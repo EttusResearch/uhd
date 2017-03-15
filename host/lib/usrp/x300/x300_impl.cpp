@@ -1665,10 +1665,7 @@ void x300_impl::check_fpga_compat(const fs_path &mb_path, const mboard_members_t
                                                                              : "resource")
                                               % members.get_pri_eth().addr);
 
-        std::cout << "=========================================================" << std::endl;
-        std::cout << "Warning:" << std::endl;
-        //throw uhd::runtime_error(str(boost::format(
-        std::cout << (str(boost::format(
+        throw uhd::runtime_error(str(boost::format(
             "Expected FPGA compatibility number %d, but got %d:\n"
             "The FPGA image on your device is not compatible with this host code build.\n"
             "Download the appropriate FPGA images for this version of UHD.\n"
@@ -1680,7 +1677,6 @@ void x300_impl::check_fpga_compat(const fs_path &mb_path, const mboard_members_t
         )   % int(X300_FPGA_COMPAT_MAJOR) % compat_major
             % print_utility_error("uhd_images_downloader.py")
             % image_loader_cmd));
-        std::cout << "=========================================================" << std::endl;
     }
     _tree->create<std::string>(mb_path / "fpga_version").set(str(boost::format("%u.%u")
                 % compat_major % compat_minor));
