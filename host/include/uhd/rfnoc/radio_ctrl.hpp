@@ -200,6 +200,53 @@ public:
      */
     virtual time_spec_t get_time_last_pps() = 0;
 
+    /*!
+     * Set the time source for this radio.
+     *
+     * May affect other radio blocks.
+     *
+     * \param source A string representing the time source
+     * \throws uhd::value_error if the value can't be applied
+     */
+    virtual void set_time_source(const std::string &source) = 0;
+
+    /*!
+     * Get the currently set time source.
+     * \param mboard which motherboard to get the config
+     * \return the string representing the time source
+     */
+    virtual std::string get_time_source() = 0;
+
+    /*!
+     * Get a list of possible time sources.
+     *
+     * \return a vector of strings for possible settings
+     */
+    virtual std::vector<std::string> get_time_sources() = 0;
+
+    /*!
+     * Set the clock source for the usrp device (for reference clock).
+     *
+     * Typical options for source: internal, external.
+     *
+     * \param source a string representing the clock source
+     */
+    virtual void set_clock_source(const std::string &source) = 0;
+
+    /*!
+     * Get the currently set clock source.
+     *
+     * \return the string representing the clock source
+     */
+    virtual std::string get_clock_source() = 0;
+
+    /*!
+     * Get a list of possible clock sources.
+     *
+     * \return a vector of strings for possible settings
+     */
+    virtual std::vector<std::string> get_clock_sources() = 0;
+
     /*! Given a frontend name, return the channel mapping.
      *
      * E.g.: For a TwinRX board, there's two frontends, '0' and '1', which

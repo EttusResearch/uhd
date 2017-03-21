@@ -76,6 +76,12 @@ public:
     void set_time_sync(const uhd::time_spec_t &time);
     time_spec_t get_time_now();
     time_spec_t get_time_last_pps();
+    virtual void set_time_source(const std::string &source);
+    virtual std::string get_time_source();
+    virtual std::vector<std::string> get_time_sources();
+    virtual void set_clock_source(const std::string &source);
+    virtual std::string get_clock_source();
+    virtual std::vector<std::string> get_clock_sources();
 
     /***********************************************************************
      * Block control API calls

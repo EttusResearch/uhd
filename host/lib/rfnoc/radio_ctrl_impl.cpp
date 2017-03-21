@@ -363,7 +363,6 @@ void radio_ctrl_impl::set_time_next_pps(const time_spec_t &time_spec)
     _time64->set_time_next_pps(time_spec);
 }
 
-
 time_spec_t radio_ctrl_impl::get_time_now()
 {
     return _time64->get_time_now();
@@ -372,5 +371,35 @@ time_spec_t radio_ctrl_impl::get_time_now()
 time_spec_t radio_ctrl_impl::get_time_last_pps()
 {
     return _time64->get_time_last_pps();
+}
+
+void radio_ctrl_impl::set_time_source(const std::string &source)
+{
+    _tree->access<std::string>("time_source/value").set(source);
+}
+
+std::string radio_ctrl_impl::get_time_source()
+{
+    return _tree->access<std::string>("time_source/value").get();
+}
+
+std::vector<std::string> radio_ctrl_impl::get_time_sources()
+{
+    return _tree->access<std::vector<std::string>>("time_source/options").get();
+}
+
+void radio_ctrl_impl::set_clock_source(const std::string &source)
+{
+    _tree->access<std::string>("clock_source/value").set(source);
+}
+
+std::string radio_ctrl_impl::get_clock_source()
+{
+    return _tree->access<std::string>("clock_source/value").get();
+}
+
+std::vector<std::string> radio_ctrl_impl::get_clock_sources()
+{
+    return _tree->access<std::vector<std::string>>("clock_source/options").get();
 }
 
