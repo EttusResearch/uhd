@@ -14,19 +14,24 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+"""
+dboard base implementation module
+"""
+from . import lib
+import logging
+import struct
 
-########################################################################
-# This file included, use CMake directory variables
-########################################################################
+log = logging.Logger("usrp_mpm.dboards")
 
 
-ADD_SUBDIRECTORY(spi)
-ADD_SUBDIRECTORY(mykonos)
-ADD_SUBDIRECTORY(lmk04828)
+class dboard_manager(object):
+    """
+    Holds shared pointer to wrapped C++ implementation.
+    Sanitizes arguments before calling C++ functions.
+    Ties various constants to specific daughterboard class
+    """
+    def __init__(self, eeprom={}):
+        self._eeprom = eeprom
 
-USRP_PERIPHS_ADD_OBJECT(periphs
-  net_helper.cpp
-  udev_helper.cpp
-  xbar_iface.cpp
-  print_foo.cpp
-  )
+    def get_serial(self):
+        return self._eeprom.get("serial", "")

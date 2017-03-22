@@ -48,3 +48,13 @@ namespace mpm { namespace dboards {
 
 }};
 
+
+#ifdef LIBMPM_PYTHON
+void export_dboards(){
+    LIBMPM_BOOST_PREAMBLE("dboards")
+    bp::class_<mpm::dboards::magnesium_periph_manager>("magnesium_periph_manager", bp::init<std::string, std::string>())
+        .def("get_clock_ctrl", &mpm::dboards::magnesium_periph_manager::get_clock_ctrl)
+        .def("get_radio_ctrl", &mpm::dboards::magnesium_periph_manager::get_radio_ctrl)
+    ;
+}
+#endif

@@ -26,5 +26,7 @@ SET(USRP_MPM_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/rpc_process.py
     ${CMAKE_CURRENT_SOURCE_DIR}/rpc_server.py
     ${CMAKE_CURRENT_SOURCE_DIR}/periphs.py
+    ${CMAKE_CURRENT_SOURCE_DIR}/periph_manager
+    ${CMAKE_CURRENT_SOURCE_DIR}/dboard_manager
     PARENT_SCOPE
     )

@@ -70,3 +70,32 @@ protected:
 
     static std::set<size_t> _get_valid_fir_lengths(const std::string& which);
 };
+
+#ifdef LIBMPM_PYTHON
+void export_mykonos(){
+    LIBMPM_BOOST_PREAMBLE("ad937x")
+
+    bp::class_<ad937x_ctrl, boost::noncopyable, std::shared_ptr<ad937x_ctrl> >("ad937x_ctrl", bp::no_init)
+        .def("make", &ad937x_ctrl::make)
+        .def("get_rf_freq_range", &ad937x_ctrl::get_rf_freq_range)
+        .def("get_bw_filter_range", &ad937x_ctrl::get_bw_filter_range)
+        .def("get_clock_rates", &ad937x_ctrl::get_clock_rates)
+        .def("get_gain_range", &ad937x_ctrl::get_gain_range)
+        .def("get_product_id", &ad937x_ctrl::get_product_id)
+        .def("get_device_rev", &ad937x_ctrl::get_device_rev)
+        .def("get_api_version", &ad937x_ctrl::get_api_version)
+        .def("get_arm_version", &ad937x_ctrl::get_arm_version)
+        .def("set_bw_filter", &ad937x_ctrl::set_bw_filter)
+        .def("set_gain", &ad937x_ctrl::set_gain)
+        .def("set_agc_mode", &ad937x_ctrl::set_agc_mode)
+        .def("set_clock_rate", &ad937x_ctrl::set_clock_rate)
+        .def("enable_channel", &ad937x_ctrl::enable_channel)
+        .def("set_freq", &ad937x_ctrl::set_freq)
+        .def("get_freq", &ad937x_ctrl::get_freq)
+        .def("set_fir", &ad937x_ctrl::set_fir)
+        .def("get_fir", &ad937x_ctrl::get_fir)
+        .def("get_temperature", &ad937x_ctrl::get_temperature)
+        ;
+}
+#endif
+

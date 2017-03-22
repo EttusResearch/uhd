@@ -2,7 +2,9 @@ MACRO(ETTUS_PYTHON_GEN_SOURCE pyfile outfile)
     #ensure that the directory exists for outfile
     GET_FILENAME_COMPONENT(outfile_dir ${outfile} PATH)
     FILE(MAKE_DIRECTORY ${outfile_dir})
-
+    IF(NOT PYTHON_EXECUTABLE)
+        MESSAGE( FATAL_ERROR "No python executable found to generate ic_regmaps!" )
+    ENDIF(NOT PYTHON_EXECUTABLE)
     #make the outfile depend on the python script
     ADD_CUSTOM_COMMAND(
         OUTPUT ${outfile} DEPENDS ${pyfile} ${ETTUS_PYTHON_GEN_SOURCE_DEPS}

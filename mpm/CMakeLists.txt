@@ -61,10 +61,23 @@ FIND_PACKAGE(Boost 1.53 COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
 
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
+message("python executable: ${PYTHON_EXECUTABLE}")
 
 MESSAGE(STATUS "Boost include directories: ${Boost_INCLUDE_DIRS}")
 MESSAGE(STATUS "Boost library directories: ${Boost_LIBRARY_DIRS}")
 MESSAGE(STATUS "Boost libraries: ${Boost_LIBRARIES}")
+
+########################################################################
+# Setup Python API
+########################################################################
+
+SET(PYTHON_ADDITIONAL_VERSIONS 2.7 3.4 3.5)
+message("python executable: ${PYTHON_EXECUTABLE}")
+FIND_PACKAGE(PythonInterp)
+message("python executable: ${PYTHON_EXECUTABLE}")
+FIND_PACKAGE(PythonLibs)
+message("python executable: ${PYTHON_EXECUTABLE}")
+
 
 ########################################################################
 # Setup library configuration
@@ -92,16 +105,9 @@ ENDIF(MPM_DEVICE STREQUAL tests)
 
 MESSAGE("usrp_periphs objects: ${usrp_periphs_objects}")
 ADD_LIBRARY(usrp-periphs SHARED ${usrp_periphs_objects})
-TARGET_LINK_LIBRARIES(usrp-periphs udev)
-########################################################################
-# Setup Python API
-########################################################################
+TARGET_LINK_LIBRARIES(usrp-periphs
+    udev
+    ${Boost_LIBRARIES}
+)
 
-SET(PYTHON_ADDITIONAL_VERSIONS 2.7 3.4 3.5)
-FIND_PACKAGE(PythonInterp)
-unset(PYTHON_LIBRARY)
-unset(PYTHON_EXECUTABLE)
-FIND_PACKAGE(PythonLibs)
 ADD_SUBDIRECTORY(python)
-
-########################################################################

@@ -14,19 +14,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+"""
+EISCAT rx board implementation module
+"""
+from base import dboard_manager
+from base import lib
+from base import log
 
-########################################################################
-# This file included, use CMake directory variables
-########################################################################
 
+class unknown(dboard_manager):
+    hw_pid = 0
+    special_eeprom_addrs = {}
 
-ADD_SUBDIRECTORY(spi)
-ADD_SUBDIRECTORY(mykonos)
-ADD_SUBDIRECTORY(lmk04828)
-
-USRP_PERIPHS_ADD_OBJECT(periphs
-  net_helper.cpp
-  udev_helper.cpp
-  xbar_iface.cpp
-  print_foo.cpp
-  )
+    def __init__(self, spi_devices, eeprom_data):
+        self._eeprom = eeprom_data[0] # save eeprom header
+        # Do own init
+        super(unknown, self).__init__()

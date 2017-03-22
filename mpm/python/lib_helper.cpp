@@ -15,21 +15,24 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "tests_periphs.hpp"
-#include <mpm/tests/tests_spi_iface.hpp>
-#include <mpm/spi_iface.hpp>
+#include "lib_helper.hpp"
+#include "converters.hpp"
+#include "../lib/udev_helper.hpp"
+#include "../lib/net_helper.hpp"
 #include <boost/python.hpp>
 
 namespace bp = boost::python;
 
-void export_tests(){
+void export_helper(){
     //Register submodule types
-    bp::object tests_module(bp::handle<>(bp::borrowed(PyImport_AddModule("libpyusrp_periphs.tests"))));
-    bp::scope().attr("tests") = tests_module;
-    bp::scope io_scope = tests_module;
+    bp::object helper_module(bp::handle<>(bp::borrowed(PyImport_AddModule("libpyusrp_periphs.helper"))));
+    bp::scope().attr("helper") = helper_module;
+    bp::scope io_scope = helper_module;
 
-    bp::class_<mpm::tests_spi_iface, bp::bases<mpm::spi_iface>, boost::shared_ptr<mpm::tests_spi_iface> >("test_spi_iface", bp::init<>())
-        .def("make", &mpm::tests_spi_iface::make)
-        .staticmethod("make")
+    bp::class_<mpm::udev_helper>("udev_helper", bp::init<>())
+        .def("get_eeprom", &mpm::udev_helper::get_eeprom)
         ;
+    bp::def("get_if_addrs", &mpm::network::get_if_addrs);
+    bp::to_python_converter<std::vector< std::string >, iterable_to_python_list<std::vector< std::string > >, false>();
 }
+

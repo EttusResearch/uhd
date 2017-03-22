@@ -14,19 +14,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+"""
+periph_manager __init__.py
+"""
 
-########################################################################
-# This file included, use CMake directory variables
-########################################################################
+# This is where the import magic happens
+from .. import libpyusrp_periphs as lib
+from .. import dboard_manager
+from .. import types
 
-
-ADD_SUBDIRECTORY(spi)
-ADD_SUBDIRECTORY(mykonos)
-ADD_SUBDIRECTORY(lmk04828)
-
-USRP_PERIPHS_ADD_OBJECT(periphs
-  net_helper.cpp
-  udev_helper.cpp
-  xbar_iface.cpp
-  print_foo.cpp
-  )
+try:
+    from n310 import n310 as periph_manager
+except ImportError:
+    raise("Could not import n310")

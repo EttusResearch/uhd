@@ -24,13 +24,14 @@ SET(UHD_HOST_ROOT ${CMAKE_SOURCE_DIR}/../host)
 LIST(APPEND
   pyusrp_periphs_sources
   pyusrp_periphs.cpp
-  lib_periphs.cpp
-  n310_periphs.cpp
-  # tests_periphs.cpp
-  )
+)
 
 ADD_LIBRARY(pyusrp_periphs SHARED ${pyusrp_periphs_sources})
-TARGET_INCLUDE_DIRECTORIES(pyusrp_periphs PUBLIC ${PYTHON_INCLUDE_DIRS} ${UHD_HOST_ROOT}/lib/usrp/common)
+TARGET_INCLUDE_DIRECTORIES(pyusrp_periphs PUBLIC
+    ${PYTHON_INCLUDE_DIRS}
+    ${CMAKE_SOURCE_DIR}/lib/
+    ${UHD_HOST_ROOT}/lib/usrp/common
+)
 TARGET_LINK_LIBRARIES(pyusrp_periphs ${Boost_PYTHON_LIBRARY} ${Boost_LIBRARIES} usrp-periphs)
 ADD_CUSTOM_COMMAND(TARGET pyusrp_periphs POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/libpyusrp_periphs.so ${CMAKE_CURRENT_BINARY_DIR}/usrp_mpm/libpyusrp_periphs.so)
 
@@ -43,10 +44,10 @@ SET(OUTPUT      "${CMAKE_CURRENT_BINARY_DIR}/build/timestamp")
 CONFIGURE_FILE(${SETUP_PY_IN} ${SETUP_PY})
 
 ADD_CUSTOM_COMMAND(OUTPUT ${OUTPUT}
-    COMMAND ${CMAKE_COMMAND} -E copy ${USRP_MPM_FILES} ${CMAKE_CURRENT_BINARY_DIR}/usrp_mpm
-    COMMAND ${PYTHON} ${SETUP_PY} -q build
-    COMMAND ${CMAKE_COMMAND} -E touch ${OUTPUT}
-    DEPENDS ${USRP_MPM_FILES})
+     COMMAND ${CMAKE_COMMAND}  -DSOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}" -DBINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}" -P ${CMAKE_CURRENT_SOURCE_DIR}/copy_python_module.cmake
+     COMMAND ${PYTHON} ${SETUP_PY} -q build
+     COMMAND ${CMAKE_COMMAND} -E touch ${OUTPUT}
+     DEPENDS ${USRP_MPM_FILES})
 ADD_CUSTOM_TARGET(usrp_mpm ALL DEPENDS ${OUTPUT} pyusrp_periphs)
 
 EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -c

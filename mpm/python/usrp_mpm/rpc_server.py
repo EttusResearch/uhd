@@ -61,7 +61,10 @@ class ClaimServer(RPCServer):
 class MPMServer(RPCServer):
     def __init__(self, state):
         # Instead do self.mboard = periphs.init_periph_manager(args...)
-        self.mboard = periphs.lib.n3xx.periph_manager("/dev/spidev1.0", "")
+        self.periph_manager = periphs.init_periph_manager()
+        # When we do init we can just add dboard/periph_manager methods with setattr(self, method)
+        # Maybe using partial
+        # To remove methods again we also have to remove them from self._methods dict (they're cached)
 
     def get_clock_id(self, dboard):
         dboard = getattr(self.mboard, "get_dboard_"+dboard)

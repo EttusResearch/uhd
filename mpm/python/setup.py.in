@@ -38,7 +38,7 @@ setup(name='usrp_mpm',
       package_dir={ '': '${CMAKE_CURRENT_BINARY_DIR}' },
       package_data={"usrp_mpm": ["*.so"]},
       zip_safe=False,
-      packages=['usrp_mpm'],
+      packages=['usrp_mpm', 'usrp_mpm.periph_manager', 'usrp_mpm.dboard_manager'],
       install_requires=[
           'numpy'
       ])

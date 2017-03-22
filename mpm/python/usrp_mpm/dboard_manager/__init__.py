@@ -14,19 +14,15 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+"""
+dboards module __init__.py
+"""
+from .. import libpyusrp_periphs as lib
+from magnesium import magnesium
+from eiscat import eiscat
+from unknown import unknown
 
-########################################################################
-# This file included, use CMake directory variables
-########################################################################
-
-
-ADD_SUBDIRECTORY(spi)
-ADD_SUBDIRECTORY(mykonos)
-ADD_SUBDIRECTORY(lmk04828)
-
-USRP_PERIPHS_ADD_OBJECT(periphs
-  net_helper.cpp
-  udev_helper.cpp
-  xbar_iface.cpp
-  print_foo.cpp
-  )
+hw_pids = {
+    eiscat.hw_pid: eiscat,
+    magnesium.hw_pid: magnesium,
+}
