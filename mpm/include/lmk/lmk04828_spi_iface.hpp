@@ -1,12 +1,15 @@
 #include "lmk04828.hpp"
 #include "uhd/types/serial.hpp"
+#include <boost/shared_ptr.hpp>
 
 class lmk04828_spi_iface
 {
 public:
+    using sptr = boost::shared_ptr<lmk04828_spi_iface>;
     lmk04828_spi_iface(uhd::spi_iface::sptr iface);
     lmk04828_iface::write_fn_t get_write_fn();
     lmk04828_iface::read_fn_t get_read_fn();
+    static sptr make(uhd::spi_iface::sptr iface);
 
 private:
     const int LMK_SPI_NUM_BITS = 24;

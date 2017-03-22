@@ -1,6 +1,7 @@
 #include "lmk/lmk04828_spi_iface.hpp"
 #include "uhd/exception.hpp"
 #include <boost/bind.hpp>
+#include <boost/make_shared.hpp>
 
 lmk04828_spi_iface::lmk04828_spi_iface(uhd::spi_iface::sptr iface) : _spi_iface(iface)
     {
@@ -41,3 +42,7 @@ uint8_t lmk04828_spi_iface::spi_read(uint32_t addr) {
 
         return data & 0xFF;
     }
+
+lmk04828_spi_iface::sptr lmk04828_spi_iface::make(uhd::spi_iface::sptr iface){
+    return boost::make_shared<lmk04828_spi_iface>(iface);
+}
