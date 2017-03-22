@@ -30,15 +30,8 @@ ENDMACRO(USRP_PERIPHS_ADD_OBJECT)
 MESSAGE(STATUS "")
 MESSAGE(STATUS "Configuring Boost C++ Libraries...")
 SET(BOOST_REQUIRED_COMPONENTS
-    chrono
-    date_time
-    filesystem
-    program_options
-    python
-    regex
-    system
-    unit_test_framework
-    serialization
+  python
+  system
 )
 IF(MINGW)
     LIST(APPEND BOOST_REQUIRED_COMPONENTS thread_win32)
@@ -77,8 +70,8 @@ MESSAGE(STATUS "Boost libraries: ${Boost_LIBRARIES}")
 # Setup library configuration
 ########################################################################
 SET(CMAKE_CXX_STANDARD 11)
-SET(MPM_DEVICE "tests" CACHE STRING "Choose a MPM device to build")
-SET_PROPERTY(CACHE MPM_DEVICE PROPERTY STRINGS tests n310)
+# SET(MPM_DEVICE "tests" CACHE STRING "Choose a MPM device to build")
+# SET_PROPERTY(CACHE MPM_DEVICE PROPERTY STRINGS tests)
 
 SET(UHD_HOST_ROOT ${CMAKE_SOURCE_DIR}/../host)
 
@@ -89,6 +82,7 @@ INCLUDE_DIRECTORIES(
   ${UHD_HOST_ROOT}/include
   )
 
+ADD_SUBDIRECTORY(dboards)
 ADD_SUBDIRECTORY(lib)
 IF(MPM_DEVICE STREQUAL tests)
   ADD_SUBDIRECTORY(tests)
@@ -98,6 +92,7 @@ ENDIF(MPM_DEVICE STREQUAL tests)
 
 MESSAGE("usrp_periphs objects: ${usrp_periphs_objects}")
 ADD_LIBRARY(usrp-periphs SHARED ${usrp_periphs_objects})
+TARGET_LINK_LIBRARIES(usrp-periphs udev)
 ########################################################################
 # Setup Python API
 ########################################################################

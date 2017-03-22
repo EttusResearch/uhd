@@ -1,8 +1,8 @@
 #pragma once
 
 #include <boost/noncopyable.hpp>
-#include <memory>
 #include <mutex>
+#include <memory>
 
 class spi_lock : public boost::noncopyable
 {

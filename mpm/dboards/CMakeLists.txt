@@ -20,7 +20,8 @@
 ########################################################################
 
 
-USRP_PERIPHS_ADD_OBJECT(n310
-  ${CMAKE_CURRENT_SOURCE_DIR}/periph_manager.cpp)
+USRP_PERIPHS_ADD_OBJECT(dboards
+  magnesium_manager.cpp
+  )
 
-TARGET_INCLUDE_DIRECTORIES(n310 PUBLIC ${UHD_HOST_ROOT}/lib/usrp/common)
+TARGET_INCLUDE_DIRECTORIES(dboards PUBLIC ${UHD_HOST_ROOT}/lib/usrp/common)
