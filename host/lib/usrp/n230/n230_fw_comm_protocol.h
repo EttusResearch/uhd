@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_FW_COMM_PROTOCOL
-#define INCLUDED_FW_COMM_PROTOCOL
+#ifndef INCLUDED_N230_FW_COMM_PROTOCOL
+#define INCLUDED_N230_FW_COMM_PROTOCOL
 
 #include <stdint.h>
 #ifndef __cplusplus
@@ -99,4 +99,4 @@ bool process_fw_comm_protocol_pkt(
 
 #endif  //ifdef __cplusplus
 
-#endif /* INCLUDED_FW_COMM_PROTOCOL */
+#endif /* INCLUDED_N230_FW_COMM_PROTOCOL */

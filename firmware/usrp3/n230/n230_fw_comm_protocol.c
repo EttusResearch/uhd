@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "../../../host/lib/usrp/common/fw_comm_protocol.h"
+#include "../../../host/lib/usrp/n230/n230_fw_comm_protocol.h"
 
 #include <trace.h>
 #include <string.h> //memcmp
