@@ -1,5 +1,5 @@
 //
-// Copyright 2013 Ettus Research LLC
+// Copyright 2013,2017 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -84,7 +84,7 @@ namespace uhd{ namespace usrp{
             //----------------------------------------------------------
             //-- Try to claim the transport or wait patiently
             //----------------------------------------------------------
-            if (_claimed.cas(1, 0))
+            if (_claimed.exchange(true))
             {
                 boost::mutex::scoped_lock l(mutex);
                 cond.timed_wait(l, boost::posix_time::microseconds(long(timeout*1e6)));
@@ -111,7 +111,7 @@ namespace uhd{ namespace usrp{
                     }
                 }
 #ifdef RECV_PACKET_DEMUXER_3000_THREAD_SAFE
-                _claimed.write(0);
+                _claimed = false;
                 cond.notify_all();
 #endif // RECV_PACKET_DEMUXER_3000_THREAD_SAFE
             }
@@ -133,7 +133,7 @@ namespace uhd{ namespace usrp{
         std::map<uint32_t, queue_type_t> _queues;
         transport::zero_copy_if::sptr _xport;
 #ifdef RECV_PACKET_DEMUXER_3000_THREAD_SAFE
-        uhd::atomic_uint32_t _claimed;
+        std::atomic_bool _claimed;
         boost::condition_variable cond;
 #endif // RECV_PACKET_DEMUXER_3000_THREAD_SAFE
         boost::mutex mutex;
