@@ -20,15 +20,14 @@
 
 #include <uhd/config.hpp>
 #include <uhd/transport/zero_copy.hpp>
-#include <stdint.h>
-#include <boost/thread.hpp>
 #include <uhd/utils/log.hpp>
-#include <uhd/utils/atomic.hpp>
 #include <uhd/types/time_spec.hpp>
 #include <uhd/utils/byteswap.hpp>
+#include <boost/thread.hpp>
+#include <boost/enable_shared_from_this.hpp>
 #include <queue>
 #include <map>
-#include <boost/enable_shared_from_this.hpp>
+#include <stdint.h>
 
 namespace uhd{ namespace usrp{
 
@@ -77,24 +76,6 @@ namespace uhd{ namespace usrp{
                     return buff;
                 }
             }
-            // Following is disabled by default as super_recv_packet_handler (caller) is not thread safe
-            // Only underlying transport (libusb1_zero_copy) is thread safe
-            // The onus is on the caller to super_recv_packet_handler (and therefore this) to serialise access
-#ifdef RECV_PACKET_DEMUXER_3000_THREAD_SAFE
-            //----------------------------------------------------------
-            //-- Try to claim the transport or wait patiently
-            //----------------------------------------------------------
-            if (_claimed.exchange(true))
-            {
-                boost::mutex::scoped_lock l(mutex);
-                cond.timed_wait(l, boost::posix_time::microseconds(long(timeout*1e6)));
-            }
-
-            //----------------------------------------------------------
-            //-- Wait on the transport for input buffers
-            //----------------------------------------------------------
-            else
-#endif // RECV_PACKET_DEMUXER_3000_THREAD_SAFE
             {
                 buff = _xport->get_recv_buff(timeout);
                 if (buff)
@@ -110,10 +91,6 @@ namespace uhd{ namespace usrp{
                         buff.reset();
                     }
                 }
-#ifdef RECV_PACKET_DEMUXER_3000_THREAD_SAFE
-                _claimed = false;
-                cond.notify_all();
-#endif // RECV_PACKET_DEMUXER_3000_THREAD_SAFE
             }
             return buff;
         }
@@ -132,10 +109,6 @@ namespace uhd{ namespace usrp{
         typedef std::queue<transport::managed_recv_buffer::sptr> queue_type_t;
         std::map<uint32_t, queue_type_t> _queues;
         transport::zero_copy_if::sptr _xport;
-#ifdef RECV_PACKET_DEMUXER_3000_THREAD_SAFE
-        std::atomic_bool _claimed;
-        boost::condition_variable cond;
-#endif // RECV_PACKET_DEMUXER_3000_THREAD_SAFE
         boost::mutex mutex;
     };
 
