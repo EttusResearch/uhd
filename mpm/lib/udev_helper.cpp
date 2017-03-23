@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "udev_helper.hpp"
+#include "mpm/udev_helper.hpp"
 #include <uhd/exception.hpp>
 #include <boost/format.hpp>
 #include <boost/make_shared.hpp>

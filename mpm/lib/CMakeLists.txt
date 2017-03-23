@@ -28,5 +28,4 @@ USRP_PERIPHS_ADD_OBJECT(periphs
   net_helper.cpp
   udev_helper.cpp
   xbar_iface.cpp
-  print_foo.cpp
   )

@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "net_helper.hpp"
+#include <mpm/net_helper.hpp>
 #include <uhd/exception.hpp>
 #include <boost/format.hpp>
 #include <netdb.h>

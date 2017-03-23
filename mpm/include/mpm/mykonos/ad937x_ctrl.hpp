@@ -17,19 +17,19 @@
 
 #pragma once
 
-#include "ad937x_device.hpp"
-#include "../spi/spi_lock.h"
+#include "mpm/spi/spi_lock.hpp"
 
 // TODO: fix path of UHD includes
-#include <../../host/include/uhd/types/direction.hpp>
-#include <../../host/include/uhd/types/ranges.hpp>
-#include <../../host/include/uhd/exception.hpp>
-#include <../../host/include/uhd/types/serial.hpp>
+#include <uhd/types/direction.hpp>
+#include <uhd/types/ranges.hpp>
+#include <uhd/exception.hpp>
+#include <uhd/types/serial.hpp>
 
 #include <boost/noncopyable.hpp>
 #include <memory>
 #include <functional>
 #include <set>
+class ad937x_device;
 
 class ad937x_ctrl : public boost::noncopyable
 {
@@ -66,8 +66,6 @@ public:
 
 protected:
     static uhd::direction_t _get_direction_from_antenna(const std::string& antenna);
-    static ad937x_device::chain_t _get_chain_from_antenna(const std::string& antenna);
-
     static std::set<size_t> _get_valid_fir_lengths(const std::string& which);
 };
 

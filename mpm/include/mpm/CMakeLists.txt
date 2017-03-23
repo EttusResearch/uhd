@@ -15,6 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 INSTALL(FILES
-    print_foo.hpp
+    net_helper.hpp
+    spi_iface.hpp
+    udev_helper.hpp
+    xbar_iface.hpp
     DESTINATION ${INCLUDE_DIR}/mpm
 )

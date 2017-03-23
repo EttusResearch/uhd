@@ -17,10 +17,10 @@
 
 #pragma once
 
-#include "../lib/spi/spi_lock.h"
+#include "mpm/spi/spi_lock.hpp"
 #include "mpm/spi/spidev_iface.hpp"
-#include "lmk/lmk04828_spi_iface.hpp"
-#include "../lib/mykonos/ad937x_ctrl.hpp"
+#include "mpm/lmk04828/lmk04828_spi_iface.hpp"
+#include "mpm/mykonos/ad937x_ctrl.hpp"
 #include <memory>
 
 namespace mpm { namespace dboards {

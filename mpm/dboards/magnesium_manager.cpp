@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "magnesium_manager.hpp"
+#include "mpm/dboards/magnesium_manager.hpp"
 #include "mpm/spi/spidev_iface.hpp"
 #include <boost/make_shared.hpp>
 

@@ -16,7 +16,7 @@
 //
 
 #include "ad937x_device.hpp"
-#include "ad937x_ctrl.hpp"
+#include "mpm/mykonos/ad937x_ctrl.hpp"
 #include "adi/mykonos.h"
 
 #include <sstream>
@@ -85,21 +85,6 @@ uhd::direction_t ad937x_ctrl::_get_direction_from_antenna(const std::string& ant
     return uhd::direction_t::RX_DIRECTION;
 }
 
-ad937x_device::chain_t ad937x_ctrl::_get_chain_from_antenna(const std::string& antenna)
-{
-    auto sub = antenna.substr(2, 1);
-    if (sub == "1") {
-        return ad937x_device::chain_t::ONE;
-    }
-    else if (sub == "2") {
-        return ad937x_device::chain_t::TWO;
-    }
-    else {
-        throw uhd::runtime_error("ad937x_ctrl got an invalid channel string.");
-    }
-    return ad937x_device::chain_t::ONE;
-}
-
 class ad937x_ctrl_impl : public ad937x_ctrl
 {
 public:
@@ -109,6 +94,23 @@ public:
     {
 
     }
+
+    static ad937x_device::chain_t _get_chain_from_antenna(const std::string& antenna)
+        {
+            auto sub = antenna.substr(2, 1);
+            if (sub == "1") {
+                return ad937x_device::chain_t::ONE;
+            }
+            else if (sub == "2") {
+                return ad937x_device::chain_t::TWO;
+            }
+            else {
+                throw uhd::runtime_error("ad937x_ctrl got an invalid channel string.");
+            }
+            return ad937x_device::chain_t::ONE;
+        }
+
+
 
     virtual uint8_t get_product_id()
     {

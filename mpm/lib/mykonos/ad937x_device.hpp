@@ -24,9 +24,9 @@
 #include "mpm/spi/adi_ctrl.hpp"
 
 // TODO: fix path of UHD includes
-#include <../../host/include/uhd/types/direction.hpp>
-#include <../../host/include/uhd/types/ranges.hpp>
-#include <../../host/include/uhd/exception.hpp>
+#include <uhd/types/direction.hpp>
+#include <uhd/types/ranges.hpp>
+#include <uhd/exception.hpp>
 
 #include <boost/noncopyable.hpp>
 #include <mutex>

@@ -1,4 +1,4 @@
-#include "spi_lock.h"
+#include "mpm/spi/spi_lock.hpp"
 
 spi_lock::spi_lock(uint8_t spidev_index) :
     spidev_index(spidev_index)

@@ -1,7 +1,7 @@
-#include "lmk/lmk04828_spi_iface.hpp"
-#include "uhd/exception.hpp"
-#include <boost/bind.hpp>
+#include <mpm/lmk04828/lmk04828_spi_iface.hpp>
+#include <uhd/exception.hpp>
 #include <boost/make_shared.hpp>
+#include <functional>
 
 lmk04828_spi_iface::lmk04828_spi_iface(uhd::spi_iface::sptr iface) : _spi_iface(iface)
     {
@@ -11,12 +11,12 @@ lmk04828_spi_iface::lmk04828_spi_iface(uhd::spi_iface::sptr iface) : _spi_iface(
 
 lmk04828_iface::write_fn_t lmk04828_spi_iface::get_write_fn()
     {
-        return boost::bind(&lmk04828_spi_iface::spi_write, this, _1);
+        return std::bind(&lmk04828_spi_iface::spi_write, this, std::placeholders::_1);
     }
 
 lmk04828_iface::read_fn_t lmk04828_spi_iface::get_read_fn()
     {
-        return boost::bind(&lmk04828_spi_iface::spi_read, this, _1);
+        return std::bind(&lmk04828_spi_iface::spi_read, this, std::placeholders::_1);
     }
 
 void lmk04828_spi_iface::spi_write(std::vector<uint32_t> writes) {

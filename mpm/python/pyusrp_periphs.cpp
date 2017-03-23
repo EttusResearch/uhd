@@ -27,11 +27,11 @@
 
 //#include "types.hpp"
 #include "converters.hpp"
-#include "net_helper.hpp"
-#include "xbar_iface.hpp"
-#include "udev_helper.hpp"
-#include "mykonos/ad937x_ctrl.hpp"
-#include "lmk/lmk04828_spi_iface.hpp"
+#include "mpm/net_helper.hpp"
+#include "mpm/xbar_iface.hpp"
+#include "mpm/udev_helper.hpp"
+#include "mpm/mykonos/ad937x_ctrl.hpp"
+#include "mpm/lmk04828//lmk04828_spi_iface.hpp"
 //#include "lib_periphs.hpp"
 //#include "dboards.hpp"
 #include <boost/noncopyable.hpp>
