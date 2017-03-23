@@ -36,11 +36,11 @@ class ad937x_ctrl : public boost::noncopyable
 public:
     typedef std::shared_ptr<ad937x_ctrl> sptr;
     static sptr make(spi_lock::sptr spi_l, uhd::spi_iface::sptr iface);
-    virtual ~ad937x_ctrl(void) {};
+    virtual ~ad937x_ctrl(void) {}
 
     static uhd::meta_range_t get_rf_freq_range(void);
     static uhd::meta_range_t get_bw_filter_range(void);
-    static std::set<double> get_clock_rates(void);
+    static std::vector<double> get_clock_rates(void);
     static uhd::meta_range_t get_gain_range(const std::string &which);
 
     virtual uint8_t get_product_id() = 0;

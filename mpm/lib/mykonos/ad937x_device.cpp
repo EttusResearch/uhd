@@ -43,20 +43,20 @@ static const size_t ARM_BINARY_SIZE = 98304;
 static const uint32_t INIT_CAL_TIMEOUT_MS = 10000;
 
 static const uint32_t INIT_CALS =
-    TX_BB_FILTER | 
-    ADC_TUNER | 
-    TIA_3DB_CORNER | 
+    TX_BB_FILTER |
+    ADC_TUNER |
+    TIA_3DB_CORNER |
     DC_OFFSET |
-    TX_ATTENUATION_DELAY | 
-    RX_GAIN_DELAY | 
+    TX_ATTENUATION_DELAY |
+    RX_GAIN_DELAY |
     FLASH_CAL |
-    PATH_DELAY | 
-    TX_LO_LEAKAGE_INTERNAL | 
+    PATH_DELAY |
+    TX_LO_LEAKAGE_INTERNAL |
 //  TX_LO_LEAKAGE_EXTERNAL |
     TX_QEC_INIT |
-    LOOPBACK_RX_LO_DELAY | 
+    LOOPBACK_RX_LO_DELAY |
     LOOPBACK_RX_RX_QEC_INIT |
-    RX_LO_DELAY | 
+    RX_LO_DELAY |
     RX_QEC_INIT |
 //  DPD_INIT |
 //  CLGC_INIT |
@@ -110,7 +110,7 @@ void ad937x_device::_call_gpio_api_function(std::function<mykonosGpioErr_t()> fu
 void ad937x_device::_initialize()
 {
     _call_api_function(std::bind(MYKONOS_resetDevice, mykonos_config.device));
-    
+
     if (get_product_id() != AD9371_PRODUCT_ID)
     {
         throw uhd::runtime_error("AD9371 product ID does not match expected ID!");
@@ -140,7 +140,7 @@ void ad937x_device::_initialize()
     }
 
     // TODO: ADD GPIO CTRL setup here
-    
+
     set_gain(uhd::RX_DIRECTION, chain_t::ONE, 0);
     set_gain(uhd::RX_DIRECTION, chain_t::TWO, 0);
     set_gain(uhd::TX_DIRECTION, chain_t::ONE, 0);
@@ -153,7 +153,7 @@ void ad937x_device::_initialize()
 
     _start_jesd();
     _enable_tracking_calibrations();
-    
+
     // radio is ON!
     _call_api_function(std::bind(MYKONOS_radioOn, mykonos_config.device));
 
@@ -182,10 +182,10 @@ void ad937x_device::_run_initialization_calibrations()
     uint8_t errorFlag = 0;
     uint8_t errorCode = 0;
     _call_api_function(
-        std::bind(MYKONOS_waitInitCals, 
-            mykonos_config.device, 
-            INIT_CAL_TIMEOUT_MS, 
-            &errorFlag, 
+        std::bind(MYKONOS_waitInitCals,
+            mykonos_config.device,
+            INIT_CAL_TIMEOUT_MS,
+            &errorFlag,
             &errorCode));
 
     if ((errorFlag != 0) || (errorCode != 0))
@@ -210,14 +210,14 @@ void ad937x_device::_run_initialization_calibrations()
 void ad937x_device::_start_jesd()
 {
     // Stop and/or disable SYSREF
-    // ensure BBIC JESD is reset and ready to recieve CGS characters
+    // ensure BBIC JESD is reset and ready to receive CGS characters
 
     // prepare to transmit CGS when sysref starts
     _call_api_function(std::bind(MYKONOS_enableSysrefToRxFramer, mykonos_config.device, 1));
-        
+
     // prepare to transmit CGS when sysref starts
     //_call_api_function(std::bind(MYKONOS_enableSysrefToObsRxFramer, mykonos_config.device, 1));
-    
+
     // prepare to transmit CGS when sysref starts
     _call_api_function(std::bind(MYKONOS_enableSysrefToDeframer, mykonos_config.device, 0));
 
@@ -471,9 +471,9 @@ void ad937x_device::set_agc_mode(uhd::direction_t direction, gain_mode_t mode)
 }
 
 void ad937x_device::set_fir(
-    const uhd::direction_t direction, 
-    const chain_t chain, 
-    int8_t gain, 
+    const uhd::direction_t direction,
+    const chain_t chain,
+    int8_t gain,
     const std::vector<int16_t> & fir)
 {
     switch (direction)
@@ -490,8 +490,8 @@ void ad937x_device::set_fir(
 }
 
 std::vector<int16_t> ad937x_device::get_fir(
-    const uhd::direction_t direction, 
-    const chain_t chain, 
+    const uhd::direction_t direction,
+    const chain_t chain,
     int8_t &gain)
 {
     switch (direction)
@@ -512,5 +512,4 @@ int16_t ad937x_device::get_temperature()
     _call_gpio_api_function(std::bind(MYKONOS_readTempSensor, mykonos_config.device, &status));
     return status.tempCode;
 }
-
 

@@ -34,7 +34,7 @@ uhd::meta_range_t ad937x_ctrl::get_bw_filter_range(void)
     return uhd::meta_range_t(0, 1);
 }
 
-std::set<double> ad937x_ctrl::get_clock_rates(void)
+std::vector<double> ad937x_ctrl::get_clock_rates(void)
 {
     // TODO: fix
     return { 125e6 };
