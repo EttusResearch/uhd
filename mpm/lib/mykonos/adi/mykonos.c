@@ -1702,7 +1702,7 @@ mykonosErr_t MYKONOS_waitForEvent(mykonosDevice_t *device, waitEvent_t waitEvent
             return MYKONOS_ERR_WAITFOREVENT_INV_PARM;
     }
 
-    CMB_setTimeout_us(timeout_us); /* timeout after desired time */
+    CMB_setTimeout_us(device->spiSettings, timeout_us); /* timeout after desired time */
 
     do
     {
@@ -1720,7 +1720,7 @@ mykonosErr_t MYKONOS_waitForEvent(mykonosDevice_t *device, waitEvent_t waitEvent
         }
 #endif
 
-        if (CMB_hasTimeoutExpired() > 0)
+        if (CMB_hasTimeoutExpired(device->spiSettings) > 0)
         {
             CMB_writeToLog(ADIHAL_LOG_WARNING, device->spiSettings->chipSelectIndex, errCode, getMykonosErrorMessage(errCode));
             return errCode;
@@ -13155,14 +13155,14 @@ mykonosErr_t MYKONOS_verifyArmChecksum(mykonosDevice_t *device)
     buildTimeChecksum = (((uint32_t)buildData[3] << 24) | ((uint32_t)buildData[2] << 16) | ((uint32_t)buildData[1] << 8) | (uint32_t)buildData[0]);
 
     /* using 200 msec timeout for exit out of while loop [maximum checksum calculation time = 5 ms] */
-    CMB_setTimeout_ms(200);
+    CMB_setTimeout_ms(device->spiSettings, 200);
 
     /* determining calculated checksum */
     do
     {
         MYKONOS_readArmMem(device, MYKONOS_ADDR_ARM_CALC_CHKSUM_ADDR, calcData, CHECKSUM_BYTES, 0);
         calculatedChecksum = (((uint32_t)calcData[3] << 24) | ((uint32_t)calcData[2] << 16) | ((uint32_t)calcData[1] << 8) | (uint32_t)calcData[0]);
-    } while ((!calculatedChecksum) && (!CMB_hasTimeoutExpired()));
+    } while ((!calculatedChecksum) && (!CMB_hasTimeoutExpired(device->spiSettings)));
 
     /* performing consistency check */
     if (buildTimeChecksum == calculatedChecksum)
@@ -13204,7 +13204,7 @@ mykonosErr_t MYKONOS_checkArmState(mykonosDevice_t *device, mykonosArmState_t ar
     CMB_writeToLog(ADIHAL_LOG_MESSAGE, device->spiSettings->chipSelectIndex, MYKONOS_ERR_OK, "MYKONOS_checkArmState()\n");
 #endif
 
-    CMB_setTimeout_ms(timeoutMs);
+    CMB_setTimeout_ms(device->spiSettings, timeoutMs);
 
     do
     {
@@ -13220,7 +13220,7 @@ mykonosErr_t MYKONOS_checkArmState(mykonosDevice_t *device, mykonosArmState_t ar
             break;
         }
 
-        if (CMB_hasTimeoutExpired())
+        if (CMB_hasTimeoutExpired(device->spiSettings))
         {
             CMB_writeToLog(ADIHAL_LOG_ERROR, device->spiSettings->chipSelectIndex, MYKONOS_ERR_WAITARMCSTATE_TIMEOUT,
                     getMykonosErrorMessage(MYKONOS_ERR_WAITARMCSTATE_TIMEOUT));
@@ -15602,13 +15602,13 @@ mykonosErr_t MYKONOS_sendArmCommand(mykonosDevice_t *device, uint8_t opCode, uin
     }
 
     /* setting a 2 sec timeout for mailbox busy bit to be clear (can't send an arm mailbox command until mailbox is ready) */
-    CMB_setTimeout_ms(2000);
+    CMB_setTimeout_ms(device->spiSettings, 2000);
 
     do
     {
         CMB_SPIReadField(device->spiSettings, MYKONOS_ADDR_ARM_CMD, &armCommandBusy, 0x80, 7);
 
-        if (CMB_hasTimeoutExpired())
+        if (CMB_hasTimeoutExpired(device->spiSettings))
         {
             CMB_writeToLog(ADIHAL_LOG_ERROR, device->spiSettings->chipSelectIndex, MYKONOS_ERR_TIMEDOUT_ARMMAILBOXBUSY,
                     getMykonosErrorMessage(MYKONOS_ERR_TIMEDOUT_ARMMAILBOXBUSY));
@@ -15795,7 +15795,7 @@ mykonosErr_t MYKONOS_waitArmCmdStatus(mykonosDevice_t *device, uint8_t opCode, u
     }
 
     /* start wait */
-    CMB_setTimeout_ms(timeoutMs);
+    CMB_setTimeout_ms(device->spiSettings, timeoutMs);
 
     do
     {
@@ -15809,7 +15809,7 @@ mykonosErr_t MYKONOS_waitArmCmdStatus(mykonosDevice_t *device, uint8_t opCode, u
             return MYKONOS_ERR_ARMCMDSTATUS_ARMERROR;
         }
 
-        if (CMB_hasTimeoutExpired())
+        if (CMB_hasTimeoutExpired(device->spiSettings))
         {
             return MYKONOS_ERR_WAITARMCMDSTATUS_TIMEOUT;
         }

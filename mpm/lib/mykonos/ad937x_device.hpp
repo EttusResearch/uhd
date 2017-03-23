@@ -1,92 +1,103 @@
+//
+// Copyright 2017 Ettus Research (National Instruments)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
+
 #pragma once
+
+#include "config/ad937x_config_t.hpp"
+#include "config/ad937x_fir.hpp"
+#include "adi/t_mykonos.h"
+#include "adi/t_mykonos_gpio.h"
+#include "mpm/spi/adi_ctrl.hpp"
 
 // TODO: fix path of UHD includes
 #include <../../host/include/uhd/types/direction.hpp>
 #include <../../host/include/uhd/types/ranges.hpp>
 #include <../../host/include/uhd/exception.hpp>
 
-#include "config/ad937x_config_t.hpp"
-#include "config/ad937x_fir.h"
-#include "adi/t_mykonos.h"
-#include "../spi/spi_lock.h"
-#include "../spi/spi_config.h"
-#include <mpm/spi_iface.hpp>
-#include <mpm/spi/adi_ctrl.hpp>
 #include <boost/noncopyable.hpp>
+#include <mutex>
+#include <memory>
 #include <functional>
-
-struct ad937x_api_version_t {
-    uint32_t silicon_ver;
-    uint32_t major_ver;
-    uint32_t minor_ver;
-    uint32_t build_ver;
-};
-
-struct ad937x_arm_version_t {
-    uint32_t major_ver;
-    uint32_t minor_ver;
-    uint32_t rc_ver;
-};
 
 class ad937x_device : public boost::noncopyable
 {
 public:
+    struct api_version_t {
+        uint32_t silicon_ver;
+        uint32_t major_ver;
+        uint32_t minor_ver;
+        uint32_t build_ver;
+    };
+
+    struct arm_version_t {
+        uint8_t major_ver;
+        uint8_t minor_ver;
+        uint8_t rc_ver;
+    };
+
     enum class gain_mode_t { MANUAL, AUTOMATIC, HYBRID };
     enum class chain_t { ONE, TWO };
+    enum class pll_t {CLK_SYNTH, RX_SYNTH, TX_SYNTH, SNIFF_SYNTH, CALPLL_SDM};
 
     typedef std::shared_ptr<ad937x_device> sptr;
-    virtual ~ad937x_device(void) {};
-    
-    static uhd::meta_range_t get_rf_freq_range(void);
-    static uhd::meta_range_t get_bw_filter_range(void);
-    static std::vector<double> get_clock_rates(void);
+    ad937x_device(uhd::spi_iface::sptr iface);
 
-    uhd::meta_range_t get_gain_range(uhd::direction_t direction, chain_t chain);
+    uint8_t get_product_id();
+    uint8_t get_device_rev();
+    api_version_t get_api_version();
+    arm_version_t get_arm_version();
 
-    uint8_t get_product_id() = 0;
-    uint8_t get_device_rev() = 0;
-    ad937x_api_version_t get_api_version() = 0;
-    ad937x_arm_version_t get_arm_version() = 0;
+    double set_bw_filter(uhd::direction_t direction, chain_t chain, double value);
+    double set_gain(uhd::direction_t direction, chain_t chain, double value);
+    void set_agc_mode(uhd::direction_t direction, gain_mode_t mode);
+    double set_clock_rate(double value);
+    void enable_channel(uhd::direction_t direction, chain_t chain, bool enable);
+    double tune(uhd::direction_t direction, double value);
+    double get_freq(uhd::direction_t direction);
 
-    double set_bw_filter(const uhd::direction_t direction, const chain_t chain, const double value) = 0;
-    double set_gain(const uhd::direction_t direction, const chain_t chain, const double value) = 0;
+    bool get_pll_lock_status(pll_t pll);
 
-    void set_agc(const uhd::direction_t direction, const bool enable) = 0;
-    void set_agc_mode(const uhd::direction_t direction, const gain_mode_t mode) = 0;
+    void set_fir(uhd::direction_t direction, chain_t chain, int8_t gain, const std::vector<int16_t> & fir);
+    std::vector<int16_t> get_fir(uhd::direction_t direction, chain_t chain, int8_t &gain);
 
-    double set_clock_rate(const double value) = 0;
-    void enable_channel(const uhd::direction_t direction, const chain_t chain, const bool enable) = 0;
+    int16_t get_temperature();    
 
-    double tune(const uhd::direction_t direction, const double value) = 0;
-    double get_freq(const uhd::direction_t direction) = 0;
-
-    void set_fir(const uhd::direction_t direction, const chain_t chain, const ad937x_fir & fir) = 0;
-    ad937x_fir get_fir(const uhd::direction_t direction, const chain_t chain) = 0;
-
-    int16_t get_temperature() = 0;    
-
-private:
     const static double MIN_FREQ;
     const static double MAX_FREQ;
+    const static double MIN_RX_GAIN;
+    const static double MAX_RX_GAIN;
+    const static double RX_GAIN_STEP;
+    const static double MIN_TX_GAIN;
+    const static double MAX_TX_GAIN;
+    const static double TX_GAIN_STEP;
 
-    virtual void initialize() = 0;
+private:
+    void _initialize();
+    void _load_arm(std::vector<uint8_t> & binary);
+    void _run_initialization_calibrations();
+    void _start_jesd();
+    void _enable_tracking_calibrations();
 
-    spi_lock::sptr spi_l;
-    mpm::spi_iface::sptr iface;
-    mpm_spiSettings_t mpm_sps;
-
+    ad9371_spiSettings_t full_spi_settings;
     ad937x_config_t mykonos_config;
 
-    void call_api_function(std::function<mykonosErr_t()> func);
+    void _call_api_function(std::function<mykonosErr_t()> func);
+    void _call_gpio_api_function(std::function<mykonosGpioErr_t()> func);
 
-    static uint8_t _convert_rx_gain(double inGain, double &coercedGain);
-    static uint16_t _convert_tx_gain(double inGain, double &coercedGain);
-
-    void _set_active_tx_chains(bool tx1, bool tx2);
-    void _set_active_rx_chains(bool rx1, bool rx2);
-
-    const static spi_device_settings_t spi_device_settings;
+    static uint8_t _convert_rx_gain(double gain);
+    static uint16_t _convert_tx_gain(double gain);
 };
-
-const double ad937x_ctrl::MIN_FREQ = 300e6;
-const double ad937x_ctrl::MAX_FREQ = 6e9;

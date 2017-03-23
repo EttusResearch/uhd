@@ -1,8 +1,27 @@
-#include "ad937x_config_t.h"
-#include "mykonos_default_config.h"
+//
+// Copyright 2017 Ettus Research (National Instruments)
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+//
 
-ad937x_config_t::ad937x_config_t()
+#include "ad937x_config_t.hpp"
+#include "ad937x_default_config.hpp"
+
+ad937x_config_t::ad937x_config_t(spiSettings_t* sps)    
 {
+    _device.spiSettings = sps;
+
     _assign_default_configuration();
     _init_pointers();
 }
@@ -59,33 +78,38 @@ void ad937x_config_t::_init_pointers()
     _device.clocks = &_clocks;
 
     _rx.rxProfile = &_rxProfile;
-    _rxProfile.rxFir = _rx_fir_config.getFir();
     _rx.framer = &_framer;
     _rx.rxGainCtrl = &_rxGainCtrl;
     _rx.rxAgcCtrl = &_rxAgcCtrl;
+    _rxProfile.rxFir = rx_fir_config.fir;
+    _rxProfile.customAdcProfile = nullptr;
     _rxAgcCtrl.peakAgc = &_rxPeakAgc;
     _rxAgcCtrl.powerAgc = &_rxPowerAgc;
 
     _tx.txProfile = &_txProfile;
-    _txProfile.txFir = _tx_fir_config.getFir();
+    _txProfile.txFir = tx_fir_config.fir;
     _tx.deframer = &_deframer;
 
     // AD9373
-    //_tx.dpdConfig = &_dpdConfig;
-    //_tx.clgcConfig = &_clgcConfig;
-    //_tx.vswrConfig = &_vswrConfig;
+    _tx.dpdConfig = nullptr;
+    _tx.clgcConfig = nullptr;
+    _tx.vswrConfig = nullptr;
 
+    // TODO: ideally we set none of this information and leave the profile as nullptr
+    // Check that the API supports this
     _obsRx.orxProfile = &_orxProfile;
-    _orxProfile.rxFir = _orx_fir_config.getFir();
     _obsRx.orxGainCtrl = &_orxGainCtrl;
     _obsRx.orxAgcCtrl = &_orxAgcCtrl;
+    _orxProfile.rxFir = _orx_fir_config.fir;
+    _orxProfile.customAdcProfile = nullptr;
     _orxAgcCtrl.peakAgc = &_orxPeakAgc;
     _orxAgcCtrl.powerAgc = &_orxPowerAgc;
 
     _obsRx.snifferProfile = &_snifferProfile;
-    _snifferProfile.rxFir = _sniffer_rx_fir_config.getFir();
+    _snifferProfile.rxFir = _sniffer_rx_fir_config.fir;
     _obsRx.snifferGainCtrl = &_snifferGainCtrl;
     // sniffer has no AGC ctrl, so leave as null
+    _obsRx.orxAgcCtrl = nullptr;
     _obsRx.framer = &_orxFramer;
 
     _auxIo.gpio3v3 = &_gpio3v3;
@@ -95,16 +119,10 @@ void ad937x_config_t::_init_pointers()
 
 void ad937x_config_t::_assign_firs()
 {
-    // TODO: In general, storing just these pointers could lead to Bad Stuff
-    // Consider if it would be helpful to enforce some pointer safety here
-    // (if that's even possible with the C API)
-    _rx_fir_config = { -6,{ 48, 0 } };
-    _rxProfile.rxFir = _rx_fir_config.getFir();
-    _tx_fir_config = { 6,{ 32, 0 } };
-    _txProfile.txFir = _tx_fir_config.getFir();
-    _orx_fir_config = { -6, { 48, 0 } };
-    _orxProfile.rxFir = _orx_fir_config.getFir();
-    _sniffer_rx_fir_config = { -6, { 48, 0 } };
-    _snifferProfile.rxFir = _sniffer_rx_fir_config.getFir();
+    // TODO: get default filters here
+    tx_fir_config.set_fir(6, { 32, 0 });
+    rx_fir_config.set_fir( -6,{ 48, 0 });
+    _orx_fir_config.set_fir( -6, { 48, 0 });
+    _sniffer_rx_fir_config.set_fir( -6, { 48, 0 });
 }
 

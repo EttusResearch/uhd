@@ -32,7 +32,6 @@ SET(mykonos_sources
 )
 
 ADD_SUBDIRECTORY(adi)
-ADD_SUBDIRECTORY(adi_sample)
 ADD_SUBDIRECTORY(config)
 
 USRP_PERIPHS_ADD_OBJECT(mykonos ${mykonos_sources})

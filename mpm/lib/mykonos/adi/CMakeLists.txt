@@ -2,5 +2,4 @@ MYKONOS_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/mykonos.c
     ${CMAKE_CURRENT_SOURCE_DIR}/mykonos_gpio.c
     ${CMAKE_CURRENT_SOURCE_DIR}/mykonos_user.c
-    ${CMAKE_CURRENT_SOURCE_DIR}/mykonosMmap.c
 )

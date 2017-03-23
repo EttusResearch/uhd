@@ -17,24 +17,19 @@
 
 #pragma once
 
-// TODO: fix path of UHD include
-#include <../../host/include/uhd/types/serial.hpp>
+#include "../adi/t_mykonos.h"
+#include <vector>
 
-#include <chrono>
-
-struct ad9371_spiSettings_t
+// wraps FIR allocation and provides a fixed mykonosFir_t pointer
+class ad937x_fir
 {
-    static ad9371_spiSettings_t* make(spiSettings_t *sps) {
-        return reinterpret_cast<ad9371_spiSettings_t *>(sps);
-    }
+    std::vector<int16_t> _fir_coefficients;
+    mykonosFir_t _fir;
+public:
+    mykonosFir_t* const fir = &_fir;
+    ad937x_fir();
+    ad937x_fir(int8_t gain, const std::vector<int16_t>& coefficients);
 
-    explicit ad9371_spiSettings_t(uhd::spi_iface::sptr uhd_iface);
-
-    // spiSetting_t MUST be the first data member so that the
-    // reintrepret_cast in make() works
-    spiSettings_t spi_settings;
-    uhd::spi_iface::sptr spi_iface;
-    std::chrono::time_point<std::chrono::steady_clock> timeout_start;
-    std::chrono::microseconds timeout_duration;
+    void set_fir(int8_t gain, const std::vector<int16_t>& coefficients);
+    std::vector<int16_t> get_fir(int8_t &gain);
 };
-

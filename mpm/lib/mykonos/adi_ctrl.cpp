@@ -15,123 +15,181 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
+
 #include "adi/common.h"
 #include <mpm/spi/adi_ctrl.hpp>
-#include <mpm/spi_iface.hpp>
+
+// TODO: fix path of UHD includes
+#include <../../host/include/uhd/exception.hpp>
 #include <iostream>
-//#include <boost/format.hpp>
+#include <chrono>
+#include <thread>
 
-#define CMB_TRACE_FUNCTIONS 0
+ad9371_spiSettings_t::ad9371_spiSettings_t(uhd::spi_iface::sptr uhd_iface) :
+    spi_iface(uhd_iface)
+{
+    spi_settings.chipSelectIndex = 0;       // set later
+    spi_settings.writeBitPolarity = 1;      // unused
+    spi_settings.longInstructionWord = 1;   
+    spi_settings.MSBFirst = 1;              
+    spi_settings.CPHA = 0;                  
+    spi_settings.CPOL = 0;                  
+    spi_settings.enSpiStreaming = 0;        // unused
+    spi_settings.autoIncAddrUp = 0;         // unused
+    spi_settings.fourWireMode = 1;          // unused
+    spi_settings.spiClkFreq_Hz = 250000000; // currently unused
+}
 
-#if CMB_TRACE_FUNCTIONS == 1
-#define CMB_TRACE_FUNCTION std::cout << __FUNCTION__ << std::endl;
-#else
-#define CMB_TRACE_FUNCTION
-#endif
+uhd::spi_config_t::edge_t _get_edge(const spiSettings_t & sps)
+{
+    return (sps.CPOL ^ sps.CPHA) ? uhd::spi_config_t::EDGE_FALL : uhd::spi_config_t::EDGE_RISE;
+}
 
+// TODO: change // not implemented to  meaningful errors
 
-/* close hardware pointers */
+// close hardware pointers
 commonErr_t CMB_closeHardware(void)
 {
-    CMB_TRACE_FUNCTION;
-    return COMMONERR_OK;
+    // not implemented
+    return COMMONERR_FAILED;
 }
 
-/* GPIO function */
+// GPIO function
 commonErr_t CMB_setGPIO(uint32_t GPIO)
 {
-    CMB_TRACE_FUNCTION;
-    return COMMONERR_OK;
+    // not implemented
+    return COMMONERR_FAILED;
 }
 
-/* hardware reset function */
+// hardware reset function
 commonErr_t CMB_hardReset(uint8_t spiChipSelectIndex)
 {
-    CMB_TRACE_FUNCTION;
-    //std::cout << "Hard reset chip select " << spiChipSelectIndex << std::endl;
+    // TODO: implement
     return COMMONERR_OK;
 }
 
-/* SPI read/write functions */
+//
+// SPI read/write functions
+//
 
-/* allows the platform HAL to work with devices with various SPI settings */
+// allows the platform HAL to work with devices with various SPI settings
 commonErr_t CMB_setSPIOptions(spiSettings_t *spiSettings)
 {
-    CMB_TRACE_FUNCTION;
+    // not implemented
     return COMMONERR_OK;
 }
 
-/* value of 0 deasserts all chip selects */
+// value of 0 deasserts all chip selects
 commonErr_t CMB_setSPIChannel(uint16_t chipSelectIndex)
 {
-    CMB_TRACE_FUNCTION;
+    // not implemented
     return COMMONERR_OK;
 }
 
-/* single SPI byte write function */
+// single SPI byte write function
 commonErr_t CMB_SPIWriteByte(spiSettings_t *spiSettings, uint16_t addr, uint8_t data)
 {
-    mpm_spiSettings_t *mpm_spi = mpm_spiSettings_t::make(spiSettings);
+    // TODO: crash and burn for these errors?
+    if (spiSettings == nullptr || spiSettings->MSBFirst == 0) return COMMONERR_FAILED;
+
+    ad9371_spiSettings_t *mpm_spi = ad9371_spiSettings_t::make(spiSettings);
+    uhd::spi_config_t config(_get_edge(*spiSettings));
+    uint32_t data_word = (0) | (addr << 8) | (data);
     try {
-        mpm_spi->spi_iface->write_byte(addr, data);
+        mpm_spi->spi_iface->write_spi(spiSettings->chipSelectIndex, config, data_word, 24);
         return COMMONERR_OK;
     } catch (const std::exception &e) {
-        /* ... error handling ... */
+        // ... error handling ...
     }
     return COMMONERR_FAILED;
 }
 
 commonErr_t CMB_SPIWriteBytes(spiSettings_t *spiSettings, uint16_t *addr, uint8_t *data, uint32_t count)
 {
-    mpm_spiSettings_t *mpm_spi = mpm_spiSettings_t::make(spiSettings);
+    // TODO: crash and burn for these errors?
+    if (spiSettings == nullptr ||
+        addr == nullptr ||
+        data == nullptr ||
+        spiSettings->MSBFirst == 0)
+    {
+        return COMMONERR_FAILED;
+    }
+
+    ad9371_spiSettings_t *mpm_spi = ad9371_spiSettings_t::make(spiSettings);
+    uhd::spi_config_t config(_get_edge(*spiSettings));
     try {
-        mpm_spi->spi_iface->write_bytes(addr, data, count);
+        for (size_t i = 0; i < count; ++i)
+        {
+            uint32_t data_word = (0) | (addr[i] << 8) | (data[i]);
+            mpm_spi->spi_iface->write_spi(spiSettings->chipSelectIndex, config, data_word, 24);
+        }
         return COMMONERR_OK;
     } catch (const std::exception &e) {
-        /* ... error handling ... */
+        // ... error handling ...
     }
     return COMMONERR_FAILED;
 }
 
-/* single SPI byte read function */
+// single SPI byte read function
 commonErr_t CMB_SPIReadByte (spiSettings_t *spiSettings, uint16_t addr, uint8_t *readdata)
 {
-    mpm_spiSettings_t *mpm_spi = mpm_spiSettings_t::make(spiSettings);
+    if (spiSettings == nullptr ||
+        readdata == nullptr ||
+        spiSettings->MSBFirst == 0)
+    {
+        return COMMONERR_FAILED;
+    }
+
+    ad9371_spiSettings_t *mpm_spi = ad9371_spiSettings_t::make(spiSettings);
+    uhd::spi_config_t config(_get_edge(*spiSettings));
+    uint32_t data_word = (0) | (addr << 8);
+    
     try {
-        *readdata = mpm_spi->spi_iface->read_byte(addr);
+        *readdata = static_cast<uint8_t>(
+            mpm_spi->spi_iface->read_spi(spiSettings->chipSelectIndex, config, data_word, 24));
         return COMMONERR_OK;
     } catch (const std::exception &e) {
-        /* ... error handling ... */
+        // ... error handling ...
     }
     return COMMONERR_FAILED;
 }
 
-/* write a field in a single register */
+// write a field in a single register
 commonErr_t CMB_SPIWriteField(
         spiSettings_t *spiSettings,
         uint16_t addr, uint8_t  field_val,
         uint8_t mask, uint8_t start_bit
 ) {
-    mpm_spiSettings_t *mpm_spi = mpm_spiSettings_t::make(spiSettings);
+    ad9371_spiSettings_t *mpm_spi = ad9371_spiSettings_t::make(spiSettings);
+    uhd::spi_config_t config(_get_edge(*spiSettings));
+    uint32_t read_word = (0) | (addr << 8);
+
     try {
-        mpm_spi->spi_iface->write_field(addr, field_val, mask, start_bit);
+        uint32_t current_value = mpm_spi->spi_iface->read_spi(spiSettings->chipSelectIndex, config, read_word, 24);
+        uint8_t new_value = static_cast<uint8_t>((current_value & ~mask) | (field_val << start_bit));
+        uint32_t write_word = (0) | (addr << 8) | new_value;
+        mpm_spi->spi_iface->write_spi(spiSettings->chipSelectIndex, config, write_word, 24);
         return COMMONERR_OK;
     } catch (const std::exception &e) {
-        /* ... error handling ... */
+        // ... error handling ...
     }
     return COMMONERR_FAILED;
 }
 
 
-/* read a field in a single register */
+// read a field in a single register
 commonErr_t CMB_SPIReadField(
         spiSettings_t *spiSettings,
         uint16_t addr, uint8_t *field_val,
         uint8_t mask, uint8_t start_bit
 ) {
-    mpm_spiSettings_t *mpm_spi = mpm_spiSettings_t::make(spiSettings);
+    ad9371_spiSettings_t *mpm_spi = ad9371_spiSettings_t::make(spiSettings);
+    uhd::spi_config_t config(_get_edge(*spiSettings));
+    uint32_t read_word = (0) | (addr << 8);
+
     try {
-        *field_val = mpm_spi->spi_iface->read_field(addr, mask, start_bit);
+        uint32_t value = mpm_spi->spi_iface->read_spi(spiSettings->chipSelectIndex, config, read_word, 24);
+        *field_val = static_cast<uint8_t>((value & mask) >> start_bit);
         return COMMONERR_OK;
     } catch (const std::exception &e) {
         /* ... error handling ... */
@@ -139,77 +197,89 @@ commonErr_t CMB_SPIReadField(
     return COMMONERR_FAILED;
 }
 
-/* platform timer functions */
+// platform timer functions
+
 commonErr_t CMB_wait_ms(uint32_t time_ms)
 {
-    CMB_TRACE_FUNCTION;
+    std::this_thread::sleep_for(std::chrono::milliseconds(time_ms));
     return COMMONERR_OK;
 }
 commonErr_t CMB_wait_us(uint32_t time_us)
 {
-    CMB_TRACE_FUNCTION;
+    std::this_thread::sleep_for(std::chrono::microseconds(time_us));
     return COMMONERR_OK;
-}
-commonErr_t CMB_setTimeout_ms(uint32_t timeOut_ms)
-{
-    CMB_TRACE_FUNCTION;
-    return COMMONERR_OK;
-}
-commonErr_t CMB_setTimeout_us(uint32_t timeOut_us)
-{
-    CMB_TRACE_FUNCTION;
-    return COMMONERR_OK;
-}
-commonErr_t CMB_hasTimeoutExpired()
-{
-    CMB_TRACE_FUNCTION;
-    return COMMONERR_FAILED;
 }
 
-/* platform logging functions */
+commonErr_t CMB_setTimeout_ms(spiSettings_t *spiSettings, uint32_t timeOut_ms)
+{
+    ad9371_spiSettings_t *mpm_spi = ad9371_spiSettings_t::make(spiSettings);
+    mpm_spi->timeout_start = std::chrono::steady_clock::now();
+    mpm_spi->timeout_duration = std::chrono::milliseconds(timeOut_ms);
+    return COMMONERR_OK;
+}
+commonErr_t CMB_setTimeout_us(spiSettings_t *spiSettings, uint32_t timeOut_us)
+{
+    ad9371_spiSettings_t *mpm_spi = ad9371_spiSettings_t::make(spiSettings);
+    mpm_spi->timeout_start = std::chrono::steady_clock::now();
+    mpm_spi->timeout_duration = std::chrono::microseconds(timeOut_us);
+    return COMMONERR_OK;
+}
+commonErr_t CMB_hasTimeoutExpired(spiSettings_t *spiSettings)
+{
+    ad9371_spiSettings_t *mpm_spi = ad9371_spiSettings_t::make(spiSettings);
+    auto current_time = std::chrono::steady_clock::now();
+    if ((std::chrono::steady_clock::now() - mpm_spi->timeout_start) > mpm_spi->timeout_duration)
+    {
+        return COMMONERR_FAILED;
+    }
+    else {
+        return COMMONERR_OK;
+    }
+}
+
+// platform logging functions
 commonErr_t CMB_openLog(const char *filename)
 {
-    CMB_TRACE_FUNCTION;
-    return COMMONERR_OK;
+    // not implemented
+    return COMMONERR_FAILED;
 }
 commonErr_t CMB_closeLog(void)
 {
-    CMB_TRACE_FUNCTION;
-    return COMMONERR_OK;
+    // not implemented
+    return COMMONERR_FAILED;
 }
 
 commonErr_t CMB_writeToLog(ADI_LOGLEVEL level, uint8_t deviceIndex, uint32_t errorCode, const char *comment)
 {
-    CMB_TRACE_FUNCTION;
     std::cout << level << " " << errorCode << " " << comment << std::endl;
     return COMMONERR_OK;
 }
 commonErr_t CMB_flushLog(void)
 {
-    CMB_TRACE_FUNCTION;
-    return COMMONERR_OK;
+    // not implemented
+    return COMMONERR_FAILED;
 }
 
 /* platform FPGA AXI register read/write functions */
 commonErr_t CMB_regRead(uint32_t offset, uint32_t *data)
 {
-    CMB_TRACE_FUNCTION;
-    return COMMONERR_OK;
+    // not implemented
+    return COMMONERR_FAILED;
 }
 commonErr_t CMB_regWrite(uint32_t offset, uint32_t data)
 {
-    CMB_TRACE_FUNCTION;
-    return COMMONERR_OK;
+    // not implemented
+    return COMMONERR_FAILED;
 }
 
 /* platform DDR3 memory read/write functions */
 commonErr_t CMB_memRead(uint32_t offset, uint32_t *data, uint32_t len)
 {
-    CMB_TRACE_FUNCTION;
-    return COMMONERR_OK;
+    // not implemented
+    return COMMONERR_FAILED;
 }
 commonErr_t CMB_memWrite(uint32_t offset, uint32_t *data, uint32_t len)
 {
-    CMB_TRACE_FUNCTION;
-    return COMMONERR_OK;
+    // not implemented
+    return COMMONERR_FAILED;
 }
