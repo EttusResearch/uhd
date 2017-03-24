@@ -51,20 +51,20 @@ Bits   | Meaning
 60     | End-of-burst or error flag
 59:48  | 12-bit sequence number
 47:32  | Total packet length in Bytes
-31:0   | Stream ID (SID)
-
+31:0   | Stream ID (SID). For the format of SID, see uhd::sid_t.
 
 The packet type is determined mainly by the first two bits, although
-the EOB or error flag are also taken into consideration:
+the EOB or error flag are also taken into consideration (the third bit does not
+affect the packet type):
 
-Bit 63 | Bit 62 | Bit 60 | Packet Type
--------|--------|--------|--------------
-0      | 0      | 0      | Data
-0      | 0      | 1      | Data (End-of-burst)
-0      | 1      | 0      | Flow Control
-1      | 0      | 0      | Command Packet
-1      | 1      | 0      | Command Response
-1      | 1      | 1      | Command Response (Error)
+Bit 63 | Bit 62 | Bit 61 | Bit 60 | Packet Type
+-------|--------|--------|--------|--------------
+0      | 0      | x      | 0      | Data
+0      | 0      | x      | 1      | Data (End-of-burst)
+0      | 1      | x      | 0      | Flow Control
+1      | 0      | x      | 0      | Command Packet
+1      | 1      | x      | 0      | Command Response
+1      | 1      | x      | 1      | Command Response (Error)
 
 \section vrt_tools Tools
 
