@@ -121,6 +121,8 @@ public:
      * Make a new multi usrp from the device address.
      * \param dev_addr the device address
      * \return a new single usrp object
+     * \throws uhd::key_error no device found
+     * \throws uhd::index_error fewer devices found than expected
      */
     static sptr make(const device_addr_t &dev_addr);
 

@@ -23,6 +23,9 @@
 
 namespace uhd{ namespace transport{
 
+    // Jumbo frames are limited to 9000;
+    static const size_t MAX_ETHERNET_MTU = 9000;
+
     typedef boost::shared_ptr<boost::asio::ip::udp::socket> socket_sptr;
 
     /*!

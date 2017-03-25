@@ -30,7 +30,6 @@ add_library(usrp3fw STATIC
     print_addrs.c
     link_state_route_proto.c
     cron.c
-    fw_comm_protocol.c
     flash/spi_flash.c
     flash/spif_spsn_s25flxx.c
 )

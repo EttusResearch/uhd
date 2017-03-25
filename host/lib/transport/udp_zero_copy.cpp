@@ -310,22 +310,22 @@ udp_zero_copy::sptr udp_zero_copy::make(
     xport_params.num_send_frames = size_t(hints.cast<double>("num_send_frames", default_buff_args.num_send_frames));
 
     //extract buffer size hints from the device addr
-    size_t usr_recv_buff_size = size_t(hints.cast<double>("recv_buff_size", 0.0));
-    size_t usr_send_buff_size = size_t(hints.cast<double>("send_buff_size", 0.0));
+    size_t usr_recv_buff_size = size_t(hints.cast<double>("recv_buff_size", xport_params.num_recv_frames * MAX_ETHERNET_MTU));
+    size_t usr_send_buff_size = size_t(hints.cast<double>("send_buff_size", xport_params.num_send_frames * MAX_ETHERNET_MTU));
 
     if (hints.has_key("recv_buff_size")) {
-        if (usr_recv_buff_size < xport_params.recv_frame_size * xport_params.num_recv_frames) {
+        if (usr_recv_buff_size < xport_params.num_recv_frames * MAX_ETHERNET_MTU) {
             throw uhd::value_error((boost::format(
-                "recv_buff_size must be equal to or greater than (num_recv_frames * recv_frame_size) where num_recv_frames=%d, recv_frame_size=%d")
-                % xport_params.num_recv_frames % xport_params.recv_frame_size).str());
+                "recv_buff_size must be equal to or greater than %d")
+                % (xport_params.num_recv_frames * MAX_ETHERNET_MTU)).str());
         }
     }
 
     if (hints.has_key("send_buff_size")) {
-        if (usr_send_buff_size < xport_params.send_frame_size * xport_params.num_send_frames) {
+        if (usr_send_buff_size < xport_params.num_send_frames * MAX_ETHERNET_MTU) {
             throw uhd::value_error((boost::format(
-                "send_buff_size must be equal to or greater than (num_send_frames * send_frame_size) where num_send_frames=%d, send_frame_size=%d")
-                % xport_params.num_send_frames % xport_params.send_frame_size).str());
+                "send_buff_size must be equal to or greater than %d")
+                % (xport_params.num_send_frames * MAX_ETHERNET_MTU)).str());
         }
     }
 

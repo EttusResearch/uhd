@@ -22,7 +22,7 @@
 #include <u3_net_stack.h>
 #include <print_addrs.h>
 #include <trace.h>
-#include "../../../host/lib/usrp/common/fw_comm_protocol.h"
+#include "../../../host/lib/usrp/n230/n230_fw_comm_protocol.h"
 #include "../../../host/lib/usrp/n230/n230_fw_defs.h"
 #include "../n230/n230_fw_host_iface.h"
 #include "../../../host/lib/usrp/n230/n230_eeprom.h"

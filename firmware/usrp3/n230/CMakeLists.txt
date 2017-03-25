@@ -19,7 +19,12 @@
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${CMAKE_SOURCE_DIR}/../../host/lib/usrp/n230)
 
-list(APPEND n230_sources n230_eeprom.c n230_eth_handlers.c n230_init.c n230_main.c)
+list(APPEND n230_sources
+    n230_eeprom.c
+    n230_fw_comm_protocol.c
+    n230_eth_handlers.c
+    n230_init.c
+    n230_main.c)
 
 ########################################################################
 set(GEN_OUTPUTS_BIN_SIZE 0x7fff)

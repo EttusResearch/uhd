@@ -276,6 +276,198 @@ double x300_radio_ctrl_impl::set_rx_gain(const double gain, const size_t chan)
 }
 
 
+std::vector<std::string> x300_radio_ctrl_impl::get_rx_lo_names(const size_t chan)
+{
+    fs_path rx_fe_fe_root = fs_path("dboards" / _radio_slot / "rx_frontends" / _rx_fe_map.at(chan).db_fe_name);
+
+    std::vector<std::string> lo_names;
+    if (_tree->exists(rx_fe_fe_root / "los")) {
+        for(const std::string &name:  _tree->list(rx_fe_fe_root / "los")) {
+            lo_names.push_back(name);
+        }
+    }
+    return lo_names;
+}
+
+std::vector<std::string> x300_radio_ctrl_impl::get_rx_lo_sources(const std::string &name, const size_t chan)
+{
+    fs_path rx_fe_fe_root = fs_path("dboards" / _radio_slot / "rx_frontends" / _rx_fe_map.at(chan).db_fe_name);
+
+    if (_tree->exists(rx_fe_fe_root / "los")) {
+        if (name == ALL_LOS) {
+            if (_tree->exists(rx_fe_fe_root / "los" / ALL_LOS)) {
+                //Special value ALL_LOS support atomically sets the source for all LOs
+                return _tree->access< std::vector<std::string> >(rx_fe_fe_root / "los" / ALL_LOS / "source" / "options").get();
+            } else {
+                return std::vector<std::string>();
+            }
+        } else {
+            if (_tree->exists(rx_fe_fe_root / "los")) {
+                return _tree->access< std::vector<std::string> >(rx_fe_fe_root / "los" / name / "source" / "options").get();
+            } else {
+                throw uhd::runtime_error("Could not find LO stage " + name);
+            }
+        }
+    } else {
+        // If the daughterboard doesn't expose it's LO(s) then it can only be internal
+        return std::vector<std::string> (1, "internal");
+    }
+}
+
+void x300_radio_ctrl_impl::set_rx_lo_source(const std::string &src, const std::string &name, const size_t chan)
+{
+    fs_path rx_fe_fe_root = fs_path("dboards" / _radio_slot / "rx_frontends" / _rx_fe_map.at(chan).db_fe_name);
+
+    if (_tree->exists(rx_fe_fe_root / "los")) {
+        if (name == ALL_LOS) {
+            if (_tree->exists(rx_fe_fe_root / "los" / ALL_LOS)) {
+                //Special value ALL_LOS support atomically sets the source for all LOs
+                _tree->access<std::string>(rx_fe_fe_root / "los" / ALL_LOS / "source" / "value").set(src);
+            } else {
+                for(const std::string &n:  _tree->list(rx_fe_fe_root / "los")) {
+                    this->set_rx_lo_source(src, n, chan);
+                }
+            }
+        } else {
+            if (_tree->exists(rx_fe_fe_root / "los")) {
+                _tree->access<std::string>(rx_fe_fe_root / "los" / name / "source" / "value").set(src);
+            } else {
+                throw uhd::runtime_error("Could not find LO stage " + name);
+            }
+        }
+    } else {
+        throw uhd::runtime_error("This device does not support manual configuration of LOs");
+    }
+}
+
+const std::string x300_radio_ctrl_impl::get_rx_lo_source(const std::string &name, const size_t chan)
+{
+    fs_path rx_fe_fe_root = fs_path("dboards" / _radio_slot / "rx_frontends" / _rx_fe_map.at(chan).db_fe_name);
+
+    if (_tree->exists(rx_fe_fe_root / "los")) {
+        if (name == ALL_LOS) {
+            //Special value ALL_LOS support atomically sets the source for all LOs
+            return _tree->access<std::string>(rx_fe_fe_root / "los" / ALL_LOS / "source" / "value").get();
+        } else {
+            if (_tree->exists(rx_fe_fe_root / "los")) {
+                return _tree->access<std::string>(rx_fe_fe_root / "los" / name / "source" / "value").get();
+            } else {
+                throw uhd::runtime_error("Could not find LO stage " + name);
+            }
+        }
+    } else {
+        // If the daughterboard doesn't expose it's LO(s) then it can only be internal
+        return "internal";
+    }
+}
+
+void x300_radio_ctrl_impl::set_rx_lo_export_enabled(bool enabled, const std::string &name, const size_t chan)
+{
+    fs_path rx_fe_fe_root = fs_path("dboards" / _radio_slot / "rx_frontends" / _rx_fe_map.at(chan).db_fe_name);
+
+    if (_tree->exists(rx_fe_fe_root / "los")) {
+        if (name == ALL_LOS) {
+            if (_tree->exists(rx_fe_fe_root / "los" / ALL_LOS)) {
+                //Special value ALL_LOS support atomically sets the source for all LOs
+                _tree->access<bool>(rx_fe_fe_root / "los" / ALL_LOS / "export").set(enabled);
+            } else {
+                for(const std::string &n:  _tree->list(rx_fe_fe_root / "los")) {
+                    this->set_rx_lo_export_enabled(enabled, n, chan);
+                }
+            }
+        } else {
+            if (_tree->exists(rx_fe_fe_root / "los")) {
+                _tree->access<bool>(rx_fe_fe_root / "los" / name / "export").set(enabled);
+            } else {
+                throw uhd::runtime_error("Could not find LO stage " + name);
+            }
+        }
+    } else {
+        throw uhd::runtime_error("This device does not support manual configuration of LOs");
+    }
+}
+
+bool x300_radio_ctrl_impl::get_rx_lo_export_enabled(const std::string &name, const size_t chan)
+{
+    fs_path rx_fe_fe_root = fs_path("dboards" / _radio_slot / "rx_frontends" / _rx_fe_map.at(chan).db_fe_name);
+
+    if (_tree->exists(rx_fe_fe_root / "los")) {
+        if (name == ALL_LOS) {
+            //Special value ALL_LOS support atomically sets the source for all LOs
+            return _tree->access<bool>(rx_fe_fe_root / "los" / ALL_LOS / "export").get();
+        } else {
+            if (_tree->exists(rx_fe_fe_root / "los")) {
+                return _tree->access<bool>(rx_fe_fe_root / "los" / name / "export").get();
+            } else {
+                throw uhd::runtime_error("Could not find LO stage " + name);
+            }
+        }
+    } else {
+        // If the daughterboard doesn't expose it's LO(s), assume it cannot export
+        return false;
+    }
+}
+
+double x300_radio_ctrl_impl::set_rx_lo_freq(double freq, const std::string &name, const size_t chan)
+{
+    fs_path rx_fe_fe_root = fs_path("dboards" / _radio_slot / "rx_frontends" / _rx_fe_map.at(chan).db_fe_name);
+
+    if (_tree->exists(rx_fe_fe_root / "los")) {
+        if (name == ALL_LOS) {
+            throw uhd::runtime_error("LO frequency must be set for each stage individually");
+        } else {
+            if (_tree->exists(rx_fe_fe_root / "los")) {
+                _tree->access<double>(rx_fe_fe_root / "los" / name / "freq" / "value").set(freq);
+                return _tree->access<double>(rx_fe_fe_root / "los" / name / "freq" / "value").get();
+            } else {
+                throw uhd::runtime_error("Could not find LO stage " + name);
+            }
+        }
+    } else {
+        throw uhd::runtime_error("This device does not support manual configuration of LOs");
+    }
+}
+
+double x300_radio_ctrl_impl::get_rx_lo_freq(const std::string &name, const size_t chan)
+{
+    fs_path rx_fe_fe_root = fs_path("dboards" / _radio_slot / "rx_frontends" / _rx_fe_map.at(chan).db_fe_name);
+
+    if (_tree->exists(rx_fe_fe_root / "los")) {
+        if (name == ALL_LOS) {
+            throw uhd::runtime_error("LO frequency must be retrieved for each stage individually");
+        } else {
+            if (_tree->exists(rx_fe_fe_root / "los")) {
+                return _tree->access<double>(rx_fe_fe_root / "los" / name / "freq" / "value").get();
+            } else {
+                throw uhd::runtime_error("Could not find LO stage " + name);
+            }
+        }
+    } else {
+        // Return actual RF frequency if the daughterboard doesn't expose it's LO(s)
+        return _tree->access<double>(rx_fe_fe_root / "freq" /" value").get();
+    }
+}
+
+freq_range_t x300_radio_ctrl_impl::get_rx_lo_freq_range(const std::string &name, const size_t chan)
+{
+    fs_path rx_fe_fe_root = fs_path("dboards" / _radio_slot / "rx_frontends" / _rx_fe_map.at(chan).db_fe_name);
+
+    if (_tree->exists(rx_fe_fe_root / "los")) {
+        if (name == ALL_LOS) {
+            throw uhd::runtime_error("LO frequency range must be retrieved for each stage individually");
+        } else {
+            if (_tree->exists(rx_fe_fe_root / "los")) {
+                return _tree->access<freq_range_t>(rx_fe_fe_root / "los" / name / "freq" / "range").get();
+            } else {
+                throw uhd::runtime_error("Could not find LO stage " + name);
+            }
+        }
+    } else {
+        // Return the actual RF range if the daughterboard doesn't expose it's LO(s)
+        return _tree->access<meta_range_t>(rx_fe_fe_root / "freq" / "range").get();
+    }
+}
+
 template <typename map_type>
 static size_t _get_chan_from_map(std::map<size_t, map_type> map, const std::string &fe)
 {

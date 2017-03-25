@@ -69,6 +69,10 @@ IF(CURSES_FOUND)
     ADD_EXECUTABLE(rx_ascii_art_dft rx_ascii_art_dft.cpp)
     TARGET_LINK_LIBRARIES(rx_ascii_art_dft uhd ${CURSES_LIBRARIES} ${Boost_LIBRARIES})
     UHD_INSTALL(TARGETS rx_ascii_art_dft RUNTIME DESTINATION ${PKG_LIB_DIR}/examples COMPONENT examples)
+
+    ADD_EXECUTABLE(twinrx_freq_hopping twinrx_freq_hopping.cpp)
+    TARGET_LINK_LIBRARIES(twinrx_freq_hopping uhd ${CURSES_LIBRARIES} ${Boost_LIBRARIES})
+    UHD_INSTALL(TARGETS twinrx_freq_hopping RUNTIME DESTINATION ${PKG_LIB_DIR}/examples COMPONENT examples)
 ENDIF(CURSES_FOUND)
 
 ########################################################################

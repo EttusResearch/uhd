@@ -29,6 +29,7 @@ using namespace uhd;
 using namespace uhd::rfnoc;
 
 static const size_t BYTES_PER_SAMPLE = 4;
+const std::string radio_ctrl::ALL_LOS = "all";
 
 /****************************************************************************
  * Structors and init
@@ -242,6 +243,51 @@ double radio_ctrl_impl::get_rx_bandwidth(const size_t chan) /* const */
 {
     return _rx_bandwidth[chan];
 }
+    
+std::vector<std::string> radio_ctrl_impl::get_rx_lo_names(const size_t /* chan */)
+{
+    return std::vector<std::string>();
+}
+
+std::vector<std::string> radio_ctrl_impl::get_rx_lo_sources(const std::string & /* name */, const size_t /* chan */)
+{
+    return std::vector<std::string>();
+}
+
+freq_range_t radio_ctrl_impl::get_rx_lo_freq_range(const std::string & /* name */, const size_t /* chan */)
+{
+    return freq_range_t();
+}
+
+void radio_ctrl_impl::set_rx_lo_source(const std::string & /* src */, const std::string & /* name */, const size_t /* chan */)
+{
+    throw uhd::not_implemented_error("set_rx_lo_source is not supported on this radio");
+}
+
+const std::string radio_ctrl_impl::get_rx_lo_source(const std::string & /* name */, const size_t /* chan */)
+{
+    return "internal";
+}
+
+void radio_ctrl_impl::set_rx_lo_export_enabled(bool /* enabled */, const std::string & /* name */, const size_t /* chan */)
+{
+    throw uhd::not_implemented_error("set_rx_lo_export_enabled is not supported on this radio");
+}
+
+bool radio_ctrl_impl::get_rx_lo_export_enabled(const std::string & /* name */, const size_t /* chan */)
+{
+    return false; // Not exporting non-existant LOs
+}
+
+double radio_ctrl_impl::set_rx_lo_freq(double /* freq */, const std::string & /* name */, const size_t /* chan */)
+{
+    throw uhd::not_implemented_error("set_rx_lo_freq is not supported on this radio");
+}
+
+double radio_ctrl_impl::get_rx_lo_freq(const std::string & /* name */, const size_t /* chan */)
+{
+    return 0;
+}
 
 /***********************************************************************
  * RX Streamer-related methods (from source_block_ctrl_base)
@@ -363,7 +409,6 @@ void radio_ctrl_impl::set_time_next_pps(const time_spec_t &time_spec)
     _time64->set_time_next_pps(time_spec);
 }
 
-
 time_spec_t radio_ctrl_impl::get_time_now()
 {
     return _time64->get_time_now();
@@ -372,5 +417,35 @@ time_spec_t radio_ctrl_impl::get_time_now()
 time_spec_t radio_ctrl_impl::get_time_last_pps()
 {
     return _time64->get_time_last_pps();
+}
+
+void radio_ctrl_impl::set_time_source(const std::string &source)
+{
+    _tree->access<std::string>("time_source/value").set(source);
+}
+
+std::string radio_ctrl_impl::get_time_source()
+{
+    return _tree->access<std::string>("time_source/value").get();
+}
+
+std::vector<std::string> radio_ctrl_impl::get_time_sources()
+{
+    return _tree->access<std::vector<std::string>>("time_source/options").get();
+}
+
+void radio_ctrl_impl::set_clock_source(const std::string &source)
+{
+    _tree->access<std::string>("clock_source/value").set(source);
+}
+
+std::string radio_ctrl_impl::get_clock_source()
+{
+    return _tree->access<std::string>("clock_source/value").get();
+}
+
+std::vector<std::string> radio_ctrl_impl::get_clock_sources()
+{
+    return _tree->access<std::vector<std::string>>("clock_source/options").get();
 }
 

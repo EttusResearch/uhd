@@ -18,6 +18,7 @@
 #ifndef INCLUDED_LIBUHD_RFNOC_RADIO_CTRL_HPP
 #define INCLUDED_LIBUHD_RFNOC_RADIO_CTRL_HPP
 
+#include <uhd/types/ranges.hpp>
 #include <uhd/types/direction.hpp>
 #include <uhd/rfnoc/source_block_ctrl_base.hpp>
 #include <uhd/rfnoc/sink_block_ctrl_base.hpp>
@@ -42,6 +43,16 @@ public:
     UHD_RFNOC_BLOCK_OBJECT(radio_ctrl)
 
     virtual ~radio_ctrl(){}
+
+
+    //! A wildcard channel index
+    static const size_t ALL_CHANS = size_t(~0);
+
+    //! A wildcard gain element name
+    static const std::string ALL_GAINS;
+
+    //! A wildcard local oscillator element name
+    static const std::string ALL_LOS;
 
     /************************************************************************
      * API calls
@@ -246,6 +257,137 @@ public:
      * \return the value set for this attribute
      */
     virtual uint32_t get_gpio_attr(const std::string &bank, const std::string &attr) = 0;
+
+    /*!
+     * Get a list of possible LO stage names
+     * \param chan the channel index 0 to N-1
+     * \return a vector of strings for possible LO names
+     */
+    virtual std::vector<std::string> get_rx_lo_names(const size_t chan) = 0;
+
+    /*!
+     * Get a list of possible LO sources.
+     * Channels which do not have controllable LO sources
+     * will return "internal".
+     * \param name the name of the LO stage to query
+     * \param chan the channel index 0 to N-1
+     * \return a vector of strings for possible settings
+     */
+    virtual std::vector<std::string> get_rx_lo_sources(const std::string &name, const size_t chan) = 0;
+
+    /*!
+     * Get the LO frequency range of the RX LO.
+     * If the channel does not have independently configurable LOs
+     * the rf frequency range will be returned.
+     * \param name the name of the LO stage to query
+     * \param chan the channel index 0 to N-1
+     * \return a frequency range object
+     */
+    virtual freq_range_t get_rx_lo_freq_range(const std::string &name, const size_t chan) = 0;
+
+    /*!
+     * Set the LO source for a channel.
+     * For usrps that support selectable LOs, this function
+     * allows switching between them.
+     * Typical options for source: internal, external.
+     * \param src a string representing the LO source
+     * \param name the name of the LO stage to update
+     * \param chan the channel index 0 to N-1
+     */
+    virtual void set_rx_lo_source(const std::string &src, const std::string &name, const size_t chan) = 0;
+
+    /*!
+     * Get the currently set LO source.
+     * Channels without controllable LO sources will return
+     * "internal"
+     * \param name the name of the LO stage to query
+     * \param chan the channel index 0 to N-1
+     * \return the configured LO source
+     */
+    virtual const std::string get_rx_lo_source(const std::string &name, const size_t chan) = 0;
+
+    /*!
+     * Set whether the LO used by the usrp device is exported
+     * For usrps that support exportable LOs, this function
+     * configures if the LO used by chan is exported or not.
+     * \param enabled if true then export the LO
+     * \param name the name of the LO stage to update
+     * \param chan the channel index 0 to N-1 for the source channel
+     */
+    virtual void set_rx_lo_export_enabled(bool enabled, const std::string &name, const size_t chan) = 0;
+
+    /*!
+     * Returns true if the currently selected LO is being exported.
+     * \param name the name of the LO stage to query
+     * \param chan the channel index 0 to N-1
+     */
+    virtual bool get_rx_lo_export_enabled(const std::string &name, const size_t chan) = 0;
+
+    /*!
+     * Set the RX LO frequency (Advanced).
+     * \param freq the frequency to set the LO to
+     * \param name the name of the LO stage to update
+     * \param chan the channel index 0 to N-1
+     * \return a coerced LO frequency
+     */
+    virtual double set_rx_lo_freq(double freq, const std::string &name, const size_t chan) = 0;
+
+    /*!
+     * Get the current RX LO frequency (Advanced).
+     * If the channel does not have independently configurable LOs
+     * the current rf frequency will be returned.
+     * \param name the name of the LO stage to query
+     * \param chan the channel index 0 to N-1
+     * \return the configured LO frequency
+     */
+    virtual double get_rx_lo_freq(const std::string &name, const size_t chan) = 0;
+
+    /*! 
+     * Set the time source for this radio.
+     *
+     * May affect other radio blocks.
+     *
+     * \param source A string representing the time source
+     * \throws uhd::value_error if the value can't be applied
+     */
+    virtual void set_time_source(const std::string &source) = 0;
+
+    /*!
+     * Get the currently set time source.
+     * \param mboard which motherboard to get the config
+     * \return the string representing the time source
+     */
+    virtual std::string get_time_source() = 0;
+
+    /*!
+     * Get a list of possible time sources.
+     *
+     * \return a vector of strings for possible settings
+     */
+    virtual std::vector<std::string> get_time_sources() = 0;
+
+    /*!
+     * Set the clock source for the usrp device (for reference clock).
+     *
+     * Typical options for source: internal, external.
+     *
+     * \param source a string representing the clock source
+     */
+    virtual void set_clock_source(const std::string &source) = 0;
+
+    /*!
+     * Get the currently set clock source.
+     *
+     * \return the string representing the clock source
+     */
+    virtual std::string get_clock_source() = 0;
+
+    /*!
+     * Get a list of possible clock sources.
+     *
+     * \return a vector of strings for possible settings
+     */
+    virtual std::vector<std::string> get_clock_sources() = 0;
 
     /*! Given a frontend name, return the channel mapping.
      *

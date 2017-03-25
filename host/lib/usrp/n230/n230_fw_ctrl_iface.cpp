@@ -22,7 +22,7 @@
 #include <uhd/exception.hpp>
 #include <boost/format.hpp>
 #include <boost/asio.hpp> //used for htonl and ntohl
-#include "fw_comm_protocol.h"
+#include "n230_fw_comm_protocol.h"
 
 namespace uhd { namespace usrp { namespace n230 {
 

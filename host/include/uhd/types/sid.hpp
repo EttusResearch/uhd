@@ -39,7 +39,13 @@ namespace uhd {
      * is required, we use the combination of the 8-bit address and the 8-bit
      * endpoint.
      *
-     * \section sid_str_repr String Representation
+     * <pre>
+     * +-------------+--------------+-------------+--------------+
+     * | SRC address | SRC endpoint | DST address | DST endpoint |
+     * +-------------+--------------+-------------+--------------+
+     * </pre>
+     *
+     * \section sid_str_repr String Representation (pretty printing)
      *
      * The string representation of a SID is of the form
      *
