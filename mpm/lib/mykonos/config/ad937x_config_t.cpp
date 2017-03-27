@@ -18,7 +18,7 @@
 #include "ad937x_config_t.hpp"
 #include "ad937x_default_config.hpp"
 
-ad937x_config_t::ad937x_config_t(spiSettings_t* sps)    
+ad937x_config_t::ad937x_config_t(spiSettings_t* sps)
 {
     _device.spiSettings = sps;
 

@@ -46,23 +46,23 @@ private:
     mykonosObsRxSettings_t _obsRx;
     mykonosAuxIo_t _auxIo;
     mykonosDigClocks_t _clocks;
-    
+
     mykonosRxProfile_t _rxProfile;
     mykonosJesd204bFramerConfig_t _framer;
     mykonosRxGainControl_t _rxGainCtrl;
     mykonosAgcCfg_t _rxAgcCtrl;
     mykonosPeakDetAgcCfg_t _rxPeakAgc;
     mykonosPowerMeasAgcCfg_t _rxPowerAgc;
-    
+
     mykonosTxProfile_t _txProfile;
     mykonosJesd204bDeframerConfig_t _deframer;
-    
+
     mykonosRxProfile_t _orxProfile;
     mykonosORxGainControl_t _orxGainCtrl;
     mykonosAgcCfg_t _orxAgcCtrl;
     mykonosPeakDetAgcCfg_t _orxPeakAgc;
     mykonosPowerMeasAgcCfg_t _orxPowerAgc;
-    
+
     mykonosRxProfile_t _snifferProfile;
     mykonosSnifferGainControl_t _snifferGainCtrl;
     mykonosJesd204bFramerConfig_t _orxFramer;

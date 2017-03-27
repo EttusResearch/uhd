@@ -27,8 +27,8 @@ ad937x_fir::ad937x_fir(int8_t gain, const std::vector<int16_t>& coefficients) :
     // These two constructors will be run in the order they are declared in the class definition
     // see C++ standard 12.6.2 section 13.3
     _fir_coefficients(coefficients),
-    _fir({gain, 
-        static_cast<uint8_t>(_fir_coefficients.size()), 
+    _fir({gain,
+        static_cast<uint8_t>(_fir_coefficients.size()),
         _fir_coefficients.data()})
 {
 

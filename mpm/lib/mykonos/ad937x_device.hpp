@@ -74,7 +74,7 @@ public:
     void set_fir(uhd::direction_t direction, chain_t chain, int8_t gain, const std::vector<int16_t> & fir);
     std::vector<int16_t> get_fir(uhd::direction_t direction, chain_t chain, int8_t &gain);
 
-    int16_t get_temperature();    
+    int16_t get_temperature();
 
     const static double MIN_FREQ;
     const static double MAX_FREQ;

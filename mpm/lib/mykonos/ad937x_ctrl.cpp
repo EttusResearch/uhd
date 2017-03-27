@@ -28,7 +28,7 @@ uhd::meta_range_t ad937x_ctrl::get_rf_freq_range(void)
     return uhd::meta_range_t(ad937x_device::MIN_FREQ, ad937x_device::MAX_FREQ);
 }
 
-uhd::meta_range_t ad937x_ctrl::get_bw_filter_range(void) 
+uhd::meta_range_t ad937x_ctrl::get_bw_filter_range(void)
 {
     // TODO: fix
     return uhd::meta_range_t(0, 1);
@@ -255,7 +255,7 @@ public:
         std::lock_guard<spi_lock> lock(*spi_l);
         return device.get_temperature();
     }
-    
+
 private:
     ad937x_device device;
     spi_lock::sptr spi_l;

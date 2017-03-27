@@ -35,7 +35,7 @@ static const mykonosRxSettings_t DEFAULT_RX_SETTINGS =
 };
 
 static const mykonosRxProfile_t DEFAULT_RX_PROFILE =
-{                   // Rx 100MHz, IQrate 122.88MHz, Dec5 
+{                   // Rx 100MHz, IQrate 122.88MHz, Dec5
     1,              // The divider used to generate the ADC clock
     nullptr,        // Pointer to Rx FIR filter structure
     2,              // Rx FIR decimation (1,2,4)
@@ -85,58 +85,58 @@ static const mykonosRxGainControl_t DEFAULT_RX_GAIN =
 
 static const mykonosPeakDetAgcCfg_t DEFAULT_RX_PEAK_AGC =
 {
-    0x1F,   // apdHighThresh: 
-    0x16,   // apdLowThresh 
-    0xB5,   // hb2HighThresh 
-    0x80,   // hb2LowThresh 
-    0x40,   // hb2VeryLowThresh 
-    0x06,   // apdHighThreshExceededCnt 
-    0x04,   // apdLowThreshExceededCnt 
-    0x06,   // hb2HighThreshExceededCnt 
-    0x04,   // hb2LowThreshExceededCnt 
-    0x04,   // hb2VeryLowThreshExceededCnt 
-    0x4,    // apdHighGainStepAttack 
-    0x2,    // apdLowGainStepRecovery 
-    0x4,    // hb2HighGainStepAttack 
-    0x2,    // hb2LowGainStepRecovery 
-    0x4,    // hb2VeryLowGainStepRecovery 
-    0x1,    // apdFastAttack 
-    0x1,    // hb2FastAttack 
-    0x1,    // hb2OverloadDetectEnable 
-    0x1,    // hb2OverloadDurationCnt 
-    0x1     // hb2OverloadThreshCnt 
+    0x1F,   // apdHighThresh:
+    0x16,   // apdLowThresh
+    0xB5,   // hb2HighThresh
+    0x80,   // hb2LowThresh
+    0x40,   // hb2VeryLowThresh
+    0x06,   // apdHighThreshExceededCnt
+    0x04,   // apdLowThreshExceededCnt
+    0x06,   // hb2HighThreshExceededCnt
+    0x04,   // hb2LowThreshExceededCnt
+    0x04,   // hb2VeryLowThreshExceededCnt
+    0x4,    // apdHighGainStepAttack
+    0x2,    // apdLowGainStepRecovery
+    0x4,    // hb2HighGainStepAttack
+    0x2,    // hb2LowGainStepRecovery
+    0x4,    // hb2VeryLowGainStepRecovery
+    0x1,    // apdFastAttack
+    0x1,    // hb2FastAttack
+    0x1,    // hb2OverloadDetectEnable
+    0x1,    // hb2OverloadDurationCnt
+    0x1     // hb2OverloadThreshCnt
 };
 
 static const mykonosPowerMeasAgcCfg_t DEFAULT_RX_POWER_AGC =
 {
-    0x01,   // pmdUpperHighThresh 
-    0x03,   // pmdUpperLowThresh 
-    0x0C,   // pmdLowerHighThresh 
-    0x04,   // pmdLowerLowThresh 
-    0x4,    // pmdUpperHighGainStepAttack 
-    0x2,    // pmdUpperLowGainStepAttack 
-    0x2,    // pmdLowerHighGainStepRecovery 
-    0x4,    // pmdLowerLowGainStepRecovery 
-    0x08,   // pmdMeasDuration 
-    0x02    // pmdMeasConfig 
+    0x01,   // pmdUpperHighThresh
+    0x03,   // pmdUpperLowThresh
+    0x0C,   // pmdLowerHighThresh
+    0x04,   // pmdLowerLowThresh
+    0x4,    // pmdUpperHighGainStepAttack
+    0x2,    // pmdUpperLowGainStepAttack
+    0x2,    // pmdLowerHighGainStepRecovery
+    0x4,    // pmdLowerLowGainStepRecovery
+    0x08,   // pmdMeasDuration
+    0x02    // pmdMeasConfig
 };
 
 static const mykonosAgcCfg_t DEFAULT_RX_AGC_CTRL =
 {
-    255,    // AGC peak wait time 
-    195,    // agcRx1MinGainIndex 
-    255,    // agcRx2MaxGainIndex 
-    195,    // agcRx2MinGainIndex: 
-    255,    // agcObsRxMaxGainIndex 
-    203,    // agcObsRxMinGainIndex 
-    1,      // agcObsRxSelect 
-    1,      // agcPeakThresholdMode 
-    1,      // agcLowThsPreventGainIncrease 
-    30720,  // agcGainUpdateCounter 
-    3,      // agcSlowLoopSettlingDelay 
-    2,      // agcPeakWaitTime 
-    0,      // agcResetOnRxEnable 
-    0,      // agcEnableSyncPulseForGainCounter 
+    255,    // AGC peak wait time
+    195,    // agcRx1MinGainIndex
+    255,    // agcRx2MaxGainIndex
+    195,    // agcRx2MinGainIndex:
+    255,    // agcObsRxMaxGainIndex
+    203,    // agcObsRxMinGainIndex
+    1,      // agcObsRxSelect
+    1,      // agcPeakThresholdMode
+    1,      // agcLowThsPreventGainIncrease
+    30720,  // agcGainUpdateCounter
+    3,      // agcSlowLoopSettlingDelay
+    2,      // agcPeakWaitTime
+    0,      // agcResetOnRxEnable
+    0,      // agcEnableSyncPulseForGainCounter
     nullptr,// *peakAgc
     nullptr // *powerAgc
 };
@@ -157,7 +157,7 @@ static const mykonosTxSettings_t DEFAULT_TX_SETTINGS =
 };
 
 static const mykonosTxProfile_t DEFAULT_TX_PROFILE =
-{                   // Tx 20/100MHz, IQrate 122.88MHz, Dec5 
+{                   // Tx 20/100MHz, IQrate 122.88MHz, Dec5
     DACDIV_2p5,     // The divider used to generate the DAC clock
     nullptr,        // Pointer to Tx FIR filter structure
     2,              // The Tx digital FIR filter interpolation (1,2,4)
@@ -177,12 +177,12 @@ static const mykonosJesd204bDeframerConfig_t DEFAULT_DEFRAMER =
     0,              // bankId extension to Device ID (Valid 0..15)
     0,              // deviceId  link identification number. (Valid 0..255)
     0,              // lane0Id Lane0 ID. (Valid 0..31)
-    4,              // M  number of DACss (0, 2, or 4) - 2 DACs per transmit chain 
+    4,              // M  number of DACss (0, 2, or 4) - 2 DACs per transmit chain
     32,             // K  #frames in a multiframe (default=32), F*K=multiple of 4. (F=2*M/numberOfLanes)
     0,              // Scrambling off if scramble = 0, if framerScramble > 0 scrambling is enabled
     1,              // External SYSREF select. 0 = use internal SYSREF, 1 = external SYSREF
-    0x0F,           // Deserializer lane select bit field. Where, [0] = Lane0 enabled, [1] = Lane1 enabled, etc 
-    0xE4,           // Lane crossbar to map physical lanes to deframer lane inputs [1:0] = Deframer Input 0 Lane section, [3:2] = Deframer Input 1 lane select, etc 
+    0x0F,           // Deserializer lane select bit field. Where, [0] = Lane0 enabled, [1] = Lane1 enabled, etc
+    0xE4,           // Lane crossbar to map physical lanes to deframer lane inputs [1:0] = Deframer Input 0 Lane section, [3:2] = Deframer Input 1 lane select, etc
     1,              // Equalizer setting. Applied to all deserializer lanes. Range is 0..4
     0,              // PN inversion per each lane.  bit[0] = 1 Invert PN of Lane 0, bit[1] = Invert PN of Lane 1, etc).
     0,              // LMFC offset value to adjust deterministic latency. Range is 0..31
@@ -198,13 +198,13 @@ static const mykonosObsRxSettings_t DEFAULT_ORX_SETTINGS =
     nullptr,        // ORx AGC control settings structure
     nullptr,        // Sniffer datapath profile, 3dB corner frequencies, and digital filter enables
     nullptr,        // SnRx gain control settings structure
-    nullptr,        // ObsRx JESD204b framer configuration structure 
-    MYK_OBS_RXOFF,  // obsRxChannel 
-    OBSLO_TX_PLL,   // (obsRxLoSource) The Obs Rx mixer can use the Tx Synth(TX_PLL) or Sniffer Synth (SNIFFER_PLL) 
-    2600000000U,    // SnRx PLL LO frequency in Hz 
+    nullptr,        // ObsRx JESD204b framer configuration structure
+    MYK_OBS_RXOFF,  // obsRxChannel
+    OBSLO_TX_PLL,   // (obsRxLoSource) The Obs Rx mixer can use the Tx Synth(TX_PLL) or Sniffer Synth (SNIFFER_PLL)
+    2600000000U,    // SnRx PLL LO frequency in Hz
     0,              // Flag to choose if complex baseband or real IF data are selected for Rx and ObsRx paths. Where if > 0 = real IF data, '0' = complex data
-    nullptr,        // Custom Loopback ADC profile to set the bandwidth of the ADC response 
-    OBS_RXOFF       // Default ObsRx channel to enter when radioOn called 
+    nullptr,        // Custom Loopback ADC profile to set the bandwidth of the ADC response
+    OBS_RXOFF       // Default ObsRx channel to enter when radioOn called
 };
 
 static const mykonosJesd204bFramerConfig_t DEFAULT_ORX_FRAMER =
@@ -240,64 +240,64 @@ static const mykonosORxGainControl_t DEFAULT_ORX_GAIN =
 
 static const mykonosAgcCfg_t DEFAULT_ORX_AGC_CTRL =
 {
-    0,      // agcRx1MaxGainIndex 
-    0,      // agcRx1MinGainIndex 
-    0,      // agcRx2MaxGainIndex 
-    0,      // agcRx2MinGainIndex: 
-    0,      // agcObsRxMaxGainIndex 
-    0,      // agcObsRxMinGainIndex 
-    0,      // agcObsRxSelect 
-    0,      // agcPeakThresholdMode 
-    0,      // agcLowThsPreventGainIncrease 
-    0,      // agcGainUpdateCounter 
-    0,      // agcSlowLoopSettlingDelay 
-    0,      // agcPeakWaitTime 
-    0,      // agcResetOnRxEnable 
-    0,      // agcEnableSyncPulseForGainCounter 
+    0,      // agcRx1MaxGainIndex
+    0,      // agcRx1MinGainIndex
+    0,      // agcRx2MaxGainIndex
+    0,      // agcRx2MinGainIndex:
+    0,      // agcObsRxMaxGainIndex
+    0,      // agcObsRxMinGainIndex
+    0,      // agcObsRxSelect
+    0,      // agcPeakThresholdMode
+    0,      // agcLowThsPreventGainIncrease
+    0,      // agcGainUpdateCounter
+    0,      // agcSlowLoopSettlingDelay
+    0,      // agcPeakWaitTime
+    0,      // agcResetOnRxEnable
+    0,      // agcEnableSyncPulseForGainCounter
     nullptr,// *peakAgc
     nullptr // *powerAgc
 };
 
 static const mykonosPeakDetAgcCfg_t DEFAULT_ORX_PEAK_AGC =
 {
-    0,      // apdHighThresh: 
-    0,      // apdLowThresh 
-    0,      // hb2HighThresh 
-    0,      // hb2LowThresh 
-    0,      // hb2VeryLowThresh 
-    0,      // apdHighThreshExceededCnt 
-    0,      // apdLowThreshExceededCnt 
-    0,      // hb2HighThreshExceededCnt 
-    0,      // hb2LowThreshExceededCnt 
-    0,      // hb2VeryLowThreshExceededCnt 
-    0,      // apdHighGainStepAttack 
-    0,      // apdLowGainStepRecovery 
-    0,      // hb2HighGainStepAttack 
-    0,      // hb2LowGainStepRecovery 
-    0,      // hb2VeryLowGainStepRecovery 
-    0,      // apdFastAttack 
-    0,      // hb2FastAttack 
-    0,      // hb2OverloadDetectEnable 
-    0,      // hb2OverloadDurationCnt 
-    0       // hb2OverloadThreshCnt 
+    0,      // apdHighThresh:
+    0,      // apdLowThresh
+    0,      // hb2HighThresh
+    0,      // hb2LowThresh
+    0,      // hb2VeryLowThresh
+    0,      // apdHighThreshExceededCnt
+    0,      // apdLowThreshExceededCnt
+    0,      // hb2HighThreshExceededCnt
+    0,      // hb2LowThreshExceededCnt
+    0,      // hb2VeryLowThreshExceededCnt
+    0,      // apdHighGainStepAttack
+    0,      // apdLowGainStepRecovery
+    0,      // hb2HighGainStepAttack
+    0,      // hb2LowGainStepRecovery
+    0,      // hb2VeryLowGainStepRecovery
+    0,      // apdFastAttack
+    0,      // hb2FastAttack
+    0,      // hb2OverloadDetectEnable
+    0,      // hb2OverloadDurationCnt
+    0       // hb2OverloadThreshCnt
 };
 
 static const mykonosPowerMeasAgcCfg_t DEFAULT_ORX_POWER_AGC =
 {
-    0,      // pmdUpperHighThresh 
-    0,      // pmdUpperLowThresh 
-    0,      // pmdLowerHighThresh 
-    0,      // pmdLowerLowThresh 
-    0,      // pmdUpperHighGainStepAttack 
-    0,      // pmdUpperLowGainStepAttack 
-    0,      // pmdLowerHighGainStepRecovery 
-    0,      // pmdLowerLowGainStepRecovery 
-    0,      // pmdMeasDuration 
-    0,      // pmdMeasConfig 
+    0,      // pmdUpperHighThresh
+    0,      // pmdUpperLowThresh
+    0,      // pmdLowerHighThresh
+    0,      // pmdLowerLowThresh
+    0,      // pmdUpperHighGainStepAttack
+    0,      // pmdUpperLowGainStepAttack
+    0,      // pmdLowerHighGainStepRecovery
+    0,      // pmdLowerLowGainStepRecovery
+    0,      // pmdMeasDuration
+    0,      // pmdMeasConfig
 };
 
 static const mykonosRxProfile_t DEFAULT_ORX_PROFILE =
-{// ORX 100MHz, IQrate 125MSPS, Dec5 
+{// ORX 100MHz, IQrate 125MSPS, Dec5
     1,              // The divider used to generate the ADC clock
     nullptr,        // Pointer to Rx FIR filter structure or NULL
     2,              // Rx FIR decimation (1,2,4)
@@ -312,46 +312,46 @@ static const mykonosRxProfile_t DEFAULT_ORX_PROFILE =
 
 static const mykonosArmGpioConfig_t DEFAULT_ARM_GPIO =
 {
-    0,  // useRx2EnablePin; //!< 0= RX1_ENABLE controls RX1 and RX2, 1 = separate RX1_ENABLE/RX2_ENABLE pins 
-    0,  // useTx2EnablePin; //!< 0= TX1_ENABLE controls TX1 and TX2, 1 = separate TX1_ENABLE/TX2_ENABLE pins 
-    0,  // txRxPinMode;     //!< 0= ARM command mode, 1 = Pin mode to power up Tx/Rx chains 
+    0,  // useRx2EnablePin; //!< 0= RX1_ENABLE controls RX1 and RX2, 1 = separate RX1_ENABLE/RX2_ENABLE pins
+    0,  // useTx2EnablePin; //!< 0= TX1_ENABLE controls TX1 and TX2, 1 = separate TX1_ENABLE/TX2_ENABLE pins
+    0,  // txRxPinMode;     //!< 0= ARM command mode, 1 = Pin mode to power up Tx/Rx chains
     0,  // orxPinMode;      //!< 0= ARM command mode, 1 = Pin mode to power up ObsRx receiver
 
-    //Mykonos ARM input GPIO pins -- Only valid if orxPinMode = 1 
-    0,  // orxTriggerPin; //!< Select desired GPIO pin (valid 4-15) 
-    0,  // orxMode2Pin;   //!< Select desired GPIO pin (valid 0-18) 
-    0,  // orxMode1Pin;   //!< Select desired GPIO pin (valid 0-18) 
-    0,  // orxMode0Pin;   //!< Select desired GPIO pin (valid 0-18) 
+    //Mykonos ARM input GPIO pins -- Only valid if orxPinMode = 1
+    0,  // orxTriggerPin; //!< Select desired GPIO pin (valid 4-15)
+    0,  // orxMode2Pin;   //!< Select desired GPIO pin (valid 0-18)
+    0,  // orxMode1Pin;   //!< Select desired GPIO pin (valid 0-18)
+    0,  // orxMode0Pin;   //!< Select desired GPIO pin (valid 0-18)
 
     // Mykonos ARM output GPIO pins  --  always available, even when pin mode not enabled
-    0,  // rx1EnableAck;  //!< Select desired GPIO pin (0-15), [4] = Output Enable 
-    0,  // rx2EnableAck;  //!< Select desired GPIO pin (0-15), [4] = Output Enable 
-    0,  // tx1EnableAck;  //!< Select desired GPIO pin (0-15), [4] = Output Enable 
-    0,  // tx2EnableAck;  //!< Select desired GPIO pin (0-15), [4] = Output Enable 
-    0,  // orx1EnableAck;  //!< Select desired GPIO pin (0-15), [4] = Output Enable 
-    0,  // orx2EnableAck;  //!< Select desired GPIO pin (0-15), [4] = Output Enable 
-    0,  // srxEnableAck;  //!< Select desired GPIO pin (0-15), [4] = Output Enable 
-    0   // txObsSelect;   //!< Select desired GPIO pin (0-15), [4] = Output Enable 
-        // When 2Tx are used with only 1 ORx input, this GPIO tells the BBIC which Tx channel is   
+    0,  // rx1EnableAck;  //!< Select desired GPIO pin (0-15), [4] = Output Enable
+    0,  // rx2EnableAck;  //!< Select desired GPIO pin (0-15), [4] = Output Enable
+    0,  // tx1EnableAck;  //!< Select desired GPIO pin (0-15), [4] = Output Enable
+    0,  // tx2EnableAck;  //!< Select desired GPIO pin (0-15), [4] = Output Enable
+    0,  // orx1EnableAck;  //!< Select desired GPIO pin (0-15), [4] = Output Enable
+    0,  // orx2EnableAck;  //!< Select desired GPIO pin (0-15), [4] = Output Enable
+    0,  // srxEnableAck;  //!< Select desired GPIO pin (0-15), [4] = Output Enable
+    0   // txObsSelect;   //!< Select desired GPIO pin (0-15), [4] = Output Enable
+        // When 2Tx are used with only 1 ORx input, this GPIO tells the BBIC which Tx channel is
         // active for calibrations, so BBIC can route correct RF Tx path into the single ORx input
 };
 
 static const mykonosGpio3v3_t DEFAULT_GPIO_3V3 =
 {
-    0,                      //!< Oe per pin, 1=output, 0 = input 
-    GPIO3V3_BITBANG_MODE,   //!< Mode for GPIO3V3[3:0] 
-    GPIO3V3_BITBANG_MODE,   //!< Mode for GPIO3V3[7:4] 
-    GPIO3V3_BITBANG_MODE,   //!< Mode for GPIO3V3[11:8] 
+    0,                      //!< Oe per pin, 1=output, 0 = input
+    GPIO3V3_BITBANG_MODE,   //!< Mode for GPIO3V3[3:0]
+    GPIO3V3_BITBANG_MODE,   //!< Mode for GPIO3V3[7:4]
+    GPIO3V3_BITBANG_MODE,   //!< Mode for GPIO3V3[11:8]
 };
 
 static const mykonosGpioLowVoltage_t DEFAULT_GPIO =
 {
-    0,                      // Oe per pin, 1=output, 0 = input 
-    GPIO_MONITOR_MODE,      // Mode for GPIO[3:0] 
-    GPIO_MONITOR_MODE,      // Mode for GPIO[7:4] 
-    GPIO_MONITOR_MODE,      // Mode for GPIO[11:8] 
-    GPIO_MONITOR_MODE,      // Mode for GPIO[15:12] 
-    GPIO_MONITOR_MODE,      // Mode for GPIO[18:16] 
+    0,                      // Oe per pin, 1=output, 0 = input
+    GPIO_MONITOR_MODE,      // Mode for GPIO[3:0]
+    GPIO_MONITOR_MODE,      // Mode for GPIO[7:4]
+    GPIO_MONITOR_MODE,      // Mode for GPIO[11:8]
+    GPIO_MONITOR_MODE,      // Mode for GPIO[15:12]
+    GPIO_MONITOR_MODE,      // Mode for GPIO[18:16]
 };
 
 static const mykonosAuxIo_t DEFAULT_AUX_IO =

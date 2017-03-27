@@ -29,7 +29,7 @@
 class spidev_impl : public spi
 {
 public:
-    
+
     spidev_impl(const std::string &device)
         : _mode(SPI_CPHA),
         _speed(2000000),
@@ -107,7 +107,7 @@ private:
     uint32_t _speed;
     uint8_t _bits;
     uint16_t _delay;
-    
+
 };
 
 spi::sptr spi::make(const std::string &device)

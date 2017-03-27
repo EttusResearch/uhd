@@ -30,10 +30,10 @@ ad9371_spiSettings_t::ad9371_spiSettings_t(uhd::spi_iface::sptr uhd_iface) :
 {
     spi_settings.chipSelectIndex = 0;       // set later
     spi_settings.writeBitPolarity = 1;      // unused
-    spi_settings.longInstructionWord = 1;   
-    spi_settings.MSBFirst = 1;              
-    spi_settings.CPHA = 0;                  
-    spi_settings.CPOL = 0;                  
+    spi_settings.longInstructionWord = 1;
+    spi_settings.MSBFirst = 1;
+    spi_settings.CPHA = 0;
+    spi_settings.CPOL = 0;
     spi_settings.enSpiStreaming = 0;        // unused
     spi_settings.autoIncAddrUp = 0;         // unused
     spi_settings.fourWireMode = 1;          // unused
@@ -143,7 +143,7 @@ commonErr_t CMB_SPIReadByte (spiSettings_t *spiSettings, uint16_t addr, uint8_t 
     ad9371_spiSettings_t *mpm_spi = ad9371_spiSettings_t::make(spiSettings);
     uhd::spi_config_t config(_get_edge(*spiSettings));
     uint32_t data_word = (0) | (addr << 8);
-    
+
     try {
         *readdata = static_cast<uint8_t>(
             mpm_spi->spi_iface->read_spi(spiSettings->chipSelectIndex, config, data_word, 24));
