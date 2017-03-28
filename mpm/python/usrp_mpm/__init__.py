@@ -19,7 +19,7 @@ MPM Module
 """
 
 from discovery import spawn_discovery_process
-from rpc_process import spawn_rpc_process
+from rpc_server import spawn_rpc_process
 import types
 import periph_manager
 import dboard_manager

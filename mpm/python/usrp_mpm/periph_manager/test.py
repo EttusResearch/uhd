@@ -15,32 +15,49 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 """
-N310 implementation module
+test periph_manager implementation module
 """
 from base import periph_manager
+from . import dboard_manager
+import random
+import string
 import struct
 
 
-class n310(periph_manager):
-    hw_pids = "1"
-    mboard_eeprom_addr = "e0007000.spi:ec@0:i2c-tunnel"
+class test(periph_manager):
+    hw_pids = "42"
+    mboard_eeprom_addr = None
     dboard_eeprom_addrs = {"A": "something", "B": "else"}
     dboard_spimaster_addrs = {"A": "something", "B": "else"}
 
     def __init__(self, *args, **kwargs):
         # First initialize parent class - will populate self._eeprom_head and self._eeprom_rawdata
-        super(n310, self).__init__(*args, **kwargs)
-        data = self.read_eeprom_v1(self._eeprom_rawdata)
-        print(data)
+        # super(n310, self).__init__(*args, **kwargs)
         # if header.get("dataversion", 0) == 1:
+        self._eeprom = self.read_eeprom_fake()
+        self._serial = "AABBCCDDEEFF"
 
-    def read_eeprom_v1(self, data):
-        # data_version contains
-        # 6 bytes mac_addr0
-        # 2 bytes pad
-        # 6 bytes mac_addr1
-        # 2 bytes pad
-        # 6 bytes mac_addr2
-        # 2 bytes pad
-        # 8 bytes serial
-        return struct.unpack_from("6s 2x 6s 2x 6s 2x 8s", data)
+        # I'm the test periph_manager, I know I have test dboards attached
+        self.dboards = {
+            "A": dboard_manager.test(self.read_db_eeprom_random()),
+            "B": dboard_manager.test(self.read_db_eeprom_random())
+        }
+
+    def read_eeprom_fake(self):
+        fake_eeprom = {
+            "magic": 42,
+            "crc": 4242,
+            "data_version": 42,
+            "hw_pid": 42,
+            "hw_rev": 5
+        }
+
+        return fake_eeprom
+
+    def read_db_eeprom_random(self):
+        fake_eeprom = {
+            "serial": ''.join(
+                random.choice("ABCDEF" + string.digits)
+                for _ in range(16))
+        }
+        return fake_eeprom

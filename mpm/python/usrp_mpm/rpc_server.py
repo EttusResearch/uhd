@@ -17,25 +17,57 @@
 """
 Implemented RPC Servers
 """
-
 from __future__ import print_function
+from gevent.server import StreamServer
+from types import graceful_exit, MPM_RPC_PORT
 from mprpc import RPCServer
-from usrp_mpm import periphs
+from six import iteritems
+import time
 
+from multiprocessing import Process
 
-class EchoServer(RPCServer):
-    def echo(self, arg):
-        print(arg)
-        return arg
-
-
-class ClaimServer(RPCServer):
-    def __init__(self, state):
+class MPMServer(RPCServer):
+    _db_methods = {}
+    def __init__(self, state, mgr):
         self._state = state
-        super(ClaimServer, self).__init__()
+        # Instead do self.mboard = periphs.init_periph_manager(args...)
+        self.periph_manager = mgr
+        for db_slot, db in iteritems(mgr.dboards):
+            methods = (m for m in dir(db) if not m.startswith('_') and callable(getattr(db, m)))
+            for method in methods:
+                command_name = 'db_'+ db_slot + '_' + method
+                self._add_command(getattr(db,method), command_name)
+                db_methods = self._db_methods.get(db_slot, [])
+                db_methods.append(command_name)
+                self._db_methods.update({db_slot: db_methods})
+
+        # When we do init we can just add dboard/periph_manager methods with setattr(self, method)
+        # Maybe using partial
+        # To remove methods again we also have to remove them from self._methods dict (they're cached)
+        super(MPMServer, self).__init__()
+
+    def _add_command(self, function, command):
+        setattr(self, command, function)
+
+
+    def list_methods(self):
+        """
+        Returns all public methods of this RPC server
+        """
+        methods = filter(lambda entry: not entry.startswith('_'), dir(self)) # Return public methods
+        methods_with_docs = map(lambda m: (m, getattr(self, m).__doc__), methods)
+        return methods_with_docs
+
+    def ping(self, data=None):
+        """
+        Take in data as argument and send it back
+        """
+        return data
 
     def claim(self, token):
-        'claim `token` - claims the MPM device with given token'
+        """
+        claim `token` - claims the MPM device with given token
+        """
         if self._state.claim_status.value:
             if self._state.claim_token.value == token:
                 return True
@@ -45,28 +77,33 @@ class ClaimServer(RPCServer):
         return True
 
     def unclaim(self, token):
-        'unclaim `token` - unclaims the MPM device if it is claimed with this token'
+        """
+        unclaim `token` - unclaims the MPM device if it is claimed with this token
+        """
         if self._state.claim_status.value and self._state.claim_token.value == token:
             self._state.claim_status.value = False
             self._state.claim_token.value = ""
             return True
         return False
 
-    def list_methods(self):
-        methods = filter(lambda entry: not entry.startswith('_'), dir(self)) # Return public methods
-        methods_with_docs = map(lambda m: (m, getattr(self,m).__doc__), methods)
-        return methods_with_docs
+
+def _rpc_server_process(shared_state, port, mgr):
+    """
+    Start the RPC server
+    """
+    server = StreamServer(('0.0.0.0', port), handle=MPMServer(shared_state, mgr))
+    try:
+        server.serve_forever()
+    except:
+        server.close()
 
 
-class MPMServer(RPCServer):
-    def __init__(self, state):
-        # Instead do self.mboard = periphs.init_periph_manager(args...)
-        self.periph_manager = periphs.init_periph_manager()
-        # When we do init we can just add dboard/periph_manager methods with setattr(self, method)
-        # Maybe using partial
-        # To remove methods again we also have to remove them from self._methods dict (they're cached)
+def spawn_rpc_process(state, udp_port, mgr):
+    """
+    Returns a process that contains the RPC server
+    """
 
-    def get_clock_id(self, dboard):
-        dboard = getattr(self.mboard, "get_dboard_"+dboard)
-        clk = dboard.get_clock_gen()
-        return clk.get_chip_id()
+    p_args = [udp_port, state, mgr]
+    p = Process(target=_rpc_server_process, args=p_args)
+    p.start()
+    return p

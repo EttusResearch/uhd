@@ -14,16 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-"""
-dboards module __init__.py
-"""
-from .. import libpyusrp_periphs as lib
-from magnesium import magnesium
-from eiscat import eiscat
-from test import test
-from unknown import unknown
 
-hw_pids = {
-    eiscat.hw_pid: eiscat,
-    magnesium.hw_pid: magnesium,
-}
+INSTALL(PROGRAMS
+  rpc_shell.py
+  mpm_debug.py
+  DESTINATION ${RUNTIME_DIR})

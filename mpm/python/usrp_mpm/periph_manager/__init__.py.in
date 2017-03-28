@@ -24,6 +24,6 @@ from .. import dboard_manager
 from .. import types
 
 try:
-    from n310 import n310 as periph_manager
+    from ${MPM_DEVICE} import ${MPM_DEVICE} as periph_manager
 except ImportError:
-    raise("Could not import n310")
+    raise Exception("Could not import ${MPM_DEVICE}")

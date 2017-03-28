@@ -30,6 +30,7 @@ class dboard_manager(object):
     Sanitizes arguments before calling C++ functions.
     Ties various constants to specific daughterboard class
     """
+    _eeprom = {}
     def __init__(self, eeprom={}):
         self._eeprom = eeprom
 

@@ -16,8 +16,11 @@
 #
 INSTALL(FILES
     net_helper.hpp
-    spi_iface.hpp
     udev_helper.hpp
     xbar_iface.hpp
     DESTINATION ${INCLUDE_DIR}/mpm
 )
+ADD_SUBDIRECTORY(dboards)
+ADD_SUBDIRECTORY(lmk04828)
+ADD_SUBDIRECTORY(mykonos)
+ADD_SUBDIRECTORY(spi)

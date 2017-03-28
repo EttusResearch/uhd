@@ -22,35 +22,49 @@ RPC shell to debug USRP MPM capable devices
 import sys
 import cmd
 import types
-from functools import partial
 from mprpc import RPCClient
 from mprpc.exceptions import RPCError
 from usrp_mpm import types
+from importlib import import_module
 
-def rpc_template(obj, command, args):
-    try:
-        if args:
-            response = obj.client.call(command, args)
-        else:
-            response = obj.client.call(command)
-    except RPCError as e:
-        print("RPC Command failed!")
-        print("Error: {}".format(e))
-        return
-    if isinstance(response, bool):
-        if response:
-            print("Commend executed successfully!")
-            return
-        print("Command failed!")
-        return
-    print(response)
 
 class RPCShell(cmd.Cmd):
-    prompt="MPM> "
+    prompt = "MPM> "
     client = None
     remote_methods = []
 
+    def rpc_template(self, command, args=None):
+        """Template function to create new RPC shell commands"""
+        eval_preamble = "="
+        try:
+            if args:
+                if isinstance(args, list):
+                    parsed_args = [
+                        eval(a.lstrip(eval_preamble))
+                        if a.startswith(eval_preamble) else a for a in args
+                    ]
+                    response = self.client.call(command, parsed_args)
+                else:
+                    response = self.client.call(
+                        command,
+                        eval(args.lstrip(eval_preamble))
+                        if args.startswith(eval_preamble) else args)
+            else:
+                response = self.client.call(command)
+        except RPCError as e:
+            print("RPC Command failed!")
+            print("Error: {}".format(e))
+            return
+        if isinstance(response, bool):
+            if response:
+                print("Commend executed successfully!")
+                return
+            print("Command failed!")
+            return
+        print(response)
+
     def do_connect(self, host, port=types.MPM_RPC_PORT):
+        """connect to a remote RPC serverconnect <host> (port=MPM_RPC_PORT)"""
         try:
             self.client = RPCClient(host, port)
         except:
@@ -61,6 +75,7 @@ class RPCShell(cmd.Cmd):
             self.add_command(*method)
 
     def do_disconnect(self, args):
+        """disconnect from the RPC server"""
         if self.client:
             try:
                 self.client.close()
@@ -68,15 +83,21 @@ class RPCShell(cmd.Cmd):
                 print("Error while closing the connection")
                 print("Error: {}".format(e))
         for method in self.remote_methods:
-            delattr(self, "do_"+method)
+            delattr(self, "do_" + method)
         self.remote_methods = []
         self.client = None
 
+    def do_import(self, args):
+        """import a python module into the global namespace"""
+        globals()[args] = import_module(args)
+
+    def do_EOF(self, args):
+        exit(0)
 
     def add_command(self, command, docs):
-        new_command = partial(rpc_template, self, str(command))
+        def new_command(args): self.rpc_template(str(command), args)
         new_command.__doc__ = docs
-        setattr(self, "do_"+command, new_command)
+        setattr(self, "do_" + command, new_command)
         self.remote_methods.append(command)
 
     def run(self):
@@ -92,5 +113,4 @@ class RPCShell(cmd.Cmd):
 
 if __name__ == "__main__":
     my_shell = RPCShell()
-    exit(not(my_shell.run()))
-
+    exit(not (my_shell.run()))

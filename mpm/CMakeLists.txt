@@ -61,7 +61,6 @@ FIND_PACKAGE(Boost 1.53 COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
 
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
-message("python executable: ${PYTHON_EXECUTABLE}")
 
 MESSAGE(STATUS "Boost include directories: ${Boost_INCLUDE_DIRS}")
 MESSAGE(STATUS "Boost library directories: ${Boost_LIBRARY_DIRS}")
@@ -72,19 +71,39 @@ MESSAGE(STATUS "Boost libraries: ${Boost_LIBRARIES}")
 ########################################################################
 
 SET(PYTHON_ADDITIONAL_VERSIONS 2.7 3.4 3.5)
-message("python executable: ${PYTHON_EXECUTABLE}")
 FIND_PACKAGE(PythonInterp)
-message("python executable: ${PYTHON_EXECUTABLE}")
 FIND_PACKAGE(PythonLibs)
-message("python executable: ${PYTHON_EXECUTABLE}")
+
+########################################################################
+# Install Dirs
+########################################################################
+#when the library suffix should be 64 (applies to redhat linux family)
+IF(NOT DEFINED LIB_SUFFIX AND REDHAT AND CMAKE_SYSTEM_PROCESSOR MATCHES "64$")
+    SET(LIB_SUFFIX 64)
+ENDIF()
+IF(CMAKE_INSTALL_LIBDIR MATCHES lib64)
+    SET(LIB_SUFFIX 64)
+ENDIF()
+
+SET(LIB_SUFFIX ${LIB_SUFFIX} CACHE STRING "lib directory suffix")
+SET(RUNTIME_DIR bin)
+SET(LIBRARY_DIR lib${LIB_SUFFIX})
+SET(INCLUDE_DIR include)
+SET(PKG_DATA_DIR share/mpm)
+IF(NOT DEFINED PKG_LIB_DIR)
+    SET(PKG_LIB_DIR ${LIBRARY_DIR}/mpm)
+ENDIF()
+SET(PKG_DOC_DIR share/doc/mpm)
+SET(PKG_MAN_DIR share/man/man1)
+
 
 
 ########################################################################
 # Setup library configuration
 ########################################################################
 SET(CMAKE_CXX_STANDARD 11)
-# SET(MPM_DEVICE "tests" CACHE STRING "Choose a MPM device to build")
-# SET_PROPERTY(CACHE MPM_DEVICE PROPERTY STRINGS tests)
+SET(MPM_DEVICE "n310" CACHE STRING "Choose an MPM device to build")
+SET_PROPERTY(CACHE MPM_DEVICE PROPERTY STRINGS n310 tests)
 
 SET(UHD_HOST_ROOT ${CMAKE_SOURCE_DIR}/../host)
 
@@ -97,11 +116,6 @@ INCLUDE_DIRECTORIES(
 
 ADD_SUBDIRECTORY(dboards)
 ADD_SUBDIRECTORY(lib)
-IF(MPM_DEVICE STREQUAL tests)
-  ADD_SUBDIRECTORY(tests)
-ELSEIF(MPM_DEVICE STREQUAL n310)
-  ADD_SUBDIRECTORY(n310)
-ENDIF(MPM_DEVICE STREQUAL tests)
 
 MESSAGE("usrp_periphs objects: ${usrp_periphs_objects}")
 ADD_LIBRARY(usrp-periphs SHARED ${usrp_periphs_objects})
@@ -111,3 +125,4 @@ TARGET_LINK_LIBRARIES(usrp-periphs
 )
 
 ADD_SUBDIRECTORY(python)
+ADD_SUBDIRECTORY(tools)

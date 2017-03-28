@@ -68,9 +68,9 @@ def _discovery_process(device_info, state):
     try:
         while True:
             data, sender = sock.recvfrom(4096)
-            if data == "MPM-DISC":
+            if data.strip("\0") == "MPM-DISC":
                 send_data = create_response_string()
                 send_sock.sendto(send_data, sender)
-    except graceful_exit:
+    except:
         sock.close()
-        print("I'm done")
+        send_sock.close()

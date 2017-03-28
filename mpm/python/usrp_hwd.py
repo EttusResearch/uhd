@@ -18,19 +18,33 @@
 """
 Main executable for the USRP Hardware Daemon
 """
-
 from __future__ import print_function
-from multiprocessing import Value
-import ctypes
+from logging import getLogger
+from logging import StreamHandler
+from logging import DEBUG
+from logging import Formatter
 import signal
-import time
+import sys
 import usrp_mpm as mpm
 from usrp_mpm.types import shared_state
-from usrp_mpm.types import graceful_exit
+from usrp_mpm.periph_manager import periph_manager
+
+log = getLogger("usrp_mpm")
+_PROCESSES = []
 
 
-def signal_handler(signum, frame):
-    raise graceful_exit()
+def kill_time(signal, frame):
+    """
+    kill all processes
+    to be used in a signal handler
+    """
+    for proc in _PROCESSES:
+        proc.terminate()
+        log.info("Terminating pid: {0}".format(proc.pid))
+    for proc in _PROCESSES:
+        proc.join()
+    log.info("System exiting")
+    sys.exit(0)
 
 
 def main():
@@ -39,19 +53,24 @@ def main():
 
     Main process loop.
     """
-    procs = []
-    signal.signal(signal.SIGTERM, signal_handler)
-    signal.signal(signal.SIGINT, signal_handler)
+    # Setup logging
+    log.setLevel(DEBUG)
+    ch = StreamHandler()
+    ch.setLevel(DEBUG)
+    formatter = Formatter('[%(asctime)s] [%(levelname)s] [%(name)s] [%(message)s]')
+    ch.setFormatter(formatter)
+    log.addHandler(ch)
+
+
     shared = shared_state()
-    procs.append(mpm.spawn_discovery_process({'a': "foo"}, shared))
-    # procs.append(mpm.spawn_rpc_process("Echo", 5000))
-    procs.append(mpm.spawn_rpc_process("MPM", mpm.types.MPM_RPC_PORT, shared))
-    try:
-        for proc in procs:
-            proc.join()
-    except mpm.types.graceful_exit:
-        pass
+    mgr = periph_manager()
+    _PROCESSES.append(
+        mpm.spawn_discovery_process({'serial': mgr.get_serial()}, shared))
+    _PROCESSES.append(
+        mpm.spawn_rpc_process(mpm.types.MPM_RPC_PORT, shared, mgr))
+    signal.signal(signal.SIGTERM, kill_time)
+    signal.signal(signal.SIGINT, kill_time)
+    signal.pause()
 
 if __name__ == '__main__':
     exit(not main())
-

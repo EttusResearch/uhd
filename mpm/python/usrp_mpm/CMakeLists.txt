@@ -18,15 +18,16 @@
 ########################################################################
 # This file included, use CMake directory variables
 ########################################################################
-
-SET(USRP_MPM_FILES
+SET(USRP_MPM_FILES ${USRP_MPM_FILES})
+SET(USRP_MPM_TOP_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/__init__.py
     ${CMAKE_CURRENT_SOURCE_DIR}/types.py
     ${CMAKE_CURRENT_SOURCE_DIR}/discovery.py
-    ${CMAKE_CURRENT_SOURCE_DIR}/rpc_process.py
     ${CMAKE_CURRENT_SOURCE_DIR}/rpc_server.py
     ${CMAKE_CURRENT_SOURCE_DIR}/periphs.py
-    ${CMAKE_CURRENT_SOURCE_DIR}/periph_manager
-    ${CMAKE_CURRENT_SOURCE_DIR}/dboard_manager
-    PARENT_SCOPE
     )
+LIST(APPEND USRP_MPM_FILES ${USRP_MPM_TOP_FILES})
+ADD_SUBDIRECTORY(periph_manager)
+ADD_SUBDIRECTORY(dboard_manager)
+
+SET(USRP_MPM_FILES ${USRP_MPM_FILES} PARENT_SCOPE)

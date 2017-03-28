@@ -20,6 +20,7 @@ magnesium dboard implementation module
 from base import dboard_manager
 from base import lib
 from base import log
+import struct
 
 class magnesium(dboard_manager):
     hw_pid = 2
@@ -47,4 +48,3 @@ class magnesium(dboard_manager):
         # magnesium eeprom contains
         # nothing
         return struct.unpack_from("x", data)
-
