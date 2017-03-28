@@ -354,7 +354,7 @@ public:
 
     /*!
      * Get the currently set time source.
-     * \param mboard which motherboard to get the config
+     *
      * \return the string representing the time source
      */
     virtual std::string get_time_source() = 0;
