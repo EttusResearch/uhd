@@ -17,8 +17,11 @@
 """
 magnesium dboard implementation module
 """
-from base import dboard_manager
-from base import log
+from . import lib
+from .base import DboardManagerBase
+from logging import getLogger
+
+LOG = getLogger(__name__)
 
 
 class fake_spi(object):
@@ -36,7 +39,7 @@ class test_device(object):
         return argument
 
 
-class test(dboard_manager):
+class test(DboardManagerBase):
     hw_pid = 234
     special_eeprom_addrs = {"special0": "something"}
     spi_chipselect = {"0": "dev1", "1": "dev2", "2": "dev3"}
@@ -51,6 +54,7 @@ class test(dboard_manager):
         self.dev3 = "2"
 
     def init_device(self):
+        LOG.debug("initialize hardware")
         self._device = test_device(self.dev1, self.dev2, self.dev3)
 
 

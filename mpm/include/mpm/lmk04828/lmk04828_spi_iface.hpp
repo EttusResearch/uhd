@@ -1,3 +1,5 @@
+#pragma once
+
 #include "lmk04828.hpp"
 #include "uhd/types/serial.hpp"
 #include <boost/shared_ptr.hpp>

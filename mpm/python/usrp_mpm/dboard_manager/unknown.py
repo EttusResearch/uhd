@@ -17,12 +17,13 @@
 """
 EISCAT rx board implementation module
 """
-from base import dboard_manager
-from base import lib
-from base import log
+from .base import DboardManagerBase
+from logging import getLogger
+
+LOG = getLogger(__name__)
 
 
-class unknown(dboard_manager):
+class unknown(DboardManagerBase):
     hw_pid = 0
     special_eeprom_addrs = {}
 

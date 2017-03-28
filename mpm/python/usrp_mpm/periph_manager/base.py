@@ -18,16 +18,24 @@
 Mboard implementation base class
 """
 
-import re
 import os
-from . import lib
-from . import types
-from . import dboard_manager
+from ..types import EEPROM
+from .. import dboard_manager
+from .udev import get_eeprom
+from .udev import get_spidev_nodes
+from six import iteritems
 
 
-class periph_manager(object):
+class PeriphManagerBase(object):
+    """"
+    Base class for all motherboards. Common function and API calls should
+    be implemented here. Motherboard specific information can be stored in
+    separate motherboard classes derived from this class
+    """
     # stores discovered device information in dicts
+    claimed = False
     dboards = {}
+    mboard_info = {"type": "unknown"}
     mboard_if_addrs = {}
     mboard_overlays = {}
     # this information has to be provided by
@@ -35,41 +43,88 @@ class periph_manager(object):
     mboard_eeprom_addr = ""
     dboard_eeprom_addrs = {}
     dboard_spimaster_addrs = {}
+    updateable_components = []
 
     def __init__(self):
         # I know my EEPROM address, lets use it
-        helper = lib.udev_helper.udev_helper()
-        (self._eeprom_head, self._eeprom_rawdata) = types.eeprom().read_eeprom(helper.get_eeprom(self.mboard_eeprom_addr))
+        self.overlays = ""
+        (self._eeprom_head, self._eeprom_rawdata) = EEPROM().read_eeprom(
+            get_eeprom(self.mboard_eeprom_addr))
         self._dboard_eeproms = {}
         for dboard_slot, eeprom_addr in self.dboard_eeprom_addrs.iteritems():
             spi_devices = []
             # I know EEPROM adresses for my dboard slots
-            eeprom_data = types.eeprom().read(helper.get_eeprom(eeprom_addr))
+            eeprom_data = EEPROM().read_eeprom(get_eeprom(eeprom_addr))
             # I know spidev masters on the dboard slots
-            hw_pid = eeprom_data.get("hw_pid", 0)
-            if hw_pid in dboards.hw_pids:
-                spi_devices = helper.get_spidev_nodes(self.dboard_spimaster_addrs.get(dboard_slot))
-            dboard = dboards.hw_pids.get(hw_pid, dboards.unknown)
+            hw_pid = eeprom_data[0].get("hw_pid", 0)
+            if hw_pid in dboard_manager.HW_PIDS:
+                spi_devices = get_spidev_nodes(self.dboard_spimaster_addrs.get(dboard_slot))
+            dboard = dboard_manager.HW_PIDS.get(hw_pid, dboard_manager.unknown)
             self.dboards.update({dboard_slot: dboard(spi_devices, eeprom_data)})
 
+    def safe_list_updateable_components(self):
+        """
+        return list of updateable components
+        This method does not require a claim_token in the RPC
+        """
+        return self.updateable_components
+
     def get_overlays(self):
+        """
+        get and store the list of available dt overlays
+        """
         self.mboard_overlays = []
-        for f in os.listdir("/lib/firmware/"):
-            if f.endswith(".dtbo"):
-                self.mboard_overlays.append(f.strip(".dtbo"))
+        for fw_files in os.listdir("/lib/firmware/"):
+            if fw_files.endswith(".dtbo"):
+                self.mboard_overlays.append(fw_files.strip(".dtbo"))
 
     def check_overlay(self):
-        for f in os.listdir("/sys/kernel/device-tree/overlays/"):
-            pass #do stuff
+        """
+        check which dt overlay is loaded currently
+        """
+        for overlay_file in os.listdir("/sys/kernel/device-tree/overlays/"):
+            self.overlays = overlay_file
 
-    def get_serial(self):
-        return self._serial
+    def _get_device_info(self):
+        """
+        return the mboard_info dict and add a claimed field
+        """
+        result = {"claimed": str(self.claimed)}
+        result.update(self.mboard_info)
+        return result
+
+    def get_dboards(self):
+        """
+        get a dict with slot: hw_pid for each dboard
+        """
+        result = {}
+        for slot, dboard in iteritems(self.dboards):
+            result.update({slot:dboard.hw_pid})
+        return result
 
     def load_fpga_image(self, target=None):
+        """
+        load a new fpga image
+        """
         pass
 
     def init_device(self, *args, **kwargs):
+        """
+        Do the real init on the mboard and all dboards
+        """
         # Load FPGA
         # Init dboards
         pass
+
+    def _probe_interface(self, sender_addr):
+        """
+        Overload this method in actual device implementation
+        """
+        return True
+
+    def get_interfaces(self):
+        """
+        Overload this method in actual device implementation
+        """
+        return []
 

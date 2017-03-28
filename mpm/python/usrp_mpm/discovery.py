@@ -19,17 +19,17 @@ Code to run the discovery port
 """
 
 from __future__ import print_function
-import time
-import ctypes
-from multiprocessing import Process, Value
+from logging import getLogger
+from multiprocessing import Process
 from six import iteritems
 import socket
-from types import MPM_DISCOVERY_PORT, graceful_exit
+from usrp_mpm.types import MPM_DISCOVERY_PORT
+
+LOG = getLogger(__name__)
 
 RESPONSE_PREAMBLE = "USRP-MPM"
 RESPONSE_SEP = ";"
 RESPONSE_CLAIMED_KEY = "claimed"
-
 
 
 def spawn_discovery_process(device_info, shared_state):
@@ -41,9 +41,9 @@ def spawn_discovery_process(device_info, shared_state):
                    will be included in the response string.
     """
     # claim_status = Value(ctypes.c_bool, False)
-    p = Process(target=_discovery_process, args=(device_info, shared_state))
-    p.start()
-    return p
+    proc = Process(target=_discovery_process, args=(device_info, shared_state))
+    proc.start()
+    return proc
 
 
 def _discovery_process(device_info, state):
@@ -65,12 +65,22 @@ def _discovery_process(device_info, state):
 
     send_sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
-    try:
-        while True:
-            data, sender = sock.recvfrom(4096)
-            if data.strip("\0") == "MPM-DISC":
-                send_data = create_response_string()
-                send_sock.sendto(send_data, sender)
-    except:
-        sock.close()
-        send_sock.close()
+    # try:
+    while True:
+        data, sender = sock.recvfrom(8000)
+        LOG.info("Got poked by: %s", sender[0])
+        if data.strip("\0") == "MPM-DISC":
+            LOG.info("Sending discovery response to %s port: %d",
+                     sender[0], sender[1])
+            send_data = create_response_string()
+            send_sock.sendto(send_data, sender)
+        elif data.strip("\0").startswith("MPM-ECHO"):
+            LOG.info("Received echo request")
+            send_data = data
+            send_sock.sendto(send_data, sender)
+
+    # except Exception as err:
+    #     LOG.info("Error: %s", err)
+    #     LOG.info("Error type: %s", type(err))
+    #     sock.close()
+    #     send_sock.close()

@@ -20,7 +20,7 @@ MPM types
 import ctypes
 from multiprocessing import Value
 from multiprocessing import Array
-from multiprocessing import Lock
+from multiprocessing import RLock
 import struct
 
 MPM_RPC_PORT = 49601
@@ -29,18 +29,26 @@ MPM_DISCOVERY_PORT = 49600
 MPM_DISCOVERY_MESSAGE = "MPM-DISC"
 
 
-class graceful_exit(Exception):
-    pass
+class SharedState(object):
+    """
+    Holds information which should be shared between processes
+    Usage should be kept to a minimum
+    """
 
-
-class shared_state:
     def __init__(self):
-        self.lock = Lock()
-        self.claim_status = Value(ctypes.c_bool, False, lock=self.lock) # lock
-        self.claim_token = Array(ctypes.c_char, 32, lock=self.lock) # String with max length of 32
+        self.lock = RLock()
+        self.claim_status = Value(
+            ctypes.c_bool,
+            False, lock=self.lock)  # lock
+        self.claim_token = Array(
+            ctypes.c_char, 256,
+            lock=self.lock)  # String with max length of 256
 
 
-class eeprom(object):
+class EEPROM(object):
+    """
+    Reads out common properties and rawdata out of a nvmem path
+    """
     # eeprom_header contains:
     # 4 bytes magic
     # 4 bytes CRC
@@ -53,9 +61,13 @@ class eeprom(object):
     eeprom_header = struct.Struct("I I H H H 2x")
 
     def read_eeprom(self, nvmem_path):
-        with open(nvmem_path, "rb") as f:
-            header = f.read(16)
-            data = f.read(240)
+        """
+        Read the EEPROM located at nvmem_path and return a tuple (header, body)
+        Header is already parsed in the common header fields
+        """
+        with open(nvmem_path, "rb") as nvmem_file:
+            header = nvmem_file.read(16)
+            data = nvmem_file.read(240)
         header = self.eeprom_header.unpack(header)
         header = {
             "magic": header[0],

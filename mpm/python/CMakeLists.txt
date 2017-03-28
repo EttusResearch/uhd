@@ -59,12 +59,8 @@ MESSAGE(STATUS "Boost library directories: ${Boost_LIBRARY_DIRS}")
 MESSAGE(STATUS "Boost libraries: ${Boost_LIBRARIES}")
 
 SET(UHD_HOST_ROOT ${CMAKE_SOURCE_DIR}/../host)
-LIST(APPEND
-  pyusrp_periphs_sources
-  pyusrp_periphs.cpp
-)
 
-ADD_LIBRARY(pyusrp_periphs SHARED ${pyusrp_periphs_sources})
+ADD_LIBRARY(pyusrp_periphs SHARED pyusrp_periphs.cpp)
 TARGET_INCLUDE_DIRECTORIES(pyusrp_periphs PUBLIC
     ${PYTHON_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}/lib/

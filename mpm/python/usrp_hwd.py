@@ -21,12 +21,13 @@ Main executable for the USRP Hardware Daemon
 from __future__ import print_function
 from logging import getLogger
 from logging import StreamHandler
+from systemd.journal import JournalHandler
 from logging import DEBUG
 from logging import Formatter
-import signal
+from gevent import signal
 import sys
 import usrp_mpm as mpm
-from usrp_mpm.types import shared_state
+from usrp_mpm.types import SharedState
 from usrp_mpm.periph_manager import periph_manager
 
 log = getLogger("usrp_mpm")
@@ -55,17 +56,29 @@ def main():
     """
     # Setup logging
     log.setLevel(DEBUG)
-    ch = StreamHandler()
-    ch.setLevel(DEBUG)
-    formatter = Formatter('[%(asctime)s] [%(levelname)s] [%(name)s] [%(message)s]')
-    ch.setFormatter(formatter)
-    log.addHandler(ch)
+    handler = StreamHandler()
+    journal_handler = JournalHandler(SYSLOG_IDENTIFIER='usrp_hwd')
+    handler.setLevel(DEBUG)
+    formatter = Formatter('[%(asctime)s] [%(levelname)s] [%(module)s] %(message)s')
+    handler.setFormatter(formatter)
+    journal_formatter = Formatter('[%(levelname)s] [%(module)s] %(message)s')
+    journal_handler.setFormatter(journal_formatter)
+    log.addHandler(handler)
+    log.addHandler(journal_handler)
 
-
-    shared = shared_state()
+    shared = SharedState()
+    # Create the periph_manager for this device
+    # This call will be forwarded to the device specific implementation
+    # e.g. in periph_manager/test.py
+    # Which implementation is called will be determined during configuration
+    # with cmake (-DMPM_DEVICE)
     mgr = periph_manager()
+    discovery_info = {
+        "type": mgr._get_device_info()["type"],
+        "serial": mgr._get_device_info()["serial"]
+    }
     _PROCESSES.append(
-        mpm.spawn_discovery_process({'serial': mgr.get_serial()}, shared))
+        mpm.spawn_discovery_process(discovery_info, shared))
     _PROCESSES.append(
         mpm.spawn_rpc_process(mpm.types.MPM_RPC_PORT, shared, mgr))
     signal.signal(signal.SIGTERM, kill_time)

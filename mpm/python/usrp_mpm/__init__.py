@@ -18,8 +18,8 @@
 MPM Module
 """
 
-from discovery import spawn_discovery_process
-from rpc_server import spawn_rpc_process
-import types
-import periph_manager
-import dboard_manager
+from .discovery import spawn_discovery_process
+from .rpc_server import spawn_rpc_process
+from . import types
+from . import periph_manager
+from . import dboard_manager

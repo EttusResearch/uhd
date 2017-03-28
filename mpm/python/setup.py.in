@@ -40,5 +40,9 @@ setup(name='usrp_mpm',
       zip_safe=False,
       packages=['usrp_mpm', 'usrp_mpm.periph_manager', 'usrp_mpm.dboard_manager'],
       install_requires=[
-          'numpy'
-      ])
+          'mprpc',
+          'systemd-python',
+          'pyroute2',
+          'pyudev'
+      ],
+      tests_require=['pytest', 'pylint'])

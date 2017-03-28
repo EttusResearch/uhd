@@ -1,3 +1,0 @@
-
-
-class eeprom_helper:

@@ -15,6 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 INSTALL(FILES
+    adi_ctrl.hpp
     ad937x_ctrl.hpp
     DESTINATION ${INCLUDE_DIR}/mpm/mykonos
 )

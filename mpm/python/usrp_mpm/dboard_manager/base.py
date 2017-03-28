@@ -17,22 +17,22 @@
 """
 dboard base implementation module
 """
-from . import lib
 import logging
 import struct
 
-log = logging.Logger("usrp_mpm.dboards")
+LOG = logging.Logger(__name__)
 
 
-class dboard_manager(object):
+class DboardManagerBase(object):
     """
     Holds shared pointer to wrapped C++ implementation.
     Sanitizes arguments before calling C++ functions.
     Ties various constants to specific daughterboard class
     """
     _eeprom = {}
-    def __init__(self, eeprom={}):
-        self._eeprom = eeprom
+
+    def __init__(self, eeprom=None):
+        self._eeprom = eeprom or {}
 
     def get_serial(self):
         return self._eeprom.get("serial", "")

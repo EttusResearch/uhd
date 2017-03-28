@@ -32,7 +32,6 @@ void export_helper(){
     bp::class_<mpm::udev_helper>("udev_helper", bp::init<>())
         .def("get_eeprom", &mpm::udev_helper::get_eeprom)
         ;
-    bp::def("get_if_addrs", &mpm::network::get_if_addrs);
     bp::to_python_converter<std::vector< std::string >, iterable_to_python_list<std::vector< std::string > >, false>();
 }
 

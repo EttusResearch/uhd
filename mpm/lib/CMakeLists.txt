@@ -25,7 +25,5 @@ ADD_SUBDIRECTORY(mykonos)
 ADD_SUBDIRECTORY(lmk04828)
 
 USRP_PERIPHS_ADD_OBJECT(periphs
-  net_helper.cpp
-  udev_helper.cpp
   xbar_iface.cpp
   )

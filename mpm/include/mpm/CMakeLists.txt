@@ -15,8 +15,6 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 INSTALL(FILES
-    net_helper.hpp
-    udev_helper.hpp
     xbar_iface.hpp
     DESTINATION ${INCLUDE_DIR}/mpm
 )
