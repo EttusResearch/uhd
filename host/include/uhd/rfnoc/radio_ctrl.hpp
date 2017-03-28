@@ -165,7 +165,7 @@ public:
      *
      * \return The actual bandwidth value
      */
-    // virtual double get_rx_bandwidth(const double bandwidth, const size_t chan) = 0;
+    virtual double get_rx_bandwidth(const size_t chan) = 0;
 
     /*! Set the analog filter bandwidth channel \p chan
      *
