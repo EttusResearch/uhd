@@ -46,7 +46,7 @@ REPLACE_EXPR = [
 
 def fix_naming(workdir):
     """
-    replace all the things
+    Applies all the REPLACE_EXPR in all the files
     """
     for root, dirs, files in os.walk(workdir):
         for cur_file in files:
@@ -78,7 +78,7 @@ def extract_rpclib_version(rpclib_root):
 
 def copy_important_files(target_root, rpclib_root):
     """
-    copy files/subdirs we consider important
+    copy files/subdirs we consider important (see IMPORTANT_FILES)
     """
     for rpc_file in os.listdir(rpclib_root):
         if rpc_file in IMPORTANT_FILES:
@@ -110,7 +110,6 @@ def extract_rpclib(args):
     """
     THE extraction function
     """
-
     workdir = tempfile.mkdtemp()
     rpclib_root = args.rpclib_root
     new_rpclib_root = tempfile.mkdtemp()

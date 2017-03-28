@@ -14,6 +14,16 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+
+########################################################################
+# This file included, use CMake directory variables
+########################################################################
+
+########################################################################
+# Conditionally configure the X300 support
+########################################################################
 IF(ENABLE_NETD)
-    ADD_SUBDIRECTORY(rpclib)
-ENDIF()
+    LIBUHD_APPEND_SOURCES(
+        ${CMAKE_CURRENT_SOURCE_DIR}/netd_impl.cpp
+    )
+ENDIF(ENABLE_NETD)
