@@ -16,17 +16,64 @@
 //
 
 #include "ad937x_device.hpp"
-#include "mpm/mykonos/ad937x_ctrl.hpp"
 #include "adi/mykonos.h"
+
+#include <mpm/mykonos/ad937x_ctrl.hpp>
 
 #include <sstream>
 #include <set>
 #include <functional>
 
+static uhd::direction_t _get_direction_from_antenna(const std::string& antenna)
+{
+    auto sub = antenna.substr(0, 2);
+    if (sub == "RX") {
+        return uhd::direction_t::RX_DIRECTION;
+    }
+    else if (sub == "TX") {
+        return uhd::direction_t::TX_DIRECTION;
+    }
+    else {
+        throw uhd::runtime_error("ad937x_ctrl got an invalid channel string.");
+    }
+    return uhd::direction_t::RX_DIRECTION;
+}
+
+static ad937x_device::chain_t _get_chain_from_antenna(const std::string& antenna)
+{
+    auto sub = antenna.substr(2, 1);
+    if (sub == "1") {
+        return ad937x_device::chain_t::ONE;
+    }
+    else if (sub == "2") {
+        return ad937x_device::chain_t::TWO;
+    }
+    else {
+        throw uhd::runtime_error("ad937x_ctrl got an invalid channel string.");
+    }
+    return ad937x_device::chain_t::ONE;
+}
+
+std::set<size_t> _get_valid_fir_lengths(const std::string& which)
+{
+    auto dir = _get_direction_from_antenna(which);
+    switch (dir)
+    {
+    case uhd::direction_t::RX_DIRECTION:
+        return{ 24, 48, 72 };
+    case uhd::direction_t::TX_DIRECTION:
+        return{ 16, 32, 48, 64, 80, 96 };
+    default:
+        UHD_THROW_INVALID_CODE_PATH();
+        return std::set<size_t>();
+    }
+}
+
 uhd::meta_range_t ad937x_ctrl::get_rf_freq_range(void)
 {
     return uhd::meta_range_t(ad937x_device::MIN_FREQ, ad937x_device::MAX_FREQ);
 }
+
 
 uhd::meta_range_t ad937x_ctrl::get_bw_filter_range(void)
 {
@@ -55,36 +102,6 @@ uhd::meta_range_t ad937x_ctrl::get_gain_range(const std::string &which)
     }
 }
 
-std::set<size_t> ad937x_ctrl::_get_valid_fir_lengths(const std::string& which)
-{
-    auto dir = _get_direction_from_antenna(which);
-    switch (dir)
-    {
-    case uhd::direction_t::RX_DIRECTION:
-        return { 24, 48, 72 };
-    case uhd::direction_t::TX_DIRECTION:
-        return { 16, 32, 48, 64, 80, 96 };
-    default:
-        UHD_THROW_INVALID_CODE_PATH();
-        return std::set<size_t>();
-    }
-}
-
-uhd::direction_t ad937x_ctrl::_get_direction_from_antenna(const std::string& antenna)
-{
-    auto sub = antenna.substr(0, 2);
-    if (sub == "RX") {
-        return uhd::direction_t::RX_DIRECTION;
-    }
-    else if (sub == "TX") {
-        return uhd::direction_t::TX_DIRECTION;
-    }
-    else {
-        throw uhd::runtime_error("ad937x_ctrl got an invalid channel string.");
-    }
-    return uhd::direction_t::RX_DIRECTION;
-}
-
 class ad937x_ctrl_impl : public ad937x_ctrl
 {
 public:
@@ -94,23 +111,6 @@ public:
     {
 
     }
-
-    static ad937x_device::chain_t _get_chain_from_antenna(const std::string& antenna)
-        {
-            auto sub = antenna.substr(2, 1);
-            if (sub == "1") {
-                return ad937x_device::chain_t::ONE;
-            }
-            else if (sub == "2") {
-                return ad937x_device::chain_t::TWO;
-            }
-            else {
-                throw uhd::runtime_error("ad937x_ctrl got an invalid channel string.");
-            }
-            return ad937x_device::chain_t::ONE;
-        }
-
-
 
     virtual uint8_t get_product_id()
     {
@@ -241,7 +241,7 @@ public:
         device.set_fir(dir, chain, gain, fir);
     }
 
-    std::vector<int16_t> get_fir(const std::string &which, int8_t &gain)
+    virtual std::vector<int16_t> get_fir(const std::string &which, int8_t &gain)
     {
         auto dir = _get_direction_from_antenna(which);
         auto chain = _get_chain_from_antenna(which);

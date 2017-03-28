@@ -23,7 +23,6 @@
 #include "adi/t_mykonos_gpio.h"
 #include "mpm/spi/adi_ctrl.hpp"
 
-// TODO: fix path of UHD includes
 #include <uhd/types/direction.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/exception.hpp>

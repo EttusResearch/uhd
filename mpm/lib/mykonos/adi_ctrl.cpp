@@ -15,12 +15,11 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-
 #include "adi/common.h"
-#include <mpm/spi/adi_ctrl.hpp>
 
-// TODO: fix path of UHD includes
-#include <../../host/include/uhd/exception.hpp>
+#include <mpm/spi/adi_ctrl.hpp>
+#include <uhd/exception.hpp>
+
 #include <iostream>
 #include <chrono>
 #include <thread>

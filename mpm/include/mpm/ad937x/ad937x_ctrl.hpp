@@ -19,7 +19,6 @@
 
 #include "mpm/spi/spi_lock.hpp"
 
-// TODO: fix path of UHD includes
 #include <uhd/types/direction.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/exception.hpp>
@@ -29,7 +28,6 @@
 #include <memory>
 #include <functional>
 #include <set>
-class ad937x_device;
 
 class ad937x_ctrl : public boost::noncopyable
 {
@@ -63,10 +61,6 @@ public:
     virtual std::vector<int16_t> get_fir(const std::string &which, int8_t &gain) = 0;
 
     virtual int16_t get_temperature() = 0;
-
-protected:
-    static uhd::direction_t _get_direction_from_antenna(const std::string& antenna);
-    static std::set<size_t> _get_valid_fir_lengths(const std::string& which);
 };
 
 #ifdef LIBMPM_PYTHON
