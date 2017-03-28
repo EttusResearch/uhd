@@ -16,9 +16,9 @@
 //
 #pragma once
 
-#include <mpm/spi_iface.hpp>
 #include <unordered_map>
 #include <memory>
+
 namespace mpm {
     class tests_spi_iface : public virtual spi_iface
     {

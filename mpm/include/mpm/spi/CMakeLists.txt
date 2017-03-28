@@ -18,7 +18,6 @@ INSTALL(FILES
   adi_ctrl.hpp
   mock_spi.h
   spidev_iface.hpp
-  spi_iface.hpp
   spi_lock.hpp
   DESTINATION ${INCLUDE_DIR}/mpm/spi
 )
