@@ -54,11 +54,11 @@ static const mykonosJesd204bFramerConfig_t DEFAULT_FRAMER =
     0,              // JESD204B Configuration Device ID - link identification number. (Valid 0..255)
     0,              // JESD204B Configuration starting Lane ID.  If more than one lane used, each lane will increment from the Lane0 ID. (Valid 0..31)
     4,              // number of ADCs (0, 2, or 4) - 2 ADCs per receive chain
-    32,             // number of frames in a multiframe (default=32), F*K must be a multiple of 4. (F=2*M/numberOfLanes)
+    20,             // number of frames in a multiframe (default=32), F*K must be a multiple of 4. (F=2*M/numberOfLanes)
     1,              // scrambling off if framerScramble= 0, if framerScramble>0 scramble is enabled.
     1,              // 0=use internal SYSREF, 1= use external SYSREF
     0x0F,           // serializerLanesEnabled - bit per lane, [0] = Lane0 enabled, [1] = Lane1 enabled
-    0xE4,           // serializerLaneCrossbar
+    0x4B,           // serializerLaneCrossbar
     26,             // serializerAmplitude - default 22 (valid (0-31)
     0,              // preEmphasis - < default 4 (valid 0 - 7)
     0,              // invertLanePolarity - default 0 ([0] will invert lane [0], bit1 will invert lane1)
@@ -178,11 +178,11 @@ static const mykonosJesd204bDeframerConfig_t DEFAULT_DEFRAMER =
     0,              // deviceId  link identification number. (Valid 0..255)
     0,              // lane0Id Lane0 ID. (Valid 0..31)
     4,              // M  number of DACss (0, 2, or 4) - 2 DACs per transmit chain
-    32,             // K  #frames in a multiframe (default=32), F*K=multiple of 4. (F=2*M/numberOfLanes)
+    20,             // K  #frames in a multiframe (default=32), F*K=multiple of 4. (F=2*M/numberOfLanes)
     0,              // Scrambling off if scramble = 0, if framerScramble > 0 scrambling is enabled
     1,              // External SYSREF select. 0 = use internal SYSREF, 1 = external SYSREF
     0x0F,           // Deserializer lane select bit field. Where, [0] = Lane0 enabled, [1] = Lane1 enabled, etc
-    0xE4,           // Lane crossbar to map physical lanes to deframer lane inputs [1:0] = Deframer Input 0 Lane section, [3:2] = Deframer Input 1 lane select, etc
+    0xD2,           // Lane crossbar to map physical lanes to deframer lane inputs [1:0] = Deframer Input 0 Lane section, [3:2] = Deframer Input 1 lane select, etc
     1,              // Equalizer setting. Applied to all deserializer lanes. Range is 0..4
     0,              // PN inversion per each lane.  bit[0] = 1 Invert PN of Lane 0, bit[1] = Invert PN of Lane 1, etc).
     0,              // LMFC offset value to adjust deterministic latency. Range is 0..31

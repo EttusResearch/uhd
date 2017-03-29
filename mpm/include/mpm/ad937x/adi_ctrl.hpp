@@ -18,7 +18,7 @@
 #pragma once
 
 // TODO: fix path of UHD include
-#include <../../host/include/uhd/types/serial.hpp>
+#include <uhd/types/serial.hpp>
 
 #include <chrono>
 
