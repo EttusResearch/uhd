@@ -292,7 +292,7 @@ protected:
 
 private:
     niriok_proxy::sptr _drv_proxy;
-    static const uint32_t READ_TIMEOUT_IN_MS = 10;
+    static const uint32_t READ_TIMEOUT_IN_MS = 100;
     static const uint32_t INIT_TIMEOUT_IN_MS = 5000;
 };
 
