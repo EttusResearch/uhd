@@ -511,6 +511,8 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     eth_addrs.push_back(eth0_addr);
 
     mb.next_src_addr = 0;   //Host source address for blocks
+    mb.next_tx_src_addr = 0;
+    mb.next_rx_src_addr = 0;
     if (dev_addr.has_key("second_addr")) {
         std::string eth1_addr = dev_addr["second_addr"];
 
@@ -1136,12 +1138,16 @@ uhd::both_xports_t x300_impl::make_transport(
 
     } else if (mb.xport_path == "eth") {
         // Decide on the IP/Interface pair based on the endpoint index
-        std::string interface_addr = mb.eth_conns[mb.next_src_addr].addr;
+        size_t &next_src_addr =
+            xport_type == TX_DATA ? mb.next_tx_src_addr :
+            xport_type == RX_DATA ? mb.next_rx_src_addr :
+            mb.next_src_addr;
+        std::string interface_addr = mb.eth_conns[next_src_addr].addr;
         const uint32_t xbar_src_addr =
-            mb.next_src_addr==0 ? X300_SRC_ADDR0 : X300_SRC_ADDR1;
+            next_src_addr==0 ? X300_SRC_ADDR0 : X300_SRC_ADDR1;
         const uint32_t xbar_src_dst =
-            mb.eth_conns[mb.next_src_addr].type==X300_IFACE_ETH0 ? X300_XB_DST_E0 : X300_XB_DST_E1;
-        mb.next_src_addr = (mb.next_src_addr + 1) % mb.eth_conns.size();
+            mb.eth_conns[next_src_addr].type==X300_IFACE_ETH0 ? X300_XB_DST_E0 : X300_XB_DST_E1;
+        next_src_addr = (next_src_addr + 1) % mb.eth_conns.size();
 
         xports.send_sid = this->allocate_sid(mb, address, xbar_src_addr, xbar_src_dst);
         xports.recv_sid = xports.send_sid.reversed();

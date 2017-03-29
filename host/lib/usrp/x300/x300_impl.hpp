@@ -162,6 +162,8 @@ private:
 
         std::vector<x300_eth_conn_t> eth_conns;
         size_t next_src_addr;
+        size_t next_tx_src_addr;
+        size_t next_rx_src_addr;
 
         // Discover the ethernet connections per motherboard
         void discover_eth(const uhd::usrp::mboard_eeprom_t mb_eeprom,

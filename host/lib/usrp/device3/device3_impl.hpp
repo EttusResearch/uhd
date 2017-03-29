@@ -57,7 +57,8 @@ public:
     enum xport_type_t {
         CTRL = 0,
         TX_DATA,
-        RX_DATA
+        RX_DATA,
+        ASYNC_TX_MSG
     };
 
     enum xport_t {AXI, ETH, PCIE};

@@ -40,7 +40,11 @@ namespace uhd{ namespace usrp{
         //load into metadata
         metadata.channel = channel;
         metadata.has_time_spec = if_packet_info.has_tsf;
-        metadata.time_spec = time_spec_t::from_ticks(if_packet_info.tsf, tick_rate);
+        if (tick_rate == 0.0) {
+            metadata.time_spec = 0.0;
+        } else {
+            metadata.time_spec = time_spec_t::from_ticks(if_packet_info.tsf, tick_rate);
+        }
         metadata.event_code = async_metadata_t::event_code_t(to_host(payload[0]) & 0xff);
 
         //load user payload
