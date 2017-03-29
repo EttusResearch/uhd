@@ -18,7 +18,7 @@
 #include "ad937x_device.hpp"
 #include "adi/mykonos.h"
 
-#include <mpm/mykonos/ad937x_ctrl.hpp>
+#include <mpm/ad937x/ad937x_ctrl.hpp>
 
 #include <sstream>
 #include <set>

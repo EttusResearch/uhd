@@ -17,8 +17,6 @@
 
 #pragma once
 
-#include "mpm/spi/spi_lock.hpp"
-
 #include <uhd/types/direction.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/exception.hpp>
@@ -28,6 +26,7 @@
 #include <memory>
 #include <functional>
 #include <set>
+#include <mutex>
 
 class ad937x_ctrl : public boost::noncopyable
 {

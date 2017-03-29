@@ -14,10 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+
 INSTALL(FILES
-  adi_ctrl.hpp
-  mock_spi.h
   spidev_iface.hpp
-  spi_lock.hpp
   DESTINATION ${INCLUDE_DIR}/mpm/spi
 )

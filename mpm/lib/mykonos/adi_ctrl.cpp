@@ -17,7 +17,7 @@
 
 #include "adi/common.h"
 
-#include <mpm/spi/adi_ctrl.hpp>
+#include <mpm/ad937x/adi_ctrl.hpp>
 #include <uhd/exception.hpp>
 
 #include <iostream>

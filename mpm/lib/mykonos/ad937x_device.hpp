@@ -21,7 +21,7 @@
 #include "config/ad937x_fir.hpp"
 #include "adi/t_mykonos.h"
 #include "adi/t_mykonos_gpio.h"
-#include "mpm/spi/adi_ctrl.hpp"
+#include "mpm/ad937x/adi_ctrl.hpp"
 
 #include <uhd/types/direction.hpp>
 #include <uhd/types/ranges.hpp>

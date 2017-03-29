@@ -30,7 +30,7 @@
 #include "mpm/net_helper.hpp"
 #include "mpm/xbar_iface.hpp"
 #include "mpm/udev_helper.hpp"
-#include "mpm/mykonos/ad937x_ctrl.hpp"
+#include "mpm/ad937x/ad937x_ctrl.hpp"
 #include "mpm/lmk04828//lmk04828_spi_iface.hpp"
 //#include "lib_periphs.hpp"
 //#include "dboards.hpp"
