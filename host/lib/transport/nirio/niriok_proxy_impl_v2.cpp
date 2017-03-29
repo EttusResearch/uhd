@@ -759,14 +759,14 @@ namespace uhd { namespace niusrprio
         in.timeout = timeout;
         in.status = NiRio_Status_Success;
 
-        ioctl_status = 
+           ioctl_status =
            nirio_driver_iface::rio_ioctl(
-               _device_handle,
-               IOCTL_TRANSPORT_FIFO_WAIT,
-               &in,
-               sizeof(in),
-               &out,
-               sizeof(out));
+              _device_handle,
+              IOCTL_TRANSPORT_FIFO_WAIT,
+              &in,
+              sizeof(in),
+              &out,
+              sizeof(out));
         if (nirio_status_fatal(ioctl_status)) return ioctl_status;
 
         data_pointer = reinterpret_cast<void*>(out.elements);
