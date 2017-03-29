@@ -105,8 +105,8 @@ uhd::meta_range_t ad937x_ctrl::get_gain_range(const std::string &which)
 class ad937x_ctrl_impl : public ad937x_ctrl
 {
 public:
-    ad937x_ctrl_impl(spi_lock::sptr spi_l, uhd::spi_iface::sptr iface) :
-        spi_l(spi_l),
+    ad937x_ctrl_impl(std::shared_ptr<std::mutex> spi_mutex, uhd::spi_iface::sptr iface) :
+        spi_mutex(spi_mutex),
         device(iface)
     {
 
@@ -114,18 +114,18 @@ public:
 
     virtual uint8_t get_product_id()
     {
-        std::lock_guard<spi_lock> lock(*spi_l);
+        std::lock_guard<std::mutex> lock(*spi_mutex);
         return device.get_product_id();
     }
 
     virtual uint8_t get_device_rev()
     {
-        std::lock_guard<spi_lock> lock(*spi_l);
+        std::lock_guard<std::mutex> lock(*spi_mutex);
         return device.get_device_rev();
     }
     virtual std::string get_api_version()
     {
-        std::lock_guard<spi_lock> lock(*spi_l);
+        std::lock_guard<std::mutex> lock(*spi_mutex);
         auto api = device.get_api_version();
         std::ostringstream ss;
         ss  << api.silicon_ver << "."
@@ -137,7 +137,7 @@ public:
 
     virtual std::string get_arm_version()
     {
-        std::lock_guard<spi_lock> lock(*spi_l);
+        std::lock_guard<std::mutex> lock(*spi_mutex);
         auto arm = device.get_arm_version();
         std::ostringstream ss;
         ss  << arm.major_ver << "."
@@ -157,7 +157,7 @@ public:
         auto dir = _get_direction_from_antenna(which);
         auto chain = _get_chain_from_antenna(which);
 
-        std::lock_guard<spi_lock> lock(*spi_l);
+        std::lock_guard<std::mutex> lock(*spi_mutex);
         return device.set_gain(dir, chain, value);
     }
 
@@ -184,7 +184,7 @@ public:
             throw uhd::runtime_error("invalid agc mode");
         }
 
-        std::lock_guard<spi_lock> lock(*spi_l);
+        std::lock_guard<std::mutex> lock(*spi_mutex);
         device.set_agc_mode(dir, gain_mode);
     }
 
@@ -196,7 +196,7 @@ public:
             value = *(rates.cbegin());
         }
 
-        std::lock_guard<spi_lock> lock(*spi_l);
+        std::lock_guard<std::mutex> lock(*spi_mutex);
         return device.set_clock_rate(value);
     }
 
@@ -205,7 +205,7 @@ public:
         auto dir = _get_direction_from_antenna(which);
         auto chain = _get_chain_from_antenna(which);
 
-        std::lock_guard<spi_lock> lock(*spi_l);
+        std::lock_guard<std::mutex> lock(*spi_mutex);
         return device.enable_channel(dir, chain, enable);
     }
 
@@ -214,7 +214,7 @@ public:
         auto dir = _get_direction_from_antenna(which);
         auto clipped_value = get_rf_freq_range().clip(value);
 
-        std::lock_guard<spi_lock> lock(*spi_l);
+        std::lock_guard<std::mutex> lock(*spi_mutex);
         return device.tune(dir, clipped_value);
     }
 
@@ -222,7 +222,7 @@ public:
     {
         auto dir = _get_direction_from_antenna(which);
 
-        std::lock_guard<spi_lock> lock(*spi_l);
+        std::lock_guard<std::mutex> lock(*spi_mutex);
         return device.get_freq(dir);
     }
 
@@ -237,7 +237,7 @@ public:
             throw uhd::value_error("invalid filter length");
         }
 
-        std::lock_guard<spi_lock> lock(*spi_l);
+        std::lock_guard<std::mutex> lock(*spi_mutex);
         device.set_fir(dir, chain, gain, fir);
     }
 
@@ -246,24 +246,24 @@ public:
         auto dir = _get_direction_from_antenna(which);
         auto chain = _get_chain_from_antenna(which);
 
-        std::lock_guard<spi_lock> lock(*spi_l);
+        std::lock_guard<std::mutex> lock(*spi_mutex);
         return device.get_fir(dir, chain, gain);
     }
 
     virtual int16_t get_temperature()
     {
-        std::lock_guard<spi_lock> lock(*spi_l);
+        std::lock_guard<std::mutex> lock(*spi_mutex);
         return device.get_temperature();
     }
 
 private:
     ad937x_device device;
-    spi_lock::sptr spi_l;
+    std::shared_ptr<std::mutex> spi_mutex;
 };
 
-ad937x_ctrl::sptr ad937x_ctrl::make(spi_lock::sptr spi_l, uhd::spi_iface::sptr iface)
+ad937x_ctrl::sptr ad937x_ctrl::make(std::shared_ptr<std::mutex> spi_mutex, uhd::spi_iface::sptr iface)
 {
-    return std::make_shared<ad937x_ctrl_impl>(spi_l, iface);
+    return std::make_shared<ad937x_ctrl_impl>(spi_mutex, iface);
 }
 
 

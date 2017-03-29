@@ -17,7 +17,6 @@
 
 #pragma once
 
-// TODO: fix path of UHD include
 #include <uhd/types/serial.hpp>
 
 #include <chrono>

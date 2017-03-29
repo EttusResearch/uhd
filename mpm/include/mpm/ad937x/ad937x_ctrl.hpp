@@ -33,7 +33,7 @@ class ad937x_ctrl : public boost::noncopyable
 {
 public:
     typedef std::shared_ptr<ad937x_ctrl> sptr;
-    static sptr make(spi_lock::sptr spi_l, uhd::spi_iface::sptr iface);
+    static sptr make(std::shared_ptr<std::mutex> spi_mutex, uhd::spi_iface::sptr iface);
     virtual ~ad937x_ctrl(void) {}
 
     static uhd::meta_range_t get_rf_freq_range(void);

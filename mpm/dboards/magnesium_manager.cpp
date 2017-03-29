@@ -23,10 +23,10 @@ using namespace mpm::dboards;
 
 magnesium_periph_manager::magnesium_periph_manager(
     std::string lmk_spidev, std::string mykonos_spidev
-    ): _spi_lock(spi_lock::make(std::rand()))
+    ): _spi_mutex(std::make_shared<std::mutex>())
 {
     _clock_spi = lmk04828_spi_iface::make(mpm::spi::spidev_iface::make(lmk_spidev));
     _clock_ctrl = lmk04828_iface::make(_clock_spi->get_write_fn(), _clock_spi->get_read_fn());
     _mykonos_spi = mpm::spi::spidev_iface::make(mykonos_spidev);
-    _mykonos_ctrl = ad937x_ctrl::make(_spi_lock, _mykonos_spi);
+    _mykonos_ctrl = ad937x_ctrl::make(_spi_mutex, _mykonos_spi);
 };

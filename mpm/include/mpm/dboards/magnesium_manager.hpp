@@ -39,7 +39,7 @@ namespace mpm { namespace dboards {
 
     private:
         //cpld control
-        spi_lock::sptr _spi_lock;
+        std::shared_ptr<std::mutex> _spi_mutex;
         lmk04828_spi_iface::sptr _clock_spi;
         lmk04828_iface::sptr _clock_ctrl;
         mpm::spi::spidev_iface::sptr _mykonos_spi;
