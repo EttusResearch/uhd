@@ -182,11 +182,13 @@ public:
             nirio_status_chain(
                 _recv_fifo->initialize(
                     (_xport_params.recv_frame_size*_xport_params.num_recv_frames)/sizeof(fifo_data_t),
+                    _xport_params.recv_frame_size / sizeof(fifo_data_t),
                     actual_depth, actual_size),
                 status);
             nirio_status_chain(
                 _send_fifo->initialize(
                     (_xport_params.send_frame_size*_xport_params.num_send_frames)/sizeof(fifo_data_t),
+                    _xport_params.send_frame_size / sizeof(fifo_data_t),
                     actual_depth, actual_size),
                 status);
 
