@@ -1644,7 +1644,7 @@ x300_impl::frame_size_t x300_impl::determine_max_frame_size(const std::string &a
     // of the recv and send frame sizes.
     frame_size.recv_frame_size = std::min(min_recv_frame_size, min_send_frame_size);
     frame_size.send_frame_size = std::min(min_recv_frame_size, min_send_frame_size);
-    UHD_LOGGER_INFO("X300") << "Maximim frame size: " << frame_size.send_frame_size << " bytes.";
+    UHD_LOGGER_INFO("X300") << "Maximum frame size: " << frame_size.send_frame_size << " bytes.";
     return frame_size;
 }
 
