@@ -52,25 +52,6 @@ include(GrMiscUtils)
 GR_LIBRARY_FOO(gnuradio-usrptest RUNTIME_COMPONENT "usrptest_runtime" DEVEL_COMPONENT "usrptest_devel")
 
 ########################################################################
-# Build and register unit test
-########################################################################
-include(GrTest)
-
-include_directories(${CPPUNIT_INCLUDE_DIRS})
-
-add_executable(test-usrptest ${test_usrptest_sources})
-
-target_link_libraries(
-  test-usrptest
-  ${GNURADIO_RUNTIME_LIBRARIES}
-  ${Boost_LIBRARIES}
-  ${CPPUNIT_LIBRARIES}
-  gnuradio-usrptest
-)
-
-GR_ADD_TEST(test_usrptest test-usrptest)
-
-########################################################################
 # Print summary
 ########################################################################
 message(STATUS "Using install prefix: ${CMAKE_INSTALL_PREFIX}")

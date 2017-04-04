@@ -20,7 +20,6 @@
 ########################################################################
 # Include python install macros
 ########################################################################
-include(GrPython)
 if(NOT PYTHONINTERP_FOUND)
     return()
 endif()
