@@ -747,15 +747,16 @@ uint32_t e300_impl::_allocate_sid(const sid_config_t &config)
 {
     const uint32_t stream = (config.dst_prefix | (config.router_dst_there << 2)) & 0xff;
 
+    const size_t sid_framer = _sid_framer++; //increment for next setup
     const uint32_t sid = 0
         | (E300_DEVICE_HERE << 24)
-        | (_sid_framer << 16)
+        | (sid_framer << 16)
         | (config.router_addr_there << 8)
         | (stream << 0)
     ;
     UHD_LOGGER_DEBUG("E300")<< std::hex
         << " sid 0x" << sid
-        << " framer 0x" << _sid_framer
+        << " framer 0x" << sid_framer
         << " stream 0x" << stream
         << " router_dst_there 0x" << int(config.router_dst_there)
         << " router_addr_there 0x" << int(config.router_addr_there)
@@ -778,9 +779,6 @@ uint32_t e300_impl::_allocate_sid(const sid_config_t &config)
     UHD_LOGGER_DEBUG("E300") << std::hex
         << "done router config for sid 0x" << sid
         << std::dec ;
-
-    //increment for next setup
-    _sid_framer++;
 
     return sid;
 }

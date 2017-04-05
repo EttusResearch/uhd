@@ -47,6 +47,7 @@
 #include "e300_i2c.hpp"
 #include "e300_eeprom_manager.hpp"
 #include "e300_sensor_manager.hpp"
+#include <atomic>
 
 /* if we don't compile with gpsd support, don't bother */
 #ifdef E300_GPSD
@@ -288,7 +289,7 @@ private: // members
     uhd::device_addr_t                     _device_addr;
     xport_t                                _xport_path;
     e300_fifo_interface::sptr              _fifo_iface;
-    size_t                                 _sid_framer;
+    std::atomic<size_t>                    _sid_framer;
     radio_perifs_t                         _radio_perifs[2];
     double                                 _tick_rate;
     ad9361_ctrl::sptr                      _codec_ctrl;

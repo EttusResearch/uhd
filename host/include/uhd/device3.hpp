@@ -22,6 +22,7 @@
 #include <uhd/rfnoc/graph.hpp>
 #include <uhd/rfnoc/block_ctrl_base.hpp>
 #include <boost/units/detail/utility.hpp>
+#include <boost/thread/mutex.hpp>
 #include <vector>
 
 namespace uhd {
@@ -53,12 +54,14 @@ class UHD_API device3 : public uhd::device {
      *
      * \param block_id Canonical block name (e.g. "0/FFT_1").
      * \return true if a block with the specified id exists
+     * \note this access is not thread safe if peformed during block enumeration
      */
     bool has_block(const rfnoc::block_id_t &block_id) const;
 
     /*! Same as has_block(), but with a type check.
      *
      * \return true if a block of type T with the specified id exists
+     * \note this access is not thread safe if peformed during block enumeration
      */
     template <typename T>
     bool has_block(const rfnoc::block_id_t &block_id) const
@@ -76,6 +79,7 @@ class UHD_API device3 : public uhd::device {
      * on this device), it will throw a uhd::lookup_error.
      *
      * \param block_id Canonical block name (e.g. "0/FFT_1").
+     * \note this access is not thread safe if peformed during block enumeration
      */
     rfnoc::block_ctrl_base::sptr get_block_ctrl(const rfnoc::block_id_t &block_id) const;
 
@@ -91,6 +95,7 @@ class UHD_API device3 : public uhd::device {
      * uhd::rfnoc::my_block_ctrl::sptr block_controller = get_block_ctrl<my_block_ctrl>("0/MyBlock_0");
      * block_controller->my_own_block_method();
      * \endcode
+     * \note this access is not thread safe if peformed during block enumeration
      */
     template <typename T>
     boost::shared_ptr<T> get_block_ctrl(const rfnoc::block_id_t &block_id) const
@@ -115,6 +120,7 @@ class UHD_API device3 : public uhd::device {
      * // Assume DEV is a device3::sptr
      * null_block_ctrl::sptr null_block = DEV->find_blocks<null_block_ctrl>("NullSrcSink");
      * \endcode
+     * \note this access is not thread safe if peformed during block enumeration
      */
     std::vector<rfnoc::block_id_t> find_blocks(const std::string &block_id_hint) const;
 
@@ -138,6 +144,8 @@ class UHD_API device3 : public uhd::device {
     //  It is the responsibility of the deriving class to make
     //  sure this gets correctly populated.
     std::vector< rfnoc::block_ctrl_base::sptr > _rfnoc_block_ctrl;
+    //! Mutex to protect access to members
+    boost::mutex                                _block_ctrl_mutex;
 };
 
 } //namespace uhd

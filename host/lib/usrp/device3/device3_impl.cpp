@@ -28,7 +28,6 @@
 using namespace uhd::usrp;
 
 device3_impl::device3_impl()
-    : _sid_framer(0)
 {
     _type = uhd::device::USRP;
     _async_md.reset(new async_md_type(1000/*messages deep*/));
@@ -172,7 +171,10 @@ void device3_impl::enumerate_rfnoc_blocks(
         make_args.base_address = xport.send_sid.get_dst();
         make_args.device_index = device_index;
         make_args.tree = subtree;
-        _rfnoc_block_ctrl.push_back(uhd::rfnoc::block_ctrl_base::make(make_args, noc_id));
+        {   //Critical section for block_ctrl vector access
+            boost::lock_guard<boost::mutex> lock(_block_ctrl_mutex);
+            _rfnoc_block_ctrl.push_back(uhd::rfnoc::block_ctrl_base::make(make_args, noc_id));
+        }
     }
 }
 

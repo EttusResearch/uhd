@@ -68,6 +68,7 @@ std::vector<rfnoc::block_id_t> device3::find_blocks(const std::string &block_id_
 
 void device3::clear()
 {
+    boost::lock_guard<boost::mutex> lock(_block_ctrl_mutex);
     for(const block_ctrl_base::sptr &block:  _rfnoc_block_ctrl) {
         block->clear();
     }

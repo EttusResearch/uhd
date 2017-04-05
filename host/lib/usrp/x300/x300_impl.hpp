@@ -39,6 +39,7 @@
 #include <uhd/rfnoc/block_ctrl.hpp>
 ///////////// RFNOC /////////////////////
 #include <boost/dynamic_bitset.hpp>
+#include <atomic>
 
 static const std::string X300_FW_FILE_NAME  = "usrp_x300_fw.bin";
 static const std::string X300_DEFAULT_CLOCK_SOURCE  = "internal";
@@ -215,7 +216,7 @@ private:
     //task for periodically reclaiming the device from others
     void claimer_loop(uhd::wb_iface::sptr);
 
-    size_t _sid_framer;
+    std::atomic<size_t> _sid_framer;
 
     uhd::sid_t allocate_sid(
         mboard_members_t &mb,

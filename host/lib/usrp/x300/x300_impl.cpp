@@ -1307,7 +1307,7 @@ uhd::sid_t x300_impl::allocate_sid(
 ) {
     uhd::sid_t sid = address;
     sid.set_src_addr(src_addr);
-    sid.set_src_endpoint(_sid_framer);
+    sid.set_src_endpoint(_sid_framer++);    //increment for next setup
 
     // TODO Move all of this setup_mb()
     // Program the X300 to recognise it's own local address.
@@ -1320,9 +1320,6 @@ uhd::sid_t x300_impl::allocate_sid(
     mb.zpu_ctrl->poke32(SR_ADDR(SETXB_BASE, 0 + src_addr), src_dst);
 
     UHD_LOGGER_DEBUG("X300") << "done router config for sid " << sid ;
-
-    //increment for next setup
-    _sid_framer++;
 
     return sid;
 }
