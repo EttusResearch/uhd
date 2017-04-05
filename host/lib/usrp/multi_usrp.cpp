@@ -1754,8 +1754,12 @@ private:
     {
         try
         {
-            const std::string name = _tree->list("/mboards").at(mboard);
-            return "/mboards/" + name;
+            const std::string tree_path = "/mboards/" + boost::lexical_cast<std::string>(mboard);
+            if (_tree->exists(tree_path)) {
+                return tree_path;
+            } else {
+                throw uhd::index_error(str(boost::format("multi_usrp::mb_root(%u) - path not found") % mboard));
+            }
         }
         catch(const std::exception &e)
         {
@@ -1778,8 +1782,12 @@ private:
 
         try
         {
-            const std::string name = _tree->list(mb_root(mcp.mboard) / "rx_dsps").at(mcp.chan);
-            return mb_root(mcp.mboard) / "rx_dsps" / name;
+            const std::string tree_path = mb_root(mcp.mboard) / "rx_dsps" / boost::lexical_cast<std::string>(mcp.chan);
+            if (_tree->exists(tree_path)) {
+                return tree_path;
+            } else {
+                throw uhd::index_error(str(boost::format("multi_usrp::rx_dsp_root(%u) - mcp(%u) - path not found") % chan % mcp.chan));
+            }
         }
         catch(const std::exception &e)
         {
@@ -1801,8 +1809,12 @@ private:
         }
         try
         {
-            const std::string name = _tree->list(mb_root(mcp.mboard) / "tx_dsps").at(mcp.chan);
-            return mb_root(mcp.mboard) / "tx_dsps" / name;
+            const std::string tree_path = mb_root(mcp.mboard) / "tx_dsps" / boost::lexical_cast<std::string>(mcp.chan);
+            if (_tree->exists(tree_path)) {
+                return tree_path;
+            } else {
+                throw uhd::index_error(str(boost::format("multi_usrp::tx_dsp_root(%u) - mcp(%u) - path not found") % chan % mcp.chan));
+            }
         }
         catch(const std::exception &e)
         {
