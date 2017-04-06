@@ -438,7 +438,7 @@ void x300_impl::mboard_members_t::discover_eth(
             UHD_LOGGER_WARNING("X300") << str(boost::format(
                 "Duplicate IP address %s found in mboard EEPROM. "
                 "Device may not function properly.\nView and reprogram the values "
-                "using the usrp_burn_mb_eeprom utility.\n") % mb_eeprom[key]);
+                "using the usrp_burn_mb_eeprom utility.") % mb_eeprom[key]);
         }
         mb_eeprom_addrs.push_back(mb_eeprom[key]);
     }

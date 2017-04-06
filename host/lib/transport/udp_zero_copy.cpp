@@ -272,7 +272,7 @@ template<typename Opt> static size_t resize_buff_helper(
     std::string help_message;
     #if defined(UHD_PLATFORM_LINUX)
         help_message = str(boost::format(
-            "Please run: sudo sysctl -w net.core.%smem_max=%d\n"
+            "Please run: sudo sysctl -w net.core.%smem_max=%d"
         ) % ((name == "recv")?"r":"w") % target_size);
     #endif /*defined(UHD_PLATFORM_LINUX)*/
 
