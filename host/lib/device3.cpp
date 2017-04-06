@@ -15,9 +15,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <boost/format.hpp>
 #include <uhd/device3.hpp>
 #include <uhd/utils/log.hpp>
+#include <boost/format.hpp>
+#include <boost/thread/lock_guard.hpp>
 
 using namespace uhd;
 using namespace uhd::rfnoc;
