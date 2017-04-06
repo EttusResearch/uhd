@@ -144,7 +144,7 @@ public:
         _send_buffer_pool(buffer_pool::make(_num_send_frames, _send_frame_size)),
         _next_recv_buff_index(0), _next_send_buff_index(0)
     {
-        UHD_LOGGER_DEBUG("TCP") << boost::format("Creating tcp transport for %s %s") % addr % port ;
+        UHD_LOGGER_TRACE("TCP") << boost::format("Creating tcp transport for %s %s") % addr % port ;
 
         //resolve the address
         asio::ip::tcp::resolver resolver(_io_service);

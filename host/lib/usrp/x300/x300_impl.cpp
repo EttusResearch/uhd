@@ -1319,7 +1319,7 @@ uhd::sid_t x300_impl::allocate_sid(
     // This type of packet does not match the XB_LOCAL address and is looked up in the lower half of the CAM
     mb.zpu_ctrl->poke32(SR_ADDR(SETXB_BASE, 0 + src_addr), src_dst);
 
-    UHD_LOGGER_DEBUG("X300") << "done router config for sid " << sid ;
+    UHD_LOGGER_TRACE("X300") << "done router config for sid " << sid ;
 
     return sid;
 }

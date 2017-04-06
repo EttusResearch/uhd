@@ -147,7 +147,7 @@ private:
         //mask and return lock detect
         bool locked = 5 >= _max2118_read_regs.adc and _max2118_read_regs.adc >= 2;
 
-        UHD_LOGGER_DEBUG("DBSRX") << boost::format(
+        UHD_LOGGER_TRACE("DBSRX") << boost::format(
             "DBSRX: locked %d"
         ) % locked ;
 

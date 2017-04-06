@@ -432,19 +432,19 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr) :
         ////////////////////////////////////////////////////////////////
         // construct transports for RX and TX DSPs
         ////////////////////////////////////////////////////////////////
-        UHD_LOGGER_DEBUG("USRP2") << "Making transport for RX DSP0..." ;
+        UHD_LOGGER_TRACE("USRP2") << "Making transport for RX DSP0..." ;
         _mbc[mb].rx_dsp_xports.push_back(make_xport(
             addr, BOOST_STRINGIZE(USRP2_UDP_RX_DSP0_PORT), device_args_i, "recv"
         ));
-        UHD_LOGGER_DEBUG("USRP2") << "Making transport for RX DSP1..." ;
+        UHD_LOGGER_TRACE("USRP2") << "Making transport for RX DSP1..." ;
         _mbc[mb].rx_dsp_xports.push_back(make_xport(
             addr, BOOST_STRINGIZE(USRP2_UDP_RX_DSP1_PORT), device_args_i, "recv"
         ));
-        UHD_LOGGER_DEBUG("USRP2") << "Making transport for TX DSP0..." ;
+        UHD_LOGGER_TRACE("USRP2") << "Making transport for TX DSP0..." ;
         _mbc[mb].tx_dsp_xport = make_xport(
             addr, BOOST_STRINGIZE(USRP2_UDP_TX_DSP0_PORT), device_args_i, "send"
         );
-        UHD_LOGGER_DEBUG("USRP2") << "Making transport for Control..." ;
+        UHD_LOGGER_TRACE("USRP2") << "Making transport for Control..." ;
         _mbc[mb].fifo_ctrl_xport = make_xport(
             addr, BOOST_STRINGIZE(USRP2_UDP_FIFO_CRTL_PORT), device_addr_t(), ""
         );

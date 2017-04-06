@@ -57,7 +57,7 @@ rpc_client::rpc_client (
         tcp::resolver::iterator iterator = resolver.resolve(query);
         boost::asio::connect(_socket, iterator);
 
-        UHD_LOGGER_DEBUG("NIRIO") << "rpc_client connected to server." ;
+        UHD_LOGGER_TRACE("NIRIO") << "rpc_client connected to server." ;
 
         try {
             //Perform handshake
@@ -75,7 +75,7 @@ rpc_client::rpc_client (
                 _hshake_args_client.version >= _hshake_args_server.oldest_comp_version &&
                 status)
             {
-                UHD_LOGGER_DEBUG("NIRIO") << "rpc_client bound to server." ;
+                UHD_LOGGER_TRACE("NIRIO") << "rpc_client bound to server." ;
                 _wait_for_next_response_header();
 
                 //Spawn a thread for the io_service callback handler. This thread will run until rpc_client is destroyed.
@@ -84,7 +84,7 @@ rpc_client::rpc_client (
                 UHD_LOGGER_DEBUG("NIRIO") << "rpc_client handshake failed." ;
                 _exec_err.assign(boost::asio::error::connection_refused, boost::asio::error::get_system_category());
             }
-            UHD_LOGGER_DEBUG("NIRIO") << boost::format("rpc_client archive = %d, rpc_server archive = %d\n.") %
+            UHD_LOGGER_TRACE("NIRIO") << boost::format("rpc_client archive = %d, rpc_server archive = %d\n.") %
                 _hshake_args_client.boost_archive_version %
                 _hshake_args_server.boost_archive_version;
         } catch (boost::exception&) {

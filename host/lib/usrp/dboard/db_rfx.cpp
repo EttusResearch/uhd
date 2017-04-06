@@ -339,7 +339,7 @@ double rfx_xcvr::set_lo_freq(
     dboard_iface::unit_t unit,
     double target_freq
 ){
-    UHD_LOGGER_DEBUG("RFX") << boost::format(
+    UHD_LOGGER_TRACE("RFX") << boost::format(
         "RFX tune: target frequency %f MHz"
     ) % (target_freq/1e6) ;
 
@@ -442,7 +442,7 @@ double rfx_xcvr::set_lo_freq(
 
     //return the actual frequency
     if (_div2[unit]) actual_freq /= 2;
-    UHD_LOGGER_DEBUG("RFX") << boost::format(
+    UHD_LOGGER_TRACE("RFX") << boost::format(
         "RFX tune: actual frequency %f MHz"
     ) % (actual_freq/1e6) ;
     return actual_freq;

@@ -341,7 +341,7 @@ public:
     virtual ~e300_fifo_interface_impl(void)
     {
         delete _waiter;
-        UHD_LOGGER_DEBUG("E300")<< "cleanup: munmap" ;
+        UHD_LOGGER_TRACE("E300")<< "cleanup: munmap" ;
         ::munmap(_buff, _config.ctrl_length + _config.buff_length);
         ::close(_fd);
     }

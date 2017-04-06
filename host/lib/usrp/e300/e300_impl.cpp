@@ -776,7 +776,7 @@ uint32_t e300_impl::_allocate_sid(const sid_config_t &config)
     _global_regs->poke32(XB_ADDR(E300_DEVICE_HERE),
                          config.router_dst_here);
 
-    UHD_LOGGER_DEBUG("E300") << std::hex
+    UHD_LOGGER_TRACE("E300") << std::hex
         << "done router config for sid 0x" << sid
         << std::dec ;
 

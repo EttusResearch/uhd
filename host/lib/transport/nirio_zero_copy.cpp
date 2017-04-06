@@ -131,11 +131,11 @@ public:
         _xport_params(xport_params),
         _next_recv_buff_index(0), _next_send_buff_index(0)
     {
-        UHD_LOGGER_DEBUG("NIRIO") << boost::format("Creating PCIe transport for channel %d") % instance ;
-        UHD_LOGGER_DEBUG("NIRIO") << boost::format("nirio zero-copy RX transport configured with frame size = %u, #frames = %u, buffer size = %u\n")
+        UHD_LOGGER_TRACE("NIRIO") << boost::format("Creating PCIe transport for channel %d") % instance ;
+        UHD_LOGGER_TRACE("NIRIO") << boost::format("nirio zero-copy RX transport configured with frame size = %u, #frames = %u, buffer size = %u\n")
                     % _xport_params.recv_frame_size % _xport_params.num_recv_frames %
                     (_xport_params.recv_frame_size * _xport_params.num_recv_frames);
-        UHD_LOGGER_DEBUG("NIRIO") << boost::format("nirio zero-copy TX transport configured with frame size = %u, #frames = %u, buffer size = %u\n")
+        UHD_LOGGER_TRACE("NIRIO") << boost::format("nirio zero-copy TX transport configured with frame size = %u, #frames = %u, buffer size = %u\n")
                     % _xport_params.send_frame_size % _xport_params.num_send_frames % (_xport_params.send_frame_size * _xport_params.num_send_frames);
 
         _recv_buffer_pool = buffer_pool::make(_xport_params.num_recv_frames, _xport_params.recv_frame_size);

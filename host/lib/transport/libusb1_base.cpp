@@ -275,15 +275,15 @@ public:
     {
         int ret;
         ret = libusb_clear_halt(this->get(), recv_endpoint  | 0x80);
-        UHD_LOGGER_DEBUG("USB") << "usb device handle: recv endpoint clear: " << libusb_error_name(ret) ;
+        UHD_LOGGER_TRACE("USB") << "usb device handle: recv endpoint clear: " << libusb_error_name(ret) ;
         ret = libusb_clear_halt(this->get(), send_endpoint | 0x00);
-        UHD_LOGGER_DEBUG("USB") << "usb device handle: send endpoint clear: " << libusb_error_name(ret) ;
+        UHD_LOGGER_TRACE("USB") << "usb device handle: send endpoint clear: " << libusb_error_name(ret) ;
     }
 
     void reset_device(void)
     {
         int ret = libusb_reset_device(this->get());
-        UHD_LOGGER_DEBUG("USB") << "usb device handle: dev Reset: " << libusb_error_name(ret) ;
+        UHD_LOGGER_TRACE("USB") << "usb device handle: dev Reset: " << libusb_error_name(ret) ;
     }
 
 private:

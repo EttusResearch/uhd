@@ -91,6 +91,6 @@ multi_usrp_clock::~multi_usrp_clock(void){
  * Multi USRP Clock factory function
  **********************************************************************/
 multi_usrp_clock::sptr multi_usrp_clock::make(const device_addr_t &dev_addr){
-    UHD_LOGGER_DEBUG("OCTOCLOCK") << "multi_usrp_clock::make with args " << dev_addr.to_pp_string() ;
+    UHD_LOGGER_TRACE("OCTOCLOCK") << "multi_usrp_clock::make with args " << dev_addr.to_pp_string() ;
     return sptr(new multi_usrp_clock_impl(dev_addr));
 }

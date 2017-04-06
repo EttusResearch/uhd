@@ -132,11 +132,6 @@ private:
             for(uint8_t i=0; i < num_bytes; i++){
                 if (i + start_addr >= status_addr){
                     _max2112_read_regs.set_reg(i + start_addr, regs_vector[i]);
-                    /*
-                    UHD_LOGGER_DEBUG("DBSRX") << boost::format(
-                        "DBSRX2: set reg 0x%02x, value 0x%04x"
-                    ) % int(i + start_addr) % int(_max2112_read_regs.get_reg(i + start_addr));
-                    */
                 }
                 UHD_LOGGER_DEBUG("DBSRX") << boost::format(
                     "DBSRX2: read reg 0x%02x, value 0x%04x, start_addr = 0x%04x, num_bytes %d"
@@ -155,7 +150,7 @@ private:
         //mask and return lock detect
         bool locked = (_max2112_read_regs.ld & _max2112_read_regs.vasa & _max2112_read_regs.vase) != 0;
 
-        UHD_LOGGER_DEBUG("DBSRX") << boost::format(
+        UHD_LOGGER_TRACE("DBSRX") << boost::format(
             "DBSRX2 locked: %d"
         ) % locked ;
 
@@ -307,7 +302,7 @@ static int gain_to_bbg_vga_reg(double &gain){
     UHD_LOGGER_DEBUG("DBSRX")
         << boost::format("DBSRX2 BBG Gain:\n")
         << boost::format("    %f dB, bbg: %d") % gain % reg
-        ;
+    ;
 
     return reg;
 }
