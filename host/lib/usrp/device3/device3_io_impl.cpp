@@ -860,7 +860,8 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
         xport.send = zero_copy_flow_ctrl::make(
             xport.send,
             boost::bind(&tx_flow_ctrl, task, fc_cache, fc_window, _1),
-            NULL);
+            0
+        );
 
         //Give the streamer a functor to get the send buffer
         //get_tx_buff is static so bind has no lifetime issues

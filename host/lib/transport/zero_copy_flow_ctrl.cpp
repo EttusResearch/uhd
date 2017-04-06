@@ -37,7 +37,7 @@ public:
     zero_copy_flow_ctrl_msb(
         flow_ctrl_func flow_ctrl
     ) :
-        _mb(NULL),
+        _mb(nullptr),
         _flow_ctrl(flow_ctrl)
     {
         /* NOP */
@@ -75,7 +75,7 @@ public:
     zero_copy_flow_ctrl_mrb(
         flow_ctrl_func flow_ctrl
     ) :
-        _mb(NULL),
+        _mb(nullptr),
         _flow_ctrl(flow_ctrl)
     {
         /* NOP */
