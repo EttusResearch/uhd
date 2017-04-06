@@ -182,8 +182,12 @@ namespace uhd {
 #define UHD_LOG_FATAL(component, message)
 #endif
 
+#ifndef UHD_LOG_FASTPATH_DISABLE
 #define UHD_LOG_FASTPATH(message)               \
     std::cerr << message << std::flush;
+#else
+#define UHD_LOG_FASTPATH(message)
+#endif
 
 // iostream-style logging
 #define UHD_LOGGER_TRACE(component) _UHD_LOG_INTERNAL(component, uhd::log::trace)

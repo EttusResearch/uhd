@@ -50,6 +50,11 @@ ELSE()
     ENDIF()
 ENDIF()
 
+SET(UHD_LOG_FASTPATH_DISABLE "OFF" CACHE BOOL "Disable printing of fastpath logging symbols to stderr (DOSU)")
+IF(UHD_LOG_FASTPATH_DISABLE)
+    ADD_DEFINITIONS(-DUHD_LOG_FASTPATH_DISABLE)
+ENDIF()
+
 SET(UHD_LOG_FILE "" CACHE FILE "Set UHD log file to a file in a existing directory")
 IF(NOT UHD_LOG_FILE STREQUAL "")
     ADD_DEFINITIONS(-DUHD_LOG_FILE=${UHD_LOG_FILE})
