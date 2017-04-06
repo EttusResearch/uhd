@@ -30,6 +30,35 @@ namespace fs = boost::filesystem;
 namespace pt = boost::posix_time;
 namespace ip = boost::interprocess;
 
+static const std::string PURPLE = "\033[35;1m"; // purple
+static const std::string BLUE = "\033[34;1m"; // blue
+static const std::string GREEN = "\033[32;1m"; // green
+static const std::string YELLOW = "\033[33;1m"; // yellow
+static const std::string RED = "\033[31;0m"; // red
+static const std::string BRED = "\033[31;1m"; // bright red
+static const std::string RESET_COLORS = "\033[39;0m"; // reset colors
+
+
+static const std::string verbosity_color(const uhd::log::severity_level &level){
+    switch(level){
+    case (uhd::log::trace):
+        return PURPLE;
+    case(uhd::log::debug):
+        return BLUE;
+    case(uhd::log::info):
+        return GREEN;
+    case(uhd::log::warning):
+        return YELLOW;
+    case(uhd::log::error):
+        return RED;
+    case(uhd::log::fatal):
+        return BRED;
+    default:
+        return RESET_COLORS;
+    }
+}
+
+
 /***********************************************************************
  * Global resources for the logger
  **********************************************************************/
@@ -152,6 +181,7 @@ inline std::string path_to_filename(std::string path)
     return path.substr(path.find_last_of("/\\") + 1);
 }
 
+
 uhd::_log::log::log(
     const uhd::log::severity_level verbosity,
     const std::string &file,
@@ -181,6 +211,9 @@ uhd::_log::log::log(
             const std::string time = pt::to_simple_string(pt::microsec_clock::local_time());
 #endif
             _console
+#ifdef UHD_LOG_CONSOLE_COLOR
+                << verbosity_color(verbosity)
+#endif
 #ifdef UHD_LOG_CONSOLE_TIME
                 << "[" << time << "] "
 #endif
@@ -192,6 +225,9 @@ uhd::_log::log::log(
 #endif
                 << "[" << verbosity << "] "
                 << "[" << component << "] "
+#ifdef UHD_LOG_CONSOLE_COLOR
+                << RESET_COLORS
+#endif
                 ;
         }
 #endif
@@ -225,7 +261,6 @@ uhd::_log::log::~log(void)
                 << "Logging has been disabled for this process" << std::endl
                 ;
         }
-       
     }
 }
 
