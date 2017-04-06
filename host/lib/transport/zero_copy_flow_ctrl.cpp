@@ -18,7 +18,6 @@
 #include <uhd/transport/zero_copy_flow_ctrl.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/transport/buffer_pool.hpp>
-#include <uhd/utils/msg.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <boost/format.hpp>
@@ -128,7 +127,7 @@ public:
         _send_flow_ctrl(send_flow_ctrl),
         _recv_flow_ctrl(recv_flow_ctrl)
     {
-        UHD_LOG << "Created zero_copy_flow_ctrl" << std::endl;
+        UHD_LOG_TRACE("TRANSPORT", "Created zero_copy_flow_ctrl");
 
         for (size_t i = 0; i < transport->get_num_send_frames(); i++)
         {
