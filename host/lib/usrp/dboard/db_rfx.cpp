@@ -396,7 +396,7 @@ double rfx_xcvr::set_lo_freq(
         }
     } done_loop:
 
-    UHD_LOGGER_DEBUG("RFX") << boost::format(
+    UHD_LOGGER_TRACE("RFX") << boost::format(
         "RFX tune: R=%d, BS=%d, P=%d, B=%d, A=%d, DIV2=%d"
     ) % R % BS % P % B % A % int(_div2[unit] && (!is_rx_rfx400)) ;
 

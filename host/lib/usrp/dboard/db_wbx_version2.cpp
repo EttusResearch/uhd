@@ -58,7 +58,7 @@ static double tx_pga0_gain_to_dac_volts(double &gain){
     //calculate the voltage for the aux dac
     double dac_volts = gain*slope + min_volts;
 
-    UHD_LOGGER_DEBUG("WBX") << boost::format(
+    UHD_LOGGER_TRACE("WBX") << boost::format(
         "WBX TX Gain: %f dB, dac_volts: %f V"
     ) % gain % dac_volts ;
 
