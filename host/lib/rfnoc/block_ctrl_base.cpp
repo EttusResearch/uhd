@@ -356,6 +356,7 @@ void block_ctrl_base::set_command_time(
     }
 
     iface_sptr->set_time(time_spec);
+    _set_command_time(time_spec, port);
 }
 
 time_spec_t block_ctrl_base::get_command_time(
@@ -583,4 +584,8 @@ void block_ctrl_base::_clear(const size_t port)
     sr_write(SR_CLEAR_RX_FC, 0x00C1EA12, port); // 'CLEAR', but we can write anything, really
 }
 
+void block_ctrl_base::_set_command_time(const time_spec_t & /*time_spec*/, const size_t /*port*/)
+{
+    UHD_RFNOC_BLOCK_TRACE() << "block_ctrl_base::_set_command_time() ";
+}
 // vim: sw=4 et:

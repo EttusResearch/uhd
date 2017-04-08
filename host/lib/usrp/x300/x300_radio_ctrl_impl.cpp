@@ -907,6 +907,10 @@ void x300_radio_ctrl_impl::_set_db_eeprom(i2c_iface::sptr i2c, const size_t addr
     _db_eeproms[addr] = db_eeprom;
 }
 
+void x300_radio_ctrl_impl::_set_command_time(const time_spec_t &spec, const size_t port)
+{
+   set_fe_cmd_time(spec, port);
+}
 /****************************************************************************
  * Helpers
  ***************************************************************************/
