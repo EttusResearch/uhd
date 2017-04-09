@@ -1445,7 +1445,7 @@ public:
       if (gain_range_width == 0.0) {
           return 0.0;
       }
-      double norm_gain = (get_rx_gain(ALL_GAINS, chan) - gain_range.start()) / gain_range_width;
+      double norm_gain = (get_tx_gain(ALL_GAINS, chan) - gain_range.start()) / gain_range_width;
       // Avoid rounding errors:
       if (norm_gain > 1.0) return 1.0;
       if (norm_gain < 0.0) return 0.0;
