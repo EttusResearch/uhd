@@ -19,61 +19,49 @@
 
 #include "config/ad937x_config_t.hpp"
 #include "config/ad937x_fir.hpp"
+#include "config/ad937x_gain_ctrl_config.hpp"
+#include "mpm/ad937x/adi_ctrl.hpp"
+#include "ad937x_device_types.hpp"
+#include "mpm/ad937x/ad937x_ctrl_types.hpp"
 #include "adi/t_mykonos.h"
 #include "adi/t_mykonos_gpio.h"
-#include "mpm/ad937x/adi_ctrl.hpp"
 
-#include <uhd/types/direction.hpp>
-#include <uhd/types/ranges.hpp>
 #include <uhd/exception.hpp>
 
 #include <boost/noncopyable.hpp>
-#include <mutex>
 #include <memory>
 #include <functional>
 
 class ad937x_device : public boost::noncopyable
 {
 public:
-    struct api_version_t {
-        uint32_t silicon_ver;
-        uint32_t major_ver;
-        uint32_t minor_ver;
-        uint32_t build_ver;
-    };
-
-    struct arm_version_t {
-        uint8_t major_ver;
-        uint8_t minor_ver;
-        uint8_t rc_ver;
-    };
-
     enum class gain_mode_t { MANUAL, AUTOMATIC, HYBRID };
-    enum class chain_t { ONE, TWO };
     enum class pll_t {CLK_SYNTH, RX_SYNTH, TX_SYNTH, SNIFF_SYNTH, CALPLL_SDM};
 
-    typedef std::shared_ptr<ad937x_device> sptr;
-    ad937x_device(uhd::spi_iface::sptr iface);
+    ad937x_device(uhd::spi_iface::sptr iface, mpm::ad937x::gpio::gain_pins_t gain_pins);
 
     uint8_t get_product_id();
     uint8_t get_device_rev();
-    api_version_t get_api_version();
-    arm_version_t get_arm_version();
+    mpm::ad937x::device::api_version_t get_api_version();
+    mpm::ad937x::device::arm_version_t get_arm_version();
 
-    double set_bw_filter(uhd::direction_t direction, chain_t chain, double value);
-    double set_gain(uhd::direction_t direction, chain_t chain, double value);
+    double set_bw_filter(uhd::direction_t direction, mpm::ad937x::device::chain_t chain, double value);
+    double set_gain(uhd::direction_t direction, mpm::ad937x::device::chain_t chain, double value);
     void set_agc_mode(uhd::direction_t direction, gain_mode_t mode);
     double set_clock_rate(double value);
-    void enable_channel(uhd::direction_t direction, chain_t chain, bool enable);
+    void enable_channel(uhd::direction_t direction, mpm::ad937x::device::chain_t chain, bool enable);
     double tune(uhd::direction_t direction, double value);
     double get_freq(uhd::direction_t direction);
 
     bool get_pll_lock_status(pll_t pll);
 
-    void set_fir(uhd::direction_t direction, chain_t chain, int8_t gain, const std::vector<int16_t> & fir);
-    std::vector<int16_t> get_fir(uhd::direction_t direction, chain_t chain, int8_t &gain);
+    void set_fir(uhd::direction_t direction, mpm::ad937x::device::chain_t chain, int8_t gain, const std::vector<int16_t> & fir);
+    std::vector<int16_t> get_fir(uhd::direction_t direction, mpm::ad937x::device::chain_t chain, int8_t &gain);
 
     int16_t get_temperature();
+
+    void set_enable_gain_pins(uhd::direction_t direction, mpm::ad937x::device::chain_t chain, bool enable);
+    void set_gain_pin_step_sizes(uhd::direction_t direction, mpm::ad937x::device::chain_t chain, double inc_step, double dec_step);
 
     const static double MIN_FREQ;
     const static double MAX_FREQ;
@@ -85,14 +73,17 @@ public:
     const static double TX_GAIN_STEP;
 
 private:
+    ad9371_spiSettings_t full_spi_settings;
+    ad937x_config_t mykonos_config;
+    ad937x_gain_ctrl_config_t gain_ctrl;
+
     void _initialize();
     void _load_arm(std::vector<uint8_t> & binary);
     void _run_initialization_calibrations();
     void _start_jesd();
     void _enable_tracking_calibrations();
 
-    ad9371_spiSettings_t full_spi_settings;
-    ad937x_config_t mykonos_config;
+    void _apply_gain_pins(uhd::direction_t direction, mpm::ad937x::device::chain_t chain);
 
     void _call_api_function(std::function<mykonosErr_t()> func);
     void _call_gpio_api_function(std::function<mykonosGpioErr_t()> func);

@@ -17,12 +17,13 @@
 
 #include "ad937x_device.hpp"
 #include "adi/mykonos.h"
-
-#include <mpm/ad937x/ad937x_ctrl.hpp>
+#include "mpm/ad937x/ad937x_ctrl.hpp"
 
 #include <sstream>
 #include <set>
 #include <functional>
+
+using namespace mpm::ad937x::device;
 
 static uhd::direction_t _get_direction_from_antenna(const std::string& antenna)
 {
@@ -39,19 +40,19 @@ static uhd::direction_t _get_direction_from_antenna(const std::string& antenna)
     return uhd::direction_t::RX_DIRECTION;
 }
 
-static ad937x_device::chain_t _get_chain_from_antenna(const std::string& antenna)
+static chain_t _get_chain_from_antenna(const std::string& antenna)
 {
     auto sub = antenna.substr(2, 1);
     if (sub == "1") {
-        return ad937x_device::chain_t::ONE;
+        return chain_t::ONE;
     }
     else if (sub == "2") {
-        return ad937x_device::chain_t::TWO;
+        return chain_t::TWO;
     }
     else {
         throw uhd::runtime_error("ad937x_ctrl got an invalid channel string.");
     }
-    return ad937x_device::chain_t::ONE;
+    return chain_t::ONE;
 }
 
 std::set<size_t> _get_valid_fir_lengths(const std::string& which)
@@ -67,6 +68,18 @@ std::set<size_t> _get_valid_fir_lengths(const std::string& which)
         UHD_THROW_INVALID_CODE_PATH();
         return std::set<size_t>();
     }
+}
+
+uhd::meta_range_t _get_valid_rx_gain_steps()
+{
+    // 0-7 step size is valid, in 0.5 dB increments
+    return uhd::meta_range_t(0, 3.5, 0.5);
+}
+
+uhd::meta_range_t _get_valid_tx_gain_steps()
+{
+    // 0-31 step size is valid, in 0.05 dB increments
+    return uhd::meta_range_t(0, 1.55, 0.05);
 }
 
 uhd::meta_range_t ad937x_ctrl::get_rf_freq_range(void)
@@ -105,9 +118,12 @@ uhd::meta_range_t ad937x_ctrl::get_gain_range(const std::string &which)
 class ad937x_ctrl_impl : public ad937x_ctrl
 {
 public:
-    ad937x_ctrl_impl(std::shared_ptr<std::mutex> spi_mutex, uhd::spi_iface::sptr iface) :
+    ad937x_ctrl_impl(
+        std::shared_ptr<std::mutex> spi_mutex,
+        uhd::spi_iface::sptr iface,
+        mpm::ad937x::gpio::gain_pins_t gain_pins) :
         spi_mutex(spi_mutex),
-        device(iface)
+        device(iface, gain_pins)
     {
 
     }
@@ -161,6 +177,8 @@ public:
         return device.set_gain(dir, chain, value);
     }
 
+    // TODO: does agc mode need to have a which parameter?
+    // this affects all RX channels on the device
     virtual void set_agc_mode(const std::string &which, const std::string &mode)
     {
         auto dir = _get_direction_from_antenna(which);
@@ -256,14 +274,51 @@ public:
         return device.get_temperature();
     }
 
+    virtual void set_enable_gain_pins(const std::string &which, bool enable)
+    {
+        auto dir = _get_direction_from_antenna(which);
+        auto chain = _get_chain_from_antenna(which);
+
+        std::lock_guard<std::mutex> lock(*spi_mutex);
+        device.set_enable_gain_pins(dir, chain, enable);
+    }
+
+    virtual void set_gain_pin_step_sizes(const std::string &which, double inc_step, double dec_step)
+    {
+        auto dir = _get_direction_from_antenna(which);
+        auto chain = _get_chain_from_antenna(which);
+
+        if (dir == uhd::RX_DIRECTION)
+        {
+            auto steps = _get_valid_rx_gain_steps();
+            inc_step = steps.clip(inc_step);
+            dec_step = steps.clip(dec_step);
+        }
+        else if (dir == uhd::TX_DIRECTION)
+        {
+            auto steps = _get_valid_tx_gain_steps();
+            inc_step = steps.clip(inc_step);
+            dec_step = steps.clip(dec_step);
+
+            // double comparison here should be okay because of clipping
+            if (inc_step != dec_step)
+            {
+                throw uhd::value_error("TX gain increment and decrement steps must be equal");
+            }
+        }
+
+        std::lock_guard<std::mutex> lock(*spi_mutex);
+        device.set_gain_pin_step_sizes(dir, chain, inc_step, dec_step);
+    }
+
 private:
     ad937x_device device;
     std::shared_ptr<std::mutex> spi_mutex;
 };
 
-ad937x_ctrl::sptr ad937x_ctrl::make(std::shared_ptr<std::mutex> spi_mutex, uhd::spi_iface::sptr iface)
+ad937x_ctrl::sptr ad937x_ctrl::make(std::shared_ptr<std::mutex> spi_mutex, uhd::spi_iface::sptr iface, mpm::ad937x::gpio::gain_pins_t gain_pins)
 {
-    return std::make_shared<ad937x_ctrl_impl>(spi_mutex, iface);
+    return std::make_shared<ad937x_ctrl_impl>(spi_mutex, iface, gain_pins);
 }
 
 

@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include "ad937x_ctrl_types.hpp"
+
 #include <uhd/types/direction.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/exception.hpp>
@@ -28,38 +30,126 @@
 #include <set>
 #include <mutex>
 
+/*! AD937x Control Interface
+*
+* A sane API for configuring AD937x chips.
+*
+* \section ad937x_which The `which` parameter
+*
+* Many function calls require a `which` string parameter to select
+* the RF frontend. Valid values for `which` are:
+* - RX1, RX2
+* - TX1, TX2
+*
+* Frontend numbering is as designed by the AD9371.
+*
+* While all functions that use `which` specify an individual channel,
+* certain functions affect more than one channel due to the limitations of
+* the AD9371.
+*/
 class ad937x_ctrl : public boost::noncopyable
 {
 public:
     typedef std::shared_ptr<ad937x_ctrl> sptr;
-    static sptr make(std::shared_ptr<std::mutex> spi_mutex, uhd::spi_iface::sptr iface);
+    /*! \brief make a new AD9371 ctrl object using the specified SPI iface
+     *
+     * \param spi_mutex a mutex that will be locked whenever the SPI iface is to be used
+     * \param iface the spi_iface for accessing the AD9371
+     */
+    static sptr make(
+        std::shared_ptr<std::mutex> spi_mutex,
+        uhd::spi_iface::sptr iface,
+        mpm::ad937x::gpio::gain_pins_t gain_pins);
     virtual ~ad937x_ctrl(void) {}
 
+    //! get the RF frequency range for the AD9371
     static uhd::meta_range_t get_rf_freq_range(void);
+
+    //! get the BW filter range for the AD9371
     static uhd::meta_range_t get_bw_filter_range(void);
+
+    //! get valid clock rates for the AD9371
     static std::vector<double> get_clock_rates(void);
+
+    //! get the gain range for a frontend (RX, TX)
     static uhd::meta_range_t get_gain_range(const std::string &which);
 
+    //! read the product ID from the device
     virtual uint8_t get_product_id() = 0;
+
+    //! read the product revision from the device
     virtual uint8_t get_device_rev() = 0;
+
+    /*! \brief get the API version from the software driver
+     *
+     * \return a version string in the format "SILICON.MAJOR.MINOR.BUILD"
+     */
     virtual std::string get_api_version() = 0;
+
+    /*! \brief get the currently loaded ARM version from the device
+     *
+     * \return a version string in the format "MAJOR.MINOR.RC"
+     */
     virtual std::string get_arm_version() = 0;
 
+    //! set the BW filter for the frontend which
     virtual double set_bw_filter(const std::string &which, double value) = 0;
+
+    /*! \brief set the gain for the frontend which
+     *
+     * \param which frontend string
+     * \param value target gain value
+     * \return actual gain value
+     */
     virtual double set_gain(const std::string &which, double value) = 0;
 
+    /*! \brief set the agc mode for all RX channels
+     *
+     * \param which frontend string
+     * \param mode requested mode (automatic, manual, hybrid)
+     */
     virtual void set_agc_mode(const std::string &which, const std::string &mode) = 0;
 
+    /*! \brief set the clock rate for the device
+     *
+     * \param value requested clock rate
+     * \return actual clock rate
+     */
     virtual double set_clock_rate(double value) = 0;
+
+    //! enable the frontend which
     virtual void enable_channel(const std::string &which, bool enable) = 0;
 
+    /*! \brief set the RF frequency for the direction specified in which
+     * Sets the RF frequency.  This is a per direction setting.
+     * \param which frontend string to specify direction to tune
+     * \param value target frequency
+     * \return actual frequency
+     */
     virtual double set_freq(const std::string &which, double value) = 0;
+
+    /*! \brief get the RF frequency for the direction specified in which
+    /* Gets the RF frequency.  This is a per direction setting.
+     * \param which frontend string to specify direction to get
+     * \return actual frequency
+     */
     virtual double get_freq(const std::string &which) = 0;
 
+    //! set the FIR filter for the frontend which
     virtual void set_fir(const std::string &which, int8_t gain, const std::vector<int16_t> & fir) = 0;
+
+    //! get the FIR filter for the frontend which
     virtual std::vector<int16_t> get_fir(const std::string &which, int8_t &gain) = 0;
 
+    // TODO: update docstring with temperature unit and calibration information
+    //! get the device temperature
     virtual int16_t get_temperature() = 0;
+
+    //! enable or disable gain ctrl pins for one channel
+    virtual void set_enable_gain_pins(const std::string &which, bool enable) = 0;
+
+    //! set step sizes for gain ctrl pins for one channel
+    virtual void set_gain_pin_step_sizes(const std::string &which, double inc_step, double dec_step) = 0;
 };
 
 #ifdef LIBMPM_PYTHON

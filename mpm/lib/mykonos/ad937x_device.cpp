@@ -22,6 +22,10 @@
 #include <functional>
 #include <iostream>
 
+using namespace mpm::ad937x::device;
+using namespace mpm::ad937x::gpio;
+using namespace uhd;
+
 const double ad937x_device::MIN_FREQ = 300e6;
 const double ad937x_device::MAX_FREQ = 6e9;
 const double ad937x_device::MIN_RX_GAIN = 0.0;
@@ -109,42 +113,45 @@ void ad937x_device::_call_gpio_api_function(std::function<mykonosGpioErr_t()> fu
 
 void ad937x_device::_initialize()
 {
+    // TODO: make this reset actually do something (implement CMB_HardReset or replace)
     _call_api_function(std::bind(MYKONOS_resetDevice, mykonos_config.device));
 
     if (get_product_id() != AD9371_PRODUCT_ID)
     {
-        throw uhd::runtime_error("AD9371 product ID does not match expected ID!");
+        throw runtime_error("AD9371 product ID does not match expected ID!");
     }
 
     _call_api_function(std::bind(MYKONOS_initialize, mykonos_config.device));
 
     if (!get_pll_lock_status(pll_t::CLK_SYNTH))
     {
-        throw uhd::runtime_error("AD937x CLK_SYNTH PLL failed to lock in initialize()");
+        throw runtime_error("AD937x CLK_SYNTH PLL failed to lock in initialize()");
     }
 
     std::vector<uint8_t> binary(98304, 0);
     _load_arm(binary);
 
-    tune(uhd::RX_DIRECTION, RX_DEFAULT_FREQ);
-    tune(uhd::TX_DIRECTION, TX_DEFAULT_FREQ);
+    // TODO: Add multi-chip sync code
+
+    tune(RX_DIRECTION, RX_DEFAULT_FREQ);
+    tune(TX_DIRECTION, TX_DEFAULT_FREQ);
 
     // TODO: wait 200ms or change to polling
     if (!get_pll_lock_status(pll_t::RX_SYNTH))
     {
-        throw uhd::runtime_error("AD937x RX PLL failed to lock in initialize()");
+        throw runtime_error("AD937x RX PLL failed to lock in initialize()");
     }
     if (!get_pll_lock_status(pll_t::TX_SYNTH))
     {
-        throw uhd::runtime_error("AD937x TX PLL failed to lock in initialize()");
+        throw runtime_error("AD937x TX PLL failed to lock in initialize()");
     }
 
     // TODO: ADD GPIO CTRL setup here
 
-    set_gain(uhd::RX_DIRECTION, chain_t::ONE, 0);
-    set_gain(uhd::RX_DIRECTION, chain_t::TWO, 0);
-    set_gain(uhd::TX_DIRECTION, chain_t::ONE, 0);
-    set_gain(uhd::TX_DIRECTION, chain_t::TWO, 0);
+    set_gain(RX_DIRECTION, chain_t::ONE, 0);
+    set_gain(RX_DIRECTION, chain_t::TWO, 0);
+    set_gain(TX_DIRECTION, chain_t::ONE, 0);
+    set_gain(TX_DIRECTION, chain_t::TWO, 0);
 
     _run_initialization_calibrations();
 
@@ -160,6 +167,11 @@ void ad937x_device::_initialize()
     // TODO: ordering of this doesn't seem right, intuitively, verify this works
     _call_api_function(std::bind(MYKONOS_setObsRxPathSource, mykonos_config.device, OBS_RXOFF));
     _call_api_function(std::bind(MYKONOS_setObsRxPathSource, mykonos_config.device, OBS_INTERNALCALS));
+
+    _apply_gain_pins(RX_DIRECTION, chain_t::ONE);
+    _apply_gain_pins(RX_DIRECTION, chain_t::TWO);
+    _apply_gain_pins(TX_DIRECTION, chain_t::ONE);
+    _apply_gain_pins(TX_DIRECTION, chain_t::TWO);
 }
 
 // TODO: review const-ness in this function with respect to ADI API
@@ -169,7 +181,7 @@ void ad937x_device::_load_arm(std::vector<uint8_t> & binary)
 
     if (binary.size() == ARM_BINARY_SIZE)
     {
-        throw uhd::runtime_error("ad937x_device ARM is not the correct size!");
+        throw runtime_error("ad937x_device ARM is not the correct size!");
     }
 
     _call_api_function(std::bind(MYKONOS_loadArmFromBinary, mykonos_config.device, &binary[0], binary.size()));
@@ -241,9 +253,10 @@ void ad937x_device::_enable_tracking_calibrations()
     _call_api_function(std::bind(MYKONOS_enableTrackingCals, mykonos_config.device, TRACKING_CALS));
 }
 
-ad937x_device::ad937x_device(uhd::spi_iface::sptr iface) :
+ad937x_device::ad937x_device(spi_iface::sptr iface, gain_pins_t gain_pins) :
     full_spi_settings(iface),
-    mykonos_config(&full_spi_settings.spi_settings)
+    mykonos_config(&full_spi_settings.spi_settings),
+    gain_ctrl(gain_pins)
 {
     _initialize();
 }
@@ -262,7 +275,7 @@ uint8_t ad937x_device::get_device_rev()
     return rev;
 }
 
-ad937x_device::api_version_t ad937x_device::get_api_version()
+api_version_t ad937x_device::get_api_version()
 {
     api_version_t api;
     _call_api_function(std::bind(MYKONOS_getApiVersion,
@@ -274,7 +287,7 @@ ad937x_device::api_version_t ad937x_device::get_api_version()
     return api;
 }
 
-ad937x_device::arm_version_t ad937x_device::get_arm_version()
+arm_version_t ad937x_device::get_arm_version()
 {
     arm_version_t arm;
     _call_api_function(std::bind(MYKONOS_getArmVersion,
@@ -293,14 +306,14 @@ double ad937x_device::set_clock_rate(double req_rate)
     return static_cast<double>(rate);
 }
 
-void ad937x_device::enable_channel(uhd::direction_t direction, chain_t chain, bool enable)
+void ad937x_device::enable_channel(direction_t direction, chain_t chain, bool enable)
 {
     // TODO:
     // Turns out the only code in the API that actually sets the channel enable settings
-    // _initialize(). Need to figure out how to deal with this.
+    // is _initialize(). Need to figure out how to deal with this.
 }
 
-double ad937x_device::tune(uhd::direction_t direction, double value)
+double ad937x_device::tune(direction_t direction, double value)
 {
     // I'm not sure why we set the PLL value in the config AND as a function parameter
     // but here it is
@@ -309,11 +322,11 @@ double ad937x_device::tune(uhd::direction_t direction, double value)
     uint64_t integer_value = static_cast<uint64_t>(value);
     switch (direction)
     {
-    case uhd::TX_DIRECTION:
+    case TX_DIRECTION:
         pll = TX_PLL;
         mykonos_config.device->tx->txPllLoFrequency_Hz = integer_value;
         break;
-    case uhd::RX_DIRECTION:
+    case RX_DIRECTION:
         pll = RX_PLL;
         mykonos_config.device->rx->rxPllLoFrequency_Hz = integer_value;
         break;
@@ -330,13 +343,13 @@ double ad937x_device::tune(uhd::direction_t direction, double value)
     return static_cast<double>(coerced_pll);
 }
 
-double ad937x_device::get_freq(uhd::direction_t direction)
+double ad937x_device::get_freq(direction_t direction)
 {
     mykonosRfPllName_t pll;
     switch (direction)
     {
-    case uhd::TX_DIRECTION: pll = TX_PLL; break;
-    case uhd::RX_DIRECTION: pll = RX_PLL; break;
+    case TX_DIRECTION: pll = TX_PLL; break;
+    case RX_DIRECTION: pll = RX_PLL; break;
     default:
         UHD_THROW_INVALID_CODE_PATH();
     }
@@ -355,22 +368,22 @@ bool ad937x_device::get_pll_lock_status(pll_t pll)
     switch (pll)
     {
     case pll_t::CLK_SYNTH:
-        return (pll_status & 0x01) ? 1 : 0;
+        return (pll_status & 0x01) > 0;
     case pll_t::RX_SYNTH:
-        return (pll_status & 0x02) ? 1 : 0;
+        return (pll_status & 0x02) > 0;
     case pll_t::TX_SYNTH:
-        return (pll_status & 0x04) ? 1 : 0;
+        return (pll_status & 0x04) > 0;
     case pll_t::SNIFF_SYNTH:
-        return (pll_status & 0x08) ? 1 : 0;
+        return (pll_status & 0x08) > 0;
     case pll_t::CALPLL_SDM:
-        return (pll_status & 0x10) ? 1 : 0;
+        return (pll_status & 0x10) > 0;
     default:
         UHD_THROW_INVALID_CODE_PATH();
         return false;
     }
 }
 
-double ad937x_device::set_bw_filter(uhd::direction_t direction, chain_t chain, double value)
+double ad937x_device::set_bw_filter(direction_t direction, chain_t chain, double value)
 {
     // TODO: implement
     return double();
@@ -395,12 +408,12 @@ uint16_t ad937x_device::_convert_tx_gain(double gain)
 }
 
 
-double ad937x_device::set_gain(uhd::direction_t direction, chain_t chain, double value)
+double ad937x_device::set_gain(direction_t direction, chain_t chain, double value)
 {
     double coerced_value;
     switch (direction)
     {
-    case uhd::TX_DIRECTION:
+    case TX_DIRECTION:
     {
         uint16_t attenuation = _convert_tx_gain(value);
         coerced_value = static_cast<double>(attenuation);
@@ -420,7 +433,7 @@ double ad937x_device::set_gain(uhd::direction_t direction, chain_t chain, double
         _call_api_function(std::bind(func, mykonos_config.device, attenuation));
         break;
     }
-    case uhd::RX_DIRECTION:
+    case RX_DIRECTION:
     {
         uint8_t gain = _convert_rx_gain(value);
         coerced_value = static_cast<double>(gain);
@@ -446,11 +459,11 @@ double ad937x_device::set_gain(uhd::direction_t direction, chain_t chain, double
     return coerced_value;
 }
 
-void ad937x_device::set_agc_mode(uhd::direction_t direction, gain_mode_t mode)
+void ad937x_device::set_agc_mode(direction_t direction, gain_mode_t mode)
 {
     switch (direction)
     {
-    case uhd::RX_DIRECTION:
+    case RX_DIRECTION:
         switch (mode)
         {
         case gain_mode_t::MANUAL:
@@ -471,17 +484,17 @@ void ad937x_device::set_agc_mode(uhd::direction_t direction, gain_mode_t mode)
 }
 
 void ad937x_device::set_fir(
-    const uhd::direction_t direction,
+    const direction_t direction,
     const chain_t chain,
     int8_t gain,
     const std::vector<int16_t> & fir)
 {
     switch (direction)
     {
-    case uhd::TX_DIRECTION:
+    case TX_DIRECTION:
         mykonos_config.tx_fir_config.set_fir(gain, fir);
         break;
-    case uhd::RX_DIRECTION:
+    case RX_DIRECTION:
         mykonos_config.rx_fir_config.set_fir(gain, fir);
         break;
     default:
@@ -490,15 +503,15 @@ void ad937x_device::set_fir(
 }
 
 std::vector<int16_t> ad937x_device::get_fir(
-    const uhd::direction_t direction,
+    const direction_t direction,
     const chain_t chain,
     int8_t &gain)
 {
     switch (direction)
     {
-    case uhd::TX_DIRECTION:
+    case TX_DIRECTION:
         return mykonos_config.tx_fir_config.get_fir(gain);
-    case uhd::RX_DIRECTION:
+    case RX_DIRECTION:
         return mykonos_config.rx_fir_config.get_fir(gain);
     default:
         UHD_THROW_INVALID_CODE_PATH();
@@ -511,5 +524,88 @@ int16_t ad937x_device::get_temperature()
     mykonosTempSensorStatus_t status;
     _call_gpio_api_function(std::bind(MYKONOS_readTempSensor, mykonos_config.device, &status));
     return status.tempCode;
+}
+
+void ad937x_device::set_enable_gain_pins(direction_t direction, chain_t chain, bool enable)
+{
+    gain_ctrl.config.at(direction).at(chain).enable = enable;
+    _apply_gain_pins(direction, chain);
+}
+
+void ad937x_device::set_gain_pin_step_sizes(direction_t direction, chain_t chain, double inc_step, double dec_step)
+{
+    if (direction == RX_DIRECTION)
+    {
+        gain_ctrl.config.at(direction).at(chain).inc_step = static_cast<uint8_t>(inc_step / 0.5);
+        gain_ctrl.config.at(direction).at(chain).dec_step = static_cast<uint8_t>(dec_step / 0.5);
+    } else if (direction == TX_DIRECTION) {
+        // !!! TX is attenuation direction, so the pins are flipped !!!
+        gain_ctrl.config.at(direction).at(chain).dec_step = static_cast<uint8_t>(inc_step / 0.05);
+        gain_ctrl.config.at(direction).at(chain).inc_step = static_cast<uint8_t>(dec_step / 0.05);
+    } else {
+        UHD_THROW_INVALID_CODE_PATH();
+    }
+    _apply_gain_pins(direction, chain);
+}
+
+void ad937x_device::_apply_gain_pins(direction_t direction, chain_t chain)
+{
+    using namespace std::placeholders;
+
+    // get this channels configuration
+    auto chan = gain_ctrl.config.at(direction).at(chain);
+
+    // TX direction does not support different steps per direction
+    if (direction == TX_DIRECTION)
+    {
+        UHD_ASSERT_THROW(chan.inc_step == chan.dec_step);
+    }
+
+    switch (direction)
+    {
+        case RX_DIRECTION:
+        {
+            std::function<decltype(MYKONOS_setRx1GainCtrlPin)> func;
+            switch (chain)
+            {
+            case chain_t::ONE:
+                func = MYKONOS_setRx1GainCtrlPin;
+                break;
+            case chain_t::TWO:
+                func = MYKONOS_setRx2GainCtrlPin;
+                break;
+            }
+            _call_gpio_api_function(
+                std::bind(func,
+                    mykonos_config.device,
+                    chan.inc_step,
+                    chan.dec_step,
+                    chan.inc_pin,
+                    chan.dec_pin,
+                    chan.enable));
+        }
+        case TX_DIRECTION:
+        {
+            // TX sets attenuation, but the configuration should be stored correctly
+            std::function<decltype(MYKONOS_setTx2AttenCtrlPin)> func;
+            switch (chain)
+            {
+            case chain_t::ONE:
+                // TX1 has an extra parameter "useTx1ForTx2" that we do not support
+                func = std::bind(MYKONOS_setTx1AttenCtrlPin, _1, _2, _3, _4, _5, 0);
+                break;
+            case chain_t::TWO:
+                func = MYKONOS_setTx2AttenCtrlPin;
+                break;
+            }
+            _call_gpio_api_function(
+                std::bind(func,
+                    mykonos_config.device,
+                    chan.inc_step,
+                    chan.inc_pin,
+                    chan.dec_pin,
+                    chan.enable));
+        }
+    }
 }
 

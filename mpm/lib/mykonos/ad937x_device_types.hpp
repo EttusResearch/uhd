@@ -15,18 +15,32 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "mpm/dboards/magnesium_manager.hpp"
-#include "mpm/spi/spidev_iface.hpp"
-#include <boost/make_shared.hpp>
+#pragma once
 
-using namespace mpm::dboards;
+// Include this to get all types for ad937x_device functions
 
-magnesium_periph_manager::magnesium_periph_manager(
-    std::string lmk_spidev, std::string mykonos_spidev
-    ): _spi_mutex(std::make_shared<std::mutex>())
-{
-    _clock_spi = lmk04828_spi_iface::make(mpm::spi::spidev_iface::make(lmk_spidev));
-    _clock_ctrl = lmk04828_iface::make(_clock_spi->get_write_fn(), _clock_spi->get_read_fn());
-    _mykonos_spi = mpm::spi::spidev_iface::make(mykonos_spidev);
-    _mykonos_ctrl = ad937x_ctrl::make(_spi_mutex, _mykonos_spi, mpm::ad937x::gpio::gain_pins_t());
-};
+#include <uhd/types/direction.hpp>
+#include <uhd/types/ranges.hpp>
+
+namespace mpm {
+    namespace ad937x {
+        namespace device {
+
+            struct api_version_t {
+                uint32_t silicon_ver;
+                uint32_t major_ver;
+                uint32_t minor_ver;
+                uint32_t build_ver;
+            };
+
+            struct arm_version_t {
+                uint8_t major_ver;
+                uint8_t minor_ver;
+                uint8_t rc_ver;
+            };
+
+            enum class chain_t { ONE, TWO };
+        }
+    }
+}
+
