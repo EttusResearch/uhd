@@ -45,35 +45,58 @@ class SharedState(object):
             lock=self.lock)  # String with max length of 256
 
 
+class SID(object):
+    def __init__(self, sid=0):
+        self.src_addr = sid >> 24
+        self.src_ep = (sid >> 16) & 0xFF
+        self.dst_addr = (sid >> 8) & 0xFF
+        self.dst_ep = sid & 0xFF
+
+    def set_src_addr(self, new_addr):
+        self.src_addr =  new_addr & 0xFF
+
+    def set_dst_addr(self, new_addr):
+        self.dst_addr = new_addr & 0xFF
+
+    def set_src_ep(self, new_addr):
+        self.src_ep = new_addr & 0xFF
+
+    def set_dst_ep(self, new_addr):
+        self.dst_ep = new_addr & 0xFF
+
+    def get(self):
+        return (self.src_addr << 24) | (self.src_ep << 16) | (self.dst_addr << 8) | self.dst_ep
+
+
 class EEPROM(object):
     """
     Reads out common properties and rawdata out of a nvmem path
     """
     # eeprom_header contains:
     # 4 bytes magic
-    # 4 bytes CRC
-    # 2 bytes data_version
+    # 4 bytes version
+    # 4x4 bytes mcu_flags -> throw them away
     # 2 bytes hw_pid
     # 2 bytes hw_rev
-    # 2 bytes pad
     #
-    # 16 bytes in total
-    eeprom_header = struct.Struct("I I H H H 2x")
+    # 28 bytes in total
+    eeprom_header = struct.Struct("!I I 16x H H")
 
     def read_eeprom(self, nvmem_path):
         """
-        Read the EEPROM located at nvmem_path and return a tuple (header, body)
+        Read the EEPROM located at nvmem_path and return a tuple (header, data)
         Header is already parsed in the common header fields
+        Data contains the full eeprom data structure
         """
         with open(nvmem_path, "rb") as nvmem_file:
-            header = nvmem_file.read(16)
-            data = nvmem_file.read(240)
-        header = self.eeprom_header.unpack(header)
+            data = nvmem_file.read(256)
+        _header = self.eeprom_header.unpack_from(data)
+        print hex(_header[0]), hex(_header[1]), hex(_header[2]), hex(_header[3])
         header = {
-            "magic": header[0],
-            "crc": header[1],
-            "data_version": header[2],
-            "hw_pid": header[3],
-            "hw_rev": header[4],
+            "magic": _header[0],
+            "version": _header[1],
+            "hw_pid": _header[2],
+            "hw_rev": _header[3],
         }
+        print header
         return (header, data)

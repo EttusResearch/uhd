@@ -185,20 +185,18 @@ class MPMServer(RPCServer):
         This is as safe method which can be called without a claim on the device
         """
         info = self.periph_manager._get_device_info()
-        if self.host in ["127.0.0.1", "::1"]:
+        if self.client_host in ["127.0.0.1", "::1"]:
             info["connection"] = "local"
         else:
             info["connection"] = "remote"
         return info
 
-    def probe_interface(self, token):
+    def allocate_sid(self, token, *args):
         """
-        Forwards the call to periph_manager._probe_interface with the client ip addresss
-        as argument. Should be used to probe the data interfaces on the device
+        Forwards the call to periph_manager._allocate_sid with the client ip addresss
+        as argument. Should be used to setup interfaces
         """
-        if token[:256] != self._state.claim_token.value:
-            return False
-        return self.periph_manager._probe_interface(self.host)
+        return self.periph_manager._allocate_sid(self.client_host, *args)
 
 
 

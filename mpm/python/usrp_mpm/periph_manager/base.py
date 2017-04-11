@@ -21,7 +21,7 @@ Mboard implementation base class
 import os
 from ..types import EEPROM
 from .. import dboard_manager
-from .udev import get_eeprom
+from .udev import get_eeprom_path
 from .udev import get_spidev_nodes
 from six import iteritems
 
@@ -44,17 +44,20 @@ class PeriphManagerBase(object):
     dboard_eeprom_addrs = {}
     dboard_spimaster_addrs = {}
     updateable_components = []
+    sid_endpoints = {}
+    available_endpoints = range(256)
 
     def __init__(self):
         # I know my EEPROM address, lets use it
         self.overlays = ""
         (self._eeprom_head, self._eeprom_rawdata) = EEPROM().read_eeprom(
-            get_eeprom(self.mboard_eeprom_addr))
+            get_eeprom_path(self.mboard_eeprom_addr))
+        print self._eeprom_head
         self._dboard_eeproms = {}
         for dboard_slot, eeprom_addr in self.dboard_eeprom_addrs.iteritems():
             spi_devices = []
             # I know EEPROM adresses for my dboard slots
-            eeprom_data = EEPROM().read_eeprom(get_eeprom(eeprom_addr))
+            eeprom_data = EEPROM().read_eeprom(get_eeprom_path(eeprom_addr))
             # I know spidev masters on the dboard slots
             hw_pid = eeprom_data[0].get("hw_pid", 0)
             if hw_pid in dboard_manager.HW_PIDS:
@@ -116,7 +119,7 @@ class PeriphManagerBase(object):
         # Init dboards
         pass
 
-    def _probe_interface(self, sender_addr):
+    def _allocate_sid(self, sender_addr, sid, xbar_src_addr, xbar_src_port):
         """
         Overload this method in actual device implementation
         """
@@ -127,4 +130,3 @@ class PeriphManagerBase(object):
         Overload this method in actual device implementation
         """
         return []
-

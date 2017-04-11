@@ -16,19 +16,22 @@
 #
 
 import pyudev
+import os
+from logging import getLogger
+LOG = getLogger(__name__)
 
 
-def get_eeprom(address):
+def get_eeprom_path(address):
     """
     Return EEPROM device path for a given I2C address
     """
     context = pyudev.Context()
     parent = pyudev.Device.from_name(context, "platform", address)
-    paths = [device.dev_node if device.dev_node is not None else device.sys_path
+    paths = [device.device_node if device.device_node is not None else device.sys_path
              for device in context.list_devices(parent=parent, subsystem="nvmem")]
     if len(paths) != 1:
         raise Exception("{0} paths to EEPROM found!".format(len(paths)))
-    return paths[0]
+    return paths[0] + "/nvmem"
 
 
 def get_spidev_nodes(spi_master):
@@ -37,6 +40,30 @@ def get_spidev_nodes(spi_master):
     """
     context = pyudev.Context()
     parent = pyudev.Device.from_name(context, "platform", spi_master)
-    paths = [device.dev_node if device.dev_node is not None else device.sys_path
+    paths = [device.sys_path
              for device in context.list_devices(parent=parent, subsystem="spidev")]
     return paths
+
+def get_uio_node(uio_name):
+    """
+    Return found uio device path for a give parent name
+    """
+    context = pyudev.Context()
+    paths = [device.sys_path
+             for device in context.list_devices(subsystem="uio")]
+    LOG.debug("get_uio_node")
+    LOG.debug("got paths: %s", paths)
+    for path in paths:
+        with open(os.path.join(path, "maps", "map0", "name"), "r") as uio_file:
+            name = uio_file.read()
+        LOG.debug("uio_node name: %s", name.strip())
+        if name.strip() == uio_name:
+            with open(os.path.join(path, "maps", "map0", "size"), "r") as uio_file:
+                size = uio_file.read()
+            LOG.debug("uio_node size: %s", size.strip())
+            LOG.debug("uio_node syspath: %s", path)
+            # device = pyudev.Device.from_sys_path(context, path)
+            LOG.debug("got udev device")
+            LOG.debug("device_node: %s size: %s", "/dev/uio0", size.strip())
+            return ("/dev/uio0", int(size.strip()))
+    return ("", 0)
