@@ -53,8 +53,8 @@ netd_mboard_impl::netd_mboard_impl(const std::string& addr)
         };
         boost::this_thread::sleep_for(boost::chrono::milliseconds(1000));
     });
-    std::vector<std::string> data_ifaces =
-        rpc.call<std::vector<std::string>>("get_interfaces", _rpc_token);
+    // std::vector<std::string> data_ifaces =
+    //     rpc.call<std::vector<std::string>>("get_interfaces", _rpc_token);
 
     // discover path to device and tell MPM our MAC address seen at the data
     // interfaces
@@ -81,9 +81,11 @@ netd_mboard_impl::uptr netd_mboard_impl::make(const std::string& addr)
     return mb;
 }
 
-bool netd_mboard_impl::claim() { return rpc.call<bool>("claim", _rpc_token); }
+bool netd_mboard_impl::claim() { return rpc.call<bool>("reclaim", _rpc_token); }
 
-netd_impl::netd_impl(const device_addr_t& device_addr) : usrp::device3_impl()
+netd_impl::netd_impl(const device_addr_t& device_addr) :
+    usrp::device3_impl(),
+    _sid_framer(0)
 {
     UHD_LOGGER_INFO("NETD") << "NETD initialization sequence...";
     _tree->create<std::string>("/name").set("NETD - Series device");
@@ -151,9 +153,9 @@ netd_mboard_impl::uptr netd_impl::setup_mb(const size_t mb_i,
 // }
 // Everything fake below here
 
-both_xports_t netd_impl::make_transport(const sid_t&,
-                                        usrp::device3_impl::xport_type_t,
-                                        const uhd::device_addr_t&)
+both_xports_t netd_impl::make_transport(const sid_t& address,
+                                        usrp::device3_impl::xport_type_t xport_type,
+                                        const uhd::device_addr_t& args)
 {
     //const size_t mb_index = address.get_dst_addr();
     size_t mb_index = 0;
@@ -191,8 +193,6 @@ both_xports_t netd_impl::make_transport(const sid_t&,
     xports.send_sid = _mb[mb_index]->allocate_sid(port, address, xbar_src_addr, xbar_src_dst);
     xports.recv_sid = xports.send_sid.reversed();
 
-    //std::cout << xports.send_sid << std::endl;
-    //std::cout << xports.recv_sid << std::endl;
 
     xports.recv_buff_size = buff_params.recv_buff_size;
     xports.send_buff_size = buff_params.send_buff_size;

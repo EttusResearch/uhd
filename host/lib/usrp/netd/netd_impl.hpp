@@ -54,6 +54,10 @@ class netd_mboard_impl
     std::string loaded_fpga_image;
     std::string xport_path;
     uhd::rpc_client rpc;
+    uhd::sid_t allocate_sid(const uint16_t port,
+                            const uhd::sid_t address,
+                            const uint32_t xbar_src_addr,
+                            const uint32_t xbar_src_dst);
 
   private:
     bool claim();
@@ -76,6 +80,7 @@ class netd_impl : public uhd::usrp::device3_impl
 
   private:
     std::vector<netd_mboard_impl::uptr> _mb;
+    size_t _sid_framer;
 };
 uhd::device_addrs_t netd_find(const uhd::device_addr_t& hint_);
 #endif /* INCLUDED_NETD_IMPL_HPP */
