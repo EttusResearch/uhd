@@ -13,10 +13,10 @@
 extern "C" {
 #endif
 
-#include "mykonos.h"
-#include "t_mykonos_gpio.h"
+#include "../mykonos.h"
+#include "../t_mykonos_gpio.h"
 #include "t_mykonos_dbgjesd.h"
-#include "mykonos_user.h"
+#include "../mykonos_user.h"
 
 /*
  *****************************************************************************

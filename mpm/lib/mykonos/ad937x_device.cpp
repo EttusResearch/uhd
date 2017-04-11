@@ -18,6 +18,7 @@
 #include "ad937x_device.hpp"
 #include "adi/mykonos.h"
 #include "adi/mykonos_gpio.h"
+#include "adi/mykonos_debug/mykonos_dbgjesd.h"
 
 #include <functional>
 #include <iostream>
@@ -111,7 +112,84 @@ void ad937x_device::_call_gpio_api_function(std::function<mykonosGpioErr_t()> fu
     }
 }
 
-void ad937x_device::_initialize()
+void ad937x_device::_call_debug_api_function(std::function<mykonosDbgErr_t()> func)
+{
+    auto error = func();
+    if (error != MYKONOS_ERR_DBG_OK)
+    {
+        std::cout << getDbgJesdMykonosErrorMessage(error);
+        // TODO: make UHD exception
+        //throw std::exception(getMykonosErrorMessage(error));
+    }
+}
+
+// TODO: delete this comment closer to release
+/*
+EX 1 Preconditions
+EX      1. Check revision register
+EX      2. Initialize Clocking
+EX      3. Initialize FPGA JESD
+
+begin_initialize()
+IN 2 Start
+IN      1. Reset Myk
+IN      2. Init Myk
+IN      3. Check base PLL
+IN      4. Start Multichip Sync
+
+EX 3 Multichip Pulses
+EX      1. Send 2 SYSREF pulses
+
+finish_initialize()
+IN 4 Verify Multichip
+IN    1. Verify Multichip
+IN    2. Complete Init
+
+--skipping this for now using special hack from jepson
+--IN    3. Load ARM
+--IN    4. RF Start
+--IN        Set RF Freq
+--IN        Check RF PLLs
+--IN        Set GPIO controls
+--IN        Set gain
+--IN        Init TX attenuations
+--IN        Initialization Calibrations
+--IN        External LOL Calibration (do we need this ???)
+
+--separate functions here for reusability--
+
+start_jesd_rx()
+IN 5 Start Myk JESD RX
+IN    1. Reset Myk JESD RX (???)
+IN    2. Enable Myk JESD RX Transmitter
+
+EX 6 Start FPGA CGS
+EX    1. Reset and Ready RX JESD for CGS
+EX    2. Reset and Ready TX JESD for CGS
+
+start_jesd_tx()
+IN 7 Start Myk JESD TX
+IN    1. Disable Myk JESD Receiver
+IN    2. Reset Myk JESD Receiver
+IN    3. Enable Myk JESD Receiver
+
+EX 8 Finish CGS
+EX    1. Enable FPGA LMFC Generator
+EX    2. Send SYSREF Pulse
+EX    3. Wait (200 ms ???)
+EX    4. Check TX Core is Synced
+EX    5. Check RX Core is Synced
+
+OTHER FUNCTIONS THAT SHOULD BE WRITTEN
+get_framer_status() get_deframer_status() Read framer/deframer status
+get_deframer_irq() Read Deframer IRQ
+get_ilas_config_match() Check ILAS Config Match
+set_jesd_loopback() Enable Loopback
+stop_jesd() Stop Link
+
+*/
+
+void ad937x_device::begin_initialization()
 {
     // TODO: make this reset actually do something (implement CMB_HardReset or replace)
     _call_api_function(std::bind(MYKONOS_resetDevice, mykonos_config.device));
@@ -128,129 +206,82 @@ void ad937x_device::_initialize()
         throw runtime_error("AD937x CLK_SYNTH PLL failed to lock in initialize()");
     }
 
-    std::vector<uint8_t> binary(98304, 0);
-    _load_arm(binary);
-
-    // TODO: Add multi-chip sync code
-
-    tune(RX_DIRECTION, RX_DEFAULT_FREQ);
-    tune(TX_DIRECTION, TX_DEFAULT_FREQ);
-
-    // TODO: wait 200ms or change to polling
-    if (!get_pll_lock_status(pll_t::RX_SYNTH))
-    {
-        throw runtime_error("AD937x RX PLL failed to lock in initialize()");
-    }
-    if (!get_pll_lock_status(pll_t::TX_SYNTH))
-    {
-        throw runtime_error("AD937x TX PLL failed to lock in initialize()");
-    }
-
-    // TODO: ADD GPIO CTRL setup here
-
-    set_gain(RX_DIRECTION, chain_t::ONE, 0);
-    set_gain(RX_DIRECTION, chain_t::TWO, 0);
-    set_gain(TX_DIRECTION, chain_t::ONE, 0);
-    set_gain(TX_DIRECTION, chain_t::TWO, 0);
-
-    _run_initialization_calibrations();
-
-    // TODO: do external LO leakage calibration here if hardware supports it
-    // I don't think we do?
-
-    _start_jesd();
-    _enable_tracking_calibrations();
-
-    // radio is ON!
-    _call_api_function(std::bind(MYKONOS_radioOn, mykonos_config.device));
-
-    // TODO: ordering of this doesn't seem right, intuitively, verify this works
-    _call_api_function(std::bind(MYKONOS_setObsRxPathSource, mykonos_config.device, OBS_RXOFF));
-    _call_api_function(std::bind(MYKONOS_setObsRxPathSource, mykonos_config.device, OBS_INTERNALCALS));
-
-    _apply_gain_pins(RX_DIRECTION, chain_t::ONE);
-    _apply_gain_pins(RX_DIRECTION, chain_t::TWO);
-    _apply_gain_pins(TX_DIRECTION, chain_t::ONE);
-    _apply_gain_pins(TX_DIRECTION, chain_t::TWO);
+    uint8_t mcs_status = 0;
+    _call_api_function(std::bind(MYKONOS_enableMultichipSync, mykonos_config.device, 1, &mcs_status));
 }
 
-// TODO: review const-ness in this function with respect to ADI API
-void ad937x_device::_load_arm(std::vector<uint8_t> & binary)
+void ad937x_device::finish_initialization()
 {
-    _call_api_function(std::bind(MYKONOS_initArm, mykonos_config.device));
+    // to check status, just call the same function with a 0 instead of a 1, seems good
+    uint8_t mcs_status = 0;
+    _call_api_function(std::bind(MYKONOS_enableMultichipSync, mykonos_config.device, 0, &mcs_status));
 
-    if (binary.size() == ARM_BINARY_SIZE)
+    if ((mcs_status & 0x0A) != 0x0A)
     {
-        throw runtime_error("ad937x_device ARM is not the correct size!");
+        throw runtime_error("Multichip sync failed!");
     }
 
-    _call_api_function(std::bind(MYKONOS_loadArmFromBinary, mykonos_config.device, &binary[0], binary.size()));
+    _call_api_function(std::bind(MYKONOS_initSubRegisterTables, mykonos_config.device));
+    // according to djepson, we can call only this function and avoid loading the ARM or
+    // doing an RF stuff
+    // TODO: fix all this once we want to more than just loopback
+
+    // load ARM
+    // ARM init
+    // RF setup
 }
 
-void ad937x_device::_run_initialization_calibrations()
+void ad937x_device::start_jesd_rx()
 {
-    _call_api_function(std::bind(MYKONOS_runInitCals, mykonos_config.device, INIT_CALS));
-
-    uint8_t errorFlag = 0;
-    uint8_t errorCode = 0;
-    _call_api_function(
-        std::bind(MYKONOS_waitInitCals,
-            mykonos_config.device,
-            INIT_CAL_TIMEOUT_MS,
-            &errorFlag,
-            &errorCode));
-
-    if ((errorFlag != 0) || (errorCode != 0))
-    {
-        mykonosInitCalStatus_t initCalStatus = { 0 };
-        _call_api_function(std::bind(MYKONOS_getInitCalStatus, mykonos_config.device, &initCalStatus));
-
-        // abort init cals
-        uint32_t initCalsCompleted = 0;
-        _call_api_function(std::bind(MYKONOS_abortInitCals, mykonos_config.device, &initCalsCompleted));
-        // init cals completed contains mask of cals that did finish
-
-        uint16_t errorWord = 0;
-        uint16_t statusWord = 0;
-        _call_api_function(std::bind(MYKONOS_readArmCmdStatus, mykonos_config.device, &errorWord, &statusWord));
-
-        uint8_t status = 0;
-        _call_api_function(std::bind(MYKONOS_readArmCmdStatusByte, mykonos_config.device, 2, &status));
-    }
-}
-
-void ad937x_device::_start_jesd()
-{
-    // Stop and/or disable SYSREF
-    // ensure BBIC JESD is reset and ready to receive CGS characters
-
-    // prepare to transmit CGS when sysref starts
     _call_api_function(std::bind(MYKONOS_enableSysrefToRxFramer, mykonos_config.device, 1));
+}
 
-    // prepare to transmit CGS when sysref starts
-    //_call_api_function(std::bind(MYKONOS_enableSysrefToObsRxFramer, mykonos_config.device, 1));
-
-    // prepare to transmit CGS when sysref starts
+void ad937x_device::start_jesd_tx()
+{
     _call_api_function(std::bind(MYKONOS_enableSysrefToDeframer, mykonos_config.device, 0));
-
     _call_api_function(std::bind(MYKONOS_resetDeframer, mykonos_config.device));
     _call_api_function(std::bind(MYKONOS_enableSysrefToDeframer, mykonos_config.device, 1));
-
-    // make sure BBIC JESD framer is actively transmitting CGS
-    // Start SYSREF
-
-    // verify sync code here
-    // verify links
-    uint8_t framerStatus = 0;
-    _call_api_function(std::bind(MYKONOS_readRxFramerStatus, mykonos_config.device, &framerStatus));
-
-    uint8_t deframerStatus = 0;
-    _call_api_function(std::bind(MYKONOS_readDeframerStatus, mykonos_config.device, &deframerStatus));
 }
 
-void ad937x_device::_enable_tracking_calibrations()
+uint8_t ad937x_device::get_multichip_sync_status()
 {
-    _call_api_function(std::bind(MYKONOS_enableTrackingCals, mykonos_config.device, TRACKING_CALS));
+    uint8_t mcs_status = 0;
+    _call_api_function(std::bind(MYKONOS_enableMultichipSync, mykonos_config.device, 0, &mcs_status));
+    return mcs_status;
+}
+
+uint8_t ad937x_device::get_framer_status()
+{
+    uint8_t status = 0;
+    _call_api_function(std::bind(MYKONOS_readRxFramerStatus, mykonos_config.device, &status));
+    return status;
+}
+
+uint8_t ad937x_device::get_deframer_status()
+{
+    uint8_t status = 0;
+    _call_api_function(std::bind(MYKONOS_readDeframerStatus, mykonos_config.device, &status));
+    return status;
+}
+
+uint8_t ad937x_device::get_deframer_irq()
+{
+    uint8_t irq_status = 0;
+    _call_debug_api_function(std::bind(MYKONOS_deframerGetIrq, mykonos_config.device, &irq_status));
+    return irq_status;
+}
+
+uint16_t ad937x_device::get_ilas_config_match()
+{
+    uint16_t ilas_status = 0;
+    _call_api_function(std::bind(MYKONOS_jesd204bIlasCheck, mykonos_config.device, &ilas_status));
+    return ilas_status;
+
+}
+
+void ad937x_device::enable_jesd_loopback(uint8_t enable)
+{
+    _call_api_function(std::bind(MYKONOS_setRxFramerDataSource, mykonos_config.device, enable));
 }
 
 ad937x_device::ad937x_device(spi_iface::sptr iface, gain_pins_t gain_pins) :
@@ -258,7 +289,7 @@ ad937x_device::ad937x_device(spi_iface::sptr iface, gain_pins_t gain_pins) :
     mykonos_config(&full_spi_settings.spi_settings),
     gain_ctrl(gain_pins)
 {
-    _initialize();
+
 }
 
 uint8_t ad937x_device::get_product_id()

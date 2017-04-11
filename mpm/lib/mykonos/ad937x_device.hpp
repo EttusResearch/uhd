@@ -25,6 +25,7 @@
 #include "mpm/ad937x/ad937x_ctrl_types.hpp"
 #include "adi/t_mykonos.h"
 #include "adi/t_mykonos_gpio.h"
+#include "adi/mykonos_debug/t_mykonos_dbgjesd.h"
 
 #include <uhd/exception.hpp>
 
@@ -39,6 +40,20 @@ public:
     enum class pll_t {CLK_SYNTH, RX_SYNTH, TX_SYNTH, SNIFF_SYNTH, CALPLL_SDM};
 
     ad937x_device(uhd::spi_iface::sptr iface, mpm::ad937x::gpio::gain_pins_t gain_pins);
+
+    void begin_initialization();
+    void finish_initialization();
+    void start_jesd_rx();
+    void start_jesd_tx();
+    uint8_t get_multichip_sync_status();
+    uint8_t get_framer_status();
+    uint8_t get_deframer_status();
+
+    // debug functions for JESD
+    // TODO: make these returns useful
+    uint8_t get_deframer_irq();
+    uint16_t get_ilas_config_match();
+    void enable_jesd_loopback(uint8_t enable);
 
     uint8_t get_product_id();
     uint8_t get_device_rev();
@@ -77,16 +92,11 @@ private:
     ad937x_config_t mykonos_config;
     ad937x_gain_ctrl_config_t gain_ctrl;
 
-    void _initialize();
-    void _load_arm(std::vector<uint8_t> & binary);
-    void _run_initialization_calibrations();
-    void _start_jesd();
-    void _enable_tracking_calibrations();
-
     void _apply_gain_pins(uhd::direction_t direction, mpm::ad937x::device::chain_t chain);
 
     void _call_api_function(std::function<mykonosErr_t()> func);
     void _call_gpio_api_function(std::function<mykonosGpioErr_t()> func);
+    void _call_debug_api_function(std::function<mykonosDbgErr_t()> func);
 
     static uint8_t _convert_rx_gain(double gain);
     static uint16_t _convert_tx_gain(double gain);

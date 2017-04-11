@@ -13,7 +13,7 @@
 extern "C" {
 #endif
 
-#include "common.h"
+#include "../common.h"
 
 /**
  *  \brief Enum of unique error codes from the Mykonos DBG API functions.

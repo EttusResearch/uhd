@@ -62,6 +62,18 @@ public:
         mpm::ad937x::gpio::gain_pins_t gain_pins);
     virtual ~ad937x_ctrl(void) {}
 
+    virtual void begin_initialization() = 0;
+    virtual void finish_initialization() = 0;
+    virtual void start_jesd_rx() = 0;
+    virtual void start_jesd_tx() = 0;
+    virtual uint8_t get_multichip_sync_status() = 0;
+    virtual uint8_t get_framer_status() = 0;
+    virtual uint8_t get_deframer_status() = 0;
+
+    virtual uint8_t get_deframer_irq() = 0;
+    virtual uint16_t get_ilas_config_match() = 0;
+    virtual void enable_jesd_loopback(uint8_t enable) = 0;
+
     //! get the RF frequency range for the AD9371
     static uhd::meta_range_t get_rf_freq_range(void);
 
@@ -158,6 +170,16 @@ void export_mykonos(){
 
     bp::class_<ad937x_ctrl, boost::noncopyable, std::shared_ptr<ad937x_ctrl> >("ad937x_ctrl", bp::no_init)
         .def("make", &ad937x_ctrl::make)
+        .def("begin_initialization", &ad937x_ctrl::begin_initialization)
+        .def("finish_initialization", &ad937x_ctrl::finish_initialization)
+        .def("start_jesd_rx", &ad937x_ctrl::start_jesd_rx)
+        .def("start_jesd_tx", &ad937x_ctrl::start_jesd_tx)
+        .def("get_multichip_sync_status", &ad937x_ctrl::get_multichip_sync_status)
+        .def("get_framer_status", &ad937x_ctrl::get_framer_status)
+        .def("get_deframer_status", &ad937x_ctrl::get_deframer_status)
+        .def("get_deframer_irq", &ad937x_ctrl::get_deframer_irq)
+        .def("get_ilas_config_match", &ad937x_ctrl::get_ilas_config_match)
+        .def("enable_jesd_loopback", &ad937x_ctrl::enable_jesd_loopback)
         .def("get_rf_freq_range", &ad937x_ctrl::get_rf_freq_range)
         .def("get_bw_filter_range", &ad937x_ctrl::get_bw_filter_range)
         .def("get_clock_rates", &ad937x_ctrl::get_clock_rates)

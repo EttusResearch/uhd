@@ -3,3 +3,5 @@ MYKONOS_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/mykonos_gpio.c
     ${CMAKE_CURRENT_SOURCE_DIR}/mykonos_user.c
 )
+
+ADD_SUBDIRECTORY(mykonos_debug)

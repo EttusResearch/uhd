@@ -128,6 +128,71 @@ public:
 
     }
 
+    virtual void begin_initialization()
+    {
+        std::lock_guard<std::mutex> lock(*spi_mutex);
+        device.begin_initialization();
+    }
+
+    virtual void finish_initialization()
+    {
+        std::lock_guard<std::mutex> lock(*spi_mutex);
+        device.finish_initialization();
+    }
+
+    virtual void start_jesd_rx()
+    {
+        std::lock_guard<std::mutex> lock(*spi_mutex);
+        device.start_jesd_rx();
+    }
+
+    virtual void start_jesd_tx()
+    {
+        std::lock_guard<std::mutex> lock(*spi_mutex);
+        device.start_jesd_tx();
+    }
+
+    // TODO: interpret the status byte
+    // or provide means to do so
+    virtual uint8_t get_multichip_sync_status()
+    {
+        std::lock_guard<std::mutex> lock(*spi_mutex);
+        return device.get_multichip_sync_status();
+    }
+
+    // TODO: interpret the status byte
+    // or provide means to do so
+    virtual uint8_t get_framer_status()
+    {
+        std::lock_guard<std::mutex> lock(*spi_mutex);
+        return device.get_framer_status();
+    }
+
+    // TODO: interpret the status byte
+    // or provide means to do so
+    virtual uint8_t get_deframer_status()
+    {
+        std::lock_guard<std::mutex> lock(*spi_mutex);
+        return device.get_deframer_status();
+    }
+
+    virtual uint8_t get_deframer_irq()
+    {
+        std::lock_guard<std::mutex> lock(*spi_mutex);
+        return device.get_deframer_irq();
+    }
+
+    virtual uint16_t get_ilas_config_match()
+    {
+        std::lock_guard<std::mutex> lock(*spi_mutex);
+        return device.get_ilas_config_match();
+    }
+    virtual void enable_jesd_loopback(uint8_t enable)
+    {
+        std::lock_guard<std::mutex> lock(*spi_mutex);
+        device.enable_jesd_loopback(enable);
+    }
+
     virtual uint8_t get_product_id()
     {
         std::lock_guard<std::mutex> lock(*spi_mutex);
