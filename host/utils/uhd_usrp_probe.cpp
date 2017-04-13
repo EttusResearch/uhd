@@ -148,10 +148,14 @@ static std::string get_rfnoc_pp_string(property_tree::sptr tree, const fs_path &
 static std::string get_mboard_pp_string(property_tree::sptr tree, const fs_path &path){
     std::stringstream ss;
     ss << boost::format("Mboard: %s") % (tree->access<std::string>(path / "name").get()) << std::endl;
-    //ss << std::endl;
-    usrp::mboard_eeprom_t mb_eeprom = tree->access<usrp::mboard_eeprom_t>(path / "eeprom").get();
-    for(const std::string &key:  mb_eeprom.keys()){
-        if (not mb_eeprom[key].empty()) ss << boost::format("%s: %s") % key % mb_eeprom[key] << std::endl;
+
+    if (tree->exists(path / "eeprom")){
+        usrp::mboard_eeprom_t mb_eeprom = tree->access<usrp::mboard_eeprom_t>(path / "eeprom").get();
+        for(const std::string &key:  mb_eeprom.keys()){
+            if (not mb_eeprom[key].empty()) ss << boost::format("%s: %s") % key % mb_eeprom[key] << std::endl;
+        }
+    } else {
+        ss << "No mboard EEPROM found." << std::endl;
     }
     if (tree->exists(path / "fw_version")){
         ss << "FW Version: " << tree->access<std::string>(path / "fw_version").get() << std::endl;
