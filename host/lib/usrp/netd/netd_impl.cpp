@@ -71,6 +71,15 @@ netd_mboard_impl::netd_mboard_impl(const std::string& addr)
         //}
     //}
 }
+
+uhd::sid_t netd_mboard_impl::allocate_sid(const uint16_t port,
+                                          const uhd::sid_t address,
+                                          const uint32_t xbar_src_addr,
+                                          const uint32_t xbar_src_port){
+    const uint32_t sid = rpc.call<uint32_t>("allocate_sid", _rpc_token, port,
+                                            address.get(), xbar_src_addr, xbar_src_port);
+    return sid;
+}
 netd_mboard_impl::~netd_mboard_impl() {}
 
 netd_mboard_impl::uptr netd_mboard_impl::make(const std::string& addr)
@@ -84,8 +93,7 @@ netd_mboard_impl::uptr netd_mboard_impl::make(const std::string& addr)
 bool netd_mboard_impl::claim() { return rpc.call<bool>("reclaim", _rpc_token); }
 
 netd_impl::netd_impl(const device_addr_t& device_addr) :
-    usrp::device3_impl(),
-    _sid_framer(0)
+    usrp::device3_impl(), _sid_framer(0)
 {
     UHD_LOGGER_INFO("NETD") << "NETD initialization sequence...";
     _tree->create<std::string>("/name").set("NETD - Series device");
@@ -94,6 +102,19 @@ netd_impl::netd_impl(const device_addr_t& device_addr) :
     for (size_t mb_i = 0; mb_i < device_args.size(); ++mb_i) {
         _mb.push_back(setup_mb(mb_i, device_args[mb_i]));
     }
+
+    try {
+        enumerate_rfnoc_blocks(
+          0,
+          1,
+          3, /* base port */
+          uhd::sid_t(0x0200),
+          device_addr
+        );
+    } catch (...) {
+        printf("%s Derp\n", __func__);
+    }
+
 }
 
 netd_impl::~netd_impl() {}
