@@ -49,7 +49,7 @@ public:
     {
         uint32_t swapped = uhd::htonx(value);
 
-        UHD_LOGGER_DEBUG("USRP1")
+        UHD_LOGGER_TRACE("USRP1")
             << "poke32("
             << std::dec << std::setw(2) << addr << ", 0x"
             << std::hex << std::setw(8) << value << ")"
@@ -70,7 +70,7 @@ public:
 
     uint32_t peek32(const uint32_t addr)
     {
-        UHD_LOGGER_DEBUG("USRP1")
+        UHD_LOGGER_TRACE("USRP1")
             << "peek32("
             << std::dec << std::setw(2) << addr << ")"
         ;
@@ -129,7 +129,7 @@ public:
                                  size_t num_bits,
                                  bool readback)
     {
-        UHD_LOGGER_DEBUG("USRP1")
+        UHD_LOGGER_TRACE("USRP1")
             << "transact_spi: "
             << "  slave: " << which_slave
             << "  bits: " << bits

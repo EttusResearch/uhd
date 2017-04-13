@@ -23,17 +23,18 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/assign/list_of.hpp>
 #include <stdint.h>
-#include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/format.hpp>
 #include <boost/regex.hpp>
 #include <boost/thread/mutex.hpp>
+#include <ctime>
+#include <string>
+#include <boost/date_time.hpp>
 
 #include "boost/tuple/tuple.hpp"
 
 using namespace uhd;
-using namespace boost::gregorian;
 using namespace boost::posix_time;
 using namespace boost::algorithm;
 using namespace boost::this_thread;
@@ -348,16 +349,16 @@ private:
                 throw uhd::value_error(str(boost::format("Invalid response \"%s\"") % reply));
             }
 
-            //just trust me on this one
-            gps_time = ptime( date(
-                             greg_year(boost::lexical_cast<int>(datestr.substr(4, 2)) + 2000),
-                             greg_month(boost::lexical_cast<int>(datestr.substr(2, 2))),
-                             greg_day(boost::lexical_cast<int>(datestr.substr(0, 2)))
-                           ),
-                          hours(  boost::lexical_cast<int>(timestr.substr(0, 2)))
-                        + minutes(boost::lexical_cast<int>(timestr.substr(2, 2)))
-                        + seconds(boost::lexical_cast<int>(timestr.substr(4, 2)))
-                     );
+            struct tm raw_date;
+            raw_date.tm_year = std::stoi(datestr.substr(4, 2)) + 2000 - 1900; // years since 1900
+            raw_date.tm_mon = std::stoi(datestr.substr(2, 2)) - 1; // months since january (0-11)
+            raw_date.tm_mday = std::stoi(datestr.substr(0, 2)); // dom (1-31)
+            raw_date.tm_hour = std::stoi(timestr.substr(0, 2));
+            raw_date.tm_min = std::stoi(timestr.substr(2, 2));
+            raw_date.tm_sec = std::stoi(timestr.substr(4,2));
+            gps_time = boost::posix_time::ptime_from_tm(raw_date);
+
+            UHD_LOG_TRACE("GPS", "GPS time: " + boost::posix_time::to_simple_string(gps_time));
             return gps_time;
 
         } catch(std::exception &e) {

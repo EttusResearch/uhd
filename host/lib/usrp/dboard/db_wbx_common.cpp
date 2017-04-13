@@ -42,7 +42,7 @@ static int rx_pga0_gain_to_iobits(double &gain){
     int attn_code = boost::math::iround(attn*2);
     int iobits = ((~attn_code) << RX_ATTN_SHIFT) & RX_ATTN_MASK;
 
-    UHD_LOGGER_DEBUG("WBX") << boost::format(
+    UHD_LOGGER_TRACE("WBX") << boost::format(
         "WBX RX Attenuation: %f dB, Code: %d, IO Bits %x, Mask: %x"
     ) % attn % attn_code % (iobits & RX_ATTN_MASK) % RX_ATTN_MASK ;
 

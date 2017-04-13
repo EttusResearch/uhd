@@ -1,5 +1,5 @@
 //
-// Copyright 2012-2013,2016 Ettus Research LLC
+// Copyright 2012-2013,2016-2017 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -21,51 +21,9 @@
 #include <uhd/config.hpp>
 #include <uhd/types/time_spec.hpp>
 #include <boost/thread/thread.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread/condition_variable.hpp>
-#include <boost/interprocess/detail/atomic.hpp>
-
-#include <boost/version.hpp>
-#define BOOST_IPC_DETAIL boost::interprocess::ipcdetail
+#include <atomic>
 
 namespace uhd{
-
-    //! A 32-bit integer that can be atomically accessed
-    class UHD_API atomic_uint32_t{
-    public:
-
-        //! Create a new atomic 32-bit integer, initialized to zero
-        UHD_INLINE atomic_uint32_t(void){
-            this->write(0);
-        }
-
-        //! Compare with cmp, swap with newval if same, return old value
-        UHD_INLINE uint32_t cas(uint32_t newval, uint32_t cmp){
-            return BOOST_IPC_DETAIL::atomic_cas32(&_num, newval, cmp);
-        }
-
-        //! Sets the atomic integer to a new value
-        UHD_INLINE void write(const uint32_t newval){
-            BOOST_IPC_DETAIL::atomic_write32(&_num, newval);
-        }
-
-        //! Gets the current value of the atomic integer
-        UHD_INLINE uint32_t read(void){
-            return BOOST_IPC_DETAIL::atomic_read32(&_num);
-        }
-
-        //! Increment by 1 and return the old value
-        UHD_INLINE uint32_t inc(void){
-            return BOOST_IPC_DETAIL::atomic_inc32(&_num);
-        }
-
-        //! Decrement by 1 and return the old value
-        UHD_INLINE uint32_t dec(void){
-            return BOOST_IPC_DETAIL::atomic_dec32(&_num);
-        }
-
-    private: volatile uint32_t _num;
-    };
 
     /*!
      * Spin-wait on a condition with a timeout.
@@ -74,15 +32,18 @@ namespace uhd{
      * \param timeout the timeout in seconds
      * \return true for cond == value, false for timeout
      */
+    template<typename T>
     UHD_INLINE bool spin_wait_with_timeout(
-        atomic_uint32_t &cond,
-        uint32_t value,
+        std::atomic<T> &cond,
+        const T value,
         const double timeout
     ){
-        if (cond.read() == value) return true;
+        if (cond == value) return true;
         const time_spec_t exit_time = time_spec_t::get_system_time() + time_spec_t(timeout);
-        while (cond.read() != value){
-            if (time_spec_t::get_system_time() > exit_time) return false;
+        while (cond != value) {
+            if (time_spec_t::get_system_time() > exit_time) {
+                return false;
+            }
             boost::this_thread::interruption_point();
             boost::this_thread::yield();
         }
@@ -100,19 +61,19 @@ namespace uhd{
         }
 
         UHD_INLINE void release(void){
-            _locked.write(0);
+            _locked = false;
         }
 
         UHD_INLINE bool claim_with_wait(const double timeout){
-            if (spin_wait_with_timeout(_locked, 0, timeout)){
-                _locked.write(1);
+            if (spin_wait_with_timeout(_locked, false, timeout)){
+                _locked = true;
                 return true;
             }
             return false;
         }
 
     private:
-        atomic_uint32_t _locked;
+        std::atomic<bool> _locked;
     };
 
 } //namespace uhd

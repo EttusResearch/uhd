@@ -47,7 +47,7 @@ public:
         _inbox(transport->get_num_recv_frames()),
         _recv_done(false)
     {
-        UHD_LOGGER_DEBUG("XPORT") << "Created threaded transport" ;
+        UHD_LOGGER_TRACE("XPORT") << "Created threaded transport" ;
 
         // Create the receive and send threads to offload
         // the system calls onto other threads

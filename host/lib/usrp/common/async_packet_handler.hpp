@@ -55,14 +55,23 @@ namespace uhd{ namespace usrp{
         if (metadata.event_code &
             ( async_metadata_t::EVENT_CODE_UNDERFLOW
             | async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET)
-            ) UHD_LOG_FASTPATH("U")
+            )
+        {
+            UHD_LOG_FASTPATH("U")
+        }
         else if (metadata.event_code &
             ( async_metadata_t::EVENT_CODE_SEQ_ERROR
             | async_metadata_t::EVENT_CODE_SEQ_ERROR_IN_BURST)
-            ) UHD_LOG_FASTPATH("S")
+            )
+        {
+            UHD_LOG_FASTPATH("S")
+        }
         else if (metadata.event_code &
             async_metadata_t::EVENT_CODE_TIME_ERROR
-            ) UHD_LOG_FASTPATH("L")
+            )
+        {
+            UHD_LOG_FASTPATH("L")
+        }
     }
 
 

@@ -135,7 +135,7 @@ private:
     void spi_reset(void);
     void send_reg(uint8_t addr){
         uint32_t value = _max2829_regs.get_reg(addr);
-        UHD_LOGGER_DEBUG("XCVR2450") << boost::format(
+        UHD_LOGGER_TRACE("XCVR2450") << boost::format(
             "XCVR2450: send reg 0x%02x, value 0x%05x"
         ) % int(addr) % value ;
         this->get_iface()->write_spi(
@@ -391,7 +391,7 @@ double xcvr2450::set_lo_freq_core(double target_freq){
     double N = double(intdiv) + double(fracdiv)/double(1 << 16);
     _lo_freq = (N*ref_freq)/(scaler*R*_ad9515div);
 
-    UHD_LOGGER_DEBUG("XCVR2450")
+    UHD_LOGGER_TRACE("XCVR2450")
         << boost::format("XCVR2450 tune:\n")
         << boost::format("    R=%d, N=%f, ad9515=%d, scaler=%f\n") % R % N % _ad9515div % scaler
         << boost::format("    Ref    Freq=%fMHz\n") % (ref_freq/1e6)
@@ -401,10 +401,10 @@ double xcvr2450::set_lo_freq_core(double target_freq){
 
     //high-high band or low-high band?
     if(_lo_freq > (5.35e9 + 5.47e9)/2.0){
-        UHD_LOGGER_DEBUG("XCVR2450") << "XCVR2450 tune: Using  high-high band" ;
+        UHD_LOGGER_TRACE("XCVR2450") << "XCVR2450 tune: Using  high-high band" ;
         _max2829_regs.band_select_802_11a = max2829_regs_t::BAND_SELECT_802_11A_5_47GHZ_TO_5_875GHZ;
     }else{
-        UHD_LOGGER_DEBUG("XCVR2450") << "XCVR2450 tune: Using  low-high band" ;
+        UHD_LOGGER_TRACE("XCVR2450") << "XCVR2450 tune: Using  low-high band" ;
         _max2829_regs.band_select_802_11a = max2829_regs_t::BAND_SELECT_802_11A_4_9GHZ_TO_5_35GHZ;
     }
 
@@ -655,7 +655,7 @@ double xcvr2450::set_rx_bandwidth(double bandwidth){
     //update register
     send_reg(0x7);
 
-    UHD_LOGGER_DEBUG("XCVR2450") << boost::format(
+    UHD_LOGGER_TRACE("XCVR2450") << boost::format(
         "XCVR2450 RX Bandwidth (lp_fc): %f Hz, coarse reg: %d, fine reg: %d"
     ) % _rx_bandwidth % (int(_max2829_regs.rx_lpf_coarse_adj)) % (int(_max2829_regs.rx_lpf_fine_adj)) ;
 
@@ -675,7 +675,7 @@ double xcvr2450::set_tx_bandwidth(double bandwidth){
     //update register
     send_reg(0x7);
 
-    UHD_LOGGER_DEBUG("XCVR2450") << boost::format(
+    UHD_LOGGER_TRACE("XCVR2450") << boost::format(
         "XCVR2450 TX Bandwidth (lp_fc): %f Hz, coarse reg: %d"
     ) % _tx_bandwidth % (int(_max2829_regs.tx_lpf_coarse_adj)) ;
 

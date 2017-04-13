@@ -1463,7 +1463,7 @@ public:
       if (gain_range_width == 0.0) {
           return 0.0;
       }
-      double norm_gain = (get_rx_gain(ALL_GAINS, chan) - gain_range.start()) / gain_range_width;
+      double norm_gain = (get_tx_gain(ALL_GAINS, chan) - gain_range.start()) / gain_range_width;
       // Avoid rounding errors:
       if (norm_gain > 1.0) return 1.0;
       if (norm_gain < 0.0) return 0.0;
@@ -1773,8 +1773,12 @@ private:
     {
         try
         {
-            const std::string name = _tree->list("/mboards").at(mboard);
-            return "/mboards/" + name;
+            const std::string tree_path = "/mboards/" + boost::lexical_cast<std::string>(mboard);
+            if (_tree->exists(tree_path)) {
+                return tree_path;
+            } else {
+                throw uhd::index_error(str(boost::format("multi_usrp::mb_root(%u) - path not found") % mboard));
+            }
         }
         catch(const std::exception &e)
         {
@@ -1797,8 +1801,12 @@ private:
 
         try
         {
-            const std::string name = _tree->list(mb_root(mcp.mboard) / "rx_dsps").at(mcp.chan);
-            return mb_root(mcp.mboard) / "rx_dsps" / name;
+            const std::string tree_path = mb_root(mcp.mboard) / "rx_dsps" / boost::lexical_cast<std::string>(mcp.chan);
+            if (_tree->exists(tree_path)) {
+                return tree_path;
+            } else {
+                throw uhd::index_error(str(boost::format("multi_usrp::rx_dsp_root(%u) - mcp(%u) - path not found") % chan % mcp.chan));
+            }
         }
         catch(const std::exception &e)
         {
@@ -1820,8 +1828,12 @@ private:
         }
         try
         {
-            const std::string name = _tree->list(mb_root(mcp.mboard) / "tx_dsps").at(mcp.chan);
-            return mb_root(mcp.mboard) / "tx_dsps" / name;
+            const std::string tree_path = mb_root(mcp.mboard) / "tx_dsps" / boost::lexical_cast<std::string>(mcp.chan);
+            if (_tree->exists(tree_path)) {
+                return tree_path;
+            } else {
+                throw uhd::index_error(str(boost::format("multi_usrp::tx_dsp_root(%u) - mcp(%u) - path not found") % chan % mcp.chan));
+            }
         }
         catch(const std::exception &e)
         {
@@ -1956,6 +1968,6 @@ multi_usrp::~multi_usrp(void){
  * The Make Function
  **********************************************************************/
 multi_usrp::sptr multi_usrp::make(const device_addr_t &dev_addr){
-    UHD_LOGGER_DEBUG("MULTI_USRP") << "multi_usrp::make with args " << dev_addr.to_pp_string() ;
+    UHD_LOGGER_TRACE("MULTI_USRP") << "multi_usrp::make with args " << dev_addr.to_pp_string() ;
     return sptr(new multi_usrp_impl(dev_addr));
 }

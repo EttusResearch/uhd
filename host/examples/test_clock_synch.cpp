@@ -34,29 +34,8 @@ namespace po = boost::program_options;
 using namespace uhd::usrp_clock;
 using namespace uhd::usrp;
 
-void wait_for_pps(multi_usrp::sptr usrp, size_t chan, double timeout){
-    time_t last_pps_time = usrp->get_time_last_pps(chan).get_full_secs();
-    time_t system_time = uhd::time_spec_t::get_system_time().get_full_secs();
-    time_t exit_time = system_time + time_t(timeout);
-    bool detected_pps = false;
-
-    //Otherwise, this would hang if the USRP doesn't detect any PPS
-    while(uhd::time_spec_t::get_system_time().get_full_secs() < exit_time){
-        time_t time_now = usrp->get_time_last_pps(chan).get_full_secs();
-        if(last_pps_time < time_now){
-            detected_pps = true;
-            break;
-        }
-        else last_pps_time = time_now;
-    }
-    if(not detected_pps) throw uhd::runtime_error(str(boost::format("%s did not detect a PPS signal.")
-                                                      % usrp->get_usrp_tx_info()["mboard_serial"]));
-
-}
-
-void get_usrp_time(multi_usrp::sptr usrp, size_t chan, std::vector<time_t> *times){
-    wait_for_pps(usrp, chan, 2);
-    (*times)[chan] = usrp->get_time_now(chan).get_full_secs();
+void get_usrp_time(multi_usrp::sptr usrp, size_t mboard, std::vector<time_t> *times){
+    (*times)[mboard] = usrp->get_time_now(mboard).get_full_secs();
 }
 
 int UHD_SAFE_MAIN(int argc, char *argv[]){
@@ -125,14 +104,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //Get GPS time to initially set USRP devices
     std::cout << std::endl << "Querying Clock for time and setting USRP times..." << std::endl << std::endl;
     time_t clock_time = clock->get_time();
-    usrp->set_time_unknown_pps(uhd::time_spec_t(double(clock_time+2)));
-
-    //Wait for next PPS to start polling
-    wait_for_pps(usrp, 0, 2);
-
+    usrp->set_time_next_pps(uhd::time_spec_t(double(clock_time+1)));
     srand((unsigned int)time(NULL));
 
-    std::cout << boost::format("\nRunning %d comparisons at random intervals.") % num_tests << std::endl << std::endl;
+    std::cout << boost::format("Running %d comparisons at random intervals.") % num_tests << std::endl;
     uint32_t num_matches = 0;
     for(size_t i = 0; i < num_tests; i++){
         //Wait random time before querying

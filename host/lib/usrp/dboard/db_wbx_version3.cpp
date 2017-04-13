@@ -63,7 +63,7 @@ static int tx_pga0_gain_to_iobits(double &gain){
             (attn_code &  1 ? 0 : TX_ATTN_1)
         ) & TX_ATTN_MASK;
 
-    UHD_LOGGER_DEBUG("WBX") << boost::format(
+    UHD_LOGGER_TRACE("WBX") << boost::format(
         "WBX TX Attenuation: %f dB, Code: %d, IO Bits %x, Mask: %x"
     ) % attn % attn_code % (iobits & TX_ATTN_MASK) % TX_ATTN_MASK ;
 
@@ -196,7 +196,7 @@ double wbx_base::wbx_version3::set_lo_freq(dboard_iface::unit_t unit, double tar
     //clip to tuning range
     target_freq = wbx_v3_freq_range.clip(target_freq);
 
-    UHD_LOGGER_DEBUG("WBX") << boost::format(
+    UHD_LOGGER_TRACE("WBX") << boost::format(
         "WBX tune: target frequency %f MHz"
     ) % (target_freq/1e6) ;
 

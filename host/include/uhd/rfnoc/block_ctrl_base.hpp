@@ -381,6 +381,9 @@ protected:
     // than reset register SR_CLEAR_TX_FC.
     virtual void _clear(const size_t port = 0);
 
+    //! Override this function if your block needs to specially handle
+    // setting the command time
+    virtual void _set_command_time(const time_spec_t &time_spec, const size_t port = ANY_PORT);
     /***********************************************************************
      * Protected members
      **********************************************************************/

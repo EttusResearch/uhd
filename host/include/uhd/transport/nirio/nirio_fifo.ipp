@@ -134,7 +134,6 @@ bool nirio_fifo<data_t>::_acquire_block_from_rio_buffer(
     uint32_t elements_remaining_u32 = 0;
     size_t elements_to_request = 0;
     void* elements_buffer = NULL;
-    char context_buffer[64];
 
     if (fifo_optimization_option == MAXIMIZE_THROUGHPUT)
     {

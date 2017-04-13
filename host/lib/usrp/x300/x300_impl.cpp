@@ -438,7 +438,7 @@ void x300_impl::mboard_members_t::discover_eth(
             UHD_LOGGER_WARNING("X300") << str(boost::format(
                 "Duplicate IP address %s found in mboard EEPROM. "
                 "Device may not function properly.\nView and reprogram the values "
-                "using the usrp_burn_mb_eeprom utility.\n") % mb_eeprom[key]);
+                "using the usrp_burn_mb_eeprom utility.") % mb_eeprom[key]);
         }
         mb_eeprom_addrs.push_back(mb_eeprom[key]);
     }
@@ -1128,14 +1128,14 @@ uhd::both_xports_t x300_impl::make_transport(
                 ? X300_PCIE_RX_DATA_FRAME_SIZE
                 : X300_PCIE_MSG_FRAME_SIZE;
 
-            default_buff_args.num_send_frames =
-                (xport_type == TX_DATA)
-                ? X300_PCIE_DATA_NUM_FRAMES
+			default_buff_args.num_send_frames =
+				(xport_type == TX_DATA)
+                ? X300_PCIE_TX_DATA_NUM_FRAMES
                 : X300_PCIE_MSG_NUM_FRAMES;
 
             default_buff_args.num_recv_frames =
                 (xport_type == RX_DATA)
-                ? X300_PCIE_DATA_NUM_FRAMES
+                ? X300_PCIE_RX_DATA_NUM_FRAMES
                 : X300_PCIE_MSG_NUM_FRAMES;
 
             xports.recv = nirio_zero_copy::make(
@@ -1307,7 +1307,7 @@ uhd::sid_t x300_impl::allocate_sid(
 ) {
     uhd::sid_t sid = address;
     sid.set_src_addr(src_addr);
-    sid.set_src_endpoint(_sid_framer);
+    sid.set_src_endpoint(_sid_framer++);    //increment for next setup
 
     // TODO Move all of this setup_mb()
     // Program the X300 to recognise it's own local address.
@@ -1319,10 +1319,7 @@ uhd::sid_t x300_impl::allocate_sid(
     // This type of packet does not match the XB_LOCAL address and is looked up in the lower half of the CAM
     mb.zpu_ctrl->poke32(SR_ADDR(SETXB_BASE, 0 + src_addr), src_dst);
 
-    UHD_LOGGER_DEBUG("X300") << "done router config for sid " << sid ;
-
-    //increment for next setup
-    _sid_framer++;
+    UHD_LOGGER_TRACE("X300") << "done router config for sid " << sid ;
 
     return sid;
 }
@@ -1644,7 +1641,7 @@ x300_impl::frame_size_t x300_impl::determine_max_frame_size(const std::string &a
     // of the recv and send frame sizes.
     frame_size.recv_frame_size = std::min(min_recv_frame_size, min_send_frame_size);
     frame_size.send_frame_size = std::min(min_recv_frame_size, min_send_frame_size);
-    UHD_LOGGER_INFO("X300") << "Maximim frame size: " << frame_size.send_frame_size << " bytes.";
+    UHD_LOGGER_INFO("X300") << "Maximum frame size: " << frame_size.send_frame_size << " bytes.";
     return frame_size;
 }
 

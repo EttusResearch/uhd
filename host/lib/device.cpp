@@ -149,7 +149,7 @@ device::sptr device::make(const device_addr_t &hint, device_filter_t filter, siz
     device_addr_t dev_addr; make_t maker;
     boost::tie(dev_addr, maker) = dev_addr_makers.at(which);
     size_t dev_hash = hash_device_addr(dev_addr);
-    UHD_LOGGER_DEBUG("UHD") << boost::format("Device hash: %u") % dev_hash ;
+    UHD_LOGGER_TRACE("UHD") << boost::format("Device hash: %u") % dev_hash ;
 
     //copy keys that were in hint but not in dev_addr
     //this way, we can pass additional transport arguments

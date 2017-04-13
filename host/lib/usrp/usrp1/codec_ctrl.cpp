@@ -277,7 +277,7 @@ void usrp1_codec_ctrl_impl::send_reg(uint8_t addr)
 {
     uint32_t reg = _ad9862_regs.get_write_reg(addr);
 
-    UHD_LOGGER_DEBUG("USRP1")
+    UHD_LOGGER_TRACE("USRP1")
         << "codec control write reg: 0x"
         << std::setw(8) << std::hex << reg 
     ;
@@ -289,7 +289,7 @@ void usrp1_codec_ctrl_impl::recv_reg(uint8_t addr)
 {
     uint32_t reg = _ad9862_regs.get_read_reg(addr);
 
-    UHD_LOGGER_DEBUG("USRP1")
+    UHD_LOGGER_TRACE("USRP1")
         << "codec control read reg: 0x"
         << std::setw(8) << std::hex << reg 
     ;
@@ -297,7 +297,7 @@ void usrp1_codec_ctrl_impl::recv_reg(uint8_t addr)
     uint32_t ret = _iface->read_spi(_spi_slave,
                                         spi_config_t::EDGE_RISE, reg, 16);
 
-    UHD_LOGGER_DEBUG("USRP1")
+    UHD_LOGGER_TRACE("USRP1")
         << "codec control read ret: 0x"
         << std::setw(8) << std::hex << ret 
     ;

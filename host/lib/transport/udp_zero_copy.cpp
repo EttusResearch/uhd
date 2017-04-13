@@ -175,7 +175,7 @@ public:
         _send_buffer_pool(buffer_pool::make(xport_params.num_send_frames, xport_params.send_frame_size)),
         _next_recv_buff_index(0), _next_send_buff_index(0)
     {
-        UHD_LOGGER_DEBUG("UDP") << boost::format("Creating udp transport for %s %s") % addr % port ;
+        UHD_LOGGER_TRACE("UDP") << boost::format("Creating udp transport for %s %s") % addr % port ;
 
         #ifdef CHECK_REG_SEND_THRESH
         check_registry_for_fast_send_threshold(this->get_send_frame_size());
@@ -272,7 +272,7 @@ template<typename Opt> static size_t resize_buff_helper(
     std::string help_message;
     #if defined(UHD_PLATFORM_LINUX)
         help_message = str(boost::format(
-            "Please run: sudo sysctl -w net.core.%smem_max=%d\n"
+            "Please run: sudo sysctl -w net.core.%smem_max=%d"
         ) % ((name == "recv")?"r":"w") % target_size);
     #endif /*defined(UHD_PLATFORM_LINUX)*/
 

@@ -180,6 +180,7 @@ private:
     void set_rx_fe_corrections(const uhd::fs_path &db_path, const uhd::fs_path &rx_fe_corr_path, const double lo_freq);
     void set_tx_fe_corrections(const uhd::fs_path &db_path, const uhd::fs_path &tx_fe_corr_path, const double lo_freq);
 
+    void _set_command_time(const uhd::time_spec_t &spec, const size_t port);
     void set_fe_cmd_time(const time_spec_t &time, const size_t chan);
 
 private: // members

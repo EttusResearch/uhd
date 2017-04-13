@@ -51,7 +51,7 @@ void sbx_xcvr::cbx::write_lo_regs(dboard_iface::unit_t unit, const std::vector<u
  * Tuning
  **********************************************************************/
 double sbx_xcvr::cbx::set_lo_freq(dboard_iface::unit_t unit, double target_freq) {
-    UHD_LOGGER_DEBUG("CBX") << boost::format(
+    UHD_LOGGER_TRACE("CBX") << boost::format(
         "CBX tune: target frequency %f MHz"
     ) % (target_freq/1e6) ;
 

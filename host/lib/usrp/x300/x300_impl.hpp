@@ -39,6 +39,7 @@
 #include <uhd/rfnoc/block_ctrl.hpp>
 ///////////// RFNOC /////////////////////
 #include <boost/dynamic_bitset.hpp>
+#include <atomic>
 
 static const std::string X300_FW_FILE_NAME  = "usrp_x300_fw.bin";
 static const std::string X300_DEFAULT_CLOCK_SOURCE  = "internal";
@@ -51,15 +52,18 @@ static const size_t X300_RX_SW_BUFF_SIZE_ETH        = 0x2000000;//32MiB    For a
 static const size_t X300_RX_SW_BUFF_SIZE_ETH_MACOS  = 0x100000; //1Mib
 
 //The FIFO closest to the DMA controller is 1023 elements deep for RX and 1029 elements deep for TX
-//where an element is 8 bytes. For best throughput ensure that the data frame fits in these buffers.
-//Also ensure that the kernel has enough frames to hold buffered TX and RX data
-static const size_t X300_PCIE_RX_DATA_FRAME_SIZE    = 8184;     //bytes
-static const size_t X300_PCIE_TX_DATA_FRAME_SIZE    = 8184;     //bytes
-static const size_t X300_PCIE_DATA_NUM_FRAMES       = 2048;
-static const size_t X300_PCIE_MSG_FRAME_SIZE        = 256;      //bytes
-static const size_t X300_PCIE_MSG_NUM_FRAMES        = 64;
-static const size_t X300_PCIE_MAX_CHANNELS          = 6;
-static const size_t X300_PCIE_MAX_MUXED_XPORTS      = 32;
+//where an element is 8 bytes. The buffers (number of frames * frame size) must be aligned to the
+//memory page size.  For the control, we are getting lucky because 64 frames * 256 bytes each aligns
+//with the typical page size of 4096 bytes.  Since most page sizes are 4096 bytes or some multiple of
+//that, keep the number of frames * frame size aligned to it.
+static const size_t X300_PCIE_RX_DATA_FRAME_SIZE        = 4096;     //bytes
+static const size_t X300_PCIE_RX_DATA_NUM_FRAMES        = 4096;
+static const size_t X300_PCIE_TX_DATA_FRAME_SIZE        = 4096;     //bytes
+static const size_t X300_PCIE_TX_DATA_NUM_FRAMES	    = 4096;
+static const size_t X300_PCIE_MSG_FRAME_SIZE            = 256;      //bytes
+static const size_t X300_PCIE_MSG_NUM_FRAMES            = 64;
+static const size_t X300_PCIE_MAX_CHANNELS              = 6;
+static const size_t X300_PCIE_MAX_MUXED_XPORTS          = 32;
 
 static const size_t X300_10GE_DATA_FRAME_MAX_SIZE   = 8000;     // CHDR packet size in bytes
 static const size_t X300_1GE_DATA_FRAME_MAX_SIZE    = 1472;     // CHDR packet size in bytes
@@ -215,7 +219,7 @@ private:
     //task for periodically reclaiming the device from others
     void claimer_loop(uhd::wb_iface::sptr);
 
-    size_t _sid_framer;
+    std::atomic<size_t> _sid_framer;
 
     uhd::sid_t allocate_sid(
         mboard_members_t &mb,

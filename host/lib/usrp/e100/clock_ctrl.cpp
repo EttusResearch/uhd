@@ -459,7 +459,7 @@ private:
 
     void send_reg(uint16_t addr){
         uint32_t reg = _ad9522_regs.get_write_reg(addr);
-        UHD_LOGGER_DEBUG("E100") << "clock control write reg: " << std::hex << reg ;
+        UHD_LOGGER_TRACE("E100") << "clock control write reg: " << std::hex << reg ;
         _iface->write_spi(
             UE_SPI_SS_AD9522,
             spi_config_t::EDGE_RISE,

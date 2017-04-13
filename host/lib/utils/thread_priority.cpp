@@ -29,7 +29,7 @@ bool uhd::set_thread_priority_safe(float priority, bool realtime){
         UHD_LOGGER_WARNING("UHD") << boost::format(
             "Unable to set the thread priority. Performance may be negatively affected.\n"
             "Please see the general application notes in the manual for instructions.\n"
-            "%s\n"
+            "%s"
         ) % e.what();
         return false;
     }

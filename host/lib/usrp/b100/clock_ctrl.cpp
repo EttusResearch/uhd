@@ -465,7 +465,7 @@ private:
 
     void send_reg(uint16_t addr){
         uint32_t reg = _ad9522_regs.get_write_reg(addr);
-        UHD_LOGGER_DEBUG("B100") << "clock control write reg: " << std::hex << reg ;
+        UHD_LOGGER_TRACE("B100") << "clock control write reg: " << std::hex << reg ;
         byte_vector_t buf;
         buf.push_back(uint8_t(reg >> 16));
         buf.push_back(uint8_t(reg >> 8));

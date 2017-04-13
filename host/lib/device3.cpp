@@ -15,9 +15,10 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <boost/format.hpp>
 #include <uhd/device3.hpp>
 #include <uhd/utils/log.hpp>
+#include <boost/format.hpp>
+#include <boost/thread/lock_guard.hpp>
 
 using namespace uhd;
 using namespace uhd::rfnoc;
@@ -68,6 +69,7 @@ std::vector<rfnoc::block_id_t> device3::find_blocks(const std::string &block_id_
 
 void device3::clear()
 {
+    boost::lock_guard<boost::mutex> lock(_block_ctrl_mutex);
     for(const block_ctrl_base::sptr &block:  _rfnoc_block_ctrl) {
         block->clear();
     }
