@@ -113,6 +113,15 @@ public:
     double get_input_samp_rate(size_t port=ANY_PORT)
     {
         port = (port == ANY_PORT) ? 0 : port;
+
+        // Wait, what? If this seems out of place to you, you're right. However,
+        // we need a function call that is called when the graph is complete,
+        // but streaming is not yet set up.
+        if (_tree->exists("tick_rate")) {
+            const double tick_rate = _tree->access<double>("tick_rate").get();
+            set_command_tick_rate(tick_rate, port);
+        }
+
         if (not (_tx_streamer_active.count(port) and _tx_streamer_active.at(port))) {
             return RATE_UNDEFINED;
         }

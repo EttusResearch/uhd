@@ -161,6 +161,7 @@ double radio_ctrl_impl::set_rate(double rate)
     _tick_rate = rate;
     _time64->set_tick_rate(_tick_rate);
     _time64->self_test();
+    set_command_tick_rate(rate);
     return _tick_rate;
 }
 
