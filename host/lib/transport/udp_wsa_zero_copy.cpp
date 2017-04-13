@@ -275,6 +275,16 @@ public:
 
     size_t get_num_send_frames(void) const {return _num_send_frames;}
     size_t get_send_frame_size(void) const {return _send_frame_size;}
+    uint16_t get_local_port(void) const {
+        struct sockaddr_in addr_info;
+        int addr_len = sizeof(addr_info);
+        uint16_t local_port = 0;
+        if (getsockname( _sock_fd, (SOCKADDR*) &addr_info,
+                         &addr_len) == 0){
+            local_port = ntohs(addr_info.sin_port);
+        }
+        return local_port;
+    }
 
     //! Read back the socket's buffer space reserved for receives
     size_t get_recv_buff_size(void) {
