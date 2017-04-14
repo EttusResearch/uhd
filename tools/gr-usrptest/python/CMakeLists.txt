@@ -20,6 +20,7 @@
 ########################################################################
 # Include python install macros
 ########################################################################
+include(GrPython)
 if(NOT PYTHONINTERP_FOUND)
     return()
 endif()
@@ -43,8 +44,6 @@ add_subdirectory(rts_tests)
 ########################################################################
 include(GrTest)
 
-GR_ADD_TEST(qa_phasealignment ${PYTHON_EXECUTABLE}
-    ${CMAKE_CURRENT_SOURCE_DIR}/qa_phasealignment.py)
 set(GR_TEST_TARGET_DEPS gnuradio-usrptest)
 set(GR_TEST_PYTHON_DIRS ${CMAKE_BINARY_DIR}/swig)
 GR_ADD_TEST(qa_measurement_sink_f ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/qa_measurement_sink_f.py)
