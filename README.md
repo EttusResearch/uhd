@@ -74,7 +74,7 @@ building applications that link against UHD.
 __images/__
 
 This contains the package builder for FPGA and firmware images.
-We provide other tools to downloade image packages, the scripts in here
+We provide other tools to download image packages, the scripts in here
 are mainly relevant for UHD maintainers and -developers.
 
 __tools/__
