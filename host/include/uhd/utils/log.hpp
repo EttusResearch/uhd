@@ -198,9 +198,14 @@ namespace uhd {
 #define UHD_LOGGER_FATAL(component) _UHD_LOG_INTERNAL(component, uhd::log::fatal)
 
 
+#if defined(__GNUG__)
 //! Helpful debug tool to print site info
 #define UHD_HERE()                                              \
+    UHD_LOGGER_DEBUG("DEBUG") << __FILE__ << ":" << __LINE__ << " (" << __PRETTY_FUNCTION__ << ")";
+#else
+#define UHD_HERE()                                              \
     UHD_LOGGER_DEBUG("DEBUG") << __FILE__ << ":" << __LINE__;
+#endif
 
 //! Helpful debug tool to print a variable
 #define UHD_VAR(var)                                        \
