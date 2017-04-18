@@ -1,5 +1,5 @@
 //
-// Copyright 2015 Ettus Research LLC
+// Copyright 2017 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -23,6 +23,11 @@
 #include <vector>
 #include <stdint.h>
 
+static const uint32_t LMK04828_ID_DEVICE_TYPE = 6;
+static const uint32_t LMK04828_ID_PROD_LSB    = 91;
+static const uint32_t LMK04828_ID_PROD_MSB    = 208;
+static const uint32_t LMK04828_ID_MASKREV     = 32;
+
 class lmk04828_iface
 {
 public:
@@ -30,16 +35,24 @@ public:
     typedef boost::function<void(std::vector<uint32_t>)> write_fn_t; 
     typedef boost::function<uint8_t(uint32_t)> read_fn_t;
 
-    static sptr make(write_fn_t write_fn, read_fn_t read_fn);
+    //static sptr (write_fn_t write_fn, read_fn_t read_fn);
+    lmk04828_iface(write_fn_t, read_fn_t);
 
-    virtual ~lmk04828_iface() {}
+    ~lmk04828_iface() {}
 
-    virtual void verify_chip_id() = 0;
+    void verify_chip_id();
 
-    virtual uint8_t get_chip_id() = 0;
+    uint8_t get_chip_id();
 
-    virtual void init() = 0;
+    void init();
 
-    virtual void send_sysref_pulse() = 0;
+    void send_sysref_pulse();
+
+private:
+    // use IC Reg Map once values stabilize
+//    lmk04828_regs_t _regs;
+    
+    write_fn_t _write_fn;
+    read_fn_t _read_fn;
 };
 #endif

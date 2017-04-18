@@ -31,6 +31,7 @@
 #include "mpm/ad937x/ad937x_ctrl.hpp"
 #include "mpm/lmk04828//lmk04828_spi_iface.hpp"
 #include "mpm/dboards/magnesium_manager.hpp"
+#include "lmk02848_py.hpp"
 //#include "lib_periphs.hpp"
 //#include "dboards.hpp"
 #include <boost/noncopyable.hpp>

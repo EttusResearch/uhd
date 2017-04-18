@@ -26,7 +26,7 @@ magnesium_periph_manager::magnesium_periph_manager(
     ): _spi_mutex(std::make_shared<std::mutex>())
 {
     _clock_spi = lmk04828_spi_iface::make(mpm::spi::spidev_iface::make(lmk_spidev));
-    _clock_ctrl = lmk04828_iface::make(_clock_spi->get_write_fn(), _clock_spi->get_read_fn());
+    _clock_ctrl = boost::make_shared<lmk04828_iface>(lmk04828_iface(_clock_spi->get_write_fn(), _clock_spi->get_read_fn()));
     _mykonos_spi = mpm::spi::spidev_iface::make(mykonos_spidev);
     _mykonos_ctrl = ad937x_ctrl::make(_spi_mutex, _mykonos_spi, mpm::ad937x::gpio::gain_pins_t());
 };

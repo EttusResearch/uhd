@@ -32,11 +32,11 @@ private:
 void export_lmk(){
     LIBMPM_BOOST_PREAMBLE("lmk04828")
     bp::class_<lmk04828_iface, boost::shared_ptr<lmk04828_iface>, boost::noncopyable >("lmk04828_iface", bp::no_init)
-        .def("make", &lmk04828_iface::make)
         .def("verify_chip_id", &lmk04828_iface::verify_chip_id)
         .def("get_chip_id", &lmk04828_iface::get_chip_id)
         .def("init", &lmk04828_iface::init)
         .def("send_sysref_pulse", &lmk04828_iface::send_sysref_pulse)
    ;
 }
+//        .def("make", &lmk04828_iface::make)
 #endif
