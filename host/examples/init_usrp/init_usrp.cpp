@@ -20,7 +20,7 @@
 // The program itself only initializes a USRP. For more elaborate examples,
 // have a look at the files in host/examples/.
 
-#include <uhd/utils/thread_priority.hpp>
+#include <uhd/utils/thread.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
 #include <boost/program_options.hpp>

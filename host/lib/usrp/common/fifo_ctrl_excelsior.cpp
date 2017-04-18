@@ -22,7 +22,7 @@
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhd/utils/safe_call.hpp>
-#include <uhd/utils/thread_priority.hpp>
+#include <uhd/utils/thread.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
 #include <boost/thread/mutex.hpp>

@@ -16,7 +16,7 @@
 //
 
 #include <uhd/config.hpp>
-#include <uhd/utils/thread_priority.hpp>
+#include <uhd/utils/thread.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/types/stream_cmd.hpp>

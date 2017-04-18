@@ -40,9 +40,13 @@ namespace uhd{
          * It may not block, or the destructor will also block.
          *
          * \param task_fcn the task callback function
+         * \param name Task name. Will be used as a thread name.
          * \return a new task object
          */
-        static sptr make(const task_fcn_type &task_fcn);
+        static sptr make(
+            const task_fcn_type &task_fcn,
+            const std::string &name=""
+        );
     };
 } //namespace uhd
 

@@ -16,7 +16,7 @@
 //
 
 #include "usrp_cal_utils.hpp"
-#include <uhd/utils/thread_priority.hpp>
+#include <uhd/utils/thread.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/algorithm.hpp>

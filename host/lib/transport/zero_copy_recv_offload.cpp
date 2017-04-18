@@ -21,6 +21,7 @@
 
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
+#include <uhd/utils/thread.hpp>
 #include <boost/format.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/thread/mutex.hpp>
@@ -54,6 +55,7 @@ public:
         _recv_thread = boost::thread(
             boost::bind(&zero_copy_recv_offload_impl::enqueue_recv, this)
         );
+        set_thread_name(&_recv_thread, "zero_copy_recv");
     }
 
     // Receive thread flags

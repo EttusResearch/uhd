@@ -73,7 +73,7 @@
 // mask - a mask indicating which bits in the specified attribute register are
 //          to be changed (default is all bits).
 
-#include <uhd/utils/thread_priority.hpp>
+#include <uhd/utils/thread.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/convert.hpp>

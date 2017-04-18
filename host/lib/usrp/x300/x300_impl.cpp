@@ -712,7 +712,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     if (not try_to_claim(mb.zpu_ctrl)) {
         throw uhd::runtime_error("Failed to claim device");
     }
-    mb.claimer_task = uhd::task::make(boost::bind(&x300_impl::claimer_loop, this, mb.zpu_ctrl));
+    mb.claimer_task = uhd::task::make(boost::bind(&x300_impl::claimer_loop, this, mb.zpu_ctrl), "x300_claimer");
 
     //extract the FW path for the X300
     //and live load fw over ethernet link

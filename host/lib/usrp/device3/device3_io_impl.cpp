@@ -849,7 +849,8 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
                     my_streamer->_async_xport.recv,
                     xport.endianness,
                     tick_rate_retriever
-                )
+                    ),
+                "tx_async_msgs_task"
         );
 
         blk_ctrl->sr_write(uhd::rfnoc::SR_CLEAR_RX_FC, 0xc1ea12, block_port);

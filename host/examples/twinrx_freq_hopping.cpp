@@ -18,7 +18,7 @@
 // FFT conversion
 #include "ascii_art_dft.hpp"
 
-#include <uhd/utils/thread_priority.hpp>
+#include <uhd/utils/thread.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
 
