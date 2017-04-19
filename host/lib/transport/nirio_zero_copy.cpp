@@ -32,6 +32,23 @@
 //@TODO: Move the register defs required by the class to a common location
 #include "../usrp/x300/x300_regs.hpp"
 
+#if defined(_WIN32) || defined(__WIN32__) || defined(WIN32)
+#include <windows.h>
+static UHD_INLINE size_t get_page_size()
+{
+    SYSTEM_INFO si;
+    GetSystemInfo(&si);
+    return si.dwPageSize;
+}
+#else
+#include <unistd.h>
+static UHD_INLINE size_t get_page_size()
+{
+    return size_t(sysconf(_SC_PAGESIZE));
+}
+#endif
+static const size_t page_size = get_page_size();
+
 using namespace uhd;
 using namespace uhd::transport;
 using namespace uhd::niusrprio;
@@ -351,7 +368,6 @@ nirio_zero_copy::sptr nirio_zero_copy::make(
 ){
     //Initialize xport_params
     zero_copy_xport_params xport_params = default_buff_args;
-    size_t page_size = boost::interprocess::mapped_region::get_page_size();
 
     //The kernel buffer for this transport must be (num_frames * frame_size) big. Unlike ethernet,
     //where the kernel buffer size is independent of the circular buffer size for the transport,
@@ -366,6 +382,22 @@ nirio_zero_copy::sptr nirio_zero_copy::make(
     size_t usr_recv_buff_size = static_cast<size_t>(
         hints.cast<double>("recv_buff_size", default_buff_args.num_recv_frames));
 
+    if (hints.has_key("recv_buff_size"))
+    {
+        if (usr_recv_buff_size % page_size != 0)
+        {
+            throw uhd::value_error((boost::format("recv_buff_size must be multiple of %d") % page_size).str());
+        }
+    }
+
+    if (hints.has_key("recv_frame_size") and hints.has_key("num_recv_frames"))
+    {
+        if (usr_num_recv_frames * xport_params.recv_frame_size % page_size != 0)
+        {
+            throw uhd::value_error((boost::format("num_recv_frames * recv_frame_size must be an even multiple of %d") % page_size).str());
+        }
+    }
+
     if (hints.has_key("num_recv_frames") and hints.has_key("recv_buff_size")) {
         if (usr_recv_buff_size < xport_params.recv_frame_size)
             throw uhd::value_error("recv_buff_size must be equal to or greater than (num_recv_frames * recv_frame_size)");
@@ -378,6 +410,11 @@ nirio_zero_copy::sptr nirio_zero_copy::make(
         xport_params.num_recv_frames = std::max<size_t>(1, usr_recv_buff_size/xport_params.recv_frame_size);    //Round down
     } else if (hints.has_key("num_recv_frames")) {
         xport_params.num_recv_frames = usr_num_recv_frames;
+    }
+
+    if (xport_params.num_recv_frames * xport_params.recv_frame_size % page_size != 0)
+    {
+        throw uhd::value_error((boost::format("num_recv_frames * recv_frame_size must be an even multiple of %d") % page_size).str());
     }
 
     //TX
