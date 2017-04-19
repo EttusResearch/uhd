@@ -190,6 +190,7 @@ private:
         boost::weak_ptr<uhd::rx_streamer> rx_streamer;
         boost::weak_ptr<uhd::tx_streamer> tx_streamer;
         bool ant_rx2;
+        bool ant_cal;
     };
     std::vector<radio_perifs_t> _radio_perifs;
 

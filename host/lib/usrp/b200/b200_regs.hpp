@@ -103,6 +103,11 @@ static const uint32_t STATE_TX1_TXRX = (TX_ENABLE1
                                                 | SFDX1_TX
                                                 | LED_TXRX_TX1);
 
+static const boost::uint32_t STATE_FDX1_TXRX_CAL = (TX_ENABLE1
+                                                | SRX1_RX
+                                                | SFDX1_TX
+                                                | LED_TXRX_TX1);
+
 ///////////////////////// side 2 ///////////////////////////////////
 static const uint32_t STATE_RX2_RX2 = (SFDX2_RX
                                                 | SRX2_TX
@@ -123,5 +128,9 @@ static const uint32_t STATE_TX2_TXRX = (TX_ENABLE2
                                                 | SFDX2_TX
                                                 | LED_TXRX_TX2);
 
+static const boost::uint32_t STATE_FDX2_TXRX_CAL = (TX_ENABLE2
+                                                | SRX2_RX
+                                                | SFDX2_TX
+                                                | LED_TXRX_TX2);
 
 #endif /* INCLUDED_B200_REGS_HPP */

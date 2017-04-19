@@ -1167,10 +1167,11 @@ void b200_impl::update_atrs(void)
         const bool enb_rx = bool(perif.rx_streamer.lock());
         const bool enb_tx = bool(perif.tx_streamer.lock());
         const bool is_rx2 = perif.ant_rx2;
+        const bool is_cal = perif.ant_cal;
         const size_t rxonly = (enb_rx)? ((is_rx2)? STATE_RX1_RX2 : STATE_RX1_TXRX) : STATE_OFF;
         const size_t txonly = (enb_tx)? (STATE_TX1_TXRX) : STATE_OFF;
         size_t fd = STATE_OFF;
-        if (enb_rx and enb_tx) fd = STATE_FDX1_TXRX;
+        if (enb_rx and enb_tx) fd = (is_cal) ? STATE_FDX1_TXRX_CAL : STATE_FDX1_TXRX;
         if (enb_rx and not enb_tx) fd = rxonly;
         if (not enb_rx and enb_tx) fd = txonly;
         gpio_atr_3000::sptr atr = perif.atr;
@@ -1185,10 +1186,11 @@ void b200_impl::update_atrs(void)
         const bool enb_rx = bool(perif.rx_streamer.lock());
         const bool enb_tx = bool(perif.tx_streamer.lock());
         const bool is_rx2 = perif.ant_rx2;
+        const bool is_cal = perif.ant_cal;
         const size_t rxonly = (enb_rx)? ((is_rx2)? STATE_RX2_RX2 : STATE_RX2_TXRX) : STATE_OFF;
         const size_t txonly = (enb_tx)? (STATE_TX2_TXRX) : STATE_OFF;
         size_t fd = STATE_OFF;
-        if (enb_rx and enb_tx) fd = STATE_FDX2_TXRX;
+        if (enb_rx and enb_tx) fd = (is_cal) ? STATE_FDX2_TXRX_CAL : STATE_FDX2_TXRX;
         if (enb_rx and not enb_tx) fd = rxonly;
         if (not enb_rx and enb_tx) fd = txonly;
         gpio_atr_3000::sptr atr = perif.atr;
@@ -1201,8 +1203,9 @@ void b200_impl::update_atrs(void)
 
 void b200_impl::update_antenna_sel(const size_t which, const std::string &ant)
 {
-    if (ant != "TX/RX" and ant != "RX2") throw uhd::value_error("b200: unknown RX antenna option: " + ant);
+    if (ant != "TX/RX" and ant != "RX2" and ant != "CAL") throw uhd::value_error("b200: unknown RX antenna option: " + ant);
     _radio_perifs[which].ant_rx2 = (ant == "RX2");
+    _radio_perifs[which].ant_cal = (ant == "CAL");
     this->update_atrs();
 }
 
