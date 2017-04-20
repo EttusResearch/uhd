@@ -179,6 +179,9 @@ public:
     log_resource(void):
         global_level(uhd::log::off),
         _exit(false),
+#ifndef UHD_LOG_FASTPATH_DISABLE
+        _fastpath_queue(10),
+#endif
         _log_queue(10)
     {
         //allow override from macro definition
@@ -231,6 +234,7 @@ public:
 
         // Launch log message consumer
         _pop_task = std::make_shared<std::thread>(std::thread([this](){this->pop_task();}));
+        _pop_fastpath_task = std::make_shared<std::thread>(std::thread([this](){this->pop_fastpath_task();}));
     }
 
     ~log_resource(void){
@@ -240,11 +244,25 @@ public:
             std::lock_guard<std::mutex> l(_logmap_mutex);
             _loggers.clear();
         }
+        _pop_task.reset();
+#ifndef UHD_LOG_FASTPATH_DISABLE
+        _pop_fastpath_task->join();
+        _pop_fastpath_task.reset();
+#endif
     }
 
     void push(const uhd::log::logging_info& log_info)
     {
         _log_queue.push_with_haste(log_info);
+    }
+
+    void push_fastpath(const std::string &message)
+    {
+        // Never wait. If the buffer is full, we just don't see the message.
+        // Too bad.
+#ifndef UHD_LOG_FASTPATH_DISABLE
+        _fastpath_queue.push_with_haste(message);
+#endif
     }
 
     void pop_task()
@@ -278,6 +296,25 @@ public:
         }
     }
 
+    void pop_fastpath_task()
+    {
+#ifndef UHD_LOG_FASTPATH_DISABLE
+        while (!_exit) {
+            std::string msg;
+            if (_fastpath_queue.pop_with_timed_wait(msg, 1)){
+                std::cerr << msg << std::flush;
+            }
+        }
+
+        // Exit procedure: Clear the queue
+        std::string msg;
+        while (_fastpath_queue.pop_with_haste(msg)) {
+            std::cerr << msg << std::flush;
+        }
+#endif
+    }
+
+
     void add_logger(const std::string &key, uhd::log::log_fn_t logger_fn)
     {
         std::lock_guard<std::mutex> l(_logmap_mutex);
@@ -286,6 +323,9 @@ public:
 
 private:
     std::shared_ptr<std::thread> _pop_task;
+#ifndef UHD_LOG_FASTPATH_DISABLE
+    std::shared_ptr<std::thread> _pop_fastpath_task;
+#endif
     uhd::log::severity_level _get_log_level(const std::string &log_level_str,
                                             const uhd::log::severity_level &previous_level){
         if (std::isdigit(log_level_str[0])) {
@@ -316,6 +356,9 @@ private:
     std::atomic<bool> _exit;
     std::map<std::string, uhd::log::log_fn_t> _loggers;
     uhd::transport::bounded_buffer<uhd::log::logging_info> _log_queue;
+#ifndef UHD_LOG_FASTPATH_DISABLE
+    uhd::transport::bounded_buffer<std::string> _fastpath_queue;
+#endif
 };
 
 UHD_SINGLETON_FCN(log_resource, log_rs);
@@ -351,6 +394,12 @@ uhd::_log::log::~log(void)
     }
 }
 
+void uhd::_log::log_fastpath(const std::string &msg)
+{
+#ifndef UHD_LOG_FASTPATH_DISABLE
+    log_rs().push_fastpath(msg);
+#endif
+}
 
 /***********************************************************************
  * Public API calls

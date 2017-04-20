@@ -20,6 +20,8 @@
 #include <iostream>
 
 BOOST_AUTO_TEST_CASE(test_messages){
+    UHD_LOG_FASTPATH("foo");
+    UHD_LOG_FASTPATH("bar");
     uhd::log::set_log_level(uhd::log::debug);
     uhd::log::set_console_level(uhd::log::info);
     uhd::log::add_logger("test",

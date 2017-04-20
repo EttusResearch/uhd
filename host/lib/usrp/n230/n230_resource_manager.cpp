@@ -488,7 +488,7 @@ bool n230_resource_manager::_radio_data_loopback_self_test(wb_iface::sptr iface)
         const uint32_t rb_rx = uint32_t(rb_word64 & 0xffffffff);
         test_fail = word32 != rb_tx or word32 != rb_rx;
         if (test_fail){
-            UHD_LOG_FASTPATH(boost::format("mismatch (exp:%x, got:%x and %x)... ") % word32 % rb_tx % rb_rx)
+            UHD_LOG_ERROR("N230", str(boost::format("mismatch (exp:%x, got:%x and %x)... ") % word32 % rb_tx % rb_rx));
             break; //exit loop on any failure
         }
     }

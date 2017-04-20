@@ -248,8 +248,12 @@ namespace uhd {
 #endif
 
 #ifndef UHD_LOG_FASTPATH_DISABLE
+//! Extra-fast logging macro for when speed matters.
+// No metadata is tracked. Only the message is displayed. This does not go
+// through the regular backends. Mostly used for printing the UOSDL characters
+// during streaming.
 #define UHD_LOG_FASTPATH(message)               \
-    std::cerr << message << std::flush;
+    uhd::_log::log_fastpath(message);
 #else
 #define UHD_LOG_FASTPATH(message)
 #endif
@@ -284,7 +288,10 @@ namespace uhd {
 //! \cond
 namespace uhd{ namespace _log {
 
-    //! \internal Internal logging object (called by UHD_LOG macros)
+    //! Fastpath logging
+    void UHD_API log_fastpath(const std::string &msg);
+
+    //! Internal logging object (called by UHD_LOG* macros)
     class UHD_API log {
     public:
         log(
@@ -297,7 +304,7 @@ namespace uhd{ namespace _log {
 
         ~log(void);
 
-        // \internal Macro for overloading insertion operators to avoid costly
+        // Macro for overloading insertion operators to avoid costly
         // conversion of types if not logging.
         #define INSERTION_OVERLOAD(x)   log& operator<< (x)             \
                                         {                               \
