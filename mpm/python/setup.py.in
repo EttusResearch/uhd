@@ -21,7 +21,7 @@
 from setuptools import setup
 
 setup(name='usrp_mpm',
-      version='',
+      version='0.0.0',
       description='Universal Software Radio Peripheral (USRP) Machiavellian Puppet Master (MPM) Python API',
       classifiers=[
           'Development Status :: 4 - Beta',
