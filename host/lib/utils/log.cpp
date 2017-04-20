@@ -97,6 +97,11 @@ void console_log(
             ;
 }
 
+/*! Helper class to implement file logging
+ *
+ * The class holds references to the file stream object, and handles closing
+ * and cleanup.
+ */
 class file_logger_backend
 {
 public:
@@ -157,28 +162,34 @@ public:
         _exit(false),
         _log_queue(10)
     {
-
         //allow override from macro definition
 #ifdef UHD_LOG_MIN_LEVEL
         this->global_level = _get_log_level(BOOST_STRINGIZE(UHD_LOG_MIN_LEVEL), this->global_level);
 #endif
        //allow override from environment variables
         const char * log_level_env = std::getenv("UHD_LOG_LEVEL");
-        if (log_level_env != NULL && log_level_env[0] != '\0') this->global_level = _get_log_level(log_level_env, this->global_level);
+        if (log_level_env != NULL && log_level_env[0] != '\0') {
+            this->global_level =
+                _get_log_level(log_level_env, this->global_level);
+        }
 
 
-// console logging support
+        /***** Console logging ***********************************************/
 #ifndef UHD_LOG_CONSOLE_DISABLE
         uhd::log::severity_level console_level = uhd::log::trace;
 #ifdef UHD_LOG_CONSOLE_LEVEL
         console_level = _get_log_level(BOOST_STRINGIZE(UHD_LOG_CONSOLE_LEVEL), console_level);
 #endif
         const char * log_console_level_env = std::getenv("UHD_LOG_CONSOLE_LEVEL");
-        if (log_console_level_env != NULL && log_console_level_env[0] != '\0') console_level = _get_log_level(log_console_level_env, console_level);
+        if (log_console_level_env != NULL && log_console_level_env[0] != '\0') {
+            console_level =
+                _get_log_level(log_console_level_env, console_level);
+        }
         logger_level[UHD_CONSOLE_LOGGER_KEY] = console_level;
         _loggers[UHD_CONSOLE_LOGGER_KEY] = &console_log;
 #endif
 
+        /***** File logging **************************************************/
         uhd::log::severity_level file_level = uhd::log::trace;
         std::string log_file_target;
 #if defined(UHD_LOG_FILE_LEVEL) && defined(UHD_LOG_FILE_PATH)
@@ -198,6 +209,8 @@ public:
             auto F = boost::make_shared<file_logger_backend>(log_file_target);
             _loggers[UHD_FILE_LOGGER_KEY] = [F](const uhd::log::logging_info& log_info){F->log(log_info);};
         }
+
+        // Launch log message consumer
         _pop_task = uhd::task::make([this](){this->pop_task();});
 
     }
@@ -209,7 +222,6 @@ public:
 
     void push(const uhd::log::logging_info& log_info)
     {
-
         _log_queue.push_with_haste(log_info);
     }
 

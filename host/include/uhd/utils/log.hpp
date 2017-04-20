@@ -19,7 +19,6 @@
 #define INCLUDED_UHD_UTILS_LOG_HPP
 
 #include <uhd/config.hpp>
-#include <uhd/utils/pimpl.hpp>
 #include <boost/current_function.hpp>
 #include <boost/thread/thread.hpp>
 #include <ostream>
@@ -28,34 +27,41 @@
 #include <iostream>
 
 /*! \file log.hpp
- * The UHD logging facility
- * =========================
  *
- * The logger enables UHD library code to easily log events into a file and display
- * messages above a certain level in the terminal.
+ * \section loghpp_logging The UHD logging facility
+ *
+ * The logger enables UHD library code to easily log events into a file and
+ * display messages above a certain level in the terminal.
  * Log entries are time-stamped and stored with file, line, and function.
- * Each call to the UHD_LOG macros is thread-safe. Each thread will aquire the lock
- * for the logger.
+ * Each call to the UHD_LOG macros is thread-safe. Each thread will aquire the
+ * lock for the logger.
+ *
+ * Note: More information on the logging subsystem can be found on
+ * \ref page_logging.
  *
  * To disable console logging completely at compile time specify
  * `-DUHD_LOG_CONSOLE_DISABLE` during configuration with CMake.
  *
  * By default no file logging will occur. Set a log file path:
  *  - at compile time by specifying `-DUHD_LOG_FILE=$file_path`
- *  - and/or override at runtime by setting the environment variable `UHD_LOG_FILE`
+ *  - and/or override at runtime by setting the environment variable
+ *    `UHD_LOG_FILE`
  *
- * Log levels
- * ----------
+ * \subsection loghpp_levels Log levels
+ *
+ * See also \ref logging_levels.
  *
  * All log messages with verbosity greater than or equal to the log level
  * (in other words, as often or less often than the current log level)
  * are recorded to std::clog and/or the log file.
- * Log levels can be specified using string or numeric values of uhd::log::severity_level.
+ * Log levels can be specified using string or numeric values of
+ * uhd::log::severity_level.
  *
  * The default log level is "info", but can be overridden:
  *  - at compile time by setting the pre-processor define `-DUHD_LOG_MIN_LEVEL`.
  *  - at runtime by setting the environment variable `UHD_LOG_LEVEL`.
- *  - for console logging by setting `(-D)UHD_LOG_CONSOLE_LEVEL` at run-/compiletime
+ *  - for console logging by setting `(-D)UHD_LOG_CONSOLE_LEVEL` at
+ *    run-/compiletime
  *  - for file logging by setting `(-D)UHD_LOG_FILE_LEVEL` at run-/compiletime
  *
  * UHD_LOG_LEVEL can be the name of a verbosity enum or integer value:
@@ -64,8 +70,7 @@
  *   - Example environment variable: `export UHD_LOG_LEVEL=3`
  *   - Example environment variable: `export UHD_LOG_LEVEL=info`
  *
- * Log formatting
- * --------------
+ * \subsection loghpp_formatting Log formatting
  *
  * The log format for messages going into a log file is CSV.
  * All log messages going into a logfile will contain following fields:
@@ -76,11 +81,13 @@
  * - component/channel information which logged the information
  * - the actual log message
  *
- * The log format of log messages displayed on the terminal is plain text with space separated tags prepended.
+ * The log format of log messages displayed on the terminal is plain text with
+ * space separated tags prepended.
  * For example:
- *    - `[INFO] [x300] This is a informational log message`
+ *    - `[INFO] [X300] This is a informational log message`
  *
- * The log format for log output on the console by using these preprocessor defines in CMake:
+ * The log format for log output on the console by using these preprocessor
+ * defines in CMake:
  * - `-DUHD_LOG_CONSOLE_TIME` adds a timestamp [2017-01-01 00:00:00.000000]
  * - `-DUHD_LOG_CONSOLE_THREAD` adds a thread-id `[0x001234]`
  * - `-DUHD_LOG_CONSOLE_SRC` adds a sourcefile and line tag `[src_file:line]`
@@ -101,7 +108,8 @@ namespace uhd {
     namespace log {
         /*! Logging severity levels
          *
-         * Either numeric value or string can be used to define loglevel in CMake and environment variables
+         * Either numeric value or string can be used to define loglevel in
+         * CMake and environment variables
          */
         enum UHD_API severity_level {
             trace   = 0, /**< displays every available log message */
@@ -209,10 +217,11 @@ namespace uhd {
     }
 }
 
-
-// internal logging macro to be used in other macros
+//! \cond
+//! Internal logging macro to be used in other macros
 #define _UHD_LOG_INTERNAL(component, level) \
     uhd::_log::log(level, __FILE__, __LINE__, component, boost::this_thread::get_id())
+//! \endcond
 
 // macro-style logging (compile-time determined)
 #if UHD_LOG_MIN_LEVEL < 1
@@ -278,6 +287,7 @@ namespace uhd {
 #define UHD_HERE()                                              \
     UHD_LOGGER_DEBUG("DEBUG") << __FILE__ << ":" << __LINE__ << " (" << __PRETTY_FUNCTION__ << ")";
 #else
+//! Helpful debug tool to print site info
 #define UHD_HERE()                                              \
     UHD_LOGGER_DEBUG("DEBUG") << __FILE__ << ":" << __LINE__;
 #endif
@@ -290,9 +300,10 @@ namespace uhd {
 #define UHD_HEX(var)                                                    \
     UHD_LOGGER_DEBUG("DEBUG") << #var << " = 0x" << std::hex << std::setfill('0') << std::setw(8) << var << std::dec;
 
+//! \cond
 namespace uhd{ namespace _log {
 
-    //! Internal logging object (called by UHD_LOG macros)
+    //! \internal Internal logging object (called by UHD_LOG macros)
     class UHD_API log {
     public:
         log(
@@ -305,7 +316,7 @@ namespace uhd{ namespace _log {
 
         ~log(void);
 
-        // Macro for overloading insertion operators to avoid costly
+        // \internal Macro for overloading insertion operators to avoid costly
         // conversion of types if not logging.
         #define INSERTION_OVERLOAD(x)   log& operator<< (x)             \
                                         {                               \
@@ -331,6 +342,7 @@ namespace uhd{ namespace _log {
     };
 
 } //namespace uhd::_log
+//! \endcond
 } /* namespace uhd */
 
 #endif /* INCLUDED_UHD_UTILS_LOG_HPP */
