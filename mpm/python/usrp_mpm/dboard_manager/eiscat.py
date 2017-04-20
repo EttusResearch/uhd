@@ -19,8 +19,6 @@ EISCAT rx board implementation module
 """
 from . import lib
 from .base import DboardManagerBase
-from .base import LOG
-
 
 class eiscat(DboardManagerBase):
     hw_pid = 3

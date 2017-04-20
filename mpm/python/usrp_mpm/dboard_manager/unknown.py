@@ -20,9 +20,6 @@ EISCAT rx board implementation module
 from .base import DboardManagerBase
 from logging import getLogger
 
-LOG = getLogger(__name__)
-
-
 class unknown(DboardManagerBase):
     hw_pid = 0
     special_eeprom_addrs = {}

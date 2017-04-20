@@ -19,18 +19,15 @@ Code to run the discovery port
 """
 
 from __future__ import print_function
-from logging import getLogger
 from multiprocessing import Process
-from six import iteritems
 import socket
+from six import iteritems
 from usrp_mpm.types import MPM_DISCOVERY_PORT
-
-LOG = getLogger(__name__)
+from .mpmlog import get_main_logger
 
 RESPONSE_PREAMBLE = "USRP-MPM"
 RESPONSE_SEP = ";"
 RESPONSE_CLAIMED_KEY = "claimed"
-
 
 def spawn_discovery_process(device_info, shared_state):
     """
@@ -59,6 +56,7 @@ def _discovery_process(device_info, state):
             ["{k}={v}".format(k=RESPONSE_CLAIMED_KEY, v=state.claim_status.value)] + \
             ["{k}={v}".format(k="token", v=state.claim_token.value)]
         )
+    log = get_main_logger().getChild('discovery')
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind((("0.0.0.0", MPM_DISCOVERY_PORT)))
@@ -68,19 +66,19 @@ def _discovery_process(device_info, state):
     # try:
     while True:
         data, sender = sock.recvfrom(8000)
-        LOG.info("Got poked by: %s", sender[0])
+        log.info("Got poked by: %s", sender[0])
         if data.strip("\0") == "MPM-DISC":
-            LOG.info("Sending discovery response to %s port: %d",
+            log.info("Sending discovery response to %s port: %d",
                      sender[0], sender[1])
             send_data = create_response_string()
             send_sock.sendto(send_data, sender)
         elif data.strip("\0").startswith("MPM-ECHO"):
-            LOG.info("Received echo request")
+            log.info("Received echo request from {sender}".format(sender=sender[0]))
             send_data = data
             send_sock.sendto(send_data, sender)
 
     # except Exception as err:
-    #     LOG.info("Error: %s", err)
-    #     LOG.info("Error type: %s", type(err))
+    #     log.info("Error: %s", err)
+    #     log.info("Error type: %s", type(err))
     #     sock.close()
     #     send_sock.close()

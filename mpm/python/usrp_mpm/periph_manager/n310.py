@@ -31,9 +31,6 @@ from logging import getLogger
 import netaddr
 import socket
 
-LOG = getLogger(__name__)
-
-
 class n310(PeriphManagerBase):
     """
     Holds N310 specific attributes and methods
@@ -42,13 +39,15 @@ class n310(PeriphManagerBase):
     mboard_type = "n310"
     mboard_eeprom_addr = "e0005000.i2c"
     # dboard_eeprom_addrs = {"A": "something", "B": "else"}
+    # dboard_eeprom_addrs = {"A": "e0004000.i2c",}
     # dboard_spimaster_addrs = {"A": "something", "B": "else"}
+    dboard_spimaster_addrs = {"A": "e0006000.spi",}
     interfaces = {}
 
     def __init__(self, *args, **kwargs):
         # First initialize parent class - will populate self._eeprom_head and self._eeprom_rawdata
         super(n310, self).__init__(*args, **kwargs)
-        data = self._read_eeprom_v1(self._eeprom_rawdata)
+        # data = self._read_eeprom_v1(self._eeprom_rawdata)
         # mac 0: mgmt port, mac1: sfp0, mac2: sfp1
         # self.interfaces["mgmt"] = {
         #     "mac_addr": byte_to_mac(data[0]),
@@ -62,12 +61,15 @@ class n310(PeriphManagerBase):
         #     "mac_addr": byte_to_mac(data[2]),
         #     "addrs": get_iface_addrs(byte_to_mac(data[2]))
         # }
-        self.mboard_info["serial"] = data[0]  # some format
+        # self.mboard_info["serial"] = data[0]  # some format
+        self.mboard_info["serial"] = '123'  # some format
         with open("/sys/class/rfnoc_crossbar/crossbar0/local_addr", "w") as xbar:
             xbar.write("0x2")
-
         # if header.get("dataversion", 0) == 1:
 
+        # Initialize our daughterboards:
+        self.log.debug("Initializing A-side dboard")
+        self.dboards['A'].init_device()
 
     def _read_eeprom_v1(self, data):
         """
@@ -119,11 +121,11 @@ class n310(PeriphManagerBase):
             # uio_path, uio_size = get_uio_node("misc-enet-regs0")
             uio_path = "/dev/uio0"
             uio_size = 0x2000
-            LOG.debug("got uio_path and size")
+            self.log.debug("got uio_path and size")
             uio_obj = uio(uio_path, uio_size, read_only=False)
-            LOG.info("got my uio")
-            LOG.info("ip_addr: %s", sender_addr)
-            # LOG.info("mac_addr: %s", mac_addr)
+            self.log.info("got my uio")
+            self.log.info("ip_addr: %s", sender_addr)
+            # self.log.info("mac_addr: %s", mac_addr)
             ip_addr = int(netaddr.IPAddress(sender_addr))
             mac_addr = int(netaddr.EUI(mac_addr))
             uio_obj.poke32(0x1000 + 4*new_ep, ip_addr)

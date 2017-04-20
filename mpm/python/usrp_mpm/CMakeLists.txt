@@ -25,7 +25,9 @@ SET(USRP_MPM_TOP_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/discovery.py
     ${CMAKE_CURRENT_SOURCE_DIR}/rpc_server.py
     ${CMAKE_CURRENT_SOURCE_DIR}/uio.py
-    )
+    ${CMAKE_CURRENT_SOURCE_DIR}/nijesdcore.py
+    ${CMAKE_CURRENT_SOURCE_DIR}/mpmlog.py
+)
 LIST(APPEND USRP_MPM_FILES ${USRP_MPM_TOP_FILES})
 ADD_SUBDIRECTORY(periph_manager)
 ADD_SUBDIRECTORY(dboard_manager)

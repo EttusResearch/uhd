@@ -19,12 +19,13 @@ Mboard implementation base class
 """
 
 import os
+from six import iteritems
+from ..mpmlog import get_logger
+from logging import getLogger
 from ..types import EEPROM
 from .. import dboard_manager
 from .udev import get_eeprom_path
 from .udev import get_spidev_nodes
-from six import iteritems
-
 
 class PeriphManagerBase(object):
     """"
@@ -48,22 +49,38 @@ class PeriphManagerBase(object):
     available_endpoints = range(256)
 
     def __init__(self):
+        self.log = get_logger('PeriphManager')
         # I know my EEPROM address, lets use it
         self.overlays = ""
-        (self._eeprom_head, self._eeprom_rawdata) = EEPROM().read_eeprom(
-            get_eeprom_path(self.mboard_eeprom_addr))
-        print self._eeprom_head
+        # (self._eeprom_head, self._eeprom_rawdata) = EEPROM().read_eeprom(
+            # get_eeprom_path(self.mboard_eeprom_addr))
+        # print self._eeprom_head
         self._dboard_eeproms = {}
-        for dboard_slot, eeprom_addr in self.dboard_eeprom_addrs.iteritems():
-            spi_devices = []
-            # I know EEPROM adresses for my dboard slots
-            eeprom_data = EEPROM().read_eeprom(get_eeprom_path(eeprom_addr))
-            # I know spidev masters on the dboard slots
-            hw_pid = eeprom_data[0].get("hw_pid", 0)
-            if hw_pid in dboard_manager.HW_PIDS:
-                spi_devices = get_spidev_nodes(self.dboard_spimaster_addrs.get(dboard_slot))
-            dboard = dboard_manager.HW_PIDS.get(hw_pid, dboard_manager.unknown)
-            self.dboards.update({dboard_slot: dboard(spi_devices, eeprom_data)})
+        self.log.debug("Initializing dboards")
+        # for dboard_slot, eeprom_addr in self.dboard_eeprom_addrs.iteritems():
+            # self.log.debug("Adding dboard for slot {0}".format(dboard_slot))
+            # spi_devices = []
+            # # I know EEPROM adresses for my dboard slots
+            # eeprom_data = EEPROM().read_eeprom(get_eeprom_path(eeprom_addr))
+            # # I know spidev masters on the dboard slots
+            # hw_pid = eeprom_data[0].get("hw_pid", 0)
+            # if hw_pid in dboard_manager.HW_PIDS:
+                # spi_devices = get_spidev_nodes(self.dboard_spimaster_addrs.get(dboard_slot))
+            # dboard = dboard_manager.HW_PIDS.get(hw_pid, dboard_manager.unknown)
+            # self.dboards.update({dboard_slot: dboard(spi_devices, eeprom_data)})
+        dboard_slot = "A"
+        self.log.debug("Adding dboard for slot {0}".format(dboard_slot))
+        spi_devices = []
+        # I know EEPROM adresses for my dboard slots
+        # eeprom_data = EEPROM().read_eeprom(get_eeprom_path(eeprom_addr))
+        eeprom_data = None
+        # I know spidev masters on the dboard slots
+        hw_pid = 2
+        if hw_pid in dboard_manager.HW_PIDS:
+            spi_devices = get_spidev_nodes("e0006000.spi")
+            self.log.debug("found spidev nodes: {0}".format(spi_devices))
+        dboard = dboard_manager.HW_PIDS.get(hw_pid, dboard_manager.unknown)
+        self.dboards.update({dboard_slot: dboard(spi_devices, eeprom_data)})
 
     def safe_list_updateable_components(self):
         """

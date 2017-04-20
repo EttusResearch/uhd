@@ -21,9 +21,6 @@ from . import lib
 from .base import DboardManagerBase
 from logging import getLogger
 
-LOG = getLogger(__name__)
-
-
 class fake_spi(object):
     def __init__(self, addr):
         self.addr = addr
@@ -54,8 +51,6 @@ class test(DboardManagerBase):
         self.dev3 = "2"
 
     def init_device(self):
-        LOG.debug("initialize hardware")
+        self.log.debug("initialize hardware")
         self._device = test_device(self.dev1, self.dev2, self.dev3)
-
-
 

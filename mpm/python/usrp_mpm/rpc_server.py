@@ -18,7 +18,6 @@
 Implemented RPC Servers
 """
 from __future__ import print_function
-from logging import getLogger
 from gevent.server import StreamServer
 from gevent.pool import Pool
 from gevent import signal
@@ -30,11 +29,8 @@ from mprpc import RPCServer
 from random import choice
 from six import iteritems
 from string import ascii_letters, digits
-from threading import Timer
 from multiprocessing import Process
-
-
-LOG = getLogger(__name__)
+from .mpmlog import get_main_logger
 
 
 class MPMServer(RPCServer):
@@ -48,6 +44,7 @@ class MPMServer(RPCServer):
     _mb_methods = []
 
     def __init__(self, state, mgr, *args, **kwargs):
+        self.log = get_main_logger().getChild('RPCServer')
         self._state = state
         self._timer = Greenlet()
         self.periph_manager = mgr
@@ -78,8 +75,7 @@ class MPMServer(RPCServer):
         Adds a method with the name command to the RPC server
         This command will require an acquired claim on the device
         """
-        LOG.debug("adding command %s pointing to %s", command, function)
-
+        self.log.trace("adding command %s pointing to %s", command, function)
         def new_function(token, *args):
             if token[:256] != self._state.claim_token.value:
                 return False
@@ -92,7 +88,7 @@ class MPMServer(RPCServer):
         Add a safe method which does not require a claim on the
         device
         """
-        LOG.debug("adding safe command %s pointing to %s", command, function)
+        self.log.trace("adding safe command %s pointing to %s", command, function)
         setattr(self, command, function)
 
     def list_methods(self):
@@ -109,7 +105,7 @@ class MPMServer(RPCServer):
         Take in data as argument and send it back
         This is a safe method which can be called without a claim on the device
         """
-        LOG.debug("I was pinged from: %s:%s", self.client_host, self.client_port)
+        self.log.debug("I was pinged from: %s:%s", self.client_host, self.client_port)
         return data
 
     def claim(self, sender_id):
@@ -120,14 +116,14 @@ class MPMServer(RPCServer):
         self._state.lock.acquire()
         if self._state.claim_status.value:
             return ""
-        LOG.debug("claiming from: %s", self.client_host)
+        self.log.debug("claiming from: %s", self.client_host)
         self.periph_manager.claimed = True
         self._state.claim_token.value = ''.join(choice(ascii_letters + digits) for _ in range(256))
         self._state.claim_status.value = True
         self._state.lock.release()
         self.sender_id = sender_id
         self._reset_timer()
-        LOG.debug("giving token: %s to host: %s", self._state.claim_token.value, self.client_host)
+        self.log.debug("giving token: %s to host: %s", self._state.claim_token.value, self.client_host)
         return self._state.claim_token.value
 
     def reclaim(self, token):
@@ -140,23 +136,20 @@ class MPMServer(RPCServer):
         if self._state.claim_status.value:
             if self._state.claim_token.value == token[:256]:
                 self._state.lock.release()
-                LOG.debug("reclaimed from: %s", self.client_host)
+                self.log.debug("reclaimed from: %s", self.client_host)
                 self._reset_timer()
                 return True
             self._state.lock.release()
-            LOG.debug("reclaim failed from: %s", self.client_host)
+            self.log.debug("reclaim failed from: %s", self.client_host)
             return False
-        LOG.debug("trying to reclaim unclaimed device from: %s", self.client_host)
+        self.log.debug("trying to reclaim unclaimed device from: %s", self.client_host)
         return False
-
-
-
 
     def _unclaim(self):
         """
         unconditional unclaim - for internal use
         """
-        LOG.debug("releasing claim")
+        self.log.debug("releasing claim")
         self._state.claim_status.value = False
         self._state.claim_token.value = ""
         self.sender_id = None

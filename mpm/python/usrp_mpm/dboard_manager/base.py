@@ -17,11 +17,8 @@
 """
 dboard base implementation module
 """
-import logging
 import struct
-
-LOG = logging.Logger(__name__)
-
+from ..mpmlog import get_logger
 
 class DboardManagerBase(object):
     """
@@ -33,6 +30,7 @@ class DboardManagerBase(object):
 
     def __init__(self, eeprom=None):
         self._eeprom = eeprom or {}
+        self.log = get_logger('dboardManager')
 
     def get_serial(self):
         return self._eeprom.get("serial", "")

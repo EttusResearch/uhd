@@ -20,10 +20,7 @@ N310 implementation module
 import itertools
 import socket
 from pyroute2 import IPRoute
-from logging import getLogger
-
-LOG = getLogger(__name__)
-
+from ..mpmlog import get_logger
 
 def get_iface_addrs(mac_addr):
     """
@@ -57,7 +54,7 @@ def get_mac_addr(remote_addr):
     ip2 = IPRoute()
     addrs = ip2.get_neighbours(dst=remote_addr)
     if len(addrs) > 1:
-        LOG.warning("More than one device with the same IP address found. Picking entry at random")
+        get_logger('get_mac_addr').warning("More than one device with the same IP address found. Picking entry at random")
     if not addrs:
         return None
     return addrs[0].get_attr('NDA_LLADDR')

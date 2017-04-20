@@ -19,32 +19,28 @@
 Main executable for the USRP Hardware Daemon
 """
 from __future__ import print_function
-from logging import getLogger
-from logging import StreamHandler
-from systemd.journal import JournalHandler
-from logging import DEBUG
-from logging import Formatter
-from gevent import signal
 import sys
+from gevent import signal
 import usrp_mpm as mpm
 from usrp_mpm.types import SharedState
 from usrp_mpm.periph_manager import periph_manager
 
-log = getLogger("usrp_mpm")
 _PROCESSES = []
 
-
-def kill_time(signal, frame):
+def kill_time(sig, frame):
     """
     kill all processes
     to be used in a signal handler
+
+    If all processes are properly terminated, this will exit
     """
+    log = mpm.get_main_logger().getChild('kill')
     for proc in _PROCESSES:
         proc.terminate()
-        log.info("Terminating pid: {0}".format(proc.pid))
+        LOG.info("Terminating pid: {0}".format(proc.pid))
     for proc in _PROCESSES:
         proc.join()
-    log.info("System exiting")
+    LOG.info("System exiting")
     sys.exit(0)
 
 
@@ -54,36 +50,32 @@ def main():
 
     Main process loop.
     """
-    # Setup logging
-    log.setLevel(DEBUG)
-    handler = StreamHandler()
-    journal_handler = JournalHandler(SYSLOG_IDENTIFIER='usrp_hwd')
-    handler.setLevel(DEBUG)
-    formatter = Formatter('[%(asctime)s] [%(levelname)s] [%(module)s] %(message)s')
-    handler.setFormatter(formatter)
-    journal_formatter = Formatter('[%(levelname)s] [%(module)s] %(message)s')
-    journal_handler.setFormatter(journal_formatter)
-    log.addHandler(handler)
-    log.addHandler(journal_handler)
-
+    log = mpm.get_main_logger().getChild('main')
     shared = SharedState()
     # Create the periph_manager for this device
     # This call will be forwarded to the device specific implementation
-    # e.g. in periph_manager/test.py
+    # e.g. in periph_manager/n310.py
     # Which implementation is called will be determined during configuration
-    # with cmake (-DMPM_DEVICE)
+    # with cmake (-DMPM_DEVICE).
+    # mgr is thus derived from PeriphManagerBase (see periph_manager/base.py)
+    log.info("Spawning periph manager...")
     mgr = periph_manager()
     discovery_info = {
         "type": mgr._get_device_info()["type"],
         "serial": mgr._get_device_info()["serial"]
     }
+    log.info("Spawning discovery process...")
     _PROCESSES.append(
         mpm.spawn_discovery_process(discovery_info, shared))
+    log.info("Spawning RPC process...")
     _PROCESSES.append(
         mpm.spawn_rpc_process(mpm.types.MPM_RPC_PORT, shared, mgr))
+    log.info("Processes launched. Registering signal handlers.")
     signal.signal(signal.SIGTERM, kill_time)
     signal.signal(signal.SIGINT, kill_time)
     signal.pause()
+    return True
 
 if __name__ == '__main__':
     exit(not main())
+
