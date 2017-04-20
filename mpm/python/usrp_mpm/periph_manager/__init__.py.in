@@ -23,7 +23,4 @@ from .. import libpyusrp_periphs as lib
 from .. import dboard_manager
 from .. import types
 
-try:
-    from .${MPM_DEVICE} import ${MPM_DEVICE} as periph_manager
-except ImportError:
-    raise Exception("Could not import ${MPM_DEVICE}")
+from .${MPM_DEVICE} import ${MPM_DEVICE} as periph_manager
