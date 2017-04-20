@@ -253,7 +253,8 @@ public:
 
     void push(const uhd::log::logging_info& log_info)
     {
-        _log_queue.push_with_haste(log_info);
+        static const double PUSH_TIMEOUT = 0.25; // seconds
+        _log_queue.push_with_timed_wait(log_info, PUSH_TIMEOUT);
     }
 
     void push_fastpath(const std::string &message)
