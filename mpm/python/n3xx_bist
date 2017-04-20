@@ -1,0 +1,183 @@
+#!/usr/bin/env python
+#
+# Copyright 2017 Ettus Research (National Instruments)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+"""
+N310 Built-In Self Test (BIST)
+"""
+
+from __future__ import print_function
+import sys
+import argparse
+
+class N310BIST(object):
+    """
+    BIST Tool for the USRP N3xx series
+    """
+    # This defines special tests that are really collections of other tests.
+    collections = {
+        'standard': ["ddr3", "gpsdo", "rtc", "temp", "clock_int", "tpm"],
+        'extended': "*",
+    }
+
+    @staticmethod
+    def make_arg_parser():
+        """
+        Return arg parser
+        """
+        parser = argparse.ArgumentParser(
+            description="N3xx BIST Tool",
+        )
+        parser.add_argument(
+            'tests',
+            help="List the tests that should be run",
+            nargs='+', # There has to be at least one
+        )
+        return parser
+
+    def __init__(self):
+        self.args = N310BIST.make_arg_parser().parse_args()
+        self.tests_to_run = set()
+        for test in self.args.tests:
+            if test in self.collections:
+                for test in self.expand_collection(test):
+                    self.tests_to_run.add(test)
+            else:
+                self.tests_to_run.add(test)
+
+    def expand_collection(self, coll):
+        """
+        Return names of tests in a collection
+        """
+        tests = self.collections[coll]
+        if tests == "*":
+            tests = {x.replace('bist_', '')
+                     for x in dir(self)
+                     if x.find('bist_') == 0
+                    }
+        else:
+            tests = set(tests)
+        return tests
+
+    def run(self):
+        """
+        Execute tests.
+
+        Returns True on Success.
+        """
+        def execute_test(testname):
+            """
+            Actually run a test.
+            """
+            testmethod_name = "bist_{0}".format(testname)
+            sys.stderr.write("Executing test method: {0}\n\n".format(testmethod_name))
+            return getattr(self, testmethod_name)()
+        tests_successful = True
+        for test in self.tests_to_run:
+            tests_successful = tests_successful and execute_test(test)
+        return tests_successful
+
+#############################################################################
+# BISTS
+# All bist_* methods must return True/False success values!
+#############################################################################
+    def bist_rtc(self):
+        """
+        BIST for RTC (real time clock)
+        """
+        assert 'rtc' in self.tests_to_run
+        sys.stderr.write("Test not implemented.\n")
+        return True
+
+    def bist_ddr3(self):
+        """
+        BIST for PL DDR3 DRAM
+        """
+        assert 'ddr3' in self.tests_to_run
+        sys.stderr.write("Test not implemented.\n")
+        return True
+
+    def bist_gpsdo(self):
+        """
+        BIST for GPSDO
+        """
+        assert 'gpsdo' in self.tests_to_run
+        sys.stderr.write("Test not implemented.\n")
+        return True
+
+    def bist_tpm(self):
+        """
+        BIST for TPM (Trusted Platform Module)
+        """
+        assert 'gpsdo' in self.tests_to_run
+        sys.stderr.write("Test not implemented.\n")
+        return True
+
+    def bist_clock_int(self):
+        """
+        BIST for clock lock from internal source
+        """
+        assert 'clock_int' in self.tests_to_run
+        sys.stderr.write("Test not implemented.\n")
+        return True
+
+    def bist_clock_ext(self):
+        """
+        BIST for clock lock from external source
+        """
+        assert 'clock_ext' in self.tests_to_run
+        sys.stderr.write("Test not implemented.\n")
+        return True
+
+    def bist_usbhost(self):
+        """
+        BIST for USB host functionality
+        """
+        assert 'usbhost' in self.tests_to_run
+        sys.stderr.write("Test not implemented.\n")
+        return True
+
+    def bist_sfp(self):
+        """
+        BIST for SFP+ ports
+        """
+        assert 'sfp' in self.tests_to_run
+        sys.stderr.write("Test not implemented.\n")
+        return True
+
+    def bist_gpio(self):
+        """
+        BIST for SFP+ ports
+        """
+        assert 'gpio' in self.tests_to_run
+        sys.stderr.write("Test not implemented.\n")
+        return True
+
+    def bist_temp(self):
+        """
+        BIST for temperature sensors
+        """
+        assert 'temp' in self.tests_to_run
+        sys.stderr.write("Test not implemented.\n")
+        return True
+
+def main():
+    " Go, go, go! "
+    return N310BIST().run()
+
+if __name__ == '__main__':
+    exit(not main())
+
