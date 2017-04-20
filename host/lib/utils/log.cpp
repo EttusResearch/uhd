@@ -221,13 +221,29 @@ public:
                 for (const auto &logger : _loggers) {
                     auto level = logger_level.find(logger.first);
                     if(level != logger_level.end() && log_info.verbosity < level->second){
-                        UHD_VAR(level->second)
-                            continue;
+                        continue;
                     }
                     logger.second(log_info);
                 }
             }
         }
+
+        // Exit procedure: Clear the queue
+        uhd::log::logging_info log_info;
+        while (_log_queue.pop_with_haste(log_info)) {
+            for (const auto &logger : _loggers) {
+                auto level = logger_level.find(logger.first);
+                if (level != logger_level.end() && log_info.verbosity < level->second){
+                    continue;
+                }
+                logger.second(log_info);
+            }
+        }
+    }
+
+    void add_logger(const std::string &key, uhd::log::log_fn_t logger_fn)
+    {
+        _loggers[key] = logger_fn;
     }
 
 private:
@@ -295,6 +311,13 @@ uhd::_log::log::~log(void)
         this->_log_info.message = _ss.str();
         log_rs().push(this->_log_info);
     }
+}
+
+
+void
+uhd::log::add_logger(const std::string &key, log_fn_t logger_fn)
+{
+    log_rs().add_logger(key, logger_fn);
 }
 
 void
