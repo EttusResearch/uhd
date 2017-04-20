@@ -39,7 +39,7 @@ public:
     enum class gain_mode_t { MANUAL, AUTOMATIC, HYBRID };
     enum class pll_t {CLK_SYNTH, RX_SYNTH, TX_SYNTH, SNIFF_SYNTH, CALPLL_SDM};
 
-    ad937x_device(uhd::spi_iface::sptr iface, mpm::ad937x::gpio::gain_pins_t gain_pins);
+    ad937x_device(uhd::spi_iface* iface, mpm::ad937x::gpio::gain_pins_t gain_pins);
 
     void begin_initialization();
     void finish_initialization();
@@ -96,7 +96,7 @@ private:
 
     void _call_api_function(std::function<mykonosErr_t()> func);
     void _call_gpio_api_function(std::function<mykonosGpioErr_t()> func);
-    void _call_debug_api_function(std::function<mykonosDbgErr_t()> func);
+    //void _call_debug_api_function(std::function<mykonosDbgErr_t()> func);
 
     static uint8_t _convert_rx_gain(double gain);
     static uint16_t _convert_tx_gain(double gain);

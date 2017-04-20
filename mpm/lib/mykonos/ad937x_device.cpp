@@ -20,6 +20,8 @@
 #include "adi/mykonos_gpio.h"
 #include "adi/mykonos_debug/mykonos_dbgjesd.h"
 
+#include <boost/format.hpp>
+
 #include <functional>
 #include <iostream>
 
@@ -112,16 +114,16 @@ void ad937x_device::_call_gpio_api_function(std::function<mykonosGpioErr_t()> fu
     }
 }
 
-void ad937x_device::_call_debug_api_function(std::function<mykonosDbgErr_t()> func)
-{
-    auto error = func();
-    if (error != MYKONOS_ERR_DBG_OK)
-    {
-        std::cout << getDbgJesdMykonosErrorMessage(error);
-        // TODO: make UHD exception
-        //throw std::exception(getMykonosErrorMessage(error));
-    }
-}
+//void ad937x_device::_call_debug_api_function(std::function<mykonosDbgErr_t()> func)
+//{
+    //auto error = func();
+    //if (error != MYKONOS_ERR_DBG_OK)
+    //{
+        //std::cout << getDbgJesdMykonosErrorMessage(error);
+        //// TODO: make UHD exception
+        ////throw std::exception(getMykonosErrorMessage(error));
+    //}
+//}
 
 // TODO: delete this comment closer to release
 /*
@@ -193,13 +195,16 @@ void ad937x_device::begin_initialization()
 {
     // TODO: make this reset actually do something (implement CMB_HardReset or replace)
     _call_api_function(std::bind(MYKONOS_resetDevice, mykonos_config.device));
-
-    if (get_product_id() != AD9371_PRODUCT_ID)
-    {
-        throw runtime_error("AD9371 product ID does not match expected ID!");
-    }
-
     _call_api_function(std::bind(MYKONOS_initialize, mykonos_config.device));
+
+    uint8_t product_id = get_product_id();
+    if (product_id != AD9371_PRODUCT_ID)
+    {
+        throw runtime_error(str(
+            boost::format("AD9371 product ID does not match expected ID! Read: %X Expected: %X")
+            % int(product_id) % int(AD9371_PRODUCT_ID)
+        ));
+    }
 
     if (!get_pll_lock_status(pll_t::CLK_SYNTH))
     {
@@ -267,7 +272,7 @@ uint8_t ad937x_device::get_deframer_status()
 uint8_t ad937x_device::get_deframer_irq()
 {
     uint8_t irq_status = 0;
-    _call_debug_api_function(std::bind(MYKONOS_deframerGetIrq, mykonos_config.device, &irq_status));
+    //_call_debug_api_function(std::bind(MYKONOS_deframerGetIrq, mykonos_config.device, &irq_status));
     return irq_status;
 }
 
@@ -284,11 +289,17 @@ void ad937x_device::enable_jesd_loopback(uint8_t enable)
     _call_api_function(std::bind(MYKONOS_setRxFramerDataSource, mykonos_config.device, enable));
 }
 
-ad937x_device::ad937x_device(spi_iface::sptr iface, gain_pins_t gain_pins) :
+ad937x_device::ad937x_device(spi_iface* iface, gain_pins_t gain_pins) :
     full_spi_settings(iface),
     mykonos_config(&full_spi_settings.spi_settings),
     gain_ctrl(gain_pins)
 {
+    std::cout << "full spi settings addr " << &full_spi_settings << std::endl;
+    iface->read_spi(0, uhd::spi_config_t::EDGE_RISE, 400, 24);
+    std::cout << "adi spi settings addr " << &(full_spi_settings.spi_settings) << std::endl;
+    std::cout << "iface addr " << std::hex << iface << std::dec << std::endl;
+
+    std::cout << "myk dev addr " << std::hex << mykonos_config.device->spiSettings << std::dec << std::endl;
 
 }
 

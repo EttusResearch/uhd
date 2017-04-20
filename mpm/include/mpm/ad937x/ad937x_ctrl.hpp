@@ -177,7 +177,7 @@ void export_mykonos(){
         .def("get_multichip_sync_status", &ad937x_ctrl::get_multichip_sync_status)
         .def("get_framer_status", &ad937x_ctrl::get_framer_status)
         .def("get_deframer_status", &ad937x_ctrl::get_deframer_status)
-        .def("get_deframer_irq", &ad937x_ctrl::get_deframer_irq)
+        //.def("get_deframer_irq", &ad937x_ctrl::get_deframer_irq)
         .def("get_ilas_config_match", &ad937x_ctrl::get_ilas_config_match)
         .def("enable_jesd_loopback", &ad937x_ctrl::enable_jesd_loopback)
         .def("get_rf_freq_range", &ad937x_ctrl::get_rf_freq_range)

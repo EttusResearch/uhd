@@ -23,6 +23,8 @@
 #include <linux/spi/spidev.h>
 #include <boost/format.hpp>
 
+#include <iostream>
+
 using namespace mpm::spi;
 
 /******************************************************************************
@@ -45,34 +47,53 @@ public:
             ));
         }
 
-        ret = ioctl(_fd, SPI_IOC_WR_MODE32, &_mode);
+        int MODE = 3;
+        ret = ioctl(_fd, SPI_IOC_WR_MODE32, &MODE);
         if (ret == -1) {
-            throw std::runtime_error("Could not set spidev mode");
+            throw std::runtime_error(str(
+                    boost::format("Could not set spidev mode to %X for spidev %s")
+                    % uint16_t(_mode) % device
+            ));
         }
 
         ret = ioctl(_fd, SPI_IOC_RD_MODE32, &_mode);
         if (ret == -1) {
-            throw std::runtime_error("Could not get spidev mode");
+            throw std::runtime_error(str(
+                    boost::format("Could not get spidev mode for spidev %s")
+                    % device
+            ));
         }
 
         ret = ioctl(_fd, SPI_IOC_WR_BITS_PER_WORD, &_bits);
         if (ret == -1) {
-            throw std::runtime_error("Could not set spidev bits per word");
+            throw std::runtime_error(str(
+                    boost::format("Could not set spidev bits per word to %d for spidev %s")
+                    % uint16_t(_bits) % device
+            ));
         }
 
         ret = ioctl(_fd, SPI_IOC_RD_BITS_PER_WORD, &_bits);
         if (ret == -1) {
-            throw std::runtime_error("Could not get spidev bits per word");
+            throw std::runtime_error(str(
+                    boost::format("Could not get spidev bits per word for spidev %s")
+                    % device
+            ));
         }
 
         ret = ioctl(_fd, SPI_IOC_WR_MAX_SPEED_HZ, &_speed);
         if (ret == -1) {
-            throw std::runtime_error("Could not set spidev max speed");
+            throw std::runtime_error(str(
+                    boost::format("Could not set spidev max speed to %d for spidev %s")
+                    % _speed % device
+            ));
         }
 
         ret = ioctl(_fd, SPI_IOC_RD_MAX_SPEED_HZ, &_speed);
         if (ret == -1) {
-            throw std::runtime_error("Could not get spidev max speed");
+            throw std::runtime_error(str(
+                    boost::format("Could not get spidev max speed for spidev %s")
+                    % device
+            ));
         }
     }
 
@@ -138,7 +159,7 @@ public:
 
 private:
     int _fd;
-    uint8_t _mode = SPI_CPHA | SPI_CPOL;
+    uint32_t _mode = SPI_CPHA | SPI_CPOL;
     uint32_t _speed = 2000000;
     uint8_t _bits = 8;
     uint16_t _delay = 0;

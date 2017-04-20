@@ -24,6 +24,8 @@ ad937x_config_t::ad937x_config_t(spiSettings_t* sps)
 
     _assign_default_configuration();
     _init_pointers();
+
+    device = &_device;
 }
 
 void ad937x_config_t::_assign_default_configuration()
@@ -70,7 +72,6 @@ void ad937x_config_t::_assign_default_configuration()
 
 void ad937x_config_t::_init_pointers()
 {
-    _device.spiSettings = &_spiSettings;
     _device.rx = &_rx;
     _device.tx = &_tx;
     _device.obsRx = &_obsRx;

@@ -35,7 +35,7 @@ void export_lmk(){
         .def("verify_chip_id", &lmk04828_iface::verify_chip_id)
         .def("get_chip_id", &lmk04828_iface::get_chip_id)
         .def("init", &lmk04828_iface::init)
-        .def("send_sysref_pulse", &lmk04828_iface::send_sysref_pulse)
+        .def("enable_sysref_pulse", &lmk04828_iface::enable_sysref_pulse)
    ;
 }
 //        .def("make", &lmk04828_iface::make)

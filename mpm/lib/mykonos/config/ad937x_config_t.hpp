@@ -28,7 +28,8 @@ class ad937x_config_t  : public boost::noncopyable
     // a user could technically modify the pointers in the structs, but we have no way of preventing that
 public:
     ad937x_config_t(spiSettings_t* sps);
-    mykonosDevice_t * const device = &_device;
+    //mykonosDevice_t * const device = &_device;
+    mykonosDevice_t * device;
 
     ad937x_fir rx_fir_config;
     ad937x_fir tx_fir_config;
@@ -40,7 +41,6 @@ private:
 
     // in general, this organization stinks
     // TODO: group and make more sense of these fields and pointers
-    spiSettings_t _spiSettings;
     mykonosRxSettings_t _rx;
     mykonosTxSettings_t _tx;
     mykonosObsRxSettings_t _obsRx;

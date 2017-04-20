@@ -30,7 +30,7 @@ uint8_t lmk04828_spi_iface::spi_read(uint32_t addr) {
         // r/w[23] 0[22:21] addr[20:8] data[7:0] = 24 bits
         uint32_t transaction = 0;
         transaction |= LMK_SPI_READ_FLAG << LMK_SPI_READ_FLAG_OFFSET;
-        transaction &= LMK_SPI_RESERVED_FIELD_MASK;
+        //transaction &= LMK_SPI_RESERVED_FIELD_MASK;
         transaction |= addr << LMK_SPI_READ_ADDR_OFFSET;
 
         uint32_t data = _spi_iface->read_spi(DEFAULT_SLAVE, config, transaction, LMK_SPI_NUM_BITS);

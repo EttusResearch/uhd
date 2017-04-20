@@ -22,6 +22,7 @@
 #include <sstream>
 #include <set>
 #include <functional>
+#include <iostream>
 
 using namespace mpm::ad937x::device;
 
@@ -123,9 +124,10 @@ public:
         uhd::spi_iface::sptr iface,
         mpm::ad937x::gpio::gain_pins_t gain_pins) :
         spi_mutex(spi_mutex),
-        device(iface, gain_pins)
+        device(iface.get(), gain_pins),
+        _iface(iface)
     {
-
+        /* nop */
     }
 
     virtual void begin_initialization()
@@ -379,6 +381,7 @@ public:
 private:
     ad937x_device device;
     std::shared_ptr<std::mutex> spi_mutex;
+    uhd::spi_iface::sptr _iface;
 };
 
 ad937x_ctrl::sptr ad937x_ctrl::make(std::shared_ptr<std::mutex> spi_mutex, uhd::spi_iface::sptr iface, mpm::ad937x::gpio::gain_pins_t gain_pins)

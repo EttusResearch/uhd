@@ -24,7 +24,9 @@
 #include <chrono>
 #include <thread>
 
-ad9371_spiSettings_t::ad9371_spiSettings_t(uhd::spi_iface::sptr uhd_iface) :
+static const uint32_t MYKONOS_READ_BIT = (1 << 23);
+
+ad9371_spiSettings_t::ad9371_spiSettings_t(uhd::spi_iface* uhd_iface) :
     spi_iface(uhd_iface)
 {
     spi_settings.chipSelectIndex = 0;       // set later
@@ -98,7 +100,7 @@ commonErr_t CMB_SPIWriteByte(spiSettings_t *spiSettings, uint16_t addr, uint8_t 
         mpm_spi->spi_iface->write_spi(spiSettings->chipSelectIndex, config, data_word, 24);
         return COMMONERR_OK;
     } catch (const std::exception &e) {
-        // ... error handling ...
+        std::cout << "AAAAAAAAAAAAH" << std::endl;
     }
     return COMMONERR_FAILED;
 }
@@ -124,7 +126,7 @@ commonErr_t CMB_SPIWriteBytes(spiSettings_t *spiSettings, uint16_t *addr, uint8_
         }
         return COMMONERR_OK;
     } catch (const std::exception &e) {
-        // ... error handling ...
+        std::cout << "AAAAAAAAAAAAH" << std::endl;
     }
     return COMMONERR_FAILED;
 }
@@ -141,13 +143,14 @@ commonErr_t CMB_SPIReadByte (spiSettings_t *spiSettings, uint16_t addr, uint8_t 
 
     ad9371_spiSettings_t *mpm_spi = ad9371_spiSettings_t::make(spiSettings);
     uhd::spi_config_t config(_get_edge(*spiSettings));
-    uint32_t data_word = (0) | (addr << 8);
+    uint32_t read_word = MYKONOS_READ_BIT | (addr << 8);
 
     try {
         *readdata = static_cast<uint8_t>(
-            mpm_spi->spi_iface->read_spi(spiSettings->chipSelectIndex, config, data_word, 24));
+            mpm_spi->spi_iface->read_spi(spiSettings->chipSelectIndex, config, read_word, 24));
         return COMMONERR_OK;
     } catch (const std::exception &e) {
+        std::cout << "AAAAAAAAAAAAH READ" << std::endl;
         // ... error handling ...
     }
     return COMMONERR_FAILED;
@@ -170,6 +173,7 @@ commonErr_t CMB_SPIWriteField(
         mpm_spi->spi_iface->write_spi(spiSettings->chipSelectIndex, config, write_word, 24);
         return COMMONERR_OK;
     } catch (const std::exception &e) {
+        std::cout << "AAAAAAAAAAAAH WRITE FIELD" << std::endl;
         // ... error handling ...
     }
     return COMMONERR_FAILED;
@@ -184,13 +188,14 @@ commonErr_t CMB_SPIReadField(
 ) {
     ad9371_spiSettings_t *mpm_spi = ad9371_spiSettings_t::make(spiSettings);
     uhd::spi_config_t config(_get_edge(*spiSettings));
-    uint32_t read_word = (0) | (addr << 8);
+    uint32_t read_word = MYKONOS_READ_BIT | (addr << 8);
 
     try {
         uint32_t value = mpm_spi->spi_iface->read_spi(spiSettings->chipSelectIndex, config, read_word, 24);
         *field_val = static_cast<uint8_t>((value & mask) >> start_bit);
         return COMMONERR_OK;
     } catch (const std::exception &e) {
+        std::cout << "AAAAAAAAAAAAH READ FIELD" << std::endl;
         /* ... error handling ... */
     }
     return COMMONERR_FAILED;
@@ -250,7 +255,7 @@ commonErr_t CMB_closeLog(void)
 
 commonErr_t CMB_writeToLog(ADI_LOGLEVEL level, uint8_t deviceIndex, uint32_t errorCode, const char *comment)
 {
-    std::cout << level << " " << errorCode << " " << comment << std::endl;
+    std::cout << "[CMB_writeToLog] level==" << level << " errorCode==" << errorCode << " " << comment << std::endl;
     return COMMONERR_OK;
 }
 commonErr_t CMB_flushLog(void)

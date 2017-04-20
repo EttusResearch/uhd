@@ -46,12 +46,16 @@ public:
 
     void init();
 
-    void send_sysref_pulse();
+    /*! Enable SYSREF pulses
+     *
+     * After calling this, triggering the sync pin will emit a SYSREF pulse.
+     */
+    void enable_sysref_pulse();
 
 private:
     // use IC Reg Map once values stabilize
 //    lmk04828_regs_t _regs;
-    
+
     write_fn_t _write_fn;
     read_fn_t _read_fn;
 };

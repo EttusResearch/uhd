@@ -27,12 +27,12 @@ struct ad9371_spiSettings_t
         return reinterpret_cast<ad9371_spiSettings_t *>(sps);
     }
 
-    explicit ad9371_spiSettings_t(uhd::spi_iface::sptr uhd_iface);
+    explicit ad9371_spiSettings_t(uhd::spi_iface* uhd_iface);
 
     // spiSetting_t MUST be the first data member so that the
-    // reintrepret_cast in make() works
+    // reinterpret_cast in make() works
     spiSettings_t spi_settings;
-    uhd::spi_iface::sptr spi_iface;
+    uhd::spi_iface* spi_iface;
     std::chrono::time_point<std::chrono::steady_clock> timeout_start;
     std::chrono::microseconds timeout_duration;
 };
