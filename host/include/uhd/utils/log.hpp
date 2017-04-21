@@ -157,8 +157,7 @@ namespace uhd {
          * Every logging_backend has to define a function with this signature.
          * Can be added to the logging core.
          */
-        using log_fn_t = std::function<void(const uhd::log::logging_info&)>;
-
+        typedef std::function<void(const uhd::log::logging_info&)> log_fn_t ;
 
         /*! Set the global log level
          *
