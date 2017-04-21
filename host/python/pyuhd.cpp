@@ -475,6 +475,20 @@ void export_filter()
 
 }
 
+// We need this hack because import_array() returns NULL for newer Python
+// versions.
+#if PY_MAJOR_VERSION >= 3
+void* init_numpy()
+{
+    import_array();
+    return NULL;
+}
+#else
+void init_numpy()
+{
+    import_array();
+}
+#endif
 
 BOOST_PYTHON_MODULE(libpyuhd)
 {
@@ -493,7 +507,6 @@ BOOST_PYTHON_MODULE(libpyuhd)
     export_multi_usrp();
     export_types();
     export_filter();
-    //For numpy initialization
-    import_array();
+    init_numpy();
 }
 
