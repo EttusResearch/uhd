@@ -32,7 +32,7 @@ class lmk04828_iface
 {
 public:
     typedef boost::shared_ptr<lmk04828_iface> sptr;
-    typedef boost::function<void(std::vector<uint32_t>)> write_fn_t; 
+    typedef boost::function<void(std::vector<uint32_t>)> write_fn_t;
     typedef boost::function<uint8_t(uint32_t)> read_fn_t;
 
     //static sptr (write_fn_t write_fn, read_fn_t read_fn);
@@ -40,7 +40,12 @@ public:
 
     ~lmk04828_iface() {}
 
-    void verify_chip_id();
+    //! Checks if the chip ID is what we expect
+    //
+    // Does not throw
+    //
+    // \returns false if chip ID is incorrect
+    bool verify_chip_id();
 
     uint8_t get_chip_id();
 

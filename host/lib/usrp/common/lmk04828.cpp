@@ -28,7 +28,7 @@ lmk04828_iface::lmk04828_iface(write_fn_t write_fn, read_fn_t read_fn) : _write_
 
 }
 
-void lmk04828_iface::verify_chip_id()
+bool lmk04828_iface::verify_chip_id()
 {
     // Check ID Device Type, ID Prod, and ID Maskrev registers
     uint8_t id_device_type = get_chip_id();
@@ -38,7 +38,10 @@ void lmk04828_iface::verify_chip_id()
     // assert(id_device_type == 6);
     if (id_device_type != 6){
         std::cout << "id_device_type is not 6!" << std::endl;
+        return false;
     }
+
+    return true;
 }
 
 uint8_t lmk04828_iface::get_chip_id(){
@@ -69,7 +72,9 @@ void lmk04828_iface::init()
 
     _write_fn(writes);
 
-    verify_chip_id();
+    if (!verify_chip_id()) {
+        throw uhd::runtime_error("LMK ID not correct!");
+    }
 }
 
 void lmk04828_iface::enable_sysref_pulse()
