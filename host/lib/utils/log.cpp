@@ -18,30 +18,31 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/paths.hpp>
-#include <uhd/utils/tasks.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/make_shared.hpp>
-#include <boost/thread/locks.hpp>
-#include <boost/thread/mutex.hpp>
 #include <fstream>
 #include <cctype>
 #include <atomic>
+#include <mutex>
+#include <memory>
+#include <thread>
 
 namespace pt = boost::posix_time;
 
-static const std::string PURPLE = "\033[35;1m"; // purple
-static const std::string BLUE = "\033[34;1m"; // blue
-static const std::string GREEN = "\033[32;1m"; // green
-static const std::string YELLOW = "\033[33;1m"; // yellow
-static const std::string RED = "\033[31;0m"; // red
-static const std::string BRED = "\033[31;1m"; // bright red
-static const std::string RESET_COLORS = "\033[39;0m"; // reset colors
+// Don't make these static const std::string -- we need their lifetime guaranteed!
+#define PURPLE "\033[35;1m" // purple
+#define BLUE "\033[34;1m" // blue
+#define GREEN "\033[32;1m" // green
+#define YELLOW "\033[33;1m" // yellow
+#define RED "\033[31;0m" // red
+#define BRED "\033[31;1m" // bright red
+#define RESET_COLORS "\033[39;0m" // reset colors
 
 /***********************************************************************
  * Helpers
  **********************************************************************/
-static const std::string verbosity_color(const uhd::log::severity_level &level){
+static std::string verbosity_color(const uhd::log::severity_level &level){
     switch(level){
     case (uhd::log::trace):
         return PURPLE;
@@ -60,6 +61,26 @@ static const std::string verbosity_color(const uhd::log::severity_level &level){
     }
 }
 
+static std::string verbosity_name(const uhd::log::severity_level &level){
+    switch(level){
+    case (uhd::log::trace):
+        return "TRACE";
+    case(uhd::log::debug):
+        return "DEBUG";
+    case(uhd::log::info):
+        return "INFO";
+    case(uhd::log::warning):
+        return "WARNING";
+    case(uhd::log::error):
+        return "ERROR";
+    case(uhd::log::fatal):
+        return "FATAL";
+    default:
+        return "-";
+    }
+    return "";
+}
+
 //! get the relative file path from the host directory
 inline std::string path_to_filename(std::string path)
 {
@@ -69,32 +90,31 @@ inline std::string path_to_filename(std::string path)
 /***********************************************************************
  * Logger backends
  **********************************************************************/
-
-
 void console_log(
     const uhd::log::logging_info &log_info
 ) {
-        std::clog
+
+    std::clog
 #ifdef UHD_LOG_CONSOLE_COLOR
-            << verbosity_color(log_info.verbosity)
+        << verbosity_color(log_info.verbosity)
 #endif
 #ifdef UHD_LOG_CONSOLE_TIME
-            << "[" << pt::to_simple_string(log_info.time) << "] "
+        << "[" << pt::to_simple_string(log_info.time) << "] "
 #endif
 #ifdef UHD_LOG_CONSOLE_THREAD
-            << "[0x" << log_info.thread_id << "] "
+        << "[0x" << log_info.thread_id << "] "
 #endif
 #ifdef UHD_LOG_CONSOLE_SRC
-            << "[" << path_to_filename(log_info.file) << ":" << log_info.line << "] "
+        << "[" << path_to_filename(log_info.file) << ":" << log_info.line << "] "
 #endif
-            << "[" << log_info.verbosity << "] "
-            << "[" << log_info.component << "] "
+        << "[" << verbosity_name(log_info.verbosity) << "] "
+        << "[" << log_info.component << "] "
 #ifdef UHD_LOG_CONSOLE_COLOR
-            << RESET_COLORS
+        << RESET_COLORS
 #endif
-            << log_info.message
-            << std::endl
-            ;
+        << log_info.message
+        << std::endl
+    ;
 }
 
 /*! Helper class to implement file logging
@@ -115,7 +135,6 @@ public:
                 std::cerr << "Error opening log file: " << fail.what() << std::endl;
             }
         }
-
     }
 
     void log(const uhd::log::logging_info &log_info)
@@ -211,13 +230,16 @@ public:
         }
 
         // Launch log message consumer
-        _pop_task = uhd::task::make([this](){this->pop_task();});
-
+        _pop_task = std::make_shared<std::thread>(std::thread([this](){this->pop_task();}));
     }
 
     ~log_resource(void){
         _exit = true;
-        _pop_task.reset();
+        _pop_task->join();
+        {
+            std::lock_guard<std::mutex> l(_logmap_mutex);
+            _loggers.clear();
+        }
     }
 
     void push(const uhd::log::logging_info& log_info)
@@ -227,9 +249,12 @@ public:
 
     void pop_task()
     {
+        uhd::log::logging_info log_info;
+        log_info.message = "";
+
         while (!_exit) {
-            uhd::log::logging_info log_info;
             if (_log_queue.pop_with_timed_wait(log_info, 1)){
+                std::lock_guard<std::mutex> l(_logmap_mutex);
                 for (const auto &logger : _loggers) {
                     auto level = logger_level.find(logger.first);
                     if(level != logger_level.end() && log_info.verbosity < level->second){
@@ -241,8 +266,8 @@ public:
         }
 
         // Exit procedure: Clear the queue
-        uhd::log::logging_info log_info;
         while (_log_queue.pop_with_haste(log_info)) {
+            std::lock_guard<std::mutex> l(_logmap_mutex);
             for (const auto &logger : _loggers) {
                 auto level = logger_level.find(logger.first);
                 if (level != logger_level.end() && log_info.verbosity < level->second){
@@ -255,11 +280,12 @@ public:
 
     void add_logger(const std::string &key, uhd::log::log_fn_t logger_fn)
     {
+        std::lock_guard<std::mutex> l(_logmap_mutex);
         _loggers[key] = logger_fn;
     }
 
 private:
-    uhd::task::sptr _pop_task;
+    std::shared_ptr<std::thread> _pop_task;
     uhd::log::severity_level _get_log_level(const std::string &log_level_str,
                                             const uhd::log::severity_level &previous_level){
         if (std::isdigit(log_level_str[0])) {
@@ -286,9 +312,10 @@ private:
         return previous_level;
     }
 
+    std::mutex _logmap_mutex;
     std::atomic<bool> _exit;
     std::map<std::string, uhd::log::log_fn_t> _loggers;
-    uhd::transport::bounded_buffer<uhd::log::logging_info> _log_queue; // Init auf size 10 oder so
+    uhd::transport::bounded_buffer<uhd::log::logging_info> _log_queue;
 };
 
 UHD_SINGLETON_FCN(log_resource, log_rs);
@@ -296,7 +323,6 @@ UHD_SINGLETON_FCN(log_resource, log_rs);
 /***********************************************************************
  * The logger object implementation
  **********************************************************************/
-
 uhd::_log::log::log(
     const uhd::log::severity_level verbosity,
     const std::string &file,
@@ -326,6 +352,9 @@ uhd::_log::log::~log(void)
 }
 
 
+/***********************************************************************
+ * Public API calls
+ **********************************************************************/
 void
 uhd::log::add_logger(const std::string &key, log_fn_t logger_fn)
 {

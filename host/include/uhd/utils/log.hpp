@@ -111,7 +111,7 @@ namespace uhd {
          * Either numeric value or string can be used to define loglevel in
          * CMake and environment variables
          */
-        enum UHD_API severity_level {
+        enum severity_level {
             trace   = 0, /**< displays every available log message */
             debug   = 1, /**< displays most log messages necessary for debugging internals */
             info    = 2, /**< informational messages about setup and what is going on*/
@@ -127,7 +127,8 @@ namespace uhd {
          * logging_info structure.
          */
         struct UHD_API logging_info {
-            logging_info(){};
+            logging_info()
+                : verbosity(uhd::log::off) {}
             logging_info(
                 const boost::posix_time::ptime &time_,
                 const uhd::log::severity_level &verbosity_,
@@ -194,25 +195,6 @@ namespace uhd {
          * \param logger_fn function which actually logs messages to this backend
          */
         UHD_API void add_logger(const std::string &key, log_fn_t logger_fn);
-
-        // The operator is used when putting the severity level to log
-        template <typename CharT, typename TraitsT>
-        inline std::basic_ostream<CharT, TraitsT>&
-        operator<<(std::basic_ostream<CharT, TraitsT>& strm, severity_level level)
-        {
-            static const char* strings[] = {"TRACE",   "DEBUG", "INFO",
-                                            "WARNING", "ERROR", "FATAL"
-            };
-
-            if (static_cast<std::size_t>(level) < sizeof(strings) / sizeof(*strings)) {
-                strm << strings[level];
-            } else {
-                strm << static_cast<int>(level);
-            }
-
-            return strm;
-        }
-
     }
 }
 
