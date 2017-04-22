@@ -46,6 +46,7 @@
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <boost/weak_ptr.hpp>
+#include <atomic>
 
 static const double USRP2_LINK_RATE_BPS = 1000e6/8;
 static const double mimo_clock_delay_usrp2_rev4 = 4.18e-9;
@@ -120,6 +121,7 @@ private:
     //io impl methods and members
     uhd::device_addr_t device_addr;
     UHD_PIMPL_DECL(io_impl) _io_impl;
+    std::atomic<bool> _pirate_task_exit;
     void io_init(void);
     void update_tick_rate(const double rate);
     void update_rx_samp_rate(const std::string &, const size_t, const double rate);

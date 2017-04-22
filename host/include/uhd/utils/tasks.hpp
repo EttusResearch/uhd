@@ -1,5 +1,6 @@
 //
 // Copyright 2011-2012 Ettus Research LLC
+// Copyright 2017 Ettus Research (National Instruments Corp.)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -33,18 +34,15 @@ namespace uhd{
         /*!
          * Create a new task object with function callback.
          * The task function callback will be run in a loop.
-         * until the thread is interrupted by the deconstructor.
+         * until the thread is interrupted by the destructor.
          *
-         * A task should return in a reasonable amount of time
-         * or may block forever under the following conditions:
-         *  - The blocking call is interruptible.
-         *  - The task polls the interrupt condition.
+         * A task should return in a reasonable amount of time.
+         * It may not block, or the destructor will also block.
          *
          * \param task_fcn the task callback function
          * \return a new task object
          */
         static sptr make(const task_fcn_type &task_fcn);
-
     };
 } //namespace uhd
 
