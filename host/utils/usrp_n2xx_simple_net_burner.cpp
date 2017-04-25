@@ -151,7 +151,7 @@ void sig_int_handler(int){
 void list_usrps(){
     udp_simple::sptr udp_bc_transport;
     const usrp2_fw_update_data_t *update_data_in = reinterpret_cast<const usrp2_fw_update_data_t *>(usrp2_update_data_in_mem);
-    uint32_t hw_rev;
+    uint32_t hw_rev = 0;
 
     usrp2_fw_update_data_t usrp2_ack_pkt = usrp2_fw_update_data_t();
     usrp2_ack_pkt.proto_ver = htonx<uint32_t>(USRP2_FW_PROTO_VERSION);

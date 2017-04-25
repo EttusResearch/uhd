@@ -215,6 +215,7 @@ class expression_container : public expression
 
     //! Create an empty container
     expression_container() : _combiner(COMBINE_NOTSET) {};
+    virtual ~expression_container(){};
 
     /*! Type-deduction rules for containers are:
      * - If the combination type is COMBINE_ALL or COMBINE_AND,
@@ -299,6 +300,7 @@ class expression_function : public expression_container
             const std::string &name,
             const boost::shared_ptr<function_table> func_table
     );
+    ~expression_function(){};
 
     //! Add an argument expression
     virtual void add(expression::sptr new_expr);
