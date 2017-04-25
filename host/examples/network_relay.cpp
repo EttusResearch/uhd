@@ -100,9 +100,9 @@ public:
 
         std::cout << "spawning relay threads... " << _port << std::endl;
         boost::unique_lock<boost::mutex> lock(spawn_mutex);     // lock in preparation to wait for threads to spawn
-        _thread_group.create_thread(boost::bind(&udp_relay_type::server_thread, this));
+        (void)_thread_group.create_thread(boost::bind(&udp_relay_type::server_thread, this));
         wait_for_thread.wait(lock);      // wait for thread to spin up
-        _thread_group.create_thread(boost::bind(&udp_relay_type::client_thread, this));
+        (void)_thread_group.create_thread(boost::bind(&udp_relay_type::client_thread, this));
         wait_for_thread.wait(lock);      // wait for thread to spin up
         std::cout << "    done!" << std::endl << std::endl;
     }
