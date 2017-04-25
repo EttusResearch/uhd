@@ -122,11 +122,12 @@ public:
         tr.tx_buf = (unsigned long) &tx[0];
         tr.rx_buf = (unsigned long) &rx[0];
         tr.len = num_bits >> 3;
-        tr.bits_per_word = _bits;
-        tr.tx_nbits = 1; // Standard SPI
-        tr.rx_nbits = 1; // Standard SPI
         tr.speed_hz = _speed;
         tr.delay_usecs = _delay;
+        tr.bits_per_word = _bits;
+        tr.cs_change = 0;
+        tr.tx_nbits = 1; // Standard SPI
+        tr.rx_nbits = 1; // Standard SPI
 
         ret = ioctl(_fd, SPI_IOC_MESSAGE(1), &tr);
         if (ret < 1)
