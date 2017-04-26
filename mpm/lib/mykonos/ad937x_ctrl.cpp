@@ -381,6 +381,18 @@ public:
         device.set_gain_pin_step_sizes(dir, chain, inc_step, dec_step);
     }
 
+    uint8_t peek8(const uint32_t addr)
+    {
+        std::lock_guard<std::mutex> lock(*spi_mutex);
+        return _iface->peek8(addr);
+    }
+
+    void poke8(const uint32_t addr, const uint8_t val)
+    {
+        std::lock_guard<std::mutex> lock(*spi_mutex);
+        _iface->poke8(addr, val);
+    }
+
 private:
     ad937x_device device;
     std::shared_ptr<std::mutex> spi_mutex;

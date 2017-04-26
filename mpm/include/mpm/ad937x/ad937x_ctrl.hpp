@@ -167,6 +167,12 @@ public:
 
     //! set step sizes for gain ctrl pins for one channel
     virtual void set_gain_pin_step_sizes(const std::string &which, double inc_step, double dec_step) = 0;
+
+    //! Direct register read access
+    virtual uint8_t peek8(const uint32_t addr) = 0;
+
+    //! Direct register write access
+    virtual void poke8(const uint32_t addr, const uint8_t val) = 0;
 };
 
 }}; /* namespace mpm::chips */
