@@ -27,8 +27,8 @@
 #include "adi/t_mykonos_gpio.h"
 #include "adi/mykonos_debug/t_mykonos_dbgjesd.h"
 
-#include <uhd/exception.hpp>
-
+#include <mpm/spi/spi_iface.hpp>
+#include <mpm/exception.hpp>
 #include <boost/noncopyable.hpp>
 #include <memory>
 #include <functional>
@@ -39,7 +39,10 @@ public:
     enum class gain_mode_t { MANUAL, AUTOMATIC, HYBRID };
     enum class pll_t {CLK_SYNTH, RX_SYNTH, TX_SYNTH, SNIFF_SYNTH, CALPLL_SDM};
 
-    ad937x_device(uhd::spi_iface* iface, mpm::ad937x::gpio::gain_pins_t gain_pins);
+    ad937x_device(
+        mpm::types::regs_iface* iface,
+        mpm::ad937x::gpio::gain_pins_t gain_pins
+    );
 
     void begin_initialization();
     void finish_initialization();

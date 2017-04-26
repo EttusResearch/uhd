@@ -18,12 +18,15 @@
 #include "ad937x_device.hpp"
 #include "adi/mykonos.h"
 #include "mpm/ad937x/ad937x_ctrl.hpp"
+#include <mpm/exception.hpp>
 
 #include <sstream>
 #include <set>
 #include <functional>
 #include <iostream>
+#include <algorithm>
 
+using namespace mpm::chips;
 using namespace mpm::ad937x::device;
 
 static uhd::direction_t _get_direction_from_antenna(const std::string& antenna)
@@ -36,7 +39,7 @@ static uhd::direction_t _get_direction_from_antenna(const std::string& antenna)
         return uhd::direction_t::TX_DIRECTION;
     }
     else {
-        throw uhd::runtime_error("ad937x_ctrl got an invalid channel string.");
+        throw mpm::runtime_error("ad937x_ctrl got an invalid channel string.");
     }
     return uhd::direction_t::RX_DIRECTION;
 }
@@ -51,7 +54,7 @@ static chain_t _get_chain_from_antenna(const std::string& antenna)
         return chain_t::TWO;
     }
     else {
-        throw uhd::runtime_error("ad937x_ctrl got an invalid channel string.");
+        throw mpm::runtime_error("ad937x_ctrl got an invalid channel string.");
     }
     return chain_t::ONE;
 }
@@ -66,7 +69,7 @@ std::set<size_t> _get_valid_fir_lengths(const std::string& which)
     case uhd::direction_t::TX_DIRECTION:
         return{ 16, 32, 48, 64, 80, 96 };
     default:
-        UHD_THROW_INVALID_CODE_PATH();
+        MPM_THROW_INVALID_CODE_PATH();
         return std::set<size_t>();
     }
 }
@@ -111,7 +114,7 @@ uhd::meta_range_t ad937x_ctrl::get_gain_range(const std::string &which)
     case uhd::direction_t::TX_DIRECTION:
         return uhd::meta_range_t(ad937x_device::MIN_TX_GAIN, ad937x_device::MAX_TX_GAIN, ad937x_device::TX_GAIN_STEP);
     default:
-        UHD_THROW_INVALID_CODE_PATH();
+        MPM_THROW_INVALID_CODE_PATH();
         return uhd::meta_range_t();
     }
 }
@@ -121,7 +124,7 @@ class ad937x_ctrl_impl : public ad937x_ctrl
 public:
     ad937x_ctrl_impl(
         std::shared_ptr<std::mutex> spi_mutex,
-        uhd::spi_iface::sptr iface,
+        mpm::types::regs_iface::sptr iface,
         mpm::ad937x::gpio::gain_pins_t gain_pins) :
         spi_mutex(spi_mutex),
         device(iface.get(), gain_pins),
@@ -251,7 +254,7 @@ public:
         auto dir = _get_direction_from_antenna(which);
         if (dir != uhd::direction_t::RX_DIRECTION)
         {
-            throw uhd::runtime_error("set_agc not valid for non-rx channels");
+            throw mpm::runtime_error("set_agc not valid for non-rx channels");
         }
 
         ad937x_device::gain_mode_t gain_mode;
@@ -266,7 +269,7 @@ public:
             gain_mode = ad937x_device::gain_mode_t::HYBRID;
         }
         else {
-            throw uhd::runtime_error("invalid agc mode");
+            throw mpm::runtime_error("invalid agc mode");
         }
 
         std::lock_guard<std::mutex> lock(*spi_mutex);
@@ -319,7 +322,7 @@ public:
         auto lengths = _get_valid_fir_lengths(which);
         if (std::find(lengths.begin(), lengths.end(), fir.size()) == lengths.end())
         {
-            throw uhd::value_error("invalid filter length");
+            throw mpm::value_error("invalid filter length");
         }
 
         std::lock_guard<std::mutex> lock(*spi_mutex);
@@ -370,7 +373,7 @@ public:
             // double comparison here should be okay because of clipping
             if (inc_step != dec_step)
             {
-                throw uhd::value_error("TX gain increment and decrement steps must be equal");
+                throw mpm::value_error("TX gain increment and decrement steps must be equal");
             }
         }
 
@@ -381,11 +384,14 @@ public:
 private:
     ad937x_device device;
     std::shared_ptr<std::mutex> spi_mutex;
-    uhd::spi_iface::sptr _iface;
+    mpm::types::regs_iface::sptr _iface;
 };
 
-ad937x_ctrl::sptr ad937x_ctrl::make(std::shared_ptr<std::mutex> spi_mutex, uhd::spi_iface::sptr iface, mpm::ad937x::gpio::gain_pins_t gain_pins)
-{
+ad937x_ctrl::sptr ad937x_ctrl::make(
+        std::shared_ptr<std::mutex> spi_mutex,
+        mpm::types::regs_iface::sptr iface,
+        mpm::ad937x::gpio::gain_pins_t gain_pins
+) {
     return std::make_shared<ad937x_ctrl_impl>(spi_mutex, iface, gain_pins);
 }
 

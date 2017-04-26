@@ -15,24 +15,25 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#pragma once
+#include <mpm/dboards/magnesium_manager.hpp>
+#include <mpm/chips/lmk04828_spi_iface.hpp>
+#include <mpm/ad937x/ad937x_spi_iface.hpp>
 
-#include <mpm/types/regs_iface.hpp>
-#include <chrono>
+using namespace mpm::dboards;
+using namespace mpm::chips;
 
-struct ad9371_spiSettings_t
+magnesium_manager::magnesium_manager(
+    const std::string &lmk_spidev,
+    const std::string &mykonos_spidev
+) : _spi_mutex(std::make_shared<std::mutex>())
+  , _spi_lock(mpm::types::lockable::make(_spi_mutex))
+  , _clock_ctrl(mpm::chips::make_lmk04828_iface(lmk_spidev))
+  , _mykonos_ctrl(ad937x_ctrl::make(
+        _spi_mutex,
+        make_ad937x_iface(mykonos_spidev),
+        mpm::ad937x::gpio::gain_pins_t()
+    ))
 {
-    static ad9371_spiSettings_t* make(spiSettings_t *sps) {
-        return reinterpret_cast<ad9371_spiSettings_t *>(sps);
-    }
 
-    explicit ad9371_spiSettings_t(mpm::types::regs_iface*);
-
-    // spiSetting_t MUST be the first data member so that the
-    // reinterpret_cast in make() works
-    spiSettings_t spi_settings;
-    mpm::types::regs_iface* spi_iface;
-    std::chrono::time_point<std::chrono::steady_clock> timeout_start;
-    std::chrono::microseconds timeout_duration;
-};
+}
 

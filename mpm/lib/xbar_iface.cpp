@@ -16,7 +16,7 @@
 //
 
 #include "mpm/xbar_iface.hpp"
-#include <uhd/exception.hpp>
+#include <mpm/exception.hpp>
 #include <boost/format.hpp>
 #include <sys/ioctl.h>
 #include <fcntl.h>
@@ -38,7 +38,7 @@ void xbar_iface::set_route(uint8_t dst_addr, uint8_t dst_port) {
     rfnoc_crossbar_cmd cmd = {.dest_addr = dst_addr, .dest_port = dst_port};
     int err = ioctl(_fd, RFNCBWROUTIOC, &cmd);
     if (err < 0) {
-        throw uhd::os_error(str(boost::format("setting crossbar route failed! Error: %d") % err));
+        throw mpm::os_error(str(boost::format("setting crossbar route failed! Error: %d") % err));
     }
 }
 
@@ -47,7 +47,7 @@ void xbar_iface::del_route(uint8_t dst_addr, uint8_t dst_port){
     rfnoc_crossbar_cmd cmd = {.dest_addr = dst_addr, .dest_port = dst_port};
     int err = ioctl(_fd, RFNCDELROUTIOC, &cmd);
     if (err < 0){
-        throw uhd::os_error(str(boost::format("deleting crossbar route failed! Error: %d") % err));
+        throw mpm::os_error(str(boost::format("deleting crossbar route failed! Error: %d") % err));
     }
 }
 

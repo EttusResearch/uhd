@@ -200,7 +200,7 @@ void ad937x_device::begin_initialization()
     uint8_t product_id = get_product_id();
     if (product_id != AD9371_PRODUCT_ID)
     {
-        throw runtime_error(str(
+        throw mpm::runtime_error(str(
             boost::format("AD9371 product ID does not match expected ID! Read: %X Expected: %X")
             % int(product_id) % int(AD9371_PRODUCT_ID)
         ));
@@ -208,7 +208,7 @@ void ad937x_device::begin_initialization()
 
     if (!get_pll_lock_status(pll_t::CLK_SYNTH))
     {
-        throw runtime_error("AD937x CLK_SYNTH PLL failed to lock in initialize()");
+        throw mpm::runtime_error("AD937x CLK_SYNTH PLL failed to lock in initialize()");
     }
 
     uint8_t mcs_status = 0;
@@ -223,7 +223,7 @@ void ad937x_device::finish_initialization()
 
     if ((mcs_status & 0x0A) != 0x0A)
     {
-        throw runtime_error("Multichip sync failed!");
+        throw mpm::runtime_error("Multichip sync failed!");
     }
 
     _call_api_function(std::bind(MYKONOS_initSubRegisterTables, mykonos_config.device));
@@ -289,18 +289,14 @@ void ad937x_device::enable_jesd_loopback(uint8_t enable)
     _call_api_function(std::bind(MYKONOS_setRxFramerDataSource, mykonos_config.device, enable));
 }
 
-ad937x_device::ad937x_device(spi_iface* iface, gain_pins_t gain_pins) :
+ad937x_device::ad937x_device(
+        mpm::types::regs_iface* iface,
+        gain_pins_t gain_pins
+) :
     full_spi_settings(iface),
     mykonos_config(&full_spi_settings.spi_settings),
     gain_ctrl(gain_pins)
 {
-    std::cout << "full spi settings addr " << &full_spi_settings << std::endl;
-    iface->read_spi(0, uhd::spi_config_t::EDGE_RISE, 400, 24);
-    std::cout << "adi spi settings addr " << &(full_spi_settings.spi_settings) << std::endl;
-    std::cout << "iface addr " << std::hex << iface << std::dec << std::endl;
-
-    std::cout << "myk dev addr " << std::hex << mykonos_config.device->spiSettings << std::dec << std::endl;
-
 }
 
 uint8_t ad937x_device::get_product_id()
@@ -373,7 +369,7 @@ double ad937x_device::tune(direction_t direction, double value)
         mykonos_config.device->rx->rxPllLoFrequency_Hz = integer_value;
         break;
     default:
-        UHD_THROW_INVALID_CODE_PATH();
+        MPM_THROW_INVALID_CODE_PATH();
     }
 
     _call_api_function(std::bind(MYKONOS_setRfPllFrequency, mykonos_config.device, pll, integer_value));
@@ -393,7 +389,7 @@ double ad937x_device::get_freq(direction_t direction)
     case TX_DIRECTION: pll = TX_PLL; break;
     case RX_DIRECTION: pll = RX_PLL; break;
     default:
-        UHD_THROW_INVALID_CODE_PATH();
+        MPM_THROW_INVALID_CODE_PATH();
     }
 
     // TODO: coercion here causes extra device accesses, when the formula is provided on pg 119 of the user guide
@@ -420,7 +416,7 @@ bool ad937x_device::get_pll_lock_status(pll_t pll)
     case pll_t::CALPLL_SDM:
         return (pll_status & 0x10) > 0;
     default:
-        UHD_THROW_INVALID_CODE_PATH();
+        MPM_THROW_INVALID_CODE_PATH();
         return false;
     }
 }
@@ -470,7 +466,7 @@ double ad937x_device::set_gain(direction_t direction, chain_t chain, double valu
             func = MYKONOS_setTx2Attenuation;
             break;
         default:
-            UHD_THROW_INVALID_CODE_PATH();
+            MPM_THROW_INVALID_CODE_PATH();
         }
         _call_api_function(std::bind(func, mykonos_config.device, attenuation));
         break;
@@ -490,13 +486,13 @@ double ad937x_device::set_gain(direction_t direction, chain_t chain, double valu
             func = MYKONOS_setRx2ManualGain;
             break;
         default:
-            UHD_THROW_INVALID_CODE_PATH();
+            MPM_THROW_INVALID_CODE_PATH();
         }
         _call_api_function(std::bind(func, mykonos_config.device, gain));
         break;
     }
     default:
-        UHD_THROW_INVALID_CODE_PATH();
+        MPM_THROW_INVALID_CODE_PATH();
     }
     return coerced_value;
 }
@@ -518,10 +514,10 @@ void ad937x_device::set_agc_mode(direction_t direction, gain_mode_t mode)
             _call_api_function(std::bind(MYKONOS_setRxGainControlMode, mykonos_config.device, HYBRID));
             break;
         default:
-            UHD_THROW_INVALID_CODE_PATH();
+            MPM_THROW_INVALID_CODE_PATH();
         }
     default:
-        UHD_THROW_INVALID_CODE_PATH();
+        MPM_THROW_INVALID_CODE_PATH();
     }
 }
 
@@ -540,7 +536,7 @@ void ad937x_device::set_fir(
         mykonos_config.rx_fir_config.set_fir(gain, fir);
         break;
     default:
-        UHD_THROW_INVALID_CODE_PATH();
+        MPM_THROW_INVALID_CODE_PATH();
     }
 }
 
@@ -556,7 +552,7 @@ std::vector<int16_t> ad937x_device::get_fir(
     case RX_DIRECTION:
         return mykonos_config.rx_fir_config.get_fir(gain);
     default:
-        UHD_THROW_INVALID_CODE_PATH();
+        MPM_THROW_INVALID_CODE_PATH();
     }
 }
 
@@ -585,7 +581,7 @@ void ad937x_device::set_gain_pin_step_sizes(direction_t direction, chain_t chain
         gain_ctrl.config.at(direction).at(chain).dec_step = static_cast<uint8_t>(inc_step / 0.05);
         gain_ctrl.config.at(direction).at(chain).inc_step = static_cast<uint8_t>(dec_step / 0.05);
     } else {
-        UHD_THROW_INVALID_CODE_PATH();
+        MPM_THROW_INVALID_CODE_PATH();
     }
     _apply_gain_pins(direction, chain);
 }
@@ -600,7 +596,7 @@ void ad937x_device::_apply_gain_pins(direction_t direction, chain_t chain)
     // TX direction does not support different steps per direction
     if (direction == TX_DIRECTION)
     {
-        UHD_ASSERT_THROW(chan.inc_step == chan.dec_step);
+        MPM_ASSERT_THROW(chan.inc_step == chan.dec_step);
     }
 
     switch (direction)

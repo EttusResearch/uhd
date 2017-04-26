@@ -17,22 +17,31 @@
 
 #pragma once
 
-#include <mpm/types/regs_iface.hpp>
-#include <chrono>
+#include <boost/noncopyable.hpp>
+#include <memory>
 
-struct ad9371_spiSettings_t
-{
-    static ad9371_spiSettings_t* make(spiSettings_t *sps) {
-        return reinterpret_cast<ad9371_spiSettings_t *>(sps);
-    }
+namespace mpm { namespace types {
 
-    explicit ad9371_spiSettings_t(mpm::types::regs_iface*);
+    /*! Interface to a register reader/writer interface
+     */
+    class regs_iface : public boost::noncopyable
+    {
+    public:
+        using sptr = std::shared_ptr<regs_iface>;
 
-    // spiSetting_t MUST be the first data member so that the
-    // reinterpret_cast in make() works
-    spiSettings_t spi_settings;
-    mpm::types::regs_iface* spi_iface;
-    std::chrono::time_point<std::chrono::steady_clock> timeout_start;
-    std::chrono::microseconds timeout_duration;
-};
+        /*! Return an 8-bit value from a given address
+         */
+        virtual uint8_t peek8(
+            const uint32_t addr
+        ) = 0;
+
+        /*! Write an 8-bit value to a given address
+         */
+        virtual void poke8(
+            const uint32_t addr,
+            const uint8_t data
+        ) = 0;
+    };
+
+}}; /* namespace mpm::regs */
 

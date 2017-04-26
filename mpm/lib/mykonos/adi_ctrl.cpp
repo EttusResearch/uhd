@@ -24,10 +24,10 @@
 #include <chrono>
 #include <thread>
 
-static const uint32_t MYKONOS_READ_BIT = (1 << 23);
-
-ad9371_spiSettings_t::ad9371_spiSettings_t(uhd::spi_iface* uhd_iface) :
-    spi_iface(uhd_iface)
+ad9371_spiSettings_t::ad9371_spiSettings_t(
+        mpm::types::regs_iface* spi_iface_
+) :
+    spi_iface(spi_iface_)
 {
     spi_settings.chipSelectIndex = 0;       // set later
     spi_settings.writeBitPolarity = 1;      // unused
@@ -39,11 +39,6 @@ ad9371_spiSettings_t::ad9371_spiSettings_t(uhd::spi_iface* uhd_iface) :
     spi_settings.autoIncAddrUp = 0;         // unused
     spi_settings.fourWireMode = 1;          // unused
     spi_settings.spiClkFreq_Hz = 250000000; // currently unused
-}
-
-uhd::spi_config_t::edge_t _get_edge(const spiSettings_t & sps)
-{
-    return (sps.CPOL ^ sps.CPHA) ? uhd::spi_config_t::EDGE_FALL : uhd::spi_config_t::EDGE_RISE;
 }
 
 // TODO: change // not implemented to  meaningful errors
@@ -90,14 +85,14 @@ commonErr_t CMB_setSPIChannel(uint16_t chipSelectIndex)
 // single SPI byte write function
 commonErr_t CMB_SPIWriteByte(spiSettings_t *spiSettings, uint16_t addr, uint8_t data)
 {
-    // TODO: crash and burn for these errors?
-    if (spiSettings == nullptr || spiSettings->MSBFirst == 0) return COMMONERR_FAILED;
+    if (spiSettings == nullptr || spiSettings->MSBFirst == 0) {
+        // TODO: crash and burn for these errors?
+        return COMMONERR_FAILED;
+    }
 
-    ad9371_spiSettings_t *mpm_spi = ad9371_spiSettings_t::make(spiSettings);
-    uhd::spi_config_t config(_get_edge(*spiSettings));
-    uint32_t data_word = (0) | (addr << 8) | (data);
+    ad9371_spiSettings_t *spi = ad9371_spiSettings_t::make(spiSettings);
     try {
-        mpm_spi->spi_iface->write_spi(spiSettings->chipSelectIndex, config, data_word, 24);
+        spi->spi_iface->poke8(addr, data);
         return COMMONERR_OK;
     } catch (const std::exception &e) {
         std::cout << "AAAAAAAAAAAAH" << std::endl;
@@ -107,22 +102,22 @@ commonErr_t CMB_SPIWriteByte(spiSettings_t *spiSettings, uint16_t addr, uint8_t 
 
 commonErr_t CMB_SPIWriteBytes(spiSettings_t *spiSettings, uint16_t *addr, uint8_t *data, uint32_t count)
 {
-    // TODO: crash and burn for these errors?
     if (spiSettings == nullptr ||
         addr == nullptr ||
         data == nullptr ||
         spiSettings->MSBFirst == 0)
     {
+        // TODO: crash and burn for these errors?
         return COMMONERR_FAILED;
     }
 
-    ad9371_spiSettings_t *mpm_spi = ad9371_spiSettings_t::make(spiSettings);
-    uhd::spi_config_t config(_get_edge(*spiSettings));
+    ad9371_spiSettings_t *spi = ad9371_spiSettings_t::make(spiSettings);
     try {
         for (size_t i = 0; i < count; ++i)
         {
             uint32_t data_word = (0) | (addr[i] << 8) | (data[i]);
-            mpm_spi->spi_iface->write_spi(spiSettings->chipSelectIndex, config, data_word, 24);
+
+            spi->spi_iface->poke8(addr[i], data[i]);
         }
         return COMMONERR_OK;
     } catch (const std::exception &e) {
@@ -141,13 +136,9 @@ commonErr_t CMB_SPIReadByte (spiSettings_t *spiSettings, uint16_t addr, uint8_t 
         return COMMONERR_FAILED;
     }
 
-    ad9371_spiSettings_t *mpm_spi = ad9371_spiSettings_t::make(spiSettings);
-    uhd::spi_config_t config(_get_edge(*spiSettings));
-    uint32_t read_word = MYKONOS_READ_BIT | (addr << 8);
-
+    ad9371_spiSettings_t *spi = ad9371_spiSettings_t::make(spiSettings);
     try {
-        *readdata = static_cast<uint8_t>(
-            mpm_spi->spi_iface->read_spi(spiSettings->chipSelectIndex, config, read_word, 24));
+        *readdata = spi->spi_iface->peek8(addr);
         return COMMONERR_OK;
     } catch (const std::exception &e) {
         std::cout << "AAAAAAAAAAAAH READ" << std::endl;
@@ -162,15 +153,12 @@ commonErr_t CMB_SPIWriteField(
         uint16_t addr, uint8_t  field_val,
         uint8_t mask, uint8_t start_bit
 ) {
-    ad9371_spiSettings_t *mpm_spi = ad9371_spiSettings_t::make(spiSettings);
-    uhd::spi_config_t config(_get_edge(*spiSettings));
-    uint32_t read_word = (0) | (addr << 8);
+    ad9371_spiSettings_t *spi = ad9371_spiSettings_t::make(spiSettings);
 
     try {
-        uint32_t current_value = mpm_spi->spi_iface->read_spi(spiSettings->chipSelectIndex, config, read_word, 24);
-        uint8_t new_value = static_cast<uint8_t>((current_value & ~mask) | (field_val << start_bit));
-        uint32_t write_word = (0) | (addr << 8) | new_value;
-        mpm_spi->spi_iface->write_spi(spiSettings->chipSelectIndex, config, write_word, 24);
+        uint8_t current_value = spi->spi_iface->peek8(addr);
+        uint8_t new_value = ((current_value & ~mask) | (field_val << start_bit));
+        spi->spi_iface->poke8(addr, new_value);
         return COMMONERR_OK;
     } catch (const std::exception &e) {
         std::cout << "AAAAAAAAAAAAH WRITE FIELD" << std::endl;
@@ -186,12 +174,10 @@ commonErr_t CMB_SPIReadField(
         uint16_t addr, uint8_t *field_val,
         uint8_t mask, uint8_t start_bit
 ) {
-    ad9371_spiSettings_t *mpm_spi = ad9371_spiSettings_t::make(spiSettings);
-    uhd::spi_config_t config(_get_edge(*spiSettings));
-    uint32_t read_word = MYKONOS_READ_BIT | (addr << 8);
+    ad9371_spiSettings_t *spi = ad9371_spiSettings_t::make(spiSettings);
 
     try {
-        uint32_t value = mpm_spi->spi_iface->read_spi(spiSettings->chipSelectIndex, config, read_word, 24);
+        uint8_t value = spi->spi_iface->peek8(addr);
         *field_val = static_cast<uint8_t>((value & mask) >> start_bit);
         return COMMONERR_OK;
     } catch (const std::exception &e) {

@@ -19,16 +19,20 @@
 
 #include "ad937x_ctrl_types.hpp"
 
+#include <mpm/exception.hpp>
+#include <mpm/spi/spi_iface.hpp>
+
 #include <uhd/types/direction.hpp>
 #include <uhd/types/ranges.hpp>
-#include <uhd/exception.hpp>
-#include <uhd/types/serial.hpp>
 
 #include <boost/noncopyable.hpp>
+
 #include <memory>
 #include <functional>
 #include <set>
 #include <mutex>
+
+namespace mpm { namespace chips {
 
 /*! AD937x Control Interface
 *
@@ -58,7 +62,7 @@ public:
      */
     static sptr make(
         std::shared_ptr<std::mutex> spi_mutex,
-        uhd::spi_iface::sptr iface,
+        mpm::types::regs_iface::sptr iface,
         mpm::ad937x::gpio::gain_pins_t gain_pins);
     virtual ~ad937x_ctrl(void) {}
 
@@ -141,7 +145,8 @@ public:
     virtual double set_freq(const std::string &which, double value) = 0;
 
     /*! \brief get the RF frequency for the direction specified in which
-    /* Gets the RF frequency.  This is a per direction setting.
+     *
+     * Returns the RF frequency.  This is a per direction setting.
      * \param which frontend string to specify direction to get
      * \return actual frequency
      */
@@ -164,12 +169,13 @@ public:
     virtual void set_gain_pin_step_sizes(const std::string &which, double inc_step, double dec_step) = 0;
 };
 
+}}; /* namespace mpm::chips */
+
 #ifdef LIBMPM_PYTHON
 void export_mykonos(){
     LIBMPM_BOOST_PREAMBLE("ad937x")
-
+    using namespace mpm::chips;
     bp::class_<ad937x_ctrl, boost::noncopyable, std::shared_ptr<ad937x_ctrl> >("ad937x_ctrl", bp::no_init)
-        .def("make", &ad937x_ctrl::make)
         .def("begin_initialization", &ad937x_ctrl::begin_initialization)
         .def("finish_initialization", &ad937x_ctrl::finish_initialization)
         .def("start_jesd_rx", &ad937x_ctrl::start_jesd_rx)

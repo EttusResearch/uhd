@@ -17,22 +17,20 @@
 
 #pragma once
 
-#include <mpm/types/regs_iface.hpp>
-#include <chrono>
+#include "lockable.hpp"
+#include "regs_iface.hpp"
 
-struct ad9371_spiSettings_t
-{
-    static ad9371_spiSettings_t* make(spiSettings_t *sps) {
-        return reinterpret_cast<ad9371_spiSettings_t *>(sps);
-    }
+void export_types() {
+    LIBMPM_BOOST_PREAMBLE("types")
+    using namespace mpm::types;
+    bp::class_<lockable, boost::noncopyable, std::shared_ptr<lockable> >("lockable", bp::no_init)
+        .def("lock", &lockable::lock)
+        .def("unlock", &lockable::unlock)
+    ;
 
-    explicit ad9371_spiSettings_t(mpm::types::regs_iface*);
-
-    // spiSetting_t MUST be the first data member so that the
-    // reinterpret_cast in make() works
-    spiSettings_t spi_settings;
-    mpm::types::regs_iface* spi_iface;
-    std::chrono::time_point<std::chrono::steady_clock> timeout_start;
-    std::chrono::microseconds timeout_duration;
-};
+    bp::class_<regs_iface, boost::noncopyable, std::shared_ptr<regs_iface> >("regs_iface", bp::no_init)
+        .def("peek8", &regs_iface::peek8)
+        .def("poke8", &regs_iface::poke8)
+   ;
+}
 

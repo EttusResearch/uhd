@@ -18,21 +18,16 @@
 #pragma once
 
 #include <mpm/types/regs_iface.hpp>
-#include <chrono>
 
-struct ad9371_spiSettings_t
-{
-    static ad9371_spiSettings_t* make(spiSettings_t *sps) {
-        return reinterpret_cast<ad9371_spiSettings_t *>(sps);
-    }
+namespace mpm { namespace chips {
 
-    explicit ad9371_spiSettings_t(mpm::types::regs_iface*);
+    /*! Return a peek/poke interface to the LMK04828
+     *
+     * Assumption is it is attached to a spidev
+     */
+    mpm::types::regs_iface::sptr make_ad937x_iface(
+            const std::string &spi_device
+    );
 
-    // spiSetting_t MUST be the first data member so that the
-    // reinterpret_cast in make() works
-    spiSettings_t spi_settings;
-    mpm::types::regs_iface* spi_iface;
-    std::chrono::time_point<std::chrono::steady_clock> timeout_start;
-    std::chrono::microseconds timeout_duration;
-};
+}}; /* namespace mpm::chips */
 

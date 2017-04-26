@@ -15,18 +15,27 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "mpm/dboards/magnesium_manager.hpp"
-#include "mpm/spi/spidev_iface.hpp"
-#include <boost/make_shared.hpp>
+#include <mpm/ad937x/ad937x_spi_iface.hpp>
+#include <mpm/spi/spi_regs_iface.hpp>
 
-using namespace mpm::dboards;
+using namespace mpm::spi;
 
-magnesium_periph_manager::magnesium_periph_manager(
-    std::string lmk_spidev, std::string mykonos_spidev
-    ): _spi_mutex(std::make_shared<std::mutex>())
-{
-    _clock_spi = lmk04828_spi_iface::make(mpm::spi::spidev_iface::make(lmk_spidev));
-    _clock_ctrl = boost::make_shared<lmk04828_iface>(lmk04828_iface(_clock_spi->get_write_fn(), _clock_spi->get_read_fn()));
-    _mykonos_spi = mpm::spi::spidev_iface::make(mykonos_spidev);
-    _mykonos_ctrl = ad937x_ctrl::make(_spi_mutex, _mykonos_spi, mpm::ad937x::gpio::gain_pins_t());
-};
+static const int    MYK_SPI_SPEED_HZ = 1000000;
+static const size_t MYK_ADDR_SHIFT = 8;
+static const size_t MYK_DATA_SHIFT = 0;
+static const size_t MYK_READ_FLAG = 1 << 23;
+static const size_t MYK_WRITE_FLAG = 0;
+
+mpm::types::regs_iface::sptr mpm::chips::make_ad937x_iface(
+        const std::string &spi_device
+) {
+    return make_spi_regs_iface(
+        spi_iface::make_spidev(spi_device, MYK_SPI_SPEED_HZ),
+        MYK_ADDR_SHIFT,
+        MYK_DATA_SHIFT,
+        MYK_READ_FLAG,
+        MYK_WRITE_FLAG
+    );
+}
+
+

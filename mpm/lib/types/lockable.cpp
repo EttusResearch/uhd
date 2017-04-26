@@ -15,24 +15,39 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#pragma once
+#include <mpm/types/lockable.hpp>
 
-#include <mpm/types/regs_iface.hpp>
-#include <chrono>
+using namespace mpm::types;
 
-struct ad9371_spiSettings_t
+class lockable_impl : public lockable
 {
-    static ad9371_spiSettings_t* make(spiSettings_t *sps) {
-        return reinterpret_cast<ad9371_spiSettings_t *>(sps);
+public:
+    lockable_impl(
+            std::shared_ptr<std::mutex> spi_mutex
+    ) : _spi_mutex(spi_mutex)
+    {
+        /* nop */
     }
 
-    explicit ad9371_spiSettings_t(mpm::types::regs_iface*);
+    void lock()
+    {
+        _spi_mutex->lock();
+    }
 
-    // spiSetting_t MUST be the first data member so that the
-    // reinterpret_cast in make() works
-    spiSettings_t spi_settings;
-    mpm::types::regs_iface* spi_iface;
-    std::chrono::time_point<std::chrono::steady_clock> timeout_start;
-    std::chrono::microseconds timeout_duration;
+    void unlock()
+    {
+        _spi_mutex->unlock();
+    }
+
+private:
+    std::shared_ptr<std::mutex> _spi_mutex;
 };
+
+lockable::sptr lockable::make(
+            std::shared_ptr<std::mutex> spi_mutex
+) {
+    return std::make_shared<lockable_impl>(
+        spi_mutex
+    );
+}
 

@@ -27,12 +27,11 @@
 
 //#include "types.hpp"
 #include "converters.hpp"
-#include "mpm/xbar_iface.hpp"
+#include <mpm/xbar_iface.hpp>
+#include <mpm/types/types_python.hpp>
 #include <mpm/ad937x/ad937x_ctrl.hpp>
-#include <mpm/lmk04828//lmk04828_spi_iface.hpp>
-#include "mpm/dboards/magnesium_manager.hpp"
-//#include "lib_periphs.hpp"
-//#include "dboards.hpp"
+#include <mpm/chips/lmk04828_spi_iface.hpp>
+#include <mpm/dboards/magnesium_manager.hpp>
 #include <boost/noncopyable.hpp>
 
 namespace bp = boost::python;
@@ -42,10 +41,9 @@ BOOST_PYTHON_MODULE(libpyusrp_periphs)
     bp::object package = bp::scope();
     package.attr("__path__") = "libpyusrp_periphs";
     export_converter();
-    //export_types();
+    export_types();
     //export_spi();
-    export_lmk();
     export_mykonos();
     export_xbar();
-    export_dboards();
+    export_magnesium();
 }

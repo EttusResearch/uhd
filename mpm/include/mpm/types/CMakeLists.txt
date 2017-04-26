@@ -16,7 +16,6 @@
 #
 
 INSTALL(FILES
-  spi_iface.hpp
-  spi_regs_iface.hpp
-  DESTINATION ${INCLUDE_DIR}/mpm/spi
+  regs_iface.hpp
+  DESTINATION ${INCLUDE_DIR}/mpm/types
 )

@@ -18,21 +18,17 @@
 #pragma once
 
 #include <mpm/types/regs_iface.hpp>
-#include <chrono>
+#include <mpm/spi/spi_iface.hpp>
 
-struct ad9371_spiSettings_t
-{
-    static ad9371_spiSettings_t* make(spiSettings_t *sps) {
-        return reinterpret_cast<ad9371_spiSettings_t *>(sps);
-    }
+namespace mpm { namespace spi {
 
-    explicit ad9371_spiSettings_t(mpm::types::regs_iface*);
+    mpm::types::regs_iface::sptr make_spi_regs_iface(
+        mpm::spi::spi_iface::sptr spi_iface,
+        uint32_t addr_shift,
+        uint32_t data_shift,
+        uint32_t read_flags,
+        uint32_t write_flags = 0
+    );
 
-    // spiSetting_t MUST be the first data member so that the
-    // reinterpret_cast in make() works
-    spiSettings_t spi_settings;
-    mpm::types::regs_iface* spi_iface;
-    std::chrono::time_point<std::chrono::steady_clock> timeout_start;
-    std::chrono::microseconds timeout_duration;
-};
+}}; /* namespace mpm::spi */
 

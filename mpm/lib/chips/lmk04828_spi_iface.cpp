@@ -15,24 +15,26 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#pragma once
+#include <mpm/chips/lmk04828_spi_iface.hpp>
+#include <mpm/spi/spi_regs_iface.hpp>
 
-#include <mpm/types/regs_iface.hpp>
-#include <chrono>
+using namespace mpm::spi;
 
-struct ad9371_spiSettings_t
-{
-    static ad9371_spiSettings_t* make(spiSettings_t *sps) {
-        return reinterpret_cast<ad9371_spiSettings_t *>(sps);
-    }
+static const int LMK_SPI_SPEED_HZ = 1000000;
+static const size_t LMK_ADDR_SHIFT = 8;
+static const size_t LMK_DATA_SHIFT = 0;
+static const size_t LMK_READ_FLAG = 1 << 23;
+static const size_t LMK_WRITE_FLAG = 0;
 
-    explicit ad9371_spiSettings_t(mpm::types::regs_iface*);
-
-    // spiSetting_t MUST be the first data member so that the
-    // reinterpret_cast in make() works
-    spiSettings_t spi_settings;
-    mpm::types::regs_iface* spi_iface;
-    std::chrono::time_point<std::chrono::steady_clock> timeout_start;
-    std::chrono::microseconds timeout_duration;
-};
+mpm::types::regs_iface::sptr mpm::chips::make_lmk04828_iface(
+        const std::string &spi_device
+) {
+    return make_spi_regs_iface(
+        spi_iface::make_spidev(spi_device, LMK_SPI_SPEED_HZ),
+        LMK_ADDR_SHIFT,
+        LMK_DATA_SHIFT,
+        LMK_READ_FLAG,
+        LMK_WRITE_FLAG
+    );
+}
 

@@ -17,22 +17,35 @@
 
 #pragma once
 
-#include <mpm/types/regs_iface.hpp>
-#include <chrono>
+#include <boost/noncopyable.hpp>
+#include <memory>
+#include <mutex>
 
-struct ad9371_spiSettings_t
-{
-    static ad9371_spiSettings_t* make(spiSettings_t *sps) {
-        return reinterpret_cast<ad9371_spiSettings_t *>(sps);
-    }
+namespace mpm { namespace types {
 
-    explicit ad9371_spiSettings_t(mpm::types::regs_iface*);
+    /*! A lockable object
+     *
+     * Don't tell anyone, but's really just a wrapper around a mutex. This
+     * class is primarily to make it easy to safely expose that mutex into
+     * Python.
+     */
+    class lockable : public boost::noncopyable
+    {
+    public:
+        using sptr = std::shared_ptr<lockable>;
 
-    // spiSetting_t MUST be the first data member so that the
-    // reinterpret_cast in make() works
-    spiSettings_t spi_settings;
-    mpm::types::regs_iface* spi_iface;
-    std::chrono::time_point<std::chrono::steady_clock> timeout_start;
-    std::chrono::microseconds timeout_duration;
-};
+        /*! Lock the lock
+         */
+        virtual void lock() = 0;
+
+        /*! Unlock the lock
+         */
+        virtual void unlock() = 0;
+
+        static sptr make(
+            std::shared_ptr<std::mutex> spi_mutex
+        );
+    };
+
+}}; /* namespace mpm::types */
 

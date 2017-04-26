@@ -114,7 +114,6 @@ INCLUDE_DIRECTORIES(
   ${UHD_HOST_ROOT}/include
   )
 
-ADD_SUBDIRECTORY(dboards)
 ADD_SUBDIRECTORY(lib)
 
 MESSAGE("usrp_periphs objects: ${usrp_periphs_objects}")

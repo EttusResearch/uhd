@@ -15,15 +15,18 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-########################################################################
-# This file included, use CMake directory variables
-########################################################################
+SET(UHD_HOST_ROOT ${CMAKE_SOURCE_DIR}/../host)
 
-
-ADD_SUBDIRECTORY(spi)
+ADD_SUBDIRECTORY(dboards)
+ADD_SUBDIRECTORY(chips)
 ADD_SUBDIRECTORY(mykonos)
-ADD_SUBDIRECTORY(lmk04828)
+ADD_SUBDIRECTORY(spi)
+ADD_SUBDIRECTORY(types)
 
 USRP_PERIPHS_ADD_OBJECT(periphs
-  xbar_iface.cpp
-  )
+    exception.cpp
+    xbar_iface.cpp
+    ${UHD_HOST_ROOT}/lib/exception.cpp
+)
+
+# vim: set sw=4 et:
