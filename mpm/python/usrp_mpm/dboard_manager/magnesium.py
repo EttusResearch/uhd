@@ -23,7 +23,7 @@ import time
 from . import lib # Pulls in everything from C++-land
 from .base import DboardManagerBase
 from .. import nijesdcore
-from ..uio import uio
+from ..uio import UIO
 
 class magnesium(DboardManagerBase):
     """
@@ -60,7 +60,7 @@ class magnesium(DboardManagerBase):
         Execute necessary init dance to bring up dboard
         """
         self.log.debug("initialize hardware")
-        self._device = lib.dboards.magnesium_periph_manager(
+        self._device = lib.dboards.magnesium_manager(
             # self.lmk.encode('ascii'), self.mykonos.encode('ascii')
             '/dev/spidev0.0',
             '/dev/spidev0.1',
@@ -69,13 +69,10 @@ class magnesium(DboardManagerBase):
         self.mykonos = self._device.get_radio_ctrl()
 
         # uio_path, uio_size = get_uio_node("misc-enet-regs0")
-        self.log.debug("getting Mg A uio")
-        uio_path = "/dev/uio2" # TODO use labels
-        uio_size = 0x4000
-        self.log.debug("got uio_path and size")
-        self.uio = uio(uio_path, uio_size, read_only=False)
-        self.log.info("got my uio")
-        self.init_jesd(self.uio)
+        self.log.debug("Getting Mg A uio...")
+        self.radio_regs = UIO(label="jesd204b-regs", read_only=False)
+        self.log.info("Radio-register UIO object successfully generated!")
+        self.init_jesd(self.radio_regs)
 
     def init_jesd(self, uio):
         """

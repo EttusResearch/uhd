@@ -23,9 +23,8 @@ from .base import PeriphManagerBase
 from .net import get_iface_addrs
 from .net import byte_to_mac
 from .net import get_mac_addr
-from .udev import get_uio_node
 from ..types import SID
-from ..uio import uio
+from ..uio import UIO
 from .. import libpyusrp_periphs as lib
 from logging import getLogger
 import netaddr
@@ -118,11 +117,8 @@ class n310(PeriphManagerBase):
             sid.set_src_ep(new_ep)
             my_xbar = lib.xbar.xbar.make("/dev/crossbar0") # TODO
             my_xbar.set_route(xbar_src_addr, 0) # TODO
-            # uio_path, uio_size = get_uio_node("misc-enet-regs0")
-            uio_path = "/dev/uio0"
-            uio_size = 0x2000
-            self.log.debug("got uio_path and size")
-            uio_obj = uio(uio_path, uio_size, read_only=False)
+            self.log.debug("Getting UIO device for Ethernet configuration...")
+            uio_obj = UIO(label="misc-enet-regs0", read_only=False)
             self.log.info("got my uio")
             self.log.info("ip_addr: %s", sender_addr)
             # self.log.info("mac_addr: %s", mac_addr)
