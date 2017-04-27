@@ -20,55 +20,48 @@ magnesium dboard implementation module
 
 import struct
 import time
+from six import iteritems
 from . import lib # Pulls in everything from C++-land
 from .base import DboardManagerBase
 from .. import nijesdcore
 from ..uio import UIO
+from ..mpmlog import get_logger
 
-class magnesium(DboardManagerBase):
+class Magnesium(DboardManagerBase):
     """
     Holds all dboard specific information and methods of the magnesium dboard
     """
     hw_pid = 2
     special_eeprom_addrs = {"special0": "something"}
-    spi_chipselect = {"0": "lmk", "1": "mykonos",}
-    spidevs = {}
-    lmk = ""
-    mykonos = ""
-    random = ""
+    # Maps the chipselects to the corresponding devices:
+    spi_chipselect = {"lmk": 0, "mykonos": 1}
 
     def __init__(self, spi_devices, eeprom_data, *args, **kwargs):
-        super(magnesium, self).__init__(*args, **kwargs)
+        super(Magnesium, self).__init__(*args, **kwargs)
+        self.log = get_logger("Magnesium")
         # eeprom_data is a tuple (head_dict, raw_data)
         if len(spi_devices) != len(self.spi_chipselect):
             self.log.error("Expected {0} spi devices, found {1} spi devices".format(
                 len(self.spi_chipselect), len(spi_devices),
             ))
-            exit(1)
-        for spi in spi_devices:
-            device = self.spi_chipselect.get(spi[-1], None)
-            # if self.chipselect is None:
-                # self.log.error("Unexpected chipselect {0}".format(spi[-1]))
-                # exit(1)
-            setattr(self, device, spi)
-            self.log.debug("Setting spi device for {device}: {spidev}".format(
-                device=device, spidev=spi
-            ))
+            raise RuntimeError("Not enough SPI devices found.")
+        self._spi_nodes = {}
+        for k, v in iteritems(self.spi_chipselect):
+            self._spi_nodes[k] = spi_devices[v]
+        self.log.debug("spidev device node map: {}".format(self._spi_nodes))
 
     def init_device(self):
         """
         Execute necessary init dance to bring up dboard
         """
-        self.log.debug("initialize hardware")
+        self.log.debug("Loading C++ drivers...")
         self._device = lib.dboards.magnesium_manager(
-            # self.lmk.encode('ascii'), self.mykonos.encode('ascii')
-            '/dev/spidev0.0',
-            '/dev/spidev0.1',
+            self._spi_nodes['lmk'],
+            self._spi_nodes['mykonos'],
         )
         self.lmk = self._device.get_clock_ctrl()
         self.mykonos = self._device.get_radio_ctrl()
-
-        # uio_path, uio_size = get_uio_node("misc-enet-regs0")
+        self.log.debug("Loaded C++ drivers.")
         self.log.debug("Getting Mg A uio...")
         self.radio_regs = UIO(label="jesd204b-regs", read_only=False)
         self.log.info("Radio-register UIO object successfully generated!")

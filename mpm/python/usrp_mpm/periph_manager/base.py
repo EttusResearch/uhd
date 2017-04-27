@@ -77,8 +77,8 @@ class PeriphManagerBase(object):
         # I know spidev masters on the dboard slots
         hw_pid = 2
         if hw_pid in dboard_manager.HW_PIDS:
-            spi_devices = get_spidev_nodes("e0006000.spi")
-            self.log.debug("found spidev nodes: {0}".format(spi_devices))
+            spi_devices = sorted(get_spidev_nodes("e0006000.spi"))
+            self.log.debug("Found spidev nodes: {0}".format(spi_devices))
         dboard = dboard_manager.HW_PIDS.get(hw_pid, dboard_manager.unknown)
         self.dboards.update({dboard_slot: dboard(spi_devices, eeprom_data)})
 

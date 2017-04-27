@@ -17,7 +17,7 @@
 """
 dboard base implementation module
 """
-import struct
+
 from ..mpmlog import get_logger
 
 class DboardManagerBase(object):

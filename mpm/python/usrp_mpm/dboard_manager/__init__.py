@@ -18,12 +18,12 @@
 dboards module __init__.py
 """
 from .. import libpyusrp_periphs as lib
-from .magnesium import magnesium
+from .magnesium import Magnesium
 from .eiscat import eiscat
 from .test import test
 from .unknown import unknown
 
 HW_PIDS = {
     eiscat.hw_pid: eiscat,
-    magnesium.hw_pid: magnesium,
+    Magnesium.hw_pid: Magnesium,
 }

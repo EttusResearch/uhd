@@ -38,7 +38,7 @@ def get_spidev_nodes(spi_master):
     """
     context = pyudev.Context()
     parent = pyudev.Device.from_name(context, "platform", spi_master)
-    paths = [device.sys_path
+    paths = [device.device_node.encode('ascii')
              for device in context.list_devices(parent=parent, subsystem="spidev")]
     return paths
 
