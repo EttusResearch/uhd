@@ -86,7 +86,7 @@ class Magnesium(DboardManagerBase):
 
         self.jesdcore.init()
         self.log.trace("Resetting Mykonos...")
-        self.reset_mykonos() #not sure who owns the reset
+        self.jesdcore.reset_mykonos() #not sure who owns the reset
 
         self.log.trace("Initializing Mykonos...")
         self.mykonos.begin_initialization()
@@ -111,14 +111,6 @@ class Magnesium(DboardManagerBase):
         #    raise Exception('Mykonos Framer is not synced!')
         #if (!self.mykonos.get_deframer_status())
         #    raise Exception('Mykonos Deframer is not synced!')
-
-    def reset_mykonos(self):
-        " Toggle reset line on Mykonos "
-        # SUPER GHETTO FIXME
-        import os
-        os.system('devmem2 0x4001000C w 2') # Active low reset
-        time.sleep(0.001)
-        os.system('devmem2 0x4001000C w 10')
 
     def read_eeprom_v1(self, data):
         """

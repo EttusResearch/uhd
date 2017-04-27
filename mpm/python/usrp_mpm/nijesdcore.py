@@ -142,3 +142,9 @@ class NIMgJESDCore(object):
         if rb & 0xF != 0x2:
             raise Exception("GT PLL failed to lock!")
 
+    def reset_mykonos(self):
+        " Toggle reset line on Mykonos "
+        self.regs.poke32(0x0008, 0) # Active low reset
+        time.sleep(0.001)
+        self.regs.poke32(0x0008, 1) # No longer in reset
+
