@@ -37,10 +37,10 @@ def kill_time(sig, frame):
     log = mpm.get_main_logger().getChild('kill')
     for proc in _PROCESSES:
         proc.terminate()
-        LOG.info("Terminating pid: {0}".format(proc.pid))
+        log.info("Terminating pid: {0}".format(proc.pid))
     for proc in _PROCESSES:
         proc.join()
-    LOG.info("System exiting")
+    log.info("System exiting")
     sys.exit(0)
 
 
