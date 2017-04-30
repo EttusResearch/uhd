@@ -22,5 +22,6 @@
 
 USRP_PERIPHS_ADD_OBJECT(dboards
   magnesium_manager.cpp
+  eiscat_manager.cpp
 )
 
