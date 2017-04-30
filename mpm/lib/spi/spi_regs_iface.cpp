@@ -98,3 +98,23 @@ regs_iface::sptr mpm::spi::make_spi_regs_iface(
         write_flags
     );
 }
+
+mpm::types::regs_iface::sptr mpm::spi::make_spidev_regs_iface(
+    const std::string &device,
+    const int speed_hz,
+    uint32_t addr_shift,
+    uint32_t data_shift,
+    uint32_t read_flags,
+    uint32_t write_flags
+) {
+    auto spi_iface_sptr = mpm::spi::spi_iface::make_spidev(
+        device, speed_hz
+    );
+    return std::make_shared<spi_regs_iface_impl>(
+        spi_iface_sptr,
+        addr_shift,
+        data_shift,
+        read_flags,
+        write_flags
+    );
+}
