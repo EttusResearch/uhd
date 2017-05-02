@@ -50,6 +50,6 @@
 #SET(LIBUHD_PYTHON_GEN_SOURCE_DEPS)
 
 # Define the object
-USRP_PERIPHS_ADD_OBJECT(chips
-    lmk04828_spi_iface.cpp
-)
+#USRP_PERIPHS_ADD_OBJECT(chips
+    #lmk04828_spi_iface.cpp
+#)

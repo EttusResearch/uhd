@@ -16,18 +16,15 @@
 //
 
 #include <mpm/dboards/magnesium_manager.hpp>
-#include <mpm/chips/lmk04828_spi_iface.hpp>
 #include <mpm/ad937x/ad937x_spi_iface.hpp>
 
 using namespace mpm::dboards;
 using namespace mpm::chips;
 
 magnesium_manager::magnesium_manager(
-    const std::string &lmk_spidev,
     const std::string &mykonos_spidev
 ) : _spi_mutex(std::make_shared<std::mutex>())
   , _spi_lock(mpm::types::lockable::make(_spi_mutex))
-  , _clock_ctrl(mpm::chips::make_lmk04828_iface(lmk_spidev))
   , _mykonos_ctrl(ad937x_ctrl::make(
         _spi_mutex,
         make_ad937x_iface(mykonos_spidev),

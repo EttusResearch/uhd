@@ -28,17 +28,12 @@ namespace mpm { namespace dboards {
     {
     public:
         magnesium_manager(
-            const std::string &lmk_spidev,
             const std::string &mykonos_spidev
         );
 
         /*! Return a reference to the SPI mutex
          */
         mpm::types::lockable::sptr get_spi_lock() { return _spi_lock; }
-
-        /*! Return a reference to the clock chip controls
-         */
-        mpm::types::regs_iface::sptr get_clock_ctrl(){ return _clock_ctrl; }
 
         /*! Return a reference to the radio chip controls
          */
@@ -47,10 +42,9 @@ namespace mpm { namespace dboards {
     private:
         std::shared_ptr<std::mutex> _spi_mutex;
 
-        // TODO: cpld control
+        // TODO: cpld control, or maybe it goes into Python
 
         mpm::types::lockable::sptr _spi_lock;
-        mpm::types::regs_iface::sptr _clock_ctrl;
         mpm::chips::ad937x_ctrl::sptr _mykonos_ctrl;
     };
 
@@ -60,9 +54,8 @@ namespace mpm { namespace dboards {
 void export_magnesium(){
     LIBMPM_BOOST_PREAMBLE("dboards")
     using namespace mpm::dboards;
-    bp::class_<mpm::dboards::magnesium_manager>("magnesium_manager", bp::init<std::string, std::string>())
+    bp::class_<mpm::dboards::magnesium_manager>("magnesium_manager", bp::init<std::string>())
         .def("get_spi_lock", &mpm::dboards::magnesium_manager::get_spi_lock)
-        .def("get_clock_ctrl", &mpm::dboards::magnesium_manager::get_clock_ctrl)
         .def("get_radio_ctrl", &mpm::dboards::magnesium_manager::get_radio_ctrl)
     ;
 }

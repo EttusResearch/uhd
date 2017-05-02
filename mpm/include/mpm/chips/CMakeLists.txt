@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
-INSTALL(FILES
-    lmk04828_spi_iface.hpp
-    DESTINATION ${INCLUDE_DIR}/mpm/lmk04828
-)
+#INSTALL(FILES
+
+    #DESTINATION ${INCLUDE_DIR}/mpm/lmk04828
+#)

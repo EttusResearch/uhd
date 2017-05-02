@@ -27,11 +27,10 @@ class LMK04828EISCAT(object):
     """
     LMK04828 controls for EISCAT daughterboard
     """
-    def __init__(self, regs_iface, spi_lock, slot=None):
+    def __init__(self, regs_iface, slot=None):
         slot = slot or "-A"
         self.log = get_logger("LMK04828"+slot)
         self.regs_iface = regs_iface
-        self.spi_lock = spi_lock
         self.init()
         self.config()
 
@@ -221,8 +220,6 @@ class LMK04828EISCAT(object):
         # """
         # Enable SYSREF pulses
         # """
-        # self.spi_lock.lock()
         # self.poke8(0x139, 0x2)
         # self.poke8(0x144, 0xFF)
         # self.poke8(0x143, 0x52)
-        # self.spi_lock.unlock()

@@ -40,6 +40,24 @@ PWR2_5V_ADC1_SPI_EN = 1<<13
 
 ADC_RESET = 0x2008
 
+def create_spidev_iface(dev_node):
+    """
+    Create a regs iface from a spidev node
+    """
+    SPI_SPEED_HZ = 1000000
+    SPI_ADDR_SHIFT = 8
+    SPI_DATA_SHIFT = 0
+    SPI_READ_FLAG = 1<<23
+    SPI_WRIT_FLAG = 0
+    return lib.spi.make_spidev_regs_iface(
+        dev_node,
+        SPI_SPEED_HZ,
+        SPI_ADDR_SHIFT,
+        SPI_DATA_SHIFT,
+        SPI_READ_FLAG,
+        SPI_WRIT_FLAG
+    )
+
 class ADS54J56(object):
     """
     Controls for ADS54J56 ADC
@@ -323,36 +341,41 @@ class EISCAT(DboardManagerBase):
             ))
             raise RuntimeError("Not enough SPI devices found.")
         self._spi_nodes = {}
+        self._spi_ifaces = {}
+        self.log.trace("Loading SPI interfaces...")
         for k, v in iteritems(self.spi_chipselect):
             self._spi_nodes[k] = spi_devices[v]
+            self._spi_ifaces[k] = create_spidev_iface(self._spi_nodes[k])
+        self.log.info("Loaded SPI interfaces!")
         self.log.debug("spidev device node map: {}".format(self._spi_nodes))
+        # Define some attributes so that PyLint stays quiet:
+        self.radio_regs = None
+        self.jesd_cores = None
+        self.lmk = None
+        self.adc0 = None
+        self.adc1 = None
 
     def init_device(self):
         """
         Execute necessary actions to bring up the daughterboard
+
+        This assumes that an appropriate overlay was loaded.
         """
-        self.log.debug("Loading C++ drivers...")
-        self._device = lib.eiscat.eiscat_manager(
-            self._spi_nodes['lmk'],
-            self._spi_nodes['adc0'],
-            self._spi_nodes['adc1'],
-            # self._spi_nodes['phasedac'],
-        )
-        self.lmk_regs = self._device.get_clock_ctrl()
-        self.adc0_regs = self._device.get_adc0_ctrl()
-        self.adc1_regs = self._device.get_adc1_ctrl()
-        self.spi_lock = self._device.get_spi_lock()
-        self.log.debug("Loaded C++ drivers.")
-        self.log.debug("Getting uio...")
+        self.log.trace("Loading SPI interfaces...")
+        for chip, spi_dev_node in iteritems(self._spi_nodes):
+            self._spi_ifaces[chip] = create_spidev_iface(spi_dev_node)
+        self.log.info("Loaded SPI interfaces!")
+        self.log.debug("spidev device node map: {}".format(self._spi_nodes))
+        self.log.trace("Getting uio...")
         self.radio_regs = UIO(label="jesd204b-regs", read_only=False)
         # Create JESD cores. They will also test the UIO regs on initialization.
         self.jesd_cores = [
             JesdCoreEiscat(
                 self.radio_regs,
                 "A", # TODO fix hard-coded slot number
-                x,
+                core_idx,
                 self.log
-            ) for x in xrange(2)
+            ) for core_idx in xrange(2)
         ]
         self.log.info("Radio-register UIO object successfully generated!")
 
@@ -362,7 +385,7 @@ class EISCAT(DboardManagerBase):
         self.mmcm = MMCM(self.radio_regs, self.log)
         self._init_power(self.radio_regs)
         self.mmcm.reset()
-        self.lmk = LMK04828EISCAT(self.lmk_regs, self.spi_lock, "A") # Initializes LMK
+        self.lmk = LMK04828EISCAT(self._spi_ifaces['lmk'], "A") # Initializes LMK
         if not self.mmcm.enable():
             self.log.error("Could not re-enable MMCM!")
             raise RuntimeError("Could not re-enable MMCM!")
@@ -370,8 +393,8 @@ class EISCAT(DboardManagerBase):
         # Initialize ADCs and JESD cores
         for i in xrange(2):
             self.jesd_cores[i].init()
-        self.adc0 = ADS54J56(self.adc0_regs, self.log)
-        self.adc1 = ADS54J56(self.adc1_regs, self.log)
+        self.adc0 = ADS54J56(self._spi_ifaces['adc0'], self.log)
+        self.adc1 = ADS54J56(self._spi_ifaces['adc1'], self.log)
         self.adc0.reset()
         self.adc1.reset()
         self.log.info("ADCs resetted!")

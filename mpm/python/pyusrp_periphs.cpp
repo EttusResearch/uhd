@@ -31,9 +31,7 @@
 #include <mpm/types/types_python.hpp>
 #include <mpm/spi/spi_python.hpp>
 #include <mpm/ad937x/ad937x_ctrl.hpp>
-#include <mpm/chips/lmk04828_spi_iface.hpp>
 #include <mpm/dboards/magnesium_manager.hpp>
-#include <mpm/dboards/eiscat_manager.hpp>
 #include <boost/noncopyable.hpp>
 
 namespace bp = boost::python;
@@ -48,5 +46,4 @@ BOOST_PYTHON_MODULE(libpyusrp_periphs)
     export_mykonos();
     export_xbar();
     export_magnesium();
-    export_eiscat();
 }

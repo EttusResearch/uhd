@@ -56,10 +56,21 @@ class Magnesium(DboardManagerBase):
         """
         self.log.debug("Loading C++ drivers...")
         self._device = lib.dboards.magnesium_manager(
-            self._spi_nodes['lmk'],
             self._spi_nodes['mykonos'],
         )
-        self.lmk = self._device.get_clock_ctrl()
+        SPI_SPEED_HZ = 1000000
+        SPI_ADDR_SHIFT = 8
+        SPI_DATA_SHIFT = 0
+        SPI_READ_FLAG = 1<<23
+        SPI_WRIT_FLAG = 0
+        self.lmk = lib.spi.make_spidev_regs_iface(
+            dev_node,
+            SPI_SPEED_HZ,
+            SPI_ADDR_SHIFT,
+            SPI_DATA_SHIFT,
+            SPI_READ_FLAG,
+            SPI_WRIT_FLAG
+        )
         self.mykonos = self._device.get_radio_ctrl()
         self.log.debug("Loaded C++ drivers.")
         self.log.debug("Getting Mg A uio...")
