@@ -88,7 +88,7 @@ class ADS54J56(object):
         self.regs.poke8(0x000059, 0x20) # ALWAYS WRITE 1 to this bit
         readback_test_addr = 0x11
         readback_test_val = self.regs.peek8(readback_test_addr)
-        self.log.trace("ADC readback reg 0x{:x} post-init: 0x{:x}".format(
+        self.log.trace("ADC readback reg 0x{:x} post-reset: 0x{:x}".format(
             readback_test_addr,
             readback_test_val,
         ))
@@ -135,7 +135,7 @@ class ADS54J56(object):
         self.regs.poke8(0x4005, 0x00) # Enable broadcast mode
         readback_test_addr = 0x11
         readback_test_val = self.regs.peek8(readback_test_addr)
-        self.log.trace("ADC readback reg 0x{:x} post-init: 0x{:x}".format(
+        self.log.trace("ADC readback reg 0x{:x} post-setup: 0x{:x}".format(
             readback_test_addr,
             readback_test_val,
         ))
@@ -184,6 +184,8 @@ class MMCM(object):
             self.RADIO_CLK2X_ENABLE | \
             self.RADIO_CLK3X_ENABLE
         )
+        
+        self.log.trace("Clocks enabled readback: 0x{:x}".format(self.peek32()))
         return True
 
 class JesdCoreEiscat(object):
@@ -234,10 +236,12 @@ class JesdCoreEiscat(object):
 
         Returns None, but will throw if there's a problem.
         """
+        self.log.trace("Init JESD...")
         self._gt_pll_power_control()
         self._gt_rx_reset(True)
         if not self._gt_pll_lock_control():
             raise RuntimeError("JESD CORE {} PLLs not locked!".format(self.core_idx))
+        self._gt_polarity_control()
 
     def init_deframer(self):
         """
@@ -245,11 +249,12 @@ class JesdCoreEiscat(object):
 
         Returns nothing, but throws on error.
         """
+        self.log.trace("Init JESD Deframer...")
         self.poke32(0x40, 0x02) # Force assertion of ADC SYNC
         self.poke32(0x50, 0x01) # Data = 0 = Scrambler enabled. Data = 1 = disabled. Must match ADC settings.
         if not self._gt_rx_reset(reset_only=False):
             raise RuntimeError("JESD Core did not come out of reset properly!")
-        self.poke32(0x50, 0x00) # Stop forcing assertion of ADC SYNC
+        self.poke32(0x40, 0x00) # Stop forcing assertion of ADC SYNC
 
     def check_deframer_status(self):
         """
@@ -263,11 +268,18 @@ class JesdCoreEiscat(object):
             return False
         return True
 
+    def check_refclk(self):
+        """
+        Not technically a JESD core reg, but related.
+        """
+        return bool(self.peek32(0x2004))
+
     def _gt_pll_power_control(self):
         """
         Power down unused CPLLs and QPLLs
         """
         self.poke32(0x00C, 0xFFFC0000)
+        self.log.trace("MGT power enabled readback: {:x}".format(self.peek32(0x00C)))
 
     def _gt_rx_reset(self, reset_only=True):
         """
@@ -281,10 +293,12 @@ class JesdCoreEiscat(object):
             time.sleep(.001) # Probably not necessary
             self.poke32(0x024, 0x20) # Unreset and Enable
             time.sleep(0.1) # TODO replace with poll and timeout 20 ms
-            lock_status = self.peek32(0x024) & 0xFFFF0000
-            if lock_status != 0xF0000:
+            self.log.trace("MGT power enabled readback (rst seq): {:x}".format(self.peek32(0x00C)))
+            self.log.trace("MGT CPLL lock readback (rst seq): {:x}".format(self.peek32(0x004)))
+            lock_status = self.peek32(0x024)
+            if lock_status & 0xFFFF0000 != 0x30000:
                 self.log.error(
-                    "JESD Core {}: TX MGTs failed to reset! Status: 0x{:x}".format(self.core_idx, lock_status)
+                    "JESD Core {}: RX MGTs failed to reset! Status: 0x{:x}".format(self.core_idx, lock_status)
                 )
                 return False
         return True
@@ -297,6 +311,7 @@ class JesdCoreEiscat(object):
         self.poke32(0x004, 0x11111100) # Unreset the ones we're using
         time.sleep(0.002) # TODO replace with poll and timeout
         self.poke32(0x010, 0x10000) # Clear all CPLL sticky bits
+        self.log.trace("MGT CPLL lock readback (lock seq): {:x}".format(self.peek32(0x004)))
         lock_status = self.peek32(0x004) & 0xFF
         lock_good = bool(lock_status == 0x22)
         if not lock_good:
@@ -310,9 +325,9 @@ class JesdCoreEiscat(object):
         reg_val = {
             'A': {0: 0x00, 1: 0x11},
             'B': {0: 0x01, 1: 0x01},
-        }
+        }[self.slot][self.core_idx]
         self.log.trace(
-            "JESD Core: Slot {}, ADC {}: Setting polarity control to 0b{:2b}".format(
+            "JESD Core: Slot {}, ADC {}: Setting polarity control to 0x{:2x}".format(
                 self.slot, self.core_idx, reg_val
             ))
         self.poke32(0x80, reg_val)
@@ -391,6 +406,9 @@ class EISCAT(DboardManagerBase):
             raise RuntimeError("Could not re-enable MMCM!")
         self.log.info("MMCM enabled!")
         # Initialize ADCs and JESD cores
+        if not self.jesd_cores[0].check_refclk():
+            self.log.error("JESD Core {} not getting a refclk!".format(0))
+            raise RuntimeError("JESD Core {} not getting a refclk!".format(0))
         for i in xrange(2):
             self.jesd_cores[i].init()
         self.adc0 = ADS54J56(self._spi_ifaces['adc0'], self.log)
@@ -398,14 +416,28 @@ class EISCAT(DboardManagerBase):
         self.adc0.reset()
         self.adc1.reset()
         self.log.info("ADCs resetted!")
-        return
-        # Send SYSREF FIXME
+
+        def send_sysref():
+            """
+            TODO this is a temp way of sending sysref
+            need to replace with timed command
+            """
+            SYSREF = 1<<13
+            old_val = 0x1FFF
+            self.radio_regs.poke32(POWER_ENB, old_val | SYSREF)
+            time.sleep(0.001)
+            self.radio_regs.poke32(POWER_ENB, old_val)
+
+        send_sysref()
+
         self.adc0.setup()
         self.adc1.setup()
         self.log.info("ADCs set up!")
         for i in xrange(2):
             self.jesd_cores[i].init_deframer()
-        # Send SYSREF FIXME
+
+        send_sysref()
+
         for i in xrange(2):
             if not self.jesd_cores[i].check_deframer_status():
                 raise RuntimeError("JESD Core {}: Deframer status not lookin' so good!".format(i))
@@ -420,7 +452,7 @@ class EISCAT(DboardManagerBase):
         than turning it off again).
         """
         reg_val = PWR2_5V_DC_CTRL_ENB
-        self.log.trace("Asserting power ctrl enable ({})...".format(bin(reg_val)))
+        self.log.trace("Asserting power ctrl enable ({:x})...".format((reg_val)))
         regs.poke32(POWER_ENB, reg_val)
         time.sleep(0.001)
         reg_val = reg_val \
@@ -429,11 +461,11 @@ class EISCAT(DboardManagerBase):
                 | PWR2_5V_LNA_CTRL_EN \
                 | PWR2_5V_LMK_SPI_EN | PWR2_5V_ADC0_SPI_EN #| PWR2_5V_ADC1_SPI_EN
         regs.poke32(POWER_ENB, reg_val)
-        self.log.trace("Asserting power enable for all the chips ({})...".format(bin(reg_val)))
+        self.log.trace("Asserting power enable for all the chips ({:x})...".format((reg_val)))
         time.sleep(0.1)
         for chan in xrange(8):
             reg_val = reg_val | PWR_CHAN_EN_2V5[chan]
-        self.log.trace("Asserting power enable for all the channels ({})...".format(bin(reg_val)))
+        self.log.trace("Asserting power enable for all the channels ({:x})...".format((reg_val)))
         regs.poke32(POWER_ENB, reg_val)
 
     def _deinit_power(self, regs):
