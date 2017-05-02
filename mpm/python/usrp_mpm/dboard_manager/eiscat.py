@@ -453,7 +453,7 @@ class EISCAT(DboardManagerBase):
         Safely turn off the daughterboard
         """
         self.log.info("Shutting down daughterboard")
-        self._deinit_power()
+        self._deinit_power(self.radio_regs)
 
 
     def _init_power(self, regs):
