@@ -1,22 +1,10 @@
 #!/usr/bin/env python
 #
-# Copyright 2017 Ettus Research LLC
+#  Copyright 2017-2018 Ettus Research, a National Instruments Company
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+#  SPDX-License-Identifier: GPL-3.0-or-later
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-
-
+"""Setup file for uhd module"""
 
 from setuptools import setup
 
@@ -30,15 +18,13 @@ setup(name='uhd',
           'Programming Language :: Python',
           'Topic :: System :: Hardware :: Hardware Drivers',
       ],
-      keywords='SDR UHD USRP SDR',
+      keywords='SDR UHD USRP',
       author='Ettus Research',
       author_email='packages@ettus.com',
       url='https://www.ettus.com/',
       license='GPLv3',
-      package_dir={ '': '${CMAKE_CURRENT_BINARY_DIR}' },
-      package_data={"uhd": ["*.so"]},
+      package_dir={'': '${CMAKE_CURRENT_BINARY_DIR}'},
+      package_data={'uhd': ['*.so']},
       zip_safe=False,
       packages=['uhd'],
-      install_requires=[
-          'numpy'
-      ])
+      install_requires=['numpy'])

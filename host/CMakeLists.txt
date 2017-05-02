@@ -1,6 +1,5 @@
 #
-# Copyright 2010-2016 Ettus Research LLC
-# Copyright 2018 Ettus Research, a National Instruments Company
+# Copyright 2010-2018 Ettus Research, a National Instruments Company
 #
 # SPDX-License-Identifier: GPL-3.0
 #
@@ -281,9 +280,18 @@ ENDIF(CYGWIN)
 IF(WIN32)
     ADD_DEFINITIONS(-D_WIN32_WINNT=0x0501) #minimum version required is windows xp
     ADD_DEFINITIONS(-DNOMINMAX) #disables stupidity and enables std::min and std::max
-  ENDIF(WIN32)
+ENDIF(WIN32)
 
-
+########################################################################
+# Choose a version of Python
+########################################################################
+OPTION(ENABLE_PYTHON3 "Enable Python 3. Default is Python 2" OFF)
+SET(BOOST_PYTHON_COMPONENT python)
+SET(BOOST_PYTHON_VERSION 2.7)
+IF(${ENABLE_PYTHON3})
+    SET(BOOST_PYTHON_COMPONENT python3)
+    SET(BOOST_PYTHON_VERSION 3)
+ENDIF()
 
 ########################################################################
 # Setup Boost
@@ -299,11 +307,9 @@ SET(BOOST_REQUIRED_COMPONENTS
     system
     unit_test_framework
     serialization
-    )
-
-SET(BOOST_OPTIONAL_COMPONENTS
-    python
 )
+
+SET(BOOST_OPTIONAL_COMPONENTS ${BOOST_PYTHON_COMPONENT})
 IF(MINGW)
     LIST(APPEND BOOST_REQUIRED_COMPONENTS thread_win32)
 ELSE()
@@ -330,19 +336,26 @@ SET(Boost_ADDITIONAL_VERSIONS
 )
 
 #Python API requirements
-MESSAGE(STATUS "Looking for optional Boost copmponents...")
+MESSAGE(STATUS "Looking for optional Boost components...")
 FIND_PACKAGE(Boost ${BOOST_MIN_VERSION} OPTIONAL_COMPONENTS ${BOOST_OPTIONAL_COMPONENTS})
 
-MESSAGE(STATUS "Looking for required Boost copmponents...")
+MESSAGE(STATUS "Looking for required Boost components...")
 FIND_PACKAGE(Boost ${BOOST_MIN_VERSION} COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
 
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
 
+#Check to see if the Python version we're looking for exists
+SET(BOOST_PYTHON_FOUND ${Boost_PYTHON_FOUND})
+SET(BOOST_PYTHON_LIBRARY ${Boost_PYTHON_LIBRARY})
+IF(${ENABLE_PYTHON3})
+    SET(BOOST_PYTHON_FOUND ${Boost_PYTHON3_FOUND})
+    SET(BOOST_PYTHON_LIBRARY ${Boost_PYTHON3_LIBRARY})
+ENDIF()
+
 MESSAGE(STATUS "Boost include directories: ${Boost_INCLUDE_DIRS}")
 MESSAGE(STATUS "Boost library directories: ${Boost_LIBRARY_DIRS}")
 MESSAGE(STATUS "Boost libraries: ${Boost_LIBRARIES}")
-
 
 ########################################################################
 # Additional settings for build environment
@@ -355,11 +368,18 @@ INCLUDE(UHDLog)
 ########################################################################
 # Check Python Modules
 ########################################################################
+FIND_PACKAGE(PythonInterp ${BOOST_PYTHON_VERSION})
+FIND_PACKAGE(PythonLibs ${BOOST_PYTHON_VERSION})
 INCLUDE(UHDPython)
 
+SET(PYTHON_VERSION "platform.python_version() >= '2.7' and platform.python_version() < '3.0'")
+IF(${ENABLE_PYTHON3})
+    SET(PYTHON_VERSION "platform.python_version() >= '3.0'")
+ENDIF()
+
 PYTHON_CHECK_MODULE(
-    "Python version 2.7 or greater"
-    "platform" "platform.python_version() >= '2.7'"
+    "Python version ${BOOST_PYTHON_VERSION} or greater"
+    "platform" ${PYTHON_VERSION}
     HAVE_PYTHON_PLAT_MIN_VERSION
 )
 
@@ -373,16 +393,16 @@ PYTHON_CHECK_MODULE(
     "requests 2.0 or greater"
     "requests" "requests.__version__ >= '2.0'"
     HAVE_PYTHON_MODULE_REQUESTS
-    )
+)
 
 PYTHON_CHECK_MODULE(
     "numpy 1.7 or greater"
     "numpy" "LooseVersion(numpy.__version__) >= LooseVersion('1.7')"
     HAVE_PYTHON_MODULE_NUMPY
-    )
+)
 
 SET(PYTHON_ADDITIONAL_VERSIONS 2.7 3.4 3.5)
-FIND_PACKAGE(PythonLibs)
+
 ########################################################################
 # Create Uninstall Target
 ########################################################################
@@ -410,7 +430,7 @@ UHD_INSTALL(FILES
 ########################################################################
 LIBUHD_REGISTER_COMPONENT("LibUHD" ENABLE_LIBUHD ON "Boost_FOUND;HAVE_PYTHON_PLAT_MIN_VERSION;HAVE_PYTHON_MODULE_MAKO" OFF ON)
 LIBUHD_REGISTER_COMPONENT("LibUHD - C API" ENABLE_C_API ON "ENABLE_LIBUHD" OFF OFF)
-LIBUHD_REGISTER_COMPONENT("LibUHD - Python API" ENABLE_PYTHON_API ON "ENABLE_LIBUHD;Boost_PYTHON_FOUND;HAVE_PYTHON_MODULE_NUMPY;PythonLibs_FOUND" OFF OFF)
+LIBUHD_REGISTER_COMPONENT("LibUHD - Python API" ENABLE_PYTHON_API OFF "ENABLE_LIBUHD;BOOST_PYTHON_FOUND;HAVE_PYTHON_MODULE_NUMPY;PythonLibs_FOUND" OFF OFF)
 LIBUHD_REGISTER_COMPONENT("Examples" ENABLE_EXAMPLES ON "ENABLE_LIBUHD" OFF OFF)
 LIBUHD_REGISTER_COMPONENT("Utils" ENABLE_UTILS ON "ENABLE_LIBUHD" OFF OFF)
 LIBUHD_REGISTER_COMPONENT("Tests" ENABLE_TESTS ON "ENABLE_LIBUHD" OFF OFF)

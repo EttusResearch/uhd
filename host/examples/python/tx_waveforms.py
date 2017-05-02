@@ -1,35 +1,28 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 #
-# Copyright 2017 Ettus Research LLC
+# Copyright 2017-2018 Ettus Research, a National Instruments Company
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
+"""
+Generate and TX samples using a set of waveforms, and waveform characteristics
+"""
 
+import argparse
 import numpy as np
 import uhd
-import argparse
-
 
 waveforms = {
     "sine": lambda n, tone_offset, rate: np.exp(n * 2j * np.pi * tone_offset / rate),
     "square": lambda n, tone_offset, rate: np.sign(waveforms["sine"](n, tone_offset, rate)),
     "const": lambda n, tone_offset, rate: 1 + 1j,
-    "ramp": lambda n, tone_offset, rate: 2*(n*(tone_offset/rate) - np.floor(float(0.5 + n*(tone_offset/rate))))
+    "ramp": lambda n, tone_offset, rate:
+            2*(n*(tone_offset/rate) - np.floor(float(0.5 + n*(tone_offset/rate))))
 }
 
 
 def parse_args():
+    """Parse the command line arguments"""
     parser = argparse.ArgumentParser()
     parser.add_argument("-a", "--args", default="", type=str)
     parser.add_argument(
@@ -45,15 +38,16 @@ def parse_args():
 
 
 def main():
+    """TX samples based on input arguments"""
     args = parse_args()
-    usrp = uhd.multi_usrp(args.args)
+    usrp = uhd.usrp.MultiUSRP(args.args)
     if not isinstance(args.channels, list):
         args.channels = [args.channels]
     data = np.array(
-        map(lambda n: args.wave_ampl * waveforms[args.waveform](n, args.wave_freq, args.rate),
+        list(map(lambda n: args.wave_ampl * waveforms[args.waveform](n, args.wave_freq, args.rate),
             np.arange(
                 int(10 * np.floor(args.rate / args.wave_freq)),
-                dtype=np.complex64)),
+                dtype=np.complex64))),
         dtype=np.complex64)  # One period
 
     usrp.send_waveform(data, args.duration, args.freq, args.rate,
