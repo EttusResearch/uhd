@@ -42,9 +42,9 @@ static const mykonosRxProfile_t DEFAULT_RX_PROFILE =
     5,              // Decimation of Dec5 or Dec4 filter (5,4)
     1,              // If set, and DEC5 filter used, will use a higher rejection DEC5 FIR filter (1=Enabled, 0=Disabled)
     1,              // RX Half band 1 decimation (1 or 2)
-    122880,         // Rx IQ data rate in kHz
+    125000,         // Rx IQ data rate in kHz
     100000000,      // The Rx RF passband bandwidth for the profile
-    100000,         // Rx BBF 3dB corner in kHz
+    102000,         // Rx BBF 3dB corner in kHz
     NULL            // pointer to custom ADC profile
 };
 
@@ -164,11 +164,11 @@ static const mykonosTxProfile_t DEFAULT_TX_PROFILE =
     2,              // Tx Halfband1 filter interpolation (1,2)
     1,              // Tx Halfband2 filter interpolation (1,2)
     1,              // TxInputHbInterpolation (1,2)
-    122880,         // Tx IQ data rate in kHz
+    125000,         // Tx IQ data rate in kHz
     20000000,       // Primary Signal BW
-    100000000,      // The Tx RF passband bandwidth for the profile
-    710539,         // The DAC filter 3dB corner in kHz
-    50000,          // Tx BBF 3dB corner in kHz
+    102000000,      // The Tx RF passband bandwidth for the profile
+    722000,         // The DAC filter 3dB corner in kHz
+    51000,          // Tx BBF 3dB corner in kHz
     0               // Enable DPD, only valid for AD9373
 };
 
@@ -240,18 +240,18 @@ static const mykonosORxGainControl_t DEFAULT_ORX_GAIN =
 
 static const mykonosAgcCfg_t DEFAULT_ORX_AGC_CTRL =
 {
-    0,      // agcRx1MaxGainIndex
-    0,      // agcRx1MinGainIndex
-    0,      // agcRx2MaxGainIndex
-    0,      // agcRx2MinGainIndex:
-    0,      // agcObsRxMaxGainIndex
-    0,      // agcObsRxMinGainIndex
-    0,      // agcObsRxSelect
-    0,      // agcPeakThresholdMode
-    0,      // agcLowThsPreventGainIncrease
-    0,      // agcGainUpdateCounter
-    0,      // agcSlowLoopSettlingDelay
-    0,      // agcPeakWaitTime
+    255,    // agcRx1MaxGainIndex
+    195,    // agcRx1MinGainIndex
+    255,    // agcRx2MaxGainIndex
+    195,    // agcRx2MinGainIndex:
+    255,    // agcObsRxMaxGainIndex
+    203,    // agcObsRxMinGainIndex
+    1,      // agcObsRxSelect
+    1,      // agcPeakThresholdMode
+    1,      // agcLowThsPreventGainIncrease
+    30720,  // agcGainUpdateCounter
+    3,      // agcSlowLoopSettlingDelay
+    4,      // agcPeakWaitTime
     0,      // agcResetOnRxEnable
     0,      // agcEnableSyncPulseForGainCounter
     nullptr,// *peakAgc
@@ -260,40 +260,48 @@ static const mykonosAgcCfg_t DEFAULT_ORX_AGC_CTRL =
 
 static const mykonosPeakDetAgcCfg_t DEFAULT_ORX_PEAK_AGC =
 {
-    0,      // apdHighThresh:
-    0,      // apdLowThresh
-    0,      // hb2HighThresh
-    0,      // hb2LowThresh
-    0,      // hb2VeryLowThresh
-    0,      // apdHighThreshExceededCnt
-    0,      // apdLowThreshExceededCnt
-    0,      // hb2HighThreshExceededCnt
-    0,      // hb2LowThreshExceededCnt
-    0,      // hb2VeryLowThreshExceededCnt
-    0,      // apdHighGainStepAttack
-    0,      // apdLowGainStepRecovery
-    0,      // hb2HighGainStepAttack
-    0,      // hb2LowGainStepRecovery
-    0,      // hb2VeryLowGainStepRecovery
-    0,      // apdFastAttack
-    0,      // hb2FastAttack
-    0,      // hb2OverloadDetectEnable
-    0,      // hb2OverloadDurationCnt
-    0       // hb2OverloadThreshCnt
+    0x2A,   // apdHighThresh:
+    0x16,   // apdLowThresh
+    0xB5,   // hb2HighThresh
+    0x72,   // hb2LowThresh
+    0x40,   // hb2VeryLowThresh
+    0x03,   // apdHighThreshExceededCnt
+    0x03,   // apdLowThreshExceededCnt
+    0x03,   // hb2HighThreshExceededCnt
+    0x03,   // hb2LowThreshExceededCnt
+    0x03,   // hb2VeryLowThreshExceededCnt
+    0x4,    // apdHighGainStepAttack
+    0x2,    // apdLowGainStepRecovery
+    0x4,    // hb2HighGainStepAttack
+    0x2,    // hb2LowGainStepRecovery
+    0x4,    // hb2VeryLowGainStepRecovery
+    0x0,    // apdFastAttack
+    0x0,    // hb2FastAttack
+    0x1,    // hb2OverloadDetectEnable
+    0x1,    // hb2OverloadDurationCnt
+    0x1     // hb2OverloadThreshCnt
 };
 
 static const mykonosPowerMeasAgcCfg_t DEFAULT_ORX_POWER_AGC =
 {
-    0,      // pmdUpperHighThresh
-    0,      // pmdUpperLowThresh
-    0,      // pmdLowerHighThresh
-    0,      // pmdLowerLowThresh
-    0,      // pmdUpperHighGainStepAttack
-    0,      // pmdUpperLowGainStepAttack
-    0,      // pmdLowerHighGainStepRecovery
-    0,      // pmdLowerLowGainStepRecovery
-    0,      // pmdMeasDuration
-    0,      // pmdMeasConfig
+    0x01,   // pmdUpperHighThresh
+    0x03,   // pmdUpperLowThresh
+    0x0C,   // pmdLowerHighThresh
+    0x04,   // pmdLowerLowThresh
+    0x0,    // pmdUpperHighGainStepAttack
+    0x0,    // pmdUpperLowGainStepAttack
+    0x0,    // pmdLowerHighGainStepRecovery
+    0x0,    // pmdLowerLowGainStepRecovery
+    0x08,   // pmdMeasDuration
+    0x02    // pmdMeasConfig
+};
+
+static const mykonosSnifferGainControl_t DEFAULT_SNIFFER_GAIN =
+{
+    MGC,    // Current Sniffer gain control mode setting
+    255,    // Current Sniffer gain index. Can be used differently for Manual Gain control/AGC
+    255,    // Max gain index for the currently loaded Sniffer Gain table
+    203     // Min gain index for the currently loaded Sniffer Gain table
 };
 
 static const mykonosRxProfile_t DEFAULT_ORX_PROFILE =
@@ -367,8 +375,8 @@ static const mykonosAuxIo_t DEFAULT_AUX_IO =
 
 static const mykonosDigClocks_t DEFAULT_CLOCKS =
 {
-    122880,         // CLKPLL and device reference clock frequency in kHz
-    9830400,        // CLKPLL VCO frequency in kHz
+    125000,         // CLKPLL and device reference clock frequency in kHz
+    10000000,       // CLKPLL VCO frequency in kHz
     VCODIV_2,       // CLKPLL VCO divider
     4               // CLKPLL high speed clock divider
 };

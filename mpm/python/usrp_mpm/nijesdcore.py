@@ -94,6 +94,12 @@ class NIMgJESDCore(object):
         self._gt_reset('tx', reset_only=True)
         self._gt_reset('rx', reset_only=True)
         self._gt_pll_lock_control()
+        
+    def enable_lmfc(self):
+        """
+        Enable LMFC generator in FPGA. This step is woefully incomplete, but this call will work for now.
+        """
+        self.regs.poke32(0x2078, 0)
 
     def send_sysref_pulse(self):
         """
@@ -107,7 +113,7 @@ class NIMgJESDCore(object):
         " Put MGTs into reset. Optionally unresets and enables them "
         assert tx_or_rx.lower() in ('rx', 'tx')
         mgt_reg = {'tx': 0x2020, 'rx': 0x2024}[tx_or_rx]
-        self.log.trace("Resetting TX MGTs...")
+        self.log.trace("Resetting %s MGTs..." % tx_or_rx.upper())
         self.regs.poke32(mgt_reg, 0x10)
         if not reset_only:
             self.regs.poke32(mgt_reg, 0x20)
@@ -116,7 +122,7 @@ class NIMgJESDCore(object):
                 rb = self.regs.peek32(mgt_reg)
                 if rb & 0xFFFF0000 == 0x000F0000:
                     return True
-                time.sleep(0.01)
+                time.sleep(0.001)
             raise Exception('Timeout in GT {trx} Reset (Readback: 0x{rb:X})'.format(
                 trx=tx_or_rx.upper(),
                 rb=(rb & 0xFFFF0000),

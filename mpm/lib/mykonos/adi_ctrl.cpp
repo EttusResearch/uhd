@@ -241,7 +241,7 @@ commonErr_t CMB_closeLog(void)
 
 commonErr_t CMB_writeToLog(ADI_LOGLEVEL level, uint8_t deviceIndex, uint32_t errorCode, const char *comment)
 {
-    std::cout << "[CMB_writeToLog] level==" << level << " errorCode==" << errorCode << " " << comment << std::endl;
+    std::cout << "[CMB_writeToLog] level==" << level << " errorCode==" << errorCode << " " << comment;
     return COMMONERR_OK;
 }
 commonErr_t CMB_flushLog(void)

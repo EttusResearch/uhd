@@ -24,6 +24,7 @@
 
 #include <functional>
 #include <iostream>
+#include <thread>
 
 using namespace mpm::ad937x::device;
 using namespace mpm::ad937x::gpio;
@@ -42,13 +43,14 @@ static const double RX_DEFAULT_FREQ = 1e9;
 static const double TX_DEFAULT_FREQ = 1e9;
 
 // TODO: get the actual device ID
-static const uint32_t AD9371_PRODUCT_ID = 0x1F;
+static const uint32_t AD9371_PRODUCT_ID = 0x1;
 
 // TODO: move this to whereever we declare the ARM binary
 static const size_t ARM_BINARY_SIZE = 98304;
 
 static const uint32_t INIT_CAL_TIMEOUT_MS = 10000;
 
+// TODO: actually figure out what cals we want to run
 static const uint32_t INIT_CALS =
     TX_BB_FILTER |
     ADC_TUNER |
@@ -96,9 +98,7 @@ void ad937x_device::_call_api_function(std::function<mykonosErr_t()> func)
     auto error = func();
     if (error != MYKONOS_ERR_OK)
     {
-        std::cout << getMykonosErrorMessage(error);
-        // TODO: make UHD exception
-        //throw std::exception(getMykonosErrorMessage(error));
+        throw mpm::runtime_error(getMykonosErrorMessage(error));
     }
 }
 
@@ -108,9 +108,7 @@ void ad937x_device::_call_gpio_api_function(std::function<mykonosGpioErr_t()> fu
     auto error = func();
     if (error != MYKONOS_ERR_GPIO_OK)
     {
-        std::cout << getGpioMykonosErrorMessage(error);
-        // TODO: make UHD exception
-        //throw std::exception(getMykonosErrorMessage(error));
+        throw mpm::runtime_error(getGpioMykonosErrorMessage(error));
     }
 }
 
@@ -217,13 +215,15 @@ void ad937x_device::begin_initialization()
 
 void ad937x_device::finish_initialization()
 {
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
     // to check status, just call the same function with a 0 instead of a 1, seems good
     uint8_t mcs_status = 0;
     _call_api_function(std::bind(MYKONOS_enableMultichipSync, mykonos_config.device, 0, &mcs_status));
 
     if ((mcs_status & 0x0A) != 0x0A)
     {
-        throw mpm::runtime_error("Multichip sync failed!");
+        throw mpm::runtime_error(str(boost::format("Multichip sync failed! Read: %X Expected: %X")
+            % int(mcs_status) % int(0x0A)));
     }
 
     _call_api_function(std::bind(MYKONOS_initSubRegisterTables, mykonos_config.device));

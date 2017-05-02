@@ -60,6 +60,11 @@ void ad937x_config_t::_assign_default_configuration()
     _orxPowerAgc = DEFAULT_ORX_POWER_AGC;
     _orxAgcCtrl = DEFAULT_ORX_AGC_CTRL;
 
+    // TODO: this is ridiculous
+    // oh, and ORX bring up requires a valid sniffer gain control
+    // https://github.com/EttusResearch/uhddev/blob/n3xx-master/mpm/lib/mykonos/adi/mykonos.c#L5713
+    _snifferGainCtrl = DEFAULT_SNIFFER_GAIN;
+
     _armGpio = DEFAULT_ARM_GPIO;
     _gpio3v3 = DEFAULT_GPIO_3V3;
     _gpio = DEFAULT_GPIO;
@@ -110,7 +115,6 @@ void ad937x_config_t::_init_pointers()
     _snifferProfile.rxFir = _sniffer_rx_fir_config.fir;
     _obsRx.snifferGainCtrl = &_snifferGainCtrl;
     // sniffer has no AGC ctrl, so leave as null
-    _obsRx.orxAgcCtrl = nullptr;
     _obsRx.framer = &_orxFramer;
 
     _auxIo.gpio3v3 = &_gpio3v3;
@@ -121,9 +125,9 @@ void ad937x_config_t::_init_pointers()
 void ad937x_config_t::_assign_firs()
 {
     // TODO: get default filters here
-    tx_fir_config.set_fir(6, { 32, 0 });
-    rx_fir_config.set_fir( -6,{ 48, 0 });
-    _orx_fir_config.set_fir( -6, { 48, 0 });
-    _sniffer_rx_fir_config.set_fir( -6, { 48, 0 });
+    tx_fir_config.set_fir(6, std::vector<int16_t>(48, 0));
+    rx_fir_config.set_fir(-6, std::vector<int16_t>(48, 0));
+    _orx_fir_config.set_fir(-6, std::vector<int16_t>(48, 0));
+    _sniffer_rx_fir_config.set_fir(-6, std::vector<int16_t>(48, 0));
 }
 
