@@ -19,16 +19,75 @@ N310 implementation module
 """
 from __future__ import print_function
 import struct
+import netaddr
 from .base import PeriphManagerBase
 from .net import get_iface_addrs
 from .net import byte_to_mac
 from .net import get_mac_addr
 from ..types import SID
 from ..uio import UIO
+from ..sysfs_gpio import SysFSGPIO
 from .. import libpyusrp_periphs as lib
-from logging import getLogger
-import netaddr
-import socket
+
+
+N3XX_DEFAULT_EXT_CLOCK_FREQ = 10e6
+N3XX_DEFAULT_CLOCK_SOURCE = 'external'
+
+class TCA6424(object):
+    """
+    Abstraction layer for the port/gpio expander
+    """
+    pins = (
+        'PWREN-CLK-MGT156MHz',
+        'PWREN-CLK-WB-CDCM',
+        'WB-CDCM-RESETn',
+        'WB-CDCM-PR0',
+        'WB-CDCM-PR1',
+        'WB-CDCM-OD0',
+        'WB-CDCM-OD1',
+        'WB-CDCM-OD2',
+        'PWREN-CLK-MAINREF',
+        'CLK-MAINREF-SEL0',
+        'CLK-MAINREF-SEL1',
+        '12',
+        '13',
+        'FPGA-GPIO-EN',
+        'PWREN-CLK-WB-20MHz',
+        'PWREN-CLK-WB-25MHz',
+        'GPS-PHASELOCK',
+        'GPS-nINITSURV',
+        'GPS-nRESET',
+        'GPS-WARMUP',
+        'GPS-SURVEY',
+        'GPS-LOCKOK',
+        'GPS-ALARM',
+        'PWREN-GPS',
+    )
+
+    def __init__(self):
+        self._gpios = SysFSGPIO('tca6424', 0x700, 0x700)
+
+    def set(self, name):
+        """
+        Assert a pin by name
+        """
+        assert name in self.pins
+        self._gpios.set(self.pins.index(name))
+
+    def reset(self, name):
+        """
+        Deassert a pin by name
+        """
+        assert name in self.pins
+        self._gpios.reset(self.pins.index(name))
+
+    def get(self, name):
+        """
+        Read back a pin by name
+        """
+        assert name in self.pins
+        self._gpios.get(self.pins.index(name))
+
 
 class n310(PeriphManagerBase):
     """
@@ -46,6 +105,17 @@ class n310(PeriphManagerBase):
     def __init__(self, *args, **kwargs):
         # First initialize parent class - will populate self._eeprom_head and self._eeprom_rawdata
         super(n310, self).__init__(*args, **kwargs)
+
+        self.log.trace("Initializing TCA6424 port expander controls...")
+        self._gpios = TCA6424()
+
+        # Initialize reference clock
+        self._gpios.set("PWREN-CLK-MAINREF")
+        self._ext_clock_freq = N3XX_DEFAULT_EXT_CLOCK_FREQ
+        self._clock_source = None # Gets set in set_clock_source()
+        self.set_clock_source(N3XX_DEFAULT_CLOCK_SOURCE)
+
+
         # data = self._read_eeprom_v1(self._eeprom_rawdata)
         # mac 0: mgmt port, mac1: sfp0, mac2: sfp1
         # self.interfaces["mgmt"] = {
@@ -133,3 +203,48 @@ class n310(PeriphManagerBase):
             uio_obj.poke32(0x1400 + 4*new_ep, ((int(port) << 16) | (mac_addr >> 32)))
             print("gonna poke: %x %x" % (0x1400+4*new_ep, ((port << 16) | (mac_addr >> 32))))
         return sid.get()
+
+    def get_clock_sources(self):
+        " Lists all available clock sources. "
+        self.log.trace("Listing available clock sources...")
+        return ('external', 'internal', 'gpsdo')
+
+    def get_clock_source(self):
+        " Returns the currently selected clock source "
+        return self._clock_source
+
+    def set_ext_clock_freq(self, freq):
+        """
+        Tell our USRP what the frequency of the external reference clock is.
+
+        Will throw if it's not a valid value.
+        """
+        assert freq in (10e6, 20e6, 25e6)
+        self._ext_clock_freq = freq
+
+    def get_clock_freq(self):
+        " Returns the currently active reference clock frequency"
+        return {
+            'internal': 25e6,
+            'external': self._ext_clock_freq,
+            'gpsdo': 20e6,
+        }[self._clock_source]
+
+    def set_clock_source(self, clock_source):
+        """
+        Enable given external reference clock.
+
+        Throws if clock_source is not a valid value.
+        """
+        assert clock_source in self.get_clock_sources()
+        self.log.trace("Setting clock sel to `{}'".format(clock_source))
+        if clock_source == 'internal':
+            self._gpios.set("CLK-MAINREF-SEL0")
+            self._gpios.set("CLK-MAINREF-SEL1")
+        elif clock_source == 'gpsdo':
+            self._gpios.set("CLK-MAINREF-SEL0")
+            self._gpios.reset("CLK-MAINREF-SEL1")
+        else: # external
+            self._gpios.reset("CLK-MAINREF-SEL0")
+            self._gpios.reset("CLK-MAINREF-SEL1")
+
