@@ -20,6 +20,7 @@ N310 implementation module
 from __future__ import print_function
 import struct
 import netaddr
+from six import iteritems
 from .base import PeriphManagerBase
 from .net import get_iface_addrs
 from .net import byte_to_mac
@@ -137,8 +138,9 @@ class n310(PeriphManagerBase):
         # if header.get("dataversion", 0) == 1:
 
         # Initialize our daughterboards:
-        self.log.debug("Initializing A-side dboard")
-        self.dboards['A'].init_device()
+        self.log.debug("Initializing dboards...")
+        for k, dboard in iteritems(self.dboards):
+            dboard.init_device()
 
     def _read_eeprom_v1(self, data):
         """
@@ -247,4 +249,11 @@ class n310(PeriphManagerBase):
         else: # external
             self._gpios.reset("CLK-MAINREF-SEL0")
             self._gpios.reset("CLK-MAINREF-SEL1")
+        self._clock_source = clock_source
+        ref_clk_freq = self.get_clock_freq()
+        for slot, dboard in iteritems(self.dboards):
+            if hasattr(dboard, 'update_ref_clock_freq'):
+                self.log.trace(
+                    "Updating reference clock on dboard `{}' to {} MHz...".format(slot, ref_clk_freq/1e6)
+                )
 

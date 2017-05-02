@@ -27,9 +27,11 @@ class LMK04828EISCAT(object):
     """
     LMK04828 controls for EISCAT daughterboard
     """
-    def __init__(self, regs_iface, slot=None):
+    def __init__(self, regs_iface, ref_clock_freq, slot=None):
         slot = slot or "-A"
         self.log = get_logger("LMK04828"+slot)
+        assert ref_clock_freq in (10e6, 20e6)
+        self.ref_clock_freq = ref_clock_freq
         self.regs_iface = regs_iface
         self.init()
         self.config()
@@ -61,6 +63,7 @@ class LMK04828EISCAT(object):
         Write lots of config foo.
         """
         self.log.trace("Setting clkout config...")
+        CLKin0_R_divider = {10e6: 0x0A, 20e6: 0x14}[self.ref_clock_freq]
         self.pokes8((
             (0x100, 0x6C), # CLKout Config
             (0x101, 0x55), # CLKout Config
@@ -139,7 +142,7 @@ class LMK04828EISCAT(object):
             (0x151, 0x02), # Holdover Settings (defaults)
             (0x152, 0x00), # Holdover Settings (defaults)
             (0x153, 0x00), # CLKin0_R divider [13:8], default = 0
-            (0x154, 0x0A), # CLKin0_R divider [7:0], default = d120
+            (0x154, CLKin0_R_divider), # CLKin0_R divider [7:0], default = d120
             (0x155, 0x00), # CLKin1_R divider [13:8], default = 0
             (0x156, 0x01), # CLKin1_R divider [7:0], default = d120
             (0x157, 0x00), # CLKin2_R divider [13:8], default = 0

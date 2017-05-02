@@ -52,7 +52,7 @@ class MPMServer(RPCServer):
         self._update_component_commands(mgr, '', '_mb_methods')
         # add public dboard methods in `db_<slot>_` namespace
         for db_slot, dboard in iteritems(mgr.dboards):
-            self._update_component_commands(dboard, 'db_' + db_slot + '_', '_db_methods')
+            self._update_component_commands(dboard, 'db_' + str(db_slot) + '_', '_db_methods')
         super(MPMServer, self).__init__(*args, **kwargs)
 
     def _update_component_commands(self, component, namespace, storage):

@@ -34,3 +34,9 @@ class DboardManagerBase(object):
 
     def get_serial(self):
         return self._eeprom.get("serial", "")
+
+    def update_ref_clock_freq(self, freq):
+        """
+        Call this function if the frequency of the reference clock changes.
+        """
+        self.log.warning("update_ref_clock_freq() called but not implemented")

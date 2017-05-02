@@ -197,10 +197,10 @@ class JesdCoreEiscat(object):
     ADDR_BASE = 0x0000
     ADDR_OFFSET = 0x1000
 
-    def __init__(self, regs, slot, core_idx, log):
+    def __init__(self, regs, slot_idx, core_idx, log):
         self.log = log
         self.regs = regs
-        self.slot = slot
+        self.slot = "A" if slot_idx == 0 else "B"
         assert core_idx in (0, 1)
         self.core_idx = core_idx
         self.base_addr = self.ADDR_BASE + self.ADDR_OFFSET * self.core_idx
@@ -346,10 +346,13 @@ class EISCAT(DboardManagerBase):
         "adc1": 2
     }
 
-    def __init__(self, spi_devices, *args, **kwargs):
+    def __init__(self, slot_idx, spi_devices, *args, **kwargs):
         super(EISCAT, self).__init__(*args, **kwargs)
         self.log = get_logger("EISCAT")
-        self.log.trace("Initializing EISCAT daughterbaord")
+        self.slot_idx = slot_idx
+        self.log.trace("Initializing EISCAT daughterboard, slot index {}".format(self.slot_idx))
+        self.initialized = False
+        self.ref_clock_freq = 10e6
         if len(spi_devices) < len(self.spi_chipselect):
             self.log.error("Expected {0} spi devices, found {1} spi devices".format(
                 len(self.spi_chipselect), len(spi_devices),
@@ -369,6 +372,7 @@ class EISCAT(DboardManagerBase):
         self.lmk = None
         self.adc0 = None
         self.adc1 = None
+        self.mmcm = None
 
     def init_device(self):
         """
@@ -387,7 +391,7 @@ class EISCAT(DboardManagerBase):
         self.jesd_cores = [
             JesdCoreEiscat(
                 self.radio_regs,
-                "A", # TODO fix hard-coded slot number
+                self.slot_idx,
                 core_idx,
                 self.log
             ) for core_idx in xrange(2)
@@ -400,7 +404,7 @@ class EISCAT(DboardManagerBase):
         self.mmcm = MMCM(self.radio_regs, self.log)
         self._init_power(self.radio_regs)
         self.mmcm.reset()
-        self.lmk = LMK04828EISCAT(self._spi_ifaces['lmk'], "A") # Initializes LMK
+        self.lmk = LMK04828EISCAT(self._spi_ifaces['lmk'], self.ref_clock_freq, "A") # Initializes LMK
         if not self.mmcm.enable():
             self.log.error("Could not re-enable MMCM!")
             raise RuntimeError("Could not re-enable MMCM!")
@@ -442,6 +446,14 @@ class EISCAT(DboardManagerBase):
             if not self.jesd_cores[i].check_deframer_status():
                 raise RuntimeError("JESD Core {}: Deframer status not lookin' so good!".format(i))
         ## END OF THE JEPSON SEQUENCE ##
+        self.initialized = True
+
+    def shutdown(self):
+        """
+        Safely turn off the daughterboard
+        """
+        self.log.info("Shutting down daughterboard")
+        self._deinit_power()
 
 
     def _init_power(self, regs):
@@ -474,4 +486,17 @@ class EISCAT(DboardManagerBase):
         """
         self.log.trace("Disabling power to the daughterboard...")
         regs.poke32(POWER_ENB, 0x0000)
+
+    def update_ref_clock_freq(self, freq):
+        """
+        Call this to notify the daughterboard about a change in reference clock
+        """
+        self.ref_clock_freq = freq
+        if self.initialized:
+            self.log.warning(
+                "Attempting to update external reference clock frequency "
+                "after initialization! This will only take effect after "
+                "the daughterboard is re-initialized."
+            )
+
 

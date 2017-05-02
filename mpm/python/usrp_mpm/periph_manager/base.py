@@ -21,7 +21,6 @@ Mboard implementation base class
 import os
 from six import iteritems
 from ..mpmlog import get_logger
-from logging import getLogger
 from ..types import EEPROM
 from .. import dboard_manager
 from .udev import get_eeprom_path
@@ -68,7 +67,7 @@ class PeriphManagerBase(object):
                 # spi_devices = get_spidev_nodes(self.dboard_spimaster_addrs.get(dboard_slot))
             # dboard = dboard_manager.HW_PIDS.get(hw_pid, dboard_manager.unknown)
             # self.dboards.update({dboard_slot: dboard(spi_devices, eeprom_data)})
-        dboard_slot = "A"
+        dboard_slot = 0
         self.log.debug("Adding dboard for slot {0}".format(dboard_slot))
         spi_devices = []
         # I know EEPROM adresses for my dboard slots
@@ -80,7 +79,7 @@ class PeriphManagerBase(object):
             spi_devices = sorted(get_spidev_nodes("e0006000.spi"))
             self.log.debug("Found spidev nodes: {0}".format(spi_devices))
         dboard = dboard_manager.HW_PIDS.get(hw_pid, dboard_manager.unknown)
-        self.dboards.update({dboard_slot: dboard(spi_devices, eeprom_data)})
+        self.dboards.update({dboard_slot: dboard(0, spi_devices, eeprom_data)})
 
     def safe_list_updateable_components(self):
         """

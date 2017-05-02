@@ -36,7 +36,7 @@ class Magnesium(DboardManagerBase):
     # Maps the chipselects to the corresponding devices:
     spi_chipselect = {"lmk": 0, "mykonos": 1}
 
-    def __init__(self, spi_devices, eeprom_data, *args, **kwargs):
+    def __init__(self, slot_idx, spi_devices, eeprom_data, *args, **kwargs):
         super(Magnesium, self).__init__(*args, **kwargs)
         self.log = get_logger("Magnesium")
         # eeprom_data is a tuple (head_dict, raw_data)
