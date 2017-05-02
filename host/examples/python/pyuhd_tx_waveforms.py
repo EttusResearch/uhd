@@ -1,6 +1,6 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 #
-# Copyright 2017 Ettus Research LLC
+# Copyright 2017 Ettus Research
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -16,8 +16,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import numpy as np
 import uhd
+import numpy as np
 import argparse
 
 
@@ -46,7 +46,7 @@ def parse_args():
 
 def main():
     args = parse_args()
-    usrp = uhd.multi_usrp(args.args)
+    usrp = uhd.usrp.MultiUSRP(args.args)
     if not isinstance(args.channels, list):
         args.channels = [args.channels]
     data = np.array(

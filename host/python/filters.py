@@ -15,6 +15,26 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-from . import types
-from . import usrp
-from . import filters
+from . import libpyuhd as lib
+
+## @package filters
+#  Python UHD module containing the filter API
+
+## See: uhd::filter_info_base::filter_info_type
+class FilterType(lib.filters.filter_type):
+    pass
+
+
+## See: uhd::filter_info_base
+class FilterInfoBase(lib.filters.filter_info_base):
+    pass
+
+
+## See: uhd::analog_filter_base
+class AnalogFilterBase(lib.filters.analog_filter_base):
+    pass
+
+
+## See: uhd::analog_filter_lp
+class AnalogFilterLP(lib.filters.analog_filter_lp):
+    pass

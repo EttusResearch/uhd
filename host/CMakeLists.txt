@@ -1,5 +1,5 @@
 #
-# Copyright 2010-2016 Ettus Research LLC
+# Copyright 2010-2016 Ettus Research
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -255,9 +255,7 @@ ENDIF(CYGWIN)
 IF(WIN32)
     ADD_DEFINITIONS(-D_WIN32_WINNT=0x0501) #minimum version required is windows xp
     ADD_DEFINITIONS(-DNOMINMAX) #disables stupidity and enables std::min and std::max
-  ENDIF(WIN32)
-
-
+ENDIF(WIN32)
 
 ########################################################################
 # Setup Boost
@@ -273,7 +271,7 @@ SET(BOOST_REQUIRED_COMPONENTS
     system
     unit_test_framework
     serialization
-    )
+)
 
 SET(BOOST_OPTIONAL_COMPONENTS
     python
@@ -302,11 +300,12 @@ SET(Boost_ADDITIONAL_VERSIONS
     "1.51.0" "1.51" "1.52.0" "1.52" "1.53.0" "1.53" "1.54.0" "1.54" "1.55.0" "1.55"
     "1.56.0" "1.56" "1.57" "1.57" "1.58" "1.59" "1.60" "1.61" "1.62" "1.63"
 )
+
 #Python API requirements
-MESSAGE(STATUS "Looking for optional Boost copmponents...")
+MESSAGE(STATUS "Looking for optional Boost components...")
 FIND_PACKAGE(Boost 1.53 OPTIONAL_COMPONENTS ${BOOST_OPTIONAL_COMPONENTS})
 
-MESSAGE(STATUS "Looking for required Boost copmponents...")
+MESSAGE(STATUS "Looking for required Boost components...")
 FIND_PACKAGE(Boost 1.53 COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
 
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
@@ -315,7 +314,6 @@ LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
 MESSAGE(STATUS "Boost include directories: ${Boost_INCLUDE_DIRS}")
 MESSAGE(STATUS "Boost library directories: ${Boost_LIBRARY_DIRS}")
 MESSAGE(STATUS "Boost libraries: ${Boost_LIBRARIES}")
-
 
 ########################################################################
 # Additional settings for build environment
@@ -346,16 +344,17 @@ PYTHON_CHECK_MODULE(
     "requests 2.0 or greater"
     "requests" "requests.__version__ >= '2.0'"
     HAVE_PYTHON_MODULE_REQUESTS
-    )
+)
 
 PYTHON_CHECK_MODULE(
     "numpy 1.7 or greater"
     "numpy" "LooseVersion(numpy.__version__) >= LooseVersion('1.7')"
     HAVE_PYTHON_MODULE_NUMPY
-    )
+)
 
 SET(PYTHON_ADDITIONAL_VERSIONS 2.7 3.4 3.5)
 FIND_PACKAGE(PythonLibs)
+
 ########################################################################
 # Create Uninstall Target
 ########################################################################
