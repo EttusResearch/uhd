@@ -106,15 +106,15 @@ netd_impl::netd_impl(const device_addr_t& device_addr) :
     try {
         enumerate_rfnoc_blocks(
           0,
-          1,
+          3, /* num blocks */
           3, /* base port */
           uhd::sid_t(0x0200),
           device_addr
         );
-    } catch (...) {
-        printf("%s Derp\n", __func__);
+    } catch (const std::exception &ex) {
+        UHD_HERE();
+        std::cout << ex.what() << std::endl;
     }
-
 }
 
 netd_impl::~netd_impl() {}
