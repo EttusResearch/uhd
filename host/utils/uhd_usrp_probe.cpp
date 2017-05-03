@@ -179,24 +179,30 @@ static std::string get_mboard_pp_string(property_tree::sptr tree, const fs_path 
             const std::vector< std::string > clock_sources = tree->access<std::vector<std::string> >(path / "clock_source" / "options").get();
             ss << "Clock sources: " << prop_names_to_pp_string(clock_sources) << std::endl;
         }
-        ss << "Sensors: " << prop_names_to_pp_string(tree->list(path / "sensors")) << std::endl;
+        if (tree->exists(path / "sensors")){
+            ss << "Sensors: " << prop_names_to_pp_string(tree->list(path / "sensors")) << std::endl;
+        }
         if (tree->exists(path / "rx_dsps")){
             for(const std::string &name:  tree->list(path / "rx_dsps")){
                 ss << make_border(get_dsp_pp_string("RX", tree, path / "rx_dsps" / name));
             }
         }
-        for(const std::string &name:  tree->list(path / "dboards")){
-            ss << make_border(get_dboard_pp_string("RX", tree, path / "dboards" / name));
-        }
-        if (tree->exists(path / "tx_dsps")){
-            for(const std::string &name:  tree->list(path / "tx_dsps")){
-                ss << make_border(get_dsp_pp_string("TX", tree, path / "tx_dsps" / name));
+        if (tree->exists(path / "dboards")) {
+            for(const std::string &name:  tree->list(path / "dboards")){
+                ss << make_border(get_dboard_pp_string("RX", tree, path / "dboards" / name));
+            }
+            if (tree->exists(path / "tx_dsps")){
+                for(const std::string &name:  tree->list(path / "tx_dsps")){
+                    ss << make_border(get_dsp_pp_string("TX", tree, path / "tx_dsps" / name));
+                }
+            }
+            for(const std::string &name:  tree->list(path / "dboards")){
+                ss << make_border(get_dboard_pp_string("TX", tree, path / "dboards" / name));
             }
         }
-        for(const std::string &name:  tree->list(path / "dboards")){
-            ss << make_border(get_dboard_pp_string("TX", tree, path / "dboards" / name));
-        }
+        if (tree->exists(path / "xbar")){
             ss << make_border(get_rfnoc_pp_string(tree, path / "xbar"));
+        }
     }
     catch (const uhd::lookup_error&) {
         /* nop */
