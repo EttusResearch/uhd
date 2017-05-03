@@ -87,26 +87,30 @@ EXECUTE_PROCESS(
 
 #only set the build info on success
 IF(_git_describe_result EQUAL 0)
-    EXECUTE_PROCESS(
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        COMMAND ${PYTHON_EXECUTABLE} -c "
+    IF(NOT UHD_GIT_COUNT)
+        EXECUTE_PROCESS(
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+            COMMAND ${PYTHON_EXECUTABLE} -c "
 try:
     print('${_git_describe}'.split('-')[-2])
 except IndexError:
     print('0')
 "
-        OUTPUT_VARIABLE UHD_GIT_COUNT OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
-    EXECUTE_PROCESS(
-        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        COMMAND ${PYTHON_EXECUTABLE} -c "
+            OUTPUT_VARIABLE UHD_GIT_COUNT OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+    ENDIF()
+    IF(NOT UHD_GIT_HASH)
+        EXECUTE_PROCESS(
+            WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+            COMMAND ${PYTHON_EXECUTABLE} -c "
 try:
     print('${_git_describe}'.split('-')[-1])
 except IndexError:
     print('unknown')
 "
-        OUTPUT_VARIABLE UHD_GIT_HASH OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
+             OUTPUT_VARIABLE UHD_GIT_HASH OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+    ENDIF()
 ENDIF()
 
 ## Set default values if all fails. Make sure they're identical to the ones above.
