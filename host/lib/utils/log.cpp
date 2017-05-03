@@ -356,10 +356,10 @@ private:
     std::mutex _logmap_mutex;
     std::atomic<bool> _exit;
     std::map<std::string, uhd::log::log_fn_t> _loggers;
-    uhd::transport::bounded_buffer<uhd::log::logging_info> _log_queue;
 #ifndef UHD_LOG_FASTPATH_DISABLE
     uhd::transport::bounded_buffer<std::string> _fastpath_queue;
 #endif
+    uhd::transport::bounded_buffer<uhd::log::logging_info> _log_queue;
 };
 
 UHD_SINGLETON_FCN(log_resource, log_rs);
