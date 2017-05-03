@@ -25,7 +25,7 @@ from .base import PeriphManagerBase
 from .net import get_iface_addrs
 from .net import byte_to_mac
 from .net import get_mac_addr
-from ..types import SID
+from ..mpmtypes import SID
 from ..uio import UIO
 from ..sysfs_gpio import SysFSGPIO
 from .. import libpyusrp_periphs as lib

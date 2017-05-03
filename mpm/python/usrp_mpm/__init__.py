@@ -20,7 +20,7 @@ MPM Module
 
 from .discovery import spawn_discovery_process
 from .rpc_server import spawn_rpc_process
-from . import types
+from . import mpmtypes
 from . import periph_manager
 from . import dboard_manager
 from .mpmlog import get_main_logger

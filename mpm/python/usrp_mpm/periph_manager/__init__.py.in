@@ -21,6 +21,6 @@ periph_manager __init__.py
 # This is where the import magic happens
 from .. import libpyusrp_periphs as lib
 from .. import dboard_manager
-from .. import types
+from .. import mpmtypes
 
 from .${MPM_DEVICE} import ${MPM_DEVICE} as periph_manager
