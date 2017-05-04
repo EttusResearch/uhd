@@ -16,6 +16,7 @@
 //
 
 #include <uhd/utils/log.hpp>
+#include <uhd/utils/log_add.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/transport/bounded_buffer.hpp>

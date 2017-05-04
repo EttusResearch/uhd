@@ -17,6 +17,7 @@
 
 #include <boost/test/unit_test.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhd/utils/log_add.hpp>
 #include <iostream>
 
 BOOST_AUTO_TEST_CASE(test_messages){

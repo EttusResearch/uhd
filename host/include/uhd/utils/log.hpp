@@ -153,13 +153,6 @@ namespace uhd {
             std::string message;
         };
 
-        /*! Logging function type
-         *
-         * Every logging_backend has to define a function with this signature.
-         * Can be added to the logging core.
-         */
-        typedef std::function<void(const uhd::log::logging_info&)> log_fn_t ;
-
         /*! Set the global log level
          *
          * The global log level gets applied before the specific log level.
@@ -188,13 +181,6 @@ namespace uhd {
          * \throws uhd::key_error if \p logger was not defined
          */
         UHD_API void set_logger_level(const std::string &logger, uhd::log::severity_level level);
-
-        /*! Add logging backend to the log system
-         *
-         * \param key Identifies the logging backend in the logging core
-         * \param logger_fn function which actually logs messages to this backend
-         */
-        UHD_API void add_logger(const std::string &key, log_fn_t logger_fn);
     }
 }
 
