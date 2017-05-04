@@ -256,4 +256,5 @@ class n310(PeriphManagerBase):
                 self.log.trace(
                     "Updating reference clock on dboard `{}' to {} MHz...".format(slot, ref_clk_freq/1e6)
                 )
+                dboard.update_ref_clock_freq(ref_clk_freq)
 

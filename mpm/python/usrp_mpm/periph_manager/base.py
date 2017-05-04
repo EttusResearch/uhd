@@ -74,7 +74,7 @@ class PeriphManagerBase(object):
         # eeprom_data = EEPROM().read_eeprom(get_eeprom_path(eeprom_addr))
         eeprom_data = None
         # I know spidev masters on the dboard slots
-        hw_pid = 2
+        hw_pid = 3
         if hw_pid in dboard_manager.HW_PIDS:
             spi_devices = sorted(get_spidev_nodes("e0006000.spi"))
             self.log.debug("Found spidev nodes: {0}".format(spi_devices))

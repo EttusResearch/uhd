@@ -30,6 +30,7 @@ class LMK04828EISCAT(object):
     def __init__(self, regs_iface, ref_clock_freq, slot=None):
         slot = slot or "-A"
         self.log = get_logger("LMK04828"+slot)
+        self.log.trace("Using reference clock frequency {} MHz".format(ref_clock_freq/1e6))
         assert ref_clock_freq in (10e6, 20e6)
         self.ref_clock_freq = ref_clock_freq
         self.regs_iface = regs_iface
