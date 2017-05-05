@@ -22,7 +22,7 @@ from __future__ import print_function
 from multiprocessing import Process
 import socket
 from six import iteritems
-from usrp_mpm.types import MPM_DISCOVERY_PORT
+from usrp_mpm.mpmtypes import MPM_DISCOVERY_PORT
 from .mpmlog import get_main_logger
 
 RESPONSE_PREAMBLE = "USRP-MPM"

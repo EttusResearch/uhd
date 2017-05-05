@@ -22,7 +22,7 @@ from __future__ import print_function
 import sys
 from gevent import signal
 import usrp_mpm as mpm
-from usrp_mpm.types import SharedState
+from usrp_mpm.mpmtypes import SharedState
 from usrp_mpm.periph_manager import periph_manager
 
 _PROCESSES = []
@@ -69,7 +69,7 @@ def main():
         mpm.spawn_discovery_process(discovery_info, shared))
     log.info("Spawning RPC process...")
     _PROCESSES.append(
-        mpm.spawn_rpc_process(mpm.types.MPM_RPC_PORT, shared, mgr))
+        mpm.spawn_rpc_process(mpm.mpmtypes.MPM_RPC_PORT, shared, mgr))
     log.info("Processes launched. Registering signal handlers.")
     signal.signal(signal.SIGTERM, kill_time)
     signal.signal(signal.SIGINT, kill_time)

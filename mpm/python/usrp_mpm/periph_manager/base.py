@@ -21,7 +21,7 @@ Mboard implementation base class
 import os
 from six import iteritems
 from ..mpmlog import get_logger
-from ..types import EEPROM
+from ..mpmtypes import EEPROM
 from .. import dboard_manager
 from .udev import get_eeprom_path
 from .udev import get_spidev_nodes
