@@ -21,53 +21,6 @@
 using namespace uhd::usrp::x300;
 
 /***********************************************************************
- * DAC: Reset and synchronization operations
- **********************************************************************/
-
-void x300_impl::synchronize_dacs(const std::vector<radio_perifs_t*>& radios)
-{
-    if (radios.size() < 2) return;  //Nothing to synchronize
-
-    //**PRECONDITION**
-    //This function assumes that all the VITA times in "radios" are synchronized
-    //to a common reference. Currently, this function is called in get_tx_stream
-    //which also has the same precondition.
-
-    //Reinitialize and resync all DACs
-    for (size_t i = 0; i < radios.size(); i++) {
-        radios[i]->dac->reset();
-    }
-
-    //Get a rough estimate of the cumulative command latency
-    boost::posix_time::ptime t_start = boost::posix_time::microsec_clock::local_time();
-    for (size_t i = 0; i < radios.size(); i++) {
-        radios[i]->ctrl->peek64(uhd::usrp::radio::RB64_TIME_NOW); //Discard value. We are just timing the call
-    }
-    boost::posix_time::time_duration t_elapsed =
-        boost::posix_time::microsec_clock::local_time() - t_start;
-
-    //Add 100% of headroom + uncertaintly to the command time
-    uint64_t t_sync_us = (t_elapsed.total_microseconds() * 2) + 13000 /*Scheduler latency*/;
-
-    //Pick radios[0] as the time reference.
-    uhd::time_spec_t sync_time =
-        radios[0]->time64->get_time_now() + uhd::time_spec_t(((double)t_sync_us)/1e6);
-
-    //Send the sync command
-    for (size_t i = 0; i < radios.size(); i++) {
-        radios[i]->ctrl->set_time(sync_time);
-        radios[i]->ctrl->poke32(uhd::usrp::radio::sr_addr(uhd::usrp::radio::DACSYNC), 0x1);    //Arm FRAMEP/N sync pulse
-        radios[i]->ctrl->set_time(uhd::time_spec_t(0.0));   //Clear command time
-    }
-
-    //Wait and check status
-    boost::this_thread::sleep(boost::posix_time::microseconds(t_sync_us));
-    for (size_t i = 0; i < radios.size(); i++) {
-        radios[i]->dac->verify_sync();
-    }
-}
-
-/***********************************************************************
  * ADC: Self-test operations
  **********************************************************************/
 
