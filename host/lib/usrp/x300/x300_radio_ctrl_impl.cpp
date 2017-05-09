@@ -30,6 +30,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/date_time/posix_time/posix_time_io.hpp>
+#include <boost/assign/list_of.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -520,6 +521,68 @@ double x300_radio_ctrl_impl::get_output_samp_rate(size_t chan)
         }
     }
     return _rx_fe_map.at(chan).core->get_output_rate();
+}
+
+std::vector<std::string> x300_radio_ctrl_impl::get_gpio_banks() const
+{
+    std::vector<std::string> banks = boost::assign::list_of("RX")("TX");
+    // These pairs are the same, but RXA/TXA are from pre-rfnoc era and are kept for backward compat:
+    banks.push_back("RX"+_radio_slot);
+    banks.push_back("TX"+_radio_slot);
+    if (_fp_gpio) {
+        banks.push_back("FP0");
+    }
+    return banks;
+}
+
+void x300_radio_ctrl_impl::set_gpio_attr(
+        const std::string &bank,
+        const std::string &attr,
+        const uint32_t value,
+        const uint32_t mask
+) {
+    if (bank == "FP0" and _fp_gpio) {
+        const uint32_t current = _tree->access<uint32_t>(fs_path("gpio") / bank / attr).get();
+        const uint32_t new_value = (current & ~mask) | (value & mask);
+        _tree->access<uint32_t>(fs_path("gpio") / bank / attr).set(new_value);
+        return;
+    }
+    if (bank.size() > 2 and bank[1] == 'X')
+    {
+        const std::string name = bank.substr(2);
+        const dboard_iface::unit_t unit = (bank[0] == 'R')? dboard_iface::UNIT_RX : dboard_iface::UNIT_TX;
+        dboard_iface::sptr iface = _tree->access<dboard_iface::sptr>(fs_path("dboards") / name / "iface").get();
+        if (attr == "CTRL") iface->set_pin_ctrl(unit, uint16_t(value), uint16_t(mask));
+        if (attr == "DDR") iface->set_gpio_ddr(unit, uint16_t(value), uint16_t(mask));
+        if (attr == "OUT") iface->set_gpio_out(unit, uint16_t(value), uint16_t(mask));
+        if (attr == "ATR_0X") iface->set_atr_reg(unit, gpio_atr::ATR_REG_IDLE, uint16_t(value), uint16_t(mask));
+        if (attr == "ATR_RX") iface->set_atr_reg(unit, gpio_atr::ATR_REG_RX_ONLY, uint16_t(value), uint16_t(mask));
+        if (attr == "ATR_TX") iface->set_atr_reg(unit, gpio_atr::ATR_REG_TX_ONLY, uint16_t(value), uint16_t(mask));
+        if (attr == "ATR_XX") iface->set_atr_reg(unit, gpio_atr::ATR_REG_FULL_DUPLEX, uint16_t(value), uint16_t(mask));
+    }
+}
+
+uint32_t x300_radio_ctrl_impl::get_gpio_attr(
+        const std::string &bank,
+        const std::string &attr
+) {
+    if (bank == "FP0" and _fp_gpio) {
+        return uint32_t(_tree->access<uint64_t>(fs_path("gpio") / bank / attr).get());
+    }
+    if (bank.size() > 2 and bank[1] == 'X') {
+        const std::string name = bank.substr(2);
+        const dboard_iface::unit_t unit = (bank[0] == 'R')? dboard_iface::UNIT_RX : dboard_iface::UNIT_TX;
+        dboard_iface::sptr iface = _tree->access<dboard_iface::sptr>(fs_path("dboards") / name / "iface").get();
+        if (attr == "CTRL") return iface->get_pin_ctrl(unit);
+        if (attr == "DDR") return iface->get_gpio_ddr(unit);
+        if (attr == "OUT") return iface->get_gpio_out(unit);
+        if (attr == "ATR_0X") return iface->get_atr_reg(unit, gpio_atr::ATR_REG_IDLE);
+        if (attr == "ATR_RX") return iface->get_atr_reg(unit, gpio_atr::ATR_REG_RX_ONLY);
+        if (attr == "ATR_TX") return iface->get_atr_reg(unit, gpio_atr::ATR_REG_TX_ONLY);
+        if (attr == "ATR_XX") return iface->get_atr_reg(unit, gpio_atr::ATR_REG_FULL_DUPLEX);
+        if (attr == "READBACK") return iface->read_gpio(unit);
+    }
+    return 0;
 }
 
 /****************************************************************************
