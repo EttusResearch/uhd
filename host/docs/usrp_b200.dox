@@ -92,8 +92,8 @@ frontends share the TX LO. Each LO is tunable between 50 MHz and 6 GHz.
 \subsection b200_fe_gain Frontend gain
 
 All frontends have individual analog gain controls. The receive
-frontends have 73 dB of available gain; and the transmit frontends have
-89.5 dB of available gain. Gain settings are application specific, but
+frontends have 76 dB of available gain; and the transmit frontends have
+89.8 dB of available gain. Gain settings are application specific, but
 it is recommended that users consider using at least half of the
 available gain to get reasonable dynamic range.
 
