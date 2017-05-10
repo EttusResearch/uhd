@@ -22,15 +22,20 @@ from ..mpmlog import get_logger
 
 class DboardManagerBase(object):
     """
-    Holds shared pointer to wrapped C++ implementation.
-    Sanitizes arguments before calling C++ functions.
-    Ties various constants to specific daughterboard class
+    Base class for daughterboard controls
     """
-    _eeprom = {}
+    #########################################################################
+    # Overridables
+    #
+    # These values are meant to be overridden by the according subclasses
+    #########################################################################
+    # Very important: A list of PIDs that apply to the current device. Must be
+    # list, even if there's only one entry.
+    pids = []
 
-    def __init__(self, eeprom=None):
-        self._eeprom = eeprom or {}
+    def __init__(self, slot_idx, **kwargs):
         self.log = get_logger('dboardManager')
+        self.slot_idx = slot_idx
 
     def get_serial(self):
         return self._eeprom.get("serial", "")

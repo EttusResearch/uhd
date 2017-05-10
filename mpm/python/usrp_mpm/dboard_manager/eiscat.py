@@ -338,21 +338,26 @@ class EISCAT(DboardManagerBase):
     """
     EISCAT Daughterboard
     """
-    hw_pid = 3
-    special_eeprom_addrs = {"special0": "something"}
+    #########################################################################
+    # Overridables
+    #
+    # See DboardManagerBase for documentation on these fields
+    #########################################################################
+    pids = [0x180]
+
     spi_chipselect = {
         "lmk": 0,
         "adc0": 1,
         "adc1": 2
     }
 
-    def __init__(self, slot_idx, spi_devices, *args, **kwargs):
-        super(EISCAT, self).__init__(*args, **kwargs)
+    def __init__(self, slot_idx, **kwargs):
+        super(EISCAT, self).__init__(slot_idx, **kwargs)
         self.log = get_logger("EISCAT")
-        self.slot_idx = slot_idx
         self.log.trace("Initializing EISCAT daughterboard, slot index {}".format(self.slot_idx))
         self.initialized = False
         self.ref_clock_freq = 10e6
+        spi_devices = kwargs['spi_nodes']
         if len(spi_devices) < len(self.spi_chipselect):
             self.log.error("Expected {0} spi devices, found {1} spi devices".format(
                 len(self.spi_chipselect), len(spi_devices),

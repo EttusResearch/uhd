@@ -27,7 +27,6 @@ from gevent import monkey
 monkey.patch_all()
 from mprpc import RPCServer
 from random import choice
-from six import iteritems
 from string import ascii_letters, digits
 from multiprocessing import Process
 from .mpmlog import get_main_logger
@@ -51,7 +50,7 @@ class MPMServer(RPCServer):
         # add public mboard methods without namespace
         self._update_component_commands(mgr, '', '_mb_methods')
         # add public dboard methods in `db_<slot>_` namespace
-        for db_slot, dboard in iteritems(mgr.dboards):
+        for db_slot, dboard in enumerate(mgr.dboards):
             self._update_component_commands(dboard, 'db_' + str(db_slot) + '_', '_db_methods')
         super(MPMServer, self).__init__(*args, **kwargs)
 

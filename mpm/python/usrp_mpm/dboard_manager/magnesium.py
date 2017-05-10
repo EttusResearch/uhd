@@ -50,14 +50,20 @@ class Magnesium(DboardManagerBase):
     """
     Holds all dboard specific information and methods of the magnesium dboard
     """
-    hw_pid = 2
-    special_eeprom_addrs = {"special0": "something"}
+    #########################################################################
+    # Overridables
+    #
+    # See DboardManagerBase for documentation on these fields
+    #########################################################################
+    pids = [0x150]
+
     # Maps the chipselects to the corresponding devices:
     spi_chipselect = {"lmk": 0, "mykonos": 1}
 
-    def __init__(self, slot_idx, spi_devices, eeprom_data, *args, **kwargs):
+    def __init__(self, slot_idx, **kwargs):
         super(Magnesium, self).__init__(*args, **kwargs)
         self.log = get_logger("Magnesium")
+        spi_devices = kwargs['spi_nodes']
         # eeprom_data is a tuple (head_dict, raw_data)
         if len(spi_devices) != len(self.spi_chipselect):
             self.log.error("Expected {0} spi devices, found {1} spi devices".format(

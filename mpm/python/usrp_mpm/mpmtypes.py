@@ -68,35 +68,3 @@ class SID(object):
         return (self.src_addr << 24) | (self.src_ep << 16) | (self.dst_addr << 8) | self.dst_ep
 
 
-class EEPROM(object):
-    """
-    Reads out common properties and rawdata out of a nvmem path
-    """
-    # eeprom_header contains:
-    # 4 bytes magic
-    # 4 bytes version
-    # 4x4 bytes mcu_flags -> throw them away
-    # 2 bytes hw_pid
-    # 2 bytes hw_rev
-    #
-    # 28 bytes in total
-    eeprom_header = struct.Struct("!I I 16x H H")
-
-    def read_eeprom(self, nvmem_path):
-        """
-        Read the EEPROM located at nvmem_path and return a tuple (header, data)
-        Header is already parsed in the common header fields
-        Data contains the full eeprom data structure
-        """
-        with open(nvmem_path, "rb") as nvmem_file:
-            data = nvmem_file.read(256)
-        _header = self.eeprom_header.unpack_from(data)
-        print hex(_header[0]), hex(_header[1]), hex(_header[2]), hex(_header[3])
-        header = {
-            "magic": _header[0],
-            "version": _header[1],
-            "hw_pid": _header[2],
-            "hw_rev": _header[3],
-        }
-        print header
-        return (header, data)

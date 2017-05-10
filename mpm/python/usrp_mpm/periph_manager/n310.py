@@ -94,14 +94,23 @@ class n310(PeriphManagerBase):
     """
     Holds N310 specific attributes and methods
     """
-    hw_pids = "1"
-    mboard_type = "n310"
-    mboard_eeprom_addr = "e0005000.i2c"
-    # dboard_eeprom_addrs = {"A": "something", "B": "else"}
-    # dboard_eeprom_addrs = {"A": "e0004000.i2c",}
     # dboard_spimaster_addrs = {"A": "something", "B": "else"}
     dboard_spimaster_addrs = {"A": "e0006000.spi",}
     interfaces = {}
+
+    #########################################################################
+    # Overridables
+    #
+    # See PeriphManagerBase for documentation on these fields
+    #########################################################################
+    pids = [0x4242,]
+    mboard_eeprom_addr = "e0005000.i2c"
+    mboard_eeprom_max_len = 256
+    mboard_info = {"type": "n3xx"}
+    dboard_eeprom_addr = "e0004000.i2c"
+    dboard_eeprom_max_len = 64
+    dboard_spimaster_addrs = ["e0006000.spi",]
+
 
     def __init__(self, *args, **kwargs):
         # First initialize parent class - will populate self._eeprom_head and self._eeprom_rawdata
@@ -139,7 +148,7 @@ class n310(PeriphManagerBase):
 
         # Initialize our daughterboards:
         self.log.debug("Initializing dboards...")
-        for k, dboard in iteritems(self.dboards):
+        for dboard in self.dboards:
             dboard.init_device()
 
     def _read_eeprom_v1(self, data):
@@ -251,7 +260,7 @@ class n310(PeriphManagerBase):
             self._gpios.reset("CLK-MAINREF-SEL1")
         self._clock_source = clock_source
         ref_clk_freq = self.get_clock_freq()
-        for slot, dboard in iteritems(self.dboards):
+        for slot, dboard in enumerate(self.dboards):
             if hasattr(dboard, 'update_ref_clock_freq'):
                 self.log.trace(
                     "Updating reference clock on dboard `{}' to {} MHz...".format(slot, ref_clk_freq/1e6)

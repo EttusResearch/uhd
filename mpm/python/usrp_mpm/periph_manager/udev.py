@@ -19,18 +19,15 @@ import pyudev
 import os
 from ..mpmlog import get_logger
 
-def get_eeprom_path(address):
+def get_eeprom_paths(address):
     """
-    Return EEPROM device path for a given I2C address
+    Return EEPROM device paths for a given I2C address
     """
     context = pyudev.Context()
     parent = pyudev.Device.from_name(context, "platform", address)
     paths = [device.device_node if device.device_node is not None else device.sys_path
              for device in context.list_devices(parent=parent, subsystem="nvmem")]
-    if len(paths) != 1:
-        raise Exception("{0} paths to EEPROM found!".format(len(paths)))
-    return paths[0] + "/nvmem"
-
+    return [os.path.join(x.encode('ascii'), 'nvmem') for x in paths]
 
 def get_spidev_nodes(spi_master):
     """
