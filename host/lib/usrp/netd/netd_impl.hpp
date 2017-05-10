@@ -25,6 +25,9 @@
 #include <uhd/utils/tasks.hpp>
 #include <map>
 
+static const size_t NETD_RX_SW_BUFF_SIZE_ETH        = 0x2000000;//32MiB    For an ~8k frame size any size >32MiB is just wasted buffer space
+static const size_t NETD_RX_SW_BUFF_SIZE_ETH_MACOS  = 0x100000; //1Mib
+
 static const size_t MPM_DISCOVERY_PORT = 49600;
 static const size_t MPM_RPC_PORT = 49601;
 static const char MPM_DISCOVERY_CMD[] = "MPM-DISC";
@@ -79,6 +82,8 @@ class netd_impl : public uhd::usrp::device3_impl
                                       const uhd::device_addr_t&);
 
   private:
+    uhd::device_addr_t get_rx_hints(size_t mb_index);
+
     std::vector<netd_mboard_impl::uptr> _mb;
     size_t _sid_framer;
 };

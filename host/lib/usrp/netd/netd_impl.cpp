@@ -165,6 +165,30 @@ netd_mboard_impl::uptr netd_impl::setup_mb(const size_t mb_i,
     return mb;
 }
 
+
+// TODO this does not consider the liberio use case!
+uhd::device_addr_t netd_impl::get_rx_hints(size_t /* mb_index */)
+{
+    //device_addr_t rx_hints = _mb[mb_index].recv_args;
+    device_addr_t rx_hints; // TODO don't ignore what the user tells us
+    // (default to a large recv buff)
+    if (not rx_hints.has_key("recv_buff_size"))
+    {
+        //For the ethernet transport, the buffer has to be set before creating
+        //the transport because it is independent of the frame size and # frames
+        //For nirio, the buffer size is not configurable by the user
+        #if defined(UHD_PLATFORM_MACOS) || defined(UHD_PLATFORM_BSD)
+            //limit buffer resize on macos or it will error
+            rx_hints["recv_buff_size"] = boost::lexical_cast<std::string>(NETD_RX_SW_BUFF_SIZE_ETH_MACOS);
+        #elif defined(UHD_PLATFORM_LINUX) || defined(UHD_PLATFORM_WIN32)
+            //set to half-a-second of buffering at max rate
+            rx_hints["recv_buff_size"] = boost::lexical_cast<std::string>(NETD_RX_SW_BUFF_SIZE_ETH);
+        #endif
+    }
+    return rx_hints;
+}
+
+
 // frame_size_t determine_max_frame_size(const std::string &addr,
 //                                       const frame_size_t &user_frame_size){
 //     transport::udp_simple::sptr udp =
