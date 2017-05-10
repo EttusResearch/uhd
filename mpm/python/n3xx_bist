@@ -97,6 +97,12 @@ class N310BIST(object):
     def bist_rtc(self):
         """
         BIST for RTC (real time clock)
+        Description:!!! I don't know how this will be tested !!!
+        External Equipment: None
+        JSON{
+            'status': Return TRUE if no errors occurred, else FALSE
+            'idk': Returns some stuff??
+            }
         """
         assert 'rtc' in self.tests_to_run
         sys.stderr.write("Test not implemented.\n")
@@ -105,6 +111,12 @@ class N310BIST(object):
     def bist_ddr3(self):
         """
         BIST for PL DDR3 DRAM
+        Description: Calls a test to examine the speed of the DDR3
+        External Equipment: None
+        JSON{
+            'status': Return TRUE if no errors occurred, else FALSE
+            'speed': Return numeric value of speed in MB/s
+            }
         """
         assert 'ddr3' in self.tests_to_run
         sys.stderr.write("Test not implemented.\n")
@@ -113,6 +125,12 @@ class N310BIST(object):
     def bist_gpsdo(self):
         """
         BIST for GPSDO
+        Description: Returns the time of GPSDO
+        External Equipment: None; Recommend attaching an antenna
+        JSON{
+            'status': Return TRUE if no errors occurred, else FALSE
+            'time': Return GPSDO time, in seconds since January 1, 1970
+            }
         """
         assert 'gpsdo' in self.tests_to_run
         sys.stderr.write("Test not implemented.\n")
@@ -121,6 +139,12 @@ class N310BIST(object):
     def bist_tpm(self):
         """
         BIST for TPM (Trusted Platform Module)
+        Description:!!! I don't know how this will be tested !!!
+        External Equipment: None
+        JSON{
+            'status': Return TRUE if no errors occurred, else FALSE
+            'idk': Returns some stuff??
+            }
         """
         assert 'gpsdo' in self.tests_to_run
         sys.stderr.write("Test not implemented.\n")
@@ -129,6 +153,12 @@ class N310BIST(object):
     def bist_clock_int(self):
         """
         BIST for clock lock from internal source
+        Description: Checks to see if the N3xx can lock to the internal reference clock
+        External Equipment: None
+        JSON{
+            'status': Return TRUE if no errors occurred, else FALSE
+            'locked': Return TRUE if able to lock to internal reference, else FALSE
+            }
         """
         assert 'clock_int' in self.tests_to_run
         sys.stderr.write("Test not implemented.\n")
@@ -137,6 +167,12 @@ class N310BIST(object):
     def bist_clock_ext(self):
         """
         BIST for clock lock from external source
+        Description: Checks to see if the N3xx can lock to the external reference clock
+        External Equipment: Reference Source outputted into the "Ref In"
+        JSON{
+            'status': Return TRUE if no errors occurred, else FALSE
+            'locked': Return TRUE if able to lock to external reference, else FALSE
+            }
         """
         assert 'clock_ext' in self.tests_to_run
         sys.stderr.write("Test not implemented.\n")
@@ -145,6 +181,12 @@ class N310BIST(object):
     def bist_usbhost(self):
         """
         BIST for USB host functionality
+        Description:!!! I'm considering removing this test !!!
+        External Equipment: USB device attached to USB hOST
+        JSON{
+            'status': Return TRUE if no errors occurred, else FALSE
+            'devices': [] Returns all devices seen on USB hub
+            }
         """
         assert 'usbhost' in self.tests_to_run
         sys.stderr.write("Test not implemented.\n")
@@ -152,7 +194,14 @@ class N310BIST(object):
 
     def bist_sfp(self):
         """
-        BIST for SFP+ ports
+        BIST for SFP+ ports:
+        Description: Uses one SFP+ port to test the other. Returns the speeds
+        External Equipment: External loopback cable between SFP+ port 0 and 1 is required
+        JSON{
+            'status': Return TRUE if no errors occurred, else FALSE
+            'speed01': Returns speed in Gbit/s from port 0 to port 1
+            'speed10': Returns speed in Gbit/s from port 1 to port 0
+            }
         """
         assert 'sfp' in self.tests_to_run
         sys.stderr.write("Test not implemented.\n")
@@ -160,7 +209,22 @@ class N310BIST(object):
 
     def bist_gpio(self):
         """
-        BIST for SFP+ ports
+        BIST for GPIO
+        Description: Writes and reads the values to the GPIO
+        Needed Equipment: External loopback as follows
+            GPIO
+            0<->6
+            1<->7
+            2<->8
+            3<->9
+            4<->10
+            5<->11
+
+        JSON{
+            'status': Return TRUE if no errors occurred, else FALSE
+            'expected': Return expected read values
+            'returned': Return read values
+            }
         """
         assert 'gpio' in self.tests_to_run
         sys.stderr.write("Test not implemented.\n")
@@ -169,8 +233,33 @@ class N310BIST(object):
     def bist_temp(self):
         """
         BIST for temperature sensors
+        Description: Reads the temperature sensors on the motherboards and returns their values
+        External Equipment: None
+        JSON{
+            'status': Return TRUE if no errors occurred, else FALSE
+            'temperature_ec_hwmon': Return numeric value of read temperature in milliCelsius
+            'temperature_iio_hwmon': Return numeric value of read temperature in milliCelsius
+            'temperature_XXX': Return numeric value of read temperature in milliCelsius
+            }
         """
         assert 'temp' in self.tests_to_run
+        sys.stderr.write("Test not implemented.\n")
+        return True
+
+    def bist_fan(self):
+        """
+        BIST for temperature sensors
+        Description: Reads the RPM and temperature sensor values of the fans on the motherboard
+        External Equipment: None
+        JSON{
+            'status': Return TRUE if no errors occurred, else FALSE
+            'fan0_rpm': Return numeric value of revolutions per minute (RPM) of fan0
+            'fan0_temperature': Return numeric value of read temperature in milliCelsius of fan0
+            'fan1_rpm': Return numeric value of revolutions per minute (RPM) of fan1
+            'fan1_temperature': Return numeric value of read temperature in milliCelsius of fan1
+            }
+        """
+        assert 'fan' in self.tests_to_run
         sys.stderr.write("Test not implemented.\n")
         return True
 
@@ -180,4 +269,3 @@ def main():
 
 if __name__ == '__main__':
     exit(not main())
-
