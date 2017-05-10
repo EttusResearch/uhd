@@ -59,6 +59,12 @@ namespace uhd{
         //! Convert this range to a printable string
         const std::string to_pp_string(void) const;
 
+        //! Equality operator
+        bool operator==(const range_t &other) const;
+
+        //! Inequality operator
+        bool operator!=(const range_t &other) const;
+
     private: double _start, _stop, _step;
     };
 

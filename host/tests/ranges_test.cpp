@@ -68,3 +68,12 @@ BOOST_AUTO_TEST_CASE(test_ranges_clip2){
     BOOST_CHECK_CLOSE(mr.clip(3.1, true), 3., tolerance);
     BOOST_CHECK_CLOSE(mr.clip(4., true), 3., tolerance);
 }
+
+BOOST_AUTO_TEST_CASE(test_ranges_compare){
+    range_t range(1);
+    range_t n_range(1);
+    range_t d_range(2);
+
+    BOOST_CHECK(range == n_range);
+    BOOST_CHECK(range != d_range);
+}

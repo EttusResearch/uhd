@@ -43,6 +43,14 @@ bool usrp::operator==(const subdev_spec_pair_t &lhs, const subdev_spec_pair_t &r
     return (lhs.db_name == rhs.db_name) and (lhs.sd_name == rhs.sd_name);
 }
 
+bool subdev_spec_pair_t::operator==(const subdev_spec_pair_t &other){
+    return (other.db_name == db_name) and (other.sd_name == sd_name);
+}
+
+bool subdev_spec_pair_t::operator!=(const subdev_spec_pair_t &other){
+    return (other.db_name != db_name) or (other.sd_name != sd_name);
+}
+
 subdev_spec_t::subdev_spec_t(const std::string &markup){
     for(const std::string &pair:  pair_tokenizer(markup)){
         if (pair.empty()) continue;
