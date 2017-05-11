@@ -353,7 +353,7 @@ class EISCAT(DboardManagerBase):
 
     def __init__(self, slot_idx, **kwargs):
         super(EISCAT, self).__init__(slot_idx, **kwargs)
-        self.log = get_logger("EISCAT")
+        self.log = get_logger("EISCAT-{}".format(slot_idx))
         self.log.trace("Initializing EISCAT daughterboard, slot index {}".format(self.slot_idx))
         self.initialized = False
         self.ref_clock_freq = 10e6

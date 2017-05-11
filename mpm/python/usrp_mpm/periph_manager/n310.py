@@ -112,9 +112,9 @@ class n310(PeriphManagerBase):
     dboard_spimaster_addrs = ["e0006000.spi",]
 
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, args):
         # First initialize parent class - will populate self._eeprom_head and self._eeprom_rawdata
-        super(n310, self).__init__(*args, **kwargs)
+        super(n310, self).__init__(args)
 
         self.log.trace("Initializing TCA6424 port expander controls...")
         self._gpios = TCA6424()

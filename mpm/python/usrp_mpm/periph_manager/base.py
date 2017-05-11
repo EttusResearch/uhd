@@ -236,15 +236,14 @@ class PeriphManagerBase(object):
     dboard_spimaster_addrs = []
 
 
-    def __init__(self):
+    def __init__(self, args):
         # First, make some checks to see if the child class is correctly set up:
         assert len(self.pids) > 0
         assert self.mboard_eeprom_magic is not None
         # Set up logging
         self.log = get_logger('PeriphManager')
         self._init_mboard_with_eeprom()
-        self._init_dboards()
-
+        self._init_dboards(args.override_db_pids)
 
     def _init_mboard_with_eeprom(self):
         """
@@ -331,7 +330,7 @@ class PeriphManagerBase(object):
             # This will actually instantiate the dboard class:
             db_class = get_dboard_class_from_pid(db_pid)
             if db_class is None:
-                self.log.warning("Could not identify daughterboard class for PID {:04X}!".format(pid))
+                self.log.warning("Could not identify daughterboard class for PID {:04X}!".format(db_pid))
                 continue
             self.dboards.append(db_class(dboard_idx, **dboard_info))
         self.log.info("Found {} daughterboard(s).".format(len(self.dboards)))

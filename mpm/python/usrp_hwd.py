@@ -20,12 +20,47 @@ Main executable for the USRP Hardware Daemon
 """
 from __future__ import print_function
 import sys
+import argparse
 from gevent import signal
 import usrp_mpm as mpm
 from usrp_mpm.mpmtypes import SharedState
 from usrp_mpm.periph_manager import periph_manager
 
 _PROCESSES = []
+
+
+def setup_arg_parser():
+    """
+    Create an arg parser
+    """
+    parser = argparse.ArgumentParser(description="USRP Hardware Daemon")
+    parser.add_argument(
+        '--daemon',
+        help="Run as daemon",
+        action="store_true",
+    )
+    parser.add_argument(
+        '--init-only',
+        help="Don't start the RPC server, terminate after running initialization",
+        action="store_true",
+    )
+    parser.add_argument(
+        '--override-db-pids',
+        help="Provide a comma-separated list of daughterboard PIDs that are " \
+             "used instead of whatever else the code may find",
+        default=None
+    )
+    return parser
+
+def parse_args():
+    """
+    Return a fully parse args object
+    """
+    args = setup_arg_parser().parse_args()
+    if args.override_db_pids is not None:
+        args.override_db_pids = [int(x, 0) for x in args.override_db_pids.split(",")]
+    return args
+
 
 def kill_time(sig, frame):
     """
@@ -51,6 +86,7 @@ def main():
     Main process loop.
     """
     log = mpm.get_main_logger().getChild('main')
+    args = parse_args()
     shared = SharedState()
     # Create the periph_manager for this device
     # This call will be forwarded to the device specific implementation
@@ -59,11 +95,14 @@ def main():
     # with cmake (-DMPM_DEVICE).
     # mgr is thus derived from PeriphManagerBase (see periph_manager/base.py)
     log.info("Spawning periph manager...")
-    mgr = periph_manager()
+    mgr = periph_manager(args)
     discovery_info = {
         "type": mgr._get_device_info()["type"],
         "serial": mgr._get_device_info()["serial"]
     }
+    if args.init_only:
+        log.info("Terminating on user request before launching RPC server.")
+        return True
     log.info("Spawning discovery process...")
     _PROCESSES.append(
         mpm.spawn_discovery_process(discovery_info, shared))
