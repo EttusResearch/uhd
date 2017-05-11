@@ -33,6 +33,7 @@ def create_spidev_iface(dev_node):
     Create a regs iface from a spidev node
     """
     SPI_SPEED_HZ = 1000000
+    SPI_MODE = 3
     SPI_ADDR_SHIFT = 8
     SPI_DATA_SHIFT = 0
     SPI_READ_FLAG = 1<<23
@@ -40,6 +41,7 @@ def create_spidev_iface(dev_node):
     return lib.spi.make_spidev_regs_iface(
         dev_node,
         SPI_SPEED_HZ,
+        SPI_MODE,
         SPI_ADDR_SHIFT,
         SPI_DATA_SHIFT,
         SPI_READ_FLAG,

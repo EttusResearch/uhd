@@ -37,8 +37,10 @@ public:
 
     spidev_iface_impl(
             const std::string &device,
-            const int max_speed_hz
-    ) : _speed(max_speed_hz)
+            const int max_speed_hz,
+            const int spi_mode
+    ) : _speed(max_speed_hz),
+        _mode(spi_mode)
     {
 
         if (!init_spi(
@@ -94,7 +96,7 @@ public:
 
 private:
     int _fd;
-    uint32_t _mode = SPI_CPHA | SPI_CPOL;
+    const uint32_t _mode;
     uint32_t _speed = 2000000;
     uint8_t _bits = 8;
     uint16_t _delay = 0;
@@ -105,10 +107,11 @@ private:
  *****************************************************************************/
 spi_iface::sptr spi_iface::make_spidev(
     const std::string &device,
-    const int speed_hz
+    const int speed_hz,
+    const int spi_mode
 ) {
     return std::make_shared<spidev_iface_impl>(
-        device, speed_hz
+        device, speed_hz, spi_mode
     );
 }
 

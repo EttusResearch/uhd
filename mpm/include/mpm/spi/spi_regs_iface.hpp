@@ -35,6 +35,7 @@ namespace mpm { namespace spi {
     mpm::types::regs_iface::sptr make_spidev_regs_iface(
         const std::string &device,
         const int speed_hz,
+        const int spi_mode,
         uint32_t addr_shift,
         uint32_t data_shift,
         uint32_t read_flags,

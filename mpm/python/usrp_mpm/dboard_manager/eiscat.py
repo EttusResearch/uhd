@@ -40,23 +40,34 @@ PWR2_5V_ADC1_SPI_EN = 1<<13
 
 ADC_RESET = 0x2008
 
-def create_spidev_iface(dev_node):
+def create_spidev_iface_sane(dev_node):
     """
-    Create a regs iface from a spidev node
+    Create a regs iface from a spidev node (sane values)
     """
-    SPI_SPEED_HZ = 1000000
-    SPI_ADDR_SHIFT = 8
-    SPI_DATA_SHIFT = 0
-    SPI_READ_FLAG = 1<<23
-    SPI_WRIT_FLAG = 0
     return lib.spi.make_spidev_regs_iface(
         dev_node,
-        SPI_SPEED_HZ,
-        SPI_ADDR_SHIFT,
-        SPI_DATA_SHIFT,
-        SPI_READ_FLAG,
-        SPI_WRIT_FLAG
+        1000000, # Speed (Hz)
+        3, # SPI mode
+        8, # Addr shift
+        0, # Data shift
+        1<<23, # Read flag
+        0, # Write flag
     )
+
+def create_spidev_iface_phasedac(dev_node):
+    """
+    Create a regs iface from a spidev node (ADS5681)
+    """
+    return lib.spi.make_spidev_regs_iface(
+        dev_node,
+        1000000, # Speed (Hz)
+        1, # SPI mode
+        20, # Addr shift
+        8, # Data shift
+        0, # Read flag
+        0, # Write flag
+    )
+
 
 class ADS54J56(object):
     """
@@ -184,7 +195,6 @@ class MMCM(object):
             self.RADIO_CLK2X_ENABLE | \
             self.RADIO_CLK3X_ENABLE
         )
-        
         self.log.trace("Clocks enabled readback: 0x{:x}".format(self.peek32()))
         return True
 
@@ -347,7 +357,14 @@ class EISCAT(DboardManagerBase):
     spi_chipselect = {
         "lmk": 0,
         "adc0": 1,
-        "adc1": 2
+        "adc1": 2,
+        # "phase_dac": 3,
+    }
+    spi_factories = {
+        "lmk": create_spidev_iface_sane,
+        "adc0": create_spidev_iface_sane,
+        "adc1": create_spidev_iface_sane,
+        # "phase_dac": create_spidev_iface_phasedac,
     }
 
     def __init__(self, slot_idx, **kwargs):
@@ -356,9 +373,6 @@ class EISCAT(DboardManagerBase):
         self.log.trace("Initializing EISCAT daughterboard, slot index {}".format(self.slot_idx))
         self.initialized = False
         self.ref_clock_freq = 10e6
-        self.log.trace("Loading SPI interfaces...")
-        self._spi_ifaces = {key: create_spidev_iface(self._spi_nodes[key]) for key in self._spi_nodes}
-        self.log.info("Loaded SPI interfaces!")
         # Define some attributes so that PyLint stays quiet:
         self.radio_regs = None
         self.jesd_cores = None
@@ -366,6 +380,7 @@ class EISCAT(DboardManagerBase):
         self.adc0 = None
         self.adc1 = None
         self.mmcm = None
+        self._spi_ifaces = None
 
     def init_device(self):
         """
@@ -373,11 +388,6 @@ class EISCAT(DboardManagerBase):
 
         This assumes that an appropriate overlay was loaded.
         """
-        self.log.trace("Loading SPI interfaces...")
-        for chip, spi_dev_node in iteritems(self._spi_nodes):
-            self._spi_ifaces[chip] = create_spidev_iface(spi_dev_node)
-        self.log.info("Loaded SPI interfaces!")
-        self.log.debug("spidev device node map: {}".format(self._spi_nodes))
         self.log.trace("Getting uio...")
         self.radio_regs = UIO(label="jesd204b-regs", read_only=False)
         # Create JESD cores. They will also test the UIO regs on initialization.
@@ -392,6 +402,14 @@ class EISCAT(DboardManagerBase):
         self.log.info("Radio-register UIO object successfully generated!")
 
         self.radio_regs.poke32(ADC_RESET, 0x0000) # TODO put this somewhere else
+
+        # Load SPI devices. Note: They won't be usable until _init_power() was called.
+        self.log.trace("Loading SPI interfaces...")
+        self._spi_ifaces = {
+            key: self.spi_factories[key](self._spi_nodes[key])
+            for key in self._spi_nodes
+        }
+        self.log.info("Loaded SPI interfaces!")
 
         # Initialize Clocking
         self.mmcm = MMCM(self.radio_regs, self.log)

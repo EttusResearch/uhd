@@ -102,13 +102,14 @@ regs_iface::sptr mpm::spi::make_spi_regs_iface(
 mpm::types::regs_iface::sptr mpm::spi::make_spidev_regs_iface(
     const std::string &device,
     const int speed_hz,
+    const int spi_mode,
     uint32_t addr_shift,
     uint32_t data_shift,
     uint32_t read_flags,
     uint32_t write_flags
 ) {
     auto spi_iface_sptr = mpm::spi::spi_iface::make_spidev(
-        device, speed_hz
+        device, speed_hz, spi_mode
     );
     return std::make_shared<spi_regs_iface_impl>(
         spi_iface_sptr,

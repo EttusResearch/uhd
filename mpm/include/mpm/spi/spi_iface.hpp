@@ -45,7 +45,8 @@ namespace mpm { namespace spi {
          */
         static sptr make_spidev(
             const std::string &device,
-            const int speed_hz
+            const int speed_hz,
+            const int spi_mode=3
         );
     };
 
