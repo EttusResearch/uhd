@@ -344,7 +344,6 @@ class EISCAT(DboardManagerBase):
     # See DboardManagerBase for documentation on these fields
     #########################################################################
     pids = [0x180]
-
     spi_chipselect = {
         "lmk": 0,
         "adc0": 1,
@@ -357,20 +356,9 @@ class EISCAT(DboardManagerBase):
         self.log.trace("Initializing EISCAT daughterboard, slot index {}".format(self.slot_idx))
         self.initialized = False
         self.ref_clock_freq = 10e6
-        spi_devices = kwargs['spi_nodes']
-        if len(spi_devices) < len(self.spi_chipselect):
-            self.log.error("Expected {0} spi devices, found {1} spi devices".format(
-                len(self.spi_chipselect), len(spi_devices),
-            ))
-            raise RuntimeError("Not enough SPI devices found.")
-        self._spi_nodes = {}
-        self._spi_ifaces = {}
         self.log.trace("Loading SPI interfaces...")
-        for k, v in iteritems(self.spi_chipselect):
-            self._spi_nodes[k] = spi_devices[v]
-            self._spi_ifaces[k] = create_spidev_iface(self._spi_nodes[k])
+        self._spi_ifaces = {key: create_spidev_iface(self._spi_nodes[key]) for key in self._spi_nodes}
         self.log.info("Loaded SPI interfaces!")
-        self.log.debug("spidev device node map: {}".format(self._spi_nodes))
         # Define some attributes so that PyLint stays quiet:
         self.radio_regs = None
         self.jesd_cores = None

@@ -63,17 +63,7 @@ class Magnesium(DboardManagerBase):
     def __init__(self, slot_idx, **kwargs):
         super(Magnesium, self).__init__(*args, **kwargs)
         self.log = get_logger("Magnesium")
-        spi_devices = kwargs['spi_nodes']
         # eeprom_data is a tuple (head_dict, raw_data)
-        if len(spi_devices) != len(self.spi_chipselect):
-            self.log.error("Expected {0} spi devices, found {1} spi devices".format(
-                len(self.spi_chipselect), len(spi_devices),
-            ))
-            raise RuntimeError("Not enough SPI devices found.")
-        self._spi_nodes = {}
-        for k, v in iteritems(self.spi_chipselect):
-            self._spi_nodes[k] = spi_devices[v]
-        self.log.debug("spidev device node map: {}".format(self._spi_nodes))
 
     def init_device(self):
         """
