@@ -31,6 +31,8 @@ void export_types() {
     bp::class_<regs_iface, boost::noncopyable, std::shared_ptr<regs_iface> >("regs_iface", bp::no_init)
         .def("peek8", &regs_iface::peek8)
         .def("poke8", &regs_iface::poke8)
+        .def("peek16", &regs_iface::peek16)
+        .def("poke16", &regs_iface::poke16)
    ;
 }
 

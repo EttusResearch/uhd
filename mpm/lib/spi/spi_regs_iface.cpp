@@ -58,12 +58,41 @@ public:
             throw mpm::runtime_error("SPI read returned too much data");
         }
 
-        return uint8_t(data & 0xFF);
+        return data;
     }
 
     void poke8(
         const uint32_t addr,
         const uint8_t data
+    ) {
+        uint32_t transaction = 0
+            | _write_flags
+            | (addr << _addr_shift)
+            | (data << _data_shift)
+        ;
+
+        _spi_iface->transfer24_8(transaction);
+    }
+
+    uint16_t peek16(
+        const uint32_t addr
+    ) {
+        uint32_t transaction = 0
+            | (addr << _addr_shift)
+            | _read_flags
+        ;
+
+        uint32_t data = _spi_iface->transfer24_8(transaction);
+        if ((data & 0xFFFF0000) != 0) {
+            throw mpm::runtime_error("SPI read returned too much data");
+        }
+
+        return data;
+    }
+
+    void poke16(
+        const uint32_t addr,
+        const uint16_t data
     ) {
         uint32_t transaction = 0
             | _write_flags
