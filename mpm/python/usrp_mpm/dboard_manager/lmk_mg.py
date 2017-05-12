@@ -18,16 +18,15 @@
 LMK04828 driver for use with Magnesium
 """
 
-from ..mpmlog import get_logger
 from time import sleep
+from ..mpmlog import get_logger
+from ..chips import LMK04828
 
-class LMK04828Mg(object):
-    def __init__(self, regs_iface, spi_lock):
-        self.regs_iface = regs_iface
+class LMK04828Mg(LMK04828):
+    def __init__(self, regs_iface, spi_lock, slot=None):
+        LMK04828.__init__(self, regs_iface, slot)
         self.spi_lock = spi_lock
         self.log = get_logger("LMK04828")
-        assert hasattr(self.regs_iface, 'peek8')
-        assert hasattr(self.regs_iface, 'poke8')
         assert hasattr(self.spi_lock, 'lock')
         assert hasattr(self.spi_lock, 'unlock')
 
@@ -95,22 +94,3 @@ class LMK04828Mg(object):
 
         self.log.trace("LMK init'd and locked")
 
-    def get_chip_id(self):
-        """
-        Read back the chip ID
-        """
-        # TODO: avoid deadlock by not locking when we already have lock (or use a recursive mutex internally)
-        #self.spi_lock.lock()
-        chip_id = self.regs_iface.peek8(0x03)
-        #self.spi_lock.unlock()
-        return chip_id
-
-    def verify_chip_id(self):
-        """
-        Returns True if the chip ID matches what we expect, False otherwise.
-        """
-        chip_id = self.get_chip_id()
-        if chip_id != 6:
-            self.log.error("wrong chip id {0}".format(chip_id))
-            return False
-        return True

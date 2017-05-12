@@ -15,22 +15,11 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-########################################################################
-# This file included, use CMake directory variables
-########################################################################
 SET(USRP_MPM_FILES ${USRP_MPM_FILES})
-SET(USRP_MPM_TOP_FILES
+SET(USRP_MPM_CHIP_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/__init__.py
-    ${CMAKE_CURRENT_SOURCE_DIR}/discovery.py
-    ${CMAKE_CURRENT_SOURCE_DIR}/mpmlog.py
-    ${CMAKE_CURRENT_SOURCE_DIR}/nijesdcore.py
-    ${CMAKE_CURRENT_SOURCE_DIR}/rpc_server.py
-    ${CMAKE_CURRENT_SOURCE_DIR}/sysfs_gpio.py
-    ${CMAKE_CURRENT_SOURCE_DIR}/mpmtypes.py
-    ${CMAKE_CURRENT_SOURCE_DIR}/uio.py
+    ${CMAKE_CURRENT_SOURCE_DIR}/lmk04828.py
 )
-LIST(APPEND USRP_MPM_FILES ${USRP_MPM_TOP_FILES})
-ADD_SUBDIRECTORY(periph_manager)
-ADD_SUBDIRECTORY(dboard_manager)
-ADD_SUBDIRECTORY(chips)
+LIST(APPEND USRP_MPM_FILES ${USRP_MPM_CHIP_FILES})
 SET(USRP_MPM_FILES ${USRP_MPM_FILES} PARENT_SCOPE)
+

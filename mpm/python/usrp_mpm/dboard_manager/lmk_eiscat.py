@@ -20,29 +20,19 @@ LMK04828 driver for use with Magnesium
 
 import time
 from ..mpmlog import get_logger
+from ..chips import LMK04828
 
-LMK_CHIP_ID = 6
-
-class LMK04828EISCAT(object):
+class LMK04828EISCAT(LMK04828):
     """
     LMK04828 controls for EISCAT daughterboard
     """
     def __init__(self, regs_iface, ref_clock_freq, slot=None):
-        slot = slot or "-A"
-        self.log = get_logger("LMK04828"+slot)
+        LMK04828.__init__(self, regs_iface, slot)
         self.log.trace("Using reference clock frequency {} MHz".format(ref_clock_freq/1e6))
         assert ref_clock_freq in (10e6, 20e6)
         self.ref_clock_freq = ref_clock_freq
-        self.regs_iface = regs_iface
         self.init()
         self.config()
-
-    def pokes8(self, addr_vals):
-        """
-        Apply a series of pokes
-        """
-        for addr, val in addr_vals:
-            self.regs_iface.poke8(addr, val)
 
     def init(self):
         """
@@ -201,23 +191,6 @@ class LMK04828EISCAT(object):
         ))
         self.log.info("LMK init'd and locked!")
 
-    def get_chip_id(self):
-        """
-        Read back the chip ID
-        """
-        chip_id = self.regs_iface.peek8(0x03)
-        self.log.trace("Read chip ID: {}".format(chip_id))
-        return chip_id
-
-    def verify_chip_id(self):
-        """
-        Returns True if the chip ID matches what we expect, False otherwise.
-        """
-        chip_id = self.get_chip_id()
-        if chip_id != LMK_CHIP_ID:
-            self.log.error("wrong chip id {0}".format(chip_id))
-            return False
-        return True
 
     # TODO delete this
     # def enable_sysref_pulse(self):
