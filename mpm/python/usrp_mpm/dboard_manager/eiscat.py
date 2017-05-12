@@ -30,7 +30,7 @@ N_CHANS = 8 # Chans per dboard
 
 # Power enable pins
 POWER_ENB = 0x200C # Address of the power enable register
-PWR_CHAN_EN_2V5 = [(1<<x) for x in xrange(8)]
+PWR_CHAN_EN_2V5 = [(1<<chan_en) for chan_en in xrange(8)]
 PWR2_5V_DC_CTRL_ENB = 1<<8
 PWR2_5V_DC_PWR_EN = 1<<9
 PWR2_5V_LNA_CTRL_EN = 1<<10
@@ -382,12 +382,15 @@ class EISCAT(DboardManagerBase):
         self.mmcm = None
         self._spi_ifaces = None
 
-    def init_device(self):
+    def init(self, args):
         """
         Execute necessary actions to bring up the daughterboard
 
         This assumes that an appropriate overlay was loaded.
         """
+        self.log.info("init() called with args `{}'".format(
+            ",".join(['{}={}'.format(x, args[x]) for x in args])
+        ))
         self.log.trace("Getting uio...")
         self.radio_regs = UIO(label="jesd204b-regs", read_only=False)
         # Create JESD cores. They will also test the UIO regs on initialization.
@@ -456,6 +459,7 @@ class EISCAT(DboardManagerBase):
         for i in xrange(2):
             if not self.jesd_cores[i].check_deframer_status():
                 raise RuntimeError("JESD Core {}: Deframer status not lookin' so good!".format(i))
+        self.log.info("JESD core initialized, link up!")
 
         self.phase_dac = self._spi_ifaces['phase_dac']
         ## END OF THE JEPSON SEQUENCE ##

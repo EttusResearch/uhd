@@ -42,12 +42,16 @@ class DboardManagerBase(object):
     def __init__(self, slot_idx, **kwargs):
         self.log = get_logger('dboardManager')
         self.slot_idx = slot_idx
+        self.device_info = {}
         self._init_spi_nodes(kwargs.get('spi_nodes', []))
 
 
     def _init_spi_nodes(self, spi_devices):
         """
-        docstring for _init_spi_nodes
+        Populates the self._spi_nodes dictionary.
+        Note that this won't instantiate any spidev objects, it'll just map
+        keys from self.spi_chipselect to spidev nodes, and do a sanity check
+        that enough nodes are available.
         """
         if len(spi_devices) < len(self.spi_chipselect):
             self.log.error("Expected {0} spi devices, found {1} spi devices".format(
@@ -59,8 +63,30 @@ class DboardManagerBase(object):
             self._spi_nodes[k] = spi_devices[v]
         self.log.debug("spidev device node map: {}".format(self._spi_nodes))
 
+    def init(self, args):
+        """
+        Run the dboard initialization. This typically happens at the beginning
+        of a UHD session.
+
+        Must be overridden.
+
+        args -- A dictionary of arbitrary settings that can be used by the
+                dboard code. Similar to device args for UHD.
+        """
+        raise NotImplementedError("DboardManagerBase::init() not implemented!")
+
+    def deinit(self):
+        """
+        Power down the dboard. Does not have be implemented. If it does, it
+        needs to be safe to call multiple times.
+        """
+        self.log.info("deinit() called, but not implemented.")
+
     def get_serial(self):
-        return self._eeprom.get("serial", "")
+        """
+        Return this daughterboard's serial number as a dictionary.
+        """
+        return self.device_info.get("serial", "")
 
     def update_ref_clock_freq(self, freq):
         """

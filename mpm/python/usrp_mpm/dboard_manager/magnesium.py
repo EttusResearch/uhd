@@ -65,12 +65,14 @@ class Magnesium(DboardManagerBase):
     def __init__(self, slot_idx, **kwargs):
         super(Magnesium, self).__init__(*args, **kwargs)
         self.log = get_logger("Magnesium")
-        # eeprom_data is a tuple (head_dict, raw_data)
 
-    def init_device(self):
+    def init(self, args):
         """
         Execute necessary init dance to bring up dboard
         """
+        self.log.info("init() called with args `{}'".format(
+            ",".join(['{}={}'.format(x, args[x]) for x in args])
+        ))
         self.clock_regs = create_spidev_iface(self._spi_nodes['lmk'])
         self.log.debug("Loading C++ drivers...")
         self._device = lib.dboards.magnesium_manager(
@@ -143,12 +145,4 @@ class Magnesium(DboardManagerBase):
             for j in range(0, 0x10, 0x4):
                 print("%08X" % self.radio_regs.peek32(i + j)),
             print("")
-
-    def read_eeprom_v1(self, data):
-        """
-        read eeprom data version 1
-        """
-        # magnesium eeprom contains
-        # nothing
-        return struct.unpack_from("x", data)
 

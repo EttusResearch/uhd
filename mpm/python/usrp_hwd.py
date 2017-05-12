@@ -50,6 +50,12 @@ def setup_arg_parser():
              "used instead of whatever else the code may find",
         default=None
     )
+    parser.add_argument(
+        '--default-args',
+        help="Provide a comma-separated list of key=value pairs that are" \
+             "used as defaults for device initialization.",
+        default=None
+    )
     return parser
 
 def parse_args():
@@ -59,6 +65,15 @@ def parse_args():
     args = setup_arg_parser().parse_args()
     if args.override_db_pids is not None:
         args.override_db_pids = [int(x, 0) for x in args.override_db_pids.split(",")]
+    args.default_args = args.default_args or ''
+    try:
+        args.default_args = {
+            x.split('=')[0].strip(): x.split('=')[1].strip() if x.find('=') != -1 else ''
+            for x in args.default_args.split(',')
+            if len(x)
+        }
+    except IndexError:
+        log.error("Could not parse default device args: `{}'".format(args.default_args))
     return args
 
 
@@ -100,8 +115,10 @@ def main():
         "type": mgr._get_device_info()["type"],
         "serial": mgr._get_device_info()["serial"]
     }
+    mgr.init(args.default_args) # TODO really this should be called by the UHD session
     if args.init_only:
         log.info("Terminating on user request before launching RPC server.")
+        mgr.deinit()
         return True
     log.info("Spawning discovery process...")
     _PROCESSES.append(
@@ -113,6 +130,7 @@ def main():
     signal.signal(signal.SIGTERM, kill_time)
     signal.signal(signal.SIGINT, kill_time)
     signal.pause()
+    mgr.deinit() # TODO Really this should be called when a device is unclaimed
     return True
 
 if __name__ == '__main__':

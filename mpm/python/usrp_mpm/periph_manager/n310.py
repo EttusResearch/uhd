@@ -126,46 +126,11 @@ class n310(PeriphManagerBase):
         self.set_clock_source(N3XX_DEFAULT_CLOCK_SOURCE)
 
 
-        # data = self._read_eeprom_v1(self._eeprom_rawdata)
-        # mac 0: mgmt port, mac1: sfp0, mac2: sfp1
-        # self.interfaces["mgmt"] = {
-        #     "mac_addr": byte_to_mac(data[0]),
-        #     "addrs": get_iface_addrs(byte_to_mac(data[0]))
-        # }
-        # self.interfaces["sfp0"] = {
-        #     "mac_addr": byte_to_mac(data[1]),
-        #     "addrs": get_iface_addrs(byte_to_mac(data[1]))
-        # }
-        # self.interfaces["sfp1"] = {
-        #     "mac_addr": byte_to_mac(data[2]),
-        #     "addrs": get_iface_addrs(byte_to_mac(data[2]))
-        # }
-        # self.mboard_info["serial"] = data[0]  # some format
         self.mboard_info["serial"] = '123'  # some format
         with open("/sys/class/rfnoc_crossbar/crossbar0/local_addr", "w") as xbar:
             xbar.write("0x2")
         # if header.get("dataversion", 0) == 1:
 
-        # Initialize our daughterboards:
-        self.log.debug("Initializing dboards...")
-        for dboard in self.dboards:
-            dboard.init_device()
-
-    def _read_eeprom_v1(self, data):
-        """
-        read eeprom with data version 1
-        """
-        # data contains
-        # 24 bytes header -> ignore them here
-        # 8 bytes serial
-        # 6 bytes mac_addr0
-        # 2 bytes pad
-        # 6 bytes mac_addr1
-        # 2 bytes pad
-        # 6 bytes mac_addr2
-        # 2 bytes pad
-        # 4 bytes CRC
-        return struct.unpack_from("!28x 8s 6s 2x 6s 2x 6s 2x I", data)
 
     def get_interfaces(self):
         """

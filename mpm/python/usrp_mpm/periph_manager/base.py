@@ -336,19 +336,34 @@ class PeriphManagerBase(object):
         self.log.info("Found {} daughterboard(s).".format(len(self.dboards)))
 
         # self.overlays = ""
-        # self._dboard_eeproms = {}
-        # self.log.debug("Initializing dboards")
-        # # for dboard_slot, eeprom_addr in self.dboard_eeprom_addrs.iteritems():
-            # # self.log.debug("Adding dboard for slot {0}".format(dboard_slot))
-            # # spi_devices = []
-            # # # I know EEPROM adresses for my dboard slots
-            # # eeprom_data = EEPROM().read_eeprom(get_eeprom_paths(eeprom_addr))
-            # # # I know spidev masters on the dboard slots
-            # # hw_pid = eeprom_data[0].get("hw_pid", 0)
-            # # if hw_pid in dboard_manager.HW_PIDS:
-                # # spi_devices = get_spidev_nodes(self.dboard_spimaster_addrs.get(dboard_slot))
-            # # dboard = dboard_manager.HW_PIDS.get(hw_pid, dboard_manager.unknown)
-            # # self.dboards.update({dboard_slot: dboard(spi_devices, eeprom_data)})
+
+    def init(self, args):
+        """
+        Run the mboard initialization. This is typically done at the beginning
+        of a UHD session.
+        Default behaviour is to call init() on all the daughterboards.`args' is
+        passed to the daughterboard's init calls.  For additional features,
+        this needs to be overridden.
+
+        args -- A dictionary of args for initialization. Similar to device args
+                in UHD.
+        """
+        self.log.info("Mboard init() called with device args `{}'.".format(
+            ",".join(['{}={}'.format(x, args[x]) for x in args])
+        ))
+        self.log.debug("Initializing dboards...")
+        for dboard in self.dboards:
+            dboard.init(args)
+
+    def deinit(self):
+        """
+        Power down a device after a UHD session.
+        This must be safe to call multiple times. The default behaviour is to
+        call deinit() on all the daughterboards.
+        """
+        self.log.info("Mboard deinit() called.")
+        for dboard in self.dboards:
+            dboard.deinit()
 
     def safe_list_updateable_components(self):
         """
