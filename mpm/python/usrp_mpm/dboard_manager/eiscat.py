@@ -358,13 +358,13 @@ class EISCAT(DboardManagerBase):
         "lmk": 0,
         "adc0": 1,
         "adc1": 2,
-        # "phase_dac": 3,
+        "phase_dac": 3,
     }
     spi_factories = {
         "lmk": create_spidev_iface_sane,
         "adc0": create_spidev_iface_sane,
         "adc1": create_spidev_iface_sane,
-        # "phase_dac": create_spidev_iface_phasedac,
+        "phase_dac": create_spidev_iface_phasedac,
     }
 
     def __init__(self, slot_idx, **kwargs):
@@ -456,6 +456,8 @@ class EISCAT(DboardManagerBase):
         for i in xrange(2):
             if not self.jesd_cores[i].check_deframer_status():
                 raise RuntimeError("JESD Core {}: Deframer status not lookin' so good!".format(i))
+
+        self.phase_dac = self._spi_ifaces['phase_dac']
         ## END OF THE JEPSON SEQUENCE ##
         self.initialized = True
 
