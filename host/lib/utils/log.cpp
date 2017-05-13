@@ -258,6 +258,22 @@ public:
 
     ~log_resource(void){
         _exit = true;
+        // We push a final message to kick the pop task out of it's wait state.
+        // This wouldn't be necessary if pop_with_wait() could fail. Should
+        // that ever get fixed, we can remove this.
+        auto final_message = uhd::log::logging_info(
+                pt::microsec_clock::local_time(),
+                uhd::log::trace,
+                __FILE__,
+                __LINE__,
+                "LOGGING",
+                boost::this_thread::get_id()
+        );
+        final_message.message = "Terminating logger.";
+        push(final_message);
+#ifndef UHD_LOG_FASTPATH_DISABLE
+        push_fastpath("");
+#endif
         _pop_task->join();
         {
             std::lock_guard<std::mutex> l(_logmap_mutex);
@@ -291,7 +307,8 @@ public:
         log_info.message = "";
 
         while (!_exit) {
-            if (_log_queue.pop_with_timed_wait(log_info, 1)){
+            _log_queue.pop_with_wait(log_info);
+            {
                 std::lock_guard<std::mutex> l(_logmap_mutex);
                 for (const auto &logger : _loggers) {
                     auto level = logger_level.find(logger.first);
@@ -321,7 +338,8 @@ public:
 #ifndef UHD_LOG_FASTPATH_DISABLE
         while (!_exit) {
             std::string msg;
-            if (_fastpath_queue.pop_with_timed_wait(msg, 1)){
+            _fastpath_queue.pop_with_wait(msg);
+            {
                 std::cerr << msg << std::flush;
             }
         }
