@@ -9,14 +9,20 @@
   <!-- Registers -->
   <registers>
     <setreg>
+      <!--1-Bit register. Enable Beam Stream Channels. There are 10, so this is a 10 bit value. -->
+      <name>SR_RX_STREAM_ENABLE</name>
+      <address>159</address>
+    </setreg>
+    <setreg>
       <!--1-Bit register. Are we sending the upper or lower 5 beam contirbutions? -->
       <name>SR_BEAMS_TO_NEIGHBOR</name>
-      <address>135</address>
+      <address>202</address>
+      <value>2</value>
     </setreg>
     <setreg>
       <!--1-Bit register. Are we expecting previous contributions? 1==yes we are -->
       <name>SR_PREV_OR_NULL</name>
-      <address>136</address>
+      <address>203</address>
     </setreg>
     <setreg>
       <!--1-Bit register. Are we expecting previous contributions? 1==yes we are -->
@@ -84,7 +90,14 @@
     <arg>
       <name>neighbors</name>
       <type>int</type>
-      <value>0</value>
+      <value>2</value>
+      <action>SR_WRITE("SR_BEAMS_TO_NEIGHBOR", 2)</action>
+    </arg>
+    <arg>
+      <name>channel_enable</name>
+      <type>int</type>
+      <value>1</value>
+      <action>SR_WRITE("SR_RX_STREAM_ENABLE", 1)</action>
     </arg>
     <arg>
       <name>gain</name>

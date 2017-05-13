@@ -60,10 +60,7 @@ public:
     double get_output_samp_rate(size_t port);
 
 private:
-    enum radio_connection_t { PRIMARY, SECONDARY };
 
-    radio_connection_t                  _radio_type;
-    std::string                         _radio_slot;
 }; /* class radio_ctrl_impl */
 
 }} /* namespace uhd::rfnoc */
