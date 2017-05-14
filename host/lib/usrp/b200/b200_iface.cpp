@@ -211,9 +211,10 @@ public:
 
     void load_firmware(const std::string filestring, UHD_UNUSED(bool force) = false)
     {
-        if (load_img_msg)
+        if (load_img_msg) {
             UHD_LOGGER_INFO("B200") << "Loading firmware image: "
-                            << filestring << "..." << std::flush;
+                            << filestring << "...";
+        }
 
         ihex_reader file_reader(filestring);
         try {
@@ -227,7 +228,6 @@ public:
             throw uhd::io_error(str(boost::format("Could not load firmware: \n%s") % e.what()));
         }
 
-        UHD_LOGGER_INFO("B200") ;
 
         //TODO
         //usrp_set_firmware_hash(hash); //set hash before reset
@@ -446,8 +446,10 @@ public:
             wait_count++;
         } while(fx3_state != FX3_STATE_FPGA_READY);
 
-        if (load_img_msg) UHD_LOGGER_INFO("B200") << "Loading FPGA image: " \
-            << filestring << "..." << std::flush;
+        if (load_img_msg) {
+            UHD_LOGGER_INFO("B200") << "Loading FPGA image: "
+                                    << filestring << "...";
+        }
 
         bytes_to_xfer = 1;
         ret = fx3_control_write(B200_VREQ_FPGA_START, 0, 0, out_buff, bytes_to_xfer, 1000);
@@ -485,15 +487,20 @@ public:
             else if (nwritten != transfer_count)
                 throw uhd::io_error((boost::format("load_fpga: short write while transferring bitstream to FX3  (expecting: %d, returned: %d)") % transfer_count % nwritten).str());
 
+            const size_t LOG_GRANULARITY = 10; // %. Keep this an integer divisor of 100.
             if (load_img_msg)
             {
-                if (bytes_sent == 0) UHD_LOGGER_INFO("B200") << "  0%" << std::flush;
-                const size_t percent_before = size_t((bytes_sent*100)/file_size);
+                if (bytes_sent == 0) UHD_LOGGER_DEBUG("B200") << "  0%" << std::flush;
+                const size_t percent_before =
+                    size_t((bytes_sent*100)/file_size) -
+                    (size_t((bytes_sent*100)/file_size) % LOG_GRANULARITY);
                 bytes_sent += transfer_count;
-                const size_t percent_after = size_t((bytes_sent*100)/file_size);
+                const size_t percent_after =
+                    size_t((bytes_sent*100)/file_size) -
+                    (size_t((bytes_sent*100)/file_size) % LOG_GRANULARITY);
                 if (percent_before != percent_after)
                 {
-                    UHD_LOGGER_INFO("B200") << "\b\b\b\b" << std::setw(3) << percent_after << "%" << std::flush;
+                    UHD_LOGGER_DEBUG("B200") << std::setw(3) << percent_after << "%";
                 }
             }
         }
@@ -515,8 +522,9 @@ public:
 
         usrp_set_fpga_hash(hash);
 
-        if (load_img_msg)
-            UHD_LOGGER_INFO("B200") << "\b\b\b\b done" ;
+        if (load_img_msg) {
+            UHD_LOGGER_DEBUG("B200") << "FPGA image loaded!";
+        }
 
         return 0;
     }
