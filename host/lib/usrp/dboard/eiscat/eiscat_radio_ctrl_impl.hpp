@@ -25,6 +25,8 @@ namespace uhd {
     namespace rfnoc {
 
 /*! \brief Provide access to an eiscat radio.
+ *
+ * Note: This will control both daughterboards.
  */
 class eiscat_radio_ctrl_impl : public radio_ctrl_impl
 {
@@ -58,6 +60,9 @@ public:
     std::string get_dboard_fe_from_chan(const size_t chan, const uhd::direction_t dir);
 
     double get_output_samp_rate(size_t port);
+
+protected:
+    virtual bool check_radio_config();
 
 private:
 

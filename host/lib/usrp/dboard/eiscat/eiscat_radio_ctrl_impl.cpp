@@ -69,7 +69,7 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(eiscat_radio_ctrl)
     // nothing is lost here.
     for (size_t fe_idx = 0; fe_idx < EISCAT_NUM_CHANS; fe_idx++) {
         _tree->create<std::string>(fe_path / fe_idx / "name")
-            .set(str(boost::format("EISCAT Rx %d") % fe_idx))
+            .set(str(boost::format("EISCAT Beam Contributions %d") % fe_idx))
         ;
         _tree->create<std::string>(fe_path / fe_idx / "connection")
             .set("I")
@@ -107,6 +107,18 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(eiscat_radio_ctrl)
         _tree->create<meta_range_t>(fe_path / fe_idx / "bandwidth" / "range")
             .set(meta_range_t(EISCAT_DEFAULT_BANDWIDTH, EISCAT_DEFAULT_BANDWIDTH))
         ;
+        _tree->create<bool>(fe_path / fe_idx / "use_lo_offset")
+            .set(false)
+        ;
+    }
+
+    // We can actually stream data to an EISCAT board, so it needs some tx
+    // frontends too:
+    fe_path = fs_path("dboards") / "A" / "tx_frontends";
+    for (size_t fe_idx = 0; fe_idx < EISCAT_NUM_CHANS; fe_idx++) {
+        _tree->create<std::string>(fe_path / fe_idx / "name")
+            .set(str(boost::format("EISCAT Uplink %d") % fe_idx))
+        ;
     }
 
     // There is only ever one EISCAT radio per dboard, so this should be unset
@@ -116,6 +128,10 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(eiscat_radio_ctrl)
         //.set_coercer(boost::bind(&eiscat_radio_ctrl_impl::set_rate, this, _1))
         .set(EISCAT_TICK_RATE)
     ;
+
+    if (not _tree->exists(fs_path("clock_source/value"))) {
+        _tree->create<std::string>(fs_path("clock_source/value")).set("external");
+    }
 
     UHD_VAR((_tree->exists(fs_path("time/cmd"))));
 }
@@ -198,6 +214,22 @@ std::string eiscat_radio_ctrl_impl::get_dboard_fe_from_chan(const size_t chan, c
 double eiscat_radio_ctrl_impl::get_output_samp_rate(size_t /* port */)
 {
     return EISCAT_RADIO_RATE;
+}
+
+bool eiscat_radio_ctrl_impl::check_radio_config()
+{
+    UHD_RFNOC_BLOCK_TRACE() << "x300_radio_ctrl_impl::check_radio_config() " ;
+    const fs_path rx_fe_path = fs_path("dboards/A/rx_frontends");
+    uint32_t chan_enables = 0;
+    for (const auto &enb: _rx_streamer_active) {
+        if (enb.second) {
+            chan_enables |= (1<<enb.first);
+        }
+    }
+    UHD_LOG_TRACE("EISCAT", str(boost::format("check_radio_config(): Setting channel enables to 0x%02X") % chan_enables));
+    sr_write("SR_RX_STREAM_ENABLE", chan_enables);
+
+    return true;
 }
 
 UHD_RFNOC_BLOCK_REGISTER(eiscat_radio_ctrl, "EISCATRadio");
