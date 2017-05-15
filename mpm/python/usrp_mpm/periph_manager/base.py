@@ -262,7 +262,9 @@ class PeriphManagerBase(object):
             self.log.trace("Found EEPROM metadata: `{}'".format(str(self._eeprom_head)))
             self.log.trace("Read {} bytes of EEPROM data.".format(len(self._eeprom_rawdata)))
             for key in ('pid', 'serial', 'rev'):
-                self.mboard_info[key] = self._eeprom_head.get(key, '')
+                # In C++, we can only handle dicts if all the values are of the
+                # same type. So we must convert them all to strings here:
+                self.mboard_info[key] = str(self._eeprom_head.get(key, ''))
             if self._eeprom_head.has_key('pid') and not self._eeprom_head['pid'] in self.pids:
                 self.log.error("Found invalid PID in EEPROM: 0x{:04X}. Valid PIDs are: {}".format(
                     self._eeprom_head['pid'],

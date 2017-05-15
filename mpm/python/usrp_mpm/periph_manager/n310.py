@@ -125,11 +125,10 @@ class n310(PeriphManagerBase):
         self._clock_source = None # Gets set in set_clock_source()
         self.set_clock_source(N3XX_DEFAULT_CLOCK_SOURCE)
 
-
-        self.mboard_info["serial"] = '123'  # some format
         with open("/sys/class/rfnoc_crossbar/crossbar0/local_addr", "w") as xbar:
             xbar.write("0x2")
         # if header.get("dataversion", 0) == 1:
+        self.log.info("mboard info: {}".format(self.mboard_info))
 
 
     def get_interfaces(self):
