@@ -1,0 +1,89 @@
+/*! \page page_logging UHD Logging
+
+During the operation of UHD, logging messages are created which UHD handles in a
+logging subsystem. Everything logging-related is defined in
+include/uhd/utils/log.hpp. See also \ref loghpp_logging
+
+UHD itself never prints anything to stdout, which means that stdout can be used
+for applications using UHD. Actual logging messages are handled by separate
+logging backends. By default, UHD has two backends: A *console* backend, which
+prints logging messages to stderr (more accurately, to `std::clog`), and
+a *file* backend, which writes all logging messages into a log file.
+
+
+\section logging_levels Log levels
+
+UHD defines the following log levels (see also \ref loghpp_levels):
+
+- Trace: Typical trace messages are along the lines of "this function is
+  currently being executed" or "this is the current state of my local scope, the
+  following variables have the following values". Trace message are numerous,
+  and should usually be safe to ignore, unless some tricky debugging is
+  happening which requires knowing exactly what UHD is doing when and where and
+  how.
+- Debug: Messages should have this level when it's likely the message can be
+  useful for debugging errorneus behaviour. A good reason to use debug level
+  messages is when user input is in the mix.
+- Info: Whenever a message is usually supposed to be seen by the user, but it's
+  indicating regular behaviour, it's 'info'. Message at this level are rare.
+- Warning: Anything that indicates something could be wrong, but operation can
+  continue for now, is a warning.
+- Error: If something goes wrong, it's an error message. This is typically
+  accompanied by termination of the program.
+- Fatal: SOMETHING'S REALLY WRONG
+
+Whenever a log level is set, it means all log levels with higher severity are
+also printed. Example: If the log level is set to 'debug', it won't print
+messages that are at 'trace' severity, but it will print 'info' and all the
+other levels.
+
+There are multiple ways to set the log level:
+
+- Minimum level: This is a compile-time option. At compile-time, it disables
+  all log messages permanently that are below this log level.
+- Global level: The global level can be changed at runtime, and applies to all
+  backends.
+- Per-backend level: For example, The logfile and the console output could have
+  different logging levels.
+
+Log levels are evaluated in this order. If the minimum level is 'debug', no
+'trace' message will ever be printed. If the global level is 'info', no 'debug'
+message will ever be printed -- but this can be changed at runtime. Finally,
+if a message has passed both the minimum and global levels, it is handled by
+the individual backends if their log levels are appropriately set.
+
+For more info on how to set the individual log levels, see
+include/uhd/utils/log.hpp.
+
+\section logging_macros Logging Macros
+
+When log messages are generated, the appropriate logging macros should always
+be used. There are two types of macros:
+
+~~~~~~~~~~~~~~{.cpp}
+UHD_LOG_DEBUG("component", "message");
+UHD_LOGGER_DEBUG("component") << "message";
+~~~~~~~~~~~~~~
+
+The difference between those is, the former style is completely compiled out
+when the minimum log level is set accordingly, whereas the second one is not,
+but offers more flexibility through the streaming operators.
+Use the former if speed matters.
+
+The macros require three pieces of information:
+
+- The log level. This is done by choosing the appropriate macro, e.g.,
+  `UHD_LOGGER_DEBUG` vs. `UHD_LOGGER_INFO`.
+- The component where the log message is originating from. This allows to filter
+  log messages more easily.
+- The log message itself.
+
+\section logging_backends Logging Backends
+
+Anything that acts upon a log message is called a backend. UHD defines two by
+default: A logfile, and a console backend. More backends can be added by
+calling uhd::log::add_logger().
+
+*/
+// vim:ft=doxygen:
+

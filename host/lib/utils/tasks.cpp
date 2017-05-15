@@ -32,7 +32,7 @@ public:
     task_impl(const task_fcn_type &task_fcn):
         _spawn_barrier(2)
     {
-        _thread_group.create_thread(boost::bind(&task_impl::task_loop, this, task_fcn));
+        (void)_thread_group.create_thread(boost::bind(&task_impl::task_loop, this, task_fcn));
         _spawn_barrier.wait();
     }
 
@@ -99,7 +99,7 @@ public:
     msg_task_impl(const task_fcn_type &task_fcn):
         _spawn_barrier(2)
     {
-        _thread_group.create_thread(boost::bind(&msg_task_impl::task_loop, this, task_fcn));
+        (void)_thread_group.create_thread(boost::bind(&msg_task_impl::task_loop, this, task_fcn));
         _spawn_barrier.wait();
     }
 

@@ -357,6 +357,8 @@ static bool tx_flow_ctrl(
     size_t fc_window,
     managed_buffer::sptr
 ) {
+    bool refresh_cache = false;
+
     // Busy loop waiting for flow control update.  This is necessary because
     // at this point there is data trying to be sent and it must be sent as
     // quickly as possible when the flow control update arrives to avoid
@@ -364,6 +366,12 @@ static bool tx_flow_ctrl(
     // data needs to be sent and flow control is holding it back.
     while (true)
     {
+        if (refresh_cache)
+        {
+            // update the cached value from the atomic
+            fc_cache->last_seq_ack_cache = fc_cache->last_seq_ack;
+        }
+
         // delta is the amount of FC credit we've used up
         const size_t delta = (fc_cache->last_seq_out & HW_SEQ_NUM_MASK) -
             (fc_cache->last_seq_ack_cache & HW_SEQ_NUM_MASK);
@@ -374,8 +382,26 @@ static bool tx_flow_ctrl(
             fc_cache->last_seq_out++; //update seq
             return true;
         }
-        // update the cached value from the atomic
-        fc_cache->last_seq_ack_cache = fc_cache->last_seq_ack;
+        else
+        {
+            if (refresh_cache)
+            {
+                // We have already refreshed the cache and still
+                // lack flow control permission to send new data.
+
+                // A true busy loop choked out the message handler
+                // thread on machines with processor limitations
+                // (too few cores).  Yield to allow flow control
+                // receiver thread to operate.
+                boost::this_thread::yield();
+            }
+            else
+            {
+                // Allow the cache to refresh and try again to
+                // see if the device has granted flow control permission.
+                refresh_cache = true;
+            }
+        }
     }
     return false;
 }

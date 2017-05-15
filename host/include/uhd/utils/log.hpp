@@ -19,7 +19,6 @@
 #define INCLUDED_UHD_UTILS_LOG_HPP
 
 #include <uhd/config.hpp>
-#include <uhd/utils/pimpl.hpp>
 #include <boost/current_function.hpp>
 #include <boost/thread/thread.hpp>
 #include <ostream>
@@ -28,34 +27,41 @@
 #include <iostream>
 
 /*! \file log.hpp
- * The UHD logging facility
- * =========================
  *
- * The logger enables UHD library code to easily log events into a file and display
- * messages above a certain level in the terminal.
+ * \section loghpp_logging The UHD logging facility
+ *
+ * The logger enables UHD library code to easily log events into a file and
+ * display messages above a certain level in the terminal.
  * Log entries are time-stamped and stored with file, line, and function.
- * Each call to the UHD_LOG macros is thread-safe. Each thread will aquire the lock
- * for the logger.
+ * Each call to the UHD_LOG macros is thread-safe. Each thread will aquire the
+ * lock for the logger.
+ *
+ * Note: More information on the logging subsystem can be found on
+ * \ref page_logging.
  *
  * To disable console logging completely at compile time specify
  * `-DUHD_LOG_CONSOLE_DISABLE` during configuration with CMake.
  *
  * By default no file logging will occur. Set a log file path:
  *  - at compile time by specifying `-DUHD_LOG_FILE=$file_path`
- *  - and/or override at runtime by setting the environment variable `UHD_LOG_FILE`
+ *  - and/or override at runtime by setting the environment variable
+ *    `UHD_LOG_FILE`
  *
- * Log levels
- * ----------
+ * \subsection loghpp_levels Log levels
+ *
+ * See also \ref logging_levels.
  *
  * All log messages with verbosity greater than or equal to the log level
  * (in other words, as often or less often than the current log level)
  * are recorded to std::clog and/or the log file.
- * Log levels can be specified using string or numeric values of uhd::log::severity_level.
+ * Log levels can be specified using string or numeric values of
+ * uhd::log::severity_level.
  *
  * The default log level is "info", but can be overridden:
  *  - at compile time by setting the pre-processor define `-DUHD_LOG_MIN_LEVEL`.
  *  - at runtime by setting the environment variable `UHD_LOG_LEVEL`.
- *  - for console logging by setting `(-D)UHD_LOG_CONSOLE_LEVEL` at run-/compiletime
+ *  - for console logging by setting `(-D)UHD_LOG_CONSOLE_LEVEL` at
+ *    run-/compiletime
  *  - for file logging by setting `(-D)UHD_LOG_FILE_LEVEL` at run-/compiletime
  *
  * UHD_LOG_LEVEL can be the name of a verbosity enum or integer value:
@@ -64,8 +70,7 @@
  *   - Example environment variable: `export UHD_LOG_LEVEL=3`
  *   - Example environment variable: `export UHD_LOG_LEVEL=info`
  *
- * Log formatting
- * --------------
+ * \subsection loghpp_formatting Log formatting
  *
  * The log format for messages going into a log file is CSV.
  * All log messages going into a logfile will contain following fields:
@@ -76,11 +81,13 @@
  * - component/channel information which logged the information
  * - the actual log message
  *
- * The log format of log messages displayed on the terminal is plain text with space separated tags prepended.
+ * The log format of log messages displayed on the terminal is plain text with
+ * space separated tags prepended.
  * For example:
- *    - `[INFO] [x300] This is a informational log message`
+ *    - `[INFO] [X300] This is a informational log message`
  *
- * The log format for log output on the console by using these preprocessor defines in CMake:
+ * The log format for log output on the console by using these preprocessor
+ * defines in CMake:
  * - `-DUHD_LOG_CONSOLE_TIME` adds a timestamp [2017-01-01 00:00:00.000000]
  * - `-DUHD_LOG_CONSOLE_THREAD` adds a thread-id `[0x001234]`
  * - `-DUHD_LOG_CONSOLE_SRC` adds a sourcefile and line tag `[src_file:line]`
@@ -99,8 +106,10 @@
 
 namespace uhd {
     namespace log {
-        /** logging severity levels
-         * Either numeric value or string can be used to define loglevel in CMake and environment variables
+        /*! Logging severity levels
+         *
+         * Either numeric value or string can be used to define loglevel in
+         * CMake and environment variables
          */
         enum severity_level {
             trace   = 0, /**< displays every available log message */
@@ -112,32 +121,74 @@ namespace uhd {
             off = 6, /**< logging is turned off */
         };
 
-        // The operator is used when putting the severity level to log
-        template <typename CharT, typename TraitsT>
-        inline std::basic_ostream<CharT, TraitsT>&
-        operator<<(std::basic_ostream<CharT, TraitsT>& strm, severity_level level)
-        {
-            static const char* strings[] = {"TRACE",   "DEBUG", "INFO",
-                                            "WARNING", "ERROR", "FATAL"
-            };
+        /*! Logging info structure
+         *
+         * Information needed to create a log entry is fully contained in the
+         * logging_info structure.
+         */
+        struct UHD_API logging_info {
+            logging_info()
+                : verbosity(uhd::log::off) {}
+            logging_info(
+                const boost::posix_time::ptime &time_,
+                const uhd::log::severity_level &verbosity_,
+                const std::string &file_,
+                const size_t &line_,
+                const std::string &component_,
+                const boost::thread::id &thread_id_
+            ) : time(time_),
+                verbosity(verbosity_),
+                file(file_),
+                line(line_),
+                component(component_),
+                thread_id(thread_id_)
+            { /* nop */ }
 
-            if (static_cast<std::size_t>(level) < sizeof(strings) / sizeof(*strings)) {
-                strm << strings[level];
-            } else {
-                strm << static_cast<int>(level);
-            }
+            boost::posix_time::ptime time;
+            uhd::log::severity_level verbosity;
+            std::string file;
+            unsigned int line;
+            std::string component;
+            boost::thread::id thread_id;
+            std::string message;
+        };
 
-            return strm;
-        }
+        /*! Set the global log level
+         *
+         * The global log level gets applied before the specific log level.
+         * So, if the global log level is 'info', no logger can can print
+         * messages at level 'debug' or below.
+         */
+        UHD_API void set_log_level(uhd::log::severity_level level);
 
+        /*! Set the log level for the console logger (if defined).
+         *
+         * Short-hand for `set_logger_level("console", level);`
+         */
+        UHD_API void set_console_level(uhd::log::severity_level level);
 
+        /*! Set the log level for the file logger (if defined)
+         *
+         * Short-hand for `set_logger_level("file", level);`
+         */
+        UHD_API void set_file_level(uhd::log::severity_level level);
+
+        /*! Set the log level for any specific logger.
+         *
+         * \param logger Name of the logger
+         * \param level New log level for this logger.
+         *
+         * \throws uhd::key_error if \p logger was not defined
+         */
+        UHD_API void set_logger_level(const std::string &logger, uhd::log::severity_level level);
     }
 }
 
-
-// internal logging macro to be used in other macros
+//! \cond
+//! Internal logging macro to be used in other macros
 #define _UHD_LOG_INTERNAL(component, level) \
     uhd::_log::log(level, __FILE__, __LINE__, component, boost::this_thread::get_id())
+//! \endcond
 
 // macro-style logging (compile-time determined)
 #if UHD_LOG_MIN_LEVEL < 1
@@ -183,8 +234,12 @@ namespace uhd {
 #endif
 
 #ifndef UHD_LOG_FASTPATH_DISABLE
+//! Extra-fast logging macro for when speed matters.
+// No metadata is tracked. Only the message is displayed. This does not go
+// through the regular backends. Mostly used for printing the UOSDL characters
+// during streaming.
 #define UHD_LOG_FASTPATH(message)               \
-    std::cerr << message << std::flush;
+    uhd::_log::log_fastpath(message);
 #else
 #define UHD_LOG_FASTPATH(message)
 #endif
@@ -198,9 +253,15 @@ namespace uhd {
 #define UHD_LOGGER_FATAL(component) _UHD_LOG_INTERNAL(component, uhd::log::fatal)
 
 
+#if defined(__GNUG__)
+//! Helpful debug tool to print site info
+#define UHD_HERE()                                              \
+    UHD_LOGGER_DEBUG("DEBUG") << __FILE__ << ":" << __LINE__ << " (" << __PRETTY_FUNCTION__ << ")";
+#else
 //! Helpful debug tool to print site info
 #define UHD_HERE()                                              \
     UHD_LOGGER_DEBUG("DEBUG") << __FILE__ << ":" << __LINE__;
+#endif
 
 //! Helpful debug tool to print a variable
 #define UHD_VAR(var)                                        \
@@ -210,11 +271,13 @@ namespace uhd {
 #define UHD_HEX(var)                                                    \
     UHD_LOGGER_DEBUG("DEBUG") << #var << " = 0x" << std::hex << std::setfill('0') << std::setw(8) << var << std::dec;
 
+//! \cond
+namespace uhd{ namespace _log {
 
+    //! Fastpath logging
+    void UHD_API log_fastpath(const std::string &msg);
 
-namespace uhd{ namespace _log{
-
-    //! Internal logging object (called by UHD_LOG macros)
+    //! Internal logging object (called by UHD_LOG* macros)
     class UHD_API log {
     public:
         log(
@@ -222,14 +285,10 @@ namespace uhd{ namespace _log{
             const std::string &file,
             const unsigned int line,
             const std::string &component,
-            const boost::thread::id id
+            const boost::thread::id thread_id
         );
 
         ~log(void);
-
-        static void set_log_level(uhd::log::severity_level level);
-        static void set_console_level(uhd::log::severity_level level);
-        static void set_file_level(uhd::log::severity_level level);
 
         // Macro for overloading insertion operators to avoid costly
         // conversion of types if not logging.
@@ -251,31 +310,13 @@ namespace uhd{ namespace _log{
         INSERTION_OVERLOAD(std::ios_base& (*val)(std::ios_base&))
 
     private:
+        uhd::log::logging_info _log_info;
         std::ostringstream _ss;
-        std::ostringstream _file;
-        std::ostringstream _console;
-        bool _log_it;
-        bool _log_file;
-        bool _log_console;
+        const bool _log_it;
     };
 
-    } //namespace uhd::_log
-    namespace log{
-        inline void
-        set_console_level(severity_level level){
-            ::uhd::_log::log::set_console_level(level);
-        }
-
-        inline void
-        set_log_level(severity_level level){
-            ::uhd::_log::log::set_log_level(level);
-        }
-
-        inline void
-        set_file_level(severity_level level){
-            ::uhd::_log::log::set_file_level(level);
-        }
-    }
-}
+} //namespace uhd::_log
+//! \endcond
+} /* namespace uhd */
 
 #endif /* INCLUDED_UHD_UTILS_LOG_HPP */

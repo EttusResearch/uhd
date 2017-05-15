@@ -67,6 +67,8 @@ public:
         udp_zero_copy::buff_params& buff_params_out,
         const device_addr_t &hints = device_addr_t()
     );
+
+    virtual uint16_t get_local_port(void) const = 0;
 };
 
 }} //namespace

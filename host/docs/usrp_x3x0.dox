@@ -479,13 +479,14 @@ Example device address string representation for 2 USRPs with IPv4 addresses **1
 
 See also \ref page_multiple.
 
-\section x3x0_comm_problems Communication Problems
+\section x3x0_troubleshooting Troubleshooting
+\subsection x3x0_comm_issues Communication Issues
 
 When setting up a development machine for the first time,
 you may have various difficulties communicating with the USRP device.
 The following tips are designed to help narrow down and diagnose the problem.
 
-\subsection x3x0_comm_problems_runtimeerr RuntimeError: no control response
+\subsection x3x0_comm_issues_runtimeerr RuntimeError: no control response
 
 This is a common error that occurs when you have set the subnet of your network
 interface to a different subnet than the network interface of the USRP device.  For
@@ -497,7 +498,7 @@ Fixing this is simple - just set the your host PC's IP address to the same
 subnet as that of your USRP device. Instructions for setting your IP address are in the
 previous section of this documentation.
 
-\subsection x3x0_comm_problems_firewall Firewall issues
+\subsection x3x0_comm_issues_firewall Firewall Issues
 
 When the IP address is not specified,
 the device discovery broadcasts UDP packets from each Ethernet interface.
@@ -508,14 +509,14 @@ then your firewall may be blocking replies to UDP broadcast packets.
 If this is the case, we recommend that you disable the firewall
 or create a rule to allow all incoming packets with UDP source port **49152**.
 
-\subsection x3x0_comm_problems_ping Ping the device
+\subsection x3x0_comm_issues_ping Ping the device
 The USRP device will reply to ICMP echo requests ("ping").
 A successful ping response means that the device has booted properly
 and that it is using the expected IP address.
 
     ping 192.168.10.2
 
-\subsection x3x0_comm_problems_not_enumerated Device not enumerated over PCI-Express (Linux)
+\subsection x3x0_comm_issues_not_enumerated Device not enumerated over PCI-Express (Linux)
 
 UHD requires the RIO device manager service to be running in order to
 communicate with an X-Series USRP over PCIe.  This service is installed as
@@ -545,7 +546,7 @@ A device similar to the following should be detected:
     - NI-USRP 295xR: 772F, 77FE, 7730, 77FF, 7731, 7800, 7732, 7857, 785E, 7858, 785F, 7859, 7860 or 785A
 
 
-\subsection x3x0_comm_problems_not_enumerated_win Device not enumerated over PCI-Express (Windows)
+\subsection x3x0_comm_issues_not_enumerated_win Device not enumerated over PCI-Express (Windows)
 
 UHD requires the RIO device manager service to be running in order to
 communicate with an X-Series USRP over PCIe.
@@ -557,15 +558,13 @@ status of **niusrpriorpc** is "Running".
 If the device still does not enumerate after starting the device manager, make sure that the host computer
 has successfully detected it. You can do so by checking if your device shows up in the Windows Device Manager.
 
-\subsection x3x0_comm_problems_monitor Monitor the host network traffic
+\subsection x3x0_comm_issues_monitor Monitor the host network traffic
 Use Wireshark to monitor packets sent to and received from the device.
 
 \subsection x3x0_comm_problems_leds Observe Ethernet port LEDs
 When there is network traffic arriving at the Ethernet port, LEDs will light up.
 You can use this to make sure the network connection is correctly set up, e.g.
 by pinging the USRP and making sure the LEDs start to blink.
-
-\section x3x0_usage_problems Usage Problems
 
 \subsection x3x0_corrupt_eeprom Corrupt EEPROM
 

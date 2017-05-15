@@ -17,12 +17,23 @@
 
 #include <boost/test/unit_test.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhd/utils/log_add.hpp>
 #include <iostream>
 
 BOOST_AUTO_TEST_CASE(test_messages){
-    uhd::log::set_log_level(uhd::log::info);
+    UHD_LOG_FASTPATH("foo");
+    UHD_LOG_FASTPATH("bar");
+    uhd::log::set_log_level(uhd::log::debug);
     uhd::log::set_console_level(uhd::log::info);
-    std::cerr << "---begin print test ---" << std::endl;
+    uhd::log::add_logger("test",
+        [](const uhd::log::logging_info &I){
+            std::cout << "<TEST> " << I.message << std::endl;
+        }
+    );
+    uhd::log::set_logger_level("test", uhd::log::debug);
+    UHD_LOGGER_DEBUG("logger_test") <<
+        "This is a test print for a debug log."
+    ;
     UHD_LOGGER_INFO("logger_test") <<
         "This is a test print for a info log."
     ;
@@ -35,5 +46,4 @@ BOOST_AUTO_TEST_CASE(test_messages){
     UHD_HERE();
     const int x = 42;
     UHD_VAR(x);
-    std::cerr << "---end print test ---" << std::endl;
 }

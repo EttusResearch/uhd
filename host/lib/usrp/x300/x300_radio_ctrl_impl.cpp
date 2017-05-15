@@ -471,9 +471,7 @@ freq_range_t x300_radio_ctrl_impl::get_rx_lo_freq_range(const std::string &name,
 template <typename map_type>
 static size_t _get_chan_from_map(std::map<size_t, map_type> map, const std::string &fe)
 {
-    // TODO replace with 'auto' when possible
-    typedef typename std::map<size_t, map_type>::iterator chan_iterator;
-    for (chan_iterator it = map.begin(); it != map.end(); ++it) {
+    for (auto it = map.begin(); it != map.end(); ++it) {
         if (it->second.db_fe_name == fe) {
             return it->first;
         }
