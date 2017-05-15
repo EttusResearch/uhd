@@ -231,7 +231,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("subdev", po::value<std::string>(&subdev), "subdevice specification")
         ("bw", po::value<double>(&bw), "analog frontend filter bandwidth in Hz")
         ("ref", po::value<std::string>(&ref)->default_value("internal"), "reference source (internal, external, mimo)")
-        ("wirefmt", po::value<std::string>(&wirefmt)->default_value("sc16"), "wire format (sc8 or sc16)")
+        ("wirefmt", po::value<std::string>(&wirefmt)->default_value("sc16"), "wire format (sc8, sc16 or s16)")
         ("setup", po::value<double>(&setup_time)->default_value(1.0), "seconds of setup time")
         ("progress", "periodically display short-term bandwidth")
         ("stats", "show average bandwidth on exit")
@@ -331,10 +331,17 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 #define recv_to_file_args(format) \
     (usrp, format, wirefmt, file, spb, total_num_samps, total_time, bw_summary, stats, null, enable_size_map, continue_on_bad_packet)
     //recv to file
-    if (type == "double") recv_to_file<std::complex<double> >recv_to_file_args("fc64");
-    else if (type == "float") recv_to_file<std::complex<float> >recv_to_file_args("fc32");
-    else if (type == "short") recv_to_file<std::complex<short> >recv_to_file_args("sc16");
-    else throw std::runtime_error("Unknown type " + type);
+    if (wirefmt == "s16") {
+        if (type == "double") recv_to_file<double>recv_to_file_args("f64");
+        else if (type == "float") recv_to_file<float>recv_to_file_args("f32");
+        else if (type == "short") recv_to_file<short>recv_to_file_args("s16");
+        else throw std::runtime_error("Unknown type " + type);
+    } else {
+        if (type == "double") recv_to_file<std::complex<double> >recv_to_file_args("fc64");
+        else if (type == "float") recv_to_file<std::complex<float> >recv_to_file_args("fc32");
+        else if (type == "short") recv_to_file<std::complex<short> >recv_to_file_args("sc16");
+        else throw std::runtime_error("Unknown type " + type);
+    }
 
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;
