@@ -118,8 +118,7 @@ void graph_impl::connect(
      ********************************************************************/
     size_t pkt_size = (pkt_size_ != 0) ? pkt_size_ : src->get_output_signature(src_block_port).packet_size;
     if (pkt_size == 0) { // Unspecified packet rate. Assume max packet size.
-        UHD_LOGGER_INFO("RFNOC")
-            << "Assuming max packet size for " << src->get_block_id();
+        UHD_LOGGER_WARNING("RFNOC") << "Assuming max packet size for " << src->get_block_id() ;
         pkt_size = uhd::rfnoc::MAX_PACKET_SIZE;
     }
     // FC window (in packets) depends on FIFO size...          ...and packet size.
