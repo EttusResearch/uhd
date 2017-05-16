@@ -153,6 +153,7 @@ class MPMServer(RPCServer):
         self._state.claim_token.value = ""
         self.sender_id = None
         self.periph_manager.claimed = False
+        self.periph_manager.deinit()
         self._timer.kill()
 
     def _reset_timer(self):
