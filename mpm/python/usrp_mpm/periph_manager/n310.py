@@ -149,7 +149,7 @@ class n310(PeriphManagerBase):
         Get the MAC address of the sender and store it in the FPGA ARP table
         """
         mac_addr = get_mac_addr(sender_addr)
-        new_ep = self.available_endpoints.pop(0)
+        new_ep = self._available_endpoints.pop(0)
         if mac_addr is not None:
             if sender_addr not in self.sid_endpoints:
                 self.sid_endpoints.update({sender_addr: (new_ep,)})

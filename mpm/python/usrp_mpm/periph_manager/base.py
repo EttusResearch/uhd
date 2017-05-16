@@ -168,15 +168,12 @@ class PeriphManagerBase(object):
     separate motherboard classes derived from this class
     """
     # stores discovered device information in dicts
-    claimed = False
     mboard_if_addrs = {}
     mboard_overlays = {}
     # this information has to be provided by
     # the specific periph_manager implementation
-    dboard_spimaster_addrs = {}
     updateable_components = []
     sid_endpoints = {}
-    available_endpoints = range(256)
 
     #########################################################################
     # Overridables
@@ -242,8 +239,10 @@ class PeriphManagerBase(object):
         assert self.mboard_eeprom_magic is not None
         # Set up logging
         self.log = get_logger('PeriphManager')
+        self.claimed = False
         self._init_mboard_with_eeprom()
         self._init_dboards(args.override_db_pids)
+        self._available_endpoints = range(256)
 
     def _init_mboard_with_eeprom(self):
         """
@@ -366,6 +365,8 @@ class PeriphManagerBase(object):
         self.log.info("Mboard deinit() called.")
         for dboard in self.dboards:
             dboard.deinit()
+        self.log.trace("Resetting SID pool...")
+        self._available_endpoints = range(256)
 
     def safe_list_updateable_components(self):
         """
@@ -413,19 +414,11 @@ class PeriphManagerBase(object):
         """
         pass
 
-    def init_device(self, *args, **kwargs):
-        """
-        Do the real init on the mboard and all dboards
-        """
-        # Load FPGA
-        # Init dboards
-        pass
-
     def _allocate_sid(self, sender_addr, sid, xbar_src_addr, xbar_src_port):
         """
         Overload this method in actual device implementation
         """
-        return True
+        raise NotImplementedError("_allocate_sid() not implented")
 
     def get_interfaces(self):
         """
