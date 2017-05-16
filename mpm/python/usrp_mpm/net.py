@@ -20,7 +20,52 @@ N310 implementation module
 import itertools
 import socket
 from pyroute2 import IPRoute
-from ..mpmlog import get_logger
+from .mpmlog import get_logger
+
+
+def get_valid_interfaces(iface_list):
+    """
+    Given a list of interfaces (['eth1', 'eth2'] for example), return the
+    subset that contains actually valid entries.
+    Interfaces are checked for if they actually exist, and if so, if they're up.
+    """
+    ipr = IPRoute()
+    valid_ifaces = []
+    for iface in iface_list:
+        valid_iface_idx = ipr.link_lookup(ifname=iface)
+        if len(valid_iface_idx) == 0:
+            continue
+        valid_iface_idx = valid_iface_idx[0]
+        link_info = ipr.get_links(valid_iface_idx)[0]
+        if link_info.get_attr('IFLA_OPERSTATE') == 'UP':
+            assert link_info.get_attr('IFLA_IFNAME') == iface
+            valid_ifaces.append(iface)
+    ipr.close()
+    return valid_ifaces
+
+
+def get_iface_info(ifname):
+    """
+    Given an interface name (e.g. 'eth1'), return a dictionary with the
+    following keys:
+    - ip_addr: Main IPv4 address
+    - ip_addrs: List of valid IPv4 addresses
+    - mac_addr: MAC address
+
+    All values are stored as strings.
+    """
+    ipr = IPRoute()
+    try:
+        link_info = ipr.get_links(ipr.link_lookup(ifname=ifname))[0]
+    except IndexError:
+        raise LookupError("Could not identify interface `{}'".format(ifname))
+    mac_addr = link_info.get_attr('IFLA_ADDRESS')
+    ip_addrs = get_iface_addrs(mac_addr)
+    return {
+        'mac_addr': mac_addr,
+        'ip_addr': ip_addrs[0],
+        'ip_addrs': ip_addrs,
+    }
 
 def get_iface_addrs(mac_addr):
     """
@@ -36,6 +81,7 @@ def get_iface_addrs(mac_addr):
                  if addr.get('index', None) == link]
     # flatten possibly nested list
     addresses = list(itertools.chain.from_iterable(addresses))
+    ip2.close()
     return addresses
 
 
