@@ -28,6 +28,7 @@ from .net import get_mac_addr
 from ..mpmtypes import SID
 from ..uio import UIO
 from ..sysfs_gpio import SysFSGPIO
+from ..ethtable import EthDispatcherTable
 from .. import libpyusrp_periphs as lib
 
 
@@ -110,7 +111,9 @@ class n310(PeriphManagerBase):
     dboard_eeprom_addr = "e0004000.i2c"
     dboard_eeprom_max_len = 64
     dboard_spimaster_addrs = ["e0006000.spi",]
-
+    chdr_interfaces = ['eth1', 'eth2']
+    # N310-specific settings
+    eth_tables = {'eth1': 'misc-enet-regs0', 'eth2': 'misc-enet-regs1'}
 
     def __init__(self, args):
         # First initialize parent class - will populate self._eeprom_head and self._eeprom_rawdata
@@ -130,19 +133,18 @@ class n310(PeriphManagerBase):
         # if header.get("dataversion", 0) == 1:
         self.log.info("mboard info: {}".format(self.mboard_info))
 
-
-    def get_interfaces(self):
+    def init(self, args):
         """
-        returns available transport interfaces
+        Calls init() on the parent class, and then programs the Ethernet
+        dispatchers accordingly.
         """
-        return [iface for iface in self.interfaces.keys()
-                if iface.startswith("sfp")]
-
-    def get_interface_addrs(self, interface):
-        """
-        returns discovered ipv4 addresses for a given interface
-        """
-        return self.interfaces.get(interface, {}).get("addrs", [])
+        super(n310, self).init(args)
+        self._eth_dispatchers = {
+            x: EthDispatcherTable(self.eth_tables.get(x))
+            for x in self._chdr_interfaces.keys()
+        }
+        for ifname, table in iteritems(self._eth_dispatchers):
+            table.set_ipv4_addr(self._chdr_interfaces[ifname]['ip_addr'])
 
     def _allocate_sid(self, sender_addr, port, sid, xbar_src_addr, xbar_src_port):
         """
@@ -162,21 +164,8 @@ class n310(PeriphManagerBase):
             sid.set_src_ep(new_ep)
             my_xbar = lib.xbar.xbar.make("/dev/crossbar0") # TODO
             my_xbar.set_route(xbar_src_addr, 0) # TODO
-            self.log.debug("Getting UIO device for Ethernet configuration...")
-            uio_obj = UIO(label="misc-enet-regs0", read_only=False)
-            self.log.info("got my uio")
-            self.log.info("ip_addr: %s", sender_addr)
-            # self.log.info("mac_addr: %s", mac_addr)
-            ip_addr = int(netaddr.IPAddress(sender_addr))
-            mac_addr = int(netaddr.EUI(mac_addr))
-            uio_obj.poke32(0x1000 + 4*new_ep, ip_addr)
-            print("sid: %x" % (sid.get()))
-            print("gonna poke: %x %x" % (0x1000+4*new_ep, ip_addr))
-            uio_obj.poke32(0x1800 + 4*new_ep, mac_addr & 0xFFFFFFFF)
-            print("gonna poke: %x %x" % (0x1800+4*new_ep, mac_addr))
-            port = int(port)
-            uio_obj.poke32(0x1400 + 4*new_ep, ((int(port) << 16) | (mac_addr >> 32)))
-            print("gonna poke: %x %x" % (0x1400+4*new_ep, ((port << 16) | (mac_addr >> 32))))
+            eth_dispatcher = self._eth_dispatchers['eth1'] # TODO
+            eth_dispatcher.set_route(sid.reversed(), sender_addr, port)
         return sid.get()
 
     def get_clock_sources(self):

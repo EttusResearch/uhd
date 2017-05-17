@@ -24,6 +24,7 @@ from six import iteritems, itervalues
 from ..mpmlog import get_logger
 from .udev import get_eeprom_paths
 from .udev import get_spidev_nodes
+from usrp_mpm import net
 
 EEPROM_DEFAULT_HEADER = struct.Struct("!I I")
 
@@ -231,6 +232,11 @@ class PeriphManagerBase(object):
     # dboards, but if it's shorter, it simply won't instantiate list SPI nodes
     # for those dboards.
     dboard_spimaster_addrs = []
+    # Lists the network interfaces which can theoretically support CHDR. These
+    # do not have to exist, but these interfaces will be probed for
+    # availability. If the list is empty, no CHDR traffic will be possible over
+    # the network. Example: ['eth1', 'eth2']
+    chdr_interfaces = []
 
 
     def __init__(self, args):
@@ -243,6 +249,8 @@ class PeriphManagerBase(object):
         self._init_mboard_with_eeprom()
         self._init_dboards(args.override_db_pids)
         self._available_endpoints = range(256)
+        self._init_args = {}
+        self._chdr_interfaces = []
 
     def _init_mboard_with_eeprom(self):
         """
@@ -264,7 +272,7 @@ class PeriphManagerBase(object):
                 # In C++, we can only handle dicts if all the values are of the
                 # same type. So we must convert them all to strings here:
                 self.mboard_info[key] = str(self._eeprom_head.get(key, ''))
-            if self._eeprom_head.has_key('pid') and not self._eeprom_head['pid'] in self.pids:
+            if self._eeprom_head.has_key('pid') and self._eeprom_head['pid'] not in self.pids:
                 self.log.error("Found invalid PID in EEPROM: 0x{:04X}. Valid PIDs are: {}".format(
                     self._eeprom_head['pid'],
                     ", ".join(["0x{:04X}".format(x) for x in self.pids]),
@@ -294,7 +302,6 @@ class PeriphManagerBase(object):
         if len(dboard_eeprom_paths) > self.max_num_dboards:
             self.log.warning("Found more EEPROM paths than daughterboards. Ignoring some of them.")
             dboard_eeprom_paths = dboard_eeprom_paths[:self.max_num_dboards]
-        num_dboards = len(dboard_eeprom_paths)
         self.dboards = []
         for dboard_idx, dboard_eeprom_path in enumerate(dboard_eeprom_paths):
             self.log.debug("Initializing dboard {}...".format(dboard_idx))
@@ -323,10 +330,10 @@ class PeriphManagerBase(object):
                 spi_nodes = []
                 self.log.warning("No SPI nodes for dboard {}.".format(dboard_idx))
             dboard_info = {
-                    'eeprom_md': dboard_eeprom_md,
-                    'eeprom_rawdata': dboard_eeprom_rawdata,
-                    'pid': db_pid,
-                    'spi_nodes': spi_nodes,
+                'eeprom_md': dboard_eeprom_md,
+                'eeprom_rawdata': dboard_eeprom_rawdata,
+                'pid': db_pid,
+                'spi_nodes': spi_nodes,
             }
             # This will actually instantiate the dboard class:
             db_class = get_dboard_class_from_pid(db_pid)
@@ -337,6 +344,20 @@ class PeriphManagerBase(object):
         self.log.info("Found {} daughterboard(s).".format(len(self.dboards)))
 
         # self.overlays = ""
+
+    def _init_interfaces(self):
+        """
+        Initialize the list of network interfaces
+        """
+        self.log.trace("Testing available interfaces out of `{}'".format(
+            self.chdr_interfaces
+        ))
+        valid_ifaces = net.get_valid_interfaces(self.chdr_interfaces)
+        self.log.debug("Found CHDR interfaces: `{}'".format(valid_ifaces))
+        self._chdr_interfaces = {
+            x: net.get_iface_info(x)
+            for x in valid_ifaces
+        }
 
     def init(self, args):
         """
@@ -352,6 +373,9 @@ class PeriphManagerBase(object):
         self.log.info("Mboard init() called with device args `{}'.".format(
             ",".join(['{}={}'.format(x, args[x]) for x in args])
         ))
+        self._init_args = args
+        self.log.info("Identifying available network interfaces...")
+        self._init_interfaces()
         self.log.debug("Initializing dboards...")
         for dboard in self.dboards:
             dboard.init(args)
@@ -420,8 +444,3 @@ class PeriphManagerBase(object):
         """
         raise NotImplementedError("_allocate_sid() not implented")
 
-    def get_interfaces(self):
-        """
-        Overload this method in actual device implementation
-        """
-        return []
