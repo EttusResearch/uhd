@@ -101,34 +101,20 @@ DECLARE_CONVERTER({us8}_item32_{end}, 1, {us8}, 1, PRIORITY_GENERAL) {{
 
 TMPL_CONV_S16 = """
 DECLARE_CONVERTER(s16, 1, s16_item32_{end}, 1, PRIORITY_GENERAL) {{
-    const item32_t *input = reinterpret_cast<const item32_t *>(inputs[0]);
-    item32_t *output = reinterpret_cast<item32_t *>(outputs[0]);
+    const uint16_t *input = reinterpret_cast<const uint16_t *>(inputs[0]);
+    uint16_t *output = reinterpret_cast<uint16_t *>(outputs[0]);
 
-    // 1) Copy all the 4-byte tuples
-    size_t n_words = nsamps / 2;
-    for (size_t i = 0; i < n_words; i++) {{
+    for (size_t i = 0; i < nsamps; i++) {{
         output[i] = {to_wire}(input[i]);
-    }}
-    // 2) If nsamps was not a multiple of 2, copy the last one by hand
-    if (nsamps % 2) {{
-        item32_t tmp = item32_t(*reinterpret_cast<const s16_t *>(&input[n_words]));
-        output[n_words] = {to_wire}(tmp);
     }}
 }}
 
 DECLARE_CONVERTER(s16_item32_{end}, 1, s16, 1, PRIORITY_GENERAL) {{
-    const item32_t *input = reinterpret_cast<const item32_t *>(inputs[0]);
-    item32_t *output = reinterpret_cast<item32_t *>(outputs[0]);
+    const uint16_t *input = reinterpret_cast<const uint16_t *>(inputs[0]);
+    uint16_t *output = reinterpret_cast<uint16_t *>(outputs[0]);
 
-    // 1) Copy all the 4-byte tuples
-    size_t n_words = nsamps / 2;
-    for (size_t i = 0; i < n_words; i++) {{
+    for (size_t i = 0; i < nsamps; i++) {{
         output[i] = {to_host}(input[i]);
-    }}
-    // 2) If nsamps was not a multiple of 2, copy the last one by hand
-    if (nsamps % 2) {{
-        item32_t tmp = {to_host}(input[n_words]);
-        *reinterpret_cast<s16_t *>(&output[n_words]) = s16_t(tmp);
     }}
 }}
 """
