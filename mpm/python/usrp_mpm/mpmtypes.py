@@ -64,7 +64,22 @@ class SID(object):
     def set_dst_ep(self, new_addr):
         self.dst_ep = new_addr & 0xFF
 
+    def reversed(self):
+        """
+        Return a reversed SID.
+        """
+        new_sid = SID(self.get())
+        new_sid.src_addr, new_sid.dst_addr = new_sid.dst_addr, new_sid.src_addr
+        new_sid.src_ep, new_sid.dst_ep = new_sid.dst_ep, new_sid.src_ep
+        return new_sid
+
     def get(self):
         return (self.src_addr << 24) | (self.src_ep << 16) | (self.dst_addr << 8) | self.dst_ep
+
+    def __repr__(self):
+        return "{:02X}:{:02X}>{:02X}:{:02X}".format(
+            self.src_addr, self.src_ep,
+            self.dst_addr, self.dst_ep,
+        )
 
 
