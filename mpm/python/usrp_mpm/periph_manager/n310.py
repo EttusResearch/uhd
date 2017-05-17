@@ -95,10 +95,6 @@ class n310(PeriphManagerBase):
     """
     Holds N310 specific attributes and methods
     """
-    # dboard_spimaster_addrs = {"A": "something", "B": "else"}
-    dboard_spimaster_addrs = {"A": "e0006000.spi",}
-    interfaces = {}
-
     #########################################################################
     # Overridables
     #
@@ -124,9 +120,13 @@ class n310(PeriphManagerBase):
 
         # Initialize reference clock
         self._gpios.set("PWREN-CLK-MAINREF")
-        self._ext_clock_freq = N3XX_DEFAULT_EXT_CLOCK_FREQ
+        self._ext_clock_freq = float(
+            args.default_args.get('ext_clock_freq', N3XX_DEFAULT_EXT_CLOCK_FREQ)
+        )
         self._clock_source = None # Gets set in set_clock_source()
-        self.set_clock_source(N3XX_DEFAULT_CLOCK_SOURCE)
+        self.set_clock_source(
+            args.default_args.get('clock_source', N3XX_DEFAULT_CLOCK_SOURCE)
+        )
 
         with open("/sys/class/rfnoc_crossbar/crossbar0/local_addr", "w") as xbar:
             xbar.write("0x2")
