@@ -84,6 +84,7 @@ class netd_impl : public uhd::usrp::device3_impl
   private:
     uhd::device_addr_t get_rx_hints(size_t mb_index);
 
+    uhd::device_addr_t _device_addr;
     std::vector<netd_mboard_impl::uptr> _mb;
     size_t _sid_framer;
 };

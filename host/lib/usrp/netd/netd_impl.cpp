@@ -38,6 +38,7 @@ using namespace uhd;
 netd_mboard_impl::netd_mboard_impl(const std::string& addr)
     : rpc(addr, MPM_RPC_PORT)
 {
+    UHD_LOG_TRACE("MPMD", "Initializing mboard, IP address: " << addr);
     std::map<std::string, std::string> _dev_info =
         rpc.call<dev_info>("get_device_info");
     device_info =
@@ -92,10 +93,12 @@ netd_mboard_impl::uptr netd_mboard_impl::make(const std::string& addr)
 
 bool netd_mboard_impl::claim() { return rpc.call<bool>("reclaim", _rpc_token); }
 
-netd_impl::netd_impl(const device_addr_t& device_addr) :
-    usrp::device3_impl(), _sid_framer(0)
+netd_impl::netd_impl(const device_addr_t& device_addr)
+    : usrp::device3_impl()
+    , _device_addr(device_addr)
+    , _sid_framer(0)
 {
-    UHD_LOGGER_INFO("NETD") << "NETD initialization sequence...";
+    UHD_LOGGER_INFO("NETD") << "NETD initialization sequence. Device args: " << device_addr.to_string();
     _tree->create<std::string>("/name").set("NETD - Series device");
     const device_addrs_t device_args = separate_device_addr(device_addr);
     _mb.reserve(device_args.size());
@@ -216,7 +219,7 @@ both_xports_t netd_impl::make_transport(const sid_t& address,
     std::cout << address.get_dst_addr() << std::endl;
     */
 
-    std::string interface_addr = "192.168.10.2";
+    std::string interface_addr = _device_addr["addr"];
     const uint32_t xbar_src_addr = address.get_src_addr();
     const uint32_t xbar_src_dst = 0;
 
