@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-# support for the SDCC assembler, asx8051
+# support for the SDCC assembler, sdas8051
 SET( ASM_DIALECT "_SDCC" )
 SET( CMAKE_ASM${ASM_DIALECT}_SOURCE_FILE_EXTENSIONS a51 )
 

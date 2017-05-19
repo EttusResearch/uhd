@@ -29,7 +29,7 @@ extern const char InitData[7];
 // The tool is kind of screwed up, in that it doesn't configure some
 // of the ports correctly.  We just use their tables and handle the
 // initialization ourselves.  They also declare that their static
-// initialized data is in xdata, which screws us too.
+// initialized data is in __xdata, which screws us too.
 
 void
 init_gpif (void)

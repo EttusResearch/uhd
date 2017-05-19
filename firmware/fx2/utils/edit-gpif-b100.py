@@ -105,7 +105,7 @@ def edit_gpif (input_name, output_name, inline_name):
         check_flow_state (line, flow_state_dict)
 
         line = re.sub (r'#include', r'// #include', line)
-        line = re.sub (r'xdata ', r'', line)
+        line = re.sub (r'__xdata ', r'', line)
         if re.search (r'GpifInit', line):
             break
         
