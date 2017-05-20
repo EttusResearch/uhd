@@ -185,7 +185,10 @@ void eiscat_radio_ctrl_impl::set_rx_antenna(const std::string &ant, const size_t
         UHD_LOG_TRACE("EISCAT", "Setting antenna to 'BF' (which is a no-op)");
         return;
     }
-    if (ant.size() < 3 or ant.size() > 4 or (ant.substr(0, 2) != "Rx" and ant.substr(0, 2) != "BF")) {
+    if (ant.size() < 3 or ant.size() > 4
+        or (ant.substr(0, 2) != "Rx"
+            and ant.substr(0, 2) != "RX"
+            and ant.substr(0, 2) != "BF")) {
         throw uhd::value_error(str(
             boost::format("EISCAT: Invalid antenna selection: %s")
             % ant
