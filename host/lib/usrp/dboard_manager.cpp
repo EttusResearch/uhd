@@ -96,7 +96,7 @@ static void register_dboard_key(
     const std::vector<std::string> &subdev_names,
     dboard_manager::dboard_ctor_t db_container_ctor
 ){
-    UHD_LOGGER_TRACE("DBMGR") << "registering: " << name;
+    // UHD_LOGGER_TRACE("DBMGR") << "registering: " << name;
     if (get_id_to_args_map().has_key(dboard_key)){
 
         if (dboard_key.is_xcvr()) throw uhd::key_error(str(boost::format(

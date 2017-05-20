@@ -46,8 +46,8 @@ UHD_SINGLETON_FCN(string_map_t,     get_recovery_strings);
 void uhd::image_loader::register_image_loader(const std::string &device_type,
                                               const loader_fcn_t &loader_fcn,
                                               const std::string &recovery_instructions){
-    UHD_LOGGER_TRACE("UHD") << "Registering image loader and recovery instructions for "
-                                     << device_type;
+    // UHD_LOGGER_TRACE("UHD") << "Registering image loader and recovery instructions for "
+    //                                 << device_type;
 
     get_image_loaders().insert(loader_fcn_pair_t(device_type, loader_fcn));
     get_recovery_strings().insert(string_pair_t(device_type, recovery_instructions));
