@@ -14,7 +14,7 @@
       <address>159</address>
     </setreg>
     <setreg>
-      <!--1-Bit register. Are we sending the upper or lower 5 beam contirbutions? -->
+      <!--1-Bit register. Are we sending the upper or lower 5 beam contributions? 2 means we ignore contributions -->
       <name>SR_BEAMS_TO_NEIGHBOR</name>
       <address>202</address>
       <value>2</value>
@@ -25,27 +25,26 @@
       <address>203</address>
     </setreg>
     <setreg>
-      <!--1-Bit register. Are we expecting previous contributions? 1==yes we are -->
       <name>SR_FIR_COMMANDS_RELOAD</name>
-      <address>131</address>
+      <address>198</address>
     </setreg>
     <setreg>
       <name>SR_FIR_COMMANDS_CTRL_TIME_HI</name>
-      <address>132</address>
+      <address>199</address>
     </setreg>
     <setreg>
       <name>SR_FIR_COMMANDS_CTRL_TIME_LO</name>
-      <address>133</address>
+      <address>200</address>
     </setreg>
     <setreg>
       <!-- Use this to actually update taps in RAM -->
       <name>SR_FIR_BRAM_WRITE_TAPS</name>
-      <address>134</address>
+      <address>201</address>
     </setreg>
-    <!--<setreg>-->
-      <!--<name>SR_CHANNEL_GAIN_0</name>-->
-      <!--<address>190</address>-->
-    <!--</setreg>-->
+    <setreg>
+      <name>SR_CHANNEL_GAIN_0</name>
+      <address>204</address>
+    </setreg>
     <readback>
       <name>RB_NUM_TAPS</name>
       <address>0</address>
@@ -87,11 +86,18 @@
       <check_message>use_prev must be 0 or 1.</check_message>
       <action>SR_WRITE("SR_PREV_OR_NULL", $use_prev) AND SR_WRITE("SR_PREV_OR_NULL", $use_prev)</action>
     </arg>
+     <!--4-Bit register. 
+       [0] Are we sending the upper or lower 5 beam contirbutions? 
+       [1] = 1, beams_to_here goes directly to output (bypass neighbour contributions, single USRP)
+       [2] = 1, input to rx_receive direct from jesd_core (bypassing beamforming)
+       [3] = 1, if bypassing beamforming, instead output counter 00-FF
+       to output counter [3:0] = 0d10.
+       to output jesd streams directly [3:0] = 6 -->
     <arg>
-      <name>neighbors</name>
+      <name>choose_beams</name>
       <type>int</type>
-      <value>2</value>
-      <action>SR_WRITE("SR_BEAMS_TO_NEIGHBOR", 2)</action>
+      <value>6</value>
+      <action>SR_WRITE("SR_BEAMS_TO_NEIGHBOR", $choose_beams)</action>
     </arg>
     <arg>
       <name>channel_enable</name>
@@ -103,6 +109,7 @@
       <name>gain</name>
       <type>double</type>
       <value>1.0</value>
+      <action>SR_WRITE("SR_CHANNEL_GAIN_0", 131071)</action>
       <port>0</port>
     </arg>
     <arg>

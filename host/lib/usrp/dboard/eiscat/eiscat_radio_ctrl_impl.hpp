@@ -31,7 +31,8 @@ namespace uhd {
 class eiscat_radio_ctrl_impl : public radio_ctrl_impl
 {
 public:
-    typedef boost::shared_ptr<eiscat_radio_ctrl_impl> sptr;
+    using sptr = boost::shared_ptr<eiscat_radio_ctrl_impl>;
+    using fir_tap_t = int32_t;
 
     /************************************************************************
      * Structors
@@ -46,6 +47,21 @@ public:
     double set_rate(double rate);
 
     void set_tx_antenna(const std::string &ant, const size_t chan);
+
+    /*! Configures FPGA switching for antenna selection
+     *
+     *
+     * Valid antenna values:
+     * - BF: This is the default. Will apply the beamforming matrix in whatever
+     *   state it currently is.
+     * - Rx0...Rx15: Will mux the antenna signal 0...15 straight to this
+     *   channel. Note that this will disable the FIR matrix entirely.
+     * - BF0...BF15: Will configure the FIR filter matrix such that only the
+     *   contributions from antenna 0...15 are passed to this channel.
+     *
+     *
+     * \throws uhd::value_error if the antenna value was not valid
+     */
     void set_rx_antenna(const std::string &ant, const size_t chan);
 
     double set_tx_frequency(const double freq, const size_t chan);
@@ -65,6 +81,56 @@ protected:
     virtual bool check_radio_config();
 
 private:
+
+    /*! Write filter taps for a specific FIR filter.
+     *
+     * Note: If the number of taps is smaller than the number of available
+     * filter taps, it is padded with zero.
+     *
+     * \param fir_idx The index of the FIR filter we are reprogramming
+     * \param taps A list of FIR filter taps for this filter.
+     *
+     * \throws uhd::value_error if the number of taps is longer than the number
+     *                          of taps that the filter can handle, or if any
+     *                          tap has more bits than allowed.
+     */
+    void write_fir_taps(
+        const size_t fir_idx,
+        const std::vector<fir_tap_t> &taps
+    );
+
+
+    /*! Choose a filter to be applied between an output beam and antenna input
+     *
+     * \param beam_index Beam index
+     * \param antenna_index Antenna index
+     * \param fir_index The index of the FIR filter taps that get applied
+     * \param time_spec If non-zero, the taps get applied at this time
+     */
+    void select_filter(
+        const size_t beam_index,
+        const size_t antenna_index,
+        const size_t fir_index,
+        const uhd::time_spec_t &time_spec
+    );
+
+    /*! Sets the digital gain on a specific antenna
+     *
+     * \param antenna_idx Antenna for which this gain setting applies
+     * \param normalized_gain A value in [0, 1] which gets converted to a
+     *                        digital gain value
+     */
+    void set_antenna_gain(
+        const size_t antenna_idx,
+        const double normalized_gain
+    );
+
+    /*! The number of channels this block outputs
+     *
+     * This is *not* the number of antennas, but the number of streams a single
+     * block outputs to the crossbar.
+     */
+    size_t _num_ports;
 
 }; /* class radio_ctrl_impl */
 
