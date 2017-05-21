@@ -19,11 +19,8 @@
 # This file included, use CMake directory variables
 ########################################################################
 
-########################################################################
-# Conditionally configure the X300 support
-########################################################################
-IF(ENABLE_NETD)
+IF(ENABLE_MPMD)
     LIBUHD_APPEND_SOURCES(
-        ${CMAKE_CURRENT_SOURCE_DIR}/netd_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/mpmd_impl.cpp
     )
-ENDIF(ENABLE_NETD)
+ENDIF(ENABLE_MPMD)

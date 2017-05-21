@@ -15,8 +15,8 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_NETD_IMPL_HPP
-#define INCLUDED_NETD_IMPL_HPP
+#ifndef INCLUDED_MPMD_IMPL_HPP
+#define INCLUDED_MPMD_IMPL_HPP
 #include "../../utils/rpc.hpp"
 #include "../device3/device3_impl.hpp"
 #include <uhd/stream.hpp>
@@ -25,14 +25,14 @@
 #include <uhd/utils/tasks.hpp>
 #include <map>
 
-static const size_t NETD_RX_SW_BUFF_SIZE_ETH        = 0x2000000;//32MiB    For an ~8k frame size any size >32MiB is just wasted buffer space
-static const size_t NETD_RX_SW_BUFF_SIZE_ETH_MACOS  = 0x100000; //1Mib
+static const size_t MPMD_RX_SW_BUFF_SIZE_ETH        = 0x2000000;//32MiB    For an ~8k frame size any size >32MiB is just wasted buffer space
+static const size_t MPMD_RX_SW_BUFF_SIZE_ETH_MACOS  = 0x100000; //1Mib
 
 static const size_t MPM_DISCOVERY_PORT = 49600;
 static const size_t MPM_RPC_PORT = 49601;
 static const char MPM_DISCOVERY_CMD[] = "MPM-DISC";
 static const char MPM_ECHO_CMD[] = "MPM-ECHO";
-static const size_t NETD_10GE_DATA_FRAME_MAX_SIZE = 8000; // CHDR packet size in bytes
+static const size_t MPMD_10GE_DATA_FRAME_MAX_SIZE = 8000; // CHDR packet size in bytes
 
 struct frame_size_t
 {
@@ -40,13 +40,13 @@ struct frame_size_t
     size_t send_frame_size;
 };
 
-class netd_mboard_impl
+class mpmd_mboard_impl
 {
   public:
-    using uptr = std::unique_ptr<netd_mboard_impl>;
+    using uptr = std::unique_ptr<mpmd_mboard_impl>;
     using dev_info = std::map<std::string, std::string>;
-    netd_mboard_impl(const std::string& addr);
-    ~netd_mboard_impl();
+    mpmd_mboard_impl(const std::string& addr);
+    ~mpmd_mboard_impl();
     static uptr make(const std::string& addr);
 
     bool initialization_done = false;
@@ -69,13 +69,13 @@ class netd_mboard_impl
     uhd::task::sptr _claimer_task;
 };
 
-class netd_impl : public uhd::usrp::device3_impl
+class mpmd_impl : public uhd::usrp::device3_impl
 {
   public:
-    netd_impl(const uhd::device_addr_t& device_addr);
-    ~netd_impl();
+    mpmd_impl(const uhd::device_addr_t& device_addr);
+    ~mpmd_impl();
 
-    netd_mboard_impl::uptr setup_mb(const size_t mb_i,
+    mpmd_mboard_impl::uptr setup_mb(const size_t mb_i,
                                     const uhd::device_addr_t& dev_addr);
     uhd::both_xports_t make_transport(const uhd::sid_t&,
                                       uhd::usrp::device3_impl::xport_type_t,
@@ -85,9 +85,9 @@ class netd_impl : public uhd::usrp::device3_impl
     uhd::device_addr_t get_rx_hints(size_t mb_index);
 
     uhd::device_addr_t _device_addr;
-    std::vector<netd_mboard_impl::uptr> _mb;
+    std::vector<mpmd_mboard_impl::uptr> _mb;
     size_t _sid_framer;
 };
-uhd::device_addrs_t netd_find(const uhd::device_addr_t& hint_);
-#endif /* INCLUDED_NETD_IMPL_HPP */
+uhd::device_addrs_t mpmd_find(const uhd::device_addr_t& hint_);
+#endif /* INCLUDED_MPMD_IMPL_HPP */
 // vim: sw=4 expandtab:

@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "netd_impl.hpp"
+#include "mpmd_impl.hpp"
 #include <../device3/device3_impl.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/property_tree.hpp>
@@ -35,7 +35,7 @@
 
 using namespace uhd;
 
-netd_mboard_impl::netd_mboard_impl(const std::string& addr)
+mpmd_mboard_impl::mpmd_mboard_impl(const std::string& addr)
     : rpc(addr, MPM_RPC_PORT)
 {
     UHD_LOG_TRACE("MPMD", "Initializing mboard, IP address: " << addr);
@@ -46,11 +46,11 @@ netd_mboard_impl::netd_mboard_impl(const std::string& addr)
     // Get initial claim on mboard
     _rpc_token = rpc.call<std::string>("claim", "UHD - Session 01"); // make this configurable with device_addr?
     if (_rpc_token.empty()){
-        throw uhd::value_error("netd device claiming failed!");
+        throw uhd::value_error("mpmd device claiming failed!");
     }
     _claimer_task = task::make([this] {
         if (not this->claim()) {
-            throw uhd::value_error("netd device reclaiming loop failed!");
+            throw uhd::value_error("mpmd device reclaiming loop failed!");
         };
         boost::this_thread::sleep_for(boost::chrono::milliseconds(1000));
     });
@@ -73,7 +73,7 @@ netd_mboard_impl::netd_mboard_impl(const std::string& addr)
     //}
 }
 
-uhd::sid_t netd_mboard_impl::allocate_sid(const uint16_t port,
+uhd::sid_t mpmd_mboard_impl::allocate_sid(const uint16_t port,
                                           const uhd::sid_t address,
                                           const uint32_t xbar_src_addr,
                                           const uint32_t xbar_src_port){
@@ -81,25 +81,25 @@ uhd::sid_t netd_mboard_impl::allocate_sid(const uint16_t port,
                                             address.get(), xbar_src_addr, xbar_src_port);
     return sid;
 }
-netd_mboard_impl::~netd_mboard_impl() {}
+mpmd_mboard_impl::~mpmd_mboard_impl() {}
 
-netd_mboard_impl::uptr netd_mboard_impl::make(const std::string& addr)
+mpmd_mboard_impl::uptr mpmd_mboard_impl::make(const std::string& addr)
 {
-    netd_mboard_impl::uptr mb =
-        netd_mboard_impl::uptr(new netd_mboard_impl(addr));
+    mpmd_mboard_impl::uptr mb =
+        mpmd_mboard_impl::uptr(new mpmd_mboard_impl(addr));
     // implicit move
     return mb;
 }
 
-bool netd_mboard_impl::claim() { return rpc.call<bool>("reclaim", _rpc_token); }
+bool mpmd_mboard_impl::claim() { return rpc.call<bool>("reclaim", _rpc_token); }
 
-netd_impl::netd_impl(const device_addr_t& device_addr)
+mpmd_impl::mpmd_impl(const device_addr_t& device_addr)
     : usrp::device3_impl()
     , _device_addr(device_addr)
     , _sid_framer(0)
 {
-    UHD_LOGGER_INFO("NETD") << "NETD initialization sequence. Device args: " << device_addr.to_string();
-    _tree->create<std::string>("/name").set("NETD - Series device");
+    UHD_LOGGER_INFO("MPMD") << "MPMD initialization sequence. Device args: " << device_addr.to_string();
+    _tree->create<std::string>("/name").set("MPMD - Series device");
     const device_addrs_t device_args = separate_device_addr(device_addr);
     _mb.reserve(device_args.size());
     for (size_t mb_i = 0; mb_i < device_args.size(); ++mb_i) {
@@ -120,13 +120,13 @@ netd_impl::netd_impl(const device_addr_t& device_addr)
     }
 }
 
-netd_impl::~netd_impl() {}
+mpmd_impl::~mpmd_impl() {}
 
-netd_mboard_impl::uptr netd_impl::setup_mb(const size_t mb_i,
+mpmd_mboard_impl::uptr mpmd_impl::setup_mb(const size_t mb_i,
                                            const uhd::device_addr_t& dev_addr)
 {
     const fs_path mb_path = "/mboards/" + std::to_string(mb_i);
-    netd_mboard_impl::uptr mb = netd_mboard_impl::make(dev_addr["addr"]);
+    mpmd_mboard_impl::uptr mb = mpmd_mboard_impl::make(dev_addr["addr"]);
     mb->initialization_done = false;
     std::vector<std::string> addrs;
     const std::string eth0_addr = dev_addr["addr"];
@@ -170,7 +170,7 @@ netd_mboard_impl::uptr netd_impl::setup_mb(const size_t mb_i,
 
 
 // TODO this does not consider the liberio use case!
-uhd::device_addr_t netd_impl::get_rx_hints(size_t /* mb_index */)
+uhd::device_addr_t mpmd_impl::get_rx_hints(size_t /* mb_index */)
 {
     //device_addr_t rx_hints = _mb[mb_index].recv_args;
     device_addr_t rx_hints; // TODO don't ignore what the user tells us
@@ -182,10 +182,10 @@ uhd::device_addr_t netd_impl::get_rx_hints(size_t /* mb_index */)
         //For nirio, the buffer size is not configurable by the user
         #if defined(UHD_PLATFORM_MACOS) || defined(UHD_PLATFORM_BSD)
             //limit buffer resize on macos or it will error
-            rx_hints["recv_buff_size"] = boost::lexical_cast<std::string>(NETD_RX_SW_BUFF_SIZE_ETH_MACOS);
+            rx_hints["recv_buff_size"] = boost::lexical_cast<std::string>(MPMD_RX_SW_BUFF_SIZE_ETH_MACOS);
         #elif defined(UHD_PLATFORM_LINUX) || defined(UHD_PLATFORM_WIN32)
             //set to half-a-second of buffering at max rate
-            rx_hints["recv_buff_size"] = boost::lexical_cast<std::string>(NETD_RX_SW_BUFF_SIZE_ETH);
+            rx_hints["recv_buff_size"] = boost::lexical_cast<std::string>(MPMD_RX_SW_BUFF_SIZE_ETH);
         #endif
     }
     return rx_hints;
@@ -201,7 +201,7 @@ uhd::device_addr_t netd_impl::get_rx_hints(size_t /* mb_index */)
 // }
 // Everything fake below here
 
-both_xports_t netd_impl::make_transport(const sid_t& address,
+both_xports_t mpmd_impl::make_transport(const sid_t& address,
                                         usrp::device3_impl::xport_type_t xport_type,
                                         const uhd::device_addr_t& args)
 {
@@ -251,7 +251,7 @@ both_xports_t netd_impl::make_transport(const sid_t& address,
     return xports;
 }
 
-device_addrs_t netd_find_with_addr(const device_addr_t& hint_)
+device_addrs_t mpmd_find_with_addr(const device_addr_t& hint_)
 {
     transport::udp_simple::sptr comm = transport::udp_simple::make_broadcast(
         hint_["addr"], std::to_string(MPM_DISCOVERY_PORT));
@@ -293,7 +293,7 @@ device_addrs_t netd_find_with_addr(const device_addr_t& hint_)
         }
         device_addr_t new_addr;
         new_addr["addr"] = recv_addr;
-        new_addr["type"] = "netd"; // hwd will overwrite this
+        new_addr["type"] = "mpmd"; // hwd will overwrite this
         // remove ident string and put other informations into device_addr dict
         result.erase(result.begin());
         // parse key-value pairs in the discovery string and add them to the
@@ -310,7 +310,7 @@ device_addrs_t netd_find_with_addr(const device_addr_t& hint_)
     return addrs;
 };
 
-device_addrs_t netd_find(const device_addr_t& hint_)
+device_addrs_t mpmd_find(const device_addr_t& hint_)
 {
     // handle cases:
     //
@@ -334,7 +334,7 @@ device_addrs_t netd_find(const device_addr_t& hint_)
             if (not hint.has_key("addr")) { // maybe allow other attributes as well
                 return device_addrs_t();
             }
-            device_addrs_t reply_addrs = netd_find_with_addr(hint);
+            device_addrs_t reply_addrs = mpmd_find_with_addr(hint);
             if (reply_addrs.size() > 1) {
                 throw uhd::value_error(
                     str(boost::format("Could not resolve device hint \"%s\" to "
@@ -353,26 +353,26 @@ device_addrs_t netd_find(const device_addr_t& hint_)
 
     if (hint.has_key("addr")) {
         // is this safe?
-        return netd_find_with_addr(hint);
+        return mpmd_find_with_addr(hint);
     }
 
     for (const transport::if_addrs_t& if_addr : transport::get_if_addrs()) {
         device_addr_t new_hint = hint;
         new_hint["addr"] = if_addr.bcast;
 
-        device_addrs_t reply_addrs = netd_find_with_addr(new_hint);
+        device_addrs_t reply_addrs = mpmd_find_with_addr(new_hint);
         addrs.insert(addrs.begin(), reply_addrs.begin(), reply_addrs.end());
     }
     return addrs;
 }
 
-static device::sptr netd_make(const device_addr_t& device_addr)
+static device::sptr mpmd_make(const device_addr_t& device_addr)
 {
-    return device::sptr(boost::make_shared<netd_impl>(device_addr));
+    return device::sptr(boost::make_shared<mpmd_impl>(device_addr));
 }
 
-UHD_STATIC_BLOCK(register_netd_device)
+UHD_STATIC_BLOCK(register_mpmd_device)
 {
-    device::register_device(&netd_find, &netd_make, device::USRP);
+    device::register_device(&mpmd_find, &mpmd_make, device::USRP);
 }
 // vim: sw=4 expandtab:

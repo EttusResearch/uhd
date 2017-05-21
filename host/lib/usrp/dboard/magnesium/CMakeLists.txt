@@ -15,10 +15,10 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-IF(ENABLE_NETD)
+IF(ENABLE_MPMD)
     LIST(APPEND MAGNESIUM_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/magnesium_radio_ctrl_impl.cpp
     )
     LIBUHD_APPEND_SOURCES(${MAGNESIUM_SOURCES})
-ENDIF(ENABLE_NETD)
+ENDIF(ENABLE_MPMD)
 
