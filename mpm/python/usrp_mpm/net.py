@@ -37,7 +37,8 @@ def get_valid_interfaces(iface_list):
             continue
         valid_iface_idx = valid_iface_idx[0]
         link_info = ipr.get_links(valid_iface_idx)[0]
-        if link_info.get_attr('IFLA_OPERSTATE') == 'UP':
+        if link_info.get_attr('IFLA_OPERSTATE') == 'UP' \
+                and len(get_iface_addrs(link_info.get_attr('IFLA_ADDRESS'))):
             assert link_info.get_attr('IFLA_IFNAME') == iface
             valid_ifaces.append(iface)
     ipr.close()

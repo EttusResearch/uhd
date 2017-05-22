@@ -353,7 +353,10 @@ class PeriphManagerBase(object):
             self.chdr_interfaces
         ))
         valid_ifaces = net.get_valid_interfaces(self.chdr_interfaces)
-        self.log.debug("Found CHDR interfaces: `{}'".format(valid_ifaces))
+        if len(valid_ifaces):
+            self.log.debug("Found CHDR interfaces: `{}'".format(valid_ifaces))
+        else:
+            self.log.warning("No CHDR interfaces found!")
         self._chdr_interfaces = {
             x: net.get_iface_info(x)
             for x in valid_ifaces
