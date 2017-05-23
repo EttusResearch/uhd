@@ -324,6 +324,16 @@ class PeriphManagerBase(object):
                     self.log.warning("No dboard PID found!")
                 else:
                     self.log.debug("Found dboard PID in EEPROM: 0x{:04X}".format(db_pid))
+            db_class = get_dboard_class_from_pid(db_pid)
+            if db_class is None:
+                self.log.warning("Could not identify daughterboard class for PID {:04X}!".format(db_pid))
+                continue
+            self.log.trace("Dboard requires device tree overlays: {}".format(
+                db_class.dt_overlays
+            ))
+            for overlay in db_class.dt_overlays:
+                # FIXME don't hardcode XG
+                dtoverlay.apply_overlay_safe(overlay.format(sfp="XG"))
             if len(self.dboard_spimaster_addrs) > dboard_idx:
                 spi_nodes = sorted(get_spidev_nodes(self.dboard_spimaster_addrs[dboard_idx]))
                 self.log.debug("Found spidev nodes: {0}".format(spi_nodes))
@@ -337,16 +347,6 @@ class PeriphManagerBase(object):
                 'spi_nodes': spi_nodes,
             }
             # This will actually instantiate the dboard class:
-            db_class = get_dboard_class_from_pid(db_pid)
-            if db_class is None:
-                self.log.warning("Could not identify daughterboard class for PID {:04X}!".format(db_pid))
-                continue
-            self.log.trace("Dboard requires device tree overlays: {}".format(
-                db_class.dt_overlays
-            ))
-            for overlay in db_class.dt_overlays:
-                # FIXME don't hardcode XG
-                dtoverlay.apply_overlay_safe(overlay.format(sfp="XG"))
             self.dboards.append(db_class(dboard_idx, **dboard_info))
         self.log.info("Found {} daughterboard(s).".format(len(self.dboards)))
 

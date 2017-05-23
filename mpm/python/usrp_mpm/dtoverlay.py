@@ -42,6 +42,17 @@ def get_overlay_attrs(overlay_name):
             attrs[attr_name] = attr_val
     return attrs
 
+def is_applied(overlay_name):
+    """
+    Returns True if the overlay is already applied, False if not.
+    """
+    try:
+        return open(
+            os.path.join(SYSFS_OVERLAY_BASE_DIR, overlay_name, 'status')
+        ).read().strip() == 'applied'
+    except IOError:
+        return False
+
 def list_overlays(applied_only=False):
     """
     List all registered kernel modules. Returns a dict of dicts:
@@ -74,14 +85,20 @@ def apply_overlay(overlay_name):
     Applies the given overlay. Does not check if the overlay is loaded.
     """
     get_logger("DTO").trace("Applying overlay `{}'...".format(overlay_name))
-    # TODO don't use this script
-    os.system("overlay add {}".format(overlay_name))
+    overlay_path = os.path.join(SYSFS_OVERLAY_BASE_DIR, overlay_name)
+    if not os.path.exists(overlay_path):
+        os.mkdir(overlay_path)
+    open(
+        os.path.join(SYSFS_OVERLAY_BASE_DIR, overlay_name, 'path'), 'w'
+    ).write("{}.dtbo".format(overlay_name))
 
 def apply_overlay_safe(overlay_name):
     """
     Only apply an overlay if it's not yet applied.
+
+    Finally, checks that the overlay was applied and throws an exception if not.
     """
-    if overlay_name in list_overlays(applied_only=True).keys():
+    if is_applied(overlay_name):
         get_logger("DTO").debug(
             "Overlay `{}' was already applied, not applying again.".format(
                 overlay_name
@@ -89,14 +106,15 @@ def apply_overlay_safe(overlay_name):
         )
     else:
         apply_overlay(overlay_name)
+    if not is_applied(overlay_name):
+        raise RuntimeError("Failed to apply overlay `{}'".format(overlay_name))
 
 def rm_overlay(overlay_name):
     """
     Removes the given overlay. Does not check if the overlay is loaded.
     """
     get_logger("DTO").trace("Removing overlay `{}'...".format(overlay_name))
-    # TODO don't use this script
-    os.system("overlay rm {}".format(overlay_name))
+    os.rmdir(os.path.join(SYSFS_OVERLAY_BASE_DIR, overlay_name))
 
 def rm_overlay_safe(overlay_name):
     """
