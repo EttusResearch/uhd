@@ -38,12 +38,19 @@ class DboardManagerBase(object):
     # maps these keys to actual spidev paths. Also throws a warning/error if
     # the SPI configuration is invalid.
     spi_chipselect = {}
-    # Lists device tree overlays that need to be applied before this class can
-    # be used. List of strings. If strings contain the token {sfp}, it will be
-    # expanded to the flavour of SFP configuration is (XG, 1G, ...).
-    # Example: 'magnesium-{sfp}' could get expanded to 'eiscat-XG'.
-    # Are applied in order.
-    dt_overlays = []
+    @staticmethod
+    def list_required_dt_overlays(eeprom_md, sfp_config, device_args):
+        """
+        Lists device tree overlays that need to be applied before this class can
+        be used. List of strings.
+        Are applied in order.
+
+        eeprom_md -- Dictionary of info read out from the dboard EEPROM
+        sfp_config -- A string identifying the configuration of the SFP ports.
+                      Example: "XG", "HG", "XA", ...
+        device_args -- Arbitrary dictionary of info, typically user-defined
+        """
+        return []
 
     def __init__(self, slot_idx, **kwargs):
         self.log = get_logger('dboardManager')
