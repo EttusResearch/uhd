@@ -95,36 +95,44 @@ static UHD_INLINE size_t ZF_STREAM_OFF(const size_t which)
 struct e300_fifo_poll_waiter
 {
     e300_fifo_poll_waiter(const int fd):
-        fd(fd)
+        _fd(fd),
+        _poll_claimed(false)
     {
         //NOP
     }
 
     void wait(const double timeout)
     {
-        if (_poll_claimed.cas(1, 0))
+        if (timeout == 0) {
+            return;
+        }
+
+        boost::mutex::scoped_lock l(_mutex);
+        if (_poll_claimed)
         {
-            boost::mutex::scoped_lock l(mutex);
-            cond.wait(l);
+            _cond.timed_wait(l, boost::posix_time::microseconds(timeout*1000000));
         }
         else
         {
+            _poll_claimed = true;
+            l.unlock();
             struct pollfd fds[1];
-            fds[0].fd = fd;
+            fds[0].fd = _fd;
             fds[0].events = POLLIN;
             ::poll(fds, 1, long(timeout*1000));
             if (fds[0].revents & POLLIN)
-                ::read(fd, NULL, 0);
+                ::read(_fd, NULL, 0);
 
-            _poll_claimed.write(0);
-            cond.notify_all();
+            l.lock();
+            _poll_claimed = 0;
+            _cond.notify_all();
         }
     }
 
-    uhd::atomic_uint32_t _poll_claimed;
-    boost::condition_variable cond;
-    boost::mutex mutex;
-    int fd;
+    boost::condition_variable _cond;
+    boost::mutex _mutex;
+    int _fd;
+    bool _poll_claimed;
 };
 
 static const size_t DEFAULT_FRAME_SIZE = 2048;
@@ -236,7 +244,7 @@ public:
     UHD_INLINE typename T::sptr get_buff(const double timeout)
     {
         const time_spec_t exit_time = time_spec_t::get_system_time() + time_spec_t(timeout);
-        do
+        while (1)
         {
             if (zf_peek32(_addrs.ctrl + ARBITER_RB_STATUS_OCC))
             {
@@ -248,10 +256,12 @@ public:
                     _index = 0;
                 return _buffs[_index++]->get_new<T>();
             }
+            if (time_spec_t::get_system_time() > exit_time) {
+                break;
+            }
             _waiter->wait(timeout);
             //boost::this_thread::sleep(boost::posix_time::milliseconds(1));
         }
-        while (time_spec_t::get_system_time() < exit_time);
 
         return typename T::sptr();
     }
