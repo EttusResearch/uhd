@@ -238,6 +238,17 @@ class PeriphManagerBase(object):
     # availability. If the list is empty, no CHDR traffic will be possible over
     # the network. Example: ['eth1', 'eth2']
     chdr_interfaces = []
+    @staticmethod
+    def list_required_dt_overlays(eeprom_md, device_args):
+        """
+        Lists device tree overlays that need to be applied before this class can
+        be used. List of strings.
+        Are applied in order.
+
+        eeprom_md -- Dictionary of info read out from the mboard EEPROM
+        device_args -- Arbitrary dictionary of info, typically user-defined
+        """
+        return []
 
 
     def __init__(self, args):
@@ -248,6 +259,7 @@ class PeriphManagerBase(object):
         self.log = get_logger('PeriphManager')
         self.claimed = False
         self._init_mboard_with_eeprom()
+        self._init_mboard_overlays(self._eeprom_head, args)
         self._init_dboards(args.override_db_pids)
         self._available_endpoints = range(256)
         self._init_args = {}
@@ -285,11 +297,39 @@ class PeriphManagerBase(object):
             self._eeprom_rawdata = ''
         self.log.info("Device serial number: {}".format(self.mboard_info.get('serial', 'n/a')))
 
+    def _init_mboard_overlays(self, eeprom_md, device_args):
+        """
+        """
+        requested_overlays = self.list_required_dt_overlays(
+            eeprom_md,
+            device_args,
+        )
+        self.log.trace("Motherboard requires device tree overlays: {}".format(
+            requested_overlays
+        ))
+        for overlay in requested_overlays:
+            dtoverlay.apply_overlay_safe(overlay)
+
 
     def _init_dboards(self, override_dboard_pids=None):
         """
         Initialize all the daughterboards
         """
+        def _init_dboards_overlay(db_class):
+            """
+            Load the required overlays for this dboard.
+            """
+            requested_overlays = db_class.list_required_dt_overlays(
+                dboard_eeprom_md,
+                'XG', # FIXME don't hardcode
+                {}, # FIXME don't hardcode
+            )
+            self.log.trace("Dboard requires device tree overlays: {}".format(
+                requested_overlays
+            ))
+            for overlay in requested_overlays:
+                dtoverlay.apply_overlay_safe(overlay)
+        # Go, go, go!
         override_dboard_pids = override_dboard_pids or []
         dboard_eeprom_addrs = self.dboard_eeprom_addr \
                               if isinstance(self.dboard_eeprom_addr, list) \
@@ -328,16 +368,7 @@ class PeriphManagerBase(object):
             if db_class is None:
                 self.log.warning("Could not identify daughterboard class for PID {:04X}!".format(db_pid))
                 continue
-            requested_overlays = db_class.list_required_dt_overlays(
-                dboard_eeprom_md,
-                'XG', # FIXME don't hardcode
-                {}, # FIXME don't hardcode
-            )
-            self.log.trace("Dboard requires device tree overlays: {}".format(
-                requested_overlays
-            ))
-            for overlay in requested_overlays:
-                dtoverlay.apply_overlay_safe(overlay)
+            _init_dboards_overlay(db_class)
             if len(self.dboard_spimaster_addrs) > dboard_idx:
                 spi_nodes = sorted(get_spidev_nodes(self.dboard_spimaster_addrs[dboard_idx]))
                 self.log.debug("Found spidev nodes: {0}".format(spi_nodes))
