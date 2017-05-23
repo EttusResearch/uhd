@@ -33,6 +33,8 @@ using namespace uhd::rfnoc;
 namespace {
     const size_t SR_ANTENNA_GAIN_BASE     = 204;
     const size_t SR_ANTENNA_SELECT_BASE   = 192; // Note: On other dboards, 192 is DB_GPIO address space
+    const size_t RB_CHOOSE_BEAMS          = 10;
+
 
     const double EISCAT_TICK_RATE         = 208e6; // Hz
     const double EISCAT_RADIO_RATE        = 104e6; // Hz
@@ -53,7 +55,13 @@ namespace {
     const size_t EISCAT_NUM_FIR_TAPS      = 10;
     const size_t EISCAT_NUM_FIR_SETS      = 1024; // BRAM must be at least EISCAT_NUM_FIR_TAPS * EISCAT_NUM_FIR_SETS
     const size_t EISCAT_FIR_INDEX_IMPULSE = 1002;
-    const size_t EISCAT_FIR_INDEX_ZEROS   = 1003; // FIXME
+    const size_t EISCAT_FIR_INDEX_ZEROS   = 1003;
+
+    const uint32_t EISCAT_CONTRIB_LOWER   = 0<<0;
+    const uint32_t EISCAT_CONTRIB_UPPER   = 1<<0;
+    const uint32_t EISCAT_SKIP_NEIGHBOURS = 1<<1;
+    const uint32_t EISCAT_BYPASS_MATRIX   = 1<<2;
+    const uint32_t EISCAT_OUTPUT_COUNTER  = 1<<3;
 };
 
 
@@ -77,10 +85,37 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(eiscat_radio_ctrl)
     for (size_t i = 0; i < EISCAT_NUM_ANTENNAS; i++) {
         _tree->access<double>(get_arg_path("gain", i) / "value")
             .set_coercer([](double gain){ return std::max(-1.0, std::min(1.0, gain)); })
-            .add_coerced_subscriber([this, i](double gain){ this->set_antenna_gain(i, gain); })
+            .add_coerced_subscriber([this, i](double gain){
+                this->set_antenna_gain(i, gain);
+            })
             .set(EISCAT_DEFAULT_NORM_GAIN)
         ;
     }
+
+    /**** Add subscribers for our special properties ************************/
+    _tree->access<int>(get_arg_path("choose_beams", 0) / "value")
+        .add_coerced_subscriber([this](int choose_beams){
+            this->set_beam_selection(choose_beams);
+        })
+        .update()
+    ;
+    _tree->access<bool>(get_arg_path("enable_firs", 0) / "value")
+        .add_coerced_subscriber([this](int enable){
+            this->enable_firs(bool(enable));
+        })
+        .update()
+    ;
+    _tree->access<bool>(get_arg_path("enable_counter", 0) / "value")
+        .add_coerced_subscriber([this](int enable){
+            this->enable_counter(bool(enable));
+        })
+        .update()
+    ;
+    _tree->access<int>(get_arg_path("configure_beams", 0) / "value")
+        .add_coerced_subscriber([this](int reg_value){
+            this->configure_beams(uint32_t(reg_value));
+        }) // No update!
+    ;
 
     /**** Set up legacy compatible properties ******************************/
     // For use with multi_usrp APIs etc.
@@ -185,18 +220,14 @@ void eiscat_radio_ctrl_impl::set_rx_antenna(const std::string &ant, const size_t
         UHD_LOG_TRACE("EISCAT", "Setting antenna to 'BF' (which is a no-op)");
         return;
     }
-    if (ant.size() < 3 or ant.size() > 4
-        or (ant.substr(0, 2) != "Rx"
-            and ant.substr(0, 2) != "RX"
-            and ant.substr(0, 2) != "BF")) {
+    if (ant.size() < 3) {
         throw uhd::value_error(str(
             boost::format("EISCAT: Invalid antenna selection: %s")
             % ant
         ));
     }
 
-    bool use_fir_matrix = (ant.substr(0, 2) == "BF");
-
+    const std::string ant_mode = ant.substr(0, 2);
     const size_t antenna_idx = [&ant](){
         try {
             return boost::lexical_cast<size_t>(ant.substr(2));
@@ -208,7 +239,7 @@ void eiscat_radio_ctrl_impl::set_rx_antenna(const std::string &ant, const size_t
         }
     }();
 
-    if (use_fir_matrix) {
+    if (ant_mode == "BF") {
         UHD_LOG_TRACE("EISCAT", str(
             boost::format("Setting port %d to only receive on antenna %d via FIR matrix")
             % port % antenna_idx
@@ -236,13 +267,39 @@ void eiscat_radio_ctrl_impl::set_rx_antenna(const std::string &ant, const size_t
                 );
             }
         }
-    } else {
+        enable_firs(true);
+    } else if (ant_mode == "RX" or ant_mode == "Rx") {
         set_arg<int>("choose_beams", 6);
         UHD_LOG_TRACE("EISCAT", str(
             boost::format("Setting port %d to only receive on antenna %d directly")
             % port % antenna_idx
         ));
-        sr_write(SR_ANTENNA_SELECT_BASE + port, antenna_idx);
+        enable_firs(false);
+    } else if (ant_mode == "FI") {
+        UHD_LOG_TRACE("EISCAT", str(
+            boost::format("Setting port %d to filter index %d on all antennas.")
+            % port % antenna_idx
+        ));
+        // Note: antenna_idx is not indexing a physical antenna in this scenario.
+        // TODO: When we have a way to select neighbour contributions, we will
+        // need to calculate the beam_index as a function of the port *and* if
+        // we're the left or right USRP
+        const size_t beam_index = port;
+        uhd::time_spec_t send_now(0.0);
+        for (size_t i = 0; i < EISCAT_NUM_ANTENNAS; i++) {
+            select_filter(
+                beam_index,
+                i,
+                antenna_idx,
+                send_now
+            );
+        }
+        enable_firs(true);
+    } else {
+        throw uhd::value_error(str(
+            boost::format("EISCAT: Invalid antenna selection: %s")
+            % ant
+        ));
     }
 }
 
@@ -325,7 +382,10 @@ bool eiscat_radio_ctrl_impl::check_radio_config()
             chan_enables |= (1<<enb.first);
         }
     }
-    UHD_LOG_TRACE("EISCAT", str(boost::format("check_radio_config(): Setting channel enables to 0x%02X") % chan_enables));
+    UHD_LOG_TRACE("EISCAT", str(
+        boost::format("check_radio_config(): Setting channel enables to 0x%02X")
+        % chan_enables
+    ));
     sr_write("SR_RX_STREAM_ENABLE", chan_enables);
 
     return true;
@@ -438,6 +498,58 @@ void eiscat_radio_ctrl_impl::set_antenna_gain(
         % antenna_idx % normalized_gain % fixpoint_gain
     ));
     sr_write(SR_ANTENNA_GAIN_BASE + antenna_idx, fixpoint_gain);
+}
+
+void eiscat_radio_ctrl_impl::configure_beams(uint32_t reg_value)
+{
+    UHD_LOGGER_TRACE("EISCAT")
+        << "Selecting " <<
+        ((reg_value & EISCAT_CONTRIB_UPPER) ? "upper" : "lower") << " beams.";
+    UHD_LOGGER_TRACE("EISCAT")
+        << ((reg_value & EISCAT_SKIP_NEIGHBOURS) ? "Disabling" : "Enabling")
+        << " neighbour contributions.";
+    UHD_LOGGER_TRACE("EISCAT")
+        << ((reg_value & EISCAT_BYPASS_MATRIX) ? "Disabling" : "Enabling")
+        << " FIR matrix.";
+    UHD_LOGGER_TRACE("EISCAT")
+        << ((reg_value & EISCAT_OUTPUT_COUNTER) ? "Enabling" : "Disabling")
+        << " counter.";
+    UHD_LOG_TRACE("EISCAT", str(
+        boost::format("Setting SR_BEAMS_TO_NEIGHBOR to 0x%08X.")
+        % reg_value
+    ));
+    sr_write("SR_BEAMS_TO_NEIGHBOR", reg_value);
+}
+
+void eiscat_radio_ctrl_impl::set_beam_selection(int beam_selection)
+{
+    const uint32_t old_value = user_reg_read32(RB_CHOOSE_BEAMS);
+    const uint32_t new_value =
+        (old_value & (~uint32_t(EISCAT_CONTRIB_UPPER|EISCAT_SKIP_NEIGHBOURS)))
+        | (uint32_t(beam_selection)
+                & uint32_t(EISCAT_CONTRIB_UPPER|EISCAT_SKIP_NEIGHBOURS))
+    ;
+    configure_beams(new_value);
+}
+
+void eiscat_radio_ctrl_impl::enable_firs(bool enable)
+{
+    const uint32_t old_value = user_reg_read32(RB_CHOOSE_BEAMS);
+    const uint32_t new_value = enable ?
+        (old_value & ~EISCAT_BYPASS_MATRIX)
+        : old_value | EISCAT_BYPASS_MATRIX
+    ;
+    configure_beams(new_value);
+}
+
+void eiscat_radio_ctrl_impl::enable_counter(bool enable)
+{
+    const uint32_t old_value = user_reg_read32(RB_CHOOSE_BEAMS);
+    const uint32_t new_value = enable ?
+        old_value | EISCAT_OUTPUT_COUNTER
+        : (old_value & ~EISCAT_OUTPUT_COUNTER)
+    ;
+    configure_beams(new_value);
 }
 
 /****************************************************************************

@@ -54,11 +54,17 @@ public:
      * Valid antenna values:
      * - BF: This is the default. Will apply the beamforming matrix in whatever
      *   state it currently is.
-     * - Rx0...Rx15: Will mux the antenna signal 0...15 straight to this
-     *   channel. Note that this will disable the FIR matrix entirely.
+     * - RX0...RX15: Will mux the antenna signal 0...15 straight to this
+     *   channel. Note that this will disable the FIR matrix entirely, and will
+     *   also disable contributions from other USRPs.
      * - BF0...BF15: Will configure the FIR filter matrix such that only the
-     *   contributions from antenna 0...15 are passed to this channel.
-     *
+     *   contributions from antenna 0...15 are passed to this channel. This
+     *   should produce the same signal as RX0..RX15, reduced by 12 dB (because
+     *   the FIR matri needs to account for bit growth from adding 16 channels)
+     * - FI$idx: Here, $idx is a number (the filter index, hence the name).
+     *   This will apply filter index $idx to all input channels. Useful for
+     *   testing actual beamforming applications, when the same signal is
+     *   applied to all inputs.
      *
      * \throws uhd::value_error if the antenna value was not valid
      */
@@ -124,6 +130,30 @@ private:
         const size_t antenna_idx,
         const double normalized_gain
     );
+
+    /*! Directly writes a value to the beam configuration register.
+     */
+    void configure_beams(uint32_t reg_value);
+
+    /*! Controls selection of beams coming from the FIR matrix.
+     *
+     * The following values are allowed:
+     * - 0: We stream the lower 5 beams, plus the neighbours contribution
+     * - 1: We stream the upper 5 beams, plus the neighbours contribution
+     * - 2: We stream the lower 5 beams, without the neighbours contribution
+     * - 3: We stream the upper 5 beams, without the neighbours contribution
+     */
+    void set_beam_selection(int beam_selection);
+
+    /*! Controls if we're using the FIR matrix
+     *
+     * If this is false, the beam selection is irrelevant.
+     */
+    void enable_firs(bool enable);
+
+    /*! Enables counter instead of JESD core output
+     */
+    void enable_counter(bool enable);
 
     /*! The number of channels this block outputs
      *

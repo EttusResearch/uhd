@@ -14,7 +14,13 @@
       <address>159</address>
     </setreg>
     <setreg>
-      <!--1-Bit register. Are we sending the upper or lower 5 beam contributions? 2 means we ignore contributions -->
+     <!--4-Bit register. 
+       [0] Are we sending the upper or lower 5 beam contirbutions? 
+       [1] = 1, beams_to_here goes directly to output (bypass neighbour contributions, single USRP)
+       [2] = 1, input to rx_receive direct from jesd_core (bypassing beamforming)
+       [3] = 1, if bypassing beamforming, instead output counter 00-FF
+       to output counter [3:0] = 0d10.
+       to output jesd streams directly [3:0] = 6 -->
       <name>SR_BEAMS_TO_NEIGHBOR</name>
       <address>202</address>
       <value>2</value>
@@ -86,24 +92,32 @@
       <check_message>use_prev must be 0 or 1.</check_message>
       <action>SR_WRITE("SR_PREV_OR_NULL", $use_prev) AND SR_WRITE("SR_PREV_OR_NULL", $use_prev)</action>
     </arg>
-     <!--4-Bit register. 
-       [0] Are we sending the upper or lower 5 beam contirbutions? 
-       [1] = 1, beams_to_here goes directly to output (bypass neighbour contributions, single USRP)
-       [2] = 1, input to rx_receive direct from jesd_core (bypassing beamforming)
-       [3] = 1, if bypassing beamforming, instead output counter 00-FF
-       to output counter [3:0] = 0d10.
-       to output jesd streams directly [3:0] = 6 -->
+    <!--Direct access to the beams register-->
+    <arg>
+      <name>configure_beams</name>
+      <type>int</type>
+    </arg>
+    <!--0: Upper 1: Lower 2: no neighbours-->
     <arg>
       <name>choose_beams</name>
       <type>int</type>
-      <value>6</value>
-      <action>SR_WRITE("SR_BEAMS_TO_NEIGHBOR", $choose_beams)</action>
+      <value>2</value>
+    </arg>
+    <arg>
+      <name>enable_firs</name>
+      <type>int</type>
+      <value>1</value>
+    </arg>
+    <arg>
+      <name>enable_counter</name>
+      <type>int</type>
+      <value>0</value>
     </arg>
     <arg>
       <name>channel_enable</name>
       <type>int</type>
       <value>1</value>
-      <action>SR_WRITE("SR_RX_STREAM_ENABLE", 1)</action>
+      <action>SR_WRITE("SR_RX_STREAM_ENABLE", $channel_enable)</action>
     </arg>
     <arg>
       <name>gain</name>
