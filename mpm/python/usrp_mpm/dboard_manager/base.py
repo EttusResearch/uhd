@@ -38,6 +38,12 @@ class DboardManagerBase(object):
     # maps these keys to actual spidev paths. Also throws a warning/error if
     # the SPI configuration is invalid.
     spi_chipselect = {}
+    # Lists device tree overlays that need to be applied before this class can
+    # be used. List of strings. If strings contain the token {sfp}, it will be
+    # expanded to the flavour of SFP configuration is (XG, 1G, ...).
+    # Example: 'magnesium-{sfp}' could get expanded to 'eiscat-XG'.
+    # Are applied in order.
+    dt_overlays = []
 
     def __init__(self, slot_idx, **kwargs):
         self.log = get_logger('dboardManager')

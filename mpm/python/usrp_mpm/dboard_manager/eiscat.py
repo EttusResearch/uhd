@@ -366,6 +366,7 @@ class EISCAT(DboardManagerBase):
         "adc1": create_spidev_iface_sane,
         "phase_dac": create_spidev_iface_phasedac,
     }
+    dt_overlays = ['eiscat-{sfp}']
 
     def __init__(self, slot_idx, **kwargs):
         super(EISCAT, self).__init__(slot_idx, **kwargs)

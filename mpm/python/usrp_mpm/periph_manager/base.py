@@ -25,6 +25,7 @@ from ..mpmlog import get_logger
 from .udev import get_eeprom_paths
 from .udev import get_spidev_nodes
 from usrp_mpm import net
+from usrp_mpm import dtoverlay
 
 EEPROM_DEFAULT_HEADER = struct.Struct("!I I")
 
@@ -340,10 +341,14 @@ class PeriphManagerBase(object):
             if db_class is None:
                 self.log.warning("Could not identify daughterboard class for PID {:04X}!".format(db_pid))
                 continue
+            self.log.trace("Dboard requires device tree overlays: {}".format(
+                db_class.dt_overlays
+            ))
+            for overlay in db_class.dt_overlays:
+                # FIXME don't hardcode XG
+                dtoverlay.apply_overlay_safe(overlay.format(sfp="XG"))
             self.dboards.append(db_class(dboard_idx, **dboard_info))
         self.log.info("Found {} daughterboard(s).".format(len(self.dboards)))
-
-        # self.overlays = ""
 
     def _init_interfaces(self):
         """

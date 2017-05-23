@@ -1,0 +1,111 @@
+#
+# Copyright 2017 Ettus Research (National Instruments)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+"""
+Manipulation of device tree overlays (Linux kernel)
+"""
+
+import os
+from .mpmlog import get_logger
+
+SYSFS_OVERLAY_BASE_DIR = '/sys/kernel/config/device-tree/overlays'
+OVERLAY_DEFAULT_PATH = '/lib/firmware'
+
+def get_overlay_attrs(overlay_name):
+    """
+    List those attributes that are connected to an overlay entry in a sysfs
+    node.
+    """
+    overlay_path = os.path.join(SYSFS_OVERLAY_BASE_DIR, overlay_name)
+    attrs = {}
+    for attr_name in os.listdir(overlay_path):
+        try:
+            attr_val = open(
+                os.path.join(overlay_path, attr_name), 'r'
+            ).read().strip()
+        except OSError:
+            pass
+        if len(attr_val):
+            attrs[attr_name] = attr_val
+    return attrs
+
+def list_overlays(applied_only=False):
+    """
+    List all registered kernel modules. Returns a dict of dicts:
+    {
+        '<overlay_name>': {
+            # attributes
+        },
+    }
+
+    All the attributes come from sysfs. See get_overlay_attrs().
+
+    applied_only -- Only return those overlays that are already applied.
+    """
+    return {
+        overlay_name: get_overlay_attrs(overlay_name)
+        for overlay_name in os.listdir(SYSFS_OVERLAY_BASE_DIR)
+        if not applied_only \
+            or get_overlay_attrs(overlay_name).get('status') == 'applied'
+    }
+
+def list_available_overlays(path):
+    """
+    List available overlay files (dtbo)
+    """
+    path = path or OVERLAY_DEFAULT_PATH
+    return [x.strip()[:-5] for x in os.listdir(path) if x.endswith('.dtbo')]
+
+def apply_overlay(overlay_name):
+    """
+    Applies the given overlay. Does not check if the overlay is loaded.
+    """
+    get_logger("DTO").trace("Applying overlay `{}'...".format(overlay_name))
+    # TODO don't use this script
+    os.system("overlay add {}".format(overlay_name))
+
+def apply_overlay_safe(overlay_name):
+    """
+    Only apply an overlay if it's not yet applied.
+    """
+    if overlay_name in list_overlays(applied_only=True).keys():
+        get_logger("DTO").debug(
+            "Overlay `{}' was already applied, not applying again.".format(
+                overlay_name
+            )
+        )
+    else:
+        apply_overlay(overlay_name)
+
+def rm_overlay(overlay_name):
+    """
+    Removes the given overlay. Does not check if the overlay is loaded.
+    """
+    get_logger("DTO").trace("Removing overlay `{}'...".format(overlay_name))
+    # TODO don't use this script
+    os.system("overlay rm {}".format(overlay_name))
+
+def rm_overlay_safe(overlay_name):
+    """
+    Only remove an overlay if it's already applied.
+    """
+    if overlay_name in list_overlays(applied_only=True).keys():
+        rm_overlay(overlay_name)
+    else:
+        get_logger("DTO").debug(
+            "Overlay `{}' was not loaded, not removing.".format(overlay_name)
+        )
+
