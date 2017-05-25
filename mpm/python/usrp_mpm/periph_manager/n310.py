@@ -106,7 +106,9 @@ class n310(PeriphManagerBase):
     mboard_info = {"type": "n3xx"}
     dboard_eeprom_addr = "e0004000.i2c"
     dboard_eeprom_max_len = 64
-    dboard_spimaster_addrs = ["e0006000.spi",]
+    # We're on a Zynq target, so the following two come from the Zynq standard
+    # device tree overlay (tree/arch/arm/boot/dts/zynq-7000.dtsi)
+    dboard_spimaster_addrs = ["e0006000.spi", "e0007000.spi"]
     chdr_interfaces = ['eth1', 'eth2']
     # N310-specific settings
     eth_tables = {'eth1': 'misc-enet-regs0', 'eth2': 'misc-enet-regs1'}

@@ -406,7 +406,10 @@ class EISCAT(DboardManagerBase):
             ",".join(['{}={}'.format(x, args[x]) for x in args])
         ))
         self.log.trace("Getting uio...")
-        self.radio_regs = UIO(label="jesd204b-regs", read_only=False)
+        self.radio_regs = UIO(
+            label="dboard-regs-{}".format(self.slot_idx),
+            read_only=False
+        )
         # Create JESD cores. They will also test the UIO regs on initialization.
         self.jesd_cores = [
             JesdCoreEiscat(
