@@ -274,6 +274,7 @@ void eiscat_radio_ctrl_impl::set_rx_antenna(const std::string &ant, const size_t
             boost::format("Setting port %d to only receive on antenna %d directly")
             % port % antenna_idx
         ));
+        sr_write(SR_ANTENNA_SELECT_BASE + port, antenna_idx);
         enable_firs(false);
     } else if (ant_mode == "FI") {
         UHD_LOG_TRACE("EISCAT", str(
