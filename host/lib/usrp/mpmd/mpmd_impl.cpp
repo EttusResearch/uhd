@@ -118,6 +118,9 @@ mpmd_impl::mpmd_impl(const device_addr_t& device_addr)
         UHD_HERE();
         std::cout << ex.what() << std::endl;
     }
+
+
+    // FIXME pass in a reference to the rpc client for all childs of rpc_block_ctrl
 }
 
 mpmd_impl::~mpmd_impl() {}

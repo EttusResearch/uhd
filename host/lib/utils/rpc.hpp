@@ -20,12 +20,27 @@
 
 #include <rpc/client.h>
 
-namespace uhd
-{
+namespace uhd {
+
+/*! Abstraction for RPC client
+ *
+ * Purpose of this class is to wrap the underlying RPC implementation.
+ * This class holds a connection to an RPC server (the connection is severed on
+ * destruction).
+ */
 class rpc_client
 {
   public:
+    using sptr = std::shared_ptr<rpc_client>;
+
+    /*!
+     * \param addr An IP address to connect to
+     * \param port Port to connect to
+     */
     rpc_client(std::string const& addr, uint16_t port) : _client(addr, port) {}
+
+    /*! Perform an RPC call
+     */
     template <typename return_type, typename... Args>
     return_type call(std::string const& func_name, Args&&... args)
     {
