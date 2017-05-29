@@ -59,7 +59,7 @@ elif registertype == "dissectors":
  */
 """
 else:
-	print "Unknown output type '%s'" % registertype
+	print("Unknown output type '%s'" % registertype)
 	sys.exit(1)
 
 
@@ -77,7 +77,7 @@ for file in files:
 		filenames.append(os.path.join(srcdir, file))
 
 if len(filenames) < 1:
-	print "No files found"
+	print("No files found")
 	sys.exit(1)
 
 
@@ -118,7 +118,7 @@ if cache_filename:
 		cache_file = open(cache_filename, 'rb')
 		cache = pickle.load(cache_file)
 		cache_file.close()
-		if not cache.has_key(VERSION_KEY) or cache[VERSION_KEY] != CUR_VERSION:
+		if (VERSION_KEY not in cache) or cache[VERSION_KEY] != CUR_VERSION:
 			cache = {VERSION_KEY: CUR_VERSION}
 	except:
 		cache = {VERSION_KEY: CUR_VERSION}
@@ -127,10 +127,10 @@ if cache_filename:
 for filename in filenames:
 	file = open(filename)
 	cur_mtime = os.fstat(file.fileno())[ST_MTIME]
-	if cache and cache.has_key(filename):
+	if cache and (filename in cache):
 		cdict = cache[filename]
 		if cur_mtime == cdict['mtime']:
-#			print "Pulling %s from cache" % (filename)
+#			print("Pulling %s from cache" % (filename))
 			regs['proto_reg'].extend(cdict['proto_reg'])
 			regs['handoff_reg'].extend(cdict['handoff_reg'])
 			regs['wtap_register'].extend(cdict['wtap_register'])
@@ -144,7 +144,7 @@ for filename in filenames:
 			'handoff_reg': [],
 			'wtap_register': [],
 			}
-#	print "Searching %s" % (filename)
+#	print("Searching %s" % (filename))
 	for line in file.readlines():
 		for action in patterns:
 			regex = action[1]
@@ -154,7 +154,7 @@ for filename in filenames:
 				sym_type = action[0]
 				regs[sym_type].append(symbol)
 				if cache is not None:
-#					print "Caching %s for %s: %s" % (sym_type, filename, symbol)
+#					print("Caching %s for %s: %s" % (sym_type, filename, symbol))
 					cache[filename][sym_type].append(symbol)
 	file.close()
 
@@ -165,7 +165,7 @@ if cache is not None and cache_filename is not None:
 
 # Make sure we actually processed something
 if len(regs['proto_reg']) < 1:
-	print "No protocol registrations found"
+	print("No protocol registrations found")
 	sys.exit(1)
 
 # Sort the lists to make them pretty
@@ -252,7 +252,7 @@ register_wtap_module(void)
 		reg_code.write(line)
 
 	reg_code.write("}\n");
-        reg_code.write("#endif\n");
+	reg_code.write("#endif\n");
 else:
 	reg_code.write("""
 static gulong proto_reg_count(void)
