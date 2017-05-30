@@ -19,7 +19,8 @@
 #define INCLUDED_LIBUHD_RFNOC_EISCAT_RADIO_CTRL_IMPL_HPP
 
 #include "radio_ctrl_impl.hpp"
-#include "uhd/types/direction.hpp"
+#include "rpc_block_ctrl.hpp"
+#include <uhd/types/direction.hpp>
 
 namespace uhd {
     namespace rfnoc {
@@ -28,11 +29,11 @@ namespace uhd {
  *
  * Note: This will control both daughterboards.
  */
-class eiscat_radio_ctrl_impl : public radio_ctrl_impl
+class eiscat_radio_ctrl_impl : public radio_ctrl_impl, public rpc_block_ctrl
 {
 public:
     using sptr = boost::shared_ptr<eiscat_radio_ctrl_impl>;
-    using fir_tap_t = int32_t;
+    using fir_tap_t = int32_t; // See also EISCAT_BITS_PER_TAP
 
     /************************************************************************
      * Structors
@@ -85,6 +86,11 @@ public:
 
 protected:
     virtual bool check_radio_config();
+
+    void set_rpc_client(
+        uhd::rpc_client::sptr rpcc,
+        const uhd::device_addr_t &block_args
+    );
 
 private:
 
@@ -161,6 +167,10 @@ private:
      * block outputs to the crossbar.
      */
     size_t _num_ports;
+
+    /*! Reference to the RPC client
+     */
+    uhd::rpc_client::sptr _rpcc;
 
 }; /* class radio_ctrl_impl */
 

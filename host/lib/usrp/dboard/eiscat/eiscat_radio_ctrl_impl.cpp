@@ -392,6 +392,13 @@ bool eiscat_radio_ctrl_impl::check_radio_config()
     return true;
 }
 
+void eiscat_radio_ctrl_impl::set_rpc_client(
+    uhd::rpc_client::sptr rpcc,
+    const uhd::device_addr_t & /* block_args */
+) {
+    _rpcc = rpcc;
+}
+
 /****************************************************************************
  * Internal methods
  ***************************************************************************/
