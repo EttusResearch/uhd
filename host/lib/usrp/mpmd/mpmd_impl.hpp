@@ -40,6 +40,9 @@ struct frame_size_t
     size_t send_frame_size;
 };
 
+
+/*! Stores all attributes specific to a single MPM device
+ */
 class mpmd_mboard_impl
 {
   public:
@@ -56,7 +59,13 @@ class mpmd_mboard_impl
     std::map<std::string, std::string> data_interfaces;
     std::string loaded_fpga_image;
     std::string xport_path;
-    uhd::rpc_client rpc;
+
+    /*! Reference the RPC client for this motherboard
+     *
+     * We store a shared ptr, because we might share it with some of the RFNoC
+     * blocks.
+     */
+    uhd::rpc_client::sptr rpc;
     uhd::sid_t allocate_sid(const uint16_t port,
                             const uhd::sid_t address,
                             const uint32_t xbar_src_addr,
@@ -69,6 +78,13 @@ class mpmd_mboard_impl
     uhd::task::sptr _claimer_task;
 };
 
+
+/*! Parent class of an MPM device
+ *
+ * An MPM device is a USRP running MPM. Because most of the hardware controls
+ * are taken care of by MPM itself, it is not necessary to write a specific
+ * derived class for every single type of MPM device.
+ */
 class mpmd_impl : public uhd::usrp::device3_impl
 {
   public:

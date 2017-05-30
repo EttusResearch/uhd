@@ -16,6 +16,7 @@
 //
 
 #include "mpmd_impl.hpp"
+#include "rpc_block_ctrl.hpp"
 #include <../device3/device3_impl.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/property_tree.hpp>
@@ -36,15 +37,15 @@
 using namespace uhd;
 
 mpmd_mboard_impl::mpmd_mboard_impl(const std::string& addr)
-    : rpc(addr, MPM_RPC_PORT)
+    : rpc(uhd::rpc_client::make(addr, MPM_RPC_PORT))
 {
     UHD_LOG_TRACE("MPMD", "Initializing mboard, IP address: " << addr);
     std::map<std::string, std::string> _dev_info =
-        rpc.call<dev_info>("get_device_info");
+        rpc->call<dev_info>("get_device_info");
     device_info =
         dict<std::string, std::string>(_dev_info.begin(), _dev_info.end());
     // Get initial claim on mboard
-    _rpc_token = rpc.call<std::string>("claim", "UHD - Session 01"); // make this configurable with device_addr?
+    _rpc_token = rpc->call<std::string>("claim", "UHD - Session 01"); // TODO make this configurable with device_addr, and provide better defaults
     if (_rpc_token.empty()){
         throw uhd::value_error("mpmd device claiming failed!");
     }
@@ -77,7 +78,7 @@ uhd::sid_t mpmd_mboard_impl::allocate_sid(const uint16_t port,
                                           const uhd::sid_t address,
                                           const uint32_t xbar_src_addr,
                                           const uint32_t xbar_src_port){
-    const uint32_t sid = rpc.call<uint32_t>("allocate_sid", _rpc_token, port,
+    const uint32_t sid = rpc->call<uint32_t>("allocate_sid", _rpc_token, port,
                                             address.get(), xbar_src_addr, xbar_src_port);
     return sid;
 }
@@ -91,36 +92,56 @@ mpmd_mboard_impl::uptr mpmd_mboard_impl::make(const std::string& addr)
     return mb;
 }
 
-bool mpmd_mboard_impl::claim() { return rpc.call<bool>("reclaim", _rpc_token); }
+bool mpmd_mboard_impl::claim()
+{
+    return rpc->call<bool>("reclaim", _rpc_token);
+}
 
 mpmd_impl::mpmd_impl(const device_addr_t& device_addr)
     : usrp::device3_impl()
     , _device_addr(device_addr)
     , _sid_framer(0)
 {
-    UHD_LOGGER_INFO("MPMD") << "MPMD initialization sequence. Device args: " << device_addr.to_string();
-    _tree->create<std::string>("/name").set("MPMD - Series device");
+    UHD_LOGGER_INFO("MPMD")
+        << "MPMD initialization sequence. Device args: "
+        << device_addr.to_string();
     const device_addrs_t device_args = separate_device_addr(device_addr);
     _mb.reserve(device_args.size());
     for (size_t mb_i = 0; mb_i < device_args.size(); ++mb_i) {
         _mb.push_back(setup_mb(mb_i, device_args[mb_i]));
     }
 
+
+    // TODO read this from the device info
+    _tree->create<std::string>("/name").set("MPMD - Series device");
+
     try {
         enumerate_rfnoc_blocks(
           0,
-          3, /* num blocks */
-          3, /* base port */
-          uhd::sid_t(0x0200),
+          3, /* num blocks */ // TODO don't hardcode
+          3, /* base port */  // TODO don't hardcode
+          uhd::sid_t(0x0200), // TODO don't hardcode
           device_addr
         );
     } catch (const std::exception &ex) {
-        UHD_HERE();
-        std::cout << ex.what() << std::endl;
+        UHD_LOGGER_ERROR("MPMD")
+            << "Failure during device initialization: "
+            << ex.what();
+        throw uhd::runtime_error("Failed to run enumerate_rfnoc_blocks()");
     }
 
-
-    // FIXME pass in a reference to the rpc client for all childs of rpc_block_ctrl
+    for (const auto &block_ctrl: _rfnoc_block_ctrl) {
+        auto rpc_block_id = block_ctrl->get_block_id();
+        if (has_block<uhd::rfnoc::rpc_block_ctrl>(block_ctrl->get_block_id())) {
+            const size_t mboard_idx = rpc_block_id.get_device_no();
+            UHD_LOGGER_DEBUG("MPMD")
+                << "Adding RPC access to block: " << rpc_block_id
+                << " Extra device args: " << device_args[mboard_idx].to_string()
+            ;
+            get_block_ctrl<uhd::rfnoc::rpc_block_ctrl>(rpc_block_id)
+                ->set_rpc_client(_mb[mboard_idx]->rpc, device_args[mboard_idx]);
+        }
+    }
 }
 
 mpmd_impl::~mpmd_impl() {}

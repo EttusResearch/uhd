@@ -15,12 +15,13 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#ifndef INCLUDED_UTILS_RPC_HPP
-#define INCLUDED_UTILS_RPC_HPP
+#ifndef INCLUDED_LIBUHD_RFNOC_RPC_BLOCK_CTRL_HPP
+#define INCLUDED_LIBUHD_RFNOC_RPC_BLOCK_CTRL_HPP
 
-#include <rpc/client.h>
+#include "../utils/rpc.hpp"
 
 namespace uhd {
+    namespace rfnoc {
 
 /*! Abstraction for RPC client
  *
@@ -28,36 +29,23 @@ namespace uhd {
  * This class holds a connection to an RPC server (the connection is severed on
  * destruction).
  */
-class rpc_client
+class rpc_block_ctrl
 {
-  public:
-    using sptr = std::shared_ptr<rpc_client>;
+public:
+    virtual ~rpc_block_ctrl() {}
 
-    static sptr make(std::string const& addr, uint16_t port) {
-        return std::make_shared<rpc_client>(addr, port);
-    }
-
-    /*!
-     * \param addr An IP address to connect to
-     * \param port Port to connect to
+    /*! Pass in an RPC client for the block to use
+     *
+     * \param rpcc Reference to the RPC client
+     * \param block_args Additional block arguments
      */
-    rpc_client(std::string const& addr, uint16_t port) : _client(addr, port) {}
+    virtual void set_rpc_client(
+        uhd::rpc_client::sptr rpcc,
+        const uhd::device_addr_t &block_args
+    ) = 0;
 
-    /*! Perform an RPC call
-     */
-    template <typename return_type, typename... Args>
-    return_type call(std::string const& func_name, Args&&... args)
-    {
-        std::lock_guard<std::mutex> lock(_mutex);
-        return _client.call(func_name, std::forward<Args>(args)...)
-            .template as<return_type>();
-    };
-
-  private:
-    std::mutex _mutex;
-    ::rpc::client _client;
 };
 
-}
+}}
 
-#endif /* INCLUDED_UTILS_RPC_HPP */
+#endif /* INCLUDED_LIBUHD_RFNOC_RPC_BLOCK_CTRL_HPP */
