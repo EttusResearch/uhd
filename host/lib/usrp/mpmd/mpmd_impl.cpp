@@ -49,6 +49,7 @@ mpmd_mboard_impl::mpmd_mboard_impl(const std::string& addr)
     if (_rpc_token.empty()){
         throw uhd::value_error("mpmd device claiming failed!");
     }
+    rpc->set_token(_rpc_token);
     _claimer_task = task::make([this] {
         if (not this->claim()) {
             throw uhd::value_error("mpmd device reclaiming loop failed!");
@@ -77,11 +78,15 @@ mpmd_mboard_impl::mpmd_mboard_impl(const std::string& addr)
 uhd::sid_t mpmd_mboard_impl::allocate_sid(const uint16_t port,
                                           const uhd::sid_t address,
                                           const uint32_t xbar_src_addr,
-                                          const uint32_t xbar_src_port){
-    const uint32_t sid = rpc->call<uint32_t>("allocate_sid", _rpc_token, port,
-                                            address.get(), xbar_src_addr, xbar_src_port);
+                                          const uint32_t xbar_src_port)
+{
+    const uint32_t sid = rpc->call_with_token<uint32_t>(
+        "allocate_sid",
+        port, address.get(), xbar_src_addr, xbar_src_port
+    );
     return sid;
 }
+
 mpmd_mboard_impl::~mpmd_mboard_impl() {}
 
 mpmd_mboard_impl::uptr mpmd_mboard_impl::make(const std::string& addr)
@@ -94,7 +99,7 @@ mpmd_mboard_impl::uptr mpmd_mboard_impl::make(const std::string& addr)
 
 bool mpmd_mboard_impl::claim()
 {
-    return rpc->call<bool>("reclaim", _rpc_token);
+    return rpc->call_with_token<bool>("reclaim");
 }
 
 mpmd_impl::mpmd_impl(const device_addr_t& device_addr)
