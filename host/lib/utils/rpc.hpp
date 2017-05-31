@@ -73,6 +73,25 @@ class rpc_client
         }
     };
 
+    template <typename... Args>
+    void call(std::string const& func_name, Args&&... args)
+    {
+        std::lock_guard<std::mutex> lock(_mutex);
+        try {
+            _client.call(func_name, std::forward<Args>(args)...);
+        } catch (const ::rpc::rpc_error &ex) {
+            throw uhd::runtime_error(str(
+                boost::format("Error during RPC call to `%s'. Error message: %s")
+                % func_name % ex.what()
+            ));
+        } catch (const std::bad_cast& ex) {
+            throw uhd::runtime_error(str(
+                boost::format("Error during RPC call to `%s'. Error message: %s")
+                % func_name % ex.what()
+            ));
+        }
+    };
+
     /*! Perform an RPC call; also includes a token.
      *
      * The first argument to the actual RPC function call is the current token
