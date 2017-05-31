@@ -42,7 +42,8 @@ setup(name='usrp_mpm',
           'usrp_mpm',
           'usrp_mpm.periph_manager',
           'usrp_mpm.dboard_manager',
-          'usrp_mpm.chips'
+          'usrp_mpm.chips',
+          'usrp_mpm.cores',
       ],
       install_requires=[
           'mprpc',
