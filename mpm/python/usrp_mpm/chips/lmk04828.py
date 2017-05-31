@@ -28,7 +28,7 @@ class LMK04828(object):
 
     def __init__(self, regs_iface, postfix=None):
         postfix = postfix or ""
-        self.log = get_logger("LMK04828"+postfix)
+        self.log = get_logger("LMK04828{}".format(postfix))
         self.regs_iface = regs_iface
         assert hasattr(self.regs_iface, 'peek8')
         assert hasattr(self.regs_iface, 'poke8')
@@ -41,13 +41,13 @@ class LMK04828(object):
         pokes8((0,1),(0,2)) is the same as calling poke8(0,1), poke8(0,2).
         """
         for addr, val in addr_vals:
-            self.regs_iface.poke8(addr, val)
+            self.poke8(addr, val)
 
     def get_chip_id(self):
         """
         Read back the chip ID
         """
-        chip_id = self.regs_iface.peek8(0x03)
+        chip_id = self.peek8(0x03)
         self.log.trace("Read chip ID: {}".format(chip_id))
         return chip_id
 
@@ -60,4 +60,26 @@ class LMK04828(object):
             self.log.error("Wrong chip id 0x{:X}".format(chip_id))
             return False
         return True
+
+    def check_plls_locked(self):
+        """
+        Checks both PLLs are locked. Will throw an exception otherwise.
+        Returns True if both PLLs are locked, False otherwise.
+        """
+        self.log.trace("Checking PLL lock bits...")
+        def check_pll_lock(pll_id, addr):
+            """
+
+            pll_id -- A string defining the PLL (e.g. 'PLL1')
+            addr -- The address to peek to see if it's locked
+            """
+            pll_lock_status = self.regs_iface.peek8(addr)
+            if (pll_lock_status & 0x7) != 0x02:
+                self.log.error("LMK {} did not lock. Status: {:x}".format(pll_id, pll_lock_status))
+                return False
+            return True
+        lock_status = \
+                check_pll_lock("PLL1", 0x182) and \
+                check_pll_lock("PLL2", 0x183)
+        return lock_status
 
