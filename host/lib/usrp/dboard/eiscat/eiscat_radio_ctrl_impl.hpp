@@ -87,6 +87,8 @@ public:
 protected:
     virtual bool check_radio_config();
 
+    /*! Finalize initialization sequence
+     */
     void set_rpc_client(
         uhd::rpc_client::sptr rpcc,
         const uhd::device_addr_t &block_args

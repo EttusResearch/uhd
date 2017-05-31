@@ -60,6 +60,9 @@ def create_spidev_iface_phasedac(dev_node):
 class ADS54J56(object):
     """
     Controls for ADS54J56 ADC
+
+    These commands are very specific to the EISCAT daughterboard, so they stay
+    here.
     """
     def __init__(self, regs, log):
         self.log = log
@@ -533,8 +536,8 @@ class EISCAT(DboardManagerBase):
 
     def send_sysref(self):
         """
-        TODO this is a temp way of sending sysref
-        need to replace with timed command
+        Send a SYSREF from MPM. This is not possible to do in a timed
+        fashion though.
         """
         self.log.trace("Sending SYSREF via MPM...")
         self.radio_regs.poke32(self.SYSREF_CONTROL, 0x0)

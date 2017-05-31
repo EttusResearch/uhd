@@ -148,20 +148,6 @@ class n310(PeriphManagerBase):
         }
         for ifname, table in iteritems(self._eth_dispatchers):
             table.set_ipv4_addr(self._chdr_interfaces[ifname]['ip_addr'])
-        self.log.warning("Running a custom EISCAT-specific sequence to bring " \
-                         "up 2 daughterboards without requiring UHD support. " \
-                         "This effectively disables Magnesium and must be " \
-                         "replaced before merging back into n3xx-master."
-                        )
-        self.dboards[0].send_sysref()
-        for dboard in self.dboards:
-            dboard.init_adcs_and_deframers()
-        self.dboards[0].send_sysref()
-        time.sleep(0.5)
-        for dboard in self.dboards:
-            dboard.check_deframer_status()
-            assert dboard.initialized
-
 
     def _allocate_sid(self, sender_addr, port, sid, xbar_src_addr, xbar_src_port):
         """

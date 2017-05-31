@@ -35,7 +35,6 @@ namespace {
     const size_t SR_ANTENNA_SELECT_BASE   = 192; // Note: On other dboards, 192 is DB_GPIO address space
     const size_t RB_CHOOSE_BEAMS          = 10;
 
-
     const double EISCAT_TICK_RATE         = 208e6; // Hz
     const double EISCAT_RADIO_RATE        = 104e6; // Hz
     const double EISCAT_CENTER_FREQ       = 104e6; // Hz
@@ -394,9 +393,27 @@ bool eiscat_radio_ctrl_impl::check_radio_config()
 
 void eiscat_radio_ctrl_impl::set_rpc_client(
     uhd::rpc_client::sptr rpcc,
-    const uhd::device_addr_t & /* block_args */
+    const uhd::device_addr_t &block_args
 ) {
     _rpcc = rpcc;
+    std::function<void()> send_sysref;
+    if (block_args.has_key("use_mpm_sysref")) {
+        send_sysref = [rpcc](){ rpcc->call<void>("db_0_send_sysref"); };
+    } else {
+        send_sysref = [this](){ this->sr_write("SR_SYSREF", 1); };
+    }
+
+    UHD_LOG_INFO(
+        "EISCAT",
+        "Finalizing dboard initialization using internal PPS"
+    );
+    send_sysref();
+    rpcc->call_with_token<void>("db_0_init_adcs_and_deframers");
+    rpcc->call_with_token<void>("db_1_init_adcs_and_deframers");
+    send_sysref();
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    rpcc->call_with_token<void>("db_0_check_deframer_status");
+    rpcc->call_with_token<void>("db_1_check_deframer_status");
 }
 
 /****************************************************************************

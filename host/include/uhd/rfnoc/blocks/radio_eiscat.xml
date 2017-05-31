@@ -48,6 +48,10 @@
       <address>201</address>
     </setreg>
     <setreg>
+      <name>SR_SYSREF</name>
+      <address>221</address>
+    </setreg>
+    <setreg>
       <name>SR_CHANNEL_GAIN_0</name>
       <address>204</address>
     </setreg>
