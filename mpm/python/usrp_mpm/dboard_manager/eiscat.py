@@ -19,26 +19,14 @@ EISCAT rx board implementation module
 """
 
 import time
-from six import iteritems
 from ..mpmlog import get_logger
 from ..uio import UIO
 from . import lib
 from .base import DboardManagerBase
 from .lmk_eiscat import LMK04828EISCAT
+from usrp_mpm.cores import ClockSynchronizer
 
 N_CHANS = 8 # Chans per dboard
-
-# Power enable pins
-POWER_ENB = 0x200C # Address of the power enable register
-PWR_CHAN_EN_2V5 = [(1<<chan_en) for chan_en in xrange(8)]
-PWR2_5V_DC_CTRL_ENB = 1<<8
-PWR2_5V_DC_PWR_EN = 1<<9
-PWR2_5V_LNA_CTRL_EN = 1<<10
-PWR2_5V_LMK_SPI_EN = 1<<11
-PWR2_5V_ADC0_SPI_EN = 1<<12
-PWR2_5V_ADC1_SPI_EN = 1<<13
-
-ADC_RESET = 0x2008
 
 def create_spidev_iface_sane(dev_node):
     """
@@ -152,60 +140,77 @@ class ADS54J56(object):
         ))
 
 
-class MMCM(object):
+class DboardClockControl(object):
     """
-    Controller for the MMCM inside the FPGA
+    Control the FPGA MMCM for Radio Clock control.
     """
-    RADIO_CLK_CTRL = 0x2000 # Register address
-
-    RADIO_CLK1X_ENABLE = 1<<0
-    RADIO_CLK2X_ENABLE = 1<<1
-    RADIO_CLK3X_ENABLE = 1<<2
-    RADIO_CLK_MMCM_RESET = 1<<3
-    RADIO_CLK_VALID = 1<<4
+    # Clocking Register address constants
+    RADIO_CLK_MMCM      = 0x0020
+    PHASE_SHIFT_CONTROL = 0x0024
+    RADIO_CLK_ENABLES   = 0x0028
+    MGT_REF_CLK_STATUS  = 0x0030
 
     def __init__(self, regs, log):
         self.log = log
         self.regs = regs
-        self.addr = self.RADIO_CLK_CTRL
-        self.poke32 = lambda bits: self.regs.poke32(self.addr, bits)
-        self.peek32 = lambda: self.regs.peek32(self.addr)
+        self.poke32 = self.regs.poke32
+        self.peek32 = self.regs.peek32
 
-    def reset(self):
+    def enable_outputs(self, enable=True):
+        """
+        Enables or disables the MMCM outputs.
+        """
+        if enable:
+            self.poke32(self.RADIO_CLK_ENABLES, 0x011)
+        else:
+            self.poke32(self.RADIO_CLK_ENABLES, 0x000)
+
+    def reset_mmcm(self):
         """
         Uninitialize and reset the MMCM
         """
-        self.log.trace("Resetting MMCM, disabling all clocks...")
-        self.poke32(self.RADIO_CLK_MMCM_RESET)
+        self.log.trace("Disabling all Radio Clocks, then resetting MMCM...")
+        self.enable_outputs(False)
+        self.poke32(self.RADIO_CLK_MMCM, 0x1)
 
-    def enable(self):
+    def enable_mmcm(self):
         """
         Unreset MMCM and poll lock indicators
+
+        If MMCM is not locked after unreset, an exception is thrown.
         """
-        self.log.trace("Unresetting MMCM...")
-        self.poke32(0x0000) # Take out of reset
+        self.log.trace("Un-resetting MMCM...")
+        self.poke32(self.RADIO_CLK_MMCM, 0x2)
         time.sleep(0.5) # Replace with poll and timeout TODO
-        mmcm_locked = bool(self.peek32() & self.RADIO_CLK_VALID)
+        mmcm_locked = bool(self.peek32(self.RADIO_CLK_MMCM) & 0x10)
         if not mmcm_locked:
             self.log.error("MMCM not locked!")
             raise RuntimeError("MMCM not locked!")
-        self.log.trace("Enabling output clocks on MMCM...")
-        self.poke32( # Enable all the output clocks:
-            self.RADIO_CLK1X_ENABLE | \
-            self.RADIO_CLK2X_ENABLE | \
-            self.RADIO_CLK3X_ENABLE
-        )
-        self.log.trace("Clocks enabled readback: 0x{:x}".format(self.peek32()))
-        return True
+        self.log.trace("Enabling output MMCM clocks...")
+        self.enable_outputs(True)
+
+    def check_refclk(self):
+        """
+        Not technically a clocking reg, but related.
+        """
+        return bool(self.peek32(self.MGT_REF_CLK_STATUS) & 0x1)
+
 
 class JesdCoreEiscat(object):
     """
     Wrapper for the JESD core. Note this core is specifically adapted for
     EISCAT, it is not general-purpose.
     """
+    # JESD Core Register Address Space Setup
+    ADDR_BASE     = 0x2000
+    CORE_B_OFFSET = 0x1000
+
+    # JESD Core Register Offsets
+    JESD_SIGNATURE_REG = 0x100
+    JESD_REVISION_REG  = 0x104
+
+    # Expected value for the JESD Core Signature
     CORE_ID_BASE = 0x4A455344
-    ADDR_BASE = 0x0000
-    ADDR_OFFSET = 0x1000
 
     def __init__(self, regs, slot_idx, core_idx, log):
         self.log = log
@@ -213,8 +218,8 @@ class JesdCoreEiscat(object):
         self.slot = "A" if slot_idx == 0 else "B"
         assert core_idx in (0, 1)
         self.core_idx = core_idx
-        self.base_addr = self.ADDR_BASE + self.ADDR_OFFSET * self.core_idx
-        self.log.trace("Slot: {} JESD Core {}: Base address {}".format(
+        self.base_addr = self.ADDR_BASE + self.CORE_B_OFFSET * self.core_idx
+        self.log.trace("Slot: {} JESD Core {}: Base address {:x}".format(
             self.slot, self.core_idx, self.base_addr
         ))
         self.peek32 = lambda addr: self.regs.peek32(self.base_addr + addr)
@@ -227,7 +232,7 @@ class JesdCoreEiscat(object):
         Verify that the JESD core ID is correct.
         """
         expected_id = self.CORE_ID_BASE + self.core_idx
-        core_id = self.peek32(0x100)
+        core_id = self.peek32(self.JESD_SIGNATURE_REG)
         self.log.trace("Reading JESD core ID: {:x}".format(core_id))
         if core_id != expected_id:
             self.log.error(
@@ -236,7 +241,7 @@ class JesdCoreEiscat(object):
                 )
             )
             return False
-        date_info = core_id = self.peek32(0x104)
+        date_info = core_id = self.peek32(self.JESD_REVISION_REG)
         self.log.trace("Reading JESD date info: {:x}".format(date_info))
         return True
 
@@ -246,7 +251,7 @@ class JesdCoreEiscat(object):
 
         Returns None, but will throw if there's a problem.
         """
-        self.log.trace("Init JESD...")
+        self.log.trace("Init JESD Core...")
         self._gt_pll_power_control()
         self._gt_rx_reset(True)
         if not self._gt_pll_lock_control():
@@ -277,12 +282,6 @@ class JesdCoreEiscat(object):
             self.log.error("Unexpected JESD Core Deframer Status: {:x}".format(deframer_status))
             return False
         return True
-
-    def check_refclk(self):
-        """
-        Not technically a JESD core reg, but related.
-        """
-        return bool(self.peek32(0x2004))
 
     def _gt_pll_power_control(self):
         """
@@ -319,7 +318,7 @@ class JesdCoreEiscat(object):
         """
         self.poke32(0x004, 0x11111111) # Reset CPLLs
         self.poke32(0x004, 0x11111100) # Unreset the ones we're using
-        time.sleep(0.002) # TODO replace with poll and timeout
+        time.sleep(0.02) # TODO replace with poll and timeout
         self.poke32(0x010, 0x10000) # Clear all CPLL sticky bits
         self.log.trace("MGT CPLL lock readback (lock seq): {:x}".format(self.peek32(0x004)))
         lock_status = self.peek32(0x004) & 0xFF
@@ -334,7 +333,7 @@ class JesdCoreEiscat(object):
         """
         reg_val = {
             'A': {0: 0x00, 1: 0x11},
-            'B': {0: 0x01, 1: 0x01},
+            'B': {0: 0x01, 1: 0x10},
         }[self.slot][self.core_idx]
         self.log.trace(
             "JESD Core: Slot {}, ADC {}: Setting polarity control to 0x{:2x}".format(
@@ -343,11 +342,11 @@ class JesdCoreEiscat(object):
         self.poke32(0x80, reg_val)
 
 
-
 class EISCAT(DboardManagerBase):
     """
     EISCAT Daughterboard
     """
+
     #########################################################################
     # Overridables
     #
@@ -381,6 +380,15 @@ class EISCAT(DboardManagerBase):
         """
         return ['eiscat-{sfp}'.format(sfp=sfp_config)]
 
+    # Daughterboard Control Register address constants
+    ADC_CONTROL    = 0x0600
+    LMK_STATUS     = 0x0604
+    DB_ENABLES     = 0x0608
+    DB_CH_ENABLES  = 0x060C
+    SYSREF_CONTROL = 0x0620
+
+    INIT_PHASE_DAC_WORD = 500 # Intentionally decimal
+
     def __init__(self, slot_idx, **kwargs):
         super(EISCAT, self).__init__(slot_idx, **kwargs)
         self.log = get_logger("EISCAT-{}".format(slot_idx))
@@ -393,93 +401,176 @@ class EISCAT(DboardManagerBase):
         self.lmk = None
         self.adc0 = None
         self.adc1 = None
-        self.mmcm = None
+        self.dboard_clk_control = None
+        self.clock_synchronizer = None
         self._spi_ifaces = None
 
     def init(self, args):
         """
-        Execute necessary actions to bring up the daughterboard
+        Execute necessary actions to bring up the daughterboard:
+        - Initializes all the software controls for all the chips and registers
+        - Turns on the power
+        - Initializes clocking
+        - Synchronizes clocks to reference
+        - Initializes JESD cores
+        - Initializes and resets ADCs
 
-        This assumes that an appropriate overlay was loaded.
+        This assumes that an appropriate overlay was loaded. If not, this will
+        fail loudly complaining about missing devices.
+
+        For operation (streaming), the ADCs and deframers still need to be
+        initialized.
         """
+        def _init_dboard_regs():
+            " Create a UIO object to talk to dboard regs "
+            self.log.trace("Getting uio...")
+            return UIO(
+                label="dboard-regs-{}".format(self.slot_idx),
+                read_only=False
+            )
+        def _init_jesd_cores(dboard_regs, slot_idx):
+            " Init abstraction layer for JESD cores. Will also test registers. "
+            return [
+                JesdCoreEiscat(
+                    dboard_regs,
+                    slot_idx,
+                    core_idx,
+                    self.log
+                ) for core_idx in xrange(2)
+            ]
+        def _init_spi_devices():
+            " Returns abstraction layers to all the SPI devices "
+            self.log.trace("Loading SPI interfaces...")
+            return {
+                key: self.spi_factories[key](self._spi_nodes[key])
+                for key in self._spi_nodes
+            }
+        def _init_clock_control(dboard_regs):
+            " Create a dboard clock control object and reset it "
+            dboard_clk_control = DboardClockControl(dboard_regs, self.log)
+            dboard_clk_control.reset_mmcm()
+            return dboard_clk_control
+        def _init_lmk(slot_idx, lmk_spi, ref_clk_freq,
+                      pdac_spi, init_phase_dac_word):
+            """
+            Sets the phase DAC to initial value, and then brings up the LMK
+            according to the selected ref clock frequency.
+            Will throw if something fails.
+            """
+            self.log.trace("Initializing Phase DAC to d{}.".format(
+                init_phase_dac_word
+            ))
+            pdac_spi.poke16(0x3, init_phase_dac_word)
+            return LMK04828EISCAT(lmk_spi, ref_clk_freq, slot_idx)
+        def _sync_db_clock(synchronizer):
+            " Synchronizes the DB clock to the common reference "
+            synchronizer.run_sync(measurement_only=False)
+            offset_error = synchronizer.run_sync(measurement_only=True)
+            if offset_error > 100e-12:
+                self.log.error("Clock synchronizer measured an offset of {} ps!".format(
+                    offset_error*1e12
+                ))
+                raise RuntimeError("Clock synchronizer measured an offset of {} ps!".format(
+                    offset_error*1e12
+                ))
+            self.log.info("Clock Synchronization Complete!")
+        def _check_jesd_cores(db_clk_control, jesd_cores):
+            " Checks clocks are enabled; init the JESD core; throw on failure. "
+            if not db_clk_control.check_refclk():
+                self.log.error("JESD Cores not getting a MGT RefClk!")
+                raise RuntimeError("JESD Cores not getting a MGT RefClk")
+            for jesd_core in jesd_cores:
+                jesd_core.init()
+        def _init_and_reset_adcs(spi_ifaces):
+            " Create ADC control objects; reset ADCs "
+            adcs = [ADS54J56(spi_iface, self.log) for spi_iface in spi_ifaces]
+            for adc in adcs:
+                adc.reset()
+            return adcs
+        # Go, go, go!
         self.log.info("init() called with args `{}'".format(
             ",".join(['{}={}'.format(x, args[x]) for x in args])
         ))
-        self.log.trace("Getting uio...")
-        self.radio_regs = UIO(
-            label="dboard-regs-{}".format(self.slot_idx),
-            read_only=False
-        )
-        # Create JESD cores. They will also test the UIO regs on initialization.
-        self.jesd_cores = [
-            JesdCoreEiscat(
-                self.radio_regs,
-                self.slot_idx,
-                core_idx,
-                self.log
-            ) for core_idx in xrange(2)
-        ]
+        self.radio_regs = _init_dboard_regs()
+        self.jesd_cores = _init_jesd_cores(self.radio_regs, self.slot_idx)
         self.log.info("Radio-register UIO object successfully generated!")
-
-        self.radio_regs.poke32(ADC_RESET, 0x0000) # TODO put this somewhere else
-
-        # Load SPI devices. Note: They won't be usable until _init_power() was called.
-        self.log.trace("Loading SPI interfaces...")
-        self._spi_ifaces = {
-            key: self.spi_factories[key](self._spi_nodes[key])
-            for key in self._spi_nodes
-        }
+        self._spi_ifaces = _init_spi_devices() # Chips don't have power yet!
         self.log.info("Loaded SPI interfaces!")
+        self._init_power(self.radio_regs) # Now, we can talk to chips via SPI
+        self.dboard_clk_control = _init_clock_control(self.radio_regs)
+        self.lmk = _init_lmk(
+            self.slot_idx,
+            self._spi_ifaces['lmk'],
+            self.ref_clock_freq,
+            self._spi_ifaces['phase_dac'],
+            self.INIT_PHASE_DAC_WORD,
+        )
+        self.dboard_clk_control.enable_mmcm()
+        self.log.info("Clocking Configured Successfully!")
+        # Synchronize DB Clocks
+        self.clock_synchronizer = ClockSynchronizer(
+            self.radio_regs,
+            self.dboard_clk_control,
+            self.lmk,
+            self._spi_ifaces['phase_dac'],
+            0, # TODO this might not actually be zero
+            104e6, # TODO don't hardcode
+            self.ref_clock_freq,
+            1.9E-12, # TODO don't hardcode. This should live in the EEPROM
+            self.INIT_PHASE_DAC_WORD,
+            self.log
+        )
+        _sync_db_clock(self.clock_synchronizer)
+        _check_jesd_cores(
+            self.dboard_clk_control,
+            self.jesd_cores
+        )
+        self.adc0, self.adc1 = _init_and_reset_adcs((
+            self._spi_ifaces['adc0'], self._spi_ifaces['adc1'],
+        ))
+        self.log.trace("ADC Reset Sequence Complete!")
 
-        # Initialize Clocking
-        self.mmcm = MMCM(self.radio_regs, self.log)
-        self._init_power(self.radio_regs)
-        self.mmcm.reset()
-        self.lmk = LMK04828EISCAT(self._spi_ifaces['lmk'], self.ref_clock_freq, "A") # Initializes LMK
-        if not self.mmcm.enable():
-            self.log.error("Could not re-enable MMCM!")
-            raise RuntimeError("Could not re-enable MMCM!")
-        self.log.info("MMCM enabled!")
-        # Initialize ADCs and JESD cores
-        if not self.jesd_cores[0].check_refclk():
-            self.log.error("JESD Core {} not getting a refclk!".format(0))
-            raise RuntimeError("JESD Core {} not getting a refclk!".format(0))
-        for i in xrange(2):
-            self.jesd_cores[i].init()
-        self.adc0 = ADS54J56(self._spi_ifaces['adc0'], self.log)
-        self.adc1 = ADS54J56(self._spi_ifaces['adc1'], self.log)
-        self.adc0.reset()
-        self.adc1.reset()
-        self.log.info("ADCs resetted!")
 
-        def send_sysref():
-            """
-            TODO this is a temp way of sending sysref
-            need to replace with timed command
-            """
-            SYSREF = 1<<13
-            old_val = 0x1FFF
-            self.radio_regs.poke32(POWER_ENB, old_val | SYSREF)
-            time.sleep(0.001)
-            self.radio_regs.poke32(POWER_ENB, old_val)
+    def send_sysref(self):
+        """
+        TODO this is a temp way of sending sysref
+        need to replace with timed command
+        """
+        self.log.trace("Sending SYSREF via MPM...")
+        self.radio_regs.poke32(self.SYSREF_CONTROL, 0x0)
+        time.sleep(0.001)
+        self.radio_regs.poke32(self.SYSREF_CONTROL, 0x1)
+        time.sleep(0.001)
+        self.radio_regs.poke32(self.SYSREF_CONTROL, 0x0)
 
-        send_sysref()
-
+    def init_adcs_and_deframers(self):
+        """
+        Initialize the ADCs and the JESD deframers. Assumption is that they were
+        SYSREF'd before.
+        """
         self.adc0.setup()
         self.adc1.setup()
-        self.log.info("ADCs set up!")
-        for i in xrange(2):
-            self.jesd_cores[i].init_deframer()
+        self.log.info("ADC Initialization Complete!")
+        for jesd_core in self.jesd_cores:
+            jesd_core.init_deframer()
 
-        send_sysref()
+    def check_deframer_status(self):
+        """
+        Checks the JESD deframer status. This is done after initialization and
+        sending a second SYSREF pulse.
 
-        for i in xrange(2):
-            if not self.jesd_cores[i].check_deframer_status():
-                raise RuntimeError("JESD Core {}: Deframer status not lookin' so good!".format(i))
-        self.log.info("JESD core initialized, link up!")
+        Calling this function is required to signal a completion of the
+        initialization sequence.
 
-        self.phase_dac = self._spi_ifaces['phase_dac']
-        ## END OF THE JEPSON SEQUENCE ##
+        Will throw on failure.
+        """
+        for jesd_idx, jesd_core in enumerate(self.jesd_cores):
+            if not jesd_core.check_deframer_status():
+                raise RuntimeError(
+                    "JESD204B Core {} Error: Failed to Link. " \
+                    "Don't ignore this, please tell someone!".format(jesd_idx)
+                )
+        self.log.info("JESD Core Initialized, link up! (woohoo!)")
         self.initialized = True
 
     def shutdown(self):
@@ -494,32 +585,23 @@ class EISCAT(DboardManagerBase):
         """
         Turn on power to the dboard.
 
-        After this function, we should never touch this register again (other
-        than turning it off again).
+        After this function, we should never touch this group again (other
+        than turning it off, maybe).
         """
-        reg_val = PWR2_5V_DC_CTRL_ENB
-        self.log.trace("Asserting power ctrl enable ({:x})...".format((reg_val)))
-        regs.poke32(POWER_ENB, reg_val)
-        time.sleep(0.001)
-        reg_val = reg_val \
-                | PWR2_5V_DC_CTRL_ENB \
-                | PWR2_5V_DC_PWR_EN \
-                | PWR2_5V_LNA_CTRL_EN \
-                | PWR2_5V_LMK_SPI_EN | PWR2_5V_ADC0_SPI_EN #| PWR2_5V_ADC1_SPI_EN
-        regs.poke32(POWER_ENB, reg_val)
-        self.log.trace("Asserting power enable for all the chips ({:x})...".format((reg_val)))
-        time.sleep(0.1)
-        for chan in xrange(8):
-            reg_val = reg_val | PWR_CHAN_EN_2V5[chan]
-        self.log.trace("Asserting power enable for all the channels ({:x})...".format((reg_val)))
-        regs.poke32(POWER_ENB, reg_val)
+        regs.poke32(self.DB_ENABLES,    0x01000000)
+        regs.poke32(self.DB_ENABLES,    0x00010101)
+        regs.poke32(self.ADC_CONTROL,   0x00010000)
+        time.sleep(0.100)
+        regs.poke32(self.DB_CH_ENABLES, 0x000000FF) # Enable all channels
 
     def _deinit_power(self, regs):
         """
-        Turn off power to the dboard.
+        Turn off power to the dboard. Sequence is reverse of init_power.
         """
         self.log.trace("Disabling power to the daughterboard...")
-        regs.poke32(POWER_ENB, 0x0000)
+        regs.poke32(self.DB_CH_ENABLES, 0x00000000) # Disable all channels
+        regs.poke32(self.ADC_CONTROL,   0x00100000)
+        regs.poke32(self.DB_ENABLES,    0x10101010)
 
     def update_ref_clock_freq(self, freq):
         """
