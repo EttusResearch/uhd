@@ -19,6 +19,9 @@
 #define INCLUDED_UTILS_RPC_HPP
 
 #include <rpc/client.h>
+#include <rpc/rpc_error.h>
+#include <uhd/exception.hpp>
+#include <boost/format.hpp>
 
 namespace uhd {
 
@@ -54,8 +57,20 @@ class rpc_client
     return_type call(std::string const& func_name, Args&&... args)
     {
         std::lock_guard<std::mutex> lock(_mutex);
-        return _client.call(func_name, std::forward<Args>(args)...)
-            .template as<return_type>();
+        try {
+            return _client.call(func_name, std::forward<Args>(args)...)
+                .template as<return_type>();
+        } catch (const ::rpc::rpc_error &ex) {
+            throw uhd::runtime_error(str(
+                boost::format("Error during RPC call to `%s'. Error message: %s")
+                % func_name % ex.what()
+            ));
+        } catch (const std::bad_cast& ex) {
+            throw uhd::runtime_error(str(
+                boost::format("Error during RPC call to `%s'. Error message: %s")
+                % func_name % ex.what()
+            ));
+        }
     };
 
     /*! Perform an RPC call; also includes a token.
