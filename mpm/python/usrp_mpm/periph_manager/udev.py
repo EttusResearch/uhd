@@ -15,8 +15,8 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-import pyudev
 import os
+import pyudev
 from ..mpmlog import get_logger
 
 def get_eeprom_paths(address):
@@ -25,8 +25,14 @@ def get_eeprom_paths(address):
     """
     context = pyudev.Context()
     parent = pyudev.Device.from_name(context, "platform", address)
-    paths = [device.device_node if device.device_node is not None else device.sys_path
-             for device in context.list_devices(parent=parent, subsystem="nvmem")]
+    paths = [d.device_node if d.device_node is not None else d.sys_path
+             for d in context.list_devices(parent=parent, subsystem="nvmem")]
+    # We need to sort this so 9-0050 comes before 10-0050 (etc.)
+    maxlen = max((len(os.path.split(p)[1]) for p in paths))
+    paths = sorted(
+        paths,
+        key=lambda x: "{:>0{maxlen}}".format(os.path.split(x)[1], maxlen=maxlen)
+    )
     return [os.path.join(x.encode('ascii'), 'nvmem') for x in paths]
 
 def get_spidev_nodes(spi_master):
