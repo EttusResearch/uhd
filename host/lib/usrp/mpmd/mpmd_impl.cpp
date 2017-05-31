@@ -120,11 +120,25 @@ mpmd_impl::mpmd_impl(const device_addr_t& device_addr)
     // TODO read this from the device info
     _tree->create<std::string>("/name").set("MPMD - Series device");
 
+    const size_t mb_index = 0;
+    const size_t num_xbars = _mb[mb_index]->rpc->call<size_t>("get_num_xbars");
+    UHD_ASSERT_THROW(num_xbars >= 1);
+    if (num_xbars > 1) {
+        UHD_LOG_WARNING("MPMD", "Only using first crossbar");
+    }
+    const size_t xbar_index = 0;
+    const size_t num_blocks = _mb[mb_index]->rpc->call<size_t>("get_num_blocks", xbar_index);
+    const size_t base_port = _mb[mb_index]->rpc->call<size_t>("get_base_port", xbar_index);
+    UHD_LOG_TRACE("MPMD",
+        "Enumerating RFNoC blocks for xbar " << xbar_index <<
+        ". Total blocks: " << num_blocks <<
+        " Base port: " << base_port
+    );
     try {
         enumerate_rfnoc_blocks(
-          0,
-          3, /* num blocks */ // TODO don't hardcode
-          3, /* base port */  // TODO don't hardcode
+          mb_index,
+          num_blocks,
+          base_port,
           uhd::sid_t(0x0200), // TODO don't hardcode
           device_addr
         );

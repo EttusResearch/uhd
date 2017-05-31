@@ -26,6 +26,7 @@ from .udev import get_spidev_nodes
 from usrp_mpm import net
 from usrp_mpm import dtoverlay
 from usrp_mpm import eeprom
+from usrp_mpm.rpc_server import no_claim, no_rpc
 
 def get_dboard_class_from_pid(pid):
     """
@@ -367,4 +368,35 @@ class PeriphManagerBase(object):
         Overload this method in actual device implementation
         """
         raise NotImplementedError("_allocate_sid() not implented")
+
+    @no_claim
+    def get_num_xbars(self):
+        """
+        Returns the number of crossbars instantiated in the current design
+        """
+        return 1 # FIXME
+
+    @no_claim
+    def get_num_blocks(self, xbar_index):
+        """
+        Returns the number of blocks connected to crossbar with index
+        xbar_index.
+
+        xbar_index -- The index of the crossbar that's being queried.
+        docstring for get_num_blocks"""
+        # FIXME
+        return int(open('/sys/class/rfnoc_crossbar/crossbar0/nports').read().strip()) - 3
+
+    @no_claim
+    def get_base_port(self, xbar_index):
+        """
+        Returns the index of the first port which is connected to an RFNoC
+        block. Example: Assume there are two SFPs connected to the crossbar, and
+        one DMA engine for CHDR traffic. The convention would be to connect
+        those to ports 0, 1, and 2, respectively. This makes port 3 the first
+        block to be connected to an RFNoC block.
+
+        xbar_index -- The index of the crossbar that's being queried
+        """
+        return 3 # FIXME This is the same 3 as in get_num_blocks
 
