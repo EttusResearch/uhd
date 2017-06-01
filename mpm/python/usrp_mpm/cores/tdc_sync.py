@@ -18,7 +18,10 @@ TDC clock synchronization
 """
 
 import time
-from numpy import mean
+
+def mean(vals):
+    " Calculate arithmetic mean of vals "
+    return float(sum(vals)) / max(len(vals), 1)
 
 def rsp_table(ref_clk_freq, radio_clk_freq):
     """
