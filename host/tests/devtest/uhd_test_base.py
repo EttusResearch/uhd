@@ -92,7 +92,7 @@ class uhd_test_case(unittest.TestCase):
         self.tear_down()
         if self.results_file:
             open(self.results_file, 'w').write(yaml.dump(self.results, default_flow_style=False))
-
+        time.sleep(15)
     def report_result(self, testname, key, value):
         """ Store a result as a key/value pair.
         After completion, all results for one test are written to the results file.
