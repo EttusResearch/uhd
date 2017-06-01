@@ -225,6 +225,8 @@ ENDIF()
 IF(MSVC)
     INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/cmake/msvc)
     ADD_DEFINITIONS( #stop all kinds of compatibility warnings
+        -DWIN32_LEAN_AND_MEAN
+        -DVC_EXTRALEAN
         -D_SCL_SECURE_NO_WARNINGS
         -D_SCL_SECURE_NO_DEPRECATE
         -D_CRT_SECURE_NO_WARNINGS
