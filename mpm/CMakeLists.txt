@@ -75,7 +75,11 @@ MESSAGE(STATUS "Boost libraries: ${Boost_LIBRARIES}")
 ########################################################################
 
 SET(MPM_PYTHON_VER 2 CACHE STRING "Python version (2 or 3)")
-SET(PYTHON_ADDITIONAL_VERSIONS 2.7 3.4 3.5)
+IF(MPM_PYTHON_VER EQUAL 2)
+    SET(PYTHON_ADDITIONAL_VERSIONS 2.7)
+ELSE()
+    SET(PYTHON_ADDITIONAL_VERSIONS 3.4 3.5)
+ENDIF()
 FIND_PACKAGE(PythonInterp ${MPM_PYTHON_VER})
 #IF(MPM_PYTHON_VER EQUAL "2")
     #FIND_PACKAGE(PythonInterp)
