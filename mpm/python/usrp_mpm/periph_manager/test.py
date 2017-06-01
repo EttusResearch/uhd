@@ -17,6 +17,7 @@
 """
 test periph_manager implementation module
 """
+
 from __future__ import print_function
 from .base import PeriphManagerBase
 from . import dboard_manager

@@ -17,6 +17,7 @@
 """
 Implemented RPC Servers
 """
+
 from __future__ import print_function
 from random import choice
 from string import ascii_letters, digits
@@ -28,6 +29,8 @@ from gevent import spawn_later
 from gevent import Greenlet
 from gevent import monkey
 monkey.patch_all()
+from builtins import str
+from builtins import range
 from mprpc import RPCServer
 from .mpmlog import get_main_logger
 

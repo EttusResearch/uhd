@@ -18,6 +18,7 @@
 dboard base implementation module
 """
 
+from builtins import object
 from six import iteritems
 from ..mpmlog import get_logger
 

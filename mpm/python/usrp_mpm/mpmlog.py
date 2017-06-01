@@ -22,6 +22,7 @@ from __future__ import print_function
 import copy
 import logging
 from logging import CRITICAL, ERROR, WARNING, INFO, DEBUG
+from builtins import str
 
 # Colors
 BOLD = str('\033[1m')

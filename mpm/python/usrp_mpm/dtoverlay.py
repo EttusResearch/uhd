@@ -120,7 +120,7 @@ def rm_overlay_safe(overlay_name):
     """
     Only remove an overlay if it's already applied.
     """
-    if overlay_name in list_overlays(applied_only=True).keys():
+    if overlay_name in list(list_overlays(applied_only=True).keys()):
         rm_overlay(overlay_name)
     else:
         get_logger("DTO").debug(

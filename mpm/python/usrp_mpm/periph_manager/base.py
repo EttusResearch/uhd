@@ -19,6 +19,9 @@ Mboard implementation base class
 """
 
 import os
+from builtins import str
+from builtins import range
+from builtins import object
 from six import iteritems, itervalues
 from ..mpmlog import get_logger
 from .udev import get_eeprom_paths
@@ -142,7 +145,7 @@ class PeriphManagerBase(object):
         self._init_mboard_with_eeprom()
         self._init_mboard_overlays(self._eeprom_head, args)
         self._init_dboards(args.override_db_pids)
-        self._available_endpoints = range(256)
+        self._available_endpoints = list(range(256))
         self._init_args = {}
         self._chdr_interfaces = []
 
@@ -166,7 +169,7 @@ class PeriphManagerBase(object):
                 # In C++, we can only handle dicts if all the values are of the
                 # same type. So we must convert them all to strings here:
                 self.mboard_info[key] = str(self._eeprom_head.get(key, ''))
-            if self._eeprom_head.has_key('pid') and self._eeprom_head['pid'] not in self.pids:
+            if 'pid' in self._eeprom_head and self._eeprom_head['pid'] not in self.pids:
                 self.log.error("Found invalid PID in EEPROM: 0x{:04X}. Valid PIDs are: {}".format(
                     self._eeprom_head['pid'],
                     ", ".join(["0x{:04X}".format(x) for x in self.pids]),
@@ -315,7 +318,7 @@ class PeriphManagerBase(object):
         for dboard in self.dboards:
             dboard.deinit()
         self.log.trace("Resetting SID pool...")
-        self._available_endpoints = range(256)
+        self._available_endpoints = list(range(256))
 
     def safe_list_updateable_components(self):
         """

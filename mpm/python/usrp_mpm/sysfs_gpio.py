@@ -19,6 +19,8 @@ Access to GPIOs mapped into the PS via sysfs
 """
 
 import os
+from builtins import range
+from builtins import object
 import pyudev
 from .mpmlog import get_logger
 

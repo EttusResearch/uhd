@@ -18,6 +18,7 @@
 magnesium dboard implementation module
 """
 
+from __future__ import print_function
 import struct
 import time
 from six import iteritems
@@ -141,8 +142,8 @@ class Magnesium(DboardManagerBase):
 
     def dump_jesd_core(self):
         for i in range(0x2000, 0x2110, 0x10):
-            print("0x%04X " % i),
+            print(("0x%04X " % i), end=' ')
             for j in range(0, 0x10, 0x4):
-                print("%08X" % self.radio_regs.peek32(i + j)),
+                print(("%08X" % self.radio_regs.peek32(i + j)), end=' ')
             print("")
 

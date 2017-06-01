@@ -19,6 +19,8 @@ JESD FPGA Core Interface
 """
 
 import time
+from builtins import hex
+from builtins import object
 from .mpmlog import get_logger
 
 class NIMgJESDCore(object):

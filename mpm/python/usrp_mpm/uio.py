@@ -21,6 +21,8 @@ Access to UIO mapped memory.
 import struct
 import os
 import mmap
+from builtins import hex
+from builtins import object
 import pyudev
 from .mpmlog import get_logger
 

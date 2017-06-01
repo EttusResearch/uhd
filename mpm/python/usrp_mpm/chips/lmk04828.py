@@ -18,6 +18,7 @@
 LMK04828 parent driver class
 """
 
+from builtins import object
 from ..mpmlog import get_logger
 
 class LMK04828(object):

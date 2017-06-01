@@ -18,6 +18,8 @@ TDC clock synchronization
 """
 
 import time
+from builtins import object
+from functools import reduce
 
 def mean(vals):
     " Calculate arithmetic mean of vals "

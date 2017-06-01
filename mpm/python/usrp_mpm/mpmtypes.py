@@ -17,11 +17,12 @@
 """
 MPM types
 """
+
 import ctypes
 from multiprocessing import Value
 from multiprocessing import Array
 from multiprocessing import RLock
-import struct
+from builtins import object
 
 MPM_RPC_PORT = 49601
 MPM_DISCOVERY_PORT = 49600

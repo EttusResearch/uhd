@@ -17,9 +17,11 @@
 """
 N310 implementation module
 """
+
 from __future__ import print_function
 import time
 from six import iteritems
+from builtins import object
 from .base import PeriphManagerBase
 from ..net import get_iface_addrs
 from ..net import byte_to_mac
@@ -144,7 +146,7 @@ class n310(PeriphManagerBase):
         super(n310, self).init(args)
         self._eth_dispatchers = {
             x: EthDispatcherTable(self.eth_tables.get(x))
-            for x in self._chdr_interfaces.keys()
+            for x in list(self._chdr_interfaces.keys())
         }
         for ifname, table in iteritems(self._eth_dispatchers):
             table.set_ipv4_addr(self._chdr_interfaces[ifname]['ip_addr'])

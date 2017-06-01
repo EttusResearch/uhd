@@ -17,6 +17,8 @@
 """
 magnesium dboard implementation module
 """
+
+from builtins import object
 from . import lib
 from .base import DboardManagerBase
 from logging import getLogger

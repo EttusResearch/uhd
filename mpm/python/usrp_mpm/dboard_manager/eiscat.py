@@ -17,6 +17,8 @@
 """
 EISCAT rx board implementation module
 """
+from builtins import range
+from builtins import object
 
 import time
 from ..mpmlog import get_logger

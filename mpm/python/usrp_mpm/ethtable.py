@@ -18,6 +18,8 @@
 Ethernet dispatcher table control
 """
 
+from builtins import str
+from builtins import object
 import netaddr
 from .mpmlog import get_logger
 from .uio import UIO

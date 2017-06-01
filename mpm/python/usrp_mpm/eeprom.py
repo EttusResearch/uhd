@@ -19,6 +19,8 @@ EEPROM management code
 """
 
 import struct
+from builtins import zip
+from builtins import object
 
 EEPROM_DEFAULT_HEADER = struct.Struct("!I I")
 
@@ -124,7 +126,7 @@ def read_eeprom(
         eeprom_parser = struct.Struct(eeprom_header_format[version])
         eeprom_keys = eeprom_header_keys[version]
         parsed_data = eeprom_parser.unpack_from(data)
-        return dict(zip(eeprom_keys, parsed_data))
+        return dict(list(zip(eeprom_keys, parsed_data)))
     # Dawaj, dawaj
     max_size = max_size or -1
     with open(nvmem_path, "rb") as nvmem_file:

@@ -19,6 +19,8 @@ LMK04828 driver for use with Magnesium
 """
 
 from time import sleep
+from builtins import zip
+from builtins import hex
 from ..mpmlog import get_logger
 from ..chips import LMK04828
 
