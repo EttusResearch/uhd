@@ -33,7 +33,7 @@ static const size_t IO_MASTER_RADIO = 0;
 
 UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(magnesium_radio_ctrl)
 {
-	std::cout << "magnesium_radio_ctrl_impl::ctor() " << std::endl;
+    std::cout << "magnesium_radio_ctrl_impl::ctor() " << std::endl;
 }
 
 magnesium_radio_ctrl_impl::~magnesium_radio_ctrl_impl()
@@ -43,6 +43,7 @@ magnesium_radio_ctrl_impl::~magnesium_radio_ctrl_impl()
 
 double magnesium_radio_ctrl_impl::set_rate(double rate)
 {
+  return 0;
 }
 
 void magnesium_radio_ctrl_impl::set_tx_antenna(const std::string &ant, const size_t chan)
@@ -55,45 +56,57 @@ void magnesium_radio_ctrl_impl::set_rx_antenna(const std::string &ant, const siz
 
 double magnesium_radio_ctrl_impl::set_tx_frequency(const double freq, const size_t chan)
 {
+  return 0;
 }
 
 double magnesium_radio_ctrl_impl::set_rx_frequency(const double freq, const size_t chan)
 {
+  return 0;
 }
 
 double magnesium_radio_ctrl_impl::set_rx_bandwidth(const double bandwidth, const size_t chan)
 {
+  return 0;
 }
 
 double magnesium_radio_ctrl_impl::get_tx_frequency(const size_t chan)
 {
+  return 0;
 }
 
 double magnesium_radio_ctrl_impl::get_rx_frequency(const size_t chan)
 {
+  return 0;
 }
 
 double magnesium_radio_ctrl_impl::get_rx_bandwidth(const size_t chan)
 {
+  return 0;
 }
 
 double magnesium_radio_ctrl_impl::set_tx_gain(const double gain, const size_t chan)
 {
+  return 0;
 }
 
 double magnesium_radio_ctrl_impl::set_rx_gain(const double gain, const size_t chan)
 {
+  return 0;
 }
 
 size_t magnesium_radio_ctrl_impl::get_chan_from_dboard_fe(const std::string &fe, const direction_t dir)
 {
+  return 0;
 }
 
-std::string magnesium_radio_ctrl_impl::get_dboard_fe_from_chan(const size_t chan, const direction_t dir) {
+std::string magnesium_radio_ctrl_impl::get_dboard_fe_from_chan(const size_t chan, const direction_t dir)
+{
+  return "";
 }
 
 double magnesium_radio_ctrl_impl::get_output_samp_rate(size_t port)
 {
+  return 0;
 }
 
 UHD_RFNOC_BLOCK_REGISTER(magnesium_radio_ctrl, "MagnesiumRadio");
