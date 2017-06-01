@@ -213,7 +213,7 @@ class LMK04828EISCAT(LMK04828):
             (0x132, ddly_value), # Hidden register. Write the same as previous based on inc/dec.
             (0x144, 0xB1), # Enable SYNC on outputs 2,4,6,12
         ))
-        for x in xrange(abs(num_shifts)):
+        for x in range(abs(num_shifts)):
             self.poke8(0x142, 0x1)
         self.poke8(0x144, 0xFF) # Disable SYNC on all outputs
 

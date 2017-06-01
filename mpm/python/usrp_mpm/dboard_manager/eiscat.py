@@ -439,7 +439,7 @@ class EISCAT(DboardManagerBase):
                     slot_idx,
                     core_idx,
                     self.log
-                ) for core_idx in xrange(2)
+                ) for core_idx in range(2)
             ]
         def _init_spi_devices():
             " Returns abstraction layers to all the SPI devices "

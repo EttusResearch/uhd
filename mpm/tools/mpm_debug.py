@@ -56,7 +56,7 @@ def echo(address, port):
     sock = socket.socket(
         socket.AF_INET,
         socket.SOCK_DGRAM)
-    message = "MPM-ECHO" + bytearray(random.getrandbits(8) for _ in xrange(8000-8))
+    message = "MPM-ECHO" + bytearray(random.getrandbits(8) for _ in range(8000-8))
     sock.sendto(message, (address, port))
     sock.settimeout(0.05) # wait max 50 ms
     while True:

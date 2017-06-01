@@ -14,7 +14,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 """
-TDC sync foo
+TDC clock synchronization
 """
 
 import time
@@ -193,7 +193,7 @@ class ClockSynchronizer(object):
         # Now, read off 512 measurements and take the mean of them.
         num_meas = 256 # FIXME back to 512
         self.log.trace("Reading {} TDC measurements from device...".format(num_meas))
-        current_value = mean([measure_offset() for _ in xrange(num_meas)])
+        current_value = mean([measure_offset() for _ in range(num_meas)])
 
         # Run the initial value through the oracle to determine the adjustments to make.
         target_values = [135e-9,] # only one target for now that all DBs shift to
@@ -232,7 +232,7 @@ class ClockSynchronizer(object):
         Return the offset (in seconds) the whatever what measured and whatever
         the reference is.
         """
-        for _ in xrange(1000): # TODO replace with poll & timeout
+        for _ in range(1000): # TODO replace with poll & timeout
             rtc_offset_msb = self.peek32(self.RTC_OFFSET_1)
             updated = (rtc_offset_msb & 0x100) == 0x100
             if updated:

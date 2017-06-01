@@ -121,7 +121,7 @@ class SysFSGPIO(object):
         E.g., if use_mask & 0x1 is True, it makes sure that 'gpioXXX' is exported.
         Also sets the DDRs.
         """
-        gpio_list = [x for x in xrange(n_gpio) if (1<<x) & use_mask]
+        gpio_list = [x for x in range(n_gpio) if (1<<x) & use_mask]
         self.log.trace("Initializing {} GPIOs...".format(len(gpio_list)))
         for gpio_idx in gpio_list:
             gpio_num = base + gpio_idx
