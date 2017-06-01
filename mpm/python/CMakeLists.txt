@@ -19,47 +19,6 @@
 # This file included, use CMake directory variables
 ########################################################################
 
-########################################################################
-# Setup Boost
-########################################################################
-MESSAGE(STATUS "")
-MESSAGE(STATUS "Configuring Boost C++ Libraries...")
-SET(BOOST_REQUIRED_COMPONENTS
-  python
-  system
-)
-IF(MINGW)
-    LIST(APPEND BOOST_REQUIRED_COMPONENTS thread_win32)
-ELSE()
-    LIST(APPEND BOOST_REQUIRED_COMPONENTS thread)
-ENDIF()
-
-IF(UNIX AND NOT BOOST_ROOT AND EXISTS "/usr/lib64")
-    LIST(APPEND BOOST_LIBRARYDIR "/usr/lib64") #fedora 64-bit fix
-ENDIF(UNIX AND NOT BOOST_ROOT AND EXISTS "/usr/lib64")
-
-IF(MSVC)
-    SET(BOOST_ALL_DYN_LINK "${BOOST_ALL_DYN_LINK}" CACHE BOOL "boost enable dynamic linking")
-    IF(BOOST_ALL_DYN_LINK)
-        ADD_DEFINITIONS(-DBOOST_ALL_DYN_LINK) #setup boost auto-linking in msvc
-    ELSE(BOOST_ALL_DYN_LINK)
-        SET(BOOST_REQUIRED_COMPONENTS) #empty components list for static link
-    ENDIF(BOOST_ALL_DYN_LINK)
-ENDIF(MSVC)
-
-SET(Boost_ADDITIONAL_VERSIONS
-    "1.46.0" "1.46" "1.47.0" "1.47" "1.48.0" "1.48" "1.48.0" "1.49" "1.50.0" "1.50"
-    "1.51.0" "1.51" "1.52.0" "1.52" "1.53.0" "1.53" "1.54.0" "1.54" "1.55.0" "1.55"
-    "1.56.0" "1.56" "1.57" "1.57" "1.58" "1.59" "1.60" "1.61"
-)
-FIND_PACKAGE(Boost 1.53 COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
-
-MESSAGE(STATUS "Boost include directories: ${Boost_INCLUDE_DIRS}")
-MESSAGE(STATUS "Boost library directories: ${Boost_LIBRARY_DIRS}")
-MESSAGE(STATUS "Boost libraries: ${Boost_LIBRARIES}")
-
-SET(UHD_HOST_ROOT ${CMAKE_SOURCE_DIR}/../host)
-
 ADD_LIBRARY(pyusrp_periphs SHARED pyusrp_periphs.cpp)
 TARGET_INCLUDE_DIRECTORIES(pyusrp_periphs PUBLIC
     ${PYTHON_INCLUDE_DIRS}

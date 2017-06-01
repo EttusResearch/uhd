@@ -30,9 +30,14 @@ ENDMACRO(USRP_PERIPHS_ADD_OBJECT)
 MESSAGE(STATUS "")
 MESSAGE(STATUS "Configuring Boost C++ Libraries...")
 SET(BOOST_REQUIRED_COMPONENTS
-  python
   system
 )
+IF(MPM_PYTHON_VER EQUAL 3)
+    LIST(APPEND BOOST_REQUIRED_COMPONENTS python3)
+ELSE()
+    LIST(APPEND BOOST_REQUIRED_COMPONENTS python)
+ENDIF()
+
 IF(MINGW)
     LIST(APPEND BOOST_REQUIRED_COMPONENTS thread_win32)
 ELSE()
@@ -69,9 +74,15 @@ MESSAGE(STATUS "Boost libraries: ${Boost_LIBRARIES}")
 # Setup Python API
 ########################################################################
 
+SET(MPM_PYTHON_VER 2 CACHE STRING "Python version (2 or 3)")
 SET(PYTHON_ADDITIONAL_VERSIONS 2.7 3.4 3.5)
-FIND_PACKAGE(PythonInterp)
-FIND_PACKAGE(PythonLibs)
+FIND_PACKAGE(PythonInterp ${MPM_PYTHON_VER})
+#IF(MPM_PYTHON_VER EQUAL "2")
+    #FIND_PACKAGE(PythonInterp)
+#ELSE()
+    #FIND_PACKAGE(PythonInterp 3)
+#ENDIF()
+FIND_PACKAGE(PythonLibs ${MPM_PYTHON_VER})
 
 ########################################################################
 # Install Dirs
