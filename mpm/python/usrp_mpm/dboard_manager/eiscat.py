@@ -35,7 +35,7 @@ def create_spidev_iface_sane(dev_node):
     Create a regs iface from a spidev node (sane values)
     """
     return lib.spi.make_spidev_regs_iface(
-        dev_node,
+        str(dev_node),
         1000000, # Speed (Hz)
         3, # SPI mode
         8, # Addr shift
@@ -49,7 +49,7 @@ def create_spidev_iface_phasedac(dev_node):
     Create a regs iface from a spidev node (ADS5681)
     """
     return lib.spi.make_spidev_regs_iface(
-        dev_node,
+        str(dev_node),
         1000000, # Speed (Hz)
         1, # SPI mode
         20, # Addr shift

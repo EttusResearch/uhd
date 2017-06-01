@@ -19,7 +19,6 @@ Access to GPIOs mapped into the PS via sysfs
 """
 
 import os
-from builtins import range
 from builtins import object
 import pyudev
 from .mpmlog import get_logger
@@ -35,11 +34,11 @@ def get_all_gpio_devs():
     """
     try:
         context = pyudev.Context()
-        gpios = [device.sys_name.encode('ascii')
+        gpios = [device.sys_name
                  for device in context.list_devices(subsystem="gpio")
                  if os.path.exists(os.path.join( # udev probably has better ways to do this
                      GPIO_SYSFS_BASE_DIR,
-                     device.sys_name.encode('ascii'),
+                     device.sys_name,
                      GPIO_SYSFS_LABELFILE
                  ))
                 ]
