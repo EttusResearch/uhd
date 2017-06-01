@@ -224,6 +224,7 @@ class ClockSynchronizer(object):
             if not self.lmk.check_plls_locked():
                 raise RuntimeError("LMK PLLs lost lock during clock synchronization!")
             self.dboard_clk_control.enable_outputs(True)
+            self.poke32(self.TDC_CONTROL, 0x1000) # Re-enable PPS
         return distance_to_target
 
 
