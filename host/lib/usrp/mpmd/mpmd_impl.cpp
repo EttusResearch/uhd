@@ -36,156 +36,63 @@
 
 using namespace uhd;
 
-mpmd_mboard_impl::mpmd_mboard_impl(const std::string& addr)
-    : rpc(uhd::rpc_client::make(addr, MPM_RPC_PORT))
-{
-    UHD_LOG_TRACE("MPMD", "Initializing mboard, IP address: " << addr);
-    std::map<std::string, std::string> _dev_info =
-        rpc->call<dev_info>("get_device_info");
-    device_info =
-        dict<std::string, std::string>(_dev_info.begin(), _dev_info.end());
-    // Get initial claim on mboard
-    _rpc_token = rpc->call<std::string>("claim", "UHD - Session 01"); // TODO make this configurable with device_addr, and provide better defaults
-    if (_rpc_token.empty()){
-        throw uhd::value_error("mpmd device claiming failed!");
-    }
-    rpc->set_token(_rpc_token);
-    _claimer_task = task::make([this] {
-        if (not this->claim()) {
-            throw uhd::value_error("mpmd device reclaiming loop failed!");
-        };
-        boost::this_thread::sleep_for(boost::chrono::milliseconds(1000));
-    });
-    // std::vector<std::string> data_ifaces =
-    //     rpc.call<std::vector<std::string>>("get_interfaces", _rpc_token);
-
-    // discover path to device and tell MPM our MAC address seen at the data
-    // interfaces
-    // move this into make_transport
-    //for (const auto& iface : data_ifaces) {
-        //std::vector<std::string> addrs = rpc.call<std::vector<std::string>>(
-            //"get_interface_addrs", _rpc_token, iface);
-        //for (const auto& iface_addr : addrs) {
-            //if (rpc_client(iface_addr, MPM_RPC_PORT)
-                    //.call<bool>("probe_interface", _rpc_token)) {
-                //data_interfaces.emplace(iface, iface_addr);
-                //break;
-            //}
-        //}
-    //}
-}
-
-uhd::sid_t mpmd_mboard_impl::allocate_sid(const uint16_t port,
-                                          const uhd::sid_t address,
-                                          const uint32_t xbar_src_addr,
-                                          const uint32_t xbar_src_port)
-{
-    const uint32_t sid = rpc->call_with_token<uint32_t>(
-        "allocate_sid",
-        port, address.get(), xbar_src_addr, xbar_src_port
-    );
-    return sid;
-}
-
-mpmd_mboard_impl::~mpmd_mboard_impl() {}
-
-mpmd_mboard_impl::uptr mpmd_mboard_impl::make(const std::string& addr)
-{
-    mpmd_mboard_impl::uptr mb =
-        mpmd_mboard_impl::uptr(new mpmd_mboard_impl(addr));
-    // implicit move
-    return mb;
-}
-
-bool mpmd_mboard_impl::claim()
-{
-    return rpc->call_with_token<bool>("reclaim");
-}
-
-mpmd_impl::mpmd_impl(const device_addr_t& device_addr)
+/*****************************************************************************
+ * Structors
+ ****************************************************************************/
+mpmd_impl::mpmd_impl(const device_addr_t& device_args)
     : usrp::device3_impl()
-    , _device_addr(device_addr)
+    , _device_addr(device_args)
     , _sid_framer(0)
 {
     UHD_LOGGER_INFO("MPMD")
         << "MPMD initialization sequence. Device args: "
-        << device_addr.to_string();
-    const device_addrs_t device_args = separate_device_addr(device_addr);
-    _mb.reserve(device_args.size());
-    for (size_t mb_i = 0; mb_i < device_args.size(); ++mb_i) {
-        _mb.push_back(setup_mb(mb_i, device_args[mb_i]));
+        << device_args.to_string();
+
+    for (const std::string& key : device_args.keys()) {
+        if (key.find("recv") != std::string::npos) {
+            recv_args[key] = device_args[key];
+        }
+        if (key.find("send") != std::string::npos) {
+            send_args[key] = device_args[key];
+        }
     }
 
+    const device_addrs_t mb_args = separate_device_addr(device_args);
+    _mb.reserve(mb_args.size());
+    for (size_t mb_i = 0; mb_i < mb_args.size(); ++mb_i) {
+        _mb.push_back(setup_mb(mb_i, mb_args[mb_i]));
+        setup_rfnoc_blocks(mb_i, mb_args[mb_i]);
+    }
 
     // TODO read this from the device info
     _tree->create<std::string>("/name").set("MPMD - Series device");
 
-    const size_t mb_index = 0;
-    const size_t num_xbars = _mb[mb_index]->rpc->call<size_t>("get_num_xbars");
-    UHD_ASSERT_THROW(num_xbars >= 1);
-    if (num_xbars > 1) {
-        UHD_LOG_WARNING("MPMD", "Only using first crossbar");
-    }
-    const size_t xbar_index = 0;
-    const size_t num_blocks = _mb[mb_index]->rpc->call<size_t>("get_num_blocks", xbar_index);
-    const size_t base_port = _mb[mb_index]->rpc->call<size_t>("get_base_port", xbar_index);
-    UHD_LOG_TRACE("MPMD",
-        "Enumerating RFNoC blocks for xbar " << xbar_index <<
-        ". Total blocks: " << num_blocks <<
-        " Base port: " << base_port
-    );
-    try {
-        enumerate_rfnoc_blocks(
-          mb_index,
-          num_blocks,
-          base_port,
-          uhd::sid_t(0x0200), // TODO don't hardcode
-          device_addr
-        );
-    } catch (const std::exception &ex) {
-        UHD_LOGGER_ERROR("MPMD")
-            << "Failure during device initialization: "
-            << ex.what();
-        throw uhd::runtime_error("Failed to run enumerate_rfnoc_blocks()");
-    }
-
-    for (const auto &block_ctrl: _rfnoc_block_ctrl) {
-        auto rpc_block_id = block_ctrl->get_block_id();
-        if (has_block<uhd::rfnoc::rpc_block_ctrl>(block_ctrl->get_block_id())) {
-            const size_t mboard_idx = rpc_block_id.get_device_no();
-            UHD_LOGGER_DEBUG("MPMD")
-                << "Adding RPC access to block: " << rpc_block_id
-                << " Extra device args: " << device_args[mboard_idx].to_string()
-            ;
-            get_block_ctrl<uhd::rfnoc::rpc_block_ctrl>(rpc_block_id)
-                ->set_rpc_client(_mb[mboard_idx]->rpc, device_args[mboard_idx]);
-        }
-    }
+    auto filtered_block_args = device_args; // TODO actually filter
+    setup_rpc_blocks(filtered_block_args);
 }
 
 mpmd_impl::~mpmd_impl() {}
 
-mpmd_mboard_impl::uptr mpmd_impl::setup_mb(const size_t mb_i,
-                                           const uhd::device_addr_t& dev_addr)
-{
-    const fs_path mb_path = "/mboards/" + std::to_string(mb_i);
-    mpmd_mboard_impl::uptr mb = mpmd_mboard_impl::make(dev_addr["addr"]);
-    mb->initialization_done = false;
-    std::vector<std::string> addrs;
-    const std::string eth0_addr = dev_addr["addr"];
+/*****************************************************************************
+ * Private methods
+ ****************************************************************************/
+mpmd_mboard_impl::uptr mpmd_impl::setup_mb(
+    const size_t mb_index,
+    const uhd::device_addr_t& device_args
+) {
+    UHD_LOG_DEBUG("MPMD",
+        "Initializing mboard " << mb_index << ". Device args: "
+        << device_args.to_string()
+    );
+
+    const fs_path mb_path = fs_path("/mboards") / mb_index;
+    auto mb = mpmd_mboard_impl::make(device_args["addr"]);
     _tree->create<std::string>(mb_path / "name")
-        .set(mb->device_info.get("type", ""));
+        .set(mb->device_info.get("type", "UNKNOWN"));
     _tree->create<std::string>(mb_path / "serial")
-        .set(mb->device_info.get("serial", ""));
+        .set(mb->device_info.get("serial", "n/a"));
     _tree->create<std::string>(mb_path / "connection")
         .set(mb->device_info.get("connection", "remote"));
-
-    for (const std::string& key : dev_addr.keys()) {
-        if (key.find("recv") != std::string::npos)
-            mb->recv_args[key] = dev_addr[key];
-        if (key.find("send") != std::string::npos)
-            mb->send_args[key] = dev_addr[key];
-    }
 
     // Do real MTU discovery (something similar like X300 but with MPM)
 
@@ -201,17 +108,67 @@ mpmd_mboard_impl::uptr mpmd_impl::setup_mb(const size_t mb_i,
     // Query time/clock sources on mboards/dboards
     // Throw rpc calls with boost bind into the property tree?
 
-    // Query rfnoc blocks on the device (MPM may know about them?)
-
-    // call enumerate rfnoc_blocks on the device
-
-    // configure radio?
 
     // implicit move
     return mb;
 }
 
+void mpmd_impl::setup_rfnoc_blocks(
+    const size_t mb_index,
+    const uhd::device_addr_t& ctrl_xport_args
+) {
+    auto mb = _mb[mb_index].get();
+    mb->num_xbars = mb->rpc->call<size_t>("get_num_xbars");
+    UHD_ASSERT_THROW(mb->num_xbars >= 1);
+    if (mb->num_xbars > 1) {
+        UHD_LOG_WARNING("MPMD", "Only using first crossbar");
+    }
+    // TODO loop over all xbars
+    const size_t xbar_index = 0;
+    const size_t num_blocks = mb->rpc->call<size_t>("get_num_blocks", xbar_index);
+    const size_t base_port = mb->rpc->call<size_t>("get_base_port", xbar_index);
+    UHD_LOG_TRACE("MPMD",
+        "Enumerating RFNoC blocks for xbar " << xbar_index <<
+        ". Total blocks: " << num_blocks <<
+        " Base port: " << base_port
+    );
+    try {
+        enumerate_rfnoc_blocks(
+          mb_index,
+          num_blocks,
+          base_port,
+          uhd::sid_t(0x0200), // TODO don't hardcode
+          ctrl_xport_args
+        );
+    } catch (const std::exception &ex) {
+        UHD_LOGGER_ERROR("MPMD")
+            << "Failure during block enumeration: "
+            << ex.what();
+        throw uhd::runtime_error("Failed to run enumerate_rfnoc_blocks()");
+    }
+}
 
+void mpmd_impl::setup_rpc_blocks(const device_addr_t &block_args)
+{
+    for (const auto &block_ctrl: _rfnoc_block_ctrl) {
+        auto rpc_block_id = block_ctrl->get_block_id();
+        if (has_block<uhd::rfnoc::rpc_block_ctrl>(block_ctrl->get_block_id())) {
+            const size_t mboard_idx = rpc_block_id.get_device_no();
+            UHD_LOGGER_DEBUG("MPMD")
+                << "Adding RPC access to block: " << rpc_block_id
+                << " Block args: " << block_args.to_string()
+            ;
+            get_block_ctrl<uhd::rfnoc::rpc_block_ctrl>(rpc_block_id)
+                ->set_rpc_client(_mb[mboard_idx]->rpc, block_args);
+        }
+    }
+}
+
+
+
+/*****************************************************************************
+ * API
+ ****************************************************************************/
 // TODO this does not consider the liberio use case!
 uhd::device_addr_t mpmd_impl::get_rx_hints(size_t /* mb_index */)
 {
@@ -294,6 +251,9 @@ both_xports_t mpmd_impl::make_transport(const sid_t& address,
     return xports;
 }
 
+/*****************************************************************************
+ * Find, Factory & Registry
+ ****************************************************************************/
 device_addrs_t mpmd_find_with_addr(const device_addr_t& hint_)
 {
     transport::udp_simple::sptr comm = transport::udp_simple::make_broadcast(
@@ -337,10 +297,10 @@ device_addrs_t mpmd_find_with_addr(const device_addr_t& hint_)
         device_addr_t new_addr;
         new_addr["addr"] = recv_addr;
         new_addr["type"] = "mpmd"; // hwd will overwrite this
-        // remove ident string and put other informations into device_addr dict
+        // remove ident string and put other informations into device_args dict
         result.erase(result.begin());
         // parse key-value pairs in the discovery string and add them to the
-        // device_addr
+        // device_args
         for (const auto& el : result) {
             std::vector<std::string> value;
             boost::algorithm::split(value, el,
@@ -409,9 +369,9 @@ device_addrs_t mpmd_find(const device_addr_t& hint_)
     return addrs;
 }
 
-static device::sptr mpmd_make(const device_addr_t& device_addr)
+static device::sptr mpmd_make(const device_addr_t& device_args)
 {
-    return device::sptr(boost::make_shared<mpmd_impl>(device_addr));
+    return device::sptr(boost::make_shared<mpmd_impl>(device_args));
 }
 
 UHD_STATIC_BLOCK(register_mpmd_device)

@@ -15,12 +15,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-########################################################################
-# This file included, use CMake directory variables
-########################################################################
-
 IF(ENABLE_MPMD)
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/mpmd_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/mpmd_mboard_impl.cpp
     )
 ENDIF(ENABLE_MPMD)
