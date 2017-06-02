@@ -169,10 +169,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         next_refresh = boost::get_system_time() + boost::posix_time::microseconds(long(1e6/frame_rate));
 
         //calculate the dft and create the ascii art frame
-        acsii_art_dft::log_pwr_dft_type lpdft(
-            acsii_art_dft::log_pwr_dft(&buff.front(), num_rx_samps)
+        ascii_art_dft::log_pwr_dft_type lpdft(
+            ascii_art_dft::log_pwr_dft(&buff.front(), num_rx_samps)
         );
-        std::string frame = acsii_art_dft::dft_to_plot(
+        std::string frame = ascii_art_dft::dft_to_plot(
             lpdft, COLS, LINES,
             usrp->get_rx_rate(),
             usrp->get_rx_freq(),

@@ -101,7 +101,7 @@ static void write_fft_to_file(const std::string &fft_path) {
     std::cout << "Calculating FFTs (this may take a while)... " << std::flush;
     std::ofstream ofile(fft_path.c_str(), std::ios::binary);
     BOOST_FOREACH(const recv_buff_t &buff, buffs) {
-                    std::vector<float> fft = acsii_art_dft::log_pwr_dft(&buff.front(), buff.size());
+                    std::vector<float> fft = ascii_art_dft::log_pwr_dft(&buff.front(), buff.size());
                     ofile.write((char*)&fft[0], (sizeof(float)*fft.size()));
                 }
     ofile.close();
