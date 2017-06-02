@@ -408,12 +408,12 @@ void eiscat_radio_ctrl_impl::set_rpc_client(
         "Finalizing dboard initialization using internal PPS"
     );
     send_sysref();
-    rpcc->notify_with_token("db_0_init_adcs_and_deframers");
-    rpcc->notify_with_token("db_1_init_adcs_and_deframers");
+    rpcc->request_with_token<bool>("db_0_init_adcs_and_deframers");
+    rpcc->request_with_token<bool>("db_1_init_adcs_and_deframers");
     send_sysref();
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    rpcc->notify_with_token("db_0_check_deframer_status");
-    rpcc->notify_with_token("db_1_check_deframer_status");
+    rpcc->request_with_token<bool>("db_0_check_deframer_status");
+    rpcc->request_with_token<bool>("db_1_check_deframer_status");
 }
 
 /****************************************************************************

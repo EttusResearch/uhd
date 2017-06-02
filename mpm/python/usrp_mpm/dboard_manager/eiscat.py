@@ -558,6 +558,7 @@ class EISCAT(DboardManagerBase):
         self.log.info("ADC Initialization Complete!")
         for jesd_core in self.jesd_cores:
             jesd_core.init_deframer()
+        return True
 
     def check_deframer_status(self):
         """
@@ -577,6 +578,7 @@ class EISCAT(DboardManagerBase):
                 )
         self.log.info("JESD Core Initialized, link up! (woohoo!)")
         self.initialized = True
+        return self.initialized
 
     def shutdown(self):
         """
