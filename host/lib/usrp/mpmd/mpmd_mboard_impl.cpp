@@ -21,6 +21,8 @@
 
 namespace {
     const size_t MPMD_RECLAIM_INTERVAL_MS = 1000;
+
+    const std::string MPMD_DEFAULT_SESSION_ID = "UHD";
 }
 
 using namespace uhd;
@@ -28,15 +30,26 @@ using namespace uhd;
 /*****************************************************************************
  * Structors
  ****************************************************************************/
-mpmd_mboard_impl::mpmd_mboard_impl(const std::string& ip_addr)
-    : rpc(uhd::rpc_client::make(ip_addr, MPM_RPC_PORT))
+mpmd_mboard_impl::mpmd_mboard_impl(
+        const device_addr_t &mb_args,
+        const std::string& ip_addr
+) : rpc(uhd::rpc_client::make(ip_addr, MPM_RPC_PORT))
 {
-    UHD_LOG_TRACE("MPMD", "Initializing mboard, IP address: " << ip_addr);
-    auto _dev_info = rpc->call<dev_info>("get_device_info");
-    device_info =
-        dict<std::string, std::string>(_dev_info.begin(), _dev_info.end());
-    // Get initial claim on mboard
-    auto rpc_token = rpc->call<std::string>("claim", "UHD - Session 01"); // TODO make this configurable with device_addr, and provide better defaults
+    UHD_LOGGER_TRACE("MPMD")
+        << "Initializing mboard, connecting to IP address: " << ip_addr
+        << " mboard args: " << mb_args.to_string()
+    ;
+    auto device_info_dict = rpc->call<dev_info>("get_device_info");
+    for (const auto &info_pair: device_info_dict) {
+        device_info[info_pair.first] = info_pair.second;
+    }
+    UHD_LOGGER_TRACE("MPMD")
+        << "MPM reports device info: " << device_info.to_string();
+
+    // Claim logic
+    auto rpc_token = rpc->call<std::string>("claim",
+        mb_args.get("session_id", MPMD_DEFAULT_SESSION_ID)
+    );
     if (rpc_token.empty()) {
         throw uhd::value_error("mpmd device claiming failed!");
     }
@@ -49,6 +62,11 @@ mpmd_mboard_impl::mpmd_mboard_impl(const std::string& ip_addr)
             std::chrono::milliseconds(MPMD_RECLAIM_INTERVAL_MS)
         );
     });
+
+    // Initialize properties
+    this->num_xbars = rpc->call<size_t>("get_num_xbars");
+    // Local addresses are not yet valid after this!
+    this->xbar_local_addrs.resize(this->num_xbars, 0xFF);
 
     // std::vector<std::string> data_ifaces =
     //     rpc.call<std::vector<std::string>>("get_interfaces", rpc_token);
@@ -89,6 +107,14 @@ uhd::sid_t mpmd_mboard_impl::allocate_sid(const uint16_t port,
     return uhd::sid_t(sid);
 }
 
+void mpmd_mboard_impl::set_xbar_local_addr(
+        const size_t xbar_index,
+        const size_t local_addr
+) {
+    rpc->call_with_token<void>("set_xbar_local_addr", xbar_index, local_addr);
+    UHD_ASSERT_THROW(xbar_index < xbar_local_addrs.size());
+    xbar_local_addrs.at(xbar_index) = local_addr;
+}
 
 /*****************************************************************************
  * Private methods
@@ -101,10 +127,12 @@ bool mpmd_mboard_impl::claim()
 /*****************************************************************************
  * Factory
  ****************************************************************************/
-mpmd_mboard_impl::uptr mpmd_mboard_impl::make(const std::string& addr)
-{
+mpmd_mboard_impl::uptr mpmd_mboard_impl::make(
+    const uhd::device_addr_t &mb_args,
+    const std::string& addr
+) {
     mpmd_mboard_impl::uptr mb =
-        mpmd_mboard_impl::uptr(new mpmd_mboard_impl(addr));
+        mpmd_mboard_impl::uptr(new mpmd_mboard_impl(mb_args, addr));
     // implicit move
     return mb;
 }

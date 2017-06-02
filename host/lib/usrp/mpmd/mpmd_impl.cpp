@@ -36,17 +36,20 @@
 
 using namespace uhd;
 
+namespace {
+    const size_t MPMD_CROSSBAR_MAX_LADDR = 255;
+}
+
 /*****************************************************************************
  * Structors
  ****************************************************************************/
 mpmd_impl::mpmd_impl(const device_addr_t& device_args)
     : usrp::device3_impl()
-    , _device_addr(device_args)
+    , _device_args(device_args)
     , _sid_framer(0)
 {
     UHD_LOGGER_INFO("MPMD")
-        << "MPMD initialization sequence. Device args: "
-        << device_args.to_string();
+        << "Initializing device with args: " << device_args.to_string();
 
     for (const std::string& key : device_args.keys()) {
         if (key.find("recv") != std::string::npos) {
@@ -59,8 +62,17 @@ mpmd_impl::mpmd_impl(const device_addr_t& device_args)
 
     const device_addrs_t mb_args = separate_device_addr(device_args);
     _mb.reserve(mb_args.size());
+
+    // This can theoretically be parallelized, but then we want to make sure
+    // we're distributing crossbar local addresses in some orderly fashion.
+    // At the very least, _xbar_local_addr_ctr needs to become atomic.
     for (size_t mb_i = 0; mb_i < mb_args.size(); ++mb_i) {
         _mb.push_back(setup_mb(mb_i, mb_args[mb_i]));
+    }
+
+    //! This might be parallelized. std::tasks would probably be a good way to
+    // do that if we want to.
+    for (size_t mb_i = 0; mb_i < mb_args.size(); ++mb_i) {
         setup_rfnoc_blocks(mb_i, mb_args[mb_i]);
     }
 
@@ -71,7 +83,10 @@ mpmd_impl::mpmd_impl(const device_addr_t& device_args)
     setup_rpc_blocks(filtered_block_args);
 }
 
-mpmd_impl::~mpmd_impl() {}
+mpmd_impl::~mpmd_impl()
+{
+    /* nop */
+}
 
 /*****************************************************************************
  * Private methods
@@ -80,13 +95,20 @@ mpmd_mboard_impl::uptr mpmd_impl::setup_mb(
     const size_t mb_index,
     const uhd::device_addr_t& device_args
 ) {
-    UHD_LOG_DEBUG("MPMD",
-        "Initializing mboard " << mb_index << ". Device args: "
-        << device_args.to_string()
+    UHD_LOGGER_DEBUG("MPMD")
+        << "Initializing mboard " << mb_index
+        << ". Device args: " << device_args.to_string()
+    ;
+
+    auto mb = mpmd_mboard_impl::make(
+        device_args,
+        device_args["addr"]
     );
+    for (size_t xbar_index = 0; xbar_index < mb->num_xbars; xbar_index++) {
+        mb->set_xbar_local_addr(xbar_index, allocate_xbar_local_addr());
+    }
 
     const fs_path mb_path = fs_path("/mboards") / mb_index;
-    auto mb = mpmd_mboard_impl::make(device_args["addr"]);
     _tree->create<std::string>(mb_path / "name")
         .set(mb->device_info.get("type", "UNKNOWN"));
     _tree->create<std::string>(mb_path / "serial")
@@ -117,39 +139,46 @@ void mpmd_impl::setup_rfnoc_blocks(
     const size_t mb_index,
     const uhd::device_addr_t& ctrl_xport_args
 ) {
-    auto mb = _mb[mb_index].get();
+    auto &mb = _mb[mb_index];
     mb->num_xbars = mb->rpc->call<size_t>("get_num_xbars");
-    UHD_ASSERT_THROW(mb->num_xbars >= 1);
-    if (mb->num_xbars > 1) {
-        UHD_LOG_WARNING("MPMD", "Only using first crossbar");
-    }
-    // TODO loop over all xbars
-    const size_t xbar_index = 0;
-    const size_t num_blocks = mb->rpc->call<size_t>("get_num_blocks", xbar_index);
-    const size_t base_port = mb->rpc->call<size_t>("get_base_port", xbar_index);
-    UHD_LOG_TRACE("MPMD",
-        "Enumerating RFNoC blocks for xbar " << xbar_index <<
-        ". Total blocks: " << num_blocks <<
-        " Base port: " << base_port
+    UHD_LOG_TRACE("MPM",
+        "Mboard " << mb_index << " reports " << mb->num_xbars << " crossbar(s)."
     );
-    try {
-        enumerate_rfnoc_blocks(
-          mb_index,
-          num_blocks,
-          base_port,
-          uhd::sid_t(0x0200), // TODO don't hardcode
-          ctrl_xport_args
-        );
-    } catch (const std::exception &ex) {
-        UHD_LOGGER_ERROR("MPMD")
-            << "Failure during block enumeration: "
-            << ex.what();
-        throw uhd::runtime_error("Failed to run enumerate_rfnoc_blocks()");
+
+    for (size_t xbar_index = 0; xbar_index < mb->num_xbars; xbar_index++) {
+        const size_t num_blocks =
+            mb->rpc->call<size_t>("get_num_blocks", xbar_index);
+        const size_t base_port =
+            mb->rpc->call<size_t>("get_base_port", xbar_index);
+        const size_t local_addr = mb->get_xbar_local_addr(xbar_index);
+        UHD_LOGGER_TRACE("MPMD")
+            << "Enumerating RFNoC blocks for xbar " << xbar_index
+            << ". Total blocks: " << num_blocks
+            << " Base port: " << base_port
+            << " Local address: " << local_addr
+        ;
+        try {
+            enumerate_rfnoc_blocks(
+              mb_index,
+              num_blocks,
+              base_port,
+              uhd::sid_t(0, 0, local_addr, 0),
+              ctrl_xport_args
+            );
+        } catch (const std::exception &ex) {
+            UHD_LOGGER_ERROR("MPMD")
+                << "Failure during block enumeration: "
+                << ex.what();
+            throw uhd::runtime_error("Failed to run enumerate_rfnoc_blocks()");
+        }
     }
 }
 
 void mpmd_impl::setup_rpc_blocks(const device_addr_t &block_args)
 {
+    // This could definitely be parallelized. Blocks may do all sorts of stuff
+    // inside set_rpc_client(), and it can take any amount of time (I mean,
+    // like, seconds).
     for (const auto &block_ctrl: _rfnoc_block_ctrl) {
         auto rpc_block_id = block_ctrl->get_block_id();
         if (has_block<uhd::rfnoc::rpc_block_ctrl>(block_ctrl->get_block_id())) {
@@ -164,6 +193,15 @@ void mpmd_impl::setup_rpc_blocks(const device_addr_t &block_args)
     }
 }
 
+size_t mpmd_impl::allocate_xbar_local_addr()
+{
+    const size_t new_local_addr = _xbar_local_addr_ctr++;
+    if (new_local_addr > MPMD_CROSSBAR_MAX_LADDR) {
+        throw uhd::runtime_error("Too many crossbars.");
+    }
+
+    return new_local_addr;
+}
 
 
 /*****************************************************************************
@@ -219,7 +257,7 @@ both_xports_t mpmd_impl::make_transport(const sid_t& address,
     std::cout << address.get_dst_addr() << std::endl;
     */
 
-    std::string interface_addr = _device_addr["addr"];
+    std::string interface_addr = _device_args["addr"];
     const uint32_t xbar_src_addr = address.get_src_addr();
     const uint32_t xbar_src_dst = 0;
 

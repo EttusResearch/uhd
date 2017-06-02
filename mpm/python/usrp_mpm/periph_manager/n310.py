@@ -131,8 +131,6 @@ class n310(PeriphManagerBase):
             args.default_args.get('clock_source', N3XX_DEFAULT_CLOCK_SOURCE)
         )
 
-        with open("/sys/class/rfnoc_crossbar/crossbar0/local_addr", "w") as xbar:
-            xbar.write("0x2")
         # if header.get("dataversion", 0) == 1:
         self.log.info("mboard info: {}".format(self.mboard_info))
         # Define some attributes so PyLint stays quiet

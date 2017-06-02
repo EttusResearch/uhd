@@ -52,15 +52,29 @@ class mpmd_mboard_impl
     using dev_info = std::map<std::string, std::string>;
 
     /*** Structors ***********************************************************/
-    mpmd_mboard_impl(const std::string& addr);
+    /*!
+     * \param mb_args Device args that pertain to this motherboard
+     * \param ip_addr RPC client will attempt to connect to this IP address
+     */
+    mpmd_mboard_impl(
+            const uhd::device_addr_t &mb_args,
+            const std::string& ip_addr
+    );
     ~mpmd_mboard_impl();
 
     /*** Factory *************************************************************/
-    static uptr make(const std::string& addr);
+    /*!
+     * \param mb_args Device args that pertain to this motherboard
+     * \param ip_addr RPC client will attempt to connect to this IP address
+     */
+    static uptr make(
+            const uhd::device_addr_t &mb_args,
+            const std::string& addr
+    );
 
     /*** Public attributes ***************************************************/
     //! Device information is read back via MPM and stored here.
-    uhd::dict<std::string, std::string> device_info;
+    uhd::device_addr_t device_info;
 
     //! Number of RFNoC crossbars on this device
     size_t num_xbars = 0;
@@ -81,7 +95,23 @@ class mpmd_mboard_impl
                             const uint32_t xbar_src_addr,
                             const uint32_t xbar_src_dst);
 
+    //! Configure a crossbar to have a certain local address
+    void set_xbar_local_addr(const size_t xbar_index, const size_t local_addr);
+
+    //! Return the local address of a given crossbar
+    size_t get_xbar_local_addr(const size_t xbar_index) {
+        return xbar_local_addrs.at(xbar_index);
+    }
+
   private:
+    /*************************************************************************
+     * Private attributes
+     ************************************************************************/
+    //! Stores a list of local addresses of the crossbars. The local address is
+    // what we use when addressing a crossbar in a CHDR header.
+    std::vector<size_t> xbar_local_addrs;
+
+
     /*! Renew the claim onto the device.
      *
      * This is meant to be called repeatedly, e.g., using a UHD task.
@@ -111,14 +141,20 @@ class mpmd_impl : public uhd::usrp::device3_impl
                                       const uhd::device_addr_t&);
 
   private:
+    /*! Initialize a single motherboard
+     *
+     * - See mpmd_mboard_impl ctor for details
+     * - Also allocates the local crossbar addresses
+     */
     mpmd_mboard_impl::uptr setup_mb(
             const size_t mb_i,
             const uhd::device_addr_t& dev_addr
     );
 
+    //! Setup all RFNoC blocks running on mboard \p mb_i
     void setup_rfnoc_blocks(
             const size_t mb_i,
-            const uhd::device_addr_t& dev_addr
+            const uhd::device_addr_t& block_args
     );
 
     //! Configure all blocks that require access to an RPC client
@@ -126,11 +162,26 @@ class mpmd_impl : public uhd::usrp::device3_impl
 
     uhd::device_addr_t get_rx_hints(size_t mb_index);
 
+    /*! Returns a valid local address for a crossbar
+     *
+     * \returns Valid local address
+     * \throws uhd::runtime_error if there are no more local addresses
+     */
+    size_t allocate_xbar_local_addr();
+
+
     uhd::dict<std::string, std::string> recv_args;
     uhd::dict<std::string, std::string> send_args;
 
-    uhd::device_addr_t _device_addr;
+    //! Stores the args with which the device was originally initialized
+    uhd::device_addr_t _device_args;
+    //! Stores a list of mboard references
     std::vector<mpmd_mboard_impl::uptr> _mb;
+
+    //! A counter for distributing local addresses to crossbars
+    // No-one touches this except allocate_xbar_local_addr(), gotcha?
+    size_t  _xbar_local_addr_ctr = 2;
+
     size_t _sid_framer;
 };
 

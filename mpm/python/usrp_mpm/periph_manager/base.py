@@ -387,8 +387,12 @@ class PeriphManagerBase(object):
 
         xbar_index -- The index of the crossbar that's being queried.
         docstring for get_num_blocks"""
-        # FIXME
-        return int(open('/sys/class/rfnoc_crossbar/crossbar0/nports').read().strip()) - 3
+        # FIXME udev lookup
+        xbar_sysfs_path = '/sys/class/rfnoc_crossbar/crossbar{}/nports'.format(
+            xbar_index
+        )
+        return int(open(xbar_sysfs_path).read().strip()) - \
+                self.get_base_port(xbar_index)
 
     @no_claim
     def get_base_port(self, xbar_index):
@@ -401,5 +405,21 @@ class PeriphManagerBase(object):
 
         xbar_index -- The index of the crossbar that's being queried
         """
-        return 3 # FIXME This is the same 3 as in get_num_blocks
+        return 3 # FIXME It's 3 because 0,1,2 are SFP,SFP,DMA
+
+    def set_xbar_local_addr(self, xbar_index, local_addr):
+        """
+        Program crossbar xbar_index to have the local address local_addr.
+        """
+        # FIXME udev lookup
+        xbar_sysfs_path = '/sys/class/rfnoc_crossbar/crossbar{}/local_addr'.format(
+            xbar_index
+        )
+        laddr_value = "0x{:X}".format(local_addr)
+        self.log.trace("Setting local address for xbar {} to {}.".format(
+            xbar_sysfs_path, laddr_value
+        ))
+        with open(xbar_sysfs_path, "w") as xbar_file:
+            xbar_file.write(laddr_value)
+        return True
 
