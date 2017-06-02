@@ -37,6 +37,7 @@ template<typename samp_type> void recv_to_file(
     uhd::usrp::multi_usrp::sptr usrp,
     const std::string &cpu_format,
     const std::string &wire_format,
+    const std::string &channel,
     const std::string &file,
     size_t samps_per_buff,
     unsigned long long num_requested_samples,
@@ -50,6 +51,9 @@ template<typename samp_type> void recv_to_file(
     unsigned long long num_total_samps = 0;
     //create a receive streamer
     uhd::stream_args_t stream_args(cpu_format,wire_format);
+    std::vector<size_t> channel_nums;
+    channel_nums.push_back(boost::lexical_cast<size_t>(channel));
+    stream_args.channels = channel_nums;
     uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
 
     uhd::rx_metadata_t md;
@@ -209,7 +213,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::set_thread_priority_safe();
 
     //variables to be set by po
-    std::string args, file, type, ant, subdev, ref, wirefmt;
+    std::string args, file, type, ant, subdev, ref, wirefmt, channel;
     size_t total_num_samps, spb;
     double rate, freq, gain, bw, total_time, setup_time;
 
@@ -229,9 +233,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("gain", po::value<double>(&gain), "gain for the RF chain")
         ("ant", po::value<std::string>(&ant), "antenna selection")
         ("subdev", po::value<std::string>(&subdev), "subdevice specification")
+        ("channel", po::value<std::string>(&channel)->default_value("0"), "which channel to use")
         ("bw", po::value<double>(&bw), "analog frontend filter bandwidth in Hz")
         ("ref", po::value<std::string>(&ref)->default_value("internal"), "reference source (internal, external, mimo)")
-        ("wirefmt", po::value<std::string>(&wirefmt)->default_value("sc16"), "wire format (sc8 or sc16)")
+        ("wirefmt", po::value<std::string>(&wirefmt)->default_value("sc16"), "wire format (sc8, sc16 or s16)")
         ("setup", po::value<double>(&setup_time)->default_value(1.0), "seconds of setup time")
         ("progress", "periodically display short-term bandwidth")
         ("stats", "show average bandwidth on exit")
@@ -329,12 +334,19 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
 
 #define recv_to_file_args(format) \
-    (usrp, format, wirefmt, file, spb, total_num_samps, total_time, bw_summary, stats, null, enable_size_map, continue_on_bad_packet)
+    (usrp, format, wirefmt, channel, file, spb, total_num_samps, total_time, bw_summary, stats, null, enable_size_map, continue_on_bad_packet)
     //recv to file
-    if (type == "double") recv_to_file<std::complex<double> >recv_to_file_args("fc64");
-    else if (type == "float") recv_to_file<std::complex<float> >recv_to_file_args("fc32");
-    else if (type == "short") recv_to_file<std::complex<short> >recv_to_file_args("sc16");
-    else throw std::runtime_error("Unknown type " + type);
+    if (wirefmt == "s16") {
+        if (type == "double") recv_to_file<double>recv_to_file_args("f64");
+        else if (type == "float") recv_to_file<float>recv_to_file_args("f32");
+        else if (type == "short") recv_to_file<short>recv_to_file_args("s16");
+        else throw std::runtime_error("Unknown type " + type);
+    } else {
+        if (type == "double") recv_to_file<std::complex<double> >recv_to_file_args("fc64");
+        else if (type == "float") recv_to_file<std::complex<float> >recv_to_file_args("fc32");
+        else if (type == "short") recv_to_file<std::complex<short> >recv_to_file_args("sc16");
+        else throw std::runtime_error("Unknown type " + type);
+    }
 
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;

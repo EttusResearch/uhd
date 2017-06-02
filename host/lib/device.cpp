@@ -73,7 +73,7 @@ void device::register_device(
     const make_t &make,
     const device_filter_t filter
 ){
-    UHD_LOGGER_TRACE("UHD") << "registering device";
+    // UHD_LOGGER_TRACE("UHD") << "registering device";
     get_dev_fcn_regs().push_back(dev_fcn_reg_t(find, make, filter));
 }
 

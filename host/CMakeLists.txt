@@ -225,6 +225,12 @@ IF(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" OR
         UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-fvisibility=hidden HAVE_VISIBILITY_HIDDEN)
         UHD_ADD_OPTIONAL_CXX_COMPILER_FLAG(-fvisibility-inlines-hidden HAVE_VISIBILITY_INLINES_HIDDEN)
     ENDIF(NOT WIN32)
+    IF(${CMAKE_BUILD_TYPE} STREQUAL "Coverage")
+        include(CodeCoverage)
+        setup_target_for_coverage(coverage "ctest || return 0" coverage) # never fail ctest, always generate coverage report
+        SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pedantic -pthread -g -O0 -fprofile-arcs -ftest-coverage" CACHE STRING "Flags used by the C++ compiler during Coverage builds." FORCE)
+        SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pedantic -pthread -g -O0 -fprofile-arcs -ftest-coverage" CACHE STRING "Flags used by the C compiler during Coverage builds." FORCE)
+    ENDIF()
 ENDIF()
 
 IF(MSVC)

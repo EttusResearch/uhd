@@ -261,7 +261,8 @@ static tune_result_t tune_xx_subdev_and_dsp(
      * tune_request. This lo_offset is based on the requirements of the FE, and
      * does not reflect a user-requested lo_offset, which is handled later. */
     double lo_offset = 0.0;
-    if (rf_fe_subtree->access<bool>("use_lo_offset").get()){
+    if (rf_fe_subtree->exists("use_lo_offset") and
+        rf_fe_subtree->access<bool>("use_lo_offset").get()){
         // If the frontend has lo_offset value and range properties, trust it
         // for lo_offset
         if (rf_fe_subtree->exists("lo_offset/value")) {
@@ -1175,7 +1176,11 @@ public:
     }
 
     std::vector<std::string> get_rx_sensor_names(size_t chan){
-        return _tree->list(rx_rf_fe_root(chan) / "sensors");
+        std::vector<std::string> sensor_names;
+        if (_tree->exists(rx_rf_fe_root(chan) / "sensors")) {
+            sensor_names = _tree->list(rx_rf_fe_root(chan) / "sensors");
+        }
+        return sensor_names;
     }
 
     void set_rx_dc_offset(const bool enb, size_t chan){
@@ -1515,7 +1520,11 @@ public:
     }
 
     std::vector<std::string> get_tx_sensor_names(size_t chan){
-        return _tree->list(tx_rf_fe_root(chan) / "sensors");
+        std::vector<std::string> sensor_names;
+        if (_tree->exists(rx_rf_fe_root(chan) / "sensors")) {
+            sensor_names = _tree->list(tx_rf_fe_root(chan) / "sensors");
+        }
+        return sensor_names;
     }
 
     void set_tx_dc_offset(const std::complex<double> &offset, size_t chan){

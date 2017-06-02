@@ -96,7 +96,8 @@ static UHD_INLINE size_t ZF_STREAM_OFF(const size_t which)
 struct e300_fifo_poll_waiter
 {
     e300_fifo_poll_waiter(const int fd):
-        fd(fd)
+        fd(fd),
+       _poll_claimed(false)
     {
         //NOP
     }

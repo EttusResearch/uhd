@@ -20,6 +20,7 @@
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
+#include <uhd/version.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/make_shared.hpp>
 #include <fstream>
@@ -232,6 +233,23 @@ public:
             auto F = boost::make_shared<file_logger_backend>(log_file_target);
             _loggers[UHD_FILE_LOGGER_KEY] = [F](const uhd::log::logging_info& log_info){F->log(log_info);};
         }
+        std::ostringstream sys_info;
+        sys_info \
+          << "UHD" \
+          << BOOST_PLATFORM << "; "
+          << BOOST_COMPILER << "; "
+          << "Boost_"
+          << BOOST_VERSION << "; "
+          << "UHD_" << uhd::get_version_string();
+        _log_queue.push_with_timed_wait(
+            uhd::log::logging_info(
+               pt::microsec_clock::local_time(),
+               uhd::log::info,
+               __FILE__,
+               __LINE__,
+               sys_info.str(),
+                boost::this_thread::get_id()),
+            0.25);
 
         // Launch log message consumer
         _pop_task = std::make_shared<std::thread>(std::thread([this](){this->pop_task();}));
@@ -240,6 +258,22 @@ public:
 
     ~log_resource(void){
         _exit = true;
+        // We push a final message to kick the pop task out of it's wait state.
+        // This wouldn't be necessary if pop_with_wait() could fail. Should
+        // that ever get fixed, we can remove this.
+        auto final_message = uhd::log::logging_info(
+                pt::microsec_clock::local_time(),
+                uhd::log::trace,
+                __FILE__,
+                __LINE__,
+                "LOGGING",
+                boost::this_thread::get_id()
+        );
+        final_message.message = "Terminating logger.";
+        push(final_message);
+#ifndef UHD_LOG_FASTPATH_DISABLE
+        push_fastpath("");
+#endif
         _pop_task->join();
         {
             std::lock_guard<std::mutex> l(_logmap_mutex);
@@ -273,7 +307,8 @@ public:
         log_info.message = "";
 
         while (!_exit) {
-            if (_log_queue.pop_with_timed_wait(log_info, 1)){
+            _log_queue.pop_with_wait(log_info);
+            {
                 std::lock_guard<std::mutex> l(_logmap_mutex);
                 for (const auto &logger : _loggers) {
                     auto level = logger_level.find(logger.first);
@@ -303,7 +338,8 @@ public:
 #ifndef UHD_LOG_FASTPATH_DISABLE
         while (!_exit) {
             std::string msg;
-            if (_fastpath_queue.pop_with_timed_wait(msg, 1)){
+            _fastpath_queue.pop_with_wait(msg);
+            {
                 std::cerr << msg << std::flush;
             }
         }

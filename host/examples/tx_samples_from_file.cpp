@@ -33,16 +33,10 @@ static bool stop_signal_called = false;
 void sig_int_handler(int){stop_signal_called = true;}
 
 template<typename samp_type> void send_from_file(
-    uhd::usrp::multi_usrp::sptr usrp,
-    const std::string &cpu_format,
-    const std::string &wire_format,
+    uhd::tx_streamer::sptr tx_stream,
     const std::string &file,
     size_t samps_per_buff
 ){
-
-    //create a transmit streamer
-    uhd::stream_args_t stream_args(cpu_format, wire_format);
-    uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
 
     uhd::tx_metadata_t md;
     md.start_of_burst = false;
@@ -69,7 +63,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::set_thread_priority_safe();
 
     //variables to be set by po
-    std::string args, file, type, ant, subdev, ref, wirefmt;
+    std::string args, file, type, ant, subdev, ref, wirefmt, channel;
     size_t spb;
     double rate, freq, gain, bw, delay, lo_off;
 
@@ -91,6 +85,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("ref", po::value<std::string>(&ref)->default_value("internal"), "reference source (internal, external, mimo)")
         ("wirefmt", po::value<std::string>(&wirefmt)->default_value("sc16"), "wire format (sc8 or sc16)")
         ("delay", po::value<double>(&delay)->default_value(0.0), "specify a delay between repeated transmission of file")
+        ("channel", po::value<std::string>(&channel)->default_value("0"), "which channel to use")
         ("repeat", "repeatedly transmit file")
         ("int-n", "tune USRP with integer-n tuning")
     ;
@@ -186,11 +181,22 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         std::cout << "Press Ctrl + C to stop streaming..." << std::endl;
     }
 
+    //create a transmit streamer
+    std::string cpu_format;
+    std::vector<size_t> channel_nums;
+    if (type == "double") cpu_format = "fc64";
+    else if (type == "float") cpu_format = "fc32";
+    else if (type == "short") cpu_format = "sc16";
+    uhd::stream_args_t stream_args(cpu_format, wirefmt);
+    channel_nums.push_back(boost::lexical_cast<size_t>(channel));
+    stream_args.channels = channel_nums;
+    uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
+
     //send from file
     do{
-        if (type == "double") send_from_file<std::complex<double> >(usrp, "fc64", wirefmt, file, spb);
-        else if (type == "float") send_from_file<std::complex<float> >(usrp, "fc32", wirefmt, file, spb);
-        else if (type == "short") send_from_file<std::complex<short> >(usrp, "sc16", wirefmt, file, spb);
+        if (type == "double") send_from_file<std::complex<double> >(tx_stream, file, spb);
+        else if (type == "float") send_from_file<std::complex<float> >(tx_stream, file, spb);
+        else if (type == "short") send_from_file<std::complex<short> >(tx_stream, file, spb);
         else throw std::runtime_error("Unknown type " + type);
 
         if(repeat and delay != 0.0) boost::this_thread::sleep(boost::posix_time::milliseconds(delay));

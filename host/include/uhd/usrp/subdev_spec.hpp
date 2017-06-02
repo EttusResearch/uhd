@@ -44,6 +44,12 @@ namespace uhd{ namespace usrp{
             const std::string &db_name = "",
             const std::string &sd_name = ""
         );
+
+        //! overloaded equality operator
+        bool operator==(const subdev_spec_pair_t &other);
+
+        //! overloaded inquality operator
+        bool operator!=(const subdev_spec_pair_t &other);
     };
 
     //! overloaded comparison operator for subdev_spec_pair_t

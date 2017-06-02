@@ -63,6 +63,18 @@ const std::string range_t::to_pp_string(void) const{
     return ss.str();
 }
 
+bool range_t::operator==(const range_t &other) const{
+    return (other._start == _start and
+            other._step  == _step  and
+            other._stop  == _stop);
+}
+
+bool range_t::operator!=(const range_t &other) const{
+    return (other._start != _start or
+            other._step  != _step  or
+            other._stop  != _stop);
+}
+
 /***********************************************************************
  * meta_range_t implementation code
  **********************************************************************/

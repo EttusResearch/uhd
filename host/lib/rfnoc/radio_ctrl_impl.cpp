@@ -450,3 +450,22 @@ std::vector<std::string> radio_ctrl_impl::get_clock_sources()
     return _tree->access<std::vector<std::string>>("clock_source/options").get();
 }
 
+
+std::vector<std::string> radio_ctrl_impl::get_gpio_banks() const
+{
+    return std::vector<std::string>();
+}
+
+void radio_ctrl_impl::set_gpio_attr(
+        const std::string &bank,
+        const std::string &attr,
+        const uint32_t value,
+        const uint32_t mask
+) {
+    throw uhd::not_implemented_error("set_gpio_attr was not defined for this radio");
+}
+
+uint32_t radio_ctrl_impl::get_gpio_attr(const std::string &bank, const std::string &attr)
+{
+    throw uhd::not_implemented_error("get_gpio_attr was not defined for this radio");
+}
