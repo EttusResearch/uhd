@@ -398,7 +398,7 @@ void eiscat_radio_ctrl_impl::set_rpc_client(
     _rpcc = rpcc;
     std::function<void()> send_sysref;
     if (block_args.has_key("use_mpm_sysref")) {
-        send_sysref = [rpcc](){ rpcc->call<void>("db_0_send_sysref"); };
+        send_sysref = [rpcc](){ rpcc->notify("db_0_send_sysref"); };
     } else {
         send_sysref = [this](){ this->sr_write("SR_SYSREF", 1); };
     }
@@ -408,12 +408,12 @@ void eiscat_radio_ctrl_impl::set_rpc_client(
         "Finalizing dboard initialization using internal PPS"
     );
     send_sysref();
-    rpcc->call_with_token<void>("db_0_init_adcs_and_deframers");
-    rpcc->call_with_token<void>("db_1_init_adcs_and_deframers");
+    rpcc->notify_with_token("db_0_init_adcs_and_deframers");
+    rpcc->notify_with_token("db_1_init_adcs_and_deframers");
     send_sysref();
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    rpcc->call_with_token<void>("db_0_check_deframer_status");
-    rpcc->call_with_token<void>("db_1_check_deframer_status");
+    rpcc->notify_with_token("db_0_check_deframer_status");
+    rpcc->notify_with_token("db_1_check_deframer_status");
 }
 
 /****************************************************************************

@@ -140,16 +140,16 @@ void mpmd_impl::setup_rfnoc_blocks(
     const uhd::device_addr_t& ctrl_xport_args
 ) {
     auto &mb = _mb[mb_index];
-    mb->num_xbars = mb->rpc->call<size_t>("get_num_xbars");
+    mb->num_xbars = mb->rpc->request<size_t>("get_num_xbars");
     UHD_LOG_TRACE("MPM",
         "Mboard " << mb_index << " reports " << mb->num_xbars << " crossbar(s)."
     );
 
     for (size_t xbar_index = 0; xbar_index < mb->num_xbars; xbar_index++) {
         const size_t num_blocks =
-            mb->rpc->call<size_t>("get_num_blocks", xbar_index);
+            mb->rpc->request<size_t>("get_num_blocks", xbar_index);
         const size_t base_port =
-            mb->rpc->call<size_t>("get_base_port", xbar_index);
+            mb->rpc->request<size_t>("get_base_port", xbar_index);
         const size_t local_addr = mb->get_xbar_local_addr(xbar_index);
         UHD_LOGGER_TRACE("MPMD")
             << "Enumerating RFNoC blocks for xbar " << xbar_index

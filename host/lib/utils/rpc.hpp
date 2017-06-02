@@ -46,15 +46,18 @@ class rpc_client
      */
     rpc_client(std::string const& addr, uint16_t port) : _client(addr, port) {}
 
-    /*! Perform an RPC call.
+    /*! Perform an RPC request.
      *
-     * Thread safe (locked).
+     * Thread safe (locked). This function blocks until it receives a valid
+     * response from the server.
      *
      * \param func_name The function name that is called via RPC
      * \param args All these arguments are passed to the RPC call
+     *
+     * \throws uhd::runtime_error in case of failure
      */
     template <typename return_type, typename... Args>
-    return_type call(std::string const& func_name, Args&&... args)
+    return_type request(std::string const& func_name, Args&&... args)
     {
         std::lock_guard<std::mutex> lock(_mutex);
         try {
@@ -73,8 +76,18 @@ class rpc_client
         }
     };
 
+    /*! Perform an RPC notification.
+     *
+     * Thread safe (locked). This function does not require a response from the
+     * server, although the underlying implementation may provide one.
+     *
+     * \param func_name The function name that is called via RPC
+     * \param args All these arguments are passed to the RPC call
+     *
+     * \throws uhd::runtime_error in case of failure
+     */
     template <typename... Args>
-    void call(std::string const& func_name, Args&&... args)
+    void notify(std::string const& func_name, Args&&... args)
     {
         std::lock_guard<std::mutex> lock(_mutex);
         try {
@@ -92,18 +105,29 @@ class rpc_client
         }
     };
 
-    /*! Perform an RPC call; also includes a token.
+    /*! Like request(), also provides a token.
      *
-     * The first argument to the actual RPC function call is the current token
-     * value. To set a token value, call set_token()
+     * This is a convenience wrapper to directly call a function that requires
+     * a token without having to have a copy of the token.
      */
     template <typename return_type, typename... Args>
-    return_type call_with_token(std::string const& func_name, Args&&... args)
+    return_type request_with_token(std::string const& func_name, Args&&... args)
     {
-        return call<return_type>(func_name, _token, std::forward<Args>(args)...);
+        return request<return_type>(func_name, _token, std::forward<Args>(args)...);
     };
 
-    /*! Sets the token value. This is used by call_with_token().
+    /*! Like notify(), also provides a token.
+     *
+     * This is a convenience wrapper to directly call a function that requires
+     * a token without having to have a copy of the token.
+     */
+    template <typename... Args>
+    void notify_with_token(std::string const& func_name, Args&&... args)
+    {
+        notify(func_name, _token, std::forward<Args>(args)...);
+    };
+
+    /*! Sets the token value. This is used by the `_with_token` methods.
      */
     void set_token(const std::string &token)
     {
@@ -116,6 +140,6 @@ class rpc_client
     ::rpc::client _client;
 };
 
-}
+} /* namespace uhd */
 
 #endif /* INCLUDED_UTILS_RPC_HPP */
