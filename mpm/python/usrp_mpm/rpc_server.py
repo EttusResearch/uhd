@@ -29,7 +29,7 @@ from gevent import spawn_later
 from gevent import Greenlet
 from gevent import monkey
 monkey.patch_all()
-from builtins import str
+from builtins import str, bytes
 from builtins import range
 from mprpc import RPCServer
 from .mpmlog import get_main_logger
@@ -101,8 +101,12 @@ class MPMServer(RPCServer):
         self.log.trace("adding command %s pointing to %s", command, function)
         def new_claimed_function(token, *args):
             " Define a function that requires a claim token check "
-            if token[:TOKEN_LEN] != self._state.claim_token.value:
-                return False
+            if bytes(token[:TOKEN_LEN], 'ascii') != self._state.claim_token.value:
+                self.log.warning(
+                    "Stopped attempt to access function `{}' with invalid " \
+                    "token `{}'.".format(command, token)
+                )
+                raise RuntimeError("Invalid token!")
             return function(*args)
         new_claimed_function.__doc__ = function.__doc__
         setattr(self, command, new_claimed_function)
@@ -133,22 +137,25 @@ class MPMServer(RPCServer):
         self.log.debug("I was pinged from: %s:%s", self.client_host, self.client_port)
         return data
 
-    def claim(self, sender_id):
+    def claim(self, session_id):
         """
-        claim `token` - tries to claim MPM device and provides a human readable sender_id
+        claim `token` - tries to claim MPM device and provides a human readable session_id
         This is a safe method which can be called without a claim on the device
         """
         self._state.lock.acquire()
         if self._state.claim_status.value:
             return ""
-        self.log.debug("claiming from: %s", self.client_host)
-        self.periph_manager.claimed = True
-        self._state.claim_token.value = ''.join(
-            choice(ascii_letters + digits) for _ in range(TOKEN_LEN)
+        self.log.debug(
+            "Claiming from: %s, Session ID: %s",
+            self.client_host,
+            session_id
         )
+        self._state.claim_token.value = bytes(''.join(
+            choice(ascii_letters + digits) for _ in range(TOKEN_LEN)
+        ), 'ascii')
         self._state.claim_status.value = True
         self._state.lock.release()
-        self.sender_id = sender_id
+        self.session_id = session_id
         self._reset_timer()
         self.log.debug("giving token: %s to host: %s", self._state.claim_token.value, self.client_host)
         return self._state.claim_token.value
@@ -161,13 +168,16 @@ class MPMServer(RPCServer):
         """
         self._state.lock.acquire()
         if self._state.claim_status.value:
-            if self._state.claim_token.value == token[:TOKEN_LEN]:
+            if self._state.claim_token.value == bytes(token[:TOKEN_LEN], 'ascii'):
                 self._state.lock.release()
                 self.log.debug("reclaimed from: %s", self.client_host)
                 self._reset_timer()
                 return True
             self._state.lock.release()
-            self.log.debug("reclaim failed from: %s", self.client_host)
+            self.log.debug(
+                "reclaim failed from: %s  Invalid token: %s",
+                self.client_host, token[:TOKEN_LEN]
+            )
             return False
         self.log.debug("trying to reclaim unclaimed device from: %s", self.client_host)
         return False
@@ -178,8 +188,8 @@ class MPMServer(RPCServer):
         """
         self.log.debug("releasing claim")
         self._state.claim_status.value = False
-        self._state.claim_token.value = ""
-        self.sender_id = None
+        self._state.claim_token.value = b''
+        self.session_id = None
         self.periph_manager.claimed = False
         self.periph_manager.deinit()
         self._timer.kill()

@@ -18,6 +18,7 @@
 Mboard implementation base class
 """
 
+from __future__ import print_function
 import os
 from builtins import str
 from builtins import range
@@ -168,7 +169,13 @@ class PeriphManagerBase(object):
             for key in ('pid', 'serial', 'rev'):
                 # In C++, we can only handle dicts if all the values are of the
                 # same type. So we must convert them all to strings here:
-                self.mboard_info[key] = str(self._eeprom_head.get(key, ''))
+                try:
+                    self.mboard_info[key] = str(
+                        self._eeprom_head.get(key, ''),
+                        'ascii'
+                    )
+                except TypeError:
+                    self.mboard_info[key] = str(self._eeprom_head.get(key, ''))
             if 'pid' in self._eeprom_head and self._eeprom_head['pid'] not in self.pids:
                 self.log.error("Found invalid PID in EEPROM: 0x{:04X}. Valid PIDs are: {}".format(
                     self._eeprom_head['pid'],
