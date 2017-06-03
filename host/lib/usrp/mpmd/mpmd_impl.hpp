@@ -73,6 +73,9 @@ class mpmd_mboard_impl
     );
 
     /*** Public attributes ***************************************************/
+    //! These are the args given by the user, with some filtering/preprocessing
+    uhd::device_addr_t mb_args;
+
     //! Device information is read back via MPM and stored here.
     uhd::device_addr_t device_info;
 
@@ -93,7 +96,9 @@ class mpmd_mboard_impl
     uhd::sid_t allocate_sid(const uint16_t port,
                             const uhd::sid_t address,
                             const uint32_t xbar_src_addr,
-                            const uint32_t xbar_src_dst);
+                            const uint32_t xbar_src_dst,
+                            const uint32_t dst_addr
+                            );
 
     //! Configure a crossbar to have a certain local address
     void set_xbar_local_addr(const size_t xbar_index, const size_t local_addr);
@@ -141,6 +146,11 @@ class mpmd_impl : public uhd::usrp::device3_impl
                                       const uhd::device_addr_t&);
 
   private:
+    uhd::device_addr_t get_rx_hints(size_t mb_index);
+
+    /*************************************************************************
+     * Private methods/helpers
+     ************************************************************************/
     /*! Initialize a single motherboard
      *
      * - See mpmd_mboard_impl ctor for details
@@ -160,8 +170,6 @@ class mpmd_impl : public uhd::usrp::device3_impl
     //! Configure all blocks that require access to an RPC client
     void setup_rpc_blocks(const uhd::device_addr_t &block_args);
 
-    uhd::device_addr_t get_rx_hints(size_t mb_index);
-
     /*! Returns a valid local address for a crossbar
      *
      * \returns Valid local address
@@ -169,7 +177,14 @@ class mpmd_impl : public uhd::usrp::device3_impl
      */
     size_t allocate_xbar_local_addr();
 
+    /*! Return the index of the motherboard carrying the crossbar at \p remote_addr
+     */
+    size_t identify_mboard_by_sid(const size_t remote_addr);
 
+
+    /*************************************************************************
+     * Private attributes
+     ************************************************************************/
     uhd::dict<std::string, std::string> recv_args;
     uhd::dict<std::string, std::string> send_args;
 

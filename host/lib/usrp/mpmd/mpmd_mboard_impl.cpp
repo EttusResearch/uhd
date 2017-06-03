@@ -33,12 +33,14 @@ using namespace uhd;
  * Structors
  ****************************************************************************/
 mpmd_mboard_impl::mpmd_mboard_impl(
-        const device_addr_t &mb_args,
-        const std::string& ip_addr
-) : rpc(uhd::rpc_client::make(ip_addr, MPM_RPC_PORT))
+        const device_addr_t &mb_args_,
+        const std::string& rpc_server_addr
+) : mb_args(mb_args_)
+  , rpc(uhd::rpc_client::make(rpc_server_addr, MPM_RPC_PORT))
 {
     UHD_LOGGER_TRACE("MPMD")
-        << "Initializing mboard, connecting to IP address: " << ip_addr
+        << "Initializing mboard, connecting to RPC server address: "
+        << rpc_server_addr
         << " mboard args: " << mb_args.to_string()
     ;
     auto device_info_dict = rpc->request<dev_info>("get_device_info");
@@ -102,14 +104,16 @@ mpmd_mboard_impl::~mpmd_mboard_impl()
 /*****************************************************************************
  * API
  ****************************************************************************/
-uhd::sid_t mpmd_mboard_impl::allocate_sid(const uint16_t port,
-                                          const uhd::sid_t address,
-                                          const uint32_t xbar_src_addr,
-                                          const uint32_t xbar_src_port)
-{
+uhd::sid_t mpmd_mboard_impl::allocate_sid(
+        const uint16_t port,
+        const uhd::sid_t address,
+        const uint32_t xbar_src_addr,
+        const uint32_t xbar_src_port,
+        const uint32_t dst_addr
+) {
     const auto sid = rpc->request_with_token<uint32_t>(
         "allocate_sid",
-        port, address.get(), xbar_src_addr, xbar_src_port
+        port, address.get(), xbar_src_addr, xbar_src_port, dst_addr
     );
     return uhd::sid_t(sid);
 }

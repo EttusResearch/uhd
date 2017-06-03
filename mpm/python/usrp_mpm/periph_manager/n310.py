@@ -149,12 +149,14 @@ class n310(PeriphManagerBase):
         for ifname, table in iteritems(self._eth_dispatchers):
             table.set_ipv4_addr(self._chdr_interfaces[ifname]['ip_addr'])
 
-    def _allocate_sid(self, sender_addr, port, sid, xbar_src_addr, xbar_src_port):
+    def _allocate_sid(self, sender_addr, port, sid, xbar_src_addr, xbar_src_port, new_ep):
         """
         Get the MAC address of the sender and store it in the FPGA ARP table
         """
         mac_addr = get_mac_addr(sender_addr)
-        new_ep = self._available_endpoints.pop(0)
+        if new_ep not in self._available_endpoints:
+            raise RuntimeError("no more sids yo")
+        self._available_endpoints.remove(new_ep)
         if mac_addr is not None:
             if sender_addr not in self.sid_endpoints:
                 self.sid_endpoints.update({sender_addr: (new_ep,)})

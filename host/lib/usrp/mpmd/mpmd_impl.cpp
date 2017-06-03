@@ -203,6 +203,23 @@ size_t mpmd_impl::allocate_xbar_local_addr()
     return new_local_addr;
 }
 
+size_t mpmd_impl::identify_mboard_by_sid(const size_t remote_addr)
+{
+    for (size_t mb_index = 0; mb_index < _mb.size(); mb_index++) {
+        for (size_t xbar_index = 0;
+                xbar_index < _mb[mb_index]->num_xbars;
+                xbar_index++) {
+            if (_mb[mb_index]->get_xbar_local_addr(xbar_index) == remote_addr) {
+                return mb_index;
+            }
+        }
+    }
+    throw uhd::lookup_error(str(
+        boost::format("Cannot identify mboard for remote address %d")
+        % remote_addr
+    ));
+}
+
 
 /*****************************************************************************
  * API
@@ -239,25 +256,27 @@ uhd::device_addr_t mpmd_impl::get_rx_hints(size_t /* mb_index */)
 // }
 // Everything fake below here
 
-both_xports_t mpmd_impl::make_transport(const sid_t& address,
-                                        usrp::device3_impl::xport_type_t xport_type,
-                                        const uhd::device_addr_t& args)
-{
-    //const size_t mb_index = address.get_dst_addr();
-    size_t mb_index = 0;
+both_xports_t mpmd_impl::make_transport(
+        const sid_t& address,
+        usrp::device3_impl::xport_type_t xport_type,
+        const uhd::device_addr_t& args
+) {
+    const size_t mb_index = identify_mboard_by_sid(address.get_dst_addr());
+
+    UHD_LOGGER_TRACE("MPMD")
+        << "Creating new transport of type: "
+        << (xport_type == CTRL ? "CTRL" : (xport_type == RX_DATA ? "RX" : "TX"))
+        << " To mboard: " << mb_index
+        << " Destination address: " << address.to_pp_string_hex().substr(6)
+        << " User-defined xport args: " << args.to_string()
+    ;
 
     both_xports_t xports;
-    xports.endianness = uhd::ENDIANNESS_BIG;
     const uhd::device_addr_t& xport_args = (xport_type == CTRL) ? uhd::device_addr_t() : args;
     transport::zero_copy_xport_params default_buff_args;
 
-    /*
-    std::cout << address << std::endl;
-    std::cout << address.get_src_addr() << std::endl;
-    std::cout << address.get_dst_addr() << std::endl;
-    */
-
-    std::string interface_addr = _device_args["addr"];
+    std::string interface_addr = _mb[mb_index]->mb_args.get("addr");
+    UHD_ASSERT_THROW(not interface_addr.empty());
     const uint32_t xbar_src_addr = address.get_src_addr();
     const uint32_t xbar_src_dst = 0;
 
@@ -276,15 +295,23 @@ both_xports_t mpmd_impl::make_transport(const sid_t& address,
         xport_args);
     uint16_t port  = recv->get_local_port();
 
-    xports.send_sid = _mb[mb_index]->allocate_sid(port, address, xbar_src_addr, xbar_src_dst);
+    xports.endianness = uhd::ENDIANNESS_BIG;
+    xports.send_sid = _mb[mb_index]->allocate_sid(port,
+            address, xbar_src_addr, xbar_src_dst, _sid_framer++
+        );
     xports.recv_sid = xports.send_sid.reversed();
-
-
     xports.recv_buff_size = buff_params.recv_buff_size;
     xports.send_buff_size = buff_params.send_buff_size;
-
-    xports.recv = recv;
+    xports.recv = recv; // Note: This is a type cast!
     xports.send = xports.recv;
+    UHD_LOGGER_TRACE("MPMD")
+        << "xport info: send_sid==" << xports.send_sid.to_pp_string_hex()
+        << " recv_sid==" << xports.recv_sid.to_pp_string_hex()
+        << " endianness=="
+            << (xports.endianness == uhd::ENDIANNESS_BIG ? "BE" : "LE")
+        << " recv_buff_size==" << xports.recv_buff_size
+        << " send_buff_size==" << xports.send_buff_size
+    ;
 
     return xports;
 }
