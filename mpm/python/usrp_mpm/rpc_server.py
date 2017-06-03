@@ -92,6 +92,7 @@ class MPMServer(RPCServer):
                 m for m in dir(component)
                 if not m.startswith('_') \
                     and callable(getattr(component, m)) \
+                    and not hasattr(self, m) \
                     and not getattr(getattr(component, m), '_norpc', False)
             ):
             new_rpc_method = getattr(component, method_name)
