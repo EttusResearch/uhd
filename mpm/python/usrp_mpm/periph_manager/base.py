@@ -302,6 +302,12 @@ class PeriphManagerBase(object):
         passed to the daughterboard's init calls.  For additional features,
         this needs to be overridden.
 
+        The main requirement of this function is, after calling it successfully,
+        all RFNoC blocks must be reachable via CHDR interfaces (i.e., clocks
+        need to be on).
+
+        Return False on failure, True on success.
+
         args -- A dictionary of args for initialization. Similar to device args
                 in UHD.
         """
@@ -312,8 +318,7 @@ class PeriphManagerBase(object):
         self.log.info("Identifying available network interfaces...")
         self._init_interfaces()
         self.log.debug("Initializing dboards...")
-        for dboard in self.dboards:
-            dboard.init(args)
+        return all((dboard.init(args) for dboard in self.dboards))
 
     def deinit(self):
         """

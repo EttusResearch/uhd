@@ -52,6 +52,7 @@ class DboardManagerBase(object):
         device_args -- Arbitrary dictionary of info, typically user-defined
         """
         return []
+    ### End of overridables #################################################
 
     def __init__(self, slot_idx, **kwargs):
         self.log = get_logger('dboardManager')
@@ -82,7 +83,7 @@ class DboardManagerBase(object):
         Run the dboard initialization. This typically happens at the beginning
         of a UHD session.
 
-        Must be overridden.
+        Must be overridden. Must return True/False on success/failure.
 
         args -- A dictionary of arbitrary settings that can be used by the
                 dboard code. Similar to device args for UHD.

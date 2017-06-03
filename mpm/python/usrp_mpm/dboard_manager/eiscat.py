@@ -17,18 +17,16 @@
 """
 EISCAT rx board implementation module
 """
-from builtins import range
-from builtins import object
 
 import time
+from builtins import range
+from builtins import object
 from ..mpmlog import get_logger
 from ..uio import UIO
 from . import lib
 from .base import DboardManagerBase
 from .lmk_eiscat import LMK04828EISCAT
 from usrp_mpm.cores import ClockSynchronizer
-
-N_CHANS = 8 # Chans per dboard
 
 def create_spidev_iface_sane(dev_node):
     """
@@ -410,6 +408,12 @@ class EISCAT(DboardManagerBase):
         self.clock_synchronizer = None
         self._spi_ifaces = None
 
+    def is_initialized(self):
+        """
+        Returns True if the daughterboard is a usable state and ready to stream
+        """
+        return self.initialized
+
     def init(self, args):
         """
         Execute necessary actions to bring up the daughterboard:
@@ -424,6 +428,9 @@ class EISCAT(DboardManagerBase):
         fail loudly complaining about missing devices.
 
         For operation (streaming), the ADCs and deframers still need to be
+        initialized.
+
+        Note that this function will do nothing if the device was previously
         initialized.
         """
         def _init_dboard_regs():
@@ -493,6 +500,12 @@ class EISCAT(DboardManagerBase):
                 adc.reset()
             return adcs
         # Go, go, go!
+        if self.initialized and not args.get("force_init", False):
+            self.log.info(
+                "Dboard was previously initialized; skipping init. " \
+                "Specify force_init=1 to force initialization."
+            )
+            return True
         self.log.info("init() called with args `{}'".format(
             ",".join(['{}={}'.format(x, args[x]) for x in args])
         ))
@@ -534,6 +547,7 @@ class EISCAT(DboardManagerBase):
             self._spi_ifaces['adc0'], self._spi_ifaces['adc1'],
         ))
         self.log.trace("ADC Reset Sequence Complete!")
+        return True
 
 
     def send_sysref(self):
@@ -582,11 +596,12 @@ class EISCAT(DboardManagerBase):
 
     def shutdown(self):
         """
-        Safely turn off the daughterboard
+        Safely turn off the daughterboard. This will take away power to the
+        components; a re-initialization will be necessary after calling this.
         """
         self.log.info("Shutting down daughterboard")
+        self.initialized = False
         self._deinit_power(self.radio_regs)
-
 
     def _init_power(self, regs):
         """

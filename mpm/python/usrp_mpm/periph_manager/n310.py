@@ -141,13 +141,14 @@ class n310(PeriphManagerBase):
         Calls init() on the parent class, and then programs the Ethernet
         dispatchers accordingly.
         """
-        super(n310, self).init(args)
+        result = super(n310, self).init(args)
         self._eth_dispatchers = {
             x: EthDispatcherTable(self.eth_tables.get(x))
             for x in list(self._chdr_interfaces.keys())
         }
         for ifname, table in iteritems(self._eth_dispatchers):
             table.set_ipv4_addr(self._chdr_interfaces[ifname]['ip_addr'])
+        return result
 
     def _allocate_sid(self, sender_addr, port, sid, xbar_src_addr, xbar_src_port, new_ep):
         """

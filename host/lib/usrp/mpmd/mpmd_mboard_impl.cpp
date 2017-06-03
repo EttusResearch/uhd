@@ -22,7 +22,12 @@
 #include <thread>
 
 namespace {
-    const size_t MPMD_RECLAIM_INTERVAL_MS = 1000;
+    //! Time between reclaims (ms)
+    const size_t MPMD_RECLAIM_INTERVAL_MS     = 1000;
+    //! Default timeout value for the init() RPC call (ms)
+    const size_t MPMD_DEFAULT_INIT_TIMEOUT    = 30000;
+    //! Default timeout value for RPC calls (ms)
+    const size_t MPMD_DEFAULT_RPC_TIMEOUT     = 2000;
 
     const std::string MPMD_DEFAULT_SESSION_ID = "UHD";
 }
@@ -43,12 +48,6 @@ mpmd_mboard_impl::mpmd_mboard_impl(
         << rpc_server_addr
         << " mboard args: " << mb_args.to_string()
     ;
-    auto device_info_dict = rpc->request<dev_info>("get_device_info");
-    for (const auto &info_pair: device_info_dict) {
-        device_info[info_pair.first] = info_pair.second;
-    }
-    UHD_LOGGER_TRACE("MPMD")
-        << "MPM reports device info: " << device_info.to_string();
 
     // Claim logic
     auto rpc_token = rpc->request<std::string>("claim",
@@ -67,6 +66,32 @@ mpmd_mboard_impl::mpmd_mboard_impl(
             std::chrono::milliseconds(MPMD_RECLAIM_INTERVAL_MS)
         );
     });
+
+    // Init and query info
+    std::map<std::string, std::string> mpm_device_args;
+    const std::set<std::string> key_blacklist{ // TODO put this somewhere else
+        "serial", "claimed", "type", "rev", "addr"
+    };
+    for (const auto &key : mb_args.keys()) {
+        if (not key_blacklist.count(key)) {
+            mpm_device_args[key] = mb_args[key];
+        }
+    }
+    rpc->set_timeout(mb_args.cast<size_t>(
+        "init_timeout", MPMD_DEFAULT_INIT_TIMEOUT
+    ));
+    if (not rpc->request_with_token<bool>("init", mpm_device_args)) {
+        throw uhd::runtime_error("Failed to initialize device.");
+    }
+    auto device_info_dict = rpc->request<dev_info>("get_device_info");
+    for (const auto &info_pair : device_info_dict) {
+        device_info[info_pair.first] = info_pair.second;
+    }
+    UHD_LOGGER_TRACE("MPMD")
+        << "MPM reports device info: " << device_info.to_string();
+    rpc->set_timeout(mb_args.cast<size_t>(
+        "rpc_timeout", MPMD_DEFAULT_RPC_TIMEOUT
+    ));
 
     // Initialize properties
     this->num_xbars = rpc->request<size_t>("get_num_xbars");

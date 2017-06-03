@@ -153,12 +153,13 @@ class MPMServer(RPCServer):
 
     def claim(self, session_id):
         """
-        claim `token` - tries to claim MPM device and provides a human readable session_id
-        This is a safe method which can be called without a claim on the device
+        claim `token` - tries to claim MPM device and provides a human readable
+        session_id.
         """
         self._state.lock.acquire()
         if self._state.claim_status.value:
-            return ""
+            self.log.warning("Someone tried to claim this device again")
+            raise RuntimeError("Double-claim")
         self.log.debug(
             "Claiming from: %s, Session ID: %s",
             self.client_host,
@@ -169,10 +170,33 @@ class MPMServer(RPCServer):
         ), 'ascii')
         self._state.claim_status.value = True
         self._state.lock.release()
-        self.session_id = session_id
+        self.session_id = session_id + " ({})".format(self.client_host)
         self._reset_timer()
-        self.log.debug("giving token: %s to host: %s", self._state.claim_token.value, self.client_host)
+        self.log.debug(
+            "giving token: %s to host: %s",
+            self._state.claim_token.value,
+            self.client_host
+        )
         return self._state.claim_token.value
+
+
+    def init(self, token, args):
+        """
+        Initialize device. See PeriphManagerBase for details. This is forwarded
+        from here import to give extra control over the claim release timeout.
+        """
+        if not self._check_token_valid(token):
+            self.log.warning(
+                "Attempt to init without valid claim from {}".format(
+                    self.client_host
+                )
+            )
+            raise RuntimeError("init() called without valid claim.")
+        self._timer.kill() # Stop the timer, inits can take some time.
+        result = self.periph_manager.init(args)
+        self.log.debug("init() result: {}".format(result))
+        self._reset_timer()
+        return result
 
     def reclaim(self, token):
         """
@@ -203,8 +227,8 @@ class MPMServer(RPCServer):
         """
         unconditional unclaim - for internal use
         """
-        self.log.debug("Releasing claim on session `{}' by `{}'".format(
-            self.session_id, self.client_host
+        self.log.debug("Releasing claim on session `{}'".format(
+            self.session_id
         ))
         self._state.claim_status.value = False
         self._state.claim_token.value = b''
@@ -213,12 +237,12 @@ class MPMServer(RPCServer):
         self.periph_manager.deinit()
         self._timer.kill()
 
-    def _reset_timer(self):
+    def _reset_timer(self, timeout=TIMEOUT_INTERVAL):
         """
         reset unclaim timer
         """
         self._timer.kill()
-        self._timer = spawn_later(TIMEOUT_INTERVAL, self._unclaim)
+        self._timer = spawn_later(timeout, self._unclaim)
 
     def unclaim(self, token):
         """

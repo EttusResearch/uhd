@@ -115,8 +115,8 @@ def main():
         "type": mgr._get_device_info()["type"],
         "serial": mgr._get_device_info()["serial"]
     }
-    mgr.init(args.default_args) # TODO really this should be called by the UHD session
     if args.init_only:
+        mgr.init(args.default_args)
         log.info("Terminating on user request before launching RPC server.")
         mgr.deinit()
         return True
@@ -130,7 +130,6 @@ def main():
     signal.signal(signal.SIGTERM, kill_time)
     signal.signal(signal.SIGINT, kill_time)
     signal.pause()
-    mgr.deinit() # TODO Really this should be called when a device is unclaimed
     return True
 
 if __name__ == '__main__':
