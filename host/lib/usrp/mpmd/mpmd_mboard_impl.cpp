@@ -16,6 +16,8 @@
 //
 
 #include "mpmd_impl.hpp"
+#include <uhd/utils/safe_call.hpp>
+#include <uhd/utils/log.hpp>
 #include <chrono>
 #include <thread>
 
@@ -90,7 +92,11 @@ mpmd_mboard_impl::mpmd_mboard_impl(
 
 mpmd_mboard_impl::~mpmd_mboard_impl()
 {
-    /* nop */
+    UHD_SAFE_CALL(
+        if (not rpc->request_with_token<bool>("unclaim")) {
+            UHD_LOG_WARNING("MPMD", "Failure to ack unclaim!");
+        }
+    );
 }
 
 /*****************************************************************************
