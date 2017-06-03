@@ -29,7 +29,7 @@ class LMK04828(object):
 
     def __init__(self, regs_iface, postfix=None):
         postfix = postfix or ""
-        self.log = get_logger("LMK04828{}".format(postfix))
+        self.log = get_logger("LMK04828-{}".format(postfix))
         self.regs_iface = regs_iface
         assert hasattr(self.regs_iface, 'peek8')
         assert hasattr(self.regs_iface, 'poke8')
