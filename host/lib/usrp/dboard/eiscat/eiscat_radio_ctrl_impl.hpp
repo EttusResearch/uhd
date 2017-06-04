@@ -25,9 +25,73 @@
 namespace uhd {
     namespace rfnoc {
 
-/*! \brief Provide access to an eiscat radio.
+/*! \brief Provide access to an EISCAT radio, including beamformer.
  *
- * Note: This will control both daughterboards.
+ * Note: This will control both daughterboards. Since we have a single RFNoC
+ * block, we only have one of these per motherboard.
+ *
+ * EISCAT radios have a whole bunch of features which don't have APIs provided
+ * by radio_ctrl. This means the most interesting features are controlled by
+ * set_arg() and get_arg(). Notable exception is set_rx_antenna(), which is
+ * heavily abused for all sorts of things.
+ *
+ * List of relevant args:
+ * - sysref (bool): Write to this to trigger a SYSREF pulse to *both*
+ *                  daughterboards. Will honor command time. Will always return
+ *                  true when read.
+ * - gain (double): Set the gain for antenna X, where X is the set_arg() `port`
+ *                  value. The gain is normalized in [0,1]. Can be read to get
+ *                  the current value. Example: `set_arg("gain", 0.5, 5)` will
+ *                  set the digital gain for antenna 5 to mid-point.
+ * - fir_ctrl_time (time_spec_t): This time will be used for following
+ *                                fir_select writes. Will return the last value
+ *                                that was written.
+ * - fir_select (int): Will queue a filter for manipulating a specific
+ *                     contribution. The value is the filter index in the BRAM.
+ *                     The port parameter specifies which filter; filters are
+ *                     indexed 0...159 using the equation beam_index * 10 +
+ *                     antenna_idx. Example: `set_arg("fir_select", 357, 16)`
+ *                     will apply filter number 357 to the zeroth antenna for
+ *                     beam number 1 (i.e. the second beam). Returns the last
+ *                     value that was written. May be incorrect before written
+ *                     for the first time.
+ * - fir_taps (vector<int32_t>): Updates FIR tap values in the BRAM. Port is
+ *                               the filter index. Will always return an impulse
+ *                               response, not the actual filter value.
+ * - assert_adcs_deframers (bool): Writing this does nothing. Reading it back
+ *                                 will run the initialization of ADCs and
+ *                                 deframers. Return value is success.
+ * - assert_deframer_status (bool): Writing this does nothing. Reading it will
+ *                                  run the final step of the JESD deframer
+ *                                  initialization routine. Returns success.
+ * - choose_beams (int): Configures beam selection (upper, lower, are neighbour
+ *                       contributions included). See set_beam_selection() for
+ *                       details.
+ * - enable_firs (bool): Can be used to disable fir FIR matrix. This routes the
+ *                       JESD output directly to the noc_shell.
+ * - enable_counter (bool): If the feature is available in the given FPGA image,
+ *                          setting this to true will disable the JESD core
+ *                          output and will input a counter signal (ramp)
+ *                          instead.
+ * - configure_beams (int): Danger, danger: Directly writes the
+ *                          SR_BEAMS_TO_NEIGHBOR register. Writing this can put
+ *                          some of the other properties out of sync, because
+ *                          writing to those will also write to this, but not
+ *                          vice versa.
+ *
+ *
+ * ## Time-aligned synchronization sequence:
+ *
+ * 0. Make sure all devices are getting the same ref clock and PPS!
+ * 1. Call set_command_time() with the same time on all blocks (make it far
+ *    enough in the future)
+ * 2. Call set_arg<bool>("sysref") on all blocks. This should SYSREF all dboards
+ *    synchronously.
+ * 3. On all blocks, call get_arg<bool>("assert_adcs_deframers") and verify it
+ *    returns true.
+ * 4. Repeat steps 1 and 2 with, obviously, another time that's in the future.
+ * 5. On all blocks, call get_arg<bool>("assert_deframer_status") and make sure
+ *    it returned true.
  */
 class eiscat_radio_ctrl_impl : public radio_ctrl_impl, public rpc_block_ctrl
 {
@@ -45,12 +109,14 @@ public:
      * API calls
      * Note: Tx calls are here mostly to throw errors.
      ***********************************************************************/
+    //! Returns the actual tick rate. Will display a warning if rate is not that
+    // value.
     double set_rate(double rate);
 
+    //! \throws uhd::runtime_error
     void set_tx_antenna(const std::string &ant, const size_t chan);
 
     /*! Configures FPGA switching for antenna selection
-     *
      *
      * Valid antenna values:
      * - BF: This is the default. Will apply the beamforming matrix in whatever
@@ -67,27 +133,38 @@ public:
      *   testing actual beamforming applications, when the same signal is
      *   applied to all inputs.
      *
+     * Note that this is very useful for testing and debugging. For actual
+     * beamforming operations, this API call won't be enough. Rather, set this
+     * to 'BF' (or don't do anything) and use the block properties
+     *
      * \throws uhd::value_error if the antenna value was not valid
      */
     void set_rx_antenna(const std::string &ant, const size_t chan);
 
+    //! \throws uhd::runtime_error
     double set_tx_frequency(const double freq, const size_t chan);
+    //! \returns Some value in the EISCAT passband
     double set_rx_frequency(const double freq, const size_t chan);
+    //! \returns Width of the EISCAT analog frontend filters
     double set_rx_bandwidth(const double bandwidth, const size_t chan);
+    //! \throws uhd::runtime_error
     double get_tx_frequency(const size_t chan);
 
+    //! \throws uhd::runtime_error
     double set_tx_gain(const double gain, const size_t chan);
+    //! \returns zero
     double set_rx_gain(const double gain, const size_t chan);
 
     size_t get_chan_from_dboard_fe(const std::string &fe, const uhd::direction_t dir);
     std::string get_dboard_fe_from_chan(const size_t chan, const uhd::direction_t dir);
 
+    //! \returns The EISCAT sampling rate
     double get_output_samp_rate(size_t port);
 
 protected:
     virtual bool check_radio_config();
 
-    /*! Finalize initialization sequence
+    /*! Finalize initialization sequence (ADCs, deframers) etc.
      */
     void set_rpc_client(
         uhd::rpc_client::sptr rpcc,
@@ -95,11 +172,16 @@ protected:
     );
 
 private:
-
+    /*************************************************************************
+     * Private methods
+     * To control the dboard (and execute these), take a look at the block
+     * properties.
+     ************************************************************************/
     /*! Write filter taps for a specific FIR filter.
      *
      * Note: If the number of taps is smaller than the number of available
-     * filter taps, it is padded with zero.
+     * filter taps, it is padded with zero (i.e., all taps are always written
+     * and this can't be use to partially update filters).
      *
      * \param fir_idx The index of the FIR filter we are reprogramming
      * \param taps A list of FIR filter taps for this filter.
@@ -112,7 +194,6 @@ private:
         const size_t fir_idx,
         const std::vector<fir_tap_t> &taps
     );
-
 
     /*! Choose a filter to be applied between an output beam and antenna input
      *
