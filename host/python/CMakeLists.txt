@@ -36,12 +36,12 @@ FIND_PATH(PYTHON_NUMPY_INCLUDE_DIR numpy/arrayobject.h
           HINTS "${__numpy_path}" "${PYTHON_INCLUDE_PATH}" NO_DEFAULT_PATH)
 
 # Build libpyuhd.so
-ADD_LIBRARY( pyuhd SHARED pyuhd.cpp )
+ADD_LIBRARY(pyuhd SHARED pyuhd.cpp)
 TARGET_INCLUDE_DIRECTORIES(pyuhd PUBLIC
     ${PYTHON_NUMPY_INCLUDE_DIR}
     ${CMAKE_SOURCE_DIR}/lib
 )
-TARGET_LINK_LIBRARIES( pyuhd ${Boost_PYTHON_LIBRARY} ${Boost_LIBRARIES} uhd )
+TARGET_LINK_LIBRARIES(pyuhd ${BOOST_PYTHON_LIBRARY} ${Boost_LIBRARIES} uhd)
 
 ADD_CUSTOM_COMMAND(TARGET pyuhd
     POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/libpyuhd.so ${CMAKE_CURRENT_BINARY_DIR}/uhd/libpyuhd.so)
@@ -73,6 +73,7 @@ ELSE()
       "from distutils import sysconfig; print(sysconfig.get_python_lib(plat_specific=True, prefix=''))"
       OUTPUT_VARIABLE UHD_PYTHON_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
     )
+    MESSAGE(STATUS "Utilizing the python install directory: ${CMAKE_INSTALL_PREFIX}/${UHD_PYTHON_DIR}")
     INSTALL(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/uhd DESTINATION ${CMAKE_INSTALL_PREFIX}/${UHD_PYTHON_DIR})
 ENDIF()
 
