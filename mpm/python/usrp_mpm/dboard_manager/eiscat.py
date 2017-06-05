@@ -104,11 +104,17 @@ class ADS54J56(object):
         self.regs.poke8(0x0053, 0x80) # Set clk divider to div-2
         self.regs.poke8(0x0039, 0xC0) # ALWAYS WRITE 1 to this bit
         self.regs.poke8(0x0059, 0x20) # ALWAYS WRITE 1 to this bit
-        self.regs.poke8(0x4004, 0x68) #
+        self.regs.poke8(0x4004, 0x68) # Select Main Digital page
         self.regs.poke8(0x4003, 0x00) #
-        self.regs.poke8(0x6000, 0x01) # Reset interleaving engine for Ch A-B
+        self.regs.poke8(0x6042, 0x02) # Set interleaving correction to 3rd nyquist zone
+        self.regs.poke8(0x604E, 0x80) # Enable correction
+        self.regs.poke8(0x7042, 0x02) # Set interleaving correction to 3rd nyquist zone
+        self.regs.poke8(0x704E, 0x80) # Enable correction
+        self.regs.poke8(0x6000, 0x00) # Reset interleaving engine for Ch A-B (set to 0-1-0)
+        self.regs.poke8(0x6000, 0x01) #
         self.regs.poke8(0x6000, 0x00) #
-        self.regs.poke8(0x7000, 0x01) # Reset interleaving engine for Ch C-D
+        self.regs.poke8(0x7000, 0x00) # Reset interleaving engine for Ch C-D (set to 0-1-0)
+        self.regs.poke8(0x7000, 0x01) #
         self.regs.poke8(0x7000, 0x00) #
         self.regs.poke8(0x4004, 0x61) # Select decimation filter page of JESD bank.
         self.regs.poke8(0x4003, 0x41) #
@@ -514,6 +520,12 @@ class EISCAT(DboardManagerBase):
         self.log.info("Radio-register UIO object successfully generated!")
         self._spi_ifaces = _init_spi_devices() # Chips don't have power yet!
         self.log.info("Loaded SPI interfaces!")
+        # An occasional failure to train the ADC-FPGA JESD204B link was cropping up during
+        # dev. A simple solution is to turn off the power and control signals to the DB
+        # before configuration begins (for the first-run case this call is a no-op, but
+        # for reconfiguration, it turns off the power).
+        self._deinit_power(self.radio_regs)
+        time.sleep(.100) # This time is arbitrarily assigned and seems to work well.
         self._init_power(self.radio_regs) # Now, we can talk to chips via SPI
         self.dboard_clk_control = _init_clock_control(self.radio_regs)
         self.lmk = _init_lmk(
@@ -557,9 +569,7 @@ class EISCAT(DboardManagerBase):
         """
         self.log.trace("Sending SYSREF via MPM...")
         self.radio_regs.poke32(self.SYSREF_CONTROL, 0x0)
-        time.sleep(0.001)
         self.radio_regs.poke32(self.SYSREF_CONTROL, 0x1)
-        time.sleep(0.001)
         self.radio_regs.poke32(self.SYSREF_CONTROL, 0x0)
 
     def init_adcs_and_deframers(self):
