@@ -200,6 +200,16 @@ class ClockSynchronizer(object):
         self.log.trace("Reading {} TDC measurements from device...".format(num_meas))
         current_value = mean([measure_offset() for _ in range(num_meas)])
 
+        if (current_value < 120e-9) or (current_value > 150e-9):
+            self.log.error("Clock synchronizer measured a "
+                           "current value of {} ns!".format(
+                current_value*1e9
+            ))
+            raise RuntimeError("TDC measurement out of range! "
+                               "Current value: {} ns.".format(
+                current_value*1e9
+            ))
+
         # Run the initial value through the oracle to determine the adjustments to make.
         target_values = [135e-9,] # only one target for now that all DBs shift to
         lmk_vco_freq = 2.496e9    # LMK VCO = 2.496 GHz
@@ -212,7 +222,6 @@ class ClockSynchronizer(object):
 
         if not measurement_only:
             self.log.trace("Applying calculated shifts...")
-            self.dboard_clk_control.enable_outputs(False)
             # Coarse shift with the LMK.
             self.lmk.lmk_shift(coarse_steps_required)
             self.log.trace("LMK Shift Complete!")
@@ -223,7 +232,6 @@ class ClockSynchronizer(object):
             time.sleep(0.5)
             if not self.lmk.check_plls_locked():
                 raise RuntimeError("LMK PLLs lost lock during clock synchronization!")
-            self.dboard_clk_control.enable_outputs(True)
             self.poke32(self.TDC_CONTROL, 0x1000) # Re-enable PPS
         return distance_to_target
 
