@@ -49,7 +49,7 @@ namespace uhd {
  * - fir_select (int): Will queue a filter for manipulating a specific
  *                     contribution. The value is the filter index in the BRAM.
  *                     The port parameter specifies which filter; filters are
- *                     indexed 0...159 using the equation beam_index * 10 +
+ *                     indexed 0...159 using the equation beam_index * 16 +
  *                     antenna_idx. Example: `set_arg("fir_select", 357, 16)`
  *                     will apply filter number 357 to the zeroth antenna for
  *                     beam number 1 (i.e. the second beam). Returns the last
@@ -67,12 +67,12 @@ namespace uhd {
  * - choose_beams (int): Configures beam selection (upper, lower, are neighbour
  *                       contributions included). See set_beam_selection() for
  *                       details.
- * - enable_firs (bool): Can be used to disable fir FIR matrix. This routes the
- *                       JESD output directly to the noc_shell.
- * - enable_counter (bool): If the feature is available in the given FPGA image,
- *                          setting this to true will disable the JESD core
- *                          output and will input a counter signal (ramp)
- *                          instead.
+ * - enable_firs (int): Can be used to disable fir FIR matrix. This routes the
+ *                      JESD output directly to the noc_shell.
+ * - enable_counter (int): If the feature is available in the given FPGA image,
+ *                         setting this to true will disable the JESD core
+ *                         output and will input a counter signal (ramp)
+ *                         instead.
  * - configure_beams (int): Danger, danger: Directly writes the
  *                          SR_BEAMS_TO_NEIGHBOR register. Writing this can put
  *                          some of the other properties out of sync, because
@@ -200,14 +200,31 @@ private:
      * \param beam_index Beam index
      * \param antenna_index Antenna index
      * \param fir_index The index of the FIR filter taps that get applied
-     * \param time_spec If non-zero, the taps get applied at this time
+     * \param time_spec If non-zero, the taps get applied at this time.
+     *                  Otherwise, they get sent out now.
+     * \param write_time If false, time will never get written *even if* it is
+     *                   non-zero. The assumption is that someone else wrote
+     *                   the value previously
+     *                   \param write_time If false, time will never get written *even if* it is
+     *                                     non-zero. The assumption is that someone else wrote
+     *                                     the value previously 
      */
     void select_filter(
         const size_t beam_index,
         const size_t antenna_index,
         const size_t fir_index,
-        const uhd::time_spec_t &time_spec
+        const uhd::time_spec_t &time_spec,
+        const bool write_time=true
     );
+
+
+    /*! Sets the command time for the next call to select_filter()
+     *
+     * \param time_spec This value gets written to the FPGA and is applied to
+     *                  *all* subsequent filter selections. To request
+     *                  immediate application of filters, set this to zero.
+     */
+    void set_fir_ctrl_time(const uhd::time_spec_t &time_spec);
 
     /*! Sets the digital gain on a specific antenna
      *
@@ -244,12 +261,23 @@ private:
      */
     void enable_counter(bool enable);
 
+    void send_sysref();
+
+    //! Run initialization of ADCs and deframers; returns success status
+    bool assert_adcs_deframers();
+
+    //! Run final step of JESD core setup; returns success status
+    bool assert_deframer_status();
+
     /*! The number of channels this block outputs
      *
      * This is *not* the number of antennas, but the number of streams a single
      * block outputs to the crossbar.
      */
     size_t _num_ports;
+
+    //! Additional block args; gets set during set_rpc_client()
+    uhd::device_addr_t _block_args;
 
     /*! Reference to the RPC client
      */

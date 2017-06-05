@@ -69,7 +69,9 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(eiscat_radio_ctrl)
     UHD_LOG_TRACE("EISCAT", "eiscat_radio_ctrl_impl::ctor() ");
     _num_ports = get_output_ports().size();
     UHD_LOG_TRACE("EISCAT", "Number of channels: " << _num_ports);
-    UHD_LOG_TRACE("EISCAT", "Setting tick rate to " << EISCAT_TICK_RATE/1e6 << " MHz");
+    UHD_LOG_TRACE("EISCAT",
+        "Tick rate is " << EISCAT_TICK_RATE/1e6 << " MHz"
+    );
 
     /**** Configure the radio_ctrl itself ***********************************/
     radio_ctrl_impl::set_rate(EISCAT_TICK_RATE);
@@ -80,18 +82,72 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(eiscat_radio_ctrl)
         radio_ctrl_impl::set_rx_bandwidth(EISCAT_DEFAULT_BANDWIDTH, chan);
     }
 
-    /**** Configure the digital gain controls *******************************/
-    for (size_t i = 0; i < EISCAT_NUM_ANTENNAS; i++) {
-        _tree->access<double>(get_arg_path("gain", i) / "value")
-            .set_coercer([](double gain){ return std::max(-1.0, std::min(1.0, gain)); })
-            .add_coerced_subscriber([this, i](double gain){
-                this->set_antenna_gain(i, gain);
-            })
-            .set(EISCAT_DEFAULT_NORM_GAIN)
+    /**** Set up arg-based control API **************************************/
+    // None of these properties are defined in the XML file. Some of them have
+    // non-Noc-Script-compatible types.
+    _tree->create<bool>(get_arg_path("sysref", 0) / "value")
+        .set(true)
+        .add_coerced_subscriber([this](bool){
+            try {
+                this->send_sysref();
+            } catch (const uhd::exception &ex) {
+                UHD_LOGGER_WARNING("EISCAT")
+                    << "Failed to send SYSREF: " << ex.what();
+                throw uhd::runtime_error(str(
+                    boost::format("Failed to send SYSREF: %s")
+                    % ex.what()
+                ));
+            }
+        })
+        .set_publisher([](){ return true; })
+    ;
+    _tree->create<bool>(get_arg_path("assert_adcs_deframers", 0) / "value")
+        .set(true)
+        .set_publisher([this](){ return this->assert_adcs_deframers(); })
+    ;
+    _tree->create<bool>(get_arg_path("assert_deframer_status", 0) / "value")
+        .set(true)
+        .set_publisher([this](){ return this->assert_adcs_deframers(); })
+    ;
+    _tree->create<time_spec_t>(get_arg_path("fir_ctrl_time", 0) / "value")
+        .add_coerced_subscriber([this](time_spec_t switch_time){
+            this->set_fir_ctrl_time(switch_time);
+        })
+        .set(time_spec_t(0.0))
+    ;
+    for (size_t beam = 0; beam < EISCAT_NUM_BEAMS; beam++) {
+        for (size_t ant = 0; ant < EISCAT_NUM_ANTENNAS; ant++) {
+            const size_t fir_index = beam * EISCAT_NUM_ANTENNAS + ant;
+            // These are not in the XML file
+            _tree->create<int>(get_arg_path("fir_select", fir_index) / "value")
+                .add_coerced_subscriber([beam, ant, this](const size_t ram_idx){
+                    UHD_ASSERT_THROW(ram_idx < EISCAT_NUM_FIR_SETS);
+                    this->select_filter(
+                        beam,
+                        ant,
+                        ram_idx,
+                        this->get_arg<time_spec_t>("fir_ctrl_time", 0),
+                        false
+                    );
+                })
+            ;
+        }
+    }
+    for (size_t fir_set = 0; fir_set < EISCAT_NUM_FIR_SETS; fir_set++) {
+        _tree->create<std::vector<fir_tap_t>>(
+                                get_arg_path("fir_taps", fir_set) / "value")
+            .add_coerced_subscriber(
+                [this, fir_set](const std::vector<fir_tap_t> &taps){
+                    this->write_fir_taps(fir_set, taps);
+                }
+            )
         ;
     }
 
+
     /**** Add subscribers for our special properties ************************/
+    // The difference between this block and the previous that these *are*
+    // defined in the XML file, and can have defaults set there.
     _tree->access<int>(get_arg_path("choose_beams", 0) / "value")
         .add_coerced_subscriber([this](int choose_beams){
             this->set_beam_selection(choose_beams);
@@ -116,20 +172,29 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(eiscat_radio_ctrl)
         }) // No update!
     ;
 
-    /**** Set up legacy compatible properties ******************************/
+    /**** Configure the digital gain controls *******************************/
+    for (size_t i = 0; i < EISCAT_NUM_ANTENNAS; i++) {
+        _tree->access<double>(get_arg_path("gain", i) / "value")
+            .set_coercer([](double gain){
+                return std::max(-1.0, std::min(1.0, gain));
+            })
+            .add_coerced_subscriber([this, i](double gain){
+                this->set_antenna_gain(i, gain);
+            })
+            .update()
+        ;
+    }
+
+    /**** Set up legacy compatible properties *******************************/
     // For use with multi_usrp APIs etc.
     // For legacy prop tree init:
     fs_path fe_path = fs_path("dboards") / "A" / "rx_frontends";
 
-    auto antenna_options = std::vector<std::string>{"BF"};
-    for (size_t i = 0; i < EISCAT_NUM_ANTENNAS; i++) {
-        antenna_options.push_back(str(boost::format("Rx%d") % i));
-    }
-
-    // The EISCAT dboards have 16 frontends total, but they map to 5 channels
-    // each through a matrix of FIR filters and summations. UHD will get much
-    // less confused if we create 5 fake frontends, because that's also the
-    // number of channels. Since we have no control over the frontends,
+    // The EISCAT dboards have 16 frontends total, but they map to 10 beams
+    // each through a matrix of FIR filters and summations, and then only 5 of
+    // those channels go out through the Noc-Shell.
+    // UHD will thus get much less confused if we create 5 fake frontends (i.e.,
+    // number of Noc-Block-ports). Since we have no control over the frontends,
     // nothing is lost here.
     for (size_t fe_idx = 0; fe_idx < _num_ports; fe_idx++) {
         _tree->create<std::string>(fe_path / fe_idx / "name")
@@ -137,13 +202,6 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(eiscat_radio_ctrl)
         ;
         _tree->create<std::string>(fe_path / fe_idx / "connection")
             .set("I")
-        ;
-        _tree->create<std::string>(fe_path / fe_idx / "antenna" / "value")
-            .add_coerced_subscriber(boost::bind(&eiscat_radio_ctrl_impl::set_rx_antenna, this, _1, 0))
-            .set_publisher(boost::bind(&radio_ctrl_impl::get_rx_antenna, this, 0))
-        ;
-        _tree->create<std::vector<std::string>>(fe_path / fe_idx / "antenna" / "options")
-            .set(antenna_options)
         ;
         _tree->create<double>(fe_path / fe_idx / "freq" / "value")
             .set(EISCAT_CENTER_FREQ)
@@ -174,6 +232,27 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(eiscat_radio_ctrl)
         ;
     }
 
+    auto antenna_options = std::vector<std::string>{"BF"};
+    for (size_t i = 0; i < EISCAT_NUM_ANTENNAS; i++) {
+        antenna_options.push_back(str(boost::format("Rx%d") % i));
+        antenna_options.push_back(str(boost::format("BF%d") % i));
+    }
+    for (size_t beam_idx = 0; beam_idx < _num_ports; beam_idx++) {
+        _tree->create<std::string>(fe_path / beam_idx / "antenna" / "value")
+            .set(EISCAT_DEFAULT_ANTENNA)
+            .add_coerced_subscriber([this, beam_idx](const std::string &name){
+                this->set_rx_antenna(name, beam_idx);
+            })
+            .set_publisher([this, beam_idx](){
+                return this->get_rx_antenna(beam_idx);
+            })
+        ;
+        _tree->create<std::vector<std::string>>(
+                fe_path / beam_idx / "antenna" / "options")
+            .set(antenna_options)
+        ;
+    }
+
     // We can actually stream data to an EISCAT board, so it needs some tx
     // frontends too:
     fe_path = fs_path("dboards") / "A" / "tx_frontends";
@@ -187,8 +266,8 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(eiscat_radio_ctrl)
     // when we reach this line:
     UHD_ASSERT_THROW(not _tree->exists("tick_rate"));
     _tree->create<double>("tick_rate")
-        //.set_coercer(boost::bind(&eiscat_radio_ctrl_impl::set_rate, this, _1))
         .set(EISCAT_TICK_RATE)
+        .set_coercer(boost::bind(&eiscat_radio_ctrl_impl::set_rate, this, _1))
     ;
 
     if (not _tree->exists(fs_path("clock_source/value"))) {
@@ -396,24 +475,21 @@ void eiscat_radio_ctrl_impl::set_rpc_client(
     const uhd::device_addr_t &block_args
 ) {
     _rpcc = rpcc;
-    std::function<void()> send_sysref;
-    if (block_args.has_key("use_mpm_sysref")) {
-        send_sysref = [rpcc](){ rpcc->notify("db_0_send_sysref"); };
-    } else {
-        send_sysref = [this](){ this->sr_write("SR_SYSREF", 1); };
-    }
+    _block_args = block_args;
 
     UHD_LOG_INFO(
         "EISCAT",
         "Finalizing dboard initialization using internal PPS"
     );
     send_sysref();
-    rpcc->request_with_token<bool>("db_0_init_adcs_and_deframers");
-    rpcc->request_with_token<bool>("db_1_init_adcs_and_deframers");
+    if (not assert_adcs_deframers()) {
+        throw uhd::runtime_error("Failed to initialize ADCs and JESD cores!");
+    }
     send_sysref();
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    rpcc->request_with_token<bool>("db_0_check_deframer_status");
-    rpcc->request_with_token<bool>("db_1_check_deframer_status");
+    if (not assert_deframer_status()) {
+        throw uhd::runtime_error("Failed to finalize JESD core setup!");
+    }
 }
 
 /****************************************************************************
@@ -458,7 +534,8 @@ void eiscat_radio_ctrl_impl::select_filter(
         const size_t beam_index,
         const size_t antenna_index,
         const size_t fir_index,
-        const uhd::time_spec_t &time_spec
+        const uhd::time_spec_t &time_spec,
+        const bool write_time
 ) {
     if (antenna_index >= EISCAT_NUM_ANTENNAS) {
         throw uhd::value_error(str(
@@ -468,8 +545,10 @@ void eiscat_radio_ctrl_impl::select_filter(
     }
     if (beam_index >= EISCAT_NUM_BEAMS) {
         throw uhd::value_error(str(
-            boost::format("Beam index %d out of range. There are %d beam channels in EISCAT.")
-            % beam_index % EISCAT_NUM_BEAMS
+            boost::format("Beam index %d out of range. "
+                          "There are %d beam channels in EISCAT.")
+            % beam_index
+            % EISCAT_NUM_BEAMS
         ));
     }
 
@@ -487,16 +566,33 @@ void eiscat_radio_ctrl_impl::select_filter(
     ;
 
     if (not send_now) {
-        uint64_t cmd_time_ticks = time_spec.to_ticks(EISCAT_TICK_RATE);
         UHD_LOG_TRACE("EISCAT", str(
-            boost::format("Filter selection will be applied at time %f (0x%016X == %u)")
+            boost::format("Filter selection will be applied at "
+                          "time %f (0x%016X == %u). %s")
             % time_spec.get_full_secs()
-            % cmd_time_ticks
+            % time_spec.to_ticks(EISCAT_TICK_RATE)
+            % (write_time ? "Writing time regs now."
+                          : "Assuming time regs already up-to-date.")
         ));
-        sr_write("SR_FIR_COMMANDS_CTRL_TIME_LO", cmd_time_ticks & 0xFFFFFFFF);
-        sr_write("SR_FIR_COMMANDS_CTRL_TIME_HI", (cmd_time_ticks >> 32) & 0xFFFFFFFF);
+        if (write_time) {
+            set_fir_ctrl_time(time_spec);
+        }
     }
     sr_write("SR_FIR_COMMANDS_RELOAD", reg_value);
+}
+
+void eiscat_radio_ctrl_impl::set_fir_ctrl_time(
+    const uhd::time_spec_t &time_spec
+) {
+    const uint64_t cmd_time_ticks = time_spec.to_ticks(EISCAT_TICK_RATE);
+    sr_write(
+        "SR_FIR_COMMANDS_CTRL_TIME_LO",
+        uint32_t(cmd_time_ticks & 0xFFFFFFFF)
+    );
+    sr_write(
+        "SR_FIR_COMMANDS_CTRL_TIME_HI",
+        uint32_t((cmd_time_ticks >> 32) & 0xFFFFFFFF)
+    );
 }
 
 void eiscat_radio_ctrl_impl::set_antenna_gain(
@@ -567,6 +663,15 @@ void eiscat_radio_ctrl_impl::enable_firs(bool enable)
     configure_beams(new_value);
 }
 
+void eiscat_radio_ctrl_impl::send_sysref()
+{
+    if (_block_args.has_key("use_mpm_sysref")) {
+        _rpcc->notify_with_token("db_0_send_sysref");
+    } else {
+        this->sr_write("SR_SYSREF", 1);
+    }
+}
+
 void eiscat_radio_ctrl_impl::enable_counter(bool enable)
 {
     const uint32_t old_value = user_reg_read32(RB_CHOOSE_BEAMS);
@@ -575,6 +680,18 @@ void eiscat_radio_ctrl_impl::enable_counter(bool enable)
         : (old_value & ~EISCAT_OUTPUT_COUNTER)
     ;
     configure_beams(new_value);
+}
+
+bool eiscat_radio_ctrl_impl::assert_adcs_deframers()
+{
+    return _rpcc->request_with_token<bool>("db_0_init_adcs_and_deframers")
+        and _rpcc->request_with_token<bool>("db_1_init_adcs_and_deframers");
+}
+
+bool eiscat_radio_ctrl_impl::assert_deframer_status()
+{
+    return _rpcc->request_with_token<bool>("db_0_check_deframer_status")
+        and _rpcc->request_with_token<bool>("db_1_check_deframer_status");
 }
 
 /****************************************************************************
