@@ -37,7 +37,7 @@ namespace {
 
     const double EISCAT_TICK_RATE         = 208e6; // Hz
     const double EISCAT_RADIO_RATE        = 104e6; // Hz
-    const double EISCAT_CENTER_FREQ       = 104e6; // Hz
+    const double EISCAT_CENTER_FREQ       = 208e6; // Hz
     const double EISCAT_DEFAULT_NULL_GAIN = 0.0; // dB. This is not the digital antenna gain, this a fake stub value.
     const double EISCAT_DEFAULT_BANDWIDTH = 52e6; // Hz
     const char*  EISCAT_DEFAULT_ANTENNA   = "BF";
@@ -205,8 +205,8 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(eiscat_radio_ctrl)
         ;
         _tree->create<double>(fe_path / fe_idx / "freq" / "value")
             .set(EISCAT_CENTER_FREQ)
-            //.set_coercer(boost::bind(&eiscat_radio_ctrl_impl::set_rx_frequency, this, _1, 0))
-            ////.set_publisher(boost::bind(&radio_ctrl_impl::get_rx_frequency, this, 0))
+            .set_coercer(boost::bind(&eiscat_radio_ctrl_impl::set_rx_frequency, this, _1, 0))
+            .set_publisher(boost::bind(&radio_ctrl_impl::get_rx_frequency, this, 0))
         ;
         _tree->create<meta_range_t>(fe_path / fe_idx / "freq" / "range")
             .set(meta_range_t(EISCAT_CENTER_FREQ, EISCAT_CENTER_FREQ))

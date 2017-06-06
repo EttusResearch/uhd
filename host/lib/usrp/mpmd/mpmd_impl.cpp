@@ -25,6 +25,7 @@
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/tasks.hpp>
+#include <uhd/types/sensors.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
 #include <boost/make_shared.hpp>
@@ -91,6 +92,21 @@ namespace {
                 return mb->rpc->request_with_token<std::vector<std::string>>(
                     "get_time_sources"
                 );
+            })
+        ;
+        tree->create<sensor_value_t>(
+                mb_path / "sensors/ref_locked")
+            .set_publisher([](){
+                return sensor_value_t (
+                    "Ref", true, "locked", "unlocked" // FIXME: Remove hardcoded "true"
+                );
+            })
+        ;
+        tree->create<int>(
+                mb_path / "rx_codecs" / "A" / "gains")
+            .set_publisher([](){
+                return 1                              // FIXME: Remove hardcoding
+                ;
             })
         ;
     }
