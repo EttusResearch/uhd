@@ -276,6 +276,10 @@ private:
      */
     size_t _num_ports;
 
+    //! Running with 1 dboard is theoretically possible; thus, store the
+    // number of active dboards.
+    size_t _num_dboards = 0;
+
     //! Additional block args; gets set during set_rpc_client()
     uhd::device_addr_t _block_args;
 

@@ -476,6 +476,20 @@ void eiscat_radio_ctrl_impl::set_rpc_client(
 ) {
     _rpcc = rpcc;
     _block_args = block_args;
+    auto dboard_info =
+        _rpcc->request<std::vector<std::map<std::string, std::string>>>(
+                "get_dboard_info"
+        );
+    _num_dboards = dboard_info.size();
+    UHD_LOG_DEBUG("EISCAT", "Using " << _num_dboards << " daughterboards.");
+    if (_num_dboards == 1) {
+        UHD_LOG_WARNING("EISCAT",
+            "Found 1 dboard, expected 2 for optimal operation."
+        );
+    } else if (_num_dboards > 2) {
+        UHD_LOG_ERROR("EISCAT", "Detected too many dboards: " << _num_dboards);
+        throw uhd::runtime_error("Too many dboards detected.");
+    }
 
     UHD_LOG_INFO(
         "EISCAT",
@@ -684,12 +698,18 @@ void eiscat_radio_ctrl_impl::enable_counter(bool enable)
 
 bool eiscat_radio_ctrl_impl::assert_adcs_deframers()
 {
+    if (_num_dboards == 1) {
+        return _rpcc->request_with_token<bool>("db_0_init_adcs_and_deframers");
+    }
     return _rpcc->request_with_token<bool>("db_0_init_adcs_and_deframers")
         and _rpcc->request_with_token<bool>("db_1_init_adcs_and_deframers");
 }
 
 bool eiscat_radio_ctrl_impl::assert_deframer_status()
 {
+    if (_num_dboards == 1) {
+        return _rpcc->request_with_token<bool>("db_0_check_deframer_status");
+    }
     return _rpcc->request_with_token<bool>("db_0_check_deframer_status")
         and _rpcc->request_with_token<bool>("db_1_check_deframer_status");
 }
