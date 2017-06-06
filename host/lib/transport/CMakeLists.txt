@@ -138,6 +138,16 @@ IF(ENABLE_X300)
     )
 ENDIF(ENABLE_X300)
 
+IF(ENABLE_LIBERIO)
+    MESSAGE(STATUS "")
+    MESSAGE(STATUS "liberio support enabled.")
+    INCLUDE_DIRECTORIES(${LIBERIO_INCLUDE_DIRS})
+    LIBUHD_APPEND_LIBS(${LIBERIO_LIBRARIES})
+    LIBUHD_APPEND_SOURCES(
+        ${CMAKE_CURRENT_SOURCE_DIR}/liberio_zero_copy.cpp
+    )
+ENDIF(ENABLE_LIBERIO)
+
 # Verbose Debug output for send/recv
 SET( UHD_TXRX_DEBUG_PRINTS OFF CACHE BOOL "Use verbose debug output for send/recv" )
 OPTION( UHD_TXRX_DEBUG_PRINTS "Use verbose debug output for send/recv" "" )
