@@ -236,6 +236,11 @@ class PeriphManagerBase(object):
         if len(dboard_eeprom_paths) > self.max_num_dboards:
             self.log.warning("Found more EEPROM paths than daughterboards. Ignoring some of them.")
             dboard_eeprom_paths = dboard_eeprom_paths[:self.max_num_dboards]
+        if len(override_dboard_pids) and \
+                len(override_dboard_pids) < len(dboard_eeprom_paths):
+            self.log.warning("--override-db-pids is going to skip dboards.")
+            dboard_eeprom_paths = \
+                    dboard_eeprom_paths[:len(override_dboard_pids)]
         self.dboards = []
         for dboard_idx, dboard_eeprom_path in enumerate(dboard_eeprom_paths):
             self.log.debug("Initializing dboard {}...".format(dboard_idx))
