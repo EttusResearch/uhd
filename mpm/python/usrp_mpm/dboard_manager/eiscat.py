@@ -506,7 +506,10 @@ class EISCAT(DboardManagerBase):
                 adc.reset()
             return adcs
         # Go, go, go!
-        if self.initialized and not args.get("force_init", False):
+        if args.get("force_init", False):
+            self.log.info("Forcing re-initialization of dboard.")
+        self.initialized = args.get("force_init", self.initialized)
+        if self.initialized:
             self.log.info(
                 "Dboard was previously initialized; skipping init. " \
                 "Specify force_init=1 to force initialization."
@@ -577,6 +580,12 @@ class EISCAT(DboardManagerBase):
         Initialize the ADCs and the JESD deframers. Assumption is that they were
         SYSREF'd before.
         """
+        if self.initialized:
+            self.log.debug(
+                "Dboard already initialized; skipping initialization " \
+                "of ADCs and JESD cores."
+            )
+            return True
         self.adc0.setup()
         self.adc1.setup()
         self.log.info("ADC Initialization Complete!")
@@ -594,6 +603,12 @@ class EISCAT(DboardManagerBase):
 
         Will throw on failure.
         """
+        if self.initialized:
+            self.log.debug(
+                "Dboard already initialized; assuming JESD deframer status " \
+                "is fine."
+            )
+            return True
         for jesd_idx, jesd_core in enumerate(self.jesd_cores):
             if not jesd_core.check_deframer_status():
                 raise RuntimeError(
