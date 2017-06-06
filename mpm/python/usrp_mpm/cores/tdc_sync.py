@@ -131,12 +131,14 @@ class ClockSynchronizer(object):
 
         self.log.trace("Running clock synchronization...")
 
-        # Reset and disable TDC, disable PPS crossing, and enable re-runs. Confirm the
-        # core is in reset and PPS is cleared.
-        self.poke32(self.TDC_CONTROL, 0x2121)
+        # Reset and disable TDC, and enable re-runs. Confirm the core is in
+        # reset and PPS is cleared. Do not disable the PPS crossing.
+        self.poke32(self.TDC_CONTROL, 0x0121)
         reset_status = self.peek32(self.TDC_STATUS) & 0xFF
         if reset_status != 0x01:
-            self.log.error("TDC Failed to Reset! Status: 0x{:x}".format(reset_status))
+            self.log.error("TDC Failed to Reset! Status: 0x{:x}".format(
+                reset_status
+            ))
             raise RuntimeError("TDC Failed to reset.")
 
         # Set the RSP and RTC values based on the Radio Clock and Reference Clock
@@ -164,11 +166,10 @@ class ClockSynchronizer(object):
         if reset_status != 0x00:
             self.log.error(
                 "TDC Reset Failed to Clear! " \
-                "Check that your clocks are toggling. Status: 0x{:x}".format(reset_status)
-            )
+                "Check that your clocks are toggling. Status: 0x{:x}".format(
+                    reset_status
+            ))
             raise RuntimeError("TDC Reset Failed.")
-        
-        
         self.log.trace("Enabling the TDC")
         # Enable the TDC.
         # As long as PPS is actually a PPS, this doesn't have to happen "synchronously"
@@ -185,7 +186,7 @@ class ClockSynchronizer(object):
             raise RuntimeError("Failed to capture PPS.")
 
         self.log.trace("PPS Captured!")
-        
+
         meas_clk_freq = 170.542641116e6
         measure_offset = lambda: self.read_tdc_meas(
             1/meas_clk_freq, 1/self.ref_clk_freq, 1/self.radio_clk_freq
@@ -232,7 +233,11 @@ class ClockSynchronizer(object):
             time.sleep(0.5)
             if not self.lmk.check_plls_locked():
                 raise RuntimeError("LMK PLLs lost lock during clock synchronization!")
-            self.poke32(self.TDC_CONTROL, 0x1000) # Re-enable PPS
+            # After shifting the clocks, we enable the PPS crossing from the
+            # RefClk into the SampleClk domain. We never explicitly turn off the
+            # crossing from this point forward, even if we re-run this routine.
+            self.poke32(self.TDC_CONTROL, 0x1000)
+
         return distance_to_target
 
 
