@@ -133,7 +133,7 @@ mpmd_impl::mpmd_impl(const device_addr_t& device_args)
     }
 
     for (size_t mb_i = 0; mb_i < mb_args.size(); ++mb_i) {
-        init_property_tree(_tree, fs_path("/mboard") / mb_i, _mb[mb_i].get());
+        init_property_tree(_tree, fs_path("/mboards") / mb_i, _mb[mb_i].get());
     }
 
     auto filtered_block_args = device_args; // TODO actually filter

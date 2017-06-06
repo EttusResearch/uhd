@@ -270,10 +270,6 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(eiscat_radio_ctrl)
         .set_coercer(boost::bind(&eiscat_radio_ctrl_impl::set_rate, this, _1))
     ;
 
-    if (not _tree->exists(fs_path("clock_source/value"))) {
-        _tree->create<std::string>(fs_path("clock_source/value")).set("external");
-    }
-
     UHD_VAR((_tree->exists(fs_path("time/cmd"))));
 }
 
