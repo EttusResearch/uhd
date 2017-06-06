@@ -124,6 +124,7 @@ class PeriphManagerBase(object):
     # the network. Example: ['eth1', 'eth2']
     chdr_interfaces = []
     @staticmethod
+    # Yes, this is overridable too: List the required device tree overlays
     def list_required_dt_overlays(eeprom_md, device_args):
         """
         Lists device tree overlays that need to be applied before this class can
@@ -134,7 +135,7 @@ class PeriphManagerBase(object):
         device_args -- Arbitrary dictionary of info, typically user-defined
         """
         return []
-
+    ### End of overridables ###################################################
 
     def __init__(self, args):
         # First, make some checks to see if the child class is correctly set up:
@@ -332,7 +333,8 @@ class PeriphManagerBase(object):
         self.log.trace("Resetting SID pool...")
         self._available_endpoints = list(range(256))
 
-    def safe_list_updateable_components(self):
+    @no_claim
+    def list_updateable_components(self):
         """
         return list of updateable components
         This method does not require a claim_token in the RPC

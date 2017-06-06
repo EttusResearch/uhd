@@ -19,7 +19,7 @@ N310 implementation module
 """
 
 from __future__ import print_function
-import time
+import os
 from six import iteritems
 from builtins import object
 from .base import PeriphManagerBase
@@ -35,6 +35,7 @@ from .. import libpyusrp_periphs as lib
 
 N3XX_DEFAULT_EXT_CLOCK_FREQ = 10e6
 N3XX_DEFAULT_CLOCK_SOURCE = 'external'
+N3XX_DEFAULT_TIME_SOURCE = 'internal'
 
 class TCA6424(object):
     """
@@ -130,8 +131,13 @@ class n310(PeriphManagerBase):
         self.set_clock_source(
             args.default_args.get('clock_source', N3XX_DEFAULT_CLOCK_SOURCE)
         )
-
-        # if header.get("dataversion", 0) == 1:
+        self._time_source = None # Gets set in set_time_source()
+        self.set_time_source(
+            args.default_args.get(
+                'time_source',
+                N3XX_DEFAULT_TIME_SOURCE
+            )
+        )
         self.log.info("mboard info: {}".format(self.mboard_info))
         # Define some attributes so PyLint stays quiet
         self._eth_dispatchers = None
@@ -183,31 +189,15 @@ class n310(PeriphManagerBase):
         " Returns the currently selected clock source "
         return self._clock_source
 
-    def set_ext_clock_freq(self, freq):
-        """
-        Tell our USRP what the frequency of the external reference clock is.
-
-        Will throw if it's not a valid value.
-        """
-        assert freq in (10e6, 20e6, 25e6)
-        self._ext_clock_freq = freq
-
-    def get_clock_freq(self):
-        " Returns the currently active reference clock frequency"
-        return {
-            'internal': 25e6,
-            'external': self._ext_clock_freq,
-            'gpsdo': 20e6,
-        }[self._clock_source]
-
-    def set_clock_source(self, clock_source):
+    def set_clock_source(self, *args):
         """
         Enable given external reference clock.
 
         Throws if clock_source is not a valid value.
         """
+        clock_source = args[0]
         assert clock_source in self.get_clock_sources()
-        self.log.trace("Setting clock sel to `{}'".format(clock_source))
+        self.log.trace("Setting clock source to `{}'".format(clock_source))
         if clock_source == 'internal':
             self._gpios.set("CLK-MAINREF-SEL0")
             self._gpios.set("CLK-MAINREF-SEL1")
@@ -218,11 +208,50 @@ class n310(PeriphManagerBase):
             self._gpios.reset("CLK-MAINREF-SEL0")
             self._gpios.reset("CLK-MAINREF-SEL1")
         self._clock_source = clock_source
-        ref_clk_freq = self.get_clock_freq()
+        ref_clk_freq = self.get_ref_clock_freq()
         for slot, dboard in enumerate(self.dboards):
             if hasattr(dboard, 'update_ref_clock_freq'):
                 self.log.trace(
-                    "Updating reference clock on dboard `{}' to {} MHz...".format(slot, ref_clk_freq/1e6)
+                    "Updating reference clock on dboard `{}' to {} MHz...".format(
+                        slot, ref_clk_freq/1e6
+                    )
                 )
                 dboard.update_ref_clock_freq(ref_clk_freq)
+
+    def set_ref_clock_freq(self, freq):
+        """
+        Tell our USRP what the frequency of the external reference clock is.
+
+        Will throw if it's not a valid value.
+        """
+        assert freq in (10e6, 20e6, 25e6)
+        self._ext_clock_freq = freq
+
+    def get_ref_clock_freq(self):
+        " Returns the currently active reference clock frequency"
+        return {
+            'internal': 25e6,
+            'external': self._ext_clock_freq,
+            'gpsdo': 20e6,
+        }[self._clock_source]
+
+    def get_time_sources(self):
+        " Returns list of valid time sources "
+        return ['internal', 'external']
+
+    def get_time_source(self):
+        " Return the currently selected time source "
+        return self._time_source
+
+    def set_time_source(self, time_source):
+        " Set a time source "
+        assert time_source in self.get_time_sources()
+        self.log.trace("Setting time source to `{}'".format(time_source))
+        # FIXME use uio
+        if time_source == 'internal':
+            os.system('devmem2 0x4001000C w 0x1')
+        elif time_source == 'external':
+            os.system('devmem2 0x4001000C w 0x0')
+        else:
+            assert False
 

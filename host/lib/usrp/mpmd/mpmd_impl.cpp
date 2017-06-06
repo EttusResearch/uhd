@@ -37,7 +37,63 @@
 using namespace uhd;
 
 namespace {
+    /*************************************************************************
+     * Local constants
+     ************************************************************************/
     const size_t MPMD_CROSSBAR_MAX_LADDR = 255;
+
+    /*************************************************************************
+     * Helper functions
+     ************************************************************************/
+    void init_property_tree(
+            uhd::property_tree::sptr tree,
+            fs_path mb_path,
+            mpmd_mboard_impl *mb
+    ) {
+        if (not tree->exists(fs_path("/name"))) {
+            tree->create<std::string>("/name")
+                .set(mb->device_info.get("name", "Unknown MPM device"))
+            ;
+        }
+
+        /*** Clocking *******************************************************/
+        tree->create<std::string>(mb_path / "clock_source/value")
+            .add_coerced_subscriber([mb](const std::string &clock_source){
+                mb->rpc->notify_with_token("set_clock_source", clock_source);
+            })
+            .set_publisher([mb](){
+                return mb->rpc->request_with_token<std::string>(
+                    "get_clock_source"
+                );
+            })
+        ;
+        tree->create<std::vector<std::string>>(
+                mb_path / "clock_source/options")
+            .set_publisher([mb](){
+                return mb->rpc->request_with_token<std::vector<std::string>>(
+                    "get_clock_sources"
+                );
+            })
+        ;
+        tree->create<std::string>(mb_path / "time_source/value")
+            .add_coerced_subscriber([mb](const std::string &time_source){
+                mb->rpc->notify_with_token("set_time_source", time_source);
+            })
+            .set_publisher([mb](){
+                return mb->rpc->request_with_token<std::string>(
+                    "get_time_source"
+                );
+            })
+        ;
+        tree->create<std::vector<std::string>>(
+                mb_path / "time_source/options")
+            .set_publisher([mb](){
+                return mb->rpc->request_with_token<std::vector<std::string>>(
+                    "get_time_sources"
+                );
+            })
+        ;
+    }
 }
 
 /*****************************************************************************
@@ -76,8 +132,9 @@ mpmd_impl::mpmd_impl(const device_addr_t& device_args)
         setup_rfnoc_blocks(mb_i, mb_args[mb_i]);
     }
 
-    // TODO read this from the device info
-    _tree->create<std::string>("/name").set("MPMD - Series device");
+    for (size_t mb_i = 0; mb_i < mb_args.size(); ++mb_i) {
+        init_property_tree(_tree, fs_path("/mboard") / mb_i, _mb[mb_i].get());
+    }
 
     auto filtered_block_args = device_args; // TODO actually filter
     setup_rpc_blocks(filtered_block_args);

@@ -22,6 +22,9 @@
 #include <thread>
 
 namespace {
+    /*************************************************************************
+     * Local constants
+     ************************************************************************/
     //! Time between reclaims (ms)
     const size_t MPMD_RECLAIM_INTERVAL_MS     = 1000;
     //! Default timeout value for the init() RPC call (ms)
@@ -30,6 +33,7 @@ namespace {
     const size_t MPMD_DEFAULT_RPC_TIMEOUT     = 2000;
 
     const std::string MPMD_DEFAULT_SESSION_ID = "UHD";
+
 }
 
 using namespace uhd;
