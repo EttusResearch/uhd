@@ -79,6 +79,11 @@ class mpmd_mboard_impl
     //! Device information is read back via MPM and stored here.
     uhd::device_addr_t device_info;
 
+    //! Dboard info is read back via MPM and stored here. There will be one
+    // dictionary per dboard; but there's no requirement for the dictionary
+    // to be populated at all.
+    std::vector<uhd::device_addr_t> dboard_info;
+
     //! Number of RFNoC crossbars on this device
     size_t num_xbars = 0;
 
@@ -110,18 +115,26 @@ class mpmd_mboard_impl
 
   private:
     /*************************************************************************
+     * Private methods
+     ************************************************************************/
+    /*! Renew the claim onto the device.
+     *
+     * This is meant to be called repeatedly, e.g., using a UHD task.
+     */
+    bool claim();
+
+    uhd::task::sptr claim_device_and_make_task(
+            uhd::rpc_client::sptr rpc,
+            const uhd::device_addr_t mb_args
+    );
+
+    /*************************************************************************
      * Private attributes
      ************************************************************************/
     //! Stores a list of local addresses of the crossbars. The local address is
     // what we use when addressing a crossbar in a CHDR header.
     std::vector<size_t> xbar_local_addrs;
 
-
-    /*! Renew the claim onto the device.
-     *
-     * This is meant to be called repeatedly, e.g., using a UHD task.
-     */
-    bool claim();
 
     /*! Continuously reclaims the device.
      */

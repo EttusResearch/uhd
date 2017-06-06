@@ -365,14 +365,12 @@ class PeriphManagerBase(object):
         result.update(self.mboard_info)
         return result
 
-    def get_dboards(self):
+    @no_claim
+    def get_dboard_info(self):
         """
-        get a dict with slot: hw_pid for each dboard
+        Returns a list of dicts. One dict per dboard.
         """
-        result = {}
-        for slot, dboard in iteritems(self.dboards):
-            result.update({slot:dboard.hw_pid})
-        return result
+        return [dboard.device_info for dboard in self.dboards]
 
     def load_fpga_image(self, target=None):
         """

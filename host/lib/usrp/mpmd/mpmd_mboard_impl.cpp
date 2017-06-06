@@ -34,6 +34,36 @@ namespace {
 
     const std::string MPMD_DEFAULT_SESSION_ID = "UHD";
 
+
+    /*************************************************************************
+     * Helper functions
+     ************************************************************************/
+
+    void init_device(
+            uhd::rpc_client::sptr rpc,
+            const uhd::device_addr_t mb_args
+    ) {
+        // TODO maybe put this somewhere else?
+        const std::set<std::string> key_blacklist{
+            "serial", "claimed", "type", "rev", "addr"
+        };
+        std::map<std::string, std::string> mpm_device_args;
+        for (const auto &key : mb_args.keys()) {
+            if (not key_blacklist.count(key)) {
+                mpm_device_args[key] = mb_args[key];
+            }
+        }
+        rpc->set_timeout(mb_args.cast<size_t>(
+            "init_timeout", MPMD_DEFAULT_INIT_TIMEOUT
+        ));
+        if (not rpc->request_with_token<bool>("init", mpm_device_args)) {
+            throw uhd::runtime_error("Failed to initialize device.");
+        }
+        rpc->set_timeout(mb_args.cast<size_t>(
+            "rpc_timeout", MPMD_DEFAULT_RPC_TIMEOUT
+        ));
+    }
+
 }
 
 using namespace uhd;
@@ -53,53 +83,34 @@ mpmd_mboard_impl::mpmd_mboard_impl(
         << " mboard args: " << mb_args.to_string()
     ;
 
-    // Claim logic
-    auto rpc_token = rpc->request<std::string>("claim",
-        mb_args.get("session_id", MPMD_DEFAULT_SESSION_ID)
-    );
-    if (rpc_token.empty()) {
-        throw uhd::value_error("mpmd device claiming failed!");
-    }
-    UHD_LOG_TRACE("MPMD", "Received claim token " << rpc_token);
-    rpc->set_token(rpc_token);
-    _claimer_task = task::make([this] {
-        if (not this->claim()) {
-            throw uhd::value_error("mpmd device reclaiming loop failed!");
-        };
-        std::this_thread::sleep_for(
-            std::chrono::milliseconds(MPMD_RECLAIM_INTERVAL_MS)
-        );
-    });
+    _claimer_task = claim_device_and_make_task(rpc, mb_args);
+    // No one else can now claim the device.
+    init_device(rpc, mb_args);
+    // RFNoC block clocks are now on. Noc-IDs can be read back.
 
-    // Init and query info
-    std::map<std::string, std::string> mpm_device_args;
-    const std::set<std::string> key_blacklist{ // TODO put this somewhere else
-        "serial", "claimed", "type", "rev", "addr"
-    };
-    for (const auto &key : mb_args.keys()) {
-        if (not key_blacklist.count(key)) {
-            mpm_device_args[key] = mb_args[key];
-        }
-    }
-    rpc->set_timeout(mb_args.cast<size_t>(
-        "init_timeout", MPMD_DEFAULT_INIT_TIMEOUT
-    ));
-    if (not rpc->request_with_token<bool>("init", mpm_device_args)) {
-        throw uhd::runtime_error("Failed to initialize device.");
-    }
+
     auto device_info_dict = rpc->request<dev_info>("get_device_info");
     for (const auto &info_pair : device_info_dict) {
         device_info[info_pair.first] = info_pair.second;
     }
     UHD_LOGGER_TRACE("MPMD")
         << "MPM reports device info: " << device_info.to_string();
-    rpc->set_timeout(mb_args.cast<size_t>(
-        "rpc_timeout", MPMD_DEFAULT_RPC_TIMEOUT
-    ));
+    auto dboards_info = rpc->request<std::vector<dev_info>>("get_dboard_info");
+    UHD_ASSERT_THROW(this->dboard_info.size() == 0);
+    for (const auto &dboard_info_dict : dboards_info) {
+        uhd::device_addr_t this_db_info;
+        for (const auto &info_pair : dboard_info_dict) {
+            this_db_info[info_pair.first] = info_pair.second;
+        }
+        UHD_LOGGER_TRACE("MPMD")
+            << "MPM reports dboard info for slot " << this->dboard_info.size()
+            << ": " << this_db_info.to_string();
+        this->dboard_info.push_back(this_db_info);
+    }
 
     // Initialize properties
     this->num_xbars = rpc->request<size_t>("get_num_xbars");
-    // Local addresses are not yet valid after this!
+    // xbar_local_addrs is not yet valid after this!
     this->xbar_local_addrs.resize(this->num_xbars, 0xFF);
 
     // std::vector<std::string> data_ifaces =
@@ -163,6 +174,29 @@ bool mpmd_mboard_impl::claim()
 {
     return rpc->request_with_token<bool>("reclaim");
 }
+
+uhd::task::sptr mpmd_mboard_impl::claim_device_and_make_task(
+        uhd::rpc_client::sptr rpc,
+        const uhd::device_addr_t mb_args
+) {
+    auto rpc_token = rpc->request<std::string>("claim",
+        mb_args.get("session_id", MPMD_DEFAULT_SESSION_ID)
+    );
+    if (rpc_token.empty()) {
+        throw uhd::value_error("mpmd device claiming failed!");
+    }
+    UHD_LOG_TRACE("MPMD", "Received claim token " << rpc_token);
+    rpc->set_token(rpc_token);
+    return uhd::task::make([this] {
+        if (not this->claim()) {
+            throw uhd::value_error("mpmd device reclaiming loop failed!");
+        };
+        std::this_thread::sleep_for(
+            std::chrono::milliseconds(MPMD_RECLAIM_INTERVAL_MS)
+        );
+    });
+}
+
 
 /*****************************************************************************
  * Factory
