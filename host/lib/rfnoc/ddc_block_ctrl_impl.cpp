@@ -252,7 +252,15 @@ private:
 
         // Rate change = M/N
         sr_write("N", std::pow(2.0, double(hb_enable)) * (decim & 0xff), chan);
-        sr_write("M", 1, chan);
+        const auto noc_id = _tree->access<uint64_t>(_root_path / "noc_id").get();
+        // FIXME this should be a rb reg in the FPGA, not based on a hard-coded
+        // Noc-ID
+        if (noc_id == 0xDDC5E15CA7000000) {
+            UHD_LOG_DEBUG("DDC", "EISCAT DDC! Assuming real inputs.");
+            sr_write("M", 2, chan);
+        } else {
+            sr_write("M", 1, chan);
+        }
 
         if (decim > 1 and hb_enable == 0) {
             UHD_LOGGER_WARNING("RFNOC") << boost::format(
