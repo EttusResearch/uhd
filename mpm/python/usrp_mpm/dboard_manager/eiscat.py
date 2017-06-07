@@ -658,12 +658,13 @@ class EISCAT(DboardManagerBase):
         """
         Call this to notify the daughterboard about a change in reference clock
         """
-        self.ref_clock_freq = freq
-        if self.initialized:
+        if self.initialized and freq != self.ref_clock_freq:
             self.log.warning(
                 "Attempting to update external reference clock frequency "
                 "after initialization! This will only take effect after "
-                "the daughterboard is re-initialized."
+                "the daughterboard is re-initialized. Unsetting init flag now."
             )
+            self.initialized = False
+        self.ref_clock_freq = freq
 
 
