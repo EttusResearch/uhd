@@ -491,6 +491,10 @@ class EISCAT(DboardManagerBase):
                 raise RuntimeError("Clock synchronizer measured an offset of {} ps!".format(
                     offset_error*1e12
                 ))
+            else:
+                self.log.debug("Residual DAC offset error: {} ps.".format(
+                    offset_error*1e12
+                ))
             self.log.info("Clock Synchronization Complete!")
         def _check_jesd_cores(db_clk_control, jesd_cores):
             " Checks clocks are enabled; init the JESD core; throw on failure. "
