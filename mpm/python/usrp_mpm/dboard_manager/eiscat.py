@@ -615,10 +615,10 @@ class EISCAT(DboardManagerBase):
             return True
         for jesd_idx, jesd_core in enumerate(self.jesd_cores):
             if not jesd_core.check_deframer_status():
-                raise RuntimeError(
-                    "JESD204B Core {} Error: Failed to Link. " \
+                self.log.error("JESD204B Core {} Error: Failed to Link. " \
                     "Don't ignore this, please tell someone!".format(jesd_idx)
                 )
+                return False
         self.log.info("JESD Core Initialized, link up! (woohoo!)")
         self.initialized = True
         return self.initialized
