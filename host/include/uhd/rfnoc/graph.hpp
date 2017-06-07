@@ -9,6 +9,7 @@
 
 #include <boost/noncopyable.hpp>
 #include <uhd/rfnoc/block_id.hpp>
+#include <uhd/types/sid.hpp>
 
 namespace uhd { namespace rfnoc {
 
@@ -40,6 +41,37 @@ public:
     virtual void connect(
             const block_id_t &src_block,
             const block_id_t &dst_block
+    ) = 0;
+
+    /*! Anonymous connection.
+     *
+     * Danger, danger. You use this, you know what you're doing.
+     *
+     * \param src_block Source block ID
+     * \param src_block_port Source block port
+     * \param dst_sid SID to route traffic to
+     * \param buf_size_dst_bytes Destination window buffer in bytes
+     */
+    virtual void connect_src(
+            const block_id_t &src_block,
+            const size_t src_block_port,
+            const uhd::sid_t dst_sid,
+            const size_t buf_size_dst_bytes,
+            const size_t pkt_size_
+    ) = 0;
+
+    /*! Anonymous connection
+     *
+     * Danger, danger. You use this, you know what you're doing.
+     *
+     * \param sink_block Sink block ID
+     * \param dst_block_port Destination (sink) block port
+     * \param pkts_per_ack Flow controlf frequency in packets
+     */
+    virtual void connect_sink(
+            const block_id_t &sink_block,
+            const size_t dst_block_port,
+            const size_t pkts_per_ack
     ) = 0;
 
     virtual std::string get_name() const = 0;

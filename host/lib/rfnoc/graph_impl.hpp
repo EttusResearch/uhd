@@ -43,6 +43,20 @@ public:
             const block_id_t &dst_block
     );
 
+    void connect_src(
+            const block_id_t &src_block,
+            const size_t src_block_port,
+            const uhd::sid_t dst_sid,
+            const size_t buf_size_dst_bytes,
+            const size_t pkt_size_
+    );
+
+    void connect_sink(
+            const block_id_t &sink_block,
+            const size_t dst_block_port,
+            const size_t pkts_per_ack
+    );
+
     /************************************************************************
      * Utilities
      ***********************************************************************/
