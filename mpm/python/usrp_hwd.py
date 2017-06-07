@@ -51,6 +51,12 @@ def setup_arg_parser():
         default=None
     )
     parser.add_argument(
+        '--discovery-addr',
+        help="Bind discovery socket to this address only. Defaults to all " \
+             "addresses.",
+        default="0.0.0.0",
+    )
+    parser.add_argument(
         '--default-args',
         help="Provide a comma-separated list of key=value pairs that are" \
              "used as defaults for device initialization.",
@@ -122,7 +128,8 @@ def main():
         return True
     log.info("Spawning discovery process...")
     _PROCESSES.append(
-        mpm.spawn_discovery_process(discovery_info, shared))
+        mpm.spawn_discovery_process(discovery_info, shared, args.discovery_addr)
+    )
     log.info("Spawning RPC process...")
     _PROCESSES.append(
         mpm.spawn_rpc_process(mpm.mpmtypes.MPM_RPC_PORT, shared, mgr))
