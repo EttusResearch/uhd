@@ -39,7 +39,7 @@ namespace {
     const double EISCAT_RADIO_RATE        = 104e6; // Hz
     const double EISCAT_CENTER_FREQ       = 208e6; // Hz
     const double EISCAT_DEFAULT_NULL_GAIN = 0.0; // dB. This is not the digital antenna gain, this a fake stub value.
-    const double EISCAT_DEFAULT_BANDWIDTH = 52e6; // Hz
+    const double EISCAT_DEFAULT_BANDWIDTH = 104e6; // Hz
     const char*  EISCAT_DEFAULT_ANTENNA   = "BF";
     const size_t EISCAT_NUM_ANTENNAS      = 16;
     const size_t EISCAT_NUM_BEAMS         = 10;
@@ -204,25 +204,34 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(eiscat_radio_ctrl)
             .set("I")
         ;
         _tree->create<double>(fe_path / fe_idx / "freq" / "value")
-            .set(EISCAT_CENTER_FREQ)
-            .set_coercer(boost::bind(&eiscat_radio_ctrl_impl::set_rx_frequency, this, _1, 0))
-            .set_publisher(boost::bind(&radio_ctrl_impl::get_rx_frequency, this, 0))
+            .set_coercer([this](const double freq){
+                return this->set_rx_frequency(freq, 0);
+            })
+            .set_publisher([this](){
+                return this->get_rx_frequency(0);
+            })
         ;
         _tree->create<meta_range_t>(fe_path / fe_idx / "freq" / "range")
             .set(meta_range_t(EISCAT_CENTER_FREQ, EISCAT_CENTER_FREQ))
         ;
         _tree->create<double>(fe_path / fe_idx / "gains" / "null" / "value")
-            .set(EISCAT_DEFAULT_NULL_GAIN)
-            //.set_coercer(boost::bind(&eiscat_radio_ctrl_impl::set_rx_gain, this, _1, 0))
-            //.set_publisher(boost::bind(&radio_ctrl_impl::get_rx_gain, this, 0))
+            .set_coercer([this](const double gain){
+                return this->set_rx_gain(gain, 0);
+            })
+            .set_publisher([this](){
+                return this->get_rx_gain(0);
+            })
         ;
         _tree->create<meta_range_t>(fe_path / fe_idx / "gains" / "null" / "range")
             .set(meta_range_t(EISCAT_DEFAULT_NULL_GAIN, EISCAT_DEFAULT_NULL_GAIN))
         ;
         _tree->create<double>(fe_path / fe_idx / "bandwidth" / "value")
-            .set(EISCAT_DEFAULT_BANDWIDTH)
-            //.set_coercer(boost::bind(&eiscat_radio_ctrl_impl::set_rx_bandwidth, this, _1, 0))
-            //.set_publisher(boost::bind(&radio_ctrl_impl::get_rx_bandwidth, this, 0))
+            .set_coercer([this](const double bw){
+                return this->set_rx_bandwidth(bw, 0);
+            })
+            .set_publisher([this](){
+                return this->get_rx_bandwidth(0);
+            })
         ;
         _tree->create<meta_range_t>(fe_path / fe_idx / "bandwidth" / "range")
             .set(meta_range_t(EISCAT_DEFAULT_BANDWIDTH, EISCAT_DEFAULT_BANDWIDTH))
