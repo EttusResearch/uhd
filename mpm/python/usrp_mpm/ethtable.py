@@ -32,7 +32,8 @@ class EthDispatcherTable(object):
     DEFAULT_VITA_PORT = (49153, 49154)
     # Address offsets:
     OWN_IP_OFFSET = 0x0000
-    OWN_PORT_OFFSET = (0x0004, 0x0008)
+    OWN_PORT_OFFSET = 0x0004
+    FORWARD_ETH_BCAST_OFFSET = 0x0008
     SID_IP_OFFSET = 0x1000
     SID_PORT_MAC_HI_OFFSET = 0x1400
     SID_MAC_LO_OFFSET = 0x1800
@@ -59,8 +60,8 @@ class EthDispatcherTable(object):
         """
         port_idx = port_idx or 0
         port_value = port_value or self.DEFAULT_VITA_PORT[port_idx]
-        assert port_idx in (0, 1)
-        port_reg_addr = self.OWN_PORT_OFFSET[port_idx]
+        assert port_idx in (0)                      #FIXME: Fix port_idx = 1
+        port_reg_addr = self.OWN_PORT_OFFSET
         self.poke32(port_reg_addr, port_value)
 
     def set_route(self, sid, ip_addr, udp_port, mac_addr=None):
@@ -119,5 +120,16 @@ class EthDispatcherTable(object):
             self.SID_PORT_MAC_HI_OFFSET + sid_offset,
             (udp_port << 16) | (mac_addr_int >> 32)
         )
+
+    def set_forward_policy(self, forward_eth, forward_bcast):
+        """
+        Forward Ethernet packet not matching OWN_IP to CROSSOVER
+        Forward broadcast packet to CPU and CROSSOVER
+        """
+        reg_value = int(bool(forward_eth) << 1) | int(bool(forward_bcast))
+        self.log.trace("Writing to address 0x{:04X}: 0x{:04X}".format(
+            self.FORWARD_ETH_BCAST_OFFSET, reg_value
+        ))
+        self.poke32(self.FORWARD_ETH_BCAST_OFFSET, reg_value)
 
 

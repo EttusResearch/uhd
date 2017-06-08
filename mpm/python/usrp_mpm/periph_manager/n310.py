@@ -154,6 +154,11 @@ class n310(PeriphManagerBase):
         }
         for ifname, table in iteritems(self._eth_dispatchers):
             table.set_ipv4_addr(self._chdr_interfaces[ifname]['ip_addr'])
+            if 'forward_eth' in args or 'forward_bcast' in args:
+                table.set_forward_policy(
+                    args.get('forward_eth', False),
+                    args.get('forward_bcast', False)
+                )
         if 'preload_ethtables' in args:
             self._preload_ethtables(
                 self._eth_dispatchers,
