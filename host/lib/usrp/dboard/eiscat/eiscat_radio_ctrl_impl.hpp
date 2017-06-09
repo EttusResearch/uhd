@@ -123,11 +123,12 @@ public:
      *   state it currently is.
      * - RX0...RX15: Will mux the antenna signal 0...15 straight to this
      *   channel. Note that this will disable the FIR matrix entirely, and will
-     *   also disable contributions from other USRPs.
+     *   also disable contributions from other USRPs globally.
      * - BF0...BF15: Will configure the FIR filter matrix such that only the
      *   contributions from antenna 0...15 are passed to this channel. This
      *   should produce the same signal as RX0..RX15, reduced by 12 dB (because
-     *   the FIR matri needs to account for bit growth from adding 16 channels)
+     *   the FIR matri needs to account for bit growth from adding 16 channels).
+     *   Will also disable contributions from other channels globally.
      * - FI$idx: Here, $idx is a number (the filter index, hence the name).
      *   This will apply filter index $idx to all input channels. Useful for
      *   testing actual beamforming applications, when the same signal is

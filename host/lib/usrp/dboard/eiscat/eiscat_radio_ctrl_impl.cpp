@@ -169,7 +169,7 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(eiscat_radio_ctrl)
     _tree->access<int>(get_arg_path("configure_beams", 0) / "value")
         .add_coerced_subscriber([this](int reg_value){
             this->configure_beams(uint32_t(reg_value));
-        }) // No update!
+        }) // No update! This would override the previous settings.
     ;
 
     /**** Configure the digital gain controls *******************************/
@@ -246,6 +246,10 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(eiscat_radio_ctrl)
         antenna_options.push_back(str(boost::format("Rx%d") % i));
         antenna_options.push_back(str(boost::format("BF%d") % i));
     }
+    antenna_options.push_back("FI0");
+    antenna_options.push_back("FI250");
+    antenna_options.push_back("FI500");
+    antenna_options.push_back("FI750");
     for (size_t beam_idx = 0; beam_idx < _num_ports; beam_idx++) {
         _tree->create<std::string>(fe_path / beam_idx / "antenna" / "value")
             .set(EISCAT_DEFAULT_ANTENNA)
@@ -271,7 +275,7 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(eiscat_radio_ctrl)
         ;
     }
 
-    // There is only ever one EISCAT radio per dboard, so this should be unset
+    // There is only ever one EISCAT radio per mboard, so this should be unset
     // when we reach this line:
     UHD_ASSERT_THROW(not _tree->exists("tick_rate"));
     _tree->create<double>("tick_rate")
@@ -296,8 +300,10 @@ void eiscat_radio_ctrl_impl::set_tx_antenna(const std::string &, const size_t)
     throw uhd::runtime_error("Cannot set Tx antenna on EISCAT daughterboard");
 }
 
-void eiscat_radio_ctrl_impl::set_rx_antenna(const std::string &ant, const size_t port)
-{
+void eiscat_radio_ctrl_impl::set_rx_antenna(
+        const std::string &ant,
+        const size_t port
+) {
     UHD_ASSERT_THROW(port < EISCAT_NUM_PORTS);
     if (ant == "BF") {
         UHD_LOG_TRACE("EISCAT", "Setting antenna to 'BF' (which is a no-op)");
@@ -323,52 +329,52 @@ void eiscat_radio_ctrl_impl::set_rx_antenna(const std::string &ant, const size_t
     }();
 
     if (ant_mode == "BF") {
-        UHD_LOG_TRACE("EISCAT", str(
-            boost::format("Setting port %d to only receive on antenna %d via FIR matrix")
-            % port % antenna_idx
-        ));
-        // TODO: When we have a way to select neighbour contributions, we will need
-        // to calculate the beam_index as a function of the port *and* if we're the
-        // left or right USRP
-        const size_t beam_index = port;
+        size_t beam_select_offset =
+                (get_arg<int>("choose_beams") & EISCAT_CONTRIB_UPPER) ?
+                EISCAT_NUM_PORTS : 0;
+        const size_t beam_index = port + beam_select_offset;
         uhd::time_spec_t send_now(0.0);
-
+        UHD_LOG_TRACE("EISCAT", str(
+            boost::format("Setting block port %d to only receive from beam %d "
+                          "connected to antenna %d via FIR matrix")
+            % port
+            % beam_index
+            % antenna_idx
+        ));
         for (size_t i = 0; i < EISCAT_NUM_ANTENNAS; i++) {
-            if (i == antenna_idx) {
-                select_filter(
-                    beam_index,
-                    i,
-                    EISCAT_FIR_INDEX_IMPULSE,
-                    send_now
-                );
-            } else {
-                select_filter(
-                    beam_index,
-                    i,
-                    EISCAT_FIR_INDEX_ZEROS,
-                    send_now
-                );
-            }
+            select_filter(
+                beam_index,
+                i,
+                (i == antenna_idx) ?
+                    EISCAT_FIR_INDEX_IMPULSE : EISCAT_FIR_INDEX_ZEROS,
+                send_now
+            );
         }
         enable_firs(true);
     } else if (ant_mode == "RX" or ant_mode == "Rx") {
-        set_arg<int>("choose_beams", 6);
+        int new_choose_beams =
+            get_arg<int>("choose_beams") | EISCAT_SKIP_NEIGHBOURS;
+        set_arg<int>("choose_beams", new_choose_beams);
         UHD_LOG_TRACE("EISCAT", str(
-            boost::format("Setting port %d to only receive on antenna %d directly")
+            boost::format("Setting port %d to only receive on antenna %d "
+                          "directly, bypassing neighbours and FIR matrix")
             % port % antenna_idx
         ));
         sr_write(SR_ANTENNA_SELECT_BASE + port, antenna_idx);
         enable_firs(false);
     } else if (ant_mode == "FI") {
+        size_t beam_select_offset =
+                (get_arg<int>("choose_beams") & EISCAT_CONTRIB_UPPER) ?
+                EISCAT_NUM_PORTS : 0;
+        const size_t beam_index = port + beam_select_offset;
         UHD_LOG_TRACE("EISCAT", str(
-            boost::format("Setting port %d to filter index %d on all antennas.")
-            % port % antenna_idx
+            boost::format("Setting port %d to filter index %d on all antennas "
+                          "using beam index %d.")
+            % port
+            % antenna_idx
+            % beam_index
         ));
         // Note: antenna_idx is not indexing a physical antenna in this scenario.
-        // TODO: When we have a way to select neighbour contributions, we will
-        // need to calculate the beam_index as a function of the port *and* if
-        // we're the left or right USRP
-        const size_t beam_index = port;
         uhd::time_spec_t send_now(0.0);
         for (size_t i = 0; i < EISCAT_NUM_ANTENNAS; i++) {
             select_filter(
@@ -663,6 +669,7 @@ void eiscat_radio_ctrl_impl::configure_beams(uint32_t reg_value)
 
 void eiscat_radio_ctrl_impl::set_beam_selection(int beam_selection)
 {
+    UHD_ASSERT_THROW(beam_selection < 4 and beam_selection >= 0);
     const uint32_t old_value = user_reg_read32(RB_CHOOSE_BEAMS);
     const uint32_t new_value =
         (old_value & (~uint32_t(EISCAT_CONTRIB_UPPER|EISCAT_SKIP_NEIGHBOURS)))

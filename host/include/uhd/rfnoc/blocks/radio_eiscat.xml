@@ -101,7 +101,7 @@
       <name>configure_beams</name>
       <type>int</type>
     </arg>
-    <!--0: Upper 1: Lower 2: no neighbours-->
+    <!--Bit 0: 0: Upper 1: Lower Bit 1: 0: Use neighbours 1: no neighbours-->
     <arg>
       <name>choose_beams</name>
       <type>int</type>
