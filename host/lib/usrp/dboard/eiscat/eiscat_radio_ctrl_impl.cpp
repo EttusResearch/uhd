@@ -170,6 +170,9 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(eiscat_radio_ctrl)
         .add_coerced_subscriber([this](int reg_value){
             this->configure_beams(uint32_t(reg_value));
         }) // No update! This would override the previous settings.
+        .set_publisher([this](){
+            return this->user_reg_read32(RB_CHOOSE_BEAMS);
+        })
     ;
 
     /**** Configure the digital gain controls *******************************/
@@ -329,6 +332,9 @@ void eiscat_radio_ctrl_impl::set_rx_antenna(
     }();
 
     if (ant_mode == "BF") {
+        int new_choose_beams =
+            get_arg<int>("choose_beams") | EISCAT_SKIP_NEIGHBOURS;
+        set_arg<int>("choose_beams", new_choose_beams);
         size_t beam_select_offset =
                 (get_arg<int>("choose_beams") & EISCAT_CONTRIB_UPPER) ?
                 EISCAT_NUM_PORTS : 0;
@@ -465,6 +471,9 @@ double eiscat_radio_ctrl_impl::get_output_samp_rate(size_t /* port */)
 bool eiscat_radio_ctrl_impl::check_radio_config()
 {
     UHD_RFNOC_BLOCK_TRACE() << "x300_radio_ctrl_impl::check_radio_config() " ;
+    const uint32_t config_beams = get_arg<int>("configure_beams");
+    bool skipping_neighbours = config_beams & EISCAT_SKIP_NEIGHBOURS;
+    bool upper_contrib = config_beams & EISCAT_CONTRIB_UPPER;
     const fs_path rx_fe_path = fs_path("dboards/A/rx_frontends");
     uint32_t chan_enables = 0;
     for (const auto &enb: _rx_streamer_active) {
@@ -472,9 +481,17 @@ bool eiscat_radio_ctrl_impl::check_radio_config()
             chan_enables |= (1<<enb.first);
         }
     }
+    if (not skipping_neighbours) {
+        chan_enables = chan_enables | (chan_enables << EISCAT_NUM_PORTS);
+    } else if (upper_contrib) {
+        chan_enables <<= EISCAT_NUM_PORTS;
+    }
     UHD_LOG_TRACE("EISCAT", str(
-        boost::format("check_radio_config(): Setting channel enables to 0x%02X")
+        boost::format("check_radio_config(): Setting channel enables to 0x%02X"
+                      " Using %s beams, %saccepting neighbour contributions")
         % chan_enables
+        % (upper_contrib ? "upper" : "lower")
+        % (skipping_neighbours ? "not " : "")
     ));
     sr_write("SR_RX_STREAM_ENABLE", chan_enables);
 
