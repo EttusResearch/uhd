@@ -427,17 +427,17 @@ class EISCAT(DboardManagerBase):
         - Turns on the power
         - Initializes clocking
         - Synchronizes clocks to reference
-        - Initializes JESD cores
-        - Initializes and resets ADCs
+        - Forwards PPS to the radio block
 
         This assumes that an appropriate overlay was loaded. If not, this will
         fail loudly complaining about missing devices.
 
         For operation (streaming), the ADCs and deframers still need to be
-        initialized.
+        initialized. See init_jesd_core_reset_adcs(), init_adcs_and_deframers(),
+        and check_deframer_status().
 
         Note that this function will do nothing if the device was previously
-        initialized.
+        initialized, unless force_init was specified in the init args.
         """
         def _init_dboard_regs():
             " Create a UIO object to talk to dboard regs "
@@ -496,19 +496,6 @@ class EISCAT(DboardManagerBase):
                     offset_error*1e12
                 ))
             self.log.info("Clock Synchronization Complete!")
-        def _check_jesd_cores(db_clk_control, jesd_cores):
-            " Checks clocks are enabled; init the JESD core; throw on failure. "
-            if not db_clk_control.check_refclk():
-                self.log.error("JESD Cores not getting a MGT RefClk!")
-                raise RuntimeError("JESD Cores not getting a MGT RefClk")
-            for jesd_core in jesd_cores:
-                jesd_core.init()
-        def _init_and_reset_adcs(spi_ifaces):
-            " Create ADC control objects; reset ADCs "
-            adcs = [ADS54J56(spi_iface, self.log) for spi_iface in spi_ifaces]
-            for adc in adcs:
-                adc.reset()
-            return adcs
         # Go, go, go!
         if args.get("force_init", False):
             self.log.info("Forcing re-initialization of dboard.")
@@ -527,10 +514,10 @@ class EISCAT(DboardManagerBase):
         self.log.info("Radio-register UIO object successfully generated!")
         self._spi_ifaces = _init_spi_devices() # Chips don't have power yet!
         self.log.info("Loaded SPI interfaces!")
-        # An occasional failure to train the ADC-FPGA JESD204B link was cropping up during
-        # dev. A simple solution is to turn off the power and control signals to the DB
-        # before configuration begins (for the first-run case this call is a no-op, but
-        # for reconfiguration, it turns off the power).
+        # We toggle power in order to hard-reset the ADCs. This has proven
+        # necessary to avoid failures of JESD204B link bringups, even though
+        # it's not lined out in the data sheets. If power was never on, this'll
+        # just delay initialization a little.
         self._deinit_power(self.radio_regs)
         time.sleep(.100) # This time is arbitrarily assigned and seems to work well.
         self._init_power(self.radio_regs) # Now, we can talk to chips via SPI
@@ -558,14 +545,7 @@ class EISCAT(DboardManagerBase):
             self.log
         )
         _sync_db_clock(self.clock_synchronizer)
-        _check_jesd_cores(
-            self.dboard_clk_control,
-            self.jesd_cores
-        )
-        self.adc0, self.adc1 = _init_and_reset_adcs((
-            self._spi_ifaces['adc0'], self._spi_ifaces['adc1'],
-        ))
-        self.log.trace("ADC Reset Sequence Complete!")
+        # Clocks and PPS are now fully active!
         return True
 
 
@@ -578,6 +558,34 @@ class EISCAT(DboardManagerBase):
         self.radio_regs.poke32(self.SYSREF_CONTROL, 0x0)
         self.radio_regs.poke32(self.SYSREF_CONTROL, 0x1)
         self.radio_regs.poke32(self.SYSREF_CONTROL, 0x0)
+
+    def init_jesd_core_reset_adcs(self):
+        """
+        - Initializes JESD cores
+        - Initializes and resets ADCs
+        """
+        def _check_jesd_cores(db_clk_control, jesd_cores):
+            " Checks clocks are enabled; init the JESD core; throw on failure. "
+            if not db_clk_control.check_refclk():
+                self.log.error("JESD Cores not getting a MGT RefClk!")
+                raise RuntimeError("JESD Cores not getting a MGT RefClk")
+            for jesd_core in jesd_cores:
+                jesd_core.init()
+        def _init_and_reset_adcs(spi_ifaces):
+            " Create ADC control objects; reset ADCs "
+            adcs = [ADS54J56(spi_iface, self.log) for spi_iface in spi_ifaces]
+            for adc in adcs:
+                adc.reset()
+            return adcs
+        _check_jesd_cores(
+            self.dboard_clk_control,
+            self.jesd_cores
+        )
+        self.adc0, self.adc1 = _init_and_reset_adcs((
+            self._spi_ifaces['adc0'], self._spi_ifaces['adc1'],
+        ))
+        self.log.trace("ADC Reset Sequence Complete!")
+        return True
 
     def init_adcs_and_deframers(self):
         """

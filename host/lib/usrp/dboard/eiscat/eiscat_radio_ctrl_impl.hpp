@@ -262,7 +262,14 @@ private:
      */
     void enable_counter(bool enable);
 
+    //! Sends a SYSREF pulse. Device arg use_mpm_sysref can be used to send it
+    // via MPM. Default is to send it via CHDR, in which case calling this
+    // function *will modify the command time!*, but it will ensure that the
+    // sysref is sent on an even time
     void send_sysref();
+
+    //! Run initialization of JESD cores, put ADCs into reset
+    bool assert_jesd_cores_initialized();
 
     //! Run initialization of ADCs and deframers; returns success status
     bool assert_adcs_deframers();

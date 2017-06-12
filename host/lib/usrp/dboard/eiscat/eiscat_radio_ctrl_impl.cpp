@@ -74,6 +74,7 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(eiscat_radio_ctrl)
     );
 
     /**** Configure the radio_ctrl itself ***********************************/
+    // This also sets the command tick rate:
     radio_ctrl_impl::set_rate(EISCAT_TICK_RATE);
     for (size_t chan = 0; chan < _num_ports; chan++) {
         radio_ctrl_impl::set_rx_frequency(EISCAT_CENTER_FREQ, chan);
@@ -521,11 +522,14 @@ void eiscat_radio_ctrl_impl::set_rpc_client(
 
     UHD_LOG_INFO(
         "EISCAT",
-        "Finalizing dboard initialization using internal PPS"
+        "Finalizing dboard initialization; initializing JESD cores and ADCs."
     );
+    if (not assert_jesd_cores_initialized()) {
+        throw uhd::runtime_error("Failed to initialize JESD cores and reset ADCs!");
+    }
     send_sysref();
     if (not assert_adcs_deframers()) {
-        throw uhd::runtime_error("Failed to initialize ADCs and JESD cores!");
+        throw uhd::runtime_error("Failed to initialize ADCs and JESD deframers!");
     }
     send_sysref();
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -711,7 +715,20 @@ void eiscat_radio_ctrl_impl::send_sysref()
     if (_block_args.has_key("use_mpm_sysref")) {
         _rpcc->notify_with_token("db_0_send_sysref");
     } else {
+        // This value needs to be big enough that we actually hit it between
+        // reading back the time, and applying the command:
+        const int CMD_DELAY_MS = 100;
+        auto sysref_time = get_time_now()
+                + uhd::time_spec_t(double(CMD_DELAY_MS * 1000));
+        uint64_t sysref_time_ticks = sysref_time.to_ticks(EISCAT_TICK_RATE);
+        // The tick value must be even, or we'd still have the 180 degree phase
+        // ambiguity! The actual value doesn't matter.
+        sysref_time_ticks += sysref_time_ticks % 2;
+        set_command_time(uhd::time_spec_t::from_ticks(
+            sysref_time_ticks, EISCAT_TICK_RATE
+        ));
         this->sr_write("SR_SYSREF", 1);
+        std::this_thread::sleep_for(std::chrono::milliseconds(CMD_DELAY_MS));
     }
 }
 
@@ -723,6 +740,15 @@ void eiscat_radio_ctrl_impl::enable_counter(bool enable)
         : (old_value & ~EISCAT_OUTPUT_COUNTER)
     ;
     configure_beams(new_value);
+}
+
+bool eiscat_radio_ctrl_impl::assert_jesd_cores_initialized()
+{
+    if (_num_dboards == 1) {
+        return _rpcc->request_with_token<bool>("db_0_init_jesd_core_reset_adcs");
+    }
+    return _rpcc->request_with_token<bool>("db_0_init_jesd_core_reset_adcs")
+        and _rpcc->request_with_token<bool>("db_1_init_jesd_core_reset_adcs");
 }
 
 bool eiscat_radio_ctrl_impl::assert_adcs_deframers()
