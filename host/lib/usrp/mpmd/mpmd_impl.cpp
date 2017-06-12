@@ -44,6 +44,8 @@ namespace {
     const size_t MPMD_CROSSBAR_MAX_LADDR = 255;
     //! How long we wait for discovery responses (in seconds)
     const double MPMD_FIND_TIMEOUT = 0.5;
+    //! Most pessimistic time for a CHDR query to go to device and back
+    const double MPMD_CHDR_MAX_RTT = 0.02;
 
     /*************************************************************************
      * Helper functions
@@ -112,6 +114,61 @@ namespace {
             })
         ;
     }
+
+    void reset_time_synchronized(uhd::property_tree::sptr tree)
+    {
+        const size_t n_mboards = tree->list("/mboards").size();
+        UHD_LOGGER_DEBUG("MPMD")
+            << "Synchronizing " << n_mboards <<" timekeepers...";
+        auto get_time_last_pps = [tree](){
+            return tree->access<time_spec_t>(
+                fs_path("/mboards/0/time/pps")
+            ).get();
+        };
+        auto end_time = std::chrono::steady_clock::now()
+                            + std::chrono::milliseconds(1100);
+        auto time_last_pps = get_time_last_pps();
+        UHD_LOG_DEBUG("MPMD", "Waiting for PPS clock edge...");
+        while (time_last_pps == get_time_last_pps())
+        {
+            if (std::chrono::steady_clock::now() > end_time) {
+                throw uhd::runtime_error(
+                    "Board 0 may not be getting a PPS signal!\n"
+                    "No PPS detected within the time interval.\n"
+                    "See the application notes for your device.\n"
+                );
+            }
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+        }
+        UHD_LOG_DEBUG("MPMD", "Setting all timekeepers to 0...");
+        for (size_t mboard_idx = 0; mboard_idx < n_mboards; mboard_idx++) {
+            tree->access<time_spec_t>(
+                fs_path("/mboards") / mboard_idx / "time" / "pps"
+            ).set(time_spec_t(0.0));
+        }
+
+        UHD_LOG_DEBUG("MPMD", "Waiting for next PPS edge...");
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+
+        UHD_LOG_DEBUG("MPMD", "Verifying all timekeepers are aligned...");
+        auto get_time_now = [tree](const size_t mb_index){
+            return tree->access<time_spec_t>(
+                fs_path("/mboards") / mb_index / "time/now"
+            ).get();
+        };
+        for (size_t m = 1; m < n_mboards; m++){
+            time_spec_t time_0 = get_time_now(0);
+            time_spec_t time_i = get_time_now(m);
+            if (time_i < time_0
+                    or (time_i - time_0) > time_spec_t(MPMD_CHDR_MAX_RTT)) {
+                UHD_LOGGER_WARNING("MULTI_USRP") << boost::format(
+                    "Detected time deviation between board %d and board 0.\n"
+                    "Board 0 time is %f seconds.\n"
+                    "Board %d time is %f seconds.\n"
+                ) % m % time_0.get_real_secs() % m % time_i.get_real_secs();
+            }
+        }
+    }
 }
 
 /*****************************************************************************
@@ -144,17 +201,30 @@ mpmd_impl::mpmd_impl(const device_addr_t& device_args)
         _mb.push_back(setup_mb(mb_i, mb_args[mb_i]));
     }
 
-    //! This might be parallelized. std::tasks would probably be a good way to
+    // Init the prop tree before the blocks get set up -- they might need access
+    // to some of the properties. This also means that the prop tree is pristine
+    // at this point in time.
+    for (size_t mb_i = 0; mb_i < mb_args.size(); ++mb_i) {
+        init_property_tree(_tree, fs_path("/mboards") / mb_i, _mb[mb_i].get());
+    }
+
+    // This might be parallelized. std::tasks would probably be a good way to
     // do that if we want to.
     for (size_t mb_i = 0; mb_i < mb_args.size(); ++mb_i) {
         setup_rfnoc_blocks(mb_i, mb_args[mb_i]);
     }
 
-    for (size_t mb_i = 0; mb_i < mb_args.size(); ++mb_i) {
-        init_property_tree(_tree, fs_path("/mboards") / mb_i, _mb[mb_i].get());
+    // FIXME this section only makes sense for when the time source is external.
+    // So, check for that, or something similar.
+    // This section of code assumes that the prop tree is set and we have access
+    // to the timekeepers. So don't move it anywhere else.
+    if (device_args.has_key("sync_time")) {
+        reset_time_synchronized(_tree);
     }
 
     auto filtered_block_args = device_args; // TODO actually filter
+    // Blocks will finalize their own setup in this function. They have (and
+    // might need) full access to the prop tree, the timekeepers, etc.
     setup_rpc_blocks(filtered_block_args);
 }
 
