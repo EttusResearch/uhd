@@ -42,6 +42,8 @@ namespace {
      * Local constants
      ************************************************************************/
     const size_t MPMD_CROSSBAR_MAX_LADDR = 255;
+    //! How long we wait for discovery responses (in seconds)
+    const double MPMD_FIND_TIMEOUT = 0.5;
 
     /*************************************************************************
      * Helper functions
@@ -401,7 +403,10 @@ device_addrs_t mpmd_find_with_addr(const device_addr_t& hint_)
     device_addrs_t addrs;
     while (true) {
         char buff[4096] = {};
-        const size_t nbytes = comm->recv(boost::asio::buffer(buff), 0.050);
+        const size_t nbytes = comm->recv( // TODO make sure we don't buf overflow
+                boost::asio::buffer(buff),
+                MPMD_FIND_TIMEOUT
+        );
         if (nbytes == 0) {
             break;
         }
