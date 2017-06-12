@@ -154,7 +154,58 @@ class n310(PeriphManagerBase):
         }
         for ifname, table in iteritems(self._eth_dispatchers):
             table.set_ipv4_addr(self._chdr_interfaces[ifname]['ip_addr'])
+        if 'preload_ethtables' in args:
+            self._preload_ethtables(
+                self._eth_dispatchers,
+                args['preload_ethtables']
+            )
         return result
+
+    def _preload_ethtables(self, eth_dispatchers, table_file):
+        """
+        Populates the ethernet tables from a JSON file
+        """
+        import json
+        try:
+            eth_table_data = json.load(open(table_file))
+        except ValueError as ex:
+            self.log.warning(
+                "Bad values in preloading table file: %s",
+                str(ex)
+            )
+            return
+        self.log.info(
+            "Preloading Ethernet dispatch tables from JSON file `%s'.",
+            table_file
+        )
+        for eth_iface, data in iteritems(eth_table_data):
+            if eth_iface not in eth_dispatchers:
+                self.log.warning(
+                    "Request to preload eth dispatcher table for "
+                    "iface `{}', but no such interface is "
+                    "registered. Known interfaces: {}".format(
+                        str(eth_iface),
+                        ",".join(eth_dispatchers.keys())
+                    )
+                )
+                continue
+            eth_dispatcher = eth_dispatchers[eth_iface]
+            self.log.debug("Preloading {} dispatch table".format(eth_iface))
+            try:
+                for dst_ep, udp_data in iteritems(data):
+                    sid = SID()
+                    sid.set_dst_ep(int(dst_ep))
+                    eth_dispatcher.set_route(
+                        sid,
+                        udp_data['ip_addr'],
+                        udp_data['port'],
+                        udp_data.get('mac_addr', None)
+                    )
+            except ValueError as ex:
+                self.log.warning(
+                    "Bad values in preloading table file: %s",
+                    str(ex)
+                )
 
     def _allocate_sid(self, sender_addr, port, sid, xbar_src_addr, xbar_src_port, new_ep):
         """

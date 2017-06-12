@@ -87,15 +87,19 @@ class EthDispatcherTable(object):
             self.log.error(
                 "Could not resolve a MAC address for IP address `{}'".format(ip_addr)
             )
+        dst_ep = sid.dst_ep
         self.log.debug(
-            "Routing SID `{sid}' to IP address `{ip}', " \
+            "Routing SID `{sid}' (endpoint `{ep}') to IP address `{ip}', " \
             "MAC address `{mac}', port `{port}'".format(
-                sid=str(sid), ip=ip_addr, mac=mac_addr, port=udp_port
+                sid=str(sid),
+                ep=dst_ep,
+                ip=ip_addr,
+                mac=mac_addr,
+                port=udp_port
             )
         )
         ip_addr_int = int(netaddr.IPAddress(ip_addr))
         mac_addr_int = int(netaddr.EUI(mac_addr))
-        dst_ep = sid.dst_ep
         sid_offset = 4 * dst_ep
         def poke_and_trace(addr, data):
             " Do a poke32() and log.trace() "
