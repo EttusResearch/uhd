@@ -56,9 +56,9 @@ public:
     //! The purpose of a transport
     enum xport_type_t {
         CTRL = 0,
+        ASYNC_MSG,
         TX_DATA,
-        RX_DATA,
-        ASYNC_TX_MSG
+        RX_DATA
     };
 
     enum xport_t {AXI, ETH, PCIE};

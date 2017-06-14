@@ -62,7 +62,8 @@ static const size_t X300_PCIE_TX_DATA_NUM_FRAMES	    = 4096;
 static const size_t X300_PCIE_MSG_FRAME_SIZE            = 256;      //bytes
 static const size_t X300_PCIE_MSG_NUM_FRAMES            = 64;
 static const size_t X300_PCIE_MAX_CHANNELS              = 6;
-static const size_t X300_PCIE_MAX_MUXED_XPORTS          = 32;
+static const size_t X300_PCIE_MAX_MUXED_CTRL_XPORTS     = 32;
+static const size_t X300_PCIE_MAX_MUXED_ASYNC_XPORTS    = 4;
 
 static const size_t X300_10GE_DATA_FRAME_MAX_SIZE   = 8000;     // CHDR packet size in bytes
 static const size_t X300_1GE_DATA_FRAME_MAX_SIZE    = 1472;     // CHDR packet size in bytes
@@ -205,6 +206,8 @@ private:
         std::map<uint32_t, uint32_t> _dma_chan_pool;
         //! Control transport for one PCIe connection
         uhd::transport::muxed_zero_copy_if::sptr ctrl_dma_xport;
+        //! Async message transport
+        uhd::transport::muxed_zero_copy_if::sptr async_msg_dma_xport;
 
         /*! Allocate or return a previously allocated PCIe channel pair
          *

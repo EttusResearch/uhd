@@ -773,7 +773,7 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
         uhd::sid_t stream_address = blk_ctrl->get_address(block_port);
         UHD_STREAMER_LOG() << "[TX Streamer] creating tx stream " << tx_hints.to_string() << std::endl;
         both_xports_t xport = make_transport(stream_address, TX_DATA, tx_hints);
-		both_xports_t async_xport = make_transport(stream_address, ASYNC_TX_MSG, device_addr_t(""));
+		both_xports_t async_xport = make_transport(stream_address, ASYNC_MSG, device_addr_t(""));
         UHD_STREAMER_LOG() << std::hex << "[TX Streamer] data_sid = " << xport.send_sid << std::dec << std::endl;
 
         // To calculate the max number of samples per packet, we assume the maximum header length
