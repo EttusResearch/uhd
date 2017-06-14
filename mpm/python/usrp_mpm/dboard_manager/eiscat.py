@@ -577,6 +577,12 @@ class EISCAT(DboardManagerBase):
             for adc in adcs:
                 adc.reset()
             return adcs
+        if self.initialized:
+            self.log.debug(
+                "Dboard already initialized; skipping initialization " \
+                "of ADCs and JESD cores."
+            )
+            return True
         _check_jesd_cores(
             self.dboard_clk_control,
             self.jesd_cores
