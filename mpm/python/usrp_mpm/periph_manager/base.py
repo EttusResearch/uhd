@@ -149,7 +149,8 @@ class PeriphManagerBase(object):
         self._init_dboards(args.override_db_pids)
         self._available_endpoints = list(range(256))
         self._init_args = {}
-        self._chdr_interfaces = []
+        self.log.info("Identifying available network interfaces...")
+        self._chdr_interfaces = self._init_interfaces(self.chdr_interfaces)
 
     def _init_mboard_with_eeprom(self):
         """
@@ -283,19 +284,19 @@ class PeriphManagerBase(object):
             self.dboards.append(db_class(dboard_idx, **dboard_info))
         self.log.info("Found {} daughterboard(s).".format(len(self.dboards)))
 
-    def _init_interfaces(self):
+    def _init_interfaces(self, possible_ifaces):
         """
         Initialize the list of network interfaces
         """
         self.log.trace("Testing available interfaces out of `{}'".format(
-            self.chdr_interfaces
+            possible_ifaces
         ))
-        valid_ifaces = net.get_valid_interfaces(self.chdr_interfaces)
+        valid_ifaces = net.get_valid_interfaces(possible_ifaces)
         if len(valid_ifaces):
             self.log.debug("Found CHDR interfaces: `{}'".format(valid_ifaces))
         else:
             self.log.warning("No CHDR interfaces found!")
-        self._chdr_interfaces = {
+        return {
             x: net.get_iface_info(x)
             for x in valid_ifaces
         }
@@ -321,8 +322,6 @@ class PeriphManagerBase(object):
             ",".join(['{}={}'.format(x, args[x]) for x in args])
         ))
         self._init_args = args
-        self.log.info("Identifying available network interfaces...")
-        self._init_interfaces()
         self.log.debug("Initializing dboards...")
         return all((dboard.init(args) for dboard in self.dboards))
 

@@ -139,8 +139,12 @@ class n310(PeriphManagerBase):
             )
         )
         self.log.info("mboard info: {}".format(self.mboard_info))
-        # Define some attributes so PyLint stays quiet
-        self._eth_dispatchers = None
+        self._eth_dispatchers = {
+            x: EthDispatcherTable(self.eth_tables.get(x))
+            for x in list(self._chdr_interfaces.keys())
+        }
+        for ifname, table in iteritems(self._eth_dispatchers):
+            table.set_ipv4_addr(self._chdr_interfaces[ifname]['ip_addr'])
 
     def init(self, args):
         """
@@ -148,12 +152,7 @@ class n310(PeriphManagerBase):
         dispatchers accordingly.
         """
         result = super(n310, self).init(args)
-        self._eth_dispatchers = {
-            x: EthDispatcherTable(self.eth_tables.get(x))
-            for x in list(self._chdr_interfaces.keys())
-        }
-        for ifname, table in iteritems(self._eth_dispatchers):
-            table.set_ipv4_addr(self._chdr_interfaces[ifname]['ip_addr'])
+        for _, table in iteritems(self._eth_dispatchers):
             if 'forward_eth' in args or 'forward_bcast' in args:
                 table.set_forward_policy(
                     args.get('forward_eth', False),
