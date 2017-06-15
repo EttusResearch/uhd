@@ -64,6 +64,10 @@ public:
         return _recv_endpoint.address().to_string();
     }
 
+    std::string get_send_addr(void){
+        return _send_endpoint.address().to_string();
+    }
+
 private:
     bool                    _connected;
     asio::io_service        _io_service;
