@@ -67,6 +67,26 @@ class ADS54J56(object):
     def __init__(self, regs, log):
         self.log = log
         self.regs = regs
+        self.sync_line = "AB"
+
+    def swap_sync_line(self, new_value=None):
+        """
+        Select sync pin value, or switch sync pin over. If new_value is given,
+        use that (it has to be either AB or CD), otherwise, pick whatever is
+        currently not selected.
+        """
+        if new_value is not None:
+            self.sync_line = new_value
+        elif self.sync_line == "AB":
+            self.sync_line = "CD"
+        else:
+            self.sync_line = "AB"
+        assert self.sync_line in ('AB', 'CD')
+        self.log.debug(
+            "The next setup() sequence will use sync pin: {}".format(
+                self.sync_line
+            )
+        )
 
     def reset(self):
         """
@@ -100,6 +120,7 @@ class ADS54J56(object):
         """
         Enable the ADC for streaming
         """
+        self.log.trace("Setting up ADS54J56 for EISCAT operation...")
         self.regs.poke8(0x0011, 0x80) # Select Master page in Analog Bank
         self.regs.poke8(0x0053, 0x80) # Set clk divider to div-2
         self.regs.poke8(0x0039, 0xC0) # ALWAYS WRITE 1 to this bit
@@ -138,9 +159,20 @@ class ADS54J56(object):
         self.regs.poke8(0x6006, 0x0F) # Set K to 16
         self.regs.poke8(0x7000, 0x80) # Set CTRL K for C-D
         self.regs.poke8(0x7006, 0x0F) # Set K to 16
-        self.regs.poke8(0x4005, 0x01) # Disable broadcast mode
-        self.regs.poke8(0x7001, 0x20) # SyncbAB to issue a SYNC request for all 4 channels
-        self.regs.poke8(0x4005, 0x00) # Enable broadcast mode
+        # Choose the sync pin. We have both connected up to the FPGA, but we
+        # can only use one at a time. Sync pins can become non-functional (e.g.
+        # after ESD events) and thus we need the ability to choose between them.
+        # In any case, we'll set the pin to issue a SYNC request for all 4
+        # channels.
+        assert self.sync_line in ("AB", "CD")
+        if self.sync_line == "AB":
+            self.log.trace("Using SyncAB")
+            self.regs.poke8(0x7001, 0x22)
+        else:
+            self.log.trace("Using SyncCD")
+            self.regs.poke8(0x6001, 0x22)
+        # This readback is pretty useless, but we use it as a debug mechanic to
+        # see if anything is coming back from the chip:
         readback_test_addr = 0x11
         readback_test_val = self.regs.peek8(readback_test_addr)
         self.log.trace("ADC readback reg 0x{:x} post-setup: 0x{:x}".format(
@@ -408,8 +440,7 @@ class EISCAT(DboardManagerBase):
         self.radio_regs = None
         self.jesd_cores = None
         self.lmk = None
-        self.adc0 = None
-        self.adc1 = None
+        self.adcs = []
         self.dboard_clk_control = None
         self.clock_synchronizer = None
         self._spi_ifaces = None
@@ -523,6 +554,10 @@ class EISCAT(DboardManagerBase):
             self._spi_ifaces['phase_dac'],
             self.INIT_PHASE_DAC_WORD,
         )
+        self.adcs = [
+            ADS54J56(self._spi_ifaces[spi_iface], self.log)
+            for spi_iface in ('adc0', 'adc1')
+        ]
         self.dboard_clk_control.enable_mmcm()
         self.log.info("Clocking Configured Successfully!")
         # Synchronize DB Clocks
@@ -565,12 +600,6 @@ class EISCAT(DboardManagerBase):
                 raise RuntimeError("JESD Cores not getting a MGT RefClk")
             for jesd_core in jesd_cores:
                 jesd_core.init()
-        def _init_and_reset_adcs(spi_ifaces):
-            " Create ADC control objects; reset ADCs "
-            adcs = [ADS54J56(spi_iface, self.log) for spi_iface in spi_ifaces]
-            for adc in adcs:
-                adc.reset()
-            return adcs
         if self.initialized:
             self.log.debug(
                 "Dboard already initialized; skipping initialization " \
@@ -581,9 +610,8 @@ class EISCAT(DboardManagerBase):
             self.dboard_clk_control,
             self.jesd_cores
         )
-        self.adc0, self.adc1 = _init_and_reset_adcs((
-            self._spi_ifaces['adc0'], self._spi_ifaces['adc1'],
-        ))
+        for adc in self.adcs:
+            adc.reset()
         self.log.trace("ADC Reset Sequence Complete!")
         return True
 
@@ -598,8 +626,8 @@ class EISCAT(DboardManagerBase):
                 "of ADCs and JESD cores."
             )
             return True
-        self.adc0.setup()
-        self.adc1.setup()
+        for adc in self.adcs:
+            adc.setup()
         self.log.info("ADC Initialization Complete!")
         for jesd_core in self.jesd_cores:
             jesd_core.init_deframer()
@@ -626,7 +654,11 @@ class EISCAT(DboardManagerBase):
                 self.log.error("JESD204B Core {} Error: Failed to Link. " \
                     "Don't ignore this, please tell someone!".format(jesd_idx)
                 )
-                return False
+                error = True
+                self.adcs[jesd_idx].swap_sync_line()
+        if error:
+            return False
+
         self.log.info("JESD Core Initialized, link up! (woohoo!)")
         self.initialized = True
         return self.initialized
