@@ -94,7 +94,7 @@
       <value>0</value>
       <check>EQUAL($use_prev, 0) OR EQUAL($use_prev, 1)</check>
       <check_message>use_prev must be 0 or 1.</check_message>
-      <action>SR_WRITE("SR_PREV_OR_NULL", $use_prev) AND SR_WRITE("SR_PREV_OR_NULL", $use_prev)</action>
+      <action>SR_WRITE("SR_PREV_OR_NULL", $use_prev)</action>
     </arg>
     <!--Direct access to the beams register-->
     <arg>
