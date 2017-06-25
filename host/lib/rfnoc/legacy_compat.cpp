@@ -26,7 +26,6 @@
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/types/direction.hpp>
 #include <uhd/types/ranges.hpp>
-
 #include <uhd/utils/log.hpp>
 #include <uhd/transport/chdr.hpp>
 #include <uhd/usrp/multi_usrp.hpp>

@@ -1,5 +1,5 @@
 //
-// Copyright 2013-2014 Ettus Research LLC
+// Copyright 2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,25 +15,22 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include "e300_regs.hpp"
-#include "e300_impl.hpp"
-#include "e300_fpga_defs.hpp"
-#include "e300_defaults.hpp"
-#include "../../transport/super_recv_packet_handler.hpp"
-#include "../../transport/super_send_packet_handler.hpp"
-#include <uhd/utils/tasks.hpp>
-#include <boost/bind.hpp>
-#include <boost/format.hpp>
+#ifndef INCLUDED_LIBUHD_RFNOC_SIGGEN_BLOCK_CTRL_HPP
+#define INCLUDED_LIBUHD_RFNOC_SIGGEN_BLOCK_CTRL_HPP
 
-using namespace uhd;
-using namespace uhd::usrp;
-using namespace uhd::transport;
+#include <uhd/rfnoc/source_block_ctrl_base.hpp>
+#include <uhd/rfnoc/sink_block_ctrl_base.hpp>
 
-namespace uhd { namespace usrp { namespace e300 {
+namespace uhd {
+    namespace rfnoc {
 
-uhd::device_addr_t e300_impl::get_rx_hints(size_t)
+class UHD_RFNOC_API siggen_block_ctrl : public source_block_ctrl_base, public sink_block_ctrl_base
 {
-    return uhd::device_addr_t(str(boost::format("max_recv_window=%d") % DEFAULT_RX_DATA_NUM_FRAMES));
-}
+public:
+    UHD_RFNOC_BLOCK_OBJECT(siggen_block_ctrl)
 
-}}} // namespace
+}; /* class siggen_block_ctrl*/
+
+}} /* namespace uhd::rfnoc */
+
+#endif /* INCLUDED_LIBUHD_RFNOC_SIGGEN_BLOCK_CTRL_HPP */

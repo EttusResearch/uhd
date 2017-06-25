@@ -1,0 +1,16 @@
+/*! \page page_rfnoc_descriptor_file RFNoC Block Descriptor Files
+
+
+\section rfnoc_descriptor_file_nocscript NocScript
+
+NocScript is a simple DSL designed to augment block definition files for RFNoC.
+
+\li Statically Typed
+\li No implicit typecasting
+\li Very few operators
+
+See \subpage page_nocscript_funcs for a full function reference.
+
+*/
+// vim:ft=doxygen:
+

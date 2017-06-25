@@ -39,6 +39,14 @@ SET(example_sources
     sync_to_gps.cpp
 )
 
+IF(ENABLE_RFNOC)
+    LIST(APPEND
+        example_sources
+        rfnoc_nullsource_ce_rx.cpp
+        rfnoc_rx_to_file.cpp
+    )
+ENDIF(ENABLE_RFNOC)
+
 IF(ENABLE_OCTOCLOCK)
     LIST(APPEND example_sources test_clock_synch.cpp)
 ENDIF(ENABLE_OCTOCLOCK)

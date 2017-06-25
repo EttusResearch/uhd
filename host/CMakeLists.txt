@@ -309,7 +309,7 @@ MESSAGE(STATUS "Boost libraries: ${Boost_LIBRARIES}")
 # Additional settings for build environment
 ########################################################################
 # Note: RFNoC never gets fully disabled, but the public APIs do
-SET(ENABLE_RFNOC OFF CACHE BOOL "Export RFNoC includes and symbols")
+SET(ENABLE_RFNOC ON CACHE BOOL "Export RFNoC includes and symbols")
 INCLUDE(UHDGlobalDefs)
 INCLUDE(UHDLog)
 
@@ -364,8 +364,8 @@ UHD_INSTALL(FILES
 #{{{IMG_SECTION
 # This section is written automatically by /images/create_imgs_package.py
 # Any manual changes in here will be overwritten.
-SET(UHD_IMAGES_MD5SUM "487beb2dd2477ad90f9b21399931979c")
-SET(UHD_IMAGES_DOWNLOAD_SRC "uhd-images_003.010.001.001-27-g47672ede.zip")
+SET(UHD_IMAGES_MD5SUM "ff2a1ab0e9ee277901cd0bdb9188708e")
+SET(UHD_IMAGES_DOWNLOAD_SRC "uhd-images_4.0.0.rfnoc-devel-238-g39a41476.zip")
 #}}}
 
 ########################################################################

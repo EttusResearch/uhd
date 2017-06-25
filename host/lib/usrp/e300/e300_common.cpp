@@ -26,7 +26,6 @@
 #include "e300_common.hpp"
 
 #include <boost/filesystem.hpp>
-#include <boost/noncopyable.hpp>
 #include <fstream>
 #include <string>
 

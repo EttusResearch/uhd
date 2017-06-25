@@ -766,6 +766,7 @@ public:
     rx_streamer::sptr get_rx_stream(const stream_args_t &args) {
         _check_link_rate(args, false);
         if (is_device3()) {
+            UHD_LOGGER_DEBUG("MULTI_USRP") << "[multi_usrp] Getting rx streamer from legacy compat" << std::endl;
             return _legacy_compat->get_rx_stream(args);
         }
         return this->get_device()->get_rx_stream(args);
@@ -846,10 +847,28 @@ public:
     }
 
     tune_result_t set_rx_freq(const tune_request_t &tune_request, size_t chan){
+        tune_request_t local_request = tune_request;
+
+        // If any mixer is driven by an external LO the daughterboard assumes that no CORDIC correction is
+        // necessary. Since the LO might be sourced from another daughterboard which would normally apply a
+        // cordic correction we must disable all DSP tuning to ensure identical configurations across daughterboards.
+        if (tune_request.dsp_freq_policy == tune_request.POLICY_AUTO and
+            tune_request.rf_freq_policy  == tune_request.POLICY_AUTO)
+        {
+            for (size_t c = 0; c < get_rx_num_channels(); c++) {
+                UHD_VAR(get_rx_lo_source(ALL_LOS, c));
+                if (get_rx_lo_source(ALL_LOS, c) == "external") {
+                    local_request.dsp_freq_policy = tune_request.POLICY_MANUAL;
+                    local_request.dsp_freq = 0;
+                    break;
+                }
+            }
+        }
+
         tune_result_t result = tune_xx_subdev_and_dsp(RX_SIGN,
                 _tree->subtree(rx_dsp_root(chan)),
                 _tree->subtree(rx_rf_fe_root(chan)),
-                tune_request);
+                local_request);
         //do_tune_freq_results_message(tune_request, result, get_rx_freq(chan), "RX");
         return result;
     }
@@ -939,7 +958,7 @@ public:
             }
         } else {
             // If the daughterboard doesn't expose it's LO(s) then it can only be internal
-            return std::vector<std::string>(1, "internal");
+            return std::vector<std::string> (1, "internal");
         }
     }
 

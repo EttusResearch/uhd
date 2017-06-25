@@ -1,0 +1,84 @@
+<!--This defines one NoC-Block.-->
+<nocblock>
+  <name>Vector IIR</name>
+  <blockname>VectorIIR</blockname>
+  <!--There can be several of these:-->
+  <ids>
+    <id revision="0">1112</id>
+  </ids>
+  <!-- Registers -->
+  <registers>
+    <setreg>
+      <name>VECTOR_LEN</name>
+      <address>129</address>
+    </setreg>
+    <setreg>
+      <name>ALPHA</name>
+      <address>130</address>
+    </setreg>
+    <setreg>
+      <name>BETA</name>
+      <address>131</address>
+    </setreg>
+  </registers>
+  <!-- Args -->
+  <args>
+    <arg>
+      <name>spp</name>
+      <type>int</type>
+      <value>256</value>
+      <check>GE($spp, 1) AND LE($spp, 4096)</check>
+      <check_message>Vector length must be in [1, 4096].</check_message>
+      <action>SR_WRITE("VECTOR_LEN", $spp)</action>
+    </arg>
+    <arg>
+      <name>alpha</name>
+      <type>double</type>
+      <value>0.9</value>
+      <check>GT($alpha, 0.0) AND LT($alpha, 1.0)</check>
+      <check_message>Alpha must be in (0.0, 1.0).</check_message>
+      <!--We set the register value to alpha * 2^31 (Q1.31 format)-->
+      <action>SR_WRITE("ALPHA", IROUND(MULT($alpha, 2147483648.0)))</action>
+    </arg>
+    <arg>
+      <name>beta</name>
+      <type>double</type>
+      <value>0.1</value>
+      <check>GT($beta, 0.0) AND LT($beta, 1.0)</check>
+      <check_message>Beta must be in (0.0, 1.0).</check_message>
+      <!--We set the register value to alpha * 2^31 (Q1.31 format)-->
+      <action>SR_WRITE("BETA", IROUND(MULT($beta, 2147483648.0)))</action>
+    </arg>
+  </args>
+  <ports>
+    <sink>
+      <name>in</name>
+      <type>sc16</type>
+      <vlen>$spp</vlen>
+      <pkt_size>%vlen</pkt_size>
+    </sink>
+    <source>
+      <name>out</name>
+      <type>sc16</type>
+      <vlen>$spp</vlen>
+      <pkt_size>%vlen</pkt_size>
+    </source>
+  </ports>
+  <!--<components>-->
+    <!--<component>-->
+      <!--<key revision="1">nocshell</key>-->
+    <!--</component>-->
+    <!--<component srbase="0">-->
+      <!--[>Will look for a component with this key:<]-->
+      <!--<key revision="1">componentname</key>-->
+    <!--</component>-->
+  <!--</components>-->
+  <!--<connection>-->
+    <!--<source port="0">nocshell</source>-->
+    <!--<sink port="0">componentname</sink>-->
+  <!--</connection>-->
+  <!--<connection>-->
+    <!--<source port="0">componentname</source>-->
+    <!--<sink port="0">nocshell</sink>-->
+  <!--</connection>-->
+</nocblock>

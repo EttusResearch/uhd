@@ -1,5 +1,5 @@
 //
-// Copyright 2014 Ettus Research LLC
+// Copyright 2014-2016 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -28,6 +28,7 @@
 using namespace uhd::usrp;
 
 device3_impl::device3_impl()
+    : _sid_framer(0)
 {
     _type = uhd::device::USRP;
     _async_md.reset(new async_md_type(1000/*messages deep*/));
