@@ -411,7 +411,7 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     _codec_mgr = ad936x_manager::make(_codec_ctrl, fpga::NUM_RADIOS);
 
 #ifdef E300_GPSD
-    UHD_MSG(status) << "Detecting internal GPSDO " << std::flush;
+    UHD_MSG(status) << "Detecting internal GPS " << std::flush;
     try {
         if (_xport_path == AXI)
             _gps = gpsd_iface::make("localhost", 2947);
