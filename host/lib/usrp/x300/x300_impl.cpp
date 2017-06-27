@@ -542,6 +542,8 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     eth_addrs.push_back(eth0_addr);
 
     mb.next_src_addr = 0;   //Host source address for blocks
+    mb.next_tx_src_addr = 0;
+    mb.next_rx_src_addr = 0;
     if (dev_addr.has_key("second_addr")) {
         std::string eth1_addr = dev_addr["second_addr"];
 
@@ -1057,9 +1059,12 @@ x300_impl::~x300_impl(void)
 uint32_t x300_impl::mboard_members_t::allocate_pcie_dma_chan(const uhd::sid_t &tx_sid, const xport_type_t xport_type)
 {
     static const uint32_t CTRL_CHANNEL       = 0;
-    static const uint32_t FIRST_DATA_CHANNEL = 1;
+    static const uint32_t ASYNC_MSG_CHANNEL  = 1;
+    static const uint32_t FIRST_DATA_CHANNEL = 2;
     if (xport_type == CTRL) {
         return CTRL_CHANNEL;
+    } else if (xport_type == ASYNC_MSG) {
+        return ASYNC_MSG_CHANNEL;
     } else {
         // sid_t has no comparison defined, so we need to convert it uint32_t
         uint32_t raw_sid = tx_sid.get();
@@ -1079,6 +1084,24 @@ uint32_t x300_impl::mboard_members_t::allocate_pcie_dma_chan(const uhd::sid_t &t
 
 static uint32_t extract_sid_from_pkt(void* pkt, size_t) {
     return uhd::sid_t(uhd::wtohx(static_cast<const uint32_t*>(pkt)[1])).get_dst();
+}
+
+static uhd::transport::muxed_zero_copy_if::sptr make_muxed_pcie_msg_xport
+(
+    uhd::niusrprio::niusrprio_session::sptr rio_fpga_interface,
+    uint32_t dma_channel_num,
+    size_t max_muxed_ports
+) {
+    zero_copy_xport_params buff_args;
+    buff_args.send_frame_size = X300_PCIE_MSG_FRAME_SIZE;
+    buff_args.recv_frame_size = X300_PCIE_MSG_FRAME_SIZE;
+    buff_args.num_send_frames = X300_PCIE_MSG_NUM_FRAMES * max_muxed_ports;
+    buff_args.num_recv_frames = X300_PCIE_MSG_NUM_FRAMES * max_muxed_ports;
+
+    zero_copy_if::sptr base_xport = nirio_zero_copy::make(
+        rio_fpga_interface, dma_channel_num,
+        buff_args, uhd::device_addr_t());
+    return muxed_zero_copy_if::make(base_xport, extract_sid_from_pkt, max_muxed_ports);
 }
 
 uhd::both_xports_t x300_impl::make_transport(
@@ -1103,19 +1126,25 @@ uhd::both_xports_t x300_impl::make_transport(
             if (not mb.ctrl_dma_xport) {
                 //One underlying DMA channel will handle
                 //all control traffic
-                zero_copy_xport_params ctrl_buff_args;
-                ctrl_buff_args.send_frame_size = X300_PCIE_MSG_FRAME_SIZE;
-                ctrl_buff_args.recv_frame_size = X300_PCIE_MSG_FRAME_SIZE;
-                ctrl_buff_args.num_send_frames = X300_PCIE_MSG_NUM_FRAMES * X300_PCIE_MAX_MUXED_XPORTS;
-                ctrl_buff_args.num_recv_frames = X300_PCIE_MSG_NUM_FRAMES * X300_PCIE_MAX_MUXED_XPORTS;
-
-                zero_copy_if::sptr base_xport = nirio_zero_copy::make(
-                    mb.rio_fpga_interface, dma_channel_num,
-                    ctrl_buff_args, uhd::device_addr_t());
-                mb.ctrl_dma_xport = muxed_zero_copy_if::make(base_xport, extract_sid_from_pkt, X300_PCIE_MAX_MUXED_XPORTS);
+                mb.ctrl_dma_xport = make_muxed_pcie_msg_xport(
+                    mb.rio_fpga_interface,
+                    dma_channel_num,
+                    X300_PCIE_MAX_MUXED_CTRL_XPORTS);
             }
             //Create a virtual control transport
             xports.recv = mb.ctrl_dma_xport->make_stream(xports.recv_sid.get_dst());
+        } else if (xport_type == ASYNC_MSG) {
+            //Transport for async message stream
+            if (not mb.async_msg_dma_xport) {
+                //One underlying DMA channel will handle
+                //all async message traffic
+                mb.async_msg_dma_xport = make_muxed_pcie_msg_xport(
+                    mb.rio_fpga_interface,
+                    dma_channel_num,
+                    X300_PCIE_MAX_MUXED_ASYNC_XPORTS);
+            }
+            //Create a virtual async message transport
+            xports.recv = mb.async_msg_dma_xport->make_stream(xports.recv_sid.get_dst());
         } else {
             //Transport for data stream
             default_buff_args.send_frame_size =
@@ -1157,12 +1186,16 @@ uhd::both_xports_t x300_impl::make_transport(
 
     } else if (mb.xport_path == "eth") {
         // Decide on the IP/Interface pair based on the endpoint index
-        std::string interface_addr = mb.eth_conns[mb.next_src_addr].addr;
+        size_t &next_src_addr =
+            xport_type == TX_DATA ? mb.next_tx_src_addr :
+            xport_type == RX_DATA ? mb.next_rx_src_addr :
+            mb.next_src_addr;
+        std::string interface_addr = mb.eth_conns[next_src_addr].addr;
         const uint32_t xbar_src_addr =
-            mb.next_src_addr==0 ? X300_SRC_ADDR0 : X300_SRC_ADDR1;
+            next_src_addr==0 ? X300_SRC_ADDR0 : X300_SRC_ADDR1;
         const uint32_t xbar_src_dst =
-            mb.eth_conns[mb.next_src_addr].type==X300_IFACE_ETH0 ? X300_XB_DST_E0 : X300_XB_DST_E1;
-        mb.next_src_addr = (mb.next_src_addr + 1) % mb.eth_conns.size();
+            mb.eth_conns[next_src_addr].type==X300_IFACE_ETH0 ? X300_XB_DST_E0 : X300_XB_DST_E1;
+        next_src_addr = (next_src_addr + 1) % mb.eth_conns.size();
 
         xports.send_sid = this->allocate_sid(mb, address, xbar_src_addr, xbar_src_dst);
         xports.recv_sid = xports.send_sid.reversed();

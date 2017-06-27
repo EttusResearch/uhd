@@ -35,7 +35,7 @@ public:
 
     virtual ~twinrx_ctrl() {}
 
-    enum channel_t { CH1 = 0, CH2 = 1, BOTH = 2};
+    enum channel_t { CH1 = 0, CH2 = 1, BOTH = 2 };
 
     enum preamp_state_t { PREAMP_LOWBAND, PREAMP_HIGHBAND, PREAMP_BYPASS };
 
@@ -43,7 +43,7 @@ public:
 
     enum preselector_path_t { PRESEL_PATH1, PRESEL_PATH2, PRESEL_PATH3, PRESEL_PATH4 };
 
-    enum lo_source_t { LO_INTERNAL, LO_EXTERNAL, LO_COMPANION, LO_DISABLED };
+    enum lo_source_t { LO_INTERNAL, LO_EXTERNAL, LO_COMPANION, LO_DISABLED, LO_REIMPORT };
 
     enum lo_export_source_t { LO_CH1_SYNTH, LO_CH2_SYNTH, LO_EXPORT_DISABLED };
 

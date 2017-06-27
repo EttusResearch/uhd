@@ -112,7 +112,7 @@ public:
             "los/LO2/freq/value", prepend_ch("los/LO2/freq/desired", _ch_name), prepend_ch("los/LO2/freq/coerced", _ch_name),
             0.0, AUTO_RESOLVE_ON_READ_WRITE);
         get_rx_subtree()->create<std::vector<std::string> >("los/all/source/options")
-            .set(boost::assign::list_of("internal")("external")("companion")("disabled"));
+            .set(boost::assign::list_of("internal")("external")("companion")("disabled")("reimport"));
         expert_factory::add_prop_node<std::string>(_expert, get_rx_subtree(),
             "los/all/source/value", prepend_ch("los/all/source", _ch_name),
             "internal", AUTO_RESOLVE_ON_WRITE);
