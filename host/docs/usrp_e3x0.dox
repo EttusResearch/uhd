@@ -344,13 +344,16 @@ It's behavior is firmware version dependent.
 - **SERIAL**: Micro USB connection for serial uart console
 
 \subsection e3x0_hw_sync Clock and Time Synchronization
+
 Unlike most USRP devices, the E310 does not have independent reference clock and time source inputs.
 It is possible, however, to discipline the internal reference clock using an external time (PPS) source
 connected to the SYNC input pin. The E310 FPGA has a subsystem that can use the PPS signal from the
 SYNC pin or the internal GPS to align edges of the reference clock to edges of a shared PPS signal. 
 This alignment happens automatically when the time source in UHD is set to "gpsdo" or "external". 
 Please note that because the SYNC input can only accept a PPS signal, the only supported value for 
-the reference clock source is "internal".
+the reference clock source is "internal". Also, keep in mind that the E310
+does *not* have a GPS-disciplined oscillator like other USRPs, the value "gpsdo"
+for the time source was chosen for compatibility with other USRPs.
 
 
 \subsection e3x0_hw_pps PPS - Pulse Per Second
@@ -369,8 +372,11 @@ To test the PPS input, you can use the following tool from the UHD examples:
 
 Your USRP-E Series device comes with an internal GPS.
 In order to get a lock on a satellite an external GPS antenna is required.
-The PPS from the internal GPS can be used to discipline the internal reference clock. This feature is automatically 
-enabled with the time source is set to "gpsdo".
+The PPS from the internal GPS can be used to discipline the internal reference
+clock. This feature is automatically enabled with the time source is set to
+"gpsdo". Again, keep in mind that the E310 does not have an actual
+GPS-disciplined oscillator (GPSDO) on the board, the value "gpsdo" was named
+such for better compatibility with code written for other devices.
 
 The device provides a 3.3V supply voltage to an external antenna connected to the *GPS* port
 of your device. Note that this supply voltage is turned off in order to safe power upon destruction of the software object.
