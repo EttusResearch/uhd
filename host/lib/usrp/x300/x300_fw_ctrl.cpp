@@ -28,6 +28,7 @@
 #include "x300_regs.hpp"
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread/thread.hpp>
+#include <boost/lexical_cast.hpp>
 
 using namespace uhd;
 using namespace uhd::niusrprio;
@@ -60,7 +61,7 @@ public:
             catch(const uhd::io_error &ex)
             {
                 std::string error_msg = str(boost::format(
-                    "x300 fw communication failure #%u\n%s") % i % ex.what());
+                    "%s: x300 fw communication failure #%u\n%s") % __loc_info() % i % ex.what());
                 if (errors) UHD_LOGGER_ERROR("X300") << error_msg ;
                 if (i == num_retries) throw uhd::io_error(error_msg);
             }
@@ -80,7 +81,7 @@ public:
             catch(const uhd::io_error &ex)
             {
                 std::string error_msg = str(boost::format(
-                    "x300 fw communication failure #%u\n%s") % i % ex.what());
+                    "%s: x300 fw communication failure #%u\n%s") % __loc_info() % i % ex.what());
                 if (errors) UHD_LOGGER_ERROR("X300") << error_msg ;
                 if (i == num_retries) throw uhd::io_error(error_msg);
             }
@@ -94,6 +95,7 @@ protected:
     virtual void __poke32(const wb_addr_type addr, const uint32_t data) = 0;
     virtual uint32_t __peek32(const wb_addr_type addr) = 0;
     virtual void __flush() = 0;
+    virtual std::string __loc_info() = 0;
 
     boost::mutex reg_access;
 };
@@ -180,6 +182,11 @@ protected:
     {
         char buff[X300_FW_COMMS_MTU] = {};
         while (udp->recv(boost::asio::buffer(buff), 0.0)){} //flush
+    }
+
+    virtual std::string __loc_info(void)
+    {
+        return udp->get_send_addr();
     }
 
 private:
@@ -288,6 +295,11 @@ protected:
     virtual void __flush(void)
     {
         __peek32(0);
+    }
+
+    virtual std::string __loc_info(void)
+    {
+        return boost::lexical_cast<std::string>(_drv_proxy->get_interface_num());
     }
 
 private:

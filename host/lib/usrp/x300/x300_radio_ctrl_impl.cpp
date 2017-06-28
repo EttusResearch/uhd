@@ -870,8 +870,14 @@ void x300_radio_ctrl_impl::synchronize_dacs(const std::vector<x300_radio_ctrl_im
     boost::posix_time::time_duration t_elapsed =
         boost::posix_time::microsec_clock::local_time() - t_start;
 
-    //Add 100% of headroom + uncertaintly to the command time
-    uint64_t t_sync_us = (t_elapsed.total_microseconds() * 2) + 13000 /*Scheduler latency*/;
+    //Set tick rate and make sure FRAMEP/N is 0
+    for (size_t i = 0; i < radios.size(); i++) {
+        radios[i]->set_command_tick_rate(radios[i]->_radio_clk_rate, IO_MASTER_RADIO);
+        radios[i]->_regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::DAC_SYNC, 0);
+    }
+
+    //Add 100% of headroom + uncertainty to the command time
+    uint64_t t_sync_us = (t_elapsed.total_microseconds() * 2) + 16000 /*Scheduler latency*/;
 
     //Pick radios[0] as the time reference.
     uhd::time_spec_t sync_time =
@@ -879,13 +885,15 @@ void x300_radio_ctrl_impl::synchronize_dacs(const std::vector<x300_radio_ctrl_im
 
     //Send the sync command
     for (size_t i = 0; i < radios.size(); i++) {
-        radios[i]->set_command_tick_rate(radios[i]->_radio_clk_rate, IO_MASTER_RADIO);
-        radios[i]->_regs->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::DAC_SYNC, 0);
         radios[i]->set_command_time(sync_time, IO_MASTER_RADIO);
         //Arm FRAMEP/N sync pulse by asserting a rising edge
-        radios[i]->_regs->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::DAC_SYNC, 1);
-        radios[i]->_regs->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::DAC_SYNC, 0);
+        radios[i]->_regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::DAC_SYNC, 1);
         radios[i]->set_command_time(uhd::time_spec_t(0.0), IO_MASTER_RADIO);
+    }
+
+    //Reset FRAMEP/N to 0
+    for (size_t i = 0; i < radios.size(); i++) {
+        radios[i]->_regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::DAC_SYNC, 0);
     }
 
     //Wait and check status

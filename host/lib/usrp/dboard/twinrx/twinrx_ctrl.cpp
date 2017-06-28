@@ -309,7 +309,7 @@ public:
         boost::lock_guard<boost::mutex> lock(_mutex);
         if (ch == CH1 or ch == BOTH) {
             _cpld_regs->rf1_reg5.set(rm::rf1_reg5_t::SW14_CTRL_CH2, bool2bin(source!=LO_COMPANION));
-            _cpld_regs->rf1_reg1.set(rm::rf1_reg1_t::SW15_CTRL_CH1, bool2bin(source==LO_EXTERNAL));
+            _cpld_regs->rf1_reg1.set(rm::rf1_reg1_t::SW15_CTRL_CH1, bool2bin(source==LO_EXTERNAL||source==LO_REIMPORT));
             _cpld_regs->rf1_reg1.set(rm::rf1_reg1_t::SW16_CTRL_CH1, bool2bin(source!=LO_INTERNAL));
             _lo1_src[size_t(CH1)] = source;
         }
@@ -332,7 +332,7 @@ public:
             _lo2_src[size_t(CH1)] = source;
         }
         if (ch == CH2 or ch == BOTH) {
-            _cpld_regs->if0_reg4.set(rm::if0_reg4_t::SW19_CTRL_CH1, bool2bin(source==LO_EXTERNAL));
+            _cpld_regs->if0_reg4.set(rm::if0_reg4_t::SW19_CTRL_CH1, bool2bin(source==LO_EXTERNAL||source==LO_REIMPORT));
             _cpld_regs->if0_reg0.set(rm::if0_reg0_t::SW20_CTRL_CH2, bool2bin(source==LO_INTERNAL||source==LO_DISABLED));
             _cpld_regs->if0_reg4.set(rm::if0_reg4_t::SW21_CTRL_CH2, bool2bin(source==LO_INTERNAL));
             _lo2_src[size_t(CH2)] = source;

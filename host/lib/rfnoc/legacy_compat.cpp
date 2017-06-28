@@ -44,6 +44,7 @@ using uhd::stream_cmd_t;
  ***********************************************************************/
 static const std::string RADIO_BLOCK_NAME = "Radio";
 static const std::string DFIFO_BLOCK_NAME = "DmaFIFO";
+static const std::string SFIFO_BLOCK_NAME = "FIFO";
 static const std::string DDC_BLOCK_NAME = "DDC";
 static const std::string DUC_BLOCK_NAME = "DUC";
 static const size_t MAX_BYTES_PER_HEADER =
@@ -121,6 +122,7 @@ public:
         _has_ducs(not args.has_key("skip_duc") and not device->find_blocks(DUC_BLOCK_NAME).empty()),
         _has_ddcs(not args.has_key("skip_ddc") and not device->find_blocks(DDC_BLOCK_NAME).empty()),
         _has_dmafifo(not args.has_key("skip_dram") and not device->find_blocks(DFIFO_BLOCK_NAME).empty()),
+        _has_sramfifo(not args.has_key("skip_sram") and not device->find_blocks(SFIFO_BLOCK_NAME).empty()),
         _num_mboards(_tree->list("/mboards").size()),
         _num_radios_per_board(device->find_blocks<radio_ctrl>("0/Radio").size()), // These might throw, maybe we catch that and provide a nicer error message.
         _num_tx_chans_per_radio(
@@ -154,9 +156,13 @@ public:
             UHD_LOGGER_WARNING("RFNOC") << "[legacy_compat] No DUCs detected. You will only be able to transmit at the radio frontend rate." ;
         }
         if (args.has_key("skip_dram")) {
-            UHD_LEGACY_LOG() << "[legacy_compat] Skipping DRAM by user request." ;
-        } else if (not _has_dmafifo) {
-            UHD_LOGGER_WARNING("RFNOC") << "[legacy_compat] No DMA FIFO detected. You will only be able to transmit at slow rates." ;
+            UHD_LEGACY_LOG() << "[legacy_compat] Skipping DRAM by user request." << std::endl;
+        }
+        if (args.has_key("skip_sram")) {
+            UHD_LEGACY_LOG() << "[legacy_compat] Skipping SRAM by user request." << std::endl;
+        }
+        if (not _has_dmafifo and not _has_sramfifo) {
+            UHD_LOGGER_WARNING("RFNOC") << "[legacy_compat] No FIFO detected. Higher transmit rates may encounter errors.";
         }
 
         for (size_t mboard = 0; mboard < _num_mboards; mboard++) {
@@ -512,7 +518,9 @@ private: // methods
             size_t &port_index
     ) {
         if (dir == uhd::TX_DIRECTION) {
-            if (_has_dmafifo) {
+            if (_has_sramfifo) {
+                return block_id_t(mboard_idx, SFIFO_BLOCK_NAME, radio_index).to_string();
+            } else if (_has_dmafifo) {
                 port_index = radio_index;
                 return block_id_t(mboard_idx, DFIFO_BLOCK_NAME, 0).to_string();
             } else {
@@ -726,7 +734,15 @@ private: // methods
                             block_id_t(mboard, RADIO_BLOCK_NAME, radio), chan,
                             tx_bpp
                         );
-                        if (_has_dmafifo) {
+                        // Prioritize SRAM over DRAM for performance
+                        if (_has_sramfifo) {
+                            // We have SRAM FIFO *and* DUCs
+                            _graph->connect(
+                                block_id_t(mboard, SFIFO_BLOCK_NAME, radio), chan,
+                                block_id_t(mboard, DUC_BLOCK_NAME, radio), chan,
+                                tx_bpp
+                            );
+                        } else if (_has_dmafifo) {
                             // We have DMA FIFO *and* DUCs
                             _graph->connect(
                                 block_id_t(mboard, DFIFO_BLOCK_NAME, 0), radio,
@@ -734,6 +750,13 @@ private: // methods
                                 tx_bpp
                             );
                         }
+                    } else if (_has_sramfifo) {
+                            // We have SRAM FIFO, *no* DUCs
+                            _graph->connect(
+                                block_id_t(mboard, SFIFO_BLOCK_NAME, radio), radio,
+                                block_id_t(mboard, RADIO_BLOCK_NAME, radio), chan,
+                                tx_bpp
+                            );
                     } else if (_has_dmafifo) {
                             // We have DMA FIFO, *no* DUCs
                             _graph->connect(
@@ -833,6 +856,7 @@ private: // attributes
     const bool _has_ducs;
     const bool _has_ddcs;
     const bool _has_dmafifo;
+    const bool _has_sramfifo;
     const size_t _num_mboards;
     const size_t _num_radios_per_board;
     const size_t _num_tx_chans_per_radio;

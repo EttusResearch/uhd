@@ -87,8 +87,8 @@ class Responder
             bool combine_eob;
             bool pause;
             bool realtime;
-            bool invert;
-            bool output_value;
+            float invert;
+            float output_value;
             bool no_delay;
             bool allow_late_bursts;
 

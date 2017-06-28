@@ -400,7 +400,7 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     }
 
 #ifdef E300_GPSD
-    UHD_LOGGER_INFO("E300") << "Detecting internal GPSDO ";
+    UHD_LOGGER_INFO("E300") << "Detecting internal GPS ";
     try {
         if (_xport_path == AXI)
             _gps = gpsd_iface::make("localhost", 2947);

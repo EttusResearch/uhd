@@ -442,7 +442,10 @@ for information specific to certain daughterboards.
 
 Not all combinations of daughterboards work within the same device, if
 daughterboard clock requirements conflict. Note that some daughterboards
-(e.g. the UBX) will try and set the daughterboard clock rate themselves.
+will try and set the daughterboard clock rate themselves. Refer to the
+<a href="https://kb.ettus.com/X300/X310#Choosing_an_RF_Daughterboard">Ettus Research
+Knowledge Base article on the X300/X310</a> for more information on daughterboard
+compatibilty.
 
 \section x3x0_addressing Addressing the Device
 

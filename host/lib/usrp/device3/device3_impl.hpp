@@ -56,6 +56,7 @@ public:
     //! The purpose of a transport
     enum xport_type_t {
         CTRL = 0,
+        ASYNC_MSG,
         TX_DATA,
         RX_DATA
     };

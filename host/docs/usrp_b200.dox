@@ -280,6 +280,12 @@ Component ID            |  Description               | Details
 
  <sup>1</sup> GPIO pinout is 1=3.3V, 2=GPIO_0, 3=GPIO_1, 4=GPIO_2, 5=GPIO_3, 6=GND, 7=3.3V, 8=GPIO_4, 9=GPIO_5, 10=GPIO_6, 11=GPIO_7, 12=GND
 
+\section b200_known_issues Known issues
+
+The B200 and B210 cannot support an external 10 MHz reference if a GPSDO is
+already present on the motherboard. If an external 10 MHz is to be used, the
+GPSDO needs to be physically removed from the device beforehand.
+
 */
 
 // vim:ft=doxygen:

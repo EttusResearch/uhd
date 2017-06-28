@@ -345,13 +345,16 @@ It's behavior is firmware version dependent.
 - **SERIAL**: Micro USB connection for serial uart console
 
 \subsection e3x0_hw_sync Clock and Time Synchronization
+
 Unlike most USRP devices, the E310 does not have independent reference clock and time source inputs.
 It is possible, however, to discipline the internal reference clock using an external time (PPS) source
 connected to the SYNC input pin. The E310 FPGA has a subsystem that can use the PPS signal from the
 SYNC pin or the internal GPS to align edges of the reference clock to edges of a shared PPS signal. 
 This alignment happens automatically when the time source in UHD is set to "gpsdo" or "external". 
 Please note that because the SYNC input can only accept a PPS signal, the only supported value for 
-the reference clock source is "internal".
+the reference clock source is "internal". Also, keep in mind that the E310
+does *not* have a GPS-disciplined oscillator like other USRPs, the value "gpsdo"
+for the time source was chosen for compatibility with other USRPs.
 
 
 \subsection e3x0_hw_pps PPS - Pulse Per Second
@@ -370,8 +373,11 @@ To test the PPS input, you can use the following tool from the UHD examples:
 
 Your USRP-E Series device comes with an internal GPS.
 In order to get a lock on a satellite an external GPS antenna is required.
-The PPS from the internal GPS can be used to discipline the internal reference clock. This feature is automatically 
-enabled with the time source is set to "gpsdo".
+The PPS from the internal GPS can be used to discipline the internal reference
+clock. This feature is automatically enabled with the time source is set to
+"gpsdo". Again, keep in mind that the E310 does not have an actual
+GPS-disciplined oscillator (GPSDO) on the board, the value "gpsdo" was named
+such for better compatibility with code written for other devices.
 
 The device provides a 3.3V supply voltage to an external antenna connected to the *GPS* port
 of your device. Note that this supply voltage is turned off in order to safe power upon destruction of the software object.
@@ -431,7 +437,8 @@ For more advanced IMU based applications please refer to the <a href="https://gi
 
 Please see the \ref page_gpio_api for information on configuring and using the GPIO bus.
 
-\subsection e3x0_hw_audio Audio connectors
+\subsection e3x0_hw_audio Audio connectors (if populated)
+
 The E3x0 2.5 mm Audio Jack TRRS pins are assigned as follows: Tip=Mic, Ring1=Right, Ring2=Left, Sleeve=GND. 
 
 \image html TRRS.png "Audio Jack"
@@ -538,6 +545,22 @@ The RF frontend has individually tunable receive and transmit chains.
 Both transmit and receive can be used in a MIMO configuration. For
 the MIMO case, both receive frontends share the RX LO, and both transmit
 frontends share the TX LO. Each LO is tunable between 50 MHz and 6 GHz.
+
+As there is a single LO for each direction (RX and TX), this means that both
+channels need to use the same LO frequency (i.e., both RX channels share an LO
+frequency, and both TX channels share an LO frequency). If the two channels
+are supposed to receive on different frequencies, the digital tune stages need
+to be used for that. The two frequencies will need to be within the currently
+selected master clock rate, and the final bandwidths need to be chosen
+carefully. Example: Assume the master clock rate is set to 50 MHz, and we want
+to receive at 400 MHz and 440 MHz. We can set the LO to 420 MHz, which will
+sample the spectrum from 395 MHz to 445 MHz. The LO offsets for both channels
+need to be 20 MHz and -20 MHz respectively. However, the final bandwidth should
+be less than 10 MHz (preferably lower), or the signals would exhibit aliasing.
+
+Because both channels share an LO, tuning one channel can possibly affect the
+other channel. It is advisable to read back the actual, current frequency from
+software before assuming the device is tuned to a specific frequency.
 
 \subsubsection e3x0_dboard_e310_gain Frontend gain
 
