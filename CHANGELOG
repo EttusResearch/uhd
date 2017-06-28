@@ -7,7 +7,8 @@ Change Log for Releases
 * X300: Fix for network discovery, will now return early when correct serial is
         found.
 * CBX: Fixed LO LPF behaviour in 1.5-2 GHz range.
-* UBX: Fixed dtor SIGABRT issue.
+* UBX: Fixed dtor SIGABRT issue. Better error handling for setting dboard clock
+       rate.
 * GPSDO: Improved detection.
 * Examples: Added channel param to samps to/from file. sync_to_gps exits instead
             of uncaught throw.

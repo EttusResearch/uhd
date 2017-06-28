@@ -293,6 +293,7 @@ public:
         _tx_target_pfd_freq = pfd_freq_max;
         if (_rev >= 1)
         {
+            bool can_set_clock_rate = true;
             // set dboard clock rates to as close to the max PFD freq as possible
             if (_iface->get_clock_rate(dboard_iface::UNIT_RX) > pfd_freq_max)
             {
@@ -303,10 +304,15 @@ public:
                     if (rate <= pfd_freq_max and rate > highest_rate)
                         highest_rate = rate;
                 }
-                _iface->set_clock_rate(dboard_iface::UNIT_RX, highest_rate);
+                try {
+                    _iface->set_clock_rate(dboard_iface::UNIT_RX, highest_rate);
+                } catch (const uhd::not_implemented_error &) {
+                    UHD_MSG(warning) << "Unable to set dboard clock rate - phase will vary" << std::endl;
+                    can_set_clock_rate = false;
+                }
                 _rx_target_pfd_freq = highest_rate;
             }
-            if (_iface->get_clock_rate(dboard_iface::UNIT_TX) > pfd_freq_max)
+            if (can_set_clock_rate and _iface->get_clock_rate(dboard_iface::UNIT_TX) > pfd_freq_max)
             {
                 std::vector<double> rates = _iface->get_clock_rates(dboard_iface::UNIT_TX);
                 double highest_rate = 0.0;
@@ -315,7 +321,11 @@ public:
                     if (rate <= pfd_freq_max and rate > highest_rate)
                         highest_rate = rate;
                 }
-                _iface->set_clock_rate(dboard_iface::UNIT_TX, highest_rate);
+                try {
+                    _iface->set_clock_rate(dboard_iface::UNIT_TX, highest_rate);
+                } catch (const uhd::not_implemented_error &) {
+                    UHD_MSG(warning) << "Unable to set dboard clock rate - phase will vary" << std::endl;
+                }
                 _tx_target_pfd_freq = highest_rate;
             }
         }
