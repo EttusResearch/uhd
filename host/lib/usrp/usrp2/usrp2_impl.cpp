@@ -316,7 +316,8 @@ static zero_copy_if::sptr make_xport(
  * Structors
  **********************************************************************/
 usrp2_impl::usrp2_impl(const device_addr_t &_device_addr) :
-    device_addr(_device_addr)
+    device_addr(_device_addr),
+    _pirate_task_exit(false)
 {
     UHD_LOGGER_INFO("USRP2") << "Opening a USRP2/N-Series device...";
 
@@ -786,6 +787,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr) :
 }
 
 usrp2_impl::~usrp2_impl(void){UHD_SAFE_CALL(
+    _pirate_task_exit = true;
     for(const std::string &mb:  _mbc.keys()){
         _mbc[mb].tx_dsp->set_updates(0, 0);
     }

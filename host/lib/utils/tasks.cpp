@@ -18,11 +18,14 @@
 #include <uhd/utils/tasks.hpp>
 #include <uhd/utils/msg_task.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhd/exception.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/barrier.hpp>
 #include <exception>
 #include <iostream>
 #include <vector>
+#include <thread>
+#include <atomic>
 
 using namespace uhd;
 
@@ -30,53 +33,44 @@ class task_impl : public task{
 public:
 
     task_impl(const task_fcn_type &task_fcn):
-        _spawn_barrier(2)
+        _exit(false)
     {
-        (void)_thread_group.create_thread(boost::bind(&task_impl::task_loop, this, task_fcn));
-        _spawn_barrier.wait();
+        _task = std::thread([this, task_fcn](){ this->task_loop(task_fcn); });
     }
 
     ~task_impl(void){
-        _running = false;
-        _thread_group.interrupt_all();
-        _thread_group.join_all();
+        _exit = true;
+        if (_task.joinable()) {
+            _task.join();
+        }
     }
 
 private:
 
     void task_loop(const task_fcn_type &task_fcn){
-        _running = true;
-        _spawn_barrier.wait();
-
         try{
-            while (_running){
+            while (!_exit){
                 task_fcn();
             }
-        }
-        catch(const boost::thread_interrupted &){
-            //this is an ok way to exit the task loop
         }
         catch(const std::exception &e){
             do_error_msg(e.what());
         }
         catch(...){
-            //FIXME
-            //Unfortunately, this is also an ok way to end a task,
-            //because on some systems boost throws uncatchables.
+            UHD_THROW_INVALID_CODE_PATH();
         }
     }
 
     void do_error_msg(const std::string &msg){
         UHD_LOGGER_ERROR("UHD")
-            << "An unexpected exception was caught in a task loop." 
-            << "The task loop will now exit, things may not work." 
-            << msg 
+            << "An unexpected exception was caught in a task loop."
+            << "The task loop will now exit, things may not work."
+            << msg
         ;
     }
 
-    boost::thread_group _thread_group;
-    boost::barrier _spawn_barrier;
-    bool _running;
+    std::atomic<bool> _exit;
+    std::thread _task;
 };
 
 task::sptr task::make(const task_fcn_type &task_fcn){

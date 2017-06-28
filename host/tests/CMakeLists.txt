@@ -45,6 +45,7 @@ SET(test_sources
     sph_send_test.cpp
     subdev_spec_test.cpp
     time_spec_test.cpp
+    tasks_test.cpp
     vrt_test.cpp
     expert_test.cpp
     fe_conn_test.cpp

@@ -33,6 +33,7 @@
 #include <uhd/transport/usb_zero_copy.hpp>
 #include <boost/weak_ptr.hpp>
 #include <complex>
+#include <atomic>
 
 #ifndef INCLUDED_USRP1_IMPL_HPP
 #define INCLUDED_USRP1_IMPL_HPP
@@ -144,7 +145,7 @@ private:
     bool has_rx_halfband(void);
     bool has_tx_halfband(void);
 
-    void vandal_conquest_loop(void);
+    void vandal_conquest_loop(std::atomic<bool> &);
 
     void set_reg(const std::pair<uint8_t, uint32_t> &reg);
 

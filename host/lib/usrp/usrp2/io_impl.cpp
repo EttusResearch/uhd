@@ -165,7 +165,7 @@ struct usrp2_impl::io_impl{
     std::vector<flow_control_monitor::sptr> fc_mons;
 
     //methods and variables for the pirate crew
-    void recv_pirate_loop(zero_copy_if::sptr, size_t);
+    void recv_pirate_loop(zero_copy_if::sptr, size_t, const std::atomic<bool> &);
     std::list<task::sptr> pirate_tasks;
     bounded_buffer<async_metadata_t> async_msg_fifo;
     double tick_rate;
@@ -178,14 +178,14 @@ struct usrp2_impl::io_impl{
  * - put async message packets into queue
  **********************************************************************/
 void usrp2_impl::io_impl::recv_pirate_loop(
-    zero_copy_if::sptr err_xport, size_t index
+    zero_copy_if::sptr err_xport, size_t index, const std::atomic<bool> &exit_loop
 ){
     set_thread_priority_safe();
 
     //store a reference to the flow control monitor (offset by max dsps)
     flow_control_monitor &fc_mon = *(this->fc_mons[index]);
 
-    while (not boost::this_thread::interruption_requested()){
+    while (not exit_loop){
         managed_recv_buffer::sptr buff = err_xport->get_recv_buff();
         if (not buff.get()) continue; //ignore timeout/error buffers
 
@@ -252,7 +252,8 @@ void usrp2_impl::io_init(void){
         //spawn a new pirate to plunder the recv booty
         _io_impl->pirate_tasks.push_back(task::make(boost::bind(
             &usrp2_impl::io_impl::recv_pirate_loop, _io_impl.get(),
-            _mbc[mb].tx_dsp_xport, index++
+            _mbc[mb].tx_dsp_xport, index++,
+            boost::ref(_pirate_task_exit)
         )));
     }
 }

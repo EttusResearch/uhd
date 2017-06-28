@@ -199,8 +199,9 @@ public:
 
     void recv_cmd_task(void){ //task is looped
         boost::shared_ptr<stream_cmd_t> cmd;
-        _cmd_queue.pop_with_wait(cmd);
-        recv_cmd_handle_cmd(*cmd);
+        if (_cmd_queue.pop_with_timed_wait(cmd, 0.25)) {
+            recv_cmd_handle_cmd(*cmd);
+        }
     }
 
     bounded_buffer<async_metadata_t> &get_async_queue(void){
