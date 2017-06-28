@@ -32,7 +32,7 @@ graph_impl::graph_impl(
 ) : _name(name)
   , _device_ptr(device_ptr)
 {
-
+    UHD_LOG_TRACE("RFNOC", "Instantiating RFNoC graph " << _name);
 }
 
 
@@ -51,8 +51,15 @@ void graph_impl::connect(
         throw uhd::runtime_error("Invalid device");
     }
 
-    uhd::rfnoc::source_block_ctrl_base::sptr src = device_ptr->get_block_ctrl<rfnoc::source_block_ctrl_base>(src_block);
-    uhd::rfnoc::sink_block_ctrl_base::sptr dst = device_ptr->get_block_ctrl<rfnoc::sink_block_ctrl_base>(dst_block);
+    uhd::rfnoc::source_block_ctrl_base::sptr src =
+        device_ptr->get_block_ctrl<rfnoc::source_block_ctrl_base>(src_block);
+    uhd::rfnoc::sink_block_ctrl_base::sptr dst =
+        device_ptr->get_block_ctrl<rfnoc::sink_block_ctrl_base>(dst_block);
+    UHD_LOGGER_TRACE("RFNOC")
+        << "[" << _name << "] Attempting to connect "
+        << src_block << ":" << src_block_port << " --> "
+        << dst_block << ":" << dst_block_port
+        ;
 
     /********************************************************************
      * 1. Draw the edges (logically connect the nodes)
@@ -85,10 +92,11 @@ void graph_impl::connect(
     dst->set_upstream_port(actual_dst_block_port, actual_src_block_port);
     // At this point, ports are locked and no one else can simply connect
     // into them.
-    //UHD_LOGGER_INFO("RFNOC")
-        //<< "[" << _name << "] Connecting "
-        //<< src_block << ":" << actual_src_block_port << " --> "
-        //<< dst_block << ":" << actual_dst_block_port ;
+    UHD_LOGGER_TRACE("RFNOC")
+        << "[" << _name << "] Connecting "
+        << src_block << ":" << actual_src_block_port << " --> "
+        << dst_block << ":" << actual_dst_block_port
+        ;
 
     /********************************************************************
      * 2. Check IO signatures match
@@ -104,6 +112,7 @@ void graph_impl::connect(
             % dst->get_input_signature(actual_dst_block_port)
         ));
     }
+    UHD_LOG_TRACE("RFNOC", "IO signatures match.");
 
     /********************************************************************
      * 3. Configure the source block's destination
@@ -120,7 +129,8 @@ void graph_impl::connect(
      ********************************************************************/
     size_t pkt_size = (pkt_size_ != 0) ? pkt_size_ : src->get_output_signature(src_block_port).packet_size;
     if (pkt_size == 0) { // Unspecified packet rate. Assume max packet size.
-        UHD_LOGGER_INFO("RFNOC") << "Assuming max packet size for " << src->get_block_id() ;
+        UHD_LOGGER_INFO("RFNOC")
+            << "Assuming max packet size for " << src->get_block_id();
         pkt_size = uhd::rfnoc::MAX_PACKET_SIZE;
     }
     // FC window (in packets) depends on FIFO size...          ...and packet size.
