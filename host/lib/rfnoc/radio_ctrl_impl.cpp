@@ -457,15 +457,15 @@ std::vector<std::string> radio_ctrl_impl::get_gpio_banks() const
 }
 
 void radio_ctrl_impl::set_gpio_attr(
-        const std::string &bank,
-        const std::string &attr,
-        const uint32_t value,
-        const uint32_t mask
+        const std::string &,
+        const std::string &,
+        const uint32_t,
+        const uint32_t
 ) {
     throw uhd::not_implemented_error("set_gpio_attr was not defined for this radio");
 }
 
-uint32_t radio_ctrl_impl::get_gpio_attr(const std::string &bank, const std::string &attr)
+uint32_t radio_ctrl_impl::get_gpio_attr(const std::string &, const std::string &)
 {
     throw uhd::not_implemented_error("get_gpio_attr was not defined for this radio");
 }
