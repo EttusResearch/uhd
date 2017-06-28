@@ -21,7 +21,6 @@
 #include <boost/program_options.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/format.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
 #include <csignal>
 #include <iostream>
@@ -86,11 +85,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::vector<size_t> channel_nums;
     boost::split(channel_strings, channel_list, boost::is_any_of("\"',"));
     for(size_t ch = 0; ch < channel_strings.size(); ch++){
-        size_t chan = boost::lexical_cast<int>(channel_strings[ch]);
+        size_t chan = std::stoi(channel_strings[ch]);
         if(chan >= usrp->get_tx_num_channels()){
             throw std::runtime_error("Invalid channel(s) specified.");
         }
-        else channel_nums.push_back(boost::lexical_cast<int>(channel_strings[ch]));
+        else channel_nums.push_back(std::stoi(channel_strings[ch]));
     }
 
     //set the tx sample rate

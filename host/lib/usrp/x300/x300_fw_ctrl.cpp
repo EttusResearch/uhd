@@ -28,7 +28,6 @@
 #include "x300_regs.hpp"
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/thread/thread.hpp>
-#include <boost/lexical_cast.hpp>
 
 using namespace uhd;
 using namespace uhd::niusrprio;
@@ -299,7 +298,7 @@ protected:
 
     virtual std::string __loc_info(void)
     {
-        return boost::lexical_cast<std::string>(_drv_proxy->get_interface_num());
+        return std::to_string(_drv_proxy->get_interface_num());
     }
 
 private:

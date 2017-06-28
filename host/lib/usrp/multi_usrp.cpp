@@ -1763,7 +1763,7 @@ private:
     {
         try
         {
-            const std::string tree_path = "/mboards/" + boost::lexical_cast<std::string>(mboard);
+            const std::string tree_path = "/mboards/" + std::to_string(mboard);
             if (_tree->exists(tree_path)) {
                 return tree_path;
             } else {
@@ -1791,7 +1791,7 @@ private:
 
         try
         {
-            const std::string tree_path = mb_root(mcp.mboard) / "rx_dsps" / boost::lexical_cast<std::string>(mcp.chan);
+            const std::string tree_path = mb_root(mcp.mboard) / "rx_dsps" / mcp.chan;
             if (_tree->exists(tree_path)) {
                 return tree_path;
             } else {
@@ -1818,7 +1818,7 @@ private:
         }
         try
         {
-            const std::string tree_path = mb_root(mcp.mboard) / "tx_dsps" / boost::lexical_cast<std::string>(mcp.chan);
+            const std::string tree_path = mb_root(mcp.mboard) / "tx_dsps" / mcp.chan;
             if (_tree->exists(tree_path)) {
                 return tree_path;
             } else {

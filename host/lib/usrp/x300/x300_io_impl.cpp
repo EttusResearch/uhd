@@ -46,10 +46,10 @@ device_addr_t x300_impl::get_rx_hints(size_t mb_index)
             //For nirio, the buffer size is not configurable by the user
             #if defined(UHD_PLATFORM_MACOS) || defined(UHD_PLATFORM_BSD)
                 //limit buffer resize on macos or it will error
-                rx_hints["recv_buff_size"] = boost::lexical_cast<std::string>(X300_RX_SW_BUFF_SIZE_ETH_MACOS);
+                rx_hints["recv_buff_size"] = std::to_string(X300_RX_SW_BUFF_SIZE_ETH_MACOS);
             #elif defined(UHD_PLATFORM_LINUX) || defined(UHD_PLATFORM_WIN32)
                 //set to half-a-second of buffering at max rate
-                rx_hints["recv_buff_size"] = boost::lexical_cast<std::string>(X300_RX_SW_BUFF_SIZE_ETH);
+                rx_hints["recv_buff_size"] = std::to_string(X300_RX_SW_BUFF_SIZE_ETH);
             #endif
         }
     }

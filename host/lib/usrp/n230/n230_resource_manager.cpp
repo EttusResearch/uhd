@@ -26,9 +26,7 @@
 #include <uhd/utils/paths.hpp>
 #include <boost/format.hpp>
 #include <boost/thread.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/functional/hash.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/make_shared.hpp>
 #include "n230_fw_defs.h"
 #include "n230_fw_host_iface.h"
@@ -419,7 +417,7 @@ transport::zero_copy_if::sptr n230_resource_manager::_create_transport(
     default_buff_args.num_send_frames = 32;
 
     transport::zero_copy_if::sptr xport = transport::udp_zero_copy::make(
-        eth_conn.ip_addr, boost::lexical_cast<std::string>(fpga::CVITA_UDP_PORT),
+        eth_conn.ip_addr, std::to_string(fpga::CVITA_UDP_PORT),
         default_buff_args, buff_params_out, buff_params);
 
     if (xport.get()) {

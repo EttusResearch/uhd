@@ -17,7 +17,6 @@
 
 #include <uhd/exception.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/function.hpp>
 #include <boost/make_shared.hpp>
 #include <vector>
@@ -300,7 +299,7 @@ class expression_function : public expression_container
             const std::string &name,
             const boost::shared_ptr<function_table> func_table
     );
-    ~expression_function(){};
+    ~expression_function(){}
 
     //! Add an argument expression
     virtual void add(expression::sptr new_expr);

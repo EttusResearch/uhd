@@ -17,7 +17,6 @@
 
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/device.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <iostream>

@@ -23,7 +23,6 @@
 #include <boost/format.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
 //#include <boost/atomic.hpp>
 #include <iostream>
 #include <complex>
@@ -406,11 +405,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
         boost::split(channel_strings, rx_channel_list, boost::is_any_of("\"',"));
         for (size_t ch = 0; ch < channel_strings.size(); ch++) {
-            size_t chan = boost::lexical_cast<int>(channel_strings[ch]);
+            size_t chan = std::stoul(channel_strings[ch]);
             if (chan >= usrp->get_rx_num_channels()) {
                 throw std::runtime_error("Invalid channel(s) specified.");
             } else {
-                rx_channel_nums.push_back(boost::lexical_cast<int>(channel_strings[ch]));
+                rx_channel_nums.push_back(std::stoul(channel_strings[ch]));
             }
         }
     }
@@ -423,11 +422,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
         boost::split(channel_strings, tx_channel_list, boost::is_any_of("\"',"));
         for (size_t ch = 0; ch < channel_strings.size(); ch++) {
-            size_t chan = boost::lexical_cast<int>(channel_strings[ch]);
+            size_t chan = std::stoul(channel_strings[ch]);
             if (chan >= usrp->get_tx_num_channels()) {
                 throw std::runtime_error("Invalid channel(s) specified.");
             } else {
-                tx_channel_nums.push_back(boost::lexical_cast<int>(channel_strings[ch]));
+                tx_channel_nums.push_back(std::stoul(channel_strings[ch]));
             }
         }
     }

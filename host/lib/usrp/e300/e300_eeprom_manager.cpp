@@ -67,9 +67,9 @@ const mboard_eeprom_t& e300_eeprom_manager::read_mb_eeprom(void)
 
     mb_eeprom_map_t &map = *map_ptr;
 
-    _mb_eeprom["product"] = boost::lexical_cast<std::string>(
+    _mb_eeprom["product"] = std::to_string(
         uhd::ntohx<uint16_t>(map.hw_product));
-    _mb_eeprom["revision"] = boost::lexical_cast<std::string>(
+    _mb_eeprom["revision"] = std::to_string(
         uhd::ntohx<uint16_t>(map.hw_revision));
     _mb_eeprom["serial"] = _bytes_to_string(
         map.serial, MB_SERIAL_LEN);
@@ -101,7 +101,7 @@ const dboard_eeprom_t& e300_eeprom_manager::read_db_eeprom(void)
     _db_eeprom.id = uhd::usrp::dboard_id_t::from_uint16(
         uhd::ntohx<uint16_t>(map.hw_product));
 
-    _db_eeprom.revision = boost::lexical_cast<std::string>(
+    _db_eeprom.revision = std::to_string(
         uhd::ntohx<uint16_t>(map.hw_revision));
     _db_eeprom.serial = _bytes_to_string(
         map.serial, DB_SERIAL_LEN);

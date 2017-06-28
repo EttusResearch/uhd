@@ -28,7 +28,6 @@
 #include <boost/unordered_map.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/foreach.hpp>
-#include <boost/lexical_cast.hpp>
 #include <list>
 
 /*! \file soft_register.hpp

@@ -171,11 +171,11 @@ public:
 
     uhd::sensor_value_t get_mb_temp(void)
     {
-        double scale = boost::lexical_cast<double>(
+        double scale = std::stod(
             e300_get_sysfs_attr(E300_TEMP_SYSFS, "in_temp0_scale"));
-        unsigned long raw = boost::lexical_cast<unsigned long>(
+        unsigned long raw = std::stoul(
             e300_get_sysfs_attr(E300_TEMP_SYSFS, "in_temp0_raw"));
-        unsigned long offset = boost::lexical_cast<unsigned long>(
+        unsigned long offset = std::stoul(
             e300_get_sysfs_attr(E300_TEMP_SYSFS, "in_temp0_offset"));
         return sensor_value_t("temp", (raw + offset) * scale / 1000, "C");
     }

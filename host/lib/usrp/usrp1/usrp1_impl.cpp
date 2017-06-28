@@ -229,7 +229,7 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     _master_clock_rate = 64e6;
     if (device_addr.has_key("mcr")){
         try{
-            _master_clock_rate = boost::lexical_cast<double>(device_addr["mcr"]);
+            _master_clock_rate = std::stod(device_addr["mcr"]);
         }
         catch(const std::exception &e){
             UHD_LOGGER_ERROR("USRP1") << "Error parsing FPGA clock rate from device address: " << e.what() ;
@@ -237,7 +237,7 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     }
     else if (not mb_eeprom["mcr"].empty()){
         try{
-            _master_clock_rate = boost::lexical_cast<double>(mb_eeprom["mcr"]);
+            _master_clock_rate = std::stod(mb_eeprom["mcr"]);
         }
         catch(const std::exception &e){
             UHD_LOGGER_ERROR("USRP1") << "Error parsing FPGA clock rate from EEPROM: " << e.what() ;

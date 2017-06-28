@@ -31,7 +31,6 @@
 #include <stdint.h>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/thread.hpp>
 
 #include <algorithm>

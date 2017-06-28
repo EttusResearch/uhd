@@ -21,7 +21,6 @@
 #include <uhd/transport/nirio/status.h>
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
 #include <stdio.h>
 #include <fstream>
 //@TODO: Move the register defs required by the class to a common location

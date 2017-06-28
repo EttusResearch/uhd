@@ -30,7 +30,6 @@
 #include <uhd/rfnoc/blockdef.hpp>
 #include <uhd/rfnoc/constants.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/lexical_cast.hpp>
 #include <stdint.h>
 
 namespace uhd {

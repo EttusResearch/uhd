@@ -195,8 +195,8 @@ void block_ctrl_base::_init_block_args()
         fs_path arg_val_path = arg_path / arg["port"] / arg["name"] / "value";
         if (not arg["value"].empty()) {
             if (arg["type"] == "int_vector") { throw uhd::runtime_error("not yet implemented: int_vector"); }
-            else if (arg["type"] == "int") { _tree->access<int>(arg_val_path).set(boost::lexical_cast<int>(arg["value"])); }
-            else if (arg["type"] == "double") { _tree->access<double>(arg_val_path).set(boost::lexical_cast<double>(arg["value"])); }
+            else if (arg["type"] == "int") { _tree->access<int>(arg_val_path).set(std::stoi(arg["value"])); }
+            else if (arg["type"] == "double") { _tree->access<double>(arg_val_path).set(std::stod(arg["value"])); }
             else if (arg["type"] == "string") { _tree->access<string>(arg_val_path).set(arg["value"]); }
             else { UHD_THROW_INVALID_CODE_PATH(); }
         }
@@ -453,10 +453,10 @@ void block_ctrl_base::set_arg(const std::string &key, const std::string &val, co
             _tree->access<std::string>(arg_val_path).set(val);
         }
         else if (type == "int") {
-            _tree->access<int>(arg_val_path).set(boost::lexical_cast<int>(val));
+            _tree->access<int>(arg_val_path).set(std::stoi(val));
         }
         else if (type == "double") {
-            _tree->access<double>(arg_val_path).set(boost::lexical_cast<double>(val));
+            _tree->access<double>(arg_val_path).set(std::stod(val));
         }
         else if (type == "int_vector") {
             throw uhd::runtime_error("not yet implemented: int_vector");
@@ -494,10 +494,10 @@ std::string block_ctrl_base::get_arg(const std::string &key, const size_t port) 
         return _tree->access<std::string>(arg_val_path).get();
     }
     else if (type == "int") {
-        return boost::lexical_cast<std::string>(_tree->access<int>(arg_val_path).get());
+        return std::to_string(_tree->access<int>(arg_val_path).get());
     }
     else if (type == "double") {
-        return boost::lexical_cast<std::string>(_tree->access<double>(arg_val_path).get());
+        return std::to_string(_tree->access<double>(arg_val_path).get());
     }
     else if (type == "int_vector") {
         throw uhd::runtime_error("not yet implemented: int_vector");

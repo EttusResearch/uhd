@@ -29,7 +29,6 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/thread/thread.hpp>
-#include <boost/lexical_cast.hpp>
 #include <cstdio>
 #include <iostream>
 

@@ -20,7 +20,6 @@
 
 #include <uhd/types/device_addr.hpp>
 #include <uhd/exception.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/assign/list_of.hpp>
@@ -116,7 +115,7 @@ namespace usrp {
                 }
             }
             inline virtual std::string to_string() const {
-                return key() + "=" + boost::lexical_cast<std::string>(get());
+                return key() + "=" + std::to_string(get());
             }
         private:
             data_t _value;
@@ -192,7 +191,7 @@ namespace usrp {
             }
             inline void parse(const std::string& str_rep) {
                 try {
-                    _value = (boost::lexical_cast<int>(str_rep) != 0);
+                    _value = (std::stoi(str_rep) != 0);
                 } catch (std::exception& ex) {
                     if (str_rep.empty()) {
                         //If str_rep is empty then the device_addr was set
@@ -250,7 +249,7 @@ namespace usrp {
                 throw uhd::value_error(str(boost::format(
                     "Invalid device arg value: %s (Minimum: %s, Maximum: %s)") %
                     arg.to_string() %
-                    boost::lexical_cast<std::string>(min) % boost::lexical_cast<std::string>(max)));
+                    std::to_string(min) % std::to_string(max)));
             }
         }
 
@@ -269,7 +268,7 @@ namespace usrp {
             if (!match) {
                 std::string valid_values_str;
                 for (size_t i = 0; i < valid_values.size(); i++) {
-                    valid_values_str += ((i==0)?"":", ") + boost::lexical_cast<std::string>(valid_values[i]);
+                    valid_values_str += ((i==0)?"":", ") + std::to_string(valid_values[i]);
                     throw uhd::value_error(str(boost::format(
                         "Invalid device arg value: %s (Valid: {%s})") %
                         arg.to_string() % valid_values_str

@@ -54,12 +54,12 @@ expression_literal::expression_literal(
         if (_val.substr(0, 2) == "0x") {
             _int_val = uhd::cast::hexstr_cast<int>(_val);
         } else {
-            _int_val = boost::lexical_cast<int>(_val);
+            _int_val = std::stoi(_val);
         }
         break;
 
     case expression::TYPE_DOUBLE:
-        _double_val = boost::lexical_cast<double>(_val);
+        _double_val = std::stod(_val);
         break;
 
     case expression::TYPE_BOOL:
@@ -67,7 +67,7 @@ expression_literal::expression_literal(
             _bool_val = true;
         } else {
             // lexical cast to bool is too picky
-            _bool_val = bool(boost::lexical_cast<int>(_val));
+            _bool_val = bool(std::stoi(_val));
         }
         break;
 
@@ -77,7 +77,7 @@ expression_literal::expression_literal(
         std::vector<std::string> subtoken_list;
         boost::split(subtoken_list, str_vec, boost::is_any_of(", "), boost::token_compress_on);
         for(const std::string &t:  subtoken_list) {
-            _int_vector_val.push_back(boost::lexical_cast<int>(t));
+            _int_vector_val.push_back(std::stoi(t));
         }
         break;
         }
@@ -142,11 +142,11 @@ bool expression_literal::to_bool() const
 {
     switch (_type) {
         case TYPE_INT:
-            return bool(boost::lexical_cast<int>(_val));
+            return bool(std::stoi(_val));
         case TYPE_STRING:
             return not _val.empty();
         case TYPE_DOUBLE:
-            return bool(boost::lexical_cast<double>(_val));
+            return bool(std::stod(_val));
         case TYPE_BOOL:
             return _bool_val;
         case TYPE_INT_VECTOR:
@@ -205,11 +205,11 @@ std::string expression_literal::repr() const
 {
     switch (_type) {
         case TYPE_INT:
-            return boost::lexical_cast<std::string>(_int_val);
+            return std::to_string(_int_val);
         case TYPE_STRING:
             return _val;
         case TYPE_DOUBLE:
-            return boost::lexical_cast<std::string>(_double_val);
+            return std::to_string(_double_val);
         case TYPE_BOOL:
             return _bool_val ? "TRUE" : "FALSE";
         case TYPE_INT_VECTOR:

@@ -17,7 +17,6 @@
 
 #include <uhd/types/sensors.hpp>
 #include <uhd/exception.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/format.hpp>
 
 using namespace uhd;
@@ -92,11 +91,11 @@ bool sensor_value_t::to_bool(void) const{
 }
 
 signed sensor_value_t::to_int(void) const{
-    return boost::lexical_cast<signed>(value);
+    return std::stoi(value);
 }
 
 double sensor_value_t::to_real(void) const{
-    return boost::lexical_cast<double>(value);
+    return std::stod(value);
 }
 
 sensor_value_t& sensor_value_t::operator=(const sensor_value_t& rhs)
