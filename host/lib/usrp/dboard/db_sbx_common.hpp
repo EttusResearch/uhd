@@ -109,6 +109,14 @@ static const freq_range_t sbx_enable_rx_lo_filter = list_of
     (range_t(0.4e9, 1.5e9))
 ;
 
+static const freq_range_t cbx_enable_tx_lo_filter = list_of
+    (range_t(1.2e9, 2e9))
+;
+
+static const freq_range_t cbx_enable_rx_lo_filter = list_of
+    (range_t(1.2e9, 2e9))
+;
+
 static const std::vector<std::string> sbx_tx_antennas = list_of("TX/RX")("CAL");
 
 static const std::vector<std::string> sbx_rx_antennas = list_of("TX/RX")("RX2")("CAL");
@@ -211,9 +219,12 @@ protected:
     /*!
      * CBX daughterboard
      *
-     * The only driver difference between SBX and CBX is the MAX2870 vs. ADF435x.
-     * There is also no LO filter switching required, but the GPIO is left blank
-     * so we don't worry about it.
+     * There are a few differences between SBX and CBX
+     * - The CBX and SBX use the MAX2870 and ADF435x respectively for LOs
+     * - There are different frequency ranges
+     * - There are different LO LPF cutoff frequencies
+     * There is also no LO filter switching required on CBX, but the GPIO is left
+     * blank so we don't worry about it.
      */
     class cbx : public sbx_versionx {
     public:
@@ -235,6 +246,18 @@ protected:
      * to correspond either to SBX or CBX.
      */
     freq_range_t freq_range;
+
+    /*!
+    * Frequency range to use the LO LPF in RX; this is set in the constructor
+    * to correspond either to SBX or CBX.
+    */
+    freq_range_t enable_rx_lo_filter;
+
+    /*!
+    * Frequency range to use the LO LPF in TX; this is set in the constructor
+    * to correspond either to SBX or CBX.
+    */
+    freq_range_t enable_tx_lo_filter;
 
     /*!
      * Handle to the version-specific implementation of the SBX.
