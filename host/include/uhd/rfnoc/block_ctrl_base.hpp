@@ -173,6 +173,7 @@ public:
      *
      * \param reg The settings register to write to.
      * \param data New value of this register.
+     * \param port Port on which to write
      */
     void sr_write(const uint32_t reg, const uint32_t data, const size_t port = 0);
 
@@ -224,7 +225,7 @@ public:
      * instead of a numeric address. The register name must be
      * defined in the block definition file.
      *
-     * \param addr The user register address.
+     * \param reg The user register address.
      * \param port Port on which to read
      * \returns the readback value.
      * \throws uhd::key_error if \p reg is not a valid register name
@@ -252,6 +253,7 @@ public:
      * \param reg The user register name.
      * \returns the readback value.
      * \throws uhd::key_error if \p reg is not a valid register name
+     * \param port Port from which to read
      */
     uint32_t user_reg_read32(const std::string &reg, const size_t port = 0);
 
@@ -271,8 +273,8 @@ public:
 
     /*! Sets a tick rate for the command timebase.
      *
-     * \param the tick rate in Hz
-     * \port port Port
+     * \param tick_rate The tick rate in Hz
+     * \param port Port
      */
     void set_command_tick_rate(const double tick_rate, const size_t port = ANY_PORT);
 
