@@ -514,12 +514,6 @@ class EISCAT(DboardManagerBase):
         self.log.info("Radio-register UIO object successfully generated!")
         self._spi_ifaces = _init_spi_devices() # Chips don't have power yet!
         self.log.info("Loaded SPI interfaces!")
-        # We toggle power in order to hard-reset the ADCs. This has proven
-        # necessary to avoid failures of JESD204B link bringups, even though
-        # it's not lined out in the data sheets. If power was never on, this'll
-        # just delay initialization a little.
-        self._deinit_power(self.radio_regs)
-        time.sleep(.100) # This time is arbitrarily assigned and seems to work well.
         self._init_power(self.radio_regs) # Now, we can talk to chips via SPI
         self.dboard_clk_control = _init_clock_control(self.radio_regs)
         self.lmk = _init_lmk(
@@ -653,20 +647,23 @@ class EISCAT(DboardManagerBase):
         After this function, we should never touch this group again (other
         than turning it off, maybe).
         """
+        # Enable all channels first due to a signal integrity issue when enabling them
+        # after the LNA enable is asserted.
+        self.log.trace("Enabling power to the daughterboard...")
+        regs.poke32(self.DB_CH_ENABLES, 0x000000FF)
         regs.poke32(self.DB_ENABLES,    0x01000000)
         regs.poke32(self.DB_ENABLES,    0x00010101)
         regs.poke32(self.ADC_CONTROL,   0x00010000)
         time.sleep(0.100)
-        regs.poke32(self.DB_CH_ENABLES, 0x000000FF) # Enable all channels
 
     def _deinit_power(self, regs):
         """
         Turn off power to the dboard. Sequence is reverse of init_power.
         """
         self.log.trace("Disabling power to the daughterboard...")
-        regs.poke32(self.DB_CH_ENABLES, 0x00000000) # Disable all channels
         regs.poke32(self.ADC_CONTROL,   0x00100000)
         regs.poke32(self.DB_ENABLES,    0x10101010)
+        regs.poke32(self.DB_CH_ENABLES, 0x00000000) # Disable all channels (last)
 
     def update_ref_clock_freq(self, freq):
         """
