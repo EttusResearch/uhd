@@ -57,7 +57,7 @@ int main(int argc, char* argv[]){
     double freq = 2e9;
     double rate = 1e6;
     double gain = 0;
-    char* device_args;
+    char* device_args = NULL;
     size_t channel = 0;
     uint64_t total_num_samps = 0;
     bool verbose = false;
@@ -106,9 +106,9 @@ int main(int argc, char* argv[]){
         fprintf(stderr, "Unable to set thread priority. Continuing anyway.\n");
     }
 
-    if (device_args == NULL){
-        device_args = "";
-    }
+    if (!device_args)
+        device_args = strdup("");
+
     // Create USRP
     uhd_usrp_handle usrp;
     fprintf(stderr, "Creating USRP with args \"%s\"...\n", device_args);
@@ -249,9 +249,8 @@ int main(int argc, char* argv[]){
         uhd_usrp_free(&usrp);
 
     free_option_strings:
-        if(device_args != NULL){
+        if(device_args)
             free(device_args);
-        }
 
     fprintf(stderr, (return_code ? "Failure\n" : "Success\n"));
 

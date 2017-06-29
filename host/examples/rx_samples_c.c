@@ -53,7 +53,7 @@ int main(int argc, char* argv[])
     double freq = 500e6;
     double rate = 1e6;
     double gain = 5.0;
-    char* device_args = "";
+    char* device_args = NULL;
     size_t channel = 0;
     char* filename = "out.dat";
     size_t n_samples = 1000000;
@@ -104,6 +104,9 @@ int main(int argc, char* argv[])
                 goto free_option_strings;
         }
     }
+
+    if (!device_args)
+            device_args = strdup("");
 
     // Create USRP
     uhd_usrp_handle usrp;
@@ -279,7 +282,7 @@ int main(int argc, char* argv[])
         uhd_usrp_free(&usrp);
 
     free_option_strings:
-        if(strcmp(device_args,"")){
+        if(device_args) {
             free(device_args);
         }
         if(custom_filename){
