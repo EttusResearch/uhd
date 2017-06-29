@@ -118,27 +118,24 @@ sbx_xcvr::sbx_xcvr(ctor_args_t args) : xcvr_dboard_base(args){
     switch(get_rx_id().to_uint16()) {
         case 0x0054:
             db_actual = sbx_versionx_sptr(new sbx_version3(this));
-            freq_range = sbx_freq_range;
+            freq_range =          sbx_freq_range;
+            enable_rx_lo_filter = sbx_enable_rx_lo_filter;
+            enable_tx_lo_filter = sbx_enable_tx_lo_filter;
             break;
         case 0x0065:
-            db_actual = sbx_versionx_sptr(new sbx_version4(this));
-            freq_range = sbx_freq_range;
-            break;
-        case 0x0067:
-            db_actual = sbx_versionx_sptr(new cbx(this));
-            freq_range = cbx_freq_range;
-            break;
         case 0x0069:
-            db_actual = sbx_versionx_sptr(new sbx_version4(this));
-            freq_range = sbx_freq_range;
-            break;
         case 0x0083:
             db_actual = sbx_versionx_sptr(new sbx_version4(this));
-            freq_range = sbx_freq_range;
+            freq_range =          sbx_freq_range;
+            enable_rx_lo_filter = sbx_enable_rx_lo_filter;
+            enable_tx_lo_filter = sbx_enable_tx_lo_filter;
             break;
+        case 0x0067:
         case 0x0085:
             db_actual = sbx_versionx_sptr(new cbx(this));
-            freq_range = cbx_freq_range;
+            freq_range =          cbx_freq_range;
+            enable_rx_lo_filter = cbx_enable_rx_lo_filter;
+            enable_tx_lo_filter = cbx_enable_tx_lo_filter;
             break;
         default:
             /* We didn't recognize the version of the board... */
@@ -256,8 +253,8 @@ void sbx_xcvr::update_atr(void){
     //calculate atr pins
     int rx_pga0_iobits = rx_pga0_gain_to_iobits(_rx_gains["PGA0"]);
     int tx_pga0_iobits = tx_pga0_gain_to_iobits(_tx_gains["PGA0"]);
-    int rx_lo_lpf_en = (_rx_lo_freq == sbx_enable_rx_lo_filter.clip(_rx_lo_freq)) ? LO_LPF_EN : 0;
-    int tx_lo_lpf_en = (_tx_lo_freq == sbx_enable_tx_lo_filter.clip(_tx_lo_freq)) ? LO_LPF_EN : 0;
+    int rx_lo_lpf_en = (_rx_lo_freq == enable_rx_lo_filter.clip(_rx_lo_freq)) ? LO_LPF_EN : 0;
+    int tx_lo_lpf_en = (_tx_lo_freq == enable_tx_lo_filter.clip(_tx_lo_freq)) ? LO_LPF_EN : 0;
     int rx_ld_led = _rx_lo_lock_cache ? 0 : RX_LED_LD;
     int tx_ld_led = _tx_lo_lock_cache ? 0 : TX_LED_LD;
     int rx_ant_led = _rx_ant == "TX/RX" ? RX_LED_RX1RX2 : 0;
