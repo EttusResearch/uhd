@@ -7,6 +7,7 @@
 SET(python_examples
     rx_to_file.py
     tx_waveforms.py
+    curses_fft.py
 )
 
 UHD_INSTALL(PROGRAMS ${python_examples} DESTINATION ${PKG_LIB_DIR}/examples/python COMPONENT examples)
