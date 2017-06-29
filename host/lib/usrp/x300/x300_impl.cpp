@@ -305,7 +305,21 @@ device_addrs_t x300_find(const device_addr_t &hint_)
 
             //call discover with the new hint and append results
             device_addrs_t new_addrs = x300_find(new_hint);
-            addrs.insert(addrs.begin(), new_addrs.begin(), new_addrs.end());
+            //if we are looking for a serial, only add the one device with a matching serial
+            if (hint.has_key("serial")) {
+                bool found_serial = false; //signal to break out of the interface loop
+                for (device_addrs_t::iterator new_addr_it=new_addrs.begin(); new_addr_it != new_addrs.end(); new_addr_it++) {
+                    if ((*new_addr_it)["serial"] == hint["serial"]) {
+                        addrs.emplace(addrs.begin(), *new_addr_it);
+                        found_serial = true;
+                        break;
+                    }
+                }
+                if (found_serial) break;
+            } else {
+                // Otherwise, add all devices we find
+                addrs.insert(addrs.begin(), new_addrs.begin(), new_addrs.end());
+            }
         }
     }
 
