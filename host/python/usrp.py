@@ -64,8 +64,7 @@ class MultiUSRP(lib.usrp.multi_usrp):
                 print(metadata.strerror())
             if samps:
                 real_samps = min(num_samps - recv_samps, samps)
-                result[:, recv_samps:recv_samps + real_samps -
-                       1] = recv_buffer[:, 0:real_samps - 1]
+                result[:, recv_samps:recv_samps + real_samps] = recv_buffer[:, 0:real_samps]
                 recv_samps += real_samps
 
         stream_cmd = lib.types.stream_cmd(lib.types.stream_mode.stop_cont)
