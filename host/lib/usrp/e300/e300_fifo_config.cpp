@@ -91,6 +91,7 @@ static UHD_INLINE size_t ZF_STREAM_OFF(const size_t which)
 //locking stuff for shared irq
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition_variable.hpp>
+#include <boost/function.hpp>
 
 struct e300_fifo_poll_waiter
 {
@@ -193,14 +194,16 @@ public:
         const size_t num_frames,
         const size_t frame_size,
         e300_fifo_poll_waiter *waiter,
-        const bool auto_release
+        const bool auto_release,
+        boost::function<void(void)> dtor_cb
     ):
         _allocator(allocator),
         _addrs(addrs),
         _num_frames(num_frames),
         _frame_size(frame_size),
         _index(0),
-        _waiter(waiter)
+        _waiter(waiter),
+        _dtor_cb(dtor_cb)
     {
         //UHD_MSG(status) << boost::format("phys 0x%x") % addrs.phys << std::endl;
         //UHD_MSG(status) << boost::format("data 0x%x") % addrs.data << std::endl;
@@ -229,7 +232,10 @@ public:
 
     ~e300_transport(void)
     {
-        //NOP
+        if (_dtor_cb)
+        {
+            _dtor_cb();
+        }
     }
 
     template <typename T>
@@ -294,6 +300,7 @@ private:
     size_t _index;
     e300_fifo_poll_waiter *_waiter;
     std::vector<boost::shared_ptr<e300_fifo_mb> > _buffs;
+    boost::function<void(void)> _dtor_cb;
 };
 
 /***********************************************************************
@@ -385,8 +392,38 @@ private:
         addrs.ctrl = ((is_recv)? S2H_BASE(_ctrl_space) : H2S_BASE(_ctrl_space)) + ZF_STREAM_OFF(which_stream);
 
         uhd::transport::zero_copy_if::sptr xport;
-        if (is_recv) xport.reset(new e300_transport(shared_from_this(), addrs, num_frames, frame_size, _waiter, is_recv));
-        else         xport.reset(new e300_transport(shared_from_this(), addrs, num_frames, frame_size, _waiter, is_recv));
+        if (is_recv)
+        {
+            xport.reset(new e300_transport(
+                    shared_from_this(),
+                    addrs,
+                    num_frames,
+                    frame_size,
+                    _waiter,
+                    is_recv,
+                    boost::bind(&e300_fifo_interface_impl::_release_xport,
+                            this,
+                            which_stream,
+                            num_frames*frame_size,
+                            num_frames,
+                            is_recv)
+            ));
+        } else {
+            xport.reset(new e300_transport(
+                    shared_from_this(),
+                    addrs,
+                    num_frames,
+                    frame_size,
+                    _waiter,
+                    is_recv,
+                    boost::bind(&e300_fifo_interface_impl::_release_xport,
+                            this,
+                            which_stream,
+                            num_frames*frame_size,
+                            num_frames,
+                            is_recv)
+            ));
+        }
 
         _bytes_in_use += num_frames*frame_size;
         entries_in_use += num_frames;
@@ -395,8 +432,22 @@ private:
         UHD_ASSERT_THROW(_send_entries_in_use.at(which_stream) <= H2S_NUM_CMDS);
         UHD_ASSERT_THROW(_bytes_in_use <= _config.buff_length);
 
-
         return xport;
+    }
+
+    void _release_xport(
+            const size_t which_stream,
+            size_t bytes, size_t frames,
+            bool is_recv)
+    {
+        boost::mutex::scoped_lock lock(_setup_mutex);
+        _bytes_in_use -= bytes;
+        if (is_recv)
+        {
+            _recv_entries_in_use.at(which_stream) -= frames;
+        } else {
+            _send_entries_in_use.at(which_stream) -= frames;
+        }
     }
 
     e300_fifo_config_t     _config;
