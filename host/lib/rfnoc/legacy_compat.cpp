@@ -520,7 +520,10 @@ private: // methods
     ) {
         if (dir == uhd::TX_DIRECTION) {
             if (_has_sramfifo) {
-                return block_id_t(mboard_idx, SFIFO_BLOCK_NAME, radio_index).to_string();
+                const size_t sfifo_idx =
+                    radio_index * _num_tx_chans_per_radio + port_index;
+                port_index = 0;
+                return block_id_t(mboard_idx, SFIFO_BLOCK_NAME, sfifo_idx).to_string();
             } else if (_has_dmafifo) {
                 port_index = radio_index;
                 return block_id_t(mboard_idx, DFIFO_BLOCK_NAME, 0).to_string();
@@ -738,8 +741,11 @@ private: // methods
                         // Prioritize SRAM over DRAM for performance
                         if (_has_sramfifo) {
                             // We have SRAM FIFO *and* DUCs
+                            // SRAM FIFOs have only 1 channel per block
+                            const size_t sfifo_idx =
+                                _num_tx_chans_per_radio * radio + chan;
                             _graph->connect(
-                                block_id_t(mboard, SFIFO_BLOCK_NAME, radio), chan,
+                                block_id_t(mboard, SFIFO_BLOCK_NAME, sfifo_idx), chan,
                                 block_id_t(mboard, DUC_BLOCK_NAME, radio), chan,
                                 tx_bpp
                             );
@@ -753,8 +759,11 @@ private: // methods
                         }
                     } else if (_has_sramfifo) {
                             // We have SRAM FIFO, *no* DUCs
+                            // SRAM FIFOs have only 1 channel per block
+                            const size_t sfifo_idx =
+                                _num_tx_chans_per_radio * radio + chan;
                             _graph->connect(
-                                block_id_t(mboard, SFIFO_BLOCK_NAME, radio), radio,
+                                block_id_t(mboard, SFIFO_BLOCK_NAME, sfifo_idx), 0,
                                 block_id_t(mboard, RADIO_BLOCK_NAME, radio), chan,
                                 tx_bpp
                             );
