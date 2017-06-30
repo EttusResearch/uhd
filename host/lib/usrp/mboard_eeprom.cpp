@@ -50,7 +50,7 @@ static byte_vector_t string_to_uint16_bytes(const std::string &num_str){
 //! convert a byte vector read from eeprom to a string
 static std::string uint16_bytes_to_string(const byte_vector_t &bytes){
     const uint16_t num = (uint16_t(bytes.at(0)) << 0) | (uint16_t(bytes.at(1)) << 8);
-    return (num == 0 or num == 0xffff)? "" : boost::lexical_cast<std::string>(num);
+    return (num == 0 or num == 0xffff)? "" : std::to_string(num);
 }
 
 /***********************************************************************
@@ -134,7 +134,7 @@ static void load_n100(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
     if (mb_eeprom["serial"].empty()){
         byte_vector_t mac_addr_bytes = mac_addr_t::from_string(mb_eeprom["mac-addr"]).to_bytes();
         unsigned serial = mac_addr_bytes.at(5) | (unsigned(mac_addr_bytes.at(4) & 0x0f) << 8);
-        mb_eeprom["serial"] = boost::lexical_cast<std::string>(serial);
+        mb_eeprom["serial"] = std::to_string(serial);
     }
 }
 
@@ -417,7 +417,7 @@ static void load_b000(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
     );
     master_clock_rate = ntohl(master_clock_rate);
     if (master_clock_rate > 1e6 and master_clock_rate < 1e9){
-        mb_eeprom["mcr"] = boost::lexical_cast<std::string>(master_clock_rate);
+        mb_eeprom["mcr"] = std::to_string(master_clock_rate);
     }
     else mb_eeprom["mcr"] = "";
 }
@@ -437,7 +437,7 @@ static void store_b000(const mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
 
     //store the master clock rate as a 32-bit uint in Hz
     if (mb_eeprom.has_key("mcr")){
-        uint32_t master_clock_rate = uint32_t(boost::lexical_cast<double>(mb_eeprom["mcr"]));
+        uint32_t master_clock_rate = uint32_t(std::stod(mb_eeprom["mcr"]));
         master_clock_rate = htonl(master_clock_rate);
         const byte_vector_t rate_bytes(
             reinterpret_cast<const uint8_t *>(&master_clock_rate),
@@ -606,10 +606,10 @@ static void load_e100(mboard_eeprom_t &mb_eeprom, i2c_iface &iface){
     byte_vector_t map_bytes = iface.read_eeprom(E100_EEPROM_ADDR, 0, num_bytes);
     e100_eeprom_map map; std::memcpy(&map, &map_bytes[0], map_bytes.size());
 
-    mb_eeprom["vendor"] = boost::lexical_cast<std::string>(uhd::ntohx(map.vendor));
-    mb_eeprom["device"] = boost::lexical_cast<std::string>(uhd::ntohx(map.device));
-    mb_eeprom["revision"] = boost::lexical_cast<std::string>(unsigned(map.revision));
-    mb_eeprom["content"] = boost::lexical_cast<std::string>(unsigned(map.content));
+    mb_eeprom["vendor"] = std::to_string(uhd::ntohx(map.vendor));
+    mb_eeprom["device"] = std::to_string(uhd::ntohx(map.device));
+    mb_eeprom["revision"] = std::to_string(unsigned(map.revision));
+    mb_eeprom["content"] = std::to_string(unsigned(map.content));
 
     #define load_e100_string_xx(key) mb_eeprom[#key] = bytes_to_string(iface.read_eeprom( \
         E100_EEPROM_ADDR, offsetof(e100_eeprom_map, key), sizeof_member(e100_eeprom_map, key) \

@@ -29,7 +29,6 @@
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <boost/format.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/bind.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/asio/ip/address_v4.hpp>
@@ -334,7 +333,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr) :
     if (not device_addr.has_key("send_buff_size")){
         //The buffer should be the size of the SRAM on the device,
         //because we will never commit more than the SRAM can hold.
-        device_addr["send_buff_size"] = boost::lexical_cast<std::string>(USRP2_SRAM_BYTES);
+        device_addr["send_buff_size"] = std::to_string(USRP2_SRAM_BYTES);
     }
 
     device_addrs_t device_args = separate_device_addr(device_addr);
@@ -353,8 +352,8 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr) :
             mtu.send_mtu = std::min(mtu.send_mtu, mtu_i.send_mtu);
         }
 
-        device_addr["recv_frame_size"] = boost::lexical_cast<std::string>(mtu.recv_mtu);
-        device_addr["send_frame_size"] = boost::lexical_cast<std::string>(mtu.send_mtu);
+        device_addr["recv_frame_size"] = std::to_string(mtu.recv_mtu);
+        device_addr["send_frame_size"] = std::to_string(mtu.send_mtu);
 
         UHD_LOGGER_INFO("USRP2") << boost::format("Current recv frame size: %d bytes") % mtu.recv_mtu;
         UHD_LOGGER_INFO("USRP2") << boost::format("Current send frame size: %d bytes") % mtu.send_mtu;
@@ -375,7 +374,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr) :
 
     for (size_t mbi = 0; mbi < device_args.size(); mbi++){
         const device_addr_t device_args_i = device_args[mbi];
-        const std::string mb = boost::lexical_cast<std::string>(mbi);
+        const std::string mb = std::to_string(mbi);
         const std::string addr = device_args_i["addr"];
         const fs_path mb_path = "/mboards/" + mb;
 

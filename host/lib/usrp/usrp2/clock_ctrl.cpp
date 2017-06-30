@@ -22,7 +22,6 @@
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/assert_has.hpp>
 #include <stdint.h>
-#include <boost/lexical_cast.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <iostream>
 

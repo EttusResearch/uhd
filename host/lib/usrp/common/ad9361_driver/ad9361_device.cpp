@@ -1454,7 +1454,8 @@ double ad9361_device_t::_setup_rates(const double rate)
         _rfir_factor = 2;
     } else if ((rate > 58e6) && (rate <= 61.44e6)) {
         // RX1 + RX2 enabled, 2, 1, 2, 2
-        _regs.rxfilt = B8(11010110);
+        _regs.rxfilt = B8(11001110);
+
 
         // TX1 + TX2 enabled, 2, 1, 1, 2
         _regs.txfilt = B8(11010010);

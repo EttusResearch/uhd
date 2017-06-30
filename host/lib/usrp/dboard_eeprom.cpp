@@ -107,7 +107,7 @@ void dboard_eeprom_t::load(i2c_iface &iface, uint8_t addr){
             | (uint16_t(bytes[DB_EEPROM_REV_MSB]) << 8)
         ;
         if (rev_num != 0 and rev_num != 0xffff){
-            revision = boost::lexical_cast<std::string>(rev_num);
+            revision = std::to_string(rev_num);
         }
 
     }catch(const uhd::assertion_error &){

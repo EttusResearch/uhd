@@ -24,7 +24,6 @@
 #include <stdint.h>
 #include "boost/date_time/gregorian/gregorian.hpp"
 #include <boost/format.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread.hpp>
 #include <boost/math/special_functions/fpclassify.hpp>

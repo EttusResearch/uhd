@@ -24,7 +24,6 @@
 #include <uhd/utils/byteswap.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/asio.hpp>
-#include <boost/lexical_cast.hpp>
 
 #include <iostream>
 
@@ -84,7 +83,7 @@ void octoclock_eeprom_t::_load(){
         (*this)["name"] = bytes_to_string(name_bytes);
 
         //Revision
-        (*this)["revision"] = boost::lexical_cast<std::string>(int(eeprom_in->revision));
+        (*this)["revision"] = std::to_string(int(eeprom_in->revision));
     }
     else throw uhd::runtime_error("Error loading OctoClock EEPROM.");
 }

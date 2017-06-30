@@ -310,7 +310,7 @@ public:
             }
             // We have to be extra-careful with the port numbers:
             if (port["port"].empty()) {
-                port["port"] = boost::lexical_cast<std::string>(n_ports);
+                port["port"] = std::to_string(n_ports);
             }
             size_t new_port_number;
             try {

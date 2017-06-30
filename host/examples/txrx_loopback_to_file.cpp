@@ -17,7 +17,7 @@
 
 #include "wavetable.hpp"
 #include <uhd/types/tune_request.hpp>
-#include <uhd/utils/thread_priority.hpp>
+#include <uhd/utils/thread.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
@@ -26,7 +26,6 @@
 #include <boost/program_options.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <boost/format.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem.hpp>
 #include <iostream>
@@ -267,21 +266,21 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::vector<size_t> tx_channel_nums;
     boost::split(tx_channel_strings, tx_channels, boost::is_any_of("\"',"));
     for(size_t ch = 0; ch < tx_channel_strings.size(); ch++){
-        size_t chan = boost::lexical_cast<int>(tx_channel_strings[ch]);
+        size_t chan = std::stoi(tx_channel_strings[ch]);
         if(chan >= tx_usrp->get_tx_num_channels()){
             throw std::runtime_error("Invalid TX channel(s) specified.");
         }
-        else tx_channel_nums.push_back(boost::lexical_cast<int>(tx_channel_strings[ch]));
+        else tx_channel_nums.push_back(std::stoi(tx_channel_strings[ch]));
     }
     std::vector<std::string> rx_channel_strings;
     std::vector<size_t> rx_channel_nums;
     boost::split(rx_channel_strings, rx_channels, boost::is_any_of("\"',"));
     for(size_t ch = 0; ch < rx_channel_strings.size(); ch++){
-        size_t chan = boost::lexical_cast<int>(rx_channel_strings[ch]);
+        size_t chan = std::stoi(rx_channel_strings[ch]);
         if(chan >= rx_usrp->get_rx_num_channels()){
             throw std::runtime_error("Invalid RX channel(s) specified.");
         }
-        else rx_channel_nums.push_back(boost::lexical_cast<int>(rx_channel_strings[ch]));
+        else rx_channel_nums.push_back(std::stoi(rx_channel_strings[ch]));
     }
 
     //Lock mboard clocks

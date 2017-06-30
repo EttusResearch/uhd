@@ -96,11 +96,11 @@ e300_fifo_config_t e300_read_sysfs(void)
 
     e300_fifo_config_t config;
 
-    config.buff_length  = boost::lexical_cast<unsigned long>(
+    config.buff_length  = std::stoul(
         e300_get_sysfs_attr(E300_AXI_FPGA_SYSFS, "buffer_length"));
-    config.ctrl_length = boost::lexical_cast<unsigned long>(
+    config.ctrl_length = std::stoul(
         e300_get_sysfs_attr(E300_AXI_FPGA_SYSFS, "control_length"));
-    config.phys_addr = boost::lexical_cast<unsigned long>(
+    config.phys_addr = std::stoul(
         e300_get_sysfs_attr(E300_AXI_FPGA_SYSFS, "phys_addr"));
 
     return config;

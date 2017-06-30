@@ -54,9 +54,9 @@ const device_addr_t& xport_benchmarker::benchmark_throughput_chdr
     _results["RX-Bytes"] = (boost::format("%.2fMB") % (rx_bytes/(1024*1024))).str();
     _results["TX-Throughput"] = (boost::format("%.2fMB/s") % (tx_rate/(1024*1024))).str();
     _results["RX-Throughput"] = (boost::format("%.2fMB/s") % (rx_rate/(1024*1024))).str();
-    _results["TX-Timeouts"] = boost::lexical_cast<std::string>(_num_tx_timeouts);
-    _results["RX-Timeouts"] = boost::lexical_cast<std::string>(_num_rx_timeouts);
-    _results["Data-Errors"] = boost::lexical_cast<std::string>(_num_data_errors);
+    _results["TX-Timeouts"] = std::to_string(_num_tx_timeouts);
+    _results["RX-Timeouts"] = std::to_string(_num_rx_timeouts);
+    _results["Data-Errors"] = std::to_string(_num_data_errors);
 
     return _results;
 }

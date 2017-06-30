@@ -68,9 +68,9 @@ const mboard_eeprom_t& n230_eeprom_manager::read_mb_eeprom()
     uint16_t ver_major = uhd::htonx<uint16_t>(map.data_version_major);
     uint16_t ver_minor = uhd::htonx<uint16_t>(map.data_version_minor);
 
-    _mb_eeprom["product"] = boost::lexical_cast<std::string>(
+    _mb_eeprom["product"] = std::to_string(
         uhd::htonx<uint16_t>(map.hw_product));
-    _mb_eeprom["revision"] = boost::lexical_cast<std::string>(
+    _mb_eeprom["revision"] = std::to_string(
         uhd::htonx<uint16_t>(map.hw_revision));
     //The revision_compat field does not exist in version 1.0
     //EEPROM version 1.0 will only exist on HW revision 1 so it is safe to set
@@ -78,7 +78,7 @@ const mboard_eeprom_t& n230_eeprom_manager::read_mb_eeprom()
     if (ver_major == 1 and ver_minor == 0) {
         _mb_eeprom["revision_compat"] = _mb_eeprom["revision"];
     } else {
-        _mb_eeprom["revision_compat"] = boost::lexical_cast<std::string>(
+        _mb_eeprom["revision_compat"] = std::to_string(
             uhd::htonx<uint16_t>(map.hw_revision_compat));
     }
     _mb_eeprom["serial"] = _bytes_to_string(

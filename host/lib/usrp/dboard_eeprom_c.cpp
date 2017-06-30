@@ -18,8 +18,6 @@
 #include <uhd/usrp/dboard_eeprom.h>
 #include <uhd/error.h>
 
-#include <boost/lexical_cast.hpp>
-
 #include <string.h>
 
 uhd_error uhd_dboard_eeprom_make(
@@ -84,7 +82,7 @@ uhd_error uhd_dboard_eeprom_get_revision(
     int* revision_out
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        *revision_out = boost::lexical_cast<int>(h->dboard_eeprom_cpp.revision);
+        *revision_out = std::stoi(h->dboard_eeprom_cpp.revision);
     )
 }
 
@@ -93,7 +91,7 @@ uhd_error uhd_dboard_eeprom_set_revision(
     int revision
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        h->dboard_eeprom_cpp.revision = boost::lexical_cast<std::string>(revision);
+        h->dboard_eeprom_cpp.revision = std::to_string(revision);
     )
 }
 

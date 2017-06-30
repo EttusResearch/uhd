@@ -29,7 +29,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/thread/condition_variable.hpp>
 #include <boost/filesystem.hpp>
-#include <uhd/utils/thread_priority.hpp>
+#include <uhd/utils/thread.hpp>
 #include <uhd/property_tree.hpp>
 
 const std::string _eth_file("eths_info.txt");

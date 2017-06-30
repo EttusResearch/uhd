@@ -60,7 +60,7 @@ public:
     virtual void usrp_fx2_reset(void) = 0;
 
     /*!
-     * Load firmware in Intel HEX Format onto device 
+     * Load firmware in Intel HEX Format onto device
      * \param filename name of firmware file
      * \param force reload firmware if already loaded
      */
@@ -68,24 +68,25 @@ public:
                                    bool force = false) = 0;
 
     /*!
-     * Load fpga file onto usrp 
-     * \param filename name of fpga image 
+     * Load fpga file onto usrp
+     * \param filename name of fpga image
      */
     virtual void usrp_load_fpga(std::string filename) = 0;
 
     /*!
      * Load USB descriptor file in Intel HEX format into EEPROM
-     * \param filename name of EEPROM image
+     * \param filestring name of EEPROM image
      */
     virtual void usrp_load_eeprom(std::string filestring) = 0;
-    
+
     /*!
-     * Submit an IN transfer 
-     * \param request device specific request 
+     * Submit an IN transfer
+     * \param request device specific request
      * \param value device specific field
      * \param index device specific field
      * \param buff buffer to place data
-     * \return number of bytes read or error 
+     * \param length length of buffer
+     * \return number of bytes read or error
      */
     virtual int usrp_control_read(uint8_t request,
                                   uint16_t value,
@@ -94,12 +95,13 @@ public:
                                   uint16_t length) = 0;
 
     /*!
-     * Submit an OUT transfer 
-     * \param request device specific request 
+     * Submit an OUT transfer
+     * \param request device specific request
      * \param value device specific field
      * \param index device specific field
-     * \param buff buffer of data to be sent 
-     * \return number of bytes written or error 
+     * \param buff buffer of data to be sent
+     * \param length length of buffer
+     * \return number of bytes written or error
      */
     virtual int usrp_control_write(uint8_t request,
                                    uint16_t value,
@@ -110,25 +112,25 @@ public:
     /*!
      * Perform an I2C write
      * \param i2c_addr I2C device address
-     * \param buf data to be written 
+     * \param buf data to be written
      * \param len length of data in bytes
-     * \return number of bytes written or error 
+     * \return number of bytes written or error
      */
 
     virtual int usrp_i2c_write(uint16_t i2c_addr,
-                               unsigned char *buf, 
+                               unsigned char *buf,
                                uint16_t len) = 0;
 
     /*!
      * Perform an I2C read
      * \param i2c_addr I2C device address
-     * \param buf data to be read 
+     * \param buf data to be read
      * \param len length of data in bytes
-     * \return number of bytes read or error 
+     * \return number of bytes read or error
      */
 
     virtual int usrp_i2c_read(uint16_t i2c_addr,
-                               unsigned char *buf, 
+                               unsigned char *buf,
                                uint16_t len) = 0;
 
     //! enable/disable the rx path

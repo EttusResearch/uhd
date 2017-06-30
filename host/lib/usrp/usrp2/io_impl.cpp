@@ -27,7 +27,7 @@
 #include <uhd/utils/tasks.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/byteswap.hpp>
-#include <uhd/utils/thread_priority.hpp>
+#include <uhd/utils/thread.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/format.hpp>

@@ -22,6 +22,7 @@
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
 #include <boost/timer.hpp>
+#include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
 #include <iostream>
 #include <iomanip>

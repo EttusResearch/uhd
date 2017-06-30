@@ -39,6 +39,7 @@ UHD_INSTALL(FILES
     static.hpp
     tasks.hpp
     thread_priority.hpp
+    thread.hpp
     DESTINATION ${INCLUDE_DIR}/uhd/utils
     COMPONENT headers
 )

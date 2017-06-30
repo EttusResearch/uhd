@@ -16,7 +16,7 @@
 //
 
 #include "wavetable.hpp"
-#include <uhd/utils/thread_priority.hpp>
+#include <uhd/utils/thread.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
@@ -25,11 +25,11 @@
 #include <boost/math/special_functions/round.hpp>
 #include <boost/format.hpp>
 #include <boost/thread.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
 #include <stdint.h>
 #include <iostream>
 #include <csignal>
+#include <string>
 
 namespace po = boost::program_options;
 
@@ -93,11 +93,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::vector<size_t> channel_nums;
     boost::split(channel_strings, channel_list, boost::is_any_of("\"',"));
     for(size_t ch = 0; ch < channel_strings.size(); ch++){
-        size_t chan = boost::lexical_cast<int>(channel_strings[ch]);
+        size_t chan = std::stoi(channel_strings[ch]);
         if(chan >= usrp->get_tx_num_channels())
             throw std::runtime_error("Invalid channel(s) specified.");
         else
-            channel_nums.push_back(boost::lexical_cast<int>(channel_strings[ch]));
+            channel_nums.push_back(std::stoi(channel_strings[ch]));
     }
 
 
@@ -212,7 +212,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //Check Ref and LO Lock detect
     std::vector<std::string> sensor_names;
-    const size_t tx_sensor_chan = channel_list.empty() ? 0 : boost::lexical_cast<size_t>(channel_list[0]);
+    const size_t tx_sensor_chan = channel_nums.empty() ? 0 : channel_nums[0];
     sensor_names = usrp->get_tx_sensor_names(tx_sensor_chan);
     if (std::find(sensor_names.begin(), sensor_names.end(), "lo_locked") != sensor_names.end()) {
         uhd::sensor_value_t lo_locked = usrp->get_tx_sensor("lo_locked", tx_sensor_chan);

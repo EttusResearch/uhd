@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/utils/thread_priority.hpp>
+#include <uhd/utils/thread.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/exception.hpp>
 #include <boost/format.hpp>
@@ -108,3 +108,15 @@ static void check_priority_range(float priority){
     }
 
 #endif /* HAVE_THREAD_PRIO_DUMMY */
+
+void uhd::set_thread_name(
+    boost::thread *thrd,
+    const std::string &name
+) {
+#ifdef HAVE_PTHREAD_SETNAME
+    pthread_setname_np(thrd->native_handle(), name.substr(0,16).c_str());
+#endif /* HAVE_PTHREAD_SETNAME */
+#ifdef HAVE_THREAD_SETNAME_DUMMY
+    UHD_LOG_DEBUG("UHD", "Setting thread name is not implemented; wanted to set to " << name);
+#endif /* HAVE_THREAD_SETNAME_DUMMY */
+}

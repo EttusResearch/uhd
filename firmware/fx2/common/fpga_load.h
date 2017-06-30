@@ -22,7 +22,7 @@
 #define INCLUDED_FPGA_LOAD_H
 
 unsigned char fpga_load_begin (void);
-unsigned char fpga_load_xfer (xdata unsigned char *p, unsigned char len);
+unsigned char fpga_load_xfer (__xdata unsigned char *p, unsigned char len);
 unsigned char fpga_load_end (void);
 
 #endif /* INCLUDED_FPGA_LOAD_H */

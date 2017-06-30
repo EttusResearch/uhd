@@ -51,9 +51,11 @@ CHECK_CXX_SOURCE_COMPILES("
     " HAVE_WIN_SETTHREADPRIORITY
 )
 
+
+
 IF(HAVE_PTHREAD_SETSCHEDPARAM)
     MESSAGE(STATUS "  Priority scheduling supported through pthread_setschedparam.")
-    SET(THREAD_PRIO_DEFS HAVE_PTHREAD_SETSCHEDPARAM)
+    LIST(APPEND THREAD_PRIO_DEFS HAVE_PTHREAD_SETSCHEDPARAM)
     LIBUHD_APPEND_LIBS(pthread)
 ELSEIF(HAVE_WIN_SETTHREADPRIORITY)
     MESSAGE(STATUS "  Priority scheduling supported through windows SetThreadPriority.")
@@ -63,8 +65,36 @@ ELSE()
     SET(THREAD_PRIO_DEFS HAVE_THREAD_PRIO_DUMMY)
 ENDIF()
 
+SET(CMAKE_REQUIRED_LIBRARIES "pthread")
+
+CHECK_CXX_SOURCE_COMPILES("
+    #include <pthread.h>
+    int main(){
+        pthread_t pt;
+        const char* pt_name = \"test\";
+        pthread_setname_np(pt, pt_name);
+        return 0;
+    }
+    " HAVE_PTHREAD_SETNAME
+)
+
+IF(CYGWIN)
+    #SCHED_RR non-operational on cygwin
+    SET(HAVE_PTHREAD_SETNAME False)
+ENDIF(CYGWIN)
+
+IF(HAVE_PTHREAD_SETNAME)
+    MESSAGE(STATUS "  Setting thread names is supported through pthread_setname_np.")
+    LIST(APPEND THREAD_PRIO_DEFS HAVE_PTHREAD_SETNAME)
+    LIBUHD_APPEND_LIBS(pthread)
+ELSE()
+    MESSAGE(STATUS "  Setting thread names is not supported.")
+    LIST(APPEND THREAD_PRIO_DEFS HAVE_THREAD_SETNAME_DUMMY)
+ENDIF()
+
+
 SET_SOURCE_FILES_PROPERTIES(
-    ${CMAKE_CURRENT_SOURCE_DIR}/thread_priority.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/thread.cpp
     PROPERTIES COMPILE_DEFINITIONS "${THREAD_PRIO_DEFS}"
 )
 
@@ -146,7 +176,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/platform.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/static.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/tasks.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/thread_priority.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/thread.cpp
 )
 
 IF(ENABLE_C_API)

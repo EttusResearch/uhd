@@ -30,7 +30,6 @@
 #include <uhd/rfnoc/blockdef.hpp>
 #include <uhd/rfnoc/constants.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/lexical_cast.hpp>
 #include <stdint.h>
 
 namespace uhd {
@@ -174,7 +173,7 @@ public:
      *
      * \param reg The settings register to write to.
      * \param data New value of this register.
-     * \param port Destination port
+     * \param port Port on which to write
      */
     void sr_write(const uint32_t reg, const uint32_t data, const size_t port = 0);
 
@@ -255,6 +254,7 @@ public:
      * \param port Destination port.
      * \returns the readback value.
      * \throws uhd::key_error if \p reg is not a valid register name
+     * \param port Port from which to read
      */
     uint32_t user_reg_read32(const std::string &reg, const size_t port = 0);
 
@@ -274,7 +274,11 @@ public:
 
     /*! Sets a tick rate for the command timebase.
      *
+<<<<<<< HEAD
      * \param tick_rate the tick rate in Hz
+=======
+     * \param tick_rate The tick rate in Hz
+>>>>>>> master
      * \param port Port
      */
     void set_command_tick_rate(const double tick_rate, const size_t port = ANY_PORT);

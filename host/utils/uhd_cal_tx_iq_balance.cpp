@@ -16,7 +16,7 @@
 //
 
 #include "usrp_cal_utils.hpp"
-#include <uhd/utils/thread_priority.hpp>
+#include <uhd/utils/thread.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <boost/program_options.hpp>
 #include <boost/thread/thread.hpp>

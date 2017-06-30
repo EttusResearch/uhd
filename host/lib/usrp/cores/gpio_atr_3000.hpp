@@ -39,7 +39,7 @@ public:
      *
      * \param iface register iface to GPIO ATR registers
      * \param base base settings offset for GPIO ATR registers
-     * \param base readback offset for GPIO ATR registers
+     * \param rb_addr readback offset for GPIO ATR registers
      */
     static sptr make(
         uhd::wb_iface::sptr iface,
@@ -119,7 +119,7 @@ public:
      *
      * \param iface register iface to GPIO ATR registers
      * \param base base settings offset for GPIO ATR registers
-     * \param base readback offset for GPIO ATR registers
+     * \param rb_addr readback offset for GPIO ATR registers
      */
     static sptr make(
         uhd::wb_iface::sptr iface,
@@ -131,6 +131,7 @@ public:
      *
      * \param unit the side of the daughterboard interface to configure (TX or RX)
      * \param value if value[i] is 1, the i'th bit is in ATR mode otherwise it is in GPIO mode
+     * \param mask mask
      */
     virtual void set_pin_ctrl(const db_unit_t unit, const uint32_t value, const uint32_t mask) = 0;
 
@@ -141,6 +142,7 @@ public:
      *
      * \param unit the side of the daughterboard interface to configure (TX or RX)
      * \param value if value[i] is 1, the i'th bit is an output otherwise it is an input
+     * \param mask mask
      */
     virtual void set_gpio_ddr(const db_unit_t unit, const uint32_t value, const uint32_t mask) = 0;
 
@@ -149,9 +151,10 @@ public:
     /*!
      * Write the specified value to the ATR register (all bits)
      *
-     * \param atr the type of ATR register to write to {IDLE, RX, TX, FDX}
      * \param unit the side of the daughterboard interface to configure (TX or RX)
+     * \param atr the type of ATR register to write to {IDLE, RX, TX, FDX}
      * \param value the value to write
+     * \param mask mask
      */
     virtual void set_atr_reg(const db_unit_t unit, const gpio_atr_reg_t atr, const uint32_t value, const uint32_t mask) = 0;
 
@@ -160,8 +163,9 @@ public:
     /*!
      * Write the specified value to the GPIO register (all bits)
      *
-     * \param atr the type of ATR register to write to {IDLE, RX, TX, FDX}
+     * \param unit the side of the daughterboard interface to configure (TX or RX)
      * \param value the value to write
+     * \param mask mask
      */
     virtual void set_gpio_out(const db_unit_t unit, const uint32_t value, const uint32_t mask) = 0;
 

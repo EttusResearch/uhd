@@ -15,7 +15,7 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/utils/thread_priority.hpp>
+#include <uhd/utils/thread.hpp>
 #include <uhd/convert.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
@@ -23,7 +23,6 @@
 #include <boost/format.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
 //#include <boost/atomic.hpp>
 #include <iostream>
 #include <complex>
@@ -406,11 +405,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
         boost::split(channel_strings, rx_channel_list, boost::is_any_of("\"',"));
         for (size_t ch = 0; ch < channel_strings.size(); ch++) {
-            size_t chan = boost::lexical_cast<int>(channel_strings[ch]);
+            size_t chan = std::stoul(channel_strings[ch]);
             if (chan >= usrp->get_rx_num_channels()) {
                 throw std::runtime_error("Invalid channel(s) specified.");
             } else {
-                rx_channel_nums.push_back(boost::lexical_cast<int>(channel_strings[ch]));
+                rx_channel_nums.push_back(std::stoul(channel_strings[ch]));
             }
         }
     }
@@ -423,11 +422,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
         boost::split(channel_strings, tx_channel_list, boost::is_any_of("\"',"));
         for (size_t ch = 0; ch < channel_strings.size(); ch++) {
-            size_t chan = boost::lexical_cast<int>(channel_strings[ch]);
+            size_t chan = std::stoul(channel_strings[ch]);
             if (chan >= usrp->get_tx_num_channels()) {
                 throw std::runtime_error("Invalid channel(s) specified.");
             } else {
-                tx_channel_nums.push_back(boost::lexical_cast<int>(channel_strings[ch]));
+                tx_channel_nums.push_back(std::stoul(channel_strings[ch]));
             }
         }
     }
@@ -452,7 +451,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         uhd::stream_args_t stream_args(rx_cpu, rx_otw);
         stream_args.channels = rx_channel_nums;
         uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
-        thread_group.create_thread(boost::bind(&benchmark_rx_rate, usrp, rx_cpu, rx_stream, random_nsamps, boost::ref(burst_timer_elapsed)));
+        auto rx_thread = thread_group.create_thread(boost::bind(&benchmark_rx_rate, usrp, rx_cpu, rx_stream, random_nsamps, boost::ref(burst_timer_elapsed)));
+        uhd::set_thread_name(rx_thread, "bmark_rx_stream");
     }
 
     //spawn the transmit test thread
@@ -462,8 +462,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         uhd::stream_args_t stream_args(tx_cpu, tx_otw);
         stream_args.channels = tx_channel_nums;
         uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
-        thread_group.create_thread(boost::bind(&benchmark_tx_rate, usrp, tx_cpu, tx_stream, boost::ref(burst_timer_elapsed), random_nsamps));
-        thread_group.create_thread(boost::bind(&benchmark_tx_rate_async_helper, tx_stream, boost::ref(burst_timer_elapsed)));
+        auto tx_thread = thread_group.create_thread(boost::bind(&benchmark_tx_rate, usrp, tx_cpu, tx_stream, boost::ref(burst_timer_elapsed), random_nsamps));
+        uhd::set_thread_name(tx_thread, "bmark_tx_stream");
+        auto tx_async_thread = thread_group.create_thread(boost::bind(&benchmark_tx_rate_async_helper, tx_stream, boost::ref(burst_timer_elapsed)));
+        uhd::set_thread_name(tx_async_thread, "bmark_tx_helper");
     }
 
     //sleep for the required duration

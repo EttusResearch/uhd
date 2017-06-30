@@ -211,7 +211,7 @@ octoclock_impl::octoclock_impl(const device_addr_t &_device_addr){
                 ) % _get_images_help_message(addr)));
         }
 
-        const std::string oc = boost::lexical_cast<std::string>(oci);
+        const std::string oc = std::to_string(oci);
 
         ////////////////////////////////////////////////////////////////////
         // Set up UDP transports
@@ -234,7 +234,7 @@ octoclock_impl::octoclock_impl(const device_addr_t &_device_addr){
                     "%s\n"
                 ) % int(OCTOCLOCK_FW_COMPAT_NUM) % int(_proto_ver) % _get_images_help_message(addr)));
         }
-        _tree->create<std::string>(oc_path / "fw_version").set(boost::lexical_cast<std::string>(int(_proto_ver)));
+        _tree->create<std::string>(oc_path / "fw_version").set(std::to_string(int(_proto_ver)));
 
         ////////////////////////////////////////////////////////////////////
         // Set up EEPROM

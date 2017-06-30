@@ -16,12 +16,9 @@
 //
 
 #include <uhd/types/sensors.h>
-
-#include <boost/lexical_cast.hpp>
-
 #include <stdexcept>
-#include <string.h>
 #include <string>
+#include <string.h>
 
 uhd_error uhd_sensor_value_make_from_bool(
     uhd_sensor_value_handle* h,

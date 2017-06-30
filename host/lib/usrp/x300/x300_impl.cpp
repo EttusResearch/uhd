@@ -524,7 +524,7 @@ void x300_impl::mboard_members_t::discover_eth(
 
 void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
 {
-    const fs_path mb_path = "/mboards/"+boost::lexical_cast<std::string>(mb_i);
+    const fs_path mb_path = fs_path("/mboards") / mb_i;
     mboard_members_t &mb = _mb[mb_i];
     mb.initialization_done = false;
 
@@ -533,7 +533,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     );
     const std::string thread_msg(
         "Thread ID " + thread_id + " for motherboard "
-        + boost::lexical_cast<std::string>(mb_i)
+        + std::to_string(mb_i)
     );
 
     std::vector<std::string> eth_addrs;
@@ -712,7 +712,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     if (not try_to_claim(mb.zpu_ctrl)) {
         throw uhd::runtime_error("Failed to claim device");
     }
-    mb.claimer_task = uhd::task::make(boost::bind(&x300_impl::claimer_loop, this, mb.zpu_ctrl));
+    mb.claimer_task = uhd::task::make(boost::bind(&x300_impl::claimer_loop, this, mb.zpu_ctrl), "x300_claimer");
 
     //extract the FW path for the X300
     //and live load fw over ethernet link
@@ -1204,7 +1204,7 @@ uhd::both_xports_t x300_impl::make_transport(
          * connection type.*/
         size_t eth_data_rec_frame_size = 0;
 
-        fs_path mboard_path = fs_path("/mboards/"+boost::lexical_cast<std::string>(mb_index) / "link_max_rate");
+        fs_path mboard_path = fs_path("/mboards") / mb_index / "link_max_rate";
 
         if (mb.loaded_fpga_image == "HG") {
             size_t max_link_rate = 0;

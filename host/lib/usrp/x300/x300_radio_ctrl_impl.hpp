@@ -158,7 +158,7 @@ private:
             misc_ins_reg_t(): uhd::soft_reg64_ro_t(regs::RB_MISC_IO) { }
         } misc_ins_reg;
 
-        radio_regmap_t(int radio_num) : soft_regmap_t("radio" + boost::lexical_cast<std::string>(radio_num) + "_regmap") {
+        radio_regmap_t(int radio_num) : soft_regmap_t("radio" + std::to_string(radio_num) + "_regmap") {
             add_to_map(misc_outs_reg, "misc_outs_reg", PRIVATE);
             add_to_map(misc_ins_reg, "misc_ins_reg", PRIVATE);
         }

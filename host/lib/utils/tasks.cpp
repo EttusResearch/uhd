@@ -17,6 +17,7 @@
 
 #include <uhd/utils/tasks.hpp>
 #include <uhd/utils/msg_task.hpp>
+#include <uhd/utils/thread.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/exception.hpp>
 #include <boost/thread/thread.hpp>
@@ -32,10 +33,15 @@ using namespace uhd;
 class task_impl : public task{
 public:
 
-    task_impl(const task_fcn_type &task_fcn):
+    task_impl(const task_fcn_type &task_fcn, const std::string &name):
         _exit(false)
     {
         _task = std::thread([this, task_fcn](){ this->task_loop(task_fcn); });
+        if (not name.empty()) {
+#ifdef HAVE_PTHREAD_SETNAME
+            pthread_setname_np(_task->native_handle(), name.substr(0,16).c_str());
+#endif /* HAVE_PTHREAD_SETNAME */
+        }
     }
 
     ~task_impl(void){
@@ -46,7 +52,6 @@ public:
     }
 
 private:
-
     void task_loop(const task_fcn_type &task_fcn){
         try{
             while (!_exit){
@@ -73,8 +78,8 @@ private:
     std::thread _task;
 };
 
-task::sptr task::make(const task_fcn_type &task_fcn){
-    return task::sptr(new task_impl(task_fcn));
+task::sptr task::make(const task_fcn_type &task_fcn, const std::string &name){
+    return task::sptr(new task_impl(task_fcn, name));
 }
 
 msg_task::~msg_task(void){
