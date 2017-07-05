@@ -310,7 +310,7 @@ device_addrs_t x300_find(const device_addr_t &hint_)
                 bool found_serial = false; //signal to break out of the interface loop
                 for (device_addrs_t::iterator new_addr_it=new_addrs.begin(); new_addr_it != new_addrs.end(); new_addr_it++) {
                     if ((*new_addr_it)["serial"] == hint["serial"]) {
-                        addrs.emplace(addrs.begin(), *new_addr_it);
+                        addrs.insert(addrs.begin(), *new_addr_it);
                         found_serial = true;
                         break;
                     }
