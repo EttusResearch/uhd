@@ -20,6 +20,10 @@
 
 #include "interpolation.hpp"
 #include <uhd/utils/log.hpp>
+// This is a bugfix for Boost 1.64, maybe future Boosts won't need this
+#if BOOST_VERSION >= 106400
+#  include <boost/serialization/array_wrapper.hpp>
+#endif // end of bugfix
 #include <boost/numeric/ublas/io.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 #include <boost/numeric/ublas/lu.hpp>
