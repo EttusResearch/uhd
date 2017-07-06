@@ -551,7 +551,10 @@ static void test_convert_types_fc32(
     std::swap(out_id.input_format, out_id.output_format);
     std::swap(out_id.num_inputs, out_id.num_outputs);
     loopback(nsamps, in_id, out_id, input, output);
-    BOOST_CHECK_EQUAL_COLLECTIONS(input.begin(), input.end(), output.begin(), output.end());
+    for (size_t i = 0; i < nsamps; i++){
+        MY_CHECK_CLOSE(input[i].real(), output[i].real(), float(1./(1 << 16)));
+        MY_CHECK_CLOSE(input[i].imag(), output[i].imag(), float(1./(1 << 16)));
+    }
 }
 
 BOOST_AUTO_TEST_CASE(test_convert_types_fc32_and_fc32){
@@ -589,7 +592,9 @@ static void test_convert_types_f32(
     std::swap(out_id.input_format, out_id.output_format);
     std::swap(out_id.num_inputs, out_id.num_outputs);
     loopback(nsamps, in_id, out_id, input, output);
-    BOOST_CHECK_EQUAL_COLLECTIONS(input.begin(), input.end(), output.begin(), output.end());
+    for (size_t i = 0; i < nsamps; i++){
+        MY_CHECK_CLOSE(input[i], output[i], float(1./(1 << 16)));
+    }
 }
 
 BOOST_AUTO_TEST_CASE(test_convert_types_f32_and_f32){
