@@ -26,12 +26,17 @@ MESSAGE(STATUS "")
 ########################################################################
 IF(CMAKE_COMPILER_IS_GNUCXX)
     SET(EMMINTRIN_FLAGS -msse2)
+    SET(TMMINTRIN_FLAGS -mssse3)
 ELSEIF(MSVC)
     SET(EMMINTRIN_FLAGS /arch:SSE2)
 ENDIF()
 
 SET(CMAKE_REQUIRED_FLAGS ${EMMINTRIN_FLAGS})
 CHECK_INCLUDE_FILE_CXX(emmintrin.h HAVE_EMMINTRIN_H)
+SET(CMAKE_REQUIRED_FLAGS)
+
+SET(CMAKE_REQUIRED_FLAGS ${TMMINTRIN_FLAGS})
+CHECK_INCLUDE_FILE_CXX(tmmintrin.h HAVE_TMMINTRIN_H)
 SET(CMAKE_REQUIRED_FLAGS)
 
 IF(HAVE_EMMINTRIN_H)
@@ -52,6 +57,18 @@ IF(HAVE_EMMINTRIN_H)
     )
     LIBUHD_APPEND_SOURCES(${convert_with_sse2_sources})
 ENDIF(HAVE_EMMINTRIN_H)
+
+IF(HAVE_TMMINTRIN_H)
+    SET(convert_with_ssse3_sources
+        ${CMAKE_CURRENT_SOURCE_DIR}/ssse3_pack_sc12.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/ssse3_unpack_sc12.cpp
+    )
+    SET_SOURCE_FILES_PROPERTIES(
+        ${convert_with_ssse3_sources}
+        PROPERTIES COMPILE_FLAGS "${TMMINTRIN_FLAGS}"
+    )
+    LIBUHD_APPEND_SOURCES(${convert_with_ssse3_sources})
+ENDIF(HAVE_TMMINTRIN_H)
 
 ########################################################################
 # Check for NEON SIMD headers
