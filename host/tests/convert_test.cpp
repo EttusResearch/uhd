@@ -70,13 +70,13 @@ template <typename Range> static void loopback(
  * Test short conversion
  **********************************************************************/
 static void test_convert_types_sc16(
-    size_t nsamps, convert::id_type &id, const int extra_div = 1
+    size_t nsamps, convert::id_type &id, const int extra_div = 1, int mask = 0xffff
 ){
     //fill the input samples
     std::vector<sc16_t> input(nsamps), output(nsamps);
     for(sc16_t &in:  input) in = sc16_t(
-        short((float((std::rand())/(double(RAND_MAX)/2)) - 1)*32767/extra_div),
-        short((float((std::rand())/(double(RAND_MAX)/2)) - 1)*32767/extra_div)
+        short((float((std::rand())/(double(RAND_MAX)/2)) - 1)*32767/extra_div) & mask,
+        short((float((std::rand())/(double(RAND_MAX)/2)) - 1)*32767/extra_div) & mask
     );
 
     //run the loopback and test
@@ -232,6 +232,31 @@ BOOST_AUTO_TEST_CASE(test_convert_types_be_sc12_with_fc32){
     //try various lengths to test edge cases
     for (size_t nsamps = 1; nsamps < 16; nsamps++){
         test_convert_types_for_floats<fc32_t>(nsamps, id, 1./16);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(test_convert_types_le_sc16_and_sc12){
+    convert::id_type id;
+    id.input_format = "sc16";
+    id.num_inputs = 1;
+    id.num_outputs = 1;
+
+    //try various lengths to test edge cases
+    id.output_format = "sc12_item32_le";
+    for (size_t nsamps = 1; nsamps < 16; nsamps++){
+        test_convert_types_sc16(nsamps, id, 1, 0xfff0);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(test_convert_types_be_sc16_and_sc12){
+    convert::id_type id;
+    id.input_format = "sc16";
+    id.num_inputs = 1;
+    id.num_outputs = 1;
+
+    id.output_format = "sc12_item32_be";
+    for (size_t nsamps = 1; nsamps < 16; nsamps++){
+        test_convert_types_sc16(nsamps, id, 1, 0xfff0);
     }
 }
 

@@ -20,6 +20,7 @@
 #include <uhd/utils/log.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <vector>
+#include <type_traits>
 
 using namespace uhd::convert;
 
@@ -56,7 +57,8 @@ void convert_sc12_item32_3_to_star_4
     std::complex<type> &out1,
     std::complex<type> &out2,
     std::complex<type> &out3,
-    const double scalar
+    const double scalar,
+    typename std::enable_if<std::is_floating_point<type>::value>::type* = NULL
 )
 {
     //step 0: extract the lines from the input buffer
@@ -84,6 +86,32 @@ void convert_sc12_item32_3_to_star_4
     out1 = std::complex<type>(i1, q1);
     out2 = std::complex<type>(i2, q2);
     out3 = std::complex<type>(i3, q3);
+}
+
+template <typename type, tohost32_type tohost>
+void convert_sc12_item32_3_to_star_4
+(
+    const item32_sc12_3x &input,
+    std::complex<type> &out0,
+    std::complex<type> &out1,
+    std::complex<type> &out2,
+    std::complex<type> &out3,
+    const double,
+    typename std::enable_if<std::is_integral<type>::value>::type* = NULL
+)
+{
+    //step 0: extract the lines from the input buffer
+    const item32_t line0 = tohost(input.line0);
+    const item32_t line1 = tohost(input.line1);
+    const item32_t line2 = tohost(input.line2);
+    const uint64_t line01 = (uint64_t(line0) << 32) | line1;
+    const uint64_t line12 = (uint64_t(line1) << 32) | line2;
+
+    //step 1: extract and load the outputs
+    out0 = std::complex<type>(line0  >> 16 & 0xfff0, line0  >>  4 & 0xfff0);
+    out1 = std::complex<type>(line01 >> 24 & 0xfff0, line1  >> 12 & 0xfff0);
+    out2 = std::complex<type>(line1  >>  0 & 0xfff0, line12 >> 20 & 0xfff0);
+    out3 = std::complex<type>(line2  >>  8 & 0xfff0, line2  <<  4 & 0xfff0);
 }
 
 template <typename type, tohost32_type tohost>
@@ -193,18 +221,32 @@ static converter::sptr make_convert_sc12_item32_be_1_to_fc32_1(void)
     return converter::sptr(new convert_sc12_item32_1_to_star_1<float, uhd::ntohx>());
 }
 
+static converter::sptr make_convert_sc12_item32_le_1_to_sc16_1(void)
+{
+    return converter::sptr(new convert_sc12_item32_1_to_star_1<short, uhd::wtohx>());
+}
+
+static converter::sptr make_convert_sc12_item32_be_1_to_sc16_1(void)
+{
+    return converter::sptr(new convert_sc12_item32_1_to_star_1<short, uhd::ntohx>());
+}
+
 UHD_STATIC_BLOCK(register_convert_unpack_sc12)
 {
     uhd::convert::register_bytes_per_item("sc12", 3/*bytes*/);
-
     uhd::convert::id_type id;
     id.num_inputs = 1;
     id.num_outputs = 1;
-    id.output_format = "fc32";
 
+    id.output_format = "fc32";
     id.input_format = "sc12_item32_le";
     uhd::convert::register_converter(id, &make_convert_sc12_item32_le_1_to_fc32_1, PRIORITY_GENERAL);
-
     id.input_format = "sc12_item32_be";
     uhd::convert::register_converter(id, &make_convert_sc12_item32_be_1_to_fc32_1, PRIORITY_GENERAL);
+
+    id.output_format = "sc16";
+    id.input_format = "sc12_item32_le";
+    uhd::convert::register_converter(id, &make_convert_sc12_item32_le_1_to_sc16_1, PRIORITY_GENERAL);
+    id.input_format = "sc12_item32_be";
+    uhd::convert::register_converter(id, &make_convert_sc12_item32_be_1_to_sc16_1, PRIORITY_GENERAL);
 }

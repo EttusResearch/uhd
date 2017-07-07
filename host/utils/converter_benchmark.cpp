@@ -98,6 +98,28 @@ void init_random_vector_complex_int(std::vector<char> &buf_ptr, const size_t n_i
     }
 }
 
+struct item32_sc12_3x
+{
+    uint32_t line0;
+    uint32_t line1;
+    uint32_t line2;
+};
+
+template <typename T>
+void init_random_vector_complex_sc12(std::vector<char> &buf_ptr, const size_t n_items)
+{
+    item32_sc12_3x *const buf = reinterpret_cast<item32_sc12_3x * const>(&buf_ptr[0]);
+    if (n_items % 4) throw std::invalid_argument("");
+
+    for (size_t i = 0; i < n_items / 4; i++) {
+        int16_t iq[8];
+        for (auto &k : iq) k = rand() & 0xfff;
+        buf[i].line0 = iq[0] << 20 | iq[1] <<  8 | iq[2] >> 4;
+        buf[i].line1 = iq[2] << 28 | iq[3] << 16 | iq[4] << 4 | iq[5] >> 8;
+        buf[i].line2 = iq[5] << 24 | iq[6] << 12 | iq[7] << 0;
+    }
+}
+
 template <typename T>
 void init_random_vector_real_int(std::vector<char> &buf_ptr, size_t n_items)
 {
@@ -164,6 +186,8 @@ void init_buffers(
     for (size_t i = 0; i < buf.size(); i++) {
         if (type == "sc8") {
             init_random_vector_complex_int<int8_t>(buf[i], n_items);
+        } else if (type == "sc12") {
+            init_random_vector_complex_sc12<int16_t>(buf[i], n_items);
         } else if (type == "sc16") {
             init_random_vector_complex_int<int16_t>(buf[i], n_items);
         } else if (type == "sc32") {

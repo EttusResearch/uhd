@@ -20,6 +20,7 @@
 #include <uhd/utils/log.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <vector>
+#include <type_traits>
 
 using namespace uhd::convert;
 
@@ -59,6 +60,17 @@ enum item32_sc12_3x_enable {
  * |_ _|_ _ _4_ _ _| 2
  * 31              0
  */
+template <towire32_type towire>
+inline void pack(item32_sc12_3x &output, int enable, const int32_t i[4], const int32_t q[4])
+{
+    if (enable & CONVERT12_LINE0)
+        output.line0 = towire(i[0] << 20 | q[0] <<  8 | i[1] >> 4);
+    if (enable & CONVERT12_LINE1)
+        output.line1 = towire(i[1] << 28 | q[1] << 16 | i[2] << 4 | q[2] >> 8);
+    if (enable & CONVERT12_LINE2)
+        output.line2 = towire(q[2] << 24 | i[3] << 12 | q[3]);
+}
+
 template <typename type, towire32_type towire>
 void convert_star_4_to_sc12_item32_3
 (
@@ -68,31 +80,55 @@ void convert_star_4_to_sc12_item32_3
     const std::complex<type> &in3,
     const int enable,
     item32_sc12_3x &output,
-    const double scalar
+    const double scalar,
+    typename std::enable_if<std::is_floating_point<type>::value>::type* = NULL
 )
 {
-    const item32_t i0 = int32_t(type(in0.real()*scalar)) & 0xfff;
-    const item32_t q0 = int32_t(type(in0.imag()*scalar)) & 0xfff;
+    int32_t i[4] {
+        int32_t(in0.real()*scalar) & 0xfff,
+        int32_t(in1.real()*scalar) & 0xfff,
+        int32_t(in2.real()*scalar) & 0xfff,
+        int32_t(in3.real()*scalar) & 0xfff,
+    };
 
-    const item32_t i1 = int32_t(type(in1.real()*scalar)) & 0xfff;
-    const item32_t q1 = int32_t(type(in1.imag()*scalar)) & 0xfff;
+    int32_t q[4] {
+        int32_t(in0.imag()*scalar) & 0xfff,
+        int32_t(in1.imag()*scalar) & 0xfff,
+        int32_t(in2.imag()*scalar) & 0xfff,
+        int32_t(in3.imag()*scalar) & 0xfff,
+    };
 
-    const item32_t i2 = int32_t(type(in2.real()*scalar)) & 0xfff;
-    const item32_t q2 = int32_t(type(in2.imag()*scalar)) & 0xfff;
+    pack<towire>(output, enable, i, q);
+}
 
-    const item32_t i3 = int32_t(type(in3.real()*scalar)) & 0xfff;
-    const item32_t q3 = int32_t(type(in3.imag()*scalar)) & 0xfff;
+template <typename type, towire32_type towire>
+void convert_star_4_to_sc12_item32_3
+(
+    const std::complex<type> &in0,
+    const std::complex<type> &in1,
+    const std::complex<type> &in2,
+    const std::complex<type> &in3,
+    const int enable,
+    item32_sc12_3x &output,
+    const double,
+    typename std::enable_if<std::is_same<type, short>::value>::type* = NULL
+)
+{
+    int32_t i[4] {
+        int32_t(in0.real() >> 4) & 0xfff,
+        int32_t(in1.real() >> 4) & 0xfff,
+        int32_t(in2.real() >> 4) & 0xfff,
+        int32_t(in3.real() >> 4) & 0xfff,
+    };
 
-    const item32_t line0 = (i0 << 20) | (q0 << 8) | (i1 >> 4);
-    const item32_t line1 = (i1 << 28) | (q1 << 16) | (i2 << 4) | (q2 >> 8);
-    const item32_t line2 = (q2 << 24) | (i3 << 12) | (q3);
+    int32_t q[4] {
+        int32_t(in0.imag() >> 4) & 0xfff,
+        int32_t(in1.imag() >> 4) & 0xfff,
+        int32_t(in2.imag() >> 4) & 0xfff,
+        int32_t(in3.imag() >> 4) & 0xfff,
+    };
 
-    if (enable & CONVERT12_LINE0)
-        output.line0 = towire(line0);
-    if (enable & CONVERT12_LINE1)
-        output.line1 = towire(line1);
-    if (enable & CONVERT12_LINE2)
-        output.line2 = towire(line2);
+    pack<towire>(output, enable, i, q);
 }
 
 template <typename type, towire32_type towire>
@@ -192,6 +228,16 @@ static converter::sptr make_convert_fc32_1_to_sc12_item32_be_1(void)
     return converter::sptr(new convert_star_1_to_sc12_item32_1<float, uhd::ntohx>());
 }
 
+static converter::sptr make_convert_sc16_1_to_sc12_item32_le_1(void)
+{
+    return converter::sptr(new convert_star_1_to_sc12_item32_1<short, uhd::wtohx>());
+}
+
+static converter::sptr make_convert_sc16_1_to_sc12_item32_be_1(void)
+{
+    return converter::sptr(new convert_star_1_to_sc12_item32_1<short, uhd::ntohx>());
+}
+
 UHD_STATIC_BLOCK(register_convert_pack_sc12)
 {
     //uhd::convert::register_bytes_per_item("sc12", 3/*bytes*/); //registered in unpack
@@ -199,11 +245,16 @@ UHD_STATIC_BLOCK(register_convert_pack_sc12)
     uhd::convert::id_type id;
     id.num_inputs = 1;
     id.num_outputs = 1;
-    id.input_format = "fc32";
 
+    id.input_format = "fc32";
     id.output_format = "sc12_item32_le";
     uhd::convert::register_converter(id, &make_convert_fc32_1_to_sc12_item32_le_1, PRIORITY_GENERAL);
-
     id.output_format = "sc12_item32_be";
     uhd::convert::register_converter(id, &make_convert_fc32_1_to_sc12_item32_be_1, PRIORITY_GENERAL);
+
+    id.input_format = "sc16";
+    id.output_format = "sc12_item32_le";
+    uhd::convert::register_converter(id, &make_convert_sc16_1_to_sc12_item32_le_1, PRIORITY_GENERAL);
+    id.output_format = "sc12_item32_be";
+    uhd::convert::register_converter(id, &make_convert_sc16_1_to_sc12_item32_be_1, PRIORITY_GENERAL);
 }
