@@ -21,7 +21,24 @@ N310 Built-In Self Test (BIST)
 
 from __future__ import print_function
 import sys
+import json
+from datetime import datetime
 import argparse
+import pyudev
+
+def post_results(results):
+    """
+    Given a dictionary, post the results.
+
+    This will print the results as JSON to stdout.
+    """
+    print(json.dumps(
+        results,
+        sort_keys=True,
+        indent=4,
+        separators=(',', ': ')
+    ))
+
 
 class N310BIST(object):
     """
@@ -40,6 +57,11 @@ class N310BIST(object):
         """
         parser = argparse.ArgumentParser(
             description="N3xx BIST Tool",
+        )
+        parser.add_argument(
+            '-n', '--dry-run', action='store_true',
+            help="Fake out the tests. All tests will return a valid response," \
+                 " but will not actually interact with hardware.",
         )
         parser.add_argument(
             'tests',
@@ -83,11 +105,22 @@ class N310BIST(object):
             Actually run a test.
             """
             testmethod_name = "bist_{0}".format(testname)
-            sys.stderr.write("Executing test method: {0}\n\n".format(testmethod_name))
-            return getattr(self, testmethod_name)()
+            sys.stderr.write(
+                "Executing test method: {0}\n\n".format(testmethod_name)
+            )
+            try:
+                return getattr(self, testmethod_name)()
+            except AttributeError as ex:
+                sys.stderr.write("Test not defined: {}\n".format(testname))
+                return False, {}
         tests_successful = True
+        result = {}
         for test in self.tests_to_run:
-            tests_successful = tests_successful and execute_test(test)
+            status, result_data = execute_test(test)
+            tests_successful = tests_successful and status
+            if tests_successful:
+                result[test] = result_data
+        post_results(result)
         return tests_successful
 
 #############################################################################
@@ -97,16 +130,26 @@ class N310BIST(object):
     def bist_rtc(self):
         """
         BIST for RTC (real time clock)
-        Description:!!! I don't know how this will be tested !!!
-        External Equipment: None
-        JSON{
-            'status': Return TRUE if no errors occurred, else FALSE
-            'idk': Returns some stuff??
-            }
+
+        Return dictionary:
+        - time: Returns the current UTC time, with seconds-accuracy, in ISO 8601
+                format, as a string.
+
+        Return status:
+        Unless the 'date' command fails (which is used under the hood), will
+        always return True.
         """
         assert 'rtc' in self.tests_to_run
-        sys.stderr.write("Test not implemented.\n")
-        return True
+        result = {}
+        try:
+            utc_time = datetime.utcnow().replace(microseconds=0).isoformat()
+            result['time'] = utc_time + "+00:00"
+        except:
+            if self.args.dry_run:
+                result['time'] = '2017-07-11T17:31:03+00:00'
+            else:
+                return False, {}
+        return True, result
 
     def bist_ddr3(self):
         """
@@ -120,7 +163,7 @@ class N310BIST(object):
         """
         assert 'ddr3' in self.tests_to_run
         sys.stderr.write("Test not implemented.\n")
-        return True
+        return True, {}
 
     def bist_gpsdo(self):
         """
@@ -134,7 +177,7 @@ class N310BIST(object):
         """
         assert 'gpsdo' in self.tests_to_run
         sys.stderr.write("Test not implemented.\n")
-        return True
+        return True, {}
 
     def bist_tpm(self):
         """
@@ -148,7 +191,7 @@ class N310BIST(object):
         """
         assert 'gpsdo' in self.tests_to_run
         sys.stderr.write("Test not implemented.\n")
-        return True
+        return True, {}
 
     def bist_clock_int(self):
         """
@@ -162,7 +205,7 @@ class N310BIST(object):
         """
         assert 'clock_int' in self.tests_to_run
         sys.stderr.write("Test not implemented.\n")
-        return True
+        return True, {}
 
     def bist_clock_ext(self):
         """
@@ -176,7 +219,7 @@ class N310BIST(object):
         """
         assert 'clock_ext' in self.tests_to_run
         sys.stderr.write("Test not implemented.\n")
-        return True
+        return True, {}
 
     def bist_usbhost(self):
         """
@@ -190,7 +233,7 @@ class N310BIST(object):
         """
         assert 'usbhost' in self.tests_to_run
         sys.stderr.write("Test not implemented.\n")
-        return True
+        return True, {}
 
     def bist_sfp(self):
         """
@@ -205,7 +248,7 @@ class N310BIST(object):
         """
         assert 'sfp' in self.tests_to_run
         sys.stderr.write("Test not implemented.\n")
-        return True
+        return True, {}
 
     def bist_gpio(self):
         """
@@ -228,40 +271,51 @@ class N310BIST(object):
         """
         assert 'gpio' in self.tests_to_run
         sys.stderr.write("Test not implemented.\n")
-        return True
+        return True, {}
 
     def bist_temp(self):
         """
         BIST for temperature sensors
-        Description: Reads the temperature sensors on the motherboards and returns their values
-        External Equipment: None
-        JSON{
-            'status': Return TRUE if no errors occurred, else FALSE
-            'temperature_ec_hwmon': Return numeric value of read temperature in milliCelsius
-            'temperature_iio_hwmon': Return numeric value of read temperature in milliCelsius
-            'temperature_XXX': Return numeric value of read temperature in milliCelsius
-            }
+        Description: Reads the temperature sensors on the motherboards and
+        returns their values in mC
+
+        Return dictionary:
+        - <thermal-zone-name>: temp in mC
         """
         assert 'temp' in self.tests_to_run
-        sys.stderr.write("Test not implemented.\n")
-        return True
+        if self.args.dry_run:
+            return True, {'fpga-thermal-zone': 30000}
+        context = pyudev.Context()
+        result = {
+            device.attributes.get('type').decode('ascii'): \
+                    int(device.attributes.get('temp').decode('ascii'))
+            for device in context.list_devices(subsystem='thermal')
+            if 'temp' in device.attributes.available_attributes \
+                    and device.attributes.get('temp') is not None
+        }
+        return True, result
 
     def bist_fan(self):
         """
         BIST for temperature sensors
-        Description: Reads the RPM and temperature sensor values of the fans on the motherboard
+        Description: Reads the RPM values of the fans on the motherboard
+
+        Return dictionary:
+        - <fan-name>: Fan speed in RPM
+
         External Equipment: None
-        JSON{
-            'status': Return TRUE if no errors occurred, else FALSE
-            'fan0_rpm': Return numeric value of revolutions per minute (RPM) of fan0
-            'fan0_temperature': Return numeric value of read temperature in milliCelsius of fan0
-            'fan1_rpm': Return numeric value of revolutions per minute (RPM) of fan1
-            'fan1_temperature': Return numeric value of read temperature in milliCelsius of fan1
-            }
         """
         assert 'fan' in self.tests_to_run
-        sys.stderr.write("Test not implemented.\n")
-        return True
+        if self.args.dry_run:
+            return True, {'cooling_device0': 10000}
+        context = pyudev.Context()
+        result = {
+            device.sys_name: int(device.attributes.get('cur_state'))
+            for device in context.list_devices(subsystem='thermal')
+            if 'cur_state' in device.attributes.available_attributes \
+                    and device.attributes.get('cur_state') is not None
+        }
+        return True, result
 
 def main():
     " Go, go, go! "
