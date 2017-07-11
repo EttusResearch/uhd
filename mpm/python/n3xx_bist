@@ -21,6 +21,7 @@ N310 Built-In Self Test (BIST)
 
 from __future__ import print_function
 import sys
+import socket
 import json
 from datetime import datetime
 import argparse
@@ -110,7 +111,7 @@ class N310BIST(object):
             )
             try:
                 return getattr(self, testmethod_name)()
-            except AttributeError as ex:
+            except AttributeError:
                 sys.stderr.write("Test not defined: {}\n".format(testname))
                 return False, {}
         tests_successful = True
@@ -168,16 +169,56 @@ class N310BIST(object):
     def bist_gpsdo(self):
         """
         BIST for GPSDO
-        Description: Returns the time of GPSDO
-        External Equipment: None; Recommend attaching an antenna
-        JSON{
-            'status': Return TRUE if no errors occurred, else FALSE
-            'time': Return GPSDO time, in seconds since January 1, 1970
-            }
+        Description: Returns GPS information
+        External Equipment: None; Recommend attaching an antenna or providing
+                           fake GPS information
+
+        Return dictionary: A TPV dictionary as returned by gpsd.
+        See also: http://www.catb.org/gpsd/gpsd_json.html
+
+        Check for mode 2 or 3 to see if it's locked.
         """
         assert 'gpsdo' in self.tests_to_run
-        sys.stderr.write("Test not implemented.\n")
-        return True, {}
+        if self.args.dry_run:
+            return True, {
+                "class": "TPV",
+                "time": "2017-04-30T11:48:20.10Z",
+                "ept": 0.005,
+                "lat": 30.407899,
+                "lon": -97.726634,
+                "alt": 1327.689,
+                "epx": 15.319,
+                "epy": 17.054,
+                "epv": 124.484,
+                "track": 10.3797,
+                "speed": 0.091,
+                "climb": -0.085,
+                "eps": 34.11,
+                "mode": 3
+            }
+        my_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        my_sock.connect(('localhost', 2947))
+        sys.stderr.write("Connected to GPSDO socket.\n")
+        query_cmd = b'?WATCH={"enable":true,"json":true}'
+        my_sock.sendall(query_cmd)
+        sys.stderr.write("Sent query: {}\n".format(query_cmd))
+        while my_sock.recv(1) != b'\n':
+            pass
+        sys.stderr.write("Received initial newline.\n")
+        result = {}
+        while result.get('class', None) != 'TPV':
+            json_result = b''
+            next_char = b''
+            while next_char != b'\n':
+                json_result += next_char
+                next_char = my_sock.recv(1)
+            sys.stderr.write(
+                "Received JSON response: {}\n\n".format(json_result)
+            )
+            result = json.loads(json_result.decode('ascii'))
+        my_sock.sendall(b'?WATCH={"enable":false}')
+        my_sock.close()
+        return True, result
 
     def bist_tpm(self):
         """
@@ -189,7 +230,7 @@ class N310BIST(object):
             'idk': Returns some stuff??
             }
         """
-        assert 'gpsdo' in self.tests_to_run
+        assert 'tpm' in self.tests_to_run
         sys.stderr.write("Test not implemented.\n")
         return True, {}
 
