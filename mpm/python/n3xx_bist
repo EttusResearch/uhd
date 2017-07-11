@@ -23,6 +23,7 @@ from __future__ import print_function
 import os
 import sys
 import socket
+import time
 import json
 from datetime import datetime
 import argparse
@@ -111,7 +112,9 @@ class N310BIST(object):
                 "Executing test method: {0}\n\n".format(testmethod_name)
             )
             try:
-                return getattr(self, testmethod_name)()
+                status, data = getattr(self, testmethod_name)()
+                data['status'] = status
+                return status, data
             except AttributeError:
                 sys.stderr.write("Test not defined: {}\n".format(testname))
                 return False, {}
@@ -119,7 +122,7 @@ class N310BIST(object):
                 sys.stderr.write(
                     "Test {} failed to execute: {}\n".format(testname, str(ex))
                 )
-                return False, {}
+                return False, {'error_msg': str(ex)}
         tests_successful = True
         result = {}
         for test in self.tests_to_run:
@@ -139,18 +142,19 @@ class N310BIST(object):
         BIST for RTC (real time clock)
 
         Return dictionary:
-        - time: Returns the current UTC time, with seconds-accuracy, in ISO 8601
-                format, as a string.
+        - date: Returns the current UTC time, with seconds-accuracy, in ISO 8601
+                format, as a string. As if running 'date -Iseconds -u'.
+        - time: Same time, but in seconds since epoch.
 
         Return status:
-        Unless the 'date' command fails (which is used under the hood), will
-        always return True.
+        Unless datetime throws an exception, returns True.
         """
         assert 'rtc' in self.tests_to_run
-        result = {}
-        utc_time = datetime.utcnow().replace(microsecond=0).isoformat()
-        result['time'] = utc_time + "+00:00"
-        return True, result
+        utc_now = datetime.utcnow()
+        return True, {
+            'time': time.mktime(utc_now.timetuple()),
+            'date': utc_now.replace(microsecond=0).isoformat() + "+00:00",
+        }
 
     def bist_ddr3(self):
         """
