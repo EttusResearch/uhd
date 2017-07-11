@@ -20,6 +20,7 @@ N310 Built-In Self Test (BIST)
 """
 
 from __future__ import print_function
+import os
 import sys
 import socket
 import json
@@ -114,6 +115,11 @@ class N310BIST(object):
             except AttributeError:
                 sys.stderr.write("Test not defined: {}\n".format(testname))
                 return False, {}
+            except Exception as ex:
+                sys.stderr.write(
+                    "Test {} failed to execute: {}\n".format(testname, str(ex))
+                )
+                return False, {}
         tests_successful = True
         result = {}
         for test in self.tests_to_run:
@@ -142,27 +148,30 @@ class N310BIST(object):
         """
         assert 'rtc' in self.tests_to_run
         result = {}
-        try:
-            utc_time = datetime.utcnow().replace(microseconds=0).isoformat()
-            result['time'] = utc_time + "+00:00"
-        except:
-            if self.args.dry_run:
-                result['time'] = '2017-07-11T17:31:03+00:00'
-            else:
-                return False, {}
+        utc_time = datetime.utcnow().replace(microsecond=0).isoformat()
+        result['time'] = utc_time + "+00:00"
         return True, result
 
     def bist_ddr3(self):
         """
         BIST for PL DDR3 DRAM
-        Description: Calls a test to examine the speed of the DDR3
+        Description: Calls a test to examine the speed of the DDR3. To be
+        precise, it fires up a UHD session, which runs a DDR3 BiST internally.
+        If that works, it'll return estimated throughput that was gathered
+        during the DDR3 BiST.
+
         External Equipment: None
-        JSON{
-            'status': Return TRUE if no errors occurred, else FALSE
-            'speed': Return numeric value of speed in MB/s
-            }
+
+        Return dictionary:
+        - throughput: The estimated throughput in bytes/s
+
+        Return status:
+        True if the DDR3 bist passed
         """
         assert 'ddr3' in self.tests_to_run
+        if self.args.dry_run:
+            return True, {'throughput': 1250e6}
+        # FIXME implement
         sys.stderr.write("Test not implemented.\n")
         return True, {}
 
@@ -223,56 +232,78 @@ class N310BIST(object):
     def bist_tpm(self):
         """
         BIST for TPM (Trusted Platform Module)
-        Description:!!! I don't know how this will be tested !!!
-        External Equipment: None
-        JSON{
-            'status': Return TRUE if no errors occurred, else FALSE
-            'idk': Returns some stuff??
-            }
+
+        This reads the caps value for all detected TPM devices.
+
+        Return dictionary:
+        - tpm<N>:
+          - caps: TPM manufacturer and version info. Is a multi-line string.
+
+        Return status: True if exactly one TPM device is detected.
         """
         assert 'tpm' in self.tests_to_run
-        sys.stderr.write("Test not implemented.\n")
-        return True, {}
+        if self.args.dry_run:
+            return True, {
+                'tpm0': {
+                    'caps': "Fake caps value\n\nVersion 0.0.0",
+                }
+            }
+        result = {}
+        props_to_read = ('caps',)
+        base_path = '/sys/class/tpm'
+        for tpm_device in os.listdir(base_path):
+            if tpm_device.startswith('tpm'):
+                dev_result = {
+                    key: open(
+                        os.path.join(base_path, tpm_device, key), 'r'
+                    ).read().strip()
+                    for key in props_to_read
+                }
+                result[tpm_device] = dev_result
+        return len(result) == 1, result
 
     def bist_clock_int(self):
         """
-        BIST for clock lock from internal source
-        Description: Checks to see if the N3xx can lock to the internal reference clock
+        BIST for clock lock from internal (25 MHz) source.
+        Description: Checks to see if the daughtercard can lock to an internal
+        clock source.
+
         External Equipment: None
-        JSON{
-            'status': Return TRUE if no errors occurred, else FALSE
-            'locked': Return TRUE if able to lock to internal reference, else FALSE
-            }
+        Return dictionary:
+        - <sensor-name>:
+          - locked: Boolean lock status
+
+        There can be multiple ref lock sensors; for a pass condition they all
+        need to be asserted.
         """
         assert 'clock_int' in self.tests_to_run
+        if self.args.dry_run:
+            return True, {'ref_locked': True}
+        # FIXME implement
         sys.stderr.write("Test not implemented.\n")
         return True, {}
 
     def bist_clock_ext(self):
         """
-        BIST for clock lock from external source
-        Description: Checks to see if the N3xx can lock to the external reference clock
-        External Equipment: Reference Source outputted into the "Ref In"
-        JSON{
-            'status': Return TRUE if no errors occurred, else FALSE
-            'locked': Return TRUE if able to lock to external reference, else FALSE
-            }
+        BIST for clock lock from external source. Note: This test requires a
+        connected daughterboard with a 'ref lock' sensor available.
+
+        Description: Checks to see if the daughtercard can lock to the external
+        reference clock.
+
+        External Equipment: 10 MHz reference Source connected to "ref in".
+
+        Return dictionary:
+        - <sensor-name>:
+          - locked: Boolean lock status
+
+        There can be multiple ref lock sensors; for a pass condition they all
+        need to be asserted.
         """
         assert 'clock_ext' in self.tests_to_run
-        sys.stderr.write("Test not implemented.\n")
-        return True, {}
-
-    def bist_usbhost(self):
-        """
-        BIST for USB host functionality
-        Description:!!! I'm considering removing this test !!!
-        External Equipment: USB device attached to USB hOST
-        JSON{
-            'status': Return TRUE if no errors occurred, else FALSE
-            'devices': [] Returns all devices seen on USB hub
-            }
-        """
-        assert 'usbhost' in self.tests_to_run
+        if self.args.dry_run:
+            return True, {'ref_locked': True}
+        # FIXME implement
         sys.stderr.write("Test not implemented.\n")
         return True, {}
 
@@ -288,7 +319,7 @@ class N310BIST(object):
         Return dictionary:
         - elapsed_time: Float value, test time in seconds
         - max_roundtrip_latency: Float value, max roundtrip latency in seconds
-        - throughput: Approximate data throughput in MB/s
+        - throughput: Approximate data throughput in bytes/s
         - max_ber: Estimated maximum BER, float value.
         - errors: Number of errors
         - bits: Number of bits that were transferred
@@ -298,11 +329,12 @@ class N310BIST(object):
             return True, {
                 'elapsed_time': 1.0,
                 'max_roundtrip_latency': 0.8e-6,
-                'throughput': 1000.0,
+                'throughput': 1000e6,
                 'max_ber': 8.5e-11,
                 'errors': 0,
                 'bits': 12012486656,
             }
+        # FIXME implement
         sys.stderr.write("Test not implemented.\n")
         return True, {}
 
@@ -310,6 +342,7 @@ class N310BIST(object):
         """
         BIST for GPIO
         Description: Writes and reads the values to the GPIO
+
         Needed Equipment: External loopback as follows
             GPIO
             0<->6
@@ -319,13 +352,17 @@ class N310BIST(object):
             4<->10
             5<->11
 
-        JSON{
-            'status': Return TRUE if no errors occurred, else FALSE
-            'expected': Return expected read values
-            'returned': Return read values
-            }
+        Return dictionary:
+        - write_patterns: A list of patterns that were written
+        - read_patterns: A list of patterns that were read back
         """
         assert 'gpio' in self.tests_to_run
+        if self.args.dry_run:
+            return True, {
+                'write_patterns': [0, 1, 2, 4],
+                'read_patterns': [0, 1, 2, 4],
+            }
+        # FIXME implement
         sys.stderr.write("Test not implemented.\n")
         return True, {}
 
