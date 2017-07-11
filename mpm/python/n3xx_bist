@@ -279,15 +279,30 @@ class N310BIST(object):
     def bist_sfp(self):
         """
         BIST for SFP+ ports:
-        Description: Uses one SFP+ port to test the other. Returns the speeds
-        External Equipment: External loopback cable between SFP+ port 0 and 1 is required
-        JSON{
-            'status': Return TRUE if no errors occurred, else FALSE
-            'speed01': Returns speed in Gbit/s from port 0 to port 1
-            'speed10': Returns speed in Gbit/s from port 1 to port 0
-            }
+        Description: Uses one SFP+ port to test the other. Pipes data out
+        through one SFP, back to the other.
+
+        External Equipment: External loopback cable between SFP+ port 0 and 1 is
+        required.
+
+        Return dictionary:
+        - elapsed_time: Float value, test time in seconds
+        - max_roundtrip_latency: Float value, max roundtrip latency in seconds
+        - throughput: Approximate data throughput in MB/s
+        - max_ber: Estimated maximum BER, float value.
+        - errors: Number of errors
+        - bits: Number of bits that were transferred
         """
         assert 'sfp' in self.tests_to_run
+        if self.args.dry_run:
+            return True, {
+                'elapsed_time': 1.0,
+                'max_roundtrip_latency': 0.8e-6,
+                'throughput': 1000.0,
+                'max_ber': 8.5e-11,
+                'errors': 0,
+                'bits': 12012486656,
+            }
         sys.stderr.write("Test not implemented.\n")
         return True, {}
 
