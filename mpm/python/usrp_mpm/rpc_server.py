@@ -159,6 +159,7 @@ class MPMServer(RPCServer):
         self._state.lock.acquire()
         if self._state.claim_status.value:
             self.log.warning("Someone tried to claim this device again")
+            self._state.lock.release()
             raise RuntimeError("Double-claim")
         self.log.debug(
             "Claiming from: %s, Session ID: %s",
@@ -204,8 +205,8 @@ class MPMServer(RPCServer):
         if the device is claimed and the token doesn't match.
         Or if the device is not claimed at all.
         """
-        self._state.lock.acquire()
         if self._state.claim_status.value:
+            self._state.lock.acquire()
             if self._check_token_valid(token):
                 self._state.lock.release()
                 self.log.debug("reclaimed from: %s", self.client_host)
