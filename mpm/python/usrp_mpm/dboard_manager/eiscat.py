@@ -435,7 +435,7 @@ class EISCAT(DboardManagerBase):
         self.log = get_logger("EISCAT-{}".format(slot_idx))
         self.log.trace("Initializing EISCAT daughterboard, slot index {}".format(self.slot_idx))
         self.initialized = False
-        self.ref_clock_freq = 10e6
+        self.ref_clock_freq = 10e6 # This is the only supported clock rate
         # Define some attributes so that PyLint stays quiet:
         self.radio_regs = None
         self.jesd_cores = None
@@ -701,13 +701,13 @@ class EISCAT(DboardManagerBase):
         """
         Call this to notify the daughterboard about a change in reference clock
         """
-        if self.initialized and freq != self.ref_clock_freq:
-            self.log.warning(
-                "Attempting to update external reference clock frequency "
-                "after initialization! This will only take effect after "
-                "the daughterboard is re-initialized. Unsetting init flag now."
+        if freq != self.ref_clock_freq:
+            self.log.error(
+                "EISCAT daughterboard only supports a reference clock " \
+                "frequency of {} MHz".format(self.ref_clock_freq/1e6)
             )
-            self.initialized = False
-        self.ref_clock_freq = freq
+            raise RuntimeError("Invalid reference clock frequency: {}".format(
+                freq
+            ))
 
 

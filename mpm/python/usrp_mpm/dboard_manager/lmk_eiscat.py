@@ -28,7 +28,11 @@ class LMK04828EISCAT(LMK04828):
     def __init__(self, regs_iface, ref_clock_freq, slot=None):
         LMK04828.__init__(self, regs_iface, slot)
         self.log.trace("Using reference clock frequency {} MHz".format(ref_clock_freq/1e6))
-        assert ref_clock_freq in (10e6, 20e6)
+        if ref_clock_freq != 10e6:
+            error_msg = "Invalid reference clock frequency: {} MHz. " \
+                        "Must be 10 MHz.".format(ref_clock_freq)
+            self.log.error(error_msg)
+            raise RuntimeError(error_msg)
         self.ref_clock_freq = ref_clock_freq
         self.init()
         self.config()

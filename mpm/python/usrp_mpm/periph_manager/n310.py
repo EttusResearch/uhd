@@ -352,6 +352,9 @@ class n310(PeriphManagerBase):
             self._gpios.reset("CLK-MAINREF-SEL1")
         self._clock_source = clock_source
         ref_clk_freq = self.get_ref_clock_freq()
+        self.log.info("Reference clock frequency is: {} MHz".format(
+            ref_clk_freq/1e6
+        ))
         for slot, dboard in enumerate(self.dboards):
             if hasattr(dboard, 'update_ref_clock_freq'):
                 self.log.trace(
@@ -368,6 +371,8 @@ class n310(PeriphManagerBase):
         Will throw if it's not a valid value.
         """
         assert freq in (10e6, 20e6, 25e6)
+        self.log.debug("We've been told the external reference clock " \
+                       "frequency is {} MHz.".format(freq/1e6))
         self._ext_clock_freq = freq
 
     def get_ref_clock_freq(self):
