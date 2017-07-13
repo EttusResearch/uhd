@@ -175,7 +175,8 @@ public:
         _send_buffer_pool(buffer_pool::make(xport_params.num_send_frames, xport_params.send_frame_size)),
         _next_recv_buff_index(0), _next_send_buff_index(0)
     {
-        UHD_LOGGER_TRACE("UDP") << boost::format("Creating udp transport for %s %s") % addr % port ;
+        UHD_LOGGER_TRACE("UDP")
+            << boost::format("Creating UDP transport to %s:%s") % addr % port;
 
         #ifdef CHECK_REG_SEND_THRESH
         check_registry_for_fast_send_threshold(this->get_send_frame_size());
@@ -191,6 +192,10 @@ public:
         _socket->open(asio::ip::udp::v4());
         _socket->connect(receiver_endpoint);
         _sock_fd = _socket->native();
+
+        UHD_LOGGER_TRACE("UDP")
+            << boost::format("Local UDP socket endpoint: %s:%s")
+            % get_local_addr() % get_local_port();
 
         //allocate re-usable managed receive buffers
         for (size_t i = 0; i < get_num_recv_frames(); i++){
@@ -289,10 +294,12 @@ template<typename Opt> static size_t resize_buff_helper(
     //resize the buffer if size was provided
     if (target_size > 0){
         actual_size = udp_trans->resize_buff<Opt>(target_size);
-        UHD_LOGGER_DEBUG("UDP") << boost::format(
-            "Target %s sock buff size: %d bytes\n"
-            "Actual %s sock buff size: %d bytes"
-        ) % name % target_size % name % actual_size ;
+        UHD_LOGGER_DEBUG("UDP")
+            << boost::format("Target/actual %s sock buff size: %d/%d bytes")
+               % name
+               % target_size
+               % actual_size
+        ;
         if (actual_size < target_size) UHD_LOGGER_WARNING("UDP") << boost::format(
             "The %s buffer could not be resized sufficiently.\n"
             "Target sock buff size: %d bytes.\n"
