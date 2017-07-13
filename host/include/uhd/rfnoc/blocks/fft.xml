@@ -87,8 +87,8 @@
       <check>EQUAL($direction, "forward") OR EQUAL($direction, "reverse")</check>
       <check_message>FFT direction must be either "forward" or "reverse".</check_message>
       <action>
-          IF(EQUAL($direction, "forward"),  SR_WRITE("FFT_DIRECTION", 0)) OR
-          IF(EQUAL($direction, "reverse"), SR_WRITE("FFT_DIRECTION", 1))
+          IF(EQUAL($direction, "forward"),  SR_WRITE("FFT_DIRECTION", 1)) OR
+          IF(EQUAL($direction, "reverse"), SR_WRITE("FFT_DIRECTION", 0))
       </action>
     </arg>
     <arg>
