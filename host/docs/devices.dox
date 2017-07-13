@@ -10,10 +10,12 @@
 \li \subpage page_transport
 \li \subpage page_sync
 \li \subpage page_calibration
+\li \subpage page_mpm
 
 ## USRP N-Series Devices
 
 \li \subpage page_usrp2 "USRP N2x0 Series"
+\li \subpage page_n3xx "USRP N3xx Series"
 
 ## USRP B-Series Devices
 

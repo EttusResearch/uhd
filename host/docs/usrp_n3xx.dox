@@ -1,0 +1,87 @@
+/*! \page page_usrp_n3xx USRP N3xx Series
+
+\tableofcontents
+
+\section n3xx_feature_list Comparative features list
+
+- Hardware Capabilities:
+	- External PPS input & output
+	- External 10 MHz input & output
+- FPGA Capabilities:
+	- Timed commands in FPGA
+	- Timed sampling in FPGA
+
+tbw
+
+\section n3xx_getting_started Getting started
+
+This will run you through the first steps relevant to get your USRP N300/N310
+up and running.
+
+\subsection n3xx_getting_started_assembling Assembling the N300/N310 kit
+
+tbw
+
+\subsubsection n3xx_serial Serial connection
+
+It is possible to gain root access to the device using a serial terminal
+emulator. Most Linuxes, OSX, or other Unix flavours have a tool called 'screen'
+which can be used for this purpose, by running the following command:
+
+    $ sudo screen /dev/ttyUSB2 115200
+
+The exact device node depends on your operating system's driver and other USB
+devices that might be already connected.
+
+(TODO: Expand upon how to figure this out, include /dev/serial/by-id)
+
+You should be presented with a shell similar to the following
+
+    root@ni-sulfur-<serial>:~#
+
+
+\subsubsection n3xx_ssh SSH connection
+
+The USRP N-Series devices have two network connnections: The dual SFP ports,
+and a RJ-45 connector. The latter is by default configured by DHCP; by plugging
+it into into 1 Gigabit switch on a DHCP-capable network, it will get assigned
+an IP address and thus be accessible via ssh.
+
+In case your network setup does not include a DHCP server, refer to the section
+\ref n3xx_serial. A serial login can be used to assign an IP address manually.
+
+After the device obtained an IP address you can log in from a Linux or OSX
+machine by typing:
+
+    $ ssh root@192.168.10.42
+
+where the IP address depends on your local network setup.
+
+(TODO: Add the hostname thing here)
+
+On Microsoft Windows, the connection can be established using a tool such as
+Putty, by selecting a username of root without password.
+
+You should be presented with a shell similar to the following (FIXME):
+
+    root@ni-sulfur:~#
+
+\subsection n3xx_getting_started_connectivity Network Connectivity
+
+tbw
+
+\subsection n3xx_getting_started_fpga_update Updating the FPGA
+
+tbw
+
+\subsection n3xx_theory_of_ops Theory of Operation
+
+The N3xx-series are devices based on the MPM architecture (see
+also: \ref page_mpm). Inside the Linux operating system running on the ARM
+cores, there is hardware daemon which needs to be active in order for the
+device to function as a USRP (it is enabled to run by default).
+
+A large portion of hardware-specific setup is handled by the daemon.
+
+*/
+// vim:ft=doxygen:
