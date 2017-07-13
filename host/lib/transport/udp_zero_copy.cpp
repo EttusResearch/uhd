@@ -244,7 +244,16 @@ public:
 
     size_t get_num_send_frames(void) const {return _num_send_frames;}
     size_t get_send_frame_size(void) const {return _send_frame_size;}
-    uint16_t get_local_port(void) const {return _socket->local_endpoint().port();}
+
+    uint16_t get_local_port(void) const
+    {
+        return _socket->local_endpoint().port();
+    }
+
+    std::string get_local_addr(void) const
+    {
+        return _socket->local_endpoint().address().to_string();
+    }
 
 private:
     //memory management -> buffers and fifos

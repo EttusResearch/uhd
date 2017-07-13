@@ -68,7 +68,20 @@ public:
         const device_addr_t &hints = device_addr_t()
     );
 
+    /*! Return the local port of the UDP connection
+     *
+     * Port is in host byte order. No funny business here.
+     *
+     * \returns Port number or 0 if port number couldn't be identified.
+     */
     virtual uint16_t get_local_port(void) const = 0;
+
+    /*! Return the local IP address of the UDP connection as a dotted string.
+     *
+     * \returns IP address as a string or empty string if the IP address could
+     *          not be identified.
+     */
+    virtual std::string get_local_addr(void) const = 0;
 };
 
 }} //namespace

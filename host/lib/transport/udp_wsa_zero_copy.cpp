@@ -286,6 +286,21 @@ public:
         return local_port;
     }
 
+    std::string get_local_addr(void) const {
+        // Behold the beauty of winsock
+        struct sockaddr_in addr_info;
+        int addr_len = sizeof(addr_info);
+        std::string local_addr;
+        if (getsockname(_sock_fd, (SOCKADDR*) &addr_info, &addr_len) == 0) {
+            // inet_ntoa() guarantees either NULL or null-terminated array
+            char *local_ip = inet_ntoa(addr_info.sin_addr);
+            if (local_ip) {
+                local_addr = std::string(local_ip);
+            }
+        }
+        return local_addr;
+    }
+
     //! Read back the socket's buffer space reserved for receives
     size_t get_recv_buff_size(void) {
         int recv_buff_size = 0;
