@@ -1,18 +1,18 @@
 # UHD Image Manifest File
 # Target    hash    url     SHA256
 # X300-Series
-x3xx_x310_fpga_default          fpga-c398755        x3xx/fpga-c398755/x3xx_x310_fpga_default-gc398755.zip                   22bf9147373bae395063ed0f2c016f2d1c47da01a40e042fc7f84e9e2eecd331
-x3xx_x300_fpga_default          fpga-c398755        x3xx/fpga-c398755/x3xx_x300_fpga_default-gc398755.zip                   19c5ff0109cc3c09a698bf2349a7b1f0573528a8b8d29f6e37720ec7c263efe6
+x3xx_x310_fpga_default          fpga-615d9b8        x3xx/fpga-615d9b8/x3xx_x310_fpga_default-g615d9b8.zip                   9e6f50bb71ee0e6a00159023820504ba1245dbfbd2ba94081cf340aa55015193
+x3xx_x300_fpga_default          fpga-615d9b8        x3xx/fpga-615d9b8/x3xx_x300_fpga_default-g615d9b8.zip                   0017564dcfaf1c07f86228bd521cd0dd168a7ae6530616466cfcb12155fb361e
 # Example daughterboard targets (none currently exist)
 #x3xx_twinrx_cpld_default   example_target
 #dboard_ubx_cpld_default    example_target
 
 # E-Series
-e3xx_e310_fpga_default          fpga-c398755        e3xx/fpga-c398755/e3xx_e310_fpga_default-gc398755.zip                   707428e8703b29ad9df60725f25fed78223deab5f4a7becf4ed1886b43f18f92
+e3xx_e310_fpga_default          fpga-615d9b8        e3xx/fpga-615d9b8/e3xx_e310_fpga_default-g615d9b8.zip                   058c0536ff70f5026e0e1ad9f88583599603b10c770906cdbfd68435adb4c0ef
 e3xx_e310_fpga_rfnoc            fpga-d6a878b        e3xx/fpga-d6a878b/e3xx_e310_fpga_rfnoc-gd6a878b.zip                     5c9b89fb6293423644868c22e914de386a9af39ff031da6800a1cf39a90ea73b
 # N300-Series
-n3xx_n310_fpga_default          fpga-c398755        n3xx/fpga-c398755/n3xx_n310_fpga_default-gc398755.zip                   6637bf9ce4a9c212bd30494aa5e0117e4a076a367a5370b4542053beed69e85a
-n3xx_n300_fpga_default          fpga-c398755        n3xx/fpga-c398755/n3xx_n300_fpga_default-gc398755.zip                   2d45af7c433449a3b0f4aca90bf30b3c1bc918b452893d22c8397f086e2812d4
+n3xx_n310_fpga_default          fpga-615d9b8        n3xx/fpga-615d9b8/n3xx_n310_fpga_default-g615d9b8.zip                   eacea76a927d8ae8807c19648d6e693cf111e61c0d6282438635659acda78279
+n3xx_n300_fpga_default          fpga-615d9b8        n3xx/fpga-615d9b8/n3xx_n300_fpga_default-g615d9b8.zip                   29f5988e3d4520b2cc99ee12a349b4b43076e9de881b60c63a8ca43d457890af
 #n3xx_n310_fpga_aurora           fpga-1107862        n3xx/fpga-1107862/n3xx_n310_fpga_aurora-g1107862.zip                    3926d6b247a8f931809460d3957cec51f8407cd3f7aea6f4f3b91d1bbb427c7d
 #n3xx_n300_fpga_aurora           fpga-1107862        n3xx/fpga-1107862/n3xx_n300_fpga_aurora-g1107862.zip                    e34e9343572adfba905433a1570cb394fe45207d442268d0fa400c3406253530
 #n3xx_n310_cpld_default         fpga-6bea23d        n3xx/fpga-6bea23d/n3xx_n310_cpld_default-g6bea23d.zip                   0
@@ -37,7 +37,7 @@ usrp2_n200_fpga_default         fpga-6bea23d        usrp2/fpga-6bea23d/usrp2_n20
 usrp2_n200_fw_default           fpga-6bea23d        usrp2/fpga-6bea23d/usrp2_n200_fw_default-g6bea23d.zip                   3eee2a6195caafe814912167fccf2dfc369f706446f8ecee36e97d2c0830116f
 usrp2_n210_fpga_default         fpga-6bea23d        usrp2/fpga-6bea23d/usrp2_n210_fpga_default-g6bea23d.zip                 5ce68ac539ee6eeb7d04fb3127c1fabcaff442a8edfaaa2f3746590f9df909bd
 usrp2_n210_fw_default           fpga-6bea23d        usrp2/fpga-6bea23d/usrp2_n210_fw_default-g6bea23d.zip                   3646fcd3fc974d18c621cb10dfe97c4dad6d282036dc63b7379995dfad95fb98
-n230_n230_fpga_default          fpga-4bb66b3        n230/fpga-4bb66b3/n230_n230_fpga_default-g4bb66b3.zip                   02ba098d797832906b8cb2e75f10dba5b2dc21cc84ec99e1f159a72e0b89eefa
+n230_n230_fpga_default          fpga-615d9b8        n230/fpga-615d9b8/n230_n230_fpga_default-g615d9b8.zip                   9609e48c14766b8f05f48c13a17d6511807e86d70778fe54c1a3e608e6c92687
 
 # USRP1 Devices
 usrp1_usrp1_fpga_default        fpga-6bea23d        usrp1/fpga-6bea23d/usrp1_usrp1_fpga_default-g6bea23d.zip                03bf72868c900dd0853bf48e2ede91058d579829b0e70c021e51b0e282d1d5be

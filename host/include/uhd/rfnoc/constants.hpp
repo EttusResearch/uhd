@@ -25,7 +25,7 @@ static const std::string XML_PATH_ENV = "UHD_RFNOC_DIR";
 //! If the block name can't be automatically detected, this name is used
 static const std::string DEFAULT_BLOCK_NAME = "Block";
 static const uint64_t DEFAULT_NOC_ID = 0xFFFFFFFFFFFFFFFF;
-static const size_t NOC_SHELL_COMPAT_MAJOR = 4;
+static const size_t NOC_SHELL_COMPAT_MAJOR = 5;
 static const size_t NOC_SHELL_COMPAT_MINOR = 0;
 
 static const size_t MAX_PACKET_SIZE = 8000; // bytes

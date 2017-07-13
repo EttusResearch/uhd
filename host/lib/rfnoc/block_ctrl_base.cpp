@@ -100,9 +100,7 @@ block_ctrl_base::block_ctrl_base(
         sr_write(SR_BLOCK_SID, get_address(ctrl_port), ctrl_port);
         // Set sink buffer sizes:
         settingsbus_reg_t reg = SR_READBACK_REG_FIFOSIZE;
-        uint64_t value = sr_read64(reg, ctrl_port);
-        size_t buf_size_log2 = value & 0xFF;
-        size_t buf_size_bytes = BYTES_PER_LINE * (1 << buf_size_log2); // Bytes == 8 * 2^x
+        size_t buf_size_bytes = size_t(sr_read64(reg, ctrl_port));
         if (buf_size_bytes > 0) n_valid_input_buffers++;
         _tree->create<size_t>(_root_path / "input_buffer_size" / ctrl_port).set(buf_size_bytes);
     }
