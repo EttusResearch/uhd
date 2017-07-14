@@ -248,6 +248,8 @@ def main():
                         help="Do not clear images directory before extracting new files [default=%default]")
     parser.add_option("-v", "--verbose",            action="store_true",    default=False,
                         help="Enable verbose output [default=%default]")
+    parser.add_option("--force-delete",             action="store_true",    default=False,
+                        help="Delete all files in the target images directory without prompting [default=%default]")
     (options, args) = parser.parse_args()
     if options.buffer_size <= 0:
         print("Invalid buffer size: %s" % (options.buffer_size))
@@ -282,6 +284,18 @@ def main():
         print("Copying locally:            {0}".format("Yes" if base_url_is_local else "No"))
     else:
         print("Images destination:      %s" % (images_dir))
+
+    ### Check contradictory arguments
+    if options.force_delete and options.keep:
+        print("Error: Keep and force delete options contradict.\n")
+        parser.print_help()
+        return 1
+
+    ### Prevent accidental file deletion
+    if options.install_location != default_images_dir and options.force_delete == False and options.keep != True:
+        print("Custom install location specified, defaulting to overwriting only image files.\n"
+            "Use \'--force-delete\' to clean the target directory first.")
+        options.keep = True
 
     ### Download or copy
     downloader = uhd_images_downloader()
