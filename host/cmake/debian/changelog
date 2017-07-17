@@ -1,3 +1,22 @@
+uhd (3.9.7-0ubuntu1) trusty; urgency=low
+
+  * multi_usrp: Fixed get_normalized_tx_gain.
+  * E300: Fix for streamer recreation issue
+  * X300: Fix for network discovery, will now return early when correct serial is
+          found.
+  * CBX: Fixed LO LPF behaviour in 1.5-2 GHz range.
+  * UBX: Fixed dtor SIGABRT issue. Better error handling for setting dboard clock
+         rate.
+  * GPSDO: Improved detection.
+  * Examples: Added channel param to samps to/from file. sync_to_gps exits instead
+              of uncaught throw.
+  * C API: Fixed some missing fields in USRP info.
+  * Docs: Many minor fixes.
+  * CMake: Fixed GCC 4.4 compilation issue. Added ability to specify package
+           names.
+
+ -- Ettus Research <packages@ettus.com>  Mon, 17 Jul 2017 09:46:59 -0800
+
 uhd (3.9.6-0ubuntu1) trusty; urgency=low
 
   - CMake/Builds: Many minor fixes. Better handle missing python-requests.
