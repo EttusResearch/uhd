@@ -309,7 +309,9 @@ public:
                 try {
                     _iface->set_clock_rate(dboard_iface::UNIT_RX, highest_rate);
                 } catch (const uhd::not_implemented_error &) {
-                    UHD_MSG(warning) << "Unable to set dboard clock rate - phase will vary" << std::endl;
+                    UHD_LOG_WARNING("UBX",
+                        "Unable to set dboard clock rate - phase will vary"
+                    );
                     can_set_clock_rate = false;
                 }
                 _rx_target_pfd_freq = highest_rate;
@@ -326,7 +328,9 @@ public:
                 try {
                     _iface->set_clock_rate(dboard_iface::UNIT_TX, highest_rate);
                 } catch (const uhd::not_implemented_error &) {
-                    UHD_MSG(warning) << "Unable to set dboard clock rate - phase will vary" << std::endl;
+                    UHD_LOG_WARNING("UBX",
+                        "Unable to set dboard clock rate - phase will vary"
+                    );
                 }
                 _tx_target_pfd_freq = highest_rate;
             }
