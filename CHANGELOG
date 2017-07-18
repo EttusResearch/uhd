@@ -1,6 +1,20 @@
 Change Log for Releases
 ==============================
 
+## 003.010.001.002
+* multi_usrp: Fixed get_normalized_tx_gain.
+* E300: Fix for streamer recreation issue
+* X300: Fix for network discovery, will now return early when correct serial is
+        found.
+* CBX: Fixed LO LPF behaviour in 1.5-2 GHz range.
+* UBX: Fixed dtor SIGABRT issue.
+* GPSDO: Improved detection.
+* Examples: Added channel param to samps to/from file. sync_to_gps exits instead
+            of uncaught throw.
+* C API: Fixed some missing fields in USRP info.
+* Docs: Many minor fixes.
+* CMake: Fixed GCC 4.4 compilation issue. Added ability to specify package
+         names.
 
 ## 003.010.001.001
 
