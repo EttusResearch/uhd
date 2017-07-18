@@ -1,18 +1,33 @@
 Change Log for Releases
 ==============================
 
-## 003.010.001.002
+## 003.010.002.000
+
 * multi_usrp: Fixed get_normalized_tx_gain.
-* E300: Fix for streamer recreation issue
+* E300: Fix for streamer recreation issue. Reduced minimum timeout, fixed
+        potential race condition.
 * X300: Fix for network discovery, will now return early when correct serial is
-        found.
+        found. Fixed issue with DAC sync. All async messages now go through
+        single DMA channel on PCIe. Improved TX performance. Fixed page size
+        acquisition for PCIe. Fixed some FW communication errors. Improved flow
+        control. Removed MTU throttling. Legacy compat falls back to min spp
+        for mixed transport types.
 * CBX: Fixed LO LPF behaviour in 1.5-2 GHz range.
-* UBX: Fixed dtor SIGABRT issue.
-* GPSDO: Improved detection.
-* Examples: Added channel param to samps to/from file. sync_to_gps exits instead
-            of uncaught throw.
+* UBX: Fixed dtor SIGABRT issue. Better error handling for various dboard clock
+       rates.
+* TwinRX: Added LO reimport feature.
+* GPSDO: Improved detection. Improved query_gpsdo sensor.
+* RFNoC: Fixed issue with DDC and DUC command tick rate.
+* UHD: Fixed potential memory leak in tasks. Fixed get_normalized_tx_gain().
+       Fixed default socket buffer size to honor MTU.
+* Examples: Added channel param to samps to/from file. sync_to_gps exits
+            instead of uncaught throw. latency_test improved output. Use
+            next_pps in test_clock_synch. Added TwinRX FHSS example.
+* Utils: Modified behaviour of uhd_images_downloader so it won't delete dirs
+         when using -i
+* Tools: Updates to CHDR dissector. Added set_time_source_out(). Fixed LO API.
 * C API: Fixed some missing fields in USRP info.
-* Docs: Many minor fixes.
+* Docs: Many minor fixes. Fixed Doxygen warnings related to /* in files.
 * CMake: Fixed GCC 4.4 compilation issue. Added ability to specify package
          names.
 
