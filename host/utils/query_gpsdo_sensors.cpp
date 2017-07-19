@@ -34,6 +34,8 @@
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
+const size_t WARMUP_TIMEOUT_MS = 30000;
+
 void print_notes(void) {
   // Helpful notes
   std::cout << boost::format("**************************************Helpful Notes on Clock/PPS Selection**************************************\n");
@@ -171,14 +173,18 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
   print_notes();
 
   // The TCXO has a long warm up time, so wait up to 30 seconds for sensor data to show up
-  std::cout << "Waiting for the GPSDO to warm up..." << std::endl;
-  for (size_t i = 0; i < 300; i++) {
+  std::cout << "Waiting for the GPSDO to warm up..." << std::flush;
+  boost::system_time exit_time = boost::get_system_time() +
+              boost::posix_time::milliseconds(WARMUP_TIMEOUT_MS);
+  while (boost::get_system_time() < exit_time) {
       try {
           usrp->get_mboard_sensor("gps_locked",0);
           break;
       } catch (std::exception &) {}
       boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+      std::cout << "." << std::flush;
   }
+  std::cout << std::endl;
   try {
       usrp->get_mboard_sensor("gps_locked",0);
   } catch (std::exception &) {
