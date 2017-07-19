@@ -134,6 +134,7 @@ SET(man_page_sources
     uhd_cal_rx_iq_balance.1
     uhd_cal_tx_dc_offset.1
     uhd_cal_tx_iq_balance.1
+    uhd_config_info.1
     uhd_find_devices.1
     uhd_image_loader.1
     uhd_images_downloader.1

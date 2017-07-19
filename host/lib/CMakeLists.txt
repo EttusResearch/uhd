@@ -76,6 +76,16 @@ INCLUDE_SUBDIRECTORY(usrp_clock)
 INCLUDE_SUBDIRECTORY(utils)
 
 ########################################################################
+# Build info
+########################################################################
+INCLUDE(UHDBuildInfo)
+UHD_LOAD_BUILD_INFO()
+CONFIGURE_FILE(
+    ${CMAKE_CURRENT_SOURCE_DIR}/build_info.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/build_info.cpp
+@ONLY)
+
+########################################################################
 # Setup UHD_VERSION_STRING for version.cpp
 ########################################################################
 CONFIGURE_FILE(
@@ -87,6 +97,7 @@ CONFIGURE_FILE(
 # Append to the list of sources for lib uhd
 ########################################################################
 LIBUHD_APPEND_SOURCES(
+    ${CMAKE_CURRENT_BINARY_DIR}/build_info.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/deprecated.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/device.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/image_loader.cpp
