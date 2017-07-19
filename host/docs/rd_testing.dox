@@ -45,10 +45,11 @@ following).
    `uhd_usrp_probe` and verify that the GPSDO is correctly reported. Power down
    the device before connecting the peripheral. The GPSDO must be reported
    found, and no error or warning must be printed.
-3. Without connecting the GPS antenna input, run `query_gpsdo_sensors`. To pass,
-   it must report the GPSDO as found, lock to the external reference, but then
-   report not being locked to GPS. The tool will report a valid GPS time, and
-   a string such as "GPS and UHD Device time are aligned" in case of success.
+3. OCXO only: Without connecting the GPS antenna input, run
+   `query_gpsdo_sensors`. To pass, it must report the GPSDO as found, lock to
+   the external reference, but then report not being locked to GPS. The tool
+   will report a valid GPS time, and a string such as "GPS and UHD Device time
+   are aligned" in case of success.
 4. Connect a GPS antenna to the input and make sure it is in a position to
    receive GPS satellite data. Confirm that GPS lock is reported using
    `query_gpsdo_sensors` within 20 minutes of connecting the antenna.
