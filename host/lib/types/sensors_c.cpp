@@ -20,6 +20,21 @@
 #include <string>
 #include <string.h>
 
+uhd_error uhd_sensor_value_make(
+    uhd_sensor_value_handle* h
+){
+    try{
+        *h = new uhd_sensor_value_t;
+    }
+    catch(...){
+        return UHD_ERROR_UNKNOWN;
+    }
+
+    UHD_SAFE_C_SAVE_ERROR((*h),
+        (*h)->sensor_value_cpp = new uhd::sensor_value_t("", false, "", "");
+    )
+}
+
 uhd_error uhd_sensor_value_make_from_bool(
     uhd_sensor_value_handle* h,
     const char* name,

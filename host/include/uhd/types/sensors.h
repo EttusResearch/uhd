@@ -51,6 +51,20 @@ typedef enum {
     UHD_SENSOR_VALUE_STRING  = 115
 } uhd_sensor_value_data_type_t;
 
+//! Make an empty UHD sensor value.
+/*!
+ * The purpose of this call is to populate the handle with a valid sensor value
+ * object. Querying this object will always yield 'false'. Typically, this
+ * sensor value object will never be used, but it will allow the handle object
+ * to be used with sensor functions later on.
+ *
+ * \param h the sensor handle in which to place sensor
+ * \returns UHD error code
+ */
+UHD_API uhd_error uhd_sensor_value_make(
+    uhd_sensor_value_handle* h
+);
+
 //! Make a UHD sensor from a boolean.
 /*!
  * \param h the sensor handle in which to place sensor
