@@ -4,17 +4,34 @@
 
 \section c_api_intro Introduction
 
-Alongside its C++ API, UHD provides a C API wrapper for the uhd::usrp::multi_usrp and
-uhd::usrp_clock::multi_usrp_clock classes, as well as their associated classes and
-structs. Other important UHD functions are also included in this API. To use this
-API, simply:
+Alongside its C++ API, UHD provides a C API wrapper for the
+uhd::usrp::multi_usrp and uhd::usrp_clock::multi_usrp_clock classes, as well as
+their associated classes and structs. Other important UHD functions are also
+included in this API. To use this API, simply:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.c}
 #include <uhd.h>
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-...and all UHD C-level structs and functions will be available to you. The sections below
-give more detail on the key features of the C API.
+...and all UHD C-level structs and functions will be available to you. The
+sections below give more detail on the key features of the C API.
+
+Keep in mind that the C-API is a wrapper around the C++ API, so performance can
+never exceed that of the C++ API.
+
+\subsection c_api_philosophy API Philosophy
+
+The C API was designed to mirror the C++ API as closely as possible. This means
+that most API calls are mapped 1:1 from C++ to C, and the documentation for the
+C++ API can still be useful and should be considered when using the C API.
+For example, the uhd_usrp_set_rx_antenna() and
+uhd::multi_usrp::set_rx_antenna() calls do the same thing under the hood, and
+thus, if the behaviour of the C API call is unclear, consulting the
+corresponding C++ API call documentation can be helpful.
+
+There are some C++ concepts that don't map into C easily, though. Among those
+are object storage, which is solved by using handles (see \ref c_api_handles)
+and exceptions, which are translated into error codes (see \ref c_api_errorcode).
 
 \subsection c_api_handles C-Level Handles
 
@@ -28,7 +45,7 @@ terminates, you must pass the handle into its free() function, or your program w
 leak. The example below shows the proper usage of an RX metadata handle over the course of its
 lifetime, from instantiation to destruction.
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.c}
 uhd_rx_metadata_handle md;
 uhd_rx_metadata_make(&md);
 

@@ -10,6 +10,7 @@ publically available symbol in the UHD namespace.
 Some additional pages on developing UHD are also available here:
 
 \li \subpage page_coding
+\li \subpage page_c_api
 \li \subpage page_converters
 \li \subpage page_stream
 \li \subpage page_rtp
