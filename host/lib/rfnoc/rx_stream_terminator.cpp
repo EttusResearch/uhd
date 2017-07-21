@@ -63,6 +63,12 @@ void rx_stream_terminator::set_rx_streamer(bool active, const size_t)
 
 void rx_stream_terminator::handle_overrun(boost::weak_ptr<uhd::rx_streamer> streamer, const size_t)
 {
+    std::unique_lock<std::mutex> l(_overrun_handler_mutex, std::defer_lock);
+    if (!l.try_lock()) {
+        // We're already handling overruns, so just stop right there
+        return;
+    }
+
     std::vector<boost::shared_ptr<uhd::rfnoc::radio_ctrl_impl> > upstream_radio_nodes =
         find_upstream_node<uhd::rfnoc::radio_ctrl_impl>();
     const size_t n_radios = upstream_radio_nodes.size();

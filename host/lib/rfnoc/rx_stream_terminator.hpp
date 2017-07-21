@@ -24,6 +24,7 @@
 #include <uhd/rfnoc/scalar_node_ctrl.hpp>
 #include <uhd/rfnoc/terminator_node_ctrl.hpp>
 #include <uhd/rfnoc/block_ctrl_base.hpp> // For the block macros
+#include <mutex>
 
 namespace uhd {
     namespace rfnoc {
@@ -77,6 +78,8 @@ private:
 
     double _samp_rate;
     double _tick_rate;
+
+    std::mutex _overrun_handler_mutex;
 
 }; /* class rx_stream_terminator */
 
