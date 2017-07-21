@@ -47,6 +47,7 @@ UHD_INSTALL(FILES
 IF(ENABLE_C_API)
     UHD_INSTALL(FILES
         thread_priority.h
+        log.h
         DESTINATION ${INCLUDE_DIR}/uhd/utils
         COMPONENT headers
     )

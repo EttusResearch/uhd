@@ -37,5 +37,6 @@
 #include <uhd/usrp_clock/usrp_clock.h>
 
 #include <uhd/utils/thread_priority.h>
+#include <uhd/utils/log.h>
 
 #endif /* INCLUDED_UHD_H */
