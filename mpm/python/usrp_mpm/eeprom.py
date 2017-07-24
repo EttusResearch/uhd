@@ -19,6 +19,7 @@ EEPROM management code
 """
 
 import struct
+import zlib
 from builtins import zip
 from builtins import object
 
@@ -56,11 +57,11 @@ class MboardEEPROM(object):
     # Create one of these for every version of the EEPROM format:
     eeprom_header_format = (
         None, # For laziness, we start at version 1 and thus index 0 stays empty
-        "!I I 16x H H 7s 25x I", # Version 1
+        "!I I 16s  H H 7s 1x 24s I", # Version 1
     )
     eeprom_header_keys = (
         None, # For laziness, we start at version 1 and thus index 0 stays empty
-        ('magic', 'eeprom_version', 'pid', 'rev', 'serial', 'CRC'), # Version 1
+        ('magic', 'eeprom_version', 'mcu_flags', 'pid', 'rev', 'serial', 'mac_addresses', 'CRC') # Version 1
     )
 
 class DboardEEPROM(object):
@@ -121,11 +122,21 @@ def read_eeprom(
         ):
         """
         Parses the raw 'data' according to the version.
+        This also parses the CRC and assumes CRC is the last 4 bytes of each data.
         Returns a dictionary.
         """
         eeprom_parser = struct.Struct(eeprom_header_format[version])
+        eeprom_parser_no_crc = struct.Struct(eeprom_header_format[version][0:-1])
         eeprom_keys = eeprom_header_keys[version]
         parsed_data = eeprom_parser.unpack_from(data)
+        read_crc = parsed_data[-1]
+        rawdata_without_crc = eeprom_parser_no_crc.pack(*(parsed_data[0:-1]))
+        expected_crc = zlib.crc32(rawdata_without_crc)
+        if  read_crc != expected_crc:
+            raise RuntimeError(
+                "Received incorrect CRC."\
+                "Read: {:08X} Expected: {:08X}".format(
+                    read_crc, expected_crc))
         return dict(list(zip(eeprom_keys, parsed_data)))
     # Dawaj, dawaj
     max_size = max_size or -1
@@ -136,8 +147,7 @@ def read_eeprom(
         raise RuntimeError(
             "Received incorrect EEPROM magic. " \
             "Read: {:08X} Expected: {:08X}".format(
-               eeprom_magic, expected_magic
-       ))
+                eeprom_magic, expected_magic))
     if eeprom_version >= len(eeprom_header_format):
         raise RuntimeError("Unexpected EEPROM version: `{}'".format(eeprom_version))
     return (_parse_eeprom_data(data, eeprom_version), data)
