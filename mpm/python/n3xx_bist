@@ -114,6 +114,7 @@ class N310BIST(object):
             try:
                 status, data = getattr(self, testmethod_name)()
                 data['status'] = status
+                data['error_msg'] = data.get('error_msg', '')
                 return status, data
             except AttributeError:
                 sys.stderr.write("Test not defined: {}\n".format(testname))
