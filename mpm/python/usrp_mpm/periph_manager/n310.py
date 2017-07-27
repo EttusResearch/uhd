@@ -69,7 +69,7 @@ class TCA6424(object):
     )
 
     def __init__(self):
-        self._gpios = SysFSGPIO('tca6424',0xFFE7FF, 0x86E7FF)
+        self._gpios = SysFSGPIO('tca6424', 0xFFE7FF, 0x86E7FF)
 
     def set(self, name):
         """
@@ -92,6 +92,74 @@ class TCA6424(object):
         assert name in self.pins
         self._gpios.get(self.pins.index(name))
 
+class FP_GPIO(object):
+    """
+    Abstraction layer for the front panel GPIO
+    """
+    EMIO_BASE = 54
+    FP_GPIO_OFFSET = 32 # Bit offset within the ps_gpio_* pins
+
+    def __init__(self, ddr):
+        self._gpiosize = 12
+        self._offset = self.FP_GPIO_OFFSET + self.EMIO_BASE
+        self.usemask = 0xFFF
+        self.ddr = ddr
+        self._gpios = SysFSGPIO(
+            'zynq_gpio',
+            self.usemask<<self._offset,
+            self.ddr<<self._offset
+        )
+
+    def set_all(self, value):
+        """
+        Assert all pin to the value.
+        This method will convert value into binary and take the first 6 bits
+        assign to 6pins.
+        """
+        bin_value = '{0:06b}'.format(value)
+        wr_value = bin_value[-(self._gpiosize):]
+        for i in range(self._gpiosize):
+            if  (1<<i)&self.ddr:
+                self._gpios.set(self._offset+i, wr_value[i%6])
+
+    def set(self, index, value=None):
+        """
+        Assert a pin by index
+        """
+        assert index in range(self._gpiosize)
+        self._gpios.set(self._offset+index, value)
+
+    def reset_all(self):
+        """
+         Deassert all pins
+        """
+        for i in range(self._gpiosize):
+            self._gpios.reset(self._offset+i)
+
+    def reset(self, index):
+        """
+         Deassert a pin by index
+        """
+        assert index in range(self._gpiosize)
+        self._gpios.reset(self._offset+index)
+
+    def get_all(self):
+        """
+        Read back all pins
+        """
+        result = 0
+        for i in range(self._gpiosize):
+            if not (1<<i)&self.ddr:
+                value = self._gpios.get(self._offset+i)
+                result = (result<<1) | value
+        return result
+
+    def get(self, index):
+        """
+        Read back a pin by index
+        """
+        assert index in range(self._gpiosize)
+        return self._gpios.get(self._offset+index)
 
 class n310(PeriphManagerBase):
     """

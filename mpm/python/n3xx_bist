@@ -469,14 +469,37 @@ class N310BIST(object):
         - read_patterns: A list of patterns that were read back
         """
         assert 'gpio' in self.tests_to_run
+        patterns = range(64)
         if self.args.dry_run:
             return True, {
-                'write_patterns': [0, 1, 2, 4],
-                'read_patterns': [0, 1, 2, 4],
+                'write_patterns': patterns,
+                'read_patterns': patterns,
             }
-        # FIXME implement
-        sys.stderr.write("Test not implemented.\n")
-        return True, {}
+        from usrp_mpm.periph_manager import n310
+        gpioTCA6424 = n310.TCA6424()
+        ddr1 = 0x03f
+        ddr2 = 0xfc0
+        half_GPIO_SIZE = 6
+        def _runGPIO(ddr, patterns):
+            gpioTCA6424.set("FPGA-GPIO-EN")
+            time.sleep(.5)
+            myGPIO = n310.FP_GPIO(ddr)
+            for pattern in patterns:
+                myGPIO.set_all(pattern)
+                time.sleep(0.1)
+                rb = myGPIO.get_all()
+                if  pattern != rb:
+                    return False, {'write_patterns': [pattern],
+                                   'read_patterns': [rb]}
+            return True, {'write_patterns': list(patterns),
+                          'read_patterns': list(patterns)}
+            gpioTCA6424.reset("FPGA-GPIO-EN")
+            time.sleep(.5)
+        status, data = _runGPIO(ddr1, patterns)
+        if  not status:
+            return status, data
+        status, data = _runGPIO(ddr2, patterns)
+        return status, data
 
     def bist_temp(self):
         """
