@@ -114,8 +114,16 @@ class N310BIST(object):
         )
         parser.add_argument(
             '-n', '--dry-run', action='store_true',
-            help="Fake out the tests. All tests will return a valid response," \
-                 " but will not actually interact with hardware.",
+            help="Fake out the tests. All tests will return a valid" \
+                 " response, but will not actually interact with hardware.",
+        )
+        parser.add_argument(
+            '-v', '--verbose', action='store_true',
+            help="Crank up verbosity level",
+        )
+        parser.add_argument(
+            '--debug', action='store_true',
+            help="For debugging this tool.",
         )
         parser.add_argument(
             'tests',
@@ -136,6 +144,9 @@ class N310BIST(object):
         try:
             # Keep this import here so we can do dry-runs without any MPM code
             from usrp_mpm import get_main_logger
+            if not self.args.verbose:
+                from usrp_mpm.mpmlog import WARNING
+                get_main_logger().setLevel(WARNING)
             self.log = get_main_logger().getChild('main')
         except ImportError:
             pass
@@ -177,18 +188,18 @@ class N310BIST(object):
                 sys.stderr.write("Test not defined: {}\n".format(testname))
                 return False, {}
             except Exception as ex:
-                raise
                 sys.stderr.write(
                     "Test {} failed to execute: {}\n".format(testname, str(ex))
                 )
+                if self.args.debug:
+                    raise
                 return False, {'error_msg': str(ex)}
         tests_successful = True
         result = {}
         for test in self.tests_to_run:
             status, result_data = execute_test(test)
             tests_successful = tests_successful and status
-            if tests_successful:
-                result[test] = result_data
+            result[test] = result_data
         post_results(result)
         return tests_successful
 
