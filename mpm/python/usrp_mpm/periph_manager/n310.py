@@ -69,7 +69,7 @@ class TCA6424(object):
     )
 
     def __init__(self):
-        self._gpios = SysFSGPIO('tca6424', 0x700, 0x700)
+        self._gpios = SysFSGPIO('tca6424',0xFFE7FF, 0x86E7FF)
 
     def set(self, name):
         """
@@ -124,6 +124,7 @@ class n310(PeriphManagerBase):
 
         # Initialize reference clock
         self._gpios.set("PWREN-CLK-MAINREF")
+        self._gpios.set("PWREN-CLK-MGT156MHz")
         self._ext_clock_freq = float(
             args.default_args.get('ext_clock_freq', N3XX_DEFAULT_EXT_CLOCK_FREQ)
         )
