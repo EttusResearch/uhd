@@ -237,7 +237,7 @@ class AuroraControl(object):
             'Running Latency Loopback BIST at %.0fMB/s for %.0fs...',
             coerced_rate/8e6, duration
         )
-        self._pre_test_init()
+        self._pre_test_init(slave)
         start_time = time.time()
         results = {
             'latencies': [],
@@ -299,7 +299,7 @@ class AuroraControl(object):
         if slave is not None:
             results['sla_overruns'], results['sla_hard_errors'] = \
                     self._get_slave_status(slave)
-        self._post_test_cleanup()
+        self._post_test_cleanup(slave)
         return results
 
     def run_ber_loopback_bist(self, duration, requested_rate, slave=None):
@@ -314,7 +314,7 @@ class AuroraControl(object):
         self.log.info('Running BER Loopback BIST at {}MB/s for {}s...'.format(
             coerced_rate/8e6, duration
         ))
-        self._pre_test_init()
+        self._pre_test_init(slave)
         mst_overruns = 0
         self.log.info("Starting BER test...")
         start_time = time.time()
@@ -352,18 +352,25 @@ class AuroraControl(object):
             results['sla_overruns'], results['sla_hard_errors'] = \
                     self._get_slave_status(slave)
         if results['mst_samps'] != 0:
-            mst_latency_us = self._mst_status_to_latency_us(mst_status)
+            results['mst_latency_us'] = \
+                    self._mst_status_to_latency_us(mst_status)
             self.log.info('BIST Complete!')
             self.log.info('- Elapsed Time              = {:.2} s'.format(
                 results['time_elapsed']
             ))
+            results['max_ber'] = \
+                    float(results['mst_errors']+1) / results['mst_samps']
+            results['approx_throughput'] = \
+                (8 * results['mst_samps']) / results['time_elapsed']
             self.log.info('- Max BER (Bit Error Ratio) = %.4g ' \
                           '(%d errors out of %d)',
-                          float(results['mst_errors']+1) / results['mst_samps'],
-                          results['mst_errors'], results['mst_samps'])
-            self.log.info('- Max Roundtrip Latency     = %.1fus'%mst_latency_us)
+                          results['max_ber'],
+                          results['mst_errors'],
+                          results['mst_samps'])
+            self.log.info('- Max Roundtrip Latency     = %.1fus',
+                          results['mst_latency_us'])
             self.log.info('- Approx Throughput         = %.0fMB/s',
-                          (8e-6*results['mst_samps'])/results['time_elapsed'])
+                          results['approx_throughput'] / 1e6)
         else:
             self.log.error('No samples received -- BIST Failed!')
         self._post_test_cleanup(slave)
