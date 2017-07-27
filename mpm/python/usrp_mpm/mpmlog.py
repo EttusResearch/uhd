@@ -105,10 +105,13 @@ def get_main_logger(use_console=True, use_journal=False, console_color=True):
     return LOGGER
 
 def get_logger(child_name):
-    """docstring for get_logger"""
+    """
+    Returns a child logger. Prior to calling this, get_main_logger() needs to
+    have been called.
+    """
     assert LOGGER is not None
     return get_main_logger().getChild(child_name)
-    
+
 
 if __name__ == "__main__":
     print("Testing logger: ")
