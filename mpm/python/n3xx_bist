@@ -29,6 +29,55 @@ from datetime import datetime
 import argparse
 import pyudev
 
+##############################################################################
+# Aurora/SFP BIST code
+##############################################################################
+def get_sfp_bist_defaults():
+    " Default dictionary for SFP/Aurora BIST dry-runs "
+    return {
+        'elapsed_time': 1.0,
+        'max_roundtrip_latency': 0.8e-6,
+        'throughput': 1000e6,
+        'max_ber': 8.5e-11,
+        'errors': 0,
+        'bits': 12012486656,
+    }
+
+def run_aurora_bist(master, slave=None):
+    """
+    Spawn a BER test
+    """
+    from usrp_mpm import aurora_control
+    from usrp_mpm.uio import UIO
+    master_au_ctrl = aurora_control.AuroraControl(
+        UIO(label=master, read_only=False),
+    )
+    slave_au_ctrl = None if slave is None else aurora_control.AuroraControl(
+        UIO(label=slave, read_only=False),
+    )
+    return master_au_ctrl.run_ber_loopback_bist(
+        duration=10,
+        requested_rate=1300 * 8e6,
+        slave=slave_au_ctrl,
+    )
+
+def aurora_results_to_status(bist_results):
+    """
+    Convert a dictionary coming from AuroraControl BIST to one that we can use
+    for this BIST
+    """
+    return bist_results['mst_errors'] == 0, {
+        'elapsed_time': bist_results['time_elapsed'],
+        'max_roundtrip_latency': bist_results['mst_latency_us'],
+        'throughput': bist_results['approx_throughput'],
+        'max_ber': bist_results['max_ber'],
+        'errors': bist_results['mst_errors'],
+        'bits': bist_results['mst_samps'],
+    }
+
+##############################################################################
+# Helpers
+##############################################################################
 def post_results(results):
     """
     Given a dictionary, post the results.
@@ -42,7 +91,9 @@ def post_results(results):
         separators=(',', ': ')
     ))
 
-
+##############################################################################
+# Bist class
+##############################################################################
 class N310BIST(object):
     """
     BIST Tool for the USRP N3xx series
@@ -82,6 +133,12 @@ class N310BIST(object):
                     self.tests_to_run.add(test)
             else:
                 self.tests_to_run.add(test)
+        try:
+            # Keep this import here so we can do dry-runs without any MPM code
+            from usrp_mpm import get_main_logger
+            self.log = get_main_logger().getChild('main')
+        except ImportError:
+            pass
 
     def expand_collection(self, coll):
         """
@@ -120,6 +177,7 @@ class N310BIST(object):
                 sys.stderr.write("Test not defined: {}\n".format(testname))
                 return False, {}
             except Exception as ex:
+                raise
                 sys.stderr.write(
                     "Test {} failed to execute: {}\n".format(testname, str(ex))
                 )
@@ -312,13 +370,13 @@ class N310BIST(object):
         sys.stderr.write("Test not implemented.\n")
         return True, {}
 
-    def bist_sfp(self):
+    def bist_sfp0_loopback(self):
         """
         BIST for SFP+ ports:
         Description: Uses one SFP+ port to test the other. Pipes data out
         through one SFP, back to the other.
 
-        External Equipment: External loopback cable between SFP+ port 0 and 1 is
+        External Equipment: Loopback module in SFP0 required
         required.
 
         Return dictionary:
@@ -329,19 +387,57 @@ class N310BIST(object):
         - errors: Number of errors
         - bits: Number of bits that were transferred
         """
-        assert 'sfp' in self.tests_to_run
         if self.args.dry_run:
-            return True, {
-                'elapsed_time': 1.0,
-                'max_roundtrip_latency': 0.8e-6,
-                'throughput': 1000e6,
-                'max_ber': 8.5e-11,
-                'errors': 0,
-                'bits': 12012486656,
-            }
-        # FIXME implement
-        sys.stderr.write("Test not implemented.\n")
-        return True, {}
+            return True, get_sfp_bist_defaults()
+        sfp_bist_results = run_aurora_bist(master='misc-enet-regs0')
+        return aurora_results_to_status(sfp_bist_results)
+
+    def bist_sfp1_loopback(self):
+        """
+        BIST for SFP+ ports:
+        Description: Uses one SFP+ port to test the other. Pipes data out
+        through one SFP, back to the other.
+
+        External Equipment: Loopback module in SFP1 required
+        required.
+
+        Return dictionary:
+        - elapsed_time: Float value, test time in seconds
+        - max_roundtrip_latency: Float value, max roundtrip latency in seconds
+        - throughput: Approximate data throughput in bytes/s
+        - max_ber: Estimated maximum BER, float value.
+        - errors: Number of errors
+        - bits: Number of bits that were transferred
+        """
+        if self.args.dry_run:
+            return True, get_sfp_bist_defaults()
+        sfp_bist_results = run_aurora_bist(master='misc-enet-regs1')
+        return aurora_results_to_status(sfp_bist_results)
+
+    def bist_sfp_loopback(self):
+        """
+        BIST for SFP+ ports:
+        Description: Uses one SFP+ port to test the other. Pipes data out
+        through one SFP, back to the other.
+
+        External Equipment: Loopback cable between the two SFP+ ports
+        required.
+
+        Return dictionary:
+        - elapsed_time: Float value, test time in seconds
+        - max_roundtrip_latency: Float value, max roundtrip latency in seconds
+        - throughput: Approximate data throughput in bytes/s
+        - max_ber: Estimated maximum BER, float value.
+        - errors: Number of errors
+        - bits: Number of bits that were transferred
+        """
+        if self.args.dry_run:
+            return True, get_sfp_bist_defaults()
+        sfp_bist_results = run_aurora_bist(
+            master='misc-enet-regs0',
+            slave='misc-enet-regs1',
+        )
+        return aurora_results_to_status(sfp_bist_results)
 
     def bist_gpio(self):
         """
@@ -415,6 +511,9 @@ class N310BIST(object):
         }
         return True, result
 
+##############################################################################
+# main
+##############################################################################
 def main():
     " Go, go, go! "
     return N310BIST().run()
