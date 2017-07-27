@@ -1,5 +1,5 @@
 #
-# Copyright 2014-2015 Ettus Research LLC
+# Copyright 2014-2015,2017 Ettus Research LLC
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -47,7 +47,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/ddc_block_ctrl_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/duc_block_ctrl_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/radio_ctrl_impl.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/dma_fifo_block_ctrl_impl
+    ${CMAKE_CURRENT_SOURCE_DIR}/dma_fifo_block_ctrl_impl.cpp
 )
 
 INCLUDE_SUBDIRECTORY(nocscript)
