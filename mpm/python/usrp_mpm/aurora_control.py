@@ -383,6 +383,7 @@ class AuroraControl(object):
         slave.clear_control_reg()
         sla_status = slave.read_mac_ctrl_status()
         sla_overruns = slave.read_overruns()
+        sla_hard_errors = 0
         if sla_status & self.MAC_STATUS_HARD_ERR_MSK:
             self.log.error('Hard errors in slave PHY')
             sla_hard_errors = slave.read_overruns()
