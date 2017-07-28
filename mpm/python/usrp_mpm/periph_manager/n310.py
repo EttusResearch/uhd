@@ -36,6 +36,8 @@ from .. import libpyusrp_periphs as lib
 N3XX_DEFAULT_EXT_CLOCK_FREQ = 10e6
 N3XX_DEFAULT_CLOCK_SOURCE = 'external'
 N3XX_DEFAULT_TIME_SOURCE = 'internal'
+N3XX_DEFAULT_ENABLE_GPS = True
+N3XX_DEFAULT_ENABLE_FPGPIO = True
 
 class TCA6424(object):
     """
@@ -183,15 +185,24 @@ class n310(PeriphManagerBase):
     eth_tables = {'eth1': 'misc-enet-regs0', 'eth2': 'misc-enet-regs1'}
 
     def __init__(self, args):
-        # First initialize parent class - will populate self._eeprom_head and self._eeprom_rawdata
         super(n310, self).__init__(args)
-
         self.log.trace("Initializing TCA6424 port expander controls...")
         self._gpios = TCA6424()
-
-        # Initialize reference clock
-        self._gpios.set("PWREN-CLK-MAINREF")
         self._gpios.set("PWREN-CLK-MGT156MHz")
+        self.enable_gps(
+            enable=bool(
+                args.default_args.get('enable_gps', N3XX_DEFAULT_ENABLE_GPS)
+            )
+        )
+        self.enable_fp_gpio(
+            enable=bool(
+                args.default_args.get(
+                    'enable_fp_gpio',
+                    N3XX_DEFAULT_ENABLE_FPGPIO
+                )
+            )
+        )
+        self.enable_ref_clock(enable=True)
         self._ext_clock_freq = float(
             args.default_args.get('ext_clock_freq', N3XX_DEFAULT_EXT_CLOCK_FREQ)
         )
@@ -377,4 +388,32 @@ class n310(PeriphManagerBase):
             os.system('devmem2 0x4001000C w 0x0')
         else:
             assert False
+
+    def enable_gps(self, enable):
+        """
+        Turn power to the GPS off or on.
+        """
+        self.log.trace("{} power to GPS".format(
+            "Enabling" if enable else "Disabling"
+        ))
+        self._gpios.set("PWREN-GPS", int(bool(enable)))
+
+    def enable_fp_gpio(self, enable):
+        """
+        Turn power to the front panel GPIO off or on.
+        """
+        self.log.trace("{} power to front-panel GPIO".format(
+            "Enabling" if enable else "Disabling"
+        ))
+        self._gpios.set("FPGA-GPIO-EN", int(bool(enable)))
+
+    def enable_ref_clock(self, enable):
+        """
+        Enables the ref clock voltage (+3.3-MAINREF). Without setting this to
+        True, *no* ref clock works.
+        """
+        self.log.trace("{} power to reference clocks".format(
+            "Enabling" if enable else "Disabling"
+        ))
+        self._gpios.set("PWREN-CLK-MAINREF", int(bool(enable)))
 
