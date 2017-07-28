@@ -71,19 +71,18 @@ class TCA6424(object):
     def __init__(self):
         self._gpios = SysFSGPIO('tca6424', 0xFFE7FF, 0x86E7FF)
 
-    def set(self, name):
+    def set(self, name, value=None):
         """
         Assert a pin by name
         """
         assert name in self.pins
-        self._gpios.set(self.pins.index(name))
+        self._gpios.set(self.pins.index(name), value=value)
 
     def reset(self, name):
         """
         Deassert a pin by name
         """
-        assert name in self.pins
-        self._gpios.reset(self.pins.index(name))
+        self.set(name, value=0)
 
     def get(self, name):
         """
