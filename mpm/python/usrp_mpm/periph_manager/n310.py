@@ -186,6 +186,7 @@ class n310(PeriphManagerBase):
 
     def __init__(self, args):
         super(n310, self).__init__(args)
+        # Init peripherals
         self.log.trace("Initializing TCA6424 port expander controls...")
         self._gpios = TCA6424()
         self._gpios.set("PWREN-CLK-MGT156MHz")
@@ -202,28 +203,36 @@ class n310(PeriphManagerBase):
                 )
             )
         )
+        # Init clocking
         self.enable_ref_clock(enable=True)
-        self._ext_clock_freq = float(
-            args.default_args.get('ext_clock_freq', N3XX_DEFAULT_EXT_CLOCK_FREQ)
-        )
-        self._clock_source = None # Gets set in set_clock_source()
-        self.set_clock_source(
-            args.default_args.get('clock_source', N3XX_DEFAULT_CLOCK_SOURCE)
-        )
-        self._time_source = None # Gets set in set_time_source()
-        self.set_time_source(
-            args.default_args.get(
-                'time_source',
-                N3XX_DEFAULT_TIME_SOURCE
-            )
-        )
-        self.log.info("mboard info: {}".format(self.mboard_info))
+        self._ext_clock_freq = None
+        self._clock_source = None
+        self._time_source = None
+        self._init_ref_clock_and_time(args.default_args)
+        # Init Ethernet
         self._eth_dispatchers = {
             x: EthDispatcherTable(self.eth_tables.get(x))
             for x in list(self._chdr_interfaces.keys())
         }
         for ifname, table in iteritems(self._eth_dispatchers):
             table.set_ipv4_addr(self._chdr_interfaces[ifname]['ip_addr'])
+        # Init complete.
+        self.log.info("mboard info: {}".format(self.mboard_info))
+
+    def _init_ref_clock_and_time(self, default_args):
+        """
+        Initialize clock and time sources. After this function returns, the
+        reference signals going to the FPGA are valid.
+        """
+        self._ext_clock_freq = float(
+            default_args.get('ext_clock_freq', N3XX_DEFAULT_EXT_CLOCK_FREQ)
+        )
+        self.set_clock_source(
+            default_args.get('clock_source', N3XX_DEFAULT_CLOCK_SOURCE)
+        )
+        self.set_time_source(
+            default_args.get('time_source', N3XX_DEFAULT_TIME_SOURCE)
+        )
 
     def init(self, args):
         """
