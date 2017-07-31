@@ -1404,26 +1404,6 @@ uhd_error uhd_usrp_get_tx_sensor_names(
     )
 }
 
-uhd_error uhd_usrp_set_tx_dc_offset_enabled(
-    uhd_usrp_handle h,
-    bool enb,
-    size_t chan
-){
-    UHD_SAFE_C_SAVE_ERROR(h,
-        USRP(h)->set_tx_dc_offset(enb, chan);
-    )
-}
-
-uhd_error uhd_usrp_set_tx_iq_balance_enabled(
-    uhd_usrp_handle h,
-    bool enb,
-    size_t chan
-){
-    UHD_SAFE_C_SAVE_ERROR(h,
-        USRP(h)->set_tx_iq_balance(enb, chan);
-    )
-}
-
 /****************************************************************************
  * GPIO methods
  ***************************************************************************/

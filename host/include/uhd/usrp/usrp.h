@@ -1138,23 +1138,6 @@ UHD_API uhd_error uhd_usrp_get_tx_sensor_names(
     uhd_string_vector_handle *sensor_names_out
 );
 
-//! Enable or disable TX DC offset correction for the given channel
-/*!
- * See uhd::usrp::multi_usrp::set_tx_dc_offset() for more details.
- */
-UHD_API uhd_error uhd_usrp_set_tx_dc_offset_enabled(
-    uhd_usrp_handle h,
-    bool enb,
-    size_t chan
-);
-
-//! Enable or disable TX IQ imbalance correction for the given channel
-UHD_API uhd_error uhd_usrp_set_tx_iq_balance_enabled(
-    uhd_usrp_handle h,
-    bool enb,
-    size_t chan
-);
-
 /****************************************************************************
  * GPIO methods
  ***************************************************************************/
