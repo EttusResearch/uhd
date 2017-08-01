@@ -330,7 +330,7 @@ uint32_t block_ctrl_base::user_reg_read32(const std::string &reg, const size_t p
         ));
     }
     return user_reg_read32(uint32_t(
-        _tree->access<size_t>(_root_path / "registers" / "sr" / reg).get()
+        _tree->access<size_t>(_root_path / "registers" / "rb" / reg).get()
     ), port);
 }
 
