@@ -45,11 +45,14 @@ uhd_error error_from_uhd_exception(const uhd::exception* e){
 }
 
 // Store the error string in a single place in library
+// Note: Don't call _c_global_error_string() directly, it needs to be locked
+// for thread-safety. Use set_c_global_error_string() and
+// get_c_global_error_string() instead.
 UHD_SINGLETON_FCN(std::string, _c_global_error_string)
 
 static boost::mutex _error_c_mutex;
 
-const std::string& get_c_global_error_string(){
+std::string get_c_global_error_string(){
     boost::mutex::scoped_lock lock(_error_c_mutex);
     return _c_global_error_string();
 }
@@ -66,8 +69,9 @@ uhd_error uhd_get_last_error(
     size_t strbuffer_len
 ){
     try{
+        auto error_str = get_c_global_error_string();
         memset(error_out, '\0', strbuffer_len);
-        strncpy(error_out, _c_global_error_string().c_str(), strbuffer_len);
+        strncpy(error_out, error_str.c_str(), strbuffer_len);
     }
     catch(...){
         return UHD_ERROR_UNKNOWN;

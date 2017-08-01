@@ -87,7 +87,8 @@ typedef enum {
 
 UHD_API uhd_error error_from_uhd_exception(const uhd::exception* e);
 
-UHD_API const std::string& get_c_global_error_string();
+//! Return a copy of the last error string.
+UHD_API std::string get_c_global_error_string();
 
 UHD_API void set_c_global_error_string(const std::string &msg);
 
