@@ -101,21 +101,26 @@ class SysFSGPIO(object):
     API for accessing GPIOs mapped into userland via sysfs
     """
 
-    def __init__(self, label, use_mask, ddr):
+    def __init__(self, label, use_mask, ddr, init_value=0):
         assert (use_mask & ddr) == ddr
         self.log = get_logger("SysFSGPIO")
         self._label = label
         self._use_mask = use_mask
         self._ddr = ddr
+        self._init_value = init_value
         self.log.trace("Generating SysFSGPIO object for label `{}'...".format(label))
         self._gpio_dev, self._map_info = find_gpio_device(label, self.log)
         if self._gpio_dev is None:
             self.log.error("Could not find GPIO device with label `{}'.".format(label))
         self.log.trace("GPIO base number is {}".format(self._map_info.get("sys_number")))
         self._base_gpio = self._map_info.get("sys_number")
-        self.init(self._map_info['ngpio'], self._base_gpio, self._use_mask, self._ddr)
+        self.init(self._map_info['ngpio'],
+                  self._base_gpio,
+                  self._use_mask,
+                  self._ddr,
+                  self._init_value)
 
-    def init(self, n_gpio, base, use_mask, ddr):
+    def init(self, n_gpio, base, use_mask, ddr, init_value=0):
         """
         Guarantees that all the devices are created accordingly
 
@@ -127,11 +132,13 @@ class SysFSGPIO(object):
         for gpio_idx in gpio_list:
             gpio_num = base + gpio_idx
             ddr_out = ddr & (1<<gpio_idx)
+            ini_v = init_value & (1<<gpio_idx)
             gpio_path = os.path.join(GPIO_SYSFS_BASE_DIR, 'gpio{}'.format(gpio_num))
             if not os.path.exists(gpio_path):
                 self.log.trace("Creating GPIO path `{}'...".format(gpio_path))
                 open(os.path.join(GPIO_SYSFS_BASE_DIR, 'export'), 'w').write('{}'.format(gpio_num))
             ddr_str = 'out' if ddr_out else 'in'
+            ddr_str = 'high' if ini_v else ddr_str
             self.log.trace("On GPIO path `{}', setting DDR mode to {}.".format(gpio_path, ddr_str))
             open(os.path.join(GPIO_SYSFS_BASE_DIR, gpio_path, 'direction'), 'w').write(ddr_str)
 
