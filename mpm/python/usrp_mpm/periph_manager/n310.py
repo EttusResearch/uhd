@@ -71,7 +71,7 @@ class TCA6424(object):
     )
 
     def __init__(self):
-        self._gpios = SysFSGPIO('tca6424', 0xFFE7FF, 0x86E7FF)
+        self._gpios = SysFSGPIO('tca6424', 0xFFE7FF, 0x86E7FF, 0x1)
 
     def set(self, name, value=None):
         """
