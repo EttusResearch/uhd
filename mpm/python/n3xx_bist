@@ -27,7 +27,6 @@ import time
 import json
 from datetime import datetime
 import argparse
-import pyudev
 
 ##############################################################################
 # Aurora/SFP BIST code
@@ -476,29 +475,28 @@ class N310BIST(object):
                 'read_patterns': patterns,
             }
         from usrp_mpm.periph_manager import n310
-        gpioTCA6424 = n310.TCA6424()
+        gpio_tca6424 = n310.TCA6424()
+        gpio_tca6424.set("FPGA-GPIO-EN")
+        # Allow some time for the front-panel GPIOs to become usable
+        time.sleep(.5)
         ddr1 = 0x03f
         ddr2 = 0xfc0
-        half_GPIO_SIZE = 6
-        def _runGPIO(ddr, patterns):
-            gpioTCA6424.set("FPGA-GPIO-EN")
-            time.sleep(.5)
-            myGPIO = n310.FP_GPIO(ddr)
+        def _run_gpio(ddr, patterns):
+            " Run a GPIO test for a given set of patterns "
+            gpio_ctrl = n310.FP_GPIO(ddr)
             for pattern in patterns:
-                myGPIO.set_all(pattern)
+                gpio_ctrl.set_all(pattern)
                 time.sleep(0.1)
-                rb = myGPIO.get_all()
-                if  pattern != rb:
+                gpio_rb = gpio_ctrl.get_all()
+                if  pattern != gpio_rb:
                     return False, {'write_patterns': [pattern],
-                                   'read_patterns': [rb]}
+                                   'read_patterns': [gpio_rb]}
             return True, {'write_patterns': list(patterns),
                           'read_patterns': list(patterns)}
-            gpioTCA6424.reset("FPGA-GPIO-EN")
-            time.sleep(.5)
-        status, data = _runGPIO(ddr1, patterns)
+        status, data = _run_gpio(ddr1, patterns)
         if  not status:
             return status, data
-        status, data = _runGPIO(ddr2, patterns)
+        status, data = _run_gpio(ddr2, patterns)
         return status, data
 
     def bist_temp(self):
@@ -513,6 +511,7 @@ class N310BIST(object):
         assert 'temp' in self.tests_to_run
         if self.args.dry_run:
             return True, {'fpga-thermal-zone': 30000}
+        import pyudev
         context = pyudev.Context()
         result = {
             device.attributes.get('type').decode('ascii'): \
@@ -536,6 +535,7 @@ class N310BIST(object):
         assert 'fan' in self.tests_to_run
         if self.args.dry_run:
             return True, {'cooling_device0': 10000, 'cooling_device1': 10000}
+        import pyudev
         context = pyudev.Context()
         result = {
             device.sys_name: int(device.attributes.get('cur_state'))
