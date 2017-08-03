@@ -247,7 +247,8 @@ class N310BIST(object):
             return True, {'throughput': 1250e6}
         # FIXME implement
         sys.stderr.write("Test not implemented.\n")
-        return True, {}
+        result = {'throughput': 1250e6}
+        return result.get('throughput', 0) > 1000e6, result
 
     def bist_gpsdo(self):
         """
@@ -279,6 +280,10 @@ class N310BIST(object):
                 "eps": 34.11,
                 "mode": 3
             }
+        from usrp_mpm.periph_manager import n310
+        gpio_tca6424 = n310.TCA6424()
+        gpio_tca6424.set("PWREN-GPS")
+        time.sleep(60) # Wait for GPS chip to power on and lock to GPS
         my_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         my_sock.connect(('localhost', 2947))
         sys.stderr.write("Connected to GPSDO socket.\n")
@@ -301,7 +306,7 @@ class N310BIST(object):
             result = json.loads(json_result.decode('ascii'))
         my_sock.sendall(b'?WATCH={"enable":false}')
         my_sock.close()
-        return True, result
+        return True, result # TODO Come up with a better pass condition
 
     def bist_tpm(self):
         """
@@ -310,30 +315,25 @@ class N310BIST(object):
         This reads the caps value for all detected TPM devices.
 
         Return dictionary:
-        - tpm<N>:
-          - caps: TPM manufacturer and version info. Is a multi-line string.
+        - tpm<N>_caps: TPM manufacturer and version info. Is a multi-line
+                       string.
 
         Return status: True if exactly one TPM device is detected.
         """
         assert 'tpm' in self.tests_to_run
         if self.args.dry_run:
             return True, {
-                'tpm0': {
-                    'caps': "Fake caps value\n\nVersion 0.0.0",
-                }
+                'tpm0_caps': "Fake caps value\n\nVersion 0.0.0",
             }
         result = {}
         props_to_read = ('caps',)
         base_path = '/sys/class/tpm'
         for tpm_device in os.listdir(base_path):
             if tpm_device.startswith('tpm'):
-                dev_result = {
-                    key: open(
+                for key in props_to_read:
+                    result['{}_{}'.format(tpm_device, key)] = open(
                         os.path.join(base_path, tpm_device, key), 'r'
                     ).read().strip()
-                    for key in props_to_read
-                }
-                result[tpm_device] = dev_result
         return len(result) == 1, result
 
     def bist_clock_int(self):
@@ -521,7 +521,7 @@ class N310BIST(object):
             if 'temp' in device.attributes.available_attributes \
                     and device.attributes.get('temp') is not None
         }
-        return True, result
+        return len(result) >= 1, result
 
     def bist_fan(self):
         """
@@ -535,7 +535,7 @@ class N310BIST(object):
         """
         assert 'fan' in self.tests_to_run
         if self.args.dry_run:
-            return True, {'cooling_device0': 10000}
+            return True, {'cooling_device0': 10000, 'cooling_device1': 10000}
         context = pyudev.Context()
         result = {
             device.sys_name: int(device.attributes.get('cur_state'))
@@ -543,7 +543,7 @@ class N310BIST(object):
             if 'cur_state' in device.attributes.available_attributes \
                     and device.attributes.get('cur_state') is not None
         }
-        return True, result
+        return len(result) == 2, result
 
 ##############################################################################
 # main
