@@ -30,6 +30,9 @@ from datetime import datetime
 import argparse
 from six import iteritems
 
+GPS_WARMUP_TIMEOUT = 70 # Data sheet says "about a minute"
+GPS_LOCKOK_TIMEOUT = 2 # Data sheet says about 15 minutes
+
 ##############################################################################
 # Aurora/SFP BIST code
 ##############################################################################
@@ -195,6 +198,21 @@ def sock_read_line(my_sock, timeout=60, interval=0.1):
         else:
             time.sleep(interval)
     raise RuntimeError("sock_read_line() exceeded read timeout!")
+
+def poll_with_timeout(state_check, timeout_ms, interval_ms):
+    """
+    Calls state_check() every interval_ms until it returns a positive value, or
+    until a timeout is exceeded.
+
+    Returns True if state_check() returned True within the timeout.
+    """
+    max_time = time.time() + (float(timeout_ms) / 1000)
+    interval_s = float(interval_ms) / 1000
+    while time.time() < max_time:
+        if state_check():
+            return True
+        time.sleep(interval_s)
+    return False
 
 ##############################################################################
 # Bist class
@@ -401,24 +419,19 @@ class N310BIST(object):
         time.sleep(5)
         # Wait for WARMUP to go low
         sys.stderr.write("Waiting for WARMUP to go low...\n")
-        for _ in range(70):
-            # FIXME proper timeout
-            if not gpio_tca6424.get('GPS-WARMUP'):
-                break
-            time.sleep(1)
-        if gpio_tca6424.get('GPS-WARMUP'):
+        if not poll_with_timeout(
+                lambda: not gpio_tca6424.get('GPS-WARMUP'),
+                GPS_WARMUP_TIMEOUT, 1000
+            ):
             raise RuntimeError("GPS-WARMUP did not go low within one minute!")
         sys.stderr.write("Chip is warmed up.\n")
-        if gpio_tca6424.get('GPS-ALARM'):
-            raise RuntimeError("GPS-ALARM is high!")
-        # Wait for LOCKOK
+        # Wait for LOCKOK. Data sheet says wait up to 15 minutes for GPS lock.
         sys.stderr.write("Waiting for LOCKOK to go high...\n")
-        for _ in range(1):
-            # FIXME proper timeout
-            if gpio_tca6424.get('GPS-LOCKOK'):
-                break
-            time.sleep(1)
-        if not gpio_tca6424.get('GPS-WARMUP'):
+        if not poll_with_timeout(
+                lambda: gpio_tca6424.get('GPS-LOCKOK'),
+                GPS_LOCKOK_TIMEOUT,
+                1000
+            ):
             sys.stderr.write("No GPS-LOCKOK!\n")
         sys.stderr.write("GPS-SURVEY status: {}\n".format(
             gpio_tca6424.get('GPS-SURVEY')
