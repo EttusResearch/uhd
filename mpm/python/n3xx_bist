@@ -27,6 +27,7 @@ import time
 import json
 from datetime import datetime
 import argparse
+from six import iteritems
 
 ##############################################################################
 # Aurora/SFP BIST code
@@ -90,6 +91,92 @@ def post_results(results):
         separators=(',', ': ')
     ))
 
+def filter_results_for_lv(results):
+    """
+    The LabView JSON parser does not support a variety of things, such as
+    nested dicts, and some downstream LV applications freak out if certain keys
+    are not what they expect.
+    This is a long hard-coded list of how results should look like for those
+    cases. Note: This list needs manual supervision and attention for the case
+    where either subsystems get renamed, or other architectural changes should
+    occur.
+    """
+    lv_compat_format = {
+        'ddr3': {
+            'throughput': -1,
+        },
+        'gspdo': {
+            "class": "",
+            "time": "",
+            "ept": -1,
+            "lat": -1,
+            "lon": -1,
+            "alt": -1,
+            "epx": -1,
+            "epy": -1,
+            "epv": -1,
+            "track": -1,
+            "speed": -1,
+            "climb": -1,
+            "eps": -1,
+            "mode": -1,
+        },
+        'tpm': {
+            'tpm0_caps': "",
+        },
+        'sfp0_loopback': {
+            'elapsed_time': -1,
+            'max_roundtrip_latency': -1,
+            'throughput': -1,
+            'max_ber': -1,
+            'errors': -1,
+            'bits': -1,
+        },
+        'sfp1_loopback': {
+            'elapsed_time': -1,
+            'max_roundtrip_latency': -1,
+            'throughput': -1,
+            'max_ber': -1,
+            'errors': -1,
+            'bits': -1,
+        },
+        'gpio': {
+            'write_patterns': [],
+            'read_patterns': [],
+        },
+        'temp': {
+            'fpga-thermal-zone': 30000,
+        },
+        'fan': {
+            'cooling_device0': 10000,
+            'cooling_device1': 10000,
+        },
+    }
+    # OK now go and brush up the results:
+    def fixup_dict(result_dict, ref_dict):
+        """
+        Touches up result_dict according to ref_dict by the following rules:
+        - If a key is in result_dict that is not in ref_dict, delete that
+        - If a key is in ref_dict that is not in result_dict, use the value
+          from ref_dict
+        """
+        ref_dict['error_msg'] = ""
+        ref_dict['status'] = ""
+        result_dict = {
+            k: v for k, v in iteritems(result_dict)
+            if k in ref_dict or k in ('error_msg', 'status')
+        }
+        result_dict = {
+            k: result_dict.get(k, ref_dict[k]) for k in ref_dict
+        }
+        return result_dict
+    results = {
+        testname: fixup_dict(testresults, lv_compat_format[testname]) \
+                    if testname in lv_compat_format else testresults
+        for testname, testresults in iteritems(results)
+    }
+    return results
+
 ##############################################################################
 # Bist class
 ##############################################################################
@@ -123,6 +210,13 @@ class N310BIST(object):
         parser.add_argument(
             '--debug', action='store_true',
             help="For debugging this tool.",
+        )
+        parser.add_argument(
+            '--lv-compat', action='store_true',
+            help="Provides compatibility with the LV JSON parser. Don't run "
+                 "this mode unless you know what you're doing. The JSON "
+                 "output does not necessarily reflect the actual system "
+                 "status when using this mode.",
         )
         parser.add_argument(
             'tests',
@@ -199,6 +293,8 @@ class N310BIST(object):
             status, result_data = execute_test(test)
             tests_successful = tests_successful and status
             result[test] = result_data
+        if self.args.lv_compat:
+            result = filter_results_for_lv(result)
         post_results(result)
         return tests_successful
 
