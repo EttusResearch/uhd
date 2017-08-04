@@ -376,9 +376,36 @@ class N310BIST(object):
                 "mode": 3
             }
         from usrp_mpm.periph_manager import n310
+        # Turn on GPS, give some time to acclimatize
         gpio_tca6424 = n310.TCA6424()
         gpio_tca6424.set("PWREN-GPS")
-        time.sleep(60) # Wait for GPS chip to power on and lock to GPS
+        time.sleep(5)
+        # Wait for WARMUP to go low
+        sys.stderr.write("Waiting for WARMUP to go low...\n")
+        for _ in range(70):
+            # FIXME proper timeout
+            if not gpio_tca6424.get('GPS-WARMUP'):
+                break
+            time.sleep(1)
+        if gpio_tca6424.get('GPS-WARMUP'):
+            raise RuntimeError("GPS-WARMUP did not go low within one minute!")
+        sys.stderr.write("Chip is warmed up.\n")
+        # Wait for LOCKOK
+        sys.stderr.write("Waiting for LOCKOK to go high...\n")
+        for _ in range(60):
+            # FIXME proper timeout
+            if gpio_tca6424.get('GPS-LOCKOK'):
+                break
+            time.sleep(1)
+        if not gpio_tca6424.get('GPS-WARMUP'):
+            sys.stderr.write("No GPS-LOCKOK!\n")
+        sys.stderr.write("GPS-SURVEY status: {}\n".format(
+            gpio_tca6424.get('GPS-SURVEY')
+        ))
+        sys.stderr.write("GPS-PHASELOCK status: {}\n".format(
+            gpio_tca6424.get('GPS-PHASELOCK')
+        ))
+        # Now read back response from chip
         my_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         my_sock.connect(('localhost', 2947))
         sys.stderr.write("Connected to GPSDO socket.\n")
@@ -401,7 +428,8 @@ class N310BIST(object):
             result = json.loads(json_result.decode('ascii'))
         my_sock.sendall(b'?WATCH={"enable":false}')
         my_sock.close()
-        return True, result # TODO Come up with a better pass condition
+        # If we reach this line, we have a valid result and the chip responded.
+        return True, result
 
     def bist_tpm(self):
         """
