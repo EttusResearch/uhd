@@ -93,7 +93,7 @@ class TCA6424(object):
         Read back a pin by name
         """
         assert name in self.pins
-        self._gpios.get(self.pins.index(name))
+        return self._gpios.get(self.pins.index(name))
 
 class FP_GPIO(object):
     """
