@@ -23,6 +23,7 @@ from __future__ import print_function
 import os
 import sys
 import socket
+import select
 import time
 import json
 from datetime import datetime
@@ -176,6 +177,24 @@ def filter_results_for_lv(results):
         for testname, testresults in iteritems(results)
     }
     return results
+
+def sock_read_line(my_sock, timeout=60, interval=0.1):
+    """
+    Read from a socket until newline. If there was no newline until the timeout
+    occurs, raise an error. Otherwise, return the line.
+    """
+    line = b''
+    end_time = time.time() + timeout
+    while time.time() < end_time:
+        socket_ready = select.select([my_sock], [], [], 0)[0]
+        if socket_ready:
+            next_char = my_sock.recv(1)
+            if next_char == b'\n':
+                return line.decode('ascii')
+            line += next_char
+        else:
+            time.sleep(interval)
+    raise RuntimeError("sock_read_line() exceeded read timeout!")
 
 ##############################################################################
 # Bist class
@@ -390,9 +409,11 @@ class N310BIST(object):
         if gpio_tca6424.get('GPS-WARMUP'):
             raise RuntimeError("GPS-WARMUP did not go low within one minute!")
         sys.stderr.write("Chip is warmed up.\n")
+        if gpio_tca6424.get('GPS-ALARM'):
+            raise RuntimeError("GPS-ALARM is high!")
         # Wait for LOCKOK
         sys.stderr.write("Waiting for LOCKOK to go high...\n")
-        for _ in range(60):
+        for _ in range(1):
             # FIXME proper timeout
             if gpio_tca6424.get('GPS-LOCKOK'):
                 break
@@ -405,6 +426,9 @@ class N310BIST(object):
         sys.stderr.write("GPS-PHASELOCK status: {}\n".format(
             gpio_tca6424.get('GPS-PHASELOCK')
         ))
+        sys.stderr.write("GPS-ALARM status: {}\n".format(
+            gpio_tca6424.get('GPS-ALARM')
+        ))
         # Now read back response from chip
         my_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         my_sock.connect(('localhost', 2947))
@@ -412,23 +436,19 @@ class N310BIST(object):
         query_cmd = b'?WATCH={"enable":true,"json":true}'
         my_sock.sendall(query_cmd)
         sys.stderr.write("Sent query: {}\n".format(query_cmd))
-        while my_sock.recv(1) != b'\n':
-            pass
+        sock_read_line(my_sock, timeout=10)
         sys.stderr.write("Received initial newline.\n")
         result = {}
         while result.get('class', None) != 'TPV':
-            json_result = b''
-            next_char = b''
-            while next_char != b'\n':
-                json_result += next_char
-                next_char = my_sock.recv(1)
+            json_result = sock_read_line(my_sock, timeout=60)
             sys.stderr.write(
                 "Received JSON response: {}\n\n".format(json_result)
             )
-            result = json.loads(json_result.decode('ascii'))
+            result = json.loads(json_result)
         my_sock.sendall(b'?WATCH={"enable":false}')
         my_sock.close()
         # If we reach this line, we have a valid result and the chip responded.
+        # However, it doesn't necessarily mean we had a GPS lock.
         return True, result
 
     def bist_tpm(self):
