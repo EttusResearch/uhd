@@ -71,7 +71,9 @@ class TCA6424(object):
     )
 
     def __init__(self):
-        self._gpios = SysFSGPIO('tca6424', 0xFFE7FF, 0x86E7FF, 0x1)
+        # Default state: Turn on GPS power, take GPS out of reset or
+        # init-survey, turn on 156.25 MHz clock
+        self._gpios = SysFSGPIO('tca6424', 0xFFE7FF, 0x86E7FF, 0x860001)
 
     def set(self, name, value=None):
         """
