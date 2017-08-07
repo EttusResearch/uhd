@@ -83,7 +83,7 @@ static const size_t X300_MAX_RATE_10GIGE            = (size_t)(  // bytes/s
         ( float(X300_10GE_DATA_FRAME_MAX_SIZE - uhd::usrp::DEVICE3_TX_MAX_HDR_LEN) /
           float(X300_10GE_DATA_FRAME_MAX_SIZE + 8 /* UDP header */ + 20 /* Ethernet header length */ )));
 static const size_t X300_MAX_RATE_1GIGE            = (size_t)(  // bytes/s
-        10e9 / 8 *                                               // wire speed multiplied by percentage of packets that is sample data
+        1e9 / 8 *                                               // wire speed multiplied by percentage of packets that is sample data
         ( float(X300_1GE_DATA_FRAME_MAX_SIZE - uhd::usrp::DEVICE3_TX_MAX_HDR_LEN) /
           float(X300_1GE_DATA_FRAME_MAX_SIZE + 8 /* UDP header */ + 20 /* Ethernet header length */ )));
 
