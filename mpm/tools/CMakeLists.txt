@@ -16,6 +16,6 @@
 #
 
 INSTALL(PROGRAMS
-  rpc_shell.py
+  mpm_shell.py
   mpm_debug.py
   DESTINATION ${RUNTIME_DIR})
