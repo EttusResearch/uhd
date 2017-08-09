@@ -111,7 +111,7 @@ def filter_results_for_lv(results):
         'ddr3': {
             'throughput': -1,
         },
-        'gspdo': {
+        'gpsdo': {
             "class": "",
             "time": "",
             "ept": -1,
@@ -151,11 +151,11 @@ def filter_results_for_lv(results):
             'read_patterns': [],
         },
         'temp': {
-            'fpga-thermal-zone': 30000,
+            'fpga-thermal-zone': -1,
         },
         'fan': {
-            'cooling_device0': 10000,
-            'cooling_device1': 10000,
+            'cooling_device0': -1,
+            'cooling_device1': -1,
         },
     }
     # OK now go and brush up the results:
@@ -167,7 +167,7 @@ def filter_results_for_lv(results):
           from ref_dict
         """
         ref_dict['error_msg'] = ""
-        ref_dict['status'] = ""
+        ref_dict['status'] = False
         result_dict = {
             k: v for k, v in iteritems(result_dict)
             if k in ref_dict or k in ('error_msg', 'status')
@@ -645,11 +645,12 @@ class N310BIST(object):
         - read_patterns: A list of patterns that were read back
         """
         assert 'gpio' in self.tests_to_run
+        # patterns = list(range(64))
         patterns = range(64)
         if self.args.dry_run:
             return True, {
-                'write_patterns': patterns,
-                'read_patterns': patterns,
+                'write_patterns': list(patterns),
+                'read_patterns': list(patterns),
             }
         from usrp_mpm.periph_manager import n310
         gpio_tca6424 = n310.TCA6424()
