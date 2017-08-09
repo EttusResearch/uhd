@@ -51,18 +51,16 @@ class MPMServer(RPCServer):
     """
     Main MPM RPC class which holds the periph_manager object and translates
     RPC calls to appropiate calls in the periph_manager and dboard_managers.
-
-    Claiming and unclaiming is implemented in python only
     """
-    _db_methods = []
-    _mb_methods = []
-
     def __init__(self, state, mgr, *args, **kwargs):
         self.log = get_main_logger().getChild('RPCServer')
         self._state = state
         self._timer = Greenlet()
         self.session_id = None
         self.periph_manager = mgr
+        self._db_methods = []
+        self._mb_methods = []
+        self.claimed_methods = ['init', 'reclaim', 'unclaim', 'allocate_sid']
         # add public mboard methods without namespace
         self._update_component_commands(mgr, '', '_mb_methods')
         # add public dboard methods in `db_<slot>_` namespace
@@ -101,6 +99,7 @@ class MPMServer(RPCServer):
                 self._add_safe_command(new_rpc_method, command_name)
             else:
                 self._add_claimed_command(new_rpc_method, command_name)
+                self.claimed_methods.append(command_name)
             getattr(self, storage).append(command_name)
 
 
@@ -139,9 +138,11 @@ class MPMServer(RPCServer):
         Returns a tuple of public methods and
         corresponding docs of this RPC server
         """
-        return [(met, getattr(self, met).__doc__)
+        return [(met, getattr(self, met).__doc__, met in self.claimed_methods)
                 for met in dir(self)
-                if not met.startswith('_') and callable(getattr(self, met))]
+                if not met.startswith('_') \
+                        and callable(getattr(self, met))
+        ] # TODO _notok is missing from the list of checks
 
     def ping(self, data=None):
         """

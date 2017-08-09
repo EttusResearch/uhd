@@ -93,10 +93,14 @@ class MPMClaimer(object):
         """
         client = RPCClient(host, port, pack_params={'use_bin_type': True})
         self.token = client.call('claim', 'MPM Shell')
-        while not self._exit_loop:
-            client.call('reclaim', self.token)
-            time.sleep(1)
-        client.call('unclaim', self.token)
+        try:
+            while not self._exit_loop:
+                client.call('reclaim', self.token)
+                time.sleep(1)
+            client.call('unclaim', self.token)
+        except RPCError as ex:
+            print("Unexpected RPC error in claimer loop!")
+            print(str(ex))
         disc_callback()
         self.token = None
 
@@ -128,24 +132,32 @@ class MPMShell(cmd.Cmd):
                 self.claim()
         self.update_prompt()
 
-    def _add_command(self, command, docs):
+    def _add_command(self, command, docs, requires_token=False):
         """
         Add a command to the current session
         """
         cmd_name = 'do_' + command
         if not hasattr(self, cmd_name):
-            new_command = lambda args: self.rpc_template(str(command), args)
+            new_command = lambda args: self.rpc_template(
+                str(command), requires_token, args
+            )
             new_command.__doc__ = docs
             setattr(self, cmd_name, new_command)
             self.remote_methods.append(command)
 
-    def rpc_template(self, command, args=None):
+    def rpc_template(self, command, requires_token, args=None):
         """
         Template function to create new RPC shell commands
         """
+        if requires_token and \
+                (self._claimer is None or self._claimer.token is None):
+            print("Cannot execute `{}' -- no claim available!")
+            return
         try:
-            if args:
+            if args or requires_token:
                 expanded_args = self.expand_args(args)
+                if requires_token:
+                    expanded_args.insert(0, self._claimer.token)
                 response = self.client.call(command, *expanded_args)
             else:
                 response = self.client.call(command)
@@ -281,7 +293,6 @@ class MPMShell(cmd.Cmd):
             args = args.replace('$T', str(self._claimer.token))
         eval_preamble = '='
         args = args.strip()
-        print('args ' + str(args))
         if args.startswith(eval_preamble):
             parsed_args = eval(args.lstrip(eval_preamble))
             if not isinstance(parsed_args, list):
@@ -346,7 +357,10 @@ def main():
     my_shell = MPMShell()
     try:
         return my_shell.run()
-    except (KeyboardInterrupt, Exception):
+    except KeyboardInterrupt:
+        my_shell.disconnect()
+    except Exception as ex:
+        print("Uncaught exception: " + str(ex))
         my_shell.disconnect()
     return True
 
