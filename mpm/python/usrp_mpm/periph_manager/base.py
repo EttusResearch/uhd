@@ -56,7 +56,6 @@ class PeriphManagerBase(object):
     """
     # stores discovered device information in dicts
     mboard_if_addrs = {}
-    mboard_overlays = {}
     # this information has to be provided by
     # the specific periph_manager implementation
     updateable_components = []
@@ -345,21 +344,20 @@ class PeriphManagerBase(object):
         """
         return self.updateable_components
 
-    def get_overlays(self):
+    @no_claim
+    def list_available_overlays(self):
         """
-        get and store the list of available dt overlays
+        Returns a list of available device tree overlays
         """
-        self.mboard_overlays = []
-        for fw_files in os.listdir("/lib/firmware/"):
-            if fw_files.endswith(".dtbo"):
-                self.mboard_overlays.append(fw_files.strip(".dtbo"))
+        return dtoverlay.list_available_overlays()
 
-    def check_overlay(self):
+    @no_claim
+    def list_active_overlays(self):
         """
+        Returns a list of currently loaded device tree overlays
         check which dt overlay is loaded currently
         """
-        for overlay_file in os.listdir("/sys/kernel/device-tree/overlays/"):
-            self.overlays = overlay_file
+        return dtoverlay.list_overlays()
 
     def _get_device_info(self):
         """
