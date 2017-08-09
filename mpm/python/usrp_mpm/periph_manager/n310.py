@@ -229,12 +229,20 @@ class n310(PeriphManagerBase):
         self._ext_clock_freq = float(
             default_args.get('ext_clock_freq', N3XX_DEFAULT_EXT_CLOCK_FREQ)
         )
-        self.set_clock_source(
-            default_args.get('clock_source', N3XX_DEFAULT_CLOCK_SOURCE)
-        )
-        self.set_time_source(
-            default_args.get('time_source', N3XX_DEFAULT_TIME_SOURCE)
-        )
+        if len(self.dboards) == 0:
+            self.log.warning(
+                "No dboards found, skipping setting clock and time source " \
+                "configuration."
+            )
+            self._clock_source = N3XX_DEFAULT_CLOCK_SOURCE
+            self._time_source = N3XX_DEFAULT_TIME_SOURCE
+        else:
+            self.set_clock_source(
+                default_args.get('clock_source', N3XX_DEFAULT_CLOCK_SOURCE)
+            )
+            self.set_time_source(
+                default_args.get('time_source', N3XX_DEFAULT_TIME_SOURCE)
+            )
 
     def init(self, args):
         """
