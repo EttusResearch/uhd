@@ -74,7 +74,6 @@ public:
     virtual uint8_t get_framer_status() = 0;
     virtual uint8_t get_deframer_status() = 0;
 
-    virtual uint8_t get_deframer_irq() = 0;
     virtual uint16_t get_ilas_config_match() = 0;
     virtual void enable_jesd_loopback(uint8_t enable) = 0;
 
@@ -140,9 +139,10 @@ public:
      * Sets the RF frequency.  This is a per direction setting.
      * \param which frontend string to specify direction to tune
      * \param value target frequency
+     * \param wait_for_lock wait after tuning for the PLL to lock
      * \return actual frequency
      */
-    virtual double set_freq(const std::string &which, double value) = 0;
+    virtual double set_freq(const std::string &which, double value, bool wait_for_lock) = 0;
 
     /*! \brief get the RF frequency for the direction specified in which
      *
@@ -189,7 +189,6 @@ void export_mykonos(){
         .def("get_multichip_sync_status", &ad937x_ctrl::get_multichip_sync_status)
         .def("get_framer_status", &ad937x_ctrl::get_framer_status)
         .def("get_deframer_status", &ad937x_ctrl::get_deframer_status)
-        //.def("get_deframer_irq", &ad937x_ctrl::get_deframer_irq)
         .def("get_ilas_config_match", &ad937x_ctrl::get_ilas_config_match)
         .def("enable_jesd_loopback", &ad937x_ctrl::enable_jesd_loopback)
         .def("get_rf_freq_range", &ad937x_ctrl::get_rf_freq_range)

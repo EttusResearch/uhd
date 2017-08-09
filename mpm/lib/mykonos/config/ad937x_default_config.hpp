@@ -199,7 +199,7 @@ static const mykonosObsRxSettings_t DEFAULT_ORX_SETTINGS =
     nullptr,        // Sniffer datapath profile, 3dB corner frequencies, and digital filter enables
     nullptr,        // SnRx gain control settings structure
     nullptr,        // ObsRx JESD204b framer configuration structure
-    MYK_OBS_RXOFF,  // obsRxChannel
+    MYK_ORX1,       // obsRxChannel  TODO: fix this garbage please
     OBSLO_TX_PLL,   // (obsRxLoSource) The Obs Rx mixer can use the Tx Synth(TX_PLL) or Sniffer Synth (SNIFFER_PLL)
     2600000000U,    // SnRx PLL LO frequency in Hz
     0,              // Flag to choose if complex baseband or real IF data are selected for Rx and ObsRx paths. Where if > 0 = real IF data, '0' = complex data

@@ -30,6 +30,7 @@
 #include <mpm/spi/spi_iface.hpp>
 #include <mpm/exception.hpp>
 #include <boost/noncopyable.hpp>
+#include <boost/filesystem.hpp>
 #include <memory>
 #include <functional>
 
@@ -37,7 +38,7 @@ class ad937x_device : public boost::noncopyable
 {
 public:
     enum class gain_mode_t { MANUAL, AUTOMATIC, HYBRID };
-    enum class pll_t {CLK_SYNTH, RX_SYNTH, TX_SYNTH, SNIFF_SYNTH, CALPLL_SDM};
+    enum class pll_t { CLK_SYNTH, RX_SYNTH, TX_SYNTH, SNIFF_SYNTH, CALPLL_SDM };
 
     ad937x_device(
         mpm::types::regs_iface* iface,
@@ -48,13 +49,10 @@ public:
     void finish_initialization();
     void start_jesd_rx();
     void start_jesd_tx();
+
     uint8_t get_multichip_sync_status();
     uint8_t get_framer_status();
     uint8_t get_deframer_status();
-
-    // debug functions for JESD
-    // TODO: make these returns useful
-    uint8_t get_deframer_irq();
     uint16_t get_ilas_config_match();
     void enable_jesd_loopback(uint8_t enable);
 
@@ -68,7 +66,7 @@ public:
     void set_agc_mode(uhd::direction_t direction, gain_mode_t mode);
     double set_clock_rate(double value);
     void enable_channel(uhd::direction_t direction, mpm::ad937x::device::chain_t chain, bool enable);
-    double tune(uhd::direction_t direction, double value);
+    double tune(uhd::direction_t direction, double value, bool wait_for_lock);
     double get_freq(uhd::direction_t direction);
 
     bool get_pll_lock_status(pll_t pll);
@@ -91,6 +89,8 @@ public:
     const static double TX_GAIN_STEP;
 
 private:
+    enum class multichip_sync_t { PARTIAL, FULL };
+
     ad9371_spiSettings_t full_spi_settings;
     ad937x_config_t mykonos_config;
     ad937x_gain_ctrl_config_t gain_ctrl;
@@ -99,7 +99,13 @@ private:
 
     void _call_api_function(std::function<mykonosErr_t()> func);
     void _call_gpio_api_function(std::function<mykonosGpioErr_t()> func);
-    //void _call_debug_api_function(std::function<mykonosDbgErr_t()> func);
+
+    std::string _get_arm_binary_path();
+    std::vector<uint8_t> _get_arm_binary();
+
+    void _initialize_rf();
+    void _verify_product_id();
+    void _verify_multichip_sync_status(multichip_sync_t mcs);
 
     static uint8_t _convert_rx_gain(double gain);
     static uint16_t _convert_tx_gain(double gain);

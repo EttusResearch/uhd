@@ -25,6 +25,7 @@
 #include <functional>
 #include <iostream>
 #include <thread>
+#include <fstream>
 
 using namespace mpm::ad937x::device;
 using namespace mpm::ad937x::gpio;
@@ -39,8 +40,10 @@ const double ad937x_device::MIN_TX_GAIN = 0.0;
 const double ad937x_device::MAX_TX_GAIN = 41.95;
 const double ad937x_device::TX_GAIN_STEP = 0.05;
 
-static const double RX_DEFAULT_FREQ = 1e9;
-static const double TX_DEFAULT_FREQ = 1e9;
+static const double RX_DEFAULT_FREQ = 2.5e9;
+static const double TX_DEFAULT_FREQ = 2.5e9;
+static const double RX_DEFAULT_GAIN = 0;
+static const double TX_DEFAULT_GAIN = 0;
 
 // TODO: get the actual device ID
 static const uint32_t AD9371_PRODUCT_ID = 0x1;
@@ -112,89 +115,59 @@ void ad937x_device::_call_gpio_api_function(std::function<mykonosGpioErr_t()> fu
     }
 }
 
-//void ad937x_device::_call_debug_api_function(std::function<mykonosDbgErr_t()> func)
-//{
-    //auto error = func();
-    //if (error != MYKONOS_ERR_DBG_OK)
-    //{
-        //std::cout << getDbgJesdMykonosErrorMessage(error);
-        //// TODO: make UHD exception
-        ////throw std::exception(getMykonosErrorMessage(error));
-    //}
-//}
-
-// TODO: delete this comment closer to release
-/*
-EX 1 Preconditions
-EX      1. Check revision register
-EX      2. Initialize Clocking
-EX      3. Initialize FPGA JESD
-
-begin_initialize()
-IN 2 Start
-IN      1. Reset Myk
-IN      2. Init Myk
-IN      3. Check base PLL
-IN      4. Start Multichip Sync
-
-EX 3 Multichip Pulses
-EX      1. Send 2 SYSREF pulses
-
-finish_initialize()
-IN 4 Verify Multichip
-IN    1. Verify Multichip
-IN    2. Complete Init
-
---skipping this for now using special hack from jepson
---IN    3. Load ARM
---IN    4. RF Start
---IN        Set RF Freq
---IN        Check RF PLLs
---IN        Set GPIO controls
---IN        Set gain
---IN        Init TX attenuations
---IN        Initialization Calibrations
---IN        External LOL Calibration (do we need this ???)
-
---separate functions here for reusability--
-
-start_jesd_rx()
-IN 5 Start Myk JESD RX
-IN    1. Reset Myk JESD RX (???)
-IN    2. Enable Myk JESD RX Transmitter
-
-EX 6 Start FPGA CGS
-EX    1. Reset and Ready RX JESD for CGS
-EX    2. Reset and Ready TX JESD for CGS
-
-start_jesd_tx()
-IN 7 Start Myk JESD TX
-IN    1. Disable Myk JESD Receiver
-IN    2. Reset Myk JESD Receiver
-IN    3. Enable Myk JESD Receiver
-
-EX 8 Finish CGS
-EX    1. Enable FPGA LMFC Generator
-EX    2. Send SYSREF Pulse
-EX    3. Wait (200 ms ???)
-EX    4. Check TX Core is Synced
-EX    5. Check RX Core is Synced
-
-OTHER FUNCTIONS THAT SHOULD BE WRITTEN
-get_framer_status() get_deframer_status() Read framer/deframer status
-get_deframer_irq() Read Deframer IRQ
-get_ilas_config_match() Check ILAS Config Match
-set_jesd_loopback() Enable Loopback
-stop_jesd() Stop Link
-
-*/
-
-void ad937x_device::begin_initialization()
+std::string ad937x_device::_get_arm_binary_path()
 {
-    // TODO: make this reset actually do something (implement CMB_HardReset or replace)
-    _call_api_function(std::bind(MYKONOS_resetDevice, mykonos_config.device));
-    _call_api_function(std::bind(MYKONOS_initialize, mykonos_config.device));
+    // TODO: possibly add more options here, for now it's always in /lib/firmware or we explode
+    return "/lib/firmware/Mykonos_M3.bin";
+}
 
+std::vector<uint8_t> ad937x_device::_get_arm_binary()
+{
+    auto path = _get_arm_binary_path();
+    std::ifstream file(path, std::ios::binary);
+    if (!file.is_open())
+    {
+        throw mpm::runtime_error("Could not open AD9371 ARM binary at path " + path);
+        return{};
+    }
+
+    std::vector<uint8_t> binary(ARM_BINARY_SIZE);
+    file.read(reinterpret_cast<char*>(binary.data()), ARM_BINARY_SIZE);
+    if (file.bad())
+    {
+        throw mpm::runtime_error("Error reading AD9371 ARM binary at path " + path);
+    }
+    return binary;
+}
+
+void ad937x_device::_initialize_rf()
+{
+    // Set frequencies
+    tune(uhd::RX_DIRECTION, RX_DEFAULT_FREQ, true);
+    tune(uhd::TX_DIRECTION, TX_DEFAULT_FREQ, true);
+
+    if (!get_pll_lock_status(pll_t::CLK_SYNTH))
+    {
+        throw mpm::runtime_error("CLK SYNTH PLL became unlocked!");
+    }
+
+    // Set gain control GPIO pins
+    _apply_gain_pins(uhd::RX_DIRECTION, chain_t::ONE);
+    _apply_gain_pins(uhd::RX_DIRECTION, chain_t::TWO);
+    _apply_gain_pins(uhd::TX_DIRECTION, chain_t::ONE);
+    _apply_gain_pins(uhd::TX_DIRECTION, chain_t::TWO);
+
+    // Set manual gain values
+    set_gain(uhd::RX_DIRECTION, chain_t::ONE, RX_DEFAULT_GAIN);
+    set_gain(uhd::RX_DIRECTION, chain_t::TWO, RX_DEFAULT_GAIN);
+    set_gain(uhd::TX_DIRECTION, chain_t::ONE, TX_DEFAULT_GAIN);
+    set_gain(uhd::TX_DIRECTION, chain_t::TWO, TX_DEFAULT_GAIN);
+
+    // TODO: add calibration stuff
+}
+
+void ad937x_device::_verify_product_id()
+{
     uint8_t product_id = get_product_id();
     if (product_id != AD9371_PRODUCT_ID)
     {
@@ -203,10 +176,30 @@ void ad937x_device::begin_initialization()
             % int(product_id) % int(AD9371_PRODUCT_ID)
         ));
     }
+}
+
+void ad937x_device::_verify_multichip_sync_status(multichip_sync_t mcs)
+{
+    uint8_t status_expected = (mcs == multichip_sync_t::FULL) ? 0x0B : 0x0A;
+    uint8_t status_mask = status_expected; // all 1s expected, mask is the same
+
+    uint8_t mcs_status = get_multichip_sync_status();
+    if ((mcs_status & status_mask) != status_expected)
+    {
+        throw mpm::runtime_error(str(boost::format("Multichip sync failed! Read: %X Expected: %X")
+            % int(mcs_status) % int(status_expected)));
+    }
+}
+
+void ad937x_device::begin_initialization()
+{
+    _call_api_function(std::bind(MYKONOS_initialize, mykonos_config.device));
+
+    _verify_product_id();
 
     if (!get_pll_lock_status(pll_t::CLK_SYNTH))
     {
-        throw mpm::runtime_error("AD937x CLK_SYNTH PLL failed to lock in initialize()");
+        throw mpm::runtime_error("AD937x CLK_SYNTH PLL failed to lock");
     }
 
     uint8_t mcs_status = 0;
@@ -215,33 +208,24 @@ void ad937x_device::begin_initialization()
 
 void ad937x_device::finish_initialization()
 {
-    std::this_thread::sleep_for(std::chrono::milliseconds(200));
-    // to check status, just call the same function with a 0 instead of a 1, seems good
-    uint8_t mcs_status = 0;
-    _call_api_function(std::bind(MYKONOS_enableMultichipSync, mykonos_config.device, 0, &mcs_status));
+    _verify_multichip_sync_status(multichip_sync_t::PARTIAL);
 
-    if ((mcs_status & 0x0A) != 0x0A)
-    {
-        throw mpm::runtime_error(str(boost::format("Multichip sync failed! Read: %X Expected: %X")
-            % int(mcs_status) % int(0x0A)));
-    }
+    _call_api_function(std::bind(MYKONOS_initArm, mykonos_config.device));
+    auto binary = _get_arm_binary();
+    _call_api_function(std::bind(MYKONOS_loadArmFromBinary,
+        mykonos_config.device,
+        binary.data(),
+        binary.size()));
 
-    _call_api_function(std::bind(MYKONOS_initSubRegisterTables, mykonos_config.device));
-    // according to djepson, we can call only this function and avoid loading the ARM or
-    // doing an RF stuff
-    // TODO: fix all this once we want to more than just loopback
-
-    // load ARM
-    // ARM init
-    // RF setup
+    _initialize_rf();
 }
 
-void ad937x_device::start_jesd_rx()
+void ad937x_device::start_jesd_tx()
 {
     _call_api_function(std::bind(MYKONOS_enableSysrefToRxFramer, mykonos_config.device, 1));
 }
 
-void ad937x_device::start_jesd_tx()
+void ad937x_device::start_jesd_rx()
 {
     _call_api_function(std::bind(MYKONOS_enableSysrefToDeframer, mykonos_config.device, 0));
     _call_api_function(std::bind(MYKONOS_resetDeframer, mykonos_config.device));
@@ -251,6 +235,7 @@ void ad937x_device::start_jesd_tx()
 uint8_t ad937x_device::get_multichip_sync_status()
 {
     uint8_t mcs_status = 0;
+    // to check status, just call the enable function with a 0 instead of a 1, seems good
     _call_api_function(std::bind(MYKONOS_enableMultichipSync, mykonos_config.device, 0, &mcs_status));
     return mcs_status;
 }
@@ -269,19 +254,11 @@ uint8_t ad937x_device::get_deframer_status()
     return status;
 }
 
-uint8_t ad937x_device::get_deframer_irq()
-{
-    uint8_t irq_status = 0;
-    //_call_debug_api_function(std::bind(MYKONOS_deframerGetIrq, mykonos_config.device, &irq_status));
-    return irq_status;
-}
-
 uint16_t ad937x_device::get_ilas_config_match()
 {
     uint16_t ilas_status = 0;
     _call_api_function(std::bind(MYKONOS_jesd204bIlasCheck, mykonos_config.device, &ilas_status));
     return ilas_status;
-
 }
 
 void ad937x_device::enable_jesd_loopback(uint8_t enable)
@@ -351,21 +328,24 @@ void ad937x_device::enable_channel(direction_t direction, chain_t chain, bool en
     // is _initialize(). Need to figure out how to deal with this.
 }
 
-double ad937x_device::tune(direction_t direction, double value)
+double ad937x_device::tune(direction_t direction, double value, bool wait_for_lock = false)
 {
     // I'm not sure why we set the PLL value in the config AND as a function parameter
     // but here it is
 
     mykonosRfPllName_t pll;
+    pll_t locked_pll;
     uint64_t integer_value = static_cast<uint64_t>(value);
     switch (direction)
     {
     case TX_DIRECTION:
         pll = TX_PLL;
+        locked_pll = pll_t::TX_SYNTH;
         mykonos_config.device->tx->txPllLoFrequency_Hz = integer_value;
         break;
     case RX_DIRECTION:
         pll = RX_PLL;
+        locked_pll = pll_t::RX_SYNTH;
         mykonos_config.device->rx->rxPllLoFrequency_Hz = integer_value;
         break;
     default:
@@ -373,11 +353,30 @@ double ad937x_device::tune(direction_t direction, double value)
     }
 
     _call_api_function(std::bind(MYKONOS_setRfPllFrequency, mykonos_config.device, pll, integer_value));
+    auto lock_time = std::chrono::steady_clock::now() + std::chrono::milliseconds(200);
 
     // TODO: coercion here causes extra device accesses, when the formula is provided on pg 119 of the user guide
     // Furthermore, because coerced is returned as an integer, it's not even accurate
     uint64_t coerced_pll;
     _call_api_function(std::bind(MYKONOS_getRfPllFrequency, mykonos_config.device, pll, &coerced_pll));
+
+    if (wait_for_lock)
+    {
+        bool locked = false;
+        while (not locked and lock_time > std::chrono::steady_clock::now())
+        {
+            locked = get_pll_lock_status(locked_pll);
+        }
+
+        if (!locked)
+        {
+            if (!get_pll_lock_status(locked_pll)) // last chance
+            {
+                throw mpm::runtime_error("RF PLL did not lock");
+            }
+        }
+    }
+
     return static_cast<double>(coerced_pll);
 }
 
@@ -403,6 +402,7 @@ bool ad937x_device::get_pll_lock_status(pll_t pll)
 {
     uint8_t pll_status;
     _call_api_function(std::bind(MYKONOS_checkPllsLockStatus, mykonos_config.device, &pll_status));
+
     switch (pll)
     {
     case pll_t::CLK_SYNTH:

@@ -19,6 +19,7 @@
 #define INCLUDED_LIBUHD_RFNOC_MAGNESIUM_RADIO_CTRL_IMPL_HPP
 
 #include "radio_ctrl_impl.hpp"
+#include "rpc_block_ctrl.hpp"
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/usrp/gpio_defs.hpp>
 
@@ -27,7 +28,7 @@ namespace uhd {
 
 /*! \brief Provide access to an Magnesium radio.
  */
-class magnesium_radio_ctrl_impl : public radio_ctrl_impl
+class magnesium_radio_ctrl_impl : public radio_ctrl_impl, public rpc_block_ctrl
 {
 public:
     typedef boost::shared_ptr<magnesium_radio_ctrl_impl> sptr;
@@ -49,9 +50,6 @@ public:
     double set_tx_frequency(const double freq, const size_t chan);
     double set_rx_frequency(const double freq, const size_t chan);
     double set_rx_bandwidth(const double bandwidth, const size_t chan);
-    double get_tx_frequency(const size_t chan);
-    double get_rx_frequency(const size_t chan);
-    double get_rx_bandwidth(const size_t chan);
 
     double set_tx_gain(const double gain, const size_t chan);
     double set_rx_gain(const double gain, const size_t chan);
@@ -61,7 +59,22 @@ public:
 
     double get_output_samp_rate(size_t port);
 
+    void set_rpc_client(
+        uhd::rpc_client::sptr rpcc,
+        const uhd::device_addr_t &block_args
+    );
 
+private:
+    double _set_freq(const double freq, const size_t chan, const direction_t dir);
+    double _set_gain(const double gain, const size_t chan, const direction_t dir);
+
+    std::string _radio_slot;
+    std::string _slot_prefix;
+    //! Additional block args; gets set during set_rpc_client()
+    uhd::device_addr_t _block_args;
+
+    //! Reference to the RPC client
+    uhd::rpc_client::sptr _rpcc;
 
 }; /* class radio_ctrl_impl */
 

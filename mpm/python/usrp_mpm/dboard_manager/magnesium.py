@@ -64,8 +64,9 @@ class Magnesium(DboardManagerBase):
     spi_chipselect = {"lmk": 0, "mykonos": 1}
 
     def __init__(self, slot_idx, **kwargs):
-        super(Magnesium, self).__init__(*args, **kwargs)
-        self.log = get_logger("Magnesium")
+        super(Magnesium, self).__init__(slot_idx, **kwargs)
+        self.log = get_logger("Magnesium-{}".format(slot_idx))
+        self.log.trace("Initializing Magnesium daughterboard, slot index {}".format(self.slot_idx))
 
     def init(self, args):
         """
@@ -88,6 +89,7 @@ class Magnesium(DboardManagerBase):
         self.radio_regs = UIO(label="jesd204b-regs", read_only=False)
         self.log.info("Radio-register UIO object successfully generated!")
         self.init_jesd(self.radio_regs)
+        return True
 
     def init_jesd(self, uio):
         """
@@ -117,14 +119,14 @@ class Magnesium(DboardManagerBase):
         self.mykonos.finish_initialization()
 
         self.log.trace("Starting Mykonos framer...")
-        self.mykonos.start_jesd_rx()
+        self.mykonos.start_jesd_tx()
         self.jesdcore.send_sysref_pulse()
         self.log.trace("Resetting FPGA deframer...")
         self.jesdcore.init_deframer()
         self.log.trace("Resetting FPGA framer...")
         self.jesdcore.init_framer()
         self.log.trace("Starting Mykonos deframer...")
-        self.mykonos.start_jesd_tx()
+        self.mykonos.start_jesd_rx()
 
         self.log.trace("Enable LMFC and send")
         self.jesdcore.enable_lmfc()

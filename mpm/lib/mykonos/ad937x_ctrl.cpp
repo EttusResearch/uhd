@@ -157,34 +157,22 @@ public:
         device.start_jesd_tx();
     }
 
-    // TODO: interpret the status byte
-    // or provide means to do so
     virtual uint8_t get_multichip_sync_status()
     {
         std::lock_guard<std::mutex> lock(*spi_mutex);
         return device.get_multichip_sync_status();
     }
 
-    // TODO: interpret the status byte
-    // or provide means to do so
     virtual uint8_t get_framer_status()
     {
         std::lock_guard<std::mutex> lock(*spi_mutex);
         return device.get_framer_status();
     }
 
-    // TODO: interpret the status byte
-    // or provide means to do so
     virtual uint8_t get_deframer_status()
     {
         std::lock_guard<std::mutex> lock(*spi_mutex);
         return device.get_deframer_status();
-    }
-
-    virtual uint8_t get_deframer_irq()
-    {
-        std::lock_guard<std::mutex> lock(*spi_mutex);
-        return device.get_deframer_irq();
     }
 
     virtual uint16_t get_ilas_config_match()
@@ -192,6 +180,7 @@ public:
         std::lock_guard<std::mutex> lock(*spi_mutex);
         return device.get_ilas_config_match();
     }
+
     virtual void enable_jesd_loopback(uint8_t enable)
     {
         std::lock_guard<std::mutex> lock(*spi_mutex);
@@ -297,13 +286,13 @@ public:
         return device.enable_channel(dir, chain, enable);
     }
 
-    virtual double set_freq(const std::string &which, double value)
+    virtual double set_freq(const std::string &which, double value, bool wait_for_lock)
     {
         auto dir = _get_direction_from_antenna(which);
         auto clipped_value = get_rf_freq_range().clip(value);
 
         std::lock_guard<std::mutex> lock(*spi_mutex);
-        return device.tune(dir, clipped_value);
+        return device.tune(dir, clipped_value, wait_for_lock);
     }
 
     virtual double get_freq(const std::string &which)

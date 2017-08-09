@@ -106,13 +106,6 @@ namespace {
                 );
             })
         ;
-        tree->create<int>(
-                mb_path / "rx_codecs" / "A" / "gains")
-            .set_publisher([](){
-                return 1                              // FIXME: Remove hardcoding
-                ;
-            })
-        ;
     }
 
     void reset_time_synchronized(uhd::property_tree::sptr tree)
