@@ -22,6 +22,7 @@ from __future__ import print_function
 import sys
 import argparse
 from gevent import signal
+from gevent.hub import BlockingSwitchOutError
 import usrp_mpm as mpm
 from usrp_mpm.mpmtypes import SharedState
 from usrp_mpm.periph_manager import periph_manager
@@ -95,7 +96,11 @@ def kill_time(sig, frame):
         proc.terminate()
         log.info("Terminating pid: {0}".format(proc.pid))
     for proc in _PROCESSES:
-        proc.join()
+        try:
+            proc.join()
+        except BlockingSwitchOutError:
+            log.debug("Caught BlockingSwitchOutError for {}".format(str(proc)))
+            pass
     log.info("System exiting")
     sys.exit(0)
 
