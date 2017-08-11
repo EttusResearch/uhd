@@ -181,7 +181,8 @@ class SysFSGPIO(object):
         gpio_num = self._base_gpio + gpio_idx
         gpio_path = os.path.join(GPIO_SYSFS_BASE_DIR, 'gpio{}'.format(gpio_num))
         value_path = os.path.join(gpio_path, GPIO_SYSFS_VALUEFILE)
-        self.log.trace("Writing value from `{}'...".format(value_path))
         assert os.path.exists(value_path)
-        return int(open(value_path, 'r').read().strip())
+        read_value = int(open(value_path, 'r').read().strip())
+        self.log.trace("Reading value {} from `{}'...".format(read_value, value_path))
+        return read_value
 
