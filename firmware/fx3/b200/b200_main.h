@@ -32,8 +32,8 @@
  * that GPIOs < 32 are configured without the use of masks. */
 #define MASK_GPIO_PROGRAM_B         (uint32_t)(1 << (GPIO_PROGRAM_B - 32))
 #define MASK_GPIO_INIT_B            (uint32_t)(1 << (GPIO_INIT_B - 32))
-#define MASK_GPIO_AUX_PWR_ON        (uint32_t)(1 << (GPIO_FX3_SCLK - 32))
-#define MASK_GPIO_SHDN_SW           (uint32_t)(1 << (GPIO_FX3_SCLK - 32))
+#define MASK_GPIO_AUX_PWR_ON        (uint32_t)(1 << (GPIO_AUX_PWR_ON - 32))
+#define MASK_GPIO_SHDN_SW           (uint32_t)(1 << (GPIO_SHDN_SW - 32))
 #define MASK_GPIO_FX3_SCLK          (uint32_t)(1 << (GPIO_FX3_SCLK - 32))
 #define MASK_GPIO_FX3_CE            (uint32_t)(1 << (GPIO_FX3_CE - 32))
 #define MASK_GPIO_FX3_MISO          (uint32_t)(1 << (GPIO_FX3_MISO - 32))
