@@ -857,11 +857,6 @@ void x300_radio_ctrl_impl::synchronize_dacs(const std::vector<x300_radio_ctrl_im
     //to a common reference. Currently, this function is called in get_tx_stream
     //which also has the same precondition.
 
-    //Reinitialize and resync all DACs
-    for (size_t i = 0; i < radios.size(); i++) {
-        radios[i]->_dac->reset();
-    }
-
     //Get a rough estimate of the cumulative command latency
     boost::posix_time::ptime t_start = boost::posix_time::microsec_clock::local_time();
     for (size_t i = 0; i < radios.size(); i++) {
@@ -870,37 +865,59 @@ void x300_radio_ctrl_impl::synchronize_dacs(const std::vector<x300_radio_ctrl_im
     boost::posix_time::time_duration t_elapsed =
         boost::posix_time::microsec_clock::local_time() - t_start;
 
-    //Set tick rate and make sure FRAMEP/N is 0
-    for (size_t i = 0; i < radios.size(); i++) {
-        radios[i]->set_command_tick_rate(radios[i]->_radio_clk_rate, IO_MASTER_RADIO);
-        radios[i]->_regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::DAC_SYNC, 0);
-    }
-
     //Add 100% of headroom + uncertainty to the command time
     uint64_t t_sync_us = (t_elapsed.total_microseconds() * 2) + 16000 /*Scheduler latency*/;
 
-    //Pick radios[0] as the time reference.
-    uhd::time_spec_t sync_time =
-        radios[0]->_time64->get_time_now() + uhd::time_spec_t(((double)t_sync_us)/1e6);
+    std::string err_str;
+    //Try to sync 3 times before giving up
+    for (size_t attempt = 0; attempt < 3; attempt++)
+    {
+        try
+        {
+            //Reinitialize and resync all DACs
+            for (size_t i = 0; i < radios.size(); i++) {
+                radios[i]->_dac->sync();
+            }
 
-    //Send the sync command
-    for (size_t i = 0; i < radios.size(); i++) {
-        radios[i]->set_command_time(sync_time, IO_MASTER_RADIO);
-        //Arm FRAMEP/N sync pulse by asserting a rising edge
-        radios[i]->_regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::DAC_SYNC, 1);
-        radios[i]->set_command_time(uhd::time_spec_t(0.0), IO_MASTER_RADIO);
-    }
+            //Set tick rate and make sure FRAMEP/N is 0
+            for (size_t i = 0; i < radios.size(); i++) {
+                radios[i]->set_command_tick_rate(radios[i]->_radio_clk_rate, IO_MASTER_RADIO);
+                radios[i]->_regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::DAC_SYNC, 0);
+            }
 
-    //Reset FRAMEP/N to 0
-    for (size_t i = 0; i < radios.size(); i++) {
-        radios[i]->_regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::DAC_SYNC, 0);
-    }
+            //Pick radios[0] as the time reference.
+            uhd::time_spec_t sync_time =
+                radios[0]->_time64->get_time_now() + uhd::time_spec_t(((double)t_sync_us)/1e6);
 
-    //Wait and check status
-    boost::this_thread::sleep(boost::posix_time::microseconds(t_sync_us));
-    for (size_t i = 0; i < radios.size(); i++) {
-        radios[i]->_dac->verify_sync();
+            //Send the sync command
+            for (size_t i = 0; i < radios.size(); i++) {
+                radios[i]->set_command_time(sync_time, IO_MASTER_RADIO);
+                //Arm FRAMEP/N sync pulse by asserting a rising edge
+                radios[i]->_regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::DAC_SYNC, 1);
+            }
+
+            //Reset FRAMEP/N to 0 after 2 clock cycles
+            for (size_t i = 0; i < radios.size(); i++) {
+                radios[i]->set_command_time(sync_time + (2.0 / radios[i]->_radio_clk_rate), IO_MASTER_RADIO);
+                radios[i]->_regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::DAC_SYNC, 0);
+                radios[i]->set_command_time(uhd::time_spec_t(0.0), IO_MASTER_RADIO);
+            }
+
+            //Wait and check status
+            boost::this_thread::sleep(boost::posix_time::microseconds(t_sync_us));
+            for (size_t i = 0; i < radios.size(); i++) {
+                radios[i]->_dac->verify_sync();
+            }
+
+            return;
+        }
+        catch (const uhd::runtime_error &e)
+        {
+            err_str = e.what();
+            UHD_LOGGER_TRACE("X300 RADIO") << "Retrying DAC synchronization: " << err_str;
+        }
     }
+    throw uhd::runtime_error(err_str);
 }
 
 double x300_radio_ctrl_impl::self_cal_adc_xfer_delay(
