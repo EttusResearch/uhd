@@ -40,6 +40,9 @@ public:
     // ! Reset the DAC
     virtual void reset(void) = 0;
 
+    // ! Sync the DAC
+    virtual void sync(void) = 0;
+
     // ! Check for successful backend and frontend sync
     virtual void verify_sync(void) = 0;
 };
