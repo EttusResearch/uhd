@@ -17,6 +17,7 @@
 
 #include <uhd/usrp/dboard_eeprom.h>
 #include <uhd/error.h>
+#include <boost/format.hpp>
 
 #include <string.h>
 
@@ -77,12 +78,33 @@ uhd_error uhd_dboard_eeprom_set_serial(
     )
 }
 
+//! Convert a string into an int. If that doesn't work, craft our own exception
+// instead of using the Boost exception. We need to put this separate from the
+// caller function because of macro expansion.
+int _convert_rev_with_exception(const std::string &rev_str)
+{
+    try {
+        return std::stoi(rev_str);
+    } catch (const std::invalid_argument &) {
+        throw uhd::lookup_error(str(
+            boost::format("Error retrieving revision from string `%s`")
+            % rev_str
+        ));
+    } catch (const std::out_of_range &) {
+        throw uhd::lookup_error(str(
+            boost::format("Error retrieving revision from string `%s`")
+            % rev_str
+        ));
+    }
+}
+
 uhd_error uhd_dboard_eeprom_get_revision(
     uhd_dboard_eeprom_handle h,
     int* revision_out
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        *revision_out = std::stoi(h->dboard_eeprom_cpp.revision);
+        *revision_out = \
+            _convert_rev_with_exception(h->dboard_eeprom_cpp.revision);
     )
 }
 
