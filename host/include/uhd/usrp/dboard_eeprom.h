@@ -84,7 +84,11 @@ UHD_API uhd_error uhd_dboard_eeprom_set_serial(
     const char* serial
 );
 
-//! Get the daughterboard's revision (not always present)
+/*! Get the daughterboard's revision
+ *
+ * The revision doesn't always have to be present, in which case this function
+ * will return an error.
+ */
 UHD_API uhd_error uhd_dboard_eeprom_get_revision(
     uhd_dboard_eeprom_handle h,
     int* revision_out

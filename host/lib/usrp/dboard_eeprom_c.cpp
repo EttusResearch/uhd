@@ -19,6 +19,7 @@
 #include <uhd/error.h>
 
 #include <boost/lexical_cast.hpp>
+#include <boost/format.hpp>
 
 #include <string.h>
 
@@ -79,12 +80,28 @@ uhd_error uhd_dboard_eeprom_set_serial(
     )
 }
 
+//! Convert a string into an int. If that doesn't work, craft our own exception
+// instead of using the Boost exception. We need to put this separate from the
+// caller function because of macro expansion.
+int _convert_rev_with_exception(const std::string &rev_str)
+{
+    try {
+        return boost::lexical_cast<int>(rev_str);
+    } catch (const boost::bad_lexical_cast &) {
+        throw uhd::lookup_error(str(
+            boost::format("Error retrieving revision from string `%s`")
+            % rev_str
+        ));
+    }
+}
+
 uhd_error uhd_dboard_eeprom_get_revision(
     uhd_dboard_eeprom_handle h,
     int* revision_out
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        *revision_out = boost::lexical_cast<int>(h->dboard_eeprom_cpp.revision);
+        *revision_out = \
+            _convert_rev_with_exception(h->dboard_eeprom_cpp.revision);
     )
 }
 
