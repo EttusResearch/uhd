@@ -91,6 +91,68 @@ SET_SOURCE_FILES_PROPERTIES(
 )
 
 ########################################################################
+# Setup defines for high resolution timing
+########################################################################
+MESSAGE(STATUS "")
+MESSAGE(STATUS "Configuring high resolution timing...")
+INCLUDE(CheckCXXSourceCompiles)
+
+SET(CMAKE_REQUIRED_LIBRARIES -lrt)
+CHECK_CXX_SOURCE_COMPILES("
+    #include <ctime>
+    int main(){
+        timespec ts;
+        return clock_gettime(CLOCK_MONOTONIC, &ts);
+    }
+    " HAVE_CLOCK_GETTIME
+)
+SET(CMAKE_REQUIRED_LIBRARIES)
+
+INCLUDE(CheckCXXSourceCompiles)
+CHECK_CXX_SOURCE_COMPILES("
+    #include <mach/mach_time.h>
+    int main(){
+        mach_timebase_info_data_t info;
+        mach_timebase_info(&info);
+        mach_absolute_time();
+        return 0;
+    }
+    " HAVE_MACH_ABSOLUTE_TIME
+)
+
+CHECK_CXX_SOURCE_COMPILES("
+    #include <Windows.h>
+    int main(){
+        LARGE_INTEGER value;
+        QueryPerformanceCounter(&value);
+        QueryPerformanceFrequency(&value);
+        return 0;
+    }
+    " HAVE_QUERY_PERFORMANCE_COUNTER
+)
+
+
+IF(HAVE_CLOCK_GETTIME)
+    MESSAGE(STATUS "  High resolution timing supported through clock_gettime.")
+    SET(SYSTEM_TIME_DEFS HAVE_CLOCK_GETTIME)
+    LIBUHD_APPEND_LIBS("-lrt")
+ELSEIF(HAVE_MACH_ABSOLUTE_TIME)
+    MESSAGE(STATUS "  High resolution timing supported through mach_absolute_time.")
+    SET(SYSTEM_TIME_DEFS HAVE_MACH_ABSOLUTE_TIME)
+ELSEIF(HAVE_QUERY_PERFORMANCE_COUNTER)
+    MESSAGE(STATUS "  High resolution timing supported through QueryPerformanceCounter.")
+    SET(SYSTEM_TIME_DEFS HAVE_QUERY_PERFORMANCE_COUNTER)
+ELSE()
+    MESSAGE(STATUS "  High resolution timing supported though microsec_clock.")
+    SET(SYSTEM_TIME_DEFS HAVE_MICROSEC_CLOCK)
+ENDIF()
+
+SET_SOURCE_FILES_PROPERTIES(
+    ${CMAKE_CURRENT_SOURCE_DIR}/system_time.cpp
+    PROPERTIES COMPILE_DEFINITIONS "${SYSTEM_TIME_DEFS}"
+)
+
+########################################################################
 # Setup defines for module loading
 ########################################################################
 MESSAGE(STATUS "")
@@ -178,6 +240,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/platform.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/prefs.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/static.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/system_time.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/tasks.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/thread.cpp
 )

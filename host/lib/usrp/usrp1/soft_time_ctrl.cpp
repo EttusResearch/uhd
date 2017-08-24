@@ -6,6 +6,7 @@
 //
 
 #include "soft_time_ctrl.hpp"
+#include <uhd/utils/system_time.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/thread/condition_variable.hpp>
@@ -49,7 +50,7 @@ public:
      ******************************************************************/
     void set_time(const time_spec_t &time){
         boost::mutex::scoped_lock lock(_update_mutex);
-        _time_offset = time_spec_t::get_system_time() - time;
+        _time_offset = uhd::get_system_time() - time;
     }
 
     time_spec_t get_time(void){
@@ -59,7 +60,7 @@ public:
 
     UHD_INLINE time_spec_t time_now(void){
         //internal get time without scoped lock
-        return time_spec_t::get_system_time() - _time_offset;
+        return uhd::get_system_time() - _time_offset;
     }
 
     UHD_INLINE void sleep_until_time(

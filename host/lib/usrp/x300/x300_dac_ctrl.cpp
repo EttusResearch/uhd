@@ -7,6 +7,7 @@
 
 #include "x300_dac_ctrl.hpp"
 #include "x300_regs.hpp"
+#include <uhd/utils/system_time.hpp>
 #include <uhd/types/time_spec.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
@@ -207,14 +208,14 @@ public:
 
         // Verify PLL is Locked. 1 sec timeout.
         // NOTE: Data sheet inconsistent about which pins give PLL lock status. FIXME!
-        const time_spec_t exit_time = time_spec_t::get_system_time() + time_spec_t(1.0);
+        const time_spec_t exit_time = uhd::get_system_time() + time_spec_t(1.0);
         while (true)
         {
             const size_t reg_e = read_ad9146_reg(0x0E); // PLL Status (Expect bit 7 = 1)
             const size_t reg_6 = read_ad9146_reg(0x06); // Event Flags (Expect bit 7 = 0 and bit 6 = 1)
             if ((((reg_e >> 7) & 0x1) == 0x1) && (((reg_6 >> 6) & 0x3) == 0x1))
                 break;
-            if (time_spec_t::get_system_time() > exit_time)
+            if (exit_time < uhd::get_system_time())
                 throw uhd::runtime_error("x300_dac_ctrl: timeout waiting for DAC PLL to lock");
             if (reg_6 & (1 << 7))               // Lock lost?
                 write_ad9146_reg(0x06, 0xC0);   // Clear PLL event flags
@@ -231,7 +232,7 @@ public:
         write_ad9146_reg(0x06, 0x30);
         write_ad9146_reg(0x12, 0x00);
 
-        const time_spec_t exit_time = time_spec_t::get_system_time() + time_spec_t(1.0);
+        const time_spec_t exit_time = uhd::get_system_time() + time_spec_t(1.0);
         while (true)
         {
             boost::this_thread::sleep(boost::posix_time::milliseconds(1));  // wait for sync to complete
@@ -239,7 +240,7 @@ public:
             const size_t reg_6 = read_ad9146_reg(0x06);     // Event Flags (Expect bit 5 = 0 and bit 4 = 1)
             if ((((reg_12 >> 6) & 0x3) == 0x1) && (((reg_6 >> 4) & 0x3) == 0x1))
                 break;
-            if (time_spec_t::get_system_time() > exit_time)
+            if (exit_time < uhd::get_system_time())
                 throw uhd::runtime_error("x300_dac_ctrl: timeout waiting for backend synchronization");
             if (reg_6 & (1 << 5))
                 write_ad9146_reg(0x06, 0x30);   // Clear Sync event flags

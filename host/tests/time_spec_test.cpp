@@ -52,24 +52,6 @@ BOOST_AUTO_TEST_CASE(test_time_spec_parts){
     BOOST_CHECK_EQUAL(uhd::time_spec_t(-1.1).to_ticks(100), -110);
 }
 
-BOOST_AUTO_TEST_CASE(test_time_spec_get_system_time){
-    std::cout << "Testing time specification get system time..." << std::endl;
-
-    //Not really checking for high resolution timing here,
-    //just need to check that system time is minimally working.
-
-    uhd::time_spec_t start = uhd::time_spec_t::get_system_time();
-    boost::this_thread::sleep(boost::posix_time::milliseconds(500));
-    uhd::time_spec_t stop = uhd::time_spec_t::get_system_time();
-
-    uhd::time_spec_t diff = stop - start;
-    std::cout << "start: " << start.get_real_secs() << std::endl;
-    std::cout << "stop: " << stop.get_real_secs() << std::endl;
-    std::cout << "diff: " << diff.get_real_secs() << std::endl;
-    BOOST_CHECK(diff.get_real_secs() > 0); //assert positive
-    BOOST_CHECK(diff.get_real_secs() < 1.0); //assert under 1s
-}
-
 BOOST_AUTO_TEST_CASE(test_time_spec_neg_values){
     uhd::time_spec_t ts1(0.3);
     uhd::time_spec_t ts2(1, -0.9);

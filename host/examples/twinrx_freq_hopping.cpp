@@ -14,6 +14,7 @@
 
 #include <boost/program_options.hpp>
 #include <boost/thread.hpp>
+#include <boost/thread/thread_time.hpp>
 
 #include <fstream>
 
@@ -222,7 +223,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     while(1) {
 
         std::cout << "Scanning..." << std::endl;
-        uhd::time_spec_t start_time = uhd::time_spec_t::get_system_time();
+        auto start_time = boost::get_system_time();
 
         for (size_t i = 0; i < rf_freqs.size(); i++) {
             // Swap the mapping of synthesizers by setting the LO source
@@ -249,8 +250,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             }
         }
 
-        uhd::time_spec_t end_time = uhd::time_spec_t::get_system_time();
-        std::cout << boost::format("Sweep done in %d milliseconds.\n") % ((end_time - start_time).get_real_secs() * 1000);
+        auto end_time = boost::get_system_time();
+        std::cout
+            << boost::format("Sweep done in %d milliseconds.\n")
+                % ((end_time - start_time).total_milliseconds() * 1000);
 
         // Optionally convert received samples to FFT and write to file
         if(vm.count("fft-path")) {

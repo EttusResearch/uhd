@@ -8,6 +8,7 @@
 #ifndef INCLUDED_LIBUHD_USRP_COMMON_RECV_PACKET_DEMUXER_3000_HPP
 #define INCLUDED_LIBUHD_USRP_COMMON_RECV_PACKET_DEMUXER_3000_HPP
 
+#include <uhd/utils/system_time.hpp>
 #include <uhd/config.hpp>
 #include <uhd/transport/zero_copy.hpp>
 #include <uhd/utils/log.hpp>
@@ -35,12 +36,13 @@ namespace uhd{ namespace usrp{
 
         transport::managed_recv_buffer::sptr get_recv_buff(const uint32_t sid, const double timeout)
         {
-            const time_spec_t exit_time = time_spec_t(timeout) + time_spec_t::get_system_time();
+            const time_spec_t exit_time =
+                time_spec_t(timeout) + uhd::get_system_time();
             transport::managed_recv_buffer::sptr buff;
             buff = _internal_get_recv_buff(sid, timeout);
             while (not buff) //loop until timeout
             {
-                const time_spec_t delta = exit_time - time_spec_t::get_system_time();
+                const time_spec_t delta = exit_time - uhd::get_system_time();
                 const double new_timeout = delta.get_real_secs();
                 if (new_timeout < 0.0) break;
                 buff = _internal_get_recv_buff(sid, new_timeout);
