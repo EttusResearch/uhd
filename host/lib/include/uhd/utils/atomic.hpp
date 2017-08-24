@@ -9,6 +9,7 @@
 #define INCLUDED_UHD_UTILS_ATOMIC_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/utils/system_time.hpp>
 #include <uhd/types/time_spec.hpp>
 #include <boost/thread/thread.hpp>
 #include <atomic>
@@ -30,9 +31,9 @@ namespace uhd{
         const double timeout
     ){
         if (cond == value) return true;
-        const time_spec_t exit_time = time_spec_t::get_system_time() + time_spec_t(timeout);
+        const time_spec_t exit_time = uhd::get_system_time() + time_spec_t(timeout);
         while (cond != value) {
-            if (time_spec_t::get_system_time() > exit_time) {
+            if (uhd::get_system_time() > exit_time) {
                 return false;
             }
             boost::this_thread::interruption_point();

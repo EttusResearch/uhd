@@ -9,7 +9,6 @@ UHD_INSTALL(FILES
     algorithm.hpp
     assert_has.hpp
     assert_has.ipp
-    atomic.hpp
     byteswap.hpp
     byteswap.ipp
     cast.hpp
