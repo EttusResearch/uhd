@@ -57,11 +57,10 @@ static const size_t X300_PCIE_MAX_CHANNELS              = 6;
 static const size_t X300_PCIE_MAX_MUXED_CTRL_XPORTS     = 32;
 static const size_t X300_PCIE_MAX_MUXED_ASYNC_XPORTS    = 4;
 
-static const size_t X300_10GE_DATA_FRAME_MAX_SIZE   = 8000;     // CHDR packet size in bytes
+//Reduced to 4000 to make sure flow control packets are not blocked for too long at high rates
+static const size_t X300_10GE_DATA_FRAME_MAX_SIZE   = 4000;     // CHDR packet size in bytes
 static const size_t X300_1GE_DATA_FRAME_MAX_SIZE    = 1472;     // CHDR packet size in bytes
 static const size_t X300_ETH_MSG_FRAME_SIZE         = uhd::transport::udp_simple::mtu;  //bytes
-// MTU throttling for ethernet/TX (see above):
-static const size_t X300_ETH_DATA_FRAME_MAX_TX_SIZE = 8000;
 
 static const double X300_THREAD_BUFFER_TIMEOUT      = 0.1;   // Time in seconds
 

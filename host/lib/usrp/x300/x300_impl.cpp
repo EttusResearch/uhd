@@ -705,7 +705,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         }
 
         _tree->create<size_t>(mb_path / "mtu/recv").set(_max_frame_sizes.recv_frame_size);
-        _tree->create<size_t>(mb_path / "mtu/send").set(std::min(_max_frame_sizes.send_frame_size, X300_ETH_DATA_FRAME_MAX_TX_SIZE));
+        _tree->create<size_t>(mb_path / "mtu/send").set(_max_frame_sizes.send_frame_size);
         _tree->create<double>(mb_path / "link_max_rate").set(X300_MAX_RATE_10GIGE);
     }
 
@@ -1313,7 +1313,7 @@ uhd::both_xports_t x300_impl::make_transport(
                 << boost::format("For this connection, UHD recommends a send frame size of at least %lu for best\nperformance, but your system's MTU will only allow %lu.")
                 % eth_data_rec_frame_size
                 % _max_frame_sizes.send_frame_size
-                << "This will negatively impact your maximum achievable sample rate."
+                << "This may negatively impact your maximum achievable sample rate."
             ;
         }
 
@@ -1322,7 +1322,7 @@ uhd::both_xports_t x300_impl::make_transport(
                 << boost::format("For this connection, UHD recommends a receive frame size of at least %lu for best\nperformance, but your system's MTU will only allow %lu.")
                 % eth_data_rec_frame_size
                 % _max_frame_sizes.recv_frame_size
-                << "This will negatively impact your maximum achievable sample rate."
+                << "This may negatively impact your maximum achievable sample rate."
             ;
         }
 
