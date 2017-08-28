@@ -177,6 +177,7 @@ class n310(PeriphManagerBase):
     mboard_eeprom_addr = "e0005000.i2c"
     mboard_eeprom_max_len = 256
     mboard_info = {"type": "n3xx"}
+    mboard_max_rev = 3 # 3 == RevD
     dboard_eeprom_addr = "e0004000.i2c"
     dboard_eeprom_max_len = 64
     # We're on a Zynq target, so the following two come from the Zynq standard

@@ -89,6 +89,10 @@ class PeriphManagerBase(object):
     # means that keys from this dict could be overwritten during the
     # initialization process.
     mboard_info = {"type": "unknown"}
+    # For checking revision numbers, this is the highest revision that this
+    # particular version of MPM supports. Leave at None to skip a max rev
+    # check.
+    mboard_max_rev = None
     # This is a sanity check value to see if the correct number of
     # daughterboards are detected. If somewhere along the line more than
     # max_num_dboards dboards are found, an error or warning is raised,
@@ -177,12 +181,32 @@ class PeriphManagerBase(object):
                     )
                 except TypeError:
                     self.mboard_info[key] = str(self._eeprom_head.get(key, ''))
-            if 'pid' in self._eeprom_head and self._eeprom_head['pid'] not in self.pids:
-                self.log.error("Found invalid PID in EEPROM: 0x{:04X}. Valid PIDs are: {}".format(
-                    self._eeprom_head['pid'],
-                    ", ".join(["0x{:04X}".format(x) for x in self.pids]),
-                ))
+            if 'pid' in self._eeprom_head \
+                    and self._eeprom_head['pid'] not in self.pids:
+                self.log.error(
+                    "Found invalid PID in EEPROM: 0x{:04X}. " \
+                    "Valid PIDs are: {}".format(
+                        self._eeprom_head['pid'],
+                        ", ".join(["0x{:04X}".format(x) for x in self.pids]),
+                    )
+                )
                 raise RuntimeError("Invalid PID found in EEPROM.")
+            if 'rev' in self._eeprom_head:
+                try:
+                    rev_numeric = int(self._eeprom_head.get('rev'))
+                except (ValueError, TypeError):
+                    raise RuntimeError(
+                        "Invalid revision info read from EEPROM!"
+                    )
+                if self.mboard_max_rev is not None \
+                        and rev_numeric > self.mboard_max_rev:
+                    raise RuntimeError(
+                        "Device has revision `{}', but max supported " \
+                        "revision is `{}'".format(
+                            rev_numeric, self.mboard_max_rev
+                        ))
+            else:
+                raise RuntimeError("No revision found in EEPROM.")
         else:
             self.log.trace("No EEPROM address to read from.")
             self._eeprom_head = {}
