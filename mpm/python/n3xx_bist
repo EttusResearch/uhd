@@ -216,6 +216,12 @@ def poll_with_timeout(state_check, timeout_ms, interval_ms):
         time.sleep(interval_s)
     return False
 
+def expand_options(option_list):
+    """
+    Turn a list ['foo=bar', 'spam=eggs'] into a dictionary {'foo': 'bar',
+    'spam': 'eggs'}.
+    """
+    return dict(x.split('=') for x in option_list)
 ##############################################################################
 # Bist class
 ##############################################################################
@@ -251,6 +257,10 @@ class N310BIST(object):
             help="For debugging this tool.",
         )
         parser.add_argument(
+            '--option', '-o', action='append', default=[],
+            help="Option for individual test.",
+        )
+        parser.add_argument(
             '--lv-compat', action='store_true',
             help="Provides compatibility with the LV JSON parser. Don't run "
                  "this mode unless you know what you're doing. The JSON "
@@ -266,6 +276,7 @@ class N310BIST(object):
 
     def __init__(self):
         self.args = N310BIST.make_arg_parser().parse_args()
+        self.args.option = expand_options(self.args.option)
         self.tests_to_run = set()
         for test in self.args.tests:
             if test in self.collections:
@@ -437,19 +448,22 @@ class N310BIST(object):
         gpio_tca6424 = n310.TCA6424()
         gpio_tca6424.set("PWREN-GPS")
         time.sleep(5)
+        gps_warmup_timeout = float(self.args.option.get('gps_warmup_timeout', GPS_WARMUP_TIMEOUT))
+        gps_lockok_timeout = float(self.args.option.get('gps_lockok_timeout', GPS_LOCKOK_TIMEOUT))
         # Wait for WARMUP to go low
         sys.stderr.write("Waiting for WARMUP to go low...\n")
         if not poll_with_timeout(
                 lambda: not gpio_tca6424.get('GPS-WARMUP'),
-                GPS_WARMUP_TIMEOUT, 1000
+                gps_warmup_timeout*1000, 1000
             ):
             raise RuntimeError("GPS-WARMUP did not go low within one minute!")
         sys.stderr.write("Chip is warmed up.\n")
         # Wait for LOCKOK. Data sheet says wait up to 15 minutes for GPS lock.
         sys.stderr.write("Waiting for LOCKOK to go high...\n")
+        print(gps_lockok_timeout)
         if not poll_with_timeout(
                 lambda: gpio_tca6424.get('GPS-LOCKOK'),
-                GPS_LOCKOK_TIMEOUT,
+                gps_lockok_timeout*1000,
                 1000
             ):
             sys.stderr.write("No GPS-LOCKOK!\n")
