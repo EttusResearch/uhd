@@ -576,7 +576,7 @@ class N310BIST(object):
         """
         if self.args.dry_run:
             return True, get_sfp_bist_defaults()
-        sfp_bist_results = run_aurora_bist(master='misc-enet-regs0')
+        sfp_bist_results = run_aurora_bist(master='misc-auro-regs0')
         return aurora_results_to_status(sfp_bist_results)
 
     def bist_sfp1_loopback(self):
@@ -598,7 +598,7 @@ class N310BIST(object):
         """
         if self.args.dry_run:
             return True, get_sfp_bist_defaults()
-        sfp_bist_results = run_aurora_bist(master='misc-enet-regs1')
+        sfp_bist_results = run_aurora_bist(master='misc-auro-regs1')
         return aurora_results_to_status(sfp_bist_results)
 
     def bist_sfp_loopback(self):
@@ -621,8 +621,8 @@ class N310BIST(object):
         if self.args.dry_run:
             return True, get_sfp_bist_defaults()
         sfp_bist_results = run_aurora_bist(
-            master='misc-enet-regs0',
-            slave='misc-enet-regs1',
+            master='misc-auro-regs0',
+            slave='misc-auro-regs1',
         )
         return aurora_results_to_status(sfp_bist_results)
 
