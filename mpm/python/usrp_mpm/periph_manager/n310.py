@@ -32,7 +32,6 @@ from ..sysfs_gpio import SysFSGPIO
 from ..ethtable import EthDispatcherTable
 from .. import libpyusrp_periphs as lib
 
-
 N3XX_DEFAULT_EXT_CLOCK_FREQ = 10e6
 N3XX_DEFAULT_CLOCK_SOURCE = 'external'
 N3XX_DEFAULT_TIME_SOURCE = 'internal'
@@ -42,38 +41,74 @@ N3XX_DEFAULT_ENABLE_FPGPIO = True
 class TCA6424(object):
     """
     Abstraction layer for the port/gpio expander
+    pins_list is  an array of different version of TCA6424 pins map.
+    First element of this array corresponding to revC, second is revD etc...
     """
-    pins = (
-        'PWREN-CLK-MGT156MHz',
-        'PWREN-CLK-WB-CDCM',
-        'WB-CDCM-RESETn',
-        'WB-CDCM-PR0',
-        'WB-CDCM-PR1',
-        'WB-CDCM-OD0',
-        'WB-CDCM-OD1',
-        'WB-CDCM-OD2',
-        'PWREN-CLK-MAINREF',
-        'CLK-MAINREF-SEL1',
-        'CLK-MAINREF-SEL0',
-        '12',
-        '13',
-        'FPGA-GPIO-EN',
-        'PWREN-CLK-WB-20MHz',
-        'PWREN-CLK-WB-25MHz',
-        'GPS-PHASELOCK',
-        'GPS-nINITSURV',
-        'GPS-nRESET',
-        'GPS-WARMUP',
-        'GPS-SURVEY',
-        'GPS-LOCKOK',
-        'GPS-ALARM',
-        'PWREN-GPS',
-    )
+    pins_list = [
+        (
+            'PWREN-CLK-MGT156MHz',
+            'NETCLK-CE',         #revC name: 'PWREN-CLK-WB-CDCM',
+            'NETCLK-RESETn',     #revC name: 'WB-CDCM-RESETn',
+            'NETCLK-PR0',        #revC name: 'WB-CDCM-PR0',
+            'NETCLK-PR1',        #revC name: 'WB-CDCM-PR1',
+            'NETCLK-OD0',        #revC name: 'WB-CDCM-OD0',
+            'NETCLK-OD1',        #revC name: 'WB-CDCM-OD1',
+            'NETCLK-OD2',        #revC name: 'WB-CDCM-OD2',
+            'PWREN-CLK-MAINREF',
+            'CLK-MAINSEL-25MHz', #revC name: 'CLK-MAINREF-SEL1',
+            'CLK-MAINSEL-EX_B',  #revC name: 'CLK-MAINREF-SEL0',
+            '12',
+            'CLK-MAINSEL-GPS',   #revC name: '13',
+            'FPGA-GPIO-EN',
+            'PWREN-CLK-WB-20MHz',
+            'PWREN-CLK-WB-25MHz',
+            'GPS-PHASELOCK',
+            'GPS-nINITSURV',
+            'GPS-nRESET',
+            'GPS-WARMUP',
+            'GPS-SURVEY',
+            'GPS-LOCKOK',
+            'GPS-ALARM',
+            'PWREN-GPS',
+        ),
+        (
+            'NETCLK-PR1',
+            'NETCLK-PR0',
+            'NETCLK-CE',
+            'NETCLK-RESETn',
+            'NETCLK-OD2',
+            'NETCLK-OD1',
+            'NETCLK-OD0',
+            'PWREN-CLK-MGT156MHz',
+            'PWREN-CLK-MAINREF',
+            'CLK-MAINSEL-25MHz',
+            'CLK-MAINSEL-EX_B',
+            '12',
+            'CLK-MAINSEL-GPS',
+            'FPGA-GPIO-EN',
+            'PWREN-CLK-WB-20MHz',
+            'PWREN-CLK-WB-25MHz',
+            'GPS-PHASELOCK',
+            'GPS-nINITSURV',
+            'GPS-nRESET',
+            'GPS-WARMUP',
+            'GPS-SURVEY',
+            'GPS-LOCKOK',
+            'GPS-ALARM',
+            'PWREN-GPS',
+        )]
 
-    def __init__(self):
+    def __init__(self, rev):
         # Default state: Turn on GPS power, take GPS out of reset or
         # init-survey, turn on 156.25 MHz clock
-        self._gpios = SysFSGPIO('tca6424', 0xFFE7FF, 0x86E7FF, 0x860001)
+        # min Support from revC or rev = 2
+        if rev == 2:
+            self.pins = self.pins_list[0]
+        else:
+            self.pins = self.pins_list[1]
+
+        default_val = 0x860101 if rev == 2 else 0x860780
+        self._gpios = SysFSGPIO('tca6424', 0xFFF7FF, 0x86F7FF, default_val)
 
     def set(self, name, value=None):
         """
@@ -94,6 +129,7 @@ class TCA6424(object):
         """
         assert name in self.pins
         return self._gpios.get(self.pins.index(name))
+
 
 class FP_GPIO(object):
     """
@@ -191,7 +227,8 @@ class n310(PeriphManagerBase):
         super(n310, self).__init__(args)
         # Init peripherals
         self.log.trace("Initializing TCA6424 port expander controls...")
-        self._gpios = TCA6424()
+        self._gpios = TCA6424(int(self.mboard_info['rev']))
+        self.log.trace("Enabling power of MGT156MHZ clk")
         self._gpios.set("PWREN-CLK-MGT156MHz")
         self.enable_gps(
             enable=bool(
@@ -353,14 +390,18 @@ class n310(PeriphManagerBase):
         assert clock_source in self.get_clock_sources()
         self.log.trace("Setting clock source to `{}'".format(clock_source))
         if clock_source == 'internal':
-            self._gpios.set("CLK-MAINREF-SEL0")
-            self._gpios.set("CLK-MAINREF-SEL1")
+            self._gpios.set("CLK-MAINSEL-EX_B")
+            self._gpios.set("CLK-MAINSEL-25MHz")
+            self._gpios.reset("CLK-MAINSEL-GPS")
         elif clock_source == 'gpsdo':
-            self._gpios.set("CLK-MAINREF-SEL0")
-            self._gpios.reset("CLK-MAINREF-SEL1")
+            self._gpios.set("CLK-MAINSEL-EX_B")
+            self._gpios.reset("CLK-MAINSEL-25MHz")
+            self._gpios.set("CLK-MAINSEL-GPS")
         else: # external
-            self._gpios.reset("CLK-MAINREF-SEL0")
-            self._gpios.reset("CLK-MAINREF-SEL1")
+            self._gpios.reset("CLK-MAINSEL-EX_B")
+            self._gpios.reset("CLK-MAINSEL-GPS")
+            # SKY13350 needs to be in known state
+            self._gpios.set("CLK-MAINSEL-25MHz")
         self._clock_source = clock_source
         ref_clk_freq = self.get_ref_clock_freq()
         self.log.info("Reference clock frequency is: {} MHz".format(

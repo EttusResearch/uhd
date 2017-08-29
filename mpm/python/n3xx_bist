@@ -226,6 +226,7 @@ def expand_options(option_list):
     'spam': 'eggs'}.
     """
     return dict(x.split('=') for x in option_list)
+
 ##############################################################################
 # Bist class
 ##############################################################################
@@ -238,6 +239,7 @@ class N310BIST(object):
         'standard': ["ddr3", "gpsdo", "rtc", "temp", "clock_int", "tpm"],
         'extended': "*",
     }
+    REV = 3
 
     @staticmethod
     def make_arg_parser():
@@ -281,6 +283,14 @@ class N310BIST(object):
     def __init__(self):
         self.args = N310BIST.make_arg_parser().parse_args()
         self.args.option = expand_options(self.args.option)
+        try:
+            from usrp_mpm.periph_manager.n310 import n310
+            default_rev = n310.mboard_max_rev
+        except ImportError:
+            # This means we're in dry run mode or something like that, so just
+            # pick something
+            default_rev = 3
+        self.mb_rev = int(self.args.option.get('mb_rev', default_rev))
         self.tests_to_run = set()
         for test in self.args.tests:
             if test in self.collections:
@@ -296,7 +306,7 @@ class N310BIST(object):
                 get_main_logger().setLevel(WARNING)
             self.log = get_main_logger().getChild('main')
         except ImportError:
-            pass
+            print("No logging capability available.")
 
     def expand_collection(self, coll):
         """
@@ -448,8 +458,8 @@ class N310BIST(object):
                 "mode": 3
             }
         from usrp_mpm.periph_manager import n310
+        gpio_tca6424 = n310.TCA6424(self.mb_rev)
         # Turn on GPS, give some time to acclimatize
-        gpio_tca6424 = n310.TCA6424()
         gpio_tca6424.set("PWREN-GPS")
         time.sleep(5)
         gps_warmup_timeout = float(
@@ -678,7 +688,7 @@ class N310BIST(object):
                 'read_patterns': list(patterns),
             }
         from usrp_mpm.periph_manager import n310
-        gpio_tca6424 = n310.TCA6424()
+        gpio_tca6424 = n310.TCA6424(self.REV)
         gpio_tca6424.set("FPGA-GPIO-EN")
         # Allow some time for the front-panel GPIOs to become usable
         time.sleep(.5)
