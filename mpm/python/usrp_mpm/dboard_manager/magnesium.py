@@ -19,6 +19,7 @@ magnesium dboard implementation module
 """
 
 from __future__ import print_function
+import os
 import struct
 import time
 from six import iteritems
@@ -29,7 +30,7 @@ from ..uio import UIO
 from ..mpmlog import get_logger
 from .lmk_mg import LMK04828Mg
 from usrp_mpm.cores import ClockSynchronizer
-
+from ..sysfs_gpio import SysFSGPIO
 def create_spidev_iface(dev_node):
     """
     Create a regs iface from a spidev node
@@ -84,6 +85,46 @@ def create_spidev_iface_phasedac(dev_node):
         0, # Write flag
     )
 
+class TCA6408(object):
+    """
+    Abstraction layer for the port/gpio expander
+    """
+    pins = (
+        'PWR-GOOD-3.6V', #3.6V
+        'PWR-EN-3.6V',   #3.6V
+        'PWR-GOOD-1.5V', #1.5V
+        'PWR-EN-1.5V',   #1.5V
+        'PWR-GOOD-5.5V', #5.5V
+        'PWR-EN-5.5V',   #5.5V
+        '6',
+        'LED',
+    )
+
+    def __init__(self, i2c_dev):
+        if i2c_dev is None:
+            raise RuntimeError("Need to specify i2c device to use the TCA6408")
+        self._gpios = SysFSGPIO('tca6408', 0xBF, 0xAA, 0xAA, i2c_dev)
+
+    def set(self, name, value=None):
+        """
+        Assert a pin by name
+        """
+        assert name in self.pins
+        self._gpios.set(self.pins.index(name), value=value)
+
+    def reset(self, name):
+        """
+        Deassert a pin by name
+        """
+        self.set(name, value=0)
+
+    def get(self, name):
+        """
+        Read back a pin by name
+        """
+        assert name in self.pins
+        return self._gpios.get(self.pins.index(name))
+
 class Magnesium(DboardManagerBase):
     """
     Holds all dboard specific information and methods of the magnesium dboard
@@ -94,7 +135,8 @@ class Magnesium(DboardManagerBase):
     # See DboardManagerBase for documentation on these fields
     #########################################################################
     pids = [0x150]
-
+    #file system path to i2c-adapter/mux
+    base_i2c_adapter = '/sys/class/i2c-adapter'
     # Maps the chipselects to the corresponding devices:
     spi_chipselect = {"cpld": 0, "lmk": 1, "mykonos": 2, "phase_dac": 3}
     @staticmethod
@@ -118,6 +160,8 @@ class Magnesium(DboardManagerBase):
         "mykonos": create_spidev_iface,
         "phase_dac": create_spidev_iface_phasedac,
     }
+    # Map I2C channel to slot index
+    i2c_chan_map = {0: 'i2c-9', 1: 'i2c-10'}
 
     # DAC is initialized to midscale automatically on power-on: 16-bit DAC, so midpoint
     # is at 2^15 = 32768. However, the linearity of the DAC is best just below that
@@ -131,13 +175,43 @@ class Magnesium(DboardManagerBase):
         func.__doc__ = mykfunc.__doc__
         return func
 
+    def _get_i2c_dev(self):
+        " Return the I2C path for this daughterboard "
+        import pyudev
+        context = pyudev.Context()
+        i2c_dev_path = os.path.join(
+            self.base_i2c_adapter,
+            self.i2c_chan_map[self.slot_idx]
+        )
+        return pyudev.Devices.from_sys_path(context, i2c_dev_path)
+
+    def _power_on(self):
+        " Turn on power to daughterboard "
+        self.log.trace("Powering on slot_idx={}...".format(self.slot_idx))
+        i2c_dev = self._get_i2c_dev()
+        self._port_expander = TCA6408(i2c_dev)
+        self._port_expander.set("PWR-EN-3.6V")
+        self._port_expander.set("PWR-EN-1.5V")
+        self._port_expander.set("PWR-EN-5.5V")
+        self._port_expander.set("LED")
+
+    def _power_off(self):
+        " Turn off power to daughterboard "
+        self.log.trace("Powering off slot_idx={}...".format(self.slot_idx))
+        i2c_dev = self._get_i2c_dev()
+        self._port_expander = TCA6408(i2c_dev)
+        self._port_expander.reset("PWR-EN-3.6V")
+        self._port_expander.reset("PWR-EN-1.5V")
+        self._port_expander.reset("PWR-EN-5.5V")
+        self._port_expander.reset("LED")
+
     def __init__(self, slot_idx, **kwargs):
         super(Magnesium, self).__init__(slot_idx, **kwargs)
         self.log = get_logger("Magnesium-{}".format(slot_idx))
         self.log.trace("Initializing Magnesium daughterboard, slot index {}".format(self.slot_idx))
 
         self.ref_clock_freq = 10e6 # TODO: make this not fixed
-
+        self._power_on()
         self.log.debug("Loading C++ drivers...")
         self._device = lib.dboards.magnesium_manager(
             self._spi_nodes['mykonos'],
