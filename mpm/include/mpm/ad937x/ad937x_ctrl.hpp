@@ -70,6 +70,8 @@ public:
     virtual void finish_initialization() = 0;
     virtual void start_jesd_rx() = 0;
     virtual void start_jesd_tx() = 0;
+    virtual void start_radio() = 0;
+    virtual void stop_radio() = 0;
     virtual uint8_t get_multichip_sync_status() = 0;
     virtual uint8_t get_framer_status() = 0;
     virtual uint8_t get_deframer_status() = 0;
@@ -117,6 +119,8 @@ public:
      * \return actual gain value
      */
     virtual double set_gain(const std::string &which, double value) = 0;
+
+    virtual double get_gain(const std::string &which) = 0;
 
     /*! \brief set the agc mode for all RX channels
      *
@@ -186,6 +190,8 @@ void export_mykonos(){
         .def("finish_initialization", &ad937x_ctrl::finish_initialization)
         .def("start_jesd_rx", &ad937x_ctrl::start_jesd_rx)
         .def("start_jesd_tx", &ad937x_ctrl::start_jesd_tx)
+        .def("start_radio", &ad937x_ctrl::start_radio)
+        .def("stop_radio", &ad937x_ctrl::stop_radio)
         .def("get_multichip_sync_status", &ad937x_ctrl::get_multichip_sync_status)
         .def("get_framer_status", &ad937x_ctrl::get_framer_status)
         .def("get_deframer_status", &ad937x_ctrl::get_deframer_status)
@@ -201,6 +207,7 @@ void export_mykonos(){
         .def("get_arm_version", &ad937x_ctrl::get_arm_version)
         .def("set_bw_filter", &ad937x_ctrl::set_bw_filter)
         .def("set_gain", &ad937x_ctrl::set_gain)
+        .def("get_gain", &ad937x_ctrl::get_gain)
         .def("set_agc_mode", &ad937x_ctrl::set_agc_mode)
         .def("set_clock_rate", &ad937x_ctrl::set_clock_rate)
         .def("enable_channel", &ad937x_ctrl::enable_channel)

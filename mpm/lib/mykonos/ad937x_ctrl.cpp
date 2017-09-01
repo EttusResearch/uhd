@@ -157,6 +157,18 @@ public:
         device.start_jesd_tx();
     }
 
+    virtual void start_radio()
+    {
+        std::lock_guard<std::mutex> lock(*spi_mutex);
+        device.start_radio();
+    }
+
+    virtual void stop_radio()
+    {
+        std::lock_guard<std::mutex> lock(*spi_mutex);
+        device.stop_radio();
+    }
+
     virtual uint8_t get_multichip_sync_status()
     {
         std::lock_guard<std::mutex> lock(*spi_mutex);
@@ -234,6 +246,15 @@ public:
 
         std::lock_guard<std::mutex> lock(*spi_mutex);
         return device.set_gain(dir, chain, value);
+    }
+
+    virtual double get_gain(const std::string &which)
+    {
+        auto dir = _get_direction_from_antenna(which);
+        auto chain = _get_chain_from_antenna(which);
+
+        std::lock_guard<std::mutex> lock(*spi_mutex);
+        return device.get_gain(dir, chain);
     }
 
     // TODO: does agc mode need to have a which parameter?
