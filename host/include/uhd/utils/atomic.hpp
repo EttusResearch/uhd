@@ -25,7 +25,8 @@
 
 namespace uhd{
 
-    /*!
+    /*! DEPRECATED -- Will be removed in coming versions of UHD.
+     *
      * Spin-wait on a condition with a timeout.
      * \param cond an atomic variable to compare
      * \param value compare to atomic for true/false
@@ -50,7 +51,8 @@ namespace uhd{
         return true;
     }
 
-    /*!
+    /*! DEPRECATED -- Will be removed in coming versions of UHD.
+     *
      * Claimer class to provide synchronization for multi-thread access.
      * Claiming enables buffer classes to be used with a buffer queue.
      */

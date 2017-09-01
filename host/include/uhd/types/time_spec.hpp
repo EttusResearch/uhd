@@ -39,7 +39,8 @@ namespace uhd{
     class UHD_API time_spec_t : boost::additive<time_spec_t>, boost::totally_ordered<time_spec_t>{
     public:
 
-        /*!
+        /*! DEPRECATED -- Will get removed from UHD in future versions.
+         *
          * Get the system time in time_spec_t format.
          * Uses the highest precision clock available.
          * \return the system time as a time_spec_t
