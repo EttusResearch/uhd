@@ -54,6 +54,16 @@ public:
     double set_tx_gain(const double gain, const size_t chan);
     double set_rx_gain(const double gain, const size_t chan);
 
+    std::string get_tx_antenna(const size_t chan);
+    std::string get_rx_antenna(const size_t chan);
+
+    double get_tx_frequency(const size_t chan);
+    double get_rx_frequency(const size_t chan);
+    double get_rx_bandwidth(const size_t chan);
+
+    double get_tx_gain(const size_t chan);
+    double get_rx_gain(const size_t chan);
+
     size_t get_chan_from_dboard_fe(const std::string &fe, const direction_t dir);
     std::string get_dboard_fe_from_chan(const size_t chan, const direction_t dir);
 
@@ -65,11 +75,21 @@ public:
     );
 
 private:
-    double _set_freq(const double freq, const size_t chan, const direction_t dir);
-    double _set_gain(const double gain, const size_t chan, const direction_t dir);
-
     std::string _radio_slot;
     std::string _slot_prefix;
+
+    fs_path _get_fe_path(size_t chan, direction_t dir);
+
+    double _set_frequency(const double freq, const size_t chan, const direction_t dir);
+    double _set_gain(const double gain, const size_t chan, const direction_t dir);
+    void _set_antenna(const std::string &ant, const size_t chan, const direction_t dir);
+    double _set_bandwidth(const double bandwidth, const size_t chan, const direction_t dir);
+
+    double _get_frequency(const size_t chan, const direction_t dir);
+    double _get_gain(const size_t chan, const direction_t dir);
+    std::string _get_antenna(const size_t chan, const direction_t dir);
+    double _get_bandwidth(const size_t chan, const direction_t dir);
+
     //! Additional block args; gets set during set_rpc_client()
     uhd::device_addr_t _block_args;
 
