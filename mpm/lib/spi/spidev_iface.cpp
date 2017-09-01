@@ -89,9 +89,33 @@ public:
             ));
         }
 
-         // Assumes that only a single byte is being read.
-         // TODO the function does not advertise this. Should probably fix.
         return uint32_t(rx[2]);
+    }
+
+    uint32_t transfer24_16(
+            const uint32_t data_
+    ) {
+        int ret(0);
+
+        uint32_t data = data_;
+        uint8_t *tx_data = reinterpret_cast<uint8_t *>(&data);
+
+        // Create tx and rx buffers:
+        uint8_t tx[] = {tx_data[2], tx_data[1], tx_data[0]}; // FIXME guarantee endianness
+        uint8_t rx[3]; // Buffer length must match tx buffer
+
+        if (transfer(
+            _fd,
+            &tx[0], &rx[0],
+            3,
+            _speed, _bits, _delay
+        ) != 0) {
+            throw mpm::runtime_error(str(
+                    boost::format("SPI Transaction failed!")
+            ));
+        }
+
+        return uint32_t(rx[1] << 8 | rx[2]);
     }
 
 private:

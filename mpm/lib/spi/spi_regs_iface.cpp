@@ -82,7 +82,7 @@ public:
             | _read_flags
         ;
 
-        uint32_t data = _spi_iface->transfer24_8(transaction);
+        uint32_t data = _spi_iface->transfer24_16(transaction);
         if ((data & 0xFFFF0000) != 0) {
             throw mpm::runtime_error("SPI read returned too much data");
         }
@@ -100,7 +100,7 @@ public:
             | (data << _data_shift)
         ;
 
-        _spi_iface->transfer24_8(transaction);
+        _spi_iface->transfer24_16(transaction);
     }
 
 private:
