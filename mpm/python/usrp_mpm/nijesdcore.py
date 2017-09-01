@@ -38,7 +38,7 @@ class NIMgJESDCore(object):
         assert hasattr(self.regs, 'peek32')
         assert hasattr(self.regs, 'poke32')
 
-    def unreset_mmcm(self):
+    def unreset_qpll(self):
         # new_val = self.regs.peek32(0x0) & ~0x8
         # self.log.trace("Unresetting MMCM, writing value {:X}".format(new_val))
         self.regs.poke32(0x0, 0x7)
@@ -52,6 +52,7 @@ class NIMgJESDCore(object):
             raise Exception('JESD Core signature mismatch! Check that core is mapped correctly')
         #if self.regs.peek32(0x2104) != 0xFF
         #error here for date revision mismatch
+        self.log.trace("JESD Core build code: {0}".format(hex(self.regs.peek32(0x2104))))
         return True
 
     def init_deframer(self):
@@ -85,6 +86,12 @@ class NIMgJESDCore(object):
         " Return True if deframer is in good status "
         rb = self.regs.peek32(0x2040)
         self.log.trace("Returning deframer status: {0}".format(hex(rb & 0xFFFFFFFF)))
+        if rb & 0b100 == 0b0:
+            self.log.warning("Deframer warning: Code Group Sync failed to complete!")
+        elif rb & 0b1000 == 0b0:
+            self.log.warning("Deframer warning: Channel Bonding failed to complete!")
+        elif rb & 0x200000 == 0b1:
+            self.log.warning("Deframer warning: Misc error!")
         return rb & 0xFFFFFFFF == 0xF000001C
 
     def init(self):
@@ -96,7 +103,8 @@ class NIMgJESDCore(object):
         self._gt_reset('tx', reset_only=True)
         self._gt_reset('rx', reset_only=True)
         self._gt_pll_lock_control()
-        
+        self.regs.poke32(0x2078, 0x40)
+
     def enable_lmfc(self):
         """
         Enable LMFC generator in FPGA. This step is woefully incomplete, but this call will work for now.
