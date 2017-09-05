@@ -48,7 +48,7 @@ static const double TX_DEFAULT_GAIN = 0;
 static const uint32_t AD9371_PRODUCT_ID = 0x3;
 static const size_t ARM_BINARY_SIZE = 98304;
 
-static const size_t PLL_LOCK_TIMEOUT_MS = 200;
+static const uint32_t PLL_LOCK_TIMEOUT_MS = 200;
 static const uint32_t INIT_CAL_TIMEOUT_MS = 10000;
 
 // TODO: actually figure out what cals we want to run
