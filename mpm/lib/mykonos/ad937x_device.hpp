@@ -110,8 +110,8 @@ private:
 
     void _apply_gain_pins(uhd::direction_t direction, mpm::ad937x::device::chain_t chain);
 
-    void _call_api_function(std::function<mykonosErr_t()> func);
-    void _call_gpio_api_function(std::function<mykonosGpioErr_t()> func);
+    void _call_api_function(const std::function<mykonosErr_t()>& func);
+    void _call_gpio_api_function(const std::function<mykonosGpioErr_t()>& func);
 
     std::string _get_arm_binary_path();
     std::vector<uint8_t> _get_arm_binary();
