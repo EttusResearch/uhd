@@ -47,19 +47,27 @@ template<typename samp_type> void send_from_file(
     uhd::tx_metadata_t md;
     md.start_of_burst = false;
     md.end_of_burst = false;
-    std::vector<samp_type> buff(samps_per_buff);
     std::ifstream infile(file.c_str(), std::ifstream::binary);
 
-    //loop until the entire file has been read
+    char *array;
+    bool array_created = false;
+    int infile_length;
 
-    while(not md.end_of_burst and not stop_signal_called){
+    //get size of infile
+    infile.seekg (0, std::ios::end);
+    infile_length = infile.tellg()/sizeof(samp_type);
+    infile.seekg (0, std::ios::beg);
 
-        infile.read((char*)&buff.front(), buff.size()*sizeof(samp_type));
-        size_t num_tx_samps = size_t(infile.gcount()/sizeof(samp_type));
+    //create appropriate sized buffer
+    std::vector<samp_type> buff(infile_length);
 
-        md.end_of_burst = infile.eof();
+    //read entire file into buffer
+    infile.read((char*)&buff.front(), infile_length*sizeof(samp_type));
+        
+    //transmit until stop_signal_called
+    while(not stop_signal_called){
 
-        tx_stream->send(&buff.front(), num_tx_samps, md);
+        tx_stream->send(&buff.front(), infile_length, md);
     }
 
     infile.close();
