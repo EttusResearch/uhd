@@ -156,7 +156,7 @@ uhd_error uhd_rx_streamer_last_error(
     char* error_out,
     size_t strbuffer_len
 ){
-    UHD_SAFE_C_SAVE_ERROR(h,
+    UHD_SAFE_C(
         memset(error_out, '\0', strbuffer_len);
         strncpy(error_out, h->last_error.c_str(), strbuffer_len);
     )
