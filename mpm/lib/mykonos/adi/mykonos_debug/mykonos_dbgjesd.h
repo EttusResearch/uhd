@@ -3,8 +3,15 @@
  *
  * \brief Contains macro definitions and global structure declarations for mykonos_dbgjesd.c
  *
- * Mykonos API version: 1.3.1.3534
+ * Mykonos API version: 1.5.1.3565
  */
+
+/**
+* \page Disclaimer Legal Disclaimer
+* Copyright 2015-2017 Analog Devices Inc.
+* Released under the AD9371 API license, for more information see the "LICENSE.txt" file in this zip file.
+*
+*/
 
 #ifndef MYKONOS_DBGJESD_H_
 #define MYKONOS_DBGJESD_H_
@@ -13,10 +20,10 @@
 extern "C" {
 #endif
 
-#include "../mykonos.h"
-#include "../t_mykonos_gpio.h"
+#include "mykonos.h"
+#include "t_mykonos_gpio.h"
 #include "t_mykonos_dbgjesd.h"
-#include "../mykonos_user.h"
+#include "mykonos_user.h"
 
 /*
  *****************************************************************************

@@ -2,8 +2,15 @@
  * \file mykonos_gpio.h
  * \brief Contains macro definitions and function prototypes for mykonos_gpio.c
  *
- * Mykonos API version: 1.3.1.3534
+ * Mykonos API version: 1.5.1.3565
  */
+
+/**
+* \page Disclaimer Legal Disclaimer
+* Copyright 2015-2017 Analog Devices Inc.
+* Released under the AD9371 API license, for more information see the "LICENSE.txt" file in this zip file.
+*
+*/
 
 #ifndef MYKONOSGPIO_H_
 #define MYKONOSGPIO_H_
@@ -22,8 +29,8 @@ extern "C" {
  */
 
 /* GPIO CMOS and SPI setting Functions */
-mykonosGpioErr_t MYKONOS_setGpioDrv(mykonosDevice_t *device, mykonosGpioSelect_t gpioDrv);
-mykonosGpioErr_t MYKONOS_getGpioDrv(mykonosDevice_t *device, mykonosGpioSelect_t *gpioDrv);
+mykonosGpioErr_t MYKONOS_setGpioDrv(mykonosDevice_t *device, uint32_t gpioDrv);
+mykonosGpioErr_t MYKONOS_getGpioDrv(mykonosDevice_t *device, uint32_t *gpioDrv);
 
 mykonosGpioErr_t MYKONOS_setGpioSlewRate(mykonosDevice_t *device, mykonosGpioSelect_t gpioSelect, mykonosGpioSlewRate_t slewRate);
 mykonosGpioErr_t MYKONOS_getGpioSlewRate(mykonosDevice_t *device, mykonosGpioSelect_t gpioSelect, mykonosGpioSlewRate_t *slewRate);
@@ -103,7 +110,6 @@ mykonosGpioErr_t MYKONOS_readGpInterruptStatus(mykonosDevice_t *device, uint16_t
  *****************************************************************************
  */
 mykonosGpioErr_t MYKONOS_setArmGpioPins(mykonosDevice_t *device);
-mykonosGpioErr_t MYKONOS_setRadioControlPinMode(mykonosDevice_t *device);
 
 /*
  *****************************************************************************

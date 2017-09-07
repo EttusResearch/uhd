@@ -2,8 +2,15 @@
  * \file t_mykonos_gpio.h
  * \brief Mykonos GPIO error handling and type defines
  *
- * Mykonos API version: 1.3.1.3534
+ * Mykonos API version: 1.5.1.3565
  */
+
+/**
+* \page Disclaimer Legal Disclaimer
+* Copyright 2015-2017 Analog Devices Inc.
+* Released under the AD9371 API license, for more information see the "LICENSE.txt" file in this zip file.
+*
+*/
 
 #ifndef T_MYKONOSGPIO_H_
 #define T_MYKONOSGPIO_H_
@@ -75,6 +82,7 @@ typedef enum
     MYKONOS_ERR_GETGPIO_OE_NULL_PARM,
     MYKONOS_ERR_GPIO_OE_INV_PARAM,
     MYKONOS_ERR_GPIO_SRC_PARAM_INV,
+    MYKONOS_ERR_GET_GPIO_SOURCE_CONTROL_NULL_PARM,
 
     MYKONOS_ERR_INV_GP_INT_MASK_PARM,
     MYKONOS_ERR_GP_INT_STATUS_NULL_PARAM,
@@ -90,7 +98,6 @@ typedef enum
     MYKONOS_ERR_SET_ARMGPIO_PINS_ARMERROR,
     MYKONOS_ERR_SET_ARMGPIO_PINS_INV_SIGNALID,
     MYKONOS_ERR_SET_ARMGPIO_PINS_INV_GPIOPIN,
-    MYKONOS_ERR_SET_RADIOCTRL_PINS_ARMERROR,
 
     MYKONOS_ERR_SETUPAUXDAC_NULL_PARAM,
     MYKONOS_ERR_WRITEAUXDAC_NULL_AUXIO,
@@ -103,6 +110,7 @@ typedef enum
     MYKONOS_ERR_INV_AUX_ADC_DEC_PARM,
 
     MYKONOS_ERR_GAINCOMP_NULL_STRUCT,
+    MYKONOS_ERR_GAINCOMP_EN_NULL_PARM,
     MYKONOS_ERR_GAINCOMP_SET_NULL_STRUCT,
     MYKONOS_ERR_GAINCOMP_INV_RX1_OFFSET,
     MYKONOS_ERR_GAINCOMP_INV_RX2_OFFSET,
@@ -110,6 +118,7 @@ typedef enum
     MYKONOS_ERR_GAINCOMP_INV_EN,
 
     MYKONOS_ERR_OBS_RX_GAINCOMP_SET_NULL_STRUCT,
+    MYKONOS_ERR_OBS_RX_GAINCOMP_EN_NULL_PARAM,
     MYKONOS_ERR_OBS_RX_GAINCOMP_INV_EN,
     MYKONOS_ERR_OBS_RX_GAINCOMP_INV_OFFSET,
     MYKONOS_ERR_OBS_RX_GAINCOMP_INV_STEP,
@@ -209,7 +218,7 @@ typedef enum
 typedef enum
 {
     GPIO_18_17_16      = 0,    /*!< GPIO combination for observation channel */
-    GPIO_16_15_14      = 1,    /*!< GPIO combination for observation channel */
+    GPIO_16_15_14      = 1     /*!< GPIO combination for observation channel */
 } mykonosObsRxSlicer_t;
 
 /**

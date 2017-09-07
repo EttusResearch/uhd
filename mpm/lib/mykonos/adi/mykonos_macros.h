@@ -2,8 +2,15 @@
  * \file mykonos_macros.h
  * \brief Contains address and miscellaneous macro definitions for Mykonos API
  *
- * Mykonos API version: 1.3.1.3534
+ * Mykonos API version: 1.5.1.3565
  */
+
+/**
+* \page Disclaimer Legal Disclaimer
+* Copyright 2015-2017 Analog Devices Inc.
+* Released under the AD9371 API license, for more information see the "LICENSE.txt" file in this zip file.
+*
+*/
 
 #ifndef CLEMENTE_TDD_MACROS_H
 #define CLEMENTE_TDD_MACROS_H
@@ -189,12 +196,11 @@ extern "C" {
 #define MYKONOS_ADDR_CLK_SYNTH_VCO_VAR_CTL2                 0x15F
 
 /* DPD Registers */
-#define MYKONOS_ADDR_TX1_DPD_RMS_INDIRECT_PTR               0x168
-#define MYKONOS_ADDR_TX2_DPD_RMS_INDIRECT_PTR               0x16C
 #define MYKONOS_ADDR_TX1_DPD_MODEL_INDIRECT_PTR             0x178
 #define MYKONOS_ADDR_TX2_DPD_MODEL_INDIRECT_PTR             0x17C
 #define MYKONOS_ADDR_DPD_RMS_BUF_SIZE                       0x180
-#define MYKONOS_ADDR_DPD_MODEL_BUF_SIZE                     0x182
+#define MYKONOS_ADDR_TX1_DPD_MODEL_WORKING_PTR              0x188
+#define MYKONOS_ADDR_TX2_DPD_MODEL_WORKING_PTR              0x18C
 
 /* Rx NCO Control registers */
 #define MYKONOS_ADDR_CALPLL_SDM_CONTROL                     0x17F
@@ -423,8 +429,16 @@ extern "C" {
 #define MYKONOS_ADDR_RFDC_MEASURE_COUNT_2                   0x632
 #define MYKONOS_ADDR_RFDC_PROGRAM_SHIFT                     0x635
 #define MYKONOS_ADDR_RFDC_CONFIG2                           0x636
+#define MYKONOS_DPD_Sniffer_RFDC_CAL_TRACK_EN               0x642
+#define MYKONOS_ADDR_RFDC_SNF_MEASURE_COUNT_1               0x644
+#define MYKONOS_ADDR_RFDC_SNF_MEASURE_COUNT_2               0x645
+#define MYKONOS_ADDR_RFDC_ORX_MEASURE_COUNT_1               0x650
+#define MYKONOS_ADDR_RFDC_ORX_MEASURE_COUNT_2               0x651
 #define MYKONOS_ADDR_DIGITAL_DC_MIN_CAL_IDX                 0x63A
 #define MYKONOS_ADDR_DIGITAL_DC_OFFSET_SHIFT                0x674
+#define MYKONOS_ADDR_DIGITAL_DC_OFFSET_CONFIG               0x676
+#define MYKONOS_DIGITAL_DC_OFFSET_CH3_TRACKING              0x67A
+#define MYKONOS_ADDR_DIGITAL_DC_OFFSET_SNF                  0x67C
 #define MYKONOS_ADDR_DIGITAL_DC_OFFSET_CH3_DPD_M_SHIFT      0x67D
 
 #define MYKONOS_ADDR_RX_GAIN_COMP_DELAY                     0x710
@@ -645,7 +659,7 @@ extern "C" {
 #define MYKONOS_ARM_OBJECTID_CLGCINIT_CONFIG                0x10
 #define MYKONOS_ARM_OBJECTID_VSWRINIT_CONFIG                0x11
 #define MYKONOS_ARM_OBJECTID_DPDCONFIG                      0x24
-#define MYKONOS_ARM_DPD_INIT_MODEL                          0x02
+#define MYKONOS_ARM_DPD_RESET                               0x02
 #define MYKONOS_ARM_OBJECTID_GS_TRACKCALS                   0x66
 #define MYKONOS_ARM_OBJECTID_RXQEC_TRACKING                 0x20
 #define MYKONOS_ARM_OBJECTID_ORXQEC_TRACKING                0x21
@@ -684,6 +698,7 @@ extern "C" {
 #define ENABLE_DPD_ACTUATOR       0x04
 #define SET_CLGC_DESIRED_GAIN_1   0x05
 #define SET_CLGC_DESIRED_GAIN_2   0x06
+#define SET_PATH_DELAY            0x08
 
 #ifdef __cplusplus
 }

@@ -2,8 +2,15 @@
  * \file mykonos_user.c
  * \brief Contains Mykonos default gain table values for Rx, ObsRx, and SnRx
  *
- * Mykonos API version: 1.3.1.3534
+ * Mykonos API version: 1.5.1.3565
  */
+
+/**
+* \page Disclaimer Legal Disclaimer
+* Copyright 2015-2017 Analog Devices Inc.
+* Released under the AD9371 API license, for more information see the "LICENSE.txt" file in this zip file.
+*
+*/
 
 #include <stdint.h>
 #include "t_mykonos.h"
@@ -12,7 +19,6 @@
 /**
  * \brief Default Rx gain table settings
  */
-
 uint8_t RxGainTable [61][4] =
 {
 	/* Order: {FE table, External Ctl, Digital Gain/Atten, Enable Atten} */

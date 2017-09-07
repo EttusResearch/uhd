@@ -3,8 +3,15 @@
  *
  * \brief Contains definitions and structure declarations for mykonos_dbgjesd.c
  *
- * Mykonos API version: 1.3.1.3534
+ * Mykonos API version: 1.5.1.3565
  */
+
+/**
+* \page Disclaimer Legal Disclaimer
+* Copyright 2015-2017 Analog Devices Inc.
+* Released under the AD9371 API license, for more information see the "LICENSE.txt" file in this zip file.
+*
+*/
 
 #ifndef T_MYKONOS_DBGJESD_H_
 #define T_MYKONOS_DBGJESD_H_
@@ -13,7 +20,7 @@
 extern "C" {
 #endif
 
-#include "../common.h"
+#include "common.h"
 
 /**
  *  \brief Enum of unique error codes from the Mykonos DBG API functions.
@@ -69,7 +76,7 @@ typedef enum
     MYK_LANE_0 = 0, /*!< Lane 0 */
     MYK_LANE_1 = 1, /*!< Lane 1 */
     MYK_LANE_2 = 2, /*!< Lane 2 */
-    MYK_LANE_3 = 3, /*!< Lane 3 */
+    MYK_LANE_3 = 3  /*!< Lane 3 */
 } mykonosLaneSel_t;
 
 /**
@@ -79,7 +86,7 @@ typedef enum
 {
     MYK_BAD_DISP_CNTR = 0,  /*!< Bad disparity */
     MYK_NIT_CNTR = 1,       /*!< Not in table */
-    MYK_UEKC_CNTR = 2,      /*!< Unexpected K character */
+    MYK_UEKC_CNTR = 2       /*!< Unexpected K character */
 } mykonosCtrSel_t;
 
 /**
@@ -89,7 +96,7 @@ typedef enum
 {
     MYK_SYNC_BADDISP = 0x04,    /*!< Bad disparity mask enable */
     MYK_SYNC_NIT = 0x02,        /*!< Not in table */
-    MYK_SYNC_UEKC = 0x01,       /*!< Unexpected K character */
+    MYK_SYNC_UEKC = 0x01        /*!< Unexpected K character */
 } mykonosSyncMasks_t;
 
 /**
@@ -100,7 +107,7 @@ typedef enum
     MYK_IRQ_CMM = 0x08,     /*!< Configuration mismatch mask enable */
     MYK_IRQ_BADDISP = 0x04, /*!< Bad disparity mask enable */
     MYK_IRQ_NIT = 0x02,     /*!< Not in table */
-    MYK_IRQ_UEKC = 0x01,    /*!< Unexpected K character */
+    MYK_IRQ_UEKC = 0x01     /*!< Unexpected K character */
 } mykonosIrqMasks_t;
 
 /**
@@ -110,7 +117,7 @@ typedef enum
 {
     MYK_CLEAR = 1,          /*!< Clear error handling type */
     MYK_RESET = 2,          /*!< Reset error handling type */
-    MYK_CLEAR_RESET = 3,    /*!< Clear and Reset error handling type */
+    MYK_CLEAR_RESET = 3     /*!< Clear and Reset error handling type */
 } mykonosHandleType_t;
 
 /**
@@ -121,7 +128,7 @@ typedef enum
     MYK_CMM = 0x7B,     /*!< configuration mismatch */
     MYK_BADDISP = 0x6D, /*!< Bad disparity */
     MYK_NIT = 0x6E,     /*!< Not in table */
-    MYK_UEKC = 0x6F,    /*!< Unexpected K character */
+    MYK_UEKC = 0x6F     /*!< Unexpected K character */
 } mykonosErrType_t;
 
 /**

@@ -2,8 +2,15 @@
  * \file mykonos_version.h
  * \brief Contains the version number for the Mykonos API
  *
- * Mykonos API version: 1.3.1.3534
+ * Mykonos API version: 1.5.1.3565
  */
+
+/**
+* \page Disclaimer Legal Disclaimer
+* Copyright 2015-2017 Analog Devices Inc.
+* Released under the AD9371 API license, for more information see the "LICENSE.txt" file in * this zip file.
+*
+*/
 
 #ifndef MYKONOS_VERSION_H_
 #define MYKONOS_VERSION_H_
@@ -13,9 +20,9 @@ extern "C" {
 #endif
 
 #define MYKONOS_CURRENT_SI_VERSION 1    		/*!< Mykonos current silicon version */
-#define MYKONOS_CURRENT_MAJOR_VERSION 3			/*!< Mykonos current ARM major version */
+#define MYKONOS_CURRENT_MAJOR_VERSION 5			/*!< Mykonos current ARM major version */
 #define MYKONOS_CURRENT_MINOR_VERSION 1			/*!< Mykonos current ARM minor version */
-#define MYKONOS_CURRENT_BUILD_VERSION 3534		/*!< Mykonos current API build version */
+#define MYKONOS_CURRENT_BUILD_VERSION 3565		/*!< Mykonos current API build version */
 
 #ifdef __cplusplus
 }

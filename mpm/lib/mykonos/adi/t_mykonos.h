@@ -2,8 +2,15 @@
  * \file t_mykonos.h
  * \brief Contains type definitions for Mykonos API
  *
- * Mykonos API version: 1.3.1.3534
+ * Mykonos API version: 1.5.1.3565
  */
+
+/**
+* \page Disclaimer Legal Disclaimer
+* Copyright 2015-2017 Analog Devices Inc.
+* Released under the AD9371 API license, for more information see the "LICENSE.txt" file in this zip file.
+*
+*/
 
 #ifndef _T_MYKONOS_LIB_H_
 #define _T_MYKONOS_LIB_H_
@@ -85,10 +92,11 @@ typedef enum
     MYKONOS_ERR_SETRX1GAIN_INV_GAIN_PARM,
     MYKONOS_ERR_SETRX2GAIN_INV_GAIN_PARM,
     MYKONOS_ERR_INITSER_INV_VCODIV_PARM,
+    MYKONOS_ERR_INITSER_INV_VCODIV1_HSCLK_PARM,
+    MYKONOS_ERR_INITSER_INV_VCODIV1P5_HSCLK_PARM,
     MYKONOS_ERR_INITDES_INV_VCODIV_PARM,
     MYKONOS_ERR_SER_INV_M_PARM,
     MYKONOS_ERR_SER_INV_L_PARM,
-    MYKONOS_ERR_SER_INV_HSCLK_PARM,
     MYKONOS_ERR_SER_INV_LANERATE_PARM,
     MYKONOS_ERR_SER_INV_LANEEN_PARM,
     MYKONOS_ERR_SER_INV_AMP_PARM,
@@ -280,6 +288,7 @@ typedef enum
 	MYKONOS_ERR_TIMEDOUT_ARMMAILBOXBUSY,
 	MYKONOS_ERR_PU_OBSRXPATH_ARMERROR,
 	MYKONOS_ERR_EN_TRACKING_CALS_ARMSTATE_ERROR,
+	MYKONOS_ERR_SET_RADIOCTRL_PINS_ARMERROR,
 	MYKONOS_ERR_EN_TRACKING_CALS_ARMERROR,
 	MYKONOS_ERR_SETRFPLL_ARMERROR,
 	MYKONOS_ERR_INIT_INV_TXINPUTHB_PARM,
@@ -320,6 +329,9 @@ typedef enum
 	MYKONOS_ERR_ARMCMD_NULL_PARM,
 	MYKONOS_ERR_WRITEARMMEM_NULL_PARM,
 	MYKONOS_ERR_LOADBIN_NULL_PARAM,
+	MYKONOS_ERR_ARM_INV_ADDR_PARM,
+	MYKONOS_ERR_LOADARMCON_INVALID_BYTECOUNT,
+	MYKONOS_ERR_LOADARMCON_NULL_PARAM,
 	MYKONOS_ERR_GETTX1ATTEN_NULL_PARM,
 	MYKONOS_ERR_GETTX2ATTEN_NULL_PARM,
 	MYKONOS_ERR_ENFRAMERLINK_INV_LANESEN_PARM,
@@ -342,6 +354,7 @@ typedef enum
 	MYKONOS_ERR_GETRFPLL_NULLPARAM,
 	MYKONOS_ERR_INITARM_INV_VCODIV,
 	MYKONOS_ERR_GET_PLLFREQ_INV_HSDIV,
+	MYKONOS_ERR_GET_PLLFREQ_INV_VCODIV,
 	MYKONOS_ERR_GET_PLLFREQ_INV_REFCLKDIV,
 	MYKONOS_ERR_SETORXGAIN_INV_ORX1GAIN,
 	MYKONOS_ERR_SETORXGAIN_INV_ORX2GAIN,
@@ -366,7 +379,6 @@ typedef enum
  	MYKONOS_ERR_WRITEARMCFG_ARMERRFLAG,
 	MYKONOS_ERR_CFGDPD_TXORX_PROFILE_INV,
 	MYKONOS_ERR_CFGDPD_NULL_DPDCFGSTRUCT,
-	MYKONOS_ERR_CFGDPD_ARMSTATE_ERROR,
 	MYKONOS_ERR_CFGDPD_INV_DPDDAMPING,
 	MYKONOS_ERR_CFGDPD_INV_DPDSAMPLES,
 	MYKONOS_ERR_CFGDPD_INV_DPDOUTLIERTHRESH,
@@ -414,7 +426,6 @@ typedef enum
 	MYKONOS_ERR_SETDPDACT_ARMERRFLAG,
 	MYKONOS_ERR_CFGCLGC_TXORX_PROFILE_INV,
 	MYKONOS_ERR_CFGCLGC_NULL_CLGCCFGSTRUCT,
-	MYKONOS_ERR_CFGCLGC_ARMSTATE_ERROR,
 	MYKONOS_ERR_GETCLGCCFG_TXORX_PROFILE_INV,
 	MYKONOS_ERR_GETCLGCCFG_NULL_CFGSTRUCT,
 	MYKONOS_ERR_CALCDIGCLK_NULLDEV_PARAM,
@@ -498,7 +509,61 @@ typedef enum
     MYKONOS_ERR_TXPROFILE_FIR_COEFS,
     MYKONOS_ERR_TXPROFILE_DACDIV,
     MYKONOS_ERR_RESET_TXLOL_INV_PARAM,
-    MYKONOS_ERR_RESET_TXLOL_ARMERROR
+    MYKONOS_ERR_RESET_TXLOL_ARMERROR,
+	MYKONOS_ERR_SETRFPLL_LF_INV_STABILITY,
+	MYKONOS_ERR_SETRFPLL_LF_PLLNAME,
+	MYKONOS_ERR_SETRFPLL_LF_INV_TXRX_LOOPBANDWIDTH,
+	MYKONOS_ERR_SETRFPLL_LF_INV_SNF_LOOPBANDWIDTH,
+	MYKONOS_ERR_SETRFPLL_LF_ARMERROR,
+	MYKONOS_ERR_GETRFPLL_LF_ARMERROR,
+	MYKONOS_ERR_GETRFPLL_LF_NULLPARAM,
+	MYKONOS_ERR_GETRFPLL_LF_INV_PLLNAME,
+    MYKONOS_ERR_DC_OFFSET_INV_CHAN,
+    MYKONOS_ERR_SET_RF_DC_OFFSET_INV_MEASURECNT,
+    MYKONOS_ERR_SET_RF_DC_OFFSET_MEASURECNT_MIN_LIMIT,
+    MYKONOS_ERR_GET_RF_DC_OFFSET_NULL_MEASURECNT,
+    MYKONOS_ERR_RF_DC_OFFSET_INV_ENABLE_MASK,
+    MYKONOS_ERR_RF_DC_OFFSET_NULL_ENABLE_MASK,
+    MYKONOS_ERR_SET_DIG_DC_OFFSET_INV_MSHIFT,
+    MYKONOS_ERR_GET_DIG_DC_OFFSET_NULL_MSHIFT,
+    MYKONOS_ERR_DIG_DC_OFFSET_INV_ENABLE_MASK,
+    MYKONOS_ERR_DIG_DC_OFFSET_NULL_ENABLE_MASK,
+    MYKONOS_ERR_CFGCLGC_INV_THRESHOLD,
+    MYKONOS_ERR_RESETDPD_INV_TXCHANNEL,
+    MYKONOS_ERR_RESETDPD_ARMERRFLAG,
+    MYKONOS_ERR_RESETDPD_WRONG_PARAM,
+    MYKONOS_WRN_RADIO_ON_NOT_MODIFIABLE,
+    MYKONOS_ERR_SET_PATH_DELAY_NULL_PARAM,
+    MYKONOS_ERR_SET_PATH_DELAY_PARAM_OUT_OF_RANGE,
+    MYKONOS_ERR_GET_PATH_DELAY_NULL_PARAM,
+    MYKONOS_ERR_GET_PATH_DELAY_INVALID_SELECTION,
+    MYKONOS_ERR_GET_PATH_DELAY_ARMERRFLAG,
+
+
+	MYKONOS_ERR_GETDPD_ERROR_CNT_NULLPARAM,
+	MYKONOS_ERR_GETDPD_ERROR_CNT_INV_CH,
+	MYKONOS_ERR_GETDPD_ERROR_CNT_ARMERRFLAG,
+
+	MYKONOS_ERR_SETDPDACT_NULL_ACTSTRUCT,
+	MYKONOS_ERR_SETDPDACT_INV_ACTMODE,
+	MYKONOS_ERR_SETDPDACT_INV_LEVEL,
+	MYKONOS_ERR_GETDPDACT_NULL_ACTSTRUCT,
+
+	MYKONOS_ERR_SETDPDACTCHECK_NULL_ACTSTRUCT,
+	MYKONOS_ERR_SETDPDACTCHECK_INV_ACTMODE,
+	MYKONOS_ERR_SETDPDACTCHECK_INV_LEVEL,
+	MYKONOS_ERR_GETDPDACTCHECK_NULL_ACTSTRUCT,
+
+	MYKONOS_ERR_CLGCATTENTUNCFG_NULL_ATTRANGECFGSTRUCT,
+	MYKONOS_ERR_CLGCATTENTUNCFG_INVALID_MODE,
+	MYKONOS_ERR_CLGCATTENTUNCFG_INVALID_PRESET,
+	MYKONOS_ERR_CLGCATTENTUNCFG_INVALID_RANGE,
+	MYKONOS_ERR_CLGCATTENTUNCFG_INVALID_TX1_SETTINGS,
+	MYKONOS_ERR_CLGCATTENTUNCFG_INVALID_TX2_SETTINGS,
+
+	MYKONOS_ERR_CLGCATTENTUNCFGGET_NULL_ATTRANGECFGSTRUCT,
+
+    MYKONOS_ERR_END
 } mykonosErr_t;
 
 /**
@@ -798,6 +863,17 @@ typedef enum
     TRACK_SRX_QEC       = 0x40000
 } mykonosTrackingCalibrations_t;
 
+
+/**
+ *  \brief Enum to select the desired status calibration path delay read back
+ */
+typedef enum
+{
+    MYK_DPD_PATH_DELAY     = 0,
+    MYK_CLGC_PATH_DELAY    = 1,
+    MYK_VSWR_PATH_DELAY    = 2
+} mykonosPathDelaySel_t;
+
 /**
  *  \brief Enum to set the GPIO3v3 mode
  */
@@ -806,7 +882,7 @@ typedef enum
     GPIO3V3_LEVELTRANSLATE_MODE     = 1,    /*!< Level translate mode, signal level on low voltage GPIO output on GPIO3v3 pins */
     GPIO3V3_INVLEVELTRANSLATE_MODE  = 2,    /*!< Inverted Level translate mode, inverse of signal level on low voltage GPIO output on GPIO3v3 pins */
     GPIO3V3_BITBANG_MODE            = 3,    /*!< Manual mode, API function sets output pin levels and reads input pin levels */
-    GPIO3V3_EXTATTEN_LUT_MODE       = 4,    /*!< GPIO3v3 output level follows Rx1/Rx2 gain table external control 6bit field. */
+    GPIO3V3_EXTATTEN_LUT_MODE       = 4     /*!< GPIO3v3 output level follows Rx1/Rx2 gain table external control 6bit field. */
 } mykonosGpio3v3Mode_t;
 
 /**
@@ -828,11 +904,96 @@ typedef enum
     MYK_ARM_POWERUP         = 0x00,    /*!< ARM is powered up and ready to be programmed */
     MYK_ARM_READY           = 0x01,    /*!< ARM enter this state once the boot up sequence is completed */
     MYK_ARM_IDLE            = 0x02,    /*!< ARM enter this state after initial calibrations are completed */
-    MYK_ARM_RADIO_ON        = 0x03,    /*!< ARM has moved from MYKONOS_ARM_IDLE state into MYKONOS_ARM_RADIO_ON after the proper command, an abort command will move back to MYKONOS_ARM_IDLE state */
-    MYK_ARM_PROFILE_ERROR   = 0x04,    /*!< ARM has detected an illegal profile */
+    MYK_ARM_RADIO_ON        = 0x04,    /*!< ARM has moved from MYKONOS_ARM_IDLE state into MYKONOS_ARM_RADIO_ON after the proper command, an abort command will move back to MYKONOS_ARM_IDLE state */
+    MYK_ARM_PROFILE_ERROR   = 0x08,    /*!< ARM has detected an illegal profile */
     MYK_ARM_CAL_ERROR       = 0x40,    /*!< ARM has detected an error in the tracking calibrations */
     MYK_ARM_EXCEPTION       = 0x80     /*!< ARM system problem has been detected */
 } mykonosArmState_t;
+
+/**
+ *  \brief Enum for channel selection for DC offset settings.
+ */
+typedef enum
+{
+    MYK_DC_OFFSET_RX_CHN = 0x01,                /*!< Select Rx channel */
+    MYK_DC_OFFSET_ORX_CHN = 0x02,               /*!< Select ORx channel */
+    MYK_DC_OFFSET_SNF_CHN = 0x04                /*!< Select Sniffer channel */
+}mykonosDcOffsetChannels_t;
+
+/**
+ *  \brief Enum of Rx channels  for configuring (Enable /disable) DC offsets.
+ */
+typedef enum
+{
+    MYK_DC_OFFSET_ALL_OFF = 0x00,               /*!< Disable all the channels */
+    MYK_DC_OFFSET_RX1 = 0x01,                   /*!< Enables Rx1  */
+    MYK_DC_OFFSET_RX2 = 0x02,                   /*!< Enables Rx2  */
+    MYK_DC_OFFSET_SNF = 0x04,                   /*!< Enables Sniffer  */
+    MYK_DC_OFFSET_ORX = 0x08,                   /*!< Enables ORx  */
+    MYK_DC_OFFSET_AVAILABLE = 0x0F              /*!< Enables all the channels  */
+}mykonosRxDcOffsettEn_t;
+
+/**
+ *  \brief Enum of build type
+ */
+typedef enum
+{
+    MYK_BUILD_RELEASE = 0X00,
+    MYK_BUILD_DEBUG = 0x01,
+    MYK_BUILD_TEST_OBJECT = 0x04
+}mykonosBuild_t;
+
+/**
+ *  \brief Enum for DPD error codes
+ */
+typedef enum
+{
+    MYK_NO_ERROR = 0,                               /*!< No Error */
+    MYK_ORX_DISABLED = 1,                           /*!< ORX_DISABLED */
+    MYK_TX_DISABLED = 2,                            /*!< TX_DISABLED */
+    MYK_PATHDELAY_NOT_SETUP = 3,                    /*!< PATHDELAY_NOT_SETUP */
+    MYK_DPD_INIT_NOT_RUN = 4,                       /*!< DPD_INIT_NOT_RUN */
+    MYK_ORX_SIG_TOO_LOW = 5,                        /*!< ORX_SIG_TOO_LOW */
+    MYK_ORX_SIG_SATURATED = 6,                      /*!< ORX_SIG_SATURATED */
+    MYK_TX_SIG_TOO_LOW = 7,                         /*!< TX_SIG_TOO_LOW */
+    MYK_TX_SIG_SATURATED = 8,                       /*!< TX_SIG_SATURATED */
+    MYK_MODEL_ERROR_HIGH = 9,                       /*!< MODEL_ERROR_HIGH */
+    MYK_AM_AM_OUTLIERS = 10,                        /*!< AM_AM_OUTLIERS */
+    MYK_INVALID_TX_PROFILE = 11,                    /*!< INVALID_TX_PROFILE */
+    MYK_ORX_TRACKING_DISABLED = 12,                 /*!< ORX_TRACKING_DISABLED ORx tracking must be enabled */
+    MYK_ERR_RESERVED_13 = 13,                       /*!< Reserved DPD error */
+    MYK_ERR_BAD_ACTUATOR_MODEL = 14,                /*!< DPD actuator model is in bad state */
+    MYK_ERR_LOW_POWER_ACTUATOR_BYPASS = 15,         /*!< DPD actuator bypassed due to low input power */
+
+    MYK_DPD_ERROR_END
+} mykonosDpdErrors_t;
+
+/**
+ *  \brief Enum for DPD reset modes
+ */
+typedef enum
+{
+    MYK_DPD_NO_ACTION         = 0,    /*!< DPD no Action error */
+    MYK_DPD_RESET_FULL        = 1,    /*!< Full DPD reset */
+    MYK_DPD_RESET_PRIOR       = 4,    /*!< Reset only prior model */
+    MYK_DPD_RESET_CORRELATOR  = 8,    /*!< Reset correlator only */
+
+    MYK_DPD_RESET_END
+} mykonosDpdResetMode_t;
+
+
+/**
+ *  \brief Enum for CLGC Tx attenuation tuning range modes
+ */
+typedef enum
+{
+    MYK_CLGC_ATTEN_TUNING_PRESET  = 0,    /*!< Set attenuation to the tx[]AttenTuningPreset  */
+    MYK_CLGC_ATTEN_DISCARD        = 1,    /*!< Ignore calculated attenuation level and keep the existing one */
+    MYK_CLGC_ATTEN_UPDATE         = 2,    /*!< Set attenuation to tx[]AttenTuningPreset + tx[]AttenTuningRange if calculated attenuation is above this level
+                                               Set attenuation to tx[]AttenTuningPreset - tx[]AttenTuningRange if calculated attenuation is below this level*/
+
+    MYK_CLGC_ATTEN_END
+} mykonosClgcAttenTuningMode_t;
 
 /**
  *  \brief Data structure to hold 3.3 VDC GPIO settings
@@ -867,8 +1028,8 @@ typedef struct{
 } int8_cpx;
 
 /**
- *  \brief Structure to configure DPD (Only valid for AD9373 device)
- *
+ *  \brief Structure to configure DPD (Only valid for a DPD-enabled transceiver)
+ *  \deprecated robustModeling member of this structure is no longer in use.
  *  This information is loaded into the ARM memory using the
  *  MYKONOS_configDpd() function before running the DPD init or tracking
  *  calibrations.  These values can only be changed when the ARM is in the
@@ -881,7 +1042,7 @@ typedef struct
     uint8_t modelVersion;           /*!< DPD model version: one of four different generalized polynomial models: 0 = same as R0 silicon, 1-3 are new and the best one depends on the PA (default: 2) */
     uint8_t highPowerModelUpdate;   /*!< 1 = Update saved model whenever peak Tx digital RMS is within 1dB of historical peak Tx RMS */
     uint8_t modelPriorWeight;       /*!< Determines how much weight the loaded prior model has on DPD modeling (Valid 0 - 32, default 20) */
-    uint8_t robustModeling;         /*!< Default off = 0, 1=enables automatic outlier removal during DPD modeling */
+    uint8_t robustModeling;         /*!< This is deprecated and no longer in use */
     uint16_t samples;               /*!< number of samples to capture (default: 512, valid 64 - 32768) */
     uint16_t outlierThreshold;      /*!< threshold for sample in AM-AM plot outside of 1:1 line to be thrown out. (default: 50% = 8192/2, valid 8192 to 1) */
     int16_t  additionalDelayOffset; /*!< 16th of an ORx sample (16=1sample), (default 0, valid -64 to 64) */
@@ -890,12 +1051,37 @@ typedef struct
 } mykonosDpdConfig_t;
 
 /**
- *  \brief Structure to configure CLGC (Closed Loop Gain Control) (Only valid for AD9373 device)
+ *  \brief Structure to configure the feature to bypass DPD actuator when signal power below a threshold
+ *
+ */
+typedef struct
+{
+    uint8_t bypassActuatorEn;                         /*!< Enable/Disable feature to bypass actuator when input power below a certain threshold */
+    mykonosDpdResetMode_t bypassActuatorMode;         /*!< Follows reset DPD enum */
+    uint16_t bypassActuatorLevel;                     /*!< Tx RMS level below which actuator is bypassed. P_dBFS = 20*log10(bypassActuatorLevel/8192) */
+} mykonosDpdBypassConfig_t;
+
+
+
+/**
+ * \brief Structure to configure the DPD actuator gain check
+ *
+ */
+typedef struct
+{
+    uint8_t actuatorGainCheckEn;                  /*!< Enable Gain check for DPD actuator */
+    mykonosDpdResetMode_t actuatorGainCheckMode;  /*!< Follows reset DPD enum */
+    uint16_t actuatorGainCheckLevel;              /*!< If the gain difference before and after the actuator exceeds this value an error will be issued
+                                                     and the actuator will reset depending on the actuatorGainCheckMode, in 0.01dB, where a value of 200 => 2dB*/
+} mykonosDpdActuatorCheck_t;
+
+/**
+ *  \brief Structure to configure CLGC (Closed Loop Gain Control) (Only valid for a DPD-enabled transceiver)
  *
  *  This information is loaded into the ARM memory using the
  *  MYKONOS_configClgc() function before running the CLGC init or tracking
- *  calibrations.  These values can only be changed when the ARM is in the
- *  radioOff state.
+ *  calibrations.
+ *  These values can be changed when the ARM is in the radioOff or radioOn states.
  */
 typedef struct
 {
@@ -908,10 +1094,36 @@ typedef struct
     uint8_t allowTx1AttenUpdates;   /*!< 0= allow CLGC to run, but Tx1Atten will not be updated. User can still read back power measurements.  1=CLGC runs, and Tx1Atten automatically updated */
     uint8_t allowTx2AttenUpdates;   /*!< 0= allow CLGC to run, but Tx2Atten will not be updated. User can still read back power measurements.  1=CLGC runs, and Tx2Atten automatically updated */
 
-    int16_t  additionalDelayOffset; /*!< 16th of an ORx sample (16=1sample), (default 0, valid -64 to 64) */
+    int16_t additionalDelayOffset;  /*!< 16th of an ORx sample (16=1sample), (default 0, valid -64 to 64) */
     uint16_t pathDelayPnSeqLevel;   /*!< Default 255 (-30dBFs=(20Log10(value/8192)), (valid range  1 to 8191) */
+
+    uint16_t tx1RelThreshold;       /*!< Threshold for Tx1 in order to stop tracking, value = 100 * dB, default 6db then value = 600 */
+    uint16_t tx2RelThreshold;       /*!< Threshold for Tx2 in order to stop tracking, value = 100 * dB, default 6db then value = 600 */
+    uint8_t tx1RelThresholdEn;      /*!< Threshold feature enable for Tx1, 0 = disable, 1 = enable, default = 0 */
+    uint8_t tx2RelThresholdEn;      /*!< Threshold feature enable for Tx2, 0 = disable, 1 = enable, default = 0 */
 } mykonosClgcConfig_t;
 
+/**
+ * \brief Structure to configure the CLGC attenuation tuning range
+ */
+typedef struct
+{
+    mykonosClgcAttenTuningMode_t tx1AttenTuningLimitMode;   /*!< Tx1 CLGC Attenuation tuning mode */
+    mykonosClgcAttenTuningMode_t tx2AttenTuningLimitMode;   /*!< Tx2 CLGC Attenuation tuning mode */
+    uint16_t tx1AttenTuningPreset;                          /*!< Tx1 CLGC nominal attenuation, valid range is 0 to 839 with a 0.05dB*/
+    uint16_t tx2AttenTuningPreset;                          /*!< Tx2 CLGC nominal attenuation, valid range is 0 to 839 with a 0.05dB*/
+    uint16_t tx1AttenTuningRange;                           /*!< Tx1 CLGC relative attenuation range around nominal attenuation, valid range is 0 to 420 with a 0.05dB*/
+    uint16_t tx2AttenTuningRange;                           /*!< Tx2 CLGC relative attenuation range around nominal attenuation, valid range is 0 to 420 with a 0.05dB*/
+} mykonosClgcAttenTuningConfig_t;
+
+/**
+ *  \brief Structure to configure VSWR (Only valid for a DPD-enabled transceiver)
+ *
+ *  This information is loaded into the ARM memory using the
+ *  MYKONOS_configVswr() function before running the VSWR init or tracking
+ *  calibrations.
+ *  These values can be changed when the ARM is in the radioOff states.
+ */
 typedef struct
 {
     /* VSWR init cal parameters */
@@ -923,8 +1135,8 @@ typedef struct
     uint8_t tx2VswrSwitchGpio3p3Pin;    /*!< 3p3V GPIO pin to use to control VSWR switch for Tx2 (valid 0-11) (output from Mykonos) */
     uint8_t tx1VswrSwitchPolarity;      /*!< 3p3v GPIO pin polarity for forward path of Tx1, opposite used for reflection path (1 = high level, 0 = low level) */
     uint8_t tx2VswrSwitchPolarity;      /*!< 3p3v GPIO pin polarity for forward path of Tx2, opposite used for reflection path (1 = high level, 0 = low level) */
-    uint8_t tx1VswrSwitchDelay_ms;      /*!< Delay for Tx1 after flipping the VSWR switch until measurement is made. In ms resolution */
-    uint8_t tx2VswrSwitchDelay_ms;      /*!< Delay for Tx2 after flipping the VSWR switch until measurement is made. In ms resolution */
+    uint8_t tx1VswrSwitchDelay_us;      /*!< Delay for Tx1 after flipping the VSWR switch until measurement is made. In us resolution with a range from 0 to 255us */
+    uint8_t tx2VswrSwitchDelay_us;      /*!< Delay for Tx2 after flipping the VSWR switch until measurement is made. In us resolution with a range from 0 to 255us */
 } mykonosVswrConfig_t;
 
 typedef struct
@@ -993,6 +1205,7 @@ typedef struct
     uint8_t obsRxSyncbSelect; 			/*!< Selects SYNCb input source. Where, 0 = use RXSYNCB for this framer, 1 = use OBSRX_SYNCB for this framer */
     uint8_t rxSyncbMode;                /*!< Flag for determining if CMOS mode for RX Sync signal is used. Where, if > 0 = CMOS, '0' = LVDS */
     uint8_t overSample;                 /*!< Selects framer bit repeat or oversampling mode for lane rate matching. Where, 0 = bitRepeat mode (changes effective lanerate), 1 = overSample (maintains same lane rate between ObsRx framer and Rx framer and oversamples the ADC samples) */
+    uint8_t enableManualLaneXbar;       /*!< Flag for determining if API will calculate the appropriate settings for framer lane outputs to physical lanes. Where, if '0' = API will set automatic lane crossbar, '1' = set to manual mode and the value in serializerLaneCrossbar will be used */
 } mykonosJesd204bFramerConfig_t;
 
 /* NO Doxygen content required for this data structure as this is used internally */
@@ -1045,6 +1258,7 @@ typedef struct
     uint8_t newSysrefOnRelink;			/*!< Flag for determining if SYSREF on relink should be set. Where, if > 0 = set, '0' = not set */
     uint8_t enableAutoChanXbar;			/*!< Flag for determining if auto channel select for the xbar should be set. Where, if > 0 = set, '0' = not set */
     uint8_t txSyncbMode;                /*!< Flag for determining if CMOS mode for TX Sync signal is used. Where, if > 0 = CMOS, '0' = LVDS */
+    uint8_t enableManualLaneXbar;       /*!< Flag for determining if API will calculate the appropriate settings for deframer lane in to physical lanes. Where, if '0' = API will set automatic lane crossbar, '1' = set to manual mode and the value in deserializerLaneCrossbar will be used */
 } mykonosJesd204bDeframerConfig_t;
 
 /**
@@ -1080,7 +1294,7 @@ typedef struct
     uint32_t rfBandwidth_Hz;            /*!< Tx RF passband bandwidth for the profile */
     uint32_t txDac3dBCorner_kHz;        /*!< DAC filter 3dB corner in kHz */
     uint32_t txBbf3dBCorner_kHz;        /*!< Tx BBF 3dB corner in kHz */
-    uint8_t enableDpdDataPath;          /*!< Enable Tx Dynamic pre distortion - only valid for AD9373 device */
+    uint8_t enableDpdDataPath;          /*!< Enable Tx Dynamic pre distortion - only valid for a DPD-enabled transceiver */
 } mykonosTxProfile_t;
 
 /**
@@ -1222,9 +1436,9 @@ typedef struct
     mykonosTxAttenStepSize_t txAttenStepSize;   /*!< Tx Attenuation step size */
     uint16_t tx1Atten_mdB;                      /*!< Initial and current Tx1 Attenuation */
     uint16_t tx2Atten_mdB;                      /*!< Initial and current Tx2 Attenuation */
-    mykonosDpdConfig_t *dpdConfig;              /*!< DPD settings. Only valid for AD9373 device, set pointer to NULL otherwise */
-    mykonosClgcConfig_t *clgcConfig;            /*!< CLGC settings. Only valid for AD9373 device, set pointer to NULL otherwise */
-    mykonosVswrConfig_t *vswrConfig;            /*!< VSWR settings. Only valid for AD9373 device, set pointer to NULL otherwise */
+    mykonosDpdConfig_t *dpdConfig;              /*!< DPD settings. Only valid for a DPD-enabled transceiver, set pointer to NULL otherwise */
+    mykonosClgcConfig_t *clgcConfig;            /*!< CLGC settings. Only valid for a DPD-enabled transceiver, set pointer to NULL otherwise */
+    mykonosVswrConfig_t *vswrConfig;            /*!< VSWR settings. Only valid for a DPD-enabled transceiver, set pointer to NULL otherwise */
 } mykonosTxSettings_t;
 
 /**
@@ -1359,9 +1573,12 @@ typedef struct
      *                      18   | Reserved
      */
     uint32_t dpdErrorStatus;
-    uint32_t dpdTrackCount;         /*!< Number of times DPD tracking has run since last reset */
-    uint32_t dpdModelErrorPercent;  /*!< Percent Error of PA model * 10 to include 1 decimal place */
-    uint32_t dpdExtPathDelay;       /*!< External path delay from Tx output to ORx input, at 1/16 sample resolution of ORx sample rate */
+    uint32_t dpdTrackCount;           /*!< Number of times DPD tracking has run since last reset */
+    uint32_t dpdModelErrorPercent;    /*!< Percent Error of PA model * 10 to include 1 decimal place */
+    uint32_t dpdExtPathDelay;         /*!< External path delay from Tx output to ORx input, at 1/16 sample resolution of ORx sample rate */
+    uint16_t dpdMaxAdaptationCurrent; /*!< max amplitude of current adaptation */
+    uint16_t dpdMaxAdaptation;        /*!< max amplitude of adaptation since DPD started*/
+    uint32_t dpdIterCount;            /*!< number of times DPD tracking has run since last reset*/
 } mykonosDpdStatus_t;
 
 /**
@@ -1387,8 +1604,8 @@ typedef struct
      *                     12   | No GPIO configured in single ORx configuration
      *                     13   | Tx is not observable with any of the ORx Channels
      *                     14   | ORX_TRACKING_DISABLED  ORx tracking must be enabled
-     *                     15   | Cal suspended
-     *                     16   | RESERVED
+     *                     15   | PA Protection Activated
+     *                     16   | Relative Threshold Violated
      *                     17   | RESERVED
      *                     18   | RESERVED
      *                     19   | RESERVED
@@ -1413,6 +1630,28 @@ typedef struct
     uint32_t iterCount;         /*!< running counter that increments each time the cal runs to completion */
     uint32_t updateCount;       /*!< running counter that increments each time the cal updates the correction/actuator hardware */
 } mykonosTxLolStatus_t;
+
+/**
+ * \brief This structure contains the internal path delay
+ *
+ */
+typedef struct
+{
+    uint32_t forwardPathDelayCh1; /*!< Forward path delay for Channel 1 valid range is from 0 to 4095 at 1/16 sample resolution of ORx sample rate */
+    uint32_t reversePathDelayCh1; /*!< Reverse path delay for Channel 1 valid range is from 0 to 4095 at 1/16 sample resolution of ORx sample rate */
+    uint32_t forwardPathDelayCh2; /*!< Forward path delay for Channel 2 valid range is from 0 to 4095 at 1/16 sample resolution of ORx sample rate */
+    uint32_t reversePathDelayCh2; /*!< Reverse path delay for Channel 2 valid range is from 0 to 4095 at 1/16 sample resolution of ORx sample rate */
+} mykonosPathdelay_t;
+
+/**
+ * \brief This structure contains the DPD error status counters for the different errors
+ *
+ */
+typedef struct
+{
+    uint32_t dpdErrorCount;     /*!< DPD total error count */
+    uint32_t errorCounter[MYK_DPD_ERROR_END];  /*!< array for individual error counters corresponding to ::mykonosDpdErrors_t */
+} mykonosDpdErrorCounters_t;
 
 /**
  * \brief Data structure to hold Tx QEC Status
