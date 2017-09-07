@@ -323,10 +323,11 @@ uhd_error uhd_usrp_get_rx_stream(
     uhd_stream_args_t *stream_args,
     uhd_rx_streamer_handle h_s
 ){
-    UHD_SAFE_C(
+    UHD_SAFE_C_SAVE_ERROR(h_s,
         boost::mutex::scoped_lock lock(_usrp_get_rx_stream_mutex);
 
         if(!get_usrp_ptrs().count(h_u->usrp_index)){
+            h_s->last_error = "Streamer's device is invalid or expired.";
             return UHD_ERROR_INVALID_DEVICE;
         }
 
@@ -345,10 +346,11 @@ uhd_error uhd_usrp_get_tx_stream(
     uhd_stream_args_t *stream_args,
     uhd_tx_streamer_handle h_s
 ){
-    UHD_SAFE_C(
+    UHD_SAFE_C_SAVE_ERROR(h_s,
         boost::mutex::scoped_lock lock(_usrp_get_tx_stream_mutex);
 
         if(!get_usrp_ptrs().count(h_u->usrp_index)){
+            h_s->last_error = "Streamer's device is invalid or expired.";
             return UHD_ERROR_INVALID_DEVICE;
         }
 
