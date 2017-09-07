@@ -219,6 +219,7 @@ public:
             << api.major_ver << "."
             << api.minor_ver << "."
             << api.build_ver;
+
         return ss.str();
     }
 
@@ -230,6 +231,20 @@ public:
         ss  << arm.major_ver << "."
             << arm.minor_ver << "."
             << arm.rc_ver;
+
+        switch (arm.build_type)
+        {
+        case mpm::ad937x::device::build_type_t::RELEASE:
+            ss << " Release";
+            break;
+        case mpm::ad937x::device::build_type_t::DEBUG:
+            ss << " Debug";
+            break;
+        case mpm::ad937x::device::build_type_t::TEST_OBJECT:
+            ss << " Test Object";
+            break;
+        }
+
         return ss.str();
     }
 

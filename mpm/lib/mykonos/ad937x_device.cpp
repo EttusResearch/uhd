@@ -471,11 +471,29 @@ api_version_t ad937x_device::get_api_version()
 arm_version_t ad937x_device::get_arm_version()
 {
     arm_version_t arm;
+    mykonosBuild_t build;
     _call_api_function(std::bind(MYKONOS_getArmVersion,
         mykonos_config.device,
         &arm.major_ver,
         &arm.minor_ver,
-        &arm.rc_ver));
+        &arm.rc_ver,
+        &build));
+
+    switch (build)
+    {
+    case MYK_BUILD_RELEASE:
+        arm.build_type = mpm::ad937x::device::build_type_t::RELEASE;
+        break;
+    case MYK_BUILD_DEBUG:
+        arm.build_type = mpm::ad937x::device::build_type_t::DEBUG;
+        break;
+    case MYK_BUILD_TEST_OBJECT:
+        arm.build_type = mpm::ad937x::device::build_type_t::TEST_OBJECT;
+        break;
+    default:
+        MPM_THROW_INVALID_CODE_PATH();
+    }
+
     return arm;
 }
 
