@@ -100,9 +100,9 @@ commonErr_t CMB_SPIReadField (spiSettings_t *spiSettings, uint16_t addr, uint8_t
 /* platform timer functions */
 commonErr_t CMB_wait_ms(uint32_t time_ms);
 commonErr_t CMB_wait_us(uint32_t time_us);
-commonErr_t CMB_setTimeout_ms(uint32_t timeOut_ms);
-commonErr_t CMB_setTimeout_us(uint32_t timeOut_us);
-commonErr_t CMB_hasTimeoutExpired();
+commonErr_t CMB_setTimeout_ms(spiSettings_t *spiSettings, uint32_t timeOut_ms);
+commonErr_t CMB_setTimeout_us(spiSettings_t *spiSettings, uint32_t timeOut_us);
+commonErr_t CMB_hasTimeoutExpired(spiSettings_t *spiSettings);
 
 /* platform logging functions */
 commonErr_t CMB_openLog(const char *filename);

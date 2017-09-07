@@ -1235,7 +1235,7 @@ mykonosErr_t MYKONOS_initialize(mykonosDevice_t *device)
         return retVal;
     }
 
-    
+
     if ((retVal = MYKONOS_setupObsRxAgc(device)) != MYKONOS_ERR_OK)
     {
         return retVal;
@@ -1707,7 +1707,7 @@ mykonosErr_t MYKONOS_waitForEvent(mykonosDevice_t *device, waitEvent_t waitEvent
             return MYKONOS_ERR_WAITFOREVENT_INV_PARM;
     }
 
-    CMB_setTimeout_us(timeout_us); /* timeout after desired time */
+    CMB_setTimeout_us(device->spiSettings, timeout_us); /* timeout after desired time */
 
     do
     {
@@ -1725,7 +1725,7 @@ mykonosErr_t MYKONOS_waitForEvent(mykonosDevice_t *device, waitEvent_t waitEvent
         }
 #endif
 
-        if ((uint32_t)CMB_hasTimeoutExpired() > 0)
+        if ((uint32_t)CMB_hasTimeoutExpired(device->spiSettings) > 0)
         {
             CMB_writeToLog(ADIHAL_LOG_WARNING, device->spiSettings->chipSelectIndex, errCode, getMykonosErrorMessage(errCode));
             return errCode;
@@ -2426,10 +2426,10 @@ mykonosErr_t MYKONOS_getRfPllFrequency(mykonosDevice_t *device, mykonosRfPllName
 }
 
 /**
- * \brief Checks if the PLLs are locked 
- * 
- * This function updates the pllLockStatus pointer with a lock status it per 
- * PLL.  
+ * \brief Checks if the PLLs are locked
+ *
+ * This function updates the pllLockStatus pointer with a lock status it per
+ * PLL.
  * pllLockStatus[0] = CLKPLL Locked
  * pllLockStatus[1] = RX_PLL Locked
  * pllLockStatus[2] = TX_PLL Locked
@@ -3681,7 +3681,7 @@ mykonosErr_t MYKONOS_programRxGainTable(mykonosDevice_t *device, uint8_t *gainTa
  *
  * \param device Pointer to the Mykonos data structure
  * \param gainIndex Desired Rx1 gain index
- * 
+ *
  * \return Returns enum MYKONOS_ERR, MYKONOS_ERR_OK=pass, !MYKONOS_ERR_OK=fail
  */
 mykonosErr_t MYKONOS_setRx1ManualGain(mykonosDevice_t *device, uint8_t gainIndex)
@@ -3727,7 +3727,7 @@ mykonosErr_t MYKONOS_setRx1ManualGain(mykonosDevice_t *device, uint8_t gainIndex
  *
  * \param device Pointer to the Mykonos data structure
  * \param gainIndex Desired Rx2 gain index
- * 
+ *
  * \return Returns enum MYKONOS_ERR, MYKONOS_ERR_OK=pass, !MYKONOS_ERR_OK=fail
  */
 mykonosErr_t MYKONOS_setRx2ManualGain(mykonosDevice_t *device, uint8_t gainIndex)
@@ -3760,18 +3760,18 @@ mykonosErr_t MYKONOS_setRx2ManualGain(mykonosDevice_t *device, uint8_t gainIndex
 /**
  * \brief Reads the Rx1 Gain Index for Manual or AGC gain control mode
  *
- * This function reads the Rx1 gain index for manual or AGC modes. If the 
+ * This function reads the Rx1 gain index for manual or AGC modes. If the
  * *rx1GainIndex pointer is nonzero, the read back gain index will
  * be returned in the parameter.  If the *rx1GainIndex pointer
  * is NULL, the device data structure will be updated with the new read back value
- * 
+ *
  * <B>Dependencies</B>
  * - device->spiSettings
  * - device->rxTxSettings->rxGainControl->rx1GainIndex
  *
  * \param device Pointer to the Mykonos data structure
  * \param rx1GainIndex uint8_t Pointer to the Rx1 gain index value
- * 
+ *
  * \return Returns enum MYKONOS_ERR, MYKONOS_ERR_OK=pass, !MYKONOS_ERR_OK=fail
  */
 mykonosErr_t MYKONOS_getRx1Gain(mykonosDevice_t *device, uint8_t *rx1GainIndex)
@@ -3807,18 +3807,18 @@ mykonosErr_t MYKONOS_getRx1Gain(mykonosDevice_t *device, uint8_t *rx1GainIndex)
 /**
  * \brief Reads the Rx2 Gain Index for Manual or AGC gain control mode
  *
- * This function reads the Rx2 gain index for manual or AGC modes. If the 
+ * This function reads the Rx2 gain index for manual or AGC modes. If the
  * *rx1GainIndex pointer is nonzero, the read back gain index will
  * be returned in the parameter.  If the *rx1GainIndex pointer
  * is NULL, the device data structure will be updated with the new read back value
- * 
+ *
  * <B>Dependencies</B>
  * - device->spiSettings
  * - device->rxTxSettings->rxGainControl->rx2GainIndex
  *
  * \param device Pointer to the Mykonos data structure
  * \param rx2GainIndex Desired Rx2 gain index
- * 
+ *
  * \return Returns enum MYKONOS_ERR, MYKONOS_ERR_OK=pass, !MYKONOS_ERR_OK=fail
  */
 mykonosErr_t MYKONOS_getRx2Gain(mykonosDevice_t *device, uint8_t *rx2GainIndex)
@@ -5265,7 +5265,7 @@ mykonosErr_t MYKONOS_setDefaultObsRxPath(mykonosDevice_t *device, mykonosObsRxCh
  *
  * \param device is structure pointer to the Mykonos data structure containing settings
  * \param obsRxCh is mykonosObsRxChannels_t enum type which selects the desired observation receive path to power up
- *         
+ *
  * \retval MYKONOS_ERR_OK Function completed successfully
  * \retval MYKONOS_ERR_PU_OBSRXPATH_INV_PARAM Invalid obsRxCh function parameter
  * \retval MYKONOS_ERR_PU_OBSRXPATH_ARMERROR ARM returned an error while trying to set the ObsRx Path source
@@ -6996,7 +6996,7 @@ mykonosErr_t MYKONOS_clearPaErrorFlag(mykonosDevice_t *device)
  *
  * To save codespace, these error strings are ifdef'd out unless the user
  * adds a define MYKONOS_VERBOSE to their workspace.  This function can be
- * useful for debug.  Each function also returns unique error codes to 
+ * useful for debug.  Each function also returns unique error codes to
  * make it easier to determine where the code broke.
  *
  * \param errorCode is enumerated error code value
@@ -7925,7 +7925,7 @@ const char* getMykonosErrorMessage(mykonosErr_t errorCode)
         case MYKONOS_ERR_SETRFPLL_LF_INV_STABILITY:
         	return "Invalid stability value requested in MYKONOS_setRfPllLoopFilter()\n";
         case MYKONOS_ERR_SETRFPLL_LF_ARMERROR:
-        	return "ARM Command Error in MYKONOS_setRfPllLoopFilter()\n";			
+        	return "ARM Command Error in MYKONOS_setRfPllLoopFilter()\n";
         case MYKONOS_ERR_SETRFPLL_LF_INV_TXRX_LOOPBANDWIDTH:
         	return "Invalid Tx/Rx value bandwith requested in MYKONOS_setRfPllLoopFilter()\n";
         case MYKONOS_ERR_SETRFPLL_LF_INV_SNF_LOOPBANDWIDTH:
@@ -13454,7 +13454,7 @@ mykonosErr_t MYKONOS_verifyArmChecksum(mykonosDevice_t *device)
     buildTimeChecksum = (((uint32_t)buildData[3] << 24) | ((uint32_t)buildData[2] << 16) | ((uint32_t)buildData[1] << 8) | (uint32_t)buildData[0]);
 
     /* using 200 msec timeout for exit out of while loop [maximum checksum calculation time = 5 ms] */
-    CMB_setTimeout_ms(200);
+    CMB_setTimeout_ms(device->spiSettings, 200);
 
     /* determining calculated checksum */
     do
@@ -13464,7 +13464,7 @@ mykonosErr_t MYKONOS_verifyArmChecksum(mykonosDevice_t *device)
             return retVal;
         }
         calculatedChecksum = (((uint32_t)calcData[3] << 24) | ((uint32_t)calcData[2] << 16) | ((uint32_t)calcData[1] << 8) | (uint32_t)calcData[0]);
-    } while ((!calculatedChecksum) && (!CMB_hasTimeoutExpired()));
+    } while ((!calculatedChecksum) && (!CMB_hasTimeoutExpired(device->spiSettings)));
 
     /* performing consistency check */
     if (buildTimeChecksum == calculatedChecksum)
@@ -13507,7 +13507,7 @@ mykonosErr_t MYKONOS_checkArmState(mykonosDevice_t *device, mykonosArmState_t ar
     CMB_writeToLog(ADIHAL_LOG_MESSAGE, device->spiSettings->chipSelectIndex, MYKONOS_ERR_OK, "MYKONOS_checkArmState()\n");
 #endif
 
-    CMB_setTimeout_ms(timeoutMs);
+    CMB_setTimeout_ms(device->spiSettings, timeoutMs);
 
     do
     {
@@ -13545,7 +13545,7 @@ mykonosErr_t MYKONOS_checkArmState(mykonosDevice_t *device, mykonosArmState_t ar
             break;
         }
 
-        if (CMB_hasTimeoutExpired())
+        if (CMB_hasTimeoutExpired(device->spiSettings))
         {
             CMB_writeToLog(ADIHAL_LOG_ERROR, device->spiSettings->chipSelectIndex, MYKONOS_ERR_WAITARMCSTATE_TIMEOUT,
                     getMykonosErrorMessage(MYKONOS_ERR_WAITARMCSTATE_TIMEOUT));
@@ -15955,13 +15955,13 @@ mykonosErr_t MYKONOS_sendArmCommand(mykonosDevice_t *device, uint8_t opCode, uin
     }
 
     /* setting a 2 sec timeout for mailbox busy bit to be clear (can't send an arm mailbox command until mailbox is ready) */
-    CMB_setTimeout_ms(2000);
+    CMB_setTimeout_ms(device->spiSettings, 2000);
 
     do
     {
         CMB_SPIReadField(device->spiSettings, MYKONOS_ADDR_ARM_CMD, &armCommandBusy, 0x80, 7);
 
-        if (CMB_hasTimeoutExpired())
+        if (CMB_hasTimeoutExpired(device->spiSettings))
         {
             CMB_writeToLog(ADIHAL_LOG_ERROR, device->spiSettings->chipSelectIndex, MYKONOS_ERR_TIMEDOUT_ARMMAILBOXBUSY,
                     getMykonosErrorMessage(MYKONOS_ERR_TIMEDOUT_ARMMAILBOXBUSY));
@@ -16149,7 +16149,7 @@ mykonosErr_t MYKONOS_waitArmCmdStatus(mykonosDevice_t *device, uint8_t opCode, u
     }
 
     /* start wait */
-    CMB_setTimeout_ms(timeoutMs);
+    CMB_setTimeout_ms(device->spiSettings, timeoutMs);
 
     do
     {
@@ -16167,7 +16167,7 @@ mykonosErr_t MYKONOS_waitArmCmdStatus(mykonosDevice_t *device, uint8_t opCode, u
             return MYKONOS_ERR_ARMCMDSTATUS_ARMERROR;
         }
 
-        if (CMB_hasTimeoutExpired())
+        if (CMB_hasTimeoutExpired(device->spiSettings))
         {
             return MYKONOS_ERR_WAITARMCMDSTATUS_TIMEOUT;
         }
