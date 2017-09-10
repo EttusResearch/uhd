@@ -187,7 +187,6 @@ private:
             //get seq to ack from outstanding packets list
             UHD_ASSERT_THROW(not _outstanding_seqs.empty());
             const size_t seq_to_ack = _outstanding_seqs.front();
-            _outstanding_seqs.pop();
 
             //parse the packet
             vrt::if_packet_info_t packet_info;
@@ -204,6 +203,7 @@ private:
                 {
                     UHD_ASSERT_THROW(bool(buff));
                     UHD_ASSERT_THROW(buff->size() > 0);
+                    _outstanding_seqs.pop();
                 }
                 catch(const std::exception &ex)
                 {
@@ -236,6 +236,7 @@ private:
                     accum_timeout += short_timeout;
                     UHD_ASSERT_THROW(accum_timeout < _timeout);
                 }
+                _outstanding_seqs.pop();
 
                 pkt = resp_buff.data;
                 packet_info.num_packet_words32 = sizeof(resp_buff)/sizeof(uint32_t);
