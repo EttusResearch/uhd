@@ -183,7 +183,6 @@ private:
             //get seq to ack from outstanding packets list
             UHD_ASSERT_THROW(not _outstanding_seqs.empty());
             const size_t seq_to_ack = _outstanding_seqs.front();
-            _outstanding_seqs.pop();
 
             //parse the packet
             vrt::if_packet_info_t packet_info;
@@ -196,6 +195,7 @@ private:
             try {
                 UHD_ASSERT_THROW(bool(buff));
                 UHD_ASSERT_THROW(buff->size() > 0);
+                _outstanding_seqs.pop();
             }
             catch(const std::exception &ex) {
                 throw uhd::io_error(str(boost::format("Block ctrl (%s) no response packet - %s") % _name % ex.what()));
