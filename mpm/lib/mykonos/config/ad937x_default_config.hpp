@@ -67,7 +67,8 @@ static const mykonosJesd204bFramerConfig_t DEFAULT_FRAMER =
     0,              // Flag for determining if auto channel select for the xbar should be set. Where, if > 0 = set, '0' = not set
     0,              // Selects SYNCb input source. Where, 0 = use RXSYNCB for this framer, 1 = use OBSRX_SYNCB for this framer
     1,              // Flag for determining if CMOS mode for RX Sync signal is used. Where, if > 0 = CMOS, '0' = LVDS
-    0               // Selects framer bit repeat or oversampling mode for lane rate matching. Where, 0 = bitRepeat mode (changes effective lanerate), 1 = overSample (maintains same lane rate between ObsRx framer and Rx framer and oversamples the ADC samples)
+    0,              // Selects framer bit repeat or oversampling mode for lane rate matching. Where, 0 = bitRepeat mode (changes effective lanerate), 1 = overSample (maintains same lane rate between ObsRx framer and Rx framer and oversamples the ADC samples)
+    1               // Flag for determining if API will calculate the appropriate settings for framer lane outputs to physical lanes. Where, if '0' = API will set automatic lane crossbar, '1' = set to manual mode and the value in serializerLaneCrossbar will be used
 };
 
 static const mykonosRxGainControl_t DEFAULT_RX_GAIN =
@@ -188,7 +189,8 @@ static const mykonosJesd204bDeframerConfig_t DEFAULT_DEFRAMER =
     0,              // LMFC offset value to adjust deterministic latency. Range is 0..31
     0,              // Flag for determining if SYSREF on relink should be set. Where, if > 0 = set, '0' = not set
     0,              // Flag for determining if auto channel select for the xbar should be set. Where, if > 0 = set, '0' = not set
-    1               // Flag for determining if CMOS mode for TX Sync signal is used. Where, if > 0 = CMOS, '0' = LVDS
+    1,              // Flag for determining if CMOS mode for TX Sync signal is used. Where, if > 0 = CMOS, '0' = LVDS
+    1,              // Flag for determining if API will calculate the appropriate settings for deframer lane in to physical lanes. Where, if '0' = API will set automatic lane crossbar, '1' = set to manual mode and the value in deserializerLaneCrossbar will be used
 };
 
 static const mykonosObsRxSettings_t DEFAULT_ORX_SETTINGS =
@@ -226,7 +228,8 @@ static const mykonosJesd204bFramerConfig_t DEFAULT_ORX_FRAMER =
     0,              // Flag for determining if auto channel select for the xbar should be set. Where, if > 0 = set, '0' = not set
     1,              // Selects SYNCb input source. Where, 0 = use RXSYNCB for this framer, 1 = use OBSRX_SYNCB for this framer
     0,              // Flag for determining if CMOS mode for RX Sync signal is used. Where, if > 0 = CMOS, '0' = LVDS
-    1               // Selects framer bit repeat or oversampling mode for lane rate matching. Where, 0 = bitRepeat mode (changes effective lanerate), 1 = overSample (maintains same lane rate between ObsRx framer and Rx framer and oversamples the ADC samples)
+    1,              // Selects framer bit repeat or oversampling mode for lane rate matching. Where, 0 = bitRepeat mode (changes effective lanerate), 1 = overSample (maintains same lane rate between ObsRx framer and Rx framer and oversamples the ADC samples)
+    1               // Flag for determining if API will calculate the appropriate settings for framer lane outputs to physical lanes. Where, if '0' = API will set automatic lane crossbar, '1' = set to manual mode and the value in serializerLaneCrossbar will be used
 };
 
 static const mykonosORxGainControl_t DEFAULT_ORX_GAIN =
