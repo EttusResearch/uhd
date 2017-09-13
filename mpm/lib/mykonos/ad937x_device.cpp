@@ -94,11 +94,13 @@ static const uint32_t TRACKING_CALS =
 ////  TRACK_SRX_QEC |
     0;
 
-
-
 /******************************************************
 Helper functions
 ******************************************************/
+
+// Macro to call an API function via lambda
+#define CALL_API(function_call) \
+    _call_api_function([&,this]{return function_call;})
 
 // helper function to unify error handling
 void ad937x_device::_call_api_function(const std::function<mykonosErr_t()>& func)
@@ -109,6 +111,10 @@ void ad937x_device::_call_api_function(const std::function<mykonosErr_t()>& func
         throw mpm::runtime_error(getMykonosErrorMessage(error));
     }
 }
+
+// Macro to call a GPIO API function via lambda
+#define CALL_GPIO_API(function_call) \
+    _call_gpio_api_function([&,this]{return function_call;})
 
 // helper function to unify error handling, GPIO version
 void ad937x_device::_call_gpio_api_function(const std::function<mykonosGpioErr_t()>& func)
@@ -130,7 +136,7 @@ void ad937x_device::_call_gpio_api_function(const std::function<mykonosGpioErr_t
 ad937x_device::radio_state_t ad937x_device::_move_to_config_state()
 {
     uint32_t status;
-    _call_api_function(std::bind(MYKONOS_getRadioState, mykonos_config.device, &status));
+    CALL_API(MYKONOS_getRadioState(mykonos_config.device, &status));
     if ((status & 0x3) == 0x3)
     {
         stop_radio();
@@ -261,9 +267,7 @@ void ad937x_device::_apply_gain_pins(const direction_t direction, const chain_t 
                 func = MYKONOS_setRx2GainCtrlPin;
                 break;
             }
-            _call_gpio_api_function(
-                std::bind(func,
-                    mykonos_config.device,
+            CALL_GPIO_API(func(mykonos_config.device,
                     chan.inc_step,
                     chan.dec_step,
                     chan.inc_pin,
@@ -274,24 +278,27 @@ void ad937x_device::_apply_gain_pins(const direction_t direction, const chain_t 
         case TX_DIRECTION:
         {
             // TX sets attenuation, but the configuration should be stored correctly
-            std::function<decltype(MYKONOS_setTx2AttenCtrlPin)> func;
             switch (chain)
             {
             case chain_t::ONE:
                 // TX1 has an extra parameter "useTx1ForTx2" that we do not support
-                func = std::bind(MYKONOS_setTx1AttenCtrlPin, _1, _2, _3, _4, _5, 0);
+                CALL_GPIO_API(MYKONOS_setTx1AttenCtrlPin(
+                        mykonos_config.device,
+                        chan.inc_step,
+                        chan.inc_pin,
+                        chan.dec_pin,
+                        chan.enable,
+                        0));
                 break;
             case chain_t::TWO:
-                func = MYKONOS_setTx2AttenCtrlPin;
+                CALL_GPIO_API(MYKONOS_setTx2AttenCtrlPin(
+                        mykonos_config.device,
+                        chan.inc_step,
+                        chan.inc_pin,
+                        chan.dec_pin,
+                        chan.enable));
                 break;
             }
-            _call_gpio_api_function(
-                std::bind(func,
-                    mykonos_config.device,
-                    chan.inc_step,
-                    chan.inc_pin,
-                    chan.dec_pin,
-                    chan.enable));
             break;
         }
     }
@@ -332,7 +339,7 @@ void ad937x_device::_initialize_rf()
     _apply_gain_pins(uhd::TX_DIRECTION, chain_t::ONE);
     _apply_gain_pins(uhd::TX_DIRECTION, chain_t::TWO);
 
-    _call_gpio_api_function(std::bind(MYKONOS_setupGpio, mykonos_config.device));
+    CALL_GPIO_API(MYKONOS_setupGpio(mykonos_config.device));
 
     // Set manual gain values
     set_gain(uhd::RX_DIRECTION, chain_t::ONE, RX_DEFAULT_GAIN);
@@ -341,10 +348,10 @@ void ad937x_device::_initialize_rf()
     set_gain(uhd::TX_DIRECTION, chain_t::TWO, TX_DEFAULT_GAIN);
 
     // Run and wait for init cals
-    _call_api_function(std::bind(MYKONOS_runInitCals, mykonos_config.device, INIT_CALS));
+    CALL_API(MYKONOS_runInitCals(mykonos_config.device, INIT_CALS));
 
     uint8_t errorFlag = 0, errorCode = 0;
-    _call_api_function(std::bind(MYKONOS_waitInitCals, mykonos_config.device, INIT_CAL_TIMEOUT_MS, &errorFlag, &errorCode));
+    CALL_API(MYKONOS_waitInitCals(mykonos_config.device, INIT_CAL_TIMEOUT_MS, &errorFlag, &errorCode));
 
     if ((errorFlag != 0) || (errorCode != 0))
     {
@@ -352,13 +359,13 @@ void ad937x_device::_initialize_rf()
         // TODO: add more debugging information here
     }
 
-    _call_api_function(std::bind(MYKONOS_enableTrackingCals, mykonos_config.device, TRACKING_CALS));
+    CALL_API(MYKONOS_enableTrackingCals(mykonos_config.device, TRACKING_CALS));
     // ready for radioOn
 }
 
 void ad937x_device::begin_initialization()
 {
-    _call_api_function(std::bind(MYKONOS_initialize, mykonos_config.device));
+    CALL_API(MYKONOS_initialize(mykonos_config.device));
 
     _verify_product_id();
 
@@ -368,16 +375,16 @@ void ad937x_device::begin_initialization()
     }
 
     uint8_t mcs_status = 0;
-    _call_api_function(std::bind(MYKONOS_enableMultichipSync, mykonos_config.device, 1, &mcs_status));
+    CALL_API(MYKONOS_enableMultichipSync(mykonos_config.device, 1, &mcs_status));
 }
 
 void ad937x_device::finish_initialization()
 {
     _verify_multichip_sync_status(multichip_sync_t::PARTIAL);
 
-    _call_api_function(std::bind(MYKONOS_initArm, mykonos_config.device));
+    CALL_API(MYKONOS_initArm(mykonos_config.device));
     auto binary = _get_arm_binary();
-    _call_api_function(std::bind(MYKONOS_loadArmFromBinary,
+    CALL_API(MYKONOS_loadArmFromBinary(
         mykonos_config.device,
         binary.data(),
         binary.size()));
@@ -387,24 +394,24 @@ void ad937x_device::finish_initialization()
 
 void ad937x_device::start_jesd_tx()
 {
-    _call_api_function(std::bind(MYKONOS_enableSysrefToRxFramer, mykonos_config.device, 1));
+    CALL_API(MYKONOS_enableSysrefToRxFramer(mykonos_config.device, 1));
 }
 
 void ad937x_device::start_jesd_rx()
 {
-    _call_api_function(std::bind(MYKONOS_enableSysrefToDeframer, mykonos_config.device, 0));
-    _call_api_function(std::bind(MYKONOS_resetDeframer, mykonos_config.device));
-    _call_api_function(std::bind(MYKONOS_enableSysrefToDeframer, mykonos_config.device, 1));
+    CALL_API(MYKONOS_enableSysrefToDeframer(mykonos_config.device, 0));
+    CALL_API(MYKONOS_resetDeframer(mykonos_config.device));
+    CALL_API(MYKONOS_enableSysrefToDeframer(mykonos_config.device, 1));
 }
 
 void ad937x_device::start_radio()
 {
-    _call_api_function(std::bind(MYKONOS_radioOn, mykonos_config.device));
+    CALL_API(MYKONOS_radioOn(mykonos_config.device));
 }
 
 void ad937x_device::stop_radio()
 {
-    _call_api_function(std::bind(MYKONOS_radioOff, mykonos_config.device));
+    CALL_API(MYKONOS_radioOff(mykonos_config.device));
 }
 
 
@@ -417,49 +424,49 @@ uint8_t ad937x_device::get_multichip_sync_status()
 {
     uint8_t mcs_status = 0;
     // to check status, just call the enable function with a 0 instead of a 1, seems good
-    _call_api_function(std::bind(MYKONOS_enableMultichipSync, mykonos_config.device, 0, &mcs_status));
+    CALL_API(MYKONOS_enableMultichipSync(mykonos_config.device, 0, &mcs_status));
     return mcs_status;
 }
 
 uint8_t ad937x_device::get_framer_status()
 {
     uint8_t status = 0;
-    _call_api_function(std::bind(MYKONOS_readRxFramerStatus, mykonos_config.device, &status));
+    CALL_API(MYKONOS_readRxFramerStatus(mykonos_config.device, &status));
     return status;
 }
 
 uint8_t ad937x_device::get_deframer_status()
 {
     uint8_t status = 0;
-    _call_api_function(std::bind(MYKONOS_readDeframerStatus, mykonos_config.device, &status));
+    CALL_API(MYKONOS_readDeframerStatus(mykonos_config.device, &status));
     return status;
 }
 
 uint16_t ad937x_device::get_ilas_config_match()
 {
     uint16_t ilas_status = 0;
-    _call_api_function(std::bind(MYKONOS_jesd204bIlasCheck, mykonos_config.device, &ilas_status));
+    CALL_API(MYKONOS_jesd204bIlasCheck(mykonos_config.device, &ilas_status));
     return ilas_status;
 }
 
 uint8_t ad937x_device::get_product_id()
 {
     uint8_t id;
-    _call_api_function(std::bind(MYKONOS_getProductId, mykonos_config.device, &id));
+    CALL_API(MYKONOS_getProductId(mykonos_config.device, &id));
     return id;
 }
 
 uint8_t ad937x_device::get_device_rev()
 {
     uint8_t rev;
-    _call_api_function(std::bind(MYKONOS_getDeviceRev, mykonos_config.device, &rev));
+    CALL_API(MYKONOS_getDeviceRev(mykonos_config.device, &rev));
     return rev;
 }
 
 api_version_t ad937x_device::get_api_version()
 {
     api_version_t api;
-    _call_api_function(std::bind(MYKONOS_getApiVersion,
+    CALL_API(MYKONOS_getApiVersion(
         mykonos_config.device,
         &api.silicon_ver,
         &api.major_ver,
@@ -472,7 +479,7 @@ arm_version_t ad937x_device::get_arm_version()
 {
     arm_version_t arm;
     mykonosBuild_t build;
-    _call_api_function(std::bind(MYKONOS_getArmVersion,
+    CALL_API(MYKONOS_getArmVersion(
         mykonos_config.device,
         &arm.major_ver,
         &arm.minor_ver,
@@ -506,7 +513,7 @@ Set configuration functions
 void ad937x_device::enable_jesd_loopback(const uint8_t enable)
 {
     const auto state = _move_to_config_state();
-    _call_api_function(std::bind(MYKONOS_setRxFramerDataSource, mykonos_config.device, enable));
+    CALL_API(MYKONOS_setRxFramerDataSource(mykonos_config.device, enable));
     _restore_from_config_state(state);
 }
 
@@ -516,7 +523,7 @@ double ad937x_device::set_clock_rate(const double req_rate)
 
     const auto state = _move_to_config_state();
     mykonos_config.device->clocks->deviceClock_kHz = rate;
-    _call_api_function(std::bind(MYKONOS_initDigitalClocks, mykonos_config.device));
+    CALL_API(MYKONOS_initDigitalClocks(mykonos_config.device));
     _restore_from_config_state(state);
 
     return static_cast<double>(rate);
@@ -559,7 +566,7 @@ double ad937x_device::tune(const direction_t direction, const double value, cons
 
     const auto state = _move_to_config_state();
     *config_value = integer_value;
-    _call_api_function(std::bind(MYKONOS_setRfPllFrequency, mykonos_config.device, pll, integer_value));
+    CALL_API(MYKONOS_setRfPllFrequency(mykonos_config.device, pll, integer_value));
 
     if (wait_for_lock)
     {
@@ -603,7 +610,7 @@ double ad937x_device::set_gain(const direction_t direction, const chain_t chain,
         default:
             MPM_THROW_INVALID_CODE_PATH();
         }
-        _call_api_function(std::bind(func, mykonos_config.device, attenuation));
+        CALL_API(func(mykonos_config.device, attenuation));
         break;
     }
     case RX_DIRECTION:
@@ -623,7 +630,7 @@ double ad937x_device::set_gain(const direction_t direction, const chain_t chain,
         default:
             MPM_THROW_INVALID_CODE_PATH();
         }
-        _call_api_function(std::bind(func, mykonos_config.device, gain));
+        CALL_API(func(mykonos_config.device, gain));
         break;
     }
     default:
@@ -661,7 +668,7 @@ void ad937x_device::set_agc_mode(const direction_t direction, const gain_mode_t 
     }
 
     const auto state = _move_to_config_state();
-    _call_api_function(std::bind(MYKONOS_setRxGainControlMode, mykonos_config.device, mykonos_mode));
+    CALL_API(MYKONOS_setRxGainControlMode(mykonos_config.device, mykonos_mode));
     _restore_from_config_state(state);
 }
 
@@ -730,14 +737,14 @@ double ad937x_device::get_freq(const direction_t direction)
     // TODO: coercion here causes extra device accesses, when the formula is provided on pg 119 of the user guide
     // Furthermore, because coerced is returned as an integer, it's not even accurate
     uint64_t coerced_pll;
-    _call_api_function(std::bind(MYKONOS_getRfPllFrequency, mykonos_config.device, pll, &coerced_pll));
+    CALL_API(MYKONOS_getRfPllFrequency(mykonos_config.device, pll, &coerced_pll));
     return static_cast<double>(coerced_pll);
 }
 
 bool ad937x_device::get_pll_lock_status(const uint8_t pll, const bool wait_for_lock)
 {
     uint8_t pll_status;
-    _call_api_function(std::bind(MYKONOS_checkPllsLockStatus, mykonos_config.device, &pll_status));
+    CALL_API(MYKONOS_checkPllsLockStatus(mykonos_config.device, &pll_status));
 
     if (not wait_for_lock)
     {
@@ -777,7 +784,7 @@ double ad937x_device::get_gain(const direction_t direction, const chain_t chain)
                 break;
             }
             uint16_t atten;
-            _call_api_function(std::bind(func, mykonos_config.device, &atten));
+            CALL_API(func(mykonos_config.device, &atten));
             return _convert_tx_gain_from_mykonos(atten);
         }
         case RX_DIRECTION:
@@ -793,7 +800,7 @@ double ad937x_device::get_gain(const direction_t direction, const chain_t chain)
                 break;
             }
             uint8_t gain;
-            _call_api_function(std::bind(func, mykonos_config.device, &gain));
+            CALL_API(func(mykonos_config.device, &gain));
             return _convert_rx_gain_from_mykonos(gain);
         }
         default:
@@ -821,7 +828,7 @@ int16_t ad937x_device::get_temperature()
 {
     // TODO: deal with the status.tempValid flag
     mykonosTempSensorStatus_t status;
-    _call_gpio_api_function(std::bind(MYKONOS_readTempSensor, mykonos_config.device, &status));
+    CALL_GPIO_API(MYKONOS_readTempSensor(mykonos_config.device, &status));
     return status.tempCode;
 }
 
