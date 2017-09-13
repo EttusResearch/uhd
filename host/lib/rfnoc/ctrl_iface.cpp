@@ -241,9 +241,10 @@ private:
                 if (packet_info.packet_count != (seq_to_ack & 0xfff)) {
                     throw uhd::io_error(
                         str(
-                            boost::format("Expected packet index: %d  Received index: %d")
-                            % packet_info.packet_count
+                            boost::format("Expected packet index: %d " \
+                                          "Received index: %d")
                             % (seq_to_ack & 0xfff)
+                            % packet_info.packet_count
                         )
                     );
                 }
