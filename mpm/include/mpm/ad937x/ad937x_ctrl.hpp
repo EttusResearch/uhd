@@ -59,6 +59,7 @@ public:
      *
      * \param spi_mutex a mutex that will be locked whenever the SPI iface is to be used
      * \param iface the spi_iface for accessing the AD9371
+     * \param gain_pins a struct defining the usage of gain pins by this device
      */
     static sptr make(
         std::shared_ptr<std::mutex> spi_mutex,
@@ -66,17 +67,37 @@ public:
         mpm::ad937x::gpio::gain_pins_t gain_pins);
     virtual ~ad937x_ctrl(void) {}
 
+    //! initializes the AD9371, checks basic functionality, and prepares the chip to receive a SYSREF pulse
     virtual void begin_initialization() = 0;
+
+    //! finishes initialization of the AD9371 by loading the ARM binary and setting a default RF configuration
     virtual void finish_initialization() = 0;
+
+    //! resets and start the JESD deframer (JESD Rx, for RF Tx)
     virtual void start_jesd_rx() = 0;
+
+    //! starts the JESD framer (JESD Tx, for RF Rx)
     virtual void start_jesd_tx() = 0;
+
+    //! moves the AD9371 to a running state, RF inputs/outputs will be unmuted
     virtual void start_radio() = 0;
+
+    //! moves the AD9371 to an idle state, RF inputs/outputs will be muted
     virtual void stop_radio() = 0;
+
+    //! get the multichip sync status byte, see AD9371 data sheet for more information
     virtual uint8_t get_multichip_sync_status() = 0;
+
+    //! get the JESD framer status byte, see AD9371 data sheet for more information
     virtual uint8_t get_framer_status() = 0;
+
+    //! get the JESD deframer status byte, see AD9371 data sheet for more information
     virtual uint8_t get_deframer_status() = 0;
 
+    //! get the ilas config status bytes, see AD9371 data sheet for more information
     virtual uint16_t get_ilas_config_match() = 0;
+
+    //! enable or disable JESD loopback, when enabled JESD Rx will be directly connected to JESD Tx
     virtual void enable_jesd_loopback(uint8_t enable) = 0;
 
     //! get the RF frequency range for the AD9371
@@ -120,6 +141,11 @@ public:
      */
     virtual double set_gain(const std::string &which, double value) = 0;
 
+    /*! \brief get the gain for the frontend which
+    *
+    * \param which frontend string
+    * \return actual gain value
+    */
     virtual double get_gain(const std::string &which) = 0;
 
     /*! \brief set the agc mode for all RX channels
