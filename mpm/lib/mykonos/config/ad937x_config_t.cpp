@@ -34,63 +34,58 @@ const int16_t ad937x_config_t::DEFAULT_SNIFFER_FIR[DEFAULT_RX_FIR_SIZE] =
          98,-1771,-3216,-2641,  942, 7027,13533,17738,17738,13533, 7027,  942,-2641,-3216,-1771,   98,
        1183, 1174,  507, -174, -471, -378, -120,   80,  137,   92,   24,  -16,  -23,  -14,   -5,   -1 };
 
-ad937x_config_t::ad937x_config_t(spiSettings_t* sps)
+ad937x_config_t::ad937x_config_t(spiSettings_t* sps) :
+    _rx(DEFAULT_RX_SETTINGS),
+    _rxProfile(DEFAULT_RX_PROFILE),
+    _framer(DEFAULT_FRAMER),
+    _rxGainCtrl(DEFAULT_RX_GAIN),
+    _rxPeakAgc(DEFAULT_RX_PEAK_AGC),
+    _rxPowerAgc(DEFAULT_RX_POWER_AGC),
+    _rxAgcCtrl(DEFAULT_RX_AGC_CTRL),
+
+    _tx(DEFAULT_TX_SETTINGS),
+    _txProfile(DEFAULT_TX_PROFILE),
+    _deframer(DEFAULT_DEFRAMER),
+
+    // TODO: Remove if ADI ever fixes this
+    // The TX bring up requires a valid ORX profile
+    // https://github.com/EttusResearch/uhddev/blob/f0f8f58471c3fed94279c32f00e9f8da7db40efd/mpm/lib/mykonos/adi/mykonos.c#L16590
+
+    _obsRx(DEFAULT_ORX_SETTINGS),
+    _orxFramer(DEFAULT_ORX_FRAMER),
+    _orxProfile(DEFAULT_ORX_PROFILE),
+    _orxGainCtrl(DEFAULT_ORX_GAIN),
+    _orxPeakAgc(DEFAULT_ORX_PEAK_AGC),
+    _orxPowerAgc(DEFAULT_ORX_POWER_AGC),
+    _orxAgcCtrl(DEFAULT_ORX_AGC_CTRL),
+
+    // TODO: Remove if ADI ever fixes this
+    // ORX bring up requires a valid sniffer gain control struct
+    // https://github.com/EttusResearch/uhddev/blob/f0f8f58471c3fed94279c32f00e9f8da7db40efd/mpm/lib/mykonos/adi/mykonos.c#L5752
+
+    _snifferGainCtrl(DEFAULT_SNIFFER_GAIN),
+
+    _armGpio(DEFAULT_ARM_GPIO),
+    _gpio3v3(DEFAULT_GPIO_3V3),
+    _gpio(DEFAULT_GPIO),
+
+    _auxIo(DEFAULT_AUX_IO),
+    _clocks(DEFAULT_CLOCKS),
+
+    tx_fir_config(6, std::vector<int16_t>(DEFAULT_TX_FIR, DEFAULT_TX_FIR + DEFAULT_TX_FIR_SIZE)),
+    rx_fir_config(-6, std::vector<int16_t>(DEFAULT_RX_FIR, DEFAULT_RX_FIR + DEFAULT_RX_FIR_SIZE)),
+    _orx_fir_config(-6, std::vector<int16_t>(DEFAULT_OBSRX_FIR, DEFAULT_OBSRX_FIR + DEFAULT_RX_FIR_SIZE)),
+    _sniffer_rx_fir_config(-6, std::vector<int16_t>(DEFAULT_SNIFFER_FIR, DEFAULT_SNIFFER_FIR + DEFAULT_RX_FIR_SIZE))
 {
     _device.spiSettings = sps;
 
-    _assign_default_configuration();
     _init_pointers();
 
     device = &_device;
 }
 
-void ad937x_config_t::_assign_default_configuration()
-{
-    // This is a pretty poor way of doing this, but the ADI structs force you
-    // to write spaghetti code sometimes.  This sets none of the required pointers,
-    // relying on a call to _init_pointers() to set all of them after the fact.
-    // TODO: do this better
-    _rx = DEFAULT_RX_SETTINGS;
-
-    _rxProfile = DEFAULT_RX_PROFILE;
-    _framer = DEFAULT_FRAMER;
-    _rxGainCtrl = DEFAULT_RX_GAIN;
-    _rxPeakAgc = DEFAULT_RX_PEAK_AGC;
-    _rxPowerAgc = DEFAULT_RX_POWER_AGC;
-    _rxAgcCtrl = DEFAULT_RX_AGC_CTRL;
-
-    _tx = DEFAULT_TX_SETTINGS;
-
-    _txProfile = DEFAULT_TX_PROFILE;
-    _deframer = DEFAULT_DEFRAMER;
-
-    // TODO: Likely an ADI bug.
-    // The TX bring up, for no reason, requires a valid ORX profile
-    // https://github.com/EttusResearch/uhddev/blob/eb2bcf9001b8e39eca8e62f0d6d5283895fae50d/embedded/libraries/mykonos/adi/mykonos.c#L16236
-
-    _obsRx = DEFAULT_ORX_SETTINGS;
-    _orxFramer = DEFAULT_ORX_FRAMER;
-    _orxProfile = DEFAULT_ORX_PROFILE;
-    _orxGainCtrl = DEFAULT_ORX_GAIN;
-    _orxPeakAgc = DEFAULT_ORX_PEAK_AGC;
-    _orxPowerAgc = DEFAULT_ORX_POWER_AGC;
-    _orxAgcCtrl = DEFAULT_ORX_AGC_CTRL;
-
-    // TODO: this is ridiculous
-    // oh, and ORX bring up requires a valid sniffer gain control
-    // https://github.com/EttusResearch/uhddev/blob/n3xx-master/mpm/lib/mykonos/adi/mykonos.c#L5713
-    _snifferGainCtrl = DEFAULT_SNIFFER_GAIN;
-
-    _armGpio = DEFAULT_ARM_GPIO;
-    _gpio3v3 = DEFAULT_GPIO_3V3;
-    _gpio = DEFAULT_GPIO;
-    _auxIo = DEFAULT_AUX_IO;
-
-    _clocks = DEFAULT_CLOCKS;
-
-    _assign_firs();
-}
-
+// This function sets up all the pointers in all of our local members that represent the device struct
+// This function should only be called during construction.
 void ad937x_config_t::_init_pointers()
 {
     _device.rx = &_rx;
@@ -136,14 +131,5 @@ void ad937x_config_t::_init_pointers()
     _auxIo.gpio3v3 = &_gpio3v3;
     _auxIo.gpio = &_gpio;
     _auxIo.armGpio = &_armGpio;
-}
-
-void ad937x_config_t::_assign_firs()
-{
-    // TODO: get default filters here
-    tx_fir_config.set_fir(6, std::vector<int16_t>(DEFAULT_TX_FIR, DEFAULT_TX_FIR + DEFAULT_TX_FIR_SIZE));
-    rx_fir_config.set_fir(-6, std::vector<int16_t>(DEFAULT_RX_FIR, DEFAULT_RX_FIR + DEFAULT_RX_FIR_SIZE));
-    _orx_fir_config.set_fir(-6, std::vector<int16_t>(DEFAULT_OBSRX_FIR, DEFAULT_OBSRX_FIR + DEFAULT_RX_FIR_SIZE));
-    _sniffer_rx_fir_config.set_fir(-6, std::vector<int16_t>(DEFAULT_SNIFFER_FIR, DEFAULT_SNIFFER_FIR + DEFAULT_RX_FIR_SIZE));
 }
 

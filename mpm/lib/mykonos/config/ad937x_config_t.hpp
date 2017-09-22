@@ -21,14 +21,11 @@
 #include "ad937x_fir.hpp"
 #include <boost/noncopyable.hpp>
 
-// This class exists so that the entire mykonos config can be allocated and managed together
+// Allocates and links the entire mykonos config struct in a single class
 class ad937x_config_t  : public boost::noncopyable
 {
-    // The top level device struct contains all other structs, so everything is technically "public"
-    // a user could technically modify the pointers in the structs, but we have no way of preventing that
 public:
     ad937x_config_t(spiSettings_t* sps);
-    //mykonosDevice_t * const device = &_device;
     mykonosDevice_t * device;
 
     ad937x_fir rx_fir_config;
@@ -43,19 +40,21 @@ public:
     static const int16_t DEFAULT_SNIFFER_FIR[DEFAULT_RX_FIR_SIZE];
 
 private:
+    // The top level device struct is non-const and contains all other structs, so everything is "public"
+    // a user could technically modify the pointers in the structs, but we have no way of preventing that
     mykonosDevice_t _device;
 
     ad937x_fir _orx_fir_config;
     ad937x_fir _sniffer_rx_fir_config;
 
-    // in general, this organization stinks
-    // TODO: group and make more sense of these fields and pointers
+    // General structs
     mykonosRxSettings_t _rx;
     mykonosTxSettings_t _tx;
     mykonosObsRxSettings_t _obsRx;
     mykonosAuxIo_t _auxIo;
     mykonosDigClocks_t _clocks;
 
+    // RX structs
     mykonosRxProfile_t _rxProfile;
     mykonosJesd204bFramerConfig_t _framer;
     mykonosRxGainControl_t _rxGainCtrl;
@@ -63,24 +62,27 @@ private:
     mykonosPeakDetAgcCfg_t _rxPeakAgc;
     mykonosPowerMeasAgcCfg_t _rxPowerAgc;
 
+    // TX structs
     mykonosTxProfile_t _txProfile;
     mykonosJesd204bDeframerConfig_t _deframer;
 
+    // ObsRX structs
     mykonosRxProfile_t _orxProfile;
     mykonosORxGainControl_t _orxGainCtrl;
     mykonosAgcCfg_t _orxAgcCtrl;
     mykonosPeakDetAgcCfg_t _orxPeakAgc;
     mykonosPowerMeasAgcCfg_t _orxPowerAgc;
 
+    // Sniffer RX structs
     mykonosRxProfile_t _snifferProfile;
     mykonosSnifferGainControl_t _snifferGainCtrl;
     mykonosJesd204bFramerConfig_t _orxFramer;
 
+    // GPIO structs
     mykonosGpio3v3_t _gpio3v3;
     mykonosGpioLowVoltage_t _gpio;
     mykonosArmGpioConfig_t _armGpio;
 
+    // private initialization helper functions
     void _init_pointers();
-    void _assign_firs();
-    void _assign_default_configuration();
 };
