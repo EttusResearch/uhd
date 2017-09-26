@@ -31,10 +31,9 @@ class NIMgJESDCore(object):
     Arguments:
     regs -- regs class to use for peek/poke
     """
-    def __init__(self, regs, side=None):
-        side = side or "-0"
+    def __init__(self, regs, slot_idx=0):
         self.regs = regs
-        self.log = get_logger('NIMgJESDCore'+side)
+        self.log = get_logger("NIMgJESDCore-{}".format(slot_idx))
         assert hasattr(self.regs, 'peek32')
         assert hasattr(self.regs, 'poke32')
 
@@ -53,6 +52,8 @@ class NIMgJESDCore(object):
         #if self.regs.peek32(0x2104) != 0xFF
         #error here for date revision mismatch
         self.log.trace("JESD Core build code: {0}".format(hex(self.regs.peek32(0x2104))))
+        self.log.trace("DB Slot #: {}".format( (self.regs.peek32(0x630) & 0x10000) >> 16  ))
+        self.log.trace("DB PID: {:X}".format( self.regs.peek32(0x630) & 0xFFFF ))
         return True
 
     def init_deframer(self):
@@ -66,32 +67,45 @@ class NIMgJESDCore(object):
     def init_framer(self):
         " Initialize framer "
         self.log.trace("Initializing framer...")
+        # Disable DAC Sync from requesting CGS & Stop Deframer
         self.regs.poke32(0x2060, 0x2002)
+        # Reset, unreset, and check the GTs
         self._gt_reset('tx', reset_only=False)
+        # MGT phy control... enable TX Driver Swing
         self.regs.poke32(0x2064, 0xF0000)
         time.sleep(0.001)
+        # Bypass scrambler and disable char replacement
         self.regs.poke32(0x2068, 0x1)
+        # Check for Framer in Idle state
         rb = self.regs.peek32(0x2060)
         if rb & 0x100 != 0x100:
-            raise Exception('TX core is not idle after reset')
-        self.regs.poke32(0x2060, 0x1001)
+            raise Exception('TX Framer is not idle after reset')
+        # Enable the framer and incoming DAC Sync
+        self.regs.poke32(0x2060, 0x1000)
+        self.regs.poke32(0x2060, 0x0001)
 
     def get_framer_status(self):
         " Return True if framer is in good status "
         rb = self.regs.peek32(0x2060)
-        self.log.trace("Returning framer status: {0}".format(hex(rb & 0xFF0)))
+        self.log.trace("FPGA Framer status: {0}".format(hex(rb & 0xFF0)))
+        if rb & (0b1 << 8) == 0b1 << 8:
+            self.log.warning("Framer warning: Framer is Idle!")
+        elif rb & (0b1 << 6) == 0b0 << 6:
+            self.log.warning("Framer warning: Code Group Sync failed to complete!")
+        elif rb & (0b1 << 7) == 0b0 << 7:
+            self.log.warning("Framer warning: Lane Alignment failed to complete!")
         return rb & 0xFF0 == 0x6C0
 
     def get_deframer_status(self):
         " Return True if deframer is in good status "
         rb = self.regs.peek32(0x2040)
-        self.log.trace("Returning deframer status: {0}".format(hex(rb & 0xFFFFFFFF)))
-        if rb & 0b100 == 0b0:
+        self.log.trace("FPGA Deframer status: {0}".format(hex(rb & 0xFFFFFFFF)))
+        if rb & (0b1 << 2) == 0b0 << 2:
             self.log.warning("Deframer warning: Code Group Sync failed to complete!")
-        elif rb & 0b1000 == 0b0:
+        elif rb & (0b1 <<  3) == 0b0 << 3:
             self.log.warning("Deframer warning: Channel Bonding failed to complete!")
-        elif rb & 0x200000 == 0b1:
-            self.log.warning("Deframer warning: Misc error!")
+        elif rb & (0b1 << 21) == 0b1 << 21:
+            self.log.warning("Deframer warning: Misc link error!")
         return rb & 0xFFFFFFFF == 0xF000001C
 
     def init(self):
