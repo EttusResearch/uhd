@@ -571,6 +571,9 @@ class EISCAT(DboardManagerBase):
             self.ref_clock_freq,
             1.9E-12, # TODO don't hardcode. This should live in the EEPROM
             self.INIT_PHASE_DAC_WORD,
+            2.496e9,     # lmk_vco_freq
+            [135e-9,],   # target_values
+            0x3,         # spi_addr
             self.log
         )
         _sync_db_clock(self.clock_synchronizer)

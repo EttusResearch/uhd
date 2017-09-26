@@ -18,6 +18,7 @@ TDC clock synchronization
 """
 
 import time
+import math
 from builtins import object
 from functools import reduce
 
@@ -63,7 +64,7 @@ def rtc_table(radio_clk_freq):
     Returns a tuple (period, high_time).
     """
     return {
-        125e6:   (125, 62.5),
+        125e6:   (125, 63),
         122.8e6: (3072, 1536),
         156.3e6: (3840, 1920),
         104e6:   (104, 52),
@@ -100,6 +101,9 @@ class ClockSynchronizer(object):
             ref_clk_freq,
             fine_delay_step,
             init_pdac_word,
+            lmk_vco_freq,
+            target_values,
+            dac_spi_addr_val,
             log
         ):
         self._iface = regs_iface
@@ -113,6 +117,9 @@ class ClockSynchronizer(object):
         self.ref_clk_freq = ref_clk_freq
         self.fine_delay_step = fine_delay_step
         self.current_phase_dac_word = init_pdac_word
+        self.lmk_vco_freq = lmk_vco_freq
+        self.target_values = target_values
+        self.dac_spi_addr_val = dac_spi_addr_val
 
     def run_sync(self, measurement_only=False):
         """
@@ -203,21 +210,19 @@ class ClockSynchronizer(object):
 
         if (current_value < 120e-9) or (current_value > 150e-9):
             self.log.error("Clock synchronizer measured a "
-                           "current value of {} ns!".format(
+                           "current value of {:.3f} ns!".format(
                 current_value*1e9
             ))
             raise RuntimeError("TDC measurement out of range! "
-                               "Current value: {} ns.".format(
+                               "Current value: {:.3f} ns.".format(
                 current_value*1e9
             ))
 
         # Run the initial value through the oracle to determine the adjustments to make.
-        target_values = [135e-9,] # only one target for now that all DBs shift to
-        lmk_vco_freq = 2.496e9    # LMK VCO = 2.496 GHz
         coarse_steps_required, dac_word_delta, distance_to_target = self.oracle(
-            target_values,
+            self.target_values,
             current_value,
-            lmk_vco_freq,
+            self.lmk_vco_freq,
             self.fine_delay_step
         )
 
@@ -227,10 +232,7 @@ class ClockSynchronizer(object):
             self.lmk.lmk_shift(coarse_steps_required)
             self.log.trace("LMK Shift Complete!")
             # Fine shift with the DAC, then give it time to take effect.
-            self.current_phase_dac_word = (self.current_phase_dac_word + dac_word_delta) & 0xFFF
-            self.log.trace("Writing Phase DAC Word: {}".format(self.current_phase_dac_word))
-            self.phase_dac.poke16(0x3, self.current_phase_dac_word)
-            time.sleep(0.5)
+            self.write_dac_word(self.current_phase_dac_word + dac_word_delta, 0.5)
             if not self.lmk.check_plls_locked():
                 raise RuntimeError("LMK PLLs lost lock during clock synchronization!")
             # After shifting the clocks, we enable the PPS crossing from the
@@ -298,7 +300,7 @@ class ClockSynchronizer(object):
             target_values
         )
         distance_to_target = target_value - current_value
-        self.log.trace("Target value = {} ns. Current value = {} ns. Distance to target = {} ns.".format(
+        self.log.trace("Target value = {:.3f} ns. Current value = {:.3f} ns. Distance to target = {:.3f} ns.".format(
             target_value*1e9,
             current_value*1e9,
             distance_to_target*1e9,
@@ -315,4 +317,52 @@ class ClockSynchronizer(object):
         dac_word_delta = int(remainder // fine_delay_step) * sign
         self.log.trace("Fine Steps (DAC):   {}".format(dac_word_delta))
         return coarse_steps_required, dac_word_delta, distance_to_target
+
+
+    def write_dac_word(self, word, settling_time=1.0):
+        """
+        Write the word and wait for settling time.
+        TODO: hard-coded to support 16 bit DACs. do we need to modify to support smaller?
+        """
+        self.current_phase_dac_word = word & 0xFFFF
+        self.log.trace("Writing Phase DAC Word: {}".format(self.current_phase_dac_word))
+        self.phase_dac.poke16(self.dac_spi_addr_val, self.current_phase_dac_word)
+        time.sleep(settling_time) # settling time.
+        return self.current_phase_dac_word
+
+
+    def test_dac_flatness(self, low_bound, high_bound, middle_samples):
+        """
+        Take several TDC measurements using DAC settings from [low_bound, high_bound].
+        Minimum number of measurements is 2, for the low and high bounds, and
+        middle_samples defines the number of measurements taken between the bounds.
+
+        Writes these samples along with their corresponding DAC values to a file for
+        post-processing.
+        """
+        results = []
+
+        self.log.trace("Starting DAC Flatness Test...")
+        self.log.trace("DAC Low Bound: {}. DAC High Bound: {}".format(low_bound, high_bound))
+
+        # open file for writing
+        meas_file = open("dac_flatness_results.txt", "w")
+        meas_file.write("DAC Word, Distance to Target (ns)\n")
+
+        inc = math.floor((high_bound - low_bound)/(middle_samples + 1.0))
+
+        for x in range(middle_samples + 2):
+            self.log.info("Test Progress: {:.2f}%".format(x*100/(middle_samples+2)))
+            self.write_dac_word(x*inc + low_bound, 0.1)
+            distance_to_target = self.run_sync(measurement_only=True)
+            meas_file.write("{}, {:.4f}\n".format(x*inc + low_bound, distance_to_target*1e12))
+            results.append(distance_to_target*1e12)
+
+        meas_file.close()
+
+        self.log.info("Results:")
+        for y in range(middle_samples + 2):
+            self.log.info("Word: {}   Measurement: {:.6f}".format(y*inc + low_bound, results[y]))
+
+        return True
 
