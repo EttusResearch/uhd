@@ -53,7 +53,6 @@ static const uint32_t B100_TX_ASYNC_SID = 10;
 static const uint32_t B100_CTRL_MSG_SID = 20;
 static const double          B100_DEFAULT_TICK_RATE = 64e6;
 static const size_t          B100_MAX_PKT_BYTE_LIMIT = 2048;
-static const std::string     B100_EEPROM_MAP_KEY = "B100";
 static const size_t          B100_MAX_RATE_USB2  =  32000000; // bytes/s
 
 #define I2C_ADDR_TX_A       (I2C_DEV_EEPROM | 0x4)
@@ -104,6 +103,8 @@ public:
     uhd::rx_streamer::sptr get_rx_stream(const uhd::stream_args_t &args);
     uhd::tx_streamer::sptr get_tx_stream(const uhd::stream_args_t &args);
     bool recv_async_msg(uhd::async_metadata_t &, double);
+
+    static uhd::usrp::mboard_eeprom_t get_mb_eeprom(uhd::i2c_iface::sptr);
 
 private:
     //controllers

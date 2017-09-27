@@ -34,5 +34,6 @@ IF(ENABLE_E100)
         ${CMAKE_CURRENT_SOURCE_DIR}/e100_mmap_zero_copy.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/fpga_downloader.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/io_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/mb_eeprom.cpp
     )
 ENDIF(ENABLE_E100)

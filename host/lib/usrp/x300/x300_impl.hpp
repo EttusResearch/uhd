@@ -147,6 +147,9 @@ public:
     static x300_mboard_t get_mb_type_from_pcie(const std::string& resource, const std::string& rpc_port);
     static x300_mboard_t get_mb_type_from_eeprom(const uhd::usrp::mboard_eeprom_t& mb_eeprom);
 
+    //! Read out the on-board EEPROM, convert to dict, and return
+    static uhd::usrp::mboard_eeprom_t get_mb_eeprom(uhd::i2c_iface::sptr i2c);
+
 protected:
     void subdev_to_blockid(
             const uhd::usrp::subdev_spec_pair_t &spec, const size_t mb_i,
@@ -287,7 +290,11 @@ private:
     bool wait_for_clk_locked(mboard_members_t& mb, uint32_t which, double timeout);
     bool is_pps_present(mboard_members_t& mb);
 
-    void set_mb_eeprom(uhd::i2c_iface::sptr i2c, const uhd::usrp::mboard_eeprom_t &);
+    //! Write the contents of an EEPROM dict to the on-board EEPROM
+    void set_mb_eeprom(
+            uhd::i2c_iface::sptr i2c,
+            const uhd::usrp::mboard_eeprom_t &
+    );
 
     void check_fw_compat(const uhd::fs_path &mb_path, uhd::wb_iface::sptr iface);
     void check_fpga_compat(const uhd::fs_path &mb_path, const mboard_members_t &members);

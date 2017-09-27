@@ -55,7 +55,6 @@ static const size_t mimo_clock_sync_delay_cycles = 138;
 static const size_t USRP2_SRAM_BYTES = size_t(1 << 20);
 static const uint32_t USRP2_TX_ASYNC_SID = 2;
 static const uint32_t USRP2_RX_SID_BASE = 3;
-static const std::string USRP2_EEPROM_MAP_KEY = "N100";
 
 uhd::device_addrs_t usrp2_find(const uhd::device_addr_t &hint_);
 
@@ -81,6 +80,8 @@ public:
     uhd::rx_streamer::sptr get_rx_stream(const uhd::stream_args_t &args);
     uhd::tx_streamer::sptr get_tx_stream(const uhd::stream_args_t &args);
     bool recv_async_msg(uhd::async_metadata_t &, double);
+
+    static uhd::usrp::mboard_eeprom_t get_mb_eeprom(usrp2_iface &);
 
 private:
     struct mb_container_type{

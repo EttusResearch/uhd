@@ -28,6 +28,7 @@ IF(ENABLE_USRP2)
         ${CMAKE_CURRENT_SOURCE_DIR}/codec_ctrl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/dboard_iface.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/io_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/mb_eeprom.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_iface.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_fifo_ctrl.cpp

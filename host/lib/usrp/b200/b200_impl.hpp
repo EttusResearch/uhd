@@ -124,6 +124,8 @@ public:
     // uhd::value_error.
     void check_streamer_args(const uhd::stream_args_t &args, double tick_rate, const std::string &direction = "");
 
+    static uhd::usrp::mboard_eeprom_t get_mb_eeprom(uhd::i2c_iface::sptr);
+
 private:
     b200_product_t  _product;
     size_t          _revision;

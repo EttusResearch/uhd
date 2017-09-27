@@ -70,7 +70,8 @@ device_addrs_t e100_find(const device_addr_t &hint){
         new_addr["node"] = fs::system_complete(fs::path(hint["node"])).string();
         try{
             i2c_iface::sptr i2c_iface = e100_ctrl::make_dev_i2c_iface(E100_I2C_DEV_NODE);
-            const mboard_eeprom_t mb_eeprom(*i2c_iface, E100_EEPROM_MAP_KEY);
+            const mboard_eeprom_t mb_eeprom = get_mb_eeprom(i2c_iface);
+
             new_addr["name"] = mb_eeprom["name"];
             new_addr["serial"] = mb_eeprom["serial"];
         }
@@ -108,7 +109,7 @@ static const uhd::dict<std::string, std::string> model_to_fpga_file_name = boost
 std::string get_default_e1x0_fpga_image(const uhd::device_addr_t &device_addr){
     //read the eeprom so we can determine the hardware
     uhd::i2c_iface::sptr dev_i2c_iface = e100_ctrl::make_dev_i2c_iface(E100_I2C_DEV_NODE);
-    const mboard_eeprom_t mb_eeprom(*dev_i2c_iface, E100_EEPROM_MAP_KEY);
+    const mboard_eeprom_t mb_eeprom = e100_impl::get_mb_eeprom(dev_i2c_iface);
 
     //determine the model string for this device
     const std::string model = device_addr.get("model", mb_eeprom.get("model", ""));
@@ -132,8 +133,9 @@ e100_impl::e100_impl(const uhd::device_addr_t &device_addr){
     _ignore_cal_file = device_addr.has_key("ignore-cal-file");
 
     _dev_i2c_iface = e100_ctrl::make_dev_i2c_iface(E100_I2C_DEV_NODE);
-    const mboard_eeprom_t mb_eeprom(*_dev_i2c_iface, E100_EEPROM_MAP_KEY);
-    const std::string default_fpga_file_name = get_default_e1x0_fpga_image(device_addr);
+    const mboard_eeprom_t mb_eeprom = get_mb_eeprom(_dev_i2c_iface);
+    const std::string default_fpga_file_name =
+        get_default_e1x0_fpga_image(device_addr);
     const std::string model = device_addr["model"];
     std::string e100_fpga_image;
     try{
@@ -494,10 +496,6 @@ double e100_impl::update_rx_codec_gain(const double gain){
     _codec_ctrl->set_rx_pga_gain(gain, 'A');
     _codec_ctrl->set_rx_pga_gain(gain, 'B');
     return _codec_ctrl->get_rx_pga_gain('A');
-}
-
-void e100_impl::set_mb_eeprom(const uhd::usrp::mboard_eeprom_t &mb_eeprom){
-    mb_eeprom.commit(*_dev_i2c_iface, E100_EEPROM_MAP_KEY);
 }
 
 void e100_impl::set_db_eeprom(const std::string &type, const uhd::usrp::dboard_eeprom_t &db_eeprom){

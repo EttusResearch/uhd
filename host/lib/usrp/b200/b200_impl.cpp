@@ -220,7 +220,7 @@ static device_addrs_t b200_find(const device_addr_t &hint)
             catch(const uhd::exception &){continue;} //ignore claimed
 
             b200_iface::sptr iface = b200_iface::make(control);
-            const mboard_eeprom_t mb_eeprom = mboard_eeprom_t(*iface, "B200");
+            const mboard_eeprom_t mb_eeprom = b200_impl::get_mb_eeprom(iface);
 
             device_addr_t new_addr;
             new_addr["type"] = "b200";
@@ -362,7 +362,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     ////////////////////////////////////////////////////////////////////
     // setup the mboard eeprom
     ////////////////////////////////////////////////////////////////////
-    const mboard_eeprom_t mb_eeprom(*_iface, "B200");
+    const mboard_eeprom_t mb_eeprom = get_mb_eeprom(_iface);
     _tree->create<mboard_eeprom_t>(mb_path / "eeprom")
         .set(mb_eeprom)
         .add_coerced_subscriber(boost::bind(&b200_impl::set_mb_eeprom, this, _1));
@@ -981,11 +981,6 @@ void b200_impl::check_fpga_compat(void)
     }
     _tree->create<std::string>("/mboards/0/fpga_version").set(str(boost::format("%u.%u")
                 % compat_major % compat_minor));
-}
-
-void b200_impl::set_mb_eeprom(const uhd::usrp::mboard_eeprom_t &mb_eeprom)
-{
-    mb_eeprom.commit(*_iface, "B200");
 }
 
 /***********************************************************************

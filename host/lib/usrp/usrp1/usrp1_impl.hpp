@@ -84,6 +84,8 @@ public:
     uhd::tx_streamer::sptr get_tx_stream(const uhd::stream_args_t &args);
     bool recv_async_msg(uhd::async_metadata_t &, double);
 
+    static uhd::usrp::mboard_eeprom_t get_mb_eeprom(uhd::i2c_iface::sptr);
+
 private:
     //controllers
     uhd::usrp::fx2_ctrl::sptr _fx2_ctrl;

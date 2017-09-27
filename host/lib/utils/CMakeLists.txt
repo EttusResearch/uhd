@@ -19,6 +19,8 @@
 # This file included, use CMake directory variables
 ########################################################################
 
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
 ########################################################################
 # Setup defines for process scheduling
 ########################################################################
@@ -168,6 +170,7 @@ SET_SOURCE_FILES_PROPERTIES(
 ########################################################################
 LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/csv.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/eeprom_utils.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/gain_group.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ihex.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/load_modules.cpp

@@ -108,7 +108,8 @@ static device_addrs_t b100_find(const device_addr_t &hint)
             catch(const uhd::exception &){continue;} //ignore claimed
 
             fx2_ctrl::sptr fx2_ctrl = fx2_ctrl::make(control);
-            const mboard_eeprom_t mb_eeprom = mboard_eeprom_t(*fx2_ctrl, B100_EEPROM_MAP_KEY);
+            const mboard_eeprom_t mb_eeprom =
+                b100_impl::get_mb_eeprom(fx2_ctrl);
             device_addr_t new_addr;
             new_addr["type"] = "b100";
             new_addr["name"] = mb_eeprom["name"];
@@ -283,7 +284,7 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     // setup the mboard eeprom
     ////////////////////////////////////////////////////////////////////
-    const mboard_eeprom_t mb_eeprom(*_fx2_ctrl, B100_EEPROM_MAP_KEY);
+    const mboard_eeprom_t mb_eeprom = this->get_mb_eeprom(_fx2_ctrl);
     _tree->create<mboard_eeprom_t>(mb_path / "eeprom")
         .set(mb_eeprom)
         .add_coerced_subscriber(boost::bind(&b100_impl::set_mb_eeprom, this, _1));
@@ -559,10 +560,6 @@ double b100_impl::update_rx_codec_gain(const double gain){
     _codec_ctrl->set_rx_pga_gain(gain, 'A');
     _codec_ctrl->set_rx_pga_gain(gain, 'B');
     return _codec_ctrl->get_rx_pga_gain('A');
-}
-
-void b100_impl::set_mb_eeprom(const uhd::usrp::mboard_eeprom_t &mb_eeprom){
-    mb_eeprom.commit(*_fx2_ctrl, B100_EEPROM_MAP_KEY);
 }
 
 void b100_impl::set_db_eeprom(const std::string &type, const uhd::usrp::dboard_eeprom_t &db_eeprom){

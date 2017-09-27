@@ -55,7 +55,6 @@ static const uint32_t E100_RX_SID_BASE = 30;
 static const uint32_t E100_TX_ASYNC_SID = 10;
 static const uint32_t E100_CTRL_MSG_SID = 20;
 static const double          E100_DEFAULT_CLOCK_RATE = 64e6;
-static const std::string     E100_EEPROM_MAP_KEY = "E100";
 
 //! load an fpga image from a bin file into the usrp-e fpga
 extern void e100_load_fpga(const std::string &bin_file);
@@ -117,6 +116,7 @@ private:
     std::vector<boost::weak_ptr<uhd::tx_streamer> > _tx_streamers;
 
     double update_rx_codec_gain(const double); //sets A and B at once
+    uhd::usrp::mboard_eeprom_t get_mb_eeprom();
     void set_mb_eeprom(const uhd::usrp::mboard_eeprom_t &);
     void set_db_eeprom(const std::string &, const uhd::usrp::dboard_eeprom_t &);
     void update_tick_rate(const double rate);

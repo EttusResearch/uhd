@@ -1,5 +1,6 @@
 //
 // Copyright 2010-2012 Ettus Research LLC
+// Copyright 2017 Ettus Research (National Instruments Corp.)
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -18,41 +19,24 @@
 #ifndef INCLUDED_UHD_USRP_MBOARD_EEPROM_HPP
 #define INCLUDED_UHD_USRP_MBOARD_EEPROM_HPP
 
-#include <uhd/config.hpp>
 #include <uhd/types/dict.hpp>
-#include <uhd/types/serial.hpp>
 #include <string>
 
 namespace uhd{ namespace usrp{
 
-    /*!
-     * The motherboard EEPROM object:
-     * Knows how to read and write the EEPROM for various USRPs.
-     * The class inherits from a string, string dictionary.
-     * Use the dictionary interface to get and set values.
-     * Commit to the EEPROM to save changed settings.
+    /*!  The motherboard EEPROM object.
+     *
+     * The specific implementation knows how to read and write the EEPROM for
+     * various USRPs. By itself, this class is nothing but a thin wrapper
+     * around a string -> string dictionary.
+     *
+     * Note that writing to an object of type mboard_eeprom_t does not actually
+     * write to the EEPROM. Devices have their own APIs to read/write from the
+     * EEPROM chips themselves. Most devices will write the EEPROM itself when
+     * the according property is updated.
      */
-    struct UHD_API mboard_eeprom_t : uhd::dict<std::string, std::string>{
+    using mboard_eeprom_t = uhd::dict<std::string, std::string>;
 
-        //! Make a new empty mboard eeprom
-        mboard_eeprom_t(void);
-
-        /*!
-         * Make a new mboard EEPROM handler.
-         * \param iface the interface to i2c
-         * \param which which EEPROM map to use
-         */
-        mboard_eeprom_t(i2c_iface &iface, const std::string &which);
-
-        /*!
-         * Write the contents of this object to the EEPROM.
-         * \param iface the interface to i2c
-         * \param which which EEPROM map to use
-         */
-        void commit(i2c_iface &iface, const std::string &which) const;
-
-    };
-
-}} //namespace
+}} // namespace uhd::usrp
 
 #endif /* INCLUDED_UHD_USRP_MBOARD_EEPROM_HPP */

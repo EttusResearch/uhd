@@ -83,7 +83,7 @@ public:
             throw uhd::runtime_error("firmware not responding");
         _protocol_compat = ntohl(ctrl_data.proto_ver);
 
-        mb_eeprom = mboard_eeprom_t(*this, USRP2_EEPROM_MAP_KEY);
+        mb_eeprom = usrp2_impl::get_mb_eeprom(*this);
     }
 
     ~usrp2_iface_impl(void){UHD_SAFE_CALL(
