@@ -71,11 +71,6 @@ static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp)
         usrp->set_tx_rate(4e6);
         usrp->set_rx_rate(4e6);
     }
-    else if (mb_name.find("E100") != std::string::npos or mb_name.find("E110") != std::string::npos)
-    {
-        usrp->set_tx_rate(4e6);
-        usrp->set_rx_rate(8e6);
-    }
     else
     {
         throw std::runtime_error("self-calibration is not supported for this device");

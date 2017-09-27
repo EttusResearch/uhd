@@ -812,12 +812,6 @@ Files:  fpga/usrp2/sdr_lib/integrate.v
  fpga/usrp2/top/USRP2/u2_core.v
  fpga/usrp2/top/USRP2/Makefile
  fpga/usrp2/top/Makefile.common
- fpga/usrp2/top/E1x0/u1e.v
- fpga/usrp2/top/E1x0/Makefile.E100
- fpga/usrp2/top/E1x0/tb_u1e.v
- fpga/usrp2/top/E1x0/Makefile.E110
- fpga/usrp2/top/E1x0/u1e_core.v
- fpga/usrp2/top/E1x0/Makefile
  fpga/usrp2/top/B100/u1plus.v
  fpga/usrp2/top/B100/u1plus_core.v
  fpga/usrp2/top/B100/B100.v
