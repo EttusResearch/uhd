@@ -240,8 +240,6 @@ double ad937x_device::_convert_tx_gain_from_mykonos(const uint16_t gain)
 
 void ad937x_device::_apply_gain_pins(const direction_t direction, const chain_t chain)
 {
-    using namespace std::placeholders;
-
     // get this channels configuration
     const auto chan = gain_ctrl.config.at(direction).at(chain);
 
@@ -322,7 +320,7 @@ ad937x_device::ad937x_device(
 
 void ad937x_device::_initialize_rf()
 {
-    // TODO: add setRfPllLoopFilter here when we upgrade the API to >3546
+    // TODO: add setRfPllLoopFilter here
 
     // Set frequencies
     tune(uhd::RX_DIRECTION, RX_DEFAULT_FREQ, false);
@@ -389,6 +387,10 @@ void ad937x_device::finish_initialization()
         binary.data(),
         binary.size()));
 
+    // TODO: check ARM version before or after the load of the ARM
+    // currently binary has no readable version number until after it's loaded
+
+    // TODO: separate initialize rf into its own step
     _initialize_rf();
 }
 
@@ -636,10 +638,9 @@ double ad937x_device::set_gain(const direction_t direction, const chain_t chain,
     default:
         MPM_THROW_INVALID_CODE_PATH();
     }
-
     _restore_from_config_state(state);
-    // TODO: coerced_value here is wrong, should just call get_gain
-    return coerced_value;
+
+    return get_gain(direction, chain);
 }
 
 void ad937x_device::set_agc_mode(const direction_t direction, const gain_mode_t mode)
@@ -734,8 +735,7 @@ double ad937x_device::get_freq(const direction_t direction)
         MPM_THROW_INVALID_CODE_PATH();
     }
 
-    // TODO: coercion here causes extra device accesses, when the formula is provided on pg 119 of the user guide
-    // Furthermore, because coerced is returned as an integer, it's not even accurate
+    // TODO: because coerced_pll is returned as an integer, it's not accurate
     uint64_t coerced_pll;
     CALL_API(MYKONOS_getRfPllFrequency(mykonos_config.device, pll, &coerced_pll));
     return static_cast<double>(coerced_pll);
