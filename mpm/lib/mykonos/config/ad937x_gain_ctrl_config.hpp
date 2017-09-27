@@ -20,26 +20,10 @@
 #include "../ad937x_device_types.hpp"
 #include "../adi/t_mykonos.h"
 
-// TODO: fix paths for the config subfolder
-#include "../../../include/mpm/ad937x/ad937x_ctrl_types.hpp"
+#include "mpm/ad937x/ad937x_ctrl_types.hpp"
 
 #include <vector>
 #include <unordered_map>
-
-struct ad937x_gain_ctrl_channel_t
-{
-    uint8_t enable;
-    uint8_t inc_step;
-    uint8_t dec_step;
-    mykonosGpioSelect_t inc_pin;
-    mykonosGpioSelect_t dec_pin;
-
-    ad937x_gain_ctrl_channel_t(mykonosGpioSelect_t inc_pin, mykonosGpioSelect_t dec_pin);
-
-private:
-    const static uint8_t DEFAULT_GAIN_STEP;
-    const static bool DEFAULT_ENABLE;
-};
 
 // C++14 requires std::hash includes a specialization for enums, but gcc doesn't do that yet
 // Remove this when that happens
@@ -61,6 +45,23 @@ namespace std {
     };
 }
 
+// collection of the 5 attributes that define the gain pins for a channel in Mykonos
+struct ad937x_gain_ctrl_channel_t
+{
+    uint8_t enable;
+    uint8_t inc_step;
+    uint8_t dec_step;
+    mykonosGpioSelect_t inc_pin;
+    mykonosGpioSelect_t dec_pin;
+
+    ad937x_gain_ctrl_channel_t(mykonosGpioSelect_t inc_pin, mykonosGpioSelect_t dec_pin);
+
+private:
+    const static uint8_t DEFAULT_GAIN_STEP;
+    const static bool DEFAULT_ENABLE;
+};
+
+// logically maps ad937x_gain_ctrl_channels by direction and channel number
 struct ad937x_gain_ctrl_config_t
 {
     std::unordered_map<uhd::direction_t,

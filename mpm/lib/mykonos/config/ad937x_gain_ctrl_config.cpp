@@ -120,6 +120,7 @@ ad937x_gain_ctrl_config_t::ad937x_gain_ctrl_config_t(gain_pins_t gain_pins)
 {
     config.emplace(std::piecewise_construct, std::forward_as_tuple(RX_DIRECTION), std::forward_as_tuple());
     config.emplace(std::piecewise_construct, std::forward_as_tuple(TX_DIRECTION), std::forward_as_tuple());
+
     config.at(RX_DIRECTION).emplace(std::piecewise_construct, std::forward_as_tuple(chain_t::ONE),
         std::forward_as_tuple(
         _get_gain_pin(RX_DIRECTION, chain_t::ONE, pin_direction_t::INCREASE, gain_pins),
