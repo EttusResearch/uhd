@@ -23,6 +23,7 @@
 #include <iostream>
 #include <chrono>
 #include <thread>
+#include <sstream>
 
 ad9371_spiSettings_t::ad9371_spiSettings_t(
         mpm::types::regs_iface* spi_iface_
@@ -86,7 +87,6 @@ commonErr_t CMB_setSPIChannel(uint16_t chipSelectIndex)
 commonErr_t CMB_SPIWriteByte(spiSettings_t *spiSettings, uint16_t addr, uint8_t data)
 {
     if (spiSettings == nullptr || spiSettings->MSBFirst == 0) {
-        // TODO: crash and burn for these errors?
         return COMMONERR_FAILED;
     }
 
@@ -95,11 +95,19 @@ commonErr_t CMB_SPIWriteByte(spiSettings_t *spiSettings, uint16_t addr, uint8_t 
         spi->spi_iface->poke8(addr, data);
         return COMMONERR_OK;
     } catch (const std::exception &e) {
-        std::cout << "AAAAAAAAAAAAH" << std::endl;
+        // TODO: spit out a reasonable error here (that will survive the C API transition)
+        std::stringstream ss;
+        ss << "Error in CMB_SPIWriteByte: " << e.what();
+        CMB_writeToLog(
+            ADIHAL_LOG_ERROR,
+            spiSettings->chipSelectIndex,
+            ad9371_spi_errors_t::SPI_WRITE_ERROR,
+            ss.str().c_str());
     }
     return COMMONERR_FAILED;
 }
 
+// multi SPI byte write function (address, data pairs)
 commonErr_t CMB_SPIWriteBytes(spiSettings_t *spiSettings, uint16_t *addr, uint8_t *data, uint32_t count)
 {
     if (spiSettings == nullptr ||
@@ -107,7 +115,6 @@ commonErr_t CMB_SPIWriteBytes(spiSettings_t *spiSettings, uint16_t *addr, uint8_
         data == nullptr ||
         spiSettings->MSBFirst == 0)
     {
-        // TODO: crash and burn for these errors?
         return COMMONERR_FAILED;
     }
 
@@ -121,7 +128,14 @@ commonErr_t CMB_SPIWriteBytes(spiSettings_t *spiSettings, uint16_t *addr, uint8_
         }
         return COMMONERR_OK;
     } catch (const std::exception &e) {
-        std::cout << "AAAAAAAAAAAAH" << std::endl;
+        // TODO: spit out a reasonable error here (that will survive the C API transition)
+        std::stringstream ss;
+        ss << "Error in CMB_SPIWriteBytes: " << e.what();
+        CMB_writeToLog(
+            ADIHAL_LOG_ERROR,
+            spiSettings->chipSelectIndex,
+            ad9371_spi_errors_t::SPI_WRITE_ERROR,
+            ss.str().c_str());
     }
     return COMMONERR_FAILED;
 }
@@ -141,8 +155,14 @@ commonErr_t CMB_SPIReadByte (spiSettings_t *spiSettings, uint16_t addr, uint8_t 
         *readdata = spi->spi_iface->peek8(addr);
         return COMMONERR_OK;
     } catch (const std::exception &e) {
-        std::cout << "AAAAAAAAAAAAH READ" << std::endl;
-        // ... error handling ...
+        // TODO: spit out a reasonable error here (that will survive the C API transition)
+        std::stringstream ss;
+        ss << "Error in CMB_SPIReadByte: " << e.what();
+        CMB_writeToLog(
+            ADIHAL_LOG_ERROR,
+            spiSettings->chipSelectIndex,
+            ad9371_spi_errors_t::SPI_READ_ERROR,
+            ss.str().c_str());
     }
     return COMMONERR_FAILED;
 }
@@ -161,8 +181,14 @@ commonErr_t CMB_SPIWriteField(
         spi->spi_iface->poke8(addr, new_value);
         return COMMONERR_OK;
     } catch (const std::exception &e) {
-        std::cout << "AAAAAAAAAAAAH WRITE FIELD" << std::endl;
-        // ... error handling ...
+        // TODO: spit out a reasonable error here (that will survive the C API transition)
+        std::stringstream ss;
+        ss << "Error in CMB_SPIWriteField: " << e.what();
+        CMB_writeToLog(
+            ADIHAL_LOG_ERROR,
+            spiSettings->chipSelectIndex,
+            ad9371_spi_errors_t::SPI_WRITE_ERROR,
+            ss.str().c_str());
     }
     return COMMONERR_FAILED;
 }
@@ -181,8 +207,14 @@ commonErr_t CMB_SPIReadField(
         *field_val = static_cast<uint8_t>((value & mask) >> start_bit);
         return COMMONERR_OK;
     } catch (const std::exception &e) {
-        std::cout << "AAAAAAAAAAAAH READ FIELD" << std::endl;
-        /* ... error handling ... */
+        // TODO: spit out a reasonable error here (that will survive the C API transition)
+        std::stringstream ss;
+        ss << "Error in CMB_SPIReadField: " << e.what();
+        CMB_writeToLog(
+            ADIHAL_LOG_ERROR,
+            spiSettings->chipSelectIndex,
+            ad9371_spi_errors_t::SPI_READ_ERROR,
+            ss.str().c_str());
     }
     return COMMONERR_FAILED;
 }
@@ -241,6 +273,8 @@ commonErr_t CMB_closeLog(void)
 
 commonErr_t CMB_writeToLog(ADI_LOGLEVEL level, uint8_t deviceIndex, uint32_t errorCode, const char *comment)
 {
+    // TODO: send to logging API
+    // TODO: filter log messages based on level
     std::cout << "[CMB_writeToLog] level==" << level << " errorCode==" << errorCode << " " << comment;
     return COMMONERR_OK;
 }

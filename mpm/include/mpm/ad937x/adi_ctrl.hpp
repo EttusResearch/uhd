@@ -36,3 +36,9 @@ struct ad9371_spiSettings_t
     std::chrono::microseconds timeout_duration;
 };
 
+enum ad9371_spi_errors_t : uint32_t
+{
+    SPI_READ_ERROR  = 4096,
+    SPI_WRITE_ERROR = 4097,
+};
+
