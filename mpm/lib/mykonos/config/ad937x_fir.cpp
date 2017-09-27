@@ -44,7 +44,7 @@ void ad937x_fir::set_fir(int8_t gain, const std::vector<int16_t>& coefficients)
     _fir.numFirCoefs = static_cast<uint8_t>(_fir_coefficients.size());
 }
 
-std::vector<int16_t> ad937x_fir::get_fir(int8_t &gain)
+std::vector<int16_t> ad937x_fir::get_fir(int8_t &gain) const
 {
     gain = _fir.gain_dB;
     return _fir_coefficients;
