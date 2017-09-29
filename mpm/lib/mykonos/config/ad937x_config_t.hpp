@@ -34,6 +34,9 @@ public:
     static const size_t DEFAULT_TX_FIR_SIZE = 32;
     static const size_t DEFAULT_RX_FIR_SIZE = 48;
 
+    static const int32_t DEFAULT_TX_FIR_GAIN = 6;
+    static const int32_t DEFAULT_RX_FIR_GAIN = -6;
+
     static const int16_t DEFAULT_TX_FIR[DEFAULT_TX_FIR_SIZE];
     static const int16_t DEFAULT_RX_FIR[DEFAULT_RX_FIR_SIZE];
     static const int16_t DEFAULT_OBSRX_FIR[DEFAULT_RX_FIR_SIZE];

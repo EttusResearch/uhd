@@ -72,10 +72,10 @@ ad937x_config_t::ad937x_config_t(spiSettings_t* sps) :
     _auxIo(DEFAULT_AUX_IO),
     _clocks(DEFAULT_CLOCKS),
 
-    tx_fir_config(6, std::vector<int16_t>(DEFAULT_TX_FIR, DEFAULT_TX_FIR + DEFAULT_TX_FIR_SIZE)),
-    rx_fir_config(-6, std::vector<int16_t>(DEFAULT_RX_FIR, DEFAULT_RX_FIR + DEFAULT_RX_FIR_SIZE)),
-    _orx_fir_config(-6, std::vector<int16_t>(DEFAULT_OBSRX_FIR, DEFAULT_OBSRX_FIR + DEFAULT_RX_FIR_SIZE)),
-    _sniffer_rx_fir_config(-6, std::vector<int16_t>(DEFAULT_SNIFFER_FIR, DEFAULT_SNIFFER_FIR + DEFAULT_RX_FIR_SIZE))
+    tx_fir_config(DEFAULT_TX_FIR_GAIN, std::vector<int16_t>(DEFAULT_TX_FIR, DEFAULT_TX_FIR + DEFAULT_TX_FIR_SIZE)),
+    rx_fir_config(DEFAULT_RX_FIR_GAIN, std::vector<int16_t>(DEFAULT_RX_FIR, DEFAULT_RX_FIR + DEFAULT_RX_FIR_SIZE)),
+    _orx_fir_config(DEFAULT_RX_FIR_GAIN, std::vector<int16_t>(DEFAULT_OBSRX_FIR, DEFAULT_OBSRX_FIR + DEFAULT_RX_FIR_SIZE)),
+    _sniffer_rx_fir_config(DEFAULT_RX_FIR_GAIN, std::vector<int16_t>(DEFAULT_SNIFFER_FIR, DEFAULT_SNIFFER_FIR + DEFAULT_RX_FIR_SIZE))
 {
     _device.spiSettings = sps;
 
