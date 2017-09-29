@@ -93,6 +93,9 @@ class PeriphManagerBase(object):
     # particular version of MPM supports. Leave at None to skip a max rev
     # check.
     mboard_max_rev = None
+    # A list of available sensors on the motherboard. This dictionary is a map
+    # of the form sensor_name -> method name
+    mboard_sensor_callback_map = {}
     # This is a sanity check value to see if the correct number of
     # daughterboards are detected. If somewhere along the line more than
     # max_num_dboards dboards are found, an error or warning is raised,
@@ -460,4 +463,39 @@ class PeriphManagerBase(object):
         with open(xbar_sysfs_path, "w") as xbar_file:
             xbar_file.write(laddr_value)
         return True
+
+    def get_mb_sensors(self):
+        """
+        Return a list of sensor names.
+        """
+        return list(self.mboard_sensor_callback_map.keys())
+
+    def get_mb_sensor(self, sensor_name):
+        """
+        Return a dictionary that represents the sensor values for a given
+        sensor. If the requested sensor sensor_name does not exist, throw an
+        exception.
+
+        The returned dictionary has the following keys (all values are
+        strings):
+        - name: This is typically the same as sensor_name
+        - type: One of the following strings: BOOLEAN, INTEGER, REALNUM, STRING
+                Note that this matches uhd::sensor_value_t::data_type_t
+        - value: The value. If type is STRING, it is interpreted as-is. If it's
+                 REALNUM or INTEGER, it needs to be convertable to float or
+                 int, respectively. If it's BOOLEAN, it needs to be either
+                 'true' or 'false', although any string that is not 'true' will
+                 be interpreted as false.
+        - unit: This depends on the type. It is generally only relevant for
+                pretty-printing the sensor value.
+        """
+        if sensor_name not in self.get_mb_sensors():
+            error_msg = "Was asked for non-existent sensor `{}'.".format(
+                sensor_name
+            )
+            self.log.error(error_msg)
+            raise RuntimeError(error_msg)
+        return getattr(
+            self, self.mboard_sensor_callback_map.get(sensor_name)
+        )()
 

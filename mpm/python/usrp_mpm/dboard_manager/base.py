@@ -34,6 +34,10 @@ class DboardManagerBase(object):
     # Very important: A list of PIDs that apply to the current device. Must be
     # list, even if there's only one entry.
     pids = []
+    # See PeriphManager.mboard_sensor_callback_map for a description.
+    rx_sensor_callback_map = {}
+    # See PeriphManager.mboard_sensor_callback_map for a description.
+    tx_sensor_callback_map = {}
     # A dictionary that maps chips or components to chip selects for SPI.
     # If this is given, a dictionary called self._spi_nodes is created which
     # maps these keys to actual spidev paths. Also throws a warning/error if
@@ -108,3 +112,37 @@ class DboardManagerBase(object):
         Call this function if the frequency of the reference clock changes.
         """
         self.log.warning("update_ref_clock_freq() called but not implemented")
+
+    def get_sensors(self, direction):
+        """
+        Return a list of RX daughterboard sensor names.
+
+        direction needs to be either RX or TX.
+        """
+        if direction.lower() == 'rx':
+            return list(self.rx_sensor_callback_map.keys())
+        else:
+            return list(self.tx_sensor_callback_map.keys())
+
+    def get_sensor(self, direction, sensor_name):
+        """
+        Return a dictionary that represents the sensor values for a given
+        sensor. If the requested sensor sensor_name does not exist, throw an
+        exception. direction is either RX or TX.
+
+        See PeriphManager.get_mb_sensor() for a description of the return value
+        format.
+        """
+        callback_map = \
+            rx_sensor_callback_map if direction.lower() == 'rx' \
+            else tx_sensor_callback_map
+        if sensor_name not in callback_map:
+            error_msg = "Was asked for non-existent sensor `{}'.".format(
+                sensor_name
+            )
+            self.log.error(error_msg)
+            raise RuntimeError(error_msg)
+        return getattr(
+            self, self.callback_map.get('sensor_name')
+        )()
+

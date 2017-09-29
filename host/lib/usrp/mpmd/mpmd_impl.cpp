@@ -106,6 +106,36 @@ namespace {
                 );
             })
         ;
+
+        /*** Sensors ********************************************************/
+        auto sensor_list =
+            mb->rpc->request_with_token<std::vector<std::string>>(
+                "get_mb_sensors"
+            );
+        UHD_LOG_DEBUG("MPMD",
+            "Found " << sensor_list.size() << " motherboard sensors."
+        );
+        for (const auto& sensor_name : sensor_list) {
+            UHD_LOG_TRACE("MPMD",
+                "Adding motherboard sensor `" << sensor_name << "'"
+            );
+            tree->create<sensor_value_t>(
+                    mb_path / "sensors" / sensor_name)
+                .set_publisher([mb, sensor_name](){
+                    return sensor_value_t(
+                        mb->rpc->request_with_token<sensor_value_t::sensor_map_t>(
+                            "get_mb_sensor", sensor_name
+                        )
+                    );
+                })
+                .set_coercer([](const sensor_value_t &){
+                    throw uhd::runtime_error(
+                        "Trying to write read-only sensor value!"
+                    );
+                    return sensor_value_t("", "", "");
+                })
+            ;
+        }
     }
 
     void reset_time_synchronized(uhd::property_tree::sptr tree)
