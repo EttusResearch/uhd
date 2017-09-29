@@ -8,6 +8,7 @@
 #define INCLUDED_UHD_TYPES_SENSORS_HPP
 
 #include <uhd/config.hpp>
+#include <map>
 #include <string>
 
 namespace uhd{
@@ -25,6 +26,7 @@ namespace uhd{
      * //prints Temperature: 38.5 C
      */
     struct UHD_API sensor_value_t{
+        typedef std::map<std::string, std::string> sensor_map_t;
 
         /*!
          * Create a sensor value from a boolean.
@@ -78,6 +80,18 @@ namespace uhd{
             const std::string &name,
             const std::string &value,
             const std::string &unit
+        );
+
+        /*!
+         * Create a sensor value from a map.
+         *
+         * The map must have the following keys: name, type, value, and unit.
+         *
+         * type must one of the following strings: BOOLEAN, INTEGER, REALNUM,
+         * or STRING (see data_type_t).
+         */
+        sensor_value_t(
+            const std::map<std::string, std::string> &sensor_dict
         );
 
         /*!

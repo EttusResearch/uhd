@@ -57,6 +57,57 @@ sensor_value_t::sensor_value_t(
     /* NOP */
 }
 
+static sensor_value_t::data_type_t _string_to_type(
+    const std::string &type_str
+) {
+    if (type_str == "STRING") {
+        return sensor_value_t::STRING;
+    } else if (type_str == "REALNUM") {
+        return sensor_value_t::REALNUM;
+    } else if (type_str == "INTEGER") {
+        return sensor_value_t::INTEGER;
+    } else if (type_str == "BOOLEAN") {
+        return sensor_value_t::BOOLEAN;
+    } else {
+        throw uhd::value_error(
+            std::string("Invalid sensor value type: ") + type_str
+        );
+    }
+}
+
+sensor_value_t::sensor_value_t(
+    const std::map<std::string, std::string> &sensor_dict
+):
+    name(sensor_dict.at("name")),
+    value(sensor_dict.at("value")),
+    unit(sensor_dict.at("unit")),
+    type(_string_to_type(sensor_dict.at("type")))
+{
+    UHD_ASSERT_THROW(not name.empty());
+    UHD_ASSERT_THROW(not value.empty());
+    try {
+        if (type == INTEGER) {
+            to_int();
+        } else if (type == REALNUM) {
+            to_real();
+        }
+    }
+    catch (const std::invalid_argument&) {
+        throw uhd::value_error(str(
+            boost::format("Could not convert sensor value `%s' to type `%s'")
+            % value
+            % sensor_dict.at("type")
+        ));
+    }
+    catch (const std::out_of_range&) {
+        throw uhd::value_error(str(
+            boost::format("Could not convert sensor value `%s' to type `%s'")
+            % value
+            % sensor_dict.at("type")
+        ));
+    }
+}
+
 sensor_value_t::sensor_value_t(const sensor_value_t& source)
 {
     *this = source;
