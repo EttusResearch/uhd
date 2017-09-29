@@ -23,12 +23,10 @@
 #include <uhd/types/wb_iface.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/thread/mutex.hpp>
+#include <boost/format.hpp>
 
 using namespace uhd;
 using namespace uhd::rfnoc;
-
-//TODO (Ashish): This should come from the framework
-static const double BUS_CLK_RATE = 166.67e6;
 
 class dma_fifo_block_ctrl_impl : public dma_fifo_block_ctrl
 {
@@ -70,7 +68,7 @@ public:
                 if (bisterr != 0) {
                     throw uhd::runtime_error(str(boost::format("BIST failed! (code: %d)\n") % bisterr));
                 } else {
-                    double throughput = _perifs[i].core->get_bist_throughput(BUS_CLK_RATE);
+                    double throughput = _perifs[i].core->get_bist_throughput();
                     UHD_LOGGER_INFO("RFNOC") << (boost::format("pass (Throughput: %.1fMB/s)") % (throughput/1e6)) ;
                 }
             } else {

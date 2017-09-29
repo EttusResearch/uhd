@@ -79,7 +79,7 @@ public:
     /*!
      * Get the throughput measured from the last invocation of the BIST (extended BIST only)
      */
-    virtual double get_bist_throughput(double fifo_clock_rate) = 0;
+    virtual double get_bist_throughput() = 0;
 
 };
 
