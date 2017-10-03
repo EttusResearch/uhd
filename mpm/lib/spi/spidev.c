@@ -17,6 +17,8 @@
 
 #include "spidev.h"
 #include <fcntl.h>
+#include <errno.h>
+#include <string.h>
 #include <sys/ioctl.h>
 #include <linux/types.h>
 #include <linux/spi/spidev.h>
@@ -30,56 +32,91 @@ int init_spi(int *fd, const char *device,
 ) {
     int err;
 
+    if (!fd)
+    {
+        fprintf(stderr, "%s: was passed a null pointer\n",
+            __func__);
+        return -EINVAL;
+    }
+
     *fd = open(device, O_RDWR);
     if (*fd < 0) {
-        fprintf(stderr, "%s: Failed to open device\n", __func__);
+        fprintf(stderr, "%s: Failed to open device. %s\n",
+            __func__, strerror(*fd));
+        return *fd;
+    }
+
+    // SPI_IOC_WR commands interpret our pointer as non-const, so play it safe
+    uint32_t set_mode = mode;
+    if (ioctl(*fd, SPI_IOC_WR_MODE32, &set_mode) < 0)
+    {
+        int err = errno;
+        fprintf(stderr, "%s: Failed to set mode. %s\n",
+            __func__, strerror(err));
         return err;
     }
 
-    uint32_t requested_mode = mode;
-    err = ioctl(*fd, SPI_IOC_WR_MODE32, &mode);
-    if (err < 0) {
-        fprintf(stderr, "%s: Failed to set mode\n", __func__);
-        return err;;
+    uint32_t coerced_mode;
+    if (ioctl(*fd, SPI_IOC_RD_MODE32, &coerced_mode) < 0)
+    {
+        int err = errno;
+        fprintf(stderr, "%s: Failed to get mode. %s\n",
+            __func__, strerror(err));
+        return err;
     }
 
-    err = ioctl(*fd, SPI_IOC_RD_MODE32, &mode);
-    if (err < 0) {
-        fprintf(stderr, "%s: Failed to get mode\n", __func__);
-        return err;
-    }
-    if (requested_mode != mode) {
-        return 2;
+    if (coerced_mode != mode) {
+        fprintf(stderr, "%s: Failed to set mode to %d, got %d\n",
+            __func__, mode, coerced_mode);
+        return -ENOTSUP;
     }
 
-    uint8_t requested_bits_per_word;
-    err = ioctl(*fd, SPI_IOC_WR_BITS_PER_WORD, &bits_per_word);
-    if (err < 0) {
-        fprintf(stderr, "%s: Failed to set bits per word\n", __func__);
+    uint8_t set_bits_per_word = bits_per_word;
+    if (ioctl(*fd, SPI_IOC_WR_BITS_PER_WORD, &set_bits_per_word) < 0)
+    {
+        int err = errno;
+        fprintf(stderr, "%s: Failed to set bits per word. %s\n",
+            __func__, strerror(err));
         return err;
-    }
-    err = ioctl(*fd, SPI_IOC_RD_BITS_PER_WORD, &bits_per_word);
-    if (err) {
-        fprintf(stderr, "%s: Failed to get bits per word\n", __func__);
-        return err;
-    }
-    if (requested_bits_per_word != bits_per_word) {
-        return 2;
     }
 
-    uint32_t requested_speed_hz = speed_hz;
-    err = ioctl(*fd, SPI_IOC_WR_MAX_SPEED_HZ, &speed_hz);
-    if (err < 0) {
-        fprintf(stderr, "%s: Failed to set speed\n", __func__);
+    uint8_t coerced_bits_per_word;
+    if (ioctl(*fd, SPI_IOC_RD_BITS_PER_WORD, &coerced_bits_per_word) < 0)
+    {
+        int err = errno;
+        fprintf(stderr, "%s: Failed to get bits per word\n",
+            __func__, strerror(err));
         return err;
     }
-    err = ioctl(*fd, SPI_IOC_RD_MAX_SPEED_HZ, &speed_hz);
-    if (err < 0) {
-        fprintf(stderr, "%s: Failed to get speed\n", __func__);
+
+    if (coerced_bits_per_word != bits_per_word) {
+        fprintf(stderr, "%s: Failed to set bits per word to %d, got %d\n",
+            __func__, bits_per_word, coerced_bits_per_word);
+        return -ENOTSUP;
+    }
+
+    uint32_t set_speed_hz = speed_hz;
+    if (ioctl(*fd, SPI_IOC_WR_MAX_SPEED_HZ, &set_speed_hz) < 0)
+    {
+        int err = errno;
+        fprintf(stderr, "%s: Failed to set speed\n",
+            __func__, strerror(err));
         return err;
     }
-    if (requested_speed_hz != speed_hz) {
-        return 2;
+
+    uint32_t coerced_speed_hz;
+    if (ioctl(*fd, SPI_IOC_RD_MAX_SPEED_HZ, &coerced_speed_hz) < 0)
+    {
+        int err = errno;
+        fprintf(stderr, "%s: Failed to get speed\n",
+            __func__, strerror(err));
+        return err;
+    }
+
+    if (coerced_speed_hz != speed_hz) {
+        fprintf(stderr, "%s: Failed to set speed to %d, got %d\n",
+            __func__, speed_hz, coerced_speed_hz);
+        return -ENOTSUP;
     }
 
     return 0;

@@ -21,6 +21,7 @@
 extern "C" {
 #include "spidev.h"
 }
+#include <fcntl.h>
 #include <linux/spi/spidev.h>
 
 #include <boost/format.hpp>
@@ -42,22 +43,21 @@ public:
     ) : _speed(max_speed_hz),
         _mode(spi_mode)
     {
-
-        if (!init_spi(
+        if (init_spi(
                 &_fd,
                 device.c_str(),
-                _mode, _speed, _bits, _delay
-        )) {
+                _mode, _speed, _bits, _delay) < 0)
+        {
             throw mpm::runtime_error(str(
-                    boost::format("Could not initialize spidev device %s")
-                    % device
-            ));
+                boost::format("Could not initialize spidev device %s")
+                % device));
         }
-        if (_fd < 0) {
+
+        if (_fd < 0)
+        {
             throw mpm::runtime_error(str(
-                    boost::format("Could not open spidev device %s")
-                    % device
-            ));
+                boost::format("Could not open spidev device %s")
+                % device));
         }
     }
 
