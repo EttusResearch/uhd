@@ -32,8 +32,12 @@ from datetime import datetime
 import argparse
 from six import iteritems
 
+# Timeout values are in seconds:
 GPS_WARMUP_TIMEOUT = 70 # Data sheet says "about a minute"
-GPS_LOCKOK_TIMEOUT = 2 # Data sheet says about 15 minutes
+GPS_LOCKOK_TIMEOUT = 2 # Data sheet says about 15 minutes. Because our test
+                       # does not necessarily require GPS lock to pass, we
+                       # reduce this value in order for the BIST to pass faster
+                       # by default.
 
 ##############################################################################
 # Aurora/SFP BIST code
@@ -448,19 +452,26 @@ class N310BIST(object):
         gpio_tca6424 = n310.TCA6424()
         gpio_tca6424.set("PWREN-GPS")
         time.sleep(5)
-        gps_warmup_timeout = float(self.args.option.get('gps_warmup_timeout', GPS_WARMUP_TIMEOUT))
-        gps_lockok_timeout = float(self.args.option.get('gps_lockok_timeout', GPS_LOCKOK_TIMEOUT))
+        gps_warmup_timeout = float(
+            self.args.option.get('gps_warmup_timeout', GPS_WARMUP_TIMEOUT))
+        gps_lockok_timeout = float(
+            self.args.option.get('gps_lockok_timeout', GPS_LOCKOK_TIMEOUT))
         # Wait for WARMUP to go low
-        sys.stderr.write("Waiting for WARMUP to go low...\n")
+        sys.stderr.write(
+            "Waiting for WARMUP to go low for up to {} seconds...\n".format(
+                gps_warmup_timeout))
         if not poll_with_timeout(
                 lambda: not gpio_tca6424.get('GPS-WARMUP'),
                 gps_warmup_timeout*1000, 1000
             ):
-            raise RuntimeError("GPS-WARMUP did not go low within one minute!")
+            raise RuntimeError(
+                "GPS-WARMUP did not go low within {} seconds!".format(
+                    gps_warmup_timeout))
         sys.stderr.write("Chip is warmed up.\n")
         # Wait for LOCKOK. Data sheet says wait up to 15 minutes for GPS lock.
-        sys.stderr.write("Waiting for LOCKOK to go high...\n")
-        print(gps_lockok_timeout)
+        sys.stderr.write(
+            "Waiting for LOCKOK to go high for up to {} seconds...\n".format(
+                gps_lockok_timeout))
         if not poll_with_timeout(
                 lambda: gpio_tca6424.get('GPS-LOCKOK'),
                 gps_lockok_timeout*1000,
