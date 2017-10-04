@@ -68,7 +68,7 @@ public:
         }
     }
 
-    sptr get_new(int timeout, size_t &index)
+    sptr get_new(double timeout, size_t &index)
     {
         _buf = liberio_chan_buf_dequeue(_chan, timeout * USEC);
         if (!_buf)
@@ -99,7 +99,7 @@ public:
             liberio_chan_buf_enqueue(_chan, _buf);
     }
 
-    sptr get_new(int timeout, size_t &index)
+    sptr get_new(double timeout, size_t &index)
     {
         _buf = liberio_chan_buf_dequeue(_chan, timeout * USEC);
         if (!_buf)
@@ -200,7 +200,7 @@ public:
         if (_next_recv_buff_index == _num_recv_bufs)
             _next_recv_buff_index = 0;
         return _mrb_pool[_next_recv_buff_index]->get_new(
-                USEC * timeout, _next_recv_buff_index);
+            timeout, _next_recv_buff_index);
     }
 
     size_t get_num_recv_frames(void) const
