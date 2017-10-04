@@ -77,7 +77,7 @@ public:
         index++;
 
         return make(this, liberio_buf_get_mem(_buf, 0),
-        liberio_buf_get_len(_buf, 0));
+                    liberio_buf_get_len(_buf, 0));
     }
 
 private:
@@ -108,7 +108,7 @@ public:
         index++;
 
         return make(this, liberio_buf_get_mem(_buf, 0),
-        liberio_buf_get_payload(_buf, 0));
+                    liberio_buf_get_payload(_buf, 0));
     }
 
 private:
@@ -150,7 +150,7 @@ public:
                 _tx_chan, xport_params.num_send_frames
             )
         );
-	_num_send_bufs = liberio_chan_get_num_bufs(_tx_chan);
+        _num_send_bufs = liberio_chan_get_num_bufs(_tx_chan);
 
         for (size_t i = 0; i < xport_params.num_send_frames; i++) {
             liberio_chan_get(_tx_chan);
@@ -175,7 +175,7 @@ public:
                      xport_params.recv_frame_size);
         UHD_ASSERT_THROW(!liberio_chan_request_buffers(
                 _rx_chan, xport_params.num_recv_frames));
-	_num_recv_bufs = liberio_chan_get_num_bufs(_rx_chan);
+        _num_recv_bufs = liberio_chan_get_num_bufs(_rx_chan);
 
         for (size_t i = 0; i < xport_params.num_recv_frames; i++) {
             liberio_chan_get(_rx_chan);
