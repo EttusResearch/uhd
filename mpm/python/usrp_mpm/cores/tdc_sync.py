@@ -217,8 +217,8 @@ class ClockSynchronizer(object):
         high_bound = 1.0/self.ref_clk_freq + (1.0/self.radio_clk_freq)*5
         if (current_value < low_bound) or (current_value > high_bound):
             self.log.error("Clock synchronizer measured a "
-                           "current value of {:.3f} ns!".format(
-                current_value*1e9
+                           "current value of {:.3f} ns. Range is [{:.3f},{:.3f}] ns".format(
+                current_value*1e9, low_bound*1e9, high_bound*1e9
             ))
             raise RuntimeError("TDC measurement out of range! "
                                "Current value: {:.3f} ns.".format(
