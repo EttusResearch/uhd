@@ -214,6 +214,9 @@ class n310(PeriphManagerBase):
     mboard_eeprom_max_len = 256
     mboard_info = {"type": "n3xx"}
     mboard_max_rev = 3 # 3 == RevD
+    mboard_sensor_callback_map = {
+        'ref_locked': 'get_ref_lock_sensor',
+    }
     dboard_eeprom_addr = "e0004000.i2c"
     dboard_eeprom_max_len = 64
     # We're on a Zynq target, so the following two come from the Zynq standard
@@ -482,4 +485,29 @@ class n310(PeriphManagerBase):
             "Enabling" if enable else "Disabling"
         ))
         self._gpios.set("PWREN-CLK-MAINREF", int(bool(enable)))
+
+    ###########################################################################
+    # Sensors
+    ###########################################################################
+    def get_ref_lock_sensor(self):
+        """
+        The N310 has no ref lock sensor, but because the ref lock is
+        historically considered a motherboard-level sensor, we will return the
+        combined lock status of all daughterboards. If no dboard is connected,
+        or none has a ref lock sensor, we simply return True.
+        """
+        self.log.trace(
+            "Querying ref lock status from %d dboards.",
+            len(self.dboards)
+        )
+        lock_status = all([
+            not hasattr(db, 'get_ref_lock') or db.get_ref_lock()
+            for db in self.dboards
+        ])
+        return {
+            'name': 'ref_locked',
+            'type': 'BOOLEAN',
+            'unit': 'locked' if lock_status else 'unlocked',
+            'value': str(lock_status).lower(),
+        }
 

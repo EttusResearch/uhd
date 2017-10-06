@@ -98,14 +98,6 @@ namespace {
                 );
             })
         ;
-        tree->create<sensor_value_t>(
-                mb_path / "sensors/ref_locked")
-            .set_publisher([](){
-                return sensor_value_t (
-                    "Ref", true, "locked", "unlocked" // FIXME: Remove hardcoded "true"
-                );
-            })
-        ;
 
         /*** Sensors ********************************************************/
         auto sensor_list =
