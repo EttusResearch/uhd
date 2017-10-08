@@ -18,7 +18,6 @@
 #include <uhd/transport/nirio_zero_copy.hpp>
 #include <stdio.h>
 #include <uhd/transport/nirio/nirio_fifo.h>
-#include <uhd/transport/buffer_pool.hpp>
 
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/atomic.hpp>
@@ -155,9 +154,6 @@ public:
                     (_xport_params.recv_frame_size * _xport_params.num_recv_frames);
         UHD_LOGGER_TRACE("NIRIO") << boost::format("nirio zero-copy TX transport configured with frame size = %u, #frames = %u, buffer size = %u\n")
                     % _xport_params.send_frame_size % _xport_params.num_send_frames % (_xport_params.send_frame_size * _xport_params.num_send_frames);
-
-        _recv_buffer_pool = buffer_pool::make(_xport_params.num_recv_frames, _xport_params.recv_frame_size);
-        _send_buffer_pool = buffer_pool::make(_xport_params.num_send_frames, _xport_params.send_frame_size);
 
         nirio_status status = 0;
         size_t actual_depth = 0, actual_size = 0;
@@ -353,7 +349,6 @@ private:
     uint32_t _fifo_instance;
     nirio_fifo<fifo_data_t>::sptr _recv_fifo, _send_fifo;
     const zero_copy_xport_params _xport_params;
-    buffer_pool::sptr _recv_buffer_pool, _send_buffer_pool;
     std::vector<boost::shared_ptr<nirio_zero_copy_msb> > _msb_pool;
     std::vector<boost::shared_ptr<nirio_zero_copy_mrb> > _mrb_pool;
     size_t _next_recv_buff_index, _next_send_buff_index;
