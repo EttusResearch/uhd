@@ -216,6 +216,7 @@ class n310(PeriphManagerBase):
     mboard_max_rev = 3 # 3 == RevD
     mboard_sensor_callback_map = {
         'ref_locked': 'get_ref_lock_sensor',
+        'gps_locked': 'get_gps_lock_sensor',
     }
     dboard_eeprom_addr = "e0004000.i2c"
     dboard_eeprom_max_len = 64
@@ -511,6 +512,18 @@ class n310(PeriphManagerBase):
             'value': str(lock_status).lower(),
         }
 
+    def get_gps_lock_sensor(self):
+        """
+        Get lock status of GPS as a sensor dict
+        """
+        self.log.trace("Reading status GPS lock pin from port expander")
+        gps_locked = bool(self._gpios.get("GPS-LOCKOK"))
+        return {
+            'name': 'gps_lock',
+            'type': 'BOOLEAN',
+            'unit': 'locked' if gps_locked else 'unlocked',
+            'value': str(gps_locked).lower(),
+        }
     ###########################################################################
     # EEPROMs
     ###########################################################################
