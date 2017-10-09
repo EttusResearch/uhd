@@ -31,6 +31,17 @@ class NIMgJESDCore(object):
     Arguments:
     regs -- regs class to use for peek/poke
     """
+    
+    MGT_RECEIVER_CONTROL       = 0x2040
+    MGT_RX_DESCRAMBLER_CONTROL = 0x2050
+    MGT_TRANSMITTER_CONTROL    = 0x2060
+    MGT_TX_TRANSCEIVER_CONTROL = 0x2064
+    MGT_TX_SCRAMBLER_CONTROL   = 0x2068
+    SYSREF_CAPTURE_CONTROL     = 0x2078
+    JESD_SIGNATURE_REG         = 0x2100
+    JESD_REVISION_REG          = 0x2104
+    
+    
     def __init__(self, regs, slot_idx=0):
         self.regs = regs
         self.log = get_logger("NIMgJESDCore-{}".format(slot_idx))
@@ -47,11 +58,11 @@ class NIMgJESDCore(object):
         Verify JESD core returns correct ID
         """
         self.log.trace("Checking JESD Core...")
-        if self.regs.peek32(0x2100) != 0x4A455344:
+        if self.regs.peek32(self.JESD_SIGNATURE_REG) != 0x4A455344:
             raise Exception('JESD Core signature mismatch! Check that core is mapped correctly')
-        #if self.regs.peek32(0x2104) != 0xFF
+        #if self.regs.peek32(JESD_REVISION_REG) != 0xFF
         #error here for date revision mismatch
-        self.log.trace("JESD Core build code: {0}".format(hex(self.regs.peek32(0x2104))))
+        self.log.trace("JESD Core build code: {0}".format(hex(self.regs.peek32(self.JESD_REVISION_REG))))
         self.log.trace("DB Slot #: {}".format( (self.regs.peek32(0x630) & 0x10000) >> 16  ))
         self.log.trace("DB PID: {:X}".format( self.regs.peek32(0x630) & 0xFFFF ))
         return True
@@ -59,34 +70,34 @@ class NIMgJESDCore(object):
     def init_deframer(self):
         " Initialize deframer "
         self.log.trace("Initializing deframer...")
-        self.regs.poke32(0x2040, 0x2)
-        self.regs.poke32(0x2050, 0x0)
+        self.regs.poke32(self.MGT_RECEIVER_CONTROL, 0x2)
+        self.regs.poke32(self.MGT_RX_DESCRAMBLER_CONTROL, 0x0)
         self._gt_reset('rx', reset_only=False)
-        self.regs.poke32(0x2040, 0x0)
+        self.regs.poke32(self.MGT_RECEIVER_CONTROL, 0x0)
 
     def init_framer(self):
         " Initialize framer "
         self.log.trace("Initializing framer...")
         # Disable DAC Sync from requesting CGS & Stop Deframer
-        self.regs.poke32(0x2060, 0x2002)
+        self.regs.poke32(self.MGT_TRANSMITTER_CONTROL, 0x2002)
         # Reset, unreset, and check the GTs
         self._gt_reset('tx', reset_only=False)
         # MGT phy control... enable TX Driver Swing
-        self.regs.poke32(0x2064, 0xF0000)
+        self.regs.poke32(self.MGT_TX_TRANSCEIVER_CONTROL, 0xF0000)
         time.sleep(0.001)
         # Bypass scrambler and disable char replacement
-        self.regs.poke32(0x2068, 0x1)
+        self.regs.poke32(self.MGT_TX_SCRAMBLER_CONTROL, 0x1)
         # Check for Framer in Idle state
-        rb = self.regs.peek32(0x2060)
+        rb = self.regs.peek32(self.MGT_TRANSMITTER_CONTROL)
         if rb & 0x100 != 0x100:
             raise Exception('TX Framer is not idle after reset')
         # Enable the framer and incoming DAC Sync
-        self.regs.poke32(0x2060, 0x1000)
-        self.regs.poke32(0x2060, 0x0001)
+        self.regs.poke32(self.MGT_TRANSMITTER_CONTROL, 0x1000)
+        self.regs.poke32(self.MGT_TRANSMITTER_CONTROL, 0x0001)
 
     def get_framer_status(self):
         " Return True if framer is in good status "
-        rb = self.regs.peek32(0x2060)
+        rb = self.regs.peek32(self.MGT_TRANSMITTER_CONTROL)
         self.log.trace("FPGA Framer status: {0}".format(hex(rb & 0xFF0)))
         if rb & (0b1 << 8) == 0b1 << 8:
             self.log.warning("Framer warning: Framer is Idle!")
@@ -98,7 +109,7 @@ class NIMgJESDCore(object):
 
     def get_deframer_status(self):
         " Return True if deframer is in good status "
-        rb = self.regs.peek32(0x2040)
+        rb = self.regs.peek32(self.MGT_RECEIVER_CONTROL)
         self.log.trace("FPGA Deframer status: {0}".format(hex(rb & 0xFFFFFFFF)))
         if rb & (0b1 << 2) == 0b0 << 2:
             self.log.warning("Deframer warning: Code Group Sync failed to complete!")
@@ -117,13 +128,14 @@ class NIMgJESDCore(object):
         self._gt_reset('tx', reset_only=True)
         self._gt_reset('rx', reset_only=True)
         self._gt_pll_lock_control()
-        self.regs.poke32(0x2078, 0x40)
+        # Disable SYSREF Sampler
+        self.regs.poke32(self.SYSREF_CAPTURE_CONTROL, 0x9800040)
 
     def enable_lmfc(self):
         """
         Enable LMFC generator in FPGA. This step is woefully incomplete, but this call will work for now.
         """
-        self.regs.poke32(0x2078, 0)
+        self.regs.poke32(self.SYSREF_CAPTURE_CONTROL, 0x9800000)
 
     def send_sysref_pulse(self):
         """

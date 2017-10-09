@@ -273,64 +273,76 @@ class Magnesium(DboardManagerBase):
 
     def init_jesd(self, uio):
         """
-        Bring up the JESD link between Mykonos and the N310
+        Bring up the JESD link between Mykonos and the N310.
         """
-        self.log.trace("Creating jesdcore object")
-        self.jesdcore = nijesdcore.NIMgJESDCore(uio)
+        # CPLD Register Definition
+        MYKONOS_CONTROL = 0x13
 
-        self.log.trace("Checking JESD core...")
+        self.log.trace("Creating jesdcore object")
+        self.jesdcore = nijesdcore.NIMgJESDCore(uio, self.slot_idx)
         self.jesdcore.check_core()
-        self.log.trace("Initializing LMK...")
 
         self.jesdcore.unreset_qpll()
-
         self.jesdcore.init()
-        self.log.trace("Resetting Mykonos...")
 
-        # YIKES!!! Where does this go?!? CPLD?
-        # self.jesdcore.reset_mykonos() #not sure who owns the reset
-        self.cpld_poke16(0x13, 0x1)
-        self.cpld_poke16(0x13, 0x0)
-
+        self.log.trace("Pulsing Mykonos Hard Reset...")
+        self.cpld_regs.poke16(MYKONOS_CONTROL, 0x1)
+        time.sleep(0.001) # No spec here, but give it some time to reset.
+        self.cpld_regs.poke16(MYKONOS_CONTROL, 0x0)
+        time.sleep(0.001) # No spec here, but give it some time to enable.
 
         self.log.trace("Initializing Mykonos...")
         self.mykonos.begin_initialization()
+        # Multi-chip Sync requires two SYSREF pulses at least 17us apart.
         self.jesdcore.send_sysref_pulse()
+        time.sleep(0.001)
         self.jesdcore.send_sysref_pulse()
         self.mykonos.finish_initialization()
 
-        self.log.trace("Starting Mykonos framer...")
-        self.mykonos.start_jesd_tx()
-        self.jesdcore.send_sysref_pulse()
-        self.log.trace("Resetting FPGA deframer...")
-        self.jesdcore.init_deframer()
-        self.log.trace("Resetting FPGA framer...")
+        self.log.trace("Starting JESD204b Link Initialization...")
+        # Generally, enable the source before the sink. Start with the DAC side.
+        self.log.trace("Starting FPGA framer...")
         self.jesdcore.init_framer()
         self.log.trace("Starting Mykonos deframer...")
         self.mykonos.start_jesd_rx()
-
-        self.log.trace("Enable LMFC and send")
+        # Now for the ADC link. Note that the Mykonos framer will not start issuing CGS
+        # characters until SYSREF is received by the framer. Therefore we enable the
+        # framer in Mykonos and the FPGA, send a SYSREF pulse to everyone, and then
+        # start the deframer in the FPGA.
+        self.log.trace("Starting Mykonos framer...")
+        self.mykonos.start_jesd_tx()
+        self.log.trace("Enable FPGA SYSREF Receiver.")
         self.jesdcore.enable_lmfc()
         self.jesdcore.send_sysref_pulse()
-        time.sleep(0.2)
+        self.log.trace("Starting FPGA deframer...")
+        self.jesdcore.init_deframer()
+
+        # Allow a bit of time for CGS/ILA to complete.
+        time.sleep(0.100)
+
         if not self.jesdcore.get_framer_status():
+            self.log.error("FPGA Framer Error!")
             raise Exception('JESD Core Framer is not synced!')
         if ((self.mykonos.get_deframer_status() & 0x7F) != 0x28):
+            self.log.error("Mykonos Deframer Error: 0x{:X}".format((self.mykonos.get_deframer_status() & 0x7F)))
             raise Exception('Mykonos Deframer is not synced!')
         if not self.jesdcore.get_deframer_status():
+            self.log.error("FPGA Deframer Error!")
             raise Exception('JESD Core Deframer is not synced!')
-        if (self.mykonos.get_framer_status() & 0xFF) != 0x3E:
+        if ((self.mykonos.get_framer_status() & 0xFF) != 0x3E):
+            self.log.error("Mykonos Framer Error: 0x{:X}".format((self.mykonos.get_framer_status() & 0xFF)))
             raise Exception('Mykonos Framer is not synced!')
-        if (self.mykonos.get_multichip_sync_status() & 0xB) != 0xB:
+        if ((self.mykonos.get_multichip_sync_status() & 0xB) != 0xB):
             raise Exception('Mykonos multi chip sync failed!')
+        self.log.info("JESD204B Link Initialization & Training Complete")
 
-        self.log.trace("JESD fully synced and ready")
 
     def dump_jesd_core(self):
+        radio_regs = UIO(label="dboard-regs-{}".format(self.slot_idx))
         for i in range(0x2000, 0x2110, 0x10):
             print(("0x%04X " % i), end=' ')
             for j in range(0, 0x10, 0x4):
-                print(("%08X" % self.radio_regs.peek32(i + j)), end=' ')
+                print(("%08X" % radio_regs.peek32(i + j)), end=' ')
             print("")
 
 
