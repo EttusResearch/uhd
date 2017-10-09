@@ -28,6 +28,7 @@ from .. import nijesdcore
 from ..uio import UIO
 from ..mpmlog import get_logger
 from .lmk_mg import LMK04828Mg
+from usrp_mpm.cores import ClockSynchronizer
 
 def create_spidev_iface(dev_node):
     """
@@ -69,6 +70,20 @@ def create_spidev_iface_cpld(dev_node):
         SPI_WRIT_FLAG
     )
 
+def create_spidev_iface_phasedac(dev_node):
+    """
+    Create a regs iface from a spidev node (ADS5681)
+    """
+    return lib.spi.make_spidev_regs_iface(
+        str(dev_node),
+        1000000, # Speed (Hz)
+        1, # SPI mode
+        16, # Addr shift
+        0, # Data shift
+        0, # Read flag
+        0, # Write flag
+    )
+
 class Magnesium(DboardManagerBase):
     """
     Holds all dboard specific information and methods of the magnesium dboard
@@ -81,7 +96,18 @@ class Magnesium(DboardManagerBase):
     pids = [0x150]
 
     # Maps the chipselects to the corresponding devices:
-    spi_chipselect = {"cpld": 0, "lmk": 1, "mykonos": 2}
+    spi_chipselect = {"cpld": 0, "lmk": 1, "mykonos": 2, "phase_dac": 3}
+    spi_factories = {
+        "cpld": create_spidev_iface_cpld,
+        "lmk": create_spidev_iface,
+        "mykonos": create_spidev_iface,
+        "phase_dac": create_spidev_iface_phasedac,
+    }
+
+    # DAC is initialized to midscale automatically on power-on: 16-bit DAC, so midpoint
+    # is at 2^15 = 32768. However, the linearity of the DAC is best just below that
+    # point, so we set it to the (carefully calculated) alternate value instead.
+    INIT_PHASE_DAC_WORD = 31000 # Intentionally decimal
 
     def _get_mykonos_function(self, name):
         mykfunc = getattr(self.mykonos, name)
@@ -95,6 +121,7 @@ class Magnesium(DboardManagerBase):
         self.log = get_logger("Magnesium-{}".format(slot_idx))
         self.log.trace("Initializing Magnesium daughterboard, slot index {}".format(self.slot_idx))
 
+        self.ref_clock_freq = 10e6 # TODO: make this not fixed
         self.log.debug("Loading C++ drivers for CPLD SPI.")
         self.cpld_regs = create_spidev_iface_cpld(self._spi_nodes['cpld'])
 
@@ -102,10 +129,6 @@ class Magnesium(DboardManagerBase):
         self._device = lib.dboards.magnesium_manager(
             self._spi_nodes['mykonos'],
         )
-        self.spi_lock = self._device.get_spi_lock()
-        self.log.debug("Loading C++ drivers for LMK SPI.")
-        self.clock_regs = create_spidev_iface(self._spi_nodes['lmk'])
-        self.lmk = LMK04828Mg(self.clock_regs, self.spi_lock)
         self.mykonos = self._device.get_radio_ctrl()
         self.log.debug("Loaded C++ drivers.")
 
@@ -122,11 +145,31 @@ class Magnesium(DboardManagerBase):
         Execute necessary init dance to bring up dboard
         """
 
+        def _init_spi_devices():
+            " Returns abstraction layers to all the SPI devices "
+            self.log.trace("Loading SPI interfaces...")
+            return {
+                key: self.spi_factories[key](self._spi_nodes[key])
+                for key in self._spi_nodes
+            }
         def _init_clock_control(dboard_regs):
             " Create a dboard clock control object and reset it "
             dboard_clk_control = DboardClockControl(dboard_regs, self.log)
             dboard_clk_control.reset_mmcm()
             return dboard_clk_control
+        def _init_lmk(slot_idx, lmk_spi, ref_clk_freq,
+                      pdac_spi, init_phase_dac_word):
+            """
+            Sets the phase DAC to initial value, and then brings up the LMK
+            according to the selected ref clock frequency.
+            Will throw if something fails.
+            """
+            self.log.trace("Initializing Phase DAC to d{}.".format(
+                init_phase_dac_word
+            ))
+            pdac_spi.poke16(0x0, init_phase_dac_word)
+            self.spi_lock = self._device.get_spi_lock()
+            return LMK04828Mg(lmk_spi, self.spi_lock, ref_clk_freq, slot_idx)
 
 
         self.log.info("init() called with args `{}'".format(
@@ -134,12 +177,19 @@ class Magnesium(DboardManagerBase):
         ))
 
 
+        self._spi_ifaces = _init_spi_devices()
+        self.log.info("Loaded SPI interfaces!")
         self.dboard_clk_control = _init_clock_control(self.radio_regs)
 
-        self.lmk.init()
-        self.lmk.config()
+        self.lmk = _init_lmk(
+            self.slot_idx,
+            self._spi_ifaces['lmk'],
+            self.ref_clock_freq,
+            self._spi_ifaces['phase_dac'],
+            self.INIT_PHASE_DAC_WORD,
+        )
         self.dboard_clk_control.enable_mmcm()
-        self.log.info("Clocking Configured Successfully!")
+        self.log.info("Sample Clocks and Phase DAC Configured Successfully!")
 
         self.init_jesd(self.radio_regs)
 

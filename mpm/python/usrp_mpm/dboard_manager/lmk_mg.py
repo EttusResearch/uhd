@@ -25,12 +25,16 @@ from ..mpmlog import get_logger
 from ..chips import LMK04828
 
 class LMK04828Mg(LMK04828):
-    def __init__(self, regs_iface, spi_lock, slot=None):
+    def __init__(self, regs_iface, spi_lock, ref_clock_freq, slot=None):
         LMK04828.__init__(self, regs_iface, slot)
+        self.log.trace("Using reference clock frequency {} MHz".format(ref_clock_freq/1e6))
         self.spi_lock = spi_lock
         self.log = get_logger("LMK04828")
         assert hasattr(self.spi_lock, 'lock')
         assert hasattr(self.spi_lock, 'unlock')
+        self.ref_clock_freq = ref_clock_freq
+        self.init()
+        self.config()
 
     def init(self):
         """
@@ -52,59 +56,59 @@ class LMK04828Mg(LMK04828):
         Write lots of config foo.
         """
         self.log.trace("LMK Initialization")
-        clkin0_r_divider = {10e6: 0x0A, 20e6: 0x14}[10e6] # FIXME: hard coded to use 10 MHz
+        clkin0_r_divider = {10e6: 0x0A, 20e6: 0x14}[self.ref_clock_freq]
         self.pokes8((
             (0x100, 0x78), # CLKout Config
-            (0x101, 0x55), # CLKout Config
-            (0x102, 0x55), # CLKout Config
+            (0x101, 0xCC), # CLKout Config
+            (0x102, 0xCC), # CLKout Config
             (0x103, 0x00), # CLKout Config
             (0x104, 0x20), # CLKout Config
             (0x105, 0x00), # CLKout Config
-            (0x106, 0xF2), # CLKout Config MYK: (0xAB where A = SYSREF, B = CLK)
+            (0x106, 0x72), # CLKout Config MYK: (0xAB where A = SYSREF, B = CLK)
             (0x107, 0x15), # CLKout Config 0x15 = LVDS, 0x55 = LVPECL
             (0x108, 0x7E), # CLKout Config
-            (0x109, 0x55), # CLKout Config
-            (0x10A, 0x55), # CLKout Config
+            (0x109, 0xFF), # CLKout Config
+            (0x10A, 0xFF), # CLKout Config
             (0x10B, 0x00), # CLKout Config
             (0x10C, 0x00), # CLKout Config
             (0x10D, 0x00), # CLKout Config
-            (0x10E, 0xF0), # CLKout Config
+            (0x10E, 0x70), # CLKout Config
             (0x10F, 0x55), # CLKout Config
-            (0x110, 0x61), # CLKout Config
-            (0x111, 0x55), # CLKout Config
-            (0x112, 0x55), # CLKout Config
+            (0x110, 0x78), # CLKout Config
+            (0x111, 0xCC), # CLKout Config
+            (0x112, 0xCC), # CLKout Config
             (0x113, 0x00), # CLKout Config
             (0x114, 0x00), # CLKout Config
             (0x115, 0x00), # CLKout Config
             (0x116, 0xF9), # CLKout Config
             (0x117, 0x00), # CLKout Config
             (0x118, 0x78), # CLKout Config
-            (0x119, 0x55), # CLKout Config
-            (0x11A, 0x55), # CLKout Config
+            (0x119, 0xCC), # CLKout Config
+            (0x11A, 0xCC), # CLKout Config
             (0x11B, 0x00), # CLKout Config
             (0x11C, 0x20), # CLKout Config
             (0x11D, 0x00), # CLKout Config
             (0x11E, 0xF1), # CLKout Config
             (0x11F, 0x00), # CLKout Config
             (0x120, 0x78), # CLKout Config
-            (0x121, 0x55), # CLKout Config
-            (0x122, 0x55), # CLKout Config
+            (0x121, 0xCC), # CLKout Config
+            (0x122, 0xCC), # CLKout Config
             (0x123, 0x00), # CLKout Config
-            (0x124, 0x20), # CLKout Config
+            (0x124, 0x20), # CLKout Config 0x20 = SYSREF output, 0x00 = DEVCLK
             (0x125, 0x00), # CLKout Config
-            (0x126, 0xF2), # CLKout Config FPGA: (0xAB where A = SYSREF, B = CLK)
-            (0x127, 0x55), # CLKout Config 0x15 = LVDS, 0x55 = LVPECL
+            (0x126, 0x72), # CLKout Config FPGA: (0xAB where A = SYSREF, B = CLK)
+            (0x127, 0x55), # CLKout Config 0x1 = LVDS, 0x5 = LVPECL
             (0x128, 0x78), # CLKout Config
-            (0x129, 0x55), # CLKout Config
-            (0x12A, 0x55), # CLKout Config
+            (0x129, 0xCC), # CLKout Config
+            (0x12A, 0xCC), # CLKout Config
             (0x12B, 0x00), # CLKout Config
             (0x12C, 0x00), # CLKout Config
             (0x12D, 0x00), # CLKout Config
-            (0x12E, 0xF0), # CLKout Config
-            (0x12F, 0x50), # CLKout Config
+            (0x12E, 0x72), # CLKout Config
+            (0x12F, 0xD0), # CLKout Config
             (0x130, 0x78), # CLKout Config
-            (0x131, 0x55), # CLKout Config
-            (0x132, 0x55), # CLKout Config
+            (0x131, 0xCC), # CLKout Config
+            (0x132, 0xCC), # CLKout Config
             (0x133, 0x00), # CLKout Config
             (0x134, 0x20), # CLKout Config
             (0x135, 0x00), # CLKout Config
@@ -128,6 +132,7 @@ class LMK04828Mg(LMK04828):
             (0x147, 0x1A), # CLKin_SEL = CLKin1 manual; CLKin1 to PLL1
             # (0x148, 0x01), # CLKin_SEL0 = input with pullup: previously written above!
             (0x149, 0x01), # CLKin_SEL1 = input with pulldown
+            (0x14A, 0x02), # RESET type
             (0x14B, 0x01), # Holdover & DAC Manual Mode
             (0x14C, 0xF6), # DAC Manual Mode
             (0x14D, 0x00), # DAC Settings (defaults)
@@ -190,3 +195,32 @@ class LMK04828Mg(LMK04828):
         ))
         self.log.info("LMK init'd and locked!")
 
+    def lmk_shift(self, num_shifts=0):
+        """
+        Apply time shift
+        """
+        # TODO: these numbers need to be based off the radio clock freq.
+        self.log.trace("LMK04828 Clock Phase Shifting Commencing...")
+        ddly_value = 0xCD if num_shifts >= 0 else 0xCB
+        ddly_value_sysref_reg0 = 0x01
+        ddly_value_sysref_reg1 = 0xE1 if num_shifts >= 0 else 0xDF # 0xE0 is normal
+        self.pokes8((
+            (0x141, 0xB1), # Dynamic digital delay enable on outputs 0, 8, 10
+            (0x143, 0x53), # SYSREF_CLR; SYNC Enabled; SYNC from pulser @ regwrite
+            (0x139, 0x02), # SYSREF_MUX = Pulser
+            (0x101, ddly_value), # Set DDLY values for DCLKout0 +/-1 on low cnt.
+            (0x102, ddly_value), # Hidden register. Write the same as previous based on inc/dec.
+            (0x121, ddly_value), # Set DDLY values for DCLKout8 +/-1 on low cnt
+            (0x122, ddly_value), # Hidden register. Write the same as previous based on inc/dec.
+            (0x129, ddly_value), # Set DDLY values for DCLKout10 +/-1 on low cnt
+            (0x12A, ddly_value), # Hidden register. Write the same as previous based on inc/dec.
+            (0x13C, ddly_value_sysref_reg0), # SYSREF DDLY value
+            (0x13D, ddly_value_sysref_reg1), # SYSREF DDLY value
+            (0x144, 0x4E), # Enable SYNC on outputs 0, 8, 10
+        ))
+        for x in range(abs(num_shifts)):
+            self.poke8(0x142, 0x1)
+        # Put everything back the way it was before shifting.
+        self.poke8(0x144, 0xFF) # Disable SYNC on all outputs including SYSREF
+        # self.poke8(0x143, 0xD2) # Reset SYSREF engine to proper SYNC settings
+        self.poke8(0x143, 0x52) # Pulser selected; SYNC enabled; 1 shot enabled
