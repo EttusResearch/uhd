@@ -249,7 +249,6 @@ class Magnesium(DboardManagerBase):
         return True
 
 
-
     def cpld_peek(self, addr):
         """
         Debug for accessing the CPLD via the RPC shell.
