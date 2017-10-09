@@ -132,10 +132,6 @@ class Magnesium(DboardManagerBase):
         self.mykonos = self._device.get_radio_ctrl()
         self.log.debug("Loaded C++ drivers.")
 
-        self.log.debug("Getting Mg A uio...")
-        self.radio_regs = UIO(label="dboard-regs-0", read_only=False)
-        self.log.info("Radio-register UIO object successfully generated!")
-
         for mykfuncname in [x for x in dir(self.mykonos) if not x.startswith("_") and callable(getattr(self.mykonos, x))]:
             self.log.trace("adding {}".format(mykfuncname))
             setattr(self, mykfuncname, self._get_mykonos_function(mykfuncname))
@@ -145,6 +141,13 @@ class Magnesium(DboardManagerBase):
         Execute necessary init dance to bring up dboard
         """
 
+        def _init_dboard_regs():
+            " Create a UIO object to talk to dboard regs "
+            self.log.trace("Getting uio...")
+            return UIO(
+                label="dboard-regs-{}".format(self.slot_idx),
+                read_only=False
+            )
         def _init_spi_devices():
             " Returns abstraction layers to all the SPI devices "
             self.log.trace("Loading SPI interfaces...")
@@ -176,7 +179,8 @@ class Magnesium(DboardManagerBase):
             ",".join(['{}={}'.format(x, args[x]) for x in args])
         ))
 
-
+        self.radio_regs = _init_dboard_regs()
+        self.log.info("Radio-register UIO object successfully generated!")
         self._spi_ifaces = _init_spi_devices()
         self.log.info("Loaded SPI interfaces!")
         self.dboard_clk_control = _init_clock_control(self.radio_regs)
