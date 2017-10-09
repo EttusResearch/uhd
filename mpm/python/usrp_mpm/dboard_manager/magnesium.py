@@ -173,6 +173,23 @@ class Magnesium(DboardManagerBase):
             pdac_spi.poke16(0x0, init_phase_dac_word)
             self.spi_lock = self._device.get_spi_lock()
             return LMK04828Mg(lmk_spi, self.spi_lock, ref_clk_freq, slot_idx)
+        def _sync_db_clock(synchronizer):
+            " Synchronizes the DB clock to the common reference "
+            synchronizer.run_sync(measurement_only=False)
+            offset_error = synchronizer.run_sync(measurement_only=True)
+            if offset_error > 100e-12:
+                self.log.error("Clock synchronizer measured an offset of {:.1f} ps!".format(
+                    offset_error*1e12
+                ))
+                raise RuntimeError("Clock synchronizer measured an offset of {:.1f} ps!".format(
+                    offset_error*1e12
+                ))
+            else:
+                self.log.debug("Residual DAC offset error: {:.1f} ps.".format(
+                    offset_error*1e12
+                ))
+            self.log.info("Sample Clock Synchronization Complete!")
+
 
 
         self.log.info("init() called with args `{}'".format(
@@ -184,7 +201,6 @@ class Magnesium(DboardManagerBase):
         self._spi_ifaces = _init_spi_devices()
         self.log.info("Loaded SPI interfaces!")
         self.dboard_clk_control = _init_clock_control(self.radio_regs)
-
         self.lmk = _init_lmk(
             self.slot_idx,
             self._spi_ifaces['lmk'],
@@ -194,6 +210,25 @@ class Magnesium(DboardManagerBase):
         )
         self.dboard_clk_control.enable_mmcm()
         self.log.info("Sample Clocks and Phase DAC Configured Successfully!")
+        # Synchronize DB Clocks
+        self.clock_synchronizer = ClockSynchronizer(
+            self.radio_regs,
+            self.dboard_clk_control,
+            self.lmk,
+            self._spi_ifaces['phase_dac'],
+            0, # TODO this might not actually be zero
+            125e6, # TODO don't hardcode
+            self.ref_clock_freq,
+            860E-15, # TODO don't hardcode. This should live in the EEPROM
+            self.INIT_PHASE_DAC_WORD,
+            3e9,         # lmk_vco_freq
+            [128e-9,],   # target_values
+            0x0,         # spi_addr TODO: make this a constant and replace in _sync_db_clock as well
+            self.log
+        )
+        _sync_db_clock(self.clock_synchronizer)
+        # Clocks and PPS are now fully active!
+
 
         self.init_jesd(self.radio_regs)
 

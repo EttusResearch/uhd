@@ -196,7 +196,7 @@ class ClockSynchronizer(object):
 
         meas_clk_freq = 170.542641116e6
         measure_offset = lambda: self.read_tdc_meas(
-            1/meas_clk_freq, 1/self.ref_clk_freq, 1/self.radio_clk_freq
+            1.0/meas_clk_freq, 1.0/self.ref_clk_freq, 1.0/self.radio_clk_freq
         )
         # Retrieve the first measurement, but throw it away since it won't align with
         # all the re-run measurements.
@@ -208,7 +208,14 @@ class ClockSynchronizer(object):
         self.log.trace("Reading {} TDC measurements from device...".format(num_meas))
         current_value = mean([measure_offset() for _ in range(num_meas)])
 
-        if (current_value < 120e-9) or (current_value > 150e-9):
+        # The high and low bounds for this are set programmatically based on the
+        # Reference and Sample Frequencies and the TDC structure. The bounds are:
+        # Low  = T_refclk + T_sampleclk*(3)
+        # High = T_refclk + T_sampleclk*(4)
+        # For slop, we add in another T_sampleclk on either side.
+        low_bound  = 1.0/self.ref_clk_freq + (1.0/self.radio_clk_freq)*2
+        high_bound = 1.0/self.ref_clk_freq + (1.0/self.radio_clk_freq)*5
+        if (current_value < low_bound) or (current_value > high_bound):
             self.log.error("Clock synchronizer measured a "
                            "current value of {:.3f} ns!".format(
                 current_value*1e9
@@ -245,9 +252,9 @@ class ClockSynchronizer(object):
 
     def read_tdc_meas(
             self,
-            meas_clk_period=1/170.542641116e6,
-            ref_clk_period=1/10e6,
-            radio_clk_period=1/104e6
+            meas_clk_period=1.0/170.542641116e6,
+            ref_clk_period=1.0/10e6,
+            radio_clk_period=1.0/104e6
         ):
         """
         Return the offset (in seconds) the whatever what measured and whatever
@@ -307,7 +314,7 @@ class ClockSynchronizer(object):
         ))
         # Determine the sign.
         sign = 1 if distance_to_target >= 0 else -1
-        coarse_step_size = 1/lmk_vco_freq
+        coarse_step_size = 1.0/lmk_vco_freq
         # For negative input values, divmod occasionally returns coarse steps -1 from
         # the correct value. To combat this blatent crime, I just give it a positive value
         # and then sign-correct afterwards.
