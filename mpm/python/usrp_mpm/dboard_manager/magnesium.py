@@ -122,8 +122,6 @@ class Magnesium(DboardManagerBase):
         self.log.trace("Initializing Magnesium daughterboard, slot index {}".format(self.slot_idx))
 
         self.ref_clock_freq = 10e6 # TODO: make this not fixed
-        self.log.debug("Loading C++ drivers for CPLD SPI.")
-        self.cpld_regs = create_spidev_iface_cpld(self._spi_nodes['cpld'])
 
         self.log.debug("Loading C++ drivers...")
         self._device = lib.dboards.magnesium_manager(
@@ -189,6 +187,19 @@ class Magnesium(DboardManagerBase):
                     offset_error*1e12
                 ))
             self.log.info("Sample Clock Synchronization Complete!")
+        def _init_cpld():
+            "Initialize communication with the Mg CPLD"
+            CPLD_SIGNATURE = 0xCAFE
+            cpld_regs = self._spi_ifaces['cpld']
+            signature = cpld_regs.peek16(0x00)
+            self.log.trace("CPLD Signature: 0x{:X}".format(signature))
+            if signature != CPLD_SIGNATURE:
+                self.log.error("CPLD Signature Mismatch! Expected: 0x{:x}".format(CPLD_SIGNATURE))
+                raise RuntimeError("CPLD Status Check Failed!")
+            self.log.trace("CPLD Revision:  0d{}".format(cpld_regs.peek16(0x01)))
+            revision_msb = cpld_regs.peek16(0x04)
+            self.log.trace("CPLD Date Code: 0x{:X}".format(cpld_regs.peek16(0x03) | (revision_msb << 16)))
+            return cpld_regs
 
 
 
@@ -200,6 +211,7 @@ class Magnesium(DboardManagerBase):
         self.log.info("Radio-register UIO object successfully generated!")
         self._spi_ifaces = _init_spi_devices()
         self.log.info("Loaded SPI interfaces!")
+        self.cpld_regs = _init_cpld()
         self.dboard_clk_control = _init_clock_control(self.radio_regs)
         self.lmk = _init_lmk(
             self.slot_idx,
@@ -238,22 +250,26 @@ class Magnesium(DboardManagerBase):
 
 
 
-    def cpld_peek16(self, addr):
+    def cpld_peek(self, addr):
+        """
+        Debug for accessing the CPLD via the RPC shell.
+        """
+        self.cpld_regs = create_spidev_iface_cpld(self._spi_nodes['cpld'])
+        self.log.trace("CPLD Signature: 0x{:X}".format(self.cpld_regs.peek16(0x00)))
+        revision_msb = self.cpld_regs.peek16(0x04)
+        self.log.trace("CPLD Revision:  0x{:X}".format(self.cpld_regs.peek16(0x03) | (revision_msb << 16)))
         return self.cpld_regs.peek16(addr)
 
-    def cpld_poke16(self, addr, data):
-        return self.cpld_regs.poke16(addr, data)
-
-    def lmk_peek(self, addr):
-        return self.lmk.peek8(addr)
-
-    def lmk_poke(self, addr, data):
-        return self.lmk.poke8(addr, data)
-
-    def lmk_setup_dbg(self):
-        self.lmk.init()
-        self.lmk.config()
-        return "LMK Init Success"
+    def cpld_poke(self, addr, data):
+        """
+        Debug for accessing the CPLD via the RPC shell.
+        """
+        self.cpld_regs = create_spidev_iface_cpld(self._spi_nodes['cpld'])
+        self.log.trace("CPLD Signature: 0x{:X}".format(self.cpld_regs.peek16(0x00)))
+        revision_msb = self.cpld_regs.peek16(0x04)
+        self.log.trace("CPLD Revision:  0x{:X}".format(self.cpld_regs.peek16(0x03) | (revision_msb << 16)))
+        self.cpld_regs.poke16(addr, data)
+        return self.cpld_regs.peek16(addr)
 
 
     def init_jesd(self, uio):
