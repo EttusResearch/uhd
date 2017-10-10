@@ -174,7 +174,7 @@ class PeriphManagerBase(object):
             )
             self.log.trace("Found EEPROM metadata: `{}'".format(str(self._eeprom_head)))
             self.log.trace("Read {} bytes of EEPROM data.".format(len(self._eeprom_rawdata)))
-            for key in ('pid', 'serial', 'rev'):
+            for key in ('pid', 'serial', 'rev', 'eeprom_version'):
                 # In C++, we can only handle dicts if all the values are of the
                 # same type. So we must convert them all to strings here:
                 try:
@@ -464,6 +464,9 @@ class PeriphManagerBase(object):
             xbar_file.write(laddr_value)
         return True
 
+    ##########################################################################
+    # Mboard Sensors
+    ##########################################################################
     def get_mb_sensors(self):
         """
         Return a list of sensor names.
@@ -498,4 +501,25 @@ class PeriphManagerBase(object):
         return getattr(
             self, self.mboard_sensor_callback_map.get(sensor_name)
         )()
+
+    ##########################################################################
+    # EEPROMS
+    ##########################################################################
+    def get_mb_eeprom(self):
+        """
+        Return a dictionary with EEPROM contents
+
+        All key/value pairs are string -> string
+        """
+        return {k: str(v) for k, v in iteritems(self._eeprom_head)}
+
+    def set_mb_eeprom(self, eeprom_vals):
+        """
+        eeprom_vals is a dictionary (string -> string)
+
+        By default, we do nothing. Writing EEPROMs is highly device specific
+        and is thus defined in the individual device classes.
+        """
+        self.log.warn("Called set_mb_eeprom(), but not implemented!")
+        raise NotImplementedError
 

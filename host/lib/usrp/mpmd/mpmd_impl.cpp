@@ -26,6 +26,8 @@
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhd/types/sensors.hpp>
+#include <uhd/types/eeprom.hpp>
+#include <uhd/usrp/mboard_eeprom.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
 #include <boost/make_shared.hpp>
@@ -128,6 +130,27 @@ namespace {
                 })
             ;
         }
+
+        /*** EEPROM *********************************************************/
+        tree->create<uhd::usrp::mboard_eeprom_t>(mb_path / "eeprom")
+            .add_coerced_subscriber([mb](const uhd::usrp::mboard_eeprom_t& mb_eeprom){
+                eeprom_map_t eeprom_map;
+                for (const auto& key : mb_eeprom.keys()) {
+                    eeprom_map[key] = mb_eeprom[key];
+                }
+                mb->rpc->notify_with_token("set_mb_eeprom", eeprom_map);
+            })
+            .set_publisher([mb](){
+                auto mb_eeprom =
+                    mb->rpc->request_with_token<std::map<std::string, std::string>>(
+                        "get_mb_eeprom"
+                    );
+                uhd::usrp::mboard_eeprom_t mb_eeprom_dict(
+                    mb_eeprom.cbegin(), mb_eeprom.cend()
+                );
+                return mb_eeprom_dict;
+            })
+        ;
     }
 
     void reset_time_synchronized(uhd::property_tree::sptr tree)
@@ -284,8 +307,6 @@ mpmd_mboard_impl::uptr mpmd_impl::setup_mb(
 
     // query more information about FPGA/MPM
 
-    // Call init on periph_manager, this will init the dboards/mboard, maybe
-    // even selfcal and everything
 
     // Query time/clock sources on mboards/dboards
     // Throw rpc calls with boost bind into the property tree?

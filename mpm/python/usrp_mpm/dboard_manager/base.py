@@ -134,8 +134,8 @@ class DboardManagerBase(object):
         format.
         """
         callback_map = \
-            rx_sensor_callback_map if direction.lower() == 'rx' \
-            else tx_sensor_callback_map
+            self.rx_sensor_callback_map if direction.lower() == 'rx' \
+            else self.tx_sensor_callback_map
         if sensor_name not in callback_map:
             error_msg = "Was asked for non-existent sensor `{}'.".format(
                 sensor_name
@@ -143,6 +143,6 @@ class DboardManagerBase(object):
             self.log.error(error_msg)
             raise RuntimeError(error_msg)
         return getattr(
-            self, self.callback_map.get('sensor_name')
+            self, callback_map.get('sensor_name')
         )()
 
