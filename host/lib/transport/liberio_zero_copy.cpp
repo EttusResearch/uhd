@@ -143,8 +143,11 @@ public:
         UHD_ASSERT_THROW(_tx_chan);
         liberio_chan_stop_streaming(_tx_chan);
         liberio_chan_request_buffers(_tx_chan, 0);
-        liberio_chan_set_fixed_size(_tx_chan, 0,
-            xport_params.send_frame_size);
+        UHD_ASSERT_THROW(
+            !liberio_chan_set_fixed_size(_tx_chan, 0,
+                xport_params.send_frame_size
+            )
+        );
         UHD_ASSERT_THROW(
             !liberio_chan_request_buffers(
                 _tx_chan, xport_params.num_send_frames
@@ -171,8 +174,11 @@ public:
         /* stop the channel, free the buffers, set the size, allocate */
         liberio_chan_stop_streaming(_rx_chan);
         liberio_chan_request_buffers(_rx_chan, 0);
-        liberio_chan_set_fixed_size(_rx_chan, 0,
-                     xport_params.recv_frame_size);
+        UHD_ASSERT_THROW(
+            !liberio_chan_set_fixed_size(_rx_chan, 0,
+                xport_params.recv_frame_size
+            )
+        );
         UHD_ASSERT_THROW(!liberio_chan_request_buffers(
                 _rx_chan, xport_params.num_recv_frames));
         _num_recv_bufs = liberio_chan_get_num_bufs(_rx_chan);
