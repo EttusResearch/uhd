@@ -511,3 +511,18 @@ class n310(PeriphManagerBase):
             'value': str(lock_status).lower(),
         }
 
+    ###########################################################################
+    # EEPROMs
+    ###########################################################################
+    def get_mb_eeprom(self):
+        """
+        Return a dictionary with EEPROM contents.
+
+        All key/value pairs are string -> string.
+
+        We don't actually return the EEPROM contents, instead, we return the
+        mboard info again. This filters the EEPROM contents to what we think
+        the user wants to know/see.
+        """
+        return self.mboard_info
+
