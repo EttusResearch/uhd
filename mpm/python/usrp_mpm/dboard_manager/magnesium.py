@@ -97,6 +97,21 @@ class Magnesium(DboardManagerBase):
 
     # Maps the chipselects to the corresponding devices:
     spi_chipselect = {"cpld": 0, "lmk": 1, "mykonos": 2, "phase_dac": 3}
+    @staticmethod
+    def list_required_dt_overlays(eeprom_md, sfp_config, device_args):
+        """
+        Lists device tree overlays that need to be applied before this class can
+        be used. List of strings.
+        Are applied in order.
+
+        eeprom_md -- Dictionary of info read out from the dboard EEPROM
+        sfp_config -- A string identifying the configuration of the SFP ports.
+                      Example: "XG", "HG", "XA", ...
+        device_args -- Arbitrary dictionary of info, typically user-defined
+        """
+        return ['magnesium-{sfp}'.format(sfp=sfp_config)]
+    ### End of overridables #################################################
+    # Class-specific, but constant settings:
     spi_factories = {
         "cpld": create_spidev_iface_cpld,
         "lmk": create_spidev_iface,
