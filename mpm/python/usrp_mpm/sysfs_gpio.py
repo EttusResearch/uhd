@@ -27,20 +27,30 @@ GPIO_SYSFS_BASE_DIR = '/sys/class/gpio'
 GPIO_SYSFS_LABELFILE = 'label'
 GPIO_SYSFS_VALUEFILE = 'value'
 
-def get_all_gpio_devs():
+def get_all_gpio_devs(parent_dev=None):
     """
     Returns a list of all GPIO chips available through sysfs. Will look
     something like ['gpiochip882', 'gpiochip123', ...]
+
+    If there are multiple devices with the same label (example: daughterboards
+    may have a single label for a shared component), a parent device needs to
+    be provided to disambiguate.
+
+    Arguments:
+    parent_dev -- A parent udev device. If this is provided, only GPIO devices
+                  which are a child of the parent device are returned.
+
+    Example:
+    >>> parent_dev = pyudev.Devices.from_sys_path(
+            pyudev.Context(), '/sys/class/i2c-adapter/i2c-10')
+    >>> get_all_gpio_devs(parent_dev)
     """
     try:
         context = pyudev.Context()
         gpios = [device.sys_name
-                 for device in context.list_devices(subsystem="gpio")
-                 if os.path.exists(os.path.join( # udev probably has better ways to do this
-                     GPIO_SYSFS_BASE_DIR,
-                     device.sys_name,
-                     GPIO_SYSFS_LABELFILE
-                 ))
+                 for device in context.list_devices(
+                     subsystem="gpio").match_parent(parent_dev)
+                 if device.device_number == 0
                 ]
         return gpios
     except OSError:
@@ -75,13 +85,13 @@ def get_gpio_map_info(gpio_dev):
     )
     return map_info
 
-def find_gpio_device(label, logger=None):
+def find_gpio_device(label, parent_dev=None, logger=None):
     """
     Given a label, returns a tuple (uio_device, map_info).
     uio_device is something like 'gpio882'. map_info is a dictionary with
     information regarding the GPIO device read from the map info sysfs dir.
     """
-    gpio_devices = get_all_gpio_devs()
+    gpio_devices = get_all_gpio_devs(parent_dev)
     if logger:
         logger.trace("Found the following UIO devices: `{0}'".format(','.join(gpio_devices)))
     for gpio_device in gpio_devices:
@@ -101,7 +111,7 @@ class SysFSGPIO(object):
     API for accessing GPIOs mapped into userland via sysfs
     """
 
-    def __init__(self, label, use_mask, ddr, init_value=0):
+    def __init__(self, label, use_mask, ddr, init_value=0, parent_dev=None):
         assert (use_mask & ddr) == ddr
         self.log = get_logger("SysFSGPIO")
         self._label = label
@@ -109,7 +119,8 @@ class SysFSGPIO(object):
         self._ddr = ddr
         self._init_value = init_value
         self.log.trace("Generating SysFSGPIO object for label `{}'...".format(label))
-        self._gpio_dev, self._map_info = find_gpio_device(label, self.log)
+        self._gpio_dev, self._map_info = \
+                find_gpio_device(label, parent_dev, self.log)
         if self._gpio_dev is None:
             self.log.error("Could not find GPIO device with label `{}'.".format(label))
         self.log.trace("GPIO base number is {}".format(self._map_info.get("sys_number")))
