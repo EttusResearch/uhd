@@ -22,6 +22,7 @@
 #include <uhd/transport/chdr.hpp>
 #include <uhd/utils/math.hpp>
 #include <uhd/types/direction.hpp>
+#include <uhd/types/eeprom.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/format.hpp>
@@ -232,6 +233,9 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(magnesium_radio_ctrl)
         }
     }
 
+    // EEPROM paths subject to change FIXME
+    _tree->create<eeprom_map_t>(_root_path / "eeprom").set(eeprom_map_t());
+
     // TODO change codec names
     _tree->create<int>("rx_codecs" / _radio_slot / "gains");
     _tree->create<int>("tx_codecs" / _radio_slot / "gains");
@@ -350,10 +354,22 @@ double magnesium_radio_ctrl_impl::get_output_samp_rate(size_t port)
 void magnesium_radio_ctrl_impl::set_rpc_client(
     uhd::rpc_client::sptr rpcc,
     const uhd::device_addr_t &block_args
-)
-{
+) {
     _rpcc = rpcc;
     _block_args = block_args;
+
+    // EEPROM paths subject to change FIXME
+    const size_t db_idx = get_block_id().get_block_count();
+    _tree->access<eeprom_map_t>(_root_path / "eeprom")
+        .add_coerced_subscriber([this, db_idx](const eeprom_map_t& db_eeprom){
+            this->_rpcc->notify_with_token("set_db_eeprom", db_idx, db_eeprom);
+        })
+        .set_publisher([this, db_idx](){
+            return this->_rpcc->request_with_token<eeprom_map_t>(
+                "get_db_eeprom", db_idx
+            );
+        })
+    ;
 }
 
 double magnesium_radio_ctrl_impl::_set_frequency(const double freq, const size_t chan, const direction_t dir)
