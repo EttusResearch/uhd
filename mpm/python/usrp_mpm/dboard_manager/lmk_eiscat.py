@@ -139,7 +139,7 @@ class LMK04828EISCAT(LMK04828):
             (0x14D, 0x00), # DAC Settings (defaults)
             (0x14E, 0x00), # DAC Settings (defaults)
             (0x14F, 0x7F), # DAC Settings (defaults)
-            (0x150, 0x03), # Holdover Settings (defaults)
+            (0x150, 0x00), # Holdover Settings; bits 0/1 = '0' per long PLL1 lock time debug
             (0x151, 0x02), # Holdover Settings (defaults)
             (0x152, 0x00), # Holdover Settings (defaults)
             (0x153, 0x00), # CLKin0_R divider [13:8], default = 0
@@ -175,6 +175,7 @@ class LMK04828EISCAT(LMK04828):
             (0x16D, 0x00), # PLL2 loop filter c = 10 pF
             (0x173, 0x00), # Do not power down PLL2 or prescaler
         ))
+        # TODO: change to Polling.
         time.sleep(1.0) # Increased time to wait for DAC and VCXO to settle.
         self.pokes8((
             (0x182, 0x1), # Clear Lock Detect Sticky

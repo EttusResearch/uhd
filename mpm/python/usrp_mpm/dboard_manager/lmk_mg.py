@@ -138,7 +138,7 @@ class LMK04828Mg(LMK04828):
             (0x14D, 0x00), # DAC Settings (defaults)
             (0x14E, 0x00), # DAC Settings (defaults)
             (0x14F, 0x7F), # DAC Settings (defaults)
-            (0x150, 0x03), # Holdover Settings (defaults)
+            (0x150, 0x00), # Holdover Settings; bits 0/1 = '0' per long PLL1 lock time debug
             (0x151, 0x02), # Holdover Settings (defaults)
             (0x152, 0x00), # Holdover Settings (defaults)
             (0x153, 0x00), # CLKin0_R divider [13:8], default = 0
@@ -175,16 +175,28 @@ class LMK04828Mg(LMK04828):
             (0x16E, 0x13), # Status LD2 pin = Output push-pull, PLL2 DLD
             (0x173, 0x00), # Do not power down PLL2 or prescaler
         ))
-        time.sleep(1.0) # Increased time to wait for DAC and VCXO to settle.
-        self.pokes8((
-            (0x182, 0x1), # Clear Lock Detect Sticky
-            (0x182, 0x0), # Clear Lock Detect Sticky
-            (0x183, 0x1), # Clear Lock Detect Sticky
-            (0x183, 0x0), # Clear Lock Detect Sticky
-        ))
-        time.sleep(0.1)
-        if not self.check_plls_locked():
+
+        # Poll for PLL1/2 lock. Total time = 6 * 50 ms = 300 ms
+        self.log.trace("Polling for PLL lock...")
+        locked = False
+        for _ in range(6):
+            time.sleep(0.050)
+            # Clear stickies
+            self.pokes8((
+                (0x182, 0x1), # Clear Lock Detect Sticky
+                (0x182, 0x0), # Clear Lock Detect Sticky
+                (0x183, 0x1), # Clear Lock Detect Sticky
+                (0x183, 0x0), # Clear Lock Detect Sticky
+            ))
+            # Wait a bit before checking for lock
+            # time.sleep(0.050)
+            if self.check_plls_locked():
+                locked = True
+                self.log.info("LMK PLLs Locked!")
+                break
+        if not locked:
             raise RuntimeError("At least one LMK PLL did not lock! Check the logs for details.")
+
         self.log.trace("Setting SYNC and SYSREF config...")
         self.pokes8((
             (0x143, 0xF1), # toggle SYNC polarity to trigger SYNC event
