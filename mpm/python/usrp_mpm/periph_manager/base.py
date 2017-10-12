@@ -523,3 +523,31 @@ class PeriphManagerBase(object):
         self.log.warn("Called set_mb_eeprom(), but not implemented!")
         raise NotImplementedError
 
+    def get_db_eeprom(self, dboard_idx):
+        """
+        Return a dictionary representing the content of the daughterboard
+        EEPROM.
+
+        By default, will simply return the device info of the dboard.
+        Typically, this gets overloaded by the device specific class.
+
+        Arguments:
+        dboard_idx -- Slot index of dboard
+        """
+        self.log.debug("Calling base-class get_db_eeprom(). This may not be " \
+                       "what you want.")
+        return self.dboards[dboard_idx].device_info
+
+    def set_db_eeprom(self, dboard_idx, eeprom_data):
+        """
+        Write new EEPROM contents with eeprom_map.
+
+        Arguments:
+        dboard_idx -- Slot index of dboard
+        eeprom_data -- Dictionary of EEPROM data to be written. It's up to the
+                       specific device implementation on how to handle it.
+        """
+        self.log.warn("Attempted to write dboard `%d' EEPROM, but function " \
+                      "is not implemented.", dboard_idx)
+        raise NotImplementedError
+
