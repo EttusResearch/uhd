@@ -152,13 +152,14 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(magnesium_radio_ctrl)
             {
                 // TODO: fix antenna name
                 // Now witness the firepower of this fully armed and operational lambda
-                auto coerced_lambda = [this, chan, dir = dir[fe_idx]](const std::string &ant)
+                auto dir_ = dir[fe_idx];
+                auto coerced_lambda = [this, chan, dir_](const std::string &ant)
                 {
-                    return this->_set_antenna(ant, chan, dir);
+                    return this->_set_antenna(ant, chan, dir_);
                 };
-                auto publisher_lambda = [this, chan, dir = dir[fe_idx]]()
+                auto publisher_lambda = [this, chan, dir_]()
                 {
-                    return this->_get_antenna(chan, dir);
+                    return this->_get_antenna(chan, dir_);
                 };
                 _tree->create<std::string>(fe_path / "antenna" / "value")
                     .set(str(boost::format("%s%d") % ant[fe_idx] % (chan + 1)))
@@ -169,13 +170,14 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(magnesium_radio_ctrl)
                     .set(std::vector<std::string>(1, str(boost::format("%s%d") % ant[fe_idx] % (chan + 1))));
             }
             {
-                auto coerced_lambda = [this, chan, dir = dir[fe_idx]](const double freq)
+                auto dir_ = dir[fe_idx];
+                auto coerced_lambda = [this, chan, dir_](const double freq)
                 {
-                    return this->_set_frequency(freq, chan, dir);
+                    return this->_set_frequency(freq, chan, dir_);
                 };
-                auto publisher_lambda = [this, chan, dir = dir[fe_idx]]()
+                auto publisher_lambda = [this, chan, dir_]()
                 {
-                    return this->_get_frequency(chan, dir);
+                    return this->_get_frequency(chan, dir_);
                 };
                 _tree->create<double>(fe_path / "freq" / "value")
                     .set(MAGNESIUM_CENTER_FREQ)
@@ -185,13 +187,14 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(magnesium_radio_ctrl)
                     .set(meta_range_t(MAGNESIUM_MIN_FREQ, MAGNESIUM_MAX_FREQ));
             }
             {
-                auto coerced_lambda = [this, chan, dir = dir[fe_idx]](const double gain)
+                auto dir_ = dir[fe_idx];
+                auto coerced_lambda = [this, chan, dir_](const double gain)
                 {
-                    return this->_set_gain(gain, chan, dir);
+                    return this->_set_gain(gain, chan, dir_);
                 };
-                auto publisher_lambda = [this, chan, dir = dir[fe_idx]]()
+                auto publisher_lambda = [this, chan, dir_]()
                 {
-                    return this->_get_gain(chan, dir);
+                    return this->_get_gain(chan, dir_);
                 };
                 auto min_gain = (fe_idx == RX_IDX) ? MAGNESIUM_MIN_RX_GAIN : MAGNESIUM_MIN_TX_GAIN;
                 auto max_gain = (fe_idx == RX_IDX) ? MAGNESIUM_MAX_RX_GAIN : MAGNESIUM_MAX_TX_GAIN;
