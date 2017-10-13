@@ -20,6 +20,7 @@ N310 implementation module
 
 from __future__ import print_function
 import os
+import copy
 from six import iteritems
 from builtins import object
 from .base import PeriphManagerBase
@@ -555,4 +556,70 @@ class n310(PeriphManagerBase):
         the user wants to know/see.
         """
         return self.mboard_info
+
+    def set_mb_eeprom(self, eeprom_vals):
+        """
+        See PeriphManagerBase.set_mb_eeprom() for docs.
+        """
+        self.log.warn("Called set_mb_eeprom(), but not implemented!")
+        raise NotImplementedError
+
+    def get_db_eeprom(self, dboard_idx):
+        """
+        See PeriphManagerBase.get_db_eeprom() for docs.
+        """
+        try:
+            dboard = self.dboards[dboard_idx]
+        except KeyError:
+            error_msg = "Attempted to access invalid dboard index `{}' " \
+                        "in get_db_eeprom()!".format(dboard_idx)
+            self.log.error(error_msg)
+            raise RuntimeError(error_msg)
+        db_eeprom_data = copy.copy(dboard.device_info)
+        if hasattr(dboard, 'get_user_eeprom_data') and \
+                callable(dboard.get_user_eeprom_data):
+            for blob_id, blob in iteritems(dboard.get_user_eeprom_data()):
+                if blob_id in db_eeprom_data:
+                    self.log.warn("EEPROM user data contains invalid blob ID " \
+                                  "%s", blob_id)
+                else:
+                    db_eeprom_data[blob_id] = blob
+        return db_eeprom_data
+
+    def set_db_eeprom(self, dboard_idx, eeprom_data):
+        """
+        Write new EEPROM contents with eeprom_map.
+
+        Arguments:
+        dboard_idx -- Slot index of dboard
+        eeprom_data -- Dictionary of EEPROM data to be written. It's up to the
+                       specific device implementation on how to handle it.
+        """
+        try:
+            dboard = self.dboards[dboard_idx]
+        except KeyError:
+            error_msg = "Attempted to access invalid dboard index `{}' " \
+                        "in set_db_eeprom()!".format(dboard_idx)
+            self.log.error(error_msg)
+            raise RuntimeError(error_msg)
+        if not hasattr(dboard, 'set_user_eeprom_data') or \
+                not callable(dboard.set_user_eeprom_data):
+            error_msg = "Dboard has no set_user_eeprom_data() method!"
+            self.log.error(error_msg)
+            raise RuntimeError(error_msg)
+        safe_db_eeprom_user_data = {}
+        for blob_id, blob in iteritems(eeprom_data):
+            if blob_id in dboard.device_info:
+                error_msg = "Trying to overwrite read-only EEPROM " \
+                            "entry `{}'!".format(blob_id)
+                self.log.error(error_msg)
+                raise RuntimeError(error_msg)
+            if not isinstance(blob, str) and not isinstance(blob, bytes):
+                error_msg = "Blob data for ID `{}' is not a " \
+                            "string!".format(blob_id)
+                self.log.error(error_msg)
+                raise RuntimeError(error_msg)
+            assert isinstance(blob, str)
+            safe_db_eeprom_user_data[blob_id] = blob.encode('ascii')
+        dboard.set_user_eeprom_data(safe_db_eeprom_user_data)
 
