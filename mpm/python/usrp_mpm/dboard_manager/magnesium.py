@@ -22,15 +22,19 @@ from __future__ import print_function
 import os
 import struct
 import time
-from six import iteritems
+import threading
+from six import iterkeys, iteritems
 from . import lib # Pulls in everything from C++-land
 from .base import DboardManagerBase
 from .. import nijesdcore
 from ..uio import UIO
 from ..mpmlog import get_logger
 from .lmk_mg import LMK04828Mg
+from usrp_mpm.periph_manager.udev import get_eeprom_paths
 from usrp_mpm.cores import ClockSynchronizer
 from ..sysfs_gpio import SysFSGPIO
+from usrp_mpm.bfrfs import BufferFS
+
 def create_spidev_iface(dev_node):
     """
     Create a regs iface from a spidev node
@@ -162,6 +166,14 @@ class Magnesium(DboardManagerBase):
     }
     # Map I2C channel to slot index
     i2c_chan_map = {0: 'i2c-9', 1: 'i2c-10'}
+    user_eeprom = {
+        2: { # RevC
+            'label': "e0004000.i2c",
+            'offset': 1024,
+            'max_size': 32786 - 1024,
+            'alignment': 1024,
+        },
+    }
 
     # DAC is initialized to midscale automatically on power-on: 16-bit DAC, so midpoint
     # is at 2^15 = 32768. However, the linearity of the DAC is best just below that
@@ -209,7 +221,8 @@ class Magnesium(DboardManagerBase):
         super(Magnesium, self).__init__(slot_idx, **kwargs)
         self.log = get_logger("Magnesium-{}".format(slot_idx))
         self.log.trace("Initializing Magnesium daughterboard, slot index {}".format(self.slot_idx))
-
+        self.rev = int(self.device_info['rev'])
+        self.log.trace("This is a rev: {}".format(chr(65 + self.rev)))
         self.ref_clock_freq = 10e6 # TODO: make this not fixed
         self._power_on()
         self.log.debug("Loading C++ drivers...")
@@ -222,6 +235,32 @@ class Magnesium(DboardManagerBase):
         for mykfuncname in [x for x in dir(self.mykonos) if not x.startswith("_") and callable(getattr(self.mykonos, x))]:
             self.log.trace("adding {}".format(mykfuncname))
             setattr(self, mykfuncname, self._get_mykonos_function(mykfuncname))
+        self.eeprom_fs, self.eeprom_path = self._init_user_eeprom(
+            self.user_eeprom[self.rev]
+        )
+
+    def _init_user_eeprom(self, eeprom_info):
+        """
+        Reads out user-data EEPROM, and intializes a BufferFS object from that.
+        """
+        self.log.trace("Initializing EEPROM user data...")
+        eeprom_paths = get_eeprom_paths(eeprom_info.get('label'))
+        self.log.trace("Found the following EEPROM paths: `{}'".format(
+            eeprom_paths))
+        eeprom_path = eeprom_paths[self.slot_idx]
+        self.log.trace("Selected EEPROM path: `{}'".format(eeprom_path))
+        user_eeprom_offset = eeprom_info.get('offset', 0)
+        self.log.trace("Selected EEPROM offset: %d", user_eeprom_offset)
+        user_eeprom_data = open(eeprom_path, 'rb').read()[user_eeprom_offset:]
+        self.log.trace("Total EEPROM size is: %d bytes", len(user_eeprom_data))
+        # FIXME verify EEPROM sectors
+        return BufferFS(
+            user_eeprom_data,
+            max_size=eeprom_info.get('max_size'),
+            alignment=eeprom_info.get('alignment', 1024),
+            log=self.log
+        ), eeprom_path
+
 
     def init(self, args):
         """
@@ -434,6 +473,65 @@ class Magnesium(DboardManagerBase):
                 print(("%08X" % radio_regs.peek32(i + j)), end=' ')
             print("")
 
+    def get_user_eeprom_data(self):
+        """
+        Return a dict of blobs stored in the user data section of the EEPROM.
+        """
+        return {
+            blob_id: self.eeprom_fs.get_blob(blob_id)
+            for blob_id in iterkeys(self.eeprom_fs.entries)
+        }
+
+    def set_user_eeprom_data(self, eeprom_data):
+        """
+        Update the local EEPROM with the data from eeprom_data.
+
+        The actual writing to EEPROM can take some time, and is thus kicked
+        into a background task. Don't call set_user_eeprom_data() quickly in
+        succession. Also, while the background task is running, reading the
+        EEPROM is unavailable and MPM won't be able to reboot until it's
+        completed.
+        However, get_user_eeprom_data() will immediately return the correct
+        data after this method returns.
+        """
+        for blob_id, blob in iteritems(eeprom_data):
+            self.eeprom_fs.set_blob(blob_id, blob)
+        self.log.trace("Writing EEPROM info to `{}'".format(self.eeprom_path))
+        eeprom_offset = self.user_eeprom[self.rev]['offset']
+        def _write_to_eeprom_task(path, offset, data, log):
+            " Writer task: Actually write to file "
+            # Note: This can be sped up by only writing sectors that actually
+            # changed. To do so, this function would need to read out the
+            # current state of the file, do some kind of diff, and then seek()
+            # to the different sectors. When very large blobs are being
+            # written, it doesn't actually help all that much, of course,
+            # because in that case, we'd anyway be changing most of the EEPROM.
+            with open(path, 'r+b') as eeprom_file:
+                log.trace("Seeking forward to `{}'".format(offset))
+                eeprom_file.seek(eeprom_offset)
+                log.trace("Writing a total of {} bytes.".format(
+                    len(self.eeprom_fs.buffer)))
+                eeprom_file.write(data)
+                log.trace("EEPROM write complete.")
+        thread_id = "eeprom_writer_task_{}".format(self.slot_idx)
+        if any([x.name == thread_id for x in threading.enumerate()]):
+            # Should this be fatal?
+            self.log.warn("Another EEPROM writer thread is already active!")
+        writer_task = threading.Thread(
+            target=_write_to_eeprom_task,
+            args=(
+                self.eeprom_path,
+                eeprom_offset,
+                self.eeprom_fs.buffer,
+                self.log
+            ),
+            name=thread_id,
+        )
+        writer_task.start()
+        # Now return and let the copy finish on its own. The thread will detach
+        # and MPM this process won't terminate until the thread is complete.
+        # This does not stop anyone from killing this process (and the thread)
+        # while the EEPROM write is happening, though.
 
 
 class DboardClockControl(object):
