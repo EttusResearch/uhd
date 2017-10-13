@@ -220,10 +220,13 @@ class Magnesium(DboardManagerBase):
     def __init__(self, slot_idx, **kwargs):
         super(Magnesium, self).__init__(slot_idx, **kwargs)
         self.log = get_logger("Magnesium-{}".format(slot_idx))
-        self.log.trace("Initializing Magnesium daughterboard, slot index {}".format(self.slot_idx))
+        self.log.trace("Initializing Magnesium daughterboard, slot index %d",
+            self.slot_idx)
         self.rev = int(self.device_info['rev'])
         self.log.trace("This is a rev: {}".format(chr(65 + self.rev)))
-        self.ref_clock_freq = 10e6 # TODO: make this not fixed
+        # This is a default ref clock freq, it must be updated before init() is
+        # called!
+        self.ref_clock_freq = 10e6
         self._power_on()
         self.log.debug("Loading C++ drivers...")
         self._device = lib.dboards.magnesium_manager(
@@ -231,13 +234,30 @@ class Magnesium(DboardManagerBase):
         )
         self.mykonos = self._device.get_radio_ctrl()
         self.log.debug("Loaded C++ drivers.")
-
-        for mykfuncname in [x for x in dir(self.mykonos) if not x.startswith("_") and callable(getattr(self.mykonos, x))]:
-            self.log.trace("adding {}".format(mykfuncname))
-            setattr(self, mykfuncname, self._get_mykonos_function(mykfuncname))
+        self._init_myk_api(self.mykonos)
         self.eeprom_fs, self.eeprom_path = self._init_user_eeprom(
             self.user_eeprom[self.rev]
         )
+
+    def _init_myk_api(self, myk):
+        """
+        Propagate the C++ Mykonos API into Python land.
+        """
+        def export_method(obj, method):
+            " Export a method object, including docstring "
+            meth_obj = getattr(obj, method)
+            def func(*args):
+                " Functor for storing docstring too "
+                return meth_obj(*args)
+            func.__doc__ = meth_obj.__doc__
+            return func
+        self.log.trace("Forwarding AD9371 methods to Magnesium class...")
+        for method in [
+                x for x in dir(self.mykonos)
+                if not x.startswith("_") and \
+                        callable(getattr(self.mykonos, x))]:
+            self.log.trace("adding {}".format(method))
+            setattr(self, method, export_method(myk, method))
 
     def _init_user_eeprom(self, eeprom_info):
         """
