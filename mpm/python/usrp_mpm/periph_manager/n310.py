@@ -234,6 +234,7 @@ class n310(PeriphManagerBase):
         self._gpios = TCA6424(int(self.mboard_info['rev']))
         self.log.trace("Enabling power of MGT156MHZ clk")
         self._gpios.set("PWREN-CLK-MGT156MHz")
+        self.enable_1G_ref_clock()
         self.enable_gps(
             enable=bool(
                 args.default_args.get('enable_gps', N3XX_DEFAULT_ENABLE_GPS)
@@ -486,6 +487,22 @@ class n310(PeriphManagerBase):
             "Enabling" if enable else "Disabling"
         ))
         self._gpios.set("PWREN-CLK-MAINREF", int(bool(enable)))
+    
+    def enable_1G_ref_clock(self):
+        """
+        Enables 125 MHz refclock for 1G interface.
+        """
+        self.log.trace("Enable 125 MHz Clock for 1G SFP interface.")
+        self._gpios.set("NETCLK-CE")
+        self._gpios.set("NETCLK-RESETn", 0)
+        self._gpios.set("NETCLK-PR0", 1)
+        self._gpios.set("NETCLK-PR1", 1)
+        self._gpios.set("NETCLK-OD0", 1)
+        self._gpios.set("NETCLK-OD1", 1)
+        self._gpios.set("NETCLK-OD2", 0)
+        self._gpios.set("PWREN-CLK-WB-25MHz", 1)
+        self.log.trace("Finished configuring NETCLK CDCM.")
+        self._gpios.set("NETCLK-RESETn", 1)
 
     ###########################################################################
     # Sensors
