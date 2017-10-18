@@ -207,26 +207,28 @@ class ClockSynchronizer(object):
         measure_offset()
 
         # Now, read off 512 measurements and take the mean of them.
-        num_meas = 256 # FIXME back to 512
+        num_meas = 512
         self.log.trace("Reading {} TDC measurements from device...".format(num_meas))
         current_value = mean([measure_offset() for _ in range(num_meas)])
+        self.log.trace("TDC measurements collected.")
 
         # The high and low bounds for this are set programmatically based on the
         # Reference and Sample Frequencies and the TDC structure. The bounds are:
         # Low  = T_refclk + T_sampleclk*(3)
         # High = T_refclk + T_sampleclk*(4)
         # For slop, we add in another T_sampleclk on either side.
-        low_bound  = 1.0/self.ref_clk_freq + (1.0/self.radio_clk_freq)*2
+        low_bound = 1.0/self.ref_clk_freq + (1.0/self.radio_clk_freq)*2
         high_bound = 1.0/self.ref_clk_freq + (1.0/self.radio_clk_freq)*5
         if (current_value < low_bound) or (current_value > high_bound):
             self.log.error("Clock synchronizer measured a "
-                           "current value of {:.3f} ns. Range is [{:.3f},{:.3f}] ns".format(
-                current_value*1e9, low_bound*1e9, high_bound*1e9
-            ))
+                           "current value of {:.3f} ns. " \
+                           "Range is [{:.3f},{:.3f}] ns".format(
+                               current_value*1e9,
+                               low_bound*1e9,
+                               high_bound*1e9))
             raise RuntimeError("TDC measurement out of range! "
                                "Current value: {:.3f} ns.".format(
-                current_value*1e9
-            ))
+                                   current_value*1e9))
 
         # Run the initial value through the oracle to determine the adjustments to make.
         coarse_steps_required, dac_word_delta, distance_to_target = self.oracle(
