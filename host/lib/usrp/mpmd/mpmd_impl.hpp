@@ -196,7 +196,10 @@ public:
     );
 
     //! Configure all blocks that require access to an RPC client
-    void setup_rpc_blocks(const uhd::device_addr_t &block_args);
+    void setup_rpc_blocks(
+        const uhd::device_addr_t &block_args,
+        const bool serialize_init
+    );
 
     /*! Returns a valid local address for a crossbar
      *

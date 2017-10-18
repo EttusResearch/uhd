@@ -26,6 +26,8 @@
 #include <random>
 #include <string>
 #include <vector>
+#include <future>
+#include <thread>
 
 using namespace uhd;
 using namespace uhd::mpmd;
@@ -356,7 +358,8 @@ mpmd_impl::mpmd_impl(const device_addr_t& device_args)
         auto filtered_block_args = device_args; // TODO actually filter
         // Blocks will finalize their own setup in this function. They have (and
         // might need) full access to the prop tree, the timekeepers, etc.
-        setup_rpc_blocks(filtered_block_args);
+        setup_rpc_blocks(filtered_block_args,
+                device_args.has_key("serialize_init"));
     } else {
         UHD_LOG_INFO("MPMD", "Claimed device without full initialization.");
     }
@@ -474,22 +477,41 @@ void mpmd_impl::setup_rfnoc_blocks(
     }
 }
 
-void mpmd_impl::setup_rpc_blocks(const device_addr_t &block_args)
-{
-    // This could definitely be parallelized. Blocks may do all sorts of stuff
-    // inside set_rpc_client(), and it can take any amount of time (I mean,
-    // like, seconds).
+void mpmd_impl::setup_rpc_blocks(
+    const device_addr_t &block_args,
+    const bool serialize_init
+) {
+    std::vector<std::future<void>> task_list;
+    // If we don't force async, most compilers, at least now, will default to
+    // deferred.
+    const auto launch_policy = serialize_init ?
+        std::launch::deferred :
+        std::launch::async;
+
+    // Preload all the tasks (they might start running on emplace_back)
     for (const auto &block_ctrl: _rfnoc_block_ctrl) {
         auto rpc_block_id = block_ctrl->get_block_id();
-        if (has_block<uhd::rfnoc::rpc_block_ctrl>(block_ctrl->get_block_id())) {
+        if (has_block<uhd::rfnoc::rpc_block_ctrl>(rpc_block_id)) {
             const size_t mboard_idx = rpc_block_id.get_device_no();
-            UHD_LOGGER_DEBUG("MPMD")
-                << "Adding RPC access to block: " << rpc_block_id
-                << " Block args: " << block_args.to_string()
-            ;
-            get_block_ctrl<uhd::rfnoc::rpc_block_ctrl>(rpc_block_id)
-                ->set_rpc_client(_mb[mboard_idx]->rpc, block_args);
+            auto rpc_block_ctrl =
+                get_block_ctrl<uhd::rfnoc::rpc_block_ctrl>(rpc_block_id);
+            auto rpc_sptr = _mb[mboard_idx]->rpc;
+            task_list.emplace_back(std::async(launch_policy,
+                [rpc_block_id, rpc_block_ctrl, &block_args, rpc_sptr](){
+                    UHD_LOGGER_DEBUG("MPMD")
+                        << "Adding RPC access to block: " << rpc_block_id
+                        << " Block args: " << block_args.to_string()
+                    ;
+                    rpc_block_ctrl->set_rpc_client(rpc_sptr, block_args);
+                }
+            ));
         }
+    }
+
+    // Execute all the calls to set_rpc_client(), either concurrently, or
+    // serially
+    for (auto &task : task_list) {
+        task.get();
     }
 }
 
