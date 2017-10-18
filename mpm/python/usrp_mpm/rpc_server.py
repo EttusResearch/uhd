@@ -66,7 +66,7 @@ class MPMServer(RPCServer):
         # add public dboard methods in `db_<slot>_` namespace
         for db_slot, dboard in enumerate(mgr.dboards):
             self._update_component_commands(dboard, 'db_' + str(db_slot) + '_', '_db_methods')
-        super(MPMServer, self).__init__(*args, **kwargs)
+        super(MPMServer, self).__init__(*args, pack_params={'use_bin_type': True}, **kwargs)
 
     def _check_token_valid(self, token):
         """
@@ -74,9 +74,14 @@ class MPMServer(RPCServer):
         - The device is currently claimed
         - The claim token matches the one passed in
         """
+        try:
+            token = bytes(token, 'ascii')
+        except TypeError:
+            pass
+
         return self._state.claim_status.value and \
                 len(token) == TOKEN_LEN and \
-                self._state.claim_token.value == bytes(token, 'ascii')
+                self._state.claim_token.value == token
 
 
     def _update_component_commands(self, component, namespace, storage):
