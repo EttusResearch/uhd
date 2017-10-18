@@ -260,15 +260,15 @@ class ClockSynchronizer(object):
         Return the offset (in seconds) the whatever what measured and whatever
         the reference is.
         """
-        for _ in range(1000): # TODO replace with poll & timeout
+        timeout = time.time() + 1.0
+        while True:
             rtc_offset_msb = self.peek32(self.RTC_OFFSET_1)
-            updated = (rtc_offset_msb & 0x100) == 0x100
-            if updated:
+            if rtc_offset_msb & 0x100 == 0x100:
                 break
-            time.sleep(0.001)
-        if not updated:
-            self.log.error("Offsets failed to update within timeout.")
-            raise RuntimeError("Offsets failed to update within timeout.")
+            if time.time() > timeout:
+                error_msg = "Offsets failed to update within timeout."
+                self.log.error(error_msg)
+                raise RuntimeError(error_msg)
 
         rtc_offset = (rtc_offset_msb & 0xFF) << 32
         rtc_offset = float(rtc_offset | self.peek32(self.RTC_OFFSET_0)) / (1<<27)
