@@ -21,6 +21,7 @@ import time
 import math
 from builtins import object
 from functools import reduce
+from usrp_mpm.mpmutils import poll_with_timeout
 
 def mean(vals):
     " Calculate arithmetic mean of vals "
@@ -183,15 +184,17 @@ class ClockSynchronizer(object):
         # across all devices.
         self.poke32(self.TDC_CONTROL, 0x10)
 
-        # Since a PPS rising edge comes once per second... we only need to wait slightly
-        # longer than a second to confirm the TDC received a PPS.
-        # TODO change this to a polling operation
-        time.sleep(1.1)
-        pps_status = self.peek32(self.TDC_STATUS) & 0xFF
-        if pps_status != 0x10:
-            self.log.error("Failed to capture PPS within 1.1 seconds. Status: 0x{:x}".format(pps_status))
+        # Since a PPS rising edge comes once per second, we need to wait
+        # slightly longer than a second (worst-case) to confirm the TDC
+        # received a PPS.
+        if not poll_with_timeout(
+                lambda: bool(self.peek32(self.TDC_STATUS) & 0xFF != 0x10),
+                1100, # Try for 1.1 seconds
+                100, # Poll every 100 ms
+            ):
+            self.log.error("Failed to capture PPS within 1.1 seconds. " \
+                           "TDC_STATUS: 0x{:X}".format(pps_status))
             raise RuntimeError("Failed to capture PPS.")
-
         self.log.trace("PPS Captured!")
 
         meas_clk_freq = 170.542641116e6

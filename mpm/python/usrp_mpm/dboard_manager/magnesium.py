@@ -34,6 +34,7 @@ from usrp_mpm.periph_manager.udev import get_eeprom_paths
 from usrp_mpm.cores import ClockSynchronizer
 from ..sysfs_gpio import SysFSGPIO
 from usrp_mpm.bfrfs import BufferFS
+from usrp_mpm.mpmutils import poll_with_timeout
 
 def create_spidev_iface(dev_node):
     """
@@ -595,12 +596,14 @@ class DboardClockControl(object):
         """
         self.log.trace("Un-resetting MMCM...")
         self.poke32(self.RADIO_CLK_MMCM, 0x2)
-        time.sleep(0.5) # Replace with poll and timeout TODO
-        mmcm_locked = bool(self.peek32(self.RADIO_CLK_MMCM) & 0x10)
-        if not mmcm_locked:
+        if not poll_with_timeout(
+                lambda: bool(self.peek32(self.RADIO_CLK_MMCM) & 0x10),
+                500,
+                10,
+                ):
             self.log.error("MMCM not locked!")
             raise RuntimeError("MMCM not locked!")
-        self.log.trace("Enabling output MMCM clocks...")
+        self.log.trace("MMCM locked. Enabling output MMCM clocks...")
         self.enable_outputs(True)
 
     def check_refclk(self):
