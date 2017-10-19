@@ -405,7 +405,7 @@ class N310BIST(object):
         if self.args.dry_run:
             return True, {'throughput': 1250e6}
         result = {}
-        ddr3_bist_executor = 'uhd_usrp_probe'
+        ddr3_bist_executor = 'uhd_usrp_probe --args addr=127.0.0.1'
         try:
             output = subprocess.check_output(
                 ddr3_bist_executor,
