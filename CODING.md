@@ -137,3 +137,7 @@ std::map<std::string, std::string> bar =
 * Remember that we ship git repositories, not just code. This means every
   commit is part of our product and should be treated as such.
 
+## FPGA Guidelines
+
+FPGA guidelines are stored in a separate file. See CODING.md in the FPGA
+repository.
