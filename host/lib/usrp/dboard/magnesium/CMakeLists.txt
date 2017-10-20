@@ -18,6 +18,7 @@
 IF(ENABLE_MPMD)
     LIST(APPEND MAGNESIUM_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/magnesium_radio_ctrl_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/magnesium_cpld_ctrl.cpp
     )
     LIBUHD_APPEND_SOURCES(${MAGNESIUM_SOURCES})
 ENDIF(ENABLE_MPMD)
