@@ -35,7 +35,7 @@ namespace uhd{ namespace usrp{
      * EEPROM chips themselves. Most devices will write the EEPROM itself when
      * the according property is updated.
      */
-    using mboard_eeprom_t = uhd::dict<std::string, std::string>;
+    typedef uhd::dict<std::string, std::string> mboard_eeprom_t;
 
 }} // namespace uhd::usrp
 
