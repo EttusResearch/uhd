@@ -32,7 +32,7 @@ namespace {
 
     const double MAGNESIUM_TICK_RATE = 125e6; // Hz
     const double MAGNESIUM_RADIO_RATE = 125e6; // Hz
-    const double MAGNESIUM_MIN_FREQ = 300e6; // Hz
+    const double MAGNESIUM_MIN_FREQ = 1e6; // Hz
     const double MAGNESIUM_MAX_FREQ = 6e9; // Hz
     const double MAGNESIUM_MIN_RX_GAIN = 0.0; // dB
     const double MAGNESIUM_MAX_RX_GAIN = 30.0; // dB
@@ -47,6 +47,49 @@ namespace {
     const double MAGNESIUM_DEFAULT_BANDWIDTH = 40e6; // Hz TODO: fix
     const size_t MAGNESIUM_NUM_TX_CHANS = 1;
     const size_t MAGNESIUM_NUM_RX_CHANS = 1;
+    const double MAGNESIUM_RX_IF_FREQ = 2.44e9;
+    const double MAGNESIUM_TX_IF_FREQ = 1.95e9;
+    const double MAGNESIUM_LOWBAND_FREQ = 300e6;
+/*
+Magnesium Rev C frequency bands:
+
+RX IF frequency is 2.4418 GHz. Have 80 MHz of bandwidth for loband.
+TX IF frequency is 1.8-2.1 GHz (1.95 GHz is best).
+
+For RX:
+	Band   	  SW2-AB SW3-ABC SW4-ABC SW5-ABCD SW6-ABC SW7-AB SW8-AB MIX
+	WB     	  RF1 01 OFF 111 NA  --- NA  ---- RF3 001 RF2 01 RF2 01 0
+	LB     	  RF2 10 RF5 100 NA  --- RF3 0010 RF1 100 RF1 10 RF1 10 1
+	440-530	  RF2 10 RF2 001 NA  --- RF1 1000 RF1 100 RF2 01 RF2 01 0
+	650-1000  RF2 10 RF6 101 NA  --- RF4 0001 RF1 100 RF2 01 RF2 01 0
+	1100-1575 RF2 10 RF4 011 NA  --- RF2 0100 RF1 100 RF2 01 RF2 01 0
+	1600-2250 RF2 10 RF3 010 RF2 010 NA  ---- RF2 010 RF2 01 RF2 01 0
+	2100-2850 RF2 10 RF1 000 RF1 100 NA  ---- RF2 010 RF2 01 RF2 01 0
+	2700+     RF3 11 OFF 111 RF3 001 NA  ---- RF2 010 RF2 01 RF2 01 0
+
+For TX:
+	Band      SW5-AB SW4-AB SW3-X SW2-ABCD SW1-AB SWTRX-AB MIX
+	WB        RF1 10 RF2 01 RF1 0 NA  ---- SHD 00 RF4   11 0
+	LB        RF2 01 RF1 10 RF2 1 RF3 0010 RF3 11 RF1   00 1
+	<800      RF1 10 RF2 01 RF2 1 RF3 0010 RF3 11 RF1   00 0
+	800-1700  RF1 10 RF2 01 RF2 1 RF2 0100 RF2 10 RF1   00 0
+	1700-3400 RF1 10 RF2 01 RF2 1 RF1 1000 RF1 01 RF1   00 0
+	3400-6400 RF1 10 RF2 01 RF2 1 RF4 0001 SHD 00 RF2   10 0
+
+*/
+
+
+    const double MAGNESIUM_RX_BAND1_MIN_FREQ = MAGNESIUM_LOWBAND_FREQ;
+    const double MAGNESIUM_RX_BAND2_MIN_FREQ = 600e6;
+    const double MAGNESIUM_RX_BAND3_MIN_FREQ = 1050e6;
+    const double MAGNESIUM_RX_BAND4_MIN_FREQ = 1600e6;
+    const double MAGNESIUM_RX_BAND5_MIN_FREQ = 2100e6;
+    const double MAGNESIUM_RX_BAND6_MIN_FREQ = 2700e6;
+
+    const double MAGNESIUM_TX_BAND1_MIN_FREQ = MAGNESIUM_LOWBAND_FREQ;
+    const double MAGNESIUM_TX_BAND2_MIN_FREQ = 800e6;
+    const double MAGNESIUM_TX_BAND3_MIN_FREQ = 1700e6;
+    const double MAGNESIUM_TX_BAND4_MIN_FREQ = 3400e6;
 
     const size_t FPGPIO_MASTER_RADIO = 0;
 
@@ -58,6 +101,16 @@ namespace {
     {
         UHD_ASSERT_THROW(dir == RX_DIRECTION or dir == TX_DIRECTION);
         UHD_ASSERT_THROW(chan == 0 or chan == 1);
+        size_t chan = 0;
+        if (_radio_slot == "A" or _radio_slot == "C")
+        {
+             chan = 0;
+        }
+        if (_radio_slot == "B" or _radio_slot == "D")
+        {
+            chan = 1;
+        }
+        UHD_LOG_WARNING("MAGNESIUM_MYKONOS","board slot to chan map " << _radio_slot << " "<<chan)
         return str(boost::format("%s%d")
                    % (dir == RX_DIRECTION ? "RX" : "TX")
                    % (chan+1)
@@ -224,7 +277,12 @@ void magnesium_radio_ctrl_impl::_init_peripherals()
     fs_path cpld_path  = _root_path.branch_path()
         / str(boost::format("Radio_%d") % ((get_block_id().get_block_count()/2)*2))
         / "cpld";
-
+    fs_path rx_lo_path  = _root_path.branch_path()
+        / str(boost::format("Radio_%d") % ((get_block_id().get_block_count()/2)*2))
+        / "rx_lo";
+    fs_path tx_lo_path  = _root_path.branch_path()
+        / str(boost::format("Radio_%d") % ((get_block_id().get_block_count()/2)*2))
+        / "tx_lo";
     // TODO: When we move back to 2 chans per RFNoC block, this needs to be
     // non-conditional, and the else-branch goes away:
     if (_radio_slot == "A" or _radio_slot == "C") {
@@ -300,6 +358,20 @@ void magnesium_radio_ctrl_impl::_init_peripherals()
         );
     } else {
         UHD_LOG_TRACE("MAGNESIUM", "Not a master radio, no LOs.");
+    }
+    if (not _tree->exists(rx_lo_path)) {
+        _tree->create<adf435x_iface::sptr>(rx_lo_path).set(_rx_lo);
+    }else
+    {
+        UHD_LOG_TRACE("MAGNESIUM", "Not a master radio. Getting LO from master" );
+        _rx_lo = _tree->access<adf435x_iface::sptr>(rx_lo_path).get();
+    }
+    if (not _tree->exists(tx_lo_path)) {
+        _tree->create<adf435x_iface::sptr>(tx_lo_path).set(_tx_lo);
+    }else
+    {
+        UHD_LOG_TRACE("MAGNESIUM", "Not a master radio. Getting LO from master" );
+        _tx_lo = _tree->access<adf435x_iface::sptr>(tx_lo_path).get();
     }
 
     _gpio.clear(); // Following the as-if rule, this can get optimized out
@@ -536,11 +608,172 @@ double magnesium_radio_ctrl_impl::_myk_set_frequency(
     // affect the adjacent channel in the same direction. We have to make sure
     // that getters will always tell the truth!
     auto which = _get_which(dir, chan);
+    UHD_LOG_TRACE("MAGNESIUM", "requested frequency of " << freq);
+    double ad9371_freq = freq;
+    auto lo_iface = (dir == RX_DIRECTION) ? _rx_lo : _tx_lo;
+
+    if (freq < MAGNESIUM_LOWBAND_FREQ) { // Low band
+        double if_freq = (dir == RX_DIRECTION) ? MAGNESIUM_RX_IF_FREQ
+                                               : MAGNESIUM_TX_IF_FREQ;
+        double lo_freq = if_freq - freq;
+        _lo_set_frequency(lo_iface, lo_freq, chan);
+        lo_iface->set_output_enable(adf435x_iface::RF_OUTPUT_A, true); // TODO: Find correct value
+        lo_iface->set_output_enable(adf435x_iface::RF_OUTPUT_B, true); // TODO: Find correct value
+        lo_iface->commit();
+        ad9371_freq = if_freq;
+    } else {
+        lo_iface->set_output_enable(adf435x_iface::RF_OUTPUT_A, false); // TODO: Find correct value
+        lo_iface->set_output_enable(adf435x_iface::RF_OUTPUT_B, false); // TODO: Find correct value
+        lo_iface->commit();
+    }
+
     UHD_LOG_TRACE("MAGNESIUM",
-            "Calling " << _rpc_prefix << "set_freq on " << which << " with " << freq);
-    auto retval = _rpcc->request_with_token<double>(_rpc_prefix + "set_freq", which, freq, false);
+            "Calling " << _rpc_prefix << "set_freq on " << which << " with " << ad9371_freq);
+    auto retval = _rpcc->request_with_token<double>(_rpc_prefix + "set_freq", which, ad9371_freq, false);
     UHD_LOG_TRACE("MAGNESIUM",
             _rpc_prefix << "set_freq returned " << retval);
+
+
+    // Set filters based on frequency
+    if (dir == RX_DIRECTION) {
+        if (freq < MAGNESIUM_RX_BAND1_MIN_FREQ) {
+            _cpld->set_rx_switches(
+                magnesium_cpld_ctrl::BOTH,
+                magnesium_cpld_ctrl::RX_SW1_RX2INPUT, /* FIXME hard coded */
+                magnesium_cpld_ctrl::RX_SW2_LOWERFILTERBANKTOSWITCH3,
+                magnesium_cpld_ctrl::RX_SW3_FILTER0490LPMHZ,
+                magnesium_cpld_ctrl::RX_SW4_FILTER2700HPMHZ,
+                magnesium_cpld_ctrl::RX_SW5_FILTER0490LPMHZFROM,
+                magnesium_cpld_ctrl::RX_SW6_LOWERFILTERBANKFROMSWITCH5,
+                magnesium_cpld_ctrl::LOWBAND_MIXER_PATH_SEL_LOBAND,
+                true
+            );
+        } else if (freq < MAGNESIUM_RX_BAND2_MIN_FREQ) {
+            _cpld->set_rx_switches(
+                magnesium_cpld_ctrl::BOTH,
+                magnesium_cpld_ctrl::RX_SW1_RX2INPUT, /* FIXME hard coded */
+                magnesium_cpld_ctrl::RX_SW2_LOWERFILTERBANKTOSWITCH3,
+                magnesium_cpld_ctrl::RX_SW3_FILTER0440X0530MHZ,
+                magnesium_cpld_ctrl::RX_SW4_FILTER2700HPMHZ,
+                magnesium_cpld_ctrl::RX_SW5_FILTER0440X0530MHZFROM,
+                magnesium_cpld_ctrl::RX_SW6_LOWERFILTERBANKFROMSWITCH5,
+                magnesium_cpld_ctrl::LOWBAND_MIXER_PATH_SEL_BYPASS,
+                false
+            );
+        } else if (freq < MAGNESIUM_RX_BAND3_MIN_FREQ) {
+            _cpld->set_rx_switches(
+                magnesium_cpld_ctrl::BOTH,
+                magnesium_cpld_ctrl::RX_SW1_RX2INPUT, /* FIXME hard coded */
+                magnesium_cpld_ctrl::RX_SW2_LOWERFILTERBANKTOSWITCH3,
+                magnesium_cpld_ctrl::RX_SW3_FILTER0650X1000MHZ,
+                magnesium_cpld_ctrl::RX_SW4_FILTER2700HPMHZ,
+                magnesium_cpld_ctrl::RX_SW5_FILTER0650X1000MHZFROM,
+                magnesium_cpld_ctrl::RX_SW6_LOWERFILTERBANKFROMSWITCH5,
+                magnesium_cpld_ctrl::LOWBAND_MIXER_PATH_SEL_BYPASS,
+                false
+            );
+        } else if (freq < MAGNESIUM_RX_BAND4_MIN_FREQ) {
+            _cpld->set_rx_switches(
+                magnesium_cpld_ctrl::BOTH,
+                magnesium_cpld_ctrl::RX_SW1_RX2INPUT, /* FIXME hard coded */
+                magnesium_cpld_ctrl::RX_SW2_LOWERFILTERBANKTOSWITCH3,
+                magnesium_cpld_ctrl::RX_SW3_FILTER1100X1575MHZ,
+                magnesium_cpld_ctrl::RX_SW4_FILTER2700HPMHZ,
+                magnesium_cpld_ctrl::RX_SW5_FILTER1100X1575MHZFROM,
+                magnesium_cpld_ctrl::RX_SW6_LOWERFILTERBANKFROMSWITCH5,
+                magnesium_cpld_ctrl::LOWBAND_MIXER_PATH_SEL_BYPASS,
+                false
+            );
+        } else if (freq < MAGNESIUM_RX_BAND5_MIN_FREQ) {
+            _cpld->set_rx_switches(
+                magnesium_cpld_ctrl::BOTH,
+                magnesium_cpld_ctrl::RX_SW1_RX2INPUT, /* FIXME hard coded */
+                magnesium_cpld_ctrl::RX_SW2_LOWERFILTERBANKTOSWITCH3,
+                magnesium_cpld_ctrl::RX_SW3_FILTER1600X2250MHZ,
+                magnesium_cpld_ctrl::RX_SW4_FILTER1600X2250MHZFROM,
+                magnesium_cpld_ctrl::RX_SW5_FILTER0440X0530MHZFROM,
+                magnesium_cpld_ctrl::RX_SW6_UPPERFILTERBANKFROMSWITCH4,
+                magnesium_cpld_ctrl::LOWBAND_MIXER_PATH_SEL_BYPASS,
+                false
+            );
+        } else if (freq < MAGNESIUM_RX_BAND6_MIN_FREQ) {
+            _cpld->set_rx_switches(
+                magnesium_cpld_ctrl::BOTH,
+                magnesium_cpld_ctrl::RX_SW1_RX2INPUT, /* FIXME hard coded */
+                magnesium_cpld_ctrl::RX_SW2_LOWERFILTERBANKTOSWITCH3,
+                magnesium_cpld_ctrl::RX_SW3_FILTER2100X2850MHZ,
+                magnesium_cpld_ctrl::RX_SW4_FILTER2100X2850MHZFROM,
+                magnesium_cpld_ctrl::RX_SW5_FILTER0440X0530MHZFROM,
+                magnesium_cpld_ctrl::RX_SW6_UPPERFILTERBANKFROMSWITCH4,
+                magnesium_cpld_ctrl::LOWBAND_MIXER_PATH_SEL_BYPASS,
+                false
+            );
+        } else {
+            _cpld->set_rx_switches(
+                magnesium_cpld_ctrl::BOTH,
+                magnesium_cpld_ctrl::RX_SW1_RX2INPUT, /* FIXME hard coded */
+                magnesium_cpld_ctrl::RX_SW2_UPPERFILTERBANKTOSWITCH4,
+                magnesium_cpld_ctrl::RX_SW3_SHUTDOWNSW3,
+                magnesium_cpld_ctrl::RX_SW4_FILTER2700HPMHZ,
+                magnesium_cpld_ctrl::RX_SW5_FILTER0440X0530MHZFROM,
+                magnesium_cpld_ctrl::RX_SW6_UPPERFILTERBANKFROMSWITCH4,
+                magnesium_cpld_ctrl::LOWBAND_MIXER_PATH_SEL_BYPASS,
+                false
+            );
+        }
+    } else {
+        if (freq < MAGNESIUM_TX_BAND1_MIN_FREQ) {
+        } else if (freq < MAGNESIUM_TX_BAND2_MIN_FREQ) {
+        } else if (freq < MAGNESIUM_TX_BAND3_MIN_FREQ) {
+        } else if (freq < MAGNESIUM_TX_BAND4_MIN_FREQ) {
+        } else {
+        }
+    }
+    UHD_LOG_INFO("MAGNESIUM", "Update all freq related switches for " << freq <<" finished!.");
+}
+/******************************************************************************
+ * AD9371 Controls
+ *****************************************************************************/
+double magnesium_radio_ctrl_impl::_myk_set_frequency(
+        const double freq,
+        const size_t chan,
+        const direction_t dir
+) {
+
+
+    // Note: There is only one LO per RX or TX, so changing frequency will
+    // affect the adjacent channel in the same direction. We have to make sure
+    // that getters will always tell the truth!
+    auto which = _get_which(dir,_radio_slot);
+    UHD_LOG_TRACE("MAGNESIUM", "requested frequency of " << freq);
+    _update_freq_switches(freq,chan,dir);
+    double ad9371_freq = freq;
+    auto lo_iface = (dir == RX_DIRECTION) ? _rx_lo : _tx_lo;
+
+    if (freq < MAGNESIUM_LOWBAND_FREQ) { // Low band
+        UHD_LOG_WARNING("LO BAND", "requested frequency of " << freq);
+        double if_freq = (dir == RX_DIRECTION) ? MAGNESIUM_RX_IF_FREQ
+                                               : MAGNESIUM_TX_IF_FREQ;
+        double lo_freq = if_freq - freq;
+        _lo_set_frequency(lo_iface, lo_freq, chan);
+        lo_iface->set_output_enable(adf435x_iface::RF_OUTPUT_A, true); // TODO: Find correct value
+        lo_iface->set_output_enable(adf435x_iface::RF_OUTPUT_B, true); // TODO: Find correct value
+        lo_iface->commit();
+        ad9371_freq = if_freq;
+    } else {
+        UHD_LOG_WARNING("HI BAND", "requested frequency of " << freq);
+        lo_iface->set_output_enable(adf435x_iface::RF_OUTPUT_A, false); // TODO: Find correct value
+        lo_iface->set_output_enable(adf435x_iface::RF_OUTPUT_B, false); // TODO: Find correct value
+        lo_iface->commit();
+    }
+
+    UHD_LOG_TRACE("MAGNESIUM",
+            "Calling " << _rpc_prefix << "set_freq on " << which << " with " << ad9371_freq);
+    auto retval = _rpcc->request_with_token<double>(_rpc_prefix + "set_freq", which, ad9371_freq, false);
+    UHD_LOG_TRACE("MAGNESIUM",
+            _rpc_prefix << "set_freq returned " << retval);
+
+
     return retval;
 }
 
@@ -604,6 +837,35 @@ double magnesium_radio_ctrl_impl::_myk_get_bandwidth(const size_t chan, const di
     // TODO: implement
     UHD_LOG_WARNING("MAGNESIUM", "Ignoring attempt to get bandwidth");
     return MAGNESIUM_DEFAULT_BANDWIDTH;
+}
+
+/******************************************************************************
+ * ADF4351 Controls
+ *****************************************************************************/
+double magnesium_radio_ctrl_impl::_lo_set_frequency(
+        adf435x_iface::sptr lo_iface,
+        const double freq,
+        const size_t chan
+) {
+
+        UHD_LOG_TRACE("MAGNESIUM", "attempting to tune low band LO to " << freq);
+        lo_iface->set_feedback_select(adf435x_iface::FB_SEL_DIVIDED);
+        lo_iface->set_reference_freq(100e6); // FIXME: How to get refclk freq? This can change.
+        lo_iface->set_prescaler(adf435x_iface::PRESCALER_4_5);
+
+        double actual_freq = 0.0;
+        actual_freq = lo_iface->set_frequency(freq, false); // FIXME: always fractional-n mode
+        UHD_LOG_TRACE("MAGNESIUM", "actual low band LO is " << actual_freq);
+        lo_iface->set_output_power(adf435x_iface::RF_OUTPUT_A, adf435x_iface::OUTPUT_POWER_2DBM); // TODO: Find correct value
+        lo_iface->set_output_power(adf435x_iface::RF_OUTPUT_B, adf435x_iface::OUTPUT_POWER_2DBM); // TODO: Find correct value
+        lo_iface->set_charge_pump_current(adf435x_iface::CHARGE_PUMP_CURRENT_0_31MA);
+
+        // TODO: Check for PLL lock
+        //sleep(1);
+        //auto lock_det = _rpcc->request_with_token<uint16_t>(_slot_prefix + "cpld_peek", 0x12);
+        //UHD_LOG_TRACE("MAGNESIUM", "lock detect is " << lock_det);
+
+	return actual_freq;
 }
 
 UHD_RFNOC_BLOCK_REGISTER(magnesium_radio_ctrl, "MagnesiumRadio");

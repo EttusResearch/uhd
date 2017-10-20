@@ -138,6 +138,12 @@ private:
             const direction_t dir
     );
 
+    double _lo_set_frequency(
+            adf435x_iface::sptr lo_iface,
+            const double freq,
+            const size_t chan
+    );
+
     //! Letter representation of the radio we're currently running
     std::string _radio_slot;
 
