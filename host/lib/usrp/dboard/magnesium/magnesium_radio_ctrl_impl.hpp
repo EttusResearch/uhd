@@ -20,6 +20,10 @@
 
 #include "radio_ctrl_impl.hpp"
 #include "rpc_block_ctrl.hpp"
+#include "magnesium_cpld_ctrl.hpp"
+#include "magnesium_cpld_regs.hpp"
+#include "adf435x.hpp"
+#include <uhd/types/serial.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/usrp/gpio_defs.hpp>
 
@@ -144,6 +148,19 @@ private:
 
     //! Reference to the RPC client
     uhd::rpc_client::sptr _rpcc;
+
+    //! Reference to the SPI core
+    uhd::spi_iface::sptr _spi;
+
+    //! Reference to the TX LO
+    adf435x_iface::sptr _tx_lo;
+
+    //! Reference to the RX LO
+    adf435x_iface::sptr _rx_lo;
+
+    //! Reference to the CPLD controls
+    std::shared_ptr<magnesium_cpld_ctrl> _cpld;
+
 
 }; /* class radio_ctrl_impl */
 

@@ -5,13 +5,14 @@
 //
 
 #include "magnesium_radio_ctrl_impl.hpp"
-
+#include "spi_core_3000.hpp"
 #include <uhd/utils/log.hpp>
 #include <uhd/rfnoc/node_ctrl_base.hpp>
 #include <uhd/transport/chdr.hpp>
 #include <uhd/utils/math.hpp>
 #include <uhd/types/direction.hpp>
 #include <uhd/types/eeprom.hpp>
+#include <uhd/exception.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/format.hpp>
@@ -22,6 +23,12 @@ using namespace uhd::usrp;
 using namespace uhd::rfnoc;
 
 namespace {
+    enum slave_select_t {
+        SEN_CPLD = 1,
+        SEN_TX_LO = 2,
+        SEN_RX_LO = 4,
+        SEN_PHASE_DAC = 8
+    };
 
     const double MAGNESIUM_TICK_RATE = 125e6; // Hz
     const double MAGNESIUM_RADIO_RATE = 125e6; // Hz
@@ -45,7 +52,7 @@ namespace {
      *
      * These strings take the form of "RX1", "TX2", ...
      */
-    std::string _get_which(direction_t dir, size_t chan)
+    std::string _get_which(const direction_t dir, const size_t chan)
     {
         UHD_ASSERT_THROW(dir == RX_DIRECTION or dir == TX_DIRECTION);
         UHD_ASSERT_THROW(chan == 0 or chan == 1);
@@ -212,6 +219,86 @@ magnesium_radio_ctrl_impl::~magnesium_radio_ctrl_impl()
 void magnesium_radio_ctrl_impl::_init_peripherals()
 {
     UHD_LOG_TRACE("MAGNESIUM", "Initializing peripherals...");
+    fs_path cpld_path  = _root_path.branch_path()
+        / str(boost::format("Radio_%d") % ((get_block_id().get_block_count()/2)*2))
+        / "cpld";
+
+    // TODO: When we move back to 2 chans per RFNoC block, this needs to be
+    // non-conditional, and the else-branch goes away:
+    if (_radio_slot == "A" or _radio_slot == "C") {
+        UHD_LOG_TRACE("MAGNESIUM", "Initializing SPI core...");
+        _spi = spi_core_3000::make(_get_ctrl(0),
+            radio_ctrl_impl::regs::sr_addr(radio_ctrl_impl::regs::SPI),
+            radio_ctrl_impl::regs::RB_SPI);
+    } else {
+        UHD_LOG_TRACE("MAGNESIUM", "Not a master radio, no SPI core.");
+    }
+
+    UHD_LOG_TRACE("MAGNESIUM", "Initializing CPLD...");
+    UHD_LOG_TRACE("MAGNESIUM", "CPLD path: " << cpld_path);
+    if (not _tree->exists(cpld_path)) {
+        UHD_LOG_TRACE("MAGNESIUM", "Creating new CPLD object...");
+        spi_config_t spi_config;
+        spi_config.use_custom_divider = true;
+        spi_config.divider = 125;
+        spi_config.mosi_edge = spi_config_t::EDGE_RISE;
+        spi_config.miso_edge = spi_config_t::EDGE_FALL;
+        UHD_LOG_TRACE("MAGNESIUM", "Making CPLD object...");
+        _cpld = std::make_shared<magnesium_cpld_ctrl>(
+            [this, spi_config](const uint32_t transaction){ // Write functor
+                this->_spi->write_spi(
+                    SEN_CPLD,
+                    spi_config,
+                    transaction,
+                    24
+                );
+            },
+            [this, spi_config](const uint32_t transaction){ // Read functor
+                return this->_spi->read_spi(
+                    SEN_CPLD,
+                    spi_config,
+                    transaction,
+                    24
+                );
+            }
+        );
+        _tree->create<magnesium_cpld_ctrl::sptr>(cpld_path).set(_cpld);
+    } else {
+        UHD_LOG_TRACE("MAGNESIUM", "Reusing someone else's CPLD object...");
+        _cpld = _tree->access<magnesium_cpld_ctrl::sptr>(cpld_path).get();
+    }
+
+    // TODO: Same comment as above applies
+    if (_radio_slot == "A" or _radio_slot == "C") {
+        UHD_LOG_TRACE("MAGNESIUM", "Initializing TX LO...");
+        _tx_lo = adf435x_iface::make_adf4351(
+            [this](const std::vector<uint32_t> transactions){
+                for (const uint32_t transaction: transactions) {
+                    this->_spi->write_spi(
+                        SEN_TX_LO,
+                        spi_config_t::EDGE_RISE,
+                        transaction,
+                        32
+                    );
+                }
+            }
+        );
+        UHD_LOG_TRACE("MAGNESIUM", "Initializing RX LO...");
+        _rx_lo = adf435x_iface::make_adf4351(
+            [this](const std::vector<uint32_t> transactions){
+                for (const uint32_t transaction: transactions) {
+                    this->_spi->write_spi(
+                        SEN_RX_LO,
+                        spi_config_t::EDGE_RISE,
+                        transaction,
+                        32
+                    );
+                }
+            }
+        );
+    } else {
+        UHD_LOG_TRACE("MAGNESIUM", "Not a master radio, no LOs.");
+    }
 }
 
 void magnesium_radio_ctrl_impl::_init_defaults()
