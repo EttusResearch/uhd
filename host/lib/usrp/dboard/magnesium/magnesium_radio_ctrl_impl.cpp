@@ -1,18 +1,7 @@
 //
-// Copyright 2017 Ettus Research
+// Copyright 2017 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0
 //
 
 #include "magnesium_radio_ctrl_impl.hpp"
@@ -32,98 +21,60 @@ using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::rfnoc;
 
-static const size_t IO_MASTER_RADIO = 0;
+namespace {
 
-// TODO: some of these values are duplicated in ad937x_device.cpp
-static const double MAGNESIUM_TICK_RATE = 125e6; // Hz
-static const double MAGNESIUM_RADIO_RATE = 125e6; // Hz
-static const double MAGNESIUM_MIN_FREQ = 300e6; // Hz
-static const double MAGNESIUM_MAX_FREQ = 6e9; // Hz
-static const double MAGNESIUM_MIN_RX_GAIN = 0.0; // dB
-static const double MAGNESIUM_MAX_RX_GAIN = 30.0; // dB
-static const double MAGNESIUM_RX_GAIN_STEP = 0.5;
-static const double MAGNESIUM_MIN_TX_GAIN = 0.0; // dB
-static const double MAGNESIUM_MAX_TX_GAIN = 41.95; // dB
-static const double MAGNESIUM_TX_GAIN_STEP = 0.05;
-static const double MAGNESIUM_CENTER_FREQ = 2.5e9; // Hz
-static const double MAGNESIUM_DEFAULT_GAIN = 0.0; // dB
-static const double MAGNESIUM_DEFAULT_BANDWIDTH = 40e6; // Hz TODO: fix
-static const size_t MAGNESIUM_NUM_TX_CHANS = 2;
-static const size_t MAGNESIUM_NUM_RX_CHANS = 2;
+    const double MAGNESIUM_TICK_RATE = 125e6; // Hz
+    const double MAGNESIUM_RADIO_RATE = 125e6; // Hz
+    const double MAGNESIUM_MIN_FREQ = 300e6; // Hz
+    const double MAGNESIUM_MAX_FREQ = 6e9; // Hz
+    const double MAGNESIUM_MIN_RX_GAIN = 0.0; // dB
+    const double MAGNESIUM_MAX_RX_GAIN = 30.0; // dB
+    const double MAGNESIUM_RX_GAIN_STEP = 0.5;
+    const double MAGNESIUM_MIN_TX_GAIN = 0.0; // dB
+    const double MAGNESIUM_MAX_TX_GAIN = 41.95; // dB
+    const double MAGNESIUM_TX_GAIN_STEP = 0.05;
+    const double MAGNESIUM_CENTER_FREQ = 2.5e9; // Hz
+    const char* MAGNESIUM_DEFAULT_RX_ANTENNA = "RX2";
+    const char* MAGNESIUM_DEFAULT_TX_ANTENNA = "TX/RX";
+    const double MAGNESIUM_DEFAULT_GAIN = 0.0; // dB
+    const double MAGNESIUM_DEFAULT_BANDWIDTH = 40e6; // Hz TODO: fix
+    const size_t MAGNESIUM_NUM_TX_CHANS = 1;
+    const size_t MAGNESIUM_NUM_RX_CHANS = 1;
 
-std::string _get_which(direction_t dir, size_t chan)
-{
-    std::stringstream ss;
-    switch (dir)
+    /*! Return a valid 'which' string for use with AD9371 API calls
+     *
+     * These strings take the form of "RX1", "TX2", ...
+     */
+    std::string _get_which(direction_t dir, size_t chan)
     {
-    case RX_DIRECTION:
-        ss << "RX";
-        break;
-    case TX_DIRECTION:
-        ss << "TX";
-        break;
-    default:
-        UHD_THROW_INVALID_CODE_PATH();
-    }
-
-    switch (chan)
-    {
-    case 0:
-        ss << "1";
-        break;
-    case 1:
-        ss << "2";
-        break;
-    default:
-        throw uhd::runtime_error("invalid channel number");
-    }
-
-    return ss.str();
-}
-
-fs_path magnesium_radio_ctrl_impl::_get_fe_path(size_t chan, direction_t dir)
-{
-    switch (dir)
-    {
-        case TX_DIRECTION:
-            return fs_path("dboards" / _radio_slot / "tx_frontends" / get_dboard_fe_from_chan(chan, TX_DIRECTION));
-        case RX_DIRECTION:
-            return fs_path("dboards" / _radio_slot / "rx_frontends" / get_dboard_fe_from_chan(chan, RX_DIRECTION));
-        default:
-            UHD_THROW_INVALID_CODE_PATH();
+        UHD_ASSERT_THROW(dir == RX_DIRECTION or dir == TX_DIRECTION);
+        UHD_ASSERT_THROW(chan == 0 or chan == 1);
+        return str(boost::format("%s%d")
+                   % (dir == RX_DIRECTION ? "RX" : "TX")
+                   % (chan+1)
+        );
     }
 }
 
+
+/******************************************************************************
+ * Structors
+ *****************************************************************************/
 UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(magnesium_radio_ctrl)
 {
-    UHD_LOG_TRACE("MAGNESIUM", "magnesium_radio_ctrl_impl::ctor() ");
-    _radio_slot = (get_block_id().get_block_count() == IO_MASTER_RADIO) ? "A" : "B";
-    _slot_prefix = (get_block_id().get_block_count() == IO_MASTER_RADIO) ? "db_0_" : "db_1_";
+    UHD_LOG_TRACE("MAGNESIUM", "Entering magnesium_radio_ctrl_impl ctor...");
+    UHD_LOG_DEBUG("MAGNESIUM", "Note: Running in one-block-per-channel mode!");
+    const char radio_slot_name[4] = {'A','B','C','D'};
+    _radio_slot = radio_slot_name[get_block_id().get_block_count()];
     UHD_LOG_TRACE("MAGNESIUM", "Radio slot: " << _radio_slot);
+    _rpc_prefix =
+        (get_block_id().get_block_count() % 2 == 0) ? "db_0_" : "db_1_";
+    UHD_LOG_TRACE("MAGNESIUM", "Using RPC prefix `" << _rpc_prefix << "'");
 
+    _init_peripherals();
+    _init_defaults();
 
-    const size_t num_rx_chans = get_output_ports().size();
-    //UHD_ASSERT_THROW(num_rx_chans == MAGNESIUM_NUM_RX_CHANS);
-    const size_t num_tx_chans = get_input_ports().size();
-    //UHD_ASSERT_THROW(num_tx_chans == MAGNESIUM_NUM_TX_CHANS);
-
-    UHD_LOG_TRACE("MAGNESIUM", "Setting tick rate to " << MAGNESIUM_TICK_RATE / 1e6 << " MHz");
-    radio_ctrl_impl::set_rate(MAGNESIUM_TICK_RATE);
-
-    for (size_t chan = 0; chan < num_rx_chans; chan++) {
-        radio_ctrl_impl::set_rx_frequency(MAGNESIUM_CENTER_FREQ, chan);
-        radio_ctrl_impl::set_rx_gain(MAGNESIUM_DEFAULT_GAIN, chan);
-        // TODO: fix antenna name
-        radio_ctrl_impl::set_rx_antenna(str(boost::format("RX%d") % (chan+1)), chan);
-        radio_ctrl_impl::set_rx_bandwidth(MAGNESIUM_DEFAULT_BANDWIDTH, chan);
-    }
-
-    for (size_t chan = 0; chan < num_tx_chans; chan++) {
-        radio_ctrl_impl::set_tx_frequency(MAGNESIUM_CENTER_FREQ, chan);
-        radio_ctrl_impl::set_tx_gain(MAGNESIUM_DEFAULT_GAIN, chan);
-        // TODO: fix antenna name
-        radio_ctrl_impl::set_tx_antenna(str(boost::format("TX%d") % (chan + 1)), chan);
-    }
+    //////// REST OF CTOR IS PROP TREE SETUP //////////////////////////////////
 
     /**** Set up legacy compatible properties ******************************/
     // For use with multi_usrp APIs etc.
@@ -134,7 +85,8 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(magnesium_radio_ctrl)
     const std::vector<std::string> fe({ "rx_frontends", "tx_frontends" });
     const std::vector<std::string> ant({ "RX" , "TX" });
     const std::vector<size_t> num_chans({ MAGNESIUM_NUM_RX_CHANS , MAGNESIUM_NUM_TX_CHANS });
-    const size_t RX_IDX = 0, TX_IDX = 1;
+    const size_t RX_IDX = 0;
+    // const size_t TX_IDX = 1;
 
     for (size_t fe_idx = 0; fe_idx < fe.size(); ++fe_idx)
     {
@@ -156,11 +108,11 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(magnesium_radio_ctrl)
                 auto dir_ = dir[fe_idx];
                 auto coerced_lambda = [this, chan, dir_](const std::string &ant)
                 {
-                    return this->_set_antenna(ant, chan, dir_);
+                    return this->_myk_set_antenna(ant, chan, dir_);
                 };
                 auto publisher_lambda = [this, chan, dir_]()
                 {
-                    return this->_get_antenna(chan, dir_);
+                    return this->_myk_get_antenna(chan, dir_);
                 };
                 _tree->create<std::string>(fe_path / "antenna" / "value")
                     .set(str(boost::format("%s%d") % ant[fe_idx] % (chan + 1)))
@@ -174,11 +126,11 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(magnesium_radio_ctrl)
                 auto dir_ = dir[fe_idx];
                 auto coerced_lambda = [this, chan, dir_](const double freq)
                 {
-                    return this->_set_frequency(freq, chan, dir_);
+                    return this->_myk_set_frequency(freq, chan, dir_);
                 };
                 auto publisher_lambda = [this, chan, dir_]()
                 {
-                    return this->_get_frequency(chan, dir_);
+                    return this->_myk_get_frequency(chan, dir_);
                 };
                 _tree->create<double>(fe_path / "freq" / "value")
                     .set(MAGNESIUM_CENTER_FREQ)
@@ -191,11 +143,11 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(magnesium_radio_ctrl)
                 auto dir_ = dir[fe_idx];
                 auto coerced_lambda = [this, chan, dir_](const double gain)
                 {
-                    return this->_set_gain(gain, chan, dir_);
+                    return this->_myk_set_gain(gain, chan, dir_);
                 };
                 auto publisher_lambda = [this, chan, dir_]()
                 {
-                    return this->_get_gain(chan, dir_);
+                    return this->_myk_get_gain(chan, dir_);
                 };
                 auto min_gain = (fe_idx == RX_IDX) ? MAGNESIUM_MIN_RX_GAIN : MAGNESIUM_MIN_TX_GAIN;
                 auto max_gain = (fe_idx == RX_IDX) ? MAGNESIUM_MAX_RX_GAIN : MAGNESIUM_MAX_TX_GAIN;
@@ -254,101 +206,166 @@ magnesium_radio_ctrl_impl::~magnesium_radio_ctrl_impl()
     UHD_LOG_TRACE("MAGNESIUM", "magnesium_radio_ctrl_impl::dtor() ");
 }
 
+/**************************************************************************
+ * Init Helpers
+ *************************************************************************/
+void magnesium_radio_ctrl_impl::_init_peripherals()
+{
+    UHD_LOG_TRACE("MAGNESIUM", "Initializing peripherals...");
+}
 
+void magnesium_radio_ctrl_impl::_init_defaults()
+{
+    UHD_LOG_TRACE("MAGNESIUM", "Initializing defaults...");
+    const size_t num_rx_chans = get_output_ports().size();
+    //UHD_ASSERT_THROW(num_rx_chans == MAGNESIUM_NUM_RX_CHANS);
+    const size_t num_tx_chans = get_input_ports().size();
+    //UHD_ASSERT_THROW(num_tx_chans == MAGNESIUM_NUM_TX_CHANS);
+
+    UHD_LOG_TRACE("MAGNESIUM",
+            "Num TX chans: " << num_tx_chans
+            << " Num RX chans: " << num_rx_chans);
+    UHD_LOG_TRACE("MAGNESIUM",
+            "Setting tick rate to " << MAGNESIUM_TICK_RATE / 1e6 << " MHz");
+    radio_ctrl_impl::set_rate(MAGNESIUM_TICK_RATE);
+
+    for (size_t chan = 0; chan < num_rx_chans; chan++) {
+        radio_ctrl_impl::set_rx_frequency(MAGNESIUM_CENTER_FREQ, chan);
+        radio_ctrl_impl::set_rx_gain(MAGNESIUM_DEFAULT_GAIN, chan);
+        radio_ctrl_impl::set_rx_antenna(MAGNESIUM_DEFAULT_RX_ANTENNA, chan);
+        radio_ctrl_impl::set_rx_bandwidth(MAGNESIUM_DEFAULT_BANDWIDTH, chan);
+    }
+
+    for (size_t chan = 0; chan < num_tx_chans; chan++) {
+        radio_ctrl_impl::set_tx_frequency(MAGNESIUM_CENTER_FREQ, chan);
+        radio_ctrl_impl::set_tx_gain(MAGNESIUM_DEFAULT_GAIN, chan);
+        radio_ctrl_impl::set_tx_antenna(MAGNESIUM_DEFAULT_TX_ANTENNA, chan);
+    }
+}
+
+
+/******************************************************************************
+ * API Calls
+ *****************************************************************************/
 double magnesium_radio_ctrl_impl::set_rate(double rate)
 {
     // TODO: implement
     if (rate != get_rate()) {
-        UHD_LOG_WARNING("MAGNESIUM", "Attempting to set sampling rate to invalid value " << rate);
+        UHD_LOG_WARNING("MAGNESIUM",
+                "Attempting to set sampling rate to invalid value " << rate);
     }
     return get_rate();
 }
 
-void magnesium_radio_ctrl_impl::set_tx_antenna(const std::string &ant, const size_t chan)
-{
-    _set_antenna(ant, chan, TX_DIRECTION);
+void magnesium_radio_ctrl_impl::set_tx_antenna(
+        const std::string &ant,
+        const size_t chan
+) {
+    _myk_set_antenna(ant, chan, TX_DIRECTION);
 }
 
-void magnesium_radio_ctrl_impl::set_rx_antenna(const std::string &ant, const size_t chan)
-{
-    _set_antenna(ant, chan, RX_DIRECTION);
+void magnesium_radio_ctrl_impl::set_rx_antenna(
+        const std::string &ant,
+        const size_t chan
+) {
+    _myk_set_antenna(ant, chan, RX_DIRECTION);
 }
 
-double magnesium_radio_ctrl_impl::set_tx_frequency(const double freq, const size_t chan)
-{
-    return _set_frequency(freq, chan, TX_DIRECTION);
+double magnesium_radio_ctrl_impl::set_tx_frequency(
+        const double freq,
+        const size_t chan
+) {
+    return _myk_set_frequency(freq, chan, TX_DIRECTION);
 }
 
-double magnesium_radio_ctrl_impl::set_rx_frequency(const double freq, const size_t chan)
-{
-    return _set_frequency(freq, chan, RX_DIRECTION);
+double magnesium_radio_ctrl_impl::set_rx_frequency(
+        const double freq,
+        const size_t chan
+) {
+    return _myk_set_frequency(freq, chan, RX_DIRECTION);
 }
 
-double magnesium_radio_ctrl_impl::set_rx_bandwidth(const double bandwidth, const size_t chan)
-{
-    return _set_bandwidth(bandwidth, chan, RX_DIRECTION);
+double magnesium_radio_ctrl_impl::set_rx_bandwidth(
+        const double bandwidth,
+        const size_t chan
+) {
+    return _myk_set_bandwidth(bandwidth, chan, RX_DIRECTION);
 }
 
-double magnesium_radio_ctrl_impl::set_tx_gain(const double gain, const size_t chan)
-{
-    return _set_gain(gain, chan, TX_DIRECTION);
+double magnesium_radio_ctrl_impl::set_tx_gain(
+        const double gain,
+        const size_t chan
+) {
+    return _myk_set_gain(gain, chan, TX_DIRECTION);
 }
 
-double magnesium_radio_ctrl_impl::set_rx_gain(const double gain, const size_t chan)
-{
-    return _set_gain(gain, chan, RX_DIRECTION);
+double magnesium_radio_ctrl_impl::set_rx_gain(
+        const double gain,
+        const size_t chan
+) {
+    return _myk_set_gain(gain, chan, RX_DIRECTION);
 }
 
-std::string magnesium_radio_ctrl_impl::get_tx_antenna(const size_t chan) /* const */
-{
-    return _get_antenna(chan, TX_DIRECTION);
+std::string magnesium_radio_ctrl_impl::get_tx_antenna(
+        const size_t chan
+) /* const */ {
+    return _myk_get_antenna(chan, TX_DIRECTION);
 }
 
-std::string magnesium_radio_ctrl_impl::get_rx_antenna(const size_t chan) /* const */
-{
-    return _get_antenna(chan, RX_DIRECTION);
+std::string magnesium_radio_ctrl_impl::get_rx_antenna(
+        const size_t chan
+) /* const */ {
+    return _myk_get_antenna(chan, RX_DIRECTION);
 }
 
-double magnesium_radio_ctrl_impl::get_tx_frequency(const size_t chan) /* const */
-{
-    return _get_frequency(chan, TX_DIRECTION);
+double magnesium_radio_ctrl_impl::get_tx_frequency(
+        const size_t chan
+) /* const */ {
+    return _myk_get_frequency(chan, TX_DIRECTION);
 }
 
-double magnesium_radio_ctrl_impl::get_rx_frequency(const size_t chan) /* const */
-{
-    return _get_frequency(chan, RX_DIRECTION);
+double magnesium_radio_ctrl_impl::get_rx_frequency(
+        const size_t chan
+) /* const */ {
+    return _myk_get_frequency(chan, RX_DIRECTION);
 }
 
-double magnesium_radio_ctrl_impl::get_tx_gain(const size_t chan) /* const */
-{
-    return _get_gain(chan, TX_DIRECTION);
+double magnesium_radio_ctrl_impl::get_tx_gain(
+    const size_t chan
+) /* const */ {
+    return _myk_get_gain(chan, TX_DIRECTION);
 }
 
-double magnesium_radio_ctrl_impl::get_rx_gain(const size_t chan) /* const */
-{
-    return _get_gain(chan, RX_DIRECTION);
+double magnesium_radio_ctrl_impl::get_rx_gain(
+    const size_t chan
+) /* const */ {
+    return _myk_get_gain(chan, RX_DIRECTION);
 }
 
-double magnesium_radio_ctrl_impl::get_rx_bandwidth(const size_t chan) /* const */
-{
-    return _get_bandwidth(chan, RX_DIRECTION);
+double magnesium_radio_ctrl_impl::get_rx_bandwidth(
+    const size_t chan
+) /* const */ {
+    return _myk_get_bandwidth(chan, RX_DIRECTION);
 }
 
-size_t magnesium_radio_ctrl_impl::get_chan_from_dboard_fe(const std::string &fe, const direction_t dir)
-{
+size_t magnesium_radio_ctrl_impl::get_chan_from_dboard_fe(
+    const std::string &fe, const direction_t dir
+) {
     // UHD_LOG_TRACE("MAGNESIUM", "get_chan_from_dboard_fe " << fe << " returns " << boost::lexical_cast<size_t>(fe));
     return boost::lexical_cast<size_t>(fe);
 }
 
-std::string magnesium_radio_ctrl_impl::get_dboard_fe_from_chan(const size_t chan, const direction_t dir)
-{
+std::string magnesium_radio_ctrl_impl::get_dboard_fe_from_chan(
+    const size_t chan,
+    const direction_t dir
+) {
     // UHD_LOG_TRACE("MAGNESIUM", "get_dboard_fe_from_chan " << chan << " returns " << std::to_string(chan));
     return std::to_string(chan);
 }
 
 double magnesium_radio_ctrl_impl::get_output_samp_rate(size_t port)
 {
-    return 125e6;
+    return MAGNESIUM_RADIO_RATE;
 }
 
 void magnesium_radio_ctrl_impl::set_rpc_client(
@@ -372,59 +389,90 @@ void magnesium_radio_ctrl_impl::set_rpc_client(
     ;
 }
 
-double magnesium_radio_ctrl_impl::_set_frequency(const double freq, const size_t chan, const direction_t dir)
+/******************************************************************************
+ * Helpers
+ *****************************************************************************/
+fs_path magnesium_radio_ctrl_impl::_get_fe_path(size_t chan, direction_t dir)
 {
-    // TODO: there is only one LO per RX or TX, so changing frequency will affect the adjacent channel in the same direction
-    // Update the adjacent channel when this occurs
+    switch (dir)
+    {
+        case TX_DIRECTION:
+            return fs_path("dboards" / _radio_slot / "tx_frontends" / get_dboard_fe_from_chan(chan, TX_DIRECTION));
+        case RX_DIRECTION:
+            return fs_path("dboards" / _radio_slot / "rx_frontends" / get_dboard_fe_from_chan(chan, RX_DIRECTION));
+        default:
+            UHD_THROW_INVALID_CODE_PATH();
+    }
+}
+
+/******************************************************************************
+ * AD9371 Controls
+ *****************************************************************************/
+double magnesium_radio_ctrl_impl::_myk_set_frequency(
+        const double freq,
+        const size_t chan,
+        const direction_t dir
+) {
+    // Note: There is only one LO per RX or TX, so changing frequency will
+    // affect the adjacent channel in the same direction. We have to make sure
+    // that getters will always tell the truth!
     auto which = _get_which(dir, chan);
-    UHD_LOG_TRACE("MAGNESIUM", "calling " << _slot_prefix << "set_freq on " << which << " with " << freq);
-    auto retval = _rpcc->request_with_token<double>(_slot_prefix + "set_freq", which, freq, false);
-    UHD_LOG_TRACE("MAGNESIUM", _slot_prefix << "set_freq returned " << retval);
+    UHD_LOG_TRACE("MAGNESIUM",
+            "Calling " << _rpc_prefix << "set_freq on " << which << " with " << freq);
+    auto retval = _rpcc->request_with_token<double>(_rpc_prefix + "set_freq", which, freq, false);
+    UHD_LOG_TRACE("MAGNESIUM",
+            _rpc_prefix << "set_freq returned " << retval);
     return retval;
 }
 
-double magnesium_radio_ctrl_impl::_set_gain(const double gain, const size_t chan, const direction_t dir)
-{
+double magnesium_radio_ctrl_impl::_myk_set_gain(
+        const double gain,
+        const size_t chan,
+        const direction_t dir
+) {
     auto which = _get_which(dir, chan);
-    UHD_LOG_TRACE("MAGNESIUM", "calling " << _slot_prefix << "set_gain on " << which << " with " << gain);
-    auto retval = _rpcc->request_with_token<double>(_slot_prefix + "set_gain", which, gain);
-    UHD_LOG_TRACE("MAGNESIUM", _slot_prefix << "set_gain returned " << retval);
+    UHD_LOG_TRACE("MAGNESIUM", "Calling " << _rpc_prefix << "set_gain on " << which << " with " << gain);
+    auto retval = _rpcc->request_with_token<double>(_rpc_prefix + "set_gain", which, gain);
+    UHD_LOG_TRACE("MAGNESIUM", _rpc_prefix << "set_gain returned " << retval);
     return retval;
 }
 
-void magnesium_radio_ctrl_impl::_set_antenna(const std::string &ant, const size_t chan, const direction_t dir)
-{
+void magnesium_radio_ctrl_impl::_myk_set_antenna(
+        const std::string &ant,
+        const size_t chan,
+        const direction_t dir
+) {
     // TODO: implement
     UHD_LOG_WARNING("MAGNESIUM", "Ignoring attempt to set antenna");
     // CPLD control?
 }
 
-double magnesium_radio_ctrl_impl::_set_bandwidth(const double bandwidth, const size_t chan, const direction_t dir)
+double magnesium_radio_ctrl_impl::_myk_set_bandwidth(const double bandwidth, const size_t chan, const direction_t dir)
 {
     // TODO: implement
     UHD_LOG_WARNING("MAGNESIUM", "Ignoring attempt to set bandwidth");
     return get_rx_bandwidth(chan);
 }
 
-double magnesium_radio_ctrl_impl::_get_frequency(const size_t chan, const direction_t dir)
+double magnesium_radio_ctrl_impl::_myk_get_frequency(const size_t chan, const direction_t dir)
 {
     auto which = _get_which(dir, chan);
-    UHD_LOG_TRACE("MAGNESIUM", "calling " << _slot_prefix << "get_freq on " << which);
-    auto retval = _rpcc->request_with_token<double>(_slot_prefix + "get_freq", which);
-    UHD_LOG_TRACE("MAGNESIUM", _slot_prefix << "get_freq returned " << retval);
+    UHD_LOG_TRACE("MAGNESIUM", "calling " << _rpc_prefix << "get_freq on " << which);
+    auto retval = _rpcc->request_with_token<double>(_rpc_prefix + "get_freq", which);
+    UHD_LOG_TRACE("MAGNESIUM", _rpc_prefix << "get_freq returned " << retval);
     return retval;
 }
 
-double magnesium_radio_ctrl_impl::_get_gain(const size_t chan, const direction_t dir)
+double magnesium_radio_ctrl_impl::_myk_get_gain(const size_t chan, const direction_t dir)
 {
     auto which = _get_which(dir, chan);
-    UHD_LOG_TRACE("MAGNESIUM", "calling " << _slot_prefix << "get_gain on " << which);
-    auto retval = _rpcc->request_with_token<double>(_slot_prefix + "get_gain", which);
-    UHD_LOG_TRACE("MAGNESIUM", _slot_prefix << "get_gain returned " << retval);
+    UHD_LOG_TRACE("MAGNESIUM", "calling " << _rpc_prefix << "get_gain on " << which);
+    auto retval = _rpcc->request_with_token<double>(_rpc_prefix + "get_gain", which);
+    UHD_LOG_TRACE("MAGNESIUM", _rpc_prefix << "get_gain returned " << retval);
     return retval;
 }
 
-std::string magnesium_radio_ctrl_impl::_get_antenna(const size_t chan, const direction_t dir)
+std::string magnesium_radio_ctrl_impl::_myk_get_antenna(const size_t chan, const direction_t dir)
 {
     // TODO: implement
     UHD_LOG_WARNING("MAGNESIUM", "Ignoring attempt to get antenna");
@@ -432,7 +480,7 @@ std::string magnesium_radio_ctrl_impl::_get_antenna(const size_t chan, const dir
     // CPLD control?
 }
 
-double magnesium_radio_ctrl_impl::_get_bandwidth(const size_t chan, const direction_t dir)
+double magnesium_radio_ctrl_impl::_myk_get_bandwidth(const size_t chan, const direction_t dir)
 {
     // TODO: implement
     UHD_LOG_WARNING("MAGNESIUM", "Ignoring attempt to get bandwidth");

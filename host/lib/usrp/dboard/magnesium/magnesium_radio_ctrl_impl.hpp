@@ -75,20 +75,69 @@ public:
     );
 
 private:
+    /**************************************************************************
+     * Helpers
+     *************************************************************************/
+    //! Return the path to the dboards property subtree
+    fs_path _get_fe_path(const size_t chan, const direction_t dir);
+
+    //! Initialize all the peripherals connected to this block
+    void _init_peripherals();
+
+    //! Set state of this class to sensible defaults
+    void _init_defaults();
+
+    /**************************************************************************
+     * AD9371 Controls
+     *************************************************************************/
+    double _myk_set_frequency(
+            const double freq,
+            const size_t chan,
+            const direction_t dir
+    );
+
+    double _myk_set_gain(
+            const double gain,
+            const size_t chan,
+            const direction_t dir
+    );
+    void _myk_set_antenna(
+            const std::string &ant,
+            const size_t chan,
+            const direction_t dir
+    );
+
+    double _myk_set_bandwidth(
+            const double bandwidth,
+            const size_t chan,
+            const direction_t dir
+    );
+
+    double _myk_get_frequency(
+            const size_t chan,
+            const direction_t dir
+    );
+
+    double _myk_get_gain(
+            const size_t chan,
+            const direction_t dir
+    );
+
+    std::string _myk_get_antenna(
+            const size_t chan,
+            const direction_t dir
+    );
+
+    double _myk_get_bandwidth(
+            const size_t chan,
+            const direction_t dir
+    );
+
+    //! Letter representation of the radio we're currently running
     std::string _radio_slot;
-    std::string _slot_prefix;
 
-    fs_path _get_fe_path(size_t chan, direction_t dir);
-
-    double _set_frequency(const double freq, const size_t chan, const direction_t dir);
-    double _set_gain(const double gain, const size_t chan, const direction_t dir);
-    void _set_antenna(const std::string &ant, const size_t chan, const direction_t dir);
-    double _set_bandwidth(const double bandwidth, const size_t chan, const direction_t dir);
-
-    double _get_frequency(const size_t chan, const direction_t dir);
-    double _get_gain(const size_t chan, const direction_t dir);
-    std::string _get_antenna(const size_t chan, const direction_t dir);
-    double _get_bandwidth(const size_t chan, const direction_t dir);
+    //! Stores the prefix to RPC calls
+    std::string _rpc_prefix;
 
     //! Additional block args; gets set during set_rpc_client()
     uhd::device_addr_t _block_args;
