@@ -1,0 +1,139 @@
+/*! \page page_usrp_e1x0 USRP-E1x0 Series
+
+<b>Note: The USPR E1x0-Series is no longer supported with this version of UHD.
+This page is kept here for reference purposes only.</b>
+
+\tableofcontents
+
+\section e1x0_features Comparative features list
+
+- Hardware Capabilities:
+    -   1 transceiver card slot
+    -   Internal PPS reference input
+    -   Internal 10 MHz reference input
+    -   Configurable clock rate (defaults to 64 MHz)
+    -   Internal GPSDO option
+- FPGA Capabilities:
+    -   2 RX DDC chains in FPGA
+    -   1 TX DUC chain in FPGA
+    -   Timed commands in FPGA
+    -   Timed sampling in FPGA
+    -   sc8 and sc16 sample modes
+        -   Up to 8 MHz of RF BW with 16-bit samples
+        -   Up to 16 MHz of RF BW with 8-bit samples
+
+\section e1x0_imgs Specify a Non-standard Image
+
+UHD software will automatically select the USRP-Embedded FPGA image from
+the installed images package. The FPGA image selection can be overridden
+with the `fpga` device address parameter.
+
+Example device address string representations to specify non-standard
+FPGA image:
+
+    fpga=usrp_e100_custom.bin
+
+\section e1x0_mcr Changing the Master Clock Rate
+
+The master clock rate of the USRP-Embedded feeds both the FPGA DSP and
+the codec chip. Hundreds of rates between 32 MHz and 64 MHz are
+available. A few notable rates are:
+
+-   **64 MHz:** maximum rate of the codec chip
+-   **61.44 MHz:** good for UMTS/WCDMA applications
+-   **52 MHz:** good for GSM applications
+
+\subsection e1x0_mcr_extvcxo Set 61.44MHz - uses external VCXO
+
+To use the 61.44 MHz clock rate with the USRP-Embedded, two jumpers must
+be moved on the device.
+
+-   **J16** is a two pin header; remove the jumper (or leave it on pin1
+    only).
+-   **J15** is a three pin header; move the jumper to (pin1, pin2).
+
+**Note:** See instructions below to communicate the desired clock rate
+to UHD software.
+
+\subsection e1x0_intvco Set other rates - uses internal VCO
+
+To use other clock rates, the jumpers will need to be in the default
+position.
+
+-   **J16** is a two pin header; move the jumper to (pin1, pin2).
+-   **J15** is a three pin header; move the jumper to (pin2, pin3).
+
+To communicate the desired clock rate into UHD software, specify the a
+special device address argument, where the key is
+`master_clock_rate` and the value is a rate in Hz. Example:
+
+    uhd_usrp_probe --args="master_clock_rate=52e6"
+
+\section e1x0_clksync Clock Synchronization
+
+\subsection e1x0_clksync_ref Ref Clock - 10MHz
+
+The E1xx has a 10MHz TCXO which can be used to discipline the flexible
+clocking by selecting `REF_INT` for the uhd::clock_config_t.
+
+Alternately, an external 10MHz reference clock can be supplied by
+soldering a connector.
+
+-   Connector **J10** (REF_IN) needs MCX connector **WM5541-ND** or
+    similar.
+-   Square wave will offer the best phase noise performance, but
+    sinusoid is acceptable.
+-   **Power level:** 0 to 15dBm
+-   Select `REF_SMA` in uhd::clock_config_t.
+
+\subsection e1x0_clksync_pps PPS - Pulse Per Second
+
+An external PPS signal for timestamp synchronization can be supplied by
+soldering a connector.
+
+-   Connector **J13** (PPS) needs MCX connector **WM5541-ND** or
+    similar.
+-   Requires a square wave signal.
+-   **Amplitude:** 3.3 to 5 Vpp
+
+Test the PPS input with the following app (`<args>` are device
+address arguments, optional if only one USRP device is on your machine):
+
+    cd <install-path>/lib/uhd/examples
+    ./test_pps_input --args=<args>
+
+\subsection e1x0_clksync_gpsdo Internal GPSDO
+
+Please see the \subpage page_gpsdo for
+information on configuring and using the internal GPSDO.
+
+UHD software will always try to detect an installed GPSDO at runtime. It
+is not necessary to burn a special EEPROM value for GPSDO detection.
+
+\section e1x0_hw Hardware Setup Notes
+
+\subsection e1x0_hw_leds Front panel LEDs
+
+The LEDs on the front panel can be useful in debugging hardware and
+software issues. The LEDs reveal the following about the state of the
+device:
+
+-   **LED A:** transmitting
+-   **LED B:** PPS signal
+-   **LED C:** receiving
+-   **LED D:** FPGA loaded
+-   **LED E:** reference lock
+-   **LED F:** board power
+
+\section e1x0_misc Miscellaneous
+
+\subsection e1x0_misc_sensors Available Sensors
+
+The following sensors are available; they can be queried through the
+API.
+
+-   **ref_locked:** clock reference locked (internal/external)
+-   other sensors are added when the GPSDO is enabled
+
+*/
+// vim:ft=doxygen:
