@@ -23,6 +23,7 @@
 #include <boost/format.hpp>
 #include <boost/asio.hpp> //used for htonl and ntohl
 #include "n230_fw_comm_protocol.h"
+#include <cstring>
 
 namespace uhd { namespace usrp { namespace n230 {
 
@@ -189,6 +190,7 @@ std::vector<std::string> n230_fw_ctrl_iface::discover_devices(
 
     //Send dummy request
     fw_comm_pkt_t request;
+    std::memset(&request, 0, sizeof(request));
     request.id = uhd::htonx<uint32_t>(FW_COMM_GENERATE_ID(product_id));
     request.flags = uhd::htonx<uint32_t>(FW_COMM_FLAGS_ACK|FW_COMM_CMD_ECHO);
     request.sequence = uhd::htonx<uint32_t>(std::rand());
