@@ -21,6 +21,18 @@
       <name>MAGNITUDE_OUT</name>
       <address>133</address>
     </setreg>
+    <setreg>
+      <name>FFT_DIRECTION</name>
+      <address>134</address>
+    </setreg>
+    <setreg>
+      <name>FFT_SCALING</name>
+      <address>135</address>
+    </setreg>
+    <setreg>
+      <name>FFT_SHIFT_CONFIG</name>
+      <address>136</address>
+    </setreg>
     <readback>
       <name>RB_FFT_RESET</name>
       <address>0</address>
@@ -29,26 +41,62 @@
       <name>RB_MAGNITUDE_OUT</name>
       <address>1</address>
     </readback>
+    <readback>
+      <name>RB_FFT_SIZE_LOG2</name>
+      <address>2</address>
+    </readback>
+    <readback>
+      <name>RB_FFT_DIRECTION</name>
+      <address>3</address>
+    </readback>
+    <readback>
+      <name>RB_FFT_SCALING</name>
+      <address>4</address>
+    </readback>
+    <readback>
+      <name>RB_FFT_SHIFT_CONFIG</name>
+      <address>5</address>
+    </readback>
   </registers>
   <!-- Args -->
   <args>
     <arg>
-        <!--This controls only the fft shift part, so remember to also set the ctrl_word-->
       <name>spp</name>
       <type>int</type>
       <value>256</value>
       <check>GE($spp, 16) AND LE($spp, 4096) AND IS_PWR_OF_2($spp)</check>
       <check_message>FFT size must be in [16, 4096] and a power of two.</check_message>
-      <action>SR_WRITE("FFT_SIZE_LOG2", LOG2($spp)) AND SR_WRITE("AXIS_CONFIG_BUS", ADD(873472, LOG2($spp)))</action>
+      <action>SR_WRITE("FFT_SIZE_LOG2", LOG2($spp))</action>
     </arg>
     <arg>
-      <name>ctrl_word</name>
+      <name>shift</name>
+      <type>string</type>
+      <value>normal</value>
+      <check>EQUAL($shift, "normal") OR EQUAL($shift, "reverse") OR EQUAL($shift, "natural")</check>
+      <check_message>FFT direction must be either "normal", "reverse", or "natural".</check_message>
+      <action>
+          IF(EQUAL($shift, "normal"),  SR_WRITE("FFT_SHIFT_CONFIG", 0)) OR
+          IF(EQUAL($shift, "reverse"), SR_WRITE("FFT_SHIFT_CONFIG", 1)) OR
+          IF(EQUAL($shift, "natural"), SR_WRITE("FFT_SHIFT_CONFIG", 2))
+      </action>
+    </arg>
+    <arg>
+      <name>direction</name>
+      <type>string</type>
+      <value>forward</value>
+      <check>EQUAL($direction, "forward") OR EQUAL($direction, "reverse")</check>
+      <check_message>FFT direction must be either "forward" or "reverse".</check_message>
+      <action>
+          IF(EQUAL($direction, "forward"),  SR_WRITE("FFT_DIRECTION", 1)) OR
+          IF(EQUAL($direction, "reverse"), SR_WRITE("FFT_DIRECTION", 0))
+      </action>
+    </arg>
+    <arg>
+      <name>scaling</name>
       <type>int</type>
-      <value>873472</value>
-      <!--<check>EQUAL($otype, "sc16")</check>-->
-      <!--<check_message>Output data type must be sc16.</check_message>-->
-      <!--TODO: Check against mag-out value (requires GET() function) -->
-      <action>SR_WRITE("AXIS_CONFIG_BUS", ADD($ctrl_word, LOG2($spp)))</action>
+      <!--scaling per radix-4 butterfly-->
+      <value>1706</value>
+      <action>SR_WRITE("FFT_SCALING", $scaling)</action>
     </arg>
     <arg>
       <name>otype</name>
@@ -96,21 +144,4 @@
       <pkt_size>%vlen</pkt_size>
     </source>
   </ports>
-  <!--<components>-->
-    <!--<component>-->
-      <!--<key revision="1">nocshell</key>-->
-    <!--</component>-->
-    <!--<component srbase="0">-->
-      <!--[>Will look for a component with this key:<]-->
-      <!--<key revision="1">componentname</key>-->
-    <!--</component>-->
-  <!--</components>-->
-  <!--<connection>-->
-    <!--<source port="0">nocshell</source>-->
-    <!--<sink port="0">componentname</sink>-->
-  <!--</connection>-->
-  <!--<connection>-->
-    <!--<source port="0">componentname</source>-->
-    <!--<sink port="0">nocshell</sink>-->
-  <!--</connection>-->
 </nocblock>
