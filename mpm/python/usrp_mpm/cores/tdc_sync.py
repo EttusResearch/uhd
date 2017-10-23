@@ -378,3 +378,83 @@ class ClockSynchronizer(object):
 
         return True
 
+
+    def dac_bist(self, taps_from_center = 100):
+        """
+        A quick BIST of the DAC, proving it is (a) alive and (b) can shift the clock.
+
+        Instructions:
+        - Replace the <_sync_db_clock(self.clock_synchronizer)> call in the dboard
+          manager with <self.clock_synchronizer.dac_bist(100)>, replacing 100 with
+          the desired taps_from_center value.
+        - Run MPM with: # usrp_hwd.py --init-only
+
+        The test performs 3 TDC measurements with three DAC settings:
+          1) at the initial DAC setting
+          2) below the initial setting
+          3) above the initial setting
+        The following checks are performed on the resulting measurments:
+          1) they are monotonicly increasing in this order: 2, 1, 3
+          2) the distance from 2 -> 1 and 2 -> 3 is within some range based on calculated
+             expected values
+        """
+        test1_result = False
+        test2_result = False
+
+        self.log.info("Starting Phase DAC BIST Test...")
+
+        # We need to move the clock to a mid-range value to avoid wrap-around effects
+        # on our measurements below. Even if the PDAC isn't functional, this sync run
+        # will use the LMK digital delays to bring our clocks well within the required
+        # ranges.
+        self.log.trace("Running initial synchronization as a precursor before BIST:")
+        self.run_sync(measurement_only=False)
+
+        # Take a measurement at the current value (which should be near our target value).
+        center_meas = self.target_values[0] + self.run_sync(measurement_only=True)
+
+        # Modify the DAC word to below the default value, then above, repeating the
+        # measurements each time.
+        self.write_dac_word(self.current_phase_dac_word + taps_from_center, 0.5)
+        low_meas = self.target_values[0] + self.run_sync(measurement_only=True)
+        self.write_dac_word(self.current_phase_dac_word - 2*taps_from_center, 0.5)
+        high_meas = self.target_values[0] + self.run_sync(measurement_only=True)
+
+        self.log.info("Phase DAC BIST Raw Results:")
+        self.log.info("Low Measurement:    {:.6f} ns".format(low_meas*1e9))
+        self.log.info("Center Measurement: {:.6f} ns".format(center_meas*1e9))
+        self.log.info("High Measurement:   {:.6f} ns".format(high_meas*1e9))
+
+        # Test #1: Are all the measurements increasing: low -> center -> high?
+        if (high_meas > center_meas) and (center_meas > low_meas):
+            test1_result = True
+        else:
+            self.log.warning("DAC BIST values are not monotonically increasing!")
+
+        # Test #2: Are the measurements spaced appropriately?
+        expected_meas = taps_from_center*self.fine_delay_step
+        actual_high_meas = high_meas - center_meas
+        actual_low_meas = center_meas - low_meas
+
+        # TDC measurement error is typically 40 ps. We should expected that the variation
+        # between measurements is significantly less than this, but still prepare for the
+        # worst... therefore we check to ensure our expected measurement spread is
+        # higher than our expected error.
+        allowable_error = 40e-12
+        if expected_meas < allowable_error:
+            self.log.warning("Expected measurement offset is less than the allowable error \
+of {:.2f} ps. Consider increasing the taps_from_center parameter." \
+                           .format(allowable_error*1e12))
+
+        if  abs(actual_high_meas - expected_meas) < allowable_error and \
+            abs(actual_low_meas  - expected_meas) < allowable_error:
+            test2_result = True
+        else:
+            self.log.warning("DAC BIST values are not spaced correctly!")
+
+        if not(test1_result and test2_result):
+            raise RuntimeError("Phase DAC BIST Failed!")
+
+        self.log.info("Phase DAC BIST Success!")
+        return True
+
