@@ -239,7 +239,6 @@ class N310BIST(object):
         'standard': ["ddr3", "gpsdo", "rtc", "temp", "clock_int", "tpm"],
         'extended': "*",
     }
-    REV = 3
 
     @staticmethod
     def make_arg_parser():
@@ -688,7 +687,7 @@ class N310BIST(object):
                 'read_patterns': list(patterns),
             }
         from usrp_mpm.periph_manager import n310
-        gpio_tca6424 = n310.TCA6424(self.REV)
+        gpio_tca6424 = n310.TCA6424(self.mb_rev)
         gpio_tca6424.set("FPGA-GPIO-EN")
         # Allow some time for the front-panel GPIOs to become usable
         time.sleep(.5)
