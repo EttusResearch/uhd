@@ -54,13 +54,6 @@ class PeriphManagerBase(object):
     be implemented here. Motherboard specific information can be stored in
     separate motherboard classes derived from this class
     """
-    # stores discovered device information in dicts
-    mboard_if_addrs = {}
-    # this information has to be provided by
-    # the specific periph_manager implementation
-    updateable_components = []
-    sid_endpoints = {}
-
     #########################################################################
     # Overridables
     #
@@ -369,7 +362,8 @@ class PeriphManagerBase(object):
         return list of updateable components
         This method does not require a claim_token in the RPC
         """
-        return self.updateable_components
+        # return self.updateable_components.keys()
+        return [] # FIXME
 
     @no_claim
     def list_available_overlays(self):

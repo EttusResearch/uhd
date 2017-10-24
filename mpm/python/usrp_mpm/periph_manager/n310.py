@@ -230,6 +230,7 @@ class n310(PeriphManagerBase):
 
     def __init__(self, args):
         super(n310, self).__init__(args)
+        self.sid_endpoints = {}
         # Init peripherals
         self.log.trace("Initializing TCA6424 port expander controls...")
         self._gpios = TCA6424(int(self.mboard_info['rev']))
