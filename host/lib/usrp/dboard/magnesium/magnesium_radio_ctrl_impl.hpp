@@ -23,6 +23,7 @@
 #include "magnesium_cpld_ctrl.hpp"
 #include "magnesium_cpld_regs.hpp"
 #include "adf435x.hpp"
+#include "gpio_atr_3000.hpp"
 #include <uhd/types/serial.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/usrp/gpio_defs.hpp>
@@ -158,8 +159,20 @@ private:
     //! Reference to the RX LO
     adf435x_iface::sptr _rx_lo;
 
-    //! Reference to the CPLD controls
+    //! Reference to the CPLD controls. Even if there's multiple radios,
+    //  there's only one CPLD control.
     std::shared_ptr<magnesium_cpld_ctrl> _cpld;
+
+    //! ATR controls. These control the external DSA and the AD9371 gain
+    //  up/down bits. They do *not* control the ATR state of the CPLD, the
+    //  tx/rx run states are hooked up directly to the CPLD.
+    //
+    //  Every radio channel gets its own ATR state register.
+    std::vector<usrp::gpio_atr::gpio_atr_3000::sptr> _gpio;
+
+    //! Front panel GPIO controller. Note that only one radio block per
+    //  module can be the FP-GPIO master.
+    usrp::gpio_atr::gpio_atr_3000::sptr _fp_gpio;
 
 
 }; /* class radio_ctrl_impl */

@@ -48,6 +48,8 @@ namespace {
     const size_t MAGNESIUM_NUM_TX_CHANS = 1;
     const size_t MAGNESIUM_NUM_RX_CHANS = 1;
 
+    const size_t FPGPIO_MASTER_RADIO = 0;
+
     /*! Return a valid 'which' string for use with AD9371 API calls
      *
      * These strings take the form of "RX1", "TX2", ...
@@ -298,6 +300,36 @@ void magnesium_radio_ctrl_impl::_init_peripherals()
         );
     } else {
         UHD_LOG_TRACE("MAGNESIUM", "Not a master radio, no LOs.");
+    }
+
+    _gpio.clear(); // Following the as-if rule, this can get optimized out
+    for (size_t radio_idx = 0; radio_idx < _get_num_radios(); radio_idx++) {
+        UHD_LOG_TRACE("MAGNESIUM",
+            "Initializing GPIOs for channel " << radio_idx);
+        _gpio.emplace_back(
+            gpio_atr::gpio_atr_3000::make(
+                _get_ctrl(radio_idx),
+                regs::sr_addr(regs::ATR)
+            )
+        );
+        // DSA and AD9371 gain bits do *not* toggle on ATR modes. If we ever
+        // connect anything else to this core, we might need to set_atr_mode()
+        // to MODE_ATR on those bits. For now, all bits simply do what they're
+        // told, and don't toggle on RX/TX state changes.
+         _gpio.back()->set_atr_mode(
+             usrp::gpio_atr::MODE_GPIO, // Disable ATR mode
+             usrp::gpio_atr::gpio_atr_3000::MASK_SET_ALL
+         );
+         _gpio.back()->set_gpio_ddr(
+            usrp::gpio_atr::DDR_OUTPUT, // Make all GPIOs outputs
+            usrp::gpio_atr::gpio_atr_3000::MASK_SET_ALL
+        );
+    }
+
+    if (get_block_id().get_block_count() == FPGPIO_MASTER_RADIO) {
+        UHD_LOG_TRACE(unique_id(), "Initializing front-panel GPIO control...")
+        _fp_gpio = gpio_atr::gpio_atr_3000::make(
+                _get_ctrl(0), regs::sr_addr(regs::FP_GPIO), regs::RB_FP_GPIO);
     }
 }
 
