@@ -143,17 +143,40 @@ private:
             const double freq,
             const size_t chan
     );
-
-    void _update_freq_switches(
+   void _update_freq_switches(
         const double freq,
         const size_t chan,
         const direction_t dir
     );
 
     void _update_atr_switches(
-        const size_t chan,
+        const magnesium_cpld_ctrl::chan_sel_t chan,
         const direction_t dir,
         const std::string &ant
+    );
+
+    double _dsa_set_gain(
+            const double gain,
+            const size_t chan,
+            const direction_t dir
+    );
+    double _dsa_get_gain(
+            const size_t chan,
+            const direction_t dir
+    );
+    double _set_all_gain(
+        const double gain,
+        const size_t chan,
+        const direction_t dir
+    );
+    double _get_all_gain(
+        const size_t chan,
+        const direction_t dir
+    );
+    void _set_dsa_val(
+            const size_t chan,
+            const direction_t dir,
+            const uint32_t dsa_val
     );
     //! Letter representation of the radio we're currently running
     std::string _radio_slot;
@@ -190,6 +213,15 @@ private:
     //! Front panel GPIO controller. Note that only one radio block per
     //  module can be the FP-GPIO master.
     usrp::gpio_atr::gpio_atr_3000::sptr _fp_gpio;
+    //! AD9371 gain
+    double _ad9371_rx_gain = 0.0;
+    double _ad9371_tx_gain = 0.0;
+    //! DSA gain
+    double _dsa_rx_gain = 0.0;
+    double _dsa_tx_gain = 0.0;
+    //! All gain
+    double _all_rx_gain = 0.0;
+    double _all_tx_gain = 0.0;
 
 }; /* class radio_ctrl_impl */
 

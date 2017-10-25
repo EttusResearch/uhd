@@ -34,16 +34,24 @@ namespace {
     const double MAGNESIUM_RADIO_RATE = 125e6; // Hz
     const double MAGNESIUM_MIN_FREQ = 1e6; // Hz
     const double MAGNESIUM_MAX_FREQ = 6e9; // Hz
-    const double MAGNESIUM_MIN_RX_GAIN = 0.0; // dB
-    const double MAGNESIUM_MAX_RX_GAIN = 30.0; // dB
-    const double MAGNESIUM_RX_GAIN_STEP = 0.5;
-    const double MAGNESIUM_MIN_TX_GAIN = 0.0; // dB
-    const double MAGNESIUM_MAX_TX_GAIN = 41.95; // dB
-    const double MAGNESIUM_TX_GAIN_STEP = 0.05;
+    const double AD9371_MIN_RX_GAIN = 0.0; // dB
+    const double AD9371_MAX_RX_GAIN = 30.0; // dB
+    const double AD9371_RX_GAIN_STEP = 0.5;
+    const double DSA_MIN_GAIN = 0; // dB
+    const double DSA_MAX_GAIN = 31.5; // dB
+    const double DSA_GAIN_STEP = 0.5; // db
+    const double AD9371_MIN_TX_GAIN = 0.0; // dB
+    const double AD9371_MAX_TX_GAIN = 41.95; // dB
+    const double AD9371_TX_GAIN_STEP = 0.05;
+    const double ALL_RX_MIN_GAIN = 0.0;
+    const double ALL_RX_MAX_GAIN = 61.5;
+    const double ALL_RX_GAIN_STEP = 0.5;
+    const double ALL_TX_MIN_GAIN = 0.0;
+    const double ALL_TX_MAX_GAIN = 73.45;
+    const double ALL_TX_GAIN_STEP = 0.5;
     const double MAGNESIUM_CENTER_FREQ = 2.5e9; // Hz
     const char* MAGNESIUM_DEFAULT_RX_ANTENNA = "RX2";
     const char* MAGNESIUM_DEFAULT_TX_ANTENNA = "TX/RX";
-    const double MAGNESIUM_DEFAULT_GAIN = 0.0; // dB
     const double MAGNESIUM_DEFAULT_BANDWIDTH = 40e6; // Hz TODO: fix
     const size_t MAGNESIUM_NUM_TX_CHANS = 1;
     const size_t MAGNESIUM_NUM_RX_CHANS = 1;
@@ -97,10 +105,9 @@ For TX:
      *
      * These strings take the form of "RX1", "TX2", ...
      */
-    std::string _get_which(const direction_t dir, const size_t chan)
+    std::string _get_which(const direction_t dir,std::string _radio_slot)
     {
         UHD_ASSERT_THROW(dir == RX_DIRECTION or dir == TX_DIRECTION);
-        UHD_ASSERT_THROW(chan == 0 or chan == 1);
         size_t chan = 0;
         if (_radio_slot == "A" or _radio_slot == "C")
         {
@@ -129,13 +136,24 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(magnesium_radio_ctrl)
     const char radio_slot_name[4] = {'A','B','C','D'};
     _radio_slot = radio_slot_name[get_block_id().get_block_count()];
     UHD_LOG_TRACE("MAGNESIUM", "Radio slot: " << _radio_slot);
-    _rpc_prefix =
-        (get_block_id().get_block_count() % 2 == 0) ? "db_0_" : "db_1_";
-    UHD_LOG_TRACE("MAGNESIUM", "Using RPC prefix `" << _rpc_prefix << "'");
+    if (_radio_slot == "A" or _radio_slot =="B"){
+        _rpc_prefix = "db_0_";
+    }
+    if (_radio_slot == "C" or _radio_slot=="D")
+    {
+        _rpc_prefix = "db_1_";
+    }
+    UHD_LOG_WARNING("MAGNESIUM", "Using RPC prefix `" << _rpc_prefix << "'");
 
     _init_peripherals();
     _init_defaults();
 
+    fs_path gain_mode_path = _root_path.branch_path()
+    / str(boost::format("Radio_%d") % ((get_block_id().get_block_count()/2)*2))
+    / "args/0/gain_mode/value";
+    UHD_LOG_DEBUG("GAIN_MODE_STRING","Gain mode path " << gain_mode_path);
+    std::string gain_mode = _tree->access<std::string>(gain_mode_path).get();
+    UHD_LOG_DEBUG("GAIN_MODE_STRING","Gain mode string" << gain_mode);
     //////// REST OF CTOR IS PROP TREE SETUP //////////////////////////////////
 
     /**** Set up legacy compatible properties ******************************/
@@ -149,7 +167,7 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(magnesium_radio_ctrl)
     const std::vector<size_t> num_chans({ MAGNESIUM_NUM_RX_CHANS , MAGNESIUM_NUM_TX_CHANS });
     const size_t RX_IDX = 0;
     // const size_t TX_IDX = 1;
-
+    //this->_dsa_set_gain(0.5,0,RX_DIRECTION);
     for (size_t fe_idx = 0; fe_idx < fe.size(); ++fe_idx)
     {
         const fs_path fe_direction_path = fe_base / fe[fe_idx];
@@ -202,25 +220,79 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(magnesium_radio_ctrl)
                     .set(meta_range_t(MAGNESIUM_MIN_FREQ, MAGNESIUM_MAX_FREQ));
             }
             {
+                auto ad9371_min_gain = (fe_idx == RX_IDX) ? AD9371_MIN_RX_GAIN : AD9371_MIN_TX_GAIN;
+                auto ad9371_max_gain = (fe_idx == RX_IDX) ? AD9371_MAX_RX_GAIN : AD9371_MAX_TX_GAIN;
+                auto ad9371_gain_step = (fe_idx == RX_IDX) ? AD9371_RX_GAIN_STEP : AD9371_TX_GAIN_STEP;
+                auto dsa_min_gain = DSA_MIN_GAIN;
+                auto dsa_max_gain = DSA_MAX_GAIN;
+                auto dsa_gain_step = DSA_GAIN_STEP;
+                auto all_min_gain = (fe_idx == RX_IDX) ? ALL_RX_MIN_GAIN : ALL_TX_MIN_GAIN;
+                auto all_max_gain = (fe_idx == RX_IDX) ? ALL_TX_MAX_GAIN : ALL_TX_MAX_GAIN;
+                auto all_gain_step = 0.5;
+                if (gain_mode == "auto"){
+                    ad9371_min_gain = 0;
+                    ad9371_max_gain = 0;
+                    ad9371_gain_step = 0;
+                    dsa_min_gain = 0;
+                    dsa_max_gain = 0;
+                    dsa_gain_step = 0;
+                }
+                if (gain_mode == "manual")
+                {
+                    all_min_gain = 0 ;
+                    all_max_gain = 0 ;
+                    all_gain_step = 0 ;
+
+                }
                 auto dir_ = dir[fe_idx];
-                auto coerced_lambda = [this, chan, dir_](const double gain)
+                //Create gain property for mykonos
+                auto myk_set_gain_func = [this, chan, dir_](const double gain)
                 {
                     return this->_myk_set_gain(gain, chan, dir_);
                 };
-                auto publisher_lambda = [this, chan, dir_]()
+                auto myk_get_gain_func = [this, chan, dir_]()
                 {
                     return this->_myk_get_gain(chan, dir_);
                 };
-                auto min_gain = (fe_idx == RX_IDX) ? MAGNESIUM_MIN_RX_GAIN : MAGNESIUM_MIN_TX_GAIN;
-                auto max_gain = (fe_idx == RX_IDX) ? MAGNESIUM_MAX_RX_GAIN : MAGNESIUM_MAX_TX_GAIN;
-                auto gain_step = (fe_idx == RX_IDX) ? MAGNESIUM_RX_GAIN_STEP : MAGNESIUM_TX_GAIN_STEP;
-                // TODO: change from null
-                _tree->create<double>(fe_path / "gains" / "null" / "value")
-                    .set(MAGNESIUM_DEFAULT_GAIN)
-                    .set_coercer(coerced_lambda)
-                    .set_publisher(publisher_lambda);
-                _tree->create<meta_range_t>(fe_path / "gains" / "null" / "range")
-                    .set(meta_range_t(min_gain, max_gain, gain_step));
+
+                _tree->create<double>(fe_path / "gains" / "ad9371" / "value")
+                    .set(0)
+                    .set_coercer(myk_set_gain_func)
+                    .set_publisher(myk_get_gain_func);
+                _tree->create<meta_range_t>(fe_path / "gains" / "ad9371" / "range")
+                    .set(meta_range_t(ad9371_min_gain, ad9371_max_gain, ad9371_gain_step));
+                // Create gain property for DSA
+                auto dsa_set_gain_func = [this, chan, dir_](const double gain)
+                {
+                    return this->_dsa_set_gain(gain, chan, dir_);
+                };
+                auto dsa_get_gain_func = [this, chan, dir_]()
+                {
+                    return this->_dsa_get_gain(chan, dir_);
+                };
+                _tree->create<double>(fe_path / "gains" / "dsa" / "value")
+                    .set(0)
+                    .set_coercer(dsa_set_gain_func)
+                    .set_publisher(dsa_get_gain_func);
+                _tree->create<meta_range_t>(fe_path / "gains" / "dsa" / "range")
+                    .set(meta_range_t(dsa_min_gain, dsa_max_gain, dsa_gain_step));
+
+                // Create gain property for all gains
+                auto set_all_gain_func = [this, chan, dir_](const double gain)
+                {
+                    return this->_set_all_gain(gain, chan, dir_);
+                };
+                auto get_all_gain_func = [this, chan, dir_]()
+                {
+                    return this->_get_all_gain(chan, dir_);
+                };
+                _tree->create<double>(fe_path / "gains" / "all" / "value")
+                    .set(0)
+                    .set_coercer(set_all_gain_func)
+                    .set_publisher(get_all_gain_func);
+                _tree->create<meta_range_t>(fe_path / "gains" / "all" / "range")
+                    .set(meta_range_t(all_min_gain, all_max_gain, all_gain_step));
+
             }
             // TODO: set up read/write of bandwidth properties correctly
             if (fe_idx == RX_IDX)
@@ -253,8 +325,8 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(magnesium_radio_ctrl)
     // TODO change codec names
     _tree->create<int>("rx_codecs" / _radio_slot / "gains");
     _tree->create<int>("tx_codecs" / _radio_slot / "gains");
-    _tree->create<std::string>("rx_codecs" / _radio_slot / "name").set("AD9361 Dual ADC");
-    _tree->create<std::string>("tx_codecs" / _radio_slot / "name").set("AD9361 Dual DAC");
+    _tree->create<std::string>("rx_codecs" / _radio_slot / "name").set("AD9371 Dual ADC");
+    _tree->create<std::string>("tx_codecs" / _radio_slot / "name").set("AD9371 Dual DAC");
 
     // TODO remove this dirty hack
     if (not _tree->exists("tick_rate"))
@@ -381,7 +453,8 @@ void magnesium_radio_ctrl_impl::_init_peripherals()
         _gpio.emplace_back(
             gpio_atr::gpio_atr_3000::make(
                 _get_ctrl(radio_idx),
-                regs::sr_addr(regs::ATR)
+                regs::sr_addr(regs::GPIO),
+                regs::RB_DB_GPIO
             )
         );
         // DSA and AD9371 gain bits do *not* toggle on ATR modes. If we ever
@@ -397,7 +470,6 @@ void magnesium_radio_ctrl_impl::_init_peripherals()
             usrp::gpio_atr::gpio_atr_3000::MASK_SET_ALL
         );
     }
-
     if (get_block_id().get_block_count() == FPGPIO_MASTER_RADIO) {
         UHD_LOG_TRACE(unique_id(), "Initializing front-panel GPIO control...")
         _fp_gpio = gpio_atr::gpio_atr_3000::make(
@@ -422,14 +494,14 @@ void magnesium_radio_ctrl_impl::_init_defaults()
 
     for (size_t chan = 0; chan < num_rx_chans; chan++) {
         radio_ctrl_impl::set_rx_frequency(MAGNESIUM_CENTER_FREQ, chan);
-        radio_ctrl_impl::set_rx_gain(MAGNESIUM_DEFAULT_GAIN, chan);
+        radio_ctrl_impl::set_rx_gain(0, chan);
         radio_ctrl_impl::set_rx_antenna(MAGNESIUM_DEFAULT_RX_ANTENNA, chan);
         radio_ctrl_impl::set_rx_bandwidth(MAGNESIUM_DEFAULT_BANDWIDTH, chan);
     }
 
     for (size_t chan = 0; chan < num_tx_chans; chan++) {
         radio_ctrl_impl::set_tx_frequency(MAGNESIUM_CENTER_FREQ, chan);
-        radio_ctrl_impl::set_tx_gain(MAGNESIUM_DEFAULT_GAIN, chan);
+        radio_ctrl_impl::set_tx_gain(0, chan);
         radio_ctrl_impl::set_tx_antenna(MAGNESIUM_DEFAULT_TX_ANTENNA, chan);
     }
 }
@@ -487,14 +559,15 @@ double magnesium_radio_ctrl_impl::set_tx_gain(
         const double gain,
         const size_t chan
 ) {
-    return _myk_set_gain(gain, chan, TX_DIRECTION);
+    return _set_all_gain(gain, chan, TX_DIRECTION);
 }
 
 double magnesium_radio_ctrl_impl::set_rx_gain(
         const double gain,
         const size_t chan
 ) {
-    return _myk_set_gain(gain, chan, RX_DIRECTION);
+
+    return _set_all_gain(gain, chan, RX_DIRECTION);
 }
 
 std::string magnesium_radio_ctrl_impl::get_tx_antenna(
@@ -524,13 +597,13 @@ double magnesium_radio_ctrl_impl::get_rx_frequency(
 double magnesium_radio_ctrl_impl::get_tx_gain(
     const size_t chan
 ) /* const */ {
-    return _myk_get_gain(chan, TX_DIRECTION);
+    return _get_all_gain(chan, TX_DIRECTION);
 }
 
 double magnesium_radio_ctrl_impl::get_rx_gain(
     const size_t chan
 ) /* const */ {
-    return _myk_get_gain(chan, RX_DIRECTION);
+    return _get_all_gain(chan, RX_DIRECTION);
 }
 
 double magnesium_radio_ctrl_impl::get_rx_bandwidth(
@@ -597,7 +670,7 @@ fs_path magnesium_radio_ctrl_impl::_get_fe_path(size_t chan, direction_t dir)
 }
 
 void magnesium_radio_ctrl_impl::_update_atr_switches(
-    const size_t chan,
+    const magnesium_cpld_ctrl::chan_sel_t chan,
     const direction_t dir,
     const std::string &ant
 ){
@@ -616,7 +689,7 @@ void magnesium_radio_ctrl_impl::_update_atr_switches(
     UHD_LOG_TRACE("MAGNESIUM", "Update all atr related switches for " << dir << " " << ant );
     if (dir == RX_DIRECTION){
         _cpld->set_rx_atr_bits(
-            magnesium_cpld_ctrl::chan_sel_t(chan),
+            magnesium_cpld_ctrl::BOTH,
             magnesium_cpld_ctrl::ON,
             rx_sw1,
             trx_led,
@@ -627,7 +700,7 @@ void magnesium_radio_ctrl_impl::_update_atr_switches(
             true
         );
         _cpld->set_tx_atr_bits(
-            magnesium_cpld_ctrl::chan_sel_t(chan),
+            magnesium_cpld_ctrl::BOTH,
             magnesium_cpld_ctrl::IDLE,
             false,
             sw_trx,
@@ -797,11 +870,13 @@ double magnesium_radio_ctrl_impl::_myk_set_gain(
         const size_t chan,
         const direction_t dir
 ) {
-    auto which = _get_which(dir, chan);
+    auto which = _get_which(dir,_radio_slot);
     UHD_LOG_TRACE("MAGNESIUM", "Calling " << _rpc_prefix << "set_gain on " << which << " with " << gain);
     auto retval = _rpcc->request_with_token<double>(_rpc_prefix + "set_gain", which, gain);
     UHD_LOG_TRACE("MAGNESIUM", _rpc_prefix << "set_gain returned " << retval);
+
     return retval;
+    //return 0.0;
 }
 
 void magnesium_radio_ctrl_impl::_myk_set_antenna(
@@ -811,8 +886,8 @@ void magnesium_radio_ctrl_impl::_myk_set_antenna(
 ) {
     // TODO: implement
     UHD_LOG_WARNING("MAGNESIUM", "Attempting to set antenna " << ant << " " << chan << " " << dir );
-    _update_atr_switches(chan,dir,ant);
-    // CPLD control?
+    magnesium_cpld_ctrl::chan_sel_t chan_sel  = (_radio_slot == "A" or _radio_slot == "C")? magnesium_cpld_ctrl::CHAN1 : magnesium_cpld_ctrl::CHAN2;
+    _update_atr_switches(chan_sel,dir,ant);
 }
 
 double magnesium_radio_ctrl_impl::_myk_set_bandwidth(const double bandwidth, const size_t chan, const direction_t dir)
@@ -824,7 +899,7 @@ double magnesium_radio_ctrl_impl::_myk_set_bandwidth(const double bandwidth, con
 
 double magnesium_radio_ctrl_impl::_myk_get_frequency(const size_t chan, const direction_t dir)
 {
-    auto which = _get_which(dir, chan);
+    auto which = _get_which(dir,_radio_slot);
     UHD_LOG_TRACE("MAGNESIUM", "calling " << _rpc_prefix << "get_freq on " << which);
     auto retval = _rpcc->request_with_token<double>(_rpc_prefix + "get_freq", which);
     UHD_LOG_TRACE("MAGNESIUM", _rpc_prefix << "get_freq returned " << retval);
@@ -833,7 +908,7 @@ double magnesium_radio_ctrl_impl::_myk_get_frequency(const size_t chan, const di
 
 double magnesium_radio_ctrl_impl::_myk_get_gain(const size_t chan, const direction_t dir)
 {
-    auto which = _get_which(dir, chan);
+    auto which = _get_which(dir,_radio_slot);
     UHD_LOG_TRACE("MAGNESIUM", "calling " << _rpc_prefix << "get_gain on " << which);
     auto retval = _rpcc->request_with_token<double>(_rpc_prefix + "get_gain", which);
     UHD_LOG_TRACE("MAGNESIUM", _rpc_prefix << "get_gain returned " << retval);
@@ -882,6 +957,94 @@ double magnesium_radio_ctrl_impl::_lo_set_frequency(
         //UHD_LOG_TRACE("MAGNESIUM", "lock detect is " << lock_det);
 
 	return actual_freq;
+}
+double magnesium_radio_ctrl_impl::_set_all_gain(
+    const double gain,
+    const size_t chan,
+    const direction_t dir
+)
+{
+    UHD_LOG_TRACE("MAGNESIUM", "Setting all gain " << gain);
+    // just naively  distributed gain here
+    _myk_set_gain(gain/2,chan,dir);
+    _dsa_set_gain(gain/2,chan,dir);
+    if(dir == RX_DIRECTION or dir == DX_DIRECTION)
+    {
+        _all_rx_gain = gain;
+    }
+    if(dir == TX_DIRECTION or dir == DX_DIRECTION)
+    {
+        _all_tx_gain = gain;
+    }
+
+    return gain;
+}
+double magnesium_radio_ctrl_impl::_get_all_gain(
+    const size_t chan,
+    const direction_t dir
+)
+{
+    UHD_LOG_TRACE("MAGNESIUM", "Getting all gain ");
+    if(dir == RX_DIRECTION )
+    {
+       return _all_rx_gain;
+    }
+    if(dir == TX_DIRECTION)
+    {
+        return _all_tx_gain;
+    }
+
+}
+double  magnesium_radio_ctrl_impl::_dsa_set_gain(
+    const double gain,
+    const size_t chan,
+    const direction_t dir
+) {
+
+    uint32_t dsa_val = 63-2*gain;
+    UHD_LOG_TRACE("MAGNESIUM", "Setting dsa gain " << dsa_val);
+
+    _set_dsa_val(chan,  dir, dsa_val);
+    if(dir == RX_DIRECTION or dir == DX_DIRECTION)
+    {
+        _dsa_rx_gain = gain;
+    }
+    if(dir == TX_DIRECTION or dir == DX_DIRECTION)
+    {
+        _dsa_tx_gain = gain;
+    }
+    return gain;
+}
+double  magnesium_radio_ctrl_impl::_dsa_get_gain(
+    const size_t chan,
+    const direction_t dir
+    ){
+        UHD_LOG_TRACE("MAGNESIUM", "Getting dsa gain ");
+        if(dir == RX_DIRECTION )
+        {
+           return _dsa_rx_gain;
+        }
+        if(dir == TX_DIRECTION)
+        {
+            return _dsa_tx_gain;
+        }
+
+}
+/******************************************************************************
+ * DSA Controls
+ *****************************************************************************/
+void magnesium_radio_ctrl_impl::_set_dsa_val(
+    const size_t chan,
+    const direction_t dir,
+    const uint32_t  dsa_val
+) {
+    UHD_LOG_TRACE("MAGNESIUM", "Setting dsa value" << dsa_val);
+    if (dir == RX_DIRECTION or dir == DX_DIRECTION){
+        _gpio[chan]->set_gpio_out(dsa_val, 0x3F);
+    }
+    if (dir == TX_DIRECTION or dir == DX_DIRECTION){
+        _gpio[chan]->set_gpio_out(dsa_val, 0x0FC0);
+    }
 }
 
 UHD_RFNOC_BLOCK_REGISTER(magnesium_radio_ctrl, "MagnesiumRadio");
