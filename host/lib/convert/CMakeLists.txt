@@ -63,10 +63,17 @@ ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 IF(HAVE_ARM_NEON_H AND (${CMAKE_SIZEOF_VOID_P} EQUAL 4))
     ENABLE_LANGUAGE(ASM)
 
-    LIBUHD_APPEND_SOURCES(
+    SET(convert_with_neon_sources
         ${CMAKE_CURRENT_SOURCE_DIR}/convert_with_neon.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/convert_neon.S
     )
+
+    SET_SOURCE_FILES_PROPERTIES(
+        ${convert_with_neon_sources}
+        PROPERTIES COMPILE_FLAGS -mfpu=neon
+    )
+
+    LIBUHD_APPEND_SOURCES(${convert_with_neon_sources})
 ENDIF()
 
 ########################################################################
