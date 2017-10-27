@@ -50,17 +50,46 @@ public:
 
     enum muxout_t { MUXOUT_3STATE, MUXOUT_DVDD, MUXOUT_DGND, MUXOUT_RDIV, MUXOUT_NDIV, MUXOUT_ALD, MUXOUT_DLD };
 
+    /**
+     * Charge Pump Currents
+     */
+    enum charge_pump_current_t {
+        CHARGE_PUMP_CURRENT_0_31MA = 0,
+        CHARGE_PUMP_CURRENT_0_63MA = 1,
+        CHARGE_PUMP_CURRENT_0_94MA = 2,
+        CHARGE_PUMP_CURRENT_1_25MA = 3,
+        CHARGE_PUMP_CURRENT_1_56MA = 4,
+        CHARGE_PUMP_CURRENT_1_88MA = 5,
+        CHARGE_PUMP_CURRENT_2_19MA = 6,
+        CHARGE_PUMP_CURRENT_2_50MA = 7,
+        CHARGE_PUMP_CURRENT_2_81MA = 8,
+        CHARGE_PUMP_CURRENT_3_13MA = 9,
+        CHARGE_PUMP_CURRENT_3_44MA = 10,
+        CHARGE_PUMP_CURRENT_3_75MA = 11,
+        CHARGE_PUMP_CURRENT_4_07MA = 12,
+        CHARGE_PUMP_CURRENT_4_38MA = 13,
+        CHARGE_PUMP_CURRENT_4_69MA = 14,
+        CHARGE_PUMP_CURRENT_5_00MA = 15
+    };
+
+
     virtual void set_reference_freq(double fref) = 0;
 
     virtual void set_prescaler(prescaler_t prescaler) = 0;
 
     virtual void set_feedback_select(feedback_sel_t fb_sel) = 0;
 
-    virtual void set_output_power(output_power_t power) = 0;
+    virtual void set_output_power(output_t output, output_power_t power) = 0;
+
+    void set_output_power(output_power_t power) {
+        set_output_power(RF_OUTPUT_A, power);
+    }
 
     virtual void set_output_enable(output_t output, bool enable) = 0;
 
     virtual void set_muxout_mode(muxout_t mode) = 0;
+
+    virtual void set_charge_pump_current(charge_pump_current_t cp_current) = 0;
 
     virtual uhd::range_t get_int_range() = 0;
 
@@ -104,14 +133,29 @@ public:
         }
     }
 
-    void set_output_power(output_power_t power)
+    void set_output_power(output_t output, output_power_t power)
     {
-        switch (power) {
-            case OUTPUT_POWER_M4DBM: _regs.output_power = adf435x_regs_t::OUTPUT_POWER_M4DBM; break;
-            case OUTPUT_POWER_M1DBM: _regs.output_power = adf435x_regs_t::OUTPUT_POWER_M1DBM; break;
-            case OUTPUT_POWER_2DBM:  _regs.output_power = adf435x_regs_t::OUTPUT_POWER_2DBM; break;
-            case OUTPUT_POWER_5DBM:  _regs.output_power = adf435x_regs_t::OUTPUT_POWER_5DBM; break;
-            default: UHD_THROW_INVALID_CODE_PATH();
+        switch (output) {
+            case RF_OUTPUT_A:
+                switch (power) {
+                    case OUTPUT_POWER_M4DBM: _regs.output_power = adf435x_regs_t::OUTPUT_POWER_M4DBM; break;
+                    case OUTPUT_POWER_M1DBM: _regs.output_power = adf435x_regs_t::OUTPUT_POWER_M1DBM; break;
+                    case OUTPUT_POWER_2DBM:  _regs.output_power = adf435x_regs_t::OUTPUT_POWER_2DBM; break;
+                    case OUTPUT_POWER_5DBM:  _regs.output_power = adf435x_regs_t::OUTPUT_POWER_5DBM; break;
+                    default: UHD_THROW_INVALID_CODE_PATH();
+                }
+                break;
+            case RF_OUTPUT_B:
+                switch (power) {
+                    case OUTPUT_POWER_M4DBM: _regs.aux_output_power = adf435x_regs_t::AUX_OUTPUT_POWER_M4DBM; break;
+                    case OUTPUT_POWER_M1DBM: _regs.aux_output_power = adf435x_regs_t::AUX_OUTPUT_POWER_M1DBM; break;
+                    case OUTPUT_POWER_2DBM:  _regs.aux_output_power = adf435x_regs_t::AUX_OUTPUT_POWER_2DBM; break;
+                    case OUTPUT_POWER_5DBM:  _regs.aux_output_power = adf435x_regs_t::AUX_OUTPUT_POWER_5DBM; break;
+                    default: UHD_THROW_INVALID_CODE_PATH();
+                }
+                break;
+            default:
+                UHD_THROW_INVALID_CODE_PATH();
         }
     }
 
@@ -137,6 +181,29 @@ public:
             case MUXOUT_NDIV:   _regs.muxout = adf435x_regs_t::MUXOUT_NDIV; break;
             case MUXOUT_ALD:    _regs.muxout = adf435x_regs_t::MUXOUT_ANALOG_LD; break;
             case MUXOUT_DLD:    _regs.muxout = adf435x_regs_t::MUXOUT_DLD; break;
+            default: UHD_THROW_INVALID_CODE_PATH();
+        }
+    }
+
+    void set_charge_pump_current(charge_pump_current_t cp_current)
+    {
+        switch (cp_current) {
+            case CHARGE_PUMP_CURRENT_0_31MA : _regs.charge_pump_current = adf435x_regs_t::CHARGE_PUMP_CURRENT_0_31MA; break;
+            case CHARGE_PUMP_CURRENT_0_63MA : _regs.charge_pump_current = adf435x_regs_t::CHARGE_PUMP_CURRENT_0_63MA; break;
+            case CHARGE_PUMP_CURRENT_0_94MA : _regs.charge_pump_current = adf435x_regs_t::CHARGE_PUMP_CURRENT_0_94MA; break;
+            case CHARGE_PUMP_CURRENT_1_25MA : _regs.charge_pump_current = adf435x_regs_t::CHARGE_PUMP_CURRENT_1_25MA; break;
+            case CHARGE_PUMP_CURRENT_1_56MA : _regs.charge_pump_current = adf435x_regs_t::CHARGE_PUMP_CURRENT_1_56MA; break;
+            case CHARGE_PUMP_CURRENT_1_88MA : _regs.charge_pump_current = adf435x_regs_t::CHARGE_PUMP_CURRENT_1_88MA; break;
+            case CHARGE_PUMP_CURRENT_2_19MA : _regs.charge_pump_current = adf435x_regs_t::CHARGE_PUMP_CURRENT_2_19MA; break;
+            case CHARGE_PUMP_CURRENT_2_50MA : _regs.charge_pump_current = adf435x_regs_t::CHARGE_PUMP_CURRENT_2_50MA; break;
+            case CHARGE_PUMP_CURRENT_2_81MA : _regs.charge_pump_current = adf435x_regs_t::CHARGE_PUMP_CURRENT_2_81MA; break;
+            case CHARGE_PUMP_CURRENT_3_13MA : _regs.charge_pump_current = adf435x_regs_t::CHARGE_PUMP_CURRENT_3_13MA; break;
+            case CHARGE_PUMP_CURRENT_3_44MA : _regs.charge_pump_current = adf435x_regs_t::CHARGE_PUMP_CURRENT_3_44MA; break;
+            case CHARGE_PUMP_CURRENT_3_75MA : _regs.charge_pump_current = adf435x_regs_t::CHARGE_PUMP_CURRENT_3_75MA; break;
+            case CHARGE_PUMP_CURRENT_4_07MA : _regs.charge_pump_current = adf435x_regs_t::CHARGE_PUMP_CURRENT_4_07MA; break;
+            case CHARGE_PUMP_CURRENT_4_38MA : _regs.charge_pump_current = adf435x_regs_t::CHARGE_PUMP_CURRENT_4_38MA; break;
+            case CHARGE_PUMP_CURRENT_4_69MA : _regs.charge_pump_current = adf435x_regs_t::CHARGE_PUMP_CURRENT_4_69MA; break;
+            case CHARGE_PUMP_CURRENT_5_00MA : _regs.charge_pump_current = adf435x_regs_t::CHARGE_PUMP_CURRENT_5_00MA; break;
             default: UHD_THROW_INVALID_CODE_PATH();
         }
     }

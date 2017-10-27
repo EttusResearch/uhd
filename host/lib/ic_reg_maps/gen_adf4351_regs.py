@@ -72,7 +72,7 @@ output_power            4[3:4]      3       m4dbm, m1dbm, 2dbm, 5dbm
 rf_output_enable        4[5]        1       disabled, enabled
 aux_output_power        4[6:7]      0       m4dbm, m1dbm, 2dbm, 5dbm
 aux_output_enable       4[8]        0       disabled, enabled
-aux_output_select       4[9]        1       divided, fundamental
+aux_output_select       4[9]        0       divided, fundamental
 mute_till_lock_detect   4[10]       0       mute_disabled, mute_enabled
 vco_power_down          4[11]       0       vco_powered_up, vco_powered_down
 band_select_clock_div   4[12:19]    0
