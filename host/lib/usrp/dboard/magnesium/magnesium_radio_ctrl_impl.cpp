@@ -749,7 +749,9 @@ void magnesium_radio_ctrl_impl::_update_freq_switches(
     const size_t chan,
     const direction_t dir
 ){
-    UHD_LOG_TRACE("MAGNESIUM", "Update all freq related switches for " << freq);
+     UHD_LOG_TRACE("MAGNESIUM", "Update all freq related switches for " << freq);
+     magnesium_cpld_ctrl::chan_sel_t chan_sel  = (_radio_slot == "A" or _radio_slot == "C")? magnesium_cpld_ctrl::CHAN1 : magnesium_cpld_ctrl::CHAN2;
+
      // Set filters based on frequency
      if (dir == RX_DIRECTION) {
         if (freq < MAGNESIUM_RX_BAND1_MIN_FREQ) {
@@ -831,12 +833,66 @@ void magnesium_radio_ctrl_impl::_update_freq_switches(
             );
         }
     } else {
-        //TODO : rememeber to cache  _sw_trx for chan 
         if (freq < MAGNESIUM_TX_BAND1_MIN_FREQ) {
+            _cpld->set_tx_switches(
+                magnesium_cpld_ctrl::BOTH,
+                magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1,
+                magnesium_cpld_ctrl::TX_SW1_FROMTXFILTERLP0800MHZ,
+                magnesium_cpld_ctrl::TX_SW2_TOTXFILTERLP0800MHZ,
+                magnesium_cpld_ctrl::TX_SW3_TOTXFILTERBANKS,
+                magnesium_cpld_ctrl::LOWBAND_MIXER_PATH_SEL_LOBAND,
+                true,
+                magnesium_cpld_ctrl::ON
+            );
+            _sw_trx[chan_sel] = magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1;
         } else if (freq < MAGNESIUM_TX_BAND2_MIN_FREQ) {
+            _cpld->set_tx_switches(
+                magnesium_cpld_ctrl::BOTH,
+                magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1,
+                magnesium_cpld_ctrl::TX_SW1_FROMTXFILTERLP0800MHZ,
+                magnesium_cpld_ctrl::TX_SW2_TOTXFILTERLP0800MHZ,
+                magnesium_cpld_ctrl::TX_SW3_TOTXFILTERBANKS,
+                magnesium_cpld_ctrl::LOWBAND_MIXER_PATH_SEL_BYPASS,
+                false,
+                magnesium_cpld_ctrl::ON
+            );
+            _sw_trx[chan_sel] = magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1;
         } else if (freq < MAGNESIUM_TX_BAND3_MIN_FREQ) {
+            _cpld->set_tx_switches(
+                magnesium_cpld_ctrl::BOTH,
+                magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1,
+                magnesium_cpld_ctrl::TX_SW1_FROMTXFILTERLP1700MHZ,
+                magnesium_cpld_ctrl::TX_SW2_TOTXFILTERLP1700MHZ,
+                magnesium_cpld_ctrl::TX_SW3_TOTXFILTERBANKS,
+                magnesium_cpld_ctrl::LOWBAND_MIXER_PATH_SEL_BYPASS,
+                false,
+                magnesium_cpld_ctrl::ON
+            );
+            _sw_trx[chan_sel] = magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1;
         } else if (freq < MAGNESIUM_TX_BAND4_MIN_FREQ) {
+            _cpld->set_tx_switches(
+                magnesium_cpld_ctrl::BOTH,
+                magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1,
+                magnesium_cpld_ctrl::TX_SW1_FROMTXFILTERLP3400MHZ,
+                magnesium_cpld_ctrl::TX_SW2_TOTXFILTERLP3400MHZ,
+                magnesium_cpld_ctrl::TX_SW3_TOTXFILTERBANKS,
+                magnesium_cpld_ctrl::LOWBAND_MIXER_PATH_SEL_BYPASS,
+                false,
+                magnesium_cpld_ctrl::ON
+            );
+            _sw_trx[chan_sel] = magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1;
         } else {
+            _cpld->set_tx_switches(
+                magnesium_cpld_ctrl::BOTH,
+                magnesium_cpld_ctrl::SW_TRX_FROMTXUPPERFILTERBANKLP6400MHZ,
+                magnesium_cpld_ctrl::TX_SW1_SHUTDOWNTXSW1,
+                magnesium_cpld_ctrl::TX_SW2_TOTXFILTERLP6400MHZ,
+                magnesium_cpld_ctrl::TX_SW3_TOTXFILTERBANKS,
+                magnesium_cpld_ctrl::LOWBAND_MIXER_PATH_SEL_BYPASS,
+                false,
+                magnesium_cpld_ctrl::ON
+            );
+            _sw_trx[chan_sel] = magnesium_cpld_ctrl::SW_TRX_FROMTXUPPERFILTERBANKLP6400MHZ;
         }
     }
     UHD_LOG_INFO("MAGNESIUM", "Update all freq related switches for " << freq <<" finished!.");
