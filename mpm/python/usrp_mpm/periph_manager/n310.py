@@ -21,6 +21,7 @@ N310 implementation module
 from __future__ import print_function
 import os
 import copy
+import shutil
 from six import iteritems
 from builtins import object
 from .base import PeriphManagerBase
@@ -29,6 +30,7 @@ from ..net import byte_to_mac
 from ..net import get_mac_addr
 from ..mpmtypes import SID
 from usrp_mpm.uio import UIO
+from usrp_mpm.rpc_server import no_claim, no_rpc
 from ..sysfs_gpio import SysFSGPIO
 from ..ethtable import EthDispatcherTable
 from .. import libpyusrp_periphs as lib
@@ -221,12 +223,24 @@ class n310(PeriphManagerBase):
     }
     dboard_eeprom_addr = "e0004000.i2c"
     dboard_eeprom_max_len = 64
+
     # We're on a Zynq target, so the following two come from the Zynq standard
     # device tree overlay (tree/arch/arm/boot/dts/zynq-7000.dtsi)
     dboard_spimaster_addrs = ["e0006000.spi", "e0007000.spi"]
     chdr_interfaces = ['eth1', 'eth2']
     # N310-specific settings
     eth_tables = {'eth1': 'misc-enet-regs0', 'eth2': 'misc-enet-regs1'}
+    # Path to N310 FPGA bin file
+    # This file will always contain the current image, regardless of SFP type,
+    # dboard, etc. The host is responsible for providing a compatible image
+    # for the N310's current setup.
+    binfile_path = '/lib/firmware/n310.bin'
+    # Override the list of updateable components
+    updateable_components = {
+        'fpga': {
+            'callback': "update_fpga",
+        },
+    }
 
     def __init__(self, args):
         super(n310, self).__init__(args)
