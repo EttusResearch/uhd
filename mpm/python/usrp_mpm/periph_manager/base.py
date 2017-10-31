@@ -20,6 +20,7 @@ Mboard implementation base class
 
 from __future__ import print_function
 import os
+from hashlib import md5
 from builtins import str
 from builtins import range
 from builtins import object
@@ -122,6 +123,11 @@ class PeriphManagerBase(object):
     # availability. If the list is empty, no CHDR traffic will be possible over
     # the network. Example: ['eth1', 'eth2']
     chdr_interfaces = []
+    # Dictionary containing valid IDs for the update_component function for a
+    # specific implementation. Each PeriphManagerBase-derived class should list
+    # information required to update the component, like a callback function
+    updateable_components = {}
+
     @staticmethod
     # Yes, this is overridable too: List the required device tree overlays
     def list_required_dt_overlays(eeprom_md, device_args):
@@ -394,6 +400,68 @@ class PeriphManagerBase(object):
         Returns a list of dicts. One dict per dboard.
         """
         return [dboard.device_info for dboard in self.dboards]
+
+    def update_component(self, file_metadata, data):
+        """
+        Updates the device component specified by comp_dict
+        :param file_metadata: Dictionary of strings containing metadata
+        :param data: Binary string with the file contents to be written
+        """
+        id_str = file_metadata['id']
+        filename = os.path.basename(file_metadata['filename'])
+        if id_str not in self.updateable_components:
+            self.log.error("{0} not an updateable component ({1})".format(
+                id_str, self.updateable_components.keys()
+            ))
+            raise NotImplementedError("Update component not implemented for {}".format(id_str))
+        self.log.trace("Updating component: {}".format(id_str))
+        if 'md5' in file_metadata:
+            given_hash = file_metadata['md5']
+            comp_hash = md5()
+            comp_hash.update(data)
+            comp_hash = comp_hash.hexdigest()
+            if comp_hash == given_hash:
+                self.log.trace("FPGA bitfile hash matched: {}".format(
+                    comp_hash
+                ))
+                raise KeyError("Update component not implemented for {}".format(id_str))
+            self.log.trace("Updating component: {}".format(id_str))
+            if 'md5' in metadata:
+                given_hash = metadata['md5']
+                comp_hash = md5()
+                comp_hash.update(data)
+                comp_hash = comp_hash.hexdigest()
+                if comp_hash == given_hash:
+                    self.log.trace("Component file hash matched: {}".format(
+                        comp_hash
+                    ))
+                else:
+                    self.log.error("Component file hash mismatched:\n"
+                                   "Calculated {}\n"
+                                   "Given      {}\n".format(
+                                       comp_hash, given_hash))
+                    raise RuntimeError("Component file hash mismatch")
+            else:
+                self.log.error("FPGA bitfile hash mismatched:")
+                self.log.error("Calculated {}".format(comp_hash))
+                self.log.error("Given      {}".format(given_hash))
+                raise RuntimeError("FPGA Bitfile hash mismatch")
+        else:
+            self.log.trace("Loading unverified {} image.".format(
+                id_str
+            ))
+        basepath = os.path.join(os.sep, "tmp", "uploads")
+        filepath = os.path.join(basepath, filename)
+        if not os.path.isdir(basepath):
+            self.log.trace("Creating directory {}".format(basepath))
+            os.makedirs(basepath)
+        self.log.trace("Writing data to {}".format(filepath))
+        with open(filepath, 'wb') as f:
+            f.write(data)
+        update_func = getattr(self, self.updateable_components[id_str]['callback'])
+        update_func(filepath, file_metadata)
+        return True
+
 
     def load_fpga_image(self, target=None):
         """

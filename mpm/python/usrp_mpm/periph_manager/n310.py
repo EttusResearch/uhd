@@ -624,3 +624,30 @@ class n310(PeriphManagerBase):
             safe_db_eeprom_user_data[blob_id] = blob.encode('ascii')
         dboard.set_user_eeprom_data(safe_db_eeprom_user_data)
 
+    @no_rpc
+    def update_fpga(self, filepath, metadata):
+        """
+        Update the FPGA image in the filesystem and reload the overlay
+        :param filepath: path to new FPGA image
+        :param metadata: Dictionary of strings containing metadata
+        """
+        self.log.trace("Updating FPGA with image at {}"
+                       .format(filepath))
+        _, file_extension = os.path.splitext(filepath)
+        # Cut off the period from the file extension
+        file_extension = file_extension[1:].lower()
+        if file_extension == "bit":
+            self.log.trace("Converting bit to bin file and writing to {}"
+                           .format(self.binfile_path))
+            from usrp_mpm.fpga_bit_to_bin import fpga_bit_to_bin
+            fpga_bit_to_bin(filepath, self.binfile_path, flip=True)
+        elif file_extension == "bin":
+            self.log.trace("Copying bin file to {}"
+                           .format(self.binfile_path))
+            shutil.copy(filepath, self.binfile_path)
+        else:
+            self.log.error("Invalid FPGA bitfile: {}"
+                           .format(filepath))
+            raise RuntimeError("Invalid N310 FPGA bitfile")
+        # TODO: Implement reload procedure
+        return True
