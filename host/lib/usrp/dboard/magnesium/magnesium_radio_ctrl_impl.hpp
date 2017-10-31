@@ -222,7 +222,11 @@ private:
     //! All gain
     double _all_rx_gain = 0.0;
     double _all_tx_gain = 0.0;
-
+    //! TRX switch state of 2 channels 
+    std::map<magnesium_cpld_ctrl::chan_sel_t,magnesium_cpld_ctrl::sw_trx_t> _sw_trx = {
+        {magnesium_cpld_ctrl::CHAN1, magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1}, 
+        {magnesium_cpld_ctrl::CHAN2, magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1}
+    };
 }; /* class radio_ctrl_impl */
 
 }} /* namespace uhd::rfnoc */

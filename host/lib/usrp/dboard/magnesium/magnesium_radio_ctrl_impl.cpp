@@ -675,7 +675,7 @@ void magnesium_radio_ctrl_impl::_update_atr_switches(
     const std::string &ant
 ){
     magnesium_cpld_ctrl::rx_sw1_t rx_sw1  = magnesium_cpld_ctrl::RX_SW1_RX2INPUT;
-    magnesium_cpld_ctrl::sw_trx_t sw_trx = magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1;
+    magnesium_cpld_ctrl::sw_trx_t sw_trx = _sw_trx[chan];
 
     bool trx_led = false, rx2_led = true;
     //bool tx_pa_enb = true, tx_amp_enb = true, tx_myk_en=true;
@@ -719,8 +719,29 @@ void magnesium_radio_ctrl_impl::_update_atr_switches(
             false,
             true
         );
-
     }
+    if (dir == TX_DIRECTION){
+        _cpld->set_tx_atr_bits(
+            chan,
+            magnesium_cpld_ctrl::ON,
+            true,
+            sw_trx,
+            true,
+            true,
+            true
+        );
+        _cpld->set_rx_atr_bits(
+            chan,
+            magnesium_cpld_ctrl::IDLE,
+            rx_sw1,
+            false,
+            false,
+            false,
+            false,
+            false,
+            true
+        );
+    };
 }
 
 void magnesium_radio_ctrl_impl::_update_freq_switches(
@@ -810,6 +831,7 @@ void magnesium_radio_ctrl_impl::_update_freq_switches(
             );
         }
     } else {
+        //TODO : rememeber to cache  _sw_trx for chan 
         if (freq < MAGNESIUM_TX_BAND1_MIN_FREQ) {
         } else if (freq < MAGNESIUM_TX_BAND2_MIN_FREQ) {
         } else if (freq < MAGNESIUM_TX_BAND3_MIN_FREQ) {
