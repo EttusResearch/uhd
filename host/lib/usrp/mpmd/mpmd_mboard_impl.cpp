@@ -85,6 +85,11 @@ mpmd_mboard_impl::mpmd_mboard_impl(
 
     _claimer_task = claim_device_and_make_task(rpc, mb_args);
     // No one else can now claim the device.
+    if (mb_args_.has_key("skip_init")) {
+        UHD_LOG_DEBUG("MPMD", "Claimed device, but skipped init.");
+        return;
+    }
+
     init_device(rpc, mb_args);
     // RFNoC block clocks are now on. Noc-IDs can be read back.
 

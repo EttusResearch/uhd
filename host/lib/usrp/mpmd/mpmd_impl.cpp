@@ -246,24 +246,28 @@ mpmd_impl::mpmd_impl(const device_addr_t& device_args)
         init_property_tree(_tree, fs_path("/mboards") / mb_i, _mb[mb_i].get());
     }
 
-    // This might be parallelized. std::tasks would probably be a good way to
-    // do that if we want to.
-    for (size_t mb_i = 0; mb_i < mb_args.size(); ++mb_i) {
-        setup_rfnoc_blocks(mb_i, mb_args[mb_i]);
-    }
+    if (not device_args.has_key("skip_init")) {
+        // This might be parallelized. std::tasks would probably be a good way to
+        // do that if we want to.
+        for (size_t mb_i = 0; mb_i < mb_args.size(); ++mb_i) {
+            setup_rfnoc_blocks(mb_i, mb_args[mb_i]);
+        }
 
-    // FIXME this section only makes sense for when the time source is external.
-    // So, check for that, or something similar.
-    // This section of code assumes that the prop tree is set and we have access
-    // to the timekeepers. So don't move it anywhere else.
-    if (device_args.has_key("sync_time")) {
-        reset_time_synchronized(_tree);
-    }
+        // FIXME this section only makes sense for when the time source is external.
+        // So, check for that, or something similar.
+        // This section of code assumes that the prop tree is set and we have access
+        // to the timekeepers. So don't move it anywhere else.
+        if (device_args.has_key("sync_time")) {
+            reset_time_synchronized(_tree);
+        }
 
-    auto filtered_block_args = device_args; // TODO actually filter
-    // Blocks will finalize their own setup in this function. They have (and
-    // might need) full access to the prop tree, the timekeepers, etc.
-    setup_rpc_blocks(filtered_block_args);
+        auto filtered_block_args = device_args; // TODO actually filter
+        // Blocks will finalize their own setup in this function. They have (and
+        // might need) full access to the prop tree, the timekeepers, etc.
+        setup_rpc_blocks(filtered_block_args);
+    } else {
+        UHD_LOG_INFO("MPMD", "Claimed device without full initialization.");
+    }
 }
 
 mpmd_impl::~mpmd_impl()
@@ -287,6 +291,11 @@ mpmd_mboard_impl::uptr mpmd_impl::setup_mb(
         device_args,
         device_args["addr"]
     );
+
+    if (device_args.has_key("skip_init")) {
+        return mb;
+    }
+
     for (size_t xbar_index = 0; xbar_index < mb->num_xbars; xbar_index++) {
         mb->set_xbar_local_addr(xbar_index, allocate_xbar_local_addr());
     }
