@@ -19,5 +19,6 @@ IF(ENABLE_MPMD)
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/mpmd_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/mpmd_mboard_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/mpmd_image_loader.cpp
     )
 ENDIF(ENABLE_MPMD)
