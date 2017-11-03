@@ -22,6 +22,7 @@
 #include "rpc_block_ctrl.hpp"
 #include "magnesium_cpld_ctrl.hpp"
 #include "magnesium_cpld_regs.hpp"
+#include "magnesium_ad9371_iface.hpp"
 #include "adf435x.hpp"
 #include "gpio_atr_3000.hpp"
 #include <uhd/types/serial.hpp>
@@ -47,6 +48,8 @@ public:
     /************************************************************************
      * API calls
      ***********************************************************************/
+    // Note: We use the cached values in radio_ctrl_impl, so most getters are
+    // not reimplemented here
     double set_rate(double rate);
 
     void set_tx_antenna(const std::string &ant, const size_t chan);
@@ -54,20 +57,11 @@ public:
 
     double set_tx_frequency(const double freq, const size_t chan);
     double set_rx_frequency(const double freq, const size_t chan);
+    double set_tx_bandwidth(const double bandwidth, const size_t chan);
     double set_rx_bandwidth(const double bandwidth, const size_t chan);
 
     double set_tx_gain(const double gain, const size_t chan);
     double set_rx_gain(const double gain, const size_t chan);
-
-    std::string get_tx_antenna(const size_t chan);
-    std::string get_rx_antenna(const size_t chan);
-
-    double get_tx_frequency(const size_t chan);
-    double get_rx_frequency(const size_t chan);
-    double get_rx_bandwidth(const size_t chan);
-
-    double get_tx_gain(const size_t chan);
-    double get_rx_gain(const size_t chan);
 
     size_t get_chan_from_dboard_fe(const std::string &fe, const direction_t dir);
     std::string get_dboard_fe_from_chan(const size_t chan, const direction_t dir);
@@ -83,70 +77,64 @@ private:
     /**************************************************************************
      * Helpers
      *************************************************************************/
-    //! Return the path to the dboards property subtree
-    fs_path _get_fe_path(const size_t chan, const direction_t dir);
-
     //! Initialize all the peripherals connected to this block
     void _init_peripherals();
 
     //! Set state of this class to sensible defaults
     void _init_defaults();
 
-    /**************************************************************************
-     * AD9371 Controls
-     *************************************************************************/
-    double _myk_set_frequency(
-            const double freq,
-            const size_t chan,
-            const direction_t dir
+    //! Init a subtree for the RF frontends
+    void _init_frontend_subtree(
+        uhd::property_tree::sptr subtree,
+        const size_t fe_chan_idx,
+        const size_t chan_idx
     );
 
-    double _myk_set_gain(
+    //! Initialize property tree
+    void _init_prop_tree();
+
+    /**************************************************************************
+     * Gain Controls (implemented in magnesium_radio_ctrl_gain.cpp)
+     *************************************************************************/
+    double _dsa_set_gain(
             const double gain,
             const size_t chan,
             const direction_t dir
     );
-    void _myk_set_antenna(
-            const std::string &ant,
+
+    double _dsa_get_gain(
             const size_t chan,
             const direction_t dir
     );
 
-    double _myk_set_bandwidth(
-            const double bandwidth,
-            const size_t chan,
-            const direction_t dir
-    );
-
-    double _myk_get_frequency(
-            const size_t chan,
-            const direction_t dir
-    );
-
-    double _myk_get_gain(
-            const size_t chan,
-            const direction_t dir
-    );
-
-    std::string _myk_get_antenna(
-            const size_t chan,
-            const direction_t dir
-    );
-
-    double _myk_get_bandwidth(
-            const size_t chan,
-            const direction_t dir
-    );
-
-    double _lo_set_frequency(
-            adf435x_iface::sptr lo_iface,
-            const double freq,
-            const size_t chan
-    );
-   void _update_freq_switches(
-        const double freq,
+    double _set_all_gain(
+        const double gain,
         const size_t chan,
         const direction_t dir
+    );
+
+    double _get_all_gain(
+        const size_t chan,
+        const direction_t dir
+    );
+
+    void _set_dsa_val(
+            const size_t chan,
+            const direction_t dir,
+            const uint32_t dsa_val
+    );
+
+    /**************************************************************************
+     * CPLD Controls (implemented in magnesium_radio_ctrl_cpld.cpp)
+     *************************************************************************/
+    void _update_rx_freq_switches(
+        const double freq,
+        const size_t chan
+    );
+
+    void _update_tx_freq_switches(
+        const double freq,
+        const size_t chan
     );
 
     void _update_atr_switches(
@@ -155,34 +143,15 @@ private:
         const std::string &ant
     );
 
-    double _dsa_set_gain(
-            const double gain,
-            const size_t chan,
-            const direction_t dir
-    );
-    double _dsa_get_gain(
-            const size_t chan,
-            const direction_t dir
-    );
-    double _set_all_gain(
-        const double gain,
-        const size_t chan,
-        const direction_t dir
-    );
-    double _get_all_gain(
-        const size_t chan,
-        const direction_t dir
-    );
-    void _set_dsa_val(
-            const size_t chan,
-            const direction_t dir,
-            const uint32_t dsa_val
-    );
+    /**************************************************************************
+     * Private attributes
+     *************************************************************************/
     //! Letter representation of the radio we're currently running
     std::string _radio_slot;
 
-    //! Stores the prefix to RPC calls
-    std::string _rpc_prefix;
+    //! If true, this is a master radio. This attribute will go away when we
+    // move back to 1 radio block per dboard.
+    bool _master;
 
     //! Additional block args; gets set during set_rpc_client()
     uhd::device_addr_t _block_args;
@@ -203,6 +172,9 @@ private:
     //  there's only one CPLD control.
     std::shared_ptr<magnesium_cpld_ctrl> _cpld;
 
+    //! Reference to the AD9371 controls
+    magnesium_ad9371_iface::uptr _ad9371;
+
     //! ATR controls. These control the external DSA and the AD9371 gain
     //  up/down bits. They do *not* control the ATR state of the CPLD, the
     //  tx/rx run states are hooked up directly to the CPLD.
@@ -222,10 +194,12 @@ private:
     //! All gain
     double _all_rx_gain = 0.0;
     double _all_tx_gain = 0.0;
-    //! TRX switch state of 2 channels 
-    std::map<magnesium_cpld_ctrl::chan_sel_t,magnesium_cpld_ctrl::sw_trx_t> _sw_trx = {
-        {magnesium_cpld_ctrl::CHAN1, magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1}, 
-        {magnesium_cpld_ctrl::CHAN2, magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1}
+    //! TRX switch state of 2 channels
+    std::map<magnesium_cpld_ctrl::chan_sel_t, magnesium_cpld_ctrl::sw_trx_t> _sw_trx = {
+        {magnesium_cpld_ctrl::CHAN1,
+            magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1},
+        {magnesium_cpld_ctrl::CHAN2,
+            magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1}
     };
 }; /* class radio_ctrl_impl */
 

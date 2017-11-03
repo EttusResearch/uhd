@@ -5,6 +5,7 @@
 //
 
 #include "magnesium_cpld_ctrl.hpp"
+#include "magnesium_constants.hpp"
 #include <uhd/utils/log.hpp>
 #include <boost/format.hpp>
 #include <chrono>
@@ -12,6 +13,8 @@
 namespace {
     //! Address of the CPLD scratch register
     const uint8_t CPLD_REGS_SCRATCH = 0x0040;
+
+    //! Address of the CPLD reset register
     const uint8_t CPLD_REGS_RESET   = 0x0041;
 }
 
