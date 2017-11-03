@@ -22,7 +22,7 @@ magnesium_cpld_ctrl::magnesium_cpld_ctrl(
 {
     _write_fn = [write_fn](const uint8_t addr, const uint32_t data){
         UHD_LOG_TRACE("MG_CPLD",
-            str(boost::format("Writing to CPLD: 0x%X -> 0x%4X")
+            str(boost::format("Writing to CPLD: 0x%02X -> 0x%04X")
                 % uint32_t(addr) % data));
         const uint32_t spi_transaction = 0
             | ((addr & 0x7F) << 16)
@@ -31,9 +31,8 @@ magnesium_cpld_ctrl::magnesium_cpld_ctrl(
         write_fn(spi_transaction);
     };
     _read_fn = [read_fn](const uint8_t addr){
-        UHD_LOG_TRACE("MG_CPLD", "Reading from addr " << addr);
         UHD_LOG_TRACE("MG_CPLD",
-            str(boost::format("Reading from CPLD address 0x%X")
+            str(boost::format("Reading from CPLD address 0x%02X")
                 % uint32_t(addr)));
         const uint32_t spi_transaction = (1<<23)
             | ((addr & 0x7F) << 16)
@@ -88,7 +87,8 @@ void magnesium_cpld_ctrl::set_tx_switches(
     const tx_sw3_t tx_sw3,
     const lowband_mixer_path_sel_t select_lowband_mixer_path,
     const bool enb_lowband_mixer,
-    const atr_state_t atr_state
+    const atr_state_t atr_state,
+    const bool defer_commit
 ) {
     std::lock_guard<std::mutex> l(_set_mutex);
     if (chan == CHAN1 or chan == BOTH) {
@@ -128,7 +128,9 @@ void magnesium_cpld_ctrl::set_tx_switches(
         }
     }
 
-    commit();
+    if (not defer_commit) {
+        commit();
+    }
 }
 
 void magnesium_cpld_ctrl::set_rx_switches(
@@ -140,7 +142,8 @@ void magnesium_cpld_ctrl::set_rx_switches(
     const rx_sw6_t rx_sw6,
     const lowband_mixer_path_sel_t select_lowband_mixer_path,
     const bool enb_lowband_mixer,
-    const atr_state_t atr_state
+    const atr_state_t atr_state,
+    const bool defer_commit
 ) {
     std::lock_guard<std::mutex> l(_set_mutex);
     if (chan == CHAN1 or chan == BOTH) {
@@ -184,7 +187,9 @@ void magnesium_cpld_ctrl::set_rx_switches(
             _regs.ch2_on_rx_mixer_en = enb_lowband_mixer;
         }
     }
-    commit();
+    if (not defer_commit) {
+        commit();
+    }
 }
 
 void magnesium_cpld_ctrl::set_tx_atr_bits(
@@ -194,7 +199,8 @@ void magnesium_cpld_ctrl::set_tx_atr_bits(
     const sw_trx_t trx_sw,
     const bool tx_pa_enb,
     const bool tx_amp_enb,
-    const bool tx_myk_en
+    const bool tx_myk_en,
+    const bool defer_commit
 ) {
     std::lock_guard<std::mutex> l(_set_mutex);
     if (chan == CHAN1 or chan == BOTH) {
@@ -229,7 +235,9 @@ void magnesium_cpld_ctrl::set_tx_atr_bits(
             _regs.ch2_on_tx_myk_en = tx_myk_en;
         }
     }
-    commit();
+    if (not defer_commit) {
+        commit();
+    }
 }
 
 void magnesium_cpld_ctrl::set_rx_atr_bits(
@@ -241,7 +249,8 @@ void magnesium_cpld_ctrl::set_rx_atr_bits(
     const bool rx_lna1_enb,
     const bool rx_lna2_enb,
     const bool rx_amp_enb,
-    const bool rx_myk_en
+    const bool rx_myk_en,
+    const bool defer_commit
 ) {
     std::lock_guard<std::mutex> l(_set_mutex);
     if (chan == CHAN1 or chan == BOTH) {
@@ -285,7 +294,9 @@ void magnesium_cpld_ctrl::set_rx_atr_bits(
         }
     }
 
-    commit();
+    if (not defer_commit) {
+        commit();
+    }
 }
 
 

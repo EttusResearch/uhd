@@ -179,7 +179,8 @@ public:
         const tx_sw3_t tx_sw3,
         const lowband_mixer_path_sel_t select_lowband_mixer_path,
         const bool enb_lowband_mixer,
-        const atr_state_t atr_state = ANY
+        const atr_state_t atr_state = ANY,
+        const bool defer_commit = false
     );
 
     /*! Frequency-related settings, receive side
@@ -207,7 +208,8 @@ public:
         const rx_sw6_t rx_sw6,
         const lowband_mixer_path_sel_t select_lowband_mixer_path,
         const bool enb_lowband_mixer,
-        const atr_state_t atr_state = ANY
+        const atr_state_t atr_state = ANY,
+        const bool defer_commit = false
     );
 
     /*! ATR settings: LEDs, PAs, LNAs, ... for TX side
@@ -232,7 +234,8 @@ public:
         const sw_trx_t trx_sw,
         const bool tx_pa_enb,
         const bool tx_amp_enb,
-        const bool tx_myk_enb
+        const bool tx_myk_enb,
+        const bool defer_commit = false
     );
 
     /*! ATR settings: LEDs, PAs, LNAs, ... for RX side
@@ -250,7 +253,9 @@ public:
      * \param rx2_led State of the RX LED for this ATR state (on or off). This
      *               is the LED on the RX2 port.
      * \param rx_lna1_enb State of RX LNA 1 for this ATR state (on or off).
+     *                    This is the high-band LNA.
      * \param rx_lna2_enb State of RX LNA 2 for this ATR state (on or off).
+     *                    This is the low-band LNA.
      * \param rx_amp_enb State of RX amp for this ATR state (on or off).
      * \param rx_myk_enb State of the AD9371 RX enable pin for this ATR state
      */
@@ -263,7 +268,8 @@ public:
         const bool rx_lna1_enb,
         const bool rx_lna2_enb,
         const bool rx_amp_enb,
-        const bool rx_myk_en
+        const bool rx_myk_en,
+        const bool defer_commit = false
     );
 
 private:
