@@ -27,6 +27,7 @@
 #include <uhd/utils/tasks.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/types/eeprom.hpp>
+#include <uhd/types/component_file.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
@@ -52,6 +53,23 @@ namespace {
     /*************************************************************************
      * Helper functions
      ************************************************************************/
+    uhd::usrp::component_file_t _update_component(
+        const uhd::usrp::component_file_t& comp,
+        mpmd_mboard_impl *mb
+    ) {
+        std::vector<uint8_t> data = comp.data;
+        std::map<std::string, std::string> metadata;
+        for (const auto& key : comp.metadata.keys()) {
+            metadata[key] = comp.metadata[key];
+        }
+        mb->rpc->notify_with_token("update_component", metadata, data);
+
+        uhd::usrp::component_file_t comp_copy;
+        comp_copy.metadata = comp.metadata;
+        return comp_copy;
+    }
+
+
     void init_property_tree(
             uhd::property_tree::sptr tree,
             fs_path mb_path,
@@ -151,6 +169,26 @@ namespace {
                 return mb_eeprom_dict;
             })
         ;
+
+        /*** Updateable Components ******************************************/
+        std::vector<std::string> updateable_components = {"fpga"};
+        //TODO: get with "list_updateable_components"
+        UHD_LOG_DEBUG("MPMD",
+                    "Found " << updateable_components.size() << " updateable motherboard components."
+                );
+        for (const auto& comp_name : updateable_components) {
+            UHD_LOG_TRACE("MPMD",
+                    "Adding motherboard component: " << comp_name);
+            tree->create<uhd::usrp::component_file_t>(mb_path / "components" / comp_name)
+                        .set_coercer([mb](const uhd::usrp::component_file_t& comp_file) {
+                    return _update_component(
+                            comp_file,
+                            mb
+                    );
+            })
+            ;
+        }
+
     }
 
     void reset_time_synchronized(uhd::property_tree::sptr tree)
