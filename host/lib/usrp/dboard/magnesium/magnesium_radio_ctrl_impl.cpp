@@ -256,6 +256,56 @@ double magnesium_radio_ctrl_impl::set_rx_gain(
     return _set_all_gain(gain, chan, RX_DIRECTION);
 }
 
+std::vector<std::string> magnesium_radio_ctrl_impl::get_rx_lo_names(
+        const size_t chan
+) {
+    return std::vector<std::string>{};
+}
+
+std::vector<std::string> magnesium_radio_ctrl_impl::get_rx_lo_sources(
+        const std::string &name,
+        const size_t chan
+) {
+    return std::vector<std::string>{};
+}
+
+freq_range_t magnesium_radio_ctrl_impl::get_rx_lo_freq_range(
+        const std::string &name,
+        const size_t chan
+) {
+    return freq_range_t{};
+}
+
+void magnesium_radio_ctrl_impl::set_rx_lo_source(
+        const std::string &src,
+        const std::string &name,
+        const size_t chan
+) {
+    // FIXME
+}
+
+const std::string magnesium_radio_ctrl_impl::get_rx_lo_source(
+        const std::string &name,
+        const size_t chan
+) {
+    return ""; // FIXME
+}
+
+double magnesium_radio_ctrl_impl::set_rx_lo_freq(
+        double freq,
+        const std::string &name,
+        const size_t chan
+) {
+    return 0.0; // FIXME
+}
+
+double magnesium_radio_ctrl_impl::get_rx_lo_freq(
+        const std::string &name,
+        const size_t chan
+) {
+    return 0.0; // FIXME
+}
+
 size_t magnesium_radio_ctrl_impl::get_chan_from_dboard_fe(
     const std::string &fe, const direction_t /* dir */
 ) {

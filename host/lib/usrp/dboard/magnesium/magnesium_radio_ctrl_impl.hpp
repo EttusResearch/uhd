@@ -60,6 +60,33 @@ public:
     double set_tx_bandwidth(const double bandwidth, const size_t chan);
     double set_rx_bandwidth(const double bandwidth, const size_t chan);
 
+    std::vector<std::string> get_rx_lo_names(const size_t chan);
+    std::vector<std::string> get_rx_lo_sources(
+            const std::string &name,
+            const size_t chan
+    );
+    freq_range_t get_rx_lo_freq_range(
+            const std::string &name,
+            const size_t chan
+    );
+
+    void set_rx_lo_source(
+            const std::string &src,
+            const std::string &name,
+            const size_t chan
+    );
+    const std::string get_rx_lo_source(
+            const std::string &name,
+            const size_t chan
+    );
+
+    double set_rx_lo_freq(
+            double freq,
+            const std::string &name,
+            const size_t chan
+    );
+    double get_rx_lo_freq(const std::string &name, const size_t chan);
+
     double set_tx_gain(const double gain, const size_t chan);
     double set_rx_gain(const double gain, const size_t chan);
 
