@@ -35,6 +35,8 @@ helpful move for the team and future maintainability of the UHD codebase.
 
 ## C++-specific Guidelines
 
+* If in doubt, consult the [C++ Core Guidelines][https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md].
+  If the guidelines have an answer, and it works for you, just pick that.
 * Use Doxygen doc-blocks copiously.
 * All things equal, prefer standard C++ constructs over Boost constructs (see
   also Boost guidelines).
@@ -123,14 +125,16 @@ std::map<std::string, std::string> bar =
 
 * In this repository, we almost always use fast-forward merges, and no merge
   commits.
-* Prefix all commit messages with the section of code they apply to (Example:
-  "x300: Fixed overflow at full moon"
-* Keep the subject line of a git commit short and concise (so that
-  `git log --oneline` is actually useful), and follow up in greater detail in
-  the body of the commmit message. The body is separated from the subject line
-  with one blank line.
-* Avoid long lines in commit messages (standard is 50 characters for subject,
-  and 72 characters for body).
+* Prefix all commit message subject lines with the section of code they apply
+  to, and use the imperative mood (Example: "x300: Fix overflow at full moon").
+  Try and keep the subject line to 50 characters, but make 72 characters a hard
+  limit.
+* Follow up in greater detail in the body of the commmit message. The body is
+  separated from the subject line with one blank line. Consider the body of the
+  git commit an email to the future reader of this changeset, so don't be
+  sparse in the commit body, and use it to explain the *what* and *why* of this
+  commit (the "how" part should be obvious from the code change). Lines should
+  be limited to 72 characters.
 * Avoid refactoring, whitespace cleanup, or fixing code to match coding
   guidelines in the same commit as modifying behaviour. Prefer dedicated
   cleanup commits.
