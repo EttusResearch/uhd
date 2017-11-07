@@ -6,6 +6,7 @@
 
 #include "magnesium_radio_ctrl_impl.hpp"
 #include "magnesium_constants.hpp"
+#include "magnesium_gain_table.hpp"
 #include <uhd/utils/log.hpp>
 #include <uhd/rfnoc/node_ctrl_base.hpp>
 #include <uhd/transport/chdr.hpp>
@@ -166,7 +167,7 @@ double magnesium_radio_ctrl_impl::set_tx_frequency(
     // bands.
     UHD_LOG_TRACE(unique_id(),
         "set_tx_frequency(f=" << freq << ", chan=" << chan << ")");
-    _update_tx_freq_switches(freq, chan);
+    _update_tx_freq_switches(freq, _tx_bypass_amp, chan);
     //double ad9371_freq = freq;
     double if_freq = 0.0;
     auto lo_iface = _tx_lo;
@@ -199,7 +200,7 @@ double magnesium_radio_ctrl_impl::set_rx_frequency(
     // bands.
     UHD_LOG_TRACE(unique_id(),
         "set_rx_frequency(f=" << freq << ", chan=" << chan << ")");
-    _update_rx_freq_switches(freq, chan);
+    _update_rx_freq_switches(freq, _rx_bypass_lnas, chan);
     //double ad9371_freq = freq;
     double if_freq = 0.0;
     auto lo_iface = _rx_lo;
@@ -243,7 +244,12 @@ double magnesium_radio_ctrl_impl::set_tx_gain(
         const size_t chan
 ) {
     radio_ctrl_impl::set_tx_gain(gain, chan);
-    return _set_all_gain(gain, chan, TX_DIRECTION);
+    return _set_all_gain(
+        gain,
+        radio_ctrl_impl::get_tx_frequency(chan),
+        chan,
+        TX_DIRECTION
+    );
 }
 
 double magnesium_radio_ctrl_impl::set_rx_gain(
@@ -253,7 +259,12 @@ double magnesium_radio_ctrl_impl::set_rx_gain(
     UHD_LOG_TRACE(unique_id(),
         "set_rx_gain(gain=" << gain << ", chan=" << chan << ")");
     radio_ctrl_impl::set_rx_gain(gain, chan);
-    return _set_all_gain(gain, chan, RX_DIRECTION);
+    return _set_all_gain(
+        gain,
+        radio_ctrl_impl::get_rx_frequency(chan),
+        chan,
+        RX_DIRECTION
+    );
 }
 
 std::vector<std::string> magnesium_radio_ctrl_impl::get_rx_lo_names(
@@ -350,89 +361,6 @@ void magnesium_radio_ctrl_impl::set_rpc_client(
             );
         })
     ;
-}
-
-/******************************************************************************
- * Helpers
- *****************************************************************************/
-double magnesium_radio_ctrl_impl::_set_all_gain(
-    const double gain,
-    const size_t chan,
-    const direction_t dir
-) {
-    UHD_LOG_TRACE(unique_id(), "Setting all gain " << gain);
-    // just naively  distributed gain here
-    _ad9371->set_gain(gain/2, chan, dir);
-    _dsa_set_gain(gain/2, chan, dir);
-    if(dir == RX_DIRECTION or dir == DX_DIRECTION)
-    {
-        _all_rx_gain = gain;
-    }
-    if(dir == TX_DIRECTION or dir == DX_DIRECTION)
-    {
-        _all_tx_gain = gain;
-    }
-
-    return gain;
-}
-
-double magnesium_radio_ctrl_impl::_get_all_gain(
-    const size_t /* chan */,
-    const direction_t dir
-) {
-    UHD_LOG_TRACE(unique_id(), "Getting all gain ");
-    if (dir == RX_DIRECTION) {
-       return _all_rx_gain;
-    }
-    return _all_tx_gain;
-}
-
-/******************************************************************************
- * DSA Controls
- *****************************************************************************/
-double magnesium_radio_ctrl_impl::_dsa_set_gain(
-    const double gain,
-    const size_t chan,
-    const direction_t dir
-) {
-    uint32_t dsa_val = 63-2*gain;
-    UHD_LOG_TRACE(unique_id(), "Setting dsa gain " << dsa_val);
-
-    _set_dsa_val(chan,  dir, dsa_val);
-    if (dir == RX_DIRECTION or dir == DX_DIRECTION) {
-        _dsa_rx_gain = gain;
-    }
-    if (dir == TX_DIRECTION or dir == DX_DIRECTION) {
-        _dsa_tx_gain = gain;
-    }
-    return gain;
-}
-
-double magnesium_radio_ctrl_impl::_dsa_get_gain(
-    const size_t /*chan*/,
-    const direction_t dir
-) {
-    if (dir == RX_DIRECTION) {
-       return _dsa_rx_gain;
-    }
-    return _dsa_tx_gain;
-}
-
-void magnesium_radio_ctrl_impl::_set_dsa_val(
-    const size_t chan,
-    const direction_t dir,
-    const uint32_t dsa_val
-) {
-    if (dir == RX_DIRECTION or dir == DX_DIRECTION){
-        UHD_LOG_TRACE(unique_id(),
-                "Chan: " << chan << " Setting RX DSA value" << dsa_val);
-        _gpio[chan]->set_gpio_out(dsa_val, 0x3F);
-    }
-    if (dir == TX_DIRECTION or dir == DX_DIRECTION){
-        UHD_LOG_TRACE(unique_id(),
-                "Chan: " << chan << " Setting TX DSA value" << dsa_val);
-        _gpio[chan]->set_gpio_out(dsa_val, 0x0FC0);
-    }
 }
 
 UHD_RFNOC_BLOCK_REGISTER(magnesium_radio_ctrl, "MagnesiumRadio");

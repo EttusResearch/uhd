@@ -314,7 +314,7 @@ void magnesium_radio_ctrl_impl::_init_frontend_subtree(
         })
     ;
     subtree->create<meta_range_t>(tx_fe_path / "gains" / "all" / "range")
-        .set(meta_range_t(0.0, 60.0, 1.0)) // FIXME
+        .set(meta_range_t(ALL_TX_MIN_GAIN, ALL_TX_MAX_GAIN, ALL_TX_GAIN_STEP))
         .add_coerced_subscriber([](const meta_range_t &){
             throw uhd::runtime_error(
                 "Attempting to update bandwidth range!");
@@ -331,7 +331,7 @@ void magnesium_radio_ctrl_impl::_init_frontend_subtree(
         })
     ;
     subtree->create<meta_range_t>(rx_fe_path / "gains" / "all" / "range")
-        .set(meta_range_t(0.0, 60.0, 1.0)) // FIXME
+        .set(meta_range_t(ALL_RX_MIN_GAIN, ALL_RX_MAX_GAIN, ALL_RX_GAIN_STEP))
         .add_coerced_subscriber([](const meta_range_t &){
             throw uhd::runtime_error(
                 "Attempting to update bandwidth range!");
