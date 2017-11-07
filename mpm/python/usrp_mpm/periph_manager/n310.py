@@ -310,6 +310,10 @@ class n310(PeriphManagerBase):
         Turn on all peripherals. This may throw an error on failure, so make
         sure to catch it.
         """
+        # Init Mboard Regs
+        self.mboard_regs = self._init_mboard_regs()
+        self.log.info("Motherboard-register UIO object successfully generated!")
+        self.mboard_regs_control = MboardRegsControl(self.mboard_regs, self.log)
         # Init peripherals
         self.log.trace("Initializing TCA6424 port expander controls...")
         self._gpios = TCA6424(int(self.mboard_info['rev']))
@@ -342,6 +346,13 @@ class n310(PeriphManagerBase):
         }
         # Init complete.
         self.log.info("mboard info: {}".format(self.mboard_info))
+
+    def _init_mboard_regs(self):
+        " Create a UIO object to talk to mboard regs "
+        return UIO(
+            label="mboard-regs",
+            read_only=False
+        )
 
     def _init_ref_clock_and_time(self, default_args):
         """
@@ -543,13 +554,7 @@ class n310(PeriphManagerBase):
         " Set a time source "
         assert time_source in self.get_time_sources()
         self.log.trace("Setting time source to `{}'".format(time_source))
-        # FIXME use uio
-        if time_source == 'internal':
-            os.system('devmem2 0x4001000C w 0x1')
-        elif time_source == 'external':
-            os.system('devmem2 0x4001000C w 0x0')
-        else:
-            assert False
+        self.mboard_regs_control.set_time_source(time_source)
 
     def enable_gps(self, enable):
         """
@@ -777,4 +782,39 @@ class n310(PeriphManagerBase):
             self.log.error("Error executing `dtc': %s", str(ex))
             return False
         return True
+
+
+class MboardRegsControl(object):
+    """
+    Control the FPGA Motherboard registers
+    """
+    # Motherboard registers
+    MB_DESIGN_REV = 0x0000
+    MB_DATESTAMP = 0x0004
+    MB_GIT_HASH = 0x0008
+    MB_BUS_COUNTER = 0x00C
+    MB_NUM_CE = 0x0010
+    MB_SCRATCH = 0x0014
+    MB_CLOCK_CTRL = 0x0018
+
+    def __init__(self, regs, log):
+        self.log = log
+        self.regs = regs
+        self.poke32 = self.regs.poke32
+        self.peek32 = self.regs.peek32
+
+    def set_time_source(self, time_source):
+        """
+        Set time source
+        """
+        if time_source == 'internal':
+            self.log.trace("Setting time source to internal...")
+            val = self.peek32(self.MB_CLOCK_CTRL);
+            self.poke32(self.MB_CLOCK_CTRL, 0x1 | val)
+        elif time_source == 'external':
+            self.log.trace("Setting time source to external...")
+            val = self.peek32(self.MB_CLOCK_CTRL);
+            self.poke32(self.MB_CLOCK_CTRL, 0x0 & val)
+        else:
+            assert False
 
