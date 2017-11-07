@@ -45,6 +45,7 @@ void magnesium_radio_ctrl_impl::_update_atr_switches(
     const direction_t dir,
     const std::string &ant
 ){
+    UHD_ASSERT_THROW(dir == RX_DIRECTION or dir == TX_DIRECTION);
     magnesium_cpld_ctrl::rx_sw1_t rx_sw1 = magnesium_cpld_ctrl::RX_SW1_RX2INPUT;
     magnesium_cpld_ctrl::sw_trx_t sw_trx = _sw_trx[chan];
 
@@ -56,60 +57,58 @@ void magnesium_radio_ctrl_impl::_update_atr_switches(
         trx_led = true;
         rx2_led = false;
     }
-    UHD_LOG_TRACE(unique_id(), "Update all atr related switches for " << dir << " " << ant );
-    if (dir == RX_DIRECTION){
-        _cpld->set_rx_atr_bits(
+    if (dir == RX_DIRECTION) {
+        UHD_LOG_TRACE(unique_id(),
+            "Updating all RX-ATR related switches for antenna==" << ant);
+        _cpld->set_rx_input_atr_bits(
             chan,
             magnesium_cpld_ctrl::ON,
             rx_sw1,
             trx_led,
             rx2_led,
-            true,
-            true,
-            true,
-            true
+            true /* defer commit */
         );
-        _cpld->set_tx_atr_bits(
+        _cpld->set_rx_atr_bits(
             chan,
-            magnesium_cpld_ctrl::IDLE,
-            false,
-            sw_trx,
-            false,
-            false,
-            false
+            magnesium_cpld_ctrl::ON,
+            true,  /* amp on       */
+            true,  /* mykonos on   */
+            true   /* defer commit */
         );
         _cpld->set_rx_atr_bits(
             chan,
             magnesium_cpld_ctrl::IDLE,
-            rx_sw1,
-            false,
-            false,
-            false,
-            false,
-            false,
-            true
+            false, /* amp off      */
+            true,  /* mykonos on   */
+            true   /* defer commit */
+        );
+        _cpld->set_trx_sw_atr_bits(
+            chan,
+            magnesium_cpld_ctrl::IDLE, /* idle here means TX is off */
+            sw_trx,
+            false /* don't defer commit */
         );
     }
-    if (dir == TX_DIRECTION){
+    if (dir == TX_DIRECTION) {
+        UHD_LOG_TRACE(unique_id(),
+            "Updating all TX-ATR related switches for antenna==" << ant);
         _cpld->set_tx_atr_bits(
             chan,
             magnesium_cpld_ctrl::ON,
-            true,
-            sw_trx,
-            true,
-            true,
-            true
+            true, /* LED on */
+            true, /* PA on  */
+            true, /* AMP on */
+            true, /* Myk on */
+            true  /* defer commit */
         );
-        _cpld->set_rx_atr_bits(
+        _cpld->set_tx_atr_bits(
             chan,
             magnesium_cpld_ctrl::IDLE,
-            rx_sw1,
-            false,
-            false,
-            false,
-            false,
-            false,
-            true
+            false, /* LED off */
+            false, /* PA off  */
+            false, /* AMP off */
+            true,  /* Myk on  */
+            false  /* don't defer commit */
         );
     };
 }
@@ -132,7 +131,7 @@ void magnesium_radio_ctrl_impl::_update_rx_freq_switches(
             magnesium_cpld_ctrl::RX_SW5_FILTER0490LPMHZFROM,
             magnesium_cpld_ctrl::RX_SW6_LOWERFILTERBANKFROMSWITCH5,
             magnesium_cpld_ctrl::LOWBAND_MIXER_PATH_SEL_LOBAND,
-            true
+            true // Enable lowband mixer
         );
     } else if (freq < MAGNESIUM_RX_BAND2_MIN_FREQ) {
         _cpld->set_rx_switches(
@@ -215,33 +214,52 @@ void magnesium_radio_ctrl_impl::_update_tx_freq_switches(
 
      // Set filters based on frequency
     if (freq < MAGNESIUM_TX_BAND1_MIN_FREQ) {
+        _sw_trx[chan_sel] =
+            magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1;
+        _cpld->set_trx_sw_atr_bits(
+            magnesium_cpld_ctrl::BOTH,
+            magnesium_cpld_ctrl::ON,
+            _sw_trx[chan_sel],
+            true /* defer commit */
+        );
         _cpld->set_tx_switches(
             magnesium_cpld_ctrl::BOTH,
-            magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1,
             magnesium_cpld_ctrl::TX_SW1_FROMTXFILTERLP0800MHZ,
             magnesium_cpld_ctrl::TX_SW2_TOTXFILTERLP0800MHZ,
             magnesium_cpld_ctrl::TX_SW3_TOTXFILTERBANKS,
             magnesium_cpld_ctrl::LOWBAND_MIXER_PATH_SEL_LOBAND,
-            true,
+            true, // Enable lowband mixer
             magnesium_cpld_ctrl::ON
         );
-        _sw_trx[chan_sel] = magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1;
     } else if (freq < MAGNESIUM_TX_BAND2_MIN_FREQ) {
+        _sw_trx[chan_sel] =
+            magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1;
+        _cpld->set_trx_sw_atr_bits(
+            magnesium_cpld_ctrl::BOTH,
+            magnesium_cpld_ctrl::ON,
+            _sw_trx[chan_sel],
+            true /* defer commit */
+        );
         _cpld->set_tx_switches(
             magnesium_cpld_ctrl::BOTH,
-            magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1,
             magnesium_cpld_ctrl::TX_SW1_FROMTXFILTERLP0800MHZ,
             magnesium_cpld_ctrl::TX_SW2_TOTXFILTERLP0800MHZ,
             magnesium_cpld_ctrl::TX_SW3_TOTXFILTERBANKS,
             magnesium_cpld_ctrl::LOWBAND_MIXER_PATH_SEL_BYPASS,
-            false,
+            false, // Disable lowband mixer
             magnesium_cpld_ctrl::ON
         );
-        _sw_trx[chan_sel] = magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1;
     } else if (freq < MAGNESIUM_TX_BAND3_MIN_FREQ) {
+        _sw_trx[chan_sel] =
+            magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1;
+        _cpld->set_trx_sw_atr_bits(
+            magnesium_cpld_ctrl::BOTH,
+            magnesium_cpld_ctrl::ON,
+            _sw_trx[chan_sel],
+            true /* defer commit */
+        );
         _cpld->set_tx_switches(
             magnesium_cpld_ctrl::BOTH,
-            magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1,
             magnesium_cpld_ctrl::TX_SW1_FROMTXFILTERLP1700MHZ,
             magnesium_cpld_ctrl::TX_SW2_TOTXFILTERLP1700MHZ,
             magnesium_cpld_ctrl::TX_SW3_TOTXFILTERBANKS,
@@ -249,11 +267,17 @@ void magnesium_radio_ctrl_impl::_update_tx_freq_switches(
             false,
             magnesium_cpld_ctrl::ON
         );
-        _sw_trx[chan_sel] = magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1;
     } else if (freq < MAGNESIUM_TX_BAND4_MIN_FREQ) {
+        _sw_trx[chan_sel] =
+            magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1;
+        _cpld->set_trx_sw_atr_bits(
+            magnesium_cpld_ctrl::BOTH,
+            magnesium_cpld_ctrl::ON,
+            _sw_trx[chan_sel],
+            true /* defer commit */
+        );
         _cpld->set_tx_switches(
             magnesium_cpld_ctrl::BOTH,
-            magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1,
             magnesium_cpld_ctrl::TX_SW1_FROMTXFILTERLP3400MHZ,
             magnesium_cpld_ctrl::TX_SW2_TOTXFILTERLP3400MHZ,
             magnesium_cpld_ctrl::TX_SW3_TOTXFILTERBANKS,
@@ -261,11 +285,17 @@ void magnesium_radio_ctrl_impl::_update_tx_freq_switches(
             false,
             magnesium_cpld_ctrl::ON
         );
-        _sw_trx[chan_sel] = magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1;
     } else {
+        _sw_trx[chan_sel] =
+            magnesium_cpld_ctrl::SW_TRX_FROMTXUPPERFILTERBANKLP6400MHZ;
+        _cpld->set_trx_sw_atr_bits(
+            magnesium_cpld_ctrl::BOTH,
+            magnesium_cpld_ctrl::ON,
+            _sw_trx[chan_sel],
+            true /* defer commit */
+        );
         _cpld->set_tx_switches(
             magnesium_cpld_ctrl::BOTH,
-            magnesium_cpld_ctrl::SW_TRX_FROMTXUPPERFILTERBANKLP6400MHZ,
             magnesium_cpld_ctrl::TX_SW1_SHUTDOWNTXSW1,
             magnesium_cpld_ctrl::TX_SW2_TOTXFILTERLP6400MHZ,
             magnesium_cpld_ctrl::TX_SW3_TOTXFILTERBANKS,
@@ -273,9 +303,6 @@ void magnesium_radio_ctrl_impl::_update_tx_freq_switches(
             false,
             magnesium_cpld_ctrl::ON
         );
-        _sw_trx[chan_sel] = magnesium_cpld_ctrl::SW_TRX_FROMTXUPPERFILTERBANKLP6400MHZ;
     }
 }
-
-
 

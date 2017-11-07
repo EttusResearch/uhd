@@ -157,10 +157,6 @@ public:
 
     /*! Frequency-related settings, transmit side
      *
-     * Note: The TRX switch is also a frequency-dependent setting, but it's
-     * also tied to ATR state. For that reason, its configuration is done by
-     * set_tx_atr_bits().
-     *
      * \param chan Which channel do these settings apply to? Use BOTH to set
      *             both channels at once.
      * \param tx_sw1 Filter bank switch 1
@@ -173,7 +169,6 @@ public:
      */
     void set_tx_switches(
         const chan_sel_t chan,
-        const sw_trx_t trx_sw,
         const tx_sw1_t tx_sw1,
         const tx_sw2_t tx_sw2,
         const tx_sw3_t tx_sw3,
@@ -214,6 +209,8 @@ public:
 
     /*! ATR settings: LEDs, PAs, LNAs, ... for TX side
      *
+     * Note: These ATR states are not frequency dependent.
+     *
      * Note on the tx_myk_enb bits: The AD9371 requires those pins to stay
      * high for longer than we can guarantee with out clock-cycle accurate
      * TX timing, so let's keep it turned on all the time.
@@ -222,7 +219,6 @@ public:
      *             both channels at once.
      * \param atr_state TX state for which these settings apply.
      * \param tx_led State of the TX LED for this ATR state (on or off)
-     * \param trx_sw State of the TRX switch for this ATR state
      * \param tx_pa_enb State of the TX PA for this ATR state (on or off)
      * \param tx_amp_enb State of the TX amp for this ATR state (on or off)
      * \param tx_myk_enb State of the AD9371 TX enable pin for this ATR state
@@ -231,14 +227,77 @@ public:
         const chan_sel_t chan,
         const atr_state_t atr_state,
         const bool tx_led,
-        const sw_trx_t trx_sw,
         const bool tx_pa_enb,
         const bool tx_amp_enb,
         const bool tx_myk_enb,
         const bool defer_commit = false
     );
 
-    /*! ATR settings: LEDs, PAs, LNAs, ... for RX side
+    /*! ATR settings: TRX switch
+     *
+     * Note: This ATR state is frequency dependent.
+     *
+     * \param chan Which channel do these settings apply to? Use BOTH to set
+     *             both channels at once.
+     * \param atr_state TX state for which these settings apply.
+     * \param trx_sw State of the TRX switch for this ATR state
+     */
+    void set_trx_sw_atr_bits(
+        const chan_sel_t chan,
+        const atr_state_t atr_state,
+        const sw_trx_t trx_sw,
+        const bool defer_commit = false
+    );
+
+    /*! ATR settings: LEDs, input switches for RX side
+     *
+     * Note: These ATR states are not frequency dependent, but need to change
+     * when the antenna input is switched.
+     *
+     * \param chan Which channel do these settings apply to? Use BOTH to set
+     *             both channels at once.
+     * \param atr_state ATR state for which these settings apply.
+     * \param rx_sw1 Filter bank sw1 of RX path
+     * \param rx_led State of the RX LED for this ATR state (on or off). This
+     *               is the LED on the TX/RX port.
+     * \param rx2_led State of the RX LED for this ATR state (on or off). This
+     *               is the LED on the RX2 port.
+     */
+    void set_rx_input_atr_bits(
+        const chan_sel_t chan,
+        const atr_state_t atr_state,
+        const rx_sw1_t rx_sw1,
+        const bool rx_led,
+        const bool rx2_led,
+        const bool defer_commit = false
+    );
+
+    /*! ATR settings: LEDs, input switches for RX side
+     *
+     * Note: These ATR states are not frequency dependent (or dependent on
+     * anything other than RX ATR state).
+     *
+     * Note on the rx_myk_enb bits: The AD9371 requires those pins to stay
+     * high for longer than we can guarantee without clock-cycle accurate
+     * RX timing, so let's keep it turned on all the time.
+     *
+     * \param chan Which channel do these settings apply to? Use BOTH to set
+     *             both channels at once.
+     * \param atr_state ATR state for which these settings apply.
+     * \param rx_amp_enb State of RX amp for this ATR state (on or off).
+     * \param rx_myk_enb State of the AD9371 RX enable pin for this ATR state
+     */
+    void set_rx_atr_bits(
+        const chan_sel_t chan,
+        const atr_state_t atr_state,
+        const bool rx_amp_enb,
+        const bool rx_myk_en,
+        const bool defer_commit = false
+    );
+
+    /*! ATR settings: LNAs for RX side
+     *
+     * Note: These ATR states are frequency dependent.
      *
      * Note on the rx_myk_enb bits: The AD9371 requires those pins to stay
      * high for longer than we can guarantee with out clock-cycle accurate
@@ -246,29 +305,17 @@ public:
      *
      * \param chan Which channel do these settings apply to? Use BOTH to set
      *             both channels at once.
-     * \param atr_state TX state for which these settings apply.
-     * \param rx_sw1 Filter bank sw1 of RX path
-     * \param rx_led State of the RX LED for this ATR state (on or off). This
-     *               is the LED on the TX/RX port.
-     * \param rx2_led State of the RX LED for this ATR state (on or off). This
-     *               is the LED on the RX2 port.
+     * \param atr_state ATR state for which these settings apply.
      * \param rx_lna1_enb State of RX LNA 1 for this ATR state (on or off).
      *                    This is the high-band LNA.
      * \param rx_lna2_enb State of RX LNA 2 for this ATR state (on or off).
      *                    This is the low-band LNA.
-     * \param rx_amp_enb State of RX amp for this ATR state (on or off).
-     * \param rx_myk_enb State of the AD9371 RX enable pin for this ATR state
      */
-    void set_rx_atr_bits(
+    void set_rx_lna_atr_bits(
         const chan_sel_t chan,
         const atr_state_t atr_state,
-        const rx_sw1_t rx_sw1,
-        const bool rx_led,
-        const bool rx2_led,
         const bool rx_lna1_enb,
         const bool rx_lna2_enb,
-        const bool rx_amp_enb,
-        const bool rx_myk_en,
         const bool defer_commit = false
     );
 

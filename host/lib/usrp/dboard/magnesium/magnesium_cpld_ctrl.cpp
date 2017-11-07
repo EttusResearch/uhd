@@ -84,7 +84,6 @@ uint16_t magnesium_cpld_ctrl::get_scratch()
 
 void magnesium_cpld_ctrl::set_tx_switches(
     const chan_sel_t chan,
-    const sw_trx_t trx_sw,
     const tx_sw1_t tx_sw1,
     const tx_sw2_t tx_sw2,
     const tx_sw3_t tx_sw3,
@@ -96,7 +95,6 @@ void magnesium_cpld_ctrl::set_tx_switches(
     std::lock_guard<std::mutex> l(_set_mutex);
     if (chan == CHAN1 or chan == BOTH) {
         if (atr_state == IDLE or atr_state == ANY) {
-            _regs.ch1_idle_sw_trx = magnesium_cpld_regs_t::ch1_idle_sw_trx_t(trx_sw);
             _regs.ch1_idle_tx_sw1 = magnesium_cpld_regs_t::ch1_idle_tx_sw1_t(tx_sw1);
             _regs.ch1_idle_tx_sw2 = magnesium_cpld_regs_t::ch1_idle_tx_sw2_t(tx_sw2);
             _regs.ch1_idle_tx_sw3 = magnesium_cpld_regs_t::ch1_idle_tx_sw3_t(tx_sw3);
@@ -199,7 +197,6 @@ void magnesium_cpld_ctrl::set_tx_atr_bits(
     const chan_sel_t chan,
     const atr_state_t atr_state,
     const bool tx_led,
-    const sw_trx_t trx_sw,
     const bool tx_pa_enb,
     const bool tx_amp_enb,
     const bool tx_myk_en,
@@ -209,14 +206,12 @@ void magnesium_cpld_ctrl::set_tx_atr_bits(
     if (chan == CHAN1 or chan == BOTH) {
         if (atr_state == IDLE or atr_state == ANY) {
             _regs.ch1_idle_tx_led = tx_led;
-            _regs.ch1_idle_sw_trx = magnesium_cpld_regs_t::ch1_idle_sw_trx_t(trx_sw);
             _regs.ch1_idle_tx_pa_en = tx_pa_enb;
             _regs.ch1_idle_tx_amp_en = tx_amp_enb;
             _regs.ch1_idle_tx_myk_en = tx_myk_en;
         }
         if (atr_state == ON or atr_state == ANY) {
             _regs.ch1_on_tx_led = tx_led;
-            _regs.ch1_on_sw_trx = magnesium_cpld_regs_t::ch1_on_sw_trx_t(trx_sw);
             _regs.ch1_on_tx_pa_en = tx_pa_enb;
             _regs.ch1_on_tx_amp_en = tx_amp_enb;
             _regs.ch1_on_tx_myk_en = tx_myk_en;
@@ -225,14 +220,12 @@ void magnesium_cpld_ctrl::set_tx_atr_bits(
     if (chan == CHAN2 or chan == BOTH) {
         if (atr_state == IDLE or atr_state == ANY) {
             _regs.ch2_idle_tx_led = tx_led;
-            _regs.ch2_idle_sw_trx = magnesium_cpld_regs_t::ch2_idle_sw_trx_t(trx_sw);
             _regs.ch2_idle_tx_pa_en = tx_pa_enb;
             _regs.ch2_idle_tx_amp_en = tx_amp_enb;
             _regs.ch2_idle_tx_myk_en = tx_myk_en;
         }
         if (atr_state == ON or atr_state == ANY) {
             _regs.ch2_on_tx_led = tx_led;
-            _regs.ch2_on_sw_trx = magnesium_cpld_regs_t::ch2_on_sw_trx_t(trx_sw);
             _regs.ch2_on_tx_pa_en = tx_pa_enb;
             _regs.ch2_on_tx_amp_en = tx_amp_enb;
             _regs.ch2_on_tx_myk_en = tx_myk_en;
@@ -243,14 +236,84 @@ void magnesium_cpld_ctrl::set_tx_atr_bits(
     }
 }
 
-void magnesium_cpld_ctrl::set_rx_atr_bits(
+void magnesium_cpld_ctrl::set_trx_sw_atr_bits(
+    const chan_sel_t chan,
+    const atr_state_t atr_state,
+    const sw_trx_t trx_sw,
+    const bool defer_commit
+) {
+    std::lock_guard<std::mutex> l(_set_mutex);
+    if (chan == CHAN1 or chan == BOTH) {
+        if (atr_state == IDLE or atr_state == ANY) {
+            _regs.ch1_idle_sw_trx =
+                magnesium_cpld_regs_t::ch1_idle_sw_trx_t(trx_sw);
+        }
+        if (atr_state == ON or atr_state == ANY) {
+            _regs.ch1_on_sw_trx =
+                magnesium_cpld_regs_t::ch1_on_sw_trx_t(trx_sw);
+        }
+    }
+    if (chan == CHAN2 or chan == BOTH) {
+        if (atr_state == IDLE or atr_state == ANY) {
+            _regs.ch2_idle_sw_trx =
+                magnesium_cpld_regs_t::ch2_idle_sw_trx_t(trx_sw);
+        }
+        if (atr_state == ON or atr_state == ANY) {
+            _regs.ch2_on_sw_trx =
+                magnesium_cpld_regs_t::ch2_on_sw_trx_t(trx_sw);
+        }
+    }
+    if (not defer_commit) {
+        commit();
+    }
+}
+
+void magnesium_cpld_ctrl::set_rx_input_atr_bits(
     const chan_sel_t chan,
     const atr_state_t atr_state,
     const rx_sw1_t rx_sw1,
     const bool rx_led,
     const bool rx2_led,
-    const bool rx_lna1_enb,
-    const bool rx_lna2_enb,
+    const bool defer_commit
+) {
+    std::lock_guard<std::mutex> l(_set_mutex);
+    if (chan == CHAN1 or chan == BOTH) {
+        if (atr_state == IDLE or atr_state == ANY) {
+            _regs.ch1_idle_rx_sw1 =
+                magnesium_cpld_regs_t::ch1_idle_rx_sw1_t(rx_sw1);
+            _regs.ch1_idle_rx_led = rx_led;
+            _regs.ch1_idle_rx2_led = rx2_led;
+        }
+        if (atr_state == ON or atr_state == ANY) {
+            _regs.ch1_on_rx_sw1 =
+                magnesium_cpld_regs_t::ch1_on_rx_sw1_t(rx_sw1);
+            _regs.ch1_on_rx_led = rx_led;
+            _regs.ch1_on_rx2_led = rx2_led;
+        }
+    }
+    if (chan == CHAN2 or chan == BOTH) {
+        if (atr_state == IDLE or atr_state == ANY) {
+            _regs.ch2_idle_rx_sw1 =
+                magnesium_cpld_regs_t::ch2_idle_rx_sw1_t(rx_sw1);
+            _regs.ch2_idle_rx_led = rx_led;
+            _regs.ch2_idle_rx2_led = rx2_led;
+        }
+        if (atr_state == ON or atr_state == ANY) {
+            _regs.ch2_on_rx_sw1 =
+                magnesium_cpld_regs_t::ch2_on_rx_sw1_t(rx_sw1);
+            _regs.ch2_on_rx_led = rx_led;
+            _regs.ch2_on_rx2_led = rx2_led;
+        }
+    }
+
+    if (not defer_commit) {
+        commit();
+    }
+}
+
+void magnesium_cpld_ctrl::set_rx_atr_bits(
+    const chan_sel_t chan,
+    const atr_state_t atr_state,
     const bool rx_amp_enb,
     const bool rx_myk_en,
     const bool defer_commit
@@ -258,42 +321,56 @@ void magnesium_cpld_ctrl::set_rx_atr_bits(
     std::lock_guard<std::mutex> l(_set_mutex);
     if (chan == CHAN1 or chan == BOTH) {
         if (atr_state == IDLE or atr_state == ANY) {
-            _regs.ch1_idle_rx_sw1 = magnesium_cpld_regs_t::ch1_idle_rx_sw1_t(rx_sw1);
-            _regs.ch1_idle_rx_led = rx_led;
-            _regs.ch1_idle_rx2_led = rx2_led;
-            _regs.ch1_idle_rx_lna1_en = rx_lna1_enb;
-            _regs.ch1_idle_rx_lna2_en = rx_lna2_enb;
             _regs.ch1_idle_rx_amp_en = rx_amp_enb;
             _regs.ch1_idle_rx_myk_en = rx_myk_en;
         }
         if (atr_state == ON or atr_state == ANY) {
-            _regs.ch1_on_rx_sw1 = magnesium_cpld_regs_t::ch1_on_rx_sw1_t(rx_sw1);
-            _regs.ch1_on_rx_led = rx_led;
-            _regs.ch1_on_rx2_led = rx2_led;
-            _regs.ch1_on_rx_lna1_en = rx_lna1_enb;
-            _regs.ch1_on_rx_lna2_en = rx_lna2_enb;
             _regs.ch1_on_rx_amp_en = rx_amp_enb;
             _regs.ch1_on_rx_myk_en = rx_myk_en;
         }
     }
     if (chan == CHAN2 or chan == BOTH) {
         if (atr_state == IDLE or atr_state == ANY) {
-            _regs.ch2_idle_rx_sw1 = magnesium_cpld_regs_t::ch2_idle_rx_sw1_t(rx_sw1);
-            _regs.ch2_idle_rx_led = rx_led;
-            _regs.ch2_idle_rx2_led = rx2_led;
-            _regs.ch2_idle_rx_lna1_en = rx_lna1_enb;
-            _regs.ch2_idle_rx_lna2_en = rx_lna2_enb;
             _regs.ch2_idle_rx_amp_en = rx_amp_enb;
             _regs.ch2_idle_rx_myk_en = rx_myk_en;
         }
         if (atr_state == ON or atr_state == ANY) {
-            _regs.ch2_on_rx_sw1 = magnesium_cpld_regs_t::ch2_on_rx_sw1_t(rx_sw1);
-            _regs.ch2_on_rx_led = rx_led;
-            _regs.ch2_on_rx2_led = rx2_led;
-            _regs.ch2_on_rx_lna1_en = rx_lna1_enb;
-            _regs.ch2_on_rx_lna2_en = rx_lna2_enb;
             _regs.ch2_on_rx_amp_en = rx_amp_enb;
             _regs.ch2_on_rx_myk_en = rx_myk_en;
+        }
+    }
+
+    if (not defer_commit) {
+        commit();
+    }
+}
+
+void magnesium_cpld_ctrl::set_rx_lna_atr_bits(
+    const chan_sel_t chan,
+    const atr_state_t atr_state,
+    const bool rx_lna1_enb,
+    const bool rx_lna2_enb,
+    const bool defer_commit
+) {
+    std::lock_guard<std::mutex> l(_set_mutex);
+    if (chan == CHAN1 or chan == BOTH) {
+        if (atr_state == IDLE or atr_state == ANY) {
+            _regs.ch1_idle_rx_lna1_en = rx_lna1_enb;
+            _regs.ch1_idle_rx_lna2_en = rx_lna2_enb;
+        }
+        if (atr_state == ON or atr_state == ANY) {
+            _regs.ch1_on_rx_lna1_en = rx_lna1_enb;
+            _regs.ch1_on_rx_lna2_en = rx_lna2_enb;
+        }
+    }
+    if (chan == CHAN2 or chan == BOTH) {
+        if (atr_state == IDLE or atr_state == ANY) {
+            _regs.ch2_idle_rx_lna1_en = rx_lna1_enb;
+            _regs.ch2_idle_rx_lna2_en = rx_lna2_enb;
+        }
+        if (atr_state == ON or atr_state == ANY) {
+            _regs.ch2_on_rx_lna1_en = rx_lna1_enb;
+            _regs.ch2_on_rx_lna2_en = rx_lna2_enb;
         }
     }
 
