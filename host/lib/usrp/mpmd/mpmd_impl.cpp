@@ -171,8 +171,10 @@ namespace {
         ;
 
         /*** Updateable Components ******************************************/
-        std::vector<std::string> updateable_components = {"fpga"};
-        //TODO: get with "list_updateable_components"
+        std::vector<std::string> updateable_components =
+                mb->rpc->request<std::vector<std::string>>(
+                        "list_updateable_components"
+                );
         UHD_LOG_DEBUG("MPMD",
                     "Found " << updateable_components.size() << " updateable motherboard components."
                 );
