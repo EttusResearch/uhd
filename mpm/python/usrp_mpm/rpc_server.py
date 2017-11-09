@@ -19,6 +19,7 @@ Implemented RPC Servers
 """
 
 from __future__ import print_function
+import copy
 from random import choice
 from string import ascii_letters, digits
 from multiprocessing import Process
@@ -52,6 +53,9 @@ class MPMServer(RPCServer):
     Main MPM RPC class which holds the periph_manager object and translates
     RPC calls to appropiate calls in the periph_manager and dboard_managers.
     """
+    # This is a list of methods in this class which require a claim
+    default_claimed_methods = ['init', 'reclaim', 'unclaim', 'allocate_sid']
+
     def __init__(self, state, mgr, *args, **kwargs):
         self.log = get_main_logger().getChild('RPCServer')
         self._state = state
@@ -60,13 +64,19 @@ class MPMServer(RPCServer):
         self.periph_manager = mgr
         self._db_methods = []
         self._mb_methods = []
-        self.claimed_methods = ['init', 'reclaim', 'unclaim', 'allocate_sid']
-        # add public mboard methods without namespace
+        self.claimed_methods = copy.copy(self.default_claimed_methods)
+        self._last_error = ""
         self._update_component_commands(mgr, '', '_mb_methods')
-        # add public dboard methods in `db_<slot>_` namespace
         for db_slot, dboard in enumerate(mgr.dboards):
-            self._update_component_commands(dboard, 'db_' + str(db_slot) + '_', '_db_methods')
-        super(MPMServer, self).__init__(*args, pack_params={'use_bin_type': True}, **kwargs)
+            cmd_prefix = 'db_' + str(db_slot) + '_'
+            self._update_component_commands(dboard, cmd_prefix, '_db_methods')
+        # We call the server __init__ function here, and not earlier, because
+        # first the commands need to be registered
+        super(MPMServer, self).__init__(
+            *args,
+            pack_params={'use_bin_type': True},
+            **kwargs
+        )
 
     def _check_token_valid(self, token):
         """
@@ -125,7 +135,15 @@ class MPMServer(RPCServer):
                     "token `{}'.".format(command, token)
                 )
                 raise RuntimeError("Invalid token!")
-            return function(*args)
+            try:
+                return function(*args)
+            except Exception as ex:
+                self.log.error(
+                    "Uncaught exception in method %s: %s",
+                    command, str(ex)
+                )
+                self._last_error = str(ex)
+                raise
         new_claimed_function.__doc__ = function.__doc__
         setattr(self, command, new_claimed_function)
 
@@ -136,18 +154,36 @@ class MPMServer(RPCServer):
         _add_claimed_command().
         """
         self.log.trace("adding safe command %s pointing to %s", command, function)
-        setattr(self, command, function)
+        def new_unclaimed_function(*args):
+            " Define a function that does not require a claim token check "
+            try:
+                return function(*args)
+            except Exception as ex:
+                self.log.error(
+                    "Uncaught exception in method %s: %s",
+                    command, str(ex)
+                )
+                self._last_error = str(ex)
+                raise
+        new_unclaimed_function.__doc__ = function.__doc__
+        setattr(self, command, new_unclaimed_function)
 
     def list_methods(self):
         """
-        Returns a tuple of public methods and
-        corresponding docs of this RPC server
+        Returns a list of tuples: (method_name, docstring, is claim required)
+
+        Every tuple represents one call that's available over RPC.
         """
-        return [(met, getattr(self, met).__doc__, met in self.claimed_methods)
-                for met in dir(self)
-                if not met.startswith('_') \
-                        and callable(getattr(self, met))
-        ] # TODO _notok is missing from the list of checks
+        return [
+            (
+                method,
+                getattr(self, method).__doc__,
+                method in self.claimed_methods
+            )
+            for method in dir(self)
+            if not method.startswith('_') \
+                    and callable(getattr(self, method))
+        ]
 
     def ping(self, data=None):
         """
@@ -165,6 +201,7 @@ class MPMServer(RPCServer):
         self._state.lock.acquire()
         if self._state.claim_status.value:
             self.log.warning("Someone tried to claim this device again")
+            self._last_error = "Someone tried to claim this device again"
             self._state.lock.release()
             raise RuntimeError("Double-claim")
         self.log.debug(
@@ -198,9 +235,14 @@ class MPMServer(RPCServer):
                     self.client_host
                 )
             )
+            self._last_error = "init() called without valid claim."
             raise RuntimeError("init() called without valid claim.")
         self._timer.kill() # Stop the timer, inits can take some time.
-        result = self.periph_manager.init(args)
+        try:
+            result = self.periph_manager.init(args)
+        except Exception as ex:
+            self._last_error = str(ex)
+            self.log.error("init() failed with error: %s", str(ex))
         self.log.debug("init() result: {}".format(result))
         self._reset_timer()
         return result
@@ -241,7 +283,12 @@ class MPMServer(RPCServer):
         self._state.claim_token.value = b''
         self.session_id = None
         self.periph_manager.claimed = False
-        self.periph_manager.deinit()
+        try:
+            self.periph_manager.deinit()
+        except Exception as ex:
+            self._last_error = str(ex)
+            self.log.error("deinit() failed: %s", str(ex))
+            # Don't want to propagate this failure -- the session is over
         self._timer.kill()
 
     def _reset_timer(self, timeout=TIMEOUT_INTERVAL):
@@ -274,6 +321,12 @@ class MPMServer(RPCServer):
             info["connection"] = "remote"
         return info
 
+    def get_last_error(self):
+        """
+        Return the 'last error' string, which gets set when RPC calls fail.
+        """
+        return self._last_error
+
     def allocate_sid(self, token, *args):
         """
         Forwards the call to periph_manager._allocate_sid with the client ip addresss
@@ -282,9 +335,12 @@ class MPMServer(RPCServer):
         if not self._check_token_valid(token):
             self.log.warning("Attempt to allocate SID without valid token!")
             return None
-        return self.periph_manager._allocate_sid(self.client_host, *args)
-
-
+        try:
+            return self.periph_manager._allocate_sid(self.client_host, *args)
+        except Exception as ex:
+            self._last_error = str(ex)
+            self.log.error("allocate_sid() failed: %s", str(ex))
+            raise
 
 
 def _rpc_server_process(shared_state, port, mgr):
