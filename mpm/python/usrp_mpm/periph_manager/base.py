@@ -385,7 +385,8 @@ class PeriphManagerBase(object):
         """
         return dtoverlay.list_overlays()
 
-    def _get_device_info(self):
+    @no_rpc
+    def get_device_info(self):
         """
         return the mboard_info dict and add a claimed field
         """

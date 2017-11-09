@@ -123,8 +123,8 @@ def main():
     log.info("Spawning periph manager...")
     mgr = periph_manager(args)
     discovery_info = {
-        "type": mgr._get_device_info()["type"],
-        "serial": mgr._get_device_info()["serial"]
+        "type": mgr.get_device_info().get("type", "n/a"),
+        "serial": mgr.get_device_info().get("serial", "n/a")
     }
     if args.init_only:
         mgr.init(args.default_args)

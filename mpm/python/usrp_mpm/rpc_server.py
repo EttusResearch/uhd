@@ -314,7 +314,7 @@ class MPMServer(RPCServer):
         get device information
         This is as safe method which can be called without a claim on the device
         """
-        info = self.periph_manager._get_device_info()
+        info = self.periph_manager.get_device_info()
         if self.client_host in ["127.0.0.1", "::1"]:
             info["connection"] = "local"
         else:
