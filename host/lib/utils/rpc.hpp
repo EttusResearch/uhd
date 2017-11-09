@@ -20,6 +20,7 @@
 
 #include <rpc/client.h>
 #include <rpc/rpc_error.h>
+#include <uhd/utils/log.hpp>
 #include <uhd/exception.hpp>
 #include <boost/format.hpp>
 
@@ -36,15 +37,31 @@ class rpc_client
   public:
     using sptr = std::shared_ptr<rpc_client>;
 
-    static sptr make(std::string const& addr, uint16_t port) {
-        return std::make_shared<rpc_client>(addr, port);
+    static sptr make(
+            const std::string &addr,
+            const uint16_t port,
+            const std::string &get_last_error_cmd=""
+    ) {
+        return std::make_shared<rpc_client>(addr, port, get_last_error_cmd);
     }
 
     /*!
      * \param addr An IP address to connect to
      * \param port Port to connect to
+     * \param get_last_error_cmd A command that queries an error string from
+     *                           the RPC server. If set, the RPC client will
+     *                           try and use this command to fetch information
+     *                           about what went wrong on the client side.
      */
-    rpc_client(std::string const& addr, uint16_t port) : _client(addr, port) {}
+    rpc_client(
+            const std::string &addr,
+            const uint16_t port,
+            std::string const &get_last_error_cmd=""
+    ) : _client(addr, port)
+      , _get_last_error_cmd(get_last_error_cmd)
+    {
+        // nop
+    }
 
     /*! Perform an RPC request.
      *
@@ -64,9 +81,13 @@ class rpc_client
             return _client.call(func_name, std::forward<Args>(args)...)
                 .template as<return_type>();
         } catch (const ::rpc::rpc_error &ex) {
+            const std::string error = _get_last_error_safe();
+            if (not error.empty()) {
+                UHD_LOG_ERROR("RPC", error);
+            }
             throw uhd::runtime_error(str(
                 boost::format("Error during RPC call to `%s'. Error message: %s")
-                % func_name % ex.what()
+                % func_name % (error.empty() ? ex.what() : error)
             ));
         } catch (const std::bad_cast& ex) {
             throw uhd::runtime_error(str(
@@ -93,9 +114,13 @@ class rpc_client
         try {
             _client.call(func_name, std::forward<Args>(args)...);
         } catch (const ::rpc::rpc_error &ex) {
+            const std::string error = _get_last_error_safe();
+            if (not error.empty()) {
+                UHD_LOG_ERROR("RPC", error);
+            }
             throw uhd::runtime_error(str(
                 boost::format("Error during RPC call to `%s'. Error message: %s")
-                % func_name % ex.what()
+                % func_name % (error.empty() ? ex.what() : error)
             ));
         } catch (const std::bad_cast& ex) {
             throw uhd::runtime_error(str(
@@ -140,9 +165,36 @@ class rpc_client
     }
 
   private:
+     /*! Pull the last error out of the RPC server. Not thread-safe, meant to
+      * be called from notify() or request().
+      *
+      * This function will do its best not to get in anyone's way. If it can't
+      * get an error string, it'll return an empty string.
+      */
+    std::string _get_last_error_safe()
+    {
+        if (_get_last_error_cmd.empty()) {
+            return "";
+        }
+        try {
+            return _client.call(_get_last_error_cmd).as<std::string>();
+        } catch (const ::rpc::rpc_error &ex) {
+            // nop
+        } catch (const std::bad_cast& ex) {
+            // nop
+        } catch (...) {
+            // nop
+        }
+        return "";
+    }
+
+    //! Reference the actual RPC client
+    ::rpc::client _client;
+    //! If set, this is the command that will retrieve an error
+    const std::string _get_last_error_cmd;
+
     std::string _token;
     std::mutex _mutex;
-    ::rpc::client _client;
 };
 
 } /* namespace uhd */
