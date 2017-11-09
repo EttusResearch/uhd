@@ -58,31 +58,31 @@ static const uint32_t INIT_CALS =
     ADC_TUNER |
     TIA_3DB_CORNER |
     DC_OFFSET |
-//    TX_ATTENUATION_DELAY |
-//    RX_GAIN_DELAY |
+    TX_ATTENUATION_DELAY |
+    RX_GAIN_DELAY |
     FLASH_CAL |
-//    PATH_DELAY |
-//    TX_LO_LEAKAGE_INTERNAL |
+    PATH_DELAY |
+    TX_LO_LEAKAGE_INTERNAL |
 ////  TX_LO_LEAKAGE_EXTERNAL |
-//    TX_QEC_INIT |
-//    LOOPBACK_RX_LO_DELAY |
-//    LOOPBACK_RX_RX_QEC_INIT |
-//    RX_LO_DELAY |
-//    RX_QEC_INIT |
+    TX_QEC_INIT |
+    LOOPBACK_RX_LO_DELAY |
+    LOOPBACK_RX_RX_QEC_INIT |
+    RX_LO_DELAY |
+    RX_QEC_INIT |
 ////  DPD_INIT |
 ////  CLGC_INIT |
 ////  VSWR_INIT |
     0;
 
 static const uint32_t TRACKING_CALS =
-//    TRACK_RX1_QEC |
-//    TRACK_RX2_QEC |
+    TRACK_RX1_QEC |
+    TRACK_RX2_QEC |
 //    TRACK_ORX1_QEC |
 //    TRACK_ORX2_QEC |
 ////  TRACK_TX1_LOL |
 ////  TRACK_TX2_LOL |
-//    TRACK_TX1_QEC |
-//    TRACK_TX2_QEC |
+    TRACK_TX1_QEC |
+    TRACK_TX2_QEC |
 ////  TRACK_TX1_DPD |
 ////  TRACK_TX2_DPD |
 ////  TRACK_TX1_CLGC |
