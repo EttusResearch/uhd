@@ -143,12 +143,12 @@ void magnesium_radio_ctrl_impl::set_rx_antenna(
         const size_t chan
 ) {
     UHD_ASSERT_THROW(chan <= MAGNESIUM_NUM_CHANS);
-    // TODO can we please not hardcode the antenna names here?
-    // We need a map somewhere, anyway, to store the available options in the
-    // prop tree.
-    if (ant != "RX2" and ant != "TX/RX") {
+    if (std::find(MAGNESIUM_RX_ANTENNAS.begin(),
+                  MAGNESIUM_RX_ANTENNAS.end(),
+                  ant) == MAGNESIUM_RX_ANTENNAS.end()) {
         throw uhd::value_error(str(
             boost::format("[%s] Requesting invalid RX antenna value: %s")
+            % unique_id()
             % ant
         ));
     }

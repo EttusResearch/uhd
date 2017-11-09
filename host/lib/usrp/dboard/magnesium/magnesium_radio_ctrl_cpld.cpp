@@ -46,20 +46,38 @@ void magnesium_radio_ctrl_impl::_update_atr_switches(
     const std::string &ant
 ){
     UHD_ASSERT_THROW(dir == RX_DIRECTION or dir == TX_DIRECTION);
-    magnesium_cpld_ctrl::rx_sw1_t rx_sw1 = magnesium_cpld_ctrl::RX_SW1_RX2INPUT;
-    magnesium_cpld_ctrl::sw_trx_t sw_trx = _sw_trx[chan];
 
-    bool trx_led = false, rx2_led = true;
-    //bool tx_pa_enb = true, tx_amp_enb = true, tx_myk_en=true;
-    if (ant == "TX/RX" and dir == RX_DIRECTION) {
-        rx_sw1 = magnesium_cpld_ctrl::RX_SW1_TRXSWITCHOUTPUT;
-        sw_trx = magnesium_cpld_ctrl::SW_TRX_RXCHANNELPATH;
-        trx_led = true;
-        rx2_led = false;
-    }
     if (dir == RX_DIRECTION) {
+        // These default values work for RX2
+        bool trx_led = false;
+        bool rx2_led = true;
+        auto rx_sw1 = magnesium_cpld_ctrl::RX_SW1_RX2INPUT;
+        // The TRX switch in TX-idle mode defaults to TX-on mode. When TX is
+        // off, and we're receiving on TX/RX however, we need to point TRX to
+        // RX SW1. In all other cases, a TX state toggle (on to idle or  vice
+        // versa) won't trigger a change of the TRX switch.
+        auto sw_trx = _sw_trx[chan];
         UHD_LOG_TRACE(unique_id(),
             "Updating all RX-ATR related switches for antenna==" << ant);
+        if (ant == "TX/RX") {
+            rx_sw1 = magnesium_cpld_ctrl::RX_SW1_TRXSWITCHOUTPUT;
+            sw_trx = magnesium_cpld_ctrl::SW_TRX_RXCHANNELPATH;
+            trx_led = true;
+            rx2_led = false;
+        }
+        else if (ant == "CAL") {
+            // It makes intuitive sense to illuminate the green TX/RX LED when
+            // receiving on CAL (because it goes over to the TX/RX port), but
+            // the problem is that CAL is only useful when we're both TXing and
+            // RXing, and then both green and red would be on the same LED.
+            // So, for CAL, we light up the green RX2 LED.
+            trx_led = false;
+            rx2_led = true;
+            rx_sw1 = magnesium_cpld_ctrl::RX_SW1_TXRXINPUT;
+        }
+        else if (ant == "LOCAL") {
+            rx_sw1 = magnesium_cpld_ctrl::RX_SW1_RXLOCALINPUT;
+        }
         _cpld->set_rx_input_atr_bits(
             chan,
             magnesium_cpld_ctrl::ON,
