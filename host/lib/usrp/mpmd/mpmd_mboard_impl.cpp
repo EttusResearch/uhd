@@ -31,7 +31,7 @@ namespace {
     const size_t MPMD_DEFAULT_INIT_TIMEOUT    = 30000;
     //! Default timeout value for RPC calls (ms)
     const size_t MPMD_DEFAULT_RPC_TIMEOUT     = 2000;
-
+    //! Default session ID (MPM will recognize a session by this name)
     const std::string MPMD_DEFAULT_SESSION_ID = "UHD";
 
 
@@ -75,7 +75,10 @@ mpmd_mboard_impl::mpmd_mboard_impl(
         const device_addr_t &mb_args_,
         const std::string& rpc_server_addr
 ) : mb_args(mb_args_)
-  , rpc(uhd::rpc_client::make(rpc_server_addr, MPM_RPC_PORT))
+  , rpc(uhd::rpc_client::make(
+              rpc_server_addr,
+              MPM_RPC_PORT,
+              MPM_RPC_GET_LAST_ERROR_CMD))
 {
     UHD_LOGGER_TRACE("MPMD")
         << "Initializing mboard, connecting to RPC server address: "

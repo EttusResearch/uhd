@@ -30,6 +30,7 @@ static const size_t MPMD_RX_SW_BUFF_SIZE_ETH_MACOS  = 0x100000; //1Mib
 
 static const size_t MPM_DISCOVERY_PORT = 49600;
 static const size_t MPM_RPC_PORT = 49601;
+static const char MPM_RPC_GET_LAST_ERROR_CMD[] = "get_last_error";
 static const char MPM_DISCOVERY_CMD[] = "MPM-DISC";
 static const char MPM_ECHO_CMD[] = "MPM-ECHO";
 static const size_t MPMD_10GE_DATA_FRAME_MAX_SIZE = 8000; // CHDR packet size in bytes
