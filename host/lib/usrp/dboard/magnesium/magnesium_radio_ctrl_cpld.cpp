@@ -78,7 +78,7 @@ void magnesium_radio_ctrl_impl::_update_atr_switches(
         _cpld->set_rx_atr_bits(
             chan,
             magnesium_cpld_ctrl::IDLE,
-            false, /* amp off      */
+            true,  /* amp stays on */
             true,  /* mykonos on   */
             true   /* defer commit */
         );
