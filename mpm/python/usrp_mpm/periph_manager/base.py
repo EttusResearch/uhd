@@ -368,8 +368,7 @@ class PeriphManagerBase(object):
         return list of updateable components
         This method does not require a claim_token in the RPC
         """
-        # return self.updateable_components.keys()
-        return [] # FIXME
+        return list(self.updateable_components.keys())
 
     @no_claim
     def list_available_overlays(self):
