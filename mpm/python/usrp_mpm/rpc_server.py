@@ -221,6 +221,10 @@ class MPMServer(RPCServer):
             self._state.claim_token.value,
             self.client_host
         )
+        if self.client_host in ["127.0.0.1", "::1"]:
+            self.periph_manager.set_connection_type("local")
+        else:
+            self.periph_manager.set_connection_type("remote")
         return self._state.claim_token.value
 
 
@@ -284,6 +288,7 @@ class MPMServer(RPCServer):
         self.session_id = None
         self.periph_manager.claimed = False
         try:
+            self.periph_manager.set_connection_type(None)
             self.periph_manager.deinit()
         except Exception as ex:
             self._last_error = str(ex)
@@ -345,7 +350,7 @@ class MPMServer(RPCServer):
 
 def _rpc_server_process(shared_state, port, mgr):
     """
-    Start the RPC server
+    This is the actual process that's running the RPC server.
     """
     connections = Pool(1000)
     server = StreamServer(

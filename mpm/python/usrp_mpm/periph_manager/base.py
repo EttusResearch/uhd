@@ -394,6 +394,19 @@ class PeriphManagerBase(object):
         result.update(self.mboard_info)
         return result
 
+    @no_rpc
+    def set_connection_type(self, conn_type):
+        """
+        Specify how the RPC client has connected to this MPM instance. Valid
+        values are "remote", "local", or None. When None is given, the value
+        is reset.
+        """
+        assert conn_type in ('remote', 'local', None)
+        if conn_type is None:
+            self.mboard_info.pop('rpc_connection', None)
+        else:
+            self.mboard_info['rpc_connection'] = conn_type
+
     @no_claim
     def get_dboard_info(self):
         """
