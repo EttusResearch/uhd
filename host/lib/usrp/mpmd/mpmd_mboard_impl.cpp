@@ -28,7 +28,7 @@ namespace {
     //! Time between reclaims (ms)
     const size_t MPMD_RECLAIM_INTERVAL_MS     = 1000;
     //! Default timeout value for the init() RPC call (ms)
-    const size_t MPMD_DEFAULT_INIT_TIMEOUT    = 30000;
+    const size_t MPMD_DEFAULT_INIT_TIMEOUT    = 45000;
     //! Default timeout value for RPC calls (ms)
     const size_t MPMD_DEFAULT_RPC_TIMEOUT     = 2000;
     //! Default session ID (MPM will recognize a session by this name)
