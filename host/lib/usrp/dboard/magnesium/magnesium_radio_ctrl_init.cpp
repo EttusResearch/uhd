@@ -185,11 +185,10 @@ void magnesium_radio_ctrl_impl::_init_defaults()
 
 void magnesium_radio_ctrl_impl::_init_frontend_subtree(
     uhd::property_tree::sptr subtree,
-    const size_t fe_chan_idx,
     const size_t chan_idx
 ) {
-    const fs_path tx_fe_path = fs_path("tx_frontends") / fe_chan_idx;
-    const fs_path rx_fe_path = fs_path("rx_frontends") / fe_chan_idx;
+    const fs_path tx_fe_path = fs_path("tx_frontends") / chan_idx;
+    const fs_path rx_fe_path = fs_path("rx_frontends") / chan_idx;
     UHD_LOG_TRACE(unique_id(),
         "Adding non-RFNoC block properties for channel " << chan_idx <<
         " to prop tree path " << tx_fe_path << " and " << rx_fe_path);
@@ -342,127 +341,14 @@ void magnesium_radio_ctrl_impl::_init_frontend_subtree(
 
 void magnesium_radio_ctrl_impl::_init_prop_tree()
 {
-    fs_path gain_mode_path =
-        _root_path.branch_path()
-        / str(boost::format("Radio_%d") % ((get_block_id().get_block_count()/2)*2))
-        / "args/0/gain_mode/value";
-    UHD_LOG_DEBUG("GAIN_MODE_STRING","Gain mode path " << gain_mode_path);
-    std::string gain_mode = _tree->access<std::string>(gain_mode_path).get();
-    UHD_LOG_DEBUG("GAIN_MODE_STRING","Gain mode string" << gain_mode);
-
-    /**** Set up legacy compatible properties ******************************/
-    // For use with multi_usrp APIs etc.
-    // For legacy prop tree init:
-    // TODO: determine DB number
     const fs_path fe_base = fs_path("dboards") / _radio_slot;
-    const std::vector<uhd::direction_t> dir({ RX_DIRECTION, TX_DIRECTION });
-    const std::vector<std::string> fe({ "rx_frontends", "tx_frontends" });
-    const std::vector<std::string> ant({ "RX" , "TX" });
-    //const size_t RX_IDX = 0;
-    // const size_t TX_IDX = 1;
-    //this->_dsa_set_gain(0.5,0,RX_DIRECTION);
-    for (size_t fe_idx = 0; fe_idx < fe.size(); ++fe_idx)
-    {
-        const fs_path fe_direction_path = fe_base / fe[fe_idx];
-        for (size_t chan = 0; chan < MAGNESIUM_NUM_CHANS; ++chan)
-        {
-            const fs_path fe_path = fe_direction_path / chan;
-            UHD_LOG_TRACE(unique_id(), "Adding FE at " << fe_path);
-            // Shared TX/RX attributes
-            //{
-                //auto ad9371_min_gain = (fe_idx == RX_IDX) ? AD9371_MIN_RX_GAIN : AD9371_MIN_TX_GAIN;
-                //auto ad9371_max_gain = (fe_idx == RX_IDX) ? AD9371_MAX_RX_GAIN : AD9371_MAX_TX_GAIN;
-                //auto ad9371_gain_step = (fe_idx == RX_IDX) ? AD9371_RX_GAIN_STEP : AD9371_TX_GAIN_STEP;
-                //auto dsa_min_gain = DSA_MIN_GAIN;
-                //auto dsa_max_gain = DSA_MAX_GAIN;
-                //auto dsa_gain_step = DSA_GAIN_STEP;
-                //auto all_min_gain = (fe_idx == RX_IDX) ? ALL_RX_MIN_GAIN : ALL_TX_MIN_GAIN;
-                //auto all_max_gain = (fe_idx == RX_IDX) ? ALL_TX_MAX_GAIN : ALL_TX_MAX_GAIN;
-                //auto all_gain_step = 0.5;
-                //if (gain_mode == "auto"){
-                    //ad9371_min_gain = 0;
-                    //ad9371_max_gain = 0;
-                    //ad9371_gain_step = 0;
-                    //dsa_min_gain = 0;
-                    //dsa_max_gain = 0;
-                    //dsa_gain_step = 0;
-                //}
-                //if (gain_mode == "manual")
-                //{
-                    //all_min_gain = 0 ;
-                    //all_max_gain = 0 ;
-                    //all_gain_step = 0 ;
-
-                //}
-                //auto dir_ = dir[fe_idx];
-                ////Create gain property for mykonos
-                //auto myk_set_gain_func = [this, chan, dir_](const double gain)
-                //{
-                    //return this->_myk_set_gain(gain, chan, dir_);
-                //};
-                //auto myk_get_gain_func = [this, chan, dir_]()
-                //{
-                    //return this->_myk_get_gain(chan, dir_);
-                //};
-
-                //_tree->create<double>(fe_path / "gains" / "ad9371" / "value")
-                    //.set(0)
-                    //.set_coercer(myk_set_gain_func)
-                    //.set_publisher(myk_get_gain_func);
-                //_tree->create<meta_range_t>(fe_path / "gains" / "ad9371" / "range")
-                    //.set(meta_range_t(ad9371_min_gain, ad9371_max_gain, ad9371_gain_step));
-                //// Create gain property for DSA
-                //auto dsa_set_gain_func = [this, chan, dir_](const double gain)
-                //{
-                    //return this->_dsa_set_gain(gain, chan, dir_);
-                //};
-                //auto dsa_get_gain_func = [this, chan, dir_]()
-                //{
-                    //return this->_dsa_get_gain(chan, dir_);
-                //};
-                //_tree->create<double>(fe_path / "gains" / "dsa" / "value")
-                    //.set(0)
-                    //.set_coercer(dsa_set_gain_func)
-                    //.set_publisher(dsa_get_gain_func);
-                //_tree->create<meta_range_t>(fe_path / "gains" / "dsa" / "range")
-                    //.set(meta_range_t(dsa_min_gain, dsa_max_gain, dsa_gain_step));
-
-                //// Create gain property for all gains
-                //auto set_all_gain_func = [this, chan, dir_](const double gain)
-                //{
-                    //return this->_set_all_gain(gain, chan, dir_);
-                //};
-                //auto get_all_gain_func = [this, chan, dir_]()
-                //{
-                    //return this->_get_all_gain(chan, dir_);
-                //};
-                //_tree->create<double>(fe_path / "gains" / "all" / "value")
-                    //.set(0)
-                    //.set_coercer(set_all_gain_func)
-                    //.set_publisher(get_all_gain_func);
-                //_tree->create<meta_range_t>(fe_path / "gains" / "all" / "range")
-                    //.set(meta_range_t(all_min_gain, all_max_gain, all_gain_step));
-
-            //}
-        }
-    }
-
-
-    // TODO this might be wrong
-    if (_master) {
-        this->_init_frontend_subtree(_tree->subtree(fe_base), 0, 0);
-        std::string slave_slot = (_radio_slot == "A") ? "B" : "D";
-        UHD_LOG_TRACE(unique_id(),
-            "Also registering props for slave radio " << slave_slot);
-        this->_init_frontend_subtree(
-                _tree->subtree(fs_path("dboards") / slave_slot), 0, 1);
-    }
+    this->_init_frontend_subtree(_tree->subtree(fe_base), 0); 
     // TODO: When we go to one radio per dboard, the above if statement goes
     // away, and instead we have something like this:
     /*
      *for (chan_idx = 0; chan_idx < MAGNESIUM_NUM_CHANS; chan_idx++) {
      *    this->_init_frontend_subtree(
-     *        _tree->get_subtree(fe_base), chan_idx, chan_idx);
+     *        _tree->get_subtree(fe_base), chan_idx);
      *}
      */
 

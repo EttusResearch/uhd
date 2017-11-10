@@ -48,7 +48,7 @@ public:
     /************************************************************************
      * API calls
      ***********************************************************************/
-    // Note: We use the cached values in radio_ctrl_impl, so most getters are
+    // Note: We use the cached values in radio_ctrl_impl, so most getters are		
     // not reimplemented here
     double set_rate(double rate);
 
@@ -57,9 +57,10 @@ public:
 
     double set_tx_frequency(const double freq, const size_t chan);
     double set_rx_frequency(const double freq, const size_t chan);
+    double get_rx_frequency(const size_t chan);
+    double get_tx_frequency(const size_t chan);
     double set_tx_bandwidth(const double bandwidth, const size_t chan);
     double set_rx_bandwidth(const double bandwidth, const size_t chan);
-
     std::vector<std::string> get_rx_lo_names(const size_t chan);
     std::vector<std::string> get_rx_lo_sources(
             const std::string &name,
@@ -89,7 +90,6 @@ public:
 
     double set_tx_gain(const double gain, const size_t chan);
     double set_rx_gain(const double gain, const size_t chan);
-
     size_t get_chan_from_dboard_fe(const std::string &fe, const direction_t dir);
     std::string get_dboard_fe_from_chan(const size_t chan, const direction_t dir);
 
@@ -113,7 +113,6 @@ private:
     //! Init a subtree for the RF frontends
     void _init_frontend_subtree(
         uhd::property_tree::sptr subtree,
-        const size_t fe_chan_idx,
         const size_t chan_idx
     );
 

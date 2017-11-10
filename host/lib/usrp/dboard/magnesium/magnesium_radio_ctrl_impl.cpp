@@ -73,6 +73,17 @@ namespace {
         lo_iface->set_output_enable(adf435x_iface::RF_OUTPUT_B, false);
         lo_iface->commit();
     }
+
+    // TODO: remove this helper when there are only 2 radios
+    fs_path master_fe_base_path(const std::string &radio_slot)
+    {
+        if (radio_slot == "B") {
+            return fs_path("dboards") / "A";
+        }
+        if (radio_slot == "D") {
+            return fs_path("dboards") / "C";
+        }
+    }
 }
 
 
@@ -141,13 +152,6 @@ void magnesium_radio_ctrl_impl::set_rx_antenna(
             % ant
         ));
     }
-
-    // TODO: When we go to 1 block per dboard, this entire if statement can go
-    // away.
-    if (not _master) {
-        // tbi
-    }
-
     UHD_LOG_TRACE(unique_id(),
         "Setting RX antenna to " << ant << " for chan " << chan);
     magnesium_cpld_ctrl::chan_sel_t chan_sel  =
@@ -167,6 +171,14 @@ double magnesium_radio_ctrl_impl::set_tx_frequency(
     // bands.
     UHD_LOG_TRACE(unique_id(),
         "set_tx_frequency(f=" << freq << ", chan=" << chan << ")");
+    if (not _master) {
+        const fs_path master_tx_fe_path =
+            master_fe_base_path(_radio_slot) / fs_path("tx_frontends") / chan;
+        UHD_LOG_DEBUG(unique_id(),
+                      "Slave setting TX frequency");
+        _tree->access<double>(master_tx_fe_path / "freq" / "value").set(freq);
+        return _tree->access<double>(master_tx_fe_path / "freq" / "value").get();
+    }
     _update_tx_freq_switches(freq, _tx_bypass_amp, chan);
     //double ad9371_freq = freq;
     double if_freq = 0.0;
@@ -200,6 +212,14 @@ double magnesium_radio_ctrl_impl::set_rx_frequency(
     // bands.
     UHD_LOG_TRACE(unique_id(),
         "set_rx_frequency(f=" << freq << ", chan=" << chan << ")");
+    if (not _master) {
+        const fs_path master_rx_fe_path =
+            master_fe_base_path(_radio_slot) / fs_path("rx_frontends") / chan;
+        UHD_LOG_DEBUG(unique_id(),
+                      "Slave setting RX frequency");
+        _tree->access<double>(master_rx_fe_path / "freq" / "value").set(freq);
+        return _tree->access<double>(master_rx_fe_path / "freq" / "value").get();
+    }
     _update_rx_freq_switches(freq, _rx_bypass_lnas, chan);
     //double ad9371_freq = freq;
     double if_freq = 0.0;
@@ -221,6 +241,34 @@ double magnesium_radio_ctrl_impl::set_rx_frequency(
         _ad9371->set_frequency(freq, chan, RX_DIRECTION);
     radio_ctrl_impl::set_rx_frequency(freq, chan);
     return freq; // FIXME calc the actual frequency
+}
+
+double magnesium_radio_ctrl_impl::get_tx_frequency(
+    const size_t chan)
+{
+    UHD_LOG_TRACE(unique_id(),
+                  "get_tx_frequency(chan=" << chan << ")");
+    if (not _master) {
+        const fs_path master_tx_fe_path =
+            master_fe_base_path(_radio_slot) / fs_path("tx_frontends") / chan;
+        UHD_LOG_TRACE(unique_id(), "Slave getting TX frequency");
+        return _tree->access<double>(master_tx_fe_path / "freq" / "value").get();
+    }
+    return radio_ctrl_impl::get_tx_frequency(chan);
+}
+
+double magnesium_radio_ctrl_impl::get_rx_frequency(
+    const size_t chan)
+{
+    UHD_LOG_TRACE(unique_id(),
+                  "get_rx_frequency(chan=" << chan << ")");
+    if (not _master) {
+        const fs_path master_rx_fe_path =
+            master_fe_base_path(_radio_slot) / fs_path("rx_frontends") / chan;
+        UHD_LOG_TRACE(unique_id(), "Slave getting RX frequency");
+        return _tree->access<double>(master_rx_fe_path / "freq" / "value").get();
+    }
+    return radio_ctrl_impl::get_rx_frequency(chan);
 }
 
 double magnesium_radio_ctrl_impl::set_rx_bandwidth(
