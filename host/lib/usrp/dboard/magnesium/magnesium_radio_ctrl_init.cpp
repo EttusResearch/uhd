@@ -366,6 +366,115 @@ void magnesium_radio_ctrl_impl::_init_frontend_subtree(
             );
         })
     ;
+    //LO Specific
+    //RX LO
+    subtree->create<meta_range_t>(rx_fe_path / "los"/MAGNESIUM_LO1/"freq/range")
+        .set_publisher([this,chan_idx](){
+            return this->get_rx_lo_freq_range(MAGNESIUM_LO1, chan_idx);
+        })
+    ;
+    subtree->create<std::vector<std::string>>(rx_fe_path / "los"/MAGNESIUM_LO1/"source/options")
+        .set_publisher([this,chan_idx](){
+            return this->get_rx_lo_sources(MAGNESIUM_LO1, chan_idx);
+        })
+    ;
+    subtree->create<std::string>(rx_fe_path / "los"/MAGNESIUM_LO1/"source/value")
+        .add_coerced_subscriber([this,chan_idx](std::string src){
+            this->set_rx_lo_source(src, MAGNESIUM_LO1,chan_idx);
+        })
+        .set_publisher([this,chan_idx](){
+            return this->get_rx_lo_source(MAGNESIUM_LO1, chan_idx);
+        })
+    ;
+    subtree->create<double>(rx_fe_path / "los"/MAGNESIUM_LO1/"freq/value")
+        .set_publisher([this,chan_idx](){
+            return this->get_rx_lo_freq(MAGNESIUM_LO1, chan_idx);
+        })
+        .set_coercer([this,chan_idx](const double freq){
+            return this->set_rx_lo_freq(freq, MAGNESIUM_LO1, chan_idx);
+        })
+    ;
+
+    subtree->create<meta_range_t>(rx_fe_path / "los"/MAGNESIUM_LO2/"freq/range")
+        .set_publisher([this,chan_idx](){
+            return this->get_rx_lo_freq_range(MAGNESIUM_LO2, chan_idx);
+        })
+    ;
+    subtree->create<std::vector<std::string>>(rx_fe_path / "los"/MAGNESIUM_LO2/"source/options")
+        .set_publisher([this,chan_idx](){
+            return this->get_rx_lo_sources(MAGNESIUM_LO2, chan_idx);
+        })
+    ;
+
+    subtree->create<std::string>(rx_fe_path / "los"/MAGNESIUM_LO2/"source/value")
+        .add_coerced_subscriber([this,chan_idx](std::string src){
+            this->set_rx_lo_source(src, MAGNESIUM_LO2, chan_idx);
+        })
+        .set_publisher([this,chan_idx](){
+            return this->get_rx_lo_source(MAGNESIUM_LO2, chan_idx);
+        })
+    ;
+    subtree->create<double>(rx_fe_path / "los"/MAGNESIUM_LO2/"freq/value")
+        .set_publisher([this,chan_idx](){
+            return this->get_rx_lo_freq(MAGNESIUM_LO2, chan_idx);
+        })
+        .set_coercer([this,chan_idx](double freq){
+            return this->set_rx_lo_freq(freq, MAGNESIUM_LO2, chan_idx);
+        });
+    //TX LO
+     subtree->create<meta_range_t>(tx_fe_path / "los"/MAGNESIUM_LO1/"freq/range")
+        .set_publisher([this,chan_idx](){
+            return this->get_rx_lo_freq_range(MAGNESIUM_LO1, chan_idx);
+        })
+    ;
+    subtree->create<std::vector<std::string>>(tx_fe_path / "los"/MAGNESIUM_LO1/"source/options")
+        .set_publisher([this,chan_idx](){
+            return this->get_tx_lo_sources(MAGNESIUM_LO1, chan_idx);
+        })
+    ;
+    subtree->create<std::string>(tx_fe_path / "los"/MAGNESIUM_LO1/"source/value")
+        .add_coerced_subscriber([this,chan_idx](std::string src){
+            this->set_tx_lo_source(src, MAGNESIUM_LO1, chan_idx);
+        })
+        .set_publisher([this,chan_idx](){
+            return this->get_tx_lo_source(MAGNESIUM_LO1, chan_idx);
+        })
+    ;
+    subtree->create<double>(tx_fe_path / "los"/MAGNESIUM_LO1/"freq/value ")
+        .set_publisher([this,chan_idx](){
+            return this->get_tx_lo_freq(MAGNESIUM_LO1, chan_idx);
+        })
+        .set_coercer([this,chan_idx](double freq){
+            return this->set_tx_lo_freq(freq, MAGNESIUM_LO1, chan_idx);
+        })
+    ;
+
+    subtree->create<meta_range_t>(tx_fe_path / "los"/MAGNESIUM_LO2/"freq/range")
+        .set_publisher([this,chan_idx](){
+            return this->get_tx_lo_freq_range(MAGNESIUM_LO2,chan_idx);
+        })
+    ;
+    subtree->create<std::vector<std::string>>(tx_fe_path / "los"/MAGNESIUM_LO2/"source/options")
+        .set_publisher([this,chan_idx](){
+            return this->get_tx_lo_sources(MAGNESIUM_LO2, chan_idx);
+        })
+    ;
+
+    subtree->create<std::string>(tx_fe_path / "los"/MAGNESIUM_LO2/"source/value")
+        .add_coerced_subscriber([this,chan_idx](std::string src){
+            this->set_tx_lo_source(src, MAGNESIUM_LO2, chan_idx);
+        })
+        .set_publisher([this,chan_idx](){
+            return this->get_tx_lo_source(MAGNESIUM_LO2, chan_idx);
+        })
+    ;
+    subtree->create<double>(tx_fe_path / "los"/MAGNESIUM_LO2/"freq/value")
+        .set_publisher([this,chan_idx](){
+            return this->get_tx_lo_freq(MAGNESIUM_LO2, chan_idx);
+        })
+        .set_coercer([this,chan_idx](double freq){
+            return this->set_tx_lo_freq(freq, MAGNESIUM_LO2, chan_idx);
+        });
 }
 
 void magnesium_radio_ctrl_impl::_init_prop_tree()

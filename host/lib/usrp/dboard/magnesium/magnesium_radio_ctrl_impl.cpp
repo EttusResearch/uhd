@@ -18,6 +18,7 @@
 #include <boost/make_shared.hpp>
 #include <boost/format.hpp>
 #include <sstream>
+#include <cmath>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -178,7 +179,6 @@ void magnesium_radio_ctrl_impl::set_rx_antenna(
         const size_t chan
 ) {
     UHD_ASSERT_THROW(chan <= MAGNESIUM_NUM_CHANS);
-    std::lock_guard<std::mutex> l(_set_lock);
     if (std::find(MAGNESIUM_RX_ANTENNAS.begin(),
                   MAGNESIUM_RX_ANTENNAS.end(),
                   ant) == MAGNESIUM_RX_ANTENNAS.end()) {
@@ -201,12 +201,10 @@ double magnesium_radio_ctrl_impl::set_tx_frequency(
         const double freq,
         const size_t chan
 ) {
-    // Note: There is only one LO per tx or TX, so changing frequency will
-    // affect the adjacent channel in the same direction. We have to make sure
-    // that getters will always tell the truth! This is true for low and high
-    // bands.
+    // FIXME bounds checking + clipping!!!
     UHD_LOG_TRACE(unique_id(),
         "set_tx_frequency(f=" << freq << ", chan=" << chan << ")");
+    _desired_rf_freq[TX_DIRECTION]=freq;
     if (not _master) {
         const fs_path master_tx_fe_path =
             master_fe_base_path(_radio_slot) / fs_path("tx_frontends") / chan;
@@ -223,26 +221,31 @@ double magnesium_radio_ctrl_impl::set_tx_frequency(
     // This way, if we tune channel 0 it will not put channel 1 into a bad
     // state.
     _update_tx_freq_switches(freq, _tx_bypass_amp, magnesium_cpld_ctrl::BOTH);
-    //double ad9371_freq = freq;
-    double if_freq = 0.0;
-    auto lo_iface = _tx_lo;
+    const std::string ad9371_source = this->get_tx_lo_source(MAGNESIUM_LO1, chan);
+    const std::string adf4351_source = this->get_tx_lo_source(MAGNESIUM_LO2, chan);
+    UHD_ASSERT_THROW(adf4351_source == "internal");
+    double coerced_if_freq = freq;
 
     if (freq < MAGNESIUM_LOWBAND_FREQ) { // Low band
-        if_freq = MAGNESIUM_TX_IF_FREQ ;
-        const double lo_freq = if_freq - freq;
-        const bool int_n_mode = false; // FIXME no hardcode
-        //const double actual_lo_freq =
-            _lo_enable(lo_iface, lo_freq, _master_clock_rate, int_n_mode);
-        //ad9371_freq = actual_lo_freq - freq;
+        _is_low_band[TX_DIRECTION] = true;
+        const double desired_low_freq = MAGNESIUM_TX_IF_FREQ - freq;
+        coerced_if_freq =
+            this->set_tx_lo_freq(desired_low_freq, MAGNESIUM_LO2, chan) + freq;
+        UHD_LOG_TRACE(unique_id(), "coerced_if_freq = " << coerced_if_freq);
     } else {
-        _lo_disable(lo_iface);
+        _is_low_band[TX_DIRECTION] = false;
+        _lo_disable(_tx_lo);
     }
+    // external LO required to tune at 2xdesired_frequency.
+    const double desired_if_freq = (ad9371_source == "internal") ?
+        coerced_if_freq :
+        2*coerced_if_freq;
 
-    //const double actual_ad9371_freq =
-    _ad9371->set_frequency(freq, chan, TX_DIRECTION);
-    radio_ctrl_impl::set_tx_frequency(freq, chan)
+    this->set_tx_lo_freq(desired_if_freq, MAGNESIUM_LO1, chan);
+
+    this->_update_freq(chan, TX_DIRECTION);
     this->_update_gain(chan, TX_DIRECTION);
-    return freq; // FIXME calc the actual frequency
+    return radio_ctrl_impl::get_tx_frequency(chan);
 }
 
 void magnesium_radio_ctrl_impl::_update_gain(
@@ -260,19 +263,37 @@ void magnesium_radio_ctrl_impl::_update_gain(
     this->_set_all_gain(this->_get_all_gain(chan, dir), freq, chan, dir);
     // now we need update gain on slave
     _tree->access<double>(slave_fe_path / "gains" / "all" / "value").update();
+}
 
+void magnesium_radio_ctrl_impl::_update_freq(
+        const size_t chan,
+        const uhd::direction_t dir
+) {
+    const double rf_freq = _is_low_band[dir] ?
+        _ad9371_freq[dir] - _adf4351_freq[dir] :
+        _ad9371_freq[dir];
+    UHD_LOG_TRACE(unique_id(),
+         "RF freq = " << rf_freq);
+        UHD_ASSERT_THROW(rf_freq >= 0);
+        UHD_ASSERT_THROW(
+            std::abs(rf_freq - _desired_rf_freq[dir]) <= _master_clock_rate/2);
+    if (dir == RX_DIRECTION){
+        radio_ctrl_impl::set_rx_frequency(rf_freq, chan);
+    }else if (dir == TX_DIRECTION){
+        radio_ctrl_impl::set_tx_frequency(rf_freq, chan);
+    }else{
+        UHD_THROW_INVALID_CODE_PATH();
+    }
 }
 
 double magnesium_radio_ctrl_impl::set_rx_frequency(
         const double freq,
         const size_t chan
 ) {
-    // Note: There is only one LO per RX or TX, so changing frequency will
-    // affect the adjacent channel in the same direction. We have to make sure
-    // that getters will always tell the truth! This is true for low and high
-    // bands.
+    // FIXME bounds checking + clipping!!!
     UHD_LOG_TRACE(unique_id(),
         "set_rx_frequency(f=" << freq << ", chan=" << chan << ")");
+    _desired_rf_freq[RX_DIRECTION]=freq;
     if (not _master) {
         const fs_path master_rx_fe_path =
             master_fe_base_path(_radio_slot) / fs_path("rx_frontends") / chan;
@@ -288,26 +309,32 @@ double magnesium_radio_ctrl_impl::set_rx_frequency(
     // This way, if we tune channel 0 it will not put channel 1 into a bad
     // state.
     _update_rx_freq_switches(freq, _rx_bypass_lnas, magnesium_cpld_ctrl::BOTH);
-    //double ad9371_freq = freq;
-    double if_freq = 0.0;
-    auto lo_iface = _rx_lo;
+    const std::string ad9371_source = this->get_rx_lo_source(MAGNESIUM_LO1, chan);
+    const std::string adf4351_source = this->get_rx_lo_source(MAGNESIUM_LO2, chan);
+    UHD_ASSERT_THROW(adf4351_source == "internal");
+    double coerced_if_freq = freq;
 
     if (freq < MAGNESIUM_LOWBAND_FREQ) { // Low band
-        if_freq = MAGNESIUM_RX_IF_FREQ ;
-        const double lo_freq = if_freq - freq;
-        const bool int_n_mode = false; // FIXME no hardcode
-        //const double actual_lo_freq =
-            _lo_enable(lo_iface, lo_freq, _master_clock_rate, int_n_mode);
-        //ad9371_freq = actual_lo_freq - freq;
+        _is_low_band[RX_DIRECTION] = true;
+        const double desired_low_freq = MAGNESIUM_RX_IF_FREQ - freq;
+        coerced_if_freq =
+             this->_set_rx_lo_freq(adf4351_source, MAGNESIUM_LO2, desired_low_freq, chan) + freq;
+        UHD_LOG_TRACE(unique_id(), "coerced_if_freq = " << coerced_if_freq);
     } else {
-        _lo_disable(lo_iface);
+        _is_low_band[RX_DIRECTION] = false;
+        _lo_disable(_rx_lo);
     }
+    // external LO required to tune at 2xdesired_frequency.
+    const double desired_if_freq = ad9371_source == "internal" ?
+        coerced_if_freq :
+        2*coerced_if_freq;
 
-    //const double actual_ad9371_freq =
-    _ad9371->set_frequency(freq, chan, RX_DIRECTION);
-    radio_ctrl_impl::set_rx_frequency(freq, chan);
+    this->_set_rx_lo_freq(ad9371_source, MAGNESIUM_LO1, desired_if_freq, chan);
+
+    this->_update_freq(chan, RX_DIRECTION);
     this->_update_gain(chan, RX_DIRECTION);
-    return freq; // FIXME calc the actual frequency
+
+    return radio_ctrl_impl::get_rx_frequency(chan);
 }
 
 double magnesium_radio_ctrl_impl::get_tx_frequency(
@@ -393,54 +420,303 @@ double magnesium_radio_ctrl_impl::set_rx_gain(
 std::vector<std::string> magnesium_radio_ctrl_impl::get_rx_lo_names(
         const size_t /*chan*/
 ) {
-    return std::vector<std::string>{};
+    return std::vector<std::string>  {MAGNESIUM_LO1, MAGNESIUM_LO2};
 }
 
 std::vector<std::string> magnesium_radio_ctrl_impl::get_rx_lo_sources(
-        const std::string &/*name*/,
+        const std::string &name,
         const size_t /*chan*/
 ) {
-    return std::vector<std::string>{};
+   if (name == MAGNESIUM_LO2){
+       return std::vector<std::string> { "internal" };
+   }else if (name == MAGNESIUM_LO1){
+       return std::vector<std::string> { "internal", "external" };
+   }else {
+        throw uhd::value_error("Could not find LO stage " + name);
+   }
 }
 
 freq_range_t magnesium_radio_ctrl_impl::get_rx_lo_freq_range(
-        const std::string &/*name*/,
-        const size_t /*chan*/
+        const std::string & name,
+        const size_t  /*chan*/
 ) {
-    return freq_range_t{};
+    if (name == MAGNESIUM_LO1){
+        return freq_range_t{ADF4351_MIN_FREQ, ADF4351_MAX_FREQ};
+    }
+    else if(name == MAGNESIUM_LO2){
+        return freq_range_t{AD9371_MIN_FREQ, AD9371_MAX_FREQ};
+    }
+    else {
+        throw uhd::value_error("Could not find LO stage " + name);
+    }
 }
 
 void magnesium_radio_ctrl_impl::set_rx_lo_source(
-        const std::string &/*src*/,
-        const std::string &/*name*/,
-        const size_t /*chan*/
+        const std::string &src,
+        const std::string &name,
+        const size_t chan
 ) {
+    UHD_LOG_TRACE(unique_id(),"Attempting to set rx LO." <<"LO "<<name<<" to "<<src << " at "<<chan);
+    //TODO: checking what options are there
     std::lock_guard<std::mutex> l(_set_lock);
-    // FIXME
+    if (not _master) {
+        const fs_path master_rx_fe_path =
+            master_fe_base_path(_radio_slot) / fs_path("rx_frontends") / chan;
+        UHD_LOG_DEBUG(unique_id(),
+                "Slave setting lo source");
+        _tree->access<std::string>(master_rx_fe_path / "los" / name /"source"/"value").set(src);
+        return;
+    }
+    UHD_LOG_TRACE(unique_id(), "Master set LO source." <<"LO "<<name<<" to "<<src << " at "<<chan);
+
+    if (name == MAGNESIUM_LO1){
+        _ad9371->set_lo_source(src, RX_DIRECTION);
+    }else{
+        UHD_LOG_ERROR(unique_id(), "This LO " <<name <<" does not support set_lo_source to "<< src);
+    }
 }
 
 const std::string magnesium_radio_ctrl_impl::get_rx_lo_source(
-        const std::string &/*name*/,
-        const size_t /*chan*/
+        const std::string &name,
+        const size_t chan
 ) {
-    return ""; // FIXME
+     if (not _master) {
+        const fs_path master_rx_fe_path =
+            master_fe_base_path(_radio_slot) / fs_path("rx_frontends") / chan;
+        UHD_LOG_DEBUG(unique_id(), "Slave getting lo source");
+        return _tree->access<std::string>(master_rx_fe_path / "los" / name /"source"/"value").get();
+    }
+    UHD_LOG_DEBUG(unique_id(),"Master getting lo source");
+    if (name == MAGNESIUM_LO1){
+        //TODO: should we use this from cache?
+         return _ad9371->get_lo_source(RX_DIRECTION);
+     }
+    return "internal";
+}
+
+double magnesium_radio_ctrl_impl::_set_rx_lo_freq(
+    const std::string source,
+    const std::string name,
+    const double freq,
+    const size_t chan
+){
+    double coerced_lo_freq = freq;
+    if (source != "internal"){
+        UHD_LOG_WARNING(unique_id(),"LO source is not internal. This set frequency will be ignored");
+        if(name == MAGNESIUM_LO1){
+            // handle ad9371 external LO case
+            coerced_lo_freq = freq;
+            _ad9371_freq[RX_DIRECTION] = coerced_lo_freq;
+        }
+    }else {
+        if(name == MAGNESIUM_LO1){
+            coerced_lo_freq = _ad9371->set_frequency(freq, chan, RX_DIRECTION);
+            _ad9371_freq[RX_DIRECTION] = coerced_lo_freq;
+        }else if (name == MAGNESIUM_LO2 ){
+            // TODO: no hardcode the init_n_mode
+             coerced_lo_freq = _lo_enable(_rx_lo, freq, _master_clock_rate, false);
+            _adf4351_freq[RX_DIRECTION] = coerced_lo_freq;
+        }else {
+            UHD_LOG_WARNING(unique_id(), "There's no LO with this name of "<<name << " in the system. This set rx lo freq will be ignored");
+        };
+    }
+    return coerced_lo_freq;
 }
 
 double magnesium_radio_ctrl_impl::set_rx_lo_freq(
-        double /*freq*/,
-        const std::string &/*name*/,
-        const size_t /*chan*/
+        double freq,
+        const std::string &name,
+        const size_t chan
 ) {
+    UHD_LOG_TRACE(unique_id(),"Setting rx lo frequency for " <<name << " with freq = " <<freq);
     std::lock_guard<std::mutex> l(_set_lock);
-    return 0.0; // FIXME
+    if (not _master) {
+        const fs_path master_rx_fe_path =
+            master_fe_base_path(_radio_slot) / fs_path("rx_frontends") / chan;
+        UHD_LOG_DEBUG(unique_id(), "Slave getting lo freq");
+       return  _tree->access<double>(master_rx_fe_path / "los" / name /"freq"/"value").set(freq).get();
+    }
+    std::string source = this->get_rx_lo_source(name, chan);
+    const double coerced_lo_freq = this->_set_rx_lo_freq(source, name, freq, chan);
+    this->_update_freq(chan,TX_DIRECTION);
+    this->_update_gain(chan,RX_DIRECTION);
+    return coerced_lo_freq;
 }
 
 double magnesium_radio_ctrl_impl::get_rx_lo_freq(
-        const std::string &/*name*/,
+        const std::string & name,
+        const size_t chan
+) {
+
+    UHD_LOG_TRACE(unique_id(),"Getting rx lo frequency for " <<name);
+    if (not _master) {
+        const fs_path master_rx_fe_path =
+            master_fe_base_path(_radio_slot) / fs_path("rx_frontends") / chan;
+        UHD_LOG_DEBUG(unique_id(), "Slave getting lo freq");
+        return _tree->access<double>(master_rx_fe_path / "los" / name /"freq"/"value").get();
+    }
+    std::string source = this->get_rx_lo_source(name,chan);
+    if(name == MAGNESIUM_LO1){
+        return _ad9371_freq[RX_DIRECTION];
+    }else if (name == "adf4531" ){
+        return _adf4351_freq[RX_DIRECTION];
+    }else {
+            UHD_LOG_ERROR(unique_id(), "There's no LO with this name of "<<name << " in the system. This set rx lo freq will be ignored");
+    }
+    UHD_THROW_INVALID_CODE_PATH();
+}
+
+//TX LO
+std::vector<std::string> magnesium_radio_ctrl_impl::get_tx_lo_names(
         const size_t /*chan*/
 ) {
-    return 0.0; // FIXME
+    return std::vector<std::string>  {MAGNESIUM_LO1, MAGNESIUM_LO2};
 }
+
+std::vector<std::string> magnesium_radio_ctrl_impl::get_tx_lo_sources(
+        const std::string &name,
+        const size_t /*chan*/
+) {
+   if (name == MAGNESIUM_LO2){
+       return std::vector<std::string> { "internal" };
+   }else if (name == MAGNESIUM_LO1){
+       return std::vector<std::string> { "internal", "external" };
+   }else {
+        throw uhd::value_error("Could not find LO stage " + name);
+   }
+}
+
+freq_range_t magnesium_radio_ctrl_impl::get_tx_lo_freq_range(
+        const std::string &name,
+        const size_t /*chan*/
+) {
+    if (name == MAGNESIUM_LO2){
+        return freq_range_t{ADF4351_MIN_FREQ, ADF4351_MAX_FREQ};
+    }
+    else if(name == MAGNESIUM_LO1){
+        return freq_range_t{AD9371_MIN_FREQ, AD9371_MAX_FREQ};
+    }
+    else {
+        throw uhd::value_error("Could not find LO stage " + name);
+    }
+}
+
+void magnesium_radio_ctrl_impl::set_tx_lo_source(
+        const std::string &src,
+        const std::string &name,
+        const size_t chan
+) {
+    UHD_LOG_TRACE(unique_id(),"Attempting to set tx LO." <<"LO "<<name<<" to "<<src << " at "<<chan);
+    //TODO: checking what options are there
+    std::lock_guard<std::mutex> l(_set_lock);
+    if (not _master) {
+        const fs_path master_tx_fe_path =
+            master_fe_base_path(_radio_slot) / fs_path("tx_frontends") / chan;
+        UHD_LOG_DEBUG(unique_id(),
+                "Slave setting lo source");
+        _tree->access<std::string>(master_tx_fe_path / "los" / name /"source"/"value").set(src);
+    }
+    UHD_LOG_TRACE(unique_id(), "Master set LO source." <<"LO "<<name<<" to "<<src << " at "<<chan);
+
+
+    if (name == MAGNESIUM_LO1){
+        _ad9371->set_lo_source(src, TX_DIRECTION);
+    }else{
+        UHD_LOG_ERROR(unique_id(), "This LO " <<name <<" does not support set_lo_source to "<< src);
+    }
+}
+
+const std::string magnesium_radio_ctrl_impl::get_tx_lo_source(
+        const std::string &name,
+        const size_t chan
+) {
+     if (not _master) {
+        const fs_path master_tx_fe_path =
+            master_fe_base_path(_radio_slot) / fs_path("tx_frontends") / chan;
+        UHD_LOG_DEBUG(unique_id(), "Slave getting lo source");
+        return _tree->access<std::string>(master_tx_fe_path / "los" / name /"source"/"value").get();
+    }
+    UHD_LOG_DEBUG(unique_id(),"Master getting lo source");
+    if (name == MAGNESIUM_LO1){
+        //TODO: should we use this from cache?
+         return _ad9371->get_lo_source(TX_DIRECTION);
+     }
+    return "internal";
+}
+
+double magnesium_radio_ctrl_impl::_set_tx_lo_freq(
+    const std::string source,
+    const std::string name,
+    const double freq,
+    const size_t chan
+){
+    double coerced_lo_freq = freq;
+    if (source != "internal"){
+        UHD_LOG_WARNING(unique_id(),"LO source is not internal. This set frequency will be ignored");
+        if(name == MAGNESIUM_LO1){
+            // handle ad9371 external LO case
+            coerced_lo_freq = freq;
+            _ad9371_freq[TX_DIRECTION] = coerced_lo_freq;
+        }
+    }else {
+        if(name == MAGNESIUM_LO1){
+            coerced_lo_freq = _ad9371->set_frequency(freq, chan, TX_DIRECTION);
+            _ad9371_freq[TX_DIRECTION] = coerced_lo_freq;
+        }else if (name == MAGNESIUM_LO2 ){
+            // TODO: no hardcode the int_n_mode
+            const bool int_n_mode = false;
+            coerced_lo_freq = _lo_enable(_tx_lo, freq, _master_clock_rate, int_n_mode);
+            _adf4351_freq[TX_DIRECTION] = coerced_lo_freq;
+        }else {
+            UHD_LOG_WARNING(unique_id(), "There's no LO with this name of "<<name << " in the system. This set tx lo freq will be ignored");
+        };
+    }
+    return coerced_lo_freq;
+}
+
+double magnesium_radio_ctrl_impl::set_tx_lo_freq(
+        double freq,
+        const std::string &name,
+        const size_t chan
+) {
+    UHD_LOG_TRACE(unique_id(),"Setting tx lo frequency for " <<name << " with freq = " <<freq);
+    if (not _master) {
+        const fs_path master_tx_fe_path =
+            master_fe_base_path(_radio_slot) / fs_path("tx_frontends") / chan;
+        UHD_LOG_DEBUG(unique_id(), "Slave getting lo freq");
+       return  _tree->access<double>(master_tx_fe_path / "los" / name /"freq"/"value").set(freq).get();
+    }
+    std::string source = this->get_tx_lo_source(name,chan);
+    const double return_freq = this->_set_tx_lo_freq(source, name, freq, chan);
+    this->_update_freq(chan, TX_DIRECTION);
+    this->_update_gain(chan, TX_DIRECTION);
+    return return_freq;
+}
+
+double magnesium_radio_ctrl_impl::get_tx_lo_freq(
+        const std::string & name,
+        const size_t chan
+) {
+    UHD_LOG_TRACE(unique_id(),"Getting tx lo frequency for " <<name);
+    if (not _master) {
+        const fs_path master_tx_fe_path =
+            master_fe_base_path(_radio_slot) / fs_path("tx_frontends") / chan;
+        UHD_LOG_DEBUG(unique_id(), "Slave getting lo freq");
+        return _tree->access<double>(master_tx_fe_path / "los" / name /"freq"/"value").get();
+    }
+    std::string source = this->get_tx_lo_source(name,chan);
+    if(name == MAGNESIUM_LO1){
+        return _ad9371_freq[TX_DIRECTION];
+    }else if (name == MAGNESIUM_LO2){
+        return _adf4351_freq[TX_DIRECTION];
+    }else {
+        UHD_LOG_ERROR(unique_id(), "There's no LO with this name of "<<name << " in the system.");
+    };
+
+    UHD_THROW_INVALID_CODE_PATH();
+}
+
+
 
 size_t magnesium_radio_ctrl_impl::get_chan_from_dboard_fe(
     const std::string &fe, const direction_t /* dir */

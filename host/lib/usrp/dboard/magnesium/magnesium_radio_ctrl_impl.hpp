@@ -62,6 +62,8 @@ public:
     double get_tx_frequency(const size_t chan);
     double set_tx_bandwidth(const double bandwidth, const size_t chan);
     double set_rx_bandwidth(const double bandwidth, const size_t chan);
+
+    // RX LO
     std::vector<std::string> get_rx_lo_names(const size_t chan);
     std::vector<std::string> get_rx_lo_sources(
             const std::string &name,
@@ -89,8 +91,38 @@ public:
     );
     double get_rx_lo_freq(const std::string &name, const size_t chan);
 
+    // TX LO
+    std::vector<std::string> get_tx_lo_names(const size_t chan);
+    std::vector<std::string> get_tx_lo_sources(
+            const std::string &name,
+            const size_t chan
+    );
+    freq_range_t get_tx_lo_freq_range(
+            const std::string &name,
+            const size_t chan
+    );
+
+    void set_tx_lo_source(
+            const std::string &src,
+            const std::string &name,
+            const size_t chan
+    );
+    const std::string get_tx_lo_source(
+            const std::string &name,
+            const size_t chan
+    );
+
+    double set_tx_lo_freq(
+            double freq,
+            const std::string &name,
+            const size_t chan
+    );
+    double get_tx_lo_freq(const std::string &name, const size_t chan);
+
+    // gain
     double set_tx_gain(const double gain, const size_t chan);
     double set_rx_gain(const double gain, const size_t chan);
+
     size_t get_chan_from_dboard_fe(const std::string &fe, const direction_t dir);
     std::string get_dboard_fe_from_chan(const size_t chan, const direction_t dir);
 
@@ -171,6 +203,10 @@ private:
 
     void _update_gain(const size_t chan, direction_t dir);
 
+    void _update_freq(
+        const size_t chan,
+        const uhd::direction_t dir
+    );
     /**************************************************************************
      * CPLD Controls (implemented in magnesium_radio_ctrl_cpld.cpp)
      *************************************************************************/
@@ -192,6 +228,19 @@ private:
         const std::string &ant
     );
 
+    double _set_rx_lo_freq(
+        const std::string source,
+        const std::string name,
+        const double freq,
+        const size_t chan
+    );
+
+    double _set_tx_lo_freq(
+        const std::string source,
+        const std::string name,
+        const double freq,
+        const size_t chan
+    );
     /**************************************************************************
      * Private attributes
      *************************************************************************/
@@ -243,7 +292,15 @@ private:
 
     //! Sampling rate, and also ref clock frequency for the lowband LOs.
     double _master_clock_rate = 1.0;
-
+     //! Desired RF frequency
+    std::map<direction_t,double> _desired_rf_freq = { {RX_DIRECTION, 2.44e9}, {TX_DIRECTION, 2.44e9} };
+    //! Coerced adf4351 frequency
+    //! Coerced ad9371 frequency
+    std::map<direction_t,double> _ad9371_freq = { {RX_DIRECTION, 2.44e9}, {TX_DIRECTION, 2.44e9} };
+    //! Coerced adf4351 frequency
+    std::map<direction_t,double> _adf4351_freq = { {RX_DIRECTION, 2.44e9}, {TX_DIRECTION, 2.44e9} };
+    //! Low band enable
+    std::map<direction_t,bool> _is_low_band = { {RX_DIRECTION, false}, {TX_DIRECTION, false} };
     //! AD9371 gain
     double _ad9371_rx_gain = 0.0;
     double _ad9371_tx_gain = 0.0;
@@ -266,6 +323,11 @@ private:
         {magnesium_cpld_ctrl::CHAN2,
             magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1}
     };
+
+    //! RX LO SOURCE
+    // NOTE for magnesium only ad9371 LO that can be connected to the external LO so we only need one var here
+    std::string _rx_lo_source = "internal";
+
 }; /* class radio_ctrl_impl */
 
 }} /* namespace uhd::rfnoc */

@@ -13,6 +13,12 @@
 
 static const size_t FPGPIO_MASTER_RADIO = 0;
 
+static const double AD9371_MIN_FREQ = 300.0e6; // Hz
+static const double AD9371_MAX_FREQ = 6.0e9; // Hz
+
+static const double ADF4351_MIN_FREQ = 35.0e6;
+static const double ADF4351_MAX_FREQ = 4.4e9;
+
 static const double MAGNESIUM_RADIO_RATE = 125e6; // Hz
 static const double MAGNESIUM_MIN_FREQ = 1e6; // Hz
 static const double MAGNESIUM_MAX_FREQ = 6e9; // Hz
@@ -50,6 +56,11 @@ static const double MAGNESIUM_CENTER_FREQ = 2.5e9; // Hz
 static const std::vector<std::string> MAGNESIUM_RX_ANTENNAS = {
     "TX/RX", "RX2", "CAL", "LOCAL"
 };
+//! AD9371 LO (for direct conversion)
+static const char* MAGNESIUM_LO1 = "rfic";
+//! Low-band LO (for IF conversion)
+static const char* MAGNESIUM_LO2 = "low_synth";
+
 static const double MAGNESIUM_DEFAULT_BANDWIDTH = 40e6; // Hz TODO: fix
 // Note: MAGNESIUM_NUM_CHANS is independent of the number of chans per
 // RFNoC block. TODO: When we go to one radio per dboard, this comment can
