@@ -33,6 +33,7 @@ from usrp_mpm.uio import UIO
 from usrp_mpm.rpc_server import no_claim, no_rpc
 from ..sysfs_gpio import SysFSGPIO
 from ..ethtable import EthDispatcherTable
+from ..liberiotable import LiberioDispatcherTable
 from .. import libpyusrp_periphs as lib
 
 N3XX_DEFAULT_EXT_CLOCK_FREQ = 10e6
@@ -241,6 +242,8 @@ class n310(PeriphManagerBase):
             'callback': "update_fpga",
         },
     }
+    # udev label for the UIO device that controls the DMA engine
+    liberio_label = 'liberio'
 
     def __init__(self, args):
         super(n310, self).__init__(args)
@@ -270,6 +273,9 @@ class n310(PeriphManagerBase):
         self._clock_source = None
         self._time_source = None
         self._init_ref_clock_and_time(args.default_args)
+        # Define some attributes so PyLint stays quiet
+        self._eth_dispatchers = None
+        self._dma_dispatcher = None
         # Init Ethernet
         self._eth_dispatchers = {
             x: EthDispatcherTable(self.eth_tables.get(x))
@@ -320,6 +326,7 @@ class n310(PeriphManagerBase):
                 self._eth_dispatchers,
                 args['preload_ethtables']
             )
+        self._dma_dispatcher = LiberioDispatcherTable(self.liberio_label)
         return result
 
     def _preload_ethtables(self, eth_dispatchers, table_file):
@@ -368,15 +375,36 @@ class n310(PeriphManagerBase):
                     str(ex)
                 )
 
-    def _allocate_sid(self, sender_addr, port, sid, xbar_src_addr, xbar_src_port, new_ep):
+    def _allocate_sid(self, sender_addr, port, sid, xbar_src_addr, xbar_src_port, new_ep): # FIXME mtu
         """
         Get the MAC address of the sender and store it in the FPGA ARP table
         """
-        mac_addr = get_mac_addr(sender_addr)
-        if new_ep not in self._available_endpoints:
-            raise RuntimeError("no more sids yo")
-        self._available_endpoints.remove(new_ep)
-        if mac_addr is not None:
+        if self.mboard_info['rpc_connection'] == 'remote':
+            self.log.debug("Preparing for UDP connection")
+            mac_addr = get_mac_addr(sender_addr)
+            if new_ep not in self._available_endpoints:
+                raise RuntimeError("no more sids yo")
+            self._available_endpoints.remove(new_ep)
+            if mac_addr is not None:
+                if sender_addr not in self.sid_endpoints:
+                    self.sid_endpoints.update({sender_addr: (new_ep,)})
+                else:
+                    current_allocation = self.sid_endpoints.get(sender_addr)
+                    new_allocation = current_allocation + (new_ep,)
+                    self.sid_endpoints.update({sender_addr: new_allocation})
+                sid = SID(sid)
+                sid.set_src_addr(xbar_src_addr)
+                sid.set_src_ep(new_ep)
+                my_xbar = lib.xbar.xbar.make("/dev/crossbar0") # TODO
+                my_xbar.set_route(xbar_src_addr, 0) # TODO
+                eth_dispatcher = self._eth_dispatchers['eth1'] # TODO
+                eth_dispatcher.set_route(sid.reversed(), sender_addr, port)
+            return sid.get()
+        else:
+            self.log.debug("Preparing for liberio connection")
+            if new_ep not in self._available_endpoints:
+                raise RuntimeError("no more sids yo")
+            self._available_endpoints.remove(new_ep)
             if sender_addr not in self.sid_endpoints:
                 self.sid_endpoints.update({sender_addr: (new_ep,)})
             else:
@@ -387,9 +415,11 @@ class n310(PeriphManagerBase):
             sid.set_src_addr(xbar_src_addr)
             sid.set_src_ep(new_ep)
             my_xbar = lib.xbar.xbar.make("/dev/crossbar0") # TODO
-            my_xbar.set_route(xbar_src_addr, 0) # TODO
-            eth_dispatcher = self._eth_dispatchers['eth1'] # TODO
-            eth_dispatcher.set_route(sid.reversed(), sender_addr, port)
+            my_xbar.set_route(xbar_src_addr, 2) # TODO
+            mtu = 0
+            assert False # This path is not yet done
+            self._dma_dispatcher.set_route(sid.reversed(), new_ep, mtu)
+
         return sid.get()
 
     def get_clock_sources(self):
