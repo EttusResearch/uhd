@@ -24,6 +24,33 @@ namespace {
     };
 }
 
+void magnesium_radio_ctrl_impl::_init_defaults()
+{
+    UHD_LOG_TRACE(unique_id(), "Initializing defaults...");
+    const size_t num_rx_chans = get_output_ports().size();
+    const size_t num_tx_chans = get_input_ports().size();
+
+    UHD_LOG_TRACE(unique_id(),
+            "Num TX chans: " << num_tx_chans
+            << " Num RX chans: " << num_rx_chans);
+    UHD_LOG_TRACE(unique_id(),
+            "Setting tick rate to " << MAGNESIUM_TICK_RATE / 1e6 << " MHz");
+    radio_ctrl_impl::set_rate(MAGNESIUM_TICK_RATE);
+
+    for (size_t chan = 0; chan < num_rx_chans; chan++) {
+        radio_ctrl_impl::set_rx_frequency(MAGNESIUM_CENTER_FREQ, chan);
+        radio_ctrl_impl::set_rx_gain(0, chan);
+        radio_ctrl_impl::set_rx_antenna(MAGNESIUM_DEFAULT_RX_ANTENNA, chan);
+        radio_ctrl_impl::set_rx_bandwidth(MAGNESIUM_DEFAULT_BANDWIDTH, chan);
+    }
+
+    for (size_t chan = 0; chan < num_tx_chans; chan++) {
+        radio_ctrl_impl::set_tx_frequency(MAGNESIUM_CENTER_FREQ, chan);
+        radio_ctrl_impl::set_tx_gain(0, chan);
+        radio_ctrl_impl::set_tx_antenna(MAGNESIUM_DEFAULT_TX_ANTENNA, chan);
+    }
+}
+
 void magnesium_radio_ctrl_impl::_init_peripherals()
 {
     UHD_LOG_TRACE(unique_id(), "Initializing peripherals...");
@@ -74,6 +101,11 @@ void magnesium_radio_ctrl_impl::_init_peripherals()
                     24
                 );
             }
+        );
+        _update_atr_switches(
+            magnesium_cpld_ctrl::BOTH,
+            DX_DIRECTION,
+            radio_ctrl_impl::get_rx_antenna(0)
         );
         _tree->create<magnesium_cpld_ctrl::sptr>(cpld_path).set(_cpld);
     } else {
@@ -153,33 +185,6 @@ void magnesium_radio_ctrl_impl::_init_peripherals()
         UHD_LOG_TRACE(unique_id(), "Initializing front-panel GPIO control...")
         _fp_gpio = usrp::gpio_atr::gpio_atr_3000::make(
                 _get_ctrl(0), regs::sr_addr(regs::FP_GPIO), regs::RB_FP_GPIO);
-    }
-}
-
-void magnesium_radio_ctrl_impl::_init_defaults()
-{
-    UHD_LOG_TRACE(unique_id(), "Initializing defaults...");
-    const size_t num_rx_chans = get_output_ports().size();
-    const size_t num_tx_chans = get_input_ports().size();
-
-    UHD_LOG_TRACE(unique_id(),
-            "Num TX chans: " << num_tx_chans
-            << " Num RX chans: " << num_rx_chans);
-    UHD_LOG_TRACE(unique_id(),
-            "Setting tick rate to " << MAGNESIUM_TICK_RATE / 1e6 << " MHz");
-    radio_ctrl_impl::set_rate(MAGNESIUM_TICK_RATE);
-
-    for (size_t chan = 0; chan < num_rx_chans; chan++) {
-        radio_ctrl_impl::set_rx_frequency(MAGNESIUM_CENTER_FREQ, chan);
-        radio_ctrl_impl::set_rx_gain(0, chan);
-        radio_ctrl_impl::set_rx_antenna(MAGNESIUM_DEFAULT_RX_ANTENNA, chan);
-        radio_ctrl_impl::set_rx_bandwidth(MAGNESIUM_DEFAULT_BANDWIDTH, chan);
-    }
-
-    for (size_t chan = 0; chan < num_tx_chans; chan++) {
-        radio_ctrl_impl::set_tx_frequency(MAGNESIUM_CENTER_FREQ, chan);
-        radio_ctrl_impl::set_tx_gain(0, chan);
-        radio_ctrl_impl::set_tx_antenna(MAGNESIUM_DEFAULT_TX_ANTENNA, chan);
     }
 }
 

@@ -45,9 +45,7 @@ void magnesium_radio_ctrl_impl::_update_atr_switches(
     const direction_t dir,
     const std::string &ant
 ){
-    UHD_ASSERT_THROW(dir == RX_DIRECTION or dir == TX_DIRECTION);
-
-    if (dir == RX_DIRECTION) {
+    if (dir == RX_DIRECTION or dir == DX_DIRECTION) {
         // These default values work for RX2
         bool trx_led = false;
         bool rx2_led = true;
@@ -107,9 +105,8 @@ void magnesium_radio_ctrl_impl::_update_atr_switches(
             false /* don't defer commit */
         );
     }
-    if (dir == TX_DIRECTION) {
-        UHD_LOG_TRACE(unique_id(),
-            "Updating all TX-ATR related switches for antenna==" << ant);
+    if (dir == TX_DIRECTION or dir == DX_DIRECTION) {
+        UHD_LOG_TRACE(unique_id(), "Updating all TX-ATR related switches...");
         _cpld->set_tx_atr_bits(
             chan,
             magnesium_cpld_ctrl::ON,

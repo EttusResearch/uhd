@@ -101,8 +101,8 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(magnesium_radio_ctrl)
     UHD_LOG_DEBUG(unique_id(),
         "Radio type: " << (_master ? "master" : "slave"));
 
-    _init_peripherals();
     _init_defaults();
+    _init_peripherals();
     _init_prop_tree();
 }
 
