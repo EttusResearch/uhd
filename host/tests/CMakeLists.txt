@@ -111,6 +111,19 @@ TARGET_LINK_LIBRARIES(nocscript_parser_test uhd ${Boost_LIBRARIES})
 UHD_ADD_TEST(nocscript_parser_test nocscript_parser_test)
 UHD_INSTALL(TARGETS nocscript_parser_test RUNTIME DESTINATION ${PKG_LIB_DIR}/tests COMPONENT tests)
 
+ADD_EXECUTABLE(config_parser_test
+    config_parser_test.cpp
+    ${CMAKE_SOURCE_DIR}/lib/utils/config_parser.cpp
+)
+TARGET_LINK_LIBRARIES(config_parser_test uhd ${Boost_LIBRARIES})
+UHD_ADD_TEST(config_parser_test config_parser_test)
+UHD_INSTALL(TARGETS
+    config_parser_test
+    RUNTIME
+    DESTINATION ${PKG_LIB_DIR}/tests
+    COMPONENT tests
+)
+
 ########################################################################
 # demo of a loadable module
 ########################################################################
