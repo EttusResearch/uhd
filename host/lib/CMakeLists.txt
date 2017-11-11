@@ -77,6 +77,7 @@ LIBUHD_REGISTER_COMPONENT("OctoClock" ENABLE_OCTOCLOCK ON "ENABLE_LIBUHD" OFF OF
 ########################################################################
 # Include subdirectories (different than add)
 ########################################################################
+INCLUDE_SUBDIRECTORY(include)
 INCLUDE_SUBDIRECTORY(ic_reg_maps)
 INCLUDE_SUBDIRECTORY(types)
 INCLUDE_SUBDIRECTORY(convert)
