@@ -419,28 +419,24 @@ class PeriphManagerBase(object):
         """
         return [dboard.device_info for dboard in self.dboards]
 
-    def update_component(self, file_metadata, data):
+    def update_component(self, metadata_l, data_l):
         """
         Updates the device component specified by comp_dict
-        :param file_metadata: Dictionary of strings containing metadata
-        :param data: Binary string with the file contents to be written
+        :param metadata_l: List of dictionary of strings containing metadata
+        :param data_l: List of binary string with the file contents to be written
         """
-        id_str = file_metadata['id']
-        filename = os.path.basename(file_metadata['filename'])
-        if id_str not in self.updateable_components:
-            self.log.error("{0} not an updateable component ({1})".format(
-                id_str, self.updateable_components.keys()
-            ))
-            raise NotImplementedError("Update component not implemented for {}".format(id_str))
-        self.log.trace("Updating component: {}".format(id_str))
-        if 'md5' in file_metadata:
-            given_hash = file_metadata['md5']
-            comp_hash = md5()
-            comp_hash.update(data)
-            comp_hash = comp_hash.hexdigest()
-            if comp_hash == given_hash:
-                self.log.trace("FPGA bitfile hash matched: {}".format(
-                    comp_hash
+        # We need a 'metadata' and a 'data' for each file we want to update
+        assert (len(metadata_l) == len(data_l)),\
+            "update_component arguments must be the same length"
+        # TODO: Update the manifest file
+
+        # Iterate through the components, updating each in turn
+        for metadata, data in zip(metadata_l, data_l):
+            id_str = metadata['id']
+            filename = os.path.basename(metadata['filename'])
+            if id_str not in self.updateable_components:
+                self.log.error("{0} not an updateable component ({1})".format(
+                    id_str, self.updateable_components.keys()
                 ))
                 raise KeyError("Update component not implemented for {}".format(id_str))
             self.log.trace("Updating component: {}".format(id_str))
@@ -460,24 +456,19 @@ class PeriphManagerBase(object):
                                        comp_hash, given_hash))
                     raise RuntimeError("Component file hash mismatch")
             else:
-                self.log.error("FPGA bitfile hash mismatched:")
-                self.log.error("Calculated {}".format(comp_hash))
-                self.log.error("Given      {}".format(given_hash))
-                raise RuntimeError("FPGA Bitfile hash mismatch")
-        else:
-            self.log.trace("Loading unverified {} image.".format(
-                id_str
-            ))
-        basepath = os.path.join(os.sep, "tmp", "uploads")
-        filepath = os.path.join(basepath, filename)
-        if not os.path.isdir(basepath):
-            self.log.trace("Creating directory {}".format(basepath))
-            os.makedirs(basepath)
-        self.log.trace("Writing data to {}".format(filepath))
-        with open(filepath, 'wb') as f:
-            f.write(data)
-        update_func = getattr(self, self.updateable_components[id_str]['callback'])
-        update_func(filepath, file_metadata)
+                self.log.trace("Loading unverified {} image.".format(
+                    id_str
+                ))
+            basepath = os.path.join(os.sep, "tmp", "uploads")
+            filepath = os.path.join(basepath, filename)
+            if not os.path.isdir(basepath):
+                self.log.trace("Creating directory {}".format(basepath))
+                os.makedirs(basepath)
+            self.log.trace("Writing data to {}".format(filepath))
+            with open(filepath, 'wb') as f:
+                f.write(data)
+            update_func = getattr(self, self.updateable_components[id_str]['callback'])
+            update_func(filepath, metadata)
         return True
 
 
@@ -697,5 +688,3 @@ class PeriphManagerBase(object):
         - src_port: IP port the connection is coming from.
         """
         raise NotImplementedError("commit_xport() not implemented.")
-
-

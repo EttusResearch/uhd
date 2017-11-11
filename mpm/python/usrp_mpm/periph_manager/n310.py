@@ -472,10 +472,14 @@ class n310(PeriphManagerBase):
     # dboard, etc. The host is responsible for providing a compatible image
     # for the N310's current setup.
     binfile_path = '/lib/firmware/n310.bin'
+    dts_path = '/lib/firmware/n310.dts'
     # Override the list of updateable components
     updateable_components = {
         'fpga': {
             'callback': "update_fpga",
+        },
+        'dts': {
+            'callback': "update_dts",
         },
     }
 
@@ -912,4 +916,17 @@ class n310(PeriphManagerBase):
                            .format(filepath))
             raise RuntimeError("Invalid N310 FPGA bitfile")
         # TODO: Implement reload procedure
+        return True
+
+    @no_rpc
+    def update_dts(self, filepath, metadata):
+        """
+        Update the DTS image in the filesystem
+        :param filepath: path to new DTS image
+        :param metadata: Dictionary of strings containing metadata
+        """
+        self.log.trace("Updating DTS with image at {}"
+                       .format(filepath))
+        shutil.copy(filepath, self.dts_path)
+        # TODO: Compile the new dts file into a usable dtbo
         return True

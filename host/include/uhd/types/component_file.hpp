@@ -30,6 +30,8 @@ namespace uhd{ namespace usrp{
         std::vector<uint8_t> data;
     };
 
+    typedef std::vector<component_file_t> component_files_t;
+
 }} // namespace uhd::usrp
 
 #endif /* INCLUDED_UHD_USRP_COMPONENT_FILE_HPP */

@@ -36,6 +36,7 @@
 #include <mutex>
 #include <random>
 #include <string>
+#include <vector>
 
 using namespace uhd;
 
@@ -52,20 +53,37 @@ namespace {
     /*************************************************************************
      * Helper functions
      ************************************************************************/
-    uhd::usrp::component_file_t _update_component(
-        const uhd::usrp::component_file_t& comp,
+    uhd::usrp::component_files_t _update_component(
+        const uhd::usrp::component_files_t& comps,
         mpmd_mboard_impl *mb
     ) {
-        std::vector<uint8_t> data = comp.data;
-        std::map<std::string, std::string> metadata;
-        for (const auto& key : comp.metadata.keys()) {
-            metadata[key] = comp.metadata[key];
-        }
-        mb->rpc->notify_with_token("update_component", metadata, data);
+        // Construct the arguments to update component
+        std::vector<std::vector<uint8_t>> all_data;
+        std::vector<std::map<std::string, std::string>> all_metadata;
+        // Also construct a copy of just the metadata to store in the property tree
+        uhd::usrp::component_files_t all_comps_copy;
 
-        uhd::usrp::component_file_t comp_copy;
-        comp_copy.metadata = comp.metadata;
-        return comp_copy;
+        for  (const auto& comp : comps) {
+            // Make a map for update components args
+            std::map<std::string, std::string> metadata;
+            // Make a component copy to add to the property tree
+            uhd::usrp::component_file_t comp_copy;
+            // Copy the metadata
+            for (const auto& key : comp.metadata.keys()) {
+                metadata[key] = comp.metadata[key];
+                comp_copy.metadata[key] = comp.metadata[key];
+            }
+            // Copy to the update component args
+            all_data.push_back(comp.data);
+            all_metadata.push_back(metadata);
+            // Copy to the property tree
+            all_comps_copy.push_back(comp_copy);
+        }
+
+        // Now call update component
+        mb->rpc->notify_with_token("update_component", all_metadata, all_data);
+
+        return all_comps_copy;
     }
 
 
@@ -174,16 +192,17 @@ namespace {
                 mb->rpc->request<std::vector<std::string>>(
                         "list_updateable_components"
                 );
+        // TODO: Check the 'id' against the registered property
         UHD_LOG_DEBUG("MPMD",
                     "Found " << updateable_components.size() << " updateable motherboard components."
                 );
         for (const auto& comp_name : updateable_components) {
             UHD_LOG_TRACE("MPMD",
                     "Adding motherboard component: " << comp_name);
-            tree->create<uhd::usrp::component_file_t>(mb_path / "components" / comp_name)
-                        .set_coercer([mb](const uhd::usrp::component_file_t& comp_file) {
+            tree->create<uhd::usrp::component_files_t>(mb_path / "components" / comp_name)
+                        .set_coercer([mb](const uhd::usrp::component_files_t& comp_files) {
                     return _update_component(
-                            comp_file,
+                            comp_files,
                             mb
                     );
             })
