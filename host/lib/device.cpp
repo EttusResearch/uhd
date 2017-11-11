@@ -36,14 +36,27 @@ static size_t hash_device_addr(
     //combine the hashes of sorted keys/value pairs
     size_t hash = 0;
 
+    // The device addr can contain all sorts of stuff, which sometimes gets in
+    // the way of hashing reliably. TODO: Make this a whitelist
+    const std::vector<std::string> hash_key_blacklist = {
+        "claimed",
+        "skip_dram",
+        "skip_ddc",
+        "skip_duc"
+    };
+
     if(dev_addr.has_key("resource")) {
         boost::hash_combine(hash, "resource");
         boost::hash_combine(hash, dev_addr["resource"]);
     }
     else {
-        for(const std::string &key:  uhd::sorted(dev_addr.keys())){
-            boost::hash_combine(hash, key);
-            boost::hash_combine(hash, dev_addr[key]);
+        for (const std::string &key: uhd::sorted(dev_addr.keys())) {
+            if (std::find(hash_key_blacklist.begin(),
+                          hash_key_blacklist.end(),
+                          key) == hash_key_blacklist.end()) {
+                boost::hash_combine(hash, key);
+                boost::hash_combine(hash, dev_addr[key]);
+            }
         }
     }
     return hash;
