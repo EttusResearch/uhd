@@ -155,6 +155,12 @@ SET_SOURCE_FILES_PROPERTIES(
     "UHD_PKG_PATH=\"${UHD_PKG_PATH}\";UHD_LIB_DIR=\"${UHD_LIB_DIR}\""
 )
 
+SET_SOURCE_FILES_PROPERTIES(
+    ${CMAKE_CURRENT_SOURCE_DIR}/prefs.cpp
+    PROPERTIES COMPILE_DEFINITIONS
+    "UHD_SYS_CONF_FILE=\"${UHD_SYS_CONF_FILE}\";UHD_USER_CONF_FILE=\"${UHD_USER_CONF_FILE}\""
+)
+
 ########################################################################
 # Append sources
 ########################################################################
@@ -170,6 +176,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/paths.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/pathslib.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/platform.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/prefs.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/static.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/tasks.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/thread.cpp

@@ -104,7 +104,6 @@ ENDIF()
 SET(LIBUHD_PKG ${LIBUHD_PKG} CACHE BOOL "Build Debian libuhd003 package")
 SET(LIBUHDDEV_PKG ${LIBUHDDEV_PKG} CACHE BOOL "Build Debian libuhd-dev package")
 SET(UHDHOST_PKG ${UHDPOST_PKG} CACHE BOOL "Build Debian uhd-host package")
-
 INCLUDE(UHDComponent) #enable components
 INCLUDE(UHDPackage)   #setup cpack
 
@@ -129,6 +128,30 @@ IF(NOT DEFINED PKG_LIB_DIR)
 ENDIF()
 SET(PKG_DOC_DIR share/doc/uhd)
 SET(PKG_MAN_DIR share/man/man1)
+
+########################################################################
+# UHD config files
+########################################################################
+SET(UHD_USER_CONF_FILE
+    ".uhd/uhd.conf"
+    CACHE STRING
+    "Location of the user-specific UHD configuration file, relative to APPDATA (or HOME)"
+)
+IF(UNIX)
+    SET(UHD_SYS_CONF_FILE
+        "/etc/uhd/uhd.conf"
+        CACHE STRING
+        "Location of the system-wide UHD configuration file"
+    )
+ELSEIF(WIN32)
+    SET(UHD_SYS_CONF_FILE
+        "%programdata%/uhd/uhd.conf"
+        CACHE STRING
+        "Location of the system-wide UHD configuration file"
+    )
+ELSE()
+    MESSAGE(WARNING "Not setting UHD_SYS_CONF_FILE!")
+ENDIF()
 
 ########################################################################
 # UHD Image Directories
