@@ -144,18 +144,6 @@ void magnesium_radio_ctrl_impl::_init_peripherals()
     } else {
         UHD_LOG_TRACE(unique_id(), "Not a master radio, no LOs.");
     }
-    if (not _tree->exists(rx_lo_path)) {
-        _tree->create<adf435x_iface::sptr>(rx_lo_path).set(_rx_lo);
-    } else {
-        UHD_LOG_TRACE(unique_id(), "Not a master radio. Getting LO from master" );
-        _rx_lo = _tree->access<adf435x_iface::sptr>(rx_lo_path).get();
-    }
-    if (not _tree->exists(tx_lo_path)) {
-        _tree->create<adf435x_iface::sptr>(tx_lo_path).set(_tx_lo);
-    } else {
-        UHD_LOG_TRACE(unique_id(), "Not a master radio. Getting LO from master" );
-        _tx_lo = _tree->access<adf435x_iface::sptr>(tx_lo_path).get();
-    }
 
     _gpio.clear(); // Following the as-if rule, this can get optimized out
     for (size_t radio_idx = 0; radio_idx < _get_num_radios(); radio_idx++) {
