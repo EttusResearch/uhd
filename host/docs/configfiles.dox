@@ -1,0 +1,75 @@
+/*! \page page_configfiles Configuration Files
+
+\tableofcontents
+
+For permanent configuration of certain device behaviours, UHD supports
+configuration files.
+
+\section configfiles_format Format of the configuration files
+
+Configurations files use the INI format. A UHD configuration file might look
+like this:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.ini}
+; Comments start with a semicolon
+; Sections are put in square brackets:
+[type=b200]
+; These settings apply to all USRPs that are of type b200:
+master_clock_rate=20e6
+
+[serial=FE18011]
+; These settings apply to the USRPs with the given serial:
+master_clock_rate=10e6 ; If this is a b200, this will overwrite the above settings
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+\section configfiles_usrps Configuring USRPs
+
+For the most part, any setting that can get put into device args at
+initialization time can be put into the config file. For example, the X300 has
+a key called `ext_adc_self_test` which is disabled by default. To enable it,
+you can add it to your device args:
+
+~~~{.cpp}
+auto usrp = uhd::usrp::multi_usrp::make("type=x300,ext_adc_self_test=1");
+~~~
+
+However, this can be cumbersome if the intention is to permanently enable this
+for all X300s connected to this machine. To generally enable this option for
+all X300s without having to modify the `make()` call, the config file can
+simply be updated as such:
+
+~~~~{.ini}
+[type=x300]
+ext_adc_self_test=1
+~~~~
+
+This will act as if this key/value pair had been passed to the device args
+directly.
+
+\section configfiles_location Location of configuration files
+
+\b UHD will look for up to three configuration files:
+
+1. A system-wide configuration file. On Unix systems, the default location for
+   this file is <b><tt>/etc/uhd/uhd.conf</tt></b>. On Windows systems,
+   <b><tt>\%programdata%/uhd/uhd.conf</tt></b>. The default can be overwritten
+   at compile time by setting `UHD_SYS_CONF_FILE` through CMake.
+2. A user-specific configuration file. On Unix systems, it defaults to
+   `$APPDATA/.uhd/uhd.conf`, where `$APPDATA` is usually the same as the user's
+   home directory, unless `$APPDATA` or `$USER_CONFIG_DIR` are defined. On
+   Windows systems, it simply resolves to <b><tt>\%appdata%</tt></b>.
+   The default can be overwritten at compile time by setting
+   the `UHD_USER_CONF_FILE` through CMake.
+3. A configuration file specified by the environment variable `UHD_CONFIG_FILE`
+
+UHD will read these files in this order (if they exist). Settings from one file
+will overwrite those from a previous one, so if the same setting exists in the
+system-wide file and the user-specific file, the settings from the
+user-specific file will take effect. There is no error if a file does not
+exist, or the environment variable is not set.
+
+\b MPM will only look for a configuration file in `/etc/uhd/mpm.conf`, on the
+device running MPM itself.
+
+*/
+// vim:ft=doxygen:
