@@ -55,6 +55,46 @@ class ad937x_ctrl : public boost::noncopyable
 {
 public:
     typedef std::shared_ptr<ad937x_ctrl> sptr;
+
+    static const uint32_t TX_BB_FILTER;
+    static const uint32_t ADC_TUNER;
+    static const uint32_t TIA_3DB_CORNER;
+    static const uint32_t DC_OFFSET;
+    static const uint32_t TX_ATTENUATION_DELAY;
+    static const uint32_t RX_GAIN_DELAY;
+    static const uint32_t FLASH_CAL;
+    static const uint32_t PATH_DELAY;
+    static const uint32_t TX_LO_LEAKAGE_INTERNAL;
+    static const uint32_t TX_LO_LEAKAGE_EXTERNAL ;
+    static const uint32_t TX_QEC_INIT;
+    static const uint32_t LOOPBACK_RX_LO_DELAY;
+    static const uint32_t LOOPBACK_RX_RX_QEC_INIT;
+    static const uint32_t RX_LO_DELAY;
+    static const uint32_t RX_QEC_INIT;
+    static const uint32_t DPD_INIT;
+    static const uint32_t CLGC_INIT;
+    static const uint32_t VSWR_INIT;
+    static const uint32_t TRACK_RX1_QEC;
+    static const uint32_t TRACK_RX2_QEC;
+    static const uint32_t TRACK_ORX1_QEC;
+    static const uint32_t TRACK_ORX2_QEC;
+    static const uint32_t TRACK_TX1_LOL;
+    static const uint32_t TRACK_TX2_LOL;
+    static const uint32_t TRACK_TX1_QEC;
+    static const uint32_t TRACK_TX2_QEC;
+    static const uint32_t TRACK_TX1_DPD;
+    static const uint32_t TRACK_TX2_DPD;
+    static const uint32_t TRACK_TX1_CLGC;
+    static const uint32_t TRACK_TX2_CLGC;
+    static const uint32_t TRACK_TX1_VSWR;
+    static const uint32_t TRACK_TX2_VSWR;
+    static const uint32_t TRACK_ORX1_QEC_SNLO;
+    static const uint32_t TRACK_ORX2_QEC_SNLO;
+    static const uint32_t TRACK_SRX_QEC;
+    static const uint32_t DEFAULT_INIT_CALS_MASKS;
+    static const uint32_t DEFAULT_TRACKING_CALS_MASKS;
+    static const uint32_t DEFAULT_INIT_CALS_TIMEOUT;
+
     /*! \brief make a new AD9371 ctrl object using the specified SPI iface
      *
      * \param spi_mutex a mutex that will be locked whenever the SPI iface is to be used
@@ -72,7 +112,15 @@ public:
 
     //! finishes initialization of the AD9371 by loading the ARM binary and setting a default RF configuration
     virtual void finish_initialization() = 0;
-
+    
+    /*! \setup initialization and tracking calibration
+    * 
+    *\param init_cals_mask bit masking field for init calibration default to 0x4DFF
+    * NOTE: this init cals mask need to be at least 0x4F.
+    *\param tracking_cals_mask bit masking field for tracking calibration default to 0xC3
+    *\param timeout init calibration timeout. default to 10s
+    */
+    virtual void setup_cal(uint32_t init_cals_mask, uint32_t tracking_cals_mask, uint32_t timeout) = 0;
     //! resets and start the JESD deframer (JESD Rx, for RF Tx)
     virtual void start_jesd_rx() = 0;
 
@@ -211,9 +259,10 @@ public:
 void export_mykonos(){
     LIBMPM_BOOST_PREAMBLE("ad937x")
     using namespace mpm::chips;
-    bp::class_<ad937x_ctrl, boost::noncopyable, std::shared_ptr<ad937x_ctrl> >("ad937x_ctrl", bp::no_init)
+    bp::class_<ad937x_ctrl, boost::noncopyable, std::shared_ptr<ad937x_ctrl>>("ad937x_ctrl", bp::no_init)
         .def("begin_initialization", &ad937x_ctrl::begin_initialization)
         .def("finish_initialization", &ad937x_ctrl::finish_initialization)
+        .def("setup_cal", &ad937x_ctrl::setup_cal)
         .def("start_jesd_rx", &ad937x_ctrl::start_jesd_rx)
         .def("start_jesd_tx", &ad937x_ctrl::start_jesd_tx)
         .def("start_radio", &ad937x_ctrl::start_radio)
@@ -242,6 +291,44 @@ void export_mykonos(){
         .def("set_fir", &ad937x_ctrl::set_fir)
         .def("get_fir", &ad937x_ctrl::get_fir)
         .def("get_temperature", &ad937x_ctrl::get_temperature)
+        .def_readonly("TX_BB_FILTER", &ad937x_ctrl::TX_BB_FILTER)
+        .def_readonly("ADC_TUNER", &ad937x_ctrl::ADC_TUNER)
+        .def_readonly("TIA_3DB_CORNER", &ad937x_ctrl::TIA_3DB_CORNER)
+        .def_readonly("DC_OFFSET", &ad937x_ctrl::DC_OFFSET)
+        .def_readonly("TX_ATTENUATION_DELAY", &ad937x_ctrl::TX_ATTENUATION_DELAY)
+        .def_readonly("RX_GAIN_DELAY", &ad937x_ctrl::RX_GAIN_DELAY)
+        .def_readonly("FLASH_CAL", &ad937x_ctrl::FLASH_CAL)
+        .def_readonly("PATH_DELAY", &ad937x_ctrl::PATH_DELAY)
+        .def_readonly("TX_LO_LEAKAGE_INTERNAL", &ad937x_ctrl::TX_LO_LEAKAGE_INTERNAL)
+        .def_readonly("TX_LO_LEAKAGE_EXTERNAL", &ad937x_ctrl::TX_LO_LEAKAGE_EXTERNAL)
+        .def_readonly("TX_QEC_INIT", &ad937x_ctrl::TX_QEC_INIT)
+        .def_readonly("LOOPBACK_RX_LO_DELAY", &ad937x_ctrl::LOOPBACK_RX_LO_DELAY)
+        .def_readonly("LOOPBACK_RX_RX_QEC_INIT", &ad937x_ctrl::LOOPBACK_RX_RX_QEC_INIT)
+        .def_readonly("RX_LO_DELAY", &ad937x_ctrl::RX_LO_DELAY)
+        .def_readonly("RX_QEC_INIT", &ad937x_ctrl::RX_QEC_INIT)
+        .def_readonly("DPD_INIT", &ad937x_ctrl::DPD_INIT)
+        .def_readonly("CLGC_INIT", &ad937x_ctrl::CLGC_INIT)
+        .def_readonly("VSWR_INIT", &ad937x_ctrl::VSWR_INIT)
+        .def_readonly("TRACK_RX1_QEC", &ad937x_ctrl::TRACK_RX1_QEC)
+        .def_readonly("TRACK_RX2_QEC", &ad937x_ctrl::TRACK_RX2_QEC)
+        .def_readonly("TRACK_ORX1_QEC", &ad937x_ctrl::TRACK_ORX1_QEC)
+        .def_readonly("TRACK_ORX2_QEC", &ad937x_ctrl::TRACK_ORX2_QEC)
+        .def_readonly("TRACK_TX1_LOL", &ad937x_ctrl::TRACK_TX1_LOL)
+        .def_readonly("TRACK_TX2_LOL", &ad937x_ctrl::TRACK_TX2_LOL)
+        .def_readonly("TRACK_TX1_QEC", &ad937x_ctrl::TRACK_TX1_QEC)
+        .def_readonly("TRACK_TX2_QEC", &ad937x_ctrl::TRACK_TX2_QEC)
+        .def_readonly("TRACK_TX1_DPD", &ad937x_ctrl::TRACK_TX1_DPD)
+        .def_readonly("TRACK_TX2_DPD", &ad937x_ctrl::TRACK_TX2_DPD)
+        .def_readonly("TRACK_TX1_CLGC", &ad937x_ctrl::TRACK_TX1_CLGC)
+        .def_readonly("TRACK_TX2_CLGC", &ad937x_ctrl::TRACK_TX2_CLGC)
+        .def_readonly("TRACK_TX1_VSWR", &ad937x_ctrl::TRACK_TX1_VSWR)
+        .def_readonly("TRACK_TX2_VSWR", &ad937x_ctrl::TRACK_TX2_VSWR)
+        .def_readonly("TRACK_ORX1_QEC_SNLO", &ad937x_ctrl::TRACK_ORX1_QEC_SNLO)
+        .def_readonly("TRACK_ORX2_QEC_SNLO", &ad937x_ctrl::TRACK_ORX2_QEC_SNLO)
+        .def_readonly("TRACK_SRX_QEC", &ad937x_ctrl::TRACK_SRX_QEC)
+        .def_readonly("DEFAULT_INIT_CALS_MASKS", &ad937x_ctrl::DEFAULT_INIT_CALS_MASKS)
+        .def_readonly("DEFAULT_TRACKING_CALS_MASKS", &ad937x_ctrl::DEFAULT_TRACKING_CALS_MASKS)
+        .def_readonly("DEFAULT_INIT_CALS_TIMEOUT", &ad937x_ctrl::DEFAULT_INIT_CALS_TIMEOUT)
         ;
 }
 #endif

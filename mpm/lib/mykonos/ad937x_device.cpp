@@ -19,7 +19,6 @@
 #include "adi/mykonos.h"
 #include "adi/mykonos_gpio.h"
 #include "adi/mykonos_debug/mykonos_dbgjesd.h"
-
 #include <boost/format.hpp>
 
 #include <functional>
@@ -49,50 +48,6 @@ static const uint32_t AD9371_PRODUCT_ID = 0x3;
 static const size_t ARM_BINARY_SIZE = 98304;
 
 static const uint32_t PLL_LOCK_TIMEOUT_MS = 200;
-static const uint32_t INIT_CAL_TIMEOUT_MS = 10000;
-
-// TODO: actually figure out what cals we want to run
-// minimum required cals are 0x4F
-static const uint32_t INIT_CALS =
-    TX_BB_FILTER |
-    ADC_TUNER |
-    TIA_3DB_CORNER |
-    DC_OFFSET |
-    TX_ATTENUATION_DELAY |
-    RX_GAIN_DELAY |
-    FLASH_CAL |
-    PATH_DELAY |
-    TX_LO_LEAKAGE_INTERNAL |
-////  TX_LO_LEAKAGE_EXTERNAL |
-    TX_QEC_INIT |
-    LOOPBACK_RX_LO_DELAY |
-    LOOPBACK_RX_RX_QEC_INIT |
-    RX_LO_DELAY |
-    RX_QEC_INIT |
-////  DPD_INIT |
-////  CLGC_INIT |
-////  VSWR_INIT |
-    0;
-
-static const uint32_t TRACKING_CALS =
-    TRACK_RX1_QEC |
-    TRACK_RX2_QEC |
-//    TRACK_ORX1_QEC |
-//    TRACK_ORX2_QEC |
-////  TRACK_TX1_LOL |
-////  TRACK_TX2_LOL |
-    TRACK_TX1_QEC |
-    TRACK_TX2_QEC |
-////  TRACK_TX1_DPD |
-////  TRACK_TX2_DPD |
-////  TRACK_TX1_CLGC |
-////  TRACK_TX2_CLGC |
-////  TRACK_TX1_VSWR |
-////  TRACK_TX2_VSWR |
-////  TRACK_ORX1_QEC_SNLO |
-////  TRACK_ORX2_QEC_SNLO |
-////  TRACK_SRX_QEC |
-    0;
 
 /******************************************************
 Helper functions
@@ -318,8 +273,7 @@ ad937x_device::ad937x_device(
 {
 }
 
-void ad937x_device::_initialize_rf()
-{
+void ad937x_device::_setup_rf(){
     // TODO: add setRfPllLoopFilter here
 
     // Set frequencies
@@ -345,19 +299,21 @@ void ad937x_device::_initialize_rf()
     set_gain(uhd::TX_DIRECTION, chain_t::ONE, TX_DEFAULT_GAIN);
     set_gain(uhd::TX_DIRECTION, chain_t::TWO, TX_DEFAULT_GAIN);
 
-    // Run and wait for init cals
-    CALL_API(MYKONOS_runInitCals(mykonos_config.device, INIT_CALS));
 
+}
+
+void ad937x_device::setup_cal(uint32_t init_cals_mask, uint32_t tracking_cals_mask, uint32_t timeout){
+    // Run and wait for init cals
+    CALL_API(MYKONOS_runInitCals(mykonos_config.device, init_cals_mask));
     uint8_t errorFlag = 0, errorCode = 0;
-    CALL_API(MYKONOS_waitInitCals(mykonos_config.device, INIT_CAL_TIMEOUT_MS, &errorFlag, &errorCode));
+    CALL_API(MYKONOS_waitInitCals(mykonos_config.device, timeout, &errorFlag, &errorCode));
 
     if ((errorFlag != 0) || (errorCode != 0))
     {
         throw mpm::runtime_error("Init cals failed!");
         // TODO: add more debugging information here
     }
-
-    CALL_API(MYKONOS_enableTrackingCals(mykonos_config.device, TRACKING_CALS));
+    CALL_API(MYKONOS_enableTrackingCals(mykonos_config.device, tracking_cals_mask));
     // ready for radioOn
 }
 
@@ -389,9 +345,8 @@ void ad937x_device::finish_initialization()
 
     // TODO: check ARM version before or after the load of the ARM
     // currently binary has no readable version number until after it's loaded
-
-    // TODO: separate initialize rf into its own step
-    _initialize_rf();
+    //Run setup RF
+    _setup_rf();
 }
 
 void ad937x_device::start_jesd_tx()

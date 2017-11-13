@@ -28,7 +28,64 @@
 
 using namespace mpm::chips;
 using namespace mpm::ad937x::device;
-
+//Init cals mask
+const uint32_t ad937x_ctrl::TX_BB_FILTER            = ::TX_BB_FILTER;
+const uint32_t ad937x_ctrl::ADC_TUNER               = ::ADC_TUNER;
+const uint32_t ad937x_ctrl::TIA_3DB_CORNER          = ::TIA_3DB_CORNER;
+const uint32_t ad937x_ctrl::DC_OFFSET               = ::DC_OFFSET;
+const uint32_t ad937x_ctrl::TX_ATTENUATION_DELAY    = ::TX_ATTENUATION_DELAY;
+const uint32_t ad937x_ctrl::RX_GAIN_DELAY           = ::RX_GAIN_DELAY;
+const uint32_t ad937x_ctrl::FLASH_CAL               = ::FLASH_CAL;
+const uint32_t ad937x_ctrl::PATH_DELAY              = ::PATH_DELAY;
+const uint32_t ad937x_ctrl::TX_LO_LEAKAGE_INTERNAL  = ::TX_LO_LEAKAGE_INTERNAL;
+const uint32_t ad937x_ctrl::TX_LO_LEAKAGE_EXTERNAL  = ::TX_LO_LEAKAGE_EXTERNAL;
+const uint32_t ad937x_ctrl::TX_QEC_INIT             = ::TX_QEC_INIT;
+const uint32_t ad937x_ctrl::LOOPBACK_RX_LO_DELAY    = ::LOOPBACK_RX_LO_DELAY;
+const uint32_t ad937x_ctrl::LOOPBACK_RX_RX_QEC_INIT = ::LOOPBACK_RX_RX_QEC_INIT;
+const uint32_t ad937x_ctrl::RX_LO_DELAY             = ::RX_LO_DELAY;
+const uint32_t ad937x_ctrl::RX_QEC_INIT             = ::RX_QEC_INIT;
+const uint32_t ad937x_ctrl::DPD_INIT                = ::DPD_INIT;
+const uint32_t ad937x_ctrl::CLGC_INIT               = ::CLGC_INIT;
+const uint32_t ad937x_ctrl::VSWR_INIT               = ::VSWR_INIT;
+//Tracking Cals mask
+const uint32_t ad937x_ctrl::TRACK_RX1_QEC           = ::TRACK_RX1_QEC;
+const uint32_t ad937x_ctrl::TRACK_RX2_QEC           = ::TRACK_RX2_QEC;
+const uint32_t ad937x_ctrl::TRACK_ORX1_QEC          = ::TRACK_ORX1_QEC;
+const uint32_t ad937x_ctrl::TRACK_ORX2_QEC          = ::TRACK_ORX2_QEC;
+const uint32_t ad937x_ctrl::TRACK_TX1_LOL           = ::TRACK_TX1_LOL;
+const uint32_t ad937x_ctrl::TRACK_TX2_LOL           = ::TRACK_TX2_LOL;
+const uint32_t ad937x_ctrl::TRACK_TX1_QEC           = ::TRACK_TX1_QEC;
+const uint32_t ad937x_ctrl::TRACK_TX2_QEC           = ::TRACK_TX2_QEC;
+const uint32_t ad937x_ctrl::TRACK_TX1_DPD           = ::TRACK_TX1_DPD;
+const uint32_t ad937x_ctrl::TRACK_TX2_DPD           = ::TRACK_TX2_DPD;
+const uint32_t ad937x_ctrl::TRACK_TX1_CLGC          = ::TRACK_TX1_CLGC;
+const uint32_t ad937x_ctrl::TRACK_TX2_CLGC          = ::TRACK_TX2_CLGC;
+const uint32_t ad937x_ctrl::TRACK_TX1_VSWR          = ::TRACK_TX1_VSWR;
+const uint32_t ad937x_ctrl::TRACK_TX2_VSWR          = ::TRACK_TX2_VSWR;
+const uint32_t ad937x_ctrl::TRACK_ORX1_QEC_SNLO     = ::TRACK_ORX1_QEC_SNLO;
+const uint32_t ad937x_ctrl::TRACK_ORX2_QEC_SNLO     = ::TRACK_ORX2_QEC_SNLO;
+const uint32_t ad937x_ctrl::TRACK_SRX_QEC           = ::TRACK_SRX_QEC;
+const uint32_t ad937x_ctrl::DEFAULT_INIT_CALS_MASKS =
+        ad937x_ctrl::TX_BB_FILTER |
+        ad937x_ctrl::ADC_TUNER |
+        ad937x_ctrl::TIA_3DB_CORNER |
+        ad937x_ctrl::DC_OFFSET |
+        ad937x_ctrl::TX_ATTENUATION_DELAY |
+        ad937x_ctrl::RX_GAIN_DELAY |
+        ad937x_ctrl::FLASH_CAL |
+        ad937x_ctrl::PATH_DELAY |
+        ad937x_ctrl::TX_LO_LEAKAGE_INTERNAL |
+        ad937x_ctrl::TX_QEC_INIT |
+        ad937x_ctrl::LOOPBACK_RX_LO_DELAY |
+        ad937x_ctrl::RX_QEC_INIT
+        ;
+const uint32_t ad937x_ctrl::DEFAULT_TRACKING_CALS_MASKS =
+        ad937x_ctrl::TRACK_RX1_QEC |
+        ad937x_ctrl::TRACK_RX2_QEC |
+        ad937x_ctrl::TRACK_TX1_QEC |
+        ad937x_ctrl::TRACK_TX2_QEC
+        ;
+const uint32_t ad937x_ctrl::DEFAULT_INIT_CALS_TIMEOUT = 60000;
 static uhd::direction_t _get_direction_from_antenna(const std::string& antenna)
 {
     auto sub = antenna.substr(0, 2);
@@ -145,6 +202,11 @@ public:
         device.finish_initialization();
     }
 
+    virtual void setup_cal(uint32_t init_cals_mask, uint32_t tracking_cals_mask, uint32_t timeout)
+    {
+        std::lock_guard<std::mutex> lock(*spi_mutex);
+        device.setup_cal(init_cals_mask, tracking_cals_mask, timeout);
+    }
     virtual void start_jesd_rx()
     {
         std::lock_guard<std::mutex> lock(*spi_mutex);

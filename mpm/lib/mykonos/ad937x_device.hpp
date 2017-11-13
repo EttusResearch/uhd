@@ -54,6 +54,7 @@ public:
 
     void begin_initialization();
     void finish_initialization();
+    void setup_cal(uint32_t init_cals_mask, uint32_t tracking_cals_mask, uint32_t timeout);
     void start_jesd_rx();
     void start_jesd_tx();
     void start_radio();
@@ -109,14 +110,13 @@ private:
     ad937x_gain_ctrl_config_t gain_ctrl;
 
     void _apply_gain_pins(uhd::direction_t direction, mpm::ad937x::device::chain_t chain);
-
+    void _setup_rf();
     void _call_api_function(const std::function<mykonosErr_t()>& func);
     void _call_gpio_api_function(const std::function<mykonosGpioErr_t()>& func);
 
     std::string _get_arm_binary_path();
     std::vector<uint8_t> _get_arm_binary();
 
-    void _initialize_rf();
     void _verify_product_id();
     void _verify_multichip_sync_status(multichip_sync_t mcs);
 

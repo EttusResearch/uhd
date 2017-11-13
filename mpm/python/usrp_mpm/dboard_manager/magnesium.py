@@ -508,7 +508,7 @@ class Magnesium(DboardManagerBase):
         _sync_db_clock(self.clock_synchronizer)
         # Clocks and PPS are now fully active!
 
-        self.init_jesd(self.radio_regs)
+        self.init_jesd(self.radio_regs, args)
         self.mykonos.start_radio()
         return True
 
@@ -526,7 +526,24 @@ class Magnesium(DboardManagerBase):
         self.cpld.poke16(addr, data)
         return self.cpld.peek16(addr)
 
-    def init_jesd(self, uio):
+    def init_rf_cal(self, args):
+        " Setup RF CAL "
+        self.log.info("Setting up RF CAL...")
+        try:
+            self._init_cals_mask = int(args.get('init_cals', str(self.mykonos.DEFAULT_INIT_CALS_MASKS)), 0)
+            self._tracking_cals_mask = int(args.get('tracking_cals', str(self.mykonos.DEFAULT_TRACKING_CALS_MASKS)), 0)
+            self._init_cals_timeout = int(args.get('init_cals_timeout', str(self.mykonos.DEFAULT_INIT_CALS_TIMEOUT)), 0)
+        except ValueError as ex:
+            self.log.warning("init() args missing or error using default value seeing following exception print out.")
+            self.log.warning("{}".format(ex))
+            self._init_cals_mask = self.mykonos.DEFAULT_INIT_CALS_MASKS
+            self._tracking_cals_mask = self.mykonos.DEFAULT_TRACKING_CALS_MASKS
+            self._init_cals_timeout = self.mykonos.DEFAULT_INIT_CALS_TIMEOUT
+        self.log.debug("args[init_cals]=0x{:02X}".format(self._init_cals_mask))
+        self.log.debug("args[tracking_cals]=0x{:02X}".format(self._tracking_cals_mask))
+        self.mykonos.setup_cal(self._init_cals_mask, self._tracking_cals_mask, self._init_cals_timeout)
+
+    def init_jesd(self, uio, args):
         """
         Bring up the JESD link between Mykonos and the N310.
         """
@@ -546,6 +563,8 @@ class Magnesium(DboardManagerBase):
         time.sleep(0.001)
         self.jesdcore.send_sysref_pulse()
         self.mykonos.finish_initialization()
+        # TODO:can we call this after JESD?
+        self.init_rf_cal(args)
 
         self.log.trace("Starting JESD204b Link Initialization...")
         # Generally, enable the source before the sink. Start with the DAC side.
