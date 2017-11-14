@@ -7,6 +7,7 @@
 #include "magnesium_gain_table.hpp"
 #include "magnesium_constants.hpp"
 #include <uhd/exception.hpp>
+#include <algorithm>
 #include <map>
 
 using namespace uhd;
