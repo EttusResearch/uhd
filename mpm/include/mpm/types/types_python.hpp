@@ -19,6 +19,7 @@
 
 #include "lockable.hpp"
 #include "regs_iface.hpp"
+#include "log_buf.hpp"
 
 void export_types() {
     LIBMPM_BOOST_PREAMBLE("types")
@@ -34,5 +35,22 @@ void export_types() {
         .def("peek16", &regs_iface::peek16)
         .def("poke16", &regs_iface::poke16)
    ;
+
+    bp::class_<log_buf, boost::noncopyable, std::shared_ptr<log_buf> >("log_buf", bp::no_init)
+        .def("make_singleton", &log_buf::make_singleton)
+        .staticmethod("make_singleton")
+        .def("set_notify_callback", +[](log_buf& self,
+                                        boost::python::object object) {
+              self.set_notify_callback(object);
+        })
+        .def("pop", +[](log_buf& self){
+            auto log_msg = self.pop();
+            return bp::make_tuple(
+                static_cast<int>(std::get<0>(log_msg)),
+                std::get<1>(log_msg),
+                std::get<2>(log_msg)
+            );
+        })
+    ;
 }
 
