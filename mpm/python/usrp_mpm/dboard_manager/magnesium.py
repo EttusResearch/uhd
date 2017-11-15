@@ -557,6 +557,17 @@ class Magnesium(DboardManagerBase):
         self.log.trace("Pulsing Mykonos Hard Reset...")
         self.cpld.reset_mykonos()
         self.log.trace("Initializing Mykonos...")
+        rx_lo_source = args.get('rx_lo_source', "internal")
+        rx_lo = -1
+        if rx_lo_source == "internal":
+            rx_lo = 0
+        if rx_lo_source == "external":
+            rx_lo = 1
+        if rx_lo == -1:
+            self.log.warning("Please specify rx LO either \"internal\" or \"external\" ")
+        else:
+            self.mykonos.update_rx_lo_source(rx_lo)
+        self.log.debug("RX LO SOURCE is {}".format(self.mykonos.get_rx_lo_source()))
         self.mykonos.begin_initialization()
         # Multi-chip Sync requires two SYSREF pulses at least 17us apart.
         self.jesdcore.send_sysref_pulse()

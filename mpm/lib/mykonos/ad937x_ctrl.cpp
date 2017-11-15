@@ -189,7 +189,23 @@ public:
     {
         /* nop */
     }
+    virtual void update_rx_lo_source(uint8_t rx_lo_source){
+        std::lock_guard<std::mutex> lock(*spi_mutex);
+        device.update_rx_lo_source(rx_lo_source);
+    }
+    virtual void update_tx_lo_source(uint8_t tx_lo_source){
+        std::lock_guard<std::mutex> lock(*spi_mutex);
+        device.update_tx_lo_source(tx_lo_source);
+    }
 
+    virtual uint8_t get_rx_lo_source(){
+        std::lock_guard<std::mutex> lock(*spi_mutex);
+        return device.get_rx_lo_source();
+    }
+    virtual uint8_t get_tx_lo_source(){
+        std::lock_guard<std::mutex> lock(*spi_mutex);
+        return device.get_tx_lo_source();
+    }
     virtual void begin_initialization()
     {
         std::lock_guard<std::mutex> lock(*spi_mutex);

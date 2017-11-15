@@ -20,7 +20,6 @@
 #include "../adi/t_mykonos.h"
 #include "ad937x_fir.hpp"
 #include <boost/noncopyable.hpp>
-
 // Allocates and links the entire mykonos config struct in a single class
 class ad937x_config_t  : public boost::noncopyable
 {
@@ -41,6 +40,10 @@ public:
     static const int16_t DEFAULT_RX_FIR[DEFAULT_RX_FIR_SIZE];
     static const int16_t DEFAULT_OBSRX_FIR[DEFAULT_RX_FIR_SIZE];
     static const int16_t DEFAULT_SNIFFER_FIR[DEFAULT_RX_FIR_SIZE];
+    void    set_rx_pll_use_external_lo(uint8_t val);
+    uint8_t get_rx_pll_use_external_lo();
+    void    set_tx_pll_use_external_lo(uint8_t val);
+    uint8_t get_tx_pll_use_external_lo();
 
 private:
     // The top level device struct is non-const and contains all other structs, so everything is "public"

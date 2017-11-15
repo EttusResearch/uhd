@@ -83,7 +83,18 @@ ad937x_config_t::ad937x_config_t(spiSettings_t* sps) :
 
     device = &_device;
 }
-
+void ad937x_config_t::set_rx_pll_use_external_lo(uint8_t val){
+    _rx.rxPllUseExternalLo = val;
+}
+uint8_t ad937x_config_t::get_rx_pll_use_external_lo(){
+    return _rx.rxPllUseExternalLo;
+}
+void ad937x_config_t::set_tx_pll_use_external_lo(uint8_t val){
+    _tx.txPllUseExternalLo = val;
+}
+uint8_t ad937x_config_t::get_tx_pll_use_external_lo(){
+    return _tx.txPllUseExternalLo;
+}
 // This function sets up all the pointers in all of our local members that represent the device struct
 // This function should only be called during construction.
 void ad937x_config_t::_init_pointers()

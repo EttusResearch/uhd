@@ -51,7 +51,6 @@ public:
         mpm::types::regs_iface* iface,
         mpm::ad937x::gpio::gain_pins_t gain_pins
     );
-
     void begin_initialization();
     void finish_initialization();
     void setup_cal(uint32_t init_cals_mask, uint32_t tracking_cals_mask, uint32_t timeout);
@@ -91,7 +90,10 @@ public:
 
     void set_enable_gain_pins(uhd::direction_t direction, mpm::ad937x::device::chain_t chain, bool enable);
     void set_gain_pin_step_sizes(uhd::direction_t direction, mpm::ad937x::device::chain_t chain, double inc_step, double dec_step);
-
+    void update_rx_lo_source(uint8_t rxPllUseExternalLo);
+    void update_tx_lo_source(uint8_t rxPllUseExternalLo);
+    uint8_t get_rx_lo_source();
+    uint8_t get_tx_lo_source();
     const static double MIN_FREQ;
     const static double MAX_FREQ;
     const static double MIN_RX_GAIN;

@@ -272,7 +272,20 @@ ad937x_device::ad937x_device(
     gain_ctrl(gain_pins)
 {
 }
-
+void ad937x_device::update_rx_lo_source(uint8_t rx_lo_source){
+    mykonos_config.set_rx_pll_use_external_lo(rx_lo_source);
+    //TODO: should we re-init after this ?
+}
+void ad937x_device::update_tx_lo_source(uint8_t tx_lo_source){
+    mykonos_config.set_tx_pll_use_external_lo(tx_lo_source);
+    //TODO: should we re-init after this ?
+}
+uint8_t ad937x_device::get_rx_lo_source(){
+    return mykonos_config.get_rx_pll_use_external_lo();
+}
+uint8_t ad937x_device::get_tx_lo_source(){
+    return mykonos_config.get_tx_pll_use_external_lo();
+}
 void ad937x_device::_setup_rf(){
     // TODO: add setRfPllLoopFilter here
 
