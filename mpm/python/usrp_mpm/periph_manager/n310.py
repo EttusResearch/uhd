@@ -471,15 +471,15 @@ class n310(PeriphManagerBase):
     # This file will always contain the current image, regardless of SFP type,
     # dboard, etc. The host is responsible for providing a compatible image
     # for the N310's current setup.
-    binfile_path = '/lib/firmware/n310.bin'
-    dts_path = '/lib/firmware/n310.dts'
     # Override the list of updateable components
     updateable_components = {
         'fpga': {
             'callback': "update_fpga",
+            'path': '/lib/firmware/n310.bin',
         },
         'dts': {
             'callback': "update_dts",
+            'path': '/lib/firmware/n310.dts',
         },
     }
 
@@ -902,15 +902,16 @@ class n310(PeriphManagerBase):
         _, file_extension = os.path.splitext(filepath)
         # Cut off the period from the file extension
         file_extension = file_extension[1:].lower()
+        binfile_path = self.updateable_components['fpga']['path']
         if file_extension == "bit":
             self.log.trace("Converting bit to bin file and writing to {}"
-                           .format(self.binfile_path))
+                           .format(binfile_path))
             from usrp_mpm.fpga_bit_to_bin import fpga_bit_to_bin
-            fpga_bit_to_bin(filepath, self.binfile_path, flip=True)
+            fpga_bit_to_bin(filepath, binfile_path, flip=True)
         elif file_extension == "bin":
             self.log.trace("Copying bin file to {}"
-                           .format(self.binfile_path))
-            shutil.copy(filepath, self.binfile_path)
+                           .format(binfile_path))
+            shutil.copy(filepath, binfile_path)
         else:
             self.log.error("Invalid FPGA bitfile: {}"
                            .format(filepath))
@@ -925,8 +926,10 @@ class n310(PeriphManagerBase):
         :param filepath: path to new DTS image
         :param metadata: Dictionary of strings containing metadata
         """
-        self.log.trace("Updating DTS with image at {}"
-                       .format(filepath))
-        shutil.copy(filepath, self.dts_path)
+        dtsfile_path = self.updateable_components['dts']['path']
+        self.log.trace("Updating DTS with image at {} to {}"
+                       .format(filepath, dtsfile_path)
+                      )
+        shutil.copy(filepath, dtsfile_path)
         # TODO: Compile the new dts file into a usable dtbo
         return True
