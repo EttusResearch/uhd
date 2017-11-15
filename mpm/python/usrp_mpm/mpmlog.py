@@ -72,6 +72,12 @@ class MPMLogger(logging.getLoggerClass()):
     """
     def __init__(self, *args, **kwargs):
         logging.Logger.__init__(self, *args, **kwargs)
+        self.cpp_log_buf = None
+        try:
+            import usrp_mpm.libpyusrp_periphs as lib
+            self.cpp_log_buf = lib.types.log_buf.make_singleton()
+        except ImportError:
+            pass
 
     def trace(self, *args, **kwargs):
         """ Extends logging for super-high verbosity """
@@ -113,6 +119,16 @@ def get_main_logger(
     ))
     default_log_level = max(1, default_log_level - (default_log_level % 10))
     LOGGER.setLevel(default_log_level)
+    # Connect to C++ logging:
+    if LOGGER.cpp_log_buf is not None:
+        lib_logger = LOGGER.getChild('lib')
+        def log_from_cpp():
+            " Callback for logging from C++ "
+            log_level, component, message = LOGGER.cpp_log_buf.pop()
+            if log_level:
+                lib_logger.log(log_level, "[%s] %s",
+                        component, message.strip())
+        LOGGER.cpp_log_buf.set_notify_callback(log_from_cpp)
     return LOGGER
 
 def get_logger(child_name):
