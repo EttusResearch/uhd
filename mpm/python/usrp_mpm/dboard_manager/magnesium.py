@@ -90,6 +90,9 @@ def create_spidev_iface_phasedac(dev_node):
         0, # Write flag
     )
 
+###############################################################################
+# Peripherals
+###############################################################################
 class TCA6408(object):
     """
     Abstraction layer for the port/gpio expander
@@ -130,6 +133,150 @@ class TCA6408(object):
         assert name in self.pins
         return self._gpios.get(self.pins.index(name))
 
+class DboardClockControl(object):
+    """
+    Control the FPGA MMCM for Radio Clock control.
+    """
+    # Clocking Register address constants
+    RADIO_CLK_MMCM      = 0x0020
+    PHASE_SHIFT_CONTROL = 0x0024
+    RADIO_CLK_ENABLES   = 0x0028
+    MGT_REF_CLK_STATUS  = 0x0030
+
+    def __init__(self, regs, log):
+        self.log = log
+        self.regs = regs
+        self.poke32 = self.regs.poke32
+        self.peek32 = self.regs.peek32
+
+    def enable_outputs(self, enable=True):
+        """
+        Enables or disables the MMCM outputs.
+        """
+        if enable:
+            self.poke32(self.RADIO_CLK_ENABLES, 0x011)
+        else:
+            self.poke32(self.RADIO_CLK_ENABLES, 0x000)
+
+    def reset_mmcm(self):
+        """
+        Uninitialize and reset the MMCM
+        """
+        self.log.trace("Disabling all Radio Clocks, then resetting MMCM...")
+        self.enable_outputs(False)
+        self.poke32(self.RADIO_CLK_MMCM, 0x1)
+
+    def enable_mmcm(self):
+        """
+        Unreset MMCM and poll lock indicators
+
+        If MMCM is not locked after unreset, an exception is thrown.
+        """
+        self.log.trace("Un-resetting MMCM...")
+        self.poke32(self.RADIO_CLK_MMCM, 0x2)
+        if not poll_with_timeout(
+                lambda: bool(self.peek32(self.RADIO_CLK_MMCM) & 0x10),
+                500,
+                10,
+                ):
+            self.log.error("MMCM not locked!")
+            raise RuntimeError("MMCM not locked!")
+        self.log.trace("MMCM locked. Enabling output MMCM clocks...")
+        self.enable_outputs(True)
+
+    def check_refclk(self):
+        """
+        Not technically a clocking reg, but related.
+        """
+        return bool(self.peek32(self.MGT_REF_CLK_STATUS) & 0x1)
+
+class MgCPLD(object):
+    """
+    Control class for the CPLD
+    """
+    CPLD_SIGNATURE = 0xCAFE # Expected signature ("magic number")
+    CPLD_REV = 4
+
+    REG_SIGNATURE = 0x0000
+    REG_REVISION = 0x0001
+    REG_OLDEST_COMPAT = 0x0002
+    REG_BUILD_CODE_LSB = 0x0003
+    REG_BUILD_CODE_MSB = 0x0004
+    REG_SCRATCH = 0x0005
+    REG_CPLD_CTRL = 0x0010
+    REG_LMK_CTRL = 0x0011
+    REG_LO_STATUS = 0x0012
+    REG_MYK_CTRL = 0x0013
+
+    def __init__(self, regs, log):
+        self.log = log.getChild("CPLD")
+        self.log.debug("Initializing CPLD...")
+        self.regs = regs
+        self.poke16 = self.regs.poke16
+        self.peek16 = self.regs.peek16
+        signature = self.peek16(self.REG_SIGNATURE)
+        if signature != self.CPLD_SIGNATURE:
+            self.log.error(
+                "CPLD Signature Mismatch! " \
+                "Expected: 0x{:04X} Got: 0x{:04X}".format(
+                    self.CPLD_SIGNATURE, signature))
+            raise RuntimeError("CPLD Status Check Failed!")
+        rev = self.peek16(self.REG_REVISION)
+        if rev != self.CPLD_REV:
+            self.log.error("CPLD Revision Mismatch! " \
+                           "Expected: %d Got: %d", self.CPLD_REV, rev)
+            raise RuntimeError("CPLD Revision Check Failed!")
+        date_code = self.peek16(self.REG_BUILD_CODE_LSB) | \
+                    (self.peek16(self.REG_BUILD_CODE_MSB) << 16)
+        self.log.trace(
+            "CPLD Signature: 0x{:X} Revision: 0x{:04X} Date code: 0x{:08X}"
+            .format(signature, rev, date_code))
+
+    def set_scratch(self, val):
+        " Write to the scratch register "
+        self.poke16(self.REG_SCRATCH, val & 0xFFFF)
+
+    def get_scratch(self):
+        " Read from the scratch register "
+        return self.peek16(self.REG_SCRATCH)
+
+    def reset(self):
+        " Reset entire CPLD "
+        self.log.trace("Resetting CPLD...")
+        self.poke16(self.REG_CPLD_CTRL, 0x1)
+        self.poke16(self.REG_CPLD_CTRL, 0x0)
+
+    def set_pdac_control(self, enb):
+        """
+        If enb is True, the Phase DAC will exclusively control the VCXO voltage
+        """
+        self.log.trace("Giving Phase %s control over VCXO voltage...",
+                       "exclusive" if bool(enb) else "non-exclusive")
+        reg_val = (1<<4) if enb else 0
+        self.poke16(self.REG_LMK_CTRL, reg_val)
+
+    def get_lo_lock_status(self, which):
+        """
+        Returns True if the 'which' LO is locked. 'which' is either 'tx' or
+        'rx'.
+        """
+        mask = (1<<4) if which.lower() == 'tx' else 1
+        return bool(self.peek16(self.REG_LO_STATUS & mask))
+
+    def reset_mykonos(self):
+        """
+        Hard-resets Mykonos
+        """
+        self.log.debug("Resetting AD9371!")
+        self.poke16(self.REG_MYK_CTRL, 0x1)
+        time.sleep(0.001) # No spec here, but give it some time to reset.
+        self.poke16(self.REG_MYK_CTRL, 0x0)
+        time.sleep(0.001) # No spec here, but give it some time to reset.
+
+
+###############################################################################
+# Main dboard control class
+###############################################################################
 class Magnesium(DboardManagerBase):
     """
     Holds all dboard specific information and methods of the magnesium dboard
@@ -175,6 +322,8 @@ class Magnesium(DboardManagerBase):
             'alignment': 1024,
         },
     }
+    # CPLD Revision
+
 
     # DAC is initialized to midscale automatically on power-on: 16-bit DAC, so midpoint
     # is at 2^15 = 32768. However, the linearity of the DAC is best just below that
@@ -336,22 +485,7 @@ class Magnesium(DboardManagerBase):
                     offset_error*1e12
                 ))
             self.log.info("Sample Clock Synchronization Complete!")
-        def _init_cpld():
-            "Initialize communication with the Mg CPLD"
-            CPLD_SIGNATURE = 0xCAFE
-            cpld_regs = self._spi_ifaces['cpld']
-            signature = cpld_regs.peek16(0x00)
-            self.log.trace("CPLD Signature: 0x{:X}".format(signature))
-            if signature != CPLD_SIGNATURE:
-                self.log.error("CPLD Signature Mismatch! Expected: 0x{:x}".format(CPLD_SIGNATURE))
-                raise RuntimeError("CPLD Status Check Failed!")
-            self.log.trace("CPLD Revision:  0d{}".format(cpld_regs.peek16(0x01)))
-            revision_msb = cpld_regs.peek16(0x04)
-            self.log.trace("CPLD Date Code: 0x{:X}".format(cpld_regs.peek16(0x03) | (revision_msb << 16)))
-            return cpld_regs
-
-
-
+        ## Go, go, go!
         self.log.info("init() called with args `{}'".format(
             ",".join(['{}={}'.format(x, args[x]) for x in args])
         ))
@@ -360,7 +494,7 @@ class Magnesium(DboardManagerBase):
         self.log.info("Radio-register UIO object successfully generated!")
         self._spi_ifaces = _init_spi_devices()
         self.log.info("Loaded SPI interfaces!")
-        self.cpld_regs = _init_cpld()
+        self.cpld = MgCPLD(self._spi_ifaces['cpld'], self.log) # TODO move to __init__()
         self.dboard_clk_control = _init_clock_control(self.radio_regs)
         self.lmk = _init_lmk(
             self.slot_idx,
@@ -402,44 +536,28 @@ class Magnesium(DboardManagerBase):
         """
         Debug for accessing the CPLD via the RPC shell.
         """
-        self.cpld_regs = create_spidev_iface_cpld(self._spi_nodes['cpld'])
-        self.log.trace("CPLD Signature: 0x{:X}".format(self.cpld_regs.peek16(0x00)))
-        revision_msb = self.cpld_regs.peek16(0x04)
-        self.log.trace("CPLD Revision:  0x{:X}".format(self.cpld_regs.peek16(0x03) | (revision_msb << 16)))
-        return self.cpld_regs.peek16(addr)
+        return self.cpld.peek16(addr)
 
     def cpld_poke(self, addr, data):
         """
         Debug for accessing the CPLD via the RPC shell.
         """
-        self.cpld_regs = create_spidev_iface_cpld(self._spi_nodes['cpld'])
-        self.log.trace("CPLD Signature: 0x{:X}".format(self.cpld_regs.peek16(0x00)))
-        revision_msb = self.cpld_regs.peek16(0x04)
-        self.log.trace("CPLD Revision:  0x{:X}".format(self.cpld_regs.peek16(0x03) | (revision_msb << 16)))
-        self.cpld_regs.poke16(addr, data)
-        return self.cpld_regs.peek16(addr)
-
+        self.cpld.poke16(addr, data)
+        return self.cpld.peek16(addr)
 
     def init_jesd(self, uio):
         """
         Bring up the JESD link between Mykonos and the N310.
         """
         # CPLD Register Definition
-        MYKONOS_CONTROL = 0x13
-
         self.log.trace("Creating jesdcore object")
         self.jesdcore = nijesdcore.NIMgJESDCore(uio, self.slot_idx)
         self.jesdcore.check_core()
-
         self.jesdcore.unreset_qpll()
         self.jesdcore.init()
 
         self.log.trace("Pulsing Mykonos Hard Reset...")
-        self.cpld_regs.poke16(MYKONOS_CONTROL, 0x1)
-        time.sleep(0.001) # No spec here, but give it some time to reset.
-        self.cpld_regs.poke16(MYKONOS_CONTROL, 0x0)
-        time.sleep(0.001) # No spec here, but give it some time to enable.
-
+        self.cpld.reset_mykonos()
         self.log.trace("Initializing Mykonos...")
         self.mykonos.begin_initialization()
         # Multi-chip Sync requires two SYSREF pulses at least 17us apart.
@@ -555,60 +673,14 @@ class Magnesium(DboardManagerBase):
         # while the EEPROM write is happening, though.
 
 
-class DboardClockControl(object):
-    """
-    Control the FPGA MMCM for Radio Clock control.
-    """
-    # Clocking Register address constants
-    RADIO_CLK_MMCM      = 0x0020
-    PHASE_SHIFT_CONTROL = 0x0024
-    RADIO_CLK_ENABLES   = 0x0028
-    MGT_REF_CLK_STATUS  = 0x0030
-
-    def __init__(self, regs, log):
-        self.log = log
-        self.regs = regs
-        self.poke32 = self.regs.poke32
-        self.peek32 = self.regs.peek32
-
-    def enable_outputs(self, enable=True):
+    ##########################################################################
+    # Sensors
+    ##########################################################################
+    def get_lowband_lo_lock(self, which):
         """
-        Enables or disables the MMCM outputs.
+        Return LO lock status (Boolean!) of the lowband LOs. 'which' must be
+        either 'tx' or 'rx'
         """
-        if enable:
-            self.poke32(self.RADIO_CLK_ENABLES, 0x011)
-        else:
-            self.poke32(self.RADIO_CLK_ENABLES, 0x000)
-
-    def reset_mmcm(self):
-        """
-        Uninitialize and reset the MMCM
-        """
-        self.log.trace("Disabling all Radio Clocks, then resetting MMCM...")
-        self.enable_outputs(False)
-        self.poke32(self.RADIO_CLK_MMCM, 0x1)
-
-    def enable_mmcm(self):
-        """
-        Unreset MMCM and poll lock indicators
-
-        If MMCM is not locked after unreset, an exception is thrown.
-        """
-        self.log.trace("Un-resetting MMCM...")
-        self.poke32(self.RADIO_CLK_MMCM, 0x2)
-        if not poll_with_timeout(
-                lambda: bool(self.peek32(self.RADIO_CLK_MMCM) & 0x10),
-                500,
-                10,
-                ):
-            self.log.error("MMCM not locked!")
-            raise RuntimeError("MMCM not locked!")
-        self.log.trace("MMCM locked. Enabling output MMCM clocks...")
-        self.enable_outputs(True)
-
-    def check_refclk(self):
-        """
-        Not technically a clocking reg, but related.
-        """
-        return bool(self.peek32(self.MGT_REF_CLK_STATUS) & 0x1)
+        assert which.lower() in ('tx', 'rx')
+        return self.cpld.get_lo_lock_status(which)
 
