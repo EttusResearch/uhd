@@ -18,7 +18,9 @@
 #include "adi/common.h"
 
 #include <mpm/ad937x/adi_ctrl.hpp>
+#include <mpm/types/log_buf.hpp>
 #include <uhd/exception.hpp>
+#include <boost/format.hpp>
 
 #include <iostream>
 #include <chrono>
@@ -271,11 +273,30 @@ commonErr_t CMB_closeLog(void)
     return COMMONERR_FAILED;
 }
 
-commonErr_t CMB_writeToLog(ADI_LOGLEVEL level, uint8_t deviceIndex, uint32_t errorCode, const char *comment)
-{
-    // TODO: send to logging API
-    // TODO: filter log messages based on level
-    std::cout << "[CMB_writeToLog] level==" << level << " errorCode==" << errorCode << " " << comment;
+commonErr_t CMB_writeToLog(
+        ADI_LOGLEVEL level,
+        uint8_t deviceIndex,
+        uint32_t errorCode,
+        const char *comment
+) {
+    mpm::types::log_level_t mpm_log_level;
+    if (level & ADIHAL_LOG_ERROR) {
+        mpm_log_level = mpm::types::log_level_t::ERROR;
+    }
+    else if (level & ADIHAL_LOG_WARNING) {
+        mpm_log_level = mpm::types::log_level_t::WARNING;
+    }
+    else {
+        mpm_log_level = mpm::types::log_level_t::TRACE;
+    }
+
+    mpm::types::log_buf::make_singleton()->post(
+        mpm_log_level,
+        "AD937X",
+        str(boost::format("[Device ID %d] [Error code: %d] %s")
+            % int(deviceIndex) % errorCode % comment)
+    );
+
     return COMMONERR_OK;
 }
 commonErr_t CMB_flushLog(void)
