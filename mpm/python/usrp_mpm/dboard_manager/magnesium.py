@@ -330,13 +330,15 @@ class Magnesium(DboardManagerBase):
         super(Magnesium, self).__init__(slot_idx, **kwargs)
         self.log = get_logger("Magnesium-{}".format(slot_idx))
         self.log.trace("Initializing Magnesium daughterboard, slot index %d",
-            self.slot_idx)
+                       self.slot_idx)
         self.rev = int(self.device_info['rev'])
         self.log.trace("This is a rev: {}".format(chr(65 + self.rev)))
         # This is a default ref clock freq, it must be updated before init() is
         # called!
         self.ref_clock_freq = 10e6
         self.master_clock_freq = 125e6 # Same
+        # Initialize power and peripherals that don't need user-settings
+        self._port_expander = TCA6408(self._get_i2c_dev(self.slot_idx))
         self._power_on()
         self.log.debug("Loading C++ drivers...")
         self._device = lib.dboards.magnesium_manager(
@@ -344,17 +346,23 @@ class Magnesium(DboardManagerBase):
         )
         self.mykonos = self._device.get_radio_ctrl()
         self.spi_lock = self._device.get_spi_lock()
-        self.log.debug("Loaded C++ drivers.")
+        self.log.trace("Loaded C++ drivers.")
         self._init_myk_api(self.mykonos)
         self.eeprom_fs, self.eeprom_path = self._init_user_eeprom(
             self.user_eeprom[self.rev]
         )
+        self.radio_regs = UIO(
+            label="dboard-regs-{}".format(self.slot_idx),
+            read_only=False
+        )
+        self.log.trace("Loading SPI devices...")
+        self._spi_ifaces = {
+            key: self.spi_factories[key](self._spi_nodes[key])
+            for key in self._spi_nodes
+        }
+        self.cpld = MgCPLD(self._spi_ifaces['cpld'], self.log)
+        self.dboard_clk_control = DboardClockControl(self.radio_regs, self.log)
         # Declare some attributes to make linter happy:
-        self._port_expander = None
-        self.radio_regs = None
-        self._spi_ifaces = None
-        self.cpld = None
-        self.dboard_clk_control = None
         self.lmk = None
         self.clock_synchronizer = None
         self.jesdcore = None
@@ -362,8 +370,6 @@ class Magnesium(DboardManagerBase):
     def _power_on(self):
         " Turn on power to daughterboard "
         self.log.trace("Powering on slot_idx={}...".format(self.slot_idx))
-        i2c_dev = self._get_i2c_dev()
-        self._port_expander = TCA6408(i2c_dev)
         self._port_expander.set("PWR-EN-3.6V")
         self._port_expander.set("PWR-EN-1.5V")
         self._port_expander.set("PWR-EN-5.5V")
@@ -372,20 +378,18 @@ class Magnesium(DboardManagerBase):
     def _power_off(self):
         " Turn off power to daughterboard "
         self.log.trace("Powering off slot_idx={}...".format(self.slot_idx))
-        i2c_dev = self._get_i2c_dev()
-        self._port_expander = TCA6408(i2c_dev)
         self._port_expander.reset("PWR-EN-3.6V")
         self._port_expander.reset("PWR-EN-1.5V")
         self._port_expander.reset("PWR-EN-5.5V")
         self._port_expander.reset("LED")
 
-    def _get_i2c_dev(self):
+    def _get_i2c_dev(self, slot_idx):
         " Return the I2C path for this daughterboard "
         import pyudev
         context = pyudev.Context()
         i2c_dev_path = os.path.join(
             self.base_i2c_adapter,
-            self.i2c_chan_map[self.slot_idx]
+            self.i2c_chan_map[slot_idx]
         )
         return pyudev.Devices.from_sys_path(context, i2c_dev_path)
 
@@ -436,26 +440,6 @@ class Magnesium(DboardManagerBase):
         """
         Execute necessary init dance to bring up dboard
         """
-
-        def _init_dboard_regs():
-            " Create a UIO object to talk to dboard regs "
-            self.log.trace("Getting uio...")
-            return UIO(
-                label="dboard-regs-{}".format(self.slot_idx),
-                read_only=False
-            )
-        def _init_spi_devices():
-            " Returns abstraction layers to all the SPI devices "
-            self.log.trace("Loading SPI interfaces...")
-            return {
-                key: self.spi_factories[key](self._spi_nodes[key])
-                for key in self._spi_nodes
-            }
-        def _init_clock_control(dboard_regs):
-            " Create a dboard clock control object and reset it "
-            dboard_clk_control = DboardClockControl(dboard_regs, self.log)
-            dboard_clk_control.reset_mmcm()
-            return dboard_clk_control
         def _init_lmk(lmk_spi, ref_clk_freq,
                       pdac_spi, init_phase_dac_word):
             """
@@ -488,13 +472,7 @@ class Magnesium(DboardManagerBase):
         self.log.info("init() called with args `{}'".format(
             ",".join(['{}={}'.format(x, args[x]) for x in args])
         ))
-
-        self.radio_regs = _init_dboard_regs()
-        self.log.info("Radio-register UIO object successfully generated!")
-        self._spi_ifaces = _init_spi_devices()
-        self.log.info("Loaded SPI interfaces!")
-        self.cpld = MgCPLD(self._spi_ifaces['cpld'], self.log) # TODO move to __init__()
-        self.dboard_clk_control = _init_clock_control(self.radio_regs)
+        self.dboard_clk_control.reset_mmcm()
         self.lmk = _init_lmk(
             self._spi_ifaces['lmk'],
             self.ref_clock_freq,
