@@ -468,7 +468,7 @@ class Magnesium(DboardManagerBase):
             ))
             pdac_spi.poke16(0x0, init_phase_dac_word)
             self.spi_lock = self._device.get_spi_lock()
-            return LMK04828Mg(lmk_spi, self.spi_lock, ref_clk_freq, slot_idx)
+            return LMK04828Mg(lmk_spi, self.spi_lock, ref_clk_freq, self.log)
         def _sync_db_clock(synchronizer):
             " Synchronizes the DB clock to the common reference "
             synchronizer.run_sync(measurement_only=False)

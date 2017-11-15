@@ -25,11 +25,10 @@ from ..mpmlog import get_logger
 from ..chips import LMK04828
 
 class LMK04828Mg(LMK04828):
-    def __init__(self, regs_iface, spi_lock, ref_clock_freq, slot=None):
-        LMK04828.__init__(self, regs_iface, slot)
+    def __init__(self, regs_iface, spi_lock, ref_clock_freq, log=None):
+        LMK04828.__init__(self, regs_iface, log)
         self.log.trace("Using reference clock frequency {} MHz".format(ref_clock_freq/1e6))
         self.spi_lock = spi_lock
-        self.log = get_logger("LMK04828")
         assert hasattr(self.spi_lock, 'lock')
         assert hasattr(self.spi_lock, 'unlock')
         self.ref_clock_freq = ref_clock_freq
