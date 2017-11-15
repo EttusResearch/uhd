@@ -636,13 +636,16 @@ class n310(PeriphManagerBase):
 
     def set_clock_source(self, *args):
         """
-        Enable given external reference clock.
+        Switch reference clock.
 
         Throws if clock_source is not a valid value.
         """
         clock_source = args[0]
         assert clock_source in self.get_clock_sources()
         self.log.trace("Setting clock source to `{}'".format(clock_source))
+        if clock_source == self.get_clock_source():
+            self.log.trace("Nothing to do -- clock source already set.")
+            return
         if clock_source == 'internal':
             self._gpios.set("CLK-MAINSEL-EX_B")
             self._gpios.set("CLK-MAINSEL-25MHz")
@@ -679,7 +682,20 @@ class n310(PeriphManagerBase):
         assert freq in (10e6, 20e6, 25e6)
         self.log.debug("We've been told the external reference clock " \
                        "frequency is {} MHz.".format(freq/1e6))
+        if self._ext_clk_freq == freq:
+            self.log.trace("New external reference clock frequency assignment matches "\
+                           "previous assignment. Ignoring update command.")
+            return
         self._ext_clock_freq = freq
+        if self.get_clock_source() == 'external':
+            for slot, dboard in enumerate(self.dboards):
+                if hasattr(dboard, 'update_ref_clock_freq'):
+                    self.log.trace(
+                        "Updating reference clock on dboard `{}' to {} MHz...".format(
+                            slot, freq/1e6
+                        )
+                    )
+                    dboard.update_ref_clock_freq(freq)
 
     def get_ref_clock_freq(self):
         " Returns the currently active reference clock frequency"
@@ -736,7 +752,7 @@ class n310(PeriphManagerBase):
             "Enabling" if enable else "Disabling"
         ))
         self._gpios.set("PWREN-CLK-MAINREF", int(bool(enable)))
-    
+
     def enable_1G_ref_clock(self):
         """
         Enables 125 MHz refclock for 1G interface.

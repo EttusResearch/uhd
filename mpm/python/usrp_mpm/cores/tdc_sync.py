@@ -40,12 +40,12 @@ def rsp_table(ref_clk_freq, radio_clk_freq):
             20e6: (20, 10),
             25e6: (25, 13),
         },
-        122.8e6: {
+        122.88e6: {
             10e6: (250, 125),
             20e6: (500, 250),
             25e6: (625, 313),
         },
-        156.3e6: {
+        153.6e6: {
             10e6: (250, 125),
             20e6: (500, 250),
             25e6: (625, 313),
@@ -65,10 +65,10 @@ def rtc_table(radio_clk_freq):
     Returns a tuple (period, high_time).
     """
     return {
-        125e6:   (125, 63),
-        122.8e6: (3072, 1536),
-        156.3e6: (3840, 1920),
-        104e6:   (104, 52),
+        125e6:    (125,  63),
+        122.88e6: (3072, 1536),
+        153.6e6:  (3840, 1920),
+        104e6:    (104,  52),
     }[radio_clk_freq]
 
 
@@ -94,7 +94,6 @@ class ClockSynchronizer(object):
     def __init__(
             self,
             regs_iface,
-            dboard_clk_control,
             lmk,
             phase_dac,
             offset,
@@ -102,7 +101,6 @@ class ClockSynchronizer(object):
             ref_clk_freq,
             fine_delay_step,
             init_pdac_word,
-            lmk_vco_freq,
             target_values,
             dac_spi_addr_val,
             log
@@ -113,14 +111,14 @@ class ClockSynchronizer(object):
         self.poke32 = lambda addr, data: self._iface.poke32(addr + offset, data)
         self.lmk = lmk
         self.phase_dac = phase_dac
-        self.dboard_clk_control = dboard_clk_control
         self.radio_clk_freq = radio_clk_freq
         self.ref_clk_freq = ref_clk_freq
         self.fine_delay_step = fine_delay_step
         self.current_phase_dac_word = init_pdac_word
-        self.lmk_vco_freq = lmk_vco_freq
+        self.lmk_vco_freq = self.lmk.get_vco_freq()
         self.target_values = target_values
         self.dac_spi_addr_val = dac_spi_addr_val
+        self.meas_clk_freq = 170.542641116e6
 
     def run_sync(self, measurement_only=False):
         """
@@ -197,9 +195,8 @@ class ClockSynchronizer(object):
             raise RuntimeError("Failed to capture PPS.")
         self.log.trace("PPS Captured!")
 
-        meas_clk_freq = 170.542641116e6
         measure_offset = lambda: self.read_tdc_meas(
-            1.0/meas_clk_freq, 1.0/self.ref_clk_freq, 1.0/self.radio_clk_freq
+            1.0/self.meas_clk_freq, 1.0/self.ref_clk_freq, 1.0/self.radio_clk_freq
         )
         # Retrieve the first measurement, but throw it away since it won't align with
         # all the re-run measurements.
@@ -207,7 +204,7 @@ class ClockSynchronizer(object):
         measure_offset()
 
         # Now, read off 512 measurements and take the mean of them.
-        num_meas = 512
+        num_meas = 256
         self.log.trace("Reading {} TDC measurements from device...".format(num_meas))
         current_value = mean([measure_offset() for _ in range(num_meas)])
         self.log.trace("TDC measurements collected.")
@@ -238,6 +235,20 @@ class ClockSynchronizer(object):
             self.fine_delay_step
         )
 
+        # Check the calculated distance_to_target value. It should be less than
+        # +/- 1 radio_clk_freq period. The boundary values are set using the same
+        # logic as the high and low bound checks above on the current_value.
+        if abs(distance_to_target) > 1.0/self.radio_clk_freq:
+            self.log.error("Clock synchronizer measured a "
+                           "distance to target of {:.3f} ns. " \
+                           "Range is [{:.3f},{:.3f}] ns".format(
+                               distance_to_target*1e9,
+                               -1.0/self.radio_clk_freq*1e9,
+                               1.0/self.radio_clk_freq*1e9))
+            raise RuntimeError("TDC measured distance to target is out of range! "
+                               "Current value: {:.3f} ns.".format(
+                                   distance_to_target*1e9))
+
         if not measurement_only:
             self.log.trace("Applying calculated shifts...")
             # Coarse shift with the LMK.
@@ -265,7 +276,8 @@ class ClockSynchronizer(object):
         Return the offset (in seconds) the whatever what measured and whatever
         the reference is.
         """
-        timeout = time.time() + 1.0
+        # Current worst-case time is around 3.5s.
+        timeout = time.time() + 4.0 # TODO knock this back down after optimizations
         while True:
             rtc_offset_msb = self.peek32(self.RTC_OFFSET_1)
             if rtc_offset_msb & 0x100 == 0x100:

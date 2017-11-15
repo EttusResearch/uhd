@@ -161,7 +161,7 @@ class DboardClockControl(object):
         """
         Uninitialize and reset the MMCM
         """
-        self.log.trace("Disabling all Radio Clocks, then resetting MMCM...")
+        self.log.trace("Disabling all Radio Clocks, then resetting FPGA MMCM...")
         self.enable_outputs(False)
         self.poke32(self.RADIO_CLK_MMCM, 0x1)
 
@@ -171,16 +171,16 @@ class DboardClockControl(object):
 
         If MMCM is not locked after unreset, an exception is thrown.
         """
-        self.log.trace("Un-resetting MMCM...")
+        self.log.trace("Enabling FPGA Radio Clock MMCM...")
         self.poke32(self.RADIO_CLK_MMCM, 0x2)
         if not poll_with_timeout(
                 lambda: bool(self.peek32(self.RADIO_CLK_MMCM) & 0x10),
                 500,
                 10,
             ):
-            self.log.error("MMCM not locked!")
-            raise RuntimeError("MMCM not locked!")
-        self.log.trace("MMCM locked. Enabling output MMCM clocks...")
+            self.log.error("FPGA Radio Clock MMCM not locked!")
+            raise RuntimeError("FPGA Radio Clock MMCM not locked!")
+        self.log.trace("FPGA Radio Clock MMCM locked. Enabling clocks to design...")
         self.enable_outputs(True)
 
     def check_refclk(self):
@@ -387,7 +387,7 @@ class Magnesium(DboardManagerBase):
         self.eeprom_fs, self.eeprom_path = self._init_user_eeprom(
             self.user_eeprom[self.rev]
         )
-        self.radio_regs = UIO(
+        self.dboard_ctrl_regs = UIO(
             label="dboard-regs-{}".format(self.slot_idx),
             read_only=False
         )
@@ -397,7 +397,7 @@ class Magnesium(DboardManagerBase):
             for key in self._spi_nodes
         }
         self.cpld = MgCPLD(self._spi_ifaces['cpld'], self.log)
-        self.dboard_clk_control = DboardClockControl(self.radio_regs, self.log)
+        self.dboard_clk_control = DboardClockControl(self.dboard_ctrl_regs, self.log)
 
     def _power_on(self):
         " Turn on power to daughterboard "
@@ -472,7 +472,7 @@ class Magnesium(DboardManagerBase):
         """
         Execute necessary init dance to bring up dboard
         """
-        def _init_lmk(lmk_spi, ref_clk_freq,
+        def _init_lmk(lmk_spi, ref_clk_freq, master_clk_freq,
                       pdac_spi, init_phase_dac_word):
             """
             Sets the phase DAC to initial value, and then brings up the LMK
@@ -483,7 +483,7 @@ class Magnesium(DboardManagerBase):
                 init_phase_dac_word
             ))
             pdac_spi.poke16(0x0, init_phase_dac_word)
-            return LMK04828Mg(lmk_spi, self.spi_lock, ref_clk_freq, self.log)
+            return LMK04828Mg(lmk_spi, self.spi_lock, ref_clk_freq, master_clk_freq, self.log)
         def _sync_db_clock(synchronizer):
             " Synchronizes the DB clock to the common reference "
             synchronizer.run_sync(measurement_only=False)
@@ -508,35 +508,48 @@ class Magnesium(DboardManagerBase):
             error_msg = "Cannot run init(), peripherals are not initialized!"
             self.log.error(error_msg)
             raise RuntimeError(error_msg)
+        if 'ref_clk_freq' in args:
+            self.ref_clock_freq = float(args['ref_clk_freq'])
+            assert self.ref_clock_freq in (10e6, 20e6, 25e6)
+        if 'master_clock_rate' in args:
+            self.master_clock_rate = float(args['master_clock_rate'])
+            assert self.master_clock_rate in (122.88e6, 125e6, 153.6e6)
+        self.log.trace("Creating jesdcore object")
+        self.jesdcore = nijesdcore.NIMgJESDCore(self.dboard_ctrl_regs, self.slot_idx)
+
+        self.log.info("Reset Daughterboard Clocking and JESD204B interfaces...")
         self.dboard_clk_control.reset_mmcm()
+        self.jesdcore.reset()
+
         self.lmk = _init_lmk(
             self._spi_ifaces['lmk'],
             self.ref_clock_freq,
+            self.master_clock_rate,
             self._spi_ifaces['phase_dac'],
             self.INIT_PHASE_DAC_WORD,
         )
         self.dboard_clk_control.enable_mmcm()
         self.log.info("Sample Clocks and Phase DAC Configured Successfully!")
         # Synchronize DB Clocks
+        # Future Work: target_value needs to be tweaked to support heterogenous rate sync.
+        self.target_value = {122.88e6: 128e-9, 125e6: 128e-9, 153.6e6: 122e-9}[self.master_clock_rate]
         self.clock_synchronizer = ClockSynchronizer(
-            self.radio_regs,
-            self.dboard_clk_control,
+            self.dboard_ctrl_regs,
             self.lmk,
             self._spi_ifaces['phase_dac'],
-            0, # TODO this might not actually be zero
+            0, # register offset value. future work.
             self.master_clock_rate,
             self.ref_clock_freq,
-            860E-15, # TODO don't hardcode. This should live in the EEPROM
+            860E-15, # fine phase shift. TODO don't hardcode. This should live in the EEPROM
             self.INIT_PHASE_DAC_WORD,
-            3e9,         # lmk_vco_freq
-            [128e-9,],   # target_values
+            [self.target_value,],   # target_values
             0x0,         # spi_addr TODO: make this a constant and replace in _sync_db_clock as well
             self.log
         )
         _sync_db_clock(self.clock_synchronizer)
         # Clocks and PPS are now fully active!
 
-        self.init_jesd(self.radio_regs, args)
+        self.init_jesd(args)
         self.mykonos.start_radio()
         return True
 
@@ -571,15 +584,12 @@ class Magnesium(DboardManagerBase):
         self.log.debug("args[tracking_cals]=0x{:02X}".format(self._tracking_cals_mask))
         self.mykonos.setup_cal(self._init_cals_mask, self._tracking_cals_mask, self._init_cals_timeout)
 
-    def init_jesd(self, uio, args):
+    def init_jesd(self, args):
         """
         Bring up the JESD link between Mykonos and the N310.
+        All clocks must be set up and stable before starting this routine.
         """
-        # CPLD Register Definition
-        self.log.trace("Creating jesdcore object")
-        self.jesdcore = nijesdcore.NIMgJESDCore(uio, self.slot_idx)
         self.jesdcore.check_core()
-        self.jesdcore.unreset_qpll()
         self.jesdcore.init()
 
         self.log.trace("Pulsing Mykonos Hard Reset...")
@@ -599,7 +609,7 @@ class Magnesium(DboardManagerBase):
         self.mykonos.begin_initialization()
         # Multi-chip Sync requires two SYSREF pulses at least 17us apart.
         self.jesdcore.send_sysref_pulse()
-        time.sleep(0.001)
+        time.sleep(0.001) # 17us... ish.
         self.jesdcore.send_sysref_pulse()
         self.mykonos.finish_initialization()
         # TODO:can we call this after JESD?
@@ -618,7 +628,7 @@ class Magnesium(DboardManagerBase):
         self.log.trace("Starting Mykonos framer...")
         self.mykonos.start_jesd_tx()
         self.log.trace("Enable FPGA SYSREF Receiver.")
-        self.jesdcore.enable_lmfc()
+        self.jesdcore.enable_lmfc(True)
         self.jesdcore.send_sysref_pulse()
         self.log.trace("Starting FPGA deframer...")
         self.jesdcore.init_deframer()
@@ -645,11 +655,11 @@ class Magnesium(DboardManagerBase):
 
     def dump_jesd_core(self):
         " Debug method to dump all JESD core regs "
-        radio_regs = UIO(label="dboard-regs-{}".format(self.slot_idx))
+        dboard_ctrl_regs = UIO(label="dboard-regs-{}".format(self.slot_idx))
         for i in range(0x2000, 0x2110, 0x10):
             print(("0x%04X " % i), end=' ')
             for j in range(0, 0x10, 0x4):
-                print(("%08X" % radio_regs.peek32(i + j)), end=' ')
+                print(("%08X" % dboard_ctrl_regs.peek32(i + j)), end=' ')
             print("")
 
     def get_user_eeprom_data(self):
@@ -715,6 +725,16 @@ class Magnesium(DboardManagerBase):
     def get_master_clock_rate(self):
         " Return master clock rate (== sampling rate) "
         return self.master_clock_rate
+
+    def update_ref_clock_freq(self, freq):
+        """
+        Call this function if the frequency of the reference clock changes (the
+        10, 20, 25 MHz one).
+        """
+        self.log.info("Changing reference clock frequency to {} MHz".format(freq/1e6))
+        assert self.ref_clock_freq in (10e6, 20e6, 25e6)
+        self.ref_clock_freq = freq
+        # JEPSON FIXME call init() ? Maybe not yet!
 
 
     ##########################################################################
