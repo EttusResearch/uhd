@@ -20,7 +20,6 @@ magnesium dboard implementation module
 
 from __future__ import print_function
 import os
-import struct
 import time
 import threading
 from six import iterkeys, iteritems
@@ -178,7 +177,7 @@ class DboardClockControl(object):
                 lambda: bool(self.peek32(self.RADIO_CLK_MMCM) & 0x10),
                 500,
                 10,
-                ):
+            ):
             self.log.error("MMCM not locked!")
             raise RuntimeError("MMCM not locked!")
         self.log.trace("MMCM locked. Enabling output MMCM clocks...")
@@ -322,30 +321,43 @@ class Magnesium(DboardManagerBase):
             'alignment': 1024,
         },
     }
-    # CPLD Revision
-
-
     # DAC is initialized to midscale automatically on power-on: 16-bit DAC, so midpoint
     # is at 2^15 = 32768. However, the linearity of the DAC is best just below that
     # point, so we set it to the (carefully calculated) alternate value instead.
     INIT_PHASE_DAC_WORD = 31000 # Intentionally decimal
 
-    def _get_mykonos_function(self, name):
-        mykfunc = getattr(self.mykonos, name)
-        def func(*args):
-            return mykfunc(*args)
-        func.__doc__ = mykfunc.__doc__
-        return func
-
-    def _get_i2c_dev(self):
-        " Return the I2C path for this daughterboard "
-        import pyudev
-        context = pyudev.Context()
-        i2c_dev_path = os.path.join(
-            self.base_i2c_adapter,
-            self.i2c_chan_map[self.slot_idx]
+    def __init__(self, slot_idx, **kwargs):
+        super(Magnesium, self).__init__(slot_idx, **kwargs)
+        self.log = get_logger("Magnesium-{}".format(slot_idx))
+        self.log.trace("Initializing Magnesium daughterboard, slot index %d",
+            self.slot_idx)
+        self.rev = int(self.device_info['rev'])
+        self.log.trace("This is a rev: {}".format(chr(65 + self.rev)))
+        # This is a default ref clock freq, it must be updated before init() is
+        # called!
+        self.ref_clock_freq = 10e6
+        self.master_clock_freq = 125e6 # Same
+        self._power_on()
+        self.log.debug("Loading C++ drivers...")
+        self._device = lib.dboards.magnesium_manager(
+            self._spi_nodes['mykonos'],
         )
-        return pyudev.Devices.from_sys_path(context, i2c_dev_path)
+        self.mykonos = self._device.get_radio_ctrl()
+        self.spi_lock = self._device.get_spi_lock()
+        self.log.debug("Loaded C++ drivers.")
+        self._init_myk_api(self.mykonos)
+        self.eeprom_fs, self.eeprom_path = self._init_user_eeprom(
+            self.user_eeprom[self.rev]
+        )
+        # Declare some attributes to make linter happy:
+        self._port_expander = None
+        self.radio_regs = None
+        self._spi_ifaces = None
+        self.cpld = None
+        self.dboard_clk_control = None
+        self.lmk = None
+        self.clock_synchronizer = None
+        self.jesdcore = None
 
     def _power_on(self):
         " Turn on power to daughterboard "
@@ -367,27 +379,15 @@ class Magnesium(DboardManagerBase):
         self._port_expander.reset("PWR-EN-5.5V")
         self._port_expander.reset("LED")
 
-    def __init__(self, slot_idx, **kwargs):
-        super(Magnesium, self).__init__(slot_idx, **kwargs)
-        self.log = get_logger("Magnesium-{}".format(slot_idx))
-        self.log.trace("Initializing Magnesium daughterboard, slot index %d",
-            self.slot_idx)
-        self.rev = int(self.device_info['rev'])
-        self.log.trace("This is a rev: {}".format(chr(65 + self.rev)))
-        # This is a default ref clock freq, it must be updated before init() is
-        # called!
-        self.ref_clock_freq = 10e6
-        self._power_on()
-        self.log.debug("Loading C++ drivers...")
-        self._device = lib.dboards.magnesium_manager(
-            self._spi_nodes['mykonos'],
+    def _get_i2c_dev(self):
+        " Return the I2C path for this daughterboard "
+        import pyudev
+        context = pyudev.Context()
+        i2c_dev_path = os.path.join(
+            self.base_i2c_adapter,
+            self.i2c_chan_map[self.slot_idx]
         )
-        self.mykonos = self._device.get_radio_ctrl()
-        self.log.debug("Loaded C++ drivers.")
-        self._init_myk_api(self.mykonos)
-        self.eeprom_fs, self.eeprom_path = self._init_user_eeprom(
-            self.user_eeprom[self.rev]
-        )
+        return pyudev.Devices.from_sys_path(context, i2c_dev_path)
 
     def _init_myk_api(self, myk):
         """
@@ -456,7 +456,7 @@ class Magnesium(DboardManagerBase):
             dboard_clk_control = DboardClockControl(dboard_regs, self.log)
             dboard_clk_control.reset_mmcm()
             return dboard_clk_control
-        def _init_lmk(slot_idx, lmk_spi, ref_clk_freq,
+        def _init_lmk(lmk_spi, ref_clk_freq,
                       pdac_spi, init_phase_dac_word):
             """
             Sets the phase DAC to initial value, and then brings up the LMK
@@ -467,7 +467,6 @@ class Magnesium(DboardManagerBase):
                 init_phase_dac_word
             ))
             pdac_spi.poke16(0x0, init_phase_dac_word)
-            self.spi_lock = self._device.get_spi_lock()
             return LMK04828Mg(lmk_spi, self.spi_lock, ref_clk_freq, self.log)
         def _sync_db_clock(synchronizer):
             " Synchronizes the DB clock to the common reference "
@@ -497,7 +496,6 @@ class Magnesium(DboardManagerBase):
         self.cpld = MgCPLD(self._spi_ifaces['cpld'], self.log) # TODO move to __init__()
         self.dboard_clk_control = _init_clock_control(self.radio_regs)
         self.lmk = _init_lmk(
-            self.slot_idx,
             self._spi_ifaces['lmk'],
             self.ref_clock_freq,
             self._spi_ifaces['phase_dac'],
@@ -512,7 +510,7 @@ class Magnesium(DboardManagerBase):
             self.lmk,
             self._spi_ifaces['phase_dac'],
             0, # TODO this might not actually be zero
-            125e6, # TODO don't hardcode
+            self.master_clock_freq,
             self.ref_clock_freq,
             860E-15, # TODO don't hardcode. This should live in the EEPROM
             self.INIT_PHASE_DAC_WORD,
@@ -524,11 +522,8 @@ class Magnesium(DboardManagerBase):
         _sync_db_clock(self.clock_synchronizer)
         # Clocks and PPS are now fully active!
 
-
         self.init_jesd(self.radio_regs)
-
         self.mykonos.start_radio()
-
         return True
 
 
@@ -590,21 +585,22 @@ class Magnesium(DboardManagerBase):
         if not self.jesdcore.get_framer_status():
             self.log.error("FPGA Framer Error!")
             raise Exception('JESD Core Framer is not synced!')
-        if ((self.mykonos.get_deframer_status() & 0x7F) != 0x28):
+        if (self.mykonos.get_deframer_status() & 0x7F) != 0x28:
             self.log.error("Mykonos Deframer Error: 0x{:X}".format((self.mykonos.get_deframer_status() & 0x7F)))
             raise Exception('Mykonos Deframer is not synced!')
         if not self.jesdcore.get_deframer_status():
             self.log.error("FPGA Deframer Error!")
             raise Exception('JESD Core Deframer is not synced!')
-        if ((self.mykonos.get_framer_status() & 0xFF) != 0x3E):
+        if (self.mykonos.get_framer_status() & 0xFF) != 0x3E:
             self.log.error("Mykonos Framer Error: 0x{:X}".format((self.mykonos.get_framer_status() & 0xFF)))
             raise Exception('Mykonos Framer is not synced!')
-        if ((self.mykonos.get_multichip_sync_status() & 0xB) != 0xB):
+        if (self.mykonos.get_multichip_sync_status() & 0xB) != 0xB:
             raise Exception('Mykonos multi chip sync failed!')
         self.log.info("JESD204B Link Initialization & Training Complete")
 
 
     def dump_jesd_core(self):
+        " Debug method to dump all JESD core regs "
         radio_regs = UIO(label="dboard-regs-{}".format(self.slot_idx))
         for i in range(0x2000, 0x2110, 0x10):
             print(("0x%04X " % i), end=' ')
@@ -668,7 +664,7 @@ class Magnesium(DboardManagerBase):
         )
         writer_task.start()
         # Now return and let the copy finish on its own. The thread will detach
-        # and MPM this process won't terminate until the thread is complete.
+        # and MPM won't terminate this process until the thread is complete.
         # This does not stop anyone from killing this process (and the thread)
         # while the EEPROM write is happening, though.
 
