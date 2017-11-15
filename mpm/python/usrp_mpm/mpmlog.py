@@ -36,6 +36,8 @@ RESET = str('\x1b[0m')
 # Additional log level
 TRACE = 1
 
+DEFAULT_LOG_LEVEL = TRACE
+
 class ColorStreamHandler(logging.StreamHandler):
     """
     StreamHandler that prints colored output
@@ -77,7 +79,12 @@ class MPMLogger(logging.getLoggerClass()):
 
 
 LOGGER = None # Logger singleton
-def get_main_logger(use_console=True, use_journal=False, console_color=True):
+def get_main_logger(
+        use_console=True,
+        use_journal=False,
+        console_color=True,
+        log_default_delta=0
+    ):
     """
     Returns the top-level logger object. This is the only API call from this
     file that should be used outside.
@@ -100,7 +107,11 @@ def get_main_logger(use_console=True, use_journal=False, console_color=True):
         journal_handler.setFormatter(journal_formatter)
         LOGGER.addHandler(journal_handler)
     # Set default level:
-    default_log_level = TRACE
+    default_log_level = int(min(
+        DEFAULT_LOG_LEVEL - log_default_delta * 10,
+        CRITICAL
+    ))
+    default_log_level = max(1, default_log_level - (default_log_level % 10))
     LOGGER.setLevel(default_log_level)
     return LOGGER
 

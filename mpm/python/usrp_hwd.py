@@ -63,6 +63,20 @@ def setup_arg_parser():
              "used as defaults for device initialization.",
         default=None
     )
+    parser.add_argument(
+        '-v',
+        '--verbose',
+        help="Increase verbosity level",
+        action="count",
+        default=0
+    )
+    parser.add_argument(
+        '-q',
+        '--quiet',
+        help="Decrease verbosity level",
+        action="count",
+        default=0
+    )
     return parser
 
 def parse_args():
@@ -100,7 +114,6 @@ def kill_time(sig, frame):
             proc.join()
         except BlockingSwitchOutError:
             log.debug("Caught BlockingSwitchOutError for {}".format(str(proc)))
-            pass
     log.info("System exiting")
     sys.exit(0)
 
@@ -111,8 +124,10 @@ def main():
 
     Main process loop.
     """
-    log = mpm.get_main_logger().getChild('main')
     args = parse_args()
+    log = mpm.get_main_logger(
+        log_default_delta=args.verbose-args.quiet
+    ).getChild('main')
     shared = SharedState()
     # Create the periph_manager for this device
     # This call will be forwarded to the device specific implementation
