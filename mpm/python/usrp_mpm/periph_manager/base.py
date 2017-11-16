@@ -352,11 +352,11 @@ class PeriphManagerBase(object):
 
     def deinit(self):
         """
-        Power down a device after a UHD session.
+        Clean up after a UHD session terminates.
         This must be safe to call multiple times. The default behaviour is to
         call deinit() on all the daughterboards.
         """
-        self.log.info("Mboard deinit() called.")
+        self.log.trace("Mboard deinit() called.")
         for dboard in self.dboards:
             dboard.deinit()
         self.log.trace("Resetting SID pool...")
