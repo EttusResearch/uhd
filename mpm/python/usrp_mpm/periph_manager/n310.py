@@ -217,6 +217,7 @@ class XportMgrUDP(object):
     """
     # Map Eth devices to UIO labels
     eth_tables = {'eth1': 'misc-enet-regs0', 'eth2': 'misc-enet-regs1'}
+    xbar_port_map = {'eth1': 0, 'eth2': 1}
 
     def __init__(self, possible_chdr_ifaces, log):
         self.log = log
@@ -230,6 +231,7 @@ class XportMgrUDP(object):
         }
         for ifname, table in iteritems(self._eth_dispatchers):
             table.set_ipv4_addr(self._chdr_ifaces[ifname]['ip_addr'])
+        self.chdr_port = 49153 # TODO get this from somewhere
 
     def _init_interfaces(self, possible_ifaces):
         """
@@ -325,22 +327,30 @@ class XportMgrUDP(object):
         Return UDP xport info
         """
         assert xport_type in ('CTRL', 'ASYNC_MSG', 'TX_DATA', 'RX_DATA')
-        xport_info = {
-            'type': 'UDP',
-            # TODO what about eth2, huh?
-            'ipv4': str(self._chdr_ifaces['eth1']['ip_addr']),
-            'port': '49153', # FIXME no hardcoding
-            'send_sid': str(sid)
-        }
-        return [xport_info]
+        # for iface_name, iface_info in iteritems(self._chdr_ifaces):
+
+        xport_info = [
+            {
+                'type': 'UDP',
+                'ipv4': str(iface_info['ip_addr']),
+                'port': str(self.chdr_port),
+                'send_sid': str(sid)
+            }
+            for _, iface_info in iteritems(self._chdr_ifaces)
+        ]
+        return xport_info
 
     def commit_xport(self, sid, xport_info):
         """
         fuu
         """
-        # TODO do error checking on the xport_info
-        self.log.trace("Committing UDP transport using xport_info `%s'",
-                       str(xport_info))
+        self.log.trace("Sanity checking xport_info %s...", str(xport_info))
+        assert xport_info['type'] == 'UDP'
+        assert any([xport_info['ipv4'] == x['ip_addr']
+                    for x in itervalues(self._chdr_ifaces)])
+        assert xport_info['port'] == str(self.chdr_port)
+        assert len(xport_info.get('src_ipv4')) > 5
+        assert int(xport_info.get('src_port')) > 0
         sender_addr = xport_info['src_ipv4']
         sender_port = int(xport_info['src_port'])
         self.log.trace("Incoming connection is coming from %s:%d",
@@ -352,13 +362,17 @@ class XportMgrUDP(object):
                     sender_addr))
         self.log.trace("Incoming connection is coming from %s",
                        mac_addr)
-        # Remove hardcodings in the following lines FIXME
-        my_xbar = lib.xbar.xbar.make("/dev/crossbar0") # TODO
-        my_xbar.set_route(sid.src_addr, 0) # TODO
-        eth_dispatcher = self._eth_dispatchers['eth1'] # TODO
-        eth_dispatcher.set_route(sid.reversed(), sender_addr, sender_port)
+        eth_iface = net.ip_addr_to_iface(xport_info['ipv4'], self._chdr_ifaces)
+        xbar_port = self.xbar_port_map[eth_iface]
+        self.log.trace("Using Ethernet interface %s, crossbar port %d",
+                       eth_iface, xbar_port)
+        my_xbar = lib.xbar.xbar.make("/dev/crossbar0") # TODO don't hardcode
+        my_xbar.set_route(sid.src_addr, xbar_port)
+        self._eth_dispatchers[eth_iface].set_route(
+            sid.reversed(), sender_addr, sender_port)
         self.log.trace("UDP transport successfully committed!")
         return True
+
 
 class XportMgrLiberio(object):
     """
