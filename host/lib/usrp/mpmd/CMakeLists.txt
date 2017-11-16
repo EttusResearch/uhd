@@ -16,9 +16,15 @@
 #
 
 IF(ENABLE_MPMD)
+    IF(ENABLE_LIBERIO)
+        MESSAGE(STATUS "Compiling MPM with liberio support...")
+	ADD_DEFINITIONS(-DHAVE_LIBERIO)
+    ENDIF(ENABLE_LIBERIO)
+
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/mpmd_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/mpmd_mboard_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/mpmd_xport.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/mpmd_image_loader.cpp
     )
 ENDIF(ENABLE_MPMD)

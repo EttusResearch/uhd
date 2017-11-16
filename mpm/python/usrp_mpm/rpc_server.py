@@ -54,7 +54,7 @@ class MPMServer(RPCServer):
     RPC calls to appropiate calls in the periph_manager and dboard_managers.
     """
     # This is a list of methods in this class which require a claim
-    default_claimed_methods = ['init', 'reclaim', 'unclaim', 'allocate_sid']
+    default_claimed_methods = ['init', 'reclaim', 'unclaim']
 
     def __init__(self, state, mgr, *args, **kwargs):
         self.log = get_main_logger().getChild('RPCServer')
@@ -332,20 +332,6 @@ class MPMServer(RPCServer):
         """
         return self._last_error
 
-    def allocate_sid(self, token, *args):
-        """
-        Forwards the call to periph_manager._allocate_sid with the client ip addresss
-        as argument. Should be used to setup interfaces
-        """
-        if not self._check_token_valid(token):
-            self.log.warning("Attempt to allocate SID without valid token!")
-            return None
-        try:
-            return self.periph_manager._allocate_sid(self.client_host, *args)
-        except Exception as ex:
-            self._last_error = str(ex)
-            self.log.error("allocate_sid() failed: %s", str(ex))
-            raise
 
 
 def _rpc_server_process(shared_state, port, mgr):

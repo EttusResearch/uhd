@@ -22,7 +22,7 @@ from __future__ import print_function
 import os
 import copy
 import shutil
-from six import iteritems
+from six import iteritems, itervalues
 from builtins import object
 from .base import PeriphManagerBase
 from ..net import get_iface_addrs
@@ -31,6 +31,7 @@ from ..net import get_mac_addr
 from ..mpmtypes import SID
 from usrp_mpm.uio import UIO
 from usrp_mpm.rpc_server import no_claim, no_rpc
+from usrp_mpm import net
 from ..sysfs_gpio import SysFSGPIO
 from ..ethtable import EthDispatcherTable
 from ..liberiotable import LiberioDispatcherTable
@@ -42,6 +43,9 @@ N3XX_DEFAULT_TIME_SOURCE = 'internal'
 N3XX_DEFAULT_ENABLE_GPS = True
 N3XX_DEFAULT_ENABLE_FPGPIO = True
 
+###############################################################################
+# Additional peripheral controllers specific to Magnesium
+###############################################################################
 class TCA6424(object):
     """
     Abstraction layer for the port/gpio expander
@@ -204,117 +208,52 @@ class FP_GPIO(object):
         assert index in range(self._gpiosize)
         return self._gpios.get(self._offset+index)
 
-class n310(PeriphManagerBase):
+###############################################################################
+# Transport managers
+###############################################################################
+class XportMgrUDP(object):
     """
-    Holds N310 specific attributes and methods
+    Transport manager for UDP connections
     """
-    #########################################################################
-    # Overridables
-    #
-    # See PeriphManagerBase for documentation on these fields
-    #########################################################################
-    pids = [0x4242,]
-    mboard_eeprom_addr = "e0005000.i2c"
-    mboard_eeprom_max_len = 256
-    mboard_info = {"type": "n3xx"}
-    mboard_max_rev = 3 # 3 == RevD
-    mboard_sensor_callback_map = {
-        'ref_locked': 'get_ref_lock_sensor',
-        'gps_locked': 'get_gps_lock_sensor',
-    }
-    dboard_eeprom_addr = "e0004000.i2c"
-    dboard_eeprom_max_len = 64
-
-    # We're on a Zynq target, so the following two come from the Zynq standard
-    # device tree overlay (tree/arch/arm/boot/dts/zynq-7000.dtsi)
-    dboard_spimaster_addrs = ["e0006000.spi", "e0007000.spi"]
-    chdr_interfaces = ['eth1', 'eth2']
-    # N310-specific settings
+    # Map Eth devices to UIO labels
     eth_tables = {'eth1': 'misc-enet-regs0', 'eth2': 'misc-enet-regs1'}
-    # Path to N310 FPGA bin file
-    # This file will always contain the current image, regardless of SFP type,
-    # dboard, etc. The host is responsible for providing a compatible image
-    # for the N310's current setup.
-    binfile_path = '/lib/firmware/n310.bin'
-    # Override the list of updateable components
-    updateable_components = {
-        'fpga': {
-            'callback': "update_fpga",
-        },
-    }
-    # udev label for the UIO device that controls the DMA engine
-    liberio_label = 'liberio'
 
-    def __init__(self, args):
-        super(n310, self).__init__(args)
-        self.sid_endpoints = {}
-        # Init peripherals
-        self.log.trace("Initializing TCA6424 port expander controls...")
-        self._gpios = TCA6424(int(self.mboard_info['rev']))
-        self.log.trace("Enabling power of MGT156MHZ clk")
-        self._gpios.set("PWREN-CLK-MGT156MHz")
-        self.enable_1G_ref_clock()
-        self.enable_gps(
-            enable=bool(
-                args.default_args.get('enable_gps', N3XX_DEFAULT_ENABLE_GPS)
-            )
-        )
-        self.enable_fp_gpio(
-            enable=bool(
-                args.default_args.get(
-                    'enable_fp_gpio',
-                    N3XX_DEFAULT_ENABLE_FPGPIO
-                )
-            )
-        )
-        # Init clocking
-        self.enable_ref_clock(enable=True)
-        self._ext_clock_freq = None
-        self._clock_source = None
-        self._time_source = None
-        self._init_ref_clock_and_time(args.default_args)
-        # Define some attributes so PyLint stays quiet
-        self._eth_dispatchers = None
-        self._dma_dispatcher = None
-        # Init Ethernet
+    def __init__(self, possible_chdr_ifaces, log):
+        self.log = log
+        self._possible_chdr_ifaces = possible_chdr_ifaces
+        self.log.info("Identifying available network interfaces...")
+        self._chdr_ifaces = \
+            self._init_interfaces(self._possible_chdr_ifaces)
         self._eth_dispatchers = {
             x: EthDispatcherTable(self.eth_tables.get(x))
-            for x in list(self._chdr_interfaces.keys())
+            for x in list(self._chdr_ifaces.keys())
         }
         for ifname, table in iteritems(self._eth_dispatchers):
-            table.set_ipv4_addr(self._chdr_interfaces[ifname]['ip_addr'])
-        # Init complete.
-        self.log.info("mboard info: {}".format(self.mboard_info))
+            table.set_ipv4_addr(self._chdr_ifaces[ifname]['ip_addr'])
 
-    def _init_ref_clock_and_time(self, default_args):
+    def _init_interfaces(self, possible_ifaces):
         """
-        Initialize clock and time sources. After this function returns, the
-        reference signals going to the FPGA are valid.
+        Initialize the list of network interfaces
         """
-        self._ext_clock_freq = float(
-            default_args.get('ext_clock_freq', N3XX_DEFAULT_EXT_CLOCK_FREQ)
-        )
-        if len(self.dboards) == 0:
-            self.log.warning(
-                "No dboards found, skipping setting clock and time source " \
-                "configuration."
-            )
-            self._clock_source = N3XX_DEFAULT_CLOCK_SOURCE
-            self._time_source = N3XX_DEFAULT_TIME_SOURCE
+        self.log.trace("Testing available interfaces out of `{}'".format(
+            possible_ifaces
+        ))
+        valid_ifaces = net.get_valid_interfaces(possible_ifaces)
+        if len(valid_ifaces):
+            self.log.debug("Found CHDR interfaces: `{}'".format(valid_ifaces))
         else:
-            self.set_clock_source(
-                default_args.get('clock_source', N3XX_DEFAULT_CLOCK_SOURCE)
-            )
-            self.set_time_source(
-                default_args.get('time_source', N3XX_DEFAULT_TIME_SOURCE)
-            )
+            self.log.warning("No CHDR interfaces found!")
+        return {
+            x: net.get_iface_info(x)
+            for x in valid_ifaces
+        }
 
     def init(self, args):
         """
-        Calls init() on the parent class, and then programs the Ethernet
-        dispatchers accordingly.
+        Call this when the user calls 'init' on the periph manager
         """
-        result = super(n310, self).init(args)
+        # TODO re-run _init_interfaces, IP addresses could have changed since
+        # bootup
         for _, table in iteritems(self._eth_dispatchers):
             if 'forward_eth' in args or 'forward_bcast' in args:
                 table.set_forward_policy(
@@ -326,8 +265,10 @@ class n310(PeriphManagerBase):
                 self._eth_dispatchers,
                 args['preload_ethtables']
             )
-        self._dma_dispatcher = LiberioDispatcherTable(self.liberio_label)
-        return result
+
+    def deinit(self):
+        " Clean up after a session terminates "
+        pass
 
     def _preload_ethtables(self, eth_dispatchers, table_file):
         """
@@ -375,52 +316,284 @@ class n310(PeriphManagerBase):
                     str(ex)
                 )
 
-    def _allocate_sid(self, sender_addr, port, sid, xbar_src_addr, xbar_src_port, new_ep): # FIXME mtu
+    def request_xport(
+            self,
+            sid,
+            xport_type,
+        ):
         """
-        Get the MAC address of the sender and store it in the FPGA ARP table
+        Return UDP xport info
         """
-        if self.mboard_info['rpc_connection'] == 'remote':
-            self.log.debug("Preparing for UDP connection")
-            mac_addr = get_mac_addr(sender_addr)
-            if new_ep not in self._available_endpoints:
-                raise RuntimeError("no more sids yo")
-            self._available_endpoints.remove(new_ep)
-            if mac_addr is not None:
-                if sender_addr not in self.sid_endpoints:
-                    self.sid_endpoints.update({sender_addr: (new_ep,)})
-                else:
-                    current_allocation = self.sid_endpoints.get(sender_addr)
-                    new_allocation = current_allocation + (new_ep,)
-                    self.sid_endpoints.update({sender_addr: new_allocation})
-                sid = SID(sid)
-                sid.set_src_addr(xbar_src_addr)
-                sid.set_src_ep(new_ep)
-                my_xbar = lib.xbar.xbar.make("/dev/crossbar0") # TODO
-                my_xbar.set_route(xbar_src_addr, 0) # TODO
-                eth_dispatcher = self._eth_dispatchers['eth1'] # TODO
-                eth_dispatcher.set_route(sid.reversed(), sender_addr, port)
-            return sid.get()
-        else:
-            self.log.debug("Preparing for liberio connection")
-            if new_ep not in self._available_endpoints:
-                raise RuntimeError("no more sids yo")
-            self._available_endpoints.remove(new_ep)
-            if sender_addr not in self.sid_endpoints:
-                self.sid_endpoints.update({sender_addr: (new_ep,)})
-            else:
-                current_allocation = self.sid_endpoints.get(sender_addr)
-                new_allocation = current_allocation + (new_ep,)
-                self.sid_endpoints.update({sender_addr: new_allocation})
-            sid = SID(sid)
-            sid.set_src_addr(xbar_src_addr)
-            sid.set_src_ep(new_ep)
-            my_xbar = lib.xbar.xbar.make("/dev/crossbar0") # TODO
-            my_xbar.set_route(xbar_src_addr, 2) # TODO
-            mtu = 0
-            assert False # This path is not yet done
-            self._dma_dispatcher.set_route(sid.reversed(), new_ep, mtu)
+        assert xport_type in ('CTRL', 'ASYNC_MSG', 'TX_DATA', 'RX_DATA')
+        xport_info = {
+            'type': 'UDP',
+            # TODO what about eth2, huh?
+            'ipv4': str(self._chdr_ifaces['eth1']['ip_addr']),
+            'port': '49153', # FIXME no hardcoding
+            'send_sid': str(sid)
+        }
+        return [xport_info]
 
-        return sid.get()
+    def commit_xport(self, sid, xport_info):
+        """
+        fuu
+        """
+        # TODO do error checking on the xport_info
+        self.log.trace("Committing UDP transport using xport_info `%s'",
+                       str(xport_info))
+        sender_addr = xport_info['src_ipv4']
+        sender_port = int(xport_info['src_port'])
+        self.log.trace("Incoming connection is coming from %s:%d",
+                       sender_addr, sender_port)
+        mac_addr = get_mac_addr(sender_addr)
+        if mac_addr is None:
+            raise RuntimeError(
+                "Could not find MAC address for IP address {}".format(
+                    sender_addr))
+        self.log.trace("Incoming connection is coming from %s",
+                       mac_addr)
+        # Remove hardcodings in the following lines FIXME
+        my_xbar = lib.xbar.xbar.make("/dev/crossbar0") # TODO
+        my_xbar.set_route(sid.src_addr, 0) # TODO
+        eth_dispatcher = self._eth_dispatchers['eth1'] # TODO
+        eth_dispatcher.set_route(sid.reversed(), sender_addr, sender_port)
+        self.log.trace("UDP transport successfully committed!")
+        return True
+
+class XportMgrLiberio(object):
+    """
+    Transport manager for UDP connections
+    """
+    # udev label for the UIO device that controls the DMA engine
+    liberio_label = 'liberio'
+
+    def __init__(self, log):
+        self.log = log
+        self._dma_dispatcher = LiberioDispatcherTable(self.liberio_label)
+        self._data_chan_ctr = 0
+        self._max_chan = 10 # TODO get this number from somewhere
+
+    def init(self, args):
+        """
+        Call this when the user calls 'init' on the periph manager
+        """
+        pass
+
+    def deinit(self):
+        " Clean up after a session terminates "
+        self._data_chan_ctr = 0
+
+    def request_xport(
+            self,
+            sid,
+            xport_type,
+        ):
+        """
+        Return liberio xport info
+        """
+        assert xport_type in ('CTRL', 'ASYNC_MSG', 'TX_DATA', 'RX_DATA')
+        if xport_type == 'CTRL':
+            chan = 0
+        elif xport_type == 'ASYNC_MSG':
+            chan = 1
+        else:
+            chan = 2 + self._data_chan_ctr
+            self._data_chan_ctr += 1
+        xport_info = {
+            'type': 'liberio',
+            'send_sid': str(sid),
+            'muxed': str(xport_type in ('CTRL', 'ASYNC_MSG')),
+            'dma_chan': str(chan),
+            'tx_dev': "/dev/tx-dma{}".format(chan),
+            'rx_dev': "/dev/rx-dma{}".format(chan),
+        }
+        self.log.trace("Liberio: Chan: {} TX Device: {} RX Device: {}".format(
+            chan, xport_info['tx_dev'], xport_info['rx_dev']))
+        self.log.trace("Liberio channel is muxed: %s",
+                       "Yes" if xport_info['muxed'] else "No")
+        return [xport_info]
+
+    def commit_xport(self, sid, xport_info):
+        " Commit liberio transport "
+        chan = int(xport_info['dma_chan'])
+        my_xbar = lib.xbar.xbar.make("/dev/crossbar0") # TODO
+        my_xbar.set_route(sid.src_addr, 2) # TODO
+        self._dma_dispatcher.set_route(sid.reversed(), chan)
+        self.log.trace("Liberio transport successfully committed!")
+        return True
+
+
+###############################################################################
+# Main Class
+###############################################################################
+class n310(PeriphManagerBase):
+    """
+    Holds N310 specific attributes and methods
+    """
+    #########################################################################
+    # Overridables
+    #
+    # See PeriphManagerBase for documentation on these fields
+    #########################################################################
+    pids = [0x4242,]
+    mboard_eeprom_addr = "e0005000.i2c"
+    mboard_eeprom_max_len = 256
+    mboard_info = {"type": "n3xx"}
+    mboard_max_rev = 3 # 3 == RevD
+    mboard_sensor_callback_map = {
+        'ref_locked': 'get_ref_lock_sensor',
+        'gps_locked': 'get_gps_lock_sensor',
+    }
+    dboard_eeprom_addr = "e0004000.i2c"
+    dboard_eeprom_max_len = 64
+
+    # We're on a Zynq target, so the following two come from the Zynq standard
+    # device tree overlay (tree/arch/arm/boot/dts/zynq-7000.dtsi)
+    dboard_spimaster_addrs = ["e0006000.spi", "e0007000.spi"]
+    chdr_interfaces = ['eth1', 'eth2']
+    # N310-specific settings
+    # Path to N310 FPGA bin file
+    # This file will always contain the current image, regardless of SFP type,
+    # dboard, etc. The host is responsible for providing a compatible image
+    # for the N310's current setup.
+    binfile_path = '/lib/firmware/n310.bin'
+    # Override the list of updateable components
+    updateable_components = {
+        'fpga': {
+            'callback': "update_fpga",
+        },
+    }
+
+    def __init__(self, args):
+        super(n310, self).__init__(args)
+        self.sid_endpoints = {}
+        # Init peripherals
+        self.log.trace("Initializing TCA6424 port expander controls...")
+        self._gpios = TCA6424(int(self.mboard_info['rev']))
+        self.log.trace("Enabling power of MGT156MHZ clk")
+        self._gpios.set("PWREN-CLK-MGT156MHz")
+        self.enable_1G_ref_clock()
+        self.enable_gps(
+            enable=bool(
+                args.default_args.get('enable_gps', N3XX_DEFAULT_ENABLE_GPS)
+            )
+        )
+        self.enable_fp_gpio(
+            enable=bool(
+                args.default_args.get(
+                    'enable_fp_gpio',
+                    N3XX_DEFAULT_ENABLE_FPGPIO
+                )
+            )
+        )
+        # Init clocking
+        self.enable_ref_clock(enable=True)
+        self._ext_clock_freq = None
+        self._clock_source = None
+        self._time_source = None
+        self._init_ref_clock_and_time(args.default_args)
+        # Init CHDR transports
+        self._xport_mgrs = {
+            'udp': XportMgrUDP(self.chdr_interfaces, self.log),
+            'liberio': XportMgrLiberio(self.log),
+        }
+        # Init complete.
+        self.log.info("mboard info: {}".format(self.mboard_info))
+
+    def _init_ref_clock_and_time(self, default_args):
+        """
+        Initialize clock and time sources. After this function returns, the
+        reference signals going to the FPGA are valid.
+        """
+        self._ext_clock_freq = float(
+            default_args.get('ext_clock_freq', N3XX_DEFAULT_EXT_CLOCK_FREQ)
+        )
+        if len(self.dboards) == 0:
+            self.log.warning(
+                "No dboards found, skipping setting clock and time source " \
+                "configuration."
+            )
+            self._clock_source = N3XX_DEFAULT_CLOCK_SOURCE
+            self._time_source = N3XX_DEFAULT_TIME_SOURCE
+        else:
+            self.set_clock_source(
+                default_args.get('clock_source', N3XX_DEFAULT_CLOCK_SOURCE)
+            )
+            self.set_time_source(
+                default_args.get('time_source', N3XX_DEFAULT_TIME_SOURCE)
+            )
+
+    def init(self, args):
+        """
+        Calls init() on the parent class, and then programs the Ethernet
+        dispatchers accordingly.
+        """
+        result = super(n310, self).init(args)
+        for xport_mgr in itervalues(self._xport_mgrs):
+            xport_mgr.init(args)
+        return result
+
+    def deinit(self):
+        """
+        Clean up after a UHD session terminates.
+        """
+        super(n310, self).deinit()
+        for xport_mgr in itervalues(self._xport_mgrs):
+            xport_mgr.deinit()
+
+    ###########################################################################
+    # Transport API
+    ###########################################################################
+    def request_xport(
+            self,
+            dst_address,
+            suggested_src_address,
+            xport_type
+        ):
+        """
+        See PeriphManagerBase.request_xport() for docs.
+        """
+        # For now, we always accept the suggestion if available, or fail
+        src_address = suggested_src_address
+        if src_address not in self._available_endpoints:
+            raise RuntimeError("no more sids yo")
+        sid = SID(src_address << 16 | dst_address)
+        self.log.debug(
+            "request_xport(dst=0x%04X, suggested_src_address=0x%04X, xport_type=%s): " \
+            "operating on SID: %s",
+            dst_address, suggested_src_address, str(xport_type), str(sid))
+        # FIXME token!
+        assert self.mboard_info['rpc_connection'] in ('remote', 'local')
+        if self.mboard_info['rpc_connection'] == 'remote':
+            return self._xport_mgrs['udp'].request_xport(
+                sid,
+                xport_type,
+            )
+        elif self.mboard_info['rpc_connection'] == 'local':
+            return self._xport_mgrs['liberio'].request_xport(
+                sid,
+                xport_type,
+            )
+
+    def commit_xport(self, xport_info):
+        """
+        See PeriphManagerBase.commit_xport() for docs.
+
+        Reminder: All connections are incoming, i.e. "send" or "TX" means
+        remote device to local device, and "receive" or "RX" means this local
+        device to remote device. "Remote device" can be, for example, a UHD
+        session.
+        """
+        ## Go, go, go
+        assert self.mboard_info['rpc_connection'] in ('remote', 'local')
+        sid = SID(xport_info['send_sid'])
+        self._available_endpoints.remove(sid.src_ep)
+        self.log.debug("Committing transport for SID %s, xport info: %s",
+                       str(sid), str(xport_info))
+        if self.mboard_info['rpc_connection'] == 'remote':
+            return self._xport_mgrs['udp'].commit_xport(sid, xport_info)
+        elif self.mboard_info['rpc_connection'] == 'local':
+            return self._xport_mgrs['liberio'].commit_xport(sid, xport_info)
 
     def get_clock_sources(self):
         " Lists all available clock sources. "

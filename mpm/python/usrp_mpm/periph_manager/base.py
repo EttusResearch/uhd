@@ -28,7 +28,6 @@ from six import iteritems, itervalues
 from ..mpmlog import get_logger
 from .udev import get_eeprom_paths
 from .udev import get_spidev_nodes
-from usrp_mpm import net
 from usrp_mpm import dtoverlay
 from usrp_mpm import eeprom
 from usrp_mpm.rpc_server import no_claim, no_rpc
@@ -154,8 +153,6 @@ class PeriphManagerBase(object):
         self._init_dboards(args.override_db_pids)
         self._available_endpoints = list(range(256))
         self._init_args = {}
-        self.log.info("Identifying available network interfaces...")
-        self._chdr_interfaces = self._init_interfaces(self.chdr_interfaces)
 
     def _init_mboard_with_eeprom(self):
         """
@@ -308,23 +305,6 @@ class PeriphManagerBase(object):
             # This will actually instantiate the dboard class:
             self.dboards.append(db_class(dboard_idx, **dboard_info))
         self.log.info("Found {} daughterboard(s).".format(len(self.dboards)))
-
-    def _init_interfaces(self, possible_ifaces):
-        """
-        Initialize the list of network interfaces
-        """
-        self.log.trace("Testing available interfaces out of `{}'".format(
-            possible_ifaces
-        ))
-        valid_ifaces = net.get_valid_interfaces(possible_ifaces)
-        if len(valid_ifaces):
-            self.log.debug("Found CHDR interfaces: `{}'".format(valid_ifaces))
-        else:
-            self.log.warning("No CHDR interfaces found!")
-        return {
-            x: net.get_iface_info(x)
-            for x in valid_ifaces
-        }
 
     def init(self, args):
         """
@@ -625,4 +605,72 @@ class PeriphManagerBase(object):
         self.log.warn("Attempted to write dboard `%d' EEPROM, but function " \
                       "is not implemented.", dboard_idx)
         raise NotImplementedError
+
+    #######################################################################
+    # Transport API
+    #######################################################################
+    def request_xport(
+            self,
+            dst_address,
+            suggested_src_address,
+            xport_type,
+        ):
+        """
+        When setting up a CHDR connection, this is the first call to be
+        made. This function will return a list of dictionaries, each
+        describing a way to open an CHDR connection.
+        All transports requested are bidirectional.
+
+        The callee must maintain a lock on the available CHDR xports. After
+        calling request_xport(), the caller needs to pick one of the
+        dictionaries, possibly amend data (e.g., if the connection is an
+        Ethernet connection, then we need to know the source port, but more
+        details on that in commit_xport()'s documentation).
+        One way to implement a lock is to simply lock a mutex here and
+        unlock it in commit_xport(), even though there are probably more
+        nuanced solutions.
+
+        Arguments:
+        dst_sid -- The destination part of the connection, i.e., which
+                   RFNoC block are we connecting to. Example: 0x0230
+        suggested_src_sid -- The source part of the connection, i.e.,
+                             what's the source address of packets going to
+                             the destination at dst_sid. This is a
+                             suggestion, MPM can override this. Example:
+                             0x0001.
+        xport_type -- One of the following strings: CTRL, ASYNC_MSG,
+                      TX_DATA, RX_DATA. See also xports_type_t in UHD.
+
+        The return value is a list of dictionaries. Every dictionary has
+        the following key/value pairs:
+        - type: Type of transport, e.g., "UDP", "liberio".
+        - ipv4 (UDP only): IPv4 address to connect to.
+        - port (UDP only): IP port to connect to.
+        - rx_mtu: In bytes, the max size RX packets can have (RX means going
+                  from device to UHD)
+        - tx_mtu: In bytes, the max size TX packets can have (TX means going
+                  from UHD to device)
+        """
+        raise NotImplementedError("request_xport() not implemented.")
+
+    def commit_xport(self, xport_info):
+        """
+        When setting up a CHDR connection, this is the second call to be
+        made.
+
+        Arguments:
+        xport_info -- A dictionary (string -> string). The dictionary must
+                      have been originally created by request_xport(), but
+                      additional key/value pairs need to be added.
+
+        All transports need to also provide:
+        - rx_mtu: In bytes, the max number of bytes going from device to UHD
+        - tx_mtu: In bytes, the max number of bytes going from UHD to device
+
+        UDP transports need to also provide:
+        - src_ipv4: IPv4 address the connection is coming from.
+        - src_port: IP port the connection is coming from.
+        """
+        raise NotImplementedError("commit_xport() not implemented.")
+
 

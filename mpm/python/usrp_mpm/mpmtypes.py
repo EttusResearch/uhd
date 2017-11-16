@@ -47,22 +47,46 @@ class SharedState(object):
 
 
 class SID(object):
-    def __init__(self, sid=0):
-        self.src_addr = sid >> 24
-        self.src_ep = (sid >> 16) & 0xFF
-        self.dst_addr = (sid >> 8) & 0xFF
-        self.dst_ep = sid & 0xFF
+    """
+    Python representation of a 32-bit SID.
+    """
+    def __init__(self, sid=None):
+        sid = sid or 0
+        if isinstance(sid, str):
+            src, dst = sid.split(">")
+            if src.find(':') != -1:
+                self.src_addr, self.src_ep = \
+                    [int(x, 16) for x in src.split(':', 2)]
+            else:
+                self.src_addr, self.src_ep = \
+                    [int(x, 10) for x in src.split('.', 2)]
+            if dst.find(':') != -1:
+                self.dst_addr, self.dst_ep = \
+                    [int(x, 16) for x in dst.split(':', 2)]
+            else:
+                self.dst_addr, self.dst_ep = \
+                    [int(x, 10) for x in dst.split('.', 2)]
+        else:
+            print(sid)
+            self.src_addr = sid >> 24
+            self.src_ep = (sid >> 16) & 0xFF
+            self.dst_addr = (sid >> 8) & 0xFF
+            self.dst_ep = sid & 0xFF
 
     def set_src_addr(self, new_addr):
-        self.src_addr =  new_addr & 0xFF
+        " Return source address (e.g. 02:30>00:01 -> 2) "
+        self.src_addr = new_addr & 0xFF
 
     def set_dst_addr(self, new_addr):
+        " Return destination address (e.g. 02:30>00:01 -> 0) "
         self.dst_addr = new_addr & 0xFF
 
     def set_src_ep(self, new_addr):
+        " Return source endpoint (e.g. 02:30>00:01 -> 0x30) "
         self.src_ep = new_addr & 0xFF
 
     def set_dst_ep(self, new_addr):
+        " Return destination endpoint (e.g. 02:30>00:01 -> 0) "
         self.dst_ep = new_addr & 0xFF
 
     def reversed(self):
@@ -75,6 +99,7 @@ class SID(object):
         return new_sid
 
     def get(self):
+        " Return SID as 32-bit number "
         return (self.src_addr << 24) | (self.src_ep << 16) | (self.dst_addr << 8) | self.dst_ep
 
     def __repr__(self):

@@ -22,7 +22,6 @@
 #include <uhd/property_tree.hpp>
 #include <uhd/transport/if_addrs.hpp>
 #include <uhd/transport/udp_simple.hpp>
-#include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhd/types/sensors.hpp>
@@ -433,118 +432,6 @@ size_t mpmd_impl::allocate_xbar_local_addr()
     return new_local_addr;
 }
 
-size_t mpmd_impl::identify_mboard_by_sid(const size_t remote_addr)
-{
-    for (size_t mb_index = 0; mb_index < _mb.size(); mb_index++) {
-        for (size_t xbar_index = 0;
-                xbar_index < _mb[mb_index]->num_xbars;
-                xbar_index++) {
-            if (_mb[mb_index]->get_xbar_local_addr(xbar_index) == remote_addr) {
-                return mb_index;
-            }
-        }
-    }
-    throw uhd::lookup_error(str(
-        boost::format("Cannot identify mboard for remote address %d")
-        % remote_addr
-    ));
-}
-
-
-/*****************************************************************************
- * API
- ****************************************************************************/
-// TODO this does not consider the liberio use case!
-uhd::device_addr_t mpmd_impl::get_rx_hints(size_t /* mb_index */)
-{
-    //device_addr_t rx_hints = _mb[mb_index].recv_args;
-    device_addr_t rx_hints; // TODO don't ignore what the user tells us
-    // (default to a large recv buff)
-    if (not rx_hints.has_key("recv_buff_size"))
-    {
-        //For the ethernet transport, the buffer has to be set before creating
-        //the transport because it is independent of the frame size and # frames
-        //For nirio, the buffer size is not configurable by the user
-        #if defined(UHD_PLATFORM_MACOS) || defined(UHD_PLATFORM_BSD)
-            //limit buffer resize on macos or it will error
-            rx_hints["recv_buff_size"] = boost::lexical_cast<std::string>(MPMD_RX_SW_BUFF_SIZE_ETH_MACOS);
-        #elif defined(UHD_PLATFORM_LINUX) || defined(UHD_PLATFORM_WIN32)
-            //set to half-a-second of buffering at max rate
-            rx_hints["recv_buff_size"] = boost::lexical_cast<std::string>(MPMD_RX_SW_BUFF_SIZE_ETH);
-        #endif
-    }
-    return rx_hints;
-}
-
-
-// frame_size_t determine_max_frame_size(const std::string &addr,
-//                                       const frame_size_t &user_frame_size){
-//     transport::udp_simple::sptr udp =
-//     transport::udp_simple::make_connected(addr,
-//                                                                             std::to_string(MPM_DISCOVERY_PORT));
-//     std::vector<uint8_t> buffer(std::max(user_frame_size.rec))
-// }
-// Everything fake below here
-
-both_xports_t mpmd_impl::make_transport(
-        const sid_t& address,
-        usrp::device3_impl::xport_type_t xport_type,
-        const uhd::device_addr_t& args
-) {
-    const size_t mb_index = identify_mboard_by_sid(address.get_dst_addr());
-
-    UHD_LOGGER_TRACE("MPMD")
-        << "Creating new transport of type: "
-        << (xport_type == CTRL ? "CTRL" : (xport_type == RX_DATA ? "RX" : "TX"))
-        << " To mboard: " << mb_index
-        << " Destination address: " << address.to_pp_string_hex().substr(6)
-        << " User-defined xport args: " << args.to_string()
-    ;
-
-    both_xports_t xports;
-    const uhd::device_addr_t& xport_args = (xport_type == CTRL) ? uhd::device_addr_t() : args;
-    transport::zero_copy_xport_params default_buff_args;
-
-    std::string interface_addr = _mb[mb_index]->mb_args.get("addr");
-    UHD_ASSERT_THROW(not interface_addr.empty());
-    const uint32_t xbar_src_addr = address.get_src_addr();
-    const uint32_t xbar_src_dst = 0;
-
-    default_buff_args.send_frame_size = 8000;
-    default_buff_args.recv_frame_size = 8000;
-    default_buff_args.num_recv_frames = 32;
-    default_buff_args.num_send_frames = 32;
-    // hardcode frame size for now
-
-    transport::udp_zero_copy::buff_params buff_params;
-    auto recv = transport::udp_zero_copy::make(
-        interface_addr,
-        BOOST_STRINGIZE(49153),
-        default_buff_args,
-        buff_params,
-        xport_args);
-    uint16_t port  = recv->get_local_port();
-
-    xports.endianness = uhd::ENDIANNESS_BIG;
-    xports.send_sid = _mb[mb_index]->allocate_sid(port,
-            address, xbar_src_addr, xbar_src_dst, _sid_framer++
-        );
-    xports.recv_sid = xports.send_sid.reversed();
-    xports.recv_buff_size = buff_params.recv_buff_size;
-    xports.send_buff_size = buff_params.send_buff_size;
-    xports.recv = recv; // Note: This is a type cast!
-    xports.send = xports.recv;
-    UHD_LOGGER_TRACE("MPMD")
-        << "xport info: send_sid==" << xports.send_sid.to_pp_string_hex()
-        << " recv_sid==" << xports.recv_sid.to_pp_string_hex()
-        << " endianness=="
-            << (xports.endianness == uhd::ENDIANNESS_BIG ? "BE" : "LE")
-        << " recv_buff_size==" << xports.recv_buff_size
-        << " send_buff_size==" << xports.send_buff_size
-    ;
-
-    return xports;
-}
 
 /*****************************************************************************
  * Find, Factory & Registry

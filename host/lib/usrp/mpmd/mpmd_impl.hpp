@@ -23,6 +23,7 @@
 #include <uhd/types/device_addr.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/utils/tasks.hpp>
+#include <uhd/transport/muxed_zero_copy_if.hpp>
 #include <map>
 
 static const size_t MPMD_RX_SW_BUFF_SIZE_ETH        = 0x2000000;//32MiB    For an ~8k frame size any size >32MiB is just wasted buffer space
@@ -34,13 +35,6 @@ static const char MPM_RPC_GET_LAST_ERROR_CMD[] = "get_last_error";
 static const char MPM_DISCOVERY_CMD[] = "MPM-DISC";
 static const char MPM_ECHO_CMD[] = "MPM-ECHO";
 static const size_t MPMD_10GE_DATA_FRAME_MAX_SIZE = 8000; // CHDR packet size in bytes
-
-
-struct frame_size_t
-{
-    size_t recv_frame_size;
-    size_t send_frame_size;
-};
 
 
 /*! Stores all attributes specific to a single MPM device
@@ -195,10 +189,42 @@ class mpmd_impl : public uhd::usrp::device3_impl
      */
     size_t identify_mboard_by_sid(const size_t remote_addr);
 
+    using xport_info_t = std::map<std::string, std::string>;
+    using xport_info_list_t = std::vector<std::map<std::string, std::string>>;
+
+    uhd::both_xports_t make_transport_udp(
+        const size_t mb_index,
+        xport_info_t &xport_info,
+        const xport_type_t xport_type,
+        const uhd::device_addr_t& xport_args
+    );
+
+#ifdef HAVE_LIBERIO
+    /*! Create a muxed liberio transport for control packets */
+    uhd::transport::muxed_zero_copy_if::sptr make_muxed_liberio_xport(
+            const std::string &tx_dev,
+            const std::string &rx_dev,
+            const uhd::transport::zero_copy_xport_params &buff_args,
+            const size_t max_muxed_ports
+    );
+
+    uhd::both_xports_t make_transport_liberio(
+        const size_t mb_index,
+        xport_info_t &xport_info,
+        const xport_type_t xport_type,
+        const uhd::device_addr_t& xport_args
+    );
+#endif
 
     /*************************************************************************
      * Private attributes
      ************************************************************************/
+    // FIXME move the next two into their own transport manager class
+    //! Control transport for one liberio connection
+    uhd::transport::muxed_zero_copy_if::sptr _ctrl_dma_xport;
+    //! Control transport for one liberio connection
+    uhd::transport::muxed_zero_copy_if::sptr _async_msg_dma_xport;
+
     uhd::dict<std::string, std::string> recv_args;
     uhd::dict<std::string, std::string> send_args;
 
