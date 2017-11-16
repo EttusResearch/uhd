@@ -1,18 +1,7 @@
 //
-// Copyright 2017 Ettus Research (National Instruments)
+// Copyright 2017 Ettus Research, National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0
 //
 
 #include "spidev.h"
@@ -30,8 +19,6 @@ int init_spi(int *fd, const char *device,
     const uint8_t bits_per_word,
     const uint16_t delay_us
 ) {
-    int err;
-
     if (!fd)
     {
         fprintf(stderr, "%s: was passed a null pointer\n",
@@ -84,7 +71,7 @@ int init_spi(int *fd, const char *device,
     if (ioctl(*fd, SPI_IOC_RD_BITS_PER_WORD, &coerced_bits_per_word) < 0)
     {
         int err = errno;
-        fprintf(stderr, "%s: Failed to get bits per word\n",
+        fprintf(stderr, "%s: Failed to get bits per word (%s)\n",
             __func__, strerror(err));
         return err;
     }
@@ -99,7 +86,7 @@ int init_spi(int *fd, const char *device,
     if (ioctl(*fd, SPI_IOC_WR_MAX_SPEED_HZ, &set_speed_hz) < 0)
     {
         int err = errno;
-        fprintf(stderr, "%s: Failed to set speed\n",
+        fprintf(stderr, "%s: Failed to set speed (%s)\n",
             __func__, strerror(err));
         return err;
     }
@@ -108,7 +95,7 @@ int init_spi(int *fd, const char *device,
     if (ioctl(*fd, SPI_IOC_RD_MAX_SPEED_HZ, &coerced_speed_hz) < 0)
     {
         int err = errno;
-        fprintf(stderr, "%s: Failed to get speed\n",
+        fprintf(stderr, "%s: Failed to get speed (%s)\n",
             __func__, strerror(err));
         return err;
     }
