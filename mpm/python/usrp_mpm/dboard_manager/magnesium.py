@@ -286,8 +286,14 @@ class Magnesium(DboardManagerBase):
     # See DboardManagerBase for documentation on these fields
     #########################################################################
     pids = [0x150]
-    #file system path to i2c-adapter/mux
-    base_i2c_adapter = '/sys/class/i2c-adapter'
+    rx_sensor_callback_map = {
+        'lowband_lo_locked': 'get_lowband_tx_lo_locked_sensor',
+        'ad9371_lo_locked': 'get_ad9371_tx_lo_locked_sensor',
+    }
+    tx_sensor_callback_map = {
+        'lowband_lo_locked': 'get_lowband_rx_lo_locked_sensor',
+        'ad9371_lo_locked': 'get_ad9371_rx_lo_locked_sensor',
+    }
     # Maps the chipselects to the corresponding devices:
     spi_chipselect = {"cpld": 0, "lmk": 1, "mykonos": 2, "phase_dac": 3}
     @staticmethod
@@ -311,6 +317,8 @@ class Magnesium(DboardManagerBase):
         "mykonos": create_spidev_iface,
         "phase_dac": create_spidev_iface_phasedac,
     }
+    #file system path to i2c-adapter/mux
+    base_i2c_adapter = '/sys/class/i2c-adapter'
     # Map I2C channel to slot index
     i2c_chan_map = {0: 'i2c-9', 1: 'i2c-10'}
     user_eeprom = {
@@ -657,4 +665,48 @@ class Magnesium(DboardManagerBase):
         """
         assert which.lower() in ('tx', 'rx')
         return self.cpld.get_lo_lock_status(which)
+
+    def get_lowband_tx_lo_locked_sensor(self):
+        " TX lowband LO lock sensor "
+        self.log.trace("Querying TX lowband LO lock status...")
+        lock_status = self.get_lowband_lo_lock('tx')
+        return {
+            'name': 'lowband_lo_locked',
+            'type': 'BOOLEAN',
+            'unit': 'locked' if lock_status else 'unlocked',
+            'value': str(lock_status).lower(),
+        }
+
+    def get_lowband_rx_lo_locked_sensor(self):
+        " RX lowband LO lock sensor "
+        self.log.trace("Querying RX lowband LO lock status...")
+        lock_status = self.get_lowband_lo_lock('rx')
+        return {
+            'name': 'lowband_lo_locked',
+            'type': 'BOOLEAN',
+            'unit': 'locked' if lock_status else 'unlocked',
+            'value': str(lock_status).lower(),
+        }
+
+    def get_ad9371_tx_lo_locked_sensor(self):
+        " TX ad9371 LO lock sensor "
+        self.log.trace("Querying TX AD9371 LO lock status...")
+        lock_status = True # FIXME
+        return {
+            'name': 'ad9371_lo_locked',
+            'type': 'BOOLEAN',
+            'unit': 'locked' if lock_status else 'unlocked',
+            'value': str(lock_status).lower(),
+        }
+
+    def get_ad9371_rx_lo_locked_sensor(self):
+        " RX ad9371 LO lock sensor "
+        self.log.trace("Querying RX AD9371 LO lock status...")
+        lock_status = True # FIXME
+        return {
+            'name': 'ad9371_lo_locked',
+            'type': 'BOOLEAN',
+            'unit': 'locked' if lock_status else 'unlocked',
+            'value': str(lock_status).lower(),
+        }
 

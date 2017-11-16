@@ -116,7 +116,7 @@ class DboardManagerBase(object):
         Power down the dboard. Does not have be implemented. If it does, it
         needs to be safe to call multiple times.
         """
-        self.log.info("deinit() called, but not implemented.")
+        self.log.debug("deinit() called, but not implemented.")
 
     def get_serial(self):
         """
