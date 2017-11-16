@@ -9,6 +9,7 @@
 #include "spi_core_3000.hpp"
 #include <uhd/utils/log.hpp>
 #include <uhd/types/eeprom.hpp>
+#include <uhd/types/sensors.hpp>
 #include <vector>
 #include <string>
 
@@ -330,12 +331,27 @@ void magnesium_radio_ctrl_impl::_init_frontend_subtree(
         })
     ;
     // FIXME separate DSA and Myk gains
+    // TX LO lock sensor
+    // Note: The lowband and AD9371 LO lock sensors are generated
+    // programmatically in set_rpc_client(). The actual lo_locked publisher is
+    // also set there.
+    subtree->create<sensor_value_t>(tx_fe_path / "sensors" / "lo_locked")
+        .set(sensor_value_t("all_los", false,  "locked", "unlocked"))
+        .add_coerced_subscriber([](const sensor_value_t &){
+            throw uhd::runtime_error(
+                "Attempting to write to sensor!");
+        })
+    ;
+    // RX LO lock sensor (see not on TX LO lock sensor)
+    subtree->create<sensor_value_t>(rx_fe_path / "sensors" / "lo_locked")
+        .set(sensor_value_t("all_los", false,  "locked", "unlocked"))
+    ;
 }
 
 void magnesium_radio_ctrl_impl::_init_prop_tree()
 {
     const fs_path fe_base = fs_path("dboards") / _radio_slot;
-    this->_init_frontend_subtree(_tree->subtree(fe_base), 0); 
+    this->_init_frontend_subtree(_tree->subtree(fe_base), 0);
     // TODO: When we go to one radio per dboard, the above if statement goes
     // away, and instead we have something like this:
     /*
