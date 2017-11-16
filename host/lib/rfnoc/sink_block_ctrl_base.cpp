@@ -52,8 +52,8 @@ size_t sink_block_ctrl_base::get_fifo_size(size_t block_port) const {
 }
 
 void sink_block_ctrl_base::configure_flow_control_in(
-        size_t bytes,
-        size_t block_port
+        const size_t bytes,
+        const size_t block_port
 ) {
     UHD_RFNOC_BLOCK_TRACE() << boost::format("sink_block_ctrl_base::configure_flow_control_in(bytes=%d)") % bytes;
 

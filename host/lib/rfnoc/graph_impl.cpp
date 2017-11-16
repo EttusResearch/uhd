@@ -139,11 +139,12 @@ void graph_impl::connect(
             src_block_port
     );
     // On the same crossbar, use lots of FC packets
-    size_t bytes_per_response = std::ceil<size_t>(buf_size_bytes / uhd::rfnoc::DEFAULT_FC_XBAR_RESPONSE_FREQ);
+    size_t bytes_per_response = buf_size_bytes / uhd::rfnoc::DEFAULT_FC_XBAR_RESPONSE_FREQ;
     // Over the network, use less or we'd flood the transport
     if (sid.get_src_addr() != sid.get_dst_addr()) {
-        bytes_per_response = std::ceil<size_t>(buf_size_bytes / uhd::rfnoc::DEFAULT_FC_TX_RESPONSE_FREQ);
+        bytes_per_response = buf_size_bytes / uhd::rfnoc::DEFAULT_FC_TX_RESPONSE_FREQ;
     }
+    UHD_ASSERT_THROW(bytes_per_response != 0);
     dst->configure_flow_control_in(
             bytes_per_response,
             dst_block_port

@@ -22,9 +22,6 @@ using namespace uhd;
 using namespace uhd::transport;
 namespace asio = boost::asio;
 
-//A reasonable number of frames for send/recv and async/sync
-//static const size_t DEFAULT_NUM_FRAMES = 32;
-
 /***********************************************************************
  * Check registry for correct fast-path setting (windows only)
  **********************************************************************/
@@ -211,7 +208,12 @@ public:
     }
 
     //set size for internal socket buffer
-    template <typename Opt> size_t resize_buff(size_t num_bytes){
+    template <typename Opt> size_t resize_buff(size_t num_bytes)
+    {
+        #if defined(UHD_PLATFORM_MACOS) || defined(UHD_PLATFORM_BSD)
+            //limit buffer resize on macos or it will error
+            num_bytes = std::min(num_bytes, MAX_BUFF_SIZE_ETH_MACOS);
+        #endif
         Opt option(num_bytes);
         _socket->set_option(option);
         return get_buff_size<Opt>();
@@ -316,26 +318,31 @@ udp_zero_copy::sptr udp_zero_copy::make(
     xport_params.num_recv_frames = size_t(hints.cast<double>("num_recv_frames", default_buff_args.num_recv_frames));
     xport_params.send_frame_size = size_t(hints.cast<double>("send_frame_size", default_buff_args.send_frame_size));
     xport_params.num_send_frames = size_t(hints.cast<double>("num_send_frames", default_buff_args.num_send_frames));
+    xport_params.recv_buff_size = size_t(hints.cast<double>("recv_buff_size", default_buff_args.recv_buff_size));
+    xport_params.send_buff_size = size_t(hints.cast<double>("send_buff_size", default_buff_args.send_buff_size));
 
-    //extract buffer size hints from the device addr
-    size_t usr_recv_buff_size = size_t(hints.cast<double>("recv_buff_size", xport_params.num_recv_frames * MAX_ETHERNET_MTU));
-    size_t usr_send_buff_size = size_t(hints.cast<double>("send_buff_size", xport_params.num_send_frames * MAX_ETHERNET_MTU));
-
-    if (hints.has_key("recv_buff_size")) {
-        if (usr_recv_buff_size < xport_params.num_recv_frames * MAX_ETHERNET_MTU) {
-            throw uhd::value_error((boost::format(
-                "recv_buff_size must be equal to or greater than %d")
-                % (xport_params.num_recv_frames * MAX_ETHERNET_MTU)).str());
-        }
+    // Preserve legacy defaults
+    if (xport_params.recv_buff_size == 0) {
+        xport_params.recv_buff_size = xport_params.num_recv_frames * xport_params.recv_frame_size;
     }
-
-    if (hints.has_key("send_buff_size")) {
-        if (usr_send_buff_size < xport_params.num_send_frames * MAX_ETHERNET_MTU) {
-            throw uhd::value_error((boost::format(
-                "send_buff_size must be equal to or greater than %d")
-                % (xport_params.num_send_frames * MAX_ETHERNET_MTU)).str());
-        }
+    if (xport_params.send_buff_size == 0) {
+        xport_params.send_buff_size = xport_params.num_recv_frames * xport_params.send_frame_size;
     }
+    
+    // Resize receive buffer due to known issue where Intel X710 uses full MTU for every packet regardless of actual size
+    xport_params.recv_buff_size = xport_params.recv_buff_size * MAX_ETHERNET_MTU / xport_params.recv_frame_size;
+
+    #if defined(UHD_PLATFORM_MACOS) || defined(UHD_PLATFORM_BSD)
+        //limit default buffer size on macos to avoid the warning issued by resize_buff_helper
+        if (not hints.has_key("recv_buff_size") and xport_params.recv_buff_size > MAX_BUFF_SIZE_ETH_MACOS)
+        {
+            xport_params.recv_buff_size = MAX_BUFF_SIZE_ETH_MACOS;
+        }
+        if (not hints.has_key("send_buff_size") and xport_params.send_buff_size > MAX_BUFF_SIZE_ETH_MACOS)
+        {
+            xport_params.send_buff_size = MAX_BUFF_SIZE_ETH_MACOS;
+        }
+    #endif
 
     udp_zero_copy_asio_impl::sptr udp_trans(
         new udp_zero_copy_asio_impl(addr, port, xport_params)
@@ -343,9 +350,12 @@ udp_zero_copy::sptr udp_zero_copy::make(
 
     //call the helper to resize send and recv buffers
     buff_params_out.recv_buff_size =
-        resize_buff_helper<asio::socket_base::receive_buffer_size>(udp_trans, usr_recv_buff_size, "recv");
+        resize_buff_helper<asio::socket_base::receive_buffer_size>(udp_trans, xport_params.recv_buff_size, "recv");
     buff_params_out.send_buff_size =
-        resize_buff_helper<asio::socket_base::send_buffer_size>   (udp_trans, usr_send_buff_size, "send");
+        resize_buff_helper<asio::socket_base::send_buffer_size>   (udp_trans, xport_params.send_buff_size, "send");
+
+    // Resize usable amount of receive buffer due to known issue where Intel X710 uses full MTU for every packet regardless of actual size
+    buff_params_out.recv_buff_size = buff_params_out.recv_buff_size * xport_params.recv_frame_size / MAX_ETHERNET_MTU;
 
     return udp_trans;
 }

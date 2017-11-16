@@ -80,8 +80,8 @@ public:
      * \param block_port Set up flow control for a stream coming in on this particular block port.
      */
     virtual void configure_flow_control_in(
-            size_t bytes,
-            size_t block_port=0
+            const size_t bytes,
+            const size_t block_port=0
     );
 
     /*! Configure the behaviour for errors on incoming packets

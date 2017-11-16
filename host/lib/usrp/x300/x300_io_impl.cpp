@@ -17,22 +17,6 @@ using namespace uhd::usrp;
 device_addr_t x300_impl::get_rx_hints(size_t mb_index)
 {
     device_addr_t rx_hints = _mb[mb_index].recv_args;
-    // (default to a large recv buff)
-    if (not rx_hints.has_key("recv_buff_size"))
-    {
-        if (_mb[mb_index].xport_path != "nirio") {
-            //For the ethernet transport, the buffer has to be set before creating
-            //the transport because it is independent of the frame size and # frames
-            //For nirio, the buffer size is not configurable by the user
-            #if defined(UHD_PLATFORM_MACOS) || defined(UHD_PLATFORM_BSD)
-                //limit buffer resize on macos or it will error
-                rx_hints["recv_buff_size"] = std::to_string(X300_RX_SW_BUFF_SIZE_ETH_MACOS);
-            #elif defined(UHD_PLATFORM_LINUX) || defined(UHD_PLATFORM_WIN32)
-                //set to half-a-second of buffering at max rate
-                rx_hints["recv_buff_size"] = std::to_string(X300_RX_SW_BUFF_SIZE_ETH);
-            #endif
-        }
-    }
     return rx_hints;
 }
 

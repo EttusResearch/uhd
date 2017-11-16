@@ -392,7 +392,7 @@ private:
             #endif
 
             //bounds check before extract
-            size_t num_packet_words32 = buff->size()/sizeof(uint32_t);
+            const size_t num_packet_words32 = buff->size()/sizeof(uint32_t);
             if (num_packet_words32 <= _header_offset_words32){
                 throw std::runtime_error("recv buffer smaller than vrt packet offset");
             }

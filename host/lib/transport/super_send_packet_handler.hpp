@@ -47,11 +47,11 @@ namespace sph {
  **********************************************************************/
 class send_packet_handler{
 public:
-    typedef boost::function<managed_send_buffer::sptr(double)> get_buff_type;
-    typedef boost::function<void(void)> post_send_cb_type;
-    typedef boost::function<bool(uhd::async_metadata_t &, const double)> async_receiver_type;
+    typedef std::function<managed_send_buffer::sptr(double)> get_buff_type;
+    typedef std::function<void(void)> post_send_cb_type;
+    typedef std::function<bool(uhd::async_metadata_t &, const double)> async_receiver_type;
     typedef void(*vrt_packer_type)(uint32_t *, vrt::if_packet_info_t &);
-    //typedef boost::function<void(uint32_t *, vrt::if_packet_info_t &)> vrt_packer_type;
+    //typedef std::function<void(uint32_t *, vrt::if_packet_info_t &)> vrt_packer_type;
 
     /*!
      * Make a new packet handler for send

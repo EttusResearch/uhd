@@ -111,10 +111,10 @@ public:
      *            not sufficient to set the flow control, and as such is rarely used.
      */
     virtual void configure_flow_control_out(
-            bool enable_output,
-            size_t buf_size_bytes,
-            size_t pkt_limit=0,
-            size_t block_port=0,
+            const bool enable_output,
+            const size_t buf_size_bytes,
+            const size_t pkt_limit=0,
+            const size_t block_port=0,
             const uhd::sid_t &sid=uhd::sid_t()
      );
 

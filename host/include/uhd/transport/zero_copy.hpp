@@ -128,10 +128,20 @@ namespace uhd{ namespace transport{
      * Transport parameters
      */
     struct zero_copy_xport_params {
+        zero_copy_xport_params() :
+        recv_frame_size(0),
+        send_frame_size(0),
+        num_recv_frames(0),
+        num_send_frames(0),
+        recv_buff_size(0),
+        send_buff_size(0)
+        { /* NOP */ }
         size_t recv_frame_size;
         size_t send_frame_size;
         size_t num_recv_frames;
         size_t num_send_frames;
+        size_t recv_buff_size;
+        size_t send_buff_size;
     };
 
     /*!

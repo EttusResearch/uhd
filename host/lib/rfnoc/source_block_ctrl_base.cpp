@@ -77,10 +77,10 @@ void source_block_ctrl_base::set_destination(
 }
 
 void source_block_ctrl_base::configure_flow_control_out(
-            bool enable_fc_output,
-            size_t buf_size_bytes,
-            size_t pkt_limit,
-            size_t block_port,
+            const bool enable_fc_output,
+            const size_t buf_size_bytes,
+            const size_t pkt_limit,
+            const size_t block_port,
             UHD_UNUSED(const uhd::sid_t &sid)
 ) {
     UHD_RFNOC_BLOCK_TRACE() << "source_block_ctrl_base::configure_flow_control_out() buf_size_bytes==" << buf_size_bytes;
@@ -113,7 +113,7 @@ void source_block_ctrl_base::configure_flow_control_out(
     //based flow control
     const bool enable_byte_fc = (buf_size_bytes != 0);
     const bool enable_pkt_cnt_fc = (pkt_limit != 0);
-    const size_t config = enable_fc_output + (enable_byte_fc << 1) + (enable_pkt_cnt_fc << 2);
+    const uint32_t config = (enable_fc_output ? 1 : 0) | (enable_byte_fc << 1) | (enable_pkt_cnt_fc << 2);
 
     //Resize the FC window.
     //Precondition: No data can be buffered upstream.

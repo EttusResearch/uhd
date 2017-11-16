@@ -56,13 +56,13 @@ public:
         _terminator(terminator),
         _data_xport(data_xport),
         _async_msg_xport(async_msg_xport)
-    {};
+    {}
 
     ~device3_send_packet_streamer()
     {
         // Make sure the async task is destroyed before the transports
         _tx_async_msg_tasks.clear();
-    };
+    }
 
     uhd::rfnoc::tx_stream_terminator::sptr get_terminator()
     {
@@ -92,9 +92,9 @@ public:
         ) :
             uhd::transport::sph::recv_packet_streamer(max_num_samps),
             _terminator(terminator),
-            _xport(xport) {};
+            _xport(xport) {}
 
-    ~device3_recv_packet_streamer() {};
+    ~device3_recv_packet_streamer() {}
 
     both_xports_t get_xport()
     {
@@ -145,7 +145,7 @@ public:
             , rx_max_len_hdr(DEVICE3_RX_MAX_HDR_LEN)
             , rx_fc_request_freq(DEVICE3_RX_FC_REQUEST_FREQ)
             , tx_fc_response_freq(DEVICE3_TX_FC_RESPONSE_FREQ)
-        {};
+        {}
     };
 
     /***********************************************************************
@@ -165,7 +165,7 @@ protected:
      * Structors
      **********************************************************************/
     device3_impl();
-    virtual ~device3_impl() {};
+    virtual ~device3_impl() {}
 
     /***********************************************************************
      * Streaming-related
@@ -196,11 +196,11 @@ protected:
         const uhd::device_addr_t& args
     ) = 0;
 
-    virtual uhd::device_addr_t get_tx_hints(size_t) { return uhd::device_addr_t(); };
-    virtual uhd::device_addr_t get_rx_hints(size_t) { return uhd::device_addr_t(); };
+    virtual uhd::device_addr_t get_tx_hints(size_t) { return uhd::device_addr_t(); }
+    virtual uhd::device_addr_t get_rx_hints(size_t) { return uhd::device_addr_t(); }
 
     //! Is called after a streamer is generated
-    virtual void post_streamer_hooks(uhd::direction_t) {};
+    virtual void post_streamer_hooks(uhd::direction_t) {}
 
     /***********************************************************************
      * Channel-related

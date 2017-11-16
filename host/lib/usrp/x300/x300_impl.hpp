@@ -39,9 +39,6 @@ static const std::string X300_DEFAULT_CLOCK_SOURCE  = "internal";
 static const double X300_DEFAULT_TICK_RATE          = 200e6;   //Hz
 static const double X300_BUS_CLOCK_RATE             = 187.5e6; //Hz
 
-static const size_t X300_RX_SW_BUFF_SIZE_ETH        = 0x2000000;//32MiB    For an ~8k frame size any size >32MiB is just wasted buffer space
-static const size_t X300_RX_SW_BUFF_SIZE_ETH_MACOS  = 0x100000; //1Mib
-
 //The FIFO closest to the DMA controller is 1023 elements deep for RX and 1029 elements deep for TX
 //where an element is 8 bytes. The buffers (number of frames * frame size) must be aligned to the
 //memory page size.  For the control, we are getting lucky because 64 frames * 256 bytes each aligns
@@ -50,22 +47,25 @@ static const size_t X300_RX_SW_BUFF_SIZE_ETH_MACOS  = 0x100000; //1Mib
 static const size_t X300_PCIE_RX_DATA_FRAME_SIZE        = 4096;     //bytes
 static const size_t X300_PCIE_RX_DATA_NUM_FRAMES        = 4096;
 static const size_t X300_PCIE_TX_DATA_FRAME_SIZE        = 4096;     //bytes
-static const size_t X300_PCIE_TX_DATA_NUM_FRAMES	    = 4096;
+static const size_t X300_PCIE_TX_DATA_NUM_FRAMES	= 4096;
 static const size_t X300_PCIE_MSG_FRAME_SIZE            = 256;      //bytes
 static const size_t X300_PCIE_MSG_NUM_FRAMES            = 64;
 static const size_t X300_PCIE_MAX_CHANNELS              = 6;
 static const size_t X300_PCIE_MAX_MUXED_CTRL_XPORTS     = 32;
 static const size_t X300_PCIE_MAX_MUXED_ASYNC_XPORTS    = 4;
 
-//Reduced to 4000 to make sure flow control packets are not blocked for too long at high rates
-static const size_t X300_10GE_DATA_FRAME_MAX_SIZE   = 4000;     // CHDR packet size in bytes
-static const size_t X300_1GE_DATA_FRAME_MAX_SIZE    = 1472;     // CHDR packet size in bytes
+static const size_t X300_DATA_FRAME_MAX_SIZE        = 8000;     // CHDR packet size in bytes
+
+// Ethernet frame sizes
+static const size_t X300_10GE_DATA_FRAME_SEND_SIZE  = 4000;     // Reduced to make sure flow control packets are not blocked for too long at high rates
+static const size_t X300_10GE_DATA_FRAME_RECV_SIZE  = 8000;
+static const size_t X300_1GE_DATA_FRAME_SEND_SIZE   = 1472;
+static const size_t X300_1GE_DATA_FRAME_RECV_SIZE   = 1472;
 static const size_t X300_ETH_MSG_FRAME_SIZE         = uhd::transport::udp_simple::mtu;  //bytes
-
-static const double X300_THREAD_BUFFER_TIMEOUT      = 0.1;   // Time in seconds
-
 static const size_t X300_ETH_MSG_NUM_FRAMES         = 64;
-static const size_t X300_ETH_DATA_NUM_FRAMES        = 32;
+
+static const double X300_RECV_OFFLOAD_BUFFER_TIMEOUT    = 0.1;  //seconds
+
 static const double X300_DEFAULT_SYSREF_RATE        = 10e6;
 
 // Limit the number of initialization threads
@@ -74,12 +74,12 @@ static const size_t X300_MAX_INIT_THREADS           = 10;
 static const size_t X300_MAX_RATE_PCIE              = 800000000; // bytes/s
 static const size_t X300_MAX_RATE_10GIGE            = (size_t)(  // bytes/s
         10e9 / 8 *                                               // wire speed multiplied by percentage of packets that is sample data
-        ( float(X300_10GE_DATA_FRAME_MAX_SIZE - uhd::usrp::DEVICE3_TX_MAX_HDR_LEN) /
-          float(X300_10GE_DATA_FRAME_MAX_SIZE + 8 /* UDP header */ + 20 /* Ethernet header length */ )));
+        ( float(X300_DATA_FRAME_MAX_SIZE - uhd::usrp::DEVICE3_TX_MAX_HDR_LEN) /
+          float(X300_DATA_FRAME_MAX_SIZE + 8 /* UDP header */ + 20 /* Ethernet header length */ )));
 static const size_t X300_MAX_RATE_1GIGE            = (size_t)(  // bytes/s
-        10e9 / 8 *                                               // wire speed multiplied by percentage of packets that is sample data
-        ( float(X300_1GE_DATA_FRAME_MAX_SIZE - uhd::usrp::DEVICE3_TX_MAX_HDR_LEN) /
-          float(X300_1GE_DATA_FRAME_MAX_SIZE + 8 /* UDP header */ + 20 /* Ethernet header length */ )));
+        1e9 / 8 *                                               // wire speed multiplied by percentage of packets that is sample data
+        ( float(X300_DATA_FRAME_MAX_SIZE - uhd::usrp::DEVICE3_TX_MAX_HDR_LEN) /
+          float(X300_DATA_FRAME_MAX_SIZE + 8 /* UDP header */ + 20 /* Ethernet header length */ )));
 
 #define X300_RADIO_DEST_PREFIX_TX 0
 
@@ -106,6 +106,7 @@ struct x300_eth_conn_t
 {
     std::string addr;
     x300_eth_iface_t type;
+    size_t link_rate;
 };
 
 
