@@ -325,8 +325,10 @@ static void handle_rx_flowctrl_ack(
     if (fc_cache->total_bytes_consumed != byte_count)
     {
         UHD_LOGGER_DEBUG("device3")
-        << "oh noes: byte_count==" << byte_count
-            << "  total_bytes_consumed==" << fc_cache->total_bytes_consumed << std::endl
+            << "oh noes: byte_count==" << byte_count
+            << "  total_bytes_consumed==" << fc_cache->total_bytes_consumed
+            << std::hex << " sid==" << fc_cache->sid << std::dec
+            << std::endl
         ;
     }
     fc_cache->total_bytes_consumed = byte_count;
@@ -386,9 +388,7 @@ static bool tx_flow_ctrl(
         }
 
         // Look for a flow control message to update the space available in the buffer.
-        // A minimal timeout is used because larger timeouts can cause the thread to be
-        // scheduled out for too long at high data rates and result in underruns.
-        managed_recv_buffer::sptr buff = xport->get_recv_buff(0.000001);
+        managed_recv_buffer::sptr buff = xport->get_recv_buff(0.1);
         if (buff)
         {
             vrt::if_packet_info_t if_packet_info;
@@ -885,6 +885,12 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
 
         // Setup the dsp transport hints
         device_addr_t tx_hints = get_tx_hints(mb_index);
+        const size_t fifo_size = blk_ctrl->get_fifo_size(block_port);
+        if (not tx_hints.has_key("send_buff_size"))
+        {
+            // Default buffer size to FIFO size
+            tx_hints["send_buff_size"] = std::to_string(fifo_size);
+        }
 
         // Allocate sid and create transport
         uhd::sid_t stream_address = blk_ctrl->get_address(block_port);
@@ -898,7 +904,7 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
         blk_ctrl->sr_write(uhd::rfnoc::SR_CLEAR_RX_FC, 0x1, block_port);
         blk_ctrl->sr_write(uhd::rfnoc::SR_CLEAR_RX_FC, 0x0, block_port);
         // Configure flow control on downstream block
-        const size_t fc_window = tx_hints.cast<size_t>("send_buff_size", blk_ctrl->get_fifo_size(block_port));
+        const size_t fc_window = std::min(tx_hints.cast<size_t>("send_buff_size", fifo_size), fifo_size);
         const size_t fc_handle_window = std::max<size_t>(1, fc_window / stream_options.tx_fc_response_freq);
         UHD_TX_STREAMER_LOG() << "Flow Control Window = " << fc_window << ", Flow Control Handler Window = " << fc_handle_window ;
         blk_ctrl->configure_flow_control_in(
