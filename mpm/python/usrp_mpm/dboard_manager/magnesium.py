@@ -345,7 +345,35 @@ class Magnesium(DboardManagerBase):
         # called!
         self.ref_clock_freq = 10e6
         self.master_clock_freq = 125e6 # Same
-        # Initialize power and peripherals that don't need user-settings
+        # Predeclare some attributes to make linter happy:
+        self.lmk = None
+        self.clock_synchronizer = None
+        self.jesdcore = None
+        self._port_expander = None
+        self.mykonos = None
+        self.eeprom_fs = None
+        self.eeprom_path = None
+        self.radio_regs = None
+        self.cpld = None
+        self.dboard_clk_control = None
+        self._init_cals_mask = 0
+        self._tracking_cals_mask = 0
+        self._init_cals_timeout = 0
+        # Now initialize all peripherals. If that doesn't work, put this class
+        # into a non-functional state (but don't crash, or we can't talk to it
+        # any more):
+        try:
+            self._init_periphs()
+            self._periphs_initialized = True
+        except Exception as ex:
+            self.log.error("Failed to initialize peripherals: %s",
+                           str(ex))
+            self._periphs_initialized = False
+
+    def _init_periphs(self):
+        """
+        Initialize power and peripherals that don't need user-settings
+        """
         self._port_expander = TCA6408(self._get_i2c_dev(self.slot_idx))
         self._power_on()
         self.log.debug("Loading C++ drivers...")
@@ -370,10 +398,6 @@ class Magnesium(DboardManagerBase):
         }
         self.cpld = MgCPLD(self._spi_ifaces['cpld'], self.log)
         self.dboard_clk_control = DboardClockControl(self.radio_regs, self.log)
-        # Declare some attributes to make linter happy:
-        self.lmk = None
-        self.clock_synchronizer = None
-        self.jesdcore = None
 
     def _power_on(self):
         " Turn on power to daughterboard "
@@ -480,6 +504,10 @@ class Magnesium(DboardManagerBase):
         self.log.info("init() called with args `{}'".format(
             ",".join(['{}={}'.format(x, args[x]) for x in args])
         ))
+        if not self._periphs_initialized:
+            error_msg = "Cannot run init(), peripherals are not initialized!"
+            self.log.error(error_msg)
+            raise RuntimeError(error_msg)
         self.dboard_clk_control.reset_mmcm()
         self.lmk = _init_lmk(
             self._spi_ifaces['lmk'],
