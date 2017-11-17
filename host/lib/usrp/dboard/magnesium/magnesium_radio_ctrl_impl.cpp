@@ -430,9 +430,33 @@ void magnesium_radio_ctrl_impl::set_rpc_client(
 }
 
 bool magnesium_radio_ctrl_impl::get_lo_lock_status(
-    const direction_t /*dir*/
+    const direction_t dir
 ) {
-    return bool(_rpcc); // FIXME
+    if (not (bool(_rpcc))) {
+        UHD_LOG_DEBUG(unique_id(),
+            "Reported no LO lock due to lack of RPC connection.");
+        return false;
+    }
+
+    const std::string trx = (dir == RX_DIRECTION) ? "rx" : "tx";
+    const size_t chan = 0; // They're the same after all
+    const double freq = (dir == RX_DIRECTION) ?
+        get_rx_frequency(chan) :
+        get_tx_frequency(chan);
+
+    bool lo_lock = _rpcc->request_with_token<bool>(
+        _rpc_prefix + "get_ad9371_lo_lock", trx);
+    UHD_LOG_TRACE(unique_id(),
+        "AD9371 " << trx << " LO reports lock: " << (lo_lock ? "Yes" : "No"));
+    if (lo_lock && freq < MAGNESIUM_LOWBAND_FREQ) {
+        lo_lock = lo_lock && _rpcc->request_with_token<bool>(
+            _rpc_prefix + "get_lowband_lo_lock", trx);
+        UHD_LOG_TRACE(unique_id(),
+            "ADF4351 " << trx << " LO reports lock: "
+            << (lo_lock ? "Yes" : "No"));
+    }
+
+    return lo_lock;
 }
 
 UHD_RFNOC_BLOCK_REGISTER(magnesium_radio_ctrl, "MagnesiumRadio");

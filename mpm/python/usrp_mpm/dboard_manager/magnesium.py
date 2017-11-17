@@ -722,11 +722,19 @@ class Magnesium(DboardManagerBase):
         either 'tx' or 'rx'
         """
         assert which.lower() in ('tx', 'rx')
-        return self.cpld.get_lo_lock_status(which)
+        return self.cpld.get_lo_lock_status(which.upper())
 
-    def get_lowband_tx_lo_locked_sensor(self):
+    def get_ad9371_lo_lock(self, which):
+        """
+        Return LO lock status (Boolean!) of the lowband LOs. 'which' must be
+        either 'tx' or 'rx'
+        """
+        return self.mykonos.get_lo_locked(which.upper())
+
+    def get_lowband_tx_lo_locked_sensor(self, chan):
         " TX lowband LO lock sensor "
-        self.log.trace("Querying TX lowband LO lock status...")
+        self.log.trace("Querying TX lowband LO lock status for chan %d...",
+                       chan)
         lock_status = self.get_lowband_lo_lock('tx')
         return {
             'name': 'lowband_lo_locked',
@@ -735,9 +743,10 @@ class Magnesium(DboardManagerBase):
             'value': str(lock_status).lower(),
         }
 
-    def get_lowband_rx_lo_locked_sensor(self):
+    def get_lowband_rx_lo_locked_sensor(self, chan):
         " RX lowband LO lock sensor "
-        self.log.trace("Querying RX lowband LO lock status...")
+        self.log.trace("Querying RX lowband LO lock status for chan %d...",
+                       chan)
         lock_status = self.get_lowband_lo_lock('rx')
         return {
             'name': 'lowband_lo_locked',
@@ -746,10 +755,10 @@ class Magnesium(DboardManagerBase):
             'value': str(lock_status).lower(),
         }
 
-    def get_ad9371_tx_lo_locked_sensor(self):
+    def get_ad9371_tx_lo_locked_sensor(self, chan):
         " TX ad9371 LO lock sensor "
-        self.log.trace("Querying TX AD9371 LO lock status...")
-        lock_status = True # FIXME
+        self.log.trace("Querying TX AD9371 LO lock status for chan %d...", chan)
+        lock_status = self.get_ad9371_lo_lock('tx')
         return {
             'name': 'ad9371_lo_locked',
             'type': 'BOOLEAN',
@@ -757,10 +766,10 @@ class Magnesium(DboardManagerBase):
             'value': str(lock_status).lower(),
         }
 
-    def get_ad9371_rx_lo_locked_sensor(self):
+    def get_ad9371_rx_lo_locked_sensor(self, chan):
         " RX ad9371 LO lock sensor "
-        self.log.trace("Querying RX AD9371 LO lock status...")
-        lock_status = True # FIXME
+        self.log.trace("Querying RX AD9371 LO lock status for chan %d...", chan)
+        lock_status = self.get_ad9371_lo_lock('tx')
         return {
             'name': 'ad9371_lo_locked',
             'type': 'BOOLEAN',

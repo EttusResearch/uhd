@@ -135,7 +135,10 @@ class DboardManagerBase(object):
         """
         self.log.warning("update_ref_clock_freq() called but not implemented")
 
-    def get_sensors(self, direction):
+    ##########################################################################
+    # Sensors
+    ##########################################################################
+    def get_sensors(self, direction, chan=0):
         """
         Return a list of RX daughterboard sensor names.
 
@@ -146,7 +149,7 @@ class DboardManagerBase(object):
         else:
             return list(self.tx_sensor_callback_map.keys())
 
-    def get_sensor(self, direction, sensor_name):
+    def get_sensor(self, direction, sensor_name, chan=0):
         """
         Return a dictionary that represents the sensor values for a given
         sensor. If the requested sensor sensor_name does not exist, throw an
@@ -166,5 +169,5 @@ class DboardManagerBase(object):
             raise RuntimeError(error_msg)
         return getattr(
             self, callback_map.get('sensor_name')
-        )()
+        )(chan)
 
