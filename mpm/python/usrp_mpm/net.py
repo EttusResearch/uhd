@@ -19,6 +19,7 @@ N310 implementation module
 """
 import itertools
 import socket
+from six import iteritems
 from pyroute2 import IPRoute
 from .mpmlog import get_logger
 
@@ -67,6 +68,22 @@ def get_iface_info(ifname):
         'ip_addr': ip_addrs[0],
         'ip_addrs': ip_addrs,
     }
+
+def ip_addr_to_iface(ip_addr, iface_list):
+    """
+    Return an Ethernet interface (e.g. 'eth1') given an IP address.
+
+    Arguments:
+    ip_addr -- The IP address as a string
+    iface_list -- A map "interface name" -> iface_info, where iface_info
+                  is another map as returned by net.get_iface_info().
+    """
+    # Flip around the iface_info map and then use it to look up by IP addr
+    return {
+        iface_info['ip_addr']: iface_name
+        for iface_name, iface_info in iteritems(iface_list)
+    }[ip_addr]
+
 
 def get_iface_addrs(mac_addr):
     """
