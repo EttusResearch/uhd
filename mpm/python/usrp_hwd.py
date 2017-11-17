@@ -139,7 +139,8 @@ def main():
     mgr = periph_manager(args)
     discovery_info = {
         "type": mgr.get_device_info().get("type", "n/a"),
-        "serial": mgr.get_device_info().get("serial", "n/a")
+        "serial": mgr.get_device_info().get("serial", "n/a"),
+        "product": mgr.get_device_info().get("product", "n/a")
     }
     if args.init_only:
         mgr.init(args.default_args)

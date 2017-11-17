@@ -452,7 +452,9 @@ class n310(PeriphManagerBase):
     pids = [0x4242,]
     mboard_eeprom_addr = "e0005000.i2c"
     mboard_eeprom_max_len = 256
-    mboard_info = {"type": "n3xx"}
+    mboard_info = {"type": "n3xx",
+                   "product": "n310"
+                  }
     mboard_max_rev = 3 # 3 == RevD
     mboard_sensor_callback_map = {
         'ref_locked': 'get_ref_lock_sensor',
