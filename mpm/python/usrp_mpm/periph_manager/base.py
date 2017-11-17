@@ -148,11 +148,16 @@ class PeriphManagerBase(object):
         # Set up logging
         self.log = get_logger('PeriphManager')
         self.claimed = False
-        self._init_mboard_with_eeprom()
-        self._init_mboard_overlays(self._eeprom_head, args)
-        self._init_dboards(args.override_db_pids)
-        self._available_endpoints = list(range(256))
         self._init_args = {}
+        self._available_endpoints = list(range(256))
+        try:
+            self._init_mboard_with_eeprom()
+            self._init_mboard_overlays(self._eeprom_head, args)
+            self._init_dboards(args.override_db_pids)
+            self._device_initialized = True
+        except Exception as ex:
+            self.log.error("Failed to initialize device: %s", str(ex))
+            self._device_initialized = False
 
     def _init_mboard_with_eeprom(self):
         """
@@ -326,6 +331,10 @@ class PeriphManagerBase(object):
         self.log.info("Mboard init() called with device args `{}'.".format(
             ",".join(['{}={}'.format(x, args[x]) for x in args])
         ))
+        if not self._device_initialized:
+            self.log.error(
+                "Cannot run init(), device was never fully initialized!")
+            return False
         self._init_args = args
         self.log.debug("Initializing dboards...")
         return all((dboard.init(args) for dboard in self.dboards))
