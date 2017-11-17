@@ -55,6 +55,8 @@ public:
     void begin_initialization();
     void finish_initialization();
     void setup_cal(uint32_t init_cals_mask, uint32_t tracking_cals_mask, uint32_t timeout);
+    uint8_t set_lo_source(const uhd::direction_t direction, const uint8_t pll_source);
+    uint8_t get_lo_source(const uhd::direction_t direction) const;
     void start_jesd_rx();
     void start_jesd_tx();
     void start_radio();

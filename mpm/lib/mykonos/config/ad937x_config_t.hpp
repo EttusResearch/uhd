@@ -43,11 +43,7 @@ public:
     static const int16_t DEFAULT_OBSRX_FIR[DEFAULT_RX_FIR_SIZE];
     static const int16_t DEFAULT_OBSRX_FIR_15366[DEFAULT_RX_FIR_SIZE];
     static const int16_t DEFAULT_SNIFFER_FIR[DEFAULT_RX_FIR_SIZE];
-    static const int16_t DEFAULT_SNIFFER_FIR_15366[DEFAULT_RX_FIR_SIZE]; 
-    void    set_rx_pll_use_external_lo(uint8_t val);
-    uint8_t get_rx_pll_use_external_lo();
-    void    set_tx_pll_use_external_lo(uint8_t val);
-    uint8_t get_tx_pll_use_external_lo();
+    static const int16_t DEFAULT_SNIFFER_FIR_15366[DEFAULT_RX_FIR_SIZE];
 
 private:
     // The top level device struct is non-const and contains all other structs, so everything is "public"

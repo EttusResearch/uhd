@@ -189,23 +189,6 @@ public:
     {
         /* nop */
     }
-    virtual void update_rx_lo_source(uint8_t rx_lo_source){
-        std::lock_guard<std::mutex> lock(*spi_mutex);
-        device.update_rx_lo_source(rx_lo_source);
-    }
-    virtual void update_tx_lo_source(uint8_t tx_lo_source){
-        std::lock_guard<std::mutex> lock(*spi_mutex);
-        device.update_tx_lo_source(tx_lo_source);
-    }
-
-    virtual uint8_t get_rx_lo_source(){
-        std::lock_guard<std::mutex> lock(*spi_mutex);
-        return device.get_rx_lo_source();
-    }
-    virtual uint8_t get_tx_lo_source(){
-        std::lock_guard<std::mutex> lock(*spi_mutex);
-        return device.get_tx_lo_source();
-    }
     virtual void begin_initialization()
     {
         std::lock_guard<std::mutex> lock(*spi_mutex);
@@ -223,6 +206,46 @@ public:
         std::lock_guard<std::mutex> lock(*spi_mutex);
         device.setup_cal(init_cals_mask, tracking_cals_mask, timeout);
     }
+
+    virtual std::string set_lo_source(const std::string &which, const std::string &source){
+        auto dir = _get_direction_from_antenna(which);
+
+        uint8_t pll_source = 0 ;
+        if (source == "internal"){
+            pll_source = 0;
+        }
+        else if (source == "external") {
+            pll_source = 1;
+        }
+        else {
+            throw mpm::runtime_error("invalid LO source");
+        }
+
+        std::lock_guard<std::mutex> lock(*spi_mutex);
+        uint8_t retval = device.set_lo_source(dir, pll_source);
+        if (retval == 0){
+            return "internal";
+        } else if (retval == 1){
+            return "external";
+        }else{
+            throw mpm::runtime_error("invalid return from set LO source");
+        }
+    }
+
+     virtual std::string get_lo_source(const std::string &which){
+        auto dir = _get_direction_from_antenna(which);
+
+        std::lock_guard<std::mutex> lock(*spi_mutex);
+        uint8_t retval = device.get_lo_source(dir);
+        if (retval == 0){
+            return "internal";
+        } else if (retval == 1){
+            return "external";
+        }else{
+            throw mpm::runtime_error("invalid return from get LO source");
+        }
+    }
+
     virtual void start_jesd_rx()
     {
         std::lock_guard<std::mutex> lock(*spi_mutex);

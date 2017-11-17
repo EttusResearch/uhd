@@ -597,6 +597,24 @@ class Magnesium(DboardManagerBase):
         self.log.debug("args[tracking_cals]=0x{:02X}".format(self._tracking_cals_mask))
         self.mykonos.setup_cal(self._init_cals_mask, self._tracking_cals_mask, self._init_cals_timeout)
 
+    def init_lo_source(self, args):
+        """Set all LO
+
+        This function will initialize all LO to user specified sources.
+        If there's no source is specified, the default one will be used.
+
+        Arguments:
+            args {string:string} -- device arguments.
+        """
+
+        self.log.info("Setting up LO source..")
+        rx_lo_source = args.get("rx_lo_source", "internal")
+        tx_lo_source = args.get("tx_lo_source", "internal")
+        self.mykonos.set_lo_source("RX", rx_lo_source)
+        self.mykonos.set_lo_source("TX", tx_lo_source)
+        self.log.debug("RX LO source is set at {}".format(self.mykonos.get_lo_source("RX")))
+        self.log.debug("TX LO source is set at {}".format(self.mykonos.get_lo_source("TX")))
+
     def init_jesd(self, jesdcore, args):
         """
         Bring up the JESD link between Mykonos and the N310.
@@ -608,17 +626,7 @@ class Magnesium(DboardManagerBase):
         self.log.trace("Pulsing Mykonos Hard Reset...")
         self.cpld.reset_mykonos()
         self.log.trace("Initializing Mykonos...")
-        rx_lo_source = args.get('rx_lo_source', "internal")
-        rx_lo = -1
-        if rx_lo_source == "internal":
-            rx_lo = 0
-        if rx_lo_source == "external":
-            rx_lo = 1
-        if rx_lo == -1:
-            self.log.warning("Please specify rx LO either \"internal\" or \"external\" ")
-        else:
-            self.mykonos.update_rx_lo_source(rx_lo)
-        self.log.debug("RX LO SOURCE is {}".format(self.mykonos.get_rx_lo_source()))
+        self.init_lo_source(args)
         self.mykonos.begin_initialization()
         # Multi-chip Sync requires two SYSREF pulses at least 17us apart.
         jesdcore.send_sysref_pulse()

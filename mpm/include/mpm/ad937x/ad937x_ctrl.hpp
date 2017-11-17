@@ -107,14 +107,6 @@ public:
         mpm::ad937x::gpio::gain_pins_t gain_pins);
     virtual ~ad937x_ctrl(void) {}
 
-    //! Update rx lo source to either external or internal. 1 is external; 0 is internal
-    virtual void update_rx_lo_source(uint8_t rx_pll_use_external_lo) = 0;
-    //! Update tx lo source to either external or internal. 1 is external; 0 is internal
-    virtual void update_tx_lo_source(uint8_t tx_pll_use_external_lo) = 0;
-    //! Get rx lo source: 1 is external; 0 is internal
-    virtual uint8_t get_rx_lo_source() = 0 ;
-    //! Get tx lo source: 1 is external; 0 is internal
-    virtual uint8_t get_tx_lo_source() = 0 ;
     //! initializes the AD9371, checks basic functionality, and prepares the chip to receive a SYSREF pulse
     virtual void begin_initialization() = 0;
 
@@ -129,6 +121,11 @@ public:
     *\param timeout init calibration timeout. default to 10s
     */
     virtual void setup_cal(uint32_t init_cals_mask, uint32_t tracking_cals_mask, uint32_t timeout) = 0;
+
+    //! set LO source
+    virtual std::string set_lo_source(const std::string &which, const std::string &source) = 0;
+    //! get LO source
+    virtual std::string get_lo_source(const std::string &which) = 0;
     //! resets and start the JESD deframer (JESD Rx, for RF Tx)
     virtual void start_jesd_rx() = 0;
 
@@ -283,10 +280,8 @@ void export_mykonos(){
         .def("set_master_clock_rate", &ad937x_ctrl::set_master_clock_rate)
         .def("begin_initialization", &ad937x_ctrl::begin_initialization)
         .def("finish_initialization", &ad937x_ctrl::finish_initialization)
-        .def("update_rx_lo_source", &ad937x_ctrl::update_rx_lo_source)
-        .def("update_tx_lo_source", &ad937x_ctrl::update_tx_lo_source)
-        .def("get_rx_lo_source", &ad937x_ctrl::get_rx_lo_source)
-        .def("get_tx_lo_source", &ad937x_ctrl::get_tx_lo_source)
+        .def("set_lo_source", &ad937x_ctrl::set_lo_source)
+        .def("get_lo_source", &ad937x_ctrl::get_lo_source)
         .def("setup_cal", &ad937x_ctrl::setup_cal)
         .def("start_jesd_rx", &ad937x_ctrl::start_jesd_rx)
         .def("start_jesd_tx", &ad937x_ctrl::start_jesd_tx)

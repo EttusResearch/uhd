@@ -274,20 +274,6 @@ ad937x_device::ad937x_device(
     gain_ctrl(gain_pins)
 {
 }
-void ad937x_device::update_rx_lo_source(uint8_t rx_lo_source){
-    mykonos_config.set_rx_pll_use_external_lo(rx_lo_source);
-    //TODO: should we re-init after this ?
-}
-void ad937x_device::update_tx_lo_source(uint8_t tx_lo_source){
-    mykonos_config.set_tx_pll_use_external_lo(tx_lo_source);
-    //TODO: should we re-init after this ?
-}
-uint8_t ad937x_device::get_rx_lo_source(){
-    return mykonos_config.get_rx_pll_use_external_lo();
-}
-uint8_t ad937x_device::get_tx_lo_source(){
-    return mykonos_config.get_tx_pll_use_external_lo();
-}
 void ad937x_device::_setup_rf(){
     // TODO: add setRfPllLoopFilter here
 
@@ -332,6 +318,29 @@ void ad937x_device::setup_cal(uint32_t init_cals_mask, uint32_t tracking_cals_ma
     // ready for radioOn
 }
 
+uint8_t ad937x_device::set_lo_source(const uhd::direction_t direction, const uint8_t pll_source){
+    switch (direction){
+        case TX_DIRECTION:
+            mykonos_config.device->tx->txPllUseExternalLo = pll_source;
+            return pll_source;
+        case RX_DIRECTION:
+            mykonos_config.device->rx->rxPllUseExternalLo = pll_source;
+            return pll_source;
+    default:
+        MPM_THROW_INVALID_CODE_PATH();
+    }
+}
+
+uint8_t ad937x_device::get_lo_source(const uhd::direction_t direction) const {
+    switch (direction){
+        case TX_DIRECTION:
+            return mykonos_config.device->tx->txPllUseExternalLo;
+        case RX_DIRECTION:
+            return mykonos_config.device->rx->rxPllUseExternalLo;
+    default:
+        MPM_THROW_INVALID_CODE_PATH();
+    }
+}
 void ad937x_device::begin_initialization()
 {
     CALL_API(MYKONOS_initialize(mykonos_config.device));
