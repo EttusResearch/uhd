@@ -115,7 +115,7 @@ void ad937x_device::_restore_from_config_state(const ad937x_device::radio_state_
 std::string ad937x_device::_get_arm_binary_path()
 {
     // TODO: possibly add more options here, for now it's always in /lib/firmware or we explode
-    return "/lib/firmware/Mykonos_M3.bin";
+    return "/lib/firmware/adi/mykonos-m3.bin";
 }
 
 std::vector<uint8_t> ad937x_device::_get_arm_binary()
