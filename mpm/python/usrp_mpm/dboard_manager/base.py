@@ -79,25 +79,30 @@ class DboardManagerBase(object):
             for key in ('pid', 'serial', 'rev', 'eeprom_version')
         }
         self.log.trace("Dboard device info: `{}'".format(self.device_info))
-        self._init_spi_nodes(kwargs.get('spi_nodes', []))
+        self._spi_nodes = self._init_spi_nodes(
+            kwargs.get('spi_nodes', []),
+            self.spi_chipselect
+        )
+        self.log.debug("spidev device node map: {}".format(self._spi_nodes))
 
 
-    def _init_spi_nodes(self, spi_devices):
+    def _init_spi_nodes(self, spi_devices, chip_select_map):
         """
-        Populates the self._spi_nodes dictionary.
+        Populates a spi_nodes dictionary.
         Note that this won't instantiate any spidev objects, it'll just map
-        keys from self.spi_chipselect to spidev nodes, and do a sanity check
+        keys from chip_select_map to spidev nodes, and do a sanity check
         that enough nodes are available.
         """
-        if len(spi_devices) < len(self.spi_chipselect):
-            self.log.error("Expected {0} spi devices, found {1} spi devices".format(
-                len(self.spi_chipselect), len(spi_devices),
+        if len(spi_devices) < len(chip_select_map):
+            self.log.error("Expected {0} spi devices, found {1}".format(
+                len(chip_select_map), len(spi_devices),
             ))
-            raise RuntimeError("Not enough SPI devices found.")
-        self._spi_nodes = {}
-        for k, v in iteritems(self.spi_chipselect):
-            self._spi_nodes[k] = spi_devices[v]
-        self.log.debug("spidev device node map: {}".format(self._spi_nodes))
+            self.log.error("Not enough SPI devices found.")
+            return {}
+        return {
+            spi_device: spi_devices[chip_select]
+            for spi_device, chip_select in iteritems(chip_select_map)
+        }
 
     def init(self, args):
         """
