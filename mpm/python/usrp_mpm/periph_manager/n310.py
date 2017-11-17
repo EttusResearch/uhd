@@ -482,7 +482,21 @@ class n310(PeriphManagerBase):
 
     def __init__(self, args):
         super(n310, self).__init__(args)
-        self.sid_endpoints = {}
+        self._device_initialized = False
+        self._ext_clock_freq = None
+        self._clock_source = None
+        self._time_source = None
+        try:
+            self._init_peripherals(args)
+            self._device_initialized = True
+        except Exception as ex:
+            self.log.error("Failed to initialize motherboard: %s", str(ex))
+
+    def _init_peripherals(self, args):
+        """
+        Turn on all peripherals. This may throw an error on failure, so make
+        sure to catch it.
+        """
         # Init peripherals
         self.log.trace("Initializing TCA6424 port expander controls...")
         self._gpios = TCA6424(int(self.mboard_info['rev']))
