@@ -22,7 +22,6 @@ import math
 import time
 from builtins import str
 from builtins import object
-import tqdm
 from .mpmlog import get_logger
 
 def mean(vals):
