@@ -116,7 +116,7 @@ public:
         _num_mboards(_tree->list("/mboards").size()),
         _num_radios_per_board(device->find_blocks<radio_ctrl>("0/Radio").size()), // These might throw, maybe we catch that and provide a nicer error message.
         _num_tx_chans_per_radio(
-            calc_num_tx_chans_per_radio(_tree, _num_radios_per_board, _has_ducs, not device->find_blocks(DFIFO_BLOCK_NAME).empty())
+            calc_num_tx_chans_per_radio(_tree, _num_radios_per_board, _has_ducs, _has_dmafifo)
         ),
         _num_rx_chans_per_radio(_has_ddcs ?
                 std::min(num_ports(_tree, RADIO_BLOCK_NAME, "out"), num_ports(_tree, DDC_BLOCK_NAME, "out"))
