@@ -237,20 +237,6 @@ class PeriphManagerBase(object):
         """
         Initialize all the daughterboards
         """
-        def _init_dboards_overlay(db_class):
-            """
-            Load the required overlays for this dboard.
-            """
-            requested_overlays = db_class.list_required_dt_overlays(
-                dboard_eeprom_md,
-                'XG', # FIXME don't hardcode
-                {}, # FIXME don't hardcode
-            )
-            self.log.trace("Dboard requires device tree overlays: {}".format(
-                requested_overlays
-            ))
-            for overlay in requested_overlays:
-                dtoverlay.apply_overlay_safe(overlay)
         # Go, go, go!
         override_dboard_pids = override_dboard_pids or []
         dboard_eeprom_addrs = self.dboard_eeprom_addr \
@@ -295,7 +281,6 @@ class PeriphManagerBase(object):
             if db_class is None:
                 self.log.warning("Could not identify daughterboard class for PID {:04X}!".format(db_pid))
                 continue
-            _init_dboards_overlay(db_class)
             if len(self.dboard_spimaster_addrs) > dboard_idx:
                 spi_nodes = sorted(get_spidev_nodes(self.dboard_spimaster_addrs[dboard_idx]))
                 self.log.debug("Found spidev nodes: {0}".format(spi_nodes))

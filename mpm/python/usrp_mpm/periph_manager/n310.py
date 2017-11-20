@@ -475,13 +475,25 @@ class n310(PeriphManagerBase):
     updateable_components = {
         'fpga': {
             'callback': "update_fpga",
-            'path': '/lib/firmware/n310.bin',
+            'path': '/lib/firmware/n3xx.bin',
         },
         'dts': {
             'callback': "update_dts",
-            'path': '/lib/firmware/n310.dts',
+            'path': '/lib/firmware/n3xx.dts',
         },
     }
+
+    @staticmethod
+    def list_required_dt_overlays(eeprom_md, device_args):
+        """
+        Lists device tree overlays that need to be applied before this class can
+        be used. List of strings.
+        Are applied in order.
+
+        eeprom_md -- Dictionary of info read out from the mboard EEPROM
+        device_args -- Arbitrary dictionary of info, typically user-defined
+        """
+        return ['n3xx']
 
     def __init__(self, args):
         super(n310, self).__init__(args)

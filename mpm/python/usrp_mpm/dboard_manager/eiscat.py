@@ -407,19 +407,6 @@ class EISCAT(DboardManagerBase):
         "phase_dac": create_spidev_iface_phasedac,
     }
 
-    @staticmethod
-    def list_required_dt_overlays(eeprom_md, sfp_config, device_args):
-        """
-        Lists device tree overlays that need to be applied before this class can
-        be used. List of strings.
-        Are applied in order.
-
-        eeprom_md -- Dictionary of info read out from the dboard EEPROM
-        sfp_config -- A string identifying the configuration of the SFP ports.
-                      Example: "XG", "HG", "XA", ...
-        device_args -- Arbitrary dictionary of info, typically user-defined
-        """
-        return ['eiscat-{sfp}'.format(sfp=sfp_config)]
 
     # Daughterboard Control Register address constants
     ADC_CONTROL    = 0x0600
