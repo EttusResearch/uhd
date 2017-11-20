@@ -31,22 +31,34 @@ class NIMgJESDCore(object):
     Arguments:
     regs -- regs class to use for peek/poke
     """
-    
+
+    DB_ID                      = 0x0630
+    MGT_QPLL_CONTROL           = 0x2000
+    MGT_PLL_POWER_DOWN_CONTROL = 0x200C
+    MGT_TX_RESET_CONTROL       = 0x2020
+    MGT_RX_RESET_CONTROL       = 0x2024
     MGT_RECEIVER_CONTROL       = 0x2040
     MGT_RX_DESCRAMBLER_CONTROL = 0x2050
     MGT_TRANSMITTER_CONTROL    = 0x2060
     MGT_TX_TRANSCEIVER_CONTROL = 0x2064
     MGT_TX_SCRAMBLER_CONTROL   = 0x2068
+    LMK_SYNC_CONTROL           = 0x206C
     SYSREF_CAPTURE_CONTROL     = 0x2078
     JESD_SIGNATURE_REG         = 0x2100
     JESD_REVISION_REG          = 0x2104
-    
-    
+
+
     def __init__(self, regs, slot_idx=0):
         self.regs = regs
         self.log = get_logger("NIMgJESDCore-{}".format(slot_idx))
         assert hasattr(self.regs, 'peek32')
         assert hasattr(self.regs, 'poke32')
+        # FutureWork: The following are constants for the Magnesium board. These need
+        # to change to variables to support other interfaces.
+        self.qplls_used = 1
+        self.cplls_used = 0
+        # Number of FPGA clock cycles per LMFC period.
+        self.lmfc_divider = 20
 
     def unreset_qpll(self):
         # new_val = self.regs.peek32(0x0) & ~0x8
@@ -63,9 +75,21 @@ class NIMgJESDCore(object):
         #if self.regs.peek32(JESD_REVISION_REG) != 0xFF
         #error here for date revision mismatch
         self.log.trace("JESD Core build code: {0}".format(hex(self.regs.peek32(self.JESD_REVISION_REG))))
-        self.log.trace("DB Slot #: {}".format( (self.regs.peek32(0x630) & 0x10000) >> 16  ))
-        self.log.trace("DB PID: {:X}".format( self.regs.peek32(0x630) & 0xFFFF ))
+        self.log.trace("DB Slot #: {}".format( (self.regs.peek32(self.DB_ID) & 0x10000) >> 16  ))
+        self.log.trace("DB PID: {:X}" .format(  self.regs.peek32(self.DB_ID) & 0xFFFF ))
         return True
+
+    def reset(self):
+        """
+        Reset to the core. Places the PLLs, TX MGTs and RX MGTs (along with the glue
+        logic) in reset. Also disables the SYSREF sampler.
+        """
+        self.log.trace("Resetting the JESD204B FPGA core(s)...")
+        self._gt_reset('tx', reset_only=True)
+        self._gt_reset('rx', reset_only=True)
+        self._gt_pll_lock_control(self.qplls_used, self.cplls_used, reset_only=True)
+        # Disable SYSREF Sampler
+        self.enable_lmfc(False)
 
     def init_deframer(self):
         " Initialize deframer "
@@ -121,21 +145,26 @@ class NIMgJESDCore(object):
 
     def init(self):
         """
-        Initializes to the core. Needs to happen after the clock signal is ready.
+        Initializes the core. Must happen after the reference clock is stable.
         """
-        self.log.trace("Initializing core...")
-        self._gt_pll_power_control()
+        self.log.trace("Initializing JESD204B FPGA core(s)...")
+        self._gt_pll_power_control(self.qplls_used, self.cplls_used)
         self._gt_reset('tx', reset_only=True)
         self._gt_reset('rx', reset_only=True)
-        self._gt_pll_lock_control()
+        self._gt_pll_lock_control(self.qplls_used, self.cplls_used, reset_only=False)
         # Disable SYSREF Sampler
-        self.regs.poke32(self.SYSREF_CAPTURE_CONTROL, 0x9800040)
+        self.enable_lmfc(False)
 
-    def enable_lmfc(self):
+    def enable_lmfc(self, enable=False):
         """
-        Enable LMFC generator in FPGA. This step is woefully incomplete, but this call will work for now.
+        Enable/disable LMFC generator in FPGA.
         """
-        self.regs.poke32(self.SYSREF_CAPTURE_CONTROL, 0x9800000)
+        disable_bit = 0b1
+        if enable:
+           disable_bit = 0b0
+        reg_val = ((self.lmfc_divider-1) << 23) | (disable_bit << 6)
+        self.log.trace("Setting SYSREF Capture reg: 0x{:08X}".format(reg_val))
+        self.regs.poke32(self.SYSREF_CAPTURE_CONTROL, reg_val)
 
     def send_sysref_pulse(self):
         """
@@ -143,12 +172,12 @@ class NIMgJESDCore(object):
         Note: SYSREFs must be enabled on LMK separately beforehand.
         """
         self.log.trace("Sending SYSREF pulse...")
-        self.regs.poke32(0x206C, 0x40000000) # Bit 30. Self-clears.
+        self.regs.poke32(self.LMK_SYNC_CONTROL, 0b1 << 30) # Bit 30. Self-clears.
 
     def _gt_reset(self, tx_or_rx, reset_only=False):
         " Put MGTs into reset. Optionally unresets and enables them "
         assert tx_or_rx.lower() in ('rx', 'tx')
-        mgt_reg = {'tx': 0x2020, 'rx': 0x2024}[tx_or_rx]
+        mgt_reg = {'tx': self.MGT_TX_RESET_CONTROL, 'rx': self.MGT_RX_RESET_CONTROL}[tx_or_rx]
         self.log.trace("Resetting %s MGTs..." % tx_or_rx.upper())
         self.regs.poke32(mgt_reg, 0x10)
         if not reset_only:
@@ -165,28 +194,67 @@ class NIMgJESDCore(object):
             ))
         return True
 
-    def _gt_pll_power_control(self):
+    def _gt_pll_power_control(self, qplls = 0, cplls = 0):
         " Power down unused CPLLs and QPLLs "
+        assert qplls in range(4+1) # valid is 0 - 4
+        assert cplls in range(8+1) # valid is 0 - 8
         self.log.trace("Powering down unused CPLLs and QPLLs...")
-        self.regs.poke32(0x200C, 0xFFF000E)
+        self.log.trace("Using {} CPLLs and {} QPLLs!".format(cplls, qplls))
+        reg_val = 0xFFFF000F
+        reg_val_on = 0x0
+        # Power down state is when the corresponding bit is set. For the PLLs we wish to
+        # use, clear those bits.
+        for x in range(qplls):
+           reg_val_on = reg_val_on | 0x1 << x # QPLL bits are 0-3
+        for y in range(16, 16 + cplls):
+           reg_val_on = reg_val_on | 0x1 << y # CPLL bits are 16-23, others are reserved
+        reg_val = reg_val ^ reg_val_on
+        self.regs.poke32(self.MGT_PLL_POWER_DOWN_CONTROL, reg_val)
 
-    def _gt_pll_lock_control(self):
+    def _gt_pll_lock_control(self, qplls = 0, cplls = 0, reset_only=False):
         """
         Turn on the PLLs we're using, and make sure lock bits are set.
+        QPLL bitfield mapping: the following nibble is repeated for each QPLL. For
+        example, QPLL0 get bits 0-3, QPLL1 get bits 4-7, etc.
+        [0] = reset
+        [1] = locked
+        [2] = unlocked sticky
+        [3] = ref clock lost sticky
+        ...
+        [16] = sticky reset (strobe)
         """
-        self.regs.poke32(0x2000, 0x1111) # Reset QPLLs
-        self.regs.poke32(0x2000, 0x1110) # Unreset the ones we're using
-        time.sleep(0.002) # alternatively, poll on the locked bit below
-        self.regs.poke32(0x2000, 0x10000) # Clear all QPLL sticky bits
-        rb = self.regs.peek32(0x2000) # Read QPLL locked and no unlocked stickies.
-        self.log.trace("Reading QPLL lock bit: {0}".format(hex(rb & 0xF)))
-        # Error: GT PLL failed to lock.
-        if rb & 0xF != 0x2:
-            raise Exception("GT PLL failed to lock!")
+        # FutureWork: CPLLs are NOT supported yet!!!
+        assert cplls == 0
+        assert qplls in range(4+1) # valid is 0 - 4
 
-    def reset_mykonos(self):
-        " Toggle reset line on Mykonos "
-        self.regs.poke32(0x0008, 0) # Active low reset
-        time.sleep(0.001)
-        self.regs.poke32(0x0008, 1) # No longer in reset
+        # Reset QPLLs.
+        reg_val = 0x1111 # by default assert all resets
+        self.regs.poke32(self.MGT_QPLL_CONTROL, reg_val)
+
+        # Unreset the PLLs in use and check for lock.
+        if not reset_only:
+           if qplls > 0:
+              # Unreset only the QPLLs we are using.
+              reg_val_on = 0x0
+              for nibble in range(qplls):
+                 reg_val_on = reg_val_on | 0x1 << nibble*4
+              reg_val = reg_val ^ reg_val_on
+              self.regs.poke32(self.MGT_QPLL_CONTROL, reg_val)
+
+              # Check for lock a short time later.
+              time.sleep(0.010)
+              # Clear all QPLL sticky bits
+              self.regs.poke32(self.MGT_QPLL_CONTROL, 0b1 << 16)
+              rb = self.regs.peek32(self.MGT_QPLL_CONTROL)
+              self.log.trace("Reading QPLL status register: {:04X}".format(rb & 0xFFFF))
+              # Check for lock on active quads only.
+              rb_mask = 0x0
+              locked_val = 0x0
+              for nibble in range(qplls):
+                 if (rb & (0xF << nibble*4)) != (0x2 << nibble*4):
+                    self.log.warning("GT QPLL {} failed to lock!".format(nibble))
+                 locked_val = locked_val | 0x2 << nibble*4
+                 rb_mask    = rb_mask    | 0xF << nibble*4
+              if (rb & rb_mask) != locked_val:
+                  raise Exception("One or more GT QPLLs failed to lock!")
 
