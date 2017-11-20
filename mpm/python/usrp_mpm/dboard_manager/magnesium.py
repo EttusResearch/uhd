@@ -344,7 +344,7 @@ class Magnesium(DboardManagerBase):
         # This is a default ref clock freq, it must be updated before init() is
         # called!
         self.ref_clock_freq = 10e6
-        self.master_clock_freq = 125e6 # Same
+        self.master_clock_rate = 125e6 # Same
         # Predeclare some attributes to make linter happy:
         self.lmk = None
         self.clock_synchronizer = None
@@ -524,7 +524,7 @@ class Magnesium(DboardManagerBase):
             self.lmk,
             self._spi_ifaces['phase_dac'],
             0, # TODO this might not actually be zero
-            self.master_clock_freq,
+            self.master_clock_rate,
             self.ref_clock_freq,
             860E-15, # TODO don't hardcode. This should live in the EEPROM
             self.INIT_PHASE_DAC_WORD,
@@ -711,6 +711,10 @@ class Magnesium(DboardManagerBase):
         # and MPM won't terminate this process until the thread is complete.
         # This does not stop anyone from killing this process (and the thread)
         # while the EEPROM write is happening, though.
+
+    def get_master_clock_rate(self):
+        " Return master clock rate (== sampling rate) "
+        return self.master_clock_rate
 
 
     ##########################################################################

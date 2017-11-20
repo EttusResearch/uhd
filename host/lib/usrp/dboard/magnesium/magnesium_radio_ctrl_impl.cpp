@@ -27,6 +27,13 @@ namespace {
     /**************************************************************************
      * ADF4351 Controls
      *************************************************************************/
+    /*!
+     * \param lo_iface Reference to the LO object
+     * \param freq Frequency (in Hz) of the tone to be generated from the LO
+     * \param ref_clock_freq Frequency (in Hz) of the reference clock at the
+     *                       PLL input of the LO
+     * \param int_n_mode Integer-N mode on or off
+     */
     double _lo_set_frequency(
         adf435x_iface::sptr lo_iface,
         const double freq,
@@ -53,6 +60,17 @@ namespace {
         return actual_freq;
     }
 
+    /*! Configure and enable LO
+     *
+     * Will tune it to requested frequency and enable outputs.
+     *
+     * \param lo_iface Reference to the LO object
+     * \param lo_freq Frequency (in Hz) of the tone to be generated from the LO
+     * \param ref_clock_freq Frequency (in Hz) of the reference clock at the
+     *                       PLL input of the LO
+     * \param int_n_mode Integer-N mode on or off
+     * \returns the actual frequency the LO is running at
+     */
     double _lo_enable(
         adf435x_iface::sptr lo_iface,
         const double lo_freq,
@@ -67,6 +85,8 @@ namespace {
         return actual_lo_freq;
     }
 
+    /*! Disable LO
+     */
     void _lo_disable(adf435x_iface::sptr lo_iface)
     {
         lo_iface->set_output_enable(adf435x_iface::RF_OUTPUT_A, false);
@@ -192,9 +212,8 @@ double magnesium_radio_ctrl_impl::set_tx_frequency(
         if_freq = MAGNESIUM_TX_IF_FREQ ;
         const double lo_freq = if_freq - freq;
         const bool int_n_mode = false; // FIXME no hardcode
-        const double ref_clk_freq = 100e6; // FIXME no hardcode
         //const double actual_lo_freq =
-            _lo_enable(lo_iface, lo_freq, ref_clk_freq, int_n_mode);
+            _lo_enable(lo_iface, lo_freq, _master_clock_rate, int_n_mode);
         //ad9371_freq = actual_lo_freq - freq;
     } else {
         _lo_disable(lo_iface);
@@ -233,9 +252,8 @@ double magnesium_radio_ctrl_impl::set_rx_frequency(
         if_freq = MAGNESIUM_RX_IF_FREQ ;
         const double lo_freq = if_freq - freq;
         const bool int_n_mode = false; // FIXME no hardcode
-        const double ref_clk_freq = 100e6; // FIXME no hardcode
         //const double actual_lo_freq =
-            _lo_enable(lo_iface, lo_freq, ref_clk_freq, int_n_mode);
+            _lo_enable(lo_iface, lo_freq, _master_clock_rate, int_n_mode);
         //ad9371_freq = actual_lo_freq - freq;
     } else {
         _lo_disable(lo_iface);
@@ -400,6 +418,26 @@ void magnesium_radio_ctrl_impl::set_rpc_client(
             (_radio_slot == "A" or _radio_slot == "B") ? 0 : 1
         )
     );
+
+    // Note: MCR gets set during the init() call (prior to this), which takes
+    // in arguments from the device args. So if block_args contains a
+    // master_clock_rate key, then it should better be whatever the device is
+    // configured to do.
+    _master_clock_rate = _rpcc->request_with_token<double>(
+            _rpc_prefix + "get_master_clock_rate");
+    if (block_args.cast<double>("master_clock_rate", _master_clock_rate)
+            != _master_clock_rate) {
+        throw uhd::runtime_error(str(
+            boost::format("Master clock rate mismatch. Device returns %f MHz, "
+                          "but should have been %f MHz.")
+            % (_master_clock_rate / 1e6)
+            % (block_args.cast<double>(
+                    "master_clock_rate", _master_clock_rate) / 1e6)
+        ));
+    }
+    UHD_LOG_DEBUG(unique_id(),
+        "Master Clock Rate is: " << (_master_clock_rate / 1e6) << " MHz.");
+    radio_ctrl_impl::set_rate(_master_clock_rate);
 
     // EEPROM paths subject to change FIXME
     const size_t db_idx = get_block_id().get_block_count();

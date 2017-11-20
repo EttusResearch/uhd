@@ -37,9 +37,8 @@ void magnesium_radio_ctrl_impl::_init_defaults()
     UHD_LOG_TRACE(unique_id(),
             "Num TX chans: " << num_tx_chans
             << " Num RX chans: " << num_rx_chans);
-    UHD_LOG_TRACE(unique_id(),
-            "Setting tick rate to " << MAGNESIUM_TICK_RATE / 1e6 << " MHz");
-    radio_ctrl_impl::set_rate(MAGNESIUM_TICK_RATE);
+    // get_rate() is useless until we can ask MPM for the actual rate
+    radio_ctrl_impl::set_rate(1.0);
 
     for (size_t chan = 0; chan < num_rx_chans; chan++) {
         radio_ctrl_impl::set_rx_frequency(MAGNESIUM_CENTER_FREQ, chan);
@@ -397,7 +396,9 @@ void magnesium_radio_ctrl_impl::_init_prop_tree()
     // TODO remove this dirty hack
     if (not _tree->exists("tick_rate"))
     {
-        _tree->create<double>("tick_rate").set(MAGNESIUM_TICK_RATE);
+        _tree->create<double>("tick_rate")
+            .set_publisher([this](){ return this->get_rate(); })
+        ;
     }
 }
 

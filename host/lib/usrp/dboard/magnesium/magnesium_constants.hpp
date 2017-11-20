@@ -13,7 +13,6 @@
 
 static const size_t FPGPIO_MASTER_RADIO = 0;
 
-static const double MAGNESIUM_TICK_RATE = 125e6; // Hz
 static const double MAGNESIUM_RADIO_RATE = 125e6; // Hz
 static const double MAGNESIUM_MIN_FREQ = 1e6; // Hz
 static const double MAGNESIUM_MAX_FREQ = 6e9; // Hz

@@ -235,6 +235,9 @@ private:
     //  module can be the FP-GPIO master.
     usrp::gpio_atr::gpio_atr_3000::sptr _fp_gpio;
 
+    //! Sampling rate, and also ref clock frequency for the lowband LOs.
+    double _master_clock_rate = 1.0;
+
     //! AD9371 gain
     double _ad9371_rx_gain = 0.0;
     double _ad9371_tx_gain = 0.0;
