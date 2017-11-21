@@ -401,3 +401,35 @@ void magnesium_radio_ctrl_impl::_init_prop_tree()
     }
 }
 
+void magnesium_radio_ctrl_impl::_init_mpm_sensors(
+        const direction_t dir,
+        const size_t chan_idx
+) {
+    const std::string trx = (dir == RX_DIRECTION) ? "RX" : "TX";
+    const fs_path fe_path =
+        fs_path("dboards") / _radio_slot /
+        (dir == RX_DIRECTION ? "rx_frontends" : "tx_frontends") / chan_idx;
+    auto sensor_list =
+        _rpcc->request_with_token<std::vector<std::string>>(
+                this->_rpc_prefix + "get_sensors", trx);
+    UHD_LOG_TRACE(unique_id(),
+        "Chan " << chan_idx << ": Found "
+        << sensor_list.size() << " " << trx << " sensors.");
+    for (const auto &sensor_name : sensor_list) {
+        UHD_LOG_TRACE(unique_id(),
+            "Adding " << trx << " sensor " << sensor_name);
+        _tree->create<sensor_value_t>(fe_path / "sensors" / sensor_name)
+            .add_coerced_subscriber([](const sensor_value_t &){
+                throw uhd::runtime_error(
+                    "Attempting to write to sensor!");
+            })
+            .set_publisher([this, trx, sensor_name, chan_idx](){
+                return sensor_value_t(
+                    this->_rpcc->request_with_token<sensor_value_t::sensor_map_t>(
+                        this->_rpc_prefix + "get_sensor",
+                            trx, sensor_name, chan_idx)
+                );
+            })
+        ;
+    }
+}

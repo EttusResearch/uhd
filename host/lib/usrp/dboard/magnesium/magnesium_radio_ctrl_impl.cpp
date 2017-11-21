@@ -414,17 +414,10 @@ void magnesium_radio_ctrl_impl::set_rpc_client(
         })
     ;
 
-    // Sensors
+    // Init sensors
     for (const auto &dir : std::vector<direction_t>{RX_DIRECTION, TX_DIRECTION}) {
         for (size_t chan_idx = 0; chan_idx < 1 /* num channels FIXME */; chan_idx++) {
-            const fs_path fe_path =
-                fs_path("dboards") /
-                _radio_slot /
-                (dir == RX_DIRECTION ? "rx_frontends" : "tx_frontends") /
-                chan_idx;
-            UHD_LOG_TRACE(unique_id(),
-                "Stubbed out adding sensors for fe path " << fe_path);
-            // FIXME add sensors here
+            _init_mpm_sensors(dir, chan_idx);
         }
     }
 }

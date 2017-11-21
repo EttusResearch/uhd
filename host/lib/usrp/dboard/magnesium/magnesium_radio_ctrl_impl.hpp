@@ -119,6 +119,11 @@ private:
     //! Initialize property tree
     void _init_prop_tree();
 
+    void _init_mpm_sensors(
+        const direction_t dir,
+        const size_t chan_idx
+    );
+
     /**************************************************************************
      * Sensors
      *************************************************************************/
