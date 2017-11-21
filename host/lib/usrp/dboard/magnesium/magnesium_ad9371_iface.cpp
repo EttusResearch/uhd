@@ -51,12 +51,7 @@ double magnesium_ad9371_iface::set_frequency(
 ) {
     // Note: This sets the frequency for both channels (1 and 2).
     auto which = _get_which(dir, chan);
-    UHD_LOG_TRACE(_L,
-            "Calling " << _rpc_prefix << "set_freq on "
-            << which << " with " << freq);
-    auto actual_freq =
-        _rpcc->request_with_token<double>(_rpc_prefix + "set_freq",
-                which, freq, false);
+    auto actual_freq = request<double>("set_freq", which, freq, false);
     UHD_LOG_TRACE(_L,
             _rpc_prefix << "set_freq returned " << actual_freq);
     return actual_freq;
@@ -68,8 +63,7 @@ double magnesium_ad9371_iface::set_gain(
         const direction_t dir
 ) {
     auto which = _get_which(dir, chan);
-    UHD_LOG_TRACE(_L, "Calling " << _rpc_prefix << "set_gain on " << which << " with " << gain);
-    auto retval = _rpcc->request_with_token<double>(_rpc_prefix + "set_gain", which, gain);
+    auto retval = request<double>("set_gain", which, gain);
     UHD_LOG_TRACE(_L, _rpc_prefix << "set_gain returned " << retval);
 
     return retval;
@@ -89,8 +83,7 @@ double magnesium_ad9371_iface::get_frequency(
     const direction_t dir
 ) {
     auto which = _get_which(dir, chan);
-    UHD_LOG_TRACE(_L, "calling " << _rpc_prefix << "get_freq on " << which);
-    auto retval = _rpcc->request_with_token<double>(_rpc_prefix + "get_freq", which);
+    auto retval = request<double>("get_freq", which);
     UHD_LOG_TRACE(_L, _rpc_prefix << "get_freq returned " << retval);
     return retval;
 }
@@ -98,8 +91,7 @@ double magnesium_ad9371_iface::get_frequency(
 double magnesium_ad9371_iface::get_gain(const size_t chan, const direction_t dir)
 {
     auto which = _get_which(dir, chan);
-    UHD_LOG_TRACE(_L, "calling " << _rpc_prefix << "get_gain on " << which);
-    auto retval = _rpcc->request_with_token<double>(_rpc_prefix + "get_gain", which);
+    auto retval = request<double>("get_gain", which);
     UHD_LOG_TRACE(_L, _rpc_prefix << "get_gain returned " << retval);
     return retval;
 }
@@ -117,10 +109,7 @@ std::string magnesium_ad9371_iface::set_lo_source(
 ) {
     // There is only one LO for 2 channels. Using channel 0 for 'which'
     auto which = _get_which(dir, 0);
-    UHD_LOG_TRACE(_L, "calling " << _rpc_prefix << "set_lo_source "
-            << which << "with " << source);
-    auto retval = _rpcc->request_with_token<std::string>(
-            _rpc_prefix + "set_lo_source", which, source);
+    auto retval = request<std::string>("set_lo_source", which, source);
     UHD_LOG_TRACE(_L, _rpc_prefix << "set_lo_source returned " << retval);
     return retval;
 }
@@ -129,10 +118,8 @@ std::string magnesium_ad9371_iface::get_lo_source(
     const uhd::direction_t dir
 ) {
     // There is only one LO for 2 channels. Using channel 0 for 'which'
-    auto which = _get_which(dir,0);
-    UHD_LOG_TRACE(_L, "calling " << _rpc_prefix << "get_lo_source " << which);
-    auto retval = _rpcc->request_with_token<std::string>(
-            _rpc_prefix + "get_lo_source", which);
+    auto which = _get_which(dir, 0);
+    auto retval = request<std::string>("get_lo_source", which);
     UHD_LOG_TRACE(_L, _rpc_prefix << "get_lo_source returned " << retval);
     return retval;
 }
