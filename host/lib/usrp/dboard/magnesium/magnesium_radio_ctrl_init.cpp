@@ -23,6 +23,9 @@ namespace {
         SEN_RX_LO = 4,
         SEN_PHASE_DAC = 8
     };
+
+    const char* MAGNESIUM_DEFAULT_RX_ANTENNA = "RX2";
+    const char* MAGNESIUM_DEFAULT_TX_ANTENNA = "TX/RX";
 }
 
 void magnesium_radio_ctrl_impl::_init_defaults()

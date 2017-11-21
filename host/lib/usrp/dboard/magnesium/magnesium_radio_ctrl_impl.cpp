@@ -83,6 +83,7 @@ namespace {
         if (radio_slot == "D") {
             return fs_path("dboards") / "C";
         }
+        UHD_THROW_INVALID_CODE_PATH();
     }
 }
 
@@ -129,11 +130,12 @@ double magnesium_radio_ctrl_impl::set_rate(double rate)
 
 void magnesium_radio_ctrl_impl::set_tx_antenna(
         const std::string &ant,
-        const size_t /* chan */
+        const size_t chan
 ) {
-    if (ant != MAGNESIUM_DEFAULT_TX_ANTENNA) {
+    if (ant != get_tx_antenna(chan)) {
         throw uhd::value_error(str(
             boost::format("[%s] Requesting invalid TX antenna value: %s")
+            % unique_id()
             % ant
         ));
     }
@@ -318,51 +320,51 @@ double magnesium_radio_ctrl_impl::set_rx_gain(
 }
 
 std::vector<std::string> magnesium_radio_ctrl_impl::get_rx_lo_names(
-        const size_t chan
+        const size_t /*chan*/
 ) {
     return std::vector<std::string>{};
 }
 
 std::vector<std::string> magnesium_radio_ctrl_impl::get_rx_lo_sources(
-        const std::string &name,
-        const size_t chan
+        const std::string &/*name*/,
+        const size_t /*chan*/
 ) {
     return std::vector<std::string>{};
 }
 
 freq_range_t magnesium_radio_ctrl_impl::get_rx_lo_freq_range(
-        const std::string &name,
-        const size_t chan
+        const std::string &/*name*/,
+        const size_t /*chan*/
 ) {
     return freq_range_t{};
 }
 
 void magnesium_radio_ctrl_impl::set_rx_lo_source(
-        const std::string &src,
-        const std::string &name,
-        const size_t chan
+        const std::string &/*src*/,
+        const std::string &/*name*/,
+        const size_t /*chan*/
 ) {
     // FIXME
 }
 
 const std::string magnesium_radio_ctrl_impl::get_rx_lo_source(
-        const std::string &name,
-        const size_t chan
+        const std::string &/*name*/,
+        const size_t /*chan*/
 ) {
     return ""; // FIXME
 }
 
 double magnesium_radio_ctrl_impl::set_rx_lo_freq(
-        double freq,
-        const std::string &name,
-        const size_t chan
+        double /*freq*/,
+        const std::string &/*name*/,
+        const size_t /*chan*/
 ) {
     return 0.0; // FIXME
 }
 
 double magnesium_radio_ctrl_impl::get_rx_lo_freq(
-        const std::string &name,
-        const size_t chan
+        const std::string &/*name*/,
+        const size_t /*chan*/
 ) {
     return 0.0; // FIXME
 }

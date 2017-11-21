@@ -51,8 +51,6 @@ static const double MAGNESIUM_CENTER_FREQ = 2.5e9; // Hz
 static const std::vector<std::string> MAGNESIUM_RX_ANTENNAS = {
     "TX/RX", "RX2", "CAL", "LOCAL"
 };
-static const char* MAGNESIUM_DEFAULT_RX_ANTENNA = "RX2";
-static const char* MAGNESIUM_DEFAULT_TX_ANTENNA = "TX/RX";
 static const double MAGNESIUM_DEFAULT_BANDWIDTH = 40e6; // Hz TODO: fix
 // Note: MAGNESIUM_NUM_CHANS is independent of the number of chans per
 // RFNoC block. TODO: When we go to one radio per dboard, this comment can
