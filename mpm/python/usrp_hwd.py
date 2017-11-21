@@ -20,6 +20,7 @@ Main executable for the USRP Hardware Daemon
 """
 from __future__ import print_function
 import sys
+import time
 import argparse
 from gevent import signal
 from gevent.hub import BlockingSwitchOutError
@@ -143,7 +144,15 @@ def main():
         "product": mgr.get_device_info().get("product", "n/a")
     }
     if args.init_only:
-        mgr.init(args.default_args)
+        init_time_start = time.time()
+        init_result = mgr.init(args.default_args)
+        init_duration = time.time() - init_time_start
+        if init_result:
+            log.info("Initialization successful! Duration: {:.02f} s"
+                     .format(init_duration))
+        else:
+            log.warning("Initialization failed! Duration: {:.02f} s"
+                        .format(init_duration))
         log.info("Terminating on user request before launching RPC server.")
         mgr.deinit()
         return True
