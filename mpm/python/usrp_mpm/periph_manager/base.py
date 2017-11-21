@@ -20,6 +20,7 @@ Mboard implementation base class
 
 from __future__ import print_function
 import os
+from concurrent import futures
 from hashlib import md5
 from builtins import str
 from builtins import range
@@ -323,7 +324,8 @@ class PeriphManagerBase(object):
         all RFNoC blocks must be reachable via CHDR interfaces (i.e., clocks
         need to be on).
 
-        Return False on failure, True on success.
+        Return False on failure, True on success. If daughterboard inits return
+        False (any of them), this will also return False.
 
         args -- A dictionary of args for initialization. Similar to device args
                 in UHD.
@@ -336,8 +338,22 @@ class PeriphManagerBase(object):
                 "Cannot run init(), device was never fully initialized!")
             return False
         self._init_args = args
-        self.log.debug("Initializing dboards...")
-        return all((dboard.init(args) for dboard in self.dboards))
+        if len(self.dboards) == 0:
+            return True
+        if args.get("serialize_init", False):
+            self.log.debug("Initializing dboards serially...")
+            return all((dboard.init(args) for dboard in self.dboards))
+        self.log.debug("Initializing dboards in parallel...")
+        num_workers = len(self.dboards)
+        with futures.ThreadPoolExecutor(max_workers=num_workers) as executor:
+            init_futures = [
+                executor.submit(dboard.init, args)
+                for dboard in self.dboards
+            ]
+            return all([
+                x.result()
+                for x in futures.as_completed(init_futures)
+            ])
 
     def deinit(self):
         """
