@@ -190,6 +190,9 @@ private:
     //! Letter representation of the radio we're currently running
     std::string _radio_slot;
 
+    //! Prepended for all dboard RPC calls
+    std::string _rpc_prefix;
+
     //! If true, this is a master radio. This attribute will go away when we
     // move back to 1 radio block per dboard.
     bool _master;

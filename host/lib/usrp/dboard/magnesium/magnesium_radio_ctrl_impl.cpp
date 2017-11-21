@@ -100,6 +100,8 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(magnesium_radio_ctrl)
     _master = _radio_slot == "A" or _radio_slot == "C";
     UHD_LOG_DEBUG(unique_id(),
         "Radio type: " << (_master ? "master" : "slave"));
+    _rpc_prefix =
+        (_radio_slot == "A" or _radio_slot == "B") ? "db_0_" : "db_1_";
 
     _init_defaults();
     _init_peripherals();
