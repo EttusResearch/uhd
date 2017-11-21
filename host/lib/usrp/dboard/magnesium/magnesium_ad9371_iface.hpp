@@ -55,6 +55,15 @@ public:
         const uhd::direction_t dir
     );
 
+    std::string set_lo_source(
+        const std::string &source,
+        const uhd::direction_t dir
+    );
+
+    std::string get_lo_source(
+        const uhd::direction_t dir
+    );
+
 private:
     //! Reference to the RPC client
     uhd::rpc_client::sptr _rpcc;
