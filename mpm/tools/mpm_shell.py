@@ -60,6 +60,10 @@ def parse_args():
         action='store_true',
         help="Claim device after connecting."
     )
+    parser.add_argument(
+        '-j', '--hijack', type=str,
+        help="Hijack running session (excludes --claim)."
+    )
     return parser.parse_args()
 
 
@@ -111,6 +115,19 @@ class MPMClaimer(object):
         self._exit_loop = True
         self._claim_loop.join()
 
+class MPMHijacker(object):
+    """
+    Looks like a claimer object, but doesn't actually claim.
+    """
+    def __init__(self, token):
+        self.token = token
+
+    def unclaim(self):
+        """
+        Unclaim device and exit claim loop.
+        """
+        pass
+
 
 class MPMShell(cmd.Cmd):
     """
@@ -130,6 +147,8 @@ class MPMShell(cmd.Cmd):
             self.connect(args.host, args.port)
             if args.claim:
                 self.claim()
+            elif args.hijack:
+                self.hijack(args.hijack)
         self.update_prompt()
 
     def _add_command(self, command, docs, requires_token=False):
@@ -257,6 +276,16 @@ class MPMShell(cmd.Cmd):
         self._claimer = MPMClaimer(self._host, self._port, self.unclaim_hook)
         return True
 
+    def hijack(self, token):
+        " Hijack running session "
+        assert self.client is not None
+        if self._claimer is not None:
+            print("Claimer already active. Can't hijack.")
+            return False
+        print("Hijacking device...")
+        self._claimer = MPMHijacker(token)
+        return True
+
     def unclaim(self):
         """
         unclaim
@@ -278,11 +307,17 @@ class MPMShell(cmd.Cmd):
         if self._device_info is None:
             self.prompt = '> '
         else:
+            if self._claimer is None:
+                claim_status = ''
+            elif isinstance(self._claimer, MPMClaimer):
+                claim_status = ' [C]'
+            elif isinstance(self._claimer, MPMHijacker):
+                claim_status = ' [H]'
             self.prompt = '{dev_id}{claim_status}> '.format(
                 dev_id=self._device_info.get(
                     'name', self._device_info.get('serial', '?')
                 ),
-                claim_status=' [C]' if self._claimer is not None else ''
+                claim_status=claim_status,
             )
 
     def expand_args(self, args):
@@ -329,6 +364,12 @@ class MPMShell(cmd.Cmd):
         Spawn a claim loop
         """
         self.claim()
+
+    def do_hijack(self, token):
+        """
+        Hijack a running session
+        """
+        self.hijack(token)
 
     def do_unclaim(self, _):
         """
