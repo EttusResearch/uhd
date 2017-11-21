@@ -331,7 +331,7 @@ void magnesium_radio_ctrl_impl::_init_frontend_subtree(
         })
     ;
     // FIXME separate DSA and Myk gains
-    // TX LO lock sensor
+    // TX LO lock sensor //////////////////////////////////////////////////////
     // Note: The lowband and AD9371 LO lock sensors are generated
     // programmatically in set_rpc_client(). The actual lo_locked publisher is
     // also set there.
@@ -341,10 +341,28 @@ void magnesium_radio_ctrl_impl::_init_frontend_subtree(
             throw uhd::runtime_error(
                 "Attempting to write to sensor!");
         })
+        .set_publisher([this](){
+            return sensor_value_t(
+                "all_los",
+                this->get_lo_lock_status(TX_DIRECTION),
+                "locked", "unlocked"
+            );
+        })
     ;
     // RX LO lock sensor (see not on TX LO lock sensor)
     subtree->create<sensor_value_t>(rx_fe_path / "sensors" / "lo_locked")
         .set(sensor_value_t("all_los", false,  "locked", "unlocked"))
+        .add_coerced_subscriber([](const sensor_value_t &){
+            throw uhd::runtime_error(
+                "Attempting to write to sensor!");
+        })
+        .set_publisher([this](){
+            return sensor_value_t(
+                "all_los",
+                this->get_lo_lock_status(RX_DIRECTION),
+                "locked", "unlocked"
+            );
+        })
     ;
 }
 

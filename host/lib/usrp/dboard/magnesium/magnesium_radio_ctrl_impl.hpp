@@ -120,6 +120,15 @@ private:
     void _init_prop_tree();
 
     /**************************************************************************
+     * Sensors
+     *************************************************************************/
+    //! Return LO lock status. Factors in current band (low/high) and
+    // direction (TX/RX)
+    bool get_lo_lock_status(
+            const direction_t dir
+    );
+
+    /**************************************************************************
      * Gain Controls (implemented in magnesium_radio_ctrl_gain.cpp)
      *************************************************************************/
     //! Set the attenuation of the DSA
