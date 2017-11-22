@@ -51,6 +51,7 @@ public:
         mpm::types::regs_iface* iface,
         mpm::ad937x::gpio::gain_pins_t gain_pins
     );
+
     void begin_initialization();
     void finish_initialization();
     void setup_cal(uint32_t init_cals_mask, uint32_t tracking_cals_mask, uint32_t timeout);
@@ -83,8 +84,8 @@ public:
 
     bool get_pll_lock_status(uint8_t pll, bool wait_for_lock = false);
 
-    void set_fir(uhd::direction_t direction, mpm::ad937x::device::chain_t chain, int8_t gain, const std::vector<int16_t> & fir);
-    std::vector<int16_t> get_fir(uhd::direction_t direction, mpm::ad937x::device::chain_t chain, int8_t &gain);
+    void set_fir(uhd::direction_t direction, int8_t gain, const std::vector<int16_t> & fir);
+    std::vector<int16_t> get_fir(uhd::direction_t direction, int8_t &gain);
 
     int16_t get_temperature();
 
@@ -94,6 +95,7 @@ public:
     void update_tx_lo_source(uint8_t rxPllUseExternalLo);
     uint8_t get_rx_lo_source();
     uint8_t get_tx_lo_source();
+    void set_master_clock_rate(const double rate);
     const static double MIN_FREQ;
     const static double MAX_FREQ;
     const static double MIN_RX_GAIN;

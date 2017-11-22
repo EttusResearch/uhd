@@ -35,7 +35,7 @@ static const mykonosRxSettings_t DEFAULT_RX_SETTINGS =
 };
 
 static const mykonosRxProfile_t DEFAULT_RX_PROFILE =
-{                   // Rx 100MHz, IQrate 122.88MHz, Dec5
+{                   // Rx 100MHz, IQrate 125MSPS, Dec5
     1,              // The divider used to generate the ADC clock
     nullptr,        // Pointer to Rx FIR filter structure
     2,              // Rx FIR decimation (1,2,4)

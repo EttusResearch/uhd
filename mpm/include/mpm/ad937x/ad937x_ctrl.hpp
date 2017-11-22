@@ -247,6 +247,9 @@ public:
      */
     virtual bool get_lo_locked(const std::string &which) = 0;
 
+    //! set master clock rate
+    virtual void set_master_clock_rate(const double rate) = 0;
+
     //! set the FIR filter for the frontend which
     virtual void set_fir(const std::string &which, int8_t gain, const std::vector<int16_t> & fir) = 0;
 
@@ -277,6 +280,7 @@ void export_mykonos(){
     LIBMPM_BOOST_PREAMBLE("ad937x")
     using namespace mpm::chips;
     bp::class_<ad937x_ctrl, boost::noncopyable, std::shared_ptr<ad937x_ctrl>>("ad937x_ctrl", bp::no_init)
+        .def("set_master_clock_rate", &ad937x_ctrl::set_master_clock_rate)
         .def("begin_initialization", &ad937x_ctrl::begin_initialization)
         .def("finish_initialization", &ad937x_ctrl::finish_initialization)
         .def("update_rx_lo_source", &ad937x_ctrl::update_rx_lo_source)

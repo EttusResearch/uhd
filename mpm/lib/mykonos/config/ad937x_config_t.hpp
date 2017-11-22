@@ -37,9 +37,13 @@ public:
     static const int32_t DEFAULT_RX_FIR_GAIN = -6;
 
     static const int16_t DEFAULT_TX_FIR[DEFAULT_TX_FIR_SIZE];
+    static const int16_t DEFAULT_TX_FIR_15366[DEFAULT_TX_FIR_SIZE];
     static const int16_t DEFAULT_RX_FIR[DEFAULT_RX_FIR_SIZE];
+    static const int16_t DEFAULT_RX_FIR_15366[DEFAULT_RX_FIR_SIZE];
     static const int16_t DEFAULT_OBSRX_FIR[DEFAULT_RX_FIR_SIZE];
+    static const int16_t DEFAULT_OBSRX_FIR_15366[DEFAULT_RX_FIR_SIZE];
     static const int16_t DEFAULT_SNIFFER_FIR[DEFAULT_RX_FIR_SIZE];
+    static const int16_t DEFAULT_SNIFFER_FIR_15366[DEFAULT_RX_FIR_SIZE]; 
     void    set_rx_pll_use_external_lo(uint8_t val);
     uint8_t get_rx_pll_use_external_lo();
     void    set_tx_pll_use_external_lo(uint8_t val);

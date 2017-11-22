@@ -431,7 +431,6 @@ public:
     virtual void set_fir(const std::string &which, int8_t gain, const std::vector<int16_t> & fir)
     {
         auto dir = _get_direction_from_antenna(which);
-        auto chain = _get_chain_from_antenna(which);
 
         auto lengths = _get_valid_fir_lengths(which);
         if (std::find(lengths.begin(), lengths.end(), fir.size()) == lengths.end())
@@ -440,22 +439,28 @@ public:
         }
 
         std::lock_guard<std::mutex> lock(*spi_mutex);
-        device.set_fir(dir, chain, gain, fir);
+        device.set_fir(dir, gain, fir);
     }
 
     virtual std::vector<int16_t> get_fir(const std::string &which, int8_t &gain)
     {
         auto dir = _get_direction_from_antenna(which);
-        auto chain = _get_chain_from_antenna(which);
 
         std::lock_guard<std::mutex> lock(*spi_mutex);
-        return device.get_fir(dir, chain, gain);
+        return device.get_fir(dir, gain);
     }
 
     virtual int16_t get_temperature()
     {
         std::lock_guard<std::mutex> lock(*spi_mutex);
         return device.get_temperature();
+    }
+
+    virtual void set_master_clock_rate(const double rate)
+    {
+        std::lock_guard<std::mutex> lock(*spi_mutex);
+        // FIXME: Add check for valid rates
+        device.set_master_clock_rate(rate);
     }
 
     virtual void set_enable_gain_pins(const std::string &which, bool enable)

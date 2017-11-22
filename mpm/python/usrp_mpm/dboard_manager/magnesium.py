@@ -398,6 +398,10 @@ class Magnesium(DboardManagerBase):
         }
         self.cpld = MgCPLD(self._spi_ifaces['cpld'], self.log)
         self.dboard_clk_control = DboardClockControl(self.dboard_ctrl_regs, self.log)
+        # Declare some attributes to make linter happy:
+        self.lmk = None
+        self.clock_synchronizer = None
+        self.jesdcore = None
 
     def _power_on(self):
         " Turn on power to daughterboard "
@@ -548,7 +552,7 @@ class Magnesium(DboardManagerBase):
         )
         _sync_db_clock(self.clock_synchronizer)
         # Clocks and PPS are now fully active!
-
+        self.mykonos.set_master_clock_rate(self.master_clock_rate)
         self.init_jesd(args)
         self.mykonos.start_radio()
         return True
