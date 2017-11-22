@@ -417,6 +417,17 @@ public:
         return device.get_freq(dir);
     }
 
+    virtual bool get_lo_locked(const std::string &which)
+    {
+        const auto dir = _get_direction_from_antenna(which);
+        const uint8_t pll_select = (dir == uhd::RX_DIRECTION) ?
+            ad937x_device::RX_SYNTH :
+            ad937x_device::TX_SYNTH;
+
+        std::lock_guard<std::mutex> lock(*spi_mutex);
+        return device.get_pll_lock_status(pll_select);
+    }
+
     virtual void set_fir(const std::string &which, int8_t gain, const std::vector<int16_t> & fir)
     {
         auto dir = _get_direction_from_antenna(which);

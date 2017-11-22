@@ -238,6 +238,15 @@ public:
      */
     virtual double get_freq(const std::string &which) = 0;
 
+    /*! \brief Returns the LO lock status
+     *
+     * Note there's only one LO per direction, so the channel doesn't really
+     * matter here.
+     * This does not check the PLL lock status for the main clock, the sniffer,
+     * or the CAL PLL.
+     */
+    virtual bool get_lo_locked(const std::string &which) = 0;
+
     //! set the FIR filter for the frontend which
     virtual void set_fir(const std::string &which, int8_t gain, const std::vector<int16_t> & fir) = 0;
 
@@ -300,6 +309,7 @@ void export_mykonos(){
         .def("enable_channel", &ad937x_ctrl::enable_channel)
         .def("set_freq", &ad937x_ctrl::set_freq)
         .def("get_freq", &ad937x_ctrl::get_freq)
+        .def("get_lo_locked", &ad937x_ctrl::get_lo_locked)
         .def("set_fir", &ad937x_ctrl::set_fir)
         .def("get_fir", &ad937x_ctrl::get_fir)
         .def("get_temperature", &ad937x_ctrl::get_temperature)
