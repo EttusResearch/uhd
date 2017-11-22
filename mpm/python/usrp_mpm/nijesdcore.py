@@ -43,6 +43,7 @@ class NIMgJESDCore(object):
     MGT_TX_TRANSCEIVER_CONTROL = 0x2064
     MGT_TX_SCRAMBLER_CONTROL   = 0x2068
     LMK_SYNC_CONTROL           = 0x206C
+    JESD_MGT_DRP_CONTROL       = 0x2070
     SYSREF_CAPTURE_CONTROL     = 0x2078
     JESD_SIGNATURE_REG         = 0x2100
     JESD_REVISION_REG          = 0x2104
@@ -99,25 +100,28 @@ class NIMgJESDCore(object):
         self._gt_reset('rx', reset_only=False)
         self.regs.poke32(self.MGT_RECEIVER_CONTROL, 0x0)
 
-    def init_framer(self):
+    def init_framer(self, bypass_scrambler = True):
         " Initialize framer "
         self.log.trace("Initializing framer...")
         # Disable DAC Sync from requesting CGS & Stop Deframer
-        self.regs.poke32(self.MGT_TRANSMITTER_CONTROL, 0x2002)
+        self.regs.poke32(self.MGT_TRANSMITTER_CONTROL, (0b1 << 13) | (0b1 << 1))
         # Reset, unreset, and check the GTs
         self._gt_reset('tx', reset_only=False)
         # MGT phy control... enable TX Driver Swing
         self.regs.poke32(self.MGT_TX_TRANSCEIVER_CONTROL, 0xF0000)
         time.sleep(0.001)
-        # Bypass scrambler and disable char replacement
-        self.regs.poke32(self.MGT_TX_SCRAMBLER_CONTROL, 0x1)
+        # Bypass scrambler and char replacement. If the scrambler is bypassed,
+        # then the char replacement is also disabled.
+        reg_val = {True: 0x01, False: 0x10}[bypass_scrambler]
+        self.regs.poke32(self.MGT_TX_SCRAMBLER_CONTROL, reg_val)
         # Check for Framer in Idle state
         rb = self.regs.peek32(self.MGT_TRANSMITTER_CONTROL)
         if rb & 0x100 != 0x100:
             raise Exception('TX Framer is not idle after reset')
-        # Enable the framer and incoming DAC Sync
-        self.regs.poke32(self.MGT_TRANSMITTER_CONTROL, 0x1000)
-        self.regs.poke32(self.MGT_TRANSMITTER_CONTROL, 0x0001)
+        # Enable incoming DAC Sync
+        self.regs.poke32(self.MGT_TRANSMITTER_CONTROL, 0b1 << 12)
+        # Enable the framer
+        self.regs.poke32(self.MGT_TRANSMITTER_CONTROL, 0b1 <<  0)
 
     def get_framer_status(self):
         " Return True if framer is in good status "
@@ -159,6 +163,7 @@ class NIMgJESDCore(object):
         """
         Enable/disable LMFC generator in FPGA.
         """
+        self.log.trace("%s FPGA SYSREF Receiver..." % {True: 'Enabling', False: 'Disabling'}[enable])
         disable_bit = 0b1
         if enable:
            disable_bit = 0b0
@@ -186,6 +191,7 @@ class NIMgJESDCore(object):
             for _ in range(20):
                 rb = self.regs.peek32(mgt_reg)
                 if rb & 0xFFFF0000 == 0x000F0000:
+                    self.log.trace("%s MGT Reset Cleared!" % tx_or_rx.upper())
                     return True
                 time.sleep(0.001)
             raise Exception('Timeout in GT {trx} Reset (Readback: 0x{rb:X})'.format(
@@ -198,8 +204,7 @@ class NIMgJESDCore(object):
         " Power down unused CPLLs and QPLLs "
         assert qplls in range(4+1) # valid is 0 - 4
         assert cplls in range(8+1) # valid is 0 - 8
-        self.log.trace("Powering down unused CPLLs and QPLLs...")
-        self.log.trace("Using {} CPLLs and {} QPLLs!".format(cplls, qplls))
+        self.log.trace("Powering up {} CPLLs and {} QPLLs".format(cplls, qplls))
         reg_val = 0xFFFF000F
         reg_val_on = 0x0
         # Power down state is when the corresponding bit is set. For the PLLs we wish to
@@ -230,6 +235,7 @@ class NIMgJESDCore(object):
         # Reset QPLLs.
         reg_val = 0x1111 # by default assert all resets
         self.regs.poke32(self.MGT_QPLL_CONTROL, reg_val)
+        self.log.trace("Resetting QPLL(s)...")
 
         # Unreset the PLLs in use and check for lock.
         if not reset_only:
@@ -240,14 +246,14 @@ class NIMgJESDCore(object):
                  reg_val_on = reg_val_on | 0x1 << nibble*4
               reg_val = reg_val ^ reg_val_on
               self.regs.poke32(self.MGT_QPLL_CONTROL, reg_val)
+              self.log.trace("Clearing QPLL reset...")
 
               # Check for lock a short time later.
               time.sleep(0.010)
               # Clear all QPLL sticky bits
               self.regs.poke32(self.MGT_QPLL_CONTROL, 0b1 << 16)
-              rb = self.regs.peek32(self.MGT_QPLL_CONTROL)
-              self.log.trace("Reading QPLL status register: {:04X}".format(rb & 0xFFFF))
               # Check for lock on active quads only.
+              rb = self.regs.peek32(self.MGT_QPLL_CONTROL)
               rb_mask = 0x0
               locked_val = 0x0
               for nibble in range(qplls):
@@ -257,4 +263,63 @@ class NIMgJESDCore(object):
                  rb_mask    = rb_mask    | 0xF << nibble*4
               if (rb & rb_mask) != locked_val:
                   raise Exception("One or more GT QPLLs failed to lock!")
+              self.log.trace("QPLL(s) reporting locked!")
+
+    def set_drp_target(self, mgt_or_qpll, dev_num):
+        """
+        Sets up access to the specified MGT or QPLL. This must be called
+        prior to drp_access(). It may be called repeatedly to change DRP targets
+        without calling the disable function first.
+        """
+        MAX_MGTS = 4
+        MAX_QPLLs = 1
+        DRP_ENABLE_VAL = 0b1
+        assert mgt_or_qpll.lower() in ('mgt', 'qpll')
+
+        self.log.trace("Enabling DRP access to %s #%d...",mgt_or_qpll.upper(), dev_num)
+
+        # Enable access to the DRP ports and select the correct channel. Channels are
+        # one-hot encoded with the MGT ports in bit locations [0, (MAX_MGTS-1)] and the
+        # QPLL in [MAX_MGTS, MAX_MGTs+MAX_QPLLs-1].
+        drp_ch_sel = {'mgt': dev_num, 'qpll': dev_num + MAX_MGTS}[mgt_or_qpll.lower()]
+        assert drp_ch_sel in range(MAX_MGTS + MAX_QPLLs)
+        reg_val = (0b1 << drp_ch_sel) | (DRP_ENABLE_VAL << 16)
+        self.log.trace("Writing DRP Control Register (offset 0x{:04X}) with 0x{:08X}"
+            .format(self.JESD_MGT_DRP_CONTROL, reg_val))
+        self.regs.poke32(self.JESD_MGT_DRP_CONTROL, reg_val)
+
+    def disable_drp_target(self):
+        """
+        Tears down access to the DRP ports. This must be called after drp_access().
+        """
+        self.regs.poke32(self.JESD_MGT_DRP_CONTROL, 0x0)
+        self.log.trace("DRP accesses disabled!")
+
+    def drp_access(self, rd = True, addr = 0, wr_data = 0):
+        """
+        Provides register access to the DRP ports on the MGTs or QPLLs buried inside
+        the JESD204b logic. Reads will return the DRP data directly. Writes will return
+        zeros.
+        """
+        # Check the DRP port is not busy.
+        if (self.regs.peek32(self.JESD_MGT_DRP_CONTROL) & (0b1 << 20)) != 0:
+            self.log.error("MGT/QPLL DRP Port is reporting busy during an attempted access.")
+            raise Exception("MGT/QPLL DRP Port is reporting busy during an attempted access.")
+
+        # Access the DRP registers...
+        rd_data = 0x0
+        core_offset = 0x2800 + (addr << 2)
+        if rd:
+            rd_data = self.regs.peek32(core_offset)
+            rd_data_valid = rd_data & 0xFFFF
+            self.log.trace("Reading DRP register 0x{:04X} at DB Core offset 0x{:04X}... "
+                           "0x{:04X}"
+                           .format(addr, core_offset, rd_data))
+        else:
+            self.log.trace("Writing DRP register 0x{:04X} with 0x{:04X}...".format(addr, wr_data))
+            self.regs.poke32(core_offset, wr_data)
+            if self.regs.peek32(core_offset) != wr_data:
+                self.log.error("DRP read after write failed to match!")
+
+        return rd_data
 

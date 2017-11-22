@@ -22,6 +22,7 @@ from __future__ import print_function
 import os
 import time
 import threading
+import math
 from six import iterkeys, iteritems
 from . import lib # Pulls in everything from C++-land
 from .base import DboardManagerBase
@@ -316,6 +317,7 @@ class Magnesium(DboardManagerBase):
     # point, so we set it to the (carefully calculated) alternate value instead.
     INIT_PHASE_DAC_WORD = 31000 # Intentionally decimal
     default_master_clock_rate = 125e6
+    default_current_jesd_rate = 2500e6
 
     def __init__(self, slot_idx, **kwargs):
         super(Magnesium, self).__init__(slot_idx, **kwargs)
@@ -327,8 +329,9 @@ class Magnesium(DboardManagerBase):
         # This is a default ref clock freq, it must be updated before init() is
         # called!
         self.ref_clock_freq = 10e6
-        # This will get updated during init()
+        # These will get updated during init()
         self.master_clock_rate = None
+        self.current_jesd_rate = None
         # Predeclare some attributes to make linter happy:
         self.lmk = None
         self._port_expander = None
@@ -567,19 +570,6 @@ class Magnesium(DboardManagerBase):
         return True
 
 
-    def cpld_peek(self, addr):
-        """
-        Debug for accessing the CPLD via the RPC shell.
-        """
-        return self.cpld.peek16(addr)
-
-    def cpld_poke(self, addr, data):
-        """
-        Debug for accessing the CPLD via the RPC shell.
-        """
-        self.cpld.poke16(addr, data)
-        return self.cpld.peek16(addr)
-
     def init_rf_cal(self, args):
         " Setup RF CAL "
         self.log.info("Setting up RF CAL...")
@@ -621,7 +611,17 @@ class Magnesium(DboardManagerBase):
         All clocks must be set up and stable before starting this routine.
         """
         jesdcore.check_core()
-        jesdcore.init()
+
+        # JESD Lane Rate only depends on the master_clock_rate selection, since all
+        # other link parameters (LMFS,N) remain constant.
+        L = 4
+        M = 4
+        F = 2
+        S = 1
+        N = 16
+        new_rate = self.master_clock_rate * M * N * (10.0/8) / L / S
+        self.log.trace("Calculated JESD204b lane rate is {} Gbps".format(new_rate/1e9))
+        self.set_jesd_rate(jesdcore, new_rate)
 
         self.log.trace("Pulsing Mykonos Hard Reset...")
         self.cpld.reset_mykonos()
@@ -639,7 +639,7 @@ class Magnesium(DboardManagerBase):
         self.log.trace("Starting JESD204b Link Initialization...")
         # Generally, enable the source before the sink. Start with the DAC side.
         self.log.trace("Starting FPGA framer...")
-        jesdcore.init_framer()
+        jesdcore.init_framer(bypass_scrambler=True)
         self.log.trace("Starting Mykonos deframer...")
         self.mykonos.start_jesd_rx()
         # Now for the ADC link. Note that the Mykonos framer will not start issuing CGS
@@ -648,7 +648,6 @@ class Magnesium(DboardManagerBase):
         # start the deframer in the FPGA.
         self.log.trace("Starting Mykonos framer...")
         self.mykonos.start_jesd_tx()
-        self.log.trace("Enable FPGA SYSREF Receiver.")
         jesdcore.enable_lmfc(True)
         jesdcore.send_sysref_pulse()
         self.log.trace("Starting FPGA deframer...")
@@ -674,14 +673,109 @@ class Magnesium(DboardManagerBase):
         self.log.info("JESD204B Link Initialization & Training Complete")
 
 
-    def dump_jesd_core(self):
-        " Debug method to dump all JESD core regs "
-        dboard_ctrl_regs = UIO(label="dboard-regs-{}".format(self.slot_idx))
-        for i in range(0x2000, 0x2110, 0x10):
-            print(("0x%04X " % i), end=' ')
-            for j in range(0, 0x10, 0x4):
-                print(("%08X" % dboard_ctrl_regs.peek32(i + j)), end=' ')
-            print("")
+    def set_jesd_rate(self, jesdcore, new_rate, force=False):
+        """
+        Make the QPLL and GTX changes required to change the JESD204B core rate.
+        """
+        # The core is directly compiled for 125 MHz sample rate, which
+        # corresponds to a lane rate of 2.5 Gbps. The same QPLL and GTX settings apply
+        # for the 122.88 MHz sample rate.
+        #
+        # The higher LTE rate, 153.6 MHz, requires changes to the default configuration
+        # of the MGT components. This function performs the required changes in the
+        # following order (as recommended by UG476).
+        #
+        # 1) Modify any QPLL settings.
+        # 2) Perform the QPLL reset routine by pulsing reset then waiting for lock.
+        # 3) Modify any GTX settings.
+        # 4) Perform the GTX reset routine by pulsing reset and waiting for reset done.
+
+        assert new_rate in (2457.6e6, 2500e6, 3072e6)
+
+        # On first run, we have no idea how the FPGA is configured... so let's force an
+        # update to our rate.
+        force = force or (self.current_jesd_rate is None)
+
+        skip_drp = False
+        if not force:
+            #           Current     New       Skip?
+            skip_drp = {2457.6e6 : {2457.6e6: True,  2500.0e6: True,  3072.0e6:False},
+                        2500.0e6 : {2457.6e6: True,  2500.0e6: True,  3072.0e6:False},
+                        3072.0e6 : {2457.6e6: False, 2500.0e6: False, 3072.0e6:True}}[self.current_jesd_rate][new_rate]
+
+        if skip_drp:
+            self.log.trace("Current lane rate is compatible with the new rate. Skipping "
+                           "reconfiguration.")
+
+        # These are the only registers in the QPLL and GTX that change based on the
+        # selected line rate. The MGT wizard IP was generated for each of the rates and
+        # reference clock frequencies and then diffed to create this table.
+        QPLL_CFG         = {2457.6e6: 0x680181, 2500e6: 0x680181, 3072e6: 0x06801C1}[new_rate]
+        QPLL_FBDIV       = {2457.6e6:    0x120, 2500e6:    0x120, 3072e6:      0x80}[new_rate]
+        MGT_PMA_RSV      = {2457.6e6: 0x1E7080, 2500e6: 0x1E7080, 3072e6:   0x18480}[new_rate]
+        MGT_RX_CLK25_DIV = {2457.6e6:        5, 2500e6:        5, 3072e6:         7}[new_rate]
+        MGT_TX_CLK25_DIV = {2457.6e6:        5, 2500e6:        5, 3072e6:         7}[new_rate]
+        MGT_RXOUT_DIV    = {2457.6e6:        4, 2500e6:        4, 3072e6:         2}[new_rate]
+        MGT_TXOUT_DIV    = {2457.6e6:        4, 2500e6:        4, 3072e6:         2}[new_rate]
+        MGT_RXCDR_CFG    = {2457.6e6:0x03000023ff10100020, 2500e6:0x03000023ff10100020, 3072e6:0x03000023ff10200020}[new_rate]
+
+
+        # 1-2) Do the QPLL first
+        if not skip_drp:
+            self.log.trace("Changing QPLL settings to support {} Gbps".format(new_rate/1e9))
+            jesdcore.set_drp_target('qpll', 0)
+            # QPLL_CONFIG is spread across two regs: 0x32 (dedicated) and 0x33 (shared)
+            reg_x32 = QPLL_CFG & 0xFFFF # [16:0] -> [16:0]
+            reg_x33 = jesdcore.drp_access(rd = True, addr = 0x33)
+            reg_x33 = (reg_x33 & 0xF800) | ((QPLL_CFG >> 16) & 0x7FF)  # [26:16] -> [11:0]
+            jesdcore.drp_access(rd = False, addr = 0x32, wr_data = reg_x32)
+            jesdcore.drp_access(rd = False, addr = 0x33, wr_data = reg_x33)
+            # QPLL_FBDIV is shared with other settings in reg 0x36
+            reg_x36 = jesdcore.drp_access(rd = True, addr = 0x36)
+            reg_x36 = (reg_x36 & 0xFC00) | (QPLL_FBDIV & 0x3FF)  # in bits [9:0]
+            jesdcore.drp_access(rd = False, addr = 0x36, wr_data = reg_x36)
+
+        # Run the QPLL reset sequence and prep the MGTs for modification.
+        jesdcore.init()
+
+        # 3-4) And the 4 MGTs second
+        if not skip_drp:
+            self.log.trace("Changing MGT settings to support {} Gbps".format(new_rate/1e9))
+            for lane in range(0,4):
+                jesdcore.set_drp_target('mgt', lane)
+                # MGT_PMA_RSV is split over 0x99 (LSBs) and 0x9A
+                reg_x99 = MGT_PMA_RSV & 0xFFFF
+                reg_x9A = (MGT_PMA_RSV >> 16) & 0xFFFF
+                jesdcore.drp_access(rd = False, addr = 0x99, wr_data = reg_x99)
+                jesdcore.drp_access(rd = False, addr = 0x9A, wr_data = reg_x9A)
+                # MGT_RX_CLK25_DIV is embedded with others in 0x11. The encoding for
+                # the DRP register value is one less than the desired value.
+                reg_x11 = jesdcore.drp_access(rd = True, addr = 0x11)
+                reg_x11 = (reg_x11 & 0xF83F) | ((MGT_RX_CLK25_DIV-1 & 0x1F) << 6) # [10:6]
+                jesdcore.drp_access(rd = False, addr = 0x11, wr_data = reg_x11)
+                # MGT_TX_CLK25_DIV is embedded with others in 0x6A. The encoding for
+                # the DRP register value is one less than the desired value.
+                reg_x6A = jesdcore.drp_access(rd = True, addr = 0x6A)
+                reg_x6A = (reg_x6A & 0xFFE0) | (MGT_TX_CLK25_DIV-1 & 0x1F) # [4:0]
+                jesdcore.drp_access(rd = False, addr = 0x6A, wr_data = reg_x6A)
+                # MGT_RXCDR_CFG is split over 0xA8 (LSBs) through 0xAD
+                RXCDR_REG_BASE = 0xA8
+                for reg_num in range(0, 6):
+                    reg_addr = RXCDR_REG_BASE + reg_num
+                    reg_data = (MGT_RXCDR_CFG >> 16*reg_num) & 0xFFFF
+                    jesdcore.drp_access(rd = False, addr = reg_addr, wr_data = reg_data)
+                # MGT_RXOUT_DIV and MGT_TXOUT_DIV are embedded together in 0x88. The
+                # encoding for the DRP register value is drp_val=log2(attribute)
+                reg_x88 = (int(math.log(MGT_RXOUT_DIV,2)) & 0x7) | \
+                         ((int(math.log(MGT_TXOUT_DIV,2)) & 0x7) << 4) # RX=[2:0] TX=[6:4]
+                jesdcore.drp_access(rd = False, addr = 0x88, wr_data = reg_x88)
+            self.log.trace("GTX settings changed to support {} Gbps".format(new_rate/1e9))
+            jesdcore.disable_drp_target()
+
+        self.log.trace("JESD204b Lane Rate set to {} Gbps!".format(new_rate/1e9))
+        self.current_jesd_rate = new_rate
+        return
+
 
     def get_user_eeprom_data(self):
         """
@@ -837,3 +931,57 @@ class Magnesium(DboardManagerBase):
             'value': str(lock_status).lower(),
         }
 
+
+    ##########################################################################
+    # Debug
+    ##########################################################################
+    def cpld_peek(self, addr):
+        """
+        Debug for accessing the CPLD via the RPC shell.
+        """
+        return self.cpld.peek16(addr)
+
+    def cpld_poke(self, addr, data):
+        """
+        Debug for accessing the CPLD via the RPC shell.
+        """
+        self.cpld.poke16(addr, data)
+        return self.cpld.peek16(addr)
+
+    def dump_jesd_core(self):
+        " Debug method to dump all JESD core regs "
+        dboard_ctrl_regs = UIO(
+            label="dboard-regs-{}".format(self.slot_idx),
+            read_only=False
+        )
+        for i in range(0x2000, 0x2110, 0x10):
+            print(("0x%04X " % i), end=' ')
+            for j in range(0, 0x10, 0x4):
+                print(("%08X" % dboard_ctrl_regs.peek32(i + j)), end=' ')
+            print("")
+        dboard_ctrl_regs = None
+
+    def dbcore_peek(self, addr):
+        """
+        Debug for accessing the DB Core registers via the RPC shell.
+        """
+        dboard_ctrl_regs = UIO(
+            label="dboard-regs-{}".format(self.slot_idx),
+            read_only=False
+        )
+        rd_data = dboard_ctrl_regs.peek32(addr)
+        self.log.trace("DB Core Register 0x{:04X} response: 0x{:08X}".format(addr, rd_data))
+        dboard_ctrl_regs = None
+        return rd_data
+
+    def dbcore_poke(self, addr, data):
+        """
+        Debug for accessing the DB Core registers via the RPC shell.
+        """
+        dboard_ctrl_regs = UIO(
+            label="dboard-regs-{}".format(self.slot_idx),
+            read_only=False
+        )
+        self.log.trace("Writing DB Core Register 0x{:04X} with 0x{:08X}...".format(addr, data))
+        dboard_ctrl_regs.poke32(addr, data)
+        dboard_ctrl_regs = None
