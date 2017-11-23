@@ -20,7 +20,7 @@
 
 using namespace mpm::spi;
 
-static const int    MYK_SPI_SPEED_HZ = 1000000;
+static const int    MYK_SPI_SPEED_HZ = 20000000;
 static const size_t MYK_ADDR_SHIFT = 8;
 static const size_t MYK_DATA_SHIFT = 0;
 static const size_t MYK_READ_FLAG = 1 << 23;
