@@ -35,7 +35,7 @@ from ..sysfs_gpio import SysFSGPIO
 from usrp_mpm.bfrfs import BufferFS
 from usrp_mpm.mpmutils import poll_with_timeout
 
-def create_spidev_iface(dev_node):
+def create_spidev_iface_lmk(dev_node):
     """
     Create a regs iface from a spidev node
     """
@@ -54,7 +54,6 @@ def create_spidev_iface(dev_node):
         SPI_READ_FLAG,
         SPI_WRIT_FLAG
     )
-
 def create_spidev_iface_cpld(dev_node):
     """
     Create a regs iface from a spidev node
@@ -313,8 +312,7 @@ class Magnesium(DboardManagerBase):
     # Class-specific, but constant settings:
     spi_factories = {
         "cpld": create_spidev_iface_cpld,
-        "lmk": create_spidev_iface,
-        "mykonos": create_spidev_iface,
+        "lmk": create_spidev_iface_lmk,
         "phase_dac": create_spidev_iface_phasedac,
     }
     #file system path to i2c-adapter/mux
@@ -394,7 +392,7 @@ class Magnesium(DboardManagerBase):
         self.log.trace("Loading SPI devices...")
         self._spi_ifaces = {
             key: self.spi_factories[key](self._spi_nodes[key])
-            for key in self._spi_nodes
+            for key in self.spi_factories
         }
         self.cpld = MgCPLD(self._spi_ifaces['cpld'], self.log)
         self.dboard_clk_control = DboardClockControl(self.dboard_ctrl_regs, self.log)
