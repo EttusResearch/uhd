@@ -518,6 +518,8 @@ class Magnesium(DboardManagerBase):
         if 'master_clock_rate' in args:
             self.master_clock_rate = float(args['master_clock_rate'])
             assert self.master_clock_rate in (122.88e6, 125e6, 153.6e6)
+        else:
+            self.master_clock_rate = 125e6
         self.log.trace("Creating jesdcore object")
         self.jesdcore = nijesdcore.NIMgJESDCore(self.dboard_ctrl_regs, self.slot_idx)
 
