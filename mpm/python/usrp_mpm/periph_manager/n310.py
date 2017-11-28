@@ -29,8 +29,7 @@ from ..net import get_iface_addrs
 from ..net import byte_to_mac
 from ..net import get_mac_addr
 from ..mpmtypes import SID
-from usrp_mpm.uio import UIO
-from usrp_mpm.rpc_server import no_claim, no_rpc
+from usrp_mpm.rpc_server import no_rpc
 from usrp_mpm import net
 from ..sysfs_gpio import SysFSGPIO
 from ..ethtable import EthDispatcherTable
