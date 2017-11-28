@@ -136,6 +136,17 @@ class UIO(object):
             offset=offset,
         )
 
+    def __del__(self):
+        """
+        Destructor needs to close the uio-mapped memory
+        """
+        try:
+            self._mm.close()
+            os.close(self._fd)
+        except:
+            self.log.warning("Failed to properly destruct UIO object.")
+            pass
+
     def peek32(self, addr):
         """
         Returns the 32-bit value starting at address addr as an integer
