@@ -345,15 +345,11 @@ class Magnesium(DboardManagerBase):
         self.master_clock_rate = 125e6 # Same
         # Predeclare some attributes to make linter happy:
         self.lmk = None
-        self.clock_synchronizer = None
-        self.jesdcore = None
         self._port_expander = None
         self.mykonos = None
         self.eeprom_fs = None
         self.eeprom_path = None
-        self.radio_regs = None
         self.cpld = None
-        self.dboard_clk_control = None
         self._init_cals_mask = 0
         self._tracking_cals_mask = 0
         self._init_cals_timeout = 0
@@ -395,11 +391,6 @@ class Magnesium(DboardManagerBase):
             for key in self.spi_factories
         }
         self.cpld = MgCPLD(self._spi_ifaces['cpld'], self.log)
-        self.dboard_clk_control = DboardClockControl(self.dboard_ctrl_regs, self.log)
-        # Declare some attributes to make linter happy:
-        self.lmk = None
-        self.clock_synchronizer = None
-        self.jesdcore = None
 
     def _power_on(self):
         " Turn on power to daughterboard "
@@ -518,12 +509,19 @@ class Magnesium(DboardManagerBase):
             assert self.master_clock_rate in (122.88e6, 125e6, 153.6e6)
         else:
             self.master_clock_rate = 125e6
-        self.log.trace("Creating jesdcore object")
-        self.jesdcore = nijesdcore.NIMgJESDCore(self.dboard_ctrl_regs, self.slot_idx)
 
-        self.log.info("Reset Daughterboard Clocking and JESD204B interfaces...")
-        self.dboard_clk_control.reset_mmcm()
-        self.jesdcore.reset()
+        # The following peripherals are only used during init, so we don't want
+        # to hang on to them for the full lifetime of the Magnesium class. This
+        # helps us close file descriptors associated with the UIO objects.
+        self.log.trace("Creating dboard clock control object...")
+        dboard_clk_control = DboardClockControl(self.dboard_ctrl_regs, self.log)
+        self.log.trace("Creating jesdcore object...")
+        jesdcore = nijesdcore.NIMgJESDCore(self.dboard_ctrl_regs, self.slot_idx)
+
+        # Now get cracking with the actual init sequence:
+        self.log.info("Reset Dboard Clocking and JESD204B interfaces...")
+        dboard_clk_control.reset_mmcm()
+        jesdcore.reset()
 
         self.lmk = _init_lmk(
             self._spi_ifaces['lmk'],
@@ -532,12 +530,16 @@ class Magnesium(DboardManagerBase):
             self._spi_ifaces['phase_dac'],
             self.INIT_PHASE_DAC_WORD,
         )
-        self.dboard_clk_control.enable_mmcm()
+        dboard_clk_control.enable_mmcm()
         self.log.info("Sample Clocks and Phase DAC Configured Successfully!")
         # Synchronize DB Clocks
         # Future Work: target_value needs to be tweaked to support heterogenous rate sync.
-        self.target_value = {122.88e6: 128e-9, 125e6: 128e-9, 153.6e6: 122e-9}[self.master_clock_rate]
-        self.clock_synchronizer = ClockSynchronizer(
+        target_value = {
+            122.88e6: 128e-9,
+            125e6: 128e-9,
+            153.6e6: 122e-9
+        }[self.master_clock_rate]
+        clock_synchronizer = ClockSynchronizer(
             self.dboard_ctrl_regs,
             self.lmk,
             self._spi_ifaces['phase_dac'],
@@ -546,15 +548,17 @@ class Magnesium(DboardManagerBase):
             self.ref_clock_freq,
             860E-15, # fine phase shift. TODO don't hardcode. This should live in the EEPROM
             self.INIT_PHASE_DAC_WORD,
-            [self.target_value,],   # target_values
+            [target_value,],   # target_values
             0x0,         # spi_addr TODO: make this a constant and replace in _sync_db_clock as well
             self.log
         )
-        _sync_db_clock(self.clock_synchronizer)
+        _sync_db_clock(clock_synchronizer)
         # Clocks and PPS are now fully active!
         self.mykonos.set_master_clock_rate(self.master_clock_rate)
-        self.init_jesd(args)
+        self.init_jesd(jesdcore, args)
         self.mykonos.start_radio()
+        # We can now close the dboard regs UIO object if we want to (until we
+        # re-run init(), of course)
         return True
 
 
@@ -588,13 +592,13 @@ class Magnesium(DboardManagerBase):
         self.log.debug("args[tracking_cals]=0x{:02X}".format(self._tracking_cals_mask))
         self.mykonos.setup_cal(self._init_cals_mask, self._tracking_cals_mask, self._init_cals_timeout)
 
-    def init_jesd(self, args):
+    def init_jesd(self, jesdcore, args):
         """
         Bring up the JESD link between Mykonos and the N310.
         All clocks must be set up and stable before starting this routine.
         """
-        self.jesdcore.check_core()
-        self.jesdcore.init()
+        jesdcore.check_core()
+        jesdcore.init()
 
         self.log.trace("Pulsing Mykonos Hard Reset...")
         self.cpld.reset_mykonos()
@@ -612,9 +616,9 @@ class Magnesium(DboardManagerBase):
         self.log.debug("RX LO SOURCE is {}".format(self.mykonos.get_rx_lo_source()))
         self.mykonos.begin_initialization()
         # Multi-chip Sync requires two SYSREF pulses at least 17us apart.
-        self.jesdcore.send_sysref_pulse()
+        jesdcore.send_sysref_pulse()
         time.sleep(0.001) # 17us... ish.
-        self.jesdcore.send_sysref_pulse()
+        jesdcore.send_sysref_pulse()
         self.mykonos.finish_initialization()
         # TODO:can we call this after JESD?
         self.init_rf_cal(args)
@@ -622,7 +626,7 @@ class Magnesium(DboardManagerBase):
         self.log.trace("Starting JESD204b Link Initialization...")
         # Generally, enable the source before the sink. Start with the DAC side.
         self.log.trace("Starting FPGA framer...")
-        self.jesdcore.init_framer()
+        jesdcore.init_framer()
         self.log.trace("Starting Mykonos deframer...")
         self.mykonos.start_jesd_rx()
         # Now for the ADC link. Note that the Mykonos framer will not start issuing CGS
@@ -632,21 +636,21 @@ class Magnesium(DboardManagerBase):
         self.log.trace("Starting Mykonos framer...")
         self.mykonos.start_jesd_tx()
         self.log.trace("Enable FPGA SYSREF Receiver.")
-        self.jesdcore.enable_lmfc(True)
-        self.jesdcore.send_sysref_pulse()
+        jesdcore.enable_lmfc(True)
+        jesdcore.send_sysref_pulse()
         self.log.trace("Starting FPGA deframer...")
-        self.jesdcore.init_deframer()
+        jesdcore.init_deframer()
 
         # Allow a bit of time for CGS/ILA to complete.
         time.sleep(0.100)
 
-        if not self.jesdcore.get_framer_status():
+        if not jesdcore.get_framer_status():
             self.log.error("FPGA Framer Error!")
             raise Exception('JESD Core Framer is not synced!')
         if (self.mykonos.get_deframer_status() & 0x7F) != 0x28:
             self.log.error("Mykonos Deframer Error: 0x{:X}".format((self.mykonos.get_deframer_status() & 0x7F)))
             raise Exception('Mykonos Deframer is not synced!')
-        if not self.jesdcore.get_deframer_status():
+        if not jesdcore.get_deframer_status():
             self.log.error("FPGA Deframer Error!")
             raise Exception('JESD Core Deframer is not synced!')
         if (self.mykonos.get_framer_status() & 0xFF) != 0x3E:

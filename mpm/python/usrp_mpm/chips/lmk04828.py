@@ -29,7 +29,9 @@ class LMK04828(object):
     LMK_CHIP_ID = 6
 
     def __init__(self, regs_iface, parent_log=None):
-        self.log = parent_log.getChild("LMK04828") or get_logger("LMK04828")
+        self.log = \
+            parent_log.getChild("LMK04828") if parent_log is not None \
+            else get_logger("LMK04828")
         self.regs_iface = regs_iface
         assert hasattr(self.regs_iface, 'peek8')
         assert hasattr(self.regs_iface, 'poke8')
