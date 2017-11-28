@@ -297,6 +297,7 @@ class Magnesium(DboardManagerBase):
         device_args -- Arbitrary dictionary of info, typically user-defined
         """
         return ['magnesium-{sfp}'.format(sfp=sfp_config)]
+
     ### End of overridables #################################################
     # Class-specific, but constant settings:
     spi_factories = {
@@ -320,6 +321,7 @@ class Magnesium(DboardManagerBase):
     # is at 2^15 = 32768. However, the linearity of the DAC is best just below that
     # point, so we set it to the (carefully calculated) alternate value instead.
     INIT_PHASE_DAC_WORD = 31000 # Intentionally decimal
+    default_master_clock_rate = 125e6
 
     def __init__(self, slot_idx, **kwargs):
         super(Magnesium, self).__init__(slot_idx, **kwargs)
@@ -331,7 +333,8 @@ class Magnesium(DboardManagerBase):
         # This is a default ref clock freq, it must be updated before init() is
         # called!
         self.ref_clock_freq = 10e6
-        self.master_clock_rate = 125e6 # Same
+        # This will get updated during init()
+        self.master_clock_rate = None
         # Predeclare some attributes to make linter happy:
         self.lmk = None
         self._port_expander = None
@@ -454,7 +457,7 @@ class Magnesium(DboardManagerBase):
         """
         Execute necessary init dance to bring up dboard
         """
-        def _init_lmk(lmk_spi, ref_clk_freq, master_clk_freq,
+        def _init_lmk(lmk_spi, ref_clk_freq, master_clk_rate,
                       pdac_spi, init_phase_dac_word):
             """
             Sets the phase DAC to initial value, and then brings up the LMK
@@ -465,7 +468,13 @@ class Magnesium(DboardManagerBase):
                 init_phase_dac_word
             ))
             pdac_spi.poke16(0x0, init_phase_dac_word)
-            return LMK04828Mg(lmk_spi, self.spi_lock, ref_clk_freq, master_clk_freq, self.log)
+            return LMK04828Mg(
+                lmk_spi,
+                self.spi_lock,
+                ref_clk_freq,
+                master_clk_rate,
+                self.log
+            )
         def _sync_db_clock(synchronizer):
             " Synchronizes the DB clock to the common reference "
             synchronizer.run_sync(measurement_only=False)
@@ -483,6 +492,7 @@ class Magnesium(DboardManagerBase):
                 ))
             self.log.info("Sample Clock Synchronization Complete!")
         ## Go, go, go!
+        # Sanity checks and input validation:
         self.log.info("init() called with args `{}'".format(
             ",".join(['{}={}'.format(x, args[x]) for x in args])
         ))
@@ -493,12 +503,19 @@ class Magnesium(DboardManagerBase):
         if 'ref_clk_freq' in args:
             self.ref_clock_freq = float(args['ref_clk_freq'])
             assert self.ref_clock_freq in (10e6, 20e6, 25e6)
-        if 'master_clock_rate' in args:
-            self.master_clock_rate = float(args['master_clock_rate'])
-            assert self.master_clock_rate in (122.88e6, 125e6, 153.6e6)
-        else:
-            self.master_clock_rate = 125e6
-
+        master_clock_rate = \
+            float(args.get('master_clock_rate',
+                           self.default_master_clock_rate))
+        assert master_clock_rate in (122.88e6, 125e6, 153.6e6), \
+                "Invalid master clock rate: {:.02f} MHz".format(
+                    master_clock_rate / 1e6)
+        master_clock_rate_changed = master_clock_rate != self.master_clock_rate
+        if master_clock_rate_changed:
+            self.master_clock_rate = master_clock_rate
+            self.log.debug("Updating master clock rate to {:.02f} MHz!".format(
+                self.master_clock_rate / 1e6
+            ))
+        # Init some more periphs:
         # The following peripherals are only used during init, so we don't want
         # to hang on to them for the full lifetime of the Magnesium class. This
         # helps us close file descriptors associated with the UIO objects.
@@ -506,7 +523,6 @@ class Magnesium(DboardManagerBase):
         dboard_clk_control = DboardClockControl(self.dboard_ctrl_regs, self.log)
         self.log.trace("Creating jesdcore object...")
         jesdcore = nijesdcore.NIMgJESDCore(self.dboard_ctrl_regs, self.slot_idx)
-
         # Now get cracking with the actual init sequence:
         self.log.info("Reset Dboard Clocking and JESD204B interfaces...")
         dboard_clk_control.reset_mmcm()
