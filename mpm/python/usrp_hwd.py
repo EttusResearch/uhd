@@ -137,7 +137,8 @@ def main():
     # with cmake (-DMPM_DEVICE).
     # mgr is thus derived from PeriphManagerBase (see periph_manager/base.py)
     log.info("Spawning periph manager...")
-    mgr = periph_manager(args)
+    mgr_generator = lambda: periph_manager(args)
+    mgr = mgr_generator()
     discovery_info = {
         "type": mgr.get_device_info().get("type", "n/a"),
         "serial": mgr.get_device_info().get("serial", "n/a"),
@@ -162,7 +163,7 @@ def main():
     )
     log.info("Spawning RPC process...")
     _PROCESSES.append(
-        mpm.spawn_rpc_process(mpm.mpmtypes.MPM_RPC_PORT, shared, mgr))
+        mpm.spawn_rpc_process(mpm.mpmtypes.MPM_RPC_PORT, shared, mgr, mgr_generator))
     log.info("Processes launched. Registering signal handlers.")
     signal.signal(signal.SIGTERM, kill_time)
     signal.signal(signal.SIGINT, kill_time)

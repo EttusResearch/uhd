@@ -31,6 +31,7 @@ from ..net import get_mac_addr
 from ..mpmtypes import SID
 from usrp_mpm.rpc_server import no_rpc
 from usrp_mpm import net
+from usrp_mpm import dtoverlay
 from ..sysfs_gpio import SysFSGPIO
 from ..ethtable import EthDispatcherTable
 from ..liberiotable import LiberioDispatcherTable
@@ -476,10 +477,12 @@ class n310(PeriphManagerBase):
         'fpga': {
             'callback': "update_fpga",
             'path': '/lib/firmware/n3xx.bin',
+            'reset': True,
         },
         'dts': {
             'callback': "update_dts",
             'path': '/lib/firmware/n3xx.dts',
+            'reset': False,
         },
     }
 
@@ -585,6 +588,19 @@ class n310(PeriphManagerBase):
         super(n310, self).deinit()
         for xport_mgr in itervalues(self._xport_mgrs):
             xport_mgr.deinit()
+
+    def tear_down(self):
+        """
+        Tear down all members that need to be specially handled before
+        deconstruction.
+        For N310, this means the overlay.
+        """
+        active_overlays = self.list_active_overlays()
+        self.log.trace("N310 has active device tree overlays: {}".format(
+            active_overlays
+        ))
+        for overlay in active_overlays:
+            dtoverlay.rm_overlay(overlay)
 
     ###########################################################################
     # Transport API

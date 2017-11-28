@@ -352,6 +352,13 @@ class PeriphManagerBase(object):
         self.log.trace("Resetting SID pool...")
         self._available_endpoints = list(range(256))
 
+    def tear_down(self):
+        """
+        Tear down all members that need to be specially handled before
+        deconstruction.
+        """
+        self.log.debug("Teardown called for Peripheral Manager base.")
+
     @no_claim
     def list_updateable_components(self):
         """
@@ -455,7 +462,6 @@ class PeriphManagerBase(object):
             update_func = getattr(self, self.updateable_components[id_str]['callback'])
             update_func(filepath, metadata)
         return True
-
 
     def load_fpga_image(self, target=None):
         """

@@ -54,22 +54,20 @@ class MPMServer(RPCServer):
     RPC calls to appropiate calls in the periph_manager and dboard_managers.
     """
     # This is a list of methods in this class which require a claim
-    default_claimed_methods = ['init', 'reclaim', 'unclaim']
+    default_claimed_methods = ['init', 'update_component', 'reclaim', 'unclaim']
 
-    def __init__(self, state, mgr, *args, **kwargs):
+    def __init__(self, state, mgr, mgr_generator=None, *args, **kwargs):
         self.log = get_main_logger().getChild('RPCServer')
         self._state = state
         self._timer = Greenlet()
         self.session_id = None
         self.periph_manager = mgr
+        self._mgr_generator = mgr_generator
         self._db_methods = []
         self._mb_methods = []
         self.claimed_methods = copy.copy(self.default_claimed_methods)
         self._last_error = ""
-        self._update_component_commands(mgr, '', '_mb_methods')
-        for db_slot, dboard in enumerate(mgr.dboards):
-            cmd_prefix = 'db_' + str(db_slot) + '_'
-            self._update_component_commands(dboard, cmd_prefix, '_db_methods')
+        self._init_rpc_calls(mgr)
         # We call the server __init__ function here, and not earlier, because
         # first the commands need to be registered
         super(MPMServer, self).__init__(
@@ -77,6 +75,15 @@ class MPMServer(RPCServer):
             pack_params={'use_bin_type': True},
             **kwargs
         )
+
+    def _init_rpc_calls(self, mgr):
+        """
+        Register all RPC calls for the motherboard and daughterboards
+        """
+        self._update_component_commands(mgr, '', '_mb_methods')
+        for db_slot, dboard in enumerate(mgr.dboards):
+            cmd_prefix = 'db_' + str(db_slot) + '_'
+            self._update_component_commands(dboard, cmd_prefix, '_db_methods')
 
     def _check_token_valid(self, token):
         """
@@ -92,7 +99,6 @@ class MPMServer(RPCServer):
         return self._state.claim_status.value and \
                 len(token) == TOKEN_LEN and \
                 self._state.claim_token.value == token
-
 
     def _update_component_commands(self, component, namespace, storage):
         """
@@ -137,6 +143,7 @@ class MPMServer(RPCServer):
                 raise RuntimeError("Invalid token!")
             try:
                 return function(*args)
+
             except Exception as ex:
                 self.log.error(
                     "Uncaught exception in method %s: %s",
@@ -251,6 +258,66 @@ class MPMServer(RPCServer):
         self._reset_timer()
         return result
 
+    def reset_mgr(self):
+        """
+        Reset the Peripheral Manager for this RPC server.
+        """
+        # reassign
+        self.periph_manager.tear_down()
+        self.periph_manager = None
+        if self._mgr_generator is None:
+            raise RuntimeError("Can't reset peripheral manager- no generator function.")
+        self.periph_manager = self._mgr_generator()
+        self._init_rpc_calls(self.periph_manager)
+
+    def update_component(self, token, file_metadata_l, data_l):
+        """"
+        Updates the device component files specified by the metadata and data
+        :param file_metadata_l: List of dictionary of strings containing metadata
+        :param data_l: List of binary string with the file contents to be written
+        """
+        self._timer.kill()  # Stop the timer, update_component can take some time.
+        # Check the claimed status
+        if not self._check_token_valid(token):
+            self._last_error =\
+                "Attempt to update component without valid claim from {}".format(
+                    self.client_host
+                )
+            self.log.error(self._last_error)
+            raise RuntimeError("Attempt to update component without valid claim.")
+        result = self.periph_manager.update_component(file_metadata_l, data_l)
+        if not result:
+            component_ids = [metadata['id'] for metadata in file_metadata_l]
+            raise RuntimeError("Failed to update components: {}".format(component_ids))
+
+        # Check if we need to reset the peripheral manager
+        reset_now = False
+        for metadata, data in zip(file_metadata_l, data_l):
+            # Make sure the component is in the updateable_components
+            component_id = metadata['id']
+            if component_id in self.periph_manager.updateable_components:
+                # Check if that updating that component means the PM should be reset
+                if self.periph_manager.updateable_components[component_id]['reset']:
+                    reset_now = True
+            else:
+                self.log.debug("ID {} not in updateable components ({})".format(
+                    component_id, self.periph_manager.updateable_components))
+
+        try:
+            self.log.trace("Reset after updating component? {}".format(reset_now))
+            if reset_now:
+                self.reset_mgr()
+                self.log.debug("Reset the periph manager")
+        except Exception as ex:
+            self.log.error(
+                "Error in update_component while resetting: {}".format(
+                    ex
+                ))
+            self._last_error = str(ex)
+
+        self.log.debug("End of update_component")
+        self._reset_timer()
+
     def reclaim(self, token):
         """
         reclaim a MPM device with a token. This operation will fail
@@ -286,8 +353,8 @@ class MPMServer(RPCServer):
         self._state.claim_status.value = False
         self._state.claim_token.value = b''
         self.session_id = None
-        self.periph_manager.claimed = False
         try:
+            self.periph_manager.claimed = False
             self.periph_manager.set_connection_type(None)
             self.periph_manager.deinit()
         except Exception as ex:
@@ -334,14 +401,14 @@ class MPMServer(RPCServer):
 
 
 
-def _rpc_server_process(shared_state, port, mgr):
+def _rpc_server_process(shared_state, port, mgr, mgr_generator):
     """
     This is the actual process that's running the RPC server.
     """
     connections = Pool(1000)
     server = StreamServer(
         ('0.0.0.0', port),
-        handle=MPMServer(shared_state, mgr),
+        handle=MPMServer(shared_state, mgr, mgr_generator),
         spawn=connections)
     # catch signals and stop the stream server
     signal(signal.SIGTERM, lambda *args: server.stop())
@@ -349,12 +416,12 @@ def _rpc_server_process(shared_state, port, mgr):
     server.serve_forever()
 
 
-def spawn_rpc_process(state, udp_port, mgr):
+def spawn_rpc_process(state, udp_port, mgr, mgr_generator):
     """
     Returns a process that contains the RPC server
     """
 
-    proc_args = [udp_port, state, mgr]
+    proc_args = [udp_port, state, mgr, mgr_generator]
     proc = Process(target=_rpc_server_process, args=proc_args)
     proc.start()
     return proc
