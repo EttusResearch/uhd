@@ -107,6 +107,8 @@ void magnesium_radio_ctrl_impl::_set_dsa_val(
     const direction_t dir,
     const uint32_t dsa_val
 ) {
+    // The DSA register holds 12 bits. The lower 6 bits are for RX, the upper
+    // 6 bits are for TX.
     if (dir == RX_DIRECTION or dir == DX_DIRECTION){
         UHD_LOG_TRACE(unique_id(),
             __func__ << "(chan=" << chan << ", dir=RX"
@@ -117,7 +119,7 @@ void magnesium_radio_ctrl_impl::_set_dsa_val(
         UHD_LOG_TRACE(unique_id(),
             __func__ << "(chan=" << chan << ", dir=TX"
             << ", dsa_val=" << dsa_val << ")")
-        _gpio[chan]->set_gpio_out(dsa_val, 0x0FC0);
+        _gpio[chan]->set_gpio_out(dsa_val<<6, 0x0FC0);
     }
 }
 
