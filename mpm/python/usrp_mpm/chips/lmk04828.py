@@ -66,7 +66,6 @@ class LMK04828(object):
 
     def check_plls_locked(self):
         """
-        Checks both PLLs are locked. Will throw an exception otherwise.
         Returns True if both PLLs are locked, False otherwise.
         """
         def check_pll_lock(pll_id, addr):
@@ -76,7 +75,8 @@ class LMK04828(object):
             """
             pll_lock_status = self.regs_iface.peek8(addr)
             if (pll_lock_status & 0x7) != 0x02:
-                self.log.warning("{} reporting unlocked... Status: 0x{:x}".format(pll_id, pll_lock_status))
+                self.log.warning("{} reporting unlocked... Status: 0x{:x}"
+                                 .format(pll_id, pll_lock_status))
                 return False
             return True
         lock_status = \
