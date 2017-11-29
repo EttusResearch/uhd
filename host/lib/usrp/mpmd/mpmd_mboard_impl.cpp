@@ -180,7 +180,12 @@ void mpmd_mboard_impl::set_xbar_local_addr(
  ****************************************************************************/
 bool mpmd_mboard_impl::claim()
 {
-    return rpc->request_with_token<bool>("reclaim");
+    try {
+        return rpc->request_with_token<bool>("reclaim");
+    } catch (...) {
+        UHD_LOG_WARNING("MPMD", "Reclaim failed. Exiting claimer loop.");
+        return false;
+    }
 }
 
 uhd::task::sptr mpmd_mboard_impl::claim_device_and_make_task(
