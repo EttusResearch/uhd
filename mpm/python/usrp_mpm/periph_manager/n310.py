@@ -22,6 +22,7 @@ from __future__ import print_function
 import os
 import copy
 import shutil
+import subprocess
 from six import iteritems, itervalues
 from builtins import object
 from .base import PeriphManagerBase
@@ -482,6 +483,7 @@ class n310(PeriphManagerBase):
         'dts': {
             'callback': "update_dts",
             'path': '/lib/firmware/n3xx.dts',
+            'output': '/lib/firmware/n3xx.dtbo',
             'reset': False,
         },
     }
@@ -925,8 +927,8 @@ class n310(PeriphManagerBase):
         :param filepath: path to new FPGA image
         :param metadata: Dictionary of strings containing metadata
         """
-        self.log.trace("Updating FPGA with image at {}"
-                       .format(filepath))
+        self.log.trace("Updating FPGA with image at {} (metadata: `{}')"
+                       .format(filepath, str(metadata)))
         _, file_extension = os.path.splitext(filepath)
         # Cut off the period from the file extension
         file_extension = file_extension[1:].lower()
@@ -944,7 +946,7 @@ class n310(PeriphManagerBase):
             self.log.error("Invalid FPGA bitfile: {}"
                            .format(filepath))
             raise RuntimeError("Invalid N310 FPGA bitfile")
-        # TODO: Implement reload procedure
+        # RPC server will reload the periph manager after this.
         return True
 
     @no_rpc
@@ -955,9 +957,31 @@ class n310(PeriphManagerBase):
         :param metadata: Dictionary of strings containing metadata
         """
         dtsfile_path = self.updateable_components['dts']['path']
-        self.log.trace("Updating DTS with image at {} to {}"
-                       .format(filepath, dtsfile_path)
-                      )
+        self.log.trace("Updating DTS with image at %s to %s (metadata: %s)",
+                       filepath, dtsfile_path, str(metadata))
         shutil.copy(filepath, dtsfile_path)
-        # TODO: Compile the new dts file into a usable dtbo
+        dtbofile_path = self.updateable_components['dts']['output']
+        self.log.trace("Compiling to %s...", dtbofile_path)
+        dtc_command = [
+            'dtc',
+            '--symbols',
+            '-O', 'dtb',
+            '-q', # Suppress warnings
+            '-o',
+            dtbofile_path,
+            dtsfile_path,
+        ]
+        self.log.trace("Executing command: `$ %s'", " ".join(dtc_command))
+        try:
+            out = subprocess.check_output(dtc_command)
+            if out.strip() != "":
+                self.log.debug("`dtc' command output: \n%s", out)
+        except OSError as ex:
+            self.log.error("Could not execute `dtc' command. Binary probably "\
+                           "not installed. Please compile DTS by hand.")
+            # No fatal error here, in order not to break the current workflow
+        except subprocess.CalledProcessError as ex:
+            self.log.error("Error executing `dtc': %s", str(ex))
+            return False
         return True
+
