@@ -408,12 +408,38 @@ private: // methods
      ***********************************************************************/
     std::string get_slot_name(const size_t radio_index)
     {
-        return (radio_index == 0) ? "A" : "B";
+        if (radio_index == 0){
+            return "A";
+        }else if (radio_index == 1){
+            return "B";
+        }else if (radio_index == 2){
+            return "C";
+        }else if (radio_index == 3){
+            return "D";
+        }else{
+            throw uhd::index_error(str(
+                boost::format("[legacy_compat]: radio index %u out of supported range.")
+                % radio_index
+            ));
+        }
     }
 
     size_t get_radio_index(const std::string slot_name)
     {
-        return (slot_name == "A") ? 0 : 1;
+        if (slot_name == "A"){
+            return 0;
+        }else if (slot_name == "B"){
+            return 1;
+        }else if (slot_name == "C"){
+            return 2;
+        }else if (slot_name == "D"){
+            return  3;
+        }else {
+           throw uhd::key_error(str(
+                boost::format("[legacy_compat]: radio slot name %s out of supported range.")
+                % slot_name
+            ));
+        }
     }
 
     template <typename block_type>
