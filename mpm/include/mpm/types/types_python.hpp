@@ -20,6 +20,7 @@
 #include "lockable.hpp"
 #include "regs_iface.hpp"
 #include "log_buf.hpp"
+#include "mmap_regs_iface.hpp"
 
 void export_types() {
     LIBMPM_BOOST_PREAMBLE("types")
@@ -51,6 +52,13 @@ void export_types() {
                 std::get<2>(log_msg)
             );
         })
+    ;
+
+    bp::class_<mmap_regs_iface, boost::noncopyable, std::shared_ptr<mmap_regs_iface>>("mmap_regs_iface", bp::init<std::string, size_t, size_t, bool, bool>())
+        .def("open", &mmap_regs_iface::open)
+        .def("close", &mmap_regs_iface::close)
+        .def("peek32", &mmap_regs_iface::peek32)
+        .def("poke32", &mmap_regs_iface::poke32)
     ;
 }
 
