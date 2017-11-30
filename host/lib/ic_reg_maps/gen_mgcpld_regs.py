@@ -42,7 +42,7 @@ ch1_idle_rx_myk_en    0x0052[10]        0
 ch1_on_tx_sw1         0x0053[0:1]       0 ShutdownTxSw1,FromTxFilterLp1700MHz,FromTxFilterLp3400MHz,FromTxFilterLp0800MHz
 ch1_on_tx_sw2         0x0053[2:5]       1 ToTxFilterLp3400MHz=1,ToTxFilterLp1700MHz=2,ToTxFilterLp0800MHz=4,ToTxFilterLp6400MHz=8
 ch1_on_tx_sw3         0x0053[6]         0 ToTxFilterBanks,BypassPathToTrxSw
-ch1_on_tx_lowband_mixer_path_select 0x0050[7] 0 bypass,enable
+ch1_on_tx_lowband_mixer_path_select 0x0053[7] 0 bypass,enable
 ch1_on_tx_mixer_en    0x0053[8]         0
 ch1_on_tx_amp_en      0x0053[9]         0
 ch1_on_tx_pa_en       0x0053[10]        0
@@ -90,7 +90,7 @@ ch2_idle_rx_myk_en    0x0062[10]        0
 ch2_on_tx_sw1         0x0063[0:1]       0 ShutdownTxSw1,FromTxFilterLp1700MHz,FromTxFilterLp3400MHz,FromTxFilterLp0800MHz
 ch2_on_tx_sw2         0x0063[2:5]       1 ToTxFilterLp3400MHz=1,ToTxFilterLp1700MHz=2,ToTxFilterLp0800MHz=4,ToTxFilterLp6400MHz=8
 ch2_on_tx_sw3         0x0063[6]         0 ToTxFilterBanks,BypassPathToTrxSw
-ch2_on_tx_lowband_mixer_path_select 0x0050[7] 0 bypass,enable
+ch2_on_tx_lowband_mixer_path_select 0x0063[7] 0 bypass,enable
 ch2_on_tx_mixer_en    0x0063[8]         0
 ch2_on_tx_amp_en      0x0063[9]         0
 ch2_on_tx_pa_en       0x0063[10]        0

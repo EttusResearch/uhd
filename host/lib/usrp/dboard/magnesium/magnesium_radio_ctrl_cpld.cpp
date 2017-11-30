@@ -240,7 +240,9 @@ void magnesium_radio_ctrl_impl::_update_tx_freq_switches(
         magnesium_cpld_ctrl::LOWBAND_MIXER_PATH_SEL_BYPASS;
     const bool enable_lowband_mixer = (freq <= MAGNESIUM_LOWBAND_FREQ);
     // Defaults are fine for bypassing the amp stage
-    if (not bypass_amp) {
+    if (bypass_amp) {
+        _sw_trx[chan_sel] = magnesium_cpld_ctrl::SW_TRX_BYPASSPATHTOTXSW3;
+    } else {
          // Set filters based on frequency
         if (freq < MAGNESIUM_TX_BAND1_MIN_FREQ) {
             _sw_trx[chan_sel] =
