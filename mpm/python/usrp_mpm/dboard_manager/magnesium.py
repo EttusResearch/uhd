@@ -136,6 +136,14 @@ class DboardClockControl(object):
         self.poke32 = self.regs.poke32
         self.peek32 = self.regs.peek32
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.log.trace("Tearing down DboardClockControl() object...")
+        self.regs = None
+        return exc_type is None
+
     def enable_outputs(self, enable=True):
         """
         Enables or disables the MMCM outputs.
@@ -359,10 +367,6 @@ class Magnesium(DboardManagerBase):
         self.eeprom_fs, self.eeprom_path = self._init_user_eeprom(
             self.user_eeprom[self.rev]
         )
-        self.dboard_ctrl_regs = UIO(
-            label="dboard-regs-{}".format(self.slot_idx),
-            read_only=False
-        )
         self.log.trace("Loading SPI devices...")
         self._spi_ifaces = {
             key: self.spi_factories[key](self._spi_nodes[key])
@@ -461,6 +465,28 @@ class Magnesium(DboardManagerBase):
                 master_clk_rate,
                 self.log
             )
+        def _get_clock_synchronizer():
+            " Return a clock synchronizer object "
+            # Future Work: target_value needs to be tweaked to support
+            # heterogenous rate sync.
+            target_value = {
+                122.88e6: 128e-9,
+                125e6: 128e-9,
+                153.6e6: 122e-9
+            }[self.master_clock_rate]
+            return ClockSynchronizer(
+                dboard_ctrl_regs,
+                self.lmk,
+                self._spi_ifaces['phase_dac'],
+                0, # register offset value. future work.
+                self.master_clock_rate,
+                self.ref_clock_freq,
+                860E-15, # fine phase shift. TODO don't hardcode. This should live in the EEPROM
+                self.INIT_PHASE_DAC_WORD,
+                [target_value,],   # target_values
+                0x0,         # spi_addr TODO: make this a constant and replace in _sync_db_clock as well
+                self.log
+            )
         def _sync_db_clock(synchronizer):
             " Synchronizes the DB clock to the common reference "
             synchronizer.run_sync(measurement_only=False)
@@ -505,51 +531,39 @@ class Magnesium(DboardManagerBase):
         # The following peripherals are only used during init, so we don't want
         # to hang on to them for the full lifetime of the Magnesium class. This
         # helps us close file descriptors associated with the UIO objects.
-        self.log.trace("Creating dboard clock control object...")
-        dboard_clk_control = DboardClockControl(self.dboard_ctrl_regs, self.log)
-        self.log.trace("Creating jesdcore object...")
-        jesdcore = nijesdcore.NIMgJESDCore(self.dboard_ctrl_regs, self.slot_idx)
-        # Now get cracking with the actual init sequence:
-        self.log.info("Reset Dboard Clocking and JESD204B interfaces...")
-        dboard_clk_control.reset_mmcm()
-        jesdcore.reset()
-
-        self.lmk = _init_lmk(
-            self._spi_ifaces['lmk'],
-            self.ref_clock_freq,
-            self.master_clock_rate,
-            self._spi_ifaces['phase_dac'],
-            self.INIT_PHASE_DAC_WORD,
+        dboard_ctrl_regs = UIO(
+            label="dboard-regs-{}".format(self.slot_idx),
+            read_only=False
         )
-        dboard_clk_control.enable_mmcm()
+        self.log.trace("Creating jesdcore object...")
+        jesdcore = nijesdcore.NIMgJESDCore(dboard_ctrl_regs, self.slot_idx)
+        # Now get cracking with the actual init sequence:
+        self.log.trace("Creating dboard clock control object...")
+        with DboardClockControl(dboard_ctrl_regs, self.log) as db_clk_control:
+            self.log.debug("Reset Dboard Clocking and JESD204B interfaces...")
+            db_clk_control.reset_mmcm()
+            jesdcore.reset()
+            self.log.trace("Initializing LMK...")
+            self.lmk = _init_lmk(
+                self._spi_ifaces['lmk'],
+                self.ref_clock_freq,
+                self.master_clock_rate,
+                self._spi_ifaces['phase_dac'],
+                self.INIT_PHASE_DAC_WORD,
+            )
+            db_clk_control.enable_mmcm()
         self.log.info("Sample Clocks and Phase DAC Configured Successfully!")
         # Synchronize DB Clocks
-        # Future Work: target_value needs to be tweaked to support heterogenous rate sync.
-        target_value = {
-            122.88e6: 128e-9,
-            125e6: 128e-9,
-            153.6e6: 122e-9
-        }[self.master_clock_rate]
-        clock_synchronizer = ClockSynchronizer(
-            self.dboard_ctrl_regs,
-            self.lmk,
-            self._spi_ifaces['phase_dac'],
-            0, # register offset value. future work.
-            self.master_clock_rate,
-            self.ref_clock_freq,
-            860E-15, # fine phase shift. TODO don't hardcode. This should live in the EEPROM
-            self.INIT_PHASE_DAC_WORD,
-            [target_value,],   # target_values
-            0x0,         # spi_addr TODO: make this a constant and replace in _sync_db_clock as well
-            self.log
-        )
-        _sync_db_clock(clock_synchronizer)
+        _sync_db_clock(_get_clock_synchronizer())
         # Clocks and PPS are now fully active!
         self.mykonos.set_master_clock_rate(self.master_clock_rate)
         self.init_jesd(jesdcore, args)
         self.mykonos.start_radio()
         # We can now close the dboard regs UIO object if we want to (until we
         # re-run init(), of course)
+        # Help with garbage collection:
+        jesdcore = None
+        dboard_ctrl_regs = None
         return True
 
 
