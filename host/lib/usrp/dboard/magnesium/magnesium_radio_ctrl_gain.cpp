@@ -25,6 +25,7 @@ double magnesium_radio_ctrl_impl::_set_all_gain(
         "freq=" << freq << " Hz, "
         "chan=" << chan << ", "
         "dir=" << dir);
+    size_t ad9371_chan = _master?0:1;
     const auto gain_tuple = get_gain_tuple(gain, freq, dir);
     const double ad9371_gain =
         ((dir == RX_DIRECTION) ?  AD9371_MAX_RX_GAIN : AD9371_MAX_TX_GAIN)
@@ -34,7 +35,7 @@ double magnesium_radio_ctrl_impl::_set_all_gain(
         "AD9371 gain==" << ad9371_gain << " dB, "
         "DSA attenuation == " << gain_tuple.dsa_att << " dB."
     );
-    _ad9371->set_gain(ad9371_gain, chan, dir);
+    _ad9371->set_gain(ad9371_gain, ad9371_chan, dir);
     _dsa_set_att(gain_tuple.dsa_att, chan, dir);
     if (dir == RX_DIRECTION or dir == DX_DIRECTION) {
         _all_rx_gain = gain;
