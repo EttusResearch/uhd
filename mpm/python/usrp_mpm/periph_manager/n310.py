@@ -267,6 +267,8 @@ class n310(PeriphManagerBase):
     # This file will always contain the current image, regardless of SFP type,
     # dboard, etc. The host is responsible for providing a compatible image
     # for the N310's current setup.
+    # Label for the mboard UIO
+    mboard_regs_label = "mboard-regs"
     # Override the list of updateable components
     updateable_components = {
         'fpga': {
@@ -312,9 +314,7 @@ class n310(PeriphManagerBase):
         sure to catch it.
         """
         # Init Mboard Regs
-        self.mboard_regs = self._init_mboard_regs()
-        self.log.trace("Motherboard-register UIO object successfully generated!")
-        self.mboard_regs_control = MboardRegsControl(self.mboard_regs, self.log)
+        self.mboard_regs_control = MboardRegsControl(self.mboard_regs_label, self.log)
         self.mboard_regs_control.get_git_hash()
         # Init peripherals
         self.log.trace("Initializing TCA6424 port expander controls...")
@@ -349,13 +349,6 @@ class n310(PeriphManagerBase):
         }
         # Init complete.
         self.log.info("mboard info: {}".format(self.mboard_info))
-
-    def _init_mboard_regs(self):
-        " Create a UIO object to talk to mboard regs "
-        return UIO(
-            label="mboard-regs",
-            read_only=False
-        )
 
     def _init_ref_clock_and_time(self, default_args):
         """
@@ -865,9 +858,12 @@ class MboardRegsControl(object):
     MB_CLOCK_CTRL_MEAS_CLK_RESET = 12 # set to 1 to reset mmcm, default is 0
     MB_CLOCK_CTRL_MEAS_CLK_LOCKED = 13 # locked indication for meas_clk mmcm
 
-    def __init__(self, regs, log):
+    def __init__(self, label, log):
         self.log = log
-        self.regs = regs
+        self.regs = UIO(
+            label=label,
+            read_only=False
+        )
         self.poke32 = self.regs.poke32
         self.peek32 = self.regs.peek32
 
@@ -875,7 +871,8 @@ class MboardRegsControl(object):
         """
         Returns the GIT hash for the FPGA build.
         """
-        git_hash = self.peek32(self.MB_GIT_HASH)
+        with self.regs.open():
+            git_hash = self.peek32(self.MB_GIT_HASH)
         self.log.trace("FPGA build GIT Hash: 0x{:08X}".format(git_hash))
         return git_hash
 
@@ -900,11 +897,11 @@ class MboardRegsControl(object):
             pps_sel_val = 0b1 << self.MB_CLOCK_CTRL_PPS_SEL_GPSDO
         else:
             assert False
-
-        reg_val = self.peek32(self.MB_CLOCK_CTRL) & 0xFFFFFFF0; # clear lowest nibble
-        reg_val = reg_val | (pps_sel_val & 0xF) # set lowest nibble
-        self.log.trace("Writing MB_CLOCK_CTRL to 0x{:08X}".format(reg_val))
-        self.poke32(self.MB_CLOCK_CTRL, reg_val)
+        with self.regs.open():
+            reg_val = self.peek32(self.MB_CLOCK_CTRL) & 0xFFFFFFF0; # clear lowest nibble
+            reg_val = reg_val | (pps_sel_val & 0xF) # set lowest nibble
+            self.log.trace("Writing MB_CLOCK_CTRL to 0x{:08X}".format(reg_val))
+            self.poke32(self.MB_CLOCK_CTRL, reg_val)
 
     def enable_pps_out(self, enable):
         """
@@ -912,11 +909,12 @@ class MboardRegsControl(object):
         """
         self.log.trace("%s PPS/Trig output!", "Enabling" if enable else "Disabling")
         mask = 0xFFFFFFFF ^ (0b1 << self.MB_CLOCK_CTRL_PPS_OUT_EN)
-        reg_val = self.peek32(self.MB_CLOCK_CTRL) & mask # mask the bit to clear it
-        if enable:
-            reg_val = reg_val | (0b1 << self.MB_CLOCK_CTRL_PPS_OUT_EN) # set the bit if desired
-        self.log.trace("Writing MB_CLOCK_CTRL to 0x{:08X}".format(reg_val))
-        self.poke32(self.MB_CLOCK_CTRL, reg_val)
+        with self.regs.open():
+            reg_val = self.peek32(self.MB_CLOCK_CTRL) & mask # mask the bit to clear it
+            if enable:
+                reg_val = reg_val | (0b1 << self.MB_CLOCK_CTRL_PPS_OUT_EN) # set the bit if desired
+            self.log.trace("Writing MB_CLOCK_CTRL to 0x{:08X}".format(reg_val))
+            self.poke32(self.MB_CLOCK_CTRL, reg_val)
 
     def reset_meas_clk_mmcm(self, reset=True):
         """
@@ -924,18 +922,20 @@ class MboardRegsControl(object):
         """
         self.log.trace("%s measurement clock MMCM reset...", "Asserting" if reset else "Clearing")
         mask = 0xFFFFFFFF ^ (0b1 << self.MB_CLOCK_CTRL_MEAS_CLK_RESET)
-        reg_val = self.peek32(self.MB_CLOCK_CTRL) & mask # mask the bit to clear it
-        if reset:
-            reg_val = reg_val | (0b1 << self.MB_CLOCK_CTRL_MEAS_CLK_RESET) # set the bit if desired
-        self.log.trace("Writing MB_CLOCK_CTRL to 0x{:08X}".format(reg_val))
-        self.poke32(self.MB_CLOCK_CTRL, reg_val)
+        with self.regs.open():
+            reg_val = self.peek32(self.MB_CLOCK_CTRL) & mask # mask the bit to clear it
+            if reset:
+                reg_val = reg_val | (0b1 << self.MB_CLOCK_CTRL_MEAS_CLK_RESET) # set the bit if desired
+            self.log.trace("Writing MB_CLOCK_CTRL to 0x{:08X}".format(reg_val))
+            self.poke32(self.MB_CLOCK_CTRL, reg_val)
 
     def get_meas_clock_mmcm_lock(self):
         """
         Check the status of the MMCM for the measurement clock in the FPGA TDC.
         """
         mask = 0b1 << self.MB_CLOCK_CTRL_MEAS_CLK_LOCKED
-        reg_val = self.peek32(self.MB_CLOCK_CTRL)
+        with self.regs.open():
+            reg_val = self.peek32(self.MB_CLOCK_CTRL)
         locked = (reg_val & mask) > 0
         if not locked:
             self.log.warning("Measurement clock MMCM reporting unlocked. MB_CLOCK_CTRL "

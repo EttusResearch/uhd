@@ -25,6 +25,7 @@ from usrp_mpm.mpmlog import get_logger
 from usrp_mpm.sys_utils.uio import UIO
 from usrp_mpm.sys_utils.net import get_mac_addr
 
+
 class EthDispatcherTable(object):
     """
     Controls an Ethernet dispatcher table.
@@ -51,7 +52,8 @@ class EthDispatcherTable(object):
         """
         self.log.debug("Setting my own IP address to `{}'".format(ip_addr))
         ip_addr_int = int(netaddr.IPAddress(ip_addr))
-        self.poke32(self.OWN_IP_OFFSET, ip_addr_int)
+        with self._regs.open():
+            self.poke32(self.OWN_IP_OFFSET, ip_addr_int)
 
     def set_vita_port(self, port_value=None, port_idx=None):
         """
@@ -62,7 +64,8 @@ class EthDispatcherTable(object):
         port_value = port_value or self.DEFAULT_VITA_PORT[port_idx]
         assert port_idx in (0)                      #FIXME: Fix port_idx = 1
         port_reg_addr = self.OWN_PORT_OFFSET
-        self.poke32(port_reg_addr, port_value)
+        with self._regs.open():
+            self.poke32(port_reg_addr, port_value)
 
     def set_route(self, sid, ip_addr, udp_port, mac_addr=None):
         """
@@ -102,24 +105,27 @@ class EthDispatcherTable(object):
         ip_addr_int = int(netaddr.IPAddress(ip_addr))
         mac_addr_int = int(netaddr.EUI(mac_addr))
         sid_offset = 4 * dst_ep
+
         def poke_and_trace(addr, data):
             " Do a poke32() and log.trace() "
             self.log.trace("Writing to address 0x{:04X}: 0x{:04X}".format(
                 addr, data
             ))
             self.poke32(addr, data)
-        poke_and_trace(
-            self.SID_IP_OFFSET + sid_offset,
-            ip_addr_int
-        )
-        poke_and_trace(
-            self.SID_MAC_LO_OFFSET + sid_offset,
-            mac_addr_int & 0xFFFFFFFF,
-        )
-        poke_and_trace(
-            self.SID_PORT_MAC_HI_OFFSET + sid_offset,
-            (udp_port << 16) | (mac_addr_int >> 32)
-        )
+
+        with self._regs.open():
+            poke_and_trace(
+                self.SID_IP_OFFSET + sid_offset,
+                ip_addr_int
+            )
+            poke_and_trace(
+                self.SID_MAC_LO_OFFSET + sid_offset,
+                mac_addr_int & 0xFFFFFFFF,
+            )
+            poke_and_trace(
+                self.SID_PORT_MAC_HI_OFFSET + sid_offset,
+                (udp_port << 16) | (mac_addr_int >> 32)
+            )
 
     def set_forward_policy(self, forward_eth, forward_bcast):
         """
@@ -130,6 +136,5 @@ class EthDispatcherTable(object):
         self.log.trace("Writing to address 0x{:04X}: 0x{:04X}".format(
             self.FORWARD_ETH_BCAST_OFFSET, reg_value
         ))
-        self.poke32(self.FORWARD_ETH_BCAST_OFFSET, reg_value)
-
-
+        with self._regs.open():
+            self.poke32(self.FORWARD_ETH_BCAST_OFFSET, reg_value)

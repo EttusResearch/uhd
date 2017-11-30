@@ -306,18 +306,9 @@ class MPMServer(RPCServer):
         try:
             self.log.trace("Reset after updating component? {}".format(reset_now))
             if reset_now:
-                # TODO remove this hellspawn
-                self.log.error("Exiting now because you know we have this " \
-                               "bug we haven't fixed yet. Just respawn MPM "\
-                               "manually for now. Sorry about this. Ahem. " \
-                               "Please hit Ctrl-C now.")
-                self.log.critical("Seriously, hit Ctrl-C.")
-                assert False
-                # End of evil code (at least, *this* evil code)
                 self.reset_mgr()
                 self.log.debug("Reset the periph manager")
         except Exception as ex:
-            raise # This is also part of the evilness TODO remove
             self.log.error(
                 "Error in update_component while resetting: {}".format(
                     ex

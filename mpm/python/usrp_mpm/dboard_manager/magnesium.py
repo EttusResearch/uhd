@@ -29,7 +29,7 @@ from usrp_mpm.dboard_manager import DboardManagerBase
 from usrp_mpm.dboard_manager.lmk_mg import LMK04828Mg
 from usrp_mpm.cores import nijesdcore
 from usrp_mpm.mpmlog import get_logger
-from usrp_mpm.sys_utils.uio import UIO
+from usrp_mpm.sys_utils.uio import UIO, open_uio
 from usrp_mpm.sys_utils.udev import get_eeprom_paths
 from usrp_mpm.sys_utils.sysfs_gpio import SysFSGPIO
 from usrp_mpm.cores import ClockSynchronizer
@@ -136,14 +136,6 @@ class DboardClockControl(object):
         self.regs = regs
         self.poke32 = self.regs.poke32
         self.peek32 = self.regs.peek32
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self.log.trace("Tearing down DboardClockControl() object...")
-        self.regs = None
-        return exc_type is None
 
     def enable_outputs(self, enable=True):
         """
@@ -534,15 +526,15 @@ class Magnesium(DboardManagerBase):
         # The following peripherals are only used during init, so we don't want
         # to hang on to them for the full lifetime of the Magnesium class. This
         # helps us close file descriptors associated with the UIO objects.
-        dboard_ctrl_regs = UIO(
+        with open_uio(
             label="dboard-regs-{}".format(self.slot_idx),
             read_only=False
-        )
-        self.log.trace("Creating jesdcore object...")
-        jesdcore = nijesdcore.NIMgJESDCore(dboard_ctrl_regs, self.slot_idx)
-        # Now get cracking with the actual init sequence:
-        self.log.trace("Creating dboard clock control object...")
-        with DboardClockControl(dboard_ctrl_regs, self.log) as db_clk_control:
+        ) as dboard_ctrl_regs:
+            self.log.trace("Creating jesdcore object...")
+            jesdcore = nijesdcore.NIMgJESDCore(dboard_ctrl_regs, self.slot_idx)
+            # Now get cracking with the actual init sequence:
+            self.log.trace("Creating dboard clock control object...")
+            db_clk_control = DboardClockControl(dboard_ctrl_regs, self.log)
             self.log.debug("Reset Dboard Clocking and JESD204B interfaces...")
             db_clk_control.reset_mmcm()
             jesdcore.reset()
@@ -555,18 +547,15 @@ class Magnesium(DboardManagerBase):
                 self.INIT_PHASE_DAC_WORD,
             )
             db_clk_control.enable_mmcm()
-        self.log.info("Sample Clocks and Phase DAC Configured Successfully!")
-        # Synchronize DB Clocks
-        _sync_db_clock(_get_clock_synchronizer())
-        # Clocks and PPS are now fully active!
-        self.mykonos.set_master_clock_rate(self.master_clock_rate)
-        self.init_jesd(jesdcore, args)
+            self.log.info("Sample Clocks and Phase DAC Configured Successfully!")
+            # Synchronize DB Clocks
+            _sync_db_clock(_get_clock_synchronizer())
+            # Clocks and PPS are now fully active!
+            self.mykonos.set_master_clock_rate(self.master_clock_rate)
+            self.init_jesd(jesdcore, args)
+            jesdcore = None # Help with garbage collection
+            # That's all that requires access to the dboard regs!
         self.mykonos.start_radio()
-        # We can now close the dboard regs UIO object if we want to (until we
-        # re-run init(), of course)
-        # Help with garbage collection:
-        jesdcore = None
-        dboard_ctrl_regs = None
         return True
 
 
@@ -775,7 +764,6 @@ class Magnesium(DboardManagerBase):
         self.log.trace("JESD204b Lane Rate set to {} Gbps!".format(new_rate/1e9))
         self.current_jesd_rate = new_rate
         return
-
 
     def get_user_eeprom_data(self):
         """

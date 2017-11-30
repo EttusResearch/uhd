@@ -201,10 +201,11 @@ class DboardClockControl(object):
         """
         Enables or disables the MMCM outputs.
         """
-        if enable:
-            self.poke32(self.RADIO_CLK_ENABLES, 0x011)
-        else:
-            self.poke32(self.RADIO_CLK_ENABLES, 0x000)
+        with self.regs.open():
+            if enable:
+                self.poke32(self.RADIO_CLK_ENABLES, 0x011)
+            else:
+                self.poke32(self.RADIO_CLK_ENABLES, 0x000)
 
     def reset_mmcm(self):
         """
@@ -212,7 +213,8 @@ class DboardClockControl(object):
         """
         self.log.trace("Disabling all Radio Clocks, then resetting MMCM...")
         self.enable_outputs(False)
-        self.poke32(self.RADIO_CLK_MMCM, 0x1)
+        with self.regs.open():
+            self.poke32(self.RADIO_CLK_MMCM, 0x1)
 
     def enable_mmcm(self):
         """
@@ -221,20 +223,23 @@ class DboardClockControl(object):
         If MMCM is not locked after unreset, an exception is thrown.
         """
         self.log.trace("Un-resetting MMCM...")
-        self.poke32(self.RADIO_CLK_MMCM, 0x2)
-        time.sleep(0.5) # Replace with poll and timeout TODO
-        mmcm_locked = bool(self.peek32(self.RADIO_CLK_MMCM) & 0x10)
-        if not mmcm_locked:
-            self.log.error("MMCM not locked!")
-            raise RuntimeError("MMCM not locked!")
-        self.log.trace("Enabling output MMCM clocks...")
-        self.enable_outputs(True)
+        with self.regs.open():
+            self.poke32(self.RADIO_CLK_MMCM, 0x2)
+            time.sleep(0.5) # Replace with poll and timeout TODO
+            mmcm_locked = bool(self.peek32(self.RADIO_CLK_MMCM) & 0x10)
+            if not mmcm_locked:
+                self.log.error("MMCM not locked!")
+                raise RuntimeError("MMCM not locked!")
+            self.log.trace("Enabling output MMCM clocks...")
+            self.enable_outputs(True)
 
     def check_refclk(self):
         """
         Not technically a clocking reg, but related.
         """
-        return bool(self.peek32(self.MGT_REF_CLK_STATUS) & 0x1)
+        with self.regs.open():
+            return bool(self.peek32(self.MGT_REF_CLK_STATUS) & 0x1)
+
 
 
 class JesdCoreEiscat(object):
@@ -273,17 +278,18 @@ class JesdCoreEiscat(object):
         Verify that the JESD core ID is correct.
         """
         expected_id = self.CORE_ID_BASE + self.core_idx
-        core_id = self.peek32(self.JESD_SIGNATURE_REG)
-        self.log.trace("Reading JESD core ID: {:x}".format(core_id))
-        if core_id != expected_id:
-            self.log.error(
-                "Cannot identify JESD core! Read ID: {:x} Expected: {:x}".format(
-                    core_id, expected_id
+        with self.regs.open():
+            core_id = self.peek32(self.JESD_SIGNATURE_REG)
+            self.log.trace("Reading JESD core ID: {:x}".format(core_id))
+            if core_id != expected_id:
+                self.log.error(
+                    "Cannot identify JESD core! Read ID: {:x} Expected: {:x}".format(
+                        core_id, expected_id
+                    )
                 )
-            )
-            return False
-        date_info = core_id = self.peek32(self.JESD_REVISION_REG)
-        self.log.trace("Reading JESD date info: {:x}".format(date_info))
+                return False
+            date_info = core_id = self.peek32(self.JESD_REVISION_REG)
+            self.log.trace("Reading JESD date info: {:x}".format(date_info))
         return True
 
     def init(self):
@@ -306,11 +312,12 @@ class JesdCoreEiscat(object):
         Returns nothing, but throws on error.
         """
         self.log.trace("Init JESD Deframer...")
-        self.poke32(0x40, 0x02) # Force assertion of ADC SYNC
-        self.poke32(0x50, 0x01) # Data = 0 = Scrambler enabled. Data = 1 = disabled. Must match ADC settings.
-        if not self._gt_rx_reset(reset_only=False):
-            raise RuntimeError("JESD Core did not come out of reset properly!")
-        self.poke32(0x40, 0x00) # Stop forcing assertion of ADC SYNC
+        with self.regs.open():
+            self.poke32(0x40, 0x02) # Force assertion of ADC SYNC
+            self.poke32(0x50, 0x01) # Data = 0 = Scrambler enabled. Data = 1 = disabled. Must match ADC settings.
+            if not self._gt_rx_reset(reset_only=False):
+                raise RuntimeError("JESD Core did not come out of reset properly!")
+            self.poke32(0x40, 0x00) # Stop forcing assertion of ADC SYNC
 
     def check_deframer_status(self):
         """
@@ -328,8 +335,9 @@ class JesdCoreEiscat(object):
         """
         Power down unused CPLLs and QPLLs
         """
-        self.poke32(0x00C, 0xFFFC0000)
-        self.log.trace("MGT power enabled readback: {:x}".format(self.peek32(0x00C)))
+        with self.regs.open():
+            self.poke32(0x00C, 0xFFFC0000)
+            self.log.trace("MGT power enabled readback: {:x}".format(self.peek32(0x00C)))
 
     def _gt_rx_reset(self, reset_only=True):
         """
@@ -338,34 +346,36 @@ class JesdCoreEiscat(object):
 
         Returns True on success.
         """
-        self.poke32(0x024, 0x10) # Place the RX MGTs in reset
-        if not reset_only:
-            time.sleep(.001) # Probably not necessary
-            self.poke32(0x024, 0x20) # Unreset and Enable
-            time.sleep(0.1) # TODO replace with poll and timeout 20 ms
-            self.log.trace("MGT power enabled readback (rst seq): {:x}".format(self.peek32(0x00C)))
-            self.log.trace("MGT CPLL lock readback (rst seq): {:x}".format(self.peek32(0x004)))
-            lock_status = self.peek32(0x024)
-            if lock_status & 0xFFFF0000 != 0x30000:
-                self.log.error(
-                    "JESD Core {}: RX MGTs failed to reset! Status: 0x{:x}".format(self.core_idx, lock_status)
-                )
-                return False
+        with self.regs.open():
+            self.poke32(0x024, 0x10) # Place the RX MGTs in reset
+            if not reset_only:
+                time.sleep(.001) # Probably not necessary
+                self.poke32(0x024, 0x20) # Unreset and Enable
+                time.sleep(0.1) # TODO replace with poll and timeout 20 ms
+                self.log.trace("MGT power enabled readback (rst seq): {:x}".format(self.peek32(0x00C)))
+                self.log.trace("MGT CPLL lock readback (rst seq): {:x}".format(self.peek32(0x004)))
+                lock_status = self.peek32(0x024)
+                if lock_status & 0xFFFF0000 != 0x30000:
+                    self.log.error(
+                        "JESD Core {}: RX MGTs failed to reset! Status: 0x{:x}".format(self.core_idx, lock_status)
+                    )
+                    return False
         return True
 
     def _gt_pll_lock_control(self):
         """
         Make sure PLLs are locked
         """
-        self.poke32(0x004, 0x11111111) # Reset CPLLs
-        self.poke32(0x004, 0x11111100) # Unreset the ones we're using
-        time.sleep(0.02) # TODO replace with poll and timeout
-        self.poke32(0x010, 0x10000) # Clear all CPLL sticky bits
-        self.log.trace("MGT CPLL lock readback (lock seq): {:x}".format(self.peek32(0x004)))
-        lock_status = self.peek32(0x004) & 0xFF
-        lock_good = bool(lock_status == 0x22)
-        if not lock_good:
-            self.log.error("GT PLL failed to lock! Status: 0x{:x}".format(lock_status))
+        with self.regs.open():
+            self.poke32(0x004, 0x11111111) # Reset CPLLs
+            self.poke32(0x004, 0x11111100) # Unreset the ones we're using
+            time.sleep(0.02) # TODO replace with poll and timeout
+            self.poke32(0x010, 0x10000) # Clear all CPLL sticky bits
+            self.log.trace("MGT CPLL lock readback (lock seq): {:x}".format(self.peek32(0x004)))
+            lock_status = self.peek32(0x004) & 0xFF
+            lock_good = bool(lock_status == 0x22)
+            if not lock_good:
+                self.log.error("GT PLL failed to lock! Status: 0x{:x}".format(lock_status))
         return lock_good
 
     def _gt_polarity_control(self):
@@ -380,7 +390,8 @@ class JesdCoreEiscat(object):
             "JESD Core: Slot {}, ADC {}: Setting polarity control to 0x{:2x}".format(
                 self.slot, self.core_idx, reg_val
             ))
-        self.poke32(0x80, reg_val)
+        with self.regs.open():
+            self.poke32(0x80, reg_val)
 
 
 class EISCAT(DboardManagerBase):
@@ -567,16 +578,16 @@ class EISCAT(DboardManagerBase):
         # Clocks and PPS are now fully active!
         return True
 
-
     def send_sysref(self):
         """
         Send a SYSREF from MPM. This is not possible to do in a timed
         fashion though.
         """
         self.log.trace("Sending SYSREF via MPM...")
-        self.radio_regs.poke32(self.SYSREF_CONTROL, 0x0)
-        self.radio_regs.poke32(self.SYSREF_CONTROL, 0x1)
-        self.radio_regs.poke32(self.SYSREF_CONTROL, 0x0)
+        with self.radio_regs.open():
+            self.radio_regs.poke32(self.SYSREF_CONTROL, 0x0)
+            self.radio_regs.poke32(self.SYSREF_CONTROL, 0x1)
+            self.radio_regs.poke32(self.SYSREF_CONTROL, 0x0)
 
     def init_jesd_core_reset_adcs(self):
         """
@@ -672,10 +683,11 @@ class EISCAT(DboardManagerBase):
         # Enable all channels first due to a signal integrity issue when enabling them
         # after the LNA enable is asserted.
         self.log.trace("Enabling power to the daughterboard...")
-        regs.poke32(self.DB_CH_ENABLES, 0x000000FF)
-        regs.poke32(self.DB_ENABLES,    0x01000000)
-        regs.poke32(self.DB_ENABLES,    0x00010101)
-        regs.poke32(self.ADC_CONTROL,   0x00010000)
+        with regs.open():
+            regs.poke32(self.DB_CH_ENABLES, 0x000000FF)
+            regs.poke32(self.DB_ENABLES,    0x01000000)
+            regs.poke32(self.DB_ENABLES,    0x00010101)
+            regs.poke32(self.ADC_CONTROL,   0x00010000)
         time.sleep(0.100)
 
     def _deinit_power(self, regs):
@@ -683,9 +695,10 @@ class EISCAT(DboardManagerBase):
         Turn off power to the dboard. Sequence is reverse of init_power.
         """
         self.log.trace("Disabling power to the daughterboard...")
-        regs.poke32(self.ADC_CONTROL,   0x00100000)
-        regs.poke32(self.DB_ENABLES,    0x10101010)
-        regs.poke32(self.DB_CH_ENABLES, 0x00000000) # Disable all channels (last)
+        with regs.open():
+            regs.poke32(self.ADC_CONTROL,   0x00100000)
+            regs.poke32(self.DB_ENABLES,    0x10101010)
+            regs.poke32(self.DB_CH_ENABLES, 0x00000000) # Disable all channels (last)
 
     def update_ref_clock_freq(self, freq):
         """

@@ -47,14 +47,14 @@ class LiberioDispatcherTable(object):
             self.poke32(addr, data)
         # Poke reg for destination channel
         try:
-            poke_and_trace(
-                0 + 4 * sid.dst_ep,
-                dma_channel,
-            )
+            with self._regs.open():
+                poke_and_trace(
+                    0 + 4 * sid.dst_ep,
+                    dma_channel,
+                )
         except Exception as ex:
             self.log.error(
                 "Unexpected exception while setting route: %s",
                 str(ex),
             )
             raise
-

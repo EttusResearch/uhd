@@ -18,16 +18,26 @@
 Access to UIO mapped memory.
 """
 
-import struct
 import os
-import mmap
-from builtins import hex
 from builtins import object
+from contextlib import contextmanager
 import pyudev
+import usrp_mpm.libpyusrp_periphs as lib
 from usrp_mpm.mpmlog import get_logger
 
 UIO_SYSFS_BASE_DIR = '/sys/class/uio'
 UIO_DEV_BASE_DIR = '/dev'
+
+
+@contextmanager
+def open_uio(label=None, path=None, length=None, read_only=True, offset=None):
+    """Convenience function for creating a UIO object.
+    Use this like you would open() for a file"""
+    uio_obj = UIO(label, path, length, read_only, offset)
+    uio_obj.open()
+    yield uio_obj
+    uio_obj.close()
+
 
 def get_all_uio_devs():
     """
@@ -42,6 +52,7 @@ def get_all_uio_devs():
     except OSError:
         # Typically means UIO devices
         return []
+
 
 def get_uio_map_info(uio_dev, map_num):
     """
@@ -64,6 +75,7 @@ def get_uio_map_info(uio_dev, map_num):
             map_info[info_file] = map_info_value
     return map_info
 
+
 def find_uio_device(label, logger=None):
     """
     Given a label, returns a tuple (uio_device, map_info).
@@ -84,6 +96,7 @@ def find_uio_device(label, logger=None):
     if logger:
         logger.warning("Found no matching UIO device for label `{0}'".format(label))
     return None, None
+
 
 class UIO(object):
     """
@@ -123,35 +136,30 @@ class UIO(object):
             self.log.error("Could not find a UIO device for label {0}".format(label))
             raise RuntimeError("Could not find a UIO device for label {0}".format(label))
         self._read_only = read_only
-        self.log.trace("Opening UIO device file {}...".format(self._path))
-        self._fd = os.open(self._path, os.O_RDONLY if read_only else os.O_RDWR)
-        self.log.trace("Calling mmap({fd}, length={length}, offset={offset})".format(
-            fd=self._fd, length=hex(length), offset=hex(offset)
-        ))
-        self._mm = mmap.mmap(
-            self._fd,
-            length,
-            flags=mmap.MAP_SHARED,
-            prot=mmap.PROT_READ | (0 if read_only else mmap.PROT_WRITE),
-            offset=offset,
-        )
+        # Our UIO objects are managed in C++ land, which gives us more granular control over
+        # opening and closing
+        self._uio = lib.types.mmap_regs_iface(self._path, length, offset, self._read_only, False)
 
-    def __del__(self):
-        """
-        Destructor needs to close the uio-mapped memory
-        """
-        try:
-            self._mm.close()
-            os.close(self._fd)
-        except:
-            self.log.warning("Failed to properly destruct UIO object.")
-            pass
+    def __enter__(self):
+        self.open()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.close()
+        return exc_type is None
+
+    def open(self):
+        self._uio.open()
+        return self
+
+    def close(self):
+        self._uio.close()
 
     def peek32(self, addr):
         """
         Returns the 32-bit value starting at address addr as an integer
         """
-        return struct.unpack('@I', self._mm[addr:addr+4])[0]
+        return self._uio.peek32(addr)
 
     def poke32(self, addr, val):
         """
@@ -160,8 +168,4 @@ class UIO(object):
         A value that exceeds 32 bits will be truncated to 32 bits.
         """
         assert not self._read_only
-        self._mm[addr:addr+4] = struct.pack(
-            '@I',
-            (val & 0xFFFFFFFF),
-        )
-
+        return self._uio.poke32(addr, val)

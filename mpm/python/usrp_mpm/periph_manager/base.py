@@ -22,6 +22,7 @@ from __future__ import print_function
 import os
 from hashlib import md5
 from concurrent import futures
+from time import sleep
 from builtins import str
 from builtins import range
 from builtins import object
@@ -226,6 +227,9 @@ class PeriphManagerBase(object):
         ))
         for overlay in requested_overlays:
             dtoverlay.apply_overlay_safe(overlay)
+        # Need to wait here a second to make sure the ethernet interfaces are up
+        # TODO: Fine-tune this number, or wait for some smarter signal.
+        sleep(1)
 
 
     def _init_dboards(self, override_dboard_pids=None):
