@@ -35,6 +35,7 @@ from usrp_mpm import dtoverlay
 from usrp_mpm.xports import XportMgrUDP, XportMgrLiberio
 from ..sysfs_gpio import SysFSGPIO
 from .. import libpyusrp_periphs as lib
+from ..uio import UIO
 
 N3XX_DEFAULT_EXT_CLOCK_FREQ = 10e6
 N3XX_DEFAULT_CLOCK_SOURCE = 'external'
@@ -312,8 +313,9 @@ class n310(PeriphManagerBase):
         """
         # Init Mboard Regs
         self.mboard_regs = self._init_mboard_regs()
-        self.log.info("Motherboard-register UIO object successfully generated!")
+        self.log.trace("Motherboard-register UIO object successfully generated!")
         self.mboard_regs_control = MboardRegsControl(self.mboard_regs, self.log)
+        self.mboard_regs_control.get_git_hash()
         # Init peripherals
         self.log.trace("Initializing TCA6424 port expander controls...")
         self._gpios = TCA6424(int(self.mboard_info['rev']))
@@ -339,6 +341,7 @@ class n310(PeriphManagerBase):
         self._clock_source = None
         self._time_source = None
         self._init_ref_clock_and_time(args.default_args)
+        self._init_meas_clock()
         # Init CHDR transports
         self._xport_mgrs = {
             'udp': N310XportMgrUDP(self.log.getChild('UDP')),
@@ -376,6 +379,19 @@ class n310(PeriphManagerBase):
             self.set_time_source(
                 default_args.get('time_source', N3XX_DEFAULT_TIME_SOURCE)
             )
+            self.enable_pps_out(
+                default_args.get('pps_export', True)
+            )
+
+    def _init_meas_clock(self):
+        """
+        Initialize the TDC measurement clock. After this function returns, the
+        FPGA TDC meas_clock is valid.
+        """
+        # No need to toggle reset here, simply confirm it is out of reset.
+        self.mboard_regs_control.reset_meas_clk_mmcm(False)
+        if not self.mboard_regs_control.get_meas_clock_mmcm_lock():
+            raise RuntimeError("Measurement clock failed to init")
 
     def init(self, args):
         """
@@ -544,7 +560,7 @@ class n310(PeriphManagerBase):
 
     def get_time_sources(self):
         " Returns list of valid time sources "
-        return ['internal', 'external']
+        return ['internal', 'external', 'gpsdo']
 
     def get_time_source(self):
         " Return the currently selected time source "
@@ -553,8 +569,11 @@ class n310(PeriphManagerBase):
     def set_time_source(self, time_source):
         " Set a time source "
         assert time_source in self.get_time_sources()
-        self.log.trace("Setting time source to `{}'".format(time_source))
-        self.mboard_regs_control.set_time_source(time_source)
+        self.mboard_regs_control.set_time_source(time_source, self.get_ref_clock_freq())
+
+    def enable_pps_out(self, enable):
+        " Export a PPS/Trigger to the back panel "
+        self.mboard_regs_control.enable_pps_out(enable)
 
     def enable_gps(self, enable):
         """
@@ -797,24 +816,91 @@ class MboardRegsControl(object):
     MB_SCRATCH = 0x0014
     MB_CLOCK_CTRL = 0x0018
 
+    # Bitfield locations for the MB_CLOCK_CTRL register.
+    MB_CLOCK_CTRL_PPS_SEL_INT_10 = 0 # pps_sel is one-hot encoded!
+    MB_CLOCK_CTRL_PPS_SEL_INT_25 = 1
+    MB_CLOCK_CTRL_PPS_SEL_EXT    = 2
+    MB_CLOCK_CTRL_PPS_SEL_GPSDO  = 3
+    MB_CLOCK_CTRL_PPS_OUT_EN = 4 # output enabled = 1
+    MB_CLOCK_CTRL_MEAS_CLK_RESET = 12 # set to 1 to reset mmcm, default is 0
+    MB_CLOCK_CTRL_MEAS_CLK_LOCKED = 13 # locked indication for meas_clk mmcm
+
     def __init__(self, regs, log):
         self.log = log
         self.regs = regs
         self.poke32 = self.regs.poke32
         self.peek32 = self.regs.peek32
 
-    def set_time_source(self, time_source):
+    def get_git_hash(self):
+        """
+        Returns the GIT hash for the FPGA build.
+        """
+        git_hash = self.peek32(self.MB_GIT_HASH)
+        self.log.trace("FPGA build GIT Hash: 0x{:08X}".format(git_hash))
+        return git_hash
+
+    def set_time_source(self, time_source, ref_clk_freq):
         """
         Set time source
         """
+        pps_sel_val = 0x0
         if time_source == 'internal':
-            self.log.trace("Setting time source to internal...")
-            val = self.peek32(self.MB_CLOCK_CTRL);
-            self.poke32(self.MB_CLOCK_CTRL, 0x1 | val)
+            assert ref_clk_freq in (10e6, 25e6)
+            if ref_clk_freq == 10e6:
+                self.log.trace("Setting time source to internal (10 MHz reference)...")
+                pps_sel_val = 0b1 << self.MB_CLOCK_CTRL_PPS_SEL_INT_10
+            elif ref_clk_freq == 25e6:
+                self.log.trace("Setting time source to internal (25 MHz reference)...")
+                pps_sel_val = 0b1 << self.MB_CLOCK_CTRL_PPS_SEL_INT_25
         elif time_source == 'external':
             self.log.trace("Setting time source to external...")
-            val = self.peek32(self.MB_CLOCK_CTRL);
-            self.poke32(self.MB_CLOCK_CTRL, 0x0 & val)
+            pps_sel_val = 0b1 << self.MB_CLOCK_CTRL_PPS_SEL_EXT
+        elif time_source == 'gpsdo':
+            self.log.trace("Setting time source to gpsdo...")
+            pps_sel_val = 0b1 << self.MB_CLOCK_CTRL_PPS_SEL_GPSDO
         else:
             assert False
+
+        reg_val = self.peek32(self.MB_CLOCK_CTRL) & 0xFFFFFFF0; # clear lowest nibble
+        reg_val = reg_val | (pps_sel_val & 0xF) # set lowest nibble
+        self.log.trace("Writing MB_CLOCK_CTRL to 0x{:08X}".format(reg_val))
+        self.poke32(self.MB_CLOCK_CTRL, reg_val)
+
+    def enable_pps_out(self, enable):
+        """
+        Enables the PPS/Trig output on the back panel
+        """
+        self.log.trace("%s PPS/Trig output!", "Enabling" if enable else "Disabling")
+        mask = 0xFFFFFFFF ^ (0b1 << self.MB_CLOCK_CTRL_PPS_OUT_EN)
+        reg_val = self.peek32(self.MB_CLOCK_CTRL) & mask # mask the bit to clear it
+        if enable:
+            reg_val = reg_val | (0b1 << self.MB_CLOCK_CTRL_PPS_OUT_EN) # set the bit if desired
+        self.log.trace("Writing MB_CLOCK_CTRL to 0x{:08X}".format(reg_val))
+        self.poke32(self.MB_CLOCK_CTRL, reg_val)
+
+    def reset_meas_clk_mmcm(self, reset=True):
+        """
+        Reset or unreset the MMCM for the measurement clock in the FPGA TDC.
+        """
+        self.log.trace("%s measurement clock MMCM reset...", "Asserting" if reset else "Clearing")
+        mask = 0xFFFFFFFF ^ (0b1 << self.MB_CLOCK_CTRL_MEAS_CLK_RESET)
+        reg_val = self.peek32(self.MB_CLOCK_CTRL) & mask # mask the bit to clear it
+        if reset:
+            reg_val = reg_val | (0b1 << self.MB_CLOCK_CTRL_MEAS_CLK_RESET) # set the bit if desired
+        self.log.trace("Writing MB_CLOCK_CTRL to 0x{:08X}".format(reg_val))
+        self.poke32(self.MB_CLOCK_CTRL, reg_val)
+
+    def get_meas_clock_mmcm_lock(self):
+        """
+        Check the status of the MMCM for the measurement clock in the FPGA TDC.
+        """
+        mask = 0b1 << self.MB_CLOCK_CTRL_MEAS_CLK_LOCKED
+        reg_val = self.peek32(self.MB_CLOCK_CTRL)
+        locked = (reg_val & mask) > 0
+        if not locked:
+            self.log.warning("Measurement clock MMCM reporting unlocked. MB_CLOCK_CTRL "
+                           "reg: 0x{:08X}".format(reg_val))
+        else:
+            self.log.trace("Measurement clock MMCM locked!")
+        return locked
 
