@@ -50,6 +50,8 @@ namespace {
     //! Most pessimistic time for a CHDR query to go to device and back
     const double MPMD_CHDR_MAX_RTT = 0.02;
 
+    const std::string MPMD_MGMT_ADDR_KEY = "mgmt_addr";
+
     /*************************************************************************
      * Helper functions
      ************************************************************************/
@@ -343,15 +345,21 @@ mpmd_mboard_impl::uptr mpmd_impl::setup_mb(
     const size_t mb_index,
     const uhd::device_addr_t& device_args
 ) {
+    const std::string rpc_addr =
+        device_args.get(MPMD_MGMT_ADDR_KEY, device_args.get("addr", ""));
     UHD_LOGGER_DEBUG("MPMD")
         << "Initializing mboard " << mb_index
-        << ". Device args: " << device_args.to_string()
+        << ". Device args: `" << device_args.to_string()
+        << "'. RPC address: " << rpc_addr
     ;
 
-    auto mb = mpmd_mboard_impl::make(
-        device_args,
-        device_args["addr"]
-    );
+    if (rpc_addr.empty()) {
+        UHD_LOG_ERROR("MPMD",
+            "Could not determine RPC address from device args: "
+            << device_args.to_string());
+        throw uhd::runtime_error("Could not determine device RPC address.");
+    }
+    auto mb = mpmd_mboard_impl::make(device_args, rpc_addr);
 
     if (device_args.has_key("skip_init")) {
         return mb;
@@ -460,11 +468,20 @@ size_t mpmd_impl::allocate_xbar_local_addr()
  ****************************************************************************/
 device_addrs_t mpmd_find_with_addr(const device_addr_t& hint_)
 {
+    device_addrs_t addrs;
+    const std::string query_addr =
+        hint_.get(MPMD_MGMT_ADDR_KEY, hint_.get("addr", ""));
+    if (query_addr.empty()) {
+        UHD_LOG_WARNING("MPMD FIND",
+            "Was supposed to find with addr, but no addr was given (hint was: "
+            << hint_.to_string() << ")");
+        return addrs;
+    }
+
     transport::udp_simple::sptr comm = transport::udp_simple::make_broadcast(
-        hint_["addr"], std::to_string(MPM_DISCOVERY_PORT));
+        query_addr, std::to_string(MPM_DISCOVERY_PORT));
     comm->send(
         boost::asio::buffer(&MPM_DISCOVERY_CMD, sizeof(MPM_DISCOVERY_CMD)));
-    device_addrs_t addrs;
     while (true) {
         char buff[4096] = {};
         const size_t nbytes = comm->recv( // TODO make sure we don't buf overflow
@@ -483,7 +500,8 @@ device_addrs_t mpmd_find_with_addr(const device_addr_t& hint_)
         if (result.empty()) {
             continue;
         }
-        // who else is reposending to our request !?
+        // Verify we didn't receive something other than an MPM discovery
+        // response
         if (result[0] != "USRP-MPM") {
             continue;
         }
@@ -502,7 +520,10 @@ device_addrs_t mpmd_find_with_addr(const device_addr_t& hint_)
             continue;
         }
         device_addr_t new_addr;
-        new_addr["addr"] = recv_addr;
+        new_addr[MPMD_MGMT_ADDR_KEY] = recv_addr;
+        if (not new_addr.has_key("addr")) {
+            new_addr["addr"] = recv_addr;
+        }
         new_addr["type"] = "mpmd"; // hwd will overwrite this
         // remove ident string and put other informations into device_args dict
         result.erase(result.begin());
@@ -522,6 +543,8 @@ device_addrs_t mpmd_find_with_addr(const device_addr_t& hint_)
             and (not hint_.has_key("type")    or hint_["type"]    == new_addr["type"])
             and (not hint_.has_key("product") or hint_["product"] == new_addr["product"])
         ){
+            UHD_LOG_TRACE("MPMD FIND",
+                "Found device that matches hints: " << new_addr.to_string());
             addrs.push_back(new_addr);
         } else {
             UHD_LOG_DEBUG("MPMD FIND",
@@ -532,60 +555,89 @@ device_addrs_t mpmd_find_with_addr(const device_addr_t& hint_)
     return addrs;
 };
 
-device_addrs_t mpmd_find(const device_addr_t& hint_)
-{
-    // handle cases:
-    //
-    //  - empty hint
-    //  - multiple addrs
-    //  - single addr
 
-    device_addrs_t hints = separate_device_addr(hint_);
-    // either hints has:
-    // multiple entries
-    //   -> search for multiple devices and join them back into one
-    //   device_addr_t
-    // one entry with addr:
-    //   -> search for one device with this addr
-    // one
-    // multiple addrs
-    if (hints.size() > 1) {
-        device_addrs_t found_devices;
-        found_devices.reserve(hints.size());
-        for (const auto& hint : hints) {
-            if (not hint.has_key("addr")) { // maybe allow other attributes as well
-                return device_addrs_t();
-            }
-            device_addrs_t reply_addrs = mpmd_find_with_addr(hint);
-            if (reply_addrs.size() > 1) {
-                throw uhd::value_error(
-                    str(boost::format("Could not resolve device hint \"%s\" to "
-                                      "a single device.") %
-                        hint.to_string()));
-            } else if (reply_addrs.empty()) {
-                return device_addrs_t();
-            }
-            found_devices.push_back(reply_addrs[0]);
+
+// Implements scenario 1) (see below)
+device_addrs_t mpmd_find_with_addrs(const device_addrs_t& hints)
+{
+    UHD_LOG_TRACE("MPMD FIND", "Finding with addrs.");
+    device_addrs_t found_devices;
+    found_devices.reserve(hints.size());
+    for (const auto& hint : hints) {
+        if (not (hint.has_key("addr") or hint.has_key(MPMD_MGMT_ADDR_KEY))) {
+            UHD_LOG_DEBUG("MPMD FIND",
+                "No address given in hint " << hint.to_string());
+            continue;
         }
+        device_addrs_t reply_addrs = mpmd_find_with_addr(hint);
+        if (reply_addrs.size() > 1) {
+            UHD_LOG_ERROR("MPMD",
+                "Could not resolve device hint \"" << hint.to_string()
+                << "\" to a unique device.");
+            continue;
+        } else if (reply_addrs.empty()) {
+            continue;
+        }
+        UHD_LOG_TRACE("MPMD FIND",
+            "Device responded: " << reply_addrs[0].to_string());
+        found_devices.push_back(reply_addrs[0]);
+    }
+    if (found_devices.size() == 1) {
+        return found_devices;
+    } else {
         return device_addrs_t(1, combine_device_addrs(found_devices));
     }
-    hints.resize(1);
-    device_addr_t hint = hints[0];
+}
+
+device_addrs_t mpmd_find_with_bcast(const device_addr_t& hint)
+{
     device_addrs_t addrs;
-
-    if (hint.has_key("addr")) {
-        // is this safe?
-        return mpmd_find_with_addr(hint);
-    }
-
+    UHD_LOG_TRACE("MPMD FIND",
+            "Broadcasting on all available interfaces to find MPM devices.");
     for (const transport::if_addrs_t& if_addr : transport::get_if_addrs()) {
         device_addr_t new_hint = hint;
-        new_hint["addr"] = if_addr.bcast;
+        new_hint[MPMD_MGMT_ADDR_KEY] = if_addr.bcast;
 
         device_addrs_t reply_addrs = mpmd_find_with_addr(new_hint);
         addrs.insert(addrs.begin(), reply_addrs.begin(), reply_addrs.end());
     }
     return addrs;
+}
+
+/*! Find MPM devices based on a hint
+ *
+ * There are two scenarios:
+ *
+ * 1) an addr or mgmt_addr was defined
+ *
+ * In this case, we will go through all the addrs. If they point to a device,
+ * we will then compare the other attributes (serial, etc.). If they match,
+ * the device goes into a list.
+ *
+ * 2) No addrs were defined
+ *
+ * In this case, we do a broadcast ping to see if any devices respond. After
+ * that, we do the same matching.
+ *
+ */
+device_addrs_t mpmd_find(const device_addr_t& hint_)
+{
+    device_addrs_t hints = separate_device_addr(hint_);
+    UHD_LOG_TRACE("MPMD FIND",
+        "Finding with " << hints.size() << " different hint(s).");
+
+    // Scenario 1): User gave us at least one address
+    if (not hints.empty() and
+            (hints[0].has_key("addr") or
+             hints[0].has_key(MPMD_MGMT_ADDR_KEY))) {
+        return mpmd_find_with_addrs(hints);
+    }
+
+    // Scenario 2): User gave us no address, and we need to broadcast
+    if (hints.empty()) {
+        hints.resize(1);
+    }
+    return mpmd_find_with_bcast(hints[0]);
 }
 
 static device::sptr mpmd_make(const device_addr_t& device_args)
