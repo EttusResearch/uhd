@@ -131,7 +131,7 @@ def read_eeprom(
         parsed_data = eeprom_parser.unpack_from(data)
         read_crc = parsed_data[-1]
         rawdata_without_crc = eeprom_parser_no_crc.pack(*(parsed_data[0:-1]))
-        expected_crc = zlib.crc32(rawdata_without_crc)
+        expected_crc = zlib.crc32(rawdata_without_crc) & 0xffffffff
         if  read_crc != expected_crc:
             raise RuntimeError(
                 "Received incorrect CRC."\
