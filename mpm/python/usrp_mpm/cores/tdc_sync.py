@@ -22,6 +22,7 @@ import math
 from builtins import object
 from functools import reduce
 from usrp_mpm.mpmutils import poll_with_timeout
+from usrp_mpm.mpmlog import get_logger
 
 def mean(vals):
     " Calculate arithmetic mean of vals "
@@ -103,10 +104,10 @@ class ClockSynchronizer(object):
             init_pdac_word,
             target_values,
             dac_spi_addr_val,
-            log
+            slot_idx
         ):
         self._iface = regs_iface
-        self.log = log
+        self.log = get_logger("Sync-{}".format(slot_idx))
         self.peek32 = lambda addr: self._iface.peek32(addr + offset)
         self.poke32 = lambda addr, data: self._iface.poke32(addr + offset, data)
         self.lmk = lmk
@@ -135,7 +136,9 @@ class ClockSynchronizer(object):
         # the offset at this point (see __init__), so self.peek32(0x0000) should read the
         # first offset if you kept your reg offset at 0 in your netlist
 
-        self.log.trace("Running clock synchronization...")
+        self.log.info("Running clock synchronization...")
+        self.log.trace("Using reference clock frequency: {} MHz".format(self.ref_clk_freq/1e6))
+        self.log.trace("Using master clock frequency: {} MHz".format(self.radio_clk_freq/1e6))
 
         # Reset and disable TDC, and enable re-runs. Confirm the core is in
         # reset and PPS is cleared. Do not disable the PPS crossing.
@@ -186,13 +189,15 @@ class ClockSynchronizer(object):
         # slightly longer than a second (worst-case) to confirm the TDC
         # received a PPS.
         if not poll_with_timeout(
-                lambda: bool(self.peek32(self.TDC_STATUS) & 0xFF != 0x10),
+                lambda: bool(self.peek32(self.TDC_STATUS) == 0x10),
                 1100, # Try for 1.1 seconds
                 100, # Poll every 100 ms
             ):
-            self.log.error("Failed to capture PPS within 1.1 seconds. " \
-                           "TDC_STATUS: 0x{:X}".format(pps_status))
-            raise RuntimeError("Failed to capture PPS.")
+            # Try one last time, just in case there is weirdness with the polling loop.
+            if self.peek32(self.TDC_STATUS) != 0x10:
+                self.log.error("Failed to capture PPS within 1.1 seconds. " \
+                               "TDC_STATUS: 0x{:X}".format(self.peek32(self.TDC_STATUS)))
+                raise RuntimeError("Failed to capture PPS.")
         self.log.trace("PPS Captured!")
 
         measure_offset = lambda: self.read_tdc_meas(
@@ -226,6 +231,12 @@ class ClockSynchronizer(object):
             raise RuntimeError("TDC measurement out of range! "
                                "Current value: {:.3f} ns.".format(
                                    current_value*1e9))
+
+
+        # TEMP CODE for homogenous rate sync only! Heterogenous rate sync requires an
+        # identical target value for all devices.
+        target = 1.0/self.ref_clk_freq + (1.0/self.radio_clk_freq)*3.5
+        self.target_values = [target,]
 
         # Run the initial value through the oracle to determine the adjustments to make.
         coarse_steps_required, dac_word_delta, distance_to_target = self.oracle(

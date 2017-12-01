@@ -485,7 +485,7 @@ class Magnesium(DboardManagerBase):
                 self.INIT_PHASE_DAC_WORD,
                 [target_value,],   # target_values
                 0x0,         # spi_addr TODO: make this a constant and replace in _sync_db_clock as well
-                self.log
+                self.slot_idx
             )
         def _sync_db_clock(synchronizer):
             " Synchronizes the DB clock to the common reference "
