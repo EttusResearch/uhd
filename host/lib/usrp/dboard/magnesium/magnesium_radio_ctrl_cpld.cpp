@@ -131,13 +131,12 @@ void magnesium_radio_ctrl_impl::_update_atr_switches(
 void magnesium_radio_ctrl_impl::_update_rx_freq_switches(
     const double freq,
     const bool bypass_lnas,
-    const size_t chan
+    const magnesium_cpld_ctrl::chan_sel_t chan_sel
 ) {
     UHD_LOG_TRACE(unique_id(),
         "Update all RX freq related switches. f=" << freq << " Hz, "
-        "bypass LNAS: " << (bypass_lnas ? "Yes" : "No") << ", chan=" << chan
+        "bypass LNAS: " << (bypass_lnas ? "Yes" : "No") << ", chan=" << chan_sel
     );
-
     auto rx_sw2 = magnesium_cpld_ctrl::RX_SW2_BYPASSPATHTOSWITCH6;
     auto rx_sw3 = magnesium_cpld_ctrl::RX_SW3_SHUTDOWNSW3;
     auto rx_sw4 = magnesium_cpld_ctrl::RX_SW4_FILTER2100X2850MHZFROM;
@@ -202,14 +201,14 @@ void magnesium_radio_ctrl_impl::_update_rx_freq_switches(
     }
 
     _cpld->set_rx_lna_atr_bits(
-        magnesium_cpld_ctrl::BOTH,
+        chan_sel,
         magnesium_cpld_ctrl::ANY,
         rx_lna1_enable,
         rx_lna2_enable,
         true /* defer commit */
     );
     _cpld->set_rx_switches(
-        magnesium_cpld_ctrl::BOTH,
+        chan_sel,
         rx_sw2,
         rx_sw3,
         rx_sw4,
@@ -223,15 +222,12 @@ void magnesium_radio_ctrl_impl::_update_rx_freq_switches(
 void magnesium_radio_ctrl_impl::_update_tx_freq_switches(
     const double freq,
     const bool bypass_amp,
-    const size_t chan
+    const magnesium_cpld_ctrl::chan_sel_t chan_sel
 ){
     UHD_LOG_TRACE(unique_id(),
         "Update all TX freq related switches. f=" << freq << " Hz, "
-        "bypass amp: " << (bypass_amp ? "Yes" : "No") << ", chan=" << chan
+        "bypass amp: " << (bypass_amp ? "Yes" : "No") << ", chan=" << chan_sel
     );
-    magnesium_cpld_ctrl::chan_sel_t chan_sel =
-         _master ?  magnesium_cpld_ctrl::CHAN1 : magnesium_cpld_ctrl::CHAN2;
-
     auto tx_sw1 = magnesium_cpld_ctrl::TX_SW1_SHUTDOWNTXSW1;
     auto tx_sw2 = magnesium_cpld_ctrl::TX_SW2_TOTXFILTERLP6400MHZ;
     auto tx_sw3 = magnesium_cpld_ctrl::TX_SW3_BYPASSPATHTOTRXSW;
@@ -278,13 +274,13 @@ void magnesium_radio_ctrl_impl::_update_tx_freq_switches(
     }
 
     _cpld->set_trx_sw_atr_bits(
-        magnesium_cpld_ctrl::BOTH,
+        chan_sel,
         magnesium_cpld_ctrl::ON,
         _sw_trx[chan_sel],
         true /* defer commit */
     );
     _cpld->set_tx_switches(
-        magnesium_cpld_ctrl::BOTH,
+        chan_sel,
         tx_sw1,
         tx_sw2,
         tx_sw3,

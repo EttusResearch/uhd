@@ -182,7 +182,7 @@ void magnesium_radio_ctrl_impl::set_rx_antenna(
         _master ? magnesium_cpld_ctrl::CHAN1 : magnesium_cpld_ctrl::CHAN2;
     _update_atr_switches(chan_sel, RX_DIRECTION, ant);
 
-    radio_ctrl_impl::set_rx_antenna(ant, chan);
+    radio_ctrl_impl::set_rx_antenna(ant, chan); // we don't use _master here since each radio has one antenna.
 }
 
 double magnesium_radio_ctrl_impl::set_tx_frequency(
@@ -200,10 +200,14 @@ double magnesium_radio_ctrl_impl::set_tx_frequency(
             master_fe_base_path(_radio_slot) / fs_path("tx_frontends") / chan;
         UHD_LOG_DEBUG(unique_id(),
                       "Slave setting TX frequency");
-        _tree->access<double>(master_tx_fe_path / "freq" / "value").set(freq);
-        return _tree->access<double>(master_tx_fe_path / "freq" / "value").get();
+        return _tree->access<double>(master_tx_fe_path / "freq" / "value")
+            .set(freq)
+            .get();
     }
-    _update_tx_freq_switches(freq, _tx_bypass_amp, chan);
+    // We need to set the switches on both channels, because they share an LO.
+    // This way, if we tune channel 0 it will not put channel 1 into a bad
+    // state.
+    _update_tx_freq_switches(freq, _tx_bypass_amp, magnesium_cpld_ctrl::BOTH);
     //double ad9371_freq = freq;
     double if_freq = 0.0;
     auto lo_iface = _tx_lo;
@@ -240,10 +244,14 @@ double magnesium_radio_ctrl_impl::set_rx_frequency(
             master_fe_base_path(_radio_slot) / fs_path("rx_frontends") / chan;
         UHD_LOG_DEBUG(unique_id(),
                       "Slave setting RX frequency");
-        _tree->access<double>(master_rx_fe_path / "freq" / "value").set(freq);
-        return _tree->access<double>(master_rx_fe_path / "freq" / "value").get();
+        return _tree->access<double>(master_rx_fe_path / "freq" / "value")
+            .set(freq)
+            .get();
     }
-    _update_rx_freq_switches(freq, _rx_bypass_lnas, chan);
+    // We need to set the switches on both channels, because they share an LO.
+    // This way, if we tune channel 0 it will not put channel 1 into a bad
+    // state.
+    _update_rx_freq_switches(freq, _rx_bypass_lnas, magnesium_cpld_ctrl::BOTH);
     //double ad9371_freq = freq;
     double if_freq = 0.0;
     auto lo_iface = _rx_lo;
@@ -260,7 +268,7 @@ double magnesium_radio_ctrl_impl::set_rx_frequency(
     }
 
     //const double actual_ad9371_freq =
-        _ad9371->set_frequency(freq, chan, RX_DIRECTION);
+    _ad9371->set_frequency(freq, chan, RX_DIRECTION);
     radio_ctrl_impl::set_rx_frequency(freq, chan);
     return freq; // FIXME calc the actual frequency
 }
@@ -276,7 +284,7 @@ double magnesium_radio_ctrl_impl::get_tx_frequency(
         UHD_LOG_TRACE(unique_id(), "Slave getting TX frequency");
         return _tree->access<double>(master_tx_fe_path / "freq" / "value").get();
     }
-    return radio_ctrl_impl::get_tx_frequency(chan);
+    return radio_ctrl_impl::get_tx_frequency(chan);// only master can get frequency chan here is always 0.
 }
 
 double magnesium_radio_ctrl_impl::get_rx_frequency(
@@ -290,7 +298,7 @@ double magnesium_radio_ctrl_impl::get_rx_frequency(
         UHD_LOG_TRACE(unique_id(), "Slave getting RX frequency");
         return _tree->access<double>(master_rx_fe_path / "freq" / "value").get();
     }
-    return radio_ctrl_impl::get_rx_frequency(chan);
+    return radio_ctrl_impl::get_rx_frequency(chan); // only master can get frequency chan here is always 0.
 }
 
 double magnesium_radio_ctrl_impl::set_rx_bandwidth(
@@ -313,13 +321,16 @@ double magnesium_radio_ctrl_impl::set_tx_gain(
         const double gain,
         const size_t chan
 ) {
-    radio_ctrl_impl::set_tx_gain(gain, chan);
-    return _set_all_gain(
+    UHD_LOG_TRACE(unique_id(),
+        "set_tx_gain(gain=" << gain << ", chan=" << chan << ")");
+    const double coerced_gain = _set_all_gain(
         gain,
-        radio_ctrl_impl::get_tx_frequency(chan),
+        this->get_tx_frequency(chan),
         chan,
         TX_DIRECTION
     );
+    radio_ctrl_impl::set_tx_gain(coerced_gain, chan);
+    return coerced_gain;
 }
 
 double magnesium_radio_ctrl_impl::set_rx_gain(
@@ -328,13 +339,14 @@ double magnesium_radio_ctrl_impl::set_rx_gain(
 ) {
     UHD_LOG_TRACE(unique_id(),
         "set_rx_gain(gain=" << gain << ", chan=" << chan << ")");
-    radio_ctrl_impl::set_rx_gain(gain, chan);
-    return _set_all_gain(
+    const double coerced_gain = _set_all_gain(
         gain,
-        radio_ctrl_impl::get_rx_frequency(chan),
+        this->get_rx_frequency(chan),
         chan,
         RX_DIRECTION
     );
+    radio_ctrl_impl::set_rx_gain(coerced_gain, chan);
+    return coerced_gain;
 }
 
 std::vector<std::string> magnesium_radio_ctrl_impl::get_rx_lo_names(

@@ -48,7 +48,7 @@ public:
     /************************************************************************
      * API calls
      ***********************************************************************/
-    // Note: We use the cached values in radio_ctrl_impl, so most getters are		
+    // Note: We use the cached values in radio_ctrl_impl, so most getters are
     // not reimplemented here
     double set_rate(double rate);
 
@@ -174,13 +174,13 @@ private:
     void _update_rx_freq_switches(
         const double freq,
         const bool bypass_lnas,
-        const size_t chan
+        const magnesium_cpld_ctrl::chan_sel_t chan_sel
     );
 
     void _update_tx_freq_switches(
         const double freq,
         const bool bypass_amps,
-        const size_t chan
+        const magnesium_cpld_ctrl::chan_sel_t chan_sel
     );
 
     void _update_atr_switches(
