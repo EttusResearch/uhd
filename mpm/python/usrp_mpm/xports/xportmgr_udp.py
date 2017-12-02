@@ -70,12 +70,19 @@ class XportMgrUDP(object):
 
         After calling this, _chdr_ifaces and _eth_dispatchers are in sync.
         """
+        ifaces_to_remove = [
+            x for x in self._eth_dispatchers.keys()
+            if x not in self._chdr_ifaces
+        ]
+        for iface in ifaces_to_remove:
+            self._eth_dispatchers.pop(iface)
         for iface in self._chdr_ifaces:
             if iface not in self._eth_dispatchers:
                 self._eth_dispatchers[iface] = \
                     EthDispatcherTable(self.iface_config[iface]['label'])
-        for ifname, table in iteritems(self._eth_dispatchers):
-            table.set_ipv4_addr(self._chdr_ifaces[ifname]['ip_addr'])
+            self._eth_dispatchers[iface].set_ipv4_addr(
+                self._chdr_ifaces[iface]['ip_addr']
+            )
 
     def init(self, args):
         """

@@ -1,18 +1,7 @@
 //
-// Copyright 2017 Ettus Research (National Instruments)
+// Copyright 2017 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0
 //
 
 #include "mpmd_impl.hpp"
@@ -39,6 +28,7 @@
 #include <vector>
 
 using namespace uhd;
+using namespace uhd::mpmd;
 
 namespace {
     /*************************************************************************
@@ -274,6 +264,14 @@ namespace {
     }
 }
 
+
+/*****************************************************************************
+ * Static class attributes
+ ****************************************************************************/
+const std::string mpmd_impl::MPM_RPC_GET_LAST_ERROR_CMD = "get_last_error";
+const std::string mpmd_impl::MPM_DISCOVERY_CMD = "MPM-DISC";
+const std::string mpmd_impl::MPM_ECHO_CMD = "MPM-ECHO";
+
 /*****************************************************************************
  * Structors
  ****************************************************************************/
@@ -284,15 +282,6 @@ mpmd_impl::mpmd_impl(const device_addr_t& device_args)
 {
     UHD_LOGGER_INFO("MPMD")
         << "Initializing device with args: " << device_args.to_string();
-
-    for (const std::string& key : device_args.keys()) {
-        if (key.find("recv") != std::string::npos) {
-            recv_args[key] = device_args[key];
-        }
-        if (key.find("send") != std::string::npos) {
-            send_args[key] = device_args[key];
-        }
-    }
 
     const device_addrs_t mb_args = separate_device_addr(device_args);
     _mb.reserve(mb_args.size());
@@ -506,13 +495,18 @@ device_addrs_t mpmd_find_with_addr(const device_addr_t& hint_)
     }
 
     transport::udp_simple::sptr comm = transport::udp_simple::make_broadcast(
-        query_addr, std::to_string(MPM_DISCOVERY_PORT));
+        query_addr, std::to_string(mpmd_impl::MPM_DISCOVERY_PORT));
     comm->send(
-        boost::asio::buffer(&MPM_DISCOVERY_CMD, sizeof(MPM_DISCOVERY_CMD)));
+        boost::asio::buffer(
+            mpmd_impl::MPM_DISCOVERY_CMD.c_str(),
+            mpmd_impl::MPM_DISCOVERY_CMD.size()
+        )
+    );
     while (true) {
-        char buff[4096] = {};
-        const size_t nbytes = comm->recv( // TODO make sure we don't buf overflow
-                boost::asio::buffer(buff),
+        const size_t MAX_MTU = 8000;
+        char buff[MAX_MTU] = {};
+        const size_t nbytes = comm->recv(
+                boost::asio::buffer(buff, MAX_MTU),
                 MPMD_FIND_TIMEOUT
         );
         if (nbytes == 0) {

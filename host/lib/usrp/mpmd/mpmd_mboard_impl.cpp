@@ -1,18 +1,7 @@
 //
-// Copyright 2017 Ettus Research (National Instruments)
+// Copyright 2017 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0
 //
 
 #include "mpmd_impl.hpp"
@@ -67,6 +56,7 @@ namespace {
 }
 
 using namespace uhd;
+using namespace uhd::mpmd;
 
 /*****************************************************************************
  * Structors
@@ -77,8 +67,9 @@ mpmd_mboard_impl::mpmd_mboard_impl(
 ) : mb_args(mb_args_)
   , rpc(uhd::rpc_client::make(
               rpc_server_addr,
-              MPM_RPC_PORT,
-              MPM_RPC_GET_LAST_ERROR_CMD))
+              mpmd_impl::MPM_RPC_PORT,
+              mpmd_impl::MPM_RPC_GET_LAST_ERROR_CMD))
+  , _xport_mgr(xport::mpmd_xport_mgr::make(mb_args))
 {
     UHD_LOGGER_TRACE("MPMD")
         << "Initializing mboard, connecting to RPC server address: "
@@ -95,7 +86,6 @@ mpmd_mboard_impl::mpmd_mboard_impl(
 
     init_device(rpc, mb_args);
     // RFNoC block clocks are now on. Noc-IDs can be read back.
-
 
     auto device_info_dict = rpc->request<dev_info>("get_device_info");
     for (const auto &info_pair : device_info_dict) {
@@ -120,24 +110,6 @@ mpmd_mboard_impl::mpmd_mboard_impl(
     this->num_xbars = rpc->request<size_t>("get_num_xbars");
     // xbar_local_addrs is not yet valid after this!
     this->xbar_local_addrs.resize(this->num_xbars, 0xFF);
-
-    // std::vector<std::string> data_ifaces =
-    //     rpc.call<std::vector<std::string>>("get_interfaces", rpc_token);
-
-    // discover path to device and tell MPM our MAC address seen at the data
-    // interfaces
-    // move this into make_transport
-    //for (const auto& iface : data_ifaces) {
-        //std::vector<std::string> addrs = rpc.call<std::vector<std::string>>(
-            //"get_interface_addrs", _rpc_token, iface);
-        //for (const auto& iface_addr : addrs) {
-            //if (rpc_client(iface_addr, MPM_RPC_PORT)
-                    //.call<bool>("probe_interface", _rpc_token)) {
-                //data_interfaces.emplace(iface, iface_addr);
-                //break;
-            //}
-        //}
-    //}
 }
 
 mpmd_mboard_impl::~mpmd_mboard_impl()
@@ -152,20 +124,6 @@ mpmd_mboard_impl::~mpmd_mboard_impl()
 /*****************************************************************************
  * API
  ****************************************************************************/
-uhd::sid_t mpmd_mboard_impl::allocate_sid(
-        const uint16_t port,
-        const uhd::sid_t address,
-        const uint32_t xbar_src_addr,
-        const uint32_t xbar_src_port,
-        const uint32_t dst_addr
-) {
-    const auto sid = rpc->request_with_token<uint32_t>(
-        "allocate_sid",
-        port, address.get(), xbar_src_addr, xbar_src_port, dst_addr
-    );
-    return uhd::sid_t(sid);
-}
-
 void mpmd_mboard_impl::set_xbar_local_addr(
         const size_t xbar_index,
         const size_t local_addr
@@ -174,6 +132,82 @@ void mpmd_mboard_impl::set_xbar_local_addr(
     UHD_ASSERT_THROW(xbar_index < xbar_local_addrs.size());
     xbar_local_addrs.at(xbar_index) = local_addr;
 }
+
+uhd::both_xports_t mpmd_mboard_impl::make_transport(
+        const sid_t& sid,
+        usrp::device3_impl::xport_type_t xport_type,
+        const uhd::device_addr_t& xport_args
+) {
+    const std::string xport_type_str = [xport_type](){
+        switch (xport_type) {
+        case mpmd_impl::CTRL:
+            return "CTRL";
+        case mpmd_impl::ASYNC_MSG:
+            return "ASYNC_MSG";
+        case mpmd_impl::RX_DATA:
+            return "RX_DATA";
+        case mpmd_impl::TX_DATA:
+            return "TX_DATA";
+        default:
+            UHD_THROW_INVALID_CODE_PATH();
+        };
+    }();
+
+    UHD_LOGGER_TRACE("MPMD")
+        << __func__ << "(): Creating new transport of type: "
+        << xport_type_str
+    ;
+
+    using namespace uhd::mpmd::xport;
+    const auto xport_info_list =
+        rpc->request_with_token<mpmd_xport_mgr::xport_info_list_t>(
+            "request_xport",
+            sid.get_dst(),
+            sid.get_src(),
+            xport_type_str
+    );
+    UHD_LOGGER_TRACE("MPMD")
+        << __func__
+        << "(): request_xport() gave us " << xport_info_list.size()
+        << " option(s)."
+    ;
+    if (xport_info_list.empty()) {
+        UHD_LOG_ERROR("MPMD", "No viable transport path found!");
+        throw uhd::runtime_error("No viable transport path found!");
+    }
+
+    xport::mpmd_xport_mgr::xport_info_t xport_info_out;
+    auto xports = _xport_mgr->make_transport(
+        xport_info_list,
+        xport_type,
+        xport_args,
+        xport_info_out
+    );
+
+    if (not rpc->request_with_token<bool>(
+                "commit_xport",
+                xport_info_out)) {
+        UHD_LOG_ERROR("MPMD", "Failed to create UDP transport!");
+        throw uhd::runtime_error("commit_xport() failed!");
+    }
+
+    return xports;
+}
+
+uhd::device_addr_t mpmd_mboard_impl::get_rx_hints() const
+{
+    // TODO: See if we need to do anything here. get_rx_stream() might care.
+    device_addr_t rx_hints;
+    return rx_hints;
+}
+
+uhd::device_addr_t mpmd_mboard_impl::get_tx_hints() const
+{
+    // TODO: See if we need to do anything here. get_tx_stream() might care.
+    device_addr_t tx_hints;
+    return tx_hints;
+}
+
 
 /*****************************************************************************
  * Private methods

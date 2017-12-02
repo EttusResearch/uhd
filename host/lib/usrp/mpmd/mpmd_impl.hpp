@@ -1,22 +1,13 @@
 //
-// Copyright 2017 Ettus Research (National Instruments)
+// Copyright 2017 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0
 //
 
 #ifndef INCLUDED_MPMD_IMPL_HPP
 #define INCLUDED_MPMD_IMPL_HPP
+
+#include "mpmd_xport_mgr.hpp"
 #include "../../utils/rpc.hpp"
 #include "../device3/device3_impl.hpp"
 #include <uhd/stream.hpp>
@@ -25,17 +16,9 @@
 #include <uhd/utils/tasks.hpp>
 #include <uhd/transport/muxed_zero_copy_if.hpp>
 #include <map>
+#include <memory>
 
-static const size_t MPMD_RX_SW_BUFF_SIZE_ETH        = 0x2000000;//32MiB    For an ~8k frame size any size >32MiB is just wasted buffer space
-static const size_t MPMD_RX_SW_BUFF_SIZE_ETH_MACOS  = 0x100000; //1Mib
-
-static const size_t MPM_DISCOVERY_PORT = 49600;
-static const size_t MPM_RPC_PORT = 49601;
-static const char MPM_RPC_GET_LAST_ERROR_CMD[] = "get_last_error";
-static const char MPM_DISCOVERY_CMD[] = "MPM-DISC";
-static const char MPM_ECHO_CMD[] = "MPM-ECHO";
-static const size_t MPMD_10GE_DATA_FRAME_MAX_SIZE = 8000; // CHDR packet size in bytes
-
+namespace uhd { namespace mpmd {
 
 /*! Stores all attributes specific to a single MPM device
  */
@@ -93,20 +76,33 @@ class mpmd_mboard_impl
     /*************************************************************************
      * API
      ************************************************************************/
-    uhd::sid_t allocate_sid(const uint16_t port,
-                            const uhd::sid_t address,
-                            const uint32_t xbar_src_addr,
-                            const uint32_t xbar_src_dst,
-                            const uint32_t dst_addr
-                            );
-
     //! Configure a crossbar to have a certain local address
     void set_xbar_local_addr(const size_t xbar_index, const size_t local_addr);
 
     //! Return the local address of a given crossbar
-    size_t get_xbar_local_addr(const size_t xbar_index) {
+    size_t get_xbar_local_addr(const size_t xbar_index) const {
         return xbar_local_addrs.at(xbar_index);
     }
+
+    //! Device-specific make_transport implementation
+    //
+    // A major difference to the mpmd_impl::make_transport() is the meaning of
+    // the first argument (\p sid). mpmd_impl::make_transport() will add a
+    // source part to the SID which needs to be taken into account in this
+    // function.
+    //
+    // \param sid The full SID of this transport (UHD to device)
+    // \param xport_type Transport type (CTRL, RX_DATA, ...)
+    // \param args Any kind of args passed in via get_?x_stream()
+    uhd::both_xports_t make_transport(
+        const sid_t& sid,
+        usrp::device3_impl::xport_type_t xport_type,
+        const uhd::device_addr_t& args
+    );
+
+
+    uhd::device_addr_t get_rx_hints() const;
+    uhd::device_addr_t get_tx_hints() const;
 
   private:
     /*************************************************************************
@@ -114,7 +110,8 @@ class mpmd_mboard_impl
      ************************************************************************/
     /*! Renew the claim onto the device.
      *
-     * This is meant to be called repeatedly, e.g., using a UHD task.
+     * This is meant to be called repeatedly, e.g., using a UHD task. See also
+     * _claimer_task.
      */
     bool claim();
 
@@ -130,10 +127,11 @@ class mpmd_mboard_impl
     // what we use when addressing a crossbar in a CHDR header.
     std::vector<size_t> xbar_local_addrs;
 
-
     /*! Continuously reclaims the device.
      */
     uhd::task::sptr _claimer_task;
+
+    uhd::mpmd::xport::mpmd_xport_mgr::uptr _xport_mgr;
 };
 
 
@@ -145,16 +143,36 @@ class mpmd_mboard_impl
  */
 class mpmd_impl : public uhd::usrp::device3_impl
 {
-  public:
+public:
+    //! Port on which the discovery process is listening
+    static const size_t MPM_DISCOVERY_PORT = 49600;
+    //! Port on which the RPC process is listening
+    static const size_t MPM_RPC_PORT = 49601;
+    //! This is the command that needs to be sent to the discovery port to
+    // trigger a response.
+    static const std::string MPM_DISCOVERY_CMD;
+    //! This is the command that will let you measure ping responses from the
+    // device via the discovery process. Useful for MTU discovery.
+    static const std::string MPM_ECHO_CMD;
+    //! This is the RPC command that will return the last known error from MPM.
+    static const std::string MPM_RPC_GET_LAST_ERROR_CMD;
+
+    /**************************************************************************
+     * Structors
+     ************************************************************************/
     mpmd_impl(const uhd::device_addr_t& device_addr);
     ~mpmd_impl();
 
+    /**************************************************************************
+     * API
+     ************************************************************************/
     uhd::both_xports_t make_transport(const uhd::sid_t&,
                                       uhd::usrp::device3_impl::xport_type_t,
                                       const uhd::device_addr_t&);
 
   private:
     uhd::device_addr_t get_rx_hints(size_t mb_index);
+    uhd::device_addr_t get_tx_hints(size_t mb_index);
 
     /*************************************************************************
      * Private methods/helpers
@@ -185,49 +203,14 @@ class mpmd_impl : public uhd::usrp::device3_impl
      */
     size_t allocate_xbar_local_addr();
 
-    /*! Return the index of the motherboard carrying the crossbar at \p remote_addr
+    /*! Return the index of the motherboard given the local address of a
+     * crossbar
      */
-    size_t identify_mboard_by_sid(const size_t remote_addr);
-
-    using xport_info_t = std::map<std::string, std::string>;
-    using xport_info_list_t = std::vector<std::map<std::string, std::string>>;
-
-    uhd::both_xports_t make_transport_udp(
-        const size_t mb_index,
-        xport_info_t &xport_info,
-        const xport_type_t xport_type,
-        const uhd::device_addr_t& xport_args
-    );
-
-#ifdef HAVE_LIBERIO
-    /*! Create a muxed liberio transport for control packets */
-    uhd::transport::muxed_zero_copy_if::sptr make_muxed_liberio_xport(
-            const std::string &tx_dev,
-            const std::string &rx_dev,
-            const uhd::transport::zero_copy_xport_params &buff_args,
-            const size_t max_muxed_ports
-    );
-
-    uhd::both_xports_t make_transport_liberio(
-        const size_t mb_index,
-        xport_info_t &xport_info,
-        const xport_type_t xport_type,
-        const uhd::device_addr_t& xport_args
-    );
-#endif
+    size_t identify_mboard_by_xbar_addr(const size_t xbar_addr) const;
 
     /*************************************************************************
      * Private attributes
      ************************************************************************/
-    // FIXME move the next two into their own transport manager class
-    //! Control transport for one liberio connection
-    uhd::transport::muxed_zero_copy_if::sptr _ctrl_dma_xport;
-    //! Control transport for one liberio connection
-    uhd::transport::muxed_zero_copy_if::sptr _async_msg_dma_xport;
-
-    uhd::dict<std::string, std::string> recv_args;
-    uhd::dict<std::string, std::string> send_args;
-
     //! Stores the args with which the device was originally initialized
     uhd::device_addr_t _device_args;
     //! Stores a list of mboard references
@@ -237,8 +220,11 @@ class mpmd_impl : public uhd::usrp::device3_impl
     // No-one touches this except allocate_xbar_local_addr(), gotcha?
     size_t  _xbar_local_addr_ctr = 2;
 
+    // TODO make sure this can't wrap
     size_t _sid_framer;
 };
+
+}} /* namespace uhd::mpmd */
 
 uhd::device_addrs_t mpmd_find(const uhd::device_addr_t& hint_);
 
