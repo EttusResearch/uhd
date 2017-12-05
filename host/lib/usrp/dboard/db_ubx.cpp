@@ -1,5 +1,5 @@
 //
-// Copyright 2014-15 Ettus Research LLC
+// Copyright 2014-17 Ettus Research, A National Instruments Company
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -227,6 +227,8 @@ public:
         _iface = get_iface();
         dboard_id_t rx_id = get_rx_id();
         dboard_id_t tx_id = get_tx_id();
+        size_t revision = boost::lexical_cast<size_t>(get_rx_eeprom().revision);
+        _high_isolation = false;
         if (rx_id == UBX_PROTO_V3_RX_ID and tx_id == UBX_PROTO_V3_TX_ID) {
             _rev = 0;
         }
@@ -238,6 +240,10 @@ public:
         }
         else if (rx_id == UBX_V2_40MHZ_RX_ID and tx_id == UBX_V2_40MHZ_TX_ID) {
             _rev = 2;
+            if (revision >= 4)
+            {
+                _high_isolation = true;
+            }
         }
         else if (rx_id == UBX_V1_160MHZ_RX_ID and tx_id == UBX_V1_160MHZ_TX_ID) {
             bw = 160e6;
@@ -246,6 +252,10 @@ public:
         else if (rx_id == UBX_V2_160MHZ_RX_ID and tx_id == UBX_V2_160MHZ_TX_ID) {
             bw = 160e6;
             _rev = 2;
+            if (revision >= 4)
+            {
+                _high_isolation = true;
+            }
         }
         else if (rx_id == UBX_LP_160MHZ_RX_ID and tx_id == UBX_LP_160MHZ_TX_ID) {
             // The LP version behaves and looks like a regular UBX-160 v2
@@ -542,6 +552,7 @@ public:
 
 private:
     enum power_mode_t {PERFORMANCE,POWERSAVE};
+    enum xcvr_mode_t {FDX, TDD, TX, RX, FAST_TDD};
 
     /***********************************************************************
     * Helper Functions
@@ -730,19 +741,20 @@ private:
         //validate input
         assert_has(ubx_rx_antennas, ant, "ubx rx antenna name");
 
-        // Due to an issue with TX path into to the RF switch (U32), there
-        // is a long transient at the beginning of transmission when the RX
-        // antenna is set to RX2.  Forcing on the TX PA removes the transient,
-        // so it is forced on only when the RX2 antenna is selected.  It is
-        // cleared when the TX/RX antenna is selected to avoid a higher noise
-        // floor on RX.
+        // There can be long transients on TX, so force on the TX PA
+        // except when in powersave mode (to save power) or on early
+        // boards that had lower TX-RX isolation when the RX antenna
+        // is set to TX/RX (to prevent higher noise floor on RX).
+        // Setting the xcvr_mode to TDD will force on the PA when
+        // not in powersave mode regardless of the board revision.
         if (ant == "TX/RX")
         {
             set_gpio_field(RX_ANT, 0);
-            set_cpld_field(TXDRV_FORCEON, 0);   // Turn off PA in TDD mode
+            // Force on TX PA for boards with high isolation or if the user sets the TDD mode
+            set_cpld_field(TXDRV_FORCEON, (_power_mode == POWERSAVE ? 0 : _high_isolation or _xcvr_mode == TDD ? 1 : 0));
         } else {
             set_gpio_field(RX_ANT, 1);
-            set_cpld_field(TXDRV_FORCEON, 1);   // Keep PA on
+            set_cpld_field(TXDRV_FORCEON, (_power_mode == POWERSAVE ? 0 : 1));   // Keep PA on
         }
         write_gpio();
         write_cpld_reg();
@@ -1158,7 +1170,7 @@ private:
 
             // Placeholders in case some components need to be forced on to
             // reduce settling time.  Note that some FORCEON lines are still gated
-            // by other bits in the CPLD register are are asserted during
+            // by other bits in the CPLD register and are asserted during
             // frequency tuning.
             set_cpld_field(RXAMP_FORCEON, 1);
             set_cpld_field(RXDEMOD_FORCEON, 1);
@@ -1214,7 +1226,29 @@ private:
         // The intent is to add behavior based on whether
         // the board is in TX, RX, or full duplex mode
         // to reduce power consumption and RF noise.
-        _xcvr_mode = mode;
+        boost::to_upper(mode);
+        if (mode == "FDX")
+        {
+            _xcvr_mode = FDX;
+        }
+        else if (mode == "TDD")
+        {
+            _xcvr_mode = TDD;
+            set_cpld_field(TXDRV_FORCEON, 1);
+            write_cpld_reg();
+        }
+        else if (mode == "TX")
+        {
+            _xcvr_mode = TX;
+        }
+        else if (mode == "RX")
+        {
+            _xcvr_mode = RX;
+        }
+        else
+        {
+            throw uhd::value_error("invalid xcvr_mode");
+        }
     }
 
     void set_sync_delay(bool is_tx, int64_t value)
@@ -1254,12 +1288,13 @@ private:
     int _ubx_tx_atten_val;
     int _ubx_rx_atten_val;
     power_mode_t _power_mode;
-    std::string _xcvr_mode;
+    xcvr_mode_t _xcvr_mode;
     size_t _rev;
     ubx_gpio_reg_t _tx_gpio_reg;
     ubx_gpio_reg_t _rx_gpio_reg;
     int64_t _tx_sync_delay;
     int64_t _rx_sync_delay;
+    bool _high_isolation;
 };
 
 /***********************************************************************
