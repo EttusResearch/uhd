@@ -156,7 +156,7 @@ def main():
                         .format(init_duration))
         log.info("Terminating on user request before launching RPC server.")
         mgr.deinit()
-        return True
+        return init_result
     log.info("Spawning discovery process...")
     _PROCESSES.append(
         mpm.spawn_discovery_process(discovery_info, shared, args.discovery_addr)
