@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010,2017 Ettus Research, A National Instruments Company
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -19,9 +19,9 @@
 #define INCLUDED_LIBUHD_USRP_DBOARD_CTOR_ARGS_HPP
 
 #include <uhd/property_tree.hpp>
-#include <uhd/usrp/dboard_id.hpp>
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
+#include <uhd/usrp/dboard_eeprom.hpp>
 #include <string>
 
 namespace uhd{ namespace usrp{
@@ -30,7 +30,7 @@ namespace uhd{ namespace usrp{
     public:
         std::string               sd_name;
         dboard_iface::sptr        db_iface;
-        dboard_id_t               rx_id, tx_id;
+        dboard_eeprom_t           rx_eeprom, tx_eeprom;
         property_tree::sptr       rx_subtree, tx_subtree;
         dboard_base::sptr         rx_container, tx_container;
 

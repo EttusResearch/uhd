@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2012,2014 Ettus Research LLC
+// Copyright 2010-2012,2014,2017 Ettus Research, A National Instruments Company
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -736,7 +736,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr) :
 
         //create a new dboard interface and manager
         _mbc[mb].dboard_manager = dboard_manager::make(
-            rx_db_eeprom.id, tx_db_eeprom.id, gdb_eeprom.id,
+            rx_db_eeprom, tx_db_eeprom, gdb_eeprom,
             make_usrp2_dboard_iface(_mbc[mb].wbiface, _mbc[mb].iface/*i2c*/, _mbc[mb].spiface, _mbc[mb].clock),
             _tree->subtree(mb_path / "dboards/A")
         );

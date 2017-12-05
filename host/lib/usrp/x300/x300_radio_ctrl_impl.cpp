@@ -1,5 +1,5 @@
 //
-// Copyright 2015-2016 Ettus Research
+// Copyright 2015-2017 Ettus Research, A National Instruments Company
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -639,9 +639,9 @@ void x300_radio_ctrl_impl::setup_radio(
     //create a new dboard manager
     boost::shared_ptr<x300_dboard_iface> db_iface = boost::make_shared<x300_dboard_iface>(db_config);
     _db_manager = dboard_manager::make(
-        _db_eeproms[RX_EEPROM_ADDR + DB_OFFSET].id,
-        _db_eeproms[TX_EEPROM_ADDR + DB_OFFSET].id,
-        _db_eeproms[GDB_EEPROM_ADDR + DB_OFFSET].id,
+        _db_eeproms[RX_EEPROM_ADDR + DB_OFFSET],
+        _db_eeproms[TX_EEPROM_ADDR + DB_OFFSET],
+        _db_eeproms[GDB_EEPROM_ADDR + DB_OFFSET],
         db_iface, _tree->subtree(db_path),
         true // defer daughterboard intitialization
     );
