@@ -23,8 +23,10 @@ import os
 import copy
 import shutil
 import subprocess
+import json
 from six import iteritems, itervalues
 from builtins import object
+from usrp_mpm.gpsd_iface import GPSDIface
 from usrp_mpm.periph_manager import PeriphManagerBase
 from usrp_mpm.mpmtypes import SID
 from usrp_mpm.rpc_server import no_rpc
@@ -251,6 +253,8 @@ class n310(PeriphManagerBase):
     mboard_sensor_callback_map = {
         'ref_locked': 'get_ref_lock_sensor',
         'gps_locked': 'get_gps_lock_sensor',
+        'gps_tpv': 'get_gps_tpv_sensor',
+        'gps_sky': 'get_gps_sky_sensor',
     }
     dboard_eeprom_addr = "e0004000.i2c"
     dboard_eeprom_max_len = 64
@@ -652,6 +656,46 @@ class n310(PeriphManagerBase):
             'unit': 'locked' if gps_locked else 'unlocked',
             'value': str(gps_locked).lower(),
         }
+
+    def get_gps_tpv_sensor(self):
+        """
+        Get a TPV response from GPSd as a sensor dict
+        """
+        self.log.trace("Polling GPS TPV results from GPSD")
+        with GPSDIface() as gps_iface:
+            response_mode = 0
+            # Read responses from GPSD until we get a non-trivial mode
+            while response_mode <= 0:
+                gps_info = gps_iface.get_gps_info(resp_class='tpv', timeout=15)
+                self.log.trace("GPS info: {}".format(gps_info))
+                response_mode = gps_info.get("mode", 0)
+
+            # Return the JSON'd results
+            gps_tpv = json.dumps(gps_info)
+            return {
+                'name': 'gps_tpv',
+                'type': 'STRING',
+                'unit': '',
+                'value': gps_tpv,
+            }
+
+    def get_gps_sky_sensor(self):
+        """
+        Get a SKY response from GPSd as a sensor dict
+        """
+        self.log.trace("Polling GPS SKY results from GPSD")
+        with GPSDIface() as gps_iface:
+            # Just get the first SKY result
+            gps_info = gps_iface.get_gps_info(resp_class='sky', timeout=15)
+            # Return the JSON'd results
+            gps_sky = json.dumps(gps_info)
+            return {
+                'name': 'gps_sky',
+                'type': 'STRING',
+                'unit': '',
+                'value': gps_sky,
+            }
+
     ###########################################################################
     # EEPROMs
     ###########################################################################

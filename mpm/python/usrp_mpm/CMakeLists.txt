@@ -26,6 +26,7 @@ SET(USRP_MPM_TOP_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/discovery.py
     ${CMAKE_CURRENT_SOURCE_DIR}/eeprom.py
     ${CMAKE_CURRENT_SOURCE_DIR}/ethtable.py
+    ${CMAKE_CURRENT_SOURCE_DIR}/gpsd_iface.py
     ${CMAKE_CURRENT_SOURCE_DIR}/liberiotable.py
     ${CMAKE_CURRENT_SOURCE_DIR}/mpmlog.py
     ${CMAKE_CURRENT_SOURCE_DIR}/mpmtypes.py

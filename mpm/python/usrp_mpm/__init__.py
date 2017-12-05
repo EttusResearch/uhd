@@ -27,4 +27,5 @@ from . import dboard_manager
 from . import xports
 from . import cores
 from . import chips
+from . import gpsd_iface
 from .mpmlog import get_main_logger
