@@ -81,8 +81,21 @@ public:
     virtual void set_rx_lo_export_enabled(bool enabled, const std::string &name, const size_t chan);
     virtual bool get_rx_lo_export_enabled(const std::string &name, const size_t chan);
 
-    virtual double set_rx_lo_freq(double freq, const std::string &name, const size_t chan);
+    virtual double set_rx_lo_freq(const double freq, const std::string &name, const size_t chan);
     virtual double get_rx_lo_freq(const std::string &name, const size_t chan);
+
+    virtual std::vector<std::string> get_tx_lo_names(const size_t chan);
+    virtual std::vector<std::string> get_tx_lo_sources(const std::string &name, const size_t chan);
+    virtual freq_range_t get_tx_lo_freq_range(const std::string &name, const size_t chan);
+
+    virtual void set_tx_lo_source(const std::string &src, const std::string &name, const size_t chan);
+    virtual const std::string get_tx_lo_source(const std::string &name, const size_t chan);
+
+    virtual void set_tx_lo_export_enabled(const bool enabled, const std::string &name, const size_t chan);
+    virtual bool get_tx_lo_export_enabled(const std::string &name, const size_t chan);
+
+    virtual double set_tx_lo_freq(const double freq, const std::string &name, const size_t chan);
+    virtual double get_tx_lo_freq(const std::string &name, const size_t chan);
 
     void set_time_now(const time_spec_t &time_spec);
     void set_time_next_pps(const time_spec_t &time_spec);

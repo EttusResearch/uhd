@@ -244,7 +244,10 @@ double radio_ctrl_impl::get_rx_bandwidth(const size_t chan) /* const */
 {
     return _rx_bandwidth[chan];
 }
-    
+
+/******************************************************************************
+ * LO controls
+ *****************************************************************************/
 std::vector<std::string> radio_ctrl_impl::get_rx_lo_names(const size_t /* chan */)
 {
     return std::vector<std::string>();
@@ -288,6 +291,72 @@ double radio_ctrl_impl::set_rx_lo_freq(double /* freq */, const std::string & /*
 double radio_ctrl_impl::get_rx_lo_freq(const std::string & /* name */, const size_t /* chan */)
 {
     return 0;
+}
+
+std::vector<std::string> radio_ctrl_impl::get_tx_lo_names(
+        const size_t /* chan */
+) {
+    return std::vector<std::string>();
+}
+
+std::vector<std::string> radio_ctrl_impl::get_tx_lo_sources(
+        const std::string & /* name */,
+        const size_t /* chan */
+) {
+    return std::vector<std::string>();
+}
+
+freq_range_t radio_ctrl_impl::get_tx_lo_freq_range(
+        const std::string & /* name */,
+        const size_t /* chan */
+) {
+    return freq_range_t();
+}
+
+void radio_ctrl_impl::set_tx_lo_source(
+        const std::string & /* src */,
+        const std::string & /* name */,
+        const size_t /* chan */
+) {
+    throw uhd::not_implemented_error("set_tx_lo_source is not supported on this radio");
+}
+
+const std::string radio_ctrl_impl::get_tx_lo_source(
+        const std::string & /* name */,
+        const size_t /* chan */
+) {
+    return "internal";
+}
+
+void radio_ctrl_impl::set_tx_lo_export_enabled(
+        const bool /* enabled */,
+        const std::string & /* name */,
+        const size_t /* chan */
+) {
+    throw uhd::not_implemented_error("set_tx_lo_export_enabled is not supported on this radio");
+}
+
+bool radio_ctrl_impl::get_tx_lo_export_enabled(
+        const std::string & /* name */,
+        const size_t /* chan */
+) {
+    return false; // Not exporting non-existant LOs
+}
+
+double radio_ctrl_impl::set_tx_lo_freq(
+        const double /* freq */,
+        const std::string & /* name */,
+        const size_t /* chan */
+) {
+    throw uhd::not_implemented_error(
+            "set_tx_lo_freq is not supported on this radio");
+}
+
+double radio_ctrl_impl::get_tx_lo_freq(
+        const std::string & /* name */,
+        const size_t chan
+) {
+    return get_tx_frequency(chan);
 }
 
 /***********************************************************************

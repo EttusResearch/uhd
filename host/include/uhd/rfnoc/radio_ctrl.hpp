@@ -258,15 +258,18 @@ public:
      */
     virtual uint32_t get_gpio_attr(const std::string &bank, const std::string &attr) = 0;
 
-    /*!
-     * Get a list of possible LO stage names
+    /**************************************************************************
+     * LO Controls
+     *************************************************************************/
+    /*! Get a list of possible LO stage names
+     *
      * \param chan the channel index 0 to N-1
      * \return a vector of strings for possible LO names
      */
     virtual std::vector<std::string> get_rx_lo_names(const size_t chan) = 0;
 
-    /*!
-     * Get a list of possible LO sources.
+    /*! Get a list of possible LO sources.
+     *
      * Channels which do not have controllable LO sources
      * will return "internal".
      * \param name the name of the LO stage to query
@@ -341,6 +344,126 @@ public:
      * \return the configured LO frequency
      */
     virtual double get_rx_lo_freq(const std::string &name, const size_t chan) = 0;
+
+    /*! Get a list of possible LO stage names
+     *
+     * \param chan the channel index 0 to N-1
+     * \return a vector of strings for possible LO names
+     */
+    virtual std::vector<std::string> get_tx_lo_names(const size_t chan) = 0;
+
+    /*! Get a list of possible LO sources.
+     *
+     * Channels which do not have controllable LO sources
+     * will return "internal".
+     * \param name the name of the LO stage to query
+     * \param chan the channel index 0 to N-1
+     * \return a vector of strings for possible settings
+     */
+    virtual std::vector<std::string> get_tx_lo_sources(
+            const std::string &name,
+            const size_t chan
+    ) = 0;
+
+    /*!
+     * Get the LO frequency range of the tx LO.
+     * If the channel does not have independently configurable LOs
+     * the rf frequency range will be returned.
+     * \param name the name of the LO stage to query
+     * \param chan the channel index 0 to N-1
+     * \return a frequency range object
+     */
+    virtual freq_range_t get_tx_lo_freq_range(
+            const std::string &name,
+            const size_t chan
+    ) = 0;
+
+    /*!
+     * Set the LO source for a channel.
+     * For usrps that support selectable LOs, this function
+     * allows switching between them.
+     * Typical options for source: internal, external.
+     * \param src a string representing the LO source
+     * \param name the name of the LO stage to update
+     * \param chan the channel index 0 to N-1
+     */
+    virtual void set_tx_lo_source(
+            const std::string &src,
+            const std::string &name,
+            const size_t chan
+    ) = 0;
+
+    /*!
+     * Get the currently set LO source.
+     * Channels without controllable LO sources will return
+     * "internal"
+     * \param name the name of the LO stage to query
+     * \param chan the channel index 0 to N-1
+     * \return the configured LO source
+     */
+    virtual const std::string get_tx_lo_source(
+            const std::string &name,
+            const size_t chan
+    ) = 0;
+
+    /*!
+     * Set whether the LO used by the usrp device is exported
+     * For usrps that support exportable LOs, this function
+     * configures if the LO used by chan is exported or not.
+     * \param enabled if true then export the LO
+     * \param name the name of the LO stage to update
+     * \param chan the channel index 0 to N-1 for the source channel
+     */
+    virtual void set_tx_lo_export_enabled(
+            const bool enabled,
+            const std::string &name,
+            const size_t chan
+    ) = 0;
+
+    /*!
+     * Returns true if the currently selected LO is being exported.
+     * \param name the name of the LO stage to query
+     * \param chan the channel index 0 to N-1
+     */
+    virtual bool get_tx_lo_export_enabled(
+            const std::string &name,
+            const size_t chan
+    ) = 0;
+
+    /*!  Set the tx LO frequency (Advanced).
+     *
+     * See also multi_usrp::set_tx_lo_freq().
+     *
+     * \param freq the frequency to set the LO to
+     * \param name the name of the LO stage to update
+     * \param chan the channel index 0 to N-1
+     * \return a coerced LO frequency
+     */
+    virtual double set_tx_lo_freq(
+            const double freq,
+            const std::string &name,
+            const size_t chan
+    ) = 0;
+
+    /*!  Get the current TX LO frequency (Advanced).
+     *
+     * See also multi_usrp::get_tx_lo_freq()
+     *
+     * If the channel does not have independently configurable LOs
+     * the current RF frequency will be returned.
+     *
+     * \param name the name of the LO stage to query
+     * \param chan the channel index 0 to N-1
+     * \return the configured LO frequency
+     */
+    virtual double get_tx_lo_freq(
+            const std::string &name,
+            const size_t chan
+    ) = 0;
+
+    /**************************************************************************
+     * Time and clock control
+     *************************************************************************/
 
     /*! 
      * Set the time source for this radio.
