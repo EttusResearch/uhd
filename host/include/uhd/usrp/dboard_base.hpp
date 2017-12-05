@@ -1,5 +1,5 @@
 //
-// Copyright 2010 Ettus Research LLC
+// Copyright 2010,2017 Ettus Research, A National Instruments Company
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -25,6 +25,7 @@
 #include <boost/shared_ptr.hpp>
 #include <uhd/usrp/dboard_id.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
+#include <uhd/usrp/dboard_eeprom.hpp>
 
 namespace uhd{ namespace usrp{
 
@@ -54,6 +55,8 @@ protected:
     dboard_iface::sptr get_iface(void);
     dboard_id_t get_rx_id(void);
     dboard_id_t get_tx_id(void);
+    dboard_eeprom_t get_rx_eeprom(void);
+    dboard_eeprom_t get_tx_eeprom(void);
     property_tree::sptr get_rx_subtree(void);
     property_tree::sptr get_tx_subtree(void);
 
