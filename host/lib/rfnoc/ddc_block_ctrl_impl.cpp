@@ -44,11 +44,12 @@ static double lambda_forward_prop(uhd::property_tree::sptr tree, uhd::fs_path pr
 class ddc_block_ctrl_impl : public ddc_block_ctrl
 {
 public:
-    static const size_t NUM_HALFBANDS = 3;
-    static const size_t CIC_MAX_DECIM = 255;
 
     UHD_RFNOC_BLOCK_CONSTRUCTOR(ddc_block_ctrl)
     {
+        check_compat_num();
+        _num_halfbands = (size_t) user_reg_read64(RB_REG_NUM_HALFBANDS);
+        _cic_max_decim = (size_t) user_reg_read64(RB_REG_CIC_MAX_DECIM);
         // Argument/prop tree hooks
         for (size_t chan = 0; chan < get_input_ports().size(); chan++) {
             double default_freq = get_arg<double>("freq", chan);
@@ -176,6 +177,14 @@ public:
 
 private:
 
+    size_t _num_halfbands;
+    size_t _cic_max_decim;
+    static const size_t MAJOR_COMP = 1;
+    static const size_t MINOR_COMP = 0;
+    static const size_t RB_REG_COMPAT_NUM = 0;
+    static const size_t RB_REG_NUM_HALFBANDS = 1;
+    static const size_t RB_REG_CIC_MAX_DECIM = 2;
+
     //! Set the CORDIC frequency shift the signal to \p requested_freq
     double set_freq(const double requested_freq, const size_t chan)
     {
@@ -198,23 +207,18 @@ private:
         );
     }
 
-    // FIXME this misses a whole bunch of valid rates. Anything with CIC decim <= 255
-    // is OK.
     uhd::meta_range_t get_output_rates(void)
     {
         uhd::meta_range_t range;
         const double input_rate = get_arg<double>("input_rate");
-        for (int decim = 1024; decim > 512; decim -= 8){
-            range.push_back(uhd::range_t(input_rate/decim));
-        }
-        for (int decim = 512; decim > 256; decim -= 4){
-            range.push_back(uhd::range_t(input_rate/decim));
-        }
-        for (int decim = 256; decim > 128; decim -= 2){
-            range.push_back(uhd::range_t(input_rate/decim));
-        }
-        for (int decim = 128; decim >= 1; decim -= 1){
-            range.push_back(uhd::range_t(input_rate/decim));
+        for (int hb = _num_halfbands; hb >= 0; hb--) {
+            const size_t decim_offset = _cic_max_decim<<(hb-1);
+            for(size_t decim = _cic_max_decim; decim > 0; decim--) {
+                const size_t hb_cic_decim =  decim*(1<<hb); 
+                if(hb == 0 || hb_cic_decim > decim_offset) {
+                    range.push_back(uhd::range_t(input_rate/hb_cic_decim));
+                }
+            }
         }
         return range;
     }
@@ -222,17 +226,17 @@ private:
     double set_output_rate(const int requested_rate, const size_t chan)
     {
         const double input_rate = get_arg<double>("input_rate");
+        
         const size_t decim_rate = boost::math::iround(input_rate/this->get_output_rates().clip(requested_rate, true));
         size_t decim = decim_rate;
-
         // The FPGA knows which halfbands to enable for any given value of hb_enable.
         uint32_t hb_enable = 0;
-        while ((decim % 2 == 0) and hb_enable < NUM_HALFBANDS) {
+        while ((decim % 2 == 0) and hb_enable < _num_halfbands) {
             hb_enable++;
             decim /= 2;
         }
-        UHD_ASSERT_THROW(hb_enable <= NUM_HALFBANDS);
-        UHD_ASSERT_THROW(decim <= CIC_MAX_DECIM);
+        UHD_ASSERT_THROW(hb_enable <= _num_halfbands);
+        UHD_ASSERT_THROW(decim > 0 and decim <= _cic_max_decim);
         // What we can't cover with halfbands, we do with the CIC
         sr_write("DECIM_WORD", (hb_enable << 8) | (decim & 0xff), chan);
 
@@ -293,6 +297,39 @@ private:
         sr_write("SCALE_IQ", actual_scalar, chan);
     }
 
+   //Get cached value of _num_halfbands
+   size_t get_num_halfbands() const
+   {
+       return (size_t) _num_halfbands;
+   }
+
+   //Get cached value of _cic_max_decim readback
+   size_t get_cic_max_decim() const
+   {
+       return (size_t) _cic_max_decim;
+   }
+
+   //Check compatibility num, if not current, throw error.
+   //MAJOR COMPATIBILITY, top 32 bits = 0x1
+   //MINOR COMPATIBILITY, lower 32 bits = 0x0
+   void check_compat_num()
+   {
+       uint64_t compat_num = user_reg_read64(RB_REG_COMPAT_NUM);
+       uint32_t compat_num_major = compat_num>>32;
+       uint32_t compat_num_minor = compat_num&0xFFFFFFFF;
+       if ( compat_num_major > MAJOR_COMP) {
+          throw uhd::runtime_error(str(boost::format(
+              "DDC RFNoC block is too new for this software. Please upgrade to a driver that supports hardware revision %d.")
+              % compat_num_major));
+       } else if ( compat_num_major < MAJOR_COMP) {
+          throw uhd::runtime_error(str(boost::format(
+              "DDC software is too new for this hardware. Please downgrade to a driver that supports hardware revision %d.")
+              % compat_num_major));
+       }
+       if (compat_num_minor != MINOR_COMP) {
+         UHD_LOGGER_WARNING("DDC") << "DDC hardware compatability does not match software, this may have adverse affects on the block's behavior.";
+       }
+   }
 };
 
 UHD_RFNOC_BLOCK_REGISTER(ddc_block_ctrl, "DDC");
