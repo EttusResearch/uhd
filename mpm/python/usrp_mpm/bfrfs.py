@@ -80,6 +80,7 @@ class BufferFS(object):
 
 
     def __init__(self, raw_data_buffer, max_size=None, alignment=None, log=None):
+        assert isinstance(raw_data_buffer, bytes)
         self.max_size = len(raw_data_buffer) if max_size is None else max_size
         self.raw_data_buffer = raw_data_buffer[:self.max_size]
         self.alignment = alignment or DEFAULT_ALIGNMENT
