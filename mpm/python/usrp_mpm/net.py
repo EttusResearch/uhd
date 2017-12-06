@@ -30,19 +30,18 @@ def get_valid_interfaces(iface_list):
     subset that contains actually valid entries.
     Interfaces are checked for if they actually exist, and if so, if they're up.
     """
-    ipr = IPRoute()
     valid_ifaces = []
-    for iface in iface_list:
-        valid_iface_idx = ipr.link_lookup(ifname=iface)
-        if len(valid_iface_idx) == 0:
-            continue
-        valid_iface_idx = valid_iface_idx[0]
-        link_info = ipr.get_links(valid_iface_idx)[0]
-        if link_info.get_attr('IFLA_OPERSTATE') == 'UP' \
-                and len(get_iface_addrs(link_info.get_attr('IFLA_ADDRESS'))):
-            assert link_info.get_attr('IFLA_IFNAME') == iface
-            valid_ifaces.append(iface)
-    ipr.close()
+    with IPRoute() as ipr:
+        for iface in iface_list:
+            valid_iface_idx = ipr.link_lookup(ifname=iface)
+            if len(valid_iface_idx) == 0:
+                continue
+            valid_iface_idx = valid_iface_idx[0]
+            link_info = ipr.get_links(valid_iface_idx)[0]
+            if link_info.get_attr('IFLA_OPERSTATE') == 'UP' \
+                    and len(get_iface_addrs(link_info.get_attr('IFLA_ADDRESS'))):
+                assert link_info.get_attr('IFLA_IFNAME') == iface
+                valid_ifaces.append(iface)
     return valid_ifaces
 
 
@@ -56,11 +55,16 @@ def get_iface_info(ifname):
 
     All values are stored as strings.
     """
-    ipr = IPRoute()
     try:
-        link_info = ipr.get_links(ipr.link_lookup(ifname=ifname))[0]
+        with IPRoute() as ipr:
+            links = ipr.link_lookup(ifname=ifname)
+            if len(links) == 0:
+                raise LookupError("No interfaces known with name `{}'!"
+                                  .format(ifname))
+            link_info = ipr.get_links(links)[0]
     except IndexError:
-        raise LookupError("Could not identify interface `{}'".format(ifname))
+        raise LookupError("Could not get links for interface `{}'"
+                          .format(ifname))
     mac_addr = link_info.get_attr('IFLA_ADDRESS')
     ip_addrs = get_iface_addrs(mac_addr)
     return {
@@ -90,17 +94,17 @@ def get_iface_addrs(mac_addr):
     return ipv4 addresses for a given macaddress
     input format: "aa:bb:cc:dd:ee:ff"
     """
-    ip2 = IPRoute()
-    # returns index
-    [link] = ip2.link_lookup(address=mac_addr)
-    # Only get v4 addresses
-    addresses = [addr.get_attrs('IFA_ADDRESS')
-                 for addr in ip2.get_addr(family=socket.AF_INET)
-                 if addr.get('index', None) == link]
-    # flatten possibly nested list
-    addresses = list(itertools.chain.from_iterable(addresses))
-    ip2.close()
-    return addresses
+    with  IPRoute() as ip2:
+        # returns index
+        [link] = ip2.link_lookup(address=mac_addr)
+        # Only get v4 addresses
+        addresses = [addr.get_attrs('IFA_ADDRESS')
+                     for addr in ip2.get_addr(family=socket.AF_INET)
+                     if addr.get('index', None) == link]
+        # flatten possibly nested list
+        addresses = list(itertools.chain.from_iterable(addresses))
+
+        return addresses
 
 
 def byte_to_mac(byte_str):
@@ -115,10 +119,12 @@ def get_mac_addr(remote_addr):
     return MAC address of a remote host already discovered
     or None if no host entry was found
     """
-    ip2 = IPRoute()
-    addrs = ip2.get_neighbours(dst=remote_addr)
-    if len(addrs) > 1:
-        get_logger('get_mac_addr').warning("More than one device with the same IP address found. Picking entry at random")
-    if not addrs:
-        return None
-    return addrs[0].get_attr('NDA_LLADDR')
+    with IPRoute() as ip2:
+        addrs = ip2.get_neighbours(dst=remote_addr)
+        if len(addrs) > 1:
+            get_logger('get_mac_addr').warning("More than one device with the "
+                                               "same IP address found. "
+                                               "Picking entry at random")
+        if not addrs:
+            return None
+        return addrs[0].get_attr('NDA_LLADDR')
