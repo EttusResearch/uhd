@@ -215,6 +215,27 @@ private:
  * make routine for dboard manager
  **********************************************************************/
 dboard_manager::sptr dboard_manager::make(
+    dboard_id_t rx_dboard_id,
+    dboard_id_t tx_dboard_id,
+    dboard_id_t gdboard_id,
+    dboard_iface::sptr iface,
+    property_tree::sptr subtree,
+    bool defer_db_init
+){
+    dboard_eeprom_t rx_eeprom;
+    dboard_eeprom_t tx_eeprom;
+    rx_eeprom.id = rx_dboard_id;
+    tx_eeprom.id = (gdboard_id == dboard_id_t::none()) ? tx_dboard_id : gdboard_id;
+    return dboard_manager::sptr(
+        new dboard_manager_impl(
+            rx_eeprom,
+            tx_eeprom,
+            iface, subtree, defer_db_init
+        )
+    );
+}
+
+dboard_manager::sptr dboard_manager::make(
     dboard_eeprom_t rx_eeprom,
     dboard_eeprom_t tx_eeprom,
     dboard_eeprom_t gdb_eeprom,
