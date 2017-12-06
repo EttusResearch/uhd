@@ -8,6 +8,7 @@ Miscellaneous utilities for MPM
 """
 
 import time
+import sys
 
 def poll_with_timeout(state_check, timeout_ms, interval_ms):
     """
@@ -35,4 +36,45 @@ def poll_with_timeout(state_check, timeout_ms, interval_ms):
             return True
         time.sleep(interval_s)
     return False
+
+def to_native_str(str_or_bstr):
+    """
+    Returns a native string, regardless of the input string type (binary or
+    UTF-8), and the Python version (2 or 3).
+    Note that the native string type is actually not the same in Python 2 and
+    3: In the former, it's a binary string, in the latter, it's Unicode.
+    >>> to_native_str(b'foo')
+    'foo'
+    >>> to_native_str(u'foo')
+    'foo'
+    """
+    if isinstance(str_or_bstr, str):
+        return str_or_bstr
+    if sys.version_info.major >= 3:
+        return str(str_or_bstr, encoding='ascii')
+    else:
+        return str(str_or_bstr)
+
+def to_binary_str(str_or_bstr):
+    """
+    Returns a binary string, regardless of the input string type (binary or
+    UTF-8), and the Python version (2 or 3).
+    Note that in Python 2, a binary string is the native string type.
+    """
+    try:
+        return bytes(str_or_bstr.encode('utf-8'))
+    except AttributeError:
+        return bytes(str_or_bstr)
+
+
+def to_utf8_str(str_or_bstr):
+    """
+    Returns a unicode string, regardless of the input string type (binary or
+    UTF-8), and the Python version (2 or 3).
+    Note that in Python 2, a unicode string is not the native string type.
+    """
+    try:
+        return str_or_bstr.decode('utf-8')
+    except AttributeError:
+        return str_or_bstr
 
