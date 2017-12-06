@@ -1,5 +1,5 @@
 //
-// Copyright 2010-2012,2014,2017 Ettus Research, A National Instruments Company
+// Copyright 2010-2012,2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -378,7 +378,7 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
             _master_clock_rate, rx_db_eeprom.id
         );
         _dbc[db].dboard_manager = dboard_manager::make(
-            rx_db_eeprom, tx_db_eeprom, gdb_eeprom,
+            rx_db_eeprom.id, tx_db_eeprom.id, gdb_eeprom.id,
             dboard_iface, _tree->subtree(mb_path / "dboards" / db)
         );
 

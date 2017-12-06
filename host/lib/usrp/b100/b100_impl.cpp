@@ -1,5 +1,5 @@
 //
-// Copyright 2012-2014,2017 Ettus Research, A National Instruments Company
+// Copyright 2012-2014 Ettus Research LLC
 //
 // This program is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -471,7 +471,7 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
 
     //create a new dboard interface and manager
     _dboard_manager = dboard_manager::make(
-        rx_db_eeprom, tx_db_eeprom, gdb_eeprom,
+        rx_db_eeprom.id, tx_db_eeprom.id, gdb_eeprom.id,
         make_b100_dboard_iface(_fifo_ctrl, _fpga_i2c_ctrl, _fifo_ctrl/*spi*/, _clock_ctrl, _codec_ctrl),
         _tree->subtree(mb_path / "dboards/A")
     );
