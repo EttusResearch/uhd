@@ -171,7 +171,10 @@ namespace {
             .add_coerced_subscriber([mb](const uhd::usrp::mboard_eeprom_t& mb_eeprom){
                 eeprom_map_t eeprom_map;
                 for (const auto& key : mb_eeprom.keys()) {
-                    eeprom_map[key] = mb_eeprom[key];
+                    eeprom_map[key] = std::vector<uint8_t>(
+                            mb_eeprom[key].cbegin(),
+                            mb_eeprom[key].cend()
+                    );
                 }
                 mb->rpc->notify_with_token("set_mb_eeprom", eeprom_map);
             })
