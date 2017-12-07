@@ -169,6 +169,8 @@ private:
         const direction_t dir
     );
 
+    void _update_gain(const size_t chan, direction_t dir);
+
     /**************************************************************************
      * CPLD Controls (implemented in magnesium_radio_ctrl_cpld.cpp)
      *************************************************************************/

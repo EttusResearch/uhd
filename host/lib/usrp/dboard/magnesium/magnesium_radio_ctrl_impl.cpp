@@ -97,11 +97,21 @@ namespace {
     // TODO: remove this helper when there are only 2 radios
     fs_path master_fe_base_path(const std::string &radio_slot)
     {
-        if (radio_slot == "B") {
+        if (radio_slot == "B" or radio_slot == "A") {
             return fs_path("dboards") / "A";
         }
-        if (radio_slot == "D") {
+        if (radio_slot == "D" or radio_slot == "C") {
             return fs_path("dboards") / "C";
+        }
+        UHD_THROW_INVALID_CODE_PATH();
+    }
+      fs_path slave_fe_base_path(const std::string &radio_slot)
+    {
+        if (radio_slot == "B" or radio_slot == "A") {
+            return fs_path("dboards") / "B";
+        }
+        if (radio_slot == "D" or radio_slot == "C") {
+            return fs_path("dboards") / "D";
         }
         UHD_THROW_INVALID_CODE_PATH();
     }
@@ -202,6 +212,7 @@ double magnesium_radio_ctrl_impl::set_tx_frequency(
             master_fe_base_path(_radio_slot) / fs_path("tx_frontends") / chan;
         UHD_LOG_DEBUG(unique_id(),
                       "Slave setting TX frequency");
+
         return _tree->access<double>(master_tx_fe_path / "freq" / "value")
             .set(freq)
             .get();
@@ -228,9 +239,27 @@ double magnesium_radio_ctrl_impl::set_tx_frequency(
     }
 
     //const double actual_ad9371_freq =
-        _ad9371->set_frequency(freq, chan, TX_DIRECTION);
-    radio_ctrl_impl::set_tx_frequency(freq, chan);
+    _ad9371->set_frequency(freq, chan, TX_DIRECTION);
+    this->_update_gain(chan, TX_DIRECTION);
     return freq; // FIXME calc the actual frequency
+}
+
+void magnesium_radio_ctrl_impl::_update_gain(
+        const size_t chan,
+        const uhd::direction_t dir
+) {
+    const std::string fe =
+        (dir == TX_DIRECTION) ? "tx_frontends" : "rx_frontends";
+    const fs_path slave_fe_path =
+            slave_fe_base_path(_radio_slot) / fs_path(fe) / chan;
+    const double freq =  (dir == TX_DIRECTION) ?
+        this->get_tx_frequency(chan) :
+        this->get_rx_frequency(chan);
+    // "this" here is always master
+    this->_set_all_gain(this->_get_all_gain(chan, dir), freq, chan, dir);
+    // now we need update gain on slave
+    _tree->access<double>(slave_fe_path / "gains" / "all" / "value").update();
+
 }
 
 double magnesium_radio_ctrl_impl::set_rx_frequency(
@@ -252,7 +281,7 @@ double magnesium_radio_ctrl_impl::set_rx_frequency(
             .set(freq)
             .get();
     }
-    // If we're on the slave, we use the master lock or we get a deadlock
+    // If we're on the slave, we use the master lock or we'd get a deadlock
     std::lock_guard<std::mutex> l(_set_lock);
     // We need to set the switches on both channels, because they share an LO.
     // This way, if we tune channel 0 it will not put channel 1 into a bad
@@ -276,6 +305,7 @@ double magnesium_radio_ctrl_impl::set_rx_frequency(
     //const double actual_ad9371_freq =
     _ad9371->set_frequency(freq, chan, RX_DIRECTION);
     radio_ctrl_impl::set_rx_frequency(freq, chan);
+    this->_update_gain(chan, RX_DIRECTION);
     return freq; // FIXME calc the actual frequency
 }
 
