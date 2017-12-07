@@ -28,6 +28,7 @@
 #include <uhd/types/serial.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/usrp/gpio_defs.hpp>
+#include <mutex>
 
 namespace uhd {
     namespace rfnoc {
@@ -192,6 +193,9 @@ private:
     /**************************************************************************
      * Private attributes
      *************************************************************************/
+    //! Locks access to setter APIs
+    std::mutex _set_lock;
+
     //! Letter representation of the radio we're currently running
     std::string _radio_slot;
 

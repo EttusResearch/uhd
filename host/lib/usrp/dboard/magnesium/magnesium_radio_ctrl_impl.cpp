@@ -140,6 +140,7 @@ magnesium_radio_ctrl_impl::~magnesium_radio_ctrl_impl()
  *****************************************************************************/
 double magnesium_radio_ctrl_impl::set_rate(double rate)
 {
+    std::lock_guard<std::mutex> l(_set_lock);
     // TODO: implement
     if (rate != get_rate()) {
         UHD_LOG_WARNING(unique_id(),
@@ -167,6 +168,7 @@ void magnesium_radio_ctrl_impl::set_rx_antenna(
         const size_t chan
 ) {
     UHD_ASSERT_THROW(chan <= MAGNESIUM_NUM_CHANS);
+    std::lock_guard<std::mutex> l(_set_lock);
     if (std::find(MAGNESIUM_RX_ANTENNAS.begin(),
                   MAGNESIUM_RX_ANTENNAS.end(),
                   ant) == MAGNESIUM_RX_ANTENNAS.end()) {
@@ -204,6 +206,8 @@ double magnesium_radio_ctrl_impl::set_tx_frequency(
             .set(freq)
             .get();
     }
+
+    std::lock_guard<std::mutex> l(_set_lock);
     // We need to set the switches on both channels, because they share an LO.
     // This way, if we tune channel 0 it will not put channel 1 into a bad
     // state.
@@ -248,6 +252,8 @@ double magnesium_radio_ctrl_impl::set_rx_frequency(
             .set(freq)
             .get();
     }
+    // If we're on the slave, we use the master lock or we get a deadlock
+    std::lock_guard<std::mutex> l(_set_lock);
     // We need to set the switches on both channels, because they share an LO.
     // This way, if we tune channel 0 it will not put channel 1 into a bad
     // state.
@@ -305,6 +311,7 @@ double magnesium_radio_ctrl_impl::set_rx_bandwidth(
         const double bandwidth,
         const size_t chan
 ) {
+    std::lock_guard<std::mutex> l(_set_lock);
     radio_ctrl_impl::set_rx_bandwidth(bandwidth, chan);
     return _ad9371->set_bandwidth(bandwidth, chan, RX_DIRECTION);
 }
@@ -313,6 +320,7 @@ double magnesium_radio_ctrl_impl::set_tx_bandwidth(
         const double bandwidth,
         const size_t chan
 ) {
+    std::lock_guard<std::mutex> l(_set_lock);
     //radio_ctrl_impl::set_rx_bandwidth(bandwidth, chan);
     return _ad9371->set_bandwidth(bandwidth, chan, TX_DIRECTION);
 }
@@ -321,6 +329,7 @@ double magnesium_radio_ctrl_impl::set_tx_gain(
         const double gain,
         const size_t chan
 ) {
+    std::lock_guard<std::mutex> l(_set_lock);
     UHD_LOG_TRACE(unique_id(),
         "set_tx_gain(gain=" << gain << ", chan=" << chan << ")");
     const double coerced_gain = _set_all_gain(
@@ -337,6 +346,7 @@ double magnesium_radio_ctrl_impl::set_rx_gain(
         const double gain,
         const size_t chan
 ) {
+    std::lock_guard<std::mutex> l(_set_lock);
     UHD_LOG_TRACE(unique_id(),
         "set_rx_gain(gain=" << gain << ", chan=" << chan << ")");
     const double coerced_gain = _set_all_gain(
@@ -374,6 +384,7 @@ void magnesium_radio_ctrl_impl::set_rx_lo_source(
         const std::string &/*name*/,
         const size_t /*chan*/
 ) {
+    std::lock_guard<std::mutex> l(_set_lock);
     // FIXME
 }
 
@@ -389,6 +400,7 @@ double magnesium_radio_ctrl_impl::set_rx_lo_freq(
         const std::string &/*name*/,
         const size_t /*chan*/
 ) {
+    std::lock_guard<std::mutex> l(_set_lock);
     return 0.0; // FIXME
 }
 
