@@ -18,6 +18,7 @@
 #include "twinrx/twinrx_experts.hpp"
 #include "twinrx/twinrx_ctrl.hpp"
 #include "twinrx/twinrx_io.hpp"
+#include "twinrx/twinrx_ids.hpp"
 #include <expert_factory.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <uhd/types/ranges.hpp>
@@ -37,9 +38,6 @@ using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::usrp::dboard::twinrx;
 using namespace uhd::experts;
-
-static const dboard_id_t TWINRX_V100_000_ID(0x91);
-static const dboard_id_t TWINRX_V100_100_ID(0x93);
 
 /*!
  * twinrx_rcvr_fe is the dbaord class (dboard_base) that
@@ -227,7 +225,7 @@ public:
         twinrx_gpio::sptr gpio_iface = boost::make_shared<twinrx_gpio>(_db_iface);
         twinrx_cpld_regmap::sptr cpld_regs = boost::make_shared<twinrx_cpld_regmap>();
         cpld_regs->initialize(*gpio_iface, false);
-        _ctrl = twinrx_ctrl::make(_db_iface, gpio_iface, cpld_regs);
+        _ctrl = twinrx_ctrl::make(_db_iface, gpio_iface, cpld_regs, get_rx_id());
         _expert = expert_factory::create_container("twinrx_expert");
     }
 
@@ -335,17 +333,25 @@ static dboard_base::sptr make_twinrx_container(dboard_base::ctor_args_t args)
 UHD_STATIC_BLOCK(reg_twinrx_dboards)
 {
     dboard_manager::register_dboard_restricted(
-        TWINRX_V100_000_ID,
+        twinrx::TWINRX_REV_A_ID,
         &twinrx_rcvr::make_twinrx_fe,
-        "TwinRX v1.0",
+        "TwinRX Rev A",
         boost::assign::list_of("0")("1"),
         &make_twinrx_container
     );
 
     dboard_manager::register_dboard_restricted(
-        TWINRX_V100_100_ID,
+        twinrx::TWINRX_REV_B_ID,
         &twinrx_rcvr::make_twinrx_fe,
-        "TwinRX v1.1",
+        "TwinRX Rev B",
+        boost::assign::list_of("0")("1"),
+        &make_twinrx_container
+    );
+
+    dboard_manager::register_dboard_restricted(
+        twinrx::TWINRX_REV_C_ID,
+        &twinrx_rcvr::make_twinrx_fe,
+        "TwinRX Rev C",
         boost::assign::list_of("0")("1"),
         &make_twinrx_container
     );
