@@ -118,11 +118,6 @@ class PeriphManagerBase(object):
     # dboards, but if it's shorter, it simply won't instantiate list SPI nodes
     # for those dboards.
     dboard_spimaster_addrs = []
-    # Lists the network interfaces which can theoretically support CHDR. These
-    # do not have to exist, but these interfaces will be probed for
-    # availability. If the list is empty, no CHDR traffic will be possible over
-    # the network. Example: ['eth1', 'eth2']
-    chdr_interfaces = []
     # Dictionary containing valid IDs for the update_component function for a
     # specific implementation. Each PeriphManagerBase-derived class should list
     # information required to update the component, like a callback function

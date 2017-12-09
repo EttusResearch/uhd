@@ -28,14 +28,12 @@ from builtins import object
 from .base import PeriphManagerBase
 from ..net import get_iface_addrs
 from ..net import byte_to_mac
-from ..net import get_mac_addr
 from ..mpmtypes import SID
 from usrp_mpm.rpc_server import no_rpc
 from usrp_mpm import net
 from usrp_mpm import dtoverlay
+from usrp_mpm.xports import XportMgrUDP, XportMgrLiberio
 from ..sysfs_gpio import SysFSGPIO
-from ..ethtable import EthDispatcherTable
-from ..liberiotable import LiberioDispatcherTable
 from .. import libpyusrp_periphs as lib
 
 N3XX_DEFAULT_EXT_CLOCK_FREQ = 10e6
@@ -212,231 +210,27 @@ class FP_GPIO(object):
 ###############################################################################
 # Transport managers
 ###############################################################################
-class XportMgrUDP(object):
-    """
-    Transport manager for UDP connections
-    """
-    # Map Eth devices to UIO labels
+class N310XportMgrUDP(XportMgrUDP):
     eth_tables = {'eth1': 'misc-enet-regs0', 'eth2': 'misc-enet-regs1'}
     xbar_port_map = {'eth1': 0, 'eth2': 1}
+    xbar_dev = "/dev/crossbar0"
+    iface_config = {
+        'eth1': {
+            'label': 'misc-enet-regs0',
+            'xbar': 0,
+            'xbar_port': 0,
+        },
+        'eth2': {
+            'label': 'misc-enet-regs1',
+            'xbar': 0,
+            'xbar_port': 1,
+        },
+    }
 
-    def __init__(self, possible_chdr_ifaces, log):
-        self.log = log
-        self._possible_chdr_ifaces = possible_chdr_ifaces
-        self.log.info("Identifying available network interfaces...")
-        self._chdr_ifaces = \
-            self._init_interfaces(self._possible_chdr_ifaces)
-        self._eth_dispatchers = {
-            x: EthDispatcherTable(self.eth_tables.get(x))
-            for x in list(self._chdr_ifaces.keys())
-        }
-        for ifname, table in iteritems(self._eth_dispatchers):
-            table.set_ipv4_addr(self._chdr_ifaces[ifname]['ip_addr'])
-        self.chdr_port = 49153 # TODO get this from somewhere
-
-    def _init_interfaces(self, possible_ifaces):
-        """
-        Initialize the list of network interfaces
-        """
-        self.log.trace("Testing available interfaces out of `{}'".format(
-            possible_ifaces
-        ))
-        valid_ifaces = net.get_valid_interfaces(possible_ifaces)
-        if len(valid_ifaces):
-            self.log.debug("Found CHDR interfaces: `{}'".format(valid_ifaces))
-        else:
-            self.log.warning("No CHDR interfaces found!")
-        return {
-            x: net.get_iface_info(x)
-            for x in valid_ifaces
-        }
-
-    def init(self, args):
-        """
-        Call this when the user calls 'init' on the periph manager
-        """
-        # TODO re-run _init_interfaces, IP addresses could have changed since
-        # bootup
-        for _, table in iteritems(self._eth_dispatchers):
-            if 'forward_eth' in args or 'forward_bcast' in args:
-                table.set_forward_policy(
-                    args.get('forward_eth', False),
-                    args.get('forward_bcast', False)
-                )
-        if 'preload_ethtables' in args:
-            self._preload_ethtables(
-                self._eth_dispatchers,
-                args['preload_ethtables']
-            )
-
-    def deinit(self):
-        " Clean up after a session terminates "
-        pass
-
-    def _preload_ethtables(self, eth_dispatchers, table_file):
-        """
-        Populates the ethernet tables from a JSON file
-        """
-        import json
-        try:
-            eth_table_data = json.load(open(table_file))
-        except ValueError as ex:
-            self.log.warning(
-                "Bad values in preloading table file: %s",
-                str(ex)
-            )
-            return
-        self.log.info(
-            "Preloading Ethernet dispatch tables from JSON file `%s'.",
-            table_file
-        )
-        for eth_iface, data in iteritems(eth_table_data):
-            if eth_iface not in eth_dispatchers:
-                self.log.warning(
-                    "Request to preload eth dispatcher table for "
-                    "iface `{}', but no such interface is "
-                    "registered. Known interfaces: {}".format(
-                        str(eth_iface),
-                        ",".join(eth_dispatchers.keys())
-                    )
-                )
-                continue
-            eth_dispatcher = eth_dispatchers[eth_iface]
-            self.log.debug("Preloading {} dispatch table".format(eth_iface))
-            try:
-                for dst_ep, udp_data in iteritems(data):
-                    sid = SID()
-                    sid.set_dst_ep(int(dst_ep))
-                    eth_dispatcher.set_route(
-                        sid,
-                        udp_data['ip_addr'],
-                        udp_data['port'],
-                        udp_data.get('mac_addr', None)
-                    )
-            except ValueError as ex:
-                self.log.warning(
-                    "Bad values in preloading table file: %s",
-                    str(ex)
-                )
-
-    def request_xport(
-            self,
-            sid,
-            xport_type,
-        ):
-        """
-        Return UDP xport info
-        """
-        assert xport_type in ('CTRL', 'ASYNC_MSG', 'TX_DATA', 'RX_DATA')
-        # for iface_name, iface_info in iteritems(self._chdr_ifaces):
-
-        xport_info = [
-            {
-                'type': 'UDP',
-                'ipv4': str(iface_info['ip_addr']),
-                'port': str(self.chdr_port),
-                'send_sid': str(sid)
-            }
-            for _, iface_info in iteritems(self._chdr_ifaces)
-        ]
-        return xport_info
-
-    def commit_xport(self, sid, xport_info):
-        """
-        fuu
-        """
-        self.log.trace("Sanity checking xport_info %s...", str(xport_info))
-        assert xport_info['type'] == 'UDP'
-        assert any([xport_info['ipv4'] == x['ip_addr']
-                    for x in itervalues(self._chdr_ifaces)])
-        assert xport_info['port'] == str(self.chdr_port)
-        assert len(xport_info.get('src_ipv4')) > 5
-        assert int(xport_info.get('src_port')) > 0
-        sender_addr = xport_info['src_ipv4']
-        sender_port = int(xport_info['src_port'])
-        self.log.trace("Incoming connection is coming from %s:%d",
-                       sender_addr, sender_port)
-        mac_addr = get_mac_addr(sender_addr)
-        if mac_addr is None:
-            raise RuntimeError(
-                "Could not find MAC address for IP address {}".format(
-                    sender_addr))
-        self.log.trace("Incoming connection is coming from %s",
-                       mac_addr)
-        eth_iface = net.ip_addr_to_iface(xport_info['ipv4'], self._chdr_ifaces)
-        xbar_port = self.xbar_port_map[eth_iface]
-        self.log.trace("Using Ethernet interface %s, crossbar port %d",
-                       eth_iface, xbar_port)
-        my_xbar = lib.xbar.xbar.make("/dev/crossbar0") # TODO don't hardcode
-        my_xbar.set_route(sid.src_addr, xbar_port)
-        self._eth_dispatchers[eth_iface].set_route(
-            sid.reversed(), sender_addr, sender_port)
-        self.log.trace("UDP transport successfully committed!")
-        return True
-
-
-class XportMgrLiberio(object):
-    """
-    Transport manager for UDP connections
-    """
-    # udev label for the UIO device that controls the DMA engine
-    liberio_label = 'liberio'
-
-    def __init__(self, log):
-        self.log = log
-        self._dma_dispatcher = LiberioDispatcherTable(self.liberio_label)
-        self._data_chan_ctr = 0
-        self._max_chan = 10 # TODO get this number from somewhere
-
-    def init(self, args):
-        """
-        Call this when the user calls 'init' on the periph manager
-        """
-        pass
-
-    def deinit(self):
-        " Clean up after a session terminates "
-        self._data_chan_ctr = 0
-
-    def request_xport(
-            self,
-            sid,
-            xport_type,
-        ):
-        """
-        Return liberio xport info
-        """
-        assert xport_type in ('CTRL', 'ASYNC_MSG', 'TX_DATA', 'RX_DATA')
-        if xport_type == 'CTRL':
-            chan = 0
-        elif xport_type == 'ASYNC_MSG':
-            chan = 1
-        else:
-            chan = 2 + self._data_chan_ctr
-            self._data_chan_ctr += 1
-        xport_info = {
-            'type': 'liberio',
-            'send_sid': str(sid),
-            'muxed': str(xport_type in ('CTRL', 'ASYNC_MSG')),
-            'dma_chan': str(chan),
-            'tx_dev': "/dev/tx-dma{}".format(chan),
-            'rx_dev': "/dev/rx-dma{}".format(chan),
-        }
-        self.log.trace("Liberio: Chan: {} TX Device: {} RX Device: {}".format(
-            chan, xport_info['tx_dev'], xport_info['rx_dev']))
-        self.log.trace("Liberio channel is muxed: %s",
-                       "Yes" if xport_info['muxed'] else "No")
-        return [xport_info]
-
-    def commit_xport(self, sid, xport_info):
-        " Commit liberio transport "
-        chan = int(xport_info['dma_chan'])
-        my_xbar = lib.xbar.xbar.make("/dev/crossbar0") # TODO
-        my_xbar.set_route(sid.src_addr, 2) # TODO
-        self._dma_dispatcher.set_route(sid.reversed(), chan)
-        self.log.trace("Liberio transport successfully committed!")
-        return True
-
+class N310XportMgrLiberio(XportMgrLiberio):
+    max_chan = 10
+    xbar_dev = "/dev/crossbar0"
+    xbar_port = 2
 
 ###############################################################################
 # Main Class
@@ -467,7 +261,6 @@ class n310(PeriphManagerBase):
     # We're on a Zynq target, so the following two come from the Zynq standard
     # device tree overlay (tree/arch/arm/boot/dts/zynq-7000.dtsi)
     dboard_spimaster_addrs = ["e0006000.spi", "e0007000.spi"]
-    chdr_interfaces = ['eth1', 'eth2']
     # N310-specific settings
     # Path to N310 FPGA bin file
     # This file will always contain the current image, regardless of SFP type,
@@ -544,8 +337,8 @@ class n310(PeriphManagerBase):
         self._init_ref_clock_and_time(args.default_args)
         # Init CHDR transports
         self._xport_mgrs = {
-            'udp': XportMgrUDP(self.chdr_interfaces, self.log),
-            'liberio': XportMgrLiberio(self.log),
+            'udp': N310XportMgrUDP(self.log.getChild('UDP')),
+            'liberio': N310XportMgrLiberio(self.log.getChild('liberio')),
         }
         # Init complete.
         self.log.info("mboard info: {}".format(self.mboard_info))

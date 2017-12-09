@@ -23,4 +23,5 @@ from .rpc_server import spawn_rpc_process
 from . import mpmtypes
 from . import periph_manager
 from . import dboard_manager
+from . import xports
 from .mpmlog import get_main_logger
