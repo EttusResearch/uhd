@@ -240,6 +240,7 @@ double magnesium_radio_ctrl_impl::set_tx_frequency(
 
     //const double actual_ad9371_freq =
     _ad9371->set_frequency(freq, chan, TX_DIRECTION);
+    radio_ctrl_impl::set_tx_frequency(freq, chan)
     this->_update_gain(chan, TX_DIRECTION);
     return freq; // FIXME calc the actual frequency
 }
