@@ -40,6 +40,7 @@ N3XX_DEFAULT_CLOCK_SOURCE = 'external'
 N3XX_DEFAULT_TIME_SOURCE = 'internal'
 N3XX_DEFAULT_ENABLE_GPS = True
 N3XX_DEFAULT_ENABLE_FPGPIO = True
+N3XX_FPGA_COMPAT = (1, 0)
 
 ###############################################################################
 # Additional peripheral controllers specific to Magnesium
@@ -308,6 +309,24 @@ class n310(PeriphManagerBase):
         except Exception as ex:
             self.log.error("Failed to initialize motherboard: %s", str(ex))
 
+    def _check_fpga_compat(self):
+        " Throw an exception if the compat numbers don't match up "
+        c_major, c_minor = self.mboard_regs_control.get_compat_number()
+        if c_major != N3XX_FPGA_COMPAT[0]:
+            raise RuntimeError("FPGA major compat number mismatch. "
+                               "Expected: {:d}.{:d} Actual:{:d}.{:d}"
+                               .format(N3XX_FPGA_COMPAT[0],
+                                       N3XX_FPGA_COMPAT[1],
+                                       c_major,
+                                       c_minor))
+        if c_minor < N3XX_FPGA_COMPAT[1]:
+            raise RuntimeError("FPGA minor compat number mismatch. "
+                               "Expected: {:d}.{:d} Actual:{:d}.{:d}"
+                               .format(N3XX_FPGA_COMPAT[0],
+                                       N3XX_FPGA_COMPAT[1],
+                                       c_major,
+                                       c_minor))
+
     def _init_peripherals(self, args):
         """
         Turn on all peripherals. This may throw an error on failure, so make
@@ -316,6 +335,7 @@ class n310(PeriphManagerBase):
         # Init Mboard Regs
         self.mboard_regs_control = MboardRegsControl(self.mboard_regs_label, self.log)
         self.mboard_regs_control.get_git_hash()
+        self._check_fpga_compat()
         # Init peripherals
         self.log.trace("Initializing TCA6424 port expander controls...")
         self._gpios = TCA6424(int(self.mboard_info['rev']))
@@ -866,6 +886,20 @@ class MboardRegsControl(object):
         )
         self.poke32 = self.regs.poke32
         self.peek32 = self.regs.peek32
+
+    def get_compat_number(self):
+        """get FPGA compat number
+
+        This function reads back FPGA compat number.
+        The return is a tuple of
+        2 numbers: (major compat number, minor compat number )
+        """
+        with self.regs.open():
+            compat_number = self.peek32(self.MB_DESIGN_REV)
+        minor = compat_number & 0xff
+        major = (compat_number>>16) & 0xff
+        self.log.trace("FPGA compat number: {:d}.{:d}".format(major, minor))
+        return (major, minor)
 
     def get_git_hash(self):
         """
