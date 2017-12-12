@@ -39,22 +39,19 @@ class XportMgrUDP(object):
         self.log.trace("Initializing UDP xport manager...")
         self._possible_chdr_ifaces = self.iface_config.keys()
         self.log.trace("Identifying available network interfaces...")
+        self.chdr_port = EthDispatcherTable.DEFAULT_VITA_PORT[0]
         self._chdr_ifaces = \
             self._init_interfaces(self._possible_chdr_ifaces)
-        self._eth_dispatchers = {
-            x: EthDispatcherTable(self.iface_config[x]['label'])
-            for x in self._chdr_ifaces
-        }
-        for ifname, table in iteritems(self._eth_dispatchers):
-            table.set_ipv4_addr(self._chdr_ifaces[ifname]['ip_addr'])
-        self.chdr_port = EthDispatcherTable.DEFAULT_VITA_PORT[0]
+        self._eth_dispatchers = {}
 
     def _init_interfaces(self, possible_ifaces):
         """
-        Initialize the list of network interfaces
+        Enumerate all network interfaces that are currently able to stream CHDR
+        Returns a dictionary iface name -> iface info, where iface info is the
+        return value of get_iface_info().
         """
         self.log.trace("Testing available interfaces out of `{}'".format(
-            possible_ifaces
+            list(possible_ifaces)
         ))
         valid_ifaces = net.get_valid_interfaces(possible_ifaces)
         if len(valid_ifaces):
@@ -66,12 +63,27 @@ class XportMgrUDP(object):
             for x in valid_ifaces
         }
 
+    def _update_dispatchers(self):
+        """
+        Updates the self._eth_dispatchers dictionary, makes sure that all IP
+        addresses are programmed correctly.
+
+        After calling this, _chdr_ifaces and _eth_dispatchers are in sync.
+        """
+        for iface in self._chdr_ifaces:
+            if iface not in self._eth_dispatchers:
+                self._eth_dispatchers[iface] = \
+                    EthDispatcherTable(self.iface_config[iface]['label'])
+        for ifname, table in iteritems(self._eth_dispatchers):
+            table.set_ipv4_addr(self._chdr_ifaces[ifname]['ip_addr'])
+
     def init(self, args):
         """
         Call this when the user calls 'init' on the periph manager
         """
-        # TODO re-run _init_interfaces, IP addresses could have changed since
-        # bootup
+        self._chdr_ifaces = \
+            self._init_interfaces(self._possible_chdr_ifaces)
+        self._update_dispatchers()
         for _, table in iteritems(self._eth_dispatchers):
             if 'forward_eth' in args or 'forward_bcast' in args:
                 table.set_forward_policy(
