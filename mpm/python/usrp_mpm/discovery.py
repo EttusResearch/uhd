@@ -24,7 +24,7 @@ import socket
 from builtins import bytes
 from six import iteritems
 from usrp_mpm.mpmtypes import MPM_DISCOVERY_PORT
-from .mpmlog import get_main_logger
+from usrp_mpm.mpmlog import get_main_logger
 
 RESPONSE_PREAMBLE = "USRP-MPM"
 RESPONSE_SEP = ";"

@@ -9,7 +9,7 @@ Liberio Transport manager
 
 from builtins import object
 from usrp_mpm.liberiotable import LiberioDispatcherTable
-from usrp_mpm import libpyusrp_periphs as lib
+from usrp_mpm import lib
 
 class XportMgrLiberio(object):
     """

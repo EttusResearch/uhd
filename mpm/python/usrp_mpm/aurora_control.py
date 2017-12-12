@@ -22,7 +22,7 @@ import math
 import time
 from builtins import str
 from builtins import object
-from .mpmlog import get_logger
+from usrp_mpm.mpmlog import get_logger
 
 def mean(vals):
     " Calculate arithmetic mean of vals "

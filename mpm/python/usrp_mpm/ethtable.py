@@ -21,9 +21,9 @@ Ethernet dispatcher table control
 from builtins import str
 from builtins import object
 import netaddr
-from .mpmlog import get_logger
-from .uio import UIO
-from .net import get_mac_addr
+from usrp_mpm.mpmlog import get_logger
+from usrp_mpm.sys_utils.uio import UIO
+from usrp_mpm.sys_utils.net import get_mac_addr
 
 class EthDispatcherTable(object):
     """

@@ -21,7 +21,7 @@ Access to GPIOs mapped into the PS via sysfs
 import os
 from builtins import object
 import pyudev
-from .mpmlog import get_logger
+from usrp_mpm.mpmlog import get_logger
 
 GPIO_SYSFS_BASE_DIR = '/sys/class/gpio'
 GPIO_SYSFS_LABELFILE = 'label'

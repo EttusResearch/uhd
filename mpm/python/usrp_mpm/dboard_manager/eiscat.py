@@ -21,11 +21,11 @@ EISCAT rx board implementation module
 import time
 from builtins import range
 from builtins import object
-from ..mpmlog import get_logger
-from ..uio import UIO
-from . import lib
-from .base import DboardManagerBase
-from .lmk_eiscat import LMK04828EISCAT
+from usrp_mpm.mpmlog import get_logger
+from usrp_mpm.sys_utils.uio import UIO
+from usrp_mpm import lib
+from usrp_mpm.dboard_manager import DboardManagerBase
+from usrp_mpm.dboard_manager.lmk_eiscat import LMK04828EISCAT
 from usrp_mpm.cores import ClockSynchronizer
 
 def create_spidev_iface_sane(dev_node):

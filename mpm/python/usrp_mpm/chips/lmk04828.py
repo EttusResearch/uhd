@@ -20,7 +20,7 @@ LMK04828 parent driver class
 
 import math
 from builtins import object
-from ..mpmlog import get_logger
+from usrp_mpm.mpmlog import get_logger
 
 class LMK04828(object):
     """

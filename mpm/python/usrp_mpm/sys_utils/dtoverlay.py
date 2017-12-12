@@ -19,7 +19,7 @@ Manipulation of device tree overlays (Linux kernel)
 """
 
 import os
-from .mpmlog import get_logger
+from usrp_mpm.mpmlog import get_logger
 
 SYSFS_OVERLAY_BASE_DIR = '/sys/kernel/config/device-tree/overlays'
 OVERLAY_DEFAULT_PATH = '/lib/firmware'

@@ -19,9 +19,7 @@ magnesium dboard implementation module
 """
 
 from builtins import object
-from . import lib
-from .base import DboardManagerBase
-from logging import getLogger
+from usrp_mpm.dboard_manager import DboardManagerBase
 
 class fake_spi(object):
     def __init__(self, addr):

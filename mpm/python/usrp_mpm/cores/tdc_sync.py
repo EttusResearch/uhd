@@ -19,8 +19,8 @@ TDC clock synchronization
 
 import time
 import math
-from builtins import object
 from functools import reduce
+from builtins import object
 from usrp_mpm.mpmutils import poll_with_timeout
 from usrp_mpm.mpmlog import get_logger
 

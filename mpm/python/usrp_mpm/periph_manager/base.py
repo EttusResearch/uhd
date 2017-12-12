@@ -20,16 +20,16 @@ Mboard implementation base class
 
 from __future__ import print_function
 import os
-from concurrent import futures
 from hashlib import md5
+from concurrent import futures
 from builtins import str
 from builtins import range
 from builtins import object
 from six import iteritems, itervalues
-from ..mpmlog import get_logger
-from .udev import get_eeprom_paths
-from .udev import get_spidev_nodes
-from usrp_mpm import dtoverlay
+from usrp_mpm.mpmlog import get_logger
+from usrp_mpm.sys_utils.udev import get_eeprom_paths
+from usrp_mpm.sys_utils.udev import get_spidev_nodes
+from usrp_mpm.sys_utils import dtoverlay
 from usrp_mpm import eeprom
 from usrp_mpm.rpc_server import no_claim, no_rpc
 
@@ -37,7 +37,7 @@ def get_dboard_class_from_pid(pid):
     """
     Given a PID, return a dboard class initializer callable.
     """
-    from .. import dboard_manager
+    from usrp_mpm import dboard_manager
     for member in itervalues(dboard_manager.__dict__):
         try:
             if issubclass(member, dboard_manager.DboardManagerBase) and \

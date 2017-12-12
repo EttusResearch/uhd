@@ -33,7 +33,7 @@ monkey.patch_all()
 from builtins import str, bytes
 from builtins import range
 from mprpc import RPCServer
-from .mpmlog import get_main_logger
+from usrp_mpm.mpmlog import get_main_logger
 
 TIMEOUT_INTERVAL = 3.0 # Seconds before claim expires
 TOKEN_LEN = 16 # Length of the token string

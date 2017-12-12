@@ -24,7 +24,7 @@ import mmap
 from builtins import hex
 from builtins import object
 import pyudev
-from .mpmlog import get_logger
+from usrp_mpm.mpmlog import get_logger
 
 UIO_SYSFS_BASE_DIR = '/sys/class/uio'
 UIO_DEV_BASE_DIR = '/dev'

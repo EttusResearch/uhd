@@ -25,17 +25,13 @@ import shutil
 import subprocess
 from six import iteritems, itervalues
 from builtins import object
-from .base import PeriphManagerBase
-from ..net import get_iface_addrs
-from ..net import byte_to_mac
-from ..mpmtypes import SID
+from usrp_mpm.periph_manager import PeriphManagerBase
+from usrp_mpm.mpmtypes import SID
 from usrp_mpm.rpc_server import no_rpc
-from usrp_mpm import net
-from usrp_mpm import dtoverlay
+from usrp_mpm.sys_utils import dtoverlay
+from usrp_mpm.sys_utils.sysfs_gpio import SysFSGPIO
+from usrp_mpm.sys_utils.uio import UIO
 from usrp_mpm.xports import XportMgrUDP, XportMgrLiberio
-from ..sysfs_gpio import SysFSGPIO
-from .. import libpyusrp_periphs as lib
-from ..uio import UIO
 
 N3XX_DEFAULT_EXT_CLOCK_FREQ = 10e6
 N3XX_DEFAULT_CLOCK_SOURCE = 'external'

@@ -10,9 +10,9 @@ UDP Transport manager
 from builtins import object
 from six import iteritems, itervalues
 from usrp_mpm.ethtable import EthDispatcherTable
-from usrp_mpm import net
+from usrp_mpm.sys_utils import net
 from usrp_mpm.mpmtypes import SID
-from usrp_mpm import libpyusrp_periphs as lib
+from usrp_mpm import lib
 
 class XportMgrUDP(object):
     """

@@ -17,7 +17,6 @@
 
 import os
 import pyudev
-from ..mpmlog import get_logger
 
 def get_eeprom_paths(address):
     """

@@ -17,7 +17,6 @@
 """
 dboards module __init__.py
 """
-from .. import libpyusrp_periphs as lib
 from .base import DboardManagerBase
 from .magnesium import Magnesium
 from .eiscat import EISCAT

@@ -20,7 +20,7 @@ dboard base implementation module
 
 from builtins import object
 from six import iteritems
-from ..mpmlog import get_logger
+from usrp_mpm.mpmlog import get_logger
 
 class DboardManagerBase(object):
     """

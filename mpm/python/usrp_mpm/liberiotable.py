@@ -9,8 +9,8 @@ Liberio DMA dispatcher table control
 
 from builtins import str
 from builtins import object
-from .mpmlog import get_logger
-from .uio import UIO
+from usrp_mpm.mpmlog import get_logger
+from usrp_mpm.sys_utils.uio import UIO
 
 class LiberioDispatcherTable(object):
     """

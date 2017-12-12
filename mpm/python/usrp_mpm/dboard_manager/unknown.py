@@ -17,8 +17,7 @@
 """
 EISCAT rx board implementation module
 """
-from .base import DboardManagerBase
-from logging import getLogger
+from usrp_mpm.dboard_manager import DboardManagerBase
 
 class unknown(DboardManagerBase):
     hw_pid = 0

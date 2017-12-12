@@ -21,7 +21,7 @@ import itertools
 import socket
 from six import iteritems
 from pyroute2 import IPRoute
-from .mpmlog import get_logger
+from usrp_mpm.mpmlog import get_logger
 
 
 def get_valid_interfaces(iface_list):

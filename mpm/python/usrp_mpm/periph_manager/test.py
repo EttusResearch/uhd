@@ -19,10 +19,10 @@ test periph_manager implementation module
 """
 
 from __future__ import print_function
-from .base import PeriphManagerBase
-from . import dboard_manager
 import random
 import string
+from usrp_mpm.periph_manager import PeriphManagerBase
+from usrp_mpm import dboard_manager
 
 
 class test(PeriphManagerBase):

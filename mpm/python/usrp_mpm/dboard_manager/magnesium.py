@@ -24,15 +24,15 @@ import time
 import threading
 import math
 from six import iterkeys, iteritems
-from . import lib # Pulls in everything from C++-land
-from .base import DboardManagerBase
-from .. import nijesdcore
-from ..uio import UIO
-from ..mpmlog import get_logger
-from .lmk_mg import LMK04828Mg
-from usrp_mpm.periph_manager.udev import get_eeprom_paths
+from usrp_mpm import lib # Pulls in everything from C++-land
+from usrp_mpm.dboard_manager import DboardManagerBase
+from usrp_mpm.dboard_manager.lmk_mg import LMK04828Mg
+from usrp_mpm.cores import nijesdcore
+from usrp_mpm.mpmlog import get_logger
+from usrp_mpm.sys_utils.uio import UIO
+from usrp_mpm.sys_utils.udev import get_eeprom_paths
+from usrp_mpm.sys_utils.sysfs_gpio import SysFSGPIO
 from usrp_mpm.cores import ClockSynchronizer
-from ..sysfs_gpio import SysFSGPIO
 from usrp_mpm.bfrfs import BufferFS
 from usrp_mpm.mpmutils import poll_with_timeout
 

@@ -22,8 +22,7 @@ import time
 import math
 from builtins import zip
 from builtins import hex
-from ..mpmlog import get_logger
-from ..chips import LMK04828
+from usrp_mpm.chips import LMK04828
 
 class LMK04828Mg(LMK04828):
     def __init__(self, regs_iface, spi_lock, ref_clock_freq, master_clock_freq, log=None):

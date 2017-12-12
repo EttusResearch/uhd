@@ -19,7 +19,7 @@ LMK04828 driver for use with Magnesium
 """
 
 import time
-from ..chips import LMK04828
+from usrp_mpm.chips import LMK04828
 
 class LMK04828EISCAT(LMK04828):
     """
