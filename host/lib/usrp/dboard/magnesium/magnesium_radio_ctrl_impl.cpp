@@ -731,11 +731,6 @@ std::string magnesium_radio_ctrl_impl::get_dboard_fe_from_chan(
     return std::to_string(chan);
 }
 
-double magnesium_radio_ctrl_impl::get_output_samp_rate(size_t /* port */)
-{
-    return MAGNESIUM_RADIO_RATE;
-}
-
 void magnesium_radio_ctrl_impl::set_rpc_client(
     uhd::rpc_client::sptr rpcc,
     const uhd::device_addr_t &block_args
