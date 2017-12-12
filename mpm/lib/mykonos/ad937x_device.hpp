@@ -47,6 +47,13 @@ public:
         CALPLL_SDM  = 0x10,
     };
 
+    enum mcr_t
+    {
+        MCR_122_88MHZ,
+        MCR_125_00MHZ,
+        MCR_153_60MHZ
+    };
+
     ad937x_device(
         mpm::types::regs_iface* iface,
         mpm::ad937x::gpio::gain_pins_t gain_pins
@@ -97,7 +104,7 @@ public:
     void update_tx_lo_source(uint8_t rxPllUseExternalLo);
     uint8_t get_rx_lo_source();
     uint8_t get_tx_lo_source();
-    void set_master_clock_rate(const double rate);
+    void set_master_clock_rate(const mcr_t rate);
     const static double MIN_FREQ;
     const static double MAX_FREQ;
     const static double MIN_RX_GAIN;

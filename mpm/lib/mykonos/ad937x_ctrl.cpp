@@ -19,7 +19,9 @@
 #include "adi/mykonos.h"
 #include "mpm/ad937x/ad937x_ctrl.hpp"
 #include <mpm/exception.hpp>
+#include "../../../host/include/uhd/utils/math.hpp"
 
+#include <boost/format.hpp>
 #include <sstream>
 #include <set>
 #include <functional>
@@ -482,8 +484,24 @@ public:
     virtual void set_master_clock_rate(const double rate)
     {
         std::lock_guard<std::mutex> lock(*spi_mutex);
-        // FIXME: Add check for valid rates
-        device.set_master_clock_rate(rate);
+        ad937x_device::mcr_t mcr;
+        if (uhd::math::frequencies_are_equal(rate, 122.88e6)) {
+            mcr = ad937x_device::MCR_122_88MHZ;
+        }
+        else if (uhd::math::frequencies_are_equal(rate, 125e6)) {
+            mcr = ad937x_device::MCR_125_00MHZ;
+        }
+        else if (uhd::math::frequencies_are_equal(rate, 153.6e6)) {
+            mcr = ad937x_device::MCR_153_60MHZ;
+        }
+        else {
+            throw mpm::value_error(boost::str(
+                boost::format("Requested invalid master clock rate: %f MHz")
+                % (rate / 1e6)
+            ));
+        }
+
+        device.set_master_clock_rate(mcr);
     }
 
     virtual void set_enable_gain_pins(const std::string &which, bool enable)

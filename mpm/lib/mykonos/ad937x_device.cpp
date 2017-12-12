@@ -810,86 +810,92 @@ int16_t ad937x_device::get_temperature()
 }
 
 
-void ad937x_device::set_master_clock_rate(const double rate)
+void ad937x_device::set_master_clock_rate(const mcr_t rate)
 {
-    if  (rate == 125000000)
-    {
-            mykonos_config.device->clocks->deviceClock_kHz = 125000;
-            mykonos_config.device->clocks->clkPllVcoFreq_kHz = 10000000;
-            mykonos_config.device->clocks->clkPllVcoDiv = ::VCODIV_2;
-            set_fir(TX_DIRECTION,
-                mykonos_config.device->tx->txProfile->txFir->gain_dB,
-                std::vector<int16_t>(ad937x_config_t::DEFAULT_TX_FIR,
-                    ad937x_config_t::DEFAULT_TX_FIR + ad937x_config_t::DEFAULT_TX_FIR_SIZE)
-                );
-            mykonos_config.device->tx->txProfile->iqRate_kHz = 125000;
-            mykonos_config.device->tx->txProfile->primarySigBandwidth_Hz = 20000000;
-            mykonos_config.device->tx->txProfile->rfBandwidth_Hz = 102000000;
-            mykonos_config.device->tx->txProfile->txDac3dBCorner_kHz = 722000;
-            mykonos_config.device->tx->txProfile->txBbf3dBCorner_kHz = 51000;
+    switch (rate) {
+    case MCR_125_00MHZ: {
+        mykonos_config.device->clocks->deviceClock_kHz = 125000;
+        mykonos_config.device->clocks->clkPllVcoFreq_kHz = 10000000;
+        mykonos_config.device->clocks->clkPllVcoDiv = ::VCODIV_2;
+        set_fir(TX_DIRECTION,
+            mykonos_config.device->tx->txProfile->txFir->gain_dB,
+            std::vector<int16_t>(ad937x_config_t::DEFAULT_TX_FIR,
+                ad937x_config_t::DEFAULT_TX_FIR + ad937x_config_t::DEFAULT_TX_FIR_SIZE)
+            );
+        mykonos_config.device->tx->txProfile->iqRate_kHz = 125000;
+        mykonos_config.device->tx->txProfile->primarySigBandwidth_Hz = 20000000;
+        mykonos_config.device->tx->txProfile->rfBandwidth_Hz = 102000000;
+        mykonos_config.device->tx->txProfile->txDac3dBCorner_kHz = 722000;
+        mykonos_config.device->tx->txProfile->txBbf3dBCorner_kHz = 51000;
 
-            set_fir(RX_DIRECTION,
-                mykonos_config.device->rx->rxProfile->rxFir->gain_dB,
-                std::vector<int16_t>(ad937x_config_t::DEFAULT_RX_FIR,
-                    ad937x_config_t::DEFAULT_RX_FIR + ad937x_config_t::DEFAULT_RX_FIR_SIZE)
-                );
+        set_fir(RX_DIRECTION,
+            mykonos_config.device->rx->rxProfile->rxFir->gain_dB,
+            std::vector<int16_t>(ad937x_config_t::DEFAULT_RX_FIR,
+                ad937x_config_t::DEFAULT_RX_FIR + ad937x_config_t::DEFAULT_RX_FIR_SIZE)
+            );
 
-            mykonos_config.device->rx->rxProfile->iqRate_kHz = 125000;
-            mykonos_config.device->rx->rxProfile->rxBbf3dBCorner_kHz = 102000;
+        mykonos_config.device->rx->rxProfile->iqRate_kHz = 125000;
+        mykonos_config.device->rx->rxProfile->rxBbf3dBCorner_kHz = 102000;
 
-            mykonos_config.device->obsRx->orxProfile->iqRate_kHz = 125000;
-            mykonos_config.device->obsRx->orxProfile->rxBbf3dBCorner_kHz = 102000;
-    } else if (rate == 122880000){
-            mykonos_config.device->clocks->deviceClock_kHz = 122880;
-            mykonos_config.device->clocks->clkPllVcoFreq_kHz = 9830400;
-            mykonos_config.device->clocks->clkPllVcoDiv = ::VCODIV_2;
-            set_fir(TX_DIRECTION,
-                mykonos_config.device->tx->txProfile->txFir->gain_dB,
-                std::vector<int16_t>(ad937x_config_t::DEFAULT_TX_FIR,
-                    ad937x_config_t::DEFAULT_TX_FIR + ad937x_config_t::DEFAULT_TX_FIR_SIZE)
-                );
-            mykonos_config.device->tx->txProfile->iqRate_kHz = 122880;
-            mykonos_config.device->tx->txProfile->primarySigBandwidth_Hz = 20000000;
-            mykonos_config.device->tx->txProfile->rfBandwidth_Hz = 100000000;
-            mykonos_config.device->tx->txProfile->txDac3dBCorner_kHz = 710539;
-            mykonos_config.device->tx->txProfile->txBbf3dBCorner_kHz = 50000;
+        mykonos_config.device->obsRx->orxProfile->iqRate_kHz = 125000;
+        mykonos_config.device->obsRx->orxProfile->rxBbf3dBCorner_kHz = 102000;
+        break;
+    }
+    case MCR_122_88MHZ: {
+        mykonos_config.device->clocks->deviceClock_kHz = 122880;
+        mykonos_config.device->clocks->clkPllVcoFreq_kHz = 9830400;
+        mykonos_config.device->clocks->clkPllVcoDiv = ::VCODIV_2;
+        set_fir(TX_DIRECTION,
+            mykonos_config.device->tx->txProfile->txFir->gain_dB,
+            std::vector<int16_t>(ad937x_config_t::DEFAULT_TX_FIR,
+                ad937x_config_t::DEFAULT_TX_FIR + ad937x_config_t::DEFAULT_TX_FIR_SIZE)
+            );
+        mykonos_config.device->tx->txProfile->iqRate_kHz = 122880;
+        mykonos_config.device->tx->txProfile->primarySigBandwidth_Hz = 20000000;
+        mykonos_config.device->tx->txProfile->rfBandwidth_Hz = 100000000;
+        mykonos_config.device->tx->txProfile->txDac3dBCorner_kHz = 710539;
+        mykonos_config.device->tx->txProfile->txBbf3dBCorner_kHz = 50000;
 
-            set_fir(RX_DIRECTION,
-                mykonos_config.device->rx->rxProfile->rxFir->gain_dB,
-                std::vector<int16_t>(ad937x_config_t::DEFAULT_RX_FIR,
-                    ad937x_config_t::DEFAULT_RX_FIR + ad937x_config_t::DEFAULT_RX_FIR_SIZE)
-                );
-            mykonos_config.device->rx->rxProfile->iqRate_kHz = 122880;
-            mykonos_config.device->rx->rxProfile->rxBbf3dBCorner_kHz = 100000;
+        set_fir(RX_DIRECTION,
+            mykonos_config.device->rx->rxProfile->rxFir->gain_dB,
+            std::vector<int16_t>(ad937x_config_t::DEFAULT_RX_FIR,
+                ad937x_config_t::DEFAULT_RX_FIR + ad937x_config_t::DEFAULT_RX_FIR_SIZE)
+            );
+        mykonos_config.device->rx->rxProfile->iqRate_kHz = 122880;
+        mykonos_config.device->rx->rxProfile->rxBbf3dBCorner_kHz = 100000;
 
-            mykonos_config.device->obsRx->orxProfile->iqRate_kHz = 122880;
-            mykonos_config.device->obsRx->orxProfile->rxBbf3dBCorner_kHz = 100000;
-    } else if (rate ==  153660000){
-            mykonos_config.device->clocks->deviceClock_kHz = 153600;
-            mykonos_config.device->clocks->clkPllVcoFreq_kHz = 6144000;
-            mykonos_config.device->clocks->clkPllVcoDiv = ::VCODIV_1;
-            set_fir(TX_DIRECTION,
-                mykonos_config.device->tx->txProfile->txFir->gain_dB,
-                std::vector<int16_t>(ad937x_config_t::DEFAULT_TX_FIR_15366,
-                    ad937x_config_t::DEFAULT_TX_FIR_15366 + ad937x_config_t::DEFAULT_TX_FIR_SIZE)
-                );
-            mykonos_config.device->tx->txProfile->iqRate_kHz = 153600;
-            mykonos_config.device->tx->txProfile->primarySigBandwidth_Hz = 10000000;
-            mykonos_config.device->tx->txProfile->rfBandwidth_Hz = 100000000;
-            mykonos_config.device->tx->txProfile->txDac3dBCorner_kHz = 100000;
-            mykonos_config.device->tx->txProfile->txBbf3dBCorner_kHz = 100000;
+        mykonos_config.device->obsRx->orxProfile->iqRate_kHz = 122880;
+        mykonos_config.device->obsRx->orxProfile->rxBbf3dBCorner_kHz = 100000;
+        break;
+    }
+    case MCR_153_60MHZ: {
+        mykonos_config.device->clocks->deviceClock_kHz = 153600;
+        mykonos_config.device->clocks->clkPllVcoFreq_kHz = 6144000;
+        mykonos_config.device->clocks->clkPllVcoDiv = ::VCODIV_1;
+        set_fir(TX_DIRECTION,
+            mykonos_config.device->tx->txProfile->txFir->gain_dB,
+            std::vector<int16_t>(ad937x_config_t::DEFAULT_TX_FIR_15366,
+                ad937x_config_t::DEFAULT_TX_FIR_15366 + ad937x_config_t::DEFAULT_TX_FIR_SIZE)
+            );
+        mykonos_config.device->tx->txProfile->iqRate_kHz = 153600;
+        mykonos_config.device->tx->txProfile->primarySigBandwidth_Hz = 10000000;
+        mykonos_config.device->tx->txProfile->rfBandwidth_Hz = 100000000;
+        mykonos_config.device->tx->txProfile->txDac3dBCorner_kHz = 100000;
+        mykonos_config.device->tx->txProfile->txBbf3dBCorner_kHz = 100000;
 
-            set_fir(RX_DIRECTION,
-                mykonos_config.device->rx->rxProfile->rxFir->gain_dB,
-                std::vector<int16_t>(ad937x_config_t::DEFAULT_RX_FIR_15366,
-                    ad937x_config_t::DEFAULT_RX_FIR_15366 + ad937x_config_t::DEFAULT_RX_FIR_SIZE)
-                );
-            mykonos_config.device->rx->rxProfile->iqRate_kHz = 153600;
-            mykonos_config.device->rx->rxProfile->rxBbf3dBCorner_kHz = 100000;
+        set_fir(RX_DIRECTION,
+            mykonos_config.device->rx->rxProfile->rxFir->gain_dB,
+            std::vector<int16_t>(ad937x_config_t::DEFAULT_RX_FIR_15366,
+                ad937x_config_t::DEFAULT_RX_FIR_15366 + ad937x_config_t::DEFAULT_RX_FIR_SIZE)
+            );
+        mykonos_config.device->rx->rxProfile->iqRate_kHz = 153600;
+        mykonos_config.device->rx->rxProfile->rxBbf3dBCorner_kHz = 100000;
 
-            mykonos_config.device->obsRx->orxProfile->iqRate_kHz = 153600;
-            mykonos_config.device->obsRx->orxProfile->rxBbf3dBCorner_kHz = 225000;
-    } else {
+        mykonos_config.device->obsRx->orxProfile->iqRate_kHz = 153600;
+        mykonos_config.device->obsRx->orxProfile->rxBbf3dBCorner_kHz = 225000;
+        break;
+    }
+    default:
         MPM_THROW_INVALID_CODE_PATH();
     }
 }
