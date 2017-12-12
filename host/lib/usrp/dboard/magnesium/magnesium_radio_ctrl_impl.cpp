@@ -269,9 +269,20 @@ void magnesium_radio_ctrl_impl::_update_freq(
         const size_t chan,
         const uhd::direction_t dir
 ) {
+    const std::string ad9371_source = dir == TX_DIRECTION ?
+        this->get_tx_lo_source(MAGNESIUM_LO1, chan) :
+        this->get_rx_lo_source(MAGNESIUM_LO1, chan)
+    ;
+    
+    const double ad9371_freq = ad9371_source == "external" ?
+        _ad9371_freq[dir]/2 :
+        _ad9371_freq[dir]
+    ;
     const double rf_freq = _is_low_band[dir] ?
-        _ad9371_freq[dir] - _adf4351_freq[dir] :
-        _ad9371_freq[dir];
+        ad9371_freq - _adf4351_freq[dir] :
+        ad9371_freq
+    ;
+
     UHD_LOG_TRACE(unique_id(),
          "RF freq = " << rf_freq);
         UHD_ASSERT_THROW(rf_freq >= 0);
