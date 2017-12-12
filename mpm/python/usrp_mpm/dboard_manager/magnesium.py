@@ -285,6 +285,9 @@ class Magnesium(DboardManagerBase):
     base_i2c_adapter = '/sys/class/i2c-adapter'
     # Map I2C channel to slot index
     i2c_chan_map = {0: 'i2c-9', 1: 'i2c-10'}
+    # This map describes how the user data is stored in EEPROM. If a dboard rev
+    # changes the way the EEPROM is used, we add a new entry. If a dboard rev
+    # is not found in the map, then we go backward until we find a suitable rev
     user_eeprom = {
         2: { # RevC
             'label': "e0004000.i2c",
@@ -349,7 +352,7 @@ class Magnesium(DboardManagerBase):
         self.log.trace("Loaded C++ drivers.")
         self._init_myk_api(self.mykonos)
         self.eeprom_fs, self.eeprom_path = self._init_user_eeprom(
-            self.user_eeprom[self.rev]
+            self._get_user_eeprom_info(self.rev)
         )
         self.log.trace("Loading SPI devices...")
         self._spi_ifaces = {
@@ -403,6 +406,20 @@ class Magnesium(DboardManagerBase):
                         callable(getattr(self.mykonos, x))]:
             self.log.trace("adding {}".format(method))
             setattr(self, method, export_method(myk, method))
+
+    def _get_user_eeprom_info(self, rev):
+        """
+        Return an EEPROM access map (from self.user_eeprom) based on the rev.
+        """
+        rev_for_lookup = rev
+        while rev_for_lookup not in self.user_eeprom:
+            if rev_for_lookup < 0:
+                raise RuntimeError("Could not find a user EEPROM map for "
+                                   "revision %d!", rev)
+            rev_for_lookup -= 1
+        assert rev_for_lookup in self.user_eeprom, \
+                "Invalid EEPROM lookup rev!"
+        return self.user_eeprom[rev_for_lookup]
 
     def _init_user_eeprom(self, eeprom_info):
         """
