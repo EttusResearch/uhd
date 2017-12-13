@@ -98,6 +98,7 @@ class ClockSynchronizer(object):
         ):
         self._iface = regs_iface
         self.log = get_logger("Sync-{}".format(slot_idx))
+        self.slot_idx = slot_idx
         self.peek32 = lambda addr: self._iface.peek32(addr + offset)
         self.poke32 = lambda addr, data: self._iface.poke32(addr + offset, data)
         self.lmk = lmk
@@ -226,7 +227,13 @@ class ClockSynchronizer(object):
         # TEMP CODE for homogenous rate sync only! Heterogenous rate sync requires an
         # identical target value for all devices.
         target = 1.0/self.ref_clk_freq + (1.0/self.radio_clk_freq)*3.5
-        self.target_values = [target,]
+        # The radio clock traces on the motherboard are 69 ps longer for Daughterboard B
+        # than Daughterboard A. We want both of these clocks to align at the converters
+        # on each board, so adjust the target value for DB B. This is an N3xx series
+        # peculiarity and will not apply to other motherboards.
+        trace_delay_offset = {0:  0.0e-12,
+                              1: 69.0e-12}[self.slot_idx]
+        self.target_values = [target + trace_delay_offset,]
 
         # Run the initial value through the oracle to determine the adjustments to make.
         coarse_steps_required, dac_word_delta, distance_to_target = self.oracle(
