@@ -243,6 +243,7 @@ class n310(PeriphManagerBase):
     mboard_sensor_callback_map = {
         'ref_locked': 'get_ref_lock_sensor',
         'gps_locked': 'get_gps_lock_sensor',
+        'gps_time': 'get_gps_time_sensor',
         'gps_tpv': 'get_gps_tpv_sensor',
         'gps_sky': 'get_gps_sky_sensor',
     }
@@ -657,6 +658,35 @@ class n310(PeriphManagerBase):
             'type': 'BOOLEAN',
             'unit': 'locked' if gps_locked else 'unlocked',
             'value': str(gps_locked).lower(),
+        }
+
+    def get_gps_time_sensor(self):
+        """
+        Calculates GPS time using a TPV response from GPSd, and returns as a sensor dict
+
+        This time is not high accuracy.
+        """
+        self.log.trace("Polling GPS time results from GPSD")
+        with GPSDIface() as gps_iface:
+            response_mode = 0
+            # Read responses from GPSD until we get a non-trivial mode
+            while response_mode <= 0:
+                gps_info = gps_iface.get_gps_info(resp_class='tpv', timeout=15)
+                self.log.trace("GPS info: {}".format(gps_info))
+                response_mode = gps_info.get("mode", 0)
+
+        import datetime
+        time_str = gps_info.get("time", "")
+        self.log.trace("GPS time string: {}".format(time_str))
+        time_dt = datetime.datetime.strptime(time_str, "%Y-%m-%dT%H:%M:%S.%fZ")
+        self.log.trace("GPS datetime: {}".format(time_dt))
+        epoch_dt = datetime.datetime(1970, 1, 1)
+        gps_time = int((time_dt - epoch_dt).total_seconds())
+        return {
+            'name': 'gps_time',
+            'type': 'INTEGER',
+            'unit': 'seconds',
+            'value': gps_time,
         }
 
     def get_gps_tpv_sensor(self):
