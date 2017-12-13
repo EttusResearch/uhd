@@ -224,7 +224,7 @@ class ClockSynchronizer(object):
                                    current_value*1e9))
 
 
-        # TEMP CODE for homogenous rate sync only! Heterogenous rate sync requires an
+        # TEMP CODE for homogeneous rate sync only! Heterogeneous rate sync requires an
         # identical target value for all devices.
         target = 1.0/self.ref_clk_freq + (1.0/self.radio_clk_freq)*3.5
         # The radio clock traces on the motherboard are 69 ps longer for Daughterboard B

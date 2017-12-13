@@ -469,7 +469,7 @@ class Magnesium(DboardManagerBase):
         def _get_clock_synchronizer():
             " Return a clock synchronizer object "
             # Future Work: target_value needs to be tweaked to support
-            # heterogenous rate sync.
+            # heterogeneous rate sync.
             target_value = {
                 122.88e6: 128e-9,
                 125e6: 128e-9,
