@@ -1,18 +1,7 @@
 #
-# Copyright 2017 Ettus Research (National Instruments)
+# Copyright 2017 Ettus Research, National Instruments Company
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# SPDX-License-Identifier: GPL-3.0
 #
 """
 LMK04828 driver for use with Magnesium
@@ -20,11 +9,12 @@ LMK04828 driver for use with Magnesium
 
 import time
 import math
-from builtins import zip
-from builtins import hex
 from usrp_mpm.chips import LMK04828
 
 class LMK04828Mg(LMK04828):
+    """
+    Magnesium-specific subclass of the LMK04828 controls.
+    """
     def __init__(self, regs_iface, spi_lock, ref_clock_freq, master_clock_freq, log=None):
         LMK04828.__init__(self, regs_iface, log)
         self.log.trace("Using reference clock frequency: {} MHz".format(ref_clock_freq/1e6))

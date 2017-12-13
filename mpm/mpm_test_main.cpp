@@ -1,3 +1,8 @@
+//
+// Copyright 2017 Ettus Research, National Instruments Company
+//
+// SPDX-License-Identifier: GPL-3.0
+//
 #include "spi_lock.h"
 #include "ad937x_ctrl.hpp"
 #include <iostream>

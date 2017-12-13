@@ -1,22 +1,12 @@
 #!/usr/bin/env python
 #
-# Copyright 2017 Ettus Research (National Instruments)
+# Copyright 2017 Ettus Research, National Instruments Company
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# SPDX-License-Identifier: GPL-3.0
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-
-
+"""
+USRP/MPM
+"""
 
 from setuptools import setup
 
@@ -35,7 +25,7 @@ setup(name='usrp_mpm',
       author_email='packages@ettus.com',
       url='https://www.ettus.com/',
       license='GPLv3',
-      package_dir={ '': '${CMAKE_CURRENT_BINARY_DIR}' },
+      package_dir={'': '${CMAKE_CURRENT_BINARY_DIR}'},
       package_data={"usrp_mpm": ["*.so"]},
       zip_safe=False,
       packages=[

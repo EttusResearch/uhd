@@ -1,4 +1,9 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+#
+# Copyright 2017 Ettus Research, National Instruments Company
+#
+# SPDX-License-Identifier: GPL-3.0
+#
 
 import libpyusrp_periphs as p
 
