@@ -645,6 +645,17 @@ class PeriphManagerBase(object):
                   from device to UHD)
         - tx_mtu: In bytes, the max size TX packets can have (TX means going
                   from UHD to device)
+        - allocation: This is an integer value which represents a score of
+                      how much bandwidth is used. Note: Currently does not
+                      have any unit, is just a counter. Higher numbers mean
+                      higher utilization. RX means device to UHD, for
+                      example, committing an RX streamer would increase this
+                      value.
+                      This key is optional, MPM does not have to provide it.
+
+        Note: The dictionary may include other keys which should be ignored,
+        or at the very least, kept intact. commit_xport() might be requiring
+        them.
         """
         raise NotImplementedError("request_xport() not implemented.")
 

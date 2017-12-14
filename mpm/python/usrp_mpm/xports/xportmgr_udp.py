@@ -177,7 +177,8 @@ class XportMgrUDP(object):
                 'type': 'UDP',
                 'ipv4': str(iface_info['ip_addr']),
                 'port': str(self.chdr_port),
-                'send_sid': str(sid)
+                'send_sid': str(sid),
+                'allocation': '0',
             }
             for _, iface_info in iteritems(self._chdr_ifaces)
         ]
