@@ -23,6 +23,7 @@ from builtins import str, bytes
 from builtins import range
 from mprpc import RPCServer
 from usrp_mpm.mpmlog import get_main_logger
+from usrp_mpm.mpmutils import to_binary_str
 
 TIMEOUT_INTERVAL = 3.0 # Seconds before claim expires
 TOKEN_LEN = 16 # Length of the token string
@@ -80,11 +81,7 @@ class MPMServer(RPCServer):
         - The device is currently claimed
         - The claim token matches the one passed in
         """
-        try:
-            token = bytes(token, 'ascii')
-        except TypeError:
-            pass
-
+        token = to_binary_str(token)
         return self._state.claim_status.value and \
                 len(token) == TOKEN_LEN and \
                 self._state.claim_token.value == token
