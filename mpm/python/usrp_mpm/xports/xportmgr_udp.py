@@ -43,6 +43,7 @@ class XportMgrUDP(object):
         self._chdr_ifaces = \
             self._init_interfaces(self._possible_chdr_ifaces)
         self._eth_dispatchers = {}
+        self._allocations = {}
 
     def _init_interfaces(self, possible_ifaces):
         """
@@ -105,7 +106,7 @@ class XportMgrUDP(object):
 
     def deinit(self):
         " Clean up after a session terminates "
-        pass
+        self._allocations = {}
 
     def _preload_ethtables(self, eth_dispatchers, table_file):
         """
@@ -170,15 +171,20 @@ class XportMgrUDP(object):
         Return UDP xport info
         """
         assert xport_type in ('CTRL', 'ASYNC_MSG', 'TX_DATA', 'RX_DATA')
-        # for iface_name, iface_info in iteritems(self._chdr_ifaces):
-
+        allocation_getter = lambda iface: {
+            'CTRL': 0,
+            'ASYNC_MSG': 0,
+            'RX_DATA': self._allocations.get(iface, {}).get('rx', 0),
+            'TX_DATA': self._allocations.get(iface, {}).get('tx', 0),
+        }[xport_type]
         xport_info = [
             {
                 'type': 'UDP',
                 'ipv4': str(iface_info['ip_addr']),
                 'port': str(self.chdr_port),
                 'send_sid': str(sid),
-                'allocation': '0',
+                'allocation': str(allocation_getter(iface_name)),
+                'xport_type': xport_type,
             }
             for _, iface_info in iteritems(self._chdr_ifaces)
         ]
@@ -215,5 +221,17 @@ class XportMgrUDP(object):
         self._eth_dispatchers[eth_iface].set_route(
             sid.reversed(), sender_addr, sender_port)
         self.log.trace("UDP transport successfully committed!")
+        if xport_info.get('xport_type') == 'TX_DATA':
+            self._allocations[eth_iface]['tx'] = \
+                self._allocations.get(eth_iface, {}).get('tx', 0) + 1
+        if xport_info.get('xport_type') == 'RX_DATA':
+            self._allocations[eth_iface]['rx'] = \
+                self._allocations.get(eth_iface, {}).get('rx', 0) + 1
+        self.log.trace(
+            "New link allocations for %s: TX: %d  RX: %d",
+            eth_iface,
+            self._allocations.get(eth_iface, {}).get('tx', 0),
+            self._allocations.get(eth_iface, {}).get('rx', 0),
+        )
         return True
 
