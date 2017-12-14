@@ -68,12 +68,32 @@ class MPMServer(RPCServer):
 
     def _init_rpc_calls(self, mgr):
         """
-        Register all RPC calls for the motherboard and daughterboards
+        Register all RPC calls for the motherboard and daughterboards.
+
+        First clears out all previously registered RPC calls.
         """
+        # Clear old calls:
+        for meth_list in (self._db_methods, self._mb_methods):
+            for method in meth_list:
+                if hasattr(self, method):
+                    delattr(self, method)
+                else:
+                    self.log.warning(
+                        "Attempted to remove non-existant method: %s",
+                        method
+                    )
+        self._db_methods = []
+        self._mb_methods = []
+        # Register new ones:
         self._update_component_commands(mgr, '', '_mb_methods')
         for db_slot, dboard in enumerate(mgr.dboards):
             cmd_prefix = 'db_' + str(db_slot) + '_'
             self._update_component_commands(dboard, cmd_prefix, '_db_methods')
+        self.log.debug(
+            "Registered %d motherboard methods, %d daughterboard methods.",
+            len(self._mb_methods),
+            len(self._db_methods),
+        )
 
     def _check_token_valid(self, token):
         """
