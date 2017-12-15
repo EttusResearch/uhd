@@ -272,7 +272,7 @@ public:
         const bool defer_commit = false
     );
 
-    /*! ATR settings: LEDs, input switches for RX side
+    /*! ATR settings: Amp, Mykonos settings for RX side
      *
      * Note: These ATR states are not frequency dependent (or dependent on
      * anything other than RX ATR state).

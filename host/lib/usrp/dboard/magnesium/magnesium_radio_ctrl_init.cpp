@@ -553,3 +553,4 @@ void magnesium_radio_ctrl_impl::_init_mpm_sensors(
         ;
     }
 }
+

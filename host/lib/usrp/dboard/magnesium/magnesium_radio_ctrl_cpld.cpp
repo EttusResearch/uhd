@@ -40,6 +40,35 @@ using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::rfnoc;
 using namespace uhd::math::fp_compare;
+
+void magnesium_radio_ctrl_impl::_identify_with_leds(
+    const int identify_duration
+) {
+    auto end_time = std::chrono::steady_clock::now()
+                        + std::chrono::seconds(identify_duration);
+    bool led_state = true;
+    while (std::chrono::steady_clock::now() < end_time) {
+        _cpld->set_tx_atr_bits(
+            magnesium_cpld_ctrl::BOTH,
+            magnesium_cpld_ctrl::ANY,
+            led_state,
+            false,
+            false,
+            true
+        );
+        _cpld->set_rx_input_atr_bits(
+            magnesium_cpld_ctrl::BOTH,
+            magnesium_cpld_ctrl::ANY,
+            magnesium_cpld_ctrl::RX_SW1_TXRXINPUT, /* whatever */
+            led_state,
+            led_state
+        );
+        led_state = !led_state;
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    }
+    _cpld->reset();
+}
+
 void magnesium_radio_ctrl_impl::_update_atr_switches(
     const magnesium_cpld_ctrl::chan_sel_t chan,
     const direction_t dir,

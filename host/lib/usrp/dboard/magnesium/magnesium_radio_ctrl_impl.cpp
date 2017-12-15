@@ -19,6 +19,7 @@
 #include <boost/format.hpp>
 #include <sstream>
 #include <cmath>
+#include <cstdlib>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -754,6 +755,18 @@ void magnesium_radio_ctrl_impl::set_rpc_client(
             (_radio_slot == "A" or _radio_slot == "B") ? 0 : 1
         )
     );
+
+    if (_master and block_args.has_key("identify")) {
+        const std::string identify_val = block_args.get("identify");
+        int identify_duration = std::atoi(identify_val.c_str());
+        if (identify_duration == 0) {
+            identify_duration = 5;
+        }
+        UHD_LOG_INFO(unique_id(),
+            "Running LED identification process for " << identify_duration
+            << " seconds.");
+        _identify_with_leds(identify_duration);
+    }
 
     // Note: MCR gets set during the init() call (prior to this), which takes
     // in arguments from the device args. So if block_args contains a

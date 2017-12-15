@@ -205,9 +205,16 @@ private:
         const size_t chan,
         const uhd::direction_t dir
     );
+
     /**************************************************************************
      * CPLD Controls (implemented in magnesium_radio_ctrl_cpld.cpp)
      *************************************************************************/
+    //! Blink the front-panel LEDs for \p identify_duration, then reset CPLD
+    //  and resume normal operation.
+    void _identify_with_leds(
+        const int identify_duration
+    );
+
     void _update_rx_freq_switches(
         const double freq,
         const bool bypass_lnas,
