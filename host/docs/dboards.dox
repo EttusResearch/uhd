@@ -405,6 +405,9 @@ Notes:
 
 Please refer to \ref e3x0_dboard_e310.
 
+\subsection dboards_n310 N310 XCVR board
+
+Please refer to \ref n3xx_mg.
 
 \subsection dboards_clock_rate Daughterboard reference clock
 
