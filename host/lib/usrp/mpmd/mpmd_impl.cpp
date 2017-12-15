@@ -49,6 +49,8 @@ namespace {
     const double MPMD_FIND_TIMEOUT = 0.5;
     //! Most pessimistic time for a CHDR query to go to device and back
     const double MPMD_CHDR_MAX_RTT = 0.02;
+    //! MPM Compatibility number
+    const std::vector<size_t> MPM_COMPAT_NUM = {1, 0};
 
     const std::string MPMD_MGMT_ADDR_KEY = "mgmt_addr";
 
@@ -360,6 +362,31 @@ mpmd_mboard_impl::uptr mpmd_impl::setup_mb(
         throw uhd::runtime_error("Could not determine device RPC address.");
     }
     auto mb = mpmd_mboard_impl::make(device_args, rpc_addr);
+
+    // Check the compatibility number
+    UHD_LOGGER_TRACE("MPMD") << boost::format(
+            "Checking MPM compat number against ours: %i.%i")
+            % MPM_COMPAT_NUM[0] % MPM_COMPAT_NUM[1];
+    const auto compat_num = mb->rpc->request<std::vector<size_t>>("get_mpm_compat_num");
+    UHD_LOGGER_TRACE("MPMD") << boost::format(
+            "Compat number received: %d.%d")
+            % compat_num[0] % compat_num[1];
+
+    const size_t c_major = compat_num[0], c_minor = compat_num[1];
+    if (c_major != MPM_COMPAT_NUM[0]) {
+        UHD_LOGGER_ERROR("MPMD") << boost::format(
+                                        "MPM major compat number mismatch."
+                                        "Expected %i.%i Actual %i.%i")
+                                        % MPM_COMPAT_NUM[0] % MPM_COMPAT_NUM[1] % c_major % c_minor;
+        throw uhd::runtime_error("MPM compatibility number mismatch.");
+    }
+    if (c_minor < MPM_COMPAT_NUM[1]) {
+        UHD_LOGGER_ERROR("MPMD") << boost::format(
+                                        "MPM minor compat number mismatch."
+                                        "Expected %d.%d Actual %d.%d")
+                                        % MPM_COMPAT_NUM[0] % MPM_COMPAT_NUM[1] % c_major % c_minor;
+        throw uhd::runtime_error("MPM compatibility number mismatch.");
+    }
 
     if (device_args.has_key("skip_init")) {
         return mb;

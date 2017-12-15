@@ -45,6 +45,8 @@ class MPMServer(RPCServer):
     """
     # This is a list of methods in this class which require a claim
     default_claimed_methods = ['init', 'update_component', 'reclaim', 'unclaim']
+    # Compatibility number for MPM
+    MPM_COMPAT_NUM = (1, 0)
 
     def __init__(self, state, mgr, mgr_generator=None, *args, **kwargs):
         self.log = get_main_logger().getChild('RPCServer')
@@ -240,6 +242,10 @@ class MPMServer(RPCServer):
             self.periph_manager.set_connection_type("remote")
         return self._state.claim_token.value
 
+    def get_mpm_compat_num(self):
+        """Get the MPM compatibility number"""
+        self.log.trace("Compat num requested: {}".format(self.MPM_COMPAT_NUM))
+        return self.MPM_COMPAT_NUM
 
     def init(self, token, args):
         """
