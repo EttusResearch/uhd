@@ -200,6 +200,7 @@ class FP_GPIO(object):
 # Transport managers
 ###############################################################################
 class N310XportMgrUDP(XportMgrUDP):
+    " N310-specific UDP configuration "
     eth_tables = {'eth1': 'misc-enet-regs0', 'eth2': 'misc-enet-regs1'}
     xbar_port_map = {'eth1': 0, 'eth2': 1}
     xbar_dev = "/dev/crossbar0"
@@ -208,15 +209,18 @@ class N310XportMgrUDP(XportMgrUDP):
             'label': 'misc-enet-regs0',
             'xbar': 0,
             'xbar_port': 0,
+            'ctrl_src_addr': 0,
         },
         'eth2': {
             'label': 'misc-enet-regs1',
             'xbar': 0,
             'xbar_port': 1,
+            'ctrl_src_addr': 1,
         },
     }
 
 class N310XportMgrLiberio(XportMgrLiberio):
+    " N310-specific Liberio configuration "
     max_chan = 10
     xbar_dev = "/dev/crossbar0"
     xbar_port = 2

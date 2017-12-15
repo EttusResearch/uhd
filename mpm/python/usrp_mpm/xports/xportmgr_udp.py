@@ -28,6 +28,10 @@ class XportMgrUDP(object):
     #     },
     # }
     iface_config = {}
+    # The control addresses are typically addresses bound to the controlling
+    # UHD session. When the requested source address is below or equal to this
+    # number, we override requested SID source addresses based on other logic.
+    max_ctrl_addr = 1
 
     def __init__(self, log):
         assert len(self.iface_config)
@@ -170,6 +174,11 @@ class XportMgrUDP(object):
         """
         Return UDP xport info
         """
+        def fixup_sid(sid, iface_name):
+            " Modify the source SID (e.g. the UHD SID) "
+            if sid.src_addr <= self.max_ctrl_addr:
+                sid.src_addr = self.iface_config[iface_name]['ctrl_src_addr']
+            return sid
         assert xport_type in ('CTRL', 'ASYNC_MSG', 'TX_DATA', 'RX_DATA')
         allocation_getter = lambda iface: {
             'CTRL': 0,
@@ -182,11 +191,11 @@ class XportMgrUDP(object):
                 'type': 'UDP',
                 'ipv4': str(iface_info['ip_addr']),
                 'port': str(self.chdr_port),
-                'send_sid': str(sid),
+                'send_sid': str(fixup_sid(sid, iface_name)),
                 'allocation': str(allocation_getter(iface_name)),
                 'xport_type': xport_type,
             }
-            for _, iface_info in iteritems(self._chdr_ifaces)
+            for iface_name, iface_info in iteritems(self._chdr_ifaces)
         ]
         return xport_info
 
