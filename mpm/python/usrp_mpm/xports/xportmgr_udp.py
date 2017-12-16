@@ -186,7 +186,7 @@ class XportMgrUDP(object):
             'RX_DATA': self._allocations.get(iface, {}).get('rx', 0),
             'TX_DATA': self._allocations.get(iface, {}).get('tx', 0),
         }[xport_type]
-        xport_info = [
+        xport_info = sorted([
             {
                 'type': 'UDP',
                 'ipv4': str(iface_info['ip_addr']),
@@ -196,7 +196,7 @@ class XportMgrUDP(object):
                 'xport_type': xport_type,
             }
             for iface_name, iface_info in iteritems(self._chdr_ifaces)
-        ]
+        ], key=lambda x: int(x['allocation']), reverse=False)
         return xport_info
 
     def commit_xport(self, sid, xport_info):
@@ -231,11 +231,11 @@ class XportMgrUDP(object):
             sid.reversed(), sender_addr, sender_port)
         self.log.trace("UDP transport successfully committed!")
         if xport_info.get('xport_type') == 'TX_DATA':
-            self._allocations[eth_iface]['tx'] = \
-                self._allocations.get(eth_iface, {}).get('tx', 0) + 1
+            self._allocations[eth_iface] = \
+                {'tx': self._allocations.get(eth_iface, {}).get('tx', 0) + 1}
         if xport_info.get('xport_type') == 'RX_DATA':
-            self._allocations[eth_iface]['rx'] = \
-                self._allocations.get(eth_iface, {}).get('rx', 0) + 1
+            self._allocations[eth_iface] = \
+                {'rx': self._allocations.get(eth_iface, {}).get('rx', 0) + 1}
         self.log.trace(
             "New link allocations for %s: TX: %d  RX: %d",
             eth_iface,
