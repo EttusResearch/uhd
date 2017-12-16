@@ -35,6 +35,10 @@ public:
         const mpmd_xport_mgr::xport_info_t& xport_info
     ) const;
 
+    size_t get_mtu(
+        const uhd::direction_t dir
+    ) const ;
+
 private:
     /*! Create a muxed liberio transport for control packets */
     uhd::transport::muxed_zero_copy_if::sptr make_muxed_liberio_xport(

@@ -34,11 +34,18 @@ public:
         const mpmd_xport_mgr::xport_info_t& xport_info
     ) const;
 
+    size_t get_mtu(
+        const uhd::direction_t dir
+    ) const;
+
 private:
     const uhd::device_addr_t _mb_args;
     const uhd::dict<std::string, std::string> _recv_args;
     const uhd::dict<std::string, std::string> _send_args;
+    //! A list of IP addresses we can connect our CHDR connections to
     const std::vector<std::string> _available_addrs;
+    //! MTU
+    size_t _mtu;
 };
 
 }}} /* namespace uhd::mpmd::xport */

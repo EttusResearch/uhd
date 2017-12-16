@@ -4,9 +4,13 @@
 // SPDX-License-Identifier: GPL-3.0
 //
 
+#include "mpmd_impl.hpp"
 #include "mpmd_xport_mgr.hpp"
 #include "mpmd_xport_ctrl_udp.hpp"
 #include <uhd/transport/udp_zero_copy.hpp>
+#include <uhd/transport/udp_simple.hpp>
+#include <uhd/transport/udp_constants.hpp>
+
 
 using namespace uhd;
 using namespace uhd::mpmd::xport;
@@ -22,6 +26,8 @@ namespace {
 
     const size_t MPMD_10GE_DATA_FRAME_MAX_SIZE = 8000; // CHDR packet size in bytes
 
+    const double MPMD_MTU_DISCOVERY_TIMEOUT = 0.02; // seconds
+
     std::vector<std::string> get_addrs_from_mb_args(
         const uhd::device_addr_t& mb_args
     ) {
@@ -36,6 +42,104 @@ namespace {
         }
         return addrs;
     }
+
+    /*! Do a binary search to discover MTU
+     *
+     * Uses the MPM echo service to figure out MTU. We simply send a bunch of
+     * packets and see if they come back until we converged on the path MTU.
+     * The end result must lie between \p min_frame_size and \p max_frame_size.
+     *
+     * \param address IP address
+     * \param port UDP port (yeah it's a string!)
+     * \param min_frame_size Minimum frame size, initialize algorithm to start
+     *                       with this value
+     * \param max_frame_size Maximum frame size, initialize algorithm to start
+     *                       with this value
+     * \param echo_timeout Timeout value in seconds. For frame sizes that
+     *                     exceed the MTU, we don't expect a response, and this
+     *                     is the amount of time we'll wait before we assume
+     *                     the frame size exceeds the MTU.
+     */
+    size_t discover_mtu(
+            const std::string &address,
+            const std::string &port,
+            size_t min_frame_size,
+            size_t max_frame_size,
+            const double echo_timeout = 0.020
+    ) {
+        const size_t echo_prefix_offset =
+            uhd::mpmd::mpmd_impl::MPM_ECHO_CMD.size();
+        const size_t mtu_hdr_len = echo_prefix_offset + 10;
+        UHD_ASSERT_THROW(min_frame_size < max_frame_size);
+        UHD_ASSERT_THROW(min_frame_size % 4 == 0);
+        UHD_ASSERT_THROW(max_frame_size % 4 == 0);
+        UHD_ASSERT_THROW(min_frame_size >= echo_prefix_offset + mtu_hdr_len);
+        using namespace uhd::transport;
+        // The return port will probably differ from the discovery port, so we
+        // need a "broadcast" UDP connection; using make_connected() would
+        // drop packets
+        udp_simple::sptr udp = udp_simple::make_broadcast(address, port);
+        std::string send_buf(uhd::mpmd::mpmd_impl::MPM_ECHO_CMD);
+        send_buf.resize(max_frame_size, '#');
+        UHD_ASSERT_THROW(send_buf.size() == max_frame_size);
+        std::vector<uint8_t> recv_buf;
+        recv_buf.resize(max_frame_size, ' ');
+
+        // Little helper to check returned packets match the sent ones
+        auto require_bufs_match = [&recv_buf, &send_buf, mtu_hdr_len](
+                const size_t len
+            ){
+                if (len < mtu_hdr_len or std::memcmp(
+                        (void *) &recv_buf[0],
+                        (void *) &send_buf[0],
+                        mtu_hdr_len
+                ) != 0) {
+                    throw uhd::runtime_error("Unexpected content of MTU "
+                                             "discovery return packet!");
+                }
+            };
+        UHD_LOG_TRACE("MPMD", "Determining UDP MTU... ");
+        size_t seq_no = 0;
+        while (min_frame_size < max_frame_size) {
+            // Only test multiples of 4 bytes!
+            const size_t test_frame_size =
+                (max_frame_size/2 + min_frame_size/2 + 3) & ~size_t(3);
+            // Encode sequence number and current size in the string, makes it
+            // easy to debug in code or Wireshark. Is also used for identifying
+            // response packets.
+            std::sprintf(
+                &send_buf[echo_prefix_offset],
+                ";%04lu,%04lu",
+                seq_no++,
+                test_frame_size
+            );
+            UHD_LOG_TRACE("MPMD", "Testing frame size " << test_frame_size);
+            udp->send(boost::asio::buffer(&send_buf[0], test_frame_size));
+
+            const size_t len =
+                udp->recv(boost::asio::buffer(recv_buf), echo_timeout);
+            if (len == 0) {
+                // Nothing received, so this is probably too big
+                max_frame_size = test_frame_size - 4;
+            } else if (len >= test_frame_size) {
+                // Size went through, so bump the minimum
+                require_bufs_match(len);
+                min_frame_size = test_frame_size;
+            } else if (len < test_frame_size) {
+                // This is an odd case. Something must have snipped the packet
+                // on the way back. Still, we'll just back off and try
+                // something smaller.
+                UHD_LOG_DEBUG("MPMD",
+                    "Unexpected packet truncation during MTU discovery.");
+                require_bufs_match(len);
+                max_frame_size = len;
+            }
+        }
+        UHD_LOG_DEBUG("MPMD",
+            "Path MTU for address " << address << ": " << min_frame_size);
+        return min_frame_size;
+    }
+
 }
 
 
@@ -45,7 +149,21 @@ mpmd_xport_ctrl_udp::mpmd_xport_ctrl_udp(
   , _recv_args(filter_args(mb_args, "recv"))
   , _send_args(filter_args(mb_args, "send"))
   , _available_addrs(get_addrs_from_mb_args(mb_args))
+  , _mtu(MPMD_10GE_DATA_FRAME_MAX_SIZE)
 {
+    auto discover_mtu_for_ip = [](const std::string &ip_addr){
+        return discover_mtu(
+            ip_addr,
+            std::to_string(mpmd_impl::MPM_DISCOVERY_PORT),
+            IP_PROTOCOL_MIN_MTU_SIZE-IP_PROTOCOL_UDP_PLUS_IP_HEADER,
+            MPMD_10GE_DATA_FRAME_MAX_SIZE,
+            MPMD_MTU_DISCOVERY_TIMEOUT
+        );
+    };
+
+    for (const auto &ip_addr : _available_addrs) {
+        _mtu = std::min(_mtu, discover_mtu_for_ip(ip_addr));
+    }
 }
 
 uhd::both_xports_t
@@ -105,3 +223,7 @@ bool mpmd_xport_ctrl_udp::is_valid(
     ) != _available_addrs.cend();
 }
 
+size_t mpmd_xport_ctrl_udp::get_mtu(const uhd::direction_t /*dir*/) const
+{
+    return _mtu;
+}

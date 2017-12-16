@@ -38,6 +38,10 @@ public:
     virtual bool is_valid(
         const mpmd_xport_mgr::xport_info_t& xport_info
     ) const = 0;
+
+    virtual size_t get_mtu(
+        const uhd::direction_t dir
+    ) const = 0;
 };
 
 }}} /* namespace uhd::mpmd::xport */

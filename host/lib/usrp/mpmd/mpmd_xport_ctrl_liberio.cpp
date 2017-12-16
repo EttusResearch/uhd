@@ -129,6 +129,12 @@ bool mpmd_xport_ctrl_liberio::is_valid(
     return xport_info.at("type") == "liberio";
 }
 
+size_t mpmd_xport_ctrl_liberio::get_mtu(
+    const uhd::direction_t /* dir */
+) const {
+    return 8000;
+}
+
 uhd::transport::muxed_zero_copy_if::sptr
 mpmd_xport_ctrl_liberio::make_muxed_liberio_xport(
         const std::string &tx_dev,
