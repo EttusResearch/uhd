@@ -57,9 +57,11 @@ public:
         UHD_LOG_TRACE("MPMD",
                 __func__ << "(): xport medium is " << xport_medium);
 
+        UHD_ASSERT_THROW(_xport_ctrls.count(xport_medium) > 0);
+        UHD_ASSERT_THROW(_xport_ctrls.at(xport_medium));
         // When we've picked our preferred option, pass it to the transport
         // implementation for execution:
-        return _xport_ctrls[xport_medium]->make_transport(
+        return _xport_ctrls.at(xport_medium)->make_transport(
             xport_info_out,
             xport_type,
             xport_args
@@ -82,9 +84,16 @@ private:
     xport_info_t select_xport_option(
         const xport_info_list_t &xport_info_list
     ) const {
-        // Naive xport picking method, this needs fixing (FIXME).
-        // Have algorithm run on baseline score, allocation, and random soup
-        return xport_info_list.at(0);
+        for (const auto& xport_info : xport_info_list) {
+            const std::string xport_medium = xport_info.at("type");
+            if (_xport_ctrls.count(xport_medium) != 0 and
+                    _xport_ctrls.at(xport_medium) and
+                    _xport_ctrls.at(xport_medium)->is_valid(xport_info)) {
+                return xport_info;
+            }
+        }
+
+        throw uhd::runtime_error("Could not select a transport option!");
     }
 
     //! Create an instance of an xport manager implementation
@@ -106,11 +115,13 @@ private:
             );
 #endif
         } else {
-            throw uhd::key_error("Unknown transport medium!");
+            UHD_LOG_WARNING("MPMD",
+                "Cannot instantiate transport medium " << xport_medium);
+            return nullptr;
         }
     }
 
-    //! This will make sure that _xport_ctrls contains a valid transport manager
+    //! This will try to make _xport_ctrls contain a valid transport manager
     // for \p xport_medium
     //
     // When this function returns, it will be possible to access
@@ -124,7 +135,10 @@ private:
         if (_xport_ctrls.count(xport_medium) == 0) {
             UHD_LOG_TRACE("MPMD",
                 "Instantiating transport manager `" << xport_medium << "'");
-            _xport_ctrls[xport_medium] = make_mgr_impl(xport_medium, _mb_args);
+            auto mgr_impl = make_mgr_impl(xport_medium, _mb_args);
+            if (mgr_impl) {
+                _xport_ctrls[xport_medium] = std::move(mgr_impl);
+            }
         }
     }
 
@@ -134,7 +148,7 @@ private:
     //! Cache available xport manager implementations
     //
     // Should only every be populated by require_xport_mgr()
-    std::map<std::string, mpmd_xport_ctrl_base::uptr> _xport_ctrls;
+    std::unordered_map<std::string, mpmd_xport_ctrl_base::uptr> _xport_ctrls;
 
     //! Motherboard args, can contain things like 'recv_buff_size'
     const uhd::device_addr_t _mb_args;
