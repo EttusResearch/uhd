@@ -36,35 +36,56 @@ class NIMgJESDCore(object):
     SYSREF_CAPTURE_CONTROL     = 0x2078
     JESD_SIGNATURE_REG         = 0x2100
     JESD_REVISION_REG          = 0x2104
+    JESD_OLD_COMPAT_REV_REG    = 0x2108
 
 
     def __init__(self, regs, slot_idx=0):
         self.regs = regs
-        self.log = get_logger("NIMgJESDCore-{}".format(slot_idx))
+        self.log = get_logger("NIJESD204bCore-{}".format(slot_idx))
         assert hasattr(self.regs, 'peek32')
         assert hasattr(self.regs, 'poke32')
         # FutureWork: The following are constants for the Magnesium board. These need
         # to change to variables to support other interfaces.
         self.qplls_used = 1
         self.cplls_used = 0
-        # Number of FPGA clock cycles per LMFC period.
-        self.lmfc_divider = 20
-
-    def unreset_qpll(self):
-        # new_val = self.regs.peek32(0x0) & ~0x8
-        # self.log.trace("Unresetting MMCM, writing value {:X}".format(new_val))
-        self.regs.poke32(0x0, 0x7)
+        self.rx_lanes = 4
+        self.tx_lanes = 4
+        self.bypass_descrambler = True
+        self.bypass_scrambler = True
+        self.lmfc_divider = 20 # Number of FPGA clock cycles per LMFC period.
+        self.tx_driver_swing = 0b1111 # See UG476, TXDIFFCTRL
+        self.tx_precursor = 0b00000 # See UG476, TXPRECURSOR
+        self.tx_postcursor = 0b00000 # See UG476, TXPOSTCURSOR
+        # Bump this whenever we stop supporting older FPGA images or boards.
+        # YYMMDDHH
+        self.oldest_compat_version = 0x17122214
+        # Bump this whenever changes are made to the host code.
+        self.current_version = 0x17122214
 
     def check_core(self):
         """
-        Verify JESD core returns correct ID
+        Verify JESD core returns correct ID and passes revision tests.
         """
         self.log.trace("Checking JESD Core...")
         if self.regs.peek32(self.JESD_SIGNATURE_REG) != 0x4A455344:
-            raise Exception('JESD Core signature mismatch! Check that core is mapped correctly')
-        #if self.regs.peek32(JESD_REVISION_REG) != 0xFF
-        #error here for date revision mismatch
-        self.log.trace("JESD Core build code: {0}".format(hex(self.regs.peek32(self.JESD_REVISION_REG))))
+            raise RuntimeError('JESD Core signature mismatch! Check that core is mapped correctly')
+        # Two revision checks are needed:
+        #   FPGA Current Rev >= Host Oldest Compatible Rev
+        #   Host Current Rev >= FPGA Oldest Compatible Rev
+        fpga_current_revision    = self.regs.peek32(self.JESD_REVISION_REG) & 0xFFFFFFFF
+        fpga_old_compat_revision = self.regs.peek32(self.JESD_OLD_COMPAT_REV_REG) & 0xFFFFFFFF
+        if fpga_current_revision < self.oldest_compat_version:
+            self.log.error("Revision check failed! MPM oldest supported revision "
+                           "(0x{:08X}) is too new for this FPGA revision (0x{:08X})."
+                           .format(self.oldest_compat_version, fpga_current_revision))
+            raise RuntimeError('This MPM version does not support the loaded FPGA image. Please update images!')
+        if self.current_version < fpga_old_compat_revision:
+            self.log.error("Revision check failed! FPGA oldest compatible revision "
+                           "(0x{:08X}) is too new for this MPM version (0x{:08X})."
+                           .format(fpga_current_revision, self.current_version))
+            raise RuntimeError('The loaded FPGA version is too new for MPM. Please update MPM!')
+        self.log.trace("JESD Core current revision: 0x{:08X}".format(fpga_current_revision))
+        self.log.trace("JESD Core oldest compatible revision: 0x{:08X}".format(fpga_old_compat_revision))
         self.log.trace("DB Slot #: {}".format( (self.regs.peek32(self.DB_ID) & 0x10000) >> 16  ))
         self.log.trace("DB PID: {:X}" .format(  self.regs.peek32(self.DB_ID) & 0xFFFF ))
         return True
@@ -84,29 +105,36 @@ class NIMgJESDCore(object):
     def init_deframer(self):
         " Initialize deframer "
         self.log.trace("Initializing deframer...")
+        # Force ADC SYNC_n to asserted, telling the transmitter to start (or stay in) CGS.
         self.regs.poke32(self.MGT_RECEIVER_CONTROL, 0x2)
-        self.regs.poke32(self.MGT_RX_DESCRAMBLER_CONTROL, 0x0)
+        # De-scrambler setup.
+        reg_val = {True: 0x1, False: 0x0}[self.bypass_descrambler]
+        self.regs.poke32(self.MGT_RX_DESCRAMBLER_CONTROL, reg_val)
         self._gt_reset('rx', reset_only=False)
+        # Remove forced SYNC_n assertion to allow link to connect normally.
         self.regs.poke32(self.MGT_RECEIVER_CONTROL, 0x0)
 
-    def init_framer(self, bypass_scrambler = True):
+    def init_framer(self):
         " Initialize framer "
         self.log.trace("Initializing framer...")
         # Disable DAC Sync from requesting CGS & Stop Deframer
         self.regs.poke32(self.MGT_TRANSMITTER_CONTROL, (0b1 << 13) | (0b1 << 1))
         # Reset, unreset, and check the GTs
         self._gt_reset('tx', reset_only=False)
-        # MGT phy control... enable TX Driver Swing
-        self.regs.poke32(self.MGT_TX_TRANSCEIVER_CONTROL, 0xF0000)
+        # MGT TX PHY control.
+        reg_val = ((self.tx_driver_swing & 0x0F) << 16) | \
+                  ((self.tx_precursor    & 0x1F) <<  8) | \
+                  ((self.tx_postcursor   & 0x1F) <<  0)
+        self.regs.poke32(self.MGT_TX_TRANSCEIVER_CONTROL, reg_val)
         time.sleep(0.001)
         # Bypass scrambler and char replacement. If the scrambler is bypassed,
         # then the char replacement is also disabled.
-        reg_val = {True: 0x01, False: 0x10}[bypass_scrambler]
+        reg_val = {True: 0x01, False: 0x10}[self.bypass_scrambler]
         self.regs.poke32(self.MGT_TX_SCRAMBLER_CONTROL, reg_val)
         # Check for Framer in Idle state
         rb = self.regs.peek32(self.MGT_TRANSMITTER_CONTROL)
         if rb & 0x100 != 0x100:
-            raise Exception('TX Framer is not idle after reset')
+            raise RuntimeError('TX Framer is not idle after reset')
         # Enable incoming DAC Sync
         self.regs.poke32(self.MGT_TRANSMITTER_CONTROL, 0b1 << 12)
         # Enable the framer
@@ -124,17 +152,42 @@ class NIMgJESDCore(object):
             self.log.warning("Framer warning: Lane Alignment failed to complete!")
         return rb & 0xFF0 == 0x6C0
 
-    def get_deframer_status(self):
+    def get_deframer_status(self, ignore_sysref=False):
         " Return True if deframer is in good status "
-        rb = self.regs.peek32(self.MGT_RECEIVER_CONTROL)
-        self.log.trace("FPGA Deframer status: {0}".format(hex(rb & 0xFFFFFFFF)))
-        if rb & (0b1 << 2) == 0b0 << 2:
+        rb = self.regs.peek32(self.MGT_RECEIVER_CONTROL) & 0xFFFFFFFF
+        self.log.trace("FPGA Deframer Status Readback: {0}".format(hex(rb)))
+        cgs_pass     =  (rb & (0b1 <<  2)) > 0
+        ila_pass     =  (rb & (0b1 <<  3)) > 0
+        sys_ref_pass = ((rb & (0b1 <<  5)) > 0) | ignore_sysref
+        mgt_pass     =  (rb & (0b1 << 21)) == 0
+
+        if not sys_ref_pass:
+            self.log.warning("Deframer warning: SYSREF not received!")
+        elif not cgs_pass:
             self.log.warning("Deframer warning: Code Group Sync failed to complete!")
-        elif rb & (0b1 <<  3) == 0b0 << 3:
+            for lane in range(self.rx_lanes):
+                if (rb & (0b1 << (24+lane))) == 0:
+                    self.log.warning("Deframer warning: Lane {0} failed CGS!".format(lane))
+        elif not ila_pass:
             self.log.warning("Deframer warning: Channel Bonding failed to complete!")
-        elif rb & (0b1 << 21) == 0b1 << 21:
-            self.log.warning("Deframer warning: Misc link error!")
-        return rb & 0xFFFFFFFF == 0xF000001C
+            for lane in range(self.rx_lanes):
+                if (rb & (0b1 << (28+lane))) == 0:
+                    self.log.warning("Deframer warning: Lane {0} failed ILA!".format(lane))
+        elif not mgt_pass:
+            self.log.warning("Deframer warning, Misc Link Error!")
+            # Specific sticky bits for link errors. The only way to clear these is to
+            # issue the RX MGT reset.
+            link_disparity    = (rb & (0b1 << 16)) > 0
+            link_not_in_table = (rb & (0b1 << 17)) > 0
+            link_misalignment = (rb & (0b1 << 18)) > 0
+            adc_cgs_request   = (rb & (0b1 << 19)) > 0
+            unexpected_k_char = (rb & (0b1 << 20)) > 0
+            self.log.warning("Deframer warning, Link Disparity Error: {}".format(link_disparity))
+            self.log.warning("Deframer warning, Link Not In Table Error: {}".format(link_not_in_table))
+            self.log.warning("Deframer warning, Link Misalignment Error: {}".format(link_misalignment))
+            self.log.warning("Deframer warning, Link ADC CGS Request Error: {}".format(adc_cgs_request))
+            self.log.warning("Deframer warning, Link Unexpected K Char Error: {}".format(unexpected_k_char))
+        return cgs_pass & ila_pass & sys_ref_pass & mgt_pass
 
     def init(self):
         """
@@ -183,7 +236,7 @@ class NIMgJESDCore(object):
                     self.log.trace("%s MGT Reset Cleared!" % tx_or_rx.upper())
                     return True
                 time.sleep(0.001)
-            raise Exception('Timeout in GT {trx} Reset (Readback: 0x{rb:X})'.format(
+            raise RuntimeError('Timeout in GT {trx} Reset (Readback: 0x{rb:X})'.format(
                 trx=tx_or_rx.upper(),
                 rb=(rb & 0xFFFF0000),
             ))
@@ -251,7 +304,7 @@ class NIMgJESDCore(object):
                  locked_val = locked_val | 0x2 << nibble*4
                  rb_mask    = rb_mask    | 0xF << nibble*4
               if (rb & rb_mask) != locked_val:
-                  raise Exception("One or more GT QPLLs failed to lock!")
+                  raise RuntimeError("One or more GT QPLLs failed to lock!")
               self.log.trace("QPLL(s) reporting locked!")
 
     def set_drp_target(self, mgt_or_qpll, dev_num):
@@ -293,7 +346,7 @@ class NIMgJESDCore(object):
         # Check the DRP port is not busy.
         if (self.regs.peek32(self.JESD_MGT_DRP_CONTROL) & (0b1 << 20)) != 0:
             self.log.error("MGT/QPLL DRP Port is reporting busy during an attempted access.")
-            raise Exception("MGT/QPLL DRP Port is reporting busy during an attempted access.")
+            raise RuntimeError("MGT/QPLL DRP Port is reporting busy during an attempted access.")
 
         # Access the DRP registers...
         rd_data = 0x0

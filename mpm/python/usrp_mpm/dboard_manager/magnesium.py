@@ -641,7 +641,7 @@ class Magnesium(DboardManagerBase):
         self.log.trace("Starting JESD204b Link Initialization...")
         # Generally, enable the source before the sink. Start with the DAC side.
         self.log.trace("Starting FPGA framer...")
-        jesdcore.init_framer(bypass_scrambler=True)
+        jesdcore.init_framer()
         self.log.trace("Starting Mykonos deframer...")
         self.mykonos.start_jesd_rx()
         # Now for the ADC link. Note that the Mykonos framer will not start issuing CGS
@@ -652,35 +652,96 @@ class Magnesium(DboardManagerBase):
         self.mykonos.start_jesd_tx()
         jesdcore.enable_lmfc(True)
         jesdcore.send_sysref_pulse()
+        # Allow a bit of time for SYSREF to reach Mykonos and then CGS to appear. In
+        # several experiments this time requirement was only in the 100s of nanoseconds.
+        time.sleep(0.001)
         self.log.trace("Starting FPGA deframer...")
         jesdcore.init_deframer()
 
         # Allow a bit of time for CGS/ILA to complete.
         time.sleep(0.100)
-
-        for attempt in range(5):
-            if not jesdcore.get_deframer_status():
-                self.log.warning("FPGA Deframer Error! Re-starting FPGA deframer (attempt {}/5)...".format(attempt+1))
-                jesdcore.init_deframer()
-            else:
-                break
-
+        error_flag = False
         if not jesdcore.get_framer_status():
-            self.log.error("FPGA Framer Error!")
-            raise Exception('JESD Core Framer is not synced!')
-        if (self.mykonos.get_deframer_status() & 0x7F) != 0x28:
-            self.log.error("Mykonos Deframer Error: 0x{:X}".format((self.mykonos.get_deframer_status() & 0x7F)))
-            raise Exception('Mykonos Deframer is not synced!')
+            self.log.error("JESD204b FPGA Core Framer is not synced!")
+            error_flag = True
+        if not self.check_mykonos_deframer_status():
+            self.log.error("Mykonos JESD204b Deframer is not synced!")
+            error_flag = True
         if not jesdcore.get_deframer_status():
-            self.log.error("FPGA Deframer Error!")
-            raise Exception('JESD Core Deframer is not synced, even after 5 attempts!')
-        if (self.mykonos.get_framer_status() & 0x3F) != 0x3E:
-            self.log.error("Mykonos Framer Error: 0x{:X}".format((self.mykonos.get_framer_status() & 0xFF)))
-            raise Exception('Mykonos Framer is not synced!')
+            self.log.error("JESD204b FPGA Core Deframer is not synced!")
+            error_flag = True
+        if not self.check_mykonos_framer_status():
+            self.log.error("Mykonos JESD204b Framer is not synced!")
+            error_flag = True
         if (self.mykonos.get_multichip_sync_status() & 0xB) != 0xB:
-            raise Exception('Mykonos multi chip sync failed!')
+            self.log.error("Mykonos Multi-chip Sync failed!")
+            error_flag = True
+        if error_flag:
+            raise RuntimeError('JESD204B Link Initialization Failed. See MPM logs for details.')
         self.log.info("JESD204B Link Initialization & Training Complete")
 
+    def check_mykonos_framer_status(self):
+        " Return True if Mykonos Framer is in good state "
+        rb = self.mykonos.get_framer_status()
+        self.log.trace("Mykonos Framer Status Register: 0x{:04X}".format(rb & 0xFF))
+        tx_state =   {0: 'CGS',
+                      1: 'ILAS',
+                      2: 'ADC Data'}[rb & 0b11]
+        ilas_state = {0: 'CGS',
+                      1: '1st Multframe',
+                      2: '2nd Multframe',
+                      3: '3rd Multframe',
+                      4: '4th Multframe',
+                      5: 'Last Multframe',
+                      6: 'invalid state',
+                      7: 'ILAS Complete'}[(rb & 0b11100) >> 2]
+        sysref_rx =              (rb & (0b1 << 5)) > 0
+        fifo_ptr_delta_changed = (rb & (0b1 << 6)) > 0
+        sysref_phase_error =     (rb & (0b1 << 7)) > 0
+        # According to emails with ADI, fifo_ptr_delta_changed may be buggy.
+        # Deterministic latency is still achieved even when this bit is toggled, so
+        # ADI's recommendation is to ignore it. The expected state of this bit 0, but
+        # occasionally it toggles to 1. It is unclear why exactly this happens.
+        success = ((tx_state == 'ADC Data') &
+                   (ilas_state == 'ILAS Complete') &
+                   sysref_rx &
+                   (not sysref_phase_error))
+        logger = self.log.trace if success else self.log.warning
+        logger("Mykonos Framer, TX State: %s", tx_state)
+        logger("Mykonos Framer, ILAS State: %s", ilas_state)
+        logger("Mykonos Framer, SYSREF Received: {}".format(sysref_rx))
+        logger("Mykonos Framer, FIFO Ptr Delta Change: {} (ignored, possibly buggy)".format(fifo_ptr_delta_changed))
+        logger("Mykonos Framer, SYSREF Phase Error: {}".format(sysref_phase_error))
+        return success
+
+    def check_mykonos_deframer_status(self):
+        " Return True if Mykonos Deframer is in good state "
+        rb = self.mykonos.get_deframer_status()
+        self.log.trace("Mykonos Deframer Status Register: 0x{:04X}".format(rb & 0xFF))
+
+        frame_symbol_error =  (rb & (0b1 << 0)) > 0
+        ilas_multifrm_error = (rb & (0b1 << 1)) > 0
+        ilas_framing_error =  (rb & (0b1 << 2)) > 0
+        ilas_checksum_valid = (rb & (0b1 << 3)) > 0
+        prbs_error =          (rb & (0b1 << 4)) > 0
+        sysref_received =     (rb & (0b1 << 5)) > 0
+        deframer_irq =        (rb & (0b1 << 6)) > 0
+        success = ((not frame_symbol_error) &
+                   (not ilas_multifrm_error) &
+                   (not ilas_framing_error) &
+                   ilas_checksum_valid &
+                   (not prbs_error) &
+                   sysref_received &
+                   (not deframer_irq))
+        logger = self.log.trace if success else self.log.warning
+        logger("Mykonos Deframer, Frame Symbol Error: {}".format(frame_symbol_error))
+        logger("Mykonos Deframer, ILAS Multiframe Error: {}".format(ilas_multifrm_error))
+        logger("Mykonos Deframer, ILAS Frame Error: {}".format(ilas_framing_error))
+        logger("Mykonos Deframer, ILAS Checksum Valid: {}".format(ilas_checksum_valid))
+        logger("Mykonos Deframer, PRBS Error: {}".format(prbs_error))
+        logger("Mykonos Deframer, SYSREF Received: {}".format(sysref_received))
+        logger("Mykonos Deframer, Deframer IRQ Received: {}".format(deframer_irq))
+        return success
 
     def set_jesd_rate(self, jesdcore, new_rate, force=False):
         """
