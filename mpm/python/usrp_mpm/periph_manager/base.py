@@ -10,8 +10,8 @@ Mboard implementation base class
 from __future__ import print_function
 import os
 from hashlib import md5
-from concurrent import futures
 from time import sleep
+from concurrent import futures
 from builtins import str
 from builtins import range
 from builtins import object
@@ -571,6 +571,8 @@ class PeriphManagerBase(object):
         and is thus defined in the individual device classes.
         """
         self.log.warn("Called set_mb_eeprom(), but not implemented!")
+        self.log.debug("Skipping writing EEPROM keys: {}"
+                       .format(list(eeprom_vals.keys())))
         raise NotImplementedError
 
     def get_db_eeprom(self, dboard_idx):
@@ -599,6 +601,8 @@ class PeriphManagerBase(object):
         """
         self.log.warn("Attempted to write dboard `%d' EEPROM, but function " \
                       "is not implemented.", dboard_idx)
+        self.log.debug("Skipping writing EEPROM keys: {}"
+                       .format(list(eeprom_data.keys())))
         raise NotImplementedError
 
     #######################################################################

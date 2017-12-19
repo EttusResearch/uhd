@@ -62,7 +62,7 @@ def list_overlays(applied_only=False):
             or get_overlay_attrs(overlay_name).get('status') == 'applied'
     }
 
-def list_available_overlays(path):
+def list_available_overlays(path=None):
     """
     List available overlay files (dtbo)
     """

@@ -721,53 +721,58 @@ class Magnesium(DboardManagerBase):
             jesdcore.set_drp_target('qpll', 0)
             # QPLL_CONFIG is spread across two regs: 0x32 (dedicated) and 0x33 (shared)
             reg_x32 = QPLL_CFG & 0xFFFF # [16:0] -> [16:0]
-            reg_x33 = jesdcore.drp_access(rd = True, addr = 0x33)
+            reg_x33 = jesdcore.drp_access(rd=True, addr=0x33)
             reg_x33 = (reg_x33 & 0xF800) | ((QPLL_CFG >> 16) & 0x7FF)  # [26:16] -> [11:0]
-            jesdcore.drp_access(rd = False, addr = 0x32, wr_data = reg_x32)
-            jesdcore.drp_access(rd = False, addr = 0x33, wr_data = reg_x33)
+            jesdcore.drp_access(rd=False, addr=0x32, wr_data=reg_x32)
+            jesdcore.drp_access(rd=False, addr=0x33, wr_data=reg_x33)
             # QPLL_FBDIV is shared with other settings in reg 0x36
-            reg_x36 = jesdcore.drp_access(rd = True, addr = 0x36)
+            reg_x36 = jesdcore.drp_access(rd=True, addr=0x36)
             reg_x36 = (reg_x36 & 0xFC00) | (QPLL_FBDIV & 0x3FF)  # in bits [9:0]
-            jesdcore.drp_access(rd = False, addr = 0x36, wr_data = reg_x36)
+            jesdcore.drp_access(rd=False, addr=0x36, wr_data=reg_x36)
 
         # Run the QPLL reset sequence and prep the MGTs for modification.
         jesdcore.init()
 
         # 3-4) And the 4 MGTs second
         if not skip_drp:
-            self.log.trace("Changing MGT settings to support {} Gbps".format(new_rate/1e9))
-            for lane in range(0,4):
+            self.log.trace("Changing MGT settings to support {} Gbps"
+                           .format(new_rate/1e9))
+            for lane in range(4):
                 jesdcore.set_drp_target('mgt', lane)
                 # MGT_PMA_RSV is split over 0x99 (LSBs) and 0x9A
                 reg_x99 = MGT_PMA_RSV & 0xFFFF
-                reg_x9A = (MGT_PMA_RSV >> 16) & 0xFFFF
-                jesdcore.drp_access(rd = False, addr = 0x99, wr_data = reg_x99)
-                jesdcore.drp_access(rd = False, addr = 0x9A, wr_data = reg_x9A)
-                # MGT_RX_CLK25_DIV is embedded with others in 0x11. The encoding for
-                # the DRP register value is one less than the desired value.
-                reg_x11 = jesdcore.drp_access(rd = True, addr = 0x11)
-                reg_x11 = (reg_x11 & 0xF83F) | ((MGT_RX_CLK25_DIV-1 & 0x1F) << 6) # [10:6]
-                jesdcore.drp_access(rd = False, addr = 0x11, wr_data = reg_x11)
-                # MGT_TX_CLK25_DIV is embedded with others in 0x6A. The encoding for
-                # the DRP register value is one less than the desired value.
-                reg_x6A = jesdcore.drp_access(rd = True, addr = 0x6A)
-                reg_x6A = (reg_x6A & 0xFFE0) | (MGT_TX_CLK25_DIV-1 & 0x1F) # [4:0]
-                jesdcore.drp_access(rd = False, addr = 0x6A, wr_data = reg_x6A)
+                reg_x9a = (MGT_PMA_RSV >> 16) & 0xFFFF
+                jesdcore.drp_access(rd=False, addr=0x99, wr_data=reg_x99)
+                jesdcore.drp_access(rd=False, addr=0x9A, wr_data=reg_x9a)
+                # MGT_RX_CLK25_DIV is embedded with others in 0x11. The
+                # encoding for the DRP register value is one less than the
+                # desired value.
+                reg_x11 = jesdcore.drp_access(rd=True, addr=0x11)
+                reg_x11 = (reg_x11 & 0xF83F) | \
+                          ((MGT_RX_CLK25_DIV-1 & 0x1F) << 6) # [10:6]
+                jesdcore.drp_access(rd=False, addr=0x11, wr_data=reg_x11)
+                # MGT_TX_CLK25_DIV is embedded with others in 0x6A. The
+                # encoding for the DRP register value is one less than the
+                # desired value.
+                reg_x6a = jesdcore.drp_access(rd=True, addr=0x6A)
+                reg_x6a = (reg_x6a & 0xFFE0) | (MGT_TX_CLK25_DIV-1 & 0x1F) # [4:0]
+                jesdcore.drp_access(rd=False, addr=0x6A, wr_data=reg_x6a)
                 # MGT_RXCDR_CFG is split over 0xA8 (LSBs) through 0xAD
-                RXCDR_REG_BASE = 0xA8
-                for reg_num in range(0, 6):
-                    reg_addr = RXCDR_REG_BASE + reg_num
+                for reg_num, reg_addr in enumerate(range(0xA8, 0xAE)):
                     reg_data = (MGT_RXCDR_CFG >> 16*reg_num) & 0xFFFF
-                    jesdcore.drp_access(rd = False, addr = reg_addr, wr_data = reg_data)
-                # MGT_RXOUT_DIV and MGT_TXOUT_DIV are embedded together in 0x88. The
-                # encoding for the DRP register value is drp_val=log2(attribute)
-                reg_x88 = (int(math.log(MGT_RXOUT_DIV,2)) & 0x7) | \
-                         ((int(math.log(MGT_TXOUT_DIV,2)) & 0x7) << 4) # RX=[2:0] TX=[6:4]
-                jesdcore.drp_access(rd = False, addr = 0x88, wr_data = reg_x88)
-            self.log.trace("GTX settings changed to support {} Gbps".format(new_rate/1e9))
+                    jesdcore.drp_access(rd=False, addr=reg_addr, wr_data=reg_data)
+                # MGT_RXOUT_DIV and MGT_TXOUT_DIV are embedded together in
+                # 0x88. The encoding for the DRP register value is
+                # drp_val=log2(attribute)
+                reg_x88 = (int(math.log(MGT_RXOUT_DIV, 2)) & 0x7) | \
+                         ((int(math.log(MGT_TXOUT_DIV, 2)) & 0x7) << 4) # RX=[2:0] TX=[6:4]
+                jesdcore.drp_access(rd=False, addr=0x88, wr_data=reg_x88)
+            self.log.trace("GTX settings changed to support {} Gbps"
+                           .format(new_rate/1e9))
             jesdcore.disable_drp_target()
 
-        self.log.trace("JESD204b Lane Rate set to {} Gbps!".format(new_rate/1e9))
+        self.log.trace("JESD204b Lane Rate set to {} Gbps!"
+                       .format(new_rate/1e9))
         self.current_jesd_rate = new_rate
         return
 
