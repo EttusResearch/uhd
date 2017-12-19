@@ -133,7 +133,7 @@ static void e300_send_tunnel(
             if (not buff) continue;
 
             //step 2 - recv from socket
-            while (not wait_for_recv_ready(recver->native(), 100) and *running){}
+            while (not wait_for_recv_ready(recver->native_handle(), 100) and *running){}
             if (not *running) break;
             const size_t num_bytes = recver->receive_from(asio::buffer(buff->cast<void *>(), buff->size()), _rx_endpoint);
             if (E300_NETWORK_DEBUG) UHD_LOGGER_INFO("E300") << name << " got " << num_bytes;
