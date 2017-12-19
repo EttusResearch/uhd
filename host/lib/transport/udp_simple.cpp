@@ -56,7 +56,7 @@ public:
     }
 
     size_t recv(const asio::mutable_buffer &buff, double timeout){
-        if (not wait_for_recv_ready(_socket->native(), timeout)) return 0;
+        if (not wait_for_recv_ready(_socket->native_handle(), timeout)) return 0;
         return _socket->receive_from(asio::buffer(buff), _recv_endpoint);
     }
 

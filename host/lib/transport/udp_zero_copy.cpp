@@ -191,7 +191,7 @@ public:
         _socket = socket_sptr(new asio::ip::udp::socket(_io_service));
         _socket->open(asio::ip::udp::v4());
         _socket->connect(receiver_endpoint);
-        _sock_fd = _socket->native();
+        _sock_fd = _socket->native_handle();
 
         UHD_LOGGER_TRACE("UDP")
             << boost::format("Local UDP socket endpoint: %s:%s")
