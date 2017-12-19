@@ -21,6 +21,12 @@
 #include <uhd/config.hpp>
 #include <boost/asio.hpp>
 
+#if BOOST_VERSION < 104700
+    #define ASIO_SOCKET_NATIVE(socket) socket->native()
+#else
+    #define ASIO_SOCKET_NATIVE(socket) socket->native_handle()
+#endif
+
 namespace uhd{ namespace transport{
 
     typedef boost::shared_ptr<boost::asio::ip::udp::socket> socket_sptr;

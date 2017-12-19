@@ -127,7 +127,11 @@ private:
         wait_for_thread.notify_one();    // notify constructor that this thread has started
         std::vector<char> buff(insane_mtu);
         while (not boost::this_thread::interruption_requested()){
+#if BOOST_VERSION < 104700
             if (wait_for_recv_ready(_server_socket->native())){
+#else
+            if (wait_for_recv_ready(_server_socket->native_handle())){
+#endif
                 boost::mutex::scoped_lock lock(_endpoint_mutex);
                 const size_t len = _server_socket->receive_from(asio::buffer(&buff.front(), buff.size()), _endpoint);
                 lock.unlock();
@@ -153,7 +157,11 @@ private:
         wait_for_thread.notify_one();    // notify constructor that this thread has started
         std::vector<char> buff(insane_mtu);
         while (not boost::this_thread::interruption_requested()){
+#if BOOST_VERSION < 104700
             if (wait_for_recv_ready(_client_socket->native())){
+#else
+            if (wait_for_recv_ready(_client_socket->native_handle())){
+#endif
                 const size_t len = _client_socket->receive(asio::buffer(&buff.front(), buff.size()));
                 boost::mutex::scoped_lock lock(_endpoint_mutex);
                 _server_socket->send_to(asio::buffer(&buff.front(), len), _endpoint);
