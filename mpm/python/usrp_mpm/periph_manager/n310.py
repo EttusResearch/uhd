@@ -25,7 +25,7 @@ from usrp_mpm.sys_utils.uio import UIO
 from usrp_mpm.xports import XportMgrUDP, XportMgrLiberio
 
 N3XX_DEFAULT_EXT_CLOCK_FREQ = 10e6
-N3XX_DEFAULT_CLOCK_SOURCE = 'external'
+N3XX_DEFAULT_CLOCK_SOURCE = 'internal'
 N3XX_DEFAULT_TIME_SOURCE = 'internal'
 N3XX_DEFAULT_ENABLE_GPS = True
 N3XX_DEFAULT_ENABLE_FPGPIO = True
