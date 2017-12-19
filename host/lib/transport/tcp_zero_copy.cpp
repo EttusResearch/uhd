@@ -154,7 +154,7 @@ public:
         //create, open, and connect the socket
         _socket.reset(new asio::ip::tcp::socket(_io_service));
         _socket->connect(receiver_endpoint);
-        _sock_fd = _socket->native();
+        _sock_fd = _socket->native_handle();
 
         //packets go out ASAP
         asio::ip::tcp::no_delay option(true);

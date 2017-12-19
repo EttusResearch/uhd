@@ -190,7 +190,7 @@ public:
         _socket = socket_sptr(new asio::ip::udp::socket(_io_service));
         _socket->open(asio::ip::udp::v4());
         _socket->connect(receiver_endpoint);
-        _sock_fd = _socket->native();
+        _sock_fd = _socket->native_handle();
 
         //allocate re-usable managed receive buffers
         for (size_t i = 0; i < get_num_recv_frames(); i++){
