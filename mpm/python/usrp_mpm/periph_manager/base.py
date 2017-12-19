@@ -613,7 +613,9 @@ class PeriphManagerBase(object):
         """
         When setting up a CHDR connection, this is the first call to be
         made. This function will return a list of dictionaries, each
-        describing a way to open an CHDR connection.
+        describing a way to open an CHDR connection. The list of dictionaries
+        is sorted by preference, meaning that the caller should use the first
+        option, if possible.
         All transports requested are bidirectional.
 
         The callee must maintain a lock on the available CHDR xports. After
@@ -641,10 +643,6 @@ class PeriphManagerBase(object):
         - type: Type of transport, e.g., "UDP", "liberio".
         - ipv4 (UDP only): IPv4 address to connect to.
         - port (UDP only): IP port to connect to.
-        - rx_mtu: In bytes, the max size RX packets can have (RX means going
-                  from device to UHD)
-        - tx_mtu: In bytes, the max size TX packets can have (TX means going
-                  from UHD to device)
         - allocation: This is an integer value which represents a score of
                       how much bandwidth is used. Note: Currently does not
                       have any unit, is just a counter. Higher numbers mean
@@ -652,6 +650,11 @@ class PeriphManagerBase(object):
                       example, committing an RX streamer would increase this
                       value.
                       This key is optional, MPM does not have to provide it.
+                      If the allocation affects the preference, it will be
+                      factored into the order of the results, meaning the
+                      caller does not strictly have to check its value even if
+                      the transport option with the smallest allocation is
+                      preferred.
 
         Note: The dictionary may include other keys which should be ignored,
         or at the very least, kept intact. commit_xport() might be requiring
