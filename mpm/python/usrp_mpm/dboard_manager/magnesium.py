@@ -651,6 +651,13 @@ class Magnesium(DboardManagerBase):
         # Allow a bit of time for CGS/ILA to complete.
         time.sleep(0.100)
 
+        for attempt in range(5):
+            if not jesdcore.get_deframer_status():
+                self.log.warning("FPGA Deframer Error! Re-starting FPGA deframer (attempt {}/5)...".format(attempt+1))
+                jesdcore.init_deframer()
+            else:
+                break
+
         if not jesdcore.get_framer_status():
             self.log.error("FPGA Framer Error!")
             raise Exception('JESD Core Framer is not synced!')
@@ -659,7 +666,7 @@ class Magnesium(DboardManagerBase):
             raise Exception('Mykonos Deframer is not synced!')
         if not jesdcore.get_deframer_status():
             self.log.error("FPGA Deframer Error!")
-            raise Exception('JESD Core Deframer is not synced!')
+            raise Exception('JESD Core Deframer is not synced, even after 5 attempts!')
         if (self.mykonos.get_framer_status() & 0xFF) != 0x3E:
             self.log.error("Mykonos Framer Error: 0x{:X}".format((self.mykonos.get_framer_status() & 0xFF)))
             raise Exception('Mykonos Framer is not synced!')
