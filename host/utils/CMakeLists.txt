@@ -121,6 +121,7 @@ IF(ENABLE_X300)
 ENDIF(ENABLE_X300)
 
 #UHD images downloader configuration
+FILE(READ ${CMAKE_CURRENT_SOURCE_DIR}/../../images/manifest.txt CMAKE_MANIFEST_CONTENTS)
 CONFIGURE_FILE(
     ${CMAKE_CURRENT_SOURCE_DIR}/uhd_images_downloader.py.in
     ${CMAKE_CURRENT_BINARY_DIR}/uhd_images_downloader.py
