@@ -27,14 +27,13 @@ class AuroraControl(object):
     Controls an Aurora core.
     """
     # These are relative addresses
-    REG_AURORA_MAC_CTRL        = 0x30
-    REG_AURORA_MAC_CTRL_STATUS = 0x30
-    REG_AURORA_PHY_CTRL_STATUS = 0x34
-    REG_AURORA_OVERRUNS        = 0x38
-    REG_CHECKSUM_ERRORS        = 0x3C
-    REG_BIST_CHECKER_SAMPS     = 0x40
-    REG_BIST_CHECKER_ERRORS    = 0x44
-    REG_AURORA_ENABLED_CHECK   = 0x48
+    REG_AURORA_PORT_INFO       = 0x00
+    REG_AURORA_MAC_CTRL_STATUS = 0x04
+    REG_AURORA_PHY_CTRL_STATUS = 0x08
+    REG_AURORA_OVERRUNS        = 0x20
+    REG_CHECKSUM_ERRORS        = 0x24
+    REG_BIST_CHECKER_SAMPS     = 0x28
+    REG_BIST_CHECKER_ERRORS    = 0x2C
 
     MAC_STATUS_LINK_UP_MSK         = 0x00000001
     MAC_STATUS_HARD_ERR_MSK        = 0x00000002
@@ -45,7 +44,7 @@ class AuroraControl(object):
 
     RATE_RES_BITS = 6
 
-    DEFAULT_BUS_CLK_RATE = 208e6
+    DEFAULT_BUS_CLK_RATE = 200e6
 
     def __init__(self, peeker_poker32, base_addr=None, bus_clk_rate=None):
         assert hasattr(peeker_poker32, 'peek32') \
@@ -111,7 +110,7 @@ class AuroraControl(object):
     def set_mac_ctrl(self, mac_ctrl_word):
         " Write to the MAC ctrl register "
         self.log.debug("Setting MAC ctrl word to: 0x{:08X}".format(mac_ctrl_word))
-        self.poke32(self.REG_AURORA_MAC_CTRL, mac_ctrl_word)
+        self.poke32(self.REG_AURORA_MAC_CTRL_STATUS, mac_ctrl_word)
 
     def set_bist_checker_and_gen(self, enable):
         " Enable or disable Aurora BIST: Checker + Generator "
