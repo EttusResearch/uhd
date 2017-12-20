@@ -93,7 +93,9 @@ private:
             }
         }
 
-        throw uhd::runtime_error("Could not select a transport option!");
+        throw uhd::runtime_error("Could not select a transport option! "
+                "Either a transport hint was not specified or the specified "
+                "hint does not support communication with RFNoC blocks.");
     }
 
     //! Create an instance of an xport manager implementation

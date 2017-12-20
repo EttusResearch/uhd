@@ -26,9 +26,13 @@ namespace {
         const uhd::device_addr_t& mb_args
     ) {
         // mb_args must always include addr
-        std::vector<std::string> addrs{mb_args["addr"]};
-        if (mb_args.has_key("second_addr")){
-            addrs.push_back(mb_args["second_addr"]);
+        if (not mb_args.has_key(FIRST_ADDR_KEY)) {
+            throw uhd::runtime_error("The " + FIRST_ADDR_KEY + " key must be specified in "
+                "device args to create an Ethernet transport to an RFNoC block");
+        }
+        std::vector<std::string> addrs{mb_args[FIRST_ADDR_KEY]};
+        if (mb_args.has_key(SECOND_ADDR_KEY)){
+            addrs.push_back(mb_args[SECOND_ADDR_KEY]);
         }
         return addrs;
     }

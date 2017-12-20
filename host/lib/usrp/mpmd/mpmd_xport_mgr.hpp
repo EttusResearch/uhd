@@ -16,6 +16,17 @@
 
 namespace uhd { namespace mpmd { namespace xport {
 
+/*
+ * Transport specifiers
+ */
+
+//! Ethernet address for management and RPC communication
+const std::string MGMT_ADDR_KEY    = "mgmt_addr";
+//! Primary Ethernet address for streaming and RFNoC communication
+const std::string FIRST_ADDR_KEY   = "addr";
+//! Secondary Ethernet address for streaming and RFNoC communication
+const std::string SECOND_ADDR_KEY  = "second_addr";
+
 /*! Return filtered subset from a device_addr_t
  *
  * The return dictionary will contain all key/value pairs from \p args
