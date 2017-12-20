@@ -230,7 +230,7 @@ double magnesium_radio_ctrl_impl::set_tx_frequency(
         _is_low_band[TX_DIRECTION] = true;
         const double desired_low_freq = MAGNESIUM_TX_IF_FREQ - freq;
         coerced_if_freq =
-            this->set_tx_lo_freq(desired_low_freq, MAGNESIUM_LO2, chan) + freq;
+            this->_set_tx_lo_freq(adf4351_source, MAGNESIUM_LO2, desired_low_freq, chan) + freq;
         UHD_LOG_TRACE(unique_id(), "coerced_if_freq = " << coerced_if_freq);
     } else {
         _is_low_band[TX_DIRECTION] = false;
@@ -241,8 +241,7 @@ double magnesium_radio_ctrl_impl::set_tx_frequency(
         coerced_if_freq :
         2*coerced_if_freq;
 
-    this->set_tx_lo_freq(desired_if_freq, MAGNESIUM_LO1, chan);
-
+    this->_set_tx_lo_freq(ad9371_source, MAGNESIUM_LO1, desired_if_freq, chan);
     this->_update_freq(chan, TX_DIRECTION);
     this->_update_gain(chan, TX_DIRECTION);
     return radio_ctrl_impl::get_tx_frequency(chan);
