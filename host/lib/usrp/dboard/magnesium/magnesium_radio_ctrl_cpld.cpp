@@ -8,7 +8,7 @@
 #include "magnesium_cpld_ctrl.hpp"
 #include "magnesium_constants.hpp"
 #include <uhd/utils/log.hpp>
-
+#include <uhd/utils/math.hpp>
 /*
  * Magnesium Rev C frequency bands:
  *
@@ -39,7 +39,7 @@
 using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::rfnoc;
-
+using namespace uhd::math::fp_compare;
 void magnesium_radio_ctrl_impl::_update_atr_switches(
     const magnesium_cpld_ctrl::chan_sel_t chan,
     const direction_t dir,
@@ -142,12 +142,12 @@ void magnesium_radio_ctrl_impl::_update_rx_freq_switches(
     auto rx_sw4 = magnesium_cpld_ctrl::RX_SW4_FILTER2100X2850MHZFROM;
     auto rx_sw5 = magnesium_cpld_ctrl::RX_SW5_FILTER1100X1575MHZFROM;
     auto rx_sw6 = magnesium_cpld_ctrl::RX_SW6_BYPASSPATHFROMSWITCH2;
-    const auto select_lowband_mixer_path = (freq <= MAGNESIUM_LOWBAND_FREQ) ?
+    const auto select_lowband_mixer_path = (fp_compare_epsilon<double>(freq) < MAGNESIUM_LOWBAND_FREQ) ?
         magnesium_cpld_ctrl::LOWBAND_MIXER_PATH_SEL_LOBAND :
         magnesium_cpld_ctrl::LOWBAND_MIXER_PATH_SEL_BYPASS;
-    const bool enable_lowband_mixer = (freq < MAGNESIUM_LOWBAND_FREQ);
+    const bool enable_lowband_mixer = (fp_compare_epsilon<double>(freq) < MAGNESIUM_LOWBAND_FREQ);
     const bool rx_lna2_enable =
-        not bypass_lnas and (freq < MAGNESIUM_RX_BAND4_MIN_FREQ);
+        not bypass_lnas and (fp_compare_epsilon<double>(freq) < MAGNESIUM_RX_BAND4_MIN_FREQ);
     const bool rx_lna1_enable =
         not bypass_lnas and not rx_lna2_enable;
     UHD_LOG_TRACE(unique_id(),
@@ -155,37 +155,37 @@ void magnesium_radio_ctrl_impl::_update_rx_freq_switches(
         " Enabling LNA2: " << (rx_lna2_enable ? "Yes" : "No"));
     // All the defaults are OK when using the bypass path.
     if (not bypass_lnas) {
-        if (freq < MAGNESIUM_LOWBAND_FREQ) {
+        if (fp_compare_epsilon<double>(freq) < MAGNESIUM_LOWBAND_FREQ) {
             rx_sw2 = magnesium_cpld_ctrl::RX_SW2_LOWERFILTERBANKTOSWITCH3;
             rx_sw3 = magnesium_cpld_ctrl::RX_SW3_FILTER0490LPMHZ;
             rx_sw4 = magnesium_cpld_ctrl::RX_SW4_FILTER2700HPMHZ;
             rx_sw5 = magnesium_cpld_ctrl::RX_SW5_FILTER0490LPMHZFROM;
             rx_sw6 = magnesium_cpld_ctrl::RX_SW6_LOWERFILTERBANKFROMSWITCH5;
-        } else if (freq < MAGNESIUM_RX_BAND2_MIN_FREQ) {
+        } else if (fp_compare_epsilon<double>(freq) < MAGNESIUM_RX_BAND2_MIN_FREQ) {
             rx_sw2 = magnesium_cpld_ctrl::RX_SW2_LOWERFILTERBANKTOSWITCH3;
             rx_sw3 = magnesium_cpld_ctrl::RX_SW3_FILTER0440X0530MHZ;
             rx_sw4 = magnesium_cpld_ctrl::RX_SW4_FILTER2700HPMHZ;
             rx_sw5 = magnesium_cpld_ctrl::RX_SW5_FILTER0440X0530MHZFROM;
             rx_sw6 = magnesium_cpld_ctrl::RX_SW6_LOWERFILTERBANKFROMSWITCH5;
-        } else if (freq < MAGNESIUM_RX_BAND3_MIN_FREQ) {
+        } else if (fp_compare_epsilon<double>(freq) < MAGNESIUM_RX_BAND3_MIN_FREQ) {
             rx_sw2 = magnesium_cpld_ctrl::RX_SW2_LOWERFILTERBANKTOSWITCH3;
             rx_sw3 = magnesium_cpld_ctrl::RX_SW3_FILTER0650X1000MHZ;
             rx_sw4 = magnesium_cpld_ctrl::RX_SW4_FILTER2700HPMHZ;
             rx_sw5 = magnesium_cpld_ctrl::RX_SW5_FILTER0650X1000MHZFROM;
             rx_sw6 = magnesium_cpld_ctrl::RX_SW6_LOWERFILTERBANKFROMSWITCH5;
-        } else if (freq < MAGNESIUM_RX_BAND4_MIN_FREQ) {
+        } else if (fp_compare_epsilon<double>(freq) < MAGNESIUM_RX_BAND4_MIN_FREQ) {
             rx_sw2 = magnesium_cpld_ctrl::RX_SW2_LOWERFILTERBANKTOSWITCH3;
             rx_sw3 = magnesium_cpld_ctrl::RX_SW3_FILTER1100X1575MHZ;
             rx_sw4 = magnesium_cpld_ctrl::RX_SW4_FILTER2700HPMHZ;
             rx_sw5 = magnesium_cpld_ctrl::RX_SW5_FILTER1100X1575MHZFROM;
             rx_sw6 = magnesium_cpld_ctrl::RX_SW6_LOWERFILTERBANKFROMSWITCH5;
-        } else if (freq < MAGNESIUM_RX_BAND5_MIN_FREQ) {
+        } else if (fp_compare_epsilon<double>(freq) < MAGNESIUM_RX_BAND5_MIN_FREQ) {
             rx_sw2 = magnesium_cpld_ctrl::RX_SW2_LOWERFILTERBANKTOSWITCH3;
             rx_sw3 = magnesium_cpld_ctrl::RX_SW3_FILTER1600X2250MHZ;
             rx_sw4 = magnesium_cpld_ctrl::RX_SW4_FILTER1600X2250MHZFROM;
             rx_sw5 = magnesium_cpld_ctrl::RX_SW5_FILTER0440X0530MHZFROM;
             rx_sw6 = magnesium_cpld_ctrl::RX_SW6_UPPERFILTERBANKFROMSWITCH4;
-        } else if (freq < MAGNESIUM_RX_BAND6_MIN_FREQ) {
+        } else if (fp_compare_epsilon<double>(freq) < MAGNESIUM_RX_BAND6_MIN_FREQ) {
             rx_sw2 = magnesium_cpld_ctrl::RX_SW2_LOWERFILTERBANKTOSWITCH3;
             rx_sw3 = magnesium_cpld_ctrl::RX_SW3_FILTER2100X2850MHZ;
             rx_sw4 = magnesium_cpld_ctrl::RX_SW4_FILTER2100X2850MHZFROM;
@@ -231,34 +231,34 @@ void magnesium_radio_ctrl_impl::_update_tx_freq_switches(
     auto tx_sw1 = magnesium_cpld_ctrl::TX_SW1_SHUTDOWNTXSW1;
     auto tx_sw2 = magnesium_cpld_ctrl::TX_SW2_TOTXFILTERLP6400MHZ;
     auto tx_sw3 = magnesium_cpld_ctrl::TX_SW3_BYPASSPATHTOTRXSW;
-    const auto select_lowband_mixer_path = (freq <= MAGNESIUM_LOWBAND_FREQ) ?
+    const auto select_lowband_mixer_path = (fp_compare_epsilon<double>(freq) < MAGNESIUM_LOWBAND_FREQ) ?
         magnesium_cpld_ctrl::LOWBAND_MIXER_PATH_SEL_LOBAND :
         magnesium_cpld_ctrl::LOWBAND_MIXER_PATH_SEL_BYPASS;
-    const bool enable_lowband_mixer = (freq <= MAGNESIUM_LOWBAND_FREQ);
+    const bool enable_lowband_mixer = (fp_compare_epsilon<double>(freq) < MAGNESIUM_LOWBAND_FREQ);
     // Defaults are fine for bypassing the amp stage
     if (bypass_amp) {
         _sw_trx[chan_sel] = magnesium_cpld_ctrl::SW_TRX_BYPASSPATHTOTXSW3;
     } else {
          // Set filters based on frequency
-        if (freq < MAGNESIUM_TX_BAND1_MIN_FREQ) {
+        if (fp_compare_epsilon<double>(freq) < MAGNESIUM_TX_BAND1_MIN_FREQ) {
             _sw_trx[chan_sel] =
                 magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1;
             tx_sw1 = magnesium_cpld_ctrl::TX_SW1_FROMTXFILTERLP0800MHZ;
             tx_sw2 = magnesium_cpld_ctrl::TX_SW2_TOTXFILTERLP0800MHZ;
             tx_sw3 = magnesium_cpld_ctrl::TX_SW3_TOTXFILTERBANKS;
-        } else if (freq < MAGNESIUM_TX_BAND2_MIN_FREQ) {
+        } else if (fp_compare_epsilon<double>(freq) < MAGNESIUM_TX_BAND2_MIN_FREQ) {
             _sw_trx[chan_sel] =
                 magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1;
             tx_sw1 = magnesium_cpld_ctrl::TX_SW1_FROMTXFILTERLP0800MHZ;
             tx_sw2 = magnesium_cpld_ctrl::TX_SW2_TOTXFILTERLP0800MHZ;
             tx_sw3 = magnesium_cpld_ctrl::TX_SW3_TOTXFILTERBANKS;
-        } else if (freq < MAGNESIUM_TX_BAND3_MIN_FREQ) {
+        } else if (fp_compare_epsilon<double>(freq) < MAGNESIUM_TX_BAND3_MIN_FREQ) {
             _sw_trx[chan_sel] =
                 magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1;
             tx_sw1 = magnesium_cpld_ctrl::TX_SW1_FROMTXFILTERLP1700MHZ;
             tx_sw2 = magnesium_cpld_ctrl::TX_SW2_TOTXFILTERLP1700MHZ;
             tx_sw3 = magnesium_cpld_ctrl::TX_SW3_TOTXFILTERBANKS;
-        } else if (freq < MAGNESIUM_TX_BAND4_MIN_FREQ) {
+        } else if (fp_compare_epsilon<double>(freq) < MAGNESIUM_TX_BAND4_MIN_FREQ) {
             _sw_trx[chan_sel] =
                 magnesium_cpld_ctrl::SW_TRX_FROMLOWERFILTERBANKTXSW1;
             tx_sw1 = magnesium_cpld_ctrl::TX_SW1_FROMTXFILTERLP3400MHZ;

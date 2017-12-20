@@ -23,7 +23,7 @@
 using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::rfnoc;
-
+using namespace uhd::math::fp_compare;
 namespace {
     /**************************************************************************
      * ADF4351 Controls
@@ -226,7 +226,7 @@ double magnesium_radio_ctrl_impl::set_tx_frequency(
     UHD_ASSERT_THROW(adf4351_source == "internal");
     double coerced_if_freq = freq;
 
-    if (freq < MAGNESIUM_LOWBAND_FREQ) { // Low band
+    if (fp_compare_epsilon<double>(freq) < MAGNESIUM_LOWBAND_FREQ) { // Low band
         _is_low_band[TX_DIRECTION] = true;
         const double desired_low_freq = MAGNESIUM_TX_IF_FREQ - freq;
         coerced_if_freq =
@@ -284,9 +284,9 @@ void magnesium_radio_ctrl_impl::_update_freq(
 
     UHD_LOG_TRACE(unique_id(),
          "RF freq = " << rf_freq);
-        UHD_ASSERT_THROW(rf_freq >= 0);
+        UHD_ASSERT_THROW(fp_compare_epsilon<double>(rf_freq) >= 0);
         UHD_ASSERT_THROW(
-            std::abs(rf_freq - _desired_rf_freq[dir]) <= _master_clock_rate/2);
+            fp_compare_epsilon<double>(std::abs(rf_freq - _desired_rf_freq[dir])) <= _master_clock_rate/2);
     if (dir == RX_DIRECTION){
         radio_ctrl_impl::set_rx_frequency(rf_freq, chan);
     }else if (dir == TX_DIRECTION){
@@ -324,7 +324,7 @@ double magnesium_radio_ctrl_impl::set_rx_frequency(
     UHD_ASSERT_THROW(adf4351_source == "internal");
     double coerced_if_freq = freq;
 
-    if (freq < MAGNESIUM_LOWBAND_FREQ) { // Low band
+    if (fp_compare_epsilon<double>(freq) < MAGNESIUM_LOWBAND_FREQ) { // Low band
         _is_low_band[RX_DIRECTION] = true;
         const double desired_low_freq = MAGNESIUM_RX_IF_FREQ - freq;
         coerced_if_freq =
@@ -815,7 +815,7 @@ bool magnesium_radio_ctrl_impl::get_lo_lock_status(
         _rpc_prefix + "get_ad9371_lo_lock", trx);
     UHD_LOG_TRACE(unique_id(),
         "AD9371 " << trx << " LO reports lock: " << (lo_lock ? "Yes" : "No"));
-    if (lo_lock && freq < MAGNESIUM_LOWBAND_FREQ) {
+    if (lo_lock && fp_compare_epsilon<double>(freq) < MAGNESIUM_LOWBAND_FREQ) {
         lo_lock = lo_lock && _rpcc->request_with_token<bool>(
             _rpc_prefix + "get_lowband_lo_lock", trx);
         UHD_LOG_TRACE(unique_id(),
