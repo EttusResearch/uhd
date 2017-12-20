@@ -297,6 +297,7 @@ class n310(PeriphManagerBase):
         self._ext_clock_freq = None
         self._clock_source = None
         self._time_source = None
+        self._available_endpoints = list(range(256))
         try:
             self._init_peripherals(args)
             self._device_initialized = True
@@ -417,6 +418,7 @@ class n310(PeriphManagerBase):
         super(n310, self).deinit()
         for xport_mgr in itervalues(self._xport_mgrs):
             xport_mgr.deinit()
+        self._available_endpoints = list(range(256))
 
     def tear_down(self):
         """
@@ -443,14 +445,19 @@ class n310(PeriphManagerBase):
         """
         See PeriphManagerBase.request_xport() for docs.
         """
-        # For now, we always accept the suggestion if available, or fail
+        # Try suggested address first, then just pick the first available one:
         src_address = suggested_src_address
         if src_address not in self._available_endpoints:
-            raise RuntimeError("no more sids yo")
+            if len(self._available_endpoints) == 0:
+                raise RuntimeError(
+                    "Depleted pool of SID endpoints for this device!")
+            else:
+                src_address = self._available_endpoints[0]
         sid = SID(src_address << 16 | dst_address)
+        # Note: This SID may change its source address!
         self.log.debug(
             "request_xport(dst=0x%04X, suggested_src_address=0x%04X, xport_type=%s): " \
-            "operating on SID: %s",
+            "operating on temporary SID: %s",
             dst_address, suggested_src_address, str(xport_type), str(sid))
         # FIXME token!
         assert self.mboard_info['rpc_connection'] in ('remote', 'local')

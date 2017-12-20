@@ -135,7 +135,6 @@ class PeriphManagerBase(object):
         self.log = get_logger('PeriphManager')
         self.claimed = False
         self._init_args = {}
-        self._available_endpoints = list(range(256))
         try:
             self._init_mboard_with_eeprom()
             self._init_mboard_overlays(self._eeprom_head, args)
@@ -338,7 +337,6 @@ class PeriphManagerBase(object):
         for dboard in self.dboards:
             dboard.deinit()
         self.log.trace("Resetting SID pool...")
-        self._available_endpoints = list(range(256))
 
     def tear_down(self):
         """
@@ -647,6 +645,9 @@ class PeriphManagerBase(object):
         - type: Type of transport, e.g., "UDP", "liberio".
         - ipv4 (UDP only): IPv4 address to connect to.
         - port (UDP only): IP port to connect to.
+        - send_sid: String version of the SID used for this transport. This is
+                    the definitive version of the SID, the suggested_src_address
+                    can be ignored at this point.
         - allocation: This is an integer value which represents a score of
                       how much bandwidth is used. Note: Currently does not
                       have any unit, is just a counter. Higher numbers mean

@@ -219,9 +219,6 @@ public:
     //! A counter for distributing local addresses to crossbars
     // No-one touches this except allocate_xbar_local_addr(), gotcha?
     size_t  _xbar_local_addr_ctr = 2;
-
-    // TODO make sure this can't wrap
-    size_t _sid_framer;
 };
 
 }} /* namespace uhd::mpmd */

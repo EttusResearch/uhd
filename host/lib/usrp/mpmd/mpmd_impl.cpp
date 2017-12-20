@@ -276,7 +276,6 @@ const std::string mpmd_impl::MPM_ECHO_CMD = "MPM-ECHO";
 mpmd_impl::mpmd_impl(const device_addr_t& device_args)
     : usrp::device3_impl()
     , _device_args(device_args)
-    , _sid_framer(0)
 {
     UHD_LOGGER_INFO("MPMD")
         << "Initializing device with args: " << device_args.to_string();

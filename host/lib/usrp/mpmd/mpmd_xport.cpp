@@ -49,8 +49,7 @@ both_xports_t mpmd_impl::make_transport(
         identify_mboard_by_xbar_addr(dst_address.get_dst_addr());
 
     const sid_t sid(
-        0,
-        _sid_framer++, // FIXME make sure we only increment if actually valid
+        0, 0, // Not actually an address, more of an 'ignore me' value
         dst_address.get_dst_addr(),
         dst_address.get_dst_endpoint()
     );
