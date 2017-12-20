@@ -667,7 +667,7 @@ class Magnesium(DboardManagerBase):
         if not jesdcore.get_deframer_status():
             self.log.error("FPGA Deframer Error!")
             raise Exception('JESD Core Deframer is not synced, even after 5 attempts!')
-        if (self.mykonos.get_framer_status() & 0xFF) != 0x3E:
+        if (self.mykonos.get_framer_status() & 0x3F) != 0x3E:
             self.log.error("Mykonos Framer Error: 0x{:X}".format((self.mykonos.get_framer_status() & 0xFF)))
             raise Exception('Mykonos Framer is not synced!')
         if (self.mykonos.get_multichip_sync_status() & 0xB) != 0xB:
