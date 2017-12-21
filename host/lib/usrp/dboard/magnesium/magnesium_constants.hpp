@@ -59,7 +59,7 @@ static const std::vector<std::string> MAGNESIUM_RX_ANTENNAS = {
 //! AD9371 LO (for direct conversion)
 static const char* MAGNESIUM_LO1 = "rfic";
 //! Low-band LO (for IF conversion)
-static const char* MAGNESIUM_LO2 = "low_synth";
+static const char* MAGNESIUM_LO2 = "lowband";
 
 static const double MAGNESIUM_DEFAULT_BANDWIDTH = 40e6; // Hz TODO: fix
 // Note: MAGNESIUM_NUM_CHANS is independent of the number of chans per
