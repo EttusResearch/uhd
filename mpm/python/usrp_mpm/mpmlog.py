@@ -25,7 +25,7 @@ RESET = str('\x1b[0m')
 # Additional log level
 TRACE = 1
 
-DEFAULT_LOG_LEVEL = TRACE
+DEFAULT_LOG_LEVEL = DEBUG
 
 class ColorStreamHandler(logging.StreamHandler):
     """
@@ -116,7 +116,7 @@ def get_main_logger(
             log_level, component, message = LOGGER.cpp_log_buf.pop()
             if log_level:
                 lib_logger.log(log_level, "[%s] %s",
-                        component, message.strip())
+                               component, message.strip())
         LOGGER.cpp_log_buf.set_notify_callback(log_from_cpp)
     return LOGGER
 
