@@ -10,6 +10,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/types/eeprom.hpp>
 #include <uhd/types/sensors.hpp>
+#include <uhd/transport/chdr.hpp>
 #include <vector>
 #include <string>
 
@@ -50,6 +51,17 @@ void magnesium_radio_ctrl_impl::_init_defaults()
         radio_ctrl_impl::set_tx_gain(0, chan);
         radio_ctrl_impl::set_tx_antenna(MAGNESIUM_DEFAULT_TX_ANTENNA, chan);
     }
+
+
+    /** Update default SPP (overwrites the default value from the XML file) **/
+    const size_t max_bytes_header =
+        uhd::transport::vrt::chdr::max_if_hdr_words64 * sizeof(uint64_t);
+    const size_t default_spp =
+        (_tree->access<size_t>("mtu/recv").get() - max_bytes_header)
+        / (2 * sizeof(int16_t));
+    UHD_LOG_DEBUG(unique_id(),
+        "Setting default spp to " << default_spp);
+    _tree->access<int>(get_arg_path("spp") / "value").set(default_spp);
 }
 
 void magnesium_radio_ctrl_impl::_init_peripherals()
