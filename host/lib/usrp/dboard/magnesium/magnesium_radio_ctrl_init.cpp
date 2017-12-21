@@ -37,8 +37,6 @@ void magnesium_radio_ctrl_impl::_init_defaults()
     UHD_LOG_TRACE(unique_id(),
             "Num TX chans: " << num_tx_chans
             << " Num RX chans: " << num_rx_chans);
-    // get_rate() is useless until we can ask MPM for the actual rate
-    radio_ctrl_impl::set_rate(1.0);
 
     for (size_t chan = 0; chan < num_rx_chans; chan++) {
         radio_ctrl_impl::set_rx_frequency(MAGNESIUM_CENTER_FREQ, chan);
