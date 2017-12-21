@@ -199,15 +199,22 @@ class MgCPLD(object):
                     self.CPLD_SIGNATURE, signature))
             raise RuntimeError("CPLD Status Check Failed!")
         rev = self.peek16(self.REG_REVISION)
-        if rev != self.CPLD_REV:
-            self.log.error("CPLD Revision Mismatch! " \
-                           "Expected: %d Got: %d", self.CPLD_REV, rev)
+        oldest_compat_rev = self.peek16(self.REG_OLDEST_COMPAT)
+        if oldest_compat_rev != self.CPLD_REV:
+            self.log.error(
+                "CPLD Revision compat mismatch! Expected: %d Got: %d",
+                self.CPLD_REV,
+                oldest_compat_rev
+            )
             raise RuntimeError("CPLD Revision Check Failed!")
         date_code = self.peek16(self.REG_BUILD_CODE_LSB) | \
                     (self.peek16(self.REG_BUILD_CODE_MSB) << 16)
-        self.log.trace(
-            "CPLD Signature: 0x{:X} Revision: 0x{:04X} Date code: 0x{:08X}"
-            .format(signature, rev, date_code))
+        self.log.debug(
+            "CPLD Signature: 0x{:X} "
+            "Revision: 0x{:04X} "
+            "Oldest compat rev: 0x{:04X} "
+            "Date code: 0x{:08X}"
+            .format(signature, rev, oldest_compat_rev, date_code))
 
     def set_scratch(self, val):
         " Write to the scratch register "
