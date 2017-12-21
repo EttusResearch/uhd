@@ -30,17 +30,6 @@ template <class T> T ceil_log2(T num){
     return std::ceil(std::log(num)/std::log(T(2)));
 }
 
-// TODO remove this once we have actual lambdas
-static double lambda_forward_prop(uhd::property_tree::sptr tree, uhd::fs_path prop, double value)
-{
-    return tree->access<double>(prop).set(value).get();
-}
-
-static double lambda_forward_prop(uhd::property_tree::sptr tree, uhd::fs_path prop)
-{
-    return tree->access<double>(prop).get();
-}
-
 class ddc_block_ctrl_impl : public ddc_block_ctrl
 {
 public:
@@ -54,43 +43,74 @@ public:
         for (size_t chan = 0; chan < get_input_ports().size(); chan++) {
             double default_freq = get_arg<double>("freq", chan);
             _tree->access<double>(get_arg_path("freq/value", chan))
-                .set_coercer(boost::bind(&ddc_block_ctrl_impl::set_freq, this, _1, chan))
+                .set_coercer([this, chan](const double value){
+                    return this->set_freq(value, chan);
+                })
                 .set(default_freq);
             ;
             double default_output_rate = get_arg<double>("output_rate", chan);
             _tree->access<double>(get_arg_path("output_rate/value", chan))
-                .set_coercer(boost::bind(&ddc_block_ctrl_impl::set_output_rate, this, _1, chan))
+                .set_coercer([this, chan](const double value){
+                    return this->set_output_rate(value, chan);
+                })
                 .set(default_output_rate)
             ;
             _tree->access<double>(get_arg_path("input_rate/value", chan))
-                .add_coerced_subscriber(boost::bind(&ddc_block_ctrl_impl::set_input_rate, this, _1, chan))
+                .add_coerced_subscriber([this, chan](const double rate){
+                    this->set_input_rate(rate, chan);
+                })
             ;
 
             // Legacy properties (for backward compat w/ multi_usrp)
             const uhd::fs_path dsp_base_path = _root_path / "legacy_api" / chan;
-            // Legacy properties
+            // Legacy properties simply forward to the block args properties
             _tree->create<double>(dsp_base_path / "rate/value")
-                .set_coercer(boost::bind(&lambda_forward_prop, _tree, get_arg_path("output_rate/value", chan), _1))
-                .set_publisher(boost::bind(&lambda_forward_prop, _tree, get_arg_path("output_rate/value", chan)))
+                .set_coercer([this, chan](const double value){
+                    return this->_tree->access<double>(
+                        this->get_arg_path("output_rate/value", chan)
+                    ).set(value).get();
+                })
+                .set_publisher([this, chan](){
+                    return this->_tree->access<double>(
+                        this->get_arg_path("output_rate/value", chan)
+                    ).get();
+                })
             ;
             _tree->create<uhd::meta_range_t>(dsp_base_path / "rate/range")
-                .set_publisher(boost::bind(&ddc_block_ctrl_impl::get_output_rates, this))
+                .set_publisher([this](){
+                    return get_output_rates();
+                })
             ;
             _tree->create<double>(dsp_base_path / "freq/value")
-                .set_coercer(boost::bind(&lambda_forward_prop, _tree, get_arg_path("freq/value", chan), _1))
-                .set_publisher(boost::bind(&lambda_forward_prop, _tree, get_arg_path("freq/value", chan)))
+                .set_coercer([this, chan](const double value){
+                    return this->_tree->access<double>(
+                        this->get_arg_path("freq/value", chan)
+                    ).set(value).get();
+                })
+                .set_publisher([this, chan](){
+                    return this->_tree->access<double>(
+                        this->get_arg_path("freq/value", chan)
+                    ).get();
+                })
             ;
             _tree->create<uhd::meta_range_t>(dsp_base_path / "freq/range")
-                .set_publisher(boost::bind(&ddc_block_ctrl_impl::get_freq_range, this))
+                .set_publisher([this](){
+                    return get_freq_range();
+                })
             ;
             _tree->access<uhd::time_spec_t>("time/cmd")
-                .add_coerced_subscriber(boost::bind(&block_ctrl_base::set_command_time, this, _1, chan))
+                .add_coerced_subscriber([this, chan](const uhd::time_spec_t time_spec){
+                    this->set_command_time(time_spec, chan);
+                })
             ;
             if (_tree->exists("tick_rate")) {
-                const double tick_rate = _tree->access<double>("tick_rate").get();
+                const double tick_rate =
+                    _tree->access<double>("tick_rate").get();
                 set_command_tick_rate(tick_rate, chan);
                 _tree->access<double>("tick_rate")
-                    .add_coerced_subscriber(boost::bind(&block_ctrl_base::set_command_tick_rate, this, _1, chan))
+                    .add_coerced_subscriber([this, chan](const double rate){
+                        this->set_command_tick_rate(rate, chan);
+                    })
                 ;
             }
 
@@ -100,7 +120,8 @@ public:
             sr_write("CONFIG", 1, chan); // Enable clear EOB
         }
     } // end ctor
-    virtual ~ddc_block_ctrl_impl() {};
+
+    virtual ~ddc_block_ctrl_impl() {}
 
     double get_output_scale_factor(size_t port=ANY_PORT)
     {
@@ -226,8 +247,8 @@ private:
     double set_output_rate(const int requested_rate, const size_t chan)
     {
         const double input_rate = get_arg<double>("input_rate");
-        
-        const size_t decim_rate = boost::math::iround(input_rate/this->get_output_rates().clip(requested_rate, true));
+        const size_t decim_rate =
+            boost::math::iround(input_rate/this->get_output_rates().clip(requested_rate, true));
         size_t decim = decim_rate;
         // The FPGA knows which halfbands to enable for any given value of hb_enable.
         uint32_t hb_enable = 0;
@@ -253,7 +274,7 @@ private:
             ) % decim_rate % (input_rate/1e6) % (requested_rate/1e6);
         }
 
-        // Caclulate algorithmic gain of CIC for a given decimation.
+        // Calculate algorithmic gain of CIC for a given decimation.
         // For Ettus CIC R=decim, M=1, N=4. Gain = (R * M) ^ N
         const double rate_pow = std::pow(double(decim & 0xff), 4);
         // Calculate compensation gain values for algorithmic gain of CORDIC and CIC taking into account
@@ -300,13 +321,13 @@ private:
    //Get cached value of _num_halfbands
    size_t get_num_halfbands() const
    {
-       return (size_t) _num_halfbands;
+       return _num_halfbands;
    }
 
    //Get cached value of _cic_max_decim readback
    size_t get_cic_max_decim() const
    {
-       return (size_t) _cic_max_decim;
+       return _cic_max_decim;
    }
 
    //Check compatibility num, if not current, throw error.
@@ -317,17 +338,17 @@ private:
        uint64_t compat_num = user_reg_read64(RB_REG_COMPAT_NUM);
        uint32_t compat_num_major = compat_num>>32;
        uint32_t compat_num_minor = compat_num&0xFFFFFFFF;
-       if ( compat_num_major > MAJOR_COMP) {
-          throw uhd::runtime_error(str(boost::format(
-              "DDC RFNoC block is too new for this software. Please upgrade to a driver that supports hardware revision %d.")
-              % compat_num_major));
-       } else if ( compat_num_major < MAJOR_COMP) {
-          throw uhd::runtime_error(str(boost::format(
-              "DDC software is too new for this hardware. Please downgrade to a driver that supports hardware revision %d.")
-              % compat_num_major));
+       if (compat_num_major > MAJOR_COMP) {
+           throw uhd::runtime_error(str(boost::format(
+                   "DDC RFNoC block is too new for this software. Please upgrade to a driver that supports hardware revision %d.")
+                       % compat_num_major));
+       } else if (compat_num_major < MAJOR_COMP) {
+           throw uhd::runtime_error(str(boost::format(
+                   "DDC software is too new for this hardware. Please downgrade to a driver that supports hardware revision %d.")
+                       % compat_num_major));
        }
        if (compat_num_minor != MINOR_COMP) {
-         UHD_LOGGER_WARNING("DDC") << "DDC hardware compatability does not match software, this may have adverse affects on the block's behavior.";
+           UHD_LOGGER_WARNING("DDC") << "DDC hardware compatability does not match software, this may have adverse affects on the block's behavior.";
        }
    }
 };
