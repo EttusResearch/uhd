@@ -68,6 +68,24 @@ public:
        );
     }
 
+    size_t get_mtu(
+        const uhd::direction_t dir
+    ) const {
+        if (_xport_ctrls.empty()) {
+            UHD_LOG_WARNING("MPMD",
+                "Cannot determine MTU, no transport controls have been "
+                "established!");
+            return 0;
+        }
+
+        size_t mtu = ~size_t(0);
+        for (const auto &xport_ctrl_pair : _xport_ctrls) {
+            mtu = std::min(mtu, xport_ctrl_pair.second->get_mtu(dir));
+        }
+
+        return mtu;
+    }
+
 
 private:
     /**************************************************************************

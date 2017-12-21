@@ -204,6 +204,25 @@ namespace {
             ;
         }
 
+        /*** MTUs ***********************************************************/
+        tree->create<size_t>(mb_path / "mtu/recv")
+            .add_coerced_subscriber([](const size_t){
+                throw uhd::runtime_error(
+                    "Attempting to write read-only value (MTU)!");
+            })
+            .set_publisher([mb](){
+                return mb->get_mtu(uhd::RX_DIRECTION);
+            })
+        ;
+        tree->create<size_t>(mb_path / "mtu/send")
+            .add_coerced_subscriber([](const size_t){
+                throw uhd::runtime_error(
+                    "Attempting to write read-only value (MTU)!");
+            })
+            .set_publisher([mb](){
+                return mb->get_mtu(uhd::TX_DIRECTION);
+            })
+        ;
     }
 
     void reset_time_synchronized(uhd::property_tree::sptr tree)
@@ -389,20 +408,8 @@ mpmd_mboard_impl::uptr mpmd_impl::setup_mb(
     _tree->create<std::string>(mb_path / "connection")
         .set(mb->device_info.get("connection", "remote"));
 
-    // Do real MTU discovery (something similar like X300 but with MPM)
-
-    _tree->create<size_t>(mb_path / "mtu/recv").set(1500);
-    _tree->create<size_t>(mb_path / "mtu/send").set(1500);
     _tree->create<size_t>(mb_path / "link_max_rate").set(1e9 / 8);
 
-    // query more information about FPGA/MPM
-
-
-    // Query time/clock sources on mboards/dboards
-    // Throw rpc calls with boost bind into the property tree?
-
-
-    // implicit move
     return mb;
 }
 

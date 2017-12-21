@@ -194,6 +194,11 @@ uhd::both_xports_t mpmd_mboard_impl::make_transport(
     return xports;
 }
 
+size_t mpmd_mboard_impl::get_mtu(const uhd::direction_t dir) const
+{
+    return _xport_mgr->get_mtu(dir);
+}
+
 uhd::device_addr_t mpmd_mboard_impl::get_rx_hints() const
 {
     // TODO: See if we need to do anything here. get_rx_stream() might care.

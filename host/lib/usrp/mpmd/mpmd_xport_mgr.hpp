@@ -99,6 +99,12 @@ public:
         const uhd::device_addr_t& xport_args,
         xport_info_t& xport_info_out
     ) = 0;
+
+    /*! Return the path MTU for whatever this manager lets us do
+     */
+    virtual size_t get_mtu(
+        const uhd::direction_t dir
+    ) const = 0;
 };
 
 }}} /* namespace uhd::mpmd::xport */

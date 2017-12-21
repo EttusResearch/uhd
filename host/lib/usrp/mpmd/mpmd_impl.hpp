@@ -100,6 +100,8 @@ class mpmd_mboard_impl
         const uhd::device_addr_t& args
     );
 
+    size_t get_mtu(const uhd::direction_t dir) const;
+
 
     uhd::device_addr_t get_rx_hints() const;
     uhd::device_addr_t get_tx_hints() const;
