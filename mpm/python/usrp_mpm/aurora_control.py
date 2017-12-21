@@ -199,10 +199,9 @@ class AuroraControl(object):
         return bool(self.read_phy_ctrl_status() & 0x1)
 
     def reset_core(self):
-        " Reset PHY and MAC "
+        " Reset MAC. PHY reset not necessary"
         self.clear_control_reg()
         self.clear_mac()
-        self.reset_phy()
 
     def run_latency_loopback_bist(
             self,
