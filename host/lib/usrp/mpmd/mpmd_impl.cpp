@@ -93,7 +93,18 @@ namespace {
         /*** Clocking *******************************************************/
         tree->create<std::string>(mb_path / "clock_source/value")
             .add_coerced_subscriber([mb](const std::string &clock_source){
-                mb->rpc->notify_with_token("set_clock_source", clock_source);
+                // FIXME: Undo these changes
+                //mb->rpc->notify_with_token("set_clock_source", clock_source);
+                auto current_src = mb->rpc->request_with_token<std::string>(
+                    "get_clock_source"
+                );
+                if (current_src != clock_source) {
+                    UHD_LOG_WARNING("MPMD",
+                        "Setting clock source at runtime is currently not "
+                        "supported. Use clock_source=XXX as a device arg to "
+                        "select a clock source. The current source is: "
+                        << current_src);
+                }
             })
             .set_publisher([mb](){
                 return mb->rpc->request_with_token<std::string>(
@@ -111,7 +122,18 @@ namespace {
         ;
         tree->create<std::string>(mb_path / "time_source/value")
             .add_coerced_subscriber([mb](const std::string &time_source){
-                mb->rpc->notify_with_token("set_time_source", time_source);
+                //mb->rpc->notify_with_token("set_time_source", time_source);
+                // FIXME: Undo these changes
+                auto current_src = mb->rpc->request_with_token<std::string>(
+                    "get_time_source"
+                );
+                if (current_src != time_source) {
+                    UHD_LOG_WARNING("MPMD",
+                        "Setting time source at runtime is currently not "
+                        "supported. Use time_source=XXX as a device arg to "
+                        "select a time source. The current source is: "
+                        << current_src);
+                }
             })
             .set_publisher([mb](){
                 return mb->rpc->request_with_token<std::string>(
