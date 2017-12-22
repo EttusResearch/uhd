@@ -39,8 +39,9 @@ mpmd_xport_ctrl_liberio::make_transport(
 ) {
     transport::zero_copy_xport_params default_buff_args;
     /* default ones for RX / TX, override below */
-    default_buff_args.send_frame_size = 4 * getpagesize();
-    default_buff_args.recv_frame_size = 4 * getpagesize();
+
+    default_buff_args.send_frame_size = get_mtu(uhd::TX_DIRECTION);
+    default_buff_args.recv_frame_size = get_mtu(uhd::RX_DIRECTION);
     default_buff_args.num_recv_frames = 128;
     default_buff_args.num_send_frames = 128;
 
@@ -132,7 +133,7 @@ bool mpmd_xport_ctrl_liberio::is_valid(
 size_t mpmd_xport_ctrl_liberio::get_mtu(
     const uhd::direction_t /* dir */
 ) const {
-    return 8000;
+    return 2 * getpagesize();
 }
 
 uhd::transport::muxed_zero_copy_if::sptr
