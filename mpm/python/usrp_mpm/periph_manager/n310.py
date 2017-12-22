@@ -13,6 +13,8 @@ import copy
 import shutil
 import subprocess
 import json
+import time
+import datetime
 from six import iteritems, itervalues
 from builtins import object
 from usrp_mpm.gpsd_iface import GPSDIface
@@ -333,6 +335,7 @@ class n310(PeriphManagerBase):
         # Init Mboard Regs
         self.mboard_regs_control = MboardRegsControl(self.mboard_regs_label, self.log)
         self.mboard_regs_control.get_git_hash()
+        self.mboard_regs_control.get_build_timestamp()
         self._check_fpga_compat()
         # Init peripherals
         self.log.trace("Initializing TCA6424 port expander controls...")
@@ -934,13 +937,16 @@ class MboardRegsControl(object):
     Control the FPGA Motherboard registers
     """
     # Motherboard registers
-    MB_DESIGN_REV = 0x0000
-    MB_DATESTAMP = 0x0004
-    MB_GIT_HASH = 0x0008
-    MB_BUS_COUNTER = 0x00C
-    MB_NUM_CE = 0x0010
-    MB_SCRATCH = 0x0014
-    MB_CLOCK_CTRL = 0x0018
+    M_COMPAT_NUM    = 0x0000
+    MB_DATESTAMP    = 0x0004
+    MB_GIT_HASH     = 0x0008
+    MB_SCRATCH      = 0x000C
+    MB_NUM_CE       = 0x0010
+    MB_NUM_IO_CE    = 0x0014
+    MB_CLOCK_CTRL   = 0x0018
+    MB_XADC_RB      = 0x001C
+    MB_BUS_CLK_RATE = 0x0020
+    MB_BUS_COUNTER  = 0x0024
 
     # Bitfield locations for the MB_CLOCK_CTRL register.
     MB_CLOCK_CTRL_PPS_SEL_INT_10 = 0 # pps_sel is one-hot encoded!
@@ -968,20 +974,48 @@ class MboardRegsControl(object):
         2 numbers: (major compat number, minor compat number )
         """
         with self.regs.open():
-            compat_number = self.peek32(self.MB_DESIGN_REV)
+            compat_number = self.peek32(self.M_COMPAT_NUM)
         minor = compat_number & 0xff
         major = (compat_number>>16) & 0xff
         self.log.trace("FPGA compat number: {:d}.{:d}".format(major, minor))
         return (major, minor)
 
+    def get_build_timestamp(self):
+        """
+        Returns the build date/time for the FPGA image.
+        The return is datetime string with the  ISO 8601 format
+        (YYYY-MM-DD HH:MM:SS.mmmmmm)
+        """
+        with self.regs.open():
+            datestamp_rb = self.peek32(self.MB_DATESTAMP)
+        if datestamp_rb > 0:
+            dt_str = datetime.datetime(
+                year=((datestamp_rb>>17)&0x3F)+2000,
+                month=(datestamp_rb>>23)&0x0F,
+                day=(datestamp_rb>>27)&0x1F,
+                hour=(datestamp_rb>>12)&0x1F,
+                minute=(datestamp_rb>>6)&0x3F,
+                second=((datestamp_rb>>0)&0x3F))
+            self.log.trace("FPGA build timestamp: {}".format(str(dt_str)))
+            return str(dt_str)
+        else:
+            # Compatibility with FPGAs without datestamp capability
+            return ''
+
     def get_git_hash(self):
         """
         Returns the GIT hash for the FPGA build.
+        The return is a tuple of
+        2 numbers: (short git hash, bool: is the tree dirty?)
         """
         with self.regs.open():
-            git_hash = self.peek32(self.MB_GIT_HASH)
-        self.log.trace("FPGA build GIT Hash: 0x{:08X}".format(git_hash))
-        return git_hash
+            git_hash_rb = self.peek32(self.MB_GIT_HASH)
+        git_hash = git_hash_rb & 0x0FFFFFFF
+        tree_dirty = ((git_hash_rb & 0xF0000000) > 0)
+        dirtiness_qualifier = 'dirty' if tree_dirty else 'clean'
+        self.log.trace("FPGA build GIT Hash: {:07x} ({})".format(
+            git_hash, dirtiness_qualifier))
+        return (git_hash, dirtiness_qualifier)
 
     def set_time_source(self, time_source, ref_clk_freq):
         """
