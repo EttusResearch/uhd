@@ -22,6 +22,7 @@ from usrp_mpm.rpc_server import no_rpc
 from usrp_mpm.sys_utils import dtoverlay
 from usrp_mpm.sys_utils.sysfs_gpio import SysFSGPIO
 from usrp_mpm.sys_utils.uio import UIO
+from usrp_mpm.sys_utils.sysfs_thermal import read_thermal_sensor_value
 from usrp_mpm.xports import XportMgrUDP, XportMgrLiberio
 
 N3XX_DEFAULT_EXT_CLOCK_FREQ = 10e6
@@ -250,6 +251,8 @@ class n310(PeriphManagerBase):
         'gps_time': 'get_gps_time_sensor',
         'gps_tpv': 'get_gps_tpv_sensor',
         'gps_sky': 'get_gps_sky_sensor',
+        'temp': 'get_temp_sensor',
+        'fan': 'get_fan_sensor',
     }
     dboard_eeprom_addr = "e0004000.i2c"
     dboard_eeprom_max_len = 64
@@ -656,6 +659,46 @@ class n310(PeriphManagerBase):
             'type': 'BOOLEAN',
             'unit': 'locked' if lock_status else 'unlocked',
             'value': str(lock_status).lower(),
+        }
+
+    def get_temp_sensor(self):
+        """
+        Get temperature sensor reading of the N3xx.
+        """
+        self.log.trace("Reading fpga temperature.")
+        return_val = '-1'
+        try:
+            raw_val = read_thermal_sensor_value('fpga-thermal-zone', 'temp')
+            return_val = str(raw_val/1000)
+        except ValueError:
+            self.log.warning("Error when converting temperature value")
+        except KeyError:
+            self.log.warning("Can't read temp on fpga-thermal-zone")
+        return {
+            'name': 'temperature',
+            'type': 'DOUBLE',
+            'unit': 'C',
+            'value': return_val
+        }
+
+    def get_fan_sensor(self):
+        """
+        Get cooling device reading of N3xx. In this case the speed of fan 0.
+        """
+        self.log.trace("Reading fpga cooling device.")
+        return_val = '-1'
+        try:
+            raw_val = read_thermal_sensor_value('ec-fan0', 'cur_state')
+            return_val = str(raw_val)
+        except ValueError:
+            self.log.warning("Error when converting fan speed value")
+        except KeyError:
+            self.log.warning("Can't read cur_state on ec-fan0")
+        return {
+            'name': 'cooling fan',
+            'type': 'INTEGER',
+            'unit': 'rpm',
+            'value': return_val
         }
 
     def get_gps_lock_sensor(self):
