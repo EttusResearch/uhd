@@ -14,6 +14,19 @@ using namespace uhd::mpmd::xport;
 
 namespace {
 
+    //! Max frame size of a control packet in bytes
+    const size_t LIBERIO_CTRL_FRAME_MAX_SIZE = 128;
+    //! Max frame size of an async message packet in bytes
+    const size_t LIBERIO_ASYNC_FRAME_MAX_SIZE = 256;
+    //! Max frame size of a flow control packet in bytes
+    const size_t LIBERIO_FC_FRAME_MAX_SIZE = 64;
+    //! The max MTU will be this number times the page size
+    const size_t LIBERIO_PAGES_PER_BUF  = 2;
+    //! Number of descriptors that liberio allocates (receive)
+    const size_t LIBERIO_NUM_RECV_FRAMES = 128;
+    //! Number of descriptors that liberio allocates (send)
+    const size_t LIBERIO_NUM_SEND_FRAMES = 128;
+
     uint32_t extract_sid_from_pkt(void* pkt, size_t) {
         return uhd::sid_t(uhd::wtohx(static_cast<const uint32_t*>(pkt)[1]))
             .get_dst();
@@ -42,19 +55,19 @@ mpmd_xport_ctrl_liberio::make_transport(
 
     default_buff_args.send_frame_size = get_mtu(uhd::TX_DIRECTION);
     default_buff_args.recv_frame_size = get_mtu(uhd::RX_DIRECTION);
-    default_buff_args.num_recv_frames = 128;
-    default_buff_args.num_send_frames = 128;
+    default_buff_args.num_recv_frames = LIBERIO_NUM_RECV_FRAMES;
+    default_buff_args.num_send_frames = LIBERIO_NUM_SEND_FRAMES;
 
     if (xport_type == usrp::device3_impl::CTRL) {
-      default_buff_args.send_frame_size = 128;
-      default_buff_args.recv_frame_size = 128;
+        default_buff_args.send_frame_size = LIBERIO_CTRL_FRAME_MAX_SIZE;
+        default_buff_args.recv_frame_size = LIBERIO_CTRL_FRAME_MAX_SIZE;
     } else if (xport_type == usrp::device3_impl::ASYNC_MSG) {
-      default_buff_args.send_frame_size = 256;
-      default_buff_args.recv_frame_size = 256;
+        default_buff_args.send_frame_size = LIBERIO_ASYNC_FRAME_MAX_SIZE;
+        default_buff_args.recv_frame_size = LIBERIO_ASYNC_FRAME_MAX_SIZE;
     } else if (xport_type == usrp::device3_impl::RX_DATA) {
-      default_buff_args.send_frame_size = 64;
+        default_buff_args.send_frame_size = LIBERIO_FC_FRAME_MAX_SIZE;
     } else {
-      default_buff_args.recv_frame_size = 64;
+        default_buff_args.recv_frame_size = LIBERIO_FC_FRAME_MAX_SIZE;
     }
 
     const std::string tx_dev = xport_info["tx_dev"];
@@ -69,9 +82,9 @@ mpmd_xport_ctrl_liberio::make_transport(
     // buffer...
     float divisor = 1;
     if (xport_type == usrp::device3_impl::CTRL)
-      divisor = 16;
+        divisor = 16;
     else if (xport_type == usrp::device3_impl::ASYNC_MSG)
-      divisor = 4;
+        divisor = 4;
 
 
     //if (xport_info["muxed"] == "True") {
@@ -80,8 +93,8 @@ mpmd_xport_ctrl_liberio::make_transport(
     if (xport_type == usrp::device3_impl::CTRL) {
         UHD_ASSERT_THROW(xport_info["muxed"] == "True");
         if (not _ctrl_dma_xport) {
-            default_buff_args.send_frame_size = 128;
-            default_buff_args.recv_frame_size = 128;
+            default_buff_args.send_frame_size = LIBERIO_CTRL_FRAME_MAX_SIZE;
+            default_buff_args.recv_frame_size = LIBERIO_CTRL_FRAME_MAX_SIZE;
             _ctrl_dma_xport = make_muxed_liberio_xport(tx_dev, rx_dev,
                     default_buff_args, int(divisor));
         }
@@ -92,8 +105,8 @@ mpmd_xport_ctrl_liberio::make_transport(
     } else if (xport_type == usrp::device3_impl::ASYNC_MSG) {
         UHD_ASSERT_THROW(xport_info["muxed"] == "True");
         if (not _async_msg_dma_xport) {
-            default_buff_args.send_frame_size = 256;
-            default_buff_args.recv_frame_size = 256;
+            default_buff_args.send_frame_size = LIBERIO_ASYNC_FRAME_MAX_SIZE;
+            default_buff_args.recv_frame_size = LIBERIO_ASYNC_FRAME_MAX_SIZE;
             _async_msg_dma_xport = make_muxed_liberio_xport(
                     tx_dev, rx_dev, default_buff_args, int(divisor));
         }
@@ -103,8 +116,7 @@ mpmd_xport_ctrl_liberio::make_transport(
         xports.recv =
             _async_msg_dma_xport->make_stream(xports.recv_sid.get_dst());
     } else {
-        xports.recv =
-            transport::liberio_zero_copy::make(
+        xports.recv = transport::liberio_zero_copy::make(
                     tx_dev, rx_dev, default_buff_args);
     }
 
@@ -133,7 +145,7 @@ bool mpmd_xport_ctrl_liberio::is_valid(
 size_t mpmd_xport_ctrl_liberio::get_mtu(
     const uhd::direction_t /* dir */
 ) const {
-    return 2 * getpagesize();
+    return LIBERIO_PAGES_PER_BUF * getpagesize();
 }
 
 uhd::transport::muxed_zero_copy_if::sptr
