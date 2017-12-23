@@ -359,8 +359,6 @@ class n310(PeriphManagerBase):
         # Init clocking
         self.enable_ref_clock(enable=True)
         self._ext_clock_freq = None
-        self._clock_source = None
-        self._time_source = None
         self._init_ref_clock_and_time(args.default_args)
         self._init_meas_clock()
         # Init CHDR transports
@@ -589,6 +587,10 @@ class n310(PeriphManagerBase):
     def set_time_source(self, time_source):
         " Set a time source "
         assert time_source in self.get_time_sources()
+        if time_source == self.get_time_source():
+            self.log.trace("Nothing to do -- time source already set.")
+            return
+        self._time_source = time_source
         self.mboard_regs_control.set_time_source(time_source, self.get_ref_clock_freq())
 
     def enable_pps_out(self, enable):
