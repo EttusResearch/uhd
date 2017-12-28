@@ -645,7 +645,9 @@ device_addrs_t mpmd_find_with_addrs(const device_addrs_t& hints)
             "Device responded: " << reply_addrs[0].to_string());
         found_devices.push_back(reply_addrs[0]);
     }
-    if (found_devices.size() == 1) {
+    if (found_devices.size() == 0) {
+        return device_addrs_t();
+    } else if (found_devices.size() == 1) {
         return found_devices;
     } else {
         return device_addrs_t(1, combine_device_addrs(found_devices));
