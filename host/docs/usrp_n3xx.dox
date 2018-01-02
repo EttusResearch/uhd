@@ -87,7 +87,56 @@ You should be presented with a shell similar to the following (FIXME):
 
 \subsection n3xx_getting_started_connectivity Network Connectivity
 
-tbw (Using ifconfig, using systemd to set static IPs)
+The RJ45 port (eth0) comes up with a default configuration of DHCP,
+that will request a network address from your DHCP server.
+
+The SFP+ (eth1, eth2) ports are configured with static addresses 192.168.10.2/24
+and 192.168.20.2/24 respectively.
+
+The configuration for the ethX port is stored in /etc/systemd/networkd/ethX.network.
+
+For configuration please refer to the  manual pages
+<a href=https://www.freedesktop.org/software/systemd/man/systemd.network.html> systemd-networkd manual pages</a>
+
+The factory settings are as follows:
+
+eth0 (DHCP):
+
+    [Match]
+    Name=eth0
+
+    [Network]
+    DHCP=v4
+
+    [DHCPv4]
+    UseHostname=false
+
+eth1 (static):
+
+    [Match]
+    Name=eth1
+
+    [Network]
+    Address=192.168.10.2/24
+
+    [Link]
+    MTUBytes=9000
+
+eth2 (static):
+
+    [Match]
+    Name=eth2
+
+    [Network]
+    Address=192.168.20.2/24
+
+    [Link]
+    MTUBytes=9000
+
+Note: Care needs to be taken when editing these files on the device, since vi / vim sometimes generates
+undo files (e.g. /etc/systemd/networkd/eth1.network~), that systemd-networkd might pick up.
+
+Note: Temporarily setting the IP addresses via ifconfig etc will only change the value till the next reboot / reload of the FPGA image.
 
 \subsection n3xx_getting_started_security Security-related settings
 
