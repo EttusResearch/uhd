@@ -138,7 +138,7 @@ class PeriphManagerBase(object):
         try:
             self._init_mboard_with_eeprom()
             self._init_mboard_overlays(self._eeprom_head, args)
-            self._init_dboards(args.override_db_pids)
+            self._init_dboards(args.override_db_pids, args)
             self._device_initialized = True
         except Exception as ex:
             self.log.error("Failed to initialize device: %s", str(ex))
@@ -220,7 +220,7 @@ class PeriphManagerBase(object):
         sleep(1)
 
 
-    def _init_dboards(self, override_dboard_pids=None):
+    def _init_dboards(self, override_dboard_pids, default_args):
         """
         Initialize all the daughterboards
         """
@@ -279,6 +279,7 @@ class PeriphManagerBase(object):
                 'eeprom_rawdata': dboard_eeprom_rawdata,
                 'pid': db_pid,
                 'spi_nodes': spi_nodes,
+                'default_args': default_args,
             }
             # This will actually instantiate the dboard class:
             self.dboards.append(db_class(dboard_idx, **dboard_info))
