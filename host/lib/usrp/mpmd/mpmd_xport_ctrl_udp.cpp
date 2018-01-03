@@ -159,10 +159,14 @@ mpmd_xport_ctrl_udp::mpmd_xport_ctrl_udp(
   , _available_addrs(get_addrs_from_mb_args(mb_args))
   , _mtu(MPMD_10GE_DATA_FRAME_MAX_SIZE)
 {
-    auto discover_mtu_for_ip = [](const std::string &ip_addr){
+    const std::string mpm_discovery_port = _mb_args.get(
+        mpmd_impl::MPM_DISCOVERY_PORT_KEY,
+        std::to_string(mpmd_impl::MPM_DISCOVERY_PORT)
+    );
+    auto discover_mtu_for_ip = [mpm_discovery_port](const std::string &ip_addr){
         return discover_mtu(
             ip_addr,
-            std::to_string(mpmd_impl::MPM_DISCOVERY_PORT),
+            mpm_discovery_port,
             IP_PROTOCOL_MIN_MTU_SIZE-IP_PROTOCOL_UDP_PLUS_IP_HEADER,
             MPMD_10GE_DATA_FRAME_MAX_SIZE,
             MPMD_MTU_DISCOVERY_TIMEOUT

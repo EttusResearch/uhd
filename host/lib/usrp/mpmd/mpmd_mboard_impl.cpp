@@ -96,6 +96,7 @@ namespace {
 using namespace uhd;
 using namespace uhd::mpmd;
 
+
 /*****************************************************************************
  * Structors
  ****************************************************************************/
@@ -105,7 +106,10 @@ mpmd_mboard_impl::mpmd_mboard_impl(
 ) : mb_args(mb_args_)
   , rpc(uhd::rpc_client::make(
               rpc_server_addr,
-              mpmd_impl::MPM_RPC_PORT,
+              mb_args_.cast<size_t>(
+                  mpmd_impl::MPM_RPC_PORT_KEY,
+                  mpmd_impl::MPM_RPC_PORT
+              ),
               mpmd_impl::MPM_RPC_GET_LAST_ERROR_CMD))
   , _xport_mgr(xport::mpmd_xport_mgr::make(mb_args))
 {

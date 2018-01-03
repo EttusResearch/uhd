@@ -146,10 +146,16 @@ class mpmd_mboard_impl
 class mpmd_impl : public uhd::usrp::device3_impl
 {
 public:
-    //! Port on which the discovery process is listening
-    static const size_t MPM_DISCOVERY_PORT = 49600;
-    //! Port on which the RPC process is listening
-    static const size_t MPM_RPC_PORT = 49601;
+    //! Port on which the discovery process is listening (default value, it is
+    //  user-overridable)
+    static const size_t MPM_DISCOVERY_PORT;
+    //! Device arg key to override the discovery port
+    static const std::string MPM_DISCOVERY_PORT_KEY;
+    //! Port on which the RPC process is listening (default value, it is user-
+    //  overridable)
+    static const size_t MPM_RPC_PORT;
+    //! Device arg key to override the RPC port
+    static const std::string MPM_RPC_PORT_KEY;
     //! This is the command that needs to be sent to the discovery port to
     // trigger a response.
     static const std::string MPM_DISCOVERY_CMD;

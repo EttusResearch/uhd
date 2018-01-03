@@ -172,7 +172,7 @@ For a list of which arguments can be passed into make(), see Section
 ---------------------|------------------------------------------------------------------------------|-------------------|---------------------
  addr                | IPv4 address of primary SFP+ port to connect to.                             | All N3xx          | addr=192.168.30.2
  second_addr         | IPv4 address of secondary SFP+ port to connect to.                           | All N3xx          | second_addr=192.168.40.2
- mgmt_addr           | IPv4 address which to connect the RPC client. Defaults to `addr.             | All N3xx          | mgmt_addr=10.1.2.3 (can also go to RJ45)
+ mgmt_addr           | IPv4 address or hostname which to connect the RPC client. Defaults to `addr'.| All N3xx          | mgmt_addr=ni-sulfur-311FE00 (can also go to RJ45)
  master_clock_rate   | Master Clock Rate in Hz                                                      | N310              | master_clock_rate=125e6
  identify            | Causes front-panel LEDs to blink. The duration is variable.                  | N310              | identify=5 (will blink for about 5 seconds)
  serialize_init      | Force serial initialization of daughterboards.                               | All N3xx          | serialize_init=1
@@ -182,6 +182,8 @@ For a list of which arguments can be passed into make(), see Section
  ref_clk_freq        | Specify the external reference clock frequency, default is 10 MHz.           | N310              | ref_clk_freq=20e6
  init_cals           | Specify the bitmask for initial calibrations of the RFIC.                    | N310              | init_cals=0x4DFF
  init_cals_timeout   | Timeout for initial calibrations in milliseconds.                            | N310              | init_cals_timeout=45000
+ discovery_port      | Override default value for MPM discovery port.                               | All N3xx          | discovery_port=49700
+ rpc_port            | Override default value for MPM RPC port.                                     | All N3xx          | rpc_port=49701
  tracking_cals       | Specify the bitmask for tracking calibrations of the RFIC.                   | N310              | tracking_cals=0xC3
  rx_lo_source        | Initialize the source for the RX LO.                                         | N310              | rx_lo_source=external
  tx_lo_source        | Initialize the source for the TX LO.                                         | N310              | tx_lo_source=external

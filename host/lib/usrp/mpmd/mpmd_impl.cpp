@@ -309,6 +309,10 @@ namespace {
 /*****************************************************************************
  * Static class attributes
  ****************************************************************************/
+const size_t mpmd_impl::MPM_DISCOVERY_PORT = 49600;
+const std::string mpmd_impl::MPM_DISCOVERY_PORT_KEY = "discovery_port";
+const size_t mpmd_impl::MPM_RPC_PORT = 49601;
+const std::string mpmd_impl::MPM_RPC_PORT_KEY = "rpc_port";
 const std::string mpmd_impl::MPM_RPC_GET_LAST_ERROR_CMD = "get_last_error";
 const std::string mpmd_impl::MPM_DISCOVERY_CMD = "MPM-DISC";
 const std::string mpmd_impl::MPM_ECHO_CMD = "MPM-ECHO";
@@ -532,10 +536,16 @@ size_t mpmd_impl::allocate_xbar_local_addr()
 device_addrs_t mpmd_find_with_addr(const std::string& mgmt_addr, const device_addr_t& hint_)
 {
     UHD_ASSERT_THROW(not mgmt_addr.empty());
+    const std::string mpm_discovery_port = hint_.get(
+        mpmd_impl::MPM_DISCOVERY_PORT_KEY,
+        std::to_string(mpmd_impl::MPM_DISCOVERY_PORT)
+    );
+    UHD_LOG_DEBUG("MPMD",
+        "Discovering MPM devices on port " << mpm_discovery_port);
 
     device_addrs_t addrs;
     transport::udp_simple::sptr comm = transport::udp_simple::make_broadcast(
-        mgmt_addr, std::to_string(mpmd_impl::MPM_DISCOVERY_PORT));
+        mgmt_addr, mpm_discovery_port);
     comm->send(
         boost::asio::buffer(
             mpmd_impl::MPM_DISCOVERY_CMD.c_str(),
