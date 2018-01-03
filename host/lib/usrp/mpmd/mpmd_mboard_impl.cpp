@@ -259,6 +259,13 @@ uhd::device_addr_t mpmd_mboard_impl::get_tx_hints() const
     return tx_hints;
 }
 
+void mpmd_mboard_impl::set_timeout_default()
+{
+    rpc->set_timeout(mb_args.cast<size_t>(
+            "rpc_timeout", MPMD_DEFAULT_RPC_TIMEOUT
+    ));
+}
+
 
 /*****************************************************************************
  * Private methods

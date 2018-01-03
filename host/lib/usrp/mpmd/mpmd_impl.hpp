@@ -106,6 +106,9 @@ class mpmd_mboard_impl
     uhd::device_addr_t get_rx_hints() const;
     uhd::device_addr_t get_tx_hints() const;
 
+    //! Set the RPC call timeout to the default value
+    void set_timeout_default();
+
   private:
     /*************************************************************************
      * Private methods
