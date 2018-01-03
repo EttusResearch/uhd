@@ -50,9 +50,12 @@ def to_native_str(str_or_bstr):
     """
     if isinstance(str_or_bstr, str):
         return str_or_bstr
-    if sys.version_info.major >= 3:
+    try:
+        # This will either fail because we're running Python 2 (which doesn't)
+        # have the encoding argument) or because we're not passing in a bytes-
+        # like object (e.g., an integer)
         return str(str_or_bstr, encoding='ascii')
-    else:
+    except TypeError:
         return str(str_or_bstr)
 
 def to_binary_str(str_or_bstr):
