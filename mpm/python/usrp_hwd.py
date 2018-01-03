@@ -73,16 +73,20 @@ def parse_args():
     """
     args = setup_arg_parser().parse_args()
     if args.override_db_pids is not None:
-        args.override_db_pids = [int(x, 0) for x in args.override_db_pids.split(",")]
+        args.override_db_pids = [
+            int(x, 0) for x in args.override_db_pids.split(",")
+        ]
     args.default_args = args.default_args or ''
     try:
         args.default_args = {
-            x.split('=')[0].strip(): x.split('=')[1].strip() if x.find('=') != -1 else ''
+            x.split('=')[0].strip(): x.split('=')[1].strip()
+                                     if x.find('=') != -1 else ''
             for x in args.default_args.split(',')
             if len(x)
         }
     except IndexError:
-        log.error("Could not parse default device args: `{}'".format(args.default_args))
+        print("Could not parse default device args: `{}'".format(
+            args.default_args))
     return args
 
 
