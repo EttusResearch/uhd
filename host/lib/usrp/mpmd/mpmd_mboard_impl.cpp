@@ -22,12 +22,15 @@ namespace {
     const size_t MPMD_DEFAULT_RPC_TIMEOUT     = 2000;
     //! Default session ID (MPM will recognize a session by this name)
     const std::string MPMD_DEFAULT_SESSION_ID = "UHD";
+    //! Key to initialize a ping/measurement latency test
+    const std::string MPMD_MEAS_LATENCY_KEY = "measure_rpc_latency";
+    //! Duration of a latency measurement test
+    constexpr size_t MPMD_MEAS_LATENCY_DURATION = 1000;
 
 
     /*************************************************************************
      * Helper functions
      ************************************************************************/
-
     void init_device(
             uhd::rpc_client::sptr rpc,
             const uhd::device_addr_t mb_args
@@ -51,6 +54,41 @@ namespace {
         rpc->set_timeout(mb_args.cast<size_t>(
             "rpc_timeout", MPMD_DEFAULT_RPC_TIMEOUT
         ));
+    }
+
+    void measure_rpc_latency(
+        uhd::rpc_client::sptr rpc,
+        const size_t duration_ms=MPMD_MEAS_LATENCY_DURATION
+    ) {
+        const double alpha = 0.99;
+        const std::string payload = "1234567890";
+        auto measure_once = [payload, rpc](){
+            const auto start = std::chrono::steady_clock::now();
+            rpc->request<std::string>("ping", payload);
+            return (double) std::chrono::duration_cast<std::chrono::microseconds>(
+                    std::chrono::steady_clock::now() - start
+            ).count();
+        };
+
+        double max_latency = measure_once();
+        double avg_latency = max_latency;
+
+        auto end_time = std::chrono::steady_clock::now()
+                            + std::chrono::milliseconds(duration_ms);
+        size_t ctr = 1;
+        while (std::chrono::steady_clock::now() < end_time) {
+            const auto duration = measure_once();
+            max_latency = std::max(max_latency, duration);
+            avg_latency = avg_latency * alpha + (1-alpha) * duration;
+            ctr++;
+            // Light throttle:
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        }
+
+        UHD_LOG_INFO("MPMD",
+            "RPC latency (coarse estimate): Avg = " << avg_latency << " us, "
+            "Max = " << max_latency
+            << ", n = " << ctr);
     }
 
 }
@@ -78,6 +116,10 @@ mpmd_mboard_impl::mpmd_mboard_impl(
     ;
 
     _claimer_task = claim_device_and_make_task(rpc, mb_args);
+    if (mb_args_.has_key(MPMD_MEAS_LATENCY_KEY)) {
+        measure_rpc_latency(rpc, MPMD_MEAS_LATENCY_DURATION);
+    }
+
     // No one else can now claim the device.
     if (mb_args_.has_key("skip_init")) {
         UHD_LOG_DEBUG("MPMD", "Claimed device, but skipped init.");
