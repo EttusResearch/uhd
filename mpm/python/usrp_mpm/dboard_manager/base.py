@@ -10,6 +10,7 @@ dboard base implementation module
 from builtins import object
 from six import iteritems
 from usrp_mpm.mpmlog import get_logger
+from usrp_mpm.mpmutils import to_native_str
 
 class DboardManagerBase(object):
     """
@@ -39,19 +40,10 @@ class DboardManagerBase(object):
         self.slot_idx = slot_idx
         if 'eeprom_md' not in kwargs:
             self.log.warn("No EEPROM metadata given!")
-        def anystr_to_str(any_str):
-            """
-            Convert byte-string or regular string to regular string, regardless
-            of Python version (2 or 3).
-            """
-            try:
-                return str(any_str, 'ascii')
-            except TypeError:
-                return str(any_str)
         # In C++, we can only handle dicts if all the values are of the
         # same type. So we must convert them all to strings here:
         self.device_info = {
-            key: anystr_to_str(kwargs.get('eeprom_md', {}).get(key, 'n/a'))
+            key: to_native_str(kwargs.get('eeprom_md', {}).get(key, 'n/a'))
             for key in ('pid', 'serial', 'rev', 'eeprom_version')
         }
         self.log.trace("Dboard device info: `{}'".format(self.device_info))
