@@ -315,33 +315,232 @@ void magnesium_radio_ctrl_impl::_init_frontend_subtree(
             return this->set_tx_gain(gain, chan_idx);
         })
         .set_publisher([this, chan_idx](){
-            return this->get_tx_gain(chan_idx);
+            return radio_ctrl_impl::get_tx_gain(chan_idx);
         })
     ;
     subtree->create<meta_range_t>(tx_fe_path / "gains" / "all" / "range")
-        .set(meta_range_t(ALL_TX_MIN_GAIN, ALL_TX_MAX_GAIN, ALL_TX_GAIN_STEP))
         .add_coerced_subscriber([](const meta_range_t &){
             throw uhd::runtime_error(
-                "Attempting to update bandwidth range!");
+                "Attempting to update gain range!");
+        })
+        .set_publisher([this, chan_idx](){
+            if (_gain_profile[TX_DIRECTION] == "manual") {
+                return meta_range_t(0.0, 0.0, 0.0);
+            }else{
+                return meta_range_t(ALL_TX_MIN_GAIN, ALL_TX_MAX_GAIN, ALL_TX_GAIN_STEP);
+            }
         })
     ;
+
+    subtree->create<std::vector<std::string> >(tx_fe_path / "gains/all/profile/options")
+            .set(boost::assign::list_of("manual")("default"));
+
+    subtree->create<std::string>(tx_fe_path / "gains/all/profile/value")
+        .set_coercer([this, chan_idx](const std::string& profile){
+            std::string return_profile = profile;
+            if (std::find(MAGNESIUM_GP_OPTIONS.begin(),
+                         MAGNESIUM_GP_OPTIONS.end(),
+                         profile
+                         ) == MAGNESIUM_GP_OPTIONS.end())
+            {
+                return_profile = "default";
+            }
+            _gain_profile[TX_DIRECTION] = return_profile;
+            return return_profile;
+        })
+        .set_publisher([this, chan_idx](){
+            return _gain_profile[TX_DIRECTION];
+        })
+    ;
+
     // RX gains
     subtree->create<double>(rx_fe_path / "gains" / "all" / "value")
         .set_coercer([this, chan_idx](const double gain){
             return this->set_rx_gain(gain, chan_idx);
         })
         .set_publisher([this, chan_idx](){
-            return this->get_rx_gain(chan_idx);
+            return radio_ctrl_impl::get_rx_gain(chan_idx);
         })
     ;
+
     subtree->create<meta_range_t>(rx_fe_path / "gains" / "all" / "range")
-        .set(meta_range_t(ALL_RX_MIN_GAIN, ALL_RX_MAX_GAIN, ALL_RX_GAIN_STEP))
         .add_coerced_subscriber([](const meta_range_t &){
             throw uhd::runtime_error(
-                "Attempting to update bandwidth range!");
+                "Attempting to update gain range!");
+        })
+        .set_publisher([this, chan_idx](){
+            if (_gain_profile[RX_DIRECTION] == "manual") {
+                return meta_range_t(0.0, 0.0, 0.0);
+            }else{
+                return meta_range_t(ALL_RX_MIN_GAIN, ALL_RX_MAX_GAIN, ALL_RX_GAIN_STEP);
+            }
         })
     ;
-    // FIXME separate DSA and Myk gains
+
+    subtree->create<std::vector<std::string> >(rx_fe_path / "gains/all/profile/options")
+            .set(MAGNESIUM_GP_OPTIONS);
+
+    subtree->create<std::string>(rx_fe_path / "gains/all/profile/value")
+        .set_coercer([this, chan_idx](const std::string& profile){
+            std::string return_profile = profile;
+            if (std::find(MAGNESIUM_GP_OPTIONS.begin(),
+                         MAGNESIUM_GP_OPTIONS.end(),
+                         profile
+                         ) == MAGNESIUM_GP_OPTIONS.end())
+            {
+                return_profile = "default";
+            }
+            _gain_profile[RX_DIRECTION] = return_profile;
+            return return_profile;
+        })
+        .set_publisher([this, chan_idx](){
+            return _gain_profile[RX_DIRECTION];
+        })
+    ;
+
+    // TX mykonos attenuation
+    subtree->create<double>(tx_fe_path / "gains" / MAGNESIUM_GAIN1 / "value")
+        .set_coercer([this, chan_idx](const double gain){
+            return _set_tx_gain(MAGNESIUM_GAIN1, gain, chan_idx);
+        })
+        .set_publisher([this, chan_idx](){
+            return this->_get_tx_gain(MAGNESIUM_GAIN1, chan_idx);
+        })
+    ;
+
+    subtree->create<meta_range_t>(tx_fe_path / "gains" / MAGNESIUM_GAIN1 / "range")
+        .add_coerced_subscriber([](const meta_range_t &){
+            throw uhd::runtime_error(
+                "Attempting to update gain range!");
+        })
+        .set_publisher([this, chan_idx](){
+            if (_gain_profile[TX_DIRECTION] == "manual") {
+                return meta_range_t(AD9371_MIN_TX_GAIN, AD9371_MAX_TX_GAIN, AD9371_TX_GAIN_STEP);
+            }else{
+                return meta_range_t(0.0, 0.0, 0.0);
+            }
+        })
+    ;
+     // TX DSA
+    subtree->create<double>(tx_fe_path / "gains" / MAGNESIUM_GAIN2 / "value")
+        .set_coercer([this, chan_idx](const double gain){
+            return this->_set_tx_gain(MAGNESIUM_GAIN2, gain, chan_idx);
+        })
+        .set_publisher([this, chan_idx](){
+            return this->_get_tx_gain(MAGNESIUM_GAIN2, chan_idx);
+        })
+    ;
+
+    subtree->create<meta_range_t>(tx_fe_path / "gains" / MAGNESIUM_GAIN2 / "range")
+        .add_coerced_subscriber([](const meta_range_t &){
+            throw uhd::runtime_error(
+                "Attempting to update gain range!");
+        })
+        .set_publisher([this, chan_idx](){
+            if (_gain_profile[TX_DIRECTION] == "manual") {
+                return meta_range_t(DSA_MIN_GAIN, DSA_MAX_GAIN, DSA_GAIN_STEP);
+            }else{
+                return meta_range_t(0.0, 0.0, 0.0);
+            }
+        })
+    ;
+     //TX amp
+    subtree->create<double>(tx_fe_path / "gains" / MAGNESIUM_AMP / "value")
+        .set_coercer([this, chan_idx](const double gain) {
+            return this->_set_tx_gain(MAGNESIUM_AMP, gain, chan_idx);
+        })
+        .set_publisher([this, chan_idx]() {
+            return this->_get_tx_gain(MAGNESIUM_AMP, chan_idx);
+        })
+    ;
+
+    subtree->create<meta_range_t>(tx_fe_path / "gains" / MAGNESIUM_AMP / "range")
+        .add_coerced_subscriber([](const meta_range_t &) {
+            throw uhd::runtime_error(
+                "Attempting to update gain range!");
+        })
+        .set_publisher([this, chan_idx](){
+            if (_gain_profile[TX_DIRECTION] == "manual") {
+                return meta_range_t(AMP_MIN_GAIN, AMP_MAX_GAIN, AMP_GAIN_STEP);
+            }else{
+                return meta_range_t(0.0, 0.0, 0.0);
+            }
+        })
+    ;
+
+    // RX mykonos attenuation
+    subtree->create<double>(rx_fe_path / "gains" / MAGNESIUM_GAIN1 / "value")
+        .set_coercer([this, chan_idx](const double gain){
+                UHD_VAR(gain);
+            return this->_set_rx_gain(MAGNESIUM_GAIN1, gain, chan_idx);
+        })
+        .set_publisher([this, chan_idx](){
+            return this->_get_rx_gain(MAGNESIUM_GAIN1, chan_idx);
+        })
+    ;
+
+    subtree->create<meta_range_t>(rx_fe_path / "gains" / MAGNESIUM_GAIN1 / "range")
+        .add_coerced_subscriber([](const meta_range_t &) {
+            throw uhd::runtime_error(
+                "Attempting to update gain range!");
+        })
+        .set_publisher([this, chan_idx](){
+            if (_gain_profile[RX_DIRECTION] == "manual") {
+                return meta_range_t(AD9371_MIN_RX_GAIN, AD9371_MAX_RX_GAIN, AD9371_RX_GAIN_STEP);
+            }else{
+                return meta_range_t(0.0, 0.0, 0.0);
+            }
+        })
+    ;
+    //RX DSA
+    subtree->create<double>(rx_fe_path / "gains" / MAGNESIUM_GAIN2 / "value")
+        .set_coercer([this, chan_idx](const double gain) {
+            UHD_VAR(gain);
+            return this->_set_rx_gain(MAGNESIUM_GAIN2, gain, chan_idx);
+        })
+        .set_publisher([this, chan_idx]() {
+            return this->_get_rx_gain(MAGNESIUM_GAIN2, chan_idx);
+        })
+    ;
+
+    subtree->create<meta_range_t>(rx_fe_path / "gains" / MAGNESIUM_GAIN2 / "range")
+        .add_coerced_subscriber([](const meta_range_t &){
+            throw uhd::runtime_error(
+                "Attempting to update gain range!");
+        })
+        .set_publisher([this, chan_idx](){
+            if (_gain_profile[RX_DIRECTION] == "manual") {
+                return meta_range_t(DSA_MIN_GAIN, DSA_MAX_GAIN, DSA_MAX_GAIN);
+            }else{
+                return meta_range_t(0.0, 0.0, 0.0);
+            }
+        })
+    ;
+
+    //RX amp
+    subtree->create<double>(rx_fe_path / "gains" / MAGNESIUM_AMP / "value")
+        .set_coercer([this, chan_idx](const double gain) {
+            return this->_set_rx_gain(MAGNESIUM_AMP, gain, chan_idx);
+        })
+        .set_publisher([this, chan_idx]() {
+            return this->_get_rx_gain(MAGNESIUM_AMP, chan_idx);
+        })
+    ;
+
+    subtree->create<meta_range_t>(rx_fe_path / "gains" / MAGNESIUM_AMP / "range")
+        .add_coerced_subscriber([](const meta_range_t &) {
+            throw uhd::runtime_error(
+                "Attempting to update gain range!");
+        })
+        .set_publisher([this, chan_idx](){
+            if (_gain_profile[RX_DIRECTION] == "manual") {
+                return meta_range_t(AMP_MIN_GAIN, AMP_MAX_GAIN, AMP_GAIN_STEP);
+            }else{
+                return meta_range_t(0.0, 0.0, 0.0);
+            }
+        })
+    ;
+
     // TX LO lock sensor //////////////////////////////////////////////////////
     // Note: The lowband and AD9371 LO lock sensors are generated
     // programmatically in set_rpc_client(). The actual lo_locked publisher is

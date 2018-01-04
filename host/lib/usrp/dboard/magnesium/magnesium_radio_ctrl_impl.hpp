@@ -134,6 +134,10 @@ public:
     // gain
     double set_tx_gain(const double gain, const size_t chan);
     double set_rx_gain(const double gain, const size_t chan);
+    void set_tx_gain_source(const std::string& src, const std::string& name, const size_t chan);
+    std::string get_tx_gain_source(const std::string& name, const size_t chan);
+    void set_rx_gain_source(const std::string& src, const std::string& name, const size_t chan);
+    std::string get_rx_gain_source(const std::string& name, const size_t chan);
 
     size_t get_chan_from_dboard_fe(const std::string &fe, const direction_t dir);
     std::string get_dboard_fe_from_chan(const size_t chan, const direction_t dir);
@@ -147,6 +151,18 @@ private:
     /**************************************************************************
      * Helpers
      *************************************************************************/
+    //! Set tx gain on each gain element
+    double _set_tx_gain(const std::string &name, const double gain, const size_t chan);
+
+    //! Set rx gain on each gain element
+    double _set_rx_gain(const std::string &name, const double gain, const size_t chan);
+
+    //! Get tx gain on each gain element
+    double _get_tx_gain(const std::string &name, const size_t chan);
+
+    //! Get rx gain on each gain element
+    double _get_rx_gain(const std::string &name, const size_t chan);
+
     //! Initialize all the peripherals connected to this block
     void _init_peripherals();
 
@@ -328,14 +344,18 @@ private:
     //! AD9371 gain
     double _ad9371_rx_gain = 0.0;
     double _ad9371_tx_gain = 0.0;
-
+    std::map<direction_t,double> _ad9371_att = { {RX_DIRECTION, 0.0}, {TX_DIRECTION, 0.0} };
     //! DSA attenuation
     double _dsa_rx_att = 0.0;
     double _dsa_tx_att = 0.0;
-
+    std::map<direction_t,double> _dsa_att = { {RX_DIRECTION, 0.0}, {TX_DIRECTION, 0.0} };
+    //! amp gain
+    std::map<direction_t,bool> _amp_bypass = { {RX_DIRECTION, true}, {TX_DIRECTION, true} };
     //! All gain
     double _all_rx_gain = 0.0;
     double _all_tx_gain = 0.0;
+    //! Gain profile
+    std::map<direction_t,std::string> _gain_profile = { {RX_DIRECTION, "default"}, {TX_DIRECTION, "default"} };
 
     bool _rx_bypass_lnas = true;
     bool _tx_bypass_amp  = true;

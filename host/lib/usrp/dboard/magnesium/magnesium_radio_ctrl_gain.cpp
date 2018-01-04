@@ -28,9 +28,21 @@ double magnesium_radio_ctrl_impl::_set_all_gain(
     const size_t ad9371_chan = _master ? 0 : 1; ;// FIXME: use chan when 2 radios
     const magnesium_cpld_ctrl::chan_sel_t chan_sel  =
         _master ? magnesium_cpld_ctrl::CHAN1 : magnesium_cpld_ctrl::CHAN2;
-    const auto gain_tuple = (dir == RX_DIRECTION) ?
-        get_rx_gain_tuple(gain, _map_freq_to_rx_band(freq)) :
-        get_tx_gain_tuple(gain, _map_freq_to_tx_band(freq));
+    gain_tuple_t gain_tuple = (dir == RX_DIRECTION) ?
+            get_rx_gain_tuple(gain, _map_freq_to_rx_band(freq)):
+            get_tx_gain_tuple(gain, _map_freq_to_tx_band(freq));
+
+    if (_gain_profile[dir] == "manual"){
+        UHD_LOG_TRACE(unique_id(), "Manual gain mode. Getting gain from property tree.");
+        gain_tuple = {
+            DSA_MAX_GAIN - _dsa_att[dir],
+            ((dir == RX_DIRECTION) ? AD9371_MAX_RX_GAIN : AD9371_MAX_TX_GAIN) - _ad9371_att[dir],
+            _amp_bypass[dir]};
+    }else if (_gain_profile[dir] == "default"){
+        UHD_LOG_TRACE(unique_id(), "Getting gain from gain table.");
+    }else {
+     UHD_LOG_ERROR(unique_id(), "Unsupported gain mode: " << _gain_profile[dir])
+    }
     const double ad9371_gain =
         ((dir == RX_DIRECTION) ?  AD9371_MAX_RX_GAIN : AD9371_MAX_TX_GAIN)
         - gain_tuple.ad9371_att;

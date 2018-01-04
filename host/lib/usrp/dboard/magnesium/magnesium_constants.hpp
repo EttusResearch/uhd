@@ -31,6 +31,9 @@ static const double AD9371_RX_GAIN_STEP = 0.5;
 static const double DSA_MIN_GAIN = 0; // dB
 static const double DSA_MAX_GAIN = 31.5; // dB
 static const double DSA_GAIN_STEP = 0.5; // db
+static const double AMP_MIN_GAIN = 0; // dB
+static const double AMP_MAX_GAIN = 10; // dB
+static const double AMP_GAIN_STEP = 10;// dB
 static const double AD9371_MIN_TX_GAIN = 0.0; // dB
 static const double AD9371_MAX_TX_GAIN = 41.95; // dB
 static const double AD9371_TX_GAIN_STEP = 0.05;
@@ -40,14 +43,27 @@ static const double ALL_RX_GAIN_STEP = 0.5;
 static const double ALL_TX_MIN_GAIN = 0.0;
 static const double ALL_TX_MAX_GAIN = 65.0;
 static const double ALL_TX_GAIN_STEP = 0.5;
+
 static const double MAGNESIUM_CENTER_FREQ = 2.5e9; // Hz
 static const std::vector<std::string> MAGNESIUM_RX_ANTENNAS = {
     "TX/RX", "RX2", "CAL", "LOCAL"
 };
+
 //! AD9371 LO (for direct conversion)
 static const char* MAGNESIUM_LO1 = "rfic";
 //! Low-band LO (for IF conversion)
 static const char* MAGNESIUM_LO2 = "lowband";
+//! Magnesium gain profile options
+static const std::vector<std::string> MAGNESIUM_GP_OPTIONS = {
+    "manual",
+    "default"
+};
+//! AD9371 attenuation
+static const char* MAGNESIUM_GAIN1 = "rfic";
+//! DSA attenuation
+static const char* MAGNESIUM_GAIN2 = "dsa";
+//! Amplifier gain
+static const char* MAGNESIUM_AMP = "amp";
 
 static const double MAGNESIUM_DEFAULT_BANDWIDTH = 40e6; // Hz TODO: fix
 // Note: MAGNESIUM_NUM_CHANS is independent of the number of chans per

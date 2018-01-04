@@ -412,6 +412,50 @@ double magnesium_radio_ctrl_impl::set_tx_gain(
     return coerced_gain;
 }
 
+double magnesium_radio_ctrl_impl::_set_tx_gain(
+        const std::string &name,
+        const double gain,
+        const size_t chan
+) {
+    std::lock_guard<std::mutex> l(_set_lock);
+    UHD_LOG_TRACE(unique_id(),
+        "_set_tx_gain(name=" << name << ", gain=" << gain << ", chan=" << chan << ")");
+    if (name == MAGNESIUM_GAIN1){
+        _ad9371_att[TX_DIRECTION] = gain;
+    }else if (name == MAGNESIUM_GAIN2){
+        _dsa_att[TX_DIRECTION] = gain;
+    }else if (name == MAGNESIUM_AMP){
+        _amp_bypass[TX_DIRECTION] =  gain == 0.0;
+    }else {
+        throw uhd::value_error("Could not find gain element " + name);
+    }
+    UHD_LOG_TRACE(unique_id(),
+        "_set_tx_gain calling update gain");
+    this->_set_all_gain(
+        this->_get_all_gain(chan, TX_DIRECTION),
+        this->get_tx_frequency(chan),
+        chan,
+        TX_DIRECTION
+    );
+    return gain; // not really any coreced here for individual gain
+}
+
+double magnesium_radio_ctrl_impl::_get_tx_gain(
+        const std::string &name,
+        const size_t chan
+) {
+    std::lock_guard<std::mutex> l(_set_lock);
+    if (name == MAGNESIUM_GAIN1){
+        return _ad9371_att[TX_DIRECTION];
+    }else if (name == MAGNESIUM_GAIN2){
+        return _dsa_att[TX_DIRECTION];
+    }else if (name == MAGNESIUM_AMP){
+        return _amp_bypass[TX_DIRECTION]? AMP_MIN_GAIN : AMP_MAX_GAIN;
+    }else {
+        throw uhd::value_error("Could not find gain element " + name);
+    }
+}
+
 double magnesium_radio_ctrl_impl::set_rx_gain(
         const double gain,
         const size_t chan
@@ -427,6 +471,51 @@ double magnesium_radio_ctrl_impl::set_rx_gain(
     );
     radio_ctrl_impl::set_rx_gain(coerced_gain, chan);
     return coerced_gain;
+}
+
+double magnesium_radio_ctrl_impl::_set_rx_gain(
+        const std::string &name,
+        const double gain,
+        const size_t chan
+) {
+    std::lock_guard<std::mutex> l(_set_lock);
+    UHD_LOG_TRACE(unique_id(),
+        "_set_rx_gain(name=" << name << ", gain=" << gain << ", chan=" << chan << ")");
+    if (name == MAGNESIUM_GAIN1){
+        _ad9371_att[RX_DIRECTION] = gain;
+    }else if (name == MAGNESIUM_GAIN2){
+        _dsa_att[RX_DIRECTION] = gain;
+    }else if (name == MAGNESIUM_AMP){
+        _amp_bypass[RX_DIRECTION] = gain == 0.0;
+    }else {
+        throw uhd::value_error("Could not find gain element " + name);
+    }
+    UHD_LOG_TRACE(unique_id(),
+        "_set_rx_gain calling update gain");
+    this->_set_all_gain(
+        this->_get_all_gain(chan, RX_DIRECTION),
+        this->get_rx_frequency(chan),
+        chan,
+        RX_DIRECTION
+    );
+    return gain; // not really any coreced here for individual gain
+}
+
+double magnesium_radio_ctrl_impl::_get_rx_gain(
+        const std::string &name,
+        const size_t chan
+) {
+    std::lock_guard<std::mutex> l(_set_lock);
+
+    if (name == MAGNESIUM_GAIN1){
+        return _ad9371_att[RX_DIRECTION];
+    }else if (name == MAGNESIUM_GAIN2){
+        return _dsa_att[RX_DIRECTION];
+    }else if (name == MAGNESIUM_AMP){
+        return _amp_bypass[RX_DIRECTION]? AMP_MIN_GAIN : AMP_MAX_GAIN;
+    }else{
+        throw uhd::value_error("Could not find gain element " + name);
+    }
 }
 
 std::vector<std::string> magnesium_radio_ctrl_impl::get_rx_lo_names(
