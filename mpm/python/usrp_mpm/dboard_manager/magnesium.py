@@ -320,7 +320,7 @@ class Magnesium(DboardManagerBase):
         self.log.trace("This is a rev: {}".format(chr(65 + self.rev)))
         # This is a default ref clock freq, it must be updated before init() is
         # called!
-        self.ref_clock_freq = 10e6
+        self.ref_clock_freq = None
         # These will get updated during init()
         self.master_clock_rate = None
         self.current_jesd_rate = None
@@ -524,6 +524,7 @@ class Magnesium(DboardManagerBase):
         if 'ref_clk_freq' in args:
             self.ref_clock_freq = float(args['ref_clk_freq'])
             assert self.ref_clock_freq in (10e6, 20e6, 25e6)
+        assert self.ref_clock_freq is not None
         master_clock_rate = \
             float(args.get('master_clock_rate',
                            self.default_master_clock_rate))
@@ -919,12 +920,13 @@ class Magnesium(DboardManagerBase):
     def update_ref_clock_freq(self, freq):
         """
         Call this function if the frequency of the reference clock changes (the
-        10, 20, 25 MHz one).
+        10, 20, 25 MHz one). Note: Won't actually re-run any settings.
         """
-        self.log.info("Changing reference clock frequency to {} MHz".format(freq/1e6))
-        assert self.ref_clock_freq in (10e6, 20e6, 25e6)
+        assert freq in (10e6, 20e6, 25e6), \
+                "Invalid ref clock frequency: {}".format(freq)
+        self.log.info("Changing reference clock frequency to {} MHz"
+                      .format(freq/1e6))
         self.ref_clock_freq = freq
-        # JEPSON FIXME call init() ? Maybe not yet!
 
 
     ##########################################################################
