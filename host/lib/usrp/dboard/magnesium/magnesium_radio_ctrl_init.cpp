@@ -328,7 +328,6 @@ void magnesium_radio_ctrl_impl::_init_frontend_subtree(
     // RX gains
     subtree->create<double>(rx_fe_path / "gains" / "all" / "value")
         .set_coercer([this, chan_idx](const double gain){
-                UHD_VAR(gain);
             return this->set_rx_gain(gain, chan_idx);
         })
         .set_publisher([this, chan_idx](){
