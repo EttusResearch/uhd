@@ -275,8 +275,6 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(eiscat_radio_ctrl)
         .set(EISCAT_TICK_RATE)
         .set_coercer(boost::bind(&eiscat_radio_ctrl_impl::set_rate, this, _1))
     ;
-
-    UHD_VAR((_tree->exists(fs_path("time/cmd"))));
 }
 
 eiscat_radio_ctrl_impl::~eiscat_radio_ctrl_impl()
