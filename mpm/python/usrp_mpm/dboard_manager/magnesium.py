@@ -172,18 +172,19 @@ class MgCPLD(object):
     Control class for the CPLD
     """
     CPLD_SIGNATURE = 0xCAFE # Expected signature ("magic number")
-    CPLD_REV = 4
+    CPLD_MINOR_REV = 0
+    CPLD_MAJOR_REV = 5
 
     REG_SIGNATURE = 0x0000
-    REG_REVISION = 0x0001
-    REG_OLDEST_COMPAT = 0x0002
+    REG_MINOR_REVISION = 0x0001
+    REG_MAJOR_REVISION = 0x0002
     REG_BUILD_CODE_LSB = 0x0003
     REG_BUILD_CODE_MSB = 0x0004
-    REG_SCRATCH = 0x0005
+    REG_SCRATCH   = 0x0005
     REG_CPLD_CTRL = 0x0010
-    REG_LMK_CTRL = 0x0011
+    REG_LMK_CTRL  = 0x0011
     REG_LO_STATUS = 0x0012
-    REG_MYK_CTRL = 0x0013
+    REG_MYK_CTRL  = 0x0013
 
     def __init__(self, regs, log):
         self.log = log.getChild("CPLD")
@@ -197,24 +198,24 @@ class MgCPLD(object):
                 "CPLD Signature Mismatch! " \
                 "Expected: 0x{:04X} Got: 0x{:04X}".format(
                     self.CPLD_SIGNATURE, signature))
-            raise RuntimeError("CPLD Status Check Failed!")
-        rev = self.peek16(self.REG_REVISION)
-        oldest_compat_rev = self.peek16(self.REG_OLDEST_COMPAT)
-        if oldest_compat_rev != self.CPLD_REV:
+            raise RuntimeError("CPLD Signature Check Failed! Incorrect signature readback.")
+        minor_rev = self.peek16(self.REG_MINOR_REVISION)
+        major_rev = self.peek16(self.REG_MAJOR_REVISION)
+        if major_rev != self.CPLD_MAJOR_REV:
             self.log.error(
-                "CPLD Revision compat mismatch! Expected: %d Got: %d",
-                self.CPLD_REV,
-                oldest_compat_rev
+                "CPLD Major Revision check mismatch! Expected: %d Got: %d",
+                self.CPLD_MAJOR_REV,
+                major_rev
             )
-            raise RuntimeError("CPLD Revision Check Failed!")
+            raise RuntimeError("CPLD Revision Check Failed! MPM is not compatible with " \
+                               "the loaded CPLD image.")
         date_code = self.peek16(self.REG_BUILD_CODE_LSB) | \
                     (self.peek16(self.REG_BUILD_CODE_MSB) << 16)
         self.log.debug(
-            "CPLD Signature: 0x{:X} "
-            "Revision: 0x{:04X} "
-            "Oldest compat rev: 0x{:04X} "
+            "CPLD Signature: 0x{:04X} "
+            "Revision: {}.{} "
             "Date code: 0x{:08X}"
-            .format(signature, rev, oldest_compat_rev, date_code))
+            .format(signature, major_rev, minor_rev, date_code))
 
     def set_scratch(self, val):
         " Write to the scratch register "
