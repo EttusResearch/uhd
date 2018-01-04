@@ -20,6 +20,7 @@ from builtins import object
 from usrp_mpm.gpsd_iface import GPSDIface
 from usrp_mpm.periph_manager import PeriphManagerBase
 from usrp_mpm.mpmtypes import SID
+from usrp_mpm.mpmutils import assert_compat_number
 from usrp_mpm.rpc_server import no_rpc
 from usrp_mpm.sys_utils import dtoverlay
 from usrp_mpm.sys_utils.sysfs_gpio import SysFSGPIO
@@ -311,21 +312,17 @@ class n310(PeriphManagerBase):
 
     def _check_fpga_compat(self):
         " Throw an exception if the compat numbers don't match up "
-        c_major, c_minor = self.mboard_regs_control.get_compat_number()
-        if c_major != N3XX_FPGA_COMPAT[0]:
-            raise RuntimeError("FPGA major compat number mismatch. "
-                               "Expected: {:d}.{:d} Actual:{:d}.{:d}"
-                               .format(N3XX_FPGA_COMPAT[0],
-                                       N3XX_FPGA_COMPAT[1],
-                                       c_major,
-                                       c_minor))
-        if c_minor < N3XX_FPGA_COMPAT[1]:
-            raise RuntimeError("FPGA minor compat number mismatch. "
-                               "Expected: {:d}.{:d} Actual:{:d}.{:d}"
-                               .format(N3XX_FPGA_COMPAT[0],
-                                       N3XX_FPGA_COMPAT[1],
-                                       c_major,
-                                       c_minor))
+        actual_compat = self.mboard_regs_control.get_compat_number()
+        self.log.debug("Actual FPGA compat number: {:d}.{:d}".format(
+            actual_compat[0], actual_compat[1]
+        ))
+        assert_compat_number(
+            N3XX_FPGA_COMPAT,
+            self.mboard_regs_control.get_compat_number(),
+            component="FPGA",
+            fail_on_old_minor=True,
+            log=self.log
+        )
 
     def _init_peripherals(self, args):
         """
@@ -980,7 +977,6 @@ class MboardRegsControl(object):
             compat_number = self.peek32(self.M_COMPAT_NUM)
         minor = compat_number & 0xff
         major = (compat_number>>16) & 0xff
-        self.log.trace("FPGA compat number: {:d}.{:d}".format(major, minor))
         return (major, minor)
 
     def get_build_timestamp(self):
