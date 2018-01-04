@@ -23,19 +23,7 @@ static const double MAGNESIUM_RADIO_RATE = 125e6; // Hz
 static const double MAGNESIUM_MIN_FREQ = 1e6; // Hz
 static const double MAGNESIUM_MAX_FREQ = 6e9; // Hz
 
-static const double MAGNESIUM_LOWBAND_FREQ = 300e6;
-
-static const double MAGNESIUM_RX_BAND1_MIN_FREQ = MAGNESIUM_LOWBAND_FREQ;
-static const double MAGNESIUM_RX_BAND2_MIN_FREQ = 600e6;
-static const double MAGNESIUM_RX_BAND3_MIN_FREQ = 1050e6;
-static const double MAGNESIUM_RX_BAND4_MIN_FREQ = 1600e6;
-static const double MAGNESIUM_RX_BAND5_MIN_FREQ = 2100e6;
-static const double MAGNESIUM_RX_BAND6_MIN_FREQ = 2700e6;
-
-static const double MAGNESIUM_TX_BAND1_MIN_FREQ = MAGNESIUM_LOWBAND_FREQ;
-static const double MAGNESIUM_TX_BAND2_MIN_FREQ = 800e6;
-static const double MAGNESIUM_TX_BAND3_MIN_FREQ = 1700e6;
-static const double MAGNESIUM_TX_BAND4_MIN_FREQ = 3400e6;
+static constexpr double MAGNESIUM_LOWBAND_FREQ = 300e6;
 
 static const double AD9371_MIN_RX_GAIN = 0.0; // dB
 static const double AD9371_MAX_RX_GAIN = 30.0; // dB

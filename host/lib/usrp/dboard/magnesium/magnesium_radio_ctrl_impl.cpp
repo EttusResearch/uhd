@@ -25,6 +25,7 @@ using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::rfnoc;
 using namespace uhd::math::fp_compare;
+
 namespace {
     /**************************************************************************
      * ADF4351 Controls
@@ -227,7 +228,7 @@ double magnesium_radio_ctrl_impl::set_tx_frequency(
     UHD_ASSERT_THROW(adf4351_source == "internal");
     double coerced_if_freq = freq;
 
-    if (fp_compare_epsilon<double>(freq) < MAGNESIUM_LOWBAND_FREQ) { // Low band
+    if (_map_freq_to_tx_band(freq) == tx_band::LOWBAND) {
         _is_low_band[TX_DIRECTION] = true;
         const double desired_low_freq = MAGNESIUM_TX_IF_FREQ - freq;
         coerced_if_freq =
@@ -273,7 +274,7 @@ void magnesium_radio_ctrl_impl::_update_freq(
         this->get_tx_lo_source(MAGNESIUM_LO1, chan) :
         this->get_rx_lo_source(MAGNESIUM_LO1, chan)
     ;
-    
+
     const double ad9371_freq = ad9371_source == "external" ?
         _ad9371_freq[dir]/2 :
         _ad9371_freq[dir]
@@ -325,7 +326,7 @@ double magnesium_radio_ctrl_impl::set_rx_frequency(
     UHD_ASSERT_THROW(adf4351_source == "internal");
     double coerced_if_freq = freq;
 
-    if (fp_compare_epsilon<double>(freq) < MAGNESIUM_LOWBAND_FREQ) { // Low band
+    if (_map_freq_to_rx_band(freq) == rx_band::LOWBAND) {
         _is_low_band[RX_DIRECTION] = true;
         const double desired_low_freq = MAGNESIUM_RX_IF_FREQ - freq;
         coerced_if_freq =
@@ -828,7 +829,7 @@ bool magnesium_radio_ctrl_impl::get_lo_lock_status(
         _rpc_prefix + "get_ad9371_lo_lock", trx);
     UHD_LOG_TRACE(unique_id(),
         "AD9371 " << trx << " LO reports lock: " << (lo_lock ? "Yes" : "No"));
-    if (lo_lock && fp_compare_epsilon<double>(freq) < MAGNESIUM_LOWBAND_FREQ) {
+    if (lo_lock and _map_freq_to_rx_band(freq) == rx_band::LOWBAND) {
         lo_lock = lo_lock && _rpcc->request_with_token<bool>(
             _rpc_prefix + "get_lowband_lo_lock", trx);
         UHD_LOG_TRACE(unique_id(),

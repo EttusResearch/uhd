@@ -29,6 +29,29 @@ class magnesium_radio_ctrl_impl : public radio_ctrl_impl, public rpc_block_ctrl
 public:
     typedef boost::shared_ptr<magnesium_radio_ctrl_impl> sptr;
 
+    //! Frequency bands for RX. Bands are a function of the analog filter banks
+    enum class rx_band {
+        INVALID_BAND,
+        LOWBAND,
+        BAND0,
+        BAND1,
+        BAND2,
+        BAND3,
+        BAND4,
+        BAND5,
+        BAND6
+    };
+
+    //! Frequency bands for TX. Bands are a function of the analog filter banks
+    enum class tx_band {
+        INVALID_BAND,
+        LOWBAND,
+        BAND0,
+        BAND1,
+        BAND2,
+        BAND3
+    };
+
     /************************************************************************
      * Structors
      ***********************************************************************/
@@ -143,6 +166,13 @@ private:
         const direction_t dir,
         const size_t chan_idx
     );
+
+    //! Map a frequency in Hz to an rx_band value. Will return
+    //  rx_band::INVALID_BAND if the frequency is out of range.
+    rx_band _map_freq_to_rx_band(const double freq);
+    //! Map a frequency in Hz to an tx_band value. Will return
+    //  tx_band::INVALID_BAND if the frequency is out of range.
+    tx_band _map_freq_to_tx_band(const double freq);
 
     /**************************************************************************
      * Sensors

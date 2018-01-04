@@ -26,9 +26,11 @@ double magnesium_radio_ctrl_impl::_set_all_gain(
         "chan=" << chan << ", "
         "dir=" << dir);
     const size_t ad9371_chan = _master ? 0 : 1; ;// FIXME: use chan when 2 radios
-    magnesium_cpld_ctrl::chan_sel_t chan_sel  =
+    const magnesium_cpld_ctrl::chan_sel_t chan_sel  =
         _master ? magnesium_cpld_ctrl::CHAN1 : magnesium_cpld_ctrl::CHAN2;
-    const auto gain_tuple = get_gain_tuple(gain, freq, dir);
+    const auto gain_tuple = (dir == RX_DIRECTION) ?
+        get_rx_gain_tuple(gain, _map_freq_to_rx_band(freq)) :
+        get_tx_gain_tuple(gain, _map_freq_to_tx_band(freq));
     const double ad9371_gain =
         ((dir == RX_DIRECTION) ?  AD9371_MAX_RX_GAIN : AD9371_MAX_TX_GAIN)
         - gain_tuple.ad9371_att;
