@@ -78,3 +78,62 @@ def to_utf8_str(str_or_bstr):
     except AttributeError:
         return str_or_bstr
 
+
+def assert_compat_number(
+        expected_compat,
+        actual_compat,
+        component=None,
+        fail_on_old_minor=False,
+        log=None,
+    ):
+    """
+    Check if a compat number pair is acceptable. A compat number is a pair of
+    integers (MAJOR, MINOR). A compat number is not acceptable if the major
+    part differs from the expected value (regardless of how it's different) or
+    if the minor part is behind the expected value and fail_on_old_minor was
+    given.
+    On failure, will throw a RuntimeError.
+
+    Arguments:
+    expected_compat -- A tuple (major, minor) which represents the compat
+                       number we are expecting.
+    actual_compat -- A tuple (major, minor) which represents the compat number
+                     that is actually available.
+    component -- A name of the component for which we are checking the compat
+                 number, e.g. "FPGA".
+    fail_on_old_minor -- Will also fail if the actual minor compat number is
+                         behind the expected minor compat number, assuming the
+                         major compat number matches.
+    log -- Logger object. If given, will use this to report on intermediate
+           steps and non-fatal minor compat mismatches.
+    """
+    assert len(expected_compat) == 2
+    assert len(actual_compat) == 2
+    log_err = lambda msg: log.error(msg) if log is not None else None
+    log_warn = lambda msg: log.warning(msg) if log is not None else None
+    expected_actual_str = "Expected: {:d}.{:d} Actual: {:d}.{:d}".format(
+        expected_compat[0], expected_compat[1],
+        actual_compat[0], actual_compat[1],
+    )
+    component_str = "" if component is None else " for component `{}'".format(
+        component
+    )
+    if actual_compat[0] != expected_compat[0]:
+        err_msg = "Major compat number mismatch{}: {}".format(
+            component_str, expected_actual_str
+        )
+        log_err(err_msg)
+        raise RuntimeError(err_msg)
+    if actual_compat[1] > expected_compat[1]:
+        log_warn("Actual minor compat ahead of expected compat{}. {}".format(
+            component_str, expected_actual_str
+        ))
+    if actual_compat[1] < expected_compat[1]:
+        err_msg = "Minor compat number mismatch{}: {}".format(
+            component_str, expected_actual_str
+        )
+        log_err(err_msg)
+        if fail_on_old_minor:
+            raise RuntimeError(err_msg)
+    return
+
