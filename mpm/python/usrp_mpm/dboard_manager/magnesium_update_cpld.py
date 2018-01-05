@@ -83,7 +83,7 @@ def do_update_cpld(filename, daughterboards, force=False):
         return False
 
     for dboard in daughterboards:
-        logger.info("Updating daughterboard slot %d...", dboard)
+        logger.info("Updating daughterboard slot {}...".format(dboard))
         cmd = ["openocd",
                "-f", (REQUIRED_FILES[int(dboard, 10)]).strip(),
                "-f", (REQUIRED_FILES[2]).strip(),
