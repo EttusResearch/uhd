@@ -11,6 +11,8 @@ from __future__ import print_function
 import copy
 import logging
 from logging import CRITICAL, ERROR, WARNING, INFO, DEBUG
+from logging import handlers
+import collections
 from builtins import str
 
 # Colors
@@ -26,6 +28,7 @@ RESET = str('\x1b[0m')
 TRACE = 1
 
 DEFAULT_LOG_LEVEL = DEBUG
+DEFAULT_LOG_BUF_SIZE = 100
 
 class ColorStreamHandler(logging.StreamHandler):
     """
@@ -55,6 +58,17 @@ class ColorStreamHandler(logging.StreamHandler):
         record_.msg = BOLD + color + str(record_.msg) + RESET
         logging.StreamHandler.emit(self, record_)
 
+class LossyQueueHandler(handlers.QueueHandler):
+    """
+    Like QueueHandler, except it'll try and keep the youngest, not oldest,
+    entries.
+    """
+    def enqueue(self, record):
+        """
+        Replaces logging.handlers.QueueHandler.enqueue()
+        """
+        self.queue.appendleft(record)
+
 class MPMLogger(logging.getLoggerClass()):
     """
     Extends the regular Python logging with level 'trace' (like UHD)
@@ -67,16 +81,41 @@ class MPMLogger(logging.getLoggerClass()):
             self.cpp_log_buf = lib.types.log_buf.make_singleton()
         except ImportError:
             pass
+        self.py_log_buf = collections.deque(
+            maxlen=kwargs.get('log_buf_size', DEFAULT_LOG_BUF_SIZE)
+        )
 
     def trace(self, *args, **kwargs):
         """ Extends logging for super-high verbosity """
         self.log(TRACE, *args, **kwargs)
+
+    def get_log_buf(self):
+        """
+        Return the contents of the logging queue, formatted as a list of
+        dictionaries.
+        """
+        records = []
+        # Note: This loop does not guarantee that all log items will be
+        # returned. The while loop is set up to be bounded, and to return as
+        # soon as is sensible.
+        while len(records) < self.py_log_buf.maxlen:
+            try:
+                records.append(self.py_log_buf.pop())
+            except IndexError:
+                break
+        return [{
+            'name': record.name,
+            'message': record.message,
+            'levelname': record.levelname,
+            'msecs': int(record.msecs),
+        } for record in records]
 
 
 LOGGER = None # Logger singleton
 def get_main_logger(
         use_console=True,
         use_journal=False,
+        use_logbuf=True,
         console_color=True,
         log_default_delta=0
     ):
@@ -101,6 +140,9 @@ def get_main_logger(
         journal_formatter = logging.Formatter('[%(levelname)s] [%(module)s] %(message)s')
         journal_handler.setFormatter(journal_formatter)
         LOGGER.addHandler(journal_handler)
+    if use_logbuf:
+        queue_handler = LossyQueueHandler(LOGGER.py_log_buf)
+        LOGGER.addHandler(queue_handler)
     # Set default level:
     default_log_level = int(min(
         DEFAULT_LOG_LEVEL - log_default_delta * 10,

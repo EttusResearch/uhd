@@ -21,6 +21,7 @@ from gevent import monkey
 monkey.patch_all()
 from builtins import str, bytes
 from builtins import range
+from six import iteritems
 from mprpc import RPCServer
 from usrp_mpm.mpmlog import get_main_logger
 from usrp_mpm.mpmutils import to_binary_str
@@ -46,7 +47,7 @@ class MPMServer(RPCServer):
     # This is a list of methods in this class which require a claim
     default_claimed_methods = ['init', 'update_component', 'reclaim', 'unclaim']
     # Compatibility number for MPM
-    MPM_COMPAT_NUM = (1, 0)
+    MPM_COMPAT_NUM = (1, 1)
 
     def __init__(self, state, mgr, mgr_generator=None, *args, **kwargs):
         self.log = get_main_logger().getChild('RPCServer')
@@ -411,6 +412,26 @@ class MPMServer(RPCServer):
         """
         return self._last_error
 
+    def get_log_buf(self, token):
+        """
+        Return the contents of the log buffer as a list of str -> str
+        dictionaries.
+        """
+        if not self._check_token_valid(token):
+            self.log.warning(
+                "Attempt to read logs without valid claim from {}".format(
+                    self.client_host
+                )
+            )
+            err_msg = "get_log_buf() called without valid claim."
+            self._last_error = err_msg
+            raise RuntimeError(err_msg)
+        log_records = get_main_logger().get_log_buf()
+        self.log.trace("Returning %d log records.", len(log_records))
+        return [
+            {k: str(v) for k, v in iteritems(record)}
+            for record in log_records
+        ]
 
 
 def _rpc_server_process(shared_state, port, mgr, mgr_generator):
