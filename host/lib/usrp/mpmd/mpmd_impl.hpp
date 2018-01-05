@@ -130,6 +130,11 @@ class mpmd_mboard_impl
             const uhd::device_addr_t mb_args
     );
 
+    /*! Read out the log buffer from the MPM device and send it to native
+     * logging system.
+     */
+    void dump_logs(const bool dump_to_null=false);
+
     /*************************************************************************
      * Private attributes
      ************************************************************************/

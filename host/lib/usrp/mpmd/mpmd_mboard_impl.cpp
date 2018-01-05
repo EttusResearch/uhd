@@ -27,6 +27,8 @@ namespace {
     //! Duration of a latency measurement test
     constexpr size_t MPMD_MEAS_LATENCY_DURATION = 1000;
 
+    using log_buf_t = std::vector<std::map<std::string, std::string>>;
+
 
     /*************************************************************************
      * Helper functions
@@ -89,6 +91,61 @@ namespace {
             "RPC latency (coarse estimate): Avg = " << avg_latency << " us, "
             "Max = " << max_latency
             << ", n = " << ctr);
+    }
+
+    /*! Forward entries from a list of dictionaries to UHD's native logging
+     *  system.
+     */
+    void forward_logs(log_buf_t&& log_buf)
+    {
+        for (const auto &log_record : log_buf) {
+            if (log_record.count("levelname") == 0 or \
+                    log_record.count("message") == 0) {
+                UHD_LOG_ERROR("MPMD",
+                    "Invalid logging structure returned from MPM device!");
+                continue;
+            }
+            if (log_record.at("levelname") == "TRACE") {
+                UHD_LOG_TRACE(
+                    log_record.at("name"),
+                    log_record.at("message")
+                );
+            }
+            else if (log_record.at("levelname") == "DEBUG") {
+                UHD_LOG_DEBUG(
+                    log_record.at("name"),
+                    log_record.at("message")
+                );
+            }
+            else if (log_record.at("levelname") == "INFO") {
+                UHD_LOG_INFO(
+                    log_record.at("name"),
+                    log_record.at("message")
+                );
+            }
+            else if (log_record.at("levelname") == "WARNING") {
+                UHD_LOG_WARNING(
+                    log_record.at("name"),
+                    log_record.at("message")
+                );
+            }
+            else if (log_record.at("levelname") == "ERROR") {
+                UHD_LOG_ERROR(
+                    log_record.at("name"),
+                    log_record.at("message")
+                );
+            }
+            else if (log_record.at("levelname") == "CRITICAL") {
+                UHD_LOG_FATAL(
+                    log_record.at("name"),
+                    log_record.at("message")
+                );
+            } else {
+                UHD_LOG_ERROR("MPMD",
+                    "Invalid log level returned from MPM device: "
+                    "`" << log_record.at("levelname") << "'");
+            }
+        }
     }
 
 }
@@ -302,6 +359,15 @@ uhd::task::sptr mpmd_mboard_impl::claim_device_and_make_task(
             std::chrono::milliseconds(MPMD_RECLAIM_INTERVAL_MS)
         );
     });
+}
+
+void mpmd_mboard_impl::dump_logs(const bool dump_to_null)
+{
+    if (dump_to_null) {
+        rpc->request_with_token<log_buf_t>("get_log_buf");
+    } else {
+        forward_logs(rpc->request_with_token<log_buf_t>("get_log_buf"));
+    }
 }
 
 
