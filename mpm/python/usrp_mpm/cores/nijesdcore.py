@@ -50,7 +50,7 @@ class NIMgJESDCore(object):
         self.cplls_used = 0
         self.rx_lanes = 4
         self.tx_lanes = 4
-        self.bypass_descrambler = True
+        self.bypass_descrambler = False
         self.bypass_scrambler = True
         self.lmfc_divider = 20 # Number of FPGA clock cycles per LMFC period.
         self.tx_driver_swing = 0b1111 # See UG476, TXDIFFCTRL
