@@ -30,7 +30,10 @@ class mpmd_mboard_impl
     using dev_info = std::map<std::string, std::string>;
 
     /*** Structors ***********************************************************/
-    /*!
+    /*! Ctor: Claim device or throw an exception on failure.
+     *
+     * Does not initialize the device.
+     *
      * \param mb_args Device args that pertain to this motherboard
      * \param ip_addr RPC client will attempt to connect to this IP address
      */
@@ -50,6 +53,9 @@ class mpmd_mboard_impl
             const std::string& addr
     );
 
+    /*** Init ****************************************************************/
+    void init();
+
     /*** Public attributes ***************************************************/
     //! These are the args given by the user, with some filtering/preprocessing
     uhd::device_addr_t mb_args;
@@ -62,9 +68,6 @@ class mpmd_mboard_impl
     // to be populated at all.
     std::vector<uhd::device_addr_t> dboard_info;
 
-    //! Number of RFNoC crossbars on this device
-    size_t num_xbars = 0;
-
     /*! Reference to the RPC client for this motherboard
      *
      * We store a shared ptr, because we might share it with some of the RFNoC
@@ -72,6 +75,8 @@ class mpmd_mboard_impl
      */
     uhd::rpc_client::sptr rpc;
 
+    //! Number of RFNoC crossbars on this device
+    const size_t num_xbars;
 
     /*************************************************************************
      * API
@@ -188,20 +193,35 @@ public:
     /*************************************************************************
      * Private methods/helpers
      ************************************************************************/
+    /*! Claim a device and create a reference to the mpmd_mboard_impl object.
+     *
+     * Does not initialize the device (see setup_mb() for that).
+     */
+    mpmd_mboard_impl::uptr claim_and_make(
+        const uhd::device_addr_t& dev_args
+    );
+
     /*! Initialize a single motherboard
      *
-     * - See mpmd_mboard_impl ctor for details
-     * - Also allocates the local crossbar addresses
+     * This is where mpmd_mboard_impl::init() is called.
+     * Also assigns the local crossbar addresses.
+     *
+     * \param mb Reference to the mboard class
+     * \param mb_index Index number of the mboard that's being initialized
+     * \param device_args Device args
+     *
      */
-    mpmd_mboard_impl::uptr setup_mb(
-            const size_t mb_i,
-            const uhd::device_addr_t& dev_addr
+    void setup_mb(
+        mpmd_mboard_impl *mb,
+        const size_t mb_index,
+        const size_t base_xport_addr
     );
 
     //! Setup all RFNoC blocks running on mboard \p mb_i
     void setup_rfnoc_blocks(
-            const size_t mb_i,
-            const uhd::device_addr_t& block_args
+        mpmd_mboard_impl* mb,
+        const size_t mb_i,
+        const uhd::device_addr_t& block_args
     );
 
     //! Configure all blocks that require access to an RPC client
@@ -209,13 +229,6 @@ public:
         const uhd::device_addr_t &block_args,
         const bool serialize_init
     );
-
-    /*! Returns a valid local address for a crossbar
-     *
-     * \returns Valid local address
-     * \throws uhd::runtime_error if there are no more local addresses
-     */
-    size_t allocate_xbar_local_addr();
 
     /*! Return the index of the motherboard given the local address of a
      * crossbar
@@ -229,10 +242,6 @@ public:
     uhd::device_addr_t _device_args;
     //! Stores a list of mboard references
     std::vector<mpmd_mboard_impl::uptr> _mb;
-
-    //! A counter for distributing local addresses to crossbars
-    // No-one touches this except allocate_xbar_local_addr(), gotcha?
-    size_t  _xbar_local_addr_ctr = 2;
 };
 
 }} /* namespace uhd::mpmd */

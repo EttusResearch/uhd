@@ -111,12 +111,16 @@ mpmd_mboard_impl::mpmd_mboard_impl(
                   mpmd_impl::MPM_RPC_PORT
               ),
               mpmd_impl::MPM_RPC_GET_LAST_ERROR_CMD))
+  , num_xbars(rpc->request<size_t>("get_num_xbars"))
+  // xbar_local_addrs is not yet valid after this!
+  , xbar_local_addrs(num_xbars, 0xFF)
   , _xport_mgr(xport::mpmd_xport_mgr::make(mb_args))
 {
     UHD_LOGGER_TRACE("MPMD")
         << "Initializing mboard, connecting to RPC server address: "
         << rpc_server_addr
         << " mboard args: " << mb_args.to_string()
+        << " number of crossbars: " << num_xbars
     ;
 
     _claimer_task = claim_device_and_make_task(rpc, mb_args);
@@ -124,22 +128,16 @@ mpmd_mboard_impl::mpmd_mboard_impl(
         measure_rpc_latency(rpc, MPMD_MEAS_LATENCY_DURATION);
     }
 
-    // No one else can now claim the device.
-    if (mb_args_.has_key("skip_init")) {
-        UHD_LOG_DEBUG("MPMD", "Claimed device, but skipped init.");
-        return;
-    }
-
-    init_device(rpc, mb_args);
-    // RFNoC block clocks are now on. Noc-IDs can be read back.
-
-    auto device_info_dict = rpc->request<dev_info>("get_device_info");
+    /// Get device info
+    const auto device_info_dict = rpc->request<dev_info>("get_device_info");
     for (const auto &info_pair : device_info_dict) {
         device_info[info_pair.first] = info_pair.second;
     }
     UHD_LOGGER_TRACE("MPMD")
         << "MPM reports device info: " << device_info.to_string();
-    auto dboards_info = rpc->request<std::vector<dev_info>>("get_dboard_info");
+    /// Get dboard info
+    const auto dboards_info =
+        rpc->request<std::vector<dev_info>>("get_dboard_info");
     UHD_ASSERT_THROW(this->dboard_info.size() == 0);
     for (const auto &dboard_info_dict : dboards_info) {
         uhd::device_addr_t this_db_info;
@@ -151,11 +149,6 @@ mpmd_mboard_impl::mpmd_mboard_impl(
             << ": " << this_db_info.to_string();
         this->dboard_info.push_back(this_db_info);
     }
-
-    // Initialize properties
-    this->num_xbars = rpc->request<size_t>("get_num_xbars");
-    // xbar_local_addrs is not yet valid after this!
-    this->xbar_local_addrs.resize(this->num_xbars, 0xFF);
 }
 
 mpmd_mboard_impl::~mpmd_mboard_impl()
@@ -165,6 +158,15 @@ mpmd_mboard_impl::~mpmd_mboard_impl()
             UHD_LOG_WARNING("MPMD", "Failure to ack unclaim!");
         }
     );
+}
+
+/*****************************************************************************
+ * Init
+ ****************************************************************************/
+void mpmd_mboard_impl::init()
+{
+    init_device(rpc, mb_args);
+    // RFNoC block clocks are now on. Noc-IDs can be read back.
 }
 
 /*****************************************************************************

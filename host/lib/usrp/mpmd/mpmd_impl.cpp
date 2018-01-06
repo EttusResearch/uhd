@@ -85,16 +85,30 @@ namespace {
     }
 
 
+    /*! Initialize property tree for a single device.
+     *
+     * \param tree Property tree reference (to the whole tree)
+     * \param mb_path Subtree path for this device
+     * \param mb Reference to the actual device
+     */
     void init_property_tree(
             uhd::property_tree::sptr tree,
             fs_path mb_path,
             mpmd_mboard_impl *mb
     ) {
-        if (not tree->exists(fs_path("/name"))) {
+        /*** Device info ****************************************************/
+        if (not tree->exists("/name")) {
             tree->create<std::string>("/name")
                 .set(mb->device_info.get("name", "Unknown MPM device"))
             ;
         }
+        tree->create<std::string>(mb_path / "name")
+            .set(mb->device_info.get("type", "UNKNOWN"));
+        tree->create<std::string>(mb_path / "serial")
+            .set(mb->device_info.get("serial", "n/a"));
+        tree->create<std::string>(mb_path / "connection")
+            .set(mb->device_info.get("connection", "UNKNOWN"));
+        tree->create<size_t>(mb_path / "link_max_rate").set(1e9 / 8);
 
         /*** Clocking *******************************************************/
         tree->create<std::string>(mb_path / "clock_source/value")
@@ -328,31 +342,59 @@ mpmd_impl::mpmd_impl(const device_addr_t& device_args)
     : usrp::device3_impl()
     , _device_args(device_args)
 {
-    UHD_LOGGER_INFO("MPMD")
-        << "Initializing device with args: " << device_args.to_string();
-
     const device_addrs_t mb_args = separate_device_addr(device_args);
-    _mb.reserve(mb_args.size());
+    const size_t num_mboards = mb_args.size();
+    _mb.reserve(num_mboards);
+    const bool serialize_init = device_args.has_key("serialize_init");
+    const bool skip_init = device_args.has_key("skip_init");
+    UHD_LOGGER_INFO("MPMD")
+        << "Initializing " << num_mboards << " device(s) "
+        << (serialize_init ? "serially " : "in parallel ")
+        << "with args: " << device_args.to_string();
 
-    // This can theoretically be parallelized, but then we want to make sure
-    // we're distributing crossbar local addresses in some orderly fashion.
-    // At the very least, _xbar_local_addr_ctr needs to become atomic.
-    for (size_t mb_i = 0; mb_i < mb_args.size(); ++mb_i) {
-        _mb.push_back(setup_mb(mb_i, mb_args[mb_i]));
+    // First, claim all the devices (so we own them and no one else can claim
+    // them).
+    // This can be parallelized as long as uptrs are stored in the right spot;
+    // they need to be correctly indexed.
+    for (size_t mb_i = 0; mb_i < num_mboards; ++mb_i) {
+        UHD_LOG_DEBUG("MPMD", "Claiming mboard " << mb_i);
+        _mb.push_back(claim_and_make(mb_args[mb_i]));
+    }
+
+    // Next figure out the number of base xport addresses. This way, we
+    // can run _mb[*]->init() in parallel on all the _mb.
+    // This can *not* be parallelized.
+    std::vector<size_t> base_xport_addr(num_mboards, 2); // Starts at 2 [sic]
+    for (size_t mb_i = 0; mb_i < num_mboards-1; ++mb_i) {
+        base_xport_addr[mb_i+1] = base_xport_addr[mb_i] + _mb[mb_i]->num_xbars;
+    }
+
+    if (not skip_init) {
+        // Run the actual device initialization. This can run in parallel.
+        for (size_t mb_i = 0; mb_i < num_mboards; ++mb_i) {
+            // Note: This is the only place we do compat number checks. They're
+            // effectively disabled for skip_init=1
+            setup_mb(_mb[mb_i].get(), mb_i, base_xport_addr[mb_i]);
+        }
+    } else {
+        UHD_LOG_DEBUG("MPMD", "Claimed device, but skipped init.");
     }
 
     // Init the prop tree before the blocks get set up -- they might need access
     // to some of the properties. This also means that the prop tree is pristine
     // at this point in time.
+    // This might be parallelized, need to verify the prop tree can handle the
+    // concurrent accesses. Would shave of milliseconds per device -- probably
+    // not worth it.
     for (size_t mb_i = 0; mb_i < mb_args.size(); ++mb_i) {
         init_property_tree(_tree, fs_path("/mboards") / mb_i, _mb[mb_i].get());
     }
 
-    if (not device_args.has_key("skip_init")) {
-        // This might be parallelized. std::tasks would probably be a good way to
-        // do that if we want to.
+    if (not skip_init) {
+        // This can be parallelized, because the blocks of individual mboards
+        // live on different subtrees.
         for (size_t mb_i = 0; mb_i < mb_args.size(); ++mb_i) {
-            setup_rfnoc_blocks(mb_i, mb_args[mb_i]);
+            setup_rfnoc_blocks(_mb[mb_i].get(), mb_i, mb_args[mb_i]);
         }
 
         // FIXME this section only makes sense for when the time source is external.
@@ -364,10 +406,10 @@ mpmd_impl::mpmd_impl(const device_addr_t& device_args)
         }
 
         auto filtered_block_args = device_args; // TODO actually filter
-        // Blocks will finalize their own setup in this function. They have (and
-        // might need) full access to the prop tree, the timekeepers, etc.
-        setup_rpc_blocks(filtered_block_args,
-                device_args.has_key("serialize_init"));
+        // Blocks will finalize their own setup in this function. They have
+        // (and might need) full access to the prop tree, the timekeepers, etc.
+        // This is already internally parallelized.
+        setup_rpc_blocks(filtered_block_args, serialize_init);
     } else {
         UHD_LOG_INFO("MPMD", "Claimed device without full initialization.");
     }
@@ -381,14 +423,12 @@ mpmd_impl::~mpmd_impl()
 /*****************************************************************************
  * Private methods
  ****************************************************************************/
-mpmd_mboard_impl::uptr mpmd_impl::setup_mb(
-    const size_t mb_index,
+mpmd_mboard_impl::uptr mpmd_impl::claim_and_make(
     const uhd::device_addr_t& device_args
 ) {
     const std::string rpc_addr = device_args.get(xport::MGMT_ADDR_KEY);
     UHD_LOGGER_DEBUG("MPMD")
-        << "Initializing mboard " << mb_index
-        << ". Device args: `" << device_args.to_string()
+        << "Device args: `" << device_args.to_string()
         << "'. RPC address: " << rpc_addr
     ;
 
@@ -398,13 +438,21 @@ mpmd_mboard_impl::uptr mpmd_impl::setup_mb(
             << device_args.to_string());
         throw uhd::runtime_error("Could not determine device RPC address.");
     }
-    auto mb = mpmd_mboard_impl::make(device_args, rpc_addr);
+    return mpmd_mboard_impl::make(device_args, rpc_addr);
+}
+
+void mpmd_impl::setup_mb(
+    mpmd_mboard_impl *mb,
+    const size_t mb_index,
+    const size_t base_xport_addr
+) {
 
     // Check the compatibility number
     UHD_LOGGER_TRACE("MPMD") << boost::format(
             "Checking MPM compat number against ours: %i.%i")
             % MPM_COMPAT_NUM[0] % MPM_COMPAT_NUM[1];
-    const auto compat_num = mb->rpc->request<std::vector<size_t>>("get_mpm_compat_num");
+    const auto compat_num =
+        mb->rpc->request<std::vector<size_t>>("get_mpm_compat_num");
     UHD_LOGGER_TRACE("MPMD") << boost::format(
             "Compat number received: %d.%d")
             % compat_num[0] % compat_num[1];
@@ -425,34 +473,19 @@ mpmd_mboard_impl::uptr mpmd_impl::setup_mb(
         throw uhd::runtime_error("MPM compatibility number mismatch.");
     }
 
-    if (device_args.has_key("skip_init")) {
-        return mb;
-    }
-
+    UHD_LOG_DEBUG("MPMD", "Initializing mboard " << mb_index);
+    mb->init();
     for (size_t xbar_index = 0; xbar_index < mb->num_xbars; xbar_index++) {
-        mb->set_xbar_local_addr(xbar_index, allocate_xbar_local_addr());
+        mb->set_xbar_local_addr(xbar_index, base_xport_addr + xbar_index);
     }
-
-    const fs_path mb_path = fs_path("/mboards") / mb_index;
-    _tree->create<std::string>(mb_path / "name")
-        .set(mb->device_info.get("type", "UNKNOWN"));
-    _tree->create<std::string>(mb_path / "serial")
-        .set(mb->device_info.get("serial", "n/a"));
-    _tree->create<std::string>(mb_path / "connection")
-        .set(mb->device_info.get("connection", "remote"));
-
-    _tree->create<size_t>(mb_path / "link_max_rate").set(1e9 / 8);
-
-    return mb;
 }
 
 void mpmd_impl::setup_rfnoc_blocks(
+    mpmd_mboard_impl* mb,
     const size_t mb_index,
     const uhd::device_addr_t& ctrl_xport_args
 ) {
-    auto &mb = _mb[mb_index];
-    mb->num_xbars = mb->rpc->request<size_t>("get_num_xbars");
-    UHD_LOG_TRACE("MPM",
+    UHD_LOG_TRACE("MPMD",
         "Mboard " << mb_index << " reports " << mb->num_xbars << " crossbar(s)."
     );
 
@@ -522,17 +555,6 @@ void mpmd_impl::setup_rpc_blocks(
         task.get();
     }
 }
-
-size_t mpmd_impl::allocate_xbar_local_addr()
-{
-    const size_t new_local_addr = _xbar_local_addr_ctr++;
-    if (new_local_addr > MPMD_CROSSBAR_MAX_LADDR) {
-        throw uhd::runtime_error("Too many crossbars.");
-    }
-
-    return new_local_addr;
-}
-
 
 /*****************************************************************************
  * Find, Factory & Registry
