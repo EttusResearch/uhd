@@ -321,6 +321,60 @@ namespace {
             }
         }
     }
+
+    /*! Throw an exception if compat numbers don't match.
+     *
+     * \param component Name of the component for which we're checking the
+     *                  compat number (for logging and exceptions strings).
+     * \param expected Tuple of 2 integers representing MAJOR.MINOR compat
+     *                 number.
+     * \param actual Tuple of 2 integers representing MAJOR.MINOR compat
+     *                 number.
+     */
+    void assert_compat_number_throw(
+        const std::string &component,
+        const std::vector<size_t> &expected,
+        const std::vector<size_t> &actual
+    ) {
+        UHD_ASSERT_THROW(expected.size() == 2);
+        UHD_ASSERT_THROW(actual.size() == 2);
+        UHD_LOGGER_TRACE("MPMD")
+            << "Checking " << component << " compat number. Expected: "
+            << expected[0] << "." << expected[1]
+            << " Actual: "
+            << actual[0] << "." << actual[1]
+        ;
+
+        if (actual[0] != expected[0]) {
+            const std::string err_msg =
+                str(boost::format("%s major compat number mismatch. "
+                                 "Expected: %i.%i Actual: %i.%i")
+                    % component
+                    % expected[0] % expected[1]
+                    % actual[0] % actual[1]);
+            UHD_LOG_ERROR("MPMD", err_msg);
+            throw uhd::runtime_error(err_msg);
+        }
+        if (actual[1] < expected[1]) {
+            const std::string err_msg =
+                str(boost::format("%s minor compat number mismatch. "
+                                 "Expected: %i.%i Actual: %i.%i")
+                    % component
+                    % expected[0] % expected[1]
+                    % actual[0] % actual[1]);
+            UHD_LOG_ERROR("MPMD", err_msg);
+            throw uhd::runtime_error(err_msg);
+        }
+        if (actual[1] > expected[1]) {
+            const std::string err_msg =
+                str(boost::format("%s minor compat number mismatch. "
+                                 "Expected: %i.%i Actual: %i.%i")
+                    % component
+                    % expected[0] % expected[1]
+                    % actual[0] % actual[1]);
+            UHD_LOG_WARNING("MPMD", err_msg);
+        }
+    }
 }
 
 
@@ -446,32 +500,11 @@ void mpmd_impl::setup_mb(
     const size_t mb_index,
     const size_t base_xport_addr
 ) {
-
-    // Check the compatibility number
-    UHD_LOGGER_TRACE("MPMD") << boost::format(
-            "Checking MPM compat number against ours: %i.%i")
-            % MPM_COMPAT_NUM[0] % MPM_COMPAT_NUM[1];
-    const auto compat_num =
-        mb->rpc->request<std::vector<size_t>>("get_mpm_compat_num");
-    UHD_LOGGER_TRACE("MPMD") << boost::format(
-            "Compat number received: %d.%d")
-            % compat_num[0] % compat_num[1];
-
-    const size_t c_major = compat_num[0], c_minor = compat_num[1];
-    if (c_major != MPM_COMPAT_NUM[0]) {
-        UHD_LOGGER_ERROR("MPMD") << boost::format(
-                                        "MPM major compat number mismatch."
-                                        "Expected %i.%i Actual %i.%i")
-                                        % MPM_COMPAT_NUM[0] % MPM_COMPAT_NUM[1] % c_major % c_minor;
-        throw uhd::runtime_error("MPM compatibility number mismatch.");
-    }
-    if (c_minor < MPM_COMPAT_NUM[1]) {
-        UHD_LOGGER_ERROR("MPMD") << boost::format(
-                                        "MPM minor compat number mismatch."
-                                        "Expected %d.%d Actual %d.%d")
-                                        % MPM_COMPAT_NUM[0] % MPM_COMPAT_NUM[1] % c_major % c_minor;
-        throw uhd::runtime_error("MPM compatibility number mismatch.");
-    }
+    assert_compat_number_throw(
+        "MPM",
+        MPM_COMPAT_NUM,
+        mb->rpc->request<std::vector<size_t>>("get_mpm_compat_num")
+    );
 
     UHD_LOG_DEBUG("MPMD", "Initializing mboard " << mb_index);
     mb->init();
