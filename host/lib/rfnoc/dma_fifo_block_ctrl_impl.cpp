@@ -51,20 +51,20 @@ public:
             _perifs[i].depth = DEFAULT_SIZE;
             _perifs[i].core = dma_fifo_core_3000::make(_perifs[i].ctrl, USER_SR_BASE, USER_RB_BASE);
             _perifs[i].core->resize(_perifs[i].base_addr, _perifs[i].depth);
-            UHD_LOGGER_INFO("RFNOC") << boost::format("[DMA FIFO] Running BIST for FIFO %d... ") % i;
+            UHD_LOGGER_INFO("RFNOC DMA FIFO") << boost::format("Running BIST for FIFO %d... ") % i;
             if (_perifs[i].core->ext_bist_supported()) {
                 uint32_t bisterr = _perifs[i].core->run_bist();
                 if (bisterr != 0) {
                     throw uhd::runtime_error(str(boost::format("BIST failed! (code: %d)\n") % bisterr));
                 } else {
                     double throughput = _perifs[i].core->get_bist_throughput();
-                    UHD_LOGGER_INFO("RFNOC") << (boost::format("pass (Throughput: %.1fMB/s)") % (throughput/1e6)) ;
+                    UHD_LOGGER_INFO("RFNOC DMA FIFO") << (boost::format("BIST passed (Throughput: %.0f MB/s)") % (throughput/1e6)) ;
                 }
             } else {
                 if (_perifs[i].core->run_bist() == 0) {
-                    UHD_LOGGER_INFO("RFNOC") << "pass\n";
+                    UHD_LOGGER_INFO("RFNOC DMA FIFO") << "BIST passed";
                 } else {
-                    throw uhd::runtime_error("BIST failed!\n");
+                    throw uhd::runtime_error("BIST failed!");
                 }
             }
             _tree->access<int>(get_arg_path("base_addr/value", i))

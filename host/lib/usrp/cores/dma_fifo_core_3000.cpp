@@ -329,7 +329,6 @@ public:
             _wait_for_bist_done(1000);
             static const double BYTES_PER_CYC = 8;
             double bus_clk_rate = _fifo_readback.get_bus_clk_rate();
-            UHD_LOGGER_INFO("DEBUG") << boost::format("[DMA FIFO] Clock rate for BIST calculation: %d ") % bus_clk_rate;
             return _fifo_readback.get_xfer_ratio() * bus_clk_rate * BYTES_PER_CYC;
         } else {
             throw uhd::not_implemented_error(
