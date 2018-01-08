@@ -222,10 +222,17 @@ class MPMServer(RPCServer):
         self.log.debug("I was pinged from: %s:%s", self.client_host, self.client_port)
         return data
 
+    ###########################################################################
+    # Claiming logic
+    ###########################################################################
     def claim(self, session_id):
-        """
-        claim `token` - tries to claim MPM device and provides a human readable
-        session_id.
+        """Claim device
+
+        Tries to claim MPM device and provides a human readable session_id.
+        The caller must remember this token, and call reclaim() on regular
+        intervals in order not to lose the claim.
+
+        Will return a token on success, or raise an Exception on failure.
         """
         self._state.lock.acquire()
         if self._state.claim_status.value:
@@ -242,6 +249,7 @@ class MPMServer(RPCServer):
             choice(ascii_letters + digits) for _ in range(TOKEN_LEN)
         ), 'ascii')
         self._state.claim_status.value = True
+        self.periph_manager.claim()
         self._state.lock.release()
         self.session_id = session_id + " ({})".format(self.client_host)
         self._reset_timer()
@@ -255,6 +263,64 @@ class MPMServer(RPCServer):
         else:
             self.periph_manager.set_connection_type("remote")
         return self._state.claim_token.value
+
+    def reclaim(self, token):
+        """
+        Reclaim a MPM device with a token. This operation will fail if the
+        device is claimed and the token doesn't match, or if the device is not
+        claimed at all.
+        """
+        if self._state.claim_status.value:
+            self._state.lock.acquire()
+            if self._check_token_valid(token):
+                self._state.lock.release()
+                self.log.debug("reclaimed from: %s", self.client_host)
+                self._reset_timer()
+                return True
+            self._state.lock.release()
+            self.log.debug(
+                "reclaim failed from: %s  Invalid token: %s",
+                self.client_host, token[:TOKEN_LEN]
+            )
+            return False
+        self.log.debug(
+            "trying to reclaim unclaimed device from: %s",
+            self.client_host
+        )
+        return False
+
+    def _unclaim(self):
+        """
+        unconditional unclaim - for internal use
+        """
+        self.log.debug("Releasing claim on session `{}'".format(
+            self.session_id
+        ))
+        self._state.claim_status.value = False
+        self._state.claim_token.value = b''
+        self.session_id = None
+        try:
+            self.periph_manager.claimed = False
+            self.periph_manager.unclaim()
+            self.periph_manager.set_connection_type(None)
+            self.periph_manager.deinit()
+        except Exception as ex:
+            self._last_error = str(ex)
+            self.log.error("deinit() failed: %s", str(ex))
+            # Don't want to propagate this failure -- the session is over
+        self._timer.kill()
+
+    def unclaim(self, token):
+        """
+        unclaim `token` - unclaims the MPM device if it is claimed with this
+        token
+        """
+        if self._check_token_valid(token):
+            self._unclaim()
+            return True
+        self.log.warning("Attempt to unclaim session with invalid token!")
+        return False
+
 
     def get_mpm_compat_num(self):
         """Get the MPM compatibility number"""
@@ -344,68 +410,12 @@ class MPMServer(RPCServer):
         self.log.debug("End of update_component")
         self._reset_timer()
 
-    def reclaim(self, token):
-        """
-        reclaim a MPM device with a token. This operation will fail
-        if the device is claimed and the token doesn't match.
-        Or if the device is not claimed at all.
-        """
-        if self._state.claim_status.value:
-            self._state.lock.acquire()
-            if self._check_token_valid(token):
-                self._state.lock.release()
-                self.log.debug("reclaimed from: %s", self.client_host)
-                self._reset_timer()
-                return True
-            self._state.lock.release()
-            self.log.debug(
-                "reclaim failed from: %s  Invalid token: %s",
-                self.client_host, token[:TOKEN_LEN]
-            )
-            return False
-        self.log.debug(
-            "trying to reclaim unclaimed device from: %s",
-            self.client_host
-        )
-        return False
-
-    def _unclaim(self):
-        """
-        unconditional unclaim - for internal use
-        """
-        self.log.debug("Releasing claim on session `{}'".format(
-            self.session_id
-        ))
-        self._state.claim_status.value = False
-        self._state.claim_token.value = b''
-        self.session_id = None
-        try:
-            self.periph_manager.claimed = False
-            self.periph_manager.set_connection_type(None)
-            self.periph_manager.deinit()
-        except Exception as ex:
-            self._last_error = str(ex)
-            self.log.error("deinit() failed: %s", str(ex))
-            # Don't want to propagate this failure -- the session is over
-        self._timer.kill()
-
     def _reset_timer(self, timeout=TIMEOUT_INTERVAL):
         """
         reset unclaim timer
         """
         self._timer.kill()
         self._timer = spawn_later(timeout, self._unclaim)
-
-    def unclaim(self, token):
-        """
-        unclaim `token` - unclaims the MPM device if it is claimed with this
-        token
-        """
-        if self._check_token_valid(token):
-            self._unclaim()
-            return True
-        self.log.warning("Attempt to unclaim session with invalid token!")
-        return False
 
     def get_device_info(self):
         """

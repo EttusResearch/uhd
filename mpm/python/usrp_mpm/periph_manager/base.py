@@ -685,3 +685,21 @@ class PeriphManagerBase(object):
         - src_port: IP port the connection is coming from.
         """
         raise NotImplementedError("commit_xport() not implemented.")
+
+    #######################################################################
+    # Claimer API
+    #######################################################################
+    def claim(self):
+        """
+        This is called when the device is claimed, in case the device needs to
+        run any actions on claiming (e.g., light up an LED).
+        """
+        self.log.debug("Device was claimed. No actions defined.")
+
+    def unclaim(self):
+        """
+        This is called when the device is unclaimed, in case the device needs
+        to run any actions on claiming (e.g., turn off an LED).
+        """
+        self.log.debug("Device was unclaimed. No actions defined.")
+
