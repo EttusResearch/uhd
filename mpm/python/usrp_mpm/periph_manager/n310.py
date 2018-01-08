@@ -202,6 +202,79 @@ class FP_GPIO(object):
         assert index in range(self._gpiosize)
         return self._gpios.get(self._offset+index)
 
+class BackpanelGPIO(object):
+    """
+    Abstraction layer for the back panel GPIO
+    """
+    EMIO_BASE = 54
+    BP_GPIO_OFFSET = 45
+    LED_LINK = 0
+    LED_REF = 1
+    LED_GPS = 2
+
+    def __init__(self):
+        self._gpiosize = 3
+        self._offset = self.BP_GPIO_OFFSET + self.EMIO_BASE
+        self.ddr = 0x7
+        self.usemask = 0x7
+        self._gpios = SysFSGPIO(
+            'zynq_gpio',
+            self.usemask << self._offset,
+            self.ddr << self._offset
+        )
+
+    def set_all(self, value):
+        """
+        Set all pins to 'value'.
+        This method will convert value into binary and take the first 3 bits
+        assign to 3pins.
+        """
+        bin_value = '{0:03b}'.format(value)
+        wr_value = bin_value[-(self._gpiosize):]
+        for i in range(self._gpiosize):
+            if (1 << i) & self.ddr:
+                self._gpios.set(self._offset + i, wr_value[i % 3])
+
+    def set(self, index, value=None):
+        """
+        Set a pin by index
+        """
+        assert index in range(self._gpiosize)
+        self._gpios.set(self._offset + index, value)
+
+    def reset_all(self):
+        """
+        Clear all pins
+        """
+        for i in range(self._gpiosize):
+            self._gpios.reset(self._offset+i)
+
+    def reset(self, index):
+        """
+        Clear a pin by index
+        """
+        assert index in range(self._gpiosize)
+        self._gpios.reset(self._offset + index)
+
+    def get_all(self):
+        """
+        Read back all pins
+        """
+        result = 0
+        for i in range(self._gpiosize):
+            if not (1<<i)&self.ddr:
+                value = self._gpios.get(self._offset + i)
+                result = (result << 1) | value
+        return result
+
+    def get(self, index):
+        """
+        Read back a pin by index
+        """
+        assert index in range(self._gpiosize)
+        return self._gpios.get(self._offset + index)
+
+
 ###############################################################################
 # Transport managers
 ###############################################################################
@@ -379,20 +452,17 @@ class n310(PeriphManagerBase):
         cond = threading.Condition()
         cond.acquire()
         while not self._tear_down:
-            self.log.warning(self._tear_down)
-            self.log.warning(threading.current_thread())
             gps_locked = bool(self._gpios.get("GPS-LOCKOK"))
-            # FIXME: Update GPS LED instead of logging
             self.log.trace("Setting GPS LED to {}".format(gps_locked))
-            ref_locked = bool(self.get_ref_lock_sensor()['value'])
-            # FIXME: Update REF LED instead of logging
+            self._bp_leds.set(self._bp_leds.LED_GPS, int(gps_locked))
+            ref_locked = self.get_ref_lock_sensor()['value'] == 'true'
             self.log.trace("Setting REF LED to {}".format(ref_locked))
+            self._bp_leds.set(self._bp_leds.LED_REF, int(ref_locked))
             # Now wait
-            time.sleep(N3XX_MONITOR_THREAD_INTERVAL)
-            # if cond.wait_for(
-                    # lambda: self._tear_down,
-                    # N3XX_MONITOR_THREAD_INTERVAL):
-                # break
+            if cond.wait_for(
+                    lambda: self._tear_down,
+                    N3XX_MONITOR_THREAD_INTERVAL):
+                break
         cond.release()
         self.log.trace("Terminating monitor thread.")
 
@@ -410,6 +480,8 @@ class n310(PeriphManagerBase):
         # Init peripherals
         self.log.trace("Initializing TCA6424 port expander controls...")
         self._gpios = TCA6424(int(self.mboard_info['rev']))
+        self.log.trace("Initializing back panel led controls...")
+        self._bp_leds = BackpanelGPIO()
         self.log.trace("Enabling power of MGT156MHZ clk")
         self._gpios.set("PWREN-CLK-MGT156MHz")
         self.enable_1G_ref_clock()
@@ -984,6 +1056,24 @@ class n310(PeriphManagerBase):
             return False
         return True
 
+    #######################################################################
+    # Claimer API
+    #######################################################################
+    def claim(self):
+        """
+        This is called when the device is claimed, in case the device needs to
+        run any actions on claiming (e.g., light up an LED).
+        """
+        # Light up LINK
+        self._bp_leds.set(self._bp_leds.LED_LINK, 1);
+
+    def unclaim(self):
+        """
+        This is called when the device is unclaimed, in case the device needs
+        to run any actions on claiming (e.g., turn off an LED).
+        """
+        # Turn off LINK
+        self._bp_leds.set(self._bp_leds.LED_LINK, 0);
 
 class MboardRegsControl(object):
     """
