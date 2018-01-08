@@ -86,36 +86,6 @@ size_t calc_num_tx_chans_per_radio(
     );
 }
 
-bool check_if_has_dma_fifo(
-        const uhd::device_addr_t &args,
-        uhd::device3::sptr device,
-        uhd::property_tree::sptr tree
-) {
-    if (device->find_blocks(DFIFO_BLOCK_NAME).empty()) {
-        return false;
-    }
-
-    if (args.has_key("skip_dram")) {
-        UHD_LOG_DEBUG("RFNOC",
-                "[legacy_compat] Skipping DRAM at user request.");
-        return false;
-    }
-
-    const size_t num_radios_per_board =
-        device->find_blocks<radio_ctrl>("0/Radio").size();
-    const size_t num_radio_ports = (num_radios_per_board > 0)
-        ?  num_ports(tree, RADIO_BLOCK_NAME, "in")
-        : 0;
-    const size_t num_dmafifo_ports = num_ports(tree, DFIFO_BLOCK_NAME, "in");
-    if (num_dmafifo_ports < num_radios_per_board * num_radio_ports) {
-        UHD_LOG_WARNING("RFNOC",
-            "[legacy_compat] More radio channels than DMA FIFO channels. "
-            "Skipping DMA FIFO.");
-        return false;
-    }
-    return true;
-}
-
 /*! Recreate passed property without bound subscribers. Maintains current property value.
 */
 template <typename T>
@@ -141,7 +111,7 @@ public:
         _tree(device->get_tree()),
         _has_ducs(not args.has_key("skip_duc") and not device->find_blocks(DUC_BLOCK_NAME).empty()),
         _has_ddcs(not args.has_key("skip_ddc") and not device->find_blocks(DDC_BLOCK_NAME).empty()),
-        _has_dmafifo(check_if_has_dma_fifo(args, device, _tree)),
+        _has_dmafifo(not args.has_key("skip_dram") and not device->find_blocks(DFIFO_BLOCK_NAME).empty()),
         _has_sramfifo(not args.has_key("skip_sram") and not device->find_blocks(SFIFO_BLOCK_NAME).empty()),
         _num_mboards(_tree->list("/mboards").size()),
         _num_radios_per_board(device->find_blocks<radio_ctrl>("0/Radio").size()), // These might throw, maybe we catch that and provide a nicer error message.
