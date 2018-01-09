@@ -23,7 +23,7 @@ namespace {
 
   const double TWINRX_DESIRED_REFERENCE_FREQ = 50e6;
   const double TWINRX_REV_AB_PFD_FREQ = 6.25e6;
-  const double TWINRX_REV_C_PFD_FREQ = 12.6e6;
+  const double TWINRX_REV_C_PFD_FREQ = 12.5e6;
 }
 
 class twinrx_ctrl_impl : public twinrx_ctrl {
