@@ -161,6 +161,7 @@ void magnesium_radio_ctrl_impl::_update_rx_freq_switches(
     // All the defaults are OK when using the bypass path.
     if (not bypass_lnas) {
         switch(band) {
+        case rx_band::LOWBAND:
         case rx_band::BAND0:
             rx_sw2 = magnesium_cpld_ctrl::RX_SW2_LOWERFILTERBANKTOSWITCH3;
             rx_sw3 = magnesium_cpld_ctrl::RX_SW3_FILTER0490LPMHZ;
