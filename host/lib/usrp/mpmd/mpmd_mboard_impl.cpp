@@ -7,6 +7,7 @@
 #include "mpmd_impl.hpp"
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhd/transport/udp_simple.hpp>
 #include <chrono>
 #include <thread>
 
@@ -19,7 +20,12 @@ namespace {
     //! Default timeout value for the init() RPC call (ms)
     const size_t MPMD_DEFAULT_INIT_TIMEOUT    = 120000;
     //! Default timeout value for RPC calls (ms)
-    const size_t MPMD_DEFAULT_RPC_TIMEOUT     = 2000;
+    constexpr size_t MPMD_DEFAULT_RPC_TIMEOUT     = 2000;
+    //! Short timeout value for RPC calls (ms), used for calls that shouldn't
+    // take long. This value can be used to quickly determine a link status.
+    constexpr size_t MPMD_SHORT_RPC_TIMEOUT     = 2000;
+    //! Timeout for pings (seconds).
+    constexpr double MPMD_PING_TIMEOUT          = 0.1;
     //! Default session ID (MPM will recognize a session by this name)
     const std::string MPMD_DEFAULT_SESSION_ID = "UHD";
     //! Key to initialize a ping/measurement latency test
@@ -33,6 +39,47 @@ namespace {
     /*************************************************************************
      * Helper functions
      ************************************************************************/
+    /*! Return true if we can MPM ping a device via discovery service.
+     */
+    bool is_pingable(const std::string& ip_addr, const std::string& udp_port)
+    {
+        auto udp = uhd::transport::udp_simple::make_broadcast(
+            ip_addr,
+            udp_port
+        );
+        const std::string send_buf(
+            uhd::mpmd::mpmd_impl::MPM_ECHO_CMD + " ping"
+        );
+        std::vector<uint8_t> recv_buf;
+        recv_buf.resize(send_buf.size(), ' ');
+        udp->send(boost::asio::buffer(send_buf.c_str(), send_buf.size()));
+        const size_t len =
+            udp->recv(boost::asio::buffer(recv_buf), MPMD_PING_TIMEOUT);
+        if (len == 0) {
+            UHD_LOG_TRACE("MPMD",
+                "Received no MPM ping, assuming device is unreachable.");
+            return false;
+        }
+        if (len != send_buf.size()) {
+            UHD_LOG_DEBUG("MPMD",
+                "Received bad return packet on MPM ping. Assuming endpoint"
+                " is not a valid MPM device.");
+            return false;
+        }
+        if (std::memcmp(
+                    (void *) &recv_buf[0],
+                    (void *) &send_buf[0],
+                    send_buf.size()) != 0) {
+            UHD_LOG_DEBUG("MPMD",
+                "Received invalid return packet on MPM ping. Assuming endpoint"
+                " is not a valid MPM device.");
+            return false;
+        }
+        return true;
+    }
+
+    /*! Call init() on an MPM device.
+     */
     void init_device(
             uhd::rpc_client::sptr rpc,
             const uhd::device_addr_t mb_args
@@ -162,6 +209,82 @@ namespace {
 using namespace uhd;
 using namespace uhd::mpmd;
 
+/******************************************************************************
+ * Static Helpers
+ *****************************************************************************/
+boost::optional<device_addr_t> mpmd_mboard_impl::is_device_reachable(
+        const device_addr_t &device_addr
+) {
+    UHD_LOG_TRACE("MPMD",
+        "Checking accessibility of device `" << device_addr.to_string()
+        << "'");
+    UHD_ASSERT_THROW(device_addr.has_key(xport::MGMT_ADDR_KEY));
+    const std::string rpc_addr = device_addr.get(xport::MGMT_ADDR_KEY);
+    const size_t rpc_port = device_addr.cast<size_t>(
+        mpmd_impl::MPM_RPC_PORT_KEY,
+        mpmd_impl::MPM_RPC_PORT
+    );
+    auto rpcc = uhd::rpc_client::make(rpc_addr, rpc_port);
+    rpcc->set_timeout(MPMD_SHORT_RPC_TIMEOUT);
+    // 1) Read back device info
+    dev_info device_info_dict;
+    try {
+        device_info_dict = rpcc->request<dev_info>("get_device_info");
+    } catch (const uhd::runtime_error& e) {
+        UHD_LOG_ERROR("MPMD", e.what());
+    } catch (...) {
+        UHD_LOG_DEBUG("MPMD",
+            "Unexpected exception when trying to query device info. Flagging "
+            "device as unreachable.");
+        return boost::optional<device_addr_t>();
+    }
+    // 2) Check for local device
+    if (device_info_dict.count("connection") and
+            device_info_dict.at("connection") == "local") {
+        UHD_LOG_TRACE("MPMD", "Device is local, flagging as reachable.");
+        return boost::optional<device_addr_t>(device_addr);
+    }
+    // 3) Check for network-reachable device
+    // Note: This makes the assumption that devices will always allow RPC
+    // connections on their CHDR addresses.
+    const std::vector<std::string> addr_keys = {"second_addr", "addr"};
+    for (const auto& addr_key : addr_keys) {
+        if (not device_info_dict.count(addr_key)) {
+            continue;
+        }
+        const std::string chdr_addr = device_info_dict.at(addr_key);
+        UHD_LOG_TRACE("MPMD",
+            "Checking reachability via network addr " << chdr_addr);
+        try {
+            // First do an MPM ping -- there is some issue with rpclib that can
+            // lead to indefinite timeouts
+            const std::string mpm_discovery_port = device_addr.get(
+                mpmd_impl::MPM_DISCOVERY_PORT_KEY,
+                std::to_string(mpmd_impl::MPM_DISCOVERY_PORT)
+            );
+            if (!is_pingable(chdr_addr, mpm_discovery_port)) {
+                UHD_LOG_TRACE("MPMD",
+                    "Cannot MPM ping, assuming device is unreachable.");
+                continue;
+            }
+            UHD_LOG_TRACE("MPMD",
+                "Was able to ping device, trying RPC connection.");
+            auto chdr_rpcc = uhd::rpc_client::make(chdr_addr, rpc_port);
+            chdr_rpcc->set_timeout(MPMD_SHORT_RPC_TIMEOUT);
+            chdr_rpcc->request<dev_info>("get_device_info");
+            auto device_addr_copy{device_addr};
+            device_addr_copy["addr"] = chdr_addr;
+            return boost::optional<device_addr_t>(device_addr_copy);
+        } catch (...) {
+            UHD_LOG_DEBUG("MPMD",
+                "Failed to reach device on network addr " << chdr_addr << ".");
+        }
+    }
+    // If everything fails, we probably can't talk to this chap.
+    UHD_LOG_TRACE("MPMD",
+        "All reachability checks failed -- assuming device is not reachable.");
+    return boost::optional<device_addr_t>();
+}
 
 /*****************************************************************************
  * Structors

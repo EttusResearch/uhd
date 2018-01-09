@@ -15,6 +15,7 @@
 #include <uhd/types/dict.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhd/transport/muxed_zero_copy_if.hpp>
+#include <boost/optional.hpp>
 #include <map>
 #include <memory>
 
@@ -28,6 +29,16 @@ class mpmd_mboard_impl
     /*** Types ***************************************************************/
     using uptr = std::unique_ptr<mpmd_mboard_impl>;
     using dev_info = std::map<std::string, std::string>;
+
+    /*** Static helper *******************************************************/
+    /*! Will run some checks to determine if this device can be reached from
+     *  the current UHD session
+     *
+     *  \param device_addr Device args. Must contain an mgmt_addr.
+     */
+    static boost::optional<device_addr_t> is_device_reachable(
+        const device_addr_t& device_addr
+    );
 
     /*** Structors ***********************************************************/
     /*! Ctor: Claim device or throw an exception on failure.
@@ -159,6 +170,9 @@ class mpmd_mboard_impl
 class mpmd_impl : public uhd::usrp::device3_impl
 {
 public:
+    //! Device arg key which will allow finding all devices, even those not
+    // reachable via CHDR.
+    static const std::string MPM_FINDALL_KEY;
     //! Port on which the discovery process is listening (default value, it is
     //  user-overridable)
     static const size_t MPM_DISCOVERY_PORT;
@@ -177,6 +191,9 @@ public:
     static const std::string MPM_ECHO_CMD;
     //! This is the RPC command that will return the last known error from MPM.
     static const std::string MPM_RPC_GET_LAST_ERROR_CMD;
+    //! The preamble for any response on the discovery port. Can be used to
+    //  verify that the response is actually an MPM device.
+    static constexpr char MPM_DISC_RESPONSE_PREAMBLE[] = "USRP-MPM";
 
     /**************************************************************************
      * Structors

@@ -32,6 +32,8 @@
 using namespace uhd;
 using namespace uhd::mpmd;
 
+constexpr char mpmd_impl::MPM_DISC_RESPONSE_PREAMBLE[];
+
 namespace {
     /*************************************************************************
      * Local constants
@@ -45,6 +47,9 @@ namespace {
     const std::vector<size_t> MPM_COMPAT_NUM = {1, 1};
     //! Timeout value for the update_component RPC call (ms)
     const size_t MPMD_UPDATE_COMPONENT_TIMEOUT     = 20000;
+    constexpr char MPMD_CHDR_REACHABILITY_KEY[] = "reachable";
+    constexpr char MPMD_CHDR_REACHABILITY_NEGATIVE[] = "No";
+
 
     /*************************************************************************
      * Helper functions
@@ -376,12 +381,21 @@ namespace {
             UHD_LOG_WARNING("MPMD", err_msg);
         }
     }
+
+    device_addr_t flag_dev_as_unreachable(const device_addr_t& device_args)
+    {
+        device_addr_t flagged_device_args(device_args);
+        flagged_device_args[MPMD_CHDR_REACHABILITY_KEY] =
+            MPMD_CHDR_REACHABILITY_NEGATIVE;
+        return flagged_device_args;
+    }
 }
 
 
 /*****************************************************************************
  * Static class attributes
  ****************************************************************************/
+const std::string mpmd_impl::MPM_FINDALL_KEY = "find_all";
 const size_t mpmd_impl::MPM_DISCOVERY_PORT = 49600;
 const std::string mpmd_impl::MPM_DISCOVERY_PORT_KEY = "discovery_port";
 const size_t mpmd_impl::MPM_RPC_PORT = 49601;
@@ -593,8 +607,10 @@ void mpmd_impl::setup_rpc_blocks(
 /*****************************************************************************
  * Find, Factory & Registry
  ****************************************************************************/
-device_addrs_t mpmd_find_with_addr(const std::string& mgmt_addr, const device_addr_t& hint_)
-{
+device_addrs_t mpmd_find_with_addr(
+        const std::string& mgmt_addr,
+        const device_addr_t& hint_
+) {
     UHD_ASSERT_THROW(not mgmt_addr.empty());
     const std::string mpm_discovery_port = hint_.get(
         mpmd_impl::MPM_DISCOVERY_PORT_KEY,
@@ -633,7 +649,7 @@ device_addrs_t mpmd_find_with_addr(const std::string& mgmt_addr, const device_ad
         }
         // Verify we didn't receive something other than an MPM discovery
         // response
-        if (result[0] != "USRP-MPM") {
+        if (result[0] != mpmd_impl::MPM_DISC_RESPONSE_PREAMBLE) {
             continue;
         }
         const std::string recv_addr = comm->get_recv_addr();
@@ -664,7 +680,9 @@ device_addrs_t mpmd_find_with_addr(const std::string& mgmt_addr, const device_ad
             boost::algorithm::split(value, el,
                                     [](const char& in) { return in == '='; },
                                     boost::token_compress_on);
-            new_addr[value[0]] = value[1];
+            if (value[0] != xport::MGMT_ADDR_KEY) {
+                new_addr[value[0]] = value[1];
+            }
         }
         // filter the discovered device below by matching optional keys
         if (
@@ -762,6 +780,9 @@ device_addrs_t mpmd_find(const device_addr_t& hint_)
     if (not hints.empty() and
             (hints[0].has_key(xport::FIRST_ADDR_KEY) or
              hints[0].has_key(xport::MGMT_ADDR_KEY))) {
+        // Note: We don't try and connect to the devices in this mode, because
+        // we only get here if the user specified addresses, and we assume she
+        // knows what she's doing.
         return mpmd_find_with_addrs(hints);
     }
 
@@ -769,7 +790,37 @@ device_addrs_t mpmd_find(const device_addr_t& hint_)
     if (hints.empty()) {
         hints.resize(1);
     }
-    return mpmd_find_with_bcast(hints[0]);
+    const auto bcast_mpm_devs = mpmd_find_with_bcast(hints[0]);
+    UHD_LOG_TRACE("MPMD FIND",
+        "Found " << bcast_mpm_devs.size() << " device via broadcast.");
+    const bool find_all = hint_.has_key(mpmd_impl::MPM_FINDALL_KEY);
+    if (find_all) {
+        UHD_LOG_TRACE("MPMD FIND",
+            "User provided " << mpmd_impl::MPM_FINDALL_KEY << ", will not "
+            "filter devices based on CHDR accessibility.");
+    }
+    // Filter found devices for those that we can actually talk to via CHDR
+    device_addrs_t filtered_mpm_devs;
+    for (const auto &mpm_dev : bcast_mpm_devs) {
+        const auto reachable_device_addr =
+            mpmd_mboard_impl::is_device_reachable(mpm_dev);
+        if (bool(reachable_device_addr)) {
+            filtered_mpm_devs.push_back(reachable_device_addr.get());
+        } else if (find_all) {
+            filtered_mpm_devs.emplace_back(
+                flag_dev_as_unreachable(mpm_dev)
+            );
+        }
+    }
+
+    if (filtered_mpm_devs.empty() and not bcast_mpm_devs.empty()) {
+        UHD_LOG_INFO("MPMD FIND",
+            "Found MPM devices, but none are reachable for a UHD session. "
+            "Specify " << mpmd_impl::MPM_FINDALL_KEY << " to find all devices."
+        );
+    }
+
+    return filtered_mpm_devs;
 }
 
 static device::sptr mpmd_make(const device_addr_t& device_args)
