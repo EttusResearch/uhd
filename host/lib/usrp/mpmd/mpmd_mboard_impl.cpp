@@ -210,6 +210,11 @@ mpmd_mboard_impl::mpmd_mboard_impl(
 
 mpmd_mboard_impl::~mpmd_mboard_impl()
 {
+    try {
+        dump_logs();
+    } catch (...) {
+        UHD_LOG_WARNING("MPMD", "Could not flush log queue on exit!");
+    }
     UHD_SAFE_CALL(
         if (not rpc->request_with_token<bool>("unclaim")) {
             UHD_LOG_WARNING("MPMD", "Failure to ack unclaim!");
@@ -355,6 +360,7 @@ uhd::task::sptr mpmd_mboard_impl::claim_device_and_make_task(
         if (not this->claim()) {
             throw uhd::value_error("mpmd device reclaiming loop failed!");
         };
+        this->dump_logs();
         std::this_thread::sleep_for(
             std::chrono::milliseconds(MPMD_RECLAIM_INTERVAL_MS)
         );
