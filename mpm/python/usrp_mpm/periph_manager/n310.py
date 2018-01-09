@@ -15,6 +15,7 @@ import subprocess
 import json
 import time
 import datetime
+import threading
 from six import iteritems, itervalues
 from builtins import object
 from usrp_mpm.gpsd_iface import GPSDIface
@@ -34,6 +35,7 @@ N3XX_DEFAULT_TIME_SOURCE = 'internal'
 N3XX_DEFAULT_ENABLE_GPS = True
 N3XX_DEFAULT_ENABLE_FPGPIO = True
 N3XX_FPGA_COMPAT = (1, 0)
+N3XX_MONITOR_THREAD_INTERVAL = 1.0 # seconds
 
 ###############################################################################
 # Additional peripheral controllers specific to Magnesium
@@ -303,6 +305,8 @@ class n310(PeriphManagerBase):
     def __init__(self, args):
         super(n310, self).__init__(args)
         self._device_initialized = False
+        self._tear_down = False
+        self._status_monitor_thread = None
         self._ext_clock_freq = None
         self._clock_source = None
         self._time_source = None
@@ -363,6 +367,35 @@ class n310(PeriphManagerBase):
         if not self.mboard_regs_control.get_meas_clock_mmcm_lock():
             raise RuntimeError("Measurement clock failed to init")
 
+    def _monitor_status(self):
+        """
+        Status monitoring thread: This should be executed in a thread. It will
+        continuously monitor status of the following peripherals:
+
+        - GPS lock (update back-panel GPS LED)
+        - REF lock (update back-panel REF LED)
+        """
+        self.log.trace("Launching monitor thread...")
+        cond = threading.Condition()
+        cond.acquire()
+        while not self._tear_down:
+            self.log.warning(self._tear_down)
+            self.log.warning(threading.current_thread())
+            gps_locked = bool(self._gpios.get("GPS-LOCKOK"))
+            # FIXME: Update GPS LED instead of logging
+            self.log.trace("Setting GPS LED to {}".format(gps_locked))
+            ref_locked = bool(self.get_ref_lock_sensor()['value'])
+            # FIXME: Update REF LED instead of logging
+            self.log.trace("Setting REF LED to {}".format(ref_locked))
+            # Now wait
+            time.sleep(N3XX_MONITOR_THREAD_INTERVAL)
+            # if cond.wait_for(
+                    # lambda: self._tear_down,
+                    # N3XX_MONITOR_THREAD_INTERVAL):
+                # break
+        cond.release()
+        self.log.trace("Terminating monitor thread.")
+
     def _init_peripherals(self, args):
         """
         Turn on all peripherals. This may throw an error on failure, so make
@@ -403,6 +436,14 @@ class n310(PeriphManagerBase):
             'udp': N310XportMgrUDP(self.log.getChild('UDP')),
             'liberio': N310XportMgrLiberio(self.log.getChild('liberio')),
         }
+        # Spawn status monitoring thread
+        self.log.trace("Spawning status monitor thread...")
+        self._status_monitor_thread = threading.Thread(
+            target=self._monitor_status,
+            name="N3xxStatusMonitorThread",
+            daemon=True,
+        )
+        self._status_monitor_thread.start()
         # Init complete.
         self.log.info("mboard info: {}".format(self.mboard_info))
 
@@ -435,6 +476,11 @@ class n310(PeriphManagerBase):
         deconstruction.
         For N310, this means the overlay.
         """
+        self.log.trace("Tearing down N3xx device...")
+        self._tear_down = True
+        self._status_monitor_thread.join(3 * N3XX_MONITOR_THREAD_INTERVAL)
+        if self._status_monitor_thread.is_alive():
+            self.log.error("Could not terminate monitor thread!")
         active_overlays = self.list_active_overlays()
         self.log.trace("N310 has active device tree overlays: {}".format(
             active_overlays
