@@ -336,7 +336,6 @@ class PeriphManagerBase(object):
         self.log.trace("Mboard deinit() called.")
         for dboard in self.dboards:
             dboard.deinit()
-        self.log.trace("Resetting SID pool...")
 
     def tear_down(self):
         """

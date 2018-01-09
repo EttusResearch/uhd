@@ -422,6 +422,7 @@ class n310(PeriphManagerBase):
         super(n310, self).deinit()
         for xport_mgr in itervalues(self._xport_mgrs):
             xport_mgr.deinit()
+        self.log.trace("Resetting SID pool...")
         self._available_endpoints = list(range(256))
 
     def tear_down(self):
