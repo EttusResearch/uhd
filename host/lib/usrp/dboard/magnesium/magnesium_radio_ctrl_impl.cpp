@@ -550,7 +550,7 @@ double magnesium_radio_ctrl_impl::set_rx_lo_freq(
     }
     std::string source = this->get_rx_lo_source(name, chan);
     const double coerced_lo_freq = this->_set_rx_lo_freq(source, name, freq, chan);
-    this->_update_freq(chan,TX_DIRECTION);
+    this->_update_freq(chan,RX_DIRECTION);
     this->_update_gain(chan,RX_DIRECTION);
     return coerced_lo_freq;
 }
