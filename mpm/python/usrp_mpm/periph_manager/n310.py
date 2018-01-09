@@ -297,6 +297,9 @@ class n310(PeriphManagerBase):
         """
         return ['n3xx']
 
+    ###########################################################################
+    # Ctor and device initialization tasks
+    ###########################################################################
     def __init__(self, args):
         super(n310, self).__init__(args)
         self._device_initialized = False
@@ -323,48 +326,6 @@ class n310(PeriphManagerBase):
             fail_on_old_minor=True,
             log=self.log
         )
-
-    def _init_peripherals(self, args):
-        """
-        Turn on all peripherals. This may throw an error on failure, so make
-        sure to catch it.
-        """
-        # Init Mboard Regs
-        self.mboard_regs_control = MboardRegsControl(self.mboard_regs_label, self.log)
-        self.mboard_regs_control.get_git_hash()
-        self.mboard_regs_control.get_build_timestamp()
-        self._check_fpga_compat()
-        # Init peripherals
-        self.log.trace("Initializing TCA6424 port expander controls...")
-        self._gpios = TCA6424(int(self.mboard_info['rev']))
-        self.log.trace("Enabling power of MGT156MHZ clk")
-        self._gpios.set("PWREN-CLK-MGT156MHz")
-        self.enable_1G_ref_clock()
-        self.enable_gps(
-            enable=bool(
-                args.default_args.get('enable_gps', N3XX_DEFAULT_ENABLE_GPS)
-            )
-        )
-        self.enable_fp_gpio(
-            enable=bool(
-                args.default_args.get(
-                    'enable_fp_gpio',
-                    N3XX_DEFAULT_ENABLE_FPGPIO
-                )
-            )
-        )
-        # Init clocking
-        self.enable_ref_clock(enable=True)
-        self._ext_clock_freq = None
-        self._init_ref_clock_and_time(args.default_args)
-        self._init_meas_clock()
-        # Init CHDR transports
-        self._xport_mgrs = {
-            'udp': N310XportMgrUDP(self.log.getChild('UDP')),
-            'liberio': N310XportMgrLiberio(self.log.getChild('liberio')),
-        }
-        # Init complete.
-        self.log.info("mboard info: {}".format(self.mboard_info))
 
     def _init_ref_clock_and_time(self, default_args):
         """
@@ -402,6 +363,52 @@ class n310(PeriphManagerBase):
         if not self.mboard_regs_control.get_meas_clock_mmcm_lock():
             raise RuntimeError("Measurement clock failed to init")
 
+    def _init_peripherals(self, args):
+        """
+        Turn on all peripherals. This may throw an error on failure, so make
+        sure to catch it.
+        """
+        # Init Mboard Regs
+        self.mboard_regs_control = MboardRegsControl(
+            self.mboard_regs_label, self.log)
+        self.mboard_regs_control.get_git_hash()
+        self.mboard_regs_control.get_build_timestamp()
+        self._check_fpga_compat()
+        # Init peripherals
+        self.log.trace("Initializing TCA6424 port expander controls...")
+        self._gpios = TCA6424(int(self.mboard_info['rev']))
+        self.log.trace("Enabling power of MGT156MHZ clk")
+        self._gpios.set("PWREN-CLK-MGT156MHz")
+        self.enable_1G_ref_clock()
+        self.enable_gps(
+            enable=bool(
+                args.default_args.get('enable_gps', N3XX_DEFAULT_ENABLE_GPS)
+            )
+        )
+        self.enable_fp_gpio(
+            enable=bool(
+                args.default_args.get(
+                    'enable_fp_gpio',
+                    N3XX_DEFAULT_ENABLE_FPGPIO
+                )
+            )
+        )
+        # Init clocking
+        self.enable_ref_clock(enable=True)
+        self._ext_clock_freq = None
+        self._init_ref_clock_and_time(args.default_args)
+        self._init_meas_clock()
+        # Init CHDR transports
+        self._xport_mgrs = {
+            'udp': N310XportMgrUDP(self.log.getChild('UDP')),
+            'liberio': N310XportMgrLiberio(self.log.getChild('liberio')),
+        }
+        # Init complete.
+        self.log.info("mboard info: {}".format(self.mboard_info))
+
+    ###########################################################################
+    # Session init and deinit
+    ###########################################################################
     def init(self, args):
         """
         Calls init() on the parent class, and then programs the Ethernet
