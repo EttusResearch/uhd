@@ -38,6 +38,18 @@ class XportMgrLiberio(object):
         " Clean up after a session terminates "
         self._data_chan_ctr = 0
 
+    def get_xport_info(self):
+        """
+        Returns a dictionary of useful information, e.g. for appending into the
+        device info.
+
+        Note: This can be run by callers not owning a claim, even when the
+        device has been claimed by someone else.
+
+        In this case, returns an empty dict.
+        """
+        return {}
+
     def request_xport(
             self,
             sid,

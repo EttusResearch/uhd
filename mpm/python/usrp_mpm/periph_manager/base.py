@@ -407,11 +407,27 @@ class PeriphManagerBase(object):
     @no_rpc
     def get_device_info(self):
         """
-        return the mboard_info dict and add a claimed field
+        Return the mboard_info dict and add a claimed field.
+
+        Will also call into get_device_info_dyn() for additional information.
+        Don't override this function.
         """
         result = {"claimed": str(self.claimed)}
         result.update(self.mboard_info)
+        result.update(self.get_device_info_dyn())
         return result
+
+    @no_rpc
+    def get_device_info_dyn(self):
+        """
+        "Dynamic" device info getter. When get_device_info() is called, it
+        will also call into this function to see if there is 'dynamic' info
+        that needs to be returned. The reason to split up these functions is
+        because we don't want anyone to override get_device_info(), but we do
+        want periph managers to be able to inject custom device info data.
+        """
+        self.log.trace("Called get_device_info_dyn(), but not implemented.")
+        return {}
 
     @no_rpc
     def set_connection_type(self, conn_type):

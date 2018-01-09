@@ -689,6 +689,16 @@ class n310(PeriphManagerBase):
             return self._xport_mgrs['liberio'].commit_xport(sid, xport_info)
 
     ###########################################################################
+    # Device info
+    ###########################################################################
+    def get_device_info_dyn(self):
+        """
+        Append the device info with current IP addresses.
+        """
+        return self._xport_mgrs['udp'].get_xport_info() \
+                if self._device_initialized else {}
+
+    ###########################################################################
     # Clock/Time API
     ###########################################################################
     def get_clock_sources(self):

@@ -112,6 +112,23 @@ class XportMgrUDP(object):
         " Clean up after a session terminates "
         self._allocations = {}
 
+    def get_xport_info(self):
+        """
+        Returns a dictionary of useful information, e.g. for appending into the
+        device info.
+
+        Note: This can be run by callers not owning a claim, even when the
+        device has been claimed by someone else.
+
+        In this case, returns the available IP addresses.
+        """
+        available_interfaces = \
+            self._init_interfaces(self._possible_chdr_ifaces)
+        return dict(zip(
+            ("addr", "second_addr", "third_addr", "fourth_addr"),
+            (x['ip_addr'] for x in itervalues(available_interfaces))
+        ))
+
     def _preload_ethtables(self, eth_dispatchers, table_file):
         """
         Populates the ethernet tables from a JSON file
