@@ -26,6 +26,7 @@ make_exception_impl("IndexError",            index_error,             lookup_err
 make_exception_impl("KeyError",              key_error,               lookup_error)
 make_exception_impl("TypeError",             type_error,              exception)
 make_exception_impl("ValueError",            value_error,             exception)
+make_exception_impl("NarrowingError",        narrowing_error,         value_error)
 make_exception_impl("RuntimeError",          runtime_error,           exception)
 make_exception_impl("NotImplementedError",   not_implemented_error,   runtime_error)
 make_exception_impl("EnvironmentError",      environment_error,       exception)

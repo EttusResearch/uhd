@@ -27,6 +27,7 @@ SET(test_sources
     gain_group_test.cpp
     log_test.cpp
     math_test.cpp
+    narrow_cast_test.cpp
     property_test.cpp
     ranges_test.cpp
     sid_t_test.cpp

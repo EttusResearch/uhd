@@ -80,6 +80,13 @@ namespace uhd{
         virtual void dynamic_throw(void) const;
     };
 
+    struct UHD_API narrowing_error : value_error{
+        narrowing_error(const std::string &what);
+        virtual unsigned code(void) const;
+        virtual narrowing_error *dynamic_clone(void) const;
+        virtual void dynamic_throw(void) const;
+    };
+
     struct UHD_API runtime_error : exception{
         runtime_error(const std::string &what);
         virtual unsigned code(void) const;
