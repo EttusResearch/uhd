@@ -15,10 +15,8 @@ from gevent import signal
 from gevent.hub import BlockingSwitchOutError
 import usrp_mpm as mpm
 from usrp_mpm.mpmtypes import SharedState
-from usrp_mpm.periph_manager import periph_manager
 
 _PROCESSES = []
-
 
 def setup_arg_parser():
     """
@@ -107,6 +105,54 @@ def kill_time(sig, frame):
     log.info("System exiting")
     sys.exit(0)
 
+def init_only(log, args):
+    """
+    Run the full initialization immediately and return
+    """
+    # Create the periph_manager for this device
+    # This call will be forwarded to the device specific implementation
+    # e.g. in periph_manager/n310.py
+    # Which implementation is called will be determined during
+    # configuration with cmake (-DMPM_DEVICE).
+    # mgr is thus derived from PeriphManagerBase
+    # (see periph_manager/base.py)
+    from usrp_mpm.periph_manager import periph_manager
+    log.info("Spawning periph manager...")
+    ctor_time_start = time.time()
+    mgr = periph_manager(args)
+    ctor_duration = time.time() - ctor_time_start
+    log.info("Ctor Duration: {:.02f} s".format(ctor_duration))
+    init_time_start = time.time()
+    init_result = mgr.init(args.default_args)
+    init_duration = time.time() - init_time_start
+    if init_result:
+        log.info("Initialization successful! Duration: {:.02f} s"
+                 .format(init_duration))
+    else:
+        log.warning("Initialization failed! Duration: {:.02f} s"
+                    .format(init_duration))
+    log.info("Terminating on user request before launching RPC server.")
+    mgr.deinit()
+    return init_result
+
+def spawn_processes(log, args):
+    """
+    Launch the subprocesses and hang until completion.
+    """
+    shared = SharedState()
+    log.info("Spawning RPC process...")
+    _PROCESSES.append(
+        mpm.spawn_rpc_process(mpm.mpmtypes.MPM_RPC_PORT, shared, args))
+    log.info("Spawning discovery process...")
+    _PROCESSES.append(
+        mpm.spawn_discovery_process(shared, args.discovery_addr)
+    )
+    log.info("Processes launched. Registering signal handlers.")
+    signal.signal(signal.SIGTERM, kill_time)
+    signal.signal(signal.SIGINT, kill_time)
+    signal.pause()
+    return True
+
 
 def main():
     """
@@ -118,46 +164,9 @@ def main():
     log = mpm.get_main_logger(
         log_default_delta=args.verbose-args.quiet
     ).getChild('main')
-    shared = SharedState()
-    # Create the periph_manager for this device
-    # This call will be forwarded to the device specific implementation
-    # e.g. in periph_manager/n310.py
-    # Which implementation is called will be determined during configuration
-    # with cmake (-DMPM_DEVICE).
-    # mgr is thus derived from PeriphManagerBase (see periph_manager/base.py)
-    log.info("Spawning periph manager...")
-    mgr_generator = lambda: periph_manager(args)
-    mgr = mgr_generator()
-    discovery_info = {
-        "type": mgr.get_device_info().get("type", "n/a"),
-        "serial": mgr.get_device_info().get("serial", "n/a"),
-        "product": mgr.get_device_info().get("product", "n/a")
-    }
     if args.init_only:
-        init_time_start = time.time()
-        init_result = mgr.init(args.default_args)
-        init_duration = time.time() - init_time_start
-        if init_result:
-            log.info("Initialization successful! Duration: {:.02f} s"
-                     .format(init_duration))
-        else:
-            log.warning("Initialization failed! Duration: {:.02f} s"
-                        .format(init_duration))
-        log.info("Terminating on user request before launching RPC server.")
-        mgr.deinit()
-        return init_result
-    log.info("Spawning discovery process...")
-    _PROCESSES.append(
-        mpm.spawn_discovery_process(discovery_info, shared, args.discovery_addr)
-    )
-    log.info("Spawning RPC process...")
-    _PROCESSES.append(
-        mpm.spawn_rpc_process(mpm.mpmtypes.MPM_RPC_PORT, shared, mgr, mgr_generator))
-    log.info("Processes launched. Registering signal handlers.")
-    signal.signal(signal.SIGTERM, kill_time)
-    signal.signal(signal.SIGINT, kill_time)
-    signal.pause()
-    return True
+        return init_only(log, args)
+    return spawn_processes(log, args)
 
 if __name__ == '__main__':
     exit(not main())

@@ -49,24 +49,37 @@ class MPMServer(RPCServer):
     # Compatibility number for MPM
     MPM_COMPAT_NUM = (1, 1)
 
-    def __init__(self, state, mgr, mgr_generator=None, *args, **kwargs):
+    def __init__(self, state, default_args):
         self.log = get_main_logger().getChild('RPCServer')
         self._state = state
         self._timer = Greenlet()
         self.session_id = None
-        self.periph_manager = mgr
-        self._mgr_generator = mgr_generator
+        # Create the periph_manager for this device
+        # This call will be forwarded to the device specific implementation
+        # e.g. in periph_manager/n310.py
+        # Which implementation is called will be determined during
+        # configuration with cmake (-DMPM_DEVICE).
+        # mgr is thus derived from PeriphManagerBase
+        # (see periph_manager/base.py)
+        from usrp_mpm.periph_manager import periph_manager
+        self._mgr_generator = lambda: periph_manager(default_args)
+        self.periph_manager = self._mgr_generator()
+        device_info = self.periph_manager.get_device_info()
+        self._state.dev_type.value = \
+                to_binary_str(device_info.get("type", "n/a"))
+        self._state.dev_product.value = \
+                to_binary_str(device_info.get("product", "n/a"))
+        self._state.dev_serial.value = \
+                to_binary_str(device_info.get("serial", "n/a"))
         self._db_methods = []
         self._mb_methods = []
         self.claimed_methods = copy.copy(self.default_claimed_methods)
         self._last_error = ""
-        self._init_rpc_calls(mgr)
+        self._init_rpc_calls(self.periph_manager)
         # We call the server __init__ function here, and not earlier, because
         # first the commands need to be registered
         super(MPMServer, self).__init__(
-            *args,
             pack_params={'use_bin_type': True},
-            **kwargs
         )
 
     def _init_rpc_calls(self, mgr):
@@ -434,14 +447,14 @@ class MPMServer(RPCServer):
         ]
 
 
-def _rpc_server_process(shared_state, port, mgr, mgr_generator):
+def _rpc_server_process(shared_state, port, default_args):
     """
     This is the actual process that's running the RPC server.
     """
     connections = Pool(1000)
     server = StreamServer(
         ('0.0.0.0', port),
-        handle=MPMServer(shared_state, mgr, mgr_generator),
+        handle=MPMServer(shared_state, default_args),
         spawn=connections)
     # catch signals and stop the stream server
     signal(signal.SIGTERM, lambda *args: server.stop())
@@ -449,12 +462,13 @@ def _rpc_server_process(shared_state, port, mgr, mgr_generator):
     server.serve_forever()
 
 
-def spawn_rpc_process(state, udp_port, mgr, mgr_generator):
+def spawn_rpc_process(state, udp_port, default_args):
     """
     Returns a process that contains the RPC server
     """
-
-    proc_args = [udp_port, state, mgr, mgr_generator]
-    proc = Process(target=_rpc_server_process, args=proc_args)
+    proc = Process(
+        target=_rpc_server_process,
+        args=[udp_port, state, default_args],
+    )
     proc.start()
     return proc

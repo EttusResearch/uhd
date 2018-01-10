@@ -11,13 +11,13 @@ from __future__ import print_function
 from multiprocessing import Process
 import socket
 from builtins import bytes
-from six import iteritems
 from usrp_mpm.mpmtypes import MPM_DISCOVERY_PORT
 from usrp_mpm.mpmlog import get_main_logger
+from usrp_mpm.mpmutils import to_binary_str
 
-RESPONSE_PREAMBLE = "USRP-MPM"
-RESPONSE_SEP = ";"
-RESPONSE_CLAIMED_KEY = "claimed"
+RESPONSE_PREAMBLE = b"USRP-MPM"
+RESPONSE_SEP = b";"
+RESPONSE_CLAIMED_KEY = b"claimed"
 # "Max MTU" is not a redundant name. We don't know the total path MTU, but we
 # can say for sure that it won't exceed a certain value, and that's the max MTU
 MAX_MTU = 8000
@@ -25,7 +25,7 @@ MAX_MTU = 8000
 IP_MTU_DISCOVER = 10
 IP_PMTUDISC_DO = 2
 
-def spawn_discovery_process(device_info, shared_state, discovery_addr):
+def spawn_discovery_process(shared_state, discovery_addr):
     """
     Returns a process that contains the device discovery.
 
@@ -38,25 +38,27 @@ def spawn_discovery_process(device_info, shared_state, discovery_addr):
     """
     proc = Process(
         target=_discovery_process,
-        args=(device_info, shared_state, discovery_addr)
+        args=(shared_state, discovery_addr)
     )
     proc.start()
     return proc
 
 
-def _discovery_process(device_info, state, discovery_addr):
+def _discovery_process(state, discovery_addr):
     """
     The actual process for device discovery. Is spawned by
     spawn_discovery_process().
     """
-    def create_response_string():
+    log = get_main_logger().getChild('discovery')
+    def create_response_string(state):
         " Generate the string that gets sent back to the requester. "
         return RESPONSE_SEP.join(
             [RESPONSE_PREAMBLE] + \
-            ["{k}={v}".format(k=k, v=v) for k, v in iteritems(device_info)] + \
-            ["{k}={v}".format(k=RESPONSE_CLAIMED_KEY, v=state.claim_status.value)]
+            [b"type="+state.dev_type.value] + \
+            [b"product="+state.dev_product.value] + \
+            [b"serial="+state.dev_serial.value] + \
+            [RESPONSE_CLAIMED_KEY+to_binary_str("={}".format(state.claim_status.value))]
         )
-    log = get_main_logger().getChild('discovery')
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     # FIXME really, we should only bind to the subnet but I haven't gotten that
@@ -80,7 +82,8 @@ def _discovery_process(device_info, state, discovery_addr):
             if data.strip(b"\0") == b"MPM-DISC":
                 log.info("Sending discovery response to %s port: %d",
                          sender[0], sender[1])
-                send_data = bytes(create_response_string(), 'ascii')
+                resp_str = create_response_string(state)
+                send_data = resp_str
                 log.info(send_data)
                 send_sock.sendto(send_data, sender)
             elif data.strip(b"\0").startswith(b"MPM-ECHO"):

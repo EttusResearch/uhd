@@ -15,25 +15,20 @@ from builtins import object
 
 MPM_RPC_PORT = 49601
 MPM_DISCOVERY_PORT = 49600
-
 MPM_DISCOVERY_MESSAGE = "MPM-DISC"
-
 
 class SharedState(object):
     """
-    Holds information which should be shared between processes
-    Usage should be kept to a minimum
+    Holds information which should be shared between processes.
     """
-
     def __init__(self):
         self.lock = RLock()
-        self.claim_status = Value(
-            ctypes.c_bool,
-            False, lock=self.lock)  # lock
-        self.claim_token = Array(
-            ctypes.c_char, 256,
-            lock=self.lock)  # String with max length of 256
-
+        self.claim_status = Value(ctypes.c_bool, False, lock=self.lock)
+        # String with max length of 256
+        self.claim_token = Array(ctypes.c_char, 256, lock=self.lock)
+        self.dev_type = Array(ctypes.c_char, 16, lock=self.lock)
+        self.dev_serial = Array(ctypes.c_char, 8, lock=self.lock)
+        self.dev_product = Array(ctypes.c_char, 16, lock=self.lock)
 
 class SID(object):
     """
@@ -56,7 +51,6 @@ class SID(object):
                 self.dst_addr, self.dst_ep = \
                     [int(x, 10) for x in dst.split('.', 2)]
         else:
-            print(sid)
             self.src_addr = sid >> 24
             self.src_ep = (sid >> 16) & 0xFF
             self.dst_addr = (sid >> 8) & 0xFF
