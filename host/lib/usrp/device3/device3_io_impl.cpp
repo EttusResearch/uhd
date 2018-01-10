@@ -352,9 +352,7 @@ static bool tx_flow_ctrl(
         }
 
 		// Look for a flow control message to update the space available in the buffer.
-        // A minimal timeout is used because larger timeouts can cause the thread to be
-        // scheduled out for too long at high data rates and result in underruns.
-		managed_recv_buffer::sptr buff = async_xport->get_recv_buff(0.000001);
+		managed_recv_buffer::sptr buff = async_xport->get_recv_buff();
 		if (buff)
 		{
 			vrt::if_packet_info_t if_packet_info;
