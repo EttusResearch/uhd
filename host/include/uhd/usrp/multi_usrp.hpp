@@ -791,6 +791,34 @@ public:
      */
     virtual void set_rx_gain(double gain, const std::string &name, size_t chan = 0) = 0;
 
+    /*! Get a list of possible RX gain profile options
+     *
+     * Example: On the TwinRX, this will return "low-noise", "low-distortion" or "default".
+     * These names can be used in gain-profile related API called.
+     * An empty return value doesn't mean there are no profile options, it means that
+     * this radio does not have any gain profiles implemented, and typically means
+     * there is only one default profile of set gain
+     *
+     * \param chan the channel index 0 to N-1
+     * \return a vector of strings for possible gain profile options, or an empty list of
+     *         this doesn't apply.
+     */
+    virtual std::vector<std::string> get_rx_gain_profile_names(const size_t chan = 0) = 0;
+
+    /*!
+     * Set the RX gain profile.
+     * \param profile the profile string option
+     * \param chan the channel index 0 to N-1
+     */
+    virtual void set_rx_gain_profile(const std::string& profile, const size_t chan = 0) = 0;
+
+    /*!
+     * Get the RX gain profile.
+     * \param chan the channel index 0 to N-1
+     * \return a string of current RX gain profile of corresponding channel.
+     */
+    virtual std::string get_rx_gain_profile(const size_t chan = 0) = 0;
+
     //! A convenience wrapper for setting overall RX gain
     void set_rx_gain(double gain, size_t chan = 0){
         return this->set_rx_gain(gain, ALL_GAINS, chan);
@@ -1076,6 +1104,34 @@ public:
      * \param chan the channel index 0 to N-1
      */
     virtual void set_tx_gain(double gain, const std::string &name, size_t chan = 0) = 0;
+
+    /*! Get a list of possible TX gain profile options
+     *
+     * Example: On the N310, this will return "manual" or "default".
+     * These names can be used in gain related API called.
+     * An empty return value doesn't mean there are no profile options, it means that
+     * this radio does not have any gain profiles implemented, and typically means
+     * there is only one default profile of set gain
+     *
+     * \param chan the channel index 0 to N-1
+     * \return a vector of strings for possible gain profile options, or an empty list of
+     *         this doesn't apply.
+     */
+    virtual std::vector<std::string> get_tx_gain_profile_names(const size_t chan = 0) = 0;
+
+    /*!
+     * Set the TX gain profile.
+     * \param profile the profile string option
+     * \param chan the channel index 0 to N-1
+     */
+    virtual void set_tx_gain_profile(const std::string& profile, const size_t chan = 0) = 0;
+
+    /*!
+     * Get the TX gain profile.
+     * \param chan the channel index 0 to N-1
+     * \return a string of current TX gain profile of corresponding channel.
+     */
+    virtual std::string get_tx_gain_profile(const size_t chan = 0) = 0;
 
     //! A convenience wrapper for setting overall TX gain
     void set_tx_gain(double gain, size_t chan = 0){

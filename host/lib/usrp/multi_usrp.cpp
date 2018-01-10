@@ -1272,6 +1272,42 @@ public:
         }
     }
 
+    void set_rx_gain_profile(const std::string& profile, const size_t chan){
+        if (chan != ALL_CHANS) {
+            if (_tree->exists(rx_rf_fe_root(chan) / "gains/all/profile/value")) {
+                _tree->access<std::string>(rx_rf_fe_root(chan) / "gains/all/profile/value").set(profile);
+            }
+        } else {
+            for (size_t c = 0; c < get_rx_num_channels(); c++){
+                if (_tree->exists(rx_rf_fe_root(c) / "gains/all/profile/value")) {
+                    _tree->access<std::string>(rx_rf_fe_root(chan) / "gains/all/profile/value").set(profile);
+                }
+            }
+        }
+    }
+
+    std::string get_rx_gain_profile(const size_t chan){
+        if (chan != ALL_CHANS) {
+            if (_tree->exists(rx_rf_fe_root(chan) / "gains/all/profile/value")) {
+                return _tree->access<std::string>(rx_rf_fe_root(chan) / "gains/all/profile/value").get();
+            }
+        } else {
+            UHD_LOG_ERROR("MULTI_USRP", "Can't get rx gain profile from all channels at once. Ignoring this operation")
+            return "";
+        }
+    }
+
+    std::vector<std::string> get_rx_gain_profile_names(const size_t chan){
+        if (chan != ALL_CHANS) {
+            if (_tree->exists(rx_rf_fe_root(chan) / "gains/all/profile/options")) {
+                return _tree->access<std::vector<std::string>>(rx_rf_fe_root(chan) / "gains/all/profile/options").get();
+            }
+        } else {
+            UHD_LOG_ERROR("MULTI_USRP", "Can't get rx gain profile from all channels at once. Ignoring this operation")
+            return std::vector<std::string>();
+        }
+    }
+
     void set_normalized_rx_gain(double gain, size_t chan = 0)
     {
       if (gain > 1.0 || gain < 0.0) {
@@ -1628,6 +1664,42 @@ public:
             return tx_gain_group(chan)->set_value(gain, name);
         } catch (uhd::key_error &) {
             THROW_GAIN_NAME_ERROR(name,chan,tx);
+        }
+    }
+
+    void set_tx_gain_profile(const std::string& profile, const size_t chan){
+        if (chan != ALL_CHANS) {
+            if (_tree->exists(tx_rf_fe_root(chan) / "gains/all/profile/value")) {
+                _tree->access<std::string>(tx_rf_fe_root(chan) / "gains/all/profile/value").set(profile);
+            }
+        } else {
+            for (size_t c = 0; c < get_tx_num_channels(); c++){
+                if (_tree->exists(tx_rf_fe_root(c) / "gains/all/profile/value")) {
+                    _tree->access<std::string>(tx_rf_fe_root(chan) / "gains/all/profile/value").set(profile);
+                }
+            }
+        }
+    }
+
+    std::string get_tx_gain_profile(const size_t chan){
+        if (chan != ALL_CHANS) {
+            if (_tree->exists(tx_rf_fe_root(chan) / "gains/all/profile/value")) {
+                return _tree->access<std::string>(tx_rf_fe_root(chan) / "gains/all/profile/value").get();
+            }
+        } else {
+            UHD_LOG_ERROR("MULTI_USRP", "Can't get tx gain profile from all channels at once. Ignoring this operation")
+            return "";
+        }
+    }
+
+    std::vector<std::string> get_tx_gain_profile_names(const size_t chan){
+        if (chan != ALL_CHANS) {
+            if (_tree->exists(tx_rf_fe_root(chan) / "gains/all/profile/options")) {
+                return _tree->access<std::vector<std::string>>(tx_rf_fe_root(chan) / "gains/all/profile/options").get();
+            }
+        } else {
+            UHD_LOG_ERROR("MULTI_USRP", "Can't get tx gain profile from all channels at once. Ignoring this operation")
+            return std::vector<std::string>();
         }
     }
 
