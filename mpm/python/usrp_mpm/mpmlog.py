@@ -27,7 +27,7 @@ RESET = str('\x1b[0m')
 # Additional log level
 TRACE = 1
 
-DEFAULT_LOG_LEVEL = DEBUG
+DEFAULT_LOG_LEVEL = INFO
 DEFAULT_LOG_BUF_SIZE = 100 # In number of log records
 
 class ColorStreamHandler(logging.StreamHandler):
