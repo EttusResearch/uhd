@@ -100,7 +100,7 @@ class GPSDIface(object):
         # Read results until we see one which contains the requested response class, ie TPV or SKY
         result = {}
         end_time = time.time() + timeout
-        while resp_class not in result:
+        while not result.get(resp_class, {}):
             try:
                 self.poll_query()
                 json_result = self.socket_read_line(timeout=timeout)
