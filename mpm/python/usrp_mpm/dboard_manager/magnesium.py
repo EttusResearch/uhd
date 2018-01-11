@@ -352,8 +352,16 @@ class Magnesium(DboardManagerBase):
         self._port_expander = TCA6408(self._get_i2c_dev(self.slot_idx))
         self._power_on()
         self.log.debug("Loading C++ drivers...")
+
+        # The Mykonos TX DeFramer lane crossbar requires configuration on a per-slot
+        # basis due to motherboard MGT lane swapping.
+        # The RX framer lane crossbar configuration
+        # is identical for both slots and is hard-coded within the Mykonos API.
+        deserializer_lane_xbar = 0xD2 if self.slot_idx == 0 else 0x72
+
         self._device = lib.dboards.magnesium_manager(
             self._spi_nodes['mykonos'],
+            deserializer_lane_xbar
         )
         self.mykonos = self._device.get_radio_ctrl()
         self.spi_lock = self._device.get_spi_lock()

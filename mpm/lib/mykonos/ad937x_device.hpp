@@ -45,6 +45,7 @@ public:
 
     ad937x_device(
         mpm::types::regs_iface* iface,
+        const size_t deserializer_lane_xbar,
         mpm::ad937x::gpio::gain_pins_t gain_pins
     );
 

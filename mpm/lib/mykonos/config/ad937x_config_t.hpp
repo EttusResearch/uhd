@@ -13,7 +13,7 @@
 class ad937x_config_t  : public boost::noncopyable
 {
 public:
-    ad937x_config_t(spiSettings_t* sps);
+    ad937x_config_t(spiSettings_t* sps, const size_t deserializer_lane_xbar);
     mykonosDevice_t * device;
 
     ad937x_fir rx_fir_config;

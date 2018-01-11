@@ -92,6 +92,7 @@ public:
      */
     static sptr make(
         std::shared_ptr<std::mutex> spi_mutex,
+        const size_t deserializer_lane_xbar,
         mpm::types::regs_iface::sptr iface,
         mpm::ad937x::gpio::gain_pins_t gain_pins);
     virtual ~ad937x_ctrl(void) {}

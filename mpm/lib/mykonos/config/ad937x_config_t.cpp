@@ -45,7 +45,7 @@ const int16_t ad937x_config_t::DEFAULT_SNIFFER_FIR_15366[DEFAULT_RX_FIR_SIZE] =
      -3988, -4942,-3512,  958, 8118,16519,23993,28395,28395,23993,16519, 8118,  958,-3512,-4942,-3988,
      -1871,   198, 1444, 1683, 1192,  440, -175, -466, -456, -283,  -92,   30,   71,   59,   31,   10 };
 
-ad937x_config_t::ad937x_config_t(spiSettings_t* sps) :
+ad937x_config_t::ad937x_config_t(spiSettings_t* sps, const size_t deserializer_lane_xbar) :
     _rx(DEFAULT_RX_SETTINGS),
     _rxProfile(DEFAULT_RX_PROFILE),
     _framer(DEFAULT_FRAMER),
@@ -57,7 +57,6 @@ ad937x_config_t::ad937x_config_t(spiSettings_t* sps) :
     _tx(DEFAULT_TX_SETTINGS),
     _txProfile(DEFAULT_TX_PROFILE),
     _deframer(DEFAULT_DEFRAMER),
-
     // TODO: Remove if ADI ever fixes this
     // The TX bring up requires a valid ORX profile
     // https://github.com/EttusResearch/uhddev/blob/f0f8f58471c3fed94279c32f00e9f8da7db40efd/mpm/lib/mykonos/adi/mykonos.c#L16590
@@ -89,6 +88,7 @@ ad937x_config_t::ad937x_config_t(spiSettings_t* sps) :
     _sniffer_rx_fir_config(DEFAULT_RX_FIR_GAIN, std::vector<int16_t>(DEFAULT_SNIFFER_FIR, DEFAULT_SNIFFER_FIR + DEFAULT_RX_FIR_SIZE))
 {
     _device.spiSettings = sps;
+    _deframer.deserializerLaneCrossbar = deserializer_lane_xbar;
 
     _init_pointers();
 

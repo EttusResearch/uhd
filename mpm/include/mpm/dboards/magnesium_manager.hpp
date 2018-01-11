@@ -17,7 +17,8 @@ namespace mpm { namespace dboards {
     {
     public:
         magnesium_manager(
-            const std::string &mykonos_spidev
+            const std::string &mykonos_spidev,
+            const size_t deserializer_lane_xbar
         );
 
         /*! Return a reference to the SPI mutex
@@ -43,7 +44,7 @@ namespace mpm { namespace dboards {
 void export_magnesium(){
     LIBMPM_BOOST_PREAMBLE("dboards")
     using namespace mpm::dboards;
-    bp::class_<mpm::dboards::magnesium_manager>("magnesium_manager", bp::init<std::string>())
+    bp::class_<mpm::dboards::magnesium_manager>("magnesium_manager", bp::init<std::string,size_t>())
         .def("get_spi_lock", &mpm::dboards::magnesium_manager::get_spi_lock)
         .def("get_radio_ctrl", &mpm::dboards::magnesium_manager::get_radio_ctrl)
     ;

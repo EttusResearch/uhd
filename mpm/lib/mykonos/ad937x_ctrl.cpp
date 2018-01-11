@@ -172,10 +172,11 @@ class ad937x_ctrl_impl : public ad937x_ctrl
 public:
     ad937x_ctrl_impl(
         std::shared_ptr<std::mutex> spi_mutex,
+        const size_t deserializer_lane_xbar,
         mpm::types::regs_iface::sptr iface,
         mpm::ad937x::gpio::gain_pins_t gain_pins) :
         spi_mutex(spi_mutex),
-        device(iface.get(), gain_pins),
+        device(iface.get(), deserializer_lane_xbar, gain_pins),
         _iface(iface)
     {
         /* nop */
@@ -550,10 +551,11 @@ private:
 
 ad937x_ctrl::sptr ad937x_ctrl::make(
         std::shared_ptr<std::mutex> spi_mutex,
+        const size_t deserializer_lane_xbar,
         mpm::types::regs_iface::sptr iface,
         mpm::ad937x::gpio::gain_pins_t gain_pins
 ) {
-    return std::make_shared<ad937x_ctrl_impl>(spi_mutex, iface, gain_pins);
+    return std::make_shared<ad937x_ctrl_impl>(spi_mutex, deserializer_lane_xbar, iface, gain_pins);
 }
 
 

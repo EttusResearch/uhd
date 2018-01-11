@@ -257,9 +257,10 @@ Initialization functions
 
 ad937x_device::ad937x_device(
     mpm::types::regs_iface* iface,
+    const size_t deserializer_lane_xbar,
     const gain_pins_t gain_pins) :
     full_spi_settings(iface),
-    mykonos_config(&full_spi_settings.spi_settings),
+    mykonos_config(&full_spi_settings.spi_settings, deserializer_lane_xbar),
     gain_ctrl(gain_pins)
 {
 }
