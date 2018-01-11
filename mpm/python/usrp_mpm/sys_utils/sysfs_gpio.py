@@ -186,3 +186,69 @@ class SysFSGPIO(object):
         self.log.trace("Reading value {} from `{}'...".format(read_value, value_path))
         return read_value
 
+class GPIOBank(object):
+    """
+    Extension of a SysFSGPIO
+    """
+    def __init__(self, uio_label, offset, usemask, ddr):
+        self._gpiosize = bin(usemask).count("1")
+        self._offset = offset
+        self._ddr = ddr
+        self._usemask = usemask
+        self._gpios = SysFSGPIO(
+            uio_label,
+            self._usemask << self._offset,
+            self._ddr << self._offset
+        )
+
+    def set_all(self, value):
+        """
+        Set all pins to 'value'.
+        This method will convert value into binary and assign all the bits in
+        the use mask.
+        """
+        bin_value = ('{0:0'+self._gpiosize+'b}').format(value)
+        wr_value = bin_value[-(self._gpiosize):]
+        for i in range(self._gpiosize):
+            if (1 << i) & self._ddr:
+                self._gpios.set(self._offset + i, wr_value[i % self._gpiosize])
+
+    def set(self, index, value=None):
+        """
+        Set a pin by index
+        """
+        assert index in range(self._gpiosize)
+        self._gpios.set(self._offset + index, value)
+
+    def reset_all(self):
+        """
+        Clear all pins
+        """
+        for i in range(self._gpiosize):
+            self._gpios.reset(self._offset+i)
+
+    def reset(self, index):
+        """
+        Clear a pin by index
+        """
+        assert index in range(self._gpiosize)
+        self._gpios.reset(self._offset + index)
+
+    def get_all(self):
+        """
+        Read back all pins
+        """
+        result = 0
+        for i in range(self._gpiosize):
+            if not (1<<i)&self._ddr:
+                value = self._gpios.get(self._offset + i)
+                result = (result << 1) | value
+        return result
+
+    def get(self, index):
+        """
+        Read back a pin by index
+        """
+        assert index in range(self._gpiosize)
+        return self._gpios.get(self._offset + index)
+

@@ -684,7 +684,7 @@ class N310BIST(object):
         ddr2 = 0xfc0
         def _run_gpio(ddr, patterns):
             " Run a GPIO test for a given set of patterns "
-            gpio_ctrl = n310.FP_GPIO(ddr)
+            gpio_ctrl = n310.FrontpanelGPIO(ddr)
             for pattern in patterns:
                 gpio_ctrl.set_all(pattern)
                 time.sleep(0.1)
