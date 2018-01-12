@@ -498,6 +498,7 @@ class Magnesium(DboardManagerBase):
             )
         def _sync_db_clock(synchronizer):
             " Synchronizes the DB clock to the common reference "
+            synchronizer.check_core()
             synchronizer.run_sync(measurement_only=False)
             offset_error = synchronizer.run_sync(measurement_only=True)
             if offset_error > 100e-12:

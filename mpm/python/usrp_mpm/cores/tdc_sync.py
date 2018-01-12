@@ -72,7 +72,6 @@ class ClockSynchronizer(object):
     The actual synchronization is run in run_sync().
     """
     # TDC Control Register address constants
-    # TODO see if we want to factor in an offset
     TDC_CONTROL         = 0x200
     TDC_STATUS          = 0x208
     RSP_OFFSET_0        = 0x20C
@@ -81,6 +80,11 @@ class ClockSynchronizer(object):
     RTC_OFFSET_1        = 0x218
     RSP_PERIOD_CONTROL  = 0x220
     RTC_PERIOD_CONTROL  = 0x224
+    TDC_MASTER_RESET    = 0x230
+    SYNC_SIGNATURE      = 0x300
+    SYNC_REVISION       = 0x304
+    SYNC_OLDESTCOMPAT   = 0x308
+    SYNC_SCRATCH        = 0x30C
 
     def __init__(
             self,
@@ -111,6 +115,62 @@ class ClockSynchronizer(object):
         self.target_values = target_values
         self.dac_spi_addr_val = dac_spi_addr_val
         self.meas_clk_freq = 170.542641116e6
+        # Bump this whenever we stop supporting older FPGA images or boards.
+        # YYMMDDHH
+        self.oldest_compat_version = 0x17060111
+        # Bump this whenever changes are made to this MPM host code.
+        self.current_version = 0x18011210
+
+
+    def check_core(self):
+        """
+        Verify TDC core returns correct ID and passes revision tests.
+        """
+        self.log.trace("Checking TDC Core...")
+        if self.peek32(self.SYNC_SIGNATURE) != 0x73796e63:
+            raise RuntimeError('TDC Core signature mismatch! Check that core is mapped correctly')
+        # Two revision checks are needed:
+        #   FPGA Current Rev >= Host Oldest Compatible Rev
+        #   Host Current Rev >= FPGA Oldest Compatible Rev
+        fpga_current_revision    = self.peek32(self.SYNC_REVISION) & 0xFFFFFFFF
+        fpga_old_compat_revision = self.peek32(self.SYNC_OLDESTCOMPAT) & 0xFFFFFFFF
+        if fpga_current_revision < self.oldest_compat_version:
+            self.log.error("Revision check failed! MPM oldest supported revision "
+                           "(0x{:08X}) is too new for this FPGA revision (0x{:08X})."
+                           .format(self.oldest_compat_version, fpga_current_revision))
+            raise RuntimeError('This MPM version does not support the loaded FPGA image. Please update images!')
+        if self.current_version < fpga_old_compat_revision:
+            self.log.error("Revision check failed! FPGA oldest compatible revision "
+                           "(0x{:08X}) is too new for this MPM version (0x{:08X})."
+                           .format(fpga_current_revision, self.current_version))
+            raise RuntimeError('The loaded FPGA version is too new for MPM. Please update MPM!')
+        self.log.trace("TDC Core current revision: 0x{:08X}".format(fpga_current_revision))
+        self.log.trace("TDC Core oldest compatible revision: 0x{:08X}".format(fpga_old_compat_revision))
+        return True
+
+
+    def reset_tdc(self):
+        """
+        Toggles the master reset for the registers as well as all other portions of
+        the TDC. Confirms registers are cleared by writing and reading from the
+        scratch register.
+        """
+        # Write the scratch register with known data. This will be used to tell if the
+        # register data is cleared.
+        self.poke32(self.SYNC_SCRATCH, 0xDEADBEEF)
+        assert self.peek32(self.SYNC_SCRATCH) == 0xDEADBEEF
+
+        # Reset the register space first, then check to confirm it has been cleared.
+        self.poke32(self.TDC_MASTER_RESET, 0x01) # self-clearing bit
+        if self.peek32(self.SYNC_SCRATCH) != 0:
+            self.log.error("TDC Failed to Clear Registers!")
+            raise RuntimeError("TDC Master Reset Failed")
+
+        # Toggle the master reset for the TDC module. This is not self-clearing.
+        self.poke32(self.TDC_MASTER_RESET, 0x10)
+        time.sleep(0.001)
+        self.poke32(self.TDC_MASTER_RESET, 0x00)
+
 
     def run_sync(self, measurement_only=False):
         """
