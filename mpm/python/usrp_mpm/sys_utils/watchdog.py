@@ -23,14 +23,19 @@ def has_watchdog():
     """
     return bool(os.environ.get('WATCHDOG_USEC', False))
 
-def watchdog_task(shared_state, log):
+def transfer_control(pid):
+    """
+    Transfer control of watchdog notifications to new PID.
+    """
+    daemon.notify("MAINPID={:d}".format(int(pid)))
+
+def _watchdog_task(shared_state, log):
     """
     Continuously ping the watchdog to tell him that we're still alive.
 
     This will keep running until the parent thread dies, or
     shared_state.system_ready gets set to False by someone.
     """
-    log.info("launching task")
     watchdog_timeout = \
             float(os.environ.get(
                 'WATCHDOG_USEC',
@@ -40,9 +45,12 @@ def watchdog_task(shared_state, log):
     daemon.notify("READY=1")
     log.info("READY=1, interval %f", watchdog_interval)
     while shared_state.system_ready.value:
+        # Sleep first, then ping, that avoids the case where transfer_control()
+        # is not yet complete before we call this for the first time, which
+        # would lead in error messages popping up in the systemd journal.
+        time.sleep(watchdog_interval)
         log.trace("Pinging watchdog....")
         daemon.notify("WATCHDOG=1")
-        time.sleep(watchdog_interval)
     log.error("Terminating watchdog thread!")
     return
 
@@ -53,7 +61,7 @@ def spawn_watchdog_task(shared_state, log):
     outlive the main thread.
     """
     task = threading.Thread(
-        target=watchdog_task,
+        target=_watchdog_task,
         args=[shared_state, log],
         name="MPMWatchdogTask",
         daemon=True,

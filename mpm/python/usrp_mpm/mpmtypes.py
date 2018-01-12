@@ -24,7 +24,8 @@ class SharedState(object):
     def __init__(self):
         self.lock = RLock()
         self.claim_status = Value(ctypes.c_bool, False, lock=self.lock)
-        # String with max length of 256
+        self.system_ready = Value(ctypes.c_bool, False, lock=self.lock)
+        # String with max length of 256:
         self.claim_token = Array(ctypes.c_char, 256, lock=self.lock)
         self.dev_type = Array(ctypes.c_char, 16, lock=self.lock)
         self.dev_serial = Array(ctypes.c_char, 8, lock=self.lock)

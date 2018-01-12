@@ -25,6 +25,7 @@ from six import iteritems
 from mprpc import RPCServer
 from usrp_mpm.mpmlog import get_main_logger
 from usrp_mpm.mpmutils import to_binary_str
+from usrp_mpm.sys_utils import watchdog
 
 TIMEOUT_INTERVAL = 3.0 # Seconds before claim expires
 TOKEN_LEN = 16 # Length of the token string
@@ -81,6 +82,14 @@ class MPMServer(RPCServer):
         super(MPMServer, self).__init__(
             pack_params={'use_bin_type': True},
         )
+        self._state.system_ready.value = True
+        self.log.info("RPC server ready!")
+        # Optionally spawn watchdog. Note: In order for us to be able to spawn
+        # the task from this thread, the main process needs to hand control to
+        # us using watchdog.transfer_control().
+        if watchdog.has_watchdog():
+            self.log.info("Spawning watchdog task...")
+            watchdog.spawn_watchdog_task(self._state, self.log)
 
     def _init_rpc_calls(self, mgr):
         """

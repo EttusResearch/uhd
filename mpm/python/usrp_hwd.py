@@ -15,6 +15,7 @@ from gevent import signal
 from gevent.hub import BlockingSwitchOutError
 import usrp_mpm as mpm
 from usrp_mpm.mpmtypes import SharedState
+from usrp_mpm.sys_utils import watchdog
 
 _PROCESSES = []
 
@@ -147,16 +148,20 @@ def spawn_processes(log, args):
     log.info("Spawning RPC process...")
     _PROCESSES.append(
         mpm.spawn_rpc_process(mpm.mpmtypes.MPM_RPC_PORT, shared, args))
+    log.debug("RPC process has PID: %d", _PROCESSES[-1].pid)
+    if watchdog.has_watchdog():
+        watchdog.transfer_control(_PROCESSES[-1].pid)
     log.info("Spawning discovery process...")
     _PROCESSES.append(
         mpm.spawn_discovery_process(shared, args.discovery_addr)
     )
+    log.debug("Discovery process has PID: %d", _PROCESSES[-1].pid)
     log.info("Processes launched. Registering signal handlers.")
     signal.signal(signal.SIGTERM, kill_time)
     signal.signal(signal.SIGINT, kill_time)
-    signal.pause()
+    for proc in _PROCESSES:
+        proc.join()
     return True
-
 
 def main():
     """
