@@ -23,6 +23,7 @@ SET(example_sources
     tx_timed_samples.cpp
     tx_waveforms.cpp
     txrx_loopback_to_file.cpp
+    usrp_list_sensors.cpp
     latency_test.cpp
     gpio.cpp
     sync_to_gps.cpp
