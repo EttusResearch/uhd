@@ -10,6 +10,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/rfnoc/node_ctrl_base.hpp>
 #include <uhd/transport/chdr.hpp>
+#include <uhd/utils/algorithm.hpp>
 #include <uhd/utils/math.hpp>
 #include <uhd/types/direction.hpp>
 #include <uhd/types/eeprom.hpp>
@@ -420,12 +421,18 @@ double magnesium_radio_ctrl_impl::_set_tx_gain(
     std::lock_guard<std::mutex> l(_set_lock);
     UHD_LOG_TRACE(unique_id(),
         "_set_tx_gain(name=" << name << ", gain=" << gain << ", chan=" << chan << ")");
+      UHD_LOG_TRACE(unique_id(),
+        "_set_tx_gain(name=" << name << ", gain=" << gain << ", chan=" << chan << ")");
+    double clip_gain = 0;
     if (name == MAGNESIUM_GAIN1){
-        _ad9371_att[TX_DIRECTION] = gain;
+        clip_gain = uhd::clip(gain, AD9371_MIN_TX_GAIN, AD9371_MAX_TX_GAIN);
+        _ad9371_att[TX_DIRECTION] = clip_gain;
     }else if (name == MAGNESIUM_GAIN2){
-        _dsa_att[TX_DIRECTION] = gain;
+        clip_gain = uhd::clip(gain, DSA_MIN_GAIN, DSA_MAX_GAIN);
+        _dsa_att[TX_DIRECTION] = clip_gain;
     }else if (name == MAGNESIUM_AMP){
-        _amp_bypass[TX_DIRECTION] =  gain == 0.0;
+        clip_gain = gain > 0.0 ? AMP_MAX_GAIN: AMP_MIN_GAIN;
+        _amp_bypass[TX_DIRECTION] = clip_gain == 0.0;
     }else {
         throw uhd::value_error("Could not find gain element " + name);
     }
@@ -437,7 +444,7 @@ double magnesium_radio_ctrl_impl::_set_tx_gain(
         chan,
         TX_DIRECTION
     );
-    return gain; // not really any coreced here for individual gain
+    return clip_gain; // not really any coreced here (only clip) for individual gain
 }
 
 double magnesium_radio_ctrl_impl::_get_tx_gain(
@@ -481,12 +488,16 @@ double magnesium_radio_ctrl_impl::_set_rx_gain(
     std::lock_guard<std::mutex> l(_set_lock);
     UHD_LOG_TRACE(unique_id(),
         "_set_rx_gain(name=" << name << ", gain=" << gain << ", chan=" << chan << ")");
+    double clip_gain = 0;
     if (name == MAGNESIUM_GAIN1){
-        _ad9371_att[RX_DIRECTION] = gain;
+        clip_gain = uhd::clip(gain, AD9371_MIN_RX_GAIN, AD9371_MAX_RX_GAIN);
+        _ad9371_att[RX_DIRECTION] = clip_gain;
     }else if (name == MAGNESIUM_GAIN2){
-        _dsa_att[RX_DIRECTION] = gain;
+        clip_gain = uhd::clip(gain, DSA_MIN_GAIN, DSA_MAX_GAIN);
+        _dsa_att[RX_DIRECTION] = clip_gain;
     }else if (name == MAGNESIUM_AMP){
-        _amp_bypass[RX_DIRECTION] = gain == 0.0;
+        clip_gain = gain > 0.0 ? AMP_MAX_GAIN: AMP_MIN_GAIN;
+        _amp_bypass[RX_DIRECTION] = clip_gain == 0.0;
     }else {
         throw uhd::value_error("Could not find gain element " + name);
     }
@@ -498,7 +509,7 @@ double magnesium_radio_ctrl_impl::_set_rx_gain(
         chan,
         RX_DIRECTION
     );
-    return gain; // not really any coreced here for individual gain
+    return clip_gain; // not really any coreced here (only clip) for individual gain
 }
 
 double magnesium_radio_ctrl_impl::_get_rx_gain(
