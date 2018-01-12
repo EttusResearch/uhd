@@ -136,6 +136,6 @@ class DboardManagerBase(object):
             self.log.error(error_msg)
             raise RuntimeError(error_msg)
         return getattr(
-            self, callback_map.get('sensor_name')
+            self, callback_map.get(sensor_name)
         )(chan)
 

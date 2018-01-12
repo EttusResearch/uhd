@@ -858,7 +858,7 @@ class n310(PeriphManagerBase):
             self.log.warning("Can't read temp on fpga-thermal-zone")
         return {
             'name': 'temperature',
-            'type': 'DOUBLE',
+            'type': 'REALNUM',
             'unit': 'C',
             'value': return_val
         }
@@ -910,8 +910,6 @@ class n310(PeriphManagerBase):
                 gps_info = gps_iface.get_gps_info(resp_class='tpv', timeout=15)
                 self.log.trace("GPS info: {}".format(gps_info))
                 response_mode = gps_info.get("mode", 0)
-
-        import datetime
         time_str = gps_info.get("time", "")
         self.log.trace("GPS time string: {}".format(time_str))
         time_dt = datetime.datetime.strptime(time_str, "%Y-%m-%dT%H:%M:%S.%fZ")
@@ -922,7 +920,7 @@ class n310(PeriphManagerBase):
             'name': 'gps_time',
             'type': 'INTEGER',
             'unit': 'seconds',
-            'value': gps_time,
+            'value': str(gps_time),
         }
 
     def get_gps_tpv_sensor(self):
@@ -937,7 +935,6 @@ class n310(PeriphManagerBase):
                 gps_info = gps_iface.get_gps_info(resp_class='tpv', timeout=15)
                 self.log.trace("GPS info: {}".format(gps_info))
                 response_mode = gps_info.get("mode", 0)
-
             # Return the JSON'd results
             gps_tpv = json.dumps(gps_info)
             return {
