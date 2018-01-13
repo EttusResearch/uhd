@@ -581,6 +581,10 @@ class n310(PeriphManagerBase):
         Calls init() on the parent class, and then programs the Ethernet
         dispatchers accordingly.
         """
+        if not self._device_initialized:
+            self.log.warning(
+                "Cannot run init(), device was never fully initialized!")
+            return
         result = super(n310, self).init(args)
         for xport_mgr in itervalues(self._xport_mgrs):
             xport_mgr.init(args)
@@ -590,6 +594,10 @@ class n310(PeriphManagerBase):
         """
         Clean up after a UHD session terminates.
         """
+        if not self._device_initialized:
+            self.log.warning(
+                "Cannot run deinit(), device was never fully initialized!")
+            return
         super(n310, self).deinit()
         for xport_mgr in itervalues(self._xport_mgrs):
             xport_mgr.deinit()
@@ -604,9 +612,10 @@ class n310(PeriphManagerBase):
         """
         self.log.trace("Tearing down N3xx device...")
         self._tear_down = True
-        self._status_monitor_thread.join(3 * N3XX_MONITOR_THREAD_INTERVAL)
-        if self._status_monitor_thread.is_alive():
-            self.log.error("Could not terminate monitor thread!")
+        if self._device_initialized:
+            self._status_monitor_thread.join(3 * N3XX_MONITOR_THREAD_INTERVAL)
+            if self._status_monitor_thread.is_alive():
+                self.log.error("Could not terminate monitor thread!")
         active_overlays = self.list_active_overlays()
         self.log.trace("N310 has active device tree overlays: {}".format(
             active_overlays
@@ -1115,14 +1124,16 @@ class n310(PeriphManagerBase):
         This is called when the device is claimed, in case the device needs to
         run any actions on claiming (e.g., light up an LED).
         """
-        # Light up LINK
-        self._bp_leds.set(self._bp_leds.LED_LINK, 1)
+        if self._device_initialized:
+            # Light up LINK
+            self._bp_leds.set(self._bp_leds.LED_LINK, 1)
 
     def unclaim(self):
         """
         This is called when the device is unclaimed, in case the device needs
         to run any actions on claiming (e.g., turn off an LED).
         """
-        # Turn off LINK
-        self._bp_leds.set(self._bp_leds.LED_LINK, 0)
+        if self._device_initialized:
+            # Turn off LINK
+            self._bp_leds.set(self._bp_leds.LED_LINK, 0)
 

@@ -334,6 +334,10 @@ class PeriphManagerBase(object):
         This must be safe to call multiple times. The default behaviour is to
         call deinit() on all the daughterboards.
         """
+        if not self._device_initialized:
+            self.log.error(
+                "Cannot run deinit(), device was never fully initialized!")
+            return
         self.log.trace("Mboard deinit() called.")
         for dboard in self.dboards:
             dboard.deinit()
