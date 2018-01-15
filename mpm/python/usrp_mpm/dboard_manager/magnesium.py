@@ -948,7 +948,7 @@ class Magnesium(DboardManagerBase):
         in the motherboard class.
         """
         if self.lmk is None:
-            self.log.debug("LMK object not yet initialized, defaulting to " \
+            self.log.trace("LMK object not yet initialized, defaulting to " \
                            "no ref locked!")
             return False
         lmk_lock_status = self.lmk.check_plls_locked()
