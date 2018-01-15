@@ -27,9 +27,6 @@ RESET = str('\x1b[0m')
 # Additional log level
 TRACE = 1
 
-DEFAULT_LOG_LEVEL = INFO
-DEFAULT_LOG_BUF_SIZE = 100 # In number of log records
-
 class ColorStreamHandler(logging.StreamHandler):
     """
     StreamHandler that prints colored output
@@ -81,8 +78,9 @@ class MPMLogger(logging.getLoggerClass()):
             self.cpp_log_buf = lib.types.log_buf.make_singleton()
         except ImportError:
             pass
+        from usrp_mpm import prefs
         self.py_log_buf = collections.deque(
-            maxlen=kwargs.get('log_buf_size', DEFAULT_LOG_BUF_SIZE)
+            maxlen=prefs.get_prefs().getint('mpm', 'log_buf_size')
         )
 
     def trace(self, *args, **kwargs):
@@ -144,8 +142,10 @@ def get_main_logger(
         queue_handler = LossyQueueHandler(LOGGER.py_log_buf)
         LOGGER.addHandler(queue_handler)
     # Set default level:
+    from usrp_mpm import prefs
+    mpm_prefs = prefs.get_prefs()
     default_log_level = int(min(
-        DEFAULT_LOG_LEVEL - log_default_delta * 10,
+        mpm_prefs.get_log_level() - log_default_delta * 10,
         CRITICAL
     ))
     default_log_level = max(TRACE, default_log_level - (default_log_level % 10))
@@ -162,7 +162,7 @@ def get_main_logger(
         LOGGER.cpp_log_buf.set_notify_callback(log_from_cpp)
     # Flush errors stuck in the prefs module:
     log = LOGGER.getChild('prefs')
-    for err_key, err_msg in mpm_prefs['__ERRORS__'].items():
+    for err_key, err_msg in mpm_prefs.get_log_errors():
         log.error('%s: %s', err_key, err_msg)
     return LOGGER
 
