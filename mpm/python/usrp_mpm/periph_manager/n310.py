@@ -537,12 +537,12 @@ class n310(PeriphManagerBase):
         self.enable_1g_ref_clock()
         self.enable_gps(
             enable=str2bool(
-                args.default_args.get('enable_gps', N3XX_DEFAULT_ENABLE_GPS)
+                args.get('enable_gps', N3XX_DEFAULT_ENABLE_GPS)
             )
         )
         self.enable_fp_gpio(
             enable=str2bool(
-                args.default_args.get(
+                args.get(
                     'enable_fp_gpio',
                     N3XX_DEFAULT_ENABLE_FPGPIO
                 )
@@ -557,7 +557,7 @@ class n310(PeriphManagerBase):
         # Init clocking
         self.enable_ref_clock(enable=True)
         self._ext_clock_freq = None
-        self._init_ref_clock_and_time(args.default_args)
+        self._init_ref_clock_and_time(args)
         self._init_meas_clock()
         # Init CHDR transports
         self._xport_mgrs = {

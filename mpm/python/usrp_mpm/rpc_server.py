@@ -63,7 +63,7 @@ class MPMServer(RPCServer):
         # Setting this to True will disable an unclaim on timeout. Use with
         # care, and make sure to set it to False again when finished.
         self._disable_timeouts = False
-        self._timeout_interval = float(default_args.default_args.get(
+        self._timeout_interval = float(default_args.get(
             "rpc_timeout_interval",
             TIMEOUT_INTERVAL
         ))

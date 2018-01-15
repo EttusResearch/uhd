@@ -22,6 +22,7 @@ from usrp_mpm.sys_utils.udev import get_spidev_nodes
 from usrp_mpm.sys_utils import dtoverlay
 from usrp_mpm import eeprom
 from usrp_mpm.rpc_server import no_claim, no_rpc
+from usrp_mpm import prefs
 
 def get_dboard_class_from_pid(pid):
     """
@@ -132,17 +133,28 @@ class PeriphManagerBase(object):
     # Device initialization (at MPM startup)
     ###########################################################################
     def __init__(self, args):
-        # First, make some checks to see if the child class is correctly set up:
+        # Note: args is a dictionary.
         assert len(self.pids) > 0
         assert self.mboard_eeprom_magic is not None
         # Set up logging
         self.log = get_logger('PeriphManager')
         self.claimed = False
+        # The _init_args are a check for the args that passed into init(). This
+        # should always be a dictionary (or dictionary-like object).
         self._init_args = {}
         try:
             self._init_mboard_with_eeprom()
-            self._init_mboard_overlays(self._eeprom_head, args)
-            self._init_dboards(args.override_db_pids, args)
+            self._default_args = self._update_default_args(args)
+            self.log.debug("Using default args: {}".format(self._default_args))
+            self._init_mboard_overlays(self._eeprom_head, self._default_args)
+            override_db_pids_str = self._default_args.get('override_db_pids')
+            if override_db_pids_str:
+                override_db_pids = [
+                    int(x, 0) for x in override_db_pids_str.split(",")
+                ]
+            else:
+                override_db_pids = []
+            self._init_dboards(override_db_pids, self._default_args)
             self._device_initialized = True
             self._initialization_status = "No errors."
         except Exception as ex:
@@ -212,6 +224,24 @@ class PeriphManagerBase(object):
         self.log.info("Device serial number: {}"
                       .format(self.mboard_info.get('serial', 'n/a')))
 
+    def _update_default_args(self, default_args):
+        """
+        Pipe the default_args (that get passed into us from the RPC server)
+        through the prefs API. This way, we respect both the config file and
+        command line arguments.
+        """
+        prefs_cache = prefs.get_prefs()
+        periph_section_name = None
+        if prefs_cache.has_section(self.mboard_info.get('product')):
+            periph_section_name = self.mboard_info.get('product')
+        elif prefs_cache.has_section(self.mboard_info.get('type')):
+            periph_section_name = self.mboard_info.get('type')
+        if periph_section_name is not None:
+            prefs_cache.read_dict({periph_section_name: default_args})
+            return dict(prefs_cache[periph_section_name])
+        else:
+            return default_args
+
     def _init_mboard_overlays(self, eeprom_md, device_args):
         """
         Load all required overlays for this motherboard
@@ -235,6 +265,9 @@ class PeriphManagerBase(object):
         """
         # Go, go, go!
         override_dboard_pids = override_dboard_pids or []
+        if override_dboard_pids:
+            self.log.warning("Overriding daughterboard PIDs! {}"
+                             .format(override_dboard_pids))
         dboard_eeprom_addrs = self.dboard_eeprom_addr \
                               if isinstance(self.dboard_eeprom_addr, list) \
                               else [self.dboard_eeprom_addr]

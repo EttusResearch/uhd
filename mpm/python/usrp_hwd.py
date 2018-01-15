@@ -73,10 +73,6 @@ def parse_args():
     Return a fully parse args object
     """
     args = setup_arg_parser().parse_args()
-    if args.override_db_pids is not None:
-        args.override_db_pids = [
-            int(x, 0) for x in args.override_db_pids.split(",")
-        ]
     args.default_args = args.default_args or ''
     try:
         args.default_args = {
@@ -110,7 +106,7 @@ def kill_time(sig, frame):
     log.info("System exiting")
     sys.exit(0)
 
-def init_only(log, args):
+def init_only(log, default_args):
     """
     Run the full initialization immediately and return
     """
@@ -124,11 +120,11 @@ def init_only(log, args):
     from usrp_mpm.periph_manager import periph_manager
     log.info("Spawning periph manager...")
     ctor_time_start = time.time()
-    mgr = periph_manager(args)
+    mgr = periph_manager(default_args)
     ctor_duration = time.time() - ctor_time_start
     log.info("Ctor Duration: {:.02f} s".format(ctor_duration))
     init_time_start = time.time()
-    init_result = mgr.init(args.default_args)
+    init_result = mgr.init(default_args)
     init_duration = time.time() - init_time_start
     if init_result:
         log.info("Initialization successful! Duration: {:.02f} s"
@@ -147,7 +143,8 @@ def spawn_processes(log, args):
     shared = SharedState()
     log.info("Spawning RPC process...")
     _PROCESSES.append(
-        mpm.spawn_rpc_process(mpm.mpmtypes.MPM_RPC_PORT, shared, args))
+        mpm.spawn_rpc_process(
+            mpm.mpmtypes.MPM_RPC_PORT, shared, args.default_args))
     log.debug("RPC process has PID: %d", _PROCESSES[-1].pid)
     if watchdog.has_watchdog():
         watchdog.transfer_control(_PROCESSES[-1].pid)
@@ -173,8 +170,11 @@ def main():
     log = mpm.get_main_logger(
         log_default_delta=args.verbose-args.quiet
     ).getChild('main')
+    if args.override_db_pids is not None:
+        log.warning('Overriding daughterboard PIDs!')
+        args.default_args['override_db_pids'] = args.override_db_pids
     if args.init_only:
-        return init_only(log, args)
+        return init_only(log, args.default_args)
     return spawn_processes(log, args)
 
 if __name__ == '__main__':

@@ -37,6 +37,9 @@ class _MPMPrefs(configparser.ConfigParser):
             'log_level': MPM_DEFAULT_LOG_LEVEL,
             'log_buf_size': MPM_DEFAULT_LOG_BUF_SIZE,
         },
+        'overrides': {
+            'override_db_pids': '',
+        },
     }
 
     def __init__(self):
