@@ -218,7 +218,13 @@ public:
         _iface = get_iface();
         dboard_id_t rx_id = get_rx_id();
         dboard_id_t tx_id = get_tx_id();
-        const size_t revision = boost::lexical_cast<size_t>(get_rx_eeprom().revision);
+        size_t revision = 1;    // default to rev A
+        // Get revision if programmed
+        const std::string revision_str = get_rx_eeprom().revision;
+        if (not revision_str.empty())
+        {
+            revision = boost::lexical_cast<size_t>(revision_str);
+        }
         _high_isolation = false;
         if (rx_id == UBX_PROTO_V3_RX_ID and tx_id == UBX_PROTO_V3_TX_ID) {
             _rev = 0;
