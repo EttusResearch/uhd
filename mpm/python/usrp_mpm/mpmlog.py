@@ -148,7 +148,7 @@ def get_main_logger(
         DEFAULT_LOG_LEVEL - log_default_delta * 10,
         CRITICAL
     ))
-    default_log_level = max(1, default_log_level - (default_log_level % 10))
+    default_log_level = max(TRACE, default_log_level - (default_log_level % 10))
     LOGGER.setLevel(default_log_level)
     # Connect to C++ logging:
     if LOGGER.cpp_log_buf is not None:
@@ -160,6 +160,10 @@ def get_main_logger(
                 lib_logger.log(log_level, "[%s] %s",
                                component, message.strip())
         LOGGER.cpp_log_buf.set_notify_callback(log_from_cpp)
+    # Flush errors stuck in the prefs module:
+    log = LOGGER.getChild('prefs')
+    for err_key, err_msg in mpm_prefs['__ERRORS__'].items():
+        log.error('%s: %s', err_key, err_msg)
     return LOGGER
 
 def get_logger(child_name):
