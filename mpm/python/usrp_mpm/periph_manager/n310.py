@@ -431,18 +431,22 @@ class n310(PeriphManagerBase):
     ###########################################################################
     def __init__(self, args):
         super(n310, self).__init__(args)
-        self._device_initialized = False
+        if not self._device_initialized:
+            # Don't try and figure out what's going on. Just give up.
+            return
         self._tear_down = False
         self._status_monitor_thread = None
         self._ext_clock_freq = None
         self._clock_source = None
         self._time_source = None
         self._available_endpoints = list(range(256))
+        self._initialization_error = None
         try:
             self._init_peripherals(args)
-            self._device_initialized = True
         except Exception as ex:
             self.log.error("Failed to initialize motherboard: %s", str(ex))
+            self._initialization_status = str(ex)
+            self._device_initialized = False
 
     def _check_fpga_compat(self):
         " Throw an exception if the compat numbers don't match up "
@@ -584,7 +588,7 @@ class n310(PeriphManagerBase):
         if not self._device_initialized:
             self.log.warning(
                 "Cannot run init(), device was never fully initialized!")
-            return
+            return False
         if args.get("clock_source", "") != "":
             self.set_clock_source(args.get("clock_source"))
         if args.get("time_source", "") != "":

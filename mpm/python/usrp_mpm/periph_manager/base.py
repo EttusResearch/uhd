@@ -127,6 +127,10 @@ class PeriphManagerBase(object):
         return []
     ### End of overridables ###################################################
 
+
+    ###########################################################################
+    # Device initialization (at MPM startup)
+    ###########################################################################
     def __init__(self, args):
         # First, make some checks to see if the child class is correctly set up:
         assert len(self.pids) > 0
@@ -140,9 +144,11 @@ class PeriphManagerBase(object):
             self._init_mboard_overlays(self._eeprom_head, args)
             self._init_dboards(args.override_db_pids, args)
             self._device_initialized = True
+            self._initialization_status = "No errors."
         except Exception as ex:
             self.log.error("Failed to initialize device: %s", str(ex))
             self._device_initialized = False
+            self._initialization_status = str(ex)
 
     def _init_mboard_with_eeprom(self):
         """
@@ -150,7 +156,8 @@ class PeriphManagerBase(object):
         EEPROM.
         """
         if len(self.mboard_eeprom_addr):
-            self.log.trace("Reading EEPROM from address `{}'...".format(self.mboard_eeprom_addr))
+            self.log.trace("Reading EEPROM from address `{}'..."
+                           .format(self.mboard_eeprom_addr))
             (self._eeprom_head, self._eeprom_rawdata) = eeprom.read_eeprom(
                 get_eeprom_paths(self.mboard_eeprom_addr)[0],
                 eeprom.MboardEEPROM.eeprom_header_format,
@@ -158,8 +165,10 @@ class PeriphManagerBase(object):
                 self.mboard_eeprom_magic,
                 self.mboard_eeprom_max_len,
             )
-            self.log.trace("Found EEPROM metadata: `{}'".format(str(self._eeprom_head)))
-            self.log.trace("Read {} bytes of EEPROM data.".format(len(self._eeprom_rawdata)))
+            self.log.trace("Found EEPROM metadata: `{}'"
+                           .format(str(self._eeprom_head)))
+            self.log.trace("Read {} bytes of EEPROM data."
+                           .format(len(self._eeprom_rawdata)))
             for key in ('pid', 'serial', 'rev', 'eeprom_version'):
                 # In C++, we can only handle dicts if all the values are of the
                 # same type. So we must convert them all to strings here:
@@ -200,7 +209,8 @@ class PeriphManagerBase(object):
             self.log.trace("No EEPROM address to read from.")
             self._eeprom_head = {}
             self._eeprom_rawdata = ''
-        self.log.info("Device serial number: {}".format(self.mboard_info.get('serial', 'n/a')))
+        self.log.info("Device serial number: {}"
+                      .format(self.mboard_info.get('serial', 'n/a')))
 
     def _init_mboard_overlays(self, eeprom_md, device_args):
         """
@@ -219,7 +229,6 @@ class PeriphManagerBase(object):
         # TODO: Fine-tune this number, or wait for some smarter signal.
         sleep(1)
 
-
     def _init_dboards(self, override_dboard_pids, default_args):
         """
         Initialize all the daughterboards
@@ -230,13 +239,16 @@ class PeriphManagerBase(object):
                               if isinstance(self.dboard_eeprom_addr, list) \
                               else [self.dboard_eeprom_addr]
         dboard_eeprom_paths = []
-        self.log.trace("Identifying dboard EEPROM paths from addrs `{}'...".format(",".join(dboard_eeprom_addrs)))
+        self.log.trace("Identifying dboard EEPROM paths from addrs `{}'..."
+                       .format(",".join(dboard_eeprom_addrs)))
         for dboard_eeprom_addr in dboard_eeprom_addrs:
-            self.log.trace("Resolving {}...".format(dboard_eeprom_addr))
+            self.log.trace("Resolving %s...", dboard_eeprom_addr)
             dboard_eeprom_paths += get_eeprom_paths(dboard_eeprom_addr)
-        self.log.trace("Found dboard EEPROM paths: {}".format(",".join(dboard_eeprom_paths)))
+        self.log.trace("Found dboard EEPROM paths: {}"
+                       .format(",".join(dboard_eeprom_paths)))
         if len(dboard_eeprom_paths) > self.max_num_dboards:
-            self.log.warning("Found more EEPROM paths than daughterboards. Ignoring some of them.")
+            self.log.warning("Found more EEPROM paths than daughterboards. "
+                             "Ignoring some of them.")
             dboard_eeprom_paths = dboard_eeprom_paths[:self.max_num_dboards]
         if len(override_dboard_pids) and \
                 len(override_dboard_pids) < len(dboard_eeprom_paths):
@@ -245,7 +257,7 @@ class PeriphManagerBase(object):
                     dboard_eeprom_paths[:len(override_dboard_pids)]
         self.dboards = []
         for dboard_idx, dboard_eeprom_path in enumerate(dboard_eeprom_paths):
-            self.log.debug("Initializing dboard {}...".format(dboard_idx))
+            self.log.debug("Initializing dboard %d...", dboard_idx)
             dboard_eeprom_md, dboard_eeprom_rawdata = eeprom.read_eeprom(
                 dboard_eeprom_path,
                 eeprom.DboardEEPROM.eeprom_header_format,
@@ -253,27 +265,33 @@ class PeriphManagerBase(object):
                 self.dboard_eeprom_magic,
                 self.dboard_eeprom_max_len,
             )
-            self.log.trace("Found dboard EEPROM metadata: `{}'".format(str(dboard_eeprom_md)))
-            self.log.trace("Read {} bytes of dboard EEPROM data.".format(len(dboard_eeprom_rawdata)))
+            self.log.trace("Found dboard EEPROM metadata: `{}'"
+                           .format(str(dboard_eeprom_md)))
+            self.log.trace("Read %d bytes of dboard EEPROM data.",
+                           len(dboard_eeprom_rawdata))
             if len(override_dboard_pids) > dboard_idx:
                 db_pid = override_dboard_pids[dboard_idx]
-                self.log.warning("Overriding dboard PID for dboard {} with 0x{:04X}.".format(dboard_idx, db_pid))
+                self.log.warning("Overriding dboard PID for dboard {} "
+                                 "with 0x{:04X}.".format(dboard_idx, db_pid))
             else:
                 db_pid = dboard_eeprom_md.get('pid')
                 if db_pid is None:
                     self.log.warning("No dboard PID found!")
                 else:
-                    self.log.debug("Found dboard PID in EEPROM: 0x{:04X}".format(db_pid))
+                    self.log.debug("Found dboard PID in EEPROM: 0x{:04X}"
+                                   .format(db_pid))
             db_class = get_dboard_class_from_pid(db_pid)
             if db_class is None:
-                self.log.warning("Could not identify daughterboard class for PID {:04X}!".format(db_pid))
+                self.log.warning("Could not identify daughterboard class "
+                                 "for PID {:04X}!".format(db_pid))
                 continue
             if len(self.dboard_spimaster_addrs) > dboard_idx:
-                spi_nodes = sorted(get_spidev_nodes(self.dboard_spimaster_addrs[dboard_idx]))
+                spi_nodes = sorted(get_spidev_nodes(
+                    self.dboard_spimaster_addrs[dboard_idx]))
                 self.log.debug("Found spidev nodes: {0}".format(spi_nodes))
             else:
                 spi_nodes = []
-                self.log.warning("No SPI nodes for dboard {}.".format(dboard_idx))
+                self.log.warning("No SPI nodes for dboard %d.", dboard_idx)
             dboard_info = {
                 'eeprom_md': dboard_eeprom_md,
                 'eeprom_rawdata': dboard_eeprom_rawdata,
@@ -283,8 +301,11 @@ class PeriphManagerBase(object):
             }
             # This will actually instantiate the dboard class:
             self.dboards.append(db_class(dboard_idx, **dboard_info))
-        self.log.info("Found {} daughterboard(s).".format(len(self.dboards)))
+        self.log.info("Found %d daughterboard(s).", len(self.dboards))
 
+    ###########################################################################
+    # Session (de-)initialization (at UHD startup)
+    ###########################################################################
     def init(self, args):
         """
         Run the mboard initialization. This is typically done at the beginning
@@ -349,13 +370,18 @@ class PeriphManagerBase(object):
         """
         self.log.debug("Teardown called for Peripheral Manager base.")
 
-    @no_claim
-    def list_updateable_components(self):
+    ###########################################################################
+    # Misc device status controls and indicators
+    ###########################################################################
+    def get_init_status(self):
         """
-        return list of updateable components
-        This method does not require a claim_token in the RPC
+        Returns the status of the device after its initialization (that happens
+        at startup, not that happens when init() is called).
+
+        Use this function to figure out if something went wrong at bootup, and
+        what.
         """
-        return list(self.updateable_components.keys())
+        return self._initialization_status
 
     @no_claim
     def list_available_overlays(self):
@@ -400,6 +426,17 @@ class PeriphManagerBase(object):
         Returns a list of dicts. One dict per dboard.
         """
         return [dboard.device_info for dboard in self.dboards]
+
+    ###########################################################################
+    # Component updating
+    ###########################################################################
+    @no_claim
+    def list_updateable_components(self):
+        """
+        return list of updateable components
+        This method does not require a claim_token in the RPC
+        """
+        return list(self.updateable_components.keys())
 
     def update_component(self, metadata_l, data_l):
         """
@@ -449,22 +486,14 @@ class PeriphManagerBase(object):
             self.log.trace("Writing data to {}".format(filepath))
             with open(filepath, 'wb') as f:
                 f.write(data)
-            update_func = getattr(self, self.updateable_components[id_str]['callback'])
+            update_func = \
+                getattr(self, self.updateable_components[id_str]['callback'])
             update_func(filepath, metadata)
         return True
 
-    def load_fpga_image(self, target=None):
-        """
-        load a new fpga image
-        """
-        pass
-
-    def _allocate_sid(self, sender_addr, sid, xbar_src_addr, xbar_src_port):
-        """
-        Overload this method in actual device implementation
-        """
-        raise NotImplementedError("_allocate_sid() not implented")
-
+    ###########################################################################
+    # Crossbar control
+    ###########################################################################
     @no_claim
     def get_num_xbars(self):
         """
