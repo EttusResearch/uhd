@@ -440,7 +440,7 @@ class n310(PeriphManagerBase):
         self._clock_source = None
         self._time_source = None
         self._available_endpoints = list(range(256))
-        self._initialization_error = None
+        self._bp_leds = None
         try:
             self._init_peripherals(args)
         except Exception as ex:
@@ -528,13 +528,10 @@ class n310(PeriphManagerBase):
         """
         Turn on all peripherals. This may throw an error on failure, so make
         sure to catch it.
+
+        Periphals are initialized in the order of least likely to fail, to most
+        likely.
         """
-        # Init Mboard Regs
-        self.mboard_regs_control = MboardRegsControl(
-            self.mboard_regs_label, self.log)
-        self.mboard_regs_control.get_git_hash()
-        self.mboard_regs_control.get_build_timestamp()
-        self._check_fpga_compat()
         # Init peripherals
         self.log.trace("Initializing TCA6424 port expander controls...")
         self._gpios = TCA6424(int(self.mboard_info['rev']))
@@ -542,7 +539,7 @@ class n310(PeriphManagerBase):
         self._bp_leds = BackpanelGPIO()
         self.log.trace("Enabling power of MGT156MHZ clk")
         self._gpios.set("PWREN-CLK-MGT156MHz")
-        self.enable_1G_ref_clock()
+        self.enable_1g_ref_clock()
         self.enable_gps(
             enable=bool(
                 args.default_args.get('enable_gps', N3XX_DEFAULT_ENABLE_GPS)
@@ -556,6 +553,12 @@ class n310(PeriphManagerBase):
                 )
             )
         )
+        # Init Mboard Regs
+        self.mboard_regs_control = MboardRegsControl(
+            self.mboard_regs_label, self.log)
+        self.mboard_regs_control.get_git_hash()
+        self.mboard_regs_control.get_build_timestamp()
+        self._check_fpga_compat()
         # Init clocking
         self.enable_ref_clock(enable=True)
         self._ext_clock_freq = None
@@ -690,6 +693,9 @@ class n310(PeriphManagerBase):
         elif self.mboard_info['rpc_connection'] == 'local':
             return self._xport_mgrs['liberio'].commit_xport(sid, xport_info)
 
+    ###########################################################################
+    # Clock/Time API
+    ###########################################################################
     def get_clock_sources(self):
         " Lists all available clock sources. "
         self.log.trace("Listing available clock sources...")
@@ -732,9 +738,8 @@ class n310(PeriphManagerBase):
         for slot, dboard in enumerate(self.dboards):
             if hasattr(dboard, 'update_ref_clock_freq'):
                 self.log.trace(
-                    "Updating reference clock on dboard `{}' to {} MHz...".format(
-                        slot, ref_clk_freq/1e6
-                    )
+                    "Updating reference clock on dboard %d to %f MHz...",
+                    slot, ref_clk_freq/1e6
                 )
                 dboard.update_ref_clock_freq(ref_clk_freq)
 
@@ -748,17 +753,17 @@ class n310(PeriphManagerBase):
         self.log.debug("We've been told the external reference clock " \
                        "frequency is {} MHz.".format(freq/1e6))
         if self._ext_clk_freq == freq:
-            self.log.trace("New external reference clock frequency assignment matches "\
-                           "previous assignment. Ignoring update command.")
+            self.log.trace("New external reference clock frequency " \
+                           "assignment matches previous assignment. Ignoring " \
+                           "update command.")
             return
         self._ext_clock_freq = freq
         if self.get_clock_source() == 'external':
             for slot, dboard in enumerate(self.dboards):
                 if hasattr(dboard, 'update_ref_clock_freq'):
                     self.log.trace(
-                        "Updating reference clock on dboard `{}' to {} MHz...".format(
-                            slot, freq/1e6
-                        )
+                        "Updating reference clock on dboard %d to %f MHz...",
+                        slot, freq/1e6
                     )
                     dboard.update_ref_clock_freq(freq)
 
@@ -785,8 +790,12 @@ class n310(PeriphManagerBase):
             self.log.trace("Nothing to do -- time source already set.")
             return
         self._time_source = time_source
-        self.mboard_regs_control.set_time_source(time_source, self.get_ref_clock_freq())
+        self.mboard_regs_control.set_time_source(
+                time_source, self.get_ref_clock_freq())
 
+    ###########################################################################
+    # Hardware periphal controls
+    ###########################################################################
     def enable_pps_out(self, enable):
         " Export a PPS/Trigger to the back panel "
         self.mboard_regs_control.enable_pps_out(enable)
@@ -819,7 +828,7 @@ class n310(PeriphManagerBase):
         ))
         self._gpios.set("PWREN-CLK-MAINREF", int(bool(enable)))
 
-    def enable_1G_ref_clock(self):
+    def enable_1g_ref_clock(self):
         """
         Enables 125 MHz refclock for 1G interface.
         """
@@ -1059,6 +1068,9 @@ class n310(PeriphManagerBase):
             safe_db_eeprom_user_data[blob_id] = blob.encode('ascii')
         dboard.set_user_eeprom_data(safe_db_eeprom_user_data)
 
+    ###########################################################################
+    # Component updating
+    ###########################################################################
     @no_rpc
     def update_fpga(self, filepath, metadata):
         """
@@ -1132,7 +1144,7 @@ class n310(PeriphManagerBase):
         This is called when the device is claimed, in case the device needs to
         run any actions on claiming (e.g., light up an LED).
         """
-        if self._device_initialized:
+        if self._bp_leds is not None:
             # Light up LINK
             self._bp_leds.set(self._bp_leds.LED_LINK, 1)
 
@@ -1141,7 +1153,7 @@ class n310(PeriphManagerBase):
         This is called when the device is unclaimed, in case the device needs
         to run any actions on claiming (e.g., turn off an LED).
         """
-        if self._device_initialized:
+        if self._bp_leds is not None:
             # Turn off LINK
             self._bp_leds.set(self._bp_leds.LED_LINK, 0)
 
