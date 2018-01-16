@@ -20,17 +20,21 @@ ENABLE_TESTING()
 list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
 ########################################################################
-# Check Compiler Version
+# UHD Dependency Minimum Versions
 ########################################################################
-# Full C++11 came with GCC 4.7.
+# Full C++11 came with GCC 4.7, Clang >= 3.3.0, Apple Clang >= 500
 SET(GCC_MIN_VERSION "4.8.0")
-# for c++0x or c++11 support, require:
-#   Apple Clang >= 500
-# or
-#   Clang >= 3.3.0
 SET(CLANG_MIN_VERSION "3.3.0")
 SET(APPLECLANG_MIN_VERSION "500")
+# Make sure to update the next two in unison:
+SET(MSVC_MIN_VERSION "1900")
+SET(MSVC_MIN_VERSION_READABLE "14.0")
+# Other deps
+SET(BOOST_MIN_VERSION "1.53")
 
+########################################################################
+# Check Compiler Version
+########################################################################
 IF(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
     IF(DEFINED CMAKE_CXX_COMPILER_VERSION)
         IF(${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS ${GCC_MIN_VERSION})
@@ -67,6 +71,10 @@ ELSEIF(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
     ELSE()
         MESSAGE(WARNING "\nCannot determine the version of the compiler selected to build UHD (${APPLE_STR}Clang : ${CMAKE_CXX_COMPILER}). This build may or not work. We highly recommend using Apple Clang version ${APPLECLANG_MIN_VERSION} or more recent, or Clang version ${CLANG_MIN_VERSION} or more recent.")
     ENDIF()
+ELSEIF(MSVC)
+    IF(${MSVC_VERSION} VERSION_LESS ${MSVC_MIN_VERSION})
+	MESSAGE(FATAL_ERROR "\nMSVC version is less than the required minimum. Required: ${MSVC_MIN_VERSION_READABLE}")
+    ENDIF(${MSVC_VERSION} VERSION_LESS ${MSVC_MIN_VERSION})
 ENDIF()
 
 IF(CMAKE_VERSION VERSION_LESS "3.1")
@@ -287,7 +295,7 @@ SET(Boost_ADDITIONAL_VERSIONS
     "1.51.0" "1.51" "1.52.0" "1.52" "1.53.0" "1.53" "1.54.0" "1.54" "1.55.0" "1.55"
     "1.56.0" "1.56" "1.57" "1.57" "1.58" "1.59" "1.60" "1.61"
 )
-FIND_PACKAGE(Boost 1.53 COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
+FIND_PACKAGE(Boost ${BOOST_MIN_VERSION} COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
 
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
