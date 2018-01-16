@@ -37,6 +37,15 @@ namespace {
             uhd::rpc_client::sptr rpc,
             const uhd::device_addr_t mb_args
     ) {
+        auto init_status =
+            rpc->request_with_token<std::vector<std::string>>(
+                "get_init_status");
+        if (init_status[0] != "true") {
+            throw uhd::runtime_error(
+                std::string("Device is in bad state: ") + init_status[1]
+            );
+        }
+
         // TODO maybe put this somewhere else?
         const std::set<std::string> key_blacklist{
             "serial", "claimed", "type", "rev", "addr"

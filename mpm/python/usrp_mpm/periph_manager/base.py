@@ -377,11 +377,17 @@ class PeriphManagerBase(object):
         """
         Returns the status of the device after its initialization (that happens
         at startup, not that happens when init() is called).
+        The status is a tuple of 2 strings, the first is either "true" or
+        "false", depending on whether or not the device initialization was
+        successful, and the second is an arbitrary error string.
 
         Use this function to figure out if something went wrong at bootup, and
         what.
         """
-        return self._initialization_status
+        return [
+            "true" if self._device_initialized else "false",
+            self._initialization_status
+        ]
 
     @no_claim
     def list_available_overlays(self):
