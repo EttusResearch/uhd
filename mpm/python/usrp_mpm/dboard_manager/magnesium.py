@@ -933,8 +933,7 @@ class Magnesium(DboardManagerBase):
         """
         assert freq in (10e6, 20e6, 25e6), \
                 "Invalid ref clock frequency: {}".format(freq)
-        self.log.info("Changing reference clock frequency to {} MHz"
-                      .format(freq/1e6))
+        self.log.trace("Changing ref clock frequency to %f MHz", freq/1e6)
         self.ref_clock_freq = freq
 
 

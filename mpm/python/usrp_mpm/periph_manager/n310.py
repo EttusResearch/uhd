@@ -578,7 +578,7 @@ class n310(PeriphManagerBase):
         )
         self._status_monitor_thread.start()
         # Init complete.
-        self.log.info("mboard info: {}".format(self.mboard_info))
+        self.log.debug("mboard info: {}".format(self.mboard_info))
 
     ###########################################################################
     # Session init and deinit
