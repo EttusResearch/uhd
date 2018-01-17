@@ -447,6 +447,7 @@ namespace {
         if (gain_index - int(gain_index) >= .5) {
             gain_tuple_t gt2 = gain_tuple;
             gt2.ad9371_att = std::max(0.0, gain_tuple.ad9371_att - .5);
+            return gt2;
         }
         return gain_tuple;
     }
