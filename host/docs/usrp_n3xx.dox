@@ -98,7 +98,7 @@ Checklist:
 - Connect clocking (if required)
 - Connect external LOs (if required)
 
-\subsection n3xx_getting_started_fpga_update Updating the file system
+\subsection n3xx_getting_started_fs_update Updating the file system
 
 Before doing any major work with a newly acquired USRP N3XX, it is recommended
 to update the file system to the latest version. By default, the N3xx supports
@@ -109,9 +109,9 @@ two methods of updating:
    another computer with an SD card reader. Download the latest SD card image
    file (it typically has a `.sdimg` file ending) and run the following command:
 
-    $ sudo dd if=<yourimage>.sdimg of=/dev/<yoursdcard> bs=1M
+    $ sudo dd if=$yourimage.sdimg of=/dev/$yoursdcard bs=1M
 
-   The `<yoursdcard>` device node depends on your operating system and which
+   The `$yoursdcard` device node depends on your operating system and which
    other devices are plugged in. Typical values are `sdb` or `mmcblk0`.
 
 2. Using Mender to update. For more details on this procedure, see Section
