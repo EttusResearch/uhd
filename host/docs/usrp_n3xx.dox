@@ -5,9 +5,9 @@
 \section n3xx_feature_list Comparative features list
 
 - Hardware Capabilities:
-	- Dual SFP+ Transceivers (can be used with 1 GigE, 10 GigE)
+	- Dual SFP+ Transceivers (can be used with 1 GigE, 10 GigE, and Aurora)
 	- External PPS input & output
-	- External 10 MHz input & output
+	- External 10 MHz input & output (20 MHz and 25 MHz inputs also supported)
 	- Internal 25 MHz reference clock
 	- Internal GPSDO for timing, location, and 20 MHz reference clock + PPS
 	- External GPIO Connector with UHD API control
@@ -26,69 +26,195 @@
 The N3XX series of USRPs is designed as a platform. The following USRPs are
 variants of the N3XX series:
 
-\section n3xx_feature_list_mg N310 (4-channel transceiver)
+\subsection n3xx_feature_list_mg N310 (4-channel transceiver)
 
-	- Supported master clock rates: 200 MHz and 184.32 MHz
-	- 4 RX DDC chains in FPGA
-	- 4 TX DUC chain in FPGA
+The N310 is a 4-channel receiver based on the AD9371 transceiver IC. It has two
+daughterboards with one AD9371 each; every daughterboard provides two RF
+channels.
 
-\section n3xx_getting_started Getting started
+- Supported master clock rates: 122.88 MHz, 125 MHz, 153.6 MHz
+- Tuning range: 10 MHz to 6 GHz (below 300 MHz, additional LOs and mixer stages
+  are required to shift the signal into the frequency range of the AD9371
+  transceiver)
+- 4 RX DDC chains in FPGA
+- 4 TX DUC chain in FPGA
 
-This will run you through the first steps relevant to get your USRP N300/N310
-up and running.
 
-\subsection n3xx_getting_started_assembling Assembling the N300/N310 kit
+\section n3xx_overview Overview
+
+\subsection n3xx_micro The STM32 microcontroller
 
 tbw
 
-\subsubsection n3xx_serial Serial connection
+\subsection n3xx_sdcard The SD card
+
+The N3XX series uses a micro SD card as its main storage. The entire root file
+system (Linux kernel, libraries) and any user data are stored on this SD card.
+
+The SD card is partitioned into four partitions:
+
+1. Boot partition (contains the bootloader). This partition usually does not
+   require touching.
+2. A data partition, mounted in /data. This is the only partition that is not
+   erased during file system updates.
+2. Two identical system partitions (root file systems). These contain the
+   operating system and the home directory (anything mounted under / that is not
+   the data or boot partition). The reason there are two of these is to enable
+   remote updates: An update running on one partition can update the other one
+   without any effect to the currently running system. Note that the system
+   partitions are erased during updates and are thus unsuitable for permanently
+   storing information.
+
+Note: It is possible to access the currently inactive root file system by
+mounting it. After logging into the device using serial console or SSH (see the
+following two sections), run the following commands:
+
+    $ mkdir temp
+    $ mount /dev/mmcblk0p3 temp
+    $ ls temp # You are now accessing the idle partition:
+    bin   data  etc   lib         media  proc  sbin  tmp    usr
+    boot  dev   home  lost+found  mnt    run   sys   uboot  var
+
+The device node in the mount command will likely differ, depending on which
+partition is currently already mounted.
+
+
+\section n3xx_getting_started Getting started
+
+This will run you through the first steps relevant to getting your USRP N3XX
+series up and running.
+
+\subsection n3xx_getting_started_assembling Assembling the N3XX
+
+Unlike the X300 or N200 series, there is no assembly of daughterboards required.
+Members of the N3XX product family, such as the N310, ship with daughterboards
+pre-installed.
+
+TODO: Sync with getting-started guide
+
+Checklist:
+- Connect power and network
+- Read security settings
+- Connect clocking (if required)
+- Connect external LOs (if required)
+
+\subsection n3xx_getting_started_fpga_update Updating the file system
+
+Before doing any major work with a newly acquired USRP N3XX, it is recommended
+to update the file system to the latest version. By default, the N3xx supports
+two methods of updating:
+
+1. Directly writing the latest SD card image. This requires physical access to
+   the device. To do this, remove the SD card from the device, and plug it into
+   another computer with an SD card reader. Download the latest SD card image
+   file (it typically has a `.sdimg` file ending) and run the following command:
+
+    $ sudo dd if=<yourimage>.sdimg of=/dev/<yoursdcard> bs=1M
+
+   The `<yoursdcard>` device node depends on your operating system and which
+   other devices are plugged in. Typical values are `sdb` or `mmcblk0`.
+
+2. Using Mender to update. For more details on this procedure, see Section
+   \ref n3xx_rasm_mender . This is possible without removing the SD card.
+   Updates will take a bit longer though.
+
+
+\subsection n3xx_getting_started_serial Serial connection
 
 It is possible to gain root access to the device using a serial terminal
-emulator. Most Linuxes, OSX, or other Unix flavours have a tool called 'screen'
+emulator. Most Linux, OSX, or other Unix flavours have a tool called 'screen'
 which can be used for this purpose, by running the following command:
 
     $ sudo screen /dev/ttyUSB2 115200
 
+In this command, we prepend 'sudo' to elevate user privileges (by default,
+accessing serial ports is not available to regular users), we specify the
+device node (in this case, `/dev/ttyUSB2`), and the baud rate (115200).
+
 The exact device node depends on your operating system's driver and other USB
-devices that might be already connected.
+devices that might be already connected. Modern Linux systems offer alternatives
+to simply trying device nodes; instead, the OS might have a directory of
+symlinks under `/dev/serial/by-id`:
 
-(TODO: Expand upon how to figure this out, include /dev/serial/by-id)
+    $ ls /dev/serial/by-id
+    usb-Digilent_Digilent_USB_Device_25163511FE00-if00-port0
+    usb-Digilent_Digilent_USB_Device_25163511FE00-if01-port0
+    usb-Silicon_Labs_CP2105_Dual_USB_to_UART_Bridge_Controller_007F6CB5-if00-port0
+    usb-Silicon_Labs_CP2105_Dual_USB_to_UART_Bridge_Controller_007F6CB5-if01-port0
 
-You should be presented with a shell similar to the following
+Note: Exact names depend on the host operating system version and may differ.
 
-    root@ni-sulfur-<serial>:~#
+Every N3XX series device connected to USB will by default show up as four
+different devices. The devices labeled "USB_to_UART_Bridge_Controller" are the
+devices that offer a serial prompt. The first (with the `if00` suffix) connects
+to Linux, whereas the second connects to the STM32 microcontroller.
+If you have multiple N3XX devices connect, you may have to try out multiple
+devices. In this case, to use this symlink instead of the raw device node
+address, modify the command above to:
 
+    $ sudo screen /dev/usb-Silicon_Labs_CP2105_Dual_USB_to_UART_Bridge_Controller_007F6CB5-if00-port0 115200
 
-\subsubsection n3xx_ssh SSH connection
+You should be presented with a shell prompt similar to the following:
 
-The USRP N-Series devices have two network connnections: The dual SFP ports,
-and a RJ-45 connector. The latter is by default configured by DHCP; by plugging
+    root@ni-n3xx-311FE00:~#
+
+On this prompt, you can enter any Linux command available. Using the default
+configuration, the serial console will also show all kernel log messages (unlike
+when using SSH, for example), and give access to the boot loader (U-boot
+prompt). This can be used to debug kernel or bootloader issues more efficiently
+than when logged in via SSH.
+
+\subsubsection n3xx_getting_started_serial_micro Connecting to the microcontroller
+
+The STM32 microcontroller (which controls the power sequencing, among other
+things) also has a serial console available. To connect to the microcontroller,
+use the other UART device. In the example above:
+
+    $ sudo screen /dev/usb-Silicon_Labs_CP2105_Dual_USB_to_UART_Bridge_Controller_007F6CB5-if01-port0 115200
+
+It provides a very simple prompt. The command 'help' will list all available
+commands. A direct connection to the microcontroller can be used to hard-reset
+the device without physically accessing it (i.e., emulating a power button press)
+and other low-level diagnostics.
+
+\subsection n3xx_ssh SSH connection
+
+The USRP N-Series devices have two network connections: The dual SFP ports,
+and an RJ-45 connector. The latter is by default configured by DHCP; by plugging
 it into into 1 Gigabit switch on a DHCP-capable network, it will get assigned
 an IP address and thus be accessible via ssh.
 
 In case your network setup does not include a DHCP server, refer to the section
-\ref n3xx_serial. A serial login can be used to assign an IP address manually.
+\ref n3xx_getting_started_serial. A serial login can be used to assign an IP address manually.
 
 After the device obtained an IP address you can log in from a Linux or OSX
 machine by typing:
 
-    $ ssh root@192.168.10.42
+    $ ssh root@ni-n3xx-311FE00 # Replace with your actual device name!
 
-where the IP address depends on your local network setup.
+Depending on your network setup, using a `.local` domain may work:
+
+    $ ssh root@ni-n3xx-311FE00.local
+
+Of course, you can also connect to the IP address directly if you know it (or
+set it manually using the serial console).
+
 
 (TODO: Add the hostname thing here)
 
 On Microsoft Windows, the connection can be established using a tool such as
 Putty, by selecting a username of root without password.
 
-You should be presented with a shell similar to the following (FIXME):
+Like with the serial console, you should be presented with a prompt like the
+following:
 
-    root@ni-sulfur:~#
+    root@ni-n3xx-311FE00:~#
 
 \subsection n3xx_getting_started_connectivity Network Connectivity
 
 The RJ45 port (eth0) comes up with a default configuration of DHCP,
-that will request a network address from your DHCP server.
+that will request a network address from your DHCP server (if available on your
+network).
 
 The SFP+ (eth1, eth2) ports are configured with static addresses 192.168.10.2/24
 and 192.168.20.2/24 respectively.
@@ -100,43 +226,43 @@ For configuration please refer to the  manual pages
 
 The factory settings are as follows:
 
-eth0 (DHCP):
+    eth0 (DHCP):
 
-    [Match]
-    Name=eth0
+        [Match]
+        Name=eth0
 
-    [Network]
-    DHCP=v4
+        [Network]
+        DHCP=v4
 
-    [DHCPv4]
-    UseHostname=false
+        [DHCPv4]
+        UseHostname=false
 
-eth1 (static):
+    eth1 (static):
 
-    [Match]
-    Name=eth1
+        [Match]
+        Name=eth1
 
-    [Network]
-    Address=192.168.10.2/24
+        [Network]
+        Address=192.168.10.2/24
 
-    [Link]
-    MTUBytes=9000
+        [Link]
+        MTUBytes=9000
 
-eth2 (static):
+    eth2 (static):
 
-    [Match]
-    Name=eth2
+        [Match]
+        Name=eth2
 
-    [Network]
-    Address=192.168.20.2/24
+        [Network]
+        Address=192.168.20.2/24
 
-    [Link]
-    MTUBytes=9000
+        [Link]
+        MTUBytes=9000
 
 Note: Care needs to be taken when editing these files on the device, since vi / vim sometimes generates
 undo files (e.g. /etc/systemd/networkd/eth1.network~), that systemd-networkd might pick up.
 
-Note: Temporarily setting the IP addresses via ifconfig etc will only change the value till the next reboot / reload of the FPGA image.
+Note: Temporarily setting the IP addresses via ifconfig etc will only change the value until the next reboot / reload of the FPGA image.
 
 \subsection n3xx_getting_started_security Security-related settings
 
@@ -148,7 +274,6 @@ To set a password, run the command
 
 on the device.
 
-
 \subsection n3xx_getting_started_fpga_update Updating the FPGA
 
 tbw (using uhd_image_loader)
@@ -159,9 +284,9 @@ Like any other USRP, all N3XX USRPs are controlled by the UHD software. To
 integrate a USRP N3XX into your C++ application, you would generate a UHD
 device in the same way you would for any other USRP:
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
 auto usrp = uhd::usrp::multi_usrp::make("type=n3xx");
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For a list of which arguments can be passed into make(), see Section
 \ref n3xx_usage_device_args.
@@ -193,10 +318,83 @@ For a list of which arguments can be passed into make(), see Section
 
 \section n3xx_rasm Remote Management
 
-- Mender
-- Salt
+\subsection n3xx_rasm_mender Mender: Remote update capability
 
-tbw
+Mender is a third-party software that enables remote updating of the root
+file system without physically accessing the device (see also the
+[Mender website](https://mender.io)). Mender can be executed locally on the
+device, or a Mender server can be set up which can be used to remotely update
+an arbitrary number of USRP devices. Mender servers can be self-hosted, or
+hosted by Mender (see [mender.io](https://mender.io) for pricing and
+availability).
+
+When updating the file system using Mender, the tool will overwrite the root file
+system partition that is not currently mounted (note: every SD card comes with
+two separate root file system partitions, only one is ever used at a single
+time). Any data stored on that partition will be permanently lost. After
+updating that partition, it will reboot into the newly updated partition. Only
+if the update is confirmed by the user, the update will be made permanent. This
+means that if an update fails, the device will be always able to reboot into the
+partition from which the update was originally launched (which presumably is in
+a working state). Another update can be launched now to correct the previous,
+failed update, until it works.
+See also Section \ref n3xx_sdcard.
+
+To initiate an update from the device itself, download a Mender artifact
+containing the update itself. These are files with a `.mender` suffix.
+
+Then run mender on the command line:
+
+    $ mender -rootfs /path/to/latest.mender
+
+The artifact can also be stored on a remote server:
+
+    $ mender -rootfs http://server.name/path/to/latest.mender
+
+This procedure will take a while. After mender has logged a successful update,
+reboot the device:
+
+    $ reboot
+
+If the reboot worked, and the device seems functional, commit the changes so
+the boot loader knows to permanently boot into this partition:
+
+    $ mender -commit
+
+To identify the currently installed Mender artifact from the command line, the
+following file can be queried:
+
+    $ cat /etc/mender/artifact_info
+
+If you are running a hosted server, the updates can be initiated from a web
+dashboard. From there, you can start the updates without having to log into the
+device, and can update groups of USRPs with a few clicks in a web GUI. The
+dashboard can also be used to inspect the state of USRPs. This is simple way to
+update groups of rack-mounted USRPs with custom file systems.
+
+\subsection n3xx_rasm_salt Salt: Remote configuration management and execution
+
+Salt (also known as SaltStack, see [Salt Website](https://saltstack.com)) is a
+Python-based tool for maintaining fleets of remote devices. It can be used to
+manage USRP N3XX series remotely for all types of settings that are not
+controlled by UHD. For example, if an operator would like to reset the root
+password on multiple devices, or install custom software, this tool might be a
+suitable choice.
+
+Salt is a third-party project with its [own documentation](https://docs.saltstack.com/en/latest/),
+which should be consulted for configuring it. However, the Salt minion is
+installed by default on every N3XX device. To start it, simply log on to the
+device and run:
+
+    $ systemctl start salt-minion
+
+To permanently enable it at every boot, run (this won't by itself launch the
+salt-minion):
+
+    $ systemctl enable salt-minion
+
+TODO: Add some example
+
 
 \section n3xx_theory_of_ops Theory of Operation
 
@@ -210,6 +408,24 @@ A large portion of hardware-specific setup is handled by the daemon.
 tbw
 
 \section n3xx_mg N310-specific Features
+
+\subsection n3xx_mg_external_lo External LOs
+
+The N310 has inputs for external local oscillators. For every daughterboard,
+there is one input for TX and RX, respectively, resulting in 4 LO inputs total
+per N310.
+
+Reasons to use an external LO include:
+
+- Improving phase alignment: The N310 itself has no way of aligning phase
+  between channels, and phase will be random between runs.  By applying an
+  external LO, the phase ambiguity is reduced to 180 degrees, produced by a
+  by-2 divider in the AD9371 transceiver IC.
+- Improving phase noise: The quality of the onboard LO depends on the external
+  reference clock, among other things. By providing a custom LO signal, it is
+  possible to more accurately tune, assuming the externally generated LO signal
+  is coming from a high-quality oscillator.
+
 
 \subsection n3xx_mg_eeprom Storing user data in the EEPROM
 
