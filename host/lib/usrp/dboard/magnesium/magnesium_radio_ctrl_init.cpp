@@ -25,8 +25,16 @@ namespace {
         SEN_PHASE_DAC = 8
     };
 
-    const char* MAGNESIUM_DEFAULT_RX_ANTENNA = "RX2";
-    const char* MAGNESIUM_DEFAULT_TX_ANTENNA = "TX/RX";
+    constexpr double MAGNESIUM_DEFAULT_FREQ         = 2.5e9; // Hz
+    constexpr double MAGNESIUM_DEFAULT_BANDWIDTH    = 40e6; // Hz
+    constexpr char   MAGNESIUM_DEFAULT_RX_ANTENNA[] = "RX2";
+    constexpr char   MAGNESIUM_DEFAULT_TX_ANTENNA[] = "TX/RX";
+
+    //! Magnesium gain profile options
+    const std::vector<std::string> MAGNESIUM_GP_OPTIONS = {
+        "manual",
+        "default"
+    };
 }
 
 void magnesium_radio_ctrl_impl::_init_defaults()
@@ -40,14 +48,14 @@ void magnesium_radio_ctrl_impl::_init_defaults()
             << " Num RX chans: " << num_rx_chans);
 
     for (size_t chan = 0; chan < num_rx_chans; chan++) {
-        radio_ctrl_impl::set_rx_frequency(MAGNESIUM_CENTER_FREQ, chan);
+        radio_ctrl_impl::set_rx_frequency(MAGNESIUM_DEFAULT_FREQ, chan);
         radio_ctrl_impl::set_rx_gain(0, chan);
         radio_ctrl_impl::set_rx_antenna(MAGNESIUM_DEFAULT_RX_ANTENNA, chan);
         radio_ctrl_impl::set_rx_bandwidth(MAGNESIUM_DEFAULT_BANDWIDTH, chan);
     }
 
     for (size_t chan = 0; chan < num_tx_chans; chan++) {
-        radio_ctrl_impl::set_tx_frequency(MAGNESIUM_CENTER_FREQ, chan);
+        radio_ctrl_impl::set_tx_frequency(MAGNESIUM_DEFAULT_FREQ, chan);
         radio_ctrl_impl::set_tx_gain(0, chan);
         radio_ctrl_impl::set_tx_antenna(MAGNESIUM_DEFAULT_TX_ANTENNA, chan);
     }

@@ -449,7 +449,7 @@ double magnesium_radio_ctrl_impl::_set_tx_gain(
 
 double magnesium_radio_ctrl_impl::_get_tx_gain(
         const std::string &name,
-        const size_t chan
+        const size_t /*chan*/
 ) {
     std::lock_guard<std::mutex> l(_set_lock);
     if (name == MAGNESIUM_GAIN1){
@@ -514,7 +514,7 @@ double magnesium_radio_ctrl_impl::_set_rx_gain(
 
 double magnesium_radio_ctrl_impl::_get_rx_gain(
         const std::string &name,
-        const size_t chan
+        const size_t /*chan*/
 ) {
     std::lock_guard<std::mutex> l(_set_lock);
 
