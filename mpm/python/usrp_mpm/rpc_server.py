@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Ettus Research, National Instruments Company
+# Copyright 2017 Ettus Research, a National Instruments Company
 #
 # SPDX-License-Identifier: GPL-3.0
 #
@@ -29,6 +29,8 @@ from usrp_mpm.sys_utils import watchdog
 
 TIMEOUT_INTERVAL = 3.0 # Seconds before claim expires
 TOKEN_LEN = 16 # Length of the token string
+# Compatibility number for MPM
+MPM_COMPAT_NUM = (1, 1)
 
 def no_claim(func):
     " Decorator for functions that require no token check "
@@ -47,11 +49,14 @@ class MPMServer(RPCServer):
     """
     # This is a list of methods in this class which require a claim
     default_claimed_methods = ['init', 'update_component', 'reclaim', 'unclaim']
-    # Compatibility number for MPM
-    MPM_COMPAT_NUM = (1, 1)
 
+    ###########################################################################
+    # RPC Server Initialization
+    ###########################################################################
     def __init__(self, state, default_args):
         self.log = get_main_logger().getChild('RPCServer')
+        self.log.trace("Launching RPC server with compat num %d.%d",
+                       MPM_COMPAT_NUM[0], MPM_COMPAT_NUM[1])
         self._state = state
         self._timer = Greenlet()
         self.session_id = None
@@ -120,17 +125,6 @@ class MPMServer(RPCServer):
             len(self._db_methods),
         )
 
-    def _check_token_valid(self, token):
-        """
-        Returns True iff:
-        - The device is currently claimed
-        - The claim token matches the one passed in
-        """
-        token = to_binary_str(token)
-        return self._state.claim_status.value and \
-                len(token) == TOKEN_LEN and \
-                self._state.claim_token.value == token
-
     def _update_component_commands(self, component, namespace, storage):
         """
         Detect available methods for an object and add them to the RPC server.
@@ -174,7 +168,6 @@ class MPMServer(RPCServer):
                 raise RuntimeError("Invalid token!")
             try:
                 return function(*args)
-
             except Exception as ex:
                 self.log.error(
                     "Uncaught exception in method %s: %s",
@@ -206,6 +199,9 @@ class MPMServer(RPCServer):
         new_unclaimed_function.__doc__ = function.__doc__
         setattr(self, command, new_unclaimed_function)
 
+    ###########################################################################
+    # Diagnostics and introspection
+    ###########################################################################
     def list_methods(self):
         """
         Returns a list of tuples: (method_name, docstring, is claim required)
@@ -234,6 +230,17 @@ class MPMServer(RPCServer):
     ###########################################################################
     # Claiming logic
     ###########################################################################
+    def _check_token_valid(self, token):
+        """
+        Returns True iff:
+        - The device is currently claimed
+        - The claim token matches the one passed in
+        """
+        token = to_binary_str(token)
+        return self._state.claim_status.value and \
+                len(token) == TOKEN_LEN and \
+                self._state.claim_token.value == token
+
     def claim(self, session_id):
         """Claim device
 
@@ -330,12 +337,62 @@ class MPMServer(RPCServer):
         self.log.warning("Attempt to unclaim session with invalid token!")
         return False
 
+    def _reset_timer(self, timeout=TIMEOUT_INTERVAL):
+        """
+        reset unclaim timer
+        """
+        self._timer.kill()
+        self._timer = spawn_later(timeout, self._unclaim)
 
+    ###########################################################################
+    # Status queries
+    ###########################################################################
     def get_mpm_compat_num(self):
         """Get the MPM compatibility number"""
-        self.log.trace("Compat num requested: {}".format(self.MPM_COMPAT_NUM))
-        return self.MPM_COMPAT_NUM
+        return MPM_COMPAT_NUM
 
+    def get_device_info(self):
+        """
+        get device information
+        This is as safe method which can be called without a claim on the device
+        """
+        info = self.periph_manager.get_device_info()
+        if self.client_host in ["127.0.0.1", "::1"]:
+            info["connection"] = "local"
+        else:
+            info["connection"] = "remote"
+        return info
+
+    def get_last_error(self):
+        """
+        Return the 'last error' string, which gets set when RPC calls fail.
+        """
+        return self._last_error
+
+    def get_log_buf(self, token):
+        """
+        Return the contents of the log buffer as a list of str -> str
+        dictionaries.
+        """
+        if not self._check_token_valid(token):
+            self.log.warning(
+                "Attempt to read logs without valid claim from {}".format(
+                    self.client_host
+                )
+            )
+            err_msg = "get_log_buf() called without valid claim."
+            self._last_error = err_msg
+            raise RuntimeError(err_msg)
+        log_records = get_main_logger().get_log_buf()
+        self.log.trace("Returning %d log records.", len(log_records))
+        return [
+            {k: str(v) for k, v in iteritems(record)}
+            for record in log_records
+        ]
+
+    ###########################################################################
+    # Session initialization
+    ###########################################################################
     def init(self, token, args):
         """
         Initialize device. See PeriphManagerBase for details. This is forwarded
@@ -359,15 +416,15 @@ class MPMServer(RPCServer):
         self._reset_timer()
         return result
 
+    ###########################################################################
+    # Update components
+    ###########################################################################
     def reset_mgr(self):
         """
         Reset the Peripheral Manager for this RPC server.
         """
-        # reassign
         self.periph_manager.tear_down()
         self.periph_manager = None
-        if self._mgr_generator is None:
-            raise RuntimeError("Can't reset peripheral manager- no generator function.")
         self.periph_manager = self._mgr_generator()
         self._init_rpc_calls(self.periph_manager)
 
@@ -419,53 +476,10 @@ class MPMServer(RPCServer):
         self.log.debug("End of update_component")
         self._reset_timer()
 
-    def _reset_timer(self, timeout=TIMEOUT_INTERVAL):
-        """
-        reset unclaim timer
-        """
-        self._timer.kill()
-        self._timer = spawn_later(timeout, self._unclaim)
 
-    def get_device_info(self):
-        """
-        get device information
-        This is as safe method which can be called without a claim on the device
-        """
-        info = self.periph_manager.get_device_info()
-        if self.client_host in ["127.0.0.1", "::1"]:
-            info["connection"] = "local"
-        else:
-            info["connection"] = "remote"
-        return info
-
-    def get_last_error(self):
-        """
-        Return the 'last error' string, which gets set when RPC calls fail.
-        """
-        return self._last_error
-
-    def get_log_buf(self, token):
-        """
-        Return the contents of the log buffer as a list of str -> str
-        dictionaries.
-        """
-        if not self._check_token_valid(token):
-            self.log.warning(
-                "Attempt to read logs without valid claim from {}".format(
-                    self.client_host
-                )
-            )
-            err_msg = "get_log_buf() called without valid claim."
-            self._last_error = err_msg
-            raise RuntimeError(err_msg)
-        log_records = get_main_logger().get_log_buf()
-        self.log.trace("Returning %d log records.", len(log_records))
-        return [
-            {k: str(v) for k, v in iteritems(record)}
-            for record in log_records
-        ]
-
-
+###############################################################################
+# Process control
+###############################################################################
 def _rpc_server_process(shared_state, port, default_args):
     """
     This is the actual process that's running the RPC server.
