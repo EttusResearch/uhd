@@ -19,6 +19,7 @@ SET(test_sources
     cast_test.cpp
     cal_container_test.cpp
     chdr_test.cpp
+    constrained_device_args_test.cpp
     convert_test.cpp
     dict_test.cpp
     error_test.cpp
@@ -68,6 +69,8 @@ IF(ENABLE_C_API)
         subdev_spec_c_test.c
     )
 ENDIF(ENABLE_C_API)
+
+INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/lib/include")
 
 #for each source: build an executable, register it as a test
 FOREACH(test_source ${test_sources})

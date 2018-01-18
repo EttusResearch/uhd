@@ -9,9 +9,9 @@
 
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/transport/udp_simple.hpp>
-#include <boost/thread/mutex.hpp>
-#include "../common/constrained_device_args.hpp"
+#include <uhdlib/usrp/constrained_device_args.hpp>
 #include "n230_defaults.h"
+#include <boost/thread/mutex.hpp>
 
 namespace uhd { namespace usrp { namespace n230 {
 
@@ -29,7 +29,9 @@ public:
         _send_buff_size("send_buff_size", n230::DEFAULT_SEND_BUFF_SIZE),
         _recv_buff_size("recv_buff_size", n230::DEFAULT_RECV_BUFF_SIZE),
         _safe_mode("safe_mode", false),
-        _loopback_mode("loopback_mode", LOOPBACK_OFF, boost::assign::list_of("off")("radio")("codec"))
+        _loopback_mode("loopback_mode",
+                       LOOPBACK_OFF,
+                       {{"off", LOOPBACK_OFF}, {"radio", LOOPBACK_RADIO}, {"codec", LOOPBACK_CODEC}})
     {}
 
     double get_master_clock_rate() const {

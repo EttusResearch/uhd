@@ -1,7 +1,7 @@
 //
 // Copyright 2014 Ettus Research LLC
 //
-// SPDX-License-Identifier: GPL-3.0
+// SPDX-License-Identifier: GPL-3.0+
 //
 
 #ifndef INCLUDED_LIBUHD_USRP_COMMON_CONSTRAINED_DEV_ARGS_HPP
@@ -14,6 +14,7 @@
 #include <boost/assign/list_of.hpp>
 #include <vector>
 #include <string>
+#include <unordered_map>
 
 namespace uhd {
 namespace usrp {
@@ -114,9 +115,6 @@ namespace usrp {
          * Enumeration argument type. The template type enum_t allows the
          * client to use their own enum and specify a string mapping for
          * the values of the enum
-         *
-         * NOTE: The constraint on enum_t is that the values must start with
-         * 0 and be sequential
          */
         template<typename enum_t>
         class enum_arg : public generic_arg {
@@ -124,44 +122,58 @@ namespace usrp {
             enum_arg(
                 const std::string& name,
                 const enum_t default_value,
-                const std::vector<std::string>& values) :
-                    generic_arg(name), _str_values(values)
-            { set(default_value); }
-
+                const std::unordered_map<std::string, enum_t>& values) :
+                    generic_arg(name), _str_values(_enum_map_to_lowercase<enum_t>(values))
+            {
+                set(default_value);
+            }
             inline void set(const enum_t value) {
                 _value = value;
             }
             inline const enum_t get() const {
                 return _value;
             }
-            inline void parse(const std::string& str_rep, bool assert_invalid = true) {
-                std::string valid_values_str;
-                for (size_t i = 0; i < _str_values.size(); i++) {
-                    if (boost::algorithm::to_lower_copy(str_rep) ==
-                        boost::algorithm::to_lower_copy(_str_values[i]))
-                    {
-                        valid_values_str += ((i==0)?"":", ") + _str_values[i];
-                        set(static_cast<enum_t>(static_cast<int>(i)));
+            inline void parse(
+                    const std::string& str_rep,
+                    const bool assert_invalid = true
+            ) {
+                const std::string str_rep_lowercase =
+                    boost::algorithm::to_lower_copy(str_rep);
+                if (_str_values.count(str_rep_lowercase) == 0) {
+                    if (assert_invalid) {
+                        std::string valid_values_str = "";
+                        for (const auto &value : _str_values) {
+                            valid_values_str +=
+                                (valid_values_str.empty()?"":", ")
+                                + value.first;
+                        }
+                        throw uhd::value_error(str(boost::format(
+                            "Invalid device arg value: %s=%s (Valid: {%s})") %
+                            key() % str_rep % valid_values_str
+                        ));
+                    } else {
                         return;
                     }
                 }
-                //If we reach here then, the string enum value was invalid
-                if (assert_invalid) {
-                    throw uhd::value_error(str(boost::format(
-                        "Invalid device arg value: %s=%s (Valid: {%s})") %
-                        key() % str_rep % valid_values_str
-                    ));
-                }
+
+                set(_str_values.at(str_rep_lowercase));
             }
             inline virtual std::string to_string() const {
-                size_t index = static_cast<size_t>(static_cast<int>(_value));
-                UHD_ASSERT_THROW(index < _str_values.size());
-                return key() + "=" + _str_values[index];
+                std::string repr;
+                for (const auto& value : _str_values) {
+                    if (value.second == _value) {
+                        repr = value.first;
+                        break;
+                    }
+                }
+
+                UHD_ASSERT_THROW(!repr.empty());
+                return key() + "=" + repr;
             }
 
         private:
-            enum_t                      _value;
-            std::vector<std::string>    _str_values;
+            enum_t                                         _value;
+            const std::unordered_map<std::string, enum_t>  _str_values;
         };
 
         /*!
@@ -264,6 +276,24 @@ namespace usrp {
                     ));
                 }
             }
+        }
+
+        //! Helper for enum_arg: Create a new map where keys are converted to
+        //  lowercase.
+        template<typename enum_t>
+        static std::unordered_map<std::string, enum_t> _enum_map_to_lowercase(
+            const std::unordered_map<std::string, enum_t>& in_map
+        ) {
+            std::unordered_map<std::string, enum_t> new_map;
+            for (const auto& str_to_enum : in_map) {
+                new_map.insert(
+                    std::pair<std::string, enum_t>(
+                        boost::algorithm::to_lower_copy(str_to_enum.first),
+                        str_to_enum.second
+                    )
+                );
+            }
+            return new_map;
         }
     };
 }} //namespaces
