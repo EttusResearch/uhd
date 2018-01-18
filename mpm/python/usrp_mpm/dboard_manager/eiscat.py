@@ -498,21 +498,42 @@ class EISCAT(DboardManagerBase):
             ))
             pdac_spi.poke16(0x3, init_phase_dac_word)
             return LMK04828EISCAT(lmk_spi, ref_clk_freq, slot_idx)
-        def _sync_db_clock(synchronizer):
+        def _sync_db_clock():
             " Synchronizes the DB clock to the common reference "
-            synchronizer.run_sync(measurement_only=False)
-            offset_error = synchronizer.run_sync(measurement_only=True)
+            synchronizer = ClockSynchronizer(
+                self.dboard_clk_control,
+                self.lmk,
+                self._spi_ifaces['phase_dac'],
+                0, # register offset value.
+                104e6, # TODO don't hardcode
+                self.ref_clock_freq,
+                1.9E-12, # fine phase shift. TODO don't hardcode. This should live in the EEPROM
+                self.INIT_PHASE_DAC_WORD,
+                0x3,
+                3, # External PPS pipeline delay from the PPS captured at the FPGA to TDC input
+                self.slot_idx)
+            # The radio clock traces on the motherboard are 69 ps longer for Daughterboard B
+            # than Daughterboard A. We want both of these clocks to align at the converters
+            # on each board, so adjust the target value for DB B. This is an N3xx series
+            # peculiarity and will not apply to other motherboards.
+            trace_delay_offset = {0:  0.0e-0,
+                                  1: 69.0e-12}[self.slot_idx]
+            offset = synchronizer.run(
+                num_meas=[512, 128],
+                target_offset = trace_delay_offset)
+            offset_error = abs(offset)
             if offset_error > 100e-12:
-                self.log.error("Clock synchronizer measured an offset of {} ps!".format(
+                self.log.error("Clock synchronizer measured an offset of {:.1f} ps!".format(
                     offset_error*1e12
                 ))
-                raise RuntimeError("Clock synchronizer measured an offset of {} ps!".format(
+                raise RuntimeError("Clock synchronizer measured an offset of {:.1f} ps!".format(
                     offset_error*1e12
                 ))
             else:
-                self.log.debug("Residual DAC offset error: {} ps.".format(
+                self.log.debug("Residual synchronization error: {:.1f} ps.".format(
                     offset_error*1e12
                 ))
+            synchronizer = None
             self.log.debug("Clock Synchronization Complete!")
         # Go, go, go!
         if args.get("force_init", False):
@@ -559,9 +580,8 @@ class EISCAT(DboardManagerBase):
             1.9E-12, # TODO don't hardcode. This should live in the EEPROM
             self.INIT_PHASE_DAC_WORD,
             2.496e9,     # lmk_vco_freq
-            [135e-9,],   # target_values
             0x3,         # spi_addr
-            self.log
+            self.slot_idx
         )
         _sync_db_clock(self.clock_synchronizer)
         # Clocks and PPS are now fully active!
