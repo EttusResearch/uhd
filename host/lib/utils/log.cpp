@@ -222,23 +222,27 @@ public:
             auto F = boost::make_shared<file_logger_backend>(log_file_target);
             _loggers[UHD_FILE_LOGGER_KEY] = [F](const uhd::log::logging_info& log_info){F->log(log_info);};
         }
-        std::ostringstream sys_info;
-        sys_info \
-          << "UHD" \
-          << BOOST_PLATFORM << "; "
-          << BOOST_COMPILER << "; "
-          << "Boost_"
-          << BOOST_VERSION << "; "
-          << "UHD_" << uhd::get_version_string();
-        _log_queue.push_with_timed_wait(
-            uhd::log::logging_info(
-               pt::microsec_clock::local_time(),
-               uhd::log::info,
-               __FILE__,
-               __LINE__,
-               sys_info.str(),
-                boost::this_thread::get_id()),
-            0.25);
+
+        // On boot, we print the current UHD version info:
+        {
+            std::ostringstream sys_info;
+            sys_info \
+              << BOOST_PLATFORM << "; "
+              << BOOST_COMPILER << "; "
+              << "Boost_"
+              << BOOST_VERSION << "; "
+              << "UHD_" << uhd::get_version_string();
+            auto sys_info_log_msg = uhd::log::logging_info(
+                pt::microsec_clock::local_time(),
+                uhd::log::info,
+                __FILE__,
+                __LINE__,
+                "UHD",
+                boost::this_thread::get_id()
+            );
+            sys_info_log_msg.message = sys_info.str();
+            _log_queue.push_with_timed_wait(sys_info_log_msg, 0.25);
+        }
 
         // Launch log message consumer
         _pop_task = std::make_shared<std::thread>(std::thread([this](){this->pop_task();}));
