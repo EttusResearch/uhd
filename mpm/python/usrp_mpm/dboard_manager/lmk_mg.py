@@ -17,8 +17,8 @@ class LMK04828Mg(LMK04828):
     """
     def __init__(self, regs_iface, spi_lock, ref_clock_freq, master_clock_freq, log=None):
         LMK04828.__init__(self, regs_iface, log)
-        self.log.trace("Using reference clock frequency: {} MHz".format(ref_clock_freq/1e6))
-        self.log.trace("Using master clock frequency: {} MHz".format(master_clock_freq/1e6))
+        self.log.debug("Using reference clock frequency: {} MHz".format(ref_clock_freq/1e6))
+        self.log.debug("Using master clock frequency: {} MHz".format(master_clock_freq/1e6))
         self.spi_lock = spi_lock
         assert hasattr(self.spi_lock, 'lock')
         assert hasattr(self.spi_lock, 'unlock')
