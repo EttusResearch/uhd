@@ -1035,38 +1035,35 @@ class Magnesium(DboardManagerBase):
 
     def dump_jesd_core(self):
         " Debug method to dump all JESD core regs "
-        dboard_ctrl_regs = UIO(
-            label="dboard-regs-{}".format(self.slot_idx),
-            read_only=False
-        )
-        for i in range(0x2000, 0x2110, 0x10):
-            print(("0x%04X " % i), end=' ')
-            for j in range(0, 0x10, 0x4):
-                print(("%08X" % dboard_ctrl_regs.peek32(i + j)), end=' ')
-            print("")
-        dboard_ctrl_regs = None
+        with open_uio(
+                label="dboard-regs-{}".format(self.slot_idx),
+                read_only=False
+        ) as dboard_ctrl_regs:
+            for i in range(0x2000, 0x2110, 0x10):
+                print(("0x%04X " % i), end=' ')
+                for j in range(0, 0x10, 0x4):
+                    print(("%08X" % dboard_ctrl_regs.peek32(i + j)), end=' ')
+                print("")
 
     def dbcore_peek(self, addr):
         """
         Debug for accessing the DB Core registers via the RPC shell.
         """
-        dboard_ctrl_regs = UIO(
-            label="dboard-regs-{}".format(self.slot_idx),
-            read_only=False
-        )
-        rd_data = dboard_ctrl_regs.peek32(addr)
-        self.log.trace("DB Core Register 0x{:04X} response: 0x{:08X}".format(addr, rd_data))
-        dboard_ctrl_regs = None
-        return rd_data
+        with open_uio(
+                label="dboard-regs-{}".format(self.slot_idx),
+                read_only=False
+        ) as dboard_ctrl_regs:
+            rd_data = dboard_ctrl_regs.peek32(addr)
+            self.log.trace("DB Core Register 0x{:04X} response: 0x{:08X}".format(addr, rd_data))
+            return rd_data
 
     def dbcore_poke(self, addr, data):
         """
         Debug for accessing the DB Core registers via the RPC shell.
         """
-        dboard_ctrl_regs = UIO(
-            label="dboard-regs-{}".format(self.slot_idx),
-            read_only=False
-        )
-        self.log.trace("Writing DB Core Register 0x{:04X} with 0x{:08X}...".format(addr, data))
-        dboard_ctrl_regs.poke32(addr, data)
-        dboard_ctrl_regs = None
+        with open_uio(
+                label="dboard-regs-{}".format(self.slot_idx),
+                read_only=False
+        ) as dboard_ctrl_regs:
+            self.log.trace("Writing DB Core Register 0x{:04X} with 0x{:08X}...".format(addr, data))
+            dboard_ctrl_regs.poke32(addr, data)
