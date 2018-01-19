@@ -43,7 +43,8 @@ def _watchdog_task(shared_state, log):
             )) / 1e6
     watchdog_interval = watchdog_timeout / MPM_WATCHDOG_TIMEOUT_FRAC
     daemon.notify("READY=1")
-    log.info("READY=1, interval %f", watchdog_interval)
+    log.debug("Watchdog primed, going into watchdog loop (Interval: %s s)",
+              watchdog_interval)
     while shared_state.system_ready.value:
         # Sleep first, then ping, that avoids the case where transfer_control()
         # is not yet complete before we call this for the first time, which
