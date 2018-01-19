@@ -27,7 +27,7 @@ from usrp_mpm.mpmlog import get_main_logger
 from usrp_mpm.mpmutils import to_binary_str
 from usrp_mpm.sys_utils import watchdog
 
-TIMEOUT_INTERVAL = 3.0 # Seconds before claim expires
+TIMEOUT_INTERVAL = 3.0 # Seconds before claim expires (default value)
 TOKEN_LEN = 16 # Length of the token string
 # Compatibility number for MPM
 MPM_COMPAT_NUM = (1, 1)
@@ -59,6 +59,13 @@ class MPMServer(RPCServer):
                        MPM_COMPAT_NUM[0], MPM_COMPAT_NUM[1])
         self._state = state
         self._timer = Greenlet()
+        # Setting this to True will disable an unclaim on timeout. Use with
+        # care, and make sure to set it to False again when finished.
+        self._disable_timeouts = False
+        self._timeout_interval = float(default_args.default_args.get(
+            "rpc_timeout_interval",
+            TIMEOUT_INTERVAL
+        ))
         self.session_id = None
         # Create the periph_manager for this device
         # This call will be forwarded to the device specific implementation
@@ -307,7 +314,9 @@ class MPMServer(RPCServer):
 
     def _unclaim(self):
         """
-        unconditional unclaim - for internal use
+        Unconditional unclaim - for internal use
+
+        Resets and deinitalizes the periph manager as well.
         """
         self.log.debug("Releasing claim on session `{}'".format(
             self.session_id
@@ -337,12 +346,22 @@ class MPMServer(RPCServer):
         self.log.warning("Attempt to unclaim session with invalid token!")
         return False
 
-    def _reset_timer(self, timeout=TIMEOUT_INTERVAL):
+    def _timeout_event(self):
+        " Callback for the claim timeout. "
+        if self._disable_timeouts:
+            self.log.debug("Timeouts are disabled: Snoozing")
+            self._reset_timer()
+        else:
+            self.log.warning("A timeout event occured!")
+            self._unclaim()
+
+    def _reset_timer(self):
         """
-        reset unclaim timer
+        Reset unclaim timer. After calling this, call this function again
+        within 'timeout' seconds to avoid a timeout event.
         """
         self._timer.kill()
-        self._timer = spawn_later(timeout, self._unclaim)
+        self._timer = spawn_later(self._timeout_interval, self._timeout_event)
 
     ###########################################################################
     # Status queries
@@ -406,14 +425,15 @@ class MPMServer(RPCServer):
             )
             self._last_error = "init() called without valid claim."
             raise RuntimeError("init() called without valid claim.")
-        self._timer.kill() # Stop the timer, inits can take some time.
+        self._disable_timeouts = True # Stop the timer, inits can take some time.
         try:
             result = self.periph_manager.init(args)
         except Exception as ex:
             self._last_error = str(ex)
             self.log.error("init() failed with error: %s", str(ex))
-        self.log.debug("init() result: {}".format(result))
-        self._reset_timer()
+        finally:
+            self.log.debug("init() result: {}".format(result))
+            self._disable_timeouts = False
         return result
 
     ###########################################################################
@@ -434,7 +454,8 @@ class MPMServer(RPCServer):
         :param file_metadata_l: List of dictionary of strings containing metadata
         :param data_l: List of binary string with the file contents to be written
         """
-        self._timer.kill()  # Stop the timer, update_component can take some time.
+        # Stop the timer, update_component can take some time:
+        self._disable_timeouts = True
         # Check the claimed status
         if not self._check_token_valid(token):
             self._last_error =\
