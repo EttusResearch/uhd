@@ -61,7 +61,7 @@ class LMK04828Mg(LMK04828):
         """
         Basic init. Turns it on. Let's read SPI.
         """
-        self.log.debug("Reset and Verify Chip ID")
+        self.log.trace("Reset and Verify Chip ID")
         self.pokes8((
             (0x000, 0x90), # Assert reset
             (0x000, 0x10), # De-assert reset
@@ -78,7 +78,7 @@ class LMK04828Mg(LMK04828):
         clkout_div_val = self.divide_to_reg(self.clkout_divider)
         clkout_cnt_val = self.divide_to_cnth_cntl_reg(self.clkout_divider)
 
-        self.log.debug("Register Initialization Commencing...")
+        self.log.trace("Register Initialization Commencing...")
         self.pokes8((
             (0x100, clkout_div_val), # CLKout Config
             (0x101, clkout_cnt_val), # CLKout Config
