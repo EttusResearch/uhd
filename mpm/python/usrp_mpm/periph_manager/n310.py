@@ -393,10 +393,6 @@ class n310(PeriphManagerBase):
     # device tree overlay (tree/arch/arm/boot/dts/zynq-7000.dtsi)
     dboard_spimaster_addrs = ["e0006000.spi", "e0007000.spi"]
     # N310-specific settings
-    # Path to N310 FPGA bin file
-    # This file will always contain the current image, regardless of SFP type,
-    # dboard, etc. The host is responsible for providing a compatible image
-    # for the N310's current setup.
     # Label for the mboard UIO
     mboard_regs_label = "mboard-regs"
     # Override the list of updateable components
