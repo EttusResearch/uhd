@@ -592,17 +592,18 @@ const std::string magnesium_radio_ctrl_impl::get_rx_lo_source(
         const std::string &name,
         const size_t chan
 ) {
-     if (not _master) {
+    if (not _master) {
         const fs_path master_rx_fe_path =
             master_fe_base_path(_radio_slot) / fs_path("rx_frontends") / chan;
         UHD_LOG_DEBUG(unique_id(), "Slave getting lo source");
-        return _tree->access<std::string>(master_rx_fe_path / "los" / name /"source"/"value").get();
+        return _tree->access<std::string>(
+            master_rx_fe_path / "los" / name /"source" / "value"
+        ).get();
     }
-    UHD_LOG_DEBUG(unique_id(),"Master getting lo source");
     if (name == MAGNESIUM_LO1){
         //TODO: should we use this from cache?
-         return _ad9371->get_lo_source(RX_DIRECTION);
-     }
+        return _ad9371->get_lo_source(RX_DIRECTION);
+    }
     return "internal";
 }
 
@@ -742,17 +743,18 @@ const std::string magnesium_radio_ctrl_impl::get_tx_lo_source(
         const std::string &name,
         const size_t chan
 ) {
-     if (not _master) {
+    if (not _master) {
         const fs_path master_tx_fe_path =
             master_fe_base_path(_radio_slot) / fs_path("tx_frontends") / chan;
         UHD_LOG_DEBUG(unique_id(), "Slave getting lo source");
-        return _tree->access<std::string>(master_tx_fe_path / "los" / name /"source"/"value").get();
+        return _tree->access<std::string>(
+            master_tx_fe_path / "los" / name /"source" / "value"
+        ).get();
     }
-    UHD_LOG_DEBUG(unique_id(),"Master getting lo source");
     if (name == MAGNESIUM_LO1){
         //TODO: should we use this from cache?
-         return _ad9371->get_lo_source(TX_DIRECTION);
-     }
+        return _ad9371->get_lo_source(TX_DIRECTION);
+    }
     return "internal";
 }
 
