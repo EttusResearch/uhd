@@ -261,7 +261,7 @@ to change sample rate while streaming.
   - E3x0: 0.1, 0.5, 1, 1.143, 1.684 MHz
 7. Repeat on each RX channel of the device.
 8. This test fails if:
-  - DC offset and IQ imbalance tones are unusally large
+  - DC offset and IQ imbalance tones are unusually large
   - There are any other strong tones or spectrum distortion
   - The spectrum changes significantly between frequencies or sample rates
     - An initial transient distortion is acceptable
@@ -469,7 +469,7 @@ Correct synchronization with PPS and 10 MHz references is required for these tes
                     --start-freq <lowest daughterboard frequency> --stop-freq <highest daughterboard frequency> \
 
 9. Tune signal generator to displayed frequency + 2 MHz and start measurement
-11. Inspect error plot if phase difference stays the same across retunes. Drift over time must be significantely lower than 1 degree and deviation must be well below 2 degrees.
+11. Inspect error plot if phase difference stays the same across retunes. Drift over time must be significantly lower than 1 degree and deviation must be well below 2 degrees.
 12. Verify result with terminal output and note result for current test frequency.
 13. Repeat steps 9.-12. for remaining bands
 
@@ -481,7 +481,7 @@ tbd
 \subsection rdtesting_phase_rx_twinrx TwinRX specifics for phase alignment testing
 
 Phase alignment testing with TwinRX works as described above with additional test cases and commandline options.
-TwinRX offers LO sharing inside one board and across boards. For uhd_app and derived applications involving our tools and GNU Radio we have introduced `--lo-source {internal, companion, external}` and `--lo-export {True, False}` arguments to apply LO sharing feartures on TwinRX daughterboards.
+TwinRX offers LO sharing inside one board and across boards. For uhd_app and derived applications involving our tools and GNU Radio we have introduced `--lo-source {internal, companion, external}` and `--lo-export {True, False}` arguments to apply LO sharing features on TwinRX daughterboards.
 Two testcases have to pass:
  - Phase alignment if sharing LO with companion receiver on a single daughterboard
  - Phase alignment if sharing LO with external TwinRX daughterboard
