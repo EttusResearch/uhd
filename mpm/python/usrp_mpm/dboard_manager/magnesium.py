@@ -12,6 +12,7 @@ import os
 import time
 import threading
 import math
+import re
 from six import iterkeys, iteritems
 from usrp_mpm import lib # Pulls in everything from C++-land
 from usrp_mpm.dboard_manager import DboardManagerBase
@@ -24,6 +25,43 @@ from usrp_mpm.sys_utils.sysfs_gpio import SysFSGPIO
 from usrp_mpm.cores import ClockSynchronizer
 from usrp_mpm.bfrfs import BufferFS
 from usrp_mpm.mpmutils import poll_with_timeout
+
+INIT_CALIBRATION_TABLE = {"TX_BB_FILTER"              :   0x0001,
+                          "ADC_TUNER"                 :   0x0002,
+                          "TIA_3DB_CORNER"            :   0x0004,
+                          "DC_OFFSET"                 :   0x0008,
+                          "TX_ATTENUATION_DELAY"      :   0x0010,
+                          "RX_GAIN_DELAY"             :   0x0020,
+                          "FLASH_CAL"                 :   0x0040,
+                          "PATH_DELAY"                :   0x0080,
+                          "TX_LO_LEAKAGE_INTERNAL"    :   0x0100,
+                          "TX_LO_LEAKAGE_EXTERNAL"    :   0x0200,
+                          "TX_QEC_INIT"               :   0x0400,
+                          "LOOPBACK_RX_LO_DELAY"      :   0x0800,
+                          "LOOPBACK_RX_RX_QEC_INIT"   :   0x1000,
+                          "RX_LO_DELAY"               :   0x2000,
+                          "RX_QEC_INIT"               :   0x4000,
+                          "BASIC"                     :   0x4F,
+                          "OFF"                       :   0x00,
+                          "DEFAULT"                   :   0x4DFF,
+                          "ALL"                       :   0x7DFF,
+                         }
+
+TRACKING_CALIBRATION_TABLE = {"TRACK_RX1_QEC"         :   0x01,
+                              "TRACK_RX2_QEC"         :   0x02,
+                              "TRACK_ORX1_QEC"        :   0x04,
+                              "TRACK_ORX2_QEC"        :   0x08,
+                              "TRACK_TX1_LOL"         :   0x10,
+                              "TRACK_TX2_LOL"         :   0x20,
+                              "TRACK_TX1_QEC"         :   0x40,
+                              "TRACK_TX2_QEC"         :   0x80,
+                              "OFF"                   :   0x00,
+                              "RX_QEC"                :   0x03,
+                              "TX_QEC"                :   0xC0,
+                              "TX_LOL"                :   0x30,
+                              "DEFAULT"               :   0xC3,
+                              "ALL"                   :   0xF3,
+                             }
 
 def create_spidev_iface_lmk(dev_node):
     """
@@ -582,23 +620,70 @@ class Magnesium(DboardManagerBase):
         self.mykonos.start_radio()
         return True
 
+    def _parse_and_convert_cal_args(self, table, cal_args):
+        """Parse calibration string and convert it to a number
+
+        Arguments:
+            table {dictionary} -- a look up table that map a type of calibration
+                                  to its bit mask.(defined in AD9375-UG992)
+            cal_args {string} --  string arguments from user in form of "CAL1|CAL2|CAL3"
+                                  or "CAL1 CAL2 CAL3"  or "CAL1;CAL2;CAL3"
+
+        Returns:
+            int -- calibration value bit mask.
+        """
+        value = 0
+        try:
+            return int(cal_args, 0)
+        except ValueError:
+            pass
+        for key in re.split(r'[;|\s]\s*', cal_args):
+            value_tmp = table.get(key.upper())
+            if (value_tmp) != None:
+                value |= value_tmp
+            else:
+                self.log.warning(
+                    "Calibration key `%s' is not in calibration table. "
+                    "Ignoring this key.",
+                    key.upper()
+                )
+        return value
 
     def init_rf_cal(self, args):
         " Setup RF CAL "
         self.log.info("Setting up RF CAL...")
         try:
-            self._init_cals_mask = int(args.get('init_cals', str(self.mykonos.DEFAULT_INIT_CALS_MASKS)), 0)
-            self._tracking_cals_mask = int(args.get('tracking_cals', str(self.mykonos.DEFAULT_TRACKING_CALS_MASKS)), 0)
-            self._init_cals_timeout = int(args.get('init_cals_timeout', str(self.mykonos.DEFAULT_INIT_CALS_TIMEOUT)), 0)
+            self._init_cals_mask = \
+                    self._parse_and_convert_cal_args(
+                        INIT_CALIBRATION_TABLE,
+                        args.get('init_cals', 'DEFAULT')
+                    )
+            self._tracking_cals_mask = \
+                    self._parse_and_convert_cal_args(
+                        TRACKING_CALIBRATION_TABLE,
+                        args.get('tracking_cals', 'DEFAULT')
+                    )
+            self._init_cals_timeout = int(
+                args.get('init_cals_timeout',
+                         str(self.mykonos.DEFAULT_INIT_CALS_TIMEOUT))
+                , 0
+            )
         except ValueError as ex:
-            self.log.warning("init() args missing or error using default value seeing following exception print out.")
+            self.log.warning("init() args missing or error using default \
+                             value seeing following exception print out.")
             self.log.warning("{}".format(ex))
-            self._init_cals_mask = self.mykonos.DEFAULT_INIT_CALS_MASKS
-            self._tracking_cals_mask = self.mykonos.DEFAULT_TRACKING_CALS_MASKS
+            self._init_cals_mask = self._parse_and_convert_cal_args(
+                INIT_CALIBRATION_TABLE, 'DEFAULT')
+            self._tracking_cals_mask = self._parse_and_convert_cal_args(
+                TRACKING_CALIBRATION_TABLE, 'DEFAULT')
             self._init_cals_timeout = self.mykonos.DEFAULT_INIT_CALS_TIMEOUT
-        self.log.debug("args[init_cals]=0x{:02X}".format(self._init_cals_mask))
-        self.log.debug("args[tracking_cals]=0x{:02X}".format(self._tracking_cals_mask))
-        self.mykonos.setup_cal(self._init_cals_mask, self._tracking_cals_mask, self._init_cals_timeout)
+        self.log.debug("args[init_cals]=0x{:02X}"
+                       .format(self._init_cals_mask))
+        self.log.debug("args[tracking_cals]=0x{:02X}"
+                       .format(self._tracking_cals_mask))
+        self.mykonos.setup_cal(self._init_cals_mask,
+                               self._tracking_cals_mask,
+                               self._init_cals_timeout)
 
     def init_lo_source(self, args):
         """Set all LO
