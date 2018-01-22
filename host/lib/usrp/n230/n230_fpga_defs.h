@@ -104,7 +104,7 @@ static const uint32_t AD9361_SPI_SLAVE_NUM  = 0x1;
 static const uint32_t ADF4001_SPI_SLAVE_NUM = 0x2;
 
 static const uint32_t RB_N230_PRODUCT_ID    = 1;
-static const uint32_t RB_N230_COMPAT_MAJOR  = 0x20;
+static const uint32_t RB_N230_COMPAT_MAJOR  = 0x21;
 static const uint32_t RB_N230_COMPAT_SAFE   = 0xC0;
 
 /*******************************************************************

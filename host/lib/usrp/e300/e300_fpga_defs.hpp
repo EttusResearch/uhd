@@ -10,7 +10,7 @@ namespace uhd { namespace usrp { namespace e300 { namespace fpga {
 
 static const size_t NUM_RADIOS = 2;
 
-static const uint32_t COMPAT_MAJOR = 16;
+static const uint32_t COMPAT_MAJOR = 17;
 static const uint32_t COMPAT_MINOR = 0;
 
 }}}} // namespace
