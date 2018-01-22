@@ -174,6 +174,9 @@ class MPMServer(RPCServer):
                 )
                 raise RuntimeError("Invalid token!")
             try:
+                # Because we can only reach this point with a valid claim,
+                # there's no harm in resetting the timer
+                self._reset_timer()
                 return function(*args)
             except Exception as ex:
                 self.log.error(
@@ -182,6 +185,10 @@ class MPMServer(RPCServer):
                 )
                 self._last_error = str(ex)
                 raise
+            finally:
+                if not self.periph_manager.claimed:
+                    self.log.error("Lost claim during API call to `%s'!",
+                                   command)
         new_claimed_function.__doc__ = function.__doc__
         setattr(self, command, new_claimed_function)
 
