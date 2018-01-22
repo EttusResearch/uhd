@@ -133,7 +133,7 @@ struct client::impl {
 
     client *parent_;
     boost::asio::io_service io_;
-    boost::asio::strand strand_;
+    boost::asio::io_service::strand strand_;
     std::atomic<int> call_idx_; /// The index of the last call made
     std::unordered_map<uint32_t, call_t> ongoing_calls_;
     std::string addr_;

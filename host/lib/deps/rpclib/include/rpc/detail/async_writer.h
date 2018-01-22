@@ -69,7 +69,7 @@ public:
 
 protected:
     boost::asio::ip::tcp::socket socket_;
-    boost::asio::strand write_strand_;
+    boost::asio::io_service::strand write_strand_;
     std::atomic_bool exit_{false};
     bool exited_ = false;
     std::mutex m_exit_;

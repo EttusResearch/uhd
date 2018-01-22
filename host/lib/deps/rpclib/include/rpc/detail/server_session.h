@@ -35,7 +35,7 @@ private:
 private:
     server* parent_;
     boost::asio::io_service *io_;
-    boost::asio::strand read_strand_;
+    boost::asio::io_service::strand read_strand_;
     std::shared_ptr<dispatcher> disp_;
     RPCLIB_MSGPACK::unpacker pac_;
     RPCLIB_MSGPACK::sbuffer output_buf_;
