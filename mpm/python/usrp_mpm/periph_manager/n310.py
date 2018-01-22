@@ -588,10 +588,10 @@ class n310(PeriphManagerBase):
             self.log.warning(
                 "Cannot run init(), device was never fully initialized!")
             return False
-        if args.get("clock_source", "") != "":
+        if "clock_source" in args:
             self.set_clock_source(args.get("clock_source"))
-        if args.get("time_source", "") != "":
-            self.set_time_source(args.get("time_source"))
+        if "clock_source" in args or "time_source" in args:
+            self.set_time_source(args.get("time_source", self.get_time_source()))
         result = super(n310, self).init(args)
         for xport_mgr in itervalues(self._xport_mgrs):
             xport_mgr.init(args)
@@ -782,12 +782,9 @@ class n310(PeriphManagerBase):
     def set_time_source(self, time_source):
         " Set a time source "
         assert time_source in self.get_time_sources()
-        if time_source == self.get_time_source():
-            self.log.trace("Nothing to do -- time source already set.")
-            return
         self._time_source = time_source
         self.mboard_regs_control.set_time_source(
-                time_source, self.get_ref_clock_freq())
+            time_source, self.get_ref_clock_freq())
 
     ###########################################################################
     # Hardware periphal controls
