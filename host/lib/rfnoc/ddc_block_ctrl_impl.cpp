@@ -1,5 +1,5 @@
 //
-// Copyright 2016 Ettus Research
+// Copyright 2016-2018 Ettus Research, a National Instruments Company
 //
 // SPDX-License-Identifier: GPL-3.0
 //
@@ -20,7 +20,6 @@ using namespace uhd::rfnoc;
 class ddc_block_ctrl_impl : public ddc_block_ctrl
 {
 public:
-
     UHD_RFNOC_BLOCK_CONSTRUCTOR(ddc_block_ctrl)
         , _fpga_compat(user_reg_read64(RB_REG_COMPAT_NUM))
         , _num_halfbands(uhd::narrow_cast<size_t>(
@@ -41,14 +40,15 @@ public:
 
         // Argument/prop tree hooks
         for (size_t chan = 0; chan < get_input_ports().size(); chan++) {
-            double default_freq = get_arg<double>("freq", chan);
+            const double default_freq = get_arg<double>("freq", chan);
             _tree->access<double>(get_arg_path("freq/value", chan))
                 .set_coercer([this, chan](const double value){
                     return this->set_freq(value, chan);
                 })
                 .set(default_freq);
             ;
-            double default_output_rate = get_arg<double>("output_rate", chan);
+            const double default_output_rate =
+                get_arg<double>("output_rate", chan);
             _tree->access<double>(get_arg_path("output_rate/value", chan))
                 .set_coercer([this, chan](const double value){
                     return this->set_output_rate(value, chan);

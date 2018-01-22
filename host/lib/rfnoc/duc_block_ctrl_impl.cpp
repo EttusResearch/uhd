@@ -1,5 +1,5 @@
 //
-// Copyright 2016 Ettus Research
+// Copyright 2016-2018 Ettus Research, a National Instruments Company
 //
 // SPDX-License-Identifier: GPL-3.0
 //
@@ -17,21 +17,9 @@
 
 using namespace uhd::rfnoc;
 
-// TODO remove this once we have actual lambdas
-static double lambda_forward_prop(uhd::property_tree::sptr tree, uhd::fs_path prop, double value)
-{
-    return tree->access<double>(prop).set(value).get();
-}
-
-static double lambda_forward_prop(uhd::property_tree::sptr tree, uhd::fs_path prop)
-{
-    return tree->access<double>(prop).get();
-}
-
 class duc_block_ctrl_impl : public duc_block_ctrl
 {
 public:
-
     UHD_RFNOC_BLOCK_CONSTRUCTOR(duc_block_ctrl)
         , _fpga_compat(user_reg_read64(RB_REG_COMPAT_NUM))
         , _num_halfbands(uhd::narrow_cast<size_t>(
@@ -52,45 +40,78 @@ public:
 
         // Argument/prop tree hooks
         for (size_t chan = 0; chan < get_input_ports().size(); chan++) {
-            double default_freq = get_arg<double>("freq", chan);
+            const double default_freq = get_arg<double>("freq", chan);
             _tree->access<double>(get_arg_path("freq/value", chan))
-                .set_coercer(boost::bind(&duc_block_ctrl_impl::set_freq, this, _1, chan))
+                .set_coercer([this, chan](const double value){
+                    return this->set_freq(value, chan);
+                })
                 .set(default_freq);
             ;
-            double default_input_rate = get_arg<double>("input_rate", chan);
+
+            const double default_input_rate =
+                get_arg<double>("input_rate", chan);
             _tree->access<double>(get_arg_path("input_rate/value", chan))
-                .set_coercer(boost::bind(&duc_block_ctrl_impl::set_input_rate, this, _1, chan))
+                .set_coercer([this, chan](const double value){
+                    return this->set_input_rate(value, chan);
+                })
                 .set(default_input_rate)
             ;
             _tree->access<double>(get_arg_path("output_rate/value", chan))
-                .add_coerced_subscriber(boost::bind(&duc_block_ctrl_impl::set_output_rate, this, _1, chan))
+                .add_coerced_subscriber([this, chan](const double rate){
+                    this->set_output_rate(rate, chan);
+                })
             ;
 
             // Legacy properties (for backward compat w/ multi_usrp)
             const uhd::fs_path dsp_base_path = _root_path / "legacy_api" / chan;
             // Legacy properties
             _tree->create<double>(dsp_base_path / "rate/value")
-                .set_coercer(boost::bind(&lambda_forward_prop, _tree, get_arg_path("input_rate/value", chan), _1))
-                .set_publisher(boost::bind(&lambda_forward_prop, _tree, get_arg_path("input_rate/value", chan)))
+                .set_coercer([this, chan](const double value){
+                    return this->_tree->access<double>(
+                        this->get_arg_path("input_rate/value", chan)
+                    ).set(value).get();
+                })
+                .set_publisher([this, chan](){
+                    return this->_tree->access<double>(
+                        this->get_arg_path("input_rate/value", chan)
+                    ).get();
+                })
             ;
             _tree->create<uhd::meta_range_t>(dsp_base_path / "rate/range")
-                .set_publisher(boost::bind(&duc_block_ctrl_impl::get_input_rates, this))
+                .set_publisher([this](){
+                    return get_input_rates();
+                })
             ;
             _tree->create<double>(dsp_base_path / "freq/value")
-                .set_coercer(boost::bind(&lambda_forward_prop, _tree, get_arg_path("freq/value", chan), _1))
-                .set_publisher(boost::bind(&lambda_forward_prop, _tree, get_arg_path("freq/value", chan)))
+                .set_coercer([this, chan](const double value){
+                    return this->_tree->access<double>(
+                        this->get_arg_path("freq/value", chan)
+                    ).set(value).get();
+                })
+                .set_publisher([this, chan](){
+                    return this->_tree->access<double>(
+                        this->get_arg_path("freq/value", chan)
+                    ).get();
+                })
             ;
             _tree->create<uhd::meta_range_t>(dsp_base_path / "freq/range")
-                .set_publisher(boost::bind(&duc_block_ctrl_impl::get_freq_range, this))
+                .set_publisher([this](){
+                    return get_freq_range();
+                })
             ;
             _tree->access<uhd::time_spec_t>("time/cmd")
-                .add_coerced_subscriber(boost::bind(&block_ctrl_base::set_command_time, this, _1, chan))
+                .add_coerced_subscriber([this, chan](const uhd::time_spec_t time_spec){
+                    this->set_command_time(time_spec, chan);
+                })
             ;
             if (_tree->exists("tick_rate")) {
-                const double tick_rate = _tree->access<double>("tick_rate").get();
+                const double tick_rate =
+                    _tree->access<double>("tick_rate").get();
                 set_command_tick_rate(tick_rate, chan);
                 _tree->access<double>("tick_rate")
-                    .add_coerced_subscriber(boost::bind(&block_ctrl_base::set_command_tick_rate, this, _1, chan))
+                    .add_coerced_subscriber([this, chan](const double rate){
+                        this->set_command_tick_rate(rate, chan);
+                    })
                 ;
             }
 
@@ -100,7 +121,8 @@ public:
             sr_write("CONFIG", 1, chan); // Enable clear EOB
         }
     } // end ctor
-    virtual ~duc_block_ctrl_impl() {};
+
+    virtual ~duc_block_ctrl_impl() {}
 
     double get_input_scale_factor(size_t port=ANY_PORT)
     {
