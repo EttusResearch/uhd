@@ -9,17 +9,13 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/convert.hpp>
 #include <uhd/types/ranges.hpp>
+#include <uhdlib/utils/math.hpp>
 #include <uhdlib/utils/narrow.hpp>
 #include <uhdlib/utils/compat_check.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <cmath>
 
 using namespace uhd::rfnoc;
-
-// TODO move this to a central location
-template <class T> T ceil_log2(T num){
-    return std::ceil(std::log(num)/std::log(T(2)));
-}
 
 class ddc_block_ctrl_impl : public ddc_block_ctrl
 {
@@ -301,7 +297,8 @@ private:
         // cost us small signal performance, thus we do no provide compensation gain for a saturated front end and allow
         // the signal to clip in the H/W as needed. If we wished to avoid the signal clipping in these circumstances then adjust code to read:
         // _scaling_adjustment = std::pow(2, ceil_log2(rate_pow))/(CORDIC_GAIN*rate_pow*1.415);
-        const double scaling_adjustment = std::pow(2, ceil_log2(rate_pow))/(CORDIC_GAIN*rate_pow);
+        const double scaling_adjustment =
+            std::pow(2, uhd::math::ceil_log2(rate_pow))/(CORDIC_GAIN*rate_pow);
         update_scalar(scaling_adjustment, chan);
         return input_rate/decim_rate;
     }

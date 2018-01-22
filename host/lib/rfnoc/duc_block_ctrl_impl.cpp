@@ -9,17 +9,13 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/convert.hpp>
 #include <uhd/types/ranges.hpp>
-#include <uhdlib/utils/narrow.hpp>
 #include <uhdlib/utils/compat_check.hpp>
+#include <uhdlib/utils/math.hpp>
+#include <uhdlib/utils/narrow.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <cmath>
 
 using namespace uhd::rfnoc;
-
-// TODO move this to a central location
-template <class T> T ceil_log2(T num){
-    return std::ceil(std::log(num)/std::log(T(2)));
-}
 
 // TODO remove this once we have actual lambdas
 static double lambda_forward_prop(uhd::property_tree::sptr tree, uhd::fs_path prop, double value)
@@ -250,7 +246,8 @@ private:
         // This must also encompass the CORDIC gain
         static const double CONSTANT_GAIN = 1.1644;
 
-        const double scaling_adjustment = std::pow(2, ceil_log2(rate_pow))/(CONSTANT_GAIN*rate_pow);
+        const double scaling_adjustment =
+            std::pow(2, uhd::math::ceil_log2(rate_pow))/(CONSTANT_GAIN*rate_pow);
         update_scalar(scaling_adjustment, chan);
         return output_rate/interp_rate;
     }
