@@ -1,5 +1,5 @@
 //
-// Copyright 2017 Ettus Research, National Instruments Company
+// Copyright 2017-2018 Ettus Research, National Instruments Company
 //
 // SPDX-License-Identifier: GPL-3.0
 //
@@ -51,8 +51,15 @@ public:
 
     void begin_initialization();
     void finish_initialization();
-    void setup_cal(uint32_t init_cals_mask, uint32_t tracking_cals_mask, uint32_t timeout);
-    uint8_t set_lo_source(const uhd::direction_t direction, const uint8_t pll_source);
+    void setup_cal(
+            const uint32_t init_cals_mask,
+            const uint32_t tracking_cals_mask,
+            const uint32_t timeout
+    );
+    uint8_t set_lo_source(
+            const uhd::direction_t direction,
+            const uint8_t pll_source
+    );
     uint8_t get_lo_source(const uhd::direction_t direction) const;
     void start_jesd_rx();
     void start_jesd_tx();
@@ -63,33 +70,74 @@ public:
     uint8_t get_framer_status();
     uint8_t get_deframer_status();
     uint16_t get_ilas_config_match();
-    void enable_jesd_loopback(uint8_t enable);
+    void enable_jesd_loopback(const uint8_t enable);
 
     uint8_t get_product_id();
     uint8_t get_device_rev();
     mpm::ad937x::device::api_version_t get_api_version();
     mpm::ad937x::device::arm_version_t get_arm_version();
 
-    double set_bw_filter(uhd::direction_t direction, mpm::ad937x::device::chain_t chain, double value);
-    void set_agc_mode(uhd::direction_t direction, gain_mode_t mode);
-    double set_clock_rate(double value);
-    void enable_channel(uhd::direction_t direction, mpm::ad937x::device::chain_t chain, bool enable);
+    double set_bw_filter(
+            const uhd::direction_t direction,
+            const mpm::ad937x::device::chain_t chain,
+            const double value
+    );
+    void set_agc_mode(
+            const uhd::direction_t direction,
+            const gain_mode_t mode
+    );
+    double set_clock_rate(const double value);
+    void enable_channel(
+            const uhd::direction_t direction,
+            const mpm::ad937x::device::chain_t chain,
+            const bool enable
+    );
 
-    double set_gain(uhd::direction_t direction, mpm::ad937x::device::chain_t chain, double value);
-    double get_gain(uhd::direction_t direction, mpm::ad937x::device::chain_t chain);
+    double set_gain(
+            const uhd::direction_t direction,
+            const mpm::ad937x::device::chain_t chain,
+            const double value
+    );
+    double get_gain(
+            const uhd::direction_t direction,
+            const mpm::ad937x::device::chain_t chain
+    );
 
-    double tune(uhd::direction_t direction, double value, bool wait_for_lock);
-    double get_freq(uhd::direction_t direction);
+    double tune(
+            const uhd::direction_t direction,
+            const double value,
+            const bool wait_for_lock
+    );
+    double get_freq(const uhd::direction_t direction);
 
-    bool get_pll_lock_status(uint8_t pll, bool wait_for_lock = false);
+    bool get_pll_lock_status(
+            const uint8_t pll,
+            const bool wait_for_lock=false
+    );
 
-    void set_fir(uhd::direction_t direction, int8_t gain, const std::vector<int16_t> & fir);
-    std::vector<int16_t> get_fir(uhd::direction_t direction, int8_t &gain);
+    void set_fir(
+            const uhd::direction_t direction,
+            int8_t gain,
+            const std::vector<int16_t>& fir
+    );
+    std::vector<int16_t> get_fir(
+            const uhd::direction_t direction,
+            int8_t &gain
+    );
 
     int16_t get_temperature();
 
-    void set_enable_gain_pins(uhd::direction_t direction, mpm::ad937x::device::chain_t chain, bool enable);
-    void set_gain_pin_step_sizes(uhd::direction_t direction, mpm::ad937x::device::chain_t chain, double inc_step, double dec_step);
+    void set_enable_gain_pins(
+            const uhd::direction_t direction,
+            const mpm::ad937x::device::chain_t chain,
+            const bool enable
+    );
+    void set_gain_pin_step_sizes(
+            const uhd::direction_t direction,
+            const mpm::ad937x::device::chain_t chain,
+            const double inc_step,
+            const double dec_step
+    );
     void update_rx_lo_source(uint8_t rxPllUseExternalLo);
     void update_tx_lo_source(uint8_t rxPllUseExternalLo);
     uint8_t get_rx_lo_source();
@@ -112,22 +160,25 @@ private:
     ad937x_config_t mykonos_config;
     ad937x_gain_ctrl_config_t gain_ctrl;
 
-    void _apply_gain_pins(uhd::direction_t direction, mpm::ad937x::device::chain_t chain);
+    void _apply_gain_pins(
+            const uhd::direction_t direction,
+            mpm::ad937x::device::chain_t chain
+    );
     void _setup_rf();
     void _call_api_function(const std::function<mykonosErr_t()>& func);
     void _call_gpio_api_function(const std::function<mykonosGpioErr_t()>& func);
 
-    std::string _get_arm_binary_path();
+    std::string _get_arm_binary_path() const;
     std::vector<uint8_t> _get_arm_binary();
 
     void _verify_product_id();
-    void _verify_multichip_sync_status(multichip_sync_t mcs);
+    void _verify_multichip_sync_status(const multichip_sync_t mcs);
 
     radio_state_t _move_to_config_state();
     void _restore_from_config_state(radio_state_t state);
 
-    static uint8_t _convert_rx_gain_to_mykonos(double gain);
-    static double _convert_rx_gain_from_mykonos(uint8_t gain);
-    static uint16_t _convert_tx_gain_to_mykonos(double gain);
-    static double _convert_tx_gain_from_mykonos(uint16_t gain);
+    static uint8_t _convert_rx_gain_to_mykonos(const double gain);
+    static double _convert_rx_gain_from_mykonos(const uint8_t gain);
+    static uint16_t _convert_tx_gain_to_mykonos(const double gain);
+    static double _convert_tx_gain_from_mykonos(const uint16_t gain);
 };

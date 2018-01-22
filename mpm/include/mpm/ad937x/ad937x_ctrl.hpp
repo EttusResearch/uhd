@@ -110,12 +110,21 @@ public:
     *\param tracking_cals_mask bit masking field for tracking calibration default to 0xC3
     *\param timeout init calibration timeout. default to 10s
     */
-    virtual void setup_cal(uint32_t init_cals_mask, uint32_t tracking_cals_mask, uint32_t timeout) = 0;
+    virtual void setup_cal(
+            const uint32_t init_cals_mask,
+            const uint32_t tracking_cals_mask,
+            const uint32_t timeout
+    ) = 0;
 
     //! set LO source
-    virtual std::string set_lo_source(const std::string &which, const std::string &source) = 0;
+    virtual std::string set_lo_source(
+            const std::string &which,
+            const std::string &source
+    ) = 0;
+
     //! get LO source
     virtual std::string get_lo_source(const std::string &which) = 0;
+
     //! resets and start the JESD deframer (JESD Rx, for RF Tx)
     virtual void start_jesd_rx() = 0;
 
@@ -141,7 +150,7 @@ public:
     virtual uint16_t get_ilas_config_match() = 0;
 
     //! enable or disable JESD loopback, when enabled JESD Rx will be directly connected to JESD Tx
-    virtual void enable_jesd_loopback(uint8_t enable) = 0;
+    virtual void enable_jesd_loopback(const uint8_t enable) = 0;
 
     //! get the RF frequency range for the AD9371
     static uhd::meta_range_t get_rf_freq_range(void);
@@ -174,7 +183,10 @@ public:
     virtual std::string get_arm_version() = 0;
 
     //! set the BW filter for the frontend which
-    virtual double set_bw_filter(const std::string &which, double value) = 0;
+    virtual double set_bw_filter(
+            const std::string &which,
+            const double value
+    ) = 0;
 
     /*! \brief set the gain for the frontend which
      *
@@ -182,7 +194,7 @@ public:
      * \param value target gain value
      * \return actual gain value
      */
-    virtual double set_gain(const std::string &which, double value) = 0;
+    virtual double set_gain(const std::string &which, const double value) = 0;
 
     /*! \brief get the gain for the frontend which
     *
@@ -206,7 +218,7 @@ public:
     virtual double set_clock_rate(double value) = 0;
 
     //! enable the frontend which
-    virtual void enable_channel(const std::string &which, bool enable) = 0;
+    virtual void enable_channel(const std::string &which, const bool enable) = 0;
 
     /*! \brief set the RF frequency for the direction specified in which
      * Sets the RF frequency.  This is a per direction setting.
@@ -215,7 +227,11 @@ public:
      * \param wait_for_lock wait after tuning for the PLL to lock
      * \return actual frequency
      */
-    virtual double set_freq(const std::string &which, double value, bool wait_for_lock) = 0;
+    virtual double set_freq(
+            const std::string &which,
+            const double value,
+            const bool wait_for_lock
+    ) = 0;
 
     /*! \brief get the RF frequency for the direction specified in which
      *
@@ -238,20 +254,34 @@ public:
     virtual void set_master_clock_rate(const double rate) = 0;
 
     //! set the FIR filter for the frontend which
-    virtual void set_fir(const std::string &which, int8_t gain, const std::vector<int16_t> & fir) = 0;
+    virtual void set_fir(
+            const std::string &which,
+            const int8_t gain,
+            const std::vector<int16_t> & fir
+    ) = 0;
 
     //! get the FIR filter for the frontend which
-    virtual std::vector<int16_t> get_fir(const std::string &which, int8_t &gain) = 0;
+    virtual std::vector<int16_t> get_fir(
+            const std::string &which,
+            int8_t &gain
+    ) = 0;
 
     // TODO: update docstring with temperature unit and calibration information
     //! get the device temperature
     virtual int16_t get_temperature() = 0;
 
     //! enable or disable gain ctrl pins for one channel
-    virtual void set_enable_gain_pins(const std::string &which, bool enable) = 0;
+    virtual void set_enable_gain_pins(
+            const std::string &which,
+            const bool enable
+    ) = 0;
 
     //! set step sizes for gain ctrl pins for one channel
-    virtual void set_gain_pin_step_sizes(const std::string &which, double inc_step, double dec_step) = 0;
+    virtual void set_gain_pin_step_sizes(
+            const std::string &which,
+            double inc_step,
+            double dec_step
+    ) = 0;
 
     //! Direct register read access
     virtual uint8_t peek8(const uint32_t addr) = 0;

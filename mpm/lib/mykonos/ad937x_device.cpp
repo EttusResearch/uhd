@@ -95,17 +95,19 @@ ad937x_device::radio_state_t ad937x_device::_move_to_config_state()
 
 // restores the state from before a call to _move_to_config_state
 // if ON, move to radioOn, otherwise this function is a no-op
-void ad937x_device::_restore_from_config_state(const ad937x_device::radio_state_t state)
-{
+void ad937x_device::_restore_from_config_state(
+        const ad937x_device::radio_state_t state
+) {
     if (state == radio_state_t::ON)
     {
         start_radio();
     }
 }
 
-std::string ad937x_device::_get_arm_binary_path()
+std::string ad937x_device::_get_arm_binary_path() const
 {
-    // TODO: possibly add more options here, for now it's always in /lib/firmware or we explode
+    // TODO: possibly add more options here, for now it's always in
+    // /lib/firmware or we explode
     return "/lib/firmware/adi/mykonos-m3.bin";
 }
 
@@ -113,10 +115,9 @@ std::vector<uint8_t> ad937x_device::_get_arm_binary()
 {
     const auto path = _get_arm_binary_path();
     std::ifstream file(path, std::ios::binary);
-    if (!file.is_open())
-    {
-        throw mpm::runtime_error("Could not open AD9371 ARM binary at path " + path);
-        return {};
+    if (!file.is_open()) {
+        throw mpm::runtime_error(
+                "Could not open AD9371 ARM binary at path " + path);
     }
 
     // TODO: add check that opened file size is equal to ARM_BINARY_SIZE
@@ -124,8 +125,8 @@ std::vector<uint8_t> ad937x_device::_get_arm_binary()
     file.read(reinterpret_cast<char*>(binary.data()), ARM_BINARY_SIZE);
     if (file.bad())
     {
-        throw mpm::runtime_error("Error reading AD9371 ARM binary at path " + path);
-        return {};
+        throw mpm::runtime_error(
+                "Error reading AD9371 ARM binary at path " + path);
     }
     return binary;
 }
@@ -133,10 +134,10 @@ std::vector<uint8_t> ad937x_device::_get_arm_binary()
 void ad937x_device::_verify_product_id()
 {
     const uint8_t product_id = get_product_id();
-    if (product_id != AD9371_PRODUCT_ID)
-    {
+    if (product_id != AD9371_PRODUCT_ID) {
         throw mpm::runtime_error(str(
-            boost::format("AD9371 product ID does not match expected ID! Read: %X Expected: %X")
+            boost::format("AD9371 product ID does not match expected ID! "
+                          "Read: %X Expected: %X")
             % int(product_id) % int(AD9371_PRODUCT_ID)
         ));
     }
@@ -144,19 +145,23 @@ void ad937x_device::_verify_product_id()
 
 void ad937x_device::_verify_multichip_sync_status(const multichip_sync_t mcs)
 {
-    const uint8_t status_expected = (mcs == multichip_sync_t::FULL) ? 0x0B : 0x0A;
+    const uint8_t status_expected =
+        (mcs == multichip_sync_t::FULL) ? 0x0B : 0x0A;
     const uint8_t status_mask = status_expected; // all 1s expected, mask is the same
 
     const uint8_t mcs_status = get_multichip_sync_status();
     if ((mcs_status & status_mask) != status_expected)
     {
-        throw mpm::runtime_error(str(boost::format("Multichip sync failed! Read: %X Expected: %X")
-            % int(mcs_status) % int(status_expected)));
+        throw mpm::runtime_error(str(
+            boost::format("Multichip sync failed! Read: %X Expected: %X")
+            % int(mcs_status) % int(status_expected)
+        ));
     }
 }
 
 // RX Gain values are table entries given in mykonos_user.h
-// An array of gain values is programmed at initialization, which the API will then use for its gain values
+// An array of gain values is programmed at initialization,
+// which the API will then use for its gain values
 // In general, Gain Value = (255 - Gain Table Index)
 uint8_t ad937x_device::_convert_rx_gain_to_mykonos(const double gain)
 {
@@ -184,14 +189,15 @@ double ad937x_device::_convert_tx_gain_from_mykonos(const uint16_t gain)
     return (MAX_TX_GAIN - (static_cast<double>(gain) / 1e3));
 }
 
-void ad937x_device::_apply_gain_pins(const direction_t direction, const chain_t chain)
-{
+void ad937x_device::_apply_gain_pins(
+        const direction_t direction,
+        const chain_t chain
+) {
     // get this channels configuration
     const auto chan = gain_ctrl.config.at(direction).at(chain);
 
     // TX direction does not support different steps per direction
-    if (direction == TX_DIRECTION)
-    {
+    if (direction == TX_DIRECTION) {
         MPM_ASSERT_THROW(chan.inc_step == chan.dec_step);
     }
 
@@ -293,22 +299,30 @@ void ad937x_device::_setup_rf(){
 
 }
 
-void ad937x_device::setup_cal(uint32_t init_cals_mask, uint32_t tracking_cals_mask, uint32_t timeout){
+void ad937x_device::setup_cal(
+    const uint32_t init_cals_mask,
+    const uint32_t tracking_cals_mask,
+    const uint32_t timeout
+) {
     // Run and wait for init cals
     CALL_API(MYKONOS_runInitCals(mykonos_config.device, init_cals_mask));
     uint8_t errorFlag = 0, errorCode = 0;
-    CALL_API(MYKONOS_waitInitCals(mykonos_config.device, timeout, &errorFlag, &errorCode));
+    CALL_API(MYKONOS_waitInitCals(mykonos_config.device,
+                timeout, &errorFlag, &errorCode));
 
-    if ((errorFlag != 0) || (errorCode != 0))
-    {
+    if ((errorFlag != 0) || (errorCode != 0)) {
         throw mpm::runtime_error("Init cals failed!");
         // TODO: add more debugging information here
     }
-    CALL_API(MYKONOS_enableTrackingCals(mykonos_config.device, tracking_cals_mask));
+    CALL_API(MYKONOS_enableTrackingCals(mykonos_config.device,
+                tracking_cals_mask));
     // ready for radioOn
 }
 
-uint8_t ad937x_device::set_lo_source(const uhd::direction_t direction, const uint8_t pll_source){
+uint8_t ad937x_device::set_lo_source(
+        const uhd::direction_t direction,
+        const uint8_t pll_source
+) {
     switch (direction){
         case TX_DIRECTION:
             mykonos_config.device->tx->txPllUseExternalLo = pll_source;
@@ -476,7 +490,6 @@ arm_version_t ad937x_device::get_arm_version()
 }
 
 
-
 /******************************************************
 Set configuration functions
 ******************************************************/
@@ -500,8 +513,11 @@ double ad937x_device::set_clock_rate(const double req_rate)
     return static_cast<double>(rate);
 }
 
-void ad937x_device::enable_channel(const direction_t direction, const chain_t chain, const bool enable)
-{
+void ad937x_device::enable_channel(
+        const direction_t direction,
+        const chain_t chain,
+        const bool enable
+) {
     // TODO:
     // Turns out the only code in the API that actually sets the channel enable settings
     // is _initialize(). Need to figure out how to deal with this.
@@ -510,8 +526,11 @@ void ad937x_device::enable_channel(const direction_t direction, const chain_t ch
     // always use the GPIO pins to do so. Delete this function at a later time.
 }
 
-double ad937x_device::tune(const direction_t direction, const double value, const bool wait_for_lock = false)
-{
+double ad937x_device::tune(
+        const direction_t direction,
+        const double value,
+        const bool wait_for_lock = false
+) {
     // I'm not sure why we set the PLL value in the config AND as a function parameter
     // but here it is
 
@@ -551,15 +570,21 @@ double ad937x_device::tune(const direction_t direction, const double value, cons
     return get_freq(direction);
 }
 
-double ad937x_device::set_bw_filter(const direction_t direction, const chain_t chain, const double value)
-{
+double ad937x_device::set_bw_filter(
+        const direction_t direction,
+        const chain_t chain,
+        const double value
+) {
     // TODO: implement
     return double();
 }
 
 
-double ad937x_device::set_gain(const direction_t direction, const chain_t chain, const double value)
-{
+double ad937x_device::set_gain(
+        const direction_t direction,
+        const chain_t chain,
+        const double value
+) {
     double coerced_value;
     const auto state = _move_to_config_state();
     switch (direction)
@@ -612,8 +637,10 @@ double ad937x_device::set_gain(const direction_t direction, const chain_t chain,
     return get_gain(direction, chain);
 }
 
-void ad937x_device::set_agc_mode(const direction_t direction, const gain_mode_t mode)
-{
+void ad937x_device::set_agc_mode(
+        const direction_t direction,
+        const gain_mode_t mode
+) {
     mykonosGainMode_t mykonos_mode;
     switch (direction)
     {
@@ -662,17 +689,25 @@ void ad937x_device::set_fir(
     // TODO: reload this on device
 }
 
-void ad937x_device::set_gain_pin_step_sizes(const direction_t direction, const chain_t chain, const double inc_step, const double dec_step)
-{
+void ad937x_device::set_gain_pin_step_sizes(
+        const direction_t direction,
+        const chain_t chain,
+        const double inc_step,
+        const double dec_step
+) {
     if (direction == RX_DIRECTION)
     {
-        gain_ctrl.config.at(direction).at(chain).inc_step = static_cast<uint8_t>(inc_step / 0.5);
-        gain_ctrl.config.at(direction).at(chain).dec_step = static_cast<uint8_t>(dec_step / 0.5);
+        gain_ctrl.config.at(direction).at(chain).inc_step =
+            static_cast<uint8_t>(inc_step / 0.5);
+        gain_ctrl.config.at(direction).at(chain).dec_step =
+            static_cast<uint8_t>(dec_step / 0.5);
     }
     else if (direction == TX_DIRECTION) {
         // !!! TX is attenuation direction, so the pins are flipped !!!
-        gain_ctrl.config.at(direction).at(chain).dec_step = static_cast<uint8_t>(inc_step / 0.05);
-        gain_ctrl.config.at(direction).at(chain).inc_step = static_cast<uint8_t>(dec_step / 0.05);
+        gain_ctrl.config.at(direction).at(chain).dec_step =
+            static_cast<uint8_t>(inc_step / 0.05);
+        gain_ctrl.config.at(direction).at(chain).inc_step =
+            static_cast<uint8_t>(dec_step / 0.05);
     }
     else {
         MPM_THROW_INVALID_CODE_PATH();
@@ -680,8 +715,11 @@ void ad937x_device::set_gain_pin_step_sizes(const direction_t direction, const c
     _apply_gain_pins(direction, chain);
 }
 
-void ad937x_device::set_enable_gain_pins(const direction_t direction, const chain_t chain, const bool enable)
-{
+void ad937x_device::set_enable_gain_pins(
+        const direction_t direction,
+        const chain_t chain,
+        const bool enable
+) {
     gain_ctrl.config.at(direction).at(chain).enable = enable;
     _apply_gain_pins(direction, chain);
 }
@@ -691,7 +729,6 @@ void ad937x_device::set_enable_gain_pins(const direction_t direction, const chai
 /******************************************************
 Get configuration functions
 ******************************************************/
-
 double ad937x_device::get_freq(const direction_t direction)
 {
     mykonosRfPllName_t pll;
@@ -709,8 +746,10 @@ double ad937x_device::get_freq(const direction_t direction)
     return static_cast<double>(coerced_pll);
 }
 
-bool ad937x_device::get_pll_lock_status(const uint8_t pll, const bool wait_for_lock)
-{
+bool ad937x_device::get_pll_lock_status(
+        const uint8_t pll,
+        const bool wait_for_lock
+) {
     uint8_t pll_status;
     CALL_API(MYKONOS_checkPllsLockStatus(mykonos_config.device, &pll_status));
 
@@ -719,7 +758,9 @@ bool ad937x_device::get_pll_lock_status(const uint8_t pll, const bool wait_for_l
         return (pll_status & pll) == pll;
     }
     else {
-        const auto lock_time = std::chrono::steady_clock::now() + std::chrono::milliseconds(PLL_LOCK_TIMEOUT_MS);
+        const auto lock_time =
+            std::chrono::steady_clock::now()
+            + std::chrono::milliseconds(PLL_LOCK_TIMEOUT_MS);
         bool locked = false;
         while (not locked and lock_time > std::chrono::steady_clock::now())
         {
@@ -735,8 +776,10 @@ bool ad937x_device::get_pll_lock_status(const uint8_t pll, const bool wait_for_l
     }
 }
 
-double ad937x_device::get_gain(const direction_t direction, const chain_t chain)
-{
+double ad937x_device::get_gain(
+        const direction_t direction,
+        const chain_t chain
+) {
     switch (direction)
     {
         case TX_DIRECTION:
@@ -810,7 +853,8 @@ void ad937x_device::set_master_clock_rate(const mcr_t rate)
         set_fir(TX_DIRECTION,
             mykonos_config.device->tx->txProfile->txFir->gain_dB,
             std::vector<int16_t>(ad937x_config_t::DEFAULT_TX_FIR,
-                ad937x_config_t::DEFAULT_TX_FIR + ad937x_config_t::DEFAULT_TX_FIR_SIZE)
+                ad937x_config_t::DEFAULT_TX_FIR
+                    + ad937x_config_t::DEFAULT_TX_FIR_SIZE)
             );
         mykonos_config.device->tx->txProfile->iqRate_kHz = 125000;
         mykonos_config.device->tx->txProfile->primarySigBandwidth_Hz = 20000000;
@@ -821,7 +865,8 @@ void ad937x_device::set_master_clock_rate(const mcr_t rate)
         set_fir(RX_DIRECTION,
             mykonos_config.device->rx->rxProfile->rxFir->gain_dB,
             std::vector<int16_t>(ad937x_config_t::DEFAULT_RX_FIR,
-                ad937x_config_t::DEFAULT_RX_FIR + ad937x_config_t::DEFAULT_RX_FIR_SIZE)
+                ad937x_config_t::DEFAULT_RX_FIR
+                    + ad937x_config_t::DEFAULT_RX_FIR_SIZE)
             );
 
         mykonos_config.device->rx->rxProfile->iqRate_kHz = 125000;
@@ -838,7 +883,8 @@ void ad937x_device::set_master_clock_rate(const mcr_t rate)
         set_fir(TX_DIRECTION,
             mykonos_config.device->tx->txProfile->txFir->gain_dB,
             std::vector<int16_t>(ad937x_config_t::DEFAULT_TX_FIR,
-                ad937x_config_t::DEFAULT_TX_FIR + ad937x_config_t::DEFAULT_TX_FIR_SIZE)
+                ad937x_config_t::DEFAULT_TX_FIR
+                    + ad937x_config_t::DEFAULT_TX_FIR_SIZE)
             );
         mykonos_config.device->tx->txProfile->iqRate_kHz = 122880;
         mykonos_config.device->tx->txProfile->primarySigBandwidth_Hz = 20000000;
@@ -849,7 +895,8 @@ void ad937x_device::set_master_clock_rate(const mcr_t rate)
         set_fir(RX_DIRECTION,
             mykonos_config.device->rx->rxProfile->rxFir->gain_dB,
             std::vector<int16_t>(ad937x_config_t::DEFAULT_RX_FIR,
-                ad937x_config_t::DEFAULT_RX_FIR + ad937x_config_t::DEFAULT_RX_FIR_SIZE)
+                ad937x_config_t::DEFAULT_RX_FIR
+                    + ad937x_config_t::DEFAULT_RX_FIR_SIZE)
             );
         mykonos_config.device->rx->rxProfile->iqRate_kHz = 122880;
         mykonos_config.device->rx->rxProfile->rxBbf3dBCorner_kHz = 100000;
@@ -865,7 +912,8 @@ void ad937x_device::set_master_clock_rate(const mcr_t rate)
         set_fir(TX_DIRECTION,
             mykonos_config.device->tx->txProfile->txFir->gain_dB,
             std::vector<int16_t>(ad937x_config_t::DEFAULT_TX_FIR_15366,
-                ad937x_config_t::DEFAULT_TX_FIR_15366 + ad937x_config_t::DEFAULT_TX_FIR_SIZE)
+                ad937x_config_t::DEFAULT_TX_FIR_15366
+                    + ad937x_config_t::DEFAULT_TX_FIR_SIZE)
             );
         mykonos_config.device->tx->txProfile->iqRate_kHz = 153600;
         mykonos_config.device->tx->txProfile->primarySigBandwidth_Hz = 10000000;
@@ -876,7 +924,8 @@ void ad937x_device::set_master_clock_rate(const mcr_t rate)
         set_fir(RX_DIRECTION,
             mykonos_config.device->rx->rxProfile->rxFir->gain_dB,
             std::vector<int16_t>(ad937x_config_t::DEFAULT_RX_FIR_15366,
-                ad937x_config_t::DEFAULT_RX_FIR_15366 + ad937x_config_t::DEFAULT_RX_FIR_SIZE)
+                ad937x_config_t::DEFAULT_RX_FIR_15366
+                    + ad937x_config_t::DEFAULT_RX_FIR_SIZE)
             );
         mykonos_config.device->rx->rxProfile->iqRate_kHz = 153600;
         mykonos_config.device->rx->rxProfile->rxBbf3dBCorner_kHz = 100000;

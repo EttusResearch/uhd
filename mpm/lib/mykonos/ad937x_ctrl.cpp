@@ -16,6 +16,9 @@
 #include <functional>
 #include <iostream>
 #include <algorithm>
+#include <thread>
+#include <chrono>
+
 
 using namespace mpm::chips;
 using namespace mpm::ad937x::device;
@@ -158,9 +161,17 @@ uhd::meta_range_t ad937x_ctrl::get_gain_range(const std::string &which)
     switch (dir)
     {
     case uhd::direction_t::RX_DIRECTION:
-        return uhd::meta_range_t(ad937x_device::MIN_RX_GAIN, ad937x_device::MAX_RX_GAIN, ad937x_device::RX_GAIN_STEP);
+        return uhd::meta_range_t(
+                ad937x_device::MIN_RX_GAIN,
+                ad937x_device::MAX_RX_GAIN,
+                ad937x_device::RX_GAIN_STEP
+        );
     case uhd::direction_t::TX_DIRECTION:
-        return uhd::meta_range_t(ad937x_device::MIN_TX_GAIN, ad937x_device::MAX_TX_GAIN, ad937x_device::TX_GAIN_STEP);
+        return uhd::meta_range_t(
+                ad937x_device::MIN_TX_GAIN,
+                ad937x_device::MAX_TX_GAIN,
+                ad937x_device::TX_GAIN_STEP
+        );
     default:
         MPM_THROW_INVALID_CODE_PATH();
         return uhd::meta_range_t();
@@ -181,6 +192,7 @@ public:
     {
         /* nop */
     }
+
     virtual void begin_initialization()
     {
         std::lock_guard<std::mutex> lock(*spi_mutex);
@@ -193,14 +205,20 @@ public:
         device.finish_initialization();
     }
 
-    virtual void setup_cal(uint32_t init_cals_mask, uint32_t tracking_cals_mask, uint32_t timeout)
-    {
+    virtual void setup_cal(
+            const uint32_t init_cals_mask,
+            const uint32_t tracking_cals_mask,
+            const uint32_t timeout
+    ) {
         std::lock_guard<std::mutex> lock(*spi_mutex);
         device.setup_cal(init_cals_mask, tracking_cals_mask, timeout);
     }
 
-    virtual std::string set_lo_source(const std::string &which, const std::string &source){
-        auto dir = _get_direction_from_antenna(which);
+    virtual std::string set_lo_source(
+            const std::string &which,
+            const std::string &source
+    ) {
+        const auto dir = _get_direction_from_antenna(which);
 
         uint8_t pll_source = 0 ;
         if (source == "internal"){
@@ -224,16 +242,16 @@ public:
         }
     }
 
-     virtual std::string get_lo_source(const std::string &which){
-        auto dir = _get_direction_from_antenna(which);
+    virtual std::string get_lo_source(const std::string &which){
+        const auto dir = _get_direction_from_antenna(which);
 
         std::lock_guard<std::mutex> lock(*spi_mutex);
         uint8_t retval = device.get_lo_source(dir);
         if (retval == 0){
             return "internal";
-        } else if (retval == 1){
+        } else if (retval == 1) {
             return "external";
-        }else{
+        } else {
             throw mpm::runtime_error("invalid return from get LO source");
         }
     }
@@ -286,7 +304,7 @@ public:
         return device.get_ilas_config_match();
     }
 
-    virtual void enable_jesd_loopback(uint8_t enable)
+    virtual void enable_jesd_loopback(const uint8_t enable)
     {
         std::lock_guard<std::mutex> lock(*spi_mutex);
         device.enable_jesd_loopback(enable);
@@ -300,13 +318,15 @@ public:
 
     virtual uint8_t get_device_rev()
     {
+        std::this_thread::sleep_for(std::chrono::seconds(4));
         std::lock_guard<std::mutex> lock(*spi_mutex);
         return device.get_device_rev();
     }
+
     virtual std::string get_api_version()
     {
         std::lock_guard<std::mutex> lock(*spi_mutex);
-        auto api = device.get_api_version();
+        const auto api = device.get_api_version();
         std::ostringstream ss;
         ss  << api.silicon_ver << "."
             << api.major_ver << "."
@@ -319,7 +339,7 @@ public:
     virtual std::string get_arm_version()
     {
         std::lock_guard<std::mutex> lock(*spi_mutex);
-        auto arm = device.get_arm_version();
+        const auto arm = device.get_arm_version();
         std::ostringstream ss;
         ss  << arm.major_ver << "."
             << arm.minor_ver << "."
@@ -341,16 +361,16 @@ public:
         return ss.str();
     }
 
-    virtual double set_bw_filter(const std::string &which, double value)
+    virtual double set_bw_filter(const std::string &which, const double value)
     {
         // TODO implement
         return double();
     }
 
-    virtual double set_gain(const std::string &which, double value)
+    virtual double set_gain(const std::string &which, const double value)
     {
-        auto dir = _get_direction_from_antenna(which);
-        auto chain = _get_chain_from_antenna(which);
+        const auto dir = _get_direction_from_antenna(which);
+        const auto chain = _get_chain_from_antenna(which);
 
         std::lock_guard<std::mutex> lock(*spi_mutex);
         return device.set_gain(dir, chain, value);
@@ -358,8 +378,8 @@ public:
 
     virtual double get_gain(const std::string &which)
     {
-        auto dir = _get_direction_from_antenna(which);
-        auto chain = _get_chain_from_antenna(which);
+        const auto dir = _get_direction_from_antenna(which);
+        const auto chain = _get_chain_from_antenna(which);
 
         std::lock_guard<std::mutex> lock(*spi_mutex);
         return device.get_gain(dir, chain);
@@ -367,17 +387,18 @@ public:
 
     // TODO: does agc mode need to have a which parameter?
     // this affects all RX channels on the device
-    virtual void set_agc_mode(const std::string &which, const std::string &mode)
-    {
-        auto dir = _get_direction_from_antenna(which);
+    virtual void set_agc_mode(
+            const std::string &which,
+            const std::string &mode
+    ) {
+        const auto dir = _get_direction_from_antenna(which);
         if (dir != uhd::direction_t::RX_DIRECTION)
         {
             throw mpm::runtime_error("set_agc not valid for non-rx channels");
         }
 
         ad937x_device::gain_mode_t gain_mode;
-        if (mode == "automatic")
-        {
+        if (mode == "automatic") {
             gain_mode = ad937x_device::gain_mode_t::AUTOMATIC;
         }
         else if (mode == "manual") {
@@ -396,9 +417,8 @@ public:
 
     virtual double set_clock_rate(double value)
     {
-        auto rates = get_clock_rates();
-        if (std::find(rates.cbegin(), rates.cend(), value) == rates.end())
-        {
+        const auto rates = get_clock_rates();
+        if (std::find(rates.cbegin(), rates.cend(), value) == rates.end()) {
             value = *(rates.cbegin());
         }
 
@@ -406,19 +426,22 @@ public:
         return device.set_clock_rate(value);
     }
 
-    virtual void enable_channel(const std::string &which, bool enable)
+    virtual void enable_channel(const std::string &which, const bool enable)
     {
-        auto dir = _get_direction_from_antenna(which);
-        auto chain = _get_chain_from_antenna(which);
+        const auto dir = _get_direction_from_antenna(which);
+        const auto chain = _get_chain_from_antenna(which);
 
         std::lock_guard<std::mutex> lock(*spi_mutex);
         return device.enable_channel(dir, chain, enable);
     }
 
-    virtual double set_freq(const std::string &which, double value, bool wait_for_lock)
-    {
-        auto dir = _get_direction_from_antenna(which);
-        auto clipped_value = get_rf_freq_range().clip(value);
+    virtual double set_freq(
+            const std::string &which,
+            const double value,
+            const bool wait_for_lock
+    ) {
+        const auto dir = _get_direction_from_antenna(which);
+        const auto clipped_value = get_rf_freq_range().clip(value);
 
         std::lock_guard<std::mutex> lock(*spi_mutex);
         return device.tune(dir, clipped_value, wait_for_lock);
@@ -426,7 +449,7 @@ public:
 
     virtual double get_freq(const std::string &which)
     {
-        auto dir = _get_direction_from_antenna(which);
+        const auto dir = _get_direction_from_antenna(which);
 
         std::lock_guard<std::mutex> lock(*spi_mutex);
         return device.get_freq(dir);
@@ -443,11 +466,14 @@ public:
         return device.get_pll_lock_status(pll_select);
     }
 
-    virtual void set_fir(const std::string &which, int8_t gain, const std::vector<int16_t> & fir)
-    {
-        auto dir = _get_direction_from_antenna(which);
+    virtual void set_fir(
+            const std::string &which,
+            const int8_t gain,
+            const std::vector<int16_t>& fir
+    ) {
+        const auto dir = _get_direction_from_antenna(which);
+        const auto lengths = _get_valid_fir_lengths(which);
 
-        auto lengths = _get_valid_fir_lengths(which);
         if (std::find(lengths.begin(), lengths.end(), fir.size()) == lengths.end())
         {
             throw mpm::value_error("invalid filter length");
@@ -494,36 +520,39 @@ public:
         device.set_master_clock_rate(mcr);
     }
 
-    virtual void set_enable_gain_pins(const std::string &which, bool enable)
-    {
-        auto dir = _get_direction_from_antenna(which);
-        auto chain = _get_chain_from_antenna(which);
+    virtual void set_enable_gain_pins(
+            const std::string &which,
+            const bool enable
+    ) {
+        const auto dir = _get_direction_from_antenna(which);
+        const auto chain = _get_chain_from_antenna(which);
 
         std::lock_guard<std::mutex> lock(*spi_mutex);
         device.set_enable_gain_pins(dir, chain, enable);
     }
 
-    virtual void set_gain_pin_step_sizes(const std::string &which, double inc_step, double dec_step)
-    {
-        auto dir = _get_direction_from_antenna(which);
-        auto chain = _get_chain_from_antenna(which);
+    virtual void set_gain_pin_step_sizes(
+            const std::string &which,
+            double inc_step,
+            double dec_step
+    ) {
+        const auto dir = _get_direction_from_antenna(which);
+        const auto chain = _get_chain_from_antenna(which);
 
-        if (dir == uhd::RX_DIRECTION)
-        {
+        if (dir == uhd::RX_DIRECTION) {
             auto steps = _get_valid_rx_gain_steps();
             inc_step = steps.clip(inc_step);
             dec_step = steps.clip(dec_step);
         }
-        else if (dir == uhd::TX_DIRECTION)
-        {
+        else if (dir == uhd::TX_DIRECTION) {
             auto steps = _get_valid_tx_gain_steps();
             inc_step = steps.clip(inc_step);
             dec_step = steps.clip(dec_step);
 
             // double comparison here should be okay because of clipping
-            if (inc_step != dec_step)
-            {
-                throw mpm::value_error("TX gain increment and decrement steps must be equal");
+            if (inc_step != dec_step) {
+                throw mpm::value_error(
+                        "TX gain increment and decrement steps must be equal");
             }
         }
 
@@ -555,7 +584,11 @@ ad937x_ctrl::sptr ad937x_ctrl::make(
         mpm::types::regs_iface::sptr iface,
         mpm::ad937x::gpio::gain_pins_t gain_pins
 ) {
-    return std::make_shared<ad937x_ctrl_impl>(spi_mutex, deserializer_lane_xbar, iface, gain_pins);
+    return std::make_shared<ad937x_ctrl_impl>(
+            spi_mutex,
+            deserializer_lane_xbar,
+            iface,
+            gain_pins
+    );
 }
-
 
