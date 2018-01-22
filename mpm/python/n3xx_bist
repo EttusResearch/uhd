@@ -47,7 +47,7 @@ def run_aurora_bist(master, slave=None):
     Spawn a BER test
     """
     from usrp_mpm import aurora_control
-    from usrp_mpm.uio import UIO
+    from usrp_mpm.sys_utils.uio import UIO
     master_au_ctrl = aurora_control.AuroraControl(
         UIO(label=master, read_only=False),
     )
