@@ -160,6 +160,7 @@ SET_SOURCE_FILES_PROPERTIES(
 LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/csv.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/config_parser.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/compat_check.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/eeprom_utils.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/gain_group.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ihex.cpp
