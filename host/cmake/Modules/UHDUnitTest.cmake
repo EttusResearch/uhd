@@ -18,15 +18,15 @@ function(UHD_ADD_TEST test_name)
         #directory itself.
         if(WIN32)
             set(UHD_TEST_LIBRARY_DIRS
-                "${Boost_LIBRARY_DIRS}"
                 "${CMAKE_BINARY_DIR}/lib/${CMAKE_BUILD_TYPE}"
                 "${CMAKE_CURRENT_BINARY_DIR}/${CMAKE_BUILD_TYPE}"
+                "${Boost_LIBRARY_DIRS}"
             )
         else()
             set(UHD_TEST_LIBRARY_DIRS
-                "${Boost_LIBRARY_DIRS}"
                 "${CMAKE_BINARY_DIR}/lib"
                 "${CMAKE_CURRENT_BINARY_DIR}"
+                "${Boost_LIBRARY_DIRS}"
             )
         endif(WIN32)
 
