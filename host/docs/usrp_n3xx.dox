@@ -306,11 +306,11 @@ For a list of which arguments can be passed into make(), see Section
  skip_duc            | Ignore DUC block. Connect Rx streamers or DRAM straight into radio.          | All N3xx          | skip_duc=1
  skip_init           | Skip the initialization process for the device.                              | All N3xx          | skip_init=1
  ref_clk_freq        | Specify the external reference clock frequency, default is 10 MHz.           | N310              | ref_clk_freq=20e6
- init_cals           | Specify the bitmask for initial calibrations of the RFIC.                    | N310              | init_cals=0x4DFF
+ init_cals           | Specify the bitmask for initial calibrations of the RFIC.                    | N310              | init_cals=BASIC
  init_cals_timeout   | Timeout for initial calibrations in milliseconds.                            | N310              | init_cals_timeout=45000
  discovery_port      | Override default value for MPM discovery port.                               | All N3xx          | discovery_port=49700
  rpc_port            | Override default value for MPM RPC port.                                     | All N3xx          | rpc_port=49701
- tracking_cals       | Specify the bitmask for tracking calibrations of the RFIC.                   | N310              | tracking_cals=0xC3
+ tracking_cals       | Specify the bitmask for tracking calibrations of the RFIC.                   | N310              | tracking_cals=ALL
  rx_lo_source        | Initialize the source for the RX LO.                                         | N310              | rx_lo_source=external
  tx_lo_source        | Initialize the source for the TX LO.                                         | N310              | tx_lo_source=external
 
@@ -408,6 +408,64 @@ A large portion of hardware-specific setup is handled by the daemon.
 tbw
 
 \section n3xx_mg N310-specific Features
+
+\subsection n3xx_mg_calibrations RF Calibrations
+
+The onboard RFIC (AD9371) has built-in calibrations which can be enabled from
+UHD. A more detailed description of the calibrations can be found in the AD9371
+user guide, see chapter "Quadrature Error Correction, Calibration, and ARM
+configuration".
+
+Not all calibrations available on the AD9371 are applicable to the USRP N310.
+However, those calibrations that are applicable can be enabled/disabled at
+initialization time using the `tracking_cals` and `init_cals` device args (see
+also \ref n3xx_usage_device_args). These device can be set to the precise bit
+mask the chip uses to set those calibrations (e.g., `init_cals=0x4DFF,tracking_cals=0xC3`)
+or they can use the following descriptive keys provided by UHD
+(e.g.`init_cals=DEFAULT,tracking_cals=TX_QEC|RX_QEC`). The `|` symbol can be
+used to combine keys (equivalent to a bitwise OR).
+
+Calibrations can significantly delay the initialization of a session. By only
+picking relevant calibrations, sessions can be initialized faster.
+
+Key (`init_cal`)        | Function
+------------------------|-----------------------------------
+TX_BB_FILTER            | Tx baseband filter calibration
+ADC_TUNER               | ADC tuner calibration
+TIA_3DB_CORNER          | Rx TIA filter calibration
+DC_OFFSET               | Rx DC offset calibration
+TX_ATTENUATION_DELAY    | Tx attenuation delay
+RX_GAIN_DELAY           | Rx gain delay calibration
+FLASH_CAL               | ADC flash calibration
+PATH_DELAY              | Path delay calibration
+TX_LO_LEAKAGE_INTERNAL  | Tx LO leakage internal initial calibration
+TX_LO_LEAKAGE_EXTERNAL  | Tx LO leakage external initial calibration (requires external LO)
+TX_QEC_INIT             | Tx QEC initial
+LOOPBACK_RX_LO_DELAY    | Loopback ORx LO delay (ORx not connected by default!)
+LOOPBACK_RX_RX_QEC_INIT | Loopback Rx QEC initial calibration
+RX_LO_DELAY             | Rx LO delay
+RX_QEC_INIT             | Rx QEC initial calibration
+BASIC                   | Preset for minimal calibrations (TX_BB_FILTER, ADC_TUNER, TIA_3DB_CORNER, DC_OFFSET and FLASH_CAL)
+OFF                     | Preset for disabling all initial calibrations
+DEFAULT                 | Preset for enabling most calibrations (BASIC plus TX_ATTENUATION_DELAY, RX_GAIN_DELAY, PATH_DELAY, RX_QEC_INIT, TX_LO_LEAKAGE_INTERNAL, TX_QEC_INIT, LOOPBACK_RX_LO_DELAY)
+ALL                     | Enable all applicable calibrations
+
+Key (`tracking_cal`)    | Function
+------------------------|-----------------------------------
+TRACK_RX1_QEC           | Rx1 QEC tracking
+TRACK_RX2_QEC           | Rx2 QEC tracking
+TRACK_ORX1_QEC          | ORx1 QEC tracking
+TRACK_ORX2_QEC          | ORx1 QEC tracking
+TRACK_TX1_LOL           | Tx1 LO leakage tracking
+TRACK_TX2_LOL           | Tx2 LO leakage tracking
+TRACK_TX1_QEC           | Tx1 QEC tracking
+TRACK_TX2_QEC           | Tx2 QEC tracking
+OFF                     | Disable all tracking
+RX_QEC                  | Enable all RX QEC tracking
+TX_QEC                  | Enable all TX QEC tracking
+TX_LOL                  | Enable all TX LO leakage tracking
+DEFAULT                 | Enable all QEC tracking
+ALL                     | Enable all tracking (except ORx)
 
 \subsection n3xx_mg_external_lo External LOs
 
