@@ -29,7 +29,8 @@ IMPORTANT_FILES = [
 REPLACE_EXPR = [
     ("RPCLIB_ASIO", "boost::asio"),
     ("\"asio.hpp\"", "<boost/asio.hpp>"),
-    ("std::error_code", "boost::system::error_code")
+    ("std::error_code", "boost::system::error_code"),
+    ("boost::asio::strand", "boost::asio::io_service::strand"),
 ]
 
 
