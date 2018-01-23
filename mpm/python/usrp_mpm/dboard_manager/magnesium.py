@@ -19,7 +19,7 @@ from usrp_mpm.dboard_manager import DboardManagerBase
 from usrp_mpm.dboard_manager.lmk_mg import LMK04828Mg
 from usrp_mpm.cores import nijesdcore
 from usrp_mpm.mpmlog import get_logger
-from usrp_mpm.sys_utils.uio import UIO, open_uio
+from usrp_mpm.sys_utils.uio import open_uio
 from usrp_mpm.sys_utils.udev import get_eeprom_paths
 from usrp_mpm.sys_utils.sysfs_gpio import SysFSGPIO
 from usrp_mpm.cores import ClockSynchronizer
