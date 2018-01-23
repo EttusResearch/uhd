@@ -186,7 +186,7 @@ class MPMServer(RPCServer):
                 self._last_error = str(ex)
                 raise
             finally:
-                if not self.periph_manager.claimed:
+                if not self._state.claim_status.value:
                     self.log.error("Lost claim during API call to `%s'!",
                                    command)
         new_claimed_function.__doc__ = function.__doc__
@@ -279,6 +279,7 @@ class MPMServer(RPCServer):
             choice(ascii_letters + digits) for _ in range(TOKEN_LEN)
         ), 'ascii')
         self._state.claim_status.value = True
+        self.periph_manager.claimed = True
         self.periph_manager.claim()
         self._state.lock.release()
         self.session_id = session_id + " ({})".format(self.client_host)

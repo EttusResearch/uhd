@@ -733,6 +733,9 @@ class PeriphManagerBase(object):
         """
         This is called when the device is claimed, in case the device needs to
         run any actions on claiming (e.g., light up an LED).
+
+        Consider this a "post claim hook", not a function to actually claim
+        this device (which happens outside of this class).
         """
         self.log.debug("Device was claimed. No actions defined.")
 
@@ -740,6 +743,9 @@ class PeriphManagerBase(object):
         """
         This is called when the device is unclaimed, in case the device needs
         to run any actions on claiming (e.g., turn off an LED).
+
+        Consider this a "post unclaim hook", not a function to actually
+        unclaim this device (which happens outside of this class).
         """
         self.log.debug("Device was unclaimed. No actions defined.")
 
