@@ -10,6 +10,20 @@
 #include <boost/format.hpp>
 #include <iostream>
 #include <cstdlib>
+
+namespace {
+    //! Conditionally append find_all=1 if the key isn't there yet
+    uhd::device_addr_t append_findall(const uhd::device_addr_t& device_args)
+    {
+        uhd::device_addr_t new_device_args(device_args);
+        if (!new_device_args.has_key("find_all")) {
+            new_device_args["find_all"] = "1";
+        }
+
+        return new_device_args;
+    }
+}
+
 namespace po = boost::program_options;
 
 int UHD_SAFE_MAIN(int argc, char *argv[]){
@@ -26,13 +40,14 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //print the help message
     if (vm.count("help")){
         std::cout << boost::format("UHD Find Devices %s") % desc << std::endl;
-        return EXIT_FAILURE;
+        return EXIT_SUCCESS;
     }
 
     //discover the usrps and print the results
-    uhd::device_addrs_t device_addrs = uhd::device::find(vm["args"].as<std::string>());
-
-    if (device_addrs.size() == 0){
+    const uhd::device_addr_t args(vm["args"].as<std::string>());
+    uhd::device_addrs_t device_addrs =
+        uhd::device::find(append_findall(args));
+    if (device_addrs.empty()) {
         std::cerr << "No UHD Devices Found" << std::endl;
         return EXIT_FAILURE;
     }
