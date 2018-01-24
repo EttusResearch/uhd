@@ -122,22 +122,21 @@ class MPMShell(cmd.Cmd):
     """
     RPC Shell class. See cmd module.
     """
-    def __init__(self):
+    def __init__(self, host, port, claim, hijack):
         cmd.Cmd.__init__(self)
         self.prompt = "> "
         self.client = None
         self.remote_methods = []
         self._claimer = None
-        self._host = None
-        self._port = None
+        self._host = host
+        self._port = port
         self._device_info = None
-        args = parse_args()
-        if args.host is not None:
-            self.connect(args.host, args.port)
-            if args.claim:
+        if host is not None:
+            self.connect(host, port)
+            if claim:
                 self.claim()
-            elif args.hijack:
-                self.hijack(args.hijack)
+            elif hijack:
+                self.hijack(hijack)
         self.update_prompt()
 
     def _add_command(self, command, docs, requires_token=False):
@@ -180,10 +179,11 @@ class MPMShell(cmd.Cmd):
         if isinstance(response, bool):
             if response:
                 print("Command executed successfully!")
-                return
-            print("Command failed!")
-            return
-        print("==> " + str(response))
+            else:
+                print("Command failed!")
+        else:
+            print("==> " + str(response))
+        return response
 
     def get_names(self):
         " We need this for tab completion. "
@@ -384,7 +384,9 @@ class MPMShell(cmd.Cmd):
 
 def main():
     " Go, go, go! "
-    my_shell = MPMShell()
+    args = parse_args()
+    my_shell = MPMShell(args.host, args.port, args.claim, args.hijack)
+
     try:
         return my_shell.run()
     except KeyboardInterrupt:
