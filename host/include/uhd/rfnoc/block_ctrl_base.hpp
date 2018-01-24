@@ -405,6 +405,12 @@ private:
     //! The base address of this block (the address of block port 0)
     uint32_t _base_address;
 
+    //! 64-bit NoC ID of this block
+    uint64_t _noc_id;
+
+    //! noc_shell compat number, as one 64-bit number [major,minor]
+    uint64_t _compat_num;
+
     //! The (unique) block ID.
     block_id_t _block_id;
 

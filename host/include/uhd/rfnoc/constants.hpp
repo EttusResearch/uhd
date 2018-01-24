@@ -24,6 +24,8 @@ static const std::string XML_PATH_ENV = "UHD_RFNOC_DIR";
 //! If the block name can't be automatically detected, this name is used
 static const std::string DEFAULT_BLOCK_NAME = "Block";
 static const uint64_t DEFAULT_NOC_ID = 0xFFFFFFFFFFFFFFFF;
+static const size_t NOC_SHELL_COMPAT_MAJOR = 1;
+static const size_t NOC_SHELL_COMPAT_MINOR = 0;
 
 static const size_t MAX_PACKET_SIZE = 8000; // bytes
 static const size_t DEFAULT_PACKET_SIZE = 1456; // bytes
@@ -68,8 +70,8 @@ enum settingsbus_reg_t {
     SR_READBACK_REG_FIFOSIZE   = 2, // fifo size
     SR_READBACK_REG_MTU       = 3,
     SR_READBACK_REG_BLOCKPORT_SIDS = 4,
-    SR_READBACK_REG_USER       = 5
-    /* 6 currently unused */
+    SR_READBACK_REG_USER       = 5,
+    SR_READBACK_COMPAT         = 6
 };
 
 // AXI stream configuration bus (output master bus of axi wrapper) registers
