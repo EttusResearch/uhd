@@ -15,6 +15,7 @@
 #include <uhd/types/dict.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhd/transport/muxed_zero_copy_if.hpp>
+#include <uhd/property_tree.hpp>
 #include <boost/optional.hpp>
 #include <map>
 #include <memory>
@@ -256,6 +257,19 @@ public:
      * crossbar
      */
     size_t identify_mboard_by_xbar_addr(const size_t xbar_addr) const;
+
+    /*! Initialize property tree for a single device.
+     *
+     * \param tree Property tree reference (to the whole tree)
+     * \param mb_path Subtree path for this device
+     * \param mb Reference to the actual device
+     */
+    static void init_property_tree(
+                uhd::property_tree::sptr tree,
+                fs_path mb_path,
+                mpmd_mboard_impl *mb
+    );
+
 
     /*************************************************************************
      * Private attributes

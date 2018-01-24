@@ -11,9 +11,11 @@ IF(ENABLE_MPMD)
     ENDIF(ENABLE_LIBERIO)
 
     LIBUHD_APPEND_SOURCES(
+        ${CMAKE_CURRENT_SOURCE_DIR}/mpmd_find.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/mpmd_image_loader.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/mpmd_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/mpmd_mboard_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/mpmd_prop_tree.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/mpmd_xport.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/mpmd_xport_mgr.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/mpmd_xport_ctrl_udp.cpp
