@@ -329,11 +329,11 @@ PYTHON_CHECK_MODULE(
     HAVE_PYTHON_MODULE_MAKO
 )
 
-#PYTHON_CHECK_MODULE(
-    #"requests 2.0 or greater"
-    #"requests" "requests.__version__ >= '2.0'"
-    #HAVE_PYTHON_MODULE_REQUESTS
-#)
+PYTHON_CHECK_MODULE(
+    "requests 2.0 or greater"
+    "requests" "requests.__version__ >= '2.0'"
+    HAVE_PYTHON_MODULE_REQUESTS
+)
 
 ########################################################################
 # Create Uninstall Target
