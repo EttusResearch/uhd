@@ -1,0 +1,194 @@
+#!/usr/bin/env python3
+#
+# Copyright 2018 Ettus Research, a National Instruments Company
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+"""
+Embedded USRP filesystem update utility
+"""
+
+from __future__ import print_function
+import os
+import time
+import subprocess
+import argparse
+import tempfile
+from builtins import input
+import requests
+
+MPM_DEVICE = None # This is the default value
+try:
+    from usrp_mpm import __mpm_device__ as MPM_DEVICE
+except ImportError:
+    print("ERROR: Could not import MPM.")
+
+DEFAULT_IMAGES_INSTALL_LOCATION = '/usr/share/uhd/images/'
+DEFAULT_REMOTE_MANIFEST_URL =\
+    'https://raw.githubusercontent.com/EttusResearch/uhd/{tag}/images/manifest.txt'
+DEFAULT_FS_IMAGE = {'n3xx': 'usrp_n3xx_fs.mender', 'e320': 'usrp_e320_fs.mender'}
+DEFAULT_MENDER_TARGET = {
+    'n3xx': 'n3xx_...._mender_default',
+    'e320': 'e320_...._mender_default',
+}
+
+def parse_args():
+    """ Parse args """
+    parser = argparse.ArgumentParser(
+        description="""USRP filesystem update
+
+        If run without any options, it will reset the filesystem to the state
+        it was originally in, but with the same version ("factory reset").
+
+        By using -m or -t, the precise version of the new filesystem can be
+        selected. -t master will update to the very latest filesystem image.
+
+        Most options require access to the internet to download the latest
+        manifest and/or filesystem image.
+        """,
+    )
+    parser.add_argument(
+        '--image',
+        help="Binary image of the filesystem update. If this is given, all "
+             "other options are ignored. Can be a file or a URL",
+    )
+    parser.add_argument(
+        '-y', '--yes', action="store_true",
+        help="Answer questions with yes",
+    )
+    parser.add_argument(
+        '-m', '--manifest',
+        help="Manifest source. Can be a file or a URL. Overwrites -t",
+    )
+    parser.add_argument(
+        '-d', '--device-type', default=MPM_DEVICE, required=MPM_DEVICE is None,
+        help="Specify/overwrite device type " \
+             "(DANGER! May brick device if used incorrectly!)",
+    )
+    parser.add_argument(
+        '-t', '--git-tag',
+        help="Will try and locate the given git tag or branch and get the "
+             "corresponding manifest. Ignored when -m is given. Using this "
+             "requires internet access.",
+    )
+    return parser.parse_args()
+
+def download_image(device_type, manifest_path=None):
+    """
+    Run uhd_images_downloader to fetch the mender image
+    """
+    downloader_command = [
+        'python3',
+        '/usr/bin/uhd_images_downloader',
+        '-t', DEFAULT_MENDER_TARGET[device_type],
+        '-i', DEFAULT_IMAGES_INSTALL_LOCATION,
+    ]
+    if manifest_path is not None:
+        downloader_command = downloader_command + ['-m', manifest_path]
+    subprocess.check_call(downloader_command)
+
+def prepare_manifest(manifest):
+    """Create a valid local path for a manifest"""
+    manifest = manifest.strip()
+    if os.path.isfile(manifest):
+        return manifest
+    elif manifest.strip().startswith('http'):
+        manifest = manifest.strip()
+        temp_dir = tempfile.mkdtemp()
+        print("Downloading manifest file from {}...".format(
+            manifest.strip()))
+        req_obj = requests.get(manifest)
+        manifest_path = os.path.join(temp_dir, 'manifest.txt')
+        open(manifest_path, 'wb').write(req_obj.content)
+        # This will leave a stray file in /tmp but that's OK... we're blowing
+        # away the FS anyway
+        return manifest_path
+
+def get_manifest_from_tag(git_tag):
+    """Turn a git tag or branch into a URL to a valid manifest"""
+    manifest_url = DEFAULT_REMOTE_MANIFEST_URL.format(git_tag)
+    return prepare_manifest(manifest_url)
+
+def prepare_image(device_type, args):
+    """Figure out which mender image to use, and make sure it's available.
+
+    Returns the path to a valid Mender image.
+    """
+    if args.image is not None:
+        print("Using image for upgrade: {}".format(args.image))
+        # This is the only case where we don't invoke the images downloader
+        return args.image
+    manifest_path = None
+    if args.manifest is not None:
+        print("Using manifest to download image: {}".format(args.manifest))
+        manifest_path = prepare_manifest(args.manifest)
+    elif args.git_tag:
+        manifest_path = get_manifest_from_tag(args.git_tag)
+    else:
+        print("Using default manifest.")
+    # Note: The image downloader may choose to do nothing if the requested
+    # image is already downloaded. It's safe to call anyway.
+    download_image(device_type, manifest_path)
+    return os.path.join(
+        DEFAULT_IMAGES_INSTALL_LOCATION,
+        DEFAULT_FS_IMAGE[device_type]
+    )
+
+def apply_image(mender_image):
+    """Actually run mender to inject the mender_image"""
+    subprocess.check_call(['mender', '-rootfs', mender_image])
+
+def reboot():
+    """
+    Reboot
+    """
+    print("Will reboot now. Hit Ctrl-C before the countdown expires to cancel.")
+    print("Rebooting in 3...")
+    time.sleep(1)
+    print("2...")
+    time.sleep(1)
+    print("1...")
+    time.sleep(1)
+    os.system('reboot')
+
+def run():
+    """Main execution"""
+    args = parse_args()
+    mender_image = prepare_image(args.device_type, args)
+    if mender_image is None:
+        print("Error: Unable to identify filesystem image!")
+        return False
+    apply_image(mender_image)
+    print("Applied image. After reboot, check if everything works, and then "
+          "run the command '$ mender -commit' to confirm (otherwise, this "
+          "update will be undone.")
+    print("Note: Any data stored in this partition will be not accessible "
+          "after reboot.")
+    if args.yes:
+        reboot_now = 'y'
+    else:
+        reboot_now = input("Reboot now? [Yn] ")
+    if reboot_now == "" or reboot_now.lower() == 'y':
+        try:
+            reboot() # This will implicitly terminate the program, but it looks
+                     # neater if we have the return statement here
+            return True
+        except KeyboardInterrupt:
+            pass
+    print("Skipping reboot. Your device will load the updated file system "
+          "on the next boot.")
+    return True
+
+def main():
+    """ Go, go, go! """
+    try:
+        return run()
+    except SystemExit:  # for argparse's --help
+        return True
+    except BaseException as ex:
+        print("Error: Unexpected exception caught!")
+        print(str(ex))
+    return False
+
+if __name__ == '__main__':
+    exit(not main())
