@@ -207,7 +207,7 @@ class GPIOBank(object):
         This method will convert value into binary and assign all the bits in
         the use mask.
         """
-        bin_value = ('{0:0'+self._gpiosize+'b}').format(value)
+        bin_value = ('{0:0'+str(self._gpiosize)+'b}').format(value)
         wr_value = bin_value[-(self._gpiosize):]
         for i in range(self._gpiosize):
             if (1 << i) & self._ddr:
