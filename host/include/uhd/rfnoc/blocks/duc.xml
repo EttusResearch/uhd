@@ -29,7 +29,7 @@
       <address>131</address>
     </setreg>
     <setreg>
-      <name>CORDIC_FREQ</name>
+      <name>DDS_FREQ</name>
       <address>132</address>
     </setreg>
     <setreg>

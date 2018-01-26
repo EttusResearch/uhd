@@ -19,6 +19,7 @@
 class tx_dsp_core_3000 : boost::noncopyable{
 public:
     static const double DEFAULT_CORDIC_FREQ;
+    static const double DEFAULT_DDS_FREQ;
     static const double DEFAULT_RATE;
 
     typedef boost::shared_ptr<tx_dsp_core_3000> sptr;
