@@ -44,7 +44,7 @@ namespace {
     //! MPM Compatibility number
     const std::vector<size_t> MPM_COMPAT_NUM = {1, 1};
     //! Timeout value for the update_component RPC call (ms)
-    const size_t MPMD_UPDATE_COMPONENT_TIMEOUT     = 10000;
+    const size_t MPMD_UPDATE_COMPONENT_TIMEOUT     = 20000;
 
     /*************************************************************************
      * Helper functions
@@ -77,7 +77,8 @@ namespace {
         }
 
         // Now call update component
-        mb->rpc->set_timeout(MPMD_UPDATE_COMPONENT_TIMEOUT);
+        const size_t update_component_timeout = MPMD_UPDATE_COMPONENT_TIMEOUT * comps.size();
+        mb->rpc->set_timeout(update_component_timeout);
         mb->rpc->notify_with_token("update_component", all_metadata, all_data);
         mb->set_timeout_default();
 

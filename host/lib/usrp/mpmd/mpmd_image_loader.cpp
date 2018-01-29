@@ -119,6 +119,7 @@ static bool mpmd_image_loader(const image_loader::image_loader_args_t &image_loa
     }
 
     // Call RPC to update the component
+    UHD_LOG_INFO("MPMD IMAGE LOADER", "Starting update. This may take a while.");
     tree->access<uhd::usrp::component_files_t>("/mboards/0/components/fpga").set(all_component_files);
     UHD_LOG_INFO("MPMD IMAGE LOADER", "Update component function succeeded.");
 
