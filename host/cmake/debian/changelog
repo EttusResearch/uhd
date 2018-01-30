@@ -1,3 +1,946 @@
+uhd (3.10.3.0-0ubuntu1) trusty; urgency=low
+
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  * X300
+  ** Fix max rate calculation for 1 GbE
+  ** Fix for DAC synchronization errors (unexpected FIFO depth)
+  ** Reduced CPU usage during TX
+  * N230
+  ** Properly initialize request structure before discovery
+  * B200
+  ** FX3 firmware performance opitimizations
+  ** Fixed sequence error on second TX burst
+  * TwinRX
+  ** Added ADF5356 synth and Rev C support
+  * UBX
+  ** Add implementation of TDD xcvr_mode and for TX PA on in TDD mode (to reduce transient on older revs)
+  ** Add support for UBX-TDD
+  * C API
+  ** Fixed dboard EEPROM revision error handling
+  ** Make uhd_rx_streamer_last_error use SAFE_C
+  ** Better error handling in uhd_usrp_get_[t/r]x_stream
+  * RFNoC
+  ** Fix ctrl_iface to pop sequence numbers only after success
+  ** Fix sequence number error message in ctrl_iface
+  ** FPGA fix for sr_read() failure to ack errors
+  ** FPGA fix for repeated sequence number for RX packets with 1 sample
+  ** FPGA fix for axi_serializer edge case
+  * Docs
+  ** Fixed B200 power LED description
+  ** Update README application links
+  * UHD
+  ** Utilize poll() instead of select() for UDP transports where possible to avoid descirptor limits
+  ** Fix build with Boost 1.66
+  ** Add EEPROM info to dboard_base class so daughterboard code can access all EEPROM info
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.10.2.0-0ubuntu1) trusty; urgency=low
+
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  * multi_usrp: Fixed get_normalized_tx_gain.
+  * E300: Fix for streamer recreation issue. Reduced minimum timeout, fixed
+          potential race condition.
+  * X300: Fix for network discovery, will now return early when correct serial is
+          found. Fixed issue with DAC sync. All async messages now go through
+          single DMA channel on PCIe. Improved TX performance. Fixed page size
+          acquisition for PCIe. Fixed some FW communication errors. Improved flow
+          control. Removed MTU throttling. Legacy compat falls back to min spp
+          for mixed transport types.
+  * CBX: Fixed LO LPF behaviour in 1.5-2 GHz range.
+  * UBX: Fixed dtor SIGABRT issue. Better error handling for various dboard clock
+         rates.
+  * TwinRX: Added LO reimport feature.
+  * GPSDO: Improved detection. Improved query_gpsdo sensor.
+  * RFNoC: Fixed issue with DDC and DUC command tick rate.
+  * UHD: Fixed potential memory leak in tasks. Fixed get_normalized_tx_gain().
+         Fixed default socket buffer size to honor MTU.
+  * Examples: Added channel param to samps to/from file. sync_to_gps exits
+              instead of uncaught throw. latency_test improved output. Use
+              next_pps in test_clock_synch. Added TwinRX FHSS example.
+  * Utils: Modified behaviour of uhd_images_downloader so it won't delete dirs
+           when using -i
+  * Tools: Updates to CHDR dissector. Added set_time_source_out(). Fixed LO API.
+  * C API: Fixed some missing fields in USRP info.
+  * Docs: Many minor fixes. Fixed Doxygen warnings related to /* in files.
+  * CMake: Fixed GCC 4.4 compilation issue. Added ability to specify package
+           names.
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.10.1.1-0ubuntu1) trusty; urgency=low
+
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  - Docs: The protocol for Gen-3 devices is now consistently referred to as CHDR.
+  - X300: Fixed EEPROM corruption bug (happened when two processes would access
+    find routines on the same device at the same time). Improved initialization
+    time. CE clock is now 214 MHz. Fixed channel list generation. Find routines
+    now more lenient in case one devices fails (others can still be found then).
+    Improve PCIe behaviour. Fix timed commands for non-TwinRX dboards. Improve
+    AXI Interconnect (faster, improved build timing).
+  - N230: Use second_addr (like X300).
+  - C API: Added UHD_VERSION macro. Fixed online rate change.
+  - Utils: Minor fixes to uhd_images_downloader.
+  - Build/CMake: Fixed some Py3k build issues. Fixed many compiler warnings. Allow
+    to specify package names. 
+  - RFNoC: Fixed sampling rate mismatch error. Noc-Shell uses a non-cascaded 2-clk
+    FIFO. Increase default FIFO sizes on DUC and DDC blocks.
+  - UBX: Force on RX driver to eliminate transient. 
+  - Transport code: Fixed memory leak.
+  - FPGA repository: Merged usrp3_rfnoc and usrp3 directories again. Cleaned up
+    superfluous files. Clean separation between Gen-3 and other devices in usrp3.
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.10.1.0-0ubuntu1) trusty; urgency=low
+
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  - Fixed multiple compiler warnings
+  - Multiple documentation fixes
+  - X300: RX strobe lines are always in sync on device initialization. DB EEPROM
+    now properly written. ignore-cal-file no longer ignored. Fixed case where too
+    large recv_frame_size settings could break things. Reduced ZPU clock speed
+    (helps FPGA timing). Added area constraints for AXI interconnect. Improved
+    halfband scaling in rx_frontend. Improved PCIe streaming reliability
+  - B2xx: Clear sequence numbers in idle state.
+  - RFNoC: Nodes disconnect on destruction. Fixed setting of correct bits on
+    sr_error_policy. DDC does no longer clear timed commands on EOB. DUC fixed
+    timed CORDIC tuning. Enable Noc-Shell response FIFOs (fixes simultaneous
+    commands on multiple channels).
+  - UBX: Changed default performance parameters
+  - TwinRX: LEDs properly light up depending on channels. Fixed issue of multiple
+    (redundant) writes. Simplified API steps for phase synchronization
+  - XCVR: Query dboard clock instead of DAC clock. Helps in X3x0s.
+  - GPS: Fixed message for case when no GPS is present. Fixed multiple GPS-related
+    issues.
+  - Converters: Fixed floating point rounding error in tests.
+  - Utils: uhd_usrp_probe can now query vectors
+  - Fixed issue that prevented soft_regs working on 32-bit systems
+  - Tools: Merged dissectors into common directory.
+  - CMake: -Og is the default now for gcc-based Debug builds.
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.10.0.0-0ubuntu1) trusty; urgency=low
+
+  - Changed version string to quadruplets (Major.API.ABI.Patch)
+  - Minimum dependencies bumped for gcc, Boost, CMake, clang and Python.
+  - TwinRX: Added support. Includes LO API for multi_usrp.
+  - N230: Added support
+  - Added expert framework
+  - X300: Completely restructured to use RFNoC
+  - X300: FPGA builds include git hash, dual 10GigE receive is now supported
+    (allows 2x200 Msps receive over 2x10GigE connections), DMA FIFO (over DRAM)
+    now part of builds, added Aurora support
+  - WBX: Fixed bug that prevented LO locking with 50 MHz ref clock
+  - pkg-config: Added boost_system
+  - Utils: uhd_usrp_probe can query sensors, query_gpsdo_sensors: minor fixes,
+    and cleanup
+  - Examples: Bugfixes in tx_waveforms, benchmark_rate measures timeouts,
+  - USB subsystem: Cleanups and minor bugfixes
+  - Added devtest infrastructure
+  - Converters: Added s8 and s16 data types
+  - Added more aggressive optimization strategies for FPGA builds
+  - Xilinx IP tool upgrade scripts cleaned up
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.9.5-0ubuntu1) trusty; urgency=low
+
+  - B200: Update DSPs after changing tick rate
+  - X300: Added option to disable ADC self test, prevent DAC from
+    underrunning
+  - UBX: Fixed noise issues, reduced power consumption/heat, added codes for
+    upcoming board revisions, force RX LNAs on (reduces rx settling time)
+  - WBX: Fixed rev2 and rev3 boards on X300
+  - Utils/Examples: Cleaned up query_gpsdo_sensors, test_dboard_coercion,
+  - Manual: Minor fixes and updates
+  - CMake: Fix lib64 detection, better platform detection, Doxygen may use shorter
+    filenames
+  - Octoclock: GPSDO-related fixes, sequence number consistency fixes, UART
+    fixes (off-by-one errors). uhd_usrp_probe will pick up an OC now,
+    added Wireshark dissector for OC packets
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.9.4-0ubuntu1) trusty; urgency=low
+
+  - GPIO control: Fix address mismatch for RX and full duplex.
+    This fixes full-duplex mode for most devices.
+  - B200: Fixed auto rate selection (can now select 61.44 Msps)
+  - UBX: Fix member declaration order which could cause
+    segfaults for debug builds
+  - Manual/Docs: Numerous fixes, use dot for graphs in manual
+  - Utils: multiple fixes for query_gpsdo_sensors, fixed floating point
+    comparison
+  - Windows: Include registry file in installation
+  - Converters: Improve NEON converters
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.9.3-0ubuntu1) trusty; urgency=low
+
+  * UBX: Fixed a phase synchronization issue on the sub-1GHz band
+  * USB: Fixed transport issue that crashed when multiple USB devices were
+    connected on a Windows machine, more graceful handling of USB disconnects,,
+    provided .cdf file for installing on Windows
+  * B200: Fixed memory growth/increasing tune times issue
+  * E300: Fixed memory leak with udev, fixed issue with autoboot value, fixes
+    to button behaviour
+  * usrp2, usrp3: Fixed IQ imbalance and DC bias in DDC chain
+  * CMake: Windows registry fixes
+  * Fixed several compiler warnings and minor bugs
+  * Examples: Updated benchmark_rate for improved thread safety
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.9.2-0ubuntu1) trusty; urgency=low
+
+  * E310: Added support for Speedgrade 3
+  * B205mini: Added support
+  * E310: Fixed reference counting bug
+  * B210: Fixed external clock reference bug for devices using ADF4002 PLLs
+  * B210: Fixed codec loopback test
+  * OctoClock: Fixed firmware burning on Windows
+  * B2XX, E3XX, X3XX: Easier time-syncing features. Fixes bug where B210s would
+    only run after issuing set_time_unknown_pps().
+  * X3XX: Fixed bug for IQ imbalance correction
+  * E310: DRAM testbenching
+  * Docs/Manual: Many updates and fixes
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.9.1-0ubuntu1) trusty; urgency=low
+
+  * B200mini: Updated udev rules, removed DCM
+  * B200: Better USB error messages
+  * Cores: Fixed CORDIC scaling issue on all devices that use
+    dsp_core_3000
+  * X300: Fixed GPIO issue
+  * Examples: Added PPS source option
+  * Docs: Multiple manual updates
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.9.0-0ubuntu1) trusty; urgency=low
+
+  * X300: Updated DAC ctrl, FPGA toolchain is now entirely Vivado,
+    improved master clock controls, added ADC self-cal capability,
+    prepared for revisions 7 and 8, fixed flow control issue which
+    could cause device to hang when receiving too many overruns
+  * B2XX: Auto clock rate setting, added PID/VID pairs to support
+    all B2XX- and derivatives, added temperature sensor, improved
+    DC offset and IQ imbalance correction, added AGC support,
+    support for FPGPIO connector on Rev6+ boards, full clock range support,
+    updated FX3 firmware (side-channel logging capabilities, updated
+    tx voltage swing, better configurability), default tick rate now
+    16 MHz, added B200mini support
+  * E3XX: Added temperature sensor, FPGA toolchain is now entirely Vivado,
+    improved DC offset and IQ imbalance correction, added AGC support,
+    improved FPGA capture interface robustness for RFIC, make frame
+    sizes configurable, replaced GPS control code with gpsd interfacing
+    capabilities
+  * Octoclock: Fixed bootloader + ethernet capabilities
+  * Compilers: Supported MSVC versions are now 2012, 2013, 2015
+    (dropped 2010 support), added MinGW capabilities
+  * Documentation: Many minor fixes and updates, merged all the
+    info from code.ettus.com
+  * UHD: Added sid_t, CHDR-specific transports now get their own
+    (un)packer codes, fixed a lot of compiler warnings, added
+    filter API (currently available for AD9361 frontend), added
+    soft-register API, replaced Cheetah with Mako, full Py3k
+    compliance, updated images downloader tool (now is one tool
+    for all devices), CMake minimum version is now 2.8, refactored
+    general AD9361 peripheral management, refactored most core
+    control management, added usb_error type (used by B2xx devices),
+    better exception handling at runtime, added C wrapper API,
+    new dependency: python-requests
+  * C API: Added to UHD (wraps C++ calls in C)
+  * multi_usrp: Added normalized gain setters/getters, IQ imbalance
+    + DC offset correction API, filter API
+  * Converters: Converter symbols now exported, better logging,
+    removed ORC dependency, added u8 converters
+  * Examples: Whitespace- and other cleanup, multi-channel fixes for
+    some examples
+  * Utils: Read more property tree types from the command line
+  * Tools: kitchen sink updated, added mega_fft
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.8.5-0ubuntu1) trusty; urgency=low
+
+  * E3xx: Added support for battery-based E3xx device (E312),
+    get_freq() for network mode, fixed GPS time initialization bug
+  * AD9361-based devices: Fixed frequency readback bug
+  * B200: Fixed DCM issues, better loopback failure handling,
+    fix erroneous warning for custom clock rates
+  * X3x0: Better warnings for clock reate / ref freq
+  * multi_usrp: Added define for GPIO capabilities (enables
+    exposure in GNU Radio)
+  * UHD: sc16->sc16 SSE converter
+  * Manual: Multiple minor updates, FPGA manual improvements,
+  * Build System: Fixed builds on some Windows platforms, removed
+    stray prints
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.8.4-0ubuntu1) trusty; urgency=low
+
+  * B200: Fixed EEPROM writing bug, updated images for B200 Rev5/6
+  * E300: GPS antenna power defaults to staying on, GPS time used as
+    default if available
+  * UBX: PDF frequency fix on X300
+  * USRP2: Bugfix that allows latest UHD to work with USRP2
+  * Documentation: Many fixes for E300 section, added FPGA manual
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.8.3-0ubuntu1) trusty; urgency=low
+
+  * UBX: Fixed phase synchronization issues
+    (Related changes: Change X300 daughterboard frequency, increase
+     N210 FIFO depth)
+  * Fixed many compiler warnings
+  * B200: Fixed timing issues, fixed tick rate issue, stabilized
+    operations at high clock rates
+  * X300: Improved phase alignment across devices
+  * CMake: Build fixes
+  * E300: Flow control fix
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.8.2-0ubuntu1) trusty; urgency=low
+
+  * CMake: Introducing named versions for dev branches, enable static libs,
+  * E300: Docs updates, compat number bump, VCTCXO updates,
+    more status bits for ref locking, fixed serial number length fix,
+    RSSI Sensor
+  * B200: RSSI sensor
+  * AD9361: Better handling of different interpolation rates in FIR,
+    fix for gain value truncation, removed gain value offset
+  * UBX: Added drivers
+  * Manual/Docs: Numerous updates, minimum compiler versions now specified,
+  * Converters: Multiple fixes for sc12
+  * Examples: Fixes to txrx_loopback_to_file
+  * Path handling vastly improved, made more consistent
+  * Minor UHD fixes
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.8.1-0ubuntu1) trusty; urgency=low
+
+  * B2x0: Fixed PLL settings, Fixed external ref selection, serialized
+    streamer setup (thread-safety)
+  * X3x0: Fixed flow control issue, improved DAC ctrl + init logic,
+    Fixed I/Q alignment issue
+  * Generation-3 devices: Fixed LED registers
+  * UHD: Improved tuning logic for manual tunes
+  * Tools: Multiple kitchen sink fixes, coloured output
+  * Examples: Multiple bugfixes (multi-channel ops)
+  * Docs/Manual: Multiple fixes, E310 panel images
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.8.0-0ubuntu1) trusty; urgency=low
+
+  * Added E310 support
+  * B200/B210: Moved AD9361 controls from firmware to host
+  * Added several tools: ZPU dissector, improved CHDR dissector,
+    kitchen sink, B200/B210 USB debugging utility, latency
+    measurement tool.
+  * Reorganized firmware/ directory structure. Refactored some
+    firmware.
+  * Removed FPGA sources, is now in own repository (submoduled).
+  * Cleaned up command line arguments for some tools
+  * Added math namespace, plus a unified float comparison infrastructure
+  * Fixed tuning-related bugs
+  * Moved manual over to Doxygen, also several manual bug fixes and
+    amendments
+  * Added many missing virtual destructors (less build warnings)
+  * Added support for NI-RIO 14.0
+  * X300 fixes: Not found over PCIe with no eth interfaces
+  * CMake improvements: Now comes with own UHDConfig.cmake and example
+    to build standalone UHD apps, build fixes on Apple, interoperability
+    with GNU Radio
+  * OctoClock fixes and improvements: Ethernet initialization, external
+    ref detection, stability fixes, host driver (UHD can now talk to
+    OctoClock)
+  * Examples: Improved GPIO example, rx_samples_to_file
+  * Bumped minimum Boost version to 1.46
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.7.3-0ubuntu1) trusty; urgency=low
+
+  * Fixed examples
+  * Removed compiler warnings
+  * Fixed CBX LO settings (FRAC truncation)
+  * Fixed build issues for out-of-tree tools for some distros
+  * Fixed some logging strings (SBX, GPSDO)
+  * Improved logging (speedups, removed unnecessary cycles)
+  * Added output sync for DAC reference clocks on X300
+  * Multiple FPGA improvements, as well as upgrade of build env
+  * Added support for B200 vs B210 discovery
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.7.2-0ubuntu1) trusty; urgency=low
+
+  * Fixed X300 phase alignment issues
+  * Fixed CMake 2.6 incompatibility issues
+  * EEPROM burner improvements
+  * Properly flushing PCIe chain on device to prevent stale data.
+  * Adjusted bus clock rate in FPGA to improve timing.
+  * Fixed issue where FPGA would fail to load FPGA image over PCIe.
+  * Fixed incompatibility issue with USRP2 FPGA burner utility.
+  * Fixed issue where ZPU would report empty NMEA strings from GPSDO.
+  * Updated some functions to no longer use deprecated Boost calls.
+  * Fixed issue where libusb would declare 'connection refused'.
+  * Fixed Windows library package naming.
+  * Updated documentation.
+  * Fixed reversed TX / RX colors in X300 LED indicators.
+  * DBSRX2 now works properly with X300 / X310.
+  * Updated include files to build on older distros of Linux.
+  * Fixed issue with 'item32' type converter from GNU Radio.
+  * Fixed issue where channels on B210 would occasionally not be phase-aligned.
+  * Fixed problem causing channels on B210 to swap between runs.
+  * Fixed issue in N-Series devices causing scaling error @ 50 MSps.
+  * The B200 / B210 now generates an internal PPS if none is provided.
+  * Improved performance on PCIe for X300.
+  * B200 / B210 properly reports clock rate (issue with float comparison).
+  * Fixed issue with filter selection in B200 that caused loss of RX power.
+  * Removed ref lock check from X300 where it wasn't necessary.
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.7.1-0ubuntu1) trusty; urgency=low
+
+  * Fixed issue with TVRX2 divider calculation.
+  * Fixed issue using calibration utilities on B-Side daughterboard in an X3xx.
+  * Replaced unsafe `sscanf` call in utilities.
+  * Properly initializing N-Series clock, fixing short transient on device boot-up.
+  * Improved `--help` output for a number of utilities & examples.
+  * Improved READMEs for directories.
+  * Fixed X3xx documentation with some clarifications.
+  * UHD will now tell you if you have requested a sample rate higher than the transport can deliver.
+  * Removed work-around necessary in RIO kernel module for zero-copy in PCIe for X3xx devices.
+  * Fixed issue where X3xx devices would lock-up when on networks with lots of traffic.
+  * The B2xx FX3 and AD9361 source code is now in UHD.
+  * Numerous B2xx stability improvements.
+  * Fixed includes for older OSes (e.g., Fedora 14).
+  * Fixed includes for older versions of Boost.
+  * Fixed PPS detection in X3xx with multiple time sources.
+  * Fixed overflow reporting for X3xx utilities.
+  * Fixed MTU / frame size detection for X3xx devices.
+  * Fixed B2xx filter chain causing wrong sample rate in some circumstances.
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.7.0-0ubuntu1) trusty; urgency=low
+
+  * Introduced USRP X300 and X310 support!
+  * Releasing a CHDR Dissector for Wireshark analysis
+  * Improved USRP B200 and B210 stability
+  * Introducing Integer-N tuning for WBX, SBX, CBX daughterboards
+  * Introducing support for 120 MHz versions of WBX, SBX, CBX
+  * Lots of new documentation
+  * New GPIO example for USRP X300
+  * Fixed threading bug in USRP B2xx code causing GQRX issue
+  * General UHD bug fixes & improvements
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.6.2-0ubuntu1) trusty; urgency=low
+
+  * Fixed bug in timed commands example.
+  * Improved compatibility for older versions of Boost.
+  * Fixed segmentation fault issue in converter code.
+  * Fixed binary-stripping for ARM builds.
+  * B2xx: Further improvements to code and images.
+  * Documentation links now installed to Start Menu in Windows.
+  * B2xx: More robust error checking in host code.
+  * B2xx: Improved error reporting.
+  * B2xx: Increase FPGA loading speed on USB 3
+  * B2xx: Re-programming FPGA without cycle now supported.
+  * B2xx: Larger RX SPP ceiling to support 16K transfers with larger RX FIFO in new FPGA image
+  * Updated internal READMEs and documentation.
+  * N-Series: netburner now accepts relative paths with '~'
+  * Completely re-written UHD Images Downloader, with numerous bug fixes and new features.
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.6.1-0ubuntu1) trusty; urgency=low
+
+  * B2xx: Fixed critical bug in 003.006.000 regarding USRP B2xx operation
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.6.0-0ubuntu1) trusty; urgency=low
+
+  * Many small fixes for bugs revealed by static analysis.
+  * Introduced support for the USRP B200 / B210
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.5.3-0ubuntu1) trusty; urgency=low
+
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  * E110:
+  ** Fix FPGA Makefile build typo
+  * UHD:
+  ** Fixed timespec irrational rate rounding
+  ** Multichan streamer CPU utilization
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.5.2-0ubuntu1) trusty; urgency=low
+
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  * B100:
+  ** Fix get send buffer timeout
+  * E1x0:
+  ** Changes to bus timings for S issue
+  * USRP1:
+  ** Restore broken EEPROM writing
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.5.1-0ubuntu1) trusty; urgency=low
+
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  * Misc:
+  ** Fixes to images downloader
+  ** Fixes to C++ net burner
+  ** Added sleep(1) to query_gpsdo_sensors
+  * OSX:
+  ** Fix for socket send code newer OS versions
+  * Changes from 3.4.5
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.5.0-0ubuntu1) trusty; urgency=low
+
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  * B100:
+  ** Added timed commands feature
+  ** Incremented FPGA compat number to 11.1
+  ** Incremented firmware compat number to 3
+  * E1x0:
+  ** Added timed commands feature
+  ** Incremented FPGA compat number to 11.1
+  * USRP2/N2x0:
+  ** Alternative stream destination on TX
+  ** Incremented FPGA compat number to 10
+  * N2x0:
+  ** Implemented timed-commands feature
+  ** Implemented fast-commands feature
+  * SBX/WBX
+  ** Tune with phase sync using timed-commands
+  * RFX series
+  ** Added calibration utilities support
+  * General:
+  ** SSE2 conversions for sc8 RX samples
+  ** Added multi-threading to packet converters
+  ** Added automatic images fetcher application
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.4.5-0ubuntu1) trusty; urgency=low
+
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  * XCVR2450:
+  ** Added XCVR2450 rev2 support
+  * WBX:
+  ** Added WBX rev4 support
+  * Misc:
+  ** Fix to rx_samples_to_udp byte count
+  ** stream command enums easy on SWIG
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.4.4-0ubuntu1) trusty; urgency=low
+
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  * Gen2
+  ** Fix RX and TX DSP scalar adjustments
+  * B100/E1x0
+  ** Fixed RX ADC IQ inversion swap
+  ** Incremented FPGA compat number to 9.4
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.4.3-0ubuntu1) trusty; urgency=low
+
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  * USRP2/N2x0:
+  ** Net burner parser fix (windows)
+  * XCVR2450:
+  ** Fix to disable automatic LO offset on TX
+  * N2x0:
+  ** Deal with misc exceptions in net burner
+  * E1x0:
+  ** Changes to add reliability to bus state machine
+  * USRP1:
+  ** Shutoff the DAC on transmit EOB flags
+  ** Revert 1st nyquist zone DAC calculation
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.4.2-0ubuntu1) trusty; urgency=low
+
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  * USRP2/N2x0:
+  ** Card and net burner language fixes
+  ** Net burner python v3 code fix
+  ** Net burner IPv6 interface fix
+  * E1x0:
+  ** Fix for FPGA timing issue with GPMC input
+  ** Incremented FPGA compat number to 9.2
+  * B100:
+  ** Fix USB wrapper/buffer release race condition
+  * USRP1:
+  ** Fix DAC calculation for tune out of 1st nyquist zone
+  * General:
+  ** Fix for recv packet handler time error check
+  ** SIMD conversion routines priority over table look-up
+  ** Fix undefined GCC float conversion behaviour for sc8
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.4.1-0ubuntu1) trusty; urgency=low
+
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  * USRP2/N2x0:
+  ** Filter out invalid broadcast replies
+  ** Incremented FPGA compat number to 9.1
+  * E1x0:
+  ** Incremented FPGA compat number to 9.1
+  * B100:
+  ** FPGA fixes for USB slave FIFO interface
+  ** Incremented FPGA compat number to 9.3
+  * USRP1:
+  ** Stop thread in deconstructor for race condition
+  ** Fixed DBSRX + USRP1 i2c lockup condition
+  * Gen2:
+  ** Fix for unintentional clear in deprecated recv() call
+  ** Fix RX DC offset call to handle negative values
+  * FreeBSD:
+  ** Fixed network relay example compilation
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+uhd (3.4.0-0ubuntu1) trusty; urgency=low
+
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  * USRP2/N2x0:
+  ** 50 Msps RX/TX with sc8 mode over the wire
+  * B100:
+  ** 16 Msps RX/TX with sc8 mode over the wire
+  * SBX/WBX:
+  ** Added self-calibration utilities
+  * Gen2:
+  ** Control RX/TX DC offset correction via API
+  ** Control RX/TX IQ balance correction via API
+  ** Incremented FPGA compat number to 9
+  * USRP1:
+  ** Support 16Msps RX with sc8 mode over the wire
+  ** Control RX DC offset correction via API
+  * Misc:
+  ** Multiple streamers/heterogeneous rates
+  ** Alternative host and wire data types
+  ** Added API calls for DC offset correction
+  ** Added API calls for IQ balance correction
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  ## Release 003.003.002
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  * N2x0:
+  ** Fixed TX daughterboard clocking mode
+  * B100:
+  ** Tweaks for ordering of FPGA resets
+  * Misc:
+  ** Device adder can parse empty values
+  ** Updated syntax in udev rules file
+  ** Corrections to images documentation
+  ** Performance tweak for tx_waveforms example
+  ** Handle EINTR on select() w/ udp transport
+  ** Minor fixes for compiling on FreeBSD
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  ## Release 003.003.001
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  * B100/E1x0:
+  ** Fixed VCO bounds checking on flexible clocking
+  * B100:
+  ** Fixed discovery throwing when device claimed
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  ## Release 003.003.000
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  * USRP2/N2x0:
+  ** Incremented firmware image compat number to 11.0
+  ** Re-implement internal GPSDO UART control
+  * E1x0:
+  ** New GPMC/FPGA bus implementation
+  ** Incremented FPGA compat number to 6
+  ** Incremented module compat number to 3
+  ** Added support for E110
+  ** Added support for E100r4
+  * B100:
+  ** Added support for B100
+  * USRP1:
+  ** Re-implement LibUSB data transport
+  * Misc:
+  ** Normalise time_spec for negative fractional seconds
+  * Gen2:
+  ** Fix DSP rate selection clipping for very low rates
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  ## Release 003.002.004
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  * USRP2/N2x0:
+  ** Resize all socket buffers (multi-channel)
+  * N2x0:
+  ** Gracefully handle missing GPSDO
+  * USRP1:
+  ** Fix bug with order of deconstructors
+  ** Fix zero length send padding on commit
+  * XCVR2450:
+  ** Fix LO locking at marginal frequencies
+  * WBX:
+  ** Fix TX gain readback value on v3 board
+  * Gen2:
+  ** Fix bounds checking on stream num samps
+  ** Fix error using PPS_NEG in clock config
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  ## Release 003.002.003
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  * USRP2/N2x0:
+  ** Fix uninitialized variable for multi-board case
+  ** Fix deconstructor throwing on device disconnect
+  ** Incremented FPGA image compat number to 7.3
+  * TVRX:
+  ** Populated sensors property (fixed error in init)
+  * FPGA (gen2):
+  ** Adjust RX DC offset correction time constant
+  ** Restore calibration path in RX/TX frontend
+  * Misc:
+  ** MB EEPROM burner workaround for compiler bugs
+  ** Clip the reported tune range to the dboard bandwidth
+  ** Preserve bands when calculating overall tune range
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  ## Release 003.002.002
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  * USRP2/N2x0:
+  ** Always resize socket send buffer to SRAM size
+  ** Incremented FPGA image compat number to 7.2
+  ** Incremented firmware image compat number to 10.4
+  * N2x0:
+  ** GPSDO control tweak for some devices
+  ** Fix for erasure logic in rare bricking cases
+  * E100:
+  ** Fix RX run state for GPIOs controlled by ATR
+  * USRP1:
+  ** Fix for multi-channel streaming
+  ** Fix to support 0 RX or 0 TX DSPs
+  * SBX:
+  ** Corrected lower limit on frequency range
+  * FPGA (gen2):
+  ** Reset CIC decimator on start of burst
+  * Misc:
+  ** Fix send to return zero on empty packets
+  ** Perform version check on liborc
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  ## Release 003.002.001
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  * USRP2/N-Series:
+  ** Firmware fix to shutoff streaming when socket unreachable
+  ** Incremented firmware image compat number to 10.3
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  ## Release 003.002.000
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  * USRP2/N-Series:
+  ** Incremented FPGA image compat number to 7.1
+  ** Incremented firmware image compat number to 10.2
+  ** Removed mimo_mode device addr argument
+  ** Support for rev4 N2XX motherboards
+  * USRP-E100:
+  ** Removed the need for clock recovery
+  ** Incremented FPGA image compat number to 5
+  ** Incremented kernel module compat number to 2
+  ** Added support for dual receive DSPs
+  ** Async messages independent from RX path
+  * WBX:
+  ** Support for rev3 daughterboards
+  * DBSRX2:
+  ** Rounding fix for LO tuning error
+  * Packet handler:
+  ** Overall performance improvements
+  ** Timestamps for packet fragments
+  ** Overflow message on dropped packets
+  * Conversion:
+  ** Optional liborc conversion support
+  ** SSE2 conversion alignment performance
+  ** SSE2 conversion for complex doubles
+  * Windows:
+  ** Performance improvements for UDP send
+  * Misc:
+  ** Code reorganization with property tree
+  ** Calibration support in gen2 FPGAs
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  ## Release 003.001.002
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  * N-Series:
+  ** Fix UART communication for GPSDO
+  * XCVR2450:
+  ** Fix for descontructor throwing on hardware disconnect
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  ## Release 003.001.001
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  * USRP1:
+  ** Fixed lock up in logging facility under MSVC
+  * USRP2/N-Series:
+  ** Handle exceptions thrown in device locker loop
+  ** Connected internal GPSDO PPS signal in FPGA
+  * WBX
+  ** Keep mixers on between bursts to maintain phase offsets
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  ## Release 003.001.000
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  * USRP2/N-Series:
+  ** Incremented FPGA compat number to 6
+  ** Incremented firmware compat number to 10
+  ** Created all-in-one bootloader for N-series
+  ** Lock open devices per process
+  ** USRP N-Series internal GPSDO Support
+  ** Discovery works with out-of-date images
+  ** Net and card burner: python 3.0 support
+  ** Net burner: tkinter + windows thread fix
+  ** Card burner: device selection validation
+  * USRP-E100:
+  ** Incremented FPGA compat number to 4
+  ** FPGA VRT packet framer correct length
+  ** Fix auxiliary ADC read back for AD9862
+  ** Sync TX and RX daughterbord clocks
+  ** Fix daughterboard clock rates after re-clock event
+  * USRP1:
+  ** Fix TX under remainder conditions
+  ** Fixed RX multi-channel mapping
+  * Daughterboards:
+  ** Added support for TVRX2 daughterboard
+  ** Added support for SBX daughterboard
+  ** Added support for WBX granddaughterboards
+  ** Application notes for sensors and IF
+  * Windows:
+  ** MinGW and Cygwin support (thanks Don)
+  ** Fix calling convention on libusb callbacks
+  * Misc:
+  ** Added logging and messaging facilities
+  ** Deprecated API in utils/warning.hpp
+  ** Fixed race condition in device discovery/factory
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  ## Release 003.000.001
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  * RFX400: fix for transmit capability
+  * USRP1: fix for axillary ADC read
+  * Windows: statically link libusb
+  * Windows: install dll into runtime path
+  * Linux: automatically set LIB_SUFFIX on rh-64 systems
+  * USRP-E100: fix - set FPGA tick rate on re-clock event
+  * build: various work on build system
+  * build: include FPGA and firmware images in installers
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  ## Release 003.000.000
+
+ -- Ettus Research <packages@ettus.com>  Tue, 30 Jan 2018 11:40:09 -0800
+
+  Initial (formal) release, no changes to mention.
 uhd (3.10.2.0-0ubuntu1) trusty; urgency=low
 
   * multi_usrp: Fixed get_normalized_tx_gain.
