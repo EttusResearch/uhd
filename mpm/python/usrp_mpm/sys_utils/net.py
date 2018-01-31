@@ -9,7 +9,7 @@ N310 implementation module
 import itertools
 import socket
 from six import iteritems
-from pyroute2 import IPRoute
+from pyroute2 import IPRoute, IPDB
 from usrp_mpm.mpmlog import get_logger
 
 
@@ -117,3 +117,17 @@ def get_mac_addr(remote_addr):
         if not addrs:
             return None
         return addrs[0].get_attr('NDA_LLADDR')
+
+def get_local_ip_addrs(ipv4_only=False):
+    """
+    Return a set of IP addresses which are bound to local interfaces.
+    """
+    with IPDB() as ipdb:
+        return {
+            ip_subnet[0]
+            for ip_subnet_list
+                in [x['ipaddr'] for x in ipdb.interfaces.values()]
+                    for ip_subnet in ip_subnet_list
+            if not ipv4_only or ip_subnet[0].find(':') == -1
+        }
+
