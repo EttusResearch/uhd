@@ -13,7 +13,6 @@ import copy
 import shutil
 import subprocess
 import json
-import time
 import datetime
 import threading
 from six import iteritems, itervalues
