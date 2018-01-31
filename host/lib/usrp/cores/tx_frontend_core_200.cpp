@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "tx_frontend_core_200.hpp"
+#include <uhdlib/usrp/cores/tx_frontend_core_200.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/exception.hpp>
 #include <boost/assign/list_of.hpp>

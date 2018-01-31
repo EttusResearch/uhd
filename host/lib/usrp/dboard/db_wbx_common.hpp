@@ -9,7 +9,7 @@
 #define INCLUDED_LIBUHD_USRP_DBOARD_DB_WBX_COMMON_HPP
 
 #include <uhd/types/device_addr.hpp>
-#include "adf435x.hpp"
+#include <uhdlib/usrp/common/adf435x.hpp>
 
 // LO Related
 #define ADF435X_CE      (1 << 3)

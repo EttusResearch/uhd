@@ -5,7 +5,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "apply_corrections.hpp"
 #include "b100_impl.hpp"
 #include "b100_regs.hpp"
 #include <uhd/transport/usb_control.hpp>
@@ -15,6 +14,7 @@
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/safe_call.hpp>
+#include <uhdlib/usrp/common/apply_corrections.hpp>
 #include <boost/format.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/filesystem.hpp>

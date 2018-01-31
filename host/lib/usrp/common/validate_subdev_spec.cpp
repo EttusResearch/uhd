@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "validate_subdev_spec.hpp"
+#include <uhdlib/usrp/common/validate_subdev_spec.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/assert_has.hpp>
 #include <boost/format.hpp>

@@ -5,9 +5,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "dsp_core_utils.hpp"
 #include <uhd/utils/math.hpp>
 #include <uhd/exception.hpp>
+#include <uhdlib/usrp/cores/dsp_core_utils.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <boost/math/special_functions/sign.hpp>
 

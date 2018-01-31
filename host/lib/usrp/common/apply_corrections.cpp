@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "apply_corrections.hpp"
+#include <uhdlib/usrp/common/apply_corrections.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/log.hpp>

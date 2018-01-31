@@ -9,8 +9,6 @@
 # This file included, use CMake directory variables
 ########################################################################
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-
 LIBUHD_APPEND_SOURCES(
     # Infrastructure:
     ${CMAKE_CURRENT_SOURCE_DIR}/block_ctrl_base.cpp

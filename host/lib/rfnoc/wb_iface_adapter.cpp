@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "wb_iface_adapter.hpp"
+#include <uhdlib/rfnoc/wb_iface_adapter.hpp>
 
 using namespace uhd::rfnoc;
 

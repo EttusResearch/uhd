@@ -5,7 +5,7 @@
 //
 
 #include "b200_impl.hpp"
-#include "eeprom_utils.hpp"
+#include <uhdlib/utils/eeprom_utils.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
 
 namespace {

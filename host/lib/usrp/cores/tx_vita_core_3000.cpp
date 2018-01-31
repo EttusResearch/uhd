@@ -5,8 +5,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "tx_vita_core_3000.hpp"
 #include <uhd/utils/safe_call.hpp>
+#include <uhdlib/usrp/cores/tx_vita_core_3000.hpp>
 
 #define REG_CTRL_ERROR_POLICY       (_base + 0)
 #define REG_FC_PRE_RADIO_RESP_BASE  (_base + 2*4)

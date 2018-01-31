@@ -6,10 +6,10 @@
 //
 
 #include "device3_impl.hpp"
-#include "graph_impl.hpp"
-#include "ctrl_iface.hpp"
 #include <uhd/utils/log.hpp>
 #include <uhd/rfnoc/block_ctrl_base.hpp>
+#include <uhdlib/rfnoc/graph_impl.hpp>
+#include <uhdlib/rfnoc/ctrl_iface.hpp>
 #include <boost/make_shared.hpp>
 #include <algorithm>
 

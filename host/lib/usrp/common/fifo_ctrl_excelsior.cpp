@@ -5,8 +5,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "fifo_ctrl_excelsior.hpp"
-#include "async_packet_handler.hpp"
+#include <uhdlib/usrp/common/fifo_ctrl_excelsior.hpp>
+#include <uhdlib/usrp/common/async_packet_handler.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/byteswap.hpp>

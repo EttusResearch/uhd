@@ -5,9 +5,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "gpio_atr_3000.hpp"
 #include <uhd/types/dict.hpp>
 #include <uhd/utils/soft_register.hpp>
+#include <uhdlib/usrp/cores/gpio_atr_3000.hpp>
 
 using namespace uhd;
 using namespace usrp;

@@ -5,12 +5,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "dma_fifo_core_3000.hpp"
 #include <uhd/exception.hpp>
-#include <boost/thread/thread.hpp> //sleep
 #include <uhd/utils/soft_register.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhdlib/usrp/cores/dma_fifo_core_3000.hpp>
 #include <boost/format.hpp>
+#include <boost/thread/thread.hpp> //sleep
+
 using namespace uhd;
 
 #define SR_DRAM_BIST_BASE 16

@@ -5,8 +5,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "ihex.hpp"
 #include <uhd/exception.hpp>
+#include <uhdlib/utils/ihex.hpp>
 #include <boost/format.hpp>
 #include <boost/make_shared.hpp>
 #include <sstream>

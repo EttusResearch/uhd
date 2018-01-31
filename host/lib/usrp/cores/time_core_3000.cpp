@@ -5,9 +5,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "time_core_3000.hpp"
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhdlib/usrp/cores/time_core_3000.hpp>
 #include <boost/thread/thread.hpp>
 
 #define REG_TIME_HI       _base + 0

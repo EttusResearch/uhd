@@ -8,7 +8,6 @@
 #ifndef INCLUDED_LIBUHD_TRANSPORT_SUPER_RECV_PACKET_HANDLER_HPP
 #define INCLUDED_LIBUHD_TRANSPORT_SUPER_RECV_PACKET_HANDLER_HPP
 
-#include "../rfnoc/rx_stream_terminator.hpp"
 #include <uhd/config.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/convert.hpp>
@@ -19,6 +18,7 @@
 #include <uhd/types/metadata.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/zero_copy.hpp>
+#include <uhdlib/rfnoc/rx_stream_terminator.hpp>
 #include <boost/dynamic_bitset.hpp>
 #include <boost/function.hpp>
 #include <boost/format.hpp>

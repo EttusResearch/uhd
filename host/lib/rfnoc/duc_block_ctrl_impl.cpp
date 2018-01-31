@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "dsp_core_utils.hpp"
 #include <uhd/rfnoc/duc_block_ctrl.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/convert.hpp>
@@ -12,6 +11,7 @@
 #include <uhdlib/utils/compat_check.hpp>
 #include <uhdlib/utils/math.hpp>
 #include <uhdlib/utils/narrow.hpp>
+#include <uhdlib/usrp/cores/dsp_core_utils.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <cmath>
 

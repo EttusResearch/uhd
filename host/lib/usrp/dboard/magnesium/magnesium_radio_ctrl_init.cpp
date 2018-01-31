@@ -6,11 +6,11 @@
 
 #include "magnesium_radio_ctrl_impl.hpp"
 #include "magnesium_constants.hpp"
-#include "spi_core_3000.hpp"
 #include <uhd/utils/log.hpp>
 #include <uhd/types/eeprom.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/transport/chdr.hpp>
+#include <uhdlib/usrp/cores/spi_core_3000.hpp>
 #include <vector>
 #include <string>
 #include <boost/algorithm/string.hpp>

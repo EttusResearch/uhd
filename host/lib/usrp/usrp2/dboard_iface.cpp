@@ -5,11 +5,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "gpio_core_200.hpp"
-#include <uhd/types/serial.hpp>
 #include "clock_ctrl.hpp"
 #include "usrp2_regs.hpp" //wishbone address constants
 #include "usrp2_fifo_ctrl.hpp"
+#include "ad7922_regs.hpp" //aux adc
+#include "ad5623_regs.hpp" //aux dac
+#include <uhdlib/usrp/cores/gpio_core_200.hpp>
+#include <uhd/types/serial.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/exception.hpp>
@@ -17,8 +19,6 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/asio.hpp> //htonl and ntohl
 #include <boost/math/special_functions/round.hpp>
-#include "ad7922_regs.hpp" //aux adc
-#include "ad5623_regs.hpp" //aux dac
 
 using namespace uhd;
 using namespace uhd::usrp;

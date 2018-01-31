@@ -8,7 +8,7 @@
 #ifndef INCLUDED_UHD_EXPERTS_EXPERT_CONTAINER_HPP
 #define INCLUDED_UHD_EXPERTS_EXPERT_CONTAINER_HPP
 
-#include "expert_nodes.hpp"
+#include <uhdlib/experts/expert_nodes.hpp>
 #include <uhd/config.hpp>
 #include <boost/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>

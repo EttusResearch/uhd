@@ -5,11 +5,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "rx_stream_terminator.hpp"
-#include "radio_ctrl_impl.hpp"
 #include "../transport/super_recv_packet_handler.hpp"
 #include <uhd/utils/log.hpp>
 #include <uhd/rfnoc/source_node_ctrl.hpp>
+#include <uhdlib/rfnoc/rx_stream_terminator.hpp>
+#include <uhdlib/rfnoc/radio_ctrl_impl.hpp>
 #include <boost/format.hpp>
 
 using namespace uhd::rfnoc;

@@ -9,7 +9,8 @@
 #include "twinrx/twinrx_ctrl.hpp"
 #include "twinrx/twinrx_io.hpp"
 #include "twinrx/twinrx_ids.hpp"
-#include <expert_factory.hpp>
+
+#include <uhdlib/experts/expert_factory.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/sensors.hpp>

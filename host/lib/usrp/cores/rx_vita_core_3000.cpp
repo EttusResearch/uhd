@@ -5,9 +5,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "rx_vita_core_3000.hpp"
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
+#include <uhdlib/usrp/cores/rx_vita_core_3000.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/date_time.hpp>

@@ -8,27 +8,29 @@
 #ifndef INCLUDED_X300_IMPL_HPP
 #define INCLUDED_X300_IMPL_HPP
 
-#include <uhd/property_tree.hpp>
-#include "../device3/device3_impl.hpp"
-#include <uhd/usrp/mboard_eeprom.hpp>
-#include <uhd/usrp/subdev_spec.hpp>
-#include <uhd/types/sensors.hpp>
 #include "x300_radio_ctrl_impl.hpp"
 #include "x300_clock_ctrl.hpp"
 #include "x300_fw_common.h"
+#include "x300_regs.hpp"
+
+#include "../device3/device3_impl.hpp"
+#include <uhd/property_tree.hpp>
+#include <uhd/usrp/mboard_eeprom.hpp>
+#include <uhd/usrp/subdev_spec.hpp>
+#include <uhd/types/sensors.hpp>
 #include <uhd/transport/udp_simple.hpp> //mtu
-#include "i2c_core_100_wb32.hpp"
-#include <boost/weak_ptr.hpp>
 #include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/transport/nirio/niusrprio_session.h>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/muxed_zero_copy_if.hpp>
-#include "recv_packet_demuxer_3000.hpp"
-#include "x300_regs.hpp"
 ///////////// RFNOC /////////////////////
 #include <uhd/rfnoc/block_ctrl.hpp>
 ///////////// RFNOC /////////////////////
+
+#include <uhdlib/usrp/cores/i2c_core_100_wb32.hpp>
+#include <uhdlib/usrp/common/recv_packet_demuxer_3000.hpp>
 #include <boost/dynamic_bitset.hpp>
+#include <boost/weak_ptr.hpp>
 #include <atomic>
 
 static const std::string X300_FW_FILE_NAME  = "usrp_x300_fw.bin";

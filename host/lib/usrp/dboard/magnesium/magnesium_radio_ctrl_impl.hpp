@@ -7,16 +7,16 @@
 #ifndef INCLUDED_LIBUHD_RFNOC_MAGNESIUM_RADIO_CTRL_IMPL_HPP
 #define INCLUDED_LIBUHD_RFNOC_MAGNESIUM_RADIO_CTRL_IMPL_HPP
 
-#include "radio_ctrl_impl.hpp"
-#include "rpc_block_ctrl.hpp"
 #include "magnesium_cpld_ctrl.hpp"
 #include "magnesium_cpld_regs.hpp"
 #include "magnesium_ad9371_iface.hpp"
-#include "adf435x.hpp"
-#include "gpio_atr_3000.hpp"
 #include <uhd/types/serial.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/usrp/gpio_defs.hpp>
+#include <uhdlib/usrp/cores/gpio_atr_3000.hpp>
+#include <uhdlib/rfnoc/rpc_block_ctrl.hpp>
+#include <uhdlib/rfnoc/radio_ctrl_impl.hpp>
+#include <uhdlib/usrp/common/adf435x.hpp>
 #include <mutex>
 
 namespace uhd {

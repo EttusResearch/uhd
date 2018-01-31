@@ -9,6 +9,7 @@
 #include <uhd/exception.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/utils/algorithm.hpp>
+#include <uhd/utils/log.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <utility>

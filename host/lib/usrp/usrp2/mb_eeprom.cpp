@@ -5,7 +5,7 @@
 //
 
 #include "usrp2_impl.hpp"
-#include "eeprom_utils.hpp"
+#include <uhdlib/utils/eeprom_utils.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/types/byte_vector.hpp>
 #include <uhd/types/mac_addr.hpp>

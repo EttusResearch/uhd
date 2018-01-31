@@ -16,9 +16,10 @@
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/log.hpp>
-
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/safe_call.hpp>
+#include <uhdlib/usrp/common/max287x.hpp>
+
 #include <boost/assign/list_of.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/math/special_functions/round.hpp>
@@ -26,7 +27,6 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/thread/mutex.hpp>
 #include <map>
-#include "max287x.hpp"
 
 using namespace uhd;
 using namespace uhd::usrp;

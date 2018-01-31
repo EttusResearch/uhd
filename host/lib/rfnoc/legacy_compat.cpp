@@ -5,7 +5,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "legacy_compat.hpp"
 #include "../usrp/device3/device3_impl.hpp"
 #include <uhd/property_tree.hpp>
 #include <uhd/rfnoc/radio_ctrl.hpp>
@@ -16,10 +15,10 @@
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/types/direction.hpp>
 #include <uhd/types/ranges.hpp>
-
 #include <uhd/utils/log.hpp>
 #include <uhd/transport/chdr.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
+#include <uhdlib/rfnoc/legacy_compat.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/assign.hpp>
 

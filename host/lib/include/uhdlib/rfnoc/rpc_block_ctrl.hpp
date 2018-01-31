@@ -7,7 +7,8 @@
 #ifndef INCLUDED_LIBUHD_RFNOC_RPC_BLOCK_CTRL_HPP
 #define INCLUDED_LIBUHD_RFNOC_RPC_BLOCK_CTRL_HPP
 
-#include "../utils/rpc.hpp"
+#include <uhd/types/device_addr.hpp>
+#include <uhdlib/utils/rpc.hpp>
 
 namespace uhd {
     namespace rfnoc {

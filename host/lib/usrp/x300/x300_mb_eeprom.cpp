@@ -5,7 +5,7 @@
 //
 
 #include "x300_impl.hpp"
-#include "eeprom_utils.hpp"
+#include <uhdlib/utils/eeprom_utils.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/types/serial.hpp>
 

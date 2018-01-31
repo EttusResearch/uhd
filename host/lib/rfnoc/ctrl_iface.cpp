@@ -5,15 +5,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "ctrl_iface.hpp"
 #include <uhd/exception.hpp>
-
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/types/sid.hpp>
 #include <uhd/transport/chdr.hpp>
 #include <uhd/rfnoc/constants.hpp>
+#include <uhdlib/rfnoc/ctrl_iface.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/format.hpp>

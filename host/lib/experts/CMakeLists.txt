@@ -8,8 +8,6 @@
 ########################################################################
 # This file included, use CMake directory variables
 ########################################################################
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-
 LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/expert_container.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/expert_factory.cpp

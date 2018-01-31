@@ -8,7 +8,6 @@
 #include "octoclock_impl.hpp"
 #include "common.h"
 
-#include "../../utils/ihex.hpp"
 #include <uhd/device.hpp>
 #include <uhd/image_loader.hpp>
 #include <uhd/transport/udp_simple.hpp>
@@ -17,8 +16,8 @@
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/static.hpp>
+#include <uhdlib/utils/ihex.hpp>
 
-#include <stdint.h>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <boost/thread.hpp>
@@ -30,6 +29,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <stdint.h>
 
 namespace fs = boost::filesystem;
 using namespace uhd;

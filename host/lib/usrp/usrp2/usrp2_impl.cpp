@@ -6,7 +6,7 @@
 
 #include "usrp2_impl.hpp"
 #include "fw_common.h"
-#include "apply_corrections.hpp"
+#include <uhdlib/usrp/common/apply_corrections.hpp>
 #include <uhd/utils/log.hpp>
 
 #include <uhd/exception.hpp>
