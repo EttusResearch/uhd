@@ -26,6 +26,7 @@ from mprpc import RPCServer
 from usrp_mpm.mpmlog import get_main_logger
 from usrp_mpm.mpmutils import to_binary_str
 from usrp_mpm.sys_utils import watchdog
+from usrp_mpm.sys_utils import net
 
 TIMEOUT_INTERVAL = 3.0 # Seconds before claim expires (default value)
 TOKEN_LEN = 16 # Length of the token string
@@ -289,7 +290,7 @@ class MPMServer(RPCServer):
             self._state.claim_token.value,
             self.client_host
         )
-        if self.client_host in ["127.0.0.1", "::1"]:
+        if self.client_host in net.get_local_ip_addrs():
             self.periph_manager.set_connection_type("local")
         else:
             self.periph_manager.set_connection_type("remote")
@@ -384,7 +385,7 @@ class MPMServer(RPCServer):
         This is as safe method which can be called without a claim on the device
         """
         info = self.periph_manager.get_device_info()
-        if self.client_host in ["127.0.0.1", "::1"]:
+        if self.client_host in net.get_local_ip_addrs():
             info["connection"] = "local"
         else:
             info["connection"] = "remote"
