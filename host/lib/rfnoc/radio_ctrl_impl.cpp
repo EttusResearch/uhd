@@ -5,13 +5,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "wb_iface_adapter.hpp"
 #include <boost/format.hpp>
 #include <uhd/convert.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/direction.hpp>
-#include "radio_ctrl_impl.hpp"
+#include <uhdlib/rfnoc/wb_iface_adapter.hpp>
+#include <uhdlib/rfnoc/radio_ctrl_impl.hpp>
 #include "../../transport/super_recv_packet_handler.hpp"
 #include <tuple>
 

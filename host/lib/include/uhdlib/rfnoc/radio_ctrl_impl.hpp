@@ -8,12 +8,12 @@
 #ifndef INCLUDED_LIBUHD_RFNOC_RADIO_CTRL_IMPL_HPP
 #define INCLUDED_LIBUHD_RFNOC_RADIO_CTRL_IMPL_HPP
 
-#include "rx_vita_core_3000.hpp"
-#include "tx_vita_core_3000.hpp"
-#include "time_core_3000.hpp"
-#include "gpio_atr_3000.hpp"
 #include <uhd/rfnoc/radio_ctrl.hpp>
 #include <uhd/types/direction.hpp>
+#include <uhdlib/usrp/cores/rx_vita_core_3000.hpp>
+#include <uhdlib/usrp/cores/tx_vita_core_3000.hpp>
+#include <uhdlib/usrp/cores/time_core_3000.hpp>
+#include <uhdlib/usrp/cores/gpio_atr_3000.hpp>
 #include <boost/thread.hpp>
 #include <mutex>
 

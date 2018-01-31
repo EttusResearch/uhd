@@ -5,17 +5,16 @@
 //
 
 #include "x300_radio_ctrl_impl.hpp"
-
 #include "x300_dboard_iface.hpp"
-#include "wb_iface_adapter.hpp"
-#include "gpio_atr_3000.hpp"
-#include "apply_corrections.hpp"
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/rfnoc/node_ctrl_base.hpp>
 #include <uhd/transport/chdr.hpp>
 #include <uhd/utils/math.hpp>
+#include <uhdlib/rfnoc/wb_iface_adapter.hpp>
+#include <uhdlib/usrp/cores/gpio_atr_3000.hpp>
+#include <uhdlib/usrp/common/apply_corrections.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/date_time/posix_time/posix_time_io.hpp>

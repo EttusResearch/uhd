@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "ad936x_manager.hpp"
+#include <uhdlib/usrp/common/ad936x_manager.hpp>
 #include <uhd/utils/log.hpp>
 #include <boost/functional/hash.hpp>
 #include <boost/thread/thread.hpp>

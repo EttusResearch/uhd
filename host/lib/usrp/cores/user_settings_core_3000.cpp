@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "user_settings_core_3000.hpp"
+#include <uhdlib/usrp/cores/user_settings_core_3000.hpp>
 #include <uhd/exception.hpp>
 #include <boost/thread/thread.hpp>
 

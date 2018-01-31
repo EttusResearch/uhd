@@ -8,10 +8,10 @@
 #include "e300_regs.hpp"
 #include "e300_impl.hpp"
 #include "e300_fpga_defs.hpp"
-#include "validate_subdev_spec.hpp"
+#include <uhdlib/usrp/common/validate_subdev_spec.hpp>
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
-#include "async_packet_handler.hpp"
+#include <uhdlib/usrp/common/async_packet_handler.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
 #include <boost/bind.hpp>
 #include <uhd/utils/tasks.hpp>

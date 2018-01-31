@@ -5,9 +5,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "time64_core_200.hpp"
 #include <uhd/exception.hpp>
 #include <uhd/utils/assert_has.hpp>
+#include <uhdlib/usrp/cores/time64_core_200.hpp>
 #include <boost/math/special_functions/round.hpp>
 
 #define REG_TIME64_TICKS_HI    _base + 0

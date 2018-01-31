@@ -9,19 +9,13 @@
 #include "x300_lvbitx.hpp"
 #include "x310_lvbitx.hpp"
 #include "x300_mb_eeprom_iface.hpp"
-#include "apply_corrections.hpp"
-#include <boost/algorithm/string.hpp>
-#include <boost/asio.hpp>
+#include <uhdlib/usrp/common/apply_corrections.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/transport/if_addrs.hpp>
-#include <boost/bind.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/functional/hash.hpp>
-#include <boost/assign/list_of.hpp>
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/transport/udp_constants.hpp>
 #include <uhd/transport/zero_copy_recv_offload.hpp>
@@ -29,6 +23,13 @@
 #include <uhd/transport/nirio/niusrprio_session.h>
 #include <uhd/utils/platform.hpp>
 #include <uhd/types/sid.hpp>
+
+#include <boost/algorithm/string.hpp>
+#include <boost/asio.hpp>
+#include <boost/bind.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/functional/hash.hpp>
+#include <boost/assign/list_of.hpp>
 #include <fstream>
 
 #define NIUSRPRIO_DEFAULT_RPC_PORT "5444"

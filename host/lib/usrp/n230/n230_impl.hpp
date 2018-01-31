@@ -16,7 +16,7 @@
 #include "n230_eeprom_manager.hpp"
 #include "n230_resource_manager.hpp"
 #include "n230_stream_manager.hpp"
-#include "recv_packet_demuxer_3000.hpp"
+#include <uhdlib/usrp/common/recv_packet_demuxer_3000.hpp>
 
 namespace uhd { namespace usrp { namespace n230 {
 

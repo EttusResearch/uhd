@@ -5,9 +5,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "spi_core_3000.hpp"
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhdlib/usrp/cores/spi_core_3000.hpp>
 #include <boost/thread/thread.hpp> //sleep
 
 #define SPI_DIV      _base + 0

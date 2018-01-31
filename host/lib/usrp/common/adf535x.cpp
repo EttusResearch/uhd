@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "adf535x.hpp"
+#include <uhdlib/usrp/common/adf535x.hpp>
 
 adf535x_iface::sptr adf535x_iface::make_adf5355(write_fn_t write)
 {

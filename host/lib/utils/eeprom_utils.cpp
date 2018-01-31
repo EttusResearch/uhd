@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "eeprom_utils.hpp"
+#include <uhdlib/utils/eeprom_utils.hpp>
 #include <boost/lexical_cast.hpp>
 
 uhd::byte_vector_t string_to_uint16_bytes(const std::string &num_str){

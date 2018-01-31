@@ -6,8 +6,8 @@
 //
 
 #include <uhd/types/device_addr.hpp>
-#include "adf435x.hpp"
-#include "max287x.hpp"
+#include <uhdlib/usrp/common/adf435x.hpp>
+#include <uhdlib/usrp/common/max287x.hpp>
 
 // LO Related
 #define ADF435X_CE      (1 << 3)

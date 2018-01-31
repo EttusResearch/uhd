@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "fx2_ctrl.hpp"
+#include <uhdlib/usrp/common/fx2_ctrl.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/transport/usb_control.hpp>

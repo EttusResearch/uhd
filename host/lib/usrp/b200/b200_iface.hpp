@@ -8,14 +8,14 @@
 #ifndef INCLUDED_B200_IFACE_HPP
 #define INCLUDED_B200_IFACE_HPP
 
-#include <stdint.h>
 #include <uhd/transport/usb_control.hpp>
 #include <uhd/types/serial.hpp> //i2c iface
 #include <uhd/types/dict.hpp>
+#include <uhdlib/usrp/common/ad9361_ctrl.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
-#include "ad9361_ctrl.hpp"
+#include <stdint.h>
 
 enum b200_product_t {
     B200,

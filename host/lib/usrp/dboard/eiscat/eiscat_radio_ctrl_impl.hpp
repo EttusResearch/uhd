@@ -7,9 +7,9 @@
 #ifndef INCLUDED_LIBUHD_RFNOC_EISCAT_RADIO_CTRL_IMPL_HPP
 #define INCLUDED_LIBUHD_RFNOC_EISCAT_RADIO_CTRL_IMPL_HPP
 
-#include "radio_ctrl_impl.hpp"
-#include "rpc_block_ctrl.hpp"
 #include <uhd/types/direction.hpp>
+#include <uhdlib/rfnoc/rpc_block_ctrl.hpp>
+#include <uhdlib/rfnoc/radio_ctrl_impl.hpp>
 
 namespace uhd {
     namespace rfnoc {

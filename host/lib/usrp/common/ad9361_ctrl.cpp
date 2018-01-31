@@ -5,16 +5,16 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "ad9361_ctrl.hpp"
 #include <uhd/types/ranges.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/types/serial.hpp>
-#include <cstring>
+#include <uhdlib/usrp/common/ad9361_ctrl.hpp>
 #include <boost/format.hpp>
 #include <boost/utility.hpp>
 #include <boost/function.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/thread.hpp>
+#include <cstring>
 
 using namespace uhd;
 using namespace uhd::usrp;

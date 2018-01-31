@@ -8,14 +8,14 @@
 #ifndef INCLUDED_N230_FRONTEND_CTRL_HPP
 #define INCLUDED_N230_FRONTEND_CTRL_HPP
 
-#include "radio_ctrl_core_3000.hpp"
-#include "ad9361_ctrl.hpp"
-#include "gpio_atr_3000.hpp"
+#include "n230_fpga_defs.h"
+#include <uhdlib/usrp/cores/radio_ctrl_core_3000.hpp>
+#include <uhdlib/usrp/cores/gpio_atr_3000.hpp>
+#include <uhdlib/usrp/common/ad9361_ctrl.hpp>
 #include <uhd/types/sensors.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 #include <vector>
-#include "n230_fpga_defs.h"
 
 namespace uhd { namespace usrp { namespace n230 {
 

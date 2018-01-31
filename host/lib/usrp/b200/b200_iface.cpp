@@ -7,22 +7,22 @@
 
 #include "b200_iface.hpp"
 
-#include "../../utils/ihex.hpp"
 #include <uhd/config.hpp>
-
 #include <uhd/utils/log.hpp>
 #include <uhd/exception.hpp>
+#include <uhdlib/utils/ihex.hpp>
+
 #include <boost/functional/hash.hpp>
 #include <boost/thread/thread.hpp>
-#include <stdint.h>
 #include <boost/lexical_cast.hpp>
 #include <boost/format.hpp>
+#include <libusb.h>
 #include <fstream>
 #include <string>
 #include <vector>
 #include <cstring>
 #include <iomanip>
-#include <libusb.h>
+#include <stdint.h>
 
 //! libusb_error_name is only in newer API
 #ifndef HAVE_LIBUSB_ERROR_NAME

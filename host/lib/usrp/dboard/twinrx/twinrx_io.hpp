@@ -11,8 +11,8 @@
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/utils/soft_register.hpp>
+#include <uhdlib/usrp/cores/gpio_atr_3000.hpp>
 #include <boost/thread.hpp>
-#include "gpio_atr_3000.hpp"
 
 namespace uhd { namespace usrp { namespace dboard { namespace twinrx {
 

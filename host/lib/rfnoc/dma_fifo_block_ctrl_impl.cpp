@@ -6,11 +6,11 @@
 //
 
 #include <uhd/rfnoc/dma_fifo_block_ctrl.hpp>
-#include "dma_fifo_core_3000.hpp"
-#include "wb_iface_adapter.hpp"
 #include <uhd/convert.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/types/wb_iface.hpp>
+#include <uhdlib/rfnoc/wb_iface_adapter.hpp>
+#include <uhdlib/usrp/cores/dma_fifo_core_3000.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/format.hpp>

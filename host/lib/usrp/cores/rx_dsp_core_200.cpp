@@ -5,13 +5,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "rx_dsp_core_200.hpp"
-#include "dsp_core_utils.hpp"
 #include <uhd/types/dict.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/math.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
+#include <uhdlib/usrp/cores/rx_dsp_core_200.hpp>
+#include <uhdlib/usrp/cores/dsp_core_utils.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/thread/thread.hpp> //thread sleep
 #include <boost/math/special_functions/round.hpp>

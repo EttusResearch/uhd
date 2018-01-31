@@ -8,14 +8,14 @@
 #ifndef INCLUDED_N230_CLK_PPS_CTRL_HPP
 #define INCLUDED_N230_CLK_PPS_CTRL_HPP
 
-#include "time_core_3000.hpp"
-#include "ad9361_ctrl.hpp"
+#include "n230_cores.hpp"
+#include "n230_fpga_defs.h"
 #include <uhd/types/sensors.hpp>
+#include <uhdlib/usrp/cores/time_core_3000.hpp>
+#include <uhdlib/usrp/common/ad9361_ctrl.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 #include <vector>
-#include "n230_cores.hpp"
-#include "n230_fpga_defs.h"
 
 namespace uhd { namespace usrp { namespace n230 {
 

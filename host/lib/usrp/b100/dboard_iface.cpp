@@ -5,16 +5,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "gpio_core_200.hpp"
-#include <uhd/types/serial.hpp>
 #include "b100_regs.hpp"
 #include "clock_ctrl.hpp"
 #include "codec_ctrl.hpp"
+#include <uhd/types/serial.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/exception.hpp>
+#include <uhdlib/usrp/cores/gpio_core_200.hpp>
 #include <boost/assign/list_of.hpp>
-
 
 using namespace uhd;
 using namespace uhd::usrp;

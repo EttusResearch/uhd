@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "rx_frontend_core_200.hpp"
+#include <uhdlib/usrp/cores/rx_frontend_core_200.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <boost/bind.hpp>
 

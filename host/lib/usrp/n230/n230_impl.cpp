@@ -6,9 +6,14 @@
 //
 
 #include "n230_impl.hpp"
-
 #include "n230_fw_ctrl_iface.hpp"
-#include "validate_subdev_spec.hpp"
+#include "n230_defaults.h"
+#include "n230_fpga_defs.h"
+#include "n230_fw_defs.h"
+#include "n230_fw_host_iface.h"
+
+#include <uhdlib/usrp/common/validate_subdev_spec.hpp>
+
 #include <uhd/utils/static.hpp>
 #include <uhd/transport/if_addrs.hpp>
 #include <uhd/transport/udp_zero_copy.hpp>
@@ -22,6 +27,7 @@
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/gps_ctrl.hpp>
+
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/bind.hpp>
@@ -30,11 +36,6 @@
 #include <boost/asio/ip/address_v4.hpp>
 #include <boost/asio.hpp> //used for htonl and ntohl
 #include <boost/make_shared.hpp>
-
-#include "n230_defaults.h"
-#include "n230_fpga_defs.h"
-#include "n230_fw_defs.h"
-#include "n230_fw_host_iface.h"
 
 namespace uhd { namespace usrp { namespace n230 {
 

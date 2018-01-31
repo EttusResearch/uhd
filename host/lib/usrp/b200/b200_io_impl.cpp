@@ -7,10 +7,10 @@
 
 #include "b200_regs.hpp"
 #include "b200_impl.hpp"
-#include "validate_subdev_spec.hpp"
+#include <uhdlib/usrp/common/validate_subdev_spec.hpp>
+#include <uhdlib/usrp/common/async_packet_handler.hpp>
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
-#include "async_packet_handler.hpp"
 #include <uhd/utils/math.hpp>
 #include <boost/bind.hpp>
 #include <boost/make_shared.hpp>

@@ -13,15 +13,14 @@
 #include <uhd/rfnoc/sink_block_ctrl_base.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/log.hpp>
-
-#include "../common/async_packet_handler.hpp"
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
-#include "../../rfnoc/rx_stream_terminator.hpp"
-#include "../../rfnoc/tx_stream_terminator.hpp"
 #include <uhd/rfnoc/rate_node_ctrl.hpp>
 #include <uhd/rfnoc/radio_ctrl.hpp>
 #include <uhd/transport/zero_copy_flow_ctrl.hpp>
+#include <uhdlib/rfnoc/rx_stream_terminator.hpp>
+#include <uhdlib/rfnoc/tx_stream_terminator.hpp>
+#include <uhdlib/usrp/common/async_packet_handler.hpp>
 #include <boost/atomic.hpp>
 
 #define UHD_TX_STREAMER_LOG() UHD_LOGGER_TRACE("STREAMER")

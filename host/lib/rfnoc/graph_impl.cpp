@@ -5,10 +5,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "graph_impl.hpp"
 #include <uhd/rfnoc/source_block_ctrl_base.hpp>
 #include <uhd/rfnoc/sink_block_ctrl_base.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhdlib/rfnoc/graph_impl.hpp>
 
 using namespace uhd::rfnoc;
 
