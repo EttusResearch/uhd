@@ -33,7 +33,7 @@ N3XX_DEFAULT_CLOCK_SOURCE = 'internal'
 N3XX_DEFAULT_TIME_SOURCE = 'internal'
 N3XX_DEFAULT_ENABLE_GPS = True
 N3XX_DEFAULT_ENABLE_FPGPIO = True
-N3XX_FPGA_COMPAT = (5, 1)
+N3XX_FPGA_COMPAT = (5, 2)
 N3XX_MONITOR_THREAD_INTERVAL = 1.0 # seconds
 N3XX_SFP_TYPES = {0:"", 1:"1G", 2:"10G", 3:"A"}
 
@@ -185,6 +185,8 @@ class MboardRegsControl(object):
     MB_BUS_COUNTER  = 0x0024
     MB_SFP0_INFO    = 0x0028
     MB_SFP1_INFO    = 0x002C
+    MB_GPIO_MASTER  = 0x0030
+    MB_GPIO_RADIO_SRC  = 0x0034
 
     # Bitfield locations for the MB_CLOCK_CTRL register.
     MB_CLOCK_CTRL_PPS_SEL_INT_10 = 0 # pps_sel is one-hot encoded!
@@ -216,6 +218,46 @@ class MboardRegsControl(object):
         minor = compat_number & 0xff
         major = (compat_number>>16) & 0xff
         return (major, minor)
+
+    def set_fp_gpio_master(self, value):
+        """set driver for front panel GPIO
+        Arguments:
+            value {unsigned} -- value is a single bit bit mask of 12 pins GPIO
+        """
+        with self.regs.open():
+            return self.poke32(self.MB_GPIO_MASTER, value)
+
+    def get_fp_gpio_master(self):
+        """get "who" is driving front panel gpio
+           The return value is a bit mask of 12 pins GPIO.
+           0: means the pin is driven by PL
+           1: means the pin is driven by PS
+        """
+        with self.regs.open():
+            return self.peek32(self.MB_GPIO_MASTER) & 0xfff
+
+    def set_fp_gpio_radio_src(self, value):
+        """set driver for front panel GPIO
+        Arguments:
+            value {unsigned} -- value is 2-bit bit mask of 12 pins GPIO
+           00: means the pin is driven by radio 0
+           01: means the pin is driven by radio 1
+           10: means the pin is driven by radio 2
+           11: means the pin is driven by radio 3
+        """
+        with self.regs.open():
+            return self.poke32(self.MB_GPIO_RADIO_SRC, value)
+
+    def get_fp_gpio_radio_src(self):
+        """get which radio is driving front panel gpio
+           The return value is 2-bit bit mask of 12 pins GPIO.
+           00: means the pin is driven by radio 0
+           01: means the pin is driven by radio 1
+           10: means the pin is driven by radio 2
+           11: means the pin is driven by radio 3
+        """
+        with self.regs.open():
+            return self.peek32(self.MB_GPIO_RADIO_SRC) & 0xffffff
 
     def get_build_timestamp(self):
         """
@@ -840,6 +882,41 @@ class n310(PeriphManagerBase):
         self.mboard_regs_control.set_time_source(
             time_source, self.get_ref_clock_freq())
 
+    def set_fp_gpio_master(self, value):
+        """set driver for front panel GPIO
+        Arguments:
+            value {unsigned} -- value is a single bit bit mask of 12 pins GPIO
+        """
+        self.mboard_regs_control.set_fp_gpio_master(value)
+
+    def get_fp_gpio_master(self):
+        """get "who" is driving front panel gpio
+           The return value is a bit mask of 12 pins GPIO.
+           0: means the pin is driven by PL
+           1: means the pin is driven by PS
+        """
+        return self.mboard_regs_control.get_fp_gpio_master()
+
+    def set_fp_gpio_radio_src(self, value):
+        """set driver for front panel GPIO
+        Arguments:
+            value {unsigned} -- value is 2-bit bit mask of 12 pins GPIO
+           00: means the pin is driven by radio 0
+           01: means the pin is driven by radio 1
+           10: means the pin is driven by radio 2
+           11: means the pin is driven by radio 3
+        """
+        self.mboard_regs_control.set_fp_gpio_radio_src(value)
+
+    def get_fp_gpio_radio_src(self):
+        """get which radio is driving front panel gpio
+           The return value is 2-bit bit mask of 12 pins GPIO.
+           00: means the pin is driven by radio 0
+           01: means the pin is driven by radio 1
+           10: means the pin is driven by radio 2
+           11: means the pin is driven by radio 3
+        """
+        return self.mboard_regs_control.get_fp_gpio_radio_src()
     ###########################################################################
     # Hardware periphal controls
     ###########################################################################
