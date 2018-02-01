@@ -196,6 +196,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
   if(pps_seconds != gps_seconds) {
       std::cout << "\nTrying to align the device time to GPS time..."
                 << std::endl;
+
+      gps_time = usrp->get_mboard_sensor("gps_time");
+
       //set the device time to the GPS time
       //getting the GPS time returns just after the PPS edge, so just add a
       //second and set the device time at the next PPS edge
