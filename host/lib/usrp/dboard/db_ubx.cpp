@@ -77,7 +77,8 @@ enum ubx_cpld_field_id_t
     RXDRV_FORCEON = 21,
     RXAMP_FORCEON = 22,
     RXLNA1_FORCEON = 23,
-    RXLNA2_FORCEON = 24
+    RXLNA2_FORCEON = 24,
+    CAL_ENABLE = 25
 };
 
 struct ubx_gpio_field_info_t
@@ -738,6 +739,8 @@ private:
     {
         //validate input
         assert_has(ubx_tx_antennas, ant, "ubx tx antenna name");
+        set_cpld_field(CAL_ENABLE, (ant == "CAL"));
+        write_cpld_reg();
     }
 
     // Set RX antennas
