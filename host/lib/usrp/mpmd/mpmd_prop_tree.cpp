@@ -20,6 +20,12 @@ namespace {
     //! Timeout value for the update_component RPC call (ms)
     constexpr size_t MPMD_UPDATE_COMPONENT_TIMEOUT = 20000;
 
+    /*! Update a component using all required files. For example, when updating the FPGA image
+     * (.bit or .bin), users can provide a new overlay image (DTS) to apply in addition.
+     *
+     * \param comps Vector of component files to be updated
+     * \param mb Reference to the actual device
+     */
     uhd::usrp::component_files_t _update_component(
         const uhd::usrp::component_files_t& comps,
         mpmd_mboard_impl *mb
