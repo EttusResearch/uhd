@@ -194,14 +194,16 @@ def download(images_url, filename, buffer_size=_DEFAULT_BUFFER_SIZE, print_progr
     filesize = float(resp.headers['content-length'])
     filesize_dl = 0
     with open(filename, "wb") as temp_file:
+        base_filename = os.path.basename(filename)
         for buff in resp.iter_content(chunk_size=buffer_size):
             if buff:
                 temp_file.write(buff)
                 filesize_dl += len(buff)
             if print_progress:
-                status = r"%05d kB / %05d kB (%03d%%)" % (
+                status = r"%05d kB / %05d kB (%03d%%) %s" % (
                     int(math.ceil(filesize_dl / 1000.)), int(math.ceil(filesize / 1000.)),
-                    int(math.ceil(filesize_dl * 100.) / filesize))
+                    int(math.ceil(filesize_dl * 100.) / filesize),
+                    base_filename)
                 if os.name == "nt":
                     status += chr(8) * (len(status) + 1)
                 else:
@@ -327,7 +329,7 @@ def main():
             # Now download all the images archives into a temp directory
             images_dir = args.install_location
             log("INFO", "Images destination: {}".format(os.path.abspath(images_dir)))
-            log("DEBUG", "Base URL of images: {}".format(args.base_url))
+            log("INFO", "Starting download. Run with -v to see download progress bars.")
             for target_info in targets_info:
                 target_hash = target_info.get("repo_hash")
                 target_rel_url = target_info.get("url")
