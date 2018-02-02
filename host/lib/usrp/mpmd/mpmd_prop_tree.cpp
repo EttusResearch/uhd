@@ -62,6 +62,28 @@ namespace {
         return all_comps_copy;
     }
 
+    /*
+     * Query the device to get the metadata for desired component
+     *
+     * \param comp_name String component name
+     * \param mb Reference to the actual device
+     * \return component files containing the component metadata
+     */
+    uhd::usrp::component_files_t _get_component_info(
+        const std::string &comp_name,
+        mpmd_mboard_impl *mb
+    ) {
+        UHD_LOG_TRACE("MPMD", "Getting component info for " << comp_name);
+        const auto component_metadata = mb->rpc->request<std::map<std::string, std::string>>(
+            "get_component_info", comp_name);
+        // Copy the contents of the component metadata into a object we can return
+        uhd::usrp::component_file_t return_component;
+        auto &return_metadata = return_component.metadata;
+        for (auto item : component_metadata) {
+            return_metadata[item.first] = item.second;
+        }
+        return uhd::usrp::component_files_t {return_component};
+    }
 }
 
 void mpmd_impl::init_property_tree(
@@ -210,13 +232,19 @@ void mpmd_impl::init_property_tree(
         UHD_LOG_TRACE("MPMD",
                 "Adding motherboard component: " << comp_name);
         tree->create<uhd::usrp::component_files_t>(mb_path / "components" / comp_name)
-                    .set_coercer([mb](const uhd::usrp::component_files_t& comp_files) {
+            .set_coercer([mb](const uhd::usrp::component_files_t& comp_files){
                 return _update_component(
                         comp_files,
                         mb
                 );
-        })
-        ;
+            })
+            .set_publisher([mb, comp_name](){
+                return _get_component_info(
+                        comp_name,
+                        mb
+                );
+            })
+        ; // Done adding component to property tree
     }
 
     /*** MTUs ***********************************************************/
