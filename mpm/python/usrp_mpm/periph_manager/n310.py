@@ -33,8 +33,9 @@ N3XX_DEFAULT_CLOCK_SOURCE = 'internal'
 N3XX_DEFAULT_TIME_SOURCE = 'internal'
 N3XX_DEFAULT_ENABLE_GPS = True
 N3XX_DEFAULT_ENABLE_FPGPIO = True
-N3XX_FPGA_COMPAT = (5, 0)
+N3XX_FPGA_COMPAT = (5, 1)
 N3XX_MONITOR_THREAD_INTERVAL = 1.0 # seconds
+N3XX_SFP_TYPES = {0:"", 1:"1G", 2:"10G", 3:"A"}
 
 ###############################################################################
 # Additional peripheral controllers specific to Magnesium
@@ -182,6 +183,8 @@ class MboardRegsControl(object):
     MB_XADC_RB      = 0x001C
     MB_BUS_CLK_RATE = 0x0020
     MB_BUS_COUNTER  = 0x0024
+    MB_SFP0_INFO    = 0x0028
+    MB_SFP1_INFO    = 0x002C
 
     # Bitfield locations for the MB_CLOCK_CTRL register.
     MB_CLOCK_CTRL_PPS_SEL_INT_10 = 0 # pps_sel is one-hot encoded!
@@ -326,6 +329,37 @@ class MboardRegsControl(object):
         else:
             self.log.trace("Measurement clock MMCM locked!")
         return locked
+
+    def get_fpga_type(self):
+        """
+        Reads the type of the FPGA image currently loaded
+        Returns a string with the type (ie HG, XG, AA, etc.)
+        """
+        with self.regs.open():
+            sfp0_info_rb = self.peek32(self.MB_SFP0_INFO)
+            sfp1_info_rb = self.peek32(self.MB_SFP1_INFO)
+        # Print the registers values as 32-bit hex values
+        self.log.trace("SFP0 Info: 0x{0:0{1}X}".format(sfp0_info_rb, 8))
+        self.log.trace("SFP1 Info: 0x{0:0{1}X}".format(sfp1_info_rb, 8))
+
+        sfp0_type = N3XX_SFP_TYPES.get((sfp0_info_rb & 0x0000FF00) >> 8, "")
+        sfp1_type = N3XX_SFP_TYPES.get((sfp1_info_rb & 0x0000FF00) >> 8, "")
+        self.log.trace("SFP types: ({}, {})".format(sfp0_type, sfp1_type))
+        if (sfp0_type == "") or (sfp1_type == ""):
+            return ""
+        elif (sfp0_type == "1G") and (sfp1_type == "10G"):
+            return "HG"
+        elif (sfp0_type == "10G") and (sfp1_type == "10G"):
+            return "XG"
+        elif (sfp0_type == "10G") and (sfp1_type == "A"):
+            return "XA"
+        elif (sfp0_type == "A") and (sfp1_type == "A"):
+            return "AA"
+        else:
+            self.log.warning("Unrecognized SFP type combination: ({}, {})".format(
+                sfp0_type, sfp1_type
+            ))
+            return ""
 
 
 ###############################################################################
@@ -564,6 +598,7 @@ class n310(PeriphManagerBase):
         self.mboard_regs_control.get_git_hash()
         self.mboard_regs_control.get_build_timestamp()
         self._check_fpga_compat()
+        self._update_fpga_type()
         # Init clocking
         self.enable_ref_clock(enable=True)
         self._ext_clock_freq = None
@@ -1111,6 +1146,13 @@ class n310(PeriphManagerBase):
             raise RuntimeError("Invalid N310 FPGA bitfile")
         # RPC server will reload the periph manager after this.
         return True
+
+    @no_rpc
+    def _update_fpga_type(self):
+        """Update the fpga type stored in the updateable components"""
+        fpga_type = self.mboard_regs_control.get_fpga_type()
+        self.log.debug("Updating mboard FPGA type info to {}".format(fpga_type))
+        self.updateable_components['fpga']['type'] = fpga_type
 
     @no_rpc
     def update_dts(self, filepath, metadata):
