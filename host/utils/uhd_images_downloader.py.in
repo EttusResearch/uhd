@@ -54,7 +54,6 @@ def log(level, message):
 def parse_args():
     """Setup argument parser and parse"""
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    # TODO: clean up all the one letter arguments
     parser.add_argument('-t', '--types', type=str, default="",
                         help="RegEx to select image sets from the manifest file.")
     parser.add_argument('-i', '--install-location', type=str, default=_DEFAULT_INSTALL_PATH,
@@ -74,6 +73,8 @@ def parse_args():
                               .format(",".join(_ARCHIVE_ALGS))))
     parser.add_argument("-k", "--keep", action="store_true", default=False,
                         help="Do not clear images directory before extracting new files")
+    parser.add_argument("-n", "--dry-run", action="store_true", default=False,
+                        help="Print selected target without actually downloading them.")
     parser.add_argument("--refetch", action="store_true", default=False,
                         help="Ignore the inventory file and download all images.")
     parser.add_argument('-V', '--version', action='version', version=_UHD_VERSION)
@@ -310,7 +311,6 @@ def main():
         # Determine the URLs to download based on the input regular expressions
         types_regex = _DEFAULT_TARGET_REGEX if args.types == "" else args.types
 
-
         log("TRACE", "RegEx for target selection: {}".format(types_regex))
         targets_info = lookup_urls(types_regex, manifest, inventory, args.refetch)
         # Exit early if we don't have anything to download
@@ -327,6 +327,7 @@ def main():
             # Now download all the images archives into a temp directory
             images_dir = args.install_location
             log("INFO", "Images destination: {}".format(os.path.abspath(images_dir)))
+            log("DEBUG", "Base URL of images: {}".format(args.base_url))
             for target_info in targets_info:
                 target_hash = target_info.get("repo_hash")
                 target_rel_url = target_info.get("url")
@@ -334,21 +335,26 @@ def main():
                 temp_path = os.path.join(temp_dir, filename)
                 # Add a trailing slash to make sure that urljoin handles things properly
                 full_url = urljoin(args.base_url+'/', target_rel_url)
-                _, downloaded_size = download(
-                    images_url=full_url,
-                    filename=temp_path,
-                    buffer_size=args.buffer_size,
-                    print_progress=(_LOG_LEVEL <= _LOG_LEVELS.get("DEBUG", 2))
-                )
-                # TODO: Check SHA
-                log("TRACE", "{} successfully downloaded ({} Bytes)"
-                    .format(temp_path, downloaded_size))
+                if not args.dry_run:
+                    _, downloaded_size = download(
+                        images_url=full_url,
+                        filename=temp_path,
+                        buffer_size=args.buffer_size,
+                        print_progress=(_LOG_LEVEL <= _LOG_LEVELS.get("DEBUG", 2))
+                    )
+                    # TODO: Check SHA
+                    log("TRACE", "{} successfully downloaded ({} Bytes)"
+                        .format(temp_path, downloaded_size))
 
-                delete_from_inv(filename, inventory, images_dir)
-                archive_namelist = extract(temp_path, images_dir, archive_type)
-                inventory[filename] = {"repo_hash": target_hash, "contents": archive_namelist}
+                    delete_from_inv(filename, inventory, images_dir)
+                    archive_namelist = extract(temp_path, images_dir, archive_type)
+                    inventory[filename] = {"repo_hash": target_hash, "contents": archive_namelist}
+                else:
+                    log("INFO", "[Dry run] {} successfully downloaded"
+                        .format(filename))
 
-        write_inventory(inventory, inventory_fn)
+        if not args.dry_run:
+            write_inventory(inventory, inventory_fn)
 
     except Exception as ex:
         log("ERROR", "Downloader raised an unhandled exception: {ex}\n"
