@@ -546,6 +546,24 @@ class PeriphManagerBase(object):
             update_func(filepath, metadata)
         return True
 
+    @no_claim
+    def get_component_info(self, component_name):
+        """
+        Returns the metadata for the requested component
+        :param component_name: string name of the component
+        :return: Dictionary of strings containg metadata
+        """
+        if component_name in self.updateable_components:
+            metadata = self.updateable_components.get(component_name)
+            metadata['id'] = component_name
+            self.log.trace("Component info: {}".format(metadata))
+            # Convert all values to str
+            return dict([a, str(x)] for a, x in metadata.items())
+        else:
+            self.log.trace("Component not found in updateable components: {}"
+                           .format(component_name))
+            return {}
+
     ###########################################################################
     # Crossbar control
     ###########################################################################
