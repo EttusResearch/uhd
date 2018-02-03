@@ -679,6 +679,8 @@ class N310BIST(object):
         from usrp_mpm.periph_manager import n310
         gpio_tca6424 = n310.TCA6424(self.mb_rev)
         gpio_tca6424.set("FPGA-GPIO-EN")
+        mb_regs = n310.MboardRegsControl(n310.n310.mboard_regs_label, self.log)
+        mb_regs.set_fp_gpio_master(0xFFF)
         # Allow some time for the front-panel GPIOs to become usable
         time.sleep(.5)
         ddr1 = 0x03f
