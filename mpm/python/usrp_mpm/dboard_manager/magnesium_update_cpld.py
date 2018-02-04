@@ -15,21 +15,22 @@ from usrp_mpm.mpmlog import get_logger
 from usrp_mpm.periph_manager.n310 import MboardRegsControl
 
 OPENOCD_DIR = "/usr/share/openocd/scripts"
-CONFIGS = { 'sysfsgpio' : {
-                       'files'  : ["interface/sysfsgpio-ettus-magnesium-dba.cfg",
-                                         "interface/sysfsgpio-ettus-magnesium-dbb.cfg",
-                                         "cpld/altera-5m570z-cpld.cfg"],
-                       'cmd'  : "init; svf -tap 5m570z.tap %s -progress -quiet;exit"
-            }
-            , 'axi_bitq' : {
-                       'files' : ["cpld/altera-5m570z-cpld.cfg"],
-                       'cmd' : ["interface axi_bitq; axi_bitq_config %u %u; adapter_khz %u",
-                                "init; svf -tap 5m570z.tap %s -progress -quiet;exit"]
-            }
+CONFIGS = {
+    'sysfsgpio' : {
+        'files'  : ["interface/sysfsgpio-ettus-magnesium-dba.cfg",
+                    "interface/sysfsgpio-ettus-magnesium-dbb.cfg",
+                    "cpld/altera-5m570z-cpld.cfg"],
+        'cmd'  : "init; svf -tap 5m570z.tap %s -progress -quiet;exit"
+    },
+    'axi_bitq' : {
+        'files' : ["cpld/altera-5m570z-cpld.cfg"],
+        'cmd' : ["interface axi_bitq; axi_bitq_config %u %u; adapter_khz %u",
+                 "init; svf -tap 5m570z.tap %s -progress -quiet;exit"]
+    }
 }
 
-AXI_BITQ_ADAPTER_SPEED=8000
-AXI_BITQ_BUS_CLK=40000000
+AXI_BITQ_ADAPTER_SPEED = 8000
+AXI_BITQ_BUS_CLK = 40000000
 
 def check_openocd_files(files, logger=None):
     """
@@ -62,7 +63,11 @@ def check_fpga_state(which=0):
         return False
 
 def find_axi_bitq_uio(dboard):
-    assert(dboard < 2 and dboard >= 0)
+    """
+    Find the AXI Bitq UIO device
+    :param dboard: the dboard, can be either 0 or 1
+    """
+    assert dboard < 2 and dboard >= 0
     label = 'dboard-jtag-%u' % dboard
 
     logger = get_logger('update_cpld')
@@ -71,20 +76,20 @@ def find_axi_bitq_uio(dboard):
         context = pyudev.Context()
         uios = [dev for dev in context.list_devices(subsystem="uio")]
         for uio in uios:
-            l = uio.attributes.asstring('maps/map0/name')
-            logger.trace("UIO label: {}, match: {} number: {}".format(l, l == label, uio.sys_number))
-            if (l == label):
+            uio_label = uio.attributes.asstring('maps/map0/name')
+            logger.trace("UIO label: {}, match: {} number: {}".format(
+                uio_label, uio_label == label, uio.sys_number))
+            if uio_label == label:
                 return int(uio.sys_number)
     except OSError as ex:
         logger.error("Error while looking for axi_bitq uio nodes: {}".format(ex))
-        return None
+        return -1
 
 def do_update_cpld(filename, daughterboards):
     """
     Carry out update process for the CPLD
     :param filename: path (on device) to the new CPLD image
     :param daughterboards: iterable containing dboard numbers to update
-    :param force: bool, ignore issues during update process
     :return: True on success, False otherwise
     """
     logger = get_logger('update_cpld')
@@ -98,8 +103,6 @@ def do_update_cpld(filename, daughterboards):
         logger.error("CPLD image file {} not found".format(filename))
         return False
 
-
-    # If we don't want to force this, check that the FPGA is operational
     if not check_fpga_state():
         logger.error("CPLD lines are routed through fabric, FPGA is not programmed, giving up")
         return False
@@ -128,8 +131,9 @@ def do_update_cpld(filename, daughterboards):
                    "-c", config['cmd'] % filename]
         else:
             uio_id = find_axi_bitq_uio(int(dboard, 10))
-            if not uio_id:
-                logger.error("Failed to find axi_bitq uio devices, make sure overlays are up to date")
+            if uio_id < 0:
+                logger.error("Failed to find axi_bitq uio devices, \
+                             make sure overlays are up to date")
                 continue
             cmd = ["openocd",
                    "-c", config['cmd'][0] % (uio_id, AXI_BITQ_BUS_CLK, AXI_BITQ_ADAPTER_SPEED),
@@ -163,10 +167,11 @@ def main():
     args = parse_args()
     dboards = args.dboards.split(",")
     if any([x not in ('0', '1') for x in dboards]):
-        log.error("Unsupported dboards requested: {}".format(dboards))
+        log.error("Unsupported dboards requested: %s", dboards)
         return False
-    else:
-        return do_update_cpld(args.file, dboards)
+
+    return do_update_cpld(args.file, dboards)
+
 
 if __name__ == "__main__":
     exit(not main())
