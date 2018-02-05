@@ -383,8 +383,12 @@ double magnesium_radio_ctrl_impl::set_rx_bandwidth(
         const size_t chan
 ) {
     std::lock_guard<std::mutex> l(_set_lock);
-    radio_ctrl_impl::set_rx_bandwidth(bandwidth, chan);
-    return _ad9371->set_bandwidth(bandwidth, chan, RX_DIRECTION);
+    _ad9371->set_bandwidth(bandwidth, chan, RX_DIRECTION);
+    // FIXME: setting analog bandwidth on AD9371 take no effect.
+    // Remove this warning when ADI can confirm that it works.
+    UHD_LOG_WARNING(unique_id(),
+        "set_tx_bandwidth take no effect on AD9371. Default analog bandwidth is 100MHz");
+    return AD9371_RX_MAX_BANDWIDTH;
 }
 
 double magnesium_radio_ctrl_impl::set_tx_bandwidth(
@@ -392,8 +396,12 @@ double magnesium_radio_ctrl_impl::set_tx_bandwidth(
         const size_t chan
 ) {
     std::lock_guard<std::mutex> l(_set_lock);
-    //radio_ctrl_impl::set_rx_bandwidth(bandwidth, chan);
-    return _ad9371->set_bandwidth(bandwidth, chan, TX_DIRECTION);
+    _ad9371->set_bandwidth(bandwidth, chan, TX_DIRECTION);
+    // FIXME: setting analog bandwidth on AD9371 take no effect.
+    // Remove this warning when ADI can confirm that it works.
+    UHD_LOG_WARNING(unique_id(),
+        "set_tx_bandwidth take no effect on AD9371. Default analog bandwidth is 100MHz");
+    return AD9371_TX_MAX_BANDWIDTH ;
 }
 
 double magnesium_radio_ctrl_impl::set_tx_gain(

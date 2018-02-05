@@ -73,9 +73,10 @@ double magnesium_ad9371_iface::set_gain(
 
 double magnesium_ad9371_iface::set_bandwidth(const double bandwidth, const size_t chan, const direction_t dir)
 {
-    // TODO: implement
-    UHD_LOG_WARNING(_L, "Ignoring attempt to set bandwidth");
-    return 0.0;
+    auto const which = _get_which(dir, chan);
+    auto retval = request<double>("set_bw_filter", which, bandwidth);
+    UHD_LOG_TRACE(_L, _rpc_prefix << "set_bw_filter returned " << retval);
+    return retval;
 }
 
 double magnesium_ad9371_iface::get_frequency(

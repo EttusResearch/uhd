@@ -13,6 +13,12 @@
 
 static constexpr size_t FPGPIO_MASTER_RADIO = 0;
 
+static constexpr double AD9371_RX_MIN_BANDWIDTH = 20.0e6;  // HZ
+static constexpr double AD9371_RX_MAX_BANDWIDTH = 100.0e6; // HZ
+
+static constexpr double AD9371_TX_MIN_BANDWIDTH = 20.0e6;  // HZ
+static constexpr double AD9371_TX_MAX_BANDWIDTH = 100.0e6; // HZ
+
 static constexpr double AD9371_MIN_FREQ = 300.0e6; // Hz
 static constexpr double AD9371_MAX_FREQ = 6.0e9; // Hz
 

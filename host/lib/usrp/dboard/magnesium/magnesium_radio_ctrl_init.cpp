@@ -26,7 +26,7 @@ namespace {
     };
 
     constexpr double MAGNESIUM_DEFAULT_FREQ         = 2.5e9; // Hz
-    constexpr double MAGNESIUM_DEFAULT_BANDWIDTH    = 40e6; // Hz
+    constexpr double MAGNESIUM_DEFAULT_BANDWIDTH    = 100e6; // Hz
     constexpr char   MAGNESIUM_DEFAULT_RX_ANTENNA[] = "RX2";
     constexpr char   MAGNESIUM_DEFAULT_TX_ANTENNA[] = "TX/RX";
 
@@ -286,16 +286,13 @@ void magnesium_radio_ctrl_impl::_init_frontend_subtree(
     ;
     // TX bandwidth
     subtree->create<double>(tx_fe_path / "bandwidth" / "value")
+        .set(AD9371_TX_MAX_BANDWIDTH)
         .set_coercer([this, chan_idx](const double bw){
             return this->set_tx_bandwidth(bw, chan_idx);
         })
-        .set_publisher([this, chan_idx](){
-            //return this->get_tx_bandwidth(chan_idx);
-            return 0.0; // FIXME
-        })
     ;
     subtree->create<meta_range_t>(tx_fe_path / "bandwidth" / "range")
-        .set(meta_range_t(0.0, 0.0, 0.0)) // FIXME
+        .set(meta_range_t(AD9371_TX_MIN_BANDWIDTH, AD9371_TX_MAX_BANDWIDTH))
         .add_coerced_subscriber([](const meta_range_t &){
             throw uhd::runtime_error(
                 "Attempting to update bandwidth range!");
@@ -303,15 +300,13 @@ void magnesium_radio_ctrl_impl::_init_frontend_subtree(
     ;
     // RX bandwidth
     subtree->create<double>(rx_fe_path / "bandwidth" / "value")
+        .set(AD9371_RX_MAX_BANDWIDTH)
         .set_coercer([this, chan_idx](const double bw){
             return this->set_rx_bandwidth(bw, chan_idx);
         })
-        .set_publisher([this, chan_idx](){
-            return this->get_rx_bandwidth(chan_idx);
-        })
     ;
     subtree->create<meta_range_t>(rx_fe_path / "bandwidth" / "range")
-        .set(meta_range_t(0.0, 0.0, 0.0)) // FIXME
+        .set(meta_range_t(AD9371_RX_MIN_BANDWIDTH, AD9371_RX_MAX_BANDWIDTH))
         .add_coerced_subscriber([](const meta_range_t &){
             throw uhd::runtime_error(
                 "Attempting to update bandwidth range!");
