@@ -572,11 +572,29 @@ double ad937x_device::tune(
 
 double ad937x_device::set_bw_filter(
         const direction_t direction,
-        const chain_t chain,
         const double value
 ) {
-    // TODO: implement
-    return double();
+
+    switch (direction)
+    {
+        case TX_DIRECTION:
+        {
+            mykonos_config.device->tx->txProfile->rfBandwidth_Hz = value;
+            mykonos_config.device->tx->txProfile->txBbf3dBCorner_kHz = value/1000;
+            mykonos_config.device->tx->txProfile->txDac3dBCorner_kHz = value/1000;
+            break;
+        }
+        case RX_DIRECTION:
+        {
+            mykonos_config.device->rx->rxProfile->rfBandwidth_Hz = value;
+            mykonos_config.device->rx->rxProfile->rxBbf3dBCorner_kHz = value/1000;
+            break;
+        }
+    }
+    const auto state = _move_to_config_state();
+    CALL_API(MYKONOS_writeArmProfile(mykonos_config.device));
+    _restore_from_config_state(state);
+    return value; // TODO: what is coercer value?
 }
 
 

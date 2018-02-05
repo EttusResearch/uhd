@@ -363,8 +363,9 @@ public:
 
     virtual double set_bw_filter(const std::string &which, const double value)
     {
-        // TODO implement
-        return double();
+        const auto dir = _get_direction_from_antenna(which);
+        std::lock_guard<std::mutex> lock(*spi_mutex);
+        return device.set_bw_filter(dir, value);
     }
 
     virtual double set_gain(const std::string &which, const double value)

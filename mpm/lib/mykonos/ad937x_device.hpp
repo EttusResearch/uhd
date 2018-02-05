@@ -79,7 +79,6 @@ public:
 
     double set_bw_filter(
             const uhd::direction_t direction,
-            const mpm::ad937x::device::chain_t chain,
             const double value
     );
     void set_agc_mode(
