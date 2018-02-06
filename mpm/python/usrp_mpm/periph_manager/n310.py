@@ -21,7 +21,7 @@ from builtins import object
 from usrp_mpm.gpsd_iface import GPSDIface
 from usrp_mpm.periph_manager import PeriphManagerBase
 from usrp_mpm.mpmtypes import SID
-from usrp_mpm.mpmutils import assert_compat_number
+from usrp_mpm.mpmutils import assert_compat_number, str2bool
 from usrp_mpm.rpc_server import no_rpc
 from usrp_mpm.sys_utils import dtoverlay
 from usrp_mpm.sys_utils.sysfs_gpio import SysFSGPIO, GPIOBank
@@ -537,12 +537,12 @@ class n310(PeriphManagerBase):
         self._gpios.set("PWREN-CLK-MGT156MHz")
         self.enable_1g_ref_clock()
         self.enable_gps(
-            enable=bool(
+            enable=str2bool(
                 args.default_args.get('enable_gps', N3XX_DEFAULT_ENABLE_GPS)
             )
         )
         self.enable_fp_gpio(
-            enable=bool(
+            enable=str2bool(
                 args.default_args.get(
                     'enable_fp_gpio',
                     N3XX_DEFAULT_ENABLE_FPGPIO
