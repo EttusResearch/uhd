@@ -1,5 +1,5 @@
 //
-// Copyright 2017 Ettus Research, a National Instruments Company
+// Copyright 2017-2018 Ettus Research, a National Instruments Company
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -21,6 +21,8 @@ static void usrp_sulfur_db_eeprom_print_id(struct usrp_sulfur_db_eeprom *ep)
 		printf("product=ni,magnesium-rev%x\n", rev + 1);
 	else if (ntohs(ep->pid) == 0x180)
 		printf("product=ni,eiscat-rev%x\n", rev + 1);
+	else if (ntohs(ep->pid) == 0x152)
+		printf("product=ni,rhodium-rev%x\n", rev + 1);
 	else
 		printf("product=unknown-(%04x)\n", ep->pid);
 
