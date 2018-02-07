@@ -721,7 +721,9 @@ class N310BIST(object):
             if 'temp' in device.attributes.available_attributes \
                     and device.attributes.get('temp') is not None
         }
-        return len(result) >= 1, result
+        if len(result) < 1:
+            result['error_msg'] = "No temperature sensors found!"
+        return 'error_msg' not in result, result
 
     def bist_fan(self):
         """
