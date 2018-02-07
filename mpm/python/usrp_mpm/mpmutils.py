@@ -141,4 +141,12 @@ def assert_compat_number(
     return
 
 def str2bool(value):
-      return value.lower() in ("yes", "true", "t", "1")
+    """Return a Boolean value from a string, even if the string is not simply
+    'True' or 'False'. For non-string values, this will do a simple default
+    coercion to bool.
+    """
+    try:
+        return value.lower() in ("yes", "true", "t", "1")
+    except AttributeError:
+        return bool(value)
+
