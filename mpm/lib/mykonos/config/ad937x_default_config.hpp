@@ -312,8 +312,8 @@ static const mykonosRxProfile_t DEFAULT_ORX_PROFILE =
 
 static const mykonosArmGpioConfig_t DEFAULT_ARM_GPIO =
 {
-    0,  // useRx2EnablePin; //!< 0= RX1_ENABLE controls RX1 and RX2, 1 = separate RX1_ENABLE/RX2_ENABLE pins
-    0,  // useTx2EnablePin; //!< 0= TX1_ENABLE controls TX1 and TX2, 1 = separate TX1_ENABLE/TX2_ENABLE pins
+    1,  // useRx2EnablePin; //!< 0= RX1_ENABLE controls RX1 and RX2, 1 = separate RX1_ENABLE/RX2_ENABLE pins
+    1,  // useTx2EnablePin; //!< 0= TX1_ENABLE controls TX1 and TX2, 1 = separate TX1_ENABLE/TX2_ENABLE pins
     0,  // txRxPinMode;     //!< 0= ARM command mode, 1 = Pin mode to power up Tx/Rx chains
     0,  // orxPinMode;      //!< 0= ARM command mode, 1 = Pin mode to power up ObsRx receiver
 
