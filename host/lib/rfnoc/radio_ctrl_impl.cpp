@@ -6,13 +6,13 @@
 
 #include "wb_iface_adapter.hpp"
 #include <boost/format.hpp>
-#include <boost/bind.hpp>
 #include <uhd/convert.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/direction.hpp>
 #include "radio_ctrl_impl.hpp"
 #include "../../transport/super_recv_packet_handler.hpp"
+#include <tuple>
 
 using namespace uhd;
 using namespace uhd::rfnoc;
@@ -46,33 +46,25 @@ radio_ctrl_impl::radio_ctrl_impl() :
         _register_loopback_self_test(i);
         _perifs[i].ctrl = boost::make_shared<wb_iface_adapter>(
             // poke32 functor
-            boost::bind(
-                static_cast< void (block_ctrl_base::*)(const uint32_t, const uint32_t, const size_t) >(&block_ctrl_base::sr_write),
-                this, _1, _2, i
-            ),
+            [this, i](const uint32_t addr, const uint32_t data){
+                this->sr_write(addr, data, i);
+            },
             // peek32 functor
-            boost::bind(
-                static_cast< uint32_t (block_ctrl_base::*)(const uint32_t, const size_t) >(&block_ctrl_base::user_reg_read32),
-                this,
-                _1, i
-            ),
+            [this, i](const uint32_t addr){
+                return this->user_reg_read32(addr, i);
+            },
             // peek64 functor
-            boost::bind(
-                static_cast< uint64_t (block_ctrl_base::*)(const uint32_t, const size_t) >(&block_ctrl_base::user_reg_read64),
-                this,
-                _1, i
-            ),
+            [this, i](const uint32_t addr){
+                return this->user_reg_read64(addr, i);
+            },
             // get_time functor
-            boost::bind(
-                static_cast< time_spec_t (block_ctrl_base::*)(const size_t) >(&block_ctrl_base::get_command_time),
-                this, i
-            ),
+            [this, i](){
+                return this->get_command_time(i);
+            },
             // set_time functor
-            boost::bind(
-                static_cast< void (block_ctrl_base::*)(const time_spec_t&, const size_t) >(&block_ctrl_base::set_command_time),
-                this,
-                _1, i
-            )
+            [this, i](const time_spec_t& time_spec){
+                this->set_command_time(time_spec, i);
+            }
         );
 
         // FIXME there's currently no way to set the underflow policy
@@ -81,7 +73,11 @@ radio_ctrl_impl::radio_ctrl_impl() :
             time_core_3000::readback_bases_type time64_rb_bases;
             time64_rb_bases.rb_now = regs::RB_TIME_NOW;
             time64_rb_bases.rb_pps = regs::RB_TIME_PPS;
-            _time64 = time_core_3000::make(_perifs[i].ctrl, regs::sr_addr(regs::TIME), time64_rb_bases);
+            _time64 = time_core_3000::make(
+                _perifs[i].ctrl,
+                regs::sr_addr(regs::TIME),
+                time64_rb_bases
+            );
             this->set_time_now(0.0);
         }
 
@@ -94,32 +90,40 @@ radio_ctrl_impl::radio_ctrl_impl() :
     ////////////////////////////////////////////////////////////////////
     if (not _tree->exists(fs_path("time") / "now")) {
         _tree->create<time_spec_t>(fs_path("time") / "now")
-            .set_publisher(boost::bind(&radio_ctrl_impl::get_time_now, this))
+            .set_publisher([this](){ return this->get_time_now(); })
         ;
     }
     if (not _tree->exists(fs_path("time") / "pps")) {
         _tree->create<time_spec_t>(fs_path("time") / "pps")
-            .set_publisher(boost::bind(&radio_ctrl_impl::get_time_last_pps, this))
+            .set_publisher([this](){ return this->get_time_last_pps(); })
         ;
     }
     if (not _tree->exists(fs_path("time") / "cmd")) {
         _tree->create<time_spec_t>(fs_path("time") / "cmd");
     }
     _tree->access<time_spec_t>(fs_path("time") / "now")
-        .add_coerced_subscriber(boost::bind(&radio_ctrl_impl::set_time_now, this, _1))
+        .add_coerced_subscriber([this](const time_spec_t& time_spec){
+            this->set_time_now(time_spec);
+        })
     ;
     _tree->access<time_spec_t>(fs_path("time") / "pps")
-        .add_coerced_subscriber(boost::bind(&radio_ctrl_impl::set_time_next_pps, this, _1))
+        .add_coerced_subscriber([this](const time_spec_t& time_spec){
+            this->set_time_next_pps(time_spec);
+        })
     ;
     for (size_t i = 0; i < _get_num_radios(); i++) {
         _tree->access<time_spec_t>("time/cmd")
-            .add_coerced_subscriber(boost::bind(&block_ctrl_base::set_command_tick_rate, this, boost::ref(_tick_rate), i))
-            .add_coerced_subscriber(boost::bind(&block_ctrl_base::set_command_time, this, _1, i))
+            .add_coerced_subscriber([this, i](const time_spec_t& time_spec){
+                this->set_command_tick_rate(this->_tick_rate, i);
+                this->set_command_time(time_spec, i);
+            })
         ;
     }
     // spp gets created in the XML file
     _tree->access<int>(get_arg_path("spp") / "value")
-        .add_coerced_subscriber(boost::bind(&radio_ctrl_impl::_update_spp, this, _1))
+        .add_coerced_subscriber([this](const int spp){
+            this->_update_spp(spp);
+        })
         .update()
     ;
 }
@@ -134,7 +138,10 @@ void radio_ctrl_impl::_register_loopback_self_test(size_t chan)
         uint32_t result = user_reg_read32(regs::RB_TEST, chan);
         if (result != uint32_t(hash)) {
             UHD_LOGGER_ERROR("RFNOC RADIO") << "Register loopback test failed";
-            UHD_LOGGER_ERROR("RFNOC RADIO") << boost::format("expected: %x result: %x") % uint32_t(hash) % result ;
+            UHD_LOGGER_ERROR("RFNOC RADIO")
+                << boost::format("expected: %x result: %x")
+                   % uint32_t(hash) % result
+            ;
             return; // exit on any failure
         }
     }
@@ -146,7 +153,7 @@ void radio_ctrl_impl::_register_loopback_self_test(size_t chan)
  ***************************************************************************/
 double radio_ctrl_impl::set_rate(double rate)
 {
-    boost::mutex::scoped_lock lock(_mutex);
+    std::lock_guard<std::mutex> lock(_mutex);
     _tick_rate = rate;
     _time64->set_tick_rate(_tick_rate);
     _time64->self_test();
@@ -364,41 +371,51 @@ double radio_ctrl_impl::get_tx_lo_freq(
  * RX Streamer-related methods (from source_block_ctrl_base)
  **********************************************************************/
 //! Pass stream commands to the radio
-void radio_ctrl_impl::issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd, const size_t chan)
-{
-    boost::mutex::scoped_lock lock(_mutex);
-    UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::issue_stream_cmd() " << chan << " " << char(stream_cmd.stream_mode) ;
+void radio_ctrl_impl::issue_stream_cmd(
+    const uhd::stream_cmd_t &stream_cmd,
+    const size_t chan
+) {
+    std::lock_guard<std::mutex> lock(_mutex);
+    UHD_RFNOC_BLOCK_TRACE()
+        << "radio_ctrl_impl::issue_stream_cmd() " << chan
+        << " " << char(stream_cmd.stream_mode) ;
     if (not _is_streamer_active(uhd::RX_DIRECTION, chan)) {
-        UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::issue_stream_cmd() called on inactive channel. Skipping." ;
+        UHD_RFNOC_BLOCK_TRACE()
+            << "radio_ctrl_impl::issue_stream_cmd() called on inactive "
+               "channel. Skipping.";
         return;
     }
     UHD_ASSERT_THROW(stream_cmd.num_samps <= 0x0fffffff);
-    _continuous_streaming[chan] = (stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
+    _continuous_streaming[chan] =
+        (stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
 
     //setup the mode to instruction flags
-    typedef boost::tuple<bool, bool, bool, bool> inst_t;
-    static const uhd::dict<stream_cmd_t::stream_mode_t, inst_t> mode_to_inst = boost::assign::map_list_of
+    typedef std::tuple<bool, bool, bool, bool> inst_t;
+    static const std::map<stream_cmd_t::stream_mode_t, inst_t> mode_to_inst{
                                                             //reload, chain, samps, stop
-        (stream_cmd_t::STREAM_MODE_START_CONTINUOUS,   inst_t(true,  true,  false, false))
-        (stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS,    inst_t(false, false, false, true))
-        (stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE, inst_t(false, false, true,  false))
-        (stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE, inst_t(false, true,  true,  false))
+        {stream_cmd_t::STREAM_MODE_START_CONTINUOUS,   inst_t(true,  true,  false, false)},
+        {stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS,    inst_t(false, false, false, true)},
+        {stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE, inst_t(false, false, true,  false)},
+        {stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE, inst_t(false, true,  true,  false)}
+    }
     ;
 
     //setup the instruction flag values
     bool inst_reload, inst_chain, inst_samps, inst_stop;
-    boost::tie(inst_reload, inst_chain, inst_samps, inst_stop) = mode_to_inst[stream_cmd.stream_mode];
+    std::tie(inst_reload, inst_chain, inst_samps, inst_stop) =
+        mode_to_inst.at(stream_cmd.stream_mode);
 
     //calculate the word from flags and length
-    uint32_t cmd_word = 0;
-    cmd_word |= uint32_t((stream_cmd.stream_now)? 1 : 0) << 31;
-    cmd_word |= uint32_t((inst_chain)?            1 : 0) << 30;
-    cmd_word |= uint32_t((inst_reload)?           1 : 0) << 29;
-    cmd_word |= uint32_t((inst_stop)?             1 : 0) << 28;
-    cmd_word |= (inst_samps)? stream_cmd.num_samps : ((inst_stop)? 0 : 1);
+    const uint32_t cmd_word = 0
+        | uint32_t((stream_cmd.stream_now)? 1 : 0) << 31
+        | uint32_t((inst_chain)?            1 : 0) << 30
+        | uint32_t((inst_reload)?           1 : 0) << 29
+        | uint32_t((inst_stop)?             1 : 0) << 28
+        | (inst_samps) ? stream_cmd.num_samps : ((inst_stop)? 0 : 1);
 
     //issue the stream command
-    const uint64_t ticks = (stream_cmd.stream_now)? 0 : stream_cmd.time_spec.to_ticks(get_rate());
+    const uint64_t ticks =
+        (stream_cmd.stream_now)? 0 : stream_cmd.time_spec.to_ticks(get_rate());
     sr_write(regs::RX_CTRL_CMD, cmd_word, chan);
     sr_write(regs::RX_CTRL_TIME_HI, uint32_t(ticks >> 32), chan);
     sr_write(regs::RX_CTRL_TIME_LO, uint32_t(ticks >> 0),  chan); //latches the command
@@ -459,7 +476,7 @@ void radio_ctrl_impl::set_tx_streamer(bool active, const size_t port)
 // TODO move to nocscript
 void radio_ctrl_impl::_update_spp(int spp)
 {
-    boost::mutex::scoped_lock lock(_mutex);
+    std::lock_guard<std::mutex> lock(_mutex);
     UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::_update_spp(): Requested spp: " << spp ;
     if (spp == 0) {
         spp = DEFAULT_PACKET_SIZE / BYTES_PER_SAMPLE;

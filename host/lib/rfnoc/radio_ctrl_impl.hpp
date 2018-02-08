@@ -14,6 +14,7 @@
 #include <uhd/rfnoc/radio_ctrl.hpp>
 #include <uhd/types/direction.hpp>
 #include <boost/thread.hpp>
+#include <mutex>
 
 //! Shorthand for radio block constructor
 #define UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR_DECL(CLASS_NAME) \
@@ -209,7 +210,7 @@ protected: // TODO see what's protected and what's private
     //! There is always only one time core per radio
     time_core_3000::sptr         _time64;
 
-    boost::mutex _mutex;
+    std::mutex _mutex;
 
 private:
     /************************************************************************
