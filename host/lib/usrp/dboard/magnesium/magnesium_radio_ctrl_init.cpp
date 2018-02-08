@@ -290,6 +290,9 @@ void magnesium_radio_ctrl_impl::_init_frontend_subtree(
         .set_coercer([this, chan_idx](const double bw){
             return this->set_tx_bandwidth(bw, chan_idx);
         })
+        .set_publisher([this, chan_idx](){
+            return this->get_tx_bandwidth(chan_idx);
+        })
     ;
     subtree->create<meta_range_t>(tx_fe_path / "bandwidth" / "range")
         .set(meta_range_t(AD9371_TX_MIN_BANDWIDTH, AD9371_TX_MAX_BANDWIDTH))
@@ -326,11 +329,15 @@ void magnesium_radio_ctrl_impl::_init_frontend_subtree(
             throw uhd::runtime_error(
                 "Attempting to update gain range!");
         })
-        .set_publisher([this, chan_idx](){
+        .set_publisher([this](){
             if (_gain_profile[TX_DIRECTION] == "manual") {
                 return meta_range_t(0.0, 0.0, 0.0);
-            }else{
-                return meta_range_t(ALL_TX_MIN_GAIN, ALL_TX_MAX_GAIN, ALL_TX_GAIN_STEP);
+            } else {
+                return meta_range_t(
+                    ALL_TX_MIN_GAIN,
+                    ALL_TX_MAX_GAIN,
+                    ALL_TX_GAIN_STEP
+                );
             }
         })
     ;
@@ -339,7 +346,7 @@ void magnesium_radio_ctrl_impl::_init_frontend_subtree(
             .set(boost::assign::list_of("manual")("default"));
 
     subtree->create<std::string>(tx_fe_path / "gains/all/profile/value")
-        .set_coercer([this, chan_idx](const std::string& profile){
+        .set_coercer([this](const std::string& profile){
             std::string return_profile = profile;
             if (std::find(MAGNESIUM_GP_OPTIONS.begin(),
                          MAGNESIUM_GP_OPTIONS.end(),
@@ -351,7 +358,7 @@ void magnesium_radio_ctrl_impl::_init_frontend_subtree(
             _gain_profile[TX_DIRECTION] = return_profile;
             return return_profile;
         })
-        .set_publisher([this, chan_idx](){
+        .set_publisher([this](){
             return _gain_profile[TX_DIRECTION];
         })
     ;
@@ -371,11 +378,15 @@ void magnesium_radio_ctrl_impl::_init_frontend_subtree(
             throw uhd::runtime_error(
                 "Attempting to update gain range!");
         })
-        .set_publisher([this, chan_idx](){
+        .set_publisher([this](){
             if (_gain_profile[RX_DIRECTION] == "manual") {
                 return meta_range_t(0.0, 0.0, 0.0);
-            }else{
-                return meta_range_t(ALL_RX_MIN_GAIN, ALL_RX_MAX_GAIN, ALL_RX_GAIN_STEP);
+            } else {
+                return meta_range_t(
+                    ALL_RX_MIN_GAIN,
+                    ALL_RX_MAX_GAIN,
+                    ALL_RX_GAIN_STEP
+                );
             }
         })
     ;
@@ -384,7 +395,7 @@ void magnesium_radio_ctrl_impl::_init_frontend_subtree(
             .set(MAGNESIUM_GP_OPTIONS);
 
     subtree->create<std::string>(rx_fe_path / "gains/all/profile/value")
-        .set_coercer([this, chan_idx](const std::string& profile){
+        .set_coercer([this](const std::string& profile){
             std::string return_profile = profile;
             if (std::find(MAGNESIUM_GP_OPTIONS.begin(),
                          MAGNESIUM_GP_OPTIONS.end(),
@@ -396,7 +407,7 @@ void magnesium_radio_ctrl_impl::_init_frontend_subtree(
             _gain_profile[RX_DIRECTION] = return_profile;
             return return_profile;
         })
-        .set_publisher([this, chan_idx](){
+        .set_publisher([this](){
             return _gain_profile[RX_DIRECTION];
         })
     ;
@@ -416,10 +427,14 @@ void magnesium_radio_ctrl_impl::_init_frontend_subtree(
             throw uhd::runtime_error(
                 "Attempting to update gain range!");
         })
-        .set_publisher([this, chan_idx](){
+        .set_publisher([this](){
             if (_gain_profile[TX_DIRECTION] == "manual") {
-                return meta_range_t(AD9371_MIN_TX_GAIN, AD9371_MAX_TX_GAIN, AD9371_TX_GAIN_STEP);
-            }else{
+                return meta_range_t(
+                    AD9371_MIN_TX_GAIN,
+                    AD9371_MAX_TX_GAIN,
+                    AD9371_TX_GAIN_STEP
+                );
+            } else {
                 return meta_range_t(0.0, 0.0, 0.0);
             }
         })
@@ -439,7 +454,7 @@ void magnesium_radio_ctrl_impl::_init_frontend_subtree(
             throw uhd::runtime_error(
                 "Attempting to update gain range!");
         })
-        .set_publisher([this, chan_idx](){
+        .set_publisher([this](){
             if (_gain_profile[TX_DIRECTION] == "manual") {
                 return meta_range_t(DSA_MIN_GAIN, DSA_MAX_GAIN, DSA_GAIN_STEP);
             }else{
@@ -462,7 +477,7 @@ void magnesium_radio_ctrl_impl::_init_frontend_subtree(
             throw uhd::runtime_error(
                 "Attempting to update gain range!");
         })
-        .set_publisher([this, chan_idx](){
+        .set_publisher([this](){
             if (_gain_profile[TX_DIRECTION] == "manual") {
                 return meta_range_t(AMP_MIN_GAIN, AMP_MAX_GAIN, AMP_GAIN_STEP);
             }else{
@@ -487,10 +502,14 @@ void magnesium_radio_ctrl_impl::_init_frontend_subtree(
             throw uhd::runtime_error(
                 "Attempting to update gain range!");
         })
-        .set_publisher([this, chan_idx](){
+        .set_publisher([this](){
             if (_gain_profile[RX_DIRECTION] == "manual") {
-                return meta_range_t(AD9371_MIN_RX_GAIN, AD9371_MAX_RX_GAIN, AD9371_RX_GAIN_STEP);
-            }else{
+                return meta_range_t(
+                    AD9371_MIN_RX_GAIN,
+                    AD9371_MAX_RX_GAIN,
+                    AD9371_RX_GAIN_STEP
+                );
+            } else {
                 return meta_range_t(0.0, 0.0, 0.0);
             }
         })
@@ -511,7 +530,7 @@ void magnesium_radio_ctrl_impl::_init_frontend_subtree(
             throw uhd::runtime_error(
                 "Attempting to update gain range!");
         })
-        .set_publisher([this, chan_idx](){
+        .set_publisher([this](){
             if (_gain_profile[RX_DIRECTION] == "manual") {
                 return meta_range_t(DSA_MIN_GAIN, DSA_MAX_GAIN, DSA_MAX_GAIN);
             }else{
@@ -535,7 +554,7 @@ void magnesium_radio_ctrl_impl::_init_frontend_subtree(
             throw uhd::runtime_error(
                 "Attempting to update gain range!");
         })
-        .set_publisher([this, chan_idx](){
+        .set_publisher([this](){
             if (_gain_profile[RX_DIRECTION] == "manual") {
                 return meta_range_t(AMP_MIN_GAIN, AMP_MAX_GAIN, AMP_GAIN_STEP);
             }else{
