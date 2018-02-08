@@ -87,7 +87,6 @@ class MultiUSRP(lib.usrp.multi_usrp):
         :param gain: TX gain (dB)
         :return: the number of transmitted samples
         """
-        super(MultiUSRP, self).set_tx_rate(rate)
         for chan in channels:
             super(MultiUSRP, self).set_tx_rate(rate, chan)
             super(MultiUSRP, self).set_tx_freq(lib.types.tune_request(freq), chan)
