@@ -49,6 +49,7 @@ public:
     virtual double set_rx_frequency(const double freq, const size_t chan);
     virtual double set_tx_gain(const double gain, const size_t chan);
     virtual double set_rx_gain(const double gain, const size_t chan);
+    virtual double set_tx_bandwidth(const double bandwidth, const size_t chan);
     virtual double set_rx_bandwidth(const double bandwidth, const size_t chan);
 
     virtual double get_rate() const;
@@ -58,6 +59,7 @@ public:
     virtual double get_rx_frequency(const size_t) /* const */;
     virtual double get_tx_gain(const size_t) /* const */;
     virtual double get_rx_gain(const size_t) /* const */;
+    virtual double get_tx_bandwidth(const size_t) /* const */;
     virtual double get_rx_bandwidth(const size_t) /* const */;
 
     virtual std::vector<std::string> get_rx_lo_names(const size_t chan);
@@ -231,6 +233,7 @@ private:
     std::map<size_t, double> _rx_freq;
     std::map<size_t, double> _tx_gain;
     std::map<size_t, double> _rx_gain;
+    std::map<size_t, double> _tx_bandwidth;
     std::map<size_t, double> _rx_bandwidth;
 
     std::vector<bool> _continuous_streaming;

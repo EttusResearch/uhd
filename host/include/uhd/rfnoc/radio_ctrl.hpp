@@ -154,6 +154,23 @@ public:
      *
      * \return The actual bandwidth value
      */
+    virtual double get_tx_bandwidth(const size_t chan) = 0;
+
+    /*! Set the analog filter bandwidth channel \p chan
+     *
+     * This function will attempt to set the analog bandwidth.
+     *
+     * \return The actual bandwidth value
+     */
+    virtual double set_tx_bandwidth(
+        const double bandwidth,
+        const size_t chan
+    ) = 0;
+
+    /*! Return the analog filter bandwidth channel \p chan
+     *
+     * \return The actual bandwidth value
+     */
     virtual double get_rx_bandwidth(const size_t chan) = 0;
 
     /*! Set the analog filter bandwidth channel \p chan

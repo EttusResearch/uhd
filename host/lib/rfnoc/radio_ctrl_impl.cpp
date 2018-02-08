@@ -184,6 +184,13 @@ double radio_ctrl_impl::set_rx_gain(const double gain, const size_t chan)
     return _rx_gain[chan] = gain;
 }
 
+double radio_ctrl_impl::set_tx_bandwidth(
+        const double bandwidth,
+        const size_t chan
+) {
+    return _tx_bandwidth[chan] = bandwidth;
+}
+
 double radio_ctrl_impl::set_rx_bandwidth(const double bandwidth, const size_t chan)
 {
     return _rx_bandwidth[chan] = bandwidth;
@@ -227,6 +234,11 @@ double radio_ctrl_impl::get_tx_gain(const size_t chan) /* const */
 double radio_ctrl_impl::get_rx_gain(const size_t chan) /* const */
 {
     return _rx_gain[chan];
+}
+
+double radio_ctrl_impl::get_tx_bandwidth(const size_t chan) /* const */
+{
+    return _tx_bandwidth[chan];
 }
 
 double radio_ctrl_impl::get_rx_bandwidth(const size_t chan) /* const */
