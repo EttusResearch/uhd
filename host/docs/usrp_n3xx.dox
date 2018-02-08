@@ -499,5 +499,156 @@ Storing data on the EEPROM is done by loading a uhd::eeprom_map_t object into
 the property tree. On writing this property, the driver code will serialize
 the map into a binary representation that can be stored on the EEPROM.
 
+\subsection n3xx_mg_regmap FPGA Register Map
+
+The following tables describe how FPGA registers are mapped into the PS.
+This is for reference only, most users will not even have to know about this table.
+
+
+AXI Slave | Address Range         | UIO Label        | Description
+----------|-----------------------|------------------|-----------------------------------
+Slave 0   | 4000_0000 - 4000_3fff | -                | Ethernet DMA SFP0
+Slave 1   | 4000_4000 - 4000_4fff | misc-enet-regs0  | Ethernet registers SFP0
+Slave 2   | 4000_8000 - 4000_bfff | -                | Ethernet DMA SFP1
+Slave 3   | 4000_c000 - 4000_cfff | misc-enet-regs1  | Ethernet registers SFP1
+Slave 4   | 4001_0000 - 4001_3fff | mboard-regs      | Motherboard control
+Slave 5   | 4001_4000 - 4001_41ff | dboard-regs0     | Daughterboard control, slot A
+Slave 6   | 4001_8000 - 4001_bfff | dboard-regs1     | Daughterboard control, slot B
+
+
+<table>
+<caption id="multi_row">N310 Register Map</caption>
+<tr><th>AXI Slave              <th>Module                       <th>Address               <th>Name            <th>Read/Write  <th>Description
+<tr><td rowspan="1">Slave 0    <td rowspan="1">axi_eth_dma0     <td>4000_0000 - 4000_4fff <td>Ethernet DMA    <td>RW          <td>See Linux Driver
+<tr><td rowspan="44">Slave 1   <td rowspan="7">n3xx_mgt_io_core <td>4000_4000             <td>PORT_INFO       <td>RO          <td>SFP port information
+<tr>                                                            <td>[31:24]               <td>COMPAT_NUM      <td>RO          <td>-
+<tr>                                                            <td>[23:18]               <td>6'h0	      <td>RO          <td>-
+<tr>                                                            <td>[17]                  <td>activity	      <td>RO          <td>-
+<tr>                                                            <td>[16]                  <td>link_up	      <td>RO          <td>-
+<tr>                                                            <td>[15:8]                <td>mgt_protocol    <td>RO          <td>0 - None, 1 - 1G, 2 - XG, 3 - Aurora
+<tr>                                                            <td>[7:0]                 <td>PORTNUM         <td>RO          <td>-
+<tr>                           <td rowspan="8">n3xx_mgt_io_core <td>4000_4004             <td>MAC_CTRL_STATUS <td>RW          <td>Control 10gE and Aurora mac
+<tr>                                                            <td>[0]                   <td>ctrl_tx_enable (PROTOCOL = "10GbE")<td>RW<td>-
+<tr>                                                            <td>[0]                   <td>bist_checker_en (PROTOCOL = "Aurora")<td>RW<td>-
+<tr>                                                            <td>[1]                   <td>bist_gen_en    <td>RW           <td>-
+<tr>                                                            <td>[2]                   <td>bist_loopback_en<td>RW          <td>-
+<tr>                                                            <td>[8:3]                 <td>bist_gen_rate   <td>RW          <td>-
+<tr>                                                            <td>[9]                   <td>phy_areset      <td>RW          <td>-
+<tr>                                                            <td>[10]                  <td>mac_clear       <td>RW          <td>-
+<tr>                           <td>n3xx_mgt_io_core             <td>4000_4008             <td>PHY_CTRL_STATUS <td>RW          <td>Phy reset control
+<tr>                           <td rowspan="3">n3xx_mgt_io_core <td>4000_400C             <td>MAC_LED_CTL     <td>RW          <td>Used by ethtool to indicate port
+<tr>                                                            <td>[1]                   <td>identify_enable <td>RW          <td>-
+<tr>                                                            <td>[0]                   <td>identify_value  <td>RW          <td>-
+<tr>                           <td rowspan="4">mdio_master      <td>4000_4010             <td>MDIO_DATA       <td>RW          <td>-
+<tr>                                                            <td>4000_4014             <td>MDIO_ADDR       <td>RW          <td>-
+<tr>                                                            <td>4000_4018             <td>MDIO_OP         <td>RW          <td>-
+<tr>                                                            <td>4000_401C             <td>MDIO_CTRL_STATUS<td>RW          <td>-
+<tr>                           <td rowspan="4">n3xx_mgt_io_core <td>4000_4020             <td>AURORA_OVERUNS  <td>RO          <td>-
+<tr>                                                            <td>4000_4024             <td>AURORA_CHECKSUM_ERRORS<td>RO    <td>-
+<tr>                                                            <td>4000_4028             <td>AURORA_BIST_CHECKER_SAMPS<td>RO <td>-
+<tr>                                                            <td>4000_402C             <td>AURORA_BIST_CHECKER_ERRORS<td>RO<td>-
+<tr>                           <td rowspan="4">eth_switch       <td>4000_5000             <td>MAC_LSB         <td>RW          <td>Device MAC LSB
+<tr>                                                            <td>4000_5004             <td>MAC_MSB         <td>RW          <td>Device MAC MSB
+<tr>                                                            <td>4000_6000             <td>IP              <td>RW          <td>Device IP
+<tr>                                                            <td>4000_6004             <td>PORT1, PORT0    <td>RW          <td>Device UDP port
+<tr>                           <td rowspan="2">eth_dispatch     <td>4000_6008             <td>[1] ndest, [0] bcast<td>RW      <td>Enable Crossover
+<tr>                                                            <td>4000_600c             <td>[1] my_icmp_type, [0] my_icmp_code<td>
+<tr>                           <td rowspan="5">eth_switch       <td>4000_6010             <td>BRIDGE_MAC_LSB  <td>            <td>Bridge SFP ports in ARM
+<tr>                                                            <td>4000_6014             <td>BRIDGE_MAC_MSB  <td>            <td>-
+<tr>                                                            <td>4000_6018             <td>BRIDGE_IP       <td>            <td>-
+<tr>                                                            <td>4000_601c             <td>BRIDGE_PORT1, BRIDGE_PORT0<td>  <td>-
+<tr>                                                            <td>4000_6020             <td>BRIDGE_EN       <td>            <td>-
+<tr>                           <td rowspan="6">chdr_eth_framer  <td>4000_6108 onwards     <td>LOCAL_DST_IP    <td>W           <td>Destination IP, MAC, UDP for Outgoing Packet for 256 SIDs
+<tr>                                                            <td>4000_6208 onwards     <td>LOCAL_DST_UDP_MAC_MSB<td>W      <td>Destination MAC for outgoing packets (MSB)
+<tr>                                                            <td>4000_6308 onwards     <td>LOCAL_DST_MAC_LSB<td>W          <td>Destination MAC for outgoing packets (LSB)
+<tr>                                                            <td>4000_7000 onwards     <td>REMOTE_DST_IP   <td>W           <td>Destination IP, MAC, UDP for Outgoing Packet for 16 local addrs
+<tr>                                                            <td>4000_7400 onwards     <td>REMOTE_DST_UDP_MAC_HI<td>W      <td>Destination MAC (MSB)
+<tr>                                                            <td>4000_7800 onwards     <td>REMOTE_DST_MAC_LO<td>W          <td>Destination MAC (LSB)
+
+<tr><td rowspan="1">Slave 2    <td>axi_eth_dma1                 <td>4000_8000             <td>-               <td>            <td>Same as Slave 0, different base address
+
+<tr><td rowspan="3">Slave 3    <td>n3xx_mgt_io_core             <td>4000_c001 - 4000_cfff <td>-               <td>-           <td>Same as Slave 1, different base address
+<tr>                           <td>eth_dispatch                 <td>4000_d000 - 4000_dfff <td>-               <td>-           <td>Same as Slave 1, different base address
+<tr>                           <td>eth_switch                   <td>4000_e000 - 4000_efff <td>-               <td>-           <td>Same as Slave 1, different base address
+
+<tr><td rowspan="69">Slave 4   <td rowspan="22">n310_core       <td>4001_0000             <td>COMPAT_NUM      <td>R           <td>FPGA Compat Number
+<tr>                                                            <td>[31:16]               <td>Major           <td>RO          <td>-
+<tr>                                                            <td>[15:0]                <td>Minor           <td>RO          <td>-
+<tr>                                                            <td>4001_0004             <td>DATESTAMP       <td>RO          <td>-
+<tr>                                                            <td>4001_0008             <td>GIT_HASH        <td>RO          <td>-
+<tr>                                                            <td>4001_000C             <td>SCRATCH         <td>RO          <td>-
+<tr>                                                            <td>4001_0010             <td>NUM_CE          <td>RO          <td>Number of Computation Engines (RFNoC Blocks)
+<tr>                                                            <td>4001_0014             <td>NUM_IO_CE       <td>RO          <td>Number of fixed IO CEs - Radios + DMA Fifo
+<tr>                                                            <td>4001_0018             <td>CLOCK_CTRL      <td>            <td>
+<tr>                                                            <td>[0]                   <td>pps select (internal 10 MHz)<td>RW<td>One-hot encoded pps_select to use the external PPS input.
+<tr>                                                            <td>[1]                   <td>pps select (internal 25 MHz)<td>RW<td>One-hot encoded pps_select to use the internally generated PPS with a 10 MHz ref_clk.
+<tr>                                                            <td>[2]                   <td>pps select (external)<td>RW     <td>One-hot encoded pps_select to use the internally generated PPS with a 25 MHz ref_clk.
+<tr>                                                            <td>[3]                   <td>pps select (GPSDO)<td>RW        <td>One-hot encoded pps_select to use the PPS from the GPSDO input to the FPGA.
+<tr>                                                            <td>[4]                   <td>pps output enable<td>RW         <td>
+<tr>                                                            <td>[8]                   <td>ref clk mmcm reset<td>WO        <td>-
+<tr>                                                            <td>[9]                   <td>ref clk mmcm locked<td>RO       <td>-
+<tr>                                                            <td>[12]                  <td>meas clk mmcm reset<td>WO       <td>-
+<tr>                                                            <td>[13]                  <td>meas clk mmcm locked<td>RO      <td>-
+<tr>                                                            <td>4001_001C             <td>XADC_READBACK   <td>RO          <td>-
+<tr>                                                            <td>[11:0]                <td>FPGA temperature<td>RO
+<tr>                                                            <td>4001_0020             <td>BUS_CLK_RATE    <td>RO          <td>-
+<tr>                                                            <td>4001_0024             <td>BUS_CLK_COUNT   <td>RO          <td>-
+<tr>                           <td rowspan="5">axi_crossbar     <td>4001_1010             <td>XBAR_VERSION    <td>RO          <td>See crossbar kernel driver
+<tr>                                                            <td>4001_1014             <td>XBAR_NUM_PORTS  <td>RO          <td>See crossbar kernel driver
+<tr>                                                            <td>4001_1018             <td>LOCAL_ADDR      <td>RW          <td>See crossbar kernel driver
+<tr>                                                            <td>4001_1020             <td>remote_offset   <td>WO          <td>XBAR settings reg
+<tr>                                                            <td>4001_1420             <td>local_offset    <td>WO          <td>XBAR settings reg
+<tr>                           <td rowspan="7">n3xx_mgt_io_core (NPIO0)  <td>4001_0200    <td>PORT_INFO       <td>RO          <td>
+<tr>                                                            <td>4001_0204             <td>MAC_CTRL_STATUS <td>RW          <td>
+<tr>                                                            <td>4001_0208             <td>PHY_CTRL_STATUS <td>RW          <td>
+<tr>                                                            <td>4001_0220             <td>AURORA_OVERUNS  <td>RO          <td>
+<tr>                                                            <td>4001_0224             <td>AURORA_CHECKSUM_ERRORS<td>RO    <td>
+<tr>                                                            <td>4001_0228             <td>AURORA_BIST_CHECKER_SAMPS<td>RO <td>
+<tr>                                                            <td>4001_022c             <td>AURORA_BIST_CHECKER_ERRORS<td>RO<td>
+<tr>                           <td rowspan="7">n3xx_mgt_io_core (NPIO1)     <td>4001_0240 <td>PORT_INFO       <td>RO          <td>
+<tr>                                                            <td>4001_0244             <td>MAC_CTRL_STATUS <td>RW          <td>
+<tr>                                                            <td>4001_0248             <td>PHY_CTRL_STATUS <td>RW          <td>
+<tr>                                                            <td>4001_0260             <td>AURORA_OVERUNS  <td>RO          <td>
+<tr>                                                            <td>4001_0264             <td>AURORA_CHECKSUM_ERRORS<td>RO<td>
+<tr>                                                            <td>4001_0268             <td>AURORA_BIST_CHECKER_SAMPS<td>RO<td>
+<tr>                                                            <td>4001_026c             <td>AURORA_BIST_CHECKER_ERRORS<td>RO<td>
+<tr>                           <td rowspan="7">n3xx_mgt_io_core (QSFP0)     <td>4001_0280 <td>PORT_INFO<td>RO<td>
+<tr>                                                            <td>4001_0284             <td>MAC_CTRL_STATUS<td>RW<td>
+<tr>                                                            <td>4001_0288             <td>PHY_CTRL_STATUS<td>RW<td>
+<tr>                                                            <td>4001_02a0             <td>AURORA_OVERUNS<td>RO<td>
+<tr>                                                            <td>4001_02a4             <td>AURORA_CHECKSUM_ERRORS<td>RO<td>
+<tr>                                                            <td>4001_02a8             <td>AURORA_BIST_CHECKER_SAMPS<td>RO<td>
+<tr>                                                            <td>4001_02ac             <td>AURORA_BIST_CHECKER_ERRORS<td>RO<td>
+<tr>                           <td rowspan="7">n3xx_mgt_io_core (QSFP1)     <td>4001_02c0 <td>PORT_INFO<td>RO<td>
+<tr>                                                            <td>4001_02c4             <td>MAC_CTRL_STATUS<td>RW<td>
+<tr>                                                            <td>4001_02c8             <td>PHY_CTRL_STATUS<td>RW<td>
+<tr>                                                            <td>4001_02e0             <td>AURORA_OVERUNS<td>RO<td>
+<tr>                                                            <td>4001_02e4             <td>AURORA_CHECKSUM_ERRORS<td>RO<td>
+<tr>                                                            <td>4001_02e8             <td>AURORA_BIST_CHECKER_SAMPS<td>RO<td>
+<tr>                                                            <td>4001_02ec             <td>AURORA_BIST_CHECKER_ERRORS<td>RO<td>
+<tr>                           <td rowspan="7">n3xx_mgt_io_core (QSFP2)     <td>4001_0300 <td>PORT_INFO<td>RO<td>
+<tr>                                                            <td>4001_0304             <td>MAC_CTRL_STATUS<td>RW<td>
+<tr>                                                            <td>4001_0308             <td>PHY_CTRL_STATUS<td>RW<td>
+<tr>                                                            <td>4001_0320             <td>AURORA_OVERUNS<td>RO<td>
+<tr>                                                            <td>4001_0324             <td>AURORA_CHECKSUM_ERRORS<td>RO<td>
+<tr>                                                            <td>4001_0328             <td>AURORA_BIST_CHECKER_SAMPS<td>RO<td>
+<tr>                                                            <td>4001_032c             <td>AURORA_BIST_CHECKER_ERRORS<td>RO<td>
+<tr>                           <td rowspan="7">n3xx_mgt_io_core (QSFP3)   <td>4001_0340   <td>PORT_INFO<td>RO<td>
+<tr>                                                            <td>4001_0344             <td>MAC_CTRL_STATUS<td>RW<td>
+<tr>                                                            <td>4001_0348             <td>PHY_CTRL_STATUS<td>RW<td>
+<tr>                                                            <td>4001_0360             <td>AURORA_OVERUNS<td>RO<td>
+<tr>                                                            <td>4001_0364             <td>AURORA_CHECKSUM_ERRORS<td>RO<td>
+<tr>                                                            <td>4001_0368             <td>AURORA_BIST_CHECKER_SAMPS<td>RO<td>
+<tr>                                                            <td>4001_036C             <td>AURORA_BIST_CHECKER_ERRORS<td>RO<td>
+
+<tr><td rowspan="6">Slave 5                                     <td>4001_4000<td>4001_41FF<td>Clocking<td>see Clocking regmap<td>
+<tr>                                                            <td>4001_4200<td>4001_43FF<td>Sync<td>see Sync regmap<td>
+<tr>                                                            <td>4001_4400<td>4001_45FF<td>open<td>open<td>open<td>
+<tr>                                                            <td>4001_4600<td>4001_47FF<td>Daughterboard <td>see Daughterboard regmap (EISCAT)<td>
+<tr>                                                            <td>4001_6000<td>4001_6FFF<td>JESD Core 0<td>see JESD regmap (EISCAT)<td>
+<tr>                                                            <td>4001_7000<td>4001_7FFF<td>JESD Core 1<td>see JESD regmap (EISCAT)<td>
+<tr><td rowspan="1">Slave 6                                     <td>4001_8000 - 4001_bfff <td>see above <td>-<td>same as Slave 5<td>
+</table>
+
 */
 // vim:ft=doxygen:
