@@ -92,7 +92,6 @@ class MultiUSRP(lib.usrp.multi_usrp):
                       channels=[0],
                       gain=10):
 
-        super(MultiUSRP, self).set_tx_rate(rate)
         for chan in channels:
             super(MultiUSRP, self).set_tx_rate(rate, chan)
             super(MultiUSRP, self).set_tx_freq(lib.types.tune_request(freq), chan)
