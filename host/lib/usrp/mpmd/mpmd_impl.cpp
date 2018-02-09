@@ -32,8 +32,6 @@ namespace {
     const double MPMD_CHDR_MAX_RTT = 0.02;
     //! MPM Compatibility number
     const std::vector<size_t> MPM_COMPAT_NUM = {1, 1};
-    //! Timeout value for the update_component RPC call (ms)
-    const size_t MPMD_UPDATE_COMPONENT_TIMEOUT     = 20000;
 
     /*************************************************************************
      * Helper functions

@@ -18,7 +18,7 @@ using namespace uhd::mpmd;
 
 namespace {
     //! Timeout value for the update_component RPC call (ms)
-    constexpr size_t MPMD_UPDATE_COMPONENT_TIMEOUT     = 10000;
+    constexpr size_t MPMD_UPDATE_COMPONENT_TIMEOUT = 20000;
 
     uhd::usrp::component_files_t _update_component(
         const uhd::usrp::component_files_t& comps,
@@ -48,7 +48,8 @@ namespace {
         }
 
         // Now call update component
-        mb->rpc->set_timeout(MPMD_UPDATE_COMPONENT_TIMEOUT);
+        const size_t update_component_timeout = MPMD_UPDATE_COMPONENT_TIMEOUT * comps.size();
+        mb->rpc->set_timeout(update_component_timeout);
         mb->rpc->notify_with_token("update_component", all_metadata, all_data);
         mb->set_timeout_default();
 
