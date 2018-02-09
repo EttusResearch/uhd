@@ -16,13 +16,14 @@
 using namespace uhd;
 using namespace uhd::mpmd;
 
-constexpr char mpmd_impl::MPM_DISC_RESPONSE_PREAMBLE[];
-
 namespace {
     //! How long we wait for discovery responses (in seconds)
     constexpr double MPMD_FIND_TIMEOUT = 0.5;
     constexpr char MPMD_CHDR_REACHABILITY_KEY[] = "reachable";
     constexpr char MPMD_CHDR_REACHABILITY_NEGATIVE[] = "No";
+    //! The preamble for any response on the discovery port. Can be used to
+    //  verify that the response is actually an MPM device.
+    constexpr char MPM_DISC_RESPONSE_PREAMBLE[] = "USRP-MPM";
 
     device_addr_t flag_dev_as_unreachable(const device_addr_t& device_args)
     {
@@ -75,7 +76,7 @@ device_addrs_t mpmd_find_with_addr(
         }
         // Verify we didn't receive something other than an MPM discovery
         // response
-        if (result[0] != mpmd_impl::MPM_DISC_RESPONSE_PREAMBLE) {
+        if (result[0] != MPM_DISC_RESPONSE_PREAMBLE) {
             continue;
         }
         const std::string recv_addr = comm->get_recv_addr();

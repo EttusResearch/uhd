@@ -272,7 +272,7 @@ boost::optional<device_addr_t> mpmd_mboard_impl::is_device_reachable(
             auto chdr_rpcc = uhd::rpc_client::make(chdr_addr, rpc_port);
             chdr_rpcc->set_timeout(MPMD_SHORT_RPC_TIMEOUT);
             chdr_rpcc->request<dev_info>("get_device_info");
-            auto device_addr_copy{device_addr};
+            device_addr_t device_addr_copy = device_addr;
             device_addr_copy["addr"] = chdr_addr;
             return boost::optional<device_addr_t>(device_addr_copy);
         } catch (...) {

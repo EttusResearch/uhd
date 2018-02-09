@@ -192,9 +192,6 @@ public:
     static const std::string MPM_ECHO_CMD;
     //! This is the RPC command that will return the last known error from MPM.
     static const std::string MPM_RPC_GET_LAST_ERROR_CMD;
-    //! The preamble for any response on the discovery port. Can be used to
-    //  verify that the response is actually an MPM device.
-    static constexpr char MPM_DISC_RESPONSE_PREAMBLE[] = "USRP-MPM";
 
     /**************************************************************************
      * Structors
