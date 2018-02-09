@@ -33,7 +33,7 @@ N3XX_DEFAULT_CLOCK_SOURCE = 'internal'
 N3XX_DEFAULT_TIME_SOURCE = 'internal'
 N3XX_DEFAULT_ENABLE_GPS = True
 N3XX_DEFAULT_ENABLE_FPGPIO = True
-N3XX_FPGA_COMPAT = (3, 0)
+N3XX_FPGA_COMPAT = (4, 0)
 N3XX_MONITOR_THREAD_INTERVAL = 1.0 # seconds
 
 ###############################################################################
