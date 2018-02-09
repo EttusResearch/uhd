@@ -669,6 +669,7 @@ class N310BIST(object):
         """
         assert 'gpio' in self.tests_to_run
         # patterns = list(range(64))
+        GPIO_WIDTH = 12
         patterns = range(64)
         if self.args.dry_run:
             return True, {
@@ -686,7 +687,7 @@ class N310BIST(object):
             " Run a GPIO test for a given set of patterns "
             gpio_ctrl = n310.FrontpanelGPIO(ddr)
             for pattern in patterns:
-                gpio_ctrl.set_all(pattern)
+                gpio_set_all(gpio_ctrl, pattern, GPIO_WIDTH, ddr)
                 time.sleep(0.1)
                 gpio_rb = gpio_ctrl.get_all()
                 if  pattern != gpio_rb:
@@ -747,6 +748,24 @@ class N310BIST(object):
                     and device.attributes.get('cur_state') is not None
         }
         return len(result) == 2, result
+
+
+def gpio_set_all(gpio_bank, value, gpio_size, ddr_mask):
+    """Helper function for set gpio.
+    What this function do is take decimal value and convert to a binary string
+    then try to set those individual bits to the gpio_bank.
+    Arguments:
+        gpio_bank  -- gpio bank type.
+        value -- value to set onto gpio bank.
+        gpio_size -- size of the gpio bank
+        ddr_mask  -- data direction register bit mask. 0 is input; 1 is output.  
+    """
+    ddr_size = bin(ddr_mask).count("1")
+    value_bitstring = ('{0:0' + str(ddr_size) + 'b}').format(value)[-(gpio_size):]
+    ddr_bitstring = ('{0:0' + str(gpio_size) + 'b}').format(ddr_mask)[-(gpio_size):]
+    for i in range(gpio_size):
+        if ddr_bitstring[gpio_size - 1 - i] == "1":
+            gpio_bank.set(i, value_bitstring[i % ddr_size])
 
 ##############################################################################
 # main

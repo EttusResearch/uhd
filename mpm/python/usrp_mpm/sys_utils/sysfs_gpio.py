@@ -201,18 +201,6 @@ class GPIOBank(object):
             self._ddr << self._offset
         )
 
-    def set_all(self, value):
-        """
-        Set all pins to 'value'.
-        This method will convert value into binary and assign all the bits in
-        the use mask.
-        """
-        bin_value = ('{0:0'+str(self._gpiosize)+'b}').format(value)
-        wr_value = bin_value[-(self._gpiosize):]
-        for i in range(self._gpiosize):
-            if (1 << i) & self._ddr:
-                self._gpios.set(self._offset + i, wr_value[i % self._gpiosize])
-
     def set(self, index, value=None):
         """
         Set a pin by index
