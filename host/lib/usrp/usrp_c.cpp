@@ -54,21 +54,19 @@ struct uhd_usrp {
 
 struct uhd_tx_streamer {
     size_t usrp_index;
-    size_t streamer_index;
+    uhd::tx_streamer::sptr streamer;
     std::string last_error;
 };
 
 struct uhd_rx_streamer {
     size_t usrp_index;
-    size_t streamer_index;
+    uhd::rx_streamer::sptr streamer;
     std::string last_error;
 };
 
 /* Not public: We use this for our internal registry */
 struct usrp_ptr {
     uhd::usrp::multi_usrp::sptr ptr;
-    std::vector< uhd::rx_streamer::sptr > rx_streamers;
-    std::vector< uhd::tx_streamer::sptr > tx_streamers;
     static size_t usrp_counter;
 };
 size_t usrp_ptr::usrp_counter = 0;
@@ -79,8 +77,6 @@ typedef std::map<size_t, usrp_ptr> usrp_ptrs;
 UHD_SINGLETON_FCN(usrp_ptrs, get_usrp_ptrs);
 /* Shortcut for accessing the underlying USRP sptr from a uhd_usrp_handle* */
 #define USRP(h_ptr) (get_usrp_ptrs()[h_ptr->usrp_index].ptr)
-#define RX_STREAMER(h_ptr) (get_usrp_ptrs()[h_ptr->usrp_index].rx_streamers[h_ptr->streamer_index])
-#define TX_STREAMER(h_ptr) (get_usrp_ptrs()[h_ptr->usrp_index].tx_streamers[h_ptr->streamer_index])
 
 /****************************************************************************
  * RX Streamer
@@ -105,14 +101,14 @@ uhd_error uhd_rx_streamer_free(uhd_rx_streamer_handle* h){
 uhd_error uhd_rx_streamer_num_channels(uhd_rx_streamer_handle h,
                                        size_t *num_channels_out){
     UHD_SAFE_C_SAVE_ERROR(h,
-        *num_channels_out = RX_STREAMER(h)->get_num_channels();
+        *num_channels_out = h->streamer->get_num_channels();
     )
 }
 
 uhd_error uhd_rx_streamer_max_num_samps(uhd_rx_streamer_handle h,
                                         size_t *max_num_samps_out){
     UHD_SAFE_C_SAVE_ERROR(h,
-        *max_num_samps_out = RX_STREAMER(h)->get_max_num_samps();
+        *max_num_samps_out = h->streamer->get_max_num_samps();
     )
 }
 
@@ -126,8 +122,8 @@ uhd_error uhd_rx_streamer_recv(
     size_t *items_recvd
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        uhd::rx_streamer::buffs_type buffs_cpp(buffs, RX_STREAMER(h)->get_num_channels());
-        *items_recvd = RX_STREAMER(h)->recv(buffs_cpp, samps_per_buff, (*md)->rx_metadata_cpp, timeout, one_packet);
+        uhd::rx_streamer::buffs_type buffs_cpp(buffs, h->streamer->get_num_channels());
+        *items_recvd = h->streamer->recv(buffs_cpp, samps_per_buff, (*md)->rx_metadata_cpp, timeout, one_packet);
     )
 }
 
@@ -136,7 +132,7 @@ uhd_error uhd_rx_streamer_issue_stream_cmd(
     const uhd_stream_cmd_t *stream_cmd
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        RX_STREAMER(h)->issue_stream_cmd(stream_cmd_c_to_cpp(stream_cmd));
+            h->streamer->issue_stream_cmd(stream_cmd_c_to_cpp(stream_cmd));
     )
 }
 
@@ -180,7 +176,7 @@ uhd_error uhd_tx_streamer_num_channels(
     size_t *num_channels_out
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        *num_channels_out = TX_STREAMER(h)->get_num_channels();
+        *num_channels_out = h->streamer->get_num_channels();
     )
 }
 
@@ -189,7 +185,7 @@ uhd_error uhd_tx_streamer_max_num_samps(
     size_t *max_num_samps_out
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        *max_num_samps_out = TX_STREAMER(h)->get_max_num_samps();
+        *max_num_samps_out = h->streamer->get_max_num_samps();
     )
 }
 
@@ -202,8 +198,8 @@ uhd_error uhd_tx_streamer_send(
     size_t *items_sent
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        uhd::tx_streamer::buffs_type buffs_cpp(buffs, TX_STREAMER(h)->get_num_channels());
-        *items_sent = TX_STREAMER(h)->send(
+        uhd::tx_streamer::buffs_type buffs_cpp(buffs, h->streamer->get_num_channels());
+        *items_sent = h->streamer->send(
             buffs_cpp,
             samps_per_buff,
             (*md)->tx_metadata_cpp,
@@ -219,7 +215,7 @@ uhd_error uhd_tx_streamer_recv_async_msg(
     bool *valid
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        *valid = TX_STREAMER(h)->recv_async_msg((*md)->async_metadata_cpp, timeout);
+        *valid = h->streamer->recv_async_msg((*md)->async_metadata_cpp, timeout);
     )
 }
 
@@ -321,11 +317,8 @@ uhd_error uhd_usrp_get_rx_stream(
         }
 
         usrp_ptr &usrp = get_usrp_ptrs()[h_u->usrp_index];
-        usrp.rx_streamers.push_back(
-            usrp.ptr->get_rx_stream(stream_args_c_to_cpp(stream_args))
-        );
+        h_s->streamer = usrp.ptr->get_rx_stream(stream_args_c_to_cpp(stream_args));
         h_s->usrp_index     = h_u->usrp_index;
-        h_s->streamer_index = usrp.rx_streamers.size() - 1;
     )
 }
 
@@ -344,11 +337,8 @@ uhd_error uhd_usrp_get_tx_stream(
         }
 
         usrp_ptr &usrp = get_usrp_ptrs()[h_u->usrp_index];
-        usrp.tx_streamers.push_back(
-            usrp.ptr->get_tx_stream(stream_args_c_to_cpp(stream_args))
-        );
+        h_s->streamer = usrp.ptr->get_tx_stream(stream_args_c_to_cpp(stream_args));
         h_s->usrp_index     = h_u->usrp_index;
-        h_s->streamer_index = usrp.tx_streamers.size() - 1;
     )
 }
 
