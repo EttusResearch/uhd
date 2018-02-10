@@ -237,13 +237,13 @@ class MgCPLD(object):
                 "Expected: 0x{:04X} Got: 0x{:04X}".format(
                     self.CPLD_SIGNATURE, signature))
             raise RuntimeError("CPLD Signature Check Failed! Incorrect signature readback.")
-        minor_rev = self.peek16(self.REG_MINOR_REVISION)
-        major_rev = self.peek16(self.REG_MAJOR_REVISION)
-        if major_rev != self.CPLD_MAJOR_REV:
+        self.minor_rev = self.peek16(self.REG_MINOR_REVISION)
+        self.major_rev = self.peek16(self.REG_MAJOR_REVISION)
+        if self.major_rev != self.CPLD_MAJOR_REV:
             self.log.error(
                 "CPLD Major Revision check mismatch! Expected: %d Got: %d",
                 self.CPLD_MAJOR_REV,
-                major_rev
+                self.major_rev
             )
             raise RuntimeError("CPLD Revision Check Failed! MPM is not compatible with " \
                                "the loaded CPLD image.")
@@ -253,7 +253,7 @@ class MgCPLD(object):
             "CPLD Signature: 0x{:04X} "
             "Revision: {}.{} "
             "Date code: 0x{:08X}"
-            .format(signature, major_rev, minor_rev, date_code))
+            .format(signature, self.major_rev, self.minor_rev, date_code))
 
     def set_scratch(self, val):
         " Write to the scratch register "
@@ -414,6 +414,8 @@ class Magnesium(DboardManagerBase):
             for key in self.spi_factories
         }
         self.cpld = MgCPLD(self._spi_ifaces['cpld'], self.log)
+        self.device_info['cpld_rev'] = \
+                str(self.cpld.major_rev) + '.' + str(self.cpld.minor_rev)
 
     def _power_on(self):
         " Turn on power to daughterboard "
