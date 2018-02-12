@@ -117,12 +117,13 @@ void magnesium_radio_ctrl_impl::_update_atr_switches(
             true, /* Myk on */
             true  /* defer commit */
         );
+        // Leaving PA on since we want shorter tx settling time.
         _cpld->set_tx_atr_bits(
             chan,
             magnesium_cpld_ctrl::IDLE,
             false, /* LED off */
-            false, /* PA off  */
-            false, /* AMP off */
+            true, /* PA on  */
+            true, /* AMP on */
             true,  /* Myk on  */
             false  /* don't defer commit */
         );
