@@ -333,8 +333,6 @@ class MboardRegsControl(object):
 ###############################################################################
 class N310XportMgrUDP(XportMgrUDP):
     " N310-specific UDP configuration "
-    eth_tables = {'eth1': 'misc-enet-regs0', 'eth2': 'misc-enet-regs1'}
-    xbar_port_map = {'eth1': 0, 'eth2': 1}
     xbar_dev = "/dev/crossbar0"
     iface_config = {
         'sfp0': {
