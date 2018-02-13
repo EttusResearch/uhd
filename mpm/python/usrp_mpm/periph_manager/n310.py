@@ -33,7 +33,7 @@ N3XX_DEFAULT_CLOCK_SOURCE = 'internal'
 N3XX_DEFAULT_TIME_SOURCE = 'internal'
 N3XX_DEFAULT_ENABLE_GPS = True
 N3XX_DEFAULT_ENABLE_FPGPIO = True
-N3XX_FPGA_COMPAT = (4, 0)
+N3XX_FPGA_COMPAT = (5, 0)
 N3XX_MONITOR_THREAD_INTERVAL = 1.0 # seconds
 
 ###############################################################################
@@ -337,6 +337,18 @@ class N310XportMgrUDP(XportMgrUDP):
     xbar_port_map = {'eth1': 0, 'eth2': 1}
     xbar_dev = "/dev/crossbar0"
     iface_config = {
+        'sfp0': {
+            'label': 'misc-enet-regs0',
+            'xbar': 0,
+            'xbar_port': 0,
+            'ctrl_src_addr': 0,
+        },
+        'sfp1': {
+            'label': 'misc-enet-regs1',
+            'xbar': 0,
+            'xbar_port': 1,
+            'ctrl_src_addr': 1,
+        },
         'eth1': {
             'label': 'misc-enet-regs0',
             'xbar': 0,
