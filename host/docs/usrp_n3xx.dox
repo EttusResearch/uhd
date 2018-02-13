@@ -12,7 +12,8 @@
 	- Internal GPSDO for timing, location, and 20 MHz reference clock + PPS
 	- External GPIO Connector with UHD API control
 	- External USB Connection for built-in JTAG debugger and serial console
-        - Xilinx Zynq SoC with dual-core ARM Cortex A9 and Virtex-7 FPGA
+        - Xilinx Zynq SoC with dual-core ARM Cortex A9 (Speedgrade 2) and
+          Kintex-7 FPGA
 
 - Software Capabilities:
         - Full Linux system running on the ARM core
@@ -42,9 +43,33 @@ channels.
 
 \section n3xx_overview Overview
 
+\subsection n3xx_zynq The Zynq CPU/FPGA and host operating system
+
+The main CPU of the N310 is a Xilinx Zynq SoC XC7Z100. It is both a dual-core
+ARM Cortex A9 CPU and Kintex-7 FPGA on a single die. The CPU is clocked at 800
+MHz (speedgrade 2).
+
+The programmable logic (PL, or FPGA) section of the SoC is responsible for
+handling all sampling data, the 10 GigE network connections, and any other
+high-speed utility such as custom RFNoC logic. The processing system (PS, or CPU)
+is running a custom-build OpenEmbedded-based Linux operating system. The OS is
+responsible for all the device and peripheral management, such as running MPM,
+configuring the network interfaces, running local UHD sessions, etc.
+
+It is possible to connect to the host OS either via SSH or serial console (see
+sections \ref n3xx_getting_started_ssh and \ref n3xx_getting_started_serial,
+respectively).
+
 \subsection n3xx_micro The STM32 microcontroller
 
-tbw
+The STM32 microcontroller controls various low-level features of the N3xx series
+motherboard: It controls the power sequencing, reads out fan speeds and some of
+the temperature sensors. It is connected to the Zynq via an I2C bus.
+
+It is possible to log into the STM32 using the serial interface
+(see \ref n3xx_getting_started_serial_micro). This will allow certain low-level
+controls, such as remote power cycling should the CPU have become unresponsive
+for whatever reason.
 
 \subsection n3xx_sdcard The SD card
 
@@ -77,7 +102,6 @@ following two sections), run the following commands:
 
 The device node in the mount command will likely differ, depending on which
 partition is currently already mounted.
-
 
 \section n3xx_getting_started Getting started
 
@@ -177,7 +201,7 @@ commands. A direct connection to the microcontroller can be used to hard-reset
 the device without physically accessing it (i.e., emulating a power button press)
 and other low-level diagnostics.
 
-\subsection n3xx_ssh SSH connection
+\subsection n3xx_getting_started_ssh SSH connection
 
 The USRP N-Series devices have two network connections: The dual SFP ports,
 and an RJ-45 connector. The latter is by default configured by DHCP; by plugging
@@ -216,13 +240,13 @@ The RJ45 port (eth0) comes up with a default configuration of DHCP,
 that will request a network address from your DHCP server (if available on your
 network).
 
-The SFP+ (eth1, eth2) ports are configured with static addresses 192.168.10.2/24
+The SFP+ (sfp0, sfp1) ports are configured with static addresses 192.168.10.2/24
 and 192.168.20.2/24 respectively.
 
-The configuration for the ethX port is stored in /etc/systemd/networkd/ethX.network.
+The configuration for the sfpX port is stored in /etc/systemd/networkd/sfpX.network.
 
-For configuration please refer to the  manual pages
-<a href=https://www.freedesktop.org/software/systemd/man/systemd.network.html> systemd-networkd manual pages</a>
+For configuration please refer to the
+<a href=https://www.freedesktop.org/software/systemd/man/systemd.network.html>systemd-networkd manual pages</a>
 
 The factory settings are as follows:
 
@@ -237,10 +261,10 @@ The factory settings are as follows:
         [DHCPv4]
         UseHostname=false
 
-    eth1 (static):
+    sfp0 (static):
 
         [Match]
-        Name=eth1
+        Name=sfp0
 
         [Network]
         Address=192.168.10.2/24
@@ -248,10 +272,10 @@ The factory settings are as follows:
         [Link]
         MTUBytes=9000
 
-    eth2 (static):
+    sfp1 (static):
 
         [Match]
-        Name=eth2
+        Name=sfp1
 
         [Network]
         Address=192.168.20.2/24
@@ -259,10 +283,12 @@ The factory settings are as follows:
         [Link]
         MTUBytes=9000
 
-Note: Care needs to be taken when editing these files on the device, since vi / vim sometimes generates
-undo files (e.g. /etc/systemd/networkd/eth1.network~), that systemd-networkd might pick up.
+Note: Care needs to be taken when editing these files on the device, since
+vi / vim sometimes generates undo files (e.g. /etc/systemd/networkd/sfp0.network~),
+that systemd-networkd might accidentally pick up.
 
-Note: Temporarily setting the IP addresses via ifconfig etc will only change the value until the next reboot / reload of the FPGA image.
+Note: Temporarily setting the IP addresses via ifconfig etc will only change the
+value until the next reboot or reload of the FPGA image.
 
 \subsection n3xx_getting_started_security Security-related settings
 
@@ -276,7 +302,29 @@ on the device.
 
 \subsection n3xx_getting_started_fpga_update Updating the FPGA
 
-tbw (using uhd_image_loader)
+Updating the FPGA follows the same procedure as other USRPs. Use the `uhd_image_loader`
+command line utility to upload a new FPGA image onto the device.
+
+A common reason to update the FPGA image is in the case of a UHD/FPGA compat
+number mismatch (for example, if UHD has been updated, and now expects a newer
+version of the FPGA than is on the device). In this case, simply run
+
+    $ uhd_images_downloader
+
+to update the local cache of FPGA images. Then, run
+
+    $ uhd_image_loader --args type=n3xx,addr=ni-n3xx-311fe00
+
+to update the FPGA using the default settings. If a custom FPGA image is targeted
+for uploading, use the `--fpga-path` command line argument. Run
+
+    $ uhd_image_loader --help
+
+to see a full list of command line options. Note that updating the FPGA image
+will force a reload of the FPGA, which will temporarily take down the SFP
+network interfaces (and temporary settings, such as applied via `ifconfig` on
+the command line, will be lost).
+
 
 \section n3xx_usage Using an N3XX USRP from UHD
 
