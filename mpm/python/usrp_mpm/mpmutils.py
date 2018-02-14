@@ -8,6 +8,7 @@ Miscellaneous utilities for MPM
 """
 
 import time
+from contextlib import contextmanager
 
 def poll_with_timeout(state_check, timeout_ms, interval_ms):
     """
@@ -162,4 +163,25 @@ def async_exec(parent, method_name, *args):
     # await
     while not awaitable_method():
         time.sleep(0.1)
+
+@contextmanager
+def lock_guard(lockable):
+    """Context-based lock guard
+
+    Use this in a with statement to lock out the following scope. Example:
+    >>> with lock_guard(some_mutex):
+    >>>    thread_sensitive_function()
+
+    In this snippet, we assume that some_mutex is a lockable object, and
+    implements lock() and unlock() member functions. Everything within the
+    with context will then be serialized.
+
+    This is a useful mechanic for sharing mutexes between Python and C++.
+
+    Arguments:
+    lockable -- Must have a .lock() and .unlock() method
+    """
+    lockable.lock()
+    yield
+    lockable.unlock()
 
