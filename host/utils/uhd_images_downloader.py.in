@@ -72,7 +72,7 @@ def parse_args():
                         help=("Select archiving function (options: {})"
                               .format(",".join(_ARCHIVE_ALGS))))
     parser.add_argument("-k", "--keep", action="store_true", default=False,
-                        help="Do not clear images directory before extracting new files")
+                        help="Keep the downloaded images archives in the image directory")
     parser.add_argument("-n", "--dry-run", action="store_true", default=False,
                         help="Print selected target without actually downloading them.")
     parser.add_argument("--refetch", action="store_true", default=False,
@@ -262,9 +262,6 @@ def main():
     if archive_type not in _ARCHIVE_ALGS:
         log("ERROR", "Selected archive type not supported: {}".format(archive_type))
         return 1
-    # TODO: keep not implemented
-    if args.keep:
-        log("WARN", "--keep not implemented. Downloaded archives will be deleted.")
     # Set the verbosity
     global _LOG_LEVEL
     log("TRACE", "Default log level: {}".format(_LOG_LEVEL))
@@ -350,6 +347,11 @@ def main():
 
                     delete_from_inv(filename, inventory, images_dir)
                     archive_namelist = extract(temp_path, images_dir, archive_type)
+                    if args.keep:
+                        # If the user wants to keep the downloaded archive,
+                        # save it to the images directory and add it to the inventory
+                        shutil.copy(temp_path, images_dir)
+                        archive_namelist.append(filename)
                     inventory[filename] = {"repo_hash": target_hash, "contents": archive_namelist}
                 else:
                     log("INFO", "[Dry run] {} successfully downloaded"
