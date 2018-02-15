@@ -2,18 +2,26 @@ Source: uhd
 Section: science
 Priority: optional
 Maintainer: Ettus Research <packages@ettus.com>
-Uploaders: Martin Braun <martin.braun@ettus.com>, Nicholas Corgan <nick.corgan@ettus.com>
-Build-Depends: debhelper (>= 9), cmake (>= 2.8.4+dfsg.1-3), python-dev, python-mako, doxygen, libusb-1.0-0-dev [linux-any], libusb2-dev [kfreebsd-any], libncurses5-dev, pkg-config,
- libboost-dev,
- libboost-date-time-dev,
- libboost-filesystem-dev,
- libboost-program-options-dev,
- libboost-regex-dev,
- libboost-system-dev,
- libboost-thread-dev,
- libboost-test-dev,
- libboost-serialization-dev
-Standards-Version: 3.9.5
+Uploaders: Martin Braun <martin.braun@ettus.com>
+Build-Depends:  debhelper (>= 9),
+                cmake (>= 2.8.4+dfsg.1-3),
+                python-dev,
+                python-mako, 
+                doxygen,
+                libusb-1.0-0-dev [linux-any],
+                libusb2-dev [kfreebsd-any],
+                libncurses5-dev,
+                pkg-config,
+                libboost-dev,
+                libboost-date-time-dev,
+                libboost-filesystem-dev,
+                libboost-program-options-dev,
+                libboost-regex-dev,
+                libboost-system-dev,
+                libboost-thread-dev,
+                libboost-test-dev,
+                libboost-serialization-dev
+Standards-Version: 3.9.7
 Homepage: https://www.ettus.com
 Vcs-Git: git://github.com/EttusResearch/uhd.git
 
@@ -36,7 +44,7 @@ Description: hardware driver for Ettus Research products
 Package: libuhd003
 Architecture: any
 Section: libs
-Pre-Depends: multiarch-support, ${misc:Pre-Depends}
+Pre-Depends: ${misc:Pre-Depends}
 Depends: python, adduser, ${shlibs:Depends}, ${misc:Depends}
 Suggests: gnuradio
 Multi-Arch: same
