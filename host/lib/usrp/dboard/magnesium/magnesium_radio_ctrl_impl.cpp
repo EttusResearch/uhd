@@ -387,7 +387,8 @@ double magnesium_radio_ctrl_impl::set_rx_bandwidth(
     // FIXME: setting analog bandwidth on AD9371 take no effect.
     // Remove this warning when ADI can confirm that it works.
     UHD_LOG_WARNING(unique_id(),
-        "set_tx_bandwidth take no effect on AD9371. Default analog bandwidth is 100MHz");
+        "set_rx_bandwidth take no effect on AD9371. "
+        "Default analog bandwidth is 100MHz");
     return AD9371_RX_MAX_BANDWIDTH;
 }
 
@@ -400,7 +401,8 @@ double magnesium_radio_ctrl_impl::set_tx_bandwidth(
     // FIXME: setting analog bandwidth on AD9371 take no effect.
     // Remove this warning when ADI can confirm that it works.
     UHD_LOG_WARNING(unique_id(),
-        "set_tx_bandwidth take no effect on AD9371. Default analog bandwidth is 100MHz");
+        "set_tx_bandwidth take no effect on AD9371. "
+        "Default analog bandwidth is 100MHz");
     return AD9371_TX_MAX_BANDWIDTH ;
 }
 
