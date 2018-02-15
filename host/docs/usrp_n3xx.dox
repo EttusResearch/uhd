@@ -29,6 +29,8 @@ variants of the N3XX series:
 
 \subsection n3xx_feature_list_mg N310 (4-channel transceiver)
 
+\image html N310isoExplode.png N310 Exploded View
+
 The N310 is a 4-channel receiver based on the AD9371 transceiver IC. It has two
 daughterboards with one AD9371 each; every daughterboard provides two RF
 channels.
@@ -457,6 +459,40 @@ A large portion of hardware-specific setup is handled by the daemon.
 tbw
 
 \section n3xx_mg N310-specific Features
+
+\subsection n3xx_mg_panels Front and Rear Panel
+
+Like the USRP X300 series, the N310 has connectors on both the front and back
+panel. The back panel holds the power connector, all network connections, USB
+connections for serial console (see \ref n3xx_getting_started_serial), JTAG,
+peripherals, SMA connectors for GPS antenna input, 10 MHz clock reference,
+PPS time reference input and output (TRIG in/out), the slot for the SD card
+(see also \ref n3xx_sdcard), and indicator LEDs.
+
+The following indicator LEDs are used:
+
+- LINK: This LED will be lit when this USRP has been claimed by a UHD session.
+- REF: Indicates a lock to the reference clock. In particular, when using an
+       external reference clock, this LED is useful to see if the LMK04828 PLLs
+       are locking to this reference clock. Note that some software interaction
+       is necessary to enable the LMK04828, and thus this LED may be off even
+       if a valid reference clock signal is connected.
+- GPS: Indicates a GPS lock (i.e., GPS satellites are in view of the GPS
+       antenna and signal levels are sufficient)
+- PPS: This LED will blink once every second to indicate a valid PPS signal.
+
+\image html N310rp.png N310 Rear Panel
+
+The front panel is used for all RF connections (including the external LO
+inputs, see \ref n3xx_mg_external_lo) and all TX/RX connections, as well as the
+front-panel GPIO.
+
+The connectors labeled RF0 and RF1 are also referred to as slot A, and the
+connectors labeled RF2 and RF3 are also referred as slot B (matching the
+internal connections to the daughterboard. Every slot is powered by a single
+AD9371 RFIC).
+
+\image html N310fp.png N310 Front Panel
 
 \subsection n3xx_mg_calibrations RF Calibrations
 
