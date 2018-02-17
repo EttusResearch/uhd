@@ -8,6 +8,7 @@
 #include <uhd/config.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/paths.hpp>
+#include <uhdlib/utils/paths.hpp>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/bind.hpp>
@@ -96,6 +97,7 @@ static std::vector<std::string> get_env_paths(const std::string &var_name){
 }
 
 #ifndef UHD_PLATFORM_WIN32
+// NOTE: This could be replaced by path_expandvars()
 /*! Expand a tilde character to the $HOME path.
  *
  * The path passed to this function must start with the tilde character in order

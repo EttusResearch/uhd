@@ -125,6 +125,29 @@ UHD_INSTALL(TARGETS
     COMPONENT tests
 )
 
+ADD_EXECUTABLE(paths_test
+    paths_test.cpp
+    ${CMAKE_SOURCE_DIR}/lib/utils/pathslib.cpp
+)
+# Careful: This is to satisfy the out-of-library build of paths.cpp. This is
+# duplicate code from lib/utils/CMakeLists.txt, and it's been simplified.
+SET(UHD_LIB_DIR "lib")
+FILE(TO_NATIVE_PATH "${CMAKE_INSTALL_PREFIX}" UHD_PKG_PATH)
+STRING(REPLACE "\\" "\\\\" UHD_PKG_PATH "${UHD_PKG_PATH}")
+SET_SOURCE_FILES_PROPERTIES(
+    ${CMAKE_SOURCE_DIR}/lib/utils/paths.cpp
+    PROPERTIES COMPILE_DEFINITIONS
+    "UHD_PKG_PATH=\"${UHD_PKG_PATH}\";UHD_LIB_DIR=\"${UHD_LIB_DIR}\""
+)
+TARGET_LINK_LIBRARIES(paths_test uhd ${Boost_LIBRARIES})
+UHD_ADD_TEST(paths_test paths_test)
+UHD_INSTALL(TARGETS
+    paths_test
+    RUNTIME
+    DESTINATION ${PKG_LIB_DIR}/tests
+    COMPONENT tests
+)
+
 ########################################################################
 # demo of a loadable module
 ########################################################################
