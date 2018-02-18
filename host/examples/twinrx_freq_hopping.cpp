@@ -153,7 +153,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
     if (start_freq < rx_freq_range.start() or end_freq > rx_freq_range.stop()) {
         throw uhd::runtime_error((boost::format("Start and stop frequencies must be between %d and %d MHz")
-                                            % ((rx_freq_range.start() / 1e6), (rx_freq_range.stop() / 1e6))).str());
+                                            % (rx_freq_range.start() / 1e6) % (rx_freq_range.stop() / 1e6)).str());
     }
     if (start_freq > end_freq) {
         throw uhd::runtime_error("Start frequency must be less than end frequency.");
