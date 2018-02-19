@@ -19,7 +19,7 @@ public:
         _wave_table(wave_table_len)
     {
         //compute real wave table with 1.0 amplitude
-        std::vector<double> real_wave_table(wave_table_len);
+        std::vector<float> real_wave_table(wave_table_len);
         if (wave_type == "CONST"){
             for (size_t i = 0; i < wave_table_len; i++)
                 real_wave_table[i] = 1.0;
@@ -42,7 +42,10 @@ public:
         //compute i and q pairs with 90% offset and scale to amplitude
         for (size_t i = 0; i < wave_table_len; i++){
             const size_t q = (i+(3*wave_table_len)/4)%wave_table_len;
-            _wave_table[i] = std::complex<float>(ampl*real_wave_table[i], ampl*real_wave_table[q]);
+            _wave_table[i] = std::complex<float>(
+                ampl*real_wave_table[i],
+                ampl*real_wave_table[q]
+            );
         }
     }
 

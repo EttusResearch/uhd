@@ -37,7 +37,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //variables to be set by po
     std::string args, wave_type, ant, subdev, ref, pps, otw, channel_list;
-    uint64_t total_num_samps, spb;
+    uint64_t total_num_samps;
+    size_t spb;
     double rate, freq, gain, wave_freq, bw;
     float ampl;
 
@@ -46,7 +47,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "single uhd device address args")
-        ("spb", po::value<uint64_t>(&spb)->default_value(0), "samples per buffer, 0 for default")
+        ("spb", po::value<size_t>(&spb)->default_value(0), "samples per buffer, 0 for default")
         ("nsamps", po::value<uint64_t>(&total_num_samps)->default_value(0), "total number of samples to transmit")
         ("rate", po::value<double>(&rate), "rate of outgoing samples")
         ("freq", po::value<double>(&freq), "RF center frequency in Hz")
@@ -166,7 +167,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
 
     //allocate a buffer which we re-use for each channel
-    if (spb == 0) spb = tx_stream->get_max_num_samps()*10;
+    if (spb == 0) {
+        spb = tx_stream->get_max_num_samps()*10;
+    }
     std::vector<std::complex<float> > buff(spb);
     std::vector<std::complex<float> *> buffs(channel_nums.size(), &buff.front());
 

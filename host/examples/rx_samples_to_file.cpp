@@ -17,6 +17,8 @@
 #include <fstream>
 #include <csignal>
 #include <complex>
+#include <thread>
+#include <chrono>
 
 namespace po = boost::program_options;
 
@@ -184,7 +186,7 @@ bool check_locked_sensor(std::vector<std::string> sensor_names, const char* sens
             std::cout.flush();
         }
         else {
-            first_lock_time = boost::system_time();	//reset to 'not a date time'
+            first_lock_time = boost::system_time(); //reset to 'not a date time'
 
             if (boost::get_system_time() > (start + boost::posix_time::seconds(setup_time))){
                 std::cout << std::endl;
@@ -193,7 +195,7 @@ bool check_locked_sensor(std::vector<std::string> sensor_names, const char* sens
             std::cout << "_";
             std::cout.flush();
         }
-        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     std::cout << std::endl;
     return true;
@@ -307,7 +309,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //set the antenna
     if (vm.count("ant")) usrp->set_rx_antenna(ant);
 
-    boost::this_thread::sleep(boost::posix_time::seconds(setup_time)); //allow for some setup time
+    std::this_thread::sleep_for(
+        std::chrono::milliseconds(int64_t(1000 * setup_time))
+    );
 
     //check Ref and LO Lock detect
     if (not vm.count("skip-lo")){

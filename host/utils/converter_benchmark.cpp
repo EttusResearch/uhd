@@ -330,7 +330,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
         std::cout << "Invalid argument: --seed-mode must be either 'incremental' or 'random'." << std::endl;
     }
 
-    bool debug_mode = bool(vm.count("debug-converter"));
+    bool debug_mode = vm.count("debug-converter") > 0;
     if (debug_mode) {
         iterations = 1;
     }
@@ -347,7 +347,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     if (priorities == "default" or priorities.empty()) {
         try {
             conv_list[prio] = get_converter(converter_id, prio)(); // Can throw a uhd::key_error
-        } catch(const uhd::key_error &e) {
+        } catch(const uhd::key_error &) {
             std::cout << "No converters found." << std::endl;
             return EXIT_FAILURE;
         }

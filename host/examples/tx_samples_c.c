@@ -115,7 +115,7 @@ int main(int argc, char* argv[]){
     // Create TX metadata
     uhd_tx_metadata_handle md;
     EXECUTE_OR_GOTO(free_tx_streamer,
-        uhd_tx_metadata_make(&md, false, 0.0, 0.1, true, false)
+        uhd_tx_metadata_make(&md, false, 0, 0.1, true, false)
     )
 
     // Create other necessary structs

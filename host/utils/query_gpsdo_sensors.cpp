@@ -52,7 +52,7 @@ int query_clock_sensors(const std::string &args) {
       std::cout << boost::format("%s\n%s\n") % gga_string.to_pp_string() % rmc_string.to_pp_string();
       std::cout << boost::format("\nPrinting GPS servo status:\n");
       std::cout << boost::format("%s\n\n") % servo_string.to_pp_string();
-  } catch (uhd::lookup_error &e) {
+  } catch (const uhd::lookup_error &) {
       std::cout << "NMEA strings not implemented for this device." << std::endl;
   }
   std::cout << boost::format("GPS Epoch time: %.5f seconds\n") % clock->get_sensor("gps_time").to_real();

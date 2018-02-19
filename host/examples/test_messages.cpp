@@ -345,7 +345,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         std::cout << boost::format(
             "%s   ->   %3u successes, %3u failures"
         ) % key % successes[key] % failures[key] << std::endl;
-        any_failure = any_failure or bool(failures[key]);
+        any_failure = any_failure or (failures[key] > 0);
     }
 
     //finished
