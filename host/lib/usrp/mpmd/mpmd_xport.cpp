@@ -1,7 +1,7 @@
 //
 // Copyright 2017 Ettus Research, National Instruments Company
 //
-// SPDX-License-Identifier: GPL-3.0
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 // make_transport logic for mpmd_impl. Note that mpmd_xport_mgr.* has most of

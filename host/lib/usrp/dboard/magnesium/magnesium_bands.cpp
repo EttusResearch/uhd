@@ -1,7 +1,7 @@
 //
 // Copyright 2017 Ettus Research, a National Instruments Company
 //
-// SPDX-License-Identifier: GPL-3.0
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 // The band plan

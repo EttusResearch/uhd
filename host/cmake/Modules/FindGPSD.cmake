@@ -1,7 +1,7 @@
 #
 # Copyright 2015 Ettus Research LLC
 #
-# SPDX-License-Identifier: GPL-3.0
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
 # - Find libgps
 # Find the Gpsd includes and client library

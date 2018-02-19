@@ -1,7 +1,7 @@
 //
 // Copyright 2014-17 Ettus Research, A National Instruments Company
 //
-// SPDX-License-Identifier: GPL-3.0
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 /***********************************************************************

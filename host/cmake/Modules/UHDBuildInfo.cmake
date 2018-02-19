@@ -1,7 +1,7 @@
 #
 # Copyright 2015-2016 National Instruments Corp.
 #
-# SPDX-License-Identifier: GPL-3.0
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
 
 #

@@ -2,7 +2,7 @@
 #
 # Copyright 2017 Ettus Research, a National Instruments Company
 #
-# SPDX-License-Identifier: GPL-3.0
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
 """
 Register map for the Magnesium CPLD. This is controlled via SPI.

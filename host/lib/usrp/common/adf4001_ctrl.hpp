@@ -1,12 +1,13 @@
 //
 // Copyright 2013 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
 // Original ADF4001 driver written by: bistromath
 //                                     Mar 1, 2013
 //
 // Re-used and re-licensed with permission.
 //
-// SPDX-License-Identifier: GPL-3.0
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #ifndef INCLUDED_LIBUHD_USRP_COMMON_ADF4001_HPP

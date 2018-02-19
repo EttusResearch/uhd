@@ -1,8 +1,9 @@
 //
 // Copyright 2010-2012 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 // Copyright 2017 Ettus Research (National Instruments Corp.)
 //
-// SPDX-License-Identifier: GPL-3.0
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #ifndef INCLUDED_UHD_USRP_MBOARD_EEPROM_HPP

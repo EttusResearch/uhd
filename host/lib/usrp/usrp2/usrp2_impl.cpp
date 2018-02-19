@@ -1,7 +1,7 @@
 //
 // Copyright 2010-2012,2014,2017 Ettus Research, A National Instruments Company
 //
-// SPDX-License-Identifier: GPL-3.0
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include "usrp2_impl.hpp"

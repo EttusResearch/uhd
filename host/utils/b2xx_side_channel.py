@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 #
 # Copyright 2013-2015 Ettus Research LLC
+# Copyright 2018 Ettus Research, a National Instruments Company
 #
-# SPDX-License-Identifier: GPL-3.0
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
 """
 Tool to read log buffers from the FX3. Use to debug USB connection issues.

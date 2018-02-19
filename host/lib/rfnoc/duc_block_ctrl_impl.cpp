@@ -1,7 +1,7 @@
 //
 // Copyright 2016-2018 Ettus Research, a National Instruments Company
 //
-// SPDX-License-Identifier: GPL-3.0
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include "dsp_core_utils.hpp"
