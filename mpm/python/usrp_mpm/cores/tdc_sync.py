@@ -28,22 +28,23 @@ class ClockSynchronizer(object):
     The actual synchronization is run in run_sync().
     """
     # TDC Control Register address constants
-    TDC_CONTROL            = 0x200
-    TDC_STATUS             = 0x208
-    RP_OFFSET_0            = 0x20C
-    RP_OFFSET_1            = 0x210
-    SP_OFFSET_0            = 0x214
-    SP_OFFSET_1            = 0x218
-    REPULSE_PERIOD_CONTROL = 0x21C
-    RP_PERIOD_CONTROL      = 0x220
-    SP_PERIOD_CONTROL      = 0x224
-    RPT_PERIOD_CONTROL     = 0x228
-    SPT_PERIOD_CONTROL     = 0x22C
-    TDC_MASTER_RESET       = 0x230
-    SYNC_SIGNATURE         = 0x300
-    SYNC_REVISION          = 0x304
-    SYNC_OLDESTCOMPAT      = 0x308
-    SYNC_SCRATCH           = 0x30C
+    TDC_CONTROL              = 0x200
+    TDC_STATUS               = 0x208
+    RP_OFFSET_0              = 0x20C
+    RP_OFFSET_1              = 0x210
+    SP_OFFSET_0              = 0x214
+    SP_OFFSET_1              = 0x218
+    RP_PERIOD_CONTROL        = 0x220
+    SP_PERIOD_CONTROL        = 0x224
+    RPT_PERIOD_CONTROL       = 0x228
+    SPT_PERIOD_CONTROL       = 0x22C
+    TDC_MASTER_RESET         = 0x230
+    REPULSE_PERIOD_CONTROL_1 = 0x240
+    REPULSE_PERIOD_CONTROL_2 = 0x244
+    SYNC_SIGNATURE           = 0x300
+    SYNC_REVISION            = 0x304
+    SYNC_OLDESTCOMPAT        = 0x308
+    SYNC_SCRATCH             = 0x30C
 
     def __init__(
             self,
@@ -237,7 +238,7 @@ class ClockSynchronizer(object):
                 .format(reset_status))
             raise RuntimeError("TDC Failed to reset.")
 
-        def get_pulse_setup(clk_freq, pulser, compat_mode):
+        def get_pulse_setup(clk_freq, pulser, compat_mode=False):
             """
             Set the pulser divide values based on the given clock rates.
             Returns register value required to create the desired pulses.
@@ -262,7 +263,7 @@ class ClockSynchronizer(object):
             # The Restart-pulser must run at the GCD of the RP and SP rates, not the
             # Reference Clock and Radio Clock rates! For ease of implementation,
             # run the pulser at a fixed value.
-            elif pulser == "repulse":
+            elif (pulser == "repulse-1") or (pulser == "repulse-2"):
                 pulse_rate = 1.6e3
                 # 156.25 MHz: this value needs to be 400 Hz, which is insanely
                 # slow and doubles the measurement time... so only use it for this
@@ -283,30 +284,39 @@ class ClockSynchronizer(object):
                 raise RuntimeError("TDC Failed to Initialize. Check your clock rates " \
                                    "for compatibility!")
 
-            # Registers are packed [30:16] = high time, [15:0] = period.
-            # Compatibility mode for the TDC 1.0 is bit [31] set to 0. For TDC 2.0 and
-            # later versions, set [31] to 1 for faster operation.
             period = int(clk_freq/pulse_rate)
             hi_time = int(math.floor(period/2))
+            if pulser == "repulse-1":
+                # The re-pulse is broken into two registers:
+                # -1 is the period and -2 is the high time + compatibility bit
+                assert period <= 0xFFFFFF # 24 bits
+                return period & 0xFFFFFF
+            elif pulser == "repulse-2":
+                assert hi_time <= 0x7FFFFF # 23 bits
+                return (hi_time & 0x7FFFFF)
+            # All the other registers are packed [30:16] = high time, [15:0] = period.
             # hi_time is period/2 so we only use 15 bits.
             assert hi_time <= 0x7FFF and period <= 0xFFFF
-            return (hi_time << 16) | period | (int(compat_mode == False) << 31)
+            return (hi_time << 16) | period
 
         compat_mode = self.tdc_rev < 2
         if compat_mode:
             self.log.warning("Running TDC in Compatibility Mode for v1.0!")
 
-        repulse_ctrl_word = get_pulse_setup(self.ref_clk_freq,  "repulse", compat_mode)
-        rp_ctrl_word      = get_pulse_setup(self.ref_clk_freq,  "rp",      compat_mode)
-        sp_ctrl_word      = get_pulse_setup(self.radio_clk_freq,"sp",      compat_mode)
-        rpt_ctrl_word     = get_pulse_setup(self.ref_clk_freq,  "rpt",     compat_mode)
-        spt_ctrl_word     = get_pulse_setup(self.radio_clk_freq,"spt",     compat_mode)
-        self.log.trace("Setting RePulse control word to: 0x{:08X}".format(repulse_ctrl_word))
+        repulse_ctrl_word1 = get_pulse_setup(self.ref_clk_freq,  "repulse-1")
+        repulse_ctrl_word2 = get_pulse_setup(self.ref_clk_freq,  "repulse-2")
+        rp_ctrl_word       = get_pulse_setup(self.ref_clk_freq,  "rp", compat_mode)
+        sp_ctrl_word       = get_pulse_setup(self.radio_clk_freq,"sp", compat_mode)
+        rpt_ctrl_word      = get_pulse_setup(self.ref_clk_freq,  "rpt")
+        spt_ctrl_word      = get_pulse_setup(self.radio_clk_freq,"spt")
+        self.log.trace("Setting RePulse-1 control word to: 0x{:08X}".format(repulse_ctrl_word1))
+        self.log.trace("Setting RePulse-2 control word to: 0x{:08X}".format(repulse_ctrl_word2))
         self.log.trace("Setting RP  control word to: 0x{:08X}".format(rp_ctrl_word))
         self.log.trace("Setting SP  control word to: 0x{:08X}".format(sp_ctrl_word))
         self.log.trace("Setting RPT control word to: 0x{:08X}".format(rpt_ctrl_word))
         self.log.trace("Setting SPT control word to: 0x{:08X}".format(spt_ctrl_word))
-        self.poke32(self.REPULSE_PERIOD_CONTROL, repulse_ctrl_word)
+        self.poke32(self.REPULSE_PERIOD_CONTROL_1, repulse_ctrl_word1)
+        self.poke32(self.REPULSE_PERIOD_CONTROL_2, repulse_ctrl_word2)
         self.poke32(self.RP_PERIOD_CONTROL,  rp_ctrl_word)
         self.poke32(self.SP_PERIOD_CONTROL,  sp_ctrl_word)
         self.poke32(self.RPT_PERIOD_CONTROL, rpt_ctrl_word)
