@@ -408,11 +408,11 @@ void radio_ctrl_impl::issue_stream_cmd(
 
     //calculate the word from flags and length
     const uint32_t cmd_word = 0
-        | uint32_t((stream_cmd.stream_now)? 1 : 0) << 31
-        | uint32_t((inst_chain)?            1 : 0) << 30
-        | uint32_t((inst_reload)?           1 : 0) << 29
-        | uint32_t((inst_stop)?             1 : 0) << 28
-        | (inst_samps) ? stream_cmd.num_samps : ((inst_stop)? 0 : 1);
+        | (uint32_t((stream_cmd.stream_now)? 1 : 0) << 31)
+        | (uint32_t((inst_chain)?            1 : 0) << 30)
+        | (uint32_t((inst_reload)?           1 : 0) << 29)
+        | (uint32_t((inst_stop)?             1 : 0) << 28)
+        | ((inst_samps) ? stream_cmd.num_samps : ((inst_stop)? 0 : 1));
 
     //issue the stream command
     const uint64_t ticks =
