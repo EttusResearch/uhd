@@ -105,9 +105,10 @@ static bool mpmd_image_loader(const image_loader::image_loader_args_t &image_loa
             if (boost::filesystem::exists(image_loader_args.fpga_path)) {
                 return image_loader_args.fpga_path;
             } else {
-                throw uhd::runtime_error(
-                        str(boost::format("FPGA file provided does not exists: %s")
-                                        % image_loader_args.fpga_path));
+                throw uhd::runtime_error(str(
+                    boost::format("FPGA file provided does not exist: %s")
+                    % image_loader_args.fpga_path
+                ));
             }
         }
         // Otherwise, we need to generate one
