@@ -12,6 +12,9 @@
 
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/algorithm.hpp>
+#include <uhdlib/utils/prefs.hpp>
+
+
 #include <boost/format.hpp>
 #include <boost/weak_ptr.hpp>
 #include <boost/functional/hash.hpp>
@@ -168,8 +171,10 @@ device::sptr device::make(const device_addr_t &hint, device_filter_t filter, siz
         return hash_to_device[dev_hash].lock();
     }
     else {
-        //create and register a new device
-        device::sptr dev = maker(dev_addr);
+        // Add keys from the config files (note: the user-defined keys will
+        // always be applied, see also get_usrp_args()
+        // Then, create and register a new device.
+        device::sptr dev = maker(prefs::get_usrp_args(dev_addr));
         hash_to_device[dev_hash] = dev;
         return dev;
     }
