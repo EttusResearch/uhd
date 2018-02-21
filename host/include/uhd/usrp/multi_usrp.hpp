@@ -1312,6 +1312,33 @@ public:
     virtual void set_gpio_attr(const std::string &bank, const std::string &attr, const uint32_t value, const uint32_t mask = 0xffffffff, const size_t mboard = 0) = 0;
 
     /*!
+     * Set a GPIO attribute on a particular GPIO bank.
+     * Possible attribute names:
+     *  - SRC  - "PS" for handling by processing system
+     *         - "RADIO_N/M" for handling by radio block with N is in [0..Number of Radio]; M is in [0..Number of port per Radio]
+     *  - CTRL - "ATR"  for ATR mode
+     *         - "GPIO" for GPIO mode
+     *  - DDR  - "OUT" for output
+     *         - "IN"  for input
+     *  - OUT -  a string of numbers representing GPIO output level (not ATR mode)
+     *        - "HIGH"or "LOW" as GPIO output level that apply for each bit mask that is 1
+     *  - ATR_0X - a string of numbers representing a value of the ATR idle state register
+     *           - "HIGH" or "LOW" as a value set on each bit on of the ATR idle state register
+     *  - ATR_RX - a string of numbers representing a value of a ATR receive only state register
+     *           - "HIGH" or "LOW" as a value set on each bit on of the ATR receive only state register
+     *  - ATR_TX - a string of numbers representing a value of the ATR transmit only state register
+     *           - "HIGH" or "LOW" as a value set on each bit on of the ATR transmit only state register
+     *  - ATR_XX - a string of numbers representing a value of the ATR full duplex state register
+     *           - "HIGH" or "LOW" as a value set on each bit on of the ATR full duplex state register
+     * \param bank the name of a GPIO bank
+     * \param attr the name of a GPIO attribute
+     * \param value the new value for this GPIO bank
+     * \param mask the bit mask to effect which pins are changed
+     * \param mboard the motherboard index 0 to M-1
+     */
+    virtual void set_gpio_attr(const std::string &bank, const std::string &attr, const std::string &value, const uint32_t mask = 0xffffffff, const size_t mboard = 0) = 0;
+
+    /*!
      * Get a GPIO attribute on a particular GPIO bank.
      * Possible attribute names:
      *  - CTRL - 1 for ATR mode 0 for GPIO mode
@@ -1328,6 +1355,33 @@ public:
      * \return the value set for this attribute
      */
     virtual uint32_t get_gpio_attr(const std::string &bank, const std::string &attr, const size_t mboard = 0) = 0;
+
+    /*!
+     * Get a GPIO attribute on a particular GPIO bank.
+     * Possible attribute names:
+     *  - SRC  - "PS" for handling by processing system
+     *         - "RADIO_N/M" for handling by radio block with N is in [0..Number of Radio]; M is in [0..Number of port per Radio]
+     *  - CTRL - "ATR"  for ATR mode
+     *         - "GPIO" for GPIO mode
+     *  - DDR  - "OUT" for output
+     *         - "IN"  for input
+     *  - OUT -  a string of numbers representing GPIO output level (not ATR mode)
+     *        - "HIGH"or "LOW" as GPIO output level that apply for each bit mask that is 1
+     *  - ATR_0X - a string of numbers representing a value of the ATR idle state register
+     *           - "HIGH" or "LOW" as a value set on each bit on of the ATR idle state register
+     *  - ATR_RX - a string of numbers representing a value of a ATR receive only state register
+     *           - "HIGH" or "LOW" as a value set on each bit on of the ATR receive only state register
+     *  - ATR_TX - a string of numbers representing a value of the ATR transmit only state register
+     *           - "HIGH" or "LOW" as a value set on each bit on of the ATR transmit only state register
+     *  - ATR_XX - a string of numbers representing a value of the ATR full duplex state register
+     *           - "HIGH" or "LOW" as a value set on each bit on of the ATR full duplex state register
+     *  - READBACK - readback input GPIOs
+     * \param bank the name of a GPIO bank
+     * \param attr the name of a GPIO attribute
+     * \param mboard the motherboard index 0 to M-1
+     * \return the value set for this attribute in vector of strings
+     */
+    virtual std::vector<std::string> get_gpio_string_attr(const std::string &bank, const std::string &attr, const size_t mboard = 0) = 0;
 
     /*******************************************************************
      * Register IO methods

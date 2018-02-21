@@ -121,6 +121,8 @@ public:
         //call. This API does not have a mask so it configures all bits at the same time.
         switch (attr)
         {
+        case GPIO_SRC:
+            throw uhd::runtime_error("Can't set GPIO source by GPIO ATR interface.");
         case GPIO_CTRL:
             set_atr_mode(MODE_ATR, value);   //Configure mode=ATR for all bits that are set
             set_atr_mode(MODE_GPIO, ~value); //Configure mode=GPIO for all bits that are unset
@@ -149,6 +151,9 @@ public:
             //Only set bits that are driven by the ATR engine
             set_atr_reg(ATR_REG_FULL_DUPLEX, value);
             break;
+        case GPIO_READBACK:
+            //This is readonly register, ignore on set. 
+            break;  
         default:
             UHD_THROW_INVALID_CODE_PATH();
         }

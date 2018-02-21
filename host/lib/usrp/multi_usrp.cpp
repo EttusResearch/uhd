@@ -7,7 +7,7 @@
 
 #include <uhd/property_tree.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
-
+#include <uhd/usrp/gpio_defs.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/math.hpp>
@@ -24,6 +24,7 @@
 #include <boost/algorithm/string.hpp>
 #include <algorithm>
 #include <cmath>
+#include <bitset>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -1860,51 +1861,200 @@ public:
 
     void set_gpio_attr(const std::string &bank, const std::string &attr, const uint32_t value, const uint32_t mask, const size_t mboard)
     {
+        std::vector<std::string> attr_value;
         if (_tree->exists(mb_root(mboard) / "gpio" / bank))
         {
-            const uint32_t current = _tree->access<uint32_t>(mb_root(mboard) / "gpio" / bank / attr).get();
-            const uint32_t new_value = (current & ~mask) | (value & mask);
-            _tree->access<uint32_t>(mb_root(mboard) / "gpio" / bank / attr).set(new_value);
-            return;
+            if (_tree->exists(mb_root(mboard) / "gpio" / bank / attr)){
+                gpio_atr::gpio_attr_t attr_type = gpio_atr::gpio_attr_rev_map.at(attr);
+                switch (attr_type){
+                    case gpio_atr::GPIO_SRC:
+                        throw uhd::runtime_error("Can't set SRC attribute using u32int_t value");
+                        break;
+                    case gpio_atr::GPIO_CTRL:
+                    case gpio_atr::GPIO_DDR:{
+                        attr_value = _tree->access<std::vector<std::string>>(mb_root(mboard) / "gpio" / bank / attr).get();
+                        UHD_ASSERT_THROW(attr_value.size() <= 32);
+                        std::bitset<32> bit_mask = std::bitset<32>(mask);
+                        std::bitset<32> bit_value = std::bitset<32>(value);
+                        for (size_t i = 0 ; i < bit_mask.size();i++){
+                            if (bit_mask[i] == 1){
+                                attr_value[i] = gpio_atr::attr_value_map.at(attr_type).at(bit_value[i]);
+                            }
+                        }
+                        _tree->access<std::vector<std::string>>(mb_root(mboard) / "gpio" / bank / attr).set(attr_value);
+                    }
+                        break;
+                    default:{
+                        const uint32_t current = _tree->access<uint32_t>(mb_root(mboard) / "gpio" / bank / attr).get();
+                        const uint32_t new_value = (current & ~mask) | (value & mask);
+                        _tree->access<uint32_t>(mb_root(mboard) / "gpio" / bank / attr).set(new_value);
+                    }
+                        break;
+                }
+                return;
+            }else{
+                throw uhd::runtime_error(str(boost::format(
+                    "The hardware has no gpio attribute: %s:\n") % attr));
+            }
         }
         if (bank.size() > 2 and bank[1] == 'X')
         {
             const std::string name = bank.substr(2);
             const dboard_iface::unit_t unit = (bank[0] == 'R')? dboard_iface::UNIT_RX : dboard_iface::UNIT_TX;
             dboard_iface::sptr iface = _tree->access<dboard_iface::sptr>(mb_root(mboard) / "dboards" / name / "iface").get();
-            if (attr == "CTRL") iface->set_pin_ctrl(unit, uint16_t(value), uint16_t(mask));
-            if (attr == "DDR") iface->set_gpio_ddr(unit, uint16_t(value), uint16_t(mask));
-            if (attr == "OUT") iface->set_gpio_out(unit, uint16_t(value), uint16_t(mask));
-            if (attr == "ATR_0X") iface->set_atr_reg(unit, gpio_atr::ATR_REG_IDLE, uint16_t(value), uint16_t(mask));
-            if (attr == "ATR_RX") iface->set_atr_reg(unit, gpio_atr::ATR_REG_RX_ONLY, uint16_t(value), uint16_t(mask));
-            if (attr == "ATR_TX") iface->set_atr_reg(unit, gpio_atr::ATR_REG_TX_ONLY, uint16_t(value), uint16_t(mask));
-            if (attr == "ATR_XX") iface->set_atr_reg(unit, gpio_atr::ATR_REG_FULL_DUPLEX, uint16_t(value), uint16_t(mask));
+            if (attr == gpio_atr::gpio_attr_map.at(gpio_atr::GPIO_CTRL)) iface->set_pin_ctrl(unit, uint16_t(value), uint16_t(mask));
+            if (attr == gpio_atr::gpio_attr_map.at(gpio_atr::GPIO_DDR)) iface->set_gpio_ddr(unit, uint16_t(value), uint16_t(mask));
+            if (attr == gpio_atr::gpio_attr_map.at(gpio_atr::GPIO_OUT)) iface->set_gpio_out(unit, uint16_t(value), uint16_t(mask));
+            if (attr == gpio_atr::gpio_attr_map.at(gpio_atr::GPIO_ATR_0X)) iface->set_atr_reg(unit, gpio_atr::ATR_REG_IDLE, uint16_t(value), uint16_t(mask));
+            if (attr == gpio_atr::gpio_attr_map.at(gpio_atr::GPIO_ATR_RX)) iface->set_atr_reg(unit, gpio_atr::ATR_REG_RX_ONLY, uint16_t(value), uint16_t(mask));
+            if (attr == gpio_atr::gpio_attr_map.at(gpio_atr::GPIO_ATR_TX)) iface->set_atr_reg(unit, gpio_atr::ATR_REG_TX_ONLY, uint16_t(value), uint16_t(mask));
+            if (attr == gpio_atr::gpio_attr_map.at(gpio_atr::GPIO_ATR_XX)) iface->set_atr_reg(unit, gpio_atr::ATR_REG_FULL_DUPLEX, uint16_t(value), uint16_t(mask));
+            if (attr == gpio_atr::gpio_attr_map.at(gpio_atr::GPIO_SRC)){
+                throw uhd::runtime_error("Setting gpio source does not supported in daughter board.");
+            }
         }
+        throw uhd::runtime_error(str(boost::format(
+            "The hardware has no gpio bank: %s:\n") % bank));
+    }
+
+    void set_gpio_attr(const std::string &bank, const std::string &attr, const std::string &str_value , const uint32_t mask, const size_t mboard)
+    {
+
+        gpio_atr::gpio_attr_t attr_type = gpio_atr::gpio_attr_rev_map.at(attr);
+
+        if (_tree->exists(mb_root(mboard) / "gpio" / bank))
+        {
+            if (_tree->exists(mb_root(mboard) / "gpio" / bank / attr)){
+
+                switch (attr_type){
+                    case gpio_atr::GPIO_SRC:
+                    case gpio_atr::GPIO_CTRL:
+                    case gpio_atr::GPIO_DDR:{
+                         std::vector<std::string> attr_value = _tree->access<std::vector<std::string>>(mb_root(mboard) / "gpio" / bank / attr).get();
+                         UHD_ASSERT_THROW(attr_value.size() <= 32);
+                        std::bitset<32> bit_mask = std::bitset<32>(mask);
+                        for (size_t i = 0 ; i < bit_mask.size(); i++){
+                            if (bit_mask[i] == 1){
+                                 attr_value[i] = str_value;
+                             }
+                         }
+                         _tree->access<std::vector<std::string>>(mb_root(mboard) / "gpio" / bank / attr).set(attr_value);
+                     }
+                        break;
+                    default:{
+                        uint32_t value = gpio_atr::gpio_attr_value_pair.at(attr).at(str_value) == 0 ? -1 : 0;
+                        const uint32_t current = _tree->access<uint32_t>(mb_root(mboard) / "gpio" / bank / attr).get();
+                        const uint32_t new_value = (current & ~mask) | (value & mask);
+                        _tree->access<uint32_t>(mb_root(mboard) / "gpio" / bank / attr).set(new_value);
+                    }
+                        break;
+                }
+
+                return;
+            }else{
+                throw uhd::runtime_error(str(boost::format(
+                    "The hardware has no gpio attribute: %s:\n") % attr));
+            }
+        }
+        if (bank.size() > 2 and bank[1] == 'X')
+        {
+            uint32_t value = gpio_atr::gpio_attr_value_pair.at(attr).at(str_value) == 0 ? -1 : 0;
+            const std::string name = bank.substr(2);
+            const dboard_iface::unit_t unit = (bank[0] == 'R')? dboard_iface::UNIT_RX : dboard_iface::UNIT_TX;
+            dboard_iface::sptr iface = _tree->access<dboard_iface::sptr>(mb_root(mboard) / "dboards" / name / "iface").get();
+            if (attr == gpio_atr::gpio_attr_map.at(gpio_atr::GPIO_CTRL))    iface->set_pin_ctrl(unit, uint16_t(value), uint16_t(mask));
+            if (attr == gpio_atr::gpio_attr_map.at(gpio_atr::GPIO_DDR))     iface->set_gpio_ddr(unit, uint16_t(value), uint16_t(mask));
+            if (attr == gpio_atr::gpio_attr_map.at(gpio_atr::GPIO_OUT))     iface->set_gpio_out(unit, uint16_t(value), uint16_t(mask));
+            if (attr == gpio_atr::gpio_attr_map.at(gpio_atr::GPIO_ATR_0X))  iface->set_atr_reg(unit, gpio_atr::ATR_REG_IDLE, uint16_t(value), uint16_t(mask));
+            if (attr == gpio_atr::gpio_attr_map.at(gpio_atr::GPIO_ATR_RX))  iface->set_atr_reg(unit, gpio_atr::ATR_REG_RX_ONLY, uint16_t(value), uint16_t(mask));
+            if (attr == gpio_atr::gpio_attr_map.at(gpio_atr::GPIO_ATR_TX))  iface->set_atr_reg(unit, gpio_atr::ATR_REG_TX_ONLY, uint16_t(value), uint16_t(mask));
+            if (attr == gpio_atr::gpio_attr_map.at(gpio_atr::GPIO_ATR_XX))  iface->set_atr_reg(unit, gpio_atr::ATR_REG_FULL_DUPLEX, uint16_t(value), uint16_t(mask));
+            if (attr == gpio_atr::gpio_attr_map.at(gpio_atr::GPIO_SRC)){
+                throw uhd::runtime_error("Setting gpio source does not supported in daughter board.");
+            }
+        }
+        throw uhd::runtime_error(str(boost::format("The hardware has no gpio bank: %s:\n") % bank));
     }
 
     uint32_t get_gpio_attr(const std::string &bank, const std::string &attr, const size_t mboard)
     {
+        std::vector<std::string> str_val;
+
         if (_tree->exists(mb_root(mboard) / "gpio" / bank))
         {
-            return uint32_t(_tree->access<uint64_t>(mb_root(mboard) / "gpio" / bank / attr).get());
+            if (_tree->exists(mb_root(mboard) / "gpio" / bank / attr)){
+                gpio_atr::gpio_attr_t attr_type = gpio_atr::gpio_attr_rev_map.at(attr);
+                switch (attr_type){
+                    case gpio_atr::GPIO_SRC:
+                        throw uhd::runtime_error("Can't set SRC  attribute using u32int_t value");
+                    case gpio_atr::GPIO_CTRL:
+                    case gpio_atr::GPIO_DDR:{
+                        str_val = _tree->access<std::vector<std::string>>(mb_root(mboard) / "gpio" / bank / attr).get();
+                        uint32_t val = 0;
+                        for(size_t i = 0 ; i < str_val.size() ; i++){
+                                val += usrp::gpio_atr::gpio_attr_value_pair.at(attr).at(str_val[i])<<i;
+                        }
+                        return val;
+                    }
+                    default:{
+                        return uint32_t(_tree->access<uint64_t>(mb_root(mboard) / "gpio" / bank / attr).get());
+                    }
+                }
+
+                return 0;
+            }else{
+                throw uhd::runtime_error(str(boost::format("The hardware has no gpio attribute: %s:\n") % attr));
+            }
         }
         if (bank.size() > 2 and bank[1] == 'X')
         {
             const std::string name = bank.substr(2);
             const dboard_iface::unit_t unit = (bank[0] == 'R')? dboard_iface::UNIT_RX : dboard_iface::UNIT_TX;
             dboard_iface::sptr iface = _tree->access<dboard_iface::sptr>(mb_root(mboard) / "dboards" / name / "iface").get();
-            if (attr == "CTRL") return iface->get_pin_ctrl(unit);
-            if (attr == "DDR") return iface->get_gpio_ddr(unit);
-            if (attr == "OUT") return iface->get_gpio_out(unit);
-            if (attr == "ATR_0X") return iface->get_atr_reg(unit, gpio_atr::ATR_REG_IDLE);
-            if (attr == "ATR_RX") return iface->get_atr_reg(unit, gpio_atr::ATR_REG_RX_ONLY);
-            if (attr == "ATR_TX") return iface->get_atr_reg(unit, gpio_atr::ATR_REG_TX_ONLY);
-            if (attr == "ATR_XX") return iface->get_atr_reg(unit, gpio_atr::ATR_REG_FULL_DUPLEX);
+            if (attr == "CTRL")     return iface->get_pin_ctrl(unit);
+            if (attr == "DDR")      return iface->get_gpio_ddr(unit);
+            if (attr == "OUT")      return iface->get_gpio_out(unit);
+            if (attr == "ATR_0X")   return iface->get_atr_reg(unit, gpio_atr::ATR_REG_IDLE);
+            if (attr == "ATR_RX")   return iface->get_atr_reg(unit, gpio_atr::ATR_REG_RX_ONLY);
+            if (attr == "ATR_TX")   return iface->get_atr_reg(unit, gpio_atr::ATR_REG_TX_ONLY);
+            if (attr == "ATR_XX")   return iface->get_atr_reg(unit, gpio_atr::ATR_REG_FULL_DUPLEX);
             if (attr == "READBACK") return iface->read_gpio(unit);
         }
-        return 0;
+        throw uhd::runtime_error(str(boost::format("The hardware has no gpio bank: %s:\n") % bank));
     }
-
+    std::vector<std::string> get_gpio_string_attr(const std::string &bank, const std::string &attr, const size_t mboard)
+    {
+        gpio_atr::gpio_attr_t attr_type = gpio_atr::gpio_attr_rev_map.at(attr);
+        std::vector<std::string> str_val = std::vector<std::string>(32, gpio_atr::default_attr_value_map.at(attr_type));
+        if (_tree->exists(mb_root(mboard) / "gpio" / bank))
+        {
+            if (_tree->exists(mb_root(mboard) / "gpio" / bank / attr))
+            {
+                gpio_atr::gpio_attr_t attr_type = gpio_atr::gpio_attr_rev_map.at(attr);
+                switch (attr_type){
+                    case gpio_atr::GPIO_SRC:
+                    case gpio_atr::GPIO_CTRL:
+                    case gpio_atr::GPIO_DDR:{
+                        return _tree->access<std::vector<std::string>>(mb_root(mboard) / "gpio" / bank / attr).get();
+                    }
+                    default:{
+                        uint32_t value = uint32_t(_tree->access<uint32_t>(mb_root(mboard) / "gpio" / bank / attr).get());
+                        std::bitset<32> bit_value = std::bitset<32>(value);
+                        for (size_t i = 0; i < bit_value.size(); i++)
+                        {
+                            str_val[i] = bit_value[i] == 0 ? "LOW" : "HIGH";
+                        }
+                        return str_val;
+                    }
+                }
+            }
+            else
+            {
+                throw uhd::runtime_error(str(boost::format("The hardware has no gpio attribute: %s:\n") % attr));
+            }
+        }
+        throw uhd::runtime_error(str(boost::format("The hardware has no support for given gpio bank name: %s:\n") % bank));
+    }
     void write_register(const std::string &path, const uint32_t field, const uint64_t value, const size_t mboard)
     {
         if (_tree->exists(mb_root(mboard) / "registers"))
