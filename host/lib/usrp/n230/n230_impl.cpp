@@ -399,22 +399,55 @@ void n230_impl::_initialize_property_tree(const fs_path& mb_path)
     //------------------------------------------------------------------
     // MiniSAS GPIO
     //------------------------------------------------------------------
-    _tree->create<uint32_t>(mb_path / "gpio" / "FP0" / "DDR")
-        .set(0)
-        .add_coerced_subscriber(boost::bind(&gpio_atr::gpio_atr_3000::set_gpio_attr,
-            _resource_mgr->get_minisas_gpio_ctrl_sptr(0), gpio_atr::GPIO_DDR, _1));
-    _tree->create<uint32_t>(mb_path / "gpio" / "FP1" / "DDR")
-        .set(0)
-        .add_coerced_subscriber(boost::bind(&gpio_atr::gpio_atr_3000::set_gpio_attr,
-            _resource_mgr->get_minisas_gpio_ctrl_sptr(1), gpio_atr::GPIO_DDR, _1));
-    _tree->create<uint32_t>(mb_path / "gpio" / "FP0" / "OUT")
-        .set(0)
-        .add_coerced_subscriber(boost::bind(&gpio_atr::gpio_atr_3000::set_gpio_attr,
-            _resource_mgr->get_minisas_gpio_ctrl_sptr(0), gpio_atr::GPIO_OUT, _1));
-    _tree->create<uint32_t>(mb_path / "gpio" / "FP1" / "OUT")
-        .set(0)
-        .add_coerced_subscriber(boost::bind(&gpio_atr::gpio_atr_3000::set_gpio_attr,
-            _resource_mgr->get_minisas_gpio_ctrl_sptr(1), gpio_atr::GPIO_OUT, _1));
+    for(const usrp::gpio_atr::gpio_attr_map_t::value_type attr:  usrp::gpio_atr::gpio_attr_map) {
+    switch (attr.first){
+                case usrp::gpio_atr::GPIO_SRC:
+                case usrp::gpio_atr::GPIO_CTRL:
+                    _tree->create<std::vector<std::string>>(mb_path / "gpio" / "FP0" /  attr.second)
+                         .set(std::vector<std::string>(32, usrp::gpio_atr::default_attr_value_map.at(attr.first)));
+                    _tree->create<std::vector<std::string>>(mb_path / "gpio" / "FP1" /  attr.second)
+                         .set(std::vector<std::string>(32, usrp::gpio_atr::default_attr_value_map.at(attr.first)));
+                    break;
+                case usrp::gpio_atr::GPIO_DDR:
+                    _tree->create<std::vector<std::string>>(mb_path / "gpio" / "FP0" /  attr.second)
+                         .set(std::vector<std::string>(32, usrp::gpio_atr::default_attr_value_map.at(attr.first)))
+                         .add_coerced_subscriber([this, attr](const std::vector<std::string> str_val){
+                            uint32_t val = 0;
+                            for(size_t i = 0 ; i < str_val.size() ; i++){
+                                val += usrp::gpio_atr::gpio_attr_value_pair.at(attr.second).at(str_val[i])<<i;
+                            }
+                            _resource_mgr->get_minisas_gpio_ctrl_sptr(0)->set_gpio_attr(attr.first, val);
+                         });
+                    _tree->create<std::vector<std::string>>(mb_path / "gpio" / "FP1" /  attr.second)
+                         .set(std::vector<std::string>(32, usrp::gpio_atr::default_attr_value_map.at(attr.first)))
+                         .add_coerced_subscriber([this, attr](const std::vector<std::string> str_val){
+                            uint32_t val = 0;
+                            for(size_t i = 0 ; i < str_val.size() ; i++){
+                                val += usrp::gpio_atr::gpio_attr_value_pair.at(attr.second).at(str_val[i])<<i;
+                            }
+                            _resource_mgr->get_minisas_gpio_ctrl_sptr(1)->set_gpio_attr(attr.first, val);
+                         });
+                    break;
+                case usrp::gpio_atr::GPIO_OUT:
+                    _tree->create<uint32_t>(mb_path / "gpio" / "FP0" /  attr.second)
+                         .set(0)
+                         .add_coerced_subscriber([this, attr](const uint32_t val){
+                             _resource_mgr->get_minisas_gpio_ctrl_sptr(0)->set_gpio_attr(attr.first, val);
+                         });
+                     _tree->create<uint32_t>(mb_path / "gpio" / "FP1" /  attr.second)
+                         .set(0)
+                         .add_coerced_subscriber([this, attr](const uint32_t val){
+                             _resource_mgr->get_minisas_gpio_ctrl_sptr(1)->set_gpio_attr(attr.first, val);
+                         });
+                         break;
+                default:
+                    _tree->create<uint32_t>(mb_path / "gpio" / "FP0" /  attr.second)
+                         .set(0);
+                    _tree->create<uint32_t>(mb_path / "gpio" / "FP1" /  attr.second)
+                         .set(0);
+                    break;
+            }
+    }
     _tree->create<uint32_t>(mb_path / "gpio" / "FP0" / "READBACK")
         .set_publisher(boost::bind(&gpio_atr::gpio_atr_3000::read_gpio, _resource_mgr->get_minisas_gpio_ctrl_sptr(0)));
     _tree->create<uint32_t>(mb_path / "gpio" / "FP1" / "READBACK")

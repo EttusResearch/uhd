@@ -521,14 +521,39 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     // internal gpios
     ////////////////////////////////////////////////////////////////////
     gpio_atr_3000::sptr fp_gpio = gpio_atr_3000::make(_radio_perifs[0].ctrl, radio::sr_addr(radio::FP_GPIO), radio::RB32_FP_GPIO);
-    for(const gpio_attr_map_t::value_type attr:  gpio_attr_map)
-    {
-        _tree->create<uint32_t>(mb_path / "gpio" / "INT0" / attr.second)
-            .add_coerced_subscriber(boost::bind(&gpio_atr_3000::set_gpio_attr, fp_gpio, attr.first, _1))
-            .set(0);
+    for(const auto& attr:  gpio_attr_map){
+        switch (attr.first){
+                case usrp::gpio_atr::GPIO_SRC:
+                    _tree->create<std::vector<std::string>>(mb_path / "gpio" / "INT0" / attr.second)
+                         .set(std::vector<std::string>(32, usrp::gpio_atr::default_attr_value_map.at(attr.first)))
+                         .add_coerced_subscriber([this](const std::vector<std::string> str_val){
+                            throw uhd::runtime_error("This device does not support set SRC attribute.");
+                         });
+                    break;
+                case usrp::gpio_atr::GPIO_CTRL:
+                case usrp::gpio_atr::GPIO_DDR:
+                    _tree->create<std::vector<std::string>>(mb_path / "gpio" / "INT0" / attr.second)
+                         .set(std::vector<std::string>(32, usrp::gpio_atr::default_attr_value_map.at(attr.first)))
+                         .add_coerced_subscriber([this, fp_gpio, attr](const std::vector<std::string> str_val){
+                            uint32_t val = 0;
+                            for(size_t i = 0 ; i < str_val.size() ; i++){
+                                val += usrp::gpio_atr::gpio_attr_value_pair.at(attr.second).at(str_val[i])<<i;
+                            }
+                            fp_gpio->set_gpio_attr(attr.first, val);
+                         });
+                    break;
+                default:
+                    _tree->create<uint32_t>(mb_path / "gpio" / "INT0" / attr.second)
+                         .set(0)
+                         .add_coerced_subscriber([this, fp_gpio, attr](const uint32_t val){
+                             fp_gpio->set_gpio_attr(attr.first, val);
+                         });
+            }
     }
     _tree->create<uint8_t>(mb_path / "gpio" / "INT0" / "READBACK")
-        .set_publisher(boost::bind(&gpio_atr_3000::read_gpio, fp_gpio));
+         .set_publisher([this, fp_gpio](){
+                 return fp_gpio->read_gpio();
+          });
 
 
     ////////////////////////////////////////////////////////////////////
