@@ -2,7 +2,7 @@
 # Copyright 2010-2015 Ettus Research LLC
 # Copyright 2018 Ettus Research, a National Instruments Company
 #
-# SPDX-License-Identifier: GPL-3.0
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
 
 ########################################################################
@@ -16,12 +16,6 @@ SET(util_runtime_sources
     uhd_cal_rx_iq_balance.cpp
     uhd_cal_tx_dc_offset.cpp
     uhd_cal_tx_iq_balance.cpp
-    usrp_n2xx_simple_net_burner.cpp
-)
-
-SET(x3xx_burner_sources
-    usrp_x3xx_fpga_burner.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../lib/usrp/x300/cdecode.c
 )
 
 find_package(UDev)
@@ -38,13 +32,6 @@ FOREACH(util_source ${util_runtime_sources})
     TARGET_LINK_LIBRARIES(${util_name} uhd ${Boost_LIBRARIES})
     UHD_INSTALL(TARGETS ${util_name} RUNTIME DESTINATION ${RUNTIME_DIR} COMPONENT utilities)
 ENDFOREACH(util_source)
-
-IF(ENABLE_X300)
-    INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/usrp/x300)
-    ADD_EXECUTABLE(usrp_x3xx_fpga_burner ${x3xx_burner_sources})
-    TARGET_LINK_LIBRARIES(usrp_x3xx_fpga_burner uhd ${Boost_LIBRARIES})
-    UHD_INSTALL(TARGETS usrp_x3xx_fpga_burner RUNTIME DESTINATION ${RUNTIME_DIR} COMPONENT utilities)
-ENDIF(ENABLE_X300)
 
 ########################################################################
 # Utilities that get installed into the share path
@@ -79,16 +66,6 @@ IF(ENABLE_OCTOCLOCK)
     LIST(APPEND util_share_sources
         octoclock_burn_eeprom.cpp
     )
-
-    SET(octoclock_burner_sources
-        octoclock_firmware_burner.cpp
-        ${CMAKE_SOURCE_DIR}/lib/utils/ihex.cpp
-    )
-
-    INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/usrp_clock/octoclock)
-    ADD_EXECUTABLE(octoclock_firmware_burner ${octoclock_burner_sources})
-    TARGET_LINK_LIBRARIES(octoclock_firmware_burner uhd ${Boost_LIBRARIES})
-    UHD_INSTALL(TARGETS octoclock_firmware_burner RUNTIME DESTINATION ${RUNTIME_DIR} COMPONENT utilities)
 ENDIF(ENABLE_OCTOCLOCK)
 
 IF(LINUX AND ENABLE_USB)
@@ -113,13 +90,6 @@ FOREACH(util_source ${util_share_sources_py})
         COMPONENT utilities
     )
 ENDFOREACH(util_source)
-
-IF(ENABLE_USRP2)
-    UHD_INSTALL(TARGETS usrp_n2xx_simple_net_burner RUNTIME DESTINATION ${PKG_LIB_DIR}/utils COMPONENT utilities)
-ENDIF(ENABLE_USRP2)
-IF(ENABLE_X300)
-    UHD_INSTALL(TARGETS usrp_x3xx_fpga_burner RUNTIME DESTINATION ${PKG_LIB_DIR}/utils COMPONENT utilities)
-ENDIF(ENABLE_X300)
 
 #UHD images downloader configuration
 FILE(READ ${CMAKE_CURRENT_SOURCE_DIR}/../../images/manifest.txt CMAKE_MANIFEST_CONTENTS)
@@ -155,7 +125,6 @@ ENDIF(NOT HAVE_PYTHON_MODULE_REQUESTS)
 IF(ENABLE_USRP2)
     SET(burners
         usrp2_card_burner.py
-        usrp_n2xx_net_burner.py
     )
 
     IF(WIN32 AND UHD_RELEASE_MODE) #include dd.exe
