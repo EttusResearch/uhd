@@ -440,6 +440,12 @@ void n230_impl::_initialize_property_tree(const fs_path& mb_path)
                              _resource_mgr->get_minisas_gpio_ctrl_sptr(1)->set_gpio_attr(attr.first, val);
                          });
                          break;
+                case usrp::gpio_atr::GPIO_READBACK:
+                    _tree->create<uint32_t>(mb_path / "gpio" / "FP0" / "READBACK")
+                        .set_publisher(boost::bind(&gpio_atr::gpio_atr_3000::read_gpio, _resource_mgr->get_minisas_gpio_ctrl_sptr(0)));
+                    _tree->create<uint32_t>(mb_path / "gpio" / "FP1" / "READBACK")
+                        .set_publisher(boost::bind(&gpio_atr::gpio_atr_3000::read_gpio, _resource_mgr->get_minisas_gpio_ctrl_sptr(1)));
+                    break;
                 default:
                     _tree->create<uint32_t>(mb_path / "gpio" / "FP0" /  attr.second)
                          .set(0);
@@ -448,11 +454,6 @@ void n230_impl::_initialize_property_tree(const fs_path& mb_path)
                     break;
             }
     }
-    _tree->create<uint32_t>(mb_path / "gpio" / "FP0" / "READBACK")
-        .set_publisher(boost::bind(&gpio_atr::gpio_atr_3000::read_gpio, _resource_mgr->get_minisas_gpio_ctrl_sptr(0)));
-    _tree->create<uint32_t>(mb_path / "gpio" / "FP1" / "READBACK")
-        .set_publisher(boost::bind(&gpio_atr::gpio_atr_3000::read_gpio, _resource_mgr->get_minisas_gpio_ctrl_sptr(1)));
-
     //------------------------------------------------------------------
     // GPSDO sensors
     //------------------------------------------------------------------

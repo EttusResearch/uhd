@@ -93,6 +93,12 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(x300_radio_ctrl)
                              _fp_gpio->set_gpio_attr(attr.first, val);
                          });
                     break;
+                case usrp::gpio_atr::GPIO_READBACK:
+                    _tree->create<uint32_t>(fs_path("gpio") / "FP0" / "READBACK")
+                        .set_publisher([this](){
+                            return _fp_gpio->read_gpio();
+                        });
+                    break;
                 default:
                     _tree->create<uint32_t>(fs_path("gpio") / "FP0" / attr.second)
                          .set(0)
@@ -102,10 +108,6 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(x300_radio_ctrl)
             }
 
         }
-        _tree->create<uint32_t>(fs_path("gpio") / "FP0" / "READBACK")
-            .set_publisher([this](){
-                return _fp_gpio->read_gpio();
-            });
     }
 
     ////////////////////////////////////////////////////////////////
@@ -169,7 +171,6 @@ x300_radio_ctrl_impl::~x300_radio_ctrl_impl()
         for(const gpio_atr::gpio_attr_map_t::value_type attr:  gpio_atr::gpio_attr_map) {
             _tree->remove(fs_path("gpio") / "FP0" / attr.second);
         }
-        _tree->remove(fs_path("gpio") / "FP0" / "READBACK");
     }
 
     // Reset peripherals

@@ -542,6 +542,12 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
                             fp_gpio->set_gpio_attr(attr.first, val);
                          });
                     break;
+                case usrp::gpio_atr::GPIO_READBACK:
+                    _tree->create<uint8_t>(mb_path / "gpio" / "INT0" / "READBACK")
+                        .set_publisher([this, fp_gpio](){
+                            return fp_gpio->read_gpio();
+                         });
+                    break;
                 default:
                     _tree->create<uint32_t>(mb_path / "gpio" / "INT0" / attr.second)
                          .set(0)
@@ -550,10 +556,6 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
                          });
             }
     }
-    _tree->create<uint8_t>(mb_path / "gpio" / "INT0" / "READBACK")
-         .set_publisher([this, fp_gpio](){
-                 return fp_gpio->read_gpio();
-          });
 
 
     ////////////////////////////////////////////////////////////////////
