@@ -13,8 +13,8 @@ INSTALL(PROGRAMS
 SET(eeprom_tool_sources)
 SET(eeprom_tool_libs)
 
-IF("${MPM_DEVICE}" STREQUAL "n310")
-    MESSAGE(STATUS "Adding N310-specific EEPROM tools...")
+IF("${MPM_DEVICE}" STREQUAL "n3xx")
+    MESSAGE(STATUS "Adding N3XX-specific EEPROM tools...")
     SET(eeprom_tool_libs eeprom.c)
     SET(eeprom_tool_sources
         db-dump.c
@@ -27,7 +27,7 @@ IF("${MPM_DEVICE}" STREQUAL "n310")
         eeprom-set-flags.c
         fan-limits.c
     )
-ENDIF("${MPM_DEVICE}" STREQUAL "n310")
+ENDIF("${MPM_DEVICE}" STREQUAL "n3xx")
 
 #for each source: build an executable and install
 FOREACH(eeprom_tool_source ${eeprom_tool_sources})
