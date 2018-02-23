@@ -30,7 +30,6 @@ uhd_benchmark_rate_test.tests = {
         'chan': '1',
         'rate': 1e6,
         'acceptable-underruns': 50,
-        'products': ['B210',],
     },
 }
 
