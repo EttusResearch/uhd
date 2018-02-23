@@ -110,7 +110,7 @@ public:
 
         //Gain Specific
         get_rx_subtree()->create<meta_range_t>("gains/all/range")
-            .set(gain_range_t(0, 95, double(1.0)));
+            .set(gain_range_t(0, 93, double(1.0)));
         expert_factory::add_prop_node<double>(_expert, get_rx_subtree(),
             "gains/all/value", prepend_ch("gain", _ch_name),
             0.0, AUTO_RESOLVE_ON_WRITE);
