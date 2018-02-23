@@ -20,7 +20,8 @@
 #include <cmath>
 #include <ctime>
 #include <cstdlib>
-
+#include <chrono>
+#include <thread>
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
@@ -160,17 +161,21 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
   print_notes();
 
-  // The TCXO has a long warm up time, so wait up to 30 seconds for sensor data to show up
-  std::cout << "Waiting for the GPSDO to warm up..." << std::endl;
-  for (size_t i = 0; i < 300; i++) {
+  // The TCXO has a long warm up time, so wait up to 30 seconds for sensor data
+  // to show up
+  std::cout << "Waiting for the GPSDO to warm up..." << std::flush;
+  auto end = std::chrono::steady_clock::now() + std::chrono::seconds(30);
+  while (std::chrono::steady_clock::now() < end) {
       try {
-          usrp->get_mboard_sensor("gps_locked",0);
+          usrp->get_mboard_sensor("gps_locked", 0);
           break;
       } catch (std::exception &) {}
-      boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+      std::this_thread::sleep_for(std::chrono::milliseconds(250));
+      std::cout << "." << std::flush;
   }
+  std::cout << std::endl;
   try {
-      usrp->get_mboard_sensor("gps_locked",0);
+      usrp->get_mboard_sensor("gps_locked", 0);
   } catch (std::exception &) {
       std::cout << "No response from GPSDO in 30 seconds" << std::endl;
       return EXIT_FAILURE;
