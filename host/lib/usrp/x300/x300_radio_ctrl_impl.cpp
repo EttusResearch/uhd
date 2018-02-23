@@ -77,8 +77,8 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(x300_radio_ctrl)
                 case usrp::gpio_atr::GPIO_SRC:
                     _tree->create<std::vector<std::string>>(fs_path("gpio") / "FP0" / attr.second)
                         .set(std::vector<std::string>(32, usrp::gpio_atr::default_attr_value_map.at(attr.first)))
-                        .add_coerced_subscriber([this](const std::vector<std::string> str_val){
-                             throw uhd::runtime_error("This device does not support set SRC attribute.");
+                        .add_coerced_subscriber([this](const std::vector<std::string>&){
+                             throw uhd::runtime_error("This device does not support setting the GPIO_SRC attribute.");
                     });
                     break;
                 case usrp::gpio_atr::GPIO_CTRL:

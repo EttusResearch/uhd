@@ -526,8 +526,8 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
                 case usrp::gpio_atr::GPIO_SRC:
                     _tree->create<std::vector<std::string>>(mb_path / "gpio" / "INT0" / attr.second)
                          .set(std::vector<std::string>(32, usrp::gpio_atr::default_attr_value_map.at(attr.first)))
-                         .add_coerced_subscriber([this](const std::vector<std::string> str_val){
-                            throw uhd::runtime_error("This device does not support set SRC attribute.");
+                         .add_coerced_subscriber([this](const std::vector<std::string>&){
+                            throw uhd::runtime_error("This device does not support setting the GPIO_SRC attribute.");
                          });
                     break;
                 case usrp::gpio_atr::GPIO_CTRL:
