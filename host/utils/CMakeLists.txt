@@ -127,6 +127,14 @@ CONFIGURE_FILE(
     ${CMAKE_CURRENT_SOURCE_DIR}/uhd_images_downloader.py.in
     ${CMAKE_CURRENT_BINARY_DIR}/uhd_images_downloader.py
 @ONLY)
+# TODO: FIXME when know how.
+# This is a hack to force cmake regenerate uhd_images_downloader.py
+# whenever manifest.txt file changed.
+CONFIGURE_FILE(
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../images/manifest.txt
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../images/manifest.txt
+COPYONLY)
+
 UHD_INSTALL(PROGRAMS
     ${CMAKE_CURRENT_BINARY_DIR}/uhd_images_downloader.py
     DESTINATION ${PKG_LIB_DIR}/utils
