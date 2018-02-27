@@ -455,12 +455,12 @@ class n310(PeriphManagerBase):
     #
     # See PeriphManagerBase for documentation on these fields
     #########################################################################
-    pids = [0x4242,]
     description = "N300-Series Device"
+    pids = {0x4242: 'n310', 0x4240: 'n300'}
     mboard_eeprom_addr = "e0005000.i2c"
     mboard_eeprom_max_len = 256
     mboard_info = {"type": "n3xx",
-                   "product": "n310"
+                   "product": "unknown",
                   }
     mboard_max_rev = 4 # 4 == RevE
     mboard_sensor_callback_map = {
@@ -485,13 +485,13 @@ class n310(PeriphManagerBase):
     updateable_components = {
         'fpga': {
             'callback': "update_fpga",
-            'path': '/lib/firmware/n3xx.bin',
+            'path': '/lib/firmware/{}.bin',
             'reset': True,
         },
         'dts': {
             'callback': "update_dts",
-            'path': '/lib/firmware/n3xx.dts',
-            'output': '/lib/firmware/n3xx.dtbo',
+            'path': '/lib/firmware/{}.dts',
+            'output': '/lib/firmware/{}.dtbo',
             'reset': False,
         },
     }
@@ -506,7 +506,9 @@ class n310(PeriphManagerBase):
         eeprom_md -- Dictionary of info read out from the mboard EEPROM
         device_args -- Arbitrary dictionary of info, typically user-defined
         """
-        return ['n3xx']
+        # In the N3xx case, we name the dtbo file the same as the product.
+        # N310 -> n310.dtbo, N300 -> n300.dtbo and so on.
+        return [n310.pids[eeprom_md['pid']]]
 
     ###########################################################################
     # Ctor and device initialization tasks
@@ -614,6 +616,9 @@ class n310(PeriphManagerBase):
         Periphals are initialized in the order of least likely to fail, to most
         likely.
         """
+        # Sanity checks
+        assert self.mboard_info.get('product') in self.pids.values(), \
+                "Device product could not be determined!"
         # Init peripherals
         self.log.trace("Initializing TCA6424 port expander controls...")
         self._gpios = TCA6424(int(self.mboard_info['rev']))
@@ -1213,7 +1218,8 @@ class n310(PeriphManagerBase):
         _, file_extension = os.path.splitext(filepath)
         # Cut off the period from the file extension
         file_extension = file_extension[1:].lower()
-        binfile_path = self.updateable_components['fpga']['path']
+        binfile_path = self.updateable_components['fpga']['path'].format(
+                self.mboard_info['product'])
         if file_extension == "bit":
             self.log.trace("Converting bit to bin file and writing to {}"
                            .format(binfile_path))
@@ -1244,11 +1250,13 @@ class n310(PeriphManagerBase):
         :param filepath: path to new DTS image
         :param metadata: Dictionary of strings containing metadata
         """
-        dtsfile_path = self.updateable_components['dts']['path']
+        dtsfile_path = self.updateable_components['dts']['path'].format(
+                self.mboard_info['product'])
         self.log.trace("Updating DTS with image at %s to %s (metadata: %s)",
                        filepath, dtsfile_path, str(metadata))
         shutil.copy(filepath, dtsfile_path)
-        dtbofile_path = self.updateable_components['dts']['output']
+        dtbofile_path = self.updateable_components['dts']['output'].format(
+                self.mboard_info['product'])
         self.log.trace("Compiling to %s...", dtbofile_path)
         dtc_command = [
             'dtc',

@@ -52,9 +52,9 @@ class PeriphManagerBase(object):
     #
     # These values are meant to be overridden by the according subclasses
     #########################################################################
-    # Very important: A list of PIDs that apply to the current device. Must be
-    # list, even if there's only one entry.
-    pids = []
+    # Very important: A map of PIDs that apply to the current device. Format is
+    # pid -> product name.
+    pids = {}
     # A textual description of this device type
     description = "MPM Device"
     # Address of the motherboard EEPROM. This could be something like
@@ -195,16 +195,19 @@ class PeriphManagerBase(object):
                     )
                 except TypeError:
                     self.mboard_info[key] = str(self._eeprom_head.get(key, ''))
-            if 'pid' in self._eeprom_head \
-                    and self._eeprom_head['pid'] not in self.pids:
-                self.log.error(
-                    "Found invalid PID in EEPROM: 0x{:04X}. " \
-                    "Valid PIDs are: {}".format(
-                        self._eeprom_head['pid'],
-                        ", ".join(["0x{:04X}".format(x) for x in self.pids]),
+            if 'pid' in self._eeprom_head:
+                if self._eeprom_head['pid'] not in self.pids.keys():
+                    self.log.error(
+                        "Found invalid PID in EEPROM: 0x{:04X}. " \
+                        "Valid PIDs are: {}".format(
+                            self._eeprom_head['pid'],
+                            ", ".join(["0x{:04X}".format(x)
+                                       for x in self.pids.keys()]),
+                        )
                     )
-                )
-                raise RuntimeError("Invalid PID found in EEPROM.")
+                    raise RuntimeError("Invalid PID found in EEPROM.")
+                self.mboard_info['product'] = \
+                    self.pids[self._eeprom_head['pid']]
             if 'rev' in self._eeprom_head:
                 try:
                     rev_numeric = int(self._eeprom_head.get('rev'))
