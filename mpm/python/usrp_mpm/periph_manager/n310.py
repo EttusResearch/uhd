@@ -511,10 +511,6 @@ class n310(PeriphManagerBase):
     # Ctor and device initialization tasks
     ###########################################################################
     def __init__(self, args):
-        super(n310, self).__init__(args)
-        if not self._device_initialized:
-            # Don't try and figure out what's going on. Just give up.
-            return
         self._tear_down = False
         self._status_monitor_thread = None
         self._ext_clock_freq = None
@@ -522,6 +518,10 @@ class n310(PeriphManagerBase):
         self._time_source = None
         self._available_endpoints = list(range(256))
         self._bp_leds = None
+        super(n310, self).__init__(args)
+        if not self._device_initialized:
+            # Don't try and figure out what's going on. Just give up.
+            return
         try:
             self._init_peripherals(args)
         except Exception as ex:
