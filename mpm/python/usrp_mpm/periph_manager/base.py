@@ -136,6 +136,7 @@ class PeriphManagerBase(object):
         # Note: args is a dictionary.
         assert len(self.pids) > 0
         assert self.mboard_eeprom_magic is not None
+        self.dboards = []
         # Set up logging
         self.log = get_logger('PeriphManager')
         self.claimed = False
@@ -288,7 +289,6 @@ class PeriphManagerBase(object):
             self.log.warning("--override-db-pids is going to skip dboards.")
             dboard_eeprom_paths = \
                     dboard_eeprom_paths[:len(override_dboard_pids)]
-        self.dboards = []
         for dboard_idx, dboard_eeprom_path in enumerate(dboard_eeprom_paths):
             self.log.debug("Initializing dboard %d...", dboard_idx)
             dboard_eeprom_md, dboard_eeprom_rawdata = eeprom.read_eeprom(
