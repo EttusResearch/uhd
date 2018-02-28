@@ -106,8 +106,8 @@ SET(PKG_MAN_DIR share/man/man1)
 # Setup library configuration
 ########################################################################
 SET(CMAKE_CXX_STANDARD 11)
-SET(MPM_DEVICE "n310" CACHE STRING "Choose an MPM device to build")
-SET_PROPERTY(CACHE MPM_DEVICE PROPERTY STRINGS n310 tests)
+SET(MPM_DEVICE "n3xx" CACHE STRING "Choose an MPM device to build")
+SET_PROPERTY(CACHE MPM_DEVICE PROPERTY STRINGS n3xx tests)
 
 SET(UHD_HOST_ROOT ${CMAKE_SOURCE_DIR}/../host)
 

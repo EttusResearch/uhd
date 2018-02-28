@@ -12,7 +12,7 @@ import argparse
 import subprocess
 import pyudev
 from usrp_mpm.mpmlog import get_logger
-from usrp_mpm.periph_manager.n310 import MboardRegsControl
+from usrp_mpm.periph_manager.n3xx import MboardRegsControl
 
 OPENOCD_DIR = "/usr/share/openocd/scripts"
 CONFIGS = {

@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 """
-N310 implementation module
+Network utilities for MPM
 """
 import itertools
 import socket

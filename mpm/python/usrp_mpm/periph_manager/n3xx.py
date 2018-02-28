@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 """
-N310 implementation module
+N3xx implementation module
 """
 
 from __future__ import print_function
@@ -407,8 +407,8 @@ class MboardRegsControl(object):
 ###############################################################################
 # Transport managers
 ###############################################################################
-class N310XportMgrUDP(XportMgrUDP):
-    " N310-specific UDP configuration "
+class N3xxXportMgrUDP(XportMgrUDP):
+    " N3xx-specific UDP configuration "
     xbar_dev = "/dev/crossbar0"
     iface_config = {
         'sfp0': {
@@ -437,8 +437,8 @@ class N310XportMgrUDP(XportMgrUDP):
         },
     }
 
-class N310XportMgrLiberio(XportMgrLiberio):
-    " N310-specific Liberio configuration "
+class N3xxXportMgrLiberio(XportMgrLiberio):
+    " N3xx-specific Liberio configuration "
     max_chan = 10
     xbar_dev = "/dev/crossbar0"
     xbar_port = 2
@@ -446,9 +446,9 @@ class N310XportMgrLiberio(XportMgrLiberio):
 ###############################################################################
 # Main Class
 ###############################################################################
-class n310(PeriphManagerBase):
+class n3xx(PeriphManagerBase):
     """
-    Holds N310 specific attributes and methods
+    Holds N3xx specific attributes and methods
     """
     #########################################################################
     # Overridables
@@ -478,7 +478,7 @@ class n310(PeriphManagerBase):
     # We're on a Zynq target, so the following two come from the Zynq standard
     # device tree overlay (tree/arch/arm/boot/dts/zynq-7000.dtsi)
     dboard_spimaster_addrs = ["e0006000.spi", "e0007000.spi"]
-    # N310-specific settings
+    # N3xx-specific settings
     # Label for the mboard UIO
     mboard_regs_label = "mboard-regs"
     # Override the list of updateable components
@@ -508,7 +508,7 @@ class n310(PeriphManagerBase):
         """
         # In the N3xx case, we name the dtbo file the same as the product.
         # N310 -> n310.dtbo, N300 -> n300.dtbo and so on.
-        return [n310.pids[eeprom_md['pid']]]
+        return [n3xx.pids[eeprom_md['pid']]]
 
     ###########################################################################
     # Ctor and device initialization tasks
@@ -521,7 +521,7 @@ class n310(PeriphManagerBase):
         self._time_source = None
         self._available_endpoints = list(range(256))
         self._bp_leds = None
-        super(n310, self).__init__(args)
+        super(n3xx, self).__init__(args)
         if not self._device_initialized:
             # Don't try and figure out what's going on. Just give up.
             return
@@ -654,8 +654,8 @@ class n310(PeriphManagerBase):
         self._init_meas_clock()
         # Init CHDR transports
         self._xport_mgrs = {
-            'udp': N310XportMgrUDP(self.log.getChild('UDP')),
-            'liberio': N310XportMgrLiberio(self.log.getChild('liberio')),
+            'udp': N3xxXportMgrUDP(self.log.getChild('UDP')),
+            'liberio': N3xxXportMgrLiberio(self.log.getChild('liberio')),
         }
         # Spawn status monitoring thread
         self.log.trace("Spawning status monitor thread...")
@@ -684,7 +684,7 @@ class n310(PeriphManagerBase):
             self.set_clock_source(args.get("clock_source"))
         if "clock_source" in args or "time_source" in args:
             self.set_time_source(args.get("time_source", self.get_time_source()))
-        result = super(n310, self).init(args)
+        result = super(n3xx, self).init(args)
         for xport_mgr in itervalues(self._xport_mgrs):
             xport_mgr.init(args)
         return result
@@ -697,7 +697,7 @@ class n310(PeriphManagerBase):
             self.log.warning(
                 "Cannot run deinit(), device was never fully initialized!")
             return
-        super(n310, self).deinit()
+        super(n3xx, self).deinit()
         for xport_mgr in itervalues(self._xport_mgrs):
             xport_mgr.deinit()
         self.log.trace("Resetting SID pool...")
@@ -707,7 +707,7 @@ class n310(PeriphManagerBase):
         """
         Tear down all members that need to be specially handled before
         deconstruction.
-        For N310, this means the overlay.
+        For N3xx, this means the overlay.
         """
         self.log.trace("Tearing down N3xx device...")
         self._tear_down = True
@@ -716,7 +716,7 @@ class n310(PeriphManagerBase):
             if self._status_monitor_thread.is_alive():
                 self.log.error("Could not terminate monitor thread!")
         active_overlays = self.list_active_overlays()
-        self.log.trace("N310 has active device tree overlays: {}".format(
+        self.log.trace("N3xx has active device tree overlays: {}".format(
             active_overlays
         ))
         for overlay in active_overlays:
@@ -984,7 +984,7 @@ class n310(PeriphManagerBase):
     ###########################################################################
     def get_ref_lock_sensor(self):
         """
-        The N310 has no ref lock sensor, but because the ref lock is
+        The N3xx has no ref lock sensor, but because the ref lock is
         historically considered a motherboard-level sensor, we will return the
         combined lock status of all daughterboards. If no dboard is connected,
         or none has a ref lock sensor, we simply return True.
@@ -1219,7 +1219,7 @@ class n310(PeriphManagerBase):
         # Cut off the period from the file extension
         file_extension = file_extension[1:].lower()
         binfile_path = self.updateable_components['fpga']['path'].format(
-                self.mboard_info['product'])
+            self.mboard_info['product'])
         if file_extension == "bit":
             self.log.trace("Converting bit to bin file and writing to {}"
                            .format(binfile_path))
@@ -1232,7 +1232,7 @@ class n310(PeriphManagerBase):
         else:
             self.log.error("Invalid FPGA bitfile: {}"
                            .format(filepath))
-            raise RuntimeError("Invalid N310 FPGA bitfile")
+            raise RuntimeError("Invalid N3xx FPGA bitfile")
         # RPC server will reload the periph manager after this.
         return True
 

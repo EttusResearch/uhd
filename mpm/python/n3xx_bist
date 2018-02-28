@@ -5,7 +5,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 """
-N310 Built-In Self Test (BIST)
+N3XX Built-In Self Test (BIST)
+
+Will work on all derivatives of the N3xx series.
 """
 
 from __future__ import print_function
@@ -230,7 +232,7 @@ def expand_options(option_list):
 ##############################################################################
 # Bist class
 ##############################################################################
-class N310BIST(object):
+class N3XXBIST(object):
     """
     BIST Tool for the USRP N3xx series
     """
@@ -280,11 +282,11 @@ class N310BIST(object):
         return parser
 
     def __init__(self):
-        self.args = N310BIST.make_arg_parser().parse_args()
+        self.args = N3XXBIST.make_arg_parser().parse_args()
         self.args.option = expand_options(self.args.option)
         try:
-            from usrp_mpm.periph_manager.n310 import n310
-            default_rev = n310.mboard_max_rev
+            from usrp_mpm.periph_manager.n3xx import n3xx
+            default_rev = n3xx.mboard_max_rev
         except ImportError:
             # This means we're in dry run mode or something like that, so just
             # pick something
@@ -456,8 +458,8 @@ class N310BIST(object):
                 "eps": 34.11,
                 "mode": 3
             }
-        from usrp_mpm.periph_manager import n310
-        gpio_tca6424 = n310.TCA6424(self.mb_rev)
+        from usrp_mpm.periph_manager import n3xx
+        gpio_tca6424 = n3xx.TCA6424(self.mb_rev)
         # Turn on GPS, give some time to acclimatize
         gpio_tca6424.set("PWREN-GPS")
         time.sleep(5)
@@ -687,10 +689,10 @@ class N310BIST(object):
                 'write_patterns': list(patterns),
                 'read_patterns': list(patterns),
             }
-        from usrp_mpm.periph_manager import n310
-        gpio_tca6424 = n310.TCA6424(self.mb_rev)
+        from usrp_mpm.periph_manager import n3xx
+        gpio_tca6424 = n3xx.TCA6424(self.mb_rev)
         gpio_tca6424.set("FPGA-GPIO-EN")
-        mb_regs = n310.MboardRegsControl(n310.n310.mboard_regs_label, self.log)
+        mb_regs = n3xx.MboardRegsControl(n3xx.n3xx.mboard_regs_label, self.log)
         mb_regs.set_fp_gpio_master(0xFFF)
         # Allow some time for the front-panel GPIOs to become usable
         time.sleep(.5)
@@ -698,7 +700,7 @@ class N310BIST(object):
         ddr2 = 0xfc0
         def _run_gpio(ddr, patterns):
             " Run a GPIO test for a given set of patterns "
-            gpio_ctrl = n310.FrontpanelGPIO(ddr)
+            gpio_ctrl = n3xx.FrontpanelGPIO(ddr)
             for pattern in patterns:
                 gpio_set_all(gpio_ctrl, pattern, GPIO_WIDTH, ddr)
                 time.sleep(0.1)
@@ -771,7 +773,7 @@ def gpio_set_all(gpio_bank, value, gpio_size, ddr_mask):
         gpio_bank  -- gpio bank type.
         value -- value to set onto gpio bank.
         gpio_size -- size of the gpio bank
-        ddr_mask  -- data direction register bit mask. 0 is input; 1 is output.  
+        ddr_mask  -- data direction register bit mask. 0 is input; 1 is output.
     """
     ddr_size = bin(ddr_mask).count("1")
     value_bitstring = ('{0:0' + str(ddr_size) + 'b}').format(value)[-(gpio_size):]
@@ -785,7 +787,7 @@ def gpio_set_all(gpio_bank, value, gpio_size, ddr_mask):
 ##############################################################################
 def main():
     " Go, go, go! "
-    return N310BIST().run()
+    return N3XXBIST().run()
 
 if __name__ == '__main__':
     exit(not main())
