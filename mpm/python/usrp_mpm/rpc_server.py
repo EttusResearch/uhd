@@ -70,7 +70,7 @@ class MPMServer(RPCServer):
         self.session_id = None
         # Create the periph_manager for this device
         # This call will be forwarded to the device specific implementation
-        # e.g. in periph_manager/n310.py
+        # e.g. in periph_manager/n3xx.py
         # Which implementation is called will be determined during
         # configuration with cmake (-DMPM_DEVICE).
         # mgr is thus derived from PeriphManagerBase
