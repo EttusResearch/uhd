@@ -385,6 +385,7 @@ class MPMServer(RPCServer):
         This is as safe method which can be called without a claim on the device
         """
         info = self.periph_manager.get_device_info()
+        info["mpm_version"] = "{}.{}".format(*MPM_COMPAT_NUM)
         if self.client_host in net.get_local_ip_addrs():
             info["connection"] = "local"
         else:

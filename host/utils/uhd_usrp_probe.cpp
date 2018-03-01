@@ -157,6 +157,9 @@ static std::string get_mboard_pp_string(property_tree::sptr tree, const fs_path 
     if (tree->exists(path / "fw_version")){
         ss << "FW Version: " << tree->access<std::string>(path / "fw_version").get() << std::endl;
     }
+    if (tree->exists(path / "mpm_version")){
+        ss << "MPM Version: " << tree->access<std::string>(path / "mpm_version").get() << std::endl;
+    }
     if (tree->exists(path / "fpga_version")){
         ss << "FPGA Version: " << tree->access<std::string>(path / "fpga_version").get() << std::endl;
     }
