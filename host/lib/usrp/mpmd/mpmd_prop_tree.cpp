@@ -94,16 +94,20 @@ void mpmd_impl::init_property_tree(
     /*** Device info ****************************************************/
     if (not tree->exists("/name")) {
         tree->create<std::string>("/name")
-            .set(mb->device_info.get("name", "Unknown MPM device"))
+            .set(mb->device_info.get("description", "Unknown MPM device"))
         ;
     }
     tree->create<std::string>(mb_path / "name")
-        .set(mb->device_info.get("type", "UNKNOWN"));
+        .set(mb->device_info.get("name", "UNKNOWN"));
     tree->create<std::string>(mb_path / "serial")
         .set(mb->device_info.get("serial", "n/a"));
     tree->create<std::string>(mb_path / "connection")
         .set(mb->device_info.get("connection", "UNKNOWN"));
     tree->create<size_t>(mb_path / "link_max_rate").set(1e9 / 8);
+    tree->create<std::string>(mb_path / "mpm_version")
+        .set(mb->device_info.get("mpm_version", "UNKNOWN"));
+    tree->create<std::string>(mb_path / "fpga_version")
+        .set(mb->device_info.get("fpga_version", "UNKNOWN"));
 
     /*** Clocking *******************************************************/
     tree->create<std::string>(mb_path / "clock_source/value")

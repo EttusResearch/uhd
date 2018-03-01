@@ -456,6 +456,7 @@ class n310(PeriphManagerBase):
     # See PeriphManagerBase for documentation on these fields
     #########################################################################
     pids = [0x4242,]
+    description = "N300-Series Device"
     mboard_eeprom_addr = "e0005000.i2c"
     mboard_eeprom_max_len = 256
     mboard_info = {"type": "n3xx",
@@ -782,8 +783,13 @@ class n310(PeriphManagerBase):
         """
         Append the device info with current IP addresses.
         """
-        return self._xport_mgrs['udp'].get_xport_info() \
+        device_info = self._xport_mgrs['udp'].get_xport_info() \
                 if self._device_initialized else {}
+        device_info.update({
+            'fpga_version': "{}.{}".format(
+                *self.mboard_regs_control.get_compat_number())
+        })
+        return device_info
 
     ###########################################################################
     # Clock/Time API

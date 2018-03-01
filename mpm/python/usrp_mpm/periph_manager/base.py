@@ -20,6 +20,7 @@ from usrp_mpm.mpmlog import get_logger
 from usrp_mpm.sys_utils.udev import get_eeprom_paths
 from usrp_mpm.sys_utils.udev import get_spidev_nodes
 from usrp_mpm.sys_utils import dtoverlay
+from usrp_mpm.sys_utils import net
 from usrp_mpm import eeprom
 from usrp_mpm.rpc_server import no_claim, no_rpc
 from usrp_mpm import prefs
@@ -54,6 +55,8 @@ class PeriphManagerBase(object):
     # Very important: A list of PIDs that apply to the current device. Must be
     # list, even if there's only one entry.
     pids = []
+    # A textual description of this device type
+    description = "MPM Device"
     # Address of the motherboard EEPROM. This could be something like
     # "e0005000.i2c". This value will be passed to get_eeprom_paths() tos
     # determine a full path to an EEPROM device.
@@ -447,6 +450,10 @@ class PeriphManagerBase(object):
         """
         result = {"claimed": str(self.claimed)}
         result.update(self.mboard_info)
+        result.update({
+            'name': net.get_hostname(),
+            'description': self.description,
+        })
         result.update(self.get_device_info_dyn())
         return result
 
