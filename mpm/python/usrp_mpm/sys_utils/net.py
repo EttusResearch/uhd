@@ -12,6 +12,9 @@ from six import iteritems
 from pyroute2 import IPRoute, IPDB
 from usrp_mpm.mpmlog import get_logger
 
+def get_hostname():
+    """Return the current device's hostname"""
+    return socket.gethostname()
 
 def get_valid_interfaces(iface_list):
     """
