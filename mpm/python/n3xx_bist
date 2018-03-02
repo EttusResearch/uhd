@@ -406,7 +406,7 @@ class N310BIST(object):
             ))
             result['error_msg'] = ex.output
             output = ex.output
-        mobj = re.search(r"Throughput: (?P<thrup>[0-9.]+)MB", output)
+        mobj = re.search(r"Throughput: (?P<thrup>[0-9.]+)\s?MB", output)
         if mobj is not None:
             result['throughput'] = float(mobj.group('thrup')) * 1000
         else:
