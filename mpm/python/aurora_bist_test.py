@@ -11,7 +11,7 @@ Aurora BIST command line utility
 from __future__ import print_function
 import argparse
 import usrp_mpm as mpm
-from usrp_mpm.uio import UIO
+from usrp_mpm.sys_utils.uio import UIO
 from usrp_mpm.aurora_control import AuroraControl
 
 ########################################################################
@@ -23,7 +23,7 @@ def parse_args():
         description='Controller for Ettus Aurora BIST Engine'
     )
     parser.add_argument(
-        '--uio-dev', default='misc-enet-regs0',
+        '--uio-dev', default='misc-auro-regs0',
         help='UIO device for master device peeks and pokes'
     )
     parser.add_argument(
@@ -62,33 +62,43 @@ def main():
     args = parse_args()
     # Initialize logger for downstream components
     mpm.get_main_logger().getChild('main')
-    master_core = AuroraControl(
-        UIO(label=args.uio_dev, read_only=False),
-        args.base_addr,
-    )
-    slave_core = None if args.slave_uio_dev is None else AuroraControl(
-        UIO(label=args.slave_uio_dev, read_only=False),
-        args.slave_base_addr,
-    )
-    if args.loopback:
-        master_core.reset_core()
-        master_core.set_loopback(enable=True)
-        return True
-    # Run BIST
-    if args.test == 'ber':
-        print("Performing BER BIST test.")
-        master_core.run_ber_loopback_bist(
-            args.duration,
-            args.rate * 8e6,
-            slave_core,
+    master_core_uio = UIO(label=args.uio_dev, read_only=False)
+    master_core_uio.open()
+    if args.slave_uio_dev:
+        slave_core_uio = UIO(label=args.uio_dev, read_only=False)
+        slave_core_uio.open()
+    try:
+        master_core = AuroraControl(master_core_uio, args.base_addr)
+        slave_core = None if args.slave_uio_dev is None else AuroraControl(
+            slave_core_uio,
+            args.slave_base_addr,
         )
-    else:
-        print("Performing Latency BIST test.")
-        master_core.run_latency_loopback_bist(
-            args.duration,
-            args.rate * 8e6,
-            slave_core,
-        )
+        if args.loopback:
+            master_core.reset_core()
+            master_core.set_loopback(enable=True)
+            return True
+        # Run BIST
+        if args.test == 'ber':
+            print("Performing BER BIST test.")
+            master_core.run_ber_loopback_bist(
+                args.duration,
+                args.rate * 8e6,
+                slave_core,
+            )
+        else:
+            print("Performing Latency BIST test.")
+            master_core.run_latency_loopback_bist(
+                args.duration,
+                args.rate * 8e6,
+                slave_core,
+            )
+    except Exception as ex:
+        print("Unexpected exception: {}".format(str(ex)))
+        return False
+    finally:
+        master_core_uio.close()
+        if args.slave_uio_dev:
+            slave_core_uio.close()
 
 if __name__ == '__main__':
     exit(not main())

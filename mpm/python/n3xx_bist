@@ -2,7 +2,7 @@
 #
 # Copyright 2017 Ettus Research, National Instruments Company
 #
-# SPDX-License-Identifier: GPL-3.0
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
 """
 N310 Built-In Self Test (BIST)
@@ -48,17 +48,28 @@ def run_aurora_bist(master, slave=None):
     """
     from usrp_mpm import aurora_control
     from usrp_mpm.sys_utils.uio import UIO
-    master_au_ctrl = aurora_control.AuroraControl(
-        UIO(label=master, read_only=False),
-    )
-    slave_au_ctrl = None if slave is None else aurora_control.AuroraControl(
-        UIO(label=slave, read_only=False),
-    )
-    return master_au_ctrl.run_ber_loopback_bist(
-        duration=10,
-        requested_rate=1300 * 8e6,
-        slave=slave_au_ctrl,
-    )
+    try:
+        master_au_uio = UIO(label=master, read_only=False)
+        master_au_uio.open()
+        master_au_ctrl = aurora_control.AuroraControl(master_au_uio)
+        if slave is not None:
+            slave_au_uio = UIO(label=slave, read_only=False)
+            slave_au_uio.open()
+        slave_au_ctrl = None if slave is None else aurora_control.AuroraControl(
+            slave_au_uio
+        )
+        return master_au_ctrl.run_ber_loopback_bist(
+            duration=10,
+            requested_rate=1300 * 8e6,
+            slave=slave_au_ctrl,
+        )
+    except Exception as ex:
+        print("Unexpected exception: {}".format(str(ex)))
+        exit(1)
+    finally:
+        master_au_uio.close()
+        if slave is not None:
+            slave_au_uio.close()
 
 def aurora_results_to_status(bist_results):
     """
