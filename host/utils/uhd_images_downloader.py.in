@@ -198,9 +198,13 @@ def download(images_url, filename, buffer_size=_DEFAULT_BUFFER_SIZE, print_progr
         raise RuntimeError("URL does not exist: {}".format(images_url))
     filesize = float(resp.headers['content-length'])
     filesize_dl = 0
+    base_filename = os.path.basename(filename)
+    if print_progress and not sys.stdout.isatty():
+        print_progress = False
+        log("INFO", "Downloading {}, total size: {} kB".format(
+            base_filename, filesize/1000))
     with open(filename, "wb") as temp_file:
         sha256_sum = hashlib.sha256()
-        base_filename = os.path.basename(filename)
         for buff in resp.iter_content(chunk_size=buffer_size):
             if buff:
                 temp_file.write(buff)
