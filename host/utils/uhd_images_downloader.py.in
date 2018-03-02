@@ -57,7 +57,8 @@ def parse_args():
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-t', '--types', type=str, default="",
                         help="RegEx to select image sets from the manifest file.")
-    parser.add_argument('-i', '--install-location', type=str, default=_DEFAULT_INSTALL_PATH,
+    parser.add_argument('-i', '--install-location',
+                        default=None,
                         help="Set custom install location for images")
     parser.add_argument('-m', '--manifest-location', type=str, default="",
                         help="Set custom location for the manifest file")
@@ -272,7 +273,14 @@ def main():
     global _LOG_LEVEL
     log("TRACE", "Default log level: {}".format(_LOG_LEVEL))
     _LOG_LEVEL = _LOG_LEVEL - args.verbose + args.quiet
-    images_dir = args.install_location
+    images_dir = _DEFAULT_INSTALL_PATH
+    if args.install_location:
+        images_dir = args.install_location
+    elif os.environ.get("UHD_IMAGES_DIR") != None and os.environ.get("UHD_IMAGES_DIR") != "":
+        images_dir = os.environ.get("UHD_IMAGES_DIR")
+        log("DEBUG",
+            "UHD_IMAGES_DIR environment variable is set, using to set "
+            "install location.")
     log("INFO", "Images destination: {}".format(os.path.abspath(images_dir)))
     try:
         # If we're given a path to a manifest file, use it
@@ -308,7 +316,7 @@ def main():
         if os.path.isfile(args.inventory_location):
             inventory_fn = args.inventory_location
         else:
-            inventory_fn = os.path.join(args.install_location, _INVENTORY_FILENAME)
+            inventory_fn = os.path.join(images_dir, _INVENTORY_FILENAME)
         inventory = parse_inventory(inventory_fn=inventory_fn)
         log("TRACE", "Inventory: {}\n{}".format(
             os.path.abspath(inventory_fn),
