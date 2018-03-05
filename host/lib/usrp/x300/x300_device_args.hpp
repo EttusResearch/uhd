@@ -8,6 +8,7 @@
 #define INCLUDED_X300_DEV_ARGS_HPP
 
 #include "x300_impl.hpp"
+#include "x300_defaults.hpp"
 #include <uhdlib/usrp/constrained_device_args.hpp>
 
 namespace uhd { namespace usrp { namespace x300 {
@@ -117,10 +118,9 @@ private:
             // Some daughterboards may require other rates, but this default
             // works best for all newer daughterboards (i.e. CBX, WBX, SBX,
             // UBX, and TwinRX).
-            if (_master_clock_rate.get() == 200e6) {
-                _dboard_clock_rate.set(50e6);
-            } else if (_master_clock_rate.get() == 184.32e6) {
-                _dboard_clock_rate.set(46.08e6);
+            if (_master_clock_rate.get() >= MIN_TICK_RATE &&
+                _master_clock_rate.get() <= MAX_TICK_RATE) {
+                _dboard_clock_rate.set(_master_clock_rate.get() / 4);
             } else {
                 throw uhd::value_error(
                     "Can't infer daughterboard clock rate. Specify "
@@ -157,7 +157,7 @@ private:
         }
 
         //Sanity check params
-        _enforce_discrete(_master_clock_rate, TICK_RATE_OPTIONS);
+        _enforce_range(_master_clock_rate, MIN_TICK_RATE, MAX_TICK_RATE);
         _enforce_discrete(_system_ref_rate, EXTERNAL_FREQ_OPTIONS);
         _enforce_discrete(_clock_source, CLOCK_SOURCE_OPTIONS);
         _enforce_discrete(_time_source, TIME_SOURCE_OPTIONS);

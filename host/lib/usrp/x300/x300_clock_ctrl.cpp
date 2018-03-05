@@ -7,6 +7,7 @@
 
 #include "lmk04816_regs.hpp"
 #include "x300_clock_ctrl.hpp"
+#include "x300_defaults.hpp"
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/math.hpp>
 #include <stdint.h>
@@ -18,6 +19,10 @@
 
 static const double X300_REF_CLK_OUT_RATE  = 10e6;
 static const uint16_t X300_MAX_CLKOUT_DIV = 1045;
+constexpr double MIN_VCO_FREQ = 2370e6;
+constexpr double MAX_VCO_FREQ = 2600e6;
+constexpr double VCXO_FREQ = 96.0e6;        // VCXO runs at 96MHz
+constexpr int VCXO_PLL2_N = 2;              // Assume that the PLL2 N predivider is set to /2.
 
 struct x300_clk_delays {
     x300_clk_delays() :
@@ -44,6 +49,7 @@ static const x300_clk_delays X300_REV7_CLK_DELAYS = x300_clk_delays(
     /*fpga=*/0.000, /*adc=*/0.000, /*dac=*/0.000, /*db_rx=*/0.000, /*db_tx=*/0.000);
 
 using namespace uhd;
+using namespace uhd::math::fp_compare;
 
 x300_clock_ctrl::~x300_clock_ctrl(void){
     /* NOP */
@@ -412,6 +418,68 @@ public:
 
 private:
 
+    double autoset_pll2_config(const double output_freq)
+    {
+        // VCXO runs at 96MHz, assume PLL2 reference doubler is enabled
+        const double ref = VCXO_FREQ * 2;
+
+        const int lowest_vcodiv = std::ceil(MIN_VCO_FREQ / output_freq);
+        const int highest_vcodiv = std::floor(MAX_VCO_FREQ / output_freq);
+
+        // Find the PLL2 configuration with the lowest frequency error, favoring
+        // higher phase comparison frequencies.
+        double best_error = 1e10;
+        double best_mcr = 0.0;
+        double best_vco_freq = _vco_freq;
+        int best_N = _lmk04816_regs.PLL2_N_30;
+        int best_R = _lmk04816_regs.PLL2_R_28;
+
+        for (int vcodiv = lowest_vcodiv; vcodiv <= highest_vcodiv; vcodiv++) {
+            const double try_vco_freq = vcodiv * output_freq;
+
+            // Start at R=2: with a min value of 2 for R, we don't have to worry
+            // about exceeding the maximum phase comparison frequency for PLL2.
+            for (int r = 2; r <= 50; r++)
+            {
+                // Note: We could accomplish somewhat higher resolution if we change
+                // the N predivider to odd values as well, and we may be able to get
+                // better spur performance by balancing the predivider and the
+                // divider.
+                const int n =
+                    boost::math::round((r * try_vco_freq) / (VCXO_PLL2_N * ref));
+
+                const double actual_mcr = (ref * VCXO_PLL2_N * n) / (vcodiv * r);
+                const double error = std::abs(actual_mcr - output_freq);
+                if (error < best_error) {
+                    best_error = error;
+                    best_mcr = actual_mcr;
+                    best_vco_freq = try_vco_freq;
+                    best_N = n;
+                    best_R = r;
+                }
+            }
+        }
+        UHD_ASSERT_THROW(best_mcr > 0.0);
+
+        _vco_freq = best_vco_freq;
+        _lmk04816_regs.PLL2_N_30 = best_N;
+        _lmk04816_regs.PLL2_R_28 = best_R;
+        _lmk04816_regs.PLL2_P_30 = lmk04816_regs_t::PLL2_P_30_DIV_2A;
+
+        if (fp_compare_epsilon<double>(best_error) > 0.0) {
+            UHD_LOGGER_WARNING("X300")
+            << boost::format("Attempted master clock rate %0.2f MHz, got %0.2f MHz")
+            % (output_freq / 1e6) % (best_mcr / 1e6);
+        }
+
+        UHD_LOGGER_TRACE("X300") << boost::format(
+            "Using automatic LMK04816 PLL2 config: N=%d, R=%d, VCO=%0.2f MHz, MCR=%0.2f MHz")
+            % _lmk04816_regs.PLL2_N_30 % _lmk04816_regs.PLL2_R_28
+            % (_vco_freq / 1e6) % (best_mcr / 1e6);
+
+        return best_mcr;
+    }
+
     void init() {
         /* The X3xx has two primary rates. The first is the
          * _system_ref_rate, which is sourced from the "clock_source"/"value" field
@@ -429,12 +497,14 @@ private:
                         m23_04M_184_32M_ZDEL,  // LTE with 23.04 MHz ref
                         m30_72M_184_32M_ZDEL,  // LTE with external ref, aka CPRI Mode
                         m10M_184_32M_NOZDEL,   // LTE with 10 MHz ref
-                        m10M_120M_ZDEL };       // NI USRP 120 MHz Clocking
+                        m10M_120M_ZDEL,        // NI USRP 120 MHz Clocking
+                        m10M_AUTO_NOZDEL };    // automatic for arbitrary clock from 10MHz ref
 
         /* The default clocking mode is 10MHz reference generating a 200 MHz master
          * clock, in zero-delay mode. */
         opmode_t clocking_mode = INVALID;
 
+        using namespace uhd::math::fp_compare;
         if (math::frequencies_are_equal(_system_ref_rate, 10e6)) {
             if (math::frequencies_are_equal(_master_clock_rate, 184.32e6)) {
                 /* 10MHz reference, 184.32 MHz master clock out, NOT Zero Delay. */
@@ -445,6 +515,15 @@ private:
             } else if (math::frequencies_are_equal(_master_clock_rate, 120e6)) {
                 /* 10MHz reference, 120 MHz master clock rate, Zero Delay */
                 clocking_mode = m10M_120M_ZDEL;
+            } else if (
+                    fp_compare_epsilon<double>(_master_clock_rate) >= uhd::usrp::x300::MIN_TICK_RATE
+                    && fp_compare_epsilon<double>(_master_clock_rate) <= uhd::usrp::x300::MAX_TICK_RATE
+                    ) {
+                /* 10MHz reference, attempt to automatically configure PLL
+                 * for arbitrary master clock rate, Zero Delay */
+                UHD_LOGGER_WARNING("X300")
+                    << "Using automatic master clock PLL config. This is an experimental feature.";
+                clocking_mode = m10M_AUTO_NOZDEL;
             } else {
                 throw uhd::runtime_error(str(
                     boost::format("Invalid master clock rate: %.2f MHz.\n"
@@ -654,6 +733,19 @@ private:
 
                 break;
 
+            case m10M_AUTO_NOZDEL:
+                _lmk04816_regs.MODE = lmk04816_regs_t::MODE_DUAL_INT;
+
+                // PLL1 - 2MHz compare frequency
+                _lmk04816_regs.PLL1_N_28 = 48;
+                _lmk04816_regs.PLL1_R_27 = 5;
+                _lmk04816_regs.PLL1_CP_GAIN_27 = lmk04816_regs_t::PLL1_CP_GAIN_27_100UA;
+
+                // PLL2 - this call will set _vco_freq and PLL2 P/N/R registers.
+                _master_clock_rate = autoset_pll2_config(_master_clock_rate);
+
+                break;
+
             default:
                 UHD_THROW_INVALID_CODE_PATH();
                 break;
@@ -790,7 +882,8 @@ private:
     const spi_iface::sptr   _spiface;
     const size_t            _slaveno;
     const size_t            _hw_rev;
-    const double            _master_clock_rate;
+    // This is technically constant, but it can be coerced during initialization
+    double                  _master_clock_rate;
     const double            _dboard_clock_rate;
     const double            _system_ref_rate;
     lmk04816_regs_t         _lmk04816_regs;
