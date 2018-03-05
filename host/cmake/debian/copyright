@@ -12,6 +12,10 @@ Files: *
 Copyright: Copyright 2010-2018 Ettus Research, A National Instruments Company
 License: GPL-3+
 
+Files: host/lib/rpclib/*
+Copyright: Copyright (c) 2015-2017, Tamás Szelei
+License: MIT
+
 Files:  images/*
         firmware/fx2/b100/CMakeLists.txt
         firmware/fx2/CMakeLists.txt

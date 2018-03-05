@@ -1,3 +1,26 @@
+uhd (3.11.0.0-0ubuntu1) trusty; urgency=low
+
+  * N310: Added driver
+  * UBX: Add support for CAL antenna for Rev E
+  * Added the module peripheral manager (MPM) with all subcomponents (N310
+    drivers, mpm_shell, RPC server, BIST, etc.)
+  * UHD: Added rpclib as a internally tracked dependency
+  * UHD: Reduced the usage of Boost
+  * UHD: Updated uhd_images_downloader: Now uses more elaborate manifest to
+    optimize downloads
+  * UHD: Introduced uhdlib internal include paths
+  * UHD: Add support for configuration files. USRP settings can now be set using
+    a uhd.conf file in addition to device args
+  * UHD: Add narrow and narrow_cast
+  * gr-usrptest: Various bugfixes
+  * Updated required Vivado version to 2017.4
+  * Updated all license headers to use SPDX identifiers and correctly identify
+    Ettus Research as part of National Instruments
+  * This release includes all bugfixes and features from previous releases, in
+    particular, the 3.10.* release cycle
+
+ -- Ettus Research <packages@ettus.com>  Mon, 05 Mar 2018 10:48:10 -0800
+
 uhd (3.10.3.0-0ubuntu1) trusty; urgency=low
 
   * X300
