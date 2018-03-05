@@ -412,6 +412,59 @@ public:
 
 private:
 
+    void autoset_pll2_config() {
+      double min_vco_freq = 2370e6;
+      double max_vco_freq = 2600e6;
+
+      // VCXO runs at 96MHz, assume PLL2 reference doubler is enabled
+      double ref = 96.0e6 * 2;
+      // Also assume that the PLL2 N predivider is set to /2.
+      int prediv = 2;
+
+      int lowest_vcodiv = std::ceil(min_vco_freq / _master_clock_rate);
+      int highest_vcodiv = std::floor(max_vco_freq / _master_clock_rate);
+
+      // Find the PLL2 configuration with the lowest frequency error, favoring
+      // higher phase comparison frequencies.
+      double best_error = 1e10, best_mcr = 0.0;
+      for (int vcodiv = lowest_vcodiv; vcodiv <= highest_vcodiv; vcodiv++) {
+        double try_vco_freq = vcodiv * _master_clock_rate;
+
+        // Start at R=2: with a min value of 2 for R, we don't have to worry
+        // about exceeding the maximum phase comparison frequency for PLL2.
+        for (int r = 2; r <= 50; r++) {
+          // Note: We could accomplish somewhat higher resolution if we change
+          // the N predivider to odd values as well, and we may be able to get
+          // better spur performance by balancing the predivider and the
+          // divider.
+          int n = boost::math::round((r * try_vco_freq) / (prediv * ref));
+
+          double actual_mcr = (ref * prediv * n) / (vcodiv * r);
+          double error = std::abs(actual_mcr - _master_clock_rate);
+          if (error < best_error) {
+            best_error = error;
+            best_mcr = actual_mcr;
+
+            _vco_freq = try_vco_freq;
+            _lmk04816_regs.PLL2_N_30 = n;
+            _lmk04816_regs.PLL2_R_28 = r;
+            _lmk04816_regs.PLL2_P_30 = lmk04816_regs_t::PLL2_P_30_DIV_2A;
+          }
+        }
+      }
+
+      if (best_error > 0.0) {
+        UHD_LOGGER_INFO("X300")
+          << boost::format("Attempted master clock rate %0.2f MHz, got %0.2f MHz")
+          % (_master_clock_rate / 1e6) % (best_mcr / 1e6) << std::endl;
+      }
+
+      UHD_LOGGER_INFO("X300")
+        << boost::format("Using automatic LMK04816 PLL2 config: N=%d, R=%d, VCO=%0.2f MHz, MCR=%0.2f MHz")
+        % _lmk04816_regs.PLL2_N_30 % _lmk04816_regs.PLL2_R_28
+        % (_vco_freq / 1e6) % (best_mcr / 1e6) << std::endl;
+    }
+
     void init() {
         /* The X3xx has two primary rates. The first is the
          * _system_ref_rate, which is sourced from the "clock_source"/"value" field
@@ -427,7 +480,8 @@ private:
                         m10M_200M_ZDEL,        // Normal mode
                         m30_72M_184_32M_ZDEL,  // LTE with external ref, aka CPRI Mode
                         m10M_184_32M_NOZDEL,   // LTE with 10 MHz ref
-                        m10M_120M_ZDEL };       // NI USRP 120 MHz Clocking
+                        m10M_120M_ZDEL,        // NI USRP 120 MHz Clocking
+                        m10M_AUTO_NOZDEL };    // automatic for arbitrary clock from 10MHz ref
 
         /* The default clocking mode is 10MHz reference generating a 200 MHz master
          * clock, in zero-delay mode. */
@@ -444,12 +498,10 @@ private:
                 /* 10MHz reference, 120 MHz master clock rate, Zero Delay */
                 clocking_mode = m10M_120M_ZDEL;
             } else {
-                throw uhd::runtime_error(str(
-                    boost::format("Invalid master clock rate: %.2f MHz.\n"
-                                  "Valid master clock rates when using a %f MHz reference clock are:\n"
-                                  "120 MHz, 184.32 MHz and 200 MHz.")
-                    % (_master_clock_rate / 1e6)  % (_system_ref_rate / 1e6)
-                ));
+                /* 10MHz reference, attempt to automatically configure PLL
+                 * for arbitrary master clock rate, Zero Delay */
+                UHD_LOGGER_WARNING("X300") << "Using automatic master clock PLL config, performance is unverified." << std::endl;
+                clocking_mode = m10M_AUTO_NOZDEL;
             }
         } else if (math::frequencies_are_equal(_system_ref_rate, 30.72e6)) {
             if (math::frequencies_are_equal(_master_clock_rate, 184.32e6)) {
@@ -581,6 +633,19 @@ private:
                     _lmk04816_regs.PLL2_CP_GAIN_26 = lmk04816_regs_t::PLL2_CP_GAIN_26_1600UA;
                 else
                     _lmk04816_regs.PLL2_CP_GAIN_26 = lmk04816_regs_t::PLL2_CP_GAIN_26_400UA;
+
+                break;
+
+            case m10M_AUTO_NOZDEL:
+                _lmk04816_regs.MODE = lmk04816_regs_t::MODE_DUAL_INT;
+
+                // PLL1 - 2MHz compare frequency
+                _lmk04816_regs.PLL1_N_28 = 48;
+                _lmk04816_regs.PLL1_R_27 = 5;
+                _lmk04816_regs.PLL1_CP_GAIN_27 = lmk04816_regs_t::PLL1_CP_GAIN_27_100UA;
+
+                // PLL2 - this call will set _vco_freq and PLL2 P/N/R registers.
+                autoset_pll2_config();
 
                 break;
 
