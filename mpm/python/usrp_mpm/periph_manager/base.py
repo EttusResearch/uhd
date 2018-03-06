@@ -13,7 +13,6 @@ from hashlib import md5
 from time import sleep
 from concurrent import futures
 from builtins import str
-from builtins import range
 from builtins import object
 from six import iteritems, itervalues
 from usrp_mpm.mpmlog import get_logger

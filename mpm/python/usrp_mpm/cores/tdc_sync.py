@@ -226,9 +226,9 @@ class ClockSynchronizer(object):
         if reset_status != 0x00:
             self.log.error(
                 "TDC Reset Failed to Clear! " \
-                "Check that your clocks are toggling. Status: 0x{:x}".format(
-                    reset_status
-            ))
+                "Check that your clocks are toggling. Status: 0x{:x}"
+                .format(reset_status)
+            )
             raise RuntimeError("TDC Reset Failed.")
         self.log.trace("Enabling the TDC")
         # Enable the TDC.
@@ -459,7 +459,7 @@ class ClockSynchronizer(object):
         return True
 
 
-    def dac_bist(self, taps_from_center = 100):
+    def dac_bist(self, taps_from_center=100):
         """
         A quick BIST of the DAC, proving it is (a) alive and (b) can shift the clock.
 

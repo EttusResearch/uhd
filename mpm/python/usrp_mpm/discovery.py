@@ -81,14 +81,14 @@ def _discovery_process(state, discovery_addr):
                 continue
             if data.strip(b"\0") == b"MPM-DISC":
                 log.debug("Sending discovery response to %s port: %d",
-                         sender[0], sender[1])
+                          sender[0], sender[1])
                 resp_str = create_response_string(state)
                 send_data = resp_str
                 log.trace("Return data: %s", send_data)
                 send_sock.sendto(send_data, sender)
             elif data.strip(b"\0").startswith(b"MPM-ECHO"):
                 log.debug("Received echo request from {sender}"
-                         .format(sender=sender[0]))
+                          .format(sender=sender[0]))
                 send_data = data
                 try:
                     send_sock.sendto(send_data, sender)

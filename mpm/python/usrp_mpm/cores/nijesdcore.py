@@ -208,7 +208,7 @@ class NIMgJESDCore(object):
         self.log.trace("%s FPGA SYSREF Receiver..." % {True: 'Enabling', False: 'Disabling'}[enable])
         disable_bit = 0b1
         if enable:
-           disable_bit = 0b0
+            disable_bit = 0b0
         reg_val = ((self.lmfc_divider-1) << 23) | (disable_bit << 6)
         self.log.trace("Setting SYSREF Capture reg: 0x{:08X}".format(reg_val))
         self.regs.poke32(self.SYSREF_CAPTURE_CONTROL, reg_val)
@@ -252,9 +252,9 @@ class NIMgJESDCore(object):
         # Power down state is when the corresponding bit is set. For the PLLs we wish to
         # use, clear those bits.
         for x in range(qplls):
-           reg_val_on = reg_val_on | 0x1 << x # QPLL bits are 0-3
+            reg_val_on = reg_val_on | 0x1 << x # QPLL bits are 0-3
         for y in range(16, 16 + cplls):
-           reg_val_on = reg_val_on | 0x1 << y # CPLL bits are 16-23, others are reserved
+            reg_val_on = reg_val_on | 0x1 << y # CPLL bits are 16-23, others are reserved
         reg_val = reg_val ^ reg_val_on
         self.regs.poke32(self.MGT_PLL_POWER_DOWN_CONTROL, reg_val)
 
@@ -281,31 +281,31 @@ class NIMgJESDCore(object):
 
         # Unreset the PLLs in use and check for lock.
         if not reset_only:
-           if qplls > 0:
-              # Unreset only the QPLLs we are using.
-              reg_val_on = 0x0
-              for nibble in range(qplls):
-                 reg_val_on = reg_val_on | 0x1 << nibble*4
-              reg_val = reg_val ^ reg_val_on
-              self.regs.poke32(self.MGT_QPLL_CONTROL, reg_val)
-              self.log.trace("Clearing QPLL reset...")
+            if qplls > 0:
+                # Unreset only the QPLLs we are using.
+                reg_val_on = 0x0
+                for nibble in range(qplls):
+                    reg_val_on = reg_val_on | 0x1 << nibble*4
+                reg_val = reg_val ^ reg_val_on
+                self.regs.poke32(self.MGT_QPLL_CONTROL, reg_val)
+                self.log.trace("Clearing QPLL reset...")
 
-              # Check for lock a short time later.
-              time.sleep(0.010)
-              # Clear all QPLL sticky bits
-              self.regs.poke32(self.MGT_QPLL_CONTROL, 0b1 << 16)
-              # Check for lock on active quads only.
-              rb = self.regs.peek32(self.MGT_QPLL_CONTROL)
-              rb_mask = 0x0
-              locked_val = 0x0
-              for nibble in range(qplls):
-                 if (rb & (0xF << nibble*4)) != (0x2 << nibble*4):
-                    self.log.warning("GT QPLL {} failed to lock!".format(nibble))
-                 locked_val = locked_val | 0x2 << nibble*4
-                 rb_mask    = rb_mask    | 0xF << nibble*4
-              if (rb & rb_mask) != locked_val:
-                  raise RuntimeError("One or more GT QPLLs failed to lock!")
-              self.log.trace("QPLL(s) reporting locked!")
+                # Check for lock a short time later.
+                time.sleep(0.010)
+                # Clear all QPLL sticky bits
+                self.regs.poke32(self.MGT_QPLL_CONTROL, 0b1 << 16)
+                # Check for lock on active quads only.
+                rb = self.regs.peek32(self.MGT_QPLL_CONTROL)
+                rb_mask = 0x0
+                locked_val = 0x0
+                for nibble in range(qplls):
+                    if (rb & (0xF << nibble*4)) != (0x2 << nibble*4):
+                        self.log.warning("GT QPLL {} failed to lock!".format(nibble))
+                    locked_val = locked_val | 0x2 << nibble*4
+                    rb_mask    = rb_mask    | 0xF << nibble*4
+                if (rb & rb_mask) != locked_val:
+                    raise RuntimeError("One or more GT QPLLs failed to lock!")
+                self.log.trace("QPLL(s) reporting locked!")
 
     def set_drp_target(self, mgt_or_qpll, dev_num):
         """
@@ -327,7 +327,7 @@ class NIMgJESDCore(object):
         assert drp_ch_sel in range(MAX_MGTS + MAX_QPLLs)
         reg_val = (0b1 << drp_ch_sel) | (DRP_ENABLE_VAL << 16)
         self.log.trace("Writing DRP Control Register (offset 0x{:04X}) with 0x{:08X}"
-            .format(self.JESD_MGT_DRP_CONTROL, reg_val))
+                       .format(self.JESD_MGT_DRP_CONTROL, reg_val))
         self.regs.poke32(self.JESD_MGT_DRP_CONTROL, reg_val)
 
     def disable_drp_target(self):
@@ -337,7 +337,7 @@ class NIMgJESDCore(object):
         self.regs.poke32(self.JESD_MGT_DRP_CONTROL, 0x0)
         self.log.trace("DRP accesses disabled!")
 
-    def drp_access(self, rd = True, addr = 0, wr_data = 0):
+    def drp_access(self, rd=True, addr=0, wr_data=0):
         """
         Provides register access to the DRP ports on the MGTs or QPLLs buried inside
         the JESD204b logic. Reads will return the DRP data directly. Writes will return
@@ -353,7 +353,6 @@ class NIMgJESDCore(object):
         core_offset = 0x2800 + (addr << 2)
         if rd:
             rd_data = self.regs.peek32(core_offset)
-            rd_data_valid = rd_data & 0xFFFF
             self.log.trace("Reading DRP register 0x{:04X} at DB Core offset 0x{:04X}... "
                            "0x{:04X}"
                            .format(addr, core_offset, rd_data))

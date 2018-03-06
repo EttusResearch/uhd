@@ -86,28 +86,31 @@ class LMK04828(object):
         cnth = int(math.floor(divide_val/2.0))
         reg_val = ((cnth & 0xF) << 4) | (cntl & 0xF)
         self.log.trace("From divider value 0d{}, writing CNTH/L as 0x{:02X}."
-           .format(divide_val, reg_val))
+                       .format(divide_val, reg_val))
         return reg_val
 
-    def divide_to_reg(self, divide_val, in_drive = 0x1, out_drive = 0x1):
+    def divide_to_reg(self, divide_val, in_drive=0x1, out_drive=0x1):
         """
         From the divider value, returns the register value combined with the other
         register fields.
         """
         reg_val = (divide_val & 0x1F) | ((in_drive & 0x1) << 5) | ((out_drive & 0x1) << 6)
         self.log.trace("From divider value 0d{}, writing divider register as 0x{:02X}."
-           .format(divide_val, reg_val))
+                       .format(divide_val, reg_val))
         return reg_val
 
-    def pll2_pre_to_reg(self, prescaler, osc_field = 0x01, xtal_en = 0x0, ref_2x_en = 0x0):
+    def pll2_pre_to_reg(self, prescaler, osc_field=0x01, xtal_en=0x0, ref_2x_en=0x0):
         """
         From the prescaler value, returns the register value combined with the other
         register fields.
         """
         # valid prescaler values are 2-8, where 8 is represented as 0x00.
-        assert prescaler in range(2,8+1)
-        reg_val = ((prescaler & 0x07) << 5) | ((osc_field & 0x7) << 2) | ((xtal_en & 0x1) << 1) | ((ref_2x_en & 0x1) << 0)
+        assert prescaler in range(2, 8+1)
+        reg_val = ((prescaler & 0x07) << 5) \
+                  | ((osc_field & 0x7) << 2) \
+                  | ((xtal_en & 0x1) << 1) \
+                  | ((ref_2x_en & 0x1) << 0)
         self.log.trace("From prescaler value 0d{}, writing register as 0x{:02X}."
-           .format(prescaler, reg_val))
+                       .format(prescaler, reg_val))
         return reg_val
 

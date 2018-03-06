@@ -40,13 +40,13 @@ class LMK04828Mg(LMK04828):
         self.pll2_vco_freq  = (self.vcxo_freq/self.pll2_r_divider)*self.pll2_prescaler*self.pll2_n_divider
         self.log.trace("Variable Configuration Report: "
                        "clkin1_r = 0d{}, clkout_div = 0d{}, pll1_n = 0d{}"
-           .format(self.clkin_r_divider, self.clkout_divider, self.pll1_n_divider))
+                       .format(self.clkin_r_divider, self.clkout_divider, self.pll1_n_divider))
         self.log.trace("Variable Configuration Report: "
                        "sysref_divider = 0d{}, pll2_pre = 0d{}, pll2_n = 0d{}"
-           .format(self.sysref_divider, self.pll2_prescaler, self.pll2_n_divider))
+                       .format(self.sysref_divider, self.pll2_prescaler, self.pll2_n_divider))
         self.log.trace("Variable Configuration Report: "
                        "pll2_vco_freq = 0d{}"
-           .format(self.pll2_vco_freq))
+                       .format(self.pll2_vco_freq))
         # Run .init() and .config() right off the bat. Save clock shifty-ness for later.
         self.init()
         self.config()
@@ -232,7 +232,8 @@ class LMK04828Mg(LMK04828):
         Apply time shift using the dynamic digital delays inside the LMK.
         """
         self.log.trace("Clock Shifting Commencing using Dynamic Digital Delay...")
-        ddly_value = self.divide_to_cnth_cntl_reg(self.clkout_divider+1) if num_shifts >= 0 else self.divide_to_cnth_cntl_reg(self.clkout_divider-1)
+        ddly_value = self.divide_to_cnth_cntl_reg(self.clkout_divider+1) \
+                if num_shifts >= 0 else self.divide_to_cnth_cntl_reg(self.clkout_divider-1)
         ddly_value_sysref = self.sysref_divider+1 if num_shifts >= 0 else self.sysref_divider-1
         self.pokes8((
             (0x141, 0xB1), # Dynamic digital delay enable on outputs 0, 8, 10
@@ -248,7 +249,7 @@ class LMK04828Mg(LMK04828):
             (0x13D, (ddly_value_sysref & 0x00FF) >> 0), # SYSREF DDLY value [7:0]
             (0x144, 0x4E), # Enable SYNC on outputs 0, 8, 10
         ))
-        for x in range(abs(num_shifts)):
+        for _ in range(abs(num_shifts)):
             self.poke8(0x142, 0x1)
         # Put everything back the way it was before shifting.
         self.poke8(0x144, 0xFF) # Disable SYNC on all outputs including SYSREF
