@@ -412,13 +412,11 @@ class N3XXBIST(object):
                 ddr3_bist_executor,
                 stderr=subprocess.STDOUT,
                 shell=True,
-            ).decode("utf-8")
+            )
         except subprocess.CalledProcessError as ex:
-            sys.stderr.write("Calling `{}' failed with return code {}.\n".format(
-                ddr3_bist_executor, ex.returncode
-            ))
-            result['error_msg'] = ex.output
+            # Don't throw errors from uhd_usrp_probe
             output = ex.output
+        output = output.decode("utf-8")
         mobj = re.search(r"Throughput: (?P<thrup>[0-9.]+)\s?MB", output)
         if mobj is not None:
             result['throughput'] = float(mobj.group('thrup')) * 1000
