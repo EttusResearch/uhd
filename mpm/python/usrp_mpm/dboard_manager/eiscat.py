@@ -71,7 +71,7 @@ class ADS54J56(object):
         else:
             self.sync_line = "AB"
         assert self.sync_line in ('AB', 'CD')
-        self.log.debug(
+        self.log.trace(
             "The next setup() sequence will use sync pin: {}".format(
                 self.sync_line
             )
@@ -513,25 +513,25 @@ class EISCAT(DboardManagerBase):
                 self.log.debug("Residual DAC offset error: {} ps.".format(
                     offset_error*1e12
                 ))
-            self.log.info("Clock Synchronization Complete!")
+            self.log.debug("Clock Synchronization Complete!")
         # Go, go, go!
         if args.get("force_init", False):
             self.log.info("Forcing re-initialization of dboard.")
         self.initialized = args.get("force_init", self.initialized)
         if self.initialized:
-            self.log.info(
+            self.log.debug(
                 "Dboard was previously initialized; skipping init. " \
                 "Specify force_init=1 to force initialization."
             )
             return True
-        self.log.info("init() called with args `{}'".format(
+        self.log.debug("init() called with args `{}'".format(
             ",".join(['{}={}'.format(x, args[x]) for x in args])
         ))
         self.radio_regs = _init_dboard_regs()
         self.jesd_cores = _init_jesd_cores(self.radio_regs, self.slot_idx)
-        self.log.info("Radio-register UIO object successfully generated!")
+        self.log.debug("Radio-register UIO object successfully generated!")
         self._spi_ifaces = _init_spi_devices() # Chips don't have power yet!
-        self.log.info("Loaded SPI interfaces!")
+        self.log.debug("Loaded SPI interfaces!")
         self._init_power(self.radio_regs) # Now, we can talk to chips via SPI
         self.dboard_clk_control = _init_clock_control(self.radio_regs)
         self.lmk = _init_lmk(
@@ -546,7 +546,7 @@ class EISCAT(DboardManagerBase):
             for spi_iface in ('adc0', 'adc1')
         ]
         self.dboard_clk_control.enable_mmcm()
-        self.log.info("Clocking Configured Successfully!")
+        self.log.debug("Clocking Configured Successfully!")
         # Synchronize DB Clocks
         self.clock_synchronizer = ClockSynchronizer(
             self.radio_regs,
@@ -618,7 +618,7 @@ class EISCAT(DboardManagerBase):
             return True
         for adc in self.adcs:
             adc.setup()
-        self.log.info("ADC Initialization Complete!")
+        self.log.debug("ADC Initialization Complete!")
         for jesd_core in self.jesd_cores:
             jesd_core.init_deframer()
         return True
@@ -649,7 +649,7 @@ class EISCAT(DboardManagerBase):
         if error:
             return False
 
-        self.log.info("JESD Core Initialized, link up! (woohoo!)")
+        self.log.debug("JESD Core Initialized, link up! (woohoo!)")
         self.initialized = True
         return self.initialized
 

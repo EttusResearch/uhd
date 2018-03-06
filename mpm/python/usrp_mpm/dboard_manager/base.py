@@ -39,7 +39,7 @@ class DboardManagerBase(object):
         self.log = get_logger('dboardManager')
         self.slot_idx = slot_idx
         if 'eeprom_md' not in kwargs:
-            self.log.warn("No EEPROM metadata given!")
+            self.log.debug("No EEPROM metadata given!")
         # In C++, we can only handle dicts if all the values are of the
         # same type. So we must convert them all to strings here:
         self.device_info = {

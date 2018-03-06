@@ -187,7 +187,7 @@ class ClockSynchronizer(object):
         # the offset at this point (see __init__), so self.peek32(0x0000) should read the
         # first offset if you kept your reg offset at 0 in your netlist
 
-        self.log.info("Running clock synchronization...")
+        self.log.debug("Running clock synchronization...")
         self.log.trace("Using reference clock frequency: {} MHz".format(self.ref_clk_freq/1e6))
         self.log.trace("Using master clock frequency: {} MHz".format(self.radio_clk_freq/1e6))
 
@@ -444,7 +444,7 @@ class ClockSynchronizer(object):
         inc = math.floor((high_bound - low_bound)/(middle_samples + 1.0))
 
         for x in range(middle_samples + 2):
-            self.log.info("Test Progress: {:.2f}%".format(x*100/(middle_samples+2)))
+            self.log.debug("Test Progress: {:.2f}%".format(x*100/(middle_samples+2)))
             self.write_dac_word(x*inc + low_bound, 0.1)
             distance_to_target = self.run_sync(measurement_only=True)
             meas_file.write("{}, {:.4f}\n".format(x*inc + low_bound, distance_to_target*1e12))
