@@ -30,7 +30,7 @@ class LMK04828EISCAT(LMK04828):
         """
         Basic init. Turns it on. Let's us read SPI.
         """
-        self.log.info("Reset LMK & Verify")
+        self.log.debug("Reset LMK & Verify")
         self.pokes8((
             (0x000, 0x90), # Assert reset
             (0x000, 0x10), # De-assert reset
@@ -183,7 +183,7 @@ class LMK04828EISCAT(LMK04828):
             (0x144, 0xFF), # Disable SYNC on all outputs including sysref
             (0x143, 0x52), # Pulser selected; SYNC enabled; 1 shot enabled
         ))
-        self.log.info("LMK init'd and locked!")
+        self.log.debug("LMK init'd and locked!")
 
     def lmk_shift(self, num_shifts=0):
         """

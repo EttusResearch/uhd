@@ -75,25 +75,25 @@ def _discovery_process(state, discovery_addr):
     try:
         while True:
             data, sender = sock.recvfrom(MAX_MTU)
-            log.info("Got poked by: %s", sender[0])
+            log.debug("Got poked by: %s", sender[0])
             # TODO this is still part of the awful subnet identification
             if not sender[0].startswith(discovery_addr_prefix):
                 continue
             if data.strip(b"\0") == b"MPM-DISC":
-                log.info("Sending discovery response to %s port: %d",
+                log.debug("Sending discovery response to %s port: %d",
                          sender[0], sender[1])
                 resp_str = create_response_string(state)
                 send_data = resp_str
-                log.info(send_data)
+                log.trace("Return data: %s", send_data)
                 send_sock.sendto(send_data, sender)
             elif data.strip(b"\0").startswith(b"MPM-ECHO"):
-                log.info("Received echo request from {sender}"
+                log.debug("Received echo request from {sender}"
                          .format(sender=sender[0]))
                 send_data = data
                 try:
                     send_sock.sendto(send_data, sender)
                 except OSError as ex:
-                    log.debug("ECHO send error: %s", str(ex))
+                    log.warning("ECHO send error: %s", str(ex))
     except Exception as err:
         log.error("Unexpected error: `%s' Type: `%s'", str(err), type(err))
         sock.close()

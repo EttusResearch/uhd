@@ -257,7 +257,7 @@ class PeriphManagerBase(object):
             eeprom_md,
             device_args,
         )
-        self.log.trace("Motherboard requires device tree overlays: {}".format(
+        self.log.trace("Motherboard requests device tree overlays: {}".format(
             requested_overlays
         ))
         for overlay in requested_overlays:
@@ -273,7 +273,7 @@ class PeriphManagerBase(object):
         # Go, go, go!
         override_dboard_pids = override_dboard_pids or []
         if override_dboard_pids:
-            self.log.warning("Overriding daughterboard PIDs! {}"
+            self.log.warning("Overriding daughterboard PIDs with: {}"
                              .format(override_dboard_pids))
         dboard_eeprom_addrs = self.dboard_eeprom_addr \
                               if isinstance(self.dboard_eeprom_addr, list) \
@@ -315,7 +315,7 @@ class PeriphManagerBase(object):
             else:
                 db_pid = dboard_eeprom_md.get('pid')
                 if db_pid is None:
-                    self.log.warning("No dboard PID found!")
+                    self.log.warning("No dboard PID found in dboard EEPROM!")
                 else:
                     self.log.debug("Found dboard PID in EEPROM: 0x{:04X}"
                                    .format(db_pid))
@@ -327,7 +327,7 @@ class PeriphManagerBase(object):
             if len(self.dboard_spimaster_addrs) > dboard_idx:
                 spi_nodes = sorted(get_spidev_nodes(
                     self.dboard_spimaster_addrs[dboard_idx]))
-                self.log.debug("Found spidev nodes: {0}".format(spi_nodes))
+                self.log.trace("Found spidev nodes: {0}".format(spi_nodes))
             else:
                 spi_nodes = []
                 self.log.warning("No SPI nodes for dboard %d.", dboard_idx)
@@ -363,7 +363,7 @@ class PeriphManagerBase(object):
         args -- A dictionary of args for initialization. Similar to device args
                 in UHD.
         """
-        self.log.info("Mboard init() called with device args `{}'.".format(
+        self.log.info("init() called with device args `{}'.".format(
             ",".join(['{}={}'.format(x, args[x]) for x in args])
         ))
         if not self._device_initialized:
@@ -407,7 +407,7 @@ class PeriphManagerBase(object):
         Tear down all members that need to be specially handled before
         deconstruction.
         """
-        self.log.debug("Teardown called for Peripheral Manager base.")
+        self.log.trace("Teardown called for Peripheral Manager base.")
 
     ###########################################################################
     # Misc device status controls and indicators
@@ -814,7 +814,7 @@ class PeriphManagerBase(object):
         Consider this a "post claim hook", not a function to actually claim
         this device (which happens outside of this class).
         """
-        self.log.debug("Device was claimed. No actions defined.")
+        self.log.trace("Device was claimed. No actions defined.")
 
     def unclaim(self):
         """

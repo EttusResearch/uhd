@@ -62,7 +62,7 @@ class XportMgrUDP(object):
         if len(valid_ifaces):
             self.log.debug("Found CHDR interfaces: `{}'".format(valid_ifaces))
         else:
-            self.log.warning("No CHDR interfaces found!")
+            self.log.info("No CHDR interfaces found!")
         return {
             x: net.get_iface_info(x)
             for x in valid_ifaces

@@ -304,18 +304,18 @@ class MboardRegsControl(object):
         if time_source == 'internal':
             assert ref_clk_freq in (10e6, 25e6)
             if ref_clk_freq == 10e6:
-                self.log.trace("Setting time source to internal "
+                self.log.debug("Setting time source to internal "
                                "(10 MHz reference)...")
                 pps_sel_val = 0b1 << self.MB_CLOCK_CTRL_PPS_SEL_INT_10
             elif ref_clk_freq == 25e6:
-                self.log.trace("Setting time source to internal "
+                self.log.debug("Setting time source to internal "
                                "(25 MHz reference)...")
                 pps_sel_val = 0b1 << self.MB_CLOCK_CTRL_PPS_SEL_INT_25
         elif time_source == 'external':
-            self.log.trace("Setting time source to external...")
+            self.log.debug("Setting time source to external...")
             pps_sel_val = 0b1 << self.MB_CLOCK_CTRL_PPS_SEL_EXT
         elif time_source == 'gpsdo':
-            self.log.trace("Setting time source to gpsdo...")
+            self.log.debug("Setting time source to gpsdo...")
             pps_sel_val = 0b1 << self.MB_CLOCK_CTRL_PPS_SEL_GPSDO
         else:
             assert False
@@ -590,15 +590,13 @@ class n3xx(PeriphManagerBase):
         - GPS lock (update back-panel GPS LED)
         - REF lock (update back-panel REF LED)
         """
-        self.log.trace("Launching monitor thread...")
+        self.log.trace("Launching monitor loop...")
         cond = threading.Condition()
         cond.acquire()
         while not self._tear_down:
             gps_locked = bool(self._gpios.get("GPS-LOCKOK"))
-            self.log.trace("Setting GPS LED to {}".format(gps_locked))
             self._bp_leds.set(self._bp_leds.LED_GPS, int(gps_locked))
             ref_locked = self.get_ref_lock_sensor()['value'] == 'true'
-            self.log.trace("Setting REF LED to {}".format(ref_locked))
             self._bp_leds.set(self._bp_leds.LED_REF, int(ref_locked))
             # Now wait
             if cond.wait_for(
@@ -606,7 +604,7 @@ class n3xx(PeriphManagerBase):
                     N3XX_MONITOR_THREAD_INTERVAL):
                 break
         cond.release()
-        self.log.trace("Terminating monitor thread.")
+        self.log.trace("Terminating monitor loop.")
 
     def _init_peripherals(self, args):
         """
@@ -622,7 +620,7 @@ class n3xx(PeriphManagerBase):
         # Init peripherals
         self.log.trace("Initializing TCA6424 port expander controls...")
         self._gpios = TCA6424(int(self.mboard_info['rev']))
-        self.log.trace("Initializing back panel led controls...")
+        self.log.trace("Initializing back panel LED controls...")
         self._bp_leds = BackpanelGPIO()
         self.log.trace("Enabling power of MGT156MHZ clk")
         self._gpios.set("PWREN-CLK-MGT156MHz")
@@ -677,7 +675,7 @@ class n3xx(PeriphManagerBase):
         dispatchers accordingly.
         """
         if not self._device_initialized:
-            self.log.warning(
+            self.log.error(
                 "Cannot run init(), device was never fully initialized!")
             return False
         if "clock_source" in args:
@@ -714,7 +712,8 @@ class n3xx(PeriphManagerBase):
         if self._device_initialized:
             self._status_monitor_thread.join(3 * N3XX_MONITOR_THREAD_INTERVAL)
             if self._status_monitor_thread.is_alive():
-                self.log.error("Could not terminate monitor thread!")
+                self.log.error("Could not terminate monitor thread! "
+                               "This could result in resource leaks.")
         active_overlays = self.list_active_overlays()
         self.log.trace("N3xx has active device tree overlays: {}".format(
             active_overlays
@@ -744,7 +743,7 @@ class n3xx(PeriphManagerBase):
                 src_address = self._available_endpoints[0]
         sid = SID(src_address << 16 | dst_address)
         # Note: This SID may change its source address!
-        self.log.debug(
+        self.log.trace(
             "request_xport(dst=0x%04X, suggested_src_address=0x%04X, xport_type=%s): " \
             "operating on temporary SID: %s",
             dst_address, suggested_src_address, str(xport_type), str(sid))
@@ -816,7 +815,7 @@ class n3xx(PeriphManagerBase):
         """
         clock_source = args[0]
         assert clock_source in self.get_clock_sources()
-        self.log.trace("Setting clock source to `{}'".format(clock_source))
+        self.log.debug("Setting clock source to `{}'".format(clock_source))
         if clock_source == self.get_clock_source():
             self.log.trace("Nothing to do -- clock source already set.")
             return
@@ -835,7 +834,7 @@ class n3xx(PeriphManagerBase):
             self._gpios.set("CLK-MAINSEL-25MHz")
         self._clock_source = clock_source
         ref_clk_freq = self.get_ref_clock_freq()
-        self.log.info("Reference clock frequency is: {} MHz".format(
+        self.log.debug("Reference clock frequency is: {} MHz".format(
             ref_clk_freq/1e6
         ))
         for slot, dboard in enumerate(self.dboards):
@@ -1008,7 +1007,7 @@ class n3xx(PeriphManagerBase):
         """
         Get temperature sensor reading of the N3xx.
         """
-        self.log.trace("Reading fpga temperature.")
+        self.log.trace("Reading FPGA temperature.")
         return_val = '-1'
         try:
             raw_val = read_thermal_sensor_value('fpga-thermal-zone', 'temp')
@@ -1028,7 +1027,7 @@ class n3xx(PeriphManagerBase):
         """
         Get cooling device reading of N3xx. In this case the speed of fan 0.
         """
-        self.log.trace("Reading fpga cooling device.")
+        self.log.trace("Reading FPGA cooling device.")
         return_val = '-1'
         try:
             raw_val = read_thermal_sensor_value('ec-fan0', 'cur_state')
@@ -1226,12 +1225,10 @@ class n3xx(PeriphManagerBase):
             from usrp_mpm.fpga_bit_to_bin import fpga_bit_to_bin
             fpga_bit_to_bin(filepath, binfile_path, flip=True)
         elif file_extension == "bin":
-            self.log.trace("Copying bin file to {}"
-                           .format(binfile_path))
+            self.log.trace("Copying bin file to %s", binfile_path)
             shutil.copy(filepath, binfile_path)
         else:
-            self.log.error("Invalid FPGA bitfile: {}"
-                           .format(filepath))
+            self.log.error("Invalid FPGA bitfile: %s", filepath)
             raise RuntimeError("Invalid N3xx FPGA bitfile")
         # RPC server will reload the periph manager after this.
         return True
@@ -1251,12 +1248,12 @@ class n3xx(PeriphManagerBase):
         :param metadata: Dictionary of strings containing metadata
         """
         dtsfile_path = self.updateable_components['dts']['path'].format(
-                self.mboard_info['product'])
+            self.mboard_info['product'])
         self.log.trace("Updating DTS with image at %s to %s (metadata: %s)",
                        filepath, dtsfile_path, str(metadata))
         shutil.copy(filepath, dtsfile_path)
         dtbofile_path = self.updateable_components['dts']['output'].format(
-                self.mboard_info['product'])
+            self.mboard_info['product'])
         self.log.trace("Compiling to %s...", dtbofile_path)
         dtc_command = [
             'dtc',
@@ -1271,6 +1268,8 @@ class n3xx(PeriphManagerBase):
         try:
             out = subprocess.check_output(dtc_command)
             if out.strip() != "":
+                # Keep this as debug because dtc is an external tool and
+                # something could go wrong with it that's outside of our control
                 self.log.debug("`dtc' command output: \n%s", out)
         except OSError as ex:
             self.log.error("Could not execute `dtc' command. Binary probably "\

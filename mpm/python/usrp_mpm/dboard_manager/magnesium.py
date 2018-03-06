@@ -371,10 +371,10 @@ class Magnesium(DboardManagerBase):
                 self.log.debug("Residual DAC offset error: {:.1f} ps.".format(
                     offset_error*1e12
                 ))
-            self.log.info("Sample Clock Synchronization Complete!")
+            self.log.debug("Sample Clock Synchronization Complete!")
         ## Go, go, go!
         # Sanity checks and input validation:
-        self.log.info("init() called with args `{}'".format(
+        self.log.debug("init() called with args `{}'".format(
             ",".join(['{}={}'.format(x, args[x]) for x in args])
         ))
         if not self._periphs_initialized:
@@ -422,7 +422,7 @@ class Magnesium(DboardManagerBase):
                 self.INIT_PHASE_DAC_WORD,
             )
             db_clk_control.enable_mmcm()
-            self.log.info("Sample Clocks and Phase DAC Configured Successfully!")
+            self.log.debug("Sample Clocks and Phase DAC Configured Successfully!")
             # Synchronize DB Clocks
             _sync_db_clock(_get_clock_synchronizer())
             # Clocks and PPS are now fully active!
@@ -464,7 +464,7 @@ class Magnesium(DboardManagerBase):
 
     def init_rf_cal(self, args):
         " Setup RF CAL "
-        self.log.info("Setting up RF CAL...")
+        self.log.debug("Setting up RF CAL...")
         try:
             self._init_cals_mask = \
                     self._parse_and_convert_cal_args(
@@ -507,8 +507,7 @@ class Magnesium(DboardManagerBase):
         Arguments:
             args {string:string} -- device arguments.
         """
-
-        self.log.info("Setting up LO source..")
+        self.log.debug("Setting up LO source..")
         rx_lo_source = args.get("rx_lo_source", "internal")
         tx_lo_source = args.get("tx_lo_source", "internal")
         self.mykonos.set_lo_source("RX", rx_lo_source)
@@ -587,7 +586,7 @@ class Magnesium(DboardManagerBase):
             error_flag = True
         if error_flag:
             raise RuntimeError('JESD204B Link Initialization Failed. See MPM logs for details.')
-        self.log.info("JESD204B Link Initialization & Training Complete")
+        self.log.debug("JESD204B Link Initialization & Training Complete")
 
     def check_mykonos_framer_status(self):
         " Return True if Mykonos Framer is in good state "
