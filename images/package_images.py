@@ -132,7 +132,7 @@ def gen_zip(zip_filename, files_list):
         return False
 
 
-def do_gen_package(pkg_target, install_dir=""):
+def do_gen_package(pkg_target, install_dir="", repo_and_hash=""):
     """Generate the entire N3XX image package, from the start to the end"""
     print("---Generating package for {}---".format(pkg_target))
     filelist = PACKAGE_MAPPING[pkg_target]['files']
@@ -143,8 +143,13 @@ def do_gen_package(pkg_target, install_dir=""):
         "\n".join("--{}".format(md5_fn) for md5_fn in md5_files)))
     gen_md5(md5_files, "md5_hashes.txt")
 
+    # Determine the current Git hash (w/o the repository)
+    githash_l = re.findall(r"[\d\w]+-([\d\w]{7,8})", repo_and_hash)
+    githash = githash_l[0] if githash_l else ""
+
     zip_files = gen_filelist(includes=filelist)
-    zip_filename = os.path.join(install_dir, PACKAGE_MAPPING[pkg_target]['package_name'])
+    zip_filename = os.path.join(install_dir, PACKAGE_MAPPING[pkg_target]['package_name'])\
+        .format(githash)
     print("Files to zip:\n{}".format(
         "\n".join("--{}".format(zip_fn) for zip_fn in zip_files)))
     if not gen_zip(zip_filename, zip_files):
@@ -175,7 +180,9 @@ def gen_package(pkg_targets=(), repo_and_hash="", manifest_fn=""):
                 os.mkdir(git_path)
 
             # Generate the package and add the the zip filename to the SHA list
-            sha_filenames.append(do_gen_package(pkg_target, install_dir=git_path))
+            sha_filenames.append(do_gen_package(pkg_target,
+                                                install_dir=git_path,
+                                                repo_and_hash=repo_and_hash))
         else:
             print("Error: Specify a supported type from {}".format(
                 list(PACKAGE_MAPPING.keys())))

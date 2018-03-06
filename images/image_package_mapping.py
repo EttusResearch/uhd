@@ -10,7 +10,7 @@ Container for the list of image package targets, and the information about them
 PACKAGE_MAPPING = {
     "e310": {
         "type": "e3xx",
-        "package_name": "e3xx_e310_fpga_default.zip",
+        "package_name": "e3xx_e310_fpga_default-g{}.zip",
         "files": ["usrp_e310_fpga.bin",
                   "usrp_e310_fpga_sg3.bin",
                   "usrp_e3xx_fpga_idle.bin",
@@ -26,7 +26,7 @@ PACKAGE_MAPPING = {
     },
     "x300": {
         "type": "x3xx",
-        "package_name": "x3xx_x300_fpga_default.zip",
+        "package_name": "x3xx_x300_fpga_default-g{}.zip",
         "files": ["usrp_x300_fpga_HG.bin",
                   "usrp_x300_fpga_HG.lvbitx",
                   "usrp_x300_fpga_XG.bin",
@@ -38,7 +38,7 @@ PACKAGE_MAPPING = {
     },
     "x310": {
         "type": "x3xx",
-        "package_name": "x3xx_x310_fpga_default.zip",
+        "package_name": "x3xx_x310_fpga_default-g{}.zip",
         "files": ["usrp_x310_fpga_HG.bin",
                   "usrp_x310_fpga_HG.lvbitx",
                   "usrp_x310_fpga_XG.bin",
@@ -50,7 +50,7 @@ PACKAGE_MAPPING = {
     },
     "n310": {
         "type": "n3xx",
-        "package_name": "n3xx_n310_fpga_default.zip",
+        "package_name": "n3xx_n310_fpga_default-g{}.zip",
         "files": ['usrp_n310_fpga_HG.bit',
                   'usrp_n310_fpga_HG.bit.md5',
                   'usrp_n310_fpga_HG.dts',
@@ -64,7 +64,7 @@ PACKAGE_MAPPING = {
     },
     "n300": {
         "type": "n3xx",
-        "package_name": "n3xx_n300_fpga_default.zip",
+        "package_name": "n3xx_n300_fpga_default-g{}.zip",
         "files": ['usrp_n300_fpga_HG.bit',
                   'usrp_n300_fpga_HG.bit.md5',
                   'usrp_n300_fpga_HG.dts',
@@ -78,7 +78,7 @@ PACKAGE_MAPPING = {
     },
     "n310_aa": {
         "type": "n3xx",
-        "package_name": "n3xx_n310_fpga_aurora.zip",
+        "package_name": "n3xx_n310_fpga_aurora-g{}.zip",
         "files": ['usrp_n310_fpga_AA.bit',
                   'usrp_n310_fpga_AA.bit.md5',
                   'usrp_n310_fpga_AA.dts',
@@ -97,12 +97,12 @@ PACKAGE_MAPPING = {
     },
     "n310_cpld": {
         "type": "n3xx",
-        "package_name": "n3xx_n310_cpld_default.zip",
+        "package_name": "n3xx_n310_cpld_default-g{}.zip",
         "files": ['usrp_n310_mg_cpld.svf']
     },
     'n200': {
         'type': 'usrp2',
-        'package_name': 'usrp2_n200_fpga_default.zip',
+        'package_name': 'usrp2_n200_fpga_default-g{}.zip',
         'files': ["usrp_n200_r2_fpga.bin",
                   "usrp_n200_r3_fpga.bin",
                   "usrp_n200_r4_fpga.bin",
@@ -111,7 +111,7 @@ PACKAGE_MAPPING = {
     },
     'n210': {
         'type': 'usrp2',
-        'package_name': 'usrp2_n210_fpga_default.zip',
+        'package_name': 'usrp2_n210_fpga_default-g{}.zip',
         'files': ["usrp_n210_r2_fpga.bin",
                   "usrp_n210_r3_fpga.bin",
                   "usrp_n210_r4_fpga.bin",
@@ -120,83 +120,83 @@ PACKAGE_MAPPING = {
     },
     'n200_fw': {
         'type': 'usrp2',
-        'package_name': 'usrp2_n200_fw_default.zip',
+        'package_name': 'usrp2_n200_fw_default-g{}.zip',
         'files': ["usrp_n200_fw.bin"],
     },
     'n210_fw': {
         'type': 'usrp2',
-        'package_name': 'usrp2_n210_fw_default.zip',
+        'package_name': 'usrp2_n210_fw_default-g{}.zip',
         'files': ["usrp_n210_fw.bin"],
     },
     'usrp2': {
         'type': 'usrp2',
-        'package_name': 'usrp2_usrp2_fpga_default.zip',
+        'package_name': 'usrp2_usrp2_fpga_default-g{}.zip',
         'files': ["usrp2_fpga.bin"],
     },
     'usrp2_fw': {
         'type': 'usrp2',
-        'package_name': 'usrp2_usrp2_fw_default.zip',
+        'package_name': 'usrp2_usrp2_fw_default-g{}.zip',
         'files': ["usrp2_fw.bin"],
     },
     'b200': {
         'type': 'b2xx',
-        'package_name': 'b2xx_b200_fpga_default.zip',
+        'package_name': 'b2xx_b200_fpga_default-g{}.zip',
         'files': ["usrp_b200_fpga.bin"],
     },
     'b200mini': {
         'type': 'b2xx',
-        'package_name': 'b2xx_b200mini_fpga_default.zip',
+        'package_name': 'b2xx_b200mini_fpga_default-g{}.zip',
         'files': ["usrp_b200mini_fpga.bin"],
     },
     'b205mini': {
         'type': 'b2xx',
-        'package_name': 'b2xx_b205mini_fpga_default.zip',
+        'package_name': 'b2xx_b205mini_fpga_default-g{}.zip',
         'files': ["usrp_b205mini_fpga.bin"],
     },
     'b210': {
         'type': 'b2xx',
-        'package_name': 'b2xx_b210_fpga_default.zip',
+        'package_name': 'b2xx_b210_fpga_default-g{}.zip',
         'files': ["usrp_b210_fpga.bin"],
     },
     'b2xx_fw': {
         'type': 'b2xx',
-        'package_name': 'b2xx_common_fw_default.zip',
+        'package_name': 'b2xx_common_fw_default-g{}.zip',
         'files': ["usrp_b200_fw.hex"],
     },
     'n230': {
         'type': 'n230',
-        'package_name': 'n230_n230_fpga_default.zip',
+        'package_name': 'n230_n230_fpga_default-g{}.zip',
         'files': ["usrp_n230_fpga.bin",
                   "usrp_n230_fpga.bit",
                   "usrp_n230_fpga.rpt"],
     },
     'b100': {
         'type': 'usrp1',
-        'package_name': 'usrp1_b100_fpga_default.zip',
+        'package_name': 'usrp1_b100_fpga_default-g{}.zip',
         'files': ["usrp_b100_fpga_2rx.bin",
                   "usrp_b100_fpga.bin"],
     },
     'b100_fw': {
         'type': 'usrp1',
-        'package_name': 'usrp1_b100_fw_default.zip',
+        'package_name': 'usrp1_b100_fw_default-g{}.zip',
         'files': ["usrp_b100_fw.ihx"],
     },
     'usrp1': {
         'type': 'usrp1',
-        'package_name': 'usrp1_usrp1_fpga_default.zip',
+        'package_name': 'usrp1_usrp1_fpga_default-g{}.zip',
         'files': ["usrp1_fpga_4rx.rbf",
                   "usrp1_fpga.rbf",
                   "usrp1_fw.ihx"],
     },
     'octoclock': {
         'type': 'octoclock',
-        'package_name': 'octoclock_octoclock_fw_default.zip',
+        'package_name': 'octoclock_octoclock_fw_default-g{}.zip',
         'files': ["octoclock_bootloader.hex",
                   "octoclock_r4_fw.hex"],
     },
     'winusb_drv': {
         'type': 'usb',
-        'package_name': 'usb_common_windrv_default.zip',
+        'package_name': 'usb_common_windrv_default-g{}.zip',
         'files': ["winusb_driver/",
                   "winusb_driver/erllc_uhd_b205mini.inf",
                   "winusb_driver/erllc_uhd_b100.inf",

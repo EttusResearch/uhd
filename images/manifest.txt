@@ -1,45 +1,52 @@
 # UHD Image Manifest File
 # Target    hash    url     SHA256
 # X300-Series
-x3xx_x310_fpga_default          fpga-1791847        x3xx/fpga-1791847/x3xx_x310_fpga_default.zip      b18622e48f8a7e762c07ec90a563a5925f6098fe9a905fe1689c246696678142
-x3xx_x300_fpga_default          fpga-1791847        x3xx/fpga-1791847/x3xx_x300_fpga_default.zip      2e184533f90abe17ce931848c8d2ca628b497399ac9bdd069f685ba9ce50aa3c
+x3xx_x310_fpga_default          fpga-1791847        x3xx/fpga-1791847/x3xx_x310_fpga_default-g1791847.zip                   b18622e48f8a7e762c07ec90a563a5925f6098fe9a905fe1689c246696678142
+x3xx_x300_fpga_default          fpga-1791847        x3xx/fpga-1791847/x3xx_x300_fpga_default-g1791847.zip                   2e184533f90abe17ce931848c8d2ca628b497399ac9bdd069f685ba9ce50aa3c
 # Example daughterboard targets (none currently exist)
 #x3xx_twinrx_cpld_default   example_target
 #dboard_ubx_cpld_default    example_target
+
 # E-Series
-e3xx_e310_fpga_default          fpga-1c568e6        e3xx/fpga-1c568e6/e3xx_e310_fpga_default.zip      2957b4bdefe6885644ef2bc7b0e3845d13a7fe45f5a0933a2adaffd24c1b6802
+e3xx_e310_fpga_default          fpga-1c568e6        e3xx/fpga-1c568e6/e3xx_e310_fpga_default-g1c568e6.zip                   2957b4bdefe6885644ef2bc7b0e3845d13a7fe45f5a0933a2adaffd24c1b6802
+
 # N300-Series
-n3xx_n310_fpga_default          fpga-fad351d        n3xx/fpga-fad351d/n3xx_n310_fpga_default.zip      de65ef6521ed20c57fbe75c86afc0dc80531d77b0c88a89cec742bf67363b9be
-n3xx_n300_fpga_default          fpga-fad351d        n3xx/fpga-fad351d/n3xx_n300_fpga_default.zip      0fb5aebee11f9cbb99bb6c09f50099c5eba807acab46a3a23e8f65b1ef4e06c8
-n3xx_n310_fpga_aurora           fpga-6bea23d        n3xx/fpga-6bea23d/n3xx_n310_fpga_aurora.zip       62a12a2c85526f759c96a1eb7db226e715cdd83b9c277d29f037ae00c72bf7fa
-#n3xx_n310_cpld_default         fpga-6bea23d        n3xx/fpga-6bea23d/n3xx_n310_cpld_default.zip      0
+n3xx_n310_fpga_default          fpga-fad351d        n3xx/fpga-fad351d/n3xx_n310_fpga_default-gfad351d.zip                   de65ef6521ed20c57fbe75c86afc0dc80531d77b0c88a89cec742bf67363b9be
+n3xx_n300_fpga_default          fpga-fad351d        n3xx/fpga-fad351d/n3xx_n300_fpga_default-gfad351d.zip                   0fb5aebee11f9cbb99bb6c09f50099c5eba807acab46a3a23e8f65b1ef4e06c8
+n3xx_n310_fpga_aurora           fpga-6bea23d        n3xx/fpga-6bea23d/n3xx_n310_fpga_aurora-g6bea23d.zip                    62a12a2c85526f759c96a1eb7db226e715cdd83b9c277d29f037ae00c72bf7fa
+#n3xx_n310_cpld_default         fpga-6bea23d        n3xx/fpga-6bea23d/n3xx_n310_cpld_default-g6bea23d.zip                   0
 # N3XX Mykonos firmware
-#n3xx_n310_fw_default           fpga-6bea23d        n3xx/fpga-6bea23d/n3xx_n310_fw_default.zip        0
+#n3xx_n310_fw_default           fpga-6bea23d        n3xx/fpga-6bea23d/n3xx_n310_fw_default-g6bea23d.zip                     0
 # N300-Series Filesystems, etc
-#n3xx_common_sdk_default        fpga-6bea23d        n3xx/fpga-6bea23d/n3xx_common_sdk_default.zip     0
-#n3xx_n310_mender_default       fpga-6bea23d        n3xx/fpga-6bea23d/n3xx_n310_mender_default.zip    0
-#n3xx_n300_mender_default       fpga-6bea23d        n3xx/fpga-6bea23d/n3xx_n300_mender_default.zip    0
-#n3xx_n310_sdimg_default        fpga-6bea23d        n3xx/fpga-6bea23d/n3xx_n310_sdimg_default.zip     0
-#n3xx_n300_sdimg_default        fpga-6bea23d        n3xx/fpga-6bea23d/n3xx_n300_sdimg_default.zip     0
+#n3xx_common_sdk_default        fpga-6bea23d        n3xx/fpga-6bea23d/n3xx_common_sdk_default-g6bea23d.zip                  0
+#n3xx_n310_mender_default       fpga-6bea23d        n3xx/fpga-6bea23d/n3xx_n310_mender_default-g6bea23d.zip                 0
+#n3xx_n300_mender_default       fpga-6bea23d        n3xx/fpga-6bea23d/n3xx_n300_mender_default-g6bea23d.zip                 0
+#n3xx_n310_sdimg_default        fpga-6bea23d        n3xx/fpga-6bea23d/n3xx_n310_sdimg_default-g6bea23d.zip                  0
+#n3xx_n300_sdimg_default        fpga-6bea23d        n3xx/fpga-6bea23d/n3xx_n300_sdimg_default-g6bea23d.zip                  0
+
 # B200-Series
-b2xx_b200_fpga_default          fpga-1c568e6        b2xx/fpga-1c568e6/b2xx_b200_fpga_default.zip      7ba7561d517dc9a474b01f06c273f921a3a27005e41cd38fde7cd03bbb00284f
-b2xx_b200mini_fpga_default      fpga-1c568e6        b2xx/fpga-1c568e6/b2xx_b200mini_fpga_default.zip  5cf63ec2d50630c35b6614729ae426d209cda48b02f25dd6eb31650f6ffe5bab
-b2xx_b210_fpga_default          fpga-1c568e6        b2xx/fpga-1c568e6/b2xx_b210_fpga_default.zip      612b239f86a6d1b09736c6eb55cfe370937d0414acfee48f96cecfe94c080a89
-b2xx_b205mini_fpga_default      fpga-1c568e6        b2xx/fpga-1c568e6/b2xx_b205mini_fpga_default.zip  ab4de1ff063cb2224f74f17c6e7371fec314cb95fcef2a8035529a3fe1e6355f
-b2xx_common_fw_default          uhd-14000041        b2xx/uhd-14000041/b2xx_common_fw_default.zip      920790744085d8525529c1d0ece8942fef6d29b0a503530a814727fbacd7732c
+b2xx_b200_fpga_default          fpga-1c568e6        b2xx/fpga-1c568e6/b2xx_b200_fpga_default-g1c568e6.zip                   7ba7561d517dc9a474b01f06c273f921a3a27005e41cd38fde7cd03bbb00284f
+b2xx_b200mini_fpga_default      fpga-1c568e6        b2xx/fpga-1c568e6/b2xx_b200mini_fpga_default-g1c568e6.zip               5cf63ec2d50630c35b6614729ae426d209cda48b02f25dd6eb31650f6ffe5bab
+b2xx_b210_fpga_default          fpga-1c568e6        b2xx/fpga-1c568e6/b2xx_b210_fpga_default-g1c568e6.zip                   612b239f86a6d1b09736c6eb55cfe370937d0414acfee48f96cecfe94c080a89
+b2xx_b205mini_fpga_default      fpga-1c568e6        b2xx/fpga-1c568e6/b2xx_b205mini_fpga_default-g1c568e6.zip               ab4de1ff063cb2224f74f17c6e7371fec314cb95fcef2a8035529a3fe1e6355f
+b2xx_common_fw_default          uhd-14000041        b2xx/uhd-14000041/b2xx_common_fw_default-g14000041.zip                  920790744085d8525529c1d0ece8942fef6d29b0a503530a814727fbacd7732c
+
 # USRP2 Devices
-usrp2_usrp2_fw_default          fpga-6bea23d        usrp2/fpga-6bea23d/usrp2_usrp2_fw_default.zip     d523a18318cb6a7637be40484bf03a6f54766410fee2c1a1f72e8971ea9a9cb6
-usrp2_usrp2_fpga_default        fpga-6bea23d        usrp2/fpga-6bea23d/usrp2_usrp2_fpga_default.zip   505c70aedc8cdfbbfe654bcdbe1ce604c376e733a44cdd1351571f61a7f1cb49
-usrp2_n200_fpga_default         fpga-6bea23d        usrp2/fpga-6bea23d/usrp2_n200_fpga_default.zip    833a0098d66c0c502b9c3975d651a79e125133c507f9f4b2c472f9eb96fdaef8
-usrp2_n200_fw_default           fpga-6bea23d        usrp2/fpga-6bea23d/usrp2_n200_fw_default.zip      3eee2a6195caafe814912167fccf2dfc369f706446f8ecee36e97d2c0830116f
-usrp2_n210_fpga_default         fpga-6bea23d        usrp2/fpga-6bea23d/usrp2_n210_fpga_default.zip    5ce68ac539ee6eeb7d04fb3127c1fabcaff442a8edfaaa2f3746590f9df909bd
-usrp2_n210_fw_default           fpga-6bea23d        usrp2/fpga-6bea23d/usrp2_n210_fw_default.zip      3646fcd3fc974d18c621cb10dfe97c4dad6d282036dc63b7379995dfad95fb98
-n230_n230_fpga_default          fpga-1c568e6        n230/fpga-1c568e6/n230_n230_fpga_default.zip      8cf8b5318aa797d180b8a09b2dc39f25418a5952c11ec65687ceb5542a3a59cb
+usrp2_usrp2_fw_default          fpga-6bea23d        usrp2/fpga-6bea23d/usrp2_usrp2_fw_default-g6bea23d.zip                  d523a18318cb6a7637be40484bf03a6f54766410fee2c1a1f72e8971ea9a9cb6
+usrp2_usrp2_fpga_default        fpga-6bea23d        usrp2/fpga-6bea23d/usrp2_usrp2_fpga_default-g6bea23d.zip                505c70aedc8cdfbbfe654bcdbe1ce604c376e733a44cdd1351571f61a7f1cb49
+usrp2_n200_fpga_default         fpga-6bea23d        usrp2/fpga-6bea23d/usrp2_n200_fpga_default-g6bea23d.zip                 833a0098d66c0c502b9c3975d651a79e125133c507f9f4b2c472f9eb96fdaef8
+usrp2_n200_fw_default           fpga-6bea23d        usrp2/fpga-6bea23d/usrp2_n200_fw_default-g6bea23d.zip                   3eee2a6195caafe814912167fccf2dfc369f706446f8ecee36e97d2c0830116f
+usrp2_n210_fpga_default         fpga-6bea23d        usrp2/fpga-6bea23d/usrp2_n210_fpga_default-g6bea23d.zip                 5ce68ac539ee6eeb7d04fb3127c1fabcaff442a8edfaaa2f3746590f9df909bd
+usrp2_n210_fw_default           fpga-6bea23d        usrp2/fpga-6bea23d/usrp2_n210_fw_default-g6bea23d.zip                   3646fcd3fc974d18c621cb10dfe97c4dad6d282036dc63b7379995dfad95fb98
+n230_n230_fpga_default          fpga-1c568e6        n230/fpga-1c568e6/n230_n230_fpga_default-g1c568e6.zip                   8cf8b5318aa797d180b8a09b2dc39f25418a5952c11ec65687ceb5542a3a59cb
+
 # USRP1 Devices
-usrp1_usrp1_fpga_default        fpga-6bea23d        usrp1/fpga-6bea23d/usrp1_usrp1_fpga_default.zip   03bf72868c900dd0853bf48e2ede91058d579829b0e70c021e51b0e282d1d5be
-usrp1_b100_fpga_default         fpga-6bea23d        usrp1/fpga-6bea23d/usrp1_b100_fpga_default.zip    7f2306f21e17aa3fae3f966d08c6297d6cf42041974f846ca89f0d633ece8769
-usrp1_b100_fw_default           fpga-6bea23d        usrp1/fpga-6bea23d/usrp1_b100_fw_default.zip      867f17fac085535dbcb01c226ce87acf49806de6ed0ae9b214d7c8da86e2a71d
+usrp1_usrp1_fpga_default        fpga-6bea23d        usrp1/fpga-6bea23d/usrp1_usrp1_fpga_default-g6bea23d.zip                03bf72868c900dd0853bf48e2ede91058d579829b0e70c021e51b0e282d1d5be
+usrp1_b100_fpga_default         fpga-6bea23d        usrp1/fpga-6bea23d/usrp1_b100_fpga_default-g6bea23d.zip                 7f2306f21e17aa3fae3f966d08c6297d6cf42041974f846ca89f0d633ece8769
+usrp1_b100_fw_default           fpga-6bea23d        usrp1/fpga-6bea23d/usrp1_b100_fw_default-g6bea23d.zip                   867f17fac085535dbcb01c226ce87acf49806de6ed0ae9b214d7c8da86e2a71d
+
 # Octoclock
-octoclock_octoclock_fw_default  uhd-14000041        octoclock/uhd-14000041/octoclock_octoclock_fw_default.zip     8da7f1af8cecb7f6259a237a18c39058ba69a11567fa373cffc9704031a1d053
+octoclock_octoclock_fw_default  uhd-14000041        octoclock/uhd-14000041/octoclock_octoclock_fw_default-g14000041.zip     8da7f1af8cecb7f6259a237a18c39058ba69a11567fa373cffc9704031a1d053
+
 # Legacy USB Windows drivers
-usb_common_windrv_default       uhd-14000041        usb/uhd-14000041/usb_common_windrv_default.zip    835e94b2bdf2312fd3881a1b78e2ec236c1f42b7a5bd3927f85f73cf5e3a5231
+usb_common_windrv_default       uhd-14000041        usb/uhd-14000041/usb_common_windrv_default-g14000041.zip                835e94b2bdf2312fd3881a1b78e2ec236c1f42b7a5bd3927f85f73cf5e3a5231
