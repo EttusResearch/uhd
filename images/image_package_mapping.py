@@ -95,6 +95,24 @@ PACKAGE_MAPPING = {
                   'usrp_n310_fpga_XA.dts.md5',
                   'usrp_n310_fpga_XA.rpt']
     },
+    "n310_wr": {
+        "type": "n3xx",
+        "package_name": "n3xx_n310_fpga_whiterabbit-g{}.zip",
+        "files": ['usrp_n310_fpga_WX.bit',
+                  'usrp_n310_fpga_WX.bit.md5',
+                  'usrp_n310_fpga_WX.dts',
+                  'usrp_n310_fpga_WX.dts.md5',
+                  'usrp_n310_fpga_WX.rpt',]
+    },
+    "n300_wr": {
+        "type": "n3xx",
+        "package_name": "n3xx_n300_fpga_whiterabbit-g{}.zip",
+        "files": ['usrp_n300_fpga_WX.bit',
+                  'usrp_n300_fpga_WX.bit.md5',
+                  'usrp_n300_fpga_WX.dts',
+                  'usrp_n300_fpga_WX.dts.md5',
+                  'usrp_n300_fpga_WX.rpt',]
+    },
     "n310_cpld": {
         "type": "n3xx",
         "package_name": "n3xx_n310_cpld_default-g{}.zip",

@@ -9,6 +9,7 @@ TDC clock synchronization
 
 import time
 import math
+from fractions import gcd
 from functools import reduce
 from builtins import object
 from usrp_mpm.mpmutils import poll_with_timeout
@@ -28,23 +29,23 @@ class ClockSynchronizer(object):
     The actual synchronization is run in run_sync().
     """
     # TDC Control Register address constants
-    TDC_CONTROL              = 0x200
-    TDC_STATUS               = 0x208
-    RP_OFFSET_0              = 0x20C
-    RP_OFFSET_1              = 0x210
-    SP_OFFSET_0              = 0x214
-    SP_OFFSET_1              = 0x218
-    RP_PERIOD_CONTROL        = 0x220
-    SP_PERIOD_CONTROL        = 0x224
-    RPT_PERIOD_CONTROL       = 0x228
-    SPT_PERIOD_CONTROL       = 0x22C
-    TDC_MASTER_RESET         = 0x230
-    REPULSE_PERIOD_CONTROL_1 = 0x240
-    REPULSE_PERIOD_CONTROL_2 = 0x244
-    SYNC_SIGNATURE           = 0x300
-    SYNC_REVISION            = 0x304
-    SYNC_OLDESTCOMPAT        = 0x308
-    SYNC_SCRATCH             = 0x30C
+    TDC_CONTROL              = 0x000
+    TDC_STATUS               = 0x008
+    RP_OFFSET_0              = 0x00C
+    RP_OFFSET_1              = 0x010
+    SP_OFFSET_0              = 0x014
+    SP_OFFSET_1              = 0x018
+    RP_PERIOD_CONTROL        = 0x020
+    SP_PERIOD_CONTROL        = 0x024
+    RPT_PERIOD_CONTROL       = 0x028
+    SPT_PERIOD_CONTROL       = 0x02C
+    TDC_MASTER_RESET         = 0x030
+    REPULSE_PERIOD_CONTROL_1 = 0x040
+    REPULSE_PERIOD_CONTROL_2 = 0x044
+    SYNC_SIGNATURE           = 0x100
+    SYNC_REVISION            = 0x104
+    SYNC_OLDESTCOMPAT        = 0x108
+    SYNC_SCRATCH             = 0x10C
 
     def __init__(
             self,
@@ -58,6 +59,7 @@ class ClockSynchronizer(object):
             init_pdac_word,
             dac_spi_addr_val,
             pps_in_pipe_ext_delay,
+            pps_in_pipe_dynamic_delay,
             slot_idx
         ):
         self._iface = regs_iface
@@ -73,6 +75,8 @@ class ClockSynchronizer(object):
         self.current_phase_dac_word = init_pdac_word
         self.lmk_vco_freq = self.lmk.get_vco_freq()
         self.dac_spi_addr_val = dac_spi_addr_val
+        self.meas_clk_freq = None
+        self.target_values = []
         # Output PPS static delay is the minimum number of radio_clk cycles from the SP-t
         # rising edge to when PPS appears on the output of the trigger passing module in
         # the radio_clk domain. 2 cycles are from the trigger crossing structure and
@@ -85,24 +89,30 @@ class ClockSynchronizer(object):
         self.pps_out_pipe_var_delay = 0
         # Input PPS delay (in ref_clk cycles) is recorded here and only changes when
         # the TDC structure changes. This represents the number of ref_clk cycles from
-        # PPS arriving at the input of the TDC to when the RP/-t pulse occurs.
-        self.PPS_IN_PIPE_STATIC_DELAY = 5
+        # PPS arriving at the input of the TDC to when the RP/-t pulse occurs. There are
+        # static delays and dynamic delays. Dynamic delay is 0-15 additional cycles.
+        # Default for older drivers was a total of 5 cycles. Increase the dynamic delay
+        # to delay the RP/SP pulsers start with respect to the Reset Pulser.
+        self.PPS_IN_PIPE_STATIC_DELAY = 4
+        self.pps_in_pipe_dynamic_delay = pps_in_pipe_dynamic_delay # 0-15
         # External input PPS delay is a target-specific value, typically 3 ref_clk cycles.
         # This represents the number of ref_clk cycles from when PPS is first captured
         # by the ref_clk to when PPS arrives at the input of the TDC.
         self.pps_in_pipe_ext_delay = pps_in_pipe_ext_delay
         self.tdc_rev = 1
         # update theses lists whenever more rates are supported
-        self.supported_ref_clk_freqs = [10e6,20e6,25e6]
-        if self.ref_clk_freq not in self.supported_ref_clk_freqs:
-            self.log.error("Clock synchronizer does not support the selected reference clock "
-                           "frequency. Selected rate: {:.2f} MHz".format(
+        self.SUPPORTED_PULSE_RATES = [1e6, 1.25e6, 1.2288e6] # order matters here!
+        self.SUPPORTED_REF_CLK_FREQS = [10e6, 20e6, 25e6, 62.5e6]
+        if self.ref_clk_freq not in self.SUPPORTED_REF_CLK_FREQS:
+            self.log.error("Clock synchronizer does not support the selected reference "
+                           "clock frequency. Selected rate: {:.2f} MHz".format(
                                self.ref_clk_freq*1e-6))
             raise RuntimeError("TDC does not support the selected reference clock rate!")
-        self.supported_radio_clk_freqs = [104e6,122.88e6,125e6,153.6e6,156.25e6,200e6,250e6]
+        self.supported_radio_clk_freqs = [104e6, 122.88e6, 125e6, 153.6e6, 156.25e6, \
+                                          200e6, 250e6]
         if self.radio_clk_freq not in self.supported_radio_clk_freqs:
-            self.log.error("Clock synchronizer does not support the selected radio clock "
-                           "frequency. Selected rate: {:.2f} MHz".format(
+            self.log.error("Clock synchronizer does not support the selected radio clock"
+                           " frequency. Selected rate: {:.2f} MHz".format(
                                self.radio_clk_freq*1e-6))
             raise RuntimeError("TDC does not support the selected radio clock rate!")
 
@@ -110,7 +120,7 @@ class ClockSynchronizer(object):
         # YYMMDDHH
         self.oldest_compat_version = 0x17060111
         # Bump this whenever changes are made to this MPM host code.
-        self.current_version = 0x18021614
+        self.current_version = 0x18032916
         self.check_core()
         self.configured = False
 
@@ -121,24 +131,29 @@ class ClockSynchronizer(object):
         """
         self.log.trace("Checking TDC Core...")
         if self.peek32(self.SYNC_SIGNATURE) != 0x73796e63: # SYNC in ASCII hex
-            raise RuntimeError('TDC Core signature mismatch! Check that core is mapped correctly')
+            raise RuntimeError('TDC Core signature mismatch! Check that core '
+                               'is mapped correctly')
         # Two revision checks are needed:
         #   FPGA Current Rev >= Host Oldest Compatible Rev
         #   Host Current Rev >= FPGA Oldest Compatible Rev
-        fpga_current_revision    = self.peek32(self.SYNC_REVISION) & 0xFFFFFFFF
+        fpga_current_revision = self.peek32(self.SYNC_REVISION) & 0xFFFFFFFF
         fpga_old_compat_revision = self.peek32(self.SYNC_OLDESTCOMPAT) & 0xFFFFFFFF
         if fpga_current_revision < self.oldest_compat_version:
             self.log.error("Revision check failed! MPM oldest supported revision "
                            "(0x{:08X}) is too new for this FPGA revision (0x{:08X})."
                            .format(self.oldest_compat_version, fpga_current_revision))
-            raise RuntimeError('This MPM version does not support the loaded FPGA image. Please update images!')
+            raise RuntimeError('This MPM version does not support the loaded FPGA image.'
+                               ' Please update images!')
         if self.current_version < fpga_old_compat_revision:
             self.log.error("Revision check failed! FPGA oldest compatible revision "
                            "(0x{:08X}) is too new for this MPM version (0x{:08X})."
                            .format(fpga_current_revision, self.current_version))
-            raise RuntimeError('The loaded FPGA version is too new for MPM. Please update MPM!')
-        self.log.trace("TDC Core current revision: 0x{:08X}".format(fpga_current_revision))
-        self.log.trace("TDC Core oldest compatible revision: 0x{:08X}".format(fpga_old_compat_revision))
+            raise RuntimeError('The loaded FPGA version is too new for MPM. '
+                               'Please update MPM!')
+        self.log.trace("TDC Core current revision: 0x{:08X}" \
+                       .format(fpga_current_revision))
+        self.log.trace("TDC Core oldest compatible revision: 0x{:08X}" \
+                       .format(fpga_old_compat_revision))
         # Versioning notes:
         # TDC 1.0 = [0,          0x18021614)
         # TDC 2.0 = [0x18021614, today]
@@ -191,9 +206,9 @@ class ClockSynchronizer(object):
             report_only = (len(num_meas) > 1) & (x == (len(num_meas)-1))
             meas   = self.measure(num_meas[x])
             offset = self.align(
-                     target_offset=target_offset,
-                     current_value=meas,
-                     report_only=report_only)
+                target_offset=target_offset,
+                current_value=meas,
+                report_only=report_only)
         return offset
 
 
@@ -238,6 +253,18 @@ class ClockSynchronizer(object):
                 .format(reset_status))
             raise RuntimeError("TDC Failed to reset.")
 
+        def find_rate(clk_freq, rates):
+            """
+            Go through the rates list in sequential order, checking each rate for
+            even division into our clk_freq. Return the first one we find.
+            """
+            for rate in rates:
+                if math.modf(clk_freq/rate)[0] == 0:
+                    return rate
+            self.log.error("TDC Setup Failure: Pulse rate setup failed for {:.4f} MHz!" \
+                .format(clk_freq/1e6))
+            raise RuntimeError("TDC Failed to Initialize. No pulse rate found!")
+
         def get_pulse_setup(clk_freq, pulser, compat_mode=False):
             """
             Set the pulser divide values based on the given clock rates.
@@ -247,74 +274,66 @@ class ClockSynchronizer(object):
             # 10, 20, 25, 125, 122.88, and 153.6 MHz. Any other rates are expected
             # to use the TDC 2.0 and later.
             if compat_mode:
-                pulse_rate = 40e3
-            # The RP always runs at 1 MHz since all of our reference clock rates are
-            # multiples of 1.
-            elif pulser == "rp":
-                pulse_rate = 1.00e6
-            # The SP either runs at 1.0, 1.2288, or 1.25 MHz. If the clock rate doesn't
-            # divide nicely into 1 MHz, we can use the alternative rates.
-            elif pulser == "sp":
-                pulse_rate = 1.00e6
-                if math.modf(clk_freq/pulse_rate)[0] > 0:
-                    pulse_rate = 1.2288e6
-                    if math.modf(clk_freq/pulse_rate)[0] > 0:
-                        pulse_rate = 1.25e6
-            # The Restart-pulser must run at the GCD of the RP and SP rates, not the
-            # Reference Clock and Radio Clock rates! For ease of implementation,
-            # run the pulser at a fixed value.
-            elif (pulser == "repulse-1") or (pulser == "repulse-2"):
-                pulse_rate = 1.6e3
-                # 156.25 MHz: this value needs to be 400 Hz, which is insanely
-                # slow and doubles the measurement time... so only use it for this
-                # specific case.
-                if clk_freq == 156.25e6:
-                    pulse_rate = 400
+                pulse_rate = find_rate(clk_freq, [40e3])
+            elif (pulser == "rp") or (pulser == "sp"):
+                pulse_rate = find_rate(clk_freq, self.SUPPORTED_PULSE_RATES)
             # The RP-t and SP-t pulsers always run at 10 kHz, which is the GCD of all
             # supported clock rates.
             elif (pulser == "rpt") or (pulser == "spt"):
-                pulse_rate = 10e3
+                pulse_rate = find_rate(clk_freq, [10e3])
             else:
-                pulse_rate = 10e3
-
-            # Check that the chosen pulse_rate divides evenly in the clk_freq.
-            if math.modf(clk_freq/pulse_rate)[0] > 0:
-                self.log.error("TDC Setup Failure: Pulse rate setup failed for {}!" \
+                self.log.error("TDC Setup Failure: Unrecognized pulse name given: {}" \
                     .format(pulser))
-                raise RuntimeError("TDC Failed to Initialize. Check your clock rates " \
-                                   "for compatibility!")
+                raise RuntimeError("TDC Failed to Initialize. "
+                                   "Unrecognized pulse name given!")
 
             period = int(clk_freq/pulse_rate)
             hi_time = int(math.floor(period/2))
-            if pulser == "repulse-1":
-                # The re-pulse is broken into two registers:
-                # -1 is the period and -2 is the high time + compatibility bit
-                assert period <= 0xFFFFFF # 24 bits
-                return period & 0xFFFFFF
-            elif pulser == "repulse-2":
-                assert hi_time <= 0x7FFFFF # 23 bits
-                return (hi_time & 0x7FFFFF)
-            # All the other registers are packed [30:16] = high time, [15:0] = period.
+            # All registers are packed [30:16] = high time, [15:0] = period.
             # hi_time is period/2 so we only use 15 bits.
             assert hi_time <= 0x7FFF and period <= 0xFFFF
-            return (hi_time << 16) | period
+            ctrl_word = (hi_time << 16) | period
+            return pulse_rate, ctrl_word
+
+        def get_restart_pulse_setup(rp_rate, sp_rate):
+            """
+            Set the restart pulser divide values based on the repeating pulse rates.
+            Returns register value required to create the desired pulses.
+            """
+            # The Restart-pulser must run at the GCD of the RP and SP rates, not the
+            # Reference Clock and Radio Clock rates!
+            pulse_rate = find_rate(self.ref_clk_freq, [gcd(rp_rate, sp_rate)])
+            period = int(self.ref_clk_freq/pulse_rate)
+            hi_time = int(math.floor(period/2))
+            # The re-pulse is broken into two registers:
+            # -1 is the period and -2 is the high time
+            assert period <= 0xFFFFFF # 24 bits
+            assert hi_time <= 0x7FFFFF # 23 bits
+            return pulse_rate, (period & 0xFFFFFF), (hi_time & 0x7FFFFF)
 
         compat_mode = self.tdc_rev < 2
         if compat_mode:
             self.log.warning("Running TDC in Compatibility Mode for v1.0!")
 
-        repulse_ctrl_word1 = get_pulse_setup(self.ref_clk_freq,  "repulse-1")
-        repulse_ctrl_word2 = get_pulse_setup(self.ref_clk_freq,  "repulse-2")
-        rp_ctrl_word       = get_pulse_setup(self.ref_clk_freq,  "rp", compat_mode)
-        sp_ctrl_word       = get_pulse_setup(self.radio_clk_freq,"sp", compat_mode)
-        rpt_ctrl_word      = get_pulse_setup(self.ref_clk_freq,  "rpt")
-        spt_ctrl_word      = get_pulse_setup(self.radio_clk_freq,"spt")
-        self.log.trace("Setting RePulse-1 control word to: 0x{:08X}".format(repulse_ctrl_word1))
-        self.log.trace("Setting RePulse-2 control word to: 0x{:08X}".format(repulse_ctrl_word2))
+        rp_rate, rp_ctrl_word  = get_pulse_setup(self.ref_clk_freq,  "rp", compat_mode)
+        sp_rate, sp_ctrl_word  = get_pulse_setup(self.radio_clk_freq,"sp", compat_mode)
+        rpt_rate,rpt_ctrl_word = get_pulse_setup(self.ref_clk_freq,  "rpt")
+        spt_rate,spt_ctrl_word = get_pulse_setup(self.radio_clk_freq,"spt")
+        rep_rate, repulse_ctrl_word1, repulse_ctrl_word2 = \
+            get_restart_pulse_setup(rp_rate, sp_rate)
+        self.log.trace("Using RP  pulse rate: {} MHz".format(rp_rate/1e6))
+        self.log.trace("Using SP  pulse rate: {} MHz".format(sp_rate/1e6))
+        self.log.trace("Using RPT pulse rate: {} MHz".format(rpt_rate/1e6))
+        self.log.trace("Using SPT pulse rate: {} MHz".format(spt_rate/1e6))
+        self.log.trace("Using Restart pulse rate: {} MHz".format(rep_rate/1e6))
         self.log.trace("Setting RP  control word to: 0x{:08X}".format(rp_ctrl_word))
         self.log.trace("Setting SP  control word to: 0x{:08X}".format(sp_ctrl_word))
         self.log.trace("Setting RPT control word to: 0x{:08X}".format(rpt_ctrl_word))
         self.log.trace("Setting SPT control word to: 0x{:08X}".format(spt_ctrl_word))
+        self.log.trace("Setting RePulse-1 control word to: 0x{:08X}" \
+                       .format(repulse_ctrl_word1))
+        self.log.trace("Setting RePulse-2 control word to: 0x{:08X}" \
+                       .format(repulse_ctrl_word2))
         self.poke32(self.REPULSE_PERIOD_CONTROL_1, repulse_ctrl_word1)
         self.poke32(self.REPULSE_PERIOD_CONTROL_2, repulse_ctrl_word2)
         self.poke32(self.RP_PERIOD_CONTROL,  rp_ctrl_word)
@@ -337,6 +356,12 @@ class ClockSynchronizer(object):
         # in the Radio Clock domain.
         # delay = [19..16], update = 20
         reg_val = (self.pps_out_pipe_var_delay & 0xF) << 16 | 0b1 << 20
+        self.poke32(self.TDC_CONTROL, reg_val)
+
+        # Set the pulser enable delay from the RePulse enable to the RP enable.
+        # Actual delay is +1 whatever is written here. Default is 1.
+        # delay = [27..24], update = 28
+        reg_val = (self.pps_in_pipe_dynamic_delay & 0xF) << 24 | 0b1 << 28
         self.poke32(self.TDC_CONTROL, reg_val)
 
         # Enable the TDC to capture the PPS. As long as PPS is actually a PPS, this
@@ -391,16 +416,17 @@ class ClockSynchronizer(object):
         max_skew = 0.5e-9 # 500 ps of tolerated skew either direction
         meas_err = bool(sum([x < current_value-max_skew for x in measurements])) or \
                    bool(sum([x > current_value+max_skew for x in measurements]))
+        meas_range = max(measurements) - min(measurements)
+
+        self.log.trace("TDC Measurements Collected! Average = {:.3f} ns. "
+                       "Range: {:.3f} ns".format(current_value*1e9, meas_range*1e9))
+        self.log.trace("TDC Measurement Duration: {:.3f} s" \
+                       .format(time.time()-tdc_start_time))
         if meas_err:
             self.log.error("TDC measurements show a wide range of values! "
                            "Check your clock rates for incompatibilities.")
             raise RuntimeError("TDC measurement out of expected range!")
 
-        self.log.trace("TDC Measurements Collected! Average = {:.3f} ns".format(
-            current_value*1e9))
-
-        self.log.trace("TDC Measurement Duration: {:.3f} s".format(
-                        time.time()-tdc_start_time))
         return current_value
 
 
