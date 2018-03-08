@@ -341,9 +341,9 @@ public:
         std::lock_guard<std::mutex> lock(*spi_mutex);
         const auto arm = device.get_arm_version();
         std::ostringstream ss;
-        ss  << arm.major_ver << "."
-            << arm.minor_ver << "."
-            << arm.rc_ver;
+        ss  << (int)(arm.major_ver) << "."
+            << (int)(arm.minor_ver) << "."
+            << (int)(arm.rc_ver);
 
         switch (arm.build_type)
         {
