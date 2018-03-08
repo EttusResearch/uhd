@@ -42,7 +42,20 @@ static const size_t MAX_BYTES_PER_HEADER =
         uhd::transport::vrt::chdr::max_if_hdr_words64 * sizeof(uint64_t);
 static const size_t BYTES_PER_SAMPLE = 4; // We currently only support sc16
 static boost::mutex _make_mutex;
-
+static const std::vector<std::string>
+    LEGACY_BLOCKS_LIST =
+        {
+            RADIO_BLOCK_NAME,
+            DFIFO_BLOCK_NAME,
+            SFIFO_BLOCK_NAME,
+            DDC_BLOCK_NAME,
+            DUC_BLOCK_NAME
+        };
+typedef std::vector<source_block_ctrl_base::sptr> source_block_list_t;
+typedef std::vector<sink_block_ctrl_base::sptr> sink_block_list_t;
+typedef std::map<std::string, std::pair<source_block_list_t, sink_block_list_t>> block_name_to_block_map_t;
+typedef std::pair<source_block_ctrl_base::sptr, size_t> source_port_t;
+typedef std::pair<sink_block_ctrl_base::sptr, size_t> sink_port_t;
 /************************************************************************
  * Static helpers
  ***********************************************************************/
@@ -233,6 +246,29 @@ public:
                 boost::format("/mboards/%d/xbar/%s_%d/tx_fe_corrections/%d/")
                 % mboard_idx % RADIO_BLOCK_NAME % radio_index % port_index
         ));
+    }
+    //! Get all legacy blocks from the LEGACY_BLOCK_LIST return in a form of
+    //  {BLOCK_NAME: <{source_block_pointer},{sink_block_pointer}>}
+    block_name_to_block_map_t get_legacy_blocks(uhd::device3::sptr _device)
+    {
+        block_name_to_block_map_t result ;
+        for(auto each_block_name: LEGACY_BLOCKS_LIST){
+            std::vector<block_id_t> block_list = _device->find_blocks(each_block_name);
+            std::pair<source_block_list_t, sink_block_list_t> ss_pair;
+            source_block_list_t src_list;
+            sink_block_list_t snk_list;
+            for(auto each_block: block_list){
+                uhd::rfnoc::source_block_ctrl_base::sptr src =
+                    _device->get_block_ctrl<source_block_ctrl_base>(each_block);
+                src_list.push_back(src);
+                uhd::rfnoc::sink_block_ctrl_base::sptr snk =
+                    _device->get_block_ctrl<sink_block_ctrl_base>(each_block);
+                snk_list.push_back(snk);
+            }
+            ss_pair = std::make_pair(src_list, snk_list);
+            result[each_block_name] = ss_pair;
+        }
+        return result;
     }
 
     void issue_stream_cmd(const stream_cmd_t &stream_cmd, size_t mboard, size_t chan)
@@ -467,13 +503,12 @@ private: // methods
                 % chan
             ));
         }
-
     }
 
     template <uhd::direction_t dir>
     void _update_stream_args_for_streaming(
             uhd::stream_args_t &args,
-            chan_map_t &chan_map
+            const chan_map_t &chan_map
     ) {
         // If the user provides spp, that value is always applied. If it's
         // different from what we thought it was, we need to update the blocks.
@@ -519,7 +554,9 @@ private: // methods
             // Map that mboard and channel to a block:
             const size_t radio_index = chan_map[mboard_idx][this_mboard_chan_idx].radio_index;
             size_t port_index = chan_map[mboard_idx][this_mboard_chan_idx].port_index;
-            const std::string block_name = _get_streamer_block_id_and_port<dir>(mboard_idx, radio_index, port_index);
+            auto block_and_port = _get_streamer_block_id_and_port<dir>(mboard_idx, radio_index, port_index);
+            auto block_name = block_and_port.first.to_string();
+            port_index = block_and_port.second;
             args.args[str(boost::format("block_id%d") % stream_arg_chan_idx)] = block_name;
             args.args[str(boost::format("block_port%d") % stream_arg_chan_idx)] = str(boost::format("%d") % port_index);
             // Map radio to channel (for in-band response)
@@ -528,37 +565,83 @@ private: // methods
         }
     }
 
-    template <uhd::direction_t dir>
-    std::string _get_streamer_block_id_and_port(
-            const size_t mboard_idx,
-            const size_t radio_index,
-            size_t &port_index
-    ) {
-        if (dir == uhd::TX_DIRECTION) {
-            if (_has_sramfifo) {
-                const size_t sfifo_idx =
-                    radio_index * _num_tx_chans_per_radio + port_index;
-                port_index = 0;
-                return block_id_t(mboard_idx, SFIFO_BLOCK_NAME, sfifo_idx).to_string();
-            } else if (_has_dmafifo) {
-                port_index = radio_index;
-                return block_id_t(mboard_idx, DFIFO_BLOCK_NAME, 0).to_string();
-            } else {
-                if (_has_ducs) {
-                    return block_id_t(mboard_idx, DUC_BLOCK_NAME, radio_index).to_string();
-                } else {
-                    return block_id_t(mboard_idx, RADIO_BLOCK_NAME, radio_index).to_string();
-                }
+    //! Given mboard_index(m), radio_index(r), and port_index(p),
+    //  this function return the index of a block on the input blocklist that match m,r,p
+    size_t find_block(const std::vector<source_port_t> &source_port_list, const size_t &m, const size_t &r, const size_t &p)
+    {
+        size_t index  = 0;
+        for (auto port : source_port_list)
+        {
+            auto source_block_id = (port.first)->get_block_id();
+            if (p == port.second && r == source_block_id.get_block_count() && m == source_block_id.get_device_no())
+            {
+                return index;
             }
-        } else {
-            if (_has_ddcs) {
-                return block_id_t(mboard_idx, DDC_BLOCK_NAME, radio_index).to_string();
-            } else {
-                return block_id_t(mboard_idx, RADIO_BLOCK_NAME, radio_index).to_string();
-            }
+            index++;
         }
     }
 
+    //! Given mboard_index(m), radio_index(r), and port_index(p),
+    //  this function return the index of a block on the input blocklist that match m,r,p
+    size_t find_block(const std::vector<sink_port_t> &sink_port_list, const size_t &m, const size_t &r, const size_t &p)
+    {
+        size_t index = 0;
+        for (auto port : sink_port_list)
+        {
+            auto sink_block_id = (port.first)->get_block_id();
+            if (p == port.second && r == sink_block_id.get_block_count() && m == sink_block_id.get_device_no())
+            {
+                return index;
+            }
+            index++;
+        }
+    }
+
+    template <uhd::direction_t dir>
+    std::pair<block_id_t, size_t> _get_streamer_block_id_and_port(
+        const size_t &mboard_idx,
+        const size_t &radio_index,
+        const size_t &port_index)
+    {
+        block_name_to_block_map_t legacy_block_map = get_legacy_blocks(_device);
+        auto radio_src_flat = _flatten_blocks_by_n_ports(legacy_block_map[RADIO_BLOCK_NAME].first);
+        auto radio_snk_flat = _flatten_blocks_by_n_ports(legacy_block_map[RADIO_BLOCK_NAME].second);
+        size_t index_src = find_block(radio_src_flat, mboard_idx, radio_index, port_index);
+        size_t index_snk = find_block(radio_snk_flat, mboard_idx, radio_index, port_index);
+        if (dir == uhd::TX_DIRECTION){
+            if (_has_sramfifo){
+                auto sfifo_snk_flat = _flatten_blocks_by_n_ports(legacy_block_map[SFIFO_BLOCK_NAME].second);
+                UHD_ASSERT_THROW(index_snk < sfifo_snk_flat.size());
+                auto sfifo_block = sfifo_snk_flat[index_snk].first->get_block_id();
+                return std::make_pair(sfifo_block, sfifo_snk_flat[index_snk].second);
+            }else if (_has_dmafifo){
+                auto dfifo_snk_flat = _flatten_blocks_by_n_ports(legacy_block_map[DFIFO_BLOCK_NAME].second);
+                UHD_ASSERT_THROW(index_snk < dfifo_snk_flat.size());
+                auto dfifo_block = dfifo_snk_flat[index_snk].first->get_block_id();
+                return std::make_pair(dfifo_block, dfifo_snk_flat[index_snk].second);
+            }else{
+                if (_has_ducs){
+                    return std::make_pair(block_id_t(mboard_idx, DUC_BLOCK_NAME, radio_index).to_string(),port_index);
+                    auto duc_snk_flat = _flatten_blocks_by_n_ports(legacy_block_map[DUC_BLOCK_NAME].second);
+                    UHD_ASSERT_THROW(index_src < duc_snk_flat.size());
+                    auto duc_block = duc_snk_flat[index_snk].first->get_block_id();
+                    return std::make_pair(duc_block, duc_snk_flat[index_snk].second);
+                }else{
+                    return std::make_pair(block_id_t(mboard_idx, RADIO_BLOCK_NAME, radio_index).to_string(),port_index);
+                }
+            }
+        }else{
+            if (_has_ddcs){
+                auto ddc_src_flat = _flatten_blocks_by_n_ports(legacy_block_map[DDC_BLOCK_NAME].first);
+                UHD_ASSERT_THROW(index_src < ddc_src_flat.size());
+                auto ddc_block = ddc_src_flat[index_src].first->get_block_id();
+                return std::make_pair(ddc_block, ddc_src_flat[index_src].second);
+            }
+            else{
+                return std::make_pair(block_id_t(mboard_idx, RADIO_BLOCK_NAME, radio_index).to_string(),port_index);
+            }
+        }
+    }
     /************************************************************************
      * Initialization
      ***********************************************************************/
@@ -724,6 +807,62 @@ private: // methods
             }
         }
     }
+    //! Flatten block list into a list of <block, port_index>
+    // For example block list {b0[0,1] ,b1[0,1]} (i.e block 0 with 2 port 0 and 1,etc ..)
+    // this will return {<b0,0> <b1,0> <b0,1> <b1,1>}
+    std::vector<source_port_t> _flatten_blocks_by_n_ports(source_block_list_t block_list)
+    {
+        std::vector<source_port_t> result;
+        for (auto block: block_list ){
+            for(auto port: block->get_output_ports()){
+
+                 result.push_back(std::make_pair(block,port));
+            }
+        }
+        //assign to block prior ports
+        size_t port = 0;
+        size_t i = 0;
+        for (size_t j=0; j<result.size(); j++){
+            auto block = block_list[j%block_list.size()];
+            UHD_ASSERT_THROW(port < block->get_output_ports().size());
+            if (i == block_list.size())
+            {
+                i = 0;
+                port ++;
+            }
+            result[j] = std::make_pair(block,port);
+            i++;
+        }
+        return result;
+    }
+
+    //! Flatten block list into a list of <block, port_index>
+    // For example block list {b0[0,1] ,b1[0,1]} (i.e block 0 with 2 port 0 and 1,etc ..)
+    // this will return {<b0,0> <b1,0> <b0,1> <b1,1>}
+    std::vector<sink_port_t> _flatten_blocks_by_n_ports(sink_block_list_t block_list)
+    {
+        std::vector<sink_port_t> result;
+        for (auto block: block_list ){
+            for(auto port: block->get_input_ports()){
+                 result.push_back(std::make_pair(block,port));
+            }
+        }
+        //assign to block prior ports
+        size_t port = 0;
+        size_t i = 0;
+        for (size_t j=0; j<result.size(); j++){
+            auto block = block_list[j%block_list.size()];
+            UHD_ASSERT_THROW(port < block->get_input_ports().size());
+            if (i == block_list.size())
+            {
+                i = 0;
+                port ++;
+            }
+            result[j] = std::make_pair(block,port);
+            i++;
+        }
+        return result;
+    }
 
     /*! Default block connections.
      *
@@ -744,65 +883,63 @@ private: // methods
         _graph = _device->create_graph("legacy");
         const size_t rx_bpp = _rx_spp * BYTES_PER_SAMPLE + MAX_BYTES_PER_HEADER;
         const size_t tx_bpp = _tx_spp * BYTES_PER_SAMPLE + MAX_BYTES_PER_HEADER;
-        for (size_t mboard = 0; mboard < _num_mboards; mboard++) {
-            for (size_t radio = 0; radio < _num_radios_per_board; radio++) {
-                // Tx Channels
-                for (size_t chan = 0; chan < _num_tx_chans_per_radio; chan++) {
-                    if (_has_ducs) {
-                        _graph->connect(
-                            block_id_t(mboard, DUC_BLOCK_NAME,   radio), chan,
-                            block_id_t(mboard, RADIO_BLOCK_NAME, radio), chan,
-                            tx_bpp
-                        );
-                        // Prioritize SRAM over DRAM for performance
-                        if (_has_sramfifo) {
-                            // We have SRAM FIFO *and* DUCs
-                            // SRAM FIFOs have only 1 channel per block
-                            const size_t sfifo_idx =
-                                _num_tx_chans_per_radio * radio + chan;
-                            _graph->connect(
-                                block_id_t(mboard, SFIFO_BLOCK_NAME, sfifo_idx), chan,
-                                block_id_t(mboard, DUC_BLOCK_NAME, radio), chan,
-                                tx_bpp
-                            );
-                        } else if (_has_dmafifo) {
-                            // We have DMA FIFO *and* DUCs
-                            _graph->connect(
-                                block_id_t(mboard, DFIFO_BLOCK_NAME, 0), radio,
-                                block_id_t(mboard, DUC_BLOCK_NAME, radio), chan,
-                                tx_bpp
-                            );
-                        }
-                    } else if (_has_sramfifo) {
-                            // We have SRAM FIFO, *no* DUCs
-                            // SRAM FIFOs have only 1 channel per block
-                            const size_t sfifo_idx =
-                                _num_tx_chans_per_radio * radio + chan;
-                            _graph->connect(
-                                block_id_t(mboard, SFIFO_BLOCK_NAME, sfifo_idx), 0,
-                                block_id_t(mboard, RADIO_BLOCK_NAME, radio), chan,
-                                tx_bpp
-                            );
-                    } else if (_has_dmafifo) {
-                            // We have DMA FIFO, *no* DUCs
-                            _graph->connect(
-                                block_id_t(mboard, DFIFO_BLOCK_NAME,   0), radio,
-                                block_id_t(mboard, RADIO_BLOCK_NAME, radio), chan,
-                                tx_bpp
-                            );
-                    }
-                }
-                // Rx Channels
-                for (size_t chan = 0; chan < _num_rx_chans_per_radio; chan++) {
-                    if (_has_ddcs) {
-                        _graph->connect(
-                            block_id_t(mboard, RADIO_BLOCK_NAME, radio), chan,
-                            block_id_t(mboard, DDC_BLOCK_NAME,   radio), chan,
-                            rx_bpp
-                        );
-                    }
-                }
+        block_name_to_block_map_t legacy_block_map =  get_legacy_blocks(_device);
+        size_t index = 0 ;
+        auto ddc_snk_flat = _flatten_blocks_by_n_ports(legacy_block_map[DDC_BLOCK_NAME].second);
+        auto duc_src_flat = _flatten_blocks_by_n_ports(legacy_block_map[DUC_BLOCK_NAME].first);
+        auto duc_snk_flat = _flatten_blocks_by_n_ports(legacy_block_map[DUC_BLOCK_NAME].second);
+        auto radio_src_flat = _flatten_blocks_by_n_ports(legacy_block_map[RADIO_BLOCK_NAME].first);
+        auto radio_snk_flat = _flatten_blocks_by_n_ports(legacy_block_map[RADIO_BLOCK_NAME].second);
+        auto sfifo_src_flat =  _flatten_blocks_by_n_ports(legacy_block_map[SFIFO_BLOCK_NAME].first);
+        auto dfifo_src_flat =  _flatten_blocks_by_n_ports(legacy_block_map[DFIFO_BLOCK_NAME].first);
+        for(auto each_src_radio_block:radio_src_flat){
+            auto radio_block = each_src_radio_block.first->get_block_id();
+            if (_has_ddcs) {
+                UHD_ASSERT_THROW(index < ddc_snk_flat.size());
+                auto ddc_block = ddc_snk_flat[index].first->get_block_id();
+                _graph->connect(
+                    radio_block, each_src_radio_block.second,
+                    ddc_block, ddc_snk_flat[index].second,
+                    rx_bpp
+                );
             }
+            index++;
+        }
+        index = 0;
+        for(auto each_snk_radio_block:radio_snk_flat){
+            auto radio_block = each_snk_radio_block.first->get_block_id();
+            auto down_stream_block = radio_block;
+            auto down_stream_port  = each_snk_radio_block.second;
+            if (_has_ducs) {
+                UHD_ASSERT_THROW(index < duc_snk_flat.size());
+                UHD_ASSERT_THROW(index < duc_src_flat.size());
+                auto duc_snk_block = duc_snk_flat[index].first->get_block_id();
+                auto duc_src_block = duc_src_flat[index].first->get_block_id();
+                _graph->connect(
+                    duc_src_block, duc_src_flat[index].second,
+                    radio_block, each_snk_radio_block.second,
+                    rx_bpp);
+                down_stream_block = duc_snk_block;
+                down_stream_port = duc_snk_flat[index].second;
+            }
+            if (_has_sramfifo) {
+                UHD_ASSERT_THROW(index < sfifo_src_flat.size());
+                auto sfifo_block =  sfifo_src_flat[index].first->get_block_id();
+                _graph->connect(
+                    sfifo_block, sfifo_src_flat[index].second,
+                    down_stream_block, down_stream_port,
+                    tx_bpp
+                );
+            }else if (_has_dmafifo) {
+                UHD_ASSERT_THROW(index < dfifo_src_flat.size());
+                auto dfifo_block = dfifo_src_flat[index].first->get_block_id();
+                _graph->connect(
+                    dfifo_block, dfifo_src_flat[index].second,
+                    down_stream_block, down_stream_port,
+                    tx_bpp
+                );
+            }
+            index++;
         }
     }
 
@@ -820,14 +957,18 @@ private: // methods
     {
         UHD_ASSERT_THROW(mboard < _num_mboards);
         chan_map_t &chan_map = (dir == uhd::TX_DIRECTION) ? _tx_channel_map : _rx_channel_map;
+
         std::vector<radio_port_pair_t> new_mapping(spec.size());
         for (size_t i = 0; i < spec.size(); i++) {
             const size_t new_radio_index = get_radio_index(spec[i].db_name);
             radio_ctrl::sptr radio = get_block_ctrl<radio_ctrl>(mboard, "Radio", new_radio_index);
             size_t new_port_index = radio->get_chan_from_dboard_fe(spec[i].sd_name, dir);
-            if (new_port_index >= radio->get_input_ports().size()) {
-                new_port_index = radio->get_input_ports().at(0);
+            auto port_size  = (dir == uhd::TX_DIRECTION) ? radio->get_input_ports().size() :radio->get_output_ports().size();
+            auto default_index = (dir == uhd::TX_DIRECTION)? radio->get_input_ports().at(0) : radio->get_output_ports().at(0);
+            if (new_port_index >= port_size) {
+                new_port_index = default_index;
             }
+
             radio_port_pair_t new_radio_port_pair(new_radio_index, new_port_index);
             new_mapping[i] = new_radio_port_pair;
         }
