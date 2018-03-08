@@ -682,6 +682,16 @@ class n3xx(PeriphManagerBase):
             self.set_clock_source(args.get("clock_source"))
         if "clock_source" in args or "time_source" in args:
             self.set_time_source(args.get("time_source", self.get_time_source()))
+        # Uh oh, some hard coded product-related info: The N300 has no LO
+        # source connectors on the front panel, so we assume that if this was
+        # selected, it was an artifact from N310-related code. The user gets
+        # a warning and the setting is reset to internal.
+        if self.mboard_info.get('product') == 'n300':
+            for lo_source in ('rx_lo_source', 'tx_lo_source'):
+                if lo_source in args and args.get(lo_source) != 'internal':
+                    self.log.warning("The N300 variant does not support "
+                                     "external LOs! Setting to internal.")
+                    args[lo_source] = 'internal'
         result = super(n3xx, self).init(args)
         for xport_mgr in itervalues(self._xport_mgrs):
             xport_mgr.init(args)
