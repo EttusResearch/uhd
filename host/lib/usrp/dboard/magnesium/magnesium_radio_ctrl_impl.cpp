@@ -97,28 +97,6 @@ namespace {
         lo_iface->set_output_enable(adf435x_iface::RF_OUTPUT_B, false);
         lo_iface->commit();
     }
-
-    // TODO: remove this helper when there are only 2 radios
-    fs_path master_fe_base_path(const std::string &radio_slot)
-    {
-        if (radio_slot == "B" or radio_slot == "A") {
-            return fs_path("dboards") / "A";
-        }
-        if (radio_slot == "D" or radio_slot == "C") {
-            return fs_path("dboards") / "C";
-        }
-        UHD_THROW_INVALID_CODE_PATH();
-    }
-      fs_path slave_fe_base_path(const std::string &radio_slot)
-    {
-        if (radio_slot == "B" or radio_slot == "A") {
-            return fs_path("dboards") / "B";
-        }
-        if (radio_slot == "D" or radio_slot == "C") {
-            return fs_path("dboards") / "D";
-        }
-        UHD_THROW_INVALID_CODE_PATH();
-    }
 }
 
 
@@ -128,15 +106,11 @@ namespace {
 UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(magnesium_radio_ctrl)
 {
     UHD_LOG_TRACE(unique_id(), "Entering magnesium_radio_ctrl_impl ctor...");
-    UHD_LOG_DEBUG(unique_id(), "Note: Running in one-block-per-channel mode!");
-    const char radio_slot_name[4] = {'A', 'B', 'C', 'D'};
+    const char radio_slot_name[2] = {'A', 'B'};
     _radio_slot = radio_slot_name[get_block_id().get_block_count()];
     UHD_LOG_TRACE(unique_id(), "Radio slot: " << _radio_slot);
-    _master = _radio_slot == "A" or _radio_slot == "C";
-    UHD_LOG_DEBUG(unique_id(),
-        "Radio type: " << (_master ? "master" : "slave"));
     _rpc_prefix =
-        (_radio_slot == "A" or _radio_slot == "B") ? "db_0_" : "db_1_";
+        (_radio_slot == "A") ? "db_0_" : "db_1_";
 
     _init_defaults();
     _init_peripherals();
@@ -194,7 +168,7 @@ void magnesium_radio_ctrl_impl::set_rx_antenna(
     UHD_LOG_TRACE(unique_id(),
         "Setting RX antenna to " << ant << " for chan " << chan);
     magnesium_cpld_ctrl::chan_sel_t chan_sel  =
-        _master ? magnesium_cpld_ctrl::CHAN1 : magnesium_cpld_ctrl::CHAN2;
+        chan ? magnesium_cpld_ctrl::CHAN1 : magnesium_cpld_ctrl::CHAN2;
     _update_atr_switches(chan_sel, RX_DIRECTION, ant);
 
     radio_ctrl_impl::set_rx_antenna(ant, chan); // we don't use _master here since each radio has one antenna.
@@ -208,17 +182,6 @@ double magnesium_radio_ctrl_impl::set_tx_frequency(
     UHD_LOG_TRACE(unique_id(),
         "set_tx_frequency(f=" << freq << ", chan=" << chan << ")");
     _desired_rf_freq[TX_DIRECTION]=freq;
-    if (not _master) {
-        const fs_path master_tx_fe_path =
-            master_fe_base_path(_radio_slot) / fs_path("tx_frontends") / chan;
-        UHD_LOG_DEBUG(unique_id(),
-                      "Slave setting TX frequency");
-
-        return _tree->access<double>(master_tx_fe_path / "freq" / "value")
-            .set(freq)
-            .get();
-    }
-
     std::lock_guard<std::mutex> l(_set_lock);
     // We need to set the switches on both channels, because they share an LO.
     // This way, if we tune channel 0 it will not put channel 1 into a bad
@@ -256,15 +219,10 @@ void magnesium_radio_ctrl_impl::_update_gain(
 ) {
     const std::string fe =
         (dir == TX_DIRECTION) ? "tx_frontends" : "rx_frontends";
-    const fs_path slave_fe_path =
-            slave_fe_base_path(_radio_slot) / fs_path(fe) / chan;
     const double freq =  (dir == TX_DIRECTION) ?
         this->get_tx_frequency(chan) :
         this->get_rx_frequency(chan);
-    // "this" here is always master
     this->_set_all_gain(this->_get_all_gain(chan, dir), freq, chan, dir);
-    // now we need update gain on slave
-    _tree->access<double>(slave_fe_path / "gains" / "all" / "value").update();
 }
 
 void magnesium_radio_ctrl_impl::_update_freq(
@@ -307,16 +265,6 @@ double magnesium_radio_ctrl_impl::set_rx_frequency(
     UHD_LOG_TRACE(unique_id(),
         "set_rx_frequency(f=" << freq << ", chan=" << chan << ")");
     _desired_rf_freq[RX_DIRECTION]=freq;
-    if (not _master) {
-        const fs_path master_rx_fe_path =
-            master_fe_base_path(_radio_slot) / fs_path("rx_frontends") / chan;
-        UHD_LOG_DEBUG(unique_id(),
-                      "Slave setting RX frequency");
-        return _tree->access<double>(master_rx_fe_path / "freq" / "value")
-            .set(freq)
-            .get();
-    }
-    // If we're on the slave, we use the master lock or we'd get a deadlock
     std::lock_guard<std::mutex> l(_set_lock);
     // We need to set the switches on both channels, because they share an LO.
     // This way, if we tune channel 0 it will not put channel 1 into a bad
@@ -355,13 +303,7 @@ double magnesium_radio_ctrl_impl::get_tx_frequency(
 {
     UHD_LOG_TRACE(unique_id(),
                   "get_tx_frequency(chan=" << chan << ")");
-    if (not _master) {
-        const fs_path master_tx_fe_path =
-            master_fe_base_path(_radio_slot) / fs_path("tx_frontends") / chan;
-        UHD_LOG_TRACE(unique_id(), "Slave getting TX frequency");
-        return _tree->access<double>(master_tx_fe_path / "freq" / "value").get();
-    }
-    return radio_ctrl_impl::get_tx_frequency(chan);// only master can get frequency chan here is always 0.
+    return radio_ctrl_impl::get_tx_frequency(chan);
 }
 
 double magnesium_radio_ctrl_impl::get_rx_frequency(
@@ -369,15 +311,8 @@ double magnesium_radio_ctrl_impl::get_rx_frequency(
 {
     UHD_LOG_TRACE(unique_id(),
                   "get_rx_frequency(chan=" << chan << ")");
-    if (not _master) {
-        const fs_path master_rx_fe_path =
-            master_fe_base_path(_radio_slot) / fs_path("rx_frontends") / chan;
-        UHD_LOG_TRACE(unique_id(), "Slave getting RX frequency");
-        return _tree->access<double>(master_rx_fe_path / "freq" / "value").get();
-    }
-    return radio_ctrl_impl::get_rx_frequency(chan); // only master can get frequency chan here is always 0.
+    return radio_ctrl_impl::get_rx_frequency(chan);
 }
-
 double magnesium_radio_ctrl_impl::set_rx_bandwidth(
         const double bandwidth,
         const size_t chan
@@ -454,7 +389,7 @@ double magnesium_radio_ctrl_impl::_set_tx_gain(
         chan,
         TX_DIRECTION
     );
-    return clip_gain; // not really any coreced here (only clip) for individual gain
+    return clip_gain;
 }
 
 double magnesium_radio_ctrl_impl::_get_tx_gain(
@@ -576,20 +511,12 @@ freq_range_t magnesium_radio_ctrl_impl::get_rx_lo_freq_range(
 void magnesium_radio_ctrl_impl::set_rx_lo_source(
         const std::string &src,
         const std::string &name,
-        const size_t chan
+        const size_t /*chan*/
 ) {
-    UHD_LOG_TRACE(unique_id(),"Attempting to set rx LO." <<"LO "<<name<<" to "<<src << " at "<<chan);
+    UHD_LOG_TRACE(unique_id(),"Attempting to set rx LO." <<"LO "<<name<<" to "<<src);
     //TODO: checking what options are there
     std::lock_guard<std::mutex> l(_set_lock);
-    if (not _master) {
-        const fs_path master_rx_fe_path =
-            master_fe_base_path(_radio_slot) / fs_path("rx_frontends") / chan;
-        UHD_LOG_DEBUG(unique_id(),
-                "Slave setting lo source");
-        _tree->access<std::string>(master_rx_fe_path / "los" / name /"source"/"value").set(src);
-        return;
-    }
-    UHD_LOG_TRACE(unique_id(), "Master set LO source." <<"LO "<<name<<" to "<<src << " at "<<chan);
+    UHD_LOG_TRACE(unique_id(), "Set LO source." <<"LO "<<name<<" to "<<src);
 
     if (name == MAGNESIUM_LO1){
         _ad9371->set_lo_source(src, RX_DIRECTION);
@@ -600,16 +527,8 @@ void magnesium_radio_ctrl_impl::set_rx_lo_source(
 
 const std::string magnesium_radio_ctrl_impl::get_rx_lo_source(
         const std::string &name,
-        const size_t chan
+        const size_t /*chan*/
 ) {
-    if (not _master) {
-        const fs_path master_rx_fe_path =
-            master_fe_base_path(_radio_slot) / fs_path("rx_frontends") / chan;
-        UHD_LOG_DEBUG(unique_id(), "Slave getting lo source");
-        return _tree->access<std::string>(
-            master_rx_fe_path / "los" / name /"source" / "value"
-        ).get();
-    }
     if (name == MAGNESIUM_LO1){
         //TODO: should we use this from cache?
         return _ad9371->get_lo_source(RX_DIRECTION);
@@ -625,7 +544,7 @@ double magnesium_radio_ctrl_impl::_set_rx_lo_freq(
 ){
     double coerced_lo_freq = freq;
     if (source != "internal"){
-        UHD_LOG_WARNING(unique_id(),"LO source is not internal. This set frequency will be ignored");
+        UHD_LOG_WARNING(unique_id(), "LO source is not internal. This set frequency will be ignored");
         if(name == MAGNESIUM_LO1){
             // handle ad9371 external LO case
             coerced_lo_freq = freq;
@@ -651,14 +570,8 @@ double magnesium_radio_ctrl_impl::set_rx_lo_freq(
         const std::string &name,
         const size_t chan
 ) {
-    UHD_LOG_TRACE(unique_id(),"Setting rx lo frequency for " <<name << " with freq = " <<freq);
+    UHD_LOG_TRACE(unique_id(), "Setting rx lo frequency for " <<name << " with freq = " <<freq);
     std::lock_guard<std::mutex> l(_set_lock);
-    if (not _master) {
-        const fs_path master_rx_fe_path =
-            master_fe_base_path(_radio_slot) / fs_path("rx_frontends") / chan;
-        UHD_LOG_DEBUG(unique_id(), "Slave getting lo freq");
-       return  _tree->access<double>(master_rx_fe_path / "los" / name /"freq"/"value").set(freq).get();
-    }
     std::string source = this->get_rx_lo_source(name, chan);
     const double coerced_lo_freq = this->_set_rx_lo_freq(source, name, freq, chan);
     this->_update_freq(chan,RX_DIRECTION);
@@ -672,12 +585,6 @@ double magnesium_radio_ctrl_impl::get_rx_lo_freq(
 ) {
 
     UHD_LOG_TRACE(unique_id(),"Getting rx lo frequency for " <<name);
-    if (not _master) {
-        const fs_path master_rx_fe_path =
-            master_fe_base_path(_radio_slot) / fs_path("rx_frontends") / chan;
-        UHD_LOG_DEBUG(unique_id(), "Slave getting lo freq");
-        return _tree->access<double>(master_rx_fe_path / "los" / name /"freq"/"value").get();
-    }
     std::string source = this->get_rx_lo_source(name,chan);
     if(name == MAGNESIUM_LO1){
         return _ad9371_freq[RX_DIRECTION];
@@ -729,19 +636,10 @@ void magnesium_radio_ctrl_impl::set_tx_lo_source(
         const std::string &name,
         const size_t chan
 ) {
-    UHD_LOG_TRACE(unique_id(),"Attempting to set tx LO." <<"LO "<<name<<" to "<<src << " at "<<chan);
+    UHD_LOG_TRACE(unique_id(), "Attempting to set tx LO." <<"LO "<<name<<" to "<<src << " at "<<chan);
     //TODO: checking what options are there
     std::lock_guard<std::mutex> l(_set_lock);
-    if (not _master) {
-        const fs_path master_tx_fe_path =
-            master_fe_base_path(_radio_slot) / fs_path("tx_frontends") / chan;
-        UHD_LOG_DEBUG(unique_id(),
-                "Slave setting lo source");
-        _tree->access<std::string>(master_tx_fe_path / "los" / name /"source"/"value").set(src);
-    }
-    UHD_LOG_TRACE(unique_id(), "Master set LO source." <<"LO "<<name<<" to "<<src << " at "<<chan);
-
-
+    UHD_LOG_TRACE(unique_id(), "Set LO source." <<"LO "<<name<<" to "<<src << " at "<<chan);
     if (name == MAGNESIUM_LO1){
         _ad9371->set_lo_source(src, TX_DIRECTION);
     }else{
@@ -751,16 +649,8 @@ void magnesium_radio_ctrl_impl::set_tx_lo_source(
 
 const std::string magnesium_radio_ctrl_impl::get_tx_lo_source(
         const std::string &name,
-        const size_t chan
+        const size_t /*chan*/
 ) {
-    if (not _master) {
-        const fs_path master_tx_fe_path =
-            master_fe_base_path(_radio_slot) / fs_path("tx_frontends") / chan;
-        UHD_LOG_DEBUG(unique_id(), "Slave getting lo source");
-        return _tree->access<std::string>(
-            master_tx_fe_path / "los" / name /"source" / "value"
-        ).get();
-    }
     if (name == MAGNESIUM_LO1){
         //TODO: should we use this from cache?
         return _ad9371->get_lo_source(TX_DIRECTION);
@@ -776,7 +666,7 @@ double magnesium_radio_ctrl_impl::_set_tx_lo_freq(
 ){
     double coerced_lo_freq = freq;
     if (source != "internal"){
-        UHD_LOG_WARNING(unique_id(),"LO source is not internal. This set frequency will be ignored");
+        UHD_LOG_WARNING(unique_id(), "LO source is not internal. This set frequency will be ignored");
         if(name == MAGNESIUM_LO1){
             // handle ad9371 external LO case
             coerced_lo_freq = freq;
@@ -803,13 +693,7 @@ double magnesium_radio_ctrl_impl::set_tx_lo_freq(
         const std::string &name,
         const size_t chan
 ) {
-    UHD_LOG_TRACE(unique_id(),"Setting tx lo frequency for " <<name << " with freq = " <<freq);
-    if (not _master) {
-        const fs_path master_tx_fe_path =
-            master_fe_base_path(_radio_slot) / fs_path("tx_frontends") / chan;
-        UHD_LOG_DEBUG(unique_id(), "Slave getting lo freq");
-       return  _tree->access<double>(master_tx_fe_path / "los" / name /"freq"/"value").set(freq).get();
-    }
+    UHD_LOG_TRACE(unique_id(), "Setting tx lo frequency for " <<name << " with freq = " <<freq);
     std::string source = this->get_tx_lo_source(name,chan);
     const double return_freq = this->_set_tx_lo_freq(source, name, freq, chan);
     this->_update_freq(chan, TX_DIRECTION);
@@ -822,12 +706,6 @@ double magnesium_radio_ctrl_impl::get_tx_lo_freq(
         const size_t chan
 ) {
     UHD_LOG_TRACE(unique_id(),"Getting tx lo frequency for " <<name);
-    if (not _master) {
-        const fs_path master_tx_fe_path =
-            master_fe_base_path(_radio_slot) / fs_path("tx_frontends") / chan;
-        UHD_LOG_DEBUG(unique_id(), "Slave getting lo freq");
-        return _tree->access<double>(master_tx_fe_path / "los" / name /"freq"/"value").get();
-    }
     std::string source = this->get_tx_lo_source(name,chan);
     if(name == MAGNESIUM_LO1){
         return _ad9371_freq[TX_DIRECTION];
@@ -867,11 +745,11 @@ void magnesium_radio_ctrl_impl::set_rpc_client(
     _ad9371 = magnesium_ad9371_iface::uptr(
         new magnesium_ad9371_iface(
             _rpcc,
-            (_radio_slot == "A" or _radio_slot == "B") ? 0 : 1
+            (_radio_slot == "A") ? 0 : 1
         )
     );
 
-    if (_master and block_args.has_key("identify")) {
+    if (block_args.has_key("identify")) {
         const std::string identify_val = block_args.get("identify");
         int identify_duration = std::atoi(identify_val.c_str());
         if (identify_duration == 0) {
@@ -926,7 +804,7 @@ void magnesium_radio_ctrl_impl::set_rpc_client(
 
     // Init sensors
     for (const auto &dir : std::vector<direction_t>{RX_DIRECTION, TX_DIRECTION}) {
-        for (size_t chan_idx = 0; chan_idx < 1 /* num channels FIXME */; chan_idx++) {
+        for (size_t chan_idx = 0; chan_idx < MAGNESIUM_NUM_CHANS; chan_idx++) {
             _init_mpm_sensors(dir, chan_idx);
         }
     }

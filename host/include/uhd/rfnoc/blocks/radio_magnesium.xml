@@ -5,7 +5,7 @@
   <key>MagnesiumRadio</key>
   <!--There can be several of these:-->
   <ids>
-    <id revision="0">12AD100000000310</id>
+    <id revision="0">12AD100000011312</id>
   </ids>
   <!-- Registers -->
   <registers>
@@ -38,6 +38,14 @@
     </sink>
     <source>
       <name>out0</name>
+      <type>sc16</type>
+    </source>
+    <sink>
+      <name>in1</name>
+      <type>sc16</type>
+    </sink>
+    <source>
+      <name>out1</name>
       <type>sc16</type>
     </source>
   </ports>
