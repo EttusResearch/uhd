@@ -107,12 +107,17 @@ class SysFSGPIO(object):
         self._use_mask = use_mask
         self._ddr = ddr
         self._init_value = init_value
-        self.log.trace("Generating SysFSGPIO object for label `{}'...".format(label))
+        self.log.trace("Generating SysFSGPIO object for label `{}'..."
+                       .format(label))
         self._gpio_dev, self._map_info = \
                 find_gpio_device(label, parent_dev, self.log)
         if self._gpio_dev is None:
-            self.log.error("Could not find GPIO device with label `{}'.".format(label))
-        self.log.trace("GPIO base number is {}".format(self._map_info.get("sys_number")))
+            error_msg = \
+                "Could not find GPIO device with label `{}'.".format(label)
+            self.log.error(error_msg)
+            raise RuntimeError(error_msg)
+        self.log.trace("GPIO base number is {}"
+                       .format(self._map_info.get("sys_number")))
         self._base_gpio = self._map_info.get("sys_number")
         self.init(self._map_info['ngpio'],
                   self._base_gpio,
