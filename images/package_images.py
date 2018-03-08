@@ -26,7 +26,28 @@ from image_package_mapping import PACKAGE_MAPPING
 
 def parse_args():
     """Setup argument parser and parse"""
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    description = """UHD Image Packaging
+
+    Packages the contents of the current directory into archives within a directory structure that
+    matches the Ettus fileserver. It also produces files containing the MD5 checksums of all image
+    files, as well as a file containing the SHA256 checksums of all archive files created.
+
+    The script will also modify a manifest file with the information from the generated image
+    packages. That is, the repositories, Git hashes, and SHA256 checksums listed in the manifest
+    will be updated.
+
+    The script will run without any commandline arguments provided. However, some useful (crucial,
+    even) information will be lacking. The suggested usage is to invoke the following command from
+    the directory containing the image files
+
+    `python package_images.py --manifest /path/to/manifest --githash <REPO>-<GITHASH>`
+
+    where REPO is the repository used to create the images  (ie 'fpga'), and GITHASH is the Git
+    hash of that repository used to create the images. When in doubt, please check with previous
+    image package listed in the manifest.
+    """
+    parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
+                                     description=description)
     parser.add_argument('--md5', action="store_true", default=False,
                         help="Generate MD5 files")
     parser.add_argument('--sha256', action="store_true", default=False,
@@ -189,6 +210,8 @@ def gen_package(pkg_targets=(), repo_and_hash="", manifest_fn=""):
     sha_filenames[:] = [sha_fn for sha_fn in sha_filenames if os.path.exists(sha_fn)]
     gen_sha256(sha_filenames, hash_filename="hashes.txt",
                manifest_fn=manifest_fn, repo_and_hash=repo_and_hash)
+    # Return the zipfiles we've created
+    return sha_filenames
 
 
 def list_differences(list1, list2):
@@ -200,19 +223,39 @@ def list_differences(list1, list2):
     return outlist1, outlist2
 
 
-def verify_package(zip_filename, pkg_target):
+def get_target_name(zip_filename):
+    """Return the package target that created the given zip_filename"""
+    for target, target_info in PACKAGE_MAPPING.items():
+        # First we need to strip the Git hash out of the filename
+        githash = re.findall(r"-g([\d\w]{7,8})", zip_filename)[0]
+        stripped_filename = os.path.basename(zip_filename.replace(githash, "{}"))
+        if stripped_filename == target_info.get("package_name", ""):
+            return target
+    # If it doesn't match any targets
+    return ""
+
+
+def verify_package(zip_filename):
     """Verify the contents of the image package match the expected list of files"""
+    # First, determine which target this was built for
+    pkg_target = get_target_name(zip_filename)
+    if not pkg_target:
+        print("Error: Could not determine package from filename",
+              file=sys.stderr)
+        return False
+
     expected_filelist = PACKAGE_MAPPING[pkg_target]['files']
     with zipfile.ZipFile(zip_filename, 'r') as zip_file:
         actual_filelist = zip_file.namelist()
 
     missing, extra = list_differences(expected_filelist, actual_filelist)
     if missing or extra:
-        print("Error: image package does not include expected files")
+        print("Error: image package does not include expected files ({})".format(pkg_target),
+              file=sys.stderr)
         if missing:
-            print("Missing files: {}".format(missing))
+            print("Missing files: {}".format(missing), file=sys.stderr)
         if extra:
-            print("Extra files: {}".format(extra))
+            print("Extra files: {}".format(extra), file=sys.stderr)
         return False
     return True
 
@@ -222,12 +265,27 @@ def edit_manifest_line(line, new_repo_and_hash, new_hashes_dict):
     # Check each value in your dictionary of new hashes
     for filename, new_hash in new_hashes_dict.items():
         # If the filename with a new hash shows up in the line
-        if filename in line:
+        # Note: the filename has a Git hash in it, so we need to peel that off first
+        full_filename_matches = re.findall(r"([\d\w]+)-g([\da-fA-F]{7,8})", filename)
+        if full_filename_matches:
+            # We don't really need to store the Git hash in the found filename
+            stripped_filename, _ = full_filename_matches[0]
+        else:
+            return line
+
+        if stripped_filename in line:
             # Replace the repo and git hash
-            repo_and_hash = re.findall(r"[\w]+-[\da-fA-F]{7}", line)
-            if repo_and_hash:
-                repo_and_hash = repo_and_hash[0]
-                line = line.replace(repo_and_hash, new_repo_and_hash)
+            old_repo_and_hash_matches = re.findall(r"([\w]+)-([\da-fA-F]{7,8})", line)
+            if old_repo_and_hash_matches:
+                # If we did find a repo and Git hash on this line, replace them
+                old_repo, old_githash = old_repo_and_hash_matches[0]
+                old_repo_and_hash = "{}-{}".format(old_repo, old_githash)
+                # We need to replace all instances <REPO>-<GITHASH> in this line
+                line = line.replace(old_repo_and_hash, new_repo_and_hash)
+                # We also need to replace -g<GITHASH> in the filename
+                # Find the new repo and githash
+                _, new_githash = re.findall(r"([\w]+)-([\da-fA-F]{7,8})", new_repo_and_hash)[0]
+                line = line.replace(old_githash, new_githash)
 
             # Replace the SHA256
             sha = re.findall(r"[\da-fA-F]{64}", line)
@@ -235,7 +293,7 @@ def edit_manifest_line(line, new_repo_and_hash, new_hashes_dict):
                 sha = sha[0]
                 line = line.replace(sha, new_hash)
 
-            if not repo_and_hash or not sha:
+            if not old_repo_and_hash_matches or not sha:
                 print("Error: repo, hash or SHA missing in line with new file")
                 print("Line: {}", format(line))
             # If we found and replaced info, return the edited line
@@ -248,6 +306,7 @@ def edit_manifest(manifest_fn, new_repo_and_hash, new_hash_dict):
     """Edit the provided manifest file to update the githash and SHA256"""
     with tempfile.NamedTemporaryFile(mode='w', dir='.', delete=False) as tmp_manifest, \
             open(manifest_fn, 'r') as old_manifest:
+        print("Trying to edit manifest with new repo and Git hash {}".format(new_repo_and_hash))
         # Check each line in the manifest file
         for line in old_manifest:
             # If needed, put the new info in the line
@@ -270,8 +329,12 @@ def determine_targets():
         required_files = copy.deepcopy(target_info['files'])
         required_files[:] = [filename for filename in required_files if '.md5' not in filename]
 
-        if all([os.path.exists(img_file) for img_file in required_files]):
+        check_required_files = [os.path.exists(img_file) for img_file in required_files]
+        if all(check_required_files):
             found_targets.append(target)
+        elif any(check_required_files):
+            print("Not all package contents present for {}".format(target),
+                  file=sys.stderr)
     return found_targets
 
 
@@ -280,15 +343,27 @@ def main():
     args = parse_args()
     if args.md5 or args.sha256 or args.files or args.output:
         print("Unsupported argument: only --pkg_targets is currently supported.")
+    # Check the provided Git hash
+    if not args.githash:
+        print("Please provide --githash `<REPO>-<GITHASH>'")
+        return False
+    elif not re.findall(r"[\d\w]+-[\d\w]{7,8}", args.githash):
+        print("--githash does not match expected form. Should be `<REPO>-<GITHASH>'")
+        return False
+
     if args.targets:
         pkg_targets = [ss.strip() for ss in args.targets.split(',')]
     else:
         pkg_targets = determine_targets()
         print("Targets to package:\n{}".format(
             "\n".join("--{}".format(pkg) for pkg in pkg_targets)))
-    gen_package(pkg_targets=pkg_targets, repo_and_hash=args.githash, manifest_fn=args.manifest)
-    return True
+
+    zip_filenames = gen_package(pkg_targets=pkg_targets,
+                                repo_and_hash=args.githash,
+                                manifest_fn=args.manifest)
+    check_zips = [verify_package(zip_filename) for zip_filename in zip_filenames]
+    return all(check_zips)
 
 
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(not main())
