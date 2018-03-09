@@ -1,6 +1,15 @@
 Change Log for Releases
 ==============================
 
+
+* N300: Added driver support (includes some refactoring of N3xx
+  codebase)
+* MPM: Fix PyLint warnings, Fix error handling for TCA communication
+  errors, Fix printout of AD9371 version
+* uhd_images_downloader: Create unique archive names for images archives
+  (now include git hashes in the filename)
+* UHD: Minor logging fixes
+
 ## 003.011.000.000
 * N310: Added driver
 * UBX: Add support for CAL antenna for Rev E
