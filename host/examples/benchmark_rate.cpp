@@ -115,8 +115,11 @@ void benchmark_rx_rate(
             last_time = md.time_spec;
             had_an_overflow = true;
             // check out_of_sequence flag to see if it was a sequence error or overflow
-            if (!md.out_of_sequence)
+            if (md.out_of_sequence) {
+                num_seq_errors++;
+            } else {
                 num_overflows++;
+            }
             break;
 
         case uhd::rx_metadata_t::ERROR_CODE_LATE_COMMAND:
