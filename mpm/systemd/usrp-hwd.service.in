@@ -1,0 +1,14 @@
+[Unit]
+Description=USRP Hardware Daemon (MPM)
+
+[Service]
+ExecStart=@CMAKE_INSTALL_PREFIX@/bin/usrp_hwd.py
+WatchdogSec=30
+Type=notify
+Restart=on-failure
+StartLimitInterval=2min
+StartLimitBurst=4
+StartLimitAction=none
+
+[Install]
+WantedBy=multi-user.target

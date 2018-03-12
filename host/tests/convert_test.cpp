@@ -1,18 +1,8 @@
 //
 // Copyright 2011-2012 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include <uhd/convert.hpp>
@@ -70,13 +60,13 @@ template <typename Range> static void loopback(
  * Test short conversion
  **********************************************************************/
 static void test_convert_types_sc16(
-    size_t nsamps, convert::id_type &id, const int extra_div = 1
+    size_t nsamps, convert::id_type &id, const int extra_div = 1, int mask = 0xffff
 ){
     //fill the input samples
     std::vector<sc16_t> input(nsamps), output(nsamps);
     for(sc16_t &in:  input) in = sc16_t(
-        short((float((std::rand())/(double(RAND_MAX)/2)) - 1)*32767/extra_div),
-        short((float((std::rand())/(double(RAND_MAX)/2)) - 1)*32767/extra_div)
+        short((float((std::rand())/(double(RAND_MAX)/2)) - 1)*32767/extra_div) & mask,
+        short((float((std::rand())/(double(RAND_MAX)/2)) - 1)*32767/extra_div) & mask
     );
 
     //run the loopback and test
@@ -232,6 +222,31 @@ BOOST_AUTO_TEST_CASE(test_convert_types_be_sc12_with_fc32){
     //try various lengths to test edge cases
     for (size_t nsamps = 1; nsamps < 16; nsamps++){
         test_convert_types_for_floats<fc32_t>(nsamps, id, 1./16);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(test_convert_types_le_sc16_and_sc12){
+    convert::id_type id;
+    id.input_format = "sc16";
+    id.num_inputs = 1;
+    id.num_outputs = 1;
+
+    //try various lengths to test edge cases
+    id.output_format = "sc12_item32_le";
+    for (size_t nsamps = 1; nsamps < 16; nsamps++){
+        test_convert_types_sc16(nsamps, id, 1, 0xfff0);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(test_convert_types_be_sc16_and_sc12){
+    convert::id_type id;
+    id.input_format = "sc16";
+    id.num_inputs = 1;
+    id.num_outputs = 1;
+
+    id.output_format = "sc12_item32_be";
+    for (size_t nsamps = 1; nsamps < 16; nsamps++){
+        test_convert_types_sc16(nsamps, id, 1, 0xfff0);
     }
 }
 
@@ -550,7 +565,10 @@ static void test_convert_types_fc32(
     std::swap(out_id.input_format, out_id.output_format);
     std::swap(out_id.num_inputs, out_id.num_outputs);
     loopback(nsamps, in_id, out_id, input, output);
-    BOOST_CHECK_EQUAL_COLLECTIONS(input.begin(), input.end(), output.begin(), output.end());
+    for (size_t i = 0; i < nsamps; i++){
+        MY_CHECK_CLOSE(input[i].real(), output[i].real(), float(1./(1 << 16)));
+        MY_CHECK_CLOSE(input[i].imag(), output[i].imag(), float(1./(1 << 16)));
+    }
 }
 
 BOOST_AUTO_TEST_CASE(test_convert_types_fc32_and_fc32){
@@ -588,7 +606,9 @@ static void test_convert_types_f32(
     std::swap(out_id.input_format, out_id.output_format);
     std::swap(out_id.num_inputs, out_id.num_outputs);
     loopback(nsamps, in_id, out_id, input, output);
-    BOOST_CHECK_EQUAL_COLLECTIONS(input.begin(), input.end(), output.begin(), output.end());
+    for (size_t i = 0; i < nsamps; i++){
+        MY_CHECK_CLOSE(input[i], output[i], float(1./(1 << 16)));
+    }
 }
 
 BOOST_AUTO_TEST_CASE(test_convert_types_f32_and_f32){

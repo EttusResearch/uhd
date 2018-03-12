@@ -1,18 +1,8 @@
 //
 // Copyright 2011-2015 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include <uhd/utils/thread.hpp>
@@ -30,8 +20,8 @@
 
 namespace po = boost::program_options;
 
-const double CLOCK_TIMEOUT = 1000;  // 1000mS timeout for external clock locking
-const double INIT_DELAY    = 0.05;  // 50mS initial delay before transmit
+const int64_t CLOCK_TIMEOUT = 1000;  // 1000mS timeout for external clock locking
+const float   INIT_DELAY    = 0.05;  // 50mS initial delay before transmit
 //typedef boost::atomic<bool>   atomic_bool;
 // We'll fake atomic bools for now, for more backward compat.
 // This is just an example, after all.
@@ -82,7 +72,8 @@ void benchmark_rx_rate(
     cmd.stream_now = (buffs.size() == 1);
     rx_stream->issue_stream_cmd(cmd);
 
-    const float burst_pkt_time = std::max(0.100, (2 * max_samps_per_packet/rate));
+    const float burst_pkt_time =
+        std::max<float>(0.100f, (2 * max_samps_per_packet/rate));
     float recv_timeout = burst_pkt_time + INIT_DELAY;
 
     bool stop_called = false;
@@ -363,7 +354,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         if(ref != "internal") {
             std::cout << "Now confirming lock on clock signals..." << std::endl;
             bool is_locked = false;
-            boost::system_time end_time = boost::get_system_time() + boost::posix_time::milliseconds(CLOCK_TIMEOUT);
+            boost::system_time end_time =
+                boost::get_system_time() +
+                boost::posix_time::milliseconds(CLOCK_TIMEOUT);
             for (int i = 0; i < num_mboards; i++) {
                 if (ref == "mimo" and i == 0) continue;
                 while((is_locked = usrp->get_mboard_sensor("ref_locked",i).to_bool()) == false and

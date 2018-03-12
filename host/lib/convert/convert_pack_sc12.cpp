@@ -1,99 +1,13 @@
 //
-// Copyright 2013 Ettus Research LLC
+// Copyright 2017 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "convert_common.hpp"
-#include <uhd/utils/byteswap.hpp>
-#include <uhd/utils/log.hpp>
-#include <boost/math/special_functions/round.hpp>
-#include <vector>
+#include "convert_pack_sc12.hpp"
 
 using namespace uhd::convert;
-
-typedef uint32_t (*towire32_type)(uint32_t);
-
-/* C language specification requires this to be packed
- * (i.e., line0, line1, line2 will be in adjacent memory locations).
- * If this was not true, we'd need compiler flags here to specify
- * alignment/packing.
- */
-struct item32_sc12_3x
-{
-    item32_t line0;
-    item32_t line1;
-    item32_t line2;
-};
-
-enum item32_sc12_3x_enable {
-    CONVERT12_LINE0 = 0x01,
-    CONVERT12_LINE1 = 0x02,
-    CONVERT12_LINE2 = 0x04,
-    CONVERT12_LINE_ALL = 0x07,
-};
-
-/*
- * Packed 12-bit converter with selective line enable
- *
- * The converter operates on 4 complex inputs and selectively writes to one to
- * three 32-bit lines. Line selection allows for partial writes of less than
- * 4 complex samples, or a full 3 x 32-bit struct. Writes are always full 32-bit
- * lines, so in the case of partial writes, the number of bytes written will
- * exceed the the number of bytes filled by actual samples.
- *
- *  _ _ _ _ _ _ _ _
- * |_ _ _1_ _ _|_ _| 0
- * |_2_ _ _|_ _ _3_|
- * |_ _|_ _ _4_ _ _| 2
- * 31              0
- */
-template <typename type, towire32_type towire>
-void convert_star_4_to_sc12_item32_3
-(
-    const std::complex<type> &in0,
-    const std::complex<type> &in1,
-    const std::complex<type> &in2,
-    const std::complex<type> &in3,
-    const int enable,
-    item32_sc12_3x &output,
-    const double scalar
-)
-{
-    const item32_t i0 = int32_t(type(in0.real()*scalar)) & 0xfff;
-    const item32_t q0 = int32_t(type(in0.imag()*scalar)) & 0xfff;
-
-    const item32_t i1 = int32_t(type(in1.real()*scalar)) & 0xfff;
-    const item32_t q1 = int32_t(type(in1.imag()*scalar)) & 0xfff;
-
-    const item32_t i2 = int32_t(type(in2.real()*scalar)) & 0xfff;
-    const item32_t q2 = int32_t(type(in2.imag()*scalar)) & 0xfff;
-
-    const item32_t i3 = int32_t(type(in3.real()*scalar)) & 0xfff;
-    const item32_t q3 = int32_t(type(in3.imag()*scalar)) & 0xfff;
-
-    const item32_t line0 = (i0 << 20) | (q0 << 8) | (i1 >> 4);
-    const item32_t line1 = (i1 << 28) | (q1 << 16) | (i2 << 4) | (q2 >> 8);
-    const item32_t line2 = (q2 << 24) | (i3 << 12) | (q3);
-
-    if (enable & CONVERT12_LINE0)
-        output.line0 = towire(line0);
-    if (enable & CONVERT12_LINE1)
-        output.line1 = towire(line1);
-    if (enable & CONVERT12_LINE2)
-        output.line2 = towire(line2);
-}
 
 template <typename type, towire32_type towire>
 struct convert_star_1_to_sc12_item32_1 : public converter
@@ -192,6 +106,16 @@ static converter::sptr make_convert_fc32_1_to_sc12_item32_be_1(void)
     return converter::sptr(new convert_star_1_to_sc12_item32_1<float, uhd::ntohx>());
 }
 
+static converter::sptr make_convert_sc16_1_to_sc12_item32_le_1(void)
+{
+    return converter::sptr(new convert_star_1_to_sc12_item32_1<short, uhd::wtohx>());
+}
+
+static converter::sptr make_convert_sc16_1_to_sc12_item32_be_1(void)
+{
+    return converter::sptr(new convert_star_1_to_sc12_item32_1<short, uhd::ntohx>());
+}
+
 UHD_STATIC_BLOCK(register_convert_pack_sc12)
 {
     //uhd::convert::register_bytes_per_item("sc12", 3/*bytes*/); //registered in unpack
@@ -199,11 +123,16 @@ UHD_STATIC_BLOCK(register_convert_pack_sc12)
     uhd::convert::id_type id;
     id.num_inputs = 1;
     id.num_outputs = 1;
-    id.input_format = "fc32";
 
+    id.input_format = "fc32";
     id.output_format = "sc12_item32_le";
     uhd::convert::register_converter(id, &make_convert_fc32_1_to_sc12_item32_le_1, PRIORITY_GENERAL);
-
     id.output_format = "sc12_item32_be";
     uhd::convert::register_converter(id, &make_convert_fc32_1_to_sc12_item32_be_1, PRIORITY_GENERAL);
+
+    id.input_format = "sc16";
+    id.output_format = "sc12_item32_le";
+    uhd::convert::register_converter(id, &make_convert_sc16_1_to_sc12_item32_le_1, PRIORITY_GENERAL);
+    id.output_format = "sc12_item32_be";
+    uhd::convert::register_converter(id, &make_convert_sc16_1_to_sc12_item32_be_1, PRIORITY_GENERAL);
 }

@@ -28,7 +28,7 @@ The following compilers are known to work and officially supported:
 
 - GCC >= 4.8
 - Clang >= 3.3
-- MSVC >= 2012; the free <a href="https://www.visualstudio.com/en-us/products/visual-studio-express-vs.aspx">Visual Studio Express Edition for Desktop</a> works.
+- MSVC >= 2015 (14.0); the free version works.
 
 Other compilers (or lower versions) may work, but are unsupported.
 

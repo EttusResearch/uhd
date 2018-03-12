@@ -1,18 +1,8 @@
 //
 // Copyright 2011-2012,2014 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include <uhd/types/tune_request.hpp>
@@ -26,6 +16,8 @@
 #include <fstream>
 #include <complex>
 #include <csignal>
+#include <chrono>
+#include <thread>
 
 namespace po = boost::program_options;
 
@@ -84,7 +76,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("bw", po::value<double>(&bw), "analog frontend filter bandwidth in Hz")
         ("ref", po::value<std::string>(&ref)->default_value("internal"), "reference source (internal, external, mimo)")
         ("wirefmt", po::value<std::string>(&wirefmt)->default_value("sc16"), "wire format (sc8 or sc16)")
-        ("delay", po::value<double>(&delay)->default_value(0.0), "specify a delay between repeated transmission of file")
+        ("delay", po::value<double>(&delay)->default_value(0.0), "specify a delay between repeated transmission of file (in seconds)")
         ("channel", po::value<std::string>(&channel)->default_value("0"), "which channel to use")
         ("repeat", "repeatedly transmit file")
         ("int-n", "tune USRP with integer-n tuning")
@@ -145,15 +137,20 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //set the analog frontend filter bandwidth
     if (vm.count("bw")){
-        std::cout << boost::format("Setting TX Bandwidth: %f MHz...") % bw << std::endl;
+        std::cout << boost::format("Setting TX Bandwidth: %f MHz...")
+                     % (bw / 1e6)
+                  << std::endl;
         usrp->set_tx_bandwidth(bw);
-        std::cout << boost::format("Actual TX Bandwidth: %f MHz...") % usrp->get_tx_bandwidth() << std::endl << std::endl;
+        std::cout << boost::format("Actual TX Bandwidth: %f MHz...")
+                     % (usrp->get_tx_bandwidth() / 1e6)
+                  << std::endl << std::endl;
     }
 
     //set the antenna
     if (vm.count("ant")) usrp->set_tx_antenna(ant);
 
-    boost::this_thread::sleep(boost::posix_time::seconds(1)); //allow for some setup time
+    //allow for some setup time:
+    std::this_thread::sleep_for(std::chrono::seconds(1));
 
     //Check Ref and LO Lock detect
     std::vector<std::string> sensor_names;
@@ -199,7 +196,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         else if (type == "short") send_from_file<std::complex<short> >(tx_stream, file, spb);
         else throw std::runtime_error("Unknown type " + type);
 
-        if(repeat and delay != 0.0) boost::this_thread::sleep(boost::posix_time::milliseconds(delay));
+        if(repeat and delay > 0.0) {
+            boost::this_thread::sleep(boost::posix_time::milliseconds(delay));
+            std::this_thread::sleep_for(
+                std::chrono::milliseconds(int64_t(delay*1000))
+            );
+        }
     } while(repeat and not stop_signal_called);
 
     //finished

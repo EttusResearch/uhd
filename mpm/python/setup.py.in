@@ -1,0 +1,46 @@
+#!/usr/bin/env python
+#
+# Copyright 2017 Ettus Research, a National Instruments Company
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+"""
+USRP/MPM
+"""
+
+from setuptools import setup
+
+setup(name='usrp_mpm',
+      version='0.0.0',
+      description='Universal Software Radio Peripheral (USRP) Machiavellian Puppet Master (MPM) Python API',
+      classifiers=[
+          'Development Status :: 4 - Beta',
+          'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+          'Programming Language :: C++',
+          'Programming Language :: Python',
+          'Topic :: System :: Hardware :: Hardware Drivers',
+      ],
+      keywords='SDR UHD USRP SDR',
+      author='Ettus Research',
+      author_email='packages@ettus.com',
+      url='https://www.ettus.com/',
+      license='GPLv3',
+      package_dir={'': '${CMAKE_CURRENT_BINARY_DIR}'},
+      package_data={"usrp_mpm": ["*.so"]},
+      zip_safe=False,
+      packages=[
+          'usrp_mpm',
+          'usrp_mpm.periph_manager',
+          'usrp_mpm.dboard_manager',
+          'usrp_mpm.chips',
+          'usrp_mpm.cores',
+          'usrp_mpm.sys_utils',
+          'usrp_mpm.xports',
+      ],
+      install_requires=[
+          'mprpc',
+          'systemd-python',
+          'pyroute2',
+          'pyudev'
+      ],
+      tests_require=['pytest', 'pylint'])

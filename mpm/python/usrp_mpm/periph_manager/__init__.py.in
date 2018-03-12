@@ -1,0 +1,13 @@
+#
+# Copyright 2017 Ettus Research, a National Instruments Company
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+"""
+periph_manager __init__.py
+"""
+
+from .base import PeriphManagerBase
+
+# This is where the import magic happens
+from .${MPM_DEVICE} import ${MPM_DEVICE} as periph_manager

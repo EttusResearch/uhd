@@ -1,23 +1,14 @@
 //
 // Copyright 2013,2017 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #ifndef INCLUDED_LIBUHD_USRP_COMMON_RECV_PACKET_DEMUXER_3000_HPP
 #define INCLUDED_LIBUHD_USRP_COMMON_RECV_PACKET_DEMUXER_3000_HPP
 
+#include <uhd/utils/system_time.hpp>
 #include <uhd/config.hpp>
 #include <uhd/transport/zero_copy.hpp>
 #include <uhd/utils/log.hpp>
@@ -45,12 +36,13 @@ namespace uhd{ namespace usrp{
 
         transport::managed_recv_buffer::sptr get_recv_buff(const uint32_t sid, const double timeout)
         {
-            const time_spec_t exit_time = time_spec_t(timeout) + time_spec_t::get_system_time();
+            const time_spec_t exit_time =
+                time_spec_t(timeout) + uhd::get_system_time();
             transport::managed_recv_buffer::sptr buff;
             buff = _internal_get_recv_buff(sid, timeout);
             while (not buff) //loop until timeout
             {
-                const time_spec_t delta = exit_time - time_spec_t::get_system_time();
+                const time_spec_t delta = exit_time - uhd::get_system_time();
                 const double new_timeout = delta.get_real_secs();
                 if (new_timeout < 0.0) break;
                 buff = _internal_get_recv_buff(sid, new_timeout);

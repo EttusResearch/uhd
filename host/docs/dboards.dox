@@ -137,6 +137,8 @@ Sensors:
 
 \subsection dboards_xcvr XCVR 2450
 
+\b Note: The XCVR2450 is not compatible with the X3x0-Series.
+
 The XCVR2450 has 2 quadrature frontends, one transmit, one receive.
 Transmit and Receive default to direct conversion but can be used in low
 IF mode through lo_offset in uhd::tune_request_t.
@@ -403,6 +405,9 @@ Notes:
 
 Please refer to \ref e3x0_dboard_e310.
 
+\subsection dboards_n310 N310 XCVR board
+
+Please refer to \ref n3xx_mg.
 
 \subsection dboards_clock_rate Daughterboard reference clock
 

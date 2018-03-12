@@ -1,18 +1,8 @@
 //
 // Copyright 2010-2013 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include <uhd/utils/thread.hpp>
@@ -127,7 +117,7 @@ private:
         wait_for_thread.notify_one();    // notify constructor that this thread has started
         std::vector<char> buff(insane_mtu);
         while (not boost::this_thread::interruption_requested()){
-            if (wait_for_recv_ready(_server_socket->native())){
+            if (wait_for_recv_ready(_server_socket->native_handle())){
                 boost::mutex::scoped_lock lock(_endpoint_mutex);
                 const size_t len = _server_socket->receive_from(asio::buffer(&buff.front(), buff.size()), _endpoint);
                 lock.unlock();
@@ -153,7 +143,7 @@ private:
         wait_for_thread.notify_one();    // notify constructor that this thread has started
         std::vector<char> buff(insane_mtu);
         while (not boost::this_thread::interruption_requested()){
-            if (wait_for_recv_ready(_client_socket->native())){
+            if (wait_for_recv_ready(_client_socket->native_handle())){
                 const size_t len = _client_socket->receive(asio::buffer(&buff.front(), buff.size()));
                 boost::mutex::scoped_lock lock(_endpoint_mutex);
                 _server_socket->send_to(asio::buffer(&buff.front(), len), _endpoint);

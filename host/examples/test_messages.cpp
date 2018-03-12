@@ -1,18 +1,8 @@
 //
 // Copyright 2010-2013 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include <uhd/config.hpp>
@@ -355,7 +345,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         std::cout << boost::format(
             "%s   ->   %3u successes, %3u failures"
         ) % key % successes[key] % failures[key] << std::endl;
-        any_failure = any_failure or bool(failures[key]);
+        any_failure = any_failure or (failures[key] > 0);
     }
 
     //finished

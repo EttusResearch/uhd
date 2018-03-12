@@ -1,18 +1,8 @@
 //
 // Copyright 2010-2012,2014-2015 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include "usrp2_regs.hpp"
@@ -83,7 +73,7 @@ public:
             throw uhd::runtime_error("firmware not responding");
         _protocol_compat = ntohl(ctrl_data.proto_ver);
 
-        mb_eeprom = mboard_eeprom_t(*this, USRP2_EEPROM_MAP_KEY);
+        mb_eeprom = usrp2_impl::get_mb_eeprom(*this);
     }
 
     ~usrp2_iface_impl(void){UHD_SAFE_CALL(

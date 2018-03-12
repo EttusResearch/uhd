@@ -1,18 +1,8 @@
 //
 // Copyright 2014 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #ifndef INCLUDED_N230_DEV_ARGS_HPP
@@ -20,9 +10,9 @@
 
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/transport/udp_simple.hpp>
-#include <boost/thread/mutex.hpp>
-#include "../common/constrained_device_args.hpp"
+#include <uhdlib/usrp/constrained_device_args.hpp>
 #include "n230_defaults.h"
+#include <boost/thread/mutex.hpp>
 
 namespace uhd { namespace usrp { namespace n230 {
 
@@ -40,7 +30,9 @@ public:
         _send_buff_size("send_buff_size", n230::DEFAULT_SEND_BUFF_SIZE),
         _recv_buff_size("recv_buff_size", n230::DEFAULT_RECV_BUFF_SIZE),
         _safe_mode("safe_mode", false),
-        _loopback_mode("loopback_mode", LOOPBACK_OFF, boost::assign::list_of("off")("radio")("codec"))
+        _loopback_mode("loopback_mode",
+                       LOOPBACK_OFF,
+                       {{"off", LOOPBACK_OFF}, {"radio", LOOPBACK_RADIO}, {"codec", LOOPBACK_CODEC}})
     {}
 
     double get_master_clock_rate() const {

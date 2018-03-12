@@ -61,7 +61,7 @@ MAC_CTRL_PHY_RESET          = 0x00000200
 MAC_CTRL_BIST_RATE_MSK      = 0x000001F8
 MAC_CTRL_BIST_RATE_OFFSET   = 3
 
-BUS_CLK_RATE            = 166.66e6
+BUS_CLK_RATE            = 187.50e6
 BIST_MAX_TIME_LIMIT     = math.floor(pow(2,48)/BUS_CLK_RATE)-1
 
 ########################################################################

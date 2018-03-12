@@ -1,18 +1,7 @@
 //
-// Copyright 2010-2012,2014 Ettus Research LLC
+// Copyright 2010-2012,2014,2017 Ettus Research, A National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include "usrp2_impl.hpp"
@@ -473,7 +462,8 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr) :
         ////////////////////////////////////////////////////////////////
         _tree->create<mboard_eeprom_t>(mb_path / "eeprom")
             .set(_mbc[mb].iface->mb_eeprom)
-            .add_coerced_subscriber(boost::bind(&usrp2_impl::set_mb_eeprom, this, mb, _1));
+            .add_coerced_subscriber(
+                boost::bind(&usrp2_impl::set_mb_eeprom, this, mb, _1));
 
         ////////////////////////////////////////////////////////////////
         // create clock control objects
@@ -735,7 +725,7 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr) :
 
         //create a new dboard interface and manager
         _mbc[mb].dboard_manager = dboard_manager::make(
-            rx_db_eeprom.id, tx_db_eeprom.id, gdb_eeprom.id,
+            rx_db_eeprom, tx_db_eeprom, gdb_eeprom,
             make_usrp2_dboard_iface(_mbc[mb].wbiface, _mbc[mb].iface/*i2c*/, _mbc[mb].spiface, _mbc[mb].clock),
             _tree->subtree(mb_path / "dboards/A")
         );
@@ -791,10 +781,6 @@ usrp2_impl::~usrp2_impl(void){UHD_SAFE_CALL(
         _mbc[mb].tx_dsp->set_updates(0, 0);
     }
 )}
-
-void usrp2_impl::set_mb_eeprom(const std::string &mb, const uhd::usrp::mboard_eeprom_t &mb_eeprom){
-    mb_eeprom.commit(*(_mbc[mb].iface), USRP2_EEPROM_MAP_KEY);
-}
 
 void usrp2_impl::set_db_eeprom(const std::string &mb, const std::string &type, const uhd::usrp::dboard_eeprom_t &db_eeprom){
     if (type == "rx") db_eeprom.store(*_mbc[mb].iface, USRP2_I2C_ADDR_RX_DB);

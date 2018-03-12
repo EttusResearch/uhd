@@ -1,24 +1,14 @@
 //
 // Copyright 2013-2016 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include "x300_impl.hpp"
 #include "x300_lvbitx.hpp"
 #include "x310_lvbitx.hpp"
-#include "x300_mb_eeprom.hpp"
+#include "x300_mb_eeprom_iface.hpp"
 #include "apply_corrections.hpp"
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
@@ -125,7 +115,8 @@ static device_addrs_t x300_find_with_addr(const device_addr_t &hint)
 
             i2c_core_100_wb32::sptr zpu_i2c = i2c_core_100_wb32::make(zpu_ctrl, I2C1_BASE);
             x300_mb_eeprom_iface::sptr eeprom_iface = x300_mb_eeprom_iface::make(zpu_ctrl, zpu_i2c);
-            const mboard_eeprom_t mb_eeprom(*eeprom_iface, "X300");
+            const mboard_eeprom_t mb_eeprom =
+                x300_impl::get_mb_eeprom(eeprom_iface);
             if (mb_eeprom.size() == 0 or x300_impl::claim_status(zpu_ctrl) == x300_impl::CLAIMED_BY_OTHER)
             {
                 // Skip device claimed by another process
@@ -233,7 +224,8 @@ static device_addrs_t x300_find_pcie(const device_addr_t &hint, bool explicit_qu
 
             i2c_core_100_wb32::sptr zpu_i2c = i2c_core_100_wb32::make(zpu_ctrl, I2C1_BASE);
             x300_mb_eeprom_iface::sptr eeprom_iface = x300_mb_eeprom_iface::make(zpu_ctrl, zpu_i2c);
-            const mboard_eeprom_t mb_eeprom(*eeprom_iface, "X300");
+            const mboard_eeprom_t mb_eeprom =
+                x300_impl::get_mb_eeprom(eeprom_iface);
             if (mb_eeprom.size() == 0 or x300_impl::claim_status(zpu_ctrl) == x300_impl::CLAIMED_BY_OTHER)
             {
                 // Skip device claimed by another process
@@ -332,7 +324,21 @@ device_addrs_t x300_find(const device_addr_t &hint_)
 
             //call discover with the new hint and append results
             device_addrs_t new_addrs = x300_find(new_hint);
-            addrs.insert(addrs.begin(), new_addrs.begin(), new_addrs.end());
+            //if we are looking for a serial, only add the one device with a matching serial
+            if (hint.has_key("serial")) {
+                bool found_serial = false; //signal to break out of the interface loop
+                for (device_addrs_t::iterator new_addr_it=new_addrs.begin(); new_addr_it != new_addrs.end(); new_addr_it++) {
+                    if ((*new_addr_it)["serial"] == hint["serial"]) {
+                        addrs.insert(addrs.begin(), *new_addr_it);
+                        found_serial = true;
+                        break;
+                    }
+                }
+                if (found_serial) break;
+            } else {
+                // Otherwise, add all devices we find
+                addrs.insert(addrs.begin(), new_addrs.begin(), new_addrs.end());
+            }
         }
     }
 
@@ -437,7 +443,7 @@ void x300_impl::mboard_members_t::discover_eth(
         if (std::find(mb_eeprom_addrs.begin(), mb_eeprom_addrs.end(), mb_eeprom[key]) != mb_eeprom_addrs.end()) {
             UHD_LOGGER_WARNING("X300") << str(boost::format(
                 "Duplicate IP address %s found in mboard EEPROM. "
-                "Device may not function properly.\nView and reprogram the values "
+                "Device may not function properly. View and reprogram the values "
                 "using the usrp_burn_mb_eeprom utility.") % mb_eeprom[key]);
         }
         mb_eeprom_addrs.push_back(mb_eeprom[key]);
@@ -467,8 +473,8 @@ void x300_impl::mboard_members_t::discover_eth(
         if (conn_iface.type == X300_IFACE_NONE) {
             UHD_LOGGER_WARNING("X300") << str(boost::format(
                 "Address %s not found in mboard EEPROM. Address may be wrong or "
-                "the EEPROM may be corrupt.\n Attempting to continue with default "
-                "IP addresses.\n") % conn_iface.addr
+                "the EEPROM may be corrupt. Attempting to continue with default "
+                "IP addresses.") % conn_iface.addr
             );
 
             if (addr == boost::asio::ip::address_v4(
@@ -769,13 +775,21 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     x300_mb_eeprom_iface::sptr eeprom16 = x300_mb_eeprom_iface::make(mb.zpu_ctrl, mb.zpu_i2c);
     if (dev_addr.has_key("blank_eeprom"))
     {
-        UHD_LOGGER_WARNING("X300") << "Obliterating the motherboard EEPROM..." ;
+        UHD_LOGGER_WARNING("X300") << "Obliterating the motherboard EEPROM...";
         eeprom16->write_eeprom(0x50, 0, byte_vector_t(256, 0xff));
     }
-    const mboard_eeprom_t mb_eeprom(*eeprom16, "X300");
+
+    const mboard_eeprom_t mb_eeprom = get_mb_eeprom(eeprom16);
     _tree->create<mboard_eeprom_t>(mb_path / "eeprom")
+        // Initialize the property with a current copy of the EEPROM contents
         .set(mb_eeprom)
-        .add_coerced_subscriber(boost::bind(&x300_impl::set_mb_eeprom, this, mb.zpu_i2c, _1));
+        // Whenever this property is written, update the chip
+        .add_coerced_subscriber(
+            [this, eeprom16](const mboard_eeprom_t &mb_eeprom){
+                this->set_mb_eeprom(eeprom16, mb_eeprom);
+            }
+        )
+    ;
 
     bool recover_mb_eeprom = dev_addr.has_key("recover_mb_eeprom");
     if (recover_mb_eeprom) {
@@ -1507,16 +1521,6 @@ bool x300_impl::is_pps_present(mboard_members_t& mb)
             return true;
     }
     return false;
-}
-
-/***********************************************************************
- * eeprom
- **********************************************************************/
-
-void x300_impl::set_mb_eeprom(i2c_iface::sptr i2c, const mboard_eeprom_t &mb_eeprom)
-{
-    i2c_iface::sptr eeprom16 = i2c->eeprom16();
-    mb_eeprom.commit(*eeprom16, "X300");
 }
 
 /***********************************************************************

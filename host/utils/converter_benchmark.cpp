@@ -1,18 +1,8 @@
 //
 // Copyright 2015-2016 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include <uhd/utils/safe_main.hpp>
@@ -98,6 +88,28 @@ void init_random_vector_complex_int(std::vector<char> &buf_ptr, const size_t n_i
     }
 }
 
+struct item32_sc12_3x
+{
+    uint32_t line0;
+    uint32_t line1;
+    uint32_t line2;
+};
+
+template <typename T>
+void init_random_vector_complex_sc12(std::vector<char> &buf_ptr, const size_t n_items)
+{
+    item32_sc12_3x *const buf = reinterpret_cast<item32_sc12_3x * const>(&buf_ptr[0]);
+    if (n_items % 4) throw std::invalid_argument("");
+
+    for (size_t i = 0; i < n_items / 4; i++) {
+        int16_t iq[8];
+        for (auto &k : iq) k = rand() & 0xfff;
+        buf[i].line0 = iq[0] << 20 | iq[1] <<  8 | iq[2] >> 4;
+        buf[i].line1 = iq[2] << 28 | iq[3] << 16 | iq[4] << 4 | iq[5] >> 8;
+        buf[i].line2 = iq[5] << 24 | iq[6] << 12 | iq[7] << 0;
+    }
+}
+
 template <typename T>
 void init_random_vector_real_int(std::vector<char> &buf_ptr, size_t n_items)
 {
@@ -164,6 +176,8 @@ void init_buffers(
     for (size_t i = 0; i < buf.size(); i++) {
         if (type == "sc8") {
             init_random_vector_complex_int<int8_t>(buf[i], n_items);
+        } else if (type == "sc12") {
+            init_random_vector_complex_sc12<int16_t>(buf[i], n_items);
         } else if (type == "sc16") {
             init_random_vector_complex_int<int16_t>(buf[i], n_items);
         } else if (type == "sc32") {
@@ -316,7 +330,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
         std::cout << "Invalid argument: --seed-mode must be either 'incremental' or 'random'." << std::endl;
     }
 
-    bool debug_mode = bool(vm.count("debug-converter"));
+    bool debug_mode = vm.count("debug-converter") > 0;
     if (debug_mode) {
         iterations = 1;
     }
@@ -333,7 +347,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     if (priorities == "default" or priorities.empty()) {
         try {
             conv_list[prio] = get_converter(converter_id, prio)(); // Can throw a uhd::key_error
-        } catch(const uhd::key_error &e) {
+        } catch(const uhd::key_error &) {
             std::cout << "No converters found." << std::endl;
             return EXIT_FAILURE;
         }

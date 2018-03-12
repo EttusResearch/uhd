@@ -1,23 +1,14 @@
 //
 // Copyright 2014-15 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include "twinrx/twinrx_experts.hpp"
 #include "twinrx/twinrx_ctrl.hpp"
 #include "twinrx/twinrx_io.hpp"
+#include "twinrx/twinrx_ids.hpp"
 #include <expert_factory.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <uhd/types/ranges.hpp>
@@ -37,9 +28,6 @@ using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::usrp::dboard::twinrx;
 using namespace uhd::experts;
-
-static const dboard_id_t TWINRX_V100_000_ID(0x91);
-static const dboard_id_t TWINRX_V100_100_ID(0x93);
 
 /*!
  * twinrx_rcvr_fe is the dbaord class (dboard_base) that
@@ -122,7 +110,7 @@ public:
 
         //Gain Specific
         get_rx_subtree()->create<meta_range_t>("gains/all/range")
-            .set(gain_range_t(0, 95, double(1.0)));
+            .set(gain_range_t(0, 93, double(1.0)));
         expert_factory::add_prop_node<double>(_expert, get_rx_subtree(),
             "gains/all/value", prepend_ch("gain", _ch_name),
             0.0, AUTO_RESOLVE_ON_WRITE);
@@ -227,7 +215,7 @@ public:
         twinrx_gpio::sptr gpio_iface = boost::make_shared<twinrx_gpio>(_db_iface);
         twinrx_cpld_regmap::sptr cpld_regs = boost::make_shared<twinrx_cpld_regmap>();
         cpld_regs->initialize(*gpio_iface, false);
-        _ctrl = twinrx_ctrl::make(_db_iface, gpio_iface, cpld_regs);
+        _ctrl = twinrx_ctrl::make(_db_iface, gpio_iface, cpld_regs, get_rx_id());
         _expert = expert_factory::create_container("twinrx_expert");
     }
 
@@ -335,18 +323,26 @@ static dboard_base::sptr make_twinrx_container(dboard_base::ctor_args_t args)
 UHD_STATIC_BLOCK(reg_twinrx_dboards)
 {
     dboard_manager::register_dboard_restricted(
-        TWINRX_V100_000_ID,
+        twinrx::TWINRX_REV_A_ID,
         &twinrx_rcvr::make_twinrx_fe,
-        "TwinRX v1.0",
-        boost::assign::list_of("0")("1"),
+        "TwinRX Rev A",
+        {"0", "1"},
         &make_twinrx_container
     );
 
     dboard_manager::register_dboard_restricted(
-        TWINRX_V100_100_ID,
+        twinrx::TWINRX_REV_B_ID,
         &twinrx_rcvr::make_twinrx_fe,
-        "TwinRX v1.1",
-        boost::assign::list_of("0")("1"),
+        "TwinRX Rev B",
+        {"0", "1"},
+        &make_twinrx_container
+    );
+
+    dboard_manager::register_dboard_restricted(
+        twinrx::TWINRX_REV_C_ID,
+        &twinrx_rcvr::make_twinrx_fe,
+        "TwinRX Rev C",
+        {"0", "1"},
         &make_twinrx_container
     );
 }

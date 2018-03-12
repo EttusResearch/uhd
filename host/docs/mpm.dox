@@ -1,0 +1,15 @@
+/*! \page page_mpm The Module Peripheral Manager (MPM) Architecture
+
+\tableofcontents
+
+The Module Peripheral Manager (MPM) is a software process that continually runs
+on a USRP device, and allows access to its peripherals through a network-capable
+API. This way, it does not matter whether or not it is being accessed locally or
+remotely, as long as it is possible to open an network socket to the device.
+
+For all MPM-capable devices, a single USRP/UHD driver is sufficient.
+
+
+
+*/
+// vim:ft=doxygen:

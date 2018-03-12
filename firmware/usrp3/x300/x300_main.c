@@ -1,4 +1,4 @@
-// Copyright 2013-2014 Ettus Research LLC
+// Copyright 2013-2017 Ettus Research
 
 #include "x300_init.h"
 #include "x300_defs.h"
@@ -185,6 +185,44 @@ void handle_udp_fpga_prog(
     {
         u3_net_stack_send_udp_pkt(ethno, src, dst_port, src_port, &reply, sizeof(reply));
     }
+}
+
+/***********************************************************************
+ * Handler for FPGA image reading packets
+ **********************************************************************/
+void handle_udp_fpga_read(
+    const uint8_t ethno,
+    const struct ip_addr *src, const struct ip_addr *dst,
+    const uint16_t src_port, const uint16_t dst_port,
+    const void *buff, const size_t num_bytes
+)
+{
+    const x300_fpga_read_t *request = (const x300_fpga_read_t *) buff;
+    x300_fpga_read_reply_t reply = {0};
+    bool status = true;
+
+    if (buff == NULL) {
+        return;
+    } else if (num_bytes < offsetof(x300_fpga_read_t, size)) {
+        reply.flags |= X300_FPGA_READ_FLAGS_ERROR;
+    } else {
+        if (request->flags & X300_FPGA_READ_FLAGS_INIT) {
+            STATUS_MERGE(chinch_flash_init(), status);
+        } else if (request->flags & X300_FPGA_READ_FLAGS_CLEANUP) {
+            chinch_flash_cleanup();
+        } else {
+            reply.flags |= X300_FPGA_READ_FLAGS_ACK;
+            reply.sector = request->sector;
+            reply.index  = request->index;
+            reply.size   = request->size;
+
+            STATUS_MERGE(chinch_flash_select_sector(request->sector), status);
+            STATUS_MERGE(chinch_flash_read_buf(request->index*2, reply.data, request->size), status);
+        }
+    }
+
+    if (!status) reply.flags |= X300_FPGA_READ_FLAGS_ERROR;
+    u3_net_stack_send_udp_pkt(ethno, src, dst_port, src_port, &reply, sizeof(reply));
 }
 
 /***********************************************************************
@@ -411,6 +449,7 @@ int main(void)
     u3_net_stack_register_udp_handler(X300_FW_COMMS_UDP_PORT, &handle_udp_fw_comms);
     u3_net_stack_register_udp_handler(X300_VITA_UDP_PORT, &handle_udp_prog_framer);
     u3_net_stack_register_udp_handler(X300_FPGA_PROG_UDP_PORT, &handle_udp_fpga_prog);
+    u3_net_stack_register_udp_handler(X300_FPGA_READ_UDP_PORT, &handle_udp_fpga_read);
     u3_net_stack_register_udp_handler(X300_MTU_DETECT_UDP_PORT, &handle_udp_mtu_detect);
 
     uint32_t last_cronjob = 0;

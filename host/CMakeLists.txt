@@ -1,18 +1,8 @@
 #
 # Copyright 2010-2016 Ettus Research LLC
+# Copyright 2018 Ettus Research, a National Instruments Company
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# SPDX-License-Identifier: GPL-3.0
 #
 
 ########################################################################
@@ -24,6 +14,9 @@
 # Project setup
 ########################################################################
 CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+IF(POLICY CMP0048)
+  CMAKE_POLICY(SET CMP0048 NEW) # Suppress Version warnings
+ENDIF(POLICY CMP0048)
 PROJECT(UHD CXX C)
 ENABLE_TESTING()
 
@@ -31,17 +24,21 @@ ENABLE_TESTING()
 list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
 ########################################################################
-# Check Compiler Version
+# UHD Dependency Minimum Versions
 ########################################################################
-# Full C++11 came with GCC 4.7.
+# Full C++11 came with GCC 4.7, Clang >= 3.3.0, Apple Clang >= 500
 SET(GCC_MIN_VERSION "4.8.0")
-# for c++0x or c++11 support, require:
-#   Apple Clang >= 500
-# or
-#   Clang >= 3.3.0
 SET(CLANG_MIN_VERSION "3.3.0")
 SET(APPLECLANG_MIN_VERSION "500")
+# Make sure to update the next two in unison:
+SET(MSVC_MIN_VERSION "1900")
+SET(MSVC_MIN_VERSION_READABLE "14.0")
+# Other deps
+SET(BOOST_MIN_VERSION "1.53")
 
+########################################################################
+# Check Compiler Version
+########################################################################
 IF(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
     IF(DEFINED CMAKE_CXX_COMPILER_VERSION)
         IF(${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS ${GCC_MIN_VERSION})
@@ -78,6 +75,10 @@ ELSEIF(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
     ELSE()
         MESSAGE(WARNING "\nCannot determine the version of the compiler selected to build UHD (${APPLE_STR}Clang : ${CMAKE_CXX_COMPILER}). This build may or not work. We highly recommend using Apple Clang version ${APPLECLANG_MIN_VERSION} or more recent, or Clang version ${CLANG_MIN_VERSION} or more recent.")
     ENDIF()
+ELSEIF(MSVC)
+    IF(${MSVC_VERSION} VERSION_LESS ${MSVC_MIN_VERSION})
+	MESSAGE(FATAL_ERROR "\nMSVC version is less than the required minimum. Required: ${MSVC_MIN_VERSION_READABLE}")
+    ENDIF(${MSVC_VERSION} VERSION_LESS ${MSVC_MIN_VERSION})
 ENDIF()
 
 IF(CMAKE_VERSION VERSION_LESS "3.1")
@@ -106,7 +107,6 @@ ENDIF()
 SET(LIBUHD_PKG ${LIBUHD_PKG} CACHE BOOL "Build Debian libuhd003 package")
 SET(LIBUHDDEV_PKG ${LIBUHDDEV_PKG} CACHE BOOL "Build Debian libuhd-dev package")
 SET(UHDHOST_PKG ${UHDPOST_PKG} CACHE BOOL "Build Debian uhd-host package")
-
 INCLUDE(UHDComponent) #enable components
 INCLUDE(UHDPackage)   #setup cpack
 
@@ -131,6 +131,30 @@ IF(NOT DEFINED PKG_LIB_DIR)
 ENDIF()
 SET(PKG_DOC_DIR share/doc/uhd)
 SET(PKG_MAN_DIR share/man/man1)
+
+########################################################################
+# UHD config files
+########################################################################
+SET(UHD_USER_CONF_FILE
+    ".uhd/uhd.conf"
+    CACHE STRING
+    "Location of the user-specific UHD configuration file, relative to APPDATA (or HOME)"
+)
+IF(UNIX)
+    SET(UHD_SYS_CONF_FILE
+        "/etc/uhd/uhd.conf"
+        CACHE STRING
+        "Location of the system-wide UHD configuration file"
+    )
+ELSEIF(WIN32)
+    SET(UHD_SYS_CONF_FILE
+        "%programdata%/uhd/uhd.conf"
+        CACHE STRING
+        "Location of the system-wide UHD configuration file"
+    )
+ELSE()
+    MESSAGE(WARNING "Not setting UHD_SYS_CONF_FILE!")
+ENDIF()
 
 ########################################################################
 # UHD Image Directories
@@ -236,6 +260,8 @@ ENDIF()
 IF(MSVC)
     INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/cmake/msvc)
     ADD_DEFINITIONS( #stop all kinds of compatibility warnings
+        -DWIN32_LEAN_AND_MEAN
+        -DVC_EXTRALEAN
         -D_SCL_SECURE_NO_WARNINGS
         -D_SCL_SECURE_NO_DEPRECATE
         -D_CRT_SECURE_NO_WARNINGS
@@ -296,7 +322,7 @@ SET(Boost_ADDITIONAL_VERSIONS
     "1.51.0" "1.51" "1.52.0" "1.52" "1.53.0" "1.53" "1.54.0" "1.54" "1.55.0" "1.55"
     "1.56.0" "1.56" "1.57" "1.57" "1.58" "1.59" "1.60" "1.61"
 )
-FIND_PACKAGE(Boost 1.53 COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
+FIND_PACKAGE(Boost ${BOOST_MIN_VERSION} COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
 
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})

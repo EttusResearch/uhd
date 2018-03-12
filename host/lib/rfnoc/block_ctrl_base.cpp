@@ -1,18 +1,8 @@
 //
 // Copyright 2014-2016 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 // This file contains the block control functions for block controller classes.
@@ -25,6 +15,7 @@
 #include <uhd/convert.hpp>
 #include <uhd/rfnoc/block_ctrl_base.hpp>
 #include <uhd/rfnoc/constants.hpp>
+#include <uhdlib/utils/compat_check.hpp>
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
 
@@ -38,8 +29,8 @@ using std::string;
  * Helpers
  **********************************************************************/
 //! Convert register to a peek/poke compatible address
-inline uint32_t _sr_to_addr(uint32_t reg) { return reg * 4; };
-inline uint32_t _sr_to_addr64(uint32_t reg) { return reg * 8; }; // for peek64
+inline uint32_t _sr_to_addr(const uint32_t reg) { return reg * 4; };
+inline uint32_t _sr_to_addr64(const uint32_t reg) { return reg * 8; }; // for peek64
 
 /***********************************************************************
  * Structors
@@ -48,14 +39,15 @@ block_ctrl_base::block_ctrl_base(
         const make_args_t &make_args
 ) : _tree(make_args.tree),
     _ctrl_ifaces(make_args.ctrl_ifaces),
-    _base_address(make_args.base_address & 0xFFF0)
+    _base_address(make_args.base_address & 0xFFF0),
+    _noc_id(sr_read64(SR_READBACK_REG_ID)),
+    _compat_num(sr_read64(SR_READBACK_COMPAT))
 {
     UHD_BLOCK_LOG() << "block_ctrl_base()" ;
 
     /*** Identify this block (NoC-ID, block-ID, and block definition) *******/
     // Read NoC-ID (name is passed in through make_args):
-    uint64_t noc_id = sr_read64(SR_READBACK_REG_ID);
-    _block_def = blockdef::make_from_noc_id(noc_id);
+    _block_def = blockdef::make_from_noc_id(_noc_id);
     if (_block_def) UHD_BLOCK_LOG() <<  "Found valid blockdef" ;
     if (not _block_def)
         _block_def = blockdef::make_from_noc_id(DEFAULT_NOC_ID);
@@ -67,12 +59,22 @@ block_ctrl_base::block_ctrl_base(
         _block_id++;
     }
     UHD_BLOCK_LOG()
-        << "NOC ID: " << str(boost::format("0x%016X  ") % noc_id)
+        << "NOC ID: " << str(boost::format("0x%016X  ") % _noc_id)
         << "Block ID: " << _block_id ;
+
+    /*** Check compat number ************************************************/
+    assert_fpga_compat(
+            NOC_SHELL_COMPAT_MAJOR,
+            NOC_SHELL_COMPAT_MINOR,
+            _compat_num,
+            "noc_shell",
+            "RFNoC",
+            false /* fail_on_minor_behind */
+    );
 
     /*** Initialize property tree *******************************************/
     _root_path = "xbar/" + _block_id.get_local();
-    _tree->create<uint64_t>(_root_path / "noc_id").set(noc_id);
+    _tree->create<uint64_t>(_root_path / "noc_id").set(_noc_id);
 
     /*** Reset block state *******************************************/
     clear();
@@ -251,7 +253,6 @@ void block_ctrl_base::sr_write(const std::string &reg, const uint32_t data, cons
         }
         reg_addr = uint32_t(_tree->access<size_t>(_root_path / "registers" / "sr" / reg).get());
     }
-    UHD_BLOCK_LOG() << "  ";
     UHD_RFNOC_BLOCK_TRACE() << boost::format("sr_write(%s, %08X) ==> ") % reg % data ;
     return sr_write(reg_addr, data, port);
 }
@@ -330,7 +331,7 @@ uint32_t block_ctrl_base::user_reg_read32(const std::string &reg, const size_t p
         ));
     }
     return user_reg_read32(uint32_t(
-        _tree->access<size_t>(_root_path / "registers" / "sr" / reg).get()
+        _tree->access<size_t>(_root_path / "registers" / "rb" / reg).get()
     ), port);
 }
 

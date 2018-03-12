@@ -1,18 +1,8 @@
 //
 // Copyright 2012-2016 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include "ctrl_iface.hpp"
@@ -183,7 +173,6 @@ private:
             //get seq to ack from outstanding packets list
             UHD_ASSERT_THROW(not _outstanding_seqs.empty());
             const size_t seq_to_ack = _outstanding_seqs.front();
-            _outstanding_seqs.pop();
 
             //parse the packet
             vrt::if_packet_info_t packet_info;
@@ -196,6 +185,7 @@ private:
             try {
                 UHD_ASSERT_THROW(bool(buff));
                 UHD_ASSERT_THROW(buff->size() > 0);
+                _outstanding_seqs.pop();
             }
             catch(const std::exception &ex) {
                 throw uhd::io_error(str(boost::format("Block ctrl (%s) no response packet - %s") % _name % ex.what()));
@@ -241,9 +231,10 @@ private:
                 if (packet_info.packet_count != (seq_to_ack & 0xfff)) {
                     throw uhd::io_error(
                         str(
-                            boost::format("Expected packet index: %d  Received index: %d")
-                            % packet_info.packet_count
+                            boost::format("Expected packet index: %d " \
+                                          "Received index: %d")
                             % (seq_to_ack & 0xfff)
+                            % packet_info.packet_count
                         )
                     );
                 }

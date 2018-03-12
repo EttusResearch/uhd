@@ -1,18 +1,8 @@
 //
 // Copyright 2014-2016 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #ifndef INCLUDED_LIBUHD_RFNOC_RADIO_CTRL_IMPL_HPP
@@ -25,6 +15,7 @@
 #include <uhd/rfnoc/radio_ctrl.hpp>
 #include <uhd/types/direction.hpp>
 #include <boost/thread.hpp>
+#include <mutex>
 
 //! Shorthand for radio block constructor
 #define UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR_DECL(CLASS_NAME) \
@@ -60,6 +51,7 @@ public:
     virtual double set_rx_frequency(const double freq, const size_t chan);
     virtual double set_tx_gain(const double gain, const size_t chan);
     virtual double set_rx_gain(const double gain, const size_t chan);
+    virtual double set_tx_bandwidth(const double bandwidth, const size_t chan);
     virtual double set_rx_bandwidth(const double bandwidth, const size_t chan);
 
     virtual double get_rate() const;
@@ -69,6 +61,7 @@ public:
     virtual double get_rx_frequency(const size_t) /* const */;
     virtual double get_tx_gain(const size_t) /* const */;
     virtual double get_rx_gain(const size_t) /* const */;
+    virtual double get_tx_bandwidth(const size_t) /* const */;
     virtual double get_rx_bandwidth(const size_t) /* const */;
 
     virtual std::vector<std::string> get_rx_lo_names(const size_t chan);
@@ -81,8 +74,21 @@ public:
     virtual void set_rx_lo_export_enabled(bool enabled, const std::string &name, const size_t chan);
     virtual bool get_rx_lo_export_enabled(const std::string &name, const size_t chan);
 
-    virtual double set_rx_lo_freq(double freq, const std::string &name, const size_t chan);
+    virtual double set_rx_lo_freq(const double freq, const std::string &name, const size_t chan);
     virtual double get_rx_lo_freq(const std::string &name, const size_t chan);
+
+    virtual std::vector<std::string> get_tx_lo_names(const size_t chan);
+    virtual std::vector<std::string> get_tx_lo_sources(const std::string &name, const size_t chan);
+    virtual freq_range_t get_tx_lo_freq_range(const std::string &name, const size_t chan);
+
+    virtual void set_tx_lo_source(const std::string &src, const std::string &name, const size_t chan);
+    virtual const std::string get_tx_lo_source(const std::string &name, const size_t chan);
+
+    virtual void set_tx_lo_export_enabled(const bool enabled, const std::string &name, const size_t chan);
+    virtual bool get_tx_lo_export_enabled(const std::string &name, const size_t chan);
+
+    virtual double set_tx_lo_freq(const double freq, const std::string &name, const size_t chan);
+    virtual double get_tx_lo_freq(const std::string &name, const size_t chan);
 
     void set_time_now(const time_spec_t &time_spec);
     void set_time_next_pps(const time_spec_t &time_spec);
@@ -205,7 +211,7 @@ protected: // TODO see what's protected and what's private
     //! There is always only one time core per radio
     time_core_3000::sptr         _time64;
 
-    boost::mutex _mutex;
+    std::mutex _mutex;
 
 private:
     /************************************************************************
@@ -229,6 +235,7 @@ private:
     std::map<size_t, double> _rx_freq;
     std::map<size_t, double> _tx_gain;
     std::map<size_t, double> _rx_gain;
+    std::map<size_t, double> _tx_bandwidth;
     std::map<size_t, double> _rx_bandwidth;
 
     std::vector<bool> _continuous_streaming;

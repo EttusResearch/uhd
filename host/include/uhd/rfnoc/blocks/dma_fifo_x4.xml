@@ -1,0 +1,109 @@
+<!--This defines one NoC-Block.-->
+<nocblock>
+  <name>DMA FIFO</name>
+  <blockname>DmaFIFO</blockname>
+  <key>DmaFIFO</key>
+  <!--There can be several of these:-->
+  <ids>
+    <id revision="0">F1F0D00000000004</id>
+  </ids>
+  <!-- Registers -->
+  <registers>
+  </registers>
+  <!-- Args -->
+  <args>
+    <arg>
+      <name>base_addr</name>
+      <type>int</type>
+      <!--<value>0</value>-->
+      <port>0</port>
+      <check>EQUAL($base_addr, 0) OR IS_PWR_OF_2($base_addr)</check>
+      <check_message>The base address must be 0 or a positive power of 2.</check_message>
+    </arg>
+    <arg>
+      <name>depth</name>
+      <type>int</type>
+      <!--<value>33554432</value>-->
+      <port>0</port>
+      <check>IS_PWR_OF_2($depth)</check>
+      <check_message>The FIFO depth must be a positive power of 2.</check_message>
+    </arg>
+    <arg>
+      <name>base_addr</name>
+      <type>int</type>
+      <!--<value>33554432</value>-->
+      <port>1</port>
+      <check>EQUAL($base_addr, 0) OR IS_PWR_OF_2($base_addr)</check>
+      <check_message>The base address must be 0 or a positive power of 2.</check_message>
+    </arg>
+    <arg>
+      <name>depth</name>
+      <type>int</type>
+      <!--<value>33554432</value>-->
+      <port>1</port>
+      <check>IS_PWR_OF_2($depth)</check>
+      <check_message>The FIFO depth must be a positive power of 2.</check_message>
+    </arg>
+    <arg>
+      <name>base_addr</name>
+      <type>int</type>
+      <!--<value>67108864</value>-->
+      <port>2</port>
+      <check>EQUAL($base_addr, 0) OR IS_PWR_OF_2($base_addr)</check>
+      <check_message>The base address must be 0 or a positive power of 2.</check_message>
+    </arg>
+    <arg>
+      <name>depth</name>
+      <type>int</type>
+      <!--<value>33554432</value>-->
+      <port>2</port>
+      <check>IS_PWR_OF_2($depth)</check>
+      <check_message>The FIFO depth must be a positive power of 2.</check_message>
+    </arg>
+    <arg>
+      <name>base_addr</name>
+      <type>int</type>
+      <!--<value>100663296</value>-->
+      <port>3</port>
+      <check>EQUAL($base_addr, 0) OR IS_PWR_OF_2($base_addr)</check>
+      <check_message>The base address must be 0 or a positive power of 2.</check_message>
+    </arg>
+    <arg>
+      <name>depth</name>
+      <type>int</type>
+      <!--<value>33554432</value>-->
+      <port>3</port>
+      <check>IS_PWR_OF_2($depth)</check>
+      <check_message>The FIFO depth must be a positive power of 2.</check_message>
+    </arg>
+
+  </args>
+  <!--All the connections to the outside world are listed in 'ports':-->
+  <ports>
+    <sink>
+      <name>in0</name>
+    </sink>
+    <sink>
+      <name>in1</name>
+    </sink>
+    <sink>
+      <name>in2</name>
+    </sink>
+    <sink>
+      <name>in3</name>
+    </sink>
+    <source>
+      <name>out0</name>
+    </source>
+    <source>
+      <name>out1</name>
+    </source>
+    <source>
+      <name>out2</name>
+    </source>
+    <source>
+      <name>out3</name>
+    </source>
+  </ports>
+</nocblock>
+

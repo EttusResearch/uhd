@@ -1,18 +1,8 @@
 #
 # Copyright 2010-2015 Ettus Research LLC
+# Copyright 2018 Ettus Research, a National Instruments Company
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# SPDX-License-Identifier: GPL-3.0
 #
 
 ########################################################################
@@ -71,22 +61,25 @@ MESSAGE(STATUS "")
 # Dependencies
 FIND_PACKAGE(USB1)
 FIND_PACKAGE(GPSD)
+FIND_PACKAGE(LIBERIO)
+LIBUHD_REGISTER_COMPONENT("LIBERIO" ENABLE_LIBERIO ON "ENABLE_LIBUHD;LIBERIO_FOUND" OFF OFF)
 LIBUHD_REGISTER_COMPONENT("USB" ENABLE_USB ON "ENABLE_LIBUHD;LIBUSB_FOUND" OFF OFF)
 LIBUHD_REGISTER_COMPONENT("GPSD" ENABLE_GPSD OFF "ENABLE_LIBUHD;ENABLE_GPSD;LIBGPS_FOUND" OFF OFF)
 # Devices
 LIBUHD_REGISTER_COMPONENT("B100" ENABLE_B100 ON "ENABLE_LIBUHD;ENABLE_USB" OFF OFF)
 LIBUHD_REGISTER_COMPONENT("B200" ENABLE_B200 ON "ENABLE_LIBUHD;ENABLE_USB" OFF OFF)
-LIBUHD_REGISTER_COMPONENT("E100" ENABLE_E100 OFF "ENABLE_LIBUHD;LINUX" OFF OFF)
 LIBUHD_REGISTER_COMPONENT("E300" ENABLE_E300 OFF "ENABLE_LIBUHD" OFF OFF)
 LIBUHD_REGISTER_COMPONENT("USRP1" ENABLE_USRP1 ON "ENABLE_LIBUHD;ENABLE_USB" OFF OFF)
 LIBUHD_REGISTER_COMPONENT("USRP2" ENABLE_USRP2 ON "ENABLE_LIBUHD" OFF OFF)
 LIBUHD_REGISTER_COMPONENT("X300" ENABLE_X300 ON "ENABLE_LIBUHD" OFF OFF)
 LIBUHD_REGISTER_COMPONENT("N230" ENABLE_N230 ON "ENABLE_LIBUHD" OFF OFF)
+LIBUHD_REGISTER_COMPONENT("MPMD" ENABLE_MPMD ON "ENABLE_LIBUHD" OFF OFF)
 LIBUHD_REGISTER_COMPONENT("OctoClock" ENABLE_OCTOCLOCK ON "ENABLE_LIBUHD" OFF OFF)
 
 ########################################################################
 # Include subdirectories (different than add)
 ########################################################################
+INCLUDE_SUBDIRECTORY(include)
 INCLUDE_SUBDIRECTORY(ic_reg_maps)
 INCLUDE_SUBDIRECTORY(types)
 INCLUDE_SUBDIRECTORY(convert)
@@ -173,6 +166,11 @@ ENDIF(MSVC)
 ########################################################################
 # Setup libuhd library
 ########################################################################
+IF(ENABLE_MPMD)
+    INCLUDE_DIRECTORIES(deps/rpclib/include)
+    ADD_SUBDIRECTORY(deps)
+    LIST(APPEND libuhd_sources $<TARGET_OBJECTS:uhd_rpclib>)
+ENDIF()
 ADD_LIBRARY(uhd SHARED ${libuhd_sources})
 TARGET_LINK_LIBRARIES(uhd ${Boost_LIBRARIES} ${libuhd_libs})
 SET_TARGET_PROPERTIES(uhd PROPERTIES DEFINE_SYMBOL "UHD_DLL_EXPORTS")

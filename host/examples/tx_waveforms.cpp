@@ -1,18 +1,8 @@
 //
 // Copyright 2010-2012,2014 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include "wavetable.hpp"
@@ -47,7 +37,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //variables to be set by po
     std::string args, wave_type, ant, subdev, ref, pps, otw, channel_list;
-    uint64_t total_num_samps, spb;
+    uint64_t total_num_samps;
+    size_t spb;
     double rate, freq, gain, wave_freq, bw;
     float ampl;
 
@@ -56,7 +47,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "single uhd device address args")
-        ("spb", po::value<uint64_t>(&spb)->default_value(0), "samples per buffer, 0 for default")
+        ("spb", po::value<size_t>(&spb)->default_value(0), "samples per buffer, 0 for default")
         ("nsamps", po::value<uint64_t>(&total_num_samps)->default_value(0), "total number of samples to transmit")
         ("rate", po::value<double>(&rate), "rate of outgoing samples")
         ("freq", po::value<double>(&freq), "RF center frequency in Hz")
@@ -176,7 +167,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
 
     //allocate a buffer which we re-use for each channel
-    if (spb == 0) spb = tx_stream->get_max_num_samps()*10;
+    if (spb == 0) {
+        spb = tx_stream->get_max_num_samps()*10;
+    }
     std::vector<std::complex<float> > buff(spb);
     std::vector<std::complex<float> *> buffs(channel_nums.size(), &buff.front());
 

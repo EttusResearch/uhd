@@ -21,35 +21,21 @@ current commit.
 """
 
 import os
-import re
 import subprocess
 import uhdimgs
-
-def get_md5_and_zipfilename():
-    """ Return MD5 hash and ZIP filename from the host/CMakeLists.txt file. """
-    cmakef = open(uhdimgs.get_cmake_main_file(), 'r').read()
-    md5_regex = re.compile(r'UHD_IMAGES_MD5SUM\s*"(?P<md5>[0-9a-f]{32})', flags=re.MULTILINE)
-    md5 = md5_regex.search(cmakef).groups('md5')[0]
-    filename_regex = re.compile(r'UHD_IMAGES_DOWNLOAD_SRC\s*"(?P<filename>[^"]*\.zip)', flags=re.MULTILINE)
-    filename = filename_regex.search(cmakef).groups('filename')[0]
-    return (md5, filename)
 
 def main():
     " Go, go, go! "
     # Switch to correct dir
     img_root_dir = os.path.join(uhdimgs.get_images_dir(), 'images')
     os.chdir(uhdimgs.get_images_dir())
-    # Read out the CMakeLists.txt file, get filename
-    print "== Reading MD5 and ZIP filename for current commit from {0}...".format(uhdimgs.get_cmake_main_file())
-    (md5, filename) = get_md5_and_zipfilename()
     print "== Starting download..."
     try:
         downloader_cmd = [
                 'python',
                 '../host/utils/uhd_images_downloader.py.in',
                 '-i', img_root_dir,
-                '-f', filename,
-                '-c', md5
+                '-m', 'manifest.txt'
         ]
         subprocess.check_call(downloader_cmd)
     except (subprocess.CalledProcessError, OSError):

@@ -1,18 +1,7 @@
 //
-// Copyright 2015-2016 Ettus Research
+// Copyright 2015-2017 Ettus Research, A National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include "x300_radio_ctrl_impl.hpp"
@@ -84,12 +73,41 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(x300_radio_ctrl)
     if (_radio_type==PRIMARY) {
         _fp_gpio = gpio_atr::gpio_atr_3000::make(ctrl, regs::sr_addr(regs::FP_GPIO), regs::RB_FP_GPIO);
         for(const gpio_atr::gpio_attr_map_t::value_type attr:  gpio_atr::gpio_attr_map) {
-            _tree->create<uint32_t>(fs_path("gpio") / "FP0" / attr.second)
-                .set(0)
-                .add_coerced_subscriber(boost::bind(&gpio_atr::gpio_atr_3000::set_gpio_attr, _fp_gpio, attr.first, _1));
+            switch (attr.first){
+                case usrp::gpio_atr::GPIO_SRC:
+                    _tree->create<std::vector<std::string>>(fs_path("gpio") / "FP0" / attr.second)
+                        .set(std::vector<std::string>(32, usrp::gpio_atr::default_attr_value_map.at(attr.first)))
+                        .add_coerced_subscriber([this](const std::vector<std::string>&){
+                             throw uhd::runtime_error("This device does not support setting the GPIO_SRC attribute.");
+                    });
+                    break;
+                case usrp::gpio_atr::GPIO_CTRL:
+                case usrp::gpio_atr::GPIO_DDR:
+                    _tree->create<std::vector<std::string>>(fs_path("gpio") / "FP0" / attr.second)
+                         .set(std::vector<std::string>(32, usrp::gpio_atr::default_attr_value_map.at(attr.first)))
+                         .add_coerced_subscriber([this, attr](const std::vector<std::string> str_val){
+                             uint32_t val = 0;
+                             for(size_t i = 0 ; i < str_val.size() ; i++){
+                                val += usrp::gpio_atr::gpio_attr_value_pair.at(attr.second).at(str_val[i])<<i;
+                            }
+                             _fp_gpio->set_gpio_attr(attr.first, val);
+                         });
+                    break;
+                case usrp::gpio_atr::GPIO_READBACK:
+                    _tree->create<uint32_t>(fs_path("gpio") / "FP0" / "READBACK")
+                        .set_publisher([this](){
+                            return _fp_gpio->read_gpio();
+                        });
+                    break;
+                default:
+                    _tree->create<uint32_t>(fs_path("gpio") / "FP0" / attr.second)
+                         .set(0)
+                         .add_coerced_subscriber([this, attr](const uint32_t val){
+                             _fp_gpio->set_gpio_attr(attr.first, val);
+                         });
+            }
+
         }
-        _tree->create<uint32_t>(fs_path("gpio") / "FP0" / "READBACK")
-            .set_publisher(boost::bind(&gpio_atr::gpio_atr_3000::read_gpio, _fp_gpio));
     }
 
     ////////////////////////////////////////////////////////////////
@@ -153,7 +171,6 @@ x300_radio_ctrl_impl::~x300_radio_ctrl_impl()
         for(const gpio_atr::gpio_attr_map_t::value_type attr:  gpio_atr::gpio_attr_map) {
             _tree->remove(fs_path("gpio") / "FP0" / attr.second);
         }
-        _tree->remove(fs_path("gpio") / "FP0" / "READBACK");
     }
 
     // Reset peripherals
@@ -639,9 +656,9 @@ void x300_radio_ctrl_impl::setup_radio(
     //create a new dboard manager
     boost::shared_ptr<x300_dboard_iface> db_iface = boost::make_shared<x300_dboard_iface>(db_config);
     _db_manager = dboard_manager::make(
-        _db_eeproms[RX_EEPROM_ADDR + DB_OFFSET].id,
-        _db_eeproms[TX_EEPROM_ADDR + DB_OFFSET].id,
-        _db_eeproms[GDB_EEPROM_ADDR + DB_OFFSET].id,
+        _db_eeproms[RX_EEPROM_ADDR + DB_OFFSET],
+        _db_eeproms[TX_EEPROM_ADDR + DB_OFFSET],
+        _db_eeproms[GDB_EEPROM_ADDR + DB_OFFSET],
         db_iface, _tree->subtree(db_path),
         true // defer daughterboard intitialization
     );
@@ -857,11 +874,6 @@ void x300_radio_ctrl_impl::synchronize_dacs(const std::vector<x300_radio_ctrl_im
     //to a common reference. Currently, this function is called in get_tx_stream
     //which also has the same precondition.
 
-    //Reinitialize and resync all DACs
-    for (size_t i = 0; i < radios.size(); i++) {
-        radios[i]->_dac->reset();
-    }
-
     //Get a rough estimate of the cumulative command latency
     boost::posix_time::ptime t_start = boost::posix_time::microsec_clock::local_time();
     for (size_t i = 0; i < radios.size(); i++) {
@@ -870,37 +882,59 @@ void x300_radio_ctrl_impl::synchronize_dacs(const std::vector<x300_radio_ctrl_im
     boost::posix_time::time_duration t_elapsed =
         boost::posix_time::microsec_clock::local_time() - t_start;
 
-    //Set tick rate and make sure FRAMEP/N is 0
-    for (size_t i = 0; i < radios.size(); i++) {
-        radios[i]->set_command_tick_rate(radios[i]->_radio_clk_rate, IO_MASTER_RADIO);
-        radios[i]->_regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::DAC_SYNC, 0);
-    }
-
     //Add 100% of headroom + uncertainty to the command time
     uint64_t t_sync_us = (t_elapsed.total_microseconds() * 2) + 16000 /*Scheduler latency*/;
 
-    //Pick radios[0] as the time reference.
-    uhd::time_spec_t sync_time =
-        radios[0]->_time64->get_time_now() + uhd::time_spec_t(((double)t_sync_us)/1e6);
+    std::string err_str;
+    //Try to sync 3 times before giving up
+    for (size_t attempt = 0; attempt < 3; attempt++)
+    {
+        try
+        {
+            //Reinitialize and resync all DACs
+            for (size_t i = 0; i < radios.size(); i++) {
+                radios[i]->_dac->sync();
+            }
 
-    //Send the sync command
-    for (size_t i = 0; i < radios.size(); i++) {
-        radios[i]->set_command_time(sync_time, IO_MASTER_RADIO);
-        //Arm FRAMEP/N sync pulse by asserting a rising edge
-        radios[i]->_regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::DAC_SYNC, 1);
-        radios[i]->set_command_time(uhd::time_spec_t(0.0), IO_MASTER_RADIO);
-    }
+            //Set tick rate and make sure FRAMEP/N is 0
+            for (size_t i = 0; i < radios.size(); i++) {
+                radios[i]->set_command_tick_rate(radios[i]->_radio_clk_rate, IO_MASTER_RADIO);
+                radios[i]->_regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::DAC_SYNC, 0);
+            }
 
-    //Reset FRAMEP/N to 0
-    for (size_t i = 0; i < radios.size(); i++) {
-        radios[i]->_regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::DAC_SYNC, 0);
-    }
+            //Pick radios[0] as the time reference.
+            uhd::time_spec_t sync_time =
+                radios[0]->_time64->get_time_now() + uhd::time_spec_t(((double)t_sync_us)/1e6);
 
-    //Wait and check status
-    boost::this_thread::sleep(boost::posix_time::microseconds(t_sync_us));
-    for (size_t i = 0; i < radios.size(); i++) {
-        radios[i]->_dac->verify_sync();
+            //Send the sync command
+            for (size_t i = 0; i < radios.size(); i++) {
+                radios[i]->set_command_time(sync_time, IO_MASTER_RADIO);
+                //Arm FRAMEP/N sync pulse by asserting a rising edge
+                radios[i]->_regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::DAC_SYNC, 1);
+            }
+
+            //Reset FRAMEP/N to 0 after 2 clock cycles
+            for (size_t i = 0; i < radios.size(); i++) {
+                radios[i]->set_command_time(sync_time + (2.0 / radios[i]->_radio_clk_rate), IO_MASTER_RADIO);
+                radios[i]->_regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::DAC_SYNC, 0);
+                radios[i]->set_command_time(uhd::time_spec_t(0.0), IO_MASTER_RADIO);
+            }
+
+            //Wait and check status
+            boost::this_thread::sleep(boost::posix_time::microseconds(t_sync_us));
+            for (size_t i = 0; i < radios.size(); i++) {
+                radios[i]->_dac->verify_sync();
+            }
+
+            return;
+        }
+        catch (const uhd::runtime_error &e)
+        {
+            err_str = e.what();
+            UHD_LOGGER_TRACE("X300 RADIO") << "Retrying DAC synchronization: " << err_str;
+        }
     }
+    throw uhd::runtime_error(err_str);
 }
 
 double x300_radio_ctrl_impl::self_cal_adc_xfer_delay(

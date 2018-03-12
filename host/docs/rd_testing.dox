@@ -45,10 +45,11 @@ following).
    `uhd_usrp_probe` and verify that the GPSDO is correctly reported. Power down
    the device before connecting the peripheral. The GPSDO must be reported
    found, and no error or warning must be printed.
-3. Without connecting the GPS antenna input, run `query_gpsdo_sensors`. To pass,
-   it must report the GPSDO as found, lock to the external reference, but then
-   report not being locked to GPS. The tool will report a valid GPS time, and
-   a string such as "GPS and UHD Device time are aligned" in case of success.
+3. OCXO only: Without connecting the GPS antenna input, run
+   `query_gpsdo_sensors`. To pass, it must report the GPSDO as found, lock to
+   the external reference, but then report not being locked to GPS. The tool
+   will report a valid GPS time, and a string such as "GPS and UHD Device time
+   are aligned" in case of success.
 4. Connect a GPS antenna to the input and make sure it is in a position to
    receive GPS satellite data. Confirm that GPS lock is reported using
    `query_gpsdo_sensors` within 20 minutes of connecting the antenna.
@@ -149,15 +150,16 @@ pass/fail conditions (return code 0 means 'pass').
 
 Test benches provide a faster way to verify the design through simulations.
 
-| Test Code        | Device    | Peripherals       | Manual Test Procedure        | Automatic Test Procedure  |
-|------------------|-----------|-------------------|------------------------------|---------------------------|
-| FPGATB-v1   | None      | None         | \ref rdtesting_fpga_testbenches_manual  | \ref rdtesting_fpga_testbenches_auto |
+| Test Code        | Device    | Peripherals       | Manual Test Procedure                   | Automatic Test Procedure             |
+|------------------|-----------|-------------------|-----------------------------------------|--------------------------------------|
+| FPGATB-v1        | None      | None              | \ref rdtesting_fpga_testbenches_manual  | \ref rdtesting_fpga_testbenches_auto |
 
-\subsection rdtesting_fpga_testbenches_requirement: Requirements
+\subsection rdtesting_fpga_testbenches_requirement Requirements
 
-These tests are simulations and do not need any device. Vivado 15.4 should be installed.
+These tests are simulations and do not need any device. Vivado 15.4 should be
+installed.
 
-\subsection rdtesting_fpga_testbenches_manual: Manual Test Procedure
+\subsection rdtesting_fpga_testbenches_manual Manual Test Procedure
 
 1. Go to the fpga directory depending on which test needs to be run.
 
@@ -179,34 +181,38 @@ These tests are simulations and do not need any device. Vivado 15.4 should be in
 
 4. All of these tests must report no failure with a 'PASS' validation. Example testbench output:
 
-    ========================================================
-    TESTBENCH STARTED: noc_block_skeleton
-    ========================================================
-    [TEST CASE   1] (t=000000000) BEGIN: Wait for Reset...
-    [TEST CASE   1] (t=000001002) DONE... Passed
-    [TEST CASE   2] (t=000001002) BEGIN: Check NoC ID...
-    Read Skeleton NOC ID: 1234000000000000
-    [TEST CASE   2] (t=000001238) DONE... Passed
-    [TEST CASE   3] (t=000001238) BEGIN: Connect RFNoC blocks...
-    Connecting noc_block_tb (SID: 1:0) to noc_block_skeleton (SID: 0:0)
-    Connecting noc_block_skeleton (SID: 0:0) to noc_block_tb (SID: 1:0)
-    [TEST CASE   3] (t=000005457) DONE... Passed
-    [TEST CASE   4] (t=000005457) BEGIN: Write / readback user registers...
-    [TEST CASE   4] (t=000006888) DONE... Passed
-    [TEST CASE   5] (t=000006888) BEGIN: Test sequence...
-    [TEST CASE   5] (t=000007403) DONE... Passed
-    ========================================================
-    TESTBENCH FINISHED: noc_block_skeleton
-     - Time elapsed:   7500 ns             
-     - Tests Expected: 5
-     - Tests Run:      5
-     - Tests Passed:   5
-    Result: PASSED   
-    ========================================================
+\code
+========================================================
+TESTBENCH STARTED: noc_block_skeleton
+========================================================
+[TEST CASE   1] (t=000000000) BEGIN: Wait for Reset...
+[TEST CASE   1] (t=000001002) DONE... Passed
+[TEST CASE   2] (t=000001002) BEGIN: Check NoC ID...
+Read Skeleton NOC ID: 1234000000000000
+[TEST CASE   2] (t=000001238) DONE... Passed
+[TEST CASE   3] (t=000001238) BEGIN: Connect RFNoC blocks...
+Connecting noc_block_tb (SID: 1:0) to noc_block_skeleton (SID: 0:0)
+Connecting noc_block_skeleton (SID: 0:0) to noc_block_tb (SID: 1:0)
+[TEST CASE   3] (t=000005457) DONE... Passed
+[TEST CASE   4] (t=000005457) BEGIN: Write / readback user registers...
+[TEST CASE   4] (t=000006888) DONE... Passed
+[TEST CASE   5] (t=000006888) BEGIN: Test sequence...
+[TEST CASE   5] (t=000007403) DONE... Passed
+========================================================
+TESTBENCH FINISHED: noc_block_skeleton
+ - Time elapsed:   7500 ns             
+ - Tests Expected: 5
+ - Tests Run:      5
+ - Tests Passed:   5
+Result: PASSED   
+========================================================
+\endcode
 
-Failing tests can be debugged by checking the waveform in a Vivado GUI by running 'make GUI=1 xsim'. More details on debugging https://kb.ettus.com/Debugging_FPGA_images
+Failing tests can be debugged by checking the waveform in a Vivado GUI by
+running 'make GUI=1 xsim'. More details on
+debugging: https://kb.ettus.com/Debugging_FPGA_images
 
-\subsection rdtesting_fpga_testbenches_auto: Automatic Test Procedure
+\subsection rdtesting_fpga_testbenches_auto Automatic Test Procedure
 
  Go to <fpga-dir>/usrp3/ and run 'build.py xsim all'. All tests should report 'PASS'.
 
@@ -256,7 +262,7 @@ to change sample rate while streaming.
   - E3x0: 0.1, 0.5, 1, 1.143, 1.684 MHz
 7. Repeat on each RX channel of the device.
 8. This test fails if:
-  - DC offset and IQ imbalance tones are unusally large
+  - DC offset and IQ imbalance tones are unusually large
   - There are any other strong tones or spectrum distortion
   - The spectrum changes significantly between frequencies or sample rates
     - An initial transient distortion is acceptable
@@ -419,6 +425,110 @@ Note: Any sample rate warnings can be ignored.
 
 tbd
 
+\section rdtesting_phasealignment Phase alignment tests
+
+| Test Code           | Device    | Peripherals        | Manual Test Procedure                | Automatic Test Procedure    |
+|---------------------|-----------|--------------------|--------------------------------------|-----------------------------|
+| PHASE-Twin-RX-v1    | 2xTwinRX  | 1xX3x0 + LOSharing cables | \ref rdtesting_phase_rx_X3x0_twinrx | \ref rdtesting_phase_rx_auto |
+| PHASE-UBX-40-RX-v1  | 2xUBX-40  | 2xX3x0  | \ref rdtesting_phase_rx_X3x0_sbx_ubx | \ref rdtesting_phase_rx_auto |
+| PHASE-UBX-160-RX-v1  | 2xUBX-160  | 2xX3x0 | \ref rdtesting_phase_rx_X3x0_sbx_ubx | \ref rdtesting_phase_rx_auto |
+| PHASE-SBX-40-RX-v1  | 2xSBX-40  | 2xX3x0 | \ref rdtesting_phase_rx_X3x0_sbx_ubx | \ref rdtesting_phase_rx_auto |
+| PHASE-SBX-120-RX-v1  | 2xSBX-120  | 2xX3x0 | \ref rdtesting_phase_rx_X3x0_sbx_ubx | \ref rdtesting_phase_rx_auto |
+| PHASE-N2x0-MIMO-v1 | 2x N2x0 + MIMO cable | 2x SBX | \ref rdtesting_phase_rx_N2x0_MIMO | \ref rdtesting_phase_rx_auto |
+
+
+| Device \anchor phase_band_table        | Frequency Range         | Number of bands | 
+|---------------|-------------------------|-----------------|
+| TwinRX        | 10 - 6000 MHz           |      12         |
+| UBX-{160, 40} | 10 - 6000 MHz           |      12         |
+| SBX-{120, 40} | 400 - 4400 MHz          |      7          |
+
+Phase alignment testing is necessary to verify device synchronization across multiple daughter- and motherboards is working as expected for CBX, SBX and UBX daughterboards. To enable efficient Phase alignment testing a GNU Radio Out-of-Tree module gr-usrptest exists in tools/gr-usrptest. It is required for testing RX testcases and later may be required to perform TX testcases.
+
+To test phase alignment we measure phase offset between DUTs at an offset of 2 MHz offset from the selected center frequency. The phase difference for a given center frequency has to stay the same across retunes and power cycles of the DUT.
+
+Correct synchronization with PPS and 10 MHz references is required for these tests.
+
+\subsection rdtesting_phase_rx_manual Manual phase alignment testing (Receiver) 
+
+Equipment Required
+- Octoclock-G
+- Signal Generator
+- 2-way splitter that covers frequency range for daughterboard (4-way for TwinRX)
+- 5+ SMA Cables
+
+Software Required
+- UHD
+- gnuradio
+- gr-usrptest
+
+\subsection rdtesting_phase_rx_X3x0_twinrx X3x0 with TwinRX
+1.  Make sure correct FPGA image is loaded on X3x0.
+2.  Place first daughterboard in slot A and second daughterboard in slot B.
+3.  Connect LO sharing cables between boards.
+4.  Connect host to device via 1 GbE, 10 GbE, or PCIe.
+5.  Connect 10 MHz and PPS from Octoclock-G to X3x0.
+6.  Connect Signal Generator to input of 4-way splitter and outputs of the splitter to the 2 RX ports on each daughterboard.
+7.  Set Signal Generator output power at -30 dBm.
+8.  From the top of the UHD source, run the command:
+
+    ./tools/gr-usrptest/apps/usrp_phasealignment.py
+                    --spec "A:0 A:1 B:0 B:1" --channels 0,1,2,3 \
+                    --sync pps --time-source external --clock-source external \
+                    -s 5e6 -g 75 -f 10e6 \
+                    --freq-bands 12 --start-freq 10e6 --stop-freq 6e9 \
+                    --duration 2.0 --auto \
+                    --lo-export True,False,False,False \
+                    --lo-source internal,companion,external,external
+
+9.  At each frequency step, tune Signal Generator to the displayed frequency + 1 MHz and increase output power by 3 dB.
+10.  Analyze terminal output.  The "run avg" across all runs should not deviate more than 1 degree and the "stddev" for any run should not deviate more than 1 degree.
+
+\subsection rdtesting_phase_rx_X3x0_sbx_ubx X3x0 with SBX or UBX
+1.  Set different IP addresses on each X3x0 and make sure correct FPGA image is loaded on each.
+2.  Place first daughterboard in slot A of first X3x0 and second daughterboard in slot A of second X3x0.
+3.  Connect host to both X3x0s.
+4.  Connect 10 MHz and PPS from Octoclock-G to both X3x0s.
+5.  Connect Signal Generator to input of splitter and outputs of the splitter to the RX2 port on each daughterboard.
+6.  Set Signal Generator output power at -30 dBm.
+7.  From the top of the UHD source, run the command:
+
+    ./tools/gr-usrptest/apps/usrp_phasealignment.py
+                    --args "addr0=<first X3x0 IP addr>,addr1=<second X3x0 IP addr>,dboard_clock_rate=25e6" \
+                    --clock-source external --time-source external --sync pps \
+                    --spec "A:0" --channels 0,1 \
+                    -s 10e6 -g 25 -f \<lowest DB freq> \
+                    --freq-bands \<# frequency bands> \
+                    --start-freq \<lowest freq> --stop-freq \<highest freq> \
+                    --duration 2.0 --auto
+
+8.  At each frequency step, tune Signal Generator to the displayed frequency + 1 MHz and increase output power by 3 dB.
+9.  Analyze terminal output.  The "run avg" across all runs should not deviate more than 2 degrees and the "stddev" for any run should not deviate more than 2 degrees.
+
+\subsection rdtesting_phase_rx_N2x0_MIMO N2x0 MIMO with SBX
+1.  Set different IP addresses on each N2x0 and make sure correct FPGA image and firmware are loaded.
+2.  Connect MIMO cable between devices.
+3.  Connect host to master device via 1 GbE.
+4.  Connect 10 MHz and PPS from Octoclock-G to master device only.
+5.  Connect Signal Generator to input of splitter and outputs of the splitter to the RX2 port on each daughterboard.
+6.  Set Signal Generator output power at -30 dBm.
+7.  From the top of the UHD source, run the command:
+
+    ./tools/gr-usrptest/apps/usrp_phasealignment.py
+                    --args "addr0=\<IP address of master>,addr1=\<IP address of slave>" \
+                    --clock-source external,mimo --time-source external,mimo --sync pps \
+                    --channels 0,1 -s 10e6 -f 400e6 -g 31.5 \
+                    --freq-bands 7 --start-freq 400e6 --stop-freq 4400e6 \
+                    --duration 2.0 --auto
+
+8.  At each frequency step, tune Signal Generator to the displayed frequency + 1 MHz and increase output power by 3 dB.
+9.  Analyze terminal output.  The "run avg" across all runs should not deviate more than 2 degrees and the "stddev" for any run should not deviate more than 5 degrees.
+
+\subsection rdtesting_phase_rx_auto Automatic phase alignment testing (Receiver)
+
+tbd
+
+
 \section rdtesting_defining Defining R&D Tests
 
 Tests can be added any time to define procedures for pass/fail validation. Any
@@ -444,76 +554,6 @@ Test procedures may be updated at any time. If this happens, a new test code
 must be generated, with the version number increased. Old test codes are
 considered deprecated (if there exists a version 2 of a test, version 1 should
 not be run any more).
-
-\section rdtesting_phasealignment Phase alignment tests
-
-| Test Code           | Device    | Peripherals        | Manual Test Procedure                | Automatic Test Procedure    |
-|---------------------|-----------|--------------------|--------------------------------------|-----------------------------|
-| PHASE-Twin-RX-v1    | 2xTwinRX  | 2xX3x0 + Octoclock + Signalgenerator + LOSharing cables | \ref rdtesting_phase_rx_twinrx | \ref rdtesting_phase_rx_twinrx |
-| PHASE-UBX-40-RX-v1  | 2xUBX-40  | 2xX3x0 + Octoclock + Signalgenerator  | \ref rdtesting_phase_rx_manual | \ref rdtesting_phase_rx_auto |
-| PHASE-UBX-160-RX-v1  | 2xUBX-160  | 2xX3x0 + Octoclock + Signalgenerator | \ref rdtesting_phase_rx_manual | \ref rdtesting_phase_rx_auto |
-| PHASE-SBX-40-RX-v1  | 2xSBX-40  | 2xX3x0 + Octoclock + Signalgenerator | \ref rdtesting_phase_rx_manual | \ref rdtesting_phase_rx_auto |
-| PHASE-SBX-120-RX-v1  | 2xSBX-120  | 2xX3x0 + Octoclock + Signalgenerator | \ref rdtesting_phase_rx_manual | \ref rdtesting_phase_rx_auto |
-| PHASE-N2x0-MIMO-v1 | 2x N2x0 + MIMO cable | 2x SBX + Signalgenerator | \ref rdtesting_phase_rx_N2x0_MIMO | \ref rdtesting_phase_rx_N2x0_MIMO |
-
-
-| Device \anchor phase_band_table        | Frequency Range         | Number of bands | 
-|---------------|-------------------------|-----------------|
-| TwinRX        | 10 - 6000 MHz           |      12         |
-| UBX-{160, 40} | 10 - 6000 MHz           |      12         |
-| SBX-{120, 40} | 400 - 4400 MHz          |      7          |
-
-Phase alignment testing is necessary to verify device synchronization across multiple daughter- and motherboards is working as expected for CBX, SBX and UBX daughterboards. To enable efficient Phase alignment testing a GNU Radio Out-of-Tree module gr-usrptest exists in tools/gr-usrptest. It is required for testing RX testcases and later may be required to perform TX testcases.
-
-To test phase alignment we measure phase offset between DUTs at an offset of 2 MHz offset from the selected center frequency. The phase difference for a given center frequency has to stay the same across retunes and power cycles of the DUT.
-
-Correct synchronization with PPS and 10 MHz references is required for these tests.
-
-\subsection rdtesting_phase_rx_manual Manual phase alignment testing (Receiver) 
-
-1. Get required peripherals and DUTs and additionally one splitter and enough coaxial cables. Provide a connection from host computer to USRPs. 
-2. Connect output of signal generator to the splitter and the output of splitter with each DUT.
-3. Make sure other outputs of the splitter are terminated with a 50 Ohms terminator.
-4. Connect USRPs with ethernet cables to the switch. Connect host computer with switch.
-5. Install gr-usrptest OOT-module on your host system (requires GNU Radio (>v3.7.10.1 recommended) and UHD already installed)
-6. Load correct FPGA images on X3x0 devices (via JTAG cable or with uhd_image_loader)
-7. Configure Network (USRPs and host interface)
-9. In tools/gr-usrptest/apps (or already in your $PATH if gr-usrptest is installed) run:
-
-       ./usrp_phasealignment.py
-                    --s 10e6 -runs 10 --duration 2.0 --plot --auto \ 
-                    --sync pps --time-source external --clock-source external \
-                    --args "addr0=<address first X3x0>,addr1=<address second X3x0>" \
-                    --channels <first channel, second channel (e.g. 0,2)> \
-                    -f <frequency> \
-                    --freq-bands <# frequency bands> \ 
-                    --start-freq <lowest daughterboard frequency> --stop-freq <highest daughterboard frequency> \
-
-9. Tune signal generator to displayed frequency + 2 MHz and start measurement
-11. Inspect error plot if phase difference stays the same across retunes. Drift over time must be significantely lower than 1 degree and deviation must be well below 2 degrees.
-12. Verify result with terminal output and note result for current test frequency.
-13. Repeat steps 9.-12. for remaining bands
-
-
-\subsection rdtesting_phase_rx_auto Automatic phase alignment testing (Receiver)
-
-tbd
-
-\subsection rdtesting_phase_rx_twinrx TwinRX specifics for phase alignment testing
-
-Phase alignment testing with TwinRX works as described above with additional test cases and commandline options.
-TwinRX offers LO sharing inside one board and across boards. For uhd_app and derived applications involving our tools and GNU Radio we have introduced `--lo-source {internal, companion, external}` and `--lo-export {True, False}` arguments to apply LO sharing feartures on TwinRX daughterboards.
-Two testcases have to pass:
- - Phase alignment if sharing LO with companion receiver on a single daughterboard
- - Phase alignment if sharing LO with external TwinRX daughterboard
-
-When testing TwinRX put 2 daughterboards in separate motherboards and connect LO sharing cables. Setup USRPs in a similar fashion as described above. Supply additional commandline arguments to `./usrp_phasealignment.py`. Use four receive channels `--channels 0,1,2,3` and therefore specify `--spec "A:0 A:1 B:0 B:1"` to address both receiver channels on each daughterboard.
-Also supply `--lo-export True,False,False,False` and `--lo-source internal,companion,external,external` if your LO sharing setup exports LOs from the first motherboard to the second otherwise adjust lo sharing arguments.
-
-\subsection rdtesting_phase_rx_N2x0_MIMO N2x0 with MIMO cable specifics for phase alignment testing
-
-Phase alignment testing with N210 and MIMO cable works like in the case with X3x0 devices but no Octoclock is needed for device synchronization. Instead two N210 devices are connected with a MIMO cable and only one N210 is connected with an ethernet cable to the host computer.
-Supply `--time-source internal,mimo` and `--clock-source internal,mimo` on the commandline to instruct the N2x0s to share time and clock over the MIMO cable.
 
 */
 // vim:ft=doxygen:

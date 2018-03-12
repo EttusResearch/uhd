@@ -1,18 +1,8 @@
 //
 // Copyright 2016 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include <uhd/rfnoc/dma_fifo_block_ctrl.hpp>
@@ -23,12 +13,10 @@
 #include <uhd/types/wb_iface.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/thread/mutex.hpp>
+#include <boost/format.hpp>
 
 using namespace uhd;
 using namespace uhd::rfnoc;
-
-//TODO (Ashish): This should come from the framework
-static const double BUS_CLK_RATE = 166.67e6;
 
 class dma_fifo_block_ctrl_impl : public dma_fifo_block_ctrl
 {
@@ -64,20 +52,20 @@ public:
             _perifs[i].depth = DEFAULT_SIZE;
             _perifs[i].core = dma_fifo_core_3000::make(_perifs[i].ctrl, USER_SR_BASE, USER_RB_BASE);
             _perifs[i].core->resize(_perifs[i].base_addr, _perifs[i].depth);
-            UHD_LOGGER_INFO("RFNOC") << boost::format("[DMA FIFO] Running BIST for FIFO %d... ") % i;
+            UHD_LOGGER_INFO("RFNOC DMA FIFO") << boost::format("Running BIST for FIFO %d... ") % i;
             if (_perifs[i].core->ext_bist_supported()) {
                 uint32_t bisterr = _perifs[i].core->run_bist();
                 if (bisterr != 0) {
                     throw uhd::runtime_error(str(boost::format("BIST failed! (code: %d)\n") % bisterr));
                 } else {
-                    double throughput = _perifs[i].core->get_bist_throughput(BUS_CLK_RATE);
-                    UHD_LOGGER_INFO("RFNOC") << (boost::format("pass (Throughput: %.1fMB/s)") % (throughput/1e6)) ;
+                    double throughput = _perifs[i].core->get_bist_throughput();
+                    UHD_LOGGER_INFO("RFNOC DMA FIFO") << (boost::format("BIST passed (Throughput: %.0f MB/s)") % (throughput/1e6)) ;
                 }
             } else {
                 if (_perifs[i].core->run_bist() == 0) {
-                    UHD_LOGGER_INFO("RFNOC") << "pass\n";
+                    UHD_LOGGER_INFO("RFNOC DMA FIFO") << "BIST passed";
                 } else {
-                    throw uhd::runtime_error("BIST failed!\n");
+                    throw uhd::runtime_error("BIST failed!");
                 }
             }
             _tree->access<int>(get_arg_path("base_addr/value", i))

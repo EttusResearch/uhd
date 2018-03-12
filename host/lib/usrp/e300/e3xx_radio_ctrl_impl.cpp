@@ -155,7 +155,7 @@ double e3xx_radio_ctrl_impl::set_rate(double rate)
  */
 void e3xx_radio_ctrl_impl::set_rx_antenna(const std::string &ant, const size_t chan)
 {
-    boost::mutex::scoped_lock lock(_mutex);
+    std::lock_guard<std::mutex> lock(_mutex);
     if (ant != "TX/RX" and ant != "RX2")
         throw uhd::value_error("Unknown RX antenna option: " + ant);
 
@@ -259,7 +259,7 @@ std::string e3xx_radio_ctrl_impl::get_dboard_fe_from_chan(const size_t chan, con
 void e3xx_radio_ctrl_impl::setup_radio(uhd::usrp::ad9361_ctrl::sptr safe_codec_ctrl)
 {
     {
-        boost::mutex::scoped_lock lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         if (_codec_ctrl) {
             throw std::runtime_error("Attempting to set up radio twice!");
         }
@@ -362,7 +362,7 @@ void e3xx_radio_ctrl_impl::_setup_radio_channel(const size_t chan)
 
 void e3xx_radio_ctrl_impl::_reset_radio(void)
 {
-    boost::mutex::scoped_lock lock(_mutex);
+    std::lock_guard<std::mutex> lock(_mutex);
     _misc.radio_rst = 1;
     _update_gpio_state();
     boost::this_thread::sleep(boost::posix_time::milliseconds(10));
@@ -647,7 +647,7 @@ void e3xx_radio_ctrl_impl::_update_gpio_state(void)
 
 void e3xx_radio_ctrl_impl::_update_enables(void)
 {
-    boost::mutex::scoped_lock lock(_mutex);
+    std::lock_guard<std::mutex> lock(_mutex);
     UHD_RFNOC_BLOCK_TRACE() << "e3xx_radio_ctrl_impl::_update_enables() " << std::endl;
     if (not _codec_ctrl) {
         UHD_LOGGER_WARNING("E300") << "Attempting to access CODEC controls before setting up the radios." << std::endl;
@@ -692,7 +692,7 @@ void e3xx_radio_ctrl_impl::_update_enables(void)
 
 void e3xx_radio_ctrl_impl::_update_time_source(const std::string &source)
 {
-    boost::mutex::scoped_lock lock(_mutex);
+    std::lock_guard<std::mutex> lock(_mutex);
     UHD_LOGGER_DEBUG("E300") << boost::format("Setting time source to %s") % source << std::endl;
     if (source == "none" or source == "internal") {
         _misc.pps_sel = global_regs::PPS_INT;

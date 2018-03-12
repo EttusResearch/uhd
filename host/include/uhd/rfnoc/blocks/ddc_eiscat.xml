@@ -1,0 +1,275 @@
+<!--This defines one NoC-Block.-->
+<nocblock>
+  <name>EISCAT Rx DSP (DDC/CORDIC)</name>
+  <blockname>DDC</blockname>
+  <key>DDC</key>
+  <!--There can be several of these:-->
+  <ids>
+    <id revision="0">DDC5E15CA7000000</id>
+  </ids>
+  <!-- Registers -->
+  <registers>
+    <!-- AXI rate change block registers -->
+    <setreg>
+      <name>N</name>
+      <address>128</address>
+    </setreg>
+    <setreg>
+      <name>M</name>
+      <address>129</address>
+    </setreg>
+    <setreg>
+      <!-- 1 bit, enable clear user -->
+      <name>CONFIG</name>
+      <address>130</address>
+    </setreg>
+    <!-- DDC block registers -->
+    <setreg>
+      <!-- CORDIC phase increment word -->
+      <name>CORDIC_FREQ</name>
+      <address>132</address>
+    </setreg>
+    <setreg>
+      <!-- Scaling factor to compensate for gain through filters and CORDIC -->
+      <name>SCALE_IQ</name>
+      <address>133</address>
+    </setreg>
+    <setreg>
+      <!-- DDC control word, 10 bits total, 2 bits for Halfbands, 8 bits for CIC rate -->
+      <name>DECIM_WORD</name>
+      <address>134</address>
+    </setreg>
+    <setreg>
+      <!-- Real mode, swap IQ -->
+      <name>MODE</name>
+      <address>135</address>
+    </setreg>
+    <setreg>
+      <!-- Filter coefficients reload -->
+      <name>RELOAD</name>
+      <address>136</address>
+    </setreg>
+  </registers>
+  <!-- Args -->
+  <args>
+    <arg>
+      <name>freq</name>
+      <type>double</type>
+      <value>0.0</value>
+      <port>0</port>
+    </arg>
+    <arg>
+      <name>input_rate</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>0</port>
+      <check>GE($input_rate, 0.0)</check>
+      <check_message>The input rate must be a positive value (in Hz).</check_message>
+    </arg>
+    <arg>
+      <name>output_rate</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>0</port>
+      <check>GE($output_rate, 0.0)</check>
+      <check_message>The output rate must be a positive value (in Hz).</check_message>
+    </arg>
+    <arg>
+      <name>fullscale</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>0</port>
+      <check>GE($fullscale, 0.0)</check>
+    </arg>
+    <arg>
+      <name>scalar_correction</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>0</port>
+    </arg>
+    <arg>
+      <name>freq</name>
+      <type>double</type>
+      <value>0.0</value>
+      <port>1</port>
+    </arg>
+    <arg>
+      <name>input_rate</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>1</port>
+      <check>GE($input_rate, 0.0)</check>
+      <check_message>The input rate must be a positive value (in Hz).</check_message>
+    </arg>
+    <arg>
+      <name>output_rate</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>1</port>
+      <check>GE($output_rate, 0.0)</check>
+      <check_message>The output rate must be a positive value (in Hz).</check_message>
+    </arg>
+    <arg>
+      <name>fullscale</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>1</port>
+      <check>GE($fullscale, 0.0)</check>
+    </arg>
+    <arg>
+      <name>scalar_correction</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>1</port>
+    </arg>
+    <arg>
+      <name>freq</name>
+      <type>double</type>
+      <value>0.0</value>
+      <port>2</port>
+    </arg>
+    <arg>
+      <name>input_rate</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>2</port>
+      <check>GE($input_rate, 0.0)</check>
+      <check_message>The input rate must be a positive value (in Hz).</check_message>
+    </arg>
+    <arg>
+      <name>output_rate</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>2</port>
+      <check>GE($output_rate, 0.0)</check>
+      <check_message>The output rate must be a positive value (in Hz).</check_message>
+    </arg>
+    <arg>
+      <name>fullscale</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>2</port>
+      <check>GE($fullscale, 0.0)</check>
+    </arg>
+    <arg>
+      <name>scalar_correction</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>2</port>
+    </arg>
+    <arg>
+      <name>freq</name>
+      <type>double</type>
+      <value>0.0</value>
+      <port>3</port>
+    </arg>
+    <arg>
+      <name>input_rate</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>3</port>
+      <check>GE($input_rate, 0.0)</check>
+      <check_message>The input rate must be a positive value (in Hz).</check_message>
+    </arg>
+    <arg>
+      <name>output_rate</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>3</port>
+      <check>GE($output_rate, 0.0)</check>
+      <check_message>The output rate must be a positive value (in Hz).</check_message>
+    </arg>
+    <arg>
+      <name>fullscale</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>3</port>
+      <check>GE($fullscale, 0.0)</check>
+    </arg>
+    <arg>
+      <name>scalar_correction</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>3</port>
+    </arg>
+    <arg>
+      <name>freq</name>
+      <type>double</type>
+      <value>0.0</value>
+      <port>4</port>
+    </arg>
+    <arg>
+      <name>input_rate</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>4</port>
+      <check>GE($input_rate, 0.0)</check>
+      <check_message>The input rate must be a positive value (in Hz).</check_message>
+    </arg>
+    <arg>
+      <name>output_rate</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>4</port>
+      <check>GE($output_rate, 0.0)</check>
+      <check_message>The output rate must be a positive value (in Hz).</check_message>
+    </arg>
+    <arg>
+      <name>fullscale</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>4</port>
+      <check>GE($fullscale, 0.0)</check>
+    </arg>
+    <arg>
+      <name>scalar_correction</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>4</port>
+    </arg>
+  </args>
+  <!--All the connections to the outside world are listed in 'ports':-->
+  <ports>
+    <sink>
+      <name>in0</name>
+      <type>s16</type>
+    </sink>
+    <sink>
+      <name>in1</name>
+      <type>s16</type>
+    </sink>
+    <sink>
+      <name>in2</name>
+      <type>s16</type>
+    </sink>
+    <sink>
+      <name>in3</name>
+      <type>s16</type>
+    </sink>
+    <sink>
+      <name>in4</name>
+      <type>s16</type>
+    </sink>
+    <source>
+      <name>out0</name>
+      <type>sc16</type>
+    </source>
+    <source>
+      <name>out1</name>
+      <type>sc16</type>
+    </source>
+    <source>
+      <name>out2</name>
+      <type>sc16</type>
+    </source>
+    <source>
+      <name>out3</name>
+      <type>sc16</type>
+    </source>
+    <source>
+      <name>out4</name>
+      <type>sc16</type>
+    </source>
+  </ports>
+</nocblock>
+

@@ -1,18 +1,8 @@
 /*
  * Copyright 2015 Ettus Research LLC
+ * Copyright 2018 Ettus Research, a National Instruments Company
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 #include <uhd.h>
@@ -57,7 +47,7 @@ int main(int argc, char* argv[]){
     double freq = 2e9;
     double rate = 1e6;
     double gain = 0;
-    char* device_args;
+    char* device_args = NULL;
     size_t channel = 0;
     uint64_t total_num_samps = 0;
     bool verbose = false;
@@ -106,9 +96,9 @@ int main(int argc, char* argv[]){
         fprintf(stderr, "Unable to set thread priority. Continuing anyway.\n");
     }
 
-    if (device_args == NULL){
-        device_args = "";
-    }
+    if (!device_args)
+        device_args = strdup("");
+
     // Create USRP
     uhd_usrp_handle usrp;
     fprintf(stderr, "Creating USRP with args \"%s\"...\n", device_args);
@@ -125,7 +115,7 @@ int main(int argc, char* argv[]){
     // Create TX metadata
     uhd_tx_metadata_handle md;
     EXECUTE_OR_GOTO(free_tx_streamer,
-        uhd_tx_metadata_make(&md, false, 0.0, 0.1, true, false)
+        uhd_tx_metadata_make(&md, false, 0, 0.1, true, false)
     )
 
     // Create other necessary structs
@@ -249,9 +239,8 @@ int main(int argc, char* argv[]){
         uhd_usrp_free(&usrp);
 
     free_option_strings:
-        if(device_args != NULL){
+        if(device_args)
             free(device_args);
-        }
 
     fprintf(stderr, (return_code ? "Failure\n" : "Success\n"));
 

@@ -1,18 +1,7 @@
 //
-// Copyright 2016 Ettus Research
+// Copyright 2016-2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include "dsp_core_utils.hpp"
@@ -20,76 +9,108 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/convert.hpp>
 #include <uhd/types/ranges.hpp>
+#include <uhdlib/utils/math.hpp>
+#include <uhdlib/utils/narrow.hpp>
+#include <uhdlib/utils/compat_check.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <cmath>
 
 using namespace uhd::rfnoc;
 
-// TODO move this to a central location
-template <class T> T ceil_log2(T num){
-    return std::ceil(std::log(num)/std::log(T(2)));
-}
-
-// TODO remove this once we have actual lambdas
-static double lambda_forward_prop(uhd::property_tree::sptr tree, uhd::fs_path prop, double value)
-{
-    return tree->access<double>(prop).set(value).get();
-}
-
-static double lambda_forward_prop(uhd::property_tree::sptr tree, uhd::fs_path prop)
-{
-    return tree->access<double>(prop).get();
-}
-
 class ddc_block_ctrl_impl : public ddc_block_ctrl
 {
 public:
-    static const size_t NUM_HALFBANDS = 3;
-    static const size_t CIC_MAX_DECIM = 255;
-
     UHD_RFNOC_BLOCK_CONSTRUCTOR(ddc_block_ctrl)
+        , _fpga_compat(user_reg_read64(RB_REG_COMPAT_NUM))
+        , _num_halfbands(uhd::narrow_cast<size_t>(
+                    user_reg_read64(RB_REG_NUM_HALFBANDS)))
+        , _cic_max_decim(uhd::narrow_cast<size_t>(
+                    user_reg_read64(RB_REG_CIC_MAX_DECIM)))
     {
+        UHD_LOG_DEBUG(unique_id(),
+            "Loading DDC with " << get_num_halfbands() << " halfbands and "
+            "max CIC decimation " << get_cic_max_decim()
+        );
+        uhd::assert_fpga_compat(
+            MAJOR_COMP, MINOR_COMP,
+            _fpga_compat,
+            "DDC", "DDC",
+            false /* Let it slide if minors mismatch */
+        );
+
         // Argument/prop tree hooks
         for (size_t chan = 0; chan < get_input_ports().size(); chan++) {
-            double default_freq = get_arg<double>("freq", chan);
+            const double default_freq = get_arg<double>("freq", chan);
             _tree->access<double>(get_arg_path("freq/value", chan))
-                .set_coercer(boost::bind(&ddc_block_ctrl_impl::set_freq, this, _1, chan))
+                .set_coercer([this, chan](const double value){
+                    return this->set_freq(value, chan);
+                })
                 .set(default_freq);
             ;
-            double default_output_rate = get_arg<double>("output_rate", chan);
+            const double default_output_rate =
+                get_arg<double>("output_rate", chan);
             _tree->access<double>(get_arg_path("output_rate/value", chan))
-                .set_coercer(boost::bind(&ddc_block_ctrl_impl::set_output_rate, this, _1, chan))
+                .set_coercer([this, chan](const double value){
+                    return this->set_output_rate(value, chan);
+                })
                 .set(default_output_rate)
             ;
             _tree->access<double>(get_arg_path("input_rate/value", chan))
-                .add_coerced_subscriber(boost::bind(&ddc_block_ctrl_impl::set_input_rate, this, _1, chan))
+                .add_coerced_subscriber([this, chan](const double rate){
+                    this->set_input_rate(rate, chan);
+                })
             ;
 
             // Legacy properties (for backward compat w/ multi_usrp)
             const uhd::fs_path dsp_base_path = _root_path / "legacy_api" / chan;
-            // Legacy properties
+            // Legacy properties simply forward to the block args properties
             _tree->create<double>(dsp_base_path / "rate/value")
-                .set_coercer(boost::bind(&lambda_forward_prop, _tree, get_arg_path("output_rate/value", chan), _1))
-                .set_publisher(boost::bind(&lambda_forward_prop, _tree, get_arg_path("output_rate/value", chan)))
+                .set_coercer([this, chan](const double value){
+                    return this->_tree->access<double>(
+                        this->get_arg_path("output_rate/value", chan)
+                    ).set(value).get();
+                })
+                .set_publisher([this, chan](){
+                    return this->_tree->access<double>(
+                        this->get_arg_path("output_rate/value", chan)
+                    ).get();
+                })
             ;
             _tree->create<uhd::meta_range_t>(dsp_base_path / "rate/range")
-                .set_publisher(boost::bind(&ddc_block_ctrl_impl::get_output_rates, this))
+                .set_publisher([this](){
+                    return get_output_rates();
+                })
             ;
             _tree->create<double>(dsp_base_path / "freq/value")
-                .set_coercer(boost::bind(&lambda_forward_prop, _tree, get_arg_path("freq/value", chan), _1))
-                .set_publisher(boost::bind(&lambda_forward_prop, _tree, get_arg_path("freq/value", chan)))
+                .set_coercer([this, chan](const double value){
+                    return this->_tree->access<double>(
+                        this->get_arg_path("freq/value", chan)
+                    ).set(value).get();
+                })
+                .set_publisher([this, chan](){
+                    return this->_tree->access<double>(
+                        this->get_arg_path("freq/value", chan)
+                    ).get();
+                })
             ;
             _tree->create<uhd::meta_range_t>(dsp_base_path / "freq/range")
-                .set_publisher(boost::bind(&ddc_block_ctrl_impl::get_freq_range, this))
+                .set_publisher([this](){
+                    return get_freq_range();
+                })
             ;
             _tree->access<uhd::time_spec_t>("time/cmd")
-                .add_coerced_subscriber(boost::bind(&block_ctrl_base::set_command_time, this, _1, chan))
+                .add_coerced_subscriber([this, chan](const uhd::time_spec_t time_spec){
+                    this->set_command_time(time_spec, chan);
+                })
             ;
             if (_tree->exists("tick_rate")) {
-                const double tick_rate = _tree->access<double>("tick_rate").get();
+                const double tick_rate =
+                    _tree->access<double>("tick_rate").get();
                 set_command_tick_rate(tick_rate, chan);
                 _tree->access<double>("tick_rate")
-                    .add_coerced_subscriber(boost::bind(&block_ctrl_base::set_command_tick_rate, this, _1, chan))
+                    .add_coerced_subscriber([this, chan](const double rate){
+                        this->set_command_tick_rate(rate, chan);
+                    })
                 ;
             }
 
@@ -99,7 +120,8 @@ public:
             sr_write("CONFIG", 1, chan); // Enable clear EOB
         }
     } // end ctor
-    virtual ~ddc_block_ctrl_impl() {};
+
+    virtual ~ddc_block_ctrl_impl() {}
 
     double get_output_scale_factor(size_t port=ANY_PORT)
     {
@@ -175,6 +197,15 @@ public:
     }
 
 private:
+    static constexpr size_t MAJOR_COMP = 1;
+    static constexpr size_t MINOR_COMP = 0;
+    static constexpr size_t RB_REG_COMPAT_NUM = 0;
+    static constexpr size_t RB_REG_NUM_HALFBANDS = 1;
+    static constexpr size_t RB_REG_CIC_MAX_DECIM = 2;
+
+    const uint64_t _fpga_compat;
+    const size_t _num_halfbands;
+    const size_t _cic_max_decim;
 
     //! Set the CORDIC frequency shift the signal to \p requested_freq
     double set_freq(const double requested_freq, const size_t chan)
@@ -198,23 +229,18 @@ private:
         );
     }
 
-    // FIXME this misses a whole bunch of valid rates. Anything with CIC decim <= 255
-    // is OK.
     uhd::meta_range_t get_output_rates(void)
     {
         uhd::meta_range_t range;
         const double input_rate = get_arg<double>("input_rate");
-        for (int decim = 1024; decim > 512; decim -= 8){
-            range.push_back(uhd::range_t(input_rate/decim));
-        }
-        for (int decim = 512; decim > 256; decim -= 4){
-            range.push_back(uhd::range_t(input_rate/decim));
-        }
-        for (int decim = 256; decim > 128; decim -= 2){
-            range.push_back(uhd::range_t(input_rate/decim));
-        }
-        for (int decim = 128; decim >= 1; decim -= 1){
-            range.push_back(uhd::range_t(input_rate/decim));
+        for (int hb = _num_halfbands; hb >= 0; hb--) {
+            const size_t decim_offset = _cic_max_decim<<(hb-1);
+            for(size_t decim = _cic_max_decim; decim > 0; decim--) {
+                const size_t hb_cic_decim =  decim*(1<<hb);
+                if(hb == 0 || hb_cic_decim > decim_offset) {
+                    range.push_back(uhd::range_t(input_rate/hb_cic_decim));
+                }
+            }
         }
         return range;
     }
@@ -222,23 +248,31 @@ private:
     double set_output_rate(const int requested_rate, const size_t chan)
     {
         const double input_rate = get_arg<double>("input_rate");
-        const size_t decim_rate = boost::math::iround(input_rate/this->get_output_rates().clip(requested_rate, true));
+        const size_t decim_rate =
+            boost::math::iround(input_rate/this->get_output_rates().clip(requested_rate, true));
         size_t decim = decim_rate;
-
         // The FPGA knows which halfbands to enable for any given value of hb_enable.
         uint32_t hb_enable = 0;
-        while ((decim % 2 == 0) and hb_enable < NUM_HALFBANDS) {
+        while ((decim % 2 == 0) and hb_enable < _num_halfbands) {
             hb_enable++;
             decim /= 2;
         }
-        UHD_ASSERT_THROW(hb_enable <= NUM_HALFBANDS);
-        UHD_ASSERT_THROW(decim <= CIC_MAX_DECIM);
+        UHD_ASSERT_THROW(hb_enable <= _num_halfbands);
+        UHD_ASSERT_THROW(decim > 0 and decim <= _cic_max_decim);
         // What we can't cover with halfbands, we do with the CIC
         sr_write("DECIM_WORD", (hb_enable << 8) | (decim & 0xff), chan);
 
         // Rate change = M/N
         sr_write("N", std::pow(2.0, double(hb_enable)) * (decim & 0xff), chan);
-        sr_write("M", 1, chan);
+        const auto noc_id = _tree->access<uint64_t>(_root_path / "noc_id").get();
+        // FIXME this should be a rb reg in the FPGA, not based on a hard-coded
+        // Noc-ID
+        if (noc_id == 0xDDC5E15CA7000000) {
+            UHD_LOG_DEBUG("DDC", "EISCAT DDC! Assuming real inputs.");
+            sr_write("M", 2, chan);
+        } else {
+            sr_write("M", 1, chan);
+        }
 
         if (decim > 1 and hb_enable == 0) {
             UHD_LOGGER_WARNING("RFNOC") << boost::format(
@@ -249,7 +283,7 @@ private:
             ) % decim_rate % (input_rate/1e6) % (requested_rate/1e6);
         }
 
-        // Caclulate algorithmic gain of CIC for a given decimation.
+        // Calculate algorithmic gain of CIC for a given decimation.
         // For Ettus CIC R=decim, M=1, N=4. Gain = (R * M) ^ N
         const double rate_pow = std::pow(double(decim & 0xff), 4);
         // Calculate compensation gain values for algorithmic gain of CORDIC and CIC taking into account
@@ -263,7 +297,8 @@ private:
         // cost us small signal performance, thus we do no provide compensation gain for a saturated front end and allow
         // the signal to clip in the H/W as needed. If we wished to avoid the signal clipping in these circumstances then adjust code to read:
         // _scaling_adjustment = std::pow(2, ceil_log2(rate_pow))/(CORDIC_GAIN*rate_pow*1.415);
-        const double scaling_adjustment = std::pow(2, ceil_log2(rate_pow))/(CORDIC_GAIN*rate_pow);
+        const double scaling_adjustment =
+            std::pow(2, uhd::math::ceil_log2(rate_pow))/(CORDIC_GAIN*rate_pow);
         update_scalar(scaling_adjustment, chan);
         return input_rate/decim_rate;
     }
@@ -293,6 +328,23 @@ private:
         sr_write("SCALE_IQ", actual_scalar, chan);
     }
 
+    //! Get cached value of FPGA compat number
+    uint64_t get_fpga_compat() const
+    {
+        return _fpga_compat;
+    }
+
+    //! Get cached value of _num_halfbands
+    size_t get_num_halfbands() const
+    {
+        return _num_halfbands;
+    }
+
+    //! Get cached value of _cic_max_decim readback
+    size_t get_cic_max_decim() const
+    {
+        return _cic_max_decim;
+    }
 };
 
 UHD_RFNOC_BLOCK_REGISTER(ddc_block_ctrl, "DDC");

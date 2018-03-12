@@ -1,19 +1,9 @@
 #!/usr/bin/env python
 #
 # Copyright 2010 Ettus Research LLC
+# Copyright 2018 Ettus Research, a National Instruments Company
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
 
 ########################################################################
@@ -56,7 +46,7 @@ pd_polarity             4[7]        1       negative, positive
 mux_logic               4[8]        1       1_8V, 3_3V
 ref_mode                4[9]        0       single, diff
 <% current_setting_enums = ', '.join(map(lambda x: '_'.join(("%0.2fma"%(round(x*31.27 + 31.27)/100)).split('.')), range(0,16))) %>\
-charge_pump_current     4[10:13]    0       ${current_setting_enums}
+charge_pump_current     4[10:13]    2       ${current_setting_enums}
 double_buff_div         4[14]       0       disabled, enabled
 r_counter_10_bit        4[15:24]    0
 reference_divide_by_2   4[25]       0       disabled, enabled
@@ -76,7 +66,7 @@ reg6_reserved0          6[7:9]      0x0
 rf_out_b_enabled        6[10]       1       enabled, disabled
 mute_till_lock_detect   6[11]       0       mute_disabled, mute_enabled
 reg6_reserved1          6[12]       0
-cp_bleed_current        6[13:20]    0
+cp_bleed_current        6[13:20]    2
 rf_divider_select       6[21:23]    0       div1, div2, div4, div8, div16, div32, div64
 feedback_select         6[24]       0       divided, fundamental
 reg6_reserved2          6[25:28]    0xA

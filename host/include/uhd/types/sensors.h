@@ -1,18 +1,8 @@
 //
 // Copyright 2015 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #ifndef INCLUDED_UHD_TYPES_SENSORS_H
@@ -50,6 +40,20 @@ typedef enum {
     UHD_SENSOR_VALUE_REALNUM = 114,
     UHD_SENSOR_VALUE_STRING  = 115
 } uhd_sensor_value_data_type_t;
+
+//! Make an empty UHD sensor value.
+/*!
+ * The purpose of this call is to populate the handle with a valid sensor value
+ * object. Querying this object will always yield 'false'. Typically, this
+ * sensor value object will never be used, but it will allow the handle object
+ * to be used with sensor functions later on.
+ *
+ * \param h the sensor handle in which to place sensor
+ * \returns UHD error code
+ */
+UHD_API uhd_error uhd_sensor_value_make(
+    uhd_sensor_value_handle* h
+);
 
 //! Make a UHD sensor from a boolean.
 /*!

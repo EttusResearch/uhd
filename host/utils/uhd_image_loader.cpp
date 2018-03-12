@@ -1,18 +1,8 @@
 //
-// Copyright 2015 Ettus Research LLC
+// Copyright 2015-2017 Ettus Research
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include <csignal>
@@ -56,17 +46,16 @@ void sigint_handler(int){
 
 int UHD_SAFE_MAIN(int argc, char *argv[]){
 
-    std::string fw_path = "";
-    std::string fpga_path = "";
-
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>()->default_value(""), "Device args, optional loader args")
-        ("fw-path", po::value<std::string>(&fw_path)->default_value(""), "Firmware path (uses default if none specified)")
-        ("fpga-path", po::value<std::string>(&fpga_path)->default_value(""), "FPGA path (uses default if none specified)")
+        ("fw-path", po::value<std::string>()->default_value(""), "Firmware path (uses default if none specified)")
+        ("fpga-path", po::value<std::string>()->default_value(""), "FPGA path (uses default if none specified)")
+        ("out-path", po::value<std::string>()->default_value(""), "Output path/filename of the downloaded FPGA .bit file")
         ("no-fw", "Don't burn firmware")
-        ("no-fpga", "Don't burn FPGA")
+        ("no-fpga", "Don't Burn FPGA")
+        ("download", "Download an image to a bit/bin file")
     ;
 
     po::variables_map vm;
@@ -86,10 +75,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     // Convert user options
     uhd::image_loader::image_loader_args_t image_loader_args;
     image_loader_args.args          = vm["args"].as<std::string>();
-    image_loader_args.load_firmware = (vm.count("no-fw") == 0);
-    image_loader_args.load_fpga     = (vm.count("no-fpga") == 0);
+    image_loader_args.load_firmware = (vm.count("no-fw")    == 0);
+    image_loader_args.load_fpga     = (vm.count("no-fpga")  == 0);
+    image_loader_args.download      = (vm.count("download") != 0);
     image_loader_args.firmware_path = vm["fw-path"].as<std::string>();
     image_loader_args.fpga_path     = vm["fpga-path"].as<std::string>();
+    image_loader_args.out_path      = vm["out-path"].as<std::string>();
 
     // Force user to specify a device
     if(not image_loader_args.args.has_key("type")){
@@ -112,6 +103,14 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         }
         #endif /* UHD_PLATFORM_WIN32 */
         image_loader_args.fpga_path = fs::absolute(image_loader_args.fpga_path).string();
+    }
+    if(image_loader_args.out_path != ""){
+        #ifndef UHD_PLATFORM_WIN32
+        if(image_loader_args.out_path.find("~") == 0){
+            image_loader_args.out_path.replace(0,1,getenv("HOME"));
+        }
+        #endif /* UHD_PLATFORM_WIN32 */
+        image_loader_args.out_path = fs::absolute(image_loader_args.out_path).string();
     }
 
     // Detect which type of device we're working with

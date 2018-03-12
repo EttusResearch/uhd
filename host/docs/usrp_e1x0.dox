@@ -1,5 +1,8 @@
 /*! \page page_usrp_e1x0 USRP-E1x0 Series
 
+<b>Note: The USPR E1x0-Series is no longer supported with this version of UHD.
+This page is kept here for reference purposes only.</b>
+
 \tableofcontents
 
 \section e1x0_features Comparative features list

@@ -1,18 +1,8 @@
 //
 // Copyright 2016 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include "legacy_compat.hpp"
@@ -126,7 +116,7 @@ public:
         _num_mboards(_tree->list("/mboards").size()),
         _num_radios_per_board(device->find_blocks<radio_ctrl>("0/Radio").size()), // These might throw, maybe we catch that and provide a nicer error message.
         _num_tx_chans_per_radio(
-            calc_num_tx_chans_per_radio(_tree, _num_radios_per_board, _has_ducs, not device->find_blocks(DFIFO_BLOCK_NAME).empty())
+            calc_num_tx_chans_per_radio(_tree, _num_radios_per_board, _has_ducs, _has_dmafifo)
         ),
         _num_rx_chans_per_radio(_has_ddcs ?
                 std::min(num_ports(_tree, RADIO_BLOCK_NAME, "out"), num_ports(_tree, DDC_BLOCK_NAME, "out"))
@@ -418,12 +408,38 @@ private: // methods
      ***********************************************************************/
     std::string get_slot_name(const size_t radio_index)
     {
-        return (radio_index == 0) ? "A" : "B";
+        if (radio_index == 0){
+            return "A";
+        }else if (radio_index == 1){
+            return "B";
+        }else if (radio_index == 2){
+            return "C";
+        }else if (radio_index == 3){
+            return "D";
+        }else{
+            throw uhd::index_error(str(
+                boost::format("[legacy_compat]: radio index %u out of supported range.")
+                % radio_index
+            ));
+        }
     }
 
     size_t get_radio_index(const std::string slot_name)
     {
-        return (slot_name == "A") ? 0 : 1;
+        if (slot_name == "A"){
+            return 0;
+        }else if (slot_name == "B"){
+            return 1;
+        }else if (slot_name == "C"){
+            return 2;
+        }else if (slot_name == "D"){
+            return  3;
+        }else {
+           throw uhd::key_error(str(
+                boost::format("[legacy_compat]: radio slot name %s out of supported range.")
+                % slot_name
+            ));
+        }
     }
 
     template <typename block_type>
@@ -519,7 +535,10 @@ private: // methods
     ) {
         if (dir == uhd::TX_DIRECTION) {
             if (_has_sramfifo) {
-                return block_id_t(mboard_idx, SFIFO_BLOCK_NAME, radio_index).to_string();
+                const size_t sfifo_idx =
+                    radio_index * _num_tx_chans_per_radio + port_index;
+                port_index = 0;
+                return block_id_t(mboard_idx, SFIFO_BLOCK_NAME, sfifo_idx).to_string();
             } else if (_has_dmafifo) {
                 port_index = radio_index;
                 return block_id_t(mboard_idx, DFIFO_BLOCK_NAME, 0).to_string();
@@ -737,8 +756,11 @@ private: // methods
                         // Prioritize SRAM over DRAM for performance
                         if (_has_sramfifo) {
                             // We have SRAM FIFO *and* DUCs
+                            // SRAM FIFOs have only 1 channel per block
+                            const size_t sfifo_idx =
+                                _num_tx_chans_per_radio * radio + chan;
                             _graph->connect(
-                                block_id_t(mboard, SFIFO_BLOCK_NAME, radio), chan,
+                                block_id_t(mboard, SFIFO_BLOCK_NAME, sfifo_idx), chan,
                                 block_id_t(mboard, DUC_BLOCK_NAME, radio), chan,
                                 tx_bpp
                             );
@@ -752,8 +774,11 @@ private: // methods
                         }
                     } else if (_has_sramfifo) {
                             // We have SRAM FIFO, *no* DUCs
+                            // SRAM FIFOs have only 1 channel per block
+                            const size_t sfifo_idx =
+                                _num_tx_chans_per_radio * radio + chan;
                             _graph->connect(
-                                block_id_t(mboard, SFIFO_BLOCK_NAME, radio), radio,
+                                block_id_t(mboard, SFIFO_BLOCK_NAME, sfifo_idx), 0,
                                 block_id_t(mboard, RADIO_BLOCK_NAME, radio), chan,
                                 tx_bpp
                             );

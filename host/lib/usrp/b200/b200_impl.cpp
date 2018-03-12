@@ -1,18 +1,8 @@
 //
 // Copyright 2012-2015 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include "b200_impl.hpp"
@@ -220,7 +210,7 @@ static device_addrs_t b200_find(const device_addr_t &hint)
             catch(const uhd::exception &){continue;} //ignore claimed
 
             b200_iface::sptr iface = b200_iface::make(control);
-            const mboard_eeprom_t mb_eeprom = mboard_eeprom_t(*iface, "B200");
+            const mboard_eeprom_t mb_eeprom = b200_impl::get_mb_eeprom(iface);
 
             device_addr_t new_addr;
             new_addr["type"] = "b200";
@@ -362,7 +352,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     ////////////////////////////////////////////////////////////////////
     // setup the mboard eeprom
     ////////////////////////////////////////////////////////////////////
-    const mboard_eeprom_t mb_eeprom(*_iface, "B200");
+    const mboard_eeprom_t mb_eeprom = get_mb_eeprom(_iface);
     _tree->create<mboard_eeprom_t>(mb_path / "eeprom")
         .set(mb_eeprom)
         .add_coerced_subscriber(boost::bind(&b200_impl::set_mb_eeprom, this, _1));
@@ -670,13 +660,36 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     ////////////////////////////////////////////////////////////////////
     _radio_perifs[0].fp_gpio = gpio_atr_3000::make(_radio_perifs[0].ctrl, TOREG(SR_FP_GPIO), RB32_FP_GPIO);
     for(const gpio_attr_map_t::value_type attr:  gpio_attr_map)
-    {
-            _tree->create<uint32_t>(mb_path / "gpio" / "FP0" / attr.second)
-            .set(0)
-            .add_coerced_subscriber(boost::bind(&gpio_atr_3000::set_gpio_attr, _radio_perifs[0].fp_gpio, attr.first, _1));
+    {       switch (attr.first){
+                case usrp::gpio_atr::GPIO_SRC:
+                    _tree->create<std::vector<std::string>>(mb_path / "gpio" / "FP0" / attr.second)
+                        .set(std::vector<std::string>(32, usrp::gpio_atr::default_attr_value_map.at(attr.first)))
+                        .add_coerced_subscriber([this](const std::vector<std::string>&){
+                           throw uhd::runtime_error("This device does not support setting the GPIO_SRC attribute.");
+                        });
+                    break;
+                case usrp::gpio_atr::GPIO_CTRL:
+                case usrp::gpio_atr::GPIO_DDR:
+                    _tree->create<std::vector<std::string>>(mb_path / "gpio" / "FP0" / attr.second)
+                        .set(std::vector<std::string>(32, usrp::gpio_atr::default_attr_value_map.at(attr.first)))
+                        .add_coerced_subscriber([this, attr](const std::vector<std::string> str_val){
+                           uint32_t val = 0;
+                           for(size_t i = 0 ; i < str_val.size() ; i++){
+                               val += usrp::gpio_atr::gpio_attr_value_pair.at(attr.second).at(str_val[i])<<i;
+                           }
+                           _radio_perifs[0].fp_gpio->set_gpio_attr(attr.first, val);
+                        });
+                    break;
+                case usrp::gpio_atr::GPIO_READBACK:
+                    _tree->create<uint32_t>(mb_path / "gpio" / "FP0" / "READBACK")
+                        .set_publisher(boost::bind(&gpio_atr_3000::read_gpio, _radio_perifs[0].fp_gpio));
+                    break;
+                default:
+                    _tree->create<uint32_t>(mb_path / "gpio" / "FP0" / attr.second)
+                    .set(0)
+                    .add_coerced_subscriber(boost::bind(&gpio_atr_3000::set_gpio_attr, _radio_perifs[0].fp_gpio, attr.first, _1));
+            }
     }
-    _tree->create<uint32_t>(mb_path / "gpio" / "FP0" / "READBACK")
-        .set_publisher(boost::bind(&gpio_atr_3000::read_gpio, _radio_perifs[0].fp_gpio));
 
     ////////////////////////////////////////////////////////////////////
     // dboard eeproms but not really
@@ -873,7 +886,7 @@ void b200_impl::setup_radio(const size_t dspno)
 void b200_impl::register_loopback_self_test(wb_iface::sptr iface)
 {
     bool test_fail = false;
-    UHD_LOGGER_INFO("B200") << "Performing register loopback test... " << std::flush;
+    UHD_LOGGER_INFO("B200") << "Performing register loopback test... ";
     size_t hash = size_t(time(NULL));
     for (size_t i = 0; i < 100; i++)
     {
@@ -882,7 +895,7 @@ void b200_impl::register_loopback_self_test(wb_iface::sptr iface)
         test_fail = iface->peek32(RB32_TEST) != uint32_t(hash);
         if (test_fail) break; //exit loop on any failure
     }
-    UHD_LOGGER_INFO("B200") << ((test_fail)? "fail" : "pass") ;
+    UHD_LOGGER_INFO("B200") << "Register loopback test " << ((test_fail)? "failed" : "passed") ;
 }
 
 /***********************************************************************
@@ -981,11 +994,6 @@ void b200_impl::check_fpga_compat(void)
     }
     _tree->create<std::string>("/mboards/0/fpga_version").set(str(boost::format("%u.%u")
                 % compat_major % compat_minor));
-}
-
-void b200_impl::set_mb_eeprom(const uhd::usrp::mboard_eeprom_t &mb_eeprom)
-{
-    mb_eeprom.commit(*_iface, "B200");
 }
 
 /***********************************************************************
