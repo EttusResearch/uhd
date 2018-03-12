@@ -13,6 +13,7 @@
 #include <uhd/device3.hpp>
 #include <uhd/rfnoc/block_ctrl.hpp>
 #include <uhd/rfnoc/graph.hpp>
+#include <uhd/rfnoc/constants.hpp>
 
 using namespace uhd;
 using namespace uhd::rfnoc;
@@ -34,13 +35,16 @@ class pseudo_wb_iface_impl : public uhd::wb_iface
 
     uint64_t peek64(const wb_addr_type addr) {
         std::cout << str(boost::format("[PSEUDO] peek64 to addr: %016X") % addr) << std::endl;
-        switch (addr) {
+        switch (addr/8) {
             case SR_READBACK_REG_ID:
                 return TEST_NOC_ID;
             case SR_READBACK_REG_FIFOSIZE:
                 return 0x000000000000000B;
             case SR_READBACK_REG_USER:
                 return 0x0123456789ABCDEF;
+            case SR_READBACK_COMPAT:
+                return uhd::rfnoc::NOC_SHELL_COMPAT_MAJOR << 32 |
+                       uhd::rfnoc::NOC_SHELL_COMPAT_MINOR;
             default:
                 return 0;
         }
