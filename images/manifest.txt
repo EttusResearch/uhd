@@ -1,8 +1,8 @@
 # UHD Image Manifest File
 # Target    hash    url     SHA256
 # X300-Series
-x3xx_x310_fpga_default          fpga-1791847        x3xx/fpga-1791847/x3xx_x310_fpga_default-g1791847.zip                   b18622e48f8a7e762c07ec90a563a5925f6098fe9a905fe1689c246696678142
-x3xx_x300_fpga_default          fpga-1791847        x3xx/fpga-1791847/x3xx_x300_fpga_default-g1791847.zip                   2e184533f90abe17ce931848c8d2ca628b497399ac9bdd069f685ba9ce50aa3c
+x3xx_x310_fpga_default          fpga-f93ddb5        x3xx/fpga-f93ddb5/x3xx_x310_fpga_default-gf93ddb5.zip                   876c0d154987e6a85e85ac70e6d7090bb1e2ec915f5f22d0c37398f0dbdcff11
+x3xx_x300_fpga_default          fpga-f93ddb5        x3xx/fpga-f93ddb5/x3xx_x300_fpga_default-gf93ddb5.zip                   7d4b9477cf724251ea0e5675fd9855f0b4070993a9edb037136973b55d2bd58c
 # Example daughterboard targets (none currently exist)
 #x3xx_twinrx_cpld_default   example_target
 #dboard_ubx_cpld_default    example_target

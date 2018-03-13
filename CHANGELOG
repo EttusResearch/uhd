@@ -1,6 +1,7 @@
 Change Log for Releases
 ==============================
 
+## 003.011.000.001
 
 * N300: Added driver support (includes some refactoring of N3xx
   codebase)
@@ -8,9 +9,17 @@ Change Log for Releases
   errors, Fix printout of AD9371 version
 * uhd_images_downloader: Create unique archive names for images archives
   (now include git hashes in the filename)
+* uhd_images_downloader: Fix SHA256 check
+* utils: Add support for N3xx filesystem images to images downloader
 * UHD: Minor logging fixes
+* UHD: fix legacy compat to work with 2TX radio block
+* X300: improve lvbitx bitstream md5 read time
+* examples: Enhance benchmark_rate with more stats and timestamps for errors
+* cmake: Correctly fail when an unavailable component is requested
+* debian: Add UHDConfig.cmake to install list for libuhd-dev
 
 ## 003.011.000.000
+
 * N310: Added driver
 * UBX: Add support for CAL antenna for Rev E
 * Added the module peripheral manager (MPM) with all subcomponents (N310
