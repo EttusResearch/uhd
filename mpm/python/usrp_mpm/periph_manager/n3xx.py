@@ -797,8 +797,9 @@ class n3xx(PeriphManagerBase):
         """
         Append the device info with current IP addresses.
         """
-        device_info = self._xport_mgrs['udp'].get_xport_info() \
-                if self._device_initialized else {}
+        if not self._device_initialized:
+            return {}
+        device_info = self._xport_mgrs['udp'].get_xport_info()
         device_info.update({
             'fpga_version': "{}.{}".format(
                 *self.mboard_regs_control.get_compat_number())
