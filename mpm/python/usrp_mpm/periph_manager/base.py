@@ -552,6 +552,7 @@ class PeriphManagerBase(object):
                 f.write(data)
             update_func = \
                 getattr(self, self.updateable_components[id_str]['callback'])
+            self.log.info("Updating component `%s'", id_str)
             update_func(filepath, metadata)
         return True
 

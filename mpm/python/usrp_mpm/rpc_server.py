@@ -453,6 +453,7 @@ class MPMServer(RPCServer):
         """
         Reset the Peripheral Manager for this RPC server.
         """
+        self.log.info("Resetting peripheral manager.")
         self.periph_manager.tear_down()
         self.periph_manager = None
         self.periph_manager = self._mgr_generator()
