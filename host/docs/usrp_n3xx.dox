@@ -13,7 +13,7 @@
 	- External GPIO Connector with UHD API control
 	- External USB Connection for built-in JTAG debugger and serial console
         - Xilinx Zynq SoC with dual-core ARM Cortex A9 (Speedgrade 2) and
-          Kintex-7 FPGA
+          Kintex-7 FPGA (XC7Z100 or XC7Z035 depending on variant)
 
 - Software Capabilities:
         - Full Linux system running on the ARM core
@@ -27,29 +27,32 @@
 The N3XX series of USRPs is designed as a platform. The following USRPs are
 variants of the N3XX series:
 
-\subsection n3xx_feature_list_mg N310 (4-channel transceiver)
+\subsection n3xx_feature_list_mg N310 and N300 (4-channel and 2-channel transceiver)
 
 \image html N310isoExplode.png N310 Exploded View
 
-The N310 is a 4-channel receiver based on the AD9371 transceiver IC. It has two
-daughterboards with one AD9371 each; every daughterboard provides two RF
-channels.
+The N310 is a 4-channel transmitter/receiver based on the AD9371 transceiver IC.
+It has two daughterboards with one AD9371 each; every daughterboard provides
+two RF channels.
 
 - Supported master clock rates: 122.88 MHz, 125 MHz, 153.6 MHz
 - Tuning range: 10 MHz to 6 GHz (below 300 MHz, additional LOs and mixer stages
-  are required to shift the signal into the frequency range of the AD9371
-  transceiver)
-- 4 RX DDC chains in FPGA
-- 4 TX DUC chain in FPGA
+  are used to shift the signal into the frequency range of the AD9371)
+- Support for external LOs
+- 4 RX DDC chains in FPGA (2 for N300)
+- 4 TX DUC chain in FPGA (2 for N300)
 
+The N300 is a subset of the N310. It has 2 TX/RX channels (on a single
+daughterboard; the daughterboard itself is the same as the N310) and a smaller
+FPGA (XCZ035). Also, it does not have connectors for external LOs.
 
 \section n3xx_overview Overview
 
 \subsection n3xx_zynq The Zynq CPU/FPGA and host operating system
 
-The main CPU of the N310 is a Xilinx Zynq SoC XC7Z100. It is both a dual-core
-ARM Cortex A9 CPU and Kintex-7 FPGA on a single die. The CPU is clocked at 800
-MHz (speedgrade 2).
+The main CPU of the N310 is a Xilinx Zynq SoC XC7Z100 (exception: The N300). It
+is both a dual-core ARM Cortex A9 CPU and Kintex-7 FPGA on a single die. The
+CPU is clocked at 800 MHz (speedgrade 2).
 
 The programmable logic (PL, or FPGA) section of the SoC is responsible for
 handling all sampling data, the 10 GigE network connections, and any other
@@ -225,8 +228,9 @@ Depending on your network setup, using a `.local` domain may work:
 Of course, you can also connect to the IP address directly if you know it (or
 set it manually using the serial console).
 
-
-(TODO: Add the hostname thing here)
+Note: The device's hostname is derived from its serial number by default
+(`ni-n3xx-$SERIAL`). You can change the hostname by modifying the `/etc/hostname`
+file and rebooting.
 
 On Microsoft Windows, the connection can be established using a tool such as
 Putty, by selecting a username of root without password.
@@ -444,9 +448,6 @@ salt-minion):
 
     $ systemctl enable salt-minion
 
-TODO: Add some example
-
-
 \section n3xx_theory_of_ops Theory of Operation
 
 The N3xx-series are devices based on the MPM architecture (see
@@ -456,7 +457,116 @@ device to function as a USRP (it is enabled to run by default).
 
 A large portion of hardware-specific setup is handled by the daemon.
 
-tbw
+\section n3xx_software_dev Modifying and compiling UHD and MPM for the N3XX
+
+N3xx devices ship with all relevant software installed on the SD card. Updating
+UHD and/or MPM on the SD card is typically easiest done by updating the
+filesystem image (see Section \ref n3xx_rasm_mender). However, it is certainly
+possible to compile UHD and MPM by hand, e.g., in order to modify and try out
+changes without having to build entire filesystems in between. At Ettus R&D,
+this mode of operation is often used for rapid iteration cycles.
+
+\subsection n3xx_software_dev_mpm_native Compiling MPM natively
+
+In general, compiling natively is not a recommended way of compiling code for
+the ARM processors. However, in the case of MPM, the amount of C++ code that
+needs to be compiled is very little, and a full compile of MPM will take a few
+minutes even on the N3xx. First, you need to get a copy of the MPM source code
+onto your device. If you have an internet connection, you can use git to pull
+it directly from the Ettus repository (all commands are run on the device
+itself, inside the home directory):
+
+    $ git clone https://github.com/EttusResearch/uhd.git
+
+You can also SSHFS it from another computer:
+
+    $ mkdir uhd # Create a new, empty directory called uhd
+    $ sshfs user@yourcomputer:src/uhd uhd # This will mount ~/src/uhd from the remote machine to ~/uhd on the N3xx
+
+Now, create a build directory and use the regular cmake/make procedure to kick
+off a build. It can be advantageous (especially for slow network connections)
+to create the build directory outside of the repository directory:
+
+    $ mkdir build_mpm
+    $ cd build_mpm # You are now in /home/root/build_mpm
+    $ cmake ../uhd/mpm
+    $ make -j2 install # This will take several minutes
+
+Note that this overwrites your system MPM. You can install MPM to another
+location by specifying `-DCMAKE_INSTALL_PREFIX`, but make sure to update all of
+your paths appropriately.
+
+If you prefer cross-compiling MPM the same way as UHD, refer to the following
+sections and adapt the instructions for UHD appropriately.
+
+\subsection n3xx_software_dev_sdk Obtaining an SDK
+
+The recommended way to develop software for the N3xx is to cross-compile. By
+running the compiles on a desktop or laptop computer, you will be able to speed
+up compile times considerably (compiling UHD natively for the N3xx would take
+many hours).
+
+SDKs are distributed along with other binaries. They contain a cross-compiler,
+a cross-linker, a cross-debugger, and all the libraries available on the device
+to mirror its environment.
+
+To unpack the SDK, simply execute it after downloading it:
+
+    $ ./oecore-x86_64-cortexa9hf-neon-toolchain-nodistro.0.sh
+
+This will prompt you for an installation path.  Please ensure you have
+sufficient disk space, as each of the SDKs may require several gigabytes of
+disk space (depends on the image flavor selected).
+
+This will allow you to compile UHD as well as (depending on the image flavor)
+other software.
+
+Please note, that while several toolchains can be installed in parallel, they
+have to be installed to different directories.
+
+\subsection n3xx_software_dev_sdkusage SDK Usage
+
+Having installed the toolchain in the last step,
+in order to build software for your device open a new shell and type:
+
+    $ . $SDKPATH/environment-setup-armv7ahf-vfp-neon-oe-linux-gnueabi
+
+This will modify the PATH, CC, CXX etc, environment variables and allow you to compile software for your USRP N3xx device.
+To verify all went well you can try:
+
+    $ $CC -dumpmachine
+
+which should return 'arm-oe-linux-gnueabi'.
+
+\subsubsection n3xx_software_dev_uhd  Building UHD
+
+-# Obtain the UHD source code via git or tarball
+-# Set up your environment as described in \ref n3xx_software_dev_sdkusage
+-# Type the following in the build directory (assuming a build in host/build):
+
+        $ cmake -DCMAKE_TOOLCHAIN_FILE=../host/cmake/Toolchains/oe-sdk_cross.cmake -DCMAKE_INSTALL_PREFIX=/usr .. # Add any CMake options you desire
+        $ make # You can run make -j12 to compile on 12 processes at once
+
+Note: The UHD you are cross-compiling will not run on your host computer (the
+one where you're doing the development). Compiling UHD regularly on your host
+computer (with MPMD enabled) will allow you to talk to your N3xx.
+
+\subsubsection n3xx_software_dev_gr Building GNU Radio
+
+-# Obtain the GNU Radio source code via git or tarball
+-# Set up your environment as described in \ref n3xx_software_dev_sdkusage
+-# Use the following commands to create a build directory, configure and compile gnuradio. You only need create the build directory once.
+
+\code{.sh}
+$ mkdir build-arm
+$ cd build-arm
+$ cmake -Wno-dev -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchains/oe-sdk_cross.cmake \-DCMAKE_INSTALL_PREFIX=/usr -DENABLE_GR_VOCODER=OFF -DENABLE_GR_ATSC=OFF \
+-DENABLE_GR_DTV=OFF -DENABLE_DOXYGEN=OFF ../ # Append any CMake options you desire
+\endcode
+
+Several GNU Radio components depend on running binaries built for the build
+machine during compile. These binaries can be built and used for cross
+compiling, but this is an advanced topic.
 
 \section n3xx_mg N310-specific Features
 
