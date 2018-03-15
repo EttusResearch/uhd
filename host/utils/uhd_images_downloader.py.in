@@ -358,9 +358,14 @@ def main():
                         buffer_size=args.buffer_size,
                         print_progress=(_LOG_LEVEL <= _LOG_LEVELS.get("INFO", 3))
                     )
+                    # If the check fails, print an error and don't unzip the file
                     if downloaded_sha256 != target_sha256:
-                        log("ERROR", "Downloaded SHA256 does not match manifest for {}!".format(
-                            full_url))
+                        log("ERROR", "Downloaded SHA256 does not match manifest for {}! "
+                                     "The images from this package have not been updated."
+                            .format(full_url))
+                        continue
+                        # Note: this skips the --keep option, so we'll never keep image packages
+                        # that fail the SHA256 checksum
                     log("TRACE", "{} successfully downloaded ({} Bytes)"
                         .format(temp_path, downloaded_size))
 
