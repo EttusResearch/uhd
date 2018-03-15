@@ -358,17 +358,22 @@ def main():
                         buffer_size=args.buffer_size,
                         print_progress=(_LOG_LEVEL <= _LOG_LEVELS.get("INFO", 3))
                     )
-                    # If the check fails, print an error and don't unzip the file
-                    if downloaded_sha256 != target_sha256:
-                        log("ERROR", "Downloaded SHA256 does not match manifest for {}! "
-                                     "The images from this package have not been updated."
-                            .format(full_url))
-                        continue
-                        # Note: this skips the --keep option, so we'll never keep image packages
-                        # that fail the SHA256 checksum
                     log("TRACE", "{} successfully downloaded ({} Bytes)"
                         .format(temp_path, downloaded_size))
 
+                    # If the SHA256 in the manifest has the value '0', this is a special case and
+                    # we just skip the verification step
+                    if target_sha256 == '0':
+                        log("DEBUG", "Skipping SHA256 check for {}.".format(full_url))
+                    # If the check fails, print an error and don't unzip the file
+                    elif downloaded_sha256 != target_sha256:
+                        log("ERROR", "Downloaded SHA256 does not match manifest for {}!".format(
+                            full_url))
+                        continue
+                        # Note: this skips the --keep option, so we'll never keep image packages
+                        #       that fail the SHA256 checksum
+
+                    # Otherwise, the check has succeeded, and we can proceed
                     delete_from_inv(filename, inventory, images_dir)
                     archive_namelist = extract(temp_path, images_dir, archive_type)
                     if args.keep:
