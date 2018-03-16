@@ -18,9 +18,9 @@ FIND_PACKAGE(Git QUIET)
 #  - set UHD_VERSION_DEVEL to true for master and development branches
 ########################################################################
 SET(UHD_VERSION_MAJOR   3)
-SET(UHD_VERSION_API    11)
+SET(UHD_VERSION_API    12)
 SET(UHD_VERSION_ABI     0)
-SET(UHD_VERSION_PATCH   0)
+SET(UHD_VERSION_PATCH git)
 SET(UHD_VERSION_DEVEL TRUE)
 
 ########################################################################
