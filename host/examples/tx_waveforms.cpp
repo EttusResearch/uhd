@@ -147,8 +147,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::this_thread::sleep_for(std::chrono::seconds(1)); //allow for some setup time
 
     //for the const wave, set the wave freq for small samples per period
-    if (wave_freq == 0 and wave_type == "CONST"){
-        wave_freq = usrp->get_tx_rate()/2;
+    if (wave_freq == 0){
+        if (wave_type == "CONST"){
+            wave_freq = usrp->get_tx_rate()/2;
+        } else {
+            throw std::runtime_error("wave freq cannot be 0 with wave type other than CONST");
+        }
     }
 
     //error when the waveform is not possible to generate
