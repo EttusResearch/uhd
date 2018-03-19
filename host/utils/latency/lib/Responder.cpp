@@ -152,9 +152,6 @@ Responder::Responder( Options& opt)
         return;
     }
 
-    // set up handlers for test run
-    // uhd::msg::register_handler(&_late_handler); // capture UHD output.
-
     cerr_redirect(_ss_cerr.rdbuf());
     register_stop_signal_handler();
 }
