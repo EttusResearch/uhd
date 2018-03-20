@@ -458,6 +458,7 @@ class n3xx(PeriphManagerBase):
     description = "N300-Series Device"
     pids = {0x4242: 'n310', 0x4240: 'n300'}
     mboard_eeprom_addr = "e0005000.i2c"
+    mboard_eeprom_offset = 0
     mboard_eeprom_max_len = 256
     mboard_info = {"type": "n3xx",
                    "product": "unknown",
@@ -473,6 +474,7 @@ class n3xx(PeriphManagerBase):
         'fan': 'get_fan_sensor',
     }
     dboard_eeprom_addr = "e0004000.i2c"
+    dboard_eeprom_offset = 0
     dboard_eeprom_max_len = 64
 
     # We're on a Zynq target, so the following two come from the Zynq standard
