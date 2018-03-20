@@ -68,26 +68,28 @@ void graph_impl::connect(
             boost::dynamic_pointer_cast<uhd::rfnoc::node_ctrl_base>(dst),
             src_block_port
     );
-    if (src_block_port == uhd::rfnoc::ANY_PORT) {
-        src_block_port = actual_src_block_port;
-    } else if (src_block_port != actual_src_block_port) {
-        throw uhd::runtime_error(str(
-            boost::format("Can't connect to port %d on block %s.")
-            % src_block_port % src->unique_id()
-        ));
-    }
+    src_block_port = actual_src_block_port;
+    // if (src_block_port == uhd::rfnoc::ANY_PORT) {
+    //     src_block_port = actual_src_block_port;
+    // } else if (src_block_port != actual_src_block_port) {
+    //     throw uhd::runtime_error(str(
+    //         boost::format("Can't connect to port %d on block %s.")
+    //         % src_block_port % src->unique_id()
+    //     ));
+    // }
     size_t actual_dst_block_port = dst->connect_upstream(
             boost::dynamic_pointer_cast<uhd::rfnoc::node_ctrl_base>(src),
             dst_block_port
     );
-    if (dst_block_port == uhd::rfnoc::ANY_PORT) {
-        dst_block_port = actual_dst_block_port;
-    } else if (dst_block_port != actual_dst_block_port) {
-        throw uhd::runtime_error(str(
-            boost::format("Can't connect to port %d on block %s.")
-            % dst_block_port % dst->unique_id()
-        ));
-    }
+    dst_block_port = actual_dst_block_port;
+    // if (dst_block_port == uhd::rfnoc::ANY_PORT) {
+    //     dst_block_port = actual_dst_block_port;
+    // } else if (dst_block_port != actual_dst_block_port) {
+    //     throw uhd::runtime_error(str(
+    //         boost::format("Can't connect to port %d on block %s.")
+    //         % dst_block_port % dst->unique_id()
+    //     ));
+    // }
     src->set_downstream_port(actual_src_block_port, actual_dst_block_port);
     dst->set_upstream_port(actual_dst_block_port, actual_src_block_port);
     // At this point, ports are locked and no one else can simply connect
