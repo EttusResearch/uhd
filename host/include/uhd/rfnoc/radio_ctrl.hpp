@@ -219,6 +219,20 @@ public:
      */
     virtual std::vector<std::string> get_gpio_banks() const = 0;
 
+    /*! Set the radio RX port->channel mapping
+     *
+     * \param port
+     * \param chan RX radio channel to associate with specified port
+     */
+    virtual void set_rx_port_chan_map(const size_t port, const size_t chan) = 0;
+
+    /*! Set the radio TX port->channel mapping
+     *
+     * \param port
+     * \param chan TX radio channel to associate with specified port
+     */
+    virtual void set_tx_port_chan_map(const size_t port, const size_t chan) = 0;
+
     /*!
      * Set a GPIO attribute on a particular GPIO bank.
      * Possible attribute names:

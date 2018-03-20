@@ -45,9 +45,11 @@ radio_ctrl_impl::radio_ctrl_impl() :
 
     for (size_t i = 0; i < _num_rx_channels; i++) {
         _rx_streamer_active[i] = false;
+        _rx_port_chan_map[i] = i;
     }
     for (size_t i = 0; i < _num_tx_channels; i++) {
         _tx_streamer_active[i] = false;
+        _tx_port_chan_map[i] = i;
     }
 
     /////////////////////////////////////////////////////////////////////////
@@ -205,6 +207,16 @@ void radio_ctrl_impl::set_time_sync(const uhd::time_spec_t &time)
     _time64->set_time_sync(time);
 }
 
+void radio_ctrl_impl::set_tx_port_chan_map(const size_t port, const size_t chan)
+{
+    _tx_port_chan_map[port] = chan;
+}
+
+void radio_ctrl_impl::set_rx_port_chan_map(const size_t port, const size_t chan)
+{
+    _rx_port_chan_map[port] = chan;
+}
+
 double radio_ctrl_impl::get_rate() const
 {
     return _tick_rate;
@@ -297,13 +309,14 @@ double radio_ctrl_impl::get_rx_lo_freq(const std::string & /* name */, const siz
 void radio_ctrl_impl::issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd, const size_t chan)
 {
     boost::mutex::scoped_lock lock(_mutex);
-    UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::issue_stream_cmd() " << chan << " " << char(stream_cmd.stream_mode) ;
-    if (not _is_streamer_active(uhd::RX_DIRECTION, chan)) {
+    size_t radiochan = _rx_port_chan_map[chan];
+    UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::issue_stream_cmd() " << radiochan << " " << char(stream_cmd.stream_mode) ;
+    if (not _is_streamer_active(uhd::RX_DIRECTION, radiochan)) {
         UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::issue_stream_cmd() called on inactive channel. Skipping." ;
         return;
     }
     UHD_ASSERT_THROW(stream_cmd.num_samps <= 0x0fffffff);
-    _continuous_streaming[chan] = (stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
+    _continuous_streaming[radiochan] = (stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
 
     //setup the mode to instruction flags
     typedef boost::tuple<bool, bool, bool, bool> inst_t;
@@ -329,9 +342,9 @@ void radio_ctrl_impl::issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd, cons
 
     //issue the stream command
     const uint64_t ticks = (stream_cmd.stream_now)? 0 : stream_cmd.time_spec.to_ticks(get_rate());
-    sr_write(regs::RX_CTRL_CMD, cmd_word, chan);
-    sr_write(regs::RX_CTRL_TIME_HI, uint32_t(ticks >> 32), chan);
-    sr_write(regs::RX_CTRL_TIME_LO, uint32_t(ticks >> 0),  chan); //latches the command
+    sr_write(regs::RX_CTRL_CMD, cmd_word, radiochan);
+    sr_write(regs::RX_CTRL_TIME_HI, uint32_t(ticks >> 32), radiochan);
+    sr_write(regs::RX_CTRL_TIME_LO, uint32_t(ticks >> 0),  radiochan); //latches the command
 }
 
 std::vector<size_t> radio_ctrl_impl::get_active_rx_ports()
@@ -351,14 +364,15 @@ std::vector<size_t> radio_ctrl_impl::get_active_rx_ports()
  **********************************************************************/
 void radio_ctrl_impl::set_rx_streamer(bool active, const size_t port)
 {
-    UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::set_rx_streamer() " << port << " -> " << active ;
-    if (port > _num_rx_channels) {
+    size_t radiochan = _rx_port_chan_map[port];
+    UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::set_rx_streamer() " << radiochan << " -> " << active ;
+    if (radiochan > _num_rx_channels) {
         throw uhd::value_error(str(
-            boost::format("[%s] Can't (un)register RX streamer on port %d (invalid port)")
-            % unique_id() % port
+            boost::format("[%s] Can't (un)register RX streamer on radiochan %d (invalid port)")
+            % unique_id() % radiochan
         ));
     }
-    _rx_streamer_active[port] = active;
+    _rx_streamer_active[radiochan] = active;
     if (not check_radio_config()) {
         throw std::runtime_error(str(
             boost::format("[%s]: Invalid radio configuration.")
@@ -369,14 +383,15 @@ void radio_ctrl_impl::set_rx_streamer(bool active, const size_t port)
 
 void radio_ctrl_impl::set_tx_streamer(bool active, const size_t port)
 {
-    UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::set_tx_streamer() " << port << " -> " << active ;
-    if (port > _num_tx_channels) {
+    size_t radiochan = _tx_port_chan_map[port];
+    UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::set_tx_streamer() " << radiochan << " -> " << active ;
+    if (radiochan > _num_tx_channels) {
         throw uhd::value_error(str(
-            boost::format("[%s] Can't (un)register TX streamer on port %d (invalid port)")
-            % unique_id() % port
+            boost::format("[%s] Can't (un)register TX streamer on radiochan %d (invalid port)")
+            % unique_id() % radiochan
         ));
     }
-    _tx_streamer_active[port] = active;
+    _tx_streamer_active[radiochan] = active;
     if (not check_radio_config()) {
         throw std::runtime_error(str(
             boost::format("[%s]: Invalid radio configuration.")
@@ -468,4 +483,25 @@ void radio_ctrl_impl::set_gpio_attr(
 uint32_t radio_ctrl_impl::get_gpio_attr(const std::string &, const std::string &)
 {
     throw uhd::not_implemented_error("get_gpio_attr was not defined for this radio");
+}
+
+/***********************************************************************
+ * Hooks
+ **********************************************************************/
+size_t radio_ctrl_impl::_request_output_port(
+        const size_t suggested_port,
+        const uhd::device_addr_t &args
+) const {
+    // Connect up to requested channel via port->chan map
+    size_t radiochan = _rx_port_chan_map.at(suggested_port);
+    return source_block_ctrl_base::_request_output_port(radiochan, args);
+}
+
+size_t radio_ctrl_impl::_request_input_port(
+        const size_t suggested_port,
+        const uhd::device_addr_t &args
+) const {
+    // Connect up to requested channel via port->chan map
+    size_t radiochan = _tx_port_chan_map.at(suggested_port);
+    return sink_block_ctrl_base::_request_input_port(radiochan, args);
 }
