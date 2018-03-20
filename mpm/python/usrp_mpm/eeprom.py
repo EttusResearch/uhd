@@ -88,6 +88,7 @@ class DboardEEPROM(object):
 
 def read_eeprom(
         nvmem_path,
+        offset,
         eeprom_header_format,
         eeprom_header_keys,
         expected_magic,
@@ -130,7 +131,7 @@ def read_eeprom(
     # Dawaj, dawaj
     max_size = max_size or -1
     with open(nvmem_path, "rb") as nvmem_file:
-        data = nvmem_file.read(max_size)
+        data = nvmem_file.read(max_size)[offset:]
     eeprom_magic, eeprom_version = EEPROM_DEFAULT_HEADER.unpack_from(data)
     if eeprom_magic != expected_magic:
         raise RuntimeError(
