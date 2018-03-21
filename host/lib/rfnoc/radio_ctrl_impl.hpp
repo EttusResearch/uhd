@@ -105,6 +105,9 @@ public:
     );
     virtual uint32_t get_gpio_attr(const std::string &bank, const std::string &attr);
 
+    virtual void set_tx_port_chan_map(const size_t port, const size_t chan);
+    virtual void set_rx_port_chan_map(const size_t port, const size_t chan);
+
     /***********************************************************************
      * Block control API calls
      **********************************************************************/
@@ -123,6 +126,23 @@ public:
 
 protected: // TODO see what's protected and what's private
     void _register_loopback_self_test(size_t chan);
+
+    /*! Override _request_output_port to return the
+     *  specified RX port->chan map
+     */
+    virtual size_t _request_output_port(
+            const size_t suggested_port,
+            const uhd::device_addr_t &args
+    ) const;
+
+    /*! Override _request_input_port to return the
+     *  specified TX port->chan map
+     */
+    virtual size_t _request_input_port(
+            const size_t suggested_port,
+            const uhd::device_addr_t &args
+    ) const;
+
 
     /***********************************************************************
      * Registers
@@ -223,6 +243,8 @@ private:
 
     // Cached values
     double _tick_rate;
+    std::map<size_t, size_t> _tx_port_chan_map;
+    std::map<size_t, size_t> _rx_port_chan_map;
     std::map<size_t, std::string> _tx_antenna;
     std::map<size_t, std::string> _rx_antenna;
     std::map<size_t, double> _tx_freq;
