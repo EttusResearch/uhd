@@ -56,6 +56,13 @@ public:
 
     virtual void set_rx_digital_fine_gain(double gain) = 0;
 
+    /*! Return the internal interpolation on the TX side. This is the factor
+     *  between the rate of incoming samples and rate at which the DAC is
+     *  actually clocked. Values > 1 will enable features, such as internal
+     *  modulation.
+     */
+    virtual size_t get_tx_interpolation() const = 0;
+
 };
 
 #endif /* INCLUDED_CODEC_CTRL_HPP */
