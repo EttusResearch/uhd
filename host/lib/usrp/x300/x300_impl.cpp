@@ -937,29 +937,41 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     ////////////////////////////////////////////////////////////////////
     _tree->create<std::string>(mb_path / "time_source" / "value")
         .set("internal")
-        .add_coerced_subscriber(boost::bind(&x300_impl::update_time_source, this, boost::ref(mb), _1));
-    static const std::vector<std::string> time_sources = boost::assign::list_of("internal")("external")("gpsdo");
-    _tree->create<std::vector<std::string> >(mb_path / "time_source" / "options").set(time_sources);
+        .add_coerced_subscriber([this, &mb](const std::string& time_source){
+            this->update_time_source(mb, time_source);
+        })
+    ;
+    static const std::vector<std::string> time_sources =
+        {"internal", "external", "gpsdo"};
+    _tree->create<std::vector<std::string>>(mb_path / "time_source" / "options")
+        .set(time_sources);
 
     //setup the time output, default to ON
     _tree->create<bool>(mb_path / "time_source" / "output")
-        .add_coerced_subscriber(boost::bind(&x300_impl::set_time_source_out, this, boost::ref(mb), _1))
-        .set(true);
+        .add_coerced_subscriber([this, &mb](const bool time_output){
+            this->set_time_source_out(mb, time_output);
+        })
+        .set(true)
+    ;
 
     ////////////////////////////////////////////////////////////////////
     // setup clock sources and properties
     ////////////////////////////////////////////////////////////////////
     _tree->create<std::string>(mb_path / "clock_source" / "value")
         .set(X300_DEFAULT_CLOCK_SOURCE)
-        .add_coerced_subscriber(boost::bind(&x300_impl::update_clock_source, this, boost::ref(mb), _1));
-
-    static const std::vector<std::string> clock_source_options = boost::assign::list_of("internal")("external")("gpsdo");
-    _tree->create<std::vector<std::string> >(mb_path / "clock_source" / "options").set(clock_source_options);
+        .add_coerced_subscriber([this, &mb](const std::string& clock_source){
+            this->update_clock_source(mb, clock_source);
+        })
+    ;
+    static const std::vector<std::string> clock_source_options =
+        {"internal", "external", "gpsdo"};
+    _tree->create<std::vector<std::string>>(mb_path / "clock_source" / "options")
+        .set(clock_source_options);
 
     //setup external reference options. default to 10 MHz input reference
     _tree->create<std::string>(mb_path / "clock_source" / "external");
-    static const std::vector<double> external_freq_options = boost::assign::list_of(10e6)(30.72e6)(200e6);
-    _tree->create<std::vector<double> >(mb_path / "clock_source" / "external" / "freq" / "options")
+    static const std::vector<double> external_freq_options = {10e6, 30.72e6, 200e6};
+    _tree->create<std::vector<double>>(mb_path / "clock_source" / "external" / "freq" / "options")
         .set(external_freq_options);
     _tree->create<double>(mb_path / "clock_source" / "external" / "value")
         .set(mb.clock->get_sysref_clock_rate());
@@ -967,7 +979,10 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
 
     //setup the clock output, default to ON
     _tree->create<bool>(mb_path / "clock_source" / "output")
-        .add_coerced_subscriber(boost::bind(&x300_clock_ctrl::set_ref_out, mb.clock, _1));
+        .add_coerced_subscriber([&mb](const bool clock_output){
+            mb.clock->set_ref_out(clock_output);
+        })
+    ;
 
     // Initialize tick rate (must be done before setting time)
     // Note: The master tick rate can't be changed at runtime!
