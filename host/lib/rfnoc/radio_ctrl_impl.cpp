@@ -360,7 +360,18 @@ void radio_ctrl_impl::issue_stream_cmd(
                "channel. Skipping.";
         return;
     }
-    UHD_ASSERT_THROW(stream_cmd.num_samps <= 0x0fffffff);
+    constexpr size_t max_num_samps = 0x0fffffff;
+    if (stream_cmd.num_samps > max_num_samps) {
+        UHD_LOG_ERROR("RFNOC RADIO",
+            "Requesting too many samples in a single burst! "
+            "Requested " + std::to_string(stream_cmd.num_samps) + ", maximum "
+            "is " + std::to_string(max_num_samps) + ".");
+        UHD_LOG_INFO("RFNOC RADIO",
+            "Note that a decimation block will increase the number of samples "
+            "per burst by the decimation factor. Your application may have "
+            "requested fewer samples.");
+        throw uhd::value_error("Requested too many samples in a single burst.");
+    }
     _continuous_streaming[chan] =
         (stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
 
