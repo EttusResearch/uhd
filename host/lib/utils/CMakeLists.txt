@@ -215,12 +215,6 @@ SET_SOURCE_FILES_PROPERTIES(
     "UHD_PKG_PATH=\"${UHD_PKG_PATH}\";UHD_LIB_DIR=\"${UHD_LIB_DIR}\""
 )
 
-SET_SOURCE_FILES_PROPERTIES(
-    ${CMAKE_CURRENT_SOURCE_DIR}/prefs.cpp
-    PROPERTIES COMPILE_DEFINITIONS
-    "UHD_SYS_CONF_FILE=\"${UHD_SYS_CONF_FILE}\";UHD_USER_CONF_FILE=\"${UHD_USER_CONF_FILE}\""
-)
-
 ########################################################################
 # Append sources
 ########################################################################
