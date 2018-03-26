@@ -17,3 +17,7 @@
 #ifndef UHD_VERSION
 #cmakedefine UHD_VERSION @UHD_VERSION_ADDED@
 #endif
+
+/* Config file path macros */
+#cmakedefine UHD_SYS_CONF_FILE "${UHD_SYS_CONF_FILE}"
+#cmakedefine UHD_USER_CONF_FILE "${UHD_USER_CONF_FILE}"
