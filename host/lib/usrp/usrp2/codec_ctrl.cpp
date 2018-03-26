@@ -179,6 +179,11 @@ public:
         }
     }
 
+    size_t get_tx_interpolation() const
+    {
+        return 4;
+    }
+
 private:
     ad9777_regs_t _ad9777_regs;
     ads62p44_regs_t _ads62p44_regs;
