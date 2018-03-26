@@ -23,6 +23,7 @@
 #include <uhd/transport/nirio/niusrprio_session.h>
 #include <uhd/utils/platform.hpp>
 #include <uhd/types/sid.hpp>
+#include <uhd/utils/math.hpp>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
@@ -968,11 +969,28 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     _tree->create<bool>(mb_path / "clock_source" / "output")
         .add_coerced_subscriber(boost::bind(&x300_clock_ctrl::set_ref_out, mb.clock, _1));
 
-    //initialize tick rate (must be done before setting time)
+    // Initialize tick rate (must be done before setting time)
+    // Note: The master tick rate can't be changed at runtime!
+    const double master_clock_rate = mb.clock->get_master_clock_rate();
     _tree->create<double>(mb_path / "tick_rate")
-        .add_coerced_subscriber(boost::bind(&device3_impl::update_tx_streamers, this, _1))
-        .add_coerced_subscriber(boost::bind(&device3_impl::update_rx_streamers, this, _1))
-        .set(mb.clock->get_master_clock_rate())
+        .set_coercer([master_clock_rate](const double rate){
+            // The contract of multi_usrp::set_master_clock_rate() is to coerce
+            // and not throw, so we'll follow that behaviour here.
+            if (!uhd::math::frequencies_are_equal(rate, master_clock_rate)) {
+                UHD_LOGGER_WARNING("X300") <<
+                    "Cannot update master clock rate! X300 Series does not "
+                    "allow changing the clock rate during runtime."
+                ;
+            }
+            return master_clock_rate;
+        })
+        .add_coerced_subscriber([this](const double rate){
+            this->update_tx_streamers(rate);
+        })
+        .add_coerced_subscriber([this](const double rate){
+            this->update_rx_streamers(rate);
+        })
+        .set(master_clock_rate)
     ;
 
     ////////////////////////////////////////////////////////////////////
