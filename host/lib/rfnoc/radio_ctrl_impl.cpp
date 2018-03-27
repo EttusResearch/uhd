@@ -368,7 +368,8 @@ void radio_ctrl_impl::issue_stream_cmd(
             "is " + std::to_string(max_num_samps) + ".");
         UHD_LOG_INFO("RFNOC RADIO",
             "Note that a decimation block will increase the number of samples "
-            "per burst. Your application may have requested fewer samples.");
+            "per burst by the decimation factor. Your application may have "
+            "requested fewer samples.");
         throw uhd::value_error("Requested too many samples in a single burst.");
     }
     _continuous_streaming[chan] =
