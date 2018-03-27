@@ -552,6 +552,11 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         UHD_RX_STREAMER_LOG() << std::hex << "data_sid = " << xport.send_sid << std::dec << " actual recv_buff_size = " << xport.recv_buff_size ;
 
         // Configure the block
+        // Note: We need to set_destination() after writing to SR_CLEAR_TX_FC.
+        // See noc_shell.v, in the section called Stream Source for details.
+        // Setting SR_CLEAR_TX_FC will actually also clear the destination and
+        // other settings.
+        blk_ctrl->sr_write(uhd::rfnoc::SR_CLEAR_TX_FC, 0xc1ea12, block_port);
         blk_ctrl->set_destination(xport.send_sid.get_src(), block_port);
 
         blk_ctrl->sr_write(uhd::rfnoc::SR_RESP_OUT_DST_SID, xport.send_sid.get_src(), block_port);
