@@ -465,6 +465,23 @@ public:
         return _tree->access<double>(mb_root(mboard) / "tick_rate").get();
     }
 
+    meta_range_t get_master_clock_rate_range(const size_t mboard)
+    {
+        if (_tree->exists(mb_root(mboard) / "tick_rate/range")) {
+            return _tree->access<meta_range_t>(
+                mb_root(mboard) / "tick_rate/range"
+            ).get();
+        }
+        // The USRP may not have a range defined, in which case we create a
+        // fake range with a single value:
+        const double tick_rate = get_master_clock_rate(mboard);
+        return meta_range_t(
+            tick_rate,
+            tick_rate,
+            0
+        );
+    }
+
     std::string get_pp_string(void){
         std::string buff = str(boost::format(
             "%s USRP:\n"

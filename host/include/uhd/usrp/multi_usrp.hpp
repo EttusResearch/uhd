@@ -181,6 +181,26 @@ public:
      */
     virtual double get_master_clock_rate(size_t mboard = 0) = 0;
 
+    /*! Return the range within which the master clock rate can be set for this
+     *  session
+     *
+     * Note that many USRPs do not actually support setting the master clock
+     * rate during a running session. In this case, the range will consist of
+     * a single value, which is the current master clock rate.
+     * Values from this range are valid/sensible inputs to
+     * set_master_clock_rate(), although keep in mind that the latter coerces.
+     *
+     * Examples:
+     * - The B200 series' master clock rate can be changed at runtime and
+     *   will report the true range of supported values
+     * - The X300 series has _two_ discrete options for the clock rate, but will
+     *   always return the clock rate which the USRP was initialized to because
+     *   it cannot be changed at runtime
+     * - The N200 series does not have a configurable clock rate, and will
+     *   always return the same single value as a range
+     */
+    virtual meta_range_t get_master_clock_rate_range(const size_t mboard = 0) = 0;
+
     /*!
      * Get a printable summary for this USRP configuration.
      * \return a printable string
