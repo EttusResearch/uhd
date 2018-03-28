@@ -119,8 +119,6 @@ Unlike the X300 or N200 series, there is no assembly of daughterboards required.
 Members of the N3XX product family, such as the N310, ship with daughterboards
 pre-installed.
 
-TODO: Sync with getting-started guide
-
 Checklist:
 - Connect power and network
 - Read security settings
@@ -129,24 +127,40 @@ Checklist:
 
 \subsection n3xx_getting_started_fs_update Updating the file system
 
-Before doing any major work with a newly acquired USRP N3XX, it is recommended
-to update the file system to the latest version. By default, the N3xx supports
-two methods of updating:
+Before doing any major work with a newly acquired USRP N300/N310, it is
+recommended to update the file system. Updating the filesystem can be
+accomplished directly on the N300/N310 by using Mender or externally by
+manually writing an image onto a micro SD card and inserting it.  While 
+manual updating is faster, Mender requires no direct physical access to the
+device.  For details on using Mender, see Section \ref n3xx_rasm_mender .
 
-1. Directly writing the latest SD card image. This requires physical access to
-   the device. To do this, remove the SD card from the device, and plug it into
-   another computer with an SD card reader. Download the latest SD card image
-   file (it typically has a `.sdimg` file ending) and run the following command:
+Manual updating is simply loading an image on the micro SD card.  The first step
+in that process is to obtain an image.
 
-    $ sudo dd if=$yourimage.sdimg of=/dev/$yoursdcard bs=1M
+To obtain the default micro SD card image for a specific version of UHD, install
+that version of UHD (3.11.0.1 or later) on a host system with Internet access and run:
 
-   The `$yoursdcard` device node depends on your operating system and which
-   other devices are plugged in. Typical values are `sdb` or `mmcblk0`.
+    $ uhd_images_downloader -t n3xx_common_sdimg_default
 
-2. Using Mender to update. For more details on this procedure, see Section
-   \ref n3xx_rasm_mender . This is possible without removing the SD card.
-   Updates will take a bit longer though.
+   The image will be downloaded to
+   `<UHD_INSTALL_DIR>/share/uhd/images/usrp_n3xx_fs.sdimg`,
+   where `<UHD_INSTALL_DIR>` is the UHD installation directory.
 
+To load an image onto the micro SD card, connect the card to the host and run:
+
+    $ sudo dd if=<YOUR_IMAGE> of=/dev/<YOUR_SD_CARD> bs=1M
+
+   The `<YOUR_IMAGE>` is the path to the micro SD card image
+   (i.e.`<UHD_INSTALL_DIR>/share/uhd/images/usrp_n3xx_fs.sdimg`).
+
+   The `<YOUR_SD_CARD>` device node depends on your operating system and which
+   other devices are plugged in. Typical values are `sdb` or `mmcblk0`.<br>
+   CAUTION:  Operating on the wrong device can cause damage to that device.
+
+The micro SD card used can be the original SD card shipped with the device or
+another one that is at least 16 GB in size.
+
+Insert the updated micro SD card and power on the device.
 
 \subsection n3xx_getting_started_serial Serial connection
 
