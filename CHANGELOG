@@ -1,6 +1,22 @@
 Change Log for Releases
 ==============================
 
+## 003.011.000.001
+* N300: Added driver support (includes some refactoring of N3xx
+  codebase)
+* MPM: Fix PyLint warnings, Fix error handling for TCA communication
+  errors, Fix printout of AD9371 version
+* uhd_images_downloader: Create unique archive names for images archives
+  (now include git hashes in the filename)
+* uhd_images_downloader: Fix SHA256 check
+* utils: Add support for N3xx filesystem images to images downloader
+* UHD: Minor logging fixes
+* UHD: fix legacy compat to work with 2TX radio block
+* X300: improve lvbitx bitstream md5 read time
+* examples: Enhance benchmark_rate with more stats and timestamps for errors
+* cmake: Correctly fail when an unavailable component is requested
+* debian: Add UHDConfig.cmake to install list for libuhd-dev
+
 ## 003.011.000.000
 * N310: Added driver
 * UBX: Add support for CAL antenna for Rev E
@@ -21,9 +37,7 @@ Change Log for Releases
 * This release includes all bugfixes and features from previous releases, in
   particular, the 3.10.* release cycle
 
-
 ## 003.010.003.000
-
 * X300
 ** Fix max rate calculation for 1 GbE
 ** Fix for DAC synchronization errors (unexpected FIFO depth)
@@ -56,9 +70,7 @@ Change Log for Releases
 ** Fix build with Boost 1.66
 ** Add EEPROM info to dboard_base class so daughterboard code can access all EEPROM info
 
-
 ## 003.010.002.000
-
 * multi_usrp: Fixed get_normalized_tx_gain.
 * E300: Fix for streamer recreation issue. Reduced minimum timeout, fixed
         potential race condition.
@@ -88,100 +100,98 @@ Change Log for Releases
          names.
 
 ## 003.010.001.001
-
-- Docs: The protocol for Gen-3 devices is now consistently referred to as CHDR.
-- X300: Fixed EEPROM corruption bug (happened when two processes would access
+* Docs: The protocol for Gen-3 devices is now consistently referred to as CHDR.
+* X300: Fixed EEPROM corruption bug (happened when two processes would access
   find routines on the same device at the same time). Improved initialization
   time. CE clock is now 214 MHz. Fixed channel list generation. Find routines
   now more lenient in case one devices fails (others can still be found then).
   Improve PCIe behaviour. Fix timed commands for non-TwinRX dboards. Improve
   AXI Interconnect (faster, improved build timing).
-- N230: Use second_addr (like X300).
-- C API: Added UHD_VERSION macro. Fixed online rate change.
-- Utils: Minor fixes to uhd_images_downloader.
-- Build/CMake: Fixed some Py3k build issues. Fixed many compiler warnings. Allow
+* N230: Use second_addr (like X300).
+* C API: Added UHD_VERSION macro. Fixed online rate change.
+* Utils: Minor fixes to uhd_images_downloader.
+* Build/CMake: Fixed some Py3k build issues. Fixed many compiler warnings. Allow
   to specify package names. 
-- RFNoC: Fixed sampling rate mismatch error. Noc-Shell uses a non-cascaded 2-clk
+* RFNoC: Fixed sampling rate mismatch error. Noc-Shell uses a non-cascaded 2-clk
   FIFO. Increase default FIFO sizes on DUC and DDC blocks.
-- UBX: Force on RX driver to eliminate transient. 
-- Transport code: Fixed memory leak.
-- FPGA repository: Merged usrp3_rfnoc and usrp3 directories again. Cleaned up
+* UBX: Force on RX driver to eliminate transient. 
+* Transport code: Fixed memory leak.
+* FPGA repository: Merged usrp3_rfnoc and usrp3 directories again. Cleaned up
   superfluous files. Clean separation between Gen-3 and other devices in usrp3.
 
 
 ## 003.010.001.000
-
-- Fixed multiple compiler warnings
-- Multiple documentation fixes
-- X300: RX strobe lines are always in sync on device initialization. DB EEPROM
+* Fixed multiple compiler warnings
+* Multiple documentation fixes
+* X300: RX strobe lines are always in sync on device initialization. DB EEPROM
   now properly written. ignore-cal-file no longer ignored. Fixed case where too
   large recv_frame_size settings could break things. Reduced ZPU clock speed
   (helps FPGA timing). Added area constraints for AXI interconnect. Improved
   halfband scaling in rx_frontend. Improved PCIe streaming reliability
-- B2xx: Clear sequence numbers in idle state.
-- RFNoC: Nodes disconnect on destruction. Fixed setting of correct bits on
+* B2xx: Clear sequence numbers in idle state.
+* RFNoC: Nodes disconnect on destruction. Fixed setting of correct bits on
   sr_error_policy. DDC does no longer clear timed commands on EOB. DUC fixed
   timed CORDIC tuning. Enable Noc-Shell response FIFOs (fixes simultaneous
   commands on multiple channels).
-- UBX: Changed default performance parameters
-- TwinRX: LEDs properly light up depending on channels. Fixed issue of multiple
+* UBX: Changed default performance parameters
+* TwinRX: LEDs properly light up depending on channels. Fixed issue of multiple
   (redundant) writes. Simplified API steps for phase synchronization
-- XCVR: Query dboard clock instead of DAC clock. Helps in X3x0s.
-- GPS: Fixed message for case when no GPS is present. Fixed multiple GPS-related
+* XCVR: Query dboard clock instead of DAC clock. Helps in X3x0s.
+* GPS: Fixed message for case when no GPS is present. Fixed multiple GPS-related
   issues.
-- Converters: Fixed floating point rounding error in tests.
-- Utils: uhd_usrp_probe can now query vectors
-- Fixed issue that prevented soft_regs working on 32-bit systems
-- Tools: Merged dissectors into common directory.
-- CMake: -Og is the default now for gcc-based Debug builds.
+* Converters: Fixed floating point rounding error in tests.
+* Utils: uhd_usrp_probe can now query vectors
+* Fixed issue that prevented soft_regs working on 32-bit systems
+* Tools: Merged dissectors into common directory.
+* CMake: -Og is the default now for gcc-based Debug builds.
 
 ## 003.010.000.000
-- Changed version string to quadruplets (Major.API.ABI.Patch)
-- Minimum dependencies bumped for gcc, Boost, CMake, clang and Python.
-- TwinRX: Added support. Includes LO API for multi_usrp.
-- N230: Added support
-- Added expert framework
-- X300: Completely restructured to use RFNoC
-- X300: FPGA builds include git hash, dual 10GigE receive is now supported
+* Changed version string to quadruplets (Major.API.ABI.Patch)
+* Minimum dependencies bumped for gcc, Boost, CMake, clang and Python.
+* TwinRX: Added support. Includes LO API for multi_usrp.
+* N230: Added support
+* Added expert framework
+* X300: Completely restructured to use RFNoC
+* X300: FPGA builds include git hash, dual 10GigE receive is now supported
   (allows 2x200 Msps receive over 2x10GigE connections), DMA FIFO (over DRAM)
   now part of builds, added Aurora support
-- WBX: Fixed bug that prevented LO locking with 50 MHz ref clock
-- pkg-config: Added boost_system
-- Utils: uhd_usrp_probe can query sensors, query_gpsdo_sensors: minor fixes,
+* WBX: Fixed bug that prevented LO locking with 50 MHz ref clock
+* pkg-config: Added boost_system
+* Utils: uhd_usrp_probe can query sensors, query_gpsdo_sensors: minor fixes,
   and cleanup
-- Examples: Bugfixes in tx_waveforms, benchmark_rate measures timeouts,
-- USB subsystem: Cleanups and minor bugfixes
-- Added devtest infrastructure
-- Converters: Added s8 and s16 data types
-- Added more aggressive optimization strategies for FPGA builds
-- Xilinx IP tool upgrade scripts cleaned up
+* Examples: Bugfixes in tx_waveforms, benchmark_rate measures timeouts,
+* USB subsystem: Cleanups and minor bugfixes
+* Added devtest infrastructure
+* Converters: Added s8 and s16 data types
+* Added more aggressive optimization strategies for FPGA builds
+* Xilinx IP tool upgrade scripts cleaned up
 
 ## 003.009.005
-- B200: Update DSPs after changing tick rate
-- X300: Added option to disable ADC self test, prevent DAC from
+* B200: Update DSPs after changing tick rate
+* X300: Added option to disable ADC self test, prevent DAC from
   underrunning
-- UBX: Fixed noise issues, reduced power consumption/heat, added codes for
+* UBX: Fixed noise issues, reduced power consumption/heat, added codes for
   upcoming board revisions, force RX LNAs on (reduces rx settling time)
-- WBX: Fixed rev2 and rev3 boards on X300
-- Utils/Examples: Cleaned up query_gpsdo_sensors, test_dboard_coercion,
-- Manual: Minor fixes and updates
-- CMake: Fix lib64 detection, better platform detection, Doxygen may use shorter
+* WBX: Fixed rev2 and rev3 boards on X300
+* Utils/Examples: Cleaned up query_gpsdo_sensors, test_dboard_coercion,
+* Manual: Minor fixes and updates
+* CMake: Fix lib64 detection, better platform detection, Doxygen may use shorter
   filenames
-- Octoclock: GPSDO-related fixes, sequence number consistency fixes, UART
+* Octoclock: GPSDO-related fixes, sequence number consistency fixes, UART
   fixes (off-by-one errors). uhd_usrp_probe will pick up an OC now,
   added Wireshark dissector for OC packets
 
 ## 003.009.004
-- GPIO control: Fix address mismatch for RX and full duplex.
+* GPIO control: Fix address mismatch for RX and full duplex.
   This fixes full-duplex mode for most devices.
-- B200: Fixed auto rate selection (can now select 61.44 Msps)
-- UBX: Fix member declaration order which could cause
+* B200: Fixed auto rate selection (can now select 61.44 Msps)
+* UBX: Fix member declaration order which could cause
   segfaults for debug builds
-- Manual/Docs: Numerous fixes, use dot for graphs in manual
-- Utils: multiple fixes for query_gpsdo_sensors, fixed floating point
+* Manual/Docs: Numerous fixes, use dot for graphs in manual
+* Utils: multiple fixes for query_gpsdo_sensors, fixed floating point
   comparison
-- Windows: Include registry file in installation
-- Converters: Improve NEON converters
+* Windows: Include registry file in installation
+* Converters: Improve NEON converters
 
 ## 003.009.003
 * UBX: Fixed a phase synchronization issue on the sub-1GHz band
@@ -438,7 +448,6 @@ Change Log for Releases
 * Introduced support for the USRP B200 / B210
 
 ## 003.005.003
-
 * E110:
 ** Fix FPGA Makefile build typo
 * UHD:
@@ -446,7 +455,6 @@ Change Log for Releases
 ** Multichan streamer CPU utilization
 
 ## 003.005.002
-
 * B100:
 ** Fix get send buffer timeout
 * E1x0:
@@ -454,9 +462,7 @@ Change Log for Releases
 * USRP1:
 ** Restore broken EEPROM writing
 
-
 ## 003.005.001
-
 * Misc:
 ** Fixes to images downloader
 ** Fixes to C++ net burner
@@ -466,7 +472,6 @@ Change Log for Releases
 * Changes from 3.4.5
 
 ## 003.005.000
-
 * B100:
 ** Added timed commands feature
 ** Incremented FPGA compat number to 11.1
@@ -490,7 +495,6 @@ Change Log for Releases
 ** Added automatic images fetcher application
 
 ## 003.004.005
-
 * XCVR2450:
 ** Added XCVR2450 rev2 support
 * WBX:
@@ -500,7 +504,6 @@ Change Log for Releases
 ** stream command enums easy on SWIG
 
 ## 003.004.004
-
 * Gen2
 ** Fix RX and TX DSP scalar adjustments
 * B100/E1x0
@@ -508,7 +511,6 @@ Change Log for Releases
 ** Incremented FPGA compat number to 9.4
 
 ## 003.004.003
-
 * USRP2/N2x0:
 ** Net burner parser fix (windows)
 * XCVR2450:
@@ -522,7 +524,6 @@ Change Log for Releases
 ** Revert 1st nyquist zone DAC calculation
 
 ## 003.004.002
-
 * USRP2/N2x0:
 ** Card and net burner language fixes
 ** Net burner python v3 code fix
@@ -540,7 +541,6 @@ Change Log for Releases
 ** Fix undefined GCC float conversion behaviour for sc8
 
 ## 003.004.001
-
 * USRP2/N2x0:
 ** Filter out invalid broadcast replies
 ** Incremented FPGA compat number to 9.1
@@ -559,7 +559,6 @@ Change Log for Releases
 ** Fixed network relay example compilation
 
 ## 003.004.000
-
 * USRP2/N2x0:
 ** 50 Msps RX/TX with sc8 mode over the wire
 * B100:
@@ -580,7 +579,6 @@ Change Log for Releases
 ** Added API calls for IQ balance correction
 
 ## Release 003.003.002
-
 * N2x0:
 ** Fixed TX daughterboard clocking mode
 * B100:
@@ -594,14 +592,12 @@ Change Log for Releases
 ** Minor fixes for compiling on FreeBSD
 
 ## Release 003.003.001
-
 * B100/E1x0:
 ** Fixed VCO bounds checking on flexible clocking
 * B100:
 ** Fixed discovery throwing when device claimed
 
 ## Release 003.003.000
-
 * USRP2/N2x0:
 ** Incremented firmware image compat number to 11.0
 ** Re-implement internal GPSDO UART control
@@ -621,7 +617,6 @@ Change Log for Releases
 ** Fix DSP rate selection clipping for very low rates
 
 ## Release 003.002.004
-
 * USRP2/N2x0:
 ** Resize all socket buffers (multi-channel)
 * N2x0:
@@ -638,7 +633,6 @@ Change Log for Releases
 ** Fix error using PPS_NEG in clock config
 
 ## Release 003.002.003
-
 * USRP2/N2x0:
 ** Fix uninitialized variable for multi-board case
 ** Fix deconstructor throwing on device disconnect
@@ -654,7 +648,6 @@ Change Log for Releases
 ** Preserve bands when calculating overall tune range
 
 ## Release 003.002.002
-
 * USRP2/N2x0:
 ** Always resize socket send buffer to SRAM size
 ** Incremented FPGA image compat number to 7.2
@@ -676,13 +669,11 @@ Change Log for Releases
 ** Perform version check on liborc
 
 ## Release 003.002.001
-
 * USRP2/N-Series:
 ** Firmware fix to shutoff streaming when socket unreachable
 ** Incremented firmware image compat number to 10.3
 
 ## Release 003.002.000
-
 * USRP2/N-Series:
 ** Incremented FPGA image compat number to 7.1
 ** Incremented firmware image compat number to 10.2
@@ -713,14 +704,12 @@ Change Log for Releases
 ** Calibration support in gen2 FPGAs
 
 ## Release 003.001.002
-
 * N-Series:
 ** Fix UART communication for GPSDO
 * XCVR2450:
 ** Fix for descontructor throwing on hardware disconnect
 
 ## Release 003.001.001
-
 * USRP1:
 ** Fixed lock up in logging facility under MSVC
 * USRP2/N-Series:
@@ -730,7 +719,6 @@ Change Log for Releases
 ** Keep mixers on between bursts to maintain phase offsets
 
 ## Release 003.001.000
-
 * USRP2/N-Series:
 ** Incremented FPGA compat number to 6
 ** Incremented firmware compat number to 10
@@ -764,7 +752,6 @@ Change Log for Releases
 ** Fixed race condition in device discovery/factory
 
 ## Release 003.000.001
-
 * RFX400: fix for transmit capability
 * USRP1: fix for axillary ADC read
 * Windows: statically link libusb
@@ -775,5 +762,5 @@ Change Log for Releases
 * build: include FPGA and firmware images in installers
 
 ## Release 003.000.000
-
 Initial (formal) release, no changes to mention.
+
