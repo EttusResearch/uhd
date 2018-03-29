@@ -120,8 +120,9 @@ void radio_ctrl_impl::_register_loopback_self_test(size_t chan)
             return; // exit on any failure
         }
     }
-    UHD_LOGGER_INFO("RFNOC RADIO") << "Register loopback test passed";
+    UHD_LOG_DEBUG(unique_id(), "Register loopback test passed");
 }
+
 
 /****************************************************************************
  * API calls
