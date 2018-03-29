@@ -8,6 +8,7 @@ Implemented RPC Servers
 """
 
 from __future__ import print_function
+import traceback
 import copy
 from random import choice
 from string import ascii_letters, digits
@@ -181,8 +182,8 @@ class MPMServer(RPCServer):
                 return function(*args)
             except Exception as ex:
                 self.log.error(
-                    "Uncaught exception in method %s: %s",
-                    command, str(ex)
+                    "Uncaught exception in method %s :%s \n %s ",
+                    command, str(ex), traceback.format_exc()
                 )
                 self._last_error = str(ex)
                 raise
@@ -206,8 +207,8 @@ class MPMServer(RPCServer):
                 return function(*args)
             except Exception as ex:
                 self.log.error(
-                    "Uncaught exception in method %s: %s",
-                    command, str(ex)
+                    "Uncaught exception in method %s :%s\n %s ",
+                    command, str(ex), traceback.format_exc()
                 )
                 self._last_error = str(ex)
                 raise
