@@ -115,9 +115,9 @@ The property to control the analog RX bandwidth is `bandwidth/value`.
 UHD will not allow you to set bandwidths larger than your current master clock
 rate.
 
-\section Hardware Reference
+\section b200_hw_ref Hardware Reference
 
-\subsection LED Indicators
+\subsection b200_hw_ref_leds LED Indicators
 
 Below is a table of the B200/B210 LED indicators and their meanings:
 
@@ -194,7 +194,7 @@ condition, indicating that the host is not sending or receiving samples fast
 enough.  The host will be notified of the condition and output a "U" or "O" as
 well.
 
-\subsection External Connections
+\subsection b200_hw_ref_ext  External Connections
 
 Below is a table showing the B200/B210 external connections and respective power information:
 
@@ -282,9 +282,14 @@ Component ID            |  Description               | Details
 
 \section b200_known_issues Known issues
 
-The B200 and B210 cannot support an external 10 MHz reference if a GPSDO is
-already present on the motherboard. If an external 10 MHz is to be used, the
-GPSDO needs to be physically removed from the device beforehand.
+- The B200 and B210 cannot support an external 10 MHz reference if a GPSDO is
+  already present on the motherboard. If an external 10 MHz reference is to be
+  used, the GPSDO needs to be physically removed from the device beforehand.
+
+- The default streaming settings do not work optimally for all use cases. If
+  there are issues with performance or stability, it can help to modify the
+  `recv_frame_size` values, e.g., by setting `recv_frame_size=1024` as part of
+  the device args.
 
 */
 
