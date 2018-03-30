@@ -18,3 +18,6 @@ from . import cores
 from . import chips
 from . import gpsd_iface
 from .mpmlog import get_main_logger
+
+__version__ = periph_manager.__version__
+__githash__ = periph_manager.__githash__
