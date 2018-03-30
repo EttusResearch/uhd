@@ -84,4 +84,43 @@ BOOST_AUTO_TEST_CASE(test_dict_update)
     BOOST_CHECK_THROW(d3.update(d2), uhd::value_error);
 }
 
+BOOST_AUTO_TEST_CASE(test_dict_equals)
+{
+    typedef uhd::dict<std::string, std::string> dict_ss;
+    // Original dict
+    dict_ss d0;
+    d0["key1"] = "val1";
+    d0["key2"] = "val2";
+    // Same keys and vals as d1, but different order
+    dict_ss d1;
+    d1["key2"] = "val2";
+    d1["key1"] = "val1";
+    // Same vals, different keys
+    dict_ss d2;
+    d2["key1"] = "val1";
+    d2["key3"] = "val2";
+    // Same keys, different vals
+    dict_ss d3;
+    d3["key1"] = "val1";
+    d3["key2"] = "val3";
+    // Superset of d0
+    dict_ss d4;
+    d4["key1"] = "val1";
+    d4["key2"] = "val2";
+    d4["key4"] = "val3";
+    // Subset of d0
+    dict_ss d5;
+    d5["key1"] = "val1";
 
+    // Check that d0 and d1 are equal
+    BOOST_CHECK(d0 == d1);
+    BOOST_CHECK(d1 == d0);
+    // Check that all other dictionaries are not equal to d0
+    BOOST_CHECK(d0 != d2);
+    BOOST_CHECK(d0 != d3);
+    BOOST_CHECK(d0 != d4);
+    BOOST_CHECK(d0 != d5);
+    // Redundant, but just to be sure
+    BOOST_CHECK(not (d0 == d2));
+    BOOST_CHECK(not (d0 == d3));
+}
