@@ -14,6 +14,7 @@
 #include <stdexcept>
 #include <vector>
 #include <string>
+#include <map>
 
 namespace uhd{
 
@@ -41,6 +42,12 @@ namespace uhd{
          * \param args the arguments string
          */
         device_addr_t(const std::string &args = "");
+
+        /*!
+         * Create a device address from a std::map
+         * \param info the device info map
+         */
+        device_addr_t(const std::map<std::string, std::string> &info);
 
         /*!
          * Convert a device address into a pretty print string.
