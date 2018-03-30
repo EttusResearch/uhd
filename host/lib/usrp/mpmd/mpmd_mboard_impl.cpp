@@ -500,12 +500,13 @@ uhd::task::sptr mpmd_mboard_impl::claim_device_and_make_task(
     UHD_LOG_TRACE("MPMD", "Received claim token " << rpc_token);
     rpc->set_token(rpc_token);
     return uhd::task::make([this] {
+        auto now = std::chrono::steady_clock::now();
         if (not this->claim()) {
             throw uhd::value_error("mpmd device reclaiming loop failed!");
         };
         this->dump_logs();
-        std::this_thread::sleep_for(
-            std::chrono::milliseconds(MPMD_RECLAIM_INTERVAL_MS)
+        std::this_thread::sleep_until(
+            now + std::chrono::milliseconds(MPMD_RECLAIM_INTERVAL_MS)
         );
     });
 }
