@@ -16,6 +16,17 @@ IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     )
 ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 
+LIST(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake/Modules)
+SET(UHD_HOST_ROOT ${CMAKE_SOURCE_DIR}/../host)
+# Now, we can also include CMake modules from UHD:
+LIST(INSERT CMAKE_MODULE_PATH 0 ${UHD_HOST_ROOT}/cmake/Modules)
+
+
+########################################################################
+# Version Information
+########################################################################
+INCLUDE(MPMVersion)
+
 ########################################################################
 # useful macros
 ########################################################################
@@ -109,8 +120,6 @@ ENDIF()
 SET(PKG_DOC_DIR share/doc/mpm)
 SET(PKG_MAN_DIR share/man/man1)
 
-
-
 ########################################################################
 # Setup library configuration
 ########################################################################
@@ -118,14 +127,12 @@ SET(CMAKE_CXX_STANDARD 11)
 SET(MPM_DEVICE "n3xx" CACHE STRING "Choose an MPM device to build")
 SET_PROPERTY(CACHE MPM_DEVICE PROPERTY STRINGS n3xx tests)
 
-SET(UHD_HOST_ROOT ${CMAKE_SOURCE_DIR}/../host)
-
 ADD_SUBDIRECTORY(include)
 INCLUDE_DIRECTORIES(
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
-  ${CMAKE_BINARY_DIR}/include
-  ${UHD_HOST_ROOT}/include
-  )
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${CMAKE_BINARY_DIR}/include
+    ${UHD_HOST_ROOT}/include
+)
 
 ADD_SUBDIRECTORY(lib)
 
@@ -143,14 +150,30 @@ ELSE()
 ENDIF()
 INSTALL(TARGETS usrp-periphs ${DESTINATION_KEYWORD} DESTINATION ${LIBRARY_DIR} COMPONENT libraries)
 
-SET(USRP_PERIPHS_MAJOR 0)
-SET(USRP_PERIPHS_MINOR 1)
-SET(USRP_PERIPHS_PATCH 0)
-SET(USRP_PERIPHS_VERSION ${USRP_PERIPHS_MAJOR}.${USRP_PERIPHS_MINOR}.${USRP_PERIPHS_PATCH})
-
-SET_TARGET_PROPERTIES(usrp-periphs PROPERTIES VERSION ${USRP_PERIPHS_VERSION})
-SET_TARGET_PROPERTIES(usrp-periphs PROPERTIES SOVERSION ${USRP_PERIPHS_MAJOR})
+# TODO: Come up with a versioning scheme for the MPM ABI. Not high priority
+# though... we're the only ones linking against that.
+SET_TARGET_PROPERTIES(usrp-periphs PROPERTIES VERSION "${MPM_VERSION_MAJOR}.${MPM_VERSION_API}.${MPM_VERSION_ABI}")
+SET_TARGET_PROPERTIES(usrp-periphs PROPERTIES SOVERSION ${MPM_VERSION_MAJOR})
 
 ADD_SUBDIRECTORY(python)
 ADD_SUBDIRECTORY(tools)
 ADD_SUBDIRECTORY(systemd)
+
+########################################################################
+# Print Summary
+########################################################################
+IF(MPM_VERSION_DEVEL AND NOT MPM_GIT_BRANCH STREQUAL "maint")
+    MESSAGE(STATUS "******************************************************")
+    IF(MPM_GIT_BRANCH STREQUAL "master")
+        MESSAGE(STATUS "* You are building the UHD development master branch.")
+        MESSAGE(STATUS "* For production code, we recommend our stable,")
+        MESSAGE(STATUS "* releases or using the release branch (maint).")
+    ELSE()
+        MESSAGE(STATUS "* You are building a development branch of UHD.")
+        MESSAGE(STATUS "* These branches are designed to provide early access")
+        MESSAGE(STATUS "* to UHD and USRP features, but should be considered")
+        MESSAGE(STATUS "* unstable and/or experimental!")
+    ENDIF(MPM_GIT_BRANCH STREQUAL "master")
+    MESSAGE(STATUS "******************************************************")
+ENDIF(MPM_VERSION_DEVEL AND NOT MPM_GIT_BRANCH STREQUAL "maint")
+MESSAGE(STATUS "Building version: ${MPM_VERSION}")

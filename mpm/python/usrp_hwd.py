@@ -170,6 +170,10 @@ def main():
     log = mpm.get_main_logger(
         log_default_delta=args.verbose-args.quiet
     ).getChild('main')
+    version_string = mpm.__version__
+    if len(mpm.__githash__):
+        version_string += "-g" + mpm.__githash__
+    log.info("Launching USRP/MPM, version: %s", version_string)
     if args.override_db_pids is not None:
         log.warning('Overriding daughterboard PIDs!')
         args.default_args['override_db_pids'] = args.override_db_pids
