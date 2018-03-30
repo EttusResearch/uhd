@@ -53,13 +53,17 @@ struct time_core_3000_impl : time_core_3000
     void self_test(void)
     {
         const size_t sleep_millis = 100;
-        UHD_LOGGER_INFO("CORES") << "Performing timer loopback test... ";
+        UHD_LOGGER_DEBUG("CORES") << "Performing timer loopback test... ";
         const time_spec_t time0 = this->get_time_now();
         boost::this_thread::sleep(boost::posix_time::milliseconds(sleep_millis));
         const time_spec_t time1 = this->get_time_now();
         const double approx_secs = (time1 - time0).get_real_secs();
         const bool test_fail = (approx_secs > 0.15) or (approx_secs < 0.05);
-        UHD_LOGGER_INFO("CORES") << "Timer loopback test " << ((test_fail)? "failed" : "passed");
+        if (test_fail) {
+            UHD_LOG_WARNING("CORES", "Timer loopback test failed!");
+        } else {
+            UHD_LOG_DEBUG("CORES", "Timer loopback test passed.");
+        }
 
         //useful warning for debugging actual rate
         const size_t ticks_elapsed = size_t(_tick_rate*approx_secs);
