@@ -284,7 +284,7 @@ template<typename Opt> static size_t resize_buff_helper(
     //resize the buffer if size was provided
     if (target_size > 0){
         actual_size = udp_trans->resize_buff<Opt>(target_size);
-        UHD_LOGGER_DEBUG("UDP")
+        UHD_LOGGER_TRACE("UDP")
             << boost::format("Target/actual %s sock buff size: %d/%d bytes")
                % name
                % target_size
