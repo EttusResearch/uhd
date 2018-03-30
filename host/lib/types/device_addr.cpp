@@ -41,6 +41,12 @@ device_addr_t::device_addr_t(const std::string &args){
     }
 }
 
+device_addr_t::device_addr_t(const std::map<std::string, std::string> &info) {
+    for (auto& t : info) {
+        this->set(t.first, t.second);
+    }
+}
+
 std::string device_addr_t::to_pp_string(void) const{
     if (this->size() == 0) return "Empty Device Address";
 
