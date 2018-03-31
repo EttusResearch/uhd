@@ -41,7 +41,7 @@ block_ctrl_base::block_ctrl_base(
     if (not _block_def) {
         UHD_LOG_DEBUG("RFNOC",
             "No block definition found, using default block configuration "
-            "for block with NOC ID: " + str(boost::format("0x%08X") % noc_id)
+            "for block with NOC ID: " + str(boost::format("0x%08X") % _noc_id)
         );
         _block_def = blockdef::make_from_noc_id(DEFAULT_NOC_ID);
     }
