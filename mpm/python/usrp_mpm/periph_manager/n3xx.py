@@ -35,6 +35,7 @@ N3XX_DEFAULT_CLOCK_SOURCE = 'internal'
 N3XX_DEFAULT_TIME_SOURCE = 'internal'
 N3XX_DEFAULT_ENABLE_GPS = True
 N3XX_DEFAULT_ENABLE_FPGPIO = True
+N3XX_DEFAULT_ENABLE_PPS_EXPORT = True
 N3XX_FPGA_COMPAT = (5, 2)
 N3XX_MONITOR_THREAD_INTERVAL = 1.0 # seconds
 N3XX_SFP_TYPES = {0:"", 1:"1G", 2:"10G", 3:"A", 4:"W"}
@@ -600,7 +601,7 @@ class n3xx(PeriphManagerBase):
                 default_args.get('time_source', N3XX_DEFAULT_TIME_SOURCE)
             )
             self.enable_pps_out(
-                default_args.get('pps_export', True)
+                default_args.get('pps_export', N3XX_DEFAULT_ENABLE_PPS_EXPORT)
             )
 
     def _init_meas_clock(self):
@@ -710,6 +711,13 @@ class n3xx(PeriphManagerBase):
             self.log.error(
                 "Cannot run init(), device was never fully initialized!")
             return False
+        # We need to disable the PPS out during clock initialization in order
+        # to avoid glitches.
+        enable_pps_out_state = self._default_args.get(
+            'pps_export',
+            N3XX_DEFAULT_ENABLE_PPS_EXPORT
+        )
+        self.enable_pps_out(False)
         if "clock_source" in args:
             self.set_clock_source(args.get("clock_source"))
         if "clock_source" in args or "time_source" in args:
@@ -725,6 +733,9 @@ class n3xx(PeriphManagerBase):
                                      "external LOs! Setting to internal.")
                     args[lo_source] = 'internal'
         result = super(n3xx, self).init(args)
+        # Now the clocks are all enabled, we can also re-enable PPS export if
+        # it was turned off:
+        self.enable_pps_out(enable_pps_out_state)
         for xport_mgr in itervalues(self._xport_mgrs):
             xport_mgr.init(args)
         return result
