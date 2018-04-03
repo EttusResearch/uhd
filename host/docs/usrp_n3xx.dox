@@ -630,6 +630,53 @@ device to function as a USRP (it is enabled to run by default).
 
 A large portion of hardware-specific setup is handled by the daemon.
 
+\section n3xx_fsbuild Building custom filesystems and SD card images
+
+Ettus Research provides SD card images at regular intervals, but there can be
+good reasons to build custom SD cards, e.g., to test the very latest UHD or MPM
+for which there has not been an SD card release, to add own applications to the
+SD card, or to run a modified version of UHD.
+
+Note that building SD cards is very disk space and RAM intensive.
+
+\subsection n3xx_fsbuild_docker Using Docker to build filesystems
+
+Ettus Research provides a Docker containers to facilitate building filesystems.
+Using Docker hub, the container can be downloaded by running
+
+    $ docker pull ettusresearch/oe-build
+
+Then, navigate to a location with enough disk space:
+
+    $ cd $BUILDDIR
+
+Create a world-writable directory called 'build':
+
+   $ mkdir build && chmod 777 build
+
+Then run the Docker container:
+
+    $ docker run -i -t -v $(pwd)/build:/home/oe-builder/build:rw,z ettusresearch/oe-build /bin/bash
+
+Note the order of the naming above might vary by docker version, sometimes it might need to be:
+
+    $ docker run -i -t ettusresearch/oe-build -v $(pwd)/build:/home/oe-builder/build:rw,z /bin/bash
+
+After running the previous command, you will be inside the container. First,
+configure your build environment:
+
+   $ TEMPLATECONF=`pwd`/meta-ettus/conf/sulfur source ./oe-core/oe-init-build-env ./build ./bitbake
+
+Then, you can invoke bitbake to build the image:
+
+    $ bitbake $image_name
+
+If you keep the build directory, bitbake will reuse it on consecutive runs,
+which will speed up builds significantly between runs.
+
+This step will build the SDK, the SD card image, and the Mender artefact.
+
+
 \section n3xx_software_dev Modifying and compiling UHD and MPM for the N3XX
 
 N3xx devices ship with all relevant software installed on the SD card. Updating
