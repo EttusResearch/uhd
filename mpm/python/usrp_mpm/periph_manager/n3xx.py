@@ -419,18 +419,6 @@ class MboardRegsControl(object):
             ))
             return ""
 
-    def get_sfp0_link_status(self):
-        """
-        Reads the type of the FPGA image currently loaded
-        Returns a string with the type (ie HG, XG, AA, etc.)
-        """
-        with self.regs.open():
-            sfp0_info_rb = self.peek32(self.MB_SFP0_INFO)
-        # Print the registers values as 32-bit hex values
-        self.log.trace("SFP0 Info: 0x{0:0{1}X}".format(sfp0_info_rb, 8))
-        sfp0_link = bool((sfp0_info_rb & 0x00010000) >> 16)
-        return sfp0_link
-
 
 ###############################################################################
 # Transport managers
