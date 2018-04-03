@@ -11,9 +11,10 @@ x3xx_x300_fpga_default          fpga-4bb66b3        x3xx/fpga-4bb66b3/x3xx_x300_
 e3xx_e310_fpga_default          fpga-1c568e6        e3xx/fpga-1c568e6/e3xx_e310_fpga_default-g1c568e6.zip                   2957b4bdefe6885644ef2bc7b0e3845d13a7fe45f5a0933a2adaffd24c1b6802
 
 # N300-Series
-n3xx_n310_fpga_default          fpga-4bb66b3        n3xx/fpga-4bb66b3/n3xx_n310_fpga_default-g4bb66b3.zip                   1b6fc983b7589351b6e6a935dcde70e77fca75cb3f629f43f5bef876b134e7f5
-n3xx_n300_fpga_default          fpga-4bb66b3        n3xx/fpga-4bb66b3/n3xx_n300_fpga_default-g4bb66b3.zip                   25d5d49da4174d6d7647d4b23e1bef1df9a2eb1e26d328f48fc73a9557a25a82
-n3xx_n310_fpga_aurora           fpga-4bb66b3        n3xx/fpga-4bb66b3/n3xx_n310_fpga_aurora-g4bb66b3.zip                    f93181aa29ebeee29b44afc1cb83202ba655a9dab2d1aad7a8e28e794746749b
+n3xx_n310_fpga_default          fpga-e0f552c        n3xx/fpga-e0f552c/n3xx_n310_fpga_default-ge0f552c.zip                   90ea5092e11a173bc4a80b214e9f050182de240643796cbb85727ab7678b2d3c
+n3xx_n300_fpga_default          fpga-e0f552c        n3xx/fpga-e0f552c/n3xx_n300_fpga_default-ge0f552c.zip                   4ce8c56205ec7e2493698969537bb948fed9c939ab46b6eba8107dec121333d0
+n3xx_n310_fpga_aurora           fpga-e0f552c        n3xx/fpga-e0f552c/n3xx_n310_fpga_aurora-ge0f552c.zip                    07b04cd4d6661d9e4efe339a20969f4b4086bcdbda106b05c75d47ba8a1582f4
+n3xx_n300_fpga_aurora           fpga-e0f552c        n3xx/fpga-e0f552c/n3xx_n300_fpga_aurora-ge0f552c.zip                    381b34f55067479be6ff8d1be81849674880ac81b94182f584f25a521090fac8
 #n3xx_n310_cpld_default         fpga-6bea23d        n3xx/fpga-6bea23d/n3xx_n310_cpld_default-g6bea23d.zip                   0
 # N3XX Mykonos firmware
 #n3xx_n310_fw_default           fpga-6bea23d        n3xx/fpga-6bea23d/n3xx_n310_fw_default-g6bea23d.zip                     0
