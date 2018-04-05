@@ -444,7 +444,12 @@ class Magnesium(DboardManagerBase):
             self.init_jesd(jesdcore, args)
             jesdcore = None # Help with garbage collection
             # That's all that requires access to the dboard regs!
-        self.mykonos.start_radio()
+        if bool(args.get('rfic_digital_loopback')):
+            self.log.warning("RF Functionality Disabled: JESD204b digital loopback " \
+                             "enabled inside Mykonos!")
+            self.mykonos.enable_jesd_loopback(1)
+        else:
+            self.mykonos.start_radio()
         return True
 
     def _parse_and_convert_cal_args(self, table, cal_args):
