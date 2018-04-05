@@ -97,7 +97,7 @@ double magnesium_ad9371_iface::get_gain(const size_t chan, const direction_t dir
     return retval;
 }
 
-double magnesium_ad9371_iface::get_bandwidth(const size_t chan, const direction_t dir)
+double magnesium_ad9371_iface::get_bandwidth(const size_t /*chan*/, const direction_t /*dir*/)
 {
     // TODO: implement
     UHD_LOG_WARNING(_L, "Ignoring attempt to get bandwidth");

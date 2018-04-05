@@ -634,7 +634,7 @@ freq_range_t magnesium_radio_ctrl_impl::get_tx_lo_freq_range(
 void magnesium_radio_ctrl_impl::set_tx_lo_source(
         const std::string &src,
         const std::string &name,
-        const size_t chan
+        const size_t /*chan*/
 ) {
     UHD_LOG_TRACE(unique_id(), "Attempting to set tx LO." <<"LO "<<name<<" to "<<src << " at "<<chan);
     //TODO: checking what options are there
