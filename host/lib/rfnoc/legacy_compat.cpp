@@ -565,35 +565,21 @@ private: // methods
     }
 
     //! Given mboard_index(m), radio_index(r), and port_index(p),
-    //  this function return the index of a block on the input blocklist that match m,r,p
-    size_t find_block(const std::vector<source_port_t> &source_port_list, const size_t &m, const size_t &r, const size_t &p)
+    //  this function returns the index of a block on the input block list that match m,r,p
+    template <typename T>
+    size_t find_block(const std::vector<T> &port_list, const size_t &m, const size_t &r, const size_t &p)
     {
         size_t index  = 0;
-        for (auto port : source_port_list)
+        for (auto port : port_list)
         {
-            auto source_block_id = (port.first)->get_block_id();
-            if (p == port.second && r == source_block_id.get_block_count() && m == source_block_id.get_device_no())
+            auto block_id = (port.first)->get_block_id();
+            if (p == port.second && r == block_id.get_block_count() && m == block_id.get_device_no())
             {
                 return index;
             }
             index++;
         }
-    }
-
-    //! Given mboard_index(m), radio_index(r), and port_index(p),
-    //  this function return the index of a block on the input blocklist that match m,r,p
-    size_t find_block(const std::vector<sink_port_t> &sink_port_list, const size_t &m, const size_t &r, const size_t &p)
-    {
-        size_t index = 0;
-        for (auto port : sink_port_list)
-        {
-            auto sink_block_id = (port.first)->get_block_id();
-            if (p == port.second && r == sink_block_id.get_block_count() && m == sink_block_id.get_device_no())
-            {
-                return index;
-            }
-            index++;
-        }
+        throw uhd::runtime_error((boost::format("Could not find block in list for device %d, radio %d, and port %d") % m % r % p).str());
     }
 
     template <uhd::direction_t dir>
@@ -605,8 +591,8 @@ private: // methods
         block_name_to_block_map_t legacy_block_map = get_legacy_blocks(_device);
         auto radio_src_flat = _flatten_blocks_by_n_ports(legacy_block_map[RADIO_BLOCK_NAME].first);
         auto radio_snk_flat = _flatten_blocks_by_n_ports(legacy_block_map[RADIO_BLOCK_NAME].second);
-        size_t index_src = find_block(radio_src_flat, mboard_idx, radio_index, port_index);
-        size_t index_snk = find_block(radio_snk_flat, mboard_idx, radio_index, port_index);
+        size_t index_src = find_block<source_port_t>(radio_src_flat, mboard_idx, radio_index, port_index);
+        size_t index_snk = find_block<sink_port_t>(radio_snk_flat, mboard_idx, radio_index, port_index);
         if (dir == uhd::TX_DIRECTION){
             if (_has_sramfifo){
                 auto sfifo_snk_flat = _flatten_blocks_by_n_ports(legacy_block_map[SFIFO_BLOCK_NAME].second);
