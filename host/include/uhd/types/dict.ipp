@@ -117,7 +117,7 @@ namespace uhd{
         if (this->size() != other.size()){
             return false;
         }
-        for(auto &p : _map){
+        BOOST_FOREACH(const pair_t& p, _map) {
             if (not (other.has_key(p.first) and other.get(p.first) == p.second)){
                 return false;
             }
