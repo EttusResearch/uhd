@@ -7,7 +7,7 @@
 
 #include "x300_dac_ctrl.hpp"
 #include "x300_regs.hpp"
-#include <uhd/utils/system_time.hpp>
+#include <uhdlib/utils/system_time.hpp>
 #include <uhd/types/time_spec.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>

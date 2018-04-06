@@ -9,8 +9,8 @@
 #define INCLUDED_UHD_UTILS_ATOMIC_HPP
 
 #include <uhd/config.hpp>
-#include <uhd/utils/system_time.hpp>
 #include <uhd/types/time_spec.hpp>
+#include <uhdlib/utils/system_time.hpp>
 #include <boost/thread/thread.hpp>
 #include <atomic>
 

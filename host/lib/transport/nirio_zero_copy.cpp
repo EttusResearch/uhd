@@ -10,7 +10,7 @@
 #include <uhd/transport/nirio/nirio_fifo.h>
 
 #include <uhd/utils/log.hpp>
-#include <uhd/utils/atomic.hpp>
+#include <uhdlib/utils/atomic.hpp>
 #include <boost/format.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>

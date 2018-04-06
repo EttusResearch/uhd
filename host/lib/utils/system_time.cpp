@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0+
 //
 
-#include <uhd/utils/system_time.hpp>
+#include <uhdlib/utils/system_time.hpp>
 
 using namespace uhd;
 

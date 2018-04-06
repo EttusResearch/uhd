@@ -8,7 +8,7 @@
 #ifndef INCLUDED_LIBUHD_USRP_COMMON_RECV_PACKET_DEMUXER_3000_HPP
 #define INCLUDED_LIBUHD_USRP_COMMON_RECV_PACKET_DEMUXER_3000_HPP
 
-#include <uhd/utils/system_time.hpp>
+#include <uhdlib/utils/system_time.hpp>
 #include <uhd/config.hpp>
 #include <uhd/transport/zero_copy.hpp>
 #include <uhd/utils/log.hpp>
