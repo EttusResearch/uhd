@@ -96,7 +96,7 @@ template<typename samp_type> void recv_to_file(
     const std::string &file,
     size_t samps_per_buff,
     int num_requested_samples,
-    float settling_time,
+    double settling_time,
     std::vector<size_t> rx_channel_nums
 ){
     int num_total_samps = 0;
@@ -126,7 +126,7 @@ template<typename samp_type> void recv_to_file(
     UHD_ASSERT_THROW(outfiles.size() == buffs.size());
     UHD_ASSERT_THROW(buffs.size() == rx_channel_nums.size());
     bool overflow_message = true;
-    float timeout = settling_time + 0.1f; //expected settling time + padding for first recv
+    double timeout = settling_time + 0.1f; //expected settling time + padding for first recv
 
     //setup streaming
     uhd::stream_cmd_t stream_cmd((num_requested_samples == 0)?
@@ -198,7 +198,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::string rx_args, file, type, rx_ant, rx_subdev, rx_channels;
     size_t total_num_samps, spb;
     double rx_rate, rx_freq, rx_gain, rx_bw;
-    float settling;
+    double settling;
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -209,7 +209,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("file", po::value<std::string>(&file)->default_value("usrp_samples.dat"), "name of the file to write binary samples to")
         ("type", po::value<std::string>(&type)->default_value("short"), "sample type in file: double, float, or short")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(0), "total number of samples to receive")
-        ("settling", po::value<float>(&settling)->default_value(float(0.2)), "settling time (seconds) before receiving")
+        ("settling", po::value<double>(&settling)->default_value(double(0.2)), "settling time (seconds) before receiving")
         ("spb", po::value<size_t>(&spb)->default_value(0), "samples per buffer, 0 for default")
         ("tx-rate", po::value<double>(&tx_rate), "rate of transmit outgoing samples")
         ("rx-rate", po::value<double>(&rx_rate), "rate of receive incoming samples")
