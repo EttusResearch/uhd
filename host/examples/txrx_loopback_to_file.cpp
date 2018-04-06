@@ -251,6 +251,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format("Creating the receive usrp device with: %s...") % rx_args << std::endl;
     uhd::usrp::multi_usrp::sptr rx_usrp = uhd::usrp::multi_usrp::make(rx_args);
 
+    //always select the subdevice first, the channel mapping affects the other settings
+    if (vm.count("tx-subdev")) tx_usrp->set_tx_subdev_spec(tx_subdev);
+    if (vm.count("rx-subdev")) rx_usrp->set_rx_subdev_spec(rx_subdev);
+
     //detect which channels to use
     std::vector<std::string> tx_channel_strings;
     std::vector<size_t> tx_channel_nums;
@@ -276,10 +280,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //Lock mboard clocks
     tx_usrp->set_clock_source(ref);
     rx_usrp->set_clock_source(ref);
-
-    //always select the subdevice first, the channel mapping affects the other settings
-    if (vm.count("tx-subdev")) tx_usrp->set_tx_subdev_spec(tx_subdev);
-    if (vm.count("rx-subdev")) rx_usrp->set_rx_subdev_spec(rx_subdev);
 
     std::cout << boost::format("Using TX Device: %s") % tx_usrp->get_pp_string() << std::endl;
     std::cout << boost::format("Using RX Device: %s") % rx_usrp->get_pp_string() << std::endl;
