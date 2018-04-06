@@ -53,6 +53,8 @@ class NIMgJESDCore(object):
         self.bypass_descrambler = False
         self.bypass_scrambler = True
         self.lmfc_divider = 20 # Number of FPGA clock cycles per LMFC period.
+        self.rx_sysref_delay = 8  # Cycles of delay added to RX SYSREF
+        self.tx_sysref_delay = 11 # Cycles of delay added to TX SYSREF
         self.tx_driver_swing = 0b1111 # See UG476, TXDIFFCTRL
         self.tx_precursor = 0b00000 # See UG476, TXPRECURSOR
         self.tx_postcursor = 0b00000 # See UG476, TXPOSTCURSOR
@@ -209,7 +211,10 @@ class NIMgJESDCore(object):
         disable_bit = 0b1
         if enable:
             disable_bit = 0b0
-        reg_val = ((self.lmfc_divider-1) << 23) | (disable_bit << 6)
+        reg_val = ((self.lmfc_divider-1) << 23) | \
+                  ((self.rx_sysref_delay) << 16) | \
+                  ((self.tx_sysref_delay) << 8) | \
+                  (disable_bit << 6)
         self.log.trace("Setting SYSREF Capture reg: 0x{:08X}".format(reg_val))
         self.regs.poke32(self.SYSREF_CAPTURE_CONTROL, reg_val)
 
