@@ -513,15 +513,15 @@ void magnesium_radio_ctrl_impl::set_rx_lo_source(
         const std::string &name,
         const size_t /*chan*/
 ) {
-    UHD_LOG_TRACE(unique_id(),"Attempting to set rx LO." <<"LO "<<name<<" to "<<src);
     //TODO: checking what options are there
     std::lock_guard<std::mutex> l(_set_lock);
-    UHD_LOG_TRACE(unique_id(), "Set LO source." <<"LO "<<name<<" to "<<src);
+    UHD_LOG_TRACE(unique_id(), "Setting RX LO " << name << " to " << src);
 
-    if (name == MAGNESIUM_LO1){
+    if (name == MAGNESIUM_LO1) {
         _ad9371->set_lo_source(src, RX_DIRECTION);
-    }else{
-        UHD_LOG_ERROR(unique_id(), "This LO " <<name <<" does not support set_lo_source to "<< src);
+    } else {
+        UHD_LOG_ERROR(unique_id(),
+           "RX LO " << name << " does not support setting source to " << src);
     }
 }
 
@@ -636,14 +636,14 @@ void magnesium_radio_ctrl_impl::set_tx_lo_source(
         const std::string &name,
         const size_t /*chan*/
 ) {
-    UHD_LOG_TRACE(unique_id(), "Attempting to set tx LO." <<"LO "<<name<<" to "<<src << " at "<<chan);
     //TODO: checking what options are there
     std::lock_guard<std::mutex> l(_set_lock);
-    UHD_LOG_TRACE(unique_id(), "Set LO source." <<"LO "<<name<<" to "<<src << " at "<<chan);
-    if (name == MAGNESIUM_LO1){
+    UHD_LOG_TRACE(unique_id(), "Setting TX LO " << name << " to " << src);
+    if (name == MAGNESIUM_LO1) {
         _ad9371->set_lo_source(src, TX_DIRECTION);
-    }else{
-        UHD_LOG_ERROR(unique_id(), "This LO " <<name <<" does not support set_lo_source to "<< src);
+    } else {
+        UHD_LOG_ERROR(unique_id(),
+           "TX LO " << name << " does not support setting source to " << src);
     }
 }
 
