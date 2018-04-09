@@ -27,13 +27,15 @@
 The N3XX series of USRPs is designed as a platform. The following USRPs are
 variants of the N3XX series:
 
-\subsection n3xx_feature_list_mg N310 and N300 (4-channel and 2-channel transceiver)
+\subsection n3xx_feature_list_mg N310/N300 4-channel/2-channel ("Magnesium")
 
 \image html N310isoExplode.png N310 Exploded View
 
 The N310 is a 4-channel transmitter/receiver based on the AD9371 transceiver IC.
 It has two daughterboards with one AD9371 each; every daughterboard provides
-two RF channels.
+two RF channels. Note that the product code "N310" refers to the module
+consisting of mother- and daughterboard, the daughterboard itself is referred to
+by its codename, "Magnesium".
 
 - Supported master clock rates: 122.88 MHz, 125 MHz, 153.6 MHz
 - Tuning range: 10 MHz to 6 GHz (below 300 MHz, additional LOs and mixer stages
