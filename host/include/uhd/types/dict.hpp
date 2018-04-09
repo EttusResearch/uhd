@@ -100,6 +100,20 @@ namespace uhd{
         Val &operator[](const Key &key);
 
         /*!
+         * Equals operator for the dict type
+         * \param other the dict being compared to this
+         * \return whether or not the two dict's are equal
+         */
+        bool operator==(const dict<Key, Val> &other) const;
+
+        /*!
+         * Not equal operator for the dict type
+         * \param other the dict being compared to this
+         * \return whether or not the two dict's are not equal
+         */
+        bool operator!=(const dict<Key, Val> &other) const;
+
+        /*!
          * Pop an item out of the dictionary.
          * \param key the item key
          * \return the value of the item

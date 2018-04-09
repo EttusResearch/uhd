@@ -5,13 +5,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "wb_iface_adapter.hpp"
 #include <boost/format.hpp>
 #include <uhd/convert.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/direction.hpp>
-#include "radio_ctrl_impl.hpp"
+#include <uhdlib/rfnoc/wb_iface_adapter.hpp>
+#include <uhdlib/rfnoc/radio_ctrl_impl.hpp>
 #include "../../transport/super_recv_packet_handler.hpp"
 #include <tuple>
 
@@ -45,40 +45,14 @@ radio_ctrl_impl::radio_ctrl_impl() :
     /////////////////////////////////////////////////////////////////////////
     for (size_t i = 0; i < _get_num_radios(); i++) {
         _register_loopback_self_test(i);
-        _perifs[i].ctrl = boost::make_shared<wb_iface_adapter>(
-            // poke32 functor
-            [this, i](const uint32_t addr, const uint32_t data){
-                this->sr_write(addr, data, i);
-            },
-            // peek32 functor
-            [this, i](const uint32_t addr){
-                return this->user_reg_read32(addr, i);
-            },
-            // peek64 functor
-            [this, i](const uint32_t addr){
-                return this->user_reg_read64(addr, i);
-            },
-            // get_time functor
-            [this, i](){
-                return this->get_command_time(i);
-            },
-            // set_time functor
-            [this, i](const time_spec_t& time_spec){
-                this->set_command_time(time_spec, i);
-            }
-        );
-
+        _perifs[i].ctrl = this->get_ctrl_iface(i);
         // FIXME there's currently no way to set the underflow policy
 
         if (i == 0) {
             time_core_3000::readback_bases_type time64_rb_bases;
-            time64_rb_bases.rb_now = regs::RB_TIME_NOW;
-            time64_rb_bases.rb_pps = regs::RB_TIME_PPS;
-            _time64 = time_core_3000::make(
-                _perifs[i].ctrl,
-                regs::sr_addr(regs::TIME),
-                time64_rb_bases
-            );
+            time64_rb_bases.rb_now = regs::rb_addr(regs::RB_TIME_NOW);
+            time64_rb_bases.rb_pps = regs::rb_addr(regs::RB_TIME_PPS);
+            _time64 = time_core_3000::make(_perifs[i].ctrl, regs::sr_addr(regs::TIME), time64_rb_bases);
             this->set_time_now(0.0);
         }
 
@@ -146,8 +120,9 @@ void radio_ctrl_impl::_register_loopback_self_test(size_t chan)
             return; // exit on any failure
         }
     }
-    UHD_LOGGER_INFO("RFNOC RADIO") << "Register loopback test passed";
+    UHD_LOG_DEBUG(unique_id(), "Register loopback test passed");
 }
+
 
 /****************************************************************************
  * API calls
@@ -386,7 +361,18 @@ void radio_ctrl_impl::issue_stream_cmd(
                "channel. Skipping.";
         return;
     }
-    UHD_ASSERT_THROW(stream_cmd.num_samps <= 0x0fffffff);
+    constexpr size_t max_num_samps = 0x0fffffff;
+    if (stream_cmd.num_samps > max_num_samps) {
+        UHD_LOG_ERROR("RFNOC RADIO",
+            "Requesting too many samples in a single burst! "
+            "Requested " + std::to_string(stream_cmd.num_samps) + ", maximum "
+            "is " + std::to_string(max_num_samps) + ".");
+        UHD_LOG_INFO("RFNOC RADIO",
+            "Note that a decimation block will increase the number of samples "
+            "per burst by the decimation factor. Your application may have "
+            "requested fewer samples.");
+        throw uhd::value_error("Requested too many samples in a single burst.");
+    }
     _continuous_streaming[chan] =
         (stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
 

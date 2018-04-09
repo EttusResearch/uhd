@@ -5,7 +5,7 @@
   <key>DUC</key>
   <!--There can be several of these:-->
   <ids>
-    <id revision="0">D0C0</id>
+    <id revision="0">D0C0000000000002</id>
   </ids>
   <!-- Registers -->
   <registers>
@@ -29,7 +29,7 @@
       <address>131</address>
     </setreg>
     <setreg>
-      <name>CORDIC_FREQ</name>
+      <name>DDS_FREQ</name>
       <address>132</address>
     </setreg>
     <setreg>
@@ -80,15 +80,64 @@
       <value>1.0</value>
       <port>0</port>
     </arg>
-  </args>
+    <arg>
+      <name>freq</name>
+      <type>double</type>
+      <value>0.0</value>
+      <port>1</port>
+      <!--<action>-->
+          <!--SR_WRITE("CORDIC_FREQ", $cordic_freq)-->
+      <!--</action>-->
+      <!--FIXME Calculate this properly-->
+    </arg>
+    <arg>
+      <name>input_rate</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>1</port>
+      <check>GE($input_rate, 0.0)</check>
+      <check_message>The input rate must be a positive value (in Hz).</check_message>
+    </arg>
+    <arg>
+      <name>output_rate</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>1</port>
+      <check>GE($output_rate, 0.0)</check>
+      <check_message>The output rate must be a positive value (in Hz).</check_message>
+    </arg>
+    <arg>
+      <name>fullscale</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>1</port>
+      <check>GE($fullscale, 0.0)</check>
+      <check_message>The output rate must be a positive value (in Hz).</check_message>
+      <!--FIXME Calculate this properly-->
+    </arg>
+    <arg>
+      <name>scalar_correction</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>1</port>
+    </arg>
+</args>
   <!--All the connections to the outside world are listed in 'ports':-->
   <ports>
     <sink>
-      <name>in</name>
+      <name>in0</name>
       <type>sc16</type>
     </sink>
     <source>
-      <name>out</name>
+      <name>out0</name>
+      <type>sc16</type>
+    </source>
+    <sink>
+      <name>in1</name>
+      <type>sc16</type>
+    </sink>
+    <source>
+      <name>out1</name>
       <type>sc16</type>
     </source>
   </ports>

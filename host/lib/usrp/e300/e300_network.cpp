@@ -11,8 +11,6 @@
 
 #include "e300_impl.hpp"
 
-#include "ad9361_ctrl.hpp"
-
 #include "e300_sensor_manager.hpp"
 #include "e300_fifo_config.hpp"
 #include "e300_spi.hpp"
@@ -24,6 +22,8 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/paths.hpp>
+
+#include <uhdlib/usrp/common/ad9361_ctrl.hpp>
 
 #include <boost/asio.hpp>
 #include <boost/thread.hpp>

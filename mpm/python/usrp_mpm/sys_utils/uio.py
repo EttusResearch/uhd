@@ -8,8 +8,8 @@ Access to UIO mapped memory.
 """
 
 import os
-from builtins import object
 from contextlib import contextmanager
+from builtins import object
 import pyudev
 import usrp_mpm.libpyusrp_periphs as lib
 from usrp_mpm.mpmlog import get_logger
@@ -91,6 +91,23 @@ class UIO(object):
     """
     Provides peek/poke interfaces for uio-mapped memory.
 
+    This object will not, by default, open the associated UIO device. To
+    actually open the device, you have two options:
+    - Use the instantiation of this class as a context manager (using a `with`
+      statement), like this:
+
+    >>> with UIO(path="/dev/uio0") as uio0:
+    >>>     uio0.peek32(addr)
+    >>>     uio0.poke32(addr, value)
+
+    - Manually call open() and close():
+
+    >>> uio0 = UIO(path="/dev/uio0")
+    >>> uio0.open()
+    >>> uio0.peek32(addr)
+    >>> uio0.poke32(addr, value)
+    >>> uio0.close()
+
     Arguments:
     label -- Label of the UIO device. The label is set in the device tree
              overlay
@@ -128,21 +145,38 @@ class UIO(object):
         # Our UIO objects are managed in C++ land, which gives us more granular control over
         # opening and closing
         self._uio = lib.types.mmap_regs_iface(self._path, length, offset, self._read_only, False)
+        # Reference counter for safely __enter__ and __exit__-ing
+        self._ref_count = 0
 
     def __enter__(self):
-        self.open()
-        return self
+        return self.open()
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.close()
         return exc_type is None
 
     def open(self):
-        self._uio.open()
+        """Actually open the UIO device.
+
+        You need to call this before doing peeks and pokes. See also close().
+
+        If you're using the UIO object as a context manager, it will open the
+        file automatically.
+        """
+        if self._ref_count == 0:
+            self._uio.open()
+        self._ref_count += 1
         return self
 
     def close(self):
-        self._uio.close()
+        """Close a UIO device.
+
+        UIO devices can be problematic with regards to file descriptor leakage,
+        so it is recommended to close a UIO device when it is no longer needed.
+        """
+        self._ref_count -= 1
+        if self._ref_count == 0:
+            self._uio.close()
 
     def peek32(self, addr):
         """

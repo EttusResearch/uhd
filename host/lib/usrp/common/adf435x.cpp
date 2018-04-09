@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "adf435x.hpp"
+#include <uhdlib/usrp/common/adf435x.hpp>
 
 using namespace uhd;
 

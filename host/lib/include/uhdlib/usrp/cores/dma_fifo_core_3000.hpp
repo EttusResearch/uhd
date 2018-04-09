@@ -9,9 +9,9 @@
 #define INCLUDED_LIBUHD_USRP_DMA_FIFO_CORE_3000_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/types/wb_iface.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/noncopyable.hpp>
-#include <uhd/types/wb_iface.hpp>
 
 
 class dma_fifo_core_3000 : boost::noncopyable

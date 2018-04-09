@@ -9,19 +9,13 @@
 #include "x300_lvbitx.hpp"
 #include "x310_lvbitx.hpp"
 #include "x300_mb_eeprom_iface.hpp"
-#include "apply_corrections.hpp"
-#include <boost/algorithm/string.hpp>
-#include <boost/asio.hpp>
+#include <uhdlib/usrp/common/apply_corrections.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/transport/if_addrs.hpp>
-#include <boost/bind.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/functional/hash.hpp>
-#include <boost/assign/list_of.hpp>
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/transport/udp_constants.hpp>
 #include <uhd/transport/zero_copy_recv_offload.hpp>
@@ -29,6 +23,14 @@
 #include <uhd/transport/nirio/niusrprio_session.h>
 #include <uhd/utils/platform.hpp>
 #include <uhd/types/sid.hpp>
+#include <uhd/utils/math.hpp>
+
+#include <boost/algorithm/string.hpp>
+#include <boost/asio.hpp>
+#include <boost/bind.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/functional/hash.hpp>
+#include <boost/assign/list_of.hpp>
 #include <fstream>
 
 #define NIUSRPRIO_DEFAULT_RPC_PORT "5444"
@@ -674,11 +676,10 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
                 << boost::format("You requested a receive frame size of (%lu) but your NIC's max frame size is (%lu).")
                 % req_max_frame_size.recv_frame_size
                 % _max_frame_sizes.recv_frame_size
-                
                 << boost::format("Please verify your NIC's MTU setting using '%s' or set the recv_frame_size argument appropriately.")
-                % mtu_tool 
+                % mtu_tool
                 << "UHD will use the auto-detected max frame size for this connection."
-                ;
+            ;
         }
 
         if ((mb.recv_args.has_key("send_frame_size"))
@@ -687,11 +688,10 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
                 << boost::format("You requested a send frame size of (%lu) but your NIC's max frame size is (%lu).")
                 % req_max_frame_size.send_frame_size
                 % _max_frame_sizes.send_frame_size
-                
                 << boost::format("Please verify your NIC's MTU setting using '%s' or set the send_frame_size argument appropriately.")
-                % mtu_tool 
+                % mtu_tool
                 << "UHD will use the auto-detected max frame size for this connection."
-                ;
+            ;
         }
 
         _tree->create<size_t>(mb_path / "mtu/recv").set(_max_frame_sizes.recv_frame_size);
@@ -700,7 +700,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     }
 
     //create basic communication
-    UHD_LOGGER_INFO("X300") << "Setup basic communication...";
+    UHD_LOGGER_DEBUG("X300") << "Setting up basic communication...";
     if (mb.xport_path == "nirio") {
         boost::mutex::scoped_lock(pcie_zpu_iface_registry_mutex);
         if (get_pcie_zpu_iface_registry().has_key(mb.get_pri_eth().addr)) {
@@ -771,10 +771,9 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     ////////////////////////////////////////////////////////////////////
     // setup the mboard eeprom
     ////////////////////////////////////////////////////////////////////
-    UHD_LOGGER_INFO("X300") << "Loading values from EEPROM...";
+    UHD_LOGGER_DEBUG("X300") << "Loading values from EEPROM...";
     x300_mb_eeprom_iface::sptr eeprom16 = x300_mb_eeprom_iface::make(mb.zpu_ctrl, mb.zpu_i2c);
-    if (dev_addr.has_key("blank_eeprom"))
-    {
+    if (dev_addr.has_key("blank_eeprom")) {
         UHD_LOGGER_WARNING("X300") << "Obliterating the motherboard EEPROM...";
         eeprom16->write_eeprom(0x50, 0, byte_vector_t(256, 0xff));
     }
@@ -875,7 +874,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     ////////////////////////////////////////////////////////////////////
     // create clock control objects
     ////////////////////////////////////////////////////////////////////
-    UHD_LOGGER_INFO("X300") << "Setup RF frontend clocking...";
+    UHD_LOGGER_DEBUG("X300") << "Setting up RF frontend clocking...";
 
     //Initialize clock control registers. NOTE: This does not configure the LMK yet.
     mb.clock = x300_clock_ctrl::make(mb.zpu_spi,
@@ -897,7 +896,9 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         .set_publisher(boost::bind(&x300_clock_ctrl::get_master_clock_rate, mb.clock))
     ;
 
-    UHD_LOGGER_INFO("X300") << "Radio 1x clock:" << (mb.clock->get_master_clock_rate()/1e6);
+    UHD_LOGGER_INFO("X300")
+        << "Radio 1x clock: " << (mb.clock->get_master_clock_rate()/1e6)
+        << " MHz";
 
     ////////////////////////////////////////////////////////////////////
     // Create the GPSDO control
@@ -907,25 +908,22 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     //otherwise if not disabled, look for the internal GPSDO
     if (mb.zpu_ctrl->peek32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_GPSDO_STATUS)) != dont_look_for_gpsdo)
     {
-        UHD_LOGGER_INFO("X300") << "Detecting internal GPSDO.... ";
-        try
-        {
+        UHD_LOG_DEBUG("X300", "Detecting internal GPSDO....");
+        try {
+            // gps_ctrl will print its own log statements if a GPSDO was found
             mb.gps = gps_ctrl::make(x300_make_uart_iface(mb.zpu_ctrl));
         }
-        catch(std::exception &e)
-        {
-            UHD_LOGGER_ERROR("X300") << "An error occurred making GPSDO control: " << e.what() ;
+        catch(std::exception &e) {
+            UHD_LOGGER_ERROR("X300")
+                << "An error occurred making GPSDO control: " << e.what();
         }
-        if (mb.gps and mb.gps->gps_detected())
-        {
-            for(const std::string &name:  mb.gps->get_sensors())
-            {
+        if (mb.gps and mb.gps->gps_detected()) {
+            for(const std::string& name : mb.gps->get_sensors()) {
                 _tree->create<sensor_value_t>(mb_path / "sensors" / name)
                     .set_publisher(boost::bind(&gps_ctrl::get_sensor, mb.gps, name));
             }
         }
-        else
-        {
+        else {
             mb.zpu_ctrl->poke32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_GPSDO_STATUS), dont_look_for_gpsdo);
         }
     }
@@ -935,29 +933,41 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     ////////////////////////////////////////////////////////////////////
     _tree->create<std::string>(mb_path / "time_source" / "value")
         .set("internal")
-        .add_coerced_subscriber(boost::bind(&x300_impl::update_time_source, this, boost::ref(mb), _1));
-    static const std::vector<std::string> time_sources = boost::assign::list_of("internal")("external")("gpsdo");
-    _tree->create<std::vector<std::string> >(mb_path / "time_source" / "options").set(time_sources);
+        .add_coerced_subscriber([this, &mb](const std::string& time_source){
+            this->update_time_source(mb, time_source);
+        })
+    ;
+    static const std::vector<std::string> time_sources =
+        {"internal", "external", "gpsdo"};
+    _tree->create<std::vector<std::string>>(mb_path / "time_source" / "options")
+        .set(time_sources);
 
     //setup the time output, default to ON
     _tree->create<bool>(mb_path / "time_source" / "output")
-        .add_coerced_subscriber(boost::bind(&x300_impl::set_time_source_out, this, boost::ref(mb), _1))
-        .set(true);
+        .add_coerced_subscriber([this, &mb](const bool time_output){
+            this->set_time_source_out(mb, time_output);
+        })
+        .set(true)
+    ;
 
     ////////////////////////////////////////////////////////////////////
     // setup clock sources and properties
     ////////////////////////////////////////////////////////////////////
     _tree->create<std::string>(mb_path / "clock_source" / "value")
         .set(X300_DEFAULT_CLOCK_SOURCE)
-        .add_coerced_subscriber(boost::bind(&x300_impl::update_clock_source, this, boost::ref(mb), _1));
-
-    static const std::vector<std::string> clock_source_options = boost::assign::list_of("internal")("external")("gpsdo");
-    _tree->create<std::vector<std::string> >(mb_path / "clock_source" / "options").set(clock_source_options);
+        .add_coerced_subscriber([this, &mb](const std::string& clock_source){
+            this->update_clock_source(mb, clock_source);
+        })
+    ;
+    static const std::vector<std::string> clock_source_options =
+        {"internal", "external", "gpsdo"};
+    _tree->create<std::vector<std::string>>(mb_path / "clock_source" / "options")
+        .set(clock_source_options);
 
     //setup external reference options. default to 10 MHz input reference
     _tree->create<std::string>(mb_path / "clock_source" / "external");
-    static const std::vector<double> external_freq_options = boost::assign::list_of(10e6)(30.72e6)(200e6);
-    _tree->create<std::vector<double> >(mb_path / "clock_source" / "external" / "freq" / "options")
+    static const std::vector<double> external_freq_options = {10e6, 30.72e6, 200e6};
+    _tree->create<std::vector<double>>(mb_path / "clock_source" / "external" / "freq" / "options")
         .set(external_freq_options);
     _tree->create<double>(mb_path / "clock_source" / "external" / "value")
         .set(mb.clock->get_sysref_clock_rate());
@@ -965,13 +975,33 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
 
     //setup the clock output, default to ON
     _tree->create<bool>(mb_path / "clock_source" / "output")
-        .add_coerced_subscriber(boost::bind(&x300_clock_ctrl::set_ref_out, mb.clock, _1));
+        .add_coerced_subscriber([&mb](const bool clock_output){
+            mb.clock->set_ref_out(clock_output);
+        })
+    ;
 
-    //initialize tick rate (must be done before setting time)
+    // Initialize tick rate (must be done before setting time)
+    // Note: The master tick rate can't be changed at runtime!
+    const double master_clock_rate = mb.clock->get_master_clock_rate();
     _tree->create<double>(mb_path / "tick_rate")
-        .add_coerced_subscriber(boost::bind(&device3_impl::update_tx_streamers, this, _1))
-        .add_coerced_subscriber(boost::bind(&device3_impl::update_rx_streamers, this, _1))
-        .set(mb.clock->get_master_clock_rate())
+        .set_coercer([master_clock_rate](const double rate){
+            // The contract of multi_usrp::set_master_clock_rate() is to coerce
+            // and not throw, so we'll follow that behaviour here.
+            if (!uhd::math::frequencies_are_equal(rate, master_clock_rate)) {
+                UHD_LOGGER_WARNING("X300") <<
+                    "Cannot update master clock rate! X300 Series does not "
+                    "allow changing the clock rate during runtime."
+                ;
+            }
+            return master_clock_rate;
+        })
+        .add_coerced_subscriber([this](const double rate){
+            this->update_tx_streamers(rate);
+        })
+        .add_coerced_subscriber([this](const double rate){
+            this->update_rx_streamers(rate);
+        })
+        .set(master_clock_rate)
     ;
 
     ////////////////////////////////////////////////////////////////////
@@ -997,7 +1027,8 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
                 find_blocks<rfnoc::x300_radio_ctrl_impl>(radio_blockid_hint);
     if (not radio_ids.empty()) {
         if (radio_ids.size() > 2) {
-            UHD_LOGGER_WARNING("X300") << "Too many Radio Blocks found. Using only the first two." ;
+            UHD_LOGGER_WARNING("X300")
+                << "Too many Radio Blocks found. Using only the first two.";
             radio_ids.resize(2);
         }
 
@@ -1039,7 +1070,8 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         }
 
     } else {
-        UHD_LOGGER_INFO("X300") << "No Radio Block found. Assuming radio-less operation.";
+        UHD_LOGGER_INFO("X300")
+            << "No Radio Block found. Assuming radio-less operation.";
     } /* end of radio block(s) initialization */
 
     mb.initialization_done = true;
@@ -1085,8 +1117,9 @@ uint32_t x300_impl::mboard_members_t::allocate_pcie_dma_chan(const uhd::sid_t &t
 
         if (_dma_chan_pool.count(raw_sid) == 0) {
             _dma_chan_pool[raw_sid] = _dma_chan_pool.size() + FIRST_DATA_CHANNEL;
-            UHD_LOGGER_DEBUG("X300") << "Assigning PCIe DMA channel " << _dma_chan_pool[raw_sid]
-                            << " to SID " << tx_sid.to_pp_string_hex() ;
+            UHD_LOGGER_DEBUG("X300")
+                << "Assigning PCIe DMA channel " << _dma_chan_pool[raw_sid]
+                << " to SID " << tx_sid.to_pp_string_hex();
         }
 
         if (_dma_chan_pool.size() + FIRST_DATA_CHANNEL > X300_PCIE_MAX_CHANNELS) {
@@ -1253,9 +1286,8 @@ uhd::both_xports_t x300_impl::make_transport(
                 << boost::format("For this connection, UHD recommends a send frame size of at least %lu for best\nperformance, but your system's MTU will only allow %lu.")
                 % eth_data_rec_frame_size
                 % _max_frame_sizes.send_frame_size
-                
                 << "This will negatively impact your maximum achievable sample rate."
-                ;
+            ;
         }
 
         if (_max_frame_sizes.recv_frame_size < eth_data_rec_frame_size) {
@@ -1263,9 +1295,8 @@ uhd::both_xports_t x300_impl::make_transport(
                 << boost::format("For this connection, UHD recommends a receive frame size of at least %lu for best\nperformance, but your system's MTU will only allow %lu.")
                 % eth_data_rec_frame_size
                 % _max_frame_sizes.recv_frame_size
-                
                 << "This will negatively impact your maximum achievable sample rate."
-                ;
+            ;
         }
 
         size_t system_max_send_frame_size = (size_t) _max_frame_sizes.send_frame_size;
@@ -1323,8 +1354,9 @@ uhd::both_xports_t x300_impl::make_transport(
 
         //send a mini packet with SID into the ZPU
         //ZPU will reprogram the ethernet framer
-        UHD_LOGGER_DEBUG("X300") << "programming packet for new xport on "
-            << interface_addr <<  " sid " << xports.send_sid ;
+        UHD_LOGGER_TRACE("X300")
+            << "programming packet for new xport on "
+            << interface_addr <<  " sid " << xports.send_sid;
         //YES, get a __send__ buffer from the __recv__ socket
         //-- this is the only way to program the framer for recv:
         managed_send_buffer::sptr buff = xports.recv->get_send_buff();
@@ -1334,7 +1366,8 @@ uhd::both_xports_t x300_impl::make_transport(
         buff.reset();
 
         //reprogram the ethernet dispatcher's udp port (should be safe to always set)
-        UHD_LOGGER_DEBUG("X300") << "reprogram the ethernet dispatcher's udp port" ;
+        UHD_LOGGER_TRACE("X300")
+            << "reprogram the ethernet dispatcher's udp port" ;
         mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, (ZPU_SR_ETHINT0+8+3)), X300_VITA_UDP_PORT);
         mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, (ZPU_SR_ETHINT1+8+3)), X300_VITA_UDP_PORT);
 
@@ -1629,7 +1662,7 @@ x300_impl::frame_size_t x300_impl::determine_max_frame_size(const std::string &a
     size_t min_send_frame_size = sizeof(x300_mtu_t);
     size_t max_send_frame_size = std::min(user_frame_size.send_frame_size, X300_10GE_DATA_FRAME_MAX_SIZE) & size_t(~3);
 
-    UHD_LOGGER_INFO("X300") << "Determining maximum frame size... ";
+    UHD_LOGGER_DEBUG("X300") << "Determining maximum frame size... ";
     while (min_recv_frame_size < max_recv_frame_size)
     {
        size_t test_frame_size = (max_recv_frame_size/2 + min_recv_frame_size/2 + 3) & ~3;
@@ -1678,7 +1711,8 @@ x300_impl::frame_size_t x300_impl::determine_max_frame_size(const std::string &a
     // of the recv and send frame sizes.
     frame_size.recv_frame_size = std::min(min_recv_frame_size, min_send_frame_size);
     frame_size.send_frame_size = std::min(min_recv_frame_size, min_send_frame_size);
-    UHD_LOGGER_INFO("X300") << "Maximum frame size: " << frame_size.send_frame_size << " bytes.";
+    UHD_LOGGER_INFO("X300")
+        << "Maximum frame size: " << frame_size.send_frame_size << " bytes.";
     return frame_size;
 }
 

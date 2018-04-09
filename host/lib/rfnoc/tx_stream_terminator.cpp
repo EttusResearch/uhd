@@ -5,9 +5,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "tx_stream_terminator.hpp"
-#include <boost/format.hpp>
 #include <uhd/rfnoc/sink_node_ctrl.hpp>
+#include <uhdlib/rfnoc/tx_stream_terminator.hpp>
+#include <boost/format.hpp>
 
 using namespace uhd::rfnoc;
 

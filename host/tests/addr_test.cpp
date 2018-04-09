@@ -75,3 +75,12 @@ BOOST_AUTO_TEST_CASE(test_dboard_id){
     BOOST_CHECK_EQUAL(dboard_id_t::from_string("1234").to_uint16(), 1234);
     std::cout << "Pretty Print: " << std::endl << dboard_id_t::none().to_pp_string();
 }
+
+BOOST_AUTO_TEST_CASE(test_map_device_addr){
+    std::map<std::string, std::string> dev_addr_map;
+    dev_addr_map["key1"] = "val1";
+    dev_addr_map["key2"] = "val2";
+    uhd::device_addr_t dev_addr(dev_addr_map);
+    BOOST_CHECK_EQUAL(dev_addr["key1"], "val1");
+    BOOST_CHECK_EQUAL(dev_addr["key2"], "val2");
+}

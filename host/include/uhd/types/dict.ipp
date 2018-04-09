@@ -113,6 +113,24 @@ namespace uhd{
     }
 
     template <typename Key, typename Val>
+    bool dict<Key, Val>::operator==(const dict<Key, Val> &other) const{
+        if (this->size() != other.size()){
+            return false;
+        }
+        BOOST_FOREACH(const pair_t& p, _map) {
+            if (not (other.has_key(p.first) and other.get(p.first) == p.second)){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    template <typename Key, typename Val>
+    bool dict<Key, Val>::operator!=(const dict<Key, Val> &other) const{
+        return not (*this == other);
+    }
+
+    template <typename Key, typename Val>
     Val dict<Key, Val>::pop(const Key &key){
         typename std::list<pair_t>::iterator it;
         for (it = _map.begin(); it != _map.end(); it++){

@@ -21,7 +21,7 @@
 #include <uhd/types/direction.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhd/device3.hpp>
-#include "xports.hpp"
+#include <uhdlib/rfnoc/xports.hpp>
 
 namespace uhd { namespace usrp {
 

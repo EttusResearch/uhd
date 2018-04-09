@@ -10,7 +10,7 @@
 #include <uhd/transport/buffer_pool.hpp>
 
 #include <uhd/utils/log.hpp>
-#include <uhd/utils/atomic.hpp>
+#include <uhdlib/utils/atomic.hpp>
 #include <boost/format.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/thread/thread.hpp> //sleep

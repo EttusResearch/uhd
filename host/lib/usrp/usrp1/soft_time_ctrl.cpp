@@ -6,7 +6,7 @@
 //
 
 #include "soft_time_ctrl.hpp"
-#include <uhd/utils/system_time.hpp>
+#include <uhdlib/utils/system_time.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/thread/condition_variable.hpp>

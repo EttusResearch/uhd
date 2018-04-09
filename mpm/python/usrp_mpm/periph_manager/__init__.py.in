@@ -7,6 +7,9 @@
 periph_manager __init__.py
 """
 
+__version__ = "${MPM_VERSION_MAJOR}.${MPM_VERSION_API}.${MPM_VERSION_ABI}.${MPM_VERSION_PATCH}"
+__githash__ = "${MPM_GIT_HASH_RAW}"
+
 from .base import PeriphManagerBase
 
 # This is where the import magic happens

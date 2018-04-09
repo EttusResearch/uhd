@@ -179,6 +179,11 @@ public:
         }
     }
 
+    size_t get_tx_interpolation() const
+    {
+        return 4;
+    }
+
 private:
     ad9777_regs_t _ad9777_regs;
     ads62p44_regs_t _ads62p44_regs;
@@ -187,7 +192,7 @@ private:
 
     void send_ad9777_reg(uint8_t addr){
         uint16_t reg = _ad9777_regs.get_write_reg(addr);
-        UHD_LOGGER_TRACE("USRP2") << "send_ad9777_reg: " << std::hex << reg;
+        UHD_LOG_TRACE("USRP2", "send_ad9777_reg: 0x" << std::hex << reg);
         _spiface->write_spi(
             SPI_SS_AD9777, spi_config_t::EDGE_RISE,
             reg, 16

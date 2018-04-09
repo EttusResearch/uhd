@@ -62,6 +62,11 @@ class PeriphManagerBase(object):
     # If empty, this will be ignored and no EEPROM info for the device is read
     # out.
     mboard_eeprom_addr = ""
+    # Offset of the motherboard EEPROM. All accesses to this EEPROM will be
+    # offset by this amount. In many cases, this value will be 0. But in some
+    # situations, we may want to use the offset as a way of partitioning
+    # access to an EEPROM.
+    mboard_eeprom_offset = 0
     # The EEPROM code checks for this word to see if the readout was valid.
     # Typically, devices should not override this unless their EEPROM follows a
     # different standard.
@@ -96,6 +101,13 @@ class PeriphManagerBase(object):
     # out.
     # If this is a list of EEPROMs, paths will be concatenated.
     dboard_eeprom_addr = None
+    # Offset of the daughterboard EEPROM. All accesses to this EEPROM will be
+    # offset by this amount. In many cases, this value will be 0. But in some
+    # situations, we may want to use the offset as a way of partitioning
+    # access to an EEPROM.
+    # Assume that all dboard offsets are the same for a given device. That is,
+    # the offset of DBoard 0 == offset of DBoard 1
+    dboard_eeprom_offset = 0
     # The EEPROM code checks for this word to see if the readout was valid.
     # Typically, devices should not override this unless their EEPROM follows a
     # different standard.
@@ -175,6 +187,7 @@ class PeriphManagerBase(object):
                            .format(self.mboard_eeprom_addr))
             (self._eeprom_head, self._eeprom_rawdata) = eeprom.read_eeprom(
                 get_eeprom_paths(self.mboard_eeprom_addr)[0],
+                self.mboard_eeprom_offset,
                 eeprom.MboardEEPROM.eeprom_header_format,
                 eeprom.MboardEEPROM.eeprom_header_keys,
                 self.mboard_eeprom_magic,
@@ -298,6 +311,7 @@ class PeriphManagerBase(object):
             self.log.debug("Initializing dboard %d...", dboard_idx)
             dboard_eeprom_md, dboard_eeprom_rawdata = eeprom.read_eeprom(
                 dboard_eeprom_path,
+                self.dboard_eeprom_offset,
                 eeprom.DboardEEPROM.eeprom_header_format,
                 eeprom.DboardEEPROM.eeprom_header_keys,
                 self.dboard_eeprom_magic,
@@ -552,6 +566,7 @@ class PeriphManagerBase(object):
                 f.write(data)
             update_func = \
                 getattr(self, self.updateable_components[id_str]['callback'])
+            self.log.info("Updating component `%s'", id_str)
             update_func(filepath, metadata)
         return True
 

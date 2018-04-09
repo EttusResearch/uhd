@@ -5,11 +5,18 @@
 //
 
 #include "mpmd_impl.hpp"
-#include "rpc_block_ctrl.hpp"
 #include <../device3/device3_impl.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/tasks.hpp>
+#include <uhd/types/sensors.hpp>
+#include <uhd/types/eeprom.hpp>
+#include <uhd/types/component_file.hpp>
+#include <uhd/usrp/mboard_eeprom.hpp>
+#include <uhdlib/rfnoc/rpc_block_ctrl.hpp>
+#include <uhdlib/rfnoc/radio_ctrl_impl.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/asio.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/thread.hpp>
 #include <memory>

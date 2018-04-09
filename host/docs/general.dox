@@ -212,21 +212,8 @@ For a module to be loaded at runtime, it must be:
 
 \subsection general_misc_prints Disabling or redirecting prints to stdout
 
-The user can disable the UHD library from printing directly to stdout by
-registering a custom message handler. The handler will intercept all
-messages, which can be dropped or redirected. Only one handler can be
-registered at a time. Make **register_handler** your first call into
-the UHD library:
-
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
-
-
-void my_handler(uhd::msg::type_t type, const std::string &msg){
-//handle the message...
-}
-
-uhd::msg::register_handler(&my_handler);
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+UHD will never print to stdout (this was changed in the 3.11.0.0 release).
+To find out more about configuring UHD logging, see \ref page_logging.
 
 */
 // vim:ft=doxygen:

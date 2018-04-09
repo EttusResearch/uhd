@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "expert_container.hpp"
+#include <uhdlib/experts/expert_container.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
 #include <boost/format.hpp>

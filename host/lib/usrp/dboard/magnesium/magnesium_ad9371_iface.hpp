@@ -7,8 +7,8 @@
 #ifndef INCLUDED_LIBUHD_RFNOC_MAGNESIUM_AD9371_IFACE_HPP
 #define INCLUDED_LIBUHD_RFNOC_MAGNESIUM_AD9371_IFACE_HPP
 
-#include "../../../utils/rpc.hpp"
 #include <uhd/types/direction.hpp>
+#include <uhdlib/utils/rpc.hpp>
 #include <iostream>
 #include <string>
 

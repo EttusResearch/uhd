@@ -92,5 +92,10 @@ API.
 
 -   **ref_locked:** clock reference locked (internal/external)
 
+\subsection b100_known_issues Known Issues
+
+- When using a TVRX2, you will need to send the tune command twice on the first
+  tune.
+
 */
 // vim:ft=doxygen:

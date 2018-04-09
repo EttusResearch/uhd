@@ -55,7 +55,7 @@ def log(level, message):
 def parse_args():
     """Setup argument parser and parse"""
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
-    parser.add_argument('-t', '--types', type=str, default="",
+    parser.add_argument('-t', '--types', action='append',
                         help="RegEx to select image sets from the manifest file.")
     parser.add_argument('-i', '--install-location',
                         default=None,
@@ -155,7 +155,7 @@ def write_inventory(inventory, inventory_fn):
         return False
 
 
-def lookup_urls(regex, manifest, inventory, refetch=False):
+def lookup_urls(regex_l, manifest, inventory, refetch=False):
     """Takes a list of RegExs to match within the manifest, returns a list of tuples with
     (hash, URL) that match the targets and are not in the inventory"""
     selected_targets = []
@@ -163,7 +163,7 @@ def lookup_urls(regex, manifest, inventory, refetch=False):
         # Iterate through the possible targets in the manifest.
         # If any of them match any of the RegExs supplied, add the URL to the
         # return list
-        if re.findall(regex, target):
+        if all(map((lambda regex: re.findall(regex, target)), regex_l)):
             log("TRACE", "Selected target: {}".format(target))
             target_info = manifest.get(target)
             target_url = target_info.get("url")
@@ -328,10 +328,13 @@ def main():
         ))
 
         # Determine the URLs to download based on the input regular expressions
-        types_regex = _DEFAULT_TARGET_REGEX if args.types == "" else args.types
+        if not args.types:
+            types_regex_l = [_DEFAULT_TARGET_REGEX]
+        else:
+            types_regex_l = args.types
 
-        log("TRACE", "RegEx for target selection: {}".format(types_regex))
-        targets_info = lookup_urls(types_regex, manifest, inventory, args.refetch)
+        log("TRACE", "RegExs for target selection: {}".format(types_regex_l))
+        targets_info = lookup_urls(types_regex_l, manifest, inventory, args.refetch)
         # Exit early if we don't have anything to download
         if targets_info:
             target_urls = [info.get("url") for info in targets_info]
@@ -358,12 +361,22 @@ def main():
                         buffer_size=args.buffer_size,
                         print_progress=(_LOG_LEVEL <= _LOG_LEVELS.get("INFO", 3))
                     )
-                    if downloaded_sha256 != target_sha256:
-                        log("ERROR", "Downloaded SHA256 does not match manifest for {}!".format(
-                            full_url))
                     log("TRACE", "{} successfully downloaded ({} Bytes)"
                         .format(temp_path, downloaded_size))
 
+                    # If the SHA256 in the manifest has the value '0', this is a special case and
+                    # we just skip the verification step
+                    if target_sha256 == '0':
+                        log("DEBUG", "Skipping SHA256 check for {}.".format(full_url))
+                    # If the check fails, print an error and don't unzip the file
+                    elif downloaded_sha256 != target_sha256:
+                        log("ERROR", "Downloaded SHA256 does not match manifest for {}!".format(
+                            full_url))
+                        continue
+                        # Note: this skips the --keep option, so we'll never keep image packages
+                        #       that fail the SHA256 checksum
+
+                    # Otherwise, the check has succeeded, and we can proceed
                     delete_from_inv(filename, inventory, images_dir)
                     archive_namelist = extract(temp_path, images_dir, archive_type)
                     if args.keep:

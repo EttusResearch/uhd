@@ -7,6 +7,7 @@
 // find-related code for MPM devices
 
 #include "mpmd_impl.hpp"
+#include "mpmd_devices.hpp"
 #include <uhd/types/device_addr.hpp>
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/transport/if_addrs.hpp>
@@ -116,7 +117,7 @@ device_addrs_t mpmd_find_with_addr(
         if (
             (not hint_.has_key("name")        or hint_["name"]    == new_addr["name"])
             and (not hint_.has_key("serial")  or hint_["serial"]  == new_addr["serial"])
-            and (not hint_.has_key("type")    or hint_["type"]    == new_addr["type"])
+            and (not hint_.has_key("type")    or hint_["type"]    == new_addr["type"] or hint_["type"] == MPM_CATCHALL_DEVICE_TYPE)
             and (not hint_.has_key("product") or hint_["product"] == new_addr["product"])
         ){
             UHD_LOG_TRACE("MPMD FIND",
@@ -201,6 +202,15 @@ device_addrs_t mpmd_find_with_bcast(const device_addr_t& hint)
 device_addrs_t mpmd_find(const device_addr_t& hint_)
 {
     device_addrs_t hints = separate_device_addr(hint_);
+    if (hint_.has_key("type")) {
+        if (std::find(MPM_DEVICE_TYPES.cbegin(),
+                      MPM_DEVICE_TYPES.cend(),
+                      hint_["type"]) == MPM_DEVICE_TYPES.cend()) {
+            UHD_LOG_TRACE("MPMD FIND",
+                "Returning early, type does not match an MPM device.");
+            return {};
+        }
+    }
     UHD_LOG_TRACE("MPMD FIND",
         "Finding with " << hints.size() << " different hint(s).");
 

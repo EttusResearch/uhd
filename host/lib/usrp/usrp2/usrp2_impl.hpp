@@ -8,17 +8,17 @@
 #ifndef INCLUDED_USRP2_IMPL_HPP
 #define INCLUDED_USRP2_IMPL_HPP
 
-#include "gpio_core_200.hpp"
 #include "usrp2_iface.hpp"
 #include "usrp2_fifo_ctrl.hpp"
 #include "clock_ctrl.hpp"
 #include "codec_ctrl.hpp"
-#include "rx_frontend_core_200.hpp"
-#include "tx_frontend_core_200.hpp"
-#include "rx_dsp_core_200.hpp"
-#include "tx_dsp_core_200.hpp"
-#include "time64_core_200.hpp"
-#include "user_settings_core_200.hpp"
+#include <uhdlib/usrp/cores/rx_frontend_core_200.hpp>
+#include <uhdlib/usrp/cores/tx_frontend_core_200.hpp>
+#include <uhdlib/usrp/cores/rx_dsp_core_200.hpp>
+#include <uhdlib/usrp/cores/tx_dsp_core_200.hpp>
+#include <uhdlib/usrp/cores/time64_core_200.hpp>
+#include <uhdlib/usrp/cores/user_settings_core_200.hpp>
+#include <uhdlib/usrp/cores/gpio_core_200.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/device.hpp>
@@ -27,8 +27,6 @@
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/types/clock_config.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/function.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/transport/udp_zero_copy.hpp>
@@ -36,6 +34,8 @@
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <boost/weak_ptr.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/function.hpp>
 #include <atomic>
 
 static const double USRP2_LINK_RATE_BPS = 1000e6/8;

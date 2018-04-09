@@ -5,8 +5,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "tx_dsp_core_200.hpp"
-#include "dsp_core_utils.hpp"
+#include <uhdlib/usrp/cores/tx_dsp_core_200.hpp>
+#include <uhdlib/usrp/cores/dsp_core_utils.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/math.hpp>

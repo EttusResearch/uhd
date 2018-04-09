@@ -466,5 +466,12 @@ If you need to change any of there, you should then be able to run:
 
 to set the 'mac-addr', 'serial' and 'Mboard'.
 
+\subsection usrp2_known_issues Known Issues
+
+- When setting `clock_source` to external, but not providing an external
+  reference, there are cases when a successful lock is reported even though
+  no clock signal is present, which can cause false positives. Terminating the
+  clock input may help in some cases.
+
 */
 // vim:ft=doxygen:

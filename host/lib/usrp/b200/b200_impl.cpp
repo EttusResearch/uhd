@@ -572,6 +572,11 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
         .set_coercer(boost::bind(&b200_impl::set_tick_rate, this, _1))
         .set_publisher(boost::bind(&b200_impl::get_tick_rate, this))
         .add_coerced_subscriber(boost::bind(&b200_impl::update_tick_rate, this, _1));
+    _tree->create<meta_range_t>(mb_path / "tick_rate/range")
+        .set_publisher([this](){
+            return this->_codec_ctrl->get_clock_rate_range();
+        })
+    ;
     _tree->create<time_spec_t>(mb_path / "time" / "cmd");
     _tree->create<bool>(mb_path / "auto_tick_rate").set(false);
 

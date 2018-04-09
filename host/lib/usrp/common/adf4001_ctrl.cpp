@@ -10,9 +10,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "adf4001_ctrl.hpp"
-
+#include <uhdlib/usrp/common/adf4001_ctrl.hpp>
 #include <uhd/utils/log.hpp>
+
 #include <iostream>
 #include <iomanip>
 

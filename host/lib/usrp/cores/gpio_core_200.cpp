@@ -5,8 +5,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "gpio_core_200.hpp"
 #include <uhd/types/dict.hpp>
+#include <uhdlib/usrp/cores/gpio_core_200.hpp>
 
 #define REG_GPIO_IDLE          _base + 0
 #define REG_GPIO_RX_ONLY       _base + 4

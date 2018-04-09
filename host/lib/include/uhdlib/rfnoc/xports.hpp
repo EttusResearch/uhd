@@ -5,6 +5,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#ifndef INCLUDED_LIBUHD_XPORTS_HPP
+#define INCLUDED_LIBUHD_XPORTS_HPP
+
 #include <uhd/types/sid.hpp>
 #include <uhd/types/endianness.hpp>
 #include <uhd/transport/zero_copy.hpp>
@@ -26,4 +29,6 @@ namespace uhd {
     };
 
 };
+
+#endif /* INCLUDED_LIBUHD_XPORTS_HPP */
 

@@ -158,7 +158,13 @@ class Magnesium(DboardManagerBase):
     # point, so we set it to the (carefully calculated) alternate value instead.
     INIT_PHASE_DAC_WORD = 31000 # Intentionally decimal
     PHASE_DAC_SPI_ADDR = 0x0
+    # External PPS pipeline delay from the PPS captured at the FPGA to TDC input,
+    # in reference clock ticks
+    EXT_PPS_DELAY = 5
+    # Variable PPS delay before the RP/SP pulsers begin. Fixed value for the N3xx devices.
+    N3XX_INT_PPS_DELAY = 4
     default_master_clock_rate = 125e6
+    default_time_source = 'internal'
     default_current_jesd_rate = 2500e6
 
     def __init__(self, slot_idx, **kwargs):
@@ -336,17 +342,25 @@ class Magnesium(DboardManagerBase):
             )
         def _sync_db_clock():
             " Synchronizes the DB clock to the common reference "
+            reg_offset = 0x200
+            ref_clk_freq = self.ref_clock_freq
+            ext_pps_delay = self.EXT_PPS_DELAY
+            if args.get('time_source', self.default_time_source) == 'sfp0':
+                reg_offset = 0x400
+                ref_clk_freq = 62.5e6
+                ext_pps_delay = 1 # only 1 flop between the WR core output and the TDC input
             synchronizer = ClockSynchronizer(
                 dboard_ctrl_regs,
                 self.lmk,
                 self._spi_ifaces['phase_dac'],
-                0, # register offset value.
+                reg_offset,
                 self.master_clock_rate,
-                self.ref_clock_freq,
+                ref_clk_freq,
                 860E-15, # fine phase shift. TODO don't hardcode. This should live in the EEPROM
                 self.INIT_PHASE_DAC_WORD,
                 self.PHASE_DAC_SPI_ADDR,
-                5, # External PPS pipeline delay from the PPS captured at the FPGA to TDC input
+                ext_pps_delay,
+                self.N3XX_INT_PPS_DELAY,
                 self.slot_idx)
             # The radio clock traces on the motherboard are 69 ps longer for Daughterboard B
             # than Daughterboard A. We want both of these clocks to align at the converters

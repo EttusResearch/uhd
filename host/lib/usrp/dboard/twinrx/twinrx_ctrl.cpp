@@ -6,8 +6,8 @@
 
 #include "twinrx_ctrl.hpp"
 #include "twinrx_ids.hpp"
-#include "adf435x.hpp"
-#include "adf535x.hpp"
+#include <uhdlib/usrp/common/adf435x.hpp>
+#include <uhdlib/usrp/common/adf535x.hpp>
 #include <uhd/utils/math.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <boost/thread/thread.hpp>

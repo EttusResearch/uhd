@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "dsp_core_utils.hpp"
 #include <uhd/rfnoc/duc_block_ctrl.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/convert.hpp>
@@ -12,6 +11,7 @@
 #include <uhdlib/utils/compat_check.hpp>
 #include <uhdlib/utils/math.hpp>
 #include <uhdlib/utils/narrow.hpp>
+#include <uhdlib/usrp/cores/dsp_core_utils.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <cmath>
 
@@ -182,7 +182,7 @@ public:
 
 private:
 
-    static constexpr size_t MAJOR_COMP = 1;
+    static constexpr size_t MAJOR_COMP = 2;
     static constexpr size_t MINOR_COMP = 0;
     static constexpr size_t RB_REG_COMPAT_NUM = 0;
     static constexpr size_t RB_REG_NUM_HALFBANDS = 1;
@@ -192,19 +192,18 @@ private:
     const size_t _num_halfbands;
     const size_t _cic_max_interp;
 
-    //! Set the CORDIC frequency shift the signal to \p requested_freq
+    //! Set the DDS frequency shift the signal to \p requested_freq
     double set_freq(const double requested_freq, const size_t chan)
     {
         const double output_rate = get_arg<double>("output_rate");
         double actual_freq;
         int32_t freq_word;
         get_freq_and_freq_word(requested_freq, output_rate, actual_freq, freq_word);
-        // Xilinx CORDIC uses a different format for the phase increment, hence the divide-by-four:
-        sr_write("CORDIC_FREQ", uint32_t(freq_word/4), chan);
+        sr_write("DDS_FREQ", uint32_t(freq_word), chan);
         return actual_freq;
     }
 
-    //! Return a range of valid frequencies the CORDIC can tune to
+    //! Return a range of valid frequencies the DDS can tune to
     uhd::meta_range_t get_freq_range(void)
     {
         const double output_rate = get_arg<double>("output_rate");
@@ -263,10 +262,7 @@ private:
         // For Ettus CIC R=interp, M=1, N=4. Gain = (R * M) ^ (N - 1)
         const int CIC_N = 4;
         const double rate_pow = std::pow(double(interp & 0xff), CIC_N - 1);
-
-        // Experimentally determined value to scale the output to [-1, 1]
-        // This must also encompass the CORDIC gain
-        static const double CONSTANT_GAIN = 1.1644;
+        const double CONSTANT_GAIN = 1.0;
 
         const double scaling_adjustment =
             std::pow(2, uhd::math::ceil_log2(rate_pow))/(CONSTANT_GAIN*rate_pow);
@@ -283,7 +279,7 @@ private:
         set_arg<double>("input_rate", desired_input_rate, chan);
     }
 
-    // Calculate compensation gain values for algorithmic gain of CORDIC and CIC taking into account
+    // Calculate compensation gain values for algorithmic gain of DDS and CIC taking into account
     // gain compensation blocks already hardcoded in place in DUC (that provide simple 1/2^n gain compensation).
     // Further more factor in OTW format which adds further gain factor to weight output samples correctly.
     void update_scalar(const double scalar, const size_t chan)

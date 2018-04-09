@@ -8,18 +8,8 @@
 #ifndef INCLUDED_B100_IMPL_HPP
 #define INCLUDED_B100_IMPL_HPP
 
-#include "fx2_ctrl.hpp"
 #include "clock_ctrl.hpp"
 #include "codec_ctrl.hpp"
-#include "i2c_core_200.hpp"
-#include "rx_frontend_core_200.hpp"
-#include "tx_frontend_core_200.hpp"
-#include "rx_dsp_core_200.hpp"
-#include "tx_dsp_core_200.hpp"
-#include "time64_core_200.hpp"
-#include "fifo_ctrl_excelsior.hpp"
-#include "user_settings_core_200.hpp"
-#include "recv_packet_demuxer_3000.hpp"
 #include <uhd/device.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/types/dict.hpp>
@@ -31,6 +21,16 @@
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/transport/usb_zero_copy.hpp>
+#include <uhdlib/usrp/common/fifo_ctrl_excelsior.hpp>
+#include <uhdlib/usrp/common/fx2_ctrl.hpp>
+#include <uhdlib/usrp/common/recv_packet_demuxer_3000.hpp>
+#include <uhdlib/usrp/cores/i2c_core_200.hpp>
+#include <uhdlib/usrp/cores/rx_frontend_core_200.hpp>
+#include <uhdlib/usrp/cores/tx_frontend_core_200.hpp>
+#include <uhdlib/usrp/cores/rx_dsp_core_200.hpp>
+#include <uhdlib/usrp/cores/tx_dsp_core_200.hpp>
+#include <uhdlib/usrp/cores/time64_core_200.hpp>
+#include <uhdlib/usrp/cores/user_settings_core_200.hpp>
 #include <boost/weak_ptr.hpp>
 
 static const double          B100_LINK_RATE_BPS = 256e6/5; //pratical link rate (< 480 Mbps)

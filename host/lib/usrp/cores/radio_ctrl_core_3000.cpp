@@ -5,14 +5,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "radio_ctrl_core_3000.hpp"
-#include "async_packet_handler.hpp"
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
+#include <uhdlib/usrp/common/async_packet_handler.hpp>
+#include <uhdlib/usrp/cores/radio_ctrl_core_3000.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/format.hpp>

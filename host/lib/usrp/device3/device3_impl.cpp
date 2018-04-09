@@ -6,14 +6,12 @@
 //
 
 #include "device3_impl.hpp"
-#include "graph_impl.hpp"
-#include "ctrl_iface.hpp"
 #include <uhd/utils/log.hpp>
 #include <uhd/rfnoc/block_ctrl_base.hpp>
+#include <uhdlib/rfnoc/graph_impl.hpp>
+#include <uhdlib/rfnoc/ctrl_iface.hpp>
 #include <boost/make_shared.hpp>
 #include <algorithm>
-
-#define UHD_DEVICE3_LOG() UHD_LOGGER_TRACE("DEVICE3")
 
 using namespace uhd::usrp;
 
@@ -109,7 +107,6 @@ void device3_impl::enumerate_rfnoc_blocks(
     // TODO: Clear out all the old block control classes
     // 3) Create new block controllers
     for (size_t i = 0; i < n_blocks; i++) {
-        UHD_DEVICE3_LOG() << "[RFNOC] ------- Block Setup -----------" ;
         // First, make a transport for port number zero, because we always need that:
         ctrl_sid.set_dst_xbarport(base_port + i);
         ctrl_sid.set_dst_blockport(0);
@@ -118,25 +115,39 @@ void device3_impl::enumerate_rfnoc_blocks(
             CTRL,
             transport_args
         );
-        UHD_DEVICE3_LOG() << str(boost::format("Setting up NoC-Shell Control for port #0 (SID: %s)...") % xport.send_sid.to_pp_string_hex());
-        uhd::rfnoc::ctrl_iface::sptr ctrl = uhd::rfnoc::ctrl_iface::make(
-                xport.endianness == uhd::ENDIANNESS_BIG,
-                xport.send,
-                xport.recv,
-                xport.send_sid,
-                str(boost::format("CE_%02d_Port_%02X") % i % ctrl_sid.get_dst_endpoint())
+        UHD_LOG_TRACE("DEVICE3",
+            str(boost::format("Setting up NoC-Shell Control for port #0 (SID: %s)...")
+                % xport.send_sid.to_pp_string_hex())
         );
-        uint64_t noc_id = ctrl->peek64(uhd::rfnoc::SR_READBACK_REG_ID);
-        UHD_DEVICE3_LOG() << str(boost::format("Port %d: Found NoC-Block with ID %016X.") % int(ctrl_sid.get_dst_endpoint()) % noc_id) ;
+        uhd::rfnoc::ctrl_iface::sptr ctrl = uhd::rfnoc::ctrl_iface::make(
+            xport,
+            str(boost::format("CE_%02d_Port_%02X")
+                % i
+                % ctrl_sid.get_dst_endpoint())
+        );
+        uint64_t noc_id = ctrl->send_cmd_pkt(
+                uhd::rfnoc::SR_READBACK,
+                uhd::rfnoc::SR_READBACK_REG_ID,
+                true
+        );
+        UHD_LOG_DEBUG("DEVICE3", str(
+            boost::format("Port 0x%02X: Found NoC-Block with ID %016X.")
+                % int(ctrl_sid.get_dst_endpoint())
+                % noc_id
+        ));
         uhd::rfnoc::make_args_t make_args;
         uhd::rfnoc::blockdef::sptr block_def = uhd::rfnoc::blockdef::make_from_noc_id(noc_id);
         if (not block_def) {
-            UHD_DEVICE3_LOG() << "Using default block configuration." ;
-            block_def = uhd::rfnoc::blockdef::make_from_noc_id(uhd::rfnoc::DEFAULT_NOC_ID);
+            UHD_LOG_WARNING("DEVICE3",
+                "No block definition found, using default block configuration "
+                "for block with NOC ID: " + str(boost::format("0x%08X") % noc_id)
+            );
+            block_def = uhd::rfnoc::blockdef::make_from_noc_id(
+                uhd::rfnoc::DEFAULT_NOC_ID);
         }
         UHD_ASSERT_THROW(block_def);
         make_args.ctrl_ifaces[0] = ctrl;
-        for(const size_t port_number:  block_def->get_all_port_numbers()) {
+        for (const size_t port_number : block_def->get_all_port_numbers()) {
             if (port_number == 0) { // We've already set this up
                 continue;
             }
@@ -146,17 +157,22 @@ void device3_impl::enumerate_rfnoc_blocks(
                 CTRL,
                 transport_args
             );
-            UHD_DEVICE3_LOG() << str(boost::format("Setting up NoC-Shell Control for port #%d (SID: %s)...") % port_number % xport1.send_sid.to_pp_string_hex());
+            UHD_LOG_TRACE("DEVICE3", str(
+                    boost::format("Setting up NoC-Shell Control for port #%d "
+                                  "(SID: %s)...")
+                    % port_number
+                    % xport1.send_sid.to_pp_string_hex()
+            ));
             uhd::rfnoc::ctrl_iface::sptr ctrl1 = uhd::rfnoc::ctrl_iface::make(
-                    xport1.endianness == uhd::ENDIANNESS_BIG,
-                    xport1.send,
-                    xport1.recv,
-                    xport1.send_sid,
+                    xport1,
                     str(boost::format("CE_%02d_Port_%02d") % i % ctrl_sid.get_dst_endpoint())
             );
-            UHD_DEVICE3_LOG() << "OK" ;
             make_args.ctrl_ifaces[port_number] = ctrl1;
         }
+        UHD_LOG_TRACE("DEVICE3",
+            "All control transports successfully created for block with ID " <<
+            str(boost::format("0x%08X") % noc_id)
+        );
 
         make_args.base_address = xport.send_sid.get_dst();
         make_args.device_index = device_index;

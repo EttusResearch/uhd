@@ -5,9 +5,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "i2c_core_100_wb32.hpp"
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhdlib/usrp/cores/i2c_core_100_wb32.hpp>
 #include <boost/thread/thread.hpp> //sleep
 
 #define REG_I2C_PRESCALER_LO _base + 0

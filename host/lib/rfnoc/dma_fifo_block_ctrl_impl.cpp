@@ -6,11 +6,11 @@
 //
 
 #include <uhd/rfnoc/dma_fifo_block_ctrl.hpp>
-#include "dma_fifo_core_3000.hpp"
-#include "wb_iface_adapter.hpp"
 #include <uhd/convert.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/types/wb_iface.hpp>
+#include <uhdlib/rfnoc/wb_iface_adapter.hpp>
+#include <uhdlib/usrp/cores/dma_fifo_core_3000.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/format.hpp>
@@ -27,44 +27,27 @@ public:
     {
         _perifs.resize(get_input_ports().size());
         for(size_t i = 0; i < _perifs.size(); i++) {
-            _perifs[i].ctrl = boost::make_shared<wb_iface_adapter>(
-                // poke32 functor
-                boost::bind(
-                    static_cast< void (block_ctrl_base::*)(const uint32_t, const uint32_t, const size_t) >(&block_ctrl_base::sr_write),
-                    this, _1, _2, i
-                ),
-                // peek32 functor
-                boost::bind(
-                    static_cast< uint32_t (block_ctrl_base::*)(const uint32_t, const size_t) >(&block_ctrl_base::user_reg_read32),
-                    this,
-                    _1, i
-                ),
-                // peek64 functor
-                boost::bind(
-                    static_cast< uint64_t (block_ctrl_base::*)(const uint32_t, const size_t) >(&block_ctrl_base::user_reg_read64),
-                    this,
-                    _1, i
-                )
-            );
+            _perifs[i].ctrl = this->get_ctrl_iface(i);
             static const uint32_t USER_SR_BASE = 128*4;
             static const uint32_t USER_RB_BASE = 0;     //Don't care
             _perifs[i].base_addr = DEFAULT_SIZE*i;
             _perifs[i].depth = DEFAULT_SIZE;
             _perifs[i].core = dma_fifo_core_3000::make(_perifs[i].ctrl, USER_SR_BASE, USER_RB_BASE);
             _perifs[i].core->resize(_perifs[i].base_addr, _perifs[i].depth);
-            UHD_LOGGER_INFO("RFNOC DMA FIFO") << boost::format("Running BIST for FIFO %d... ") % i;
+            UHD_LOG_DEBUG(unique_id(), "Running BIST for FIFO " << i);
             if (_perifs[i].core->ext_bist_supported()) {
                 uint32_t bisterr = _perifs[i].core->run_bist();
                 if (bisterr != 0) {
                     throw uhd::runtime_error(str(boost::format("BIST failed! (code: %d)\n") % bisterr));
                 } else {
                     double throughput = _perifs[i].core->get_bist_throughput();
-                    UHD_LOGGER_INFO("RFNOC DMA FIFO") << (boost::format("BIST passed (Throughput: %.0f MB/s)") % (throughput/1e6)) ;
+                    UHD_LOGGER_INFO(unique_id()) << (boost::format("BIST passed (Throughput: %.0f MB/s)") % (throughput/1e6)) ;
                 }
             } else {
                 if (_perifs[i].core->run_bist() == 0) {
-                    UHD_LOGGER_INFO("RFNOC DMA FIFO") << "BIST passed";
+                    UHD_LOGGER_INFO(unique_id()) << "BIST passed";
                 } else {
+                    UHD_LOGGER_ERROR(unique_id()) << "BIST failed!";
                     throw uhd::runtime_error("BIST failed!");
                 }
             }

@@ -8,7 +8,6 @@
 #define INCLUDED_MPMD_IMPL_HPP
 
 #include "mpmd_xport_mgr.hpp"
-#include "../../utils/rpc.hpp"
 #include "../device3/device3_impl.hpp"
 #include <uhd/stream.hpp>
 #include <uhd/types/device_addr.hpp>
@@ -16,6 +15,7 @@
 #include <uhd/utils/tasks.hpp>
 #include <uhd/transport/muxed_zero_copy_if.hpp>
 #include <uhd/property_tree.hpp>
+#include <uhdlib/utils/rpc.hpp>
 #include <boost/optional.hpp>
 #include <map>
 #include <memory>

@@ -5,10 +5,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "utils.hpp"
 #include <uhd/utils/log.hpp>
 #include <uhd/rfnoc/source_node_ctrl.hpp>
 #include <uhd/rfnoc/sink_node_ctrl.hpp>
+#include <uhdlib/rfnoc/utils.hpp>
 
 using namespace uhd::rfnoc;
 

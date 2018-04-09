@@ -60,7 +60,12 @@ PACKAGE_MAPPING = {
                   'usrp_n310_fpga_XG.bit.md5',
                   'usrp_n310_fpga_XG.dts',
                   'usrp_n310_fpga_XG.dts.md5',
-                  'usrp_n310_fpga_XG.rpt']
+                  'usrp_n310_fpga_XG.rpt',
+                  'usrp_n310_fpga_WX.bit',
+                  'usrp_n310_fpga_WX.bit.md5',
+                  'usrp_n310_fpga_WX.dts',
+                  'usrp_n310_fpga_WX.dts.md5',
+                  'usrp_n310_fpga_WX.rpt',],
     },
     "n300": {
         "type": "n3xx",
@@ -74,7 +79,12 @@ PACKAGE_MAPPING = {
                   'usrp_n300_fpga_XG.bit.md5',
                   'usrp_n300_fpga_XG.dts',
                   'usrp_n300_fpga_XG.dts.md5',
-                  'usrp_n300_fpga_XG.rpt']
+                  'usrp_n300_fpga_XG.rpt',
+                  'usrp_n300_fpga_WX.bit',
+                  'usrp_n300_fpga_WX.bit.md5',
+                  'usrp_n300_fpga_WX.dts',
+                  'usrp_n300_fpga_WX.dts.md5',
+                  'usrp_n300_fpga_WX.rpt',],
     },
     "n310_aa": {
         "type": "n3xx",
@@ -94,6 +104,25 @@ PACKAGE_MAPPING = {
                   'usrp_n310_fpga_XA.dts',
                   'usrp_n310_fpga_XA.dts.md5',
                   'usrp_n310_fpga_XA.rpt']
+    },
+    "n300_aa": {
+        "type": "n3xx",
+        "package_name": "n3xx_n300_fpga_aurora-g{}.zip",
+        "files": ['usrp_n300_fpga_AA.bit',
+                  'usrp_n300_fpga_AA.bit.md5',
+                  'usrp_n300_fpga_AA.dts',
+                  'usrp_n300_fpga_AA.dts.md5',
+                  'usrp_n300_fpga_AA.rpt',
+                  'usrp_n300_fpga_HA.bit',
+                  'usrp_n300_fpga_HA.bit.md5',
+                  'usrp_n300_fpga_HA.dts',
+                  'usrp_n300_fpga_HA.dts.md5',
+                  'usrp_n300_fpga_HA.rpt',
+                  'usrp_n300_fpga_XA.bit',
+                  'usrp_n300_fpga_XA.bit.md5',
+                  'usrp_n300_fpga_XA.dts',
+                  'usrp_n300_fpga_XA.dts.md5',
+                  'usrp_n300_fpga_XA.rpt']
     },
     "n310_cpld": {
         "type": "n3xx",

@@ -9,7 +9,7 @@
 #define INCLUDED_DBOARD_TWINRX_EXPERTS_HPP
 
 #include "twinrx_ctrl.hpp"
-#include "expert_nodes.hpp"
+#include <uhdlib/experts/expert_nodes.hpp>
 #include <uhd/utils/math.hpp>
 
 namespace uhd { namespace usrp { namespace dboard { namespace twinrx {

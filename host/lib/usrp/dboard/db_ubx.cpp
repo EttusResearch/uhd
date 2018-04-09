@@ -16,9 +16,10 @@
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/log.hpp>
-
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/safe_call.hpp>
+#include <uhdlib/usrp/common/max287x.hpp>
+
 #include <boost/assign/list_of.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/math/special_functions/round.hpp>
@@ -26,7 +27,6 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/thread/mutex.hpp>
 #include <map>
-#include "max287x.hpp"
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -474,7 +474,7 @@ public:
         get_tx_subtree()->create<std::vector<std::string> >("antenna/options")
             .set(ubx_tx_antennas);
         get_tx_subtree()->create<std::string>("antenna/value")
-            .add_coerced_subscriber(boost::bind(&ubx_xcvr::set_tx_ant, this, _1))
+            .set_coercer(boost::bind(&ubx_xcvr::set_tx_ant, this, _1))
             .set(ubx_tx_antennas.at(0));
         get_tx_subtree()->create<std::string>("connection")
             .set("QI");
@@ -511,7 +511,7 @@ public:
         get_rx_subtree()->create<std::vector<std::string> >("antenna/options")
             .set(ubx_rx_antennas);
         get_rx_subtree()->create<std::string>("antenna/value")
-            .add_coerced_subscriber(boost::bind(&ubx_xcvr::set_rx_ant, this, _1)).set("RX2");
+            .set_coercer(boost::bind(&ubx_xcvr::set_rx_ant, this, _1)).set("RX2");
         get_rx_subtree()->create<std::string>("connection")
             .set("IQ");
         get_rx_subtree()->create<bool>("enabled")
@@ -735,16 +735,17 @@ private:
         return sensor_value_t("Unknown", false, "locked", "unlocked");
     }
 
-    void set_tx_ant(const std::string &ant)
+    std::string set_tx_ant(const std::string &ant)
     {
         //validate input
         assert_has(ubx_tx_antennas, ant, "ubx tx antenna name");
         set_cpld_field(CAL_ENABLE, (ant == "CAL"));
         write_cpld_reg();
+        return ant;
     }
 
     // Set RX antennas
-    void set_rx_ant(const std::string &ant)
+    std::string set_rx_ant(const std::string &ant)
     {
         boost::mutex::scoped_lock lock(_mutex);
         //validate input
@@ -767,6 +768,8 @@ private:
         }
         write_gpio();
         write_cpld_reg();
+
+        return ant;
     }
 
     /***********************************************************************

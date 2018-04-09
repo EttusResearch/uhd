@@ -5,12 +5,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "recv_packet_demuxer.hpp"
+#include <uhdlib/usrp/common/recv_packet_demuxer.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/byteswap.hpp>
-#include <boost/thread/mutex.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/types/metadata.hpp>
+
+#include <boost/thread/mutex.hpp>
 #include <queue>
 #include <deque>
 #include <vector>

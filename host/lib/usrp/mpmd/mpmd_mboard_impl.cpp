@@ -271,7 +271,18 @@ boost::optional<device_addr_t> mpmd_mboard_impl::is_device_reachable(
                 "Was able to ping device, trying RPC connection.");
             auto chdr_rpcc = uhd::rpc_client::make(chdr_addr, rpc_port);
             chdr_rpcc->set_timeout(MPMD_SHORT_RPC_TIMEOUT);
-            chdr_rpcc->request<dev_info>("get_device_info");
+            auto dev_info_chdr = chdr_rpcc->request<dev_info>("get_device_info");
+            if (dev_info_chdr["serial"] != device_info_dict["serial"]) {
+                UHD_LOG_DEBUG("MPMD", boost::format(
+                    "Connected to CHDR interface, but got wrong device. "
+                    "Tried to reach serial %s, got %s")
+                     % device_info_dict["serial"] % dev_info_chdr["serial"]);
+                return boost::optional<device_addr_t>();
+            } else {
+                UHD_LOG_TRACE("MPMD", boost::format(
+                    "Reachable device matches expected device (serial=%s)")
+                    % device_info_dict["serial"] );
+            }
             device_addr_t device_addr_copy = device_addr;
             device_addr_copy["addr"] = chdr_addr;
             return boost::optional<device_addr_t>(device_addr_copy);
@@ -489,12 +500,13 @@ uhd::task::sptr mpmd_mboard_impl::claim_device_and_make_task(
     UHD_LOG_TRACE("MPMD", "Received claim token " << rpc_token);
     rpc->set_token(rpc_token);
     return uhd::task::make([this] {
+        auto now = std::chrono::steady_clock::now();
         if (not this->claim()) {
             throw uhd::value_error("mpmd device reclaiming loop failed!");
         };
         this->dump_logs();
-        std::this_thread::sleep_for(
-            std::chrono::milliseconds(MPMD_RECLAIM_INTERVAL_MS)
+        std::this_thread::sleep_until(
+            now + std::chrono::milliseconds(MPMD_RECLAIM_INTERVAL_MS)
         );
     });
 }

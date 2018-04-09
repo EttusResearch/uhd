@@ -4,7 +4,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "dsp_core_utils.hpp"
 #include <uhd/rfnoc/ddc_block_ctrl.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/convert.hpp>
@@ -12,6 +11,7 @@
 #include <uhdlib/utils/math.hpp>
 #include <uhdlib/utils/narrow.hpp>
 #include <uhdlib/utils/compat_check.hpp>
+#include <uhdlib/usrp/cores/dsp_core_utils.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <cmath>
 
@@ -197,7 +197,7 @@ public:
     }
 
 private:
-    static constexpr size_t MAJOR_COMP = 1;
+    static constexpr size_t MAJOR_COMP = 2;
     static constexpr size_t MINOR_COMP = 0;
     static constexpr size_t RB_REG_COMPAT_NUM = 0;
     static constexpr size_t RB_REG_NUM_HALFBANDS = 1;
@@ -207,18 +207,18 @@ private:
     const size_t _num_halfbands;
     const size_t _cic_max_decim;
 
-    //! Set the CORDIC frequency shift the signal to \p requested_freq
+    //! Set the DDS frequency shift the signal to \p requested_freq
     double set_freq(const double requested_freq, const size_t chan)
     {
         const double input_rate = get_arg<double>("input_rate");
         double actual_freq;
         int32_t freq_word;
         get_freq_and_freq_word(requested_freq, input_rate, actual_freq, freq_word);
-        sr_write("CORDIC_FREQ", uint32_t(freq_word), chan);
+        sr_write("DDS_FREQ", uint32_t(freq_word), chan);
         return actual_freq;
     }
 
-    //! Return a range of valid frequencies the CORDIC can tune to
+    //! Return a range of valid frequencies the DDS can tune to
     uhd::meta_range_t get_freq_range(void)
     {
         const double input_rate = get_arg<double>("input_rate");
@@ -286,19 +286,17 @@ private:
         // Calculate algorithmic gain of CIC for a given decimation.
         // For Ettus CIC R=decim, M=1, N=4. Gain = (R * M) ^ N
         const double rate_pow = std::pow(double(decim & 0xff), 4);
-        // Calculate compensation gain values for algorithmic gain of CORDIC and CIC taking into account
+        // Calculate compensation gain values for algorithmic gain of DDS and CIC taking into account
         // gain compensation blocks already hardcoded in place in DDC (that provide simple 1/2^n gain compensation).
-        // CORDIC algorithmic gain limits asymptotically around 1.647 after many iterations.
-        static const double CORDIC_GAIN = 1.648;
+        static const double DDS_GAIN = 2.0;
         //
         // The polar rotation of [I,Q] = [1,1] by Pi/8 also yields max magnitude of SQRT(2) (~1.4142) however
-        // input to the CORDIC thats outside the unit circle can only be sourced from a saturated RF frontend.
+        // input to the DDS thats outside the unit circle can only be sourced from a saturated RF frontend.
         // To provide additional dynamic range head room accordingly using scale factor applied at egress from DDC would
         // cost us small signal performance, thus we do no provide compensation gain for a saturated front end and allow
         // the signal to clip in the H/W as needed. If we wished to avoid the signal clipping in these circumstances then adjust code to read:
-        // _scaling_adjustment = std::pow(2, ceil_log2(rate_pow))/(CORDIC_GAIN*rate_pow*1.415);
         const double scaling_adjustment =
-            std::pow(2, uhd::math::ceil_log2(rate_pow))/(CORDIC_GAIN*rate_pow);
+            std::pow(2, uhd::math::ceil_log2(rate_pow))/(DDS_GAIN*rate_pow);
         update_scalar(scaling_adjustment, chan);
         return input_rate/decim_rate;
     }
@@ -312,7 +310,7 @@ private:
         set_arg<double>("output_rate", desired_output_rate, chan);
     }
 
-    // Calculate compensation gain values for algorithmic gain of CORDIC and CIC taking into account
+    // Calculate compensation gain values for algorithmic gain of DDS and CIC taking into account
     // gain compensation blocks already hardcoded in place in DDC (that provide simple 1/2^n gain compensation).
     // Further more factor in OTW format which adds further gain factor to weight output samples correctly.
     void update_scalar(const double scalar, const size_t chan)
@@ -324,7 +322,7 @@ private:
             target_scalar / actual_scalar / double(1 << 15) // Rounding error, normalized to 1.0
             * get_arg<double>("fullscale"); // Scaling requested by host
         set_arg<double>("scalar_correction", scalar_correction, chan);
-        // Write DDC with scaling correction for CIC and CORDIC that maximizes dynamic range in 32/16/12/8bits.
+        // Write DDC with scaling correction for CIC and DDS that maximizes dynamic range in 32/16/12/8bits.
         sr_write("SCALE_IQ", actual_scalar, chan);
     }
 

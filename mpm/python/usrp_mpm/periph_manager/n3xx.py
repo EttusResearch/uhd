@@ -13,14 +13,16 @@ import copy
 import shutil
 import subprocess
 import json
+import time
 import datetime
 import threading
 from six import iteritems, itervalues
 from builtins import object
+from usrp_mpm.cores import WhiteRabbitRegsControl
 from usrp_mpm.gpsd_iface import GPSDIface
 from usrp_mpm.periph_manager import PeriphManagerBase
 from usrp_mpm.mpmtypes import SID
-from usrp_mpm.mpmutils import assert_compat_number, str2bool
+from usrp_mpm.mpmutils import assert_compat_number, str2bool, poll_with_timeout
 from usrp_mpm.rpc_server import no_rpc
 from usrp_mpm.sys_utils import dtoverlay
 from usrp_mpm.sys_utils.sysfs_gpio import SysFSGPIO, GPIOBank
@@ -33,9 +35,10 @@ N3XX_DEFAULT_CLOCK_SOURCE = 'internal'
 N3XX_DEFAULT_TIME_SOURCE = 'internal'
 N3XX_DEFAULT_ENABLE_GPS = True
 N3XX_DEFAULT_ENABLE_FPGPIO = True
+N3XX_DEFAULT_ENABLE_PPS_EXPORT = True
 N3XX_FPGA_COMPAT = (5, 2)
 N3XX_MONITOR_THREAD_INTERVAL = 1.0 # seconds
-N3XX_SFP_TYPES = {0:"", 1:"1G", 2:"10G", 3:"A"}
+N3XX_SFP_TYPES = {0:"", 1:"1G", 2:"10G", 3:"A", 4:"W"}
 
 ###############################################################################
 # Additional peripheral controllers specific to Magnesium
@@ -193,6 +196,8 @@ class MboardRegsControl(object):
     MB_CLOCK_CTRL_PPS_SEL_INT_25 = 1
     MB_CLOCK_CTRL_PPS_SEL_EXT    = 2
     MB_CLOCK_CTRL_PPS_SEL_GPSDO  = 3
+    MB_CLOCK_CTRL_PPS_SEL_SFP0   = 5
+    MB_CLOCK_CTRL_PPS_SEL_SFP1   = 6
     MB_CLOCK_CTRL_PPS_OUT_EN = 4 # output enabled = 1
     MB_CLOCK_CTRL_MEAS_CLK_RESET = 12 # set to 1 to reset mmcm, default is 0
     MB_CLOCK_CTRL_MEAS_CLK_LOCKED = 13 # locked indication for meas_clk mmcm
@@ -317,11 +322,20 @@ class MboardRegsControl(object):
         elif time_source == 'gpsdo':
             self.log.debug("Setting time source to gpsdo...")
             pps_sel_val = 0b1 << self.MB_CLOCK_CTRL_PPS_SEL_GPSDO
+        elif time_source == 'sfp0':
+            self.log.debug("Setting time source to sfp0...")
+            pps_sel_val = 0b1 << self.MB_CLOCK_CTRL_PPS_SEL_SFP0
+        elif time_source == 'sfp1':
+            self.log.debug("Setting time source to sfp1...")
+            pps_sel_val = 0b1 << self.MB_CLOCK_CTRL_PPS_SEL_SFP1
         else:
             assert False
+
         with self.regs.open():
-            reg_val = self.peek32(self.MB_CLOCK_CTRL) & 0xFFFFFFF0
-            reg_val = reg_val | (pps_sel_val & 0xF)
+            reg_val = self.peek32(self.MB_CLOCK_CTRL) & 0xFFFFFF90
+            # prevent glitches by writing a cleared value first, then the final value.
+            self.poke32(self.MB_CLOCK_CTRL, reg_val)
+            reg_val = reg_val | (pps_sel_val & 0x6F)
             self.log.trace("Writing MB_CLOCK_CTRL to 0x{:08X}".format(reg_val))
             self.poke32(self.MB_CLOCK_CTRL, reg_val)
 
@@ -397,6 +411,8 @@ class MboardRegsControl(object):
             return "XA"
         elif (sfp0_type == "A") and (sfp1_type == "A"):
             return "AA"
+        elif (sfp0_type == "W") and (sfp1_type == "10G"):
+            return "WX"
         else:
             self.log.warning("Unrecognized SFP type combination: ({}, {})".format(
                 sfp0_type, sfp1_type
@@ -458,6 +474,7 @@ class n3xx(PeriphManagerBase):
     description = "N300-Series Device"
     pids = {0x4242: 'n310', 0x4240: 'n300'}
     mboard_eeprom_addr = "e0005000.i2c"
+    mboard_eeprom_offset = 0
     mboard_eeprom_max_len = 256
     mboard_info = {"type": "n3xx",
                    "product": "unknown",
@@ -473,6 +490,7 @@ class n3xx(PeriphManagerBase):
         'fan': 'get_fan_sensor',
     }
     dboard_eeprom_addr = "e0004000.i2c"
+    dboard_eeprom_offset = 0
     dboard_eeprom_max_len = 64
 
     # We're on a Zynq target, so the following two come from the Zynq standard
@@ -481,6 +499,8 @@ class n3xx(PeriphManagerBase):
     # N3xx-specific settings
     # Label for the mboard UIO
     mboard_regs_label = "mboard-regs"
+    # Label for the white rabbit UIO
+    wr_regs_label = "wr-regs"
     # Override the list of updateable components
     updateable_components = {
         'fpga': {
@@ -569,7 +589,7 @@ class n3xx(PeriphManagerBase):
                 default_args.get('time_source', N3XX_DEFAULT_TIME_SOURCE)
             )
             self.enable_pps_out(
-                default_args.get('pps_export', True)
+                default_args.get('pps_export', N3XX_DEFAULT_ENABLE_PPS_EXPORT)
             )
 
     def _init_meas_clock(self):
@@ -625,6 +645,7 @@ class n3xx(PeriphManagerBase):
         self.log.trace("Enabling power of MGT156MHZ clk")
         self._gpios.set("PWREN-CLK-MGT156MHz")
         self.enable_1g_ref_clock()
+        self.enable_wr_ref_clock()
         self.enable_gps(
             enable=str2bool(
                 args.get('enable_gps', N3XX_DEFAULT_ENABLE_GPS)
@@ -678,6 +699,13 @@ class n3xx(PeriphManagerBase):
             self.log.error(
                 "Cannot run init(), device was never fully initialized!")
             return False
+        # We need to disable the PPS out during clock initialization in order
+        # to avoid glitches.
+        enable_pps_out_state = self._default_args.get(
+            'pps_export',
+            N3XX_DEFAULT_ENABLE_PPS_EXPORT
+        )
+        self.enable_pps_out(False)
         if "clock_source" in args:
             self.set_clock_source(args.get("clock_source"))
         if "clock_source" in args or "time_source" in args:
@@ -693,6 +721,9 @@ class n3xx(PeriphManagerBase):
                                      "external LOs! Setting to internal.")
                     args[lo_source] = 'internal'
         result = super(n3xx, self).init(args)
+        # Now the clocks are all enabled, we can also re-enable PPS export if
+        # it was turned off:
+        self.enable_pps_out(enable_pps_out_state)
         for xport_mgr in itervalues(self._xport_mgrs):
             xport_mgr.init(args)
         return result
@@ -797,8 +828,9 @@ class n3xx(PeriphManagerBase):
         """
         Append the device info with current IP addresses.
         """
-        device_info = self._xport_mgrs['udp'].get_xport_info() \
-                if self._device_initialized else {}
+        if not self._device_initialized:
+            return {}
+        device_info = self._xport_mgrs['udp'].get_xport_info()
         device_info.update({
             'fpga_version': "{}.{}".format(
                 *self.mboard_regs_control.get_compat_number())
@@ -889,7 +921,7 @@ class n3xx(PeriphManagerBase):
 
     def get_time_sources(self):
         " Returns list of valid time sources "
-        return ['internal', 'external', 'gpsdo']
+        return ['internal', 'external', 'gpsdo', 'sfp0']
 
     def get_time_source(self):
         " Return the currently selected time source "
@@ -899,8 +931,36 @@ class n3xx(PeriphManagerBase):
         " Set a time source "
         assert time_source in self.get_time_sources()
         self._time_source = time_source
-        self.mboard_regs_control.set_time_source(
-            time_source, self.get_ref_clock_freq())
+        self.mboard_regs_control.set_time_source(time_source, self.get_ref_clock_freq())
+        if time_source == 'sfp0':
+            # This error is specific to slave and master mode for White Rabbit.
+            # Grand Master mode will require the external or gpsdo sources (not supported).
+            if (time_source == 'sfp0' or time_source == 'sfp1') and \
+              self.get_clock_source() != 'internal':
+                error_msg = "Time source sfp(0|1) requires the internal clock source!"
+                self.log.error(error_msg)
+                raise RuntimeError(error_msg)
+            if self.updateable_components['fpga']['type'] != 'WX':
+                self.log.error("{} time source requires 'WX' FPGA type" \
+                               .format(time_source))
+                raise RuntimeError("{} time source requires 'WX' FPGA type" \
+                               .format(time_source))
+            # Only open UIO to the WR core once we're guaranteed it exists.
+            wr_regs_control = WhiteRabbitRegsControl(
+                self.wr_regs_label, self.log)
+            # Wait for time source to become ready. Only applies to SFP0/1. All other
+            # targets start their PPS immediately.
+            self.log.debug("Waiting for {} timebase to lock..." \
+                           .format(time_source))
+            if not poll_with_timeout(
+                    lambda: wr_regs_control.get_time_lock_status(),
+                    40000, # Try for x ms... this number is set from a few benchtop tests
+                    1000, # Poll every... second! why not?
+                ):
+                self.log.error("{} timebase failed to lock within 40 seconds. Status: 0x{:X}" \
+                               .format(time_source, wr_regs_control.get_time_lock_status()))
+                raise RuntimeError("Failed to lock SFP timebase.")
+
 
     def set_fp_gpio_master(self, value):
         """set driver for front panel GPIO
@@ -977,7 +1037,7 @@ class n3xx(PeriphManagerBase):
         Enables 125 MHz refclock for 1G interface.
         """
         self.log.trace("Enable 125 MHz Clock for 1G SFP interface.")
-        self._gpios.set("NETCLK-CE")
+        self._gpios.set("NETCLK-CE", 1)
         self._gpios.set("NETCLK-RESETn", 0)
         self._gpios.set("NETCLK-PR0", 1)
         self._gpios.set("NETCLK-PR1", 1)
@@ -987,6 +1047,14 @@ class n3xx(PeriphManagerBase):
         self._gpios.set("PWREN-CLK-WB-25MHz", 1)
         self.log.trace("Finished configuring NETCLK CDCM.")
         self._gpios.set("NETCLK-RESETn", 1)
+
+    def enable_wr_ref_clock(self):
+        """
+        Enables 20 MHz WR refclk. Note that enable_1g_ref_clock() is also required for this
+        interface to work, although calling it here is redundant.
+        """
+        self.log.trace("Enable White Rabbit reference clock.")
+        self._gpios.set("PWREN-CLK-WB-20MHz", 1)
 
     ###########################################################################
     # Sensors

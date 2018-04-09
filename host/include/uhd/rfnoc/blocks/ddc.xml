@@ -25,8 +25,8 @@
     </setreg>
     <!-- DDC block registers -->
     <setreg>
-      <!-- CORDIC phase increment word -->
-      <name>CORDIC_FREQ</name>
+      <!-- DDS phase increment word -->
+      <name>DDS_FREQ</name>
       <address>132</address>
     </setreg>
     <setreg>

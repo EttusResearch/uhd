@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0+
 //
 
+#include <config.h>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhdlib/utils/prefs.hpp>

@@ -13,31 +13,44 @@
 #include <boost/format.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/algorithm/string.hpp>
-//#include <boost/atomic.hpp>
+#include <boost/date_time/posix_time/posix_time.hpp>
 #include <iostream>
 #include <complex>
 #include <cstdlib>
+#include <atomic>
+#include <chrono>
+#include <thread>
 
 namespace po = boost::program_options;
 
 const int64_t CLOCK_TIMEOUT = 1000;  // 1000mS timeout for external clock locking
 const float   INIT_DELAY    = 0.05;  // 50mS initial delay before transmit
-//typedef boost::atomic<bool>   atomic_bool;
-// We'll fake atomic bools for now, for more backward compat.
-// This is just an example, after all.
-typedef bool atomic_bool;
 
 /***********************************************************************
  * Test result variables
  **********************************************************************/
-unsigned long long num_overflows = 0;
-unsigned long long num_underflows = 0;
+unsigned long long num_overruns = 0;
+unsigned long long num_underruns = 0;
 unsigned long long num_rx_samps = 0;
 unsigned long long num_tx_samps = 0;
 unsigned long long num_dropped_samps = 0;
 unsigned long long num_seq_errors = 0;
+unsigned long long num_seqrx_errors = 0; // "D"s
 unsigned long long num_late_commands = 0;
-unsigned long long num_timeouts = 0;
+unsigned long long num_timeouts_rx = 0;
+unsigned long long num_timeouts_tx = 0;
+
+inline boost::posix_time::time_duration time_delta(const boost::posix_time::ptime &ref_time)
+{
+    return boost::posix_time::microsec_clock::local_time() - ref_time;
+}
+
+inline std::string time_delta_str(const boost::posix_time::ptime &ref_time)
+{
+    return boost::posix_time::to_simple_string(time_delta(ref_time));
+}
+
+#define NOW() (time_delta_str(start_time))
 
 /***********************************************************************
  * Benchmark RX Rate
@@ -47,14 +60,15 @@ void benchmark_rx_rate(
         const std::string &rx_cpu,
         uhd::rx_streamer::sptr rx_stream,
         bool random_nsamps,
-        atomic_bool& burst_timer_elapsed
+        const boost::posix_time::ptime &start_time,
+        std::atomic<bool>& burst_timer_elapsed
 ) {
     uhd::set_thread_priority_safe();
 
     //print pre-test summary
     std::cout << boost::format(
-        "Testing receive rate %f Msps on %u channels"
-    ) % (usrp->get_rx_rate()/1e6) % rx_stream->get_num_channels() << std::endl;
+        "[%s] Testing receive rate %f Msps on %u channels"
+    ) % NOW() % (usrp->get_rx_rate()/1e6) % rx_stream->get_num_channels() << std::endl;
 
     //setup variables and allocate buffer
     uhd::rx_metadata_t md;
@@ -92,7 +106,7 @@ void benchmark_rx_rate(
             recv_timeout = burst_pkt_time;
         }
         catch (uhd::io_error &e) {
-            std::cerr << "Caught an IO exception. " << std::endl;
+            std::cerr << "[" << NOW() << "] Caught an IO exception. " << std::endl;
             std::cerr << e.what() << std::endl;
             return;
         }
@@ -100,12 +114,11 @@ void benchmark_rx_rate(
         //handle the error codes
         switch(md.error_code){
         case uhd::rx_metadata_t::ERROR_CODE_NONE:
-            if (had_an_overflow){
+            if (had_an_overflow) {
                 had_an_overflow = false;
                 num_dropped_samps += (md.time_spec - last_time).to_ticks(rate);
             }
-            if ((burst_timer_elapsed or stop_called) and md.end_of_burst)
-            {
+            if ((burst_timer_elapsed or stop_called) and md.end_of_burst) {
                 return;
             }
             break;
@@ -115,12 +128,16 @@ void benchmark_rx_rate(
             last_time = md.time_spec;
             had_an_overflow = true;
             // check out_of_sequence flag to see if it was a sequence error or overflow
-            if (!md.out_of_sequence)
-                num_overflows++;
+            if (!md.out_of_sequence) {
+                num_overruns++;
+            } else {
+                num_seqrx_errors++;
+                std::cerr << "[" << NOW() << "] Detected Rx sequence error." << std::endl;
+            }
             break;
 
         case uhd::rx_metadata_t::ERROR_CODE_LATE_COMMAND:
-            std::cerr << "Receiver error: " << md.strerror() << ", restart streaming..."<< std::endl;
+            std::cerr << "[" << NOW() << "] Receiver error: " << md.strerror() << ", restart streaming..."<< std::endl;
             num_late_commands++;
             // Radio core will be in the idle state. Issue stream command to restart streaming.
             cmd.time_spec = usrp->get_time_now() + uhd::time_spec_t(0.05);
@@ -132,14 +149,14 @@ void benchmark_rx_rate(
             if (burst_timer_elapsed) {
                 return;
             }
-            std::cerr << "Receiver error: " << md.strerror() << ", continuing..." << std::endl;
-            num_timeouts++;
+            std::cerr << "[" << NOW() << "] Receiver error: " << md.strerror() << ", continuing..." << std::endl;
+            num_timeouts_rx++;
             break;
 
             // Otherwise, it's an error
         default:
-            std::cerr << "Receiver error: " << md.strerror() << std::endl;
-            std::cerr << "Unexpected error on recv, continuing..." << std::endl;
+            std::cerr << "[" << NOW() << "] Receiver error: " << md.strerror() << std::endl;
+            std::cerr << "[" << NOW() << "] Unexpected error on recv, continuing..." << std::endl;
             break;
         }
     }
@@ -152,15 +169,16 @@ void benchmark_tx_rate(
         uhd::usrp::multi_usrp::sptr usrp,
         const std::string &tx_cpu,
         uhd::tx_streamer::sptr tx_stream,
-        atomic_bool& burst_timer_elapsed,
+        std::atomic<bool>& burst_timer_elapsed,
+        const boost::posix_time::ptime &start_time,
         bool random_nsamps=false
 ) {
     uhd::set_thread_priority_safe();
 
     //print pre-test summary
     std::cout << boost::format(
-        "Testing transmit rate %f Msps on %u channels"
-    ) % (usrp->get_tx_rate()/1e6) % tx_stream->get_num_channels() << std::endl;
+        "[%s] Testing transmit rate %f Msps on %u channels"
+    ) % NOW() % (usrp->get_tx_rate()/1e6) % tx_stream->get_num_channels() << std::endl;
 
     //setup variables and allocate buffer
     uhd::tx_metadata_t md;
@@ -175,7 +193,6 @@ void benchmark_tx_rate(
 
     if (random_nsamps) {
         std::srand((unsigned int)time(NULL));
-        //while (not burst_timer_elapsed.load(boost::memory_order_relaxed)) {
         while (not burst_timer_elapsed) {
             size_t total_num_samps = rand() % max_samps_per_packet;
             size_t num_acc_samps = 0;
@@ -189,9 +206,15 @@ void benchmark_tx_rate(
             }
         }
     } else {
-        //while (not burst_timer_elapsed.load(boost::memory_order_relaxed)) {
         while (not burst_timer_elapsed) {
-            num_tx_samps += tx_stream->send(buffs, max_samps_per_packet, md)*tx_stream->get_num_channels();
+            const size_t num_tx_samps_sent_now = tx_stream->send(buffs, max_samps_per_packet, md)*tx_stream->get_num_channels();
+            num_tx_samps += num_tx_samps_sent_now;
+            if (num_tx_samps_sent_now == 0) {
+                num_timeouts_tx++;
+                if ((num_timeouts_tx % 10000) == 1) {
+                    std::cerr << "[" << NOW() << "] Tx timeouts: " << num_timeouts_tx << std::endl;
+                }
+            }
             md.has_time_spec = false;
         }
     }
@@ -203,14 +226,14 @@ void benchmark_tx_rate(
 
 void benchmark_tx_rate_async_helper(
         uhd::tx_streamer::sptr tx_stream,
-        atomic_bool& burst_timer_elapsed
+        const boost::posix_time::ptime &start_time,
+        std::atomic<bool>& burst_timer_elapsed
 ) {
     //setup variables and allocate buffer
     uhd::async_metadata_t async_md;
     bool exit_flag = false;
 
     while (true) {
-        //if (burst_timer_elapsed.load(boost::memory_order_relaxed)) {
         if (burst_timer_elapsed) {
             exit_flag = true;
         }
@@ -228,7 +251,7 @@ void benchmark_tx_rate_async_helper(
 
         case uhd::async_metadata_t::EVENT_CODE_UNDERFLOW:
         case uhd::async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET:
-            num_underflows++;
+            num_underruns++;
             break;
 
         case uhd::async_metadata_t::EVENT_CODE_SEQ_ERROR:
@@ -237,7 +260,7 @@ void benchmark_tx_rate_async_helper(
             break;
 
         default:
-            std::cerr << "Event code: " << async_md.event_code << std::endl;
+            std::cerr << "[" << NOW() << "] Event code: " << async_md.event_code << std::endl;
             std::cerr << "Unexpected event on async recv, continuing..." << std::endl;
             break;
         }
@@ -260,7 +283,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::string mode, ref, pps;
     std::string channel_list, rx_channel_list, tx_channel_list;
     bool random_nsamps = false;
-    atomic_bool burst_timer_elapsed(false);
+    std::atomic<bool> burst_timer_elapsed(false);
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -322,7 +345,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         std::cerr << "*** Warning! ***" << std::endl;
         std::cerr << "Benchmark results will be inaccurate on USRP1 due to insufficient features.\n" << std::endl;
     }
-    std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
+    boost::posix_time::ptime start_time(boost::posix_time::microsec_clock::local_time());
+    std::cout << boost::format("[%s] Creating the usrp device with: %s...") % NOW() % args << std::endl;
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
 
     //always select the subdevice first, the channel mapping affects the other settings
@@ -354,7 +378,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         if(ref != "internal") {
             std::cout << "Now confirming lock on clock signals..." << std::endl;
             bool is_locked = false;
-            boost::system_time end_time =
+            auto end_time =
                 boost::get_system_time() +
                 boost::posix_time::milliseconds(CLOCK_TIMEOUT);
             for (int i = 0; i < num_mboards; i++) {
@@ -362,7 +386,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
                 while((is_locked = usrp->get_mboard_sensor("ref_locked",i).to_bool()) == false and
                             boost::get_system_time() < end_time )
                 {
-                    boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
                 }
                 if (is_locked == false) {
                     std::cerr << "ERROR: Unable to confirm clock signal locked on board:" << i <<  std::endl;
@@ -424,7 +448,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         }
     }
 
-    std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
+    std::cout << boost::format("[%s] Setting device timestamp to 0...") % NOW() << std::endl;
     const bool sync_channels =
             pps == "mimo" or
             ref == "mimo" or
@@ -444,7 +468,16 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         uhd::stream_args_t stream_args(rx_cpu, rx_otw);
         stream_args.channels = rx_channel_nums;
         uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
-        auto rx_thread = thread_group.create_thread(boost::bind(&benchmark_rx_rate, usrp, rx_cpu, rx_stream, random_nsamps, boost::ref(burst_timer_elapsed)));
+        auto rx_thread = thread_group.create_thread([=, &burst_timer_elapsed](){
+            benchmark_rx_rate(
+                usrp,
+                rx_cpu,
+                rx_stream,
+                random_nsamps,
+                start_time,
+                burst_timer_elapsed
+            );
+        });
         uhd::set_thread_name(rx_thread, "bmark_rx_stream");
     }
 
@@ -455,40 +488,61 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         uhd::stream_args_t stream_args(tx_cpu, tx_otw);
         stream_args.channels = tx_channel_nums;
         uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
-        auto tx_thread = thread_group.create_thread(boost::bind(&benchmark_tx_rate, usrp, tx_cpu, tx_stream, boost::ref(burst_timer_elapsed), random_nsamps));
+        auto tx_thread = thread_group.create_thread([=, &burst_timer_elapsed](){
+            benchmark_tx_rate(
+                usrp,
+                tx_cpu,
+                tx_stream,
+                burst_timer_elapsed,
+                start_time,
+                random_nsamps
+            );
+        });
         uhd::set_thread_name(tx_thread, "bmark_tx_stream");
-        auto tx_async_thread = thread_group.create_thread(boost::bind(&benchmark_tx_rate_async_helper, tx_stream, boost::ref(burst_timer_elapsed)));
+        auto tx_async_thread = thread_group.create_thread([=, &burst_timer_elapsed](){
+            benchmark_tx_rate_async_helper(
+                tx_stream,
+                start_time,
+                burst_timer_elapsed
+            );
+        });
         uhd::set_thread_name(tx_async_thread, "bmark_tx_helper");
     }
 
     //sleep for the required duration
-    const long secs = long(duration);
-    const long usecs = long((duration - secs)*1e6);
-    boost::this_thread::sleep(boost::posix_time::seconds(secs)
-            + boost::posix_time::microseconds(usecs)
-            + boost::posix_time::milliseconds( (rx_channel_nums.size() <= 1 and tx_channel_nums.size() <= 1) ? 0 : (INIT_DELAY * 1000))
+    const bool wait_for_multichan =
+        (rx_channel_nums.size() <= 1 and tx_channel_nums.size() <= 1);
+    const int64_t secs =
+        int64_t(duration + wait_for_multichan ? 0 : INIT_DELAY * 1000);
+    const int64_t usecs = int64_t((duration - secs)*1e6);
+    std::this_thread::sleep_for(
+        std::chrono::seconds(secs) +
+        std::chrono::microseconds(usecs)
     );
 
     //interrupt and join the threads
-    //burst_timer_elapsed.store(true, boost::memory_order_relaxed);
     burst_timer_elapsed = true;
     thread_group.join_all();
+
+    std::cout << "[" << NOW() << "] Benchmark complete." << std::endl << std::endl;
 
     //print summary
     std::cout << std::endl << boost::format(
         "Benchmark rate summary:\n"
-        "  Num received samples:    %u\n"
-        "  Num dropped samples:     %u\n"
-        "  Num overflows detected:  %u\n"
-        "  Num transmitted samples: %u\n"
-        "  Num sequence errors:     %u\n"
-        "  Num underflows detected: %u\n"
-        "  Num late commands:       %u\n"
-        "  Num timeouts:            %u\n"
+        "  Num received samples:     %u\n"
+        "  Num dropped samples:      %u\n"
+        "  Num overruns detected:    %u\n"
+        "  Num transmitted samples:  %u\n"
+        "  Num sequence errors (Tx): %u\n"
+        "  Num sequence errors (Rx): %u\n"
+        "  Num underruns detected:   %u\n"
+        "  Num late commands:        %u\n"
+        "  Num timeouts (Tx):        %u\n"
+        "  Num timeouts (Rx):        %u\n"
     ) % num_rx_samps % num_dropped_samps
-      % num_overflows % num_tx_samps
-      % num_seq_errors % num_underflows
-      % num_late_commands % num_timeouts
+      % num_overruns % num_tx_samps
+      % num_seq_errors % num_seqrx_errors % num_underruns
+      % num_late_commands % num_timeouts_tx % num_timeouts_rx
       << std::endl;
 
     //finished

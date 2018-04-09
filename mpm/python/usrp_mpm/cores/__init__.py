@@ -8,3 +8,4 @@ Cores submodule
 """
 
 from .tdc_sync import ClockSynchronizer
+from .white_rabbit import WhiteRabbitRegsControl

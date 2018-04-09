@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "user_settings_core_200.hpp"
+#include <uhdlib/usrp/cores/user_settings_core_200.hpp>
 
 using namespace uhd;
 

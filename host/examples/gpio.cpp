@@ -67,14 +67,14 @@
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/convert.hpp>
-#include <boost/assign.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
-#include <stdint.h>
-#include <boost/thread.hpp>
 #include <csignal>
 #include <iostream>
+#include <thread>
+#include <chrono>
 #include <stdlib.h>
+#include <stdint.h>
 
 static const std::string        GPIO_DEFAULT_CPU_FORMAT = "fc32";
 static const std::string        GPIO_DEFAULT_OTW_FORMAT = "sc16";
@@ -112,17 +112,27 @@ std::string to_bit_string(uint32_t val, const size_t num_bits)
 void output_reg_values(
     const std::string bank,
     const uhd::usrp::multi_usrp::sptr &usrp,
-    const size_t num_bits)
-{
-    std::vector<std::string> attrs = boost::assign::list_of("CTRL")("DDR")("ATR_0X")("ATR_RX")("ATR_TX")("ATR_XX")("OUT")("READBACK");
+    const size_t num_bits
+) {
+    const std::vector<std::string> attrs = {
+        "CTRL",
+        "DDR",
+        "ATR_0X",
+        "ATR_RX",
+        "ATR_TX",
+        "ATR_XX",
+        "OUT",
+        "READBACK"
+    };
     std::cout << (boost::format("%10s ") % "Bit");
     for (int i = num_bits - 1; i >= 0; i--)
         std::cout << (boost::format(" %2d") % i);
     std::cout << std::endl;
-    for(std::string &attr:  attrs)
-    {
-        std::cout << (boost::format("%10s:%s")
-            % attr % to_bit_string(uint32_t(usrp->get_gpio_attr(bank, attr)), num_bits))
+    for (const auto &attr : attrs) {
+        const uint32_t gpio_bits = uint32_t(usrp->get_gpio_attr(bank, attr));
+        std::cout
+            << (boost::format("%10s:%s")
+                % attr % to_bit_string(gpio_bits, num_bits))
             << std::endl;
     }
 }
@@ -303,7 +313,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
             {
                 rb = usrp->get_gpio_attr(gpio, "READBACK");
                 std::cout << "\rREADBACK: " << to_bit_string(rb, num_bits);
-                boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
             }
             std::cout << std::endl;
         }
@@ -315,7 +325,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
             stop_time = usrp->get_time_now() + dwell_time;
             while (not stop_signal_called and usrp->get_time_now() < stop_time)
             {
-                boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
             }
             rb = usrp->get_gpio_attr(gpio, "READBACK");
             expected = GPIO_BIT(4) | GPIO_BIT(0);
