@@ -192,47 +192,9 @@ public:
                 _get_log_level(log_level_env, this->global_level);
         }
 
-
-        /***** Console logging ***********************************************/
-#ifndef UHD_LOG_CONSOLE_DISABLE
-        uhd::log::severity_level console_level = uhd::log::trace;
-#ifdef UHD_LOG_CONSOLE_LEVEL
-        console_level = _get_log_level(
-            BOOST_STRINGIZE(UHD_LOG_CONSOLE_LEVEL),
-            console_level
-        );
-#endif
-        const char* log_console_level_env = std::getenv("UHD_LOG_CONSOLE_LEVEL");
-        if (log_console_level_env != NULL && log_console_level_env[0] != '\0') {
-            console_level =
-                _get_log_level(log_console_level_env, console_level);
-        }
-        _loggers[UHD_CONSOLE_LOGGER_KEY] =
-            level_logfn_pair{console_level, &console_log};
-#endif
-
-        /***** File logging **************************************************/
-        uhd::log::severity_level file_level = uhd::log::trace;
-        std::string log_file_target;
-#if defined(UHD_LOG_FILE_LEVEL) && defined(UHD_LOG_FILE_PATH)
-        file_level = _get_log_level(BOOST_STRINGIZE(UHD_LOG_FILE_LEVEL), file_level);
-        log_file_target = BOOST_STRINGIZE(UHD_LOG_FILE);
-#endif
-        const char * log_file_level_env = std::getenv("UHD_LOG_FILE_LEVEL");
-        if (log_file_level_env != NULL && log_file_level_env[0] != '\0'){
-            file_level = _get_log_level(log_file_level_env, file_level);
-        }
-        const char* log_file_env = std::getenv("UHD_LOG_FILE");
-        if ((log_file_env != NULL) && (log_file_env[0] != '\0')) {
-            log_file_target = std::string(log_file_env);
-        }
-        if (!log_file_target.empty()){
-            auto F = boost::make_shared<file_logger_backend>(log_file_target);
-            _loggers[UHD_FILE_LOGGER_KEY] = level_logfn_pair{
-                file_level,
-                [F](const uhd::log::logging_info& log_info){F->log(log_info);}
-            };
-        }
+        // Setup default loggers (console and file)
+        _setup_console_logging();
+        _setup_file_logging();
 
         // On boot, we print the current UHD version info:
         {
@@ -407,6 +369,57 @@ private:
         if_loglevel_equal(fatal);
         if_loglevel_equal(off);
         return previous_level;
+    }
+
+    void _setup_console_logging()
+    {
+#ifndef UHD_LOG_CONSOLE_DISABLE
+        uhd::log::severity_level console_level = uhd::log::trace;
+#ifdef UHD_LOG_CONSOLE_LEVEL
+        console_level = _get_log_level(
+            BOOST_STRINGIZE(UHD_LOG_CONSOLE_LEVEL),
+            console_level
+        );
+#endif
+        const char* log_console_level_env =
+            std::getenv("UHD_LOG_CONSOLE_LEVEL");
+        if (log_console_level_env != NULL && log_console_level_env[0] != '\0') {
+            console_level =
+                _get_log_level(log_console_level_env, console_level);
+        }
+        _loggers[UHD_CONSOLE_LOGGER_KEY] =
+            level_logfn_pair{console_level, &console_log};
+#endif
+    }
+
+    void _setup_file_logging()
+    {
+        uhd::log::severity_level file_level = uhd::log::trace;
+        std::string log_file_target;
+#if defined(UHD_LOG_FILE_LEVEL)
+        file_level = _get_log_level(
+                BOOST_STRINGIZE(UHD_LOG_FILE_LEVEL),
+                file_level
+        );
+#endif
+#if defined(UHD_LOG_FILE)
+        log_file_target = BOOST_STRINGIZE(UHD_LOG_FILE);
+#endif
+        const char* log_file_level_env = std::getenv("UHD_LOG_FILE_LEVEL");
+        if (log_file_level_env != NULL && log_file_level_env[0] != '\0'){
+            file_level = _get_log_level(log_file_level_env, file_level);
+        }
+        const char* log_file_env = std::getenv("UHD_LOG_FILE");
+        if ((log_file_env != NULL) && (log_file_env[0] != '\0')) {
+            log_file_target = std::string(log_file_env);
+        }
+        if (!log_file_target.empty()){
+            auto F = std::make_shared<file_logger_backend>(log_file_target);
+            _loggers[UHD_FILE_LOGGER_KEY] = level_logfn_pair{
+                file_level,
+                [F](const uhd::log::logging_info& log_info){F->log(log_info);}
+            };
+        }
     }
 
     std::mutex _logmap_mutex;
