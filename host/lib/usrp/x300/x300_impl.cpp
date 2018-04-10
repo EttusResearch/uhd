@@ -213,7 +213,15 @@ static device_addrs_t x300_find_pcie(const device_addr_t &hint, bool explicit_qu
 
             if (get_pcie_zpu_iface_registry().has_key(resource_d)) {
                 zpu_ctrl = get_pcie_zpu_iface_registry()[resource_d].lock();
-            } else {
+                if (!zpu_ctrl)
+                {
+                    get_pcie_zpu_iface_registry().pop(resource_d);
+                }
+            }
+
+            // if the registry didn't have a key OR that key was an orphaned weak_ptr
+            if (!zpu_ctrl)
+            {
                 zpu_ctrl = x300_make_ctrl_iface_pcie(kernel_proxy, false /* suppress timeout errors */);
                 //We don't put this zpu_ctrl in the registry because we need
                 //a persistent niriok_proxy associated with the object
