@@ -888,12 +888,27 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
 
     //Initialize clock control registers. NOTE: This does not configure the LMK yet.
     const double requested_mcr = dev_addr.cast<double>("master_clock_rate", X300_DEFAULT_TICK_RATE);
+    //Some daughterboards may require other rates, but these defaults
+    //work best for all newer daughterboards (i.e. CBX, WBX, SBX, UBX,
+    //and TwinRX).
+    double default_dboard_clk_rate = requested_mcr;
+    if (math::frequencies_are_equal(requested_mcr, 200e6)) {
+        default_dboard_clk_rate = 50e6;
+    } else if (math::frequencies_are_equal(requested_mcr, 184.32e6)) {
+        default_dboard_clk_rate = 46.08e6;
+    } else if (math::frequencies_are_equal(requested_mcr, 120e6)) {
+        default_dboard_clk_rate = 40e6;
+    }
     mb.clock = x300_clock_ctrl::make(mb.zpu_spi,
         1 /*slaveno*/,
         mb.hw_rev,
         requested_mcr,
-        dev_addr.cast<double>("dboard_clock_rate", requested_mcr / 4),
+        dev_addr.cast<double>("dboard_clock_rate", default_dboard_clk_rate),
         dev_addr.cast<double>("system_ref_rate", X300_DEFAULT_SYSREF_RATE));
+    mb.fw_regmap->ref_freq_reg.write(
+        fw_regmap_t::ref_freq_reg_t::REF_FREQ,
+        uint32_t(dev_addr.cast<double>("system_ref_rate",
+        X300_DEFAULT_SYSREF_RATE)));
 
     //Initialize clock source to use internal reference and generate
     //a valid radio clock. This may change after configuration is done.

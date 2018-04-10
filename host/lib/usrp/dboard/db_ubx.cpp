@@ -488,7 +488,7 @@ public:
             .set(freq_range_t(bw, bw));
         get_tx_subtree()->create<int64_t>("sync_delay")
             .add_coerced_subscriber(boost::bind(&ubx_xcvr::set_sync_delay, this, true, _1))
-            .set(-8);
+            .set(0);
 
         ////////////////////////////////////////////////////////////////////
         // Register RX properties
@@ -524,7 +524,7 @@ public:
             .set(freq_range_t(bw, bw));
         get_rx_subtree()->create<int64_t>("sync_delay")
             .add_coerced_subscriber(boost::bind(&ubx_xcvr::set_sync_delay, this, false, _1))
-            .set(-8);
+            .set(0);
     }
 
     virtual ~ubx_xcvr(void)
@@ -669,20 +669,26 @@ private:
             // Phase synchronization for MAX2871 requires that the sync signal
             // is at least 4/(N*PFD_freq) + 2.6ns before the rising edge of the
             // ref clock and 4/(N*PFD_freq) after the rising edge of the ref clock.
-            // Since the ref clock, the radio clock, and the VITA time are all
-            // synchronized to the 10 MHz clock, use the time spec to move
-            // the rising edge of the sync signal away from the 10 MHz edge,
-            // which will move it away from the ref clock edge by the same amount.
             // Since the MAX2871 requires the ref freq and PFD freq be the same
             // for phase synchronization, the dboard clock rate is used as the PFD
-            // freq and the worst case value of 20 is used for the N value to
-            // calculate the offset.
-            double pfd_freq = _iface->get_clock_rate(dir == TX_DIRECTION ? dboard_iface::UNIT_TX : dboard_iface::UNIT_RX);
-            double tick_rate = _iface->get_codec_rate(dir == TX_DIRECTION ? dboard_iface::UNIT_TX : dboard_iface::UNIT_RX);
+            // freq and the sync signal is aligned to the falling edge to meet
+            // the setup and hold requirements.  Since the command time ticks
+            // at the radio clock rate, this only works if the radio clock is
+            // an even multiple of the dboard clock, the dboard clock is a
+            // multiple of the system reference, and the device time has been
+            // set on a PPS edge sampled by the system reference clock.
+
+            const double pfd_freq = _iface->get_clock_rate(dir == TX_DIRECTION ? dboard_iface::UNIT_TX : dboard_iface::UNIT_RX);
+            const double tick_rate = _iface->get_codec_rate(dir == TX_DIRECTION ? dboard_iface::UNIT_TX : dboard_iface::UNIT_RX);
+            const int64_t ticks_per_pfd_cycle = (int64_t)(tick_rate / pfd_freq);
+
+            // Convert time to ticks
             int64_t ticks = cmd_time.to_ticks(tick_rate);
-            ticks -= ticks % (int64_t)(tick_rate / 10e6);            // align to 10 MHz clock
+            // Align time to next falling edge of dboard clock
+            ticks += ticks_per_pfd_cycle - (ticks % ticks_per_pfd_cycle) + (ticks_per_pfd_cycle / 2);
+            // Add any user specified delay
             ticks += dir == TX_DIRECTION ? _tx_sync_delay : _rx_sync_delay;
-            ticks += std::ceil(tick_rate*4/(20*pfd_freq));  // add required offset (using worst case N value of 20)
+            // Set the command time
             cmd_time = uhd::time_spec_t::from_ticks(ticks, tick_rate);
             _iface->set_command_time(cmd_time);
 

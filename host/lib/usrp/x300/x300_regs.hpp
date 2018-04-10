@@ -30,6 +30,7 @@ static const int ZPU_SR_LEDS       = 00;
 static const int ZPU_SR_SW_RST     = 01;
 static const int ZPU_SR_CLOCK_CTRL = 02;
 static const int ZPU_SR_XB_LOCAL   = 03;
+static const int ZPU_SR_REF_FREQ   = 04;
 static const int ZPU_SR_SPI        = 32;
 static const int ZPU_SR_ETHINT0    = 40;
 static const int ZPU_SR_ETHINT1    = 56;
@@ -204,9 +205,20 @@ namespace uhd { namespace usrp { namespace x300 {
             clk_status_reg_t(): uhd::soft_reg32_ro_t(SR_ADDR(SET0_BASE, ZPU_RB_CLK_STATUS)) {}
         } clock_status_reg;
 
+        class ref_freq_reg_t : public uhd::soft_reg32_wo_t {
+        public:
+            UHD_DEFINE_SOFT_REG_FIELD(REF_FREQ,   /*width*/ 32, /*shift*/ 0);
+
+            ref_freq_reg_t(): uhd::soft_reg32_wo_t(SR_ADDR(SET0_BASE, ZPU_SR_REF_FREQ)) {
+                //Initial values
+                set(REF_FREQ, 10000000);
+            }
+        } ref_freq_reg;
+
         fw_regmap_t() : soft_regmap_t("fw_regmap") {
             add_to_map(clock_ctrl_reg, "clock_ctrl_reg", PUBLIC);
             add_to_map(clock_status_reg, "clock_status_reg", PUBLIC);
+            add_to_map(ref_freq_reg, "ref_freq_reg", PUBLIC);
         }
     };
 
