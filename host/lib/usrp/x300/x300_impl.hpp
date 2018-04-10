@@ -37,7 +37,6 @@ static const std::string X300_FW_FILE_NAME  = "usrp_x300_fw.bin";
 static const std::string X300_DEFAULT_CLOCK_SOURCE  = "internal";
 
 static const double X300_DEFAULT_TICK_RATE          = 200e6;   //Hz
-static const double X300_DEFAULT_DBOARD_CLK_RATE    = 50e6;    //Hz
 static const double X300_BUS_CLOCK_RATE             = 187.5e6; //Hz
 
 static const size_t X300_RX_SW_BUFF_SIZE_ETH        = 0x2000000;//32MiB    For an ~8k frame size any size >32MiB is just wasted buffer space

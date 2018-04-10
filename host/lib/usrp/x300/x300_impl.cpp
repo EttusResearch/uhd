@@ -887,11 +887,12 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     UHD_LOGGER_DEBUG("X300") << "Setting up RF frontend clocking...";
 
     //Initialize clock control registers. NOTE: This does not configure the LMK yet.
+    const double requested_mcr = dev_addr.cast<double>("master_clock_rate", X300_DEFAULT_TICK_RATE);
     mb.clock = x300_clock_ctrl::make(mb.zpu_spi,
         1 /*slaveno*/,
         mb.hw_rev,
-        dev_addr.cast<double>("master_clock_rate", X300_DEFAULT_TICK_RATE),
-        dev_addr.cast<double>("dboard_clock_rate", X300_DEFAULT_DBOARD_CLK_RATE),
+        requested_mcr,
+        dev_addr.cast<double>("dboard_clock_rate", requested_mcr / 4),
         dev_addr.cast<double>("system_ref_rate", X300_DEFAULT_SYSREF_RATE));
 
     //Initialize clock source to use internal reference and generate
