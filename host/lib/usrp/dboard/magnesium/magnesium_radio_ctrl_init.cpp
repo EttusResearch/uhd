@@ -747,10 +747,7 @@ void magnesium_radio_ctrl_impl::_init_frontend_subtree(
 void magnesium_radio_ctrl_impl::_init_prop_tree()
 {
     const fs_path fe_base = fs_path("dboards") / _radio_slot;
-    for (size_t chan_idx = 0; chan_idx < MAGNESIUM_NUM_CHANS; chan_idx++) {
-        this->_init_frontend_subtree(
-            _tree->subtree(fe_base), chan_idx);
-    }
+    this->_init_frontend_subtree(_tree->subtree(fe_base), 0);
 
     // EEPROM paths subject to change FIXME
     _tree->create<eeprom_map_t>(_root_path / "eeprom")
