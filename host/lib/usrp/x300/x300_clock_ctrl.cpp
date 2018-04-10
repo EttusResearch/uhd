@@ -415,7 +415,7 @@ private:
     void init() {
         /* The X3xx has two primary rates. The first is the
          * _system_ref_rate, which is sourced from the "clock_source"/"value" field
-         * of the property tree, and whose value can be 10e6, 30.72e6, or 200e6.
+         * of the property tree, and whose value can be 10e6, 11.52e6, 23.04e6, or 30.72e6.
          * The _system_ref_rate is the input to the clocking system, and
          * what comes out is a disciplined master clock running at the
          * _master_clock_rate. As such, only certain combinations of
@@ -425,6 +425,8 @@ private:
         enum opmode_t { INVALID,
                         m10M_200M_NOZDEL,      // used for debug purposes only
                         m10M_200M_ZDEL,        // Normal mode
+                        m11_52M_184_32M_ZDEL,  // LTE with 11.52 MHz ref
+                        m23_04M_184_32M_ZDEL,  // LTE with 23.04 MHz ref
                         m30_72M_184_32M_ZDEL,  // LTE with external ref, aka CPRI Mode
                         m10M_184_32M_NOZDEL,   // LTE with 10 MHz ref
                         m10M_120M_ZDEL };       // NI USRP 120 MHz Clocking
@@ -448,6 +450,28 @@ private:
                     boost::format("Invalid master clock rate: %.2f MHz.\n"
                                   "Valid master clock rates when using a %f MHz reference clock are:\n"
                                   "120 MHz, 184.32 MHz and 200 MHz.")
+                    % (_master_clock_rate / 1e6)  % (_system_ref_rate / 1e6)
+                ));
+            }
+        } else if (math::frequencies_are_equal(_system_ref_rate, 11.52e6)) {
+            if (math::frequencies_are_equal(_master_clock_rate, 184.32e6)) {
+                /* 11.52MHz reference, 184.32 MHz master clock out, Zero Delay */
+                clocking_mode = m11_52M_184_32M_ZDEL;
+            } else {
+                throw uhd::runtime_error(str(
+                    boost::format("Invalid master clock rate: %.2f MHz.\n"
+                                  "Valid master clock rate when using a %.2f MHz reference clock is: 184.32 MHz.")
+                    % (_master_clock_rate / 1e6)  % (_system_ref_rate / 1e6)
+                ));
+            }
+        } else if (math::frequencies_are_equal(_system_ref_rate, 23.04e6)) {
+            if (math::frequencies_are_equal(_master_clock_rate, 184.32e6)) {
+                /* 11.52MHz reference, 184.32 MHz master clock out, Zero Delay */
+                clocking_mode = m23_04M_184_32M_ZDEL;
+            } else {
+                throw uhd::runtime_error(str(
+                    boost::format("Invalid master clock rate: %.2f MHz.\n"
+                                  "Valid master clock rate when using a %.2f MHz reference clock is: 184.32 MHz.")
                     % (_master_clock_rate / 1e6)  % (_system_ref_rate / 1e6)
                 ));
             }
@@ -517,29 +541,6 @@ private:
 
                 break;
 
-            case m30_72M_184_32M_ZDEL:
-                _vco_freq = 2580.48e6;
-                _lmk04816_regs.MODE = lmk04816_regs_t::MODE_DUAL_INT_ZER_DELAY;
-
-                // PLL1 - 2.048 MHz compare frequency
-                _lmk04816_regs.PLL1_N_28 = 15;
-                _lmk04816_regs.PLL1_R_27 = 15;
-                _lmk04816_regs.PLL1_CP_GAIN_27 = lmk04816_regs_t::PLL1_CP_GAIN_27_100UA;
-
-                // PLL2 - 7.68 MHz compare frequency
-                _lmk04816_regs.PLL2_N_30 = 168;
-                _lmk04816_regs.PLL2_P_30 = lmk04816_regs_t::PLL2_P_30_DIV_2A;
-                _lmk04816_regs.PLL2_R_28 = 25;
-                _lmk04816_regs.PLL2_CP_GAIN_26 = lmk04816_regs_t::PLL2_CP_GAIN_26_3200UA;
-
-                _lmk04816_regs.PLL2_R3_LF = lmk04816_regs_t::PLL2_R3_LF_1KILO_OHM;
-                _lmk04816_regs.PLL2_C3_LF = lmk04816_regs_t::PLL2_C3_LF_39PF;
-
-                _lmk04816_regs.PLL2_R4_LF = lmk04816_regs_t::PLL2_R4_LF_1KILO_OHM;
-                _lmk04816_regs.PLL2_C4_LF = lmk04816_regs_t::PLL2_C4_LF_34PF;
-
-                break;
-
             case m10M_184_32M_NOZDEL:
                 _vco_freq = 2580.48e6;
                 _lmk04816_regs.MODE = lmk04816_regs_t::MODE_DUAL_INT;
@@ -560,6 +561,75 @@ private:
 
                 _lmk04816_regs.PLL2_R4_LF = lmk04816_regs_t::PLL2_R4_LF_1KILO_OHM;
                 _lmk04816_regs.PLL2_C4_LF = lmk04816_regs_t::PLL2_C4_LF_71PF;
+
+                break;
+
+            case m11_52M_184_32M_ZDEL:
+                _vco_freq = 2580.48e6;
+                _lmk04816_regs.MODE = lmk04816_regs_t::MODE_DUAL_INT_ZER_DELAY;
+
+                // PLL1 - 1.92 MHz compare frequency
+                _lmk04816_regs.PLL1_N_28 = 6;
+                _lmk04816_regs.PLL1_R_27 = 6;
+                _lmk04816_regs.PLL1_CP_GAIN_27 = lmk04816_regs_t::PLL1_CP_GAIN_27_100UA;
+
+                // PLL2 - 7.68 MHz compare frequency
+                _lmk04816_regs.PLL2_N_30 = 168;
+                _lmk04816_regs.PLL2_P_30 = lmk04816_regs_t::PLL2_P_30_DIV_2A;
+                _lmk04816_regs.PLL2_R_28 = 25;
+                _lmk04816_regs.PLL2_CP_GAIN_26 = lmk04816_regs_t::PLL2_CP_GAIN_26_3200UA;
+
+                _lmk04816_regs.PLL2_R3_LF = lmk04816_regs_t::PLL2_R3_LF_1KILO_OHM;
+                _lmk04816_regs.PLL2_C3_LF = lmk04816_regs_t::PLL2_C3_LF_39PF;
+
+                _lmk04816_regs.PLL2_R4_LF = lmk04816_regs_t::PLL2_R4_LF_1KILO_OHM;
+                _lmk04816_regs.PLL2_C4_LF = lmk04816_regs_t::PLL2_C4_LF_34PF;
+
+                break;
+
+            case m23_04M_184_32M_ZDEL:
+                _vco_freq = 2580.48e6;
+                _lmk04816_regs.MODE = lmk04816_regs_t::MODE_DUAL_INT_ZER_DELAY;
+
+                // PLL1 - 1.92 MHz compare frequency
+                _lmk04816_regs.PLL1_N_28 = 12;
+                _lmk04816_regs.PLL1_R_27 = 12;
+                _lmk04816_regs.PLL1_CP_GAIN_27 = lmk04816_regs_t::PLL1_CP_GAIN_27_100UA;
+
+                // PLL2 - 7.68 MHz compare frequency
+                _lmk04816_regs.PLL2_N_30 = 168;
+                _lmk04816_regs.PLL2_P_30 = lmk04816_regs_t::PLL2_P_30_DIV_2A;
+                _lmk04816_regs.PLL2_R_28 = 25;
+                _lmk04816_regs.PLL2_CP_GAIN_26 = lmk04816_regs_t::PLL2_CP_GAIN_26_3200UA;
+
+                _lmk04816_regs.PLL2_R3_LF = lmk04816_regs_t::PLL2_R3_LF_1KILO_OHM;
+                _lmk04816_regs.PLL2_C3_LF = lmk04816_regs_t::PLL2_C3_LF_39PF;
+
+                _lmk04816_regs.PLL2_R4_LF = lmk04816_regs_t::PLL2_R4_LF_1KILO_OHM;
+                _lmk04816_regs.PLL2_C4_LF = lmk04816_regs_t::PLL2_C4_LF_34PF;
+
+                break;
+
+            case m30_72M_184_32M_ZDEL:
+                _vco_freq = 2580.48e6;
+                _lmk04816_regs.MODE = lmk04816_regs_t::MODE_DUAL_INT_ZER_DELAY;
+
+                // PLL1 - 2.048 MHz compare frequency
+                _lmk04816_regs.PLL1_N_28 = 15;
+                _lmk04816_regs.PLL1_R_27 = 15;
+                _lmk04816_regs.PLL1_CP_GAIN_27 = lmk04816_regs_t::PLL1_CP_GAIN_27_100UA;
+
+                // PLL2 - 7.68 MHz compare frequency
+                _lmk04816_regs.PLL2_N_30 = 168;
+                _lmk04816_regs.PLL2_P_30 = lmk04816_regs_t::PLL2_P_30_DIV_2A;
+                _lmk04816_regs.PLL2_R_28 = 25;
+                _lmk04816_regs.PLL2_CP_GAIN_26 = lmk04816_regs_t::PLL2_CP_GAIN_26_3200UA;
+
+                _lmk04816_regs.PLL2_R3_LF = lmk04816_regs_t::PLL2_R3_LF_1KILO_OHM;
+                _lmk04816_regs.PLL2_C3_LF = lmk04816_regs_t::PLL2_C3_LF_39PF;
+
+                _lmk04816_regs.PLL2_R4_LF = lmk04816_regs_t::PLL2_R4_LF_1KILO_OHM;
+                _lmk04816_regs.PLL2_C4_LF = lmk04816_regs_t::PLL2_C4_LF_34PF;
 
                 break;
 
