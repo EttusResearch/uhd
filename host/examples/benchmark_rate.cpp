@@ -524,7 +524,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     const bool wait_for_multichan =
         (rx_channel_nums.size() <= 1 and tx_channel_nums.size() <= 1);
     const int64_t secs =
-        int64_t(duration + wait_for_multichan ? 0 : INIT_DELAY * 1000);
+        int64_t(duration + (wait_for_multichan ? 0 : INIT_DELAY * 1000));
     const int64_t usecs = int64_t((duration - secs)*1e6);
     std::this_thread::sleep_for(
         std::chrono::seconds(secs) +
