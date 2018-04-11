@@ -386,6 +386,36 @@ For a list of which arguments can be passed into make(), see Section
  tx_lo_source          | Initialize the source for the TX LO.                                         | N310              | tx_lo_source=external
  rfic_digital_loopback | Digital data loopback inside the RFIC.                                       | N310              | rfic_digital_loopback=1
 
+\subsection n3xx_usage_subdevspec Subdev Specifications
+
+The four RF ports on the front panel correspond to the following subdev
+specifications:
+
+Label | Subdev Spec
+------|------------
+RF0   | A:0
+RF1   | A:1
+RF2   | B:0 (N310 only)
+RF3   | B:1 (N310 only)
+
+Note: Before UHD 3.12.0.0, the subdev spec options were different (A:0, B:0,
+etc.). Make sure to update your application if you migrated from an earlier UHD
+version.
+
+The following example will map RF0 onto channel 0 of a uhd::usrp::multi_usrp
+object, and RF3 onto channel 1:
+
+~~~~~{.cpp}
+auto usrp = uhd::usrp::multi_usrp("type=n3xx");
+usrp->set_rx_subdev_spec("A:0 B:1");
+// This line will now set the gain for RF3 to 20.0:
+usrp->set_rx_gain(20.0, 1);
+// And this will affect RF0:
+usrp->set_rx_gain(20.0, 0);
+~~~~~
+
+See also uhd::usrp::subdev_spec_t.
+
 \subsection n3xx_usage_sensors The sensor API
 
 \section n3xx_rasm Remote Management
