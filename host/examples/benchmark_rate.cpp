@@ -118,7 +118,16 @@ void benchmark_rx_rate(
         case uhd::rx_metadata_t::ERROR_CODE_NONE:
             if (had_an_overflow) {
                 had_an_overflow = false;
-                num_dropped_samps += (md.time_spec - last_time).to_ticks(rate);
+                const long dropped_samps =
+                    (md.time_spec - last_time).to_ticks(rate);
+                if (dropped_samps < 0) {
+                    std::cerr
+                        << "[" << NOW() << "] Timestamp after overrun recovery "
+                           "ahead of error timestamp! Unable to calculate "
+                           "number of dropped samples."
+                           "(Delta: " << dropped_samps << " ticks)\n";
+                }
+                num_dropped_samps += std::max<long>(1, dropped_samps);
             }
             if ((burst_timer_elapsed or stop_called) and md.end_of_burst) {
                 return;
