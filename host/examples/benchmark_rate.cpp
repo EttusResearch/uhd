@@ -23,8 +23,10 @@
 
 namespace po = boost::program_options;
 
-const int64_t CLOCK_TIMEOUT = 1000;  // 1000mS timeout for external clock locking
-const float   INIT_DELAY    = 0.05;  // 50mS initial delay before transmit
+namespace {
+    constexpr int64_t CLOCK_TIMEOUT = 1000;  // 1000mS timeout for external clock locking
+    constexpr float   INIT_DELAY    = 0.05;  // 50mS initial delay before transmit
+}
 
 /***********************************************************************
  * Test result variables
@@ -284,6 +286,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::string channel_list, rx_channel_list, tx_channel_list;
     bool random_nsamps = false;
     std::atomic<bool> burst_timer_elapsed(false);
+    size_t overrun_threshold, underrun_threshold, drop_threshold, seq_threshold;
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -306,6 +309,14 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("channels", po::value<std::string>(&channel_list)->default_value("0"), "which channel(s) to use (specify \"0\", \"1\", \"0,1\", etc)")
         ("rx_channels", po::value<std::string>(&rx_channel_list), "which RX channel(s) to use (specify \"0\", \"1\", \"0,1\", etc)")
         ("tx_channels", po::value<std::string>(&tx_channel_list), "which TX channel(s) to use (specify \"0\", \"1\", \"0,1\", etc)")
+        ("overrun-threshold", po::value<size_t>(&overrun_threshold),
+         "Number of overruns (O) which will declare the benchmark a failure.")
+        ("underrun-threshold", po::value<size_t>(&underrun_threshold),
+         "Number of underruns (U) which will declare the benchmark a failure.")
+        ("drop-threshold", po::value<size_t>(&drop_threshold),
+         "Number of dropped packets (D) which will declare the benchmark a failure.")
+        ("seq-threshold", po::value<size_t>(&seq_threshold),
+         "Number of dropped packets (D) which will declare the benchmark a failure.")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -527,25 +538,80 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << "[" << NOW() << "] Benchmark complete." << std::endl << std::endl;
 
     //print summary
-    std::cout << std::endl << boost::format(
-        "Benchmark rate summary:\n"
-        "  Num received samples:     %u\n"
-        "  Num dropped samples:      %u\n"
-        "  Num overruns detected:    %u\n"
-        "  Num transmitted samples:  %u\n"
-        "  Num sequence errors (Tx): %u\n"
-        "  Num sequence errors (Rx): %u\n"
-        "  Num underruns detected:   %u\n"
-        "  Num late commands:        %u\n"
-        "  Num timeouts (Tx):        %u\n"
-        "  Num timeouts (Rx):        %u\n"
-    ) % num_rx_samps % num_dropped_samps
-      % num_overruns % num_tx_samps
-      % num_seq_errors % num_seqrx_errors % num_underruns
-      % num_late_commands % num_timeouts_tx % num_timeouts_rx
-      << std::endl;
-
+    const std::string threshold_err(" ERROR: Exceeds threshold!");
+    const bool overrun_threshold_err =
+        vm.count("overrun-threshold") and
+        num_overruns > overrun_threshold;
+    const bool underrun_threshold_err =
+        vm.count("underrun-threshold") and
+        num_underruns > underrun_threshold;
+    const bool drop_threshold_err =
+        vm.count("drop-threshold") and
+        num_seqrx_errors > drop_threshold;
+    const bool seq_threshold_err =
+        vm.count("seq-threshold") and
+        num_seq_errors > seq_threshold;
+    std::cout << std::endl
+        << boost::format(
+                "Benchmark rate summary:\n"
+                "  Num received samples:     %u\n"
+                "  Num dropped samples:      %u\n"
+                "  Num overruns detected:    %u\n"
+                "  Num transmitted samples:  %u\n"
+                "  Num sequence errors (Tx): %u\n"
+                "  Num sequence errors (Rx): %u\n"
+                "  Num underruns detected:   %u\n"
+                "  Num late commands:        %u\n"
+                "  Num timeouts (Tx):        %u\n"
+                "  Num timeouts (Rx):        %u\n"
+            ) % num_rx_samps
+              % num_dropped_samps
+              % num_overruns
+              % num_tx_samps
+              % num_seq_errors
+              % num_seqrx_errors
+              % num_underruns
+              % num_late_commands
+              % num_timeouts_tx
+              % num_timeouts_rx
+        << std::endl;
     //finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;
+
+    if (overrun_threshold_err
+            || underrun_threshold_err
+            || drop_threshold_err
+            || seq_threshold_err) {
+        std::cout << "The following error thresholds were exceeded:\n";
+        if (overrun_threshold_err) {
+            std::cout
+                << boost::format("  * Overruns (%d/%d)")
+                   % num_overruns
+                   % overrun_threshold
+                << std::endl;
+        }
+        if (underrun_threshold_err) {
+            std::cout
+                << boost::format("  * Underruns (%d/%d)")
+                   % num_underruns
+                   % underrun_threshold
+                << std::endl;
+        }
+        if (drop_threshold_err) {
+            std::cout
+                << boost::format("  * Dropped packets (RX) (%d/%d)")
+                   % num_seqrx_errors
+                   % drop_threshold
+                << std::endl;
+        }
+        if (seq_threshold_err) {
+            std::cout
+                << boost::format("  * Dropped packets (TX) (%d/%d)")
+                   % num_seq_errors
+                   % seq_threshold
+                << std::endl;
+        }
+        return EXIT_FAILURE;
+    }
     return EXIT_SUCCESS;
 }
