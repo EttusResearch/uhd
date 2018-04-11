@@ -18,11 +18,11 @@
 #ifndef INCLUDED_LIBUHD_RFNOC_E3XX_RADIO_CTRL_IMPL_HPP
 #define INCLUDED_LIBUHD_RFNOC_E3XX_RADIO_CTRL_IMPL_HPP
 
-#include "radio_ctrl_impl.hpp"
-#include "ad9361_ctrl.hpp"
-#include "ad936x_manager.hpp"
-#include "spi_core_3000.hpp"
 #include "e300_global_regs.hpp"
+#include <uhdlib/usrp/cores/spi_core_3000.hpp>
+#include <uhdlib/usrp/common/ad9361_ctrl.hpp>
+#include <uhdlib/usrp/common/ad936x_manager.hpp>
+#include <uhdlib/rfnoc/radio_ctrl_impl.hpp>
 #include <uhd/usrp/gpio_defs.hpp>
 
 namespace uhd {
