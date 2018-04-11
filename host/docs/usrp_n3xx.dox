@@ -383,6 +383,32 @@ For a list of which arguments can be passed into make(), see Section
  rx_lo_source        | Initialize the source for the RX LO.                                         | N310              | rx_lo_source=external
  tx_lo_source        | Initialize the source for the TX LO.                                         | N310              | tx_lo_source=external
 
+\subsection n3xx_usage_subdevspec Subdev Specifications
+
+The four RF ports on the front panel correspond to the following subdev
+specifications:
+
+Label | Subdev Spec
+------|------------
+RF0   | A:0
+RF1   | B:0
+RF2   | C:0 (N310 only)
+RF3   | D:0 (N310 only)
+
+The following example will map RF0 onto channel 0 of a uhd::usrp::multi_usrp
+object, and RF2 onto channel 1:
+
+~~~~~{.cpp}
+auto usrp = uhd::usrp::multi_usrp("type=n3xx");
+usrp->set_rx_subdev_spec("A:0 C:0");
+// This line will now set the gain for RF2 to 20.0:
+usrp->set_rx_gain(20.0, 1);
+// And this will affect RF0:
+usrp->set_rx_gain(20.0, 0);
+~~~~~
+
+See also uhd::usrp::subdev_spec_t.
+
 \subsection n3xx_usage_sensors The sensor API
 
 \section n3xx_rasm Remote Management
