@@ -59,7 +59,7 @@ uint32_t adf4001_regs_t::get_reg(uint8_t addr) {
         reg |= (uint32_t(timer_counter_control) & 0x00000F) << 11;
         reg |= (uint32_t(charge_pump_current_1) & 0x000007) << 15;
         reg |= (uint32_t(charge_pump_current_2) & 0x000007) << 18;
-        reg |= (uint32_t(power_down) & 0x000002) << 21;
+        reg |= (uint32_t(power_down) & 0x000002) << 20;
         break;
     case 3:
         reg |= (uint32_t(counter_reset) & 0x000001) << 2;
