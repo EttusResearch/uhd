@@ -124,8 +124,15 @@ SET(PKG_MAN_DIR share/man/man1)
 # Setup library configuration
 ########################################################################
 SET(CMAKE_CXX_STANDARD 11)
+SET(MPM_ALL_DEVICES n3xx tests)
 SET(MPM_DEVICE "n3xx" CACHE STRING "Choose an MPM device to build")
-SET_PROPERTY(CACHE MPM_DEVICE PROPERTY STRINGS n3xx tests)
+SET_PROPERTY(CACHE MPM_DEVICE PROPERTY STRINGS ${MPM_ALL_DEVICES})
+# Validate MPM_DEVICE
+list(FIND MPM_ALL_DEVICES ${MPM_DEVICE} mpm_device_check)
+if(mpm_device_check EQUAL -1)
+    message(FATAL_ERROR "MPM_DEVICE must be one of ${MPM_ALL_DEVICES}! \
+        Specify -DMPM_DEVICE=<device> on the command line or set MPM_DEVICE using a CMake GUI.")
+endif()
 
 ADD_SUBDIRECTORY(include)
 INCLUDE_DIRECTORIES(
@@ -177,3 +184,4 @@ IF(MPM_VERSION_DEVEL AND NOT MPM_GIT_BRANCH STREQUAL "maint")
     MESSAGE(STATUS "******************************************************")
 ENDIF(MPM_VERSION_DEVEL AND NOT MPM_GIT_BRANCH STREQUAL "maint")
 MESSAGE(STATUS "Building version: ${MPM_VERSION}")
+MESSAGE(STATUS "Building for device: ${MPM_DEVICE}")
