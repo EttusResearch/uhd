@@ -296,19 +296,19 @@ private:
     //issue some setup stuff so it spits out the appropriate data
     //none of these should issue replies so we don't bother looking for them
     //we have to sleep between commands because the JL device, despite not acking, takes considerable time to process each command.
-     sleep(milliseconds(GPSDO_COMMAND_DELAY_MS));
+     sleep(milliseconds(long(GPSDO_COMMAND_DELAY_MS)));
     _send("SYST:COMM:SER:ECHO OFF\r\n");
-     sleep(milliseconds(GPSDO_COMMAND_DELAY_MS));
+     sleep(milliseconds(long(GPSDO_COMMAND_DELAY_MS)));
     _send("SYST:COMM:SER:PRO OFF\r\n");
-     sleep(milliseconds(GPSDO_COMMAND_DELAY_MS));
+     sleep(milliseconds(long(GPSDO_COMMAND_DELAY_MS)));
     _send("GPS:GPGGA 1\r\n");
-     sleep(milliseconds(GPSDO_COMMAND_DELAY_MS));
+     sleep(milliseconds(long(GPSDO_COMMAND_DELAY_MS)));
     _send("GPS:GGAST 0\r\n");
-     sleep(milliseconds(GPSDO_COMMAND_DELAY_MS));
+     sleep(milliseconds(long(GPSDO_COMMAND_DELAY_MS)));
     _send("GPS:GPRMC 1\r\n");
-     sleep(milliseconds(GPSDO_COMMAND_DELAY_MS));
+     sleep(milliseconds(long(GPSDO_COMMAND_DELAY_MS)));
     _send("SERV:TRAC 1\r\n");
-     sleep(milliseconds(GPSDO_COMMAND_DELAY_MS));
+     sleep(milliseconds(long(GPSDO_COMMAND_DELAY_MS)));
   }
 
   //helper function to retrieve a field from an NMEA sentence

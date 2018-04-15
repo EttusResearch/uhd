@@ -64,7 +64,7 @@ struct rx_vita_core_3000_impl : rx_vita_core_3000
         // At 1 ms * 200 MHz = 200k cycles, 8 bytes * 200k cycles = 1.6 MB
         // of flushed data, when the typical amount of data buffered
         // is on the order of kilobytes
-        boost::this_thread::sleep(boost::posix_time::milliseconds(1.0));
+        boost::this_thread::sleep(boost::posix_time::milliseconds(1));
 
         _iface->poke32(REG_FC_WINDOW, window_size-1);
         _iface->poke32(REG_FC_ENABLE, window_size?1:0);

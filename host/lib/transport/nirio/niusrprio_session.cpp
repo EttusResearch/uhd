@@ -207,7 +207,7 @@ nirio_status niusrprio_session::_ensure_fpga_ready()
         //there is a small chance that the server is still finishing up cleaning up
         //the DMA FIFOs. We currently don't have any feedback from the driver regarding
         //this state so just wait.
-        boost::this_thread::sleep(boost::posix_time::milliseconds(FPGA_READY_TIMEOUT_IN_MS));
+        boost::this_thread::sleep(boost::posix_time::milliseconds(long(FPGA_READY_TIMEOUT_IN_MS)));
 
         //Disable all FIFOs in the FPGA
         for (size_t i = 0; i < _lvbitx->get_input_fifo_count(); i++) {

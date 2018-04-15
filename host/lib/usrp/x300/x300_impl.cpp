@@ -1530,7 +1530,7 @@ void x300_impl::sync_times(mboard_members_t &mb, const uhd::time_spec_t& t)
 
 bool x300_impl::wait_for_clk_locked(mboard_members_t& mb, uint32_t which, double timeout)
 {
-    boost::system_time timeout_time = boost::get_system_time() + boost::posix_time::milliseconds(timeout * 1000.0);
+    boost::system_time timeout_time = boost::get_system_time() + boost::posix_time::milliseconds(long(timeout * 1000));
     do {
         if (mb.fw_regmap->clock_status_reg.read(which)==1)
             return true;
