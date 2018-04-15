@@ -162,7 +162,7 @@ template<typename samp_type> void recv_to_file(
 
 typedef boost::function<uhd::sensor_value_t (const std::string&)> get_sensor_fn_t;
 
-bool check_locked_sensor(std::vector<std::string> sensor_names, const char* sensor_name, get_sensor_fn_t get_sensor_fn, double setup_time){
+bool check_locked_sensor(std::vector<std::string> sensor_names, const char* sensor_name, get_sensor_fn_t get_sensor_fn, long setup_time){
     if (std::find(sensor_names.begin(), sensor_names.end(), sensor_name) == sensor_names.end())
         return false;
 
@@ -207,7 +207,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //variables to be set by po
     std::string args, file, type, ant, subdev, ref, wirefmt, channel;
     size_t total_num_samps, spb;
-    double rate, freq, gain, bw, total_time, setup_time;
+    double rate, freq, gain, bw, total_time;
+    long setup_time;
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -229,7 +230,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("bw", po::value<double>(&bw), "analog frontend filter bandwidth in Hz")
         ("ref", po::value<std::string>(&ref)->default_value("internal"), "reference source (internal, external, mimo)")
         ("wirefmt", po::value<std::string>(&wirefmt)->default_value("sc16"), "wire format (sc8, sc16 or s16)")
-        ("setup", po::value<double>(&setup_time)->default_value(1.0), "seconds of setup time")
+        ("setup", po::value<long>(&setup_time)->default_value(1), "seconds of setup time")
         ("progress", "periodically display short-term bandwidth")
         ("stats", "show average bandwidth on exit")
         ("sizemap", "track packet size and display breakdown on exit")
@@ -310,7 +311,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     if (vm.count("ant")) usrp->set_rx_antenna(ant);
 
     std::this_thread::sleep_for(
-        std::chrono::milliseconds(int64_t(1000 * setup_time))
+        std::chrono::seconds(setup_time)
     );
 
     //check Ref and LO Lock detect
