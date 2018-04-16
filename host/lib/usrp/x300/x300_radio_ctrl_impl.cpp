@@ -19,6 +19,8 @@
 #include <boost/make_shared.hpp>
 #include <boost/date_time/posix_time/posix_time_io.hpp>
 #include <boost/assign/list_of.hpp>
+#include <chrono>
+#include <thread>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -804,10 +806,10 @@ void x300_radio_ctrl_impl::self_test_adc(uint32_t ramp_time_ms)
     _adc->set_test_word("ramp", "ramp");
     _regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 0);
     //Sleep added for SPI transactions to finish and ramp to start before checker is enabled.
-    boost::this_thread::sleep(boost::posix_time::microsec(1000));
+    std::this_thread::sleep_for(std::chrono::microseconds(1000));
     _regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 1);
 
-    boost::this_thread::sleep(boost::posix_time::milliseconds(ramp_time_ms));
+    std::this_thread::sleep_for(std::chrono::milliseconds(ramp_time_ms));
     _regs->misc_ins_reg.refresh();
 
     std::string i_status, q_status;
@@ -981,7 +983,7 @@ double x300_radio_ctrl_impl::self_cal_adc_xfer_delay(
             radios[r]->_regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 0);
             radios[r]->_regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 1);
             //50ms @ 200MHz = 10 million samples
-            boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
             if (radios[r]->_regs->misc_ins_reg.read(radio_regmap_t::misc_ins_reg_t::ADC_CHECKER1_I_LOCKED)) {
                 err_code += radios[r]->_regs->misc_ins_reg.get(radio_regmap_t::misc_ins_reg_t::ADC_CHECKER1_I_ERROR);
             } else {
@@ -996,7 +998,7 @@ double x300_radio_ctrl_impl::self_cal_adc_xfer_delay(
             radios[r]->_regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 0);
             radios[r]->_regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 1);
             //50ms @ 200MHz = 10 million samples
-            boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
             if (radios[r]->_regs->misc_ins_reg.read(radio_regmap_t::misc_ins_reg_t::ADC_CHECKER1_Q_LOCKED)) {
                 err_code += radios[r]->_regs->misc_ins_reg.get(radio_regmap_t::misc_ins_reg_t::ADC_CHECKER1_Q_ERROR);
             } else {
@@ -1121,7 +1123,7 @@ void x300_radio_ctrl_impl::_self_cal_adc_capture_delay(bool print_status)
             _regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 0);
             _regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 1);
             //5ms @ 200MHz = 1 million samples
-            boost::this_thread::sleep(boost::posix_time::milliseconds(5));
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
             if (_regs->misc_ins_reg.read(radio_regmap_t::misc_ins_reg_t::ADC_CHECKER0_I_LOCKED)) {
                 err_code += _regs->misc_ins_reg.get(radio_regmap_t::misc_ins_reg_t::ADC_CHECKER0_I_ERROR);
             } else {
@@ -1136,7 +1138,7 @@ void x300_radio_ctrl_impl::_self_cal_adc_capture_delay(bool print_status)
             _regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 0);
             _regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 1);
             //5ms @ 200MHz = 1 million samples
-            boost::this_thread::sleep(boost::posix_time::milliseconds(5));
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
             if (_regs->misc_ins_reg.read(radio_regmap_t::misc_ins_reg_t::ADC_CHECKER0_Q_LOCKED)) {
                 err_code += _regs->misc_ins_reg.get(radio_regmap_t::misc_ins_reg_t::ADC_CHECKER0_Q_ERROR);
             } else {
@@ -1166,7 +1168,7 @@ void x300_radio_ctrl_impl::_self_cal_adc_capture_delay(bool print_status)
         if ((win_start == -1 || (win_stop - win_start) < MIN_WINDOW_LEN) && iter < NUM_RETRIES /*not last iteration*/) {
             win_start = -1;
             win_stop = -1;
-            boost::this_thread::sleep(boost::posix_time::milliseconds(2000));
+            std::this_thread::sleep_for(std::chrono::milliseconds(2000));
         } else {
             break;
         }
@@ -1198,7 +1200,7 @@ void x300_radio_ctrl_impl::_check_adc(const uint32_t val)
     //Wait for previous control transaction to flush
     user_reg_read64(regs::RB_TEST);
     //Wait for ADC test pattern to propagate
-    boost::this_thread::sleep(boost::posix_time::microsec(5));
+    std::this_thread::sleep_for(std::chrono::microseconds(5));
     //Read value of RX readback register and verify
     uint32_t adc_rb = static_cast<uint32_t>(user_reg_read64(regs::RB_TEST)>>32);
     adc_rb ^= 0xfffc0000; //adapt for I inversion in FPGA
