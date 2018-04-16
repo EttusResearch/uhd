@@ -6,15 +6,19 @@
 //
 
 
+//@TODO: Move the register defs required by the class to a common location
+#include "../../usrp/x300/x300_regs.hpp"
 #include <uhd/transport/nirio/niusrprio_session.h>
 #include <uhd/transport/nirio/nirio_fifo.h>
 #include <uhd/transport/nirio/status.h>
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
-#include <stdio.h>
 #include <fstream>
-//@TODO: Move the register defs required by the class to a common location
-#include "../../usrp/x300/x300_regs.hpp"
+#include <stdio.h>
+
+namespace {
+    constexpr uint32_t FPGA_READY_TIMEOUT_IN_MS      = 1000;
+}
 
 namespace uhd { namespace niusrprio {
 
