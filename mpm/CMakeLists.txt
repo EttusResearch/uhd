@@ -18,6 +18,12 @@ ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 
 LIST(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake/Modules)
 SET(UHD_HOST_ROOT ${CMAKE_SOURCE_DIR}/../host)
+########################################################################
+# Setup Python API
+########################################################################
+SET(PYTHON_ADDITIONAL_VERSIONS 3.4 3.5)
+FIND_PACKAGE(PythonInterp 3 REQUIRED)
+FIND_PACKAGE(PythonLibs 3 REQUIRED)
 # Now, we can also include CMake modules from UHD:
 LIST(INSERT CMAKE_MODULE_PATH 0 ${UHD_HOST_ROOT}/cmake/Modules)
 
@@ -91,12 +97,6 @@ MESSAGE(STATUS "Boost include directories: ${Boost_INCLUDE_DIRS}")
 MESSAGE(STATUS "Boost library directories: ${Boost_LIBRARY_DIRS}")
 MESSAGE(STATUS "Boost libraries: ${Boost_LIBRARIES}")
 
-########################################################################
-# Setup Python API
-########################################################################
-SET(PYTHON_ADDITIONAL_VERSIONS 3.4 3.5)
-FIND_PACKAGE(PythonInterp 3)
-FIND_PACKAGE(PythonLibs 3)
 
 ########################################################################
 # Install Dirs
