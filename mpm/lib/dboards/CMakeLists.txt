@@ -8,8 +8,8 @@
 # This file included, use CMake directory variables
 ########################################################################
 
-if(MPM_DEVICE STREQUAL "n3xx")
+if(ENABLE_MAGNESIUM)
     USRP_PERIPHS_ADD_OBJECT(dboards
         magnesium_manager.cpp
     )
-endif(MPM_DEVICE STREQUAL "n3xx")
+endif(ENABLE_MAGNESIUM)

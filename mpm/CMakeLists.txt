@@ -36,6 +36,8 @@ INCLUDE(MPMVersion)
 ########################################################################
 # useful macros
 ########################################################################
+INCLUDE(MPMComponent) # enable components
+
 MACRO(USRP_PERIPHS_APPEND_SOURCES)
     SET(usrp_periphs_sources ${usrp_periphs_sources} PARENT_SCOPE)
     LIST(APPEND usrp_periphs_sources ${ARGV})
@@ -133,6 +135,16 @@ if(mpm_device_check EQUAL -1)
     message(FATAL_ERROR "MPM_DEVICE must be one of ${MPM_ALL_DEVICES}! \
         Specify -DMPM_DEVICE=<device> on the command line or set MPM_DEVICE using a CMake GUI.")
 endif()
+
+# Request required components for MPM_DEVICE
+IF(MPM_DEVICE STREQUAL "n3xx")
+    SET(ENABLE_MYKONOS ON)
+    SET(ENABLE_MAGNESIUM ON)
+ENDIF()
+
+MPM_REGISTER_COMPONENT("LibMPM" ENABLE_LIBMPM ON "Boost_FOUND" OFF ON)
+MPM_REGISTER_COMPONENT("Mykonos" ENABLE_MYKONOS ON "ENABLE_LIBMPM" OFF OFF)
+MPM_REGISTER_COMPONENT("Magnesium" ENABLE_MAGNESIUM ON "ENABLE_MYKONOS" OFF OFF)
 
 ADD_SUBDIRECTORY(include)
 INCLUDE_DIRECTORIES(
