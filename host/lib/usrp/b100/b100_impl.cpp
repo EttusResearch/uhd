@@ -16,19 +16,19 @@
 #include <uhd/utils/safe_call.hpp>
 #include <uhdlib/usrp/common/apply_corrections.hpp>
 #include <boost/format.hpp>
-#include <boost/assign/list_of.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/thread/thread.hpp>
 #include <cstdio>
 #include <iostream>
+#include <chrono>
 
 using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
 
-const uint16_t B100_VENDOR_ID  = 0x2500;
-const uint16_t B100_PRODUCT_ID = 0x0002;
-static const boost::posix_time::milliseconds REENUMERATION_TIMEOUT_MS(3000);
+namespace {
+    constexpr uint16_t B100_VENDOR_ID  = 0x2500;
+    constexpr uint16_t B100_PRODUCT_ID = 0x0002;
+    constexpr int64_t  REENUMERATION_TIMEOUT_MS = 3000;
+}
 
 /***********************************************************************
  * Discovery
@@ -86,17 +86,22 @@ static device_addrs_t b100_find(const device_addr_t &hint)
     vid = B100_VENDOR_ID;
     pid = B100_PRODUCT_ID;
 
-    const boost::system_time timeout_time = boost::get_system_time() + REENUMERATION_TIMEOUT_MS;
+    const auto timeout_time =
+        std::chrono::steady_clock::now()
+        + std::chrono::milliseconds(REENUMERATION_TIMEOUT_MS);
 
     //search for the device until found or timeout
-    while (boost::get_system_time() < timeout_time and b100_addrs.empty() and found != 0)
-    {
-      for(usb_device_handle::sptr handle: usb_device_handle::get_device_list(vid,  pid))
-        {
+    while (std::chrono::steady_clock::now() < timeout_time
+            and b100_addrs.empty()
+            and found != 0) {
+        for (auto handle : usb_device_handle::get_device_list(vid, pid)) {
             usb_control::sptr control;
-            try{control = usb_control::make(handle, 0);}
-            catch(const uhd::exception &){continue;} //ignore claimed
-
+            try {
+                control = usb_control::make(handle, 0);
+            }
+            catch (const uhd::exception &) {
+                continue; //ignore claimed
+            }
             fx2_ctrl::sptr fx2_ctrl = fx2_ctrl::make(control);
             const mboard_eeprom_t mb_eeprom =
                 b100_impl::get_mb_eeprom(fx2_ctrl);
@@ -108,7 +113,7 @@ static device_addrs_t b100_find(const device_addr_t &hint)
             if (
                 (not hint.has_key("name")   or hint["name"]   == new_addr["name"]) and
                 (not hint.has_key("serial") or hint["serial"] == new_addr["serial"])
-            ){
+               ) {
                 b100_addrs.push_back(new_addr);
             }
         }
@@ -425,7 +430,9 @@ b100_impl::b100_impl(const device_addr_t &device_addr){
     //setup reference source props
     _tree->create<std::string>(mb_path / "clock_source/value")
         .add_coerced_subscriber(boost::bind(&b100_impl::update_clock_source, this, _1));
-    static const std::vector<std::string> clock_sources = boost::assign::list_of("internal")("external")("auto");
+    static const std::vector<std::string> clock_sources = {
+        "internal", "external", "auto"
+    };
     _tree->create<std::vector<std::string> >(mb_path / "clock_source/options").set(clock_sources);
 
     ////////////////////////////////////////////////////////////////////
