@@ -49,6 +49,7 @@ static constexpr double ALL_RX_GAIN_STEP = 0.5;
 static constexpr double ALL_TX_MIN_GAIN = 0.0;
 static constexpr double ALL_TX_MAX_GAIN = 65.0;
 static constexpr double ALL_TX_GAIN_STEP = 0.5;
+static constexpr uint32_t DEFAULT_CAL_TIMEOUT_MS = 60000; //ms
 
 static const std::vector<std::string> MAGNESIUM_RX_ANTENNAS = {
     "TX/RX", "RX2", "CAL", "LOCAL"

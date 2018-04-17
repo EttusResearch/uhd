@@ -439,13 +439,14 @@ public:
     virtual double set_freq(
             const std::string &which,
             const double value,
-            const bool wait_for_lock
+            const bool wait_for_lock,
+            const uint32_t cal_timeout_ms
     ) {
         const auto dir = _get_direction_from_antenna(which);
         const auto clipped_value = get_rf_freq_range().clip(value);
 
         std::lock_guard<std::mutex> lock(*spi_mutex);
-        return device.tune(dir, clipped_value, wait_for_lock);
+        return device.tune(dir, clipped_value, wait_for_lock, cal_timeout_ms);
     }
 
     virtual double get_freq(const std::string &which)

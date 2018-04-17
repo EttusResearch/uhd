@@ -25,7 +25,8 @@ public:
     double set_frequency(
         const double freq,
         const size_t chan,
-        const uhd::direction_t dir
+        const uhd::direction_t dir,
+        const uint32_t cal_timeout_ms
     );
 
     double get_frequency(
