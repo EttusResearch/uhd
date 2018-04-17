@@ -19,7 +19,7 @@ usrprio_rpc_client::usrprio_rpc_client(
     std::string server,
     std::string port
 ) : _rpc_client(server, port, uhd::get_process_id(), uhd::get_host_id()),
-    _timeout(boost::posix_time::milliseconds(DEFAULT_TIMEOUT_IN_MS))
+    _timeout(boost::posix_time::milliseconds(long(DEFAULT_TIMEOUT_IN_MS)))
 {
    _ctor_status = _rpc_client.status() ? NiRio_Status_RpcConnectionError : NiRio_Status_Success;
 }
