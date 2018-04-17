@@ -8,7 +8,10 @@
 # This file included, use CMake directory variables
 ########################################################################
 
-ADD_LIBRARY(pyusrp_periphs SHARED pyusrp_periphs.cpp)
+if(MPM_DEVICE STREQUAL "n3xx")
+    ADD_LIBRARY(pyusrp_periphs SHARED pyusrp_periphs/n3xx/pyusrp_periphs.cpp)
+endif(MPM_DEVICE STREQUAL "n3xx")
+
 TARGET_INCLUDE_DIRECTORIES(pyusrp_periphs PUBLIC
     ${PYTHON_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}/lib/

@@ -6,7 +6,6 @@
 
 // include hackery to only include boost python and define the macro here
 #include <boost/python.hpp>
-#include <config.h>
 #define LIBMPM_PYTHON
 #define LIBMPM_BOOST_PREAMBLE(module)  \
     /* Register submodule types */      \
@@ -42,19 +41,12 @@ private:
 };
 
 //#include "types.hpp"
-#include "converters.hpp"
+#include "../converters.hpp"
 #include <mpm/xbar_iface.hpp>
 #include <mpm/types/types_python.hpp>
 #include <mpm/spi/spi_python.hpp>
-
-#ifdef ENABLE_MYKONOS
 #include <mpm/ad937x/ad937x_ctrl.hpp>
-#endif
-
-#ifdef ENABLE_MAGNESIUM
 #include <mpm/dboards/magnesium_manager.hpp>
-#endif
-
 #include <boost/noncopyable.hpp>
 
 namespace bp = boost::python;
@@ -66,11 +58,7 @@ BOOST_PYTHON_MODULE(libpyusrp_periphs)
     export_converter();
     export_types();
     export_spi();
-#ifdef ENABLE_MYKONOS
     export_mykonos();
-#endif
     export_xbar();
-#ifdef ENABLE_MAGNESIUM
     export_magnesium();
-#endif
 }
