@@ -8,6 +8,11 @@
 #include <uhd/transport/nirio/rpc/usrprio_rpc_client.hpp>
 #include <uhd/utils/platform.hpp>
 
+namespace {
+    constexpr int64_t DEFAULT_TIMEOUT_IN_MS = 5000;
+}
+
+
 namespace uhd { namespace usrprio_rpc {
 
 usrprio_rpc_client::usrprio_rpc_client(
