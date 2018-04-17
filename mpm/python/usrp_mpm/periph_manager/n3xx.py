@@ -479,7 +479,7 @@ class n3xx(PeriphManagerBase):
     mboard_info = {"type": "n3xx",
                    "product": "unknown",
                   }
-    mboard_max_rev = 4 # 4 == RevE
+    mboard_max_rev = 5 # 5 == RevF
     mboard_sensor_callback_map = {
         'ref_locked': 'get_ref_lock_sensor',
         'gps_locked': 'get_gps_lock_sensor',
