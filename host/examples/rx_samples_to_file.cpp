@@ -12,7 +12,7 @@
 #include <uhd/exception.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
-#include <boost/thread.hpp>
+#include <boost/lexical_cast.hpp>
 #include <iostream>
 #include <fstream>
 #include <csignal>
@@ -65,19 +65,29 @@ template<typename samp_type> void recv_to_file(
     stream_cmd.time_spec = uhd::time_spec_t();
     rx_stream->issue_stream_cmd(stream_cmd);
 
-    boost::system_time start = boost::get_system_time();
-    unsigned long long ticks_requested = (long)(time_requested * (double)boost::posix_time::time_duration::ticks_per_second());
-    boost::posix_time::time_duration ticks_diff;
-    boost::system_time last_update = start;
-    unsigned long long last_update_samps = 0;
-
     typedef std::map<size_t,size_t> SizeMap;
     SizeMap mapSizes;
+    const auto start_time = std::chrono::steady_clock::now();
+    const auto stop_time =
+        start_time
+        + std::chrono::milliseconds(int64_t(1000 * time_requested));
+    // Track time and samps between updating the BW summary
+    auto last_update = start_time;
+    unsigned long long last_update_samps = 0;
 
-    while(not stop_signal_called and (num_requested_samples != num_total_samps or num_requested_samples == 0)) {
-        boost::system_time now = boost::get_system_time();
+    // Run this loop until either time expired (if a duration was given), until
+    // the requested number of samples were collected (if such a number was
+    // given), or until Ctrl-C was pressed.
+    while (not stop_signal_called
+            and (num_requested_samples != num_total_samps
+                 or num_requested_samples == 0)
+            and (time_requested == 0.0
+                 or std::chrono::steady_clock::now() <= stop_time)
+            ) {
+        const auto now = std::chrono::steady_clock::now();
 
-        size_t num_rx_samps = rx_stream->recv(&buff.front(), buff.size(), md, 3.0, enable_size_map);
+        size_t num_rx_samps =
+            rx_stream->recv(&buff.front(), buff.size(), md, 3.0, enable_size_map);
 
         if (md.error_code == uhd::rx_metadata_t::ERROR_CODE_TIMEOUT) {
             std::cout << boost::format("Timeout while streaming") << std::endl;
@@ -115,41 +125,48 @@ template<typename samp_type> void recv_to_file(
 
         num_total_samps += num_rx_samps;
 
-        if (outfile.is_open())
-            outfile.write((const char*)&buff.front(), num_rx_samps*sizeof(samp_type));
+        if (outfile.is_open()) {
+            outfile.write(
+                (const char*)&buff.front(),
+                num_rx_samps*sizeof(samp_type)
+            );
+        }
 
         if (bw_summary) {
             last_update_samps += num_rx_samps;
-            boost::posix_time::time_duration update_diff = now - last_update;
-            if (update_diff.ticks() > boost::posix_time::time_duration::ticks_per_second()) {
-                double t = (double)update_diff.ticks() / (double)boost::posix_time::time_duration::ticks_per_second();
-                double r = (double)last_update_samps / t;
-                std::cout << boost::format("\t%f Msps") % (r/1e6) << std::endl;
+            const auto time_since_last_update = now - last_update;
+            if (time_since_last_update > std::chrono::seconds(1)) {
+                const double time_since_last_update_s =
+                    std::chrono::duration<double>(time_since_last_update).count();
+                const double rate =
+                    double(last_update_samps) / time_since_last_update_s;
+                std::cout << "\t" << (rate/1e6) << " Msps" << std::endl;
                 last_update_samps = 0;
                 last_update = now;
             }
         }
-
-        ticks_diff = now - start;
-        if (ticks_requested > 0){
-            if ((unsigned long long)ticks_diff.ticks() > ticks_requested)
-                break;
-        }
     }
+    const auto actual_stop_time = std::chrono::steady_clock::now();
 
     stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
     rx_stream->issue_stream_cmd(stream_cmd);
 
-    if (outfile.is_open())
+    if (outfile.is_open()) {
         outfile.close();
+    }
 
     if (stats) {
         std::cout << std::endl;
+        const double actual_duration_seconds =
+            std::chrono::duration<float>(actual_stop_time - start_time).count();
 
-        double t = (double)ticks_diff.ticks() / (double)boost::posix_time::time_duration::ticks_per_second();
-        std::cout << boost::format("Received %d samples in %f seconds") % num_total_samps % t << std::endl;
-        double r = (double)num_total_samps / t;
-        std::cout << boost::format("%f Msps") % (r/1e6) << std::endl;
+        std::cout
+            << boost::format("Received %d samples in %f seconds")
+               % num_total_samps
+               % actual_duration_seconds
+            << std::endl;
+        const double rate = (double)num_total_samps / actual_duration_seconds;
+        std::cout << (rate/1e6) << " Msps" << std::endl;
 
         if (enable_size_map) {
             std::cout << std::endl;
@@ -160,37 +177,43 @@ template<typename samp_type> void recv_to_file(
     }
 }
 
-typedef boost::function<uhd::sensor_value_t (const std::string&)> get_sensor_fn_t;
+typedef std::function<uhd::sensor_value_t(const std::string&)> get_sensor_fn_t;
 
-bool check_locked_sensor(std::vector<std::string> sensor_names, const char* sensor_name, get_sensor_fn_t get_sensor_fn, double setup_time){
+bool check_locked_sensor(
+    std::vector<std::string> sensor_names,
+    const char* sensor_name,
+    get_sensor_fn_t get_sensor_fn,
+    double setup_time
+) {
     if (std::find(sensor_names.begin(), sensor_names.end(), sensor_name) == sensor_names.end())
         return false;
 
-    boost::system_time start = boost::get_system_time();
-    boost::system_time first_lock_time;
+    auto setup_timeout =
+        std::chrono::steady_clock::now()
+        + std::chrono::milliseconds(int64_t(setup_time * 1000));
+    bool lock_detected = false;
 
     std::cout << boost::format("Waiting for \"%s\": ") % sensor_name;
     std::cout.flush();
 
     while (true) {
-        if ((not first_lock_time.is_not_a_date_time()) and
-                (boost::get_system_time() > (first_lock_time + boost::posix_time::seconds(setup_time))))
-        {
+        if (lock_detected and
+            (std::chrono::steady_clock::now() > setup_timeout)) {
             std::cout << " locked." << std::endl;
             break;
         }
-        if (get_sensor_fn(sensor_name).to_bool()){
-            if (first_lock_time.is_not_a_date_time())
-                first_lock_time = boost::get_system_time();
+        if (get_sensor_fn(sensor_name).to_bool()) {
             std::cout << "+";
             std::cout.flush();
+            lock_detected = true;
         }
         else {
-            first_lock_time = boost::system_time(); //reset to 'not a date time'
-
-            if (boost::get_system_time() > (start + boost::posix_time::seconds(setup_time))){
+            if (std::chrono::steady_clock::now() > setup_timeout) {
                 std::cout << std::endl;
-                throw std::runtime_error(str(boost::format("timed out waiting for consecutive locks on sensor \"%s\"") % sensor_name));
+                throw std::runtime_error(str(
+                    boost::format("timed out waiting for consecutive locks on sensor \"%s\"")
+                    % sensor_name
+                ));
             }
             std::cout << "_";
             std::cout.flush();
@@ -315,11 +338,34 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //check Ref and LO Lock detect
     if (not vm.count("skip-lo")){
-        check_locked_sensor(usrp->get_rx_sensor_names(0), "lo_locked", boost::bind(&uhd::usrp::multi_usrp::get_rx_sensor, usrp, _1, 0), setup_time);
-        if (ref == "mimo")
-            check_locked_sensor(usrp->get_mboard_sensor_names(0), "mimo_locked", boost::bind(&uhd::usrp::multi_usrp::get_mboard_sensor, usrp, _1, 0), setup_time);
-        if (ref == "external")
-            check_locked_sensor(usrp->get_mboard_sensor_names(0), "ref_locked", boost::bind(&uhd::usrp::multi_usrp::get_mboard_sensor, usrp, _1, 0), setup_time);
+        check_locked_sensor(
+            usrp->get_rx_sensor_names(0),
+            "lo_locked",
+            [usrp](const std::string& sensor_name){
+                return usrp->get_rx_sensor(sensor_name);
+            },
+            setup_time
+        );
+        if (ref == "mimo") {
+            check_locked_sensor(
+                usrp->get_mboard_sensor_names(0),
+                "mimo_locked",
+                [usrp](const std::string& sensor_name){
+                    return usrp->get_mboard_sensor(sensor_name);
+                },
+                setup_time
+            );
+        }
+        if (ref == "external") {
+            check_locked_sensor(
+                usrp->get_mboard_sensor_names(0),
+                "ref_locked",
+                [usrp](const std::string& sensor_name){
+                    return usrp->get_mboard_sensor(sensor_name);
+                },
+                setup_time
+            );
+        }
     }
 
     if (total_num_samps == 0){
