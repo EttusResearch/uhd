@@ -11,7 +11,6 @@
 #include <uhd/usrp/multi_usrp.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
-#include <boost/thread.hpp>
 #include <iostream>
 #include <fstream>
 #include <complex>
@@ -197,7 +196,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         else throw std::runtime_error("Unknown type " + type);
 
         if(repeat and delay > 0.0) {
-            boost::this_thread::sleep(boost::posix_time::milliseconds(delay));
             std::this_thread::sleep_for(
                 std::chrono::milliseconds(int64_t(delay*1000))
             );
