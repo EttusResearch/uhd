@@ -50,6 +50,12 @@ public:
         uhd::spi_iface::sptr spi_iface,
         uint32_t slave_num
     );
+
+    static sptr make_spi(
+        ad9361_params::sptr client_settings,
+        ad9361_io::sptr spi_io_iface
+    );
+
     //! Get a list of gain names for RX or TX
     static std::vector<std::string> get_gain_names(const std::string &/*which*/)
     {

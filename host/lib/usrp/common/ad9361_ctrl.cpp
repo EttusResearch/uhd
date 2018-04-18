@@ -212,6 +212,14 @@ public:
         _device.set_dc_offset_auto(direction,on);
     }
 
+    std::string get_lo_source(const std::string &which)
+    {
+        const auto dir = _get_direction_from_antenna(which);
+        //TODO: Implement this
+        boost::lock_guard<boost::mutex> lock(_mutex);
+        return "internal";
+    }
+
     void set_iq_balance_auto(const std::string &which, const bool on)
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
@@ -313,5 +321,12 @@ ad9361_ctrl::sptr ad9361_ctrl::make_spi(
     uint32_t slave_num
 ) {
     boost::shared_ptr<ad9361_io_spi> spi_io_iface = boost::make_shared<ad9361_io_spi>(spi_iface, slave_num);
+    return sptr(new ad9361_ctrl_impl(client_settings, spi_io_iface));
+}
+
+ad9361_ctrl::sptr ad9361_ctrl::make_spi(
+    ad9361_params::sptr client_settings,
+    ad9361_io::sptr spi_io_iface
+) {
     return sptr(new ad9361_ctrl_impl(client_settings, spi_io_iface));
 }

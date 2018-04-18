@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Ettus Research, National Instruments Company
+# Copyright 2017-2018 Ettus Research, a National Instruments Company
 #
 # SPDX-License-Identifier: GPL-3.0
 #
@@ -11,6 +11,8 @@ INSTALL(FILES
 
 IF(ENABLE_MYKONOS)
     ADD_SUBDIRECTORY(ad937x)
+ELSEIF(ENABLE_E320)
+    ADD_SUBDIRECTORY(ad9361)
 ENDIF(ENABLE_MYKONOS)
 
 ADD_SUBDIRECTORY(chips)

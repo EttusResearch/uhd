@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Ettus Research, a National Instruments Company
+# Copyright 2017-2018 Ettus Research, a National Instruments Company
 #
 # SPDX-License-Identifier: GPL-3.0
 #
@@ -13,21 +13,28 @@ INSTALL(PROGRAMS
 SET(eeprom_tool_sources)
 SET(eeprom_tool_libs)
 
-IF("${MPM_DEVICE}" STREQUAL "n3xx")
+IF(ENABLE_LIBMPM)
+    MESSAGE(STATUS "Adding MPM EEPROM tools...")
+    SET(eeprom_tool_libs eeprom.c)
+    SET(eeprom_tool_sources
+        eeprom-blank.c
+        eeprom-dump.c
+        eeprom-id.c
+        eeprom-init.c
+        eeprom-set-flags.c
+    )
+ENDIF(ENABLE_LIBMPM)
+IF(ENABLE_MYKONOS)
     MESSAGE(STATUS "Adding N3XX-specific EEPROM tools...")
     SET(eeprom_tool_libs eeprom.c)
     SET(eeprom_tool_sources
         db-dump.c
         db-id.c
         db-init.c
-        eeprom-blank.c
-        eeprom-dump.c
-        eeprom-id.c
-        eeprom-init.c
-        eeprom-set-flags.c
         fan-limits.c
     )
-ENDIF("${MPM_DEVICE}" STREQUAL "n3xx")
+ENDIF(ENABLE_MYKONOS)
+
 
 #for each source: build an executable and install
 FOREACH(eeprom_tool_source ${eeprom_tool_sources})
