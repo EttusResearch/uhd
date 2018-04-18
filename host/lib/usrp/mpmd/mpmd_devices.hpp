@@ -17,7 +17,8 @@ static constexpr char MPM_CATCHALL_DEVICE_TYPE[] = "mpm";
 // to make decisions. This vector is for filtering purposes.
 static const std::vector<std::string> MPM_DEVICE_TYPES = {
     MPM_CATCHALL_DEVICE_TYPE,
-    "n3xx"
+    "n3xx",
+    "e3xx",
 };
 
 #endif /* INCLUDED_MPMD_DEVICES_HPP */

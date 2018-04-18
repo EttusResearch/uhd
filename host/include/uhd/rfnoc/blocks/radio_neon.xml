@@ -1,0 +1,53 @@
+<!--This defines one NoC-Block.-->
+<nocblock>
+  <name>Radio (Neon)</name>
+  <blockname>Radio</blockname>
+  <key>NeonRadio</key>
+  <!--There can be several of these:-->
+  <ids>
+    <id revision="0">12AD100000003320</id>
+  </ids>
+  <!-- Registers -->
+  <registers>
+    <!--<setreg>-->
+      <!--<name>FFT_RESET</name>-->
+      <!--<address>131</address>-->
+    <!--</setreg>-->
+    <!--<readback>-->
+      <!--<name>RB_MAGNITUDE_OUT</name>-->
+      <!--<address>1</address>-->
+    <!--</readback>-->
+  </registers>
+  <!-- Args -->
+  <args>
+    <arg>
+      <name>spp</name>
+      <type>int</type>
+      <value>364</value>
+    </arg>
+    <arg>
+      <name>gain_mode</name>
+      <type>string</type>
+      <value>auto</value>
+    </arg>
+  </args>
+  <ports>
+    <sink>
+      <name>in0</name>
+      <type>sc16</type>
+    </sink>
+    <source>
+      <name>out0</name>
+      <type>sc16</type>
+    </source>
+    <sink>
+      <name>in1</name>
+      <type>sc16</type>
+    </sink>
+    <source>
+      <name>out1</name>
+      <type>sc16</type>
+    </source>
+  </ports>
+</nocblock>
+

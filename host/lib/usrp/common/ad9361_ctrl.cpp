@@ -212,14 +212,6 @@ public:
         _device.set_dc_offset_auto(direction,on);
     }
 
-    std::string get_lo_source(const std::string &which)
-    {
-        const auto dir = _get_direction_from_antenna(which);
-        //TODO: Implement this
-        boost::lock_guard<boost::mutex> lock(_mutex);
-        return "internal";
-    }
-
     void set_iq_balance_auto(const std::string &which, const bool on)
     {
         boost::lock_guard<boost::mutex> lock(_mutex);

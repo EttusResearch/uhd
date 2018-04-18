@@ -81,7 +81,9 @@ uhd::usrp::component_file_t generate_component(
  */
 static bool mpmd_image_loader(const image_loader::image_loader_args_t &image_loader_args){
     // See if any MPM devices with the given args are found
-    device_addrs_t devs = mpmd_find(image_loader_args.args);
+    device_addr_t find_hint = image_loader_args.args;
+    find_hint.set("find_all", "1"); // We need to find all devices
+    device_addrs_t devs = mpmd_find(find_hint);
 
     if (devs.size() != 1) {
         // TODO: Do we want to handle multiple devices here?
@@ -189,4 +191,5 @@ UHD_STATIC_BLOCK(register_mpm_image_loader){
 
     //TODO: 'n3xx' doesn't really fit the MPM abstraction, but this is simpler for the time being
     image_loader::register_image_loader("n3xx", mpmd_image_loader, recovery_instructions);
+    image_loader::register_image_loader("e3xx", mpmd_image_loader, recovery_instructions);
 }
