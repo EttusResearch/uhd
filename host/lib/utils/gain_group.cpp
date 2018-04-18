@@ -67,8 +67,11 @@ public:
             overall_min += range.start();
             overall_max += range.stop();
             //the overall step is the min (zero is invalid, first run)
-            if (overall_step == 0) overall_step = range.step();
-            overall_step = std::min(overall_step, range.step());
+            if (overall_step == 0){
+                overall_step = range.step();
+            }else if (range.step()){
+                overall_step = std::min(overall_step, range.step());
+            }
         }
         return gain_range_t(overall_min, overall_max, overall_step);
     }
