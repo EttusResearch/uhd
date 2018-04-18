@@ -385,16 +385,6 @@ UHD_INSTALL(FILES
 )
 
 ########################################################################
-# Images download directory for utils/uhd_images_downloader.py
-########################################################################
-#{{{IMG_SECTION
-# This section is written automatically by /images/create_imgs_package.py
-# Any manual changes in here will be overwritten.
-SET(UHD_IMAGES_MD5SUM "6fc29c5c141e8f3faec6189ab07e458d")
-SET(UHD_IMAGES_DOWNLOAD_SRC "uhd-images_3.11.0.git-227-g9277fc58.zip")
-#}}}
-
-########################################################################
 # Register top level components
 ########################################################################
 LIBUHD_REGISTER_COMPONENT("LibUHD" ENABLE_LIBUHD ON "Boost_FOUND;HAVE_PYTHON_PLAT_MIN_VERSION;HAVE_PYTHON_MODULE_MAKO" OFF ON)
