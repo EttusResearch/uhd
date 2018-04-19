@@ -22,7 +22,6 @@
 #include <boost/filesystem.hpp>
 #include <memory>
 #include <functional>
-#include <map>
 
 class ad937x_device : public boost::noncopyable
 {
@@ -106,10 +105,8 @@ public:
     double tune(
             const uhd::direction_t direction,
             const double value,
-            const bool wait_for_lock,
-            const uint32_t cal_timed_out
+            const bool wait_for_lock
     );
-
     double get_freq(const uhd::direction_t direction);
 
     bool get_pll_lock_status(
@@ -161,10 +158,7 @@ private:
     ad9371_spiSettings_t full_spi_settings;
     ad937x_config_t mykonos_config;
     ad937x_gain_ctrl_config_t gain_ctrl;
-    std::map<uhd::direction_t, double> _large_freq_step_map = {{uhd::direction_t::RX_DIRECTION, 100e6}, {uhd::direction_t::TX_DIRECTION, 100e6}};
-    std::map<uhd::direction_t, double> _last_cal_freq_map = {{uhd::direction_t::RX_DIRECTION, 0}, {uhd::direction_t::TX_DIRECTION, 0}};
-    uint32_t _user_init_cals;
-    uint32_t _user_tracking_cals;
+
     void _apply_gain_pins(
             const uhd::direction_t direction,
             mpm::ad937x::device::chain_t chain

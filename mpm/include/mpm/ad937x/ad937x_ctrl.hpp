@@ -225,14 +225,12 @@ public:
      * \param which frontend string to specify direction to tune
      * \param value target frequency
      * \param wait_for_lock wait after tuning for the PLL to lock
-     * \param cal_timeout_ms amount of time (in ms) to wait for calibration done.
      * \return actual frequency
      */
     virtual double set_freq(
             const std::string &which,
             const double value,
-            const bool wait_for_lock,
-            const uint32_t cal_timeout_ms
+            const bool wait_for_lock
     ) = 0;
 
     /*! \brief get the RF frequency for the direction specified in which

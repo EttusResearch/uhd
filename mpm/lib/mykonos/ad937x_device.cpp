@@ -273,12 +273,9 @@ ad937x_device::ad937x_device(
 void ad937x_device::_setup_rf(){
     // TODO: add setRfPllLoopFilter here
 
-    // Set frequencies not really tuning.
-    // ad9371 need set PLL frequencyes at bring up time
-    // before running init calibration.
-    //set timeout to 0 to not running initcal at this call
-    tune(uhd::RX_DIRECTION, RX_DEFAULT_FREQ, false, 0);
-    tune(uhd::TX_DIRECTION, RX_DEFAULT_FREQ, false, 0);
+    // Set frequencies
+    tune(uhd::RX_DIRECTION, RX_DEFAULT_FREQ, false);
+    tune(uhd::TX_DIRECTION, TX_DEFAULT_FREQ, false);
 
     if (!get_pll_lock_status(CLK_SYNTH | RX_SYNTH | TX_SYNTH | SNIFF_SYNTH, true))
     {
@@ -298,15 +295,15 @@ void ad937x_device::_setup_rf(){
     set_gain(uhd::RX_DIRECTION, chain_t::TWO, RX_DEFAULT_GAIN);
     set_gain(uhd::TX_DIRECTION, chain_t::ONE, TX_DEFAULT_GAIN);
     set_gain(uhd::TX_DIRECTION, chain_t::TWO, TX_DEFAULT_GAIN);
+
+
 }
+
 void ad937x_device::setup_cal(
     const uint32_t init_cals_mask,
     const uint32_t tracking_cals_mask,
     const uint32_t timeout
 ) {
-    _user_init_cals = init_cals_mask;
-    _user_tracking_cals = tracking_cals_mask;
-    auto state = _move_to_config_state();
     // Run and wait for init cals
     CALL_API(MYKONOS_runInitCals(mykonos_config.device, init_cals_mask));
     uint8_t errorFlag = 0, errorCode = 0;
@@ -319,7 +316,6 @@ void ad937x_device::setup_cal(
     }
     CALL_API(MYKONOS_enableTrackingCals(mykonos_config.device,
                 tracking_cals_mask));
-    _restore_from_config_state(state);
     // ready for radioOn
 }
 
@@ -530,12 +526,10 @@ void ad937x_device::enable_channel(
     // always use the GPIO pins to do so. Delete this function at a later time.
 }
 
-
 double ad937x_device::tune(
         const direction_t direction,
         const double value,
-        const bool wait_for_lock,
-        const uint32_t cal_timeout_ms
+        const bool wait_for_lock = false
 ) {
     // I'm not sure why we set the PLL value in the config AND as a function parameter
     // but here it is
@@ -544,36 +538,26 @@ double ad937x_device::tune(
     uint8_t locked_pll;
     uint64_t* config_value;
     const uint64_t integer_value = static_cast<uint64_t>(value);
-    //Note: these init cal values are  from user ad9371 user guide in large frequency step procedure.
-    uint32_t init_cals_mask = ::TX_QEC_INIT |
-        ::LOOPBACK_RX_LO_DELAY |
-        ::LOOPBACK_RX_RX_QEC_INIT |
-        ::RX_LO_DELAY |
-        ::RX_QEC_INIT;
-    // Turn on all tracking cals
-    uint32_t tracking_cals_mask = _user_tracking_cals;
-    // check if we need to re-run init calibration
-    double prev_freq = _last_cal_freq_map[direction];
-    double request_freq_step = std::abs(prev_freq-value);
-    bool rerun_cal = (cal_timeout_ms > 0) && (request_freq_step >= _large_freq_step_map[direction]);
     switch (direction)
     {
-        case TX_DIRECTION:
-            pll = TX_PLL;
-            locked_pll = TX_SYNTH;
-            config_value = &(mykonos_config.device->tx->txPllLoFrequency_Hz);
-            break;
-        case RX_DIRECTION:
-            pll = RX_PLL;
-            locked_pll = RX_SYNTH;
-            config_value = &(mykonos_config.device->rx->rxPllLoFrequency_Hz);
-            break;
-        default:
-            MPM_THROW_INVALID_CODE_PATH();
+    case TX_DIRECTION:
+        pll = TX_PLL;
+        locked_pll = TX_SYNTH;
+        config_value = &(mykonos_config.device->tx->txPllLoFrequency_Hz);
+        break;
+    case RX_DIRECTION:
+        pll = RX_PLL;
+        locked_pll = RX_SYNTH;
+        config_value = &(mykonos_config.device->rx->rxPllLoFrequency_Hz);
+        break;
+    default:
+        MPM_THROW_INVALID_CODE_PATH();
     }
+
     const auto state = _move_to_config_state();
     *config_value = integer_value;
     CALL_API(MYKONOS_setRfPllFrequency(mykonos_config.device, pll, integer_value));
+
     if (wait_for_lock)
     {
         if (!get_pll_lock_status(locked_pll, true))
@@ -581,26 +565,10 @@ double ad937x_device::tune(
             throw mpm::runtime_error("PLL did not lock");
         }
     }
-    if (rerun_cal){
-        CALL_API(MYKONOS_runInitCals(mykonos_config.device, init_cals_mask));
-        uint8_t errorFlag = 0, errorCode = 0;
-        CALL_API(MYKONOS_waitInitCals(mykonos_config.device,
-                cal_timeout_ms, &errorFlag, &errorCode));
-        if ((errorFlag != 0) || (errorCode != 0)) {
-            throw mpm::runtime_error("Init cals failed; during tuning!");
-        }
-        CALL_API(MYKONOS_enableTrackingCals(mykonos_config.device,
-                tracking_cals_mask));
-    }
-
     _restore_from_config_state(state);
-    prev_freq = get_freq(direction);
-    if (rerun_cal){
-        _last_cal_freq_map[direction] = prev_freq;
-    }
-    return prev_freq;
-}
 
+    return get_freq(direction);
+}
 
 double ad937x_device::set_bw_filter(
         const direction_t direction,

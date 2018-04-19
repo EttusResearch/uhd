@@ -43,17 +43,7 @@ INIT_CALIBRATION_TABLE = {"TX_BB_FILTER"              :   0x0001,
                           "RX_QEC_INIT"               :   0x4000,
                           "BASIC"                     :   0x4F,
                           "OFF"                       :   0x00,
-                          #DEFAULT =
-                          #     TX_BB_FILTER|
-                          #     ADC_TUNER|
-                          #     TIA_3DB_CORNER|
-                          #     DC_OFFSET|
-                          #     TX_ATTENUATION_DELAY|
-                          #     RX_GAIN_DELAY |
-                          #     FLASH_CAL |
-                          #     PATH_DELAY |
-                          #     TX_LO_LEAKAGE_INTERNAL |
-                          "DEFAULT"                   :   0x1FF,
+                          "DEFAULT"                   :   0x4DFF,
                           "ALL"                       :   0x7DFF,
                          }
 
@@ -555,6 +545,7 @@ class Magnesium(DboardManagerBase):
         self.mykonos.finish_initialization()
         # TODO:can we call this after JESD?
         self.init_rf_cal(args)
+
         self.log.trace("Starting JESD204b Link Initialization...")
         # Generally, enable the source before the sink. Start with the DAC side.
         self.log.trace("Starting FPGA framer...")

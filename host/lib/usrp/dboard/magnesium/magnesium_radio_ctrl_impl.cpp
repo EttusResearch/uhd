@@ -239,8 +239,10 @@ double magnesium_radio_ctrl_impl::set_tx_frequency(
         _is_low_band[TX_DIRECTION] = false;
         _lo_disable(_tx_lo);
     }
-
-    const double desired_if_freq = coerced_if_freq;
+    // external LO required to tune at 2xdesired_frequency.
+    const double desired_if_freq = (ad9371_source == "internal") ?
+        coerced_if_freq :
+        2*coerced_if_freq;
 
     this->_set_tx_lo_freq(ad9371_source, MAGNESIUM_LO1, desired_if_freq, chan);
     this->_update_freq(chan, TX_DIRECTION);
@@ -274,7 +276,10 @@ void magnesium_radio_ctrl_impl::_update_freq(
         this->get_rx_lo_source(MAGNESIUM_LO1, chan)
     ;
 
-    const double ad9371_freq = _ad9371_freq[dir];
+    const double ad9371_freq = ad9371_source == "external" ?
+        _ad9371_freq[dir]/2 :
+        _ad9371_freq[dir]
+    ;
     const double rf_freq = _is_low_band[dir] ?
         ad9371_freq - _adf4351_freq[dir] :
         ad9371_freq
@@ -332,7 +337,10 @@ double magnesium_radio_ctrl_impl::set_rx_frequency(
         _is_low_band[RX_DIRECTION] = false;
         _lo_disable(_rx_lo);
     }
-    const double desired_if_freq = coerced_if_freq;
+    // external LO required to tune at 2xdesired_frequency.
+    const double desired_if_freq = ad9371_source == "internal" ?
+        coerced_if_freq :
+        2*coerced_if_freq;
 
     this->_set_rx_lo_freq(ad9371_source, MAGNESIUM_LO1, desired_if_freq, chan);
 
@@ -616,16 +624,25 @@ double magnesium_radio_ctrl_impl::_set_rx_lo_freq(
     const size_t chan
 ){
     double coerced_lo_freq = freq;
-    if(name == MAGNESIUM_LO1){
-         coerced_lo_freq = _ad9371->set_frequency(freq, chan, RX_DIRECTION, DEFAULT_CAL_TIMEOUT_MS);
-        _ad9371_freq[RX_DIRECTION] = coerced_lo_freq;
-    }else if (name == MAGNESIUM_LO2 ){
-        // TODO: no hardcode the init_n_mode
-         coerced_lo_freq = _lo_enable(_rx_lo, freq, _master_clock_rate, false);
-        _adf4351_freq[RX_DIRECTION] = coerced_lo_freq;
+    if (source != "internal"){
+        UHD_LOG_WARNING(unique_id(),"LO source is not internal. This set frequency will be ignored");
+        if(name == MAGNESIUM_LO1){
+            // handle ad9371 external LO case
+            coerced_lo_freq = freq;
+            _ad9371_freq[RX_DIRECTION] = coerced_lo_freq;
+        }
     }else {
-        UHD_LOG_WARNING(unique_id(), "No RX LO `" << name << "' found. Ignoring call to set RX LO frequency.");
-    };
+        if(name == MAGNESIUM_LO1){
+            coerced_lo_freq = _ad9371->set_frequency(freq, chan, RX_DIRECTION);
+            _ad9371_freq[RX_DIRECTION] = coerced_lo_freq;
+        }else if (name == MAGNESIUM_LO2 ){
+            // TODO: no hardcode the init_n_mode
+             coerced_lo_freq = _lo_enable(_rx_lo, freq, _master_clock_rate, false);
+            _adf4351_freq[RX_DIRECTION] = coerced_lo_freq;
+        }else {
+            UHD_LOG_WARNING(unique_id(), "There's no LO with this name of "<<name << " in the system. This set rx lo freq will be ignored");
+        };
+    }
     return coerced_lo_freq;
 }
 
@@ -667,7 +684,7 @@ double magnesium_radio_ctrl_impl::get_rx_lo_freq(
     }else if (name == "adf4531" ){
         return _adf4351_freq[RX_DIRECTION];
     }else {
-            UHD_LOG_ERROR(unique_id(), "There's no LO with this name of "<< name << " in the system.");
+            UHD_LOG_ERROR(unique_id(), "There's no LO with this name of "<<name << " in the system. This set rx lo freq will be ignored");
     }
     UHD_THROW_INVALID_CODE_PATH();
 }
@@ -757,17 +774,26 @@ double magnesium_radio_ctrl_impl::_set_tx_lo_freq(
     const size_t chan
 ){
     double coerced_lo_freq = freq;
-    if(name == MAGNESIUM_LO1){
-        coerced_lo_freq = _ad9371->set_frequency(freq, chan, TX_DIRECTION, DEFAULT_CAL_TIMEOUT_MS);
-        _ad9371_freq[TX_DIRECTION] = coerced_lo_freq;
-    }else if (name == MAGNESIUM_LO2 ){
-        // TODO: no hardcode the int_n_mode
-        const bool int_n_mode = false;
-        coerced_lo_freq = _lo_enable(_tx_lo, freq, _master_clock_rate, int_n_mode);
-        _adf4351_freq[TX_DIRECTION] = coerced_lo_freq;
+    if (source != "internal"){
+        UHD_LOG_WARNING(unique_id(),"LO source is not internal. This set frequency will be ignored");
+        if(name == MAGNESIUM_LO1){
+            // handle ad9371 external LO case
+            coerced_lo_freq = freq;
+            _ad9371_freq[TX_DIRECTION] = coerced_lo_freq;
+        }
     }else {
-        UHD_LOG_WARNING(unique_id(), "No TX LO `" << name << "' found. Ignoring call to set TX LO frequency.");
-    };
+        if(name == MAGNESIUM_LO1){
+            coerced_lo_freq = _ad9371->set_frequency(freq, chan, TX_DIRECTION);
+            _ad9371_freq[TX_DIRECTION] = coerced_lo_freq;
+        }else if (name == MAGNESIUM_LO2 ){
+            // TODO: no hardcode the int_n_mode
+            const bool int_n_mode = false;
+            coerced_lo_freq = _lo_enable(_tx_lo, freq, _master_clock_rate, int_n_mode);
+            _adf4351_freq[TX_DIRECTION] = coerced_lo_freq;
+        }else {
+            UHD_LOG_WARNING(unique_id(), "There's no LO with this name of "<<name << " in the system. This set tx lo freq will be ignored");
+        };
+    }
     return coerced_lo_freq;
 }
 
@@ -807,7 +833,7 @@ double magnesium_radio_ctrl_impl::get_tx_lo_freq(
     }else if (name == MAGNESIUM_LO2){
         return _adf4351_freq[TX_DIRECTION];
     }else {
-        UHD_LOG_ERROR(unique_id(), "There's no LO with this name of "<< name << " in the system.");
+        UHD_LOG_ERROR(unique_id(), "There's no LO with this name of "<<name << " in the system.");
     };
 
     UHD_THROW_INVALID_CODE_PATH();
