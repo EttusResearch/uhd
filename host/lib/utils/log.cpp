@@ -204,16 +204,7 @@ public:
               << "Boost_"
               << BOOST_VERSION << "; "
               << "UHD_" << uhd::get_version_string();
-            auto sys_info_log_msg = uhd::log::logging_info(
-                pt::microsec_clock::local_time(),
-                uhd::log::info,
-                __FILE__,
-                __LINE__,
-                "UHD",
-                boost::this_thread::get_id()
-            );
-            sys_info_log_msg.message = sys_info.str();
-            _log_queue.push_with_timed_wait(sys_info_log_msg, 0.25);
+            _publish_log_msg(sys_info.str(), uhd::log::info, "UHD");
         }
 
         // Launch log message consumer
@@ -419,6 +410,23 @@ private:
                 [F](const uhd::log::logging_info& log_info){F->log(log_info);}
             };
         }
+    }
+
+    void _publish_log_msg(
+        const std::string& msg,
+        const uhd::log::severity_level level=uhd::log::info,
+        const std::string& component="LOGGING"
+    ) {
+        auto log_msg = uhd::log::logging_info(
+            pt::microsec_clock::local_time(),
+            level,
+            __FILE__,
+            __LINE__,
+            component,
+            boost::this_thread::get_id()
+        );
+        log_msg.message = msg;
+        _log_queue.push_with_timed_wait(log_msg, 0.25);
     }
 
     std::mutex _logmap_mutex;
