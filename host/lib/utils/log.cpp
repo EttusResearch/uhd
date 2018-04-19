@@ -184,7 +184,7 @@ public:
                 this->global_level
         );
 #endif
-       //allow override from environment variables
+        //allow override from environment variables
         const char * log_level_env = std::getenv("UHD_LOG_LEVEL");
         if (log_level_env != NULL && log_level_env[0] != '\0') {
             this->global_level =
@@ -211,9 +211,35 @@ public:
         _pop_task = std::make_shared<std::thread>(
             std::thread([this](){this->pop_task();})
         );
-        _pop_fastpath_task = std::make_shared<std::thread>(
-            std::thread([this](){this->pop_fastpath_task();})
-        );
+
+        // Fastpath message consumer
+#ifndef UHD_LOG_FASTPATH_DISABLE
+        //allow override from environment variables
+        const bool enable_fastpath = [](){
+            const char* disable_fastpath_env =
+                std::getenv("UHD_LOG_FASTPATH_DISABLE");
+            if (disable_fastpath_env != NULL
+                    && disable_fastpath_env[0] != '\0') {
+                return false;
+            }
+            return true;
+        }();
+
+        if (enable_fastpath) {
+            _pop_fastpath_task = std::make_shared<std::thread>(
+                std::thread([this](){this->pop_fastpath_task();})
+            );
+        } else {
+            _pop_fastpath_task = std::make_shared<std::thread>(
+                std::thread([this](){this->pop_fastpath_dummy_task();})
+            );
+            _publish_log_msg("Fastpath logging disabled at runtime.");
+        }
+#else
+        {
+            _publish_log_msg("Fastpath logging disabled at compile time.");
+        }
+#endif
     }
 
     ~log_resource(void){
@@ -252,14 +278,14 @@ public:
         _log_queue.push_with_timed_wait(log_info, PUSH_TIMEOUT);
     }
 
+#ifndef UHD_LOG_FASTPATH_DISABLE
     void push_fastpath(const std::string &message)
     {
         // Never wait. If the buffer is full, we just don't see the message.
         // Too bad.
-#ifndef UHD_LOG_FASTPATH_DISABLE
         _fastpath_queue.push_with_haste(message);
-#endif
     }
+#endif
 
     void _handle_log_info(const uhd::log::logging_info& log_info)
     {
@@ -298,19 +324,29 @@ public:
     void pop_fastpath_task()
     {
 #ifndef UHD_LOG_FASTPATH_DISABLE
+        std::string msg;
         while (!_exit) {
-            std::string msg;
             _fastpath_queue.pop_with_wait(msg);
-            {
-                std::cerr << msg << std::flush;
-            }
+            std::cerr << msg << std::flush;
         }
 
         // Exit procedure: Clear the queue
-        std::string msg;
         while (_fastpath_queue.pop_with_haste(msg)) {
             std::cerr << msg << std::flush;
         }
+#endif
+    }
+
+    void pop_fastpath_dummy_task()
+    {
+#ifndef UHD_LOG_FASTPATH_DISABLE
+        std::string msg;
+        while (!_exit) {
+            _fastpath_queue.pop_with_wait(msg);
+        }
+
+        // Exit procedure: Clear the queue
+        while (_fastpath_queue.pop_with_haste(msg));
 #endif
     }
 
@@ -473,12 +509,17 @@ uhd::_log::log::~log(void)
     }
 }
 
+#ifndef UHD_LOG_FASTPATH_DISABLE
 void uhd::_log::log_fastpath(const std::string &msg)
 {
-#ifndef UHD_LOG_FASTPATH_DISABLE
     log_rs().push_fastpath(msg);
-#endif
 }
+#else
+void uhd::_log::log_fastpath(const std::string &)
+{
+    // nop
+}
+#endif
 
 /***********************************************************************
  * Public API calls
