@@ -116,7 +116,10 @@ class ad936x_manager_impl : public ad936x_manager
             bool test_fail = word32 != rb_tx or word32 != rb_rx;
             if(test_fail)
             {
-                UHD_LOGGER_INFO("AD936X") << "CODEC loopback test failed";
+                UHD_LOGGER_ERROR("AD936X")
+                  << "CODEC loopback test failed! "
+                  << boost::format("Expected: 0x%08X Received (TX/RX): 0x%08X/0x%08X")
+                      % word32 % rb_tx % rb_rx;
                 throw uhd::runtime_error("CODEC loopback test failed.");
             }
         }
