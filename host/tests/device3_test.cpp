@@ -11,6 +11,8 @@
 #include <uhd/device3.hpp>
 #include <uhd/rfnoc/block_ctrl.hpp>
 #include <uhd/rfnoc/graph.hpp>
+#include <uhd/rfnoc/constants.hpp>
+#include <uhdlib/rfnoc/ctrl_iface.hpp>
 #include <boost/test/unit_test.hpp>
 #include <exception>
 #include <iostream>
@@ -27,7 +29,7 @@ class pseudo_ctrl_iface_impl : public ctrl_iface
 {
   public:
     pseudo_ctrl_iface_impl() {};
-    ~pseudo_ctrl_iface_impl() {};
+    virtual ~pseudo_ctrl_iface_impl() {}
 
     uint64_t send_cmd_pkt(
             const size_t addr,
@@ -46,6 +48,9 @@ class pseudo_ctrl_iface_impl : public ctrl_iface
                     return 0x000000000000000B;
                 case SR_READBACK_REG_USER:
                     return 0x0123456789ABCDEF;
+                case SR_READBACK_COMPAT:
+                    return uhd::rfnoc::NOC_SHELL_COMPAT_MAJOR << 32 |
+                           uhd::rfnoc::NOC_SHELL_COMPAT_MINOR;
                 default:
                     return 0;
             }
