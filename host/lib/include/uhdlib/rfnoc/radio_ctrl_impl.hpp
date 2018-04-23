@@ -194,11 +194,11 @@ protected: // TODO see what's protected and what's private
     inline bool _is_streamer_active(uhd::direction_t dir, const size_t chan) const {
         switch (dir) {
         case uhd::TX_DIRECTION:
-            return chan < _tx_streamer_active.size() ? _tx_streamer_active.at(chan) : false;
+            return _tx_streamer_active.count(chan) == 1 ? _tx_streamer_active.at(chan) : false;
         case uhd::RX_DIRECTION:
-            return chan < _rx_streamer_active.size() ? _rx_streamer_active.at(chan) : false;
+            return _rx_streamer_active.count(chan) == 1 ? _rx_streamer_active.at(chan) : false;
         case uhd::DX_DIRECTION:
-            return (chan < _rx_streamer_active.size() and chan < _tx_streamer_active.size()) ?
+            return (_tx_streamer_active.count(chan) == 1 and _rx_streamer_active.count(chan) == 1) ?
                 _rx_streamer_active.at(chan) and _tx_streamer_active.at(chan) : false;
         default:
             return false;
@@ -214,7 +214,7 @@ protected: // TODO see what's protected and what's private
 
     size_t _num_tx_channels;
     size_t _num_rx_channels;
-    
+
 private:
     /************************************************************************
      * Peripherals
