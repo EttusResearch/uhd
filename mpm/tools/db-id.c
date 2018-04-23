@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
 
 	ep = usrp_sulfur_db_eeprom_from_file(NVMEM_PATH_SLOT_B);
 	if (ep) {
-		printf("Slot-0\n");
+		printf("Slot-1\n");
 		usrp_sulfur_db_eeprom_print_id(ep);
 		free(ep);
 	}
