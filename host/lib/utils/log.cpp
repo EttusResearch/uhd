@@ -71,7 +71,6 @@ namespace {
         default:
             return "-";
         }
-        return "";
     }
 
     //! get the relative file path from the host directory
