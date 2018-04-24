@@ -70,16 +70,16 @@ public:
         }
     }
 
-    //! get the freq range for the frontend which
+    //! get the freq range
     static uhd::meta_range_t get_rf_freq_range(void)
     {
         return uhd::meta_range_t(50e6, 6e9);
     }
 
     //! get the filter range for the frontend which
-    static uhd::meta_range_t get_bw_filter_range(const std::string &/*which*/)
+    static uhd::meta_range_t get_bw_filter_range(void)
     {
-        return uhd::meta_range_t(200e3, 56e6);
+        return uhd::meta_range_t(ad9361_device_t::AD9361_MIN_BW, ad9361_device_t::AD9361_MAX_BW);
     }
 
     //! get the clock rate range for the frontend

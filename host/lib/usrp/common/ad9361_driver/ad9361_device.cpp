@@ -85,7 +85,8 @@ const double ad9361_device_t::AD9361_MIN_CLOCK_RATE  = 220e3;
 const double ad9361_device_t::AD9361_MAX_CLOCK_RATE  = 61.44e6;
 const double ad9361_device_t::AD9361_CAL_VALID_WINDOW = 100e6;
 // Max bandwdith is due to filter rolloff in analog filter stage
-const double ad9361_device_t::AD9361_RECOMMENDED_MAX_BANDWIDTH = 56e6;
+const double ad9361_device_t::AD9361_MIN_BW = 200e3;
+const double ad9361_device_t::AD9361_MAX_BW = 56e6;
 
 /* Startup RF frequencies */
 const double ad9361_device_t::DEFAULT_RX_FREQ = 800e6;
@@ -2409,20 +2410,20 @@ double ad9361_device_t::set_bw_filter(direction_t direction, const double rf_bw)
 {
     //both low pass filters are programmed to the same bw. However, their cutoffs will differ.
     //Together they should create the requested bb bw.
-    double set_analog_bb_bw = 0;
+    //Select rf_bw if it is between AD9361_MIN_BW & AD9361_MAX_BW.
+    const double clipped_bw = std::min(std::max(rf_bw, AD9361_MIN_BW), AD9361_MAX_BW);
     if(direction == RX)
     {
-        _rx_bb_lp_bw = _calibrate_baseband_rx_analog_filter(rf_bw); //returns bb bw
-        _rx_tia_lp_bw = _calibrate_rx_TIAs(rf_bw);
-        _rx_analog_bw = _rx_bb_lp_bw;
-        set_analog_bb_bw = _rx_analog_bw;
+        _rx_bb_lp_bw = _calibrate_baseband_rx_analog_filter(clipped_bw); //returns bb bw
+        _rx_tia_lp_bw = _calibrate_rx_TIAs(clipped_bw);
+        _rx_analog_bw = clipped_bw;
     } else {
-        _tx_bb_lp_bw = _calibrate_baseband_tx_analog_filter(rf_bw); //returns bb bw
-        _tx_sec_lp_bw = _calibrate_secondary_tx_filter(rf_bw);
-        _tx_analog_bw = _tx_bb_lp_bw;
-        set_analog_bb_bw = _tx_analog_bw;
+        _tx_bb_lp_bw = _calibrate_baseband_tx_analog_filter(clipped_bw); //returns bb bw
+        _tx_sec_lp_bw = _calibrate_secondary_tx_filter(clipped_bw);
+        _tx_analog_bw = clipped_bw;
     }
-    return (2.0 * set_analog_bb_bw);
+
+    return (clipped_bw);
 }
 
 void ad9361_device_t::_set_fir_taps(direction_t direction, chain_t chain, const std::vector<int16_t>& taps)
