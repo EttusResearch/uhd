@@ -160,7 +160,8 @@ public:
     static const double AD9361_MAX_CLOCK_RATE;
     static const double AD9361_MIN_CLOCK_RATE;
     static const double AD9361_CAL_VALID_WINDOW;
-    static const double AD9361_RECOMMENDED_MAX_BANDWIDTH;
+    static const double AD9361_MIN_BW;
+    static const double AD9361_MAX_BW;
     static const double DEFAULT_RX_FREQ;
     static const double DEFAULT_TX_FREQ;
 

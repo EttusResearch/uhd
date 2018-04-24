@@ -19,7 +19,7 @@ using namespace uhd::usrp;
  * Default values
  ***************************************************************************/
 const double   ad936x_manager::DEFAULT_GAIN = 0;
-const double   ad936x_manager::DEFAULT_BANDWIDTH = 56e6;
+const double   ad936x_manager::DEFAULT_BANDWIDTH = ad9361_device_t::AD9361_MAX_BW;
 const double   ad936x_manager::DEFAULT_TICK_RATE = 16e6;
 const double   ad936x_manager::DEFAULT_FREQ = 100e6; // Hz
 const uint32_t ad936x_manager::DEFAULT_DECIM  = 128;
@@ -47,8 +47,12 @@ public:
             ));
         }
         for (size_t i = 1; i <= _n_frontends; i++) {
-            _rx_frontends.push_back(str(boost::format("RX%d") % i));
-            _tx_frontends.push_back(str(boost::format("TX%d") % i));
+            const std::string rx_fe_str = str(boost::format("RX%d") % i);
+            const std::string tx_fe_str = str(boost::format("TX%d") % i);
+            _rx_frontends.push_back(rx_fe_str);
+            _tx_frontends.push_back(tx_fe_str);
+            _bw[rx_fe_str] = 0.0;
+            _bw[tx_fe_str] = 0.0;
         }
     }
 
@@ -186,14 +190,27 @@ public:
 
     bool check_bandwidth(double rate, const std::string dir)
     {
-        if (rate > _codec_ctrl->get_bw_filter_range(dir).stop()) {
+        double bw = _bw[dir == "Rx" ? "RX1" : "TX1"];
+        if (bw == 0.) //0 indicates bandwidth is default value.
+        {
+            double max_bw = ad9361_device_t::AD9361_MAX_BW;
+            double min_bw = ad9361_device_t::AD9361_MIN_BW;
+            if (rate > max_bw)
+            {
             UHD_LOGGER_WARNING("AD936X")
-                << "Selected " << dir << " bandwidth (" << (rate/1e6) << " MHz) exceeds\n"
-                << "analog frontend filter bandwidth (" << (_codec_ctrl->get_bw_filter_range(dir).stop()/1e6) << " MHz)."
+                << "Selected " << dir << " sample rate (" << (rate/1e6) << " MHz) is greater than\n"
+                << "analog frontend filter bandwidth (" << (max_bw/1e6) << " MHz)."
                 ;
-            return false;
+            }
+            else if (rate < min_bw)
+            {
+            UHD_LOGGER_WARNING("AD936X")
+                << "Selected " << dir << " sample rate (" << (rate/1e6) << " MHz) is less than\n"
+                << "analog frontend filter bandwidth (" << (min_bw/1e6) << " MHz)."
+                ;
+            }
         }
-        return true;
+        return (rate <= bw);
     }
 
     void populate_frontend_subtree(
@@ -236,15 +253,17 @@ public:
 
         // Analog Bandwidths
         subtree->create<double>("bandwidth/value")
-            .set(ad936x_manager::DEFAULT_BANDWIDTH)
-            .set_coercer([this, key](const double bw){
-                return this->_codec_ctrl->set_bw_filter(key, bw);
-            })
+            .set(DEFAULT_BANDWIDTH)
+            .set_coercer([this,key](double bw) {
+                    return set_bw_filter(key, bw);
+                }
+            )
         ;
         subtree->create<meta_range_t>("bandwidth/range")
-            .set_publisher([key](){
-                return ad9361_ctrl::get_bw_filter_range(key);
-            })
+            .set_publisher([key]() {
+                    return ad9361_ctrl::get_bw_filter_range();
+                }
+            )
         ;
 
         // LO Tuning
@@ -321,6 +340,18 @@ private:
     std::vector<std::string> _rx_frontends;
     //! List of valid TX frontend names (TX1, TX2)
     std::vector<std::string> _tx_frontends;
+
+    //! Current bandwidths
+    std::map<std::string,double> _bw;
+
+    //! Function to set bandwidth so it is tracked here
+    double set_bw_filter(const std::string& which, const double bw)
+    {
+        double actual_bw = _codec_ctrl->set_bw_filter(which, bw);
+        _bw[which] = actual_bw;
+        return actual_bw;
+    }
+
 }; /* class ad936x_manager_impl */
 
 ad936x_manager::sptr ad936x_manager::make(
