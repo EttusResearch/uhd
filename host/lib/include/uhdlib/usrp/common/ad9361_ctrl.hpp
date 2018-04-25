@@ -42,7 +42,7 @@ class ad9361_ctrl : public boost::noncopyable
 public:
     typedef boost::shared_ptr<ad9361_ctrl> sptr;
 
-    virtual ~ad9361_ctrl(void) {};
+    virtual ~ad9361_ctrl(void) {}
 
     //! make a new codec control object
     static sptr make_spi(

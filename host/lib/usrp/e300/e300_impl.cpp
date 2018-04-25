@@ -508,13 +508,14 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
         this->_setup_radio(instance);
 
     //now test each radio module's connection to the codec interface
-    for(radio_perifs_t &perif:  _radio_perifs)
-    {
+    for (radio_perifs_t &perif : _radio_perifs) {
         _codec_mgr->loopback_self_test(
-            boost::bind(
-                &radio_ctrl_core_3000::poke32, perif.ctrl, radio::sr_addr(radio::CODEC_IDLE), _1
-            ),
-            boost::bind(&radio_ctrl_core_3000::peek64, perif.ctrl, radio::RB64_CODEC_READBACK)
+            [&perif](const uint32_t value){
+                perif.ctrl->poke32(radio::sr_addr(radio::CODEC_IDLE), value);
+            },
+            [&perif](){
+                return perif.ctrl->peek64(radio::RB64_CODEC_READBACK);
+            }
         );
     }
     ////////////////////////////////////////////////////////////////////
