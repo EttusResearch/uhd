@@ -78,7 +78,9 @@ namespace uhd{
 
     std::string octoclock_uart_iface::read_uart(double timeout){
         std::string result;
-        boost::system_time exit_time = boost::get_system_time() + boost::posix_time::milliseconds(long(timeout*1e3));
+        const auto exit_time =
+            std::chrono::steady_clock::now()
+            + std::chrono::milliseconds(int64_t(timeout*1e3));
 
         while(true)
         {
@@ -93,8 +95,7 @@ namespace uhd{
                     return result;
                 }
             }
-            if (boost::get_system_time() > exit_time)
-            {
+            if (std::chrono::steady_clock::now() > exit_time) {
                 break;
             }
             std::this_thread::sleep_for(std::chrono::milliseconds(1));

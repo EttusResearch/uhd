@@ -12,7 +12,7 @@
 #include <uhd/types/serial.hpp>
 #include <uhd/exception.hpp>
 #include <boost/format.hpp>
-#include <boost/thread/thread.hpp>
+#include <chrono>
 
 using namespace uhd;
 
@@ -126,7 +126,10 @@ struct x300_uart_iface : uart_iface
     std::string read_uart(double timeout)
     {
         boost::mutex::scoped_lock(_read_mutex);
-        const boost::system_time exit_time = boost::get_system_time() + boost::posix_time::microseconds(long(timeout*1e6));
+        const auto exit_time =
+            std::chrono::steady_clock::now()
+            + std::chrono::microseconds(int64_t(timeout*1e6));
+
         std::string buff;
 
         while (true)
@@ -149,8 +152,9 @@ struct x300_uart_iface : uart_iface
             }
 
             // no more characters - check time
-            if (boost::get_system_time() > exit_time)
+            if (std::chrono::steady_clock::now() > exit_time) {
                 break;
+            }
         }
 
         return buff;

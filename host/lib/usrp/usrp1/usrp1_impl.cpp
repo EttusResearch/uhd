@@ -16,18 +16,20 @@
 #include <uhd/utils/paths.hpp>
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/thread/thread.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <cstdio>
+#include <chrono>
 
 using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
 
-const uint16_t USRP1_VENDOR_ID  = 0xfffe;
-const uint16_t USRP1_PRODUCT_ID = 0x0002;
-static const boost::posix_time::milliseconds REENUMERATION_TIMEOUT_MS(3000);
+namespace {
+    constexpr uint16_t USRP1_VENDOR_ID  = 0xfffe;
+    constexpr uint16_t USRP1_PRODUCT_ID = 0x0002;
+    constexpr int64_t  REENUMERATION_TIMEOUT_MS = 3000;
+}
 
 const std::vector<usrp1_impl::dboard_slot_t> usrp1_impl::_dboard_slots{
     usrp1_impl::DBOARD_SLOT_A,
@@ -89,13 +91,14 @@ static device_addrs_t usrp1_find(const device_addr_t &hint)
     vid = USRP1_VENDOR_ID;
     pid = USRP1_PRODUCT_ID;
 
-    const boost::system_time timeout_time = boost::get_system_time() + REENUMERATION_TIMEOUT_MS;
+    const auto timeout_time =
+        std::chrono::steady_clock::now()
+        + std::chrono::milliseconds(REENUMERATION_TIMEOUT_MS);
 
     //search for the device until found or timeout
-    while (boost::get_system_time() < timeout_time and usrp1_addrs.empty() and found != 0)
-    {
-      for(usb_device_handle::sptr handle: usb_device_handle::get_device_list(vid,  pid))
-        {
+    while (std::chrono::steady_clock::now() < timeout_time
+            and usrp1_addrs.empty() and found != 0) {
+        for (usb_device_handle::sptr handle : usb_device_handle::get_device_list(vid, pid)) {
             usb_control::sptr control;
             try{control = usb_control::make(handle, 0);}
             catch(const uhd::exception &){continue;} //ignore claimed

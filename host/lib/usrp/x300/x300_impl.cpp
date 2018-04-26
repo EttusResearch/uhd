@@ -1583,8 +1583,10 @@ void x300_impl::claimer_loop(wb_iface::sptr iface)
 x300_impl::claim_status_t x300_impl::claim_status(wb_iface::sptr iface)
 {
     claim_status_t claim_status = CLAIMED_BY_OTHER; // Default to most restrictive
-    boost::system_time timeout_time = boost::get_system_time() + boost::posix_time::seconds(1);
-    while (boost::get_system_time() < timeout_time)
+    auto timeout_time =
+        std::chrono::steady_clock::now()
+        + std::chrono::seconds(1);
+    while (std::chrono::steady_clock::now() < timeout_time)
     {
         //If timed out, then device is definitely unclaimed
         if (iface->peek32(X300_FW_SHMEM_ADDR(X300_FW_SHMEM_CLAIM_STATUS)) == 0)
@@ -1616,9 +1618,12 @@ void x300_impl::claim(wb_iface::sptr iface)
     iface->poke32(X300_FW_SHMEM_ADDR(X300_FW_SHMEM_CLAIM_SRC), get_process_hash());
 }
 
-bool x300_impl::try_to_claim(wb_iface::sptr iface, long timeout)
+bool x300_impl::try_to_claim(wb_iface::sptr iface, long timeout_ms)
 {
     boost::system_time start_time = boost::get_system_time();
+    const auto timeout_time =
+        std::chrono::steady_clock::now()
+        + std::chrono::milliseconds(timeout_ms);
     while (1)
     {
         claim_status_t status = claim_status(iface);
@@ -1633,8 +1638,7 @@ bool x300_impl::try_to_claim(wb_iface::sptr iface, long timeout)
         {
             break;
         }
-        if (boost::get_system_time() - start_time > boost::posix_time::milliseconds(timeout))
-        {
+        if (std::chrono::steady_clock::now() > timeout_time) {
             // Another process owns the device - give up
             return false;
         }

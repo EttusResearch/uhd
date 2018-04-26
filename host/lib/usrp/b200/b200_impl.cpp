@@ -18,7 +18,6 @@
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <boost/format.hpp>
 #include <boost/filesystem.hpp>
-#include <boost/thread/thread.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/functional/hash.hpp>
 #include <boost/make_shared.hpp>
