@@ -103,15 +103,9 @@ namespace {
                 mpm_device_args[key] = mb_args[key];
             }
         }
-        rpc->set_timeout(mb_args.cast<size_t>(
-            "init_timeout", MPMD_DEFAULT_INIT_TIMEOUT
-        ));
         if (not rpc->request_with_token<bool>("init", mpm_device_args)) {
             throw uhd::runtime_error("Failed to initialize device.");
         }
-        rpc->set_timeout(mb_args.cast<size_t>(
-            "rpc_timeout", MPMD_DEFAULT_RPC_TIMEOUT
-        ));
     }
 
     void measure_rpc_latency(
@@ -202,6 +196,21 @@ namespace {
                     "`" << log_record.at("levelname") << "'");
             }
         }
+    }
+
+    /*! Return a new rpc_client with given addr and mb args
+     */
+    uhd::rpc_client::sptr make_mpm_rpc_client(
+        const std::string& rpc_server_addr,
+        const uhd::device_addr_t& mb_args
+    ){
+        return uhd::rpc_client::make(
+            rpc_server_addr,
+            mb_args.cast<size_t>(
+                uhd::mpmd::mpmd_impl::MPM_RPC_PORT_KEY,
+                uhd::mpmd::mpmd_impl::MPM_RPC_PORT
+            ),
+            uhd::mpmd::mpmd_impl::MPM_RPC_GET_LAST_ERROR_CMD);
     }
 
 }
@@ -304,17 +313,12 @@ mpmd_mboard_impl::mpmd_mboard_impl(
         const device_addr_t &mb_args_,
         const std::string& rpc_server_addr
 ) : mb_args(mb_args_)
-  , rpc(uhd::rpc_client::make(
-              rpc_server_addr,
-              mb_args_.cast<size_t>(
-                  mpmd_impl::MPM_RPC_PORT_KEY,
-                  mpmd_impl::MPM_RPC_PORT
-              ),
-              mpmd_impl::MPM_RPC_GET_LAST_ERROR_CMD))
-  , num_xbars(rpc->request<size_t>("get_num_xbars"))
-  // xbar_local_addrs is not yet valid after this!
-  , xbar_local_addrs(num_xbars, 0xFF)
-  , _xport_mgr(xport::mpmd_xport_mgr::make(mb_args))
+    , rpc(make_mpm_rpc_client(rpc_server_addr, mb_args_))
+    , num_xbars(rpc->request<size_t>("get_num_xbars"))
+    , _claim_rpc(make_mpm_rpc_client(rpc_server_addr, mb_args_))
+    // xbar_local_addrs is not yet valid after this!
+    , xbar_local_addrs(num_xbars, 0xFF)
+    , _xport_mgr(xport::mpmd_xport_mgr::make(mb_args))
 {
     UHD_LOGGER_TRACE("MPMD")
         << "Initializing mboard, connecting to RPC server address: "
@@ -323,7 +327,7 @@ mpmd_mboard_impl::mpmd_mboard_impl(
         << " number of crossbars: " << num_xbars
     ;
 
-    _claimer_task = claim_device_and_make_task(rpc, mb_args);
+    _claimer_task = claim_device_and_make_task();
     if (mb_args_.has_key(MPMD_MEAS_LATENCY_KEY)) {
         measure_rpc_latency(rpc, MPMD_MEAS_LATENCY_DURATION);
     }
@@ -370,7 +374,13 @@ mpmd_mboard_impl::~mpmd_mboard_impl()
  ****************************************************************************/
 void mpmd_mboard_impl::init()
 {
+    this->set_rpcc_timeout(mb_args.cast<size_t>(
+        "init_timeout", MPMD_DEFAULT_INIT_TIMEOUT
+    ));
     init_device(rpc, mb_args);
+    this->set_rpcc_timeout(mb_args.cast<size_t>(
+        "rpc_timeout", MPMD_DEFAULT_RPC_TIMEOUT
+    ));
     // RFNoC block clocks are now on. Noc-IDs can be read back.
 }
 
@@ -468,7 +478,7 @@ uhd::device_addr_t mpmd_mboard_impl::get_tx_hints() const
 
 void mpmd_mboard_impl::set_timeout_default()
 {
-    rpc->set_timeout(mb_args.cast<size_t>(
+    this->set_rpcc_timeout(mb_args.cast<size_t>(
             "rpc_timeout", MPMD_DEFAULT_RPC_TIMEOUT
     ));
 }
@@ -480,24 +490,31 @@ void mpmd_mboard_impl::set_timeout_default()
 bool mpmd_mboard_impl::claim()
 {
     try {
-        return rpc->request_with_token<bool>("reclaim");
+        return _claim_rpc->request_with_token<bool>("reclaim");
     } catch (...) {
         UHD_LOG_WARNING("MPMD", "Reclaim failed. Exiting claimer loop.");
         return false;
     }
 }
 
+void mpmd_mboard_impl::set_rpcc_timeout(const uint64_t timeout_ms){
+    rpc->set_timeout(timeout_ms);
+    //FIXME: remove this when we know why rpc client didn't reset timer
+    // while other rpc client not yet return.
+    _claim_rpc->set_timeout(timeout_ms);
+}
+
 uhd::task::sptr mpmd_mboard_impl::claim_device_and_make_task(
-        uhd::rpc_client::sptr rpc,
-        const uhd::device_addr_t mb_args
 ) {
-    auto rpc_token = rpc->request<std::string>("claim",
+    auto rpc_token = _claim_rpc->request<std::string>("claim",
         mb_args.get("session_id", MPMD_DEFAULT_SESSION_ID)
     );
     if (rpc_token.empty()) {
         throw uhd::value_error("mpmd device claiming failed!");
     }
     UHD_LOG_TRACE("MPMD", "Received claim token " << rpc_token);
+    // Save token for both RPC clients
+    _claim_rpc->set_token(rpc_token);
     rpc->set_token(rpc_token);
     return uhd::task::make([this] {
         auto now = std::chrono::steady_clock::now();
@@ -513,10 +530,12 @@ uhd::task::sptr mpmd_mboard_impl::claim_device_and_make_task(
 
 void mpmd_mboard_impl::dump_logs(const bool dump_to_null)
 {
+    // We need to use _claim_rpc instead of rpc because this currently only
+    // gets called in the claimer loop.
     if (dump_to_null) {
-        rpc->request_with_token<log_buf_t>("get_log_buf");
+        _claim_rpc->request_with_token<log_buf_t>("get_log_buf");
     } else {
-        forward_logs(rpc->request_with_token<log_buf_t>("get_log_buf"));
+        forward_logs(_claim_rpc->request_with_token<log_buf_t>("get_log_buf"));
     }
 }
 
