@@ -31,8 +31,8 @@
 
 static const u32 USRP_EEPROM_MAGIC = 0xF008AD10;
 static const u32 USRP_EEPROM_DB_MAGIC = 0xF008AD11;
-static const u32 USRP_EEPROM_VERSION = 1;
-static const u32 USRP_EEPROM_DB_VERSION = 1;
+static const u32 USRP_EEPROM_VERSION = 2;
+static const u32 USRP_EEPROM_DB_VERSION = 2;
 static const u32 USRP_EEPROM_DEFAULT_MCU_FLAGS[4] = {0x0, 0x0, 0x0, 0x0};
 
 
@@ -122,10 +122,12 @@ static int __eth_addr_parse(uint8_t *out, const char *in)
 struct usrp_sulfur_eeprom *usrp_sulfur_eeprom_new(const u32 *mcu_flags,
 						  const u16 pid,
 						  const u16 rev,
-						  const u8 *serial,
+						  const char *serial,
 						  const char *eth_addr0,
 						  const char *eth_addr1,
-						  const char *eth_addr2)
+						  const char *eth_addr2,
+						  const u16 dt_compat,
+						  const u16 mcu_compat)
 {
 	struct usrp_sulfur_eeprom *ep;
 	int i;
@@ -168,6 +170,9 @@ struct usrp_sulfur_eeprom *usrp_sulfur_eeprom_new(const u32 *mcu_flags,
 
 	if (eth_addr2)
 		__eth_addr_parse(ep->eth_addr2, eth_addr2);
+
+	ep->dt_compat = htons(dt_compat);
+	ep->mcu_compat = htons(mcu_compat);
 
 	ep->crc = htonl(crc32(0, &ep->magic, sizeof(*ep)-4));
 
@@ -216,6 +221,10 @@ void usrp_sulfur_eeprom_print(const struct usrp_sulfur_eeprom *ep)
 	printf("-- eth_addr2: %02x:%02x:%02x:%02x:%02x:%02x\n",
 	       ep->eth_addr2[0], ep->eth_addr2[1], ep->eth_addr2[2],
 	       ep->eth_addr2[3], ep->eth_addr2[4], ep->eth_addr2[5]);
+
+	if (ntohl(ep->version) == 2)
+		printf("-- DT-Compat/MCU-Compat: %04x %04x\n",
+		       ntohs(ep->dt_compat), ntohs(ep->mcu_compat));
 
 	printf("-- CRC: %08x (%s)\n", ntohl(ep->crc),
 	       __usrp_sulfur_eeprom_check_crc(ep) ? "matches": "doesn't match!");
@@ -400,7 +409,8 @@ void usrp_sulfur_eeprom_to_i2c(struct usrp_sulfur_eeprom *ep, const char *path)
 
 struct usrp_sulfur_db_eeprom *usrp_sulfur_db_eeprom_new(const u16 pid,
 						     const u16 rev,
-						     const u8 *serial)
+						     const char *serial,
+						     const u16 dt_compat)
 {
 	struct usrp_sulfur_db_eeprom *ep;
 	int i;
@@ -418,7 +428,8 @@ struct usrp_sulfur_db_eeprom *usrp_sulfur_db_eeprom_new(const u16 pid,
 	ep->version = htonl(USRP_EEPROM_DB_VERSION);
 
 	ep->pid = htons(pid);
-	ep->rev = htons(rev);
+	ep->rev.v2_rev.rev = rev;
+	ep->rev.v2_rev.dt_compat = dt_compat;
 
 	if (strlen(serial) > 8) {
 		fprintf(stderr, "Serial# too long\n");
@@ -476,8 +487,13 @@ void usrp_sulfur_db_eeprom_print(const struct usrp_sulfur_db_eeprom *ep)
 		return;
 	}
 
-	printf("-- PID/REV: %04x %04x\n", ntohs(ep->pid), ntohs(ep->rev));
+	if (ntohl(ep->version) == 1)
+		printf("-- PID/REV: %04x %04x\n", ntohs(ep->pid), ntohs(ep->rev.v1_rev));
+	else
+		printf("-- PID/REV: %04x %02x\n", ntohs(ep->pid), ep->rev.v2_rev.rev);
 	printf("-- Serial: %s\n", ep->serial);
+	if (ntohl(ep->version) == 2)
+		printf("-- DT-Compat: %02x\n", ep->rev.v2_rev.dt_compat);
 	printf("-- CRC: %08x (%s)\n", ntohl(ep->crc),
 	       __usrp_sulfur_db_eeprom_check_crc(ep) ? "matches": "doesn't match!");
 }
