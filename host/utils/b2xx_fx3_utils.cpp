@@ -15,13 +15,14 @@
 #include <string>
 #include <cmath>
 #include <cstring>
+#include <chrono>
+#include <thread>
 
 #include <stdint.h>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/format.hpp>
 #include <boost/program_options.hpp>
-#include <boost/thread/thread.hpp>
 #include <boost/functional/hash.hpp>
 
 #include <b200_iface.hpp>
@@ -395,7 +396,7 @@ int32_t main(int32_t argc, char *argv[]) {
         // re-open device
         b200.reset();
         handle.reset();
-        boost::this_thread::sleep(boost::posix_time::seconds(2));    // wait 2 seconds for FX3 to reset
+        std::this_thread::sleep_for(std::chrono::seconds(2));    // wait 2 seconds for FX3 to reset
         handle = open_device(vid, pid);
         if (!handle)
             return -1;

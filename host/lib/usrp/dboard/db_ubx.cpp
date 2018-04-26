@@ -23,10 +23,11 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/math/special_functions/round.hpp>
-#include <boost/thread.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/thread/mutex.hpp>
 #include <map>
+#include <chrono>
+#include <thread>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -384,7 +385,7 @@ public:
         _iface->set_pin_ctrl(dboard_iface::UNIT_RX, _rx_gpio_reg.atr_mask);
 
         // bring CPLD out of reset
-        boost::this_thread::sleep(boost::posix_time::milliseconds(20)); // hold CPLD reset for minimum of 20 ms
+        std::this_thread::sleep_for(std::chrono::milliseconds(20)); // hold CPLD reset for minimum of 20 ms
 
         set_gpio_field(CPLD_RST_N, 1);
         write_gpio();

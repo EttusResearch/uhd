@@ -20,11 +20,11 @@
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/zero_copy.hpp>
 #include <uhdlib/rfnoc/tx_stream_terminator.hpp>
-#include <boost/thread/thread.hpp>
-#include <boost/thread/thread_time.hpp>
 #include <boost/function.hpp>
 #include <iostream>
 #include <vector>
+#include <chrono>
+#include <thread>
 
 #ifdef UHD_TXRX_DEBUG_PRINTS
 // Included for debugging
@@ -172,7 +172,7 @@ public:
         uhd::async_metadata_t &async_metadata, double timeout = 0.1
     ){
         if (_async_receiver) return _async_receiver(async_metadata, timeout);
-        boost::this_thread::sleep(boost::posix_time::microseconds(long(timeout*1e6)));
+        std::this_thread::sleep_for(std::chrono::microseconds(long(timeout*1e6)));
         return false;
     }
 

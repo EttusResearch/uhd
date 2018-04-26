@@ -23,6 +23,8 @@
 #include <boost/format.hpp>
 #include <boost/make_shared.hpp>
 #include <atomic>
+#include <chrono>
+#include <thread>
 
 #define bmFR_RX_FORMAT_SHIFT_SHIFT 0
 #define bmFR_RX_FORMAT_WIDTH_SHIFT 4
@@ -307,7 +309,7 @@ void usrp1_impl::vandal_conquest_loop(std::atomic<bool> &exit_loop){
             UHD_LOG_FASTPATH("O")
         }
 
-        boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }}
     catch(const std::exception &e){
         UHD_LOGGER_ERROR("USRP1") << "The vandal caught an unexpected exception " << e.what() ;

@@ -8,7 +8,8 @@
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/usrp/cores/time_core_3000.hpp>
-#include <boost/thread/thread.hpp>
+#include <chrono>
+#include <thread>
 
 #define REG_TIME_HI       _base + 0
 #define REG_TIME_LO       _base + 4
@@ -55,7 +56,7 @@ struct time_core_3000_impl : time_core_3000
         const size_t sleep_millis = 100;
         UHD_LOGGER_DEBUG("CORES") << "Performing timer loopback test... ";
         const time_spec_t time0 = this->get_time_now();
-        boost::this_thread::sleep(boost::posix_time::milliseconds(sleep_millis));
+        std::this_thread::sleep_for(std::chrono::milliseconds(sleep_millis));
         const time_spec_t time1 = this->get_time_now();
         const double approx_secs = (time1 - time0).get_real_secs();
         const bool test_fail = (approx_secs > 0.15) or (approx_secs < 0.05);

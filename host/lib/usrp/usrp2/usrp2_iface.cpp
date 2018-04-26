@@ -16,7 +16,6 @@
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/types/dict.hpp>
-#include <boost/thread.hpp>
 #include <boost/asio.hpp> //used for htonl and ntohl
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
@@ -26,6 +25,8 @@
 #include <boost/filesystem.hpp>
 #include <algorithm>
 #include <iostream>
+#include <chrono>
+#include <thread>
 #include <uhd/utils/platform.hpp>
 
 using namespace uhd;
@@ -118,7 +119,7 @@ public:
         //re-lock in task
         this->pokefw(U2_FW_REG_LOCK_TIME, this->get_curr_time());
         //sleep for a bit
-        boost::this_thread::sleep(boost::posix_time::milliseconds(1500));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1500));
     }
 
     uint32_t get_curr_time(void){

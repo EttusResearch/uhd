@@ -9,6 +9,8 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/rfnoc/constants.hpp>
 #include <uhdlib/rfnoc/utils.hpp>
+#include <chrono>
+#include <thread>
 
 using namespace uhd;
 using namespace uhd::rfnoc;
@@ -103,7 +105,7 @@ void source_block_ctrl_base::configure_flow_control_out(
     //to flush is more than enough time.
     //TODO: Enhancement. We should get feedback from the FPGA about when the source_flow_control
     //      module is done flushing.
-    boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
     //Resize the FC window.
     //Precondition: No data can be buffered upstream.

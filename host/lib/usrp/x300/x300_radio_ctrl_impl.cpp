@@ -928,7 +928,7 @@ void x300_radio_ctrl_impl::synchronize_dacs(const std::vector<x300_radio_ctrl_im
             }
 
             //Wait and check status
-            boost::this_thread::sleep(boost::posix_time::microseconds(t_sync_us));
+            std::this_thread::sleep_for(std::chrono::microseconds(t_sync_us));
             for (size_t i = 0; i < radios.size(); i++) {
                 radios[i]->_dac->verify_sync();
             }

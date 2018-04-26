@@ -13,7 +13,6 @@
 #include <uhdlib/utils/ihex.hpp>
 
 #include <boost/functional/hash.hpp>
-#include <boost/thread/thread.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/format.hpp>
 #include <libusb.h>
@@ -22,6 +21,8 @@
 #include <vector>
 #include <cstring>
 #include <iomanip>
+#include <chrono>
+#include <thread>
 #include <stdint.h>
 
 //! libusb_error_name is only in newer API
@@ -225,7 +226,7 @@ public:
         /* Success! Let the system settle. */
         // TODO: Replace this with a polling loop in the FX3, or find out
         // what the actual, correct timeout value is.
-        boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1000));
     }
 
     void reset_fx3(void) {
@@ -431,7 +432,7 @@ public:
                 return fx3_state;
             }
 
-            boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
             wait_count++;
         } while(fx3_state != FX3_STATE_FPGA_READY);
@@ -456,7 +457,7 @@ public:
                 return fx3_state;
             }
 
-            boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
             wait_count++;
         } while(fx3_state != FX3_STATE_CONFIGURING_FPGA);
@@ -505,7 +506,7 @@ public:
                 return fx3_state;
             }
 
-            boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
             wait_count++;
         } while(fx3_state != FX3_STATE_RUNNING);

@@ -53,11 +53,12 @@
 #include <uhd/usrp/dboard_manager.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
-#include <boost/thread.hpp>
 #include <boost/array.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <utility>
 #include <cmath>
+#include <chrono>
+#include <thread>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -1695,7 +1696,7 @@ void tvrx2::wait_irq(void){
     while (not irq and timeout > 0) {
         //irq = (this->get_iface()->read_gpio(dboard_iface::UNIT_RX) & tvrx2_sd_name_to_irq_io[get_subdev_name()]);
         irq = get_irq();
-        boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
         timeout -= 1;
     }
 

@@ -37,6 +37,9 @@
 #include <boost/asio.hpp> //used for htonl and ntohl
 #include <boost/make_shared.hpp>
 
+#include <chrono>
+#include <thread>
+
 namespace uhd { namespace usrp { namespace n230 {
 
 using namespace uhd::transport;
@@ -131,7 +134,7 @@ uhd::device_addrs_t n230_impl::n230_find(const uhd::device_addr_t &multi_dev_hin
                 fw_ctrl = n230_fw_ctrl_iface::make(ctrl_xport, N230_FW_PRODUCT_ID, false /*verbose*/);
                 break;
             } catch (uhd::io_error& ex) {
-                boost::this_thread::sleep(boost::posix_time::milliseconds(500));
+                std::this_thread::sleep_for(std::chrono::milliseconds(500));
                 first_conn_retries--;
             }
         }

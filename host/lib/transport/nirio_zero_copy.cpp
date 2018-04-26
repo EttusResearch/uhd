@@ -6,18 +6,19 @@
 //
 
 #include <uhd/transport/nirio_zero_copy.hpp>
-#include <stdio.h>
 #include <uhd/transport/nirio/nirio_fifo.h>
-
 #include <uhd/utils/log.hpp>
 #include <uhdlib/utils/atomic.hpp>
 #include <boost/format.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/thread/thread.hpp> //sleep
 #include <boost/interprocess/mapped_region.hpp>	//get_page_size()
 #include <vector>
 #include <algorithm>    // std::max
+#include <chrono>
+#include <thread>
+#include <stdio.h>
+
 //@TODO: Move the register defs required by the class to a common location
 #include "../usrp/x300/x300_regs.hpp"
 
@@ -313,7 +314,7 @@ private:
         if (nirio_status_not_fatal(status) && (tx_busy || rx_busy)) {
             start_time = boost::posix_time::microsec_clock::local_time();
             do {
-                boost::this_thread::sleep(boost::posix_time::microsec(50)); //Avoid flooding the bus
+                std::this_thread::sleep_for(std::chrono::microseconds(50)); //Avoid flooding the bus
                 elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
                 nirio_status_chain(_proxy()->peek(
                     PCIE_TX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), reg_data), status);

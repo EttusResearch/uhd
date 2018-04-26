@@ -9,16 +9,17 @@
 #ifndef INCLUDED_UHD_TRANSPORT_NIRIO_NIRIO_FIFO_H
 #define INCLUDED_UHD_TRANSPORT_NIRIO_NIRIO_FIFO_H
 
-#include <stdint.h>
 #include <uhd/transport/nirio/nirio_driver_iface.h>
 #include <uhd/transport/nirio/niriok_proxy.h>
 #include <uhd/transport/nirio/status.h>
 #include <boost/noncopyable.hpp>
 #include <boost/smart_ptr.hpp>
-#include <string>
 #include <boost/thread/recursive_mutex.hpp>
-#include <boost/thread/thread.hpp>
 #include <boost/atomic/atomic.hpp>
+#include <string>
+#include <chrono>
+#include <thread>
+#include <stdint.h>
 
 namespace uhd { namespace niusrprio {
 

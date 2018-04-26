@@ -10,12 +10,13 @@
 #include <uhd/usrp/multi_usrp.hpp>
 #include "ascii_art_dft.hpp" //implementation
 #include <boost/program_options.hpp>
-#include <boost/thread/thread.hpp> //gets time
 #include <boost/format.hpp>
 #include <curses.h>
 #include <iostream>
 #include <complex>
 #include <cstdlib>
+#include <chrono>
+#include <thread>
 
 namespace po = boost::program_options;
 
@@ -108,7 +109,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //set the antenna
     if (vm.count("ant")) usrp->set_rx_antenna(ant);
 
-    boost::this_thread::sleep(boost::posix_time::seconds(1)); //allow for some setup time
+    std::this_thread::sleep_for(std::chrono::seconds(1)); //allow for some setup time
 
     //Check Ref and LO Lock detect
     std::vector<std::string> sensor_names;
