@@ -8,7 +8,6 @@
 #include <uhd/convert.hpp>
 #include <boost/test/unit_test.hpp>
 #include <stdint.h>
-#include <boost/assign/list_of.hpp>
 #include <complex>
 #include <vector>
 #include <cstdlib>
@@ -128,13 +127,15 @@ static void test_convert_types_for_floats(
 
     //make a list of all prio: best/generic combos
     typedef std::pair<int, int> int_pair_t;
-    std::vector<int_pair_t> prios = boost::assign::list_of
-        (int_pair_t(0, 0)) (int_pair_t(-1, 0))
-        (int_pair_t(0, -1)) (int_pair_t(-1, -1))
-    ;
+    const std::vector<int_pair_t> prios{
+        int_pair_t(0, 0),
+        int_pair_t(-1, 0),
+        int_pair_t(0, -1),
+        int_pair_t(-1, -1)
+    };
 
     //loopback foreach prio combo (generic vs best)
-    for(const int_pair_t &prio:  prios){
+    for (const auto &prio : prios) {
         loopback(nsamps, in_id, out_id, input, output, prio.first, prio.second);
         for (size_t i = 0; i < nsamps; i++){
             MY_CHECK_CLOSE(input[i].real(), output[i].real(), value_type(1./(1 << 14)));

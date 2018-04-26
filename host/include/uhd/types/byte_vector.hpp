@@ -8,14 +8,11 @@
 #ifndef INCLUDED_UHD_TYPES_BYTE_VECTOR_HPP
 #define INCLUDED_UHD_TYPES_BYTE_VECTOR_HPP
 
+#include <uhd/config.hpp>
+#include <boost/range.hpp>
 #include <algorithm>
 #include <string>
 #include <vector>
-
-#include <boost/assign.hpp>
-#include <stdint.h>
-
-#include <uhd/config.hpp>
 
 namespace uhd{
 

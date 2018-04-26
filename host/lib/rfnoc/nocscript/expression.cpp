@@ -9,18 +9,17 @@
 #include "function_table.hpp"
 #include <uhd/utils/cast.hpp>
 #include <boost/format.hpp>
-#include <boost/assign.hpp>
 #include <boost/algorithm/string.hpp>
 
 using namespace uhd::rfnoc::nocscript;
 
-std::map<expression::type_t, std::string> expression::type_repr = boost::assign::map_list_of
-    (TYPE_INT, "INT")
-    (TYPE_DOUBLE, "DOUBLE")
-    (TYPE_STRING, "STRING")
-    (TYPE_BOOL, "BOOL")
-    (TYPE_INT_VECTOR, "INT_VECTOR")
-;
+std::map<expression::type_t, std::string> expression::type_repr{
+    {TYPE_INT, "INT"},
+    {TYPE_DOUBLE, "DOUBLE"},
+    {TYPE_STRING, "STRING"},
+    {TYPE_BOOL, "BOOL"},
+    {TYPE_INT_VECTOR, "INT_VECTOR"}
+};
 
 /********************************************************************
  * Literal expressions (constants)

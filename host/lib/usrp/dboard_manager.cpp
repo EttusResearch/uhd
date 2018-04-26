@@ -465,10 +465,10 @@ dboard_manager_impl::~dboard_manager_impl(void){UHD_SAFE_CALL(
 
 void dboard_manager_impl::set_nice_dboard_if(void){
     //make a list of possible unit types
-    std::vector<dboard_iface::unit_t> units = boost::assign::list_of
-        (dboard_iface::UNIT_RX)
-        (dboard_iface::UNIT_TX)
-    ;
+    const std::vector<dboard_iface::unit_t> units{
+        dboard_iface::UNIT_RX,
+        dboard_iface::UNIT_TX
+    };
 
     //set nice settings on each unit
     for(dboard_iface::unit_t unit:  units){
