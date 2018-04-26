@@ -15,6 +15,8 @@
 #include <complex>
 #include <ctime>
 #include <cstdlib>
+#include <chrono>
+#include <thread>
 
 namespace po = boost::program_options;
 
@@ -77,7 +79,7 @@ static double tune_rx_and_tx(uhd::usrp::multi_usrp::sptr usrp, const double tx_l
     usrp->set_rx_freq(rx_tune_req);
 
     //wait for the LOs to become locked
-    boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
     boost::system_time start = boost::get_system_time();
     while (not usrp->get_tx_sensor("lo_locked").to_bool() or not usrp->get_rx_sensor("lo_locked").to_bool())
     {
@@ -281,7 +283,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
 
     //stop the transmitter
     threads.interrupt_all();
-    boost::this_thread::sleep(boost::posix_time::milliseconds(500));    //wait for threads to finish
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));    //wait for threads to finish
     threads.join_all();
 
     store_results(results, "TX", "tx", "iq", serial);

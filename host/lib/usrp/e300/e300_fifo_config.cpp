@@ -10,6 +10,8 @@
 #include <uhd/config.hpp>
 #include <stdint.h>
 #include <atomic>
+#include <chrono>
+#include <thread>
 
 // constants coded into the fpga parameters
 static const size_t ZF_CONFIG_BASE    = 0x40000000;
@@ -255,7 +257,7 @@ public:
                 break;
             }
             _waiter->wait(timeout);
-            //boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+            //std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
 
         return typename T::sptr();

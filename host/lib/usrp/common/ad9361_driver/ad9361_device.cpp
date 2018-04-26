@@ -11,16 +11,16 @@
 #include "ad9361_client.h"
 #include "ad9361_device.h"
 #define _USE_MATH_DEFINES
-#include <cmath>
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
 
-#include <stdint.h>
-#include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/thread/thread.hpp>
 #include <boost/scoped_array.hpp>
 #include <boost/format.hpp>
 #include <boost/math/special_functions.hpp>
+#include <chrono>
+#include <thread>
+#include <cmath>
+#include <stdint.h>
 
 ////////////////////////////////////////////////////////////
 // the following macros evaluate to a compile time constant
@@ -127,7 +127,7 @@ void ad9361_device_t::_program_fir_filter(direction_t direction, chain_t chain, 
 
     /* Turn on the filter clock. */
     _io_iface->poke8(base + 5, reg_numtaps | reg_chain | 0x02);
-    boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
     /* Zero the unused taps just in case they have stale data */
     int addr;
@@ -258,7 +258,7 @@ void ad9361_device_t::_calibrate_lock_bbpll()
             break;
         }
         count++;
-        boost::this_thread::sleep(boost::posix_time::milliseconds(2));
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }
 }
 
@@ -283,7 +283,7 @@ void ad9361_device_t::_calibrate_synth_charge_pumps()
             break;
         }
         count++;
-        boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
     _io_iface->poke8(0x23d, 0x00);
 
@@ -296,7 +296,7 @@ void ad9361_device_t::_calibrate_synth_charge_pumps()
             break;
         }
         count++;
-        boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
     _io_iface->poke8(0x27d, 0x00);
 }
@@ -357,7 +357,7 @@ double ad9361_device_t::_calibrate_baseband_rx_analog_filter(double req_rfbw)
             break;
         }
         count++;
-        boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
     /* Disable RX1 & RX2 filter tuners. */
@@ -414,7 +414,7 @@ double ad9361_device_t::_calibrate_baseband_tx_analog_filter(double req_rfbw)
         }
 
         count++;
-        boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
     /* Disable the filter tuner. */
@@ -734,7 +734,7 @@ void ad9361_device_t::_calibrate_baseband_dc_offset()
             break;
         }
         count++;
-        boost::this_thread::sleep(boost::posix_time::milliseconds(5));
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
 }
 
@@ -767,7 +767,7 @@ void ad9361_device_t::_calibrate_rf_dc_offset()
             break;
         }
         count++;
-        boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 
     _io_iface->poke8(0x18b, 0x8d); // Enable RF DC tracking
@@ -818,7 +818,7 @@ void ad9361_device_t::_calibrate_rx_quadrature()
             break;
         }
         count++;
-        boost::this_thread::sleep(boost::posix_time::milliseconds(5));
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
 
     _io_iface->poke8(0x057, 0x30); // Re-enable Tx mixers
@@ -886,7 +886,7 @@ void ad9361_device_t::_tx_quadrature_cal_routine() {
             break;
         }
         count++;
-        boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }
 
@@ -1309,7 +1309,7 @@ double ad9361_device_t::_tune_helper(direction_t direction, const double value)
         _io_iface->poke8(0x005, _regs.vcodivs);
 
         /* Lock the PLL! */
-        boost::this_thread::sleep(boost::posix_time::milliseconds(2));
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
         if ((_io_iface->peek8(0x247) & 0x02) == 0) {
             throw uhd::runtime_error("[ad9361_device_t] RX PLL NOT LOCKED");
         }
@@ -1350,7 +1350,7 @@ double ad9361_device_t::_tune_helper(direction_t direction, const double value)
         _io_iface->poke8(0x005, _regs.vcodivs);
 
         /* Lock the PLL! */
-        boost::this_thread::sleep(boost::posix_time::milliseconds(2));
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
         if ((_io_iface->peek8(0x287) & 0x02) == 0) {
             throw uhd::runtime_error("[ad9361_device_t] TX PLL NOT LOCKED");
         }
@@ -1555,7 +1555,7 @@ void ad9361_device_t::initialize()
     /* Reset the device. */
     _io_iface->poke8(0x000, 0x01);
     _io_iface->poke8(0x000, 0x00);
-    boost::this_thread::sleep(boost::posix_time::milliseconds(20));
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
     /* Check device ID to make sure iface works */
     uint32_t device_id = (_io_iface->peek8(0x037) & 0x8);
@@ -1590,7 +1590,7 @@ void ad9361_device_t::initialize()
     default:
         throw uhd::runtime_error("[ad9361_device_t] NOT IMPLEMENTED");
     }
-    boost::this_thread::sleep(boost::posix_time::milliseconds(20));
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
     /* Tune the BBPLL, write TX and RX FIRS. */
     _setup_rates(50e6);
@@ -1698,7 +1698,7 @@ void ad9361_device_t::initialize()
     _io_iface->poke8(0x015, 0x04); // dual synth mode, synth en ctrl en
     _io_iface->poke8(0x014, 0x05); // use SPI for TXNRX ctrl, to ALERT, TX on
     _io_iface->poke8(0x013, 0x01); // enable ENSM
-    boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
     _calibrate_synth_charge_pumps();
 
@@ -1808,7 +1808,7 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
     case 0x05:
         /* We are in the ALERT state. */
         _io_iface->poke8(0x014, 0x21);
-        boost::this_thread::sleep(boost::posix_time::milliseconds(5));
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
         _io_iface->poke8(0x014, 0x00);
         break;
 
@@ -1838,7 +1838,7 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
     _io_iface->poke8(0x015, 0x04); //dual synth mode, synth en ctrl en
     _io_iface->poke8(0x014, 0x05); //use SPI for TXNRX ctrl, to ALERT, TX on
     _io_iface->poke8(0x013, 0x01); //enable ENSM
-    boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
     _calibrate_synth_charge_pumps();
 
@@ -2192,7 +2192,7 @@ double ad9361_device_t::_get_temperature(const double cal_offset, const double t
     boost::posix_time::time_duration elapsed;
     //wait for valid data (toggle of bit 1 in 0x00C)
     while(((_io_iface->peek8(0x00C) >> 1) & 0x01) == 0) {
-        boost::this_thread::sleep(boost::posix_time::microseconds(100));
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
         elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
         if(elapsed.total_milliseconds() > (timeout*1000))
         {

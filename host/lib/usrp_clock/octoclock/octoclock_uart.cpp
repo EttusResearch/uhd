@@ -7,11 +7,13 @@
 
 #include <iostream>
 #include <string>
+#include <chrono>
+#include <thread>
 #include <string.h>
+#include <stdint.h>
 
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
-#include <stdint.h>
 #include <boost/format.hpp>
 #include <boost/thread/thread.hpp>
 
@@ -95,7 +97,7 @@ namespace uhd{
             {
                 break;
             }
-            boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
 
         return result;

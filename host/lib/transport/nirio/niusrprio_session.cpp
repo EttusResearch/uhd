@@ -230,7 +230,7 @@ nirio_status niusrprio_session::_ensure_fpga_ready()
         boost::posix_time::ptime start_time = boost::posix_time::microsec_clock::local_time();
         boost::posix_time::time_duration elapsed;
         do {
-            boost::this_thread::sleep(boost::posix_time::milliseconds(10)); //Avoid flooding the bus
+            std::this_thread::sleep_for(std::chrono::milliseconds(10)); //Avoid flooding the bus
             elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
             nirio_status_chain(_riok_proxy->peek(FPGA_STATUS_REG, reg_data), status);
         } while (

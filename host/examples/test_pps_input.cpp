@@ -10,9 +10,10 @@
 #include <uhd/usrp/multi_usrp.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
-#include <boost/thread.hpp>
 #include <iostream>
 #include <complex>
+#include <chrono>
+#include <thread>
 
 namespace po = boost::program_options;
 
@@ -52,7 +53,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
 
     //sleep off if gpsdo detected and time next pps already set
-    boost::this_thread::sleep(boost::posix_time::seconds(1));
+    std::this_thread::sleep_for(std::chrono::seconds(1));
 
     //set time source if specified
     if (not time_source.empty()) usrp->set_time_source(time_source);

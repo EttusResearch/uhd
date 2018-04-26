@@ -16,6 +16,8 @@
 #include <csignal>
 #include <vector>
 #include <cstdlib>
+#include <chrono>
+#include <thread>
 
 namespace po = boost::program_options;
 namespace asio = boost::asio;
@@ -205,7 +207,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         std::cout << "Press Ctrl + C to stop streaming..." << std::endl;
 
         while (not stop_signal_called){
-            boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
     }
 

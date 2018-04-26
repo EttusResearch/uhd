@@ -13,9 +13,10 @@
 #include <uhd/utils/log.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/math/special_functions/round.hpp>
-#include <boost/thread/thread.hpp> //sleep
 #include <algorithm>
 #include <cmath>
+#include <chrono>
+#include <thread>
 
 #define REG_DSP_TX_FREQ          _dsp_base + 0
 #define REG_DSP_TX_SCALE_IQ      _dsp_base + 4
@@ -68,7 +69,7 @@ public:
 
     void clear(void){
         _iface->poke32(REG_TX_CTRL_CLEAR, 1); //reset and flush technique
-        boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
         _iface->poke32(REG_TX_CTRL_CLEAR, 0);
         _iface->poke32(REG_TX_CTRL_REPORT_SID, _sid);
     }

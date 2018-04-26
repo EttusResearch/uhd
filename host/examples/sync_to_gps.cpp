@@ -9,8 +9,9 @@
 #include <uhd/usrp/multi_usrp.hpp>
 #include <boost/format.hpp>
 #include <boost/program_options.hpp>
-#include <boost/thread.hpp>
 #include <iostream>
+#include <chrono>
+#include <thread>
 
 namespace po = boost::program_options;
 
@@ -80,7 +81,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
                     if (not ref_locked)
                     {
                         std::cout << "." << std::flush;
-                        boost::this_thread::sleep(boost::posix_time::seconds(1));
+                        std::this_thread::sleep_for(std::chrono::seconds(1));
                     }
                 }
                 if(ref_locked)
@@ -117,7 +118,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
             //The wait is 2 seconds because N-Series has a known issue where
             //the time at the last PPS does not properly update at the PPS edge
             //when the time is actually set.
-            boost::this_thread::sleep(boost::posix_time::seconds(2));
+            std::this_thread::sleep_for(std::chrono::seconds(2));
 
             //Check times
             gps_time = uhd::time_spec_t(time_t(usrp->get_mboard_sensor("gps_time", mboard).to_int()));
@@ -137,11 +138,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
             uhd::time_spec_t time_last_pps = usrp->get_time_last_pps();
             while (time_last_pps == usrp->get_time_last_pps())
             {
-                boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
             }
 
             //Sleep a little to make sure all devices have seen a PPS edge
-            boost::this_thread::sleep(boost::posix_time::milliseconds(200));
+            std::this_thread::sleep_for(std::chrono::milliseconds(200));
 
             //Compare times across all mboards
             bool all_matched = true;

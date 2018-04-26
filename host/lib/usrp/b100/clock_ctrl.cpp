@@ -16,10 +16,11 @@
 #include "b100_regs.hpp" //spi slave constants
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
-#include <boost/thread/thread.hpp>
 #include <boost/math/common_factor_rt.hpp> //gcd
 #include <algorithm>
 #include <utility>
+#include <chrono>
+#include <thread>
 
 using namespace uhd;
 
@@ -486,7 +487,7 @@ private:
         //wait for calibration done:
         static const uint8_t addr = 0x01F;
         for (size_t ms10 = 0; ms10 < 100; ms10++){
-            boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
             uint32_t reg = read_reg(addr);
             _ad9522_regs.set_reg(addr, reg);
             if (_ad9522_regs.vco_calibration_finished) goto wait_for_ld;
@@ -495,7 +496,7 @@ private:
         wait_for_ld:
         //wait for digital lock detect:
         for (size_t ms10 = 0; ms10 < 100; ms10++){
-            boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
             uint32_t reg = read_reg(addr);
             _ad9522_regs.set_reg(addr, reg);
             if (_ad9522_regs.digital_lock_detect) return;

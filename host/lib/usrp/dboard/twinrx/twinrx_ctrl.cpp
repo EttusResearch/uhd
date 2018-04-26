@@ -10,7 +10,8 @@
 #include <uhdlib/usrp/common/adf535x.hpp>
 #include <uhd/utils/math.hpp>
 #include <uhd/utils/safe_call.hpp>
-#include <boost/thread/thread.hpp>
+#include <chrono>
+#include <thread>
 
 using namespace uhd;
 using namespace usrp;
@@ -40,7 +41,7 @@ public:
         _gpio_iface->set_field(twinrx_gpio::FIELD_SWPS_EN, 1);
         size_t timeout_ms = 100;
         while (_gpio_iface->get_field(twinrx_gpio::FIELD_SWPS_PWR_GOOD) == 0) {
-            boost::this_thread::sleep(boost::posix_time::microsec(1000));
+            std::this_thread::sleep_for(std::chrono::microseconds(1000));
             if (--timeout_ms == 0) {
                 throw uhd::runtime_error("power supply failure");
             }

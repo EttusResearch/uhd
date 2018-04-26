@@ -20,12 +20,13 @@
 #include <uhdlib/usrp/gpio_defs.hpp>
 #include <uhdlib/rfnoc/legacy_compat.hpp>
 #include <boost/assign/list_of.hpp>
-#include <boost/thread.hpp>
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 #include <algorithm>
 #include <cmath>
 #include <bitset>
+#include <chrono>
+#include <thread>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -562,12 +563,12 @@ public:
                     "See the application notes for your device.\n"
                 );
             }
-            boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
 
         UHD_LOGGER_INFO("MULTI_USRP") << "    2) set times next pps (synchronously)";
         set_time_next_pps(time_spec, ALL_MBOARDS);
-        boost::this_thread::sleep(boost::posix_time::seconds(1));
+        std::this_thread::sleep_for(std::chrono::seconds(1));
 
         //verify that the time registers are read to be within a few RTT
         for (size_t m = 1; m < get_num_mboards(); m++){

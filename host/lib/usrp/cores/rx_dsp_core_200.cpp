@@ -13,11 +13,12 @@
 #include <uhdlib/usrp/cores/rx_dsp_core_200.hpp>
 #include <uhdlib/usrp/cores/dsp_core_utils.hpp>
 #include <boost/assign/list_of.hpp>
-#include <boost/thread/thread.hpp> //thread sleep
 #include <boost/math/special_functions/round.hpp>
 #include <boost/numeric/conversion/bounds.hpp>
 #include <algorithm>
 #include <cmath>
+#include <chrono>
+#include <thread>
 
 #define REG_DSP_RX_FREQ       _dsp_base + 0
 #define REG_DSP_RX_SCALE_IQ   _dsp_base + 4
@@ -69,7 +70,7 @@ public:
             stream_cmd_t stream_cmd(stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
             stream_cmd.num_samps = 1;
             issue_stream_command(stream_cmd);
-            boost::this_thread::sleep(boost::posix_time::milliseconds(10)); //lets lingering pkt propagate
+            std::this_thread::sleep_for(std::chrono::milliseconds(10)); //lets lingering pkt propagate
         }
 
         this->clear();

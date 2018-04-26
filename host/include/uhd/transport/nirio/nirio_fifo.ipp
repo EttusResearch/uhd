@@ -431,7 +431,7 @@ nirio_status nirio_fifo<data_t>::_ensure_transfer_completed(uint32_t timeout_ms)
         (_expected_xfer_count > actual_xfer_count) &&
         approx_us_elapsed++ < std::max<size_t>(MIN_TIMEOUT_IN_US, timeout_ms * 1000)
     ) {
-        boost::this_thread::sleep(boost::posix_time::microseconds(1));
+        std::this_thread::sleep_for(std::chrono::microseconds(1));
         nirio_status_chain(_get_transfer_count(actual_xfer_count), status);
     }
 

@@ -28,7 +28,6 @@
 using namespace uhd;
 using namespace boost::posix_time;
 using namespace boost::algorithm;
-using namespace boost::this_thread;
 
 namespace {
     constexpr int GPS_COMM_TIMEOUT_MS       = 1300;

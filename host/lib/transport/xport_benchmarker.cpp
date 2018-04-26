@@ -6,6 +6,8 @@
 //
 
 #include "xport_benchmarker.hpp"
+#include <chrono>
+#include <thread>
 
 namespace uhd { namespace transport {
 
@@ -25,7 +27,7 @@ const device_addr_t& xport_benchmarker::benchmark_throughput_chdr
     _tx_thread.reset(new boost::thread(boost::bind(&xport_benchmarker::_stream_tx, this, tx_transport.get(), &pkt_info, big_endian)));
     _rx_thread.reset(new boost::thread(boost::bind(&xport_benchmarker::_stream_rx, this, rx_transport.get(), &pkt_info, big_endian)));
 
-    boost::this_thread::sleep(boost::posix_time::milliseconds(duration_ms));
+    std::this_thread::sleep_for(std::chrono::milliseconds(duration_ms));
 
     _tx_thread->interrupt();
     _rx_thread->interrupt();

@@ -10,12 +10,13 @@
 #include <uhd/usrp/multi_usrp.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
-#include <boost/thread/thread.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <iostream>
 #include <complex>
 #include <utility>
 #include <vector>
+#include <chrono>
+#include <thread>
 
 static const double SAMP_RATE = 1e6;
 
@@ -148,7 +149,7 @@ std::string coercion_test(uhd::usrp::multi_usrp::sptr usrp, std::string type, in
         if(type == "TX") usrp->set_tx_freq(freq,chan);
         else usrp->set_rx_freq(freq,chan);
 
-        boost::this_thread::sleep(boost::posix_time::microseconds(long(1000)));
+        std::this_thread::sleep_for(std::chrono::microseconds(long(1000)));
         double actual_freq = (type == "TX") ? usrp->get_tx_freq(chan)
                                             : usrp->get_rx_freq(chan);
 
@@ -185,7 +186,7 @@ std::string coercion_test(uhd::usrp::multi_usrp::sptr usrp, std::string type, in
                 if (is_locked) {
                     break;
                 }
-                boost::this_thread::sleep(boost::posix_time::microseconds(1000));
+                std::this_thread::sleep_for(std::chrono::microseconds(1000));
             }
             if(is_locked){
                 if(verbose) std::cout << boost::format("LO successfully locked at %s frequency %s.")
@@ -206,7 +207,7 @@ std::string coercion_test(uhd::usrp::multi_usrp::sptr usrp, std::string type, in
                 if(type == "TX") usrp->set_tx_gain(gain,chan);
                 else usrp->set_rx_gain(gain,chan);
 
-                boost::this_thread::sleep(boost::posix_time::microseconds(1000));
+                std::this_thread::sleep_for(std::chrono::microseconds(1000));
 
                 double actual_gain = (type == "TX") ? usrp->get_tx_gain(chan)
                                                     : usrp->get_rx_gain(chan);
@@ -410,7 +411,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //Setting clock source
     usrp->set_clock_source(ref);
-    boost::this_thread::sleep(boost::posix_time::seconds(1));
+    std::this_thread::sleep_for(std::chrono::seconds(1));
 
     std::vector<std::string> sensor_names = usrp->get_mboard_sensor_names(0);
     if ((ref == "mimo") and (std::find(sensor_names.begin(), sensor_names.end(), "mimo_locked") != sensor_names.end())) {

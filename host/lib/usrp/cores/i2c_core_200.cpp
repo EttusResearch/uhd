@@ -8,8 +8,9 @@
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/usrp/cores/i2c_core_200.hpp>
-#include <boost/thread/thread.hpp> //sleep
 #include <boost/thread/mutex.hpp>
+#include <chrono>
+#include <thread>
 
 #define REG_I2C_WR_PRESCALER_LO (1 << 3) | 0
 #define REG_I2C_WR_PRESCALER_HI (1 << 3) | 1
@@ -118,7 +119,7 @@ private:
     void i2c_wait(void) {
         for (size_t i = 0; i < 100; i++){
             if ((this->peek(REG_I2C_RD_ST) & I2C_ST_TIP) == 0) return;
-            boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
         UHD_LOGGER_ERROR("CORES") << "i2c_core_200: i2c_wait timeout" ;
     }

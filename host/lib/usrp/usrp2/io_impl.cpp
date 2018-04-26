@@ -26,6 +26,8 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/make_shared.hpp>
 #include <iostream>
+#include <chrono>
+#include <thread>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -384,7 +386,7 @@ void usrp2_impl::program_stream_dest(
             std::memcpy(send_buff->cast<void *>(), &stream_ctrl, sizeof(stream_ctrl));
             send_buff->commit(sizeof(stream_ctrl));
             send_buff.reset();
-            boost::this_thread::sleep(boost::posix_time::milliseconds(300));
+            std::this_thread::sleep_for(std::chrono::milliseconds(300));
             managed_recv_buffer::sptr recv_buff = xport->get_recv_buff(0.0);
             if (recv_buff and recv_buff->size() >= sizeof(uint32_t)){
                 const uint32_t result = uhd::ntohx(recv_buff->cast<const uint32_t *>()[0]);

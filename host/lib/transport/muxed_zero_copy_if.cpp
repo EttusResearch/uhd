@@ -14,6 +14,8 @@
 #include <boost/thread.hpp>
 #include <boost/thread/locks.hpp>
 #include <map>
+#include <chrono>
+#include <thread>
 
 using namespace uhd;
 using namespace uhd::transport;
@@ -210,7 +212,7 @@ private:
                 if (not _process_next_buffer()) {
                     //Be a good citizen and yield if no packet is processed
                     static const size_t MIN_DUR = 1;
-                    boost::this_thread::sleep_for(boost::chrono::nanoseconds(MIN_DUR));
+                    std::this_thread::sleep_for(std::chrono::nanoseconds(MIN_DUR));
                     //We call sleep(MIN_DUR) above instead of yield() to ensure that we
                     //relinquish the current scheduler time slot.
                     //yield() is a hint to the scheduler to end the time
