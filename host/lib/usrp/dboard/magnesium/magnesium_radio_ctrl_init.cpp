@@ -369,8 +369,8 @@ void magnesium_radio_ctrl_impl::_init_frontend_subtree(
         })
     ;
 
-    subtree->create<std::vector<std::string> >(tx_fe_path / "gains/all/profile/options")
-            .set(boost::assign::list_of("manual")("default"));
+    subtree->create<std::vector<std::string>>(tx_fe_path / "gains/all/profile/options")
+        .set({"manual", "default"});
 
     subtree->create<std::string>(tx_fe_path / "gains/all/profile/value")
         .set_coercer([this](const std::string& profile){

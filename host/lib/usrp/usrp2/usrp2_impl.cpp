@@ -19,7 +19,6 @@
 #include <uhd/utils/safe_call.hpp>
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
-#include <boost/assign/list_of.hpp>
 #include <boost/asio/ip/address_v4.hpp>
 #include <boost/asio.hpp> //used for htonl and ntohl
 #include <boost/thread.hpp>
@@ -699,9 +698,12 @@ usrp2_impl::usrp2_impl(const device_addr_t &_device_addr) :
         _tree->create<std::string>(mb_path / "clock_source/value")
             .add_coerced_subscriber(boost::bind(&usrp2_impl::update_clock_source, this, mb, _1))
             .set("internal");
-        std::vector<std::string> clock_sources = boost::assign::list_of("internal")("external")("mimo");
-        if (_mbc[mb].gps and _mbc[mb].gps->gps_detected()) clock_sources.push_back("gpsdo");
-        _tree->create<std::vector<std::string> >(mb_path / "clock_source/options").set(clock_sources);
+        std::vector<std::string> clock_sources{"internal", "external", "mimo"};
+        if (_mbc[mb].gps and _mbc[mb].gps->gps_detected()) {
+            clock_sources.push_back("gpsdo");
+        }
+        _tree->create<std::vector<std::string>>(mb_path / "clock_source/options")
+            .set(clock_sources);
         //plug timed commands into tree here
         switch(_mbc[mb].iface->get_rev()){
         case usrp2_iface::USRP_N200:

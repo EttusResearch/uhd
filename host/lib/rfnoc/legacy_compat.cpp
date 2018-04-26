@@ -20,7 +20,6 @@
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhdlib/rfnoc/legacy_compat.hpp>
 #include <boost/make_shared.hpp>
-#include <boost/assign.hpp>
 
 #define UHD_LEGACY_LOG() UHD_LOGGER_TRACE("RFNOC")
 
@@ -359,7 +358,7 @@ public:
                 }
             }
         } else {
-            std::set<size_t> chans_to_change = boost::assign::list_of(chan);
+            std::set<size_t> chans_to_change{chan};
             if (_rx_stream_cache.count(chan)) {
                 uhd::rx_streamer::sptr str_ptr = _rx_stream_cache[chan].lock();
                 if (str_ptr) {
@@ -402,7 +401,7 @@ public:
                 }
             }
         } else {
-            std::set<size_t> chans_to_change = boost::assign::list_of(chan);
+            std::set<size_t> chans_to_change{chan};
             if (_tx_stream_cache.count(chan)) {
                 uhd::tx_streamer::sptr str_ptr = _tx_stream_cache[chan].lock();
                 if (str_ptr) {

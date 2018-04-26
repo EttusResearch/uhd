@@ -11,8 +11,6 @@
 #include <uhd/exception.hpp>
 #include <uhd/types/sensors.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/assign/list_of.hpp>
-#include <stdint.h>
 #include <boost/thread/thread.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/format.hpp>
@@ -24,6 +22,7 @@
 #include <string>
 #include <thread>
 #include <chrono>
+#include <stdint.h>
 
 using namespace uhd;
 using namespace boost::posix_time;
@@ -137,7 +136,7 @@ private:
         return;
     }
 
-    const std::list<std::string> keys = boost::assign::list_of("GPGGA")("GPRMC")("SERVO");
+    const std::list<std::string> keys{"GPGGA", "GPRMC", "SERVO"};
     static const boost::regex servo_regex("^\\d\\d-\\d\\d-\\d\\d.*$");
     static const boost::regex gp_msg_regex("^\\$GP.*,\\*[0-9A-F]{2}$");
     std::map<std::string,std::string> msgs;
@@ -266,13 +265,14 @@ public:
 
   //return a list of supported sensors
   std::vector<std::string> get_sensors(void) {
-    std::vector<std::string> ret = boost::assign::list_of
-        ("gps_gpgga")
-        ("gps_gprmc")
-        ("gps_time")
-        ("gps_locked")
-        ("gps_servo");
-    return ret;
+      std::vector<std::string> ret{
+          "gps_gpgga",
+          "gps_gprmc",
+          "gps_time",
+          "gps_locked",
+          "gps_servo"
+      };
+      return ret;
   }
 
   uhd::sensor_value_t get_sensor(std::string key) {

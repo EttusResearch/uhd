@@ -14,7 +14,6 @@
 #include <uhd/utils/safe_call.hpp>
 #include <stdint.h>
 #include "b100_regs.hpp" //spi slave constants
-#include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <boost/math/common_factor_rt.hpp> //gcd
 #include <algorithm>
@@ -516,11 +515,14 @@ private:
     void send_all_regs(void){
         //setup a list of register ranges to write
         typedef std::pair<uint16_t, uint16_t> range_t;
-        static const std::vector<range_t> ranges = boost::assign::list_of
-            (range_t(0x000, 0x000)) (range_t(0x010, 0x01F))
-            (range_t(0x0F0, 0x0FD)) (range_t(0x190, 0x19B))
-            (range_t(0x1E0, 0x1E1)) (range_t(0x230, 0x230))
-        ;
+        static const std::vector<range_t> ranges{
+            range_t(0x000, 0x000),
+            range_t(0x010, 0x01F),
+            range_t(0x0F0, 0x0FD),
+            range_t(0x190, 0x19B),
+            range_t(0x1E0, 0x1E1),
+            range_t(0x230, 0x230)
+        };
 
         //write initial register values and latch/update
         for(const range_t &range:  ranges){

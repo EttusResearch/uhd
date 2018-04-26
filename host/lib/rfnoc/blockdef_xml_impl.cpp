@@ -10,7 +10,6 @@
 #include <uhd/rfnoc/blockdef.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/paths.hpp>
-#include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
@@ -102,13 +101,13 @@ const device_addr_t blockdef::arg_t::ARG_ARGS(
         "port=0,"
 );
 
-const std::set<std::string> blockdef::arg_t::VALID_TYPES = boost::assign::list_of
+const std::set<std::string> blockdef::arg_t::VALID_TYPES = {
     // List all tags/args a <type> can have here:
-            ("string")
-            ("int")
-            ("int_vector")
-            ("double")
-;
+    "string",
+    "int",
+    "int_vector",
+    "double"
+};
 
 blockdef::arg_t::arg_t()
 {

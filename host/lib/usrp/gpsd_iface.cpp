@@ -6,12 +6,11 @@
 //
 
 #include <cmath>
+#include <stdint.h>
 
 #include <gps.h>
 
-#include <boost/assign/list_of.hpp>
 #include <boost/bind.hpp>
-#include <stdint.h>
 #include "boost/date_time/gregorian/gregorian.hpp"
 #include <boost/format.hpp>
 #include <boost/thread/shared_mutex.hpp>
@@ -53,9 +52,13 @@ public:
         boost::thread t(boost::bind(&gpsd_iface_impl::_thread_fcn ,this));
         _bthread.swap(t);
 
-
-        _sensors = boost::assign::list_of<std::string>("gps_locked")("gps_time") \
-            ("gps_position")("gps_gpgga")("gps_gprmc").to_container(_sensors);
+        _sensors = {
+            "gps_locked",
+            "gps_time",
+            "gps_position",
+            "gps_gpgga",
+            "gps_gprmc"
+        };
     }
 
     virtual ~gpsd_iface_impl(void)

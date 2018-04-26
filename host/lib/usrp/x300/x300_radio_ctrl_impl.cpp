@@ -18,7 +18,6 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/date_time/posix_time/posix_time_io.hpp>
-#include <boost/assign/list_of.hpp>
 #include <chrono>
 #include <thread>
 
@@ -547,7 +546,7 @@ double x300_radio_ctrl_impl::get_output_samp_rate(size_t chan)
 
 std::vector<std::string> x300_radio_ctrl_impl::get_gpio_banks() const
 {
-    std::vector<std::string> banks = boost::assign::list_of("RX")("TX");
+    std::vector<std::string> banks{"RX", "TX"};
     // These pairs are the same, but RXA/TXA are from pre-rfnoc era and are kept for backward compat:
     banks.push_back("RX"+_radio_slot);
     banks.push_back("TX"+_radio_slot);
@@ -626,10 +625,16 @@ void x300_radio_ctrl_impl::setup_radio(
     static const size_t RX_EEPROM_ADDR  = 0x5;
     static const size_t TX_EEPROM_ADDR  = 0x4;
     static const size_t GDB_EEPROM_ADDR = 0x1;
-    const static std::vector<size_t> EEPROM_ADDRS =
-        boost::assign::list_of(RX_EEPROM_ADDR)(TX_EEPROM_ADDR)(GDB_EEPROM_ADDR);
-    const static std::vector<std::string> EEPROM_PATHS =
-        boost::assign::list_of("rx_eeprom")("tx_eeprom")("gdb_eeprom");
+    const static std::vector<size_t> EEPROM_ADDRS{
+        RX_EEPROM_ADDR,
+        TX_EEPROM_ADDR,
+        GDB_EEPROM_ADDR
+    };
+    const static std::vector<std::string> EEPROM_PATHS{
+        "rx_eeprom",
+        "tx_eeprom",
+        "gdb_eeprom"
+    };
 
     const size_t DB_OFFSET = (_radio_slot == "A") ? 0x0 : 0x2;
     const fs_path db_path = ("dboards" / _radio_slot);

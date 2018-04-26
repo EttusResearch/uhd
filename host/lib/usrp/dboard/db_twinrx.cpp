@@ -19,7 +19,6 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
 #include "dboard_ctor_args.hpp"
-#include <boost/assign/list_of.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/mutex.hpp>
@@ -100,8 +99,8 @@ public:
         expert_factory::add_dual_prop_node<double>(_expert, get_rx_subtree(),
             "los/LO2/freq/value", prepend_ch("los/LO2/freq/desired", _ch_name), prepend_ch("los/LO2/freq/coerced", _ch_name),
             0.0, AUTO_RESOLVE_ON_READ_WRITE);
-        get_rx_subtree()->create<std::vector<std::string> >("los/all/source/options")
-            .set(boost::assign::list_of("internal")("external")("companion")("disabled")("reimport"));
+        get_rx_subtree()->create<std::vector<std::string>>("los/all/source/options")
+            .set({"internal", "external", "companion", "disabled", "reimport"});
         expert_factory::add_prop_node<std::string>(_expert, get_rx_subtree(),
             "los/all/source/value", prepend_ch("los/all/source", _ch_name),
             "internal", AUTO_RESOLVE_ON_WRITE);
@@ -116,14 +115,14 @@ public:
             "gains/all/value", prepend_ch("gain", _ch_name),
             0.0, AUTO_RESOLVE_ON_WRITE);
         get_rx_subtree()->create<std::vector<std::string> >("gains/all/profile/options")
-            .set(boost::assign::list_of("low-noise")("low-distortion")("default"));
+            .set({"low-noise", "low-distortion", "default"});
         expert_factory::add_prop_node<std::string>(_expert, get_rx_subtree(),
             "gains/all/profile/value", prepend_ch("gain_profile", _ch_name),
             "default", AUTO_RESOLVE_ON_WRITE);
 
         //Antenna Specific
         get_rx_subtree()->create<std::vector<std::string> >("antenna/options")
-            .set(boost::assign::list_of("RX1")("RX2"));
+            .set({"RX1", "RX2"});
         expert_factory::add_prop_node<std::string>(_expert, get_rx_subtree(),
             "antenna/value", prepend_ch("antenna", _ch_name),
             (_ch_name == "0" ? "RX1" : "RX2"), AUTO_RESOLVE_ON_WRITE);
