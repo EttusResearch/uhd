@@ -21,6 +21,7 @@ from usrp_mpm.dboard_manager.mg_periphs import TCA6408, MgCPLD
 from usrp_mpm.dboard_manager.mg_periphs import DboardClockControl
 from usrp_mpm.cores import nijesdcore
 from usrp_mpm.mpmlog import get_logger
+from usrp_mpm.mpmutils import async_exec
 from usrp_mpm.sys_utils.uio import open_uio
 from usrp_mpm.sys_utils.udev import get_eeprom_paths
 from usrp_mpm.cores import ClockSynchronizer
@@ -62,6 +63,7 @@ TRACKING_CALIBRATION_TABLE = {"TRACK_RX1_QEC"         :   0x01,
                               "DEFAULT"               :   0xC3,
                               "ALL"                   :   0xF3,
                              }
+
 
 def create_spidev_iface_lmk(dev_node):
     """
@@ -499,9 +501,13 @@ class Magnesium(DboardManagerBase):
                        .format(self._init_cals_mask))
         self.log.debug("args[tracking_cals]=0x{:02X}"
                        .format(self._tracking_cals_mask))
-        self.mykonos.setup_cal(self._init_cals_mask,
-                               self._tracking_cals_mask,
-                               self._init_cals_timeout)
+        async_exec(
+            self.mykonos,
+            "setup_cal",
+            self._init_cals_mask,
+            self._tracking_cals_mask,
+            self._init_cals_timeout
+        )
 
     def init_lo_source(self, args):
         """Set all LO
@@ -547,10 +553,9 @@ class Magnesium(DboardManagerBase):
         jesdcore.send_sysref_pulse()
         time.sleep(0.001) # 17us... ish.
         jesdcore.send_sysref_pulse()
-        self.mykonos.finish_initialization()
+        async_exec(self.mykonos, "finish_initialization")
         # TODO:can we call this after JESD?
         self.init_rf_cal(args)
-
         self.log.trace("Starting JESD204b Link Initialization...")
         # Generally, enable the source before the sink. Start with the DAC side.
         self.log.trace("Starting FPGA framer...")

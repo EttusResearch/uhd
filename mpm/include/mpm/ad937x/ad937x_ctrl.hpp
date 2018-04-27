@@ -20,6 +20,7 @@
 #include <functional>
 #include <set>
 #include <mutex>
+#include <future>
 
 namespace mpm { namespace chips {
 
@@ -83,6 +84,10 @@ public:
     static const uint32_t DEFAULT_INIT_CALS_MASKS;
     static const uint32_t DEFAULT_TRACKING_CALS_MASKS;
     static const uint32_t DEFAULT_INIT_CALS_TIMEOUT;
+
+    // Async call handles
+    std::future<void> handle_finish_initialization;
+    std::future<void> handle_setup_cal;
 
     /*! \brief make a new AD9371 ctrl object using the specified SPI iface
      *
@@ -299,10 +304,48 @@ void export_mykonos(){
     bp::class_<ad937x_ctrl, boost::noncopyable, std::shared_ptr<ad937x_ctrl>>("ad937x_ctrl", bp::no_init)
         .def("set_master_clock_rate", &ad937x_ctrl::set_master_clock_rate)
         .def("begin_initialization", &ad937x_ctrl::begin_initialization)
-        .def("finish_initialization", &ad937x_ctrl::finish_initialization)
+        .def("async__finish_initialization", +[](
+                ad937x_ctrl& self
+            ){
+                self.handle_finish_initialization = std::async(std::launch::async,
+                    &ad937x_ctrl::finish_initialization,
+                    &self
+                );
+        })
+        .def("await__finish_initialization", +[](
+                ad937x_ctrl& self
+            )->bool{
+                if (self.handle_finish_initialization.wait_for(std::chrono::seconds(0)) == std::future_status::ready){
+                    self.handle_finish_initialization.get();
+                    return true;
+                }
+                return false;
+        })
         .def("set_lo_source", &ad937x_ctrl::set_lo_source)
         .def("get_lo_source", &ad937x_ctrl::get_lo_source)
-        .def("setup_cal", &ad937x_ctrl::setup_cal)
+        .def("async__setup_cal", +[](
+                ad937x_ctrl& self,
+                const uint32_t init_cals_mask,
+                const uint32_t timeout,
+                const uint32_t tracking_cals_mask
+            ){
+                self.handle_setup_cal = std::async(std::launch::async,
+                    &ad937x_ctrl::setup_cal,
+                    &self,
+                    init_cals_mask,
+                    timeout,
+                    tracking_cals_mask
+                );
+        })
+        .def("await__setup_cal", +[](
+                ad937x_ctrl& self
+            )->bool{
+                if (self.handle_setup_cal.wait_for(std::chrono::seconds(0)) == std::future_status::ready){
+                    self.handle_setup_cal.get();
+                    return true;
+                }
+                return false;
+        })
         .def("start_jesd_rx", &ad937x_ctrl::start_jesd_rx)
         .def("start_jesd_tx", &ad937x_ctrl::start_jesd_tx)
         .def("start_radio", &ad937x_ctrl::start_radio)
