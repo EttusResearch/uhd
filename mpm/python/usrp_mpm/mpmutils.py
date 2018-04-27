@@ -8,7 +8,6 @@ Miscellaneous utilities for MPM
 """
 
 import time
-import sys
 
 def poll_with_timeout(state_check, timeout_ms, interval_ms):
     """
@@ -149,4 +148,18 @@ def str2bool(value):
         return value.lower() in ("yes", "true", "t", "1")
     except AttributeError:
         return bool(value)
+
+
+def async_exec(parent, method_name, *args):
+    """Execute method_name asynchronously.
+    Requires the parent class to have this feature enabled.
+    """
+    async_name = 'async__' + method_name
+    await_name = 'await__' + method_name
+    # Spawn async
+    getattr(parent, async_name)(*args)
+    awaitable_method = getattr(parent, await_name)
+    # await
+    while not awaitable_method():
+        time.sleep(0.1)
 
