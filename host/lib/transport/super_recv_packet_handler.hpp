@@ -268,6 +268,8 @@ public:
                 timeout, accum_num_samps*_bytes_per_cpu_item
             );
 
+            metadata.end_of_burst = _queue_metadata.end_of_burst;
+
             //metadata had an error code set, store for next call and return
             if (_queue_metadata.error_code != rx_metadata_t::ERROR_CODE_NONE){
                 _queue_error_for_next_call = true;
