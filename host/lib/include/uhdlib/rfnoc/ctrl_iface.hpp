@@ -21,7 +21,7 @@ class ctrl_iface
 {
 public:
     typedef boost::shared_ptr<ctrl_iface> sptr;
-    virtual ~ctrl_iface(void) = 0;
+    virtual ~ctrl_iface(void) {}
 
     /*! Make a new control object
      *
