@@ -5,7 +5,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "../lib/rfnoc/ctrl_iface.hpp"
 #include <uhd/property_tree.hpp>
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/device3.hpp>
@@ -28,7 +27,7 @@ static const sid_t TEST_SID1 = 0x00000210; // 0.0.2.F
 class pseudo_ctrl_iface_impl : public ctrl_iface
 {
   public:
-    pseudo_ctrl_iface_impl() {};
+    pseudo_ctrl_iface_impl() {}
     virtual ~pseudo_ctrl_iface_impl() {}
 
     uint64_t send_cmd_pkt(
