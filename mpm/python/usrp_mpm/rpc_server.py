@@ -29,7 +29,7 @@ from usrp_mpm.mpmutils import to_binary_str
 from usrp_mpm.sys_utils import watchdog
 from usrp_mpm.sys_utils import net
 
-TIMEOUT_INTERVAL = 4.0 # Seconds before claim expires (default value)
+TIMEOUT_INTERVAL = 5.0 # Seconds before claim expires (default value)
 TOKEN_LEN = 16 # Length of the token string
 # Compatibility number for MPM
 MPM_COMPAT_NUM = (1, 2)
