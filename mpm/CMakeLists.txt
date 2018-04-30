@@ -125,7 +125,13 @@ SET(PKG_MAN_DIR share/man/man1)
 ########################################################################
 # Setup library configuration
 ########################################################################
-SET(CMAKE_CXX_STANDARD 11)
+SET(CMAKE_CXX_STANDARD 14)
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-Wno-psabi" _has_no_psabi)
+if(_has_no_psabi)
+    MESSAGE(STATUS "Disabling psABI warnings.")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-psabi")
+endif(_has_no_psabi)
 SET(MPM_ALL_DEVICES n3xx tests)
 SET(MPM_DEVICE "n3xx" CACHE STRING "Choose an MPM device to build")
 SET_PROPERTY(CACHE MPM_DEVICE PROPERTY STRINGS ${MPM_ALL_DEVICES})
