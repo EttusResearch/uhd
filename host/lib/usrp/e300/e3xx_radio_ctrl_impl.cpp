@@ -296,7 +296,6 @@ void e3xx_radio_ctrl_impl::setup_radio(uhd::usrp::ad9361_ctrl::sptr safe_codec_c
     // Create timed interface
     ////////////////////////////////////////////////////////////////////
     _codec_ctrl = safe_codec_ctrl;
-    _codec_ctrl->set_timed_spi(_spi, 1);
     _codec_mgr = uhd::usrp::ad936x_manager::make(_codec_ctrl, _get_num_radios());
 
     ////////////////////////////////////////////////////////////////////
