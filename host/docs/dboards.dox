@@ -11,12 +11,28 @@ of each board as well.
 
 \subsection dboards_basicrx Basic RX and LFRX
 
-The Basic RX and LFRX boards have 4 frontends:
+The Basic RX and LFRX boards have four modes of operation:
 
 -   **Frontend A:** real signal on antenna RXA
 -   **Frontend B:** real signal on antenna RXB
 -   **Frontend AB:** quadrature frontend using both antennas (IQ)
 -   **Frontend BA:** quadrature frontend using both antennas (QI)
+
+The way in which you select the mode depends on the USRP type. On the X310,
+selecting the mode is done using the antenna API:
+
+```cpp
+auto usrp = uhd::usrp::multi_usrp::make("type=x300");
+usrp->set_rx_antenna("A"); // Disable RXB port
+```
+
+On the USRP2, the N200 series, the B100 series, the E100, and the USRP1 the mode
+depends on the subdev spec applied:
+
+```cpp
+auto usrp = uhd::usrp::multi_usrp::make("type=usrp2");
+usrp->set_rx_subdev_spec("A:A"); // Disable RXB port
+```
 
 The boards have no tunable elements or programmable gains. Through the
 magic of aliasing, you can down-convert signals greater than the Nyquist

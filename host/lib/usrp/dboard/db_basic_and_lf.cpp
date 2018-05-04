@@ -58,6 +58,8 @@ public:
     virtual ~basic_rx(void);
 
 private:
+    void set_rx_ant(const std::string& ant);
+
     double _max_freq;
 };
 
@@ -99,33 +101,49 @@ UHD_STATIC_BLOCK(reg_basic_and_lf_dboards){
 /***********************************************************************
  * Basic and LF RX dboard
  **********************************************************************/
-basic_rx::basic_rx(ctor_args_t args, double max_freq) : rx_dboard_base(args){
-    _max_freq = max_freq;
-    //this->get_iface()->set_clock_enabled(dboard_iface::UNIT_RX, true);
+basic_rx::basic_rx(ctor_args_t args, double max_freq)
+    : rx_dboard_base(args),
+    _max_freq(max_freq)
+{
+    const std::string fe_name(get_subdev_name());
+    const std::string fe_conn(sd_name_to_conn[fe_name]);
+    const std::string db_name(str(
+        boost::format("%s (%s)")
+        % ((get_rx_id() == BASIC_RX_PID) ? "BasicRX" : "LFRX")
+        % fe_name));
+    UHD_LOG_TRACE("BASICRX",
+        "Initializing driver for: " << db_name <<
+        " IQ connection type: " << fe_conn);
+    const bool has_fe_conn_settings =
+        get_iface()->has_set_fe_connection(dboard_iface::UNIT_RX);
+    UHD_LOG_TRACE("BASICRX",
+        "Access to FE connection settings: "
+        << (has_fe_conn_settings ? "Yes" : "No"));
+
+    std::vector<std::string> antenna_options = has_fe_conn_settings
+        ? sd_name_to_conn.keys()
+        : std::vector<std::string>(1, "");
 
     ////////////////////////////////////////////////////////////////////
     // Register properties
     ////////////////////////////////////////////////////////////////////
-    if (get_rx_id() == BASIC_RX_PID) {
-        this->get_rx_subtree()->create<std::string>("name").set(
-            std::string(str(boost::format("BasicRX (%s)") % get_subdev_name()
-        )));
-    }
-    else{
-        this->get_rx_subtree()->create<std::string>("name").set(
-            std::string(str(boost::format("LFRX (%s)") % get_subdev_name()
-        )));
-    }
-
+    this->get_rx_subtree()->create<std::string>("name").set(db_name);
     this->get_rx_subtree()->create<int>("gains"); //phony property so this dir exists
     this->get_rx_subtree()->create<double>("freq/value")
         .set_publisher([](){ return 0.0; });
     this->get_rx_subtree()->create<meta_range_t>("freq/range")
         .set(freq_range_t(-_max_freq, +_max_freq));
     this->get_rx_subtree()->create<std::string>("antenna/value")
-        .set("");
+        .set(has_fe_conn_settings ? fe_name : "");
+    if (has_fe_conn_settings) {
+        this->get_rx_subtree()->access<std::string>("antenna/value")
+            .add_coerced_subscriber([this](const std::string& ant){
+                this->set_rx_ant(ant);
+            })
+        ;
+    }
     this->get_rx_subtree()->create<std::vector<std::string>>("antenna/options")
-        .set({""});
+        .set(antenna_options);
     this->get_rx_subtree()->create<int>("sensors"); //phony property so this dir exists
     this->get_rx_subtree()->create<std::string>("connection")
         .set(sd_name_to_conn[get_subdev_name()]);
@@ -151,6 +169,18 @@ basic_rx::basic_rx(ctor_args_t args, double max_freq) : rx_dboard_base(args){
 
 basic_rx::~basic_rx(void){
     /* NOP */
+}
+
+void basic_rx::set_rx_ant(const std::string& ant)
+{
+    UHD_ASSERT_THROW(get_iface()->has_set_fe_connection(dboard_iface::UNIT_RX));
+    UHD_LOG_TRACE("BASICRX",
+        "Setting antenna value to: " << ant);
+    get_iface()->set_fe_connection(
+        dboard_iface::UNIT_RX,
+        get_subdev_name(),
+        usrp::fe_connection_t(sd_name_to_conn[ant], 0.0 /* IF */)
+    );
 }
 
 /***********************************************************************
