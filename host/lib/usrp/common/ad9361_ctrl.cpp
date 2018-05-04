@@ -83,22 +83,10 @@ class ad9361_ctrl_impl : public ad9361_ctrl
 {
 public:
     ad9361_ctrl_impl(ad9361_params::sptr client_settings, ad9361_io::sptr io_iface):
-        _device(client_settings, io_iface), _safe_spi(io_iface), _timed_spi(io_iface)
+        _device(client_settings, io_iface)
     {
         _device.initialize();
     }
-
-    void set_timed_spi(uhd::spi_iface::sptr spi_iface, uint32_t slave_num)
-    {
-        _timed_spi = boost::make_shared<ad9361_io_spi>(spi_iface, slave_num);
-        _use_timed_spi();
-    }
-
-    void set_safe_spi(uhd::spi_iface::sptr spi_iface, uint32_t slave_num)
-    {
-        _safe_spi = boost::make_shared<ad9361_io_spi>(spi_iface, slave_num);
-    }
-
     double set_gain(const std::string &which, const double value)
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
@@ -134,10 +122,6 @@ public:
     double set_clock_rate(const double rate)
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
-
-        // Changing clock rate will disrupt AD9361's sample clock
-        _use_safe_spi();
-
         //clip to known bounds
         const meta_range_t clock_rate_range = ad9361_ctrl::get_clock_rate_range();
         const double clipped_rate = clock_rate_range.clip(rate);
@@ -151,8 +135,6 @@ public:
 
         double return_rate = _device.set_clock_rate(clipped_rate);
 
-        _use_timed_spi();
-
         return return_rate;
     }
 
@@ -160,12 +142,7 @@ public:
     void set_active_chains(bool tx1, bool tx2, bool rx1, bool rx2)
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
-
-        // If both RX chains are disabled then the AD9361's sample clock is disabled
-        _use_safe_spi();
         _device.set_active_chains(tx1, tx2, rx1, rx2);
-        _use_timed_spi();
-
     }
 
     //! set which timing mode to use - 1R1T, 2R2T
@@ -173,12 +150,10 @@ public:
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
 
-        _use_safe_spi();
         if ((timing_mode != "2R2T") && (timing_mode != "1R1T")) {
             throw uhd::assertion_error("ad9361_ctrl: Timing mode not supported");
         }
         _device.set_timing_mode((timing_mode == "2R2T")? ad9361_device_t::TIMING_MODE_2R2T : ad9361_device_t::TIMING_MODE_1R1T);
-        _use_timed_spi();
 
     }
 
@@ -325,17 +300,7 @@ private:
         return ad9361_device_t::CHAIN_1;
     }
 
-    void _use_safe_spi() {
-        _device.set_io_iface(_safe_spi);
-    }
-
-    void _use_timed_spi() {
-        _device.set_io_iface(_timed_spi);
-    }
-
     ad9361_device_t         _device;
-    ad9361_io::sptr         _safe_spi;      // SPI core that uses an always available clock
-    ad9361_io::sptr         _timed_spi;     // SPI core that has a dependency on the AD9361's sample clock (i.e. radio clk)
     boost::mutex            _mutex;
 };
 
