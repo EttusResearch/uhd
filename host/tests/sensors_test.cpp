@@ -91,5 +91,12 @@ BOOST_AUTO_TEST_CASE(test_sensor_string) {
 
     auto sensor_str2 = sensor_value_t(sensor_map);
     BOOST_CHECK_EQUAL(sensor_str2.unit, sens_units);
+
+    sensor_value_t sensor_str3(sensor_str2.to_map());
+    BOOST_CHECK_EQUAL(sensor_str2.name, sensor_str3.name);
+    BOOST_CHECK_EQUAL(sensor_str2.value, sensor_str3.value);
+    BOOST_CHECK_EQUAL(sensor_str2.unit, sensor_str3.unit);
+    BOOST_CHECK_EQUAL(sensor_str2.type, sensor_str3.type);
+
 }
 
