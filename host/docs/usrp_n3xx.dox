@@ -8,6 +8,7 @@
 	- Dual SFP+ Transceivers (can be used with 1 GigE, 10 GigE, and Aurora)
 	- External PPS input & output
 	- External 10 MHz input & output (20 MHz and 25 MHz inputs also supported)
+	- External White Rabbit time/frequency reference input support
 	- Internal 25 MHz reference clock
 	- Internal GPSDO for timing, location, and 20 MHz reference clock + PPS
 	- External GPIO Connector with UHD API control
@@ -494,6 +495,57 @@ To permanently enable it at every boot, run (this won't by itself launch the
 salt-minion):
 
     $ systemctl enable salt-minion
+
+\section n3xx_synchronization Clock/Time Synchronization
+
+\subsection n3xx_synchronization_internal Internal references
+
+The N3xx series has an onboard GPSDO as well as a 25 MHz reference oscillator,
+which can both be used as time- and clock references. The GPSDO will function
+as a reference even when there is no GPS reception.
+
+Note that this does not enable the synchronization of multiple devices.
+Using an internal reference is the default.
+
+\subsection n3xx_synchronization_external External references
+
+In order to synchronize multiple USRPs, an external reference, such as the
+CDA-2990, is required. If only a clock reference is available, it is possible
+to derive an internal PPS signal from the reference (which will allow devices
+to share a frequency, but not a time reference). If both an external clock and
+time source are provided, devices will be synchronized in frequency and time.
+
+```cpp
+auto usrp = uhd::usrp::multi_usrp::make("type=n3xx,clock_source=external,time_source=external");
+```
+
+\subsection n3xx_synchronization_whiterabbit White Rabbit
+
+White Rabbit is an Ethernet-based synchronization procedure; it is an extension
+of the IEEE 1588 Precision Time Protocol (PTP). The N3xx device can be
+configured as a White Rabbit slave.
+
+To use White Rabbit, it is necessary to provide an appropriate reference via
+Ethernet. This reference must be connected to SFP0. Finally, a White Rabbit-compatible
+FPGA must be loaded. SFP0 will not be available for data transport in this mode.
+
+The White Rabbit image is provided as a default image. To obtain the default
+images, simply run:
+
+    $ uhd_images_downloader
+
+Then, you can install the WX (or WA) image using `uhd_image_loader`:
+
+    $ uhd_image_loader --args type=n3xx,addr=ni-n3xx-<DEVICE_SERIAL> --fpga-path=”<UHD_INSTALL_DIRECTORY>/share/uhd/images/usrp_n310_fpga_WX.bit
+
+Once the image is loaded, select `sfp0` as the clock and time source:
+
+```cpp
+auto usrp = uhd::usrp::multi_usrp::make("type=n3xx,clock_source=sfp0,time_source=sfp0");
+```
+
+For more information, refer to the [White Rabbit Homepage](https://www.ohwr.org/projects/white-rabbit),
+or the [Ettus Research Knowledge Base](https://kb.ettus.com/Using_Ethernet-Based_Synchronization_on_the_USRP%E2%84%A2_N3xx_Devices).
 
 \section n3xx_theory_of_ops Theory of Operation
 
