@@ -687,10 +687,10 @@ class N3XXBIST(object):
                 'write_patterns': list(patterns),
                 'read_patterns': list(patterns),
             }
-        from usrp_mpm.periph_manager import n3xx
-        gpio_tca6424 = n3xx.TCA6424(self.mb_rev)
+        from usrp_mpm.periph_manager import n3xx, n3xx_periphs
+        gpio_tca6424 = n3xx_periphs.TCA6424(self.mb_rev)
         gpio_tca6424.set("FPGA-GPIO-EN")
-        mb_regs = n3xx.MboardRegsControl(n3xx.n3xx.mboard_regs_label, self.log)
+        mb_regs = n3xx_periphs.MboardRegsControl(n3xx.n3xx.mboard_regs_label, self.log)
         mb_regs.set_fp_gpio_master(0xFFF)
         # Allow some time for the front-panel GPIOs to become usable
         time.sleep(.5)
@@ -698,7 +698,7 @@ class N3XXBIST(object):
         ddr2 = 0xfc0
         def _run_gpio(ddr, patterns):
             " Run a GPIO test for a given set of patterns "
-            gpio_ctrl = n3xx.FrontpanelGPIO(ddr)
+            gpio_ctrl = n3xx_periphs.FrontpanelGPIO(ddr)
             for pattern in patterns:
                 gpio_set_all(gpio_ctrl, pattern, GPIO_WIDTH, ddr)
                 time.sleep(0.1)
