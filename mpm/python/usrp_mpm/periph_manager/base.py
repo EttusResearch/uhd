@@ -52,7 +52,8 @@ class PeriphManagerBase(object):
     # These values are meant to be overridden by the according subclasses
     #########################################################################
     # Very important: A map of PIDs that apply to the current device. Format is
-    # pid -> product name.
+    # pid -> product name. If there are multiple products with the same
+    # motherboard PID, use generate_device_info() to update the product key.
     pids = {}
     # A textual description of this device type
     description = "MPM Device"
@@ -129,6 +130,16 @@ class PeriphManagerBase(object):
     updateable_components = {}
 
     @staticmethod
+    def generate_device_info(eeprom_md, mboard_info, dboard_infos):
+        """
+        Returns a dictionary which describes the device.
+
+        mboard_info -- Dictionary; motherboard info
+        device_args -- List of dictionaries; daughterboard info
+        """
+        return mboard_info
+
+    @staticmethod
     # Yes, this is overridable too: List the required device tree overlays
     def list_required_dt_overlays(eeprom_md, device_args):
         """
@@ -164,6 +175,8 @@ class PeriphManagerBase(object):
             self.log.info("Device serial number: {}"
                           .format(self.mboard_info.get('serial', 'n/a')))
             dboard_infos = self._get_dboard_eeprom_info()
+            self.device_info = \
+                    self.generate_device_info(self.mboard_info, dboard_infos)
             self._default_args = self._update_default_args(args)
             self.log.debug("Using default args: {}".format(self._default_args))
             self._init_mboard_overlays(self._eeprom_head, self._default_args)
@@ -319,10 +332,10 @@ class PeriphManagerBase(object):
         """
         prefs_cache = prefs.get_prefs()
         periph_section_name = None
-        if prefs_cache.has_section(self.mboard_info.get('product')):
-            periph_section_name = self.mboard_info.get('product')
-        elif prefs_cache.has_section(self.mboard_info.get('type')):
-            periph_section_name = self.mboard_info.get('type')
+        if prefs_cache.has_section(self.device_info.get('product')):
+            periph_section_name = self.device_info.get('product')
+        elif prefs_cache.has_section(self.device_info.get('type')):
+            periph_section_name = self.device_info.get('type')
         if periph_section_name is not None:
             prefs_cache.read_dict({periph_section_name: default_args})
             return dict(prefs_cache[periph_section_name])
@@ -490,13 +503,13 @@ class PeriphManagerBase(object):
     @no_rpc
     def get_device_info(self):
         """
-        Return the mboard_info dict and add a claimed field.
+        Return the device_info dict and add a claimed field.
 
         Will also call into get_device_info_dyn() for additional information.
         Don't override this function.
         """
         result = {"claimed": str(self.claimed)}
-        result.update(self.mboard_info)
+        result.update(self.device_info)
         result.update({
             'name': net.get_hostname(),
             'description': self.description,
@@ -525,9 +538,9 @@ class PeriphManagerBase(object):
         """
         assert conn_type in ('remote', 'local', None)
         if conn_type is None:
-            self.mboard_info.pop('rpc_connection', None)
+            self.device_info.pop('rpc_connection', None)
         else:
-            self.mboard_info['rpc_connection'] = conn_type
+            self.device_info['rpc_connection'] = conn_type
 
     @no_claim
     def get_dboard_info(self):

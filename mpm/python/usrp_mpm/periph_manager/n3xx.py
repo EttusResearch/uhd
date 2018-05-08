@@ -253,7 +253,7 @@ class n3xx(PeriphManagerBase):
         likely.
         """
         # Sanity checks
-        assert self.mboard_info.get('product') in self.pids.values(), \
+        assert self.device_info.get('product') in self.pids.values(), \
                 "Device product could not be determined!"
         # Init peripherals
         self.log.trace("Initializing TCA6424 port expander controls...")
@@ -303,7 +303,7 @@ class n3xx(PeriphManagerBase):
         )
         self._status_monitor_thread.start()
         # Init complete.
-        self.log.debug("mboard info: {}".format(self.mboard_info))
+        self.log.debug("Device info: {}".format(self.device_info))
 
     ###########################################################################
     # Session init and deinit
@@ -332,7 +332,7 @@ class n3xx(PeriphManagerBase):
         # source connectors on the front panel, so we assume that if this was
         # selected, it was an artifact from N310-related code. The user gets
         # a warning and the setting is reset to internal.
-        if self.mboard_info.get('product') == 'n300':
+        if self.device_info.get('product') == 'n300':
             for lo_source in ('rx_lo_source', 'tx_lo_source'):
                 if lo_source in args and args.get(lo_source) != 'internal':
                     self.log.warning("The N300 variant does not support "
@@ -407,13 +407,13 @@ class n3xx(PeriphManagerBase):
             "operating on temporary SID: %s",
             dst_address, suggested_src_address, str(xport_type), str(sid))
         # FIXME token!
-        assert self.mboard_info['rpc_connection'] in ('remote', 'local')
-        if self.mboard_info['rpc_connection'] == 'remote':
+        assert self.device_info['rpc_connection'] in ('remote', 'local')
+        if self.device_info['rpc_connection'] == 'remote':
             return self._xport_mgrs['udp'].request_xport(
                 sid,
                 xport_type,
             )
-        elif self.mboard_info['rpc_connection'] == 'local':
+        elif self.device_info['rpc_connection'] == 'local':
             return self._xport_mgrs['liberio'].request_xport(
                 sid,
                 xport_type,
@@ -429,14 +429,14 @@ class n3xx(PeriphManagerBase):
         session.
         """
         ## Go, go, go
-        assert self.mboard_info['rpc_connection'] in ('remote', 'local')
+        assert self.device_info['rpc_connection'] in ('remote', 'local')
         sid = SID(xport_info['send_sid'])
         self._available_endpoints.remove(sid.src_ep)
         self.log.debug("Committing transport for SID %s, xport info: %s",
                        str(sid), str(xport_info))
-        if self.mboard_info['rpc_connection'] == 'remote':
+        if self.device_info['rpc_connection'] == 'remote':
             return self._xport_mgrs['udp'].commit_xport(sid, xport_info)
-        elif self.mboard_info['rpc_connection'] == 'local':
+        elif self.device_info['rpc_connection'] == 'local':
             return self._xport_mgrs['liberio'].commit_xport(sid, xport_info)
 
     ###########################################################################
@@ -915,7 +915,7 @@ class n3xx(PeriphManagerBase):
         # Cut off the period from the file extension
         file_extension = file_extension[1:].lower()
         binfile_path = self.updateable_components['fpga']['path'].format(
-            self.mboard_info['product'])
+            self.device_info['product'])
         if file_extension == "bit":
             self.log.trace("Converting bit to bin file and writing to {}"
                            .format(binfile_path))
@@ -945,12 +945,12 @@ class n3xx(PeriphManagerBase):
         :param metadata: Dictionary of strings containing metadata
         """
         dtsfile_path = self.updateable_components['dts']['path'].format(
-            self.mboard_info['product'])
+            self.device_info['product'])
         self.log.trace("Updating DTS with image at %s to %s (metadata: %s)",
                        filepath, dtsfile_path, str(metadata))
         shutil.copy(filepath, dtsfile_path)
         dtbofile_path = self.updateable_components['dts']['output'].format(
-            self.mboard_info['product'])
+            self.device_info['product'])
         self.log.trace("Compiling to %s...", dtbofile_path)
         dtc_command = [
             'dtc',
