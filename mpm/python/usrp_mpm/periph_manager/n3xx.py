@@ -166,7 +166,7 @@ class n3xx(PeriphManagerBase):
         return device_info
 
     @staticmethod
-    def list_required_dt_overlays(eeprom_md, device_args):
+    def list_required_dt_overlays(device_info):
         """
         Lists device tree overlays that need to be applied before this class can
         be used. List of strings.
@@ -177,7 +177,7 @@ class n3xx(PeriphManagerBase):
         """
         # In the N3xx case, we name the dtbo file the same as the product.
         # N310 -> n310.dtbo, N300 -> n300.dtbo and so on.
-        return [n3xx.pids[eeprom_md['pid']]]
+        return [device_info['product']]
 
     ###########################################################################
     # Ctor and device initialization tasks

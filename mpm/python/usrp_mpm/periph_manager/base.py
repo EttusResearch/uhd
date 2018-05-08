@@ -141,7 +141,7 @@ class PeriphManagerBase(object):
 
     @staticmethod
     # Yes, this is overridable too: List the required device tree overlays
-    def list_required_dt_overlays(eeprom_md, device_args):
+    def list_required_dt_overlays(device_info):
         """
         Lists device tree overlays that need to be applied before this class can
         be used. List of strings.
@@ -181,10 +181,9 @@ class PeriphManagerBase(object):
                         self.mboard_info,
                         dboard_infos
                     )
-            self.log.warning(self.device_info)
             self._default_args = self._update_default_args(args)
             self.log.debug("Using default args: {}".format(self._default_args))
-            self._init_mboard_overlays(self._eeprom_head, self._default_args)
+            self._init_mboard_overlays()
             override_db_pids_str = self._default_args.get('override_db_pids')
             if override_db_pids_str:
                 override_db_pids = [
@@ -346,15 +345,14 @@ class PeriphManagerBase(object):
         else:
             return default_args
 
-    def _init_mboard_overlays(self, eeprom_md, device_args):
+    def _init_mboard_overlays(self):
         """
         Load all required overlays for this motherboard
         """
         requested_overlays = self.list_required_dt_overlays(
-            eeprom_md,
-            device_args,
+            self.device_info,
         )
-        self.log.trace("Motherboard requests device tree overlays: {}".format(
+        self.log.debug("Motherboard requests device tree overlays: {}".format(
             requested_overlays
         ))
         for overlay in requested_overlays:
