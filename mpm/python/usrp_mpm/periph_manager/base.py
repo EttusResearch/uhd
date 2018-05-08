@@ -158,7 +158,12 @@ class PeriphManagerBase(object):
         # should always be a dictionary (or dictionary-like object).
         self._init_args = {}
         try:
-            self._init_mboard_with_eeprom()
+            self._eeprom_head, self._eeprom_rawdata = \
+                self._read_mboard_eeprom()
+            self.mboard_info = self._get_mboard_info(self._eeprom_head)
+            self.log.info("Device serial number: {}"
+                          .format(self.mboard_info.get('serial', 'n/a')))
+            dboard_infos = self._get_dboard_eeprom_info()
             self._default_args = self._update_default_args(args)
             self.log.debug("Using default args: {}".format(self._default_args))
             self._init_mboard_overlays(self._eeprom_head, self._default_args)
@@ -169,7 +174,11 @@ class PeriphManagerBase(object):
                 ]
             else:
                 override_db_pids = []
-            self._init_dboards(override_db_pids, self._default_args)
+            self._init_dboards(
+                dboard_infos,
+                override_db_pids,
+                self._default_args
+            )
             self._device_initialized = True
             self._initialization_status = "No errors."
         except Exception as ex:
@@ -177,15 +186,19 @@ class PeriphManagerBase(object):
             self._device_initialized = False
             self._initialization_status = str(ex)
 
-    def _init_mboard_with_eeprom(self):
+    def _read_mboard_eeprom(self):
         """
-        Starts the device initialization. Typically requires reading from an
-        EEPROM.
+        Read out mboard EEPROM.
+        Returns a tuple: (eeprom_dict, eeprom_rawdata), where the the former is
+        a de-serialized dictionary representation of the data, and the latter
+        is a binary string with the raw data.
+
+        If no EEPROM is defined, returns empty values.
         """
         if len(self.mboard_eeprom_addr):
             self.log.trace("Reading EEPROM from address `{}'..."
                            .format(self.mboard_eeprom_addr))
-            (self._eeprom_head, self._eeprom_rawdata) = eeprom.read_eeprom(
+            (eeprom_head, eeprom_rawdata) = eeprom.read_eeprom(
                 get_eeprom_paths(self.mboard_eeprom_addr)[0],
                 self.mboard_eeprom_offset,
                 eeprom.MboardEEPROM.eeprom_header_format,
@@ -194,54 +207,109 @@ class PeriphManagerBase(object):
                 self.mboard_eeprom_max_len,
             )
             self.log.trace("Found EEPROM metadata: `{}'"
-                           .format(str(self._eeprom_head)))
+                           .format(str(eeprom_head)))
             self.log.trace("Read {} bytes of EEPROM data."
-                           .format(len(self._eeprom_rawdata)))
-            for key in ('pid', 'serial', 'rev', 'eeprom_version'):
-                # In C++, we can only handle dicts if all the values are of the
-                # same type. So we must convert them all to strings here:
-                try:
-                    self.mboard_info[key] = str(
-                        self._eeprom_head.get(key, ''),
-                        'ascii'
+                           .format(len(eeprom_rawdata)))
+            return eeprom_head, eeprom_rawdata
+        # Nothing defined? Return defaults.
+        self.log.trace("No mboard EEPROM path defined. "
+                       "Skipping mboard EEPROM readout.")
+        return {}, b''
+
+    def _get_mboard_info(self, eeprom_head):
+        """
+        Creates the mboard info dictionary from the EEPROM data.
+        """
+        mboard_info = self.mboard_info
+        if not eeprom_head:
+            self.log.debug("No EEPROM info: Can't generate mboard_info")
+            return mboard_info
+        for key in ('pid', 'serial', 'rev', 'eeprom_version'):
+            # In C++, we can only handle dicts if all the values are of the
+            # same type. So we must convert them all to strings here:
+            try:
+                mboard_info[key] = str(eeprom_head.get(key, ''), 'ascii')
+            except TypeError:
+                mboard_info[key] = str(eeprom_head.get(key, ''))
+        if 'pid' in eeprom_head:
+            if eeprom_head['pid'] not in self.pids.keys():
+                self.log.error(
+                    "Found invalid PID in EEPROM: 0x{:04X}. " \
+                    "Valid PIDs are: {}".format(
+                        eeprom_head['pid'],
+                        ", ".join(["0x{:04X}".format(x)
+                                   for x in self.pids.keys()]),
                     )
-                except TypeError:
-                    self.mboard_info[key] = str(self._eeprom_head.get(key, ''))
-            if 'pid' in self._eeprom_head:
-                if self._eeprom_head['pid'] not in self.pids.keys():
-                    self.log.error(
-                        "Found invalid PID in EEPROM: 0x{:04X}. " \
-                        "Valid PIDs are: {}".format(
-                            self._eeprom_head['pid'],
-                            ", ".join(["0x{:04X}".format(x)
-                                       for x in self.pids.keys()]),
-                        )
-                    )
-                    raise RuntimeError("Invalid PID found in EEPROM.")
-                self.mboard_info['product'] = \
-                    self.pids[self._eeprom_head['pid']]
-            if 'rev' in self._eeprom_head:
-                try:
-                    rev_numeric = int(self._eeprom_head.get('rev'))
-                except (ValueError, TypeError):
-                    raise RuntimeError(
-                        "Invalid revision info read from EEPROM!"
-                    )
-                if self.mboard_max_rev is not None \
-                        and rev_numeric > self.mboard_max_rev:
-                    raise RuntimeError(
-                        "Device has revision `{}', but max supported " \
-                        "revision is `{}'".format(
-                            rev_numeric, self.mboard_max_rev
-                        ))
-            else:
-                raise RuntimeError("No revision found in EEPROM.")
+                )
+                raise RuntimeError("Invalid PID found in EEPROM.")
+            mboard_info['product'] = self.pids[eeprom_head['pid']]
+        if 'rev' in eeprom_head:
+            try:
+                rev_numeric = int(eeprom_head.get('rev'))
+            except (ValueError, TypeError):
+                raise RuntimeError(
+                    "Invalid revision info read from EEPROM!"
+                )
+            if self.mboard_max_rev is not None \
+                    and rev_numeric > self.mboard_max_rev:
+                raise RuntimeError(
+                    "Device has revision `{}', but max supported " \
+                    "revision is `{}'".format(
+                        rev_numeric, self.mboard_max_rev
+                    ))
         else:
-            self.log.trace("No EEPROM address to read from.")
-            self._eeprom_head = {}
-            self._eeprom_rawdata = ''
-        self.log.info("Device serial number: {}"
-                      .format(self.mboard_info.get('serial', 'n/a')))
+            raise RuntimeError("No revision found in EEPROM.")
+        return mboard_info
+
+    def _get_dboard_eeprom_info(self):
+        """
+        Read back EEPROM info from the daughterboards
+        """
+        if self.dboard_eeprom_addr is None:
+            self.log.debug("No dboard EEPROM addresses given.")
+            return []
+        dboard_eeprom_addrs = self.dboard_eeprom_addr \
+                              if isinstance(self.dboard_eeprom_addr, list) \
+                              else [self.dboard_eeprom_addr]
+        dboard_eeprom_paths = []
+        self.log.trace("Identifying dboard EEPROM paths from addrs `{}'..."
+                       .format(",".join(dboard_eeprom_addrs)))
+        for dboard_eeprom_addr in dboard_eeprom_addrs:
+            self.log.trace("Resolving %s...", dboard_eeprom_addr)
+            dboard_eeprom_paths += get_eeprom_paths(dboard_eeprom_addr)
+        self.log.trace("Found dboard EEPROM paths: {}"
+                       .format(",".join(dboard_eeprom_paths)))
+        if len(dboard_eeprom_paths) > self.max_num_dboards:
+            self.log.warning("Found more EEPROM paths than daughterboards. "
+                             "Ignoring some of them.")
+            dboard_eeprom_paths = dboard_eeprom_paths[:self.max_num_dboards]
+        dboard_info = []
+        for dboard_idx, dboard_eeprom_path in enumerate(dboard_eeprom_paths):
+            self.log.debug("Reading EEPROM info for dboard %d...", dboard_idx)
+            dboard_eeprom_md, dboard_eeprom_rawdata = eeprom.read_eeprom(
+                dboard_eeprom_path,
+                self.dboard_eeprom_offset,
+                eeprom.DboardEEPROM.eeprom_header_format,
+                eeprom.DboardEEPROM.eeprom_header_keys,
+                self.dboard_eeprom_magic,
+                self.dboard_eeprom_max_len,
+            )
+            self.log.trace("Found dboard EEPROM metadata: `{}'"
+                           .format(str(dboard_eeprom_md)))
+            self.log.trace("Read %d bytes of dboard EEPROM data.",
+                           len(dboard_eeprom_rawdata))
+            db_pid = dboard_eeprom_md.get('pid')
+            if db_pid is None:
+                self.log.warning("No dboard PID found in dboard EEPROM!")
+            else:
+                self.log.debug("Found dboard PID in EEPROM: 0x{:04X}"
+                               .format(db_pid))
+            dboard_info.append({
+                'eeprom_md': dboard_eeprom_md,
+                'eeprom_rawdata': dboard_eeprom_rawdata,
+                'pid': db_pid,
+            })
+        return dboard_info
 
     def _update_default_args(self, default_args):
         """
@@ -278,64 +346,30 @@ class PeriphManagerBase(object):
         # TODO: Fine-tune this number, or wait for some smarter signal.
         sleep(1)
 
-    def _init_dboards(self, override_dboard_pids, default_args):
+    def _init_dboards(self, dboard_infos, override_dboard_pids, default_args):
         """
         Initialize all the daughterboards
+
+        dboard_infos -- List of dictionaries as returned from
+                       _get_dboard_eeprom_info()
+        override_dboard_pids -- List of dboard PIDs to force
+        default_args -- Default args
         """
-        # Go, go, go!
-        override_dboard_pids = override_dboard_pids or []
         if override_dboard_pids:
             self.log.warning("Overriding daughterboard PIDs with: {}"
-                             .format(override_dboard_pids))
-        dboard_eeprom_addrs = self.dboard_eeprom_addr \
-                              if isinstance(self.dboard_eeprom_addr, list) \
-                              else [self.dboard_eeprom_addr]
-        dboard_eeprom_paths = []
-        self.log.trace("Identifying dboard EEPROM paths from addrs `{}'..."
-                       .format(",".join(dboard_eeprom_addrs)))
-        for dboard_eeprom_addr in dboard_eeprom_addrs:
-            self.log.trace("Resolving %s...", dboard_eeprom_addr)
-            dboard_eeprom_paths += get_eeprom_paths(dboard_eeprom_addr)
-        self.log.trace("Found dboard EEPROM paths: {}"
-                       .format(",".join(dboard_eeprom_paths)))
-        if len(dboard_eeprom_paths) > self.max_num_dboards:
-            self.log.warning("Found more EEPROM paths than daughterboards. "
-                             "Ignoring some of them.")
-            dboard_eeprom_paths = dboard_eeprom_paths[:self.max_num_dboards]
+                             .format(",".join(override_dboard_pids)))
+        assert len(dboard_infos) <= self.max_num_dboards
         if len(override_dboard_pids) and \
-                len(override_dboard_pids) < len(dboard_eeprom_paths):
+                len(override_dboard_pids) < len(dboard_infos):
             self.log.warning("--override-db-pids is going to skip dboards.")
-            dboard_eeprom_paths = \
-                    dboard_eeprom_paths[:len(override_dboard_pids)]
-        for dboard_idx, dboard_eeprom_path in enumerate(dboard_eeprom_paths):
+            dboard_infos = dboard_infos[:len(override_dboard_pids)]
+        for dboard_idx, dboard_info in enumerate(dboard_infos):
             self.log.debug("Initializing dboard %d...", dboard_idx)
-            dboard_eeprom_md, dboard_eeprom_rawdata = eeprom.read_eeprom(
-                dboard_eeprom_path,
-                self.dboard_eeprom_offset,
-                eeprom.DboardEEPROM.eeprom_header_format,
-                eeprom.DboardEEPROM.eeprom_header_keys,
-                self.dboard_eeprom_magic,
-                self.dboard_eeprom_max_len,
-            )
-            self.log.trace("Found dboard EEPROM metadata: `{}'"
-                           .format(str(dboard_eeprom_md)))
-            self.log.trace("Read %d bytes of dboard EEPROM data.",
-                           len(dboard_eeprom_rawdata))
-            if len(override_dboard_pids) > dboard_idx:
-                db_pid = override_dboard_pids[dboard_idx]
-                self.log.warning("Overriding dboard PID for dboard {} "
-                                 "with 0x{:04X}.".format(dboard_idx, db_pid))
-            else:
-                db_pid = dboard_eeprom_md.get('pid')
-                if db_pid is None:
-                    self.log.warning("No dboard PID found in dboard EEPROM!")
-                else:
-                    self.log.debug("Found dboard PID in EEPROM: 0x{:04X}"
-                                   .format(db_pid))
+            db_pid = dboard_info.get('pid')
             db_class = get_dboard_class_from_pid(db_pid)
             if db_class is None:
                 self.log.warning("Could not identify daughterboard class "
-                                 "for PID {:04X}!".format(db_pid))
+                                 "for PID {:04X}! Skipping.".format(db_pid))
                 continue
             if len(self.dboard_spimaster_addrs) > dboard_idx:
                 spi_nodes = sorted(get_spidev_nodes(
@@ -344,16 +378,13 @@ class PeriphManagerBase(object):
             else:
                 spi_nodes = []
                 self.log.warning("No SPI nodes for dboard %d.", dboard_idx)
-            dboard_info = {
-                'eeprom_md': dboard_eeprom_md,
-                'eeprom_rawdata': dboard_eeprom_rawdata,
-                'pid': db_pid,
+            dboard_info.update({
                 'spi_nodes': spi_nodes,
                 'default_args': default_args,
-            }
+            })
             # This will actually instantiate the dboard class:
             self.dboards.append(db_class(dboard_idx, **dboard_info))
-        self.log.info("Found %d daughterboard(s).", len(self.dboards))
+        self.log.info("Initialized %d daughterboard(s).", len(self.dboards))
 
     ###########################################################################
     # Session (de-)initialization (at UHD startup)
