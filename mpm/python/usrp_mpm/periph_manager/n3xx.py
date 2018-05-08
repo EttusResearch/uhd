@@ -94,9 +94,7 @@ class n3xx(PeriphManagerBase):
     mboard_eeprom_addr = "e0005000.i2c"
     mboard_eeprom_offset = 0
     mboard_eeprom_max_len = 256
-    mboard_info = {"type": "n3xx",
-                   "product": "unknown",
-                  }
+    mboard_info = {"type": "n3xx"}
     mboard_max_rev = 5 # 5 == RevF
     mboard_sensor_callback_map = {
         'ref_locked': 'get_ref_lock_sensor',
@@ -133,6 +131,39 @@ class n3xx(PeriphManagerBase):
             'reset': False,
         },
     }
+
+    @staticmethod
+    def generate_device_info(eeprom_md, mboard_info, dboard_infos):
+        """
+        Hard-code our product map
+        """
+        # For every variant of the N3xx, add a line to the product map. If
+        # it uses a new daughterboard, also import that PID from the dboard
+        # manager class.
+        from usrp_mpm.dboard_manager.magnesium import Magnesium
+        mg_pid = Magnesium.pids[0]
+        from usrp_mpm.dboard_manager.eiscat import EISCAT
+        eiscat_pid = EISCAT.pids[0]
+        # The format of this map is:
+        # (motherboard product code, (Slot-A DB PID, [Slot-B DB PID])) -> product
+        product_map = {
+            ('n300', (mg_pid,       )): 'n300', # Slot B is empty
+            ('n310', (mg_pid, mg_pid)): 'n310',
+            ('n310', (mg_pid,       )): 'n310', # If Slot B is empty, we can
+                                                # still use the n310.bin image.
+                                                # We'll leave this here for
+                                                # debugging purposes.
+            ('n310', (eiscat_pid, eiscat_pid)): 'eiscat',
+        }
+
+        mb_pid = eeprom_md.get('pid')
+        lookup_key = (
+            n3xx.pids.get(mb_pid, 'unknown'),
+            tuple([x['pid'] for x in dboard_infos]),
+        )
+        device_info = mboard_info
+        device_info['product'] = product_map.get(lookup_key, 'unknown')
+        return device_info
 
     @staticmethod
     def list_required_dt_overlays(eeprom_md, device_args):

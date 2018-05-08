@@ -176,7 +176,12 @@ class PeriphManagerBase(object):
                           .format(self.mboard_info.get('serial', 'n/a')))
             dboard_infos = self._get_dboard_eeprom_info()
             self.device_info = \
-                    self.generate_device_info(self.mboard_info, dboard_infos)
+                    self.generate_device_info(
+                        self._eeprom_head,
+                        self.mboard_info,
+                        dboard_infos
+                    )
+            self.log.warning(self.device_info)
             self._default_args = self._update_default_args(args)
             self.log.debug("Using default args: {}".format(self._default_args))
             self._init_mboard_overlays(self._eeprom_head, self._default_args)
@@ -255,7 +260,6 @@ class PeriphManagerBase(object):
                     )
                 )
                 raise RuntimeError("Invalid PID found in EEPROM.")
-            mboard_info['product'] = self.pids[eeprom_head['pid']]
         if 'rev' in eeprom_head:
             try:
                 rev_numeric = int(eeprom_head.get('rev'))
