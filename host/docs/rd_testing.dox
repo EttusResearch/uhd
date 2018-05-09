@@ -39,20 +39,20 @@ following).
 \subsection rdtesting_gpsdo_manual GPSDO: Manual Test Procedure
 
 1. Without connecting the peripheral to the device, run `uhd_usrp_probe` on the
-   device and verify that the lack of GPSDO is correctly reported. No warning
-   or error must be printed.
+   device and verify that the lack of GPSDO is correctly reported under "sensors". 
+   No warning or error must be printed.
 2. This and the following tests are run with the peripheral connected: Run
-   `uhd_usrp_probe` and verify that the GPSDO is correctly reported. Power down
-   the device before connecting the peripheral. The GPSDO must be reported
-   found, and no error or warning must be printed.
+   `uhd_usrp_probe` and verify that the GPSDO is correctly reported under "sensors". 
+   Power down the device before connecting the peripheral. The GPSDO must be 
+   reported found, and no error or warning must be printed.
 3. OCXO only: Without connecting the GPS antenna input, run
-   `query_gpsdo_sensors`. To pass, it must report the GPSDO as found, lock to
+   `utils/query_gpsdo_sensors`. To pass, it must report the GPSDO as found, lock to
    the external reference, but then report not being locked to GPS. The tool
    will report a valid GPS time, and a string such as "GPS and UHD Device time
    are aligned" in case of success.
 4. Connect a GPS antenna to the input and make sure it is in a position to
-   receive GPS satellite data. Confirm that GPS lock is reported using
-   `query_gpsdo_sensors` within 20 minutes of connecting the antenna.
+   receive GPS satellite data. Confirm that GPS lock is reported by running
+   `utils/query_gpsdo_sensors` within 20 minutes of connecting the antenna.
    The tool `query_gpsdo_sensors` will print a string such as "GPS Locked" in
    case of success.
 
@@ -92,6 +92,9 @@ not require a version bump on the test code.
 Devtests are only defined for some devices. When running a devtest, all
 peripherals must be disconnected (e.g., no daughterboards on the X-Series, no
 GPSDOs on the B- and X-Series).
+
+Running these tests requires the yaml package. Install this by executing the 
+command: `sudo apt-get install python-yaml` 
 
 \subsection rdtesting_devtest_manual Devtest: Manual Test Procedure
 
