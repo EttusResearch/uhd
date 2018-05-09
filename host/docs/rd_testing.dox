@@ -93,8 +93,9 @@ Devtests are only defined for some devices. When running a devtest, all
 peripherals must be disconnected (e.g., no daughterboards on the X-Series, no
 GPSDOs on the B- and X-Series).
 
-Running these tests requires the yaml package. Install this by executing the 
-command: `sudo apt-get install python-yaml` 
+Running these tests requires the yaml package. On Ubuntu, run 
+`sudo apt-get install python-yaml` to install the Python 2 version of the YAML 
+library.
 
 \subsection rdtesting_devtest_manual Devtest: Manual Test Procedure
 
