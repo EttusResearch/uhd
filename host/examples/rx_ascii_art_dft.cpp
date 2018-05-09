@@ -19,6 +19,7 @@
 #include <thread>
 
 namespace po = boost::program_options;
+using std::chrono::high_resolution_clock;
 
 int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::set_thread_priority_safe();
@@ -143,7 +144,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //------------------------------------------------------------------
     initscr(); //curses init
     rx_stream->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
-    boost::system_time next_refresh = boost::get_system_time();
+    auto next_refresh = high_resolution_clock::now();
 
     //------------------------------------------------------------------
     //-- Main loop
@@ -156,8 +157,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         if (num_rx_samps != buff.size()) continue;
 
         //check and update the display refresh condition
-        if (boost::get_system_time() < next_refresh) continue;
-        next_refresh = boost::get_system_time() + boost::posix_time::microseconds(long(1e6/frame_rate));
+        if (high_resolution_clock::now() < next_refresh) {
+            continue;
+        }
+        next_refresh =
+            high_resolution_clock::now()
+            + std::chrono::microseconds(int64_t(1e6/frame_rate));
 
         //calculate the dft and create the ascii art frame
         ascii_art_dft::log_pwr_dft_type lpdft(
