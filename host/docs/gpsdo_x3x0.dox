@@ -72,7 +72,7 @@ retrieve the current GPS time, use the **gps_time** sensor:
 
 The returned value will be the current epoch time, in seconds since
 January 1, 1970. This value is readily converted into human-readable
-format using the **time.h** library in C, **boost::posix_time** in C++,
+format using the **time.h** library in C, **std::chrono** in C++,
 etc.
 
 \subsection Setting Device Time to GPS time
@@ -83,7 +83,7 @@ sure you don't encounter timing problems while doing so:
 1. Wait for GPS lock, and then set the time source to GPSDO,
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
     while(! (usrp->get_mboard_sensor("gps_locked",0).to_bool()) ) {
-       boost::this_thread::sleep(boost::posix_time::seconds(2));
+        std::this_thread::sleep(std::chrono::seconds(2));
     }
     usrp->set_time_source("gpsdo");
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -92,11 +92,11 @@ sure you don't encounter timing problems while doing so:
     uhd::time_spec_t last = usrp->get_time_last_pps();
     uhd::time_spec_t next = usrp->get_time_last_pps();
     while(next == last) {
-       boost::this_thread::sleep(boost::posix_time::seconds(0.05));
-       last = next;
-       next = usrp->get_time_last_pps();
+        std::this_thread::sleep(std::chrono::milliseconds(50));
+        last = next;
+        next = usrp->get_time_last_pps();
     }
-    boost::this_thread::sleep(boost::posix_time::seconds(0.2));
+    std::this_thread::sleep(std::chrono::milliseconds(200));
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 3.  use
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
