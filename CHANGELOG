@@ -1,6 +1,62 @@
 Change Log for Releases
 ==============================
 
+## 003.011.001.000
+* N310: fix compiler warnings
+* N310: Implement digital loopback
+* N3xx: Add N3xx devtest
+* X300: Properly coerce master clock rate (tick rate)
+* X300: handle bad weak_ptr during pcie discovery
+* X300: handle bad weak_ptr during pcie discovery
+* X300: Fix check_radio_config() to fix errors when using a single dboard
+        in slot A
+* B200: docs: Suggest modifying recv_frame_size for more stability
+* B200: Fix bandwidth warnings and ranges
+* N2xx: Fix regression issue that limited tuning range
+* UBX: Change antenna functions to coercers on antenna/value properties
+* adf4002: Fix register programming for power down bit
+* UHD: Fix config file path for some Windows builds
+* UHD: Add operators == and != for uhd::dict
+* UHD: Add device_addr_t constructor from map
+* UHD: Fix range of gain group to skip gains with zero step
+* UHD: Changes to support Boost 1.67
+* UHD: Correctly set end of burst flag in RX metadata
+* UHD: Reduce usage of boost::assign, boost::this_thread::sleep, and boost:bind
+* UHD: Update multi_usrp::get_usrp_?x_info() for MPM devices
+* UHD: Refactor static const values to fix linker errors in niusrprio
+* mpm: cmake: Add git hash and version info to Python module
+* mpm: Add reference counters to UIO
+* mpm: Add offset to EEPROM reads
+* mpm: Disable PPS out during initialization
+* mpm: Update cmake to find the correct python3
+* mpm: Bump maximum supported revision to 5 (Rev F)
+* mpm: Fixed db slot typo in db-id
+* mpm: Increased claim timeout, made a separate RPC connection for claim, and
+       added asyn calls for long RPC executions
+* mpm: Improve xport<->SFP mapping algorithm
+* mpmd: Improved find routine to fail fast and verify correct device is
+        reachable
+* mpmd: Add missing virtual destructors
+* rfnoc/x300: Make sure peek32() and peek64() are called with actual addresses
+* rfnoc: ctrl_iface cleanup
+* rfnoc radio: Improve warning for too many samples requested
+* rfnoc radio: get_rx_stream resets sequence num
+* examples: Increase settling time, increase buffer fill time, and fix subdevice
+            selection in txrx_loopback_to_file
+* examples: Improvements to benchmark_rate
+* utils: downloader supports multiple RegExs
+* utils: Added code to handle underruns during self calibration
+* utils: Fix 30s tiemout in query_gpsdo_sensors
+* logging: Improve style consistency and demote some messages
+* logging: Fix UHD_LOG_FILE cmake variable
+* Docs: Add Known Issues section to USRP1, B100, and USRP2/N2x0
+* Docs: Hide dependencies directory from Doxygen
+* Docs: Clarify subdev specs and magnesium driver usage for N300/N310
+* cmake: Improve warning for missing requests
+* cmake: update NSIS template
+* cmake: Remove images downloader section (replaced by manifest)
+
+
 ## 003.011.000.001
 * N300: Added driver support (includes some refactoring of N3xx
   codebase)
@@ -111,10 +167,10 @@ Change Log for Releases
 * C API: Added UHD_VERSION macro. Fixed online rate change.
 * Utils: Minor fixes to uhd_images_downloader.
 * Build/CMake: Fixed some Py3k build issues. Fixed many compiler warnings. Allow
-  to specify package names. 
+  to specify package names.
 * RFNoC: Fixed sampling rate mismatch error. Noc-Shell uses a non-cascaded 2-clk
   FIFO. Increase default FIFO sizes on DUC and DDC blocks.
-* UBX: Force on RX driver to eliminate transient. 
+* UBX: Force on RX driver to eliminate transient.
 * Transport code: Fixed memory leak.
 * FPGA repository: Merged usrp3_rfnoc and usrp3 directories again. Cleaned up
   superfluous files. Clean separation between Gen-3 and other devices in usrp3.
