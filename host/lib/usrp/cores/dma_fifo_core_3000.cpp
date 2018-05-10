@@ -10,7 +10,8 @@
 #include <uhd/utils/log.hpp>
 #include <uhdlib/usrp/cores/dma_fifo_core_3000.hpp>
 #include <boost/format.hpp>
-#include <boost/thread/thread.hpp> //sleep
+#include <chrono>
+#include <thread>
 
 using namespace uhd;
 
@@ -315,7 +316,7 @@ public:
         _bist_ctrl_reg.write(bist_ctrl_reg_t::GO, 1);
 
         if (!finite) {
-            boost::this_thread::sleep(boost::posix_time::milliseconds(timeout_ms));
+            std::this_thread::sleep_for(std::chrono::milliseconds(timeout_ms));
         }
 
         _wait_for_bist_done(timeout_ms, !finite);
@@ -345,7 +346,7 @@ private:
         boost::posix_time::time_duration elapsed;
 
         while (_fifo_readback.is_fifo_busy()) {
-            boost::this_thread::sleep(boost::posix_time::microsec(1000));
+            std::this_thread::sleep_for(std::chrono::microseconds(1000));
             elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
             if (elapsed.total_milliseconds() > 100) break;
         }
@@ -361,7 +362,7 @@ private:
                 _bist_ctrl_reg.write(bist_ctrl_reg_t::GO, 0);
                 force_stop = false;
             }
-            boost::this_thread::sleep(boost::posix_time::microsec(1000));
+            std::this_thread::sleep_for(std::chrono::microseconds(1000));
             elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
             if (elapsed.total_milliseconds() > timeout_ms) break;
         }

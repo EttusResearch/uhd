@@ -27,7 +27,7 @@ static const sid_t TEST_SID1 = 0x00000210; // 0.0.2.F
 class pseudo_ctrl_iface_impl : public ctrl_iface
 {
   public:
-    pseudo_ctrl_iface_impl() {};
+    pseudo_ctrl_iface_impl() {}
     virtual ~pseudo_ctrl_iface_impl() {}
 
     uint64_t send_cmd_pkt(
@@ -68,9 +68,9 @@ class pseudo_device3_impl : public uhd::device3
         _tree->create<std::string>("/name").set("Test Pseudo-Device3");
 
         // We can re-use this:
-        std::map<size_t, ctrl_iface::sptr> ctrl_ifaces = boost::assign::map_list_of
-            (0, ctrl_iface::sptr(new pseudo_ctrl_iface_impl()))
-        ;
+        std::map<size_t, ctrl_iface::sptr> ctrl_ifaces{
+            {0, ctrl_iface::sptr(new pseudo_ctrl_iface_impl())}
+        };
 
         // Add two block controls:
         uhd::rfnoc::make_args_t make_args;

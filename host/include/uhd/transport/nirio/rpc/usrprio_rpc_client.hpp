@@ -45,8 +45,6 @@ public:
     nirio_status niusrprio_download_fpga_to_flash(
         NIUSRPRIO_DOWNLOAD_FPGA_TO_FLASH_ARGS);
 
-    static const int64_t DEFAULT_TIMEOUT_IN_MS = 5000;
-
 private:
     static nirio_status _boost_error_to_nirio_status(const boost::system::error_code& err);
 

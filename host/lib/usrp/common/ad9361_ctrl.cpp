@@ -210,10 +210,24 @@ public:
 
     double set_bw_filter(const std::string &which, const double bw)
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
-
         ad9361_device_t::direction_t direction = _get_direction_from_antenna(which);
-        return _device.set_bw_filter(direction, bw);
+        double actual_bw = bw;
+
+        {
+            boost::lock_guard<boost::mutex> lock(_mutex);
+            actual_bw = _device.set_bw_filter(direction, bw);
+        }
+
+        const double min_bw = ad9361_device_t::AD9361_MIN_BW;
+        const double max_bw = ad9361_device_t::AD9361_MAX_BW;
+        if (bw < min_bw or bw > max_bw)
+        {
+            UHD_LOGGER_WARNING("AD936X") << boost::format(
+                    "The requested bandwidth %f MHz is out of range (%f - %f MHz).\n"
+                    "The bandwidth has been forced to %f MHz.\n"
+            ) % (bw/1e6) % (min_bw/1e6) % (max_bw/1e6) % (actual_bw/1e6);
+        }
+        return actual_bw;
     }
 
     std::vector<std::string> get_filter_names(const std::string &which)

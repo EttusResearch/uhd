@@ -5,12 +5,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <iostream>
-
-#include <boost/format.hpp>
-#include <boost/program_options.hpp>
-#include <boost/thread/thread.hpp>
-
 #include <uhd/device.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/usrp_clock/multi_usrp_clock.hpp>
@@ -18,6 +12,13 @@
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/thread.hpp>
+
+#include <boost/format.hpp>
+#include <boost/program_options.hpp>
+
+#include <iostream>
+#include <chrono>
+#include <thread>
 
 namespace po = boost::program_options;
 
@@ -102,7 +103,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     for(size_t i = 0; i < num_tests; i++){
         //Wait random time before querying
         uint16_t wait_time = rand() % max_interval;
-        boost::this_thread::sleep(boost::posix_time::milliseconds(wait_time));
+        std::this_thread::sleep_for(std::chrono::milliseconds(wait_time));
 
         //Get all times before output
         std::vector<time_t> usrp_times(usrp->get_num_mboards());

@@ -8,7 +8,10 @@
 # This file included, use CMake directory variables
 ########################################################################
 
-ADD_LIBRARY(pyusrp_periphs SHARED pyusrp_periphs.cpp)
+if(MPM_DEVICE STREQUAL "n3xx")
+    ADD_LIBRARY(pyusrp_periphs SHARED pyusrp_periphs/n3xx/pyusrp_periphs.cpp)
+endif(MPM_DEVICE STREQUAL "n3xx")
+
 TARGET_INCLUDE_DIRECTORIES(pyusrp_periphs PUBLIC
     ${PYTHON_INCLUDE_DIRS}
     ${CMAKE_SOURCE_DIR}/lib/
@@ -28,6 +31,7 @@ SET(PERIPH_MGR_INIT "${CMAKE_CURRENT_BINARY_DIR}/usrp_mpm/periph_manager/__init_
 
 CONFIGURE_FILE(${SETUP_PY_IN} ${SETUP_PY})
 CONFIGURE_FILE(${PERIPH_MGR_INIT_IN} ${PERIPH_MGR_INIT})
+CONFIGURE_FILE("${CMAKE_CURRENT_SOURCE_DIR}/usrp_hwd.py" "${CMAKE_CURRENT_BINARY_DIR}/usrp_hwd.py" COPYONLY)
 
 ADD_CUSTOM_COMMAND(OUTPUT ${OUTPUT}
      COMMAND ${CMAKE_COMMAND}  -DSOURCE_DIR="${CMAKE_CURRENT_SOURCE_DIR}" -DBINARY_DIR="${CMAKE_CURRENT_BINARY_DIR}"  -P ${CMAKE_CURRENT_SOURCE_DIR}/copy_python_module.cmake

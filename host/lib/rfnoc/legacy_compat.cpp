@@ -20,7 +20,6 @@
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhdlib/rfnoc/legacy_compat.hpp>
 #include <boost/make_shared.hpp>
-#include <boost/assign.hpp>
 
 #define UHD_LEGACY_LOG() UHD_LOGGER_TRACE("RFNOC")
 
@@ -359,7 +358,7 @@ public:
                 }
             }
         } else {
-            std::set<size_t> chans_to_change = boost::assign::list_of(chan);
+            std::set<size_t> chans_to_change{chan};
             if (_rx_stream_cache.count(chan)) {
                 uhd::rx_streamer::sptr str_ptr = _rx_stream_cache[chan].lock();
                 if (str_ptr) {
@@ -402,7 +401,7 @@ public:
                 }
             }
         } else {
-            std::set<size_t> chans_to_change = boost::assign::list_of(chan);
+            std::set<size_t> chans_to_change{chan};
             if (_tx_stream_cache.count(chan)) {
                 uhd::tx_streamer::sptr str_ptr = _tx_stream_cache[chan].lock();
                 if (str_ptr) {
@@ -869,7 +868,7 @@ private: // methods
         const size_t rx_bpp = _rx_spp * BYTES_PER_SAMPLE + MAX_BYTES_PER_HEADER;
         const size_t tx_bpp = _tx_spp * BYTES_PER_SAMPLE + MAX_BYTES_PER_HEADER;
         block_name_to_block_map_t legacy_block_map =  get_legacy_blocks(_device);
-        size_t index = 0 ;
+        size_t index = 0, sram_fifo_index = 0, dma_fifo_index = 0;
         auto ddc_snk_flat = _flatten_blocks_by_n_ports(legacy_block_map[DDC_BLOCK_NAME].second);
         auto duc_src_flat = _flatten_blocks_by_n_ports(legacy_block_map[DUC_BLOCK_NAME].first);
         auto duc_snk_flat = _flatten_blocks_by_n_ports(legacy_block_map[DUC_BLOCK_NAME].second);
@@ -908,21 +907,29 @@ private: // methods
                 down_stream_port = duc_snk_flat[index].second;
             }
             if (_has_sramfifo) {
-                UHD_ASSERT_THROW(index < sfifo_src_flat.size());
-                auto sfifo_block =  sfifo_src_flat[index].first->get_block_id();
-                _graph->connect(
-                    sfifo_block, sfifo_src_flat[index].second,
-                    down_stream_block, down_stream_port,
-                    tx_bpp
-                );
+                if(sram_fifo_index < sfifo_src_flat.size()){
+                    auto sfifo_block =  sfifo_src_flat[sram_fifo_index].first->get_block_id();
+                    _graph->connect(
+                        sfifo_block, sfifo_src_flat[sram_fifo_index].second,
+                        down_stream_block, down_stream_port,
+                        tx_bpp
+                    );
+                    sram_fifo_index++;
+                }else {
+                    UHD_LOGGER_WARNING("RFNOC") << "[legacy compat] Running out of SRAM FIFO ports to connect.";
+                }
             }else if (_has_dmafifo) {
-                UHD_ASSERT_THROW(index < dfifo_src_flat.size());
-                auto dfifo_block = dfifo_src_flat[index].first->get_block_id();
-                _graph->connect(
-                    dfifo_block, dfifo_src_flat[index].second,
-                    down_stream_block, down_stream_port,
-                    tx_bpp
-                );
+                if(dma_fifo_index < dfifo_src_flat.size()){
+                    auto dfifo_block = dfifo_src_flat[dma_fifo_index].first->get_block_id();
+                    _graph->connect(
+                        dfifo_block, dfifo_src_flat[dma_fifo_index].second,
+                        down_stream_block, down_stream_port,
+                        tx_bpp
+                    );
+                    dma_fifo_index++;
+                }else {
+                     UHD_LOGGER_WARNING("RFNOC") << "[legacy compat] Running out of DRAM FIFO ports to connect.";
+                }
             }
             index++;
         }

@@ -26,7 +26,8 @@ from mako.template import Template
 #
 INCLUDE_LIST = """
 #include <boost/math/special_functions/round.hpp>
-#include <boost/thread/thread.hpp>
+#include <chrono>
+#include <thread>
 """
 FUNCTION_LIST = """
 CATEGORY: Math Functions
@@ -251,7 +252,7 @@ CATEGORY: Execution Control
 BOOL SLEEP(DOUBLE)
 {
     int ms = ${args[0]} / 1000;
-    boost::this_thread::sleep(boost::posix_time::milliseconds(ms));
+    std::this_thread::sleep_for(std::chrono::milliseconds(ms));
     ${RETURN}(true);
 }
 """

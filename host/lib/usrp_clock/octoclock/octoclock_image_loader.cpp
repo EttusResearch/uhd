@@ -20,7 +20,6 @@
 
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
-#include <boost/thread.hpp>
 
 #include <algorithm>
 #include <iterator>
@@ -29,6 +28,8 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <chrono>
+#include <thread>
 #include <stdint.h>
 
 namespace fs = boost::filesystem;
@@ -194,7 +195,7 @@ static void octoclock_reset_into_bootloader(octoclock_session_t &session){
 
     if(UHD_OCTOCLOCK_PACKET_MATCHES(RESET_ACK, pkt_out, pkt_in, len)){
         // Make sure this device is now in its bootloader
-        boost::this_thread::sleep(boost::posix_time::milliseconds(500));
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
         uhd::device_addrs_t octoclocks = uhd::device::find(
                                              uhd::device_addr_t(str(boost::format("addr=%s")
                                                                     % session.dev_addr["addr"]

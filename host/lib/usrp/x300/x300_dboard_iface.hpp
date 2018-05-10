@@ -88,6 +88,12 @@ public:
         unit_t unit,  const std::string& name,
         const uhd::usrp::fe_connection_t& fe_conn);
 
+    // X300 can set the FE connection on the RX side
+    bool has_set_fe_connection(const unit_t unit) override
+    {
+        return unit == UNIT_RX;
+    }
+
     void add_rx_fe(
         const std::string& fe_name,
         rx_frontend_core_3000::sptr fe_core);

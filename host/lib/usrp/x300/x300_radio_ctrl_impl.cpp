@@ -18,7 +18,8 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/date_time/posix_time/posix_time_io.hpp>
-#include <boost/assign/list_of.hpp>
+#include <chrono>
+#include <thread>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -545,7 +546,7 @@ double x300_radio_ctrl_impl::get_output_samp_rate(size_t chan)
 
 std::vector<std::string> x300_radio_ctrl_impl::get_gpio_banks() const
 {
-    std::vector<std::string> banks = boost::assign::list_of("RX")("TX");
+    std::vector<std::string> banks{"RX", "TX"};
     // These pairs are the same, but RXA/TXA are from pre-rfnoc era and are kept for backward compat:
     banks.push_back("RX"+_radio_slot);
     banks.push_back("TX"+_radio_slot);
@@ -624,10 +625,16 @@ void x300_radio_ctrl_impl::setup_radio(
     static const size_t RX_EEPROM_ADDR  = 0x5;
     static const size_t TX_EEPROM_ADDR  = 0x4;
     static const size_t GDB_EEPROM_ADDR = 0x1;
-    const static std::vector<size_t> EEPROM_ADDRS =
-        boost::assign::list_of(RX_EEPROM_ADDR)(TX_EEPROM_ADDR)(GDB_EEPROM_ADDR);
-    const static std::vector<std::string> EEPROM_PATHS =
-        boost::assign::list_of("rx_eeprom")("tx_eeprom")("gdb_eeprom");
+    const static std::vector<size_t> EEPROM_ADDRS{
+        RX_EEPROM_ADDR,
+        TX_EEPROM_ADDR,
+        GDB_EEPROM_ADDR
+    };
+    const static std::vector<std::string> EEPROM_PATHS{
+        "rx_eeprom",
+        "tx_eeprom",
+        "gdb_eeprom"
+    };
 
     const size_t DB_OFFSET = (_radio_slot == "A") ? 0x0 : 0x2;
     const fs_path db_path = ("dboards" / _radio_slot);
@@ -804,10 +811,10 @@ void x300_radio_ctrl_impl::self_test_adc(uint32_t ramp_time_ms)
     _adc->set_test_word("ramp", "ramp");
     _regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 0);
     //Sleep added for SPI transactions to finish and ramp to start before checker is enabled.
-    boost::this_thread::sleep(boost::posix_time::microsec(1000));
+    std::this_thread::sleep_for(std::chrono::microseconds(1000));
     _regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 1);
 
-    boost::this_thread::sleep(boost::posix_time::milliseconds(ramp_time_ms));
+    std::this_thread::sleep_for(std::chrono::milliseconds(ramp_time_ms));
     _regs->misc_ins_reg.refresh();
 
     std::string i_status, q_status;
@@ -926,7 +933,7 @@ void x300_radio_ctrl_impl::synchronize_dacs(const std::vector<x300_radio_ctrl_im
             }
 
             //Wait and check status
-            boost::this_thread::sleep(boost::posix_time::microseconds(t_sync_us));
+            std::this_thread::sleep_for(std::chrono::microseconds(t_sync_us));
             for (size_t i = 0; i < radios.size(); i++) {
                 radios[i]->_dac->verify_sync();
             }
@@ -981,7 +988,7 @@ double x300_radio_ctrl_impl::self_cal_adc_xfer_delay(
             radios[r]->_regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 0);
             radios[r]->_regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 1);
             //50ms @ 200MHz = 10 million samples
-            boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
             if (radios[r]->_regs->misc_ins_reg.read(radio_regmap_t::misc_ins_reg_t::ADC_CHECKER1_I_LOCKED)) {
                 err_code += radios[r]->_regs->misc_ins_reg.get(radio_regmap_t::misc_ins_reg_t::ADC_CHECKER1_I_ERROR);
             } else {
@@ -996,7 +1003,7 @@ double x300_radio_ctrl_impl::self_cal_adc_xfer_delay(
             radios[r]->_regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 0);
             radios[r]->_regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 1);
             //50ms @ 200MHz = 10 million samples
-            boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
             if (radios[r]->_regs->misc_ins_reg.read(radio_regmap_t::misc_ins_reg_t::ADC_CHECKER1_Q_LOCKED)) {
                 err_code += radios[r]->_regs->misc_ins_reg.get(radio_regmap_t::misc_ins_reg_t::ADC_CHECKER1_Q_ERROR);
             } else {
@@ -1121,7 +1128,7 @@ void x300_radio_ctrl_impl::_self_cal_adc_capture_delay(bool print_status)
             _regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 0);
             _regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 1);
             //5ms @ 200MHz = 1 million samples
-            boost::this_thread::sleep(boost::posix_time::milliseconds(5));
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
             if (_regs->misc_ins_reg.read(radio_regmap_t::misc_ins_reg_t::ADC_CHECKER0_I_LOCKED)) {
                 err_code += _regs->misc_ins_reg.get(radio_regmap_t::misc_ins_reg_t::ADC_CHECKER0_I_ERROR);
             } else {
@@ -1136,7 +1143,7 @@ void x300_radio_ctrl_impl::_self_cal_adc_capture_delay(bool print_status)
             _regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 0);
             _regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::ADC_CHECKER_ENABLED, 1);
             //5ms @ 200MHz = 1 million samples
-            boost::this_thread::sleep(boost::posix_time::milliseconds(5));
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
             if (_regs->misc_ins_reg.read(radio_regmap_t::misc_ins_reg_t::ADC_CHECKER0_Q_LOCKED)) {
                 err_code += _regs->misc_ins_reg.get(radio_regmap_t::misc_ins_reg_t::ADC_CHECKER0_Q_ERROR);
             } else {
@@ -1166,7 +1173,7 @@ void x300_radio_ctrl_impl::_self_cal_adc_capture_delay(bool print_status)
         if ((win_start == -1 || (win_stop - win_start) < MIN_WINDOW_LEN) && iter < NUM_RETRIES /*not last iteration*/) {
             win_start = -1;
             win_stop = -1;
-            boost::this_thread::sleep(boost::posix_time::milliseconds(2000));
+            std::this_thread::sleep_for(std::chrono::milliseconds(2000));
         } else {
             break;
         }
@@ -1198,7 +1205,7 @@ void x300_radio_ctrl_impl::_check_adc(const uint32_t val)
     //Wait for previous control transaction to flush
     user_reg_read64(regs::RB_TEST);
     //Wait for ADC test pattern to propagate
-    boost::this_thread::sleep(boost::posix_time::microsec(5));
+    std::this_thread::sleep_for(std::chrono::microseconds(5));
     //Read value of RX readback register and verify
     uint32_t adc_rb = static_cast<uint32_t>(user_reg_read64(regs::RB_TEST)>>32);
     adc_rb ^= 0xfffc0000; //adapt for I inversion in FPGA
@@ -1225,7 +1232,7 @@ bool x300_radio_ctrl_impl::check_radio_config()
 {
     UHD_RFNOC_BLOCK_TRACE() << "x300_radio_ctrl_impl::check_radio_config() " ;
     const fs_path rx_fe_path = fs_path("dboards" / _radio_slot / "rx_frontends");
-    for (size_t chan = 0; chan < _get_num_radios(); chan++) {
+    for (size_t chan = 0; chan < _num_rx_channels; chan++) {
         if (_tree->exists(rx_fe_path / _rx_fe_map.at(chan).db_fe_name / "enabled")) {
             const bool chan_active = _is_streamer_active(uhd::RX_DIRECTION, chan);
             if (chan_active) {
@@ -1237,7 +1244,7 @@ bool x300_radio_ctrl_impl::check_radio_config()
     }
 
     const fs_path tx_fe_path = fs_path("dboards" / _radio_slot / "tx_frontends");
-    for (size_t chan = 0; chan < _get_num_radios(); chan++) {
+    for (size_t chan = 0; chan < _num_tx_channels; chan++) {
         if (_tree->exists(tx_fe_path / _tx_fe_map.at(chan).db_fe_name / "enabled")) {
             const bool chan_active = _is_streamer_active(uhd::TX_DIRECTION, chan);
             if (chan_active) {

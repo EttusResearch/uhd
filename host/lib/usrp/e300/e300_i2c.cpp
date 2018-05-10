@@ -5,13 +5,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#include "e300_i2c.hpp"
 #include <uhd/exception.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/transport/udp_simple.hpp>
 
-
-#include "e300_i2c.hpp"
 #include <cstring>
+#include <chrono>
+#include <thread>
 
 namespace uhd { namespace usrp { namespace e300 {
 
@@ -281,7 +282,7 @@ public:
             throw std::runtime_error("ioctl failed");
         }
         // this is ugly
-        boost::this_thread::sleep(boost::posix_time::milliseconds(5));
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
 
     uint8_t get_i2c_reg8(
@@ -339,7 +340,7 @@ public:
             throw std::runtime_error("ioctl failed");
         }
         // this is ugly
-        boost::this_thread::sleep(boost::posix_time::milliseconds(5));
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
 
 

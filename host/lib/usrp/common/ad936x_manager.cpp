@@ -8,7 +8,9 @@
 #include <uhdlib/usrp/common/ad936x_manager.hpp>
 #include <uhd/utils/log.hpp>
 #include <boost/functional/hash.hpp>
-#include <boost/thread/thread.hpp>
+#include <boost/make_shared.hpp>
+#include <chrono>
+#include <thread>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -17,7 +19,7 @@ using namespace uhd::usrp;
  * Default values
  ***************************************************************************/
 const double   ad936x_manager::DEFAULT_GAIN = 0;
-const double   ad936x_manager::DEFAULT_BANDWIDTH = 56e6;
+const double   ad936x_manager::DEFAULT_BANDWIDTH = ad9361_device_t::AD9361_MAX_BW;
 const double   ad936x_manager::DEFAULT_TICK_RATE = 16e6;
 const double   ad936x_manager::DEFAULT_FREQ = 100e6; // Hz
 const uint32_t ad936x_manager::DEFAULT_DECIM  = 128;
@@ -28,7 +30,7 @@ const bool     ad936x_manager::DEFAULT_AGC_ENABLE = false;
 
 class ad936x_manager_impl : public ad936x_manager
 {
-  public:
+public:
     /************************************************************************
      * Structor
      ***********************************************************************/
@@ -45,8 +47,12 @@ class ad936x_manager_impl : public ad936x_manager
             ));
         }
         for (size_t i = 1; i <= _n_frontends; i++) {
-            _rx_frontends.push_back(str(boost::format("RX%d") % i));
-            _tx_frontends.push_back(str(boost::format("TX%d") % i));
+            const std::string rx_fe_str = str(boost::format("RX%d") % i);
+            const std::string tx_fe_str = str(boost::format("TX%d") % i);
+            _rx_frontends.push_back(rx_fe_str);
+            _tx_frontends.push_back(tx_fe_str);
+            _bw[rx_fe_str] = 0.0;
+            _bw[tx_fe_str] = 0.0;
         }
     }
 
@@ -55,7 +61,7 @@ class ad936x_manager_impl : public ad936x_manager
      ***********************************************************************/
     void init_codec()
     {
-        for(const std::string &rx_fe:  _rx_frontends) {
+        for (const std::string &rx_fe : _rx_frontends) {
             _codec_ctrl->set_gain(rx_fe, DEFAULT_GAIN);
             _codec_ctrl->set_bw_filter(rx_fe, DEFAULT_BANDWIDTH);
             _codec_ctrl->tune(rx_fe, DEFAULT_FREQ);
@@ -63,7 +69,7 @@ class ad936x_manager_impl : public ad936x_manager
             _codec_ctrl->set_iq_balance_auto(rx_fe, DEFAULT_AUTO_IQ_BALANCE);
             _codec_ctrl->set_agc(rx_fe, DEFAULT_AGC_ENABLE);
         }
-        for(const std::string &tx_fe:  _tx_frontends) {
+        for (const std::string &tx_fe : _tx_frontends) {
             _codec_ctrl->set_gain(tx_fe, DEFAULT_GAIN);
             _codec_ctrl->set_bw_filter(tx_fe, DEFAULT_BANDWIDTH);
             _codec_ctrl->tune(tx_fe, DEFAULT_FREQ);
@@ -82,12 +88,12 @@ class ad936x_manager_impl : public ad936x_manager
     // worst case conditions to stress the interface.
     //
     void loopback_self_test(
-            boost::function<void(uint32_t)> poker_functor,
-            boost::function<uint64_t()> peeker_functor
+          std::function<void(uint32_t)> poker_functor,
+          std::function<uint64_t()> peeker_functor
     ) {
         // Put AD936x in loopback mode
         _codec_ctrl->data_port_loopback(true);
-        UHD_LOGGER_INFO("AD936X") << "Performing CODEC loopback test... ";
+        UHD_LOGGER_DEBUG("AD936X") << "Performing CODEC loopback test... ";
         size_t hash = size_t(time(NULL));
 
         // Allow some time for AD936x to enter loopback mode.
@@ -96,10 +102,10 @@ class ad936x_manager_impl : public ad936x_manager
         // when leaving the TX or RX states.  That works out to ~75us at the
         // minimum clock rate of 5 MHz, which lines up with test results.
         // Sleeping 1ms is far more than enough.
-        boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
-        for (size_t i = 0; i < 100; i++)
-        {
+        constexpr size_t NUM_LOOPBACK_ITERS = 100;
+        for (size_t i = 0; i < NUM_LOOPBACK_ITERS; i++) {
             // Create test word
             boost::hash_combine(hash, i);
             const uint32_t word32 = uint32_t(hash) & 0xfff0fff0;
@@ -107,15 +113,14 @@ class ad936x_manager_impl : public ad936x_manager
             // Write test word to codec_idle idle register (on TX side)
             poker_functor(word32);
 
-            // Read back values - TX is lower 32-bits and RX is upper 32-bits
+            // Read back values
             const uint64_t rb_word64 = peeker_functor();
             const uint32_t rb_tx = uint32_t(rb_word64 >> 32);
             const uint32_t rb_rx = uint32_t(rb_word64 & 0xffffffff);
 
             // Compare TX and RX values to test word
-            bool test_fail = word32 != rb_tx or word32 != rb_rx;
-            if(test_fail)
-            {
+            const bool test_fail = word32 != rb_tx or word32 != rb_rx;
+            if (test_fail) {
                 UHD_LOGGER_ERROR("AD936X")
                   << "CODEC loopback test failed! "
                   << boost::format("Expected: 0x%08X Received (TX/RX): 0x%08X/0x%08X")
@@ -123,7 +128,7 @@ class ad936x_manager_impl : public ad936x_manager
                 throw uhd::runtime_error("CODEC loopback test failed.");
             }
         }
-        UHD_LOGGER_INFO("AD936X") << "CODEC loopback test passed";
+        UHD_LOGGER_DEBUG("AD936X") << "CODEC loopback test passed.";
 
         // Zero out the idle data.
         poker_functor(0);
@@ -185,38 +190,59 @@ class ad936x_manager_impl : public ad936x_manager
 
     bool check_bandwidth(double rate, const std::string dir)
     {
-        if (rate > _codec_ctrl->get_bw_filter_range(dir).stop()) {
+        double bw = _bw[dir == "Rx" ? "RX1" : "TX1"];
+        if (bw == 0.) //0 indicates bandwidth is default value.
+        {
+            double max_bw = ad9361_device_t::AD9361_MAX_BW;
+            double min_bw = ad9361_device_t::AD9361_MIN_BW;
+            if (rate > max_bw)
+            {
             UHD_LOGGER_WARNING("AD936X")
-                << "Selected " << dir << " bandwidth (" << (rate/1e6) << " MHz) exceeds\n"
-                << "analog frontend filter bandwidth (" << (_codec_ctrl->get_bw_filter_range(dir).stop()/1e6) << " MHz)."
+                << "Selected " << dir << " sample rate (" << (rate/1e6) << " MHz) is greater than\n"
+                << "analog frontend filter bandwidth (" << (max_bw/1e6) << " MHz)."
                 ;
-            return false;
+            }
+            else if (rate < min_bw)
+            {
+            UHD_LOGGER_WARNING("AD936X")
+                << "Selected " << dir << " sample rate (" << (rate/1e6) << " MHz) is less than\n"
+                << "analog frontend filter bandwidth (" << (min_bw/1e6) << " MHz)."
+                ;
+            }
         }
-        return true;
+        return (rate <= bw);
     }
 
-    void populate_frontend_subtree(uhd::property_tree::sptr subtree, const std::string &key, uhd::direction_t dir)
-    {
+    void populate_frontend_subtree(
+        uhd::property_tree::sptr subtree,
+        const std::string &key,
+        uhd::direction_t dir
+    ) {
         subtree->create<std::string>("name").set("FE-"+key);
 
         // Sensors
         subtree->create<sensor_value_t>("sensors/temp")
-            .set_publisher(boost::bind(&ad9361_ctrl::get_temperature, _codec_ctrl))
+            .set_publisher([this](){
+                return this->_codec_ctrl->get_temperature();
+            })
         ;
         if (dir == RX_DIRECTION) {
             subtree->create<sensor_value_t>("sensors/rssi")
-                .set_publisher(boost::bind(&ad9361_ctrl::get_rssi, _codec_ctrl, key))
+                .set_publisher([this, key](){
+                    return this->_codec_ctrl->get_rssi(key);
+                })
             ;
         }
 
         // Gains
-        for(const std::string &name:  ad9361_ctrl::get_gain_names(key))
-        {
+        for (const std::string &name : ad9361_ctrl::get_gain_names(key)) {
             subtree->create<meta_range_t>(uhd::fs_path("gains") / name / "range")
                 .set(ad9361_ctrl::get_gain_range(key));
             subtree->create<double>(uhd::fs_path("gains") / name / "value")
                 .set(ad936x_manager::DEFAULT_GAIN)
-                .set_coercer(boost::bind(&ad9361_ctrl::set_gain, _codec_ctrl, key, _1))
+                .set_coercer([this, key](const double gain){
+                    return this->_codec_ctrl->set_gain(key, gain);
+                })
             ;
         }
 
@@ -227,20 +253,32 @@ class ad936x_manager_impl : public ad936x_manager
 
         // Analog Bandwidths
         subtree->create<double>("bandwidth/value")
-            .set(ad936x_manager::DEFAULT_BANDWIDTH)
-            .set_coercer(boost::bind(&ad9361_ctrl::set_bw_filter, _codec_ctrl, key, _1))
+            .set(DEFAULT_BANDWIDTH)
+            .set_coercer([this,key](double bw) {
+                    return set_bw_filter(key, bw);
+                }
+            )
         ;
         subtree->create<meta_range_t>("bandwidth/range")
-            .set_publisher(boost::bind(&ad9361_ctrl::get_bw_filter_range, key))
+            .set_publisher([key]() {
+                    return ad9361_ctrl::get_bw_filter_range();
+                }
+            )
         ;
 
         // LO Tuning
         subtree->create<meta_range_t>("freq/range")
-            .set_publisher(boost::bind(&ad9361_ctrl::get_rf_freq_range))
+            .set_publisher([](){
+                return ad9361_ctrl::get_rf_freq_range();
+            })
         ;
         subtree->create<double>("freq/value")
-            .set_publisher(boost::bind(&ad9361_ctrl::get_freq, _codec_ctrl, key))
-            .set_coercer(boost::bind(&ad9361_ctrl::tune, _codec_ctrl, key, _1))
+            .set_publisher([this, key](){
+                return this->_codec_ctrl->get_freq(key);
+            })
+            .set_coercer([this, key](const double freq){
+                return this->_codec_ctrl->tune(key, freq);
+            })
         ;
 
         // Frontend corrections
@@ -248,36 +286,50 @@ class ad936x_manager_impl : public ad936x_manager
         {
             subtree->create<bool>("dc_offset/enable" )
                 .set(ad936x_manager::DEFAULT_AUTO_DC_OFFSET)
-                .add_coerced_subscriber(boost::bind(&ad9361_ctrl::set_dc_offset_auto, _codec_ctrl, key, _1))
+                .add_coerced_subscriber([this, key](const bool enable){
+                    this->_codec_ctrl->set_dc_offset_auto(key, enable);
+                })
             ;
             subtree->create<bool>("iq_balance/enable" )
                 .set(ad936x_manager::DEFAULT_AUTO_IQ_BALANCE)
-                .add_coerced_subscriber(boost::bind(&ad9361_ctrl::set_iq_balance_auto, _codec_ctrl, key, _1))
+                .add_coerced_subscriber([this, key](const bool enable){
+                   this->_codec_ctrl->set_iq_balance_auto(key, enable);
+                })
             ;
 
             // AGC setup
-            const std::list<std::string> mode_strings = boost::assign::list_of("slow")("fast");
+            const std::list<std::string> mode_strings{"slow", "fast"};
             subtree->create<bool>("gain/agc/enable")
                 .set(DEFAULT_AGC_ENABLE)
-                .add_coerced_subscriber(boost::bind((&ad9361_ctrl::set_agc), _codec_ctrl, key, _1))
+                .add_coerced_subscriber([this, key](const bool enable){
+                    this->_codec_ctrl->set_agc(key, enable);
+                })
             ;
             subtree->create<std::string>("gain/agc/mode/value")
-                .add_coerced_subscriber(boost::bind((&ad9361_ctrl::set_agc_mode), _codec_ctrl, key, _1)).set(mode_strings.front())
+                .add_coerced_subscriber([this, key](const std::string& value){
+                    this->_codec_ctrl->set_agc_mode(key, value);
+                })
+                .set(mode_strings.front())
             ;
-            subtree->create< std::list<std::string> >("gain/agc/mode/options")
+            subtree->create<std::list<std::string>>("gain/agc/mode/options")
                 .set(mode_strings)
             ;
         }
 
         // Frontend filters
-        for(const std::string &filter_name:  _codec_ctrl->get_filter_names(key)) {
-            subtree->create<filter_info_base::sptr>(uhd::fs_path("filters") / filter_name / "value" )
-                .set_publisher(boost::bind(&ad9361_ctrl::get_filter, _codec_ctrl, key, filter_name))
-                .add_coerced_subscriber(boost::bind(&ad9361_ctrl::set_filter, _codec_ctrl, key, filter_name, _1));
+        for (const auto &filter_name : _codec_ctrl->get_filter_names(key)) {
+            subtree->create<filter_info_base::sptr>(uhd::fs_path("filters") / filter_name / "value")
+                .set_publisher([this, key, filter_name](){
+                    return this->_codec_ctrl->get_filter(key, filter_name);
+                })
+                .add_coerced_subscriber([this, key, filter_name](filter_info_base::sptr filter_info){
+                    this->_codec_ctrl->set_filter(key, filter_name, filter_info);
+                })
+            ;
         }
     }
 
-  private:
+private:
     //! Store a pointer to an actual AD936x control object
     ad9361_ctrl::sptr _codec_ctrl;
 
@@ -288,14 +340,24 @@ class ad936x_manager_impl : public ad936x_manager
     std::vector<std::string> _rx_frontends;
     //! List of valid TX frontend names (TX1, TX2)
     std::vector<std::string> _tx_frontends;
+
+    //! Current bandwidths
+    std::map<std::string,double> _bw;
+
+    //! Function to set bandwidth so it is tracked here
+    double set_bw_filter(const std::string& which, const double bw)
+    {
+        double actual_bw = _codec_ctrl->set_bw_filter(which, bw);
+        _bw[which] = actual_bw;
+        return actual_bw;
+    }
+
 }; /* class ad936x_manager_impl */
 
 ad936x_manager::sptr ad936x_manager::make(
         const ad9361_ctrl::sptr &codec_ctrl,
         const size_t n_frontends
 ) {
-    return sptr(
-        new ad936x_manager_impl(codec_ctrl, n_frontends)
-    );
+    return boost::make_shared<ad936x_manager_impl>(codec_ctrl, n_frontends);
 }
 

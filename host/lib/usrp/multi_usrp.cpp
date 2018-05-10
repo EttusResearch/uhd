@@ -6,6 +6,7 @@
 //
 
 #include <uhd/property_tree.hpp>
+#include <uhd/types/eeprom.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/usrp/gpio_defs.hpp>
 #include <uhd/exception.hpp>
@@ -20,12 +21,13 @@
 #include <uhdlib/usrp/gpio_defs.hpp>
 #include <uhdlib/rfnoc/legacy_compat.hpp>
 #include <boost/assign/list_of.hpp>
-#include <boost/thread.hpp>
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
 #include <algorithm>
 #include <cmath>
 #include <bitset>
+#include <chrono>
+#include <thread>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -408,38 +410,82 @@ public:
     dict<std::string, std::string> get_usrp_rx_info(size_t chan){
         mboard_chan_pair mcp = rx_chan_to_mcp(chan);
         dict<std::string, std::string> usrp_info;
-
-        mboard_eeprom_t mb_eeprom = _tree->access<mboard_eeprom_t>(mb_root(mcp.mboard) / "eeprom").get();
-        dboard_eeprom_t db_eeprom = _tree->access<dboard_eeprom_t>(rx_rf_fe_root(chan).branch_path().branch_path() / "rx_eeprom").get();
-
+        const auto mb_eeprom =
+            _tree->access<mboard_eeprom_t>(mb_root(mcp.mboard) / "eeprom").get();
         usrp_info["mboard_id"] = _tree->access<std::string>(mb_root(mcp.mboard) / "name").get();
-        usrp_info["mboard_name"] = mb_eeprom["name"];
+        usrp_info["mboard_name"] = mb_eeprom.get("name", "n/a");
         usrp_info["mboard_serial"] = mb_eeprom["serial"];
-        usrp_info["rx_id"] = db_eeprom.id.to_pp_string();
         usrp_info["rx_subdev_name"] = _tree->access<std::string>(rx_rf_fe_root(chan) / "name").get();
         usrp_info["rx_subdev_spec"] = _tree->access<subdev_spec_t>(mb_root(mcp.mboard) / "rx_subdev_spec").get().to_string();
-        usrp_info["rx_serial"] = db_eeprom.serial;
         usrp_info["rx_antenna"] =  _tree->access<std::string>(rx_rf_fe_root(chan) / "antenna" / "value").get();
-
+        if (_tree->exists(rx_rf_fe_root(chan).branch_path().branch_path() / "rx_eeprom")) {
+            const auto db_eeprom =
+                _tree->access<dboard_eeprom_t>(
+                        rx_rf_fe_root(chan).branch_path().branch_path()
+                        / "rx_eeprom"
+                ).get();
+            usrp_info["rx_serial"] = db_eeprom.serial;
+            usrp_info["rx_id"] = db_eeprom.id.to_pp_string();
+        }
+        const auto rfnoc_path = mb_root(mcp.mboard) / "xbar";
+        if (_tree->exists(rfnoc_path)) {
+            const auto spec = get_rx_subdev_spec(mcp.mboard).at(mcp.chan);
+            const auto radio_index = get_radio_index(spec.db_name);
+            const auto radio_path = rfnoc_path / str(boost::format("Radio_%d") % radio_index);
+            const auto eeprom_path = radio_path / "eeprom";
+            if (_tree->exists(radio_path)) {
+                const auto db_eeprom = _tree->access<eeprom_map_t>(eeprom_path).get();
+                usrp_info["rx_serial"] = db_eeprom.count("serial") ?
+                    std::string(db_eeprom.at("serial").begin(), db_eeprom.at("serial").end())
+                    : "n/a"
+                ;
+                usrp_info["rx_id"] = db_eeprom.count("pid") ?
+                   std::string(db_eeprom.at("pid").begin(), db_eeprom.at("pid").end())
+                   : "n/a"
+                ;
+            }
+        }
         return usrp_info;
     }
 
     dict<std::string, std::string> get_usrp_tx_info(size_t chan){
         mboard_chan_pair mcp = tx_chan_to_mcp(chan);
         dict<std::string, std::string> usrp_info;
-
-        mboard_eeprom_t mb_eeprom = _tree->access<mboard_eeprom_t>(mb_root(mcp.mboard) / "eeprom").get();
-        dboard_eeprom_t db_eeprom = _tree->access<dboard_eeprom_t>(tx_rf_fe_root(chan).branch_path().branch_path() / "tx_eeprom").get();
-
+        const auto mb_eeprom =
+            _tree->access<mboard_eeprom_t>(mb_root(mcp.mboard) / "eeprom").get();
         usrp_info["mboard_id"] = _tree->access<std::string>(mb_root(mcp.mboard) / "name").get();
         usrp_info["mboard_name"] = mb_eeprom["name"];
         usrp_info["mboard_serial"] = mb_eeprom["serial"];
-        usrp_info["tx_id"] = db_eeprom.id.to_pp_string();
         usrp_info["tx_subdev_name"] = _tree->access<std::string>(tx_rf_fe_root(chan) / "name").get();
         usrp_info["tx_subdev_spec"] = _tree->access<subdev_spec_t>(mb_root(mcp.mboard) / "tx_subdev_spec").get().to_string();
-        usrp_info["tx_serial"] = db_eeprom.serial;
         usrp_info["tx_antenna"] = _tree->access<std::string>(tx_rf_fe_root(chan) / "antenna" / "value").get();
-
+        if (_tree->exists(tx_rf_fe_root(chan).branch_path().branch_path() / "tx_eeprom")) {
+            const auto db_eeprom =
+                _tree->access<dboard_eeprom_t>(
+                        tx_rf_fe_root(chan).branch_path().branch_path()
+                        / "tx_eeprom"
+                ).get();
+            usrp_info["tx_serial"] = db_eeprom.serial;
+            usrp_info["tx_id"] = db_eeprom.id.to_pp_string();
+        }
+        const auto rfnoc_path = mb_root(mcp.mboard) / "xbar";
+        if (_tree->exists(rfnoc_path)) {
+            const auto spec = get_tx_subdev_spec(mcp.mboard).at(mcp.chan);
+            const auto radio_index = get_radio_index(spec.db_name);
+            const auto radio_path = rfnoc_path / str(boost::format("Radio_%d")%radio_index);
+            const auto path = radio_path / "eeprom";
+            if(_tree->exists(radio_path)) {
+                const auto db_eeprom = _tree->access<eeprom_map_t>(path).get();
+                usrp_info["tx_serial"] = db_eeprom.count("serial") ?
+                    std::string(db_eeprom.at("serial").begin(), db_eeprom.at("serial").end())
+                    : "n/a"
+                ;
+                usrp_info["tx_id"] = db_eeprom.count("pid") ?
+                   std::string(db_eeprom.at("pid").begin(), db_eeprom.at("pid").end())
+                   : "n/a"
+                ;
+            }
+        }
         return usrp_info;
     }
 
@@ -579,12 +625,12 @@ public:
                     "See the application notes for your device.\n"
                 );
             }
-            boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
 
         UHD_LOGGER_INFO("MULTI_USRP") << "    2) set times next pps (synchronously)";
         set_time_next_pps(time_spec, ALL_MBOARDS);
-        boost::this_thread::sleep(boost::posix_time::seconds(1));
+        std::this_thread::sleep_for(std::chrono::seconds(1));
 
         //verify that the time registers are read to be within a few RTT
         for (size_t m = 1; m < get_num_mboards(); m++){
@@ -2397,6 +2443,24 @@ private:
         catch(const std::exception &e)
         {
             throw uhd::index_error(str(boost::format("multi_usrp::tx_fe_root(%u) - mcp(%u) - %s") % chan % mcp.chan % e.what()));
+        }
+    }
+
+    size_t get_radio_index(const std::string slot_name)
+    {
+        if (slot_name == "A") {
+            return 0;
+        } else if (slot_name == "B") {
+            return 1;
+        } else if (slot_name == "C") {
+            return 2;
+        } else if (slot_name == "D") {
+            return  3;
+        } else {
+           throw uhd::key_error(str(
+                boost::format("[multi_usrp]: radio slot name %s out of supported range.")
+                % slot_name
+            ));
         }
     }
 

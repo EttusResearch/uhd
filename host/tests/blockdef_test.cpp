@@ -8,7 +8,6 @@
 #include <iostream>
 #include <map>
 #include <stdint.h>
-#include <boost/assign/list_of.hpp>
 #include <boost/test/unit_test.hpp>
 #include <boost/format.hpp>
 #include <uhd/rfnoc/blockdef.hpp>
@@ -16,24 +15,25 @@
 using namespace uhd::rfnoc;
 
 BOOST_AUTO_TEST_CASE(test_lookup) {
-    std::map<uint64_t, std::string> blocknames = boost::assign::list_of< std::pair<uint64_t, std::string> >
-        (0,                  "NullSrcSink")
-        (0xFF70000000000000, "FFT")
-        (0xF112000000000001, "FIR")
-        (0xF1F0000000000000, "FIFO")
-        (0xD053000000000000, "Window")
-        (0x5CC0000000000000, "SchmidlCox")
-    ;
-
+    const std::map<uint64_t, std::string> blocknames{
+        {0,                  "NullSrcSink"},
+        {0xFF70000000000000, "FFT"},
+        {0xF112000000000001, "FIR"},
+        {0xF1F0000000000000, "FIFO"},
+        {0xD053000000000000, "Window"},
+        {0x5CC0000000000000, "SchmidlCox"}
+    };
     std::cout << blocknames.size() << std::endl;
 
-    for (std::map<uint64_t, std::string>::iterator it = blocknames.begin(); it != blocknames.end(); ++it) {
-        std::cout << "Testing " << it->second << " => " << str(boost::format("%016X") % it->first) << std::endl;
-        blockdef::sptr block_definition = blockdef::make_from_noc_id(it->first);
+    for (const auto block : blocknames) {
+        std::cout << "Testing " << block.second
+                  << " => " << str(boost::format("%016X") % block.first)
+                  << std::endl;
+        auto block_definition = blockdef::make_from_noc_id(block.first);
         // If the previous function fails, it'll return a NULL pointer
         BOOST_REQUIRE(block_definition);
         BOOST_CHECK(block_definition->is_block());
-        BOOST_CHECK_EQUAL(block_definition->get_name(), it->second);
+        BOOST_CHECK_EQUAL(block_definition->get_name(), block.second);
     }
 }
 

@@ -41,7 +41,7 @@ private:
 };
 
 //#include "types.hpp"
-#include "converters.hpp"
+#include "../converters.hpp"
 #include <mpm/xbar_iface.hpp>
 #include <mpm/types/types_python.hpp>
 #include <mpm/spi/spi_python.hpp>

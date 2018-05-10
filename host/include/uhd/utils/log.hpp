@@ -265,7 +265,7 @@ namespace uhd {
 namespace uhd{ namespace _log {
 
     //! Fastpath logging
-    void UHD_API log_fastpath(const std::string &msg);
+    void UHD_API log_fastpath(const std::string &);
 
     //! Internal logging object (called by UHD_LOG* macros)
     class UHD_API log {

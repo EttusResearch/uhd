@@ -10,14 +10,16 @@
 #include <uhd/usrp/multi_usrp.hpp>
 #include "ascii_art_dft.hpp" //implementation
 #include <boost/program_options.hpp>
-#include <boost/thread/thread.hpp> //gets time
 #include <boost/format.hpp>
 #include <curses.h>
 #include <iostream>
 #include <complex>
 #include <cstdlib>
+#include <chrono>
+#include <thread>
 
 namespace po = boost::program_options;
+using std::chrono::high_resolution_clock;
 
 int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::set_thread_priority_safe();
@@ -108,7 +110,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //set the antenna
     if (vm.count("ant")) usrp->set_rx_antenna(ant);
 
-    boost::this_thread::sleep(boost::posix_time::seconds(1)); //allow for some setup time
+    std::this_thread::sleep_for(std::chrono::seconds(1)); //allow for some setup time
 
     //Check Ref and LO Lock detect
     std::vector<std::string> sensor_names;
@@ -142,7 +144,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //------------------------------------------------------------------
     initscr(); //curses init
     rx_stream->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
-    boost::system_time next_refresh = boost::get_system_time();
+    auto next_refresh = high_resolution_clock::now();
 
     //------------------------------------------------------------------
     //-- Main loop
@@ -155,8 +157,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         if (num_rx_samps != buff.size()) continue;
 
         //check and update the display refresh condition
-        if (boost::get_system_time() < next_refresh) continue;
-        next_refresh = boost::get_system_time() + boost::posix_time::microseconds(long(1e6/frame_rate));
+        if (high_resolution_clock::now() < next_refresh) {
+            continue;
+        }
+        next_refresh =
+            high_resolution_clock::now()
+            + std::chrono::microseconds(int64_t(1e6/frame_rate));
 
         //calculate the dft and create the ascii art frame
         ascii_art_dft::log_pwr_dft_type lpdft(

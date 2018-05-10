@@ -26,11 +26,12 @@
 #include <uhdlib/usrp/common/ad9361_ctrl.hpp>
 
 #include <boost/asio.hpp>
-#include <boost/thread.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/make_shared.hpp>
 
 #include <fstream>
+#include <chrono>
+#include <thread>
 
 using namespace uhd;
 using namespace uhd::transport;
@@ -630,7 +631,7 @@ network_server_impl::network_server_impl(const uhd::device_addr_t &device_addr)
     ad9361_params::sptr client_settings = boost::make_shared<e300_ad9361_client_t>();
     _codec_ctrl = ad9361_ctrl::make_spi(client_settings, spi::make(E300_SPIDEV_DEVICE), 1);
     // This is horrible ... why do I have to sleep here?
-    boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
     _sensor_manager = e300_sensor_manager::make_local(_global_regs);
 }
 

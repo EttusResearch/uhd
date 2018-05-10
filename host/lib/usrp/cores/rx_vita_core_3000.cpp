@@ -11,7 +11,8 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/date_time.hpp>
-#include <boost/thread.hpp>
+#include <thread>
+#include <chrono>
 
 #define REG_FRAMER_MAXLEN    _base + 4*4 + 0
 #define REG_FRAMER_SID       _base + 4*4 + 4
@@ -64,7 +65,7 @@ struct rx_vita_core_3000_impl : rx_vita_core_3000
         // At 1 ms * 200 MHz = 200k cycles, 8 bytes * 200k cycles = 1.6 MB
         // of flushed data, when the typical amount of data buffered
         // is on the order of kilobytes
-        boost::this_thread::sleep(boost::posix_time::milliseconds(1.0));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
         _iface->poke32(REG_FC_WINDOW, window_size-1);
         _iface->poke32(REG_FC_ENABLE, window_size?1:0);

@@ -71,7 +71,6 @@ namespace {
         default:
             return "-";
         }
-        return "";
     }
 
     //! get the relative file path from the host directory
@@ -185,54 +184,16 @@ public:
                 this->global_level
         );
 #endif
-       //allow override from environment variables
+        //allow override from environment variables
         const char * log_level_env = std::getenv("UHD_LOG_LEVEL");
         if (log_level_env != NULL && log_level_env[0] != '\0') {
             this->global_level =
                 _get_log_level(log_level_env, this->global_level);
         }
 
-
-        /***** Console logging ***********************************************/
-#ifndef UHD_LOG_CONSOLE_DISABLE
-        uhd::log::severity_level console_level = uhd::log::trace;
-#ifdef UHD_LOG_CONSOLE_LEVEL
-        console_level = _get_log_level(
-            BOOST_STRINGIZE(UHD_LOG_CONSOLE_LEVEL),
-            console_level
-        );
-#endif
-        const char* log_console_level_env = std::getenv("UHD_LOG_CONSOLE_LEVEL");
-        if (log_console_level_env != NULL && log_console_level_env[0] != '\0') {
-            console_level =
-                _get_log_level(log_console_level_env, console_level);
-        }
-        _loggers[UHD_CONSOLE_LOGGER_KEY] =
-            level_logfn_pair{console_level, &console_log};
-#endif
-
-        /***** File logging **************************************************/
-        uhd::log::severity_level file_level = uhd::log::trace;
-        std::string log_file_target;
-#if defined(UHD_LOG_FILE_LEVEL) && defined(UHD_LOG_FILE_PATH)
-        file_level = _get_log_level(BOOST_STRINGIZE(UHD_LOG_FILE_LEVEL), file_level);
-        log_file_target = BOOST_STRINGIZE(UHD_LOG_FILE);
-#endif
-        const char * log_file_level_env = std::getenv("UHD_LOG_FILE_LEVEL");
-        if (log_file_level_env != NULL && log_file_level_env[0] != '\0'){
-            file_level = _get_log_level(log_file_level_env, file_level);
-        }
-        const char* log_file_env = std::getenv("UHD_LOG_FILE");
-        if ((log_file_env != NULL) && (log_file_env[0] != '\0')) {
-            log_file_target = std::string(log_file_env);
-        }
-        if (!log_file_target.empty()){
-            auto F = boost::make_shared<file_logger_backend>(log_file_target);
-            _loggers[UHD_FILE_LOGGER_KEY] = level_logfn_pair{
-                file_level,
-                [F](const uhd::log::logging_info& log_info){F->log(log_info);}
-            };
-        }
+        // Setup default loggers (console and file)
+        _setup_console_logging();
+        _setup_file_logging();
 
         // On boot, we print the current UHD version info:
         {
@@ -243,25 +204,42 @@ public:
               << "Boost_"
               << BOOST_VERSION << "; "
               << "UHD_" << uhd::get_version_string();
-            auto sys_info_log_msg = uhd::log::logging_info(
-                pt::microsec_clock::local_time(),
-                uhd::log::info,
-                __FILE__,
-                __LINE__,
-                "UHD",
-                boost::this_thread::get_id()
-            );
-            sys_info_log_msg.message = sys_info.str();
-            _log_queue.push_with_timed_wait(sys_info_log_msg, 0.25);
+            _publish_log_msg(sys_info.str(), uhd::log::info, "UHD");
         }
 
         // Launch log message consumer
         _pop_task = std::make_shared<std::thread>(
             std::thread([this](){this->pop_task();})
         );
-        _pop_fastpath_task = std::make_shared<std::thread>(
-            std::thread([this](){this->pop_fastpath_task();})
-        );
+
+        // Fastpath message consumer
+#ifndef UHD_LOG_FASTPATH_DISABLE
+        //allow override from environment variables
+        const bool enable_fastpath = [](){
+            const char* disable_fastpath_env =
+                std::getenv("UHD_LOG_FASTPATH_DISABLE");
+            if (disable_fastpath_env != NULL
+                    && disable_fastpath_env[0] != '\0') {
+                return false;
+            }
+            return true;
+        }();
+
+        if (enable_fastpath) {
+            _pop_fastpath_task = std::make_shared<std::thread>(
+                std::thread([this](){this->pop_fastpath_task();})
+            );
+        } else {
+            _pop_fastpath_task = std::make_shared<std::thread>(
+                std::thread([this](){this->pop_fastpath_dummy_task();})
+            );
+            _publish_log_msg("Fastpath logging disabled at runtime.");
+        }
+#else
+        {
+            _publish_log_msg("Fastpath logging disabled at compile time.");
+        }
+#endif
     }
 
     ~log_resource(void){
@@ -300,14 +278,14 @@ public:
         _log_queue.push_with_timed_wait(log_info, PUSH_TIMEOUT);
     }
 
+#ifndef UHD_LOG_FASTPATH_DISABLE
     void push_fastpath(const std::string &message)
     {
         // Never wait. If the buffer is full, we just don't see the message.
         // Too bad.
-#ifndef UHD_LOG_FASTPATH_DISABLE
         _fastpath_queue.push_with_haste(message);
-#endif
     }
+#endif
 
     void _handle_log_info(const uhd::log::logging_info& log_info)
     {
@@ -346,19 +324,29 @@ public:
     void pop_fastpath_task()
     {
 #ifndef UHD_LOG_FASTPATH_DISABLE
+        std::string msg;
         while (!_exit) {
-            std::string msg;
             _fastpath_queue.pop_with_wait(msg);
-            {
-                std::cerr << msg << std::flush;
-            }
+            std::cerr << msg << std::flush;
         }
 
         // Exit procedure: Clear the queue
-        std::string msg;
         while (_fastpath_queue.pop_with_haste(msg)) {
             std::cerr << msg << std::flush;
         }
+#endif
+    }
+
+    void pop_fastpath_dummy_task()
+    {
+#ifndef UHD_LOG_FASTPATH_DISABLE
+        std::string msg;
+        while (!_exit) {
+            _fastpath_queue.pop_with_wait(msg);
+        }
+
+        // Exit procedure: Clear the queue
+        while (_fastpath_queue.pop_with_haste(msg));
 #endif
     }
 
@@ -409,6 +397,74 @@ private:
         return previous_level;
     }
 
+    void _setup_console_logging()
+    {
+#ifndef UHD_LOG_CONSOLE_DISABLE
+        uhd::log::severity_level console_level = uhd::log::trace;
+#ifdef UHD_LOG_CONSOLE_LEVEL
+        console_level = _get_log_level(
+            BOOST_STRINGIZE(UHD_LOG_CONSOLE_LEVEL),
+            console_level
+        );
+#endif
+        const char* log_console_level_env =
+            std::getenv("UHD_LOG_CONSOLE_LEVEL");
+        if (log_console_level_env != NULL && log_console_level_env[0] != '\0') {
+            console_level =
+                _get_log_level(log_console_level_env, console_level);
+        }
+        _loggers[UHD_CONSOLE_LOGGER_KEY] =
+            level_logfn_pair{console_level, &console_log};
+#endif
+    }
+
+    void _setup_file_logging()
+    {
+        uhd::log::severity_level file_level = uhd::log::trace;
+        std::string log_file_target;
+#if defined(UHD_LOG_FILE_LEVEL)
+        file_level = _get_log_level(
+                BOOST_STRINGIZE(UHD_LOG_FILE_LEVEL),
+                file_level
+        );
+#endif
+#if defined(UHD_LOG_FILE)
+        log_file_target = BOOST_STRINGIZE(UHD_LOG_FILE);
+#endif
+        const char* log_file_level_env = std::getenv("UHD_LOG_FILE_LEVEL");
+        if (log_file_level_env != NULL && log_file_level_env[0] != '\0'){
+            file_level = _get_log_level(log_file_level_env, file_level);
+        }
+        const char* log_file_env = std::getenv("UHD_LOG_FILE");
+        if ((log_file_env != NULL) && (log_file_env[0] != '\0')) {
+            log_file_target = std::string(log_file_env);
+        }
+        if (!log_file_target.empty()){
+            auto F = std::make_shared<file_logger_backend>(log_file_target);
+            _loggers[UHD_FILE_LOGGER_KEY] = level_logfn_pair{
+                file_level,
+                [F](const uhd::log::logging_info& log_info){F->log(log_info);}
+            };
+        }
+    }
+
+    void _publish_log_msg(
+        const std::string& msg,
+        const uhd::log::severity_level level=uhd::log::info,
+        const std::string& component="LOGGING"
+    ) {
+        auto log_msg = uhd::log::logging_info(
+            pt::microsec_clock::local_time(),
+            level,
+            __FILE__,
+            __LINE__,
+            component,
+            boost::this_thread::get_id()
+        );
+        log_msg.message = msg;
+        _log_queue.push_with_timed_wait(log_msg, 0.25);
+    }
+
     std::mutex _logmap_mutex;
     std::atomic<bool> _exit;
     using level_logfn_pair =
@@ -453,12 +509,17 @@ uhd::_log::log::~log(void)
     }
 }
 
+#ifndef UHD_LOG_FASTPATH_DISABLE
 void uhd::_log::log_fastpath(const std::string &msg)
 {
-#ifndef UHD_LOG_FASTPATH_DISABLE
     log_rs().push_fastpath(msg);
-#endif
 }
+#else
+void uhd::_log::log_fastpath(const std::string &)
+{
+    // nop
+}
+#endif
 
 /***********************************************************************
  * Public API calls

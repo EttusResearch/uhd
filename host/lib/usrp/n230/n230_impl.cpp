@@ -32,10 +32,12 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/bind.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/assign/list_of.hpp>
 #include <boost/asio/ip/address_v4.hpp>
 #include <boost/asio.hpp> //used for htonl and ntohl
 #include <boost/make_shared.hpp>
+
+#include <chrono>
+#include <thread>
 
 namespace uhd { namespace usrp { namespace n230 {
 
@@ -131,7 +133,7 @@ uhd::device_addrs_t n230_impl::n230_find(const uhd::device_addr_t &multi_dev_hin
                 fw_ctrl = n230_fw_ctrl_iface::make(ctrl_xport, N230_FW_PRODUCT_ID, false /*verbose*/);
                 break;
             } catch (uhd::io_error& ex) {
-                boost::this_thread::sleep(boost::posix_time::milliseconds(500));
+                std::this_thread::sleep_for(std::chrono::milliseconds(500));
                 first_conn_retries--;
             }
         }
@@ -339,7 +341,7 @@ void n230_impl::_initialize_property_tree(const fs_path& mb_path)
         .add_coerced_subscriber(boost::bind(&n230_impl::_check_time_source, this, _1))
         .add_coerced_subscriber(boost::bind(&n230_clk_pps_ctrl::set_pps_source, _resource_mgr->get_clk_pps_ctrl_sptr(), _1))
         .set(n230::DEFAULT_TIME_SRC);
-    static const std::vector<std::string> time_sources = boost::assign::list_of("none")("external")("gpsdo");
+    const std::vector<std::string> time_sources{"none", "external", "gpsdo"};
     _tree->create<std::vector<std::string> >(mb_path / "time_source" / "options")
         .set(time_sources);
 
@@ -348,7 +350,7 @@ void n230_impl::_initialize_property_tree(const fs_path& mb_path)
         .add_coerced_subscriber(boost::bind(&n230_impl::_check_clock_source, this, _1))
         .add_coerced_subscriber(boost::bind(&n230_clk_pps_ctrl::set_clock_source, _resource_mgr->get_clk_pps_ctrl_sptr(), _1))
         .set(n230::DEFAULT_CLOCK_SRC);
-    static const std::vector<std::string> clock_sources = boost::assign::list_of("internal")("external")("gpsdo");
+    const std::vector<std::string> clock_sources{"internal", "external", "gpsdo"};
     _tree->create<std::vector<std::string> >(mb_path / "clock_source" / "options")
         .set(clock_sources);
     _tree->create<sensor_value_t>(mb_path / "sensors" / "ref_locked")
@@ -521,8 +523,7 @@ void n230_impl::_initialize_radio_properties(const fs_path& mb_path, size_t inst
         .set_publisher(boost::bind(&tx_dsp_core_3000::get_freq_range, perif.duc));
 
     //RF Frontend Interfacing
-    static const std::vector<direction_t> data_directions = boost::assign::list_of(RX_DIRECTION)(TX_DIRECTION);
-    for(direction_t direction:  data_directions) {
+    for (direction_t direction : std::vector<direction_t>{RX_DIRECTION, TX_DIRECTION}) {
         const std::string dir_str = (direction == RX_DIRECTION) ? "rx" : "tx";
         const std::string key = boost::to_upper_copy(dir_str) + str(boost::format("%u") % (instance + 1));
         const fs_path rf_fe_path = mb_path / "dboards" / "A" / (dir_str + "_frontends") / ((instance==0)?"A":"B");
@@ -536,17 +537,15 @@ void n230_impl::_initialize_radio_properties(const fs_path& mb_path, size_t inst
 
         //Setup antenna stuff
         if (key[0] == 'R') {
-            static const std::vector<std::string> ants = boost::assign::list_of("TX/RX")("RX2");
             _tree->create<std::vector<std::string> >(rf_fe_path / "antenna" / "options")
-                .set(ants);
+                .set({"TX/RX", "RX2"});
             _tree->create<std::string>(rf_fe_path / "antenna" / "value")
                 .add_coerced_subscriber(boost::bind(&n230_frontend_ctrl::set_antenna_sel, _resource_mgr->get_frontend_ctrl_sptr(), instance, _1))
                 .set("RX2");
         }
         if (key[0] == 'T') {
-            static const std::vector<std::string> ants(1, "TX/RX");
             _tree->create<std::vector<std::string> >(rf_fe_path / "antenna" / "options")
-                .set(ants);
+                .set({"TX/RX"});
             _tree->create<std::string>(rf_fe_path / "antenna" / "value")
                 .set("TX/RX");
         }

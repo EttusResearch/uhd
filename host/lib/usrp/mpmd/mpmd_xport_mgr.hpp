@@ -53,6 +53,7 @@ public:
     using uptr = std::unique_ptr<mpmd_xport_mgr>;
     using xport_info_t = std::map<std::string, std::string>;
     using xport_info_list_t = std::vector<std::map<std::string, std::string>>;
+    virtual ~mpmd_xport_mgr() {}
 
     /*! Return a reference to a transport manager
      *

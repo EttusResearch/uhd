@@ -8,13 +8,13 @@
 #include "udp_common.hpp"
 #include <uhd/transport/tcp_zero_copy.hpp>
 #include <uhd/transport/buffer_pool.hpp>
-
 #include <uhd/utils/log.hpp>
 #include <uhdlib/utils/atomic.hpp>
 #include <boost/format.hpp>
 #include <boost/make_shared.hpp>
-#include <boost/thread/thread.hpp> //sleep
 #include <vector>
+#include <chrono>
+#include <thread>
 
 using namespace uhd;
 using namespace uhd::transport;
@@ -85,7 +85,7 @@ public:
             if (ret == ssize_t(size())) break;
             if (ret == -1 and errno == ENOBUFS)
             {
-                boost::this_thread::sleep(boost::posix_time::microseconds(1));
+                std::this_thread::sleep_for(std::chrono::microseconds(1));
                 continue; //try to send again
             }
             UHD_ASSERT_THROW(ret == ssize_t(size()));

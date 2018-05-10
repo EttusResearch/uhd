@@ -8,6 +8,7 @@
 	- Dual SFP+ Transceivers (can be used with 1 GigE, 10 GigE, and Aurora)
 	- External PPS input & output
 	- External 10 MHz input & output (20 MHz and 25 MHz inputs also supported)
+	- External White Rabbit time/frequency reference input support
 	- Internal 25 MHz reference clock
 	- Internal GPSDO for timing, location, and 20 MHz reference clock + PPS
 	- External GPIO Connector with UHD API control
@@ -27,13 +28,15 @@
 The N3XX series of USRPs is designed as a platform. The following USRPs are
 variants of the N3XX series:
 
-\subsection n3xx_feature_list_mg N310 and N300 (4-channel and 2-channel transceiver)
+\subsection n3xx_feature_list_mg N310/N300 4-channel/2-channel ("Magnesium")
 
 \image html N310isoExplode.png N310 Exploded View
 
 The N310 is a 4-channel transmitter/receiver based on the AD9371 transceiver IC.
 It has two daughterboards with one AD9371 each; every daughterboard provides
-two RF channels.
+two RF channels. Note that the product code "N310" refers to the module
+consisting of mother- and daughterboard, the daughterboard itself is referred to
+by its codename, "Magnesium".
 
 - Supported master clock rates: 122.88 MHz, 125 MHz, 153.6 MHz
 - Tuning range: 10 MHz to 6 GHz (below 300 MHz, additional LOs and mixer stages
@@ -361,27 +364,58 @@ For a list of which arguments can be passed into make(), see Section
 
 \subsection n3xx_usage_device_args Device arguments
 
- Key                 | Description                                                                  | Supported Devices | Example Value
----------------------|------------------------------------------------------------------------------|-------------------|---------------------
- addr                | IPv4 address of primary SFP+ port to connect to.                             | All N3xx          | addr=192.168.30.2
- second_addr         | IPv4 address of secondary SFP+ port to connect to.                           | All N3xx          | second_addr=192.168.40.2
- mgmt_addr           | IPv4 address or hostname which to connect the RPC client. Defaults to `addr'.| All N3xx          | mgmt_addr=ni-sulfur-311FE00 (can also go to RJ45)
- find_all            | When using broadcast, find all devices, even if unreachable via CHDR.        | All N3xx          | find_all=1
- master_clock_rate   | Master Clock Rate in Hz                                                      | N310              | master_clock_rate=125e6
- identify            | Causes front-panel LEDs to blink. The duration is variable.                  | N310              | identify=5 (will blink for about 5 seconds)
- serialize_init      | Force serial initialization of daughterboards.                               | All N3xx          | serialize_init=1
- skip_dram           | Ignore DRAM FIFO block. Connect TX streamers straight into DUC or radio.     | All N3xx          | skip_dram=1
- skip_ddc            | Ignore DDC block. Connect Rx streamers straight into radio.                  | All N3xx          | skip_ddc=1
- skip_duc            | Ignore DUC block. Connect Rx streamers or DRAM straight into radio.          | All N3xx          | skip_duc=1
- skip_init           | Skip the initialization process for the device.                              | All N3xx          | skip_init=1
- ref_clk_freq        | Specify the external reference clock frequency, default is 10 MHz.           | N310              | ref_clk_freq=20e6
- init_cals           | Specify the bitmask for initial calibrations of the RFIC.                    | N310              | init_cals=BASIC
- init_cals_timeout   | Timeout for initial calibrations in milliseconds.                            | N310              | init_cals_timeout=45000
- discovery_port      | Override default value for MPM discovery port.                               | All N3xx          | discovery_port=49700
- rpc_port            | Override default value for MPM RPC port.                                     | All N3xx          | rpc_port=49701
- tracking_cals       | Specify the bitmask for tracking calibrations of the RFIC.                   | N310              | tracking_cals=ALL
- rx_lo_source        | Initialize the source for the RX LO.                                         | N310              | rx_lo_source=external
- tx_lo_source        | Initialize the source for the TX LO.                                         | N310              | tx_lo_source=external
+ Key                   | Description                                                                  | Supported Devices | Example Value
+-----------------------|------------------------------------------------------------------------------|-------------------|---------------------
+ addr                  | IPv4 address of primary SFP+ port to connect to.                             | All N3xx          | addr=192.168.30.2
+ second_addr           | IPv4 address of secondary SFP+ port to connect to.                           | All N3xx          | second_addr=192.168.40.2
+ mgmt_addr             | IPv4 address or hostname which to connect the RPC client. Defaults to `addr'.| All N3xx          | mgmt_addr=ni-sulfur-311FE00 (can also go to RJ45)
+ find_all              | When using broadcast, find all devices, even if unreachable via CHDR.        | All N3xx          | find_all=1
+ master_clock_rate     | Master Clock Rate in Hz                                                      | N310              | master_clock_rate=125e6
+ identify              | Causes front-panel LEDs to blink. The duration is variable.                  | N310              | identify=5 (will blink for about 5 seconds)
+ serialize_init        | Force serial initialization of daughterboards.                               | All N3xx          | serialize_init=1
+ skip_dram             | Ignore DRAM FIFO block. Connect TX streamers straight into DUC or radio.     | All N3xx          | skip_dram=1
+ skip_ddc              | Ignore DDC block. Connect Rx streamers straight into radio.                  | All N3xx          | skip_ddc=1
+ skip_duc              | Ignore DUC block. Connect Rx streamers or DRAM straight into radio.          | All N3xx          | skip_duc=1
+ skip_init             | Skip the initialization process for the device.                              | All N3xx          | skip_init=1
+ ref_clk_freq          | Specify the external reference clock frequency, default is 10 MHz.           | N310              | ref_clk_freq=20e6
+ init_cals             | Specify the bitmask for initial calibrations of the RFIC.                    | N310              | init_cals=BASIC
+ init_cals_timeout     | Timeout for initial calibrations in milliseconds.                            | N310              | init_cals_timeout=45000
+ discovery_port        | Override default value for MPM discovery port.                               | All N3xx          | discovery_port=49700
+ rpc_port              | Override default value for MPM RPC port.                                     | All N3xx          | rpc_port=49701
+ tracking_cals         | Specify the bitmask for tracking calibrations of the RFIC.                   | N310              | tracking_cals=ALL
+ rx_lo_source          | Initialize the source for the RX LO.                                         | N310              | rx_lo_source=external
+ tx_lo_source          | Initialize the source for the TX LO.                                         | N310              | tx_lo_source=external
+ rfic_digital_loopback | Digital data loopback inside the RFIC.                                       | N310              | rfic_digital_loopback=1
+
+\subsection n3xx_usage_subdevspec Subdev Specifications
+
+The four RF ports on the front panel correspond to the following subdev
+specifications:
+
+Label | Subdev Spec
+------|------------
+RF0   | A:0
+RF1   | A:1
+RF2   | B:0 (N310 only)
+RF3   | B:1 (N310 only)
+
+Note: Before UHD 3.12.0.0, the subdev spec options were different (A:0, B:0,
+etc.). Make sure to update your application if you migrated from an earlier UHD
+version.
+
+The following example will map RF0 onto channel 0 of a uhd::usrp::multi_usrp
+object, and RF3 onto channel 1:
+
+~~~~~{.cpp}
+auto usrp = uhd::usrp::multi_usrp("type=n3xx");
+usrp->set_rx_subdev_spec("A:0 B:1");
+// This line will now set the gain for RF3 to 20.0:
+usrp->set_rx_gain(20.0, 1);
+// And this will affect RF0:
+usrp->set_rx_gain(20.0, 0);
+~~~~~
+
+See also uhd::usrp::subdev_spec_t.
 
 \subsection n3xx_usage_sensors The sensor API
 
@@ -461,6 +495,57 @@ To permanently enable it at every boot, run (this won't by itself launch the
 salt-minion):
 
     $ systemctl enable salt-minion
+
+\section n3xx_synchronization Clock/Time Synchronization
+
+\subsection n3xx_synchronization_internal Internal references
+
+The N3xx series has an onboard GPSDO as well as a 25 MHz reference oscillator,
+which can both be used as time- and clock references. The GPSDO will function
+as a reference even when there is no GPS reception.
+
+Note that this does not enable the synchronization of multiple devices.
+Using an internal reference is the default.
+
+\subsection n3xx_synchronization_external External references
+
+In order to synchronize multiple USRPs, an external reference, such as the
+CDA-2990, is required. If only a clock reference is available, it is possible
+to derive an internal PPS signal from the reference (which will allow devices
+to share a frequency, but not a time reference). If both an external clock and
+time source are provided, devices will be synchronized in frequency and time.
+
+```cpp
+auto usrp = uhd::usrp::multi_usrp::make("type=n3xx,clock_source=external,time_source=external");
+```
+
+\subsection n3xx_synchronization_whiterabbit White Rabbit
+
+White Rabbit is an Ethernet-based synchronization procedure; it is an extension
+of the IEEE 1588 Precision Time Protocol (PTP). The N3xx device can be
+configured as a White Rabbit slave.
+
+To use White Rabbit, it is necessary to provide an appropriate reference via
+Ethernet. This reference must be connected to SFP0. Finally, a White Rabbit-compatible
+FPGA must be loaded. SFP0 will not be available for data transport in this mode.
+
+The White Rabbit image is provided as a default image. To obtain the default
+images, simply run:
+
+    $ uhd_images_downloader
+
+Then, you can install the WX (or WA) image using `uhd_image_loader`:
+
+    $ uhd_image_loader --args type=n3xx,addr=ni-n3xx-<DEVICE_SERIAL> --fpga-path=”<UHD_INSTALL_DIRECTORY>/share/uhd/images/usrp_n310_fpga_WX.bit
+
+Once the image is loaded, select `sfp0` as the clock and time source:
+
+```cpp
+auto usrp = uhd::usrp::multi_usrp::make("type=n3xx,clock_source=sfp0,time_source=sfp0");
+```
+
+For more information, refer to the [White Rabbit Homepage](https://www.ohwr.org/projects/white-rabbit),
+or the [Ettus Research Knowledge Base](https://kb.ettus.com/Using_Ethernet-Based_Synchronization_on_the_USRP%E2%84%A2_N3xx_Devices).
 
 \section n3xx_theory_of_ops Theory of Operation
 

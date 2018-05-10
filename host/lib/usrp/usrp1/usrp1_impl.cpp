@@ -15,7 +15,6 @@
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/paths.hpp>
 #include <boost/format.hpp>
-#include <boost/assign/list_of.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/lexical_cast.hpp>
@@ -30,9 +29,10 @@ const uint16_t USRP1_VENDOR_ID  = 0xfffe;
 const uint16_t USRP1_PRODUCT_ID = 0x0002;
 static const boost::posix_time::milliseconds REENUMERATION_TIMEOUT_MS(3000);
 
-const std::vector<usrp1_impl::dboard_slot_t> usrp1_impl::_dboard_slots = boost::assign::list_of
-    (usrp1_impl::DBOARD_SLOT_A)(usrp1_impl::DBOARD_SLOT_B)
-;
+const std::vector<usrp1_impl::dboard_slot_t> usrp1_impl::_dboard_slots{
+    usrp1_impl::DBOARD_SLOT_A,
+    usrp1_impl::DBOARD_SLOT_B
+};
 
 /***********************************************************************
  * Discovery

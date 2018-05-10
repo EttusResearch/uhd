@@ -10,10 +10,11 @@
 #include <uhd/usrp/multi_usrp.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
-#include <boost/thread.hpp>
 #include <boost/algorithm/string.hpp>
 #include <iostream>
 #include <complex>
+#include <chrono>
+#include <thread>
 
 namespace po = boost::program_options;
 
@@ -86,7 +87,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     else if (sync == "pps"){
         usrp->set_time_source("external");
         usrp->set_time_unknown_pps(uhd::time_spec_t(0.0));
-        boost::this_thread::sleep(boost::posix_time::seconds(1)); //wait for pps sync pulse
+        std::this_thread::sleep_for(std::chrono::seconds(1)); //wait for pps sync pulse
     }
     else if (sync == "mimo"){
         UHD_ASSERT_THROW(usrp->get_num_mboards() == 2);
@@ -99,7 +100,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         usrp->set_time_now(uhd::time_spec_t(0.0), 0);
 
         //sleep a bit while the slave locks its time to the master
-        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
     //detect which channels to use

@@ -16,6 +16,7 @@
 #include <boost/format.hpp>
 #include <boost/shared_ptr.hpp>
 #include <stdint.h>
+#include <functional>
 
 namespace uhd { namespace usrp {
 
@@ -71,8 +72,8 @@ public:
      * \throws a uhd::runtime_error if the loopback value didn't match.
      */
     virtual void loopback_self_test(
-            boost::function<void(uint32_t)> poker_functor,
-            boost::function<uint64_t()> peeker_functor
+            std::function<void(uint32_t)> poker_functor,
+            std::function<uint64_t()> peeker_functor
     ) = 0;
 
     /*! Determine a tick rate that will work with a given sampling rate

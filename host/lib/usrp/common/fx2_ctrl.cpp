@@ -10,13 +10,14 @@
 #include <uhd/exception.hpp>
 #include <uhd/transport/usb_control.hpp>
 #include <boost/functional/hash.hpp>
-#include <boost/thread/thread.hpp>
 #include <stdint.h>
 #include <fstream>
 #include <sstream>
 #include <string>
 #include <vector>
 #include <cstring>
+#include <chrono>
+#include <thread>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -137,7 +138,7 @@ public:
         usrp_control_write(FX2_FIRMWARE_LOAD, 0xe600, 0, &reset_y, 1);
         usrp_control_write(FX2_FIRMWARE_LOAD, 0xe600, 0, &reset_n, 1);
         //wait for things to settle
-        boost::this_thread::sleep(boost::posix_time::milliseconds(2000));
+        std::this_thread::sleep_for(std::chrono::milliseconds(2000));
     }
 
     void usrp_load_firmware(std::string filestring, bool force)
@@ -194,7 +195,7 @@ public:
                 file.close();
 
                 //wait for things to settle
-                boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
+                std::this_thread::sleep_for(std::chrono::milliseconds(1000));
                 if (load_img_msg) UHD_LOGGER_INFO("FX2") << "Firmware loaded";
                 return;
             }
@@ -302,7 +303,7 @@ public:
             }
             addr += pagesize;
             len -= pagesize;
-            boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
         file.close();
         if (load_img_msg) UHD_LOGGER_INFO("FX2") << "EEPROM image loaded";

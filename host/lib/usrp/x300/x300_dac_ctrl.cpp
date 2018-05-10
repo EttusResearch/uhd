@@ -13,7 +13,8 @@
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/exception.hpp>
 #include <boost/format.hpp>
-#include <boost/thread/thread.hpp> //sleep
+#include <chrono>
+#include <thread>
 
 #define X300_DAC_FRONTEND_SYNC_FAILURE_FATAL
 
@@ -219,7 +220,7 @@ public:
                 throw uhd::runtime_error("x300_dac_ctrl: timeout waiting for DAC PLL to lock");
             if (reg_6 & (1 << 7))               // Lock lost?
                 write_ad9146_reg(0x06, 0xC0);   // Clear PLL event flags
-            boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
     }
 
@@ -235,7 +236,7 @@ public:
         const time_spec_t exit_time = uhd::get_system_time() + time_spec_t(1.0);
         while (true)
         {
-            boost::this_thread::sleep(boost::posix_time::milliseconds(1));  // wait for sync to complete
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));  // wait for sync to complete
             const size_t reg_12 = read_ad9146_reg(0x12);    // Sync Status (Expect bit 7 = 0, bit 6 = 1)
             const size_t reg_6 = read_ad9146_reg(0x06);     // Event Flags (Expect bit 5 = 0 and bit 4 = 1)
             if ((((reg_12 >> 6) & 0x3) == 0x1) && (((reg_6 >> 4) & 0x3) == 0x1))

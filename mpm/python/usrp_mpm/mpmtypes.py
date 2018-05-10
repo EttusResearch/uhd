@@ -58,20 +58,28 @@ class SID(object):
             self.dst_ep = sid & 0xFF
 
     def set_src_addr(self, new_addr):
-        " Return source address (e.g. 02:30>00:01 -> 2) "
+        " Set source address (e.g. 02:30>00:01 -> 2) "
         self.src_addr = new_addr & 0xFF
 
     def set_dst_addr(self, new_addr):
-        " Return destination address (e.g. 02:30>00:01 -> 0) "
+        " Set destination address (e.g. 02:30>00:01 -> 0) "
         self.dst_addr = new_addr & 0xFF
 
     def set_src_ep(self, new_addr):
-        " Return source endpoint (e.g. 02:30>00:01 -> 0x30) "
+        " Set source endpoint (e.g. 02:30>00:01 -> 0x30) "
         self.src_ep = new_addr & 0xFF
 
     def set_dst_ep(self, new_addr):
-        " Return destination endpoint (e.g. 02:30>00:01 -> 0) "
+        " Set destination endpoint (e.g. 02:30>00:01 -> 0) "
         self.dst_ep = new_addr & 0xFF
+
+    def get_dst_block(self):
+        " Get destination  block 2:30 or 2:31 --> 23 "
+        return (self.dst_addr<<4)&((self.dst_ep & 0xF0)>>4);
+
+    def get_dst_ep_port(self):
+        " Get destination endpoint "
+        return (self.dst_ep & 0x0F);
 
     def reversed(self):
         """

@@ -48,6 +48,7 @@ class XportMgrUDP(object):
             self._init_interfaces(self._possible_chdr_ifaces)
         self._eth_dispatchers = {}
         self._allocations = {}
+        self._previous_block_ep = {}
 
     def _init_interfaces(self, possible_ifaces):
         """
@@ -196,6 +197,30 @@ class XportMgrUDP(object):
             if sid.src_addr <= self.max_ctrl_addr:
                 sid.src_addr = self.iface_config[iface_name]['ctrl_src_addr']
             return sid
+
+        def sort_xport_info(xport):
+            """
+            We sort xport_info (which is a list of xport) as follows:
+            1. Look at current allocation of xport src_addr (which is the addr
+               of host). If the allocation too large, in this case larger or
+               equal to 2 (since 2*125 = 250MS/s = max bandwidth of SFP+ port),
+               we will use the allocation for sorting.
+            2. Else, we need to look at the destination block. The priority will
+               yield to the xport that has the previous destination block
+               that is the same as this coming destination block.
+            Note: smaller number return is the higher chance to be picked
+            """
+            sid = SID(xport['send_sid'])
+            src_addr = sid.src_addr
+            prev_block = -1
+            if src_addr in self._previous_block_ep:
+                prev_block = self._previous_block_ep[src_addr]
+            allocation = int(xport['allocation'])
+            if allocation >= 2:
+                return allocation
+            else:
+                return allocation if prev_block != sid.get_dst_block() else -1;
+
         assert xport_type in ('CTRL', 'ASYNC_MSG', 'TX_DATA', 'RX_DATA')
         allocation_getter = lambda iface: {
             'CTRL': 0,
@@ -213,7 +238,9 @@ class XportMgrUDP(object):
                 'xport_type': xport_type,
             }
             for iface_name, iface_info in iteritems(self._chdr_ifaces)
-        ], key=lambda x: int(x['allocation']), reverse=False)
+        ]
+            , key=lambda x: sort_xport_info(x)
+            , reverse=False)
         return xport_info
 
     def commit_xport(self, sid, xport_info):
@@ -247,6 +274,7 @@ class XportMgrUDP(object):
         self._eth_dispatchers[eth_iface].set_route(
             sid.reversed(), sender_addr, sender_port)
         self.log.trace("UDP transport successfully committed!")
+        self._previous_block_ep[sid.src_addr] = sid.get_dst_block()
         if xport_info.get('xport_type') == 'TX_DATA':
             self._allocations[eth_iface] = \
                 {'tx': self._allocations.get(eth_iface, {}).get('tx', 0) + 1}

@@ -50,9 +50,10 @@
 #include <uhd/usrp/dboard_manager.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
-#include <boost/thread.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <utility>
+#include <chrono>
+#include <thread>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -307,11 +308,11 @@ void xcvr2450::spi_reset(void){
     //spi reset mode: global enable = off, tx and rx enable = on
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_TX, gpio_atr::ATR_REG_IDLE, TX_ENB_TXIO);
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, gpio_atr::ATR_REG_IDLE, RX_ENB_RXIO | POWER_DOWN_RXIO);
-    boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     //take it back out of spi reset mode and wait a bit
     this->get_iface()->set_atr_reg(dboard_iface::UNIT_RX, gpio_atr::ATR_REG_IDLE, RX_DIS_RXIO | POWER_UP_RXIO);
-    boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }
 
 /***********************************************************************
@@ -348,7 +349,7 @@ double xcvr2450::set_lo_freq(double target_freq){
     double actual = 0.0;
     for (double offset = 0.0; offset <= 3e6; offset+=1e6){
         actual = this->set_lo_freq_core(target_freq + offset);
-        boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
         if (this->get_locked().to_bool()) break;
     }
     return actual;

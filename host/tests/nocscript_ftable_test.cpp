@@ -8,7 +8,6 @@
 #include "../lib/rfnoc/nocscript/function_table.hpp"
 #include <boost/test/unit_test.hpp>
 #include <boost/test/floating_point_comparison.hpp>
-#include <boost/assign/list_of.hpp>
 #include <boost/bind.hpp>
 #include <boost/make_shared.hpp>
 #include <algorithm>
@@ -28,9 +27,9 @@ BOOST_AUTO_TEST_CASE(test_basic_funcs)
     BOOST_CHECK(ft->function_exists("FALSE"));
 
     // Math
-    expression_container::expr_list_type two_int_values = boost::assign::list_of(E(2))(E(3));
-    expression_container::expr_list_type two_int_values2 = boost::assign::list_of(E(3))(E(2));
-    expression_container::expr_list_type two_double_values = boost::assign::list_of(E(2.0))(E(3.0));
+    expression_container::expr_list_type two_int_values{E(2), E(3)};
+    expression_container::expr_list_type two_int_values2{E(3), E(2)};
+    expression_container::expr_list_type two_double_values{E(2.0), E(3.0)};
 
     BOOST_REQUIRE_EQUAL(ft->get_type("ADD", two_int_args), expression::TYPE_INT);
     expression_literal e_add = ft->eval("ADD", two_int_args, two_int_values);
@@ -67,7 +66,7 @@ BOOST_AUTO_TEST_CASE(test_basic_funcs)
     BOOST_REQUIRE_EQUAL(e_ge.infer_type(), expression::TYPE_BOOL);
     BOOST_CHECK_EQUAL(e_ge.get_bool(), false);
 
-    expression_container::expr_list_type sixty_four = boost::assign::list_of(E(64));
+    expression_container::expr_list_type sixty_four{E(64)};
     expression_literal e_pwr2 = ft->eval("IS_PWR_OF_2", one_int_arg, sixty_four);
     BOOST_REQUIRE_EQUAL(e_pwr2.infer_type(), expression::TYPE_BOOL);
     BOOST_CHECK_EQUAL(e_pwr2.get_bool(), true);
@@ -76,8 +75,8 @@ BOOST_AUTO_TEST_CASE(test_basic_funcs)
     BOOST_CHECK_EQUAL(e_log2.get_int(), 6);
 
     // Boolean Logic
-    expression_container::expr_list_type e_true = boost::assign::list_of(E(true));
-    expression_container::expr_list_type e_false = boost::assign::list_of(E(false));
+    expression_container::expr_list_type e_true{E(true)};
+    expression_container::expr_list_type e_false{E(false)};
     BOOST_CHECK(ft->eval("TRUE", no_args, empty_arg_list).to_bool());
     BOOST_CHECK(ft->eval("TRUE", no_args, empty_arg_list).get_bool());
     BOOST_CHECK_EQUAL(ft->eval("FALSE", no_args, empty_arg_list).to_bool(), false);
@@ -86,7 +85,7 @@ BOOST_AUTO_TEST_CASE(test_basic_funcs)
 
     // Control
     std::cout << "Checking ~1s sleep until... ";
-    expression_container::expr_list_type e_sleeptime = boost::assign::list_of(E(.999));
+    expression_container::expr_list_type e_sleeptime{E(.999)};
     BOOST_CHECK(ft->eval("SLEEP", one_double_arg, e_sleeptime).get_bool());
     std::cout << "Now." << std::endl;
 }
@@ -103,7 +102,10 @@ BOOST_AUTO_TEST_CASE(test_add_funcs)
 
     BOOST_CHECK(not ft->function_exists("ADD_PLUS_2"));
 
-    expression_function::argtype_list_type add_int_args = boost::assign::list_of(expression::TYPE_INT)(expression::TYPE_INT);
+    expression_function::argtype_list_type add_int_args{
+        expression::TYPE_INT,
+        expression::TYPE_INT
+    };
     ft->register_function(
             "ADD_PLUS_2",
             boost::bind(&add_plus2_int, _1),
@@ -114,7 +116,7 @@ BOOST_AUTO_TEST_CASE(test_add_funcs)
     BOOST_CHECK(ft->function_exists("ADD_PLUS_2"));
     BOOST_CHECK(ft->function_exists("ADD_PLUS_2", add_int_args));
 
-    expression_container::expr_list_type add_int_values = boost::assign::list_of(E(2))(E(3));
+    expression_container::expr_list_type add_int_values{E(2), E(3)};
     expression_literal e = ft->eval("ADD_PLUS_2", two_int_args, add_int_values);
     BOOST_REQUIRE_EQUAL(e.infer_type(), expression::TYPE_INT);
     BOOST_CHECK_EQUAL(e.get_int(), 7);
@@ -219,7 +221,10 @@ BOOST_AUTO_TEST_CASE(test_bitwise_funcs)
     // Bitwise Math
     int int_value1 = 0x2;
     int int_value2 = 0x3;
-    expression_container::expr_list_type two_int_values = boost::assign::list_of(E(int_value1))(E(int_value2));
+    expression_container::expr_list_type two_int_values{
+        E(int_value1),
+        E(int_value2)
+    };
 
     BOOST_REQUIRE_EQUAL(ft->get_type("SHIFT_RIGHT", two_int_args), expression::TYPE_INT);
     expression_literal e_shift_right = ft->eval("SHIFT_RIGHT", two_int_args, two_int_values);

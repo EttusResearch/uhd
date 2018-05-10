@@ -20,13 +20,13 @@
 #include <uhd/utils/safe_call.hpp>
 #include <uhdlib/usrp/common/max287x.hpp>
 
-#include <boost/assign/list_of.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/math/special_functions/round.hpp>
-#include <boost/thread.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/thread/mutex.hpp>
 #include <map>
+#include <chrono>
+#include <thread>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -155,12 +155,12 @@ static const dboard_id_t UBX_TDD_160MHZ_RX_ID(0x0203);
 static const freq_range_t ubx_freq_range(10e6, 6.0e9);
 static const gain_range_t ubx_tx_gain_range(0, 31.5, double(0.5));
 static const gain_range_t ubx_rx_gain_range(0, 31.5, double(0.5));
-static const std::vector<std::string> ubx_pgas = boost::assign::list_of("PGA-TX")("PGA-RX");
-static const std::vector<std::string> ubx_plls = boost::assign::list_of("TXLO")("RXLO");
-static const std::vector<std::string> ubx_tx_antennas = boost::assign::list_of("TX/RX")("CAL");
-static const std::vector<std::string> ubx_rx_antennas = boost::assign::list_of("TX/RX")("RX2")("CAL");
-static const std::vector<std::string> ubx_power_modes = boost::assign::list_of("performance")("powersave");
-static const std::vector<std::string> ubx_xcvr_modes = boost::assign::list_of("FDX")("TX")("TX/RX")("RX");
+static const std::vector<std::string> ubx_pgas{"PGA-TX", "PGA-RX"};
+static const std::vector<std::string> ubx_plls{"TXLO", "RXLO"};
+static const std::vector<std::string> ubx_tx_antennas{"TX/RX", "CAL"};
+static const std::vector<std::string> ubx_rx_antennas{"TX/RX", "RX2", "CAL"};
+static const std::vector<std::string> ubx_power_modes{"performance", "powersave"};
+static const std::vector<std::string> ubx_xcvr_modes{"FDX", "TX", "TX/RX", "RX"};
 
 static const ubx_gpio_field_info_t ubx_proto_gpio_info[] = {
     //Field         Unit                  Offset Mask      Width    Direction                   ATR    IDLE,TX,RX,FDX
@@ -384,7 +384,7 @@ public:
         _iface->set_pin_ctrl(dboard_iface::UNIT_RX, _rx_gpio_reg.atr_mask);
 
         // bring CPLD out of reset
-        boost::this_thread::sleep(boost::posix_time::milliseconds(20)); // hold CPLD reset for minimum of 20 ms
+        std::this_thread::sleep_for(std::chrono::milliseconds(20)); // hold CPLD reset for minimum of 20 ms
 
         set_gpio_field(CPLD_RST_N, 1);
         write_gpio();
@@ -396,7 +396,7 @@ public:
             _txlo2 = max287x_iface::make<max2870>(boost::bind(&ubx_xcvr::write_spi_regs, this, TXLO2, _1));
             _rxlo1 = max287x_iface::make<max2870>(boost::bind(&ubx_xcvr::write_spi_regs, this, RXLO1, _1));
             _rxlo2 = max287x_iface::make<max2870>(boost::bind(&ubx_xcvr::write_spi_regs, this, RXLO2, _1));
-            std::vector<max287x_iface::sptr> los = boost::assign::list_of(_txlo1)(_txlo2)(_rxlo1)(_rxlo2);
+            std::vector<max287x_iface::sptr> los{_txlo1, _txlo2, _rxlo1, _rxlo2};
             for(max287x_iface::sptr lo:  los)
             {
                 lo->set_auto_retune(false);
@@ -410,7 +410,7 @@ public:
             _txlo2 = max287x_iface::make<max2871>(boost::bind(&ubx_xcvr::write_spi_regs, this, TXLO2, _1));
             _rxlo1 = max287x_iface::make<max2871>(boost::bind(&ubx_xcvr::write_spi_regs, this, RXLO1, _1));
             _rxlo2 = max287x_iface::make<max2871>(boost::bind(&ubx_xcvr::write_spi_regs, this, RXLO2, _1));
-            std::vector<max287x_iface::sptr> los = boost::assign::list_of(_txlo1)(_txlo2)(_rxlo1)(_rxlo2);
+            std::vector<max287x_iface::sptr> los{_txlo1, _txlo2, _rxlo1, _rxlo2};
             for(max287x_iface::sptr lo:  los)
             {
                 lo->set_auto_retune(false);

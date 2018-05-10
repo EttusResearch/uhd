@@ -17,7 +17,6 @@
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <boost/format.hpp>
-#include <boost/assign/list_of.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/lexical_cast.hpp>
@@ -615,13 +614,14 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
         this->setup_radio(i);
 
     //now test each radio module's connection to the codec interface
-    for(radio_perifs_t &perif:  _radio_perifs)
-    {
+    for (radio_perifs_t &perif : _radio_perifs) {
         _codec_mgr->loopback_self_test(
-            boost::bind(
-                &radio_ctrl_core_3000::poke32, perif.ctrl, TOREG(SR_CODEC_IDLE), _1
-            ),
-            boost::bind(&radio_ctrl_core_3000::peek64, perif.ctrl, RB64_CODEC_READBACK)
+            [&perif](const uint32_t value){
+                perif.ctrl->poke32(TOREG(SR_CODEC_IDLE), value);
+            },
+            [&perif](){
+                return perif.ctrl->peek64(RB64_CODEC_READBACK);
+            }
         );
     }
 
@@ -642,18 +642,20 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     }
 
     //setup time source props
-    static const std::vector<std::string> time_sources = (_gpsdo_capable) ?
-                                boost::assign::list_of("none")("internal")("external")("gpsdo") :
-                                boost::assign::list_of("none")("internal")("external") ;
+    const std::vector<std::string> time_sources =
+        (_gpsdo_capable) ?
+        std::vector<std::string>{"none", "internal", "external", "gpsdo"} :
+        std::vector<std::string>{"none", "internal", "external"};
     _tree->create<std::vector<std::string> >(mb_path / "time_source" / "options")
         .set(time_sources);
     _tree->create<std::string>(mb_path / "time_source" / "value")
         .set_coercer(boost::bind(&check_option_valid, "time source", time_sources, _1))
         .add_coerced_subscriber(boost::bind(&b200_impl::update_time_source, this, _1));
     //setup reference source props
-    static const std::vector<std::string> clock_sources = (_gpsdo_capable) ?
-                                boost::assign::list_of("internal")("external")("gpsdo") :
-                                boost::assign::list_of("internal")("external") ;
+    const std::vector<std::string> clock_sources =
+        (_gpsdo_capable) ?
+        std::vector<std::string>{"internal", "external", "gpsdo"} :
+        std::vector<std::string>{"internal", "external"};
     _tree->create<std::vector<std::string> >(mb_path / "clock_source" / "options")
         .set(clock_sources);
     _tree->create<std::string>(mb_path / "clock_source" / "value")
@@ -846,8 +848,7 @@ void b200_impl::setup_radio(const size_t dspno)
     ////////////////////////////////////////////////////////////////////
     // create RF frontend interfacing
     ////////////////////////////////////////////////////////////////////
-    static const std::vector<direction_t> dirs = boost::assign::list_of(RX_DIRECTION)(TX_DIRECTION);
-    for(direction_t dir:  dirs) {
+    for (direction_t dir : std::vector<direction_t>{RX_DIRECTION, TX_DIRECTION}) {
         const std::string x = (dir == RX_DIRECTION) ? "rx" : "tx";
         const std::string key = std::string(((dir == RX_DIRECTION) ? "RX" : "TX")) + std::string(((dspno == _fe1) ? "1" : "2"));
         const fs_path rf_fe_path
@@ -867,7 +868,7 @@ void b200_impl::setup_radio(const size_t dspno)
         ;
         if (dir == RX_DIRECTION)
         {
-            static const std::vector<std::string> ants = boost::assign::list_of("TX/RX")("RX2");
+            static const std::vector<std::string> ants{"TX/RX", "RX2"};
             _tree->create<std::vector<std::string> >(rf_fe_path / "antenna" / "options").set(ants);
             _tree->create<std::string>(rf_fe_path / "antenna" / "value")
                 .add_coerced_subscriber(boost::bind(&b200_impl::update_antenna_sel, this, dspno, _1))

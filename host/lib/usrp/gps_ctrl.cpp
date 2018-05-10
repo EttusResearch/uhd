@@ -11,23 +11,31 @@
 #include <uhd/exception.hpp>
 #include <uhd/types/sensors.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/assign/list_of.hpp>
-#include <stdint.h>
 #include <boost/thread/thread.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/format.hpp>
 #include <boost/regex.hpp>
 #include <boost/thread/mutex.hpp>
+#include <boost/date_time.hpp>
+#include <boost/tuple/tuple.hpp>
 #include <ctime>
 #include <string>
-#include <boost/date_time.hpp>
-
-#include "boost/tuple/tuple.hpp"
+#include <thread>
+#include <chrono>
+#include <stdint.h>
 
 using namespace uhd;
 using namespace boost::posix_time;
 using namespace boost::algorithm;
-using namespace boost::this_thread;
+
+namespace {
+    constexpr int GPS_COMM_TIMEOUT_MS       = 1300;
+    constexpr int GPS_NMEA_NORMAL_FRESHNESS = 1000;
+    constexpr int GPS_SERVO_FRESHNESS       = 1000;
+    constexpr int GPS_LOCK_FRESHNESS        = 2500;
+    constexpr int GPS_TIMEOUT_DELAY_MS      = 200;
+    constexpr int GPSDO_COMMAND_DELAY_MS    = 200;
+}
 
 /*!
  * A control for GPSDO devices
@@ -90,7 +98,7 @@ private:
                 break;
             }
 
-            sleep(boost::posix_time::milliseconds(1));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
             now = boost::get_system_time();
         }
 
@@ -128,7 +136,7 @@ private:
         return;
     }
 
-    const std::list<std::string> keys = boost::assign::list_of("GPGGA")("GPRMC")("SERVO");
+    const std::list<std::string> keys{"GPGGA", "GPRMC", "SERVO"};
     static const boost::regex servo_regex("^\\d\\d-\\d\\d-\\d\\d.*$");
     static const boost::regex gp_msg_regex("^\\$GP.*,\\*[0-9A-F]{2}$");
     std::map<std::string,std::string> msgs;
@@ -257,13 +265,14 @@ public:
 
   //return a list of supported sensors
   std::vector<std::string> get_sensors(void) {
-    std::vector<std::string> ret = boost::assign::list_of
-        ("gps_gpgga")
-        ("gps_gprmc")
-        ("gps_time")
-        ("gps_locked")
-        ("gps_servo");
-    return ret;
+      std::vector<std::string> ret{
+          "gps_gpgga",
+          "gps_gprmc",
+          "gps_time",
+          "gps_locked",
+          "gps_servo"
+      };
+      return ret;
   }
 
   uhd::sensor_value_t get_sensor(std::string key) {
@@ -293,22 +302,24 @@ public:
 
 private:
   void init_gpsdo(void) {
-    //issue some setup stuff so it spits out the appropriate data
-    //none of these should issue replies so we don't bother looking for them
-    //we have to sleep between commands because the JL device, despite not acking, takes considerable time to process each command.
-     sleep(milliseconds(GPSDO_COMMAND_DELAY_MS));
-    _send("SYST:COMM:SER:ECHO OFF\r\n");
-     sleep(milliseconds(GPSDO_COMMAND_DELAY_MS));
-    _send("SYST:COMM:SER:PRO OFF\r\n");
-     sleep(milliseconds(GPSDO_COMMAND_DELAY_MS));
-    _send("GPS:GPGGA 1\r\n");
-     sleep(milliseconds(GPSDO_COMMAND_DELAY_MS));
-    _send("GPS:GGAST 0\r\n");
-     sleep(milliseconds(GPSDO_COMMAND_DELAY_MS));
-    _send("GPS:GPRMC 1\r\n");
-     sleep(milliseconds(GPSDO_COMMAND_DELAY_MS));
-    _send("SERV:TRAC 1\r\n");
-     sleep(milliseconds(GPSDO_COMMAND_DELAY_MS));
+      //issue some setup stuff so it spits out the appropriate data
+      //none of these should issue replies so we don't bother looking for them
+      //we have to sleep between commands because the JL device, despite not
+      //acking, takes considerable time to process each command.
+      const std::vector<std::string> init_cmds = {
+          "SYST:COMM:SER:ECHO OFF\r\n",
+          "SYST:COMM:SER:PRO OFF\r\n",
+          "GPS:GPGGA 1\r\n",
+          "GPS:GGAST 0\r\n",
+          "GPS:GPRMC 1\r\n",
+          "SERV:TRAC 1\r\n"
+      };
+
+      for (const auto& cmd : init_cmds) {
+          _send(cmd);
+          std::this_thread::sleep_for(
+                std::chrono::milliseconds(GPSDO_COMMAND_DELAY_MS));
+      }
   }
 
   //helper function to retrieve a field from an NMEA sentence
@@ -408,12 +419,6 @@ private:
     GPS_TYPE_NONE
   } _gps_type;
 
-  static const int GPS_COMM_TIMEOUT_MS = 1300;
-  static const int GPS_NMEA_NORMAL_FRESHNESS = 1000;
-  static const int GPS_SERVO_FRESHNESS = 1000;
-  static const int GPS_LOCK_FRESHNESS = 2500;
-  static const int GPS_TIMEOUT_DELAY_MS = 200;
-  static const int GPSDO_COMMAND_DELAY_MS = 200;
 };
 
 /***********************************************************************

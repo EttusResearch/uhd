@@ -4,6 +4,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+//
+// Driver for the N310/N300 daughterboard ("Magnesium")
+//
+
 #ifndef INCLUDED_LIBUHD_RFNOC_MAGNESIUM_RADIO_CTRL_IMPL_HPP
 #define INCLUDED_LIBUHD_RFNOC_MAGNESIUM_RADIO_CTRL_IMPL_HPP
 
@@ -22,7 +26,9 @@
 namespace uhd {
     namespace rfnoc {
 
-/*! \brief Provide access to an Magnesium radio.
+/*! \brief RFNoC block / daughterboard driver for a "Magnesium" daughterboard.
+ *
+ * This daughterboard is used on the USRP N310 and N300.
  */
 class magnesium_radio_ctrl_impl : public radio_ctrl_impl, public rpc_block_ctrl
 {

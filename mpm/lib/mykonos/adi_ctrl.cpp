@@ -278,13 +278,13 @@ commonErr_t CMB_writeToLog(
     else {
         mpm_log_level = mpm::types::log_level_t::TRACE;
     }
-
-    mpm::types::log_buf::make_singleton()->post(
-        mpm_log_level,
-        "AD937X",
-        str(boost::format("[Device ID %d] [Error code: %d] %s")
-            % int(deviceIndex) % errorCode % comment)
-    );
+    //FIXME: This caused segfault with the async pattern call to c++ from boost python
+    // mpm::types::log_buf::make_singleton()->post(
+    //     mpm_log_level,
+    //     "AD937X",
+    //     str(boost::format("[Device ID %d] [Error code: %d] %s")
+    //         % int(deviceIndex) % errorCode % comment)
+    // );
 
     return COMMONERR_OK;
 }

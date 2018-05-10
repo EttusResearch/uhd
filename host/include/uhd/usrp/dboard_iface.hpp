@@ -276,6 +276,10 @@ public:
         const uhd::usrp::fe_connection_t& fe_conn
     ) = 0;
 
+    /*! Returns the true if set_fe_connection() is implemented on this dboard_iface
+     */
+    virtual bool has_set_fe_connection(const unit_t) { return false; }
+
     /*!
      * Get the command time.
      * \return the command time

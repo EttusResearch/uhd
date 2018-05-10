@@ -29,7 +29,7 @@ from usrp_mpm.mpmutils import to_binary_str
 from usrp_mpm.sys_utils import watchdog
 from usrp_mpm.sys_utils import net
 
-TIMEOUT_INTERVAL = 4.0 # Seconds before claim expires (default value)
+TIMEOUT_INTERVAL = 5.0 # Seconds before claim expires (default value)
 TOKEN_LEN = 16 # Length of the token string
 # Compatibility number for MPM
 MPM_COMPAT_NUM = (1, 2)
@@ -436,7 +436,6 @@ class MPMServer(RPCServer):
             )
             self._last_error = "init() called without valid claim."
             raise RuntimeError("init() called without valid claim.")
-        self._disable_timeouts = True # Stop the timer, inits can take some time.
         try:
             result = self.periph_manager.init(args)
         except Exception as ex:
@@ -444,7 +443,6 @@ class MPMServer(RPCServer):
             self.log.error("init() failed with error: %s", str(ex))
         finally:
             self.log.debug("init() result: {}".format(result))
-            self._disable_timeouts = False
         return result
 
     ###########################################################################

@@ -260,4 +260,3 @@ ctrl_iface::sptr ctrl_iface::make(
         );
     }
 }
-

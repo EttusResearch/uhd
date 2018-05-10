@@ -22,10 +22,11 @@
 #include <uhd/usrp/dboard_manager.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
-#include <boost/thread.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <utility>
 #include <cmath>
+#include <chrono>
+#include <thread>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -396,7 +397,7 @@ double dbsrx::set_lo_freq(double target_freq){
         read_reg(0x0, 0x0);
 
         //allow for setup time before checking condition again
-        boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 
     UHD_LOGGER_TRACE("DBSRX") << boost::format(

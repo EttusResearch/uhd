@@ -32,6 +32,8 @@
 #include <boost/functional/hash.hpp>
 #include <boost/assign/list_of.hpp>
 #include <fstream>
+#include <chrono>
+#include <thread>
 
 #define NIUSRPRIO_DEFAULT_RPC_PORT "5444"
 
@@ -213,7 +215,15 @@ static device_addrs_t x300_find_pcie(const device_addr_t &hint, bool explicit_qu
 
             if (get_pcie_zpu_iface_registry().has_key(resource_d)) {
                 zpu_ctrl = get_pcie_zpu_iface_registry()[resource_d].lock();
-            } else {
+                if (!zpu_ctrl)
+                {
+                    get_pcie_zpu_iface_registry().pop(resource_d);
+                }
+            }
+
+            // if the registry didn't have a key OR that key was an orphaned weak_ptr
+            if (!zpu_ctrl)
+            {
                 zpu_ctrl = x300_make_ctrl_iface_pcie(kernel_proxy, false /* suppress timeout errors */);
                 //We don't put this zpu_ctrl in the registry because we need
                 //a persistent niriok_proxy associated with the object
@@ -383,7 +393,7 @@ static void x300_load_fw(wb_iface::sptr fw_reg_ctrl, const std::string &file_nam
     }
 
     //Wait for fimrware to reboot. 3s is an upper bound
-    boost::this_thread::sleep(boost::posix_time::milliseconds(3000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(3000));
     UHD_LOGGER_INFO("X300") << "Firmware loaded!" ;
 }
 
@@ -1522,12 +1532,15 @@ void x300_impl::sync_times(mboard_members_t &mb, const uhd::time_spec_t& t)
 
 bool x300_impl::wait_for_clk_locked(mboard_members_t& mb, uint32_t which, double timeout)
 {
-    boost::system_time timeout_time = boost::get_system_time() + boost::posix_time::milliseconds(timeout * 1000.0);
+    const auto timeout_time =
+        std::chrono::steady_clock::now()
+        + std::chrono::milliseconds(int64_t(timeout * 1000));
     do {
-        if (mb.fw_regmap->clock_status_reg.read(which)==1)
+        if (mb.fw_regmap->clock_status_reg.read(which) == 1) {
             return true;
-        boost::this_thread::sleep(boost::posix_time::milliseconds(1));
-    } while (boost::get_system_time() < timeout_time);
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    } while (std::chrono::steady_clock::now() < timeout_time);
 
     //Check one last time
     return (mb.fw_regmap->clock_status_reg.read(which)==1);
@@ -1549,7 +1562,7 @@ bool x300_impl::is_pps_present(mboard_members_t& mb)
     uint32_t pps_detect = mb.fw_regmap->clock_status_reg.read(fw_regmap_t::clk_status_reg_t::PPS_DETECT);
     for (int i = 0; i < 15; i++)
     {
-        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         if (pps_detect != mb.fw_regmap->clock_status_reg.read(fw_regmap_t::clk_status_reg_t::PPS_DETECT))
             return true;
     }
@@ -1563,7 +1576,7 @@ bool x300_impl::is_pps_present(mboard_members_t& mb)
 void x300_impl::claimer_loop(wb_iface::sptr iface)
 {
     claim(iface);
-    boost::this_thread::sleep(boost::posix_time::milliseconds(1000)); //1 second
+    std::this_thread::sleep_for(std::chrono::seconds(1));
 }
 
 x300_impl::claim_status_t x300_impl::claim_status(wb_iface::sptr iface)
@@ -1587,7 +1600,7 @@ x300_impl::claim_status_t x300_impl::claim_status(wb_iface::sptr iface)
             // be in the process of being released.  This is possible because
             // older firmware takes a long time to update the status.  Wait and
             // check status again.
-            boost::this_thread::sleep(boost::posix_time::milliseconds(5));
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
             continue;
         }
         claim_status = (hash == get_process_hash() ? CLAIMED_BY_US : CLAIMED_BY_OTHER);
@@ -1612,7 +1625,7 @@ bool x300_impl::try_to_claim(wb_iface::sptr iface, long timeout)
         {
             claim(iface);
             // It takes the claimer 10ms to update status, so wait 20ms before verifying claim
-            boost::this_thread::sleep(boost::posix_time::milliseconds(20));
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
             continue;
         }
         if (status == CLAIMED_BY_US)
@@ -1624,7 +1637,7 @@ bool x300_impl::try_to_claim(wb_iface::sptr iface, long timeout)
             // Another process owns the device - give up
             return false;
         }
-        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     return true;
 }

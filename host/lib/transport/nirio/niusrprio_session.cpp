@@ -6,15 +6,21 @@
 //
 
 
+//@TODO: Move the register defs required by the class to a common location
+#include "../../usrp/x300/x300_regs.hpp"
 #include <uhd/transport/nirio/niusrprio_session.h>
 #include <uhd/transport/nirio/nirio_fifo.h>
 #include <uhd/transport/nirio/status.h>
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
-#include <stdio.h>
 #include <fstream>
-//@TODO: Move the register defs required by the class to a common location
-#include "../../usrp/x300/x300_regs.hpp"
+#include <chrono>
+#include <thread>
+#include <stdio.h>
+
+namespace {
+    constexpr uint32_t FPGA_READY_TIMEOUT_IN_MS      = 1000;
+}
 
 namespace uhd { namespace niusrprio {
 
@@ -207,7 +213,8 @@ nirio_status niusrprio_session::_ensure_fpga_ready()
         //there is a small chance that the server is still finishing up cleaning up
         //the DMA FIFOs. We currently don't have any feedback from the driver regarding
         //this state so just wait.
-        boost::this_thread::sleep(boost::posix_time::milliseconds(FPGA_READY_TIMEOUT_IN_MS));
+        std::this_thread::sleep_for(
+            std::chrono::milliseconds(FPGA_READY_TIMEOUT_IN_MS));
 
         //Disable all FIFOs in the FPGA
         for (size_t i = 0; i < _lvbitx->get_input_fifo_count(); i++) {
@@ -223,7 +230,7 @@ nirio_status niusrprio_session::_ensure_fpga_ready()
         boost::posix_time::ptime start_time = boost::posix_time::microsec_clock::local_time();
         boost::posix_time::time_duration elapsed;
         do {
-            boost::this_thread::sleep(boost::posix_time::milliseconds(10)); //Avoid flooding the bus
+            std::this_thread::sleep_for(std::chrono::milliseconds(10)); //Avoid flooding the bus
             elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
             nirio_status_chain(_riok_proxy->peek(FPGA_STATUS_REG, reg_data), status);
         } while (
