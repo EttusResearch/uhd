@@ -11,7 +11,8 @@
 
 using namespace uhd;
 
-static const double tolerance = 0.001;
+static const double tolerance = 0.001; // %
+
 
 BOOST_AUTO_TEST_CASE(test_ranges_bounds){
     meta_range_t mr;
@@ -44,6 +45,23 @@ BOOST_AUTO_TEST_CASE(test_ranges_clip){
 
     BOOST_CHECK_CLOSE(mr.clip(50.9, false), 50.9, tolerance);
     BOOST_CHECK_CLOSE(mr.clip(50.9, true), 51.0, tolerance);
+}
+
+BOOST_AUTO_TEST_CASE(test_meta_range_t_ctor){
+    meta_range_t mr1(0.0, 10.0, 1.0);
+    BOOST_CHECK_CLOSE(mr1.clip(5.0), 5.0, tolerance);
+    BOOST_CHECK_CLOSE(mr1.clip(11.0), 10.0, tolerance);
+    BOOST_CHECK_CLOSE(mr1.clip(5.1, true), 5.0, tolerance);
+
+    meta_range_t mr2(0.0, 10.0);
+    BOOST_CHECK_CLOSE(mr2.clip(5.0), 5.0, tolerance);
+    BOOST_CHECK_CLOSE(mr2.clip(11.0), 10.0, tolerance);
+    BOOST_CHECK_CLOSE(mr2.clip(5.1, true), 5.1, tolerance);
+
+    meta_range_t mr3(mr2.begin(), mr2.end());
+    BOOST_CHECK_CLOSE(mr3.clip(5.0), 5.0, tolerance);
+    BOOST_CHECK_CLOSE(mr3.clip(11.0), 10.0, tolerance);
+    BOOST_CHECK_CLOSE(mr3.clip(5.1, true), 5.1, tolerance);
 }
 
 BOOST_AUTO_TEST_CASE(test_ranges_clip2){
