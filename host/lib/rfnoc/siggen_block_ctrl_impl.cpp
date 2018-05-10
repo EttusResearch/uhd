@@ -1,24 +1,11 @@
 //
-// Copyright 2016 Ettus Research LLC
+// Copyright 2016-2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include <boost/format.hpp>
-#include <boost/bind.hpp>
 #include <uhd/utils/log.hpp>
-#include <uhd/types/ranges.hpp>
 #include <uhd/rfnoc/siggen_block_ctrl.hpp>
 
 using namespace uhd::rfnoc;
@@ -33,9 +20,10 @@ public:
 
     void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd, const size_t)
     {
-        UHD_RFNOC_BLOCK_TRACE() << "issue_stream_cmd() " << std::endl;
+        UHD_LOGGER_TRACE(unique_id()) << "issue_stream_cmd()" << std::endl;
         if (not stream_cmd.stream_now) {
-            throw uhd::not_implemented_error("siggen_block does not support timed commands.");
+            throw uhd::not_implemented_error(
+                "siggen_block does not support timed commands.");
         }
         switch (stream_cmd.stream_mode) {
             case uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS:
@@ -48,7 +36,8 @@ public:
 
             case uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE:
             case uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE:
-                throw uhd::not_implemented_error("siggen_block does not support streaming modes other than CONTINUOUS");
+                throw uhd::not_implemented_error(
+                    "siggen_block does not support streaming modes other than CONTINUOUS");
 
             default:
                 UHD_THROW_INVALID_CODE_PATH();
