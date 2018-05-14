@@ -238,7 +238,7 @@ class N3XXBIST(object):
     """
     # This defines special tests that are really collections of other tests.
     collections = {
-        'standard': ["ddr3", "gpsdo", "rtc", "temp", "clock_int", "tpm"],
+        'standard': ["ddr3", "gpsdo", "rtc", "temp", "fan", "tpm"],
         'extended': "*",
     }
 
