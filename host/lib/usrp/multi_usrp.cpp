@@ -433,7 +433,7 @@ public:
             const auto radio_index = get_radio_index(spec.db_name);
             const auto radio_path = rfnoc_path / str(boost::format("Radio_%d") % radio_index);
             const auto eeprom_path = radio_path / "eeprom";
-            if (_tree->exists(radio_path)) {
+            if (_tree->exists(eeprom_path)) {
                 const auto db_eeprom = _tree->access<eeprom_map_t>(eeprom_path).get();
                 usrp_info["rx_serial"] = db_eeprom.count("serial") ?
                     std::string(db_eeprom.at("serial").begin(), db_eeprom.at("serial").end())
@@ -474,7 +474,7 @@ public:
             const auto radio_index = get_radio_index(spec.db_name);
             const auto radio_path = rfnoc_path / str(boost::format("Radio_%d")%radio_index);
             const auto path = radio_path / "eeprom";
-            if(_tree->exists(radio_path)) {
+            if(_tree->exists(path)) {
                 const auto db_eeprom = _tree->access<eeprom_map_t>(path).get();
                 usrp_info["tx_serial"] = db_eeprom.count("serial") ?
                     std::string(db_eeprom.at("serial").begin(), db_eeprom.at("serial").end())
