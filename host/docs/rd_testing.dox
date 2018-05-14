@@ -513,6 +513,76 @@ Software Required
 
 tbd
 
+\section rdtesting_bist BISTs
+
+| Test Code           | Device    | Peripherals         | Manual Test Procedure           | Automatic Test Procedure      |
+|---------------------|-----------|---------------------|---------------------------------|-------------------------------|
+| BIST-N310-v1        | 1xN310    | DB-15 GPIO Loopback | \ref rdtesting_bist_n3x0_manual | \ref rdtesting_bist_n3x0_auto |
+| BIST-N300-v1        | 1xN300    | DB-15 GPIO Loopback | \ref rdtesting_bist_n3x0_manual | \ref rdtesting_bist_n300_auto |
+
+Some of our devices have built-in self-tests (BISTs).
+
+\subsection rdtesting_bist_n310_manual N300/N310 Manual Procedure
+
+Note: The N300 and N310 have identical BISTs.
+
+1. Connect the front-panel GPIO loopback to the front panel
+   (see \ref rdtesting_peripherals_gpiolb)
+2. Execute the following commands:
+
+        $ n3xx_bist standard # Note: This will run multiple tests
+        $ n3xx_bist gpio
+
+3. Load the AA image from a host computer. Adapt the following command to your
+   system:
+
+        $ uhd_image_loader --args type=n3xx,addr=ni-n3xx-$SERIAL --fpga-path=/path/to/usrp_n310_fpga_AA.bit
+
+4. The final BIST is the SFP test, and there are three valid ways of executing
+   them. For the purpose of running the test, only one of these needs to be
+   run, and can be chosen based on the available peripherals.
+  a. Connect an SFP loopback module to both SFP0 and SFP1. Run the command
+     `n3xx_bist sfp0_loopback sfp1_loopback`.
+  b. If only one SFP loopback module is available, connect the loopback module
+     to SFP0 and run `n3xx_bist sfp0_loopback`. Then, connect the loopback
+     module to SFP1 and run the command `n3xx_bist sfp1_loopback`.
+  c. If no SFP loopback module is available, connect an SFP cable to both SFP0
+     and SFP1, and run the command `n3xx_bist sfp_loopback`. Note while this
+     option is a legitimate substitute to the previous two options, it is of
+     limited use when trying to debug actual SFP issues.
+
+Every test will produce a JSON-serialized dictionary. All tests have passed if
+the "status" key is "true", or the return code for `n3xx_bist` is 0.
+
+Note: Keep in mind that after the test, an Aurora image is loaded. If this is
+not desired, re-run `uhd_image_loader` to load whatever image is requested.
+
+\subsection rdtesting_bist_n3x0_auto N300/N310 Automatic Procedure
+
+Note: The N300 and N310 have identical BISTs.
+
+Assuming the peripherals described in \ref rdtesting_bist_n310_manual are all
+plugged in, the test can trivially be executed automatically by running
+
+        $ n3xx_bist standard
+        $ n3xx_bist gpio
+	$ n3xx_bist sfp_loopback # Or sfp0_loopback and sfp1_loopback
+
+and making sure that all return values are 0.
+
+\section rdtesting_peripherals Required Peripherals
+
+\section rdtesting_peripherals_gpiolb DB15 GPIO Loopback
+
+This is a cable or breakout board which connects to the DB15 connector and loops
+back the following pins:
+
+- 0<->6
+- 1<->7
+- 2<->8
+- 3<->9
+- 4<->10
+- 5<->11
 
 \section rdtesting_defining Defining R&D Tests
 
