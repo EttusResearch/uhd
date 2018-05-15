@@ -588,11 +588,9 @@ private: // methods
         const size_t &port_index)
     {
         block_name_to_block_map_t legacy_block_map = get_legacy_blocks(_device);
-        auto radio_src_flat = _flatten_blocks_by_n_ports(legacy_block_map[RADIO_BLOCK_NAME].first);
-        auto radio_snk_flat = _flatten_blocks_by_n_ports(legacy_block_map[RADIO_BLOCK_NAME].second);
-        size_t index_src = find_block<source_port_t>(radio_src_flat, mboard_idx, radio_index, port_index);
-        size_t index_snk = find_block<sink_port_t>(radio_snk_flat, mboard_idx, radio_index, port_index);
         if (dir == uhd::TX_DIRECTION){
+            auto radio_snk_flat = _flatten_blocks_by_n_ports(legacy_block_map[RADIO_BLOCK_NAME].second);
+            size_t index_snk = find_block<sink_port_t>(radio_snk_flat, mboard_idx, radio_index, port_index);
             if (_has_sramfifo){
                 auto sfifo_snk_flat = _flatten_blocks_by_n_ports(legacy_block_map[SFIFO_BLOCK_NAME].second);
                 UHD_ASSERT_THROW(index_snk < sfifo_snk_flat.size());
@@ -607,7 +605,7 @@ private: // methods
                 if (_has_ducs){
                     return std::make_pair(block_id_t(mboard_idx, DUC_BLOCK_NAME, radio_index).to_string(),port_index);
                     auto duc_snk_flat = _flatten_blocks_by_n_ports(legacy_block_map[DUC_BLOCK_NAME].second);
-                    UHD_ASSERT_THROW(index_src < duc_snk_flat.size());
+                    UHD_ASSERT_THROW(index_snk < duc_snk_flat.size());
                     auto duc_block = duc_snk_flat[index_snk].first->get_block_id();
                     return std::make_pair(duc_block, duc_snk_flat[index_snk].second);
                 }else{
@@ -615,6 +613,8 @@ private: // methods
                 }
             }
         }else{
+            auto radio_src_flat = _flatten_blocks_by_n_ports(legacy_block_map[RADIO_BLOCK_NAME].first);
+            size_t index_src = find_block<source_port_t>(radio_src_flat, mboard_idx, radio_index, port_index);
             if (_has_ddcs){
                 auto ddc_src_flat = _flatten_blocks_by_n_ports(legacy_block_map[DDC_BLOCK_NAME].first);
                 UHD_ASSERT_THROW(index_src < ddc_src_flat.size());
