@@ -1,6 +1,36 @@
 Change Log for Releases
 ==============================
 
+## 003.012.000.000
+* N3x0: Add White Rabbit support, add N300 support, standard BIST
+        includes fan, fix issue with 1GigE, switch to 2 radio blocks
+        with 2 channels each, upgrade TDC to version 2.0
+* X300: Enable BasicRX to use A/B/AB/BA muxing setups, more consistent
+        logging
+* USRP2/N2x0: Re-add ability to modulate in the DAC, improve ISE
+              settings to better meet timing
+* B205mini: Fix global reset, improve timing in b205_ref_pll
+* UHD: Remove a lot of Boost usage, mostly replaced by C++11 features,
+       more unit tests, fix Boost 1.67 compatibility, fix compiler
+       warnings, add API to query clock rate range,
+* MPM: Refactored N3xx code, moved C++ standard to 14, refactor
+       Boost.Python bindings, use CMake variable MPM_DEVICE
+* Logging: Allow disabling fastpath msgs at runtime
+* Docs: Clarified meaning of DSP frequencies, improved manual
+        section on synchronization, added some known issues to B100,
+        USRP2, and USRP1
+* Examples: Improved benchmark_rate (added failure thresholds, fixed
+  incorrect calculation of samples on drops, fixed timeout values),
+  minor fixes to txrx_loopback_to_file
+* Utils: Handle U's in calibration tools, create-lvbitx.py is now Py3k
+         compatible, fixed git-hash.sh
+* RFNoC: DDCs/DUCs use DDSes instead of CORDIC, add DMA-based replay
+         block in FPGA, add 64-bit support to axi_wrapper, add compat
+         number to radio block,
+* Fix license headers
+* This release includes all bugfixes and features from previous
+  releases, in particular, the 3.11.* release cycle
+
 ## 003.011.001.000
 * N310: fix compiler warnings
 * N310: Implement digital loopback
