@@ -93,6 +93,7 @@ Devtests are only defined for some devices. When running a devtest, all
 peripherals must be disconnected (e.g., no daughterboards on the X-Series, no
 GPSDOs on the B- and X-Series).
 
+
 \subsection rdtesting_devtest_manual Devtest: Manual Test Procedure
 
 ### X3x0 procedure
@@ -200,11 +201,11 @@ Connecting noc_block_skeleton (SID: 0:0) to noc_block_tb (SID: 1:0)
 [TEST CASE   5] (t=000007403) DONE... Passed
 ========================================================
 TESTBENCH FINISHED: noc_block_skeleton
- - Time elapsed:   7500 ns             
+ - Time elapsed:   7500 ns
  - Tests Expected: 5
  - Tests Run:      5
  - Tests Passed:   5
-Result: PASSED   
+Result: PASSED
 ========================================================
 \endcode
 
@@ -251,7 +252,7 @@ to change sample rate while streaming.
 4. In the GUI, inspect the spectrum. There should be a strong tone at the test
    tone frequency. There may be a small tone at the carrier frequency due to DC
    offset and a quadrature image due to IQ imbalance.
-5. Check the input tone frequencies outlined below. The tone should shift from 
+5. Check the input tone frequencies outlined below. The tone should shift from
    left to right as the frequency changes and may have some amplitude variation,
    especially at the band edges.
   - X3x0: 910 MHz to 920 MHz in 1 MHz steps
@@ -407,19 +408,22 @@ Note: On TX tests, initial Us within the first 5 seconds can be ignored and do n
 
 #### USRP E3xx (SG3 Required, SG1 Optional)
 
-| Channels      | Master Clock Rates      | Sample Rate | Duration | Notes              |
+| Channels      | Master Clock Rate       | Sample Rate | Duration | Notes              |
 |---------------|-------------------------|-------------|----------|--------------------|
-| 1x RX         | 1e6, 10e6, 61.44e6      | 1e6         | 60       | Test both channels |
-| 1x TX         | 1e6, 10e6, 61.44e6      | 1e6         | 60       | Test both channels |
-| 2x RX         | 1e6, 10e6, 30.72e6      | 1e6         | 60       |                    |
-| 2x TX         | 1e6, 10e6, 30.72e6      | 1e6         | 60       |                    |
-| 1x RX & 1x TX | 1e6, 10e6, 61.44e6      | 1e6         | 60       | Test both channels |
-| 1x RX & 1x TX | 61.44e6                 | 1e6         | 60       | Use channel 1      |
-| 2x RX & 2x TX | 1e6, 10e6, 30.72e6      | 1e6         | 60       |                    |
+| 1x RX         | 10e6                    | 1e6         | 60       | Test both channels |
+| 1x RX         | 61.44e6                 | 1.024e6     | 60       | Test both channels |
+| 1x TX         | 10e6                    | 1e6         | 60       | Test both channels |
+| 1x TX         | 61.44e6                 | 1.024e6     | 60       | Test both channels |
+| 2x RX         | 10e6                    | 1e6         | 60       |                    |
+| 2x RX         | 30.72e6                 | 1.024e6     | 60       |                    |
+| 2x TX         | 10e6                    | 1e6         | 60       |                    |
+| 2x TX         | 30.72e6                 | 1.024e6     | 60       |                    |
+| 1x RX & 1x TX | 10e6                    | 1e6         | 60       | Test both channels |
+| 1x RX & 1x TX | 61.44e6                 | 1.024e6     | 60       | Use channel 1      |
+| 2x RX & 2x TX | 10e6                    | 1e6         | 60       |                    |
+| 2x RX & 2x TX | 30.72e6                 | 1.024e6     | 60       |                    |
 | 1x RX & 1x TX | 61.44e6                 | 1e6         | 3600     | Use channel 0      |
 | 2x RX & 2x TX | 30.72e6                 | 1e6         | 3600     |                    |
-
-Note: Any sample rate warnings can be ignored.
 
 \subsection rdtesting_fpgafuncverif_auto FPGA Functional Verification: Automatic Test Procedure
 
@@ -437,7 +441,7 @@ tbd
 | PHASE-N2x0-MIMO-v1 | 2x N2x0 + MIMO cable | 2x SBX | \ref rdtesting_phase_rx_N2x0_MIMO | \ref rdtesting_phase_rx_auto |
 
 
-| Device \anchor phase_band_table        | Frequency Range         | Number of bands | 
+| Device \anchor phase_band_table        | Frequency Range         | Number of bands |
 |---------------|-------------------------|-----------------|
 | TwinRX        | 10 - 6000 MHz           |      12         |
 | UBX-{160, 40} | 10 - 6000 MHz           |      12         |
@@ -449,7 +453,7 @@ To test phase alignment we measure phase offset between DUTs at an offset of 2 M
 
 Correct synchronization with PPS and 10 MHz references is required for these tests.
 
-\subsection rdtesting_phase_rx_manual Manual phase alignment testing (Receiver) 
+\subsection rdtesting_phase_rx_manual Manual phase alignment testing (Receiver)
 
 Equipment Required
 - Octoclock-G
