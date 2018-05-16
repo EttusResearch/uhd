@@ -200,7 +200,7 @@ public:
 
         const int min_n_divider = LMX2592_MIN_N_DIV[_regs.mash_order];
         double pfd_freq = input_freq / _regs.pll_r;
-        while (pfd_freq * (prescaler + min_n_divider) / vco_multiplier > core_vco_freq) {
+        while (pfd_freq * (prescaler * min_n_divider) / vco_multiplier > core_vco_freq) {
             _regs.pll_r++;
             pfd_freq = input_freq / _regs.pll_r;
         }
