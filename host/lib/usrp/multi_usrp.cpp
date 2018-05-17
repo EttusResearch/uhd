@@ -803,7 +803,10 @@ public:
     }
 
     std::vector<std::string> get_mboard_sensor_names(size_t mboard){
-        return _tree->list(mb_root(mboard) / "sensors");
+        if (_tree->exists(mb_root(mboard) / "sensors")) {
+            return _tree->list(mb_root(mboard) / "sensors");
+        }
+        return {};
     }
 
     void set_user_register(const uint8_t addr, const uint32_t data, size_t mboard){
