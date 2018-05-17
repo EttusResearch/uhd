@@ -1,24 +1,15 @@
 #!/usr/bin/env python
 #
 # Copyright 2014 Ettus Research LLC
+# Copyright 2018 Ettus Research, a National Instruments Company
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
 """
 Utility module for packaging and handling UHD binary images.
 """
 
+from __future__ import print_function
 import re
 import os
 import sys
@@ -75,12 +66,12 @@ def get_total_md5(img_dir):
             for filename in filenames:
                 md5_obj.update(open(os.path.join(root, filename), 'rb').read())
                 sys.stdout.write('.')
-                sys.stdout.flus()
+                sys.stdout.flush()
             for dirname in dirnames:
                 _update_md5_for_dir_recursive(os.path.join(root, dirname), md5_obj)
     md5 = hashlib.md5()
     _update_md5_for_dir_recursive(img_dir, md5)
-    print ""
+    print("")
     return md5.hexdigest()
 
 def md5_checksum(filePath):
@@ -94,6 +85,6 @@ def md5_checksum(filePath):
                     break
                 m.update(data)
             return m.hexdigest()
-    except Exception, e:
-        print "Failed to calculated MD5 sum of: %s (%s)" % (filePath, e)
+    except Exception as e:
+        print("Failed to calculated MD5 sum of: %s (%s)" % (filePath, e))
         raise e
