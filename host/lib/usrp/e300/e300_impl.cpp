@@ -312,7 +312,7 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
             // need to re-read product ID code because of conversion into string in find function
             e300_eeprom_manager eeprom_manager(i2c::make_i2cdev(E300_I2CDEV_DEVICE));
             const mboard_eeprom_t eeprom = eeprom_manager.get_mb_eeprom();
-            device_addr_t device_addr_cp;
+            device_addr_t device_addr_cp(device_addr.to_string());
             device_addr_cp["product"] = eeprom["product"];
 
             get_e3x0_fpga_images(device_addr_cp,
