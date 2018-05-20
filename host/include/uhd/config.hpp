@@ -87,6 +87,7 @@ typedef ptrdiff_t ssize_t;
 #else
     #define UHD_API UHD_IMPORT
 #endif // UHD_DLL_EXPORTS
+
 #ifdef UHD_RFNOC_ENABLED
     #define UHD_RFNOC_API UHD_API
 #else

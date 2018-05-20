@@ -830,7 +830,7 @@ uhd_error uhd_usrp_get_fe_rx_freq_range(
     )
 }
 
-UHD_API uhd_error uhd_usrp_get_rx_lo_names(
+uhd_error uhd_usrp_get_rx_lo_names(
     uhd_usrp_handle h,
     size_t chan,
     uhd_string_vector_handle *rx_lo_names_out
@@ -840,7 +840,7 @@ UHD_API uhd_error uhd_usrp_get_rx_lo_names(
     )
 }
 
-UHD_API uhd_error uhd_usrp_set_rx_lo_source(
+uhd_error uhd_usrp_set_rx_lo_source(
     uhd_usrp_handle h,
     const char* src,
     const char* name,
@@ -851,7 +851,7 @@ UHD_API uhd_error uhd_usrp_set_rx_lo_source(
     )
 }
 
-UHD_API uhd_error uhd_usrp_get_rx_lo_source(
+uhd_error uhd_usrp_get_rx_lo_source(
     uhd_usrp_handle h,
     const char* name,
     size_t chan,
@@ -863,7 +863,7 @@ UHD_API uhd_error uhd_usrp_get_rx_lo_source(
     )
 }
 
-UHD_API uhd_error uhd_usrp_get_rx_lo_sources(
+uhd_error uhd_usrp_get_rx_lo_sources(
     uhd_usrp_handle h,
     const char* name,
     size_t chan,
@@ -874,7 +874,7 @@ UHD_API uhd_error uhd_usrp_get_rx_lo_sources(
     )
 }
 
-UHD_API uhd_error uhd_usrp_set_rx_lo_export_enabled(
+uhd_error uhd_usrp_set_rx_lo_export_enabled(
     uhd_usrp_handle h,
     bool enabled,
     const char* name,
@@ -885,7 +885,7 @@ UHD_API uhd_error uhd_usrp_set_rx_lo_export_enabled(
     )
 }
 
-UHD_API uhd_error uhd_usrp_get_rx_lo_export_enabled(
+uhd_error uhd_usrp_get_rx_lo_export_enabled(
     uhd_usrp_handle h,
     const char* name,
     size_t chan,
@@ -896,7 +896,7 @@ UHD_API uhd_error uhd_usrp_get_rx_lo_export_enabled(
     )
 }
 
-UHD_API uhd_error uhd_usrp_set_rx_lo_freq(
+uhd_error uhd_usrp_set_rx_lo_freq(
     uhd_usrp_handle h,
     double freq,
     const char* name,
@@ -908,7 +908,7 @@ UHD_API uhd_error uhd_usrp_set_rx_lo_freq(
     )
 }
 
-UHD_API uhd_error uhd_usrp_get_rx_lo_freq(
+uhd_error uhd_usrp_get_rx_lo_freq(
     uhd_usrp_handle h,
     const char* name,
     size_t chan,
