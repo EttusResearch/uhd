@@ -88,7 +88,7 @@ namespace uhd{ namespace usrp{
  *
  * </pre>
  */
-class multi_usrp : boost::noncopyable{
+class UHD_API multi_usrp : boost::noncopyable{
 public:
     typedef boost::shared_ptr<multi_usrp> sptr;
 

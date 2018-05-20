@@ -9,7 +9,7 @@
 #include <stdarg.h>
 
 
-void _uhd_log(
+void UHD_API _uhd_log(
         const uhd_log_severity_level_t log_level,
         const char *filename,
         const int lineno,
