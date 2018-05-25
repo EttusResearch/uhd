@@ -451,7 +451,8 @@ class n3xx(PeriphManagerBase):
         device_info = self._xport_mgrs['udp'].get_xport_info()
         device_info.update({
             'fpga_version': "{}.{}".format(
-                *self.mboard_regs_control.get_compat_number())
+                *self.mboard_regs_control.get_compat_number()),
+            'fpga': self.updateable_components.get('fpga', {}).get('type', ""),
         })
         return device_info
 
