@@ -225,8 +225,8 @@ debugging: https://kb.ettus.com/Debugging_FPGA_images
 | Test Code                | Device        | Peripherals | Manual Test Procedure              | Automatic Test Procedure         |
 |--------------------------|---------------|-------------|------------------------------------|----------------------------------|
 | FPGADSPVERIF-X310-HG-v1  | USRP X310     | 2x UBX      | \ref rdtesting_fpgadspverif_manual | \ref rdtesting_fpgadspverif_auto |
-| FPGADSPVERIF-X310-XG-v1  | USRP X300     | 2x UBX      | \ref rdtesting_fpgadspverif_manual | \ref rdtesting_fpgadspverif_auto |
-| FPGADSPVERIF-X300-HG-v1  | USRP X310     | 2x UBX      | \ref rdtesting_fpgadspverif_manual | \ref rdtesting_fpgadspverif_auto |
+| FPGADSPVERIF-X310-XG-v1  | USRP X310     | 2x UBX      | \ref rdtesting_fpgadspverif_manual | \ref rdtesting_fpgadspverif_auto |
+| FPGADSPVERIF-X300-HG-v1  | USRP X300     | 2x UBX      | \ref rdtesting_fpgadspverif_manual | \ref rdtesting_fpgadspverif_auto |
 | FPGADSPVERIF-X300-XG-v1  | USRP X300     | 2x UBX      | \ref rdtesting_fpgadspverif_manual | \ref rdtesting_fpgadspverif_auto |
 | FPGADSPVERIF-E310-SG1-v1 | USRP E310 SG1 | None        | \ref rdtesting_fpgadspverif_manual | \ref rdtesting_fpgadspverif_auto |
 | FPGADSPVERIF-E310-SG3-v1 | USRP E310 SG3 | None        | \ref rdtesting_fpgadspverif_manual | \ref rdtesting_fpgadspverif_auto |
@@ -384,12 +384,12 @@ rates and channel configurations without any data flow issues.
 
 | Channels      | Sample Rates            | Duration |
 |---------------|-------------------------|----------|
-| 1x RX         | 1e6, 10e6, 25e6, 50e6   | 60       |
-| 2x RX         | 1e6, 10e6, 25e6         | 60       |
-| 1x TX         | 1e6, 10e6, 25e6, 50e6   | 60       |
-| 2x TX         | 1e6, 10e6, 25e6         | 60       |
-| 1x RX & 1x TX | 1e6, 10e6, 25e6, 50e6   | 60       |
-| 2x RX & 2x TX | 1e6, 10e6, 25e6         | 60       |
+| 1x RX         | 1e6, 10e6, 25e6         | 60       |
+| 2x RX         | 1e6, 10e6               | 60       |
+| 1x TX         | 1e6, 10e6, 25e6         | 60       |
+| 2x TX         | 1e6, 10e6               | 60       |
+| 1x RX & 1x TX | 1e6, 10e6, 25e6         | 60       |
+| 2x RX & 2x TX | 1e6, 10e6               | 60       |
 
 #### USRP X3x0: PCIe Interface
 
@@ -493,9 +493,9 @@ Software Required
 6.  Set Signal Generator output power at -30 dBm.
 7.  From the top of the UHD source, run the command:
 
-  -  `./tools/gr-usrptest/apps/usrp_phasealignment.py --args "addr0=<first X3x0 IP addr>,addr1=<second X3x0 IP addr>,dboard_clock_rate=25e6" --clock-source external --time-source external --sync pps --spec "A:0" --channels 0,1 -s 10e6 -g 25 -f \<lowest DB freq\> --freq-bands \<# frequency bands\> --start-freq \<lowest freq\> --stop-freq \<highest freq\> --duration 2.0 --auto`
+  -  `./tools/gr-usrptest/apps/usrp_phasealignment.py --args "addr0=<first X3x0 IP addr>,addr1=<second X3x0 IP addr>,dboard_clock_rate=20e6" --clock-source external --time-source external --sync pps --spec "A:0" --channels 0,1 -s 10e6 -g 25 -f \<lowest DB freq\> --freq-bands \<# frequency bands\> --start-freq \<lowest freq\> --stop-freq \<highest freq\> --duration 2.0 --auto`
 
-8.  At each frequency step, tune Signal Generator to the displayed frequency + 1 MHz and increase output power by 3 dB.
+8.  At each frequency step, tune Signal Generator to the displayed frequency + 1 MHz and increase output power by 2dB.
 9.  Analyze terminal output.  The "run avg" across all runs should not deviate more than 2 degrees and the "stddev" for any run should not deviate more than 2 degrees.
 
 \subsection rdtesting_phase_rx_N2x0_MIMO N2x0 MIMO with SBX
