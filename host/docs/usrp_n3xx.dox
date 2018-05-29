@@ -609,16 +609,22 @@ SDKs are distributed along with other binaries. They contain a cross-compiler,
 a cross-linker, a cross-debugger, and all the libraries available on the device
 to mirror its environment.
 
-To unpack the SDK, simply execute it after downloading it:
+The SDK is shipped in the same way as the other binaries, and you can download
+the correct version using `uhd_images_downloader`
 
+    $ uhd_images_downloader -t sdk -t n3xx
+
+To unpack and install the SDK, simply execute it after downloading it:
+
+    $ cd /usr/local/share/uhd/images # Change this to where your images are stored
     $ ./oecore-x86_64-cortexa9hf-neon-toolchain-nodistro.0.sh
 
 This will prompt you for an installation path.  Please ensure you have
 sufficient disk space, as each of the SDKs may require several gigabytes of
-disk space (depends on the image flavor selected).
+disk space (depending on the image flavor selected).
 
 This will allow you to compile UHD as well as (depending on the image flavor)
-other software.
+other software, such as GNU Radio.
 
 Please note, that while several toolchains can be installed in parallel, they
 have to be installed to different directories.
