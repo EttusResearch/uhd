@@ -70,7 +70,7 @@ private:
     template <typename return_type, typename... Args>
     return_type request(std::string const& func_name, Args&&... args)
     {
-        UHD_LOG_TRACE(_L, "[RPC] Calling " << func_name);
+        UHD_LOG_TRACE(_log_prefix, "[RPC] Calling " << func_name);
         return _rpcc->request_with_token<return_type>(
                 _rpc_prefix + func_name,
                 std::forward<Args>(args)...
@@ -87,7 +87,7 @@ private:
     const std::string _rpc_prefix;
 
     //! Logger prefix
-    const std::string _L;
+    const std::string _log_prefix;
 
 };
 
