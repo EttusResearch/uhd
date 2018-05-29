@@ -198,7 +198,7 @@ If you have multiple N3XX devices connect, you may have to try out multiple
 devices. In this case, to use this symlink instead of the raw device node
 address, modify the command above to:
 
-    $ sudo screen /dev/usb-Silicon_Labs_CP2105_Dual_USB_to_UART_Bridge_Controller_007F6CB5-if00-port0 115200
+    $ sudo screen /dev/serial/by-id/usb-Silicon_Labs_CP2105_Dual_USB_to_UART_Bridge_Controller_007F6CB5-if00-port0 115200
 
 You should be presented with a shell prompt similar to the following:
 
@@ -216,7 +216,7 @@ The STM32 microcontroller (which controls the power sequencing, among other
 things) also has a serial console available. To connect to the microcontroller,
 use the other UART device. In the example above:
 
-    $ sudo screen /dev/usb-Silicon_Labs_CP2105_Dual_USB_to_UART_Bridge_Controller_007F6CB5-if01-port0 115200
+    $ sudo screen /dev/serial/by-id/usb-Silicon_Labs_CP2105_Dual_USB_to_UART_Bridge_Controller_007F6CB5-if01-port0 115200
 
 It provides a very simple prompt. The command 'help' will list all available
 commands. A direct connection to the microcontroller can be used to hard-reset
