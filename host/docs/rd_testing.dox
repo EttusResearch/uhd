@@ -322,8 +322,10 @@ tbd
 | FPGAFUNCVERIF-X300-XG-v1  | USRP X300     | 2x UBX      | \ref rdtesting_fpgafuncverif_manual | \ref rdtesting_fpgafuncverif_auto |
 | FPGAFUNCVERIF-E310-SG1-v1 | USRP E310 SG1 | None        | \ref rdtesting_fpgafuncverif_manual | \ref rdtesting_fpgafuncverif_auto |
 | FPGAFUNCVERIF-E310-SG3-v1 | USRP E310 SG3 | None        | \ref rdtesting_fpgafuncverif_manual | \ref rdtesting_fpgafuncverif_auto |
-| FPGAFUNCVERIF-N310-v1     | USRP N310     | None        | \ref rdtesting_fpgafuncverif_manual | \ref rdtesting_fpgafuncverif_auto |
-| FPGAFUNCVERIF-N300-v1     | USRP N300     | None        | \ref rdtesting_fpgafuncverif_manual | \ref rdtesting_fpgafuncverif_auto |
+| FPGAFUNCVERIF-N310-HG-v1  | USRP N310     | None        | \ref rdtesting_fpgafuncverif_manual | \ref rdtesting_fpgafuncverif_auto |
+| FPGAFUNCVERIF-N310-XG-v1  | USRP N310     | None        | \ref rdtesting_fpgafuncverif_manual | \ref rdtesting_fpgafuncverif_auto |
+| FPGAFUNCVERIF-N300-HG-v1  | USRP N300     | None        | \ref rdtesting_fpgafuncverif_manual | \ref rdtesting_fpgafuncverif_auto |
+| FPGAFUNCVERIF-N300-XG-v1  | USRP N300     | None        | \ref rdtesting_fpgafuncverif_manual | \ref rdtesting_fpgafuncverif_auto |
 
 The FPGA functional verification tests exercise the Digital Downconverter (DDC),
 Digital Upconverter (DUC), and Radio Core RFNoC blocks.
@@ -435,6 +437,7 @@ Note: On TX tests, initial Us within the first 5 seconds can be ignored and do n
 - Required images to test: HG
 - Note: On TX tests, initial Us within the first 5 seconds can be ignored and do not fail the test
 
+<!--Note: If you change this table, also change tools/gr-usrptest/apps/usrp_fpga_funcverif.py!-->
 | Channels      | Master Clock Rate | Sample Rates            | Duration | Notes                             |
 |---------------|-------------------|-------------------------|----------|-----------------------------------|
 | 1x RX         | 125e6             | 1.25e6                  | 60       | One test each for all 4 channels  |
@@ -458,14 +461,27 @@ Note: On TX tests, initial Us within the first 5 seconds can be ignored and do n
 - Required images to test: N310 HG + XG
 - Note: On TX tests, initial Us within the first 5 seconds can be ignored and do not fail the test
 
+<!--Note: If you change this table, also change tools/gr-usrptest/apps/usrp_fpga_funcverif.py!-->
 | Channels      | Master Clock Rate | Sample Rates            | Duration | Notes                             |
 |---------------|-------------------|-------------------------|----------|-----------------------------------|
 | 1x RX         | 125e6             | 1.25e6, 125e6           | 60       | One test each for all 4 channels  |
 | 1x RX         | 122.88e6          | 1.2288e6, 122.88e6      | 60       | One test each for all 4 channels  |
 | 1x RX         | 153.6e6           | 1.536e6, 153.6e6        | 60       | One test each for all 4 channels  |
-| 2/3/4x RX     | 125e6             | 1.25e6                  | 60       | 3 tests total                     |
-| 2/3/4x RX     | 122.88e6          | 1.2288e6                | 60       | 3 tests total                     |
-| 2/3/4x RX     | 153.6e6           | 1.536e6                 | 60       | 3 tests total                     |
+| 1x TX         | 125e6             | 1.25e6, 125e6           | 60       | One test each for all 4 channels  |
+| 1x TX         | 122.88e6          | 1.2288e6, 122.88e6      | 60       | One test each for all 4 channels  |
+| 1x TX         | 153.6e6           | 1.536e6, 153.6e6        | 60       | One test each for all 4 channels  |
+| 2x RX         | 125e6             | 1.25e6, 125e6           | 60       |                                   |
+| 2x RX         | 122.88e6          | 1.2288e6, 122.88e6      | 60       |                                   |
+| 2x RX         | 153.6e6           | 1.536e6, 153.6e6        | 60       |                                   |
+| 3x RX         | 125e6             | 1.25e6                  | 60       | N310 only                         |
+| 3x RX         | 122.88e6          | 1.2288e6                | 60       | N310 only                         |
+| 3x RX         | 153.6e6           | 1.536e6                 | 60       | N310 only                         |
+| 2x TX         | 125e6             | 1.25e6, 12.5e6          | 60       |                                   |
+| 2x TX         | 122.88e6          | 1.2288e6, 12.288e6      | 60       |                                   |
+| 2x TX         | 153.6e6           | 1.536e6, 15.36e6        | 60       |                                   |
+| 3x TX         | 125e6             | 1.25e6                  | 60       | N310 only                         |
+| 3x TX         | 122.88e6          | 1.2288e6                | 60       | N310 only                         |
+| 3x TX         | 153.6e6           | 1.536e6                 | 60       | N310 only                         |
 | 4x RX         | 125e6             | 1.25e6, 62.5e6          | 60       | N310 only
 | 4x TX         | 125e6             | 1.25e6, 12.5e6          | 60       | N310 only
 | 4x RX & 4x TX | 125e6             | 1.25e6, 62.5e6          | 60       | Drop to 2 channels for N300
@@ -474,13 +490,62 @@ Note: On TX tests, initial Us within the first 5 seconds can be ignored and do n
 | 4x RX & 4x TX | 125e6             | 62.5e6                  | 3600     | Drop to 2 channels for N300
 | 4x RX & 4x TX | 122.88e6          | 61.44e6                 | 3600     | Drop to 2 channels for N300
 | 4x RX & 4x TX | 153e6             | 76.8e6                  | 3600     | Drop to 2 channels for N300
-| 4x RX & 4x TX | 125e6             | 125e6 RX, 62.5e6 TX     | 60       | Use dual 10GigE, N310 only
-| 4x RX & 4x TX | 122.88e6          | 122.88e6 RX, 61.44e6 TX | 60       | Use dual 10GigE, N310 only
-| 4x RX & 4x TX | 153e6             | 153e6 RX, 76.8e6 TX     | 60       | Use dual 10GigE, N310 only
+| 4x RX & 4x TX | 125e6             | 125e6 RX, 62.5e6 TX     | 60       | Use dual 10GigE, N310 XG only
+| 4x RX & 4x TX | 122.88e6          | 122.88e6 RX, 61.44e6 TX | 60       | Use dual 10GigE, N310 XG only
+| 4x RX & 4x TX | 153e6             | 153e6 RX, 76.8e6 TX     | 60       | Use dual 10GigE, N310 XG only
+| 2x RX & 2x TX | 125e6             | 125e6 RX, 62.5e6 TX     | 60       | Use dual 10GigE, N300 XG only
+| 2x RX & 2x TX | 122.88e6          | 122.88e6 RX, 61.44e6 TX | 60       | Use dual 10GigE, N300 XG only
+| 2x RX & 2x TX | 153e6             | 153e6 RX, 76.8e6 TX     | 60       | Use dual 10GigE, N300 XG only
 
 \subsection rdtesting_fpgafuncverif_auto FPGA Functional Verification: Automatic Test Procedure
 
-tbd
+In all cases, make sure UHD is compiled in 'Release' mode (highest
+optimization), and that all NIC and kernel are set to optimal (CPU governor,
+ring buffer settings, ...).
+
+### N310/N300
+
+The N310/N300 tests depend slightly on the type of FPGA image to be tested.
+All calls to usrp_fpga_funcverif.py need to be adapted to ensure the correct
+IP addresses and paths to the examples. Also, replace n310 with n300 where
+appropriate.
+
+#### HG
+
+- Connect a 1GigE cable on SFP0, and a 10 GigE cable on SFP1.
+- The following commands must pass:
+
+         $ usrp_fpga_funcverif n310_1gige -a 192.168.10.2 -p /path/to/examples
+         $ usrp_fpga_funcverif n310_10gige -a 192.168.20.2 -p /path/to/examples
+
+#### XG
+
+- Connect a 10GigE cable on both SFP0 and SFP1.
+- The following commands must pass:
+
+         $ usrp_fpga_funcverif n310_10gige -a 192.168.10.2 -p /path/to/examples
+         $ usrp_fpga_funcverif n310_10gige -a 192.168.10.2 -2 192.168.20.2 -p /path/to/examples
+
+#### HA
+
+- Connect a 1GigE cable on SFP0
+- The following command must pass:
+
+         $ usrp_fpga_funcverif n310_1gige -a 192.168.10.2 -p /path/to/examples
+
+#### XA
+
+- Connect a 10GigE cable on SFP0
+- The following command must pass:
+
+         $ usrp_fpga_funcverif n310_10gige -a 192.168.10.2 -p /path/to/examples
+
+#### WX
+
+- Connect a 10GigE cable on SFP1
+- The following command must pass:
+
+         $ usrp_fpga_funcverif n310_10gige -a 192.168.20.2 -p /path/to/examples
 
 \section rdtesting_phasealignment Phase alignment tests
 
