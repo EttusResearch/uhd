@@ -1,15 +1,17 @@
 # UHD Image Manifest File
 # Target    hash    url     SHA256
 # X300-Series
-x3xx_x310_fpga_default          fpga-4bb66b3        x3xx/fpga-4bb66b3/x3xx_x310_fpga_default-g4bb66b3.zip                   ded331d6e5261589e32148ac1f21096e9fd17716e5527e998beb893d282691b4
-x3xx_x300_fpga_default          fpga-4bb66b3        x3xx/fpga-4bb66b3/x3xx_x300_fpga_default-g4bb66b3.zip                   e4d311f791e6ca5c4818b0f83b0fe5ee9ee3c593dd3044d5c28968a4f5c4e3f6
+x3xx_x310_fpga_default          fpga-d6a878b        x3xx/fpga-d6a878b/x3xx_x310_fpga_default-gd6a878b.zip                   91cbe3bd07a523f160776722e182b480c33dcf8e786a6ba0278223dcffaa1479
+x3xx_x310_fpga_rfnoc            fpga-d6a878b        x3xx/fpga-d6a878b/x3xx_x310_fpga_rfnoc-gd6a878b.zip                     b3f499ce00f9bf736f251c0590c01949f3d15df9589c2b2e568d1497bd97903b
+x3xx_x300_fpga_default          fpga-d6a878b        x3xx/fpga-d6a878b/x3xx_x300_fpga_default-gd6a878b.zip                   e579404924be7f8e57559560eb4c5dab9e7a7e423f9384a72e0cc315e546a78f
+x3xx_x300_fpga_rfnoc            fpga-d6a878b        x3xx/fpga-d6a878b/x3xx_x300_fpga_rfnoc-gd6a878b.zip                     da15577467fd3abf00bc221b83e996b51cf539d93b617e62bebf55319c5c893c                      
 # Example daughterboard targets (none currently exist)
 #x3xx_twinrx_cpld_default   example_target
 #dboard_ubx_cpld_default    example_target
 
 # E-Series
-e3xx_e310_fpga_default          fpga-1c568e6        e3xx/fpga-1c568e6/e3xx_e310_fpga_default-g1c568e6.zip                   2957b4bdefe6885644ef2bc7b0e3845d13a7fe45f5a0933a2adaffd24c1b6802
-
+e3xx_e310_fpga_default          fpga-d6a878b        e3xx/fpga-d6a878b/e3xx_e310_fpga_default-gd6a878b.zip                   68d4118603834e23c36c32c1573a4529e9ce0b401dc7111fb095901a7139415d
+e3xx_e310_fpga_rfnoc            fpga-d6a878b        e3xx/fpga-d6a878b/e3xx_e310_fpga_rfnoc-gd6a878b.zip                     5c9b89fb6293423644868c22e914de386a9af39ff031da6800a1cf39a90ea73b
 # N300-Series
 n3xx_n310_fpga_default          fpga-e0f552c        n3xx/fpga-e0f552c/n3xx_n310_fpga_default-ge0f552c.zip                   90ea5092e11a173bc4a80b214e9f050182de240643796cbb85727ab7678b2d3c
 n3xx_n300_fpga_default          fpga-e0f552c        n3xx/fpga-e0f552c/n3xx_n300_fpga_default-ge0f552c.zip                   4ce8c56205ec7e2493698969537bb948fed9c939ab46b6eba8107dec121333d0
