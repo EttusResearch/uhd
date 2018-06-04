@@ -17,6 +17,7 @@ import time
 import argparse
 import subprocess
 from itertools import chain
+import math
 # Python 2/3 compat hack
 try:
     from itertools import izip
@@ -39,7 +40,7 @@ FUNCVERIF_SETTINGS = {
         # as a string expansion argument. For example, the {master_clock_rate}
         # in the following string gets expanded from the master_clock_rate key/
         # value pair further down.
-        '--args': "type=n3xx,addr={addr},master_clock_rate={master_clock_rate},{args}",
+        '--args': "type=n3xx,addr={second_addr},master_clock_rate={master_clock_rate},{args}",
         '--seq-threshold': 0,
         '--drop-threshold': 0,
         '--underrun-threshold': 100,
@@ -115,7 +116,7 @@ FUNCVERIF_SETTINGS = {
         ],
     },
     'n300_1gige': {
-        '--args': "type=n3xx,addr={addr},master_clock_rate={master_clock_rate},{args}",
+        '--args': "type=n3xx,addr={second_addr},master_clock_rate={master_clock_rate},{args}",
         '--seq-threshold': 0,
         '--drop-threshold': 0,
         '--underrun-threshold': 100,
@@ -388,20 +389,33 @@ FUNCVERIF_SETTINGS = {
     },
 }
 
+#Map Device & FPGA Image to tests that must be performed.
+DEV_TO_TEST = {
+    'n300xg': ['n300_10gige', 'n300_2x_10gige'],
+    'n300hg': ['n300_1gige', 'n300_10gige'],
+    'n310xg': ['n310_10gige', 'n310_2x_10gige'],
+    'n310hg': ['n310_1gige', 'n310_10gige'],
+    'n300_1gige': ['n300_1gige'],
+    'n300_10gige': ['n300_10gige'],
+    'n300_2x_10gige': ['n300_2x_10gige'],
+    'n310_1gige': ['n310_1gige'],
+    'n310_10gige': ['n310_10gige'],
+    'n310_2x_10gige': ['n310_2x_10gige']
+}
 
 def parse_args():
     """Parse args."""
     parser = argparse.ArgumentParser()
     parser.add_argument(
         # "-d", "--device-type", choices=FUNCVERIF_SETTINGS.keys(),
-        "device_type", choices=FUNCVERIF_SETTINGS.keys(),
-        help="Device type (n310, ...)"
+        "device_type", choices=DEV_TO_TEST.keys(),
+        help="Device type (N310HG, ...)"
     )
     parser.add_argument(
         '-a', '--addr', help="IP Address"
     )
     parser.add_argument(
-        '-2', '--second-addr', help="Second IP Address"
+        '-2', '--second-addr', help="Second IP Address (1G in HG images)"
     )
     parser.add_argument(
         '-p', '--path', default='.', help="Path to examples",
@@ -473,13 +487,12 @@ def prepare_args(default_args, test_args, extra_keys):
     return list(chain.from_iterable(zip(args.keys(), args.values())))
 
 
-def run_tests(args, settings):
+def run_tests(args, settings, num_tests, tests_run):
     """
     args -- Command line args from parse_args
     settings -- Sub-dictionary from FUNCVERIF_SETTINGS
     """
-    test_args_list = settings.pop('__tests')
-    num_tests = len(test_args_list)
+    test_args_list = settings['__tests']
     default_args = {
         key: str(val)
         for key, val in iteritems(settings)
@@ -498,7 +511,7 @@ def run_tests(args, settings):
     print("Preparing to execute {} tests...".format(num_tests))
     all_good = True
     for test_idx, test_args in enumerate(test_args_list):
-        print("Running test {}/{}...".format(test_idx+1, num_tests))
+        print("Running test {}/{}...".format(test_idx+1+tests_run, num_tests))
         bmr_args = prepare_args(default_args, test_args, copy.copy(extra_keys))
         if not run_benchmark_rate(bmr_args, args):
             print("Failure!")
@@ -510,9 +523,19 @@ def run_tests(args, settings):
 def main():
     """Go, go, go!"""
     args = parse_args()
-    settings = FUNCVERIF_SETTINGS[args.device_type]
-    return run_tests(args, settings)
 
+    #Calculate total number of tests.
+    numTests = sum([len(FUNCVERIF_SETTINGS[device_type]['__tests']) for device_type in DEV_TO_TEST[args.device_type]])
+
+    #Run all tests for given device & FPGA image.
+    tests_run = 0
+    all_good = True
+    for test in DEV_TO_TEST[args.device_type]:
+        settings = FUNCVERIF_SETTINGS[test]
+        if not (run_tests(args, settings, numTests, tests_run)):
+            all_good = False
+        tests_run += len(settings['__tests'])
+    return all_good
 
 if __name__ == "__main__":
     exit(not main())
