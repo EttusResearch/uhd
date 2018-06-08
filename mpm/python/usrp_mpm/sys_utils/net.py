@@ -41,8 +41,8 @@ def get_iface_info(ifname):
     """
     Given an interface name (e.g. 'eth1'), return a dictionary with the
     following keys:
-    - ip_addr: Main IPv4 address
-    - ip_addrs: List of valid IPv4 addresses
+    - ip_addr: Main IPv4 address, if set, or an empty string otherwise.
+    - ip_addrs: List of valid IPv4 addresses. Can be an empty list.
     - mac_addr: MAC address
 
     All values are stored as strings.
@@ -61,7 +61,7 @@ def get_iface_info(ifname):
     ip_addrs = get_iface_addrs(mac_addr)
     return {
         'mac_addr': mac_addr,
-        'ip_addr': ip_addrs[0],
+        'ip_addr': ip_addrs[0] if ip_addrs else '',
         'ip_addrs': ip_addrs,
     }
 
@@ -83,20 +83,21 @@ def ip_addr_to_iface(ip_addr, iface_list):
 
 def get_iface_addrs(mac_addr):
     """
-    return ipv4 addresses for a given macaddress
-    input format: "aa:bb:cc:dd:ee:ff"
+    Return a list of IPv4 addresses for a given MAC address.
+    If there are no IP addresses assigned to the MAC address, it will return
+    an empty list.
+
+    Arguments:
+    mac_addr -- A MAC address as a string, input format: "aa:bb:cc:dd:ee:ff"
     """
-    with  IPRoute() as ip2:
-        # returns index
-        [link] = ip2.link_lookup(address=mac_addr)
+    with IPRoute() as ip2:
+        [link_index] = ip2.link_lookup(address=mac_addr)
         # Only get v4 addresses
         addresses = [addr.get_attrs('IFA_ADDRESS')
                      for addr in ip2.get_addr(family=socket.AF_INET)
-                     if addr.get('index', None) == link]
+                     if addr.get('index', None) == link_index]
         # flatten possibly nested list
-        addresses = list(itertools.chain.from_iterable(addresses))
-
-        return addresses
+        return list(itertools.chain.from_iterable(addresses))
 
 
 def byte_to_mac(byte_str):
