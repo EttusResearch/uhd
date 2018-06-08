@@ -59,15 +59,34 @@ class XportMgrUDP(object):
         self.log.trace("Testing available interfaces out of `{}'".format(
             list(possible_ifaces)
         ))
-        valid_ifaces = net.get_valid_interfaces(possible_ifaces)
-        if len(valid_ifaces):
-            self.log.debug("Found CHDR interfaces: `{}'".format(valid_ifaces))
+        valid_iface_infos = {
+            x: net.get_iface_info(x)
+            for x in net.get_valid_interfaces(possible_ifaces)
+        }
+        # Because get_iface_info() and get_valid_interfaces() are not one atomic
+        # operation, there are rare scenarios when their return values are
+        # inconsistent. To catch these cases, we filter the list again and warn
+        # the user. Usually, this is not a problem and the next call to
+        # _init_interfaces() will be back to normal.
+        valid_iface_infos_filtered = {
+            x: valid_iface_infos[x]
+            for x in valid_iface_infos
+            if valid_iface_infos[x]['ip_addr']
+        }
+        if len(valid_iface_infos) != len(valid_iface_infos_filtered):
+            self.log.warning(
+                "Number of detected CHDR devices is inconsistent. Dropped from "
+                "{} to {}."
+                .format(len(valid_iface_infos), len(valid_iface_infos_filtered))
+            )
+        if len(valid_iface_infos_filtered):
+            self.log.debug(
+                "Found CHDR interfaces: `{}'"
+                .format(", ".join(list(valid_iface_infos.keys())))
+            )
         else:
             self.log.info("No CHDR interfaces found!")
-        return {
-            x: net.get_iface_info(x)
-            for x in valid_ifaces
-        }
+        return valid_iface_infos_filtered
 
     def _update_dispatchers(self):
         """
