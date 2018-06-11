@@ -45,6 +45,8 @@ public:
 
     virtual double set_freq(const double freq) = 0;
 
+    virtual double get_freq(void) = 0;
+
     virtual void setup(const uhd::stream_args_t &stream_args) = 0;
 
     virtual void populate_subtree(uhd::property_tree::sptr subtree) = 0;
