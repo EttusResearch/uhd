@@ -148,10 +148,6 @@ public:
     size_t get_chan_from_dboard_fe(const std::string &fe, const direction_t dir);
     std::string get_dboard_fe_from_chan(const size_t chan, const direction_t dir);
 
-    //! Disable concurrency in set_rpc_client(). This is a workaround for a
-    // thread-unsafety bug and should get deleted at some point in the future!
-    static std::mutex _set_rpc_lock; // FIXME remove this
-
     void set_rpc_client(
         uhd::rpc_client::sptr rpcc,
         const uhd::device_addr_t &block_args
