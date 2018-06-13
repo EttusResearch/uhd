@@ -216,6 +216,7 @@ protected: // TODO see what's protected and what's private
 
     size_t _num_tx_channels;
     size_t _num_rx_channels;
+    std::vector<bool> _continuous_streaming;
 
 private:
     /************************************************************************
@@ -241,7 +242,6 @@ private:
     std::map<size_t, double> _tx_bandwidth;
     std::map<size_t, double> _rx_bandwidth;
 
-    std::vector<bool> _continuous_streaming;
 }; /* class radio_ctrl_impl */
 
 }} /* namespace uhd::rfnoc */
