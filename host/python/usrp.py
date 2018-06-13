@@ -95,7 +95,6 @@ class MultiUSRP(lib.usrp.multi_usrp):
         st_args = lib.usrp.stream_args("fc32", "sc16")
         st_args.channels = channels
 
-        metadata = lib.types.rx_metadata()
         streamer = super(MultiUSRP, self).get_tx_stream(st_args)
         buffer_samps = streamer.get_max_num_samps()
         proto_len = waveform_proto.shape[-1]
