@@ -28,6 +28,8 @@ from usrp_mpm.xports import XportMgrUDP, XportMgrLiberio
 from usrp_mpm.periph_manager.n3xx_periphs import TCA6424
 from usrp_mpm.periph_manager.n3xx_periphs import BackpanelGPIO
 from usrp_mpm.periph_manager.n3xx_periphs import MboardRegsControl
+from usrp_mpm.dboard_manager.magnesium import Magnesium
+from usrp_mpm.dboard_manager.eiscat import EISCAT
 
 N3XX_DEFAULT_EXT_CLOCK_FREQ = 10e6
 N3XX_DEFAULT_CLOCK_SOURCE = 'internal'
@@ -37,6 +39,10 @@ N3XX_DEFAULT_ENABLE_FPGPIO = True
 N3XX_DEFAULT_ENABLE_PPS_EXPORT = True
 N3XX_FPGA_COMPAT = (5, 2)
 N3XX_MONITOR_THREAD_INTERVAL = 1.0 # seconds
+
+# Import daughterboard PIDs from their respective classes
+MG_PID = Magnesium.pids[0]
+EISCAT_PID = EISCAT.pids[0]
 
 ###############################################################################
 # Transport managers
@@ -84,6 +90,20 @@ class n3xx(PeriphManagerBase):
     """
     Holds N3xx specific attributes and methods
     """
+    # For every variant of the N3xx, add a line to the product map. If
+    # it uses a new daughterboard, also import that PID from the dboard
+    # manager class. The format of this map is:
+    # (motherboard product code, (Slot-A DB PID, [Slot-B DB PID])) -> product
+    product_map = {
+        ('n300', (MG_PID,       )): 'n300', # Slot B is empty
+        ('n310', (MG_PID, MG_PID)): 'n310',
+        ('n310', (MG_PID,       )): 'n310', # If Slot B is empty, we can
+                                            # still use the n310.bin image.
+                                            # We'll leave this here for
+                                            # debugging purposes.
+        ('n310', (EISCAT_PID, EISCAT_PID)): 'eiscat',
+    }
+
     #########################################################################
     # Overridables
     #
@@ -132,37 +152,18 @@ class n3xx(PeriphManagerBase):
         },
     }
 
-    @staticmethod
-    def generate_device_info(eeprom_md, mboard_info, dboard_infos):
+    @classmethod
+    def generate_device_info(cls, eeprom_md, mboard_info, dboard_infos):
         """
         Hard-code our product map
         """
-        # For every variant of the N3xx, add a line to the product map. If
-        # it uses a new daughterboard, also import that PID from the dboard
-        # manager class.
-        from usrp_mpm.dboard_manager.magnesium import Magnesium
-        mg_pid = Magnesium.pids[0]
-        from usrp_mpm.dboard_manager.eiscat import EISCAT
-        eiscat_pid = EISCAT.pids[0]
-        # The format of this map is:
-        # (motherboard product code, (Slot-A DB PID, [Slot-B DB PID])) -> product
-        product_map = {
-            ('n300', (mg_pid,       )): 'n300', # Slot B is empty
-            ('n310', (mg_pid, mg_pid)): 'n310',
-            ('n310', (mg_pid,       )): 'n310', # If Slot B is empty, we can
-                                                # still use the n310.bin image.
-                                                # We'll leave this here for
-                                                # debugging purposes.
-            ('n310', (eiscat_pid, eiscat_pid)): 'eiscat',
-        }
-
         mb_pid = eeprom_md.get('pid')
         lookup_key = (
             n3xx.pids.get(mb_pid, 'unknown'),
             tuple([x['pid'] for x in dboard_infos]),
         )
         device_info = mboard_info
-        device_info['product'] = product_map.get(lookup_key, 'unknown')
+        device_info['product'] = cls.product_map.get(lookup_key, 'unknown')
         return device_info
 
     @staticmethod
@@ -284,7 +285,7 @@ class n3xx(PeriphManagerBase):
         likely.
         """
         # Sanity checks
-        assert self.device_info.get('product') in self.pids.values(), \
+        assert self.device_info.get('product') in self.product_map.values(), \
                 "Device product could not be determined!"
         # Init peripherals
         self.log.trace("Initializing TCA6424 port expander controls...")
