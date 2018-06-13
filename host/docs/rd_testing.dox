@@ -513,39 +513,37 @@ appropriate.
 #### HG
 
 - Connect a 1GigE cable on SFP0, and a 10 GigE cable on SFP1.
-- The following commands must pass:
+- The following command must pass:
 
-         $ usrp_fpga_funcverif n310_1gige -a 192.168.10.2 -p /path/to/examples
-         $ usrp_fpga_funcverif n310_10gige -a 192.168.20.2 -p /path/to/examples
+         $ usrp_fpga_funcverif n310hg -a 192.168.20.2 -2 192.168.10.2 -p /path/to/examples
 
 #### XG
 
 - Connect a 10GigE cable on both SFP0 and SFP1.
-- The following commands must pass:
+- The following command must pass:
 
-         $ usrp_fpga_funcverif n310_10gige -a 192.168.10.2 -p /path/to/examples
-         $ usrp_fpga_funcverif n310_10gige -a 192.168.10.2 -2 192.168.20.2 -p /path/to/examples
+         $ usrp_fpga_funcverif n310xg -a 192.168.10.2 -2 192.168.20.2 -p /path/to/examples
 
 #### HA
 
 - Connect a 1GigE cable on SFP0
 - The following command must pass:
 
-         $ usrp_fpga_funcverif n310_1gige -a 192.168.10.2 -p /path/to/examples
+         $ usrp_fpga_funcverif n310ha -2 192.168.10.2 -p /path/to/examples
 
 #### XA
 
 - Connect a 10GigE cable on SFP0
 - The following command must pass:
 
-         $ usrp_fpga_funcverif n310_10gige -a 192.168.10.2 -p /path/to/examples
+         $ usrp_fpga_funcverif n310xa -a 192.168.10.2 -p /path/to/examples
 
 #### WX
 
 - Connect a 10GigE cable on SFP1
 - The following command must pass:
 
-         $ usrp_fpga_funcverif n310_10gige -a 192.168.20.2 -p /path/to/examples
+         $ usrp_fpga_funcverif n310wx -a 192.168.20.2 -p /path/to/examples
 
 \section rdtesting_phasealignment Phase alignment tests
 
