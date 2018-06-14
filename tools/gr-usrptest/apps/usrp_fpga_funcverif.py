@@ -387,10 +387,129 @@ FUNCVERIF_SETTINGS = {
              '--duration': 3600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
         ],
     },
+    'x3x0_10gige': {
+        '--args': "type=x300,addr={addr},{args}",
+        '--seq-threshold': 0,
+        '--drop-threshold': 0,
+        '--underrun-threshold': 100,
+        '--overrun-threshold': 100,
+        '--duration': 60,
+        '__tests': [
+            {'--rx_rate': 10e6,  '--channels': '0'},
+            {'--rx_rate': 50e6,  '--channels': '0'},
+            {'--rx_rate': 100e6, '--channels': '0'},
+            {'--rx_rate': 200e6, '--channels': '0'},
+            {'--rx_rate': 10e6,  '--channels': '1'},
+            {'--rx_rate': 50e6,  '--channels': '1'},
+            {'--rx_rate': 100e6, '--channels': '1'},
+            {'--rx_rate': 200e6, '--channels': '1'},
+
+            {'--rx_rate': 10e6,  '--channels': '0,1'},
+            {'--rx_rate': 50e6,  '--channels': '0,1'},
+            {'--rx_rate': 100e6, '--channels': '0,1'},
+            
+            {'--tx_rate': 10e6,  '--channels': '0'},
+            {'--tx_rate': 50e6,  '--channels': '0'},
+            {'--tx_rate': 100e6, '--channels': '0'},
+            {'--tx_rate': 200e6, '--channels': '0'},
+            {'--tx_rate': 10e6,  '--channels': '1'},
+            {'--tx_rate': 50e6,  '--channels': '1'},
+            {'--tx_rate': 100e6, '--channels': '1'},
+            {'--tx_rate': 200e6, '--channels': '1'},
+
+            {'--tx_rate': 10e6,  '--channels': '0,1'},
+            {'--tx_rate': 50e6,  '--channels': '0,1'},
+            {'--tx_rate': 100e6, '--channels': '0,1'},
+
+            {'--rx_rate': 10e6,   '--tx_rate': 10e6},
+            {'--rx_rate': 50e6,   '--tx_rate': 50e6},
+            {'--rx_rate': 100e6,  '--tx_rate': 100e6},
+
+            {'--rx_rate': 200e6,  '--tx_rate': 200e6, '--channels': 0},
+
+            {'--rx_rate': 10e6,   '--tx_rate': 10e6, '--channels': '0,1'},
+            {'--rx_rate': 50e6,   '--tx_rate': 50e6, '--channels': '0,1'},
+
+            {'--rx_rate': 200e6, '--tx_rate': 200e6, '--channels': '1',   '--duration': 3600},
+            {'--rx_rate': 100e6, '--tx_rate': 100e6, '--channels': '0,1', '--duration': 3600}
+        ],
+    },
+    'x3x0_1gige': {
+        '--args': "type=x300,addr={second_addr},{args}",
+        '--seq-threshold': 0,
+        '--drop-threshold': 0,
+        '--underrun-threshold': 100,
+        '--overrun-threshold': 100,
+        '--duration': 60,
+        '__tests': [
+            {'--rx_rate': 1e6,   '--channels': '0'},
+            {'--rx_rate': 10e6,  '--channels': '0'},
+            {'--rx_rate': 25e6,  '--channels': '0'},
+            {'--rx_rate': 1e6,   '--channels': '0,1'},
+            {'--rx_rate': 10e6,  '--channels': '0,1'},
+
+            {'--tx_rate': 1e6,   '--channels': '0'},
+            {'--tx_rate': 10e6,  '--channels': '0'},
+            {'--tx_rate': 25e6,  '--channels': '0'},
+            {'--tx_rate': 1e6,   '--channels': '0,1'},
+            {'--tx_rate': 10e6,  '--channels': '0,1'},
+
+            {'--rx_rate': 1e6 , '--tx_rate': 1e6},
+            {'--rx_rate': 10e6, '--tx_rate': 10e6},
+            {'--rx_rate': 25e6, '--tx_rate': 25e6},
+            {'--rx_rate': 1e6,  '--tx_rate': 1e6,  '--channels': '0,1'},
+            {'--rx_rate': 10e6, '--tx_rate': 10e6, '--channels': '0,1'},
+        ],
+    },
+    'x3x0_pcie': {
+        '--args': "type=x300,resource={resource},{args}",
+        '--seq-threshold': 0,
+        '--drop-threshold': 0,
+        '--underrun-threshold': 100,
+        '--overrun-threshold': 100,
+        '--duration': 60,
+        '__tests': [
+            {'--rx_rate': 10e6,   '--channels': '0'},
+            {'--rx_rate': 50e6,   '--channels': '0'},
+            {'--rx_rate': 100e6,  '--channels': '0'},
+            {'--rx_rate': 200e6,  '--channels': '0'},
+            {'--rx_rate': 10e6,   '--channels': '0,1'},
+            {'--rx_rate': 50e6,   '--channels': '0,1'},
+            {'--rx_rate': 100e6,  '--channels': '0,1'},
+
+            {'--tx_rate': 10e6,   '--channels': '0'},
+            {'--tx_rate': 50e6,   '--channels': '0'},
+            {'--tx_rate': 100e6,  '--channels': '0'},
+            {'--tx_rate': 200e6,  '--channels': '0'},
+            {'--tx_rate': 10e6,   '--channels': '0,1'},
+            {'--tx_rate': 50e6,   '--channels': '0,1'},
+            {'--tx_rate': 100e6,  '--channels': '0,1'},
+
+            {'--rx_rate': 10e6, '--tx_rate': 10e6},
+            {'--rx_rate': 50e6, '--tx_rate': 50e6},
+            {'--rx_rate': 100e6,'--tx_rate': 100e6},
+            {'--rx_rate': 200e6,'--tx_rate': 200e6},
+
+            {'--rx_rate': 10e6, '--tx_rate': 10e6, '--channels': '0,1'},
+            {'--rx_rate': 50e6, '--tx_rate': 50e6, '--channels': '0,1'},
+        ],
+    },
+    'x3x0_2x_10gige': {
+        '--args': "type=n3xx,addr={addr},second_addr={second_addr},{args}",
+        '--seq-threshold': 0,
+        '--drop-threshold': 0,
+        '--underrun-threshold': 100,
+        '--overrun-threshold': 100,
+        '--duration': 60,
+        '__tests': [
+            {'--rx_rate': 200e6, '--channels': '0,1'},
+        ],
+    },
 }
 
 #Map Device & FPGA Image to tests that must be performed.
 DEV_TO_TEST = {
+    #n300
     'n300xg': ['n300_10gige', 'n300_2x_10gige'],
     'n300hg': ['n300_1gige', 'n300_10gige'],
     'n300ha': ['n300_1gige'],
@@ -406,7 +525,14 @@ DEV_TO_TEST = {
     'n300_2x_10gige': ['n300_2x_10gige'],
     'n310_1gige': ['n310_1gige'],
     'n310_10gige': ['n310_10gige'],
-    'n310_2x_10gige': ['n310_2x_10gige']
+    'n310_2x_10gige': ['n310_2x_10gige'],
+    #x300
+    'x3x0hg': ['x3x0_1gige', 'x3x0_10gige', 'x3x0_pcie'],
+    'x3x0xg': ['x3x0_10gige', 'x3x0_2x_10gige', 'x3x0_pcie'],
+    'x3x0_1gige': ['x3x0_1gige'],
+    'x3x0_10gige': ['x3x0_10gige'],
+    'x3x0_2x_10gige': ['x3x0_2x_10gige'],
+    'x3x0_pcie': ['x3x0_pcie'],
 }
 
 def parse_args():
@@ -438,6 +564,9 @@ def parse_args():
     )
     parser.add_argument(
         '-s', '--sleep', type=int, default=30, help="Sleep time between tests",
+    )
+    parser.add_argument(
+        '-r', '--resource', help="PCIe resource on x3x0"
     )
     parser.add_argument(
         '--args'
@@ -513,6 +642,7 @@ def run_tests(args, settings, num_tests, tests_run):
         'addr': args.addr,
         'second_addr': args.second_addr,
         'args': args.args,
+        'resource': args.resource
     })
     print("Preparing to execute {} tests...".format(num_tests))
     all_good = True
