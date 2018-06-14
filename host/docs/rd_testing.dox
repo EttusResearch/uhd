@@ -503,6 +503,21 @@ In all cases, make sure UHD is compiled in 'Release' mode (highest
 optimization), and that all NIC and kernel are set to optimal (CPU governor,
 ring buffer settings, ...).
 
+### X310/X300
+The X310/X300 tests depend on the FPGA image to be tested. 
+
+#### HG
+-Connect a 1GigE cable into port 0 and a 10GigE cable into port 1.
+-The following command must pass:
+
+          $ usrp_fpga_funcverif x3x0hg -a 192.168.40.2 -2 192.168.10.2 -p /path/to/examples
+
+#### XG
+-Connect 10GigE cables to both ethernet ports.
+-The following command must pass:
+
+          $ usrp_fpga_funcverif x3x0xg -a 192.168.40.2 -2 192.168.30.2 -p /path/to/examples
+
 ### N310/N300
 
 The N310/N300 tests depend slightly on the type of FPGA image to be tested.
