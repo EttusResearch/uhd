@@ -19,6 +19,8 @@ namespace uhd{
      * fined control over the daughterboard IF and DSP tuning.
      * Not all combinations of policies are applicable.
      * Convenience constructors are supplied for most use cases.
+     *
+     * See also \ref general_tuning
      */
     struct UHD_API tune_request_t{
         /*!
@@ -76,6 +78,15 @@ namespace uhd{
         /*!
          * The DSP frequency in Hz.
          * Set when the policy is set to manual.
+         *
+         * Note that the meaning of the DSP frequency's sign differs between
+         * TX and RX operations. The target frequency is the result of
+         * `target_freq = rf_freq + sign * dsp_freq`. For TX, `sign` is
+         * negative, and for RX, `sign` is positive.
+         * Example: If both RF and DSP tuning policies are set to manual, and
+         * `rf_freq` is set to 1 GHz, and `dsp_freq` is set to 10 MHz, the
+         * actual target frequency is 990 MHz for a TX tune request, and
+         * 1010 MHz for an RX tune request.
          */
         double dsp_freq;
 

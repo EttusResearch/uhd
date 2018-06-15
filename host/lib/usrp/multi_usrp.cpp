@@ -433,7 +433,7 @@ public:
             const auto radio_index = get_radio_index(spec.db_name);
             const auto radio_path = rfnoc_path / str(boost::format("Radio_%d") % radio_index);
             const auto eeprom_path = radio_path / "eeprom";
-            if (_tree->exists(radio_path)) {
+            if (_tree->exists(eeprom_path)) {
                 const auto db_eeprom = _tree->access<eeprom_map_t>(eeprom_path).get();
                 usrp_info["rx_serial"] = db_eeprom.count("serial") ?
                     std::string(db_eeprom.at("serial").begin(), db_eeprom.at("serial").end())
@@ -474,7 +474,7 @@ public:
             const auto radio_index = get_radio_index(spec.db_name);
             const auto radio_path = rfnoc_path / str(boost::format("Radio_%d")%radio_index);
             const auto path = radio_path / "eeprom";
-            if(_tree->exists(radio_path)) {
+            if(_tree->exists(path)) {
                 const auto db_eeprom = _tree->access<eeprom_map_t>(path).get();
                 usrp_info["tx_serial"] = db_eeprom.count("serial") ?
                     std::string(db_eeprom.at("serial").begin(), db_eeprom.at("serial").end())
@@ -612,13 +612,14 @@ public:
     }
 
     void set_time_unknown_pps(const time_spec_t &time_spec){
-        UHD_LOGGER_INFO("MULTI_USRP") << "    1) catch time transition at pps edge";
-        boost::system_time end_time = boost::get_system_time() + boost::posix_time::milliseconds(1100);
+        UHD_LOGGER_INFO("MULTI_USRP")
+            << "    1) catch time transition at pps edge";
+        auto end_time = std::chrono::steady_clock::now()
+                            + std::chrono::milliseconds(1100);
         time_spec_t time_start_last_pps = get_time_last_pps();
         while (time_start_last_pps == get_time_last_pps())
         {
-            if (boost::get_system_time() > end_time)
-            {
+            if (std::chrono::steady_clock::now() > end_time) {
                 throw uhd::runtime_error(
                     "Board 0 may not be getting a PPS signal!\n"
                     "No PPS detected within the time interval.\n"
@@ -628,7 +629,8 @@ public:
             std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
 
-        UHD_LOGGER_INFO("MULTI_USRP") << "    2) set times next pps (synchronously)";
+        UHD_LOGGER_INFO("MULTI_USRP")
+            << "    2) set times next pps (synchronously)";
         set_time_next_pps(time_spec, ALL_MBOARDS);
         std::this_thread::sleep_for(std::chrono::seconds(1));
 
@@ -801,7 +803,10 @@ public:
     }
 
     std::vector<std::string> get_mboard_sensor_names(size_t mboard){
-        return _tree->list(mb_root(mboard) / "sensors");
+        if (_tree->exists(mb_root(mboard) / "sensors")) {
+            return _tree->list(mb_root(mboard) / "sensors");
+        }
+        return {};
     }
 
     void set_user_register(const uint8_t addr, const uint32_t data, size_t mboard){

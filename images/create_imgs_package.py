@@ -19,86 +19,66 @@
 Command-line utility to create a .zip-file with the current image set.
 """
 
+from __future__ import print_function
 import re
 import os
-import uhdimgs
-import glob
 import subprocess
 import argparse
 import shutil
-
-def clear_img_dir(img_root_dir):
-    """ Removes non-image files from the images dir """
-    globs = ["*.tag", "LICENSE"]
-    for the_glob in globs:
-        for filename in glob.iglob(os.path.join(img_root_dir, the_glob)):
-            print 'Removing file from images directory: ', filename
-            os.unlink(filename)
-
-def get_zipfilename_from_cpack_output(cpoutput):
-    """ Parses the output of the ZIP-file creating script
-    and scrapes the actual file name. """
-    regex = re.compile("\/build\/(?P<filename>[^\/]+\.zip)")
-    results = regex.search(cpoutput)
-    return results.group('filename')
+import uhdimgs
 
 def parse_args():
     """ Parse args, duh """
-    parser = argparse.ArgumentParser(description='Link the current set of images to this commit.')
-    parser.add_argument('--commit', default=None,
-                       help='Supply a commit message to the changes to host/CMakeLists.txt.')
-    parser.add_argument('-r', '--release-mode', default="",
-                       help='Specify UHD_RELEASE_MODE. Typically "release" or "rc1" or similar.')
-    parser.add_argument('--skip-edit', default=False, action='store_true',
-                       help='Do not edit the CMakeLists.txt file.')
-    parser.add_argument('--skip-move', default=False, action='store_true',
-                       help='Do not move the archives after creating them.')
-    parser.add_argument('--patch', help='Override patch version number.')
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        '--version',
+        help="Specify version. Will detect from tag otherwise."
+    )
     return parser.parse_args()
 
-def move_zip_to_repo(base_url, zipfilename):
-    final_destination = os.path.join(base_url, zipfilename)
-    if os.path.exists(final_destination):
-        print "WARNING: A file with name {0} is already in the images repository.".format(zipfilename)
-        print "Overwrite? [y/N]",
-        ans = raw_input()
-        if ans.strip().upper() != 'Y':
-            return
-        os.unlink(final_destination)
-    shutil.move(zipfilename, base_url)
+def download_images(img_root_dir):
+    """
+    Run the images downloader
+    """
+    import populate_images
+    populate_images.download_images(img_root_dir)
+
+def get_version():
+    """
+    Figure out version based on tag.
+    """
+    try:
+        git_cmd = ['git', 'describe', '--abbrev=0', '--tags']
+        git_output = subprocess.check_output(git_cmd)
+    except subprocess.CalledProcessError as ex:
+        print(ex.output)
+        exit(1)
+    print("Detected tag: {}".format(git_output))
+    version_mobj = re.search(r'[0-9]+\.[0-9]+\.[0-9]+\.[0-9]', git_output)
+    if version_mobj is None:
+        print("Error: Failure to resolve version from tag!")
+        exit(1)
+    return version_mobj.group(0)
 
 def main():
-    " Go, go, go! "
+    """ Go, go, go! """
     args = parse_args()
     img_root_dir = os.path.join(uhdimgs.get_images_dir(), 'images')
-    os.chdir(uhdimgs.get_images_dir())
-    print "== Clearing out the images directory..."
-    clear_img_dir(img_root_dir)
-    print "== Creating archives..."
-    cpack_cmd = ["./make_zip.sh",]
-    cpack_cmd.append(args.release_mode)
-    if args.patch is not None:
-        cpack_cmd.append("-DUHD_PATCH_OVERRIDE={}".format(args.patch))
+    print("== Clearing out the images directory...")
+    shutil.rmtree(img_root_dir)
+    print("== Downloading images...")
+    download_images(img_root_dir)
+    print("== Determining version...")
+    version = args.version if args.version is not None else get_version()
+    print("Version string: {}".format(version))
+    print("== Creating archives...")
+    archive_cmd = ["./make_zip.sh", version]
     try:
-        cpack_output = subprocess.check_output(cpack_cmd)
-    except subprocess.CalledProcessError as e:
-        print e.output
-        raise SystemExit, 1
-    zipfilename = get_zipfilename_from_cpack_output(cpack_output)
-    print "Filename: ", zipfilename
-    print "== Calculating MD5 sum of ZIP archive..."
-    md5 = uhdimgs.md5_checksum(zipfilename)
-    print 'MD5: ', md5
-    base_url = uhdimgs.get_base_url()
-    if not args.skip_move and uhdimgs.base_url_is_local(base_url) and os.access(base_url, os.W_OK):
-        print "== Moving ZIP file to {0}...".format(base_url)
-        move_zip_to_repo(base_url, zipfilename)
-    print "== Updating CMakeLists.txt..."
-    uhdimgs.update_main_cmake_file(md5, zipfilename)
-    if args.commit is not None:
-        print "== Committing changes..."
-        subprocess.check_call(['git', 'commit', '-m', args.commit, uhdimgs.get_cmake_main_file()])
-    print "== Done!"
+        subprocess.call(archive_cmd)
+    except subprocess.CalledProcessError as ex:
+        print(ex.output)
+        exit(1)
+    print("== Done!")
 
 if __name__ == "__main__":
     main()

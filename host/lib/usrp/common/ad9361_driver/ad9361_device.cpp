@@ -2188,15 +2188,15 @@ double ad9361_device_t::_get_temperature(const double cal_offset, const double t
     _io_iface->poke8(0x00B, 0); //set offset to 0
 
     _io_iface->poke8(0x00C, 0x01); //start reading, clears bit 0x00C[1]
-    boost::posix_time::ptime start_time = boost::posix_time::microsec_clock::local_time();
-    boost::posix_time::time_duration elapsed;
+    auto end_time =
+        std::chrono::steady_clock::now()
+        + std::chrono::milliseconds(int64_t(timeout * 1000));
     //wait for valid data (toggle of bit 1 in 0x00C)
     while(((_io_iface->peek8(0x00C) >> 1) & 0x01) == 0) {
         std::this_thread::sleep_for(std::chrono::microseconds(100));
-        elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
-        if(elapsed.total_milliseconds() > (timeout*1000))
-        {
-            throw uhd::runtime_error("[ad9361_device_t] timeout while reading temperature");
+        if (std::chrono::steady_clock::now() > end_time) {
+            throw uhd::runtime_error(
+                "[ad9361_device_t] timeout while reading temperature");
         }
     }
     _io_iface->poke8(0x00C, 0x00); //clear read flag

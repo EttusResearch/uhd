@@ -113,14 +113,14 @@ block_ctrl_base::block_ctrl_base(
     _init_port_defs("in",  _block_def->get_input_ports());
     _init_port_defs("out", _block_def->get_output_ports());
     // FIXME this warning always fails until the input buffer code above is fixed
-    if (_tree->list(_root_path / "ports/in").size() != n_valid_input_buffers) {
-        UHD_LOGGER_WARNING(unique_id()) <<
-            boost::format("[%s] defines %d input buffer sizes, but %d input ports")
-            % get_block_id().get()
-            % n_valid_input_buffers
-            % _tree->list(_root_path / "ports/in").size()
-        ;
-    }
+    //if (_tree->list(_root_path / "ports/in").size() != n_valid_input_buffers) {
+    //    UHD_LOGGER_WARNING(unique_id()) <<
+    //        boost::format("[%s] defines %d input buffer sizes, but %d input ports")
+    //        % get_block_id().get()
+    //        % n_valid_input_buffers
+    //        % _tree->list(_root_path / "ports/in").size()
+    //    ;
+    //}
 
     /*** Init default block args ********************************************/
     _nocscript_iface = nocscript::block_iface::make(this);

@@ -198,7 +198,7 @@ If you have multiple N3XX devices connect, you may have to try out multiple
 devices. In this case, to use this symlink instead of the raw device node
 address, modify the command above to:
 
-    $ sudo screen /dev/usb-Silicon_Labs_CP2105_Dual_USB_to_UART_Bridge_Controller_007F6CB5-if00-port0 115200
+    $ sudo screen /dev/serial/by-id/usb-Silicon_Labs_CP2105_Dual_USB_to_UART_Bridge_Controller_007F6CB5-if00-port0 115200
 
 You should be presented with a shell prompt similar to the following:
 
@@ -216,7 +216,7 @@ The STM32 microcontroller (which controls the power sequencing, among other
 things) also has a serial console available. To connect to the microcontroller,
 use the other UART device. In the example above:
 
-    $ sudo screen /dev/usb-Silicon_Labs_CP2105_Dual_USB_to_UART_Bridge_Controller_007F6CB5-if01-port0 115200
+    $ sudo screen /dev/serial/by-id/usb-Silicon_Labs_CP2105_Dual_USB_to_UART_Bridge_Controller_007F6CB5-if01-port0 115200
 
 It provides a very simple prompt. The command 'help' will list all available
 commands. A direct connection to the microcontroller can be used to hard-reset
@@ -264,9 +264,11 @@ that will request a network address from your DHCP server (if available on your
 network).
 
 The SFP+ (sfp0, sfp1) ports are configured with static addresses 192.168.10.2/24
-and 192.168.20.2/24 respectively.
+and 192.168.20.2/24, respectively. Their default MTU value is 8000. These
+settings are independent of the image type (HG vs. XG), i.e., the defaults are
+the same for 1 GigE and 10 GigE (unlike the X310!).
 
-The configuration for the sfpX port is stored in /etc/systemd/networkd/sfpX.network.
+The configuration for the sfpX port is stored in /etc/systemd/network/sfpX.network.
 
 For configuration please refer to the
 <a href=https://www.freedesktop.org/software/systemd/man/systemd.network.html>systemd-networkd manual pages</a>
@@ -293,7 +295,7 @@ The factory settings are as follows:
         Address=192.168.10.2/24
 
         [Link]
-        MTUBytes=9000
+        MTUBytes=8000
 
     sfp1 (static):
 
@@ -304,14 +306,20 @@ The factory settings are as follows:
         Address=192.168.20.2/24
 
         [Link]
-        MTUBytes=9000
+        MTUBytes=8000
 
-Note: Care needs to be taken when editing these files on the device, since
-vi / vim sometimes generates undo files (e.g. /etc/systemd/networkd/sfp0.network~),
-that systemd-networkd might accidentally pick up.
 
-Note: Temporarily setting the IP addresses via ifconfig etc will only change the
-value until the next reboot or reload of the FPGA image.
+Additional notes on networking:
+
+- Care needs to be taken when editing these files on the device, since
+  vi / vim sometimes generates undo files (e.g.
+  `/etc/systemd/network/sfp0.network~`), that systemd-networkd might
+  accidentally pick up.
+- Temporarily setting the IP addresses or MTU sizes via `ifconfig` or other
+  command line tools will only change the value until the next reboot or reload
+  of the FPGA image.
+- If the MTU of the device and host computers differ, streaming issues can
+  occur.
 
 \subsection n3xx_getting_started_security Security-related settings
 
@@ -418,6 +426,28 @@ usrp->set_rx_gain(20.0, 0);
 See also uhd::usrp::subdev_spec_t.
 
 \subsection n3xx_usage_sensors The sensor API
+
+Like other USRPs, the N3x0 series have daughterboard and motherboard sensors.
+When using uhd::usrp::multi_usrp, the following API calls are relevant to
+interact with the sensor API:
+
+- uhd::usrp::multi_usrp::get_mboard_sensor_names()
+- uhd::usrp::multi_usrp::get_mboard_sensor()
+- uhd::usrp::multi_usrp::get_tx_sensor_names()
+- uhd::usrp::multi_usrp::get_rx_sensor_names()
+- uhd::usrp::multi_usrp::get_tx_sensor()
+- uhd::usrp::multi_usrp::get_rx_sensor()
+
+The following motherboard sensors are always available:
+
+- `ref_locked`: This will check that all the daughterboards have locked to the
+  external reference.
+- `temperature`: The temperature of the die itself
+- `gps_lock`: GPS lock
+- `gps_time`: GPS time in seconds sin ce the epch
+- `gps_tpv`: A TPV report from GPSd serialized as JSON
+- `gps_sky`: A SKY report from GPSd serialized as JSON
+
 
 \section n3xx_rasm Remote Management
 
@@ -532,7 +562,7 @@ FPGA must be loaded. SFP0 will not be available for data transport in this mode.
 The White Rabbit image is provided as a default image. To obtain the default
 images, simply run:
 
-    $ uhd_images_downloader
+    $ uhd_images_downloader -t n3xx -t fpga
 
 Then, you can install the WX (or WA) image using `uhd_image_loader`:
 
@@ -546,6 +576,25 @@ auto usrp = uhd::usrp::multi_usrp::make("type=n3xx,clock_source=sfp0,time_source
 
 For more information, refer to the [White Rabbit Homepage](https://www.ohwr.org/projects/white-rabbit),
 or the [Ettus Research Knowledge Base](https://kb.ettus.com/Using_Ethernet-Based_Synchronization_on_the_USRP%E2%84%A2_N3xx_Devices).
+
+\section n3xx_troubleshooting Troubleshooting
+
+\subsection n3xx_troubleshooting_seqerrs Errors while streaming
+
+If you are getting sequence or other errors while streaming, make sure the MTU
+settings of the network devices match up. UHD will try and do an automatic MTU
+discovery, but there are cases when the automatic MTU discovery will yield
+incorrect values. Often, the host computer MTU is set smaller than the device
+MTU, but the MTU discovery will detect a larger MTU than the host computer MTU
+in this error case.
+
+The default MTU for the N3x0 series is 8000. The simplest solution is often to
+set the host computer MTU to 8000 as well:
+
+    $ [sudo] ifconfig eth0 mtu 8000 # Replace eth0 with the device you're using
+
+Of course, you can also reduce the MTU on the device to match your host
+computer, see Section \ref n3xx_getting_started_connectivity.
 
 \section n3xx_theory_of_ops Theory of Operation
 
@@ -609,16 +658,22 @@ SDKs are distributed along with other binaries. They contain a cross-compiler,
 a cross-linker, a cross-debugger, and all the libraries available on the device
 to mirror its environment.
 
-To unpack the SDK, simply execute it after downloading it:
+The SDK is shipped in the same way as the other binaries, and you can download
+the correct version using `uhd_images_downloader`
 
+    $ uhd_images_downloader -t sdk -t n3xx
+
+To unpack and install the SDK, simply execute it after downloading it:
+
+    $ cd /usr/local/share/uhd/images # Change this to where your images are stored
     $ ./oecore-x86_64-cortexa9hf-neon-toolchain-nodistro.0.sh
 
 This will prompt you for an installation path.  Please ensure you have
 sufficient disk space, as each of the SDKs may require several gigabytes of
-disk space (depends on the image flavor selected).
+disk space (depending on the image flavor selected).
 
 This will allow you to compile UHD as well as (depending on the image flavor)
-other software.
+other software, such as GNU Radio.
 
 Please note, that while several toolchains can be installed in parallel, they
 have to be installed to different directories.

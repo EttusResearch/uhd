@@ -11,8 +11,6 @@
 #include <uhd/rfnoc/blockdef.hpp>
 #include <uhd/rfnoc/block_ctrl_base.hpp>
 
-#define UHD_FACTORY_LOG() UHD_LOGGER_TRACE("RFNOC")
-
 using namespace uhd;
 using namespace uhd::rfnoc;
 
@@ -61,7 +59,7 @@ block_ctrl_base::sptr block_ctrl_base::make(
         const make_args_t &make_args_,
         uint64_t noc_id
 ) {
-    UHD_FACTORY_LOG() << "[RFNoC Factory] block_ctrl_base::make() " ;
+    UHD_LOGGER_TRACE("RFNOC") << "[RFNoC Factory] block_ctrl_base::make()";
     make_args_t make_args = make_args_;
 
     // Check if a block key was specified, in this case, we *must* either
@@ -74,13 +72,18 @@ block_ctrl_base::sptr block_ctrl_base::make(
         );
     }
     if (not get_block_fcn_regs().has_key(make_args.block_key)) {
+        UHD_LOG_WARNING("RFNOC",
+            "Can't find a block controller for key " << make_args.block_key
+            << ", using default block controller!");
         make_args.block_key = DEFAULT_BLOCK_NAME;
     }
     if (make_args.block_name.empty()) {
         make_args.block_name = make_args.block_key;
     }
 
-    UHD_FACTORY_LOG() << "[RFNoC Factory] Using controller key '" << make_args.block_key << "' and block name '" << make_args.block_name << "'" ;
+    UHD_LOGGER_TRACE("RFNOC")
+        << "[RFNoC Factory] Using controller key '" << make_args.block_key
+        << "' and block name '" << make_args.block_name << "'";
     return get_block_fcn_regs()[make_args.block_key](make_args);
 }
 

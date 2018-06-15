@@ -625,7 +625,7 @@ std::string e300_impl::_get_version_hash(void)
         = _global_regs->peek32(global_regs::RB32_CORE_GITHASH);
     return str(boost::format("%7x%s")
         % (git_hash & 0x0FFFFFFF)
-        % ((git_hash & 0xF000000) ? "-dirty" : ""));
+        % ((git_hash & 0xF0000000) ? "-dirty" : ""));
 }
 
 

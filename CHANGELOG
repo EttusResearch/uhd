@@ -1,6 +1,95 @@
 Change Log for Releases
 ==============================
 
+## 003.012.000.000
+* N3x0: Add White Rabbit support, add N300 support, standard BIST
+        includes fan, fix issue with 1GigE, switch to 2 radio blocks
+        with 2 channels each, upgrade TDC to version 2.0, fix issue in
+        ARM deframer
+* X300: Enable BasicRX to use A/B/AB/BA muxing setups, more consistent
+        logging, fix enumeration issue with TwinRX
+* USRP2/N2x0: Re-add ability to modulate in the DAC, improve ISE
+              settings to better meet timing
+* B205mini: Fix global reset, improve timing in b205_ref_pll
+* UHD: Remove a lot of Boost usage, mostly replaced by C++11 features,
+       more unit tests, fix Boost 1.67 compatibility, fix compiler
+       warnings, add API to query clock rate range, fix get_usrp_?x_info
+* MPM: Refactored N3xx code, moved C++ standard to 14, refactor
+       Boost.Python bindings, use CMake variable MPM_DEVICE
+* Logging: Allow disabling fastpath msgs at runtime
+* Docs: Clarified meaning of DSP frequencies, improved manual
+        section on synchronization, added some known issues to B100,
+        USRP2, and USRP1, update test test procedure description
+* Examples: Improved benchmark_rate (added failure thresholds, fixed
+  incorrect calculation of samples on drops, fixed timeout values),
+  minor fixes to txrx_loopback_to_file
+* Utils: Handle U's in calibration tools, create-lvbitx.py is now Py3k
+         compatible, fixed git-hash.sh
+* RFNoC: DDCs/DUCs use DDSes instead of CORDIC, add DMA-based replay
+         block in FPGA, add 64-bit support to axi_wrapper, add compat
+         number to radio block,
+* Debian: Fix rules file, fix Changelog format
+* Fix license headers
+* This release includes all bugfixes and features from previous
+  releases, in particular, the 3.11.* release cycle
+* Known issues: N310: In some rare scenarios at high rates, streaming
+  can fail and even bring the FPGA into a bad state.
+
+## 003.011.001.000
+* N310: fix compiler warnings
+* N310: Implement digital loopback
+* N3xx: Add N3xx devtest
+* X300: Properly coerce master clock rate (tick rate)
+* X300: handle bad weak_ptr during pcie discovery
+* X300: handle bad weak_ptr during pcie discovery
+* X300: Fix check_radio_config() to fix errors when using a single dboard
+        in slot A
+* B200: docs: Suggest modifying recv_frame_size for more stability
+* B200: Fix bandwidth warnings and ranges
+* N2xx: Fix regression issue that limited tuning range
+* UBX: Change antenna functions to coercers on antenna/value properties
+* adf4002: Fix register programming for power down bit
+* UHD: Fix config file path for some Windows builds
+* UHD: Add operators == and != for uhd::dict
+* UHD: Add device_addr_t constructor from map
+* UHD: Fix range of gain group to skip gains with zero step
+* UHD: Changes to support Boost 1.67
+* UHD: Correctly set end of burst flag in RX metadata
+* UHD: Reduce usage of boost::assign, boost::this_thread::sleep, and boost:bind
+* UHD: Update multi_usrp::get_usrp_?x_info() for MPM devices
+* UHD: Refactor static const values to fix linker errors in niusrprio
+* mpm: cmake: Add git hash and version info to Python module
+* mpm: Add reference counters to UIO
+* mpm: Add offset to EEPROM reads
+* mpm: Disable PPS out during initialization
+* mpm: Update cmake to find the correct python3
+* mpm: Bump maximum supported revision to 5 (Rev F)
+* mpm: Fixed db slot typo in db-id
+* mpm: Increased claim timeout, made a separate RPC connection for claim, and
+       added asyn calls for long RPC executions
+* mpm: Improve xport<->SFP mapping algorithm
+* mpmd: Improved find routine to fail fast and verify correct device is
+        reachable
+* mpmd: Add missing virtual destructors
+* rfnoc/x300: Make sure peek32() and peek64() are called with actual addresses
+* rfnoc: ctrl_iface cleanup
+* rfnoc radio: Improve warning for too many samples requested
+* rfnoc radio: get_rx_stream resets sequence num
+* examples: Increase settling time, increase buffer fill time, and fix subdevice
+            selection in txrx_loopback_to_file
+* examples: Improvements to benchmark_rate
+* utils: downloader supports multiple RegExs
+* utils: Added code to handle underruns during self calibration
+* utils: Fix 30s tiemout in query_gpsdo_sensors
+* logging: Improve style consistency and demote some messages
+* logging: Fix UHD_LOG_FILE cmake variable
+* Docs: Add Known Issues section to USRP1, B100, and USRP2/N2x0
+* Docs: Hide dependencies directory from Doxygen
+* Docs: Clarify subdev specs and magnesium driver usage for N300/N310
+* cmake: Improve warning for missing requests
+* cmake: update NSIS template
+* cmake: Remove images downloader section (replaced by manifest)
+
 ## 003.011.000.001
 * N300: Added driver support (includes some refactoring of N3xx
   codebase)
@@ -111,14 +200,13 @@ Change Log for Releases
 * C API: Added UHD_VERSION macro. Fixed online rate change.
 * Utils: Minor fixes to uhd_images_downloader.
 * Build/CMake: Fixed some Py3k build issues. Fixed many compiler warnings. Allow
-  to specify package names. 
+  to specify package names.
 * RFNoC: Fixed sampling rate mismatch error. Noc-Shell uses a non-cascaded 2-clk
   FIFO. Increase default FIFO sizes on DUC and DDC blocks.
-* UBX: Force on RX driver to eliminate transient. 
+* UBX: Force on RX driver to eliminate transient.
 * Transport code: Fixed memory leak.
 * FPGA repository: Merged usrp3_rfnoc and usrp3 directories again. Cleaned up
   superfluous files. Clean separation between Gen-3 and other devices in usrp3.
-
 
 ## 003.010.001.000
 * Fixed multiple compiler warnings
@@ -302,7 +390,6 @@ Change Log for Releases
 * X300: Improved phase alignment across devices
 * CMake: Build fixes
 * E300: Flow control fix
-
 
 ## 003.008.002
 * CMake: Introducing named versions for dev branches, enable static libs,
@@ -578,7 +665,7 @@ Change Log for Releases
 ** Added API calls for DC offset correction
 ** Added API calls for IQ balance correction
 
-## Release 003.003.002
+## 003.003.002
 * N2x0:
 ** Fixed TX daughterboard clocking mode
 * B100:
@@ -597,7 +684,7 @@ Change Log for Releases
 * B100:
 ** Fixed discovery throwing when device claimed
 
-## Release 003.003.000
+## 003.003.000
 * USRP2/N2x0:
 ** Incremented firmware image compat number to 11.0
 ** Re-implement internal GPSDO UART control
@@ -616,7 +703,7 @@ Change Log for Releases
 * Gen2:
 ** Fix DSP rate selection clipping for very low rates
 
-## Release 003.002.004
+## 003.002.004
 * USRP2/N2x0:
 ** Resize all socket buffers (multi-channel)
 * N2x0:
@@ -632,7 +719,7 @@ Change Log for Releases
 ** Fix bounds checking on stream num samps
 ** Fix error using PPS_NEG in clock config
 
-## Release 003.002.003
+## 003.002.003
 * USRP2/N2x0:
 ** Fix uninitialized variable for multi-board case
 ** Fix deconstructor throwing on device disconnect
@@ -647,7 +734,7 @@ Change Log for Releases
 ** Clip the reported tune range to the dboard bandwidth
 ** Preserve bands when calculating overall tune range
 
-## Release 003.002.002
+## 003.002.002
 * USRP2/N2x0:
 ** Always resize socket send buffer to SRAM size
 ** Incremented FPGA image compat number to 7.2
@@ -668,12 +755,12 @@ Change Log for Releases
 ** Fix send to return zero on empty packets
 ** Perform version check on liborc
 
-## Release 003.002.001
+## 003.002.001
 * USRP2/N-Series:
 ** Firmware fix to shutoff streaming when socket unreachable
 ** Incremented firmware image compat number to 10.3
 
-## Release 003.002.000
+## 003.002.000
 * USRP2/N-Series:
 ** Incremented FPGA image compat number to 7.1
 ** Incremented firmware image compat number to 10.2
@@ -703,13 +790,13 @@ Change Log for Releases
 ** Code reorganization with property tree
 ** Calibration support in gen2 FPGAs
 
-## Release 003.001.002
+## 003.001.002
 * N-Series:
 ** Fix UART communication for GPSDO
 * XCVR2450:
 ** Fix for descontructor throwing on hardware disconnect
 
-## Release 003.001.001
+## 003.001.001
 * USRP1:
 ** Fixed lock up in logging facility under MSVC
 * USRP2/N-Series:
@@ -718,7 +805,7 @@ Change Log for Releases
 * WBX
 ** Keep mixers on between bursts to maintain phase offsets
 
-## Release 003.001.000
+## 003.001.000
 * USRP2/N-Series:
 ** Incremented FPGA compat number to 6
 ** Incremented firmware compat number to 10
@@ -751,7 +838,7 @@ Change Log for Releases
 ** Deprecated API in utils/warning.hpp
 ** Fixed race condition in device discovery/factory
 
-## Release 003.000.001
+## 003.000.001
 * RFX400: fix for transmit capability
 * USRP1: fix for axillary ADC read
 * Windows: statically link libusb
@@ -761,6 +848,5 @@ Change Log for Releases
 * build: various work on build system
 * build: include FPGA and firmware images in installers
 
-## Release 003.000.000
+## 003.000.000
 Initial (formal) release, no changes to mention.
-

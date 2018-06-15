@@ -28,6 +28,8 @@ from usrp_mpm.xports import XportMgrUDP, XportMgrLiberio
 from usrp_mpm.periph_manager.n3xx_periphs import TCA6424
 from usrp_mpm.periph_manager.n3xx_periphs import BackpanelGPIO
 from usrp_mpm.periph_manager.n3xx_periphs import MboardRegsControl
+from usrp_mpm.dboard_manager.magnesium import Magnesium
+from usrp_mpm.dboard_manager.eiscat import EISCAT
 
 N3XX_DEFAULT_EXT_CLOCK_FREQ = 10e6
 N3XX_DEFAULT_CLOCK_SOURCE = 'internal'
@@ -37,6 +39,10 @@ N3XX_DEFAULT_ENABLE_FPGPIO = True
 N3XX_DEFAULT_ENABLE_PPS_EXPORT = True
 N3XX_FPGA_COMPAT = (5, 2)
 N3XX_MONITOR_THREAD_INTERVAL = 1.0 # seconds
+
+# Import daughterboard PIDs from their respective classes
+MG_PID = Magnesium.pids[0]
+EISCAT_PID = EISCAT.pids[0]
 
 ###############################################################################
 # Transport managers
@@ -84,6 +90,20 @@ class n3xx(PeriphManagerBase):
     """
     Holds N3xx specific attributes and methods
     """
+    # For every variant of the N3xx, add a line to the product map. If
+    # it uses a new daughterboard, also import that PID from the dboard
+    # manager class. The format of this map is:
+    # (motherboard product code, (Slot-A DB PID, [Slot-B DB PID])) -> product
+    product_map = {
+        ('n300', (MG_PID,       )): 'n300', # Slot B is empty
+        ('n310', (MG_PID, MG_PID)): 'n310',
+        ('n310', (MG_PID,       )): 'n310', # If Slot B is empty, we can
+                                            # still use the n310.bin image.
+                                            # We'll leave this here for
+                                            # debugging purposes.
+        ('n310', (EISCAT_PID, EISCAT_PID)): 'eiscat',
+    }
+
     #########################################################################
     # Overridables
     #
@@ -94,9 +114,7 @@ class n3xx(PeriphManagerBase):
     mboard_eeprom_addr = "e0005000.i2c"
     mboard_eeprom_offset = 0
     mboard_eeprom_max_len = 256
-    mboard_info = {"type": "n3xx",
-                   "product": "unknown",
-                  }
+    mboard_info = {"type": "n3xx"}
     mboard_max_rev = 5 # 5 == RevF
     mboard_sensor_callback_map = {
         'ref_locked': 'get_ref_lock_sensor',
@@ -134,8 +152,22 @@ class n3xx(PeriphManagerBase):
         },
     }
 
+    @classmethod
+    def generate_device_info(cls, eeprom_md, mboard_info, dboard_infos):
+        """
+        Hard-code our product map
+        """
+        mb_pid = eeprom_md.get('pid')
+        lookup_key = (
+            n3xx.pids.get(mb_pid, 'unknown'),
+            tuple([x['pid'] for x in dboard_infos]),
+        )
+        device_info = mboard_info
+        device_info['product'] = cls.product_map.get(lookup_key, 'unknown')
+        return device_info
+
     @staticmethod
-    def list_required_dt_overlays(eeprom_md, device_args):
+    def list_required_dt_overlays(device_info):
         """
         Lists device tree overlays that need to be applied before this class can
         be used. List of strings.
@@ -146,7 +178,7 @@ class n3xx(PeriphManagerBase):
         """
         # In the N3xx case, we name the dtbo file the same as the product.
         # N310 -> n310.dtbo, N300 -> n300.dtbo and so on.
-        return [n3xx.pids[eeprom_md['pid']]]
+        return [device_info['product']]
 
     ###########################################################################
     # Ctor and device initialization tasks
@@ -253,7 +285,7 @@ class n3xx(PeriphManagerBase):
         likely.
         """
         # Sanity checks
-        assert self.mboard_info.get('product') in self.pids.values(), \
+        assert self.device_info.get('product') in self.product_map.values(), \
                 "Device product could not be determined!"
         # Init peripherals
         self.log.trace("Initializing TCA6424 port expander controls...")
@@ -303,7 +335,7 @@ class n3xx(PeriphManagerBase):
         )
         self._status_monitor_thread.start()
         # Init complete.
-        self.log.debug("mboard info: {}".format(self.mboard_info))
+        self.log.debug("Device info: {}".format(self.device_info))
 
     ###########################################################################
     # Session init and deinit
@@ -332,7 +364,7 @@ class n3xx(PeriphManagerBase):
         # source connectors on the front panel, so we assume that if this was
         # selected, it was an artifact from N310-related code. The user gets
         # a warning and the setting is reset to internal.
-        if self.mboard_info.get('product') == 'n300':
+        if self.device_info.get('product') == 'n300':
             for lo_source in ('rx_lo_source', 'tx_lo_source'):
                 if lo_source in args and args.get(lo_source) != 'internal':
                     self.log.warning("The N300 variant does not support "
@@ -407,13 +439,13 @@ class n3xx(PeriphManagerBase):
             "operating on temporary SID: %s",
             dst_address, suggested_src_address, str(xport_type), str(sid))
         # FIXME token!
-        assert self.mboard_info['rpc_connection'] in ('remote', 'local')
-        if self.mboard_info['rpc_connection'] == 'remote':
+        assert self.device_info['rpc_connection'] in ('remote', 'local')
+        if self.device_info['rpc_connection'] == 'remote':
             return self._xport_mgrs['udp'].request_xport(
                 sid,
                 xport_type,
             )
-        elif self.mboard_info['rpc_connection'] == 'local':
+        elif self.device_info['rpc_connection'] == 'local':
             return self._xport_mgrs['liberio'].request_xport(
                 sid,
                 xport_type,
@@ -429,14 +461,14 @@ class n3xx(PeriphManagerBase):
         session.
         """
         ## Go, go, go
-        assert self.mboard_info['rpc_connection'] in ('remote', 'local')
+        assert self.device_info['rpc_connection'] in ('remote', 'local')
         sid = SID(xport_info['send_sid'])
         self._available_endpoints.remove(sid.src_ep)
         self.log.debug("Committing transport for SID %s, xport info: %s",
                        str(sid), str(xport_info))
-        if self.mboard_info['rpc_connection'] == 'remote':
+        if self.device_info['rpc_connection'] == 'remote':
             return self._xport_mgrs['udp'].commit_xport(sid, xport_info)
-        elif self.mboard_info['rpc_connection'] == 'local':
+        elif self.device_info['rpc_connection'] == 'local':
             return self._xport_mgrs['liberio'].commit_xport(sid, xport_info)
 
     ###########################################################################
@@ -451,7 +483,8 @@ class n3xx(PeriphManagerBase):
         device_info = self._xport_mgrs['udp'].get_xport_info()
         device_info.update({
             'fpga_version': "{}.{}".format(
-                *self.mboard_regs_control.get_compat_number())
+                *self.mboard_regs_control.get_compat_number()),
+            'fpga': self.updateable_components.get('fpga', {}).get('type', ""),
         })
         return device_info
 
@@ -914,7 +947,7 @@ class n3xx(PeriphManagerBase):
         # Cut off the period from the file extension
         file_extension = file_extension[1:].lower()
         binfile_path = self.updateable_components['fpga']['path'].format(
-            self.mboard_info['product'])
+            self.device_info['product'])
         if file_extension == "bit":
             self.log.trace("Converting bit to bin file and writing to {}"
                            .format(binfile_path))
@@ -944,12 +977,12 @@ class n3xx(PeriphManagerBase):
         :param metadata: Dictionary of strings containing metadata
         """
         dtsfile_path = self.updateable_components['dts']['path'].format(
-            self.mboard_info['product'])
+            self.device_info['product'])
         self.log.trace("Updating DTS with image at %s to %s (metadata: %s)",
                        filepath, dtsfile_path, str(metadata))
         shutil.copy(filepath, dtsfile_path)
         dtbofile_path = self.updateable_components['dts']['output'].format(
-            self.mboard_info['product'])
+            self.device_info['product'])
         self.log.trace("Compiling to %s...", dtbofile_path)
         dtc_command = [
             'dtc',

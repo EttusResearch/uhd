@@ -151,6 +151,12 @@ public:
         // Find the largest possible divider
         auto output_divider_index = 0;
         for (auto limit : LMX2592_CHDIV_MIN_FREQ) {
+            // The second harmonic level is very bad when using the div-by-3
+            // Skip and let the div-by-4 cover the range
+            if (LMX2592_CHDIV_DIVIDERS[output_divider_index] == 3) {
+                output_divider_index++;
+                continue;
+            }
             if (target_freq < limit) {
                 output_divider_index++;
             } else {
@@ -194,7 +200,7 @@ public:
 
         const int min_n_divider = LMX2592_MIN_N_DIV[_regs.mash_order];
         double pfd_freq = input_freq / _regs.pll_r;
-        while (pfd_freq * (prescaler + min_n_divider) / vco_multiplier > core_vco_freq) {
+        while (pfd_freq * (prescaler * min_n_divider) / vco_multiplier > core_vco_freq) {
             _regs.pll_r++;
             pfd_freq = input_freq / _regs.pll_r;
         }

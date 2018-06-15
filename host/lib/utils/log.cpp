@@ -505,7 +505,10 @@ uhd::_log::log::~log(void)
 {
     if (_log_it) {
         this->_log_info.message = _ss.str();
-        log_rs().push(this->_log_info);
+        try{
+            log_rs().push(this->_log_info);
+        }
+        catch (...){}
     }
 }
 

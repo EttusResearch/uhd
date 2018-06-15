@@ -1,3 +1,116 @@
+uhd (3.12.0.0-0ubuntu1) trusty; urgency=low
+
+  * N3x0: Add White Rabbit support, add N300 support, standard BIST
+          includes fan, fix issue with 1GigE, switch to 2 radio blocks
+          with 2 channels each, upgrade TDC to version 2.0, fix issue in
+          ARM deframer
+  * X300: Enable BasicRX to use A/B/AB/BA muxing setups, more consistent
+          logging, fix enumeration issue with TwinRX
+  * USRP2/N2x0: Re-add ability to modulate in the DAC, improve ISE
+                settings to better meet timing
+  * B205mini: Fix global reset, improve timing in b205_ref_pll
+  * UHD: Remove a lot of Boost usage, mostly replaced by C++11 features,
+         more unit tests, fix Boost 1.67 compatibility, fix compiler
+         warnings, add API to query clock rate range, fix get_usrp_?x_info
+  * MPM: Refactored N3xx code, moved C++ standard to 14, refactor
+         Boost.Python bindings, use CMake variable MPM_DEVICE
+  * Logging: Allow disabling fastpath msgs at runtime
+  * Docs: Clarified meaning of DSP frequencies, improved manual
+          section on synchronization, added some known issues to B100,
+          USRP2, and USRP1, update test test procedure description
+  * Examples: Improved benchmark_rate (added failure thresholds, fixed
+    incorrect calculation of samples on drops, fixed timeout values),
+    minor fixes to txrx_loopback_to_file
+  * Utils: Handle U's in calibration tools, create-lvbitx.py is now Py3k
+           compatible, fixed git-hash.sh
+  * RFNoC: DDCs/DUCs use DDSes instead of CORDIC, add DMA-based replay
+           block in FPGA, add 64-bit support to axi_wrapper, add compat
+           number to radio block,
+  * Debian: Fix rules file, fix Changelog format
+  * Fix license headers
+  * This release includes all bugfixes and features from previous
+    releases, in particular, the 3.11.* release cycle
+
+ -- Ettus Research <packages@ettus.com>  Tue, 5 Jun 2018 10:38:00 -0800
+
+uhd (3.11.1.0-0ubuntu1) trusty; urgency=low
+
+  * N310: fix compiler warnings
+  * N310: Implement digital loopback
+  * N3xx: Add N3xx devtest
+  * X300: Properly coerce master clock rate (tick rate)
+  * X300: handle bad weak_ptr during pcie discovery
+  * X300: handle bad weak_ptr during pcie discovery
+  * X300: Fix check_radio_config() to fix errors when using a single dboard
+          in slot A
+  * B200: docs: Suggest modifying recv_frame_size for more stability
+  * B200: Fix bandwidth warnings and ranges
+  * N2xx: Fix regression issue that limited tuning range
+  * UBX: Change antenna functions to coercers on antenna/value properties
+  * adf4002: Fix register programming for power down bit
+  * UHD: Fix config file path for some Windows builds
+  * UHD: Add operators == and != for uhd::dict
+  * UHD: Add device_addr_t constructor from map
+  * UHD: Fix range of gain group to skip gains with zero step
+  * UHD: Changes to support Boost 1.67
+  * UHD: Correctly set end of burst flag in RX metadata
+  * UHD: Reduce usage of boost::assign, boost::this_thread::sleep, and boost:bind
+  * UHD: Update multi_usrp::get_usrp_?x_info() for MPM devices
+  * UHD: Refactor static const values to fix linker errors in niusrprio
+  * mpm: cmake: Add git hash and version info to Python module
+  * mpm: Add reference counters to UIO
+  * mpm: Add offset to EEPROM reads
+  * mpm: Disable PPS out during initialization
+  * mpm: Update cmake to find the correct python3
+  * mpm: Bump maximum supported revision to 5 (Rev F)
+  * mpm: Fixed db slot typo in db-id
+  * mpm: Increased claim timeout, made a separate RPC connection for claim, and
+         added asyn calls for long RPC executions
+  * mpm: Improve xport<->SFP mapping algorithm
+  * mpmd: Improved find routine to fail fast and verify correct device is
+          reachable
+  * mpmd: Add missing virtual destructors
+  * rfnoc/x300: Make sure peek32() and peek64() are called with actual addresses
+  * rfnoc: ctrl_iface cleanup
+  * rfnoc radio: Improve warning for too many samples requested
+  * rfnoc radio: get_rx_stream resets sequence num
+  * examples: Increase settling time, increase buffer fill time, and fix subdevice
+              selection in txrx_loopback_to_file
+  * examples: Improvements to benchmark_rate
+  * utils: downloader supports multiple RegExs
+  * utils: Added code to handle underruns during self calibration
+  * utils: Fix 30s tiemout in query_gpsdo_sensors
+  * logging: Improve style consistency and demote some messages
+  * logging: Fix UHD_LOG_FILE cmake variable
+  * Docs: Add Known Issues section to USRP1, B100, and USRP2/N2x0
+  * Docs: Hide dependencies directory from Doxygen
+  * Docs: Clarify subdev specs and magnesium driver usage for N300/N310
+  * cmake: Improve warning for missing requests
+  * cmake: update NSIS template
+  * cmake: Remove images downloader section (replaced by manifest)
+
+ -- Ettus Research <packages@ettus.com>  Wed, 16 May 2018 10:05:17 -0800
+
+uhd (3.11.0.1-0ubuntu1) trusty; urgency=low
+
+  * N300: Added driver support (includes some refactoring of N3xx
+    codebase)
+  * MPM: Fix PyLint warnings, Fix error handling for TCA communication
+    errors, Fix printout of AD9371 version
+  * uhd_images_downloader: Create unique archive names for images archives
+    (now include git hashes in the filename)
+  * uhd_images_downloader: Fix SHA256 check
+  * utils: Add support for N3xx filesystem images to images downloader
+  * UHD: Minor logging fixes
+  * UHD: fix legacy compat to work with 2TX radio block
+  * X300: improve lvbitx bitstream md5 read time
+  * examples: Enhance benchmark_rate with more stats and timestamps for errors
+  * cmake: Correctly fail when an unavailable component is requested
+  * debian: Add UHDConfig.cmake to install list for libuhd-dev
+
+ -- Ettus Research <packages@ettus.com>  Wed, 16 May 2018 10:05:17 -0800
+
+
 uhd (3.11.0.0-0ubuntu1) trusty; urgency=low
 
   * N310: Added driver

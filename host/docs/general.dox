@@ -15,7 +15,8 @@ In a typical use-case, the user specifies an overall center frequency
 for the signal chain. The RF front-end will be tuned as close as
 possible to the center frequency, and the DSP will account for the error
 in tuning between target frequency and actual frequency. The user may
-also explicitly control both stages of tuning through through the uhd::tune_request_t object, which allows for more advanced tuning.
+also explicitly control both stages of tuning through through the
+uhd::tune_request_t object, which allows for more advanced tuning.
 
 In general, Using UHD software's advanced tuning is highly recommended
 as it makes it easy to move the DC component out of your
@@ -53,6 +54,40 @@ usrp->set_rx_freq(tune_req);
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 More information can be found in uhd::tune_request_t.
+
+\subsection general_tuning_dsp DSP Tuning
+
+As mentioned above, a tune request (regardless of whether or not the actual
+uhd::tune_request_t object is used) is split into an RF tune (i.e., tuning the
+local oscillator) and a frequency shift that is performed in DSP (typically on
+the FPGA). For example, when integer-N tuning is requested, UHD will
+automatically pick an LO frequency that is closest to the desired RF frequency,
+and tune the rest digitally. The BasicRX board, on the other hand, has no LO
+so all tuning will be handled by the FPGA. In many cases, the actual DSP tuning
+is pretty low, because many LO synthesizers have a good resolution not operating
+in integer-N mode.
+
+When using hand-crafted tune requests, it is necessary to observe sampling
+theory. If the LO offset of a tune request exceeds the sampling rate, the
+actual DSP frequency will wrap around. For example, if a B210 is used at a
+master clock rate of 20 MHz, and the LO frequency is set to 100 MHz, the digital
+tuning range is 90 MHz to 110 MHz. Now, if an LO offset of 12 MHz is selected,
+it will wrap and become an LO offset of -8 MHz, and the final frequency will
+become 92 MHz. However, if there is no anti-aliasing filter enabled, there will
+be an alias at 112 MHz, as requested.
+
+Most USRPs do have anti-aliasing filters, so this does not always work (the
+BasicTX and BasicRX are a notable exception here). For the same reason, it is
+typically recommended to not use DSP tuning to get too close to the edge of the
+Nyquist zone. In the example above, if the signal bandwidth is 2 MHz, the LO
+offset should not exceed 9 MHz, or the signal would wrap around the edges of
+the Nyquist zone. In fact, it is recommended to avoid the outer 20% of the
+Nyquist zone due to analog anti-aliasing filter influences.
+
+\subsection general_tuning_dsp_sign Sign of DSP frequency on TX vs. RX tuning
+
+Please note that the meaning of the sign of uhd::tune_request_t::dsp_freq
+differs between TX and RX tuning. See also uhd::tune_request::dsp_freq.
 
 \subsection general_tuning_rfsettling RF front-end settling time
 

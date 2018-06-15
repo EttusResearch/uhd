@@ -61,9 +61,9 @@ class DboardManagerBase(object):
         keys from chip_select_map to spidev nodes, and do a sanity check
         that enough nodes are available.
         """
-        if len(spi_devices) < len(chip_select_map):
+        if len(spi_devices) < len(set(chip_select_map.values())):
             self.log.error("Expected {0} spi devices, found {1}".format(
-                len(chip_select_map), len(spi_devices),
+                len(set(chip_select_map.values())), len(spi_devices),
             ))
             self.log.error("Not enough SPI devices found.")
             return {}

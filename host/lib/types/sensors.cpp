@@ -76,6 +76,24 @@ static sensor_value_t::data_type_t _string_to_type(
     }
 }
 
+static std::string _type_to_string(
+    const sensor_value_t::data_type_t &type
+) {
+    if (type == sensor_value_t::STRING) {
+        return "STRING";
+    } else if (type == sensor_value_t::REALNUM) {
+        return "REALNUM";
+    } else if (type == sensor_value_t::INTEGER) {
+        return "INTEGER";
+    } else if (type == sensor_value_t::BOOLEAN) {
+        return "BOOLEAN";
+    } else {
+        throw uhd::value_error(
+            std::string("Invalid raw sensor value type.")
+        );
+    }
+}
+
 sensor_value_t::sensor_value_t(
     const std::map<std::string, std::string> &sensor_dict
 ):
@@ -137,6 +155,15 @@ signed sensor_value_t::to_int(void) const{
 
 double sensor_value_t::to_real(void) const{
     return std::stod(value);
+}
+
+sensor_value_t::sensor_map_t sensor_value_t::to_map(void) const{
+    sensor_map_t ret_map;
+    ret_map["name"] = name;
+    ret_map["value"] = value;
+    ret_map["unit"] = unit;
+    ret_map["type"] = _type_to_string(type);
+    return ret_map;
 }
 
 sensor_value_t& sensor_value_t::operator=(const sensor_value_t& rhs)

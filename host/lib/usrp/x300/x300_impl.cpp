@@ -1126,15 +1126,16 @@ uint32_t x300_impl::mboard_members_t::allocate_pcie_dma_chan(const uhd::sid_t &t
         uint32_t raw_sid = tx_sid.get();
 
         if (_dma_chan_pool.count(raw_sid) == 0) {
-            _dma_chan_pool[raw_sid] = _dma_chan_pool.size() + FIRST_DATA_CHANNEL;
+            size_t channel = _dma_chan_pool.size() + FIRST_DATA_CHANNEL;
+            if (channel > X300_PCIE_MAX_CHANNELS) {
+                throw uhd::runtime_error("Trying to allocate more DMA channels than are available");
+            }
+            _dma_chan_pool[raw_sid] = channel;
             UHD_LOGGER_DEBUG("X300")
                 << "Assigning PCIe DMA channel " << _dma_chan_pool[raw_sid]
                 << " to SID " << tx_sid.to_pp_string_hex();
         }
 
-        if (_dma_chan_pool.size() + FIRST_DATA_CHANNEL > X300_PCIE_MAX_CHANNELS) {
-            throw uhd::runtime_error("Trying to allocate more DMA channels than are available");
-        }
         return _dma_chan_pool[raw_sid];
     }
 }
@@ -1792,7 +1793,7 @@ void x300_impl::check_fpga_compat(const fs_path &mb_path, const mboard_members_t
     _tree->create<std::string>(mb_path / "fpga_version_hash").set(
         str(boost::format("%07x%s")
         % (git_hash & 0x0FFFFFFF)
-        % ((git_hash & 0xF000000) ? "-dirty" : "")));
+        % ((git_hash & 0xF0000000) ? "-dirty" : "")));
 }
 
 x300_impl::x300_mboard_t x300_impl::get_mb_type_from_pcie(const std::string& resource, const std::string& rpc_port)

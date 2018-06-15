@@ -110,6 +110,9 @@ namespace uhd{
         //! convert the sensor value to real number
         double to_real(void) const;
 
+        //! convert the sensor value to sensor_map_t
+        sensor_map_t to_map(void) const;
+
         //! The name of the sensor value
         std::string name;
 

@@ -61,6 +61,8 @@ IF(GIT_FOUND)
     ELSE()
         MESSAGE(STATUS "Could not determine git branch. Probably building from tarball.")
     ENDIF()
+ELSE(GIT_FOUND)
+    MESSAGE(WARNING "Could not detect git executable! Could not determine exact version of UHD!")
 ENDIF(GIT_FOUND)
 
 ########################################################################

@@ -12,6 +12,7 @@
 #include <uhd/rfnoc/node_ctrl_base.hpp>
 #include <uhd/transport/chdr.hpp>
 #include <uhd/utils/math.hpp>
+#include <uhd/utils/safe_call.hpp>
 #include <uhdlib/rfnoc/wb_iface_adapter.hpp>
 #include <uhdlib/usrp/cores/gpio_atr_3000.hpp>
 #include <uhdlib/usrp/common/apply_corrections.hpp>
@@ -166,24 +167,27 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(x300_radio_ctrl)
 
 x300_radio_ctrl_impl::~x300_radio_ctrl_impl()
 {
-    // Tear down our part of the tree:
-    _tree->remove(fs_path("rx_codecs" / _radio_slot));
-    _tree->remove(fs_path("tx_codecs" / _radio_slot));
-    _tree->remove(_root_path / "rx_fe_corrections");
-    _tree->remove(_root_path / "tx_fe_corrections");
-    if (_radio_type==PRIMARY) {
-        for(const gpio_atr::gpio_attr_map_t::value_type attr:  gpio_atr::gpio_attr_map) {
-            _tree->remove(fs_path("gpio") / "FP0" / attr.second);
+    UHD_SAFE_CALL(
+        // Tear down our part of the tree:
+        _tree->remove(fs_path("rx_codecs" / _radio_slot));
+        _tree->remove(fs_path("tx_codecs" / _radio_slot));
+        _tree->remove(_root_path / "rx_fe_corrections");
+        _tree->remove(_root_path / "tx_fe_corrections");
+        if (_radio_type==PRIMARY) {
+            for(const gpio_atr::gpio_attr_map_t::value_type attr:  gpio_atr::gpio_attr_map) {
+                _tree->remove(fs_path("gpio") / "FP0" / attr.second);
+            }
         }
-    }
 
-    // Reset peripherals
-    if (_radio_type==PRIMARY) {
-        _regs->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::ADC_RESET, 1);
-        _regs->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::DAC_RESET_N, 0);
-    }
-    _regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::DAC_ENABLED, 0);
-    _regs->misc_outs_reg.flush();
+        // Reset peripherals
+        if (_radio_type==PRIMARY) {
+            _regs->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::ADC_RESET, 1);
+            _regs->misc_outs_reg.set(radio_regmap_t::misc_outs_reg_t::DAC_RESET_N, 0);
+        }
+        _regs->misc_outs_reg.write(radio_regmap_t::misc_outs_reg_t::DAC_ENABLED, 0);
+        _regs->misc_outs_reg.flush();
+    )
+
 }
 
 /****************************************************************************
