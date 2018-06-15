@@ -1,5 +1,4 @@
-USRP Hardware Driver (UHD™) Software
-========================================
+# USRP Hardware Driver (UHD™) Software
 
 Welcome to the UHD™ software distribution! UHD is the free & open-source
 software driver and API for the Universal Software Radio Peripheral (USRP™) SDR
@@ -55,6 +54,11 @@ third-party applications. Some common toolkits / frameworks are:
 __host/__
 
 The source code for the user-space driver.
+
+__mpm/__
+
+The source code for the module peripheral manager (MPM). This is code that is
+run on embedded devices.
 
 __firmware/__
 
