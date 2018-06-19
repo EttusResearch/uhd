@@ -261,6 +261,17 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_get_tx_rates, get_tx_rates, 0, 1
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_get_tx_freq_range, get_tx_freq_range, 0, 1);
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_get_fe_tx_freq_range, get_fe_tx_freq_range, 0, 1);
 
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_get_tx_lo_names, get_tx_lo_names, 0, 1);
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_get_tx_lo_source, get_tx_lo_source, 0, 2);
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_set_tx_lo_source, set_tx_lo_source, 1, 3);
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_get_tx_lo_sources, get_tx_lo_sources, 0, 2);
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_set_tx_lo_export_enabled, set_tx_lo_export_enabled, 1, 3);
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_get_tx_lo_export_enabled, get_tx_lo_export_enabled, 0, 2);
+
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_set_tx_lo_freq, set_tx_lo_freq, 2, 3);
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_get_tx_lo_freq, get_tx_lo_freq, 1, 2);
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_get_tx_lo_freq_range, get_tx_lo_freq_range, 1, 2);
+
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_set_normalized_tx_gain, set_normalized_tx_gain, 1, 2);
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_get_normalized_tx_gain, get_normalized_tx_gain, 0, 1);
 
@@ -401,6 +412,15 @@ void export_multi_usrp()
         .def("get_tx_rates"            , &multi_usrp::get_tx_rates, overload_get_rx_rates())
         .def("get_tx_freq_range"       , &multi_usrp::get_tx_freq_range, overload_get_tx_freq_range())
         .def("get_fe_tx_freq_range"    , &multi_usrp::get_fe_tx_freq_range, overload_get_fe_tx_freq_range())
+        .def("get_tx_lo_names"         , &multi_usrp::get_tx_lo_names, overload_get_tx_lo_names())
+        .def("set_tx_lo_source"        , &multi_usrp::set_tx_lo_source, overload_set_tx_lo_source())
+        .def("get_tx_lo_source"        , &multi_usrp::get_tx_lo_source, overload_get_tx_lo_source())
+        .def("get_tx_lo_sources"       , &multi_usrp::get_tx_lo_sources, overload_get_tx_lo_sources())
+        .def("set_tx_lo_export_enabled", &multi_usrp::set_tx_lo_export_enabled, overload_set_tx_lo_export_enabled())
+        .def("get_tx_lo_export_enabled", &multi_usrp::get_tx_lo_export_enabled, overload_get_tx_lo_export_enabled())
+        .def("set_tx_lo_freq"          , &multi_usrp::set_tx_lo_freq, overload_set_tx_lo_freq())
+        .def("get_tx_lo_freq"          , &multi_usrp::get_tx_lo_freq, overload_get_tx_lo_freq())
+        .def("get_tx_lo_freq_range"    , &multi_usrp::get_tx_lo_freq_range, overload_get_tx_lo_freq_range())
         .def("set_normalized_tx_gain"  , &multi_usrp::set_normalized_tx_gain, overload_set_normalized_tx_gain())
         .def("get_normalized_tx_gain"  , &multi_usrp::get_normalized_tx_gain, overload_get_normalized_tx_gain())
         .def("get_tx_gain"             , &get_tx_gain_0, overload_get_tx_gain_0())
