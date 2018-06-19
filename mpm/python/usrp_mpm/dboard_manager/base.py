@@ -93,7 +93,8 @@ class DboardManagerBase(object):
 
     def get_serial(self):
         """
-        Return this daughterboard's serial number as a dictionary.
+        Return this daughterboard's serial number as a string. Will return an
+        empty string if no serial can be found.
         """
         return self.device_info.get("serial", "")
 
