@@ -126,15 +126,46 @@ magnesium_radio_ctrl_impl::~magnesium_radio_ctrl_impl()
 /******************************************************************************
  * API Calls
  *****************************************************************************/
-double magnesium_radio_ctrl_impl::set_rate(double rate)
+double magnesium_radio_ctrl_impl::set_rate(double requested_rate)
 {
-    std::lock_guard<std::mutex> l(_set_lock);
-    // TODO: implement
-    if (rate != get_rate()) {
-        UHD_LOG_WARNING(unique_id(),
-                "Attempting to set sampling rate to invalid value " << rate);
+    meta_range_t rates;
+    for (const double rate : MAGNESIUM_RADIO_RATES) {
+        rates.push_back(range_t(rate));
     }
-    return get_rate();
+
+    const double rate = rates.clip(requested_rate);
+    if (!math::frequencies_are_equal(requested_rate, rate)) {
+       UHD_LOG_WARNING(unique_id(),
+            "Coercing requested sample rate from " << (requested_rate/1e6) <<
+            " to " << (rate/1e6)
+       );
+    }
+
+    const double current_rate = get_rate();
+    if (math::frequencies_are_equal(current_rate, rate)) {
+       UHD_LOG_DEBUG(unique_id(),
+            "Rate is already at " << rate << ". Skipping set_rate()");
+       return current_rate;
+    }
+
+    std::lock_guard<std::mutex> l(_set_lock);
+    // Now commit to device. First, disable LOs.
+    _lo_disable(_tx_lo);
+    _lo_disable(_rx_lo);
+    const double new_rate = _ad9371->set_master_clock_rate(rate);
+    // Frequency settings apply to both channels, no loop needed. Will also
+    // re-enable the lowband LOs if they were used.
+    set_rx_frequency(get_rx_frequency(0), 0);
+    set_tx_frequency(get_tx_frequency(0), 0);
+    // Gain and bandwidth need to be looped:
+    for (size_t radio_idx = 0; radio_idx < _get_num_radios(); radio_idx++) {
+       set_rx_gain(get_rx_gain(radio_idx), radio_idx);
+       set_tx_gain(get_rx_gain(radio_idx), radio_idx);
+       set_rx_bandwidth(get_rx_bandwidth(radio_idx), radio_idx);
+       set_tx_bandwidth(get_tx_bandwidth(radio_idx), radio_idx);
+    }
+    radio_ctrl_impl::set_rate(new_rate);
+    return new_rate;
 }
 
 void magnesium_radio_ctrl_impl::set_tx_antenna(
