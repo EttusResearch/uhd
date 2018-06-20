@@ -8,6 +8,7 @@ SET(python_examples
     rx_to_file.py
     tx_waveforms.py
     curses_fft.py
+    benchmark_rate.py
 )
 
 UHD_INSTALL(PROGRAMS ${python_examples} DESTINATION ${PKG_LIB_DIR}/examples/python COMPONENT examples)
