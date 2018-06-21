@@ -25,6 +25,7 @@
 
 #include <uhd/config.hpp>
 #include <uhd/device.hpp>
+#include <uhd/device3.hpp>
 #include <uhd/deprecated.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/stream_cmd.hpp>
@@ -121,6 +122,20 @@ public:
      * \return the device object within this USRP
      */
     virtual device::sptr get_device(void) = 0;
+
+    /*! Returns true if this is a generation-3 device.
+     */
+    virtual bool is_device3(void) = 0;
+
+    /*!
+     * Get the underlying device3 object. Only works for generation-3 (or later) devices.
+     *
+     * This is needed to get access to the streaming API and properties.
+     *
+     * \return The uhd::device3 object for this USRP.
+     * \throws uhd::type_error if this device is not actually a generation-3 device.
+     */
+    virtual device3::sptr get_device3(void) = 0;
 
     //! Convenience method to get a RX streamer. See also uhd::device::get_rx_stream().
     virtual rx_streamer::sptr get_rx_stream(const stream_args_t &args) = 0;
