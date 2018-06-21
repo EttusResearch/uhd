@@ -52,7 +52,7 @@ public:
         while (_xports.recv->get_recv_buff(0.0)) {}
     }
 
-    ~ctrl_iface_impl(void)
+    virtual ~ctrl_iface_impl(void)
     {
         UHD_SAFE_CALL(
             // dummy peek with the purpose of ack'ing all packets
