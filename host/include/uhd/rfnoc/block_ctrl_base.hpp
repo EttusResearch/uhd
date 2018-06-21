@@ -242,6 +242,7 @@ public:
      * defined in the block definition file.
      *
      * \param reg The user register name.
+     * \param port Destination port.
      * \returns the readback value.
      * \throws uhd::key_error if \p reg is not a valid register name
      * \param port Port from which to read

@@ -50,7 +50,7 @@ public:
      * See also register_upstream_block().
      *
      * \param stream_cmd The stream command.
-     * \param chan Channel
+     * \param chan Channel for which this command is meant (data shall be produced on this channel).
      */
     virtual void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd, const size_t chan=0);
 
