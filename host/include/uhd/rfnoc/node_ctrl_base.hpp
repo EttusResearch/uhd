@@ -11,13 +11,13 @@
 #include <uhd/types/device_addr.hpp>
 #include <uhd/rfnoc/constants.hpp>
 #include <uhd/utils/log.hpp>
-#include <stdint.h>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/function.hpp>
 #include <map>
 #include <set>
+#include <stdint.h>
 
 namespace uhd {
     namespace rfnoc {
