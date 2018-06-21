@@ -199,7 +199,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         else if (type == "short") send_from_file<std::complex<short> >(tx_stream, file, spb);
         else throw std::runtime_error("Unknown type " + type);
 
-        if(repeat and delay != 0.0) boost::this_thread::sleep(boost::posix_time::milliseconds(delay));
+        if(repeat and delay != 0.0) boost::this_thread::sleep(boost::posix_time::milliseconds(int64_t(delay)));
     } while(repeat and not stop_signal_called);
 
     //finished
