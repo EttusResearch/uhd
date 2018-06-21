@@ -185,7 +185,7 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_set_tx_freq, set_tx_freq, 1, 2);
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_set_tx_rate, set_tx_rate, 1, 2);
 
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_get_usrp_rx_info, get_usrp_rx_info, 0, 1);
-BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_get_usrp_tx_info, get_usrp_rx_info, 0, 1);
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_get_usrp_tx_info, get_usrp_tx_info, 0, 1);
 
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_set_master_clock_rate, set_master_clock_rate, 1, 2);
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_get_master_clock_rate, get_master_clock_rate, 0, 1);
