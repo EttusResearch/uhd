@@ -364,7 +364,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         if(ref != "internal") {
             std::cout << "Now confirming lock on clock signals..." << std::endl;
             bool is_locked = false;
-            boost::system_time end_time = boost::get_system_time() + boost::posix_time::milliseconds(CLOCK_TIMEOUT);
+            boost::system_time end_time = boost::get_system_time() + boost::posix_time::milliseconds(int64_t(CLOCK_TIMEOUT));
             for (int i = 0; i < num_mboards; i++) {
                 if (ref == "mimo" and i == 0) continue;
                 while((is_locked = usrp->get_mboard_sensor("ref_locked",i).to_bool()) == false and
@@ -471,7 +471,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     const long usecs = long((duration - secs)*1e6);
     boost::this_thread::sleep(boost::posix_time::seconds(secs)
             + boost::posix_time::microseconds(usecs)
-            + boost::posix_time::milliseconds( (rx_channel_nums.size() <= 1 and tx_channel_nums.size() <= 1) ? 0 : (INIT_DELAY * 1000))
+            + boost::posix_time::milliseconds(int64_t((rx_channel_nums.size() <= 1 and tx_channel_nums.size() <= 1) ? 0 : (INIT_DELAY * 1000)))
     );
 
     //interrupt and join the threads
