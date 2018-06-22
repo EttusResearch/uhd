@@ -25,7 +25,6 @@
 
 #include <uhd/config.hpp>
 #include <uhd/device.hpp>
-#include <uhd/device3.hpp>
 #include <uhd/deprecated.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/stream_cmd.hpp>
@@ -41,7 +40,10 @@
 #include <string>
 #include <vector>
 
-namespace uhd{ namespace usrp{
+namespace uhd {
+    class device3;
+
+    namespace usrp{
 
 /*!
  * The Multi-USRP device class:
@@ -135,7 +137,7 @@ public:
      * \return The uhd::device3 object for this USRP.
      * \throws uhd::type_error if this device is not actually a generation-3 device.
      */
-    virtual device3::sptr get_device3(void) = 0;
+    virtual boost::shared_ptr<uhd::device3> get_device3(void) = 0;
 
     //! Convenience method to get a RX streamer. See also uhd::device::get_rx_stream().
     virtual rx_streamer::sptr get_rx_stream(const stream_args_t &args) = 0;
