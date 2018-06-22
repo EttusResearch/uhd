@@ -34,7 +34,11 @@ LIBUHD_APPEND_SOURCES(
     # Default block control classes:
     ${CMAKE_CURRENT_SOURCE_DIR}/ddc_block_ctrl_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/duc_block_ctrl_impl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/fir_block_ctrl_impl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/null_block_ctrl_impl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/window_block_ctrl_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/radio_ctrl_impl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/siggen_block_ctrl_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/dma_fifo_block_ctrl_impl.cpp
 )
 
