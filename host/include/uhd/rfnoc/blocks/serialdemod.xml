@@ -1,0 +1,109 @@
+<!--This defines one NoC-Block.-->
+<nocblock>
+  <name>OFDM Constellation Demod</name>
+  <blockname>OFDMDemap</blockname>
+  <!--There can be several of these:-->
+  <ids>
+    <id revision="0">0FCD</id>
+  </ids>
+  <!-- Registers -->
+  <registers>
+    <setreg>
+      <name>MOD_ORDER</name>
+      <address>129</address>
+    </setreg>
+    <setreg>
+      <name>SCALING</name>
+      <address>130</address>
+    </setreg>
+    <setreg>
+      <name>OUTPUT_SYMBOLS</name>
+      <address>131</address>
+    </setreg>
+    <setreg>
+      <name>PKT_LEN</name>
+      <address>132</address>
+    </setreg>
+    <setreg>
+      <name>SET_EOB</name>
+      <address>133</address>
+    </setreg>
+  </registers>
+  <!-- Args -->
+  <args>
+    <arg>
+      <name>fftsize</name>
+      <type>int</type>
+      <value>64</value>
+    </arg>
+    <arg>
+      <name>mod_order</name>
+      <type>int</type>
+      <value>4</value>
+      <check>GE($mod_order, 2) AND LE($mod_order, 64) AND IS_PWR_OF_2($mod_order)</check>
+      <check_message>Modulation order must be in (2, 4, 16, 64).</check_message>
+      <action>SR_WRITE("MOD_ORDER", LOG2($mod_order))</action>
+    </arg>
+    <arg>
+      <name>scaling</name>
+      <type>double</type>
+      <value>1.4142135623730951</value>
+      <check>GE($scaling, 0.1) AND LT($scaling, 4.0)</check>
+      <check_message>Invalid scaling.</check_message>
+      <action>SR_WRITE("SCALING", IROUND(MULT(16384.0, $scaling)))</action>
+    </arg>
+    <arg>
+      <name>output_symbols</name>
+      <type>int</type>
+      <value>1</value>
+      <check>EQUAL($output_symbols, 0) OR EQUAL($output_symbols, 1)</check>
+      <check_message>Output symbols can only be true (1) or false (0)</check_message>
+      <action>SR_WRITE("OUTPUT_SYMBOLS", $output_symbols)</action>
+    </arg>
+    <!-- Packet length in bytes -->
+    <arg>
+      <name>pkt_len</name>
+      <type>int</type>
+      <value>64</value>
+      <check>GE($pkt_len, 4) AND LE($pkt_len, 4096)</check>
+      <check_message>Packet length must be greater than or equal to 4 and less than or equal to 4096 bytes</check_message>
+      <action>SR_WRITE("PKT_LEN", $pkt_len)</action>
+    </arg>
+    <arg>
+      <name>set_eob</name>
+      <type>int</type>
+      <value>1</value>
+      <check>EQUAL($set_eob, 0) OR EQUAL($set_eob, 1)</check>
+      <check_message>Set end of burst can only be true (1) or false (0)</check_message>
+      <action>SR_WRITE("SET_EOB", $set_eob)</action>
+    </arg>
+  </args>
+  <ports>
+    <sink>
+      <name>in</name>
+      <type>sc16</type>
+      <vlen>$fftsize</vlen>
+    </sink>
+    <source>
+      <name>out</name>
+      <type>u8</type>
+    </source>
+  </ports>
+  <!--<components>-->
+    <!--<component>-->
+      <!--<key revision="1">nocshell</key>-->
+    <!--</component>-->
+    <!--<component srbase="0">-->
+      <!--[>Will look for a component with this key:<]-->
+      <!--<key revision="1">componentname</key>-->
+    <!--</component>-->
+  <!--</components>-->
+  <!--<connection>-->
+    <!--<source port="0">nocshell</source>-->
+    <!--<sink port="0">componentname</sink>-->
+  <!--</connection>-->
+  <!--<connection>-->
+    <!--<source port="0">componentname</source>-->
+    <!--<sink port="0">nocshell</sink>-->
+  <!--</connection>-->
+</nocblock>

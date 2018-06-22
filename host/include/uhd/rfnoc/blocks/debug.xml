@@ -1,0 +1,49 @@
+<nocblock>
+  <name>Debug</name>
+  <blockname>Debug</blockname>
+  <!--There can be several of these:-->
+  <ids>
+    <id revision="0">DEB1200000000000</id>
+  </ids>
+  <!-- Registers -->
+  <registers>
+    <setreg>
+      <name>CONFIG</name>
+      <address>128</address>
+    </setreg>
+    <setreg>
+      <name>PAYLOAD_SIZE</name>
+      <address>129</address>
+    </setreg>
+  </registers>
+  <!-- Args -->
+  <args>
+    <arg>
+      <name>config</name>
+      <type>int</type>
+      <value>0</value>
+      <action>SR_WRITE("CONFIG", $config)</action>
+    </arg>
+    <arg>
+      <name>spp</name>
+      <type>int</type>
+      <value>64</value>
+      <action>SR_WRITE("PAYLOAD_SIZE", $spp)</action>
+    </arg>
+  </args>
+  <!-- Ports -->
+  <ports>
+    <sink>
+      <name>in</name>
+      <type>sc16</type>
+    </sink>
+    <source>
+      <name>out</name>
+      <type>sc16</type>
+    </source>
+    <source>
+      <name>stats</name>
+      <type>sc16</type>
+    </source>
+  </ports>
+</nocblock>
