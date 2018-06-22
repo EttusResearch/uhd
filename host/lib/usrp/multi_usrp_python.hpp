@@ -253,6 +253,10 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_get_rx_dboard_iface, get_rx_dboa
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_get_rx_sensor, get_rx_sensor, 1, 2);
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_get_rx_sensor_names, get_rx_sensor_names, 0, 1);
 
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_get_rx_gain_profile, get_rx_gain_profile, 0, 1);
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_set_rx_gain_profile, set_rx_gain_profile, 1, 2);
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_get_rx_gain_profile_names, get_rx_gain_profile_names, 0, 1);
+
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_set_tx_subdev_spec, set_tx_subdev_spec, 1, 2);
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_get_tx_subdev_spec, get_tx_subdev_spec, 0, 1);
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_get_tx_subdev_name, get_tx_subdev_name, 0, 1);
@@ -289,6 +293,10 @@ BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_get_tx_dboard_iface, get_tx_dboa
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_get_tx_sensor, get_tx_sensor, 1, 2);
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_get_tx_sensor_names, get_tx_sensor_names, 0, 1);
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_set_tx_iq_balance, set_tx_iq_balance, 1, 2);
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_get_tx_gain_profile, get_tx_gain_profile, 0, 1);
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_set_tx_gain_profile, set_tx_gain_profile, 1, 2);
+BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_get_tx_gain_profile_names, get_tx_gain_profile_names, 0, 1);
+
 
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_get_gpio_attr, get_gpio_attr, 2, 3);
 BOOST_PYTHON_MEMBER_FUNCTION_OVERLOADS(overload_enumerate_registers, enumerate_registers, 0, 1);
@@ -404,6 +412,9 @@ void export_multi_usrp()
         .def("set_rx_dc_offset"        , &set_rx_dc_offset_1, overload_set_rx_dc_offset_1())
         .def("set_rx_iq_balance"       , &set_rx_iq_balance_0, overload_set_rx_iq_balance_0())
         .def("set_rx_iq_balance"       , &set_rx_iq_balance_1, overload_set_rx_iq_balance_1())
+        .def("get_rx_gain_profile"     , &multi_usrp::get_rx_gain_profile, overload_get_rx_gain_profile())
+        .def("set_rx_gain_profile"     , &multi_usrp::set_rx_gain_profile, overload_set_rx_gain_profile())
+        .def("get_rx_gain_profile_names", &multi_usrp::get_rx_gain_profile_names, overload_get_rx_gain_profile_names())
 
         // TX methods
         .def("set_tx_subdev_spec"      , &multi_usrp::set_tx_subdev_spec, overload_set_tx_subdev_spec())
@@ -440,6 +451,9 @@ void export_multi_usrp()
         .def("set_tx_dc_offset"        , &set_tx_dc_offset_0, overload_set_tx_dc_offset_0())
         .def("set_tx_dc_offset"        , &set_tx_dc_offset_1, overload_set_tx_dc_offset_1())
         .def("set_tx_iq_balance"       , &multi_usrp::set_tx_iq_balance, overload_set_tx_iq_balance())
+        .def("get_tx_gain_profile"     , &multi_usrp::get_tx_gain_profile, overload_get_tx_gain_profile())
+        .def("set_tx_gain_profile"     , &multi_usrp::set_tx_gain_profile, overload_set_tx_gain_profile())
+        .def("get_tx_gain_profile_names", &multi_usrp::get_tx_gain_profile_names, overload_get_tx_gain_profile_names())
 
         // GPIO methods
         .def("get_gpio_banks"          , &multi_usrp::get_gpio_banks)
