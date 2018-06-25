@@ -1984,6 +1984,48 @@ void ad9361_device_t::set_active_chains(bool tx1, bool tx2, bool rx1, bool rx2)
         _io_iface->poke8(0x014, 0x21);
 }
 
+/* Setup Timing mode depending on active channels.
+ *
+ * LVDS interface can have two timing modes - 1R1T and 2R2T
+ */
+void ad9361_device_t::set_timing_mode(const ad9361_device_t::timing_mode_t timing_mode)
+{
+    switch (_client_params->get_digital_interface_mode()) {
+    case AD9361_DDR_FDD_LVCMOS: {
+        switch(timing_mode) {
+        case TIMING_MODE_1R1T: {
+            _io_iface->poke8(0x010, 0xc8); // Swap I&Q on Tx, Swap I&Q on Rx, Toggle frame sync mode
+            break;
+        }
+        case TIMING_MODE_2R2T: {
+            throw uhd::runtime_error("[ad9361_device_t] [set_timing_mode] 2R2T timing mode not supported for CMOS");
+            break;
+        }
+        default:
+        UHD_THROW_INVALID_CODE_PATH();
+        }
+    break;
+    }
+    case AD9361_DDR_FDD_LVDS: {
+        switch(timing_mode) {
+        case TIMING_MODE_1R1T: {
+            _io_iface->poke8(0x010, 0xc8); // Swap I&Q on Tx, Swap I&Q on Rx, Toggle frame sync mode, 1R1T timing.
+            break;
+        }
+        case TIMING_MODE_2R2T: {
+            _io_iface->poke8(0x010, 0xcc); // Swap I&Q on Tx, Swap I&Q on Rx, Toggle frame sync mode, 2R2T timing.
+            break;
+        }
+        default:
+        UHD_THROW_INVALID_CODE_PATH();
+        }
+    break;
+    }
+    default:
+        throw uhd::runtime_error("[ad9361_device_t] NOT IMPLEMENTED");
+    }
+}
+
 /* Tune the RX or TX frequency.
  *
  * This is the publicly-accessible tune function. It makes sure the tune

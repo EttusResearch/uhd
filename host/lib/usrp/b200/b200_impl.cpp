@@ -936,6 +936,17 @@ void b200_impl::enforce_tick_rate_limits(size_t chan_count, double tick_rate, co
                     % (direction.empty() ? "data" : direction)
             ));
         }
+        const double min_tick_rate = ad9361_device_t::AD9361_MIN_CLOCK_RATE / ((chan_count <= 1) ? 1 : 2);
+        if (min_tick_rate - tick_rate >= 1.0)
+        {
+            throw uhd::value_error(boost::str(
+                boost::format("current master clock rate (%.6f MHz) is less than minimum possible master clock rate (%.6f MHz) when using %d %s channels")
+                    % (tick_rate/1e6)
+                    % (min_tick_rate/1e6)
+                    % chan_count
+                    % (direction.empty() ? "data" : direction)
+            ));
+        }
     }
 }
 

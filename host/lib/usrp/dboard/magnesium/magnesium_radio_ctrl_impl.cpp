@@ -733,7 +733,6 @@ std::string magnesium_radio_ctrl_impl::get_dboard_fe_from_chan(
     return std::to_string(chan);
 }
 
-std::mutex magnesium_radio_ctrl_impl::_set_rpc_lock; // FIXME remove
 
 void magnesium_radio_ctrl_impl::set_rpc_client(
     uhd::rpc_client::sptr rpcc,
@@ -779,15 +778,7 @@ void magnesium_radio_ctrl_impl::set_rpc_client(
     }
     UHD_LOG_DEBUG(unique_id(),
         "Master Clock Rate is: " << (_master_clock_rate / 1e6) << " MHz.");
-    {
-        // FIXME: Remove this lock. It's masking a bug that's probably, but not
-        // confirmed, to be in the receive packet demuxer. It'll pop up when
-        // running UHD over liberio without using serialize_init
-        std::lock_guard<std::mutex> l(magnesium_radio_ctrl_impl::_set_rpc_lock);
-        radio_ctrl_impl::set_rate(_master_clock_rate);
-        // Note: This lock needs to encompass all CHDR traffic. RPC traffic is
-        // OK from a thread-safety perspective.
-    }
+    radio_ctrl_impl::set_rate(_master_clock_rate);
 
     // EEPROM paths subject to change FIXME
     const size_t db_idx = get_block_id().get_block_count();

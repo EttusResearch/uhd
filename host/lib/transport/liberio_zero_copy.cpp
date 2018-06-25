@@ -12,6 +12,7 @@
 #include <liberio/liberio.h>
 #include <boost/make_shared.hpp>
 #include <sys/syslog.h>
+#include <mutex>
 
 namespace uhd { namespace transport {
 
@@ -204,6 +205,7 @@ public:
 
     managed_recv_buffer::sptr get_recv_buff(double timeout = 0.1)
     {
+        std::lock_guard<std::mutex> lock(_rx_mutex);
         if (_next_recv_buff_index == _num_recv_bufs)
             _next_recv_buff_index = 0;
         return _mrb_pool[_next_recv_buff_index]->get_new(
@@ -221,7 +223,8 @@ public:
     }
 
     managed_send_buffer::sptr get_send_buff(double timeout = 0.1)
-    {
+    { 
+        std::lock_guard<std::mutex> lock(_tx_mutex);
         if (_next_send_buff_index == _num_send_bufs)
             _next_send_buff_index = 0;
         return _msb_pool[_next_send_buff_index]->get_new(
@@ -250,6 +253,8 @@ private:
     size_t _next_recv_buff_index;
     std::vector<boost::shared_ptr<liberio_zero_copy_msb> > _msb_pool;
     size_t _next_send_buff_index;
+    std::mutex _rx_mutex;
+    std::mutex _tx_mutex;
 };
 
 liberio_zero_copy::sptr liberio_zero_copy::make(

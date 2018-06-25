@@ -22,11 +22,20 @@ IF(PYTHON_EXECUTABLE)
 ELSE(PYTHON_EXECUTABLE)
 
     #use the built-in find script
-    FIND_PACKAGE(PythonInterp)
+    IF(ENABLE_PYTHON3)
+        FIND_PACKAGE(PythonInterp 3.0)
+    ELSE(ENABLE_PYTHON3)
+        FIND_PACKAGE(PythonInterp 2.0)
+    ENDIF(ENABLE_PYTHON3)
 
     #and if that fails use the find program routine
     IF(NOT PYTHONINTERP_FOUND)
-        FIND_PROGRAM(PYTHON_EXECUTABLE NAMES python python2.7 python2.6)
+        IF(ENABLE_PYTHON3)
+            FIND_PROGRAM(PYTHON_EXECUTABLE NAMES python3 python3.5 python3.6)
+        ELSE(ENABLE_PYTHON3)
+            FIND_PROGRAM(PYTHON_EXECUTABLE NAMES python2 python2.7)
+        ENDIF(ENABLE_PYTHON3)
+
         IF(PYTHON_EXECUTABLE)
             SET(PYTHONINTERP_FOUND TRUE)
         ENDIF(PYTHON_EXECUTABLE)
@@ -50,6 +59,7 @@ MACRO(PYTHON_CHECK_MODULE desc mod cmd have)
     EXECUTE_PROCESS(
         COMMAND ${PYTHON_EXECUTABLE} -c "
 #########################################
+from distutils.version import LooseVersion
 try: import ${mod}
 except: exit(1)
 try: assert ${cmd}

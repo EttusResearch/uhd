@@ -145,6 +145,20 @@ public:
         _device.set_active_chains(tx1, tx2, rx1, rx2);
     }
 
+    //! set which timing mode to use - 1R1T, 2R2T
+    void set_timing_mode(const std::string &timing_mode)
+    {
+        boost::lock_guard<boost::mutex> lock(_mutex);
+
+        _use_safe_spi();
+        if ((timing_mode != "2R2T") && (timing_mode != "1R1T")) {
+            throw uhd::assertion_error("ad9361_ctrl: Timing mode not supported");
+        }
+        _device.set_timing_mode((timing_mode == "2R2T")? ad9361_device_t::TIMING_MODE_2R2T : ad9361_device_t::TIMING_MODE_1R1T);
+        _use_timed_spi();
+
+    }
+
     //! tune the given frontend, return the exact value
     double tune(const std::string &which, const double freq)
     {

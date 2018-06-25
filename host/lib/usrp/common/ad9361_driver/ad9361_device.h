@@ -28,6 +28,7 @@ public:
     enum direction_t { RX, TX };
     enum gain_mode_t {GAIN_MODE_MANUAL, GAIN_MODE_SLOW_AGC, GAIN_MODE_FAST_AGC};
     enum chain_t { CHAIN_1, CHAIN_2, CHAIN_BOTH };
+    enum timing_mode_t { TIMING_MODE_1R1T, TIMING_MODE_2R2T };
 
     ad9361_device_t(ad9361_params::sptr client, ad9361_io::sptr io_iface) :
         _client_params(client), _io_iface(io_iface),
@@ -92,6 +93,12 @@ public:
      *
      */
     void set_active_chains(bool tx1, bool tx2, bool rx1, bool rx2);
+
+    /* Setup Timing mode depending on active channels.
+     *
+     * LVDS interface can have two timing modes - 1R1T and 2R2T
+     */
+    void set_timing_mode(const timing_mode_t timing_mode);
 
     /* Tune the RX or TX frequency.
      *

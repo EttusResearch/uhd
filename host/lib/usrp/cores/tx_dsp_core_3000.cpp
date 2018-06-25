@@ -54,6 +54,7 @@ public:
 
     void set_tick_rate(const double rate){
         _tick_rate = rate;
+        set_freq(_current_freq);
     }
 
     void set_link_rate(const double rate){
@@ -131,7 +132,12 @@ public:
         int32_t freq_word;
         get_freq_and_freq_word(requested_freq, _tick_rate, actual_freq, freq_word);
         _iface->poke32(REG_DSP_TX_FREQ, uint32_t(freq_word));
+        _current_freq = actual_freq;
         return actual_freq;
+    }
+
+    double get_freq(void){
+        return _current_freq;
     }
 
     uhd::meta_range_t get_freq_range(void){
@@ -179,6 +185,7 @@ public:
         subtree->create<double>("freq/value")
             .set(DEFAULT_DDS_FREQ)
             .set_coercer(boost::bind(&tx_dsp_core_3000::set_freq, this, _1))
+            .set_publisher([this](){ return this->get_freq(); })
         ;
         subtree->create<meta_range_t>("freq/range")
             .set_publisher(boost::bind(&tx_dsp_core_3000::get_freq_range, this))
@@ -190,6 +197,7 @@ private:
     const size_t _dsp_base;
     double _tick_rate, _link_rate;
     double _scaling_adjustment, _dsp_extra_scaling, _host_extra_scaling, _fxpt_scalar_correction;
+    double _current_freq;
 };
 
 tx_dsp_core_3000::sptr tx_dsp_core_3000::make(wb_iface::sptr iface, const size_t dsp_base)
