@@ -1,0 +1,60 @@
+<!--This defines one NoC-Block.-->
+<nocblock>
+  <name>Radio (E3XX)</name>
+  <blockname>Radio</blockname>
+  <key>E3XXRadio</key>
+  <!--There can be several of these:-->
+  <ids>
+    <id revision="0">12AD100000000000</id>
+  </ids>
+  <!-- Registers -->
+  <registers>
+    <!--<setreg>-->
+      <!--<name>FFT_RESET</name>-->
+      <!--<address>131</address>-->
+    <!--</setreg>-->
+    <!--<readback>-->
+      <!--<name>RB_MAGNITUDE_OUT</name>-->
+      <!--<address>1</address>-->
+    <!--</readback>-->
+  </registers>
+  <!-- Args -->
+  <args>
+    <arg>
+      <name>spp</name>
+      <type>int</type>
+      <value>364</value>
+      <!--<value>256</value>-->
+      <!--<check>GE($spp, 16) AND LE($spp, 4096) AND IS_PWR_OF_2($spp)</check>-->
+      <!--<check_message>FFT size must be in [16, 4096] and a power of two.</check_message>-->
+      <!--<action>SR_WRITE("FFT_SIZE_LOG2", LOG2($spp)) AND SR_WRITE("AXIS_CONFIG_BUS", ADD(873472, LOG2($spp)))</action>-->
+    </arg>
+  </args>
+  <ports>
+    <sink>
+      <name>in0</name>
+      <type>sc16</type>
+      <!--<vlen>$spp</vlen>-->
+      <!--<pkt_size>%vlen</pkt_size>-->
+    </sink>
+    <sink>
+      <name>in1</name>
+      <type>sc16</type>
+      <!--<vlen>$spp</vlen>-->
+      <!--<pkt_size>%vlen</pkt_size>-->
+    </sink>
+    <source>
+      <name>out0</name>
+      <type>sc16</type>
+      <!--<vlen>$spp</vlen>-->
+      <!--<pkt_size>%vlen</pkt_size>-->
+    </source>
+    <source>
+      <name>out1</name>
+      <type>sc16</type>
+      <!--<vlen>$spp</vlen>-->
+      <!--<pkt_size>%vlen</pkt_size>-->
+    </source>
+  </ports>
+</nocblock>
+

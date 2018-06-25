@@ -8,8 +8,6 @@
 #ifndef INCLUDED_E300_COMMON_HPP
 #define INCLUDED_E300_COMMON_HPP
 
-#include <string>
-
 namespace uhd { namespace usrp { namespace e300 {
 
 namespace common {

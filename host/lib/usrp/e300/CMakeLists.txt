@@ -28,6 +28,7 @@ IF(ENABLE_E300)
         ${CMAKE_CURRENT_SOURCE_DIR}/e300_eeprom_manager.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/e300_common.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/e300_remote_codec_ctrl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/e3xx_radio_ctrl_impl.cpp
     )
     LIBUHD_APPEND_SOURCES(${E300_SOURCES})
     IF(UDEV_FOUND AND NOT E300_FORCE_NETWORK)
@@ -43,6 +44,7 @@ IF(ENABLE_E300)
         SET_SOURCE_FILES_PROPERTIES(
             ${CMAKE_CURRENT_SOURCE_DIR}/e300_impl.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/e300_impl.hpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/e3xx_radio_ctrl_impl.hpp
             PROPERTIES COMPILE_DEFINITIONS "E300_GPSD=1"
         )
     ENDIF(ENABLE_GPSD)

@@ -33,6 +33,7 @@ public:
     static const size_t SR_CORE_MISC     = 4;
     static const size_t SR_CORE_TEST     = 28;
     static const size_t SR_CORE_XB_LOCAL = 32;
+    static const size_t SR_CORE_SPI_SEL  = 64;
 
     // leave some room for registers,
     // xbar starts with an offset of one
@@ -46,6 +47,7 @@ public:
     static const size_t RB32_CORE_COMPAT  = 2;
     static const size_t RB32_CORE_GITHASH = 3;
     static const size_t RB32_CORE_PLL     = 4;
+    static const size_t RB32_CORE_NUM_CE  = 8;
     static const size_t RB32_CORE_TEST    = 24;
 
     // PPS selection

@@ -26,8 +26,6 @@ public:
     {
     }
 
-    void set_timed_spi(uhd::spi_iface::sptr, uint32_t ) {};
-    void set_safe_spi(uhd::spi_iface::sptr, uint32_t ) {};
 
     double set_gain(const std::string &which, const double value)
     {
@@ -236,11 +234,6 @@ public:
     }
 
     void output_digital_test_tone(UHD_UNUSED(bool enb))
-    {
-        UHD_THROW_INVALID_CODE_PATH();
-    }
-
-    void set_timing_mode(UHD_UNUSED(const std::string &timing_mode))
     {
         UHD_THROW_INVALID_CODE_PATH();
     }

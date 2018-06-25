@@ -38,6 +38,10 @@ static const size_t MAX_NET_TX_DATA_FRAME_SIZE = 1200;
 static const size_t MAX_AXI_RX_DATA_FRAME_SIZE = 4096;
 static const size_t MAX_AXI_TX_DATA_FRAME_SIZE = 4096;
 
+static const size_t MAX_DMA_CHANNEL_PAIRS = 16;
+
+static const double AD9361_SPI_RATE = 8e6;
+
 class e300_ad9361_client_t : public ad9361_params {
 public:
     ~e300_ad9361_client_t() {}
@@ -58,7 +62,7 @@ public:
     digital_interface_delays_t get_digital_interface_timing() {
         digital_interface_delays_t delays;
         delays.rx_clk_delay = 0;
-        delays.rx_data_delay = 0x8;
+        delays.rx_data_delay = 0xF;
         delays.tx_clk_delay = 0;
         delays.tx_data_delay = 0xF;
         return delays;
