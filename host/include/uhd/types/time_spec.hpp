@@ -98,8 +98,8 @@ namespace uhd{
         //! Implement addable interface
         time_spec_t &operator+=(const time_spec_t &);
         time_spec_t &operator+=(double &);
-        time_spec_t &operator+(double &);
-        time_spec_t &operator+(const time_spec_t &);
+        time_spec_t operator+(double &);
+        time_spec_t operator+(const time_spec_t &);
         //! Implement subtractable interface
         time_spec_t &operator-=(const time_spec_t &);
 
