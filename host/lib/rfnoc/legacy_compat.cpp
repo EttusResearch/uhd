@@ -135,8 +135,8 @@ public:
                 : num_ports(_tree, RADIO_BLOCK_NAME, "out")),
         _rx_spp(get_block_ctrl<radio_ctrl>(0, RADIO_BLOCK_NAME, 0)->get_arg<int>("spp")),
         _tx_spp(_rx_spp),
-        _rx_channel_map(_num_mboards, std::vector<radio_port_pair_t>(_num_radios_per_board)),
-        _tx_channel_map(_num_mboards, std::vector<radio_port_pair_t>(_num_radios_per_board))
+        _rx_channel_map(_num_mboards, std::vector<radio_port_pair_t>()),
+        _tx_channel_map(_num_mboards, std::vector<radio_port_pair_t>())
     {
         _device->clear();
         check_available_periphs(); // Throws if invalid configuration.
@@ -166,11 +166,20 @@ public:
         if (not _has_dmafifo and not _has_sramfifo) {
             UHD_LOGGER_WARNING("RFNOC") << "[legacy_compat] No FIFO detected. Higher transmit rates may encounter errors.";
         }
-
         for (size_t mboard = 0; mboard < _num_mboards; mboard++) {
             for (size_t radio = 0; radio < _num_radios_per_board; radio++) {
-                _rx_channel_map[mboard][radio].radio_index = radio;
-                _tx_channel_map[mboard][radio].radio_index = radio;
+                auto radio_block_ctrl = get_block_ctrl<radio_ctrl>(mboard, "Radio", radio);
+                for (size_t port = 0; port < _num_rx_chans_per_radio; port++) {
+                    if (!radio_block_ctrl->get_dboard_fe_from_chan(port, uhd::RX_DIRECTION).empty()) {
+                        _rx_channel_map[mboard].push_back({radio, port});
+                     }
+                }
+                for (size_t port = 0; port < _num_tx_chans_per_radio; port++) {
+                    size_t chan = radio * _num_tx_chans_per_radio + port;
+                    if (!radio_block_ctrl->get_dboard_fe_from_chan(port, uhd::TX_DIRECTION).empty()) {
+                        _tx_channel_map[mboard].push_back({radio, port});
+                    }
+                }
             }
 
             const double tick_rate = _tree->access<double>(mb_root(mboard) / "tick_rate").get();
