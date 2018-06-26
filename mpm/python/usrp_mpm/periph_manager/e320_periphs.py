@@ -94,6 +94,10 @@ class MboardRegsControl(object):
     MB_DBOARD_CTRL_MIMO = 0
     MB_DBOARD_CTRL_TX_CHAN_SEL = 1
 
+    # Bitfield locations for the MB_DBOARD_STATUS register.
+    MB_DBOARD_STATUS_RX_LOCK = 6
+    MB_DBOARD_STATUS_TX_LOCK = 7
+
     def __init__(self, label, log):
         self.log = log
         self.regs = UIO(
@@ -381,3 +385,30 @@ class MboardRegsControl(object):
             self.log.trace("Writing MB_DBOARD_CTRL to 0x{:08X}".format(reg_val))
             self.poke32(self.MB_DBOARD_CTRL, reg_val)
 
+    def get_ad9361_tx_lo_lock(self):
+        """
+        Check the status of TX LO lock from CTRL_OUT pins from Catalina
+        """
+        mask = 0b1 << self.MB_DBOARD_STATUS_TX_LOCK
+        with self.regs.open():
+            reg_val =  self.peek32(self.MB_DBOARD_STATUS)
+        locked = (reg_val & mask) > 0
+        if not locked:
+            self.log.warning("TX RF PLL reporting unlocked. ")
+        else:
+            self.log.trace("TX RF PLL locked")
+        return locked
+
+    def get_ad9361_rx_lo_lock(self):
+        """
+        Check the status of RX LO lock from CTRL_OUT pins from Catalina
+        """
+        mask = 0b1 << self.MB_DBOARD_STATUS_RX_LOCK
+        with self.regs.open():
+            reg_val =  self.peek32(self.MB_DBOARD_STATUS)
+        locked = (reg_val & mask) > 0
+        if not locked:
+            self.log.warning("RX RF PLL reporting unlocked. ")
+        else:
+            self.log.trace("RX RF PLL locked")
+        return locked

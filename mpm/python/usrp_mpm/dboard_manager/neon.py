@@ -17,6 +17,7 @@ from usrp_mpm.dboard_manager import DboardManagerBase
 from usrp_mpm.mpmlog import get_logger
 from usrp_mpm.sys_utils.udev import get_eeprom_paths
 from usrp_mpm.sys_utils.uio import UIO
+from usrp_mpm.periph_manager.e320_periphs import MboardRegsControl
 
 
 ###############################################################################
@@ -34,6 +35,8 @@ class Neon(DboardManagerBase):
     pids = [0xe320]
     rx_sensor_callback_map = {
         'ad9361_temperature': 'get_catalina_temp_sensor',
+        'rssi' : 'get_rssi_sensor',
+        'lo_lock' : 'get_lo_lock_sensor',
     }
     tx_sensor_callback_map = {
         'ad9361_temperature': 'get_catalina_temp_sensor',
@@ -258,24 +261,65 @@ class Neon(DboardManagerBase):
     ##########################################################################
     # Sensors
     ##########################################################################
-    # TODO add sensors
     def get_ad9361_lo_lock(self, which):
         """
         Return LO lock status (Boolean!) of AD9361. 'which' must be
         either 'tx' or 'rx'
         """
-        # return self.catalina.
+        self.mboard_regs_label = "mboard-regs"
+        self.mboard_regs_control = MboardRegsControl(
+            self.mboard_regs_label, self.log)
+        if which == "tx":
+            locked = self. mboard_regs_control.get_ad9361_tx_lo_lock()
+        elif which == "rx":
+            locked = self. mboard_regs_control.get_ad9361_rx_lo_lock()
+        else:
+            locked = False
+        return locked
 
-        # uhd::sensor_value_t e300_impl::_get_fe_pll_lock(const bool is_tx)
-        # {
-        #     const uint32_t st =
-        #         _global_regs->peek32(global_regs::RB32_CORE_PLL);
-        #     const bool locked = is_tx ? ((st & 0x1) > 0) : ((st & 0x2) > 0);
-        #     return sensor_value_t("LO", locked, "locked", "unlocked");
-        # }
-        #return self.mykonos.get_lo_locked(which.upper())
-        #FIXME: Implement on RevB
-        time.sleep(5)
-        return True
+    def get_lo_lock_sensor(self, which):
+        """
+        Get sensor dict with LO lock status
+        """
+        self.log.trace("Reading LO Lock.")
+        lo_locked = self.get_ad9361_lo_lock(which)
+        return {
+            'name': 'ad9361_lock',
+            'type': 'BOOLEAN',
+           'unit': 'locked' if lo_locked else 'unlocked',
+           'value': str(lo_locked).lower(),
+        }
 
+    def get_catalina_temp_sensor(self, _):
+        """
+        Get temperature sensor reading of Catalina.
+        """
+        # Note: the unused argument is channel
+        self.log.trace("Reading Catalina temperature.")
+        return {
+            'name': 'ad9361_temperature',
+            'type': 'REALNUM',
+            'unit': 'C',
+            'value': str(self.catalina.get_temperature())
+        }
+
+    def get_rssi_val(self, which):
+        """
+        Return the current RSSI of `which` chain in Catalina
+        """
+        return self.catalina.get_rssi(which)
+
+    def get_rssi_sensor(self, which=None):
+        """
+        Return a sensor dictionary containing the current RSSI of `which` chain in Catalina
+        """
+        if which is None:
+            # Default to RX1 chain
+            which = "RX1"
+        return {
+            'name': 'rssi',
+            'type': 'REALNUM',
+            'unit': 'dB',
+            'value': str(self.get_rssi_val(which)),
+        }
 

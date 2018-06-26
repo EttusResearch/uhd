@@ -10,15 +10,18 @@ E320 implementation module
 from __future__ import print_function
 import bisect
 import copy
+import re
 import threading
 from six import iteritems, itervalues
 from usrp_mpm.components import ZynqComponents
 from usrp_mpm.dboard_manager import Neon
+from usrp_mpm.gpsd_iface import GPSDIfaceExtension
 from usrp_mpm.mpmtypes import SID
 from usrp_mpm.mpmutils import assert_compat_number, str2bool
 from usrp_mpm.periph_manager import PeriphManagerBase
 from usrp_mpm.rpc_server import no_rpc
 from usrp_mpm.sys_utils import dtoverlay
+from usrp_mpm.sys_utils.sysfs_thermal import read_thermal_sensor_value
 from usrp_mpm.sys_utils.udev import get_spidev_nodes
 from usrp_mpm.xports import XportMgrUDP, XportMgrLiberio
 from usrp_mpm.periph_manager.e320_periphs import MboardRegsControl
@@ -77,7 +80,9 @@ class e320(ZynqComponents, PeriphManagerBase):
                   }
     mboard_max_rev = 2  # RevB
     mboard_sensor_callback_map = {
-        # FIXME add sensors
+        'gps_locked': 'get_gps_lock_sensor',
+        'temp': 'get_temp_sensor',
+        'fan': 'get_fan_sensor',
     }
     max_num_dboards = 1
     crossbar_base_port = 2  # It's 2 because 0,1 are SFP,DMA
@@ -129,6 +134,7 @@ class e320(ZynqComponents, PeriphManagerBase):
         self._clock_source = None
         self._time_source = None
         self._available_endpoints = list(range(256))
+        self._gpsd = None
         self.dboard = self.dboards[E320_DBOARD_SLOT_IDX]
         try:
             self._init_peripherals(args)
@@ -264,6 +270,8 @@ class e320(ZynqComponents, PeriphManagerBase):
         )
         # Init clocking
         self._init_ref_clock_and_time(args)
+        # Init GPSd iface and GPS sensors
+        self._init_gps_sensors()
         # Init CHDR transports
         self._xport_mgrs = {
             'udp': E320XportMgrUDP(self.log.getChild('UDP')),
@@ -279,6 +287,22 @@ class e320(ZynqComponents, PeriphManagerBase):
         self._status_monitor_thread.start()
         # Init complete.
         self.log.debug("mboard info: {}".format(self.mboard_info))
+
+    def _init_gps_sensors(self):
+        "Init and register the GPSd Iface and related sensor functions"
+        self.log.trace("Initializing GPSd interface")
+        self._gpsd = GPSDIfaceExtension()
+        new_methods = self._gpsd.extend(self)
+        for method_name in new_methods:
+            try:
+                # Extract the sensor name from the getter
+                sensor_name = re.search(r"get_.*_sensor", method_name).string
+                # Register it with the MB sensor framework
+                self.mboard_sensor_callback_map[sensor_name] = method_name
+                self.log.trace("Adding %s sensor function", sensor_name)
+            except AttributeError:
+                # re.search will return None is if can't find the sensor name
+                self.log.warning("Error while registering sensor function: %s", method_name)
 
     ###########################################################################
     # Session init and deinit
@@ -571,27 +595,46 @@ class e320(ZynqComponents, PeriphManagerBase):
         """
         Get temperature sensor reading of the E320.
         """
-        # TODO: This is Catalina's temperature. Do we want to return a different temp?
-        return self.catalina.get_temperature()
+        self.log.trace("Reading FPGA temperature.")
+        return_val = '-1'
+        try:
+            raw_val = read_thermal_sensor_value('fpga-thermal-zone', 'temp')
+            return_val = str(raw_val / 1000)
+        except ValueError:
+            self.log.warning("Error when converting temperature value")
+        except KeyError:
+            self.log.warning("Can't read temp on fpga-thermal-zone")
+        return {
+            'name': 'temperature',
+            'type': 'REALNUM',
+            'unit': 'C',
+            'value': return_val
+        }
 
     def get_gps_lock_sensor(self):
         """
         Get lock status of GPS as a sensor dict
         """
-        self.log.trace("Reading status GPS lock pin from port expander")
-        raise NotImplementedError("GPS lock not implemented")
-        # FIXME put it in a register
-        # TODO: implement get_gps_lock, splits up functionality
-        #gps_locked = bool(self._gpios.get("GPS-LOCKOK"))
-        #return {
-        #    'name': 'gps_lock',
-        #    'type': 'BOOLEAN',
-        #    'unit': 'locked' if gps_locked else 'unlocked',
-        #    'value': str(gps_locked).lower(),
-        #}
+        gps_locked = self.mboard_regs_control.get_gps_locked_val()
+        return {
+            'name': 'gps_lock',
+            'type': 'BOOLEAN',
+            'unit': 'locked' if gps_locked else 'unlocked',
+            'value': str(gps_locked).lower(),
+        }
 
-    # TODO: Add other GPS sensors (time, TPV, SKY, etc.)
-    # TODO: Add all physical sensors we can
+    def get_fan_sensor(self):
+        """
+        Return a sensor dictionary containing the RPM of the fan
+        """
+        raise NotImplementedError("Fan sensor not implemented")
+        # TODO implement
+        # return {
+        #     'name': 'rssi',
+        #     'type': 'REALNUM',
+        #     'unit': 'rpm',
+        #     'value': XX,
+        # }
 
     ###########################################################################
     # EEPROMs
