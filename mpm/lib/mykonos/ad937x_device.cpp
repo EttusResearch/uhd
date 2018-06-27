@@ -36,6 +36,7 @@ static const double RX_DEFAULT_GAIN = 0;
 static const double TX_DEFAULT_GAIN = 0;
 
 static const uint32_t AD9371_PRODUCT_ID = 0x3;
+static const uint32_t AD9371_XBCZ_PRODUCT_ID = 0x1;
 static const size_t ARM_BINARY_SIZE = 98304;
 
 static const uint32_t PLL_LOCK_TIMEOUT_MS = 200;
@@ -134,7 +135,10 @@ std::vector<uint8_t> ad937x_device::_get_arm_binary()
 void ad937x_device::_verify_product_id()
 {
     const uint8_t product_id = get_product_id();
-    if (product_id != AD9371_PRODUCT_ID) {
+    if (product_id != AD9371_PRODUCT_ID
+            && product_id != AD9371_XBCZ_PRODUCT_ID) {
+        // The XBCZ code is an exception, so we don't print it as 'Expected'
+        // if this fails.
         throw mpm::runtime_error(str(
             boost::format("AD9371 product ID does not match expected ID! "
                           "Read: %X Expected: %X")
