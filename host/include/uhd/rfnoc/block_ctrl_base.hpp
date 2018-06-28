@@ -265,11 +265,7 @@ public:
 
     /*! Sets a tick rate for the command timebase.
      *
-<<<<<<< HEAD
-     * \param tick_rate the tick rate in Hz
-=======
      * \param tick_rate The tick rate in Hz
->>>>>>> master
      * \param port Port
      */
     void set_command_tick_rate(const double tick_rate, const size_t port = ANY_PORT);
