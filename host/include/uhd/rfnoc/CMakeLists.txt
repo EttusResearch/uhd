@@ -28,7 +28,11 @@ IF(ENABLE_RFNOC)
         # Block controllers
         ddc_block_ctrl.hpp
         duc_block_ctrl.hpp
+        fir_block_ctrl.hpp
+        null_block_ctrl.hpp
         radio_ctrl.hpp
+        siggen_block_ctrl.hpp
+        window_block_ctrl.hpp
         DESTINATION ${INCLUDE_DIR}/uhd/rfnoc
         COMPONENT headers
     )
