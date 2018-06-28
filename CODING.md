@@ -143,5 +143,7 @@ std::map<std::string, std::string> bar =
 
 ## FPGA Guidelines
 
-FPGA guidelines are stored in a separate file. See CODING.md in the FPGA
-repository.
+FPGA guidelines are stored in a separate file. See [CODING.md][fpga-coding] in
+the FPGA repository.
+
+[fpga-coding]: https://github.com/EttusResearch/fpga/blob/master/CODING.md
