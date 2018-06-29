@@ -32,6 +32,8 @@
 #include "gpsd_iface.hpp"
 #endif
 
+#include <atomic>
+
 namespace uhd { namespace usrp { namespace e300 {
 
 static const std::string E300_FPGA_FILE_NAME = "usrp_e300_fpga.bit";
@@ -173,6 +175,7 @@ private: // members
     const uhd::device_addr_t               _device_addr;
     xport_t                                _xport_path;
     e300_fifo_interface::sptr              _fifo_iface;
+    std::atomic<size_t>                    _sid_framer;
     boost::dynamic_bitset<>                _dma_chans_available;
     global_regs::sptr                      _global_regs;
     e300_sensor_manager::sptr              _sensor_manager;

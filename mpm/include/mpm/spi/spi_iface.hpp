@@ -6,6 +6,8 @@
 
 #pragma once
 
+#include <mpm/types/regs_iface.hpp>
+#include <boost/noncopyable.hpp>
 #include <memory>
 #include <string>
 
@@ -13,7 +15,7 @@ namespace mpm { namespace spi {
 
     /*! Implementation of a uhd::spi_iface that uses Linux' spidev underneath.
      */
-    class spi_iface
+    class spi_iface : public boost::noncopyable
     {
     public:
         using sptr = std::shared_ptr<spi_iface>;

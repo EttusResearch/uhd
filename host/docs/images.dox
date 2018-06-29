@@ -78,17 +78,18 @@ The build commands for a particular image can be found in
 
 \subsection images_building_xilinx Xilinx FPGA builds
 
-USRP Xilinx FPGA images are built with two different versions of ISE,
+USRP Xilinx FPGA images are built with either Vivado or one of two versions of ISE,
 depending on the device.
 
 The build requires that you have a UNIX-like environment with `Make`.
-Make sure that `xtclsh` from the Xilinx ISE bin directory is in your `$PATH`.
+Make sure that `xtclsh` from the Xilinx Vivado or ISE bin directory is in your `$PATH`.
 
-- Xilinx ISE 14.7: USRP X3x0 Series, USRP B2x0
+- Vivado 2017.4: USRP N3x0, USRP E3x0, USRP X3x0
+- Xilinx ISE 14.7: USRP B2x0, USRP B200mini, B200mini-i, B205mini-i, USRP N2x0
 
 See `<uhd-repo-path>/fpga/usrp3/top/`.
 
-- Xilinx ISSE 12.2: USRP N2x0, USRP B1x0, USRP E1x0, USRP2
+- Xilinx ISE 12.2: USRP B1x0, USRP E1x0, USRP2 [All of these devices are EOL as of 2018]
 
 See `<uhd-repo-path>/fpga/usrp2/top/`.
 
