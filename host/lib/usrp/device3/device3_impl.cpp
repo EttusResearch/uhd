@@ -16,7 +16,6 @@
 using namespace uhd::usrp;
 
 device3_impl::device3_impl()
-    : _sid_framer(0)
 {
     _type = uhd::device::USRP;
     _async_md.reset(new async_md_type(1000/*messages deep*/));

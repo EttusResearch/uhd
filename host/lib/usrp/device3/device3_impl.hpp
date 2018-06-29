@@ -163,9 +163,6 @@ protected:
     /***********************************************************************
      * Members
      **********************************************************************/
-    //! A counter, designed to create unique SIDs
-    size_t _sid_framer;
-
     // TODO: Maybe move these to private
     uhd::dict<std::string, boost::weak_ptr<uhd::rx_streamer> > _rx_streamers;
     uhd::dict<std::string, boost::weak_ptr<uhd::tx_streamer> > _tx_streamers;
