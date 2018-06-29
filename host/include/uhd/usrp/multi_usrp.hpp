@@ -25,7 +25,6 @@
 
 #include <uhd/config.hpp>
 #include <uhd/device.hpp>
-#include <uhd/device3.hpp>
 #include <uhd/deprecated.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/stream_cmd.hpp>
