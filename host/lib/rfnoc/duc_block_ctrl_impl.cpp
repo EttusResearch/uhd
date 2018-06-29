@@ -154,7 +154,7 @@ public:
     double get_output_samp_rate(size_t port=ANY_PORT)
     {
         port = (port == ANY_PORT) ? 0 : port;
-        if (not (_rx_streamer_active.count(port) and _rx_streamer_active.at(port))) {
+        if (not (_tx_streamer_active.count(port) and _tx_streamer_active.at(port))) {
             return RATE_UNDEFINED;
         }
         return get_arg<double>("output_rate", port == ANY_PORT ? 0 : port);
