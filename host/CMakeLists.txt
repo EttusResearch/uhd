@@ -1,18 +1,7 @@
 #
-# Copyright 2010-2016 Ettus Research LLC
+# Copyright 2010-2018 Ettus Research, a National Instruments Company
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# SPDX-License-Identifier: GPL-3.0
 #
 
 ########################################################################
@@ -23,7 +12,10 @@
 ########################################################################
 # Project setup
 ########################################################################
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8.2)
+IF(POLICY CMP0048)
+  CMAKE_POLICY(SET CMP0048 NEW) # Suppress Version warnings
+ENDIF(POLICY CMP0048)
 PROJECT(UHD CXX C)
 ENABLE_TESTING()
 
@@ -31,17 +23,21 @@ ENABLE_TESTING()
 list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake/Modules)
 
 ########################################################################
-# Check Compiler Version
+# UHD Dependency Minimum Versions
 ########################################################################
-# Full C++11 came with GCC 4.7.
+# Full C++11 came with GCC 4.7, Clang >= 3.3.0, Apple Clang >= 500
 SET(GCC_MIN_VERSION "4.8.0")
-# for c++0x or c++11 support, require:
-#   Apple Clang >= 500
-# or
-#   Clang >= 3.3.0
 SET(CLANG_MIN_VERSION "3.3.0")
 SET(APPLECLANG_MIN_VERSION "500")
+# Make sure to update the next two in unison:
+SET(MSVC_MIN_VERSION "1900")
+SET(MSVC_MIN_VERSION_READABLE "14.0")
+# Other deps
+SET(BOOST_MIN_VERSION "1.53")
 
+########################################################################
+# Check Compiler Version
+########################################################################
 IF(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
     IF(DEFINED CMAKE_CXX_COMPILER_VERSION)
         IF(${CMAKE_CXX_COMPILER_VERSION} VERSION_LESS ${GCC_MIN_VERSION})
@@ -78,6 +74,10 @@ ELSEIF(${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
     ELSE()
         MESSAGE(WARNING "\nCannot determine the version of the compiler selected to build UHD (${APPLE_STR}Clang : ${CMAKE_CXX_COMPILER}). This build may or not work. We highly recommend using Apple Clang version ${APPLECLANG_MIN_VERSION} or more recent, or Clang version ${CLANG_MIN_VERSION} or more recent.")
     ENDIF()
+ELSEIF(MSVC)
+    IF(${MSVC_VERSION} VERSION_LESS ${MSVC_MIN_VERSION})
+	MESSAGE(FATAL_ERROR "\nMSVC version is less than the required minimum. Required: ${MSVC_MIN_VERSION_READABLE}")
+    ENDIF(${MSVC_VERSION} VERSION_LESS ${MSVC_MIN_VERSION})
 ENDIF()
 
 IF(CMAKE_VERSION VERSION_LESS "3.1")
@@ -106,7 +106,6 @@ ENDIF()
 SET(LIBUHD_PKG ${LIBUHD_PKG} CACHE BOOL "Build Debian libuhd003 package")
 SET(LIBUHDDEV_PKG ${LIBUHDDEV_PKG} CACHE BOOL "Build Debian libuhd-dev package")
 SET(UHDHOST_PKG ${UHDPOST_PKG} CACHE BOOL "Build Debian uhd-host package")
-
 INCLUDE(UHDComponent) #enable components
 INCLUDE(UHDPackage)   #setup cpack
 
@@ -131,6 +130,30 @@ IF(NOT DEFINED PKG_LIB_DIR)
 ENDIF()
 SET(PKG_DOC_DIR share/doc/uhd)
 SET(PKG_MAN_DIR share/man/man1)
+
+########################################################################
+# UHD config files
+########################################################################
+SET(UHD_USER_CONF_FILE
+    ".uhd/uhd.conf"
+    CACHE STRING
+    "Location of the user-specific UHD configuration file, relative to APPDATA (or HOME)"
+)
+IF(UNIX)
+    SET(UHD_SYS_CONF_FILE
+        "/etc/uhd/uhd.conf"
+        CACHE STRING
+        "Location of the system-wide UHD configuration file"
+    )
+ELSEIF(WIN32)
+    SET(UHD_SYS_CONF_FILE
+        "%programdata%/uhd/uhd.conf"
+        CACHE STRING
+        "Location of the system-wide UHD configuration file"
+    )
+ELSE()
+    MESSAGE(WARNING "Not setting UHD_SYS_CONF_FILE!")
+ENDIF()
 
 ########################################################################
 # UHD Image Directories
@@ -236,6 +259,8 @@ ENDIF()
 IF(MSVC)
     INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/cmake/msvc)
     ADD_DEFINITIONS( #stop all kinds of compatibility warnings
+        -DWIN32_LEAN_AND_MEAN
+        -DVC_EXTRALEAN
         -D_SCL_SECURE_NO_WARNINGS
         -D_SCL_SECURE_NO_DEPRECATE
         -D_CRT_SECURE_NO_WARNINGS
@@ -258,6 +283,17 @@ IF(WIN32)
 ENDIF(WIN32)
 
 ########################################################################
+# Choose a version of Python
+########################################################################
+OPTION(ENABLE_PYTHON3 "Enable Python 3. Default is Python 2" OFF)
+SET(BOOST_PYTHON_COMPONENT python)
+SET(BOOST_PYTHON_VERSION 2.7)
+IF(${ENABLE_PYTHON3})
+    SET(BOOST_PYTHON_COMPONENT python3)
+    SET(BOOST_PYTHON_VERSION 3)
+ENDIF()
+
+########################################################################
 # Setup Boost
 ########################################################################
 MESSAGE(STATUS "")
@@ -272,6 +308,8 @@ SET(BOOST_REQUIRED_COMPONENTS
     unit_test_framework
     serialization
 )
+
+SET(BOOST_OPTIONAL_COMPONENTS ${BOOST_PYTHON_COMPONENT})
 IF(MINGW)
     LIST(APPEND BOOST_REQUIRED_COMPONENTS thread_win32)
 ELSE()
@@ -294,12 +332,26 @@ ENDIF(MSVC)
 SET(Boost_ADDITIONAL_VERSIONS
     "1.46.0" "1.46" "1.47.0" "1.47" "1.48.0" "1.48" "1.48.0" "1.49" "1.50.0" "1.50"
     "1.51.0" "1.51" "1.52.0" "1.52" "1.53.0" "1.53" "1.54.0" "1.54" "1.55.0" "1.55"
-    "1.56.0" "1.56" "1.57" "1.57" "1.58" "1.59" "1.60" "1.61"
+    "1.56.0" "1.56" "1.57" "1.57" "1.58" "1.59" "1.60" "1.61" "1.62" "1.63"
 )
-FIND_PACKAGE(Boost 1.53 COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
+
+#Python API requirements
+MESSAGE(STATUS "Looking for optional Boost components...")
+FIND_PACKAGE(Boost ${BOOST_MIN_VERSION} OPTIONAL_COMPONENTS ${BOOST_OPTIONAL_COMPONENTS})
+
+MESSAGE(STATUS "Looking for required Boost components...")
+FIND_PACKAGE(Boost ${BOOST_MIN_VERSION} COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
 
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS})
 LINK_DIRECTORIES(${Boost_LIBRARY_DIRS})
+
+#Check to see if the Python version we're looking for exists
+SET(BOOST_PYTHON_FOUND ${Boost_PYTHON_FOUND})
+SET(BOOST_PYTHON_LIBRARY ${Boost_PYTHON_LIBRARY})
+IF(${ENABLE_PYTHON3})
+    SET(BOOST_PYTHON_FOUND ${Boost_PYTHON3_FOUND})
+    SET(BOOST_PYTHON_LIBRARY ${Boost_PYTHON3_LIBRARY})
+ENDIF()
 
 MESSAGE(STATUS "Boost include directories: ${Boost_INCLUDE_DIRS}")
 MESSAGE(STATUS "Boost library directories: ${Boost_LIBRARY_DIRS}")
@@ -316,11 +368,18 @@ INCLUDE(UHDLog)
 ########################################################################
 # Check Python Modules
 ########################################################################
+FIND_PACKAGE(PythonInterp ${BOOST_PYTHON_VERSION})
+FIND_PACKAGE(PythonLibs ${BOOST_PYTHON_VERSION})
 INCLUDE(UHDPython)
 
+SET(PYTHON_VERSION "platform.python_version() >= '2.7' and platform.python_version() < '3.0'")
+IF(${ENABLE_PYTHON3})
+    SET(PYTHON_VERSION "platform.python_version() >= '3.0'")
+ENDIF()
+
 PYTHON_CHECK_MODULE(
-    "Python version 2.7 or greater"
-    "platform" "platform.python_version() >= '2.7'"
+    "Python version ${BOOST_PYTHON_VERSION} or greater"
+    "platform" ${PYTHON_VERSION}
     HAVE_PYTHON_PLAT_MIN_VERSION
 )
 
@@ -335,6 +394,14 @@ PYTHON_CHECK_MODULE(
     "requests" "requests.__version__ >= '2.0'"
     HAVE_PYTHON_MODULE_REQUESTS
 )
+
+PYTHON_CHECK_MODULE(
+    "numpy 1.7 or greater"
+    "numpy" "LooseVersion(numpy.__version__) >= LooseVersion('1.7')"
+    HAVE_PYTHON_MODULE_NUMPY
+)
+
+SET(PYTHON_ADDITIONAL_VERSIONS 2.7 3.4 3.5)
 
 ########################################################################
 # Create Uninstall Target
@@ -359,23 +426,15 @@ UHD_INSTALL(FILES
 )
 
 ########################################################################
-# Images download directory for utils/uhd_images_downloader.py
-########################################################################
-#{{{IMG_SECTION
-# This section is written automatically by /images/create_imgs_package.py
-# Any manual changes in here will be overwritten.
-SET(UHD_IMAGES_MD5SUM "487beb2dd2477ad90f9b21399931979c")
-SET(UHD_IMAGES_DOWNLOAD_SRC "uhd-images_003.010.001.001-27-g47672ede.zip")
-#}}}
-
-########################################################################
 # Register top level components
 ########################################################################
 LIBUHD_REGISTER_COMPONENT("LibUHD" ENABLE_LIBUHD ON "Boost_FOUND;HAVE_PYTHON_PLAT_MIN_VERSION;HAVE_PYTHON_MODULE_MAKO" OFF ON)
 LIBUHD_REGISTER_COMPONENT("LibUHD - C API" ENABLE_C_API ON "ENABLE_LIBUHD" OFF OFF)
+LIBUHD_REGISTER_COMPONENT("LibUHD - Python API" ENABLE_PYTHON_API OFF "ENABLE_LIBUHD;BOOST_PYTHON_FOUND;HAVE_PYTHON_MODULE_NUMPY;PythonLibs_FOUND" OFF OFF)
 LIBUHD_REGISTER_COMPONENT("Examples" ENABLE_EXAMPLES ON "ENABLE_LIBUHD" OFF OFF)
 LIBUHD_REGISTER_COMPONENT("Utils" ENABLE_UTILS ON "ENABLE_LIBUHD" OFF OFF)
 LIBUHD_REGISTER_COMPONENT("Tests" ENABLE_TESTS ON "ENABLE_LIBUHD" OFF OFF)
+
 
 ########################################################################
 # Check for fpga-src submodule
@@ -414,6 +473,10 @@ IF(ENABLE_UTILS)
 ENDIF(ENABLE_UTILS)
 
 ADD_SUBDIRECTORY(docs)
+
+IF(ENABLE_PYTHON_API)
+    ADD_SUBDIRECTORY(python)
+ENDIF()
 
 ########################################################################
 # Create Pkg Config File

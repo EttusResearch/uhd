@@ -1,18 +1,8 @@
 //
 // Copyright 2013-2015 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include "e300_impl.hpp"
@@ -42,9 +32,10 @@
 #include <boost/bind.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/assign/list_of.hpp>
-#include <boost/thread/thread.hpp> //sleep
 #include <boost/asio.hpp>
 #include <fstream>
+#include <chrono>
+#include <thread>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -200,7 +191,7 @@ device_addrs_t e300_find(const device_addr_t &multi_dev_hint)
                 const mboard_eeprom_t eeprom = eeprom_manager.get_mb_eeprom();
                 new_addr["name"] = eeprom["name"];
                 new_addr["serial"] = eeprom["serial"];
-                new_addr["product"] = eeprom["product"];
+                new_addr["product"] = eeprom_manager.get_mb_type_string();
             } catch (...) {
                 // set these values as empty string, so the device may still be found
                 // and the filters below can still operate on the discovered device
@@ -236,7 +227,7 @@ device_addrs_t e300_find(const device_addr_t &multi_dev_hint)
             const mboard_eeprom_t eeprom = eeprom_manager.get_mb_eeprom();
             new_addr["name"] = eeprom["name"];
             new_addr["serial"] = eeprom["serial"];
-            new_addr["product"] = eeprom["product"];
+            new_addr["product"] = eeprom_manager.get_mb_type_string();
         } catch (...) {
             // set these values as empty string, so the device may still be found
             // and the filters below can still operate on the discovered device
@@ -323,7 +314,14 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
         _do_not_reload = device_addr.has_key("no_reload_fpga");
         if (not _do_not_reload) {
             std::string fpga_image;
-            get_e3x0_fpga_images(device_addr,
+
+            // need to re-read product ID code because of conversion into string in find function
+            e300_eeprom_manager eeprom_manager(i2c::make_i2cdev(E300_I2CDEV_DEVICE));
+            const mboard_eeprom_t eeprom = eeprom_manager.get_mb_eeprom();
+            device_addr_t device_addr_cp;
+            device_addr_cp["product"] = eeprom["product"];
+
+            get_e3x0_fpga_images(device_addr_cp,
                                  fpga_image,
                                  _idle_image);
             common::load_fpga_image(fpga_image);
@@ -398,14 +396,14 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
         ad9361_params::sptr client_settings = boost::make_shared<e300_ad9361_client_t>();
         _codec_ctrl = ad9361_ctrl::make_spi(client_settings, spi::make(E300_SPIDEV_DEVICE), 1);
         // This is horrible ... why do I have to sleep here?
-        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         _eeprom_manager = boost::make_shared<e300_eeprom_manager>(i2c::make_i2cdev(E300_I2CDEV_DEVICE));
         _sensor_manager = e300_sensor_manager::make_local(_global_regs);
     }
     _codec_mgr = ad936x_manager::make(_codec_ctrl, fpga::NUM_RADIOS);
 
 #ifdef E300_GPSD
-    UHD_LOGGER_INFO("E300") << "Detecting internal GPSDO ";
+    UHD_LOGGER_INFO("E300") << "Detecting internal GPS ";
     try {
         if (_xport_path == AXI)
             _gps = gpsd_iface::make("localhost", 2947);
@@ -418,7 +416,7 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
     if (_gps) {
         for (size_t i = 0; i < _GPS_TIMEOUT; i++)
         {
-            boost::this_thread::sleep(boost::posix_time::seconds(1));
+            std::this_thread::sleep_for(std::chrono::seconds(1));
             if (!_gps->gps_detected())
                 std::cout << "." << std::flush;
             else {
@@ -511,27 +509,55 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
         this->_setup_radio(instance);
 
     //now test each radio module's connection to the codec interface
-    for(radio_perifs_t &perif:  _radio_perifs)
-    {
+    for (radio_perifs_t &perif : _radio_perifs) {
         _codec_mgr->loopback_self_test(
-            boost::bind(
-                &radio_ctrl_core_3000::poke32, perif.ctrl, radio::sr_addr(radio::CODEC_IDLE), _1
-            ),
-            boost::bind(&radio_ctrl_core_3000::peek64, perif.ctrl, radio::RB64_CODEC_READBACK)
+            [&perif](const uint32_t value){
+                perif.ctrl->poke32(radio::sr_addr(radio::CODEC_IDLE), value);
+            },
+            [&perif](){
+                return perif.ctrl->peek64(radio::RB64_CODEC_READBACK);
+            }
         );
     }
     ////////////////////////////////////////////////////////////////////
     // internal gpios
     ////////////////////////////////////////////////////////////////////
     gpio_atr_3000::sptr fp_gpio = gpio_atr_3000::make(_radio_perifs[0].ctrl, radio::sr_addr(radio::FP_GPIO), radio::RB32_FP_GPIO);
-    for(const gpio_attr_map_t::value_type attr:  gpio_attr_map)
-    {
-        _tree->create<uint32_t>(mb_path / "gpio" / "INT0" / attr.second)
-            .add_coerced_subscriber(boost::bind(&gpio_atr_3000::set_gpio_attr, fp_gpio, attr.first, _1))
-            .set(0);
+    for(const auto& attr:  gpio_attr_map){
+        switch (attr.first){
+                case usrp::gpio_atr::GPIO_SRC:
+                    _tree->create<std::vector<std::string>>(mb_path / "gpio" / "INT0" / attr.second)
+                         .set(std::vector<std::string>(32, usrp::gpio_atr::default_attr_value_map.at(attr.first)))
+                         .add_coerced_subscriber([this](const std::vector<std::string>&){
+                            throw uhd::runtime_error("This device does not support setting the GPIO_SRC attribute.");
+                         });
+                    break;
+                case usrp::gpio_atr::GPIO_CTRL:
+                case usrp::gpio_atr::GPIO_DDR:
+                    _tree->create<std::vector<std::string>>(mb_path / "gpio" / "INT0" / attr.second)
+                         .set(std::vector<std::string>(32, usrp::gpio_atr::default_attr_value_map.at(attr.first)))
+                         .add_coerced_subscriber([this, fp_gpio, attr](const std::vector<std::string> str_val){
+                            uint32_t val = 0;
+                            for(size_t i = 0 ; i < str_val.size() ; i++){
+                                val += usrp::gpio_atr::gpio_attr_value_pair.at(attr.second).at(str_val[i])<<i;
+                            }
+                            fp_gpio->set_gpio_attr(attr.first, val);
+                         });
+                    break;
+                case usrp::gpio_atr::GPIO_READBACK:
+                    _tree->create<uint8_t>(mb_path / "gpio" / "INT0" / "READBACK")
+                        .set_publisher([this, fp_gpio](){
+                            return fp_gpio->read_gpio();
+                         });
+                    break;
+                default:
+                    _tree->create<uint32_t>(mb_path / "gpio" / "INT0" / attr.second)
+                         .set(0)
+                         .add_coerced_subscriber([this, fp_gpio, attr](const uint32_t val){
+                             fp_gpio->set_gpio_attr(attr.first, val);
+                         });
+            }
     }
-    _tree->create<uint8_t>(mb_path / "gpio" / "INT0" / "READBACK")
-        .set_publisher(boost::bind(&gpio_atr_3000::read_gpio, fp_gpio));
 
 
     ////////////////////////////////////////////////////////////////////
@@ -740,7 +766,7 @@ std::string e300_impl::_get_version_hash(void)
         = _global_regs->peek32(global_regs::RB32_CORE_GITHASH);
     return str(boost::format("%7x%s")
         % (git_hash & 0x0FFFFFFF)
-        % ((git_hash & 0xF000000) ? "-dirty" : ""));
+        % ((git_hash & 0xF0000000) ? "-dirty" : ""));
 }
 
 uint32_t e300_impl::_allocate_sid(const sid_config_t &config)
@@ -1116,7 +1142,7 @@ void e300_impl::_reset_codec_mmcm(void)
 {
     _misc.codec_arst = 1;
     _update_gpio_state();
-    boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
     _misc.codec_arst = 0;
     _update_gpio_state();
 }

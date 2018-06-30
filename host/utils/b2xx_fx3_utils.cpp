@@ -1,18 +1,8 @@
 //
 // Copyright 2010-2014 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include <cstdlib>
@@ -25,13 +15,14 @@
 #include <string>
 #include <cmath>
 #include <cstring>
+#include <chrono>
+#include <thread>
 
 #include <stdint.h>
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/format.hpp>
 #include <boost/program_options.hpp>
-#include <boost/thread/thread.hpp>
 #include <boost/functional/hash.hpp>
 
 #include <b200_iface.hpp>
@@ -405,7 +396,7 @@ int32_t main(int32_t argc, char *argv[]) {
         // re-open device
         b200.reset();
         handle.reset();
-        boost::this_thread::sleep(boost::posix_time::seconds(2));    // wait 2 seconds for FX3 to reset
+        std::this_thread::sleep_for(std::chrono::seconds(2));    // wait 2 seconds for FX3 to reset
         handle = open_device(vid, pid);
         if (!handle)
             return -1;

@@ -1,28 +1,20 @@
 //
 // Copyright 2010-2016 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include "x300_dac_ctrl.hpp"
 #include "x300_regs.hpp"
+#include <uhdlib/utils/system_time.hpp>
 #include <uhd/types/time_spec.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/exception.hpp>
 #include <boost/format.hpp>
-#include <boost/thread/thread.hpp> //sleep
+#include <chrono>
+#include <thread>
 
 #define X300_DAC_FRONTEND_SYNC_FAILURE_FATAL
 
@@ -77,6 +69,33 @@ public:
         //and we need to guarantee that the FIFO is not empty.
         _backend_sync();
         _sleep_mode(false);
+    }
+
+    void sync()
+    {
+        try {
+            // Just return if PLL is locked and backend is synchronized
+            _check_pll();
+            _check_dac_sync();
+            return;
+        } catch (...) {}
+
+        std::string err_str;
+
+        // Try 3 times to sync before giving up
+        for (size_t retries = 0; retries < 3; retries++)
+        {
+            try {
+                _sleep_mode(true);
+                _init();
+                _backend_sync();
+                _sleep_mode(false);
+                return;
+            } catch (const uhd::runtime_error &e) {
+                err_str = e.what();
+            }
+        }
+        throw uhd::runtime_error(err_str);
     }
 
     void verify_sync()
@@ -147,7 +166,6 @@ public:
     void _backend_sync(void)
     {
         write_ad9146_reg(0x10, 0x40);   // Disable SYNC mode to reset state machines.
-        write_ad9146_reg(0x06, 0x30);   // Clear Sync event flags
 
         //SYNC Settings:
         //- SYNC = Enabled
@@ -175,13 +193,10 @@ public:
         write_ad9146_reg(0x17, 0x05);
 
         // We are requesting a soft FIFO align just to put the FIFO
-        // in a known state. The FRAME will actually do sync the
+        // in a known state. The FRAME will actually sync the
         // FIFO correctly when a stream is created
         write_ad9146_reg(0x18, 0x02); // Request soft FIFO align
         write_ad9146_reg(0x18, 0x00); // (See above)
-
-        //Verify the FIFO thermometer
-        _check_frontend_sync(false); //FIFO sanity check
     }
 
     //
@@ -189,20 +204,23 @@ public:
     //
     void _check_pll()
     {
+        //Clear PLL event flags
+        write_ad9146_reg(0x06, 0xC0);
+
         // Verify PLL is Locked. 1 sec timeout.
         // NOTE: Data sheet inconsistent about which pins give PLL lock status. FIXME!
-        const time_spec_t exit_time = time_spec_t::get_system_time() + time_spec_t(1.0);
+        const time_spec_t exit_time = uhd::get_system_time() + time_spec_t(1.0);
         while (true)
         {
             const size_t reg_e = read_ad9146_reg(0x0E); // PLL Status (Expect bit 7 = 1)
             const size_t reg_6 = read_ad9146_reg(0x06); // Event Flags (Expect bit 7 = 0 and bit 6 = 1)
             if ((((reg_e >> 7) & 0x1) == 0x1) && (((reg_6 >> 6) & 0x3) == 0x1))
                 break;
-            if (exit_time < time_spec_t::get_system_time())
+            if (exit_time < uhd::get_system_time())
                 throw uhd::runtime_error("x300_dac_ctrl: timeout waiting for DAC PLL to lock");
             if (reg_6 & (1 << 7))               // Lock lost?
                 write_ad9146_reg(0x06, 0xC0);   // Clear PLL event flags
-            boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
         }
     }
 
@@ -211,21 +229,27 @@ public:
     //
     void _check_dac_sync()
     {
-        const time_spec_t exit_time = time_spec_t::get_system_time() + time_spec_t(1.0);
+        // Clear Sync event flags
+        write_ad9146_reg(0x06, 0x30);
+        write_ad9146_reg(0x12, 0x00);
+
+        const time_spec_t exit_time = uhd::get_system_time() + time_spec_t(1.0);
         while (true)
         {
-            boost::this_thread::sleep(boost::posix_time::milliseconds(1));  // wait for sync to complete
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));  // wait for sync to complete
             const size_t reg_12 = read_ad9146_reg(0x12);    // Sync Status (Expect bit 7 = 0, bit 6 = 1)
             const size_t reg_6 = read_ad9146_reg(0x06);     // Event Flags (Expect bit 5 = 0 and bit 4 = 1)
             if ((((reg_12 >> 6) & 0x3) == 0x1) && (((reg_6 >> 4) & 0x3) == 0x1))
                 break;
-            if (exit_time < time_spec_t::get_system_time())
+            if (exit_time < uhd::get_system_time())
                 throw uhd::runtime_error("x300_dac_ctrl: timeout waiting for backend synchronization");
             if (reg_6 & (1 << 5))
                 write_ad9146_reg(0x06, 0x30);   // Clear Sync event flags
 #ifdef X300_DAC_RETRY_BACKEND_SYNC
-            if (reg_12 & (1 << 7))              // Sync acquired and lost?
+            if (reg_12 & (1 << 7)) {            // Sync acquired and lost?
                 write_ad9146_reg(0x10, 0xC7);   // Enable SYNC mode. Falling edge sync. Averaging set to 128.
+                write_ad9146_reg(0x12, 0x00);   // Clear Sync event flags
+            }
 #endif
         }
     }
@@ -238,7 +262,7 @@ public:
         // Register 0x19 has a thermometer indicator of the FIFO depth
         const size_t reg_19 = read_ad9146_reg(0x19);
         if ((reg_19 & 0xFF) != 0xF) {
-            std::string msg((boost::format("x300_dac_ctrl: front-end sync failed. unexpected FIFO depth [0x%x]\n") % (reg_19 & 0xFF)).str());
+            std::string msg((boost::format("x300_dac_ctrl: front-end sync failed. unexpected FIFO depth [0x%x]") % (reg_19 & 0xFF)).str());
             if (failure_is_fatal) {
                 throw uhd::runtime_error(msg);
             } else {

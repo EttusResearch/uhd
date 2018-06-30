@@ -10,20 +10,20 @@
 \li \subpage page_transport
 \li \subpage page_sync
 \li \subpage page_calibration
+\li \subpage page_mpm
+\li \subpage page_configfiles
 
 ## USRP N-Series Devices
 
 \li \subpage page_usrp2 "USRP N2x0 Series"
+\li \subpage page_usrp_n3xx "USRP N3xx Series"
 
 ## USRP B-Series Devices
 
-\li \subpage page_usrp_b100
 \li \subpage page_usrp_b200
-\li \subpage page_usrp1
 
 ## USRP E-Series Devices
 
-\li \subpage page_usrp_e1x0
 \li \subpage page_usrp_e3x0
 
 ## USRP X-Series Devices
@@ -32,6 +32,14 @@
 
 ## USRP Legacy Series
 
+Legacy devices are USRPs that are either no longer supported, or are no longer
+available for purchase. Refer to the individual manual pages for details.
+In general, no new feature development is happening for these devices, but
+unless stated otherwise, they will still work with this version of UHD.
+
+\li \subpage page_usrp1
+\li \subpage page_usrp_b100
+\li \subpage page_usrp_e1x0
 \li \ref page_usrp2 "USRP2 Series"
 
 ## Daughterboards

@@ -654,7 +654,7 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories
 # with spaces.
 
-INPUT                  = @CMAKE_CURRENT_BINARY_DIR@/mainpage.dox @DOXYGEN_INPUT_DIRS@
+INPUT                  = @DOXYGEN_INPUT_DIRS@
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is
@@ -672,7 +672,7 @@ INPUT_ENCODING         = UTF-8
 # *.hxx *.hpp *.h++ *.idl *.odl *.cs *.php *.php3 *.inc *.m *.mm *.dox *.py
 # *.f90 *.f *.for *.vhd *.vhdl
 
-FILE_PATTERNS          = *.hpp *.dox *.h *.ipp *.md
+FILE_PATTERNS          = *.hpp *.dox *.h *.ipp *.md *.py
 
 # The RECURSIVE tag can be used to turn specify whether or not subdirectories
 # should be searched for input files as well. Possible values are YES and NO.
@@ -687,7 +687,8 @@ RECURSIVE              = YES
 # run.
 
 EXCLUDE                = @CMAKE_SOURCE_DIR@/include/uhd/transport/nirio \
-                         @CMAKE_SOURCE_DIR@/include/uhd/transport/nirio_zero_copy.hpp @DOXYGEN_EXCLUDE_DIRS@
+                         @CMAKE_SOURCE_DIR@/include/uhd/transport/nirio_zero_copy.hpp @DOXYGEN_EXCLUDE_DIRS@ \
+                         @CMAKE_SOURCE_DIR@/lib/deps
 
 # The EXCLUDE_SYMLINKS tag can be used to select whether or not files or
 # directories that are symbolic links (a Unix file system feature) are excluded

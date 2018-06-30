@@ -1,18 +1,8 @@
 //
 // Copyright 2010-2011 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #ifndef INCLUDED_UHD_TYPES_DICT_IPP
@@ -120,6 +110,24 @@ namespace uhd{
         }
         _map.push_back(std::make_pair(key, Val()));
         return _map.back().second;
+    }
+
+    template <typename Key, typename Val>
+    bool dict<Key, Val>::operator==(const dict<Key, Val> &other) const{
+        if (this->size() != other.size()){
+            return false;
+        }
+        BOOST_FOREACH(const pair_t& p, _map) {
+            if (not (other.has_key(p.first) and other.get(p.first) == p.second)){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    template <typename Key, typename Val>
+    bool dict<Key, Val>::operator!=(const dict<Key, Val> &other) const{
+        return not (*this == other);
     }
 
     template <typename Key, typename Val>

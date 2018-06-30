@@ -1,52 +1,44 @@
 //
 // Copyright 2013-2016 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #ifndef INCLUDED_X300_IMPL_HPP
 #define INCLUDED_X300_IMPL_HPP
 
-#include <uhd/property_tree.hpp>
-#include "../device3/device3_impl.hpp"
-#include <uhd/usrp/mboard_eeprom.hpp>
-#include <uhd/usrp/subdev_spec.hpp>
-#include <uhd/types/sensors.hpp>
 #include "x300_radio_ctrl_impl.hpp"
 #include "x300_clock_ctrl.hpp"
 #include "x300_fw_common.h"
+#include "x300_regs.hpp"
+
+#include "../device3/device3_impl.hpp"
+#include <uhd/property_tree.hpp>
+#include <uhd/usrp/mboard_eeprom.hpp>
+#include <uhd/usrp/subdev_spec.hpp>
+#include <uhd/types/sensors.hpp>
 #include <uhd/transport/udp_simple.hpp> //mtu
-#include "i2c_core_100_wb32.hpp"
-#include <boost/weak_ptr.hpp>
 #include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/transport/nirio/niusrprio_session.h>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/muxed_zero_copy_if.hpp>
-#include "recv_packet_demuxer_3000.hpp"
-#include "x300_regs.hpp"
 ///////////// RFNOC /////////////////////
 #include <uhd/rfnoc/block_ctrl.hpp>
 ///////////// RFNOC /////////////////////
+
+#include <uhdlib/usrp/cores/i2c_core_100_wb32.hpp>
+#include <uhdlib/usrp/common/recv_packet_demuxer_3000.hpp>
 #include <boost/dynamic_bitset.hpp>
+#include <boost/weak_ptr.hpp>
 #include <atomic>
 
 static const std::string X300_FW_FILE_NAME  = "usrp_x300_fw.bin";
 static const std::string X300_DEFAULT_CLOCK_SOURCE  = "internal";
 
-static const double X300_DEFAULT_TICK_RATE          = 200e6;        //Hz
-static const double X300_DEFAULT_DBOARD_CLK_RATE    = 50e6;         //Hz
-static const double X300_BUS_CLOCK_RATE             = 166.666667e6; //Hz
+static const double X300_DEFAULT_TICK_RATE          = 200e6;   //Hz
+static const double X300_DEFAULT_DBOARD_CLK_RATE    = 50e6;    //Hz
+static const double X300_BUS_CLOCK_RATE             = 187.5e6; //Hz
 
 static const size_t X300_RX_SW_BUFF_SIZE_ETH        = 0x2000000;//32MiB    For an ~8k frame size any size >32MiB is just wasted buffer space
 static const size_t X300_RX_SW_BUFF_SIZE_ETH_MACOS  = 0x100000; //1Mib
@@ -63,7 +55,8 @@ static const size_t X300_PCIE_TX_DATA_NUM_FRAMES	    = 4096;
 static const size_t X300_PCIE_MSG_FRAME_SIZE            = 256;      //bytes
 static const size_t X300_PCIE_MSG_NUM_FRAMES            = 64;
 static const size_t X300_PCIE_MAX_CHANNELS              = 6;
-static const size_t X300_PCIE_MAX_MUXED_XPORTS          = 32;
+static const size_t X300_PCIE_MAX_MUXED_CTRL_XPORTS     = 32;
+static const size_t X300_PCIE_MAX_MUXED_ASYNC_XPORTS    = 4;
 
 static const size_t X300_10GE_DATA_FRAME_MAX_SIZE   = 8000;     // CHDR packet size in bytes
 static const size_t X300_1GE_DATA_FRAME_MAX_SIZE    = 1472;     // CHDR packet size in bytes
@@ -146,6 +139,9 @@ public:
     static x300_mboard_t get_mb_type_from_pcie(const std::string& resource, const std::string& rpc_port);
     static x300_mboard_t get_mb_type_from_eeprom(const uhd::usrp::mboard_eeprom_t& mb_eeprom);
 
+    //! Read out the on-board EEPROM, convert to dict, and return
+    static uhd::usrp::mboard_eeprom_t get_mb_eeprom(uhd::i2c_iface::sptr i2c);
+
 protected:
     void subdev_to_blockid(
             const uhd::usrp::subdev_spec_pair_t &spec, const size_t mb_i,
@@ -166,6 +162,8 @@ private:
 
         std::vector<x300_eth_conn_t> eth_conns;
         size_t next_src_addr;
+        size_t next_tx_src_addr;
+        size_t next_rx_src_addr;
 
         // Discover the ethernet connections per motherboard
         void discover_eth(const uhd::usrp::mboard_eeprom_t mb_eeprom,
@@ -207,6 +205,8 @@ private:
         std::map<uint32_t, uint32_t> _dma_chan_pool;
         //! Control transport for one PCIe connection
         uhd::transport::muxed_zero_copy_if::sptr ctrl_dma_xport;
+        //! Async message transport
+        uhd::transport::muxed_zero_copy_if::sptr async_msg_dma_xport;
 
         /*! Allocate or return a previously allocated PCIe channel pair
          *
@@ -282,7 +282,11 @@ private:
     bool wait_for_clk_locked(mboard_members_t& mb, uint32_t which, double timeout);
     bool is_pps_present(mboard_members_t& mb);
 
-    void set_mb_eeprom(uhd::i2c_iface::sptr i2c, const uhd::usrp::mboard_eeprom_t &);
+    //! Write the contents of an EEPROM dict to the on-board EEPROM
+    void set_mb_eeprom(
+            uhd::i2c_iface::sptr i2c,
+            const uhd::usrp::mboard_eeprom_t &
+    );
 
     void check_fw_compat(const uhd::fs_path &mb_path, uhd::wb_iface::sptr iface);
     void check_fpga_compat(const uhd::fs_path &mb_path, const mboard_members_t &members);

@@ -1,23 +1,13 @@
 //
 // Copyright 2011,2014 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "gpio_atr_3000.hpp"
 #include <uhd/types/dict.hpp>
 #include <uhd/utils/soft_register.hpp>
+#include <uhdlib/usrp/cores/gpio_atr_3000.hpp>
 
 using namespace uhd;
 using namespace usrp;
@@ -131,6 +121,8 @@ public:
         //call. This API does not have a mask so it configures all bits at the same time.
         switch (attr)
         {
+        case GPIO_SRC:
+            throw uhd::runtime_error("Can't set GPIO source by GPIO ATR interface.");
         case GPIO_CTRL:
             set_atr_mode(MODE_ATR, value);   //Configure mode=ATR for all bits that are set
             set_atr_mode(MODE_GPIO, ~value); //Configure mode=GPIO for all bits that are unset
@@ -159,6 +151,9 @@ public:
             //Only set bits that are driven by the ATR engine
             set_atr_reg(ATR_REG_FULL_DUPLEX, value);
             break;
+        case GPIO_READBACK:
+            //This is readonly register, ignore on set. 
+            break;  
         default:
             UHD_THROW_INVALID_CODE_PATH();
         }

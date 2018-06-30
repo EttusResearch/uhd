@@ -1,27 +1,17 @@
 //
 // Copyright 2010-2012 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "validate_subdev_spec.hpp"
+#include "usrp1_calc_mux.hpp"
+#include "usrp1_impl.hpp"
+#include <uhdlib/usrp/common/validate_subdev_spec.hpp>
 #define SRPH_DONT_CHECK_SEQUENCE
 #include "../../transport/super_recv_packet_handler.hpp"
 #define SSPH_DONT_PAD_TO_ONE
 #include "../../transport/super_send_packet_handler.hpp"
-#include "usrp1_calc_mux.hpp"
-#include "usrp1_impl.hpp"
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhd/utils/safe_call.hpp>
@@ -32,6 +22,9 @@
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
 #include <boost/make_shared.hpp>
+#include <atomic>
+#include <chrono>
+#include <thread>
 
 #define bmFR_RX_FORMAT_SHIFT_SHIFT 0
 #define bmFR_RX_FORMAT_WIDTH_SHIFT 4
@@ -147,12 +140,14 @@ struct usrp1_impl::io_impl{
     io_impl(zero_copy_if::sptr data_transport):
         data_transport(data_transport),
         curr_buff(offset_send_buffer(data_transport->get_send_buff())),
-        omsb(boost::bind(&usrp1_impl::io_impl::commit_send_buff, this, _1, _2, _3))
+        omsb(boost::bind(&usrp1_impl::io_impl::commit_send_buff, this, _1, _2, _3)),
+        vandal_loop_exit(false)
     {
         /* NOP */
     }
 
     ~io_impl(void){
+        vandal_loop_exit = true;
         UHD_SAFE_CALL(flush_send_buff();)
     }
 
@@ -175,6 +170,7 @@ struct usrp1_impl::io_impl{
         return omsb.get_new(curr_buff, next_buff);
     }
 
+    std::atomic<bool> vandal_loop_exit;
     task::sptr vandal_task;
     boost::system_time last_send_time;
 };
@@ -247,7 +243,7 @@ void usrp1_impl::io_init(void){
 
     //create a new vandal thread to poll xerflow conditions
     _io_impl->vandal_task = task::make(boost::bind(
-        &usrp1_impl::vandal_conquest_loop, this
+        &usrp1_impl::vandal_conquest_loop, this, std::ref(_io_impl->vandal_loop_exit)
     ));
 }
 
@@ -271,7 +267,7 @@ void usrp1_impl::tx_stream_on_off(bool enb){
  * On an overflow, interleave an inline message into recv and print.
  * This procedure creates "soft" inline and async user messages.
  */
-void usrp1_impl::vandal_conquest_loop(void){
+void usrp1_impl::vandal_conquest_loop(std::atomic<bool> &exit_loop){
 
     //initialize the async metadata
     async_metadata_t async_metadata;
@@ -285,7 +281,7 @@ void usrp1_impl::vandal_conquest_loop(void){
     inline_metadata.error_code = rx_metadata_t::ERROR_CODE_OVERFLOW;
 
     //start the polling loop...
-    try{ while (not boost::this_thread::interruption_requested()){
+    try{ while (not exit_loop){
         uint8_t underflow = 0, overflow = 0;
 
         //shutoff transmit if it has been too long since send() was called
@@ -313,9 +309,8 @@ void usrp1_impl::vandal_conquest_loop(void){
             UHD_LOG_FASTPATH("O")
         }
 
-        boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }}
-    catch(const boost::thread_interrupted &){} //normal exit condition
     catch(const std::exception &e){
         UHD_LOGGER_ERROR("USRP1") << "The vandal caught an unexpected exception " << e.what() ;
     }

@@ -1,24 +1,15 @@
 //
 // Copyright 2011-2014 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "i2c_core_100_wb32.hpp"
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
-#include <boost/thread/thread.hpp> //sleep
+#include <uhdlib/usrp/cores/i2c_core_100_wb32.hpp>
+#include <chrono>
+#include <thread>
 
 #define REG_I2C_PRESCALER_LO _base + 0
 #define REG_I2C_PRESCALER_HI _base + 4
@@ -136,7 +127,7 @@ private:
         for (size_t i = 0; i < 10; i++)
         {
             if ((_iface->peek32(REG_I2C_CMD_STATUS) & I2C_ST_TIP) == 0) return;
-            boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
         }
         UHD_LOGGER_ERROR("CORES") << "i2c_core_100_wb32: i2c_wait timeout" ;
     }

@@ -1,36 +1,25 @@
 //
 // Copyright 2015 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include "expression.hpp"
 #include "function_table.hpp"
 #include <uhd/utils/cast.hpp>
 #include <boost/format.hpp>
-#include <boost/assign.hpp>
 #include <boost/algorithm/string.hpp>
 
 using namespace uhd::rfnoc::nocscript;
 
-std::map<expression::type_t, std::string> expression::type_repr = boost::assign::map_list_of
-    (TYPE_INT, "INT")
-    (TYPE_DOUBLE, "DOUBLE")
-    (TYPE_STRING, "STRING")
-    (TYPE_BOOL, "BOOL")
-    (TYPE_INT_VECTOR, "INT_VECTOR")
-;
+std::map<expression::type_t, std::string> expression::type_repr{
+    {TYPE_INT, "INT"},
+    {TYPE_DOUBLE, "DOUBLE"},
+    {TYPE_STRING, "STRING"},
+    {TYPE_BOOL, "BOOL"},
+    {TYPE_INT_VECTOR, "INT_VECTOR"}
+};
 
 /********************************************************************
  * Literal expressions (constants)
@@ -54,12 +43,12 @@ expression_literal::expression_literal(
         if (_val.substr(0, 2) == "0x") {
             _int_val = uhd::cast::hexstr_cast<int>(_val);
         } else {
-            _int_val = boost::lexical_cast<int>(_val);
+            _int_val = std::stoi(_val);
         }
         break;
 
     case expression::TYPE_DOUBLE:
-        _double_val = boost::lexical_cast<double>(_val);
+        _double_val = std::stod(_val);
         break;
 
     case expression::TYPE_BOOL:
@@ -67,7 +56,7 @@ expression_literal::expression_literal(
             _bool_val = true;
         } else {
             // lexical cast to bool is too picky
-            _bool_val = bool(boost::lexical_cast<int>(_val));
+            _bool_val = bool(std::stoi(_val));
         }
         break;
 
@@ -77,7 +66,7 @@ expression_literal::expression_literal(
         std::vector<std::string> subtoken_list;
         boost::split(subtoken_list, str_vec, boost::is_any_of(", "), boost::token_compress_on);
         for(const std::string &t:  subtoken_list) {
-            _int_vector_val.push_back(boost::lexical_cast<int>(t));
+            _int_vector_val.push_back(std::stoi(t));
         }
         break;
         }
@@ -142,11 +131,11 @@ bool expression_literal::to_bool() const
 {
     switch (_type) {
         case TYPE_INT:
-            return bool(boost::lexical_cast<int>(_val));
+            return bool(std::stoi(_val));
         case TYPE_STRING:
             return not _val.empty();
         case TYPE_DOUBLE:
-            return bool(boost::lexical_cast<double>(_val));
+            return bool(std::stod(_val));
         case TYPE_BOOL:
             return _bool_val;
         case TYPE_INT_VECTOR:
@@ -205,11 +194,11 @@ std::string expression_literal::repr() const
 {
     switch (_type) {
         case TYPE_INT:
-            return boost::lexical_cast<std::string>(_int_val);
+            return std::to_string(_int_val);
         case TYPE_STRING:
             return _val;
         case TYPE_DOUBLE:
-            return boost::lexical_cast<std::string>(_double_val);
+            return std::to_string(_double_val);
         case TYPE_BOOL:
             return _bool_val ? "TRUE" : "FALSE";
         case TYPE_INT_VECTOR:

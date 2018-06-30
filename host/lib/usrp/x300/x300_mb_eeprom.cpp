@@ -1,190 +1,198 @@
 //
-// Copyright 2013-2016 Ettus Research LLC
+// Copyright 2017 Ettus Research (National Instruments Corp.)
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-/*
- * x300_mb_eeprom_iface
- * This interface was created to prevent MB EEPROM corruption while reading
- * data during discovery.  For devices with firmware version newer than 5.0,
- * the EEPROM data is read into firmware memory and available without
- * claiming the device.  For devices with firmware versions 5.0 and older,
- * the code makes sure to claim the device before driving the I2C bus.  This
- * has the unfortunate side effect of preventing multiple processes from
- * discovering the device simultaneously, but is far better than having EEPROM
- * corruption.
- */
-
-#include "x300_mb_eeprom.hpp"
-#include "x300_fw_common.h"
-#include "x300_regs.hpp"
 #include "x300_impl.hpp"
-#include <uhd/exception.hpp>
-#include <uhd/utils/platform.hpp>
-#include <uhd/utils/log.hpp>
-#include <uhd/utils/byteswap.hpp>
-#include <boost/thread.hpp>
+#include <uhdlib/utils/eeprom_utils.hpp>
+#include <uhd/usrp/mboard_eeprom.hpp>
+#include <uhd/types/serial.hpp>
 
-using namespace uhd;
+namespace {
+    const uint8_t X300_EEPROM_ADDR = 0x50;
 
-static const uint32_t X300_FW_SHMEM_IDENT_MIN_VERSION = 0x50001;
-
-class x300_mb_eeprom_iface_impl : public x300_mb_eeprom_iface
-{
-public:
-
-    x300_mb_eeprom_iface_impl(wb_iface::sptr wb, i2c_iface::sptr i2c) : _wb(wb), _i2c(i2c)
+    struct x300_eeprom_map
     {
-        _compat_num = _wb->peek32(X300_FW_SHMEM_ADDR(X300_FW_SHMEM_COMPAT_NUM));
-    }
+        //identifying numbers
+        unsigned char revision[2];
+        unsigned char product[2];
+        unsigned char revision_compat[2];
+        uint8_t _pad0[2];
 
-    ~x300_mb_eeprom_iface_impl()
-    {
-        /* NOP */
-    }
+        //all the mac addrs
+        uint8_t mac_addr0[6];
+        uint8_t _pad1[2];
+        uint8_t mac_addr1[6];
+        uint8_t _pad2[2];
 
-    /*!
-     * Write bytes over the i2c.
-     * \param addr the address
-     * \param buf the vector of bytes
-     */
-    void write_i2c(
-        uint16_t addr,
-        const byte_vector_t &buf
-    )
-    {
-        UHD_ASSERT_THROW(addr == MBOARD_EEPROM_ADDR);
-        if (x300_impl::claim_status(_wb) != x300_impl::CLAIMED_BY_US)
-        {
-            throw uhd::io_error("Attempted to write MB EEPROM without claim to device.");
-        }
-        _i2c->write_i2c(addr, buf);
-    }
+        //all the IP addrs
+        uint32_t gateway;
+        uint32_t subnet[4];
+        uint32_t ip_addr[4];
+        uint8_t _pad3[16];
 
-    /*!
-     * Read bytes over the i2c.
-     * \param addr the address
-     * \param num_bytes number of bytes to read
-     * \return a vector of bytes
-     */
-    byte_vector_t read_i2c(
-        uint16_t addr,
-        size_t num_bytes
-    )
-    {
-        UHD_ASSERT_THROW(addr == MBOARD_EEPROM_ADDR);
-        byte_vector_t bytes;
-        if (_compat_num > X300_FW_SHMEM_IDENT_MIN_VERSION)
-        {
-            bytes = read_eeprom(addr, 0, num_bytes);
-        } else {
-            x300_impl::claim_status_t status = x300_impl::claim_status(_wb);
-            // Claim device before driving the I2C bus
-            if (status == x300_impl::CLAIMED_BY_US or x300_impl::try_to_claim(_wb))
-            {
-                bytes = _i2c->read_i2c(addr, num_bytes);
-                if (status != x300_impl::CLAIMED_BY_US)
-                {
-                    // We didn't originally have the claim, so give it up
-                    x300_impl::release(_wb);
-                }
-            }
-        }
-        return bytes;
-    }
-
-    /*!
-     * Write bytes to an eeprom.
-     * \param addr the address
-     * \param offset byte offset
-     * \param buf the vector of bytes
-     */
-    void write_eeprom(
-        uint16_t addr,
-        uint16_t offset,
-        const byte_vector_t &buf
-    )
-    {
-        UHD_ASSERT_THROW(addr == MBOARD_EEPROM_ADDR);
-        if (x300_impl::claim_status(_wb) != x300_impl::CLAIMED_BY_US)
-        {
-            throw uhd::io_error("Attempted to write MB EEPROM without claim to device.");
-        }
-        _i2c->write_eeprom(addr, offset, buf);
-    }
-
-    /*!
-     * Read bytes from an eeprom.
-     * \param addr the address
-     * \param offset byte offset
-     * \param num_bytes number of bytes to read
-     * \return a vector of bytes
-     */
-    byte_vector_t read_eeprom(
-        uint16_t addr,
-        uint16_t offset,
-        size_t num_bytes
-    )
-    {
-        UHD_ASSERT_THROW(addr == MBOARD_EEPROM_ADDR);
-        byte_vector_t bytes;
-        x300_impl::claim_status_t status = x300_impl::claim_status(_wb);
-        if (_compat_num >= X300_FW_SHMEM_IDENT_MIN_VERSION)
-        {
-            // Get MB EEPROM data from firmware memory
-            if (num_bytes == 0) return bytes;
-
-            size_t bytes_read = 0;
-            for (size_t word = offset / 4; bytes_read < num_bytes; word++)
-            {
-                uint32_t value = byteswap(_wb->peek32(X300_FW_SHMEM_ADDR(X300_FW_SHMEM_IDENT + word)));
-                for (size_t byte = offset % 4; byte < 4 and bytes_read < num_bytes; byte++)
-                {
-                    bytes.push_back(uint8_t((value >> (byte * 8)) & 0xff));
-                    bytes_read++;
-                }
-            }
-        } else {
-            // Claim device before driving the I2C bus
-            if (status == x300_impl::CLAIMED_BY_US or x300_impl::try_to_claim(_wb))
-            {
-                bytes = _i2c->read_eeprom(addr, offset, num_bytes);
-                if (status != x300_impl::CLAIMED_BY_US)
-                {
-                    // We didn't originally have the claim, so give it up
-                    x300_impl::release(_wb);
-                }
-            }
-        }
-        return bytes;
-    }
-
-
-private:
-    wb_iface::sptr _wb;
-    i2c_iface::sptr _i2c;
-    uint32_t _compat_num;
-};
-
-x300_mb_eeprom_iface::~x300_mb_eeprom_iface(void)
-{
-    /* NOP */
+        //names and serials
+        unsigned char name[NAME_MAX_LEN];
+        unsigned char serial[SERIAL_LEN];
+    };
 }
 
-x300_mb_eeprom_iface::sptr x300_mb_eeprom_iface::make(wb_iface::sptr wb, i2c_iface::sptr i2c)
+using namespace uhd;
+using uhd::usrp::mboard_eeprom_t;
+
+mboard_eeprom_t x300_impl::get_mb_eeprom(uhd::i2c_iface::sptr iface)
 {
-    return boost::make_shared<x300_mb_eeprom_iface_impl>(wb, i2c->eeprom16());
+    byte_vector_t bytes =
+        iface->read_eeprom(X300_EEPROM_ADDR, 0, sizeof(struct x300_eeprom_map));
+
+    mboard_eeprom_t mb_eeprom;
+    if (bytes.empty()) {
+        return mb_eeprom;
+    }
+
+    //extract the revision number
+    mb_eeprom["revision"] = uint16_bytes_to_string(
+            byte_vector_t(
+            bytes.begin() + offsetof(x300_eeprom_map, revision),
+            bytes.begin() + (offsetof(x300_eeprom_map, revision)+2))
+    );
+
+    //extract the revision compat number
+    mb_eeprom["revision_compat"] = uint16_bytes_to_string(
+            byte_vector_t(
+            bytes.begin() + offsetof(x300_eeprom_map, revision_compat),
+            bytes.begin() + (offsetof(x300_eeprom_map, revision_compat)+2))
+    );
+
+    //extract the product code
+    mb_eeprom["product"] = uint16_bytes_to_string(
+            byte_vector_t(
+            bytes.begin() + offsetof(x300_eeprom_map, product),
+            bytes.begin() + (offsetof(x300_eeprom_map, product)+2))
+    );
+
+    //extract the mac addresses
+    mb_eeprom["mac-addr0"] = mac_addr_t::from_bytes(
+            byte_vector_t(
+            bytes.begin() + offsetof(x300_eeprom_map, mac_addr0),
+            bytes.begin() + (offsetof(x300_eeprom_map, mac_addr0)+6))
+    ).to_string();
+    mb_eeprom["mac-addr1"] = mac_addr_t::from_bytes(
+            byte_vector_t(
+            bytes.begin() + offsetof(x300_eeprom_map, mac_addr1),
+            bytes.begin() + (offsetof(x300_eeprom_map, mac_addr1)+6))
+    ).to_string();
+
+    //extract the ip addresses
+    boost::asio::ip::address_v4::bytes_type ip_addr_bytes;
+    byte_copy(
+            byte_vector_t(
+            bytes.begin() + offsetof(x300_eeprom_map, gateway),
+            bytes.begin() + (offsetof(x300_eeprom_map, gateway)+4)),
+            ip_addr_bytes
+    );
+    mb_eeprom["gateway"] = boost::asio::ip::address_v4(ip_addr_bytes).to_string();
+    for (size_t i = 0; i < 4; i++)
+    {
+        const std::string n(1, i+'0');
+        byte_copy(
+                byte_vector_t(
+                bytes.begin() + (offsetof(x300_eeprom_map, ip_addr)+(i*4)),
+                bytes.begin() + (offsetof(x300_eeprom_map, ip_addr)+(i*4)+4)),
+                ip_addr_bytes
+        );
+        mb_eeprom["ip-addr"+n] = boost::asio::ip::address_v4(ip_addr_bytes).to_string();
+
+        byte_copy(
+                byte_vector_t(
+                bytes.begin() + (offsetof(x300_eeprom_map, subnet)+(i*4)),
+                bytes.begin() + (offsetof(x300_eeprom_map, subnet)+(i*4)+4)),
+                ip_addr_bytes
+        );
+        mb_eeprom["subnet"+n] = boost::asio::ip::address_v4(ip_addr_bytes).to_string();
+    }
+
+    //extract the serial
+    mb_eeprom["serial"] = bytes_to_string(
+            byte_vector_t(
+            bytes.begin() + offsetof(x300_eeprom_map, serial),
+            bytes.begin() + (offsetof(x300_eeprom_map, serial)+SERIAL_LEN))
+    );
+
+    //extract the name
+    mb_eeprom["name"] = bytes_to_string(
+            byte_vector_t(
+            bytes.begin() + offsetof(x300_eeprom_map, name),
+            bytes.begin() + (offsetof(x300_eeprom_map, name)+NAME_MAX_LEN))
+    );
+
+    return mb_eeprom;
+}
+
+
+void x300_impl::set_mb_eeprom(
+        i2c_iface::sptr iface,
+        const mboard_eeprom_t &mb_eeprom
+) {
+    //parse the revision number
+    if (mb_eeprom.has_key("revision")) iface->write_eeprom(
+        X300_EEPROM_ADDR, offsetof(x300_eeprom_map, revision),
+        string_to_uint16_bytes(mb_eeprom["revision"])
+    );
+
+    //parse the revision compat number
+    if (mb_eeprom.has_key("revision_compat")) iface->write_eeprom(
+        X300_EEPROM_ADDR, offsetof(x300_eeprom_map, revision_compat),
+        string_to_uint16_bytes(mb_eeprom["revision_compat"])
+    );
+
+    //parse the product code
+    if (mb_eeprom.has_key("product")) iface->write_eeprom(
+        X300_EEPROM_ADDR, offsetof(x300_eeprom_map, product),
+        string_to_uint16_bytes(mb_eeprom["product"])
+    );
+
+    //store the mac addresses
+    if (mb_eeprom.has_key("mac-addr0")) iface->write_eeprom(
+        X300_EEPROM_ADDR, offsetof(x300_eeprom_map, mac_addr0),
+        mac_addr_t::from_string(mb_eeprom["mac-addr0"]).to_bytes()
+    );
+    if (mb_eeprom.has_key("mac-addr1")) iface->write_eeprom(
+        X300_EEPROM_ADDR, offsetof(x300_eeprom_map, mac_addr1),
+        mac_addr_t::from_string(mb_eeprom["mac-addr1"]).to_bytes()
+    );
+
+    //store the ip addresses
+    byte_vector_t ip_addr_bytes(4);
+    if (mb_eeprom.has_key("gateway")){
+        byte_copy(boost::asio::ip::address_v4::from_string(mb_eeprom["gateway"]).to_bytes(), ip_addr_bytes);
+        iface->write_eeprom(X300_EEPROM_ADDR, offsetof(x300_eeprom_map, gateway), ip_addr_bytes);
+    }
+    for (size_t i = 0; i < 4; i++)
+    {
+        const std::string n(1, i+'0');
+        if (mb_eeprom.has_key("ip-addr"+n)){
+            byte_copy(boost::asio::ip::address_v4::from_string(mb_eeprom["ip-addr"+n]).to_bytes(), ip_addr_bytes);
+            iface->write_eeprom(X300_EEPROM_ADDR, offsetof(x300_eeprom_map, ip_addr)+(i*4), ip_addr_bytes);
+        }
+
+        if (mb_eeprom.has_key("subnet"+n)){
+            byte_copy(boost::asio::ip::address_v4::from_string(mb_eeprom["subnet"+n]).to_bytes(), ip_addr_bytes);
+            iface->write_eeprom(X300_EEPROM_ADDR, offsetof(x300_eeprom_map, subnet)+(i*4), ip_addr_bytes);
+        }
+    }
+
+    //store the serial
+    if (mb_eeprom.has_key("serial")) iface->write_eeprom(
+        X300_EEPROM_ADDR, offsetof(x300_eeprom_map, serial),
+        string_to_bytes(mb_eeprom["serial"], SERIAL_LEN)
+    );
+
+    //store the name
+    if (mb_eeprom.has_key("name")) iface->write_eeprom(
+        X300_EEPROM_ADDR, offsetof(x300_eeprom_map, name),
+        string_to_bytes(mb_eeprom["name"], NAME_MAX_LEN)
+    );
 }
 

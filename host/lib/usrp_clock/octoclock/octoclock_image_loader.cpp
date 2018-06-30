@@ -1,24 +1,13 @@
 //
 // Copyright 2015-2016 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include "octoclock_impl.hpp"
 #include "common.h"
 
-#include "../../utils/ihex.hpp"
 #include <uhd/device.hpp>
 #include <uhd/image_loader.hpp>
 #include <uhd/transport/udp_simple.hpp>
@@ -27,12 +16,10 @@
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/static.hpp>
+#include <uhdlib/utils/ihex.hpp>
 
-#include <stdint.h>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/thread.hpp>
 
 #include <algorithm>
 #include <iterator>
@@ -41,6 +28,9 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <chrono>
+#include <thread>
+#include <stdint.h>
 
 namespace fs = boost::filesystem;
 using namespace uhd;
@@ -205,7 +195,7 @@ static void octoclock_reset_into_bootloader(octoclock_session_t &session){
 
     if(UHD_OCTOCLOCK_PACKET_MATCHES(RESET_ACK, pkt_out, pkt_in, len)){
         // Make sure this device is now in its bootloader
-        boost::this_thread::sleep(boost::posix_time::milliseconds(500));
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
         uhd::device_addrs_t octoclocks = uhd::device::find(
                                              uhd::device_addr_t(str(boost::format("addr=%s")
                                                                     % session.dev_addr["addr"]

@@ -1,18 +1,8 @@
 //
 // Copyright 2012-2015 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #ifndef INCLUDED_B200_IMPL_HPP
@@ -21,16 +11,6 @@
 #include "b200_iface.hpp"
 #include "b200_uart.hpp"
 #include "b200_cores.hpp"
-#include "ad9361_ctrl.hpp"
-#include "ad936x_manager.hpp"
-#include "adf4001_ctrl.hpp"
-#include "rx_vita_core_3000.hpp"
-#include "tx_vita_core_3000.hpp"
-#include "time_core_3000.hpp"
-#include "gpio_atr_3000.hpp"
-#include "radio_ctrl_core_3000.hpp"
-#include "rx_dsp_core_3000.hpp"
-#include "tx_dsp_core_3000.hpp"
 #include <uhd/device.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/utils/pimpl.hpp>
@@ -44,9 +24,20 @@
 #include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/transport/usb_zero_copy.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
+#include <uhdlib/usrp/common/ad9361_ctrl.hpp>
+#include <uhdlib/usrp/cores/rx_vita_core_3000.hpp>
+#include <uhdlib/usrp/cores/tx_vita_core_3000.hpp>
+#include <uhdlib/usrp/cores/time_core_3000.hpp>
+#include <uhdlib/usrp/cores/gpio_atr_3000.hpp>
+#include <uhdlib/usrp/cores/radio_ctrl_core_3000.hpp>
+#include <uhdlib/usrp/cores/rx_dsp_core_3000.hpp>
+#include <uhdlib/usrp/cores/tx_dsp_core_3000.hpp>
+#include <uhdlib/usrp/common/recv_packet_demuxer_3000.hpp>
+#include <uhdlib/usrp/common/ad936x_manager.hpp>
+#include <uhdlib/usrp/common/adf4001_ctrl.hpp>
 #include <boost/assign.hpp>
 #include <boost/weak_ptr.hpp>
-#include "recv_packet_demuxer_3000.hpp"
+
 static const uint8_t  B200_FW_COMPAT_NUM_MAJOR = 8;
 static const uint8_t  B200_FW_COMPAT_NUM_MINOR = 0;
 static const uint16_t B200_FPGA_COMPAT_NUM = 14;
@@ -123,6 +114,8 @@ public:
     // and calls said method. If arguments are invalid, throws a
     // uhd::value_error.
     void check_streamer_args(const uhd::stream_args_t &args, double tick_rate, const std::string &direction = "");
+
+    static uhd::usrp::mboard_eeprom_t get_mb_eeprom(uhd::i2c_iface::sptr);
 
 private:
     b200_product_t  _product;

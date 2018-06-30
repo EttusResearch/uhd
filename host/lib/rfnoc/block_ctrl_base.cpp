@@ -1,45 +1,28 @@
 //
-// Copyright 2014-2015 Ettus Research LLC
+// Copyright 2014-2016 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 // This file contains the block control functions for block controller classes.
 // See block_ctrl_base_factory.cpp for discovery and factory functions.
 
-#include "ctrl_iface.hpp"
 #include "nocscript/block_iface.hpp"
 
 #include <uhd/utils/log.hpp>
 #include <uhd/convert.hpp>
 #include <uhd/rfnoc/block_ctrl_base.hpp>
 #include <uhd/rfnoc/constants.hpp>
+#include <uhdlib/utils/compat_check.hpp>
+#include <uhdlib/rfnoc/ctrl_iface.hpp>
+#include <uhdlib/rfnoc/wb_iface_adapter.hpp>
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
-
-#define UHD_BLOCK_LOG() UHD_LOGGER_TRACE("RFNOC")
 
 using namespace uhd;
 using namespace uhd::rfnoc;
 using std::string;
-
-/***********************************************************************
- * Helpers
- **********************************************************************/
-//! Convert register to a peek/poke compatible address
-inline uint32_t _sr_to_addr(uint32_t reg) { return reg * 4; };
-inline uint32_t _sr_to_addr64(uint32_t reg) { return reg * 8; }; // for peek64
 
 /***********************************************************************
  * Structors
@@ -48,17 +31,20 @@ block_ctrl_base::block_ctrl_base(
         const make_args_t &make_args
 ) : _tree(make_args.tree),
     _ctrl_ifaces(make_args.ctrl_ifaces),
-    _base_address(make_args.base_address & 0xFFF0)
+    _base_address(make_args.base_address & 0xFFF0),
+    _noc_id(sr_read64(SR_READBACK_REG_ID)),
+    _compat_num(sr_read64(SR_READBACK_COMPAT))
 {
-    UHD_BLOCK_LOG() << "block_ctrl_base()" ;
-
     /*** Identify this block (NoC-ID, block-ID, and block definition) *******/
     // Read NoC-ID (name is passed in through make_args):
-    uint64_t noc_id = sr_read64(SR_READBACK_REG_ID);
-    _block_def = blockdef::make_from_noc_id(noc_id);
-    if (_block_def) UHD_BLOCK_LOG() <<  "Found valid blockdef" ;
-    if (not _block_def)
+    _block_def = blockdef::make_from_noc_id(_noc_id);
+    if (not _block_def) {
+        UHD_LOG_DEBUG("RFNOC",
+            "No block definition found, using default block configuration "
+            "for block with NOC ID: " + str(boost::format("0x%08X") % _noc_id)
+        );
         _block_def = blockdef::make_from_noc_id(DEFAULT_NOC_ID);
+    }
     UHD_ASSERT_THROW(_block_def);
     // For the block ID, we start with block count 0 and increase until
     // we get a block ID that's not already registered:
@@ -66,20 +52,34 @@ block_ctrl_base::block_ctrl_base(
     while (_tree->exists("xbar/" + _block_id.get_local())) {
         _block_id++;
     }
-    UHD_BLOCK_LOG()
-        << "NOC ID: " << str(boost::format("0x%016X  ") % noc_id)
-        << "Block ID: " << _block_id ;
+    UHD_LOG_INFO(unique_id(), str(
+            boost::format("Initializing block control (NOC ID: 0x%016X)")
+            % _noc_id
+    ));
+
+    /*** Check compat number ************************************************/
+    assert_fpga_compat(
+            NOC_SHELL_COMPAT_MAJOR,
+            NOC_SHELL_COMPAT_MINOR,
+            _compat_num,
+            "noc_shell",
+            unique_id(),
+            false /* fail_on_minor_behind */
+    );
 
     /*** Initialize property tree *******************************************/
     _root_path = "xbar/" + _block_id.get_local();
-    _tree->create<uint64_t>(_root_path / "noc_id").set(noc_id);
+    _tree->create<uint64_t>(_root_path / "noc_id").set(_noc_id);
 
     /*** Reset block state *******************************************/
     clear();
 
     /*** Configure ports ****************************************************/
     size_t n_valid_input_buffers = 0;
-    for(const size_t ctrl_port:  get_ctrl_ports()) {
+    for (const size_t ctrl_port : get_ctrl_ports()) {
+        // Set command times to sensible defaults
+        set_command_tick_rate(1.0, ctrl_port);
+        set_command_time(time_spec_t(0.0), ctrl_port);
         // Set source addresses:
         sr_write(SR_BLOCK_SID, get_address(ctrl_port), ctrl_port);
         // Set sink buffer sizes:
@@ -113,12 +113,14 @@ block_ctrl_base::block_ctrl_base(
     _init_port_defs("in",  _block_def->get_input_ports());
     _init_port_defs("out", _block_def->get_output_ports());
     // FIXME this warning always fails until the input buffer code above is fixed
-    if (_tree->list(_root_path / "ports/in").size() != n_valid_input_buffers) {
-        UHD_LOGGER_WARNING("RFNOC") <<
-            boost::format("[%s] defines %d input buffer sizes, but %d input ports")
-            % get_block_id().get() % n_valid_input_buffers % _tree->list(_root_path / "ports/in").size()
-            ;
-    }
+    //if (_tree->list(_root_path / "ports/in").size() != n_valid_input_buffers) {
+    //    UHD_LOGGER_WARNING(unique_id()) <<
+    //        boost::format("[%s] defines %d input buffer sizes, but %d input ports")
+    //        % get_block_id().get()
+    //        % n_valid_input_buffers
+    //        % _tree->list(_root_path / "ports/in").size()
+    //    ;
+    //}
 
     /*** Init default block args ********************************************/
     _nocscript_iface = nocscript::block_iface::make(this);
@@ -141,9 +143,13 @@ void block_ctrl_base::_init_port_defs(
         if (not _tree->exists(port_path)) {
             _tree->create<blockdef::port_t>(port_path);
         }
-        UHD_RFNOC_BLOCK_TRACE()  << "Adding port definition at " << port_path
-            << boost::format(": type = '%s' pkt_size = '%s' vlen = '%s'") % port_def["type"] % port_def["pkt_size"] % port_def["vlen"]
-            ;
+        UHD_LOGGER_TRACE(unique_id())
+            << "Adding port definition at " << port_path
+            << boost::format(": type = '%s' pkt_size = '%s' vlen = '%s'")
+                % port_def["type"]
+                % port_def["pkt_size"]
+                % port_def["vlen"]
+        ;
         _tree->access<blockdef::port_t>(port_path).set(port_def);
         port_index++;
     }
@@ -153,12 +159,12 @@ void block_ctrl_base::_init_block_args()
 {
     blockdef::args_t args = _block_def->get_args();
     fs_path arg_path = _root_path / "args";
-    for(const size_t port:  get_ctrl_ports()) {
+    for (const size_t port : get_ctrl_ports()) {
         _tree->create<std::string>(arg_path / port);
     }
 
     // First, create all nodes.
-    for(const blockdef::arg_t &arg:  args) {
+    for (const auto& arg : args) {
         fs_path arg_type_path = arg_path / arg["port"] / arg["name"] / "type";
         _tree->create<std::string>(arg_type_path).set(arg["type"]);
         fs_path arg_val_path  = arg_path / arg["port"] / arg["name"] / "value";
@@ -172,7 +178,7 @@ void block_ctrl_base::_init_block_args()
     // TODO: Add coercer
 #define _SUBSCRIBE_CHECK_AND_RUN(type, arg_tag, error_message) \
     _tree->access<type>(arg_val_path).add_coerced_subscriber(boost::bind((&nocscript::block_iface::run_and_check), _nocscript_iface, arg[#arg_tag], error_message))
-    for(const blockdef::arg_t &arg:  args) {
+    for (const auto& arg : args) {
         fs_path arg_val_path = arg_path / arg["port"] / arg["name"] / "value";
         if (not arg["check"].empty()) {
             if (arg["type"] == "string") { _SUBSCRIBE_CHECK_AND_RUN(string, check, arg["check_message"]); }
@@ -191,12 +197,12 @@ void block_ctrl_base::_init_block_args()
     }
 
     // Finally: Set the values. This will call subscribers, if we have any.
-    for(const blockdef::arg_t &arg:  args) {
+    for (const auto& arg : args) {
         fs_path arg_val_path = arg_path / arg["port"] / arg["name"] / "value";
         if (not arg["value"].empty()) {
             if (arg["type"] == "int_vector") { throw uhd::runtime_error("not yet implemented: int_vector"); }
-            else if (arg["type"] == "int") { _tree->access<int>(arg_val_path).set(boost::lexical_cast<int>(arg["value"])); }
-            else if (arg["type"] == "double") { _tree->access<double>(arg_val_path).set(boost::lexical_cast<double>(arg["value"])); }
+            else if (arg["type"] == "int") { _tree->access<int>(arg_val_path).set(std::stoi(arg["value"])); }
+            else if (arg["type"] == "double") { _tree->access<double>(arg_val_path).set(std::stod(arg["value"])); }
             else if (arg["type"] == "string") { _tree->access<string>(arg_val_path).set(arg["value"]); }
             else { UHD_THROW_INVALID_CODE_PATH(); }
         }
@@ -206,16 +212,21 @@ void block_ctrl_base::_init_block_args()
 /***********************************************************************
  * FPGA control & communication
  **********************************************************************/
-wb_iface::sptr block_ctrl_base::get_ctrl_iface(const size_t block_port)
+timed_wb_iface::sptr block_ctrl_base::get_ctrl_iface(const size_t block_port)
 {
-    return _ctrl_ifaces[block_port];
+    return boost::make_shared<wb_iface_adapter>(
+        _ctrl_ifaces[block_port],
+        boost::bind(&block_ctrl_base::get_command_tick_rate, this, block_port),
+        boost::bind(&block_ctrl_base::set_command_time, this, _1, block_port),
+        boost::bind(&block_ctrl_base::get_command_time, this, block_port)
+    );
 }
 
 std::vector<size_t> block_ctrl_base::get_ctrl_ports() const
 {
     std::vector<size_t> ctrl_ports;
     ctrl_ports.reserve(_ctrl_ifaces.size());
-    std::pair<size_t, wb_iface::sptr> it;
+    std::pair<size_t, ctrl_iface::sptr> it;
     for(auto it:  _ctrl_ifaces) {
         ctrl_ports.push_back(it.first);
     }
@@ -224,13 +235,14 @@ std::vector<size_t> block_ctrl_base::get_ctrl_ports() const
 
 void block_ctrl_base::sr_write(const uint32_t reg, const uint32_t data, const size_t port)
 {
-    //UHD_BLOCK_LOG() << "  ";
-    //UHD_RFNOC_BLOCK_TRACE() << boost::format("sr_write(%d, %08X, %d)") % reg % data % port ;
     if (not _ctrl_ifaces.count(port)) {
         throw uhd::key_error(str(boost::format("[%s] sr_write(): No such port: %d") % get_block_id().get() % port));
     }
     try {
-        _ctrl_ifaces[port]->poke32(_sr_to_addr(reg), data);
+        _ctrl_ifaces[port]->send_cmd_pkt(
+            reg, data, false,
+            _cmd_timespecs[port].to_ticks(_cmd_tickrates[port])
+        );
     }
     catch(const std::exception &ex) {
         throw uhd::io_error(str(boost::format("[%s] sr_write() failed: %s") % get_block_id().get() % ex.what()));
@@ -251,8 +263,6 @@ void block_ctrl_base::sr_write(const std::string &reg, const uint32_t data, cons
         }
         reg_addr = uint32_t(_tree->access<size_t>(_root_path / "registers" / "sr" / reg).get());
     }
-    UHD_BLOCK_LOG() << "  ";
-    UHD_RFNOC_BLOCK_TRACE() << boost::format("sr_write(%s, %08X) ==> ") % reg % data ;
     return sr_write(reg_addr, data, port);
 }
 
@@ -262,7 +272,11 @@ uint64_t block_ctrl_base::sr_read64(const settingsbus_reg_t reg, const size_t po
         throw uhd::key_error(str(boost::format("[%s] sr_read64(): No such port: %d") % get_block_id().get() % port));
     }
     try {
-        return _ctrl_ifaces[port]->peek64(_sr_to_addr64(reg));
+        return _ctrl_ifaces[port]->send_cmd_pkt(
+                SR_READBACK, reg,
+                true,
+                _cmd_timespecs[port].to_ticks(_cmd_tickrates[port])
+        );
     }
     catch(const std::exception &ex) {
         throw uhd::io_error(str(boost::format("[%s] sr_read64() failed: %s") % get_block_id().get() % ex.what()));
@@ -275,7 +289,11 @@ uint32_t block_ctrl_base::sr_read32(const settingsbus_reg_t reg, const size_t po
         throw uhd::key_error(str(boost::format("[%s] sr_read32(): No such port: %d") % get_block_id().get() % port));
     }
     try {
-        return _ctrl_ifaces[port]->peek32(_sr_to_addr64(reg));
+        return uint32_t(_ctrl_ifaces[port]->send_cmd_pkt(
+                SR_READBACK, reg,
+                true,
+                _cmd_timespecs[port].to_ticks(_cmd_tickrates[port])
+        ));
     }
     catch(const std::exception &ex) {
         throw uhd::io_error(str(boost::format("[%s] sr_read32() failed: %s") % get_block_id().get() % ex.what()));
@@ -285,6 +303,7 @@ uint32_t block_ctrl_base::sr_read32(const settingsbus_reg_t reg, const size_t po
 uint64_t block_ctrl_base::user_reg_read64(const uint32_t addr, const size_t port)
 {
     try {
+        // TODO: When timed readbacks are used, time the second, but not the first
         // Set readback register address
         sr_write(SR_READBACK_ADDR, addr, port);
         // Read readback register via RFNoC
@@ -330,7 +349,7 @@ uint32_t block_ctrl_base::user_reg_read32(const std::string &reg, const size_t p
         ));
     }
     return user_reg_read32(uint32_t(
-        _tree->access<size_t>(_root_path / "registers" / "sr" / reg).get()
+        _tree->access<size_t>(_root_path / "registers" / "rb" / reg).get()
     ), port);
 }
 
@@ -344,32 +363,15 @@ void block_ctrl_base::set_command_time(
         }
         return;
     }
-    boost::shared_ptr<ctrl_iface> iface_sptr =
-        boost::dynamic_pointer_cast<ctrl_iface>(get_ctrl_iface(port));
-    if (not iface_sptr) {
-        throw uhd::assertion_error(str(
-            boost::format("[%s] Cannot set command time on port '%d'")
-            % unique_id() % port
-        ));
-    }
 
-    iface_sptr->set_time(time_spec);
+    _cmd_timespecs[port] = time_spec;
     _set_command_time(time_spec, port);
 }
 
 time_spec_t block_ctrl_base::get_command_time(
         const size_t port
 ) {
-    boost::shared_ptr<ctrl_iface> iface_sptr =
-        boost::dynamic_pointer_cast<ctrl_iface>(get_ctrl_iface(port));
-    if (not iface_sptr) {
-        throw uhd::assertion_error(str(
-            boost::format("[%s] Cannot get command time on port '%d'")
-            % unique_id() % port
-        ));
-    }
-
-    return iface_sptr->get_time();
+    return _cmd_timespecs[port];
 }
 
 void block_ctrl_base::set_command_tick_rate(
@@ -382,39 +384,27 @@ void block_ctrl_base::set_command_tick_rate(
         }
         return;
     }
-    boost::shared_ptr<ctrl_iface> iface_sptr =
-        boost::dynamic_pointer_cast<ctrl_iface>(get_ctrl_iface(port));
-    if (not iface_sptr) {
-        throw uhd::assertion_error(str(
-            boost::format("[%s] Cannot set command time on port '%d'")
-            % unique_id() % port
-        ));
-    }
 
-    iface_sptr->set_tick_rate(tick_rate);
+    _cmd_tickrates[port] = tick_rate;
+}
+
+double block_ctrl_base::get_command_tick_rate(const size_t port)
+{
+    return _cmd_tickrates[port];
 }
 
 void block_ctrl_base::clear_command_time(const size_t port)
 {
-    boost::shared_ptr<ctrl_iface> iface_sptr =
-        boost::dynamic_pointer_cast<ctrl_iface>(get_ctrl_iface(port));
-    if (not iface_sptr) {
-        throw uhd::assertion_error(str(
-            boost::format("[%s] Cannot set command time on port '%d'")
-            % unique_id() % port
-        ));
-    }
-
-    iface_sptr->set_time(time_spec_t(0.0));
+    _cmd_timespecs[port] = time_spec_t(0.0);
 }
 
 void block_ctrl_base::clear()
 {
-    UHD_RFNOC_BLOCK_TRACE() << "block_ctrl_base::clear() " ;
+    UHD_LOG_TRACE(unique_id(), "block_ctrl_base::clear()");
     // Call parent...
     node_ctrl_base::clear();
     // ...then child
-    for(const size_t port_index:  get_ctrl_ports()) {
+    for (const size_t port_index : get_ctrl_ports()) {
         _clear(port_index);
     }
 }
@@ -453,10 +443,10 @@ void block_ctrl_base::set_arg(const std::string &key, const std::string &val, co
             _tree->access<std::string>(arg_val_path).set(val);
         }
         else if (type == "int") {
-            _tree->access<int>(arg_val_path).set(boost::lexical_cast<int>(val));
+            _tree->access<int>(arg_val_path).set(std::stoi(val));
         }
         else if (type == "double") {
-            _tree->access<double>(arg_val_path).set(boost::lexical_cast<double>(val));
+            _tree->access<double>(arg_val_path).set(std::stod(val));
         }
         else if (type == "int_vector") {
             throw uhd::runtime_error("not yet implemented: int_vector");
@@ -494,10 +484,10 @@ std::string block_ctrl_base::get_arg(const std::string &key, const size_t port) 
         return _tree->access<std::string>(arg_val_path).get();
     }
     else if (type == "int") {
-        return boost::lexical_cast<std::string>(_tree->access<int>(arg_val_path).get());
+        return std::to_string(_tree->access<int>(arg_val_path).get());
     }
     else if (type == "double") {
-        return boost::lexical_cast<std::string>(_tree->access<double>(arg_val_path).get());
+        return std::to_string(_tree->access<double>(arg_val_path).get());
     }
     else if (type == "int_vector") {
         throw uhd::runtime_error("not yet implemented: int_vector");
@@ -533,7 +523,6 @@ stream_sig_t block_ctrl_base::_resolve_port_def(const blockdef::port_t &port_def
     } else {
         stream_sig.item_type = port_def["type"];
     }
-    //UHD_RFNOC_BLOCK_TRACE() << "  item type: " << stream_sig.item_type ;
 
     // Vector length
     if (port_def.is_variable("vlen")) {
@@ -544,7 +533,6 @@ stream_sig_t block_ctrl_base::_resolve_port_def(const blockdef::port_t &port_def
     } else {
         stream_sig.vlen = boost::lexical_cast<size_t>(port_def["vlen"]);
     }
-    //UHD_RFNOC_BLOCK_TRACE() << "  vector length: " << stream_sig.vlen ;
 
     // Packet size
     if (port_def.is_variable("pkt_size")) {
@@ -566,7 +554,6 @@ stream_sig_t block_ctrl_base::_resolve_port_def(const blockdef::port_t &port_def
     } else {
         stream_sig.packet_size = boost::lexical_cast<size_t>(port_def["pkt_size"]);
     }
-    //UHD_RFNOC_BLOCK_TRACE() << "  packet size: " << stream_sig.vlen ;
 
     return stream_sig;
 }
@@ -577,13 +564,13 @@ stream_sig_t block_ctrl_base::_resolve_port_def(const blockdef::port_t &port_def
  **********************************************************************/
 void block_ctrl_base::_clear(const size_t port)
 {
-    UHD_RFNOC_BLOCK_TRACE() << "block_ctrl_base::_clear() " ;
+    UHD_LOG_TRACE(unique_id(), "block_ctrl_base::_clear()");
     sr_write(SR_CLEAR_TX_FC, 0x00C1EA12, port); // 'CLEAR', but we can write anything, really
     sr_write(SR_CLEAR_RX_FC, 0x00C1EA12, port); // 'CLEAR', but we can write anything, really
 }
 
 void block_ctrl_base::_set_command_time(const time_spec_t & /*time_spec*/, const size_t /*port*/)
 {
-    UHD_RFNOC_BLOCK_TRACE() << "block_ctrl_base::_set_command_time() ";
+    UHD_LOG_TRACE(unique_id(), "block_ctrl_base::_set_command_time()");
 }
 // vim: sw=4 et:

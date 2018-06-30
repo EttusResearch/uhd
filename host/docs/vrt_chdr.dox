@@ -23,7 +23,7 @@ The full standard is available from the VITA website: http://www.vita.com .
 
 For the third generation of Ettus devices, a new type transport protocol was designed.
 It reduces the complexity of the original standard and uses a fixed-length 64-Bit header
-for everything except the timestamp. Because it is "compressed" into a 64-bit heaer, it
+for everything except the timestamp. Because it is "compressed" into a 64-bit header, it
 was dubbed CHDR (pronounced like the cheese "cheddar").
 
 By compressing all information into a 64-bit line, the header can efficiently be parsed

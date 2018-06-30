@@ -1,29 +1,19 @@
 //
 // Copyright 2013 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include "n230_stream_manager.hpp"
 
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
-#include "async_packet_handler.hpp"
+#include <uhdlib/usrp/common/async_packet_handler.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
-#include <boost/bind.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhd/utils/log.hpp>
+#include <boost/bind.hpp>
 #include <boost/make_shared.hpp>
 
 static const double N230_RX_SW_BUFF_FULL_FACTOR   = 0.90;     //Buffer should ideally be 90% full.
@@ -80,13 +70,13 @@ rx_streamer::sptr n230_stream_manager::get_rx_stream(const uhd::stream_args_t &a
         //TODO: Propagate the device_args class into streamer in the future
         device_addr_t device_addr = args.args;
         if (not device_addr.has_key("recv_buff_size")) {
-            device_addr["recv_buff_size"] = boost::lexical_cast<std::string>(_dev_args.get_recv_buff_size());
+            device_addr["recv_buff_size"] = std::to_string(_dev_args.get_recv_buff_size());
         }
         if (not device_addr.has_key("recv_frame_size")) {
-            device_addr["recv_frame_size"] = boost::lexical_cast<std::string>(_dev_args.get_recv_frame_size());
+            device_addr["recv_frame_size"] = std::to_string(_dev_args.get_recv_frame_size());
         }
         if (not device_addr.has_key("num_recv_frames")) {
-            device_addr["num_recv_frames"] = boost::lexical_cast<std::string>(_dev_args.get_num_recv_frames());
+            device_addr["num_recv_frames"] = std::to_string(_dev_args.get_num_recv_frames());
         }
 
         transport::udp_zero_copy::buff_params buff_params_out;
@@ -170,7 +160,7 @@ rx_streamer::sptr n230_stream_manager::get_rx_stream(const uhd::stream_args_t &a
         if (prop_tree) {
             //TODO: Update this to support multiple motherboards
             const fs_path mb_path = "/mboards/0";
-            prop_tree->access<double>(mb_path / "rx_dsps" / boost::lexical_cast<std::string>(chan) / "rate" / "value").update();
+            prop_tree->access<double>(mb_path / "rx_dsps" / std::to_string(chan) / "rate" / "value").update();
         }
     }
     update_stream_states();
@@ -207,13 +197,13 @@ tx_streamer::sptr n230_stream_manager::get_tx_stream(const uhd::stream_args_t &a
         //TODO: Propagate the device_args class into streamer in the future
         device_addr_t device_addr = args.args;
         if (not device_addr.has_key("send_buff_size")) {
-            device_addr["send_buff_size"] = boost::lexical_cast<std::string>(_dev_args.get_send_buff_size());
+            device_addr["send_buff_size"] = std::to_string(_dev_args.get_send_buff_size());
         }
         if (not device_addr.has_key("send_frame_size")) {
-            device_addr["send_frame_size"] = boost::lexical_cast<std::string>(_dev_args.get_send_frame_size());
+            device_addr["send_frame_size"] = std::to_string(_dev_args.get_send_frame_size());
         }
         if (not device_addr.has_key("num_send_frames")) {
-            device_addr["num_send_frames"] = boost::lexical_cast<std::string>(_dev_args.get_num_send_frames());
+            device_addr["num_send_frames"] = std::to_string(_dev_args.get_num_send_frames());
         }
 
         transport::udp_zero_copy::buff_params buff_params_out;
@@ -295,7 +285,7 @@ tx_streamer::sptr n230_stream_manager::get_tx_stream(const uhd::stream_args_t &a
         if (prop_tree) {
             //TODO: Update this to support multiple motherboards
             const fs_path mb_path = "/mboards/0";
-            prop_tree->access<double>(mb_path / "tx_dsps" / boost::lexical_cast<std::string>(chan) / "rate" / "value").update();
+            prop_tree->access<double>(mb_path / "tx_dsps" / std::to_string(chan) / "rate" / "value").update();
         }
     }
     update_stream_states();

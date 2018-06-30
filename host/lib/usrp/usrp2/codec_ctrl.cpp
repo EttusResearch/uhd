@@ -1,18 +1,8 @@
 //
 // Copyright 2010-2012,2014 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include "codec_ctrl.hpp"
@@ -189,6 +179,11 @@ public:
         }
     }
 
+    size_t get_tx_interpolation() const
+    {
+        return 4;
+    }
+
 private:
     ad9777_regs_t _ad9777_regs;
     ads62p44_regs_t _ads62p44_regs;
@@ -197,7 +192,7 @@ private:
 
     void send_ad9777_reg(uint8_t addr){
         uint16_t reg = _ad9777_regs.get_write_reg(addr);
-        UHD_LOGGER_TRACE("USRP2") << "send_ad9777_reg: " << std::hex << reg;
+        UHD_LOG_TRACE("USRP2", "send_ad9777_reg: 0x" << std::hex << reg);
         _spiface->write_spi(
             SPI_SS_AD9777, spi_config_t::EDGE_RISE,
             reg, 16

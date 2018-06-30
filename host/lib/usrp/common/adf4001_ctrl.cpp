@@ -1,28 +1,18 @@
 //
 // Copyright 2013 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
 // Original ADF4001 driver written by: bistromath
 //                                     Mar 1, 2013
 //
 // Re-used and re-licensed with permission.
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "adf4001_ctrl.hpp"
-
+#include <uhdlib/usrp/common/adf4001_ctrl.hpp>
 #include <uhd/utils/log.hpp>
+
 #include <iostream>
 #include <iomanip>
 
@@ -69,7 +59,7 @@ uint32_t adf4001_regs_t::get_reg(uint8_t addr) {
         reg |= (uint32_t(timer_counter_control) & 0x00000F) << 11;
         reg |= (uint32_t(charge_pump_current_1) & 0x000007) << 15;
         reg |= (uint32_t(charge_pump_current_2) & 0x000007) << 18;
-        reg |= (uint32_t(power_down) & 0x000002) << 21;
+        reg |= (uint32_t(power_down) & 0x000002) << 20;
         break;
     case 3:
         reg |= (uint32_t(counter_reset) & 0x000001) << 2;

@@ -1,86 +1,75 @@
 //
 // Copyright 2011,2014 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include <uhd/utils/tasks.hpp>
 #include <uhd/utils/msg_task.hpp>
+#include <uhd/utils/thread.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhd/exception.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/thread/barrier.hpp>
 #include <exception>
 #include <iostream>
 #include <vector>
+#include <thread>
+#include <atomic>
 
 using namespace uhd;
 
 class task_impl : public task{
 public:
 
-    task_impl(const task_fcn_type &task_fcn):
-        _spawn_barrier(2)
+    task_impl(const task_fcn_type &task_fcn, const std::string &name):
+        _exit(false)
     {
-        (void)_thread_group.create_thread(boost::bind(&task_impl::task_loop, this, task_fcn));
-        _spawn_barrier.wait();
+        _task = std::thread([this, task_fcn](){ this->task_loop(task_fcn); });
+        if (not name.empty()) {
+#ifdef HAVE_PTHREAD_SETNAME
+            pthread_setname_np(_task->native_handle(), name.substr(0,16).c_str());
+#endif /* HAVE_PTHREAD_SETNAME */
+        }
     }
 
     ~task_impl(void){
-        _running = false;
-        _thread_group.interrupt_all();
-        _thread_group.join_all();
+        _exit = true;
+        if (_task.joinable()) {
+            _task.join();
+        }
     }
 
 private:
-
     void task_loop(const task_fcn_type &task_fcn){
-        _running = true;
-        _spawn_barrier.wait();
-
         try{
-            while (_running){
+            while (!_exit){
                 task_fcn();
             }
-        }
-        catch(const boost::thread_interrupted &){
-            //this is an ok way to exit the task loop
         }
         catch(const std::exception &e){
             do_error_msg(e.what());
         }
         catch(...){
-            //FIXME
-            //Unfortunately, this is also an ok way to end a task,
-            //because on some systems boost throws uncatchables.
+            UHD_THROW_INVALID_CODE_PATH();
         }
     }
 
     void do_error_msg(const std::string &msg){
         UHD_LOGGER_ERROR("UHD")
-            << "An unexpected exception was caught in a task loop." 
-            << "The task loop will now exit, things may not work." 
-            << msg 
+            << "An unexpected exception was caught in a task loop."
+            << "The task loop will now exit, things may not work."
+            << msg
         ;
     }
 
-    boost::thread_group _thread_group;
-    boost::barrier _spawn_barrier;
-    bool _running;
+    std::atomic<bool> _exit;
+    std::thread _task;
 };
 
-task::sptr task::make(const task_fcn_type &task_fcn){
-    return task::sptr(new task_impl(task_fcn));
+task::sptr task::make(const task_fcn_type &task_fcn, const std::string &name){
+    return task::sptr(new task_impl(task_fcn, name));
 }
 
 msg_task::~msg_task(void){

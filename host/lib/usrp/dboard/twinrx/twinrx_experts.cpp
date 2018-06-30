@@ -1,18 +1,8 @@
 //
 // Copyright 2016 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include "twinrx_experts.hpp"
@@ -309,17 +299,18 @@ void twinrx_lo_config_expert::resolve()
         ("internal",  twinrx_ctrl::LO_INTERNAL)
         ("external",  twinrx_ctrl::LO_EXTERNAL)
         ("companion", twinrx_ctrl::LO_COMPANION)
-        ("disabled",  twinrx_ctrl::LO_DISABLED);
+        ("disabled",  twinrx_ctrl::LO_DISABLED)
+        ("reimport",  twinrx_ctrl::LO_REIMPORT);
 
     if (src_lookup.has_key(_lo_source_ch0)) {
         _lo1_src_ch0 = _lo2_src_ch0 = src_lookup[_lo_source_ch0];
     } else {
-        throw uhd::value_error("Invalid LO source for channel 0.Choose from {internal, external, companion}");
+        throw uhd::value_error("Invalid LO source for channel 0.Choose from {internal, external, companion, reimport}");
     }
     if (src_lookup.has_key(_lo_source_ch1)) {
         _lo1_src_ch1 = _lo2_src_ch1 = src_lookup[_lo_source_ch1];
     } else {
-        throw uhd::value_error("Invalid LO source for channel 1.Choose from {internal, external, companion}");
+        throw uhd::value_error("Invalid LO source for channel 1.Choose from {internal, external, companion, reimport}");
     }
 
     twinrx_ctrl::lo_export_source_t export_src = twinrx_ctrl::LO_EXPORT_DISABLED;
@@ -329,14 +320,16 @@ void twinrx_lo_config_expert::resolve()
     if (_lo_export_ch1 and (_lo_source_ch1 == "external")) {
         throw uhd::value_error("Cannot export an external LO for channel 1");
     }
+
+    // Determine which channel will provide the exported LO
     if (_lo_export_ch0 and _lo_export_ch1) {
         throw uhd::value_error("Cannot export LOs for both channels");
     } else if (_lo_export_ch0) {
-        export_src = (_lo1_src_ch0 == twinrx_ctrl::LO_INTERNAL) ?
-            twinrx_ctrl::LO_CH1_SYNTH : twinrx_ctrl::LO_CH2_SYNTH;
-    } else if (_lo_export_ch1) {
-        export_src = (_lo1_src_ch1 == twinrx_ctrl::LO_INTERNAL) ?
+        export_src = (_lo1_src_ch0 == twinrx_ctrl::LO_COMPANION) ?
             twinrx_ctrl::LO_CH2_SYNTH : twinrx_ctrl::LO_CH1_SYNTH;
+    } else if (_lo_export_ch1) {
+        export_src = (_lo1_src_ch1 == twinrx_ctrl::LO_COMPANION) ?
+            twinrx_ctrl::LO_CH1_SYNTH : twinrx_ctrl::LO_CH2_SYNTH;
     }
     _lo1_export_src = _lo2_export_src = export_src;
 }
@@ -351,14 +344,16 @@ void twinrx_lo_mapping_expert::resolve()
     static const size_t CH1_MSK = 0x2;
 
     // Determine which channels are "driving" each synthesizer
-    // First check for explicit requests i.e. lo_source "internal" or "companion"
+    // First check for explicit requests
+    // "internal" or "reimport" -> this channel
+    // "companion" -> other channel
     size_t synth_map[] = {0, 0};
-    if (_lox_src_ch0 == twinrx_ctrl::LO_INTERNAL) {
+    if (_lox_src_ch0 == twinrx_ctrl::LO_INTERNAL or _lox_src_ch0 == twinrx_ctrl::LO_REIMPORT) {
         synth_map[0] = synth_map[0] | CH0_MSK;
     } else if (_lox_src_ch0 == twinrx_ctrl::LO_COMPANION) {
         synth_map[1] = synth_map[1] | CH0_MSK;
     }
-    if (_lox_src_ch1 == twinrx_ctrl::LO_INTERNAL) {
+    if (_lox_src_ch1 == twinrx_ctrl::LO_INTERNAL or _lox_src_ch1 == twinrx_ctrl::LO_REIMPORT) {
         synth_map[1] = synth_map[1] | CH1_MSK;
     } else if (_lox_src_ch1 == twinrx_ctrl::LO_COMPANION) {
         synth_map[0] = synth_map[0] | CH1_MSK;
@@ -370,7 +365,7 @@ void twinrx_lo_mapping_expert::resolve()
     // to overlap tuning with signal dwell time.
     bool hopping_enabled = false;
     if (_lox_src_ch0 == twinrx_ctrl::LO_DISABLED) {
-        if (_lox_src_ch1 == twinrx_ctrl::LO_INTERNAL) {
+        if (_lox_src_ch1 == twinrx_ctrl::LO_INTERNAL or _lox_src_ch1 == twinrx_ctrl::LO_REIMPORT) {
             synth_map[0] = synth_map[0] | CH0_MSK;
             hopping_enabled = true;
         } else if (_lox_src_ch1 == twinrx_ctrl::LO_COMPANION) {
@@ -379,7 +374,7 @@ void twinrx_lo_mapping_expert::resolve()
         }
     }
     if (_lox_src_ch1 == twinrx_ctrl::LO_DISABLED) {
-        if (_lox_src_ch0 == twinrx_ctrl::LO_INTERNAL) {
+        if (_lox_src_ch0 == twinrx_ctrl::LO_INTERNAL or _lox_src_ch0 == twinrx_ctrl::LO_REIMPORT) {
             synth_map[1] = synth_map[1] | CH1_MSK;
             hopping_enabled = true;
         } else if (_lox_src_ch0 == twinrx_ctrl::LO_COMPANION) {

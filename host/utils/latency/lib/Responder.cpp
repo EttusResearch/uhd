@@ -1,18 +1,8 @@
 //
 // Copyright 2010-2013 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include "Responder.hpp"
@@ -29,7 +19,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/thread/condition_variable.hpp>
 #include <boost/filesystem.hpp>
-#include <uhd/utils/thread_priority.hpp>
+#include <uhd/utils/thread.hpp>
 #include <uhd/property_tree.hpp>
 
 const std::string _eth_file("eths_info.txt");
@@ -161,9 +151,6 @@ Responder::Responder( Options& opt)
         }
         return;
     }
-
-    // set up handlers for test run
-    // uhd::msg::register_handler(&_late_handler); // capture UHD output.
 
     cerr_redirect(_ss_cerr.rdbuf());
     register_stop_signal_handler();

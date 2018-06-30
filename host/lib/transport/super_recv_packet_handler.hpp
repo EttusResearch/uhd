@@ -1,24 +1,13 @@
 //
 // Copyright 2011-2013 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #ifndef INCLUDED_LIBUHD_TRANSPORT_SUPER_RECV_PACKET_HANDLER_HPP
 #define INCLUDED_LIBUHD_TRANSPORT_SUPER_RECV_PACKET_HANDLER_HPP
 
-#include "../rfnoc/rx_stream_terminator.hpp"
 #include <uhd/config.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/convert.hpp>
@@ -29,6 +18,7 @@
 #include <uhd/types/metadata.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/zero_copy.hpp>
+#include <uhdlib/rfnoc/rx_stream_terminator.hpp>
 #include <boost/dynamic_bitset.hpp>
 #include <boost/function.hpp>
 #include <boost/format.hpp>
@@ -277,6 +267,8 @@ public:
                 buffs, nsamps_per_buff - accum_num_samps, _queue_metadata,
                 timeout, accum_num_samps*_bytes_per_cpu_item
             );
+
+            metadata.end_of_burst = _queue_metadata.end_of_burst;
 
             //metadata had an error code set, store for next call and return
             if (_queue_metadata.error_code != rx_metadata_t::ERROR_CODE_NONE){

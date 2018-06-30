@@ -1,18 +1,8 @@
 //
 // Copyright 2014 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include "e300_sensor_manager.hpp"
@@ -171,11 +161,11 @@ public:
 
     uhd::sensor_value_t get_mb_temp(void)
     {
-        double scale = boost::lexical_cast<double>(
+        double scale = std::stod(
             e300_get_sysfs_attr(E300_TEMP_SYSFS, "in_temp0_scale"));
-        unsigned long raw = boost::lexical_cast<unsigned long>(
+        unsigned long raw = std::stoul(
             e300_get_sysfs_attr(E300_TEMP_SYSFS, "in_temp0_raw"));
-        unsigned long offset = boost::lexical_cast<unsigned long>(
+        unsigned long offset = std::stoul(
             e300_get_sysfs_attr(E300_TEMP_SYSFS, "in_temp0_offset"));
         return sensor_value_t("temp", (raw + offset) * scale / 1000, "C");
     }

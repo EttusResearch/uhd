@@ -1,41 +1,12 @@
 //
 // Copyright 2014 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #ifndef INCLUDED_N230_RESOURCE_MANAGER_HPP
 #define INCLUDED_N230_RESOURCE_MANAGER_HPP
-
-#include "radio_ctrl_core_3000.hpp"
-#include "spi_core_3000.hpp"
-#include "gpio_atr_3000.hpp"
-#include "rx_vita_core_3000.hpp"
-#include "tx_vita_core_3000.hpp"
-#include "time_core_3000.hpp"
-#include "rx_dsp_core_3000.hpp"
-#include "tx_dsp_core_3000.hpp"
-#include "user_settings_core_3000.hpp"
-#include "ad9361_ctrl.hpp"
-#include "ad936x_manager.hpp"
-#include <uhd/utils/tasks.hpp>
-#include <uhd/types/sid.hpp>
-#include <uhd/types/device_addr.hpp>
-#include <uhd/utils/soft_register.hpp>
-#include <uhd/transport/udp_zero_copy.hpp>
-#include <uhd/transport/bounded_buffer.hpp>
-#include <uhd/usrp/gps_ctrl.hpp>
 
 #include "n230_fw_ctrl_iface.hpp"
 #include "n230_clk_pps_ctrl.hpp"
@@ -43,6 +14,26 @@
 #include "n230_fpga_defs.h"
 #include "n230_frontend_ctrl.hpp"
 #include "n230_uart.hpp"
+
+#include <uhdlib/usrp/cores/radio_ctrl_core_3000.hpp>
+#include <uhdlib/usrp/cores/spi_core_3000.hpp>
+#include <uhdlib/usrp/cores/gpio_atr_3000.hpp>
+#include <uhdlib/usrp/cores/rx_vita_core_3000.hpp>
+#include <uhdlib/usrp/cores/tx_vita_core_3000.hpp>
+#include <uhdlib/usrp/cores/time_core_3000.hpp>
+#include <uhdlib/usrp/cores/rx_dsp_core_3000.hpp>
+#include <uhdlib/usrp/cores/tx_dsp_core_3000.hpp>
+#include <uhdlib/usrp/cores/user_settings_core_3000.hpp>
+#include <uhdlib/usrp/common/ad9361_ctrl.hpp>
+#include <uhdlib/usrp/common/ad936x_manager.hpp>
+
+#include <uhd/utils/tasks.hpp>
+#include <uhd/types/sid.hpp>
+#include <uhd/types/device_addr.hpp>
+#include <uhd/utils/soft_register.hpp>
+#include <uhd/transport/udp_zero_copy.hpp>
+#include <uhd/transport/bounded_buffer.hpp>
+#include <uhd/usrp/gps_ctrl.hpp>
 
 namespace uhd { namespace usrp { namespace n230 {
 

@@ -1,42 +1,39 @@
 //
-// Copyright 2015 Ettus Research LLC
+// Copyright 2015-2017 Ettus Research, A National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <boost/thread/thread.hpp>
+#include "twinrx_ctrl.hpp"
+#include "twinrx_ids.hpp"
+#include <uhdlib/usrp/common/adf435x.hpp>
+#include <uhdlib/usrp/common/adf535x.hpp>
 #include <uhd/utils/math.hpp>
 #include <uhd/utils/safe_call.hpp>
-#include "twinrx_ctrl.hpp"
-#include "adf435x.hpp"
-#include "adf5355.hpp"
+#include <chrono>
+#include <thread>
 
 using namespace uhd;
 using namespace usrp;
 using namespace dboard::twinrx;
-typedef twinrx_cpld_regmap rm;
 
-static uint32_t bool2bin(bool x) { return x ? 1 : 0; }
+namespace {
+  typedef twinrx_cpld_regmap rm;
 
-static const double TWINRX_DESIRED_REFERENCE_FREQ = 50e6;
+  uint32_t bool2bin(bool x) { return x ? 1 : 0; }
+
+  const double TWINRX_DESIRED_REFERENCE_FREQ = 50e6;
+  const double TWINRX_REV_AB_PFD_FREQ = 6.25e6;
+  const double TWINRX_REV_C_PFD_FREQ = 12.5e6;
+}
 
 class twinrx_ctrl_impl : public twinrx_ctrl {
 public:
     twinrx_ctrl_impl(
         dboard_iface::sptr db_iface,
         twinrx_gpio::sptr gpio_iface,
-        twinrx_cpld_regmap::sptr cpld_regmap
+        twinrx_cpld_regmap::sptr cpld_regmap,
+        const dboard_id_t rx_id
     ) : _db_iface(db_iface), _gpio_iface(gpio_iface), _cpld_regs(cpld_regmap)
     {
 
@@ -44,16 +41,30 @@ public:
         _gpio_iface->set_field(twinrx_gpio::FIELD_SWPS_EN, 1);
         size_t timeout_ms = 100;
         while (_gpio_iface->get_field(twinrx_gpio::FIELD_SWPS_PWR_GOOD) == 0) {
-            boost::this_thread::sleep(boost::posix_time::microsec(1000));
+            std::this_thread::sleep_for(std::chrono::microseconds(1000));
             if (--timeout_ms == 0) {
                 throw uhd::runtime_error("power supply failure");
             }
         }
         //Initialize synthesizer objects
-        _lo1_iface[size_t(CH1)] = adf5355_iface::make(
-                boost::bind(&twinrx_ctrl_impl::_write_lo_spi, this, dboard_iface::UNIT_TX, _1));
-        _lo1_iface[size_t(CH2)] = adf5355_iface::make(
-                boost::bind(&twinrx_ctrl_impl::_write_lo_spi, this, dboard_iface::UNIT_TX, _1));
+        if (rx_id == twinrx::TWINRX_REV_C_ID) {
+          _lo1_iface[size_t(CH1)] = adf535x_iface::make_adf5356(
+                  std::bind(&twinrx_ctrl_impl::_write_lo_spi, this, dboard_iface::UNIT_TX, std::placeholders::_1));
+          _lo1_iface[size_t(CH2)] = adf535x_iface::make_adf5356(
+                  std::bind(&twinrx_ctrl_impl::_write_lo_spi, this, dboard_iface::UNIT_TX, std::placeholders::_1));
+
+          _lo1_iface[size_t(CH1)]->set_pfd_freq(TWINRX_REV_C_PFD_FREQ);
+          _lo1_iface[size_t(CH2)]->set_pfd_freq(TWINRX_REV_C_PFD_FREQ);
+
+        } else {
+          _lo1_iface[size_t(CH1)] = adf535x_iface::make_adf5355(
+                  std::bind(&twinrx_ctrl_impl::_write_lo_spi, this, dboard_iface::UNIT_TX, std::placeholders::_1));
+          _lo1_iface[size_t(CH2)] = adf535x_iface::make_adf5355(
+                  std::bind(&twinrx_ctrl_impl::_write_lo_spi, this, dboard_iface::UNIT_TX, std::placeholders::_1));
+
+          _lo1_iface[size_t(CH1)]->set_pfd_freq(TWINRX_REV_AB_PFD_FREQ);
+          _lo1_iface[size_t(CH2)]->set_pfd_freq(TWINRX_REV_AB_PFD_FREQ);
+        }
 
         _lo2_iface[size_t(CH1)] = adf435x_iface::make_adf4351(
                 boost::bind(&twinrx_ctrl_impl::_write_lo_spi, this, dboard_iface::UNIT_RX, _1));
@@ -104,11 +115,9 @@ public:
         for (size_t i = 0; i < NUM_CHANS; i++) {
             _config_lo1_route(i==0?LO_CONFIG_CH1:LO_CONFIG_CH2);
             _config_lo2_route(i==0?LO_CONFIG_CH1:LO_CONFIG_CH2);
-            _lo1_iface[i]->set_output_power(adf5355_iface::OUTPUT_POWER_5DBM);
+            _lo1_iface[i]->set_output_power(adf535x_iface::OUTPUT_POWER_5DBM);
             _lo1_iface[i]->set_reference_freq(TWINRX_DESIRED_REFERENCE_FREQ);
-            // Divided feedback did not appear to be correctly implemented during bringup. Necessary for phase resync
-//            _lo1_iface[i]->set_feedback_select(adf5355_iface::FB_SEL_DIVIDED);
-            _lo1_iface[i]->set_muxout_mode(adf5355_iface::MUXOUT_DLD);
+            _lo1_iface[i]->set_muxout_mode(adf535x_iface::MUXOUT_DLD);
             _lo1_iface[i]->set_frequency(3e9, 1.0e3);
             _lo2_iface[i]->set_feedback_select(adf435x_iface::FB_SEL_DIVIDED);
             _lo2_iface[i]->set_output_power(adf435x_iface::OUTPUT_POWER_5DBM);
@@ -309,7 +318,7 @@ public:
         boost::lock_guard<boost::mutex> lock(_mutex);
         if (ch == CH1 or ch == BOTH) {
             _cpld_regs->rf1_reg5.set(rm::rf1_reg5_t::SW14_CTRL_CH2, bool2bin(source!=LO_COMPANION));
-            _cpld_regs->rf1_reg1.set(rm::rf1_reg1_t::SW15_CTRL_CH1, bool2bin(source==LO_EXTERNAL));
+            _cpld_regs->rf1_reg1.set(rm::rf1_reg1_t::SW15_CTRL_CH1, bool2bin(source==LO_EXTERNAL||source==LO_REIMPORT));
             _cpld_regs->rf1_reg1.set(rm::rf1_reg1_t::SW16_CTRL_CH1, bool2bin(source!=LO_INTERNAL));
             _lo1_src[size_t(CH1)] = source;
         }
@@ -332,7 +341,7 @@ public:
             _lo2_src[size_t(CH1)] = source;
         }
         if (ch == CH2 or ch == BOTH) {
-            _cpld_regs->if0_reg4.set(rm::if0_reg4_t::SW19_CTRL_CH1, bool2bin(source==LO_EXTERNAL));
+            _cpld_regs->if0_reg4.set(rm::if0_reg4_t::SW19_CTRL_CH1, bool2bin(source==LO_EXTERNAL||source==LO_REIMPORT));
             _cpld_regs->if0_reg0.set(rm::if0_reg0_t::SW20_CTRL_CH2, bool2bin(source==LO_INTERNAL||source==LO_DISABLED));
             _cpld_regs->if0_reg4.set(rm::if0_reg4_t::SW21_CTRL_CH2, bool2bin(source==LO_INTERNAL));
             _lo2_src[size_t(CH2)] = source;
@@ -535,8 +544,8 @@ private:    //Functions
                                    _lo2_src[size_t(CH1)] == LO_COMPANION ||
                                    _lo2_export == LO_CH2_SYNTH;
 
-        _lo1_iface[size_t(CH1)]->set_output_enable(adf5355_iface::RF_OUTPUT_A, _lo1_enable[size_t(CH1)].get());
-        _lo1_iface[size_t(CH2)]->set_output_enable(adf5355_iface::RF_OUTPUT_A, _lo1_enable[size_t(CH2)].get());
+        _lo1_iface[size_t(CH1)]->set_output_enable(adf535x_iface::RF_OUTPUT_A, _lo1_enable[size_t(CH1)].get());
+        _lo1_iface[size_t(CH2)]->set_output_enable(adf535x_iface::RF_OUTPUT_A, _lo1_enable[size_t(CH2)].get());
 
         _lo2_iface[size_t(CH1)]->set_output_enable(adf435x_iface::RF_OUTPUT_A, _lo2_enable[size_t(CH1)].get());
         _lo2_iface[size_t(CH2)]->set_output_enable(adf435x_iface::RF_OUTPUT_A, _lo2_enable[size_t(CH2)].get());
@@ -624,7 +633,7 @@ private:    //Members
     dboard_iface::sptr          _db_iface;
     twinrx_gpio::sptr           _gpio_iface;
     twinrx_cpld_regmap::sptr    _cpld_regs;
-    adf5355_iface::sptr         _lo1_iface[NUM_CHANS];
+    adf535x_iface::sptr         _lo1_iface[NUM_CHANS];
     adf435x_iface::sptr         _lo2_iface[NUM_CHANS];
     lo_source_t                 _lo1_src[NUM_CHANS];
     lo_source_t                 _lo2_src[NUM_CHANS];
@@ -639,7 +648,8 @@ private:    //Members
 twinrx_ctrl::sptr twinrx_ctrl::make(
     dboard_iface::sptr db_iface,
     twinrx_gpio::sptr gpio_iface,
-    twinrx_cpld_regmap::sptr cpld_regmap
+    twinrx_cpld_regmap::sptr cpld_regmap,
+    const dboard_id_t rx_id
 ) {
-    return sptr(new twinrx_ctrl_impl(db_iface, gpio_iface, cpld_regmap));
+    return std::make_shared<twinrx_ctrl_impl>(db_iface, gpio_iface, cpld_regmap, rx_id);
 }

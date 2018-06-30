@@ -1,34 +1,24 @@
 //
 // Copyright 2013-2015 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include <uhd/transport/nirio_zero_copy.hpp>
-#include <stdio.h>
 #include <uhd/transport/nirio/nirio_fifo.h>
-#include <uhd/transport/buffer_pool.hpp>
-
 #include <uhd/utils/log.hpp>
-#include <uhd/utils/atomic.hpp>
+#include <uhdlib/utils/atomic.hpp>
 #include <boost/format.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/thread/thread.hpp> //sleep
 #include <boost/interprocess/mapped_region.hpp>	//get_page_size()
 #include <vector>
 #include <algorithm>    // std::max
+#include <chrono>
+#include <thread>
+#include <stdio.h>
+
 //@TODO: Move the register defs required by the class to a common location
 #include "../usrp/x300/x300_regs.hpp"
 
@@ -155,9 +145,6 @@ public:
                     (_xport_params.recv_frame_size * _xport_params.num_recv_frames);
         UHD_LOGGER_TRACE("NIRIO") << boost::format("nirio zero-copy TX transport configured with frame size = %u, #frames = %u, buffer size = %u\n")
                     % _xport_params.send_frame_size % _xport_params.num_send_frames % (_xport_params.send_frame_size * _xport_params.num_send_frames);
-
-        _recv_buffer_pool = buffer_pool::make(_xport_params.num_recv_frames, _xport_params.recv_frame_size);
-        _send_buffer_pool = buffer_pool::make(_xport_params.num_send_frames, _xport_params.send_frame_size);
 
         nirio_status status = 0;
         size_t actual_depth = 0, actual_size = 0;
@@ -327,7 +314,7 @@ private:
         if (nirio_status_not_fatal(status) && (tx_busy || rx_busy)) {
             start_time = boost::posix_time::microsec_clock::local_time();
             do {
-                boost::this_thread::sleep(boost::posix_time::microsec(50)); //Avoid flooding the bus
+                std::this_thread::sleep_for(std::chrono::microseconds(50)); //Avoid flooding the bus
                 elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
                 nirio_status_chain(_proxy()->peek(
                     PCIE_TX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance), reg_data), status);
@@ -353,7 +340,6 @@ private:
     uint32_t _fifo_instance;
     nirio_fifo<fifo_data_t>::sptr _recv_fifo, _send_fifo;
     const zero_copy_xport_params _xport_params;
-    buffer_pool::sptr _recv_buffer_pool, _send_buffer_pool;
     std::vector<boost::shared_ptr<nirio_zero_copy_msb> > _msb_pool;
     std::vector<boost::shared_ptr<nirio_zero_copy_mrb> > _mrb_pool;
     size_t _next_recv_buff_index, _next_send_buff_index;

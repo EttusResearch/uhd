@@ -1,18 +1,8 @@
 //
 // Copyright 2014 Ettus Research
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include "ad9361_filter_taps.h"
@@ -21,16 +11,16 @@
 #include "ad9361_client.h"
 #include "ad9361_device.h"
 #define _USE_MATH_DEFINES
-#include <cmath>
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
 
-#include <stdint.h>
-#include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/thread/thread.hpp>
 #include <boost/scoped_array.hpp>
 #include <boost/format.hpp>
 #include <boost/math/special_functions.hpp>
+#include <chrono>
+#include <thread>
+#include <cmath>
+#include <stdint.h>
 
 ////////////////////////////////////////////////////////////
 // the following macros evaluate to a compile time constant
@@ -95,7 +85,8 @@ const double ad9361_device_t::AD9361_MIN_CLOCK_RATE  = 220e3;
 const double ad9361_device_t::AD9361_MAX_CLOCK_RATE  = 61.44e6;
 const double ad9361_device_t::AD9361_CAL_VALID_WINDOW = 100e6;
 // Max bandwdith is due to filter rolloff in analog filter stage
-const double ad9361_device_t::AD9361_RECOMMENDED_MAX_BANDWIDTH = 56e6;
+const double ad9361_device_t::AD9361_MIN_BW = 200e3;
+const double ad9361_device_t::AD9361_MAX_BW = 56e6;
 
 /* Startup RF frequencies */
 const double ad9361_device_t::DEFAULT_RX_FREQ = 800e6;
@@ -136,7 +127,7 @@ void ad9361_device_t::_program_fir_filter(direction_t direction, chain_t chain, 
 
     /* Turn on the filter clock. */
     _io_iface->poke8(base + 5, reg_numtaps | reg_chain | 0x02);
-    boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
     /* Zero the unused taps just in case they have stale data */
     int addr;
@@ -267,7 +258,7 @@ void ad9361_device_t::_calibrate_lock_bbpll()
             break;
         }
         count++;
-        boost::this_thread::sleep(boost::posix_time::milliseconds(2));
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }
 }
 
@@ -292,7 +283,7 @@ void ad9361_device_t::_calibrate_synth_charge_pumps()
             break;
         }
         count++;
-        boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
     _io_iface->poke8(0x23d, 0x00);
 
@@ -305,7 +296,7 @@ void ad9361_device_t::_calibrate_synth_charge_pumps()
             break;
         }
         count++;
-        boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
     _io_iface->poke8(0x27d, 0x00);
 }
@@ -366,7 +357,7 @@ double ad9361_device_t::_calibrate_baseband_rx_analog_filter(double req_rfbw)
             break;
         }
         count++;
-        boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
     /* Disable RX1 & RX2 filter tuners. */
@@ -423,7 +414,7 @@ double ad9361_device_t::_calibrate_baseband_tx_analog_filter(double req_rfbw)
         }
 
         count++;
-        boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
     /* Disable the filter tuner. */
@@ -743,7 +734,7 @@ void ad9361_device_t::_calibrate_baseband_dc_offset()
             break;
         }
         count++;
-        boost::this_thread::sleep(boost::posix_time::milliseconds(5));
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
 }
 
@@ -776,7 +767,7 @@ void ad9361_device_t::_calibrate_rf_dc_offset()
             break;
         }
         count++;
-        boost::this_thread::sleep(boost::posix_time::milliseconds(50));
+        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 
     _io_iface->poke8(0x18b, 0x8d); // Enable RF DC tracking
@@ -827,7 +818,7 @@ void ad9361_device_t::_calibrate_rx_quadrature()
             break;
         }
         count++;
-        boost::this_thread::sleep(boost::posix_time::milliseconds(5));
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
 
     _io_iface->poke8(0x057, 0x30); // Re-enable Tx mixers
@@ -895,7 +886,7 @@ void ad9361_device_t::_tx_quadrature_cal_routine() {
             break;
         }
         count++;
-        boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }
 
@@ -1318,7 +1309,7 @@ double ad9361_device_t::_tune_helper(direction_t direction, const double value)
         _io_iface->poke8(0x005, _regs.vcodivs);
 
         /* Lock the PLL! */
-        boost::this_thread::sleep(boost::posix_time::milliseconds(2));
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
         if ((_io_iface->peek8(0x247) & 0x02) == 0) {
             throw uhd::runtime_error("[ad9361_device_t] RX PLL NOT LOCKED");
         }
@@ -1359,7 +1350,7 @@ double ad9361_device_t::_tune_helper(direction_t direction, const double value)
         _io_iface->poke8(0x005, _regs.vcodivs);
 
         /* Lock the PLL! */
-        boost::this_thread::sleep(boost::posix_time::milliseconds(2));
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
         if ((_io_iface->peek8(0x287) & 0x02) == 0) {
             throw uhd::runtime_error("[ad9361_device_t] TX PLL NOT LOCKED");
         }
@@ -1454,7 +1445,8 @@ double ad9361_device_t::_setup_rates(const double rate)
         _rfir_factor = 2;
     } else if ((rate > 58e6) && (rate <= 61.44e6)) {
         // RX1 + RX2 enabled, 2, 1, 2, 2
-        _regs.rxfilt = B8(11010110);
+        _regs.rxfilt = B8(11001110);
+
 
         // TX1 + TX2 enabled, 2, 1, 1, 2
         _regs.txfilt = B8(11010010);
@@ -1563,7 +1555,7 @@ void ad9361_device_t::initialize()
     /* Reset the device. */
     _io_iface->poke8(0x000, 0x01);
     _io_iface->poke8(0x000, 0x00);
-    boost::this_thread::sleep(boost::posix_time::milliseconds(20));
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
     /* Check device ID to make sure iface works */
     uint32_t device_id = (_io_iface->peek8(0x037) & 0x8);
@@ -1598,7 +1590,7 @@ void ad9361_device_t::initialize()
     default:
         throw uhd::runtime_error("[ad9361_device_t] NOT IMPLEMENTED");
     }
-    boost::this_thread::sleep(boost::posix_time::milliseconds(20));
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
     /* Tune the BBPLL, write TX and RX FIRS. */
     _setup_rates(50e6);
@@ -1706,7 +1698,7 @@ void ad9361_device_t::initialize()
     _io_iface->poke8(0x015, 0x04); // dual synth mode, synth en ctrl en
     _io_iface->poke8(0x014, 0x05); // use SPI for TXNRX ctrl, to ALERT, TX on
     _io_iface->poke8(0x013, 0x01); // enable ENSM
-    boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
     _calibrate_synth_charge_pumps();
 
@@ -1816,7 +1808,7 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
     case 0x05:
         /* We are in the ALERT state. */
         _io_iface->poke8(0x014, 0x21);
-        boost::this_thread::sleep(boost::posix_time::milliseconds(5));
+        std::this_thread::sleep_for(std::chrono::milliseconds(5));
         _io_iface->poke8(0x014, 0x00);
         break;
 
@@ -1846,7 +1838,7 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
     _io_iface->poke8(0x015, 0x04); //dual synth mode, synth en ctrl en
     _io_iface->poke8(0x014, 0x05); //use SPI for TXNRX ctrl, to ALERT, TX on
     _io_iface->poke8(0x013, 0x01); //enable ENSM
-    boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
     _calibrate_synth_charge_pumps();
 
@@ -1990,6 +1982,48 @@ void ad9361_device_t::set_active_chains(bool tx1, bool tx2, bool rx1, bool rx2)
     /* Put back into FDD state if necessary */
     if (set_back_to_fdd)
         _io_iface->poke8(0x014, 0x21);
+}
+
+/* Setup Timing mode depending on active channels.
+ *
+ * LVDS interface can have two timing modes - 1R1T and 2R2T
+ */
+void ad9361_device_t::set_timing_mode(const ad9361_device_t::timing_mode_t timing_mode)
+{
+    switch (_client_params->get_digital_interface_mode()) {
+    case AD9361_DDR_FDD_LVCMOS: {
+        switch(timing_mode) {
+        case TIMING_MODE_1R1T: {
+            _io_iface->poke8(0x010, 0xc8); // Swap I&Q on Tx, Swap I&Q on Rx, Toggle frame sync mode
+            break;
+        }
+        case TIMING_MODE_2R2T: {
+            throw uhd::runtime_error("[ad9361_device_t] [set_timing_mode] 2R2T timing mode not supported for CMOS");
+            break;
+        }
+        default:
+        UHD_THROW_INVALID_CODE_PATH();
+        }
+    break;
+    }
+    case AD9361_DDR_FDD_LVDS: {
+        switch(timing_mode) {
+        case TIMING_MODE_1R1T: {
+            _io_iface->poke8(0x010, 0xc8); // Swap I&Q on Tx, Swap I&Q on Rx, Toggle frame sync mode, 1R1T timing.
+            break;
+        }
+        case TIMING_MODE_2R2T: {
+            _io_iface->poke8(0x010, 0xcc); // Swap I&Q on Tx, Swap I&Q on Rx, Toggle frame sync mode, 2R2T timing.
+            break;
+        }
+        default:
+        UHD_THROW_INVALID_CODE_PATH();
+        }
+    break;
+    }
+    default:
+        throw uhd::runtime_error("[ad9361_device_t] NOT IMPLEMENTED");
+    }
 }
 
 /* Tune the RX or TX frequency.
@@ -2196,15 +2230,15 @@ double ad9361_device_t::_get_temperature(const double cal_offset, const double t
     _io_iface->poke8(0x00B, 0); //set offset to 0
 
     _io_iface->poke8(0x00C, 0x01); //start reading, clears bit 0x00C[1]
-    boost::posix_time::ptime start_time = boost::posix_time::microsec_clock::local_time();
-    boost::posix_time::time_duration elapsed;
+    auto end_time =
+        std::chrono::steady_clock::now()
+        + std::chrono::milliseconds(int64_t(timeout * 1000));
     //wait for valid data (toggle of bit 1 in 0x00C)
     while(((_io_iface->peek8(0x00C) >> 1) & 0x01) == 0) {
-        boost::this_thread::sleep(boost::posix_time::microseconds(100));
-        elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
-        if(elapsed.total_milliseconds() > (timeout*1000))
-        {
-            throw uhd::runtime_error("[ad9361_device_t] timeout while reading temperature");
+        std::this_thread::sleep_for(std::chrono::microseconds(100));
+        if (std::chrono::steady_clock::now() > end_time) {
+            throw uhd::runtime_error(
+                "[ad9361_device_t] timeout while reading temperature");
         }
     }
     _io_iface->poke8(0x00C, 0x00); //clear read flag
@@ -2418,20 +2452,20 @@ double ad9361_device_t::set_bw_filter(direction_t direction, const double rf_bw)
 {
     //both low pass filters are programmed to the same bw. However, their cutoffs will differ.
     //Together they should create the requested bb bw.
-    double set_analog_bb_bw = 0;
+    //Select rf_bw if it is between AD9361_MIN_BW & AD9361_MAX_BW.
+    const double clipped_bw = std::min(std::max(rf_bw, AD9361_MIN_BW), AD9361_MAX_BW);
     if(direction == RX)
     {
-        _rx_bb_lp_bw = _calibrate_baseband_rx_analog_filter(rf_bw); //returns bb bw
-        _rx_tia_lp_bw = _calibrate_rx_TIAs(rf_bw);
-        _rx_analog_bw = _rx_bb_lp_bw;
-        set_analog_bb_bw = _rx_analog_bw;
+        _rx_bb_lp_bw = _calibrate_baseband_rx_analog_filter(clipped_bw); //returns bb bw
+        _rx_tia_lp_bw = _calibrate_rx_TIAs(clipped_bw);
+        _rx_analog_bw = clipped_bw;
     } else {
-        _tx_bb_lp_bw = _calibrate_baseband_tx_analog_filter(rf_bw); //returns bb bw
-        _tx_sec_lp_bw = _calibrate_secondary_tx_filter(rf_bw);
-        _tx_analog_bw = _tx_bb_lp_bw;
-        set_analog_bb_bw = _tx_analog_bw;
+        _tx_bb_lp_bw = _calibrate_baseband_tx_analog_filter(clipped_bw); //returns bb bw
+        _tx_sec_lp_bw = _calibrate_secondary_tx_filter(clipped_bw);
+        _tx_analog_bw = clipped_bw;
     }
-    return (2.0 * set_analog_bb_bw);
+
+    return (clipped_bw);
 }
 
 void ad9361_device_t::_set_fir_taps(direction_t direction, chain_t chain, const std::vector<int16_t>& taps)

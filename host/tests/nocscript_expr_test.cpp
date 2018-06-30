@@ -1,18 +1,8 @@
 //
 // Copyright 2015 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include "../lib/rfnoc/nocscript/function_table.hpp"
@@ -73,7 +63,7 @@ BOOST_AUTO_TEST_CASE(test_literals)
 
     expression_literal literal_int_vec("[1, 2, 3]", expression::TYPE_INT_VECTOR);
     BOOST_CHECK_EQUAL(literal_int_vec.infer_type(), expression::TYPE_INT_VECTOR);
-    std::vector<int> test_data = boost::assign::list_of(1)(2)(3);
+    std::vector<int> test_data{1, 2, 3};
     std::vector<int> result = literal_int_vec.get_int_vector();
     BOOST_CHECK_EQUAL_COLLECTIONS(test_data.begin(), test_data.end(),
                                   result.begin(), result.end());
@@ -355,19 +345,9 @@ BOOST_AUTO_TEST_CASE(test_functable_mockup)
     BOOST_CHECK_EQUAL(functable.get_type("ADD", two_double_args), expression::TYPE_DOUBLE);
     BOOST_CHECK_EQUAL(functable.get_type("XOR", two_bool_args), expression::TYPE_BOOL);
 
-    expression_container::expr_list_type add_args_int =
-        boost::assign::list_of(E(2))(E(3))
-    ;
-    expression_container::expr_list_type add_args_dbl =
-        boost::assign::list_of
-            (E(2.25))
-            (E(5.0))
-    ;
-    expression_container::expr_list_type xor_args_bool =
-        boost::assign::list_of
-            (E(true))
-            (E(false))
-    ;
+    expression_container::expr_list_type add_args_int{E(2), E(3)};
+    expression_container::expr_list_type add_args_dbl{E(2.25), E(5.0)};
+    expression_container::expr_list_type xor_args_bool{E(true), E(false)};
 
     BOOST_CHECK_EQUAL(functable.eval("ADD", two_int_args, add_args_int), expression_literal(5));
     BOOST_CHECK_EQUAL(functable.eval("ADD", two_double_args, add_args_dbl), expression_literal(7.25));

@@ -1,0 +1,107 @@
+/*! \page page_mpm The Module Peripheral Manager (MPM) Architecture
+
+\tableofcontents
+
+For embedded USRP devices, there is an additional layer of control that UHD uses
+to access, configure, and control the hardware: The Module Peripheral Manager
+(MPM) daemon. In most cases, users of UHD do not need to know any details about
+MPM, but for some advanced use cases, it can be a useful tool.
+
+\section mpm_arch Architecture Overview
+
+Devices built using the MPM architecture must be capable of running an embedded
+Linux system. Within that system, the MPM daemon is continuously running and
+will allow access to device through a network-RPC based API. The UHD session
+calling into the device will thus be able to access that high-level API instead
+of directly having to interact with registers or other low-level components.
+This way, there is only a single driver in UHD for all MPM-powered devices.
+
+The source code for the MPM daemon is located in the `mpm/` subdirectory of the
+UHD repository (note that the UHD library's source code is located in the
+`host/` subdirectory). MPM is written in Python 3, C, and C++14.
+
+When starting a UHD session to control an MPM device, UHD will, under the hood,
+first try to access MPM over a network link to gain full control of the device.
+Once it has accessed MPM, it will send commands to MPM to start initializing the
+device for streaming usage.
+
+The MPM RPC connection is only used for command & control. Data is streamed over
+a separate connection, directly accessing the FPGA. This combines the
+flexibility of a network-RPC control with the high performance of direct
+streaming access.
+
+\section mpm_arch_claiming Device Claiming
+
+For most functionality, only a single UHD session can control MPM at the same
+time. To guarantee this, MPM implements a claiming mechanism. At the beginning
+of a UHD session, UHD will attempt to claim a device, which will either fail,
+or will succeed and create a \b token. This token can be used by the controlling
+UHD session to access peripherals which require exclusive access. UHD needs to
+re-claim the device within a certain interval to not lose access to the device.
+If UHD fails to claim a device, the assumption is made that the UHD process has
+terminated, and MPM will disallow further access until another, valid claim has
+been made.
+
+This is similar to the X3x0, which uses a claiming mechanism controlled by the
+ZPU.
+
+\section mpm_modes Network vs. Embedded Mode
+
+Devices such as the N310 allow running a UHD session both on the device, as well
+as off device. The former is called <em>Embedded Mode</em>, the latter <em>
+Network Mode</em>.
+
+In both cases, UHD will connect to MPM over a network socket. This allows the
+usage of the exact same driver for network and embedded modes, and thus, the
+same software can be compiled against UHD in both modes (keep in mind that the
+embedded systems are usually not as powerful as dedicated computers, so
+typically, high-performance applications will always run in network mode).
+
+\section mpm_debug Debugging Tools
+
+The `mpm/tools/` subdirectory provides a useful tool for debugging and
+interacting with MPM called `mpm_shell.py`. It is a command line tool to
+directly access MPM commands. Like MPM, it requires Python 3. It can be invoked
+as follows:
+
+    $ python3 tools/mpm_shell.py [-c] ni-n3xx-ABCD123
+
+The `-c` switch will attempt to claim the device. The only other command line
+argument is a network address at which the device can be reached.
+
+If the connection succeeds, commands can be directly entered on the command
+line. MPM Shell supports tab completion and on-line help using the `?` operator:
+By appending it to a command, its docstring will be displayed.
+
+    > get_clock_source?
+
+Arguments to the commands can simply be appended to the command itself:
+
+    > set_clock_source external
+
+Arguments can also be Python expression, if the first character after the
+command itself is an `=` symbol:
+
+    > set_db_eeprom =[0, open('eeprom.dat', 'w').read()]
+
+In this example, a list is created where the first element is a '0', and the
+second element is a string, read from a binary file. The list will be expanded
+to become the function arguments. In this case, the RPC call `set_db_eeprom`
+must thus have 2 arguments with the appropriate argument types.
+
+Note that MPM Shell can make use of non-standard RPC features, such as
+propagation of Python exceptions, which makes it a versatile debugging tool.
+
+\section mpm_shell_hijack Hijack Mode
+
+In hijack mode, MPM Shell is launched after another process, such as a UHD
+session, is already controlling the device. By passing the token to MPM Shell,
+it can access the device and perform low-level operations on the device.
+The token can be gained by scanning the log messages of the UHD session.
+
+It can be invoked as follows:
+
+    $ python3 tools/mpm_shell.py -j $TOKEN ni-n3xx-ABCD123
+
+*/
+// vim:ft=doxygen:

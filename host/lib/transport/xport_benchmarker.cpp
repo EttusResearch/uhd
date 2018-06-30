@@ -1,21 +1,13 @@
 //
 // Copyright 2010-2013 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include "xport_benchmarker.hpp"
+#include <chrono>
+#include <thread>
 
 namespace uhd { namespace transport {
 
@@ -35,7 +27,7 @@ const device_addr_t& xport_benchmarker::benchmark_throughput_chdr
     _tx_thread.reset(new boost::thread(boost::bind(&xport_benchmarker::_stream_tx, this, tx_transport.get(), &pkt_info, big_endian)));
     _rx_thread.reset(new boost::thread(boost::bind(&xport_benchmarker::_stream_rx, this, rx_transport.get(), &pkt_info, big_endian)));
 
-    boost::this_thread::sleep(boost::posix_time::milliseconds(duration_ms));
+    std::this_thread::sleep_for(std::chrono::milliseconds(duration_ms));
 
     _tx_thread->interrupt();
     _rx_thread->interrupt();
@@ -54,9 +46,9 @@ const device_addr_t& xport_benchmarker::benchmark_throughput_chdr
     _results["RX-Bytes"] = (boost::format("%.2fMB") % (rx_bytes/(1024*1024))).str();
     _results["TX-Throughput"] = (boost::format("%.2fMB/s") % (tx_rate/(1024*1024))).str();
     _results["RX-Throughput"] = (boost::format("%.2fMB/s") % (rx_rate/(1024*1024))).str();
-    _results["TX-Timeouts"] = boost::lexical_cast<std::string>(_num_tx_timeouts);
-    _results["RX-Timeouts"] = boost::lexical_cast<std::string>(_num_rx_timeouts);
-    _results["Data-Errors"] = boost::lexical_cast<std::string>(_num_data_errors);
+    _results["TX-Timeouts"] = std::to_string(_num_tx_timeouts);
+    _results["RX-Timeouts"] = std::to_string(_num_rx_timeouts);
+    _results["Data-Errors"] = std::to_string(_num_data_errors);
 
     return _results;
 }

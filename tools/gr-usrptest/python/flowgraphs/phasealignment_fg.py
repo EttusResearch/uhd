@@ -26,7 +26,9 @@ class phasealignment_fg(gr.top_block):
         self.phase_diff_calc = list()
         self.measurement_sink = list()
         self.uhd_app = copy.copy(uhd_app)
+        self.uhd_app.args = copy.copy(uhd_app.args)
         self.tx_app = copy.copy(uhd_app)
+        self.tx_app.args = copy.copy(uhd_app.args)
         self.samp_rate = uhd_app.args.samp_rate
         # Create all devices specified in --receiver
         # Create all remaining blocks and connect devices to the first port and

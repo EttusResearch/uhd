@@ -1,21 +1,11 @@
 //
 // Copyright 2011 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhd/utils/thread_priority.hpp>
+#include <uhd/utils/thread.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
 #include <boost/program_options.hpp>
@@ -58,8 +48,14 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         "    and tries to send a packet at time t + rtt,\n"
         "    where rtt is the round trip time sample time\n"
         "    from device to host and back to the device.\n"
+        "    This can be used to test latency between UHD and the device.\n"
+        "    If the value rtt is chosen too small, the transmit packet will.\n"
+        "    arrive too late at the device indicate an error.\n"
+        "    The smallest value of rtt that does not indicate an error is an\n"
+        "    approximation for the time it takes for a sample packet to\n"
+        "    go to UHD and back to the device."
         << std::endl;
-        return ~0;
+        return EXIT_SUCCESS;
     }
 
     bool verbose = vm.count("verbose") != 0;
@@ -74,11 +70,17 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //set the tx sample rate
     usrp->set_tx_rate(rate);
-    std::cout << boost::format("Actual TX Rate: %f Msps...") % (usrp->get_tx_rate()/1e6) << std::endl;
+    std::cout
+        << boost::format("Actual TX Rate: %f Msps...")
+            % (usrp->get_tx_rate()/1e6)
+        << std::endl;
 
     //set the rx sample rate
     usrp->set_rx_rate(rate);
-    std::cout << boost::format("Actual RX Rate: %f Msps...") % (usrp->get_rx_rate()/1e6) << std::endl;
+    std::cout
+        << boost::format("Actual RX Rate: %f Msps...")
+            % (usrp->get_rx_rate()/1e6)
+        << std::endl;
 
     //allocate a buffer to use
     std::vector<std::complex<float> > buffer(nsamps);
@@ -113,8 +115,18 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             &buffer.front(), buffer.size(), rx_md
         );
 
-        if(verbose) std::cout << boost::format("Got packet: %u samples, %u full secs, %f frac secs")
-            % num_rx_samps % rx_md.time_spec.get_full_secs() % rx_md.time_spec.get_frac_secs() << std::endl;
+        if (verbose) {
+            std::cout << boost::format(
+                "Run %d: Got packet: %u samples, %u full secs, %f frac secs"
+                )
+                % nrun
+                % num_rx_samps
+                % rx_md.time_spec.get_full_secs()
+                % rx_md.time_spec.get_frac_secs()
+            << std::endl;
+        } else {
+            std::cout << "." << std::flush;
+        }
 
         /***************************************************************
          * Transmit a packet with delta time after received packet
@@ -127,7 +139,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         size_t num_tx_samps = tx_stream->send(
             &buffer.front(), buffer.size(), tx_md
         );
-        if(verbose) std::cout << boost::format("Sent %d samples") % num_tx_samps << std::endl;
+        if (verbose) {
+            std::cout
+                << boost::format("Sent %d samples") % num_tx_samps
+                << std::endl;
+        }
 
         /***************************************************************
          * Check the async messages for result
@@ -159,10 +175,47 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         }
     }
 
+    while (true) {
+        uhd::async_metadata_t async_md;
+        if (not tx_stream->recv_async_msg(async_md)) {
+            break;
+        }
+        switch(async_md.event_code){
+        case uhd::async_metadata_t::EVENT_CODE_TIME_ERROR:
+            time_error++;
+            break;
+
+        case uhd::async_metadata_t::EVENT_CODE_BURST_ACK:
+            ack++;
+            break;
+
+        case uhd::async_metadata_t::EVENT_CODE_UNDERFLOW:
+            underflow++;
+            break;
+
+        default:
+            std::cerr << boost::format(
+                "failed:\n    Got unexpected event code 0x%x.\n"
+            ) % async_md.event_code << std::endl;
+            other++;
+            break;
+        }
+    }
+    if (!verbose) {
+        std::cout << std::endl;
+    }
+
     /***************************************************************
      * Print the summary
      **************************************************************/
-    std::cout << boost::format("\nACK %d, UNDERFLOW %d, TIME_ERR %d, other %d")
-        % ack % underflow % time_error % other << std::endl;
+    std::cout << "Summary\n"
+              << "================\n"
+              << "Number of runs:   " << nruns << std::endl
+              << "RTT value tested: " << (rtt*1e3) << " ms" << std::endl
+              << "ACKs received:    " << ack << "/" << nruns << std::endl
+              << "Underruns:        " << underflow << std::endl
+              << "Late packets:     " << time_error << std::endl
+              << "Other errors:     " << other << std::endl
+              << std::endl;
     return EXIT_SUCCESS;
 }

@@ -1,34 +1,24 @@
 //
 // Copyright 2015-2016 Ettus Research
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #ifndef INCLUDED_LIBUHD_RFNOC_X300_RADIO_CTRL_IMPL_HPP
 #define INCLUDED_LIBUHD_RFNOC_X300_RADIO_CTRL_IMPL_HPP
 
-#include "radio_ctrl_impl.hpp"
 #include "x300_clock_ctrl.hpp"
-#include "spi_core_3000.hpp"
 #include "x300_adc_ctrl.hpp"
 #include "x300_dac_ctrl.hpp"
 #include "x300_regs.hpp"
-#include "rx_frontend_core_3000.hpp"
-#include "tx_frontend_core_200.hpp"
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/usrp/gpio_defs.hpp>
+#include <uhdlib/rfnoc/radio_ctrl_impl.hpp>
+#include <uhdlib/usrp/cores/rx_frontend_core_3000.hpp>
+#include <uhdlib/usrp/cores/tx_frontend_core_200.hpp>
+#include <uhdlib/usrp/cores/spi_core_3000.hpp>
 
 namespace uhd {
     namespace rfnoc {
@@ -155,10 +145,10 @@ private:
             UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER1_Q_ERROR,  /*width*/ 1, /*shift*/ 38);  //[6]
             UHD_DEFINE_SOFT_REG_FIELD(ADC_CHECKER1_I_ERROR,  /*width*/ 1, /*shift*/ 39);  //[7]
 
-            misc_ins_reg_t(): uhd::soft_reg64_ro_t(regs::RB_MISC_IO) { }
+            misc_ins_reg_t(): uhd::soft_reg64_ro_t(regs::rb_addr(regs::RB_MISC_IO)) { }
         } misc_ins_reg;
 
-        radio_regmap_t(int radio_num) : soft_regmap_t("radio" + boost::lexical_cast<std::string>(radio_num) + "_regmap") {
+        radio_regmap_t(int radio_num) : soft_regmap_t("radio" + std::to_string(radio_num) + "_regmap") {
             add_to_map(misc_outs_reg, "misc_outs_reg", PRIVATE);
             add_to_map(misc_ins_reg, "misc_ins_reg", PRIVATE);
         }

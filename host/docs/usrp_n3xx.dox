@@ -1,0 +1,1002 @@
+/*! \page page_usrp_n3xx USRP N3xx Series
+
+\tableofcontents
+
+\section n3xx_feature_list Comparative features list
+
+- Hardware Capabilities:
+	- Dual SFP+ Transceivers (can be used with 1 GigE, 10 GigE, and Aurora)
+	- External PPS input & output
+	- External 10 MHz input & output (20 MHz and 25 MHz inputs also supported)
+	- External White Rabbit time/frequency reference input support
+	- Internal 25 MHz reference clock
+	- Internal GPSDO for timing, location, and 20 MHz reference clock + PPS
+	- External GPIO Connector with UHD API control
+	- External USB Connection for built-in JTAG debugger and serial console
+        - Xilinx Zynq SoC with dual-core ARM Cortex A9 (Speedgrade 2) and
+          Kintex-7 FPGA (XC7Z100 or XC7Z035 depending on variant)
+
+- Software Capabilities:
+        - Full Linux system running on the ARM core
+        - Runs MPM (see also \ref page_mpm)
+
+- FPGA Capabilities:
+	- Timed commands in FPGA
+	- Timed sampling in FPGA
+        - RFNoC capability
+
+The N3XX series of USRPs is designed as a platform. The following USRPs are
+variants of the N3XX series:
+
+\subsection n3xx_feature_list_mg N310/N300 4-channel/2-channel ("Magnesium")
+
+\image html N310isoExplode.png N310 Exploded View
+
+The N310 is a 4-channel transmitter/receiver based on the AD9371 transceiver IC.
+It has two daughterboards with one AD9371 each; every daughterboard provides
+two RF channels. Note that the product code "N310" refers to the module
+consisting of mother- and daughterboard, the daughterboard itself is referred to
+by its codename, "Magnesium".
+
+- Supported master clock rates: 122.88 MHz, 125 MHz, 153.6 MHz
+- Tuning range: 10 MHz to 6 GHz (below 300 MHz, additional LOs and mixer stages
+  are used to shift the signal into the frequency range of the AD9371)
+- Support for external LOs
+- 4 RX DDC chains in FPGA (2 for N300)
+- 4 TX DUC chain in FPGA (2 for N300)
+
+The N300 is a subset of the N310. It has 2 TX/RX channels (on a single
+daughterboard; the daughterboard itself is the same as the N310) and a smaller
+FPGA (XCZ035). Also, it does not have connectors for external LOs.
+
+\section n3xx_overview Overview
+
+\subsection n3xx_zynq The Zynq CPU/FPGA and host operating system
+
+The main CPU of the N310 is a Xilinx Zynq SoC XC7Z100 (exception: The N300). It
+is both a dual-core ARM Cortex A9 CPU and Kintex-7 FPGA on a single die. The
+CPU is clocked at 800 MHz (speedgrade 2).
+
+The programmable logic (PL, or FPGA) section of the SoC is responsible for
+handling all sampling data, the 10 GigE network connections, and any other
+high-speed utility such as custom RFNoC logic. The processing system (PS, or CPU)
+is running a custom-build OpenEmbedded-based Linux operating system. The OS is
+responsible for all the device and peripheral management, such as running MPM,
+configuring the network interfaces, running local UHD sessions, etc.
+
+It is possible to connect to the host OS either via SSH or serial console (see
+sections \ref n3xx_getting_started_ssh and \ref n3xx_getting_started_serial,
+respectively).
+
+\subsection n3xx_micro The STM32 microcontroller
+
+The STM32 microcontroller controls various low-level features of the N3xx series
+motherboard: It controls the power sequencing, reads out fan speeds and some of
+the temperature sensors. It is connected to the Zynq via an I2C bus.
+
+It is possible to log into the STM32 using the serial interface
+(see \ref n3xx_getting_started_serial_micro). This will allow certain low-level
+controls, such as remote power cycling should the CPU have become unresponsive
+for whatever reason.
+
+\subsection n3xx_sdcard The SD card
+
+The N3XX series uses a micro SD card as its main storage. The entire root file
+system (Linux kernel, libraries) and any user data are stored on this SD card.
+
+The SD card is partitioned into four partitions:
+
+1. Boot partition (contains the bootloader). This partition usually does not
+   require touching.
+2. A data partition, mounted in /data. This is the only partition that is not
+   erased during file system updates.
+2. Two identical system partitions (root file systems). These contain the
+   operating system and the home directory (anything mounted under / that is not
+   the data or boot partition). The reason there are two of these is to enable
+   remote updates: An update running on one partition can update the other one
+   without any effect to the currently running system. Note that the system
+   partitions are erased during updates and are thus unsuitable for permanently
+   storing information.
+
+Note: It is possible to access the currently inactive root file system by
+mounting it. After logging into the device using serial console or SSH (see the
+following two sections), run the following commands:
+
+    $ mkdir temp
+    $ mount /dev/mmcblk0p3 temp
+    $ ls temp # You are now accessing the idle partition:
+    bin   data  etc   lib         media  proc  sbin  tmp    usr
+    boot  dev   home  lost+found  mnt    run   sys   uboot  var
+
+The device node in the mount command will likely differ, depending on which
+partition is currently already mounted.
+
+\section n3xx_getting_started Getting started
+
+This will run you through the first steps relevant to getting your USRP N3XX
+series up and running.
+
+\subsection n3xx_getting_started_assembling Assembling the N3XX
+
+Unlike the X300 or N200 series, there is no assembly of daughterboards required.
+Members of the N3XX product family, such as the N310, ship with daughterboards
+pre-installed.
+
+Checklist:
+- Connect power and network
+- Read security settings
+- Connect clocking (if required)
+- Connect external LOs (if required)
+
+\subsection n3xx_getting_started_fs_update Updating the file system
+
+Before doing any major work with a newly acquired USRP N300/N310, it is
+recommended to update the file system. Updating the filesystem can be
+accomplished directly on the N300/N310 by using Mender or externally by
+manually writing an image onto a micro SD card and inserting it.  While 
+manual updating is faster, Mender requires no direct physical access to the
+device.  For details on using Mender, see Section \ref n3xx_rasm_mender .
+
+Manual updating is simply loading an image on the micro SD card.  The first step
+in that process is to obtain an image.
+
+To obtain the default micro SD card image for a specific version of UHD, install
+that version of UHD (3.11.0.1 or later) on a host system with Internet access and run:
+
+    $ uhd_images_downloader -t n3xx_common_sdimg_default
+
+   The image will be downloaded to
+   `<UHD_INSTALL_DIR>/share/uhd/images/usrp_n3xx_fs.sdimg`,
+   where `<UHD_INSTALL_DIR>` is the UHD installation directory.
+
+To load an image onto the micro SD card, connect the card to the host and run:
+
+    $ sudo dd if=<YOUR_IMAGE> of=/dev/<YOUR_SD_CARD> bs=1M
+
+   The `<YOUR_IMAGE>` is the path to the micro SD card image
+   (i.e.`<UHD_INSTALL_DIR>/share/uhd/images/usrp_n3xx_fs.sdimg`).
+
+   The `<YOUR_SD_CARD>` device node depends on your operating system and which
+   other devices are plugged in. Typical values are `sdb` or `mmcblk0`.<br>
+   CAUTION:  Operating on the wrong device can cause damage to that device.
+
+The micro SD card used can be the original SD card shipped with the device or
+another one that is at least 16 GB in size.
+
+Insert the updated micro SD card and power on the device.
+
+\subsection n3xx_getting_started_serial Serial connection
+
+It is possible to gain root access to the device using a serial terminal
+emulator. Most Linux, OSX, or other Unix flavours have a tool called 'screen'
+which can be used for this purpose, by running the following command:
+
+    $ sudo screen /dev/ttyUSB2 115200
+
+In this command, we prepend 'sudo' to elevate user privileges (by default,
+accessing serial ports is not available to regular users), we specify the
+device node (in this case, `/dev/ttyUSB2`), and the baud rate (115200).
+
+The exact device node depends on your operating system's driver and other USB
+devices that might be already connected. Modern Linux systems offer alternatives
+to simply trying device nodes; instead, the OS might have a directory of
+symlinks under `/dev/serial/by-id`:
+
+    $ ls /dev/serial/by-id
+    usb-Digilent_Digilent_USB_Device_25163511FE00-if00-port0
+    usb-Digilent_Digilent_USB_Device_25163511FE00-if01-port0
+    usb-Silicon_Labs_CP2105_Dual_USB_to_UART_Bridge_Controller_007F6CB5-if00-port0
+    usb-Silicon_Labs_CP2105_Dual_USB_to_UART_Bridge_Controller_007F6CB5-if01-port0
+
+Note: Exact names depend on the host operating system version and may differ.
+
+Every N3XX series device connected to USB will by default show up as four
+different devices. The devices labeled "USB_to_UART_Bridge_Controller" are the
+devices that offer a serial prompt. The first (with the `if00` suffix) connects
+to Linux, whereas the second connects to the STM32 microcontroller.
+If you have multiple N3XX devices connect, you may have to try out multiple
+devices. In this case, to use this symlink instead of the raw device node
+address, modify the command above to:
+
+    $ sudo screen /dev/serial/by-id/usb-Silicon_Labs_CP2105_Dual_USB_to_UART_Bridge_Controller_007F6CB5-if00-port0 115200
+
+You should be presented with a shell prompt similar to the following:
+
+    root@ni-n3xx-311FE00:~#
+
+On this prompt, you can enter any Linux command available. Using the default
+configuration, the serial console will also show all kernel log messages (unlike
+when using SSH, for example), and give access to the boot loader (U-boot
+prompt). This can be used to debug kernel or bootloader issues more efficiently
+than when logged in via SSH.
+
+\subsubsection n3xx_getting_started_serial_micro Connecting to the microcontroller
+
+The STM32 microcontroller (which controls the power sequencing, among other
+things) also has a serial console available. To connect to the microcontroller,
+use the other UART device. In the example above:
+
+    $ sudo screen /dev/serial/by-id/usb-Silicon_Labs_CP2105_Dual_USB_to_UART_Bridge_Controller_007F6CB5-if01-port0 115200
+
+It provides a very simple prompt. The command 'help' will list all available
+commands. A direct connection to the microcontroller can be used to hard-reset
+the device without physically accessing it (i.e., emulating a power button press)
+and other low-level diagnostics.
+
+\subsection n3xx_getting_started_ssh SSH connection
+
+The USRP N-Series devices have two network connections: The dual SFP ports,
+and an RJ-45 connector. The latter is by default configured by DHCP; by plugging
+it into into 1 Gigabit switch on a DHCP-capable network, it will get assigned
+an IP address and thus be accessible via ssh.
+
+In case your network setup does not include a DHCP server, refer to the section
+\ref n3xx_getting_started_serial. A serial login can be used to assign an IP address manually.
+
+After the device obtained an IP address you can log in from a Linux or OSX
+machine by typing:
+
+    $ ssh root@ni-n3xx-311FE00 # Replace with your actual device name!
+
+Depending on your network setup, using a `.local` domain may work:
+
+    $ ssh root@ni-n3xx-311FE00.local
+
+Of course, you can also connect to the IP address directly if you know it (or
+set it manually using the serial console).
+
+Note: The device's hostname is derived from its serial number by default
+(`ni-n3xx-$SERIAL`). You can change the hostname by modifying the `/etc/hostname`
+file and rebooting.
+
+On Microsoft Windows, the connection can be established using a tool such as
+Putty, by selecting a username of root without password.
+
+Like with the serial console, you should be presented with a prompt like the
+following:
+
+    root@ni-n3xx-311FE00:~#
+
+\subsection n3xx_getting_started_connectivity Network Connectivity
+
+The RJ45 port (eth0) comes up with a default configuration of DHCP,
+that will request a network address from your DHCP server (if available on your
+network).
+
+The SFP+ (sfp0, sfp1) ports are configured with static addresses 192.168.10.2/24
+and 192.168.20.2/24, respectively. Their default MTU value is 8000. These
+settings are independent of the image type (HG vs. XG), i.e., the defaults are
+the same for 1 GigE and 10 GigE (unlike the X310!).
+
+The configuration for the sfpX port is stored in /etc/systemd/network/sfpX.network.
+
+For configuration please refer to the
+<a href=https://www.freedesktop.org/software/systemd/man/systemd.network.html>systemd-networkd manual pages</a>
+
+The factory settings are as follows:
+
+    eth0 (DHCP):
+
+        [Match]
+        Name=eth0
+
+        [Network]
+        DHCP=v4
+
+        [DHCPv4]
+        UseHostname=false
+
+    sfp0 (static):
+
+        [Match]
+        Name=sfp0
+
+        [Network]
+        Address=192.168.10.2/24
+
+        [Link]
+        MTUBytes=8000
+
+    sfp1 (static):
+
+        [Match]
+        Name=sfp1
+
+        [Network]
+        Address=192.168.20.2/24
+
+        [Link]
+        MTUBytes=8000
+
+
+Additional notes on networking:
+
+- Care needs to be taken when editing these files on the device, since
+  vi / vim sometimes generates undo files (e.g.
+  `/etc/systemd/network/sfp0.network~`), that systemd-networkd might
+  accidentally pick up.
+- Temporarily setting the IP addresses or MTU sizes via `ifconfig` or other
+  command line tools will only change the value until the next reboot or reload
+  of the FPGA image.
+- If the MTU of the device and host computers differ, streaming issues can
+  occur.
+
+\subsection n3xx_getting_started_security Security-related settings
+
+The N3XX ships without a root password set. It is possible to ssh into the
+device by simply connecting as root, and thus gaining access to all subsystems.
+To set a password, run the command
+
+    $ passwd
+
+on the device.
+
+\subsection n3xx_getting_started_fpga_update Updating the FPGA
+
+Updating the FPGA follows the same procedure as other USRPs. Use the `uhd_image_loader`
+command line utility to upload a new FPGA image onto the device.
+
+A common reason to update the FPGA image is in the case of a UHD/FPGA compat
+number mismatch (for example, if UHD has been updated, and now expects a newer
+version of the FPGA than is on the device). In this case, simply run
+
+    $ uhd_images_downloader
+
+to update the local cache of FPGA images. Then, run
+
+    $ uhd_image_loader --args type=n3xx,addr=ni-n3xx-311fe00
+
+to update the FPGA using the default settings. If a custom FPGA image is targeted
+for uploading, use the `--fpga-path` command line argument. Run
+
+    $ uhd_image_loader --help
+
+to see a full list of command line options. Note that updating the FPGA image
+will force a reload of the FPGA, which will temporarily take down the SFP
+network interfaces (and temporary settings, such as applied via `ifconfig` on
+the command line, will be lost).
+
+
+\section n3xx_usage Using an N3XX USRP from UHD
+
+Like any other USRP, all N3XX USRPs are controlled by the UHD software. To
+integrate a USRP N3XX into your C++ application, you would generate a UHD
+device in the same way you would for any other USRP:
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+auto usrp = uhd::usrp::multi_usrp::make("type=n3xx");
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For a list of which arguments can be passed into make(), see Section
+\ref n3xx_usage_device_args.
+
+\subsection n3xx_usage_device_args Device arguments
+
+ Key                   | Description                                                                  | Supported Devices | Example Value
+-----------------------|------------------------------------------------------------------------------|-------------------|---------------------
+ addr                  | IPv4 address of primary SFP+ port to connect to.                             | All N3xx          | addr=192.168.30.2
+ second_addr           | IPv4 address of secondary SFP+ port to connect to.                           | All N3xx          | second_addr=192.168.40.2
+ mgmt_addr             | IPv4 address or hostname which to connect the RPC client. Defaults to `addr'.| All N3xx          | mgmt_addr=ni-sulfur-311FE00 (can also go to RJ45)
+ find_all              | When using broadcast, find all devices, even if unreachable via CHDR.        | All N3xx          | find_all=1
+ master_clock_rate     | Master Clock Rate in Hz                                                      | N310              | master_clock_rate=125e6
+ identify              | Causes front-panel LEDs to blink. The duration is variable.                  | N310              | identify=5 (will blink for about 5 seconds)
+ serialize_init        | Force serial initialization of daughterboards.                               | All N3xx          | serialize_init=1
+ skip_dram             | Ignore DRAM FIFO block. Connect TX streamers straight into DUC or radio.     | All N3xx          | skip_dram=1
+ skip_ddc              | Ignore DDC block. Connect Rx streamers straight into radio.                  | All N3xx          | skip_ddc=1
+ skip_duc              | Ignore DUC block. Connect Rx streamers or DRAM straight into radio.          | All N3xx          | skip_duc=1
+ skip_init             | Skip the initialization process for the device.                              | All N3xx          | skip_init=1
+ ref_clk_freq          | Specify the external reference clock frequency, default is 10 MHz.           | N310              | ref_clk_freq=20e6
+ init_cals             | Specify the bitmask for initial calibrations of the RFIC.                    | N310              | init_cals=BASIC
+ init_cals_timeout     | Timeout for initial calibrations in milliseconds.                            | N310              | init_cals_timeout=45000
+ discovery_port        | Override default value for MPM discovery port.                               | All N3xx          | discovery_port=49700
+ rpc_port              | Override default value for MPM RPC port.                                     | All N3xx          | rpc_port=49701
+ tracking_cals         | Specify the bitmask for tracking calibrations of the RFIC.                   | N310              | tracking_cals=ALL
+ rx_lo_source          | Initialize the source for the RX LO.                                         | N310              | rx_lo_source=external
+ tx_lo_source          | Initialize the source for the TX LO.                                         | N310              | tx_lo_source=external
+ rfic_digital_loopback | Digital data loopback inside the RFIC.                                       | N310              | rfic_digital_loopback=1
+
+\subsection n3xx_usage_subdevspec Subdev Specifications
+
+The four RF ports on the front panel correspond to the following subdev
+specifications:
+
+Label | Subdev Spec
+------|------------
+RF0   | A:0
+RF1   | A:1
+RF2   | B:0 (N310 only)
+RF3   | B:1 (N310 only)
+
+Note: Before UHD 3.12.0.0, the subdev spec options were different (A:0, B:0,
+etc.). Make sure to update your application if you migrated from an earlier UHD
+version.
+
+The following example will map RF0 onto channel 0 of a uhd::usrp::multi_usrp
+object, and RF3 onto channel 1:
+
+~~~~~{.cpp}
+auto usrp = uhd::usrp::multi_usrp("type=n3xx");
+usrp->set_rx_subdev_spec("A:0 B:1");
+// This line will now set the gain for RF3 to 20.0:
+usrp->set_rx_gain(20.0, 1);
+// And this will affect RF0:
+usrp->set_rx_gain(20.0, 0);
+~~~~~
+
+See also uhd::usrp::subdev_spec_t.
+
+\subsection n3xx_usage_sensors The sensor API
+
+Like other USRPs, the N3x0 series have daughterboard and motherboard sensors.
+When using uhd::usrp::multi_usrp, the following API calls are relevant to
+interact with the sensor API:
+
+- uhd::usrp::multi_usrp::get_mboard_sensor_names()
+- uhd::usrp::multi_usrp::get_mboard_sensor()
+- uhd::usrp::multi_usrp::get_tx_sensor_names()
+- uhd::usrp::multi_usrp::get_rx_sensor_names()
+- uhd::usrp::multi_usrp::get_tx_sensor()
+- uhd::usrp::multi_usrp::get_rx_sensor()
+
+The following motherboard sensors are always available:
+
+- `ref_locked`: This will check that all the daughterboards have locked to the
+  external reference.
+- `temperature`: The temperature of the die itself
+- `gps_lock`: GPS lock
+- `gps_time`: GPS time in seconds sin ce the epch
+- `gps_tpv`: A TPV report from GPSd serialized as JSON
+- `gps_sky`: A SKY report from GPSd serialized as JSON
+
+
+\section n3xx_rasm Remote Management
+
+\subsection n3xx_rasm_mender Mender: Remote update capability
+
+Mender is a third-party software that enables remote updating of the root
+file system without physically accessing the device (see also the
+[Mender website](https://mender.io)). Mender can be executed locally on the
+device, or a Mender server can be set up which can be used to remotely update
+an arbitrary number of USRP devices. Mender servers can be self-hosted, or
+hosted by Mender (see [mender.io](https://mender.io) for pricing and
+availability).
+
+When updating the file system using Mender, the tool will overwrite the root file
+system partition that is not currently mounted (note: every SD card comes with
+two separate root file system partitions, only one is ever used at a single
+time). Any data stored on that partition will be permanently lost. After
+updating that partition, it will reboot into the newly updated partition. Only
+if the update is confirmed by the user, the update will be made permanent. This
+means that if an update fails, the device will be always able to reboot into the
+partition from which the update was originally launched (which presumably is in
+a working state). Another update can be launched now to correct the previous,
+failed update, until it works.
+See also Section \ref n3xx_sdcard.
+
+To initiate an update from the device itself, download a Mender artifact
+containing the update itself. These are files with a `.mender` suffix.
+
+Then run mender on the command line:
+
+    $ mender -rootfs /path/to/latest.mender
+
+The artifact can also be stored on a remote server:
+
+    $ mender -rootfs http://server.name/path/to/latest.mender
+
+This procedure will take a while. After mender has logged a successful update,
+reboot the device:
+
+    $ reboot
+
+If the reboot worked, and the device seems functional, commit the changes so
+the boot loader knows to permanently boot into this partition:
+
+    $ mender -commit
+
+To identify the currently installed Mender artifact from the command line, the
+following file can be queried:
+
+    $ cat /etc/mender/artifact_info
+
+If you are running a hosted server, the updates can be initiated from a web
+dashboard. From there, you can start the updates without having to log into the
+device, and can update groups of USRPs with a few clicks in a web GUI. The
+dashboard can also be used to inspect the state of USRPs. This is simple way to
+update groups of rack-mounted USRPs with custom file systems.
+
+\subsection n3xx_rasm_salt Salt: Remote configuration management and execution
+
+Salt (also known as SaltStack, see [Salt Website](https://saltstack.com)) is a
+Python-based tool for maintaining fleets of remote devices. It can be used to
+manage USRP N3XX series remotely for all types of settings that are not
+controlled by UHD. For example, if an operator would like to reset the root
+password on multiple devices, or install custom software, this tool might be a
+suitable choice.
+
+Salt is a third-party project with its [own documentation](https://docs.saltstack.com/en/latest/),
+which should be consulted for configuring it. However, the Salt minion is
+installed by default on every N3XX device. To start it, simply log on to the
+device and run:
+
+    $ systemctl start salt-minion
+
+To permanently enable it at every boot, run (this won't by itself launch the
+salt-minion):
+
+    $ systemctl enable salt-minion
+
+\section n3xx_synchronization Clock/Time Synchronization
+
+\subsection n3xx_synchronization_internal Internal references
+
+The N3xx series has an onboard GPSDO as well as a 25 MHz reference oscillator,
+which can both be used as time- and clock references. The GPSDO will function
+as a reference even when there is no GPS reception.
+
+Note that this does not enable the synchronization of multiple devices.
+Using an internal reference is the default.
+
+\subsection n3xx_synchronization_external External references
+
+In order to synchronize multiple USRPs, an external reference, such as the
+CDA-2990, is required. If only a clock reference is available, it is possible
+to derive an internal PPS signal from the reference (which will allow devices
+to share a frequency, but not a time reference). If both an external clock and
+time source are provided, devices will be synchronized in frequency and time.
+
+```cpp
+auto usrp = uhd::usrp::multi_usrp::make("type=n3xx,clock_source=external,time_source=external");
+```
+
+\subsection n3xx_synchronization_whiterabbit White Rabbit
+
+White Rabbit is an Ethernet-based synchronization procedure; it is an extension
+of the IEEE 1588 Precision Time Protocol (PTP). The N3xx device can be
+configured as a White Rabbit slave.
+
+To use White Rabbit, it is necessary to provide an appropriate reference via
+Ethernet. This reference must be connected to SFP0. Finally, a White Rabbit-compatible
+FPGA must be loaded. SFP0 will not be available for data transport in this mode.
+
+The White Rabbit image is provided as a default image. To obtain the default
+images, simply run:
+
+    $ uhd_images_downloader -t n3xx -t fpga
+
+Then, you can install the WX (or WA) image using `uhd_image_loader`:
+
+    $ uhd_image_loader --args type=n3xx,addr=ni-n3xx-<DEVICE_SERIAL> --fpga-path=”<UHD_INSTALL_DIRECTORY>/share/uhd/images/usrp_n310_fpga_WX.bit
+
+Once the image is loaded, select `sfp0` as the clock and time source:
+
+```cpp
+auto usrp = uhd::usrp::multi_usrp::make("type=n3xx,clock_source=sfp0,time_source=sfp0");
+```
+
+For more information, refer to the [White Rabbit Homepage](https://www.ohwr.org/projects/white-rabbit),
+or the [Ettus Research Knowledge Base](https://kb.ettus.com/Using_Ethernet-Based_Synchronization_on_the_USRP%E2%84%A2_N3xx_Devices).
+
+\section n3xx_troubleshooting Troubleshooting
+
+\subsection n3xx_troubleshooting_seqerrs Errors while streaming
+
+If you are getting sequence or other errors while streaming, make sure the MTU
+settings of the network devices match up. UHD will try and do an automatic MTU
+discovery, but there are cases when the automatic MTU discovery will yield
+incorrect values. Often, the host computer MTU is set smaller than the device
+MTU, but the MTU discovery will detect a larger MTU than the host computer MTU
+in this error case.
+
+The default MTU for the N3x0 series is 8000. The simplest solution is often to
+set the host computer MTU to 8000 as well:
+
+    $ [sudo] ifconfig eth0 mtu 8000 # Replace eth0 with the device you're using
+
+Of course, you can also reduce the MTU on the device to match your host
+computer, see Section \ref n3xx_getting_started_connectivity.
+
+\section n3xx_theory_of_ops Theory of Operation
+
+The N3xx-series are devices based on the MPM architecture (see
+also: \ref page_mpm). Inside the Linux operating system running on the ARM
+cores, there is hardware daemon which needs to be active in order for the
+device to function as a USRP (it is enabled to run by default).
+
+A large portion of hardware-specific setup is handled by the daemon.
+
+\section n3xx_software_dev Modifying and compiling UHD and MPM for the N3XX
+
+N3xx devices ship with all relevant software installed on the SD card. Updating
+UHD and/or MPM on the SD card is typically easiest done by updating the
+filesystem image (see Section \ref n3xx_rasm_mender). However, it is certainly
+possible to compile UHD and MPM by hand, e.g., in order to modify and try out
+changes without having to build entire filesystems in between. At Ettus R&D,
+this mode of operation is often used for rapid iteration cycles.
+
+\subsection n3xx_software_dev_mpm_native Compiling MPM natively
+
+In general, compiling natively is not a recommended way of compiling code for
+the ARM processors. However, in the case of MPM, the amount of C++ code that
+needs to be compiled is very little, and a full compile of MPM will take a few
+minutes even on the N3xx. First, you need to get a copy of the MPM source code
+onto your device. If you have an internet connection, you can use git to pull
+it directly from the Ettus repository (all commands are run on the device
+itself, inside the home directory):
+
+    $ git clone https://github.com/EttusResearch/uhd.git
+
+You can also SSHFS it from another computer:
+
+    $ mkdir uhd # Create a new, empty directory called uhd
+    $ sshfs user@yourcomputer:src/uhd uhd # This will mount ~/src/uhd from the remote machine to ~/uhd on the N3xx
+
+Now, create a build directory and use the regular cmake/make procedure to kick
+off a build. It can be advantageous (especially for slow network connections)
+to create the build directory outside of the repository directory:
+
+    $ mkdir build_mpm
+    $ cd build_mpm # You are now in /home/root/build_mpm
+    $ cmake ../uhd/mpm
+    $ make -j2 install # This will take several minutes
+
+Note that this overwrites your system MPM. You can install MPM to another
+location by specifying `-DCMAKE_INSTALL_PREFIX`, but make sure to update all of
+your paths appropriately.
+
+If you prefer cross-compiling MPM the same way as UHD, refer to the following
+sections and adapt the instructions for UHD appropriately.
+
+\subsection n3xx_software_dev_sdk Obtaining an SDK
+
+The recommended way to develop software for the N3xx is to cross-compile. By
+running the compiles on a desktop or laptop computer, you will be able to speed
+up compile times considerably (compiling UHD natively for the N3xx would take
+many hours).
+
+SDKs are distributed along with other binaries. They contain a cross-compiler,
+a cross-linker, a cross-debugger, and all the libraries available on the device
+to mirror its environment.
+
+The SDK is shipped in the same way as the other binaries, and you can download
+the correct version using `uhd_images_downloader`
+
+    $ uhd_images_downloader -t sdk -t n3xx
+
+To unpack and install the SDK, simply execute it after downloading it:
+
+    $ cd /usr/local/share/uhd/images # Change this to where your images are stored
+    $ ./oecore-x86_64-cortexa9hf-neon-toolchain-nodistro.0.sh
+
+This will prompt you for an installation path.  Please ensure you have
+sufficient disk space, as each of the SDKs may require several gigabytes of
+disk space (depending on the image flavor selected).
+
+This will allow you to compile UHD as well as (depending on the image flavor)
+other software, such as GNU Radio.
+
+Please note, that while several toolchains can be installed in parallel, they
+have to be installed to different directories.
+
+\subsection n3xx_software_dev_sdkusage SDK Usage
+
+Having installed the toolchain in the last step,
+in order to build software for your device open a new shell and type:
+
+    $ . $SDKPATH/environment-setup-armv7ahf-vfp-neon-oe-linux-gnueabi
+
+This will modify the PATH, CC, CXX etc, environment variables and allow you to compile software for your USRP N3xx device.
+To verify all went well you can try:
+
+    $ $CC -dumpmachine
+
+which should return 'arm-oe-linux-gnueabi'.
+
+\subsubsection n3xx_software_dev_uhd  Building UHD
+
+-# Obtain the UHD source code via git or tarball
+-# Set up your environment as described in \ref n3xx_software_dev_sdkusage
+-# Type the following in the build directory (assuming a build in host/build):
+
+        $ cmake -DCMAKE_TOOLCHAIN_FILE=../host/cmake/Toolchains/oe-sdk_cross.cmake -DCMAKE_INSTALL_PREFIX=/usr .. # Add any CMake options you desire
+        $ make # You can run make -j12 to compile on 12 processes at once
+
+Note: The UHD you are cross-compiling will not run on your host computer (the
+one where you're doing the development). Compiling UHD regularly on your host
+computer (with MPMD enabled) will allow you to talk to your N3xx.
+
+\subsubsection n3xx_software_dev_gr Building GNU Radio
+
+-# Obtain the GNU Radio source code via git or tarball
+-# Set up your environment as described in \ref n3xx_software_dev_sdkusage
+-# Use the following commands to create a build directory, configure and compile gnuradio. You only need create the build directory once.
+
+\code{.sh}
+$ mkdir build-arm
+$ cd build-arm
+$ cmake -Wno-dev -DCMAKE_TOOLCHAIN_FILE=../cmake/Toolchains/oe-sdk_cross.cmake \-DCMAKE_INSTALL_PREFIX=/usr -DENABLE_GR_VOCODER=OFF -DENABLE_GR_ATSC=OFF \
+-DENABLE_GR_DTV=OFF -DENABLE_DOXYGEN=OFF ../ # Append any CMake options you desire
+\endcode
+
+Several GNU Radio components depend on running binaries built for the build
+machine during compile. These binaries can be built and used for cross
+compiling, but this is an advanced topic.
+
+\section n3xx_mg N310-specific Features
+
+\subsection n3xx_mg_panels Front and Rear Panel
+
+Like the USRP X300 series, the N310 has connectors on both the front and back
+panel. The back panel holds the power connector, all network connections, USB
+connections for serial console (see \ref n3xx_getting_started_serial), JTAG,
+peripherals, SMA connectors for GPS antenna input, 10 MHz clock reference,
+PPS time reference input and output (TRIG in/out), the slot for the SD card
+(see also \ref n3xx_sdcard), and indicator LEDs.
+
+The following indicator LEDs are used:
+
+- LINK: This LED will be lit when this USRP has been claimed by a UHD session.
+- REF: Indicates a lock to the reference clock. In particular, when using an
+       external reference clock, this LED is useful to see if the LMK04828 PLLs
+       are locking to this reference clock. Note that some software interaction
+       is necessary to enable the LMK04828, and thus this LED may be off even
+       if a valid reference clock signal is connected.
+- GPS: Indicates a GPS lock (i.e., GPS satellites are in view of the GPS
+       antenna and signal levels are sufficient)
+- PPS: This LED will blink once every second to indicate a valid PPS signal.
+
+\image html N310rp.png N310 Rear Panel
+
+The front panel is used for all RF connections (including the external LO
+inputs, see \ref n3xx_mg_external_lo) and all TX/RX connections, as well as the
+front-panel GPIO.
+
+The connectors labeled RF0 and RF1 are also referred to as slot A, and the
+connectors labeled RF2 and RF3 are also referred as slot B (matching the
+internal connections to the daughterboard. Every slot is powered by a single
+AD9371 RFIC).
+
+\image html N310fp.png N310 Front Panel
+
+\subsection n3xx_mg_calibrations RF Calibrations
+
+The onboard RFIC (AD9371) has built-in calibrations which can be enabled from
+UHD. A more detailed description of the calibrations can be found in the AD9371
+user guide, see chapter "Quadrature Error Correction, Calibration, and ARM
+configuration".
+
+Not all calibrations available on the AD9371 are applicable to the USRP N310.
+However, those calibrations that are applicable can be enabled/disabled at
+initialization time using the `tracking_cals` and `init_cals` device args (see
+also \ref n3xx_usage_device_args). These device can be set to the precise bit
+mask the chip uses to set those calibrations (e.g., `init_cals=0x4DFF,tracking_cals=0xC3`)
+or they can use the following descriptive keys provided by UHD
+(e.g.`init_cals=DEFAULT,tracking_cals=TX_QEC|RX_QEC`). The `|` symbol can be
+used to combine keys (equivalent to a bitwise OR).
+
+Calibrations can significantly delay the initialization of a session. By only
+picking relevant calibrations, sessions can be initialized faster.
+
+Key (`init_cal`)        | Function
+------------------------|-----------------------------------
+TX_BB_FILTER            | Tx baseband filter calibration
+ADC_TUNER               | ADC tuner calibration
+TIA_3DB_CORNER          | Rx TIA filter calibration
+DC_OFFSET               | Rx DC offset calibration
+TX_ATTENUATION_DELAY    | Tx attenuation delay
+RX_GAIN_DELAY           | Rx gain delay calibration
+FLASH_CAL               | ADC flash calibration
+PATH_DELAY              | Path delay calibration
+TX_LO_LEAKAGE_INTERNAL  | Tx LO leakage internal initial calibration
+TX_LO_LEAKAGE_EXTERNAL  | Tx LO leakage external initial calibration (requires external LO)
+TX_QEC_INIT             | Tx QEC initial
+LOOPBACK_RX_LO_DELAY    | Loopback ORx LO delay (ORx not connected by default!)
+LOOPBACK_RX_RX_QEC_INIT | Loopback Rx QEC initial calibration
+RX_LO_DELAY             | Rx LO delay
+RX_QEC_INIT             | Rx QEC initial calibration
+BASIC                   | Preset for minimal calibrations (TX_BB_FILTER, ADC_TUNER, TIA_3DB_CORNER, DC_OFFSET and FLASH_CAL)
+OFF                     | Preset for disabling all initial calibrations
+DEFAULT                 | Preset for enabling most calibrations (BASIC plus TX_ATTENUATION_DELAY, RX_GAIN_DELAY, PATH_DELAY, RX_QEC_INIT, TX_LO_LEAKAGE_INTERNAL, TX_QEC_INIT, LOOPBACK_RX_LO_DELAY)
+ALL                     | Enable all applicable calibrations
+
+Key (`tracking_cal`)    | Function
+------------------------|-----------------------------------
+TRACK_RX1_QEC           | Rx1 QEC tracking
+TRACK_RX2_QEC           | Rx2 QEC tracking
+TRACK_ORX1_QEC          | ORx1 QEC tracking
+TRACK_ORX2_QEC          | ORx1 QEC tracking
+TRACK_TX1_LOL           | Tx1 LO leakage tracking
+TRACK_TX2_LOL           | Tx2 LO leakage tracking
+TRACK_TX1_QEC           | Tx1 QEC tracking
+TRACK_TX2_QEC           | Tx2 QEC tracking
+OFF                     | Disable all tracking
+RX_QEC                  | Enable all RX QEC tracking
+TX_QEC                  | Enable all TX QEC tracking
+TX_LOL                  | Enable all TX LO leakage tracking
+DEFAULT                 | Enable all QEC tracking
+ALL                     | Enable all tracking (except ORx)
+
+\subsection n3xx_mg_external_lo External LOs
+
+The N310 has inputs for external local oscillators. For every daughterboard,
+there is one input for TX and RX, respectively, resulting in 4 LO inputs total
+per N310.
+
+Reasons to use an external LO include:
+
+- Improving phase alignment: The N310 itself has no way of aligning phase
+  between channels, and phase will be random between runs.  By applying an
+  external LO, the phase ambiguity is reduced to 180 degrees, produced by a
+  by-2 divider in the AD9371 transceiver IC.
+- Improving phase noise: The quality of the onboard LO depends on the external
+  reference clock, among other things. By providing a custom LO signal, it is
+  possible to more accurately tune, assuming the externally generated LO signal
+  is coming from a high-quality oscillator.
+
+
+\subsection n3xx_mg_eeprom Storing user data in the EEPROM
+
+The N310 daughterboard has an EEPROM which is primarily used for storing the
+serial number, product ID, and other product-specific information. However, it
+can also be used to store user data, such as calibration information.
+
+Note that EEPROMs have a limited number of write cycles, and storing user data
+should happen only when necessary. Writes should be kept at a minimum.
+
+Storing data on the EEPROM is done by loading a uhd::eeprom_map_t object into
+the property tree. On writing this property, the driver code will serialize
+the map into a binary representation that can be stored on the EEPROM.
+
+\subsection n3xx_mg_regmap FPGA Register Map
+
+The following tables describe how FPGA registers are mapped into the PS.
+This is for reference only, most users will not even have to know about this table.
+
+
+AXI Slave | Address Range         | UIO Label        | Description
+----------|-----------------------|------------------|-----------------------------------
+Slave 0   | 4000_0000 - 4000_3fff | -                | Ethernet DMA SFP0
+Slave 1   | 4000_4000 - 4000_4fff | misc-enet-regs0  | Ethernet registers SFP0
+Slave 2   | 4000_8000 - 4000_bfff | -                | Ethernet DMA SFP1
+Slave 3   | 4000_c000 - 4000_cfff | misc-enet-regs1  | Ethernet registers SFP1
+Slave 4   | 4001_0000 - 4001_3fff | mboard-regs      | Motherboard control
+Slave 5   | 4001_4000 - 4001_41ff | dboard-regs0     | Daughterboard control, slot A
+Slave 6   | 4001_8000 - 4001_bfff | dboard-regs1     | Daughterboard control, slot B
+
+
+<table>
+<caption id="multi_row">N310 Register Map</caption>
+<tr><th>AXI Slave              <th>Module                       <th>Address               <th>Name            <th>Read/Write  <th>Description
+<tr><td rowspan="1">Slave 0    <td rowspan="1">axi_eth_dma0     <td>4000_0000 - 4000_4fff <td>Ethernet DMA    <td>RW          <td>See Linux Driver
+<tr><td rowspan="44">Slave 1   <td rowspan="7">n3xx_mgt_io_core <td>4000_4000             <td>PORT_INFO       <td>RO          <td>SFP port information
+<tr>                                                            <td>[31:24]               <td>COMPAT_NUM      <td>RO          <td>-
+<tr>                                                            <td>[23:18]               <td>6'h0	      <td>RO          <td>-
+<tr>                                                            <td>[17]                  <td>activity	      <td>RO          <td>-
+<tr>                                                            <td>[16]                  <td>link_up	      <td>RO          <td>-
+<tr>                                                            <td>[15:8]                <td>mgt_protocol    <td>RO          <td>0 - None, 1 - 1G, 2 - XG, 3 - Aurora
+<tr>                                                            <td>[7:0]                 <td>PORTNUM         <td>RO          <td>-
+<tr>                           <td rowspan="8">n3xx_mgt_io_core <td>4000_4004             <td>MAC_CTRL_STATUS <td>RW          <td>Control 10gE and Aurora mac
+<tr>                                                            <td>[0]                   <td>ctrl_tx_enable (PROTOCOL = "10GbE")<td>RW<td>-
+<tr>                                                            <td>[0]                   <td>bist_checker_en (PROTOCOL = "Aurora")<td>RW<td>-
+<tr>                                                            <td>[1]                   <td>bist_gen_en    <td>RW           <td>-
+<tr>                                                            <td>[2]                   <td>bist_loopback_en<td>RW          <td>-
+<tr>                                                            <td>[8:3]                 <td>bist_gen_rate   <td>RW          <td>-
+<tr>                                                            <td>[9]                   <td>phy_areset      <td>RW          <td>-
+<tr>                                                            <td>[10]                  <td>mac_clear       <td>RW          <td>-
+<tr>                           <td>n3xx_mgt_io_core             <td>4000_4008             <td>PHY_CTRL_STATUS <td>RW          <td>Phy reset control
+<tr>                           <td rowspan="3">n3xx_mgt_io_core <td>4000_400C             <td>MAC_LED_CTL     <td>RW          <td>Used by ethtool to indicate port
+<tr>                                                            <td>[1]                   <td>identify_enable <td>RW          <td>-
+<tr>                                                            <td>[0]                   <td>identify_value  <td>RW          <td>-
+<tr>                           <td rowspan="4">mdio_master      <td>4000_4010             <td>MDIO_DATA       <td>RW          <td>-
+<tr>                                                            <td>4000_4014             <td>MDIO_ADDR       <td>RW          <td>-
+<tr>                                                            <td>4000_4018             <td>MDIO_OP         <td>RW          <td>-
+<tr>                                                            <td>4000_401C             <td>MDIO_CTRL_STATUS<td>RW          <td>-
+<tr>                           <td rowspan="4">n3xx_mgt_io_core <td>4000_4020             <td>AURORA_OVERUNS  <td>RO          <td>-
+<tr>                                                            <td>4000_4024             <td>AURORA_CHECKSUM_ERRORS<td>RO    <td>-
+<tr>                                                            <td>4000_4028             <td>AURORA_BIST_CHECKER_SAMPS<td>RO <td>-
+<tr>                                                            <td>4000_402C             <td>AURORA_BIST_CHECKER_ERRORS<td>RO<td>-
+<tr>                           <td rowspan="4">eth_switch       <td>4000_5000             <td>MAC_LSB         <td>RW          <td>Device MAC LSB
+<tr>                                                            <td>4000_5004             <td>MAC_MSB         <td>RW          <td>Device MAC MSB
+<tr>                                                            <td>4000_6000             <td>IP              <td>RW          <td>Device IP
+<tr>                                                            <td>4000_6004             <td>PORT1, PORT0    <td>RW          <td>Device UDP port
+<tr>                           <td rowspan="2">eth_dispatch     <td>4000_6008             <td>[1] ndest, [0] bcast<td>RW      <td>Enable Crossover
+<tr>                                                            <td>4000_600c             <td>[1] my_icmp_type, [0] my_icmp_code<td>
+<tr>                           <td rowspan="5">eth_switch       <td>4000_6010             <td>BRIDGE_MAC_LSB  <td>            <td>Bridge SFP ports in ARM
+<tr>                                                            <td>4000_6014             <td>BRIDGE_MAC_MSB  <td>            <td>-
+<tr>                                                            <td>4000_6018             <td>BRIDGE_IP       <td>            <td>-
+<tr>                                                            <td>4000_601c             <td>BRIDGE_PORT1, BRIDGE_PORT0<td>  <td>-
+<tr>                                                            <td>4000_6020             <td>BRIDGE_EN       <td>            <td>-
+<tr>                           <td rowspan="6">chdr_eth_framer  <td>4000_6108 onwards     <td>LOCAL_DST_IP    <td>W           <td>Destination IP, MAC, UDP for Outgoing Packet for 256 SIDs
+<tr>                                                            <td>4000_6208 onwards     <td>LOCAL_DST_UDP_MAC_MSB<td>W      <td>Destination MAC for outgoing packets (MSB)
+<tr>                                                            <td>4000_6308 onwards     <td>LOCAL_DST_MAC_LSB<td>W          <td>Destination MAC for outgoing packets (LSB)
+<tr>                                                            <td>4000_7000 onwards     <td>REMOTE_DST_IP   <td>W           <td>Destination IP, MAC, UDP for Outgoing Packet for 16 local addrs
+<tr>                                                            <td>4000_7400 onwards     <td>REMOTE_DST_UDP_MAC_HI<td>W      <td>Destination MAC (MSB)
+<tr>                                                            <td>4000_7800 onwards     <td>REMOTE_DST_MAC_LO<td>W          <td>Destination MAC (LSB)
+
+<tr><td rowspan="1">Slave 2    <td>axi_eth_dma1                 <td>4000_8000             <td>-               <td>            <td>Same as Slave 0, different base address
+
+<tr><td rowspan="3">Slave 3    <td>n3xx_mgt_io_core             <td>4000_c001 - 4000_cfff <td>-               <td>-           <td>Same as Slave 1, different base address
+<tr>                           <td>eth_dispatch                 <td>4000_d000 - 4000_dfff <td>-               <td>-           <td>Same as Slave 1, different base address
+<tr>                           <td>eth_switch                   <td>4000_e000 - 4000_efff <td>-               <td>-           <td>Same as Slave 1, different base address
+
+<tr><td rowspan="69">Slave 4   <td rowspan="22">n310_core       <td>4001_0000             <td>COMPAT_NUM      <td>R           <td>FPGA Compat Number
+<tr>                                                            <td>[31:16]               <td>Major           <td>RO          <td>-
+<tr>                                                            <td>[15:0]                <td>Minor           <td>RO          <td>-
+<tr>                                                            <td>4001_0004             <td>DATESTAMP       <td>RO          <td>-
+<tr>                                                            <td>4001_0008             <td>GIT_HASH        <td>RO          <td>-
+<tr>                                                            <td>4001_000C             <td>SCRATCH         <td>RO          <td>-
+<tr>                                                            <td>4001_0010             <td>NUM_CE          <td>RO          <td>Number of Computation Engines (RFNoC Blocks)
+<tr>                                                            <td>4001_0014             <td>NUM_IO_CE       <td>RO          <td>Number of fixed IO CEs - Radios + DMA Fifo
+<tr>                                                            <td>4001_0018             <td>CLOCK_CTRL      <td>            <td>
+<tr>                                                            <td>[0]                   <td>pps select (internal 10 MHz)<td>RW<td>One-hot encoded pps_select to use the external PPS input.
+<tr>                                                            <td>[1]                   <td>pps select (internal 25 MHz)<td>RW<td>One-hot encoded pps_select to use the internally generated PPS with a 10 MHz ref_clk.
+<tr>                                                            <td>[2]                   <td>pps select (external)<td>RW     <td>One-hot encoded pps_select to use the internally generated PPS with a 25 MHz ref_clk.
+<tr>                                                            <td>[3]                   <td>pps select (GPSDO)<td>RW        <td>One-hot encoded pps_select to use the PPS from the GPSDO input to the FPGA.
+<tr>                                                            <td>[4]                   <td>pps output enable<td>RW         <td>
+<tr>                                                            <td>[8]                   <td>ref clk mmcm reset<td>WO        <td>-
+<tr>                                                            <td>[9]                   <td>ref clk mmcm locked<td>RO       <td>-
+<tr>                                                            <td>[12]                  <td>meas clk mmcm reset<td>WO       <td>-
+<tr>                                                            <td>[13]                  <td>meas clk mmcm locked<td>RO      <td>-
+<tr>                                                            <td>4001_001C             <td>XADC_READBACK   <td>RO          <td>-
+<tr>                                                            <td>[11:0]                <td>FPGA temperature<td>RO
+<tr>                                                            <td>4001_0020             <td>BUS_CLK_RATE    <td>RO          <td>-
+<tr>                                                            <td>4001_0024             <td>BUS_CLK_COUNT   <td>RO          <td>-
+<tr>                           <td rowspan="5">axi_crossbar     <td>4001_1010             <td>XBAR_VERSION    <td>RO          <td>See crossbar kernel driver
+<tr>                                                            <td>4001_1014             <td>XBAR_NUM_PORTS  <td>RO          <td>See crossbar kernel driver
+<tr>                                                            <td>4001_1018             <td>LOCAL_ADDR      <td>RW          <td>See crossbar kernel driver
+<tr>                                                            <td>4001_1020             <td>remote_offset   <td>WO          <td>XBAR settings reg
+<tr>                                                            <td>4001_1420             <td>local_offset    <td>WO          <td>XBAR settings reg
+<tr>                           <td rowspan="7">n3xx_mgt_io_core (NPIO0)  <td>4001_0200    <td>PORT_INFO       <td>RO          <td>
+<tr>                                                            <td>4001_0204             <td>MAC_CTRL_STATUS <td>RW          <td>
+<tr>                                                            <td>4001_0208             <td>PHY_CTRL_STATUS <td>RW          <td>
+<tr>                                                            <td>4001_0220             <td>AURORA_OVERUNS  <td>RO          <td>
+<tr>                                                            <td>4001_0224             <td>AURORA_CHECKSUM_ERRORS<td>RO    <td>
+<tr>                                                            <td>4001_0228             <td>AURORA_BIST_CHECKER_SAMPS<td>RO <td>
+<tr>                                                            <td>4001_022c             <td>AURORA_BIST_CHECKER_ERRORS<td>RO<td>
+<tr>                           <td rowspan="7">n3xx_mgt_io_core (NPIO1)     <td>4001_0240 <td>PORT_INFO       <td>RO          <td>
+<tr>                                                            <td>4001_0244             <td>MAC_CTRL_STATUS <td>RW          <td>
+<tr>                                                            <td>4001_0248             <td>PHY_CTRL_STATUS <td>RW          <td>
+<tr>                                                            <td>4001_0260             <td>AURORA_OVERUNS  <td>RO          <td>
+<tr>                                                            <td>4001_0264             <td>AURORA_CHECKSUM_ERRORS<td>RO<td>
+<tr>                                                            <td>4001_0268             <td>AURORA_BIST_CHECKER_SAMPS<td>RO<td>
+<tr>                                                            <td>4001_026c             <td>AURORA_BIST_CHECKER_ERRORS<td>RO<td>
+<tr>                           <td rowspan="7">n3xx_mgt_io_core (QSFP0)     <td>4001_0280 <td>PORT_INFO<td>RO<td>
+<tr>                                                            <td>4001_0284             <td>MAC_CTRL_STATUS<td>RW<td>
+<tr>                                                            <td>4001_0288             <td>PHY_CTRL_STATUS<td>RW<td>
+<tr>                                                            <td>4001_02a0             <td>AURORA_OVERUNS<td>RO<td>
+<tr>                                                            <td>4001_02a4             <td>AURORA_CHECKSUM_ERRORS<td>RO<td>
+<tr>                                                            <td>4001_02a8             <td>AURORA_BIST_CHECKER_SAMPS<td>RO<td>
+<tr>                                                            <td>4001_02ac             <td>AURORA_BIST_CHECKER_ERRORS<td>RO<td>
+<tr>                           <td rowspan="7">n3xx_mgt_io_core (QSFP1)     <td>4001_02c0 <td>PORT_INFO<td>RO<td>
+<tr>                                                            <td>4001_02c4             <td>MAC_CTRL_STATUS<td>RW<td>
+<tr>                                                            <td>4001_02c8             <td>PHY_CTRL_STATUS<td>RW<td>
+<tr>                                                            <td>4001_02e0             <td>AURORA_OVERUNS<td>RO<td>
+<tr>                                                            <td>4001_02e4             <td>AURORA_CHECKSUM_ERRORS<td>RO<td>
+<tr>                                                            <td>4001_02e8             <td>AURORA_BIST_CHECKER_SAMPS<td>RO<td>
+<tr>                                                            <td>4001_02ec             <td>AURORA_BIST_CHECKER_ERRORS<td>RO<td>
+<tr>                           <td rowspan="7">n3xx_mgt_io_core (QSFP2)     <td>4001_0300 <td>PORT_INFO<td>RO<td>
+<tr>                                                            <td>4001_0304             <td>MAC_CTRL_STATUS<td>RW<td>
+<tr>                                                            <td>4001_0308             <td>PHY_CTRL_STATUS<td>RW<td>
+<tr>                                                            <td>4001_0320             <td>AURORA_OVERUNS<td>RO<td>
+<tr>                                                            <td>4001_0324             <td>AURORA_CHECKSUM_ERRORS<td>RO<td>
+<tr>                                                            <td>4001_0328             <td>AURORA_BIST_CHECKER_SAMPS<td>RO<td>
+<tr>                                                            <td>4001_032c             <td>AURORA_BIST_CHECKER_ERRORS<td>RO<td>
+<tr>                           <td rowspan="7">n3xx_mgt_io_core (QSFP3)   <td>4001_0340   <td>PORT_INFO<td>RO<td>
+<tr>                                                            <td>4001_0344             <td>MAC_CTRL_STATUS<td>RW<td>
+<tr>                                                            <td>4001_0348             <td>PHY_CTRL_STATUS<td>RW<td>
+<tr>                                                            <td>4001_0360             <td>AURORA_OVERUNS<td>RO<td>
+<tr>                                                            <td>4001_0364             <td>AURORA_CHECKSUM_ERRORS<td>RO<td>
+<tr>                                                            <td>4001_0368             <td>AURORA_BIST_CHECKER_SAMPS<td>RO<td>
+<tr>                                                            <td>4001_036C             <td>AURORA_BIST_CHECKER_ERRORS<td>RO<td>
+
+<tr><td rowspan="6">Slave 5                                     <td>4001_4000<td>4001_41FF<td>Clocking<td>see Clocking regmap<td>
+<tr>                                                            <td>4001_4200<td>4001_43FF<td>Sync<td>see Sync regmap<td>
+<tr>                                                            <td>4001_4400<td>4001_45FF<td>open<td>open<td>open<td>
+<tr>                                                            <td>4001_4600<td>4001_47FF<td>Daughterboard <td>see Daughterboard regmap (EISCAT)<td>
+<tr>                                                            <td>4001_6000<td>4001_6FFF<td>JESD Core 0<td>see JESD regmap (EISCAT)<td>
+<tr>                                                            <td>4001_7000<td>4001_7FFF<td>JESD Core 1<td>see JESD regmap (EISCAT)<td>
+<tr><td rowspan="1">Slave 6                                     <td>4001_8000 - 4001_bfff <td>see above <td>-<td>same as Slave 5<td>
+</table>
+
+*/
+// vim:ft=doxygen:

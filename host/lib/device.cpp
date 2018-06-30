@@ -1,18 +1,8 @@
 //
 // Copyright 2010-2011,2014-2015 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include <uhd/device.hpp>
@@ -22,6 +12,9 @@
 
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/algorithm.hpp>
+#include <uhdlib/utils/prefs.hpp>
+
+
 #include <boost/format.hpp>
 #include <boost/weak_ptr.hpp>
 #include <boost/functional/hash.hpp>
@@ -47,14 +40,27 @@ static size_t hash_device_addr(
     //combine the hashes of sorted keys/value pairs
     size_t hash = 0;
 
+    // The device addr can contain all sorts of stuff, which sometimes gets in
+    // the way of hashing reliably. TODO: Make this a whitelist
+    const std::vector<std::string> hash_key_blacklist = {
+        "claimed",
+        "skip_dram",
+        "skip_ddc",
+        "skip_duc"
+    };
+
     if(dev_addr.has_key("resource")) {
         boost::hash_combine(hash, "resource");
         boost::hash_combine(hash, dev_addr["resource"]);
     }
     else {
-        for(const std::string &key:  uhd::sorted(dev_addr.keys())){
-            boost::hash_combine(hash, key);
-            boost::hash_combine(hash, dev_addr[key]);
+        for (const std::string &key: uhd::sorted(dev_addr.keys())) {
+            if (std::find(hash_key_blacklist.begin(),
+                          hash_key_blacklist.end(),
+                          key) == hash_key_blacklist.end()) {
+                boost::hash_combine(hash, key);
+                boost::hash_combine(hash, dev_addr[key]);
+            }
         }
     }
     return hash;
@@ -165,8 +171,10 @@ device::sptr device::make(const device_addr_t &hint, device_filter_t filter, siz
         return hash_to_device[dev_hash].lock();
     }
     else {
-        //create and register a new device
-        device::sptr dev = maker(dev_addr);
+        // Add keys from the config files (note: the user-defined keys will
+        // always be applied, see also get_usrp_args()
+        // Then, create and register a new device.
+        device::sptr dev = maker(prefs::get_usrp_args(dev_addr));
         hash_to_device[dev_hash] = dev;
         return dev;
     }

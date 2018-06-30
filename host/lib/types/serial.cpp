@@ -1,23 +1,14 @@
 //
 // Copyright 2011-2013 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include <uhd/types/serial.hpp>
-#include <boost/thread.hpp> //for sleeping
-#include <boost/assign/list_of.hpp>
+#include <uhdlib/utils/narrow.hpp>
+#include <chrono>
+#include <thread>
 
 using namespace uhd;
 
@@ -51,9 +42,12 @@ void i2c_iface::write_eeprom(
 ){
     for (size_t i = 0; i < bytes.size(); i++){
         //write a byte at a time, its easy that way
-        byte_vector_t cmd = boost::assign::list_of(offset+i)(bytes[i]);
+        byte_vector_t cmd = {
+            narrow_cast<uint8_t>(offset+i),
+            narrow_cast<uint8_t>(bytes[i])
+        };
         this->write_i2c(addr, cmd);
-        boost::this_thread::sleep(boost::posix_time::milliseconds(10)); //worst case write
+        std::this_thread::sleep_for(std::chrono::milliseconds(10)); //worst case write
     }
 }
 
@@ -98,7 +92,10 @@ struct eeprom16_impl : i2c_iface
         uint16_t offset,
         size_t num_bytes
     ){
-        byte_vector_t cmd = boost::assign::list_of(offset >> 8)(offset & 0xff);
+        byte_vector_t cmd = {
+            narrow_cast<uint8_t>(offset >> 8),
+            narrow_cast<uint8_t>(offset & 0xff)
+        };
         this->write_i2c(addr, cmd);
         return this->read_i2c(addr, num_bytes);
     }
@@ -112,9 +109,13 @@ struct eeprom16_impl : i2c_iface
         {
             //write a byte at a time, its easy that way
             uint16_t offset_i = offset+i;
-            byte_vector_t cmd = boost::assign::list_of(offset_i >> 8)(offset_i & 0xff)(bytes[i]);
+            byte_vector_t cmd{
+                narrow_cast<uint8_t>(offset_i >> 8),
+                narrow_cast<uint8_t>(offset_i & 0xff),
+                bytes[i]
+            };
             this->write_i2c(addr, cmd);
-            boost::this_thread::sleep(boost::posix_time::milliseconds(10)); //worst case write
+            std::this_thread::sleep_for(std::chrono::milliseconds(10)); //worst case write
         }
     }
 };

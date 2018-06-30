@@ -1,0 +1,51 @@
+# UHD Image Manifest File
+# Target    hash    url     SHA256
+# X300-Series
+x3xx_x310_fpga_default          fpga-7d5d8db        x3xx/fpga-7d5d8db/x3xx_x310_fpga_default-g7d5d8db.zip                   6a51d510c6066dd880b6f1580d8f869538c0b897c076749749d1824395bd7858
+x3xx_x300_fpga_default          fpga-7d5d8db        x3xx/fpga-7d5d8db/x3xx_x300_fpga_default-g7d5d8db.zip                   42de33dd7c270dd599acd3a36759c7d8c076657e0bf5acd0fc352bddc177128b
+# Example daughterboard targets (none currently exist)
+#x3xx_twinrx_cpld_default   example_target
+#dboard_ubx_cpld_default    example_target
+
+# E-Series
+e3xx_e310_fpga_default          fpga-1c568e6        e3xx/fpga-1c568e6/e3xx_e310_fpga_default-g1c568e6.zip                   2957b4bdefe6885644ef2bc7b0e3845d13a7fe45f5a0933a2adaffd24c1b6802
+
+# N300-Series
+n3xx_n310_fpga_default          fpga-7d5d8db        n3xx/fpga-7d5d8db/n3xx_n310_fpga_default-g7d5d8db.zip                   4667909657debd6e2cebd377e8e2073feebb33e2fcc92f1ca4e27a82f5b2a144
+n3xx_n300_fpga_default          fpga-7d5d8db        n3xx/fpga-7d5d8db/n3xx_n300_fpga_default-g7d5d8db.zip                   a7c0eaef0cec94a77ced2768b178e65da65c484aac1fa0394553581ceb38d0af
+#n3xx_n310_fpga_aurora           fpga-e0f552c        n3xx/fpga-e0f552c/n3xx_n310_fpga_aurora-ge0f552c.zip                    07b04cd4d6661d9e4efe339a20969f4b4086bcdbda106b05c75d47ba8a1582f4
+#n3xx_n300_fpga_aurora           fpga-e0f552c        n3xx/fpga-e0f552c/n3xx_n300_fpga_aurora-ge0f552c.zip                    381b34f55067479be6ff8d1be81849674880ac81b94182f584f25a521090fac8
+#n3xx_n310_cpld_default         fpga-6bea23d        n3xx/fpga-6bea23d/n3xx_n310_cpld_default-g6bea23d.zip                   0
+# N3XX Mykonos firmware
+#n3xx_n310_fw_default           fpga-6bea23d        n3xx/fpga-6bea23d/n3xx_n310_fw_default-g6bea23d.zip                     0
+# N300-Series Filesystems, etc
+n3xx_common_sdk_default         meta-ettus-v3.12.0.0  n3xx/meta-ettus-v3.12.0.0/n3xx_common_sdk_default-v3.12.0.0.zip       0
+n3xx_common_mender_default      meta-ettus-v3.12.0.0  n3xx/meta-ettus-v3.12.0.0/n3xx_common_mender_default-v3.12.0.0.zip    0
+n3xx_common_sdimg_default       meta-ettus-v3.12.0.0  n3xx/meta-ettus-v3.12.0.0/n3xx_common_sdimg_default-v3.12.0.0.zip     0
+
+# B200-Series
+b2xx_b200_fpga_default          fpga-1c568e6        b2xx/fpga-1c568e6/b2xx_b200_fpga_default-g1c568e6.zip                   7ba7561d517dc9a474b01f06c273f921a3a27005e41cd38fde7cd03bbb00284f
+b2xx_b200mini_fpga_default      fpga-1c568e6        b2xx/fpga-1c568e6/b2xx_b200mini_fpga_default-g1c568e6.zip               5cf63ec2d50630c35b6614729ae426d209cda48b02f25dd6eb31650f6ffe5bab
+b2xx_b210_fpga_default          fpga-1c568e6        b2xx/fpga-1c568e6/b2xx_b210_fpga_default-g1c568e6.zip                   612b239f86a6d1b09736c6eb55cfe370937d0414acfee48f96cecfe94c080a89
+b2xx_b205mini_fpga_default      fpga-1c568e6        b2xx/fpga-1c568e6/b2xx_b205mini_fpga_default-g1c568e6.zip               ab4de1ff063cb2224f74f17c6e7371fec314cb95fcef2a8035529a3fe1e6355f
+b2xx_common_fw_default          uhd-14000041        b2xx/uhd-14000041/b2xx_common_fw_default-g14000041.zip                  920790744085d8525529c1d0ece8942fef6d29b0a503530a814727fbacd7732c
+
+# USRP2 Devices
+usrp2_usrp2_fw_default          fpga-6bea23d        usrp2/fpga-6bea23d/usrp2_usrp2_fw_default-g6bea23d.zip                  d523a18318cb6a7637be40484bf03a6f54766410fee2c1a1f72e8971ea9a9cb6
+usrp2_usrp2_fpga_default        fpga-6bea23d        usrp2/fpga-6bea23d/usrp2_usrp2_fpga_default-g6bea23d.zip                505c70aedc8cdfbbfe654bcdbe1ce604c376e733a44cdd1351571f61a7f1cb49
+usrp2_n200_fpga_default         fpga-6bea23d        usrp2/fpga-6bea23d/usrp2_n200_fpga_default-g6bea23d.zip                 833a0098d66c0c502b9c3975d651a79e125133c507f9f4b2c472f9eb96fdaef8
+usrp2_n200_fw_default           fpga-6bea23d        usrp2/fpga-6bea23d/usrp2_n200_fw_default-g6bea23d.zip                   3eee2a6195caafe814912167fccf2dfc369f706446f8ecee36e97d2c0830116f
+usrp2_n210_fpga_default         fpga-6bea23d        usrp2/fpga-6bea23d/usrp2_n210_fpga_default-g6bea23d.zip                 5ce68ac539ee6eeb7d04fb3127c1fabcaff442a8edfaaa2f3746590f9df909bd
+usrp2_n210_fw_default           fpga-6bea23d        usrp2/fpga-6bea23d/usrp2_n210_fw_default-g6bea23d.zip                   3646fcd3fc974d18c621cb10dfe97c4dad6d282036dc63b7379995dfad95fb98
+n230_n230_fpga_default          fpga-4bb66b3        n230/fpga-4bb66b3/n230_n230_fpga_default-g4bb66b3.zip                   02ba098d797832906b8cb2e75f10dba5b2dc21cc84ec99e1f159a72e0b89eefa
+
+# USRP1 Devices
+usrp1_usrp1_fpga_default        fpga-6bea23d        usrp1/fpga-6bea23d/usrp1_usrp1_fpga_default-g6bea23d.zip                03bf72868c900dd0853bf48e2ede91058d579829b0e70c021e51b0e282d1d5be
+usrp1_b100_fpga_default         fpga-6bea23d        usrp1/fpga-6bea23d/usrp1_b100_fpga_default-g6bea23d.zip                 7f2306f21e17aa3fae3f966d08c6297d6cf42041974f846ca89f0d633ece8769
+usrp1_b100_fw_default           fpga-6bea23d        usrp1/fpga-6bea23d/usrp1_b100_fw_default-g6bea23d.zip                   867f17fac085535dbcb01c226ce87acf49806de6ed0ae9b214d7c8da86e2a71d
+
+# Octoclock
+octoclock_octoclock_fw_default  uhd-14000041        octoclock/uhd-14000041/octoclock_octoclock_fw_default-g14000041.zip     8da7f1af8cecb7f6259a237a18c39058ba69a11567fa373cffc9704031a1d053
+
+# Legacy USB Windows drivers
+usb_common_windrv_default       uhd-14000041        usb/uhd-14000041/usb_common_windrv_default-g14000041.zip                835e94b2bdf2312fd3881a1b78e2ec236c1f42b7a5bd3927f85f73cf5e3a5231

@@ -1,18 +1,8 @@
 //
 // Copyright 2014 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include "e300_eeprom_manager.hpp"
@@ -67,9 +57,9 @@ const mboard_eeprom_t& e300_eeprom_manager::read_mb_eeprom(void)
 
     mb_eeprom_map_t &map = *map_ptr;
 
-    _mb_eeprom["product"] = boost::lexical_cast<std::string>(
+    _mb_eeprom["product"] = std::to_string(
         uhd::ntohx<uint16_t>(map.hw_product));
-    _mb_eeprom["revision"] = boost::lexical_cast<std::string>(
+    _mb_eeprom["revision"] = std::to_string(
         uhd::ntohx<uint16_t>(map.hw_revision));
     _mb_eeprom["serial"] = _bytes_to_string(
         map.serial, MB_SERIAL_LEN);
@@ -101,7 +91,7 @@ const dboard_eeprom_t& e300_eeprom_manager::read_db_eeprom(void)
     _db_eeprom.id = uhd::usrp::dboard_id_t::from_uint16(
         uhd::ntohx<uint16_t>(map.hw_product));
 
-    _db_eeprom.revision = boost::lexical_cast<std::string>(
+    _db_eeprom.revision = std::to_string(
         uhd::ntohx<uint16_t>(map.hw_revision));
     _db_eeprom.serial = _bytes_to_string(
         map.serial, DB_SERIAL_LEN);
@@ -232,8 +222,10 @@ std::string e300_eeprom_manager::get_mb_type_string(void) const
         return "E3XX";
 
     case E310_SG1_MB_PID:
+        return "E3XX SG1";
+
     case E310_SG3_MB_PID:
-        return "E3XX";
+        return "E3XX SG3";
 
     default:
         return "UNKNOWN";

@@ -1,22 +1,12 @@
 //
 // Copyright 2010-2012 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "validate_subdev_spec.hpp"
-#include "async_packet_handler.hpp"
+#include <uhdlib/usrp/common/validate_subdev_spec.hpp>
+#include <uhdlib/usrp/common/async_packet_handler.hpp>
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
 #include "usrp2_impl.hpp"
@@ -27,7 +17,7 @@
 #include <uhd/utils/tasks.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/byteswap.hpp>
-#include <uhd/utils/thread_priority.hpp>
+#include <uhd/utils/thread.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
 #include <boost/thread/thread.hpp>
 #include <boost/format.hpp>
@@ -36,6 +26,8 @@
 #include <boost/thread/mutex.hpp>
 #include <boost/make_shared.hpp>
 #include <iostream>
+#include <chrono>
+#include <thread>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -165,7 +157,7 @@ struct usrp2_impl::io_impl{
     std::vector<flow_control_monitor::sptr> fc_mons;
 
     //methods and variables for the pirate crew
-    void recv_pirate_loop(zero_copy_if::sptr, size_t);
+    void recv_pirate_loop(zero_copy_if::sptr, size_t, const std::atomic<bool> &);
     std::list<task::sptr> pirate_tasks;
     bounded_buffer<async_metadata_t> async_msg_fifo;
     double tick_rate;
@@ -178,14 +170,14 @@ struct usrp2_impl::io_impl{
  * - put async message packets into queue
  **********************************************************************/
 void usrp2_impl::io_impl::recv_pirate_loop(
-    zero_copy_if::sptr err_xport, size_t index
+    zero_copy_if::sptr err_xport, size_t index, const std::atomic<bool> &exit_loop
 ){
     set_thread_priority_safe();
 
     //store a reference to the flow control monitor (offset by max dsps)
     flow_control_monitor &fc_mon = *(this->fc_mons[index]);
 
-    while (not boost::this_thread::interruption_requested()){
+    while (not exit_loop){
         managed_recv_buffer::sptr buff = err_xport->get_recv_buff();
         if (not buff.get()) continue; //ignore timeout/error buffers
 
@@ -252,7 +244,8 @@ void usrp2_impl::io_init(void){
         //spawn a new pirate to plunder the recv booty
         _io_impl->pirate_tasks.push_back(task::make(boost::bind(
             &usrp2_impl::io_impl::recv_pirate_loop, _io_impl.get(),
-            _mbc[mb].tx_dsp_xport, index++
+            _mbc[mb].tx_dsp_xport, index++,
+            boost::ref(_pirate_task_exit)
         )));
     }
 }
@@ -393,7 +386,7 @@ void usrp2_impl::program_stream_dest(
             std::memcpy(send_buff->cast<void *>(), &stream_ctrl, sizeof(stream_ctrl));
             send_buff->commit(sizeof(stream_ctrl));
             send_buff.reset();
-            boost::this_thread::sleep(boost::posix_time::milliseconds(300));
+            std::this_thread::sleep_for(std::chrono::milliseconds(300));
             managed_recv_buffer::sptr recv_buff = xport->get_recv_buff(0.0);
             if (recv_buff and recv_buff->size() >= sizeof(uint32_t)){
                 const uint32_t result = uhd::ntohx(recv_buff->cast<const uint32_t *>()[0]);

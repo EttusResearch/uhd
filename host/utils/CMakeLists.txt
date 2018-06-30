@@ -1,18 +1,8 @@
 #
 # Copyright 2010-2015 Ettus Research LLC
+# Copyright 2018 Ettus Research, a National Instruments Company
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
 
 ########################################################################
@@ -26,12 +16,6 @@ SET(util_runtime_sources
     uhd_cal_rx_iq_balance.cpp
     uhd_cal_tx_dc_offset.cpp
     uhd_cal_tx_iq_balance.cpp
-    usrp_n2xx_simple_net_burner.cpp
-)
-
-SET(x3xx_burner_sources
-    usrp_x3xx_fpga_burner.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/../lib/usrp/x300/cdecode.c
 )
 
 find_package(UDev)
@@ -48,13 +32,6 @@ FOREACH(util_source ${util_runtime_sources})
     TARGET_LINK_LIBRARIES(${util_name} uhd ${Boost_LIBRARIES})
     UHD_INSTALL(TARGETS ${util_name} RUNTIME DESTINATION ${RUNTIME_DIR} COMPONENT utilities)
 ENDFOREACH(util_source)
-
-IF(ENABLE_X300)
-    INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/usrp/x300)
-    ADD_EXECUTABLE(usrp_x3xx_fpga_burner ${x3xx_burner_sources})
-    TARGET_LINK_LIBRARIES(usrp_x3xx_fpga_burner uhd ${Boost_LIBRARIES})
-    UHD_INSTALL(TARGETS usrp_x3xx_fpga_burner RUNTIME DESTINATION ${RUNTIME_DIR} COMPONENT utilities)
-ENDIF(ENABLE_X300)
 
 ########################################################################
 # Utilities that get installed into the share path
@@ -79,6 +56,7 @@ IF(ENABLE_USB)
         )
         # Additional include directories for b2xx_fx3_utils
         INCLUDE_DIRECTORIES(
+            ${CMAKE_CURRENT_SOURCE_DIR}/../lib/include
             ${CMAKE_CURRENT_SOURCE_DIR}/../lib/usrp/b200
             ${CMAKE_CURRENT_SOURCE_DIR}/../lib/usrp/common
             ${CMAKE_CURRENT_SOURCE_DIR}/../lib/usrp/common/ad9361_driver
@@ -89,16 +67,6 @@ IF(ENABLE_OCTOCLOCK)
     LIST(APPEND util_share_sources
         octoclock_burn_eeprom.cpp
     )
-
-    SET(octoclock_burner_sources
-        octoclock_firmware_burner.cpp
-        ${CMAKE_SOURCE_DIR}/lib/utils/ihex.cpp
-    )
-
-    INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/usrp_clock/octoclock)
-    ADD_EXECUTABLE(octoclock_firmware_burner ${octoclock_burner_sources})
-    TARGET_LINK_LIBRARIES(octoclock_firmware_burner uhd ${Boost_LIBRARIES})
-    UHD_INSTALL(TARGETS octoclock_firmware_burner RUNTIME DESTINATION ${RUNTIME_DIR} COMPONENT utilities)
 ENDIF(ENABLE_OCTOCLOCK)
 
 IF(LINUX AND ENABLE_USB)
@@ -124,18 +92,20 @@ FOREACH(util_source ${util_share_sources_py})
     )
 ENDFOREACH(util_source)
 
-IF(ENABLE_USRP2)
-    UHD_INSTALL(TARGETS usrp_n2xx_simple_net_burner RUNTIME DESTINATION ${PKG_LIB_DIR}/utils COMPONENT utilities)
-ENDIF(ENABLE_USRP2)
-IF(ENABLE_X300)
-    UHD_INSTALL(TARGETS usrp_x3xx_fpga_burner RUNTIME DESTINATION ${PKG_LIB_DIR}/utils COMPONENT utilities)
-ENDIF(ENABLE_X300)
-
 #UHD images downloader configuration
+FILE(READ ${CMAKE_CURRENT_SOURCE_DIR}/../../images/manifest.txt CMAKE_MANIFEST_CONTENTS)
 CONFIGURE_FILE(
     ${CMAKE_CURRENT_SOURCE_DIR}/uhd_images_downloader.py.in
     ${CMAKE_CURRENT_BINARY_DIR}/uhd_images_downloader.py
 @ONLY)
+# TODO: FIXME when know how.
+# This is a hack to force cmake regenerate uhd_images_downloader.py
+# whenever manifest.txt file changed.
+CONFIGURE_FILE(
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../images/manifest.txt
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../images/manifest.txt
+COPYONLY)
+
 UHD_INSTALL(PROGRAMS
     ${CMAKE_CURRENT_BINARY_DIR}/uhd_images_downloader.py
     DESTINATION ${PKG_LIB_DIR}/utils
@@ -150,13 +120,13 @@ IF(LINUX)
     )
 ENDIF(LINUX)
 IF(NOT HAVE_PYTHON_MODULE_REQUESTS)
-    MESSAGE(WARNING "Module requests not found -- uhd_images_downloader.py will not work without it.")
+    MESSAGE(WARNING "Python module `requests' not found -- uhd_images_downloader.py will not work without it.")
+    MESSAGE(WARNING "You may be able to install this by running 'pip install requests'")
 ENDIF(NOT HAVE_PYTHON_MODULE_REQUESTS)
 
 IF(ENABLE_USRP2)
     SET(burners
         usrp2_card_burner.py
-        usrp_n2xx_net_burner.py
     )
 
     IF(WIN32 AND UHD_RELEASE_MODE) #include dd.exe

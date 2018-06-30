@@ -1,18 +1,8 @@
 //
 // Copyright 2014-2015 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include <boost/assign.hpp>
@@ -46,8 +36,8 @@ static b200_iface::sptr get_b200_iface(const image_loader::image_loader_args_t& 
     if(dev_handles.size() > 0){
         for(usb_device_handle::sptr dev_handle:  dev_handles){
             if(dev_handle->firmware_loaded()){
-                iface = b200_iface::make(usb_control::make(dev_handle,0));
-                eeprom = mboard_eeprom_t(*iface, "B200");
+                iface = b200_iface::make(usb_control::make(dev_handle, 0));
+                eeprom = b200_impl::get_mb_eeprom(iface);
                 if(user_specified){
                     if(image_loader_args.args.has_key("serial") and
                        eeprom.get("serial") != image_loader_args.args.get("serial")){
@@ -73,8 +63,10 @@ static b200_iface::sptr get_b200_iface(const image_loader::image_loader_args_t& 
             std::string err_msg = "Could not resolve given args to a single B2XX device.\n"
                                   "Applicable devices:\n";
 
-            for(usb_device_handle::sptr dev_handle:  applicable_dev_handles){
-                eeprom = mboard_eeprom_t(*b200_iface::make(usb_control::make(dev_handle,0)), "B200");
+            for (usb_device_handle::sptr dev_handle: applicable_dev_handles) {
+                eeprom = b200_impl::get_mb_eeprom(
+                    b200_iface::make(usb_control::make(dev_handle, 0))
+                );
                 err_msg += str(boost::format(" * %s (serial=%s)\n")
                                % B2XX_STR_NAMES.get(get_b200_product(dev_handle, mb_eeprom), "B2XX")
                                % mb_eeprom.get("serial"));
@@ -88,7 +80,7 @@ static b200_iface::sptr get_b200_iface(const image_loader::image_loader_args_t& 
 
     // No applicable devices found, return empty sptr so we can exit
     iface.reset();
-    mb_eeprom = mboard_eeprom_t();
+    mb_eeprom = eeprom;
     return iface;
 }
 

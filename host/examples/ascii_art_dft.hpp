@@ -1,5 +1,8 @@
 //
-// ASCII Art DFT Plotter - Josh Blum
+// Copyright 2010 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #ifndef ASCII_ART_DFT_HPP
@@ -11,7 +14,7 @@
 #include <complex>
 #include <stdexcept>
 
-namespace acsii_art_dft{
+namespace ascii_art_dft{
 
     //! Type produced by the log power DFT function
     typedef std::vector<float> log_pwr_dft_type;
@@ -148,7 +151,7 @@ namespace {/*anon*/
 /***********************************************************************
  * Implementation code
  **********************************************************************/
-namespace acsii_art_dft{
+namespace ascii_art_dft{
 
     //! skip constants for amplitude and frequency labels
     static const size_t albl_skip = 5, flbl_skip = 20;
@@ -298,10 +301,10 @@ int main(void){
             samples[i] += 0.5*std::sin(i*3.14/2) + 0.7;
         }
 
-        acsii_art_dft::log_pwr_dft_type dft;
-        dft = acsii_art_dft::log_pwr_dft(&samples.front(), samples.size());
+        ascii_art_dft::log_pwr_dft_type dft;
+        dft = ascii_art_dft::log_pwr_dft(&samples.front(), samples.size());
 
-        printw("%s", acsii_art_dft::dft_to_plot(
+        printw("%s", ascii_art_dft::dft_to_plot(
             dft, COLS, LINES,
             12.5e4, 2.45e9,
             60, 0

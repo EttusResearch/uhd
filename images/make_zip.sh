@@ -11,46 +11,31 @@ if [ ! -e 'images' ]; then
 fi
 
 # Remove cruft before proceeding:
-if [ -e 'build' ]; then
-    echo 'Please remove build subdirectory before proceeding.'
-    exit 1
-fi
-if [ -e "images/LICENSE" ]; then
-	rm images/LICENSE
-fi
 TAGFILES=`ls images/*.tag 2>/dev/null`
 if [ -n "$TAGFILES" ]; then
 	rm $TAGFILES
 fi
 
-# Enter build dir
-mkdir build
-cd build
+# Copy LICENSE file
+cp ../host/LICENSE images/
 
-# Run the CPack process (ZIP file)
-cmake .. -DCPACK_GENERATOR=ZIP -DUHD_RELEASE_MODE="$1" $2 ..
-make package
-mv uhd-images*.zip ..
+ARCHIVE_SUFFIX=$1
+ARCHIVE_NAME="uhd-images_${ARCHIVE_SUFFIX}"
+echo "Creating images archive: ${ARCHIVE_NAME}"
 
-# Run the CPack process (tarball)
-cmake .. -DCPACK_GENERATOR=TGZ -DUHD_RELEASE_MODE="$1" $2 ..
-make package
-mv uhd-images*.tar.gz ..
+cp -r images $ARCHIVE_NAME
 
-# Move images to here and clean up after us:
-cd ..
-rm -r build
-rm images/*.tag
+# Now zip 'em up:
+echo "Creating ZIP archive..."
+zip -r $ARCHIVE_NAME.zip $ARCHIVE_NAME
+echo "Creating tar.gz archive..."
+tar zcvf $ARCHIVE_NAME.tar.gz $ARCHIVE_NAME
+echo "Creating tar.xz archive..."
+tar Jcvf $ARCHIVE_NAME.tar.xz $ARCHIVE_NAME
+ALL_ARCHIVES=`ls $ARCHIVE_NAME.*`
+sha256sum $ALL_ARCHIVES > $ARCHIVE_NAME.sha256
+md5sum $ALL_ARCHIVES > $ARCHIVE_NAME.md5
 
-TGZ_ARCHIVE_NAME=`ls *.tar.gz | tail -n1`
+# Clean up archive directory
+rm -r $ARCHIVE_NAME
 
-# CMake can't do xz, so do it by hand if possible
-XZ_EXECUTABLE=`which xz`
-if [ $? -eq 0 ]; then
-	XZ_ARCHIVE_NAME=`echo $TGZ_ARCHIVE_NAME | sed "s/gz\>/xz/"`
-	echo "Writing .xz tarball to $XZ_ARCHIVE_NAME ..."
-	gunzip --to-stdout $TGZ_ARCHIVE_NAME | xz - > $XZ_ARCHIVE_NAME
-fi
-
-MD5_FILE_NAME=`echo $TGZ_ARCHIVE_NAME | sed "s/tar.gz\>/md5/"`
-md5sum uhd-images* > $MD5_FILE_NAME

@@ -1,18 +1,8 @@
 //
 // Copyright 2011-2012,2014 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include <uhd/utils/paths.hpp>
@@ -45,6 +35,7 @@ static const size_t num_search_steps = 5;
 static const double default_precision = 0.0001;
 static const double default_freq_step = 7.3e6;
 static const size_t default_fft_bin_size = 1000;
+static constexpr size_t MAX_NUM_TX_ERRORS = 10;
 
 /***********************************************************************
  * Set standard defaults for devices
@@ -70,11 +61,6 @@ static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp)
     {
         usrp->set_tx_rate(4e6);
         usrp->set_rx_rate(4e6);
-    }
-    else if (mb_name.find("E100") != std::string::npos or mb_name.find("E110") != std::string::npos)
-    {
-        usrp->set_tx_rate(4e6);
-        usrp->set_rx_rate(8e6);
     }
     else
     {
@@ -390,3 +376,22 @@ UHD_INLINE void set_optimal_rx_gain(
     usrp->set_rx_gain(rx_gain);
 }
 
+
+/*! Returns true if any error on the TX stream has occured
+ */
+bool has_tx_error(uhd::tx_streamer::sptr tx_stream)
+{
+    uhd::async_metadata_t async_md;
+    if (!tx_stream->recv_async_msg(async_md, 0.0)) {
+        return false;
+    }
+
+    return async_md.event_code & (0
+            // Any of these errors are considered a problematic TX error:
+         | uhd::async_metadata_t::EVENT_CODE_UNDERFLOW
+         | uhd::async_metadata_t::EVENT_CODE_SEQ_ERROR
+         | uhd::async_metadata_t::EVENT_CODE_TIME_ERROR
+         | uhd::async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET
+         | uhd::async_metadata_t::EVENT_CODE_SEQ_ERROR_IN_BURST
+    );
+}

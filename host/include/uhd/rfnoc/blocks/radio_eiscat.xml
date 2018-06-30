@@ -1,0 +1,267 @@
+<nocblock>
+  <name>Radio (EISCAT)</name>
+  <blockname>Radio</blockname>
+  <key>EISCATRadio</key>
+  <!--There can be several of these:-->
+  <ids>
+    <id revision="0">E15CA70000000000</id>
+  </ids>
+  <!-- Registers -->
+  <registers>
+    <setreg>
+      <!--1-Bit register. Enable Beam Stream Channels. There are 10, so this is a 10 bit value. -->
+      <name>SR_RX_STREAM_ENABLE</name>
+      <address>159</address>
+    </setreg>
+    <setreg>
+     <!--4-Bit register. 
+       [0] Are we sending the upper or lower 5 beam contirbutions? 
+       [1] = 1, beams_to_here goes directly to output (bypass neighbour contributions, single USRP)
+       [2] = 1, input to rx_receive direct from jesd_core (bypassing beamforming)
+       [3] = 1, if bypassing beamforming, instead output counter 00-FF
+       to output counter [3:0] = 0d10.
+       to output jesd streams directly [3:0] = 6 -->
+      <name>SR_BEAMS_TO_NEIGHBOR</name>
+      <address>202</address>
+      <value>2</value>
+    </setreg>
+    <setreg>
+      <!--1-Bit register. Are we expecting previous contributions? 1==yes we are -->
+      <name>SR_PREV_OR_NULL</name>
+      <address>203</address>
+    </setreg>
+    <setreg>
+      <name>SR_FIR_COMMANDS_RELOAD</name>
+      <address>198</address>
+    </setreg>
+    <setreg>
+      <name>SR_FIR_COMMANDS_CTRL_TIME_HI</name>
+      <address>199</address>
+    </setreg>
+    <setreg>
+      <name>SR_FIR_COMMANDS_CTRL_TIME_LO</name>
+      <address>200</address>
+    </setreg>
+    <setreg>
+      <!-- Use this to actually update taps in RAM -->
+      <name>SR_FIR_BRAM_WRITE_TAPS</name>
+      <address>201</address>
+    </setreg>
+    <setreg>
+      <name>SR_SYSREF</name>
+      <address>221</address>
+    </setreg>
+    <setreg>
+      <name>SR_CHANNEL_GAIN_0</name>
+      <address>204</address>
+    </setreg>
+    <readback>
+      <name>RB_NUM_TAPS</name>
+      <address>0</address>
+    </readback>
+    <readback>
+      <name>RB_NUM_CHANNELS</name>
+      <address>1</address>
+    </readback>
+    <readback>
+      <name>RB_NUM_BEAMS</name>
+      <address>2</address>
+    </readback>
+    <readback>
+      <name>RB_NUM_FILTERS</name>
+      <address>3</address>
+    </readback>
+    <readback>
+      <name>RB_VITA_TIME</name>
+      <address>4</address>
+    </readback>
+  </registers>
+  <!-- Args -->
+  <args>
+  <!--Gets applied to all channels-->
+    <arg>
+      <name>spp</name>
+      <type>int</type>
+      <value>3992</value>
+    </arg>
+    <arg>
+      <name>taps</name>
+      <type>int</type>
+    </arg>
+    <arg>
+      <name>use_prev</name>
+      <type>int</type>
+      <value>0</value>
+      <check>EQUAL($use_prev, 0) OR EQUAL($use_prev, 1)</check>
+      <check_message>use_prev must be 0 or 1.</check_message>
+      <action>SR_WRITE("SR_PREV_OR_NULL", $use_prev)</action>
+    </arg>
+    <!--Direct access to the beams register-->
+    <arg>
+      <name>configure_beams</name>
+      <type>int</type>
+    </arg>
+    <!--Bit 0: 0: Upper 1: Lower Bit 1: 0: Use neighbours 1: no neighbours-->
+    <arg>
+      <name>choose_beams</name>
+      <type>int</type>
+      <value>2</value>
+    </arg>
+    <arg>
+      <name>enable_firs</name>
+      <type>int</type>
+      <value>1</value>
+    </arg>
+    <arg>
+      <name>enable_counter</name>
+      <type>int</type>
+      <value>0</value>
+    </arg>
+    <arg>
+      <name>channel_enable</name>
+      <type>int</type>
+      <value>1</value>
+      <action>SR_WRITE("SR_RX_STREAM_ENABLE", $channel_enable)</action>
+    </arg>
+    <arg>
+      <name>gain</name>
+      <type>double</type>
+      <value>1.0</value>
+      <action>SR_WRITE("SR_CHANNEL_GAIN_0", 131071)</action>
+      <port>0</port>
+    </arg>
+    <arg>
+      <name>gain</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>1</port>
+    </arg>
+    <arg>
+      <name>gain</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>2</port>
+    </arg>
+    <arg>
+      <name>gain</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>3</port>
+    </arg>
+    <arg>
+      <name>gain</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>4</port>
+    </arg>
+    <arg>
+      <name>gain</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>5</port>
+    </arg>
+    <arg>
+      <name>gain</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>6</port>
+    </arg>
+    <arg>
+      <name>gain</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>7</port>
+    </arg>
+    <arg>
+      <name>gain</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>8</port>
+    </arg>
+    <arg>
+      <name>gain</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>9</port>
+    </arg>
+    <arg>
+      <name>gain</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>10</port>
+    </arg>
+    <arg>
+      <name>gain</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>11</port>
+    </arg>
+    <arg>
+      <name>gain</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>12</port>
+    </arg>
+    <arg>
+      <name>gain</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>13</port>
+    </arg>
+    <arg>
+      <name>gain</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>14</port>
+    </arg>
+    <arg>
+      <name>gain</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>15</port>
+    </arg>
+  </args>
+  <ports>
+    <source>
+      <name>out0</name>
+      <type>s16</type>
+    </source>
+    <source>
+      <name>out1</name>
+      <type>s16</type>
+    </source>
+    <source>
+      <name>out2</name>
+      <type>s16</type>
+    </source>
+    <source>
+      <name>out3</name>
+      <type>s16</type>
+    </source>
+    <source>
+      <name>out4</name>
+      <type>s16</type>
+    </source>
+    <sink>
+      <name>in0</name>
+      <type>s16</type>
+    </sink>
+    <sink>
+      <name>in1</name>
+      <type>s16</type>
+    </sink>
+    <sink>
+      <name>in2</name>
+      <type>s16</type>
+    </sink>
+    <sink>
+      <name>in3</name>
+      <type>s16</type>
+    </sink>
+    <sink>
+      <name>in4</name>
+      <type>s16</type>
+    </sink>
+  </ports>
+</nocblock>
+

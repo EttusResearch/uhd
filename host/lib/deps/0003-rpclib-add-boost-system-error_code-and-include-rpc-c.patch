@@ -1,0 +1,104 @@
+From 6405741d1daab2a3e540571e1e7f9fd4b15be3d8 Mon Sep 17 00:00:00 2001
+From: Andrej Rode <andrej.rode@ettus.com>
+Date: Thu, 6 Apr 2017 15:56:22 -0700
+Subject: [PATCH 3/3] rpclib: add boost::system::error_code and include
+ rpc/config.h
+
+Signed-off-by: Andrej Rode <andrej.rode@ettus.com>
+---
+ include/rpc/detail/async_writer.h | 2 +-
+ include/rpc/detail/response.h     | 1 +
+ include/rpc/rpc_error.h           | 1 +
+ lib/rpc/client.cc                 | 4 ++--
+ lib/rpc/detail/server_session.cc  | 2 +-
+ lib/rpc/server.cc                 | 2 +-
+ 6 files changed, 7 insertions(+), 5 deletions(-)
+
+diff --git a/include/rpc/detail/async_writer.h b/include/rpc/detail/async_writer.h
+index a44cd29..941bb1d 100644
+--- a/include/rpc/detail/async_writer.h
++++ b/include/rpc/detail/async_writer.h
+@@ -34,7 +34,7 @@ public:
+         boost::asio::async_write(
+             socket_, boost::asio::buffer(item.data(), item.size()),
+             write_strand_.wrap(
+-                [this, self](std::error_code ec, std::size_t transferred) {
++                [this, self](boost::system::error_code ec, std::size_t transferred) {
+                     (void)transferred;
+                     if (!ec) {
+                         write_queue_.pop_front();
+diff --git a/include/rpc/detail/response.h b/include/rpc/detail/response.h
+index 0f69bcb..96131b1 100644
+--- a/include/rpc/detail/response.h
++++ b/include/rpc/detail/response.h
+@@ -6,6 +6,7 @@
+ #include "rpc/detail/log.h"
+ #include "rpc/detail/make_unique.h"
+ #include "rpc/msgpack.hpp"
++#include "rpc/config.h"
+ 
+ namespace rpc {
+ namespace detail {
+diff --git a/include/rpc/rpc_error.h b/include/rpc/rpc_error.h
+index 6ca62e0..81a5b2c 100644
+--- a/include/rpc/rpc_error.h
++++ b/include/rpc/rpc_error.h
+@@ -6,6 +6,7 @@
+ #include <exception>
+ 
+ #include "rpc/msgpack.hpp"
++#include "rpc/config.h"
+ 
+ namespace rpc {
+ 
+diff --git a/lib/rpc/client.cc b/lib/rpc/client.cc
+index ef9048b..f4d6497 100644
+--- a/lib/rpc/client.cc
++++ b/lib/rpc/client.cc
+@@ -45,7 +45,7 @@ struct client::impl {
+         LOG_INFO("Initiating connection.");
+         boost::asio::async_connect(
+             writer_->socket_, endpoint_iterator,
+-            [this](std::error_code ec, tcp::resolver::iterator) {
++            [this](boost::system::error_code ec, tcp::resolver::iterator) {
+                 if (!ec) {
+                     std::unique_lock<std::mutex> lock(mut_connection_finished_);
+                     LOG_INFO("Client connected to {}:{}", addr_, port_);
+@@ -66,7 +66,7 @@ struct client::impl {
+             boost::asio::buffer(pac_.buffer(), max_read_bytes),
+             // I don't think max_read_bytes needs to be captured explicitly
+             // (since it's constexpr), but MSVC insists.
+-            [this, max_read_bytes](std::error_code ec, std::size_t length) {
++            [this, max_read_bytes](boost::system::error_code ec, std::size_t length) {
+                 if (!ec) {
+                     LOG_TRACE("Read chunk of size {}", length);
+                     pac_.buffer_consumed(length);
+diff --git a/lib/rpc/detail/server_session.cc b/lib/rpc/detail/server_session.cc
+index 79cfd09..3f1ed48 100644
+--- a/lib/rpc/detail/server_session.cc
++++ b/lib/rpc/detail/server_session.cc
+@@ -43,7 +43,7 @@ void server_session::do_read() {
+         boost::asio::buffer(pac_.buffer(), default_buffer_size),
+         // I don't think max_read_bytes needs to be captured explicitly
+         // (since it's constexpr), but MSVC insists.
+-        read_strand_.wrap([this, self, max_read_bytes](std::error_code ec,
++        read_strand_.wrap([this, self, max_read_bytes](boost::system::error_code ec,
+                                                        std::size_t length) {
+             if (!ec) {
+                 pac_.buffer_consumed(length);
+diff --git a/lib/rpc/server.cc b/lib/rpc/server.cc
+index 568da72..4facb93 100644
+--- a/lib/rpc/server.cc
++++ b/lib/rpc/server.cc
+@@ -37,7 +37,7 @@ struct server::impl {
+           suppress_exceptions_(false) {}
+ 
+     void start_accept() {
+-        acceptor_.async_accept(socket_, [this](std::error_code ec) {
++        acceptor_.async_accept(socket_, [this](boost::system::error_code ec) {
+             if (!ec) {
+                 LOG_INFO("Accepted connection.");
+                 auto s = std::make_shared<server_session>(
+-- 
+2.10.2
+

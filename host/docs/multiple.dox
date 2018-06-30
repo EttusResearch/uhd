@@ -75,7 +75,7 @@ Now, there's a total of 5 channels, mapped as:
 - Channel 1: Slot B of Device 0
 - Channel 2: Slot A of Device 1
 - Channel 3: Slot A of Device 2
-- Channel 1: Slot B of Device 2
+- Channel 4: Slot B of Device 2
 
 While valid, this kind of configuration is not recommended unless heavily
 documented. It is usually simplest to call `set_rx_subdev_spec()` without

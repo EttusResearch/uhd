@@ -1,18 +1,8 @@
 //
 // Copyright 2010 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #ifndef INCLUDED_UHD_TRANSPORT_UDP_ZERO_COPY_HPP
@@ -68,7 +58,20 @@ public:
         const device_addr_t &hints = device_addr_t()
     );
 
+    /*! Return the local port of the UDP connection
+     *
+     * Port is in host byte order. No funny business here.
+     *
+     * \returns Port number or 0 if port number couldn't be identified.
+     */
     virtual uint16_t get_local_port(void) const = 0;
+
+    /*! Return the local IP address of the UDP connection as a dotted string.
+     *
+     * \returns IP address as a string or empty string if the IP address could
+     *          not be identified.
+     */
+    virtual std::string get_local_addr(void) const = 0;
 };
 
 }} //namespace

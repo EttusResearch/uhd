@@ -1,18 +1,8 @@
 //
 // Copyright 2014 Ettus Research
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #ifndef INCLUDED_AD9361_DEVICE_H
@@ -38,6 +28,7 @@ public:
     enum direction_t { RX, TX };
     enum gain_mode_t {GAIN_MODE_MANUAL, GAIN_MODE_SLOW_AGC, GAIN_MODE_FAST_AGC};
     enum chain_t { CHAIN_1, CHAIN_2, CHAIN_BOTH };
+    enum timing_mode_t { TIMING_MODE_1R1T, TIMING_MODE_2R2T };
 
     ad9361_device_t(ad9361_params::sptr client, ad9361_io::sptr io_iface) :
         _client_params(client), _io_iface(io_iface),
@@ -102,6 +93,12 @@ public:
      *
      */
     void set_active_chains(bool tx1, bool tx2, bool rx1, bool rx2);
+
+    /* Setup Timing mode depending on active channels.
+     *
+     * LVDS interface can have two timing modes - 1R1T and 2R2T
+     */
+    void set_timing_mode(const timing_mode_t timing_mode);
 
     /* Tune the RX or TX frequency.
      *
@@ -170,7 +167,8 @@ public:
     static const double AD9361_MAX_CLOCK_RATE;
     static const double AD9361_MIN_CLOCK_RATE;
     static const double AD9361_CAL_VALID_WINDOW;
-    static const double AD9361_RECOMMENDED_MAX_BANDWIDTH;
+    static const double AD9361_MIN_BW;
+    static const double AD9361_MAX_BW;
     static const double DEFAULT_RX_FREQ;
     static const double DEFAULT_TX_FREQ;
 

@@ -1,18 +1,8 @@
 //
 // Copyright 2010-2011 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include "udp_common.hpp"
@@ -197,7 +187,10 @@ public:
         check_registry_for_fast_send_threshold(this->get_send_frame_size());
         #endif /*CHECK_REG_SEND_THRESH*/
 
-        UHD_LOGGER_INFO("UDP") << boost::format("Creating WSA UDP transport for %s:%s") % addr % port ;
+        UHD_LOGGER_TRACE("UDP")
+            << boost::format("Creating WSA UDP transport to %s:%s")
+               % addr % port;
+
         static uhd_wsa_control uhd_wsa; //makes wsa start happen via lazy initialization
 
         UHD_ASSERT_THROW(_num_send_frames <= WSA_MAXIMUM_WAIT_EVENTS);
@@ -232,6 +225,10 @@ public:
             closesocket(_sock_fd);
             throw uhd::os_error(str(boost::format("WSAConnect() failed with error %d") % error));
         }
+
+        UHD_LOGGER_TRACE("UDP")
+            << boost::format("Local WSA UDP socket endpoint: %s:%s")
+            % get_local_addr() % get_local_port();
 
         //allocate re-usable managed receive buffers
         for (size_t i = 0; i < get_num_recv_frames(); i++){
@@ -275,6 +272,7 @@ public:
 
     size_t get_num_send_frames(void) const {return _num_send_frames;}
     size_t get_send_frame_size(void) const {return _send_frame_size;}
+
     uint16_t get_local_port(void) const {
         struct sockaddr_in addr_info;
         int addr_len = sizeof(addr_info);
@@ -284,6 +282,21 @@ public:
             local_port = ntohs(addr_info.sin_port);
         }
         return local_port;
+    }
+
+    std::string get_local_addr(void) const {
+        // Behold the beauty of winsock
+        struct sockaddr_in addr_info;
+        int addr_len = sizeof(addr_info);
+        std::string local_addr;
+        if (getsockname(_sock_fd, (SOCKADDR*) &addr_info, &addr_len) == 0) {
+            // inet_ntoa() guarantees either NULL or null-terminated array
+            char *local_ip = inet_ntoa(addr_info.sin_addr);
+            if (local_ip) {
+                local_addr = std::string(local_ip);
+            }
+        }
+        return local_addr;
     }
 
     //! Read back the socket's buffer space reserved for receives
@@ -337,10 +350,12 @@ void check_usr_buff_size(
     size_t user_buff_size, // Set this to zero for no user-defined preference
     const std::string tx_rx
 ){
-    UHD_LOGGER_DEBUG("UDP") << boost::format(
-        "Target %s sock buff size: %d bytes\n"
-        "Actual %s sock buff size: %d bytes"
-    ) % tx_rx % user_buff_size % tx_rx % actual_buff_size ;
+    UHD_LOGGER_DEBUG("UDP")
+        << boost::format("Target/actual %s sock buff size: %d/%d bytes")
+           % tx_rx
+           % user_buff_size
+           % actual_buff_size
+    ;
     if ((user_buff_size != 0.0) and (actual_buff_size < user_buff_size)) UHD_LOGGER_WARNING("UDP") << boost::format(
         "The %s buffer could not be resized sufficiently.\n"
         "Target sock buff size: %d bytes.\n"

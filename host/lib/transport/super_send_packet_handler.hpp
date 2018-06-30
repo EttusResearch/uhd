@@ -1,24 +1,13 @@
 //
 // Copyright 2011-2013 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #ifndef INCLUDED_LIBUHD_TRANSPORT_SUPER_SEND_PACKET_HANDLER_HPP
 #define INCLUDED_LIBUHD_TRANSPORT_SUPER_SEND_PACKET_HANDLER_HPP
 
-#include "../rfnoc/tx_stream_terminator.hpp"
 #include <uhd/config.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/convert.hpp>
@@ -26,14 +15,16 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhd/utils/byteswap.hpp>
+#include <uhd/utils/thread.hpp>
 #include <uhd/types/metadata.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/zero_copy.hpp>
-#include <boost/thread/thread.hpp>
-#include <boost/thread/thread_time.hpp>
+#include <uhdlib/rfnoc/tx_stream_terminator.hpp>
 #include <boost/function.hpp>
 #include <iostream>
 #include <vector>
+#include <chrono>
+#include <thread>
 
 #ifdef UHD_TXRX_DEBUG_PRINTS
 // Included for debugging
@@ -181,7 +172,7 @@ public:
         uhd::async_metadata_t &async_metadata, double timeout = 0.1
     ){
         if (_async_receiver) return _async_receiver(async_metadata, timeout);
-        boost::this_thread::sleep(boost::posix_time::microseconds(long(timeout*1e6)));
+        std::this_thread::sleep_for(std::chrono::microseconds(long(timeout*1e6)));
         return false;
     }
 

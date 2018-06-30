@@ -1,18 +1,8 @@
 /*
  * Copyright 2015-2016 Ettus Research LLC
+ * Copyright 2018 Ettus Research, a National Instruments Company
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 /* C-Interface for multi_usrp */
@@ -65,21 +55,19 @@ struct uhd_usrp {
 
 struct uhd_tx_streamer {
     size_t usrp_index;
-    size_t streamer_index;
+    uhd::tx_streamer::sptr streamer;
     std::string last_error;
 };
 
 struct uhd_rx_streamer {
     size_t usrp_index;
-    size_t streamer_index;
+    uhd::rx_streamer::sptr streamer;
     std::string last_error;
 };
 
 /* Not public: We use this for our internal registry */
 struct usrp_ptr {
     uhd::usrp::multi_usrp::sptr ptr;
-    std::vector< uhd::rx_streamer::sptr > rx_streamers;
-    std::vector< uhd::tx_streamer::sptr > tx_streamers;
     static size_t usrp_counter;
 };
 size_t usrp_ptr::usrp_counter = 0;
@@ -90,8 +78,6 @@ typedef std::map<size_t, usrp_ptr> usrp_ptrs;
 UHD_SINGLETON_FCN(usrp_ptrs, get_usrp_ptrs);
 /* Shortcut for accessing the underlying USRP sptr from a uhd_usrp_handle* */
 #define USRP(h_ptr) (get_usrp_ptrs()[h_ptr->usrp_index].ptr)
-#define RX_STREAMER(h_ptr) (get_usrp_ptrs()[h_ptr->usrp_index].rx_streamers[h_ptr->streamer_index])
-#define TX_STREAMER(h_ptr) (get_usrp_ptrs()[h_ptr->usrp_index].tx_streamers[h_ptr->streamer_index])
 
 /****************************************************************************
  * RX Streamer
@@ -116,14 +102,14 @@ uhd_error uhd_rx_streamer_free(uhd_rx_streamer_handle* h){
 uhd_error uhd_rx_streamer_num_channels(uhd_rx_streamer_handle h,
                                        size_t *num_channels_out){
     UHD_SAFE_C_SAVE_ERROR(h,
-        *num_channels_out = RX_STREAMER(h)->get_num_channels();
+        *num_channels_out = h->streamer->get_num_channels();
     )
 }
 
 uhd_error uhd_rx_streamer_max_num_samps(uhd_rx_streamer_handle h,
                                         size_t *max_num_samps_out){
     UHD_SAFE_C_SAVE_ERROR(h,
-        *max_num_samps_out = RX_STREAMER(h)->get_max_num_samps();
+        *max_num_samps_out = h->streamer->get_max_num_samps();
     )
 }
 
@@ -137,8 +123,8 @@ uhd_error uhd_rx_streamer_recv(
     size_t *items_recvd
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        uhd::rx_streamer::buffs_type buffs_cpp(buffs, RX_STREAMER(h)->get_num_channels());
-        *items_recvd = RX_STREAMER(h)->recv(buffs_cpp, samps_per_buff, (*md)->rx_metadata_cpp, timeout, one_packet);
+        uhd::rx_streamer::buffs_type buffs_cpp(buffs, h->streamer->get_num_channels());
+        *items_recvd = h->streamer->recv(buffs_cpp, samps_per_buff, (*md)->rx_metadata_cpp, timeout, one_packet);
     )
 }
 
@@ -147,7 +133,7 @@ uhd_error uhd_rx_streamer_issue_stream_cmd(
     const uhd_stream_cmd_t *stream_cmd
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        RX_STREAMER(h)->issue_stream_cmd(stream_cmd_c_to_cpp(stream_cmd));
+            h->streamer->issue_stream_cmd(stream_cmd_c_to_cpp(stream_cmd));
     )
 }
 
@@ -156,7 +142,7 @@ uhd_error uhd_rx_streamer_last_error(
     char* error_out,
     size_t strbuffer_len
 ){
-    UHD_SAFE_C_SAVE_ERROR(h,
+    UHD_SAFE_C(
         memset(error_out, '\0', strbuffer_len);
         strncpy(error_out, h->last_error.c_str(), strbuffer_len);
     )
@@ -191,7 +177,7 @@ uhd_error uhd_tx_streamer_num_channels(
     size_t *num_channels_out
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        *num_channels_out = TX_STREAMER(h)->get_num_channels();
+        *num_channels_out = h->streamer->get_num_channels();
     )
 }
 
@@ -200,7 +186,7 @@ uhd_error uhd_tx_streamer_max_num_samps(
     size_t *max_num_samps_out
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        *max_num_samps_out = TX_STREAMER(h)->get_max_num_samps();
+        *max_num_samps_out = h->streamer->get_max_num_samps();
     )
 }
 
@@ -213,8 +199,8 @@ uhd_error uhd_tx_streamer_send(
     size_t *items_sent
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        uhd::tx_streamer::buffs_type buffs_cpp(buffs, TX_STREAMER(h)->get_num_channels());
-        *items_sent = TX_STREAMER(h)->send(
+        uhd::tx_streamer::buffs_type buffs_cpp(buffs, h->streamer->get_num_channels());
+        *items_sent = h->streamer->send(
             buffs_cpp,
             samps_per_buff,
             (*md)->tx_metadata_cpp,
@@ -230,7 +216,7 @@ uhd_error uhd_tx_streamer_recv_async_msg(
     bool *valid
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        *valid = TX_STREAMER(h)->recv_async_msg((*md)->async_metadata_cpp, timeout);
+        *valid = h->streamer->recv_async_msg((*md)->async_metadata_cpp, timeout);
     )
 }
 
@@ -323,19 +309,17 @@ uhd_error uhd_usrp_get_rx_stream(
     uhd_stream_args_t *stream_args,
     uhd_rx_streamer_handle h_s
 ){
-    UHD_SAFE_C(
+    UHD_SAFE_C_SAVE_ERROR(h_s,
         boost::mutex::scoped_lock lock(_usrp_get_rx_stream_mutex);
 
         if(!get_usrp_ptrs().count(h_u->usrp_index)){
+            h_s->last_error = "Streamer's device is invalid or expired.";
             return UHD_ERROR_INVALID_DEVICE;
         }
 
         usrp_ptr &usrp = get_usrp_ptrs()[h_u->usrp_index];
-        usrp.rx_streamers.push_back(
-            usrp.ptr->get_rx_stream(stream_args_c_to_cpp(stream_args))
-        );
+        h_s->streamer = usrp.ptr->get_rx_stream(stream_args_c_to_cpp(stream_args));
         h_s->usrp_index     = h_u->usrp_index;
-        h_s->streamer_index = usrp.rx_streamers.size() - 1;
     )
 }
 
@@ -345,19 +329,17 @@ uhd_error uhd_usrp_get_tx_stream(
     uhd_stream_args_t *stream_args,
     uhd_tx_streamer_handle h_s
 ){
-    UHD_SAFE_C(
+    UHD_SAFE_C_SAVE_ERROR(h_s,
         boost::mutex::scoped_lock lock(_usrp_get_tx_stream_mutex);
 
         if(!get_usrp_ptrs().count(h_u->usrp_index)){
+            h_s->last_error = "Streamer's device is invalid or expired.";
             return UHD_ERROR_INVALID_DEVICE;
         }
 
         usrp_ptr &usrp = get_usrp_ptrs()[h_u->usrp_index];
-        usrp.tx_streamers.push_back(
-            usrp.ptr->get_tx_stream(stream_args_c_to_cpp(stream_args))
-        );
+        h_s->streamer = usrp.ptr->get_tx_stream(stream_args_c_to_cpp(stream_args));
         h_s->usrp_index     = h_u->usrp_index;
-        h_s->streamer_index = usrp.tx_streamers.size() - 1;
     )
 }
 
@@ -1401,26 +1383,6 @@ uhd_error uhd_usrp_get_tx_sensor_names(
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
         (*sensor_names_out)->string_vector_cpp = USRP(h)->get_tx_sensor_names(chan);
-    )
-}
-
-uhd_error uhd_usrp_set_tx_dc_offset_enabled(
-    uhd_usrp_handle h,
-    bool enb,
-    size_t chan
-){
-    UHD_SAFE_C_SAVE_ERROR(h,
-        USRP(h)->set_tx_dc_offset(enb, chan);
-    )
-}
-
-uhd_error uhd_usrp_set_tx_iq_balance_enabled(
-    uhd_usrp_handle h,
-    bool enb,
-    size_t chan
-){
-    UHD_SAFE_C_SAVE_ERROR(h,
-        USRP(h)->set_tx_iq_balance(enb, chan);
     )
 }
 

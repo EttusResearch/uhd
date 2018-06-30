@@ -1,26 +1,16 @@
 //
 // Copyright 2012-2015 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include "b200_regs.hpp"
 #include "b200_impl.hpp"
-#include "validate_subdev_spec.hpp"
+#include <uhdlib/usrp/common/validate_subdev_spec.hpp>
+#include <uhdlib/usrp/common/async_packet_handler.hpp>
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
-#include "async_packet_handler.hpp"
 #include <uhd/utils/math.hpp>
 #include <boost/bind.hpp>
 #include <boost/make_shared.hpp>

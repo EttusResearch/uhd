@@ -1,18 +1,8 @@
 //
 // Copyright 2010-2011 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include <boost/test/unit_test.hpp>
@@ -84,4 +74,13 @@ BOOST_AUTO_TEST_CASE(test_dboard_id){
     BOOST_CHECK_EQUAL(dboard_id_t::from_string("0x1234").to_uint16(), 0x1234);
     BOOST_CHECK_EQUAL(dboard_id_t::from_string("1234").to_uint16(), 1234);
     std::cout << "Pretty Print: " << std::endl << dboard_id_t::none().to_pp_string();
+}
+
+BOOST_AUTO_TEST_CASE(test_map_device_addr){
+    std::map<std::string, std::string> dev_addr_map;
+    dev_addr_map["key1"] = "val1";
+    dev_addr_map["key2"] = "val2";
+    uhd::device_addr_t dev_addr(dev_addr_map);
+    BOOST_CHECK_EQUAL(dev_addr["key1"], "val1");
+    BOOST_CHECK_EQUAL(dev_addr["key2"], "val2");
 }

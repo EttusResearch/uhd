@@ -1,18 +1,8 @@
 //
 // Copyright 2013-2015 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #ifndef INCLUDED_E300_IMPL_HPP
@@ -27,21 +17,21 @@
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/types/serial.hpp>
 #include <uhd/types/sensors.hpp>
+#include <uhdlib/usrp/common/ad9361_ctrl.hpp>
 #include <boost/weak_ptr.hpp>
 #include <boost/thread/mutex.hpp>
 #include <string>
 #include "e300_fifo_config.hpp"
-#include "radio_ctrl_core_3000.hpp"
-#include "rx_frontend_core_200.hpp"
-#include "tx_frontend_core_200.hpp"
-#include "rx_vita_core_3000.hpp"
-#include "tx_vita_core_3000.hpp"
-#include "time_core_3000.hpp"
-#include "rx_dsp_core_3000.hpp"
-#include "tx_dsp_core_3000.hpp"
-#include "ad9361_ctrl.hpp"
-#include "ad936x_manager.hpp"
-#include "gpio_atr_3000.hpp"
+#include <uhdlib/usrp/cores/radio_ctrl_core_3000.hpp>
+#include <uhdlib/usrp/cores/rx_frontend_core_200.hpp>
+#include <uhdlib/usrp/cores/tx_frontend_core_200.hpp>
+#include <uhdlib/usrp/cores/rx_vita_core_3000.hpp>
+#include <uhdlib/usrp/cores/tx_vita_core_3000.hpp>
+#include <uhdlib/usrp/cores/time_core_3000.hpp>
+#include <uhdlib/usrp/cores/rx_dsp_core_3000.hpp>
+#include <uhdlib/usrp/cores/tx_dsp_core_3000.hpp>
+#include <uhdlib/usrp/common/ad936x_manager.hpp>
+#include <uhdlib/usrp/cores/gpio_atr_3000.hpp>
 
 #include "e300_global_regs.hpp"
 #include "e300_i2c.hpp"

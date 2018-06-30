@@ -1,18 +1,9 @@
 //
 // Copyright 2011-2012 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2017 Ettus Research (National Instruments Corp.)
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #ifndef INCLUDED_UHD_UTILS_TASKS_HPP
@@ -33,18 +24,19 @@ namespace uhd{
         /*!
          * Create a new task object with function callback.
          * The task function callback will be run in a loop.
-         * until the thread is interrupted by the deconstructor.
+         * until the thread is interrupted by the destructor.
          *
-         * A task should return in a reasonable amount of time
-         * or may block forever under the following conditions:
-         *  - The blocking call is interruptible.
-         *  - The task polls the interrupt condition.
+         * A task should return in a reasonable amount of time.
+         * It may not block, or the destructor will also block.
          *
          * \param task_fcn the task callback function
+         * \param name Task name. Will be used as a thread name.
          * \return a new task object
          */
-        static sptr make(const task_fcn_type &task_fcn);
-
+        static sptr make(
+            const task_fcn_type &task_fcn,
+            const std::string &name=""
+        );
     };
 } //namespace uhd
 

@@ -1,18 +1,8 @@
 //
 // Copyright 2011,2014,2016 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include "clock_ctrl.hpp"
@@ -24,12 +14,12 @@
 #include <uhd/utils/safe_call.hpp>
 #include <stdint.h>
 #include "b100_regs.hpp" //spi slave constants
-#include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
-#include <boost/thread/thread.hpp>
 #include <boost/math/common_factor_rt.hpp> //gcd
 #include <algorithm>
 #include <utility>
+#include <chrono>
+#include <thread>
 
 using namespace uhd;
 
@@ -496,7 +486,7 @@ private:
         //wait for calibration done:
         static const uint8_t addr = 0x01F;
         for (size_t ms10 = 0; ms10 < 100; ms10++){
-            boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
             uint32_t reg = read_reg(addr);
             _ad9522_regs.set_reg(addr, reg);
             if (_ad9522_regs.vco_calibration_finished) goto wait_for_ld;
@@ -505,7 +495,7 @@ private:
         wait_for_ld:
         //wait for digital lock detect:
         for (size_t ms10 = 0; ms10 < 100; ms10++){
-            boost::this_thread::sleep(boost::posix_time::milliseconds(10));
+            std::this_thread::sleep_for(std::chrono::milliseconds(10));
             uint32_t reg = read_reg(addr);
             _ad9522_regs.set_reg(addr, reg);
             if (_ad9522_regs.digital_lock_detect) return;
@@ -525,11 +515,14 @@ private:
     void send_all_regs(void){
         //setup a list of register ranges to write
         typedef std::pair<uint16_t, uint16_t> range_t;
-        static const std::vector<range_t> ranges = boost::assign::list_of
-            (range_t(0x000, 0x000)) (range_t(0x010, 0x01F))
-            (range_t(0x0F0, 0x0FD)) (range_t(0x190, 0x19B))
-            (range_t(0x1E0, 0x1E1)) (range_t(0x230, 0x230))
-        ;
+        static const std::vector<range_t> ranges{
+            range_t(0x000, 0x000),
+            range_t(0x010, 0x01F),
+            range_t(0x0F0, 0x0FD),
+            range_t(0x190, 0x19B),
+            range_t(0x1E0, 0x1E1),
+            range_t(0x230, 0x230)
+        };
 
         //write initial register values and latch/update
         for(const range_t &range:  ranges){

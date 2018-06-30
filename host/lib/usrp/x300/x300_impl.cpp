@@ -1,37 +1,21 @@
 //
 // Copyright 2013-2016 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include "x300_impl.hpp"
 #include "x300_lvbitx.hpp"
 #include "x310_lvbitx.hpp"
-#include "x300_mb_eeprom.hpp"
-#include "apply_corrections.hpp"
-#include <boost/algorithm/string.hpp>
-#include <boost/asio.hpp>
+#include "x300_mb_eeprom_iface.hpp"
+#include <uhdlib/usrp/common/apply_corrections.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/transport/if_addrs.hpp>
-#include <boost/bind.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/functional/hash.hpp>
-#include <boost/assign/list_of.hpp>
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/transport/udp_constants.hpp>
 #include <uhd/transport/zero_copy_recv_offload.hpp>
@@ -39,7 +23,17 @@
 #include <uhd/transport/nirio/niusrprio_session.h>
 #include <uhd/utils/platform.hpp>
 #include <uhd/types/sid.hpp>
+#include <uhd/utils/math.hpp>
+
+#include <boost/algorithm/string.hpp>
+#include <boost/asio.hpp>
+#include <boost/bind.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/functional/hash.hpp>
+#include <boost/assign/list_of.hpp>
 #include <fstream>
+#include <chrono>
+#include <thread>
 
 #define NIUSRPRIO_DEFAULT_RPC_PORT "5444"
 
@@ -125,7 +119,8 @@ static device_addrs_t x300_find_with_addr(const device_addr_t &hint)
 
             i2c_core_100_wb32::sptr zpu_i2c = i2c_core_100_wb32::make(zpu_ctrl, I2C1_BASE);
             x300_mb_eeprom_iface::sptr eeprom_iface = x300_mb_eeprom_iface::make(zpu_ctrl, zpu_i2c);
-            const mboard_eeprom_t mb_eeprom(*eeprom_iface, "X300");
+            const mboard_eeprom_t mb_eeprom =
+                x300_impl::get_mb_eeprom(eeprom_iface);
             if (mb_eeprom.size() == 0 or x300_impl::claim_status(zpu_ctrl) == x300_impl::CLAIMED_BY_OTHER)
             {
                 // Skip device claimed by another process
@@ -220,7 +215,15 @@ static device_addrs_t x300_find_pcie(const device_addr_t &hint, bool explicit_qu
 
             if (get_pcie_zpu_iface_registry().has_key(resource_d)) {
                 zpu_ctrl = get_pcie_zpu_iface_registry()[resource_d].lock();
-            } else {
+                if (!zpu_ctrl)
+                {
+                    get_pcie_zpu_iface_registry().pop(resource_d);
+                }
+            }
+
+            // if the registry didn't have a key OR that key was an orphaned weak_ptr
+            if (!zpu_ctrl)
+            {
                 zpu_ctrl = x300_make_ctrl_iface_pcie(kernel_proxy, false /* suppress timeout errors */);
                 //We don't put this zpu_ctrl in the registry because we need
                 //a persistent niriok_proxy associated with the object
@@ -233,7 +236,8 @@ static device_addrs_t x300_find_pcie(const device_addr_t &hint, bool explicit_qu
 
             i2c_core_100_wb32::sptr zpu_i2c = i2c_core_100_wb32::make(zpu_ctrl, I2C1_BASE);
             x300_mb_eeprom_iface::sptr eeprom_iface = x300_mb_eeprom_iface::make(zpu_ctrl, zpu_i2c);
-            const mboard_eeprom_t mb_eeprom(*eeprom_iface, "X300");
+            const mboard_eeprom_t mb_eeprom =
+                x300_impl::get_mb_eeprom(eeprom_iface);
             if (mb_eeprom.size() == 0 or x300_impl::claim_status(zpu_ctrl) == x300_impl::CLAIMED_BY_OTHER)
             {
                 // Skip device claimed by another process
@@ -332,7 +336,21 @@ device_addrs_t x300_find(const device_addr_t &hint_)
 
             //call discover with the new hint and append results
             device_addrs_t new_addrs = x300_find(new_hint);
-            addrs.insert(addrs.begin(), new_addrs.begin(), new_addrs.end());
+            //if we are looking for a serial, only add the one device with a matching serial
+            if (hint.has_key("serial")) {
+                bool found_serial = false; //signal to break out of the interface loop
+                for (device_addrs_t::iterator new_addr_it=new_addrs.begin(); new_addr_it != new_addrs.end(); new_addr_it++) {
+                    if ((*new_addr_it)["serial"] == hint["serial"]) {
+                        addrs.insert(addrs.begin(), *new_addr_it);
+                        found_serial = true;
+                        break;
+                    }
+                }
+                if (found_serial) break;
+            } else {
+                // Otherwise, add all devices we find
+                addrs.insert(addrs.begin(), new_addrs.begin(), new_addrs.end());
+            }
         }
     }
 
@@ -375,7 +393,7 @@ static void x300_load_fw(wb_iface::sptr fw_reg_ctrl, const std::string &file_nam
     }
 
     //Wait for fimrware to reboot. 3s is an upper bound
-    boost::this_thread::sleep(boost::posix_time::milliseconds(3000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(3000));
     UHD_LOGGER_INFO("X300") << "Firmware loaded!" ;
 }
 
@@ -437,7 +455,7 @@ void x300_impl::mboard_members_t::discover_eth(
         if (std::find(mb_eeprom_addrs.begin(), mb_eeprom_addrs.end(), mb_eeprom[key]) != mb_eeprom_addrs.end()) {
             UHD_LOGGER_WARNING("X300") << str(boost::format(
                 "Duplicate IP address %s found in mboard EEPROM. "
-                "Device may not function properly.\nView and reprogram the values "
+                "Device may not function properly. View and reprogram the values "
                 "using the usrp_burn_mb_eeprom utility.") % mb_eeprom[key]);
         }
         mb_eeprom_addrs.push_back(mb_eeprom[key]);
@@ -467,8 +485,8 @@ void x300_impl::mboard_members_t::discover_eth(
         if (conn_iface.type == X300_IFACE_NONE) {
             UHD_LOGGER_WARNING("X300") << str(boost::format(
                 "Address %s not found in mboard EEPROM. Address may be wrong or "
-                "the EEPROM may be corrupt.\n Attempting to continue with default "
-                "IP addresses.\n") % conn_iface.addr
+                "the EEPROM may be corrupt. Attempting to continue with default "
+                "IP addresses.") % conn_iface.addr
             );
 
             if (addr == boost::asio::ip::address_v4(
@@ -524,7 +542,7 @@ void x300_impl::mboard_members_t::discover_eth(
 
 void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
 {
-    const fs_path mb_path = "/mboards/"+boost::lexical_cast<std::string>(mb_i);
+    const fs_path mb_path = fs_path("/mboards") / mb_i;
     mboard_members_t &mb = _mb[mb_i];
     mb.initialization_done = false;
 
@@ -533,7 +551,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     );
     const std::string thread_msg(
         "Thread ID " + thread_id + " for motherboard "
-        + boost::lexical_cast<std::string>(mb_i)
+        + std::to_string(mb_i)
     );
 
     std::vector<std::string> eth_addrs;
@@ -542,6 +560,8 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     eth_addrs.push_back(eth0_addr);
 
     mb.next_src_addr = 0;   //Host source address for blocks
+    mb.next_tx_src_addr = 0;
+    mb.next_rx_src_addr = 0;
     if (dev_addr.has_key("second_addr")) {
         std::string eth1_addr = dev_addr["second_addr"];
 
@@ -666,11 +686,10 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
                 << boost::format("You requested a receive frame size of (%lu) but your NIC's max frame size is (%lu).")
                 % req_max_frame_size.recv_frame_size
                 % _max_frame_sizes.recv_frame_size
-                
                 << boost::format("Please verify your NIC's MTU setting using '%s' or set the recv_frame_size argument appropriately.")
-                % mtu_tool 
+                % mtu_tool
                 << "UHD will use the auto-detected max frame size for this connection."
-                ;
+            ;
         }
 
         if ((mb.recv_args.has_key("send_frame_size"))
@@ -679,11 +698,10 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
                 << boost::format("You requested a send frame size of (%lu) but your NIC's max frame size is (%lu).")
                 % req_max_frame_size.send_frame_size
                 % _max_frame_sizes.send_frame_size
-                
                 << boost::format("Please verify your NIC's MTU setting using '%s' or set the send_frame_size argument appropriately.")
-                % mtu_tool 
+                % mtu_tool
                 << "UHD will use the auto-detected max frame size for this connection."
-                ;
+            ;
         }
 
         _tree->create<size_t>(mb_path / "mtu/recv").set(_max_frame_sizes.recv_frame_size);
@@ -692,7 +710,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     }
 
     //create basic communication
-    UHD_LOGGER_INFO("X300") << "Setup basic communication...";
+    UHD_LOGGER_DEBUG("X300") << "Setting up basic communication...";
     if (mb.xport_path == "nirio") {
         boost::mutex::scoped_lock(pcie_zpu_iface_registry_mutex);
         if (get_pcie_zpu_iface_registry().has_key(mb.get_pri_eth().addr)) {
@@ -710,7 +728,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     if (not try_to_claim(mb.zpu_ctrl)) {
         throw uhd::runtime_error("Failed to claim device");
     }
-    mb.claimer_task = uhd::task::make(boost::bind(&x300_impl::claimer_loop, this, mb.zpu_ctrl));
+    mb.claimer_task = uhd::task::make(boost::bind(&x300_impl::claimer_loop, this, mb.zpu_ctrl), "x300_claimer");
 
     //extract the FW path for the X300
     //and live load fw over ethernet link
@@ -763,17 +781,24 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     ////////////////////////////////////////////////////////////////////
     // setup the mboard eeprom
     ////////////////////////////////////////////////////////////////////
-    UHD_LOGGER_INFO("X300") << "Loading values from EEPROM...";
+    UHD_LOGGER_DEBUG("X300") << "Loading values from EEPROM...";
     x300_mb_eeprom_iface::sptr eeprom16 = x300_mb_eeprom_iface::make(mb.zpu_ctrl, mb.zpu_i2c);
-    if (dev_addr.has_key("blank_eeprom"))
-    {
-        UHD_LOGGER_WARNING("X300") << "Obliterating the motherboard EEPROM..." ;
+    if (dev_addr.has_key("blank_eeprom")) {
+        UHD_LOGGER_WARNING("X300") << "Obliterating the motherboard EEPROM...";
         eeprom16->write_eeprom(0x50, 0, byte_vector_t(256, 0xff));
     }
-    const mboard_eeprom_t mb_eeprom(*eeprom16, "X300");
+
+    const mboard_eeprom_t mb_eeprom = get_mb_eeprom(eeprom16);
     _tree->create<mboard_eeprom_t>(mb_path / "eeprom")
+        // Initialize the property with a current copy of the EEPROM contents
         .set(mb_eeprom)
-        .add_coerced_subscriber(boost::bind(&x300_impl::set_mb_eeprom, this, mb.zpu_i2c, _1));
+        // Whenever this property is written, update the chip
+        .add_coerced_subscriber(
+            [this, eeprom16](const mboard_eeprom_t &mb_eeprom){
+                this->set_mb_eeprom(eeprom16, mb_eeprom);
+            }
+        )
+    ;
 
     bool recover_mb_eeprom = dev_addr.has_key("recover_mb_eeprom");
     if (recover_mb_eeprom) {
@@ -859,7 +884,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     ////////////////////////////////////////////////////////////////////
     // create clock control objects
     ////////////////////////////////////////////////////////////////////
-    UHD_LOGGER_INFO("X300") << "Setup RF frontend clocking...";
+    UHD_LOGGER_DEBUG("X300") << "Setting up RF frontend clocking...";
 
     //Initialize clock control registers. NOTE: This does not configure the LMK yet.
     mb.clock = x300_clock_ctrl::make(mb.zpu_spi,
@@ -881,7 +906,9 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         .set_publisher(boost::bind(&x300_clock_ctrl::get_master_clock_rate, mb.clock))
     ;
 
-    UHD_LOGGER_INFO("X300") << "Radio 1x clock:" << (mb.clock->get_master_clock_rate()/1e6);
+    UHD_LOGGER_INFO("X300")
+        << "Radio 1x clock: " << (mb.clock->get_master_clock_rate()/1e6)
+        << " MHz";
 
     ////////////////////////////////////////////////////////////////////
     // Create the GPSDO control
@@ -891,25 +918,22 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     //otherwise if not disabled, look for the internal GPSDO
     if (mb.zpu_ctrl->peek32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_GPSDO_STATUS)) != dont_look_for_gpsdo)
     {
-        UHD_LOGGER_INFO("X300") << "Detecting internal GPSDO.... ";
-        try
-        {
+        UHD_LOG_DEBUG("X300", "Detecting internal GPSDO....");
+        try {
+            // gps_ctrl will print its own log statements if a GPSDO was found
             mb.gps = gps_ctrl::make(x300_make_uart_iface(mb.zpu_ctrl));
         }
-        catch(std::exception &e)
-        {
-            UHD_LOGGER_ERROR("X300") << "An error occurred making GPSDO control: " << e.what() ;
+        catch(std::exception &e) {
+            UHD_LOGGER_ERROR("X300")
+                << "An error occurred making GPSDO control: " << e.what();
         }
-        if (mb.gps and mb.gps->gps_detected())
-        {
-            for(const std::string &name:  mb.gps->get_sensors())
-            {
+        if (mb.gps and mb.gps->gps_detected()) {
+            for(const std::string& name : mb.gps->get_sensors()) {
                 _tree->create<sensor_value_t>(mb_path / "sensors" / name)
                     .set_publisher(boost::bind(&gps_ctrl::get_sensor, mb.gps, name));
             }
         }
-        else
-        {
+        else {
             mb.zpu_ctrl->poke32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_GPSDO_STATUS), dont_look_for_gpsdo);
         }
     }
@@ -919,29 +943,41 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     ////////////////////////////////////////////////////////////////////
     _tree->create<std::string>(mb_path / "time_source" / "value")
         .set("internal")
-        .add_coerced_subscriber(boost::bind(&x300_impl::update_time_source, this, boost::ref(mb), _1));
-    static const std::vector<std::string> time_sources = boost::assign::list_of("internal")("external")("gpsdo");
-    _tree->create<std::vector<std::string> >(mb_path / "time_source" / "options").set(time_sources);
+        .add_coerced_subscriber([this, &mb](const std::string& time_source){
+            this->update_time_source(mb, time_source);
+        })
+    ;
+    static const std::vector<std::string> time_sources =
+        {"internal", "external", "gpsdo"};
+    _tree->create<std::vector<std::string>>(mb_path / "time_source" / "options")
+        .set(time_sources);
 
     //setup the time output, default to ON
     _tree->create<bool>(mb_path / "time_source" / "output")
-        .add_coerced_subscriber(boost::bind(&x300_impl::set_time_source_out, this, boost::ref(mb), _1))
-        .set(true);
+        .add_coerced_subscriber([this, &mb](const bool time_output){
+            this->set_time_source_out(mb, time_output);
+        })
+        .set(true)
+    ;
 
     ////////////////////////////////////////////////////////////////////
     // setup clock sources and properties
     ////////////////////////////////////////////////////////////////////
     _tree->create<std::string>(mb_path / "clock_source" / "value")
         .set(X300_DEFAULT_CLOCK_SOURCE)
-        .add_coerced_subscriber(boost::bind(&x300_impl::update_clock_source, this, boost::ref(mb), _1));
-
-    static const std::vector<std::string> clock_source_options = boost::assign::list_of("internal")("external")("gpsdo");
-    _tree->create<std::vector<std::string> >(mb_path / "clock_source" / "options").set(clock_source_options);
+        .add_coerced_subscriber([this, &mb](const std::string& clock_source){
+            this->update_clock_source(mb, clock_source);
+        })
+    ;
+    static const std::vector<std::string> clock_source_options =
+        {"internal", "external", "gpsdo"};
+    _tree->create<std::vector<std::string>>(mb_path / "clock_source" / "options")
+        .set(clock_source_options);
 
     //setup external reference options. default to 10 MHz input reference
     _tree->create<std::string>(mb_path / "clock_source" / "external");
-    static const std::vector<double> external_freq_options = boost::assign::list_of(10e6)(30.72e6)(200e6);
-    _tree->create<std::vector<double> >(mb_path / "clock_source" / "external" / "freq" / "options")
+    static const std::vector<double> external_freq_options = {10e6, 30.72e6, 200e6};
+    _tree->create<std::vector<double>>(mb_path / "clock_source" / "external" / "freq" / "options")
         .set(external_freq_options);
     _tree->create<double>(mb_path / "clock_source" / "external" / "value")
         .set(mb.clock->get_sysref_clock_rate());
@@ -949,13 +985,33 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
 
     //setup the clock output, default to ON
     _tree->create<bool>(mb_path / "clock_source" / "output")
-        .add_coerced_subscriber(boost::bind(&x300_clock_ctrl::set_ref_out, mb.clock, _1));
+        .add_coerced_subscriber([&mb](const bool clock_output){
+            mb.clock->set_ref_out(clock_output);
+        })
+    ;
 
-    //initialize tick rate (must be done before setting time)
+    // Initialize tick rate (must be done before setting time)
+    // Note: The master tick rate can't be changed at runtime!
+    const double master_clock_rate = mb.clock->get_master_clock_rate();
     _tree->create<double>(mb_path / "tick_rate")
-        .add_coerced_subscriber(boost::bind(&device3_impl::update_tx_streamers, this, _1))
-        .add_coerced_subscriber(boost::bind(&device3_impl::update_rx_streamers, this, _1))
-        .set(mb.clock->get_master_clock_rate())
+        .set_coercer([master_clock_rate](const double rate){
+            // The contract of multi_usrp::set_master_clock_rate() is to coerce
+            // and not throw, so we'll follow that behaviour here.
+            if (!uhd::math::frequencies_are_equal(rate, master_clock_rate)) {
+                UHD_LOGGER_WARNING("X300") <<
+                    "Cannot update master clock rate! X300 Series does not "
+                    "allow changing the clock rate during runtime."
+                ;
+            }
+            return master_clock_rate;
+        })
+        .add_coerced_subscriber([this](const double rate){
+            this->update_tx_streamers(rate);
+        })
+        .add_coerced_subscriber([this](const double rate){
+            this->update_rx_streamers(rate);
+        })
+        .set(master_clock_rate)
     ;
 
     ////////////////////////////////////////////////////////////////////
@@ -981,7 +1037,8 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
                 find_blocks<rfnoc::x300_radio_ctrl_impl>(radio_blockid_hint);
     if (not radio_ids.empty()) {
         if (radio_ids.size() > 2) {
-            UHD_LOGGER_WARNING("X300") << "Too many Radio Blocks found. Using only the first two." ;
+            UHD_LOGGER_WARNING("X300")
+                << "Too many Radio Blocks found. Using only the first two.";
             radio_ids.resize(2);
         }
 
@@ -1023,7 +1080,8 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         }
 
     } else {
-        UHD_LOGGER_INFO("X300") << "No Radio Block found. Assuming radio-less operation.";
+        UHD_LOGGER_INFO("X300")
+            << "No Radio Block found. Assuming radio-less operation.";
     } /* end of radio block(s) initialization */
 
     mb.initialization_done = true;
@@ -1057,28 +1115,51 @@ x300_impl::~x300_impl(void)
 uint32_t x300_impl::mboard_members_t::allocate_pcie_dma_chan(const uhd::sid_t &tx_sid, const xport_type_t xport_type)
 {
     static const uint32_t CTRL_CHANNEL       = 0;
-    static const uint32_t FIRST_DATA_CHANNEL = 1;
+    static const uint32_t ASYNC_MSG_CHANNEL  = 1;
+    static const uint32_t FIRST_DATA_CHANNEL = 2;
     if (xport_type == CTRL) {
         return CTRL_CHANNEL;
+    } else if (xport_type == ASYNC_MSG) {
+        return ASYNC_MSG_CHANNEL;
     } else {
         // sid_t has no comparison defined, so we need to convert it uint32_t
         uint32_t raw_sid = tx_sid.get();
 
         if (_dma_chan_pool.count(raw_sid) == 0) {
-            _dma_chan_pool[raw_sid] = _dma_chan_pool.size() + FIRST_DATA_CHANNEL;
-            UHD_LOGGER_DEBUG("X300") << "[X300] Assigning PCIe DMA channel " << _dma_chan_pool[raw_sid]
-                            << " to SID " << tx_sid.to_pp_string_hex() ;
+            size_t channel = _dma_chan_pool.size() + FIRST_DATA_CHANNEL;
+            if (channel > X300_PCIE_MAX_CHANNELS) {
+                throw uhd::runtime_error("Trying to allocate more DMA channels than are available");
+            }
+            _dma_chan_pool[raw_sid] = channel;
+            UHD_LOGGER_DEBUG("X300")
+                << "Assigning PCIe DMA channel " << _dma_chan_pool[raw_sid]
+                << " to SID " << tx_sid.to_pp_string_hex();
         }
 
-        if (_dma_chan_pool.size() + FIRST_DATA_CHANNEL > X300_PCIE_MAX_CHANNELS) {
-            throw uhd::runtime_error("Trying to allocate more DMA channels than are available");
-        }
         return _dma_chan_pool[raw_sid];
     }
 }
 
 static uint32_t extract_sid_from_pkt(void* pkt, size_t) {
     return uhd::sid_t(uhd::wtohx(static_cast<const uint32_t*>(pkt)[1])).get_dst();
+}
+
+static uhd::transport::muxed_zero_copy_if::sptr make_muxed_pcie_msg_xport
+(
+    uhd::niusrprio::niusrprio_session::sptr rio_fpga_interface,
+    uint32_t dma_channel_num,
+    size_t max_muxed_ports
+) {
+    zero_copy_xport_params buff_args;
+    buff_args.send_frame_size = X300_PCIE_MSG_FRAME_SIZE;
+    buff_args.recv_frame_size = X300_PCIE_MSG_FRAME_SIZE;
+    buff_args.num_send_frames = X300_PCIE_MSG_NUM_FRAMES * max_muxed_ports;
+    buff_args.num_recv_frames = X300_PCIE_MSG_NUM_FRAMES * max_muxed_ports;
+
+    zero_copy_if::sptr base_xport = nirio_zero_copy::make(
+        rio_fpga_interface, dma_channel_num,
+        buff_args, uhd::device_addr_t());
+    return muxed_zero_copy_if::make(base_xport, extract_sid_from_pkt, max_muxed_ports);
 }
 
 uhd::both_xports_t x300_impl::make_transport(
@@ -1103,19 +1184,25 @@ uhd::both_xports_t x300_impl::make_transport(
             if (not mb.ctrl_dma_xport) {
                 //One underlying DMA channel will handle
                 //all control traffic
-                zero_copy_xport_params ctrl_buff_args;
-                ctrl_buff_args.send_frame_size = X300_PCIE_MSG_FRAME_SIZE;
-                ctrl_buff_args.recv_frame_size = X300_PCIE_MSG_FRAME_SIZE;
-                ctrl_buff_args.num_send_frames = X300_PCIE_MSG_NUM_FRAMES * X300_PCIE_MAX_MUXED_XPORTS;
-                ctrl_buff_args.num_recv_frames = X300_PCIE_MSG_NUM_FRAMES * X300_PCIE_MAX_MUXED_XPORTS;
-
-                zero_copy_if::sptr base_xport = nirio_zero_copy::make(
-                    mb.rio_fpga_interface, dma_channel_num,
-                    ctrl_buff_args, uhd::device_addr_t());
-                mb.ctrl_dma_xport = muxed_zero_copy_if::make(base_xport, extract_sid_from_pkt, X300_PCIE_MAX_MUXED_XPORTS);
+                mb.ctrl_dma_xport = make_muxed_pcie_msg_xport(
+                    mb.rio_fpga_interface,
+                    dma_channel_num,
+                    X300_PCIE_MAX_MUXED_CTRL_XPORTS);
             }
             //Create a virtual control transport
             xports.recv = mb.ctrl_dma_xport->make_stream(xports.recv_sid.get_dst());
+        } else if (xport_type == ASYNC_MSG) {
+            //Transport for async message stream
+            if (not mb.async_msg_dma_xport) {
+                //One underlying DMA channel will handle
+                //all async message traffic
+                mb.async_msg_dma_xport = make_muxed_pcie_msg_xport(
+                    mb.rio_fpga_interface,
+                    dma_channel_num,
+                    X300_PCIE_MAX_MUXED_ASYNC_XPORTS);
+            }
+            //Create a virtual async message transport
+            xports.recv = mb.async_msg_dma_xport->make_stream(xports.recv_sid.get_dst());
         } else {
             //Transport for data stream
             default_buff_args.send_frame_size =
@@ -1157,12 +1244,16 @@ uhd::both_xports_t x300_impl::make_transport(
 
     } else if (mb.xport_path == "eth") {
         // Decide on the IP/Interface pair based on the endpoint index
-        std::string interface_addr = mb.eth_conns[mb.next_src_addr].addr;
+        size_t &next_src_addr =
+            xport_type == TX_DATA ? mb.next_tx_src_addr :
+            xport_type == RX_DATA ? mb.next_rx_src_addr :
+            mb.next_src_addr;
+        std::string interface_addr = mb.eth_conns[next_src_addr].addr;
         const uint32_t xbar_src_addr =
-            mb.next_src_addr==0 ? X300_SRC_ADDR0 : X300_SRC_ADDR1;
+            next_src_addr==0 ? X300_SRC_ADDR0 : X300_SRC_ADDR1;
         const uint32_t xbar_src_dst =
-            mb.eth_conns[mb.next_src_addr].type==X300_IFACE_ETH0 ? X300_XB_DST_E0 : X300_XB_DST_E1;
-        mb.next_src_addr = (mb.next_src_addr + 1) % mb.eth_conns.size();
+            mb.eth_conns[next_src_addr].type==X300_IFACE_ETH0 ? X300_XB_DST_E0 : X300_XB_DST_E1;
+        next_src_addr = (next_src_addr + 1) % mb.eth_conns.size();
 
         xports.send_sid = this->allocate_sid(mb, address, xbar_src_addr, xbar_src_dst);
         xports.recv_sid = xports.send_sid.reversed();
@@ -1171,7 +1262,7 @@ uhd::both_xports_t x300_impl::make_transport(
          * connection type.*/
         size_t eth_data_rec_frame_size = 0;
 
-        fs_path mboard_path = fs_path("/mboards/"+boost::lexical_cast<std::string>(mb_index) / "link_max_rate");
+        fs_path mboard_path = fs_path("/mboards") / mb_index / "link_max_rate";
 
         if (mb.loaded_fpga_image == "HG") {
             size_t max_link_rate = 0;
@@ -1206,9 +1297,8 @@ uhd::both_xports_t x300_impl::make_transport(
                 << boost::format("For this connection, UHD recommends a send frame size of at least %lu for best\nperformance, but your system's MTU will only allow %lu.")
                 % eth_data_rec_frame_size
                 % _max_frame_sizes.send_frame_size
-                
                 << "This will negatively impact your maximum achievable sample rate."
-                ;
+            ;
         }
 
         if (_max_frame_sizes.recv_frame_size < eth_data_rec_frame_size) {
@@ -1216,9 +1306,8 @@ uhd::both_xports_t x300_impl::make_transport(
                 << boost::format("For this connection, UHD recommends a receive frame size of at least %lu for best\nperformance, but your system's MTU will only allow %lu.")
                 % eth_data_rec_frame_size
                 % _max_frame_sizes.recv_frame_size
-                
                 << "This will negatively impact your maximum achievable sample rate."
-                ;
+            ;
         }
 
         size_t system_max_send_frame_size = (size_t) _max_frame_sizes.send_frame_size;
@@ -1276,8 +1365,9 @@ uhd::both_xports_t x300_impl::make_transport(
 
         //send a mini packet with SID into the ZPU
         //ZPU will reprogram the ethernet framer
-        UHD_LOGGER_DEBUG("X300") << "programming packet for new xport on "
-            << interface_addr <<  " sid " << xports.send_sid ;
+        UHD_LOGGER_TRACE("X300")
+            << "programming packet for new xport on "
+            << interface_addr <<  " sid " << xports.send_sid;
         //YES, get a __send__ buffer from the __recv__ socket
         //-- this is the only way to program the framer for recv:
         managed_send_buffer::sptr buff = xports.recv->get_send_buff();
@@ -1287,7 +1377,8 @@ uhd::both_xports_t x300_impl::make_transport(
         buff.reset();
 
         //reprogram the ethernet dispatcher's udp port (should be safe to always set)
-        UHD_LOGGER_DEBUG("X300") << "reprogram the ethernet dispatcher's udp port" ;
+        UHD_LOGGER_TRACE("X300")
+            << "reprogram the ethernet dispatcher's udp port" ;
         mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, (ZPU_SR_ETHINT0+8+3)), X300_VITA_UDP_PORT);
         mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, (ZPU_SR_ETHINT1+8+3)), X300_VITA_UDP_PORT);
 
@@ -1442,12 +1533,15 @@ void x300_impl::sync_times(mboard_members_t &mb, const uhd::time_spec_t& t)
 
 bool x300_impl::wait_for_clk_locked(mboard_members_t& mb, uint32_t which, double timeout)
 {
-    boost::system_time timeout_time = boost::get_system_time() + boost::posix_time::milliseconds(timeout * 1000.0);
+    const auto timeout_time =
+        std::chrono::steady_clock::now()
+        + std::chrono::milliseconds(int64_t(timeout * 1000));
     do {
-        if (mb.fw_regmap->clock_status_reg.read(which)==1)
+        if (mb.fw_regmap->clock_status_reg.read(which) == 1) {
             return true;
-        boost::this_thread::sleep(boost::posix_time::milliseconds(1));
-    } while (boost::get_system_time() < timeout_time);
+        }
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    } while (std::chrono::steady_clock::now() < timeout_time);
 
     //Check one last time
     return (mb.fw_regmap->clock_status_reg.read(which)==1);
@@ -1469,21 +1563,11 @@ bool x300_impl::is_pps_present(mboard_members_t& mb)
     uint32_t pps_detect = mb.fw_regmap->clock_status_reg.read(fw_regmap_t::clk_status_reg_t::PPS_DETECT);
     for (int i = 0; i < 15; i++)
     {
-        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
         if (pps_detect != mb.fw_regmap->clock_status_reg.read(fw_regmap_t::clk_status_reg_t::PPS_DETECT))
             return true;
     }
     return false;
-}
-
-/***********************************************************************
- * eeprom
- **********************************************************************/
-
-void x300_impl::set_mb_eeprom(i2c_iface::sptr i2c, const mboard_eeprom_t &mb_eeprom)
-{
-    i2c_iface::sptr eeprom16 = i2c->eeprom16();
-    mb_eeprom.commit(*eeprom16, "X300");
 }
 
 /***********************************************************************
@@ -1493,7 +1577,7 @@ void x300_impl::set_mb_eeprom(i2c_iface::sptr i2c, const mboard_eeprom_t &mb_eep
 void x300_impl::claimer_loop(wb_iface::sptr iface)
 {
     claim(iface);
-    boost::this_thread::sleep(boost::posix_time::milliseconds(1000)); //1 second
+    std::this_thread::sleep_for(std::chrono::seconds(1));
 }
 
 x300_impl::claim_status_t x300_impl::claim_status(wb_iface::sptr iface)
@@ -1517,7 +1601,7 @@ x300_impl::claim_status_t x300_impl::claim_status(wb_iface::sptr iface)
             // be in the process of being released.  This is possible because
             // older firmware takes a long time to update the status.  Wait and
             // check status again.
-            boost::this_thread::sleep(boost::posix_time::milliseconds(5));
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
             continue;
         }
         claim_status = (hash == get_process_hash() ? CLAIMED_BY_US : CLAIMED_BY_OTHER);
@@ -1542,7 +1626,7 @@ bool x300_impl::try_to_claim(wb_iface::sptr iface, long timeout)
         {
             claim(iface);
             // It takes the claimer 10ms to update status, so wait 20ms before verifying claim
-            boost::this_thread::sleep(boost::posix_time::milliseconds(20));
+            std::this_thread::sleep_for(std::chrono::milliseconds(20));
             continue;
         }
         if (status == CLAIMED_BY_US)
@@ -1554,7 +1638,7 @@ bool x300_impl::try_to_claim(wb_iface::sptr iface, long timeout)
             // Another process owns the device - give up
             return false;
         }
-        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
     return true;
 }
@@ -1592,7 +1676,7 @@ x300_impl::frame_size_t x300_impl::determine_max_frame_size(const std::string &a
     size_t min_send_frame_size = sizeof(x300_mtu_t);
     size_t max_send_frame_size = std::min(user_frame_size.send_frame_size, X300_10GE_DATA_FRAME_MAX_SIZE) & size_t(~3);
 
-    UHD_LOGGER_INFO("X300") << "Determining maximum frame size... ";
+    UHD_LOGGER_DEBUG("X300") << "Determining maximum frame size... ";
     while (min_recv_frame_size < max_recv_frame_size)
     {
        size_t test_frame_size = (max_recv_frame_size/2 + min_recv_frame_size/2 + 3) & ~3;
@@ -1641,7 +1725,8 @@ x300_impl::frame_size_t x300_impl::determine_max_frame_size(const std::string &a
     // of the recv and send frame sizes.
     frame_size.recv_frame_size = std::min(min_recv_frame_size, min_send_frame_size);
     frame_size.send_frame_size = std::min(min_recv_frame_size, min_send_frame_size);
-    UHD_LOGGER_INFO("X300") << "Maximum frame size: " << frame_size.send_frame_size << " bytes.";
+    UHD_LOGGER_INFO("X300")
+        << "Maximum frame size: " << frame_size.send_frame_size << " bytes.";
     return frame_size;
 }
 
@@ -1704,7 +1789,7 @@ void x300_impl::check_fpga_compat(const fs_path &mb_path, const mboard_members_t
     _tree->create<std::string>(mb_path / "fpga_version_hash").set(
         str(boost::format("%07x%s")
         % (git_hash & 0x0FFFFFFF)
-        % ((git_hash & 0xF000000) ? "-dirty" : "")));
+        % ((git_hash & 0xF0000000) ? "-dirty" : "")));
 }
 
 x300_impl::x300_mboard_t x300_impl::get_mb_type_from_pcie(const std::string& resource, const std::string& rpc_port)

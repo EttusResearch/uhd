@@ -1,18 +1,8 @@
 //
 // Copyright 2013 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include <uhd/types/wb_iface.hpp>
@@ -27,7 +17,8 @@
 #include <uhd/transport/nirio/niriok_proxy.h>
 #include "x300_regs.hpp"
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/thread/thread.hpp>
+#include <chrono>
+#include <thread>
 
 using namespace uhd;
 using namespace uhd::niusrprio;
@@ -60,7 +51,7 @@ public:
             catch(const uhd::io_error &ex)
             {
                 std::string error_msg = str(boost::format(
-                    "x300 fw communication failure #%u\n%s") % i % ex.what());
+                    "%s: x300 fw communication failure #%u\n%s") % __loc_info() % i % ex.what());
                 if (errors) UHD_LOGGER_ERROR("X300") << error_msg ;
                 if (i == num_retries) throw uhd::io_error(error_msg);
             }
@@ -80,7 +71,7 @@ public:
             catch(const uhd::io_error &ex)
             {
                 std::string error_msg = str(boost::format(
-                    "x300 fw communication failure #%u\n%s") % i % ex.what());
+                    "%s: x300 fw communication failure #%u\n%s") % __loc_info() % i % ex.what());
                 if (errors) UHD_LOGGER_ERROR("X300") << error_msg ;
                 if (i == num_retries) throw uhd::io_error(error_msg);
             }
@@ -94,6 +85,7 @@ protected:
     virtual void __poke32(const wb_addr_type addr, const uint32_t data) = 0;
     virtual uint32_t __peek32(const wb_addr_type addr) = 0;
     virtual void __flush() = 0;
+    virtual std::string __loc_info() = 0;
 
     boost::mutex reg_access;
 };
@@ -182,6 +174,11 @@ protected:
         while (udp->recv(boost::asio::buffer(buff), 0.0)){} //flush
     }
 
+    virtual std::string __loc_info(void)
+    {
+        return udp->get_send_addr();
+    }
+
 private:
     uhd::transport::udp_simple::sptr udp;
     size_t seq;
@@ -214,7 +211,7 @@ public:
         boost::posix_time::time_duration elapsed;
 
         do {
-            boost::this_thread::sleep(boost::posix_time::microsec(500)); //Avoid flooding the bus
+            std::this_thread::sleep_for(std::chrono::microseconds(500)); //Avoid flooding the bus
             elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
             nirio_status_chain(_drv_proxy->peek(PCIE_ZPU_STATUS_REG(0), reg_data), status);
         } while (
@@ -242,7 +239,7 @@ protected:
         nirio_status_chain(_drv_proxy->poke(PCIE_ZPU_DATA_REG(addr), data), status);
         if (nirio_status_not_fatal(status)) {
             do {
-                boost::this_thread::sleep(boost::posix_time::microsec(50)); //Avoid flooding the bus
+                std::this_thread::sleep_for(std::chrono::microseconds(50)); //Avoid flooding the bus
                 elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
                 nirio_status_chain(_drv_proxy->peek(PCIE_ZPU_STATUS_REG(addr), reg_data), status);
             } while (
@@ -267,7 +264,7 @@ protected:
         nirio_status_chain(_drv_proxy->poke(PCIE_ZPU_READ_REG(addr), PCIE_ZPU_READ_START), status);
         if (nirio_status_not_fatal(status)) {
             do {
-                boost::this_thread::sleep(boost::posix_time::microsec(50)); //Avoid flooding the bus
+                std::this_thread::sleep_for(std::chrono::microseconds(50)); //Avoid flooding the bus
                 elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
                 nirio_status_chain(_drv_proxy->peek(PCIE_ZPU_STATUS_REG(addr), reg_data), status);
             } while (
@@ -288,6 +285,11 @@ protected:
     virtual void __flush(void)
     {
         __peek32(0);
+    }
+
+    virtual std::string __loc_info(void)
+    {
+        return std::to_string(_drv_proxy->get_interface_num());
     }
 
 private:

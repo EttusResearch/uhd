@@ -1,30 +1,20 @@
 //
 // Copyright 2011 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhd/utils/thread_priority.hpp>
+#include <uhd/utils/thread.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
-#include <boost/thread.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
 #include <iostream>
 #include <complex>
+#include <chrono>
+#include <thread>
 
 namespace po = boost::program_options;
 
@@ -97,7 +87,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     else if (sync == "pps"){
         usrp->set_time_source("external");
         usrp->set_time_unknown_pps(uhd::time_spec_t(0.0));
-        boost::this_thread::sleep(boost::posix_time::seconds(1)); //wait for pps sync pulse
+        std::this_thread::sleep_for(std::chrono::seconds(1)); //wait for pps sync pulse
     }
     else if (sync == "mimo"){
         UHD_ASSERT_THROW(usrp->get_num_mboards() == 2);
@@ -110,7 +100,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         usrp->set_time_now(uhd::time_spec_t(0.0), 0);
 
         //sleep a bit while the slave locks its time to the master
-        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
 
     //detect which channels to use
@@ -118,11 +108,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::vector<size_t> channel_nums;
     boost::split(channel_strings, channel_list, boost::is_any_of("\"',"));
     for(size_t ch = 0; ch < channel_strings.size(); ch++){
-        size_t chan = boost::lexical_cast<int>(channel_strings[ch]);
+        size_t chan = std::stoi(channel_strings[ch]);
         if(chan >= usrp->get_rx_num_channels()){
             throw std::runtime_error("Invalid channel(s) specified.");
         }
-        else channel_nums.push_back(boost::lexical_cast<int>(channel_strings[ch]));
+        else channel_nums.push_back(std::stoi(channel_strings[ch]));
     }
 
     //create a receive streamer

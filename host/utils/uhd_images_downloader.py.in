@@ -1,371 +1,407 @@
 #!/usr/bin/env python
 #
-# Copyright 2012-2015 Ettus Research LLC
+# Copyright 2018 Ettus Research, a National Instruments Company
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#
-
-import sys
-import os
-import tempfile
-import math
-import traceback
-import shutil
+"""
+Download image files required for USRPs
+"""
+from __future__ import print_function
+import argparse
 import hashlib
-import requests
+import json
+import math
+import os
+import re
+import shutil
+import sys
+import tempfile
 import zipfile
+import requests
+try:
+    from urllib.parse import urljoin  # Python 3
+except ImportError:
+    from urlparse import urljoin      # Python 2
 
-from optparse import OptionParser
 
-_DEFAULT_BUFFER_SIZE      = 8192
+_DEFAULT_TARGET_REGEX     = "(fpga|fw|windrv)_default"
 _BASE_DIR_STRUCTURE_PARTS = ["share", "uhd", "images"]
 _DEFAULT_INSTALL_PATH     = os.path.join("@CMAKE_INSTALL_PREFIX@", *_BASE_DIR_STRUCTURE_PARTS)
-_DEFAULT_BASE_URL         = "http://files.ettus.com/binaries/images/"
-_AUTOGEN_IMAGES_FILENAME  = "@UHD_IMAGES_DOWNLOAD_SRC@"
-_AUTOGEN_IMAGES_CHECKSUM  = "@UHD_IMAGES_MD5SUM@"
-_IMAGES_CHECKSUM_TYPE     = "md5"
+_DEFAULT_BASE_URL         = "http://files.ettus.com/binaries/cache/"
+_INVENTORY_FILENAME       = "inventory.json"
 _CONTACT                  = "support@ettus.com"
+_DEFAULT_BUFFER_SIZE      = 8192
+_ARCHIVE_ALGS             = ["zip", "targz", "tarxz"]
+_ARCHIVE_DEFAULT_TYPE     = "zip"
+_UHD_VERSION              = "@UHD_VERSION@"
+# Note: _MANIFEST_CONTENTS are placed at the bottom of this file for aesthetic reasons
+_LOG_LEVELS = {"TRACE": 1,
+               "DEBUG": 2,
+               "INFO": 3,
+               "WARN": 4,
+               "ERROR": 5}
+_LOG_LEVEL = _LOG_LEVELS["INFO"]
 
-def md5Checksum(filePath):
-    try:
-        with open(filePath, 'rb') as fh:
-            m = hashlib.md5()
-            while True:
-                data = fh.read(_DEFAULT_BUFFER_SIZE)
-                if not data:
-                    break
-                m.update(data)
-            return m.hexdigest()
-    except Exception as e:
-        print("Failed to calculated MD5 sum of: %s (%s)" % (filePath, e))
-        raise e
 
-_checksum_fns = {
-    'md5': md5Checksum
-}
+# TODO: Move to a standard logger?
+def log(level, message):
+    """Logging function"""
+    message_log_level = _LOG_LEVELS.get(level, 0)
+    if message_log_level >= _LOG_LEVEL:
+        print("[{level}] {message}".format(level=level, message=message))
 
-class temporary_directory():
+
+def parse_args():
+    """Setup argument parser and parse"""
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser.add_argument('-t', '--types', action='append',
+                        help="RegEx to select image sets from the manifest file.")
+    parser.add_argument('-i', '--install-location',
+                        default=None,
+                        help="Set custom install location for images")
+    parser.add_argument('-m', '--manifest-location', type=str, default="",
+                        help="Set custom location for the manifest file")
+    parser.add_argument('-I', '--inventory-location', type=str, default="",
+                        help="Set custom location for the inventory file")
+    parser.add_argument('-l', '--list-targets', action="store_true", default=False,
+                        help="Print targets in the manifest file, and exit.")
+    parser.add_argument("--buffer-size", type=int, default=_DEFAULT_BUFFER_SIZE,
+                        help="Set download buffer size")
+    parser.add_argument("-b", "--base-url", type=str, default=_DEFAULT_BASE_URL,
+                        help="Set base URL for images download location")
+    parser.add_argument("-z", "--archive-type", type=str, default=_ARCHIVE_DEFAULT_TYPE,
+                        help=("Select archiving function (options: {})"
+                              .format(",".join(_ARCHIVE_ALGS))))
+    parser.add_argument("-k", "--keep", action="store_true", default=False,
+                        help="Keep the downloaded images archives in the image directory")
+    parser.add_argument("-n", "--dry-run", action="store_true", default=False,
+                        help="Print selected target without actually downloading them.")
+    parser.add_argument("--refetch", action="store_true", default=False,
+                        help="Ignore the inventory file and download all images.")
+    parser.add_argument('-V', '--version', action='version', version=_UHD_VERSION)
+    parser.add_argument('-q', '--quiet', action='count', default=0,
+                        help="Decrease verbosity level")
+    parser.add_argument('-v', '--verbose', action='count', default=0,
+                        help="Increase verbosity level")
+    return parser.parse_args()
+
+
+class TemporaryDirectory:
+    """Class to create a temporary directory"""
     def __enter__(self):
         try:
             self.name = tempfile.mkdtemp()
             return self.name
-        except Exception as e:
-            print("Failed to create a temporary directory (%s)" % (e))
-            raise e
+        except Exception as ex:
+            log("ERROR", "Failed to create a temporary directory (%s)" % ex)
+            raise ex
 
     # Can return 'True' to suppress incoming exception
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, exc_type, exc_value, traceback):
         try:
             shutil.rmtree(self.name)
-        except Exception as e:
-            print("Could not delete temporary directory: %s (%s)" % (self.name, e))
+            log("TRACE", "Temp directory deleted.")
+        except Exception as ex:
+            log("ERROR", "Could not delete temporary directory: %s (%s)" % (self.name, ex))
+        return exc_type is None
 
-class uhd_images_downloader():
-    def __init__(self):
-        pass
 
-    def download(self, images_url, filename, buffer_size=_DEFAULT_BUFFER_SIZE, print_progress=False):
-        """ Run the download, show progress """
+def parse_manifest(manifest_contents):
+    """Parse the manifest file, returns a dictionary of potential targets"""
+    manifest = {}
+    for line in manifest_contents.split('\n'):
+        line_unpacked = line.split()
         try:
-            r = requests.get(images_url, stream=True, headers={'User-Agent': 'UHD Images Downloader'})
-        except TypeError as te:
-            ## requests library versions pre-4c3b9df6091b65d8c72763222bd5fdefb7231149 (Dec.'12) workaround
-            r = requests.get(images_url, prefetch=False, headers={'User-Agent': 'UHD Images Downloader'})
-        filesize = float(r.headers['content-length'])
-        filesize_dl = 0
-        with open(filename, "wb") as f:
-            for buff in r.iter_content(chunk_size=buffer_size):
-                if buff:
-                    f.write(buff)
-                    filesize_dl += len(buff)
-                if print_progress:
-                    status = r"%05d kB / %05d kB (%03d%%)" % (int(math.ceil(filesize_dl/1000.)), int(math.ceil(filesize/1000.)), int(math.ceil(filesize_dl*100.)/filesize))
-                    if os.name == "nt":
-                        status += chr(8)*(len(status)+1)
-                    else:
-                        sys.stdout.write("\x1b[2K\r") #Clear previos line
-                    sys.stdout.write(status)
-                    sys.stdout.flush()
-        if print_progress:
-            print('')
-        return (filesize, filesize_dl)
+            # Check that the line isn't empty or a comment
+            if not line_unpacked or line.strip().startswith('#'):
+                continue
 
-    def check_directories(self, dirs, print_progress=False):
-        if dirs is None or dirs == "":
-            dirs = "."
-        dirs = os.path.abspath(dirs)
+            target, repo_hash, url, sha256_hash = line_unpacked
+            manifest[target] = {"repo_hash": repo_hash,
+                                "url": url,
+                                "sha256_hash": sha256_hash,
+                                }
+        except ValueError:
+            log("WARN", "Warning: Invalid line in manifest file:\n"
+                "         {}".format(line))
+            continue
+    return manifest
 
-        def _check_part(head, tail=None):
+
+def parse_inventory(inventory_fn):
+    """Parse the inventory file, returns a dictionary of installed files"""
+    try:
+        if not os.path.exists(inventory_fn):
+            log("INFO", "No inventory file found at {}. Creating an empty one.".format(inventory_fn))
+            return {}
+        with open(inventory_fn, 'r') as inventory_file:
+            # TODO: verify the contents??
+            return json.load(inventory_file)
+    except Exception as ex:
+        log("WARN", "Error parsing the inventory file. Assuming an empty inventory: {}".format(ex))
+        return {}
+
+
+def write_inventory(inventory, inventory_fn):
+    """Writes the inventory to file"""
+    try:
+        with open(inventory_fn, 'w') as inventory_file:
+            json.dump(inventory, inventory_file)
+            return True
+    except Exception as ex:
+        log("ERROR", "Error writing the inventory file. Contents may be incomplete or corrupted.\n"
+                     "Error message: {}".format(ex))
+        return False
+
+
+def lookup_urls(regex_l, manifest, inventory, refetch=False):
+    """Takes a list of RegExs to match within the manifest, returns a list of tuples with
+    (hash, URL) that match the targets and are not in the inventory"""
+    selected_targets = []
+    for target in manifest.keys():
+        # Iterate through the possible targets in the manifest.
+        # If any of them match any of the RegExs supplied, add the URL to the
+        # return list
+        if all(map((lambda regex: re.findall(regex, target)), regex_l)):
+            log("TRACE", "Selected target: {}".format(target))
+            target_info = manifest.get(target)
+            target_url = target_info.get("url")
+            target_hash = target_info.get("repo_hash")
+            target_sha256 = target_info.get("sha256_hash")
+            # Check if the same filename and hash appear in the inventory
+            # TODO: Change to the TARGET instead of the filename
+            filename = os.path.basename(target_url)
+            if not refetch and inventory.get(filename, {}).get("repo_hash", "") == target_hash:
+                # We already have this file, we don't need to download it again
+                log("INFO", "Target {} is up to date.".format(target))
+            else:
+                # We don't have that exact file, add it to the list
+                selected_targets.append({"repo_hash": target_hash,
+                                         "url": target_url,
+                                         "sha256_hash": target_sha256})
+    return selected_targets
+
+
+def download(images_url, filename, buffer_size=_DEFAULT_BUFFER_SIZE, print_progress=False):
+    """ Run the download, show progress """
+    log("TRACE", "Downloading {} to {}".format(images_url, filename))
+    try:
+        resp = requests.get(images_url, stream=True,
+                            headers={'User-Agent': 'UHD Images Downloader'})
+    except TypeError:
+        # requests library versions pre-4c3b9df6091b65d8c72763222bd5fdefb7231149
+        # (Dec.'12) workaround
+        resp = requests.get(images_url, prefetch=False,
+                            headers={'User-Agent': 'UHD Images Downloader'})
+    if resp.status_code != 200:
+        raise RuntimeError("URL does not exist: {}".format(images_url))
+    filesize = float(resp.headers['content-length'])
+    filesize_dl = 0
+    base_filename = os.path.basename(filename)
+    if print_progress and not sys.stdout.isatty():
+        print_progress = False
+        log("INFO", "Downloading {}, total size: {} kB".format(
+            base_filename, filesize/1000))
+    with open(filename, "wb") as temp_file:
+        sha256_sum = hashlib.sha256()
+        for buff in resp.iter_content(chunk_size=buffer_size):
+            if buff:
+                temp_file.write(buff)
+                filesize_dl += len(buff)
+                sha256_sum.update(buff)
             if print_progress:
-                print("Checking: %s" % (head))
-            if tail is not None and tail == "":
-                return True
-            if not os.path.exists(head):
-                if print_progress:
-                    print("Does not exist: %s" % (head))
-                return _check_part(*os.path.split(head))
-            if not os.path.isdir(head):
-                if print_progress:
-                    print("Is not a directory: %s" % (head))
-                return (False, head)
-            if not os.access(head, os.W_OK):
-                if print_progress:
-                    print("Write permission denied on: %s" % (head))
-                return (False, head)
-            if print_progress:
-                print("Write permission granted on: %s" % (head))
-            return (True, head)
-
-        return _check_part(dirs)
-
-    def validate_checksum(self, checksum_fn, file_path, expecting, print_progress=False):
-        if checksum_fn is None:
-            return (True, "")
-        calculated_checksum = checksum_fn(file_path)
-        if (expecting is not None) and (expecting != "") and calculated_checksum != expecting:
-            return (False, calculated_checksum)
-        return (True, calculated_checksum)
-
-    def extract_images_archive(self, archive_path, destination=None, print_progress=False):
-        if not os.path.exists(archive_path):
-            if print_progress:
-                print("Path does not exist: %s" % (archive_path))
-            raise Exception("path does not exist: %s" % (archive_path))
-        if print_progress:
-            print("Archive path: %s" % (archive_path))
-        (head, tail) = os.path.split(archive_path)
-
-        if not os.access(head, os.W_OK):
-            if print_progress:
-                print("Write access denied on: %s" % (head))
-            raise Exception("write access denied on: %s" % (head))
-
-        (root, ext) = os.path.splitext(tail)
-        temp_dir = os.path.join(head, root)
-
-        if print_progress:
-            print("Temporary extraction location: %s" % (temp_dir))
-
-        if os.path.exists(temp_dir):
-            if print_progress:
-                print("Deleting existing location: %s" % (temp_dir))
-            shutil.rmtree(temp_dir)
-
-        if print_progress:
-            print("Creating directory: %s" % (temp_dir))
-        os.mkdir(temp_dir)
-
-        if print_progress:
-            print("Extracting archive %s to %s" % (archive_path, temp_dir))
-
-        images_zip = zipfile.ZipFile(archive_path)
-        images_zip.extractall(temp_dir)
-        images_zip.close()
-
-        return temp_dir
-
-    def install_images(self, source, dest, keep=False, print_progress=False):
-        if not os.path.exists(source):
-            if print_progress:
-                print("Source path does not exist: %s" % (source))
-            return
-
-        if keep:
-            if print_progress:
-                print("Not wiping directory tree (existing files will be overwritten): %s" % (dest))
-        elif os.path.exists(dest):
-            if print_progress:
-                print("Deleting directory tree: %s" % (dest))
-            shutil.rmtree(dest)
-
-        (head, tail) = os.path.split(source)
-
-        if print_progress:
-            print("Source install path: %s" % (source))
-
-        uhd_source = os.path.join(source, tail, *_BASE_DIR_STRUCTURE_PARTS)
-
-        if print_progress:
-            print("Copying files from: %s" % (uhd_source))
-            print("Copying files to:   %s" % (dest))
-
-        if keep:
-            # mgrant @ http://stackoverflow.com/questions/12683834/how-to-copy-directory-recursively-in-python-and-overwrite-all
-            def _recursive_overwrite(src, dest, ignore=None):
-                if os.path.isdir(src):
-                    if not os.path.isdir(dest):
-                        os.makedirs(dest)
-                    files = os.listdir(src)
-                    if ignore is not None:
-                        ignored = ignore(src, files)
-                    else:
-                        ignored = set()
-                    for f in files:
-                        if f not in ignored:
-                            _recursive_overwrite(os.path.join(src, f), os.path.join(dest, f), ignore)
+                status = r"%05d kB / %05d kB (%03d%%) %s" % (
+                    int(math.ceil(filesize_dl / 1000.)), int(math.ceil(filesize / 1000.)),
+                    int(math.ceil(filesize_dl * 100.) / filesize),
+                    base_filename)
+                if os.name == "nt":
+                    status += chr(8) * (len(status) + 1)
                 else:
-                    shutil.copyfile(src, dest)
+                    sys.stdout.write("\x1b[2K\r")  # Clear previous line
+                sys.stdout.write(status)
+                sys.stdout.flush()
+    if print_progress:
+        print('')
+    return filesize, filesize_dl, sha256_sum.hexdigest()
 
-            _recursive_overwrite(uhd_source, dest)
-        else:
-            shutil.copytree(uhd_source, dest)
+
+def delete_from_inv(archive_fn, inventory, images_dir):
+    """Uses the inventory to delete the contents of the archive file specified by `filename`"""
+    target = inventory.get(archive_fn, {})
+    log("TRACE", "Removing contents of {} from inventory ({})".format(
+        target, target.get("contents", [])))
+    dirs_to_delete = []
+    # Delete all of the files
+    for image_fn in target.get("contents", []):
+        image_path = os.path.join(images_dir, image_fn)
+        if os.path.isfile(image_path):
+            os.remove(image_path)
+            log("TRACE", "Deleted {} from inventory".format(image_path))
+        elif os.path.isdir(image_path):
+            dirs_to_delete.append(image_fn)
+        else: # File doesn't exist
+            log("WARN", "File {} in inventory does not exist".format(image_path))
+    # Then delete all of the (empty) directories
+    for dir_path in dirs_to_delete:
+        try:
+            if os.path.isdir(dir_path):
+                os.removedirs(dir_path)
+        except os.error as ex:
+            log("ERROR", "Failed to delete dir: {}".format(ex))
+    inventory.pop(archive_fn, None)
+    return True
+
+
+def extract(archive_path, images_dir, archive_type):
+    """Extract the contents of the archive into `images_dir`"""
+    if archive_type == "zip":
+        log("TRACE", "Attempting to extracted files from {}".format(archive_path))
+        with zipfile.ZipFile(archive_path) as images_zip:
+            images_zip.extractall(images_dir)
+            archive_namelist = images_zip.namelist()
+            log("TRACE", "Extracted files: {}".format(archive_namelist))
+            return archive_namelist
+    else:
+        raise NotImplementedError("Archive type {} not implemented".format(archive_type))
+
 
 def main():
-    ### Set defaults from env variables
-    if os.environ.get("UHD_IMAGES_DIR") != None and os.environ.get("UHD_IMAGES_DIR") != "":
-        default_images_dir = os.environ.get("UHD_IMAGES_DIR")
-        print("UHD_IMAGES_DIR environment variable is set.\nDefault install location: {0}".format(default_images_dir))
-    else:
-        default_images_dir = _DEFAULT_INSTALL_PATH
-    if os.environ.get("UHD_IMAGES_BASE_URL") != None and os.environ.get("UHD_IMAGES_BASE_URL") != "":
-        default_base_url = os.environ.get("UHD_IMAGES_BASE_URL")
-        print("UHD_IMAGES_BASE_URL environment variable is set.\nDefault base URL: {0}".format(default_base_url))
-    else:
-        default_base_url = _DEFAULT_BASE_URL
-
-    ### Setup argument parser and parse
-    parser = OptionParser()
-    parser.add_option("-i", "--install-location",   type="string",          default=default_images_dir,
-                        help="Set custom install location for images [default=%default]")
-    parser.add_option("--buffer-size",              type="int",             default=_DEFAULT_BUFFER_SIZE,
-                        help="Set download buffer size [default=%default]")
-    parser.add_option("-b", "--base-url",           type="string",          default=default_base_url,
-                        help="Set base URL for images download location [default=%default]")
-    parser.add_option("-f", "--filename",           type="string",          default=_AUTOGEN_IMAGES_FILENAME,
-                        help="Set images archive filename [default=%default]")
-    parser.add_option("-c", "--checksum",           type="string",          default=_AUTOGEN_IMAGES_CHECKSUM,
-                        help="Validate images archive against this checksum (blank to skip) [default=%default]")
-    parser.add_option("-t", "--checksum-type",      type="string",          default=_IMAGES_CHECKSUM_TYPE,
-                        help=("Select checksum hash function (options: %s) [default=%%default]" % (",".join(list(_checksum_fns.keys())))))
-    parser.add_option("-k", "--keep",               action="store_true",    default=False,
-                        help="Do not clear images directory before extracting new files [default=%default]")
-    parser.add_option("-v", "--verbose",            action="store_true",    default=False,
-                        help="Enable verbose output [default=%default]")
-    (options, args) = parser.parse_args()
-    if options.buffer_size <= 0:
-        print("Invalid buffer size: %s" % (options.buffer_size))
+    """Download the image files requested by the user"""
+    args = parse_args()
+    archive_type = args.archive_type
+    if archive_type not in _ARCHIVE_ALGS:
+        log("ERROR", "Selected archive type not supported: {}".format(archive_type))
         return 1
-
-    ### Select checksum algorithm (MD5)
-    checksum_fn = None
-    if options.checksum != "":
-        options.checksum_type = options.checksum_type.lower()
-        if options.checksum_type not in _checksum_fns:
-            print("Not a supported checksum function: %s" % (options.checksum_type))
-            return 1
-        checksum_fn = _checksum_fns[options.checksum_type]
-
-    ### Check if base URL is a local dir or off the webs
-    images_dir = os.path.abspath(options.install_location)  # This will use the current working directory if it's not absolute
-    images_url = None
-    if options.base_url.find('http') == 0:
-        base_url_is_local = False
-        if options.base_url[-1] != '/':
-            options.base_url += '/'
-        images_url = options.base_url + options.filename
-    else:
-        base_url_is_local = True
-
-    if options.verbose:
-        print("Requested install location: %s" % (options.install_location))
-        print("Images base URL:            %s" % (options.base_url))
-        print("Images filename:            %s" % (options.filename))
-        print("Images checksum:            %s (%s)" % (options.checksum, _IMAGES_CHECKSUM_TYPE))
-        print("Final install location:     %s" % (images_dir))
-        print("Copying locally:            {0}".format("Yes" if base_url_is_local else "No"))
-    else:
-        print("Images destination:      %s" % (images_dir))
-
-    ### Download or copy
-    downloader = uhd_images_downloader()
+    # Set the verbosity
+    global _LOG_LEVEL
+    log("TRACE", "Default log level: {}".format(_LOG_LEVEL))
+    _LOG_LEVEL = _LOG_LEVEL - args.verbose + args.quiet
+    images_dir = _DEFAULT_INSTALL_PATH
+    if args.install_location:
+        images_dir = args.install_location
+    elif os.environ.get("UHD_IMAGES_DIR") != None and os.environ.get("UHD_IMAGES_DIR") != "":
+        images_dir = os.environ.get("UHD_IMAGES_DIR")
+        log("DEBUG",
+            "UHD_IMAGES_DIR environment variable is set, using to set "
+            "install location.")
+    log("INFO", "Images destination: {}".format(os.path.abspath(images_dir)))
     try:
-        (access, last_path) = downloader.check_directories(images_dir, print_progress=options.verbose)
-        if not access:
-            print("You do not have sufficient permissions to write to: %s" % (last_path))
-            print("Are you root?")
-            return 1
-        with temporary_directory() as temp_dir:
-            if options.verbose:
-                print("Using temporary directory: %s" % (temp_dir))
-            temp_images_dest = os.path.join(temp_dir, options.filename)
-            if not base_url_is_local:
-                print("Downloading images from: {0}".format(images_url))
-                print("Downloading images to:   {0}".format(temp_images_dest))
-                (reported_size, downloaded_size) = downloader.download(
-                        images_url=images_url,
-                        filename=temp_images_dest,
-                        buffer_size=options.buffer_size,
-                        print_progress=True
-                )
-                if options.verbose:
-                    print("Downloaded %d of %d bytes" % (downloaded_size, reported_size))
-            else:
-                local_images_pkg = os.path.join(options.base_url, options.filename)
-                print("Copying images from:     {0}".format(local_images_pkg))
-                if not os.path.isfile(local_images_pkg):
-                    print("[ERROR] No such file.")
-                    return 1
-                shutil.copyfile(local_images_pkg, temp_images_dest)
-            (checksum_match, calculated_checksum) = downloader.validate_checksum(
-                    checksum_fn,
-                    temp_images_dest,
-                    options.checksum,
-                    print_progress=options.verbose
-            )
-            if options.verbose:
-                print("Calculated checksum: %s" % (calculated_checksum))
-            if checksum_match:
-                if options.verbose:
-                    if options.checksum == "":
-                        print("Ignoring checksum")
-                    else:
-                        print("Checksum OK")
-                try:
-                    extract_path = downloader.extract_images_archive(temp_images_dest, print_progress=options.verbose)
-                    if options.verbose:
-                        print("Image archive extracted to: %s" % (extract_path))
-                    downloader.install_images(extract_path, images_dir, options.keep, print_progress=options.verbose)
-                    if options.verbose:
-                        print("Cleaning up temp location: %s" % (extract_path))
-                    shutil.rmtree(extract_path)
-                    print("\nImages successfully installed to: %s" % (images_dir))
-                except Exception as e:
-                    print("Failed to install image archive: %s" % (e))
-                    print("This is usually a permissions problem.")
-                    print("Please check your file system access rights and try again.")
-                    if options.verbose:
-                        traceback.print_exc()
-                    else:
-                        print("You can run this again with the '--verbose' flag to see more information")
-                    print("If the problem persists, please email the output to: %s" % (_CONTACT))
-            else:
-                print("Checksum of downloaded file is not correct (not installing - see options to override)")
-                print("Expected:   %s" % (options.checksum))
-                print("Calculated: %s" % (calculated_checksum))
-                print("Please try downloading again.")
-                print("If the problem persists, please email the output to: %s" % (_CONTACT))
-    except KeyboardInterrupt:
-        print("\nCancelled at user request")
-    except Exception as e:
-        print("Downloader raised an unhandled exception: %s" % (e))
-        if options.verbose:
-            traceback.print_exc()
+        # If we're given a path to a manifest file, use it
+        if os.path.exists(args.manifest_location):
+            manifest_fn = args.manifest_location
+            log("INFO", "Using manifest file at location: {}".format(manifest_fn))
+            with open(manifest_fn, 'r') as manifest_file:
+                manifest_raw = manifest_file.read()
+        # Otherwise, use the CMake Magic manifest
         else:
-            print("You can run this again with the '--verbose' flag to see more information")
-        print("If the problem persists, please email the output to: %s" % (_CONTACT))
+            manifest_raw = _MANIFEST_CONTENTS
+            log("TRACE", "Raw manifest contents: {}".format(manifest_raw))
+
+        manifest = parse_manifest(manifest_raw)
+        if args.list_targets:
+            char_offset = max(map(len, manifest.keys()))
+            # Print a couple helpful lines,
+            # then print each (Target, URL) pair in the manifest
+            log("INFO", "Potential targets in manifest file:\n"
+                        "{} : {}\n"
+                        "{}".format(
+                "# TARGET".ljust(char_offset), "RELATIVE_URL",
+                "\n".join("{} : {}".format(key.ljust(char_offset), value["url"])
+                          for key, value in sorted(manifest.items()))
+            ))
+            return 0
+        else:
+            log("TRACE", "Manifest:\n{}".format(
+                "\n".join("{}".format(item) for item in manifest.items())
+            ))
+
+        # Read the inventory into a dictionary we can perform lookups on
+        if os.path.isfile(args.inventory_location):
+            inventory_fn = args.inventory_location
+        else:
+            inventory_fn = os.path.join(images_dir, _INVENTORY_FILENAME)
+        inventory = parse_inventory(inventory_fn=inventory_fn)
+        log("TRACE", "Inventory: {}\n{}".format(
+            os.path.abspath(inventory_fn),
+            "\n".join("{}".format(item) for item in inventory.items())
+        ))
+
+        # Determine the URLs to download based on the input regular expressions
+        if not args.types:
+            types_regex_l = [_DEFAULT_TARGET_REGEX]
+        else:
+            types_regex_l = args.types
+
+        log("TRACE", "RegExs for target selection: {}".format(types_regex_l))
+        targets_info = lookup_urls(types_regex_l, manifest, inventory, args.refetch)
+        # Exit early if we don't have anything to download
+        if targets_info:
+            target_urls = [info.get("url") for info in targets_info]
+            log("TRACE", "URLs to download:\n{}".format(
+                "\n".join("{}".format(item) for item in target_urls)
+            ))
+        else:
+            return 0
+
+        with TemporaryDirectory() as temp_dir:
+            # Now download all the images archives into a temp directory
+            for target_info in targets_info:
+                target_hash = target_info.get("repo_hash")
+                target_rel_url = target_info.get("url")
+                target_sha256 = target_info.get("sha256_hash")
+                filename = os.path.basename(target_rel_url)
+                temp_path = os.path.join(temp_dir, filename)
+                # Add a trailing slash to make sure that urljoin handles things properly
+                full_url = urljoin(args.base_url+'/', target_rel_url)
+                if not args.dry_run:
+                    _, downloaded_size, downloaded_sha256 = download(
+                        images_url=full_url,
+                        filename=temp_path,
+                        buffer_size=args.buffer_size,
+                        print_progress=(_LOG_LEVEL <= _LOG_LEVELS.get("INFO", 3))
+                    )
+                    log("TRACE", "{} successfully downloaded ({} Bytes)"
+                        .format(temp_path, downloaded_size))
+
+                    # If the SHA256 in the manifest has the value '0', this is a special case and
+                    # we just skip the verification step
+                    if target_sha256 == '0':
+                        log("DEBUG", "Skipping SHA256 check for {}.".format(full_url))
+                    # If the check fails, print an error and don't unzip the file
+                    elif downloaded_sha256 != target_sha256:
+                        log("ERROR", "Downloaded SHA256 does not match manifest for {}!".format(
+                            full_url))
+                        continue
+                        # Note: this skips the --keep option, so we'll never keep image packages
+                        #       that fail the SHA256 checksum
+
+                    # Otherwise, the check has succeeded, and we can proceed
+                    delete_from_inv(filename, inventory, images_dir)
+                    archive_namelist = extract(temp_path, images_dir, archive_type)
+                    if args.keep:
+                        # If the user wants to keep the downloaded archive,
+                        # save it to the images directory and add it to the inventory
+                        shutil.copy(temp_path, images_dir)
+                        archive_namelist.append(filename)
+                    inventory[filename] = {"repo_hash": target_hash, "contents": archive_namelist}
+                else:
+                    log("INFO", "[Dry run] {} successfully downloaded"
+                        .format(filename))
+
+        if not args.dry_run:
+            write_inventory(inventory, inventory_fn)
+
+    except Exception as ex:
+        log("ERROR", "Downloader raised an unhandled exception: {ex}\n"
+            "You can run this again with the '--verbose' flag to see more information\n"
+            "If the problem persists, please email the output to: {contact}"
+            .format(contact=_CONTACT, ex=ex))
         return 1
+    log("INFO", "Images download complete.")
     return 0
 
+# Placing this near the end of the file so we don't clutter the top
+_MANIFEST_CONTENTS = """@CMAKE_MANIFEST_CONTENTS@"""
 if __name__ == "__main__":
     sys.exit(main())

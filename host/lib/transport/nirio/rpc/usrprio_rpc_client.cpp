@@ -1,22 +1,17 @@
 //
 // Copyright 2013 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include <uhd/transport/nirio/rpc/usrprio_rpc_client.hpp>
 #include <uhd/utils/platform.hpp>
+
+namespace {
+    constexpr int64_t DEFAULT_TIMEOUT_IN_MS = 5000;
+}
+
 
 namespace uhd { namespace usrprio_rpc {
 
@@ -24,7 +19,7 @@ usrprio_rpc_client::usrprio_rpc_client(
     std::string server,
     std::string port
 ) : _rpc_client(server, port, uhd::get_process_id(), uhd::get_host_id()),
-    _timeout(boost::posix_time::milliseconds(DEFAULT_TIMEOUT_IN_MS))
+    _timeout(boost::posix_time::milliseconds(long(DEFAULT_TIMEOUT_IN_MS)))
 {
    _ctor_status = _rpc_client.status() ? NiRio_Status_RpcConnectionError : NiRio_Status_Success;
 }

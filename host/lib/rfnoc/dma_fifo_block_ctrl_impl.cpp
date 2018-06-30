@@ -1,34 +1,22 @@
 //
 // Copyright 2016 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include <uhd/rfnoc/dma_fifo_block_ctrl.hpp>
-#include "dma_fifo_core_3000.hpp"
-#include "wb_iface_adapter.hpp"
 #include <uhd/convert.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/types/wb_iface.hpp>
+#include <uhdlib/rfnoc/wb_iface_adapter.hpp>
+#include <uhdlib/usrp/cores/dma_fifo_core_3000.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/thread/mutex.hpp>
+#include <boost/format.hpp>
 
 using namespace uhd;
 using namespace uhd::rfnoc;
-
-//TODO (Ashish): This should come from the framework
-static const double BUS_CLK_RATE = 166.67e6;
 
 class dma_fifo_block_ctrl_impl : public dma_fifo_block_ctrl
 {
@@ -39,45 +27,28 @@ public:
     {
         _perifs.resize(get_input_ports().size());
         for(size_t i = 0; i < _perifs.size(); i++) {
-            _perifs[i].ctrl = boost::make_shared<wb_iface_adapter>(
-                // poke32 functor
-                boost::bind(
-                    static_cast< void (block_ctrl_base::*)(const uint32_t, const uint32_t, const size_t) >(&block_ctrl_base::sr_write),
-                    this, _1, _2, i
-                ),
-                // peek32 functor
-                boost::bind(
-                    static_cast< uint32_t (block_ctrl_base::*)(const uint32_t, const size_t) >(&block_ctrl_base::user_reg_read32),
-                    this,
-                    _1, i
-                ),
-                // peek64 functor
-                boost::bind(
-                    static_cast< uint64_t (block_ctrl_base::*)(const uint32_t, const size_t) >(&block_ctrl_base::user_reg_read64),
-                    this,
-                    _1, i
-                )
-            );
+            _perifs[i].ctrl = this->get_ctrl_iface(i);
             static const uint32_t USER_SR_BASE = 128*4;
             static const uint32_t USER_RB_BASE = 0;     //Don't care
             _perifs[i].base_addr = DEFAULT_SIZE*i;
             _perifs[i].depth = DEFAULT_SIZE;
             _perifs[i].core = dma_fifo_core_3000::make(_perifs[i].ctrl, USER_SR_BASE, USER_RB_BASE);
             _perifs[i].core->resize(_perifs[i].base_addr, _perifs[i].depth);
-            UHD_LOGGER_INFO("RFNOC") << boost::format("[DMA FIFO] Running BIST for FIFO %d... ") % i;
+            UHD_LOG_DEBUG(unique_id(), "Running BIST for FIFO " << i);
             if (_perifs[i].core->ext_bist_supported()) {
                 uint32_t bisterr = _perifs[i].core->run_bist();
                 if (bisterr != 0) {
                     throw uhd::runtime_error(str(boost::format("BIST failed! (code: %d)\n") % bisterr));
                 } else {
-                    double throughput = _perifs[i].core->get_bist_throughput(BUS_CLK_RATE);
-                    UHD_LOGGER_INFO("RFNOC") << (boost::format("pass (Throughput: %.1fMB/s)") % (throughput/1e6)) ;
+                    double throughput = _perifs[i].core->get_bist_throughput();
+                    UHD_LOGGER_INFO(unique_id()) << (boost::format("BIST passed (Throughput: %.0f MB/s)") % (throughput/1e6)) ;
                 }
             } else {
                 if (_perifs[i].core->run_bist() == 0) {
-                    UHD_LOGGER_INFO("RFNOC") << "pass\n";
+                    UHD_LOGGER_INFO(unique_id()) << "BIST passed";
                 } else {
-                    throw uhd::runtime_error("BIST failed!\n");
+                    UHD_LOGGER_ERROR(unique_id()) << "BIST failed!";
+                    throw uhd::runtime_error("BIST failed!");
                 }
             }
             _tree->access<int>(get_arg_path("base_addr/value", i))

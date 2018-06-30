@@ -1,30 +1,20 @@
 //
 // Copyright 2012-2015 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "ad9361_ctrl.hpp"
 #include <uhd/types/ranges.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/types/serial.hpp>
-#include <cstring>
+#include <uhdlib/usrp/common/ad9361_ctrl.hpp>
 #include <boost/format.hpp>
 #include <boost/utility.hpp>
 #include <boost/function.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/thread.hpp>
+#include <cstring>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -178,6 +168,20 @@ public:
 
     }
 
+    //! set which timing mode to use - 1R1T, 2R2T
+    void set_timing_mode(const std::string &timing_mode)
+    {
+        boost::lock_guard<boost::mutex> lock(_mutex);
+
+        _use_safe_spi();
+        if ((timing_mode != "2R2T") && (timing_mode != "1R1T")) {
+            throw uhd::assertion_error("ad9361_ctrl: Timing mode not supported");
+        }
+        _device.set_timing_mode((timing_mode == "2R2T")? ad9361_device_t::TIMING_MODE_2R2T : ad9361_device_t::TIMING_MODE_1R1T);
+        _use_timed_spi();
+
+    }
+
     //! tune the given frontend, return the exact value
     double tune(const std::string &which, const double freq)
     {
@@ -243,10 +247,24 @@ public:
 
     double set_bw_filter(const std::string &which, const double bw)
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
-
         ad9361_device_t::direction_t direction = _get_direction_from_antenna(which);
-        return _device.set_bw_filter(direction, bw);
+        double actual_bw = bw;
+
+        {
+            boost::lock_guard<boost::mutex> lock(_mutex);
+            actual_bw = _device.set_bw_filter(direction, bw);
+        }
+
+        const double min_bw = ad9361_device_t::AD9361_MIN_BW;
+        const double max_bw = ad9361_device_t::AD9361_MAX_BW;
+        if (bw < min_bw or bw > max_bw)
+        {
+            UHD_LOGGER_WARNING("AD936X") << boost::format(
+                    "The requested bandwidth %f MHz is out of range (%f - %f MHz).\n"
+                    "The bandwidth has been forced to %f MHz.\n"
+            ) % (bw/1e6) % (min_bw/1e6) % (max_bw/1e6) % (actual_bw/1e6);
+        }
+        return actual_bw;
     }
 
     std::vector<std::string> get_filter_names(const std::string &which)

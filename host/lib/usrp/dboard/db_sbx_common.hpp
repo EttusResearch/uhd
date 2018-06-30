@@ -1,23 +1,13 @@
 //
 // Copyright 2011-2015 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include <uhd/types/device_addr.hpp>
-#include "adf435x.hpp"
-#include "max287x.hpp"
+#include <uhdlib/usrp/common/adf435x.hpp>
+#include <uhdlib/usrp/common/max287x.hpp>
 
 // LO Related
 #define ADF435X_CE      (1 << 3)
@@ -114,6 +104,14 @@ static const freq_range_t sbx_enable_tx_lo_filter = list_of
 
 static const freq_range_t sbx_enable_rx_lo_filter = list_of
     (range_t(0.4e9, 1.5e9))
+;
+
+static const freq_range_t cbx_enable_tx_lo_filter = list_of
+    (range_t(1.2e9, 2e9))
+;
+
+static const freq_range_t cbx_enable_rx_lo_filter = list_of
+    (range_t(1.2e9, 2e9))
 ;
 
 static const std::vector<std::string> sbx_tx_antennas = list_of("TX/RX")("CAL");
@@ -226,9 +224,12 @@ protected:
     /*!
      * CBX daughterboard
      *
-     * The only driver difference between SBX and CBX is the MAX2870 vs. ADF435x.
-     * There is also no LO filter switching required, but the GPIO is left blank
-     * so we don't worry about it.
+     * There are a few differences between SBX and CBX
+     * - The CBX and SBX use the MAX2870 and ADF435x respectively for LOs
+     * - There are different frequency ranges
+     * - There are different LO LPF cutoff frequencies
+     * There is also no LO filter switching required on CBX, but the GPIO is left
+     * blank so we don't worry about it.
      */
     class cbx : public sbx_versionx {
     public:
@@ -250,6 +251,18 @@ protected:
      * to correspond either to SBX or CBX.
      */
     freq_range_t freq_range;
+
+    /*!
+    * Frequency range to use the LO LPF in RX; this is set in the constructor
+    * to correspond either to SBX or CBX.
+    */
+    freq_range_t enable_rx_lo_filter;
+
+    /*!
+    * Frequency range to use the LO LPF in TX; this is set in the constructor
+    * to correspond either to SBX or CBX.
+    */
+    freq_range_t enable_tx_lo_filter;
 
     /*!
      * Handle to the version-specific implementation of the SBX.

@@ -1,18 +1,8 @@
 //
 // Copyright 2013-2014,2016 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include "n230_eeprom.h"
@@ -68,9 +58,9 @@ const mboard_eeprom_t& n230_eeprom_manager::read_mb_eeprom()
     uint16_t ver_major = uhd::htonx<uint16_t>(map.data_version_major);
     uint16_t ver_minor = uhd::htonx<uint16_t>(map.data_version_minor);
 
-    _mb_eeprom["product"] = boost::lexical_cast<std::string>(
+    _mb_eeprom["product"] = std::to_string(
         uhd::htonx<uint16_t>(map.hw_product));
-    _mb_eeprom["revision"] = boost::lexical_cast<std::string>(
+    _mb_eeprom["revision"] = std::to_string(
         uhd::htonx<uint16_t>(map.hw_revision));
     //The revision_compat field does not exist in version 1.0
     //EEPROM version 1.0 will only exist on HW revision 1 so it is safe to set
@@ -78,7 +68,7 @@ const mboard_eeprom_t& n230_eeprom_manager::read_mb_eeprom()
     if (ver_major == 1 and ver_minor == 0) {
         _mb_eeprom["revision_compat"] = _mb_eeprom["revision"];
     } else {
-        _mb_eeprom["revision_compat"] = boost::lexical_cast<std::string>(
+        _mb_eeprom["revision_compat"] = std::to_string(
             uhd::htonx<uint16_t>(map.hw_revision_compat));
     }
     _mb_eeprom["serial"] = _bytes_to_string(

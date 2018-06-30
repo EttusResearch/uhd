@@ -1,18 +1,8 @@
 #
 # Copyright 2010-2011,2013,2015 Ettus Research LLC
+# Copyright 2018 Ettus Research, a National Instruments Company
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
 
 ########################################################################
@@ -21,12 +11,16 @@ SET(_uhd_disabled_components "" CACHE INTERNAL "" FORCE)
 
 ########################################################################
 # Register a component into the system
-#  - name the component string name
-#  - var the global enable variable
-#  - enb the default enable setting
-#  - deps a list of dependencies
-#  - dis the default disable setting
+#  - name the component string name ("FOO")
+#  - var the global enable variable (ENABLE_FOO)
+#  - enb the default enable setting (ON)
+#  - deps a list of dependencies (DEPENDENCY_FOUND)
+#  - dis the default disable setting (OFF)
 #  - req fail if dependencies not met (unless specifically disabled)
+#
+# In parentheses are examples. If you specify those, we register a component
+# "FOO" which is enabled by calling CMake with -DENABLE_FOO=ON. It defaults to
+# ON, unless DEPENDENCY_FOUND is false, in which case it becomes false.
 ########################################################################
 MACRO(LIBUHD_REGISTER_COMPONENT name var enb deps dis req)
     MESSAGE(STATUS "")
@@ -35,19 +29,33 @@ MACRO(LIBUHD_REGISTER_COMPONENT name var enb deps dis req)
         MESSAGE(STATUS "  Dependency ${dep} = ${${dep}}")
     ENDFOREACH(dep)
 
-    #if user specified option, store here
+    # If user specified option, store here. Note: If the user doesn't specify
+    # this option on the cmake command line, both user_enabled and
+    # user_disabled will be false!
     IF("${${var}}" STREQUAL "OFF")
         SET(user_disabled TRUE)
     ELSE()
         SET(user_disabled FALSE)
     ENDIF("${${var}}" STREQUAL "OFF")
+    IF("${${var}}" STREQUAL "ON")
+        SET(user_enabled TRUE)
+    ELSE()
+        SET(user_enabled FALSE)
+    ENDIF("${${var}}" STREQUAL "ON")
 
     #setup the dependent option for this component
     INCLUDE(CMakeDependentOption)
     CMAKE_DEPENDENT_OPTION(${var} "enable ${name} support" ${enb} "${deps}" ${dis})
 
-    #if a required option's dependencies aren't met, fail unless user specifies otherwise
-    IF(NOT ${var} AND ${req} AND NOT user_disabled)
+    # There are two failure cases:
+    # 1) The user requested this component explicitly (-DENABLE_FOO=ON) but the
+    #    requirements are not met.
+    # 2) The user did not explicitly turn off this component (-DENABLE_FOO=OFF)
+    #    but it is flagged as required by ${req}
+    IF(NOT ${var} AND user_enabled) # Case 1)
+        MESSAGE(FATAL_ERROR "Dependencies for required component ${name} not met.")
+    ENDIF(NOT ${var} AND user_enabled)
+    IF(NOT ${var} AND ${req} AND NOT user_disabled) # Case 2)
         MESSAGE(FATAL_ERROR "Dependencies for required component ${name} not met.")
     ENDIF(NOT ${var} AND ${req} AND NOT user_disabled)
 

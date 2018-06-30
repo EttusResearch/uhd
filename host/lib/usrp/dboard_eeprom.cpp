@@ -1,18 +1,8 @@
 //
 // Copyright 2010-2011,2015 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include <uhd/types/byte_vector.hpp>
@@ -67,7 +57,7 @@ static uint8_t checksum(const byte_vector_t &bytes){
     for (size_t i = 0; i < std::min(bytes.size(), size_t(DB_EEPROM_CHKSUM)); i++){
         sum -= int(bytes.at(i));
     }
-    UHD_LOG_DEBUG("DB_EEPROM", boost::format("byte sum: 0x%02x") % sum)
+    UHD_LOG_TRACE("DB_EEPROM", boost::format("byte sum: 0x%02x") % sum)
     return uint8_t(sum);
 }
 
@@ -81,7 +71,11 @@ void dboard_eeprom_t::load(i2c_iface &iface, uint8_t addr){
 
     std::ostringstream ss;
     for (size_t i = 0; i < bytes.size(); i++){
-        UHD_LOG_TRACE("DB_EEPROM",boost::format("eeprom byte[0x%02x] = 0x%02x") % i % int(bytes.at(i)))
+        UHD_LOG_TRACE("DB_EEPROM",
+            boost::format("eeprom byte[0x%02x] = 0x%02x")
+            % i
+            % int(bytes.at(i))
+        );
     }
 
     try{
@@ -107,7 +101,7 @@ void dboard_eeprom_t::load(i2c_iface &iface, uint8_t addr){
             | (uint16_t(bytes[DB_EEPROM_REV_MSB]) << 8)
         ;
         if (rev_num != 0 and rev_num != 0xffff){
-            revision = boost::lexical_cast<std::string>(rev_num);
+            revision = std::to_string(rev_num);
         }
 
     }catch(const uhd::assertion_error &){

@@ -1,18 +1,8 @@
 //
 // Copyright 2010-2012 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #ifndef INCLUDED_UHD_TYPES_TUNE_REQUEST_HPP
@@ -29,6 +19,8 @@ namespace uhd{
      * fined control over the daughterboard IF and DSP tuning.
      * Not all combinations of policies are applicable.
      * Convenience constructors are supplied for most use cases.
+     *
+     * See also \ref general_tuning
      */
     struct UHD_API tune_request_t{
         /*!
@@ -86,6 +78,15 @@ namespace uhd{
         /*!
          * The DSP frequency in Hz.
          * Set when the policy is set to manual.
+         *
+         * Note that the meaning of the DSP frequency's sign differs between
+         * TX and RX operations. The target frequency is the result of
+         * `target_freq = rf_freq + sign * dsp_freq`. For TX, `sign` is
+         * negative, and for RX, `sign` is positive.
+         * Example: If both RF and DSP tuning policies are set to manual, and
+         * `rf_freq` is set to 1 GHz, and `dsp_freq` is set to 10 MHz, the
+         * actual target frequency is 990 MHz for a TX tune request, and
+         * 1010 MHz for an RX tune request.
          */
         double dsp_freq;
 

@@ -1,0 +1,229 @@
+From d20d06421d11b824a1f250757ad9bb602fcccc35 Mon Sep 17 00:00:00 2001
+From: Andrej Rode <andrej.rode@ettus.com>
+Date: Thu, 6 Apr 2017 15:54:59 -0700
+Subject: [PATCH 2/3] rpclib: use the real boost::asio namespace
+
+Signed-off-by: Andrej Rode <andrej.rode@ettus.com>
+---
+ include/rpc/detail/async_writer.h   | 16 ++++++++--------
+ include/rpc/detail/server_session.h | 10 +++++-----
+ lib/rpc/client.cc                   | 20 ++++++++++----------
+ lib/rpc/detail/server_session.cc    |  6 +++---
+ lib/rpc/server.cc                   |  7 +++----
+ 5 files changed, 29 insertions(+), 30 deletions(-)
+
+diff --git a/include/rpc/detail/async_writer.h b/include/rpc/detail/async_writer.h
+index c3ecb02..a44cd29 100644
+--- a/include/rpc/detail/async_writer.h
++++ b/include/rpc/detail/async_writer.h
+@@ -3,7 +3,7 @@
+ #ifndef ASYNC_WRITER_H_HQIRH28I
+ #define ASYNC_WRITER_H_HQIRH28I
+ 
+-#include "asio.hpp"
++#include <boost/asio.hpp>
+ #include "rpc/msgpack.hpp"
+ #include <condition_variable>
+ #include <deque>
+@@ -19,8 +19,8 @@ namespace detail {
+ //! \brief Common logic for classes that have a write queue with async writing.
+ class async_writer : public std::enable_shared_from_this<async_writer> {
+ public:
+-    async_writer(RPCLIB_ASIO::io_service *io,
+-                 RPCLIB_ASIO::ip::tcp::socket socket)
++    async_writer(boost::asio::io_service *io,
++                 boost::asio::ip::tcp::socket socket)
+         : socket_(std::move(socket)), write_strand_(*io), exit_(false) {}
+ 
+     void do_write() {
+@@ -31,8 +31,8 @@ public:
+         auto &item = write_queue_.front();
+         // the data in item remains valid until the handler is called
+         // since it will still be in the queue physically until then.
+-        RPCLIB_ASIO::async_write(
+-            socket_, RPCLIB_ASIO::buffer(item.data(), item.size()),
++        boost::asio::async_write(
++            socket_, boost::asio::buffer(item.data(), item.size()),
+             write_strand_.wrap(
+                 [this, self](std::error_code ec, std::size_t transferred) {
+                     (void)transferred;
+@@ -50,7 +50,7 @@ public:
+                     if (exit_) {
+                         LOG_INFO("Closing socket");
+                         socket_.shutdown(
+-                            RPCLIB_ASIO::ip::tcp::socket::shutdown_both);
++                            boost::asio::ip::tcp::socket::shutdown_both);
+                         socket_.close();
+                     }
+                 }));
+@@ -68,8 +68,8 @@ public:
+     friend class rpc::client;
+ 
+ protected:
+-    RPCLIB_ASIO::ip::tcp::socket socket_;
+-    RPCLIB_ASIO::strand write_strand_;
++    boost::asio::ip::tcp::socket socket_;
++    boost::asio::strand write_strand_;
+     std::atomic_bool exit_{false};
+     bool exited_ = false;
+     std::mutex m_exit_;
+diff --git a/include/rpc/detail/server_session.h b/include/rpc/detail/server_session.h
+index 3b96d7d..963b082 100644
+--- a/include/rpc/detail/server_session.h
++++ b/include/rpc/detail/server_session.h
+@@ -3,7 +3,7 @@
+ #ifndef SESSION_H_5KG6ZMAB
+ #define SESSION_H_5KG6ZMAB
+ 
+-#include "asio.hpp"
++#include <boost/asio.hpp>
+ #include <memory>
+ #include <vector>
+ 
+@@ -22,8 +22,8 @@ namespace detail {
+ 
+ class server_session : public async_writer {
+ public:
+-    server_session(server *srv, RPCLIB_ASIO::io_service *io,
+-                   RPCLIB_ASIO::ip::tcp::socket socket,
++    server_session(server *srv, boost::asio::io_service *io,
++                   boost::asio::ip::tcp::socket socket,
+                    std::shared_ptr<dispatcher> disp, bool suppress_exceptions);
+     void start();
+ 
+@@ -34,8 +34,8 @@ private:
+ 
+ private:
+     server* parent_;
+-    RPCLIB_ASIO::io_service *io_;
+-    RPCLIB_ASIO::strand read_strand_;
++    boost::asio::io_service *io_;
++    boost::asio::strand read_strand_;
+     std::shared_ptr<dispatcher> disp_;
+     RPCLIB_MSGPACK::unpacker pac_;
+     RPCLIB_MSGPACK::sbuffer output_buf_;
+diff --git a/lib/rpc/client.cc b/lib/rpc/client.cc
+index e5d0117..ef9048b 100644
+--- a/lib/rpc/client.cc
++++ b/lib/rpc/client.cc
+@@ -10,15 +10,15 @@
+ #include <thread>
+ #include <unordered_map>
+ 
+-#include "asio.hpp"
++#include <boost/asio.hpp>
+ #include <boost/format.hpp>
+ 
+ #include "rpc/detail/async_writer.h"
+ #include "rpc/detail/dev_utils.h"
+ #include "rpc/detail/response.h"
+ 
+-using namespace RPCLIB_ASIO;
+-using RPCLIB_ASIO::ip::tcp;
++using namespace boost::asio;
++using boost::asio::ip::tcp;
+ using namespace rpc::detail;
+ 
+ namespace rpc {
+@@ -36,14 +36,14 @@ struct client::impl {
+           is_connected_(false),
+           state_(client::connection_state::initial),
+           writer_(std::make_shared<detail::async_writer>(
+-              &io_, RPCLIB_ASIO::ip::tcp::socket(io_))),
++              &io_, boost::asio::ip::tcp::socket(io_))),
+           timeout_(5000) {
+         pac_.reserve_buffer(default_buffer_size);
+     }
+ 
+     void do_connect(tcp::resolver::iterator endpoint_iterator) {
+         LOG_INFO("Initiating connection.");
+-        RPCLIB_ASIO::async_connect(
++        boost::asio::async_connect(
+             writer_->socket_, endpoint_iterator,
+             [this](std::error_code ec, tcp::resolver::iterator) {
+                 if (!ec) {
+@@ -63,7 +63,7 @@ struct client::impl {
+         LOG_TRACE("do_read");
+         constexpr std::size_t max_read_bytes = default_buffer_size;
+         writer_->socket_.async_read_some(
+-            RPCLIB_ASIO::buffer(pac_.buffer(), max_read_bytes),
++            boost::asio::buffer(pac_.buffer(), max_read_bytes),
+             // I don't think max_read_bytes needs to be captured explicitly
+             // (since it's constexpr), but MSVC insists.
+             [this, max_read_bytes](std::error_code ec, std::size_t length) {
+@@ -103,10 +103,10 @@ struct client::impl {
+                         pac_.reserve_buffer(max_read_bytes);
+                     }
+                     do_read();
+-                } else if (ec == RPCLIB_ASIO::error::eof) {
++                } else if (ec == boost::asio::error::eof) {
+                     LOG_WARN("The server closed the connection.");
+                     state_ = client::connection_state::disconnected;
+-                } else if (ec == RPCLIB_ASIO::error::connection_reset) {
++                } else if (ec == boost::asio::error::connection_reset) {
+                     // Yes, this should be connection_state::reset,
+                     // but on windows, disconnection results in reset. May be
+                     // asio bug, may be a windows socket pecularity. Should be
+@@ -132,8 +132,8 @@ struct client::impl {
+         std::pair<std::string, std::promise<RPCLIB_MSGPACK::object_handle>>;
+ 
+     client *parent_;
+-    RPCLIB_ASIO::io_service io_;
+-    RPCLIB_ASIO::strand strand_;
++    boost::asio::io_service io_;
++    boost::asio::strand strand_;
+     std::atomic<int> call_idx_; /// The index of the last call made
+     std::unordered_map<uint32_t, call_t> ongoing_calls_;
+     std::string addr_;
+diff --git a/lib/rpc/detail/server_session.cc b/lib/rpc/detail/server_session.cc
+index 15239da..79cfd09 100644
+--- a/lib/rpc/detail/server_session.cc
++++ b/lib/rpc/detail/server_session.cc
+@@ -13,8 +13,8 @@ namespace detail {
+ 
+ static constexpr std::size_t default_buffer_size = rpc::constants::DEFAULT_BUFFER_SIZE;
+ 
+-server_session::server_session(server *srv, RPCLIB_ASIO::io_service *io,
+-                               RPCLIB_ASIO::ip::tcp::socket socket,
++server_session::server_session(server *srv, boost::asio::io_service *io,
++                               boost::asio::ip::tcp::socket socket,
+                                std::shared_ptr<dispatcher> disp,
+                                bool suppress_exceptions)
+     : async_writer(io, std::move(socket)),
+@@ -40,7 +40,7 @@ void server_session::do_read() {
+     auto self(shared_from_this());
+     constexpr std::size_t max_read_bytes = default_buffer_size;
+     socket_.async_read_some(
+-        RPCLIB_ASIO::buffer(pac_.buffer(), default_buffer_size),
++        boost::asio::buffer(pac_.buffer(), default_buffer_size),
+         // I don't think max_read_bytes needs to be captured explicitly
+         // (since it's constexpr), but MSVC insists.
+         read_strand_.wrap([this, self, max_read_bytes](std::error_code ec,
+diff --git a/lib/rpc/server.cc b/lib/rpc/server.cc
+index f0b9b05..568da72 100644
+--- a/lib/rpc/server.cc
++++ b/lib/rpc/server.cc
+@@ -6,8 +6,7 @@
+ #include <stdint.h>
+ #include <thread>
+ 
+-#include "asio.hpp"
+-#include "format.h"
++#include <boost/asio.hpp>
+ 
+ #include "rpc/detail/dev_utils.h"
+ #include "rpc/detail/log.h"
+@@ -16,8 +15,8 @@
+ #include "rpc/detail/thread_group.h"
+ 
+ using namespace rpc::detail;
+-using RPCLIB_ASIO::ip::tcp;
+-using namespace RPCLIB_ASIO;
++using boost::asio::ip::tcp;
++using namespace boost::asio;
+ 
+ namespace rpc {
+ 
+-- 
+2.10.2
+

@@ -13,6 +13,7 @@ Follow these links to get to the section of the manual you wish to consult, or u
 \li \subpage page_devices "Part I: Devices & Usage Manual"
 \li \subpage page_uhd "Part II: UHD Development Manual"
 \li @DOXYGEN_FPGA_MANUAL_REFERENCE@
+\li \subpage page_rfnoc "Part IV: RFNoC Development Manual"
 
 ### Further Information
 

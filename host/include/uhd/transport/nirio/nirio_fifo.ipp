@@ -1,18 +1,8 @@
 //
 // Copyright 2013-2015 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 // "push" and "pop" introduced in GCC 4.6; works with all clang
@@ -441,7 +431,7 @@ nirio_status nirio_fifo<data_t>::_ensure_transfer_completed(uint32_t timeout_ms)
         (_expected_xfer_count > actual_xfer_count) &&
         approx_us_elapsed++ < std::max<size_t>(MIN_TIMEOUT_IN_US, timeout_ms * 1000)
     ) {
-        boost::this_thread::sleep(boost::posix_time::microseconds(1));
+        std::this_thread::sleep_for(std::chrono::microseconds(1));
         nirio_status_chain(_get_transfer_count(actual_xfer_count), status);
     }
 

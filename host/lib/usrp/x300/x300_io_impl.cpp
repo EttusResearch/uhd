@@ -1,30 +1,20 @@
 //
 // Copyright 2013-2014 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include "x300_regs.hpp"
 #include "x300_impl.hpp"
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
+#include <uhdlib/usrp/common/async_packet_handler.hpp>
 #include <uhd/transport/nirio_zero_copy.hpp>
-#include "async_packet_handler.hpp"
 #include <uhd/transport/bounded_buffer.hpp>
-#include <boost/bind.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhd/utils/log.hpp>
+#include <boost/bind.hpp>
 #include <boost/make_shared.hpp>
 
 using namespace uhd;
@@ -46,10 +36,10 @@ device_addr_t x300_impl::get_rx_hints(size_t mb_index)
             //For nirio, the buffer size is not configurable by the user
             #if defined(UHD_PLATFORM_MACOS) || defined(UHD_PLATFORM_BSD)
                 //limit buffer resize on macos or it will error
-                rx_hints["recv_buff_size"] = boost::lexical_cast<std::string>(X300_RX_SW_BUFF_SIZE_ETH_MACOS);
+                rx_hints["recv_buff_size"] = std::to_string(X300_RX_SW_BUFF_SIZE_ETH_MACOS);
             #elif defined(UHD_PLATFORM_LINUX) || defined(UHD_PLATFORM_WIN32)
                 //set to half-a-second of buffering at max rate
-                rx_hints["recv_buff_size"] = boost::lexical_cast<std::string>(X300_RX_SW_BUFF_SIZE_ETH);
+                rx_hints["recv_buff_size"] = std::to_string(X300_RX_SW_BUFF_SIZE_ETH);
             #endif
         }
     }

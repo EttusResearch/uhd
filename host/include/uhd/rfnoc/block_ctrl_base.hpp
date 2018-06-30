@@ -1,18 +1,8 @@
 //
 // Copyright 2014-2016 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #ifndef INCLUDED_LIBUHD_BLOCK_CTRL_BASE_HPP
@@ -30,13 +20,13 @@
 #include <uhd/rfnoc/blockdef.hpp>
 #include <uhd/rfnoc/constants.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/lexical_cast.hpp>
 #include <stdint.h>
 
 namespace uhd {
     namespace rfnoc {
+        // Forward declarations
+        class ctrl_iface;
         namespace nocscript {
-            // Forward declaration
             class block_iface;
         }
 
@@ -50,8 +40,8 @@ struct make_args_t
         block_key(key)
     {}
 
-    //! A valid interface that allows us to do peeks and pokes
-    std::map<size_t, uhd::wb_iface::sptr> ctrl_ifaces;
+    //! A valid interface that allows us to read and write registers
+    std::map<size_t, boost::shared_ptr<ctrl_iface> > ctrl_ifaces;
     //! This block's base address (address of block port 0)
     uint32_t base_address;
     //! The device index (or motherboard index).
@@ -174,6 +164,7 @@ public:
      *
      * \param reg The settings register to write to.
      * \param data New value of this register.
+     * \param port Port on which to write
      */
     void sr_write(const uint32_t reg, const uint32_t data, const size_t port = 0);
 
@@ -225,7 +216,7 @@ public:
      * instead of a numeric address. The register name must be
      * defined in the block definition file.
      *
-     * \param addr The user register address.
+     * \param reg The user register address.
      * \param port Port on which to read
      * \returns the readback value.
      * \throws uhd::key_error if \p reg is not a valid register name
@@ -251,8 +242,10 @@ public:
      * defined in the block definition file.
      *
      * \param reg The user register name.
+     * \param port Destination port.
      * \returns the readback value.
      * \throws uhd::key_error if \p reg is not a valid register name
+     * \param port Port from which to read
      */
     uint32_t user_reg_read32(const std::string &reg, const size_t port = 0);
 
@@ -272,8 +265,8 @@ public:
 
     /*! Sets a tick rate for the command timebase.
      *
-     * \param the tick rate in Hz
-     * \port port Port
+     * \param tick_rate The tick rate in Hz
+     * \param port Port
      */
     void set_command_tick_rate(const double tick_rate, const size_t port = ANY_PORT);
 
@@ -368,8 +361,7 @@ protected:
     };
 
     //! Get a control interface object for block port \p block_port
-    wb_iface::sptr get_ctrl_iface(const size_t block_port);
-
+    timed_wb_iface::sptr get_ctrl_iface(const size_t block_port);
 
     /***********************************************************************
      * Hooks & Derivables
@@ -406,14 +398,25 @@ private:
     //! Helper function to initialize the block args (used by ctor only)
     void _init_block_args();
 
+    //! Helper to create a lambda to read tick rate
+    double get_command_tick_rate(const size_t port);
+
     /***********************************************************************
      * Private members
      **********************************************************************/
     //! Objects to actually send and receive the commands
-    std::map<size_t, wb_iface::sptr> _ctrl_ifaces;
+    std::map<size_t, boost::shared_ptr<ctrl_iface> > _ctrl_ifaces;
+    std::map<size_t, time_spec_t> _cmd_timespecs;
+    std::map<size_t, double> _cmd_tickrates;
 
     //! The base address of this block (the address of block port 0)
     uint32_t _base_address;
+
+    //! 64-bit NoC ID of this block
+    uint64_t _noc_id;
+
+    //! noc_shell compat number, as one 64-bit number [major,minor]
+    uint64_t _compat_num;
 
     //! The (unique) block ID.
     block_id_t _block_id;

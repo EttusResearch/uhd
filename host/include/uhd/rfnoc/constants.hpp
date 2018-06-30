@@ -1,18 +1,8 @@
 //
 // Copyright 2014 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #ifndef INCLUDED_LIBUHD_RFNOC_CONSTANTS_HPP
@@ -35,6 +25,8 @@ static const std::string XML_PATH_ENV = "UHD_RFNOC_DIR";
 //! If the block name can't be automatically detected, this name is used
 static const std::string DEFAULT_BLOCK_NAME = "Block";
 static const uint64_t DEFAULT_NOC_ID = 0xFFFFFFFFFFFFFFFF;
+static const size_t NOC_SHELL_COMPAT_MAJOR = 2;
+static const size_t NOC_SHELL_COMPAT_MINOR = 0;
 
 static const size_t MAX_PACKET_SIZE = 8000; // bytes
 static const size_t DEFAULT_PACKET_SIZE = 1456; // bytes
@@ -79,14 +71,16 @@ enum settingsbus_reg_t {
     SR_READBACK_REG_FIFOSIZE   = 2, // fifo size
     SR_READBACK_REG_MTU       = 3,
     SR_READBACK_REG_BLOCKPORT_SIDS = 4,
-    SR_READBACK_REG_USER       = 5
-    /* 6 currently unused */
+    SR_READBACK_REG_USER       = 5,
+    SR_READBACK_COMPAT         = 6
 };
 
 // AXI stream configuration bus (output master bus of axi wrapper) registers
 static const uint32_t AXI_WRAPPER_BASE      = 128;
 static const uint32_t AXIS_CONFIG_BUS       = AXI_WRAPPER_BASE+1; // tdata with tvalid asserted
 static const uint32_t AXIS_CONFIG_BUS_TLAST = AXI_WRAPPER_BASE+2; // tdata with tvalid & tlast asserted
+
+static const size_t CMD_FIFO_SIZE = 128; // Lines == multiples of 8 bytes
 
 // Named settings registers
 static const uhd::dict<std::string, uint32_t> DEFAULT_NAMED_SR = boost::assign::map_list_of

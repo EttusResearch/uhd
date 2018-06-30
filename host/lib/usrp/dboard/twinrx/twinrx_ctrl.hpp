@@ -1,41 +1,33 @@
 //
 // Copyright 2015 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #ifndef INCLUDED_DBOARD_TWINRX_CTRL_HPP
 #define INCLUDED_DBOARD_TWINRX_CTRL_HPP
 
-#include <boost/noncopyable.hpp>
-#include <uhd/types/wb_iface.hpp>
 #include "twinrx_io.hpp"
+#include <uhd/types/wb_iface.hpp>
+#include <boost/noncopyable.hpp>
 
 namespace uhd { namespace usrp { namespace dboard { namespace twinrx {
 
 class twinrx_ctrl : public boost::noncopyable {
 public:
-    typedef boost::shared_ptr<twinrx_ctrl> sptr;
+    typedef std::shared_ptr<twinrx_ctrl> sptr;
 
     static sptr make(
         dboard_iface::sptr db_iface,
         twinrx_gpio::sptr gpio_iface,
-        twinrx_cpld_regmap::sptr cpld_regmap);
+        twinrx_cpld_regmap::sptr cpld_regmap,
+        dboard_id_t rx_id
+    );
 
     virtual ~twinrx_ctrl() {}
 
-    enum channel_t { CH1 = 0, CH2 = 1, BOTH = 2};
+    enum channel_t { CH1 = 0, CH2 = 1, BOTH = 2 };
 
     enum preamp_state_t { PREAMP_LOWBAND, PREAMP_HIGHBAND, PREAMP_BYPASS };
 
@@ -43,7 +35,7 @@ public:
 
     enum preselector_path_t { PRESEL_PATH1, PRESEL_PATH2, PRESEL_PATH3, PRESEL_PATH4 };
 
-    enum lo_source_t { LO_INTERNAL, LO_EXTERNAL, LO_COMPANION, LO_DISABLED };
+    enum lo_source_t { LO_INTERNAL, LO_EXTERNAL, LO_COMPANION, LO_DISABLED, LO_REIMPORT };
 
     enum lo_export_source_t { LO_CH1_SYNTH, LO_CH2_SYNTH, LO_EXPORT_DISABLED };
 

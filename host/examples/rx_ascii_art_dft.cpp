@@ -1,33 +1,25 @@
 //
 // Copyright 2010-2011,2014 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhd/utils/thread_priority.hpp>
+#include <uhd/utils/thread.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
 #include "ascii_art_dft.hpp" //implementation
 #include <boost/program_options.hpp>
-#include <boost/thread/thread.hpp> //gets time
 #include <boost/format.hpp>
 #include <curses.h>
 #include <iostream>
 #include <complex>
 #include <cstdlib>
+#include <chrono>
+#include <thread>
 
 namespace po = boost::program_options;
+using std::chrono::high_resolution_clock;
 
 int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::set_thread_priority_safe();
@@ -118,7 +110,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //set the antenna
     if (vm.count("ant")) usrp->set_rx_antenna(ant);
 
-    boost::this_thread::sleep(boost::posix_time::seconds(1)); //allow for some setup time
+    std::this_thread::sleep_for(std::chrono::seconds(1)); //allow for some setup time
 
     //Check Ref and LO Lock detect
     std::vector<std::string> sensor_names;
@@ -152,7 +144,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //------------------------------------------------------------------
     initscr(); //curses init
     rx_stream->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
-    boost::system_time next_refresh = boost::get_system_time();
+    auto next_refresh = high_resolution_clock::now();
 
     //------------------------------------------------------------------
     //-- Main loop
@@ -165,14 +157,18 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         if (num_rx_samps != buff.size()) continue;
 
         //check and update the display refresh condition
-        if (boost::get_system_time() < next_refresh) continue;
-        next_refresh = boost::get_system_time() + boost::posix_time::microseconds(long(1e6/frame_rate));
+        if (high_resolution_clock::now() < next_refresh) {
+            continue;
+        }
+        next_refresh =
+            high_resolution_clock::now()
+            + std::chrono::microseconds(int64_t(1e6/frame_rate));
 
         //calculate the dft and create the ascii art frame
-        acsii_art_dft::log_pwr_dft_type lpdft(
-            acsii_art_dft::log_pwr_dft(&buff.front(), num_rx_samps)
+        ascii_art_dft::log_pwr_dft_type lpdft(
+            ascii_art_dft::log_pwr_dft(&buff.front(), num_rx_samps)
         );
-        std::string frame = acsii_art_dft::dft_to_plot(
+        std::string frame = ascii_art_dft::dft_to_plot(
             lpdft, COLS, LINES,
             usrp->get_rx_rate(),
             usrp->get_rx_freq(),

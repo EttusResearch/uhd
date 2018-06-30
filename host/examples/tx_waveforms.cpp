@@ -1,22 +1,12 @@
 //
 // Copyright 2010-2012,2014 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include "wavetable.hpp"
-#include <uhd/utils/thread_priority.hpp>
+#include <uhd/utils/thread.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
@@ -24,12 +14,13 @@
 #include <boost/program_options.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <boost/format.hpp>
-#include <boost/thread.hpp>
-#include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
 #include <stdint.h>
 #include <iostream>
 #include <csignal>
+#include <string>
+#include <chrono>
+#include <thread>
 
 namespace po = boost::program_options;
 
@@ -47,7 +38,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //variables to be set by po
     std::string args, wave_type, ant, subdev, ref, pps, otw, channel_list;
-    uint64_t total_num_samps, spb;
+    uint64_t total_num_samps;
+    size_t spb;
     double rate, freq, gain, wave_freq, bw;
     float ampl;
 
@@ -56,7 +48,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "single uhd device address args")
-        ("spb", po::value<uint64_t>(&spb)->default_value(0), "samples per buffer, 0 for default")
+        ("spb", po::value<size_t>(&spb)->default_value(0), "samples per buffer, 0 for default")
         ("nsamps", po::value<uint64_t>(&total_num_samps)->default_value(0), "total number of samples to transmit")
         ("rate", po::value<double>(&rate), "rate of outgoing samples")
         ("freq", po::value<double>(&freq), "RF center frequency in Hz")
@@ -88,24 +80,23 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
 
+    //always select the subdevice first, the channel mapping affects the other settings
+    if (vm.count("subdev")) usrp->set_tx_subdev_spec(subdev);
+
     //detect which channels to use
     std::vector<std::string> channel_strings;
     std::vector<size_t> channel_nums;
     boost::split(channel_strings, channel_list, boost::is_any_of("\"',"));
     for(size_t ch = 0; ch < channel_strings.size(); ch++){
-        size_t chan = boost::lexical_cast<int>(channel_strings[ch]);
+        size_t chan = std::stoi(channel_strings[ch]);
         if(chan >= usrp->get_tx_num_channels())
             throw std::runtime_error("Invalid channel(s) specified.");
         else
-            channel_nums.push_back(boost::lexical_cast<int>(channel_strings[ch]));
+            channel_nums.push_back(std::stoi(channel_strings[ch]));
     }
-
 
     //Lock mboard clocks
     usrp->set_clock_source(ref);
-
-    //always select the subdevice first, the channel mapping affects the other settings
-    if (vm.count("subdev")) usrp->set_tx_subdev_spec(subdev);
 
     std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
 
@@ -149,7 +140,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         if (vm.count("ant")) usrp->set_tx_antenna(ant, channel_nums[ch]);
     }
 
-    boost::this_thread::sleep(boost::posix_time::seconds(1)); //allow for some setup time
+    std::this_thread::sleep_for(std::chrono::seconds(1)); //allow for some setup time
 
     //for the const wave, set the wave freq for small samples per period
     if (wave_freq == 0 and wave_type == "CONST"){
@@ -176,7 +167,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
 
     //allocate a buffer which we re-use for each channel
-    if (spb == 0) spb = tx_stream->get_max_num_samps()*10;
+    if (spb == 0) {
+        spb = tx_stream->get_max_num_samps()*10;
+    }
     std::vector<std::complex<float> > buff(spb);
     std::vector<std::complex<float> *> buffs(channel_nums.size(), &buff.front());
 
@@ -195,14 +188,14 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             usrp->set_time_now(uhd::time_spec_t(0.0), 0);
 
             //sleep a bit while the slave locks its time to the master
-            boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
         else
         {
             if (pps == "internal" or pps == "external" or pps == "gpsdo")
                 usrp->set_time_source(pps);
             usrp->set_time_unknown_pps(uhd::time_spec_t(0.0));
-            boost::this_thread::sleep(boost::posix_time::seconds(1)); //wait for pps sync pulse
+            std::this_thread::sleep_for(std::chrono::seconds(1)); //wait for pps sync pulse
         }
     }
     else
@@ -212,7 +205,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //Check Ref and LO Lock detect
     std::vector<std::string> sensor_names;
-    const size_t tx_sensor_chan = channel_list.empty() ? 0 : boost::lexical_cast<size_t>(channel_list[0]);
+    const size_t tx_sensor_chan = channel_nums.empty() ? 0 : channel_nums[0];
     sensor_names = usrp->get_tx_sensor_names(tx_sensor_chan);
     if (std::find(sensor_names.begin(), sensor_names.end(), "lo_locked") != sensor_names.end()) {
         uhd::sensor_value_t lo_locked = usrp->get_tx_sensor("lo_locked", tx_sensor_chan);

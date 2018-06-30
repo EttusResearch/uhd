@@ -1,18 +1,8 @@
 //
-// Copyright 2015 Ettus Research LLC
+// Copyright 2015-2017 Ettus Research
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include <fstream>
@@ -58,6 +48,15 @@ using namespace uhd::transport;
 #define FPGA_LOAD_TIMEOUT 15
 
 /*
+ * Bitstream header pattern
+ */
+static const uint8_t X300_FPGA_BIT_HEADER[] =
+{
+    0x00, 0x09, 0x0f, 0xf0, 0x0f, 0xf0, 0x0f, 0xf0,
+    0x0f, 0xf0, 0x00, 0x00, 0x01, 0x61, 0x00
+};
+
+/*
  * Packet structure
  */
 typedef struct {
@@ -79,17 +78,20 @@ typedef struct {
     bool                             ethernet;
     bool                             configure; // Reload FPGA after burning to flash (Ethernet only)
     bool                             verify;    // Device will verify the download along the way (Ethernet only)
+    bool                             download;  // Host will read the FPGA image on the device to a file
     bool                             lvbitx;
     uhd::device_addr_t               dev_addr;
     std::string                      ip_addr;
     std::string                      fpga_type;
     std::string                      resource;
     std::string                      filepath;
+    std::string                      outpath;
     std::string                      rpc_port;
-    uint32_t                  size;
-    udp_simple::sptr                 xport;
+    udp_simple::sptr                 write_xport;
+    udp_simple::sptr                 read_xport;
+    uint32_t                         size;
+    uint8_t                          data_in[udp_simple::mtu];
     std::vector<char>                bitstream; // .bin image extracted from .lvbitx file
-    uint8_t                   data_in[udp_simple::mtu];
 } x300_session_t;
 
 /*
@@ -157,7 +159,8 @@ static void x300_validate_image(x300_session_t &session){
 
 static void x300_setup_session(x300_session_t &session,
                                const device_addr_t &args,
-                               const std::string &filepath){
+                               const std::string &filepath,
+                               const std::string &outpath){
     device_addrs_t devs = x300_find(args);
     if(devs.size() == 0){
         session.found = false;
@@ -188,9 +191,12 @@ static void x300_setup_session(x300_session_t &session,
     if(session.ethernet){
         session.ip_addr = session.dev_addr["addr"];
         session.configure = args.has_key("configure");
-        session.xport = udp_simple::make_connected(session.ip_addr,
-                                                   BOOST_STRINGIZE(X300_FPGA_PROG_UDP_PORT));
+        session.write_xport = udp_simple::make_connected(session.ip_addr,
+                                                        BOOST_STRINGIZE(X300_FPGA_PROG_UDP_PORT));
+        session.read_xport = udp_simple::make_connected(session.ip_addr,
+                                                        BOOST_STRINGIZE(X300_FPGA_READ_UDP_PORT));
         session.verify = args.has_key("verify");
+        session.download = args.has_key("download");
     }
     else{
         session.resource = session.dev_addr["resource"];
@@ -212,6 +218,23 @@ static void x300_setup_session(x300_session_t &session,
                                                     % session.fpga_type));
     }
     else session.filepath = filepath;
+
+    /*
+     * The user can specify an output image path, or UHD will use the
+     * system temporary path by default
+     */
+    if(outpath == ""){
+        if(!session.dev_addr.has_key("product") or session.fpga_type == ""){
+            throw uhd::runtime_error("Found a device but could not auto-generate an image filename.");
+        }
+        std::string filename = str(boost::format("usrp_%s_fpga_%s")
+                                   % (to_lower_copy(session.dev_addr["product"]))
+                                   % session.fpga_type);
+
+        session.outpath = get_tmp_path() + "/" + filename;
+    } else {
+        session.outpath = outpath;
+    }
 
     // Validate image
     x300_validate_image(session);
@@ -240,7 +263,7 @@ static UHD_INLINE void x300_bitswap(uint8_t *num){
     *num = ((*num & 0xF0) >> 4) | ((*num & 0x0F) << 4);
     *num = ((*num & 0xCC) >> 2) | ((*num & 0x33) << 2);
     *num = ((*num & 0xAA) >> 1) | ((*num & 0x55) << 1);
-} 
+}
 
 static void x300_ethernet_load(x300_session_t &session){
 
@@ -250,7 +273,7 @@ static void x300_ethernet_load(x300_session_t &session){
 
     // Initialize write session
     uint32_t flags = X300_FPGA_PROG_FLAGS_ACK | X300_FPGA_PROG_FLAGS_INIT;
-    size_t len = x300_send_and_recv(session.xport, flags, &pkt_out, session.data_in);
+    size_t len = x300_send_and_recv(session.write_xport, flags, &pkt_out, session.data_in);
     if(x300_recv_ok(pkt_in, len)){
         std::cout << "-- Initializing FPGA loading..." << std::flush;
     }
@@ -312,7 +335,7 @@ static void x300_ethernet_load(x300_session_t &session){
                 pkt_out.data16[k] = htonx<uint16_t>(pkt_out.data16[k]);
             }
 
-            len = x300_send_and_recv(session.xport, flags, &pkt_out, session.data_in);
+            len = x300_send_and_recv(session.write_xport, flags, &pkt_out, session.data_in);
             if(len == 0){
                 if(!session.lvbitx) image.close();
                 throw uhd::runtime_error("Timed out waiting for reply from device.");
@@ -339,7 +362,7 @@ static void x300_ethernet_load(x300_session_t &session){
     pkt_out.sector = pkt_out.index = pkt_out.size = 0;
     memset(pkt_out.data8, 0, X300_PACKET_SIZE_BYTES);
     std::cout << "-- Finalizing image load..." << std::flush;
-    len = x300_send_and_recv(session.xport, flags, &pkt_out, session.data_in);
+    len = x300_send_and_recv(session.write_xport, flags, &pkt_out, session.data_in);
     if(len == 0){
         std::cout << "failed." << std::endl;
         throw uhd::runtime_error("Timed out waiting for reply from device.");
@@ -353,7 +376,7 @@ static void x300_ethernet_load(x300_session_t &session){
     // Save new FPGA image (if option set)
     if(session.configure){
         flags = (X300_FPGA_PROG_CONFIGURE | X300_FPGA_PROG_FLAGS_ACK);
-        x300_send_and_recv(session.xport, flags, &pkt_out, session.data_in);
+        x300_send_and_recv(session.write_xport, flags, &pkt_out, session.data_in);
         std::cout << "-- Saving image onto device..." << std::flush;
         if(len == 0){
             std::cout << "failed." << std::endl;
@@ -366,6 +389,164 @@ static void x300_ethernet_load(x300_session_t &session){
         else std::cout << "successful." << std::endl;
     }
     std::cout << str(boost::format("Power-cycle the USRP %s to use the new image.") % session.dev_addr.get("product", "")) << std::endl;
+}
+
+static void x300_ethernet_read(x300_session_t &session){
+
+    // UDP receive buffer
+    x300_fpga_update_data_t pkt_out;
+    memset(pkt_out.data8, 0, X300_PACKET_SIZE_BYTES);
+
+    x300_fpga_update_data_t *pkt_in = reinterpret_cast<x300_fpga_update_data_t*>(session.data_in);
+
+    // Initialize read session
+    uint32_t flags = X300_FPGA_READ_FLAGS_ACK | X300_FPGA_READ_FLAGS_INIT;
+    size_t len = x300_send_and_recv(session.read_xport, flags, &pkt_out, session.data_in);
+    if(x300_recv_ok(pkt_in, len)){
+        std::cout << "-- Initializing FPGA reading..." << std::flush;
+    }
+    else if(len == 0){
+        std::cout << "failed." << std::endl;
+        throw uhd::runtime_error("Timed out waiting for reply from device.");
+    }
+    else{
+        std::cout << "failed." << std::endl;
+        throw uhd::runtime_error("Device reported an error during initialization.");
+    }
+
+    std::cout << "successful." << std::endl;
+
+    // Read the first packet
+    // Acknowledge receipt of the FPGA image data
+    flags = X300_FPGA_READ_FLAGS_ACK;
+
+    // Set the initial burn location
+    pkt_out.sector = htonx<uint32_t>(X300_FPGA_SECTOR_START);
+    pkt_out.index  = 0;
+    pkt_out.size   = htonx<uint32_t>(X300_PACKET_SIZE_BYTES / 2);
+
+    len = x300_send_and_recv(session.read_xport, flags, &pkt_out, session.data_in);
+    if(len == 0){
+        throw uhd::runtime_error("Timed out waiting for reply from device.");
+    }
+    else if((ntohl(pkt_in->flags) & X300_FPGA_READ_FLAGS_ERROR)){
+        throw uhd::runtime_error("Device reported an error.");
+    }
+
+    // Data must be bitswapped and byteswapped
+    for(size_t k = 0; k < X300_PACKET_SIZE_BYTES; k++){
+        x300_bitswap(&pkt_in->data8[k]);
+    }
+    for(size_t k = 0; k < (X300_PACKET_SIZE_BYTES/2); k++){
+        pkt_in->data16[k] = htonx<uint16_t>(pkt_in->data16[k]);
+    }
+
+    // Assume the largest size first
+    size_t image_size = X300_FPGA_BIT_SIZE_BYTES;
+    size_t sectors = (image_size / X300_FLASH_SECTOR_SIZE);
+    std::string extension(".bit");
+
+    // Check for the beginning header sequence to determine
+    // the total amount of data (.bit vs .bin) on the flash
+    // The .bit file format includes header information not part of a .bin
+    for (size_t i = 0; i < sizeof(X300_FPGA_BIT_HEADER); i++)
+    {
+        if (pkt_in->data8[i] != X300_FPGA_BIT_HEADER[i])
+        {
+            std::cout << "-- No *.bit header detected, FPGA image is a raw stream (*.bin)!" << std::endl;
+            image_size = X300_FPGA_BIN_SIZE_BYTES;
+            sectors = (image_size / X300_FLASH_SECTOR_SIZE);
+            extension = std::string(".bin");
+            break;
+        }
+    }
+
+    session.outpath += extension;
+    std::ofstream image(session.outpath.c_str(), std::ios::binary);
+    std::cout << boost::format("-- Output FPGA file: %s\n")
+                 % session.outpath;
+
+    // Write the first packet
+    image.write((char*)pkt_in->data8, X300_PACKET_SIZE_BYTES);
+
+    // Each sector
+    size_t pkt_count = X300_PACKET_SIZE_BYTES;
+    for(size_t i = 0; i < image_size; i += X300_FLASH_SECTOR_SIZE){
+
+        // Once we determine the image size, print the progress percentage
+        std::cout << boost::format("\r-- Reading %s FPGA image: %d%% (%d/%d sectors)")
+                     % session.fpga_type
+                     % (int(double(i) / double(image_size) * 100.0))
+                     % (i / X300_FLASH_SECTOR_SIZE)
+                     % sectors
+                  << std::flush;
+
+        // Each packet
+        while (pkt_count < image_size and pkt_count < (i + X300_FLASH_SECTOR_SIZE))
+        {
+            // Set burn location
+            pkt_out.sector = htonx<uint32_t>(X300_FPGA_SECTOR_START + (i/X300_FLASH_SECTOR_SIZE));
+            pkt_out.index  = htonx<uint32_t>((pkt_count % X300_FLASH_SECTOR_SIZE) / 2);
+
+            len = x300_send_and_recv(session.read_xport, flags, &pkt_out, session.data_in);
+            if(len == 0){
+                image.close();
+                throw uhd::runtime_error("Timed out waiting for reply from device.");
+            }
+            else if((ntohl(pkt_in->flags) & X300_FPGA_READ_FLAGS_ERROR)){
+                image.close();
+                throw uhd::runtime_error("Device reported an error.");
+            }
+
+            // Data must be bitswapped and byteswapped
+            for(size_t k = 0; k < X300_PACKET_SIZE_BYTES; k++){
+                x300_bitswap(&pkt_in->data8[k]);
+            }
+            for(size_t k = 0; k < (X300_PACKET_SIZE_BYTES/2); k++){
+                pkt_in->data16[k] = htonx<uint16_t>(pkt_in->data16[k]);
+            }
+
+            // Calculate the number of bytes to write
+            // If this is the last packet, get rid of the extra zero padding
+            // due to packet size
+            size_t nbytes = X300_PACKET_SIZE_BYTES;
+            if (pkt_count > (image_size - X300_PACKET_SIZE_BYTES))
+            {
+                nbytes = (image_size - pkt_count);
+            }
+
+            // Write the incoming piece of the image to a file
+            image.write((char*)pkt_in->data8, nbytes);
+
+            // Increment the data count
+            pkt_count += X300_PACKET_SIZE_BYTES;
+        }
+
+        pkt_count = i + X300_FLASH_SECTOR_SIZE;
+    }
+
+    std::cout << boost::format("\r-- Reading %s FPGA image: 100%% (%d/%d sectors)")
+                 % session.fpga_type
+                 % sectors
+                 % sectors
+              << std::endl;
+
+    // Cleanup
+    image.close();
+    flags = (X300_FPGA_READ_FLAGS_CLEANUP | X300_FPGA_READ_FLAGS_ACK);
+    pkt_out.sector = pkt_out.index = pkt_out.size = 0;
+    memset(pkt_out.data8, 0, X300_PACKET_SIZE_BYTES);
+    std::cout << "-- Finalizing image read for verification..." << std::flush;
+    len = x300_send_and_recv(session.read_xport, flags, &pkt_out, session.data_in);
+    if(len == 0){
+        std::cout << "failed." << std::endl;
+        throw uhd::runtime_error("Timed out waiting for reply from device.");
+    }
+    else if((ntohl(pkt_in->flags) & X300_FPGA_READ_FLAGS_ERROR)){
+        std::cout << "failed." << std::endl;
+        throw uhd::runtime_error("Device reported an error during cleanup.");
+    }
+    else std::cout << "successful image read." << std::endl;
 }
 
 static void x300_pcie_load(x300_session_t &session){
@@ -389,13 +570,15 @@ static void x300_pcie_load(x300_session_t &session){
 static bool x300_image_loader(const image_loader::image_loader_args_t &image_loader_args){
     // See if any X3x0 with the given args is found
     device_addrs_t devs = x300_find(image_loader_args.args);
-    if(devs.size() == 0 or !image_loader_args.load_fpga) return false;
+
+    if (devs.size() == 0) return false;
 
     x300_session_t session;
     x300_setup_session(session,
                        image_loader_args.args,
-                       image_loader_args.fpga_path
-                      );
+                       image_loader_args.fpga_path,
+                       image_loader_args.out_path);
+
     if(!session.found) return false;
 
     std::cout << boost::format("Unit: USRP %s (%s, %s)\nFPGA Image: %s\n")
@@ -404,8 +587,17 @@ static bool x300_image_loader(const image_loader::image_loader_args_t &image_loa
                  % session.dev_addr[session.ethernet ? "addr" : "resource"]
                  % session.filepath;
 
-    if(session.ethernet) x300_ethernet_load(session);
-    else                 x300_pcie_load(session);
+    // Download the FPGA image to a file
+    if(image_loader_args.download) {
+        std::cout << "Attempting to download the FPGA image ..." << std::endl;
+        x300_ethernet_read(session);
+    }
+
+    if (not image_loader_args.load_fpga) return true;
+
+    if (session.ethernet) x300_ethernet_load(session);
+    else                  x300_pcie_load(session);
+
     return true;
 }
 

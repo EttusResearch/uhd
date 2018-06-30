@@ -1,18 +1,8 @@
 #
 # Copyright 2010-2013,2015 Ettus Research LLC
+# Copyright 2018 Ettus Research, a National Instruments Company
 #
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+# SPDX-License-Identifier: GPL-3.0
 #
 
 ########################################################################
@@ -41,7 +31,7 @@ IF(ENABLE_MANUAL)
     # First: Set up UHD manual only
     FILE(GLOB manual_sources "*.dox")
     SET(DOXYGEN_DEPENDENCIES ${manual_sources})
-    SET(DOXYGEN_INPUT_DIRS "${CMAKE_SOURCE_DIR}/docs")
+    SET(DOXYGEN_INPUT_DIRS "${CMAKE_SOURCE_DIR}/docs ${CMAKE_CURRENT_BINARY_DIR}")
     SET(DOXYGEN_DEP_COMPONENT "manual")
     SET(DOXYGEN_FPGA_MANUAL_REFERENCE "<a href=\"http://files.ettus.com/manual/md_fpga.html\">Part III: FPGA Manual</a>")
     SET(DOXYGEN_STRIP_EXTRA "")
@@ -82,9 +72,9 @@ IF(ENABLE_DOXYGEN)
     FILE(GLOB_RECURSE header_files ${CMAKE_SOURCE_DIR}/include/*.hpp)
     FILE(GLOB_RECURSE h_files ${CMAKE_SOURCE_DIR}/include/*.h)
     LIST(APPEND header_files ${h_files})
-    SET(DOXYGEN_DEPENDENCIES ${DOXYGEN_DEPENDENCIES} ${header_files})
+    SET(DOXYGEN_DEPENDENCIES ${DOXYGEN_DEPENDENCIES} ${header_files} "${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/gen_basic_funcs.py")
     IF(ENABLE_DOXYGEN_FULL)
-        SET(DOXYGEN_INPUT_DIRS "${DOXYGEN_INPUT_DIRS} ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/lib")
+        SET(DOXYGEN_INPUT_DIRS "${DOXYGEN_INPUT_DIRS} ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/lib ${CMAKE_SOURCE_DIR}/python")
     ELSE(ENABLE_DOXYGEN_FULL)
         SET(DOXYGEN_INPUT_DIRS "${DOXYGEN_INPUT_DIRS} ${CMAKE_SOURCE_DIR}/include")
     ENDIF(ENABLE_DOXYGEN_FULL)

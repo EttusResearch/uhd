@@ -1,24 +1,16 @@
 //
 // Copyright 2014 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "utils.hpp"
 #include <uhd/rfnoc/source_block_ctrl_base.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/rfnoc/constants.hpp>
+#include <uhdlib/rfnoc/utils.hpp>
+#include <chrono>
+#include <thread>
 
 using namespace uhd;
 using namespace uhd::rfnoc;
@@ -113,7 +105,7 @@ void source_block_ctrl_base::configure_flow_control_out(
     //to flush is more than enough time.
     //TODO: Enhancement. We should get feedback from the FPGA about when the source_flow_control
     //      module is done flushing.
-    boost::this_thread::sleep(boost::posix_time::milliseconds(1));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
     //Resize the FC window.
     //Precondition: No data can be buffered upstream.

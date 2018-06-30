@@ -1,24 +1,15 @@
 //
 // Copyright 2013-2014 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "time_core_3000.hpp"
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/log.hpp>
-#include <boost/thread/thread.hpp>
+#include <uhdlib/usrp/cores/time_core_3000.hpp>
+#include <chrono>
+#include <thread>
 
 #define REG_TIME_HI       _base + 0
 #define REG_TIME_LO       _base + 4
@@ -63,13 +54,17 @@ struct time_core_3000_impl : time_core_3000
     void self_test(void)
     {
         const size_t sleep_millis = 100;
-        UHD_LOGGER_INFO("CORES") << "Performing timer loopback test... ";
+        UHD_LOGGER_DEBUG("CORES") << "Performing timer loopback test... ";
         const time_spec_t time0 = this->get_time_now();
-        boost::this_thread::sleep(boost::posix_time::milliseconds(sleep_millis));
+        std::this_thread::sleep_for(std::chrono::milliseconds(sleep_millis));
         const time_spec_t time1 = this->get_time_now();
         const double approx_secs = (time1 - time0).get_real_secs();
         const bool test_fail = (approx_secs > 0.15) or (approx_secs < 0.05);
-        UHD_LOGGER_INFO("CORES") << "Timer loopback test " << ((test_fail)? "failed" : "passed");
+        if (test_fail) {
+            UHD_LOG_WARNING("CORES", "Timer loopback test failed!");
+        } else {
+            UHD_LOG_DEBUG("CORES", "Timer loopback test passed.");
+        }
 
         //useful warning for debugging actual rate
         const size_t ticks_elapsed = size_t(_tick_rate*approx_secs);

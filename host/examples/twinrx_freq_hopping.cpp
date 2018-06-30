@@ -1,29 +1,20 @@
 //
 // Copyright 2016 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 // FFT conversion
 #include "ascii_art_dft.hpp"
 
-#include <uhd/utils/thread_priority.hpp>
+#include <uhd/utils/thread.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/thread.hpp>
+#include <boost/thread/thread_time.hpp>
 
 #include <fstream>
 
@@ -101,7 +92,7 @@ static void write_fft_to_file(const std::string &fft_path) {
     std::cout << "Calculating FFTs (this may take a while)... " << std::flush;
     std::ofstream ofile(fft_path.c_str(), std::ios::binary);
     BOOST_FOREACH(const recv_buff_t &buff, buffs) {
-                    std::vector<float> fft = acsii_art_dft::log_pwr_dft(&buff.front(), buff.size());
+                    std::vector<float> fft = ascii_art_dft::log_pwr_dft(&buff.front(), buff.size());
                     ofile.write((char*)&fft[0], (sizeof(float)*fft.size()));
                 }
     ofile.close();
@@ -164,7 +155,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
     if (start_freq < rx_freq_range.start() or end_freq > rx_freq_range.stop()) {
         throw uhd::runtime_error((boost::format("Start and stop frequencies must be between %d and %d MHz")
-                                            % ((rx_freq_range.start() / 1e6), (rx_freq_range.stop() / 1e6))).str());
+                                            % (rx_freq_range.start() / 1e6) % (rx_freq_range.stop() / 1e6)).str());
     }
     if (start_freq > end_freq) {
         throw uhd::runtime_error("Start frequency must be less than end frequency.");
@@ -232,7 +223,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     while(1) {
 
         std::cout << "Scanning..." << std::endl;
-        uhd::time_spec_t start_time = uhd::time_spec_t::get_system_time();
+        auto start_time = boost::get_system_time();
 
         for (size_t i = 0; i < rf_freqs.size(); i++) {
             // Swap the mapping of synthesizers by setting the LO source
@@ -259,8 +250,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             }
         }
 
-        uhd::time_spec_t end_time = uhd::time_spec_t::get_system_time();
-        std::cout << boost::format("Sweep done in %d milliseconds.\n") % ((end_time - start_time).get_real_secs() * 1000);
+        auto end_time = boost::get_system_time();
+        std::cout
+            << boost::format("Sweep done in %d milliseconds.\n")
+                % ((end_time - start_time).total_milliseconds() * 1000);
 
         // Optionally convert received samples to FFT and write to file
         if(vm.count("fft-path")) {

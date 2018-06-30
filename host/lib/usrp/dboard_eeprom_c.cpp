@@ -1,24 +1,13 @@
 //
 // Copyright 2015 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include <uhd/usrp/dboard_eeprom.h>
 #include <uhd/error.h>
-
-#include <boost/lexical_cast.hpp>
+#include <boost/format.hpp>
 
 #include <string.h>
 
@@ -79,12 +68,33 @@ uhd_error uhd_dboard_eeprom_set_serial(
     )
 }
 
+//! Convert a string into an int. If that doesn't work, craft our own exception
+// instead of using the Boost exception. We need to put this separate from the
+// caller function because of macro expansion.
+int _convert_rev_with_exception(const std::string &rev_str)
+{
+    try {
+        return std::stoi(rev_str);
+    } catch (const std::invalid_argument &) {
+        throw uhd::lookup_error(str(
+            boost::format("Error retrieving revision from string `%s`")
+            % rev_str
+        ));
+    } catch (const std::out_of_range &) {
+        throw uhd::lookup_error(str(
+            boost::format("Error retrieving revision from string `%s`")
+            % rev_str
+        ));
+    }
+}
+
 uhd_error uhd_dboard_eeprom_get_revision(
     uhd_dboard_eeprom_handle h,
     int* revision_out
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        *revision_out = boost::lexical_cast<int>(h->dboard_eeprom_cpp.revision);
+        *revision_out = \
+            _convert_rev_with_exception(h->dboard_eeprom_cpp.revision);
     )
 }
 
@@ -93,7 +103,7 @@ uhd_error uhd_dboard_eeprom_set_revision(
     int revision
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
-        h->dboard_eeprom_cpp.revision = boost::lexical_cast<std::string>(revision);
+        h->dboard_eeprom_cpp.revision = std::to_string(revision);
     )
 }
 

@@ -5,7 +5,7 @@
   <key>DmaFIFO</key>
   <!--There can be several of these:-->
   <ids>
-    <id revision="0">F1F0D000</id>
+    <id revision="0">F1F0D00000000000</id>
   </ids>
   <!-- Registers -->
   <registers>

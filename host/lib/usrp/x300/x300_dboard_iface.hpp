@@ -1,31 +1,21 @@
 //
 // Copyright 2010-2014 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #ifndef INCLUDED_X300_DBOARD_IFACE_HPP
 #define INCLUDED_X300_DBOARD_IFACE_HPP
 
 #include "x300_clock_ctrl.hpp"
-#include "spi_core_3000.hpp"
-#include "i2c_core_100_wb32.hpp"
-#include "gpio_atr_3000.hpp"
-#include "rx_frontend_core_3000.hpp"
-#include <uhd/usrp/dboard_iface.hpp>
+#include <uhdlib/usrp/cores/spi_core_3000.hpp>
+#include <uhdlib/usrp/cores/i2c_core_100_wb32.hpp>
+#include <uhdlib/usrp/cores/gpio_atr_3000.hpp>
+#include <uhdlib/usrp/cores/rx_frontend_core_3000.hpp>
 #include "ad7922_regs.hpp" //aux adc
 #include "ad5623_regs.hpp" //aux dac
+#include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/types/dict.hpp>
 
 struct x300_dboard_iface_config_t
@@ -97,6 +87,12 @@ public:
     void set_fe_connection(
         unit_t unit,  const std::string& name,
         const uhd::usrp::fe_connection_t& fe_conn);
+
+    // X300 can set the FE connection on the RX side
+    bool has_set_fe_connection(const unit_t unit) override
+    {
+        return unit == UNIT_RX;
+    }
 
     void add_rx_fe(
         const std::string& fe_name,

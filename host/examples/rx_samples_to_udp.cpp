@@ -1,31 +1,22 @@
 //
 // Copyright 2010-2012,2014 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include <uhd/types/tune_request.hpp>
-#include <uhd/utils/thread_priority.hpp>
+#include <uhd/utils/thread.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/exception.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
-#include <boost/thread.hpp>
 #include <iostream>
 #include <complex>
+#include <chrono>
+#include <thread>
 
 namespace po = boost::program_options;
 
@@ -106,7 +97,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //set the antenna
     if (vm.count("ant")) usrp->set_rx_antenna(ant);
 
-    boost::this_thread::sleep(boost::posix_time::seconds(1)); //allow for some setup time
+    std::this_thread::sleep_for(std::chrono::seconds(1)); //allow for some setup time
 
     //Check Ref and LO Lock detect
     std::vector<std::string> sensor_names;

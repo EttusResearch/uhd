@@ -91,5 +91,10 @@ device address. Example:
 
     uhd_usrp_probe --args="mcr=52e6"
 
+\section usrp1_known_issues Known Issues
+
+- When using the `_4rx` image, the example `rx_sample_to_file` will fail
+  because it makes certain assumptions which are then no longer met.
+
 */
 // vim:ft=doxygen:

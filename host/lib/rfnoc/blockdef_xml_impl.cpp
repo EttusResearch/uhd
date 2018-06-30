@@ -1,18 +1,8 @@
 //
 // Copyright 2014-2015 Ettus Research LLC
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include <uhd/exception.hpp>
@@ -20,7 +10,6 @@
 #include <uhd/rfnoc/blockdef.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/paths.hpp>
-#include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
@@ -112,13 +101,13 @@ const device_addr_t blockdef::arg_t::ARG_ARGS(
         "port=0,"
 );
 
-const std::set<std::string> blockdef::arg_t::VALID_TYPES = boost::assign::list_of
+const std::set<std::string> blockdef::arg_t::VALID_TYPES = {
     // List all tags/args a <type> can have here:
-            ("string")
-            ("int")
-            ("int_vector")
-            ("double")
-;
+    "string",
+    "int",
+    "int_vector",
+    "double"
+};
 
 blockdef::arg_t::arg_t()
 {
@@ -223,7 +212,9 @@ public:
                 }
             }
         } catch (std::exception &e) {
-            UHD_LOGGER_WARNING("RFNOC") << "has_noc_id(): caught exception " << e.what() ;
+            UHD_LOGGER_WARNING("RFNOC")
+                << "has_noc_id(): caught exception " << e.what()
+                << " while parsing file: " << filename.string();
             return false;
         }
         return false;
@@ -233,7 +224,11 @@ public:
         _type(type),
         _noc_id(noc_id)
     {
-        //UHD_LOGGER_INFO("RFNOC") << "Reading XML file: " << filename.string().c_str() ;
+        UHD_LOGGER_DEBUG("RFNOC") <<
+            boost::format("Reading XML file %s for NOC ID 0x%08X")
+            % filename.string().c_str()
+            % noc_id
+        ;
         read_xml(filename.string(), _pt);
         try {
             // Check key is valid
@@ -310,7 +305,7 @@ public:
             }
             // We have to be extra-careful with the port numbers:
             if (port["port"].empty()) {
-                port["port"] = boost::lexical_cast<std::string>(n_ports);
+                port["port"] = std::to_string(n_ports);
             }
             size_t new_port_number;
             try {
@@ -362,7 +357,8 @@ public:
                 arg["type"] = "string";
             }
             if (not arg.is_valid()) {
-                UHD_LOGGER_WARNING("RFNOC") << boost::format("Found invalid argument: %s") % arg.to_string() ;
+                UHD_LOGGER_WARNING("RFNOC")
+                    << "Found invalid argument: " << arg.to_string();
                 is_valid = false;
             }
             args.push_back(arg);
@@ -418,15 +414,14 @@ blockdef::sptr blockdef::make_from_noc_id(uint64_t noc_id)
     std::vector<fs::path> valid;
 
     // Check if any of the paths exist
-    for(const fs::path &base_path:  paths) {
+    for (const auto& base_path : paths) {
         fs::path this_path = base_path / XML_BLOCKS_SUBDIR;
         if (fs::exists(this_path) and fs::is_directory(this_path)) {
             valid.push_back(this_path);
         }
     }
 
-    if (valid.empty())
-    {
+    if (valid.empty()) {
         throw uhd::assertion_error(
             "Failed to find a valid XML path for RFNoC blocks.\n"
             "Try setting the enviroment variable UHD_RFNOC_DIR "
@@ -435,7 +430,7 @@ blockdef::sptr blockdef::make_from_noc_id(uint64_t noc_id)
     }
 
     // Iterate over all paths
-    for(const fs::path &path:  valid) {
+    for (const auto& path : valid) {
         // Iterate over all .xml files
         fs::directory_iterator end_itr;
         for (fs::directory_iterator i(path); i != end_itr; ++i) {
