@@ -302,7 +302,17 @@ private:
         return ad9361_device_t::CHAIN_1;
     }
 
+    void _use_safe_spi() {
+        _device.set_io_iface(_safe_spi);
+    }
+
+    void _use_timed_spi() {
+        _device.set_io_iface(_timed_spi);
+    }
+
     ad9361_device_t         _device;
+    ad9361_io::sptr         _safe_spi;      // SPI core that uses an always available clock
+    ad9361_io::sptr         _timed_spi;     // SPI core that has a dependency on the AD9361's sample clock (i.e. radio clk)
     boost::mutex            _mutex;
 };
 
