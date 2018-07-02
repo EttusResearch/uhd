@@ -150,13 +150,10 @@ public:
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
 
-        _use_safe_spi();
         if ((timing_mode != "2R2T") && (timing_mode != "1R1T")) {
             throw uhd::assertion_error("ad9361_ctrl: Timing mode not supported");
         }
         _device.set_timing_mode((timing_mode == "2R2T")? ad9361_device_t::TIMING_MODE_2R2T : ad9361_device_t::TIMING_MODE_1R1T);
-        _use_timed_spi();
-
     }
 
     //! tune the given frontend, return the exact value
