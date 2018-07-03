@@ -518,9 +518,24 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     // before being cleared.
     ////////////////////////////////////////////////////////////////////
     device_addr_t data_xport_args;
-    data_xport_args["recv_frame_size"] = device_addr.get("recv_frame_size", "8192");
+    int recv_frame_size = device_addr.cast<int>(
+        "recv_frame_size",
+        B200_USB_DATA_DEFAULT_FRAME_SIZE
+    );
+    // If the recv_frame_size is divisible by 512, set it to the next lowest
+    // number that is divisible by 24. This is done to avoid bugs in the fx3
+    // when a packet of length divisible by 512 is sent.
+    if (recv_frame_size % 512 == 0) {
+        recv_frame_size = (recv_frame_size - 16) / 24;
+        recv_frame_size *= 24;
+        UHD_LOGGER_WARNING("B200")
+            << "Multiples of 512 not supported for recv_frame_size. "
+            << "Requested recv_frame_size of " << device_addr["recv_frame_size"]
+            << " reduced to " << recv_frame_size << ".";
+    }
+    data_xport_args["recv_frame_size"] = std::to_string(recv_frame_size);
     data_xport_args["num_recv_frames"] = device_addr.get("num_recv_frames", "16");
-    data_xport_args["send_frame_size"] = device_addr.get("send_frame_size", "8192");
+    data_xport_args["send_frame_size"] = device_addr.get("send_frame_size", std::to_string(B200_USB_DATA_DEFAULT_FRAME_SIZE));
     data_xport_args["num_send_frames"] = device_addr.get("num_send_frames", "16");
 
     // This may throw a uhd::usb_error, which will be caught by b200_make().
