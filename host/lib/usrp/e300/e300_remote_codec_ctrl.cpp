@@ -238,6 +238,11 @@ public:
         UHD_THROW_INVALID_CODE_PATH();
     }
 
+    void set_timing_mode(UHD_UNUSED(const std::string &timing_mode))
+    {
+        UHD_THROW_INVALID_CODE_PATH();
+    }
+    
 private:
     void _transact() {
         {
