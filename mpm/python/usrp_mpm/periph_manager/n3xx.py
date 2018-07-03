@@ -14,10 +14,11 @@ import shutil
 import subprocess
 import json
 import datetime
+import re
 import threading
 from six import iteritems, itervalues
 from usrp_mpm.cores import WhiteRabbitRegsControl
-from usrp_mpm.gpsd_iface import GPSDIface
+from usrp_mpm.gpsd_iface import GPSDIfaceExtension
 from usrp_mpm.periph_manager import PeriphManagerBase
 from usrp_mpm.mpmtypes import SID
 from usrp_mpm.mpmutils import assert_compat_number, str2bool, poll_with_timeout
@@ -119,9 +120,6 @@ class n3xx(PeriphManagerBase):
     mboard_sensor_callback_map = {
         'ref_locked': 'get_ref_lock_sensor',
         'gps_locked': 'get_gps_lock_sensor',
-        'gps_time': 'get_gps_time_sensor',
-        'gps_tpv': 'get_gps_tpv_sensor',
-        'gps_sky': 'get_gps_sky_sensor',
         'temp': 'get_temp_sensor',
         'fan': 'get_fan_sensor',
     }
@@ -192,6 +190,7 @@ class n3xx(PeriphManagerBase):
         self._time_source = None
         self._available_endpoints = list(range(256))
         self._bp_leds = None
+        self._gpsd = None
         super(n3xx, self).__init__(args)
         if not self._device_initialized:
             # Don't try and figure out what's going on. Just give up.
@@ -322,6 +321,8 @@ class n3xx(PeriphManagerBase):
         self._ext_clock_freq = None
         self._init_ref_clock_and_time(args)
         self._init_meas_clock()
+        # Init GPSd iface and GPS sensors
+        self._init_gps_sensors()
         # Init CHDR transports
         self._xport_mgrs = {
             'udp': N3xxXportMgrUDP(self.log.getChild('UDP')),
@@ -337,6 +338,22 @@ class n3xx(PeriphManagerBase):
         self._status_monitor_thread.start()
         # Init complete.
         self.log.debug("Device info: {}".format(self.device_info))
+
+    def _init_gps_sensors(self):
+        "Init and register the GPSd Iface and related sensor functions"
+        self.log.trace("Initializing GPSd interface")
+        self._gpsd = GPSDIfaceExtension()
+        new_methods = self._gpsd.extend(self)
+        for method_name in new_methods:
+            try:
+                # Extract the sensor name from the getter
+                sensor_name = re.search(r"get_.*_sensor", method_name).string
+                # Register it with the MB sensor framework
+                self.mboard_sensor_callback_map[sensor_name] = method_name
+                self.log.trace("Adding %s sensor function", sensor_name)
+            except AttributeError:
+                # re.search will return None is if can't find the sensor name
+                self.log.warning("Error while registering sensor function: %s", method_name)
 
     ###########################################################################
     # Session init and deinit
@@ -710,6 +727,7 @@ class n3xx(PeriphManagerBase):
 
     ###########################################################################
     # Sensors
+    # Note: GPS sensors are registered at runtime
     ###########################################################################
     def get_ref_lock_sensor(self):
         """
@@ -785,71 +803,6 @@ class n3xx(PeriphManagerBase):
             'unit': 'locked' if gps_locked else 'unlocked',
             'value': str(gps_locked).lower(),
         }
-
-    def get_gps_time_sensor(self):
-        """
-        Calculates GPS time using a TPV response from GPSd, and returns as a sensor dict
-
-        This time is not high accuracy.
-        """
-        self.log.trace("Polling GPS time results from GPSD")
-        with GPSDIface() as gps_iface:
-            response_mode = 0
-            # Read responses from GPSD until we get a non-trivial mode
-            while response_mode <= 0:
-                gps_info = gps_iface.get_gps_info(resp_class='tpv', timeout=15)
-                self.log.trace("GPS info: {}".format(gps_info))
-                response_mode = gps_info.get("mode", 0)
-        time_str = gps_info.get("time", "")
-        self.log.trace("GPS time string: {}".format(time_str))
-        time_dt = datetime.datetime.strptime(time_str, "%Y-%m-%dT%H:%M:%S.%fZ")
-        self.log.trace("GPS datetime: {}".format(time_dt))
-        epoch_dt = datetime.datetime(1970, 1, 1)
-        gps_time = int((time_dt - epoch_dt).total_seconds())
-        return {
-            'name': 'gps_time',
-            'type': 'INTEGER',
-            'unit': 'seconds',
-            'value': str(gps_time),
-        }
-
-    def get_gps_tpv_sensor(self):
-        """
-        Get a TPV response from GPSd as a sensor dict
-        """
-        self.log.trace("Polling GPS TPV results from GPSD")
-        with GPSDIface() as gps_iface:
-            response_mode = 0
-            # Read responses from GPSD until we get a non-trivial mode
-            while response_mode <= 0:
-                gps_info = gps_iface.get_gps_info(resp_class='tpv', timeout=15)
-                self.log.trace("GPS info: {}".format(gps_info))
-                response_mode = gps_info.get("mode", 0)
-            # Return the JSON'd results
-            gps_tpv = json.dumps(gps_info)
-            return {
-                'name': 'gps_tpv',
-                'type': 'STRING',
-                'unit': '',
-                'value': gps_tpv,
-            }
-
-    def get_gps_sky_sensor(self):
-        """
-        Get a SKY response from GPSd as a sensor dict
-        """
-        self.log.trace("Polling GPS SKY results from GPSD")
-        with GPSDIface() as gps_iface:
-            # Just get the first SKY result
-            gps_info = gps_iface.get_gps_info(resp_class='sky', timeout=15)
-            # Return the JSON'd results
-            gps_sky = json.dumps(gps_info)
-            return {
-                'name': 'gps_sky',
-                'type': 'STRING',
-                'unit': '',
-                'value': gps_sky,
-            }
 
     ###########################################################################
     # EEPROMs
