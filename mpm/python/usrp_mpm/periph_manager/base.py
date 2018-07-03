@@ -95,6 +95,9 @@ class PeriphManagerBase(object):
     # depending on the severity of the issue. If fewer dboards are found,
     # that's generally considered OK.
     max_num_dboards = 2
+    # The index of the first port of the RFNoC crossbar which is connected to
+    # an RFNoC block
+    crossbar_base_port = 0
     # Address of the daughterboard EEPROMs. This could be something like
     # "e0004000.i2c". This value will be passed to get_eeprom_paths() to
     # determine a full path to an EEPROM device.
@@ -670,7 +673,7 @@ class PeriphManagerBase(object):
 
         xbar_index -- The index of the crossbar that's being queried
         """
-        return 3 # FIXME It's 3 because 0,1,2 are SFP,SFP,DMA
+        return self.crossbar_base_port
 
     def set_xbar_local_addr(self, xbar_index, local_addr):
         """

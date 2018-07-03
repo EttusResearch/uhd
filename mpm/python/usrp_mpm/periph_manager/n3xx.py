@@ -125,6 +125,7 @@ class n3xx(PeriphManagerBase):
         'temp': 'get_temp_sensor',
         'fan': 'get_fan_sensor',
     }
+    crossbar_base_port = 3  # It's 3 because 0,1,2 are SFP,SFP,DMA
     dboard_eeprom_addr = "e0004000.i2c"
     dboard_eeprom_offset = 0
     dboard_eeprom_max_len = 64
