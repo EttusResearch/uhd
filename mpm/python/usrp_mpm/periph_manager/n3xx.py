@@ -8,16 +8,14 @@ N3xx implementation module
 """
 
 from __future__ import print_function
-import os
 import copy
-import shutil
-import subprocess
 import json
 import datetime
 import re
 import threading
 from six import iteritems, itervalues
 from usrp_mpm.cores import WhiteRabbitRegsControl
+from usrp_mpm.components import ZynqComponents
 from usrp_mpm.gpsd_iface import GPSDIfaceExtension
 from usrp_mpm.periph_manager import PeriphManagerBase
 from usrp_mpm.mpmtypes import SID
@@ -87,7 +85,7 @@ class N3xxXportMgrLiberio(XportMgrLiberio):
 ###############################################################################
 # Main Class
 ###############################################################################
-class n3xx(PeriphManagerBase):
+class n3xx(ZynqComponents, PeriphManagerBase):
     """
     Holds N3xx specific attributes and methods
     """
@@ -888,80 +886,13 @@ class n3xx(PeriphManagerBase):
     ###########################################################################
     # Component updating
     ###########################################################################
-    @no_rpc
-    def update_fpga(self, filepath, metadata):
-        """
-        Update the FPGA image in the filesystem and reload the overlay
-        :param filepath: path to new FPGA image
-        :param metadata: Dictionary of strings containing metadata
-        """
-        self.log.trace("Updating FPGA with image at {} (metadata: `{}')"
-                       .format(filepath, str(metadata)))
-        _, file_extension = os.path.splitext(filepath)
-        # Cut off the period from the file extension
-        file_extension = file_extension[1:].lower()
-        binfile_path = self.updateable_components['fpga']['path'].format(
-            self.device_info['product'])
-        if file_extension == "bit":
-            self.log.trace("Converting bit to bin file and writing to {}"
-                           .format(binfile_path))
-            from usrp_mpm.fpga_bit_to_bin import fpga_bit_to_bin
-            fpga_bit_to_bin(filepath, binfile_path, flip=True)
-        elif file_extension == "bin":
-            self.log.trace("Copying bin file to %s", binfile_path)
-            shutil.copy(filepath, binfile_path)
-        else:
-            self.log.error("Invalid FPGA bitfile: %s", filepath)
-            raise RuntimeError("Invalid N3xx FPGA bitfile")
-        # RPC server will reload the periph manager after this.
-        return True
-
+    # Note: Component updating functions defined by ZynqComponents
     @no_rpc
     def _update_fpga_type(self):
         """Update the fpga type stored in the updateable components"""
         fpga_type = self.mboard_regs_control.get_fpga_type()
         self.log.debug("Updating mboard FPGA type info to {}".format(fpga_type))
         self.updateable_components['fpga']['type'] = fpga_type
-
-    @no_rpc
-    def update_dts(self, filepath, metadata):
-        """
-        Update the DTS image in the filesystem
-        :param filepath: path to new DTS image
-        :param metadata: Dictionary of strings containing metadata
-        """
-        dtsfile_path = self.updateable_components['dts']['path'].format(
-            self.device_info['product'])
-        self.log.trace("Updating DTS with image at %s to %s (metadata: %s)",
-                       filepath, dtsfile_path, str(metadata))
-        shutil.copy(filepath, dtsfile_path)
-        dtbofile_path = self.updateable_components['dts']['output'].format(
-            self.device_info['product'])
-        self.log.trace("Compiling to %s...", dtbofile_path)
-        dtc_command = [
-            'dtc',
-            '--symbols',
-            '-O', 'dtb',
-            '-q', # Suppress warnings
-            '-o',
-            dtbofile_path,
-            dtsfile_path,
-        ]
-        self.log.trace("Executing command: `$ %s'", " ".join(dtc_command))
-        try:
-            out = subprocess.check_output(dtc_command)
-            if out.strip() != "":
-                # Keep this as debug because dtc is an external tool and
-                # something could go wrong with it that's outside of our control
-                self.log.debug("`dtc' command output: \n%s", out)
-        except OSError as ex:
-            self.log.error("Could not execute `dtc' command. Binary probably "\
-                           "not installed. Please compile DTS by hand.")
-            # No fatal error here, in order not to break the current workflow
-        except subprocess.CalledProcessError as ex:
-            self.log.error("Error executing `dtc': %s", str(ex))
-            return False
-        return True
 
     #######################################################################
     # Claimer API

@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Ettus Research, a National Instruments Company
+# Copyright 2017-2018 Ettus Research, a National Instruments Company
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
@@ -205,6 +205,7 @@ class PeriphManagerBase(object):
             self.log.error("Failed to initialize device: %s", str(ex))
             self._device_initialized = False
             self._initialization_status = str(ex)
+        super(PeriphManagerBase, self).__init__()
 
     def _read_mboard_eeprom(self):
         """

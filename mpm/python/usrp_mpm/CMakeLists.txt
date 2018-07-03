@@ -12,6 +12,7 @@ SET(USRP_MPM_TOP_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/__init__.py
     ${CMAKE_CURRENT_SOURCE_DIR}/aurora_control.py
     ${CMAKE_CURRENT_SOURCE_DIR}/bfrfs.py
+    ${CMAKE_CURRENT_SOURCE_DIR}/components.py
     ${CMAKE_CURRENT_SOURCE_DIR}/discovery.py
     ${CMAKE_CURRENT_SOURCE_DIR}/eeprom.py
     ${CMAKE_CURRENT_SOURCE_DIR}/ethtable.py
