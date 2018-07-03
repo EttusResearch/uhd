@@ -80,6 +80,9 @@ static const unsigned char B200_USB_DATA_RECV_ENDPOINT  = 6;
 static const unsigned char B200_USB_DATA_SEND_INTERFACE = 1;
 static const unsigned char B200_USB_DATA_SEND_ENDPOINT  = 2;
 
+// Default recv_frame_size. Must not be a multiple of 512.
+static const int B200_USB_DATA_DEFAULT_FRAME_SIZE = 8176;
+
 /*
  * VID/PID pairs for all B2xx products
  */
