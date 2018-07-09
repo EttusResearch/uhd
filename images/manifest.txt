@@ -8,8 +8,8 @@ x3xx_x300_fpga_default          fpga-7d5d8db        x3xx/fpga-7d5d8db/x3xx_x300_
 #dboard_ubx_cpld_default    example_target
 
 # E-Series
-e3xx_e310_fpga_default          fpga-1c568e6        e3xx/fpga-1c568e6/e3xx_e310_fpga_default-g1c568e6.zip                   2957b4bdefe6885644ef2bc7b0e3845d13a7fe45f5a0933a2adaffd24c1b6802
-
+e3xx_e310_fpga_default          fpga-d6a878b        e3xx/fpga-d6a878b/e3xx_e310_fpga_default-gd6a878b.zip                   68d4118603834e23c36c32c1573a4529e9ce0b401dc7111fb095901a7139415d
+e3xx_e310_fpga_rfnoc            fpga-d6a878b        e3xx/fpga-d6a878b/e3xx_e310_fpga_rfnoc-gd6a878b.zip                     5c9b89fb6293423644868c22e914de386a9af39ff031da6800a1cf39a90ea73b
 # N300-Series
 n3xx_n310_fpga_default          fpga-7d5d8db        n3xx/fpga-7d5d8db/n3xx_n310_fpga_default-g7d5d8db.zip                   4667909657debd6e2cebd377e8e2073feebb33e2fcc92f1ca4e27a82f5b2a144
 n3xx_n300_fpga_default          fpga-7d5d8db        n3xx/fpga-7d5d8db/n3xx_n300_fpga_default-g7d5d8db.zip                   a7c0eaef0cec94a77ced2768b178e65da65c484aac1fa0394553581ceb38d0af
