@@ -534,6 +534,14 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
             << "Requested recv_frame_size of " << device_addr["recv_frame_size"]
             << " reduced to " << recv_frame_size << ".";
     }
+    // Check that recv_frame_size was set to a reasonable value.
+    if (recv_frame_size < B200_USB_DATA_MIN_RECV_FRAME_SIZE) {
+        UHD_LOGGER_WARNING("B200")
+            << "Requested recv_frame_size of " << recv_frame_size
+            << " is too small. It will be set to "
+            << B200_USB_DATA_MIN_RECV_FRAME_SIZE << ".";
+        recv_frame_size = B200_USB_DATA_MIN_RECV_FRAME_SIZE;
+    }
     data_xport_args["recv_frame_size"] = std::to_string(recv_frame_size);
     data_xport_args["num_recv_frames"] = device_addr.get("num_recv_frames", "16");
     data_xport_args["send_frame_size"] = device_addr.get("send_frame_size", std::to_string(B200_USB_DATA_DEFAULT_FRAME_SIZE));
