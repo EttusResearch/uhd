@@ -6,6 +6,7 @@
 //
 
 #include <uhd/types/dict.hpp>
+#include <uhd/types/ranges.hpp>
 #include <uhdlib/usrp/cores/rx_frontend_core_3000.hpp>
 #include <uhdlib/usrp/cores/dsp_core_utils.hpp>
 #include <boost/math/special_functions/round.hpp>
@@ -33,6 +34,11 @@ using namespace uhd;
 #define OFFSET_FIXED (1ul << 31)
 #define OFFSET_SET   (1ul << 30)
 #define FLAG_MASK (OFFSET_FIXED | OFFSET_SET)
+
+namespace {
+    static const double DC_OFFSET_MIN = -1.0;
+    static const double DC_OFFSET_MAX = 1.0;
+}
 
 using namespace uhd::usrp;
 
@@ -138,6 +144,9 @@ public:
     }
 
     void populate_subtree(uhd::property_tree::sptr subtree) {
+        subtree->create<uhd::meta_range_t>("dc_offset/range")
+                .set(meta_range_t(DC_OFFSET_MIN, DC_OFFSET_MAX))
+        ;
         subtree->create<std::complex<double> >("dc_offset/value")
             .set(DEFAULT_DC_OFFSET_VALUE)
             .set_coercer(boost::bind(&rx_frontend_core_3000::set_dc_offset, this, _1))

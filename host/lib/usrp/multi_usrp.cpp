@@ -1541,6 +1541,15 @@ public:
         }
     }
 
+    meta_range_t get_rx_dc_offset_range(size_t chan) {
+        if (_tree->exists(rx_fe_root(chan) / "dc_offset" / "range")) {
+            return _tree->access<uhd::meta_range_t>(rx_fe_root(chan) / "dc_offset" / "range").get();
+        } else {
+            UHD_LOGGER_WARNING("MULTI_USRP") << "This device does not support querying the RX DC offset range." ;
+            return meta_range_t(0, 0);
+        }
+    }
+
     void set_rx_iq_balance(const bool enb, size_t chan){
         if (chan != ALL_CHANS){
             if (_tree->exists(rx_rf_fe_root(chan) / "iq_balance" / "enable")) {
@@ -1909,6 +1918,15 @@ public:
         }
         for (size_t c = 0; c < get_tx_num_channels(); c++){
             this->set_tx_dc_offset(offset, c);
+        }
+    }
+
+    meta_range_t get_tx_dc_offset_range(size_t chan) {
+        if (_tree->exists(tx_fe_root(chan) / "dc_offset" / "range")) {
+            return _tree->access<uhd::meta_range_t>(tx_fe_root(chan) / "dc_offset" / "range").get();
+        } else {
+            UHD_LOGGER_WARNING("MULTI_USRP") << "This device does not support querying the TX DC offset range." ;
+            return meta_range_t(0, 0);
         }
     }
 
