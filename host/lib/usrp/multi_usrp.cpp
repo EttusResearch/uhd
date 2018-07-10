@@ -906,6 +906,25 @@ public:
     }
 
     tune_result_t set_rx_freq(const tune_request_t &tune_request, size_t chan){
+
+        // If any mixer is driven by an external LO the daughterboard assumes that no CORDIC correction is
+        // necessary. Since the LO might be sourced from another daughterboard which would normally apply a
+        // cordic correction a manual DSP tune policy should be used to ensure identical configurations across
+        // daughterboards.
+        if (tune_request.dsp_freq_policy == tune_request.POLICY_AUTO and
+            tune_request.rf_freq_policy  == tune_request.POLICY_AUTO)
+        {
+            for (size_t c = 0; c < get_rx_num_channels(); c++) {
+                if (get_rx_lo_source(ALL_LOS, c) == "external") {
+                    UHD_LOGGER_WARNING("MULTI_USRP")
+                            << "At least one channel is using an external LO."
+                            << "Using a manual DSP frequency policy is recommended to ensure "
+                            << "the same frequency shift on all channels.";
+                    break;
+                }
+            }
+        }
+
         tune_result_t result = tune_xx_subdev_and_dsp(RX_SIGN,
                 _tree->subtree(rx_dsp_root(chan)),
                 _tree->subtree(rx_rf_fe_root(chan)),
