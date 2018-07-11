@@ -1,4 +1,4 @@
-#
+
 # Copyright 2010-2015 Ettus Research LLC
 # Copyright 2018 Ettus Research, a National Instruments Company
 #
@@ -34,6 +34,7 @@ SET(test_sources
     ranges_test.cpp
     sid_t_test.cpp
     sensors_test.cpp
+    soft_reg_test.cpp
     sph_recv_test.cpp
     sph_send_test.cpp
     subdev_spec_test.cpp
