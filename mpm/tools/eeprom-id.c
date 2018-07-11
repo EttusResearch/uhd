@@ -11,6 +11,7 @@
 
 #define N310_PID 0x4242
 #define N300_PID 0x4240
+#define E320_PID 0xe320
 
 static void usrp_sulfur_eeprom_print_id(struct usrp_sulfur_eeprom *ep)
 {
@@ -18,6 +19,8 @@ static void usrp_sulfur_eeprom_print_id(struct usrp_sulfur_eeprom *ep)
 		printf("product=ni,n310-rev%x\n", ntohs(ep->rev)+1);
 	else if (ntohs(ep->pid) == N300_PID)
 		printf("product=ni,n300-rev%x\n", ntohs(ep->rev)+1);
+	else if (ntohs(ep->pid) == E320_PID)
+		printf("product=ni,e320-rev%x\n", ntohs(ep->rev)+1);
 	else
 		printf("product=unknown-(%04x)\n", ntohs(ep->pid));
 
