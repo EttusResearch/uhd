@@ -85,14 +85,16 @@ namespace soft_reg_field {
 
     template<typename data_t>
     UHD_INLINE data_t mask(const soft_reg_field_t field) {
-        static const data_t ONE = static_cast<data_t>(1);
+        constexpr data_t ONE = static_cast<data_t>(1);
+        constexpr data_t ALL_ONES = ~static_cast<data_t>(0);
         //Behavior for the left shift operation is undefined in C++
         //if the shift amount is >= bitwidth of the datatype
         //So we treat that as a special case with a branch predicition hint
-        if (likely((sizeof(data_t)*8) != width(field)))
+        if (likely((sizeof(data_t)*8) != width(field))) {
             return ((ONE<<width(field))-ONE)<<shift(field);
-        else
-            return (0-ONE)<<shift(field);
+        } else {
+            return ALL_ONES<<shift(field);
+        }
     }
 }
 
