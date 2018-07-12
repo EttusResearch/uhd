@@ -40,8 +40,8 @@
 
 static const uint8_t  B200_FW_COMPAT_NUM_MAJOR = 8;
 static const uint8_t  B200_FW_COMPAT_NUM_MINOR = 0;
-static const uint16_t B200_FPGA_COMPAT_NUM = 14;
-static const uint16_t B205_FPGA_COMPAT_NUM = 5;
+static const uint16_t B200_FPGA_COMPAT_NUM = 15;
+static const uint16_t B205_FPGA_COMPAT_NUM = 6;
 static const double          B200_BUS_CLOCK_RATE = 100e6;
 static const uint32_t B200_GPSDO_ST_NONE = 0x83;
 static const size_t B200_MAX_RATE_USB2              =  53248000; // bytes/s

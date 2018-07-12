@@ -24,11 +24,11 @@ n3xx_common_mender_default      meta-ettus-v3.12.0.0  n3xx/meta-ettus-v3.12.0.0/
 n3xx_common_sdimg_default       meta-ettus-v3.12.0.0  n3xx/meta-ettus-v3.12.0.0/n3xx_common_sdimg_default-v3.12.0.0.zip     0
 
 # B200-Series
-b2xx_b200_fpga_default          fpga-1c568e6        b2xx/fpga-1c568e6/b2xx_b200_fpga_default-g1c568e6.zip                   7ba7561d517dc9a474b01f06c273f921a3a27005e41cd38fde7cd03bbb00284f
-b2xx_b200mini_fpga_default      fpga-1c568e6        b2xx/fpga-1c568e6/b2xx_b200mini_fpga_default-g1c568e6.zip               5cf63ec2d50630c35b6614729ae426d209cda48b02f25dd6eb31650f6ffe5bab
-b2xx_b210_fpga_default          fpga-1c568e6        b2xx/fpga-1c568e6/b2xx_b210_fpga_default-g1c568e6.zip                   612b239f86a6d1b09736c6eb55cfe370937d0414acfee48f96cecfe94c080a89
-b2xx_b205mini_fpga_default      fpga-1c568e6        b2xx/fpga-1c568e6/b2xx_b205mini_fpga_default-g1c568e6.zip               ab4de1ff063cb2224f74f17c6e7371fec314cb95fcef2a8035529a3fe1e6355f
-b2xx_common_fw_default          uhd-14000041        b2xx/uhd-14000041/b2xx_common_fw_default-g14000041.zip                  920790744085d8525529c1d0ece8942fef6d29b0a503530a814727fbacd7732c
+b2xx_b200_fpga_default          fpga-a7f39522        b2xx/fpga-a7f39522/b2xx_b200_fpga_default-ga7f39522.zip                   67b2a243db02a7561f43c7b8a608c159c68875ac848429fca34feb13eaa48f93
+b2xx_b200mini_fpga_default      fpga-a7f39522        b2xx/fpga-a7f39522/b2xx_b200mini_fpga_default-ga7f39522.zip               fa91311db56dfc5bf05579bfec834b6485702a7fcce8a83d06195f924ab6b7e6
+b2xx_b210_fpga_default          fpga-a7f39522        b2xx/fpga-a7f39522/b2xx_b210_fpga_default-ga7f39522.zip                   292303e0784a8c594b663ea618df07164a5773a3abcc50f14cb7647056cd05fd
+b2xx_b205mini_fpga_default      fpga-a7f39522        b2xx/fpga-a7f39522/b2xx_b205mini_fpga_default-ga7f39522.zip               deac6bbd5261b3ba0d80288e5a08527917860218beb42eac2232449508b04596
+b2xx_common_fw_default          uhd-36d5f8eb         b2xx/uhd-36d5f8eb/b2xx_common_fw_default-g36d5f8eb.zip                  2b64548626b1430961a7d545503a60ad06f8149f575d0e821cc82e8589815c07
 
 # USRP2 Devices
 usrp2_usrp2_fw_default          fpga-6bea23d        usrp2/fpga-6bea23d/usrp2_usrp2_fw_default-g6bea23d.zip                  d523a18318cb6a7637be40484bf03a6f54766410fee2c1a1f72e8971ea9a9cb6
