@@ -71,6 +71,15 @@ double magnesium_ad9371_iface::set_gain(
 }
 
 
+double magnesium_ad9371_iface::set_master_clock_rate(
+        const double freq
+) {
+    const auto actual_freq = request<double>("set_master_clock_rate", freq);
+    UHD_LOG_TRACE(_log_prefix,
+            _rpc_prefix << "set_master_clock_rate returned successfully");
+    return actual_freq;
+}
+
 double magnesium_ad9371_iface::set_bandwidth(const double bandwidth, const size_t chan, const direction_t dir)
 {
     auto const which = _get_which(dir, chan);
