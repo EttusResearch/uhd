@@ -1116,8 +1116,8 @@ void b200_fw_start(void) {
         case CY_U3P_FULL_SPEED:
         case CY_U3P_HIGH_SPEED:
             max_packet_size = 512;
-            data_buffer_count = 16;
-            data_buffer_size = 512;
+            data_buffer_count = g_config.dma_buffer_count;
+            data_buffer_size = g_config.dma_buffer_size;
             g_vendor_req_buff_size = USB2_VREQ_BUF_SIZE;    // Max 64
             num_packets_per_burst = USB2_PACKETS_PER_BURST; // 1
 
