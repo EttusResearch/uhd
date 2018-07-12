@@ -41,8 +41,8 @@ void usage(char *argv[])
 int main(int argc, char *argv[])
 {
 	struct usrp_sulfur_eeprom *ep, *ep2;
-	u16 dt_compat = 0;
-	u16 mcu_compat = 0;
+	u16 mcu_compat;
+	u16 dt_compat;
 
 	if (argc < 6 || argc > 9) {
 		usage(argv);
@@ -57,11 +57,15 @@ int main(int argc, char *argv[])
 	if (argc >= 8) {
 		dt_compat = strtol(argv[7], NULL, 0);
 		printf("dt_compat=%u\n", dt_compat);
+	} else {
+		dt_compat = derive_dt_compat(atoi(argv[2]));
 	}
 
 	if (argc == 9) {
 		mcu_compat = strtol(argv[8], NULL, 0);
 		printf("mcu_compat=%u\n", mcu_compat);
+	} else {
+		mcu_compat = derive_mcu_compat(atoi(argv[2]));
 	}
 
 	if (pid < 0 || pid > 0xFFFF) {
@@ -74,8 +78,8 @@ int main(int argc, char *argv[])
 	 * anything software visible anymore
 	 */
 	ep = usrp_sulfur_eeprom_new(NULL, (u16) pid, atoi(argv[2]), argv[1],
-			            argv[3], argv[4], argv[5], dt_compat ? dt_compat : derive_dt_compat(atoi(argv[2])),
-				    mcu_compat ? mcu_compat : derive_mcu_compat(atoi(argv[2])));
+			            argv[3], argv[4], argv[5], dt_compat,
+				    mcu_compat);
 
 	usrp_sulfur_eeprom_print(ep);
 	usrp_sulfur_eeprom_to_i2c(ep, "/dev/i2c-2");
