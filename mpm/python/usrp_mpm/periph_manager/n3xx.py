@@ -9,8 +9,6 @@ N3xx implementation module
 
 from __future__ import print_function
 import copy
-import json
-import datetime
 import re
 import threading
 from six import iteritems, itervalues
