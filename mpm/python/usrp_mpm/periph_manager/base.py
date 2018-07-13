@@ -168,9 +168,6 @@ class PeriphManagerBase(object):
         # Set up logging
         self.log = get_logger('PeriphManager')
         self.claimed = False
-        # The _init_args are a check for the args that passed into init(). This
-        # should always be a dictionary (or dictionary-like object).
-        self._init_args = {}
         try:
             self._eeprom_head, self._eeprom_rawdata = \
                 self._read_mboard_eeprom()
@@ -433,7 +430,6 @@ class PeriphManagerBase(object):
             self.log.error(
                 "Cannot run init(), device was never fully initialized!")
             return False
-        self._init_args = args
         if len(self.dboards) == 0:
             return True
         if args.get("serialize_init", False):
