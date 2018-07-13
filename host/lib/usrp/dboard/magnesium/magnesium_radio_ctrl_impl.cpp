@@ -171,7 +171,7 @@ void magnesium_radio_ctrl_impl::set_rx_antenna(
         chan ? magnesium_cpld_ctrl::CHAN1 : magnesium_cpld_ctrl::CHAN2;
     _update_atr_switches(chan_sel, RX_DIRECTION, ant);
 
-    radio_ctrl_impl::set_rx_antenna(ant, chan); // we don't use _master here since each radio has one antenna.
+    radio_ctrl_impl::set_rx_antenna(ant, chan);
 }
 
 double magnesium_radio_ctrl_impl::set_tx_frequency(
