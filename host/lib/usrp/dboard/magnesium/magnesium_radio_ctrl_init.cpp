@@ -111,25 +111,13 @@ void magnesium_radio_ctrl_impl::_init_defaults()
 void magnesium_radio_ctrl_impl::_init_peripherals()
 {
     UHD_LOG_TRACE(unique_id(), "Initializing peripherals...");
-    fs_path cpld_path  = _root_path.branch_path()
-        / str(boost::format("Radio_%d") % ((get_block_id().get_block_count()/2)*2))
-        / "cpld";
-    fs_path rx_lo_path  = _root_path.branch_path()
-        / str(boost::format("Radio_%d") % ((get_block_id().get_block_count()/2)*2))
-        / "rx_lo";
-    fs_path tx_lo_path  = _root_path.branch_path()
-        / str(boost::format("Radio_%d") % ((get_block_id().get_block_count()/2)*2))
-        / "tx_lo";
     UHD_LOG_TRACE(unique_id(), "Initializing SPI core...");
     _spi = spi_core_3000::make(_get_ctrl(0),
         regs::sr_addr(regs::SPI),
         regs::rb_addr(regs::RB_SPI)
     );
-
     UHD_LOG_TRACE(unique_id(), "Initializing CPLD...");
-    UHD_LOG_TRACE(unique_id(), "CPLD path: " << cpld_path);
-    if (not _tree->exists(cpld_path)) {
-        UHD_LOG_TRACE(unique_id(), "Creating new CPLD object...");
+    UHD_LOG_TRACE(unique_id(), "Creating new CPLD object...");
         spi_config_t spi_config;
         spi_config.use_custom_divider = true;
         spi_config.divider = 125;
@@ -159,12 +147,6 @@ void magnesium_radio_ctrl_impl::_init_peripherals()
             DX_DIRECTION,
             radio_ctrl_impl::get_rx_antenna(0)
         );
-        _tree->create<magnesium_cpld_ctrl::sptr>(cpld_path).set(_cpld);
-    } else {
-        UHD_LOG_TRACE(unique_id(), "Reusing someone else's CPLD object...");
-        _cpld = _tree->access<magnesium_cpld_ctrl::sptr>(cpld_path).get();
-    }
-
     UHD_LOG_TRACE(unique_id(), "Initializing TX LO...");
     _tx_lo = adf435x_iface::make_adf4351(
         [this](const std::vector<uint32_t> transactions){

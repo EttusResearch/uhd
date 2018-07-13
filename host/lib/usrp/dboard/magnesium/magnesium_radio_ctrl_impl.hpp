@@ -299,10 +299,6 @@ private:
     //! Prepended for all dboard RPC calls
     std::string _rpc_prefix;
 
-    //! If true, this is a master radio. This attribute will go away when we
-    // move back to 1 radio block per dboard.
-    bool _master;
-
     //! Additional block args; gets set during set_rpc_client()
     uhd::device_addr_t _block_args;
 
