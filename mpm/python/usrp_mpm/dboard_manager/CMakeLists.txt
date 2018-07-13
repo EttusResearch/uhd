@@ -16,6 +16,7 @@ SET(USRP_MPM_DBMGR_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/lmk_mg.py
     ${CMAKE_CURRENT_SOURCE_DIR}/magnesium.py
     ${CMAKE_CURRENT_SOURCE_DIR}/magnesium_update_cpld.py
+    ${CMAKE_CURRENT_SOURCE_DIR}/mg_init.py
     ${CMAKE_CURRENT_SOURCE_DIR}/mg_periphs.py
     ${CMAKE_CURRENT_SOURCE_DIR}/test.py
     ${CMAKE_CURRENT_SOURCE_DIR}/unknown.py

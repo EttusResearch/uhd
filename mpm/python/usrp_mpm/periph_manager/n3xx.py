@@ -384,6 +384,8 @@ class n3xx(ZynqComponents, PeriphManagerBase):
                     self.log.warning("The N300 variant does not support "
                                      "external LOs! Setting to internal.")
                     args[lo_source] = 'internal'
+        # Note: The parent class takes care of calling init() on all the
+        # daughterboards
         result = super(n3xx, self).init(args)
         # Now the clocks are all enabled, we can also re-enable PPS export if
         # it was turned off:
