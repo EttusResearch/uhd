@@ -64,6 +64,10 @@ IF(GIT_FOUND)
 ELSE(GIT_FOUND)
     MESSAGE(WARNING "Could not detect git executable! Could not determine exact version of UHD!")
 ENDIF(GIT_FOUND)
+IF(DEFINED UHD_GIT_BRANCH_OVERRIDE)
+    MESSAGE(STATUS "Overriding auto-detected git branch and setting to: ${UHD_GIT_BRANCH_OVERRIDE}")
+    SET(UHD_GIT_BRANCH ${UHD_GIT_BRANCH_OVERRIDE})
+ENDIF(DEFINED UHD_GIT_BRANCH_OVERRIDE)
 
 ########################################################################
 # Version information discovery through git log
