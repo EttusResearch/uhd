@@ -120,6 +120,7 @@ SET(CPACK_SOURCE_IGNORE_FILES "\\\\.git*;\\\\.swp$")
 # Setup CPack Components
 ########################################################################
 SET(CPACK_COMPONENT_LIBRARIES_GROUP      "Development")
+SET(CPACK_COMPONENT_PYTHONAPI_GROUP      "Development")
 SET(CPACK_COMPONENT_HEADERS_GROUP        "Development")
 SET(CPACK_COMPONENT_UTILITIES_GROUP      "Runtime")
 SET(CPACK_COMPONENT_EXAMPLES_GROUP       "Runtime")
@@ -128,6 +129,7 @@ SET(CPACK_COMPONENT_DOXYGEN_GROUP        "Documentation")
 SET(CPACK_COMPONENT_README_GROUP         "Documentation")
 
 SET(CPACK_COMPONENT_LIBRARIES_DISPLAY_NAME      "Libraries")
+SET(CPACK_COMPONENT_PYTHONAPI_DISPLAY_NAME      "UHD Python API")
 SET(CPACK_COMPONENT_HEADERS_DISPLAY_NAME        "C++ Headers")
 SET(CPACK_COMPONENT_UTILITIES_DISPLAY_NAME      "Utilities")
 SET(CPACK_COMPONENT_EXAMPLES_DISPLAY_NAME       "Examples")
@@ -137,6 +139,7 @@ SET(CPACK_COMPONENT_README_DISPLAY_NAME         "Readme")
 SET(CPACK_COMPONENT_IMAGES_DISPLAY_NAME         "Images")
 
 SET(CPACK_COMPONENT_LIBRARIES_DESCRIPTION     "Dynamic link library")
+SET(CPACK_COMPONENT_PYTHONAPI_DESCRIPTION     "UHD Python API")
 SET(CPACK_COMPONENT_HEADERS_DESCRIPTION       "C++ development headers")
 SET(CPACK_COMPONENT_UTILITIES_DESCRIPTION     "Utility executables and python scripts")
 SET(CPACK_COMPONENT_EXAMPLES_DESCRIPTION      "Example executables")
@@ -151,8 +154,7 @@ SET(CPACK_COMPONENT_UTILITIES_DEPENDS libraries)
 SET(CPACK_COMPONENT_EXAMPLES_DEPENDS libraries)
 SET(CPACK_COMPONENT_TESTS_DEPENDS libraries)
 
-SET(CPACK_COMPONENTS_ALL libraries headers utilities examples manual doxygen readme images)
-
+SET(CPACK_COMPONENTS_ALL libraries pythonapi headers utilities examples manual doxygen readme images)
 ########################################################################
 # Setup CPack Debian
 ########################################################################

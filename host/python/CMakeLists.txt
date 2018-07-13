@@ -56,11 +56,7 @@ ADD_CUSTOM_TARGET(pyuhd_library ALL DEPENDS ${TIMESTAMP_FILE} pyuhd)
 IF(HAVE_PYTHON_VIRTUALENV)
     INSTALL(CODE "execute_process(COMMAND ${PYTHON} ${SETUP_PY} -q install --force)")
 ELSE()
-    EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -c
-      "from distutils import sysconfig; print(sysconfig.get_python_lib(plat_specific=True, prefix=''))"
-      OUTPUT_VARIABLE UHD_PYTHON_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
-    )
+    SET(UHD_PYTHON_DIR "lib/site-packages")
     MESSAGE(STATUS "Utilizing the python install directory: ${CMAKE_INSTALL_PREFIX}/${UHD_PYTHON_DIR}")
-    INSTALL(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/uhd DESTINATION ${CMAKE_INSTALL_PREFIX}/${UHD_PYTHON_DIR})
+    INSTALL(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/uhd DESTINATION ${UHD_PYTHON_DIR} COMPONENT pythonapi)
 ENDIF()
-
