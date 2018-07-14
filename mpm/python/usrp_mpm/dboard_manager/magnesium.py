@@ -283,27 +283,47 @@ class Magnesium(DboardManagerBase):
             error_msg = "Cannot run init(), peripherals are not initialized!"
             self.log.error(error_msg)
             raise RuntimeError(error_msg)
-        fast_reinit = True
+        # Check if ref clock freq changed (would require a full init)
+        ref_clk_freq_changed = False
         if 'ref_clk_freq' in args:
             new_ref_clock_freq = float(args['ref_clk_freq'])
             assert new_ref_clock_freq in (10e6, 20e6, 25e6)
             if new_ref_clock_freq != self.ref_clock_freq:
-                fast_reinit = False
                 self.ref_clock_freq = float(args['ref_clk_freq'])
+                ref_clk_freq_changed = True
         assert self.ref_clock_freq is not None
+        # Check if master clock freq changed (would require a full init)
         master_clock_rate = \
             float(args.get('master_clock_rate',
                            self.default_master_clock_rate))
         assert master_clock_rate in (122.88e6, 125e6, 153.6e6), \
                 "Invalid master clock rate: {:.02f} MHz".format(
                     master_clock_rate / 1e6)
-        master_clock_rate_changed = master_clock_rate != self.master_clock_rate
+        master_clock_rate_changed = \
+            master_clock_rate != self.master_clock_rate
         if master_clock_rate_changed:
-            fast_reinit = False
             self.master_clock_rate = master_clock_rate
-            self.log.debug("Updating master clock rate to {:.02f} MHz!".format(
-                self.master_clock_rate / 1e6
-            ))
+            self.log.debug(
+                "Updating master clock rate to {:.02f} MHz!"
+                .format(self.master_clock_rate / 1e6)
+            )
+        # Track if we're able to do a "fast reinit", which means there were no
+        # major changes and can skip all slow initialization steps.
+        fast_reinit = \
+            not bool(args.get("force_reinit", False)) \
+            and not master_clock_rate_changed \
+            and not ref_clk_freq_changed
+        if fast_reinit:
+            self.log.debug(
+                "Attempting fast re-init with the following settings: "
+                "master_clock_rate={} MHz ref_clk_freq={}"
+                .format(
+                    self.master_clock_rate / 1e6,
+                    self.ref_clock_freq,
+                )
+            )
+        # Note: MagnesiumInitManager.init() can still override fast_reinit.
+        # Consider it a hint.
         result = MagnesiumInitManager(self, self._spi_ifaces).init(
             args, self._init_args, fast_reinit)
         if result:

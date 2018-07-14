@@ -378,6 +378,7 @@ For a list of which arguments can be passed into make(), see Section
  second_addr           | IPv4 address of secondary SFP+ port to connect to.                           | All N3xx          | second_addr=192.168.40.2
  mgmt_addr             | IPv4 address or hostname which to connect the RPC client. Defaults to `addr'.| All N3xx          | mgmt_addr=ni-sulfur-311FE00 (can also go to RJ45)
  find_all              | When using broadcast, find all devices, even if unreachable via CHDR.        | All N3xx          | find_all=1
+ force_reinit          | Force full reinitialization of all subsystems. Will increase init time.      | N310              | force_reinit=1
  master_clock_rate     | Master Clock Rate in Hz                                                      | N310              | master_clock_rate=125e6
  identify              | Causes front-panel LEDs to blink. The duration is variable.                  | N310              | identify=5 (will blink for about 5 seconds)
  serialize_init        | Force serial initialization of daughterboards.                               | All N3xx          | serialize_init=1
@@ -757,6 +758,29 @@ internal connections to the daughterboard. Every slot is powered by a single
 AD9371 RFIC).
 
 \image html N310fp.png N310 Front Panel
+
+\subsection n3xx_mg_initialization Device Initialization (Fast and Slow)
+
+When a UHD session is created, an initialization sequence is started. As part of
+the initialization sequence, the following steps are performed:
+
+- All clocking is initialized
+- The JESD links are trained and brought up (between the FPGA and the AD9371)
+- The AD9371 is reset, its firmware is uploaded, and calibrations are
+  initialized (See also \section n3xx_mg_calibrations)
+- N310 only: The multi-chip synchronization is performed to align all the RFICs
+  to the common time and clock reference
+
+This sequence can take a while, depending on the master clock rate and the
+calibration sequence. To speed things up, the device will retain a state
+between sessions, but only if no relevant settings were touched. In particular,
+changing the master clock rate, the clock source, or the calibration masks will
+force a full re-initialization which is very slow compared to the fast
+re-initialization. By setting the log level to DEBUG you will be able to observe
+the exact settings that cause fast vs. slow re-initialization.
+If you require a full re-initialization every time a UHD session is spawned,
+specify the `force_reinit` flag as a device arg. Specifying it will always do
+the full, slow initialization, but will guarantee a full reset of the RFIC.
 
 \subsection n3xx_mg_calibrations RF Calibrations
 

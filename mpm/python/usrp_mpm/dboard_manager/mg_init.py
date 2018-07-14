@@ -445,6 +445,14 @@ class MagnesiumInitManager(object):
         self.log.trace("Pulsing Mykonos Hard Reset...")
         self.mg_class.cpld.reset_mykonos()
         self.log.trace("Initializing Mykonos...")
+        # TODO: If we can set the LO source after initialization, that would
+        # enable us to switch LO sources without doing the entire JESD and
+        # clocking bringup. For now, we'll keep it here, and every time the LO
+        # source needs to be changed, we need to re-initialize (this is because
+        # MYKONOS_initialize() takes in the entire device config, which includes
+        # the LO source), but we can revisit this if we want to either
+        # - speed up init when the only change is the LO source, or
+        # - we want to make the LO source runtime-configurable.
         self.init_lo_source(args)
         self.mykonos.begin_initialization()
         # Multi-chip Sync requires two SYSREF pulses at least 17us apart.
@@ -543,24 +551,76 @@ class MagnesiumInitManager(object):
             self.init_jesd(jesdcore, master_clock_rate, args)
             jesdcore = None # Help with garbage collection
             # That's all that requires access to the dboard regs!
-        self.init_rf_cal(args)
+        return True
+
+
+    def init(self, args, old_args, fast_reinit):
+        """
+        Runs the actual initialization.
+
+        Arguments:
+        args -- Dictionary with user-specified args
+        old_args -- Dictionary with user-specified args from the previous
+                    initialization run.
+        fast_reinit -- A hint to do a fast reinit. If nothing changes, then
+                       we don't have to re-init everything and their dogs, we
+                       can skip a whole bunch of things.
+        """
+        # If any of these changes, we need a full re-init:
+        # TODO: This is not very DRY (because we're repeating default values),
+        # and is generally smelly design. However, we're being super
+        # conservative for now, because the only reliable reset sequence we
+        # have for AD9371 is the full Monty. As we learn more about the chip,
+        # we might be able to get away with a partial (fast) reinit even when
+        # some of these values change.
+        args_that_must_not_change = [
+            ('rx_lo_source', 'internal'),
+            ('tx_lo_source', 'internal'),
+            ('init_cals', 'DEFAULT'),
+            ('tracking_cals', 'DEFAULT'),
+            ('init_cals_timeout', str(self.mykonos.DEFAULT_INIT_CALS_TIMEOUT)),
+        ]
+        if fast_reinit:
+            for arg_key, arg_default in args_that_must_not_change:
+                old_value = old_args.get(arg_key, arg_default)
+                new_value = args.get(arg_key, arg_default)
+                if old_value != new_value:
+                    self.log.debug(
+                        "The following init arg changed and caused "
+                        "a full re-init sequence: {}".format(arg_key))
+                    fast_reinit = False
+            # TODO: Maybe we can switch to digital loopback without running the
+            # initialization. For now, force init when rfic_digital_loopback is
+            # set because we're being conservative.
+            if bool(args.get('rfic_digital_loopback')):
+                self.log.debug("Using rfic_digital_loopback causes a full "
+                               "re-init sequence.")
+                fast_reinit = False
+        # If we can't do fast re-init, start from scratch:
+        if not fast_reinit:
+            if not self._full_init(
+                    self.mg_class.slot_idx,
+                    self.mg_class.master_clock_rate,
+                    self.mg_class.ref_clock_freq,
+                    args
+                ):
+                return False
+        else:
+            self.log.debug("Running fast re-init with the following settings:")
+            for arg_key, arg_default in args_that_must_not_change:
+                self.log.debug(
+                    "{}={}".format(arg_key, args.get(arg_key, arg_default)))
+            return True
         if bool(args.get('rfic_digital_loopback')):
             self.log.warning(
                 "RF Functionality Disabled: JESD204b digital loopback "
                 "enabled inside Mykonos!")
             self.mykonos.enable_jesd_loopback(1)
         else:
+            # Now initialize calibrations:
+            # TODO: This also takes a long time. It might be faster to somehow
+            # just reset the calibrations, but one thing at a time.
+            self.init_rf_cal(args)
             self.mykonos.start_radio()
         return True
 
-    def init(self, args, fast_reinit):
-        """
-        Runs the actual initialization.
-        """
-        if not fast_reinit or True:
-            return self._full_init(
-                self.mg_class.slot_idx,
-                self.mg_class.master_clock_rate,
-                self.mg_class.ref_clock_freq,
-                args
-            )
