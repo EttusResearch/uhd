@@ -134,6 +134,7 @@ class Magnesium(DboardManagerBase):
         self.eeprom_fs = None
         self.eeprom_path = None
         self.cpld = None
+        self._init_args = {}
         # Now initialize all peripherals. If that doesn't work, put this class
         # into a non-functional state (but don't crash, or we can't talk to it
         # any more):
@@ -303,8 +304,11 @@ class Magnesium(DboardManagerBase):
             self.log.debug("Updating master clock rate to {:.02f} MHz!".format(
                 self.master_clock_rate / 1e6
             ))
-        return MagnesiumInitManager(self, self._spi_ifaces).init(
-            args, fast_reinit)
+        result = MagnesiumInitManager(self, self._spi_ifaces).init(
+            args, self._init_args, fast_reinit)
+        if result:
+            self._init_args = args
+        return result
 
     def get_user_eeprom_data(self):
         """
