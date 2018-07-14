@@ -452,8 +452,6 @@ class MagnesiumInitManager(object):
         time.sleep(0.001) # 17us... ish.
         jesdcore.send_sysref_pulse()
         async_exec(self.mykonos, "finish_initialization")
-        # TODO:can we call this after JESD?
-        self.init_rf_cal(args)
         self.log.trace("Starting JESD204b Link Initialization...")
         # Generally, enable the source before the sink. Start with the DAC side.
         self.log.trace("Starting FPGA framer...")
@@ -545,6 +543,7 @@ class MagnesiumInitManager(object):
             self.init_jesd(jesdcore, master_clock_rate, args)
             jesdcore = None # Help with garbage collection
             # That's all that requires access to the dboard regs!
+        self.init_rf_cal(args)
         if bool(args.get('rfic_digital_loopback')):
             self.log.warning(
                 "RF Functionality Disabled: JESD204b digital loopback "
