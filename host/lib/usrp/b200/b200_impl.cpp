@@ -519,28 +519,35 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     // before being cleared.
     ////////////////////////////////////////////////////////////////////
     device_addr_t data_xport_args;
+    const int max_transfer = usb_speed == 3 ? 1024 : 512;
     int recv_frame_size = device_addr.cast<int>(
         "recv_frame_size",
         B200_USB_DATA_DEFAULT_FRAME_SIZE
     );
-    // If the recv_frame_size is divisible by 512, set it to the next lowest
-    // number that is divisible by 24. This is done to avoid bugs in the fx3
-    // when a packet of length divisible by 512 is sent.
-    if (recv_frame_size % 512 == 0) {
-        recv_frame_size = (recv_frame_size - 16) / 24;
-        recv_frame_size *= 24;
-        UHD_LOGGER_WARNING("B200")
-            << "Multiples of 512 not supported for recv_frame_size. "
-            << "Requested recv_frame_size of " << device_addr["recv_frame_size"]
-            << " reduced to " << recv_frame_size << ".";
-    }
-    // Check that recv_frame_size was set to a reasonable value.
+    // Check that recv_frame_size limits.
     if (recv_frame_size < B200_USB_DATA_MIN_RECV_FRAME_SIZE) {
         UHD_LOGGER_WARNING("B200")
             << "Requested recv_frame_size of " << recv_frame_size
             << " is too small. It will be set to "
             << B200_USB_DATA_MIN_RECV_FRAME_SIZE << ".";
         recv_frame_size = B200_USB_DATA_MIN_RECV_FRAME_SIZE;
+    } else if (recv_frame_size > B200_USB_DATA_MAX_RECV_FRAME_SIZE) {
+        UHD_LOGGER_WARNING("B200")
+            << "Requested recv_frame_size of " << recv_frame_size
+            << " is too large. It will be set to "
+            << B200_USB_DATA_MAX_RECV_FRAME_SIZE << ".";
+        recv_frame_size = B200_USB_DATA_MAX_RECV_FRAME_SIZE;
+    } else if (recv_frame_size % max_transfer == 0) {
+        // The Cypress FX3 does not properly handle recv_frame_sizes that are
+        // aligned to the maximum transfer size.  The code below coerces the
+        // recv_frame_size down to a value that is not a multiple of of the
+        // maximum transfer size and aligns to full 8 byte words for sc8, sc12,
+        // and sc16 data types for best performance on the FPGA.
+        recv_frame_size = (((recv_frame_size - 16) / 24) * 24) + 16;
+        UHD_LOGGER_WARNING("B200")
+            << "Multiples of 512 not supported for recv_frame_size. "
+            << "Requested recv_frame_size of " << device_addr["recv_frame_size"]
+            << " reduced to " << recv_frame_size << ".";
     }
     data_xport_args["recv_frame_size"] = std::to_string(recv_frame_size);
     data_xport_args["num_recv_frames"] = device_addr.get("num_recv_frames", "16");
