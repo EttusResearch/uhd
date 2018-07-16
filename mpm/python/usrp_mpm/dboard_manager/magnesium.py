@@ -225,6 +225,14 @@ class Magnesium(DboardManagerBase):
         self.spi_lock = self._device.get_spi_lock()
         self.log.trace("Loaded C++ drivers.")
         self._init_myk_api(self.mykonos)
+        self.log.debug(
+            "AD9371: ARM version: {arm_ver} API version: {api_ver} "
+            "Device revision: {dev_rev}".format(
+                arm_ver=self.get_arm_version(),
+                api_ver=self.get_api_version(),
+                dev_rev=self.get_device_rev(),
+            )
+        )
         self.eeprom_fs, self.eeprom_path = self._init_user_eeprom(
             self._get_user_eeprom_info(self.rev)
         )
