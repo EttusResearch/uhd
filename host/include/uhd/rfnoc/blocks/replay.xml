@@ -1,0 +1,64 @@
+<!--This defines one NoC-Block.-->
+<nocblock>
+  <name>Replay</name>
+  <blockname>Replay</blockname>
+  <key>Replay</key>
+  <!--There can be several of these:-->
+  <ids>
+    <id revision="0">4E91A00000000000</id>
+  </ids>
+  <!-- Registers -->
+  <registers>
+    <setreg>
+      <name>REC_BASE_ADDR</name>
+      <address>128</address>
+    </setreg>
+    <setreg>
+      <name>REC_BUFFER_SIZE</name>
+      <address>129</address>
+    </setreg>
+    <setreg>
+      <name>REC_RESTART</name>
+      <address>130</address>
+    </setreg>
+    <readback>
+      <name>REC_FULLNESS</name>
+      <address>131</address>
+    </readback>
+    <setreg>
+      <name>PLAY_BASE_ADDR</name>
+      <address>132</address>
+    </setreg>
+    <setreg>
+      <name>PLAY_BUFFER_SIZE</name>
+      <address>133</address>
+    </setreg>
+    <setreg>
+      <name>RX_CTRL_COMMAND</name>
+      <address>152</address>
+    </setreg>
+    <setreg>
+      <name>RX_CTRL_HALT</name>
+      <address>155</address>
+    </setreg>
+    <setreg>
+      <name>RX_CTRL_MAXLEN</name>
+      <address>156</address>
+    </setreg>
+  </registers>
+  <!-- Args -->
+  <args>
+  </args>
+  <!--All the connections to the outside world are listed in 'ports':-->
+  <ports>
+    <sink>
+      <name>in0</name>
+      <type>sc16</type>
+    </sink>
+    <source>
+      <name>out0</name>
+      <type>sc16</type>
+    </source>
+  </ports>
+</nocblock>
+

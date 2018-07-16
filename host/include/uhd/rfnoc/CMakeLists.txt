@@ -31,6 +31,7 @@ IF(ENABLE_RFNOC)
         fir_block_ctrl.hpp
         null_block_ctrl.hpp
         radio_ctrl.hpp
+        replay_block_ctrl.hpp
         siggen_block_ctrl.hpp
         window_block_ctrl.hpp
         DESTINATION ${INCLUDE_DIR}/uhd/rfnoc
