@@ -27,9 +27,7 @@ PACKAGE_MAPPING = {
     "x300": {
         "type": "x3xx",
         "package_name": "x3xx_x300_fpga_default-g{}.zip",
-        "files": ["usrp_x300_fpga_HG.bin",
-                  "usrp_x300_fpga_HG.lvbitx",
-                  "usrp_x300_fpga_XG.bin",
+        "files": ["usrp_x300_fpga_HG.lvbitx",
                   "usrp_x300_fpga_XG.lvbitx",
                   "usrp_x300_fpga_HG.bit",
                   "usrp_x300_fpga_HG.rpt",
@@ -39,9 +37,7 @@ PACKAGE_MAPPING = {
     "x310": {
         "type": "x3xx",
         "package_name": "x3xx_x310_fpga_default-g{}.zip",
-        "files": ["usrp_x310_fpga_HG.bin",
-                  "usrp_x310_fpga_HG.lvbitx",
-                  "usrp_x310_fpga_XG.bin",
+        "files": ["usrp_x310_fpga_HG.lvbitx",
                   "usrp_x310_fpga_XG.lvbitx",
                   "usrp_x310_fpga_HG.bit",
                   "usrp_x310_fpga_HG.rpt",
