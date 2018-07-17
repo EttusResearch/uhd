@@ -915,7 +915,9 @@ public:
             tune_request.rf_freq_policy  == tune_request.POLICY_AUTO)
         {
             for (size_t c = 0; c < get_rx_num_channels(); c++) {
-                if (get_rx_lo_source(ALL_LOS, c) == "external") {
+                const bool external_all_los = _tree->exists(rx_rf_fe_root(chan) / "los" / ALL_LOS)
+                                              && get_rx_lo_source(ALL_LOS, c) == "external";
+                if (external_all_los) {
                     UHD_LOGGER_WARNING("MULTI_USRP")
                             << "At least one channel is using an external LO."
                             << "Using a manual DSP frequency policy is recommended to ensure "
