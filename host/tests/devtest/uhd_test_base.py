@@ -6,14 +6,16 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
+from __future__ import print_function
 import os
 import sys
-import yaml
 import unittest
 import re
 import time
 import logging
-from subprocess import Popen, PIPE, STDOUT
+from subprocess import Popen, PIPE
+import yaml
+from six import iteritems
 from usrp_probe import get_usrp_list
 
 #--------------------------------------------------------------------------
@@ -31,13 +33,15 @@ class shell_application(object):
         self.returncode = None
         self.exec_time = None
 
-    def run(self, args = []):
+    def run(self, args=None):
+        """Test executor."""
+        args = args or []
         cmd_line = [self.name]
         cmd_line.extend(args)
         start_time = time.time()
-        p = Popen(cmd_line, stdout=PIPE, stderr=PIPE, close_fds=True)
-        self.stdout, self.stderr = p.communicate()
-        self.returncode = p.returncode
+        proc = Popen(cmd_line, stdout=PIPE, stderr=PIPE, close_fds=True)
+        self.stdout, self.stderr = proc.communicate()
+        self.returncode = proc.returncode
         self.exec_time = time.time() - start_time
 
 #--------------------------------------------------------------------------
@@ -64,9 +68,9 @@ class uhd_test_case(unittest.TestCase):
             self.results = yaml.safe_load(open(self.results_file).read()) or {}
         self.args_str = os.getenv('_UHD_TEST_ARGS_STR', "")
         self.usrp_info = get_usrp_list(self.args_str)[0]
-        if not self.results.has_key(self.usrp_info['serial']):
+        if self.usrp_info['serial'] not in self.results:
             self.results[self.usrp_info['serial']] = {}
-        if not self.results[self.usrp_info['serial']].has_key(self.name):
+        if self.name not in self.results[self.usrp_info['serial']]:
             self.results[self.usrp_info['serial']][self.name] = {}
         self.setup_logger()
         self.set_up()
@@ -89,9 +93,10 @@ class uhd_test_case(unittest.TestCase):
         self.log.setLevel(logging.DEBUG)
         self.log.addHandler(file_handler)
         self.log.addHandler(console_handler)
-        self.log.info("Starting test with device: {dev}".format(dev=self.args_str))
+        self.log.info("Starting test with device: %s", str(self.args_str))
 
     def tear_down(self):
+        """Nothing to do."""
         pass
 
     def tearDown(self):
@@ -121,7 +126,7 @@ class uhd_test_case(unittest.TestCase):
         errstr = warn_re.sub('', errstr).strip()
         return (errstr, warnstr)
 
-    def filter_stderr(self, stderr, run_results={}):
+    def filter_stderr(self, stderr, run_results=None):
         """ Filters the output to stderr. run_results[] is a dictionary.
         This function will:
         - Remove UUUUU... strings, since they are generally not a problem.
@@ -130,6 +135,7 @@ class uhd_test_case(unittest.TestCase):
         - Remove warnings and put them in run_results['warnings']
         - Put the filtered error string into run_results['errors'] and returns the dictionary
         """
+        run_results = run_results or {}
         errstr, run_results['warnings'] = self.filter_warnings(stderr)
         # Scan for underruns and sequence errors / dropped packets  not detected in the counter
         errstr = re.sub('UU+', '', errstr)
@@ -155,8 +161,7 @@ class uhd_example_test_case(uhd_test_case):
         pass
 
     def set_up(self):
-        """
-        """
+        """Called by the unit testing framework on tests. """
         self.setup_example()
 
     def run_test(self, test_name, test_args):
@@ -173,7 +178,7 @@ class uhd_example_test_case(uhd_test_case):
         Run `example' (which has to be a UHD example or utility) with `args'.
         Return results and the app object.
         """
-        self.log.info("Running example: `{example} {args}'".format(example=example, args=" ".join(args)))
+        self.log.info("Running example: `%s %s'", example, " ".join(args))
         app = shell_application(example)
         app.run(args)
         run_results = {
@@ -190,7 +195,7 @@ class uhd_example_test_case(uhd_test_case):
 
     def report_example_results(self, test_name, run_results):
         for key in sorted(run_results):
-            self.log.info('{key} = {val}'.format(key=key, val=run_results[key]))
+            self.log.info('%s = %s', str(key), str(run_results[key]))
             self.report_result(
                 test_name,
                 key, run_results[key]
@@ -213,17 +218,24 @@ class uhd_example_test_case(uhd_test_case):
         Hook for test runner. Needs to be a class method that starts with 'test'.
         Calls run_test().
         """
-        for test_name, test_args in self.test_params.iteritems():
+        for test_name, test_args in iteritems(self.test_params):
             time.sleep(15) # Wait for X300 devices to reclaim them
             if not test_args.has_key('products') or (self.usrp_info['product'] in test_args.get('products', [])):
                 run_results = self.run_test(test_name, test_args)
                 passed = bool(run_results)
                 if isinstance(run_results, dict):
                     passed = run_results['passed']
+                errors = run_results.pop("errors", None)
+                if not passed:
+                    print("Error log:", file=sys.stderr)
+                    print(errors)
                 self.assertTrue(
                     passed,
-                    msg="Errors occurred during test `{t}'. Check log file for details.\nRun results:\n{r}".format(
-                        t=test_name, r=yaml.dump(run_results, default_flow_style=False)
-                    )
+                    msg="Errors occurred during test `{t}'. "
+                        "Check log file for details.\n"
+                        "Run results:\n{r}".format(
+                            t=test_name,
+                            r=yaml.dump(run_results, default_flow_style=False)
+                        )
                 )
 
