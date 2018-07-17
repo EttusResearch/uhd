@@ -197,6 +197,11 @@ class n3xx(ZynqComponents, PeriphManagerBase):
             self.log.error("Failed to initialize motherboard: %s", str(ex))
             self._initialization_status = str(ex)
             self._device_initialized = False
+        try:
+            if not args.get('skip_boot_init', False):
+                self.init(args)
+        except Exception as ex:
+            self.log.warning("Failed to init device on boot!")
 
     def _check_fpga_compat(self):
         " Throw an exception if the compat numbers don't match up "

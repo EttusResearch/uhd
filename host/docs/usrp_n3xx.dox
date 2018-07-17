@@ -396,6 +396,30 @@ For a list of which arguments can be passed into make(), see Section
  tx_lo_source          | Initialize the source for the TX LO.                                         | N310              | tx_lo_source=external
  rfic_digital_loopback | Digital data loopback inside the RFIC.                                       | N310              | rfic_digital_loopback=1
 
+\subsection n3xx_usage_init Device Initialization
+
+To maximally speed up UHD, an initialization sequence is run when the device
+(or more accurately, the MPM service) starts. This means even on the first run
+of UHD, the device will already be initialized into a usable state. Note that
+it will always come up in a default state, which can be changed by modifying the
+configuration file in `/etc/uhd/mpm.conf` (see also \ref page_configfiles),
+such as this:
+
+~~~{.ini}
+; Note: To boot into a fully initialized state, a clock reference must be
+; connected before turning the device on if it set to external here:
+[n3xx]
+clock_source=external
+~~~
+
+If you prefer not to have the device initialize on boot, but rather have a fast
+boot time, add the line `skip_boot_init=1` to your `/etc/uhd/mpm.conf` file.
+
+For more details on the initialization sequence, see the corresponding section
+for the specific N3XX device:
+- \ref n3xx_mg_initialization
+
+
 \subsection n3xx_usage_subdevspec Subdev Specifications
 
 The four RF ports on the front panel correspond to the following subdev
@@ -781,6 +805,24 @@ the exact settings that cause fast vs. slow re-initialization.
 If you require a full re-initialization every time a UHD session is spawned,
 specify the `force_reinit` flag as a device arg. Specifying it will always do
 the full, slow initialization, but will guarantee a full reset of the RFIC.
+
+To maximally speed up UHD, an initialization sequence is run when the device
+(or more accurately, the MPM service) starts. This means even on the first run
+of UHD, the device will already be initialized into a usable state. Note that
+it will always come up in a default state, which can be changed by modifying the
+configuration file in `/etc/uhd/mpm.conf` (see also \ref page_configfiles),
+such as this:
+
+~~~{.ini}
+; Note: To boot into a fully initialized state, a clock reference must be
+; connected before turning the device on if it set to external here:
+[n3xx]
+master_clock_rate=122.88e6
+clock_source=external
+~~~
+
+If you prefer not to have the device initialize on boot, but rather have a fast
+boot time, add the line `skip_boot_init=1` to your `/etc/uhd/mpm.conf` file.
 
 \subsection n3xx_mg_calibrations RF Calibrations
 

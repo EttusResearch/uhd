@@ -174,6 +174,10 @@ def main():
     if len(mpm.__githash__):
         version_string += "-g" + mpm.__githash__
     log.info("Launching USRP/MPM, version: %s", version_string)
+    if args.init_only:
+        # If --init-only is provided, we force disable init during boot time so
+        # we can properly time it in init_only().
+        args.default_args['skip_boot_init'] = "1"
     if args.override_db_pids is not None:
         log.warning('Overriding daughterboard PIDs!')
         args.default_args['override_db_pids'] = args.override_db_pids
