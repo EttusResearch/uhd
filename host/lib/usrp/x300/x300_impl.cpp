@@ -1620,7 +1620,6 @@ void x300_impl::claim(wb_iface::sptr iface)
 
 bool x300_impl::try_to_claim(wb_iface::sptr iface, long timeout_ms)
 {
-    boost::system_time start_time = boost::get_system_time();
     const auto timeout_time =
         std::chrono::steady_clock::now()
         + std::chrono::milliseconds(timeout_ms);
