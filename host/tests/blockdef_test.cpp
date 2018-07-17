@@ -21,7 +21,6 @@ BOOST_AUTO_TEST_CASE(test_lookup) {
         {0xF112000000000001, "FIR"},
         {0xF1F0000000000000, "FIFO"},
         {0xD053000000000000, "Window"},
-        {0x5CC0000000000000, "SchmidlCox"}
     };
     std::cout << blocknames.size() << std::endl;
 
