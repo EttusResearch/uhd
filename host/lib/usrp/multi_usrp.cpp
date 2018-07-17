@@ -454,7 +454,7 @@ public:
         const auto mb_eeprom =
             _tree->access<mboard_eeprom_t>(mb_root(mcp.mboard) / "eeprom").get();
         usrp_info["mboard_id"] = _tree->access<std::string>(mb_root(mcp.mboard) / "name").get();
-        usrp_info["mboard_name"] = mb_eeprom["name"];
+        usrp_info["mboard_name"] = mb_eeprom.get("name", "n/a");
         usrp_info["mboard_serial"] = mb_eeprom["serial"];
         usrp_info["tx_subdev_name"] = _tree->access<std::string>(tx_rf_fe_root(chan) / "name").get();
         usrp_info["tx_subdev_spec"] = _tree->access<subdev_spec_t>(mb_root(mcp.mboard) / "tx_subdev_spec").get().to_string();
