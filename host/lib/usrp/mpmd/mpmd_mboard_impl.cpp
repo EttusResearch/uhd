@@ -16,9 +16,9 @@ namespace {
      * Local constants
      ************************************************************************/
     //! Time between reclaims (ms)
-    const size_t MPMD_RECLAIM_INTERVAL_MS     = 1000;
+    constexpr size_t MPMD_RECLAIM_INTERVAL_MS     = 1000;
     //! Default timeout value for the init() RPC call (ms)
-    const size_t MPMD_DEFAULT_INIT_TIMEOUT    = 120000;
+    constexpr size_t MPMD_DEFAULT_INIT_TIMEOUT    = 120000;
     //! Default timeout value for RPC calls (ms)
     constexpr size_t MPMD_DEFAULT_RPC_TIMEOUT     = 2000;
     //! Short timeout value for RPC calls (ms), used for calls that shouldn't
@@ -483,6 +483,12 @@ void mpmd_mboard_impl::set_timeout_default()
     ));
 }
 
+void mpmd_mboard_impl::set_timeout_init()
+{
+    this->set_rpcc_timeout(mb_args.cast<size_t>(
+            "init_timeout", MPMD_DEFAULT_INIT_TIMEOUT
+    ));
+}
 
 /*****************************************************************************
  * Private methods

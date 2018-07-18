@@ -126,6 +126,9 @@ class mpmd_mboard_impl
     //! Set the RPC call timeout to the default value
     void set_timeout_default();
 
+    //! Set the RPC call timeout to the value for initializations
+    void set_timeout_init();
+
   private:
     /*! Reference to the RPC client that handles claiming
      */
