@@ -1,20 +1,20 @@
 # UHD Image Manifest File
 # Target    hash    url     SHA256
 # X300-Series
-x3xx_x310_fpga_default          fpga-7d5d8db        x3xx/fpga-7d5d8db/x3xx_x310_fpga_default-g7d5d8db.zip                   6a51d510c6066dd880b6f1580d8f869538c0b897c076749749d1824395bd7858
-x3xx_x300_fpga_default          fpga-7d5d8db        x3xx/fpga-7d5d8db/x3xx_x300_fpga_default-g7d5d8db.zip                   42de33dd7c270dd599acd3a36759c7d8c076657e0bf5acd0fc352bddc177128b
+x3xx_x310_fpga_default          fpga-1107862        x3xx/fpga-1107862/x3xx_x310_fpga_default-g1107862.zip                   e1f59031b7c7f5fa166a46636c7b12df6ede5470138cfb71e3860e2945f180e8
+x3xx_x300_fpga_default          fpga-1107862        x3xx/fpga-1107862/x3xx_x300_fpga_default-g1107862.zip                   f90a760837bea61d144cf9940ac24db72959ad075444de0d94c2724a78beb402
 # Example daughterboard targets (none currently exist)
 #x3xx_twinrx_cpld_default   example_target
 #dboard_ubx_cpld_default    example_target
 
 # E-Series
-e3xx_e310_fpga_default          fpga-d6a878b        e3xx/fpga-d6a878b/e3xx_e310_fpga_default-gd6a878b.zip                   68d4118603834e23c36c32c1573a4529e9ce0b401dc7111fb095901a7139415d
+e3xx_e310_fpga_default          fpga-1107862        e3xx/fpga-1107862/e3xx_e310_fpga_default-g1107862.zip                   52f8451fd459b2a3113903284adea11474a9efb8eaef45b986233c0693f10549
 e3xx_e310_fpga_rfnoc            fpga-d6a878b        e3xx/fpga-d6a878b/e3xx_e310_fpga_rfnoc-gd6a878b.zip                     5c9b89fb6293423644868c22e914de386a9af39ff031da6800a1cf39a90ea73b
 # N300-Series
-n3xx_n310_fpga_default          fpga-7d5d8db        n3xx/fpga-7d5d8db/n3xx_n310_fpga_default-g7d5d8db.zip                   4667909657debd6e2cebd377e8e2073feebb33e2fcc92f1ca4e27a82f5b2a144
-n3xx_n300_fpga_default          fpga-7d5d8db        n3xx/fpga-7d5d8db/n3xx_n300_fpga_default-g7d5d8db.zip                   a7c0eaef0cec94a77ced2768b178e65da65c484aac1fa0394553581ceb38d0af
-#n3xx_n310_fpga_aurora           fpga-e0f552c        n3xx/fpga-e0f552c/n3xx_n310_fpga_aurora-ge0f552c.zip                    07b04cd4d6661d9e4efe339a20969f4b4086bcdbda106b05c75d47ba8a1582f4
-#n3xx_n300_fpga_aurora           fpga-e0f552c        n3xx/fpga-e0f552c/n3xx_n300_fpga_aurora-ge0f552c.zip                    381b34f55067479be6ff8d1be81849674880ac81b94182f584f25a521090fac8
+n3xx_n310_fpga_default          fpga-1107862        n3xx/fpga-1107862/n3xx_n310_fpga_default-g1107862.zip                   fc80462f2e144d9745b0b480aa513f426e48df46ad18dc85cbb8fdb3cb162355
+n3xx_n300_fpga_default          fpga-1107862        n3xx/fpga-1107862/n3xx_n300_fpga_default-g1107862.zip                   1e7ae1429825811531149f87f82dfcbc06cf63e1fc3752517edf104950406c36
+#n3xx_n310_fpga_aurora           fpga-1107862        n3xx/fpga-1107862/n3xx_n310_fpga_aurora-g1107862.zip                    3926d6b247a8f931809460d3957cec51f8407cd3f7aea6f4f3b91d1bbb427c7d
+#n3xx_n300_fpga_aurora           fpga-1107862        n3xx/fpga-1107862/n3xx_n300_fpga_aurora-g1107862.zip                    e34e9343572adfba905433a1570cb394fe45207d442268d0fa400c3406253530
 #n3xx_n310_cpld_default         fpga-6bea23d        n3xx/fpga-6bea23d/n3xx_n310_cpld_default-g6bea23d.zip                   0
 # N3XX Mykonos firmware
 #n3xx_n310_fw_default           fpga-6bea23d        n3xx/fpga-6bea23d/n3xx_n310_fw_default-g6bea23d.zip                     0
