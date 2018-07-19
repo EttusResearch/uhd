@@ -44,6 +44,18 @@ def get_sfp_bist_defaults():
         'bits': 12012486656,
     }
 
+def assert_aurora_image(master, slave):
+    """
+    Make sure we have an FPGA image with which we can run the requested tests.
+
+    Will load an AA image if not, which always satisfies all conditions for
+    running Aurora tests.
+    """
+    from usrp_mpm.sys_utils import uio
+    if not uio.find_uio_device(master)[0] or \
+            (slave is not None and not uio.find_uio_device(slave)[0]):
+        load_fpga_image('AA')
+
 def run_aurora_bist(master, slave=None):
     """
     Spawn a BER test
@@ -51,7 +63,7 @@ def run_aurora_bist(master, slave=None):
     from usrp_mpm import aurora_control
     from usrp_mpm.sys_utils.uio import UIO
     try:
-        load_fpga_image('AA')
+        assert_aurora_image(master, slave)
         master_au_uio = UIO(label=master, read_only=False)
         master_au_uio.open()
         master_au_ctrl = aurora_control.AuroraControl(master_au_uio)
@@ -791,11 +803,15 @@ class N3XXBIST(object):
         assert 'whiterabbit' in self.tests_to_run
         if self.args.dry_run:
             return True, {'lock': True}
-        load_fpga_image('WX')
-        self.reload_fpga_image = True
         from usrp_mpm.cores import WhiteRabbitRegsControl
         from usrp_mpm.periph_manager.n3xx import n3xx
         from usrp_mpm.periph_manager import n3xx_periphs
+        from usrp_mpm.sys_utils import uio
+        if not uio.find_uio_device(n3xx.wr_regs_label, logger=self.log)[0]:
+            self.log.info("Need to load WX image before proceeding...")
+            load_fpga_image('WX')
+            self.log.info("Image loading complete.")
+        self.reload_fpga_image = True
         mb_regs = n3xx_periphs.MboardRegsControl(
             n3xx.mboard_regs_label, self.log)
         mb_regs.set_time_source('sfp0', 25e6)
