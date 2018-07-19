@@ -16,6 +16,16 @@ The Python API supports both Python 2 and 3, but if you have both versions
 installed, CMake might require some hints which version is the desired one.
 To force Python 3, UHD has a CMake variable `ENABLE_PYTHON3`
 
+\subsection python_install_windows Installing on Windows
+
+On Windows, only certain combinations of MSVC and Boost have proven functional.
+The following combinations are known to work (others might also work):
+
+- Visual Studio 2017 (version 15.7.3), Release X64 on Windows 10 with Boost
+  1.65.1 and Boost 1.66, Python27 x64 bit.
+
+Static linking on is currently unsupported on Windows.
+
 \section python_usage Using the Python API
 
 The Python API mirrors the C++ API, so the C++ reference manual can be used to
