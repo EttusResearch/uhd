@@ -57,7 +57,7 @@ Other compilers (or lower versions) may work, but are unsupported.
 
 ### Python
 
-- **Purpose:** used by mako and utility scripts
+- **Purpose:** Used by mako build time,  and utility scripts and the Python API at runtime
 - **Minimum Version:** 2.7
 - **Usage:** build time + runtime utility scripts (required)
 - **Download URL:** http://www.python.org/download/

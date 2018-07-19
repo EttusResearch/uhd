@@ -1,0 +1,85 @@
+/*! \page page_python Python API
+
+UHD supports a Python API, in case the C++ or C APIs are not the right solution
+for your application.
+
+\section python_install Installing the Python API
+
+In order to install the Python API when building UHD from source, make sure all
+the dependencies are available (see also \ref page_build_guide, you need
+Boost.Python from your Boost library). Make sure you have the CMake variable
+`ENABLE_PYTHON_API` set to ON (e.g., by running `cmake -DENABLE_PYTHON_API=ON`).
+
+\subsection python_install_2v3 Python 2 vs. 3
+
+The Python API supports both Python 2 and 3, but if you have both versions
+installed, CMake might require some hints which version is the desired one.
+To force Python 3, UHD has a CMake variable `ENABLE_PYTHON3`
+
+\section python_usage Using the Python API
+
+The Python API mirrors the C++ API, so the C++ reference manual can be used to
+understand the behaviour of the Python API as well.
+
+Names in the Python API have been modified to follow a PEP8-compatible naming
+convention, for example, uhd::usrp::multi_usrp in C++ corresponds to
+uhd.usrp.MultiUSRP in Python (this makes UHD/Python code implicitly compatible
+with most linters, but it also has the side-effect of hiding symbols that get
+imported from the C++ domain).
+The following two snippets are equivalent. First the C++ version:
+~~~{.cpp}
+#include <uhd/usrp/multi_usrp.hpp>
+
+// ...
+
+auto usrp = uhd::usrp::multi_usrp::make("type=b200");
+usrp->set_rx_freq(100e6);
+~~~
+
+Now the Python version:
+~~~{.py}
+import uhd
+
+# ...
+
+usrp = uhd.usrp.MultiUSRP("type=b200")
+usrp.set_rx_freq(100e6)
+~~~
+
+Not all API calls from the C++ API are also supported in the Python API, and
+the Python API has some additional functions that are not available in C++, but
+for the most part, the `uhd::usrp::multi_usrp` API is identical.
+
+\section python_usage_oneoff One-off transmit/receive applications
+
+A common type of Python-based SDR applications are those which produce or
+consume a limited number of samples. For example, an application could receive a
+second's worth of samples, then do offline processing, print the result, and
+exit. For this case, convenience API calls were added to the Python API. The
+following snippet is an example of how to store 1 second of samples acquired at
+1 Msps:
+
+~~~{.py}
+import uhd
+
+def recv_to_file():
+    """RX samples and write to file"""
+    usrp = uhd.usrp.MultiUSRP("type=b200")
+    num_samps = 1e6
+    if not isinstance(args.channels, list):
+        args.channels = [args.channels]
+    samps = usrp.recv_num_samps(
+        1e6, # Number of samples
+	2.4e9, # Frequency in Hz
+	1e6, # Sampling rate
+	[0], # Receive on channel 0
+	80, # 80 dB of RX gain
+    )
+    samps.tofile('samples.dat')
+~~~
+
+This kind of API is particularly useful in combination with Jupyter Notebooks or
+similar interactive environments.
+
+*/
+// vim:ft=doxygen:
