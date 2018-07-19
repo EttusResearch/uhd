@@ -281,6 +281,12 @@ class N3XXBIST(object):
                  "status when using this mode.",
         )
         parser.add_argument(
+            '--skip-fpga-reload', action='store_true',
+            help="Skip reloading the default FPGA image post-test. Note: by"
+                 "specifying this argument, the FPGA image loaded could be "
+                 "anything post-test.",
+        )
+        parser.add_argument(
             'tests',
             help="List the tests that should be run",
             nargs='+', # There has to be at least one
@@ -369,7 +375,7 @@ class N3XXBIST(object):
         if self.args.lv_compat:
             result = filter_results_for_lv(result)
         post_results(result)
-        if self.reload_fpga_image:
+        if self.reload_fpga_image and not self.args.skip_fpga_reload:
             load_fpga_image(self.DEFAULT_FPGA_TYPE)
         return tests_successful
 
