@@ -164,6 +164,9 @@ def filter_results_for_lv(results):
             'cooling_device0': -1,
             'cooling_device1': -1,
         },
+        'whiterabbit': {
+            'lock_status': 0,
+        },
     }
     # OK now go and brush up the results:
     def fixup_dict(result_dict, ref_dict):
@@ -771,6 +774,36 @@ class N3XXBIST(object):
                     and device.attributes.get('cur_state') is not None
         }
         return len(result) == 2, result
+
+    def bist_whiterabbit(self):
+        """
+        BIST for White Rabbit.
+        Description: Checks if the WR core can lock.
+
+        External Equipment: A WR source needs to be connected to SFP0.
+        """
+        assert 'whiterabbit' in self.tests_to_run
+        if self.args.dry_run:
+            return True, {'lock': True}
+        load_fpga_image('WX')
+        self.reload_fpga_image = True
+        from usrp_mpm.cores import WhiteRabbitRegsControl
+        from usrp_mpm.periph_manager.n3xx import n3xx
+        from usrp_mpm.periph_manager import n3xx_periphs
+        mb_regs = n3xx_periphs.MboardRegsControl(
+            n3xx.mboard_regs_label, self.log)
+        mb_regs.set_time_source('sfp0', 25e6)
+        wr_regs_control = WhiteRabbitRegsControl(
+            n3xx.wr_regs_label, self.log)
+        lock_status = poll_with_timeout(
+            lambda: wr_regs_control.get_time_lock_status(),
+            40000, # Try for x ms... this number is set from a few benchtop tests
+            1000, # Poll every... second! why not?
+        )
+        result = {
+            'lock_status': int(lock_status),
+        }
+        return lock_status, result
 
 
 def gpio_set_all(gpio_bank, value, gpio_size, ddr_mask):
