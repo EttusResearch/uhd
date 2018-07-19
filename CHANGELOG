@@ -1,6 +1,38 @@
 Change Log for Releases
 ==============================
 
+## 003.012.000.001
+* N310: Fix low TX power on channels other than channel 0
+* N310: Fix default tx/rx channel map
+* N310: add tx and rx mutexes to liberio_zero_copy and remove set_rpc_lock
+* X300: Add SAFE_CALL to x300_radio_ctrl_impl destructor
+* B200: Update CORDIC when tick rate changes
+* B200: Change default recv_frame_size to 8176 to avoid issue in FX3
+* B200: Add checks for minimum and maximum recv_frame_size
+* B200: Add coercion of recv_frame_size to force alignment with 8 bytes 
+        and prevent multiples of transfer size
+* B200: Change buffer count and size for USB2 in firmware
+* B200: Update FW and FPGA images
+* B200: Fix sc8 RX streaming
+* RFNoC: Warn when a block key is not found in the registry
+* MPM: Fix rare failures for IP addr detection
+* MPM: Catch inconsistent Ethernet device detections
+* MPM: Introduce dt-compat and mcu-compat fields
+* MPM: Accept PID 0x01 as well as 0x03 for AD9371
+* MPM: Fix issue with dt/mcu-compat number during eeprom-init to accept
+       valid compat value of 0
+* UHD: Update README.md, LICENSE.md, and CONTRIBUTING.md
+* UHD: Remove compiler warning, add unit test for soft_register
+* Test: Run All Tests for Device and FPGA Image
+* Test: Add HA,XA,WX Images
+* Test: Add x300 Functional Verification
+* Test: Remove SchidlCox from blockdef test
+* Docs: Update FPGA Functional Testing Procedure
+* Docs: x300 Functional Verification Procedure
+* Docs: Update ISE/Vivado versions in images.dox
+* cmake: Add ENABLE_N300 target
+* cmake: Fix version numbering
+
 ## 003.012.000.000
 * N3x0: Add White Rabbit support, add N300 support, standard BIST
         includes fan, fix issue with 1GigE, switch to 2 radio blocks

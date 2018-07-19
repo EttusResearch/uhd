@@ -20,7 +20,7 @@ FIND_PACKAGE(Git QUIET)
 SET(UHD_VERSION_MAJOR   3)
 SET(UHD_VERSION_API    12)
 SET(UHD_VERSION_ABI     0)
-SET(UHD_VERSION_PATCH   0)
+SET(UHD_VERSION_PATCH   1)
 SET(UHD_VERSION_DEVEL FALSE)
 
 ########################################################################
