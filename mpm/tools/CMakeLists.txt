@@ -16,7 +16,7 @@ SET(eeprom_tool_libs)
 IF(ENABLE_LIBMPM)
     MESSAGE(STATUS "Adding MPM EEPROM tools...")
     SET(eeprom_tool_libs eeprom.c)
-    SET(eeprom_tool_sources
+    LIST(APPEND eeprom_tool_sources
         eeprom-blank.c
         eeprom-dump.c
         eeprom-id.c
@@ -27,7 +27,7 @@ ENDIF(ENABLE_LIBMPM)
 IF(ENABLE_MYKONOS)
     MESSAGE(STATUS "Adding N3XX-specific EEPROM tools...")
     SET(eeprom_tool_libs eeprom.c)
-    SET(eeprom_tool_sources
+    LIST(APPEND eeprom_tool_sources
         db-dump.c
         db-id.c
         db-init.c
