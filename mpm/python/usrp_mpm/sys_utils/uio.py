@@ -77,7 +77,8 @@ def find_uio_device(label, logger=None):
         logger.trace("Found the following UIO devices: `{0}'".format(','.join(uio_devices)))
     for uio_device in uio_devices:
         map0_info = get_uio_map_info(uio_device, 0)
-        logger.trace("{0} has map info: {1}".format(uio_device, map0_info))
+        if logger:
+            logger.trace("{0} has map info: {1}".format(uio_device, map0_info))
         if map0_info.get('name') == label:
             if logger:
                 logger.trace("Device matches label: `{0}'".format(uio_device))
