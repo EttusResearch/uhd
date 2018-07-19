@@ -1,0 +1,24 @@
+/*! \page page_python C API
+
+UHD supports a C API, in case the C++ or Python APIs are not the right solution
+for your application.
+
+\section capi_install Installing the C API
+
+In order to install the C API when building UHD from source, make sure you have
+the CMake variable `ENABLE_C_API` set to ON (e.g., by running
+`cmake -DENABLE_C_API=ON`).
+
+\section capi_usage Using the C API
+
+The C API mirrors the C++ API, so the C++ reference manual can be used to
+understand the behaviour of the Python API as well.
+
+The `examples/` subdirectory provides several examples on how to use the C API.
+See also the usrp.h include file, which provides all the functionality that
+would be provided by uhd::usrp::multi_usrp in the C++ case.
+
+
+*/
+// vim:ft=doxygen:
+
