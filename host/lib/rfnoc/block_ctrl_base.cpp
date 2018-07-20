@@ -19,6 +19,8 @@
 #include <uhdlib/rfnoc/wb_iface_adapter.hpp>
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
+#include <chrono>
+#include <thread>
 
 using namespace uhd;
 using namespace uhd::rfnoc;
@@ -72,6 +74,20 @@ block_ctrl_base::block_ctrl_base(
     _tree->create<uint64_t>(_root_path / "noc_id").set(_noc_id);
 
     /*** Reset block state *******************************************/
+    // We don't know the state of the data-path of this block before
+    // we initialize. If everything tore down properly, the data-path
+    // should be disconnected and thus idle. Reconfiguration of parameters
+    // like SIDs is safe to do in that scenario.
+    // However, if data is still streaming, block configuration
+    // can potentially lock up noc_shell. So we flush the data-path here.
+
+    // Flush is a block-level operation that can be triggered
+    // from any block port.
+    // Do it once before clearing...
+    if (get_ctrl_ports().size() > 0) {
+        _flush(get_ctrl_ports().front());
+    }
+    // Clear flow control and misc state
     clear();
 
     /*** Configure ports ****************************************************/
@@ -129,6 +145,17 @@ block_ctrl_base::block_ctrl_base(
 
 block_ctrl_base::~block_ctrl_base()
 {
+    if (get_ctrl_ports().size() > 0) {
+        // Notify the data-path gatekeeper in noc_shell that we are done
+        // with this block. This operation disconnects the noc_block
+        // data-path from noc_shell which dumps all input and output
+        // packets that are in flight, for now and until the setting is
+        // disabled. This prevents long-running blocks without a tear-down
+        // mechanism to gracefully flush.
+        const size_t port = get_ctrl_ports().front();
+        sr_write(SR_CLEAR_TX_FC, 0x2, port);    // Disconnect TX data-path
+        sr_write(SR_CLEAR_RX_FC, 0x2, port);    // Disconnect RX data-path
+    }
     _tree->remove(_root_path);
 }
 
@@ -558,6 +585,59 @@ stream_sig_t block_ctrl_base::_resolve_port_def(const blockdef::port_t &port_def
     return stream_sig;
 }
 
+bool block_ctrl_base::_flush(const size_t port)
+{
+    UHD_LOG_DEBUG(unique_id(), "block_ctrl_base::_flush()");
+
+    auto is_data_streaming = [this](int time_ms) -> bool {
+        // noc_shell has 2 16-bit counters (one for TX and one for RX) in the top
+        // 32 bits of the SR_READBACK_REG_GLOBAL_PARAMS. For all the checks below
+        // we want to make sure that the counts are not changing i.e. no data is
+        // streaming. So we just look at the two counters together as a single
+        // 32-bit quantity.
+        auto old_cnts = static_cast<uint32_t>(this->sr_read64(SR_READBACK_REG_GLOBAL_PARAMS) >> 32);
+        std::this_thread::sleep_for(std::chrono::milliseconds(time_ms));
+        auto new_cnts = static_cast<uint32_t>(this->sr_read64(SR_READBACK_REG_GLOBAL_PARAMS) >> 32);
+        return (new_cnts != old_cnts);
+    };
+
+    // Initial check for activity
+    // We use a 10ms window to check for activity which detects a stream with approx
+    // 100 packets per second
+    constexpr int INITIAL_CHK_WINDOW_MS = 10;
+    if (not is_data_streaming(INITIAL_CHK_WINDOW_MS)) return true;
+
+    UHD_LOG_DEBUG(unique_id(), "block_ctrl_base::_flush(recovery mode)");
+    // We noticed streaming data. This is most likely because the last
+    // session terminated abnormally or if logic in a noc_block is
+    // misbehaving. This is a situation that we may not be able to
+    // recover from because we are in a partially initialized state.
+    // We will try to at least not lock up the FPGA.
+
+    // Disconnect the RX and TX data paths and let them flush.
+    // A timeout of 2s is chosen to be conservative. It needs to account for:
+    // - Upstream blocks that weren't terminated to run out of FC credits
+    // - This block which might be finishing up with its data output
+    constexpr int FLUSH_TIMEOUT_MS = 2000;  // This is approximate
+    bool success = false;
+    sr_write(SR_CLEAR_TX_FC, 0x2, port);    // Disconnect TX data-path
+    sr_write(SR_CLEAR_RX_FC, 0x2, port);    // Disconnect RX data-path
+    for (int i = 0; i < FLUSH_TIMEOUT_MS/10; i++) {
+        if (not is_data_streaming(10)) {
+            success = true;
+            break;
+        }
+    }
+    sr_write(SR_CLEAR_TX_FC, 0x0, port);    // Enable TX data-path
+    sr_write(SR_CLEAR_RX_FC, 0x0, port);    // Enable RX data-path
+
+    UHD_LOGGER_WARNING(unique_id()) <<
+        "This block seems to be busy most likely due to the abnormal termination of a previous session. " <<
+        "Attempted recovery but it may not have worked depending on the behavior of other blocks in the design. " <<
+        "Please restart the application.";
+    return success;
+}
+
 
 /***********************************************************************
  * Hooks & Derivables
@@ -565,8 +645,10 @@ stream_sig_t block_ctrl_base::_resolve_port_def(const blockdef::port_t &port_def
 void block_ctrl_base::_clear(const size_t port)
 {
     UHD_LOG_TRACE(unique_id(), "block_ctrl_base::_clear()");
-    sr_write(SR_CLEAR_TX_FC, 0x00C1EA12, port); // 'CLEAR', but we can write anything, really
-    sr_write(SR_CLEAR_RX_FC, 0x00C1EA12, port); // 'CLEAR', but we can write anything, really
+    sr_write(SR_CLEAR_TX_FC, 0x1, port);    // Write 1 to trigger a single cycle clear event
+    sr_write(SR_CLEAR_TX_FC, 0x0, port);    // Write 0 to reset the clear flag
+    sr_write(SR_CLEAR_RX_FC, 0x1, port);    // Write 1 to trigger a single cycle clear event
+    sr_write(SR_CLEAR_RX_FC, 0x0, port);    // Write 0 to reset the clear flag
 }
 
 void block_ctrl_base::_set_command_time(const time_spec_t & /*time_spec*/, const size_t /*port*/)

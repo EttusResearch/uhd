@@ -556,7 +556,8 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t &args_)
         // See noc_shell.v, in the section called Stream Source for details.
         // Setting SR_CLEAR_TX_FC will actually also clear the destination and
         // other settings.
-        blk_ctrl->sr_write(uhd::rfnoc::SR_CLEAR_TX_FC, 0xc1ea12, block_port);
+        blk_ctrl->sr_write(uhd::rfnoc::SR_CLEAR_TX_FC, 0x1, block_port);
+        blk_ctrl->sr_write(uhd::rfnoc::SR_CLEAR_TX_FC, 0x0, block_port);
         blk_ctrl->set_destination(xport.send_sid.get_src(), block_port);
 
         blk_ctrl->sr_write(uhd::rfnoc::SR_RESP_OUT_DST_SID, xport.send_sid.get_src(), block_port);
@@ -845,7 +846,8 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
                 "tx_async_msgs_task"
         );
 
-        blk_ctrl->sr_write(uhd::rfnoc::SR_CLEAR_RX_FC, 0xc1ea12, block_port);
+        blk_ctrl->sr_write(uhd::rfnoc::SR_CLEAR_RX_FC, 0x1, block_port);
+        blk_ctrl->sr_write(uhd::rfnoc::SR_CLEAR_RX_FC, 0x0, block_port);
         blk_ctrl->sr_write(uhd::rfnoc::SR_RESP_IN_DST_SID, my_streamer->_async_xport.recv_sid.get_dst(), block_port);
         UHD_TX_STREAMER_LOG() << "resp_in_dst_sid == " << boost::format("0x%04X") % xport.recv_sid.get_dst() ;
 
