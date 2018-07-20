@@ -45,7 +45,7 @@ class WhiteRabbitRegsControl(object):
         """
         Retrieves and decodes the lock status for the PPS out of the WR core.
         """
-        with self.regs.open():
+        with self.regs:
             ext_sync_status = self.periph_peek32(self.PPSG_ESCR)
         # bit 2: PPS_VALID
         # bit 3: TM_VALID (timecode)

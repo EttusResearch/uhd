@@ -190,7 +190,7 @@ class DboardClockControl(object):
         """
         Enables or disables the MMCM outputs.
         """
-        with self.regs.open():
+        with self.regs:
             if enable:
                 self.poke32(self.RADIO_CLK_ENABLES, 0x011)
             else:
@@ -202,7 +202,7 @@ class DboardClockControl(object):
         """
         self.log.trace("Disabling all Radio Clocks, then resetting MMCM...")
         self.enable_outputs(False)
-        with self.regs.open():
+        with self.regs:
             self.poke32(self.RADIO_CLK_MMCM, 0x1)
 
     def enable_mmcm(self):
@@ -212,7 +212,7 @@ class DboardClockControl(object):
         If MMCM is not locked after unreset, an exception is thrown.
         """
         self.log.trace("Un-resetting MMCM...")
-        with self.regs.open():
+        with self.regs:
             self.poke32(self.RADIO_CLK_MMCM, 0x2)
             time.sleep(0.5) # Replace with poll and timeout TODO
             mmcm_locked = bool(self.peek32(self.RADIO_CLK_MMCM) & 0x10)
@@ -226,7 +226,7 @@ class DboardClockControl(object):
         """
         Not technically a clocking reg, but related.
         """
-        with self.regs.open():
+        with self.regs:
             return bool(self.peek32(self.MGT_REF_CLK_STATUS) & 0x1)
 
 
@@ -267,7 +267,7 @@ class JesdCoreEiscat(object):
         Verify that the JESD core ID is correct.
         """
         expected_id = self.CORE_ID_BASE + self.core_idx
-        with self.regs.open():
+        with self.regs:
             core_id = self.peek32(self.JESD_SIGNATURE_REG)
             self.log.trace("Reading JESD core ID: {:x}".format(core_id))
             if core_id != expected_id:
@@ -301,7 +301,7 @@ class JesdCoreEiscat(object):
         Returns nothing, but throws on error.
         """
         self.log.trace("Init JESD Deframer...")
-        with self.regs.open():
+        with self.regs:
             self.poke32(0x40, 0x02) # Force assertion of ADC SYNC
             self.poke32(0x50, 0x01) # Data = 0 = Scrambler enabled. Data = 1 = disabled. Must match ADC settings.
             if not self._gt_rx_reset(reset_only=False):
@@ -324,7 +324,7 @@ class JesdCoreEiscat(object):
         """
         Power down unused CPLLs and QPLLs
         """
-        with self.regs.open():
+        with self.regs:
             self.poke32(0x00C, 0xFFFC0000)
             self.log.trace("MGT power enabled readback: {:x}".format(self.peek32(0x00C)))
 
@@ -335,7 +335,7 @@ class JesdCoreEiscat(object):
 
         Returns True on success.
         """
-        with self.regs.open():
+        with self.regs:
             self.poke32(0x024, 0x10) # Place the RX MGTs in reset
             if not reset_only:
                 time.sleep(.001) # Probably not necessary
@@ -355,7 +355,7 @@ class JesdCoreEiscat(object):
         """
         Make sure PLLs are locked
         """
-        with self.regs.open():
+        with self.regs:
             self.poke32(0x004, 0x11111111) # Reset CPLLs
             self.poke32(0x004, 0x11111100) # Unreset the ones we're using
             time.sleep(0.02) # TODO replace with poll and timeout
@@ -379,7 +379,7 @@ class JesdCoreEiscat(object):
             "JESD Core: Slot {}, ADC {}: Setting polarity control to 0x{:2x}".format(
                 self.slot, self.core_idx, reg_val
             ))
-        with self.regs.open():
+        with self.regs:
             self.poke32(0x80, reg_val)
 
 
@@ -593,7 +593,7 @@ class EISCAT(DboardManagerBase):
         fashion though.
         """
         self.log.trace("Sending SYSREF via MPM...")
-        with self.radio_regs.open():
+        with self.radio_regs:
             self.radio_regs.poke32(self.SYSREF_CONTROL, 0x0)
             self.radio_regs.poke32(self.SYSREF_CONTROL, 0x1)
             self.radio_regs.poke32(self.SYSREF_CONTROL, 0x0)
@@ -692,7 +692,7 @@ class EISCAT(DboardManagerBase):
         # Enable all channels first due to a signal integrity issue when enabling them
         # after the LNA enable is asserted.
         self.log.trace("Enabling power to the daughterboard...")
-        with regs.open():
+        with regs:
             regs.poke32(self.DB_CH_ENABLES, 0x000000FF)
             regs.poke32(self.DB_ENABLES,    0x01000000)
             regs.poke32(self.DB_ENABLES,    0x00010101)
@@ -704,7 +704,7 @@ class EISCAT(DboardManagerBase):
         Turn off power to the dboard. Sequence is reverse of init_power.
         """
         self.log.trace("Disabling power to the daughterboard...")
-        with regs.open():
+        with regs:
             regs.poke32(self.ADC_CONTROL,   0x00100000)
             regs.poke32(self.DB_ENABLES,    0x10101010)
             regs.poke32(self.DB_CH_ENABLES, 0x00000000) # Disable all channels (last)

@@ -47,7 +47,7 @@ class LiberioDispatcherTable(object):
             self.poke32(addr, data)
         # Poke reg for destination channel
         try:
-            with self._regs.open():
+            with self._regs:
                 poke_and_trace(
                     0 + 4 * sid.dst_ep,
                     dma_channel,

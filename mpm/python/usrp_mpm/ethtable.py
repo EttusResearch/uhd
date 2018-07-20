@@ -41,7 +41,7 @@ class EthDispatcherTable(object):
         """
         self.log.debug("Setting my own IP address to `{}'".format(ip_addr))
         ip_addr_int = int(netaddr.IPAddress(ip_addr))
-        with self._regs.open():
+        with self._regs:
             self.poke32(self.OWN_IP_OFFSET, ip_addr_int)
 
     def set_vita_port(self, port_value=None, port_idx=None):
@@ -53,7 +53,7 @@ class EthDispatcherTable(object):
         port_value = port_value or self.DEFAULT_VITA_PORT[port_idx]
         assert port_idx in (0)                      #FIXME: Fix port_idx = 1
         port_reg_addr = self.OWN_PORT_OFFSET
-        with self._regs.open():
+        with self._regs:
             self.poke32(port_reg_addr, port_value)
 
     def set_route(self, sid, ip_addr, udp_port, mac_addr=None):
@@ -102,7 +102,7 @@ class EthDispatcherTable(object):
             ))
             self.poke32(addr, data)
 
-        with self._regs.open():
+        with self._regs:
             poke_and_trace(
                 self.SID_IP_OFFSET + sid_offset,
                 ip_addr_int
@@ -125,5 +125,5 @@ class EthDispatcherTable(object):
         self.log.trace("Writing to address 0x{:04X}: 0x{:04X}".format(
             self.FORWARD_ETH_BCAST_OFFSET, reg_value
         ))
-        with self._regs.open():
+        with self._regs:
             self.poke32(self.FORWARD_ETH_BCAST_OFFSET, reg_value)

@@ -23,9 +23,9 @@ def open_uio(label=None, path=None, length=None, read_only=True, offset=None):
     """Convenience function for creating a UIO object.
     Use this like you would open() for a file"""
     uio_obj = UIO(label, path, length, read_only, offset)
-    uio_obj.open()
+    uio_obj._open()
     yield uio_obj
-    uio_obj.close()
+    uio_obj._close()
 
 
 def get_all_uio_devs():
@@ -97,17 +97,24 @@ class UIO(object):
     - Use the instantiation of this class as a context manager (using a `with`
       statement), like this:
 
+    >>> uio0 = UIO(path="/dev/uio0"):
+    >>> with uio0:
+    >>>     uio0.peek32(addr)
+    >>>     uio0.poke32(addr, value)
+
+    Or like this:
+
     >>> with UIO(path="/dev/uio0") as uio0:
     >>>     uio0.peek32(addr)
     >>>     uio0.poke32(addr, value)
 
-    - Manually call open() and close():
+    - This is Highly Discouraged, but if you need to, manually call _open() and _close():
 
     >>> uio0 = UIO(path="/dev/uio0")
-    >>> uio0.open()
+    >>> uio0._open()
     >>> uio0.peek32(addr)
     >>> uio0.poke32(addr, value)
-    >>> uio0.close()
+    >>> uio0._close()
 
     Arguments:
     label -- Label of the UIO device. The label is set in the device tree
@@ -135,10 +142,12 @@ class UIO(object):
         else:
             self.log.trace("Using UIO device by label `{0}'".format(label))
             self._path, map_info = find_uio_device(label, self.log)
-        offset = offset or map_info['offset'] # If we ever support multiple maps, check if this is correct...
+        # TODO If we ever support multiple maps, check if this is correct...
+        offset = offset or map_info['offset']
         assert offset == 0 # ...and then remove this line
         length = length or map_info['size']
-        self.log.trace("UIO device is being opened read-{0}.".format("only" if read_only else "write"))
+        self.log.trace("UIO device is being opened read-{0}.".format(
+            "only" if read_only else "write"))
         if self._path is None:
             self.log.error("Could not find a UIO device for label {0}".format(label))
             raise RuntimeError("Could not find a UIO device for label {0}".format(label))
@@ -150,13 +159,13 @@ class UIO(object):
         self._ref_count = 0
 
     def __enter__(self):
-        return self.open()
+        return self._open()
 
     def __exit__(self, exc_type, exc_value, traceback):
-        self.close()
+        self._close()
         return exc_type is None
 
-    def open(self):
+    def _open(self):
         """Actually open the UIO device.
 
         You need to call this before doing peeks and pokes. See also close().
@@ -169,7 +178,7 @@ class UIO(object):
         self._ref_count += 1
         return self
 
-    def close(self):
+    def _close(self):
         """Close a UIO device.
 
         UIO devices can be problematic with regards to file descriptor leakage,
