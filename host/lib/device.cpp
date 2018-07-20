@@ -14,12 +14,13 @@
 #include <uhd/utils/algorithm.hpp>
 #include <uhdlib/utils/prefs.hpp>
 
-
 #include <boost/format.hpp>
 #include <boost/weak_ptr.hpp>
 #include <boost/functional/hash.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/thread/mutex.hpp>
+
+#include <future>
 
 using namespace uhd;
 
@@ -94,17 +95,24 @@ device_addrs_t device::find(const device_addr_t &hint, device_filter_t filter){
     boost::mutex::scoped_lock lock(_device_mutex);
 
     device_addrs_t device_addrs;
-
-    for(const dev_fcn_reg_t &fcn:  get_dev_fcn_regs()) {
+    std::vector<std::future<device_addrs_t>> find_tasks;
+    for (const auto& fcn : get_dev_fcn_regs()) {
+        if (filter == ANY or fcn.get<2>() == filter) {
+            find_tasks.emplace_back(std::async(std::launch::async,
+                [fcn, hint](){
+                    return fcn.get<0>()(hint);
+                }
+            ));
+        }
+    }
+    for(auto &find_task : find_tasks) {
         try {
-            if (filter == ANY or fcn.get<2>() == filter) {
-                device_addrs_t discovered_addrs = fcn.get<0>()(hint);
-                device_addrs.insert(
-                    device_addrs.begin(),
-                    discovered_addrs.begin(),
-                    discovered_addrs.end()
-                );
-            }
+            device_addrs_t discovered_addrs = find_task.get();
+            device_addrs.insert(
+                device_addrs.begin(),
+                discovered_addrs.begin(),
+                discovered_addrs.end()
+            );
         }
         catch (const std::exception &e) {
             UHD_LOGGER_ERROR("UHD") << "Device discovery error: " << e.what();
