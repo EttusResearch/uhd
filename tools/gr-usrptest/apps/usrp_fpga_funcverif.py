@@ -495,7 +495,7 @@ FUNCVERIF_SETTINGS = {
         ],
     },
     'x3x0_2x_10gige': {
-        '--args': "type=n3xx,addr={addr},second_addr={second_addr},{args}",
+        '--args': "type=x300,addr={addr},second_addr={second_addr},{args}",
         '--seq-threshold': 0,
         '--drop-threshold': 0,
         '--underrun-threshold': 100,
