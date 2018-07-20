@@ -31,7 +31,7 @@ namespace uhd{
  * uhd::stream_args_t stream_args("fc32", "sc16");
  * // 2. Set the channel list, we want 3 streamers coming from channels
  * //    0, 1 and 2, in that order:
- * stream_args.channels = boost::assign::list_of(0)(1)(2);
+ * stream_args.channels = {0, 1, 2};
  * // 3. Set optional args:
  * stream_args.args["spp"] = "200"; // 200 samples per packet
  * // Now use these args to create an rx streamer:
@@ -43,6 +43,17 @@ namespace uhd{
  *
  * \b Note: Not all combinations of CPU and OTW format have conversion support.
  * You may however write and register your own conversion routines.
+ *
+ * If you are creating stream args to connect to an RFNoC block, then you might
+ * want to specify block ID and port, too:
+ * \code{.cpp}
+ * stream_args.args["block_id0"] = "0/Radio_0";
+ * stream_args.args["block_id1"] = "0/Radio_1";
+ * stream_args.args["block_id2"] = "0/Radio_1"; // Chan 1 and 2 go to the same radio
+ * stream_args.args["block_port0"] = "0";
+ * stream_args.args["block_port1"] = "0";
+ * stream_args.args["block_port2"] = "1";
+ * \endcode
  */
 struct UHD_API stream_args_t{
 
