@@ -13,6 +13,7 @@
 #include <uhd/transport/if_addrs.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
+#include <future>
 
 using namespace uhd;
 using namespace uhd::mpmd;
@@ -176,8 +177,16 @@ device_addrs_t mpmd_find_with_bcast(const device_addr_t& hint)
     device_addrs_t addrs;
     UHD_LOG_TRACE("MPMD FIND",
             "Broadcasting on all available interfaces to find MPM devices.");
-    for (const transport::if_addrs_t& if_addr : transport::get_if_addrs()) {
-        device_addrs_t reply_addrs = mpmd_find_with_addr(if_addr.bcast, hint);
+    std::vector<std::future<device_addrs_t>> task_list;
+    for (const auto& if_addr : transport::get_if_addrs()) {
+        task_list.emplace_back(std::async(std::launch::async,
+            [if_addr, hint](){
+                return mpmd_find_with_addr(if_addr.bcast, hint);
+            }
+        ));
+    }
+    for (auto &task : task_list) {
+        auto reply_addrs = task.get();
         addrs.insert(addrs.begin(), reply_addrs.begin(), reply_addrs.end());
     }
     return addrs;
