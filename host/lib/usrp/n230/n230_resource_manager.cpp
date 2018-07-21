@@ -35,6 +35,8 @@ static const uint8_t N230_HOST_DEST_ADDR     = 2;
 static const uint8_t N230_ETH0_IFACE_ID  = 0;
 static const uint8_t N230_ETH1_IFACE_ID  = 1;
 
+boost::mutex n230_resource_manager::_claimer_mutex;
+
 class n230_ad9361_client_t : public ad9361_params {
 public:
     ~n230_ad9361_client_t() {}
@@ -240,7 +242,7 @@ n230_resource_manager::~n230_resource_manager()
 {
     _claimer_task.reset();
     {   //Critical section
-        boost::mutex::scoped_lock(_claimer_mutex);
+        boost::mutex::scoped_lock lock(_claimer_mutex);
         _fw_ctrl->poke32(N230_FW_HOST_SHMEM_OFFSET(claim_time), 0);
         _fw_ctrl->poke32(N230_FW_HOST_SHMEM_OFFSET(claim_src), 0);
     }
@@ -267,7 +269,7 @@ transport::zero_copy_if::sptr n230_resource_manager::create_transport(
 
 bool n230_resource_manager::is_device_claimed(n230_fw_ctrl_iface::sptr fw_ctrl)
 {
-    boost::mutex::scoped_lock(_claimer_mutex);
+    boost::mutex::scoped_lock lock(_claimer_mutex);
 
     //If timed out then device is definitely unclaimed
     if (fw_ctrl->peek32(N230_FW_HOST_SHMEM_OFFSET(claim_status)) == 0)
@@ -280,7 +282,7 @@ bool n230_resource_manager::is_device_claimed(n230_fw_ctrl_iface::sptr fw_ctrl)
 void n230_resource_manager::_claimer_loop()
 {
     {   //Critical section
-        boost::mutex::scoped_lock(_claimer_mutex);
+        boost::mutex::scoped_lock lock(_claimer_mutex);
         _fw_ctrl->poke32(N230_FW_HOST_SHMEM_OFFSET(claim_time), time(NULL));
         _fw_ctrl->poke32(N230_FW_HOST_SHMEM_OFFSET(claim_src), get_process_hash());
     }
