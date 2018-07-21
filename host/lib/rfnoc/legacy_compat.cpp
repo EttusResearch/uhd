@@ -175,7 +175,6 @@ public:
                      }
                 }
                 for (size_t port = 0; port < _num_tx_chans_per_radio; port++) {
-                    size_t chan = radio * _num_tx_chans_per_radio + port;
                     if (!radio_block_ctrl->get_dboard_fe_from_chan(port, uhd::TX_DIRECTION).empty()) {
                         _tx_channel_map[mboard].push_back({radio, port});
                     }
