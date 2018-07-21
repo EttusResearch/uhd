@@ -211,7 +211,7 @@ static device_addrs_t x300_find_pcie(const device_addr_t &hint, bool explicit_qu
 
             //Hold on to the registry mutex as long as zpu_ctrl is alive
             //to prevent any use by different threads while enumerating
-            boost::mutex::scoped_lock(pcie_zpu_iface_registry_mutex);
+            boost::mutex::scoped_lock lock(pcie_zpu_iface_registry_mutex);
 
             if (get_pcie_zpu_iface_registry().has_key(resource_d)) {
                 zpu_ctrl = get_pcie_zpu_iface_registry()[resource_d].lock();
@@ -712,7 +712,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     //create basic communication
     UHD_LOGGER_DEBUG("X300") << "Setting up basic communication...";
     if (mb.xport_path == "nirio") {
-        boost::mutex::scoped_lock(pcie_zpu_iface_registry_mutex);
+        boost::mutex::scoped_lock lock(pcie_zpu_iface_registry_mutex);
         if (get_pcie_zpu_iface_registry().has_key(mb.get_pri_eth().addr)) {
             throw uhd::assertion_error("Someone else has a ZPU transport to the device open. Internal error!");
         } else {
@@ -1112,7 +1112,7 @@ x300_impl::~x300_impl(void)
             //kill the claimer task and unclaim the device
             mb.claimer_task.reset();
             {   //Critical section
-                boost::mutex::scoped_lock(pcie_zpu_iface_registry_mutex);
+                boost::mutex::scoped_lock lock(pcie_zpu_iface_registry_mutex);
                 release(mb.zpu_ctrl);
                 //If the process is killed, the entire registry will disappear so we
                 //don't need to worry about unclean shutdowns here.
