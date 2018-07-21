@@ -85,7 +85,7 @@ UHD_SINGLETON_FCN(usrp_ptrs, get_usrp_ptrs);
 static boost::mutex _rx_streamer_make_mutex;
 uhd_error uhd_rx_streamer_make(uhd_rx_streamer_handle* h){
     UHD_SAFE_C(
-        boost::mutex::scoped_lock(_rx_streamer_make_mutex);
+        boost::mutex::scoped_lock lock(_rx_streamer_make_mutex);
         (*h) = new uhd_rx_streamer;
     )
 }
