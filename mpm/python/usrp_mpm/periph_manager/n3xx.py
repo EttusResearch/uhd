@@ -92,7 +92,9 @@ class n3xx(ZynqComponents, PeriphManagerBase):
     # manager class. The format of this map is:
     # (motherboard product code, (Slot-A DB PID, [Slot-B DB PID])) -> product
     product_map = {
+        ('n300', tuple()) : 'n300',
         ('n300', (MG_PID,       )): 'n300', # Slot B is empty
+        ('n310', tuple()) : 'n310',
         ('n310', (MG_PID, MG_PID)): 'n310',
         ('n310', (MG_PID,       )): 'n310', # If Slot B is empty, we can
                                             # still use the n310.bin image.
