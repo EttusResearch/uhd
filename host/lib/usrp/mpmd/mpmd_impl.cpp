@@ -297,12 +297,16 @@ void mpmd_impl::setup_rfnoc_blocks(
     UHD_LOG_TRACE("MPMD",
         "Mboard " << mb_index << " reports " << mb->num_xbars << " crossbar(s)."
     );
-
+    // TODO: The args apply to all xbars, which may or may not be true
     for (size_t xbar_index = 0; xbar_index < mb->num_xbars; xbar_index++) {
-        const size_t num_blocks =
-            mb->rpc->request<size_t>("get_num_blocks", xbar_index);
-        const size_t base_port =
-            mb->rpc->request<size_t>("get_base_port", xbar_index);
+        // Pull the number of blocks and base port from the args, if available.
+        // Otherwise, get the values from MPM.
+        const size_t num_blocks = ctrl_xport_args.has_key("rfnoc_num_blocks")
+            ? ctrl_xport_args.cast<size_t>("rfnoc_num_blocks", 0)
+            : mb->rpc->request<size_t>("get_num_blocks", xbar_index);
+        const size_t base_port = ctrl_xport_args.has_key("rfnoc_base_port")
+            ? ctrl_xport_args.cast<size_t>("rfnoc_base_port", 0)
+            : mb->rpc->request<size_t>("get_base_port", xbar_index);
         const size_t local_addr = mb->get_xbar_local_addr(xbar_index);
         UHD_LOGGER_TRACE("MPMD")
             << "Enumerating RFNoC blocks for xbar " << xbar_index
@@ -310,6 +314,18 @@ void mpmd_impl::setup_rfnoc_blocks(
             << " Base port: " << base_port
             << " Local address: " << local_addr
         ;
+        if (ctrl_xport_args.has_key("rfnoc_num_blocks") or
+            ctrl_xport_args.has_key("rfnoc_base_port")) {
+            // TODO: Remove this warning once we're confident this is
+            //       (relatively) safe and useful. Also add documentation to
+            //       usrp_n3xx.dox
+            UHD_LOGGER_WARNING("MPMD")
+                << "Overriding default RFNoC configuration. You are using an "
+                << "experimental development feature, which may go away in "
+                << "future versions."
+            ;
+        }
+
         try {
             enumerate_rfnoc_blocks(
               mb_index,
