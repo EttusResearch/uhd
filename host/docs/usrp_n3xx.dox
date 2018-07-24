@@ -791,7 +791,7 @@ the initialization sequence, the following steps are performed:
 - All clocking is initialized
 - The JESD links are trained and brought up (between the FPGA and the AD9371)
 - The AD9371 is reset, its firmware is uploaded, and calibrations are
-  initialized (See also \section n3xx_mg_calibrations)
+  initialized (See also \ref n3xx_mg_calibrations)
 - N310 only: The multi-chip synchronization is performed to align all the RFICs
   to the common time and clock reference
 

@@ -1,4 +1,4 @@
-/*! \page page_python C API
+/*! \page page_capi C API
 
 UHD supports a C API, in case the C++ or Python APIs are not the right solution
 for your application.

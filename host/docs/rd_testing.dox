@@ -649,11 +649,11 @@ tbd
 | Test Code           | Device    | Peripherals         | Manual Test Procedure           | Automatic Test Procedure      |
 |---------------------|-----------|---------------------|---------------------------------|-------------------------------|
 | BIST-N310-v1        | 1xN310    | DB-15 GPIO Loopback | \ref rdtesting_bist_n3x0_manual | \ref rdtesting_bist_n3x0_auto |
-| BIST-N300-v1        | 1xN300    | DB-15 GPIO Loopback | \ref rdtesting_bist_n3x0_manual | \ref rdtesting_bist_n300_auto |
+| BIST-N300-v1        | 1xN300    | DB-15 GPIO Loopback | \ref rdtesting_bist_n3x0_manual | \ref rdtesting_bist_n3x0_auto |
 
 Some of our devices have built-in self-tests (BISTs).
 
-\subsection rdtesting_bist_n310_manual N300/N310 Manual Procedure
+\subsection rdtesting_bist_n3x0_manual N300/N310 Manual Procedure
 
 Note: The N300 and N310 have identical BISTs.
 
@@ -692,7 +692,7 @@ not desired, re-run `uhd_image_loader` to load whatever image is requested.
 
 Note: The N300 and N310 have identical BISTs.
 
-Assuming the peripherals described in \ref rdtesting_bist_n310_manual are all
+Assuming the peripherals described in \ref rdtesting_bist_n3x0_manual are all
 plugged in, the test can trivially be executed automatically by running
 
         $ n3xx_bist standard
