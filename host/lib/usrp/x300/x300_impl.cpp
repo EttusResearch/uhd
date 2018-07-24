@@ -1812,10 +1812,15 @@ void x300_impl::check_fpga_compat(const fs_path &mb_path, const mboard_members_t
 
     const uint32_t git_hash = members.zpu_ctrl->peek32(SR_ADDR(SET0_BASE,
                                                               ZPU_RB_GIT_HASH));
-    _tree->create<std::string>(mb_path / "fpga_version_hash").set(
-        str(boost::format("%07x%s")
+    const std::string git_hash_str = str(
+        boost::format("%07x%s")
         % (git_hash & 0x0FFFFFFF)
-        % ((git_hash & 0xF0000000) ? "-dirty" : "")));
+        % ((git_hash & 0xF0000000) ? "-dirty" : "")
+    );
+    _tree->create<std::string>(mb_path / "fpga_version_hash").set(git_hash_str);
+    UHD_LOG_DEBUG("X300",
+        "Using FPGA version: " << compat_major << "." << compat_minor
+        << " git hash: " << git_hash_str);
 }
 
 x300_impl::x300_mboard_t x300_impl::get_mb_type_from_pcie(const std::string& resource, const std::string& rpc_port)
