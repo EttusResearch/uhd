@@ -981,7 +981,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     // setup time sources and properties
     ////////////////////////////////////////////////////////////////////
     _tree->create<std::string>(mb_path / "time_source" / "value")
-        .set("internal")
+        .set(mb.args.get_time_source())
         .add_coerced_subscriber([this, &mb](const std::string& time_source){
             this->update_time_source(mb, time_source);
         })
@@ -1003,7 +1003,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     // setup clock sources and properties
     ////////////////////////////////////////////////////////////////////
     _tree->create<std::string>(mb_path / "clock_source" / "value")
-        .set(x300::DEFAULT_TIME_SOURCE)
+        .set(mb.args.get_clock_source())
         .add_coerced_subscriber([this, &mb](const std::string& clock_source){
             this->update_clock_source(mb, clock_source);
         })

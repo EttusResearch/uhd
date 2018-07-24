@@ -616,10 +616,17 @@ Afterward, power-cycle your X-Series device for the changes to take effect.
 \subsection x3x0_hw_x3x0_hw_ref10M Ref Clock - 10 MHz
 
 Using an external 10 MHz reference clock, a square wave will offer the best phase
-noise performance, but a sinusoid is acceptable.  The power level of the reference clock cannot exceed +15 dBm.
+noise performance, but a sinusoid is acceptable.
+The power level of the reference clock must exceed +15 dBm.
+
+To use the external reference in your UHD session, make sure to either call
+uhd::usrp::multi_usrp::set_clock_source() or specify `clock_source=external` in
+your device args.
 
 \subsection x3x0_hw_pps PPS - Pulse Per Second
-Using a PPS signal for timestamp synchronization requires a square wave signal with the following a 5Vpp amplitude.
+
+Using a PPS signal for timestamp synchronization requires a square wave signal
+with a 5Vpp amplitude.
 
 To test the PPS input, you can use the following tool from the UHD examples:
 
@@ -627,6 +634,10 @@ To test the PPS input, you can use the following tool from the UHD examples:
 
     cd <install-path>/lib/uhd/examples
     ./test_pps_input --args=\<args\>
+
+To use the external time source in your UHD session, make sure to either call
+uhd::usrp::multi_usrp::set_time_source() or specify `time_source=external` in
+your device args.
 
 \subsection x3x0_hw_gpsdo Internal GPSDO
 
