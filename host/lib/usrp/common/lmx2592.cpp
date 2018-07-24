@@ -240,9 +240,11 @@ public:
         const auto actual_f_lo = actual_fcore_vco * vco_multiplier / output_divider;
 
         UHD_LOGGER_TRACE("LMX2592") << "Tuned to " << actual_f_lo;
+
+        // Toggle fcal field to start calibration
+        _regs.fcal_enable = 0;
         commit();
 
-        // Run Frequency Calibration
         _regs.fcal_enable = 1;
         commit();
 
