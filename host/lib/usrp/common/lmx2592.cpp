@@ -119,6 +119,10 @@ public:
                     random_number % readback));
         }
 
+        _regs.muxout_sel = lmx2592_regs_t::muxout_sel_t::MUXOUT_SEL_LOCK_DETECT;
+        UHD_LOG_TRACE("LMX2592", "Disabling SPI Readback");
+        _write_fn(_regs.ADDR_R0, _regs.get_reg(_regs.ADDR_R0));
+
         // Set register values where driver defaults differ from the datasheet values
         _regs.acal_enable = 0;
         _regs.fcal_enable = 0;
@@ -330,11 +334,7 @@ public:
     }
 
     bool get_lock_status() override {
-        // MUXOUT is shared between Lock Detect and SPI Readback
-        _regs.muxout_sel = lmx2592_regs_t::muxout_sel_t::MUXOUT_SEL_LOCK_DETECT;
-        commit();
-
-        // The SPI MISO is now being driven by lock detect
+        // SPI MISO is being driven by lock detect
         // If the PLL is locked we expect to read 0xFFFF from any read, else 0x0000
         const auto value_read = _read_fn(_regs.ADDR_R0);
         const auto lock_status = (value_read == 0xFFFF);
@@ -342,10 +342,6 @@ public:
         UHD_LOG_TRACE(
             "LMX2592",
             str(boost::format("Read Lock status: 0x%04X") % static_cast<unsigned int>(value_read)));
-
-        // Restore ability to read registers
-        _regs.muxout_sel = lmx2592_regs_t::muxout_sel_t::MUXOUT_SEL_READBACK;
-        commit();
 
         return lock_status;
     }
