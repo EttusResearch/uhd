@@ -15,6 +15,7 @@
 #include <boost/assign/list_of.hpp>
 #include <vector>
 #include <string>
+#include <sstream>
 #include <unordered_map>
 
 namespace uhd {
@@ -237,6 +238,16 @@ namespace usrp {
 
         inline virtual std::string to_string() const = 0;
 
+        template <typename arg_type>
+        void parse_arg_default(
+            const device_addr_t& dev_args,
+            arg_type& constrained_arg
+        ) {
+            if (dev_args.has_key(constrained_arg.key())) {
+                constrained_arg.parse(dev_args[constrained_arg.key()]);
+            }
+        }
+
     protected:  //Methods
         //Override _parse to provide an implementation to parse all
         //client specific device args
@@ -270,10 +281,11 @@ namespace usrp {
             if (!match) {
                 std::string valid_values_str;
                 for (size_t i = 0; i < valid_values.size(); i++) {
-                    valid_values_str += ((i==0)?"":", ") + std::to_string(valid_values[i]);
+                    std::stringstream valid_values_ss;
+                    valid_values_ss << ((i==0)?"":", ") << valid_values[i];
                     throw uhd::value_error(str(boost::format(
                         "Invalid device arg value: %s (Valid: {%s})") %
-                        arg.to_string() % valid_values_str
+                        arg.to_string() % valid_values_ss.str()
                     ));
                 }
             }
