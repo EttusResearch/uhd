@@ -19,9 +19,9 @@ n3xx_n300_fpga_default          fpga-1107862        n3xx/fpga-1107862/n3xx_n300_
 # N3XX Mykonos firmware
 #n3xx_n310_fw_default           fpga-6bea23d        n3xx/fpga-6bea23d/n3xx_n310_fw_default-g6bea23d.zip                     0
 # N300-Series Filesystems, etc
-n3xx_common_sdk_default         meta-ettus-v3.12.0.0  n3xx/meta-ettus-v3.12.0.0/n3xx_common_sdk_default-v3.12.0.0.zip       0
-n3xx_common_mender_default      meta-ettus-v3.12.0.0  n3xx/meta-ettus-v3.12.0.0/n3xx_common_mender_default-v3.12.0.0.zip    0
-n3xx_common_sdimg_default       meta-ettus-v3.12.0.0  n3xx/meta-ettus-v3.12.0.0/n3xx_common_sdimg_default-v3.12.0.0.zip     0
+n3xx_common_sdk_default         meta-ettus-v3.13.0.0  n3xx/meta-ettus-v3.13.0.0/n3xx_common_sdk_default-v3.13.0.0.zip       0
+n3xx_common_mender_default      meta-ettus-v3.13.0.0  n3xx/meta-ettus-v3.13.0.0/n3xx_common_mender_default-v3.13.0.0.zip    0
+n3xx_common_sdimg_default       meta-ettus-v3.13.0.0  n3xx/meta-ettus-v3.13.0.0/n3xx_common_sdimg_default-v3.13.0.0.zip     0
 
 # B200-Series
 b2xx_b200_fpga_default          fpga-63e630a        b2xx/fpga-63e630a/b2xx_b200_fpga_default-g63e630a.zip                   c42f010a90c9a184a2bf8ab7182dcbcc50598a259f06f9b5fda92023dc6cfed8

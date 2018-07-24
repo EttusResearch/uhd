@@ -1,3 +1,28 @@
+uhd (3.13.0.0-0ubuntu1) trusty; urgency=low
+
+  * N3x0: Enable fast-reinit, fix power level issue, accept 0x01 PID for
+          AD9371, fix concurrency issues with Liberio
+  * B200: Fix sc8/sc12 modes, fix frame-size related issues, fix tick rate
+          coercion, fix issues on update of tick rate, fix EOB-not-seen
+          issue
+  * E310: Move to RFNoC architecture (this disables network mode!)
+  * UBX: Fix phase synchronization for 184.32 MHz master clock rate,
+  * multi_usrp: Fix get_?x_info() API calls
+  * UHD: Remove more Boost usage, fix some compiler warnings, default to
+         all-channels subdev specs for X3x0 and N3x0, various LMX2592
+         fixes, bump minimum CMake to 2.8.2, fix logging dtor issues
+  * RFNoC: Merge all existing RFNoC features into master
+  * FPGA: Fix various testbenches, add batch testbench execution mode,
+          improve uhd_image_builder and uhd_image_builder_gui, add all
+          existing RFNoC features
+  * Add Python API
+  * MPM: Enable Rev2 EEPROM format, fix some rare issues when detecting
+         Ethernet devices
+  * CMake: Allow to override UHD_GIT_BRANCH, fix Python-finding logic, add
+           ENABLE_N300 target
+
+ -- Ettus Research <packages@ettus.com>  Tue, 24 Jul 2018 10:13:10 -0800
+
 uhd (3.12.0.0-0ubuntu1) trusty; urgency=low
 
   * N3x0: Add White Rabbit support, add N300 support, standard BIST
