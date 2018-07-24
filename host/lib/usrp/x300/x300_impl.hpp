@@ -13,6 +13,7 @@
 #include "x300_fw_common.h"
 #include "x300_regs.hpp"
 #include "x300_defaults.hpp"
+#include "x300_device_args.hpp"
 
 #include "../device3/device3_impl.hpp"
 #include <uhd/property_tree.hpp>
@@ -95,6 +96,8 @@ private:
     //vector of member objects per motherboard
     struct mboard_members_t
     {
+        uhd::usrp::x300::x300_device_args_t args;
+
         bool initialization_done;
         uhd::task::sptr claimer_task;
         std::string xport_path;

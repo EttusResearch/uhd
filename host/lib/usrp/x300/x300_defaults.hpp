@@ -11,12 +11,13 @@
 #include "../device3/device3_impl.hpp"
 #include <string>
 
-#define NIUSRPRIO_DEFAULT_RPC_PORT "5444"
 
 
 namespace uhd {
 namespace usrp {
 namespace x300 {
+
+static constexpr size_t NIUSRPRIO_DEFAULT_RPC_PORT = 5444;
 
 static constexpr uint32_t RADIO_DEST_PREFIX_TX = 0;
 static constexpr size_t XB_DST_E0  = 0;

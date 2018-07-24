@@ -163,7 +163,7 @@ static boost::mutex pcie_zpu_iface_registry_mutex;
 
 static device_addrs_t x300_find_pcie(const device_addr_t &hint, bool explicit_query)
 {
-    std::string rpc_port_name(NIUSRPRIO_DEFAULT_RPC_PORT);
+    std::string rpc_port_name(std::to_string(NIUSRPRIO_DEFAULT_RPC_PORT));
     if (hint.has_key("niusrpriorpc_port")) {
         rpc_port_name = hint["niusrpriorpc_port"];
     }
@@ -398,7 +398,6 @@ x300_impl::x300_impl(const uhd::device_addr_t &dev_addr)
     , _sid_framer(0)
 {
     UHD_LOGGER_INFO("X300") << "X300 initialization sequence...";
-    _ignore_cal_file = dev_addr.has_key("ignore-cal-file");
     _tree->create<std::string>("/name").set("X-Series Device");
 
     const device_addrs_t device_args = separate_device_addr(dev_addr);
@@ -556,6 +555,8 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         + std::to_string(mb_i)
     );
 
+    mb.args.parse(dev_addr);
+
     std::vector<std::string> eth_addrs;
     // Not choosing eth0 based on resource might cause user issues
     std::string eth0_addr = dev_addr.has_key("resource") ? dev_addr["resource"] : dev_addr["addr"];
@@ -564,8 +565,8 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     mb.next_src_addr = 0;   //Host source address for blocks
     mb.next_tx_src_addr = 0;
     mb.next_rx_src_addr = 0;
-    if (dev_addr.has_key("second_addr")) {
-        std::string eth1_addr = dev_addr["second_addr"];
+    if (not mb.args.get_second_addr().empty()) {
+        std::string eth1_addr = mb.args.get_second_addr();
 
         // Ensure we do not have duplicate addresses
         if (eth1_addr != eth0_addr)
@@ -585,15 +586,14 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     {
         nirio_status status = 0;
 
-        std::string rpc_port_name(NIUSRPRIO_DEFAULT_RPC_PORT);
-        if (dev_addr.has_key("niusrpriorpc_port")) {
-            rpc_port_name = dev_addr["niusrpriorpc_port"];
-        }
-        UHD_LOGGER_INFO("X300") << boost::format("Connecting to niusrpriorpc at localhost:%s...") % rpc_port_name;
+        const std::string rpc_port_name = mb.args.get_niusrprio_rpc_port();
+        UHD_LOGGER_INFO("X300")
+            << boost::format("Connecting to niusrpriorpc at localhost:%s...")
+               % rpc_port_name;
 
         //Instantiate the correct lvbitx object
         nifpga_lvbitx::sptr lvbitx;
-        switch (get_mb_type_from_pcie(dev_addr["resource"], rpc_port_name)) {
+        switch (get_mb_type_from_pcie(mb.args.get_resource(), rpc_port_name)) {
             case USRP_X300_MB:
                 lvbitx.reset(new x300_lvbitx(dev_addr["fpga"]));
                 break;
@@ -649,11 +649,9 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
 
     //extract the FW path for the X300
     //and live load fw over ethernet link
-    if (dev_addr.has_key("fw"))
-    {
-        const std::string x300_fw_image = find_image_path(
-            dev_addr.has_key("fw")? dev_addr["fw"] : x300::FW_FILE_NAME
-        );
+    if (mb.args.has_fw_file()) {
+        const std::string x300_fw_image =
+            find_image_path(mb.args.get_fw_file());
         x300_load_fw(mb.zpu_ctrl, x300_fw_image);
     }
 
@@ -699,8 +697,9 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     // setup the mboard eeprom
     ////////////////////////////////////////////////////////////////////
     UHD_LOGGER_DEBUG("X300") << "Loading values from EEPROM...";
-    x300_mb_eeprom_iface::sptr eeprom16 = x300_mb_eeprom_iface::make(mb.zpu_ctrl, mb.zpu_i2c);
-    if (dev_addr.has_key("blank_eeprom")) {
+    x300_mb_eeprom_iface::sptr eeprom16 =
+        x300_mb_eeprom_iface::make(mb.zpu_ctrl, mb.zpu_i2c);
+    if (mb.args.get_blank_eeprom()) {
         UHD_LOGGER_WARNING("X300") << "Obliterating the motherboard EEPROM...";
         eeprom16->write_eeprom(0x50, 0, byte_vector_t(256, 0xff));
     }
@@ -717,8 +716,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         )
     ;
 
-    bool recover_mb_eeprom = dev_addr.has_key("recover_mb_eeprom");
-    if (recover_mb_eeprom) {
+    if (mb.args.get_recover_mb_eeprom()) {
         UHD_LOGGER_WARNING("X300") << "UHD is operating in EEPROM Recovery Mode which disables hardware version "
                             "checks.\nOperating in this mode may cause hardware damage and unstable "
                             "radio performance!";
@@ -736,7 +734,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
             product_name = "X310";
             break;
         default:
-            if (not recover_mb_eeprom)
+            if (not mb.args.get_recover_mb_eeprom())
                 throw uhd::runtime_error("Unrecognized product type.\n"
                                          "Either the software does not support this device in which case please update your driver software to the latest version and retry OR\n"
                                          "The product code in the EEPROM is corrupt and may require reprogramming.");
@@ -873,6 +871,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     ////////////////////////////////////////////////////////////////////
     // read hardware revision and compatibility number
     ////////////////////////////////////////////////////////////////////
+    const bool recover_mb_eeprom = mb.args.get_recover_mb_eeprom();
     mb.hw_rev = 0;
     if(mb_eeprom.has_key("revision") and not mb_eeprom["revision"].empty()) {
         try {
@@ -922,33 +921,22 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     UHD_LOGGER_DEBUG("X300") << "Setting up RF frontend clocking...";
 
     //Initialize clock control registers. NOTE: This does not configure the LMK yet.
-    const double requested_mcr = dev_addr.cast<double>("master_clock_rate", x300::DEFAULT_TICK_RATE);
-    //Some daughterboards may require other rates, but these defaults
-    //work best for all newer daughterboards (i.e. CBX, WBX, SBX, UBX,
-    //and TwinRX).
-    double default_dboard_clk_rate = requested_mcr;
-    if (math::frequencies_are_equal(requested_mcr, 200e6)) {
-        default_dboard_clk_rate = 50e6;
-    } else if (math::frequencies_are_equal(requested_mcr, 184.32e6)) {
-        default_dboard_clk_rate = 46.08e6;
-    } else if (math::frequencies_are_equal(requested_mcr, 120e6)) {
-        default_dboard_clk_rate = 40e6;
-    }
     mb.clock = x300_clock_ctrl::make(mb.zpu_spi,
         1 /*slaveno*/,
         mb.hw_rev,
-        requested_mcr,
-        dev_addr.cast<double>("dboard_clock_rate", default_dboard_clk_rate),
-        dev_addr.cast<double>("system_ref_rate", x300::DEFAULT_SYSREF_RATE));
+        mb.args.get_master_clock_rate(),
+        mb.args.get_dboard_clock_rate(),
+        mb.args.get_system_ref_rate()
+    );
     mb.fw_regmap->ref_freq_reg.write(
         fw_regmap_t::ref_freq_reg_t::REF_FREQ,
-        uint32_t(dev_addr.cast<double>("system_ref_rate",
-        x300::DEFAULT_SYSREF_RATE)));
+        uint32_t(mb.args.get_system_ref_rate())
+    );
 
     //Initialize clock source to use internal reference and generate
     //a valid radio clock. This may change after configuration is done.
     //This will configure the LMK and wait for lock
-    update_clock_source(mb, x300::DEFAULT_CLOCK_SOURCE);
+    update_clock_source(mb, mb.args.get_clock_source());
 
     ////////////////////////////////////////////////////////////////////
     // create clock properties
@@ -1015,7 +1003,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     // setup clock sources and properties
     ////////////////////////////////////////////////////////////////////
     _tree->create<std::string>(mb_path / "clock_source" / "value")
-        .set(x300::DEFAULT_CLOCK_SOURCE)
+        .set(x300::DEFAULT_TIME_SOURCE)
         .add_coerced_subscriber([this, &mb](const std::string& clock_source){
             this->update_clock_source(mb, clock_source);
         })
@@ -1027,9 +1015,8 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
 
     //setup external reference options. default to 10 MHz input reference
     _tree->create<std::string>(mb_path / "clock_source" / "external");
-    static const std::vector<double> external_freq_options = {10e6, 30.72e6, 200e6};
     _tree->create<std::vector<double>>(mb_path / "clock_source" / "external" / "freq" / "options")
-        .set(external_freq_options);
+        .set(x300::EXTERNAL_FREQ_OPTIONS);
     _tree->create<double>(mb_path / "clock_source" / "external" / "value")
         .set(mb.clock->get_sysref_clock_rate());
     // FIXME the external clock source settings need to be more robust
@@ -1099,25 +1086,26 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
             radio->setup_radio(
                     mb.zpu_i2c,
                     mb.clock,
-                    dev_addr.has_key("ignore-cal-file"),
-                    dev_addr.has_key("self_cal_adc_delay")
+                    mb.args.get_ignore_cal_file(),
+                    mb.args.get_self_cal_adc_delay()
             );
         }
 
         ////////////////////////////////////////////////////////////////////
         // ADC test and cal
         ////////////////////////////////////////////////////////////////////
-        if (dev_addr.has_key("self_cal_adc_delay")) {
+        if (mb.args.get_self_cal_adc_delay()) {
             rfnoc::x300_radio_ctrl_impl::self_cal_adc_xfer_delay(
                 mb.radios, mb.clock,
                 boost::bind(&x300_impl::wait_for_clk_locked, this, mb, fw_regmap_t::clk_status_reg_t::LMK_LOCK, _1),
                 true /* Apply ADC delay */);
         }
-        if (dev_addr.has_key("ext_adc_self_test")) {
+        if (mb.args.get_ext_adc_self_test()) {
             rfnoc::x300_radio_ctrl_impl::extended_adc_test(
                 mb.radios,
-                dev_addr.cast<double>("ext_adc_self_test", 30));
-        } else if (not dev_addr.has_key("recover_mb_eeprom")){
+                mb.args.get_ext_adc_self_test_duration()
+            );
+        } else if (not recover_mb_eeprom){
             for (size_t i = 0; i < mb.radios.size(); i++) {
                 mb.radios.at(i)->self_test_adc();
             }
