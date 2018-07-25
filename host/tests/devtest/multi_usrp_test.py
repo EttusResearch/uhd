@@ -618,7 +618,10 @@ def main():
     """
     args = parse_args()
     usrp = uhd.usrp.MultiUSRP(args.args)
-    return run_api_test(usrp)
+    ret_val = run_api_test(usrp)
+    if ret_val != 1:
+        raise Exception("Python API Tester Received Errors")
+    return ret_val
 
 if __name__ == "__main__":
     exit(not main())
