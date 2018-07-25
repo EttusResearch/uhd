@@ -10,6 +10,7 @@
 import re
 from uhd_test_base import uhd_example_test_case
 
+
 class uhd_usrp_probe_test(uhd_example_test_case):
     """ Run uhd_usrp_probe """
     tests = {
@@ -40,4 +41,3 @@ class uhd_usrp_probe_test(uhd_example_test_case):
         ])
         self.report_example_results(test_name, run_results)
         return run_results
-
