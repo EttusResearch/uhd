@@ -31,7 +31,7 @@ E320_DEFAULT_EXT_CLOCK_FREQ = 10e6
 E320_DEFAULT_CLOCK_SOURCE = 'internal'
 E320_DEFAULT_TIME_SOURCE = 'internal'
 E320_DEFAULT_ENABLE_GPS = True
-E320_DEFAULT_FPGPIO_VOLTAGE = 0
+E320_DEFAULT_ENABLE_FPGPIO = True
 E320_FPGA_COMPAT = (3, 0)
 E320_MONITOR_THREAD_INTERVAL = 1.0 # seconds  # TODO Verify this
 E320_DBOARD_SLOT_IDX = 0
@@ -264,9 +264,9 @@ class e320(ZynqComponents, PeriphManagerBase):
             )
         )
         self.enable_fp_gpio(
-            voltage=args.get(
-                        'fp_gpio_voltage',
-                        E320_DEFAULT_FPGPIO_VOLTAGE
+            enable=args.get(
+                        'enable_fp_gpio',
+                        E320_DEFAULT_ENABLE_FPGPIO
                     )
         )
         # Init clocking
@@ -560,19 +560,19 @@ class e320(ZynqComponents, PeriphManagerBase):
         """
         self.mboard_regs_control.enable_gps(enable)
 
-    def enable_fp_gpio(self, voltage):
+    def enable_fp_gpio(self, enable):
         """
         Turn power to the front panel GPIO off or on and set voltage
-        to (1.8, 2.5, 3.3V) and setting to 0 turns off GPIO.
+        to 3.3V.
         """
         self.log.trace("{} power to front-panel GPIO".format(
-            "Enabling" if voltage == 0 else "Disabling"
+            "Enabling" if enable else "Disabling"
         ))
-        self.mboard_regs_control.enable_fp_gpio(voltage)
+        self.mboard_regs_control.enable_fp_gpio(enable)
 
     def set_fp_gpio_voltage(self, value):
         """
-        Set Front Panel GPIO voltage (1.8, 2.5 or 3.3 Volts)
+        Set Front Panel GPIO voltage (3.3 Volts)
         """
         self.log.trace("Setting front-panel GPIO voltage to {:3.1f} V".format(value))
         self.mboard_regs_control.set_fp_gpio_voltage(value)
