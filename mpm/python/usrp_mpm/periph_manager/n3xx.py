@@ -56,6 +56,12 @@ class N3xxXportMgrUDP(XportMgrUDP):
     " N3xx-specific UDP configuration "
     xbar_dev = "/dev/crossbar0"
     iface_config = {
+        'bridge0': {
+            'label': 'misc-enet-regs0',
+            'xbar': 0,
+            'xbar_port': 0,
+            'ctrl_src_addr': 0,
+        },
         'sfp0': {
             'label': 'misc-enet-regs0',
             'xbar': 0,
@@ -81,6 +87,7 @@ class N3xxXportMgrUDP(XportMgrUDP):
             'ctrl_src_addr': 1,
         },
     }
+    bridges = {'bridge0': ['sfp0', 'sfp1', 'bridge0']}
 
 class N3xxXportMgrLiberio(XportMgrLiberio):
     " N3xx-specific Liberio configuration "
@@ -361,7 +368,7 @@ class n3xx(ZynqComponents, PeriphManagerBase):
             self.log.warning("No QSFP board detected!")
         # Init CHDR transports
         self._xport_mgrs = {
-            'udp': N3xxXportMgrUDP(self.log.getChild('UDP')),
+            'udp': N3xxXportMgrUDP(self.log.getChild('UDP'), args),
             'liberio': N3xxXportMgrLiberio(self.log.getChild('liberio')),
         }
         # Spawn status monitoring thread

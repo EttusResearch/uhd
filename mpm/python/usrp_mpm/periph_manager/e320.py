@@ -283,7 +283,7 @@ class e320(ZynqComponents, PeriphManagerBase):
         self._init_gps_sensors()
         # Init CHDR transports
         self._xport_mgrs = {
-            'udp': E320XportMgrUDP(self.log.getChild('UDP')),
+            'udp': E320XportMgrUDP(self.log.getChild('UDP'), args),
             'liberio': E320XportMgrLiberio(self.log.getChild('liberio')),
         }
         # Spawn status monitoring thread
