@@ -80,6 +80,7 @@ class e320(ZynqComponents, PeriphManagerBase):
                   }
     mboard_max_rev = 2  # RevB
     mboard_sensor_callback_map = {
+        'ref_locked': 'get_ref_lock_sensor',
         'gps_locked': 'get_gps_lock_sensor',
         'temp': 'get_temp_sensor',
         'fan': 'get_fan_sensor',
@@ -591,6 +592,19 @@ class e320(ZynqComponents, PeriphManagerBase):
     ###########################################################################
     # Sensors
     ###########################################################################
+    def get_ref_lock_sensor(self):
+        """
+        Get refclk lock from CLK_MUX_OUT signal from ADF4002
+        """
+        self.log.trace("Querying ref lock status from adf4002.")
+        lock_status = self.mboard_regs_control.get_refclk_lock()
+        return {
+            'name': 'ref_locked',
+            'type': 'BOOLEAN',
+            'unit': 'locked' if lock_status else 'unlocked',
+            'value': str(lock_status).lower(),
+        }
+
     def get_temp_sensor(self):
         """
         Get temperature sensor reading of the E320.
