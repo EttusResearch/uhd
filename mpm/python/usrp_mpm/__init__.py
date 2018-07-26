@@ -21,3 +21,4 @@ from .mpmlog import get_main_logger
 
 __version__ = periph_manager.__version__
 __githash__ = periph_manager.__githash__
+__mpm_device__ = periph_manager.__mpm_device__

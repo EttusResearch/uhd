@@ -9,6 +9,7 @@ periph_manager __init__.py
 
 __version__ = "${MPM_VERSION_MAJOR}.${MPM_VERSION_API}.${MPM_VERSION_ABI}.${MPM_VERSION_PATCH}"
 __githash__ = "${MPM_GIT_HASH_RAW}"
+__mpm_device__ = "${MPM_DEVICE}"
 
 from .base import PeriphManagerBase
 
