@@ -22,7 +22,7 @@ using namespace uhd::rfnoc;
 namespace {
     const size_t SR_ANTENNA_GAIN_BASE     = 204;
     const size_t SR_ANTENNA_SELECT_BASE   = 192; // Note: On other dboards, 192 is DB_GPIO address space
-    const size_t RB_CHOOSE_BEAMS          = 10;
+    const size_t RB_CHOOSE_BEAMS          = 11;
 
     const double EISCAT_TICK_RATE         = 208e6; // Hz
     const double EISCAT_RADIO_RATE        = 104e6; // Hz
@@ -33,9 +33,11 @@ namespace {
     const size_t EISCAT_NUM_ANTENNAS      = 16;
     const size_t EISCAT_NUM_BEAMS         = 10;
     const size_t EISCAT_NUM_PORTS         = 5;
-    const size_t EISCAT_GAIN_RANGE        = 18; // Bits, *signed*.
-    const int32_t EISCAT_MAX_GAIN         = (1<<(EISCAT_GAIN_RANGE-1))-1;
-    const int32_t EISCAT_MIN_GAIN         = -(1<<(EISCAT_GAIN_RANGE-1));
+    const size_t EISCAT_MAX_GAIN_RANGE    = 18; // Bits, *signed*.
+    const size_t EISCAT_UNIT_GAIN_RANGE   = 14; // Bits, *signed*.
+    const int32_t EISCAT_MAX_GAIN         = (1<<(EISCAT_MAX_GAIN_RANGE-1))-1;
+    const int32_t EISCAT_UNIT_GAIN        = (1<<(EISCAT_UNIT_GAIN_RANGE-1))-1;
+    const int32_t EISCAT_MIN_GAIN         = -(1<<(EISCAT_MAX_GAIN_RANGE-1));
     const double EISCAT_DEFAULT_NORM_GAIN = 1.0; // Normalized. This is the actual digital gain value.
     const size_t EISCAT_BITS_PER_TAP      = 18;
     const eiscat_radio_ctrl_impl::fir_tap_t EISCAT_MAX_TAP_VALUE  = (1<<(EISCAT_BITS_PER_TAP-1))-1;
@@ -70,6 +72,10 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(eiscat_radio_ctrl)
         radio_ctrl_impl::set_rx_gain(EISCAT_DEFAULT_NULL_GAIN, chan);
         radio_ctrl_impl::set_rx_antenna(EISCAT_DEFAULT_ANTENNA, chan);
         radio_ctrl_impl::set_rx_bandwidth(EISCAT_DEFAULT_BANDWIDTH, chan);
+        // We might get tx async messages from upstream radios, we send them to the
+        // nevernever by default or they interfere with our streamers or ctrl_iface
+        // objects. The assumption is that FF:FF is never a valid SID.
+        this->sr_write(uhd::rfnoc::SR_RESP_IN_DST_SID, 0xFFFF, chan);
     }
 
     /**** Set up arg-based control API **************************************/
@@ -169,7 +175,7 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(eiscat_radio_ctrl)
     for (size_t i = 0; i < EISCAT_NUM_ANTENNAS; i++) {
         _tree->access<double>(get_arg_path("gain", i) / "value")
             .set_coercer([](double gain){
-                return std::max(-1.0, std::min(1.0, gain));
+                return std::max(-16.0, std::min(16.0, gain));
             })
             .add_coerced_subscriber([this, i](double gain){
                 this->set_antenna_gain(i, gain);
@@ -268,6 +274,28 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(eiscat_radio_ctrl)
         ;
     }
 
+    for (size_t i = 0; i < EISCAT_NUM_PORTS; i++) {
+        _tree->create<uhd::time_spec_t>(get_arg_path("pseudo_stream_cmd", i) / "value")
+            .add_coerced_subscriber([this, i](uhd::time_spec_t stream_time){
+                if (stream_time != uhd::time_spec_t(0.0)) {
+                    uhd::stream_cmd_t cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
+                    cmd.stream_now = false;
+                    cmd.time_spec = stream_time;
+                    this->issue_stream_cmd(cmd, i);
+                } else {
+                    this->issue_stream_cmd(
+                        uhd::stream_cmd_t(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS),
+                        i
+                    );
+                }
+            })
+        ;
+    }
+    //FIXME elaborate this more, but for now it works.
+    _tree->create<int>("rx_codecs/A/gains");
+    _tree->create<std::string>("rx_codecs/A/name").set("ADS54J66");
+
+
     // There is only ever one EISCAT radio per mboard, so this should be unset
     // when we reach this line:
     UHD_ASSERT_THROW(not _tree->exists("tick_rate"));
@@ -295,7 +323,7 @@ void eiscat_radio_ctrl_impl::set_rx_antenna(
         const std::string &ant,
         const size_t port
 ) {
-    UHD_ASSERT_THROW(port < EISCAT_NUM_PORTS);
+    UHD_ASSERT_THROW(port < EISCAT_NUM_BEAMS);
     if (ant == "BF") {
         UHD_LOG_TRACE("EISCAT", "Setting antenna to 'BF' (which is a no-op)");
         return;
@@ -357,16 +385,13 @@ void eiscat_radio_ctrl_impl::set_rx_antenna(
         sr_write(SR_ANTENNA_SELECT_BASE + port, antenna_idx);
         enable_firs(false);
     } else if (ant_mode == "FI") {
-        size_t beam_select_offset =
-                (get_arg<int>("choose_beams") & EISCAT_CONTRIB_UPPER) ?
-                EISCAT_NUM_PORTS : 0;
-        const size_t beam_index = port + beam_select_offset;
+        size_t beam_index = port % EISCAT_NUM_PORTS;
         UHD_LOG_TRACE("EISCAT", str(
             boost::format("Setting port %d to filter index %d on all antennas "
-                          "using beam index %d.")
+                          "using beam indices %d and %d.")
             % port
             % antenna_idx
-            % beam_index
+            % beam_index % (beam_index + EISCAT_NUM_PORTS)
         ));
         // Note: antenna_idx is not indexing a physical antenna in this scenario.
         uhd::time_spec_t send_now(0.0);
@@ -374,6 +399,50 @@ void eiscat_radio_ctrl_impl::set_rx_antenna(
             select_filter(
                 beam_index,
                 i,
+                antenna_idx,
+                send_now
+            );
+            select_filter(
+                beam_index + EISCAT_NUM_PORTS,
+                i,
+                antenna_idx,
+                send_now
+            );
+        }
+        enable_firs(true);
+    } else if (ant_mode == "CN") {
+        const size_t beam_index = port % EISCAT_NUM_PORTS;
+        UHD_LOG_TRACE("EISCAT", str(
+            boost::format("Setting port %d to filter index %d on all antennas "
+                          "using beam indices %d and %d.")
+            % port
+            % antenna_idx
+            % beam_index % (beam_index + EISCAT_NUM_PORTS)
+        ));
+        // Note: antenna_idx is not indexing a physical antenna in this scenario.
+        uhd::time_spec_t send_now(0.0);
+        for (size_t i = 0; i < EISCAT_NUM_ANTENNAS; i+=2) {
+            select_filter(
+                beam_index,
+                i,
+                0,
+                send_now
+            );
+            select_filter(
+                beam_index + EISCAT_NUM_PORTS,
+                i,
+                0,
+                send_now
+            );
+            select_filter(
+                beam_index,
+                i+1,
+                antenna_idx,
+                send_now
+            );
+            select_filter(
+                beam_index + EISCAT_NUM_PORTS,
+                i+1,
                 antenna_idx,
                 send_now
             );
@@ -456,9 +525,111 @@ double eiscat_radio_ctrl_impl::get_output_samp_rate(size_t /* port */)
     return EISCAT_RADIO_RATE;
 }
 
+void eiscat_radio_ctrl_impl::set_rx_streamer(bool active, const size_t port)
+{
+    UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::set_rx_streamer() " << port << " -> " << active ;
+    if (port > EISCAT_NUM_PORTS) {
+        throw uhd::value_error(str(
+            boost::format("[%s] Can't (un)register RX streamer on port %d (invalid port)")
+            % unique_id() % port
+        ));
+    }
+    _rx_streamer_active[port] = active;
+    if (not check_radio_config()) {
+        throw std::runtime_error(str(
+            boost::format("[%s]: Invalid radio configuration.")
+            % unique_id()
+        ));
+    }
+
+    if (list_upstream_nodes().empty() or not bool(get_arg<int>("use_prev"))) {
+        UHD_LOG_DEBUG(unique_id(), "No prevs found, or prevs disabled, not passing on set_rx_streamer");
+    } else {
+        UHD_LOG_DEBUG(unique_id(), "set_rx_streamer(): We have prevs, so passing on set_rx_streamer");
+        source_node_ctrl::sptr this_upstream_block_ctrl =
+                boost::dynamic_pointer_cast<source_node_ctrl>(list_upstream_nodes().at(0).lock());
+        if (this_upstream_block_ctrl) {
+            this_upstream_block_ctrl->set_rx_streamer(active, port);
+        } else {
+            UHD_LOG_WARNING(unique_id(), "Oh noes, couldn't lock sptr!");
+        }
+    }
+}
+
+void eiscat_radio_ctrl_impl::issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd, const size_t chan)
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+
+    // Turn on/off top ones
+    if (list_upstream_nodes().empty() or not bool(get_arg<int>("use_prev"))) {
+        UHD_LOG_DEBUG(unique_id(), "No prevs found, or prevs disabled, not passing on stream cmd");
+    } else {
+        UHD_LOG_DEBUG(unique_id(), "issue_stream_cmd(): We have prevs, so passing on stream command");
+        source_node_ctrl::sptr this_upstream_block_ctrl =
+                boost::dynamic_pointer_cast<source_node_ctrl>(list_upstream_nodes().at(0).lock());
+        if (this_upstream_block_ctrl) {
+            this_upstream_block_ctrl->issue_stream_cmd(
+                    stream_cmd,
+                    chan
+            );
+        } else {
+            UHD_LOG_WARNING(unique_id(), "Oh noes, couldn't lock sptr!");
+        }
+    }
+
+    // Turn on/off this one
+    UHD_LOGGER_DEBUG(unique_id()) << "eiscat_radio_ctrl_impl::issue_stream_cmd() " << chan << " " << char(stream_cmd.stream_mode);
+    if (not _is_streamer_active(uhd::RX_DIRECTION, chan)) {
+        UHD_RFNOC_BLOCK_TRACE() << "radio_ctrl_impl::issue_stream_cmd() called on inactive channel. Skipping." ;
+        return;
+    }
+    UHD_ASSERT_THROW(stream_cmd.num_samps <= 0x0fffffff);
+    _continuous_streaming[chan] = (stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
+
+    if (stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS &&
+            stream_cmd.stream_now == false) {
+        UHD_LOG_TRACE("EISCAT", "Stop cmd timed, setting cmd time!");
+        set_command_time(stream_cmd.time_spec, chan);
+    }
+
+    //setup the mode to instruction flags
+    typedef boost::tuple<bool, bool, bool, bool> inst_t;
+    static const uhd::dict<stream_cmd_t::stream_mode_t, inst_t> mode_to_inst = boost::assign::map_list_of
+                                                            //reload, chain, samps, stop
+        (stream_cmd_t::STREAM_MODE_START_CONTINUOUS,   inst_t(true,  true,  false, false))
+        (stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS,    inst_t(false, false, false, true))
+        (stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE, inst_t(false, false, true,  false))
+        (stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE, inst_t(false, true,  true,  false))
+    ;
+
+    //setup the instruction flag values
+    bool inst_reload, inst_chain, inst_samps, inst_stop;
+    boost::tie(inst_reload, inst_chain, inst_samps, inst_stop) = mode_to_inst[stream_cmd.stream_mode];
+
+    //calculate the word from flags and length
+    uint32_t cmd_word = 0;
+    cmd_word |= uint32_t((stream_cmd.stream_now)? 1 : 0) << 31;
+    cmd_word |= uint32_t((inst_chain)?            1 : 0) << 30;
+    cmd_word |= uint32_t((inst_reload)?           1 : 0) << 29;
+    cmd_word |= uint32_t((inst_stop)?             1 : 0) << 28;
+    cmd_word |= (inst_samps)? stream_cmd.num_samps : ((inst_stop)? 0 : 1);
+
+    //issue the stream command
+    const uint64_t ticks = (stream_cmd.stream_now)? 0 : stream_cmd.time_spec.to_ticks(get_rate());
+    sr_write(regs::RX_CTRL_CMD, cmd_word, chan);
+    sr_write(regs::RX_CTRL_TIME_HI, uint32_t(ticks >> 32), chan);
+    sr_write(regs::RX_CTRL_TIME_LO, uint32_t(ticks >> 0),  chan); //latches the command
+    UHD_LOG_INFO(unique_id(), "issued stream command.");
+    if (stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS &&
+            stream_cmd.stream_now == false) {
+        UHD_LOG_TRACE("EISCAT", "Stop cmd timed, setting cmd time!");
+        set_command_time(uhd::time_spec_t(0.0), chan);
+    }
+
+}
+
 bool eiscat_radio_ctrl_impl::check_radio_config()
 {
-    UHD_RFNOC_BLOCK_TRACE() << "x300_radio_ctrl_impl::check_radio_config() " ;
     const uint32_t config_beams = get_arg<int>("configure_beams");
     bool skipping_neighbours = config_beams & EISCAT_SKIP_NEIGHBOURS;
     bool upper_contrib = config_beams & EISCAT_CONTRIB_UPPER;
@@ -511,18 +682,35 @@ void eiscat_radio_ctrl_impl::set_rpc_client(
         "EISCAT",
         "Finalizing dboard initialization; initializing JESD cores and ADCs."
     );
-    if (not assert_jesd_cores_initialized()) {
-        throw uhd::runtime_error("Failed to initialize JESD cores and reset ADCs!");
+
+    /* Start of the ADC synchronization operation.
+     * These steps must be repeated if any ADC fails its deframer check
+     * Changing the sync line from SyncbAB to SyncnCD usually resolves the error
+     */
+    const size_t possible_sync_combinations = 16; // 2 sync lines ^ (2 ADCs * 2 Daughtercards)
+    for (size_t iteration = 0; iteration < possible_sync_combinations; iteration++) {
+        UHD_LOG_INFO(
+            "EISCAT",
+            "looping to initialize JESD cores and ADCs."
+        );
+        if (not assert_jesd_cores_initialized()) {
+            throw uhd::runtime_error("Failed to initialize JESD cores and reset ADCs!");
+        }
+        send_sysref();
+
+        if (not assert_adcs_deframers()) {
+            throw uhd::runtime_error("Failed to initialize ADCs and JESD deframers!");
+        }
+        send_sysref();
+        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+        if (assert_deframer_status()) {
+            return;
+        }
     }
-    send_sysref();
-    if (not assert_adcs_deframers()) {
-        throw uhd::runtime_error("Failed to initialize ADCs and JESD deframers!");
-    }
-    send_sysref();
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
-    if (not assert_deframer_status()) {
-        throw uhd::runtime_error("Failed to finalize JESD core setup!");
-    }
+
+    // Unable to find a sync line combination which works
+    throw uhd::runtime_error("Failed to finalize JESD core setup!");
 }
 
 /****************************************************************************
@@ -597,12 +785,12 @@ void eiscat_radio_ctrl_impl::select_filter(
         | (beam_index & 0xF) << 18
         | send_now << 22
     ;
-
     if (not send_now) {
         UHD_LOG_TRACE("EISCAT", str(
             boost::format("Filter selection will be applied at "
                           "time %f (0x%016X == %u). %s")
             % time_spec.get_full_secs()
+            % time_spec.to_ticks(EISCAT_TICK_RATE)
             % time_spec.to_ticks(EISCAT_TICK_RATE)
             % (write_time ? "Writing time regs now."
                           : "Assuming time regs already up-to-date.")
@@ -632,9 +820,9 @@ void eiscat_radio_ctrl_impl::set_antenna_gain(
     const size_t antenna_idx,
     const double normalized_gain
 ) {
-    if (normalized_gain < -1.0 or normalized_gain > 1.0) {
+    if (normalized_gain < -16.0 or normalized_gain > 16.0) {
         throw uhd::value_error(str(
-            boost::format("Invalid gain value for antenna %d: %f")
+            boost::format("Invalid digital gain value for antenna %d: %f")
             % antenna_idx % normalized_gain
         ));
     }
@@ -643,7 +831,7 @@ void eiscat_radio_ctrl_impl::set_antenna_gain(
         EISCAT_MIN_GAIN,
         std::min(
             EISCAT_MAX_GAIN,
-            int32_t(normalized_gain * EISCAT_MAX_GAIN)
+            int32_t(normalized_gain * EISCAT_UNIT_GAIN)
         )
     );
 

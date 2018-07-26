@@ -14,8 +14,8 @@ class LMK04828EISCAT(LMK04828):
     """
     LMK04828 controls for EISCAT daughterboard
     """
-    def __init__(self, regs_iface, ref_clock_freq, slot=None):
-        LMK04828.__init__(self, regs_iface, slot)
+    def __init__(self, regs_iface, ref_clock_freq, slot=None, log=None):
+        LMK04828.__init__(self, regs_iface, log)
         self.log.trace("Using reference clock frequency {} MHz".format(ref_clock_freq/1e6))
         if ref_clock_freq != 10e6:
             error_msg = "Invalid reference clock frequency: {} MHz. " \
@@ -25,6 +25,13 @@ class LMK04828EISCAT(LMK04828):
         self.ref_clock_freq = ref_clock_freq
         self.init()
         self.config()
+
+
+    def get_vco_freq(self):
+        """
+        Return the hard coded VCO frequency in the LMK PLL2.
+        """
+        return 2.496e9
 
     def init(self):
         """

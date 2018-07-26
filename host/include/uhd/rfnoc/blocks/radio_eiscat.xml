@@ -23,7 +23,7 @@
        to output jesd streams directly [3:0] = 6 -->
       <name>SR_BEAMS_TO_NEIGHBOR</name>
       <address>202</address>
-      <value>2</value>
+      <value>14</value>
     </setreg>
     <setreg>
       <!--1-Bit register. Are we expecting previous contributions? 1==yes we are -->
@@ -57,23 +57,23 @@
     </setreg>
     <readback>
       <name>RB_NUM_TAPS</name>
-      <address>0</address>
+      <address>6</address>
     </readback>
     <readback>
       <name>RB_NUM_CHANNELS</name>
-      <address>1</address>
+      <address>7</address>
     </readback>
     <readback>
       <name>RB_NUM_BEAMS</name>
-      <address>2</address>
+      <address>8</address>
     </readback>
     <readback>
       <name>RB_NUM_FILTERS</name>
-      <address>3</address>
+      <address>9</address>
     </readback>
     <readback>
-      <name>RB_VITA_TIME</name>
-      <address>4</address>
+      <name>RB_STREAM_ENABLED</name>
+      <address>10</address>
     </readback>
   </registers>
   <!-- Args -->
@@ -82,7 +82,7 @@
     <arg>
       <name>spp</name>
       <type>int</type>
-      <value>3992</value>
+      <value>3968</value>
     </arg>
     <arg>
       <name>taps</name>

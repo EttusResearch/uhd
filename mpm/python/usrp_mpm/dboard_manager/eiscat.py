@@ -71,7 +71,7 @@ class ADS54J56(object):
         else:
             self.sync_line = "AB"
         assert self.sync_line in ('AB', 'CD')
-        self.log.trace(
+        self.log.debug(
             "The next setup() sequence will use sync pin: {}".format(
                 self.sync_line
             )
@@ -140,13 +140,11 @@ class ADS54J56(object):
         self.regs.poke8(0x7016, 0x02) # PLL mode 40x for C-D
         self.regs.poke8(0x4003, 0x00) # Select digital page in JESD Bank
         self.regs.poke8(0x4004, 0x69) #
-        self.regs.poke8(0x6000, 0x40) # Enable JESD Mode control for A-B
+        self.regs.poke8(0x6000, 0xC0) # Enable JESD Mode control & set K for A-B
         self.regs.poke8(0x6001, 0x02) # Set JESD Mode to 40x for LMFS=2441
-        self.regs.poke8(0x7000, 0x40) # Enable JESD Mode control for C-D
+        self.regs.poke8(0x7000, 0xC0) # Enable JESD Mode control & set K for C-D
         self.regs.poke8(0x7001, 0x02) # Set JESD Mode to 40x for LMFS=2441
-        self.regs.poke8(0x6000, 0x80) # Set CTRL K for A-B
         self.regs.poke8(0x6006, 0x0F) # Set K to 16
-        self.regs.poke8(0x7000, 0x80) # Set CTRL K for C-D
         self.regs.poke8(0x7006, 0x0F) # Set K to 16
         # Choose the sync pin. We have both connected up to the FPGA, but we
         # can only use one at a time. Sync pins can become non-functional (e.g.
@@ -416,6 +414,15 @@ class EISCAT(DboardManagerBase):
     SYSREF_CONTROL = 0x0620
 
     INIT_PHASE_DAC_WORD = 500 # Intentionally decimal
+    PHASE_DAC_SPI_ADDR = 0x3
+    # External PPS pipeline delay from the PPS captured at the FPGA to TDC input,
+    # in reference clock ticks
+    EXT_PPS_DELAY = 3
+    # Variable PPS delay before the RP/SP pulsers begin. Fixed value for the N3xx devices.
+    N3XX_INT_PPS_DELAY = 4
+    default_master_clock_rate = 104e6
+    default_time_source = 'external'
+    default_current_jesd_rate = 2500e6
 
     def __init__(self, slot_idx, **kwargs):
         super(EISCAT, self).__init__(slot_idx, **kwargs)
@@ -423,6 +430,7 @@ class EISCAT(DboardManagerBase):
         self.log.trace("Initializing EISCAT daughterboard, slot index {}".format(self.slot_idx))
         self.initialized = False
         self.ref_clock_freq = 10e6 # This is the only supported clock rate
+        self.master_clock_rate = None
         # Define some attributes so that PyLint stays quiet:
         self.radio_regs = None
         self.jesd_cores = None
@@ -497,20 +505,25 @@ class EISCAT(DboardManagerBase):
                 init_phase_dac_word
             ))
             pdac_spi.poke16(0x3, init_phase_dac_word)
-            return LMK04828EISCAT(lmk_spi, ref_clk_freq, slot_idx)
+            return LMK04828EISCAT(lmk_spi, ref_clk_freq, slot_idx, self.log)
         def _sync_db_clock():
             " Synchronizes the DB clock to the common reference "
+            reg_offset = 0x200
+            ext_pps_delay = self.EXT_PPS_DELAY
+            #from outdated inst of ClockSync
+            #2.496e9,     # lmk_vco_freq
             synchronizer = ClockSynchronizer(
-                self.dboard_clk_control,
+                self.radio_regs,
                 self.lmk,
                 self._spi_ifaces['phase_dac'],
-                0, # register offset value.
-                104e6, # TODO don't hardcode
+                reg_offset,
+                self.master_clock_rate,
                 self.ref_clock_freq,
                 1.9E-12, # fine phase shift. TODO don't hardcode. This should live in the EEPROM
                 self.INIT_PHASE_DAC_WORD,
-                0x3,
-                3, # External PPS pipeline delay from the PPS captured at the FPGA to TDC input
+                self.PHASE_DAC_SPI_ADDR,
+                ext_pps_delay,
+                self.N3XX_INT_PPS_DELAY,
                 self.slot_idx)
             # The radio clock traces on the motherboard are 69 ps longer for Daughterboard B
             # than Daughterboard A. We want both of these clocks to align at the converters
@@ -555,6 +568,8 @@ class EISCAT(DboardManagerBase):
         self.log.debug("Loaded SPI interfaces!")
         self._init_power(self.radio_regs) # Now, we can talk to chips via SPI
         self.dboard_clk_control = _init_clock_control(self.radio_regs)
+        self.ref_clock_freq = 10e6 # This is the only supported clock rate
+        self.master_clock_rate = self.default_master_clock_rate
         self.lmk = _init_lmk(
             self.slot_idx,
             self._spi_ifaces['lmk'],
@@ -569,21 +584,8 @@ class EISCAT(DboardManagerBase):
         self.dboard_clk_control.enable_mmcm()
         self.log.debug("Clocking Configured Successfully!")
         # Synchronize DB Clocks
-        self.clock_synchronizer = ClockSynchronizer(
-            self.radio_regs,
-            self.dboard_clk_control,
-            self.lmk,
-            self._spi_ifaces['phase_dac'],
-            0, # TODO this might not actually be zero
-            104e6, # TODO don't hardcode
-            self.ref_clock_freq,
-            1.9E-12, # TODO don't hardcode. This should live in the EEPROM
-            self.INIT_PHASE_DAC_WORD,
-            2.496e9,     # lmk_vco_freq
-            0x3,         # spi_addr
-            self.slot_idx
-        )
-        _sync_db_clock(self.clock_synchronizer)
+        _sync_db_clock()
+        self.log.debug("Clocks Sync'd Successfully!")
         # Clocks and PPS are now fully active!
         return True
 
@@ -659,7 +661,11 @@ class EISCAT(DboardManagerBase):
                 "is fine."
             )
             return True
+
+        error = False
+        self.log.trace("check deframer status of both jesd cores.")
         for jesd_idx, jesd_core in enumerate(self.jesd_cores):
+            self.log.trace("check deframer status of jesd core {}.".format(jesd_idx))
             if not jesd_core.check_deframer_status():
                 self.log.error("JESD204B Core {} Error: Failed to Link. " \
                     "Don't ignore this, please tell someone!".format(jesd_idx)

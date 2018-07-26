@@ -25,8 +25,8 @@
     </setreg>
     <!-- DDC block registers -->
     <setreg>
-      <!-- CORDIC phase increment word -->
-      <name>CORDIC_FREQ</name>
+      <!-- DDS phase increment word -->
+      <name>DDS_FREQ</name>
       <address>132</address>
     </setreg>
     <setreg>
@@ -41,6 +41,7 @@
     </setreg>
     <setreg>
       <!-- Real mode, swap IQ -->
+      <!-- Real mode = bit 1, swap IQ = bit 0 -->
       <name>MODE</name>
       <address>135</address>
     </setreg>
@@ -57,6 +58,17 @@
       <type>double</type>
       <value>0.0</value>
       <port>0</port>
+      <!--<action>-->
+          <!--SR_WRITE("CORDIC_FREQ", $cordic_freq)-->
+      <!--</action>-->
+      <!--FIXME Calculate this properly-->
+    </arg>
+    <arg>
+      <name>mode</name>
+      <type>int</type>
+      <value>2</value>
+      <port>0</port>
+      <action>SR_WRITE("MODE", $mode)</action>
     </arg>
     <arg>
       <name>input_rate</name>
@@ -92,6 +104,17 @@
       <type>double</type>
       <value>0.0</value>
       <port>1</port>
+      <!--<action>-->
+          <!--SR_WRITE("CORDIC_FREQ", $cordic_freq)-->
+      <!--</action>-->
+      <!--FIXME Calculate this properly-->
+    </arg>
+    <arg>
+      <name>mode</name>
+      <type>int</type>
+      <value>2</value>
+      <port>1</port>
+      <action>SR_WRITE("MODE", $mode)</action>
     </arg>
     <arg>
       <name>input_rate</name>
@@ -127,6 +150,17 @@
       <type>double</type>
       <value>0.0</value>
       <port>2</port>
+      <!--<action>-->
+          <!--SR_WRITE("CORDIC_FREQ", $cordic_freq)-->
+      <!--</action>-->
+      <!--FIXME Calculate this properly-->
+    </arg>
+    <arg>
+      <name>mode</name>
+      <type>int</type>
+      <value>2</value>
+      <port>2</port>
+      <action>SR_WRITE("MODE", $mode)</action>
     </arg>
     <arg>
       <name>input_rate</name>
@@ -162,6 +196,17 @@
       <type>double</type>
       <value>0.0</value>
       <port>3</port>
+      <!--<action>-->
+          <!--SR_WRITE("CORDIC_FREQ", $cordic_freq)-->
+      <!--</action>-->
+      <!--FIXME Calculate this properly-->
+    </arg>
+    <arg>
+      <name>mode</name>
+      <type>int</type>
+      <value>2</value>
+      <port>3</port>
+      <action>SR_WRITE("MODE", $mode)</action>
     </arg>
     <arg>
       <name>input_rate</name>
@@ -197,6 +242,17 @@
       <type>double</type>
       <value>0.0</value>
       <port>4</port>
+      <!--<action>-->
+          <!--SR_WRITE("CORDIC_FREQ", $cordic_freq)-->
+      <!--</action>-->
+      <!--FIXME Calculate this properly-->
+    </arg>
+    <arg>
+      <name>mode</name>
+      <type>int</type>
+      <value>2</value>
+      <port>4</port>
+      <action>SR_WRITE("MODE", $mode)</action>
     </arg>
     <arg>
       <name>input_rate</name>

@@ -151,6 +151,9 @@ public:
     //! \returns The EISCAT sampling rate
     double get_output_samp_rate(size_t port);
 
+    void set_rx_streamer(bool active, const size_t port);
+    void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd, const size_t port);
+
 protected:
     virtual bool check_radio_config();
 
