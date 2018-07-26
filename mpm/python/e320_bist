@@ -43,34 +43,51 @@ def get_sfp_bist_defaults():
         'bits': 12012486656,
     }
 
+def assert_aurora_image(master, slave):
+    """
+    Make sure we have an FPGA image with which we can run the requested tests.
+
+    Will load an AA image if not, which always satisfies all conditions for
+    running Aurora tests.
+    """
+    from usrp_mpm.sys_utils import uio
+    if not uio.find_uio_device(master)[0] or \
+            (slave is not None and not uio.find_uio_device(slave)[0]):
+        load_fpga_image('AA')
+
 def run_aurora_bist(master, slave=None):
     """
     Spawn a BER test
     """
     from usrp_mpm import aurora_control
-    from usrp_mpm.sys_utils.uio import UIO
+    from usrp_mpm.sys_utils.uio import open_uio
+
+    class DummyContext(object):
+        """Dummy class for context managers"""
+        def __enter__(self):
+            return
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            return exc_type is None
+
+    # Go, go, go!
     try:
-        master_au_uio = UIO(label=master, read_only=False)
-        master_au_uio.open()
-        master_au_ctrl = aurora_control.AuroraControl(master_au_uio)
-        if slave is not None:
-            slave_au_uio = UIO(label=slave, read_only=False)
-            slave_au_uio.open()
-        slave_au_ctrl = None if slave is None else aurora_control.AuroraControl(
-            slave_au_uio
-        )
-        return master_au_ctrl.run_ber_loopback_bist(
-            duration=10,
-            requested_rate=1300 * 8e6,
-            slave=slave_au_ctrl,
-        )
+        assert_aurora_image(master, slave)
+        with open_uio(label=master, read_only=False) as master_au_uio:
+            master_au_ctrl = aurora_control.AuroraControl(master_au_uio)
+            with open_uio(label=slave, read_only=False)\
+                    if slave is not None else DummyContext() as slave_au_uio:
+                slave_au_ctrl = aurora_control.AuroraControl(slave_au_uio)\
+                    if slave is not None else None
+                return master_au_ctrl.run_ber_loopback_bist(
+                    duration=10,
+                    requested_rate=1300 * 8e6,
+                    slave=slave_au_ctrl,
+                )
     except Exception as ex:
         print("Unexpected exception: {}".format(str(ex)))
         exit(1)
-    finally:
-        master_au_uio.close()
-        if slave is not None:
-            slave_au_uio.close()
+
 
 def aurora_results_to_status(bist_results):
     """
@@ -232,6 +249,8 @@ class E320BIST(object):
         'standard': ["ddr3", "gpsdo", "rtc", "temp", "fan", "tpm", "gyro", "ref_clock_int"],
         'extended': "*",
     }
+    # Default FPGA image type
+    DEFAULT_FPGA_TYPE = '1G'
 
     @staticmethod
     def make_arg_parser():
@@ -266,6 +285,12 @@ class E320BIST(object):
                  "status when using this mode.",
         )
         parser.add_argument(
+            '--skip-fpga-reload', action='store_true',
+            help="Skip reloading the default FPGA image post-test. Note: by"
+                 "specifying this argument, the FPGA image loaded could be "
+                 "anything post-test.",
+        )
+        parser.add_argument(
             'tests',
             help="List the tests that should be run",
             nargs='+', # There has to be at least one
@@ -275,6 +300,8 @@ class E320BIST(object):
     def __init__(self):
         self.args = E320BIST.make_arg_parser().parse_args()
         self.args.option = expand_options(self.args.option)
+        # If this is true, trigger a reload of the default FPGA image
+        self.reload_fpga_image = False
         try:
             from usrp_mpm.periph_manager.e320 import e320
             default_rev = e320.mboard_max_rev
@@ -352,6 +379,8 @@ class E320BIST(object):
         if self.args.lv_compat:
             result = filter_results_for_lv(result)
         post_results(result)
+        if self.reload_fpga_image and not self.args.skip_fpga_reload:
+            load_fpga_image(self.DEFAULT_FPGA_TYPE)
         return tests_successful
 
 #############################################################################
@@ -638,6 +667,7 @@ class E320BIST(object):
         if self.args.dry_run:
             return True, get_sfp_bist_defaults()
         sfp_bist_results = run_aurora_bist(master='misc-auro-regs')
+        self.reload_fpga_image = True
         return aurora_results_to_status(sfp_bist_results)
 
     def bist_gpio(self):
@@ -755,6 +785,33 @@ def gpio_set_all(gpio_bank, value, gpio_size, ddr_mask):
     for i in range(gpio_size):
         if ddr_bitstring[gpio_size - 1 - i] == "1":
             gpio_bank.set(i, value_bitstring[i % ddr_size])
+
+def get_product_id():
+    """Return the mboard product ID (e320):"""
+    cmd = ['eeprom-id']
+    output = subprocess.check_output(
+        cmd,
+        stderr=subprocess.STDOUT,
+        shell=True,
+    ).decode('utf-8')
+    if 'e320' in output:
+        return 'e320'
+    raise AssertionError("Cannot determine product ID.")
+
+def load_fpga_image(fpga_type):
+    """Load an FPGA image (1G, XG, AA, ...)"""
+    cmd = ['uhd_image_loader', '--args', 'type=e3xx,addr=127.0.0.1', '--fpga-path']
+    images_folder = '/usr/share/uhd/images/'
+    fpga_file_name = \
+            'usrp_' + get_product_id() + '_fpga_' + fpga_type.upper() + '.bit'
+    fpga_image = images_folder + fpga_file_name
+    cmd.append(fpga_image)
+    cmd_str = ' '.join(cmd)
+    subprocess.check_output(
+        cmd_str,
+        stderr=subprocess.STDOUT,
+        shell=True
+    )
 
 ##############################################################################
 # main
