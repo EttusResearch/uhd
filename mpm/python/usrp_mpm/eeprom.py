@@ -142,13 +142,12 @@ def read_eeprom(
         Returns a dictionary.
         """
         eeprom_parser = struct.Struct(eeprom_header_format[version])
-        eeprom_parser_no_crc = struct.Struct(eeprom_header_format[version][0:-1])
         eeprom_keys = eeprom_header_keys[version]
         parsed_data = eeprom_parser.unpack_from(data)
         read_crc = parsed_data[-1]
-        rawdata_without_crc = eeprom_parser_no_crc.pack(*(parsed_data[0:-1]))
+        rawdata_without_crc = data[:eeprom_parser.size-4]
         expected_crc = zlib.crc32(rawdata_without_crc) & 0xffffffff
-        if  read_crc != expected_crc:
+        if read_crc != expected_crc:
             raise RuntimeError(
                 "Received incorrect CRC."\
                 "Read: {:08X} Expected: {:08X}".format(
