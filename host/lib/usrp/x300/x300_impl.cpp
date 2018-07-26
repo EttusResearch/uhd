@@ -35,10 +35,6 @@
 #include <chrono>
 #include <thread>
 
-#define NIUSRPRIO_DEFAULT_RPC_PORT "5444"
-
-#define X300_REV(x) ((x) - "A" + 1)
-
 using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::rfnoc;
@@ -423,7 +419,7 @@ x300_impl::x300_impl(const uhd::device_addr_t &dev_addr)
     size_t num_usrps   = 0;
     while (num_usrps < total_usrps)
     {
-        size_t init_usrps = std::min(total_usrps - num_usrps, X300_MAX_INIT_THREADS);
+        size_t init_usrps = std::min(total_usrps - num_usrps, x300::MAX_INIT_THREADS);
         boost::thread_group setup_threads;
         for (size_t i = 0; i < init_usrps; i++)
         {
@@ -473,10 +469,10 @@ void x300_impl::mboard_members_t::discover_eth(
                 // Choose the interface based on the index parity
                 if (i % 2 == 0) {
                     conn_iface.type = X300_IFACE_ETH0;
-                    conn_iface.link_rate = loaded_fpga_image == "HG" ? X300_MAX_RATE_1GIGE : X300_MAX_RATE_10GIGE;
+                    conn_iface.link_rate = loaded_fpga_image == "HG" ? x300::MAX_RATE_1GIGE : x300::MAX_RATE_10GIGE;
                 } else {
                     conn_iface.type = X300_IFACE_ETH1;
-                    conn_iface.link_rate = X300_MAX_RATE_10GIGE;
+                    conn_iface.link_rate = x300::MAX_RATE_10GIGE;
                 }
                 break;
             }
@@ -494,19 +490,19 @@ void x300_impl::mboard_members_t::discover_eth(
             if (addr == boost::asio::ip::address_v4(
                 uint32_t(X300_DEFAULT_IP_ETH0_1G)).to_string()) {
                 conn_iface.type = X300_IFACE_ETH0;
-                conn_iface.link_rate = X300_MAX_RATE_1GIGE;
+                conn_iface.link_rate = x300::MAX_RATE_1GIGE;
             } else if (addr == boost::asio::ip::address_v4(
                 uint32_t(X300_DEFAULT_IP_ETH1_1G)).to_string()) {
                 conn_iface.type = X300_IFACE_ETH1;
-                conn_iface.link_rate = X300_MAX_RATE_1GIGE;
+                conn_iface.link_rate = x300::MAX_RATE_1GIGE;
             } else if (addr == boost::asio::ip::address_v4(
                 uint32_t(X300_DEFAULT_IP_ETH0_10G)).to_string()) {
                 conn_iface.type = X300_IFACE_ETH0;
-                conn_iface.link_rate = X300_MAX_RATE_10GIGE;
+                conn_iface.link_rate = x300::MAX_RATE_10GIGE;
             } else if (addr == boost::asio::ip::address_v4(
                 uint32_t(X300_DEFAULT_IP_ETH1_10G)).to_string()) {
                 conn_iface.type = X300_IFACE_ETH1;
-                conn_iface.link_rate = X300_MAX_RATE_10GIGE;
+                conn_iface.link_rate = x300::MAX_RATE_10GIGE;
             } else {
                 throw uhd::assertion_error(str(boost::format(
                     "X300 Initialization Error: Failed to match address %s with "
@@ -616,12 +612,12 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         nirio_status_to_exception(status, "x300_impl: Could not initialize RIO session.");
 
         //Tell the quirks object which FIFOs carry TX stream data
-        const uint32_t tx_data_fifos[2] = {X300_RADIO_DEST_PREFIX_TX, X300_RADIO_DEST_PREFIX_TX + 3};
+        const uint32_t tx_data_fifos[2] = {x300::RADIO_DEST_PREFIX_TX, x300::RADIO_DEST_PREFIX_TX + 3};
         mb.rio_fpga_interface->get_kernel_proxy()->get_rio_quirks().register_tx_streams(tx_data_fifos, 2);
 
-        _tree->create<size_t>(mb_path / "mtu/recv").set(X300_PCIE_RX_DATA_FRAME_SIZE);
-        _tree->create<size_t>(mb_path / "mtu/send").set(X300_PCIE_TX_DATA_FRAME_SIZE);
-        _tree->create<double>(mb_path / "link_max_rate").set(X300_MAX_RATE_PCIE);
+        _tree->create<size_t>(mb_path / "mtu/recv").set(x300::PCIE_RX_DATA_FRAME_SIZE);
+        _tree->create<size_t>(mb_path / "mtu/send").set(x300::PCIE_TX_DATA_FRAME_SIZE);
+        _tree->create<double>(mb_path / "link_max_rate").set(x300::MAX_RATE_PCIE);
     }
 
     for(const std::string &key:  dev_addr.keys())
@@ -656,7 +652,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     if (dev_addr.has_key("fw"))
     {
         const std::string x300_fw_image = find_image_path(
-            dev_addr.has_key("fw")? dev_addr["fw"] : X300_FW_FILE_NAME
+            dev_addr.has_key("fw")? dev_addr["fw"] : x300::FW_FILE_NAME
         );
         x300_load_fw(mb.zpu_ctrl, x300_fw_image);
     }
@@ -676,7 +672,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     mb.zpu_spi = spi_core_3000::make(mb.zpu_ctrl, SR_ADDR(SET0_BASE, ZPU_SR_SPI),
             SR_ADDR(SET0_BASE, ZPU_RB_SPI));
     mb.zpu_i2c = i2c_core_100_wb32::make(mb.zpu_ctrl, I2C1_BASE);
-    mb.zpu_i2c->set_clock_rate(X300_BUS_CLOCK_RATE/2);
+    mb.zpu_i2c->set_clock_rate(x300::BUS_CLOCK_RATE/2);
 
     ////////////////////////////////////////////////////////////////////
     // print network routes mapping
@@ -771,10 +767,10 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         frame_size_t req_max_frame_size;
         req_max_frame_size.recv_frame_size = (mb.recv_args.has_key("recv_frame_size")) \
             ? boost::lexical_cast<size_t>(mb.recv_args["recv_frame_size"]) \
-            : X300_DATA_FRAME_MAX_SIZE;
+            : x300::DATA_FRAME_MAX_SIZE;
         req_max_frame_size.send_frame_size = (mb.send_args.has_key("send_frame_size")) \
             ? boost::lexical_cast<size_t>(mb.send_args["send_frame_size"]) \
-            : X300_DATA_FRAME_MAX_SIZE;
+            : x300::DATA_FRAME_MAX_SIZE;
 
         #if defined UHD_PLATFORM_LINUX
             const std::string mtu_tool("ip link");
@@ -843,8 +839,8 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         {
             link_max_rate += conn.link_rate;
 
-            size_t rec_send_frame_size = conn.link_rate == X300_MAX_RATE_1GIGE ? X300_1GE_DATA_FRAME_SEND_SIZE : X300_10GE_DATA_FRAME_SEND_SIZE;
-            size_t rec_recv_frame_size = conn.link_rate == X300_MAX_RATE_1GIGE ? X300_1GE_DATA_FRAME_RECV_SIZE : X300_10GE_DATA_FRAME_RECV_SIZE;
+            size_t rec_send_frame_size = conn.link_rate == x300::MAX_RATE_1GIGE ? x300::GE_DATA_FRAME_SEND_SIZE : x300::XGE_DATA_FRAME_SEND_SIZE;
+            size_t rec_recv_frame_size = conn.link_rate == x300::MAX_RATE_1GIGE ? x300::GE_DATA_FRAME_RECV_SIZE : x300::XGE_DATA_FRAME_RECV_SIZE;
 
             if (_max_frame_sizes.send_frame_size < rec_send_frame_size)
             {
@@ -926,7 +922,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     UHD_LOGGER_DEBUG("X300") << "Setting up RF frontend clocking...";
 
     //Initialize clock control registers. NOTE: This does not configure the LMK yet.
-    const double requested_mcr = dev_addr.cast<double>("master_clock_rate", X300_DEFAULT_TICK_RATE);
+    const double requested_mcr = dev_addr.cast<double>("master_clock_rate", x300::DEFAULT_TICK_RATE);
     //Some daughterboards may require other rates, but these defaults
     //work best for all newer daughterboards (i.e. CBX, WBX, SBX, UBX,
     //and TwinRX).
@@ -943,16 +939,16 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         mb.hw_rev,
         requested_mcr,
         dev_addr.cast<double>("dboard_clock_rate", default_dboard_clk_rate),
-        dev_addr.cast<double>("system_ref_rate", X300_DEFAULT_SYSREF_RATE));
+        dev_addr.cast<double>("system_ref_rate", x300::DEFAULT_SYSREF_RATE));
     mb.fw_regmap->ref_freq_reg.write(
         fw_regmap_t::ref_freq_reg_t::REF_FREQ,
         uint32_t(dev_addr.cast<double>("system_ref_rate",
-        X300_DEFAULT_SYSREF_RATE)));
+        x300::DEFAULT_SYSREF_RATE)));
 
     //Initialize clock source to use internal reference and generate
     //a valid radio clock. This may change after configuration is done.
     //This will configure the LMK and wait for lock
-    update_clock_source(mb, X300_DEFAULT_CLOCK_SOURCE);
+    update_clock_source(mb, x300::DEFAULT_CLOCK_SOURCE);
 
     ////////////////////////////////////////////////////////////////////
     // create clock properties
@@ -1019,7 +1015,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     // setup clock sources and properties
     ////////////////////////////////////////////////////////////////////
     _tree->create<std::string>(mb_path / "clock_source" / "value")
-        .set(X300_DEFAULT_CLOCK_SOURCE)
+        .set(x300::DEFAULT_CLOCK_SOURCE)
         .add_coerced_subscriber([this, &mb](const std::string& clock_source){
             this->update_clock_source(mb, clock_source);
         })
@@ -1080,8 +1076,8 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     enumerate_rfnoc_blocks(
         mb_i,
         n_rfnoc_blocks,
-        X300_XB_DST_PCI + 1, /* base port */
-        uhd::sid_t(X300_SRC_ADDR0, 0, X300_DST_ADDR + mb_i, 0),
+        x300::XB_DST_PCI + 1, /* base port */
+        uhd::sid_t(x300::SRC_ADDR0, 0, x300::DST_ADDR + mb_i, 0),
         dev_addr
     );
     //////////////// RFNOC /////////////////
@@ -1182,7 +1178,7 @@ uint32_t x300_impl::mboard_members_t::allocate_pcie_dma_chan(const uhd::sid_t &t
 
         if (_dma_chan_pool.count(raw_sid) == 0) {
             size_t channel = _dma_chan_pool.size() + FIRST_DATA_CHANNEL;
-            if (channel > X300_PCIE_MAX_CHANNELS) {
+            if (channel > x300::PCIE_MAX_CHANNELS) {
                 throw uhd::runtime_error("Trying to allocate more DMA channels than are available");
             }
             _dma_chan_pool[raw_sid] = channel;
@@ -1206,10 +1202,10 @@ static uhd::transport::muxed_zero_copy_if::sptr make_muxed_pcie_msg_xport
     size_t max_muxed_ports
 ) {
     zero_copy_xport_params buff_args;
-    buff_args.send_frame_size = X300_PCIE_MSG_FRAME_SIZE;
-    buff_args.recv_frame_size = X300_PCIE_MSG_FRAME_SIZE;
-    buff_args.num_send_frames = X300_PCIE_MSG_NUM_FRAMES * max_muxed_ports;
-    buff_args.num_recv_frames = X300_PCIE_MSG_NUM_FRAMES * max_muxed_ports;
+    buff_args.send_frame_size = x300::PCIE_MSG_FRAME_SIZE;
+    buff_args.recv_frame_size = x300::PCIE_MSG_FRAME_SIZE;
+    buff_args.num_send_frames = x300::PCIE_MSG_NUM_FRAMES * max_muxed_ports;
+    buff_args.num_recv_frames = x300::PCIE_MSG_NUM_FRAMES * max_muxed_ports;
 
     zero_copy_if::sptr base_xport = nirio_zero_copy::make(
         rio_fpga_interface, dma_channel_num,
@@ -1222,7 +1218,7 @@ uhd::both_xports_t x300_impl::make_transport(
     const xport_type_t xport_type,
     const uhd::device_addr_t& args
 ) {
-    const size_t mb_index = address.get_dst_addr() - X300_DST_ADDR;
+    const size_t mb_index = address.get_dst_addr() - x300::DST_ADDR;
     mboard_members_t &mb = _mb[mb_index];
     const uhd::device_addr_t& xport_args = (xport_type == CTRL) ? uhd::device_addr_t() : args;
     zero_copy_xport_params default_buff_args;
@@ -1230,7 +1226,7 @@ uhd::both_xports_t x300_impl::make_transport(
     both_xports_t xports;
     xports.endianness = mb.if_pkt_is_big_endian ? ENDIANNESS_BIG : ENDIANNESS_LITTLE;
     if (mb.xport_path == "nirio") {
-        xports.send_sid = this->allocate_sid(mb, address, X300_SRC_ADDR0, X300_XB_DST_PCI);
+        xports.send_sid = this->allocate_sid(mb, address, x300::SRC_ADDR0, x300::XB_DST_PCI);
         xports.recv_sid = xports.send_sid.reversed();
 
         uint32_t dma_channel_num = mb.allocate_pcie_dma_chan(xports.send_sid, xport_type);
@@ -1242,7 +1238,7 @@ uhd::both_xports_t x300_impl::make_transport(
                 mb.ctrl_dma_xport = make_muxed_pcie_msg_xport(
                     mb.rio_fpga_interface,
                     dma_channel_num,
-                    X300_PCIE_MAX_MUXED_CTRL_XPORTS);
+                    x300::PCIE_MAX_MUXED_CTRL_XPORTS);
             }
             //Create a virtual control transport
             xports.recv = mb.ctrl_dma_xport->make_stream(xports.recv_sid.get_dst());
@@ -1254,7 +1250,7 @@ uhd::both_xports_t x300_impl::make_transport(
                 mb.async_msg_dma_xport = make_muxed_pcie_msg_xport(
                     mb.rio_fpga_interface,
                     dma_channel_num,
-                    X300_PCIE_MAX_MUXED_ASYNC_XPORTS);
+                    x300::PCIE_MAX_MUXED_ASYNC_XPORTS);
             }
             //Create a virtual async message transport
             xports.recv = mb.async_msg_dma_xport->make_stream(xports.recv_sid.get_dst());
@@ -1262,23 +1258,23 @@ uhd::both_xports_t x300_impl::make_transport(
             //Transport for data stream
             default_buff_args.send_frame_size =
                 (xport_type == TX_DATA)
-                ? X300_PCIE_TX_DATA_FRAME_SIZE
-                : X300_PCIE_MSG_FRAME_SIZE;
+                ? x300::PCIE_TX_DATA_FRAME_SIZE
+                : x300::PCIE_MSG_FRAME_SIZE;
 
             default_buff_args.recv_frame_size =
                 (xport_type == RX_DATA)
-                ? X300_PCIE_RX_DATA_FRAME_SIZE
-                : X300_PCIE_MSG_FRAME_SIZE;
+                ? x300::PCIE_RX_DATA_FRAME_SIZE
+                : x300::PCIE_MSG_FRAME_SIZE;
 
             default_buff_args.num_send_frames =
                 (xport_type == TX_DATA)
-                ? X300_PCIE_TX_DATA_NUM_FRAMES
-                : X300_PCIE_MSG_NUM_FRAMES;
+                ? x300::PCIE_TX_DATA_NUM_FRAMES
+                : x300::PCIE_MSG_NUM_FRAMES;
 
             default_buff_args.num_recv_frames =
                 (xport_type == RX_DATA)
-                ? X300_PCIE_RX_DATA_NUM_FRAMES
-                : X300_PCIE_MSG_NUM_FRAMES;
+                ? x300::PCIE_RX_DATA_NUM_FRAMES
+                : x300::PCIE_MSG_NUM_FRAMES;
 
             xports.recv = nirio_zero_copy::make(
                 mb.rio_fpga_interface, dma_channel_num,
@@ -1305,9 +1301,9 @@ uhd::both_xports_t x300_impl::make_transport(
             mb.next_src_addr;
         x300_eth_conn_t conn = mb.eth_conns[next_src_addr];
         const uint32_t xbar_src_addr =
-            next_src_addr==0 ? X300_SRC_ADDR0 : X300_SRC_ADDR1;
+            next_src_addr==0 ? x300::SRC_ADDR0 : x300::SRC_ADDR1;
         const uint32_t xbar_src_dst =
-            conn.type==X300_IFACE_ETH0 ? X300_XB_DST_E0 : X300_XB_DST_E1;
+            conn.type==X300_IFACE_ETH0 ? x300::XB_DST_E0 : x300::XB_DST_E1;
         if (xport_type != TX_DATA) next_src_addr = (next_src_addr + 1) % mb.eth_conns.size();
 
         xports.send_sid = this->allocate_sid(mb, address, xbar_src_addr, xbar_src_dst);
@@ -1316,15 +1312,15 @@ uhd::both_xports_t x300_impl::make_transport(
         // Set size and number of frames
         size_t system_max_send_frame_size = (size_t) _max_frame_sizes.send_frame_size;
         size_t system_max_recv_frame_size = (size_t) _max_frame_sizes.recv_frame_size;
-        default_buff_args.send_frame_size = std::min(system_max_send_frame_size, X300_ETH_MSG_FRAME_SIZE);
-        default_buff_args.recv_frame_size = std::min(system_max_recv_frame_size, X300_ETH_MSG_FRAME_SIZE);
+        default_buff_args.send_frame_size = std::min(system_max_send_frame_size, x300::ETH_MSG_FRAME_SIZE);
+        default_buff_args.recv_frame_size = std::min(system_max_recv_frame_size, x300::ETH_MSG_FRAME_SIZE);
         default_buff_args.num_send_frames = 1;  // never need multiple frames on send
         default_buff_args.num_recv_frames = 1;  // only need multiple frames with offload thread
         default_buff_args.send_buff_size = conn.link_rate / 50; // 20ms
-        default_buff_args.recv_buff_size = std::max(conn.link_rate / 50, X300_ETH_MSG_NUM_FRAMES * X300_ETH_MSG_FRAME_SIZE); // enough to hold greater of 20ms or number of msg frames
+        default_buff_args.recv_buff_size = std::max(conn.link_rate / 50, x300::ETH_MSG_NUM_FRAMES * x300::ETH_MSG_FRAME_SIZE); // enough to hold greater of 20ms or number of msg frames
         if (xport_type == TX_DATA) 
         {
-            size_t default_frame_size = conn.link_rate == X300_MAX_RATE_1GIGE ? X300_1GE_DATA_FRAME_SEND_SIZE : X300_10GE_DATA_FRAME_SEND_SIZE;
+            size_t default_frame_size = conn.link_rate == x300::MAX_RATE_1GIGE ? x300::GE_DATA_FRAME_SEND_SIZE : x300::XGE_DATA_FRAME_SEND_SIZE;
             default_buff_args.send_frame_size = args.cast<size_t>("send_frame_size", std::min(default_frame_size, system_max_send_frame_size));
             if (default_buff_args.send_frame_size > system_max_send_frame_size)
             {
@@ -1339,7 +1335,7 @@ uhd::both_xports_t x300_impl::make_transport(
         }
         else if (xport_type == RX_DATA) 
         {
-            size_t default_frame_size = conn.link_rate == X300_MAX_RATE_1GIGE ? X300_1GE_DATA_FRAME_RECV_SIZE : X300_10GE_DATA_FRAME_RECV_SIZE;
+            size_t default_frame_size = conn.link_rate == x300::MAX_RATE_1GIGE ? x300::GE_DATA_FRAME_RECV_SIZE : x300::XGE_DATA_FRAME_RECV_SIZE;
             default_buff_args.recv_frame_size = args.cast<size_t>("recv_frame_size", std::min(default_frame_size, system_max_recv_frame_size));
             if (default_buff_args.recv_frame_size > system_max_recv_frame_size)
             {
@@ -1373,7 +1369,7 @@ uhd::both_xports_t x300_impl::make_transport(
         if (xport_type == RX_DATA) {
             xports.recv = zero_copy_recv_offload::make(
                     xports.recv,
-                    X300_RECV_OFFLOAD_BUFFER_TIMEOUT
+                    x300::RECV_OFFLOAD_BUFFER_TIMEOUT
             );
         }
         xports.send = xports.recv;
@@ -1698,9 +1694,9 @@ x300_impl::frame_size_t x300_impl::determine_max_frame_size(const std::string &a
 
     //Reducing range of (min,max) by setting max value to 10gig max_frame_size as larger sizes are not supported
     size_t min_recv_frame_size = sizeof(x300_mtu_t);
-    size_t max_recv_frame_size = std::min(user_frame_size.recv_frame_size, X300_DATA_FRAME_MAX_SIZE) & size_t(~3);
+    size_t max_recv_frame_size = std::min(user_frame_size.recv_frame_size, x300::DATA_FRAME_MAX_SIZE) & size_t(~3);
     size_t min_send_frame_size = sizeof(x300_mtu_t);
-    size_t max_send_frame_size = std::min(user_frame_size.send_frame_size, X300_DATA_FRAME_MAX_SIZE) & size_t(~3);
+    size_t max_send_frame_size = std::min(user_frame_size.send_frame_size, x300::DATA_FRAME_MAX_SIZE) & size_t(~3);
 
     UHD_LOGGER_DEBUG("X300") << "Determining maximum frame size... ";
     while (min_recv_frame_size < max_recv_frame_size)
