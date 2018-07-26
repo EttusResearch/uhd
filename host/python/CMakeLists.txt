@@ -54,9 +54,21 @@ ADD_CUSTOM_COMMAND(OUTPUT ${TIMESTAMP_FILE}
 
 ADD_CUSTOM_TARGET(pyuhd_library ALL DEPENDS ${TIMESTAMP_FILE} pyuhd)
 IF(HAVE_PYTHON_VIRTUALENV)
+    # In virtualenvs, let setuptools do its thing
     INSTALL(CODE "execute_process(COMMAND ${PYTHON} ${SETUP_PY} -q install --force)")
 ELSE()
-    SET(UHD_PYTHON_DIR "lib/site-packages")
-    MESSAGE(STATUS "Utilizing the python install directory: ${CMAKE_INSTALL_PREFIX}/${UHD_PYTHON_DIR}")
+    # Otherwise, use distutils to determine the correct relative path for Python
+    # packages, and install to our prefix
+    IF(NOT DEFINED UHD_PYTHON_DIR)
+        execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
+            "from __future__ import print_function;\
+            from distutils import sysconfig;\
+            print(sysconfig.get_python_lib(plat_specific=True, prefix='${CMAKE_INSTALL_PREFIX}'));"
+            OUTPUT_VARIABLE UHD_PYTHON_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
+    ENDIF(NOT DEFINED UHD_PYTHON_DIR)
+    file(TO_CMAKE_PATH ${UHD_PYTHON_DIR} UHD_PYTHON_DIR)
+
+    MESSAGE(STATUS "Utilizing the python install directory: ${UHD_PYTHON_DIR}")
     INSTALL(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/uhd DESTINATION ${UHD_PYTHON_DIR} COMPONENT pythonapi)
-ENDIF()
+ENDIF(HAVE_PYTHON_VIRTUALENV)
