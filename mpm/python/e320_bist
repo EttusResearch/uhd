@@ -472,7 +472,6 @@ class E320BIST(object):
             }
         from usrp_mpm.periph_manager import e320
         # Turn on GPS, give some time to acclimatize
-        print("Entered gpsdo test")
         mb_regs = e320.MboardRegsControl(e320.e320.mboard_regs_label, self.log)
         mb_regs.enable_gps(True)
         time.sleep(5)
@@ -668,7 +667,6 @@ class E320BIST(object):
         from usrp_mpm.periph_manager import e320, e320_periphs
         mb_regs = e320_periphs.MboardRegsControl(e320.e320.mboard_regs_label, self.log)
         mb_regs.enable_fp_gpio(True)
-        mb_regs.set_fp_gpio_voltage(2.5)
         mb_regs.set_fp_gpio_master(0xFF)
         # Allow some time for the front-panel GPIOs to become usable
         time.sleep(1)

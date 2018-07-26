@@ -8,6 +8,7 @@ E320 peripherals
 """
 
 import datetime
+import math
 from usrp_mpm.sys_utils.sysfs_gpio import SysFSGPIO, GPIOBank
 from usrp_mpm.sys_utils.uio import UIO
 
@@ -120,16 +121,11 @@ class MboardRegsControl(object):
         major = (compat_number>>16) & 0xff
         return (major, minor)
 
-    def enable_fp_gpio(self, value):
+    def enable_fp_gpio(self, enable):
         """ Enable front panel GPIO buffers and power supply
-        and set voltage 1.8, 2.5 or 3.3 V
-        Setting value to 0 would disable gpio
+        and set voltage 3.3 V
         """
-        if value == 0:
-            enable = False
-        else:
-            enable = True
-            self.set_fp_gpio_voltage(value)
+        self.set_fp_gpio_voltage(3.3)
         mask = 0xFFFFFFFF ^ ((0b1 << self.MB_GPIO_CTRL_BUFFER_OE_N) | \
                              (0b1 << self.MB_GPIO_CTRL_EN_VAR_SUPPLY))
         with self.regs:
@@ -147,14 +143,15 @@ class MboardRegsControl(object):
          0   1  | 2.5 V
          1   0  | 3.3 V
         Arguments:
-            value : 1.8, 2.5 or 3.3
+            value : 3.3
         """
-        assert value in (1.8, 2.5, 3.3)
-        if value == 1.8:
+        assert any([math.isclose(value, nn, abs_tol=0.1) for nn in (3.3,)]),\
+            "FP GPIO currently only supports 3.3V"
+        if math.isclose(value, 1.8, abs_tol=0.1):
             voltage_reg = 0
-        elif value == 2.5:
+        elif math.isclose(value, 2.5, abs_tol=0.1):
             voltage_reg = 1
-        elif value == 3.3:
+        elif math.isclose(value, 3.3, abs_tol=0.1):
             voltage_reg = 2
         mask = 0xFFFFFFFF ^ ((0b1 << self.MB_GPIO_CTRL_EN_3V3) | \
                              (0b1 << self.MB_GPIO_CTRL_EN_2V5))
