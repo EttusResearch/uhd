@@ -61,30 +61,34 @@ def run_aurora_bist(master, slave=None):
     Spawn a BER test
     """
     from usrp_mpm import aurora_control
-    from usrp_mpm.sys_utils.uio import UIO
+    from usrp_mpm.sys_utils.uio import open_uio
+
+    class DummyContext(object):
+        """Dummy class for context managers"""
+        def __enter__(self):
+            return
+
+        def __exit__(self, exc_type, exc_value, traceback):
+            return exc_type is None
+
+    # Go, go, go!
     try:
         assert_aurora_image(master, slave)
-        master_au_uio = UIO(label=master, read_only=False)
-        master_au_uio.open()
-        master_au_ctrl = aurora_control.AuroraControl(master_au_uio)
-        if slave is not None:
-            slave_au_uio = UIO(label=slave, read_only=False)
-            slave_au_uio.open()
-        slave_au_ctrl = None if slave is None else aurora_control.AuroraControl(
-            slave_au_uio
-        )
-        return master_au_ctrl.run_ber_loopback_bist(
-            duration=10,
-            requested_rate=1300 * 8e6,
-            slave=slave_au_ctrl,
-        )
+        with open_uio(label=master, read_only=False) as master_au_uio:
+            master_au_ctrl = aurora_control.AuroraControl(master_au_uio)
+            with open_uio(label=slave, read_only=False)\
+                    if slave is not None else DummyContext() as slave_au_uio:
+                slave_au_ctrl = aurora_control.AuroraControl(slave_au_uio)\
+                    if slave is not None else None
+                return master_au_ctrl.run_ber_loopback_bist(
+                    duration=10,
+                    requested_rate=1300 * 8e6,
+                    slave=slave_au_ctrl,
+                )
     except Exception as ex:
         print("Unexpected exception: {}".format(str(ex)))
         exit(1)
-    finally:
-        master_au_uio.close()
-        if slave is not None:
-            slave_au_uio.close()
+
 
 def aurora_results_to_status(bist_results):
     """
