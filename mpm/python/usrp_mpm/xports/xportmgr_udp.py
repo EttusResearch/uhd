@@ -14,6 +14,8 @@ from usrp_mpm.sys_utils import net
 from usrp_mpm.mpmtypes import SID
 from usrp_mpm import lib
 
+DEFAULT_BRIDGE_MODE = False
+
 class XportMgrUDP(object):
     """
     Transport manager for UDP connections
@@ -28,12 +30,13 @@ class XportMgrUDP(object):
     #     },
     # }
     iface_config = {}
+    bridges = {}
     # The control addresses are typically addresses bound to the controlling
     # UHD session. When the requested source address is below or equal to this
     # number, we override requested SID source addresses based on other logic.
     max_ctrl_addr = 1
 
-    def __init__(self, log):
+    def __init__(self, log, args):
         assert len(self.iface_config)
         assert all((
             all((key in x for key in ('label', 'xbar', 'xbar_port')))
@@ -46,6 +49,7 @@ class XportMgrUDP(object):
         self.chdr_port = EthDispatcherTable.DEFAULT_VITA_PORT[0]
         self._chdr_ifaces = \
             self._init_interfaces(self._possible_chdr_ifaces)
+        self._bridge_mode = args.get('bridge_mode', DEFAULT_BRIDGE_MODE)
         self._eth_dispatchers = {}
         self._allocations = {}
         self._previous_block_ep = {}
@@ -95,19 +99,41 @@ class XportMgrUDP(object):
 
         After calling this, _chdr_ifaces and _eth_dispatchers are in sync.
         """
-        ifaces_to_remove = [
-            x for x in self._eth_dispatchers.keys()
-            if x not in self._chdr_ifaces
-        ]
-        for iface in ifaces_to_remove:
-            self._eth_dispatchers.pop(iface)
-        for iface in self._chdr_ifaces:
-            if iface not in self._eth_dispatchers:
-                self._eth_dispatchers[iface] = \
-                    EthDispatcherTable(self.iface_config[iface]['label'])
-            self._eth_dispatchers[iface].set_ipv4_addr(
-                self._chdr_ifaces[iface]['ip_addr']
-            )
+        if self._bridge_mode:
+            bridge_iface = list(self._chdr_ifaces.keys())[0]
+            if len(self._chdr_ifaces) != 1 or bridge_iface != list(self.bridges.keys())[0]:
+                self.log.error("No Bridge Interfaces found")
+                raise RuntimeError("No Bridge Interfaces found")
+            self.log.info("Updated dispatchers in bridge mode with bridge interface {}".format(
+                bridge_iface))
+            self._eth_dispatchers = {
+                x: EthDispatcherTable(self.iface_config[x]['label'])
+                for x in self.bridges[bridge_iface]
+            }
+            for dispatcher, table in iteritems(self._eth_dispatchers):
+                self.log.info("this dispatcher: {}".format(dispatcher))
+                table.set_ipv4_addr(
+                    self._chdr_ifaces[bridge_iface]['ip_addr'],
+                    self._bridge_mode
+                )
+                table.set_bridge_mode(self._bridge_mode)
+                table.set_bridge_mac_addr(
+                    self._chdr_ifaces[bridge_iface]['mac_addr']
+                )
+        else:
+            ifaces_to_remove = [
+                x for x in self._eth_dispatchers.keys()
+                if x not in self._chdr_ifaces
+            ]
+            for iface in ifaces_to_remove:
+                self._eth_dispatchers.pop(iface)
+            for iface in self._chdr_ifaces:
+                if iface not in self._eth_dispatchers:
+                    self._eth_dispatchers[iface] = \
+                        EthDispatcherTable(self.iface_config[iface]['label'])
+                self._eth_dispatchers[iface].set_ipv4_addr(
+                    self._chdr_ifaces[iface]['ip_addr']
+                )
 
     def init(self, args):
         """
@@ -115,9 +141,14 @@ class XportMgrUDP(object):
         """
         self._chdr_ifaces = \
             self._init_interfaces(self._possible_chdr_ifaces)
+        if "bridge_mode" in args:
+            self._bridge_mode = args.get("bridge_mode")
         self._update_dispatchers()
-        for _, table in iteritems(self._eth_dispatchers):
-            if 'forward_eth' in args or 'forward_bcast' in args:
+        if self._bridge_mode:
+            for _, table in iteritems(self._eth_dispatchers):
+                table.set_forward_policy(True, False)
+        elif 'forward_eth' in args or 'forward_bcast' in args:
+            for _, table in iteritems(self._eth_dispatchers):
                 table.set_forward_policy(
                     args.get('forward_eth', False),
                     args.get('forward_bcast', False)
@@ -127,6 +158,7 @@ class XportMgrUDP(object):
                 self._eth_dispatchers,
                 args['preload_ethtables']
             )
+
 
     def deinit(self):
         " Clean up after a session terminates "
@@ -180,9 +212,9 @@ class XportMgrUDP(object):
             eth_dispatcher = eth_dispatchers[eth_iface]
             self.log.debug("Preloading {} dispatch table".format(eth_iface))
             try:
-                for dst_ep, udp_data in iteritems(data):
+                for dst_addr, udp_data in iteritems(data):
                     sid = SID()
-                    sid.set_dst_ep(int(dst_ep))
+                    sid.set_dst_addr(int(dst_addr))
                     eth_dispatcher.set_route(
                         sid,
                         udp_data['ip_addr'],
