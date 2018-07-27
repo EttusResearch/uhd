@@ -28,7 +28,14 @@ GPS_LOCKOK_TIMEOUT = 2 # Data sheet says about 15 minutes. Because our test
                        # does not necessarily require GPS lock to pass, we
                        # reduce this value in order for the BIST to pass faster
                        # by default.
-
+# Temperature Sensor Mapping based on location
+temp_sensor_map = {
+    "thermal_zone0" : "internal",
+    "thermal_zone1" : "rf_channelA",
+    "thermal_zone2" : "fpga",
+    "thermal_zone3" : "rf_channelB",
+    "thermal_zone4" : "main_power"
+}
 ##############################################################################
 # Aurora/SFP BIST code
 ##############################################################################
@@ -165,11 +172,14 @@ def filter_results_for_lv(results):
             'read_patterns': [],
         },
         'temp': {
-            'fpga-thermal-zone': -1,
+            temp_sensor_map['thermal_zone0']: -1,
+            temp_sensor_map['thermal_zone1']: -1,
+            temp_sensor_map['thermal_zone2']: -1,
+            temp_sensor_map['thermal_zone3']: -1,
+            temp_sensor_map['thermal_zone4']: -1,
         },
         'fan': {
             'cooling_device0': -1,
-            'cooling_device1': -1,
         },
     }
     # OK now go and brush up the results:
@@ -731,13 +741,14 @@ class E320BIST(object):
         """
         assert 'temp' in self.tests_to_run
         if self.args.dry_run:
-            return True, {'fpga-thermal-zone': 30000}
+            return True, {'internal': 30000}
         import pyudev
         context = pyudev.Context()
         result = {
-            device.attributes.get('type').decode('ascii'): \
+            temp_sensor_map[device.sys_name]: \
                     int(device.attributes.get('temp').decode('ascii'))
             for device in context.list_devices(subsystem='thermal')
+
             if 'temp' in device.attributes.available_attributes \
                     and device.attributes.get('temp') is not None
         }
@@ -747,17 +758,17 @@ class E320BIST(object):
 
     def bist_fan(self):
         """
-        BIST for temperature sensors
+        BIST for fan
         Description: Reads the RPM values of the fans on the motherboard
+
+        External Equipment: Fan with connector
 
         Return dictionary:
         - <fan-name>: Fan speed in RPM
-
-        External Equipment: None
         """
         assert 'fan' in self.tests_to_run
         if self.args.dry_run:
-            return True, {'cooling_device0': 10000, 'cooling_device1': 10000}
+            return True, {'cooling_device0': 10000}
         import pyudev
         context = pyudev.Context()
         result = {
@@ -766,7 +777,7 @@ class E320BIST(object):
             if 'cur_state' in device.attributes.available_attributes \
                     and device.attributes.get('cur_state') is not None
         }
-        return len(result) == 2, result
+        return len(result) == 1, result
 
 
 def gpio_set_all(gpio_bank, value, gpio_size, ddr_mask):
