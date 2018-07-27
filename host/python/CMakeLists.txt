@@ -54,14 +54,14 @@ CONFIGURE_FILE(${SETUP_PY_IN} ${SETUP_PY})
 
 ADD_CUSTOM_COMMAND(OUTPUT ${TIMESTAMP_FILE}
   COMMAND ${CMAKE_COMMAND} -E copy ${PYUHD_FILES} ${CMAKE_CURRENT_BINARY_DIR}/uhd
-  COMMAND ${PYTHON} ${SETUP_PY} -q build
+  COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} -q build
   COMMAND ${CMAKE_COMMAND} -E touch ${TIMESTAMP_FILE}
   DEPENDS ${PYUHD_FILES})
 
 ADD_CUSTOM_TARGET(pyuhd_library ALL DEPENDS ${TIMESTAMP_FILE} pyuhd)
 IF(HAVE_PYTHON_VIRTUALENV)
     # In virtualenvs, let setuptools do its thing
-    INSTALL(CODE "execute_process(COMMAND ${PYTHON} ${SETUP_PY} -q install --force)")
+    INSTALL(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} -q install --force)")
 ELSE()
     # Otherwise, use distutils to determine the correct relative path for Python
     # packages, and install to our prefix
