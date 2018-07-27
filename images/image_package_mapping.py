@@ -24,6 +24,25 @@ PACKAGE_MAPPING = {
                   "usrp_e3xx_fpga_idle.rpt",
                   "usrp_e3xx_fpga_idle_sg3.rpt"]
     },
+    "e320": {
+        "type": "e3xx",
+        "package_name": "e3xx_e320_fpga_default-g{}.zip",
+        "files": ['usrp_e320_fpga_1G.bit',
+                  'usrp_e320_fpga_1G.bit.md5',
+                  'usrp_e320_fpga_1G.dts',
+                  'usrp_e320_fpga_1G.dts.md5',
+                  'usrp_e320_fpga_1G.rpt',
+                  'usrp_e320_fpga_XG.bit',
+                  'usrp_e320_fpga_XG.bit.md5',
+                  'usrp_e320_fpga_XG.dts',
+                  'usrp_e320_fpga_XG.dts.md5',
+                  'usrp_e320_fpga_XG.rpt',
+                  'usrp_e320_fpga_AA.bit',
+                  'usrp_e320_fpga_AA.bit.md5',
+                  'usrp_e320_fpga_AA.dts',
+                  'usrp_e320_fpga_AA.dts.md5',
+                  'usrp_e320_fpga_AA.rpt']
+    },
     "x300": {
         "type": "x3xx",
         "package_name": "x3xx_x300_fpga_default-g{}.zip",
