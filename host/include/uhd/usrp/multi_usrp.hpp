@@ -389,6 +389,57 @@ public:
      */
     virtual std::vector<std::string> get_clock_sources(const size_t mboard) = 0;
 
+    /*! Set the reference/synchronization sources for the USRP device
+     *
+     * This is a shorthand for calling
+     * `set_sync_source(device_addr_t("clock_source=$CLOCK_SOURCE,time_source=$TIME_SOURCE"))`
+     *
+     * \param clock_source A string representing the clock source
+     * \param time_source A string representing the time source
+     * \param mboard which motherboard to set the config
+     * \throws uhd::value_error if the sources don't actually exist
+     */
+    virtual void set_sync_source(
+        const std::string &clock_source,
+        const std::string &time_source,
+        const size_t mboard = ALL_MBOARDS
+    ) = 0;
+
+    /*! Set the reference/synchronization sources for the USRP device
+     *
+     * Typically, this will set both clock and time source in a single call. For
+     * some USRPs, this may be significantly faster than calling
+     * set_time_source() and set_clock_source() individually.
+     *
+     * Example:
+     * ~~~{.cpp}
+     * auto usrp = uhd::usrp::multi_usrp::make("");
+     * usrp->set_sync_source(device_addr_t("clock_source=external,time_source=external"));
+     * ~~~
+     *
+     * \param sync_source A dictionary representing the various source settings.
+     * \param mboard which motherboard to set the config
+     * \throws uhd::value_error if the sources don't actually exist
+     */
+    virtual void set_sync_source(
+        const device_addr_t& sync_source,
+        const size_t mboard = ALL_MBOARDS
+    ) = 0;
+
+    /*! Get the currently set sync source.
+     *
+     * \param mboard which motherboard to get the config
+     * \return the dictionary representing the sync source settings
+     */
+    virtual device_addr_t get_sync_source(const size_t mboard) = 0;
+
+    /*! Get a list of available sync sources
+     *
+     * \param mboard which motherboard to get the config
+     * \return the dictionary representing the sync source settings
+     */
+    virtual std::vector<device_addr_t> get_sync_sources(const size_t mboard) = 0;
+
     /*!
      * Send the clock source to an output connector.
      * This call is only applicable on devices with reference outputs.
