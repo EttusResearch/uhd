@@ -138,7 +138,7 @@ static clock_settings_type get_clock_settings(double rate){
                 cs.chan_divider /= cs.vco_divider;
             }
 
-            UHD_LOGGER_DEBUG("B100")
+            UHD_LOGGER_TRACE("B100")
                 << "gcd: " << gcd
                 << " X: " << X
                 << " Y: " << Y
@@ -156,7 +156,7 @@ static clock_settings_type get_clock_settings(double rate){
             if (cs.get_vco_rate() < 1400e6 + vco_bound_pad) continue;
             if (cs.get_out_rate() != rate) continue;
 
-            UHD_LOGGER_INFO("B100") << "USRP-B100 clock control: " << i  << cs.to_pp_string() ;
+            UHD_LOGGER_TRACE("B100") << "USRP-B100 clock control: " << i  << cs.to_pp_string() ;
             return cs;
         }
     }
