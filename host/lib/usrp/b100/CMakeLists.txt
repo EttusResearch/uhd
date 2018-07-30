@@ -21,5 +21,6 @@ IF(ENABLE_B100)
         ${CMAKE_CURRENT_SOURCE_DIR}/io_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/mb_eeprom.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/usb_zero_copy_wrapper.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/fifo_ctrl_excelsior.cpp
     )
 ENDIF(ENABLE_B100)

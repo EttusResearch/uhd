@@ -10,6 +10,7 @@
 
 #include "clock_ctrl.hpp"
 #include "codec_ctrl.hpp"
+#include "fifo_ctrl_excelsior.hpp"
 #include <uhd/device.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/types/dict.hpp>
@@ -21,7 +22,6 @@
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/transport/usb_zero_copy.hpp>
-#include <uhdlib/usrp/common/fifo_ctrl_excelsior.hpp>
 #include <uhdlib/usrp/common/fx2_ctrl.hpp>
 #include <uhdlib/usrp/common/recv_packet_demuxer_3000.hpp>
 #include <uhdlib/usrp/cores/i2c_core_200.hpp>
