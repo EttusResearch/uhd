@@ -22,6 +22,7 @@
 #define UHD_USRP_MULTI_USRP_REGISTER_API
 #define UHD_USRP_MULTI_USRP_FILTER_API
 #define UHD_USRP_MULTI_USRP_LO_CONFIG_API
+#define UHD_USRP_MULTI_USRP_TX_LO_CONFIG_API
 
 #include <uhd/config.hpp>
 #include <uhd/device.hpp>
