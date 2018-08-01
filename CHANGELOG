@@ -1,6 +1,11 @@
 Change Log for Releases
 ==============================
 
+## 003.013.000.001
+* N3xx: Fix UIO usage in Aurora BIST
+* N3xx: Fix EEPROM parsing (for upcoming hardware)
+* UHD: Fix install path for Python API
+
 ## 003.013.000.000
 * N3x0: Enable fast-reinit, fix power level issue, accept 0x01 PID for
         AD9371, fix concurrency issues with Liberio
@@ -22,7 +27,6 @@ Change Log for Releases
        Ethernet devices
 * CMake: Allow to override UHD_GIT_BRANCH, fix Python-finding logic, add
          ENABLE_N300 target
-
 
 ## 003.012.000.000
 * N3x0: Add White Rabbit support, add N300 support, standard BIST
