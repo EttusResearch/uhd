@@ -34,17 +34,20 @@ class ADF400x(object):
 
         # Instantiate our own copy of the register mapping and update some values
         self.adf400x_regs = ADF400xRegs()
-        self.adf400x_regs.ref_counter = 1
+        # N counter = fVCO/PFD
+        self.adf400x_regs.n_counter = 4
         self.adf400x_regs.charge_pump_current_1 = 7
         self.adf400x_regs.charge_pump_current_2 = 7
+        # Set MUXOUT to Digital Lock Detect
         self.adf400x_regs.muxout = ADF400xRegs.MUXOUT_DLD
         self.adf400x_regs.counter_reset = ADF400xRegs.COUNTER_RESET_NORMAL
         self.adf400x_regs.phase_detector_polarity = ADF400xRegs.PHASE_DETECTOR_POLARITY_POS
-        self.adf400x_regs.charge_pump_mode = ADF400xRegs.CHARGE_PUMP_TRISTATE
+        # Turn on Charge Pump
+        self.adf400x_regs.charge_pump_mode = ADF400xRegs.CHARGE_PUMP_NORMAL
         # Set the N counter
         if freq is None:
             freq = DEFAULT_REF_CLOCK_FREQ
-        self._set_n_counter(freq)
+        self._set_ref_counter(freq)
 
         # Now initialize the ADF400x
         self.program_regs()
@@ -76,19 +79,24 @@ class ADF400x(object):
             self.adf400x_regs.charge_pump_mode = ADF400xRegs.CHARGE_PUMP_TRISTATE
         self.program_regs()
 
-    def _set_n_counter(self, freq):
-        n_counter = int(BASE_REF_CLOCK_FREQ / freq)
-        if self.adf400x_regs.n_counter == n_counter:
-            self.log.trace("No change to N counter value ({}); returning early".format(n_counter))
+    def _set_ref_counter(self, freq):
+        """
+        Set R Counter based on reference frequency
+        """
+        # Calculate R counter fVCO = N * (fREF/R)
+        ref_counter = int(self.adf400x_regs.n_counter * freq / BASE_REF_CLOCK_FREQ)
+        if self.adf400x_regs.ref_counter == ref_counter:
+            self.log.trace("No change to ref counter value ({}); \
+                returning early".format(ref_counter))
             return
-        self.log.trace("Setting N counter to {}".format(n_counter))
+        self.log.trace("Setting ref counter to {}".format(ref_counter))
         # Limits from the datasheet
-        assert 1 <= n_counter <= 8191
-        self.adf400x_regs.n_counter = n_counter
+        assert 1 <= ref_counter <= 16383
+        self.adf400x_regs.ref_counter = ref_counter
 
     def set_ref_freq(self, freq):
         """Set the input reference frequency"""
-        self._set_n_counter(freq)
+        self._set_ref_counter(freq)
         self.program_regs()
 
 
