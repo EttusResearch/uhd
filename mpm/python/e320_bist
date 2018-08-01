@@ -600,6 +600,46 @@ class E320BIST(object):
                     ).read().strip()
         return len(result) == 1, result
 
+    def ref_clock_helper(self,clock_source):
+        """
+        Helper function to determine reference clock lock
+        Description: Checks to see if we can lock to a clock source.
+
+        External Equipment: None
+        Return dictionary:
+         - <sensor-name>:
+           - locked: Boolean lock status
+        """
+        assert clock_source in ("internal", "external"),\
+            "Invalid clock source selected ({}). Valid choices: {}".format(
+                clock_source, ("internal", "external"))
+        if self.args.dry_run:
+            return True, {'ref_locked': True}
+        result = {}
+        cmd = ['uhd_usrp_probe', '--args', 'addr=127.0.0.1,clock_source=' + clock_source,
+            '--sensor']
+        sensor_path = '/mboards/0/sensors/ref_locked'
+        cmd.append(sensor_path)
+        ref_lock_executor = ' '.join(cmd)
+        print(ref_lock_executor)
+        try:
+            output = subprocess.check_output(
+                ref_lock_executor,
+                stderr=subprocess.PIPE,
+                shell=True,
+            )
+        except subprocess.CalledProcessError as ex:
+            # Don't throw errors from uhd_usrp_probe
+            output = ex.output
+        output = output.decode("utf-8")
+        mobj = re.search(r"true$", output.strip())
+        if mobj is not None:
+            result['ref_locked'] = True
+        else:
+            result['ref_locked'] = False
+            result['error_msg'] = "Reference Clock not locked"
+        return result
+
     def bist_ref_clock_int(self):
         """
         BIST for clock lock from internal (20MHz).
@@ -615,18 +655,7 @@ class E320BIST(object):
         need to be asserted.
         """
         assert 'ref_clock_int' in self.tests_to_run
-        if self.args.dry_run:
-            return True, {'ref_locked': True}
-        # RevB only: Read register from FPGA for lock status.
-        result = {}
-        from usrp_mpm.periph_manager import e320, e320_periphs
-        mb_regs = e320_periphs.MboardRegsControl(e320.e320.mboard_regs_label, self.log)
-        mb_regs.set_clock_source('internal', 20e6)
-        time.sleep(5)
-        if mb_regs.get_refclk_lock():
-            result = {'ref_locked': mb_regs.get_refclk_lock()}
-        if len(result) < 1:
-            result['error_msg'] = "Reference Clock not locked"
+        result = self.ref_clock_helper('internal')
         return 'error_msg' not in result, result
 
     def bist_ref_clock_ext(self):
@@ -644,18 +673,7 @@ class E320BIST(object):
         need to be asserted.
         """
         assert 'ref_clock_ext' in self.tests_to_run
-        if self.args.dry_run:
-            return True, {'ref_locked': True}
-        # RevB only: Read register from FPGA for lock status.
-        result = {}
-        from usrp_mpm.periph_manager import e320, e320_periphs
-        mb_regs = e320_periphs.MboardRegsControl(e320.e320.mboard_regs_label, self.log)
-        mb_regs.set_clock_source('external', 10e6)
-        time.sleep(5)
-        if mb_regs.get_refclk_lock():
-            result = {'ref_locked': mb_regs.get_refclk_lock()}
-        if len(result) < 1:
-            result['error_msg'] = "Reference Clock not locked"
+        result = self.ref_clock_helper('external')
         return 'error_msg' not in result, result
 
     def bist_sfp_loopback(self):
