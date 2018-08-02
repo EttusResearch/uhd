@@ -187,6 +187,7 @@ class MboardRegsControl(object):
     MB_CLOCK_CTRL_PPS_OUT_EN = 4 # output enabled = 1
     MB_CLOCK_CTRL_MEAS_CLK_RESET = 12 # set to 1 to reset mmcm, default is 0
     MB_CLOCK_CTRL_MEAS_CLK_LOCKED = 13 # locked indication for meas_clk mmcm
+    MB_CLOCK_CTRL_DISABLE_REF_CLK = 16 # to disable the ref_clk, write a '1'
 
     def __init__(self, label, log):
         self.log = log
@@ -338,6 +339,22 @@ class MboardRegsControl(object):
             if enable:
                 # set the bit if desired:
                 reg_val = reg_val | (0b1 << self.MB_CLOCK_CTRL_PPS_OUT_EN)
+            self.log.trace("Writing MB_CLOCK_CTRL to 0x{:08X}".format(reg_val))
+            self.poke32(self.MB_CLOCK_CTRL, reg_val)
+
+    def enable_ref_clk(self, enable):
+        """
+        Enables the reference clock internal to the FPGA
+        """
+        self.log.trace("%s the Reference Clock!",
+                       "Enabling" if enable else "Disabling")
+        mask = 0xFFFFFFFF ^ (0b1 << self.MB_CLOCK_CTRL_DISABLE_REF_CLK)
+        with self.regs:
+            # mask the bit to clear it and therefore enable the clock:
+            reg_val = self.peek32(self.MB_CLOCK_CTRL) & mask
+            if not enable:
+                # set the bit if not enabled (note this is a DISABLE bit when = 1):
+                reg_val = reg_val | (0b1 << self.MB_CLOCK_CTRL_DISABLE_REF_CLK)
             self.log.trace("Writing MB_CLOCK_CTRL to 0x{:08X}".format(reg_val))
             self.poke32(self.MB_CLOCK_CTRL, reg_val)
 
