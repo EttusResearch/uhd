@@ -21,18 +21,19 @@
 // and then streams the result to the host, writing it into a file.
 
 #include <uhd/device3.hpp>
-#include <uhd/utils/thread_priority.hpp>
+#include <uhd/utils/thread.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/rfnoc/block_ctrl.hpp>
 #include <uhd/rfnoc/null_block_ctrl.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
-#include <boost/thread.hpp>
 #include <iostream>
 #include <fstream>
 #include <csignal>
 #include <complex>
+#include <thread>
+#include <chrono>
 
 namespace po = boost::program_options;
 
@@ -74,22 +75,27 @@ template<typename samp_type> void recv_to_file(
     rx_stream->issue_stream_cmd(stream_cmd);
     std::cout << "Done" << std::endl;
 
-    boost::system_time start = boost::get_system_time();
-    unsigned long long ticks_requested = (long)(time_requested * (double)boost::posix_time::time_duration::ticks_per_second());
-    boost::posix_time::time_duration ticks_diff;
-    boost::system_time last_update = start;
+    const auto start_time = std::chrono::steady_clock::now();
+    const auto stop_time =
+        start_time
+        + std::chrono::milliseconds(int64_t(1000 * time_requested));
+    // Track time and samps between updating the BW summary
+    auto last_update = start_time;
     unsigned long long last_update_samps = 0;
 
     while(
         not stop_signal_called
-        and (num_requested_samples != num_total_samps or num_requested_samples == 0)
+        and (num_requested_samples != num_total_samps
+            or num_requested_samples == 0)
+        and (time_requested == 0.0
+            or std::chrono::steady_clock::now() <= stop_time)
     ) {
-        boost::system_time now = boost::get_system_time();
+        const auto now = std::chrono::steady_clock::now();
 
         size_t num_rx_samps = rx_stream->recv(&buff.front(), buff.size(), md, 3.0);
 
         if (md.error_code == uhd::rx_metadata_t::ERROR_CODE_TIMEOUT) {
-            std::cout << boost::format("Timeout while streaming") << std::endl;
+            std::cout << "Timeout while streaming" << std::endl;
             break;
         }
         if (md.error_code == uhd::rx_metadata_t::ERROR_CODE_OVERFLOW){
@@ -101,7 +107,7 @@ template<typename samp_type> void recv_to_file(
             continue;
         }
         if (md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE){
-            std::string error = str(boost::format("Receiver error: %s") % md.strerror());
+            const auto error = std::string("Receiver error: ") + md.strerror();
             if (continue_on_bad_packet){
                 std::cerr << error << std::endl;
                 continue;
@@ -118,37 +124,40 @@ template<typename samp_type> void recv_to_file(
 
         if (bw_summary) {
             last_update_samps += num_rx_samps;
-            boost::posix_time::time_duration update_diff = now - last_update;
-            if (update_diff.ticks() > boost::posix_time::time_duration::ticks_per_second()) {
-                double t = (double)update_diff.ticks() / (double)boost::posix_time::time_duration::ticks_per_second();
-                double r = (double)last_update_samps / t;
-                std::cout << boost::format("\t%f Msps") % (r/1e6) << std::endl;
+            const auto time_since_last_update = now - last_update;
+            if (time_since_last_update > std::chrono::seconds(1)) {
+                const double time_since_last_update_s =
+                    std::chrono::duration<double>(time_since_last_update).count();
+                const double rate =
+                    double(last_update_samps) / time_since_last_update_s;
+                std::cout << "\t" << (rate/1e6) << " Msps" << std::endl;
                 last_update_samps = 0;
                 last_update = now;
             }
         }
-
-        ticks_diff = now - start;
-        if (ticks_requested > 0){
-            if ((unsigned long long)ticks_diff.ticks() > ticks_requested)
-                break;
-        }
     }
+    const auto actual_stop_time = std::chrono::steady_clock::now();
 
     stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
     std::cout << "Issuing stop stream cmd" << std::endl;
     rx_stream->issue_stream_cmd(stream_cmd);
     std::cout << "Done" << std::endl;
 
-    if (outfile.is_open())
+    if (outfile.is_open()) {
         outfile.close();
+    }
 
-    if (stats){
+    if (stats) {
         std::cout << std::endl;
-        double t = (double)ticks_diff.ticks() / (double)boost::posix_time::time_duration::ticks_per_second();
-        std::cout << boost::format("Received %d samples in %f seconds") % num_total_samps % t << std::endl;
-        double r = (double)num_total_samps / t;
-        std::cout << boost::format("%f Msps") % (r/1e6) << std::endl;
+        const double actual_duration_seconds =
+            std::chrono::duration<float>(actual_stop_time - start_time).count();
+        std::cout
+            << boost::format("Received %d samples in %f seconds")
+               % num_total_samps
+               % actual_duration_seconds
+            << std::endl;
+        const double rate = (double) num_total_samps / actual_duration_seconds;
+        std::cout << (rate/1e6) << " Msps" << std::endl;
     }
 }
 
@@ -240,9 +249,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     //print the help message
     if (vm.count("help")){
         std::cout
-            << boost::format("[RFNOC] Connect a null source to another (processing) block, and stream the result to file %s.") % desc
-            << std::endl;
-        return ~0;
+            << "[RFNOC] Connect a null source to another (processing) block, "
+               "and stream the result to file."
+            << desc << std::endl;
+        return EXIT_SUCCESS;
     }
 
     bool bw_summary = vm.count("progress") > 0;
@@ -275,10 +285,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     //////// 1. Setup a USRP device /////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////
     std::cout << std::endl;
-    std::cout << boost::format("Creating the USRP device with: %s...") % args << std::endl;
+    std::cout << "Creating the USRP device with args: " << args << std::endl;
     uhd::device3::sptr usrp = uhd::device3::make(args);
 
-    boost::this_thread::sleep(boost::posix_time::seconds(setup_time)); //allow for some setup time
+    std::this_thread::sleep_for( //allow for some setup time
+        std::chrono::milliseconds(int64_t(setup_time * 1000)));
     // Reset device streaming state
     usrp->clear();
     uhd::rfnoc::graph::sptr rx_graph = usrp->create_graph("rx_graph");
@@ -379,7 +390,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     /////////////////////////////////////////////////////////////////////////
     uhd::stream_args_t stream_args(format, "sc16");
     stream_args.args = stream_args_args;
-    stream_args.args["spp"] = boost::lexical_cast<std::string>(spp);
+    stream_args.args["spp"] = std::to_string(spp);
     UHD_LOGGER_DEBUG("RFNOC") << "Using streamer args: " << stream_args.args.to_string() << std::endl;
     uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
 
