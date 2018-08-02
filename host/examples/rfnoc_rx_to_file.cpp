@@ -17,7 +17,7 @@
 
 #include <uhd/types/tune_request.hpp>
 #include <uhd/types/sensors.hpp>
-#include <uhd/utils/thread_priority.hpp>
+#include <uhd/utils/thread.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/device3.hpp>
 #include <uhd/rfnoc/radio_ctrl.hpp>
