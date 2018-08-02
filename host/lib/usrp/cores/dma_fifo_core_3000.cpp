@@ -33,6 +33,7 @@ protected:
         static const uint32_t RB_BIST_XFER_CNT   = 2;
         static const uint32_t RB_BIST_CYC_CNT    = 3;
         static const uint32_t RB_BUS_CLK_RATE    = 4;
+        static const uint32_t RB_OUT_PKT_CNT     = 5;
 
         rb_addr_reg_t(uint32_t base):
             soft_reg32_wo_t(base + 0)
@@ -46,6 +47,7 @@ protected:
     public:
         UHD_DEFINE_SOFT_REG_FIELD(CLEAR_FIFO,           /*width*/  1, /*shift*/  0);  //[0]
         UHD_DEFINE_SOFT_REG_FIELD(RD_SUPPRESS_EN,       /*width*/  1, /*shift*/  1);  //[1]
+        UHD_DEFINE_SOFT_REG_FIELD(FLUSH_PKTS,           /*width*/  1, /*shift*/  2);  //[2]
         UHD_DEFINE_SOFT_REG_FIELD(BURST_TIMEOUT,        /*width*/ 12, /*shift*/  4);  //[15:4]
         UHD_DEFINE_SOFT_REG_FIELD(RD_SUPPRESS_THRESH,   /*width*/ 16, /*shift*/ 16);  //[31:16]
 
@@ -53,8 +55,9 @@ protected:
             soft_reg32_wo_t(base + 4)
         {
             //Initial values
-            set(CLEAR_FIFO, 1);
+            set(CLEAR_FIFO, 0);
             set(RD_SUPPRESS_EN, 0);
+            set(FLUSH_PKTS, 0);
             set(BURST_TIMEOUT, 256);
             set(RD_SUPPRESS_THRESH, 0);
         }
@@ -168,10 +171,10 @@ public:
             return _iface->peek32(_rb_addr) & 0x7FFFFFF;
         }
 
-        uint32_t is_fifo_busy() {
+        uint32_t get_out_pkt_cnt() {
             boost::lock_guard<boost::mutex> lock(_mutex);
-            _addr_reg.write(rb_addr_reg_t::ADDR, rb_addr_reg_t::RB_FIFO_STATUS);
-            return _iface->peek32(_rb_addr) & 0x40000000;
+            _addr_reg.write(rb_addr_reg_t::ADDR, rb_addr_reg_t::RB_OUT_PKT_CNT);
+            return _iface->peek32(_rb_addr);
         }
 
         struct bist_status_t {
@@ -238,19 +241,19 @@ public:
             _bist_delay_reg.initialize(*iface, true);
             _bist_sid_reg.initialize(*iface, true);
         }
-        flush();
     }
 
-    virtual ~dma_fifo_core_3000_impl()
-    {
-    }
-
-    virtual void flush() {
+    virtual ~dma_fifo_core_3000_impl() {
         //Clear the FIFO and hold it in that state
-        _fifo_ctrl_reg.write(fifo_ctrl_reg_t::CLEAR_FIFO, 1);
-        //Re-arm the FIFO
-        _wait_for_fifo_empty();
-        _fifo_ctrl_reg.write(fifo_ctrl_reg_t::CLEAR_FIFO, 0);
+        _fifo_ctrl_reg.write(fifo_ctrl_reg_t::FLUSH_PKTS, 1);
+    }
+
+    virtual bool flush(uint32_t timeout_ms = 2000) {
+        //Flush the FIFO and wait for packets to drain
+        _fifo_ctrl_reg.write(fifo_ctrl_reg_t::FLUSH_PKTS, 1);
+        bool success = _wait_for_fifo_empty(timeout_ms);
+        _fifo_ctrl_reg.write(fifo_ctrl_reg_t::FLUSH_PKTS, 0);
+        return success;
     }
 
     virtual void resize(const uint32_t base_addr, const uint32_t size) {
@@ -259,14 +262,15 @@ public:
         uint32_t size_mask = size - 1;
         if (size & size_mask) throw uhd::runtime_error("DMA FIFO size must be a power of 2");
 
+        //Flush the FIFO and wait for packets to drain
+        flush();
         //Clear the FIFO and hold it in that state
         _fifo_ctrl_reg.write(fifo_ctrl_reg_t::CLEAR_FIFO, 1);
         //Write base address and mask
         _base_addr_reg.write(base_addr_reg_t::BASE_ADDR, base_addr);
         _addr_mask_reg.write(addr_mask_reg_t::ADDR_MASK, ~size_mask);
-
         //Re-arm the FIFO
-        flush();
+        _fifo_ctrl_reg.write(fifo_ctrl_reg_t::CLEAR_FIFO, 0);
     }
 
     virtual uint32_t get_bytes_occupied() {
@@ -290,8 +294,14 @@ public:
     ) {
         boost::lock_guard<boost::mutex> lock(_mutex);
 
-        _wait_for_bist_done(timeout_ms, true);          //Stop previous BIST and wait (if running)
-        _bist_ctrl_reg.write(bist_ctrl_reg_t::GO, 0);   //Reset
+        //Stop previous BIST and wait (if running)
+        _wait_for_bist_done(timeout_ms, true);
+
+        //Flush the FIFO and wait for packets to drain
+        flush();
+        //Clear the FIFO and reset the BIST engine
+        _fifo_ctrl_reg.write(fifo_ctrl_reg_t::CLEAR_FIFO, 1);
+        _fifo_ctrl_reg.write(fifo_ctrl_reg_t::CLEAR_FIFO, 0);
 
         _bist_cfg_reg.set(bist_cfg_reg_t::MAX_PKTS, (2^18)-1);
         _bist_cfg_reg.set(bist_cfg_reg_t::MAX_PKT_SIZE, 8000);
@@ -340,32 +350,46 @@ public:
     }
 
 private:
-    void _wait_for_fifo_empty()
-    {
-        boost::posix_time::ptime start_time = boost::posix_time::microsec_clock::local_time();
-        boost::posix_time::time_duration elapsed;
+    bool _wait_for_fifo_empty(uint32_t timeout_ms = 2000) {
+        auto is_data_streaming = [this](uint32_t time_ms) -> bool {
+            auto old_cnts = _fifo_readback.get_out_pkt_cnt();
+            std::this_thread::sleep_for(std::chrono::milliseconds(time_ms));
+            auto new_cnts = _fifo_readback.get_out_pkt_cnt();
+            return (new_cnts != old_cnts);
+        };
 
-        while (_fifo_readback.is_fifo_busy()) {
-            std::this_thread::sleep_for(std::chrono::microseconds(1000));
-            elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
-            if (elapsed.total_milliseconds() > 100) break;
+        // Check for activity. Default timeout is 2s. For a 200MHz bus_clk that's 3200MB of data.
+        // We use a 10ms window to check for activity which detects a stream with approx
+        // 100 packets per second. All timeouts are approximate. No need to make a kernel
+        // call to get system time.
+        constexpr uint32_t CHK_WINDOW_MS = 10;
+        for (uint32_t i = 0; i < timeout_ms/CHK_WINDOW_MS; i++) {
+            if (not is_data_streaming(CHK_WINDOW_MS)) {
+                return true;
+            }
         }
+        return false;
     }
 
-    void _wait_for_bist_done(uint32_t timeout_ms, bool force_stop = false)
-    {
-        boost::posix_time::ptime start_time = boost::posix_time::microsec_clock::local_time();
-        boost::posix_time::time_duration elapsed;
-
-        while (_fifo_readback.get_bist_status().running) {
+    bool _wait_for_bist_done(uint32_t timeout_ms, bool force_stop = false) {
+        // Stop the BIST if requested and it is running
+        if (_fifo_readback.get_bist_status().running) {
             if (force_stop) {
                 _bist_ctrl_reg.write(bist_ctrl_reg_t::GO, 0);
-                force_stop = false;
             }
-            std::this_thread::sleep_for(std::chrono::microseconds(1000));
-            elapsed = boost::posix_time::microsec_clock::local_time() - start_time;
-            if (elapsed.total_milliseconds() > timeout_ms) break;
+        } else {
+            return true;
         }
+
+        // BIST is still running. Wait for it to finish
+        // Timeout is approximate. No need to make a kernel call to get system time.
+        for (uint32_t i = 0; i < timeout_ms; i++) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            if (not _fifo_readback.get_bist_status().running) {
+                return true;
+            }
+        }
+        return false;
     }
 
 private:

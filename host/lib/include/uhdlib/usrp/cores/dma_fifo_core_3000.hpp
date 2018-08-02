@@ -34,7 +34,7 @@ public:
     /*!
      * Flush the DMA FIFO. Will clear all contents.
      */
-    virtual void flush() = 0;
+    virtual bool flush(uint32_t timeout_ms = 2000) = 0;
 
     /*!
      * Resize and rebase the DMA FIFO. Will clear all contents.
