@@ -1,6 +1,9 @@
 Change Log for Releases
 ==============================
 
+* N3xx: Fix issue where changing the clock/time source could result in
+        clocks becoming unlocked
+
 ## 003.013.000.001
 * N3xx: Fix UIO usage in Aurora BIST
 * N3xx: Fix EEPROM parsing (for upcoming hardware)

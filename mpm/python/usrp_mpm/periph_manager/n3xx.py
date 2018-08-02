@@ -11,6 +11,7 @@ from __future__ import print_function
 import copy
 import re
 import threading
+import time
 from six import iteritems, itervalues
 from usrp_mpm.cores import WhiteRabbitRegsControl
 from usrp_mpm.components import ZynqComponents
@@ -235,15 +236,12 @@ class n3xx(ZynqComponents, PeriphManagerBase):
             self._clock_source = N3XX_DEFAULT_CLOCK_SOURCE
             self._time_source = N3XX_DEFAULT_TIME_SOURCE
         else:
-            self.set_clock_source(
-                default_args.get('clock_source', N3XX_DEFAULT_CLOCK_SOURCE)
-            )
-            self.set_time_source(
-                default_args.get('time_source', N3XX_DEFAULT_TIME_SOURCE)
-            )
-            self.enable_pps_out(
-                default_args.get('pps_export', N3XX_DEFAULT_ENABLE_PPS_EXPORT)
-            )
+            self.set_sync_source( {
+                'clock_source': default_args.get('clock_source',
+                                                 N3XX_DEFAULT_CLOCK_SOURCE),
+                'time_source' : default_args.get('time_source',
+                                                 N3XX_DEFAULT_TIME_SOURCE)
+            } )
 
     def _init_meas_clock(self):
         """
@@ -370,17 +368,11 @@ class n3xx(ZynqComponents, PeriphManagerBase):
             self.log.error(
                 "Cannot run init(), device was never fully initialized!")
             return False
-        # We need to disable the PPS out during clock initialization in order
+        # We need to disable the PPS out during clock and dboard initialization in order
         # to avoid glitches.
-        enable_pps_out_state = self._default_args.get(
-            'pps_export',
-            N3XX_DEFAULT_ENABLE_PPS_EXPORT
-        )
         self.enable_pps_out(False)
-        if "clock_source" in args:
-            self.set_clock_source(args.get("clock_source"))
         if "clock_source" in args or "time_source" in args:
-            self.set_time_source(args.get("time_source", self.get_time_source()))
+            self.set_sync_source(args)
         # Uh oh, some hard coded product-related info: The N300 has no LO
         # source connectors on the front panel, so we assume that if this was
         # selected, it was an artifact from N310-related code. The user gets
@@ -394,9 +386,11 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         # Note: The parent class takes care of calling init() on all the
         # daughterboards
         result = super(n3xx, self).init(args)
-        # Now the clocks are all enabled, we can also re-enable PPS export if
-        # it was turned off:
-        self.enable_pps_out(enable_pps_out_state)
+        # Now the clocks are all enabled, we can also enable PPS export:
+        self.enable_pps_out(args.get(
+            'pps_export',
+            N3XX_DEFAULT_ENABLE_PPS_EXPORT
+        ))
         for xport_mgr in itervalues(self._xport_mgrs):
             xport_mgr.init(args)
         return result
@@ -524,74 +518,10 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         return self._clock_source
 
     def set_clock_source(self, *args):
-        """
-        Switch reference clock.
-
-        Throws if clock_source is not a valid value.
-        """
+        " Sets a new reference clock source "
         clock_source = args[0]
-        assert clock_source in self.get_clock_sources()
-        self.log.debug("Setting clock source to `{}'".format(clock_source))
-        if clock_source == self.get_clock_source():
-            self.log.trace("Nothing to do -- clock source already set.")
-            return
-        if clock_source == 'internal':
-            self._gpios.set("CLK-MAINSEL-EX_B")
-            self._gpios.set("CLK-MAINSEL-25MHz")
-            self._gpios.reset("CLK-MAINSEL-GPS")
-        elif clock_source == 'gpsdo':
-            self._gpios.set("CLK-MAINSEL-EX_B")
-            self._gpios.reset("CLK-MAINSEL-25MHz")
-            self._gpios.set("CLK-MAINSEL-GPS")
-        else: # external
-            self._gpios.reset("CLK-MAINSEL-EX_B")
-            self._gpios.reset("CLK-MAINSEL-GPS")
-            # SKY13350 needs to be in known state
-            self._gpios.set("CLK-MAINSEL-25MHz")
-        self._clock_source = clock_source
-        ref_clk_freq = self.get_ref_clock_freq()
-        self.log.debug("Reference clock frequency is: {} MHz".format(
-            ref_clk_freq/1e6
-        ))
-        for slot, dboard in enumerate(self.dboards):
-            if hasattr(dboard, 'update_ref_clock_freq'):
-                self.log.trace(
-                    "Updating reference clock on dboard %d to %f MHz...",
-                    slot, ref_clk_freq/1e6
-                )
-                dboard.update_ref_clock_freq(ref_clk_freq)
-
-    def set_ref_clock_freq(self, freq):
-        """
-        Tell our USRP what the frequency of the external reference clock is.
-
-        Will throw if it's not a valid value.
-        """
-        assert freq in (10e6, 20e6, 25e6)
-        self.log.debug("We've been told the external reference clock " \
-                       "frequency is {} MHz.".format(freq/1e6))
-        if self._ext_clk_freq == freq:
-            self.log.trace("New external reference clock frequency " \
-                           "assignment matches previous assignment. Ignoring " \
-                           "update command.")
-            return
-        self._ext_clock_freq = freq
-        if self.get_clock_source() == 'external':
-            for slot, dboard in enumerate(self.dboards):
-                if hasattr(dboard, 'update_ref_clock_freq'):
-                    self.log.trace(
-                        "Updating reference clock on dboard %d to %f MHz...",
-                        slot, freq/1e6
-                    )
-                    dboard.update_ref_clock_freq(freq)
-
-    def get_ref_clock_freq(self):
-        " Returns the currently active reference clock frequency"
-        return {
-            'internal': 25e6,
-            'external': self._ext_clock_freq,
-            'gpsdo': 20e6,
-        }[self._clock_source]
+        source = {"clock_source": clock_source}
+        self.set_sync_source(source)
 
     def get_time_sources(self):
         " Returns list of valid time sources "
@@ -603,22 +533,81 @@ class n3xx(ZynqComponents, PeriphManagerBase):
 
     def set_time_source(self, time_source):
         " Set a time source "
+        source = {"time_source": time_source}
+        self.set_sync_source(source)
+
+    def set_sync_source(self, args):
+        """
+        Selects reference clock and PPS sources. Unconditionally re-applies the time
+        source to ensure continuity between the reference clock and time rates.
+        """
+        clock_source = args.get('clock_source',self._clock_source)
+        if clock_source != self._clock_source:
+            assert clock_source in self.get_clock_sources()
+            self.log.debug("Setting clock source to `{}'".format(clock_source))
+            # Place the DB clocks in a safe state to allow reference clock transitions. This
+            # leaves all the DB clocks OFF.
+            for slot, dboard in enumerate(self.dboards):
+                if hasattr(dboard, 'set_clk_safe_state'):
+                    self.log.trace(
+                        "Setting dboard %d components to safe clocking state...", slot)
+                    dboard.set_clk_safe_state()
+            # Disable the Ref Clock in the FPGA before throwing the external switches.
+            self.mboard_regs_control.enable_ref_clk(False)
+            # Set the external switches to bring in the new source.
+            if clock_source == 'internal':
+                self._gpios.set("CLK-MAINSEL-EX_B")
+                self._gpios.set("CLK-MAINSEL-25MHz")
+                self._gpios.reset("CLK-MAINSEL-GPS")
+            elif clock_source == 'gpsdo':
+                self._gpios.set("CLK-MAINSEL-EX_B")
+                self._gpios.reset("CLK-MAINSEL-25MHz")
+                self._gpios.set("CLK-MAINSEL-GPS")
+            else: # external
+                self._gpios.reset("CLK-MAINSEL-EX_B")
+                self._gpios.reset("CLK-MAINSEL-GPS")
+                # SKY13350 needs to be in known state
+                self._gpios.set("CLK-MAINSEL-25MHz")
+            self._clock_source = clock_source
+            self.log.debug("Reference clock source is: {}" \
+                           .format(self._clock_source))
+            self.log.debug("Reference clock frequency is: {} MHz" \
+                           .format(self.get_ref_clock_freq()/1e6))
+            # Enable the Ref Clock in the FPGA after giving it a chance to settle. The
+            # settling time is a guess.
+            time.sleep(0.100)
+            self.mboard_regs_control.enable_ref_clk(True)
+        else:
+            self.log.trace("New reference clock source " \
+                           "assignment matches previous assignment. Ignoring " \
+                           "update command.")
+        # Whenever the clock source changes, re-apply the time source to ensure
+        # frequency changes are applied to the internal PPS counters.
+        # If the time_source is not passed as an arg, use the current source.
+        time_source = args.get('time_source',self._time_source)
         assert time_source in self.get_time_sources()
+        # Perform the assignment regardless of whether the source was previously
+        # selected, since the internal PPS generator needs to change depending on the
+        # refclk frequency.
         self._time_source = time_source
-        self.mboard_regs_control.set_time_source(time_source, self.get_ref_clock_freq())
+        ref_clk_freq = self.get_ref_clock_freq()
+        self.mboard_regs_control.set_time_source(time_source, ref_clk_freq)
         if time_source == 'sfp0':
             # This error is specific to slave and master mode for White Rabbit.
-            # Grand Master mode will require the external or gpsdo sources (not supported).
-            if (time_source == 'sfp0' or time_source == 'sfp1') and \
-              self.get_clock_source() != 'internal':
-                error_msg = "Time source sfp(0|1) requires the internal clock source!"
+            # Grand Master mode will require the external or gpsdo
+            # sources (not supported).
+            if time_source in ('sfp0', 'sfp1') \
+                    and self.get_clock_source() != 'internal':
+                error_msg = "Time source {} requires `internal` clock source!".format(
+                    time_source)
                 self.log.error(error_msg)
                 raise RuntimeError(error_msg)
-            if self.updateable_components['fpga']['type'] != 'WX':
-                self.log.error("{} time source requires 'WX' FPGA type" \
-                               .format(time_source))
-                raise RuntimeError("{} time source requires 'WX' FPGA type" \
-                               .format(time_source))
+            sfp_time_source_images = ('WX',)
+            if self.updateable_components['fpga']['type'] not in sfp_time_source_images:
+                self.log.error("{} time source requires FPGA types {}" \
+                               .format(time_source, sfp_time_source_images))
+                raise RuntimeError("{} time source requires FPGA types {}" \
+                               .format(time_source, sfp_time_source_images))
             # Only open UIO to the WR core once we're guaranteed it exists.
             wr_regs_control = WhiteRabbitRegsControl(
                 self.wr_regs_label, self.log)
@@ -634,7 +623,54 @@ class n3xx(ZynqComponents, PeriphManagerBase):
                 self.log.error("{} timebase failed to lock within 40 seconds. Status: 0x{:X}" \
                                .format(time_source, wr_regs_control.get_time_lock_status()))
                 raise RuntimeError("Failed to lock SFP timebase.")
+        # Update the DB with the correct Ref Clock frequency and force a re-init.
+        for slot, dboard in enumerate(self.dboards):
+            if hasattr(dboard, 'update_ref_clock_freq'):
+                self.log.trace(
+                    "Updating reference clock on dboard %d to %f MHz...",
+                    slot, ref_clk_freq/1e6
+                )
+                dboard.update_ref_clock_freq(ref_clk_freq)
 
+    def set_ref_clock_freq(self, freq):
+        """
+        Tell our USRP what the frequency of the external reference clock is.
+
+        Will throw if it's not a valid value.
+        """
+        if freq not in (10e6, 20e6, 25e6):
+            self.log.error("{} is not a supported external reference clock frequency!" \
+                           .format(freq/1e6))
+            raise RuntimeError("{} is not a supported external reference clock " \
+                               "frequency!".format(freq/1e6))
+        self.log.debug("We've been told the external reference clock " \
+                       "frequency is now {} MHz.".format(freq/1e6))
+        if self._ext_clock_freq == freq:
+            self.log.trace("New external reference clock frequency " \
+                           "assignment matches previous assignment. Ignoring " \
+                           "update command.")
+            return
+        if (freq == 20e6) and (self.get_time_source() != 'external'):
+            self.log.error("Setting the external reference clock to {} MHz is only " \
+                           "allowed when using 'external' time_source. Set the " \
+                           "time_source to 'external' first, and then set the new " \
+                           "external clock rate.".format(freq/1e6))
+            raise RuntimeError("Setting the external reference clock to {} MHz is " \
+                               "only allowed when using 'external' time_source." \
+                               .format(freq/1e6))
+        self._ext_clock_freq = freq
+        # If the external source is currently selected we also need to re-apply the
+        # time_source. This call also updates the dboards' rates.
+        if self.get_clock_source() == 'external':
+            self.set_time_source(self.get_time_source())
+
+    def get_ref_clock_freq(self):
+        " Returns the currently active reference clock frequency"
+        return {
+            'internal': 25e6,
+            'external': self._ext_clock_freq,
+            'gpsdo': 20e6,
+        }[self._clock_source]
 
     def set_fp_gpio_master(self, value):
         """set driver for front panel GPIO

@@ -15,6 +15,8 @@ from usrp_mpm import lib # Pulls in everything from C++-land
 from usrp_mpm.dboard_manager import DboardManagerBase
 from usrp_mpm.dboard_manager.mg_periphs import TCA6408, MgCPLD
 from usrp_mpm.dboard_manager.mg_init import MagnesiumInitManager
+from usrp_mpm.dboard_manager.mg_periphs import DboardClockControl
+from usrp_mpm.cores import nijesdcore
 from usrp_mpm.mpmlog import get_logger
 from usrp_mpm.sys_utils.uio import open_uio
 from usrp_mpm.sys_utils.udev import get_eeprom_paths
@@ -134,7 +136,8 @@ class Magnesium(DboardManagerBase):
         self.eeprom_fs = None
         self.eeprom_path = None
         self.cpld = None
-        self._init_args = {}
+        # If _init_args is None, it means that init() hasn't yet been called.
+        self._init_args = None
         # Now initialize all peripherals. If that doesn't work, put this class
         # into a non-functional state (but don't crash, or we can't talk to it
         # any more):
@@ -291,6 +294,10 @@ class Magnesium(DboardManagerBase):
             if new_ref_clock_freq != self.ref_clock_freq:
                 self.ref_clock_freq = float(args['ref_clk_freq'])
                 ref_clk_freq_changed = True
+                self.log.debug(
+                    "Updating reference clock frequency to {:.02f} MHz!"
+                    .format(self.ref_clock_freq / 1e6)
+                )
         assert self.ref_clock_freq is not None
         # Check if master clock freq changed (would require a full init)
         master_clock_rate = \
@@ -390,19 +397,90 @@ class Magnesium(DboardManagerBase):
         # This does not stop anyone from killing this process (and the thread)
         # while the EEPROM write is happening, though.
 
+    ##########################################################################
+    # Clocking control APIs
+    ##########################################################################
+    def set_clk_safe_state(self):
+        """
+        Disable all components that could react badly to a sudden change in
+        clocking. After calling this method, all clocks will be off. Calling
+        _reinit() will turn them on again.
+
+        The only downstream receiver of the clock that is not reset here are the
+        lowband LOs, which are controlled through the host UHD interface.
+        """
+        if self._init_args is None:
+            # Then we're already in a safe state
+            return
+        # Reset Mykonos, since it receives a copy of the clock from the LMK.
+        self.cpld.reset_mykonos(keep_in_reset=True)
+        with open_uio(
+            label="dboard-regs-{}".format(self.slot_idx),
+            read_only=False
+        ) as dboard_ctrl_regs:
+            # Clear the Sample Clock enables and place the MMCM in reset.
+            db_clk_control = DboardClockControl(dboard_ctrl_regs, self.log)
+            db_clk_control.reset_mmcm()
+            # Place the JESD204b core in reset, mainly to reset QPLL/CPLLs.
+            jesdcore = nijesdcore.NIMgJESDCore(dboard_ctrl_regs, self.slot_idx)
+            jesdcore.reset()
+            # The reference clock is handled elsewhere since it is a motherboard-
+            # level clock.
+
+
+    def _reinit(self, master_clock_rate):
+        """
+        This will re-run init(). We store all the settings in _init_args, so we
+        will bring the device into the same state that it was before, with the
+        exception of frequency and gain. Those need to be re-set by UHD in order
+        not to invalidate the UHD caches.
+        """
+        args = self._init_args
+        args["master_clock_rate"] = master_clock_rate
+        args["ref_clk_freq"] = self.ref_clock_freq
+        # If we add API calls to reset the cals, they need to update
+        # self._init_args
+        self.master_clock_rate = None # <= This will force a re-init
+        self.init(args)
+        # self.master_clock_rate is now OK again
+
+
+    def set_master_clock_rate(self, rate):
+        """
+        Set the master clock rate to rate. Note this will trigger a
+        re-initialization of the entire clocking, unless rate matches the
+        current master clock rate.
+        """
+        if rate == self.master_clock_rate:
+            self.log.debug(
+                "New master clock rate assignment matches previous assignment. "
+                "Ignoring set_master_clock_rate() command.")
+            return self.master_clock_rate
+        self._reinit(rate)
+        return rate
+
     def get_master_clock_rate(self):
         " Return master clock rate (== sampling rate) "
         return self.master_clock_rate
 
     def update_ref_clock_freq(self, freq):
         """
-        Call this function if the frequency of the reference clock changes (the
-        10, 20, 25 MHz one). Note: Won't actually re-run any settings.
+        Call this function if the frequency of the reference clock changes
+        (the 10, 20, 25 MHz one).
+
+        If this function is called while the device is in an initialized state,
+        it will also re-trigger the initialization sequence.
+
+        No need to set the device in a safe state because (presumably) the user
+        has already switched the clock rate externally. All we need to do now
+        is re-initialize with the new rate.
         """
         assert freq in (10e6, 20e6, 25e6), \
                 "Invalid ref clock frequency: {}".format(freq)
         self.log.trace("Changing ref clock frequency to %f MHz", freq/1e6)
         self.ref_clock_freq = freq
+        if self._init_args is not None:
+            self._reinit(self.master_clock_rate)
 
 
     ##########################################################################

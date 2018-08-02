@@ -623,4 +623,3 @@ class MagnesiumInitManager(object):
             self.init_rf_cal(args)
             self.mykonos.start_radio()
         return True
-
