@@ -21,7 +21,7 @@ from usrp_mpm.mpmutils import assert_compat_number, str2bool
 from usrp_mpm.periph_manager import PeriphManagerBase
 from usrp_mpm.rpc_server import no_rpc
 from usrp_mpm.sys_utils import dtoverlay
-from usrp_mpm.sys_utils.sysfs_thermal import read_thermal_sensor_value
+from usrp_mpm.sys_utils.sysfs_thermal import read_thermal_sensor_value, read_thermal_sensors_value
 from usrp_mpm.sys_utils.udev import get_spidev_nodes
 from usrp_mpm.xports import XportMgrUDP, XportMgrLiberio
 from usrp_mpm.periph_manager.e320_periphs import MboardRegsControl
@@ -33,7 +33,7 @@ E320_DEFAULT_TIME_SOURCE = 'internal'
 E320_DEFAULT_ENABLE_GPS = True
 E320_DEFAULT_ENABLE_FPGPIO = True
 E320_FPGA_COMPAT = (3, 0)
-E320_MONITOR_THREAD_INTERVAL = 1.0 # seconds  # TODO Verify this
+E320_MONITOR_THREAD_INTERVAL = 1.0 # seconds
 E320_DBOARD_SLOT_IDX = 0
 
 
@@ -82,8 +82,12 @@ class e320(ZynqComponents, PeriphManagerBase):
     mboard_sensor_callback_map = {
         'ref_locked': 'get_ref_lock_sensor',
         'gps_locked': 'get_gps_lock_sensor',
-        'temp': 'get_temp_sensor',
         'fan': 'get_fan_sensor',
+        'temp_fpga' : 'get_fpga_temp_sensor',
+        'temp_internal' : 'get_internal_temp_sensor',
+        'temp_rf_channelA' : 'get_rf_channelA_temp_sensor',
+        'temp_rf_channelB' : 'get_rf_channelB_temp_sensor',
+        'temp_main_power' : 'get_main_power_temp_sensor',
     }
     max_num_dboards = 1
     crossbar_base_port = 2  # It's 2 because 0,1 are SFP,DMA
@@ -137,6 +141,10 @@ class e320(ZynqComponents, PeriphManagerBase):
         self._available_endpoints = list(range(256))
         self._gpsd = None
         self.dboard = self.dboards[E320_DBOARD_SLOT_IDX]
+        from functools import partial
+        for sensor_name, sensor_cb_name in self.mboard_sensor_callback_map.items():
+            if sensor_name[:5] == 'temp_':
+                setattr(self, sensor_cb_name, partial(self.get_temp_sensor, sensor_name))
         try:
             self._init_peripherals(args)
         except Exception as ex:
@@ -605,21 +613,29 @@ class e320(ZynqComponents, PeriphManagerBase):
             'value': str(lock_status).lower(),
         }
 
-    def get_temp_sensor(self):
+    def get_temp_sensor(self, sensor_name):
         """
         Get temperature sensor reading of the E320.
         """
-        self.log.trace("Reading FPGA temperature.")
+        temp_sensor_map = {
+            "temp_internal" : 0,
+            "temp_rf_channelA" : 1,
+            "temp_fpga" : 2,
+            "temp_rf_channelB" : 3,
+            "temp_main_power" : 4
+        }
+        self.log.trace("Reading temperature.")
         return_val = '-1'
+        sensor = temp_sensor_map[sensor_name]
         try:
-            raw_val = read_thermal_sensor_value('fpga-thermal-zone', 'temp')
+            raw_val = read_thermal_sensors_value('cros-ec-thermal', 'temp')[sensor]
             return_val = str(raw_val / 1000)
         except ValueError:
             self.log.warning("Error when converting temperature value")
         except KeyError:
-            self.log.warning("Can't read temp on fpga-thermal-zone")
+            self.log.warning("Can't read temp on thermal_zone".format(sensor))
         return {
-            'name': 'temperature',
+            'name': sensor_name,
             'type': 'REALNUM',
             'unit': 'C',
             'value': return_val
@@ -639,16 +655,23 @@ class e320(ZynqComponents, PeriphManagerBase):
 
     def get_fan_sensor(self):
         """
-        Return a sensor dictionary containing the RPM of the fan
+        Return a sensor dictionary containing the RPM of the cooling device/fan0
         """
-        raise NotImplementedError("Fan sensor not implemented")
-        # TODO implement
-        # return {
-        #     'name': 'rssi',
-        #     'type': 'REALNUM',
-        #     'unit': 'rpm',
-        #     'value': XX,
-        # }
+        self.log.trace("Reading cooling device.")
+        return_val = '-1'
+        try:
+            raw_val = read_thermal_sensor_value('Fan', 'cur_state')
+            return_val = str(raw_val)
+        except ValueError:
+            self.log.warning("Error when converting fan speed value")
+        except KeyError:
+            self.log.warning("Can't read cur_state on Fan")
+        return {
+            'name': 'cooling fan',
+            'unit': 'rpm',
+            'type': 'INTEGER',
+            'value': return_val
+        }
 
     ###########################################################################
     # EEPROMs
