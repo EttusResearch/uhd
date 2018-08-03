@@ -17,14 +17,14 @@ using namespace uhd::rfnoc;
  ***************************************************************************/
 graph_impl::graph_impl(
             const std::string &name,
-            boost::weak_ptr<uhd::device3> device_ptr
-            //async_msg_handler::sptr msg_handler
+            boost::weak_ptr<uhd::device3> device_ptr,
+            async_msg_handler::sptr msg_handler
 ) : _name(name)
   , _device_ptr(device_ptr)
+  , _msg_handler(msg_handler)
 {
     UHD_LOG_TRACE("RFNOC", "Instantiating RFNoC graph " << _name);
 }
-
 
 /****************************************************************************
  * Connection API
@@ -154,6 +154,12 @@ void graph_impl::connect(
      * 5. Configure error policy
      ********************************************************************/
     dst->set_error_policy("next_burst");
+
+    /********************************************************************
+     * 6. Set async message handling
+     ********************************************************************/
+    src->sr_write(uhd::rfnoc::SR_RESP_OUT_DST_SID,  _msg_handler->get_local_addr(), src_block_port);
+    dst->sr_write(uhd::rfnoc::SR_RESP_IN_DST_SID, _msg_handler->get_local_addr(), dst_block_port);
 }
 
 void graph_impl::connect(
@@ -230,5 +236,5 @@ void graph_impl::connect_sink(
      * 5. Configure error policy
      ********************************************************************/
     dst->set_error_policy("next_burst");
-
 }
+

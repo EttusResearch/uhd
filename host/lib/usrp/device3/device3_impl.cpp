@@ -186,9 +186,36 @@ void device3_impl::enumerate_rfnoc_blocks(
 
 uhd::rfnoc::graph::sptr device3_impl::create_graph(const std::string &name)
 {
-    return boost::make_shared<uhd::rfnoc::graph_impl>(
-            name,
-            shared_from_this()
+    // Create an async message handler
+    UHD_LOGGER_TRACE("DEVICE3") << "Creating async message handler for graph `" << name << "'...";
+    // FIXME: right now this only can only handle source sid of 0 and xbar local addr of 2.
+    // This is ok for now because that most of our device has xbard local addr hardcode to 2.
+    sid_t async_sid(0);
+    async_sid.set_dst_addr(2);
+    both_xports_t async_xports = make_transport(
+            async_sid,
+            ASYNC_MSG,
+            //FIXME: only get rx_hints from mb index of 0
+            get_rx_hints(0)
     );
+    UHD_LOGGER_TRACE("DEVICE3") << " Async transport ready." << std::endl;
+    uhd::rfnoc::async_msg_handler::sptr async_msg_handler =
+        uhd::rfnoc::async_msg_handler::make(
+                async_xports.recv,
+                async_xports.send,
+                async_xports.send_sid,
+                async_xports.endianness
+        );
+    UHD_LOGGER_TRACE("DEVICE3") << "Async message has address " << async_xports.send_sid << std::endl;
+
+    // Create the graph
+    UHD_LOGGER_TRACE("DEVICE3") << "Creating graph `" << name << "'..." << std::endl;
+    uhd::rfnoc::graph::sptr graph = boost::make_shared<uhd::rfnoc::graph_impl>(
+            name,
+            shared_from_this(),
+            async_msg_handler
+    );
+
+    return graph;
 }
 
