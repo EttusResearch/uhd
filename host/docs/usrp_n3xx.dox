@@ -386,6 +386,8 @@ For a list of which arguments can be passed into make(), see Section
  skip_ddc              | Ignore DDC block. Connect Rx streamers straight into radio.                  | All N3xx          | skip_ddc=1
  skip_duc              | Ignore DUC block. Connect Rx streamers or DRAM straight into radio.          | All N3xx          | skip_duc=1
  skip_init             | Skip the initialization process for the device.                              | All N3xx          | skip_init=1
+ time_source           | Specify the time (PPS) source.                                               | All N3xx          | time_source=internal
+ clock_source          | Specify the reference clock source.                                          | All N3xx          | clock_source=internal
  ref_clk_freq          | Specify the external reference clock frequency, default is 10 MHz.           | N310              | ref_clk_freq=20e6
  init_cals             | Specify the bitmask for initial calibrations of the RFIC.                    | N310              | init_cals=BASIC
  init_cals_timeout     | Timeout for initial calibrations in milliseconds.                            | N310              | init_cals_timeout=45000
@@ -593,10 +595,11 @@ Then, you can install the WX (or WA) image using `uhd_image_loader`:
 
     $ uhd_image_loader --args type=n3xx,addr=ni-n3xx-<DEVICE_SERIAL> --fpga-path=”<UHD_INSTALL_DIRECTORY>/share/uhd/images/usrp_n310_fpga_WX.bit
 
-Once the image is loaded, select `sfp0` as the clock and time source:
+Once the image is loaded, select `internal` as the clock source and
+`sfp0` as the time source:
 
 ```cpp
-auto usrp = uhd::usrp::multi_usrp::make("type=n3xx,clock_source=sfp0,time_source=sfp0");
+auto usrp = uhd::usrp::multi_usrp::make("type=n3xx,clock_source=internal,time_source=sfp0");
 ```
 
 For more information, refer to the [White Rabbit Homepage](https://www.ohwr.org/projects/white-rabbit),
