@@ -309,13 +309,11 @@ class Neon(DboardManagerBase):
         """
         return self.catalina.get_rssi(which)
 
-    def get_rssi_sensor(self, which=None):
+    def get_rssi_sensor(self, chan):
         """
         Return a sensor dictionary containing the current RSSI of `which` chain in Catalina
         """
-        if which is None:
-            # Default to RX1 chain
-            which = "RX1"
+        which = 'RX' + str(chan+1)
         return {
             'name': 'rssi',
             'type': 'REALNUM',
