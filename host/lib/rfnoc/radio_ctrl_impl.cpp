@@ -343,6 +343,14 @@ double radio_ctrl_impl::get_tx_lo_freq(
     return get_tx_frequency(chan);
 }
 
+void radio_ctrl_impl::enable_rx_timestamps(const bool enable, const size_t chan)
+{
+    const uint32_t output_format = 0
+        | (enable ? 0x01 : 0x00)
+    ;
+    sr_write(regs::RX_CTRL_OUTPUT_FORMAT, output_format, chan);
+}
+
 /***********************************************************************
  * RX Streamer-related methods (from source_block_ctrl_base)
  **********************************************************************/

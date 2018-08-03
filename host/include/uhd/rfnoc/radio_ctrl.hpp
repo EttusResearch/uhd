@@ -531,6 +531,9 @@ public:
      */
     virtual std::string get_dboard_fe_from_chan(const size_t chan, const uhd::direction_t dir) = 0;
 
+    /*! Enable or disable the setting of timestamps on Rx.
+     */
+    virtual void enable_rx_timestamps(const bool enable, const size_t chan) = 0;
 }; /* class radio_ctrl */
 
 }} /* namespace uhd::rfnoc */

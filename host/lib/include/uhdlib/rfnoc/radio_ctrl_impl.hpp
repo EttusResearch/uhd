@@ -110,6 +110,7 @@ public:
             const uint32_t mask
     );
     virtual uint32_t get_gpio_attr(const std::string &bank, const std::string &attr);
+    void enable_rx_timestamps(const bool, const size_t);
 
     /***********************************************************************
      * Block control API calls
@@ -152,6 +153,7 @@ protected: // TODO see what's protected and what's private
         static const uint32_t RX_CTRL_HALT         = 155;
         static const uint32_t RX_CTRL_MAXLEN       = 156;
         static const uint32_t RX_CTRL_CLEAR_CMDS   = 157;
+        static const uint32_t RX_CTRL_OUTPUT_FORMAT= 158;
         static const uint32_t MISC_OUTS            = 160;
         static const uint32_t DACSYNC              = 161;
         static const uint32_t SPI                  = 168;
