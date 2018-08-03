@@ -35,6 +35,7 @@ IF(ENABLE_RFNOC)
         example_sources
         rfnoc_nullsource_ce_rx.cpp
         rfnoc_rx_to_file.cpp
+        rfnoc_radio_loopback.cpp
     )
 ENDIF(ENABLE_RFNOC)
 
