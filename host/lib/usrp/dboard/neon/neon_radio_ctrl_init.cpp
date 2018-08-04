@@ -186,7 +186,7 @@ void neon_radio_ctrl_impl::_init_frontend_subtree(
         })
     ;
     subtree->create<meta_range_t>(tx_fe_path / "freq" / "range")
-        .set(meta_range_t(AD9361_MIN_FREQ, AD9361_MAX_FREQ, 1.0))
+        .set(meta_range_t(AD9361_TX_MIN_FREQ, AD9361_TX_MAX_FREQ, 1.0))
         .add_coerced_subscriber([](const meta_range_t &){
             throw uhd::runtime_error(
                 "Attempting to update freq range!");
@@ -202,7 +202,7 @@ void neon_radio_ctrl_impl::_init_frontend_subtree(
         })
     ;
     subtree->create<meta_range_t>(rx_fe_path / "freq" / "range")
-        .set(meta_range_t(AD9361_MIN_FREQ, AD9361_MAX_FREQ, 1.0))
+        .set(meta_range_t(AD9361_RX_MIN_FREQ, AD9361_RX_MAX_FREQ, 1.0))
         .add_coerced_subscriber([](const meta_range_t &){
             throw uhd::runtime_error(
                 "Attempting to update freq range!");

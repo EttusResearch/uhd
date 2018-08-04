@@ -19,8 +19,11 @@ static constexpr double AD9361_RX_MAX_BANDWIDTH = 40.0e6; // HZ
 static constexpr double AD9361_TX_MIN_BANDWIDTH = 20.0e6;  // HZ
 static constexpr double AD9361_TX_MAX_BANDWIDTH = 40.0e6; // HZ
 
-static constexpr double AD9361_MIN_FREQ = 70.0e6; // Hz
-static constexpr double AD9361_MAX_FREQ = 6.0e9; // Hz
+static constexpr double AD9361_TX_MIN_FREQ = 47.0e6; // Hz
+static constexpr double AD9361_TX_MAX_FREQ = 6.0e9; // Hz
+
+static constexpr double AD9361_RX_MIN_FREQ = 70.0e6; // Hz
+static constexpr double AD9361_RX_MAX_FREQ = 6.0e9; // Hz
 
 static constexpr double NEON_RADIO_RATE = 16e6; // Hz
 
@@ -43,7 +46,7 @@ static constexpr char   NEON_DEFAULT_RX_ANTENNA[] = "RX2";
 static constexpr char   NEON_DEFAULT_TX_ANTENNA[] = "TX/RX";
 
 static const std::vector<std::string> NEON_RX_ANTENNAS = {
-    "TX/RX", "RX2"
+    "RX2", "TX/RX"
 };
 
 static constexpr size_t NEON_NUM_CHANS = 2;
