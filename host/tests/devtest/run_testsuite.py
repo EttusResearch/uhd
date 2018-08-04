@@ -35,14 +35,16 @@ def setup_env(args):
         env['PATH'] = "{build_dir}/lib/{build_type};" + \
                       "{build_dir}/examples/{build_type};" + \
                       "{build_dir}/utils/{build_type};{path}".format(
-            build_dir=build_dir, build_type=build_type, path=env.get('PATH', '')
-        )
+                          build_dir=build_dir,
+                          build_type=build_type,
+                          path=env.get('PATH', ''))
         env['LIBPATH'] = "{build_dir}/lib/{build_type};{path}".format(
             build_dir=build_dir, build_type=build_type, path=env.get('LIBPATH', '')
         )
         env['LIB'] = "{build_dir}/lib/{build_type};{path}".format(
             build_dir=build_dir, build_type=build_type, path=env.get('LIB', '')
         )
+        env['PYTHONPATH'] = "{build_dir}/python".format(build_dir=build_dir)
         return env
     def setup_env_unix(env, build_dir):
         " Add build dir into paths (Unices)"
@@ -52,15 +54,17 @@ def setup_env(args):
         env['LD_LIBRARY_PATH'] = "{build_dir}/lib:{path}".format(
             build_dir=build_dir, path=env.get('LD_LIBRARY_PATH', '')
         )
+        env['PYTHONPATH'] = "{build_dir}/python".format(build_dir=build_dir)
         return env
     def setup_env_osx(env, build_dir):
         " Add build dir into paths (OS X)"
         env['PATH'] = "{build_dir}/examples:{build_dir}/utils:{path}".format(
-                build_dir=build_dir, path=env.get('PATH', '')
+            build_dir=build_dir, path=env.get('PATH', '')
         )
         env['DYLD_LIBRARY_PATH'] = "{build_dir}/lib:{path}".format(
-                build_dir=build_dir, path=env.get('DYLD_LIBRARY_PATH', '')
+            build_dir=build_dir, path=env.get('DYLD_LIBRARY_PATH', '')
         )
+        env['PYTHONPATH'] = "{build_dir}/python".format(build_dir=build_dir)
         return env
     ### Go
     env = os.environ
@@ -71,7 +75,8 @@ def setup_env(args):
     elif sys.platform.startswith('darwin'):
         env = setup_env_osx(env, args.build_dir)
     else:
-        print("Devtest not supported on this platform ({0}).".format(sys.platform))
+        print("Devtest not supported on this platform ({0})."
+              .format(sys.platform))
         exit(1)
     return env
 
@@ -105,6 +110,8 @@ def main():
         env['_UHD_TEST_RESULTSFILE'] = os.path.join(args.log_dir, resultsfile_name)
         env['_UHD_TEST_LOG_LEVEL'] = str(logging.INFO)
         env['_UHD_TEST_PRINT_LEVEL'] = str(logging.WARNING)
+        env['_UHD_BUILD_DIR'] = str(args.build_dir)
+        env['_UHD_DEVTEST_SRC_DIR'] = str(args.src_dir)
         proc = subprocess.Popen(
             [
                 "python", "-m", "unittest", "discover", "-v",
@@ -112,7 +119,9 @@ def main():
                 "-p", devtest_pattern,
             ],
             env=env,
-            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+            stdin=subprocess.PIPE,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
         )
         print(proc.communicate()[0])
         sys.stdout.flush()

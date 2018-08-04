@@ -7,6 +7,7 @@
 #
 """ Run uhd_find_devices and parse the output. """
 
+from __future__ import print_function
 import re
 import subprocess
 
@@ -38,5 +39,5 @@ def get_usrp_list(device_filter=None, env=None):
     return result
 
 if __name__ == "__main__":
-    print get_usrp_list()
-    print get_usrp_list('type=x300')
+    print(get_usrp_list())
+    print(get_usrp_list('type=x300'))
