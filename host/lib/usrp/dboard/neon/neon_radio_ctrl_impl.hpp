@@ -129,8 +129,8 @@ public:
     };
 
     enum tx_amp_t {
-        TX_AMP_HF_ON = 1,
-        TX_AMP_LF_ON = 2,
+        TX_AMP_HF_ON = 2,
+        TX_AMP_LF_ON = 1,
         TX_AMP_OFF = 3
     };
 
@@ -258,9 +258,7 @@ private:
     );
 
     void _set_atr_bits(
-        const size_t chan,
-        const double freq,
-        const std::string &ant
+        const size_t chan
     );
 
     /**************************************************************************

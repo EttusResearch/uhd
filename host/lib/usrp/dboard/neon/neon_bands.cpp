@@ -101,7 +101,7 @@ neon_radio_ctrl_impl::rx_band
 neon_radio_ctrl_impl::_map_freq_to_rx_band(const double freq) {
     neon_radio_ctrl_impl::rx_band band;
 
-    if (fp_compare_epsilon<double>(freq) < AD9361_MIN_FREQ) {
+    if (fp_compare_epsilon<double>(freq) < AD9361_RX_MIN_FREQ) {
         band = rx_band::INVALID_BAND;
     } else if (fp_compare_epsilon<double>(freq) < NEON_RX_LB_BAND3_MIN_FREQ) {
         band = rx_band::LB_B2;
@@ -115,7 +115,7 @@ neon_radio_ctrl_impl::_map_freq_to_rx_band(const double freq) {
         band = rx_band::LB_B6;
     } else if (fp_compare_epsilon<double>(freq) < NEON_RX_HB_MIN_FREQ) {
         band = rx_band::LB_B7;
-    } else if (fp_compare_epsilon<double>(freq) <= AD9361_MAX_FREQ) {
+    } else if (fp_compare_epsilon<double>(freq) <= AD9361_RX_MAX_FREQ) {
         band = rx_band::HB;
     } else {
         band = rx_band::INVALID_BAND;
@@ -128,7 +128,7 @@ neon_radio_ctrl_impl::tx_band
 neon_radio_ctrl_impl::_map_freq_to_tx_band(const double freq) {
     neon_radio_ctrl_impl::tx_band band;
 
-    if (fp_compare_epsilon<double>(freq) < AD9361_MIN_FREQ) {
+    if (fp_compare_epsilon<double>(freq) < AD9361_TX_MIN_FREQ) {
         band = tx_band::INVALID_BAND;
     } else if (fp_compare_epsilon<double>(freq) < NEON_TX_LB_160_MIN_FREQ) {
         band = tx_band::LB_80;
@@ -146,7 +146,7 @@ neon_radio_ctrl_impl::_map_freq_to_tx_band(const double freq) {
         band = tx_band::LB_1700;
     } else if (fp_compare_epsilon<double>(freq) < NEON_TX_HB_MIN_FREQ) {
         band = tx_band::LB_2750;
-    } else if (fp_compare_epsilon<double>(freq) <= AD9361_MAX_FREQ) {
+    } else if (fp_compare_epsilon<double>(freq) <= AD9361_TX_MAX_FREQ) {
         band = tx_band::HB;
     } else {
         band = tx_band::INVALID_BAND;
