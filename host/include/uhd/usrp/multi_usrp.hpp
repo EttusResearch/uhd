@@ -33,6 +33,7 @@
 #include <uhd/types/tune_result.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/types/filters.hpp>
+#include <uhd/types/wb_iface.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
 #include <boost/shared_ptr.hpp>
@@ -436,6 +437,32 @@ public:
      * \param mboard which motherboard to set the user register
      */
     virtual void set_user_register(const uint8_t addr, const uint32_t data, size_t mboard = ALL_MBOARDS) = 0;
+
+    /*! Return a user settings interface object
+     *
+     * This is only supported by some USRPs (B2xx series, N230). It will return
+     * an object that will allow to peek and poke user settings, which typically
+     * are implemented by custom FPGA images.
+     * If the device does not support such an interface, it will return a null
+     * pointer. This allows to probe this functionality, but can lead to
+     * dereferencing errors if no checks are performed.
+     *
+     * A typical way to use this is as follows:
+     * ~~~~{.cpp}
+     * auto usrp = multi_usrp::make(device_args);
+     * const size_t chan = 0;
+     * auto user_settings = usrp->get_user_settings_iface(chan);
+     * if (!user_settings) {
+     *     std::cout << "No user settings!" << std::endl;
+     * } else {
+     *     user_settings->poke32(0, 23); // Write value 23 to register 0
+     * }
+     * ~~~~
+     *
+     * \returns Either a uhd::wb_iface object to poke the user settings, or a
+     *          nullptr if the device doesn't support this interface.
+     */
+    virtual uhd::wb_iface::sptr get_user_settings_iface(const size_t chan = 0) = 0;
 
     /*******************************************************************
      * RX methods

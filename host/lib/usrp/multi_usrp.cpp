@@ -820,6 +820,18 @@ public:
         }
     }
 
+    wb_iface::sptr get_user_settings_iface(const size_t chan)
+    {
+        const auto user_settings_path =
+            rx_rf_fe_root(chan) / "user_settings" / "iface";
+        if (_tree->exists(user_settings_path)) {
+            return _tree->access<wb_iface::sptr>(user_settings_path).get();
+        }
+        UHD_LOG_WARNING("MULTI_USRP",
+            "Attempting to read back non-existant user settings iface!");
+        return nullptr;
+    }
+
     /*******************************************************************
      * RX methods
      ******************************************************************/
