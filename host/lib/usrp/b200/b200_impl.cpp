@@ -276,6 +276,7 @@ UHD_STATIC_BLOCK(register_b200_device)
 b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::sptr &handle) :
     _product(B200), // Some safe value
     _revision(0),
+    _enable_user_regs(device_addr.has_key("enable_user_regs")),
     _time_source(UNKNOWN),
     _tick_rate(0.0) // Forces a clock initialization at startup
 {
@@ -836,6 +837,18 @@ void b200_impl::setup_radio(const size_t dspno)
     perif.duc = tx_dsp_core_3000::make(perif.ctrl, TOREG(SR_TX_DSP));
     perif.duc->set_link_rate(10e9/8); //whatever
     perif.duc->set_freq(tx_dsp_core_3000::DEFAULT_CORDIC_FREQ);
+    if (_enable_user_regs) {
+        UHD_LOG_DEBUG("B200", "Enabling user settings registers");
+        perif.user_settings = user_settings_core_3000::make(perif.ctrl,
+            TOREG(SR_USER_SR_BASE),
+            TOREG(SR_USER_RB_ADDR)
+        );
+        if (!perif.user_settings) {
+            const std::string error_msg = "Failed to create user settings bus!";
+            UHD_LOG_ERROR("B200", error_msg);
+            throw uhd::runtime_error(error_msg);
+        }
+    }
 
     ////////////////////////////////////////////////////////////////////
     // create time control objects
@@ -853,9 +866,10 @@ void b200_impl::setup_radio(const size_t dspno)
     _tree->create<bool>(rx_dsp_path / "rate" / "set").set(false);
     _tree->access<double>(rx_dsp_path / "rate" / "value")
         .set_coercer(boost::bind(&b200_impl::coerce_rx_samp_rate, this, perif.ddc, dspno, _1))
-        .add_coerced_subscriber([this](const double){
+        .add_coerced_subscriber([this, rx_dsp_path](const double){
             if (this->_tree) {
-                _tree->access<bool>(rx_dsp_path / "rate" / "set").set(true);
+                this->_tree->access<bool>(rx_dsp_path / "rate" / "set")
+                    .set(true);
             }
         })
         .add_coerced_subscriber(boost::bind(&b200_impl::update_rx_samp_rate, this, dspno, _1))
@@ -875,9 +889,10 @@ void b200_impl::setup_radio(const size_t dspno)
     _tree->create<bool>(tx_dsp_path / "rate" / "set").set(false);
     _tree->access<double>(tx_dsp_path / "rate" / "value")
         .set_coercer(boost::bind(&b200_impl::coerce_tx_samp_rate, this, perif.duc, dspno, _1))
-        .add_coerced_subscriber([this](const double){
+        .add_coerced_subscriber([this, tx_dsp_path](const double){
             if (this->_tree) {
-                tree->access<bool>(tx_dsp_path / "rate" / "set").set(true);
+                this->_tree->access<bool>(tx_dsp_path / "rate" / "set")
+                    .set(true);
             }
         })
         .add_coerced_subscriber(boost::bind(&b200_impl::update_tx_samp_rate, this, dspno, _1))
@@ -922,6 +937,11 @@ void b200_impl::setup_radio(const size_t dspno)
             static const std::vector<std::string> ants(1, "TX/RX");
             _tree->create<std::vector<std::string> >(rf_fe_path / "antenna" / "options").set(ants);
             _tree->create<std::string>(rf_fe_path / "antenna" / "value").set("TX/RX");
+        }
+
+        if (_enable_user_regs) {
+            _tree->create<uhd::wb_iface::sptr>(rf_fe_path / "user_settings/iface")
+                .set(perif.user_settings);
         }
     }
 }

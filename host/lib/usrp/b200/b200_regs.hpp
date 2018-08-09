@@ -37,6 +37,8 @@ localparam SR_TIME      = 128;
 localparam SR_RX_FMT    = 136;
 localparam SR_TX_FMT    = 138;
 localparam SR_FP_GPIO   = 200;
+localparam SR_USER_SR_BASE = 253;
+localparam SR_USER_RB_ADDR = 255;
 
 localparam RB32_TEST            = 0;
 localparam RB64_TIME_NOW        = 8;

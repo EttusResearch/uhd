@@ -32,6 +32,7 @@
 #include <uhdlib/usrp/cores/radio_ctrl_core_3000.hpp>
 #include <uhdlib/usrp/cores/rx_dsp_core_3000.hpp>
 #include <uhdlib/usrp/cores/tx_dsp_core_3000.hpp>
+#include <uhdlib/usrp/cores/user_settings_core_3000.hpp>
 #include <uhdlib/usrp/common/recv_packet_demuxer_3000.hpp>
 #include <uhdlib/usrp/common/ad936x_manager.hpp>
 #include <uhdlib/usrp/common/adf4001_ctrl.hpp>
@@ -127,6 +128,9 @@ private:
     b200_product_t  _product;
     size_t          _revision;
     bool            _gpsdo_capable;
+    //! This flag is true if the FPGA has custom (user) registers and access to
+    // those needs to be enabled from software.
+    const bool      _enable_user_regs;
 
     //controllers
     b200_iface::sptr _iface;
@@ -188,6 +192,7 @@ private:
         tx_dsp_core_3000::sptr duc;
         boost::weak_ptr<uhd::rx_streamer> rx_streamer;
         boost::weak_ptr<uhd::tx_streamer> tx_streamer;
+        user_settings_core_3000::sptr user_settings;
         bool ant_rx2;
     };
     std::vector<radio_perifs_t> _radio_perifs;
