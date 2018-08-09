@@ -39,6 +39,32 @@ images:
 
     fw=usrp_b200_fw.hex
 
+\section b200_customfpga Custom FPGA images and accessing user settings
+
+The FPGA image is provided in source code and can thus be modified and rebuilt
+to serve custom purposes. For example, additional filtering or other DSP
+operations can be inserted into the FPGA before or after the DAC or ADC stages,
+respectively. Refer to the \ref md_fpga "FPGA Manual" for further information on
+how to rebuild the FPGA.
+
+To control user-defined IP, the `USER_SETTINGS` parameter for the `radio_legacy`
+block in `b200_core.v` (for B210 and B200) or `b205_core.v` (for the mini
+series) need to be set to 1, and radio_legacy.v can then be modified to include
+user-defined read and write registers (the file includes examples on how to do
+that).
+Any customizations will most likely also be applied in radio_legacy.v.
+
+For FPGA images that include user settings registers, UHD provides APIs to
+interface with those. To enable access to user settings, apply the
+`enable_user_regs` device argument on initialization. Then, use the
+uhd::multi_usrp::get_user_settings_iface API call to access an object that
+allows modifying the registers. Example:
+~~~{.cpp}
+auto usrp = multi_usrp::make("type=b200,enable_user_regs");
+auto user_regs = usrp->get_user_settings_iface();
+user_regs->poke32(addr, data);
+~~~
+
 \section b200_mcr Changing the Master Clock Rate
 
 The master clock rate feeds the RF frontends and the DSP chains. Users
