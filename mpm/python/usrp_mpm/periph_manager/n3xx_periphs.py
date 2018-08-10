@@ -294,7 +294,9 @@ class MboardRegsControl(object):
         """
         pps_sel_val = 0x0
         if time_source == 'internal':
-            assert ref_clk_freq in (10e6, 25e6)
+            assert ref_clk_freq in (10e6, 25e6), \
+                "Invalid reference frequency for time source 'internal'. Must " \
+                "be either 10 MHz or 25 MHz. Check clock and time source match."
             if ref_clk_freq == 10e6:
                 self.log.debug("Setting time source to internal "
                                "(10 MHz reference)...")
@@ -316,7 +318,7 @@ class MboardRegsControl(object):
             self.log.debug("Setting time source to sfp1...")
             pps_sel_val = 0b1 << self.MB_CLOCK_CTRL_PPS_SEL_SFP1
         else:
-            assert False
+            raise RuntimeError("Invalid time source: {}".format(time_source))
 
         with self.regs:
             reg_val = self.peek32(self.MB_CLOCK_CTRL) & 0xFFFFFF90
