@@ -10,6 +10,9 @@ x3xx_x300_fpga_default          fpga-1107862        x3xx/fpga-1107862/x3xx_x300_
 # E-Series
 e3xx_e310_fpga_default          fpga-1107862        e3xx/fpga-1107862/e3xx_e310_fpga_default-g1107862.zip                   52f8451fd459b2a3113903284adea11474a9efb8eaef45b986233c0693f10549
 e3xx_e310_fpga_rfnoc            fpga-d6a878b        e3xx/fpga-d6a878b/e3xx_e310_fpga_rfnoc-gd6a878b.zip                     5c9b89fb6293423644868c22e914de386a9af39ff031da6800a1cf39a90ea73b
+e3xx_e320_fpga_default          fpga-abdc445a       e3xx/fpga-abdc445a/e3xx_e320_fpga_default-gabdc445a.zip                 82e5af3742245f1f8ea5dd334b1ceb7920e3c31306d86b0dbf31bedd696879c4
+e3xx_e320_fpga_aurora           fpga-abdc445a       e3xx/fpga-abdc445a/e3xx_e320_fpga_aurora-gabdc445a.zip                  73a3851e890df827ec1b809e34cea49cf973ba225ef9852416c77237f18f016c
+
 # N300-Series
 n3xx_n310_fpga_default          fpga-1107862        n3xx/fpga-1107862/n3xx_n310_fpga_default-g1107862.zip                   fc80462f2e144d9745b0b480aa513f426e48df46ad18dc85cbb8fdb3cb162355
 n3xx_n300_fpga_default          fpga-1107862        n3xx/fpga-1107862/n3xx_n300_fpga_default-g1107862.zip                   1e7ae1429825811531149f87f82dfcbc06cf63e1fc3752517edf104950406c36
