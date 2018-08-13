@@ -36,8 +36,12 @@ PACKAGE_MAPPING = {
                   'usrp_e320_fpga_XG.bit.md5',
                   'usrp_e320_fpga_XG.dts',
                   'usrp_e320_fpga_XG.dts.md5',
-                  'usrp_e320_fpga_XG.rpt',
-                  'usrp_e320_fpga_AA.bit',
+                  'usrp_e320_fpga_XG.rpt']
+    },
+    "e320_aa": {
+        "type": "e3xx",
+        "package_name": "e3xx_e320_fpga_aurora-g{}.zip",
+        "files": ['usrp_e320_fpga_AA.bit',
                   'usrp_e320_fpga_AA.bit.md5',
                   'usrp_e320_fpga_AA.dts',
                   'usrp_e320_fpga_AA.dts.md5',
