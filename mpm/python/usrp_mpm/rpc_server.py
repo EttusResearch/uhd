@@ -457,6 +457,16 @@ class MPMServer(RPCServer):
         self.periph_manager = None
         self.periph_manager = self._mgr_generator()
         self._init_rpc_calls(self.periph_manager)
+        # RPCServer caches RPC methods, but that cache is not accessible here
+        # (because Cython). Re-running `RPCServer.__init__` clears that cache,
+        # and allows us to register new RPC methods (which we need to do because
+        # we're resetting the PeriphManager).
+        # A note on maintenance: This has been deemed safe through inspection of
+        # the RPCServer source code. However, this is not typical Python, and
+        # changes in future versions of RPCServer may cause issues.
+        super(MPMServer, self).__init__(
+            pack_params={'use_bin_type': True},
+        )
 
     def update_component(self, token, file_metadata_l, data_l):
         """"
