@@ -5,23 +5,32 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-// Example for GPIO testing and bit banging.
+// Example for GPIO testing and bit banging on X3xx series USRPs
+// with front-panel GPIO bit muxing between radios.
 //
-// This example was originally designed to test the 11 bit wide front panel
-// GPIO on the X300 series and has since been adapted to work with any GPIO
-// bank on any USRP and provide optional bit banging.  Please excuse the
+// This example was modified from the test of an 11-bit wide front-panel
+// GPIO bank on any USRP, with optional bit banging.  This version specifically
+// exercises the ability on the X300 series to have the front-panel GPIO bits
+// individually muxed between control by Radio A or Radio B.  Please excuse the
 // clutter.  Also, there is no current way to detect the width of the
 // specified GPIO bank, so the user must specify the width with the --bits
-// flag if more than 11 bits.
+// flag if more than 12 bits.
 //
 // GPIO Testing:
 // For testing, GPIO bits are set as follows:
-// GPIO[0] = ATR output 1 at idle
-// GPIO[1] = ATR output 1 during RX
-// GPIO[2] = ATR output 1 during TX
-// GPIO[3] = ATR output 1 during full duplex
-// GPIO[4] = output
-// GPIO[n:5] = input (all other pins)
+// GPIO[0]  = radio A ATR output 1 at idle
+// GPIO[1]  = radio A ATR output 1 during RX
+// GPIO[2]  = radio A ATR output 1 during TX
+// GPIO[3]  = radio A ATR output 1 during full duplex
+// GPIO[4]  = radio A manual output
+// GPIO[5]  = input
+// GPIO[6]  = radio B ATR output 1 at idle
+// GPIO[7]  = radio B ATR output 1 during RX
+// GPIO[8]  = radio B ATR output 1 during TX
+// GPIO[9]  = radio B ATR output 1 during full duplex
+// GPIO[10] = radio B manual output
+// GPIO[11] = input
+//
 // The testing cycles through idle, TX, RX, and full duplex, dwelling on each
 // test case (default 2 seconds), and then comparing the readback register with
 // the expected values of the outputs for verification.  The values of all GPIO
@@ -56,7 +65,8 @@
 // The UHD API
 // The multi_usrp::set_gpio_attr() method is the UHD API for configuring and
 // controlling the GPIO banks.  The parameters to the method are:
-// bank - the name of the GPIO bank (typically "FP0" for front panel GPIO,
+// bank - the name of the GPIO bank ("FP0" for FP GPIO bank of radio 0,
+//                                   "FP1" for FP GPIO bank of radio 1,
 //                                   "TX<n>" for TX daughter card GPIO, or
 //                                   "RX<n>" for RX daughter card GPIO)
 // attr - attribute (register) to change ("SRC", "DDR", "OUT", "CTRL",
@@ -84,9 +94,9 @@ static const std::string        GPIO_DEFAULT_OTW_FORMAT = "sc16";
 static const double             GPIO_DEFAULT_RX_RATE    = 500e3;
 static const double             GPIO_DEFAULT_TX_RATE    = 500e3;
 static const double             GPIO_DEFAULT_DWELL_TIME = 2.0;
+static const size_t             GPIO_DEFAULT_NUM_BITS   = 12;
 static const std::string        GPIO_DEFAULT_GPIO       = "FP0";
-static const size_t             GPIO_DEFAULT_NUM_BITS   = 11;
-static const std::string        GPIO_DEFAULT_SRC        = "0x0";    // all bits default to radio 0
+static const std::string        GPIO_DEFAULT_SRC        = "";       // empty string sets source for each bit based on ATR settings
 static const std::string        GPIO_DEFAULT_CTRL       = "0x0";    // all as user controlled
 static const std::string        GPIO_DEFAULT_DDR        = "0x0";    // all as inputs
 static const std::string        GPIO_DEFAULT_OUT        = "0x0";
@@ -150,29 +160,22 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     std::string args;
     std::string cpu, otw;
     double rx_rate, tx_rate, dwell;
-    std::string gpio;
     size_t num_bits;
     std::string src_str;
     std::string ctrl_str;
     std::string ddr_str;
     std::string out_str;
-    std::string tx_subdev_spec;
-    std::string rx_subdev_spec;
 
     //setup the program options
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "multi uhd device address args")
-        ("tx_subdev_spec", po::value<std::string>(&tx_subdev_spec)->default_value(""), "A:0, B:0, or A:0 B:0")
-        ("rx_subdev_spec", po::value<std::string>(&rx_subdev_spec)->default_value(""), "A:0, B:0, or A:0 B:0")
-        ("repeat", "repeat loop until Ctrl-C is pressed")
         ("cpu", po::value<std::string>(&cpu)->default_value(GPIO_DEFAULT_CPU_FORMAT), "cpu data format")
         ("otw", po::value<std::string>(&otw)->default_value(GPIO_DEFAULT_OTW_FORMAT), "over the wire data format")
         ("rx_rate", po::value<double>(&rx_rate)->default_value(GPIO_DEFAULT_RX_RATE), "rx sample rate")
         ("tx_rate", po::value<double>(&tx_rate)->default_value(GPIO_DEFAULT_TX_RATE), "tx sample rate")
         ("dwell", po::value<double>(&dwell)->default_value(GPIO_DEFAULT_DWELL_TIME), "dwell time in seconds for each test case")
-        ("bank", po::value<std::string>(&gpio)->default_value(GPIO_DEFAULT_GPIO), "name of gpio bank")
         ("bits", po::value<size_t>(&num_bits)->default_value(GPIO_DEFAULT_NUM_BITS), "number of bits in gpio bank")
         ("bitbang", "single test case where user sets values for CTRL, DDR, and OUT registers")
         ("src", po::value<std::string>(&src_str)->default_value(GPIO_DEFAULT_SRC), "GPIO SRC reg value")
@@ -195,138 +198,175 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
     std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
 
-    //subdev spec
-    if (tx_subdev_spec != "")
-        usrp->set_tx_subdev_spec(tx_subdev_spec);
-    if (rx_subdev_spec != "")
-        usrp->set_rx_subdev_spec(rx_subdev_spec);
-    std::cout << boost::format("  rx_subdev_spec: %s") % usrp->get_rx_subdev_spec(0).to_string() << std::endl;
-    std::cout << boost::format("  tx_subdev_spec: %s") % usrp->get_tx_subdev_spec(0).to_string() << std::endl;
+    //this test is specifically for the x300 series with front-panel GPIO source mux control
+    if (usrp->get_mboard_name(0).substr(0, 2) != "X3") {
+        std::cout << "This test is only for X3xx devices with front-panel GPIO source mux control." << std::endl;
+        return ~0;
+    }
+
+    //subdev spec set-up
+    const std::vector<std::string> subdev_specs = {"A:0", "B:0"};
 
     //print out initial unconfigured state of FP GPIO
-    std::cout << "Initial GPIO values:" << std::endl;
-    output_reg_values(gpio, usrp, num_bits);
+    const std::vector<std::string> fp_gpio_attrs = {"FP0", "FP1"};
+    for (int i = 0; i < 2; i++) {
+        std::cout << "Initial " << subdev_specs[i] << " GPIO values:" << std::endl;
+        output_reg_values(fp_gpio_attrs[i], usrp, num_bits);
+    }
 
     //configure GPIO registers
-    uint32_t src = strtoul(src_str.c_str(), NULL, 0);
-    uint32_t ddr = strtoul(ddr_str.c_str(), NULL, 0);
-    uint32_t out = strtoul(out_str.c_str(), NULL, 0);
-    uint32_t ctrl = 0;
-    uint32_t atr_idle = 0;
-    uint32_t atr_rx = 0;
-    uint32_t atr_tx = 0;
-    uint32_t atr_duplex = 0;
+    std::vector<uint32_t> ddr(2, strtoul(ddr_str.c_str(), NULL, 0));
+    std::vector<uint32_t> out(2, strtoul(out_str.c_str(), NULL, 0));
+    std::vector<uint32_t> ctrl(2, 0);
+    std::vector<uint32_t> atr_idle(2, 0);
+    std::vector<uint32_t> atr_rx(2, 0);
+    std::vector<uint32_t> atr_tx(2, 0);
+    std::vector<uint32_t> atr_duplex(2, 0);
     uint32_t mask = (1 << num_bits) - 1;
 
     if (!vm.count("bitbang"))
     {
         //set up GPIO outputs:
-        //GPIO[0] = ATR output 1 at idle
-        ctrl |= GPIO_BIT(0);
-        atr_idle |= GPIO_BIT(0);
-        ddr |= GPIO_BIT(0);
+        //idle state
+        ctrl[0] |= GPIO_BIT(0);
+        atr_idle[0] |= GPIO_BIT(0);
+        ddr[0] |= GPIO_BIT(0);
 
-        //GPIO[1] = ATR output 1 during RX
-        ctrl |= GPIO_BIT(1);
-        ddr |= GPIO_BIT(1);
-        atr_rx |= GPIO_BIT(1);
+        ctrl[1] |= GPIO_BIT(6);
+        atr_idle[1] |= GPIO_BIT(6);
+        ddr[1] |= GPIO_BIT(6);
 
-        //GPIO[2] = ATR output 1 during TX
-        ctrl |= GPIO_BIT(2);
-        ddr |= GPIO_BIT(2);
-        atr_tx |= GPIO_BIT(2);
+        //RX state
+        ctrl[0] |= GPIO_BIT(1);
+        ddr[0] |= GPIO_BIT(1);
+        atr_rx[0] |= GPIO_BIT(1);
 
-        //GPIO[3] = ATR output 1 during full duplex
-        ctrl |= GPIO_BIT(3);
-        ddr |= GPIO_BIT(3);
-        atr_duplex |= GPIO_BIT(3);
+        ctrl[1] |= GPIO_BIT(7);
+        ddr[1] |= GPIO_BIT(7);
+        atr_rx[1] |= GPIO_BIT(7);
 
-        //GPIO[4] = output
-        ddr |= GPIO_BIT(4);
+        //TX state
+        ctrl[0] |= GPIO_BIT(2);
+        ddr[0] |= GPIO_BIT(2);
+        atr_tx[0] |= GPIO_BIT(2);
+
+        ctrl[1] |= GPIO_BIT(8);
+        ddr[1] |= GPIO_BIT(8);
+        atr_tx[1] |= GPIO_BIT(8);
+
+        //full duplex state
+        ctrl[0] |= GPIO_BIT(3);
+        ddr[0] |= GPIO_BIT(3);
+        atr_duplex[0] |= GPIO_BIT(3);
+
+        ctrl[1] |= GPIO_BIT(9);
+        ddr[1] |= GPIO_BIT(9);
+        atr_duplex[1] |= GPIO_BIT(9);
+
+        //manual output
+        out[0] |= GPIO_BIT(4);
+        ddr[0] |= GPIO_BIT(4);
+
+        out[1] |= GPIO_BIT(10);
+        ddr[1] |= GPIO_BIT(10);
     }
 
-    //set GPIO driver source
-    usrp->set_gpio_attr(gpio, "SRC", src, mask);
+    // set GPIO driver source; if user did not specify, default each FP GPIO's
+    // bit source to whichever channel has an ATR bit set
+    uint32_t src_reg;
+    if (src_str == "")
+        src_reg = ddr[1];
+    else
+        src_reg = strtoul(src_str.c_str(), NULL, 0);
+    
+    // Radio 0 (A:0) controls the source mux register for FP GPIO
+    std::cout << "Source mux register is " << src_reg << std::endl;
+    usrp->set_gpio_attr(fp_gpio_attrs[0], "SRC", src_reg, mask);
 
-    //set data direction register (DDR)
-    usrp->set_gpio_attr(gpio, "DDR", ddr, mask);
+    for (int i = 0; i < 2; i++) {
+        //set data direction register (DDR)
+        usrp->set_gpio_attr(fp_gpio_attrs[i], "DDR", ddr[i], mask);
 
-    //set control register
-    usrp->set_gpio_attr(gpio, "CTRL", ctrl, mask);
+        //set control register
+        usrp->set_gpio_attr(fp_gpio_attrs[i], "CTRL", ctrl[i], mask);
 
-    //set output values (OUT)
-    usrp->set_gpio_attr(gpio, "OUT", out, mask);
+        //set output values (OUT) to 0; manual output to be toggled below
+        usrp->set_gpio_attr(fp_gpio_attrs[i], "OUT", 0, mask);
 
-    //set ATR registers
-    usrp->set_gpio_attr(gpio, "ATR_0X", atr_idle, mask);
-    usrp->set_gpio_attr(gpio, "ATR_RX", atr_rx, mask);
-    usrp->set_gpio_attr(gpio, "ATR_TX", atr_tx, mask);
-    usrp->set_gpio_attr(gpio, "ATR_XX", atr_duplex, mask);
+        //set ATR registers
+        usrp->set_gpio_attr(fp_gpio_attrs[i], "ATR_0X", atr_idle[i], mask);
+        usrp->set_gpio_attr(fp_gpio_attrs[i], "ATR_RX", atr_rx[i], mask);
+        usrp->set_gpio_attr(fp_gpio_attrs[i], "ATR_TX", atr_tx[i], mask);
+        usrp->set_gpio_attr(fp_gpio_attrs[i], "ATR_XX", atr_duplex[i], mask);
 
-    //print out initial state of FP GPIO
-    std::cout << "\nConfigured GPIO values:" << std::endl;
-    output_reg_values(gpio, usrp, num_bits);
-    std::cout << std::endl;
+        //print out initial state of FP GPIO
+        std::cout << "\nConfigured " << subdev_specs[i] << " GPIO values:" << std::endl;
+        output_reg_values(fp_gpio_attrs[i], usrp, num_bits);
+        std::cout << std::endl;
+    }
 
-    //set up streams
-    uhd::stream_args_t rx_args(cpu, otw);
-    uhd::stream_args_t tx_args(cpu, otw);
-    uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(rx_args);
-    uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(tx_args);
-    uhd::stream_cmd_t rx_cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
-    rx_cmd.stream_now = true;
-    usrp->set_rx_rate(rx_rate);
-    usrp->set_tx_rate(tx_rate);
-
-    //set up buffers for tx and rx
-    const size_t max_samps_per_packet = rx_stream->get_max_num_samps();
-    const size_t nsamps_per_buff = max_samps_per_packet;
-    std::vector<char> rx_buff(max_samps_per_packet*uhd::convert::get_bytes_per_item(cpu));
-    std::vector<char> tx_buff(max_samps_per_packet*uhd::convert::get_bytes_per_item(cpu));
-    std::vector<void *> rx_buffs, tx_buffs;
-    for (size_t ch = 0; ch < rx_stream->get_num_channels(); ch++)
-        rx_buffs.push_back(&rx_buff.front()); //same buffer for each channel
-    for (size_t ch = 0; ch < tx_stream->get_num_channels(); ch++)
-        tx_buffs.push_back(&tx_buff.front()); //same buffer for each channel
-
+    // common parameters
     uhd::rx_metadata_t rx_md;
     uhd::tx_metadata_t tx_md;
-    tx_md.has_time_spec = false;
-    tx_md.start_of_burst = true;
     uhd::time_spec_t stop_time;
     double timeout = 0.01;
     uhd::time_spec_t dwell_time(dwell);
-    int loop = 0;
     uint32_t rb, expected;
 
     //register signal handler
     std::signal(SIGINT, &sig_int_handler);
 
-    if (!vm.count("bitbang"))
+    for (int i = 0; i < 2; i++)
     {
-        // Test the mask parameter of the multi_usrp::set_gpio_attr API
-        // We only need to test once with no dwell time
-        std::cout << "\nTesting mask..." << std::flush;
-        //send a value of all 1's to the DDR with a mask for only upper most bit
-        usrp->set_gpio_attr(gpio, "DDR", ~0, GPIO_BIT(num_bits - 1));
-        //upper most bit should now be 1, but all the other bits should be unchanged
-        rb = usrp->get_gpio_attr(gpio, "DDR") & mask;
-        expected = ddr | GPIO_BIT(num_bits - 1);
-        if (rb == expected)
-            std::cout << "pass:" << std::endl;
-        else
-            std::cout << "fail:" << std::endl;
-        output_reg_values(gpio, usrp, num_bits);
-        //restore DDR value
-        usrp->set_gpio_attr(gpio, "DDR", ddr, mask);
-    }
+        // setting subdev radio
+        usrp->set_tx_subdev_spec(subdev_specs[i]);
+        usrp->set_rx_subdev_spec(subdev_specs[i]);
+        std::cout << boost::format("Current Subdev Spec:") << std::endl;
+        std::cout << boost::format("  rx_subdev_spec: %s") % usrp->get_rx_subdev_spec(0).to_string() << std::endl;
+        std::cout << boost::format("  tx_subdev_spec: %s") % usrp->get_tx_subdev_spec(0).to_string() << std::endl;
 
-    while (not stop_signal_called)
-    {
+        //set up streams
+        uhd::stream_args_t rx_args(cpu, otw);
+        uhd::stream_args_t tx_args(cpu, otw);
+        uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(rx_args);
+        uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(tx_args);
+        uhd::stream_cmd_t rx_cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
+        rx_cmd.stream_now = true;
+        tx_md.has_time_spec = false;
+        tx_md.start_of_burst = true;
+        usrp->set_rx_rate(rx_rate);
+        usrp->set_tx_rate(tx_rate);
+
+        //set up buffers for tx and rx
+        const size_t max_samps_per_packet = rx_stream->get_max_num_samps();
+        const size_t nsamps_per_buff = max_samps_per_packet;
+        std::vector<char> rx_buff(max_samps_per_packet*uhd::convert::get_bytes_per_item(cpu));
+        std::vector<char> tx_buff(max_samps_per_packet*uhd::convert::get_bytes_per_item(cpu));
+        std::vector<void *> rx_buffs, tx_buffs;
+        for (size_t ch = 0; ch < rx_stream->get_num_channels(); ch++)
+            rx_buffs.push_back(&rx_buff.front()); //same buffer for each channel
+        for (size_t ch = 0; ch < tx_stream->get_num_channels(); ch++)
+            tx_buffs.push_back(&tx_buff.front()); //same buffer for each channel
+
+        if (!vm.count("bitbang"))
+        {
+            // Test the mask parameter of the multi_usrp::set_gpio_attr API
+            std::cout << "\nTesting mask on " << subdev_specs[i] << " ..." << std::flush;
+            //send a value of all 1's to the DDR with a mask for only upper most bit
+            usrp->set_gpio_attr(fp_gpio_attrs[i], "DDR", ~0, GPIO_BIT(num_bits - 1));
+            //upper most bit should now be 1, but all the other bits should be unchanged
+            rb = usrp->get_gpio_attr(fp_gpio_attrs[i], "DDR") & mask;
+            expected = ddr[i] | GPIO_BIT(num_bits - 1);
+            if (rb == expected)
+                std::cout << "pass:" << std::endl;
+            else
+                std::cout << "fail:" << std::endl;
+            output_reg_values(fp_gpio_attrs[i], usrp, num_bits);
+            //restore DDR value
+            usrp->set_gpio_attr(fp_gpio_attrs[i], "DDR", ddr[i], mask);
+        }
+
         int failures = 0;
-
-        if (vm.count("repeat"))
-            std::cout << "Press Ctrl + C to quit..." << std::endl;
 
         if (vm.count("bitbang"))
         {
@@ -334,42 +374,38 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
             stop_time = usrp->get_time_now() + dwell_time;
             while (not stop_signal_called and usrp->get_time_now() < stop_time)
             {
-                rb = usrp->get_gpio_attr(gpio, "READBACK");
-                std::cout << "\rREADBACK: " << to_bit_string(rb, num_bits);
+                rb = usrp->get_gpio_attr(fp_gpio_attrs[i], "READBACK");
+                std::cout << "\rREADBACK of " << subdev_specs[i] << ": " << to_bit_string(rb, num_bits);
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
             }
             std::cout << std::endl;
         }
         else
         {
-            // test user controlled GPIO and ATR idle by setting bit 4 high for 1 second
-            std::cout << "\nTesting user controlled GPIO and ATR idle output..." << std::flush;
-            usrp->set_gpio_attr(gpio, "OUT", 1 << 4, 1 << 4);
+            // test user controlled GPIO and ATR idle
+            std::cout << "\nTesting user controlled GPIO and ATR idle output on " << subdev_specs[i] << " ..." << std::flush;
+            usrp->set_gpio_attr(fp_gpio_attrs[i], "OUT", out[i], out[i]);
             stop_time = usrp->get_time_now() + dwell_time;
             while (not stop_signal_called and usrp->get_time_now() < stop_time)
             {
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
             }
-            rb = usrp->get_gpio_attr(gpio, "READBACK");
-            expected = GPIO_BIT(4) | GPIO_BIT(0);
+            rb = usrp->get_gpio_attr(fp_gpio_attrs[i], "READBACK");
+            expected = atr_idle[i] | out[i];
             if ((rb & expected) != expected)
             {
                 ++failures;
                 std::cout << "fail:" << std::endl;
-                if ((rb & GPIO_BIT(0)) == 0)
-                    std::cout << "Bit 0 should be set, but is not" << std::endl;
-                if ((rb & GPIO_BIT(4)) == 0)
-                    std::cout << "Bit 4 should be set, but is not" << std::endl;
             } else {
                 std::cout << "pass:" << std::endl;
             }
-            output_reg_values(gpio, usrp, num_bits);
-            usrp->set_gpio_attr(gpio, "OUT", 0, GPIO_BIT(4));
+            output_reg_values(fp_gpio_attrs[i], usrp, num_bits);
+            usrp->set_gpio_attr(fp_gpio_attrs[i], "OUT", 0, out[i]);
             if (stop_signal_called)
                 break;
 
-            // test ATR RX by receiving for 1 second
-            std::cout << "\nTesting ATR RX output..." << std::flush;
+            // test ATR RX
+            std::cout << "\nTesting ATR RX output on " << subdev_specs[i] << " ..." << std::flush;
             rx_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS;
             rx_stream->issue_stream_cmd(rx_cmd);
             stop_time = usrp->get_time_now() + dwell_time;
@@ -379,17 +415,16 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
                     rx_stream->recv(rx_buffs, nsamps_per_buff, rx_md, timeout);
                 } catch(...){}
             }
-            rb = usrp->get_gpio_attr(gpio, "READBACK");
-            expected = GPIO_BIT(1);
+            rb = usrp->get_gpio_attr(fp_gpio_attrs[i], "READBACK");
+            expected = atr_rx[i];
             if ((rb & expected) != expected)
             {
                 ++failures;
                 std::cout << "fail:" << std::endl;
-                std::cout << "Bit 1 should be set, but is not" << std::endl;
             } else {
                 std::cout << "pass:" << std::endl;
             }
-            output_reg_values(gpio, usrp, num_bits);
+            output_reg_values(fp_gpio_attrs[i], usrp, num_bits);
             rx_stream->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
             //clear out any data left in the rx stream
             try {
@@ -398,8 +433,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
             if (stop_signal_called)
                 break;
 
-            // test ATR TX by transmitting for 1 second
-            std::cout << "\nTesting ATR TX output..." << std::flush;
+            // test ATR TX
+            std::cout << "\nTesting ATR TX output on " << subdev_specs[i] << " ..." << std::flush;
             stop_time = usrp->get_time_now() + dwell_time;
             tx_md.start_of_burst = true;
             tx_md.end_of_burst = false;
@@ -410,17 +445,16 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
                     tx_md.start_of_burst = false;
                 } catch(...){}
             }
-            rb = usrp->get_gpio_attr(gpio, "READBACK");
-            expected = GPIO_BIT(2);
+            rb = usrp->get_gpio_attr(fp_gpio_attrs[i], "READBACK");
+            expected = atr_tx[i];
             if ((rb & expected) != expected)
             {
                 ++failures;
                 std::cout << "fail:" << std::endl;
-                std::cout << "Bit 2 should be set, but is not" << std::endl;
             } else {
                 std::cout << "pass:" << std::endl;
             }
-            output_reg_values(gpio, usrp, num_bits);
+            output_reg_values(fp_gpio_attrs[i], usrp, num_bits);
             tx_md.end_of_burst = true;
             try {
                 tx_stream->send(tx_buffs, nsamps_per_buff, tx_md, timeout);
@@ -428,8 +462,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
             if (stop_signal_called)
                 break;
 
-            // test ATR RX by transmitting and receiving for 1 second
-            std::cout << "\nTesting ATR full duplex output..." << std::flush;
+            // test ATR XX
+            std::cout << "\nTesting ATR full duplex output on " << subdev_specs[i] << " ..." << std::flush;
             rx_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS;
             rx_stream->issue_stream_cmd(rx_cmd);
             tx_md.start_of_burst = true;
@@ -438,22 +472,21 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
             while (not stop_signal_called and usrp->get_time_now() < stop_time)
             {
                 try {
-                    tx_stream->send(rx_buffs, nsamps_per_buff, tx_md, timeout);
+                    tx_stream->send(tx_buffs, nsamps_per_buff, tx_md, timeout);
                     tx_md.start_of_burst = false;
-                    rx_stream->recv(tx_buffs, nsamps_per_buff, rx_md, timeout);
+                    rx_stream->recv(rx_buffs, nsamps_per_buff, rx_md, timeout);
                 } catch(...){}
             }
-            rb = usrp->get_gpio_attr(gpio, "READBACK");
-            expected = GPIO_BIT(3);
+            rb = usrp->get_gpio_attr(fp_gpio_attrs[i], "READBACK");
+            expected = atr_duplex[i];
             if ((rb & expected) != expected)
             {
                 ++failures;
                 std::cout << "fail:" << std::endl;
-                std::cout << "Bit 3 should be set, but is not" << std::endl;
             } else {
                 std::cout << "pass:" << std::endl;
             }
-            output_reg_values(gpio, usrp, num_bits);
+            output_reg_values(fp_gpio_attrs[i], usrp, num_bits);
             rx_stream->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
             tx_md.end_of_burst = true;
             try {
@@ -469,13 +502,15 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
                 std::cout << failures << " tests failed" << std::endl;
             else
                 std::cout << "All tests passed!" << std::endl;
+
+            // allowing time to finish up
+            stop_time = usrp->get_time_now() + dwell_time;
+            while (not stop_signal_called and usrp->get_time_now() < stop_time)
+            {
+                std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            }
         }
 
-        if (!vm.count("repeat"))
-            break;
-
-        if (not stop_signal_called)
-            std::cout << (boost::format("\nLoop %d completed")  % ++loop) << std::endl;
     }
 
     //finished

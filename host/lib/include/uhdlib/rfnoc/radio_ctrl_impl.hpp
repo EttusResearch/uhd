@@ -158,6 +158,7 @@ protected: // TODO see what's protected and what's private
         static const uint32_t LEDS                 = 176;
         static const uint32_t FP_GPIO              = 184;
         static const uint32_t GPIO                 = 192;
+        static const uint32_t FP_GPIO_SRC          = 200;
         // NOTE: Upper 32 registers (224-255) are reserved for the output settings bus for use with
         //       device specific front end control
 
@@ -176,6 +177,7 @@ protected: // TODO see what's protected and what's private
         static const uint32_t RB_LEDS            = 18;
         static const uint32_t RB_DB_GPIO         = 19;
         static const uint32_t RB_FP_GPIO         = 20;
+        static const uint32_t RB_FP_GPIO_SRC     = 21;
     };
 
     /***********************************************************************

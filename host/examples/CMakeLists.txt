@@ -27,6 +27,7 @@ SET(example_sources
     usrp_list_sensors.cpp
     latency_test.cpp
     gpio.cpp
+    gpio_x300_mux.cpp
     sync_to_gps.cpp
 )
 
@@ -35,6 +36,7 @@ IF(ENABLE_RFNOC)
         example_sources
         rfnoc_nullsource_ce_rx.cpp
         rfnoc_rx_to_file.cpp
+        gpio_x300_mux_rfnoc.cpp
     )
 ENDIF(ENABLE_RFNOC)
 
