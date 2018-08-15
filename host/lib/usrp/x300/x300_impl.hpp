@@ -287,7 +287,7 @@ private:
             const uhd::usrp::mboard_eeprom_t &
     );
 
-    void check_fw_compat(const uhd::fs_path &mb_path, uhd::wb_iface::sptr iface);
+    void check_fw_compat(const uhd::fs_path &mb_path, const mboard_members_t &members);
     void check_fpga_compat(const uhd::fs_path &mb_path, const mboard_members_t &members);
 
     /// More IO stuff
