@@ -140,6 +140,15 @@ class PeriphManagerBase(object):
         mboard_info -- Dictionary; motherboard info
         device_args -- List of dictionaries; daughterboard info
         """
+        # Try to add the MPM Git hash and version
+        try:
+            from usrp_mpm import __version__, __githash__
+            version_string = __version__
+            if len(__githash__):
+                version_string += "-g" + __githash__
+        except ImportError:
+            version_string = ""
+        mboard_info["mpm_version"] = version_string
         return mboard_info
 
     @staticmethod
