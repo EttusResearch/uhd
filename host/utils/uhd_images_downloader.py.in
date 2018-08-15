@@ -169,15 +169,16 @@ def lookup_urls(regex_l, manifest, inventory, refetch=False):
             target_url = target_info.get("url")
             target_hash = target_info.get("repo_hash")
             target_sha256 = target_info.get("sha256_hash")
-            # Check if the same filename and hash appear in the inventory
-            # TODO: Change to the TARGET instead of the filename
             filename = os.path.basename(target_url)
-            if not refetch and inventory.get(filename, {}).get("repo_hash", "") == target_hash:
+            # Check if the same filename and hash appear in the inventory
+            if not refetch and inventory.get(target, {}).get("repo_hash", "") == target_hash:
                 # We already have this file, we don't need to download it again
                 log("INFO", "Target {} is up to date.".format(target))
             else:
                 # We don't have that exact file, add it to the list
-                selected_targets.append({"repo_hash": target_hash,
+                selected_targets.append({"target": target,
+                                         "repo_hash": target_hash,
+                                         "filename": filename,
                                          "url": target_url,
                                          "sha256_hash": target_sha256})
     return selected_targets
@@ -226,9 +227,12 @@ def download(images_url, filename, buffer_size=_DEFAULT_BUFFER_SIZE, print_progr
     return filesize, filesize_dl, sha256_sum.hexdigest()
 
 
-def delete_from_inv(archive_fn, inventory, images_dir):
-    """Uses the inventory to delete the contents of the archive file specified by `filename`"""
-    target = inventory.get(archive_fn, {})
+def delete_from_inv(target_info, inventory, images_dir):
+    """
+    Uses the inventory to delete the contents of the archive file specified by in `target_info`
+    """
+    target = inventory.get(target_info.get("target"), {})
+    target_name = target.get("target")
     log("TRACE", "Removing contents of {} from inventory ({})".format(
         target, target.get("contents", [])))
     dirs_to_delete = []
@@ -249,7 +253,7 @@ def delete_from_inv(archive_fn, inventory, images_dir):
                 os.removedirs(dir_path)
         except os.error as ex:
             log("ERROR", "Failed to delete dir: {}".format(ex))
-    inventory.pop(archive_fn, None)
+    inventory.pop(target_name, None)
     return True
 
 
@@ -338,7 +342,7 @@ def main():
         # Exit early if we don't have anything to download
         if targets_info:
             target_urls = [info.get("url") for info in targets_info]
-            log("TRACE", "URLs to download:\n{}".format(
+            log("DEBUG", "URLs to download:\n{}".format(
                 "\n".join("{}".format(item) for item in target_urls)
             ))
         else:
@@ -347,10 +351,11 @@ def main():
         with TemporaryDirectory() as temp_dir:
             # Now download all the images archives into a temp directory
             for target_info in targets_info:
+                target_name = target_info.get("target")
                 target_hash = target_info.get("repo_hash")
                 target_rel_url = target_info.get("url")
                 target_sha256 = target_info.get("sha256_hash")
-                filename = os.path.basename(target_rel_url)
+                filename = target_info.get("filename")
                 temp_path = os.path.join(temp_dir, filename)
                 # Add a trailing slash to make sure that urljoin handles things properly
                 full_url = urljoin(args.base_url+'/', target_rel_url)
@@ -377,14 +382,16 @@ def main():
                         #       that fail the SHA256 checksum
 
                     # Otherwise, the check has succeeded, and we can proceed
-                    delete_from_inv(filename, inventory, images_dir)
+                    delete_from_inv(target_info, inventory, images_dir)
                     archive_namelist = extract(temp_path, images_dir, archive_type)
                     if args.keep:
                         # If the user wants to keep the downloaded archive,
                         # save it to the images directory and add it to the inventory
                         shutil.copy(temp_path, images_dir)
                         archive_namelist.append(filename)
-                    inventory[filename] = {"repo_hash": target_hash, "contents": archive_namelist}
+                    inventory[target_name] = {"repo_hash": target_hash,
+                                              "contents": archive_namelist,
+                                              "filename": filename}
                 else:
                     log("INFO", "[Dry run] {} successfully downloaded"
                         .format(filename))
