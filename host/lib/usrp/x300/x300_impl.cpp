@@ -658,7 +658,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     //check compat numbers
     //check fpga compat before fw compat because the fw is a subset of the fpga image
     this->check_fpga_compat(mb_path, mb);
-    this->check_fw_compat(mb_path, mb.zpu_ctrl);
+    this->check_fw_compat(mb_path, mb);
 
     mb.fw_regmap = boost::make_shared<fw_regmap_t>();
     mb.fw_regmap->initialize(*mb.zpu_ctrl.get(), true);
@@ -1744,23 +1744,42 @@ x300_impl::frame_size_t x300_impl::determine_max_frame_size(const std::string &a
  * compat checks
  **********************************************************************/
 
-void x300_impl::check_fw_compat(const fs_path &mb_path, wb_iface::sptr iface)
-{
-    uint32_t compat_num = iface->peek32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_COMPAT_NUM));
-    uint32_t compat_major = (compat_num >> 16);
-    uint32_t compat_minor = (compat_num & 0xffff);
+void x300_impl::check_fw_compat(
+        const fs_path &mb_path,
+        const mboard_members_t &members
+) {
+    auto iface = members.zpu_ctrl;
+    const uint32_t compat_num =
+        iface->peek32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_COMPAT_NUM));
+    const uint32_t compat_major = (compat_num >> 16);
+    const uint32_t compat_minor = (compat_num & 0xffff);
 
-    if (compat_major != X300_FW_COMPAT_MAJOR)
-    {
+    if (compat_major != X300_FW_COMPAT_MAJOR) {
+        const std::string image_loader_path =
+            (fs::path(uhd::get_pkg_path()) / "bin" / "uhd_image_loader").string();
+        const std::string image_loader_cmd =
+            str(boost::format("\"%s\" --args=\"type=x300,%s=%s\"")
+                  % image_loader_path
+                  % (members.xport_path == "eth" ? "addr"
+                                                 : "resource")
+                  % members.get_pri_eth().addr);
+
         throw uhd::runtime_error(str(boost::format(
-            "Expected firmware compatibility number %d.%d, but got %d.%d:\n"
-            "The firmware build is not compatible with the host code build.\n"
-            "%s"
-        )   % int(X300_FW_COMPAT_MAJOR) % int(X300_FW_COMPAT_MINOR)
-            % compat_major % compat_minor % print_utility_error("uhd_images_downloader.py")));
+            "Expected firmware compatibility number %d, but got %d:\n"
+            "The FPGA/firmware image on your device is not compatible with this host code build.\n"
+            "Download the appropriate FPGA images for this version of UHD.\n"
+            "%s\n\n"
+            "Then burn a new image to the on-board flash storage of your\n"
+            "USRP X3xx device using the image loader utility. "
+            "Use this command:\n\n%s\n\n"
+            "For more information, refer to the UHD manual:\n\n"
+            " http://files.ettus.com/manual/page_usrp_x3x0.html#x3x0_flash"
+        )   % int(X300_FW_COMPAT_MAJOR) % compat_major
+            % print_utility_error("uhd_images_downloader.py")
+            % image_loader_cmd));
     }
-    _tree->create<std::string>(mb_path / "fw_version").set(str(boost::format("%u.%u")
-                % compat_major % compat_minor));
+    _tree->create<std::string>(mb_path / "fw_version")
+        .set(str(boost::format("%u.%u") % compat_major % compat_minor));
 }
 
 void x300_impl::check_fpga_compat(const fs_path &mb_path, const mboard_members_t &members)
