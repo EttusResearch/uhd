@@ -155,12 +155,15 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         """
         Hard-code our product map
         """
+        # Add the default PeriphManagerBase information first
+        device_info = super().generate_device_info(
+            eeprom_md, mboard_info, dboard_infos)
+        # Then add N3xx-specific information
         mb_pid = eeprom_md.get('pid')
         lookup_key = (
             n3xx.pids.get(mb_pid, 'unknown'),
             tuple([x['pid'] for x in dboard_infos]),
         )
-        device_info = mboard_info
         device_info['product'] = cls.product_map.get(lookup_key, 'unknown')
         return device_info
 
