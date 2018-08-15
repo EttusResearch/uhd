@@ -2371,9 +2371,6 @@ public:
                 const auto attr_type = gpio_atr::gpio_attr_rev_map.at(attr);
                 switch (attr_type) {
                     case gpio_atr::GPIO_SRC:
-                        throw uhd::runtime_error(
-                            "Can't set SRC attribute using integer value!");
-                        break;
                     case gpio_atr::GPIO_CTRL:
                     case gpio_atr::GPIO_DDR: {
                         attr_value = _tree
@@ -2512,8 +2509,6 @@ public:
                 const auto attr_type = gpio_atr::gpio_attr_rev_map.at(attr);
                 switch (attr_type) {
                     case gpio_atr::GPIO_SRC:
-                        throw uhd::runtime_error(
-                            "Can't set SRC attribute using integer value");
                     case gpio_atr::GPIO_CTRL:
                     case gpio_atr::GPIO_DDR: {
                         str_val = _tree

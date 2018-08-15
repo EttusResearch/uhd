@@ -88,27 +88,19 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(x300_radio_ctrl)
     _adc = x300_adc_ctrl::make(_spi, DB_ADC_SEN);
     _dac = x300_dac_ctrl::make(_spi, DB_DAC_SEN, _radio_clk_rate);
 
-    if (_radio_type == PRIMARY) {
-        _fp_gpio = gpio_atr::gpio_atr_3000::make(
-            ctrl, regs::sr_addr(regs::FP_GPIO), regs::rb_addr(regs::RB_FP_GPIO));
-        for (const gpio_atr::gpio_attr_map_t::value_type attr : gpio_atr::gpio_attr_map) {
-            switch (attr.first) {
-                case usrp::gpio_atr::GPIO_SRC:
+    _fp_attr     = _radio_type == PRIMARY ? "FP0" : "FP1";
+    _fp_gpio_src = boost::make_shared<fp_gpio_src_reg_t>();
+    _fp_gpio_src->initialize(*ctrl, true);
+    _fp_gpio = gpio_atr::gpio_atr_3000::make(
+        ctrl, regs::sr_addr(regs::FP_GPIO), regs::rb_addr(regs::RB_FP_GPIO));
+    for (const gpio_atr::gpio_attr_map_t::value_type attr : gpio_atr::gpio_attr_map) {
+        switch (attr.first) {
+            case usrp::gpio_atr::GPIO_SRC:
+                // only set up source selection register on primary radio
+                if (_fp_attr == "FP0") {
                     _tree
                         ->create<std::vector<std::string>>(
-                            fs_path("gpio") / "FP0" / attr.second)
-                        .set(std::vector<std::string>(
-                            32, usrp::gpio_atr::default_attr_value_map.at(attr.first)))
-                        .add_coerced_subscriber([this](const std::vector<std::string>&) {
-                            throw uhd::runtime_error("This device does not support "
-                                                     "setting the GPIO_SRC attribute.");
-                        });
-                    break;
-                case usrp::gpio_atr::GPIO_CTRL:
-                case usrp::gpio_atr::GPIO_DDR:
-                    _tree
-                        ->create<std::vector<std::string>>(
-                            fs_path("gpio") / "FP0" / attr.second)
+                            fs_path("gpio") / _fp_attr / attr.second)
                         .set(std::vector<std::string>(
                             32, usrp::gpio_atr::default_attr_value_map.at(attr.first)))
                         .add_coerced_subscriber(
@@ -120,20 +112,49 @@ UHD_RFNOC_RADIO_BLOCK_CONSTRUCTOR(x300_radio_ctrl)
                                                .at(str_val[i])
                                            << i;
                                 }
-                                _fp_gpio->set_gpio_attr(attr.first, val);
+                                _fp_gpio_src->set(val);
+                                _fp_gpio_src->flush();
                             });
-                    break;
-                case usrp::gpio_atr::GPIO_READBACK:
-                    _tree->create<uint32_t>(fs_path("gpio") / "FP0" / "READBACK")
-                        .set_publisher([this]() { return _fp_gpio->read_gpio(); });
-                    break;
-                default:
-                    _tree->create<uint32_t>(fs_path("gpio") / "FP0" / attr.second)
-                        .set(0)
-                        .add_coerced_subscriber([this, attr](const uint32_t val) {
-                            _fp_gpio->set_gpio_attr(attr.first, val);
+                } else {
+                    _tree
+                        ->create<std::vector<std::string>>(
+                            fs_path("gpio") / _fp_attr / attr.second)
+                        .set(std::vector<std::string>(
+                            32, usrp::gpio_atr::default_attr_value_map.at(attr.first)))
+                        .add_coerced_subscriber([this](const std::vector<std::string>&) {
+                            throw uhd::runtime_error("Secondary radio does not have "
+                                                     "front-panel GPIO source control.");
                         });
-            }
+                }
+                break;
+            case usrp::gpio_atr::GPIO_CTRL:
+            case usrp::gpio_atr::GPIO_DDR:
+                _tree
+                    ->create<std::vector<std::string>>(
+                        fs_path("gpio") / _fp_attr / attr.second)
+                    .set(std::vector<std::string>(
+                        32, usrp::gpio_atr::default_attr_value_map.at(attr.first)))
+                    .add_coerced_subscriber([this, attr](
+                                                const std::vector<std::string> str_val) {
+                        uint32_t val = 0;
+                        for (size_t i = 0; i < str_val.size(); i++) {
+                            val += usrp::gpio_atr::gpio_attr_value_pair.at(attr.second)
+                                       .at(str_val[i])
+                                   << i;
+                        }
+                        _fp_gpio->set_gpio_attr(attr.first, val);
+                    });
+                break;
+            case usrp::gpio_atr::GPIO_READBACK:
+                _tree->create<uint32_t>(fs_path("gpio") / _fp_attr / "READBACK")
+                    .set_publisher([this]() { return _fp_gpio->read_gpio(); });
+                break;
+            default:
+                _tree->create<uint32_t>(fs_path("gpio") / _fp_attr / attr.second)
+                    .set(0)
+                    .add_coerced_subscriber([this, attr](const uint32_t val) {
+                        _fp_gpio->set_gpio_attr(attr.first, val);
+                    });
         }
     }
 
@@ -212,7 +233,7 @@ x300_radio_ctrl_impl::~x300_radio_ctrl_impl()
         if (_radio_type == PRIMARY) {
             for (const gpio_atr::gpio_attr_map_t::value_type attr :
                 gpio_atr::gpio_attr_map) {
-                _tree->remove(fs_path("gpio") / "FP0" / attr.second);
+                _tree->remove(fs_path("gpio") / _fp_attr / attr.second);
             }
         }
 
@@ -346,7 +367,7 @@ double x300_radio_ctrl_impl::set_tx_gain(const double gain, const size_t chan)
         auto& gg = _tx_gain_groups.at(chan);
         gg->set_value(gain);
         return radio_ctrl_impl::set_tx_gain(gg->get_value(), chan);
-    }
+     }
     return radio_ctrl_impl::set_tx_gain(0.0, chan);
 }
 
@@ -665,7 +686,7 @@ std::vector<std::string> x300_radio_ctrl_impl::get_gpio_banks() const
     banks.push_back("RX" + _radio_slot);
     banks.push_back("TX" + _radio_slot);
     if (_fp_gpio) {
-        banks.push_back("FP0");
+        banks.push_back(_fp_attr);
     }
     return banks;
 }
@@ -675,11 +696,35 @@ void x300_radio_ctrl_impl::set_gpio_attr(const std::string& bank,
     const uint32_t value,
     const uint32_t mask)
 {
-    if (bank == "FP0" and _fp_gpio) {
-        const uint32_t current =
-            _tree->access<uint32_t>(fs_path("gpio") / bank / attr).get();
-        const uint32_t new_value = (current & ~mask) | (value & mask);
-        _tree->access<uint32_t>(fs_path("gpio") / bank / attr).set(new_value);
+    if (bank == _fp_attr and _fp_gpio) {
+        std::vector<std::string> attr_value;
+        const auto attr_type = usrp::gpio_atr::gpio_attr_rev_map.at(attr);
+        switch (attr_type) {
+            case usrp::gpio_atr::GPIO_SRC:
+            case usrp::gpio_atr::GPIO_CTRL:
+            case usrp::gpio_atr::GPIO_DDR: {
+                attr_value =
+                    _tree->access<std::vector<std::string>>(fs_path("gpio") / bank / attr)
+                        .get();
+                UHD_ASSERT_THROW(attr_value.size() <= 32);
+                std::bitset<32> bit_mask  = std::bitset<32>(mask);
+                std::bitset<32> bit_value = std::bitset<32>(value);
+                for (size_t i = 0; i < bit_mask.size(); i++) {
+                    if (bit_mask[i] == 1) {
+                        attr_value[i] =
+                            usrp::gpio_atr::attr_value_map.at(attr_type).at(bit_value[i]);
+                    }
+                }
+                _tree->access<std::vector<std::string>>(fs_path("gpio") / bank / attr)
+                    .set(attr_value);
+            } break;
+            default: {
+                const uint32_t current =
+                    _tree->access<uint32_t>(fs_path("gpio") / bank / attr).get();
+                const uint32_t new_value = (current & ~mask) | (value & mask);
+                _tree->access<uint32_t>(fs_path("gpio") / bank / attr).set(new_value);
+            } break;
+        }
         return;
     }
     if (bank.size() > 2 and bank[1] == 'X') {
@@ -712,8 +757,28 @@ void x300_radio_ctrl_impl::set_gpio_attr(const std::string& bank,
 uint32_t x300_radio_ctrl_impl::get_gpio_attr(
     const std::string& bank, const std::string& attr)
 {
-    if (bank == "FP0" and _fp_gpio) {
-        return uint32_t(_tree->access<uint64_t>(fs_path("gpio") / bank / attr).get());
+    if (bank == _fp_attr and _fp_gpio) {
+        std::vector<std::string> str_val;
+        const auto attr_type = usrp::gpio_atr::gpio_attr_rev_map.at(attr);
+        switch (attr_type) {
+            case usrp::gpio_atr::GPIO_SRC:
+            case usrp::gpio_atr::GPIO_CTRL:
+            case usrp::gpio_atr::GPIO_DDR: {
+                str_val =
+                    _tree->access<std::vector<std::string>>(fs_path("gpio") / bank / attr)
+                        .get();
+                uint32_t val = 0;
+                for (size_t i = 0; i < str_val.size(); i++) {
+                    val += usrp::gpio_atr::gpio_attr_value_pair.at(attr).at(str_val[i])
+                           << i;
+                }
+                return val;
+            }
+            default:
+                return uint32_t(
+                    _tree->access<uint64_t>(fs_path("gpio") / bank / attr).get());
+        }
+        return 0;
     }
     if (bank.size() > 2 and bank[1] == 'X') {
         const std::string name          = bank.substr(2);

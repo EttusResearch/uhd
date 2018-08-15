@@ -63,7 +63,9 @@ static const gpio_attr_map_t gpio_attr_map{{GPIO_SRC, GPIO_ATTR_SRC},
     {GPIO_READBACK, GPIO_ATTR_READBACK}};
 
 static const std::map<gpio_attr_t, std::map<uint32_t, std::string>> attr_value_map{
-    {GPIO_CTRL, {{0, "ATR"}, {1, "GPIO"}}}, {GPIO_DDR, {{0, "INPUT"}, {1, "OUTPUT"}}}};
+    {GPIO_SRC, {{0, "RADIO_0/0"}, {1, "RADIO_1/0"}}},
+    {GPIO_CTRL, {{0, "ATR"}, {1, "GPIO"}}},
+    {GPIO_DDR, {{0, "INPUT"}, {1, "OUTPUT"}}}};
 
 static const std::map<std::string, gpio_attr_t> gpio_attr_rev_map{
     {GPIO_ATTR_SRC, GPIO_SRC},
@@ -87,7 +89,11 @@ static const std::map<std::string, uint32_t> gpio_direction{
 
 static const std::map<std::string, uint32_t> gpio_ctrl_mode{{"ATR", 0}, {"GPIO", 1}};
 
+static const std::map<std::string, uint32_t> gpio_src_map{
+    {"RADIO_0/0", 0}, {"RADIO_1/0", 1}};
+
 static const std::map<std::string, std::map<std::string, uint32_t>> gpio_attr_value_pair{
+    {GPIO_ATTR_SRC, uhd::usrp::gpio_atr::gpio_src_map},
     {GPIO_ATTR_CTRL, uhd::usrp::gpio_atr::gpio_ctrl_mode},
     {GPIO_ATTR_DDR, uhd::usrp::gpio_atr::gpio_direction},
     {GPIO_ATTR_OUT, uhd::usrp::gpio_atr::gpio_level_map},

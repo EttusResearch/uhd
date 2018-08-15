@@ -175,6 +175,29 @@ private:
         }
     };
 
+    class fp_gpio_src_reg_t : public uhd::soft_reg32_rw_t
+    {
+    public:
+        typedef boost::shared_ptr<fp_gpio_src_reg_t> sptr;
+
+        fp_gpio_src_reg_t()
+            : uhd::soft_reg32_rw_t(
+                  regs::sr_addr(regs::FP_GPIO_SRC), regs::rb_addr(regs::RB_FP_GPIO_SRC))
+        {
+            uhd::soft_reg32_rw_t::set(REGISTER, 0);
+        }
+
+        virtual void set(const uint32_t value)
+        {
+            uhd::soft_reg32_rw_t::set(REGISTER, value);
+        }
+
+        virtual uint32_t get()
+        {
+            return uhd::soft_reg32_rw_t::get(REGISTER);
+        }
+    };
+
     struct x300_regs
     {
         static const uint32_t TX_FE_BASE = 224;
@@ -205,6 +228,7 @@ private: // members
 
     radio_connection_t _radio_type;
     std::string _radio_slot;
+    std::string _fp_attr;
     //! Radio clock rate is the rate at which the ADC and DAC are running at.
     // Not necessarily this block's sampling rate (tick rate).
     double _radio_clk_rate;
@@ -215,6 +239,7 @@ private: // members
     x300_adc_ctrl::sptr _adc;
     x300_dac_ctrl::sptr _dac;
     usrp::gpio_atr::gpio_atr_3000::sptr _fp_gpio;
+    fp_gpio_src_reg_t::sptr _fp_gpio_src;
 
     std::map<size_t, usrp::dboard_eeprom_t> _db_eeproms;
     usrp::dboard_manager::sptr _db_manager;
