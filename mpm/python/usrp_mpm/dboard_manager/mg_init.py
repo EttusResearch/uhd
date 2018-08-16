@@ -460,6 +460,10 @@ class MagnesiumInitManager(object):
         time.sleep(0.001) # 17us... ish.
         jesdcore.send_sysref_pulse()
         async_exec(self.mykonos, "finish_initialization")
+        # According to the AD9371 user guide, p.57, the RF cal must come before
+        # the framer/deframer init. We tried otherwise, and failed. So don't
+        # move this anywhere else.
+        self.init_rf_cal(args)
         self.log.trace("Starting JESD204b Link Initialization...")
         # Generally, enable the source before the sink. Start with the DAC side.
         self.log.trace("Starting FPGA framer...")
@@ -617,9 +621,5 @@ class MagnesiumInitManager(object):
                 "enabled inside Mykonos!")
             self.mykonos.enable_jesd_loopback(1)
         else:
-            # Now initialize calibrations:
-            # TODO: This also takes a long time. It might be faster to somehow
-            # just reset the calibrations, but one thing at a time.
-            self.init_rf_cal(args)
             self.mykonos.start_radio()
         return True
