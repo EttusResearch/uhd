@@ -25,7 +25,7 @@ namespace po = boost::program_options;
 using namespace uhd::usrp_clock;
 using namespace uhd::usrp;
 
-void get_usrp_time(multi_usrp::sptr usrp, size_t mboard, std::vector<time_t> *times){
+void get_usrp_time(multi_usrp::sptr usrp, size_t mboard, std::vector<int64_t> *times){
     (*times)[mboard] = usrp->get_time_now(mboard).get_full_secs();
 }
 
@@ -94,7 +94,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //Get GPS time to initially set USRP devices
     std::cout << std::endl << "Querying Clock for time and setting USRP times..." << std::endl << std::endl;
-    time_t clock_time = clock->get_time();
+    int64_t clock_time = clock->get_time();
     usrp->set_time_next_pps(uhd::time_spec_t(double(clock_time+1)));
     srand((unsigned int)time(NULL));
 
@@ -106,7 +106,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         std::this_thread::sleep_for(std::chrono::milliseconds(wait_time));
 
         //Get all times before output
-        std::vector<time_t> usrp_times(usrp->get_num_mboards());
+        std::vector<int64_t> usrp_times(usrp->get_num_mboards());
         boost::thread_group thread_group;
         clock_time = clock->get_time();
         for(size_t j = 0; j < usrp->get_num_mboards(); j++){

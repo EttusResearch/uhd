@@ -131,7 +131,7 @@ private: // member functions
         return _gps_data.fix.mode >= MODE_2D;
     }
 
-    std::time_t _epoch_time(void)
+    int64_t _epoch_time(void)
     {
         boost::shared_lock<boost::shared_mutex> l(_d_mutex);
         return (boost::posix_time::from_time_t(_gps_data.fix.time)

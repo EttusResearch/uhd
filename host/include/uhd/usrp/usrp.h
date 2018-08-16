@@ -83,7 +83,7 @@ typedef struct {
     //! Stream now?
     bool stream_now;
     //! If not now, then full seconds into future to stream
-    time_t time_spec_full_secs;
+    int64_t time_spec_full_secs;
     //! If not now, then fractional seconds into future to stream
     double time_spec_frac_secs;
 } uhd_stream_cmd_t;
@@ -416,7 +416,7 @@ UHD_API uhd_error uhd_usrp_get_mboard_name(
 UHD_API uhd_error uhd_usrp_get_time_now(
     uhd_usrp_handle h,
     size_t mboard,
-    time_t *full_secs_out,
+    int64_t *full_secs_out,
     double *frac_secs_out
 );
 
@@ -427,7 +427,7 @@ UHD_API uhd_error uhd_usrp_get_time_now(
 UHD_API uhd_error uhd_usrp_get_time_last_pps(
     uhd_usrp_handle h,
     size_t mboard,
-    time_t *full_secs_out,
+    int64_t *full_secs_out,
     double *frac_secs_out
 );
 
@@ -437,7 +437,7 @@ UHD_API uhd_error uhd_usrp_get_time_last_pps(
  */
 UHD_API uhd_error uhd_usrp_set_time_now(
     uhd_usrp_handle h,
-    time_t full_secs,
+    int64_t full_secs,
     double frac_secs,
     size_t mboard
 );
@@ -448,7 +448,7 @@ UHD_API uhd_error uhd_usrp_set_time_now(
  */
 UHD_API uhd_error uhd_usrp_set_time_next_pps(
     uhd_usrp_handle h,
-    time_t full_secs,
+    int64_t full_secs,
     double frac_secs,
     size_t mboard
 );
@@ -459,7 +459,7 @@ UHD_API uhd_error uhd_usrp_set_time_next_pps(
  */
 UHD_API uhd_error uhd_usrp_set_time_unknown_pps(
     uhd_usrp_handle h,
-    time_t full_secs,
+    int64_t full_secs,
     double frac_secs
 );
 
@@ -475,7 +475,7 @@ UHD_API uhd_error uhd_usrp_get_time_synchronized(
  */
 UHD_API uhd_error uhd_usrp_set_command_time(
     uhd_usrp_handle h,
-    time_t full_secs,
+    int64_t full_secs,
     double frac_secs,
     size_t mboard
 );

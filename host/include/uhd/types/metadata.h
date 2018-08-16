@@ -113,7 +113,7 @@ UHD_API uhd_error uhd_rx_metadata_has_time_spec(
 //! Time of first sample
 UHD_API uhd_error uhd_rx_metadata_time_spec(
     uhd_rx_metadata_handle h,
-    time_t *full_secs_out,
+    int64_t *full_secs_out,
     double *frac_secs_out
 );
 
@@ -212,7 +212,7 @@ UHD_API uhd_error uhd_rx_metadata_last_error(
 UHD_API uhd_error uhd_tx_metadata_make(
     uhd_tx_metadata_handle* handle,
     bool has_time_spec,
-    time_t full_secs,
+    int64_t full_secs,
     double frac_secs,
     bool start_of_burst,
     bool end_of_burst
@@ -236,7 +236,7 @@ UHD_API uhd_error uhd_tx_metadata_has_time_spec(
 //! Get time specification
 UHD_API uhd_error uhd_tx_metadata_time_spec(
     uhd_tx_metadata_handle h,
-    time_t *full_secs_out,
+    int64_t *full_secs_out,
     double *frac_secs_out
 );
 
@@ -316,7 +316,7 @@ UHD_API uhd_error uhd_async_metadata_has_time_spec(
 //! Get time specification
 UHD_API uhd_error uhd_async_metadata_time_spec(
     uhd_async_metadata_handle h,
-    time_t *full_secs_out,
+    int64_t *full_secs_out,
     double *frac_secs_out
 );
 

@@ -45,7 +45,7 @@ time_spec_t uhd::get_system_time(void){
     pt::ptime time_now = pt::microsec_clock::universal_time();
     pt::time_duration time_dur = time_now - pt::from_time_t(0);
     return time_spec_t(
-        time_t(time_dur.total_seconds()),
+        int64_t(time_dur.total_seconds()),
         long(time_dur.fractional_seconds()),
         double(pt::time_duration::ticks_per_second())
     );

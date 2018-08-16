@@ -33,7 +33,7 @@ uhd_rx_metadata_handle md;
 uhd_rx_metadata_make(&md);
 
 // Streaming here puts useful information into metadata
-time_t full_secs;
+int64_t full_secs;
 double frac_secs;
 uhd_rx_metadata_time_spec(md, &full_secs, &frac_secs);
 

@@ -372,7 +372,7 @@ private:
     return gps_time; //keep gcc from complaining
   }
 
-  time_t get_epoch_time(void) {
+  int64_t get_epoch_time(void) {
       return (get_time() - from_time_t(0)).total_seconds();
   }
 

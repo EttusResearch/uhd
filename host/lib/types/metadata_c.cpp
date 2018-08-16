@@ -43,7 +43,7 @@ uhd_error uhd_rx_metadata_has_time_spec(
 
 uhd_error uhd_rx_metadata_time_spec(
     uhd_rx_metadata_handle h,
-    time_t *full_secs_out,
+    int64_t *full_secs_out,
     double *frac_secs_out
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
@@ -149,7 +149,7 @@ uhd_error uhd_rx_metadata_last_error(
 uhd_error uhd_tx_metadata_make(
     uhd_tx_metadata_handle* handle,
     bool has_time_spec,
-    time_t full_secs,
+    int64_t full_secs,
     double frac_secs,
     bool start_of_burst,
     bool end_of_burst
@@ -185,7 +185,7 @@ uhd_error uhd_tx_metadata_has_time_spec(
 
 uhd_error uhd_tx_metadata_time_spec(
     uhd_tx_metadata_handle h,
-    time_t *full_secs_out,
+    int64_t *full_secs_out,
     double *frac_secs_out
 ){
     UHD_SAFE_C_SAVE_ERROR(h,
@@ -265,7 +265,7 @@ uhd_error uhd_async_metadata_has_time_spec(
 
 uhd_error uhd_async_metadata_time_spec(
     uhd_async_metadata_handle h,
-    time_t *full_secs_out,
+    int64_t *full_secs_out,
     double *frac_secs_out
 ){
     UHD_SAFE_C_SAVE_ERROR(h,

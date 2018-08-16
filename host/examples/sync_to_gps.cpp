@@ -111,7 +111,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
             }
 
             //Set to GPS time
-            uhd::time_spec_t gps_time = uhd::time_spec_t(time_t(usrp->get_mboard_sensor("gps_time", mboard).to_int()));
+            uhd::time_spec_t gps_time = uhd::time_spec_t(int64_t(usrp->get_mboard_sensor("gps_time", mboard).to_int()));
             usrp->set_time_next_pps(gps_time+1.0, mboard);
 
             //Wait for it to apply
@@ -121,7 +121,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
             std::this_thread::sleep_for(std::chrono::seconds(2));
 
             //Check times
-            gps_time = uhd::time_spec_t(time_t(usrp->get_mboard_sensor("gps_time", mboard).to_int()));
+            gps_time = uhd::time_spec_t(int64_t(usrp->get_mboard_sensor("gps_time", mboard).to_int()));
             uhd::time_spec_t time_last_pps = usrp->get_time_last_pps(mboard);
             std::cout << "USRP time: " << (boost::format("%0.9f") % time_last_pps.get_real_secs()) << std::endl;
             std::cout << "GPSDO time: " << (boost::format("%0.9f") % gps_time.get_real_secs()) << std::endl;

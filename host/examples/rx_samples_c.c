@@ -223,12 +223,12 @@ int main(int argc, char* argv[])
         // Handle data
         fwrite(buff, sizeof(float) * 2, num_rx_samps, fp);
         if (verbose) {
-            time_t full_secs;
+            int64_t full_secs;
             double frac_secs;
             uhd_rx_metadata_time_spec(md, &full_secs, &frac_secs);
             fprintf(stderr, "Received packet: %zu samples, %.f full secs, %f frac secs\n",
                     num_rx_samps,
-                    difftime(full_secs, (time_t) 0),
+                    difftime(full_secs, (int64_t) 0),
                     frac_secs);
         }
 
