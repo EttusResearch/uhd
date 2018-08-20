@@ -148,15 +148,17 @@ public:
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
         if (ch == CH1 or ch == BOTH) {
-            _cpld_regs->rf1_reg1.set(rm::rf1_reg1_t::AMP_LO1_EN_CH1, bool2bin(enabled));
             _cpld_regs->if0_reg3.set(rm::if0_reg3_t::IF1_IF2_EN_CH1, bool2bin(enabled));
             _cpld_regs->if0_reg0.set(rm::if0_reg0_t::AMP_LO2_EN_CH1, bool2bin(enabled));
+            _chan_enabled[size_t(CH1)] = enabled;
         }
         if (ch == CH2 or ch == BOTH) {
             _cpld_regs->rf1_reg5.set(rm::rf1_reg5_t::AMP_LO1_EN_CH2, bool2bin(enabled));
             _cpld_regs->if0_reg4.set(rm::if0_reg4_t::IF1_IF2_EN_CH2, bool2bin(enabled));
             _cpld_regs->if0_reg0.set(rm::if0_reg0_t::AMP_LO2_EN_CH2, bool2bin(enabled));
+            _chan_enabled[size_t(CH2)] = enabled;
         }
+        _set_lo1_amp(_chan_enabled[size_t(CH1)], _chan_enabled[size_t(CH2)], _lo1_src[size_t(CH2)]);
         if (commit) _commit();
     }
 
@@ -327,6 +329,7 @@ public:
             _cpld_regs->rf1_reg5.set(rm::rf1_reg5_t::SW15_CTRL_CH2, bool2bin(source!=LO_INTERNAL));
             _cpld_regs->rf1_reg6.set(rm::rf1_reg6_t::SW16_CTRL_CH2, bool2bin(source==LO_INTERNAL));
             _lo1_src[size_t(CH2)] = source;
+            _set_lo1_amp(_chan_enabled[size_t(CH1)], _chan_enabled[size_t(CH2)], _lo1_src[size_t(CH2)]);
         }
         if (commit) _commit();
     }
@@ -497,6 +500,14 @@ private:    //Functions
         _cpld_regs->rf1_reg7.set(rm::rf1_reg7_t::SW22_CTRL_CH2, bool2bin((lo1_export_src!=LO_CH2_SYNTH)||(cal_mode==CAL_CH2)));
     }
 
+    void _set_lo1_amp(bool ch1_enabled, bool ch2_enabled, lo_source_t ch2_lo1_src)
+    {
+        // AMP_LO1_EN_CH1 also controls the amp for the external LO1 port,
+        // which could be in use by ch2
+        _cpld_regs->rf1_reg1.set(rm::rf1_reg1_t::AMP_LO1_EN_CH1, bool2bin(
+            ch1_enabled || (ch2_enabled && (ch2_lo1_src == LO_EXTERNAL || ch2_lo1_src == LO_REIMPORT))));
+    }
+
     void _config_lo1_route(lo_config_route_t source)
     {
         //Route SPI LEs through CPLD (will not assert them)
@@ -643,6 +654,7 @@ private:    //Members
     dirty_tracked<bool>         _lo2_enable[NUM_CHANS];
     lo_export_source_t          _lo1_export;
     lo_export_source_t          _lo2_export;
+    bool                        _chan_enabled[NUM_CHANS];
 };
 
 twinrx_ctrl::sptr twinrx_ctrl::make(
