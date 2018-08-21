@@ -880,12 +880,6 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t &args_)
         // Setup the dsp transport hints
         device_addr_t tx_hints = get_tx_hints(mb_index);
         const size_t fifo_size = blk_ctrl->get_fifo_size(block_port);
-        if (not tx_hints.has_key("send_buff_size"))
-        {
-            // Default buffer size to FIFO size
-            tx_hints["send_buff_size"] = std::to_string(fifo_size);
-        }
-
         // Allocate sid and create transport
         uhd::sid_t stream_address = blk_ctrl->get_address(block_port);
         UHD_TX_STREAMER_LOG() << "creating tx stream " << tx_hints.to_string() ;
