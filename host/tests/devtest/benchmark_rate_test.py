@@ -76,7 +76,7 @@ class uhd_benchmark_rate_test(uhd_example_test_case):
             run_results['rel_rx_samples_error'] = 100
         match = re.search(r'(Num dropped samples):\s*(.*)', app.stdout)
         run_results['num_rx_dropped'] = int(match.group(2)) if match else -1
-        match = re.search(r'(Num overflows detected):\s*(.*)', app.stdout)
+        match = re.search(r'(Num overruns detected):\s*(.*)', app.stdout)
         run_results['num_rx_overruns'] = int(match.group(2)) if match else -1
         match = re.search(r'(Num transmitted samples):\s*(.*)', app.stdout)
         run_results['num_tx_samples'] = int(match.group(2)) if match else -1
@@ -90,7 +90,7 @@ class uhd_benchmark_rate_test(uhd_example_test_case):
             run_results['rel_tx_samples_error'] = 100
         match = re.search(r'(Num sequence errors \(Tx\)):\s*(.*)', app.stdout)
         run_results['num_tx_seqerrs'] = int(match.group(2)) if match else -1
-        match = re.search(r'(Num underflows detected):\s*(.*)', app.stdout)
+        match = re.search(r'(Num underruns detected):\s*(.*)', app.stdout)
         run_results['num_tx_underruns'] = int(match.group(2)) if match else -1
         match = re.search(r'(Num timeouts \(Rx\)):\s*(.*)', app.stdout)
         run_results['num_timeouts_rx'] = int(match.group(2)) if match else -1
