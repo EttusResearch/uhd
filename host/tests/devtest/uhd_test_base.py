@@ -38,22 +38,12 @@ def filter_stderr(stderr, run_results=None):
     """
     Filters the output to stderr. run_results[] is a dictionary.
     This function will:
-    - Remove UUUUU... strings, since they are generally not a problem.
-    - Remove all DDDD and SSSS strings, and add run_results['has_S'] = True
-      and run_results['has_D'] = True.
     - Remove warnings and put them in run_results['warnings']
     - Put the filtered error string into run_results['errors'] and returns the dictionary
     """
     run_results = run_results or {}
     errstr, run_results['warnings'] = filter_warnings(stderr)
     # Scan for underruns and sequence errors / dropped packets  not detected in the counter
-    errstr = re.sub('UU+', '', errstr)
-    (errstr, n_subs) = re.subn('SS+', '', errstr)
-    if n_subs:
-        run_results['has_S'] = True
-    (errstr, n_subs) = re.subn('DD+', '', errstr)
-    if n_subs:
-        run_results['has_D'] = True
     errstr = re.sub("\n\n+", "\n", errstr)
     run_results['errors'] = errstr.strip()
     return run_results
@@ -205,8 +195,6 @@ class uhd_example_test_case(uhd_test_case):
         run_results = {
             'return_code': app.returncode,
             'passed': False,
-            'has_D': False,
-            'has_S': False,
         }
         run_results = filter_stderr(app.stderr, run_results)
         self.log.info('STDERR Output:')
