@@ -82,7 +82,7 @@ rpc_client::rpc_client (
             _exec_err.assign(boost::asio::error::connection_refused, boost::asio::error::get_system_category());
         }
     } catch (boost::exception&) {
-        UHD_LOGGER_DEBUG("NIRIO") << "rpc_client connection request cancelled/aborted." ;
+        UHD_LOGGER_TRACE("NIRIO") << "rpc_client connection request cancelled/aborted." ;
         _exec_err.assign(boost::asio::error::connection_aborted, boost::asio::error::get_system_category());
     }
 }
