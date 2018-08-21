@@ -82,11 +82,16 @@ typedef ptrdiff_t ssize_t;
 #endif
 
 // Define API declaration macro
-#ifdef UHD_DLL_EXPORTS
-    #define UHD_API UHD_EXPORT
+#ifdef UHD_STATIC_LIB
+    #define UHD_API
 #else
-    #define UHD_API UHD_IMPORT
-#endif // UHD_DLL_EXPORTS
+    #ifdef UHD_DLL_EXPORTS
+        #define UHD_API UHD_EXPORT
+    #else
+        #define UHD_API UHD_IMPORT
+    #endif // UHD_DLL_EXPORTS
+#endif // UHD_STATIC_LIB
+
 #ifdef UHD_RFNOC_ENABLED
     #define UHD_RFNOC_API UHD_API
 #else
