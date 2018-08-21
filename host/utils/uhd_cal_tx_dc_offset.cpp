@@ -81,14 +81,7 @@ static double tune_rx_and_tx(uhd::usrp::multi_usrp::sptr usrp, const double tx_l
         rx_tune_req.dsp_freq = rx_freq - max_fe_rx_freq;
     usrp->set_rx_freq(rx_tune_req);
 
-    //wait for the LOs to become locked
-    std::this_thread::sleep_for(std::chrono::milliseconds(50));
-    boost::system_time start = boost::get_system_time();
-    while (not usrp->get_tx_sensor("lo_locked").to_bool() or not usrp->get_rx_sensor("lo_locked").to_bool())
-    {
-        if (boost::get_system_time() > start + boost::posix_time::milliseconds(100))
-            throw std::runtime_error("timed out waiting for TX and/or RX LO to lock");
-    }
+    wait_for_lo_lock(usrp);
 
     return usrp->get_tx_freq();
 }

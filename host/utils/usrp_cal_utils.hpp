@@ -19,6 +19,8 @@
 #include <cmath>
 #include <cstdlib>
 #include <fstream>
+#include <chrono>
+#include <thread>
 
 namespace fs = boost::filesystem;
 
@@ -394,4 +396,18 @@ bool has_tx_error(uhd::tx_streamer::sptr tx_stream)
          | uhd::async_metadata_t::EVENT_CODE_UNDERFLOW_IN_PACKET
          | uhd::async_metadata_t::EVENT_CODE_SEQ_ERROR_IN_BURST
     );
+}
+
+void wait_for_lo_lock(uhd::usrp::multi_usrp::sptr usrp)
+{
+    std::this_thread::sleep_for(std::chrono::milliseconds(50));
+    const auto timeout =
+        std::chrono::steady_clock::now() + std::chrono::milliseconds(100);
+    while (not usrp->get_tx_sensor("lo_locked").to_bool()
+            or not usrp->get_rx_sensor("lo_locked").to_bool()) {
+        if (std::chrono::steady_clock::now() > timeout) {
+            throw std::runtime_error(
+                "timed out waiting for TX and/or RX LO to lock");
+        }
+    }
 }
