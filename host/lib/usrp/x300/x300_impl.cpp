@@ -1302,8 +1302,6 @@ uhd::both_xports_t x300_impl::make_transport(
         size_t system_max_recv_frame_size = (size_t) _max_frame_sizes.recv_frame_size;
         default_buff_args.send_frame_size = std::min(system_max_send_frame_size, x300::ETH_MSG_FRAME_SIZE);
         default_buff_args.recv_frame_size = std::min(system_max_recv_frame_size, x300::ETH_MSG_FRAME_SIZE);
-        default_buff_args.num_send_frames = 1;  // never need multiple frames on send
-        default_buff_args.num_recv_frames = 1;  // only need multiple frames with offload thread
         default_buff_args.send_buff_size = conn.link_rate / 50; // 20ms
         default_buff_args.recv_buff_size = std::max(conn.link_rate / 50, x300::ETH_MSG_NUM_FRAMES * x300::ETH_MSG_FRAME_SIZE); // enough to hold greater of 20ms or number of msg frames
         if (xport_type == TX_DATA) 
@@ -1335,12 +1333,7 @@ uhd::both_xports_t x300_impl::make_transport(
                         ;
                 default_buff_args.recv_frame_size = system_max_recv_frame_size;
             }
-            // set default buffering for data
-            default_buff_args.recv_buff_size = conn.link_rate / 10; // 100ms
             default_buff_args.num_recv_frames = 2;  // set some buffers so the offload thread actually offloads the socket I/O
-
-            // set buffering for flow control messages
-            default_buff_args.num_send_frames = 1;
         }
 
         //make a new transport - fpga has no idea how to talk to us on this yet
