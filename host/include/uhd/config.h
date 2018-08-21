@@ -57,11 +57,17 @@ typedef ptrdiff_t ssize_t;
 #endif
 
 // API declaration macro
-#ifdef UHD_DLL_EXPORTS
-    #define UHD_API UHD_EXPORT
+
+// Define API declaration macro
+#ifdef UHD_STATIC_LIB
+    #define UHD_API
 #else
-    #define UHD_API UHD_IMPORT
-#endif // UHD_DLL_EXPORTS
+    #ifdef UHD_DLL_EXPORTS
+        #define UHD_API UHD_EXPORT
+    #else
+        #define UHD_API UHD_IMPORT
+    #endif // UHD_DLL_EXPORTS
+#endif // UHD_STATIC_LIB
 
 // Platform defines for conditional code:
 // Taken from boost/config/select_platform_config.hpp,
