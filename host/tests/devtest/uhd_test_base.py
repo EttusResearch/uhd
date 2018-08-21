@@ -79,7 +79,15 @@ class shell_application(object):
         cmd_line = [self.name]
         cmd_line.extend(args)
         start_time = time.time()
-        proc = Popen(cmd_line, stdout=PIPE, stderr=PIPE, close_fds=True)
+        env = os.environ
+        env["UHD_LOG_FASTPATH_DISABLE"] = "1"
+        proc = Popen(
+            cmd_line,
+            stdout=PIPE,
+            stderr=PIPE,
+            close_fds=True,
+            env=env
+        )
         self.stdout, self.stderr = proc.communicate()
         self.returncode = proc.returncode
         self.exec_time = time.time() - start_time
@@ -188,6 +196,8 @@ class uhd_example_test_case(uhd_test_case):
         """
         Run `example' (which has to be a UHD example or utility) with `args'.
         Return results and the app object.
+
+        Note: UHD_LOG_FASTPATH_DISABLE will be set to 1.
         """
         self.log.info("Running example: `%s %s'", example, " ".join(args))
         app = shell_application(example)
