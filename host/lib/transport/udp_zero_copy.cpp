@@ -21,7 +21,9 @@
 using namespace uhd;
 using namespace uhd::transport;
 namespace asio = boost::asio;
-
+constexpr size_t UDP_ZERO_COPY_DEFAULT_NUM_FRAMES = 1;
+constexpr size_t UDP_ZERO_COPY_DEFAULT_FRAME_SIZE = 1472; // Based on common 1500 byte MTU for 1GbE.
+constexpr size_t UDP_ZERO_COPY_DEFAULT_BUFF_SIZE = 2500000; // 20ms of data for 1GbE link (in bytes)
 /***********************************************************************
  * Check registry for correct fast-path setting (windows only)
  **********************************************************************/
@@ -321,16 +323,48 @@ udp_zero_copy::sptr udp_zero_copy::make(
     xport_params.recv_buff_size = size_t(hints.cast<double>("recv_buff_size", default_buff_args.recv_buff_size));
     xport_params.send_buff_size = size_t(hints.cast<double>("send_buff_size", default_buff_args.send_buff_size));
 
-    // Preserve legacy defaults
+    if (xport_params.num_recv_frames == 0) {
+        UHD_LOG_TRACE("UDP", "Default value for num_recv_frames: "
+            << UDP_ZERO_COPY_DEFAULT_NUM_FRAMES
+        );
+        xport_params.num_recv_frames = UDP_ZERO_COPY_DEFAULT_NUM_FRAMES;
+    }
+    if (xport_params.num_send_frames == 0) {
+        UHD_LOG_TRACE("UDP", "Default value for no num_send_frames: "
+            << UDP_ZERO_COPY_DEFAULT_NUM_FRAMES
+        );
+        xport_params.num_send_frames = UDP_ZERO_COPY_DEFAULT_NUM_FRAMES;
+    }
+    if (xport_params.recv_frame_size == 0) {
+        UHD_LOG_TRACE("UDP", "Using default value for  recv_frame_size: "
+            << UDP_ZERO_COPY_DEFAULT_FRAME_SIZE
+        );
+        xport_params.recv_frame_size = UDP_ZERO_COPY_DEFAULT_FRAME_SIZE;
+    }
+    if (xport_params.send_frame_size == 0) {
+        UHD_LOG_TRACE("UDP", "Using default value for send_frame_size, "
+            << UDP_ZERO_COPY_DEFAULT_FRAME_SIZE
+        );
+        xport_params.send_frame_size = UDP_ZERO_COPY_DEFAULT_FRAME_SIZE;
+    }
+
     if (xport_params.recv_buff_size == 0) {
-        xport_params.recv_buff_size = xport_params.num_recv_frames * xport_params.recv_frame_size;
+        UHD_LOG_TRACE("UDP", "Using default value for recv_buff_size");
+        xport_params.recv_buff_size = std::max(
+                UDP_ZERO_COPY_DEFAULT_BUFF_SIZE,
+                xport_params.num_recv_frames*MAX_ETHERNET_MTU
+            );
+        UHD_LOG_TRACE("UDP", "Using default value for recv_buff_size"
+            << xport_params.recv_buff_size
+        );
     }
     if (xport_params.send_buff_size == 0) {
-        xport_params.send_buff_size = xport_params.num_recv_frames * xport_params.send_frame_size;
+        UHD_LOG_TRACE("UDP", "default_buff_args has no send_buff_size");
+        xport_params.send_buff_size = std::max(
+                UDP_ZERO_COPY_DEFAULT_BUFF_SIZE,
+                xport_params.num_send_frames*MAX_ETHERNET_MTU
+        );
     }
-    
-    // Resize receive buffer due to known issue where Intel X710 uses full MTU for every packet regardless of actual size
-    xport_params.recv_buff_size = xport_params.recv_buff_size * MAX_ETHERNET_MTU / xport_params.recv_frame_size;
 
     #if defined(UHD_PLATFORM_MACOS) || defined(UHD_PLATFORM_BSD)
         //limit default buffer size on macos to avoid the warning issued by resize_buff_helper
@@ -349,13 +383,23 @@ udp_zero_copy::sptr udp_zero_copy::make(
     );
 
     //call the helper to resize send and recv buffers
-    buff_params_out.recv_buff_size =
-        resize_buff_helper<asio::socket_base::receive_buffer_size>(udp_trans, xport_params.recv_buff_size, "recv");
-    buff_params_out.send_buff_size =
-        resize_buff_helper<asio::socket_base::send_buffer_size>   (udp_trans, xport_params.send_buff_size, "send");
+    buff_params_out.recv_buff_size = resize_buff_helper<asio::socket_base::receive_buffer_size>(
+        udp_trans, xport_params.recv_buff_size, "recv");
+    buff_params_out.send_buff_size = resize_buff_helper<asio::socket_base::send_buffer_size> (
+        udp_trans, xport_params.send_buff_size, "send");
 
-    // Resize usable amount of receive buffer due to known issue where Intel X710 uses full MTU for every packet regardless of actual size
-    buff_params_out.recv_buff_size = buff_params_out.recv_buff_size * xport_params.recv_frame_size / MAX_ETHERNET_MTU;
+    if (buff_params_out.recv_buff_size < xport_params.num_recv_frames * MAX_ETHERNET_MTU){
+        UHD_LOG_WARNING("UDP", "The current recv_buff_size of " << xport_params.recv_buff_size
+                        << " is less than the minimum recommended size of "
+                        << xport_params.num_recv_frames * MAX_ETHERNET_MTU
+                        << " and may result in dropped packets on some NICs");
+    }
+    if (buff_params_out.send_buff_size < xport_params.num_send_frames * MAX_ETHERNET_MTU){
+        UHD_LOG_WARNING("UDP", "The current send_buff_size of " << xport_params.send_buff_size
+                        << " is less than the minimum recommended size of "
+                        << xport_params.num_send_frames * MAX_ETHERNET_MTU
+                        << " and may result in dropped packets on some NICs");
+    }
 
     return udp_trans;
 }
