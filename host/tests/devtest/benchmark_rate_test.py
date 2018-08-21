@@ -54,7 +54,11 @@ class uhd_benchmark_rate_test(uhd_example_test_case):
         match = re.search(r'(Num received samples):\s*(.*)', app.stdout)
         run_results['num_rx_samples'] = int(match.group(2)) if match else -1
         if run_results['num_rx_samples'] != -1:
-            run_results['rel_rx_samples_error'] = 1.0 * abs(run_results['num_rx_samples'] - test_args.get('rx_buffer',0) - expected_samples) / expected_samples
+            run_results['rel_rx_samples_error'] = 1.0 * abs(
+                run_results['num_rx_samples']
+                - test_args.get('rx_buffer', 0)
+                - expected_samples
+            ) / expected_samples
         else:
             run_results['rel_rx_samples_error'] = 100
         match = re.search(r'(Num dropped samples):\s*(.*)', app.stdout)
@@ -64,7 +68,11 @@ class uhd_benchmark_rate_test(uhd_example_test_case):
         match = re.search(r'(Num transmitted samples):\s*(.*)', app.stdout)
         run_results['num_tx_samples'] = int(match.group(2)) if match else -1
         if run_results['num_tx_samples'] != -1:
-            run_results['rel_tx_samples_error'] = 1.0 * abs(run_results['num_tx_samples'] - test_args.get('tx_buffer',0) - expected_samples) / expected_samples
+            run_results['rel_tx_samples_error'] = 1.0 * abs(
+                run_results['num_tx_samples']
+                - test_args.get('tx_buffer', 0)
+                - expected_samples
+            ) / expected_samples
         else:
             run_results['rel_tx_samples_error'] = 100
         match = re.search(r'(Num sequence errors \(Tx\)):\s*(.*)', app.stdout)
@@ -86,3 +94,4 @@ class uhd_benchmark_rate_test(uhd_example_test_case):
         ])
         self.report_example_results(test_name, run_results)
         return run_results
+
