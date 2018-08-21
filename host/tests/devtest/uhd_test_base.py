@@ -71,16 +71,21 @@ class shell_application(object):
         start_time = time.time()
         env = os.environ
         env["UHD_LOG_FASTPATH_DISABLE"] = "1"
-        proc = Popen(
-            cmd_line,
-            stdout=PIPE,
-            stderr=PIPE,
-            close_fds=True,
-            env=env
-        )
-        self.stdout, self.stderr = proc.communicate()
-        self.returncode = proc.returncode
-        self.exec_time = time.time() - start_time
+        try:
+            proc = Popen(
+                cmd_line,
+                stdout=PIPE,
+                stderr=PIPE,
+                close_fds=True,
+                env=env
+            )
+            self.stdout, self.stderr = proc.communicate()
+            self.returncode = proc.returncode
+            self.exec_time = time.time() - start_time
+        except OSError as ex:
+            raise RuntimeError("Failed to execute command: `{}'\n{}"
+                               .format(cmd_line, str(ex)))
+
 
 #--------------------------------------------------------------------------
 # Test case base
@@ -229,7 +234,8 @@ class uhd_example_test_case(uhd_test_case):
         """
         for test_name, test_args in iteritems(self.test_params):
             time.sleep(15) # Wait for X300 devices to reclaim them
-            if not test_args.has_key('products') or (self.usrp_info['product'] in test_args.get('products', [])):
+            if not test_args.has_key('products') \
+                    or (self.usrp_info['product'] in test_args.get('products', [])):
                 run_results = self.run_test(test_name, test_args)
                 passed = bool(run_results)
                 if isinstance(run_results, dict):
