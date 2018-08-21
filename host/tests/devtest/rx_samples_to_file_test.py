@@ -45,11 +45,9 @@ class rx_samples_to_file_test(uhd_example_test_case):
         if test_args.has_key('subdev'):
             args.append('--subdev')
             args.append(test_args['subdev'])
-        (app, run_results) = self.run_example('rx_samples_to_file', args)
+        _, run_results = self.run_example('rx_samples_to_file', args)
         # Evaluate pass/fail:
         run_results['passed'] = all([
-            not run_results['has_D'],
-            not run_results['has_S'],
             run_results['return_code'] == 0,
         ])
         self.report_example_results(test_name, run_results)

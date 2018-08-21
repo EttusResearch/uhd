@@ -45,7 +45,6 @@ class uhd_tx_bursts_test(uhd_example_test_case):
         # Evaluate pass/fail:
         run_results['passed'] = all([
             app.returncode == 0,
-            not run_results['has_S'],
         ])
         run_results['async_burst_ack_found'] = re.search('success', app.stdout) is not None
         self.report_example_results(test_name, run_results)

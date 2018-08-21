@@ -10,6 +10,11 @@
 import re
 from uhd_test_base import uhd_example_test_case
 
+DEFAULT_O_THRESHOLD = 1000
+DEFAULT_U_THRESHOLD = 1000
+DEFAULT_D_THRESHOLD = 50
+DEFAULT_S_THRESHOLD = 50
+
 class uhd_benchmark_rate_test(uhd_example_test_case):
     """
     Run benchmark_rate in various configurations.
@@ -42,6 +47,14 @@ class uhd_benchmark_rate_test(uhd_example_test_case):
             self.create_addr_args_str(),
             '--duration', str(duration),
             '--channels', str(chan),
+            '--overrun-threshold',
+            str(test_args.get('acceptable-overruns', DEFAULT_O_THRESHOLD)),
+            '--underrun-threshold',
+            str(test_args.get('acceptable-underruns', DEFAULT_U_THRESHOLD)),
+            '--drop-threshold',
+            str(test_args.get('acceptable-D', DEFAULT_D_THRESHOLD)),
+            '--seq-threshold',
+            str(test_args.get('acceptable-S', DEFAULT_S_THRESHOLD)),
         ]
         if 'tx' in test_args.get('direction', ''):
             args.append('--tx_rate')
