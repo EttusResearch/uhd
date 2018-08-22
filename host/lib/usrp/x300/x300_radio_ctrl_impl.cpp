@@ -715,8 +715,11 @@ void x300_radio_ctrl_impl::setup_radio(
                 // We need a desired subscriber for antenna/value because the experts don't coerce that property.
                 _tree->access<std::string>(db_path / "rx_frontends" / _rx_fe_map[i].db_fe_name / "antenna" / "value")
                     .add_desired_subscriber(boost::bind(&x300_radio_ctrl_impl::_update_atr_leds, this, _1, i));
+                _update_atr_leds(_tree->access<std::string>
+                        (db_path / "rx_frontends" / _rx_fe_map[i].db_fe_name / "antenna" / "value").get(), i);
+            } else {
+                _update_atr_leds("", i); //init anyway, even if never called
             }
-            _update_atr_leds("", i); //init anyway, even if never called
         }
     }
 
