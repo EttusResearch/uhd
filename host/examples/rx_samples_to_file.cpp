@@ -29,7 +29,7 @@ template<typename samp_type> void recv_to_file(
     uhd::usrp::multi_usrp::sptr usrp,
     const std::string &cpu_format,
     const std::string &wire_format,
-    const std::string &channel,
+    const size_t &channel,
     const std::string &file,
     size_t samps_per_buff,
     unsigned long long num_requested_samples,
@@ -44,7 +44,7 @@ template<typename samp_type> void recv_to_file(
     //create a receive streamer
     uhd::stream_args_t stream_args(cpu_format,wire_format);
     std::vector<size_t> channel_nums;
-    channel_nums.push_back(boost::lexical_cast<size_t>(channel));
+    channel_nums.push_back(channel);
     stream_args.channels = channel_nums;
     uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
 
@@ -102,7 +102,7 @@ template<typename samp_type> void recv_to_file(
                     "  Dropped samples will not be written to the file.\n"
                     "  Please modify this example for your purposes.\n"
                     "  This message will not appear again.\n"
-                ) % (usrp->get_rx_rate()*sizeof(samp_type)/1e6);
+                ) % (usrp->get_rx_rate(channel)*sizeof(samp_type)/1e6);
             }
             continue;
         }
@@ -228,8 +228,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uhd::set_thread_priority_safe();
 
     //variables to be set by po
-    std::string args, file, type, ant, subdev, ref, wirefmt, channel;
-    size_t total_num_samps, spb;
+    std::string args, file, type, ant, subdev, ref, wirefmt;
+    size_t channel, total_num_samps, spb;
     double rate, freq, gain, bw, total_time, setup_time;
 
     //setup the program options
@@ -248,7 +248,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("gain", po::value<double>(&gain), "gain for the RF chain")
         ("ant", po::value<std::string>(&ant), "antenna selection")
         ("subdev", po::value<std::string>(&subdev), "subdevice specification")
-        ("channel", po::value<std::string>(&channel)->default_value("0"), "which channel to use")
+        ("channel", po::value<size_t>(&channel)->default_value(0), "which channel to use")
         ("bw", po::value<double>(&bw), "analog frontend filter bandwidth in Hz")
         ("ref", po::value<std::string>(&ref)->default_value("internal"), "reference source (internal, external, mimo)")
         ("wirefmt", po::value<std::string>(&wirefmt)->default_value("sc16"), "wire format (sc8, sc16 or s16)")
@@ -303,34 +303,34 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         return ~0;
     }
     std::cout << boost::format("Setting RX Rate: %f Msps...") % (rate/1e6) << std::endl;
-    usrp->set_rx_rate(rate);
-    std::cout << boost::format("Actual RX Rate: %f Msps...") % (usrp->get_rx_rate()/1e6) << std::endl << std::endl;
+    usrp->set_rx_rate(rate, channel);
+    std::cout << boost::format("Actual RX Rate: %f Msps...") % (usrp->get_rx_rate(channel)/1e6) << std::endl << std::endl;
 
     //set the center frequency
     if (vm.count("freq")) { //with default of 0.0 this will always be true
         std::cout << boost::format("Setting RX Freq: %f MHz...") % (freq/1e6) << std::endl;
         uhd::tune_request_t tune_request(freq);
         if(vm.count("int-n")) tune_request.args = uhd::device_addr_t("mode_n=integer");
-        usrp->set_rx_freq(tune_request);
-        std::cout << boost::format("Actual RX Freq: %f MHz...") % (usrp->get_rx_freq()/1e6) << std::endl << std::endl;
+        usrp->set_rx_freq(tune_request, channel);
+        std::cout << boost::format("Actual RX Freq: %f MHz...") % (usrp->get_rx_freq(channel)/1e6) << std::endl << std::endl;
     }
 
     //set the rf gain
     if (vm.count("gain")) {
         std::cout << boost::format("Setting RX Gain: %f dB...") % gain << std::endl;
-        usrp->set_rx_gain(gain);
-        std::cout << boost::format("Actual RX Gain: %f dB...") % usrp->get_rx_gain() << std::endl << std::endl;
+        usrp->set_rx_gain(gain, channel);
+        std::cout << boost::format("Actual RX Gain: %f dB...") % usrp->get_rx_gain(channel) << std::endl << std::endl;
     }
 
     //set the IF filter bandwidth
     if (vm.count("bw")) {
         std::cout << boost::format("Setting RX Bandwidth: %f MHz...") % (bw/1e6) << std::endl;
-        usrp->set_rx_bandwidth(bw);
-        std::cout << boost::format("Actual RX Bandwidth: %f MHz...") % (usrp->get_rx_bandwidth()/1e6) << std::endl << std::endl;
+        usrp->set_rx_bandwidth(bw, channel);
+        std::cout << boost::format("Actual RX Bandwidth: %f MHz...") % (usrp->get_rx_bandwidth(channel)/1e6) << std::endl << std::endl;
     }
 
     //set the antenna
-    if (vm.count("ant")) usrp->set_rx_antenna(ant);
+    if (vm.count("ant")) usrp->set_rx_antenna(ant, channel);
 
     std::this_thread::sleep_for(
         std::chrono::milliseconds(int64_t(1000 * setup_time))
@@ -339,10 +339,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //check Ref and LO Lock detect
     if (not vm.count("skip-lo")){
         check_locked_sensor(
-            usrp->get_rx_sensor_names(0),
+            usrp->get_rx_sensor_names(channel),
             "lo_locked",
-            [usrp](const std::string& sensor_name){
-                return usrp->get_rx_sensor(sensor_name);
+            [usrp,channel](const std::string& sensor_name){
+                return usrp->get_rx_sensor(sensor_name, channel);
             },
             setup_time
         );
