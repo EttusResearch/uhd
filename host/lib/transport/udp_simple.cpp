@@ -25,7 +25,8 @@ public:
 
         //resolve the address
         asio::ip::udp::resolver resolver(_io_service);
-        asio::ip::udp::resolver::query query(asio::ip::udp::v4(), addr, port);
+        asio::ip::udp::resolver::query query(asio::ip::udp::v4(), addr, port,
+            asio::ip::resolver_query_base::all_matching);
         _send_endpoint = *resolver.resolve(query);
 
         //create and open the socket
