@@ -75,6 +75,8 @@ def parse_args():
                               .format(",".join(_ARCHIVE_ALGS))))
     parser.add_argument("-k", "--keep", action="store_true", default=False,
                         help="Keep the downloaded images archives in the image directory")
+    parser.add_argument("-T", "--test", action="store_true", default=False,
+                        help="Verify the downloaded archives before extracting them")
     parser.add_argument("-n", "--dry-run", action="store_true", default=False,
                         help="Print selected target without actually downloading them.")
     parser.add_argument("--refetch", action="store_true", default=False,
@@ -262,11 +264,22 @@ def delete_from_inv(target_info, inventory, images_dir):
     return True
 
 
-def extract(archive_path, images_dir, archive_type):
+def extract(archive_path, images_dir, archive_type, test_zip=False):
     """Extract the contents of the archive into `images_dir`"""
     if archive_type == "zip":
         log("TRACE", "Attempting to extracted files from {}".format(archive_path))
         with zipfile.ZipFile(archive_path) as images_zip:
+            # Check that the Zip file is valid, in which case `testzip()` returns None.
+            # If its bad, that function will return a list of bad files
+            try:
+                if test_zip and images_zip.testzip():
+                    log("ERROR", "Could not extract the following invalid Zip file:"
+                                 " {}".format(archive_path))
+                    return []
+            except OSError:
+                log("ERROR", "Could not extract the following invalid Zip file:"
+                             " {}".format(archive_path))
+                return []
             images_zip.extractall(images_dir)
             archive_namelist = images_zip.namelist()
             log("TRACE", "Extracted files: {}".format(archive_namelist))
@@ -388,7 +401,7 @@ def main():
 
                     # Otherwise, the check has succeeded, and we can proceed
                     delete_from_inv(target_info, inventory, images_dir)
-                    archive_namelist = extract(temp_path, images_dir, archive_type)
+                    archive_namelist = extract(temp_path, images_dir, archive_type, args.test)
                     if args.keep:
                         # If the user wants to keep the downloaded archive,
                         # save it to the images directory and add it to the inventory
