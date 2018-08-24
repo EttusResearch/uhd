@@ -130,11 +130,34 @@ mboard_eeprom_t x300_impl::get_mb_eeprom(uhd::i2c_iface::sptr iface)
     return mb_eeprom;
 }
 
-
 void x300_impl::set_mb_eeprom(
         i2c_iface::sptr iface,
         const mboard_eeprom_t &mb_eeprom
 ) {
+    const mboard_eeprom_t curr_eeprom = get_mb_eeprom(iface);
+
+    // Check for duplicate MAC and IP addresses
+    const std::vector<std::string> mac_keys{
+        "mac-addr0",
+        "mac-addr1"
+    };
+    const std::vector<std::string> ip_keys{
+        "ip-addr0",
+        "ip-addr1",
+        "ip-addr2",
+        "ip-addr3"
+    };
+
+    //make sure there are no duplicate values
+    if (check_for_duplicates<uhd::mac_addr_t>(
+        "X300", mb_eeprom, curr_eeprom,"MAC address", mac_keys) or
+        check_for_duplicates<boost::asio::ip::address_v4>(
+        "X300", mb_eeprom, curr_eeprom, "IP address", ip_keys))
+    {
+        throw uhd::value_error(
+            "Duplicate values not permitted - write to EEPROM aborted");
+    }
+
     //parse the revision number
     if (mb_eeprom.has_key("revision")) iface->write_eeprom(
         X300_EEPROM_ADDR, offsetof(x300_eeprom_map, revision),
@@ -195,4 +218,3 @@ void x300_impl::set_mb_eeprom(
         string_to_bytes(mb_eeprom["name"], NAME_MAX_LEN)
     );
 }
-
