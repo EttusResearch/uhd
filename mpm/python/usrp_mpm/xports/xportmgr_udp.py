@@ -255,6 +255,7 @@ class XportMgrUDP(object):
                 'send_sid': str(fixup_sid(sid, iface_name)),
                 'allocation': str(allocation_getter(iface_name)),
                 'xport_type': xport_type,
+                'link_speed': str(iface_info['link_speed'])
             }
             for iface_name, iface_info in iteritems(self._chdr_ifaces)
         ]

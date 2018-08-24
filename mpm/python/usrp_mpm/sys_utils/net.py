@@ -8,6 +8,7 @@ Network utilities for MPM
 """
 import itertools
 import socket
+import pyudev
 from six import iteritems
 from pyroute2 import IPRoute, IPDB
 from usrp_mpm.mpmlog import get_logger
@@ -54,6 +55,7 @@ def get_iface_info(ifname):
                 raise LookupError("No interfaces known with name `{}'!"
                                   .format(ifname))
             link_info = ipr.get_links(links)[0]
+            link_speed = get_link_speed(ifname)
     except IndexError:
         raise LookupError("Could not get links for interface `{}'"
                           .format(ifname))
@@ -63,7 +65,26 @@ def get_iface_info(ifname):
         'mac_addr': mac_addr,
         'ip_addr': ip_addrs[0] if ip_addrs else '',
         'ip_addrs': ip_addrs,
+        'link_speed': link_speed
     }
+
+
+def get_link_speed(ifname):
+    """
+    Given an interface name (e.g 'eth0'), return link speed
+    of that interface as unsigned interger.
+    If interface is not found, IndexError will be thrown.
+    The speed is Megabits/sec
+    (from kernel at https://www.kernel.org/doc/Documentation/ABI/testing/sysfs-class-net)
+    """
+    net_sysfs = [device for device in pyudev.Context().list_devices(subsystem='net')
+                 if device.sys_name == ifname][0]
+
+    speed = net_sysfs.attributes.asint('speed')
+    # TODO: 1Gige driver returns a bad value (less than 1000). Remove the conditional once the
+    #       driver is fixed
+    return speed if speed >= 10000 else 1000
+
 
 def ip_addr_to_iface(ip_addr, iface_list):
     """
