@@ -27,14 +27,23 @@ namespace {
     #endif
 
     //! Maximum CHDR packet size in bytes
-    const size_t MPMD_10GE_DATA_FRAME_MAX_SIZE = 8000;
+    const size_t MPMD_10GE_DATA_FRAME_MAX_SIZE = 4000;
+
+    //! Maximum CHDR packet size in bytes
+    const size_t MPMD_10GE_ASYNCMSG_FRAME_MAX_SIZE = 1472;
 
     //! Number of send/recv frames
     const size_t MPMD_ETH_NUM_FRAMES = 32;
 
+    //!
+    const double MPMD_BUFFER_FILL_RATE = 20.0e-3; // s
     //! For MTU discovery, the time we wait for a packet before calling it
     // oversized (seconds).
     const double MPMD_MTU_DISCOVERY_TIMEOUT = 0.02;
+
+    //TODO: move these to appropriate header file for all other devices
+    const size_t MAX_RATE_1GIGE = 1e9 / 8; // byte/s
+    const size_t MAX_RATE_10GIGE = 10e9 / 8; // byte/s
 
     std::vector<std::string> get_addrs_from_mb_args(
         const uhd::device_addr_t& mb_args
@@ -191,14 +200,28 @@ mpmd_xport_ctrl_udp::make_transport(
         xport_args["recv_buff_size"] =
             std::to_string(MPMD_RX_SW_BUFF_SIZE_ETH);
     }
-
+    size_t link_speed = MAX_RATE_1GIGE;
+    if(xport_info.count("link_speed") == 0)
+    {
+        UHD_LOG_WARNING("MPMD",
+            "Could not determine link speed; using 1GibE max speed of "
+            << MAX_RATE_1GIGE);
+    }
+    else{
+        link_speed = xport_info.at("link_speed") == "10000"?
+                    MAX_RATE_10GIGE:
+                    MAX_RATE_1GIGE;
+    }
     transport::zero_copy_xport_params default_buff_args;
     // Create actual UDP transport
-    default_buff_args.send_frame_size = get_mtu(uhd::TX_DIRECTION);
     default_buff_args.recv_frame_size = get_mtu(uhd::RX_DIRECTION);
-    default_buff_args.num_recv_frames = MPMD_ETH_NUM_FRAMES;
-    default_buff_args.num_send_frames = MPMD_ETH_NUM_FRAMES;
-
+    default_buff_args.recv_buff_size = link_speed * MPMD_BUFFER_FILL_RATE;
+    default_buff_args.send_buff_size = link_speed * MPMD_BUFFER_FILL_RATE;
+    if (xport_type == usrp::device3_impl::ASYNC_MSG) {
+        default_buff_args.send_frame_size = MPMD_10GE_ASYNCMSG_FRAME_MAX_SIZE;
+    }else{
+        default_buff_args.send_frame_size = get_mtu(uhd::TX_DIRECTION);
+    }
     transport::udp_zero_copy::buff_params buff_params;
     auto recv = transport::udp_zero_copy::make(
         xport_info["ipv4"],
