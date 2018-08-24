@@ -51,7 +51,7 @@ uhd_benchmark_rate_test.tests = {
 # FIXME currenly broken: from rx_samples_to_file_test import rx_samples_to_file_test
 from tx_bursts_test import uhd_tx_bursts_test
 from test_pps_test import uhd_test_pps_test
-# FIXME currenly broken: from gpio_test import gpio_test
+from gpio_test import gpio_test
 from bitbang_test import bitbang_test
 from list_sensors_test import list_sensors_test
 

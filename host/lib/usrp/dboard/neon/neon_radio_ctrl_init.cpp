@@ -118,7 +118,10 @@ void neon_radio_ctrl_impl::_init_peripherals()
     }
     UHD_LOG_TRACE(unique_id(), "Initializing front-panel GPIO control...")
     _fp_gpio = usrp::gpio_atr::gpio_atr_3000::make(
-            _get_ctrl(0), regs::sr_addr(regs::FP_GPIO), regs::RB_FP_GPIO);
+        _get_ctrl(0),
+        regs::sr_addr(regs::FP_GPIO),
+        regs::rb_addr(regs::RB_FP_GPIO)
+    );
 }
 
 void neon_radio_ctrl_impl::_init_frontend_subtree(
