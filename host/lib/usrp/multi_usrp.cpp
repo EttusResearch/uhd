@@ -387,7 +387,7 @@ public:
         _tree = _dev->get_tree();
         _is_device3 = bool(boost::dynamic_pointer_cast<uhd::device3>(_dev));
 
-        if (is_device3()) {
+        if (is_device3() and not addr.has_key("recover_mb_eeprom")) {
             _legacy_compat = rfnoc::legacy_compat::make(get_device3(), addr);
         }
     }

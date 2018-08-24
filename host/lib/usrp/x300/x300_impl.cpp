@@ -805,6 +805,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         UHD_LOGGER_WARNING("X300") << "UHD is operating in EEPROM Recovery Mode which disables hardware version "
                             "checks.\nOperating in this mode may cause hardware damage and unstable "
                             "radio performance!";
+        return;
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -819,10 +820,9 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
             product_name = "X310";
             break;
         default:
-            if (not recover_mb_eeprom)
-                throw uhd::runtime_error("Unrecognized product type.\n"
-                                         "Either the software does not support this device in which case please update your driver software to the latest version and retry OR\n"
-                                         "The product code in the EEPROM is corrupt and may require reprogramming.");
+            throw uhd::runtime_error("Unrecognized product type.\n"
+                                     "Either the software does not support this device in which case please update your driver software to the latest version and retry OR\n"
+                                     "The product code in the EEPROM is corrupt and may require reprogramming.");
     }
     _tree->create<std::string>(mb_path / "name").set(product_name);
     _tree->create<std::string>(mb_path / "codename").set("Yetti");
@@ -843,12 +843,10 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         try {
             mb.hw_rev = boost::lexical_cast<size_t>(mb_eeprom["revision"]);
         } catch(...) {
-            if (not recover_mb_eeprom)
-                throw uhd::runtime_error("Revision in EEPROM is invalid! Please reprogram your EEPROM.");
+            throw uhd::runtime_error("Revision in EEPROM is invalid! Please reprogram your EEPROM.");
         }
     } else {
-        if (not recover_mb_eeprom)
-            throw uhd::runtime_error("No revision detected. MB EEPROM must be reprogrammed!");
+        throw uhd::runtime_error("No revision detected. MB EEPROM must be reprogrammed!");
     }
 
     size_t hw_rev_compat = 0;
@@ -857,12 +855,10 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
             try {
                 hw_rev_compat = boost::lexical_cast<size_t>(mb_eeprom["revision_compat"]);
             } catch(...) {
-                if (not recover_mb_eeprom)
-                    throw uhd::runtime_error("Revision compat in EEPROM is invalid! Please reprogram your EEPROM.");
+                throw uhd::runtime_error("Revision compat in EEPROM is invalid! Please reprogram your EEPROM.");
             }
         } else {
-            if (not recover_mb_eeprom)
-                throw uhd::runtime_error("No revision compat detected. MB EEPROM must be reprogrammed!");
+            throw uhd::runtime_error("No revision compat detected. MB EEPROM must be reprogrammed!");
         }
     } else {
         //For older HW just assume that revision_compat = revision
@@ -870,15 +866,13 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     }
 
     if (hw_rev_compat > X300_REVISION_COMPAT) {
-        if (not recover_mb_eeprom)
-            throw uhd::runtime_error(str(boost::format(
-                "Hardware is too new for this software. Please upgrade to a driver that supports hardware revision %d.")
-                % mb.hw_rev));
+        throw uhd::runtime_error(str(boost::format(
+            "Hardware is too new for this software. Please upgrade to a driver that supports hardware revision %d.")
+            % mb.hw_rev));
     } else if (mb.hw_rev < X300_REVISION_MIN) { //Compare min against the revision (and not compat) to give us more leeway for partial support for a compat
-        if (not recover_mb_eeprom)
-            throw uhd::runtime_error(str(boost::format(
-                "Software is too new for this hardware. Please downgrade to a driver that supports hardware revision %d.")
-                % mb.hw_rev));
+        throw uhd::runtime_error(str(boost::format(
+            "Software is too new for this hardware. Please downgrade to a driver that supports hardware revision %d.")
+            % mb.hw_rev));
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -1082,7 +1076,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
             rfnoc::x300_radio_ctrl_impl::extended_adc_test(
                 mb.radios,
                 dev_addr.cast<double>("ext_adc_self_test", 30));
-        } else if (not dev_addr.has_key("recover_mb_eeprom")){
+        } else {
             for (size_t i = 0; i < mb.radios.size(); i++) {
                 mb.radios.at(i)->self_test_adc();
             }
