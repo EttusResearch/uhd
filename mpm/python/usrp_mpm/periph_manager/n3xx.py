@@ -35,7 +35,7 @@ N3XX_DEFAULT_TIME_SOURCE = 'internal'
 N3XX_DEFAULT_ENABLE_GPS = True
 N3XX_DEFAULT_ENABLE_FPGPIO = True
 N3XX_DEFAULT_ENABLE_PPS_EXPORT = True
-N3XX_FPGA_COMPAT = (5, 2)
+N3XX_FPGA_COMPAT = (5, 3)
 N3XX_MONITOR_THREAD_INTERVAL = 1.0 # seconds
 
 # Import daughterboard PIDs from their respective classes
@@ -122,7 +122,6 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         'temp': 'get_temp_sensor',
         'fan': 'get_fan_sensor',
     }
-    crossbar_base_port = 3  # It's 3 because 0,1,2 are SFP,SFP,DMA
     dboard_eeprom_addr = "e0004000.i2c"
     dboard_eeprom_offset = 0
     dboard_eeprom_max_len = 64
@@ -320,6 +319,7 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         self.mboard_regs_control.get_build_timestamp()
         self._check_fpga_compat()
         self._update_fpga_type()
+        self.crossbar_base_port = self.mboard_regs_control.get_xbar_baseport()
         # Init clocking
         self.enable_ref_clock(enable=True)
         self._ext_clock_freq = None

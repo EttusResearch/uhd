@@ -176,6 +176,7 @@ class MboardRegsControl(object):
     MB_SFP1_INFO    = 0x002C
     MB_GPIO_MASTER  = 0x0030
     MB_GPIO_RADIO_SRC  = 0x0034
+    MB_XBAR_BASEPORT   = 0x0038
 
     # Bitfield locations for the MB_CLOCK_CTRL register.
     MB_CLOCK_CTRL_PPS_SEL_INT_10 = 0 # pps_sel is one-hot encoded!
@@ -412,3 +413,7 @@ class MboardRegsControl(object):
                              .format(sfp0_type, sfp1_type))
         return ""
 
+    def get_xbar_baseport(self):
+        "Get the RFNoC crossbar base port"
+        with self.regs:
+            return self.peek32(self.MB_XBAR_BASEPORT)
