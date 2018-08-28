@@ -32,7 +32,7 @@ E320_DEFAULT_CLOCK_SOURCE = 'internal'
 E320_DEFAULT_TIME_SOURCE = 'internal'
 E320_DEFAULT_ENABLE_GPS = True
 E320_DEFAULT_ENABLE_FPGPIO = True
-E320_FPGA_COMPAT = (3, 0)
+E320_FPGA_COMPAT = (3, 1)
 E320_MONITOR_THREAD_INTERVAL = 1.0 # seconds
 E320_DBOARD_SLOT_IDX = 0
 
@@ -90,7 +90,6 @@ class e320(ZynqComponents, PeriphManagerBase):
         'temp_main_power' : 'get_main_power_temp_sensor',
     }
     max_num_dboards = 1
-    crossbar_base_port = 2  # It's 2 because 0,1 are SFP,DMA
 
     # We're on a Zynq target, so the following two come from the Zynq standard
     # device tree overlay (tree/arch/arm/boot/dts/zynq-7000.dtsi)
@@ -265,6 +264,7 @@ class e320(ZynqComponents, PeriphManagerBase):
         self.mboard_regs_control.get_build_timestamp()
         self._check_fpga_compat()
         self._update_fpga_type()
+        self.crossbar_base_port = self.mboard_regs_control.get_xbar_baseport()
         # Init peripherals
         self.enable_gps(
             enable=str2bool(

@@ -66,6 +66,7 @@ class MboardRegsControl(object):
     MB_GPS_STATUS     = 0x003C
     MB_DBOARD_CTRL    = 0x0040
     MB_DBOARD_STATUS  = 0x0044
+    MB_XBAR_BASEPORT  = 0x0048
 
     # Bitfield locations for the MB_CLOCK_CTRL register.
     MB_CLOCK_CTRL_PPS_SEL_INT = 0
@@ -409,3 +410,8 @@ class MboardRegsControl(object):
         else:
             self.log.trace("RX RF PLL locked")
         return locked
+
+    def get_xbar_baseport(self):
+        "Get the RFNoC crossbar base port"
+        with self.regs:
+            return self.peek32(self.MB_XBAR_BASEPORT)
