@@ -596,22 +596,30 @@ class ClockSynchronizer(object):
         post-processing.
         """
         results = []
+        # Higher this number, higher the duration but also higher the TDC accuracy...
+        test_duration = 512 # low duration = 64, middle = 512, high = 1024
 
         self.log.trace("Starting DAC Flatness Test...")
         self.log.trace("DAC Low Bound: {}. DAC High Bound: {}".format(low_bound, high_bound))
 
         # open file for writing
         meas_file = open("dac_flatness_results.txt", "w")
-        meas_file.write("DAC Word, Distance to Target (ns)\n")
+        meas_file.write("DAC Word, Distance to Target (ps)\n")
 
         inc = math.floor((high_bound - low_bound)/(middle_samples + 1.0))
+        # Set the PDAC at the low bound value and allow it to settle for longer than
+        # usual since this jump could be bigger than most.
+        self.write_dac_word(low_bound, 0.750)
+
+        # Start up the machine.
+        self.configure(force=True)
 
         for x in range(middle_samples + 2):
             self.log.debug("Test Progress: {:.2f}%".format(x*100/(middle_samples+2)))
             self.write_dac_word(x*inc + low_bound, 0.1)
-            distance_to_target = self.run_sync(measurement_only=True)
-            meas_file.write("{}, {:.4f}\n".format(x*inc + low_bound, distance_to_target*1e12))
-            results.append(distance_to_target*1e12)
+            meas_value = self.measure(test_duration)
+            meas_file.write("{}, {:.4f}\n".format(x*inc + low_bound, meas_value*1e12))
+            results.append(meas_value*1e12)
 
         meas_file.close()
 
@@ -636,43 +644,41 @@ class ClockSynchronizer(object):
           1) at the initial DAC setting
           2) below the initial setting
           3) above the initial setting
-        The following checks are performed on the resulting measurments:
-          1) they are monotonicly increasing in this order: 2, 1, 3
+        The following checks are performed on the resulting measurements:
+          1) they are monotonically increasing in this order: 2, 1, 3
           2) the distance from 2 -> 1 and 2 -> 3 is within some range based on calculated
              expected values
         """
         test1_result = False
         test2_result = False
+        # Higher this number, higher the duration but also higher the TDC accuracy...
+        test_duration = 512 # low duration = 64, middle = 512, high = 1024
 
-        self.log.info("Starting Phase DAC BIST Test...")
+        self.log.info("PDAC BIST: Starting Phase DAC BIST Test...")
 
-        # We need to move the clock to a mid-range value to avoid wrap-around effects
-        # on our measurements below. Even if the PDAC isn't functional, this sync run
-        # will use the LMK digital delays to bring our clocks well within the required
-        # ranges.
-        self.log.trace("Running initial synchronization as a precursor before BIST:")
-        self.run_sync(measurement_only=False)
-
-        # Take a measurement at the current value (which should be near our target value).
-        center_meas = self.target_values[0] + self.run_sync(measurement_only=True)
+        # Take a first measurement without altering the PDAC.
+        self.log.trace("PDAC BIST: Taking center measurement.")
+        self.configure(force=True)
+        center_meas = self.measure(test_duration)
 
         # Modify the DAC word to below the default value, then above, repeating the
         # measurements each time.
         self.write_dac_word(self.current_phase_dac_word + taps_from_center, 0.5)
-        low_meas = self.target_values[0] + self.run_sync(measurement_only=True)
+        high_meas = self.measure(test_duration)
         self.write_dac_word(self.current_phase_dac_word - 2*taps_from_center, 0.5)
-        high_meas = self.target_values[0] + self.run_sync(measurement_only=True)
+        low_meas  = self.measure(test_duration)
 
-        self.log.info("Phase DAC BIST Raw Results:")
-        self.log.info("Low Measurement:    {:.6f} ns".format(low_meas*1e9))
-        self.log.info("Center Measurement: {:.6f} ns".format(center_meas*1e9))
-        self.log.info("High Measurement:   {:.6f} ns".format(high_meas*1e9))
+        self.log.info("PDAC BIST: Phase DAC BIST Raw Results:")
+        self.log.info("PDAC BIST: Low Measurement:    {:.6f} ns".format(low_meas*1e9))
+        self.log.info("PDAC BIST: Center Measurement: {:.6f} ns".format(center_meas*1e9))
+        self.log.info("PDAC BIST: High Measurement:   {:.6f} ns".format(high_meas*1e9))
 
         # Test #1: Are all the measurements increasing: low -> center -> high?
         if (high_meas > center_meas) and (center_meas > low_meas):
             test1_result = True
         else:
-            self.log.warning("DAC BIST values are not monotonically increasing!")
+            self.log.warning("PDAC BIST: Measured values are not monotonically "
+                             "increasing!")
 
         # Test #2: Are the measurements spaced appropriately?
         expected_meas = taps_from_center*self.fine_delay_step
@@ -685,19 +691,19 @@ class ClockSynchronizer(object):
         # higher than our expected error.
         allowable_error = 40e-12
         if expected_meas < allowable_error:
-            self.log.warning("Expected measurement offset is less than the allowable error \
-of {:.2f} ps. Consider increasing the taps_from_center parameter." \
-                           .format(allowable_error*1e12))
+            self.log.warning("PDAC BIST: Expected measurement offset is less than the " \
+                             "allowable error of {:.2f} ps. Consider increasing the " \
+                             "taps_from_center parameter." \
+                             .format(allowable_error*1e12))
 
         if  abs(actual_high_meas - expected_meas) < allowable_error and \
             abs(actual_low_meas  - expected_meas) < allowable_error:
             test2_result = True
         else:
-            self.log.warning("DAC BIST values are not spaced correctly!")
+            self.log.warning("PDAC BIST: Measured values are not spaced correctly!")
 
         if not(test1_result and test2_result):
             raise RuntimeError("Phase DAC BIST Failed!")
 
-        self.log.info("Phase DAC BIST Success!")
+        self.log.info("PDAC BIST: Test Passed!")
         return True
-
