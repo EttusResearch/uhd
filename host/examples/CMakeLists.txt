@@ -36,6 +36,7 @@ IF(ENABLE_RFNOC)
         rfnoc_nullsource_ce_rx.cpp
         rfnoc_rx_to_file.cpp
         rfnoc_radio_loopback.cpp
+        benchmark_streamer.cpp
     )
 ENDIF(ENABLE_RFNOC)
 
