@@ -14,10 +14,18 @@
 
 include(FindPackageHandleStandardArgs)
 
-find_path ( DPDK_INCLUDE_DIR rte_config.h
+find_path ( DPDK_INCLUDE_CONFIG_DIR rte_config.h
     PATHS ENV RTE_INCLUDE
     PATH_SUFFIXES dpdk
 )
+
+find_path ( DPDK_INCLUDE_ETHDEV_DIR rte_ethdev.h
+    PATHS ENV RTE_INCLUDE
+    PATH_SUFFIXES dpdk
+)
+
+set(DPDK_INCLUDE_DIR ${DPDK_INCLUDE_CONFIG_DIR} ${DPDK_INCLUDE_ETHDEV_DIR})
+list(REMOVE_DUPLICATES DPDK_INCLUDE_DIR)
 
 find_library(DPDK_LIBRARY
     PATHS $ENV{RTE_SDK_DIR}/$ENV{RTE_TARGET}/lib
