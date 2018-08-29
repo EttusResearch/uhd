@@ -18,11 +18,11 @@ are supported.
 \subsection linux_installation Installing the Drivers in Linux
 
 The NI USRP RIO installer can be found <a
-href=http://files.ettus.com/binaries/niusrprio/niusrprio-installer-15.0.0.tar.gz>here</a>.
+href=http://files.ettus.com/binaries/niusrprio/niusrprio-installer-18.0.0.tar.gz>here</a>.
 
 Download the installer and extract it with the following command:
 
-    tar zxf niusrprio-installer-15.0.0.tar.gz
+    tar zxf niusrprio-installer-18.0.0.tar.gz
 
 The files will be extracted into a directory called <b>niusrprio-installer</b>.
 
@@ -65,17 +65,12 @@ powering off the host computer.
 
 \subsection linux_upgrades Upgrading Kernels
 
-The NI USRPRIO kernel modules are built for a specific kernel version. If you
-upgrade/downgrade the linux kernel on the host to a version different from the
-one that the installer was run on, then you may see the following error message
-when running `niusrprio start`.
+The NI USRPRIO kernel modules are built for a specific kernel version.  If the
+kernel version is changed, the modules must be rebuilt for the current kernel.
+The `niusrprio_pcie start` command checks for the necessary modules and rebuilds
+them if necessary.
 
-    ERROR: could not insert 'NiRioSrv': Unknown symbol in module, or unknown
-    parameter (see dmesg) ERROR: could not insert 'niusrpriok': Unknown symbol
-    in module, or unknown parameter (see dmesg)
-
-To rebuild the kernel modules for the currently running kernel, simple run the
-following
+If it ever becomes necessary to rebuild the modules manually, run the following:
 
     sudo /usr/local/bin/niusrprio_pcie stop 
     sudo /usr/local/bin/updateNIDrivers --no-prompt 
@@ -95,39 +90,27 @@ Select y at the prompt, and the script will uninstall all installed components.
 
 \subsection win_requirements Requirements
 
-The kernel driver is only supported on:
-
-- Windows 8.1 32-bit
-- Windows 8.1 64-bit
-- Windows 7 32-bit
-- Windows 7 64-bit
-- Windows Vista 32-bit
-- Windows Vista 64-bit
-- Windows XP (SP3) 32-bit.
+The latest NI-USRP installer can be found by visiting
+<a href=http://ni.com/info>ni.com/info</a> and entering the Info Code
+`USRPDRIVER`.  System requirements can be found on the resulting
+web page.
 
 \subsection win_install Installing NI-USRP in Windows
 
-The NI-USRP 14.5 installer can be found <a
-href="http://search.ni.com/nisearch/app/main/p/bot/no/ap/global/lang/en/pg/1/q/NI-USRP%2014.5/">here</a> You will need to
-create a free NI User Account to download the installer.
-
-Perform the following steps to download and install the NI-USRP exe driver
-package:
-
-- Choose the "2. Standard Download:NIUSRP1450.zip" option to download NIUSRP1450.zip to your computer 
-- Extract the contents of NIUSRP1450.zip to 'C:\\National Instruments Downloads\\NI-USRP\\14.5'
-- In the extract location, run setup.exe and follow the prompts.
-
-Reboot the computer after both the NI-USRP package has been installed.
+The latest NI-USRP installer can be found by visiting
+<a href=http://ni.com/info>ni.com/info</a> and entering the Info Code
+`USRPDRIVER`.  You will need to create a free NI User Account to download
+the installer.  Follow the installation instructions on the web page to
+download and install the driver.
 
 \subsection win_enabling Enabling and Disabling Usage
 
-Once everything is installed and the system is rebooted, your X300/X310 PCI
+Once everything is installed and the system is rebooted, the X300/X310 PCI
 Express device should automatically be detected by the Windows Device Manager.
 The device should be enabled by default.
 
-- To disable the USRPRIO device, navigate to "Device Manager", locate your USRPRIO-X3x0 device, right-click on it and choose "Disable"
-- To enable the USRPRIO device, navigate to "Device Manager", locate your USRPRIO-X3x0 device, right-click on it and choose "Enable".
+- To disable the USRPRIO device, navigate to "Device Manager", locate the USRPRIO-X3x0 device, right-click on it and choose "Disable"
+- To enable the USRPRIO device, navigate to "Device Manager", locate the USRPRIO-X3x0 device, right-click on it and choose "Enable".
 
 \subsection win_swapping Hot-plugging and Power-cycling
 
