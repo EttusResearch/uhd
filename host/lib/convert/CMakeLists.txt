@@ -65,11 +65,15 @@ ENDIF(HAVE_TMMINTRIN_H)
 ########################################################################
 # Check for NEON SIMD headers
 ########################################################################
+SET(NEON_SIMD_ENABLE ON CACHE BOOL
+    "Use NEON SIMD instructions, if applicable")
+MARK_AS_ADVANCED(NEON_SIMD_ENABLE)
 IF(CMAKE_COMPILER_IS_GNUCXX)
     CHECK_INCLUDE_FILE_CXX(arm_neon.h HAVE_ARM_NEON_H)
 ENDIF(CMAKE_COMPILER_IS_GNUCXX)
 
-IF(HAVE_ARM_NEON_H AND (${CMAKE_SIZEOF_VOID_P} EQUAL 4))
+IF(NEON_SIMD_ENABLE AND HAVE_ARM_NEON_H AND
+   (${CMAKE_SIZEOF_VOID_P} EQUAL 4))
     ENABLE_LANGUAGE(ASM)
 
     LIBUHD_APPEND_SOURCES(
