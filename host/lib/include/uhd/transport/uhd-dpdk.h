@@ -47,7 +47,7 @@ enum uhd_dpdk_sock_type {
  *
  * @return Returns negative error code if there were issues, else 0
  */
-int uhd_dpdk_init(int argc, char **argv, unsigned int num_ports,
+int uhd_dpdk_init(int argc, const char **argv, unsigned int num_ports,
                   int *port_thread_mapping, int num_mbufs, int mbuf_cache_size,
                   int mtu);
 
@@ -177,7 +177,7 @@ int uhd_dpdk_send(struct uhd_dpdk_socket *sock, struct rte_mbuf **bufs, unsigned
  * NOTE: MUST free buffers with uhd_dpdk_free_buf once finished
  */
 int uhd_dpdk_recv(struct uhd_dpdk_socket *sock, struct rte_mbuf **bufs,
-                  unsigned int num_bufs, unsigned int timeout);
+                  unsigned int num_bufs, int timeout);
 
 /**
  * Frees buffer previously received from uhd_dpdk_recv

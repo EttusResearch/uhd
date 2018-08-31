@@ -106,6 +106,15 @@ struct uhd_dpdk_ipv4_5tuple {
     uint16_t dst_port;
 };
 
+/**
+ * Used for blocking calls to RX
+ */
+struct uhd_dpdk_sock_cond {
+    struct uhd_dpdk_socket *sock;
+    pthread_cond_t cond;
+    pthread_mutex_t mutex;
+};
+
 /************************************************
  * TX Queues
  *

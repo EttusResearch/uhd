@@ -11,11 +11,53 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 
+int _uhd_dpdk_arp_reply(struct uhd_dpdk_port *port, struct arp_hdr *arp_req)
+{
+    struct rte_mbuf *mbuf;
+    struct ether_hdr *hdr;
+    struct arp_hdr *arp_frame;
+
+    mbuf = rte_pktmbuf_alloc(port->parent->tx_pktbuf_pool);
+    if (unlikely(mbuf == NULL)) {
+        RTE_LOG(WARNING, MEMPOOL, "Could not allocate packet buffer for ARP response\n");
+        return -ENOMEM;
+    }
+
+    hdr = rte_pktmbuf_mtod(mbuf, struct ether_hdr *);
+    arp_frame = (struct arp_hdr *) &hdr[1];
+
+    ether_addr_copy(&arp_req->arp_data.arp_sha, &hdr->d_addr);
+    ether_addr_copy(&port->mac_addr, &hdr->s_addr);
+    hdr->ether_type = rte_cpu_to_be_16(ETHER_TYPE_ARP);
+
+    arp_frame->arp_hrd = rte_cpu_to_be_16(ARP_HRD_ETHER);
+    arp_frame->arp_pro = rte_cpu_to_be_16(ETHER_TYPE_IPv4);
+    arp_frame->arp_hln = 6;
+    arp_frame->arp_pln = 4;
+    arp_frame->arp_op  = rte_cpu_to_be_16(ARP_OP_REPLY);
+    ether_addr_copy(&port->mac_addr, &arp_frame->arp_data.arp_sha);
+    arp_frame->arp_data.arp_sip = port->ipv4_addr;
+    ether_addr_copy(&hdr->d_addr, &arp_frame->arp_data.arp_tha);
+    arp_frame->arp_data.arp_tip = arp_req->arp_data.arp_sip;
+
+    mbuf->pkt_len = 42;
+    mbuf->data_len = 42;
+    mbuf->ol_flags = PKT_TX_IP_CKSUM;
+
+    if (rte_eth_tx_burst(port->id, 0, &mbuf, 1) != 1) {
+        RTE_LOG(WARNING, RING, "%s: TX descriptor ring is full\n", __func__);
+        rte_pktmbuf_free(mbuf);
+        return -EAGAIN;
+    }
+    return 0;
+}
+
 int _uhd_dpdk_process_arp(struct uhd_dpdk_port *port, struct arp_hdr *arp_frame)
 {
     uint32_t dest_ip = arp_frame->arp_data.arp_sip;
     struct ether_addr dest_addr = arp_frame->arp_data.arp_sha;
 
+    /* Add entry to ARP table */
     struct uhd_dpdk_arp_entry *entry = NULL;
     rte_hash_lookup_data(port->arp_table, &dest_ip, (void **) &entry);
     if (!entry) {
@@ -36,11 +78,21 @@ int _uhd_dpdk_process_arp(struct uhd_dpdk_port *port, struct arp_hdr *arp_frame)
         LIST_FOREACH(req, &entry->pending_list, entry) {
             _uhd_dpdk_config_req_compl(req, 0);
         }
+        while (entry->pending_list.lh_first != NULL) {
+            LIST_REMOVE(entry->pending_list.lh_first, entry);
+        }
+    }
+
+    /* Respond if this was an ARP request */
+    if (arp_frame->arp_op == rte_cpu_to_be_16(ARP_OP_REQUEST) &&
+        arp_frame->arp_data.arp_tip == port->ipv4_addr) {
+        _uhd_dpdk_arp_reply(port, arp_frame);
     }
 
     return 0;
 }
 
+/* Send ARP request */
 int _uhd_dpdk_arp_request(struct uhd_dpdk_port *port, uint32_t ip)
 {
     struct rte_mbuf *mbuf;
@@ -81,7 +133,6 @@ int _uhd_dpdk_arp_request(struct uhd_dpdk_port *port, uint32_t ip)
     }
     return 0;
 }
-
 
 int _uhd_dpdk_process_udp(struct uhd_dpdk_port *port, struct rte_mbuf *mbuf, struct udp_hdr *pkt)
 {

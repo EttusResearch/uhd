@@ -215,7 +215,7 @@ int uhd_dpdk_send(struct uhd_dpdk_socket *sock, struct rte_mbuf **bufs,
  *     Add blocking calls with timeout
  */
 int uhd_dpdk_recv(struct uhd_dpdk_socket *sock, struct rte_mbuf **bufs,
-                  unsigned int num_bufs, unsigned int timeout)
+                  unsigned int num_bufs, int timeout)
 {
     if (!sock || !bufs || !num_bufs)
         return -EINVAL;
@@ -223,7 +223,9 @@ int uhd_dpdk_recv(struct uhd_dpdk_socket *sock, struct rte_mbuf **bufs,
         return -EINVAL;
     unsigned int num_rx = rte_ring_count(sock->rx_ring);
     num_rx = (num_rx < num_bufs) ? num_rx : num_bufs;
-    if (num_rx) {
+    /* if ((timeout > 0) && (num_rx != num_bufs)) {
+        // Wait for enough bufs
+    } else*/ if (num_rx) {
         unsigned int avail = 0;
         unsigned int status = rte_ring_dequeue_bulk(sock->rx_ring,
                                     (void **) bufs, num_rx, &avail);

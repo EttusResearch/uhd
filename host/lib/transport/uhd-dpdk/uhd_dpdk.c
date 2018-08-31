@@ -87,6 +87,12 @@ static inline int uhd_dpdk_port_init(struct uhd_dpdk_port *port,
         return -ENODEV;
 
     /* Set up Ethernet device with defaults (1 RX ring, 1 TX ring) */
+    retval = rte_eth_dev_set_mtu(port->id, mtu);
+    if (retval) {
+        RTE_LOG(WARNING, EAL, "%d: Could not set mtu to %d\n", retval, mtu);
+        rte_eth_dev_get_mtu(port->id, &mtu);
+        RTE_LOG(WARNING, EAL, "Current mtu=%d\n", mtu);
+    }
     /* FIXME: Check if hw_ip_checksum is possible */
     struct rte_eth_conf port_conf = {
         .rxmode = {
@@ -194,7 +200,7 @@ static int uhd_dpdk_thread_init(struct uhd_dpdk_thread *thread, unsigned int id)
 }
 
 
-int uhd_dpdk_init(int argc, char **argv, unsigned int num_ports,
+int uhd_dpdk_init(int argc, const char **argv, unsigned int num_ports,
                   int *port_thread_mapping, int num_mbufs, int mbuf_cache_size,
                   int mtu)
 {
@@ -207,7 +213,7 @@ int uhd_dpdk_init(int argc, char **argv, unsigned int num_ports,
     }
 
     /* Grabs arguments intended for DPDK's EAL */
-    int ret = rte_eal_init(argc, argv);
+    int ret = rte_eal_init(argc, (char **) argv);
     if (ret < 0)
         rte_exit(EXIT_FAILURE, "Error with EAL initialization\n");
 
