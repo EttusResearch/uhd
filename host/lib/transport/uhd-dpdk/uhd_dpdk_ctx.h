@@ -13,6 +13,7 @@
 #include <rte_mbuf.h>
 #include <rte_hash.h>
 #include <rte_eal.h>
+#include <rte_atomic.h>
 #include <uhd/transport/uhd-dpdk.h>
 //#include <pthread.h>
 
@@ -20,16 +21,18 @@
 
 #define UHD_DPDK_MAX_SOCKET_CNT 1024
 #define UHD_DPDK_MAX_PENDING_SOCK_REQS 16
+#define UHD_DPDK_MAX_WAITERS UHD_DPDK_MAX_SOCKET_CNT
 #define UHD_DPDK_TXQ_SIZE 64
 #define UHD_DPDK_TX_BURST_SIZE (UHD_DPDK_TXQ_SIZE - 1)
 #define UHD_DPDK_RXQ_SIZE 64
 #define UHD_DPDK_RX_BURST_SIZE (UHD_DPDK_RXQ_SIZE - 1)
 
 struct uhd_dpdk_port;
+struct uhd_dpdk_tx_queue;
 
 /**
  *
- * All memory allocation for port, rx_ring, and tx_ring owned by I/O thread
+ * All memory allocation for port, rx_ring, and tx_queue owned by I/O thread
  * Rest owned by user thread
  *
  * port: port servicing this socket
@@ -37,7 +40,7 @@ struct uhd_dpdk_port;
  * sock_type: Type of socket
  * priv: Private data, based on sock_type
  * rx_ring: pointer to individual rx_ring (created during init--Also used as free buffer ring for TX)
- * tx_ring: pointer to shared tx_ring (with all sockets for this tid)
+ * tx_queue: pointer to tx queue structure
  * tx_buf_count: Number of buffers currently outside the rings
  * tx_entry: List node for TX Queue tracking
  *
@@ -46,19 +49,21 @@ struct uhd_dpdk_port;
  */
 struct uhd_dpdk_socket {
     struct uhd_dpdk_port *port;
-    pid_t tid;
+    pthread_t tid;
     enum uhd_dpdk_sock_type sock_type;
     void *priv;
     struct rte_ring *rx_ring;
-    struct rte_ring *tx_ring;
+    struct uhd_dpdk_tx_queue *tx_queue;
     int tx_buf_count;
     LIST_ENTRY(uhd_dpdk_socket) tx_entry;
 };
 LIST_HEAD(uhd_dpdk_tx_head, uhd_dpdk_socket);
 
 /************************************************
- * Configuration
+ * Configuration and Blocking
  ************************************************/
+struct uhd_dpdk_wait_req;
+
 enum uhd_dpdk_sock_req {
     UHD_DPDK_SOCK_OPEN = 0,
     UHD_DPDK_SOCK_CLOSE,
@@ -70,20 +75,20 @@ enum uhd_dpdk_sock_req {
  * port: port associated with this request
  * sock: socket associated with this request
  * req_type: Open, Close, or terminate lcore
- * sock_type: Only udp is supported
  * cond: Used to sleep until socket creation is finished
  * mutex: associated with cond
  * entry: List node for requests pending ARP responses
  * priv: private data
  * retval: Result of call (needed post-wakeup)
+ *
+ * config_reqs are assumed not to time out
+ * The interaction with wait_reqs currently makes this impossible to do safely
  */
 struct uhd_dpdk_config_req {
     struct uhd_dpdk_port *port;
     struct uhd_dpdk_socket *sock;
     enum uhd_dpdk_sock_req req_type;
-    enum uhd_dpdk_sock_type sock_type;
-    pthread_cond_t cond;
-    pthread_mutex_t mutex;
+    struct uhd_dpdk_wait_req *waiter;
     LIST_ENTRY(uhd_dpdk_config_req) entry;
     void *priv;
     int retval;
@@ -107,24 +112,25 @@ struct uhd_dpdk_ipv4_5tuple {
 };
 
 /**
- * Used for blocking calls to RX
+ * Entry for RX table
+ * req used for blocking calls to RX
  */
-struct uhd_dpdk_sock_cond {
+struct uhd_dpdk_rx_entry {
     struct uhd_dpdk_socket *sock;
-    pthread_cond_t cond;
-    pthread_mutex_t mutex;
+    struct uhd_dpdk_wait_req *waiter;
 };
 
 /************************************************
  * TX Queues
  *
- * 1 TX Queue per thread sending through a hardware port
+ * 1 TX Queue per socket sending through a hardware port
  * All memory allocation owned by I/O thread
  *
  * tid: thread id
  * queue: TX queue holding threads prepared packets (via send())
  * retry_queue: queue holding packets that couldn't be sent
  * freebufs: queue holding empty buffers
+ * waiter: Request to wait for a free buffer
  * tx_list: list of sockets using this queue
  * entry: list node for port to track TX queues
  *
@@ -133,17 +139,17 @@ struct uhd_dpdk_sock_cond {
  * For queue, user thread is producer, I/O thread is consumer
  * For freebufs, user thread is consumer, I/O thread is consumer
  *
- * All queues are same size, and they are shared between all sockets on one
- * thread (tid is the identifier)
+ * All queues are same size
  * 1. Buffers start in freebufs (user gets buffers from freebufs)
  * 2. User submits packet to queue
  * 3. If packet couldn't be sent, it is (re)enqueued on retry_queue
  ************************************************/
 struct uhd_dpdk_tx_queue {
-    pid_t tid;
+    pthread_t tid;
     struct rte_ring *queue;
     struct rte_ring *retry_queue;
     struct rte_ring *freebufs;
+    struct uhd_dpdk_wait_req *waiter;
     struct uhd_dpdk_tx_head tx_list;
     LIST_ENTRY(uhd_dpdk_tx_queue) entry;
 };
@@ -199,6 +205,7 @@ LIST_HEAD(uhd_dpdk_port_head, uhd_dpdk_port);
  * sock_req_ring: Queue for user threads to submit service requests to the lcore
  *
  * sock_req_ring is a multi-producer, single-consumer queue
+ * It must NOT BE ACCESSED SIMULTANEOUSLY by two threads not using SCHED_OTHER(cfs)
  *
  * For threads that have ports:
  * Launch individually
@@ -208,12 +215,14 @@ LIST_HEAD(uhd_dpdk_port_head, uhd_dpdk_port);
  * REMEMBER: Without args, DPDK creates an lcore for each CPU core!
  */
 struct uhd_dpdk_thread {
-    unsigned int id;
+    unsigned int lcore;
+    cpu_set_t cpu_affinity;
     struct rte_mempool *rx_pktbuf_pool;
     struct rte_mempool *tx_pktbuf_pool;
     int num_ports;
     struct uhd_dpdk_port_head port_list;
     struct rte_ring *sock_req_ring;
+    struct rte_ring *waiter_ring;
 };
 
 
