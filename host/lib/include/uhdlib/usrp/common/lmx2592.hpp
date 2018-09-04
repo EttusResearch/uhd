@@ -37,7 +37,10 @@ public:
 
     enum mash_order_t { INT_N, FIRST, SECOND, THIRD, FOURTH };
 
-    virtual double set_frequency(double target_freq) = 0;
+    virtual double set_frequency(
+        double target_freq,
+        const bool spur_dodging,
+        const double spur_dodging_threshold) = 0;
 
     virtual void set_mash_order(mash_order_t mash_order) = 0;
 

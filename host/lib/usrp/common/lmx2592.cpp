@@ -7,11 +7,8 @@
 #include "lmx2592_regs.hpp"
 #include <uhdlib/usrp/common/lmx2592.hpp>
 #include <uhdlib/utils/narrow.hpp>
-#include <boost/math/common_factor_rt.hpp>
 #include <chrono>
-#include <cmath>
 #include <iomanip>
-#include <iostream>
 
 using namespace uhd;
 
@@ -32,6 +29,8 @@ constexpr double LMX2592_MAX_DOUBLER_INPUT_FREQ = 200e6;
 constexpr double LMX2592_MAX_MULT_OUT_FREQ = 250e6;
 constexpr double LMX2592_MAX_MULT_INPUT_FREQ = 70e6;
 constexpr double LMX2592_MAX_POSTR_DIV_OUT_FREQ = 125e6;
+
+constexpr double DEFAULT_LMX2592_SPUR_DODGING_THRESHOLD = 2e6; // Hz
 
 constexpr int MAX_N_DIVIDER = 4095;
 
@@ -72,6 +71,38 @@ constexpr std::array<std::array<int, NUM_CHDIV_STAGES>, NUM_DIVIDERS> LMX2592_CH
 constexpr int SPI_ADDR_SHIFT = 16;
 constexpr int SPI_ADDR_MASK = 0x7f;
 constexpr int SPI_READ_FLAG = 1 << 23;
+
+enum intermediate_frequency_t {
+    FVCO,
+    FLO,
+    FRF_IN,
+};
+
+const char* log_intermediate_frequency(intermediate_frequency_t inter) {
+    switch (inter) {
+        case FRF_IN: return "FRF_IN";
+        case FVCO:   return "FVCO";
+        case FLO:    return "FLO";
+        default:     return "???";
+    }
+}
+
+// simple comparator that uses absolute value
+inline bool abs_less_than_compare(const double a, const double b)
+{
+    return std::abs(a) < std::abs(b);
+}
+
+typedef std::pair<double, intermediate_frequency_t> offset_t;
+
+// comparator that uses absolute value on the first value of an offset_t
+inline bool offset_abs_less_than_compare(
+    const offset_t a,
+    const offset_t b)
+{
+    return std::abs(a.first) < std::abs(b.first);
+}
+
 }
 
 class lmx2592_impl : public lmx2592_iface {
@@ -145,8 +176,12 @@ public:
 
     ~lmx2592_impl() override { UHD_SAFE_CALL(_regs.powerdown = 1; commit();) }
 
-    double set_frequency(const double target_freq) override {
-
+    double set_frequency(
+        const double target_freq,
+        const bool spur_dodging = false,
+        const double spur_dodging_threshold = DEFAULT_LMX2592_SPUR_DODGING_THRESHOLD)
+        override
+    {
         // Enforce LMX frequency limits
         if (target_freq < LMX2592_MIN_OUT_FREQ or target_freq > LMX2592_MAX_OUT_FREQ) {
             throw runtime_error("Requested frequency is out of the supported range");
@@ -198,7 +233,7 @@ public:
         // Post R divider
         _regs.pll_r = narrow_cast<uint8_t>(std::ceil(input_freq / LMX2592_MAX_POSTR_DIV_OUT_FREQ));
 
-        // Default to divide by 2, will be increased later if N exceeds it's limit
+        // Default to divide by 2, will be increased later if N exceeds its limit
         int prescaler = 2;
         _regs.pll_n_pre = lmx2592_regs_t::pll_n_pre_t::PLL_N_PRE_DIVIDE_BY_2;
 
@@ -209,18 +244,7 @@ public:
             pfd_freq = input_freq / _regs.pll_r;
         }
 
-        const auto spur_dodging_enable = false;
-        const double min_vco_step_size = spur_dodging_enable ? 2e6 : 1;
-
-        auto fden = static_cast<uint32_t>(std::floor(pfd_freq * prescaler / min_vco_step_size));
-        _regs.pll_den_lsb = narrow_cast<uint16_t>(fden);
-        _regs.pll_den_msb = narrow_cast<uint16_t>(fden >> 16);
-
-        auto mash_seed = static_cast<uint32_t>(fden / 2);
-        _regs.mash_seed_lsb = narrow_cast<uint16_t>(mash_seed);
-        _regs.mash_seed_msb = narrow_cast<uint16_t>(mash_seed >> 16);
-
-        // Calculate N and Fnum
+        // Calculate N and frac
         const auto N_dot_F = target_vco_freq / (pfd_freq * prescaler);
         auto N = static_cast<uint16_t>(std::floor(N_dot_F));
         if (N > MAX_N_DIVIDER) {
@@ -228,16 +252,36 @@ public:
             N /= 2;
         }
         const auto frac = N_dot_F - N;
-        const auto fnum = static_cast<uint32_t>(std::round(frac * fden));
 
-        _regs.pll_n = N;
-        _regs.pll_num_lsb = narrow_cast<uint16_t>(fnum);
-        _regs.pll_num_msb = narrow_cast<uint16_t>(fnum >> 16);
+        // Increase VCO step size to threshold to avoid primary fractional spurs
+        const double min_vco_step_size = spur_dodging ? spur_dodging_threshold : 1;
+        // Calculate Fden
+        const auto initial_fden = static_cast<uint32_t>(std::floor(pfd_freq * prescaler / min_vco_step_size));
+        const auto fden = (spur_dodging) ? _find_fden(initial_fden) : initial_fden;
+        // Calculate Fnum
+        const auto initial_fnum = static_cast<uint32_t>(std::round(frac * fden));
+        const auto fnum = (spur_dodging) ? _find_fnum(N, initial_fnum, fden, prescaler, pfd_freq, output_divider, spur_dodging_threshold) : initial_fnum;
+
+        // Calculate mash_seed
+        // if spur_dodging is true, mash_seed is the first odd value less than fden
+        // else mash_seed is int(fden / 2);
+        const uint32_t mash_seed = (spur_dodging) ?
+            _find_mash_seed(fden) :
+            static_cast<uint32_t>(fden / 2);
 
         // Calculate actual Fcore_vco, Fvco, F_lo frequencies
         const auto actual_fvco = pfd_freq * prescaler * (N + double(fnum) / double(fden));
         const auto actual_fcore_vco = actual_fvco / vco_multiplier;
         const auto actual_f_lo = actual_fcore_vco * vco_multiplier / output_divider;
+
+        // Write to registers
+        _regs.pll_n = N;
+        _regs.pll_num_lsb = narrow_cast<uint16_t>(fnum);
+        _regs.pll_num_msb = narrow_cast<uint16_t>(fnum >> 16);
+        _regs.pll_den_lsb = narrow_cast<uint16_t>(fden);
+        _regs.pll_den_msb = narrow_cast<uint16_t>(fden >> 16);
+        _regs.mash_seed_lsb = narrow_cast<uint16_t>(mash_seed);
+        _regs.mash_seed_msb = narrow_cast<uint16_t>(mash_seed >> 16);
 
         UHD_LOGGER_TRACE("LMX2592") << "Tuned to " << actual_f_lo;
 
@@ -468,6 +512,266 @@ private: // Members
             _regs.chdiv_seg3 = lmx2592_regs_t::chdiv_seg3_t::CHDIV_SEG3_DIVIDE_BY_8;
         }
     }
+
+    // "k" is a derived value that indicates where sub-fractional spurs will be present
+    // at a given Fden value.  A "k" value of 1 indicates there will be no spurs.
+    // See the LMX2592 datasheet for more information
+    // Table 48 on pg. 30, Revision F (or search for "sub-fractional spurs")
+    int _get_k(const uint32_t fden) const
+    {
+        const auto mash = _regs.mash_order;
+        if (mash == lmx2592_regs_t::mash_order_t::MASH_ORDER_INT_MODE or
+            mash == lmx2592_regs_t::mash_order_t::MASH_ORDER_FIRST)
+        {
+            return 1;
+        }
+        else if (mash == lmx2592_regs_t::mash_order_t::MASH_ORDER_SECOND)
+        {
+            if (fden % 2 != 0)
+            {
+                return 1;
+            }
+            else {
+                return 2;
+            }
+        }
+        else if (mash == lmx2592_regs_t::mash_order_t::MASH_ORDER_THIRD)
+        {
+            if (fden % 2 != 0 and fden % 3 != 0)
+            {
+                return 1;
+            }
+            else if (fden % 2 == 0 and fden % 3 != 0)
+            {
+                return 2;
+            }
+            else if (fden % 2 != 0 and fden % 3 == 0)
+            {
+                return 3;
+            }
+            else
+            {
+                return 6;
+            }
+        }
+        else if (mash == lmx2592_regs_t::mash_order_t::MASH_ORDER_FOURTH)
+        {
+            if (fden % 2 != 0 and fden % 3 != 0)
+            {
+                return 1;
+            }
+            else if (fden % 2 == 0 and fden % 3 != 0)
+            {
+                return 3;
+            }
+            else if (fden % 2 != 0 and fden % 3 == 0)
+            {
+                return 4;
+            }
+            else
+            {
+                return 12;
+            }
+        }
+        UHD_THROW_INVALID_CODE_PATH();
+    }
+
+    // Find a value of fden such that "k" is 1 to avoid subfractional spurs
+    // See the _get_k function for more details on how k is calculated
+    uint32_t _find_fden(const uint32_t initial_fden) const
+    {
+        auto fden = initial_fden;
+        // mathematically, this loop should run a maximum of 4 times
+        // i.e. initial_fden = 6N + 4 and mash_order is third or fourth order
+        for (int i = 0; i < 4; ++i)
+        {
+            if (_get_k(fden) == 1)
+            {
+                UHD_LOGGER_TRACE("LMX2592") <<
+                    "_find_fden(" << initial_fden << ") returned " << fden;
+                return fden;
+            }
+            // decrement rather than increment, as incrementing fden would decrease
+            // the step size and violate any minimum step size that has been set
+            --fden;
+        }
+        UHD_LOGGER_WARNING("LMX2592") <<
+            "Unable to find suitable fractional value denominator for spur dodging on LMX2592";
+        UHD_LOGGER_ERROR("LMX2592") <<
+            "Spur dodging failed";
+        return initial_fden;
+    }
+
+    // returns the offset of the closest multiple of
+    // spur_frequency_base to target_frequency
+    // A negative offset indicates the closest multiple is at a lower frequency
+    double _get_closest_spur_offset(
+        double target_frequency,
+        double spur_frequency_base)
+    {
+        // find closest multiples of spur_frequency_base to target_frequency
+        const auto first_harmonic_number =
+            std::floor(target_frequency / spur_frequency_base);
+        const auto second_harmonic_number =
+            first_harmonic_number + 1;
+        // calculate offsets
+        const auto first_spur_offset =
+            (first_harmonic_number * spur_frequency_base) - target_frequency;
+        const auto second_spur_offset =
+            (second_harmonic_number * spur_frequency_base) - target_frequency;
+        // select offset with smallest absolute value
+        return std::min({
+            first_spur_offset,
+            second_spur_offset },
+            abs_less_than_compare);
+    }
+
+    // returns the closest spur offset among 4 different spurs
+    // as well as which signal the spur is close to
+    // 1. PFD to Frf_in spur (Integer boundary)
+    // 2. PFD to Fvco spur
+    // 3. Reference to Fvco spur
+    // 4. Reference to Flo spur
+    // A negative offset indicates the closest spur is at a lower frequency
+    offset_t _get_min_offset_frequency(
+        const uint16_t N,
+        const uint32_t fnum,
+        const uint32_t fden,
+        const int prescaler,
+        const double pfd_freq,
+        const int output_divider)
+    {
+        // Calculate intermediate values
+        const auto fref = _ref_freq;
+        const auto frf_in = pfd_freq * (N + double(fnum) / double(fden));
+        const auto fvco = frf_in * prescaler;
+        const auto flo = fvco / output_divider;
+
+        // the minimum offset is the smallest absolute value of these 4 values
+        // as calculated by the _get_closest_spur_offset function
+        // However, we also need to know which IF the spur is closest to
+        // in order to calculate the necessary frequency shift
+
+        // Integer Boundary:
+        const offset_t ib_spur = { _get_closest_spur_offset(frf_in, pfd_freq), FRF_IN };
+
+        // PFD Offset Spur:
+        const offset_t pfd_offset_spur = { _get_closest_spur_offset(fvco, pfd_freq), FVCO };
+
+        // Reference to Fvco Spur:
+        const offset_t fvco_spur = { _get_closest_spur_offset(fvco, fref), FVCO };
+
+        // Reference to F_lo Spur:
+        const offset_t flo_spur = { _get_closest_spur_offset(flo, fref), FLO };
+
+        // use min with special comparator for minimal absolute value
+        return std::min({
+            ib_spur,
+            pfd_offset_spur,
+            fvco_spur,
+            flo_spur},
+            offset_abs_less_than_compare);
+    }
+
+    // Find a suitable fnum such that _get_min_offset_frequency reports
+    // the closest spur is at least spur_dodging_threshold away.
+    // To see what spurs are considered, see _get_min_offset_frequency.
+    // This function uses a naive iterative approach, which could potentially
+    // fail for certain configurations.  For example, it is assumed that the
+    // PFD frequency will be at least 10x larger than the step size of
+    // (fnum / fden). This function only considers at least 50% potential
+    // values of fnum, and does not consider changes to N.
+    uint32_t _find_fnum(
+        const uint16_t N,
+        const uint32_t initial_fnum,
+        const uint32_t fden,
+        const int prescaler,
+        const double pfd_freq,
+        const int output_divider,
+        const double spur_dodging_threshold)
+    {
+        auto fnum = initial_fnum;
+        auto min_offset = _get_min_offset_frequency(
+            N,
+            fnum,
+            fden,
+            prescaler,
+            pfd_freq,
+            output_divider);
+
+        UHD_LOGGER_TRACE("LMX2592") <<
+            "closest spur is at " << min_offset.first <<
+            " to " << log_intermediate_frequency(min_offset.second);
+
+        // shift away from the closest integer boundary i.e. towards 0.5
+        const double delta_fnum_sign = ((((double)fnum) / ((double)fden)) < 0.5) ? 1 : -1;
+
+        while (abs(min_offset.first) < spur_dodging_threshold)
+        {
+            double shift = spur_dodging_threshold;
+            // if the spur is in the same direction as the desired shift direction...
+            if (std::signbit(min_offset.first) == std::signbit(delta_fnum_sign))
+            {
+                shift += abs(min_offset.first);
+            }
+            else {
+                shift -= abs(min_offset.first);
+            }
+
+            // convert shift of IF value to shift of Frf_in
+            if (min_offset.second == FVCO)
+            {
+                shift /= prescaler;
+            }
+            else if (min_offset.second == FLO)
+            {
+                shift /= prescaler;
+                shift *= output_divider;
+            }
+
+            double delta_fnum_value = std::ceil((shift / pfd_freq) * fden);
+            fnum += narrow_cast<int32_t>(delta_fnum_value * delta_fnum_sign);
+
+            UHD_LOGGER_TRACE("LMX2592") <<
+                "adjusting fnum by " << (delta_fnum_value * delta_fnum_sign);
+
+            // fnum is unsigned, so this also checks for underflow
+            if (fnum >= fden)
+            {
+                UHD_LOGGER_WARNING("LMX2592") <<
+                    "Unable to find suitable fractional value numerator for spur dodging on LMX2592";
+                UHD_LOGGER_ERROR("LMX2592") <<
+                    "Spur dodging failed";
+                return initial_fnum;
+            }
+
+            min_offset = _get_min_offset_frequency(
+                N,
+                fnum,
+                fden,
+                prescaler,
+                pfd_freq,
+                output_divider);
+
+            UHD_LOGGER_TRACE("LMX2592") <<
+                "closest spur is at " << min_offset.first <<
+                " to " << log_intermediate_frequency(min_offset.second);
+        }
+        UHD_LOGGER_TRACE("LMX2592") <<
+            "_find_fnum(" << initial_fnum << ") returned " << fnum;
+        return fnum;
+    }
+
+    // if spur_dodging is true, mash_seed is the first odd value less than fden
+    static uint32_t _find_mash_seed(const uint32_t fden)
+    {
+        if (fden < 2) {
+            return 1;
+        }
+        else {
+            return (fden - 2) | 0x1;
+        }
+    };
 };
 
 lmx2592_impl::sptr lmx2592_iface::make(write_spi_t write, read_spi_t read) {
