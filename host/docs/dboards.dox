@@ -370,6 +370,23 @@ Notes:
   reduce the daughterboard clock rate to 20 MHz to achieve phase
   synchronization and best RF performance (see \ref config_devaddr).
 
+\subsection dboards_twinrx TwinRX
+
+Features:
+-  2 super-heterodyne frontends (2 receive, 0 transmit)
+   - Digital IF of +/- 50 MHz
+- Supports sharing one channel's LO to the other or the use of an external LO
+   - Allows multiple channels and daughterboards to be frequency and phase synchronized
+
+Frequency Range: 10 MHz to 6 GHz
+
+Receive Antennas: **RX1** and **RX2**
+
+Receive Gain: 0-93dB
+
+More information:
+\li \subpage page_twinrx
+
 \subsection dboards_tvrx TVRX
 
 The TVRX board has 1 real-mode frontend. It is operated at a low IF.
