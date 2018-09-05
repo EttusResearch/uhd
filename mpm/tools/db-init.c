@@ -42,11 +42,13 @@ int main(int argc, char *argv[])
 
 	if (argc >= 6)
 		dt_compat = atoi(argv[5]);
+	else
+		dt_compat = get_dt_compat(atoi(argv[3]));
 
 	which_slot = atoi(argv[1]);
 
 	ep = usrp_sulfur_db_eeprom_new(strtol(argv[2], NULL, 16), atoi(argv[3]), argv[4],
-			dt_compat ? dt_compat : get_dt_compat(atoi(argv[3])));
+			dt_compat);
 	usrp_sulfur_db_eeprom_print(ep);
 
 	if (!which_slot)
