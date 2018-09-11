@@ -454,7 +454,7 @@ def main():
     # Sleep for the required duration
     # If we have a multichannel test, add some time for initialization
     if len(rx_channels) > 1 or len(tx_channels) > 1:
-        args.duration += INIT_DELAY * 1000
+        args.duration += INIT_DELAY
     time.sleep(args.duration)
     # Interrupt and join the threads
     logger.debug("Sending signal to stop!")
