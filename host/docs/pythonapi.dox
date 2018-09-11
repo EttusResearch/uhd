@@ -14,7 +14,9 @@ Boost.Python from your Boost library). Make sure you have the CMake variable
 
 The Python API supports both Python 2 and 3, but if you have both versions
 installed, CMake might require some hints which version is the desired one.
-To force Python 3, UHD has a CMake variable `ENABLE_PYTHON3`
+To force Python 3, UHD has a CMake variable `ENABLE_PYTHON3`. If you set it,
+e.g., by running `cmake -DENABLE_PYTHON3=ON`, it will force the usage of
+Python 3.
 
 \subsection python_install_windows Installing on Windows
 
@@ -58,7 +60,7 @@ usrp.set_rx_freq(100e6)
 
 Not all API calls from the C++ API are also supported in the Python API, and
 the Python API has some additional functions that are not available in C++, but
-for the most part, the `uhd::usrp::multi_usrp` API is identical.
+for the most part, the uhd::usrp::multi_usrp API is identical.
 
 \section python_usage_oneoff One-off transmit/receive applications
 
