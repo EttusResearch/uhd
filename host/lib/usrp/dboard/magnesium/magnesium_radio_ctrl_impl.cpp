@@ -206,10 +206,10 @@ void magnesium_radio_ctrl_impl::set_rx_antenna(
 }
 
 double magnesium_radio_ctrl_impl::set_tx_frequency(
-        const double freq,
+        const double req_freq,
         const size_t chan
 ) {
-    // FIXME bounds checking + clipping!!!
+    const double freq = MAGNESIUM_FREQ_RANGE.clip(req_freq);
     UHD_LOG_TRACE(unique_id(),
         "set_tx_frequency(f=" << freq << ", chan=" << chan << ")");
     _desired_rf_freq[TX_DIRECTION]=freq;
@@ -289,10 +289,10 @@ void magnesium_radio_ctrl_impl::_update_freq(
 }
 
 double magnesium_radio_ctrl_impl::set_rx_frequency(
-        const double freq,
+        const double req_freq,
         const size_t chan
 ) {
-    // FIXME bounds checking + clipping!!!
+    const double freq = MAGNESIUM_FREQ_RANGE.clip(req_freq);
     UHD_LOG_TRACE(unique_id(),
         "set_rx_frequency(f=" << freq << ", chan=" << chan << ")");
     _desired_rf_freq[RX_DIRECTION]=freq;
