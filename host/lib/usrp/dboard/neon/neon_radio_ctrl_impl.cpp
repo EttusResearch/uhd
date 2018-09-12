@@ -130,6 +130,8 @@ void neon_radio_ctrl_impl::loopback_self_test(
         std::function<void(uint32_t)> poker_functor,
         std::function<uint64_t()> peeker_functor
 ) {
+    // Save current rate before running this test
+    const double current_rate = this->get_rate();
     // Set 2R2T mode, stream on all channels
     this->set_streaming_mode(true, true, true, true);
     // Set maximum rate for 2R2T mode
@@ -180,6 +182,8 @@ void neon_radio_ctrl_impl::loopback_self_test(
     // Take AD936x out of loopback mode
     _ad9361->data_port_loopback(false);
     this->set_streaming_mode(true, false, true, false);
+    // Switch back to current rate
+    this->set_rate(current_rate);
 }
 
 double neon_radio_ctrl_impl::set_rate(const double rate)
