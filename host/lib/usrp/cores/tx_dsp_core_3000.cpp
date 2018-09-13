@@ -28,7 +28,6 @@ template <class T> T ceil_log2(T num){
 using namespace uhd;
 
 const double tx_dsp_core_3000::DEFAULT_CORDIC_FREQ = 0.0;
-const double tx_dsp_core_3000::DEFAULT_DDS_FREQ = 0.0;
 const double tx_dsp_core_3000::DEFAULT_RATE = 1e6;
 
 tx_dsp_core_3000::~tx_dsp_core_3000(void){
@@ -105,15 +104,16 @@ public:
         // Caclulate algorithmic gain of CIC for a given interpolation
         // For Ettus CIC R=decim, M=1, N=3. Gain = (R * M) ^ N
         const double rate_pow = std::pow(double(interp & 0xff), 3);
-        // Calculate compensation gain values for algorithmic gain of DDS and CIC taking into account
+        // Calculate compensation gain values for algorithmic gain of CORDIC and CIC taking into account
         // gain compensation blocks already hardcoded in place in DDC (that provide simple 1/2^n gain compensation).
-        _scaling_adjustment = std::pow(2, ceil_log2(rate_pow))/(rate_pow);
+        // CORDIC algorithmic gain limits asymptotically around 1.647 after many iterations.
+        _scaling_adjustment = std::pow(2, ceil_log2(rate_pow))/(1.648*rate_pow);
         this->update_scalar();
 
         return _tick_rate/interp_rate;
     }
 
-  // Calculate compensation gain values for algorithmic gain of DDS and CIC taking into account
+  // Calculate compensation gain values for algorithmic gain of CORDIC and CIC taking into account
   // gain compensation blocks already hardcoded in place in DDC (that provide simple 1/2^n gain compensation).
   // Further more factor in OTW format which adds further gain factor to weight output samples correctly.
     void update_scalar(void){
@@ -183,7 +183,7 @@ public:
             .set_coercer(boost::bind(&tx_dsp_core_3000::set_host_rate, this, _1))
         ;
         subtree->create<double>("freq/value")
-            .set(DEFAULT_DDS_FREQ)
+            .set(DEFAULT_CORDIC_FREQ)
             .set_coercer(boost::bind(&tx_dsp_core_3000::set_freq, this, _1))
             .set_publisher([this](){ return this->get_freq(); })
         ;

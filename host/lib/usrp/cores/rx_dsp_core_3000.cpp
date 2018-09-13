@@ -37,7 +37,6 @@ template <class T> T ceil_log2(T num){
 using namespace uhd;
 
 const double rx_dsp_core_3000::DEFAULT_CORDIC_FREQ = 0.0;
-const double rx_dsp_core_3000::DEFAULT_DDS_FREQ = 0.0;
 const double rx_dsp_core_3000::DEFAULT_RATE = 1e6;
 
 rx_dsp_core_3000::~rx_dsp_core_3000(void){
@@ -193,23 +192,24 @@ public:
         // Caclulate algorithmic gain of CIC for a given decimation.
         // For Ettus CIC R=decim, M=1, N=4. Gain = (R * M) ^ N
         const double rate_pow = std::pow(double(decim & 0xff), 4);
-        // Calculate compensation gain values for algorithmic gain of and CIC taking into account
+        // Calculate compensation gain values for algorithmic gain of CORDIC and CIC taking into account
         // gain compensation blocks already hardcoded in place in DDC (that provide simple 1/2^n gain compensation).
+        // CORDIC algorithmic gain limits asymptotically around 1.647 after many iterations.
         //
         // The polar rotation of [I,Q] = [1,1] by Pi/8 also yields max magnitude of SQRT(2) (~1.4142) however
-        // input to the DDS thats outside the unit circle can only be sourced from a saturated RF frontend.
+        // input to the CORDIC thats outside the unit circle can only be sourced from a saturated RF frontend.
         // To provide additional dynamic range head room accordingly using scale factor applied at egress from DDC would
         // cost us small signal performance, thus we do no provide compensation gain for a saturated front end and allow
         // the signal to clip in the H/W as needed. If we wished to avoid the signal clipping in these circumstances then adjust code to read:
         // _scaling_adjustment = std::pow(2, ceil_log2(rate_pow))/(1.648*rate_pow*1.415);
-        _scaling_adjustment = std::pow(2, ceil_log2(rate_pow))/(2.0*rate_pow);
+        _scaling_adjustment = std::pow(2, ceil_log2(rate_pow))/(1.648*rate_pow);
 
         this->update_scalar();
 
         return _tick_rate/decim_rate;
     }
 
-    // Calculate compensation gain values for algorithmic gain of DDS and CIC taking into account
+    // Calculate compensation gain values for algorithmic gain of CORDIC and CIC taking into account
     // gain compensation blocks already hardcoded in place in DDC (that provide simple 1/2^n gain compensation).
     // Further more factor in OTW format which adds further gain factor to weight output samples correctly.
     void update_scalar(void){
@@ -217,7 +217,7 @@ public:
         const int32_t actual_scalar = boost::math::iround(target_scalar);
         // Calculate the error introduced by using integer representation for the scalar, can be corrected in host later.
         _fxpt_scalar_correction = target_scalar/actual_scalar;
-        // Write DDC with scaling correction for CIC and DDS that maximizes dynamic range in 32/16/12/8bits.
+        // Write DDC with scaling correction for CIC and CORDIC that maximizes dynamic range in 32/16/12/8bits.
         _iface->poke32(REG_DSP_RX_SCALE_IQ, actual_scalar);
     }
 
@@ -283,7 +283,7 @@ public:
             .set_coercer(boost::bind(&rx_dsp_core_3000::set_host_rate, this, _1))
         ;
         subtree->create<double>("freq/value")
-            .set(DEFAULT_DDS_FREQ)
+            .set(DEFAULT_CORDIC_FREQ)
             .set_coercer(boost::bind(&rx_dsp_core_3000::set_freq, this, _1))
             .set_publisher([this](){ return this->get_freq(); })
         ;
