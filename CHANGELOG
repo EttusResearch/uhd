@@ -1,6 +1,20 @@
 Change Log for Releases
 ==============================
 
+## 003.013.000.002
+* N3xx: Fix issue where changing the clock/time source could result in
+        clocks becoming unlocked
+* N3xx: Improve error messages for invalid clock/time settings
+* N3xx: Add support for Rev G mboard
+* MPM: Add function parameter to support holding AD9371 in reset
+* Docs: Add section on building fs/SD images for N3xx
+* Docs: Fix Doxygen warnings
+
+## 003.013.000.001
+* N3xx: Fix UIO usage in Aurora BIST
+* N3xx: Fix EEPROM parsing (for upcoming hardware)
+* UHD: Fix install path for Python API
+
 ## 003.013.000.000
 * N3x0: Enable fast-reinit, fix power level issue, accept 0x01 PID for
         AD9371, fix concurrency issues with Liberio
