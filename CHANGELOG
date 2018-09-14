@@ -2,6 +2,35 @@ Change Log for Releases
 ==============================
 
 ## 003.013.000.002
+* N3xx: Enable setting clock and time sources at runtime
+* X300: Improve firmware compat error message
+* X300: Updated niusrprio driver
+* B2xx: Fix values of MASK_GPIO_SHDN_SW and GPIO_AUX_PWR_ON in firmware
+* B2xx: Revert changes to DSP core to fix scaling factor adjustment
+* TwinRX: enable ch1 lo amps if ch2 is using an external lo source
+* TwinRX: Correctly initialize antenna mapping on X300
+* UHD: Define UHD_API as empty string when building static lib
+* UHD: Changed to 'all_matching' endpoint resolution for udp_simple transport
+* RFNoC: Improved flushing mechanism in noc_shell and dma_fifo
+* MPM: Add Git hash, version to device info
+* MPM: Reset the RPC server upon reload
+* MPM: TDC: Update PDAC BIST and flatness test to use latest APIs
+* MPM: Fix handling of 0-valued dt-compat
+* Python API: Enable Python API on Windows
+* Python API: Change .dll to .pyd for Win32
+* Python API: Fixing Boost.Python initializer visibility
+* Python API: Fix duration of benchmark rate
+* Utils: Fix uhd_images_downloader to properly refetch when upgrading/downgrading
+* Utils: Added logging for case of no targets selected in uhd_images_downloader
+* Examples: Removed some legacy code patterns from RFNoC examples
+* Examples: Fix channel argument for rx_samples_to_file
+* Test: Add more env vars, make Py3k compatible
+* Test: Add multi_usrp_test.py to devtest
+* Test:  Clean up, refactor, and improve devtest
+* Docs: Add clock_source and time_source to n3xx argument list and fix WR clock_source call
+* Docs: Minor tweaks to the Python API manual page
+
+## 003.013.000.002
 * N3xx: Fix issue where changing the clock/time source could result in
         clocks becoming unlocked
 * N3xx: Improve error messages for invalid clock/time settings
