@@ -1,7 +1,7 @@
 Change Log for Releases
 ==============================
 
-## 003.013.000.002
+## 003.013.000.003
 * N3xx: Enable setting clock and time sources at runtime
 * X300: Improve firmware compat error message
 * X300: Updated niusrprio driver
