@@ -1,7 +1,7 @@
 #
 # Copyright 2010-2018 Ettus Research, a National Instruments Company
 #
-# SPDX-License-Identifier: GPL-3.0
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
 
 ########################################################################
@@ -12,7 +12,7 @@
 ########################################################################
 # Project setup
 ########################################################################
-CMAKE_MINIMUM_REQUIRED(VERSION 2.8.2)
+CMAKE_MINIMUM_REQUIRED(VERSION 2.8.12)
 IF(POLICY CMP0048)
   CMAKE_POLICY(SET CMP0048 NEW) # Suppress Version warnings
 ENDIF(POLICY CMP0048)
