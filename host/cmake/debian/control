@@ -3,34 +3,41 @@ Section: science
 Priority: optional
 Maintainer: Ettus Research <packages@ettus.com>
 Uploaders: Martin Braun <martin.braun@ettus.com>
-Build-Depends:  debhelper (>= 9),
-                cmake (>= 2.8.4+dfsg.1-3),
-                python-dev,
-                python-mako, 
+Build-Depends:  cmake,
+                debhelper (>= 9),
                 doxygen,
-                libusb-1.0-0-dev [linux-any],
-                libusb2-dev [kfreebsd-any],
-                libncurses5-dev,
-                pkg-config,
-                libboost-dev,
                 libboost-date-time-dev,
+                libboost-dev,
                 libboost-filesystem-dev,
                 libboost-program-options-dev,
+                libboost-python-dev,
                 libboost-regex-dev,
+                libboost-serialization-dev,
                 libboost-system-dev,
-                libboost-thread-dev,
                 libboost-test-dev,
-                libboost-serialization-dev
+                libboost-thread-dev,
+                libncurses5-dev,
+                libusb-1.0-0-dev [linux-any],
+                libusb2-dev [kfreebsd-any],
+                pkg-config,
+                python-dev,
+                python-mako,
+                python-requests
 Standards-Version: 3.9.7
 Homepage: https://www.ettus.com
 Vcs-Git: git://github.com/EttusResearch/uhd.git
 
 Package: uhd-host
 Architecture: any
-Depends: libuhd003, python, adduser, python-requests, ${shlibs:Depends}, ${misc:Depends}
-Recommends: python-tk, curl, procps
+Depends: adduser,
+         libuhd3.14.0 (= ${binary:Version}),
+         python,
+         python-requests,
+         ${misc:Depends},
+         ${shlibs:Depends}
+Recommends: curl, procps, python-tk
 Suggests: gnuradio
-Description: hardware driver for Ettus Research products
+Description: hardware driver for Ettus Research products - host apps
  Host utilities for the USRP Hardware Driver for Ettus Research products.
  .
  The supported devices provide analog radio receiver and transmitter hardware
@@ -38,15 +45,17 @@ Description: hardware driver for Ettus Research products
  defined radio running on the host computer.
  .
  This package includes the uhd_find_devices application to locate and
- configure attached peripherals, and the uhd_usrp_probe application to
- display hardware configuration information.
+ configure attached peripherals, the uhd_usrp_probe application to
+ display hardware configuration information, and Doxygen generated
+ documentation.
 
-Package: libuhd003
+Package: libuhd3.14.0
 Architecture: any
 Section: libs
 Pre-Depends: ${misc:Pre-Depends}
 Depends: python, adduser, ${shlibs:Depends}, ${misc:Depends}
 Suggests: gnuradio
+Replaces: libuhd003
 Multi-Arch: same
 Description: hardware driver for Ettus Research products
  Host library for the USRP Hardware Driver for Ettus Research products.
@@ -58,8 +67,8 @@ Description: hardware driver for Ettus Research products
 Package: libuhd-dev
 Architecture: any
 Section: libdevel
-Depends: libuhd003 (= ${binary:Version}), python, adduser, ${shlibs:Depends}, ${misc:Depends}
-Suggests: libjs-jquery, gnuradio
+Depends: libuhd3.14.0 (= ${binary:Version}), python, ${misc:Depends}, ${shlibs:Depends}
+Suggests: gnuradio
 Description: universal hardware driver for Ettus Research products
  Host library for the USRP Hardware Driver for Ettus Research products.
  .
