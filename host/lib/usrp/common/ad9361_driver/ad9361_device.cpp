@@ -1512,7 +1512,7 @@ double ad9361_device_t::_setup_rates(const double rate)
  **********************************************************************/
 void ad9361_device_t::initialize()
 {
-    boost::lock_guard<boost::recursive_mutex> lock(_mutex);
+    std::lock_guard<std::recursive_mutex> lock(_mutex);
 
     /* Initialize shadow registers. */
     _regs.vcodivs = 0x00;
@@ -1784,7 +1784,7 @@ void ad9361_device_t::set_io_iface(ad9361_io::sptr io_iface)
  * This is the only clock setting function that is exposed to the outside. */
 double ad9361_device_t::set_clock_rate(const double req_rate)
 {
-    boost::lock_guard<boost::recursive_mutex> lock(_mutex);
+    std::lock_guard<std::recursive_mutex> lock(_mutex);
 
     if (req_rate > 61.44e6) {
         throw uhd::runtime_error("[ad9361_device_t] Requested master clock rate outside range");
@@ -1933,7 +1933,7 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
  */
 void ad9361_device_t::set_active_chains(bool tx1, bool tx2, bool rx1, bool rx2)
 {
-    boost::lock_guard<boost::recursive_mutex> lock(_mutex);
+    std::lock_guard<std::recursive_mutex> lock(_mutex);
 
     /* Clear out the current active chain settings. */
     _regs.txfilt = _regs.txfilt & 0x3F;
@@ -2035,7 +2035,7 @@ void ad9361_device_t::set_timing_mode(const ad9361_device_t::timing_mode_t timin
  * After tuning, it runs any appropriate calibrations. */
 double ad9361_device_t::tune(direction_t direction, const double value)
 {
-    boost::lock_guard<boost::recursive_mutex> lock(_mutex);
+    std::lock_guard<std::recursive_mutex> lock(_mutex);
     double last_cal_freq;
 
     if (direction == RX) {
@@ -2108,7 +2108,7 @@ double ad9361_device_t::tune(direction_t direction, const double value)
 /* Get the current RX or TX frequency. */
 double ad9361_device_t::get_freq(direction_t direction)
 {
-    boost::lock_guard<boost::recursive_mutex> lock(_mutex);
+    std::lock_guard<std::recursive_mutex> lock(_mutex);
 
     if (direction == RX)
         return _rx_freq;
@@ -2123,7 +2123,7 @@ double ad9361_device_t::get_freq(direction_t direction)
  * the TX chains  are done in terms of attenuation. */
 double ad9361_device_t::set_gain(direction_t direction, chain_t chain, const double value)
 {
-    boost::lock_guard<boost::recursive_mutex> lock(_mutex);
+    std::lock_guard<std::recursive_mutex> lock(_mutex);
 
     if (direction == RX) {
 
@@ -2174,7 +2174,7 @@ double ad9361_device_t::set_gain(direction_t direction, chain_t chain, const dou
 
 void ad9361_device_t::output_test_tone()  // On RF side!
 {
-    boost::lock_guard<boost::recursive_mutex> lock(_mutex);
+    std::lock_guard<std::recursive_mutex> lock(_mutex);
     /* Output a 480 kHz tone at 800 MHz */
     _io_iface->poke8(0x3F4, 0x0B);
     _io_iface->poke8(0x3FC, 0xFF);
@@ -2184,13 +2184,13 @@ void ad9361_device_t::output_test_tone()  // On RF side!
 
 void ad9361_device_t::digital_test_tone(bool enb) // Digital output
 {
-    boost::lock_guard<boost::recursive_mutex> lock(_mutex);
+    std::lock_guard<std::recursive_mutex> lock(_mutex);
     _io_iface->poke8(0x3F4, 0x02 | (enb ? 0x01 : 0x00));
 }
 
 void ad9361_device_t::data_port_loopback(const bool loopback_enabled)
 {
-    boost::lock_guard<boost::recursive_mutex> lock(_mutex);
+    std::lock_guard<std::recursive_mutex> lock(_mutex);
     _io_iface->poke8(0x3F5, (loopback_enabled ? 0x01 : 0x00));
 }
 
@@ -2396,56 +2396,68 @@ void ad9361_device_t::set_agc_mode(chain_t chain, gain_mode_t gain_mode)
 
 std::vector<std::string> ad9361_device_t::get_filter_names(direction_t direction)
 {
+    auto& filters = (direction == RX)
+        ? _rx_filters
+        : _tx_filters
+    ;
+
     std::vector<std::string> ret;
-    if(direction == RX) {
-        for(std::map<std::string, filter_query_helper>::iterator it = _rx_filters.begin(); it != _rx_filters.end(); ++it) {
-            ret.push_back(it->first);
-        }
-    } else if (direction == TX)
-    {
-        for(std::map<std::string, filter_query_helper>::iterator it = _tx_filters.begin(); it != _tx_filters.end(); ++it) {
-            ret.push_back(it->first);
-        }
+    ret.reserve(filters.size());
+    for (auto& filter : filters) {
+        ret.push_back(filter.first);
     }
+
     return ret;
 }
 
-filter_info_base::sptr ad9361_device_t::get_filter(direction_t direction, chain_t chain, const std::string &name)
-{
-    if(direction == RX) {
-        if (not _rx_filters[name].get)
-        {
-            throw uhd::runtime_error("ad9361_device_t::get_filter this filter can not be read.");
-        }
-        return _rx_filters[name].get(direction, chain);
-    } else if (direction == TX) {
-        if (not _tx_filters[name].get)
-        {
-            throw uhd::runtime_error("ad9361_device_t::get_filter this filter can not be read.");
-        }
-        return _tx_filters[name].get(direction, chain);
-    }
+filter_info_base::sptr ad9361_device_t::get_filter(
+        direction_t direction,
+        chain_t chain,
+        const std::string &name
+) {
+    auto& filters = (direction == RX)
+        ? _rx_filters
+        : _tx_filters
+    ;
 
-    throw uhd::runtime_error("ad9361_device_t::get_filter wrong direction parameter.");
+    if (!filters.count(name)) {
+        throw uhd::runtime_error(
+            "ad9361_device_t::get_filter this filter does not exist: " + name
+        );
+    }
+    // Check entry 0 in the tuple (the getter) exists before calling it
+    if (!std::get<0>(filters[name])) {
+        throw uhd::runtime_error(
+            "ad9361_device_t::get_filter this filter can not be read: " + name
+        );
+    }
+    return std::get<0>(filters[name])(chain);
 }
 
-void ad9361_device_t::set_filter(direction_t direction, chain_t chain, const std::string &name, filter_info_base::sptr filter)
-{
+void ad9361_device_t::set_filter(
+        direction_t direction,
+        chain_t chain,
+        const std::string &name,
+        filter_info_base::sptr filter
+) {
+    auto& filters = (direction == RX)
+        ? _rx_filters
+        : _tx_filters
+    ;
 
-    if(direction == RX) {
-        if(not _rx_filters[name].set)
-        {
-            throw uhd::runtime_error("ad9361_device_t::set_filter this filter can not be written.");
-        }
-        _rx_filters[name].set(direction, chain, filter);
-    } else if (direction == TX) {
-        if(not _tx_filters[name].set)
-        {
-            throw uhd::runtime_error("ad9361_device_t::set_filter this filter can not be written.");
-        }
-        _tx_filters[name].set(direction, chain, filter);
+    if (!filters.count(name)) {
+        throw uhd::runtime_error(
+            "ad9361_device_t::set_filter this filter does not exist: " + name
+        );
     }
-
+    // Check entry 1 in the tuple (the setter) exists before calling it
+    if (!std::get<1>(filters[name])) {
+        throw uhd::runtime_error(
+            "ad9361_device_t::set_filter this filter can not be written: " +
+            name
+        );
+    }
+    std::get<1>(filters[name])(chain, filter);
 }
 
 double ad9361_device_t::set_bw_filter(direction_t direction, const double rf_bw)
