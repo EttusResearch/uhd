@@ -9,16 +9,15 @@
 #define INCLUDED_AD9361_DEVICE_H
 
 #include <ad9361_client.h>
-#include <boost/noncopyable.hpp>
-#include <boost/thread/recursive_mutex.hpp>
 #include <uhd/types/filters.hpp>
 #include <uhd/types/sensors.hpp>
+#include <boost/noncopyable.hpp>
 #include <complex>
 #include <vector>
 #include <map>
-#include "boost/assign.hpp"
-#include "boost/bind.hpp"
-#include "boost/function.hpp"
+#include <tuple>
+#include <functional>
+#include <mutex>
 
 namespace uhd { namespace usrp {
 
@@ -38,37 +37,122 @@ public:
         _tfir_factor(0), _rfir_factor(0),
         _rx1_agc_mode(GAIN_MODE_MANUAL), _rx2_agc_mode(GAIN_MODE_MANUAL),
         _rx1_agc_enable(false), _rx2_agc_enable(false),
-        _use_dc_offset_tracking(false), _use_iq_balance_tracking(false)
+        _use_dc_offset_tracking(false), _use_iq_balance_tracking(false),
+        _rx_filters{
+            {"LPF_TIA", std::make_tuple(
+                    [this](const chain_t){
+                        return this->_get_filter_lp_tia_sec(RX);
+                    },
+                    [this](const chain_t, filter_info_base::sptr filter_info){
+                        this->_set_filter_lp_tia_sec(RX, filter_info);
+                    }
+                )
+            },
+            {"LPF_BB", std::make_tuple(
+                    [this](const chain_t){
+                        return this->_get_filter_lp_bb(RX);
+                    },
+                    [this](const chain_t, filter_info_base::sptr filter_info){
+                        this->_set_filter_lp_bb(RX, filter_info);
+                    }
+                )
+            },
+            {"HB_3", std::make_tuple(
+                    [this](const chain_t){
+                        return this->_get_filter_hb_3(RX);
+                    },
+                    nullptr
+                )
+            },
+            {"DEC_3", std::make_tuple(
+                    [this](const chain_t){
+                        return this->_get_filter_dec_int_3(RX);
+                    },
+                    nullptr
+                )
+            },
+            {"HB_2", std::make_tuple(
+                    [this](const chain_t){
+                        return this->_get_filter_hb_2(RX);
+                    },
+                    nullptr
+                )
+            },
+            {"HB_1", std::make_tuple(
+                    [this](const chain_t){
+                        return this->_get_filter_hb_1(RX);
+                    },
+                    nullptr
+                )
+            },
+            {"FIR_1", std::make_tuple(
+                    [this](const chain_t channel){
+                        return this->_get_filter_fir(RX, channel);
+                    },
+                    [this](const chain_t channel, filter_info_base::sptr filter_info){
+                        this->_set_filter_fir(RX, channel, filter_info);
+                    }
+                )
+            }
+        },
+        _tx_filters{
+            {"LPF_SECONDARY", std::make_tuple(
+                    [this](const chain_t){
+                        return this->_get_filter_lp_tia_sec(TX);
+                    },
+                    [this](const chain_t, filter_info_base::sptr filter_info){
+                        this->_set_filter_lp_tia_sec(TX, filter_info);
+                    }
+                )
+            },
+            {"LPF_BB", std::make_tuple(
+                    [this](const chain_t){
+                        return this->_get_filter_lp_bb(TX);
+                    },
+                    [this](const chain_t, filter_info_base::sptr filter_info){
+                        this->_set_filter_lp_bb(TX, filter_info);
+                    }
+                )
+            },
+            {"HB_3", std::make_tuple(
+                    [this](const chain_t){
+                        return this->_get_filter_hb_3(TX);
+                    },
+                    nullptr
+                )
+            },
+            {"INT_3", std::make_tuple(
+                    [this](const chain_t){
+                        return this->_get_filter_dec_int_3(TX);
+                    },
+                    nullptr
+                )
+            },
+            {"HB_2", std::make_tuple(
+                    [this](const chain_t){
+                        return this->_get_filter_hb_2(TX);
+                    },
+                    nullptr
+                )
+            },
+            {"HB_1", std::make_tuple(
+                    [this](const chain_t){
+                        return this->_get_filter_hb_1(TX);
+                    },
+                    nullptr
+                )
+            },
+            {"FIR_1", std::make_tuple(
+                    [this](const chain_t channel){
+                        return this->_get_filter_fir(TX, channel);
+                    },
+                    [this](const chain_t channel, filter_info_base::sptr filter_info){
+                        this->_set_filter_fir(TX, channel, filter_info);
+                    }
+                )
+            },
+        }
     {
-
-        /*
-         * This Boost.Assign to_container() workaround is necessary because STL containers
-         * apparently confuse newer versions of MSVC.
-         *
-         * Source: http://www.boost.org/doc/libs/1_55_0/libs/assign/doc/#portability
-         */
-
-        _rx_filters = (boost::assign::map_list_of("LPF_TIA", filter_query_helper(boost::bind(&ad9361_device_t::_get_filter_lp_tia_sec, this, _1),
-                                                    boost::bind(&ad9361_device_t::_set_filter_lp_tia_sec, this, _1, _3)))
-                                            ("LPF_BB", filter_query_helper(boost::bind(&ad9361_device_t::_get_filter_lp_bb, this, _1),
-                                                    boost::bind(&ad9361_device_t::_set_filter_lp_bb, this, _1, _3)))
-                                            ("HB_3", filter_query_helper(boost::bind(&ad9361_device_t::_get_filter_hb_3, this, _1), 0))
-                                            ("DEC_3", filter_query_helper(boost::bind(&ad9361_device_t::_get_filter_dec_int_3, this, _1), 0))
-                                            ("HB_2", filter_query_helper(boost::bind(&ad9361_device_t::_get_filter_hb_2, this, _1), 0))
-                                            ("HB_1", filter_query_helper(boost::bind(&ad9361_device_t::_get_filter_hb_1, this, _1), 0))
-                                            ("FIR_1", filter_query_helper(boost::bind(&ad9361_device_t::_get_filter_fir, this, _1, _2),
-                                                    boost::bind(&ad9361_device_t::_set_filter_fir, this, _1, _2, _3)))).to_container(_rx_filters);
-
-        _tx_filters = (boost::assign::map_list_of("LPF_SECONDARY", filter_query_helper(boost::bind(&ad9361_device_t::_get_filter_lp_tia_sec, this, _1),
-                                                    boost::bind(&ad9361_device_t::_set_filter_lp_tia_sec, this, _1, _3)))
-                                            ("LPF_BB", filter_query_helper(boost::bind(&ad9361_device_t::_get_filter_lp_bb, this, _1),
-                                                    boost::bind(&ad9361_device_t::_set_filter_lp_bb, this, _1, _3)))
-                                            ("HB_3", filter_query_helper(boost::bind(&ad9361_device_t::_get_filter_hb_3, this, _1), 0))
-                                            ("INT_3", filter_query_helper(boost::bind(&ad9361_device_t::_get_filter_dec_int_3, this, _1), 0))
-                                            ("HB_2", filter_query_helper(boost::bind(&ad9361_device_t::_get_filter_hb_2, this, _1), 0))
-                                            ("HB_1", filter_query_helper(boost::bind(&ad9361_device_t::_get_filter_hb_1, this, _1), 0))
-                                            ("FIR_1", filter_query_helper(boost::bind(&ad9361_device_t::_get_filter_fir, this, _1, _2),
-                                                    boost::bind(&ad9361_device_t::_set_filter_fir, this, _1, _2, _3)))).to_container(_tx_filters);
     }
 
     /* Initialize the AD9361 codec. */
@@ -233,22 +317,6 @@ private:    //Members
         uint8_t bbftune_mode;
     };
 
-    struct filter_query_helper
-    {
-        filter_query_helper(
-                boost::function<filter_info_base::sptr (direction_t, chain_t)> p_get,
-                boost::function<void (direction_t, chain_t, filter_info_base::sptr)> p_set
-                ) : get(p_get), set(p_set) {  }
-
-        filter_query_helper(){ }
-
-        boost::function<filter_info_base::sptr (direction_t, chain_t)> get;
-        boost::function<void (direction_t, chain_t, filter_info_base::sptr)> set;
-    };
-
-    std::map<std::string, filter_query_helper> _rx_filters;
-    std::map<std::string, filter_query_helper> _tx_filters;
-
     //Interfaces
     ad9361_params::sptr _client_params;
     ad9361_io::sptr     _io_iface;
@@ -276,9 +344,18 @@ private:    //Members
     //Register soft-copies
     chip_regs_t         _regs;
     //Synchronization
-    boost::recursive_mutex  _mutex;
+    std::recursive_mutex  _mutex;
     bool _use_dc_offset_tracking;
     bool _use_iq_balance_tracking;
+
+    // Filter API
+    using filter_tuple = std::tuple<
+        std::function<filter_info_base::sptr(const chain_t)>, // getter
+        std::function<void(chain_t, filter_info_base::sptr)>  // setter
+    >;
+    std::map<std::string, filter_tuple> _rx_filters;
+    std::map<std::string, filter_tuple> _tx_filters;
+
 };
 
 }}  //namespace
