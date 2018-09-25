@@ -24,7 +24,7 @@
 #define UHD_DPDK_MAX_WAITERS UHD_DPDK_MAX_SOCKET_CNT
 #define UHD_DPDK_TXQ_SIZE 64
 #define UHD_DPDK_TX_BURST_SIZE (UHD_DPDK_TXQ_SIZE - 1)
-#define UHD_DPDK_RXQ_SIZE 64
+#define UHD_DPDK_RXQ_SIZE 128
 #define UHD_DPDK_RX_BURST_SIZE (UHD_DPDK_RXQ_SIZE - 1)
 
 struct uhd_dpdk_port;
@@ -256,13 +256,10 @@ static inline struct uhd_dpdk_port * find_port(unsigned int portid)
     if (!ctx)
         return NULL;
 
-    for (unsigned int i = 0; i < ctx->num_threads; i++) {
-        struct uhd_dpdk_thread *t = &ctx->threads[i];
-        struct uhd_dpdk_port *p;
-        LIST_FOREACH(p, &t->port_list, port_entry) {
-            if (p->id == portid) {
-                return p;
-            }
+    for (unsigned int i = 0; i < ctx->num_ports; i++) {
+        struct uhd_dpdk_port *p = &ctx->ports[i];
+        if (p->id == portid) {
+            return p;
         }
     }
     return NULL;

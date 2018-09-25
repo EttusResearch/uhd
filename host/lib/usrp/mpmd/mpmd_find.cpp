@@ -8,6 +8,7 @@
 
 #include "mpmd_devices.hpp"
 #include "mpmd_impl.hpp"
+#include <uhdlib/transport/dpdk_common.hpp>
 #include <uhd/transport/if_addrs.hpp>
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/types/device_addr.hpp>
@@ -193,6 +194,15 @@ device_addrs_t mpmd_find_with_bcast(const device_addr_t& hint)
  */
 device_addrs_t mpmd_find(const device_addr_t& hint_)
 {
+#ifdef HAVE_DPDK
+    // Start DPDK so links come up
+    if (hint_.has_key("use_dpdk")) {
+        auto& dpdk_ctx = uhd::transport::uhd_dpdk_ctx::get();
+        if (not dpdk_ctx.is_init_done()) {
+            dpdk_ctx.init(hint_);
+        }
+    }
+#endif
     device_addrs_t hints = separate_device_addr(hint_);
     if (hint_.has_key("type")) {
         if (std::find(MPM_DEVICE_TYPES.cbegin(), MPM_DEVICE_TYPES.cend(), hint_["type"])

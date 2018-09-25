@@ -34,6 +34,20 @@ int uhd_dpdk_port_count(void)
     return ctx->num_ports;
 }
 
+int uhd_dpdk_port_link_status(unsigned int portid)
+{
+    if (!ctx)
+        return -ENODEV;
+
+    struct uhd_dpdk_port *p = find_port(portid);
+    if (p) {
+        struct rte_eth_link link;
+        rte_eth_link_get_nowait(p->id, &link);
+        return link.link_status;
+    }
+    return -ENODEV;
+}
+
 struct eth_addr uhd_dpdk_get_eth_addr(unsigned int portid)
 {
     struct eth_addr retval;
@@ -43,6 +57,7 @@ struct eth_addr uhd_dpdk_get_eth_addr(unsigned int portid)
     if (p) {
         memcpy(retval.addr, p->mac_addr.addr_bytes, ETHER_ADDR_LEN);
     }
+
     return retval;
 }
 
@@ -211,18 +226,11 @@ static int uhd_dpdk_thread_init(struct uhd_dpdk_thread *thread, unsigned int lco
     return 0;
 }
 
-
-int uhd_dpdk_init(int argc, const char **argv, unsigned int num_ports,
-                  int *port_thread_mapping, int num_mbufs, int mbuf_cache_size,
-                  int mtu)
+int uhd_dpdk_init(int argc, const char **argv)
 {
     /* Init context only once */
     if (ctx)
         return 1;
-
-    if ((num_ports == 0) || (port_thread_mapping == NULL)) {
-        return -EINVAL;
-    }
 
     /* Grabs arguments intended for DPDK's EAL */
     int ret = rte_eal_init(argc, (char **) argv);
@@ -241,8 +249,6 @@ int uhd_dpdk_init(int argc, const char **argv, unsigned int num_ports,
     ctx->num_ports = rte_eth_dev_count();
     if (ctx->num_ports < 1)
         rte_exit(EXIT_FAILURE, "Error: Found no ports\n");
-    if (ctx->num_ports < num_ports)
-        rte_exit(EXIT_FAILURE, "Error: User requested more ports than available\n");
 
     /* Get memory for thread and port data structures */
     ctx->threads = rte_zmalloc("uhd_dpdk_thread", RTE_MAX_LCORE*sizeof(struct uhd_dpdk_thread), 0);
@@ -251,6 +257,28 @@ int uhd_dpdk_init(int argc, const char **argv, unsigned int num_ports,
     ctx->ports = rte_zmalloc("uhd_dpdk_port", ctx->num_ports*sizeof(struct uhd_dpdk_port), 0);
     if (!ctx->ports)
         rte_exit(EXIT_FAILURE, "Error: Could not allocate memory for port data\n");
+
+    for (size_t i = 0; i < ctx->num_ports; i++) {
+        struct uhd_dpdk_port *port = &ctx->ports[i];
+        port->id = i;
+        rte_eth_macaddr_get(port->id, &port->mac_addr);
+    }
+
+    return 0;
+}
+
+int uhd_dpdk_start(unsigned int num_ports, int *port_thread_mapping,
+                   int num_mbufs, int mbuf_cache_size, int mtu)
+{
+    if (!ctx)
+        return -EIO;
+
+    if ((num_ports == 0) || (port_thread_mapping == NULL)) {
+        return -EINVAL;
+    }
+
+    if (ctx->num_ports < num_ports)
+        rte_exit(EXIT_FAILURE, "Error: User requested more ports than available\n");
 
     /* Initialize the thread data structures */
     for (int i = rte_get_next_lcore(-1, 1, 0);
@@ -306,7 +334,6 @@ int uhd_dpdk_init(int argc, const char **argv, unsigned int num_ports,
             rte_exit(EXIT_FAILURE, "Requested inactive lcore %u for port %u\n", (unsigned int) thread_id, i);
 
         struct uhd_dpdk_port *port = &ctx->ports[i];
-        port->id = i;
         port->parent = &ctx->threads[thread_id];
         ctx->threads[thread_id].num_ports++;
         LIST_INSERT_HEAD(&ctx->threads[thread_id].port_list, port, port_entry);

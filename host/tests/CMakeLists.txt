@@ -113,6 +113,10 @@ if(ENABLE_DPDK)
     include_directories(${DPDK_INCLUDE_DIR})
     add_executable(dpdk_test
         dpdk_test.cpp
+        ${CMAKE_SOURCE_DIR}/lib/utils/config_parser.cpp
+        ${CMAKE_SOURCE_DIR}/lib/utils/paths.cpp
+        ${CMAKE_SOURCE_DIR}/lib/utils/pathslib.cpp
+        ${CMAKE_SOURCE_DIR}/lib/utils/prefs.cpp
         ${CMAKE_SOURCE_DIR}/lib/transport/dpdk_zero_copy.cpp
     )
     target_link_libraries(dpdk_test uhd ${Boost_LIBRARIES} ${DPDK_LIBRARIES})

@@ -15,6 +15,7 @@ struct uhd_dpdk_udp_priv {
     uint32_t dst_ipv4_addr;
     size_t dropped_pkts;
     size_t xferd_pkts;
+    bool filter_bcast;
     /* TODO: Cache destination address ptr to avoid ARP table lookup cost? */
     //struct uhd_dpdk_arp_entry *arp_entry;
 };

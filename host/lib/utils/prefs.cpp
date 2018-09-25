@@ -48,6 +48,23 @@ namespace {
                 uhd::prefs::get_uhd_config().get<std::string>(key_str, key);
         }
     }
+
+    device_addr_t get_args(
+        const uhd::device_addr_t& user_args,
+        const std::vector<std::string>& keys_to_update_from
+    ) {
+        device_addr_t args;
+        for (const auto& key : keys_to_update_from) {
+            update_from_key(key, user_args.get(key, ""), args);
+        }
+
+        // Finally, copy over the original user args:
+        for (const auto& user_key : user_args.keys()) {
+            args[user_key] = user_args[user_key];
+        }
+
+        return args;
+    }
 }
 
 config_parser& uhd::prefs::get_uhd_config()
@@ -81,22 +98,28 @@ config_parser& uhd::prefs::get_uhd_config()
 device_addr_t uhd::prefs::get_usrp_args(
     const uhd::device_addr_t &user_args
 ) {
-    device_addr_t usrp_args;
     const std::vector<std::string> keys_to_update_from = {
         "type",
         "product",
         "serial"
     };
-
-    for (const auto& key : keys_to_update_from) {
-        update_from_key(key, user_args.get(key, ""), usrp_args);
-    }
-
-    // Finally, copy over the original user args:
-    for (const auto &user_key : user_args.keys()) {
-        usrp_args[user_key] = user_args[user_key];
-    }
-
-    return usrp_args;
+    return get_args(user_args, keys_to_update_from);
 }
 
+device_addr_t uhd::prefs::get_dpdk_args(
+    const uhd::device_addr_t &user_args
+) {
+    const std::vector<std::string> keys_to_update_from = {
+        "use_dpdk"
+    };
+    return get_args(user_args, keys_to_update_from);
+}
+
+device_addr_t uhd::prefs::get_dpdk_nic_args(
+    const uhd::device_addr_t &user_args
+) {
+    const std::vector<std::string> keys_to_update_from = {
+        "dpdk-mac"
+    };
+    return get_args(user_args, keys_to_update_from);
+}

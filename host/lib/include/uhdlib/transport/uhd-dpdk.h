@@ -31,12 +31,22 @@ enum uhd_dpdk_sock_type {
 };
 
 /**
- * Init UHD-DPDK environment and bring up ports (link UP).
- *
- * Offload capabilities will be used if available
+ * Init UHD-DPDK environment, including DPDK's EAL.
+ * This will make available information about the DPDK-assigned NIC devices.
  * 
  * @param argc passed directly to rte_eal_init()
  * @param argv passed directly to rte_eal_init()
+ *
+ * @return Returns negative error code if there were issues, else 0
+ */
+int uhd_dpdk_init(int argc, const char **argv);
+
+/**
+ * Start UHD-DPDK networking stack. Bring ports up (link UP).
+ * uhd_dpdk_init() must be called first.
+ *
+ * Offload capabilities will be used if available
+ *
  * @param num_ports number of network interfaces to map
  * @param port_thread_mapping array of num_ports entries specifying which thread
  *     will drive the I/O for a given port (determined by array index)
@@ -47,15 +57,20 @@ enum uhd_dpdk_sock_type {
  *
  * @return Returns negative error code if there were issues, else 0
  */
-int uhd_dpdk_init(int argc, const char **argv, unsigned int num_ports,
-                  int *port_thread_mapping, int num_mbufs, int mbuf_cache_size,
-                  int mtu);
+int uhd_dpdk_start(unsigned int num_ports, int *port_thread_mapping,
+                   int num_mbufs, int mbuf_cache_size, int mtu);
 
 /**
  * @return Returns number of ports registered to DPDK.
  *         Returns negative error value if uhd-dpdk hasn't been init'd
  */
 int uhd_dpdk_port_count(void);
+
+/**
+ * @return Returns 0 if link is down, 1 if link is up, and negative error code
+ *         if error occurred.
+ */
+int uhd_dpdk_port_link_status(unsigned int portid);
 
 /**
  * @return Returns Ethernet MAC address of requested port
@@ -121,17 +136,21 @@ int uhd_dpdk_sock_close(struct uhd_dpdk_socket *sock);
 
 /**
  * Arguments for a UDP socket
- * All data should be provided in network format
+ * All address/port data should be provided in network format
  */
 struct uhd_dpdk_sockarg_udp {
     /*! True for TX socket, false for RX socket */
     bool     is_tx;
+    /*! True to filter broadcast packets, else recv */
+    bool     filter_bcast;
     /*! Local udp port. This is dst_port for RX, src_port for TX */
     uint16_t local_port;
     /*! Remote udp port. This is dst_port for TX */
     uint16_t remote_port;
     /*! IPv4 address for destination (TX) */
     uint32_t dst_addr;
+    /*! Number of buffers in ring */
+    size_t   num_bufs;
 };
 
 /**

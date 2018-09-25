@@ -11,6 +11,9 @@
 #ifdef HAVE_LIBERIO
 #    include "mpmd_xport_ctrl_liberio.hpp"
 #endif
+#ifdef HAVE_DPDK
+#    include "mpmd_xport_ctrl_dpdk_udp.hpp"
+#endif
 
 uhd::dict<std::string, std::string> uhd::mpmd::xport::filter_args(
     const uhd::device_addr_t& args, const std::string& prefix)
@@ -114,6 +117,11 @@ private:
         const std::string& xport_medium, const uhd::device_addr_t& mb_args) const
     {
         if (xport_medium == "UDP") {
+#ifdef HAVE_DPDK
+            if (mb_args.has_key("use_dpdk")) {
+                return mpmd_xport_ctrl_base::uptr(new mpmd_xport_ctrl_dpdk_udp(mb_args));
+	    }
+#endif
             return mpmd_xport_ctrl_base::uptr(new mpmd_xport_ctrl_udp(mb_args));
 #ifdef HAVE_LIBERIO
         } else if (xport_medium == "liberio") {

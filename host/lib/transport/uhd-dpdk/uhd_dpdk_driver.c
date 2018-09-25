@@ -43,7 +43,6 @@ int _uhd_dpdk_arp_reply(struct uhd_dpdk_port *port, struct arp_hdr *arp_req)
 
     mbuf->pkt_len = 42;
     mbuf->data_len = 42;
-    mbuf->ol_flags = PKT_TX_IP_CKSUM;
 
     if (rte_eth_tx_burst(port->id, 0, &mbuf, 1) != 1) {
         RTE_LOG(WARNING, RING, "%s: TX descriptor ring is full\n", __func__);
@@ -125,7 +124,6 @@ int _uhd_dpdk_arp_request(struct uhd_dpdk_port *port, uint32_t ip)
 
     mbuf->pkt_len = 42;
     mbuf->data_len = 42;
-    mbuf->ol_flags = PKT_TX_IP_CKSUM;
 
     if (rte_eth_tx_burst(port->id, 0, &mbuf, 1) != 1) {
         RTE_LOG(WARNING, RING, "%s: TX descriptor ring is full\n", __func__);
@@ -135,7 +133,8 @@ int _uhd_dpdk_arp_request(struct uhd_dpdk_port *port, uint32_t ip)
     return 0;
 }
 
-int _uhd_dpdk_process_udp(struct uhd_dpdk_port *port, struct rte_mbuf *mbuf, struct udp_hdr *pkt)
+int _uhd_dpdk_process_udp(struct uhd_dpdk_port *port, struct rte_mbuf *mbuf,
+                          struct udp_hdr *pkt, bool bcast)
 {
     int status = 0;
     struct uhd_dpdk_ipv4_5tuple ht_key = {
@@ -155,6 +154,10 @@ int _uhd_dpdk_process_udp(struct uhd_dpdk_port *port, struct rte_mbuf *mbuf, str
     }
 
     struct uhd_dpdk_udp_priv *pdata = (struct uhd_dpdk_udp_priv *) entry->sock->priv;
+    if (bcast && pdata->filter_bcast) {
+        // Filter broadcast packets if not listening
+        goto udp_rx_drop;
+    }
     status = rte_ring_enqueue(entry->sock->rx_ring, mbuf);
     if (entry->waiter) {
         _uhd_dpdk_waiter_wake(entry->waiter, port->parent);
@@ -172,14 +175,16 @@ udp_rx_drop:
     return status;
 }
 
-int _uhd_dpdk_process_ipv4(struct uhd_dpdk_port *port, struct rte_mbuf *mbuf, struct ipv4_hdr *pkt)
+int _uhd_dpdk_process_ipv4(struct uhd_dpdk_port *port, struct rte_mbuf *mbuf,
+                           struct ipv4_hdr *pkt)
 {
-    if (pkt->dst_addr != port->ipv4_addr) {
+    bool bcast = is_broadcast(port, pkt->dst_addr);
+    if (pkt->dst_addr != port->ipv4_addr && !bcast) {
         rte_pktmbuf_free(mbuf);
         return -ENODEV;
     }
     if (pkt->next_proto_id == 0x11) {
-        return _uhd_dpdk_process_udp(port, mbuf, (struct udp_hdr *) &pkt[1]);
+        return _uhd_dpdk_process_udp(port, mbuf, (struct udp_hdr *) &pkt[1], bcast);
     }
     rte_pktmbuf_free(mbuf);
     return -EINVAL;
@@ -417,7 +422,7 @@ static inline void _uhd_dpdk_rx_burst(struct uhd_dpdk_port *port)
             rte_pktmbuf_free(bufs[buf]);
             break;
         case ETHER_TYPE_IPv4:
-            if (ol_flags == PKT_RX_IP_CKSUM_BAD) { /* TODO: Track IP cksum errors? */
+            if (ol_flags & PKT_RX_IP_CKSUM_BAD) {
                 RTE_LOG(WARNING, RING, "Buf %d: Bad IP cksum\n", buf);
             } else {
                 _uhd_dpdk_process_ipv4(port, bufs[buf], (struct ipv4_hdr *) l2_data);

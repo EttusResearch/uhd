@@ -19,7 +19,8 @@
  * I/O thread ONLY
  */
 
-static int _alloc_txq(struct uhd_dpdk_port *port, pthread_t tid, struct uhd_dpdk_tx_queue **queue)
+static int _alloc_txq(struct uhd_dpdk_port *port, pthread_t tid,
+    struct uhd_dpdk_tx_queue **queue, size_t num_bufs)
 {
     *queue = NULL;
     struct uhd_dpdk_tx_queue *q = rte_zmalloc(NULL, sizeof(*q), 0);
@@ -31,25 +32,25 @@ static int _alloc_txq(struct uhd_dpdk_port *port, pthread_t tid, struct uhd_dpdk
     LIST_INIT(&q->tx_list);
 
     char name[32];
-    snprintf(name, sizeof(name), "tx_ring_udp_%u.%u", port->id, tid);
+    snprintf(name, sizeof(name), "tx_q%u.%0lx", port->id, (unsigned long) q);
     q->queue = rte_ring_create(
                         name,
-                        UHD_DPDK_TXQ_SIZE,
+                        num_bufs,
                         rte_socket_id(),
                         RING_F_SC_DEQ | RING_F_SP_ENQ
                     );
-    snprintf(name, sizeof(name), "buffer_ring_udp_%u.%u", port->id, tid);
+    snprintf(name, sizeof(name), "free_q%u.%0lx", port->id, (unsigned long) q);
     q->freebufs = rte_ring_create(
                         name,
-                        UHD_DPDK_TXQ_SIZE,
+                        num_bufs,
                         rte_socket_id(),
                         RING_F_SC_DEQ | RING_F_SP_ENQ
                     );
     /* Set up retry queue */
-    snprintf(name, sizeof(name), "retry_queue_%u", port->id);
+    snprintf(name, sizeof(name), "redo_q%u.%0lx", port->id, (unsigned long) q);
     q->retry_queue = rte_ring_create(
                                name,
-                               UHD_DPDK_TXQ_SIZE,
+                               num_bufs,
                                rte_socket_id(),
                                RING_F_SC_DEQ | RING_F_SP_ENQ
                             );
@@ -65,24 +66,39 @@ static int _alloc_txq(struct uhd_dpdk_port *port, pthread_t tid, struct uhd_dpdk
         rte_free(q);
         return -ENOMEM;
     }
-    struct rte_mbuf *bufs[UHD_DPDK_TXQ_SIZE];
-    unsigned int num_bufs = rte_ring_free_count(q->freebufs);
-    int buf_stat = rte_pktmbuf_alloc_bulk(port->parent->tx_pktbuf_pool, bufs, num_bufs);
-    if (buf_stat) {
-        rte_ring_free(q->freebufs);
-        rte_ring_free(q->queue);
-        rte_ring_free(q->retry_queue);
-        rte_free(q);
-        RTE_LOG(ERR, USER1, "%s: Cannot allocate packet buffers\n", __func__);
-        return -ENOENT;
-    }
-    unsigned int enqd = rte_ring_enqueue_bulk(q->freebufs, (void **) bufs, num_bufs, NULL);
-    if (enqd != num_bufs) {
-        RTE_LOG(ERR, USER1, "%s: Cannot enqueue freebufs\n", __func__);
-    }
+
+    do {
+        struct rte_mbuf *bufs[UHD_DPDK_TXQ_SIZE];
+        num_bufs = rte_ring_free_count(q->freebufs);
+        if (num_bufs > 0) {
+            num_bufs = num_bufs > UHD_DPDK_TXQ_SIZE ? UHD_DPDK_TXQ_SIZE : num_bufs;
+            int buf_stat = rte_pktmbuf_alloc_bulk(port->parent->tx_pktbuf_pool, bufs, num_bufs);
+            if (buf_stat) {
+                RTE_LOG(ERR, USER1, "%s: Cannot allocate packet buffers\n", __func__);
+                goto unwind_txq;
+            }
+            unsigned int enqd = rte_ring_enqueue_bulk(q->freebufs, (void **) bufs, num_bufs, NULL);
+            if (enqd != num_bufs) {
+                RTE_LOG(ERR, USER1, "%s: Cannot enqueue freebufs\n", __func__);
+                goto unwind_txq;
+            }
+        }
+    } while (num_bufs > 0);
     LIST_INSERT_HEAD(&port->txq_list, q, entry);
     *queue = q;
     return 0;
+
+unwind_txq:
+    while (!rte_ring_empty(q->freebufs)) {
+        struct rte_mbuf *buf;
+        if (rte_ring_dequeue(q->freebufs, (void **) &buf) == 0)
+            rte_free(buf);
+    }
+    rte_ring_free(q->freebufs);
+    rte_ring_free(q->queue);
+    rte_ring_free(q->retry_queue);
+    rte_free(q);
+    return -ENOENT;
 }
 
 /* Finish setting up UDP socket (unless ARP needs to be done)
@@ -134,11 +150,14 @@ int _uhd_dpdk_udp_setup(struct uhd_dpdk_config_req *req)
             return -EADDRINUSE;
         }
 
+        size_t num_bufs = (pdata->xferd_pkts < (UHD_DPDK_RX_BURST_SIZE + 1)) ?
+                          UHD_DPDK_RX_BURST_SIZE + 1 : pdata->xferd_pkts;
+        pdata->xferd_pkts = 0;
         char name[32];
         snprintf(name, sizeof(name), "rx_ring_udp_%u.%u", port->id, ntohs(pdata->dst_port));
         sock->rx_ring = rte_ring_create(
                             name,
-                            UHD_DPDK_RXQ_SIZE,
+                            num_bufs,
                             rte_socket_id(),
                             RING_F_SC_DEQ | RING_F_SP_ENQ
                         );
@@ -172,6 +191,9 @@ int _uhd_dpdk_udp_setup(struct uhd_dpdk_config_req *req)
 
     /* Are we doing TX? */
     if (sock->tx_queue) {
+        size_t num_bufs = (pdata->xferd_pkts < (UHD_DPDK_TX_BURST_SIZE + 1)) ?
+                          UHD_DPDK_TX_BURST_SIZE + 1 : pdata->xferd_pkts;
+        pdata->xferd_pkts = 0;
         sock->tx_queue = NULL;
         struct uhd_dpdk_tx_queue *q = NULL;
         // FIXME Not sharing txq across all thread's sockets for now
@@ -184,7 +206,7 @@ int _uhd_dpdk_udp_setup(struct uhd_dpdk_config_req *req)
         //    }
         //}
         if (!sock->tx_queue) {
-            retval = _alloc_txq(port, sock->tid, &q);
+            retval = _alloc_txq(port, sock->tid, &q, num_bufs);
             if (retval) {
                 _uhd_dpdk_config_req_compl(req, retval);
                 return retval;
@@ -385,10 +407,13 @@ void uhd_dpdk_udp_open(struct uhd_dpdk_config_req *req,
         data->src_port = arg->local_port;
         data->dst_port = arg->remote_port;
         sock->tx_queue = (struct uhd_dpdk_tx_queue *) sock;
+        data->xferd_pkts = arg->num_bufs;
     } else {
         data->src_port = arg->remote_port;
         data->dst_port = arg->local_port;
         sock->rx_ring = (struct rte_ring *) sock;
+        data->xferd_pkts = arg->num_bufs;
+        data->filter_bcast = arg->filter_bcast;
     }
 
     /* TODO: Add support for I/O thread calling (skip locking and sleep) */
@@ -433,6 +458,7 @@ static void uhd_dpdk_ipv4_prep(struct uhd_dpdk_port *port,
     ip_hdr->time_to_live = 64;
     ip_hdr->next_proto_id = proto_id;
     ip_hdr->hdr_checksum = 0; /* FIXME: Assuming hardware can offload */
+    mbuf->ol_flags |= PKT_TX_IP_CKSUM;
     ip_hdr->src_addr = port->ipv4_addr;
     ip_hdr->dst_addr = dst_ipv4_addr;
 
