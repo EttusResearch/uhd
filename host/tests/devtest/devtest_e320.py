@@ -23,7 +23,7 @@ uhd_benchmark_rate_test.tests = {
         'duration': 1,
         'direction': 'tx,rx',
         'chan': '0,1',
-        'rate': 12.5e6,
+        'rate': 8e6,
         'acceptable-underruns': 500,
         'tx_buffer': (0.1*12.5e6)+32e6*8*1/32,  # 32 MB DRAM for each channel (32 bit OTW format),
         'rx_buffer': 0.1*12.5e6,
