@@ -314,3 +314,9 @@ class LMK04828Rh(LMK04828):
         # Put everything back the way it was before shifting.
         self.poke8(0x144, 0xFF) # Disable SYNC on all outputs including SYSREF
         self.poke8(0x143, 0x52) # Pulser selected; SYNC enabled; 1 shot enabled
+
+    def enable_tx_lb_lo(self, enb):
+        self.poke8(0x11F, 0x05 if enb else 0x00)
+
+    def enable_rx_lb_lo(self, enb):
+        self.poke8(0x12F, 0x85 if enb else 0x80)

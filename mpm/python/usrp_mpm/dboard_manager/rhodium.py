@@ -560,6 +560,20 @@ class Rhodium(DboardManagerBase):
             self.log.info("Re-initializing daughter board. This may take some time.")
             self._reinit(self.master_clock_rate)
             self.log.debug("Daughter board re-initialization done.")
+            
+    def enable_tx_lowband_lo(self, enable):
+        """
+        Enables or disables the TX lowband LO output from the LMK on the
+        daughterboard.
+        """
+        self.lmk.enable_tx_lb_lo(enable);
+        
+    def enable_rx_lowband_lo(self, enable):
+        """
+        Enables or disables the RX lowband LO output from the LMK on the
+        daughterboard.
+        """
+        self.lmk.enable_rx_lb_lo(enable);
 
 
     ##########################################################################
