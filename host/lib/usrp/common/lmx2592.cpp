@@ -130,30 +130,6 @@ public:
         // The bit is cleared on the synth during the reset
         _regs.reset = 0;
 
-        // Enable SPI Readback
-        _regs.muxout_sel = lmx2592_regs_t::muxout_sel_t::MUXOUT_SEL_READBACK;
-        UHD_LOG_TRACE("LMX2592", "Enabling SPI Readback");
-        _write_fn(_regs.ADDR_R0, _regs.get_reg(_regs.ADDR_R0));
-
-        // Test Write/Read
-        const auto random_number = // Derived from current time
-            static_cast<uint16_t>(
-                std::chrono::system_clock::to_time_t(std::chrono::system_clock::now()) & 0x0FFF);
-        _write_fn(_regs.ADDR_R40, random_number);
-        const auto readback = _read_fn(_regs.ADDR_R40);
-        if (readback == random_number) {
-            UHD_LOG_TRACE("LMX2592", "Register loopback test passed");
-        } else {
-            throw runtime_error(
-                str(boost::format(
-                        "LMX2592 register loopback test failed. Expected 0x%04X, Read 0x%04X") %
-                    random_number % readback));
-        }
-
-        _regs.muxout_sel = lmx2592_regs_t::muxout_sel_t::MUXOUT_SEL_LOCK_DETECT;
-        UHD_LOG_TRACE("LMX2592", "Disabling SPI Readback");
-        _write_fn(_regs.ADDR_R0, _regs.get_reg(_regs.ADDR_R0));
-
         // Set register values where driver defaults differ from the datasheet values
         _regs.acal_enable = 0;
         _regs.fcal_enable = 0;
