@@ -91,24 +91,19 @@ time_spec_t &time_spec_t::operator+=(double &rhs){
     return *this;
 }
 
-time_spec_t time_spec_t::operator+(double &rhs){
-    double full_secs = std::trunc(rhs);
-    time_spec_t toRet(this->get_full_secs() + full_secs,
-         this->get_frac_secs() + rhs - full_secs);
-    return toRet;
-}
-
-time_spec_t time_spec_t::operator+(const time_spec_t &rhs){
-    time_spec_t toRet(
-        this->get_full_secs() + rhs.get_full_secs(),
-        this->get_frac_secs() + rhs.get_frac_secs());
-    return toRet;
-}
-
 time_spec_t &time_spec_t::operator-=(const time_spec_t &rhs){
     time_spec_init(
         this->get_full_secs() - rhs.get_full_secs(),
         this->get_frac_secs() - rhs.get_frac_secs()
+    );
+    return *this;
+}
+
+time_spec_t &time_spec_t::operator-=(double &rhs) {
+    double full_secs = std::trunc(rhs);
+    time_spec_init(
+        this->get_full_secs() - full_secs,
+        this->get_frac_secs() - (rhs - full_secs)
     );
     return *this;
 }
