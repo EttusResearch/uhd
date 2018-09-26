@@ -170,7 +170,7 @@ class LMK04828Rh(LMK04828):
             (0x12C, 0x00), # CLKout Config
             (0x12D, 0x00), # CLKout Config
             (0x12E, 0x71), # CLKout Config
-            (0x12F, 0x85), # CLKout Config
+            (0x12F, 0x05), # CLKout Config
             (0x130, convclk_div_val), # CLKout Config (ADC Clock)
             (0x131, convclk_cnt_val), # CLKout Config
             (0x132, 0x22), # CLKout Config
@@ -319,4 +319,4 @@ class LMK04828Rh(LMK04828):
         self.poke8(0x11F, 0x05 if enb else 0x00)
 
     def enable_rx_lb_lo(self, enb):
-        self.poke8(0x12F, 0x85 if enb else 0x80)
+        self.poke8(0x12F, 0x05 if enb else 0x00)
