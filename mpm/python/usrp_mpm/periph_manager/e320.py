@@ -305,7 +305,7 @@ class e320(ZynqComponents, PeriphManagerBase):
         for method_name in new_methods:
             try:
                 # Extract the sensor name from the getter
-                sensor_name = re.search(r"get_.*_sensor", method_name).string
+                sensor_name = re.search(r"get_(.*)_sensor", method_name).group(1)
                 # Register it with the MB sensor framework
                 self.mboard_sensor_callback_map[sensor_name] = method_name
                 self.log.trace("Adding %s sensor function", sensor_name)
