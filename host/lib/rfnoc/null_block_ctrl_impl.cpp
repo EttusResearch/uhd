@@ -7,6 +7,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/rfnoc/null_block_ctrl.hpp>
+#include <uhd/rfnoc/traffic_counter.hpp>
 #include <boost/format.hpp>
 
 using namespace uhd::rfnoc;
@@ -30,6 +31,21 @@ public:
             })
             .update()
         ;
+
+        traffic_counter::write_reg_fn_t write =
+            [this](const uint32_t addr, const uint32_t data) {
+                const uint64_t traffic_counter_sr_base = 192;
+                sr_write(addr+traffic_counter_sr_base, data);
+            };
+
+        traffic_counter::read_reg_fn_t read =
+            [this](const uint32_t addr) {
+                const uint64_t traffic_counter_rb_base = 64;
+                return user_reg_read64(addr+traffic_counter_rb_base);
+            };
+
+        _traffic_counter = std::make_shared<traffic_counter>(
+            _tree, _root_path, write, read);
     }
 
     void set_line_delay_cycles(int cycles)
@@ -101,6 +117,9 @@ public:
         }
         sr_write(SR_NEXT_DST_SID, sid.get(), output_block_port);
     }
+
+private:
+    traffic_counter::sptr _traffic_counter;
 };
 
 UHD_RFNOC_BLOCK_REGISTER(null_block_ctrl, "NullSrcSink");
