@@ -131,7 +131,7 @@ private: // member functions
         return _gps_data.fix.mode >= MODE_2D;
     }
 
-    std::time_t _epoch_time(void)
+    int64_t _epoch_time(void)
     {
         boost::shared_lock<boost::shared_mutex> l(_d_mutex);
         return (boost::posix_time::from_time_t(_gps_data.fix.time)
@@ -242,9 +242,9 @@ private: // member functions
             % tm.tm_hour
             % tm.tm_min
             % tm.tm_sec
-            % _deg_to_dm(std::fabs(_gps_data.fix.latitude))
+            % _zeroize(_deg_to_dm(std::fabs(_gps_data.fix.latitude)))
             % ((_gps_data.fix.latitude > 0) ? 'N' : 'S')
-            % _deg_to_dm(std::fabs(_gps_data.fix.longitude))
+            % _zeroize(_deg_to_dm(std::fabs(_gps_data.fix.longitude)))
             % ((_gps_data.fix.longitude > 0) ? 'E' : 'W')
             % _gps_data.status
             % _gps_data.satellites_used);
@@ -256,13 +256,13 @@ private: // member functions
                 str(boost::format("%.2f,") % _gps_data.dop.hdop));
 
         if (boost::math::isnan(_gps_data.fix.altitude))
-            string.append(",");
+            string.append(",,");
         else
             string.append(
                 str(boost::format("%.2f,M,") % _gps_data.fix.altitude));
 
         if (boost::math::isnan(_gps_data.separation))
-            string.append(",");
+            string.append(",,");
         else
             string.append(
                 str(boost::format("%.3f,M,") % _gps_data.separation));
