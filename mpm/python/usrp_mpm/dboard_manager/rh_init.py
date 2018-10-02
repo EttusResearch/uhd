@@ -34,13 +34,16 @@ class RhodiumInitManager(object):
     # Variable PPS delay before the RP/SP pulsers begin. Fixed value for the N3xx devices.
     N3XX_INT_PPS_DELAY = 4
     # JESD core default configuration.
-    # TODO: define the actual values for rx_sysref_delay and tx_sysref_delay.
     JESD_DEFAULT_ARGS = {"lmfc_divider"   : 12,
-                         "rx_sysref_delay": 8,
+                         "rx_sysref_delay": 5,
                          "tx_sysref_delay": 11,
                          "tx_driver_swing": 0b1101,
                          "tx_precursor"   : 0b00100,
                          "tx_postcursor"  : 0b00100}
+    # After testing the roundtrip latency (i.e. FPGA -> TX -> RX -> FPGA),
+    # it was found that a different value of RX SYSREF delay is required
+    # for sampling_clock_rate = 400 MSPS to achieve latency consistency.
+    RX_SYSREF_DLY_DIC = {400e6: 6, 491.52e6: 5, 500e6: 5}
 
 
     def __init__(self, rh_class, spi_ifaces):
@@ -251,7 +254,7 @@ class RhodiumInitManager(object):
         if not self.adc.check_framer_status():
             self.log.error("ADC JESD204B Framer is not synced!")
             error_flag = True
-        if not jesdcore.get_deframer_status(True): # TODO: Remove the boolean argument!
+        if not jesdcore.get_deframer_status():
             self.log.error("JESD204B FPGA Core Deframer is not synced!")
             error_flag = True
         if error_flag:
@@ -279,6 +282,14 @@ class RhodiumInitManager(object):
         perform_tx_prbs = False
         if 'tx_prbs' in args:
             perform_tx_prbs = (args['tx_prbs'] == 'True') or (args['tx_prbs'] == True)
+
+        # Latency across the JESD204B TX/RX links should remain constant and
+        # deterministic across the supported sampling_clock_rate values.
+        # After testing the roundtrip latency (i.e. FPGA -> TX -> RX -> FPGA),
+        # it was found that a different set of SYSREF delay values are required
+        # for sampling_clock_rate = 400 MSPS to achieve latency consistency.
+        self.JESD_DEFAULT_ARGS['rx_sysref_delay'] = \
+          self.RX_SYSREF_DLY_DIC[self.rh_class.sampling_clock_rate]
 
         # Bringup Sequence.
         #   1. Prerequisites (include opening mmaps)
