@@ -213,6 +213,10 @@ void rhodium_radio_ctrl_impl::_init_peripherals()
     _tx_fe_core->set_dc_offset(tx_frontend_core_200::DEFAULT_DC_OFFSET_VALUE);
     _tx_fe_core->set_iq_balance(tx_frontend_core_200::DEFAULT_IQ_BALANCE_VALUE);
     _tx_fe_core->populate_subtree(_tree->subtree(_root_path / "tx_fe_corrections" / 0));
+
+    UHD_LOG_TRACE(unique_id(), "Checking for existence of LO Distribution board");
+    _lo_dist_present = _rpcc->request_with_token<bool>(_rpc_prefix + "is_lo_dist_present");
+    UHD_LOG_DEBUG(unique_id(), str(boost::format("LO distribution board is%s present") % (_lo_dist_present ? "" : " NOT")));
 }
 
 void rhodium_radio_ctrl_impl::_init_frontend_subtree(
@@ -661,6 +665,28 @@ void rhodium_radio_ctrl_impl::_init_frontend_subtree(
             this->set_tx_lo_export_enabled(enabled, RHODIUM_LO2, chan_idx);
         })
     ;
+
+    //LO Distribution Output Ports
+    if (_lo_dist_present) {
+        for (const auto& port : LO_OUTPUT_PORT_NAMES) {
+            subtree->create<bool>(tx_fe_path / "los" / RHODIUM_LO1 / "lo_distribution" / port / "export")
+                .add_coerced_subscriber([this, chan_idx, port](bool enabled) {
+                    this->set_tx_lo_output_enabled(enabled, port, chan_idx);
+                })
+                .set_publisher([this, chan_idx, port]() {
+                    return this->get_tx_lo_output_enabled(port, chan_idx);
+                })
+            ;
+            subtree->create<bool>(rx_fe_path / "los" / RHODIUM_LO1 / "lo_distribution" / port / "export")
+                .add_coerced_subscriber([this, chan_idx, port](bool enabled) {
+                    this->set_tx_lo_output_enabled(enabled, port, chan_idx);
+                })
+                .set_publisher([this, chan_idx, port]() {
+                    return this->get_tx_lo_output_enabled(port, chan_idx);
+                })
+            ;
+        }
+    }
 }
 
 void rhodium_radio_ctrl_impl::_init_prop_tree()

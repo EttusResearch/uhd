@@ -26,8 +26,7 @@ class TCA6408(object):
     )
 
     def __init__(self, i2c_dev):
-        if i2c_dev is None:
-            raise RuntimeError("Need to specify i2c device to use the TCA6408")
+        assert i2c_dev is not None
         self._gpios = SysFSGPIO({'label': 'tca6408'}, 0x3F, 0x00, 0x00, i2c_dev)
 
     def set(self, name, value=None):
@@ -41,6 +40,77 @@ class TCA6408(object):
         """
         Deassert a pin by name
         """
+        self.set(name, value=0)
+
+    def get(self, name):
+        """
+        Read back a pin by name
+        """
+        assert name in self.pins
+        return self._gpios.get(self.pins.index(name))
+
+class FPGAtoLoDist(object):
+    """
+    Abstraction layer for the port/gpio expander on the LO Distribution board
+    """
+    EXPECTED_BOARD_REV = 0
+    POWER_ON_TIMEOUT = 20 #ms
+    POWER_ON_POLL_INTERVAL = 1 #ms
+
+    pins = (
+        'BD_REV_0', #Board revision bit 0
+        'BD_REV_1', #Board revision bit 1
+        'BD_REV_2', #Board revision bit 2
+        'P6_8V_PG', #6.8V Power good
+        '4', #No connect
+        '5', #No connect
+        '6', #No connect
+        '7', #No connect
+        'RX_OUT0_CTRL', #RX Out0 Port Termination Switch
+        'RX_OUT1_CTRL', #RX Out1 Port Termination Switch
+        'RX_OUT2_CTRL', #RX Out2 Port Termination Switch
+        'RX_OUT3_CTRL', #RX Out3 Port Termination Switch
+        'RX_INSWITCH_CTRL', #RX 1:4 splitter input select
+        'TX_OUT0_CTRL', #TX Out0 Port Termination Switch
+        'TX_OUT1_CTRL', #TX Out1 Port Termination Switch
+        'TX_OUT2_CTRL', #TX Out2 Port Termination Switch
+        'TX_OUT3_CTRL', #TX Out3 Port Termination Switch
+        'TX_INSWITCH_CTRL', #TX 1:4 splitter input select
+        'P6_8V_EN', #6.8V supply enable
+        'P6_5V_LDO_EN', #6.5V LDO enable
+        'P3_3V_RF_EN' #3.3V LDO for RF enable
+    )
+
+    def __init__(self, i2c_dev):
+        assert i2c_dev is not None
+        self._gpios = SysFSGPIO({'label': 'tca6424', 'device/of_node/name': 'rhodium-lodist-gpio'}, 0x1FFF0F, 0x1FFF00, 0x00A500, i2c_dev)
+        board_rev = self._gpios.get(self.pins.index('BD_REV_0')) + \
+                    self._gpios.get(self.pins.index('BD_REV_1')) << 1 + \
+                    self._gpios.get(self.pins.index('BD_REV_2')) << 2
+        if  board_rev != self.EXPECTED_BOARD_REV:
+            raise RuntimeError('LO distribution board revision did not match: Expected: {0} Actual: {1}'.format(self.EXPECTED_BOARD_REV, board_rev))
+        self._gpios.set(self.pins.index('P6_8V_EN'), 1)
+        if not poll_with_timeout(
+                lambda: bool(self._gpios.get(self.pins.index('P6_8V_PG'))), 
+                self.POWER_ON_TIMEOUT, 
+                self.POWER_ON_POLL_INTERVAL):
+            self._gpios.set(self.pins.index('P6_8V_EN'), 0)
+            raise RuntimeError('Power on failure for LO Distribution board')
+        self._gpios.set(self.pins.index('P6_5V_LDO_EN'), 1)
+        self._gpios.set(self.pins.index('P3_3V_RF_EN'), 1)
+
+    def set(self, name, value=None):
+        """
+        Assert a pin by name
+        """
+        assert name in self.pins
+        self._gpios.set(self.pins.index(name), value=value)
+
+    def reset(self, name):
+        """
+        Deassert a pin by name
+        """
+        assert name in self.pins
         self.set(name, value=0)
 
     def get(self, name):

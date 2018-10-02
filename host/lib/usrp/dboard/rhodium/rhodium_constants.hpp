@@ -7,6 +7,7 @@
 #ifndef INCLUDED_LIBUHD_RHODIUM_CONSTANTS_HPP
 #define INCLUDED_LIBUHD_RHODIUM_CONSTANTS_HPP
 
+#include <array>
 #include <vector>
 #include <string>
 #include <cstddef>
@@ -67,6 +68,15 @@ static constexpr char RHODIUM_GAIN[] = "gain_table";
 static constexpr char RHODIUM_LO_GAIN[] = "dsa";
 //! LO output power
 static constexpr char RHODIUM_LO_POWER[] = "lo";
+
+static constexpr int NUM_LO_OUTPUT_PORT_NAMES = 4;
+
+static constexpr std::array<const char*, NUM_LO_OUTPUT_PORT_NAMES> LO_OUTPUT_PORT_NAMES = {
+    "LO_OUT_0",
+    "LO_OUT_1",
+    "LO_OUT_2",
+    "LO_OUT_3"
+};
 
 static constexpr size_t RHODIUM_NUM_CHANS = 1;
 

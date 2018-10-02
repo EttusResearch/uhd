@@ -13,7 +13,7 @@ import threading
 from six import iterkeys, iteritems
 from usrp_mpm import lib # Pulls in everything from C++-land
 from usrp_mpm.dboard_manager import DboardManagerBase
-from usrp_mpm.dboard_manager.rh_periphs import TCA6408, FPGAtoDbGPIO
+from usrp_mpm.dboard_manager.rh_periphs import TCA6408, FPGAtoDbGPIO, FPGAtoLoDist
 from usrp_mpm.dboard_manager.rh_init import RhodiumInitManager
 from usrp_mpm.dboard_manager.rh_periphs import RhCPLD
 from usrp_mpm.dboard_manager.rh_periphs import DboardClockControl
@@ -24,6 +24,7 @@ from usrp_mpm.mpmlog import get_logger
 from usrp_mpm.sys_utils.uio import UIO
 from usrp_mpm.sys_utils.udev import get_eeprom_paths
 from usrp_mpm.bfrfs import BufferFS
+from usrp_mpm.sys_utils.dtoverlay import apply_overlay_safe, rm_overlay_safe
 
 
 ###############################################################################
@@ -174,6 +175,25 @@ class Rhodium(DboardManagerBase):
     default_time_source = 'internal'
     default_current_jesd_rate = 4915.2e6
 
+    # Provide a mapping of direction and pin number to
+    # pin name and active state (0 = active-low) for
+    # LO out ports
+    lo_out_pin_map = {
+        'RX' : [('RX_OUT0_CTRL', 0),
+                ('RX_OUT1_CTRL', 1),
+                ('RX_OUT2_CTRL', 0),
+                ('RX_OUT3_CTRL', 1)],
+        'TX' : [('TX_OUT0_CTRL', 0),
+                ('TX_OUT1_CTRL', 1),
+                ('TX_OUT2_CTRL', 0),
+                ('TX_OUT3_CTRL', 1)]}
+
+    # Provide mapping of direction to pin name for LO
+    # in port
+    lo_in_pin_map = {
+        'RX' : 'RX_INSWITCH_CTRL',
+        'TX' : 'TX_INSWITCH_CTRL'}
+
     def __init__(self, slot_idx, **kwargs):
         super(Rhodium, self).__init__(slot_idx, **kwargs)
         self.log = get_logger("Rhodium-{}".format(slot_idx))
@@ -191,6 +211,7 @@ class Rhodium(DboardManagerBase):
         # Predeclare some attributes to make linter happy:
         self.lmk = None
         self._port_expander = None
+        self._lo_dist = None
         self.cpld = None
         # If _init_args is None, it means that init() hasn't yet been called.
         self._init_args = None
@@ -235,6 +256,14 @@ class Rhodium(DboardManagerBase):
             )
         self._port_expander = TCA6408(_get_i2c_dev())
         self._daughterboard_gpio = FPGAtoDbGPIO(self.slot_idx)
+        # TODO: applying the overlay without checking for the presence of the
+        # LO dist board will create a kernel error. Fix this when the I2C API
+        # is implemented by checking if the board is present before applying.
+        try:
+            apply_overlay_safe('n321')
+            self._lo_dist = FPGAtoLoDist(_get_i2c_dev())
+        except RuntimeError:
+            self._lo_dist = None                
         self.log.debug("Turning on Module and RF power supplies")
         self._power_on()
         self._spi_ifaces = _init_spi_devices()
@@ -411,6 +440,48 @@ class Rhodium(DboardManagerBase):
         # This does not stop anyone from killing this process (and the thread)
         # while the EEPROM write is happening, though.
 
+    def enable_lo_export(self, direction, enable):
+        """
+        For N321 devices. If enable is true, connect the RX 1:4 splitter to the
+        daughterboard LO export. If enable is false, connect the splitter to
+        LO input port 1 instead.
+
+        Asserts if there is no LO distribution board attached (e.g. device is
+        not an N321, or this is the daughterboard in slot B)
+        """
+
+        assert self._lo_dist is not None
+        assert direction in ('RX', 'TX')
+        pin = self.lo_in_pin_map[direction]
+        pin_val = 0 if enable else 1
+        self.log.debug("LO Distribution: 1:4 splitter connected to {0} {1}".format(
+            direction, {True: "DB export", False: "Input 0"}[enable]))
+        self.log.trace("Net name: {0}, Pin value: {1}".format(pin, pin_val))
+        self._lo_dist.set(pin, pin_val)
+
+    def enable_lo_output(self, direction, port_number, enable):
+        """
+        For N321 devices. If enable is true, connect the RX 1:4 splitter to the
+        daughterboard LO export. If enable is false, connect the splitter to
+        LO input port 1 instead.
+
+        Asserts if there is no LO distribution board attached (e.g. device is
+        not an N321, or this is the daughterboard in slot B)
+        """
+
+        assert self._lo_dist is not None
+        assert direction in ('RX', 'TX')
+        assert port_number in (0, 1, 2, 3)
+        pin_info = self.lo_out_pin_map[direction][port_number]
+        # enable XNOR active_high = desired pinout value
+        pin_val = 1 if not (enable ^ pin_info[1]) else 0
+        self.log.debug("LO Distribution: {0} Out{1} is {2}".format(
+            direction, port_number, {True: "active", False: "terminated"}[enable]))
+        self.log.trace("Net name: {0}, Pin value: {1}".format(pin_info[0], pin_val))
+        self._lo_dist.set(pin_info[0], pin_val)
+        
+    def is_lo_dist_present(self):
+        return self._lo_dist is not None
 
     ##########################################################################
     # Clocking control APIs

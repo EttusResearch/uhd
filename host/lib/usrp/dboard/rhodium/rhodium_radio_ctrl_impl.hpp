@@ -114,6 +114,12 @@ public:
     bool get_tx_lo_export_enabled(const std::string& name, const size_t chan);
     bool get_rx_lo_export_enabled(const std::string& name, const size_t chan);
 
+    // LO Distribution Control
+    void set_tx_lo_output_enabled(const bool enabled, const std::string& port_name, const size_t chan);
+    void set_rx_lo_output_enabled(const bool enabled, const std::string& port_name, const size_t chan);
+    bool get_tx_lo_output_enabled(const std::string& port_name, const size_t chan);
+    bool get_rx_lo_output_enabled(const std::string& port_name, const size_t chan);
+
     // LO Gain Control
 
     //! Set the external gain for a TX LO
@@ -182,6 +188,25 @@ private:
     //! Configure LO1's export
     void _set_lo1_export_enabled(
         const bool enabled,
+        const direction_t dir
+    );
+
+    //! Validate that port_name is valid, and that LO distribution functions
+    //  can be called in this instance
+    void _validate_output_port(
+        const std::string& port_name,
+        const std::string& function_name
+    );
+
+    //! Configure LO Distribution board's termination switches
+    void _set_lo_output_enabled(
+        const bool enabled,
+        const std::string& port_name,
+        const direction_t dir
+    );
+
+    bool _get_lo_output_enabled(
+        const std::string& port_name,
         const direction_t dir
     );
 
@@ -335,6 +360,13 @@ private:
     //! LO state frequency
     double _rx_lo_freq = 0.0;
     double _tx_lo_freq = 0.0;
+
+    //! LO Distribution board
+    bool _lo_dist_present = false;
+
+    //! LO Distribution board output status
+    bool _lo_dist_rx_out_enabled[4] = { false, false, false, false };
+    bool _lo_dist_tx_out_enabled[4] = { false, false, false, false };
 
 }; /* class radio_ctrl_impl */
 

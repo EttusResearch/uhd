@@ -307,6 +307,10 @@ void rhodium_radio_ctrl_impl::_set_lo1_export_enabled(
 ) {
     auto& _lo_ctrl = (dir == RX_DIRECTION) ? _rx_lo : _tx_lo;
     _lo_ctrl->set_output_enable(lmx2592_iface::output_t::RF_OUTPUT_B, enabled);
+    if (_lo_dist_present) {
+        const auto direction = (dir == RX_DIRECTION) ? "RX" : "TX";
+        _rpcc->notify_with_token(_rpc_prefix + "enable_lo_export", direction, enabled);
+    }
 }
 
 void rhodium_radio_ctrl_impl::set_tx_lo_export_enabled(
@@ -369,6 +373,95 @@ bool rhodium_radio_ctrl_impl::get_rx_lo_export_enabled(
     _validate_lo_name(name, "get_rx_lo_export_enabled");
 
     return (name == RHODIUM_LO1) ? _rx_lo_exported : false;
+}
+
+/******************************************************************************
+ * LO Distribution Control
+ *****************************************************************************/
+
+void rhodium_radio_ctrl_impl::_validate_output_port(const std::string& port_name, const std::string& function_name)
+{
+    if (!_lo_dist_present) {
+        throw uhd::runtime_error(str(boost::format(
+            "%s can only be called if the LO distribution board was detected") % function_name));
+    }
+
+    if (!uhd::has(LO_OUTPUT_PORT_NAMES, port_name)) {
+        throw uhd::value_error(str(boost::format(
+            "%s was called with an invalid LO output port: %s Valid ports are [LO_OUT_0, LO_OUT_1, LO_OUT_2, LO_OUT_3]")
+            % function_name % port_name));
+    }
+}
+
+void rhodium_radio_ctrl_impl::_set_lo_output_enabled(
+    const bool enabled,
+    const std::string& port_name,
+    const direction_t dir
+) {
+    auto direction = (dir == RX_DIRECTION) ? "RX" : "TX";
+    auto name_iter = std::find(LO_OUTPUT_PORT_NAMES.begin(), LO_OUTPUT_PORT_NAMES.end(), port_name);
+    auto index = std::distance(LO_OUTPUT_PORT_NAMES.begin(), name_iter);
+
+    _rpcc->notify_with_token(_rpc_prefix + "enable_lo_output", direction, index, enabled);
+    auto out_enabled = (dir == RX_DIRECTION) ? _lo_dist_rx_out_enabled : _lo_dist_tx_out_enabled;
+    out_enabled[index] = enabled;
+}
+
+void rhodium_radio_ctrl_impl::set_tx_lo_output_enabled(
+    const bool enabled,
+    const std::string& port_name,
+    const size_t chan
+) {
+    UHD_LOG_TRACE(unique_id(), "set_tx_lo_output_enabled(enabled=" << enabled << ", port_name=" << port_name << ", chan=" << chan << ")");
+    UHD_ASSERT_THROW(chan == 0);
+    _validate_output_port(port_name, "set_tx_lo_output_enabled");
+
+    _set_lo_output_enabled(enabled, port_name, TX_DIRECTION);
+}
+
+void rhodium_radio_ctrl_impl::set_rx_lo_output_enabled(
+    const bool enabled,
+    const std::string& port_name,
+    const size_t chan
+) {
+    UHD_LOG_TRACE(unique_id(), "set_rx_lo_output_enabled(enabled=" << enabled << ", port_name=" << port_name << ", chan=" << chan << ")");
+    UHD_ASSERT_THROW(chan == 0);
+    _validate_output_port(port_name, "set_rx_lo_output_enabled");
+
+    _set_lo_output_enabled(enabled, port_name, RX_DIRECTION);
+}
+
+bool rhodium_radio_ctrl_impl::_get_lo_output_enabled(
+    const std::string& port_name,
+    const direction_t dir
+) {
+    auto name_iter = std::find(LO_OUTPUT_PORT_NAMES.begin(), LO_OUTPUT_PORT_NAMES.end(), port_name);
+    auto index = std::distance(LO_OUTPUT_PORT_NAMES.begin(), name_iter);
+
+    auto out_enabled = (dir == RX_DIRECTION) ? _lo_dist_rx_out_enabled : _lo_dist_tx_out_enabled;
+    return out_enabled[index];
+}
+
+bool rhodium_radio_ctrl_impl::get_tx_lo_output_enabled(
+    const std::string& port_name,
+    const size_t chan
+) {
+    UHD_LOG_TRACE(unique_id(), "get_tx_lo_output_enabled(port_name=" << port_name << ", chan=" << chan << ")");
+    UHD_ASSERT_THROW(chan == 0);
+    _validate_output_port(port_name, "get_tx_lo_output_enabled");
+
+    return _get_lo_output_enabled(port_name, TX_DIRECTION);
+}
+
+bool rhodium_radio_ctrl_impl::get_rx_lo_output_enabled(
+    const std::string& port_name,
+    const size_t chan
+) {
+    UHD_LOG_TRACE(unique_id(), "get_rx_lo_output_enabled(port_name=" << port_name << ", chan=" << chan << ")");
+    UHD_ASSERT_THROW(chan == 0);
+    _validate_output_port(port_name, "get_rx_lo_output_enabled");
+
+    return _get_lo_output_enabled(port_name, RX_DIRECTION);
 }
 
 /******************************************************************************
