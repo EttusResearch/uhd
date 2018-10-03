@@ -23,10 +23,9 @@ class RhodiumInitManager(object):
     Helper class: Holds all the logic to initialize an N320/N321 (Rhodium)
     daughterboard.
     """
-    # After manually probing the PLL1's reference and feedback signal from the LMK
-    # using multiple phase dac values close to its midpoint (2^11 = 2048), it was
-    # discovered that the PLL1's tightest phase lock is at 2024.
-    INIT_PHASE_DAC_WORD = 32768 # TODO: update this number for Rev. B
+    # The Phase DAC is set at midscale, having its flatness validate +/- 1023 codes
+    # from this initial value.
+    INIT_PHASE_DAC_WORD = 32768
     PHASE_DAC_SPI_ADDR  = 0x3
     # External PPS pipeline delay from the PPS captured at the FPGA to TDC input,
     # in reference clock ticks
@@ -69,7 +68,6 @@ class RhodiumInitManager(object):
         return LMK04828Rh(self.slot_idx, lmk_spi, ref_clk_freq, sampling_clock_rate, self.log)
 
 
-    # TODO: update phase shift value after testing phase DAC flatness with shields (Rev. B)
     def _sync_db_clock(self, dboard_ctrl_regs, ref_clk_freq, master_clock_rate, args):
         " Synchronizes the DB clock to the common reference "
         reg_offset = 0x200
@@ -85,7 +83,7 @@ class RhodiumInitManager(object):
             reg_offset,
             master_clock_rate,
             ref_clk_freq,
-            1.1E-12, # fine phase shift. TODO don't hardcode. This should live in the EEPROM
+            1.116E-12, # fine phase shift. TODO don't hardcode. This should live in the EEPROM
             self.INIT_PHASE_DAC_WORD,
             self.PHASE_DAC_SPI_ADDR,
             ext_pps_delay,
