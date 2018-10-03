@@ -149,6 +149,17 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         },
     }
 
+    #########################################################################
+    # Others properties
+    #########################################################################
+     # All valid sync_sources for N3xx in the form of (clock_source, time_source)
+    valid_sync_sources = {
+        ('internal', 'internal'),
+        ('internal', 'sfp0'),
+        ('external', 'external'),
+        ('external', 'internal'),
+        ('gpsdo', 'gpsdo'),
+    }
     @classmethod
     def generate_device_info(cls, eeprom_md, mboard_info, dboard_infos):
         """
@@ -374,8 +385,11 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         # We need to disable the PPS out during clock and dboard initialization in order
         # to avoid glitches.
         self.enable_pps_out(False)
-        if "clock_source" in args or "time_source" in args:
-            self.set_sync_source(args)
+        # if there's no clock_source or time_source params, we added here since
+        # dboards init procedures need them.
+        args['clock_source'] = args.get('clock_source', N3XX_DEFAULT_CLOCK_SOURCE)
+        args['time_source'] = args.get('time_source', N3XX_DEFAULT_TIME_SOURCE)
+        self.set_sync_source(args)
         # Uh oh, some hard coded product-related info: The N300 has no LO
         # source connectors on the front panel, so we assume that if this was
         # selected, it was an artifact from N310-related code. The user gets
@@ -523,7 +537,19 @@ class n3xx(ZynqComponents, PeriphManagerBase):
     def set_clock_source(self, *args):
         " Sets a new reference clock source "
         clock_source = args[0]
-        source = {"clock_source": clock_source}
+        time_source = self._time_source
+        assert clock_source is not None
+        assert time_source is not None
+        if (clock_source, time_source) not in self.valid_sync_sources:
+            if clock_source == 'internal':
+                time_source = 'internal'
+            elif clock_source == 'external':
+                time_source = 'external'
+            elif clock_source == 'gpsdo':
+                time_source = 'gpsdo'
+        source = {"clock_source": clock_source,
+                  "time_source": time_source
+                 }
         self.set_sync_source(source)
 
     def get_time_sources(self):
@@ -536,7 +562,21 @@ class n3xx(ZynqComponents, PeriphManagerBase):
 
     def set_time_source(self, time_source):
         " Set a time source "
-        source = {"time_source": time_source}
+        clock_source = self._clock_source
+        assert clock_source != None
+        assert time_source != None
+        if (clock_source, time_source) not in self.valid_sync_sources:
+            if time_source == 'sfp0':
+                clock_source = 'internal'
+            elif time_source == 'internal':
+                clock_source = 'internal'
+            elif time_source == 'external':
+                clock_source = 'external'
+            elif time_source == 'gpsdo':
+                clock_source = 'gpsdo'
+        source = {"time_source": time_source,
+                  "clock_source": clock_source
+                 }
         self.set_sync_source(source)
 
     def set_sync_source(self, args):
@@ -544,54 +584,52 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         Selects reference clock and PPS sources. Unconditionally re-applies the time
         source to ensure continuity between the reference clock and time rates.
         """
+
         clock_source = args.get('clock_source', self._clock_source)
-        if clock_source != self._clock_source:
-            assert clock_source in self.get_clock_sources()
-            self.log.debug("Setting clock source to `{}'".format(clock_source))
-            # Place the DB clocks in a safe state to allow reference clock
-            # transitions. This leaves all the DB clocks OFF.
-            for slot, dboard in enumerate(self.dboards):
-                if hasattr(dboard, 'set_clk_safe_state'):
-                    self.log.trace(
-                        "Setting dboard %d components to safe clocking state...", slot)
-                    dboard.set_clk_safe_state()
-            # Disable the Ref Clock in the FPGA before throwing the external switches.
-            self.mboard_regs_control.enable_ref_clk(False)
-            # Set the external switches to bring in the new source.
-            if clock_source == 'internal':
-                self._gpios.set("CLK-MAINSEL-EX_B")
-                self._gpios.set("CLK-MAINSEL-25MHz")
-                self._gpios.reset("CLK-MAINSEL-GPS")
-            elif clock_source == 'gpsdo':
-                self._gpios.set("CLK-MAINSEL-EX_B")
-                self._gpios.reset("CLK-MAINSEL-25MHz")
-                self._gpios.set("CLK-MAINSEL-GPS")
-            else: # external
-                self._gpios.reset("CLK-MAINSEL-EX_B")
-                self._gpios.reset("CLK-MAINSEL-GPS")
-                # SKY13350 needs to be in known state
-                self._gpios.set("CLK-MAINSEL-25MHz")
-            self._clock_source = clock_source
-            self.log.debug("Reference clock source is: {}" \
-                           .format(self._clock_source))
-            self.log.debug("Reference clock frequency is: {} MHz" \
-                           .format(self.get_ref_clock_freq()/1e6))
-            # Enable the Ref Clock in the FPGA after giving it a chance to
-            # settle. The settling time is a guess.
-            time.sleep(0.100)
-            self.mboard_regs_control.enable_ref_clk(True)
-        else:
-            self.log.trace("New reference clock source "
-                           "assignment matches previous assignment. Ignoring "
-                           "update command.")
-        # Whenever the clock source changes, re-apply the time source to ensure
-        # frequency changes are applied to the internal PPS counters.
-        # If the time_source is not passed as an arg, use the current source.
+        assert clock_source in self.get_clock_sources()
         time_source = args.get('time_source', self._time_source)
         assert time_source in self.get_time_sources()
-        # Perform the assignment regardless of whether the source was previously
-        # selected, since the internal PPS generator needs to change depending on the
-        # refclk frequency.
+        if (clock_source == self._clock_source) and (time_source == self._time_source):
+            # Nothing change no need to do anything
+            self.log.trace("New sync source assignment matches"
+                           "previous assignment. Ignoring update command.")
+            return
+        assert (clock_source, time_source) in self.valid_sync_sources
+        # Start setting sync source
+        self.log.debug("Setting clock source to `{}'".format(clock_source))
+        # Place the DB clocks in a safe state to allow reference clock
+        # transitions. This leaves all the DB clocks OFF.
+        for slot, dboard in enumerate(self.dboards):
+            if hasattr(dboard, 'set_clk_safe_state'):
+                self.log.trace(
+                    "Setting dboard %d components to safe clocking state...", slot)
+                dboard.set_clk_safe_state()
+        # Disable the Ref Clock in the FPGA before throwing the external switches.
+        self.mboard_regs_control.enable_ref_clk(False)
+        # Set the external switches to bring in the new source.
+        if clock_source == 'internal':
+            self._gpios.set("CLK-MAINSEL-EX_B")
+            self._gpios.set("CLK-MAINSEL-25MHz")
+            self._gpios.reset("CLK-MAINSEL-GPS")
+        elif clock_source == 'gpsdo':
+            self._gpios.set("CLK-MAINSEL-EX_B")
+            self._gpios.reset("CLK-MAINSEL-25MHz")
+            self._gpios.set("CLK-MAINSEL-GPS")
+        else: # external
+            self._gpios.reset("CLK-MAINSEL-EX_B")
+            self._gpios.reset("CLK-MAINSEL-GPS")
+            # SKY13350 needs to be in known state
+            self._gpios.set("CLK-MAINSEL-25MHz")
+        self._clock_source = clock_source
+        self.log.debug("Reference clock source is: {}" \
+                       .format(self._clock_source))
+        self.log.debug("Reference clock frequency is: {} MHz" \
+                       .format(self.get_ref_clock_freq()/1e6))
+        # Enable the Ref Clock in the FPGA after giving it a chance to
+        # settle. The settling time is a guess.
+        time.sleep(0.100)
+        self.mboard_regs_control.enable_ref_clk(True)
+        self.log.debug("Setting time source to `{}'".format(time_source))
         self._time_source = time_source
         ref_clk_freq = self.get_ref_clock_freq()
         self.mboard_regs_control.set_time_source(time_source, ref_clk_freq)
@@ -636,7 +674,7 @@ class n3xx(ZynqComponents, PeriphManagerBase):
                 ref_clk_freq,
                 time_source=time_source,
                 clock_source=clock_source,
-                skip_rfic= args.get('skip_rfic', None)
+                skip_rfic=args.get('skip_rfic', None)
             )
 
     def set_ref_clock_freq(self, freq):
