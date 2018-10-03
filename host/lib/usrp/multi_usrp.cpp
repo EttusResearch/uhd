@@ -32,6 +32,8 @@
 using namespace uhd;
 using namespace uhd::usrp;
 
+const size_t multi_usrp::ALL_MBOARDS = size_t(~0);
+const size_t multi_usrp::ALL_CHANS = size_t(~0);
 const std::string multi_usrp::ALL_GAINS = "";
 const std::string multi_usrp::ALL_LOS = "all";
 

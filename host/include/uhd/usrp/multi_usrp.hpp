@@ -100,10 +100,10 @@ public:
     virtual ~multi_usrp(void) = 0;
 
     //! A wildcard motherboard index
-    static const size_t ALL_MBOARDS = size_t(~0);
+    static const size_t ALL_MBOARDS;
 
     //! A wildcard channel index
-    static const size_t ALL_CHANS = size_t(~0);
+    static const size_t ALL_CHANS;
 
     //! A wildcard gain element name
     static const std::string ALL_GAINS;
