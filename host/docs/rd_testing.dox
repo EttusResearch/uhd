@@ -701,7 +701,7 @@ Software Required
 6.  Set Signal Generator output power at -36 dBm.
 7.  From the top of the UHD source, run the command:
 
-  -  `./tools/gr-usrptest/apps/usrp_phasealignment.py --args "addr0=<IP address of master>,addr1=<IP address of slave>" --clock-source external,mimo --time-source external,mimo --sync pps --channels 0,1 -s 10e6 -f 400e6 -g 31.5 --freq-bands 7 --start-freq 400e6 --stop-freq 4400e6 --duration 2.0 --auto`
+  -  `./tools/gr-usrptest/apps/usrp_phasealignment.py --args "addr0=<IP address of master>,addr1=<IP address of slave>" --clock-source external,mimo --time-source external,mimo --sync default --channels 0,1 -s 10e6 -f 400e6 -g 31.5 --freq-bands 7 --start-freq 400e6 --stop-freq 4400e6 --duration 2.0 --auto`
 
 8.  At each frequency step, tune Signal Generator to the displayed frequency + 1 MHz and increase output power by 2 dB.
 9.  Analyze terminal output.  The "run avg" across all runs should not deviate more than 2 degrees and the "stddev" for any run should not deviate more than 5 degrees.
