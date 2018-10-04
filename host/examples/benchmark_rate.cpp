@@ -469,16 +469,17 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     }
 
     std::cout << boost::format("[%s] Setting device timestamp to 0...") % NOW() << std::endl;
-    const bool sync_channels =
-            pps == "mimo" or
-            ref == "mimo" or
-            rx_channel_nums.size() > 1 or
-            tx_channel_nums.size() > 1
-    ;
-    if (!sync_channels) {
-       usrp->set_time_now(0.0);
+    if (pps == "mimo" or ref == "mimo") {
+        // only set the master's time, the slave's is automatically sync'd
+        usrp->set_time_now(uhd::time_spec_t(0.0), 0);
+        // ensure that the setter has completed
+        usrp->get_time_now();
+        // wait for the time to sync
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    } else if (rx_channel_nums.size() > 1 or tx_channel_nums.size() > 1) {
+        usrp->set_time_unknown_pps(uhd::time_spec_t(0.0));
     } else {
-       usrp->set_time_unknown_pps(uhd::time_spec_t(0.0));
+        usrp->set_time_now(0.0);
     }
 
     //spawn the receive test thread
