@@ -199,7 +199,7 @@ void magnesium_radio_ctrl_impl::set_rx_antenna(
     UHD_LOG_TRACE(unique_id(),
         "Setting RX antenna to " << ant << " for chan " << chan);
     magnesium_cpld_ctrl::chan_sel_t chan_sel  =
-        chan ? magnesium_cpld_ctrl::CHAN1 : magnesium_cpld_ctrl::CHAN2;
+        chan == 0 ? magnesium_cpld_ctrl::CHAN1 : magnesium_cpld_ctrl::CHAN2;
     _update_atr_switches(chan_sel, RX_DIRECTION, ant);
 
     radio_ctrl_impl::set_rx_antenna(ant, chan);
