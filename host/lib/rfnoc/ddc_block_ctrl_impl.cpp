@@ -245,7 +245,7 @@ private:
         return range;
     }
 
-    double set_output_rate(const int requested_rate, const size_t chan)
+    double set_output_rate(const double requested_rate, const size_t chan)
     {
         const double input_rate = get_arg<double>("input_rate");
         const size_t decim_rate =

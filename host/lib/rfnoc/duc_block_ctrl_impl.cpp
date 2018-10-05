@@ -230,7 +230,7 @@ private:
         return range;
     }
 
-    double set_input_rate(const int requested_rate, const size_t chan)
+    double set_input_rate(const double requested_rate, const size_t chan)
     {
         const double output_rate = get_arg<double>("output_rate", chan);
         const size_t interp_rate = boost::math::iround(output_rate/get_input_rates().clip(requested_rate, true));
