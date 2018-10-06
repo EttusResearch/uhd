@@ -18,9 +18,6 @@ static size_t wrap_recv(uhd::rx_streamer *rx_stream,
                         bp::object &metadata,
                         const double timeout = 0.1)
 {
-    // Release the GIL
-    scoped_gil_release gil_release;
-
     // Extract the metadata
     bp::extract<uhd::rx_metadata_t&> get_metadata(metadata);
     if (not get_metadata.check())
@@ -71,13 +68,17 @@ static size_t wrap_recv(uhd::rx_streamer *rx_stream,
         nsamps_per_buff = PyArray_SIZE(array_type_obj);
     }
 
-    // Call the real recv()
-    const size_t result = rx_stream->recv(
-        channel_storage,
-        nsamps_per_buff,
-        get_metadata(),
-        timeout
-    );
+    // Release the GIL only for the recv() call
+    const size_t result = [&]() {
+        scoped_gil_release gil_release;
+        // Call the real recv()
+        return rx_stream->recv(
+            channel_storage,
+            nsamps_per_buff,
+            get_metadata(),
+            timeout
+        );
+    }();
 
     // Manually decrement the ref count
     Py_DECREF(array_obj);
@@ -90,9 +91,6 @@ static size_t wrap_send(uhd::tx_streamer *tx_stream,
                         bp::object &metadata,
                         const double timeout = 0.1)
 {
-    // Release the GIL
-    scoped_gil_release gil_release;
-
     // Extract the metadata
     bp::extract<uhd::tx_metadata_t&> get_metadata(metadata);
     // TODO: throw an error here?
@@ -140,13 +138,17 @@ static size_t wrap_send(uhd::tx_streamer *tx_stream,
     // Get data buffer and size of the array
     size_t nsamps_per_buff = (dims > 1) ? (size_t) shape[1] : PyArray_SIZE(array_type_obj);
 
-    // Call the real recv()
-    const size_t result = tx_stream->send(
-        channel_storage,
-        nsamps_per_buff,
-        get_metadata(),
-        timeout
-    );
+    // Release the GIL only for the send() call
+    const size_t result = [&]() {
+        scoped_gil_release gil_release;
+        // Call the real send()
+        return tx_stream->send(
+            channel_storage,
+            nsamps_per_buff,
+            get_metadata(),
+            timeout
+        );
+    }();
 
     // Manually decrement the ref count
     Py_DECREF(array_obj);
