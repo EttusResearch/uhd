@@ -15,7 +15,8 @@
 
 static size_t wrap_recv(uhd::rx_streamer *rx_stream,
                         bp::object &np_array,
-                        bp::object &metadata)
+                        bp::object &metadata,
+                        const double timeout = 0.1)
 {
     // Release the GIL
     scoped_gil_release gil_release;
@@ -74,17 +75,20 @@ static size_t wrap_recv(uhd::rx_streamer *rx_stream,
     const size_t result = rx_stream->recv(
         channel_storage,
         nsamps_per_buff,
-        get_metadata()
+        get_metadata(),
+        timeout
     );
 
     // Manually decrement the ref count
     Py_DECREF(array_obj);
     return result;
 }
+BOOST_PYTHON_FUNCTION_OVERLOADS(overload_wrap_recv, wrap_recv, 3, 4);
 
 static size_t wrap_send(uhd::tx_streamer *tx_stream,
                         bp::object &np_array,
-                        bp::object &metadata)
+                        bp::object &metadata,
+                        const double timeout = 0.1)
 {
     // Release the GIL
     scoped_gil_release gil_release;
@@ -140,20 +144,32 @@ static size_t wrap_send(uhd::tx_streamer *tx_stream,
     const size_t result = tx_stream->send(
         channel_storage,
         nsamps_per_buff,
-        get_metadata()
+        get_metadata(),
+        timeout
     );
 
     // Manually decrement the ref count
     Py_DECREF(array_obj);
     return result;
 }
+BOOST_PYTHON_FUNCTION_OVERLOADS(overload_wrap_send, wrap_send, 3, 4);
+
+static bool wrap_recv_async_msg(uhd::tx_streamer *tx_stream,
+                                uhd::async_metadata_t &async_metadata,
+                                double timeout = 0.1)
+{
+    // Release the GIL
+    scoped_gil_release gil_release;
+
+    return tx_stream->recv_async_msg(async_metadata, timeout);
+}
+BOOST_PYTHON_FUNCTION_OVERLOADS(overload_wrap_recv_async_msg, wrap_recv_async_msg, 2, 3);
 
 void export_stream()
 {
     using stream_args_t = uhd::stream_args_t;
     using rx_streamer   = uhd::rx_streamer;
     using tx_streamer   = uhd::tx_streamer;
-    using async_metadata_t = uhd::async_metadata_t;
 
     bp::class_<stream_args_t>
         ("stream_args", bp::init<const std::string&, const std::string&>())
@@ -171,7 +187,7 @@ void export_stream()
         boost::noncopyable>("rx_streamer", "See: uhd::rx_streamer", bp::no_init)
 
         // Methods
-        .def("recv"             , &wrap_recv                          )
+        .def("recv"             , &wrap_recv, overload_wrap_recv()    )
         .def("get_num_channels" , &uhd::rx_streamer::get_num_channels )
         .def("get_max_num_samps", &uhd::rx_streamer::get_max_num_samps)
         .def("issue_stream_cmd" , &uhd::rx_streamer::issue_stream_cmd )
@@ -183,16 +199,11 @@ void export_stream()
         boost::noncopyable>("tx_streamer", "See: uhd::tx_streamer", bp::no_init)
 
         // Methods
-        .def("send"             , &wrap_send                     )
-        .def("get_num_channels" , &tx_streamer::get_num_channels )
-        .def("get_max_num_samps", &tx_streamer::get_max_num_samps)
-        // FIXME: the timeout isn't actually an optional argument right now in Python
-        .def("recv_async_msg"   , +[](tx_streamer& self, async_metadata_t& metadata, double timeout = 0.1) {
-            // Release the GIL
-            scoped_gil_release gil_release;
-
-            return self.recv_async_msg(metadata, timeout);
-        })
+        .def("send"             , &wrap_send, overload_wrap_send())
+        .def("get_num_channels" , &tx_streamer::get_num_channels  )
+        .def("get_max_num_samps", &tx_streamer::get_max_num_samps )
+        .def("recv_async_msg"   , &wrap_recv_async_msg,
+                                  overload_wrap_recv_async_msg()  )
         ;
 }
 
