@@ -11,6 +11,14 @@
 include(UHDUnitTest)
 
 ########################################################################
+# build test common
+########################################################################
+SET(test_common_SOURCEDIR ${CMAKE_CURRENT_SOURCE_DIR}/common)
+ADD_SUBDIRECTORY(common)
+LINK_DIRECTORIES(test_common_SOURCEDIR)
+
+
+########################################################################
 # unit test suite
 ########################################################################
 SET(test_sources
@@ -74,12 +82,12 @@ IF(ENABLE_C_API)
 ENDIF(ENABLE_C_API)
 
 INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/lib/include")
-
+INCLUDE_DIRECTORIES("${CMAKE_CURRENT_SOURCE_DIR}/common")
 #for each source: build an executable, register it as a test
 FOREACH(test_source ${test_sources})
     GET_FILENAME_COMPONENT(test_name ${test_source} NAME_WE)
     ADD_EXECUTABLE(${test_name} ${test_source})
-    TARGET_LINK_LIBRARIES(${test_name} uhd ${Boost_LIBRARIES})
+    TARGET_LINK_LIBRARIES(${test_name} uhd uhd_test ${Boost_LIBRARIES})
     UHD_ADD_TEST(${test_name} ${test_name})
     UHD_INSTALL(TARGETS ${test_name} RUNTIME DESTINATION ${PKG_LIB_DIR}/tests COMPONENT tests)
 ENDFOREACH(test_source)
