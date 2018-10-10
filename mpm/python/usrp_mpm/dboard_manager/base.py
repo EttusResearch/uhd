@@ -98,7 +98,7 @@ class DboardManagerBase(object):
         """
         return self.device_info.get("serial", "")
 
-    def update_ref_clock_freq(self, freq):
+    def update_ref_clock_freq(self, freq, **kwargs):
         """
         Call this function if the frequency of the reference clock changes.
         """

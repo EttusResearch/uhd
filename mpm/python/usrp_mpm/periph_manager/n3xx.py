@@ -628,12 +628,13 @@ class n3xx(ZynqComponents, PeriphManagerBase):
                 raise RuntimeError("Failed to lock SFP timebase.")
         # Update the DB with the correct Ref Clock frequency and force a re-init.
         for slot, dboard in enumerate(self.dboards):
-            if hasattr(dboard, 'update_ref_clock_freq'):
-                self.log.trace(
-                    "Updating reference clock on dboard %d to %f MHz...",
-                    slot, ref_clk_freq/1e6
-                )
-                dboard.update_ref_clock_freq(ref_clk_freq)
+            self.log.trace(
+                "Updating reference clock on dboard %d to %f MHz...",
+                slot, ref_clk_freq/1e6
+            )
+            dboard.update_ref_clock_freq(ref_clk_freq,
+                time_source=time_source,
+                clock_source=clock_source)
 
     def set_ref_clock_freq(self, freq):
         """
