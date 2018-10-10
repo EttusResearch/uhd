@@ -481,7 +481,9 @@ class Magnesium(DboardManagerBase):
         self.ref_clock_freq = freq
         if self._init_args is not None:
             self._init_args = {**self._init_args, **kwargs}
+            self.log.info("Re-initializing daughter board. This may take some time.")
             self._reinit(self.master_clock_rate)
+            self.log.debug("Daughter board re-initialization done.")
 
 
     ##########################################################################
