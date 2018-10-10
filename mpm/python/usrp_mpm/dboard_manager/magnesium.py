@@ -463,7 +463,7 @@ class Magnesium(DboardManagerBase):
         " Return master clock rate (== sampling rate) "
         return self.master_clock_rate
 
-    def update_ref_clock_freq(self, freq):
+    def update_ref_clock_freq(self, freq, **kwargs):
         """
         Call this function if the frequency of the reference clock changes
         (the 10, 20, 25 MHz one).
@@ -480,6 +480,7 @@ class Magnesium(DboardManagerBase):
         self.log.trace("Changing ref clock frequency to %f MHz", freq/1e6)
         self.ref_clock_freq = freq
         if self._init_args is not None:
+            self._init_args = {**self._init_args, **kwargs}
             self._reinit(self.master_clock_rate)
 
 
