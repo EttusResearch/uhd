@@ -132,7 +132,9 @@ void mpmd_impl::init_property_tree(
     ;
     tree->create<std::string>(mb_path / "time_source/value")
         .add_coerced_subscriber([mb](const std::string &time_source){
+            mb->set_timeout_init();
             mb->rpc->notify_with_token("set_time_source", time_source);
+            mb->set_timeout_default();
         })
         .set_publisher([mb](){
             return mb->rpc->request_with_token<std::string>(
