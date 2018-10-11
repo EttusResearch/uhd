@@ -12,6 +12,7 @@ from . import libpyuhd as lib
 
 StreamMode = lib.types.stream_mode
 StreamCMD = lib.types.stream_cmd
+DeviceAddr = lib.types.device_addr
 TimeSpec = lib.types.time_spec
 SPIEdge = lib.types.spi_edge
 SPIConfig = lib.types.spi_config
