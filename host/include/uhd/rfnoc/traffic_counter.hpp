@@ -50,18 +50,14 @@ public:
 
             const char* counters[] = {
                 "bus_clock_ticks",
-                "xbar_to_shell_last",
-                "xbar_to_shell_valid",
-                "xbar_to_shell_ready",
-                "shell_to_xbar_last",
-                "shell_to_xbar_valid",
-                "shell_to_xbar_ready",
-                "shell_to_ce_last",
-                "shell_to_ce_valid",
-                "shell_to_ce_ready",
-                "ce_to_shell_last",
-                "ce_to_shell_valid",
-                "ce_to_shell_ready"};
+                "xbar_to_shell_xfer_count",
+                "xbar_to_shell_pkt_count",
+                "shell_to_xbar_xfer_count",
+                "shell_to_xbar_pkt_count",
+                "shell_to_ce_xfer_count",
+                "shell_to_ce_pkt_count",
+                "ce_to_shell_xfer_count",
+                "ce_to_shell_pkt_count"};
 
             for (size_t i = 0; i < std::extent<decltype(counters)>::value; i++) {
                 tree->create<uint64_t>(root_path/"traffic_counter"/counters[i])

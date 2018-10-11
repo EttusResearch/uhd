@@ -24,21 +24,17 @@ namespace po = boost::program_options;
 struct traffic_counter_values {
     uint64_t clock_cycles;
 
-    uint64_t xbar_to_shell_last;
-    uint64_t xbar_to_shell_valid;
-    uint64_t xbar_to_shell_ready;
+    uint64_t xbar_to_shell_xfer_count;
+    uint64_t xbar_to_shell_pkt_count;
 
-    uint64_t shell_to_xbar_last;
-    uint64_t shell_to_xbar_valid;
-    uint64_t shell_to_xbar_ready;
+    uint64_t shell_to_xbar_xfer_count;
+    uint64_t shell_to_xbar_pkt_count;
 
-    uint64_t shell_to_ce_last;
-    uint64_t shell_to_ce_valid;
-    uint64_t shell_to_ce_ready;
+    uint64_t shell_to_ce_xfer_count;
+    uint64_t shell_to_ce_pkt_count;
 
-    uint64_t ce_to_shell_last;
-    uint64_t ce_to_shell_valid;
-    uint64_t ce_to_shell_ready;
+    uint64_t ce_to_shell_xfer_count;
+    uint64_t ce_to_shell_pkt_count;
 };
 
 struct host_measurement_values {
@@ -76,21 +72,17 @@ traffic_counter_values read_traffic_counters(
     traffic_counter_values vals;
     vals.clock_cycles = tree->access<uint64_t>(root/"bus_clock_ticks").get();
 
-    vals.xbar_to_shell_last  = tree->access<uint64_t>(root/"xbar_to_shell_last").get();
-    vals.xbar_to_shell_valid = tree->access<uint64_t>(root/"xbar_to_shell_valid").get();
-    vals.xbar_to_shell_ready = tree->access<uint64_t>(root/"xbar_to_shell_ready").get();
+    vals.xbar_to_shell_pkt_count  = tree->access<uint64_t>(root/"xbar_to_shell_pkt_count").get();
+    vals.xbar_to_shell_xfer_count = tree->access<uint64_t>(root/"xbar_to_shell_xfer_count").get();
 
-    vals.shell_to_xbar_last  = tree->access<uint64_t>(root/"shell_to_xbar_last").get();
-    vals.shell_to_xbar_valid = tree->access<uint64_t>(root/"shell_to_xbar_valid").get();
-    vals.shell_to_xbar_ready = tree->access<uint64_t>(root/"shell_to_xbar_ready").get();
+    vals.shell_to_xbar_pkt_count  = tree->access<uint64_t>(root/"shell_to_xbar_pkt_count").get();
+    vals.shell_to_xbar_xfer_count = tree->access<uint64_t>(root/"shell_to_xbar_xfer_count").get();
 
-    vals.shell_to_ce_last  = tree->access<uint64_t>(root/"shell_to_ce_last").get();
-    vals.shell_to_ce_valid = tree->access<uint64_t>(root/"shell_to_ce_valid").get();
-    vals.shell_to_ce_ready = tree->access<uint64_t>(root/"shell_to_ce_ready").get();
+    vals.shell_to_ce_pkt_count  = tree->access<uint64_t>(root/"shell_to_ce_pkt_count").get();
+    vals.shell_to_ce_xfer_count = tree->access<uint64_t>(root/"shell_to_ce_xfer_count").get();
 
-    vals.ce_to_shell_last  = tree->access<uint64_t>(root/"ce_to_shell_last").get();
-    vals.ce_to_shell_valid = tree->access<uint64_t>(root/"ce_to_shell_valid").get();
-    vals.ce_to_shell_ready = tree->access<uint64_t>(root/"ce_to_shell_ready").get();
+    vals.ce_to_shell_pkt_count  = tree->access<uint64_t>(root/"ce_to_shell_pkt_count").get();
+    vals.ce_to_shell_xfer_count = tree->access<uint64_t>(root/"ce_to_shell_xfer_count").get();
 
     return vals;
 }
@@ -100,35 +92,31 @@ void print_traffic_counters(
 ) {
     std::cout << "Clock cycles:        " << vals.clock_cycles << std::endl;
 
-    std::cout << "Xbar to shell last:  " << vals.xbar_to_shell_last << std::endl;
-    std::cout << "Xbar to shell valid: " << vals.xbar_to_shell_valid << std::endl;
-    std::cout << "Xbar to shell ready: " << vals.xbar_to_shell_ready << std::endl;
+    std::cout << "Xbar to shell pkt count:  " << vals.xbar_to_shell_pkt_count << std::endl;
+    std::cout << "Xbar to shell xfer count: " << vals.xbar_to_shell_xfer_count << std::endl;
 
-    std::cout << "Shell to xbar last:  " << vals.shell_to_xbar_last << std::endl;
-    std::cout << "Shell to xbar valid: " << vals.shell_to_xbar_valid << std::endl;
-    std::cout << "Shell to xbar ready: " << vals.shell_to_xbar_ready << std::endl;
+    std::cout << "Shell to xbar pkt count:  " << vals.shell_to_xbar_pkt_count << std::endl;
+    std::cout << "Shell to xbar xfer count: " << vals.shell_to_xbar_xfer_count << std::endl;
 
-    std::cout << "Shell to CE last:    " << vals.shell_to_ce_last << std::endl;
-    std::cout << "Shell to CE valid:   " << vals.shell_to_ce_valid << std::endl;
-    std::cout << "Shell to CE ready:   " << vals.shell_to_ce_ready << std::endl;
+    std::cout << "Shell to CE pkt count:    " << vals.shell_to_ce_pkt_count << std::endl;
+    std::cout << "Shell to CE xfer count:   " << vals.shell_to_ce_xfer_count << std::endl;
 
-    std::cout << "CE to shell last:    " << vals.ce_to_shell_last << std::endl;
-    std::cout << "CE to shell valid:   " << vals.ce_to_shell_valid << std::endl;
-    std::cout << "CE to shell ready:   " << vals.ce_to_shell_ready << std::endl;
+    std::cout << "CE to shell pkt count:    " << vals.ce_to_shell_pkt_count << std::endl;
+    std::cout << "CE to shell xfer count:   " << vals.ce_to_shell_xfer_count << std::endl;
 }
 
 void print_rx_statistics(
     const traffic_counter_values& vals,
     const double bus_clk_freq
 ) {
-    double bus_time_elapsed = vals.clock_cycles / bus_clk_freq;
-    uint64_t num_ce_packets_read = vals.ce_to_shell_last;
-    uint64_t num_ce_samples_read = (vals.ce_to_shell_valid - num_ce_packets_read)*2;
+    const double bus_time_elapsed = vals.clock_cycles / bus_clk_freq;
+    const uint64_t num_ce_packets_read = vals.ce_to_shell_pkt_count;
+    const uint64_t num_ce_samples_read = (vals.ce_to_shell_xfer_count - num_ce_packets_read)*2;
 
-    uint64_t num_non_data_packets_read = vals.shell_to_xbar_last - num_ce_packets_read;
-    double rx_data_packet_ratio = (double)num_ce_packets_read/num_non_data_packets_read;
+    const uint64_t num_non_data_packets_read = vals.shell_to_xbar_pkt_count - num_ce_packets_read;
+    const double rx_data_packet_ratio = (double)num_ce_packets_read/num_non_data_packets_read;
 
-    double calculated_throughput = num_ce_samples_read/bus_time_elapsed;
+    const double calculated_throughput = num_ce_samples_read/bus_time_elapsed;
 
     std::cout << "Time elapsed:          " << bus_time_elapsed << " s" << std::endl;
     std::cout << "Samples read:          " << num_ce_samples_read << std::endl;
@@ -141,14 +129,14 @@ void print_tx_statistics(
     const traffic_counter_values& vals,
     const double bus_clk_freq
 ) {
-    double bus_time_elapsed = vals.clock_cycles / bus_clk_freq;
-    uint64_t num_ce_packets_written = vals.shell_to_ce_last;
-    uint64_t num_ce_samples_written = (vals.shell_to_ce_valid - num_ce_packets_written)*2;
+    const double bus_time_elapsed = vals.clock_cycles / bus_clk_freq;
+    const uint64_t num_ce_packets_written = vals.shell_to_ce_pkt_count;
+    const uint64_t num_ce_samples_written = (vals.shell_to_ce_xfer_count - num_ce_packets_written)*2;
 
-    uint64_t num_non_data_packets_written = vals.xbar_to_shell_last - num_ce_packets_written;
-    double tx_data_packet_ratio = (double)num_ce_packets_written/num_non_data_packets_written;
+    const uint64_t num_non_data_packets_written = vals.xbar_to_shell_pkt_count - num_ce_packets_written;
+    const double tx_data_packet_ratio = (double)num_ce_packets_written/num_non_data_packets_written;
 
-    double calculated_throughput = num_ce_samples_written/bus_time_elapsed;
+    const double calculated_throughput = num_ce_samples_written/bus_time_elapsed;
 
     std::cout << "Time elapsed:          " << bus_time_elapsed << " s" << std::endl;
     std::cout << "Samples written:       " << num_ce_samples_written << std::endl;
@@ -160,15 +148,15 @@ void print_tx_statistics(
 void print_utilization_statistics(
     const traffic_counter_values& vals
 ) {
-    double rx_data_cycles = vals.ce_to_shell_valid - vals.ce_to_shell_last;
-    double rx_idle_cycles = vals.clock_cycles - vals.shell_to_xbar_valid;
-    double rx_data_header_cycles = vals.ce_to_shell_last;
-    double rx_other_cycles = vals.shell_to_xbar_valid - vals.ce_to_shell_valid;
+    const double rx_data_cycles = vals.ce_to_shell_xfer_count - vals.ce_to_shell_pkt_count;
+    const double rx_idle_cycles = vals.clock_cycles - vals.shell_to_xbar_xfer_count;
+    const double rx_data_header_cycles = vals.ce_to_shell_pkt_count;
+    const double rx_other_cycles = vals.shell_to_xbar_xfer_count - vals.ce_to_shell_xfer_count;
 
-    double rx_data_util = rx_data_cycles / vals.clock_cycles*100;
-    double rx_idle_util = rx_idle_cycles / vals.clock_cycles*100;
-    double rx_data_header_util = rx_data_header_cycles / vals.clock_cycles * 100;
-    double rx_other_util = rx_other_cycles / vals.clock_cycles * 100;
+    const double rx_data_util = rx_data_cycles / vals.clock_cycles*100;
+    const double rx_idle_util = rx_idle_cycles / vals.clock_cycles*100;
+    const double rx_data_header_util = rx_data_header_cycles / vals.clock_cycles * 100;
+    const double rx_other_util = rx_other_cycles / vals.clock_cycles * 100;
 
     std::cout << "RX utilization:" << std::endl;
     std::cout << "   data:        " << rx_data_util << " %" << std::endl;
@@ -177,15 +165,15 @@ void print_utilization_statistics(
     std::cout << "   other:       " << rx_other_util << " % (flow control, register I/O)" << std::endl;
     std::cout << std::endl;
 
-    double tx_data_cycles = vals.shell_to_ce_valid - vals.shell_to_ce_last;
-    double tx_idle_cycles = vals.clock_cycles - vals.xbar_to_shell_valid;
-    double tx_data_header_cycles = vals.shell_to_ce_last;
-    double tx_other_cycles = vals.xbar_to_shell_valid - vals.shell_to_ce_valid;
+    const double tx_data_cycles = vals.shell_to_ce_xfer_count - vals.shell_to_ce_pkt_count;
+    const double tx_idle_cycles = vals.clock_cycles - vals.xbar_to_shell_xfer_count;
+    const double tx_data_header_cycles = vals.shell_to_ce_pkt_count;
+    const double tx_other_cycles = vals.xbar_to_shell_xfer_count - vals.shell_to_ce_xfer_count;
 
-    double tx_data_util = tx_data_cycles / vals.clock_cycles*100;
-    double tx_idle_util = tx_idle_cycles / vals.clock_cycles*100;
-    double tx_data_header_util = tx_data_header_cycles / vals.clock_cycles * 100;
-    double tx_other_util = tx_other_cycles / vals.clock_cycles * 100;
+    const double tx_data_util = tx_data_cycles / vals.clock_cycles*100;
+    const double tx_idle_util = tx_idle_cycles / vals.clock_cycles*100;
+    const double tx_data_header_util = tx_data_header_cycles / vals.clock_cycles * 100;
+    const double tx_other_util = tx_other_cycles / vals.clock_cycles * 100;
 
     std::cout << "TX utilization:" << std::endl;
     std::cout << "   data:        " << tx_data_util << " %" << std::endl;
@@ -223,7 +211,7 @@ void print_rx_results(
 
 void print_tx_results(
     const test_results& results,
-    double bus_clk_freq
+    const double bus_clk_freq
 ) {
     std::cout << "------------------------------------------------------------------" << std::endl;
     std::cout << "------------------- Benchmarking tx stream -----------------------" << std::endl;
@@ -523,7 +511,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     po::notify(vm);
 
     //print the help message
-    bool at_least_one_test_specified =
+    const bool at_least_one_test_specified =
         rx_duration != 0.0 or tx_duration != 0.0 or
         dual_rx_duration != 0.0 or dual_tx_duration != 0.0 or
         full_duplex_duration != 0.0 or dual_full_duplex_duration != 0.0;
