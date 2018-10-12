@@ -238,12 +238,12 @@ class n3xx(ZynqComponents, PeriphManagerBase):
             self._clock_source = N3XX_DEFAULT_CLOCK_SOURCE
             self._time_source = N3XX_DEFAULT_TIME_SOURCE
         else:
-            self.set_sync_source( {
+            self.set_sync_source({
                 'clock_source': default_args.get('clock_source',
                                                  N3XX_DEFAULT_CLOCK_SOURCE),
                 'time_source' : default_args.get('time_source',
                                                  N3XX_DEFAULT_TIME_SOURCE)
-            } )
+            })
 
     def _init_meas_clock(self):
         """
@@ -544,12 +544,12 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         Selects reference clock and PPS sources. Unconditionally re-applies the time
         source to ensure continuity between the reference clock and time rates.
         """
-        clock_source = args.get('clock_source',self._clock_source)
+        clock_source = args.get('clock_source', self._clock_source)
         if clock_source != self._clock_source:
             assert clock_source in self.get_clock_sources()
             self.log.debug("Setting clock source to `{}'".format(clock_source))
-            # Place the DB clocks in a safe state to allow reference clock transitions. This
-            # leaves all the DB clocks OFF.
+            # Place the DB clocks in a safe state to allow reference clock
+            # transitions. This leaves all the DB clocks OFF.
             for slot, dboard in enumerate(self.dboards):
                 if hasattr(dboard, 'set_clk_safe_state'):
                     self.log.trace(
@@ -576,18 +576,18 @@ class n3xx(ZynqComponents, PeriphManagerBase):
                            .format(self._clock_source))
             self.log.debug("Reference clock frequency is: {} MHz" \
                            .format(self.get_ref_clock_freq()/1e6))
-            # Enable the Ref Clock in the FPGA after giving it a chance to settle. The
-            # settling time is a guess.
+            # Enable the Ref Clock in the FPGA after giving it a chance to
+            # settle. The settling time is a guess.
             time.sleep(0.100)
             self.mboard_regs_control.enable_ref_clk(True)
         else:
-            self.log.trace("New reference clock source " \
-                           "assignment matches previous assignment. Ignoring " \
+            self.log.trace("New reference clock source "
+                           "assignment matches previous assignment. Ignoring "
                            "update command.")
         # Whenever the clock source changes, re-apply the time source to ensure
         # frequency changes are applied to the internal PPS counters.
         # If the time_source is not passed as an arg, use the current source.
-        time_source = args.get('time_source',self._time_source)
+        time_source = args.get('time_source', self._time_source)
         assert time_source in self.get_time_sources()
         # Perform the assignment regardless of whether the source was previously
         # selected, since the internal PPS generator needs to change depending on the
@@ -632,7 +632,8 @@ class n3xx(ZynqComponents, PeriphManagerBase):
                 "Updating reference clock on dboard %d to %f MHz...",
                 slot, ref_clk_freq/1e6
             )
-            dboard.update_ref_clock_freq(ref_clk_freq,
+            dboard.update_ref_clock_freq(
+                ref_clk_freq,
                 time_source=time_source,
                 clock_source=clock_source)
 
