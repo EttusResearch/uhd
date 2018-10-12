@@ -81,6 +81,8 @@ public:
         uint32_t mapping_reg_val = 0;
         switch (fe_conn.get_sampling_mode()) {
         case fe_connection_t::REAL:
+            mapping_reg_val = FLAG_DSP_RX_MAPPING_REAL_MODE;
+            break;
         case fe_connection_t::HETERODYNE:
             mapping_reg_val = FLAG_DSP_RX_MAPPING_REAL_MODE|FLAG_DSP_RX_MAPPING_REAL_DECIM;
             break;
