@@ -76,6 +76,14 @@ class N3XXBIST(bist.UsrpBIST):
             'errors': -1,
             'bits': -1,
         },
+        'qsfp_loopback': {
+            'elapsed_time': -1,
+            'max_roundtrip_latency': -1,
+            'throughput': -1,
+            'max_ber': -1,
+            'errors': -1,
+            'bits': -1,
+        },
         'gpio': {
             'write_patterns': [],
             'read_patterns': [],
@@ -103,7 +111,7 @@ class N3XXBIST(bist.UsrpBIST):
 
     def get_product_id(self):
         """Return the mboard product ID (n310 or n300):"""
-        return bist.get_product_id_from_eeprom(valid_ids=['n300', 'n310'])
+        return bist.get_product_id_from_eeprom(valid_ids=['n300', 'n310', 'n320'])
 
 #############################################################################
 # BISTS
@@ -357,6 +365,42 @@ class N3XXBIST(bist.UsrpBIST):
             master='misc-auro-regs1',
         )
         self.reload_fpga_image = True
+        return bist.aurora_results_to_status(sfp_bist_results)
+
+    def bist_qsfp_loopback(self):
+        """
+        BIST for QSFP+ ports:
+        Description: Tests individual quads of the QSFP+ connector. You need to
+        provide `--option qsfp_port=X` to select the QSFP+ connector.
+
+        External Equipment: Loopback module in QSFPX required
+
+        Return dictionary:
+        - elapsed_time: Float value, test time in seconds
+        - max_roundtrip_latency: Float value, max roundtrip latency in seconds
+        - throughput: Approximate data throughput in bytes/s
+        - max_ber: Estimated maximum BER, float value.
+        - errors: Number of errors
+        - bits: Number of bits that were transferred
+        """
+        if self.args.dry_run:
+            return True, bist.get_sfp_bist_defaults()
+        from usrp_mpm.sys_utils import i2c_dev
+        from usrp_mpm.periph_manager import n3xx
+        qsfp_i2c = i2c_dev.of_get_i2c_adapter(n3xx.N32X_QSFP_I2C_LABEL)
+        if qsfp_i2c is None:
+            raise RuntimeError("Could not find QSFP board!")
+        qsfp_port = int(self.args.option.get('qsfp_port', '0'))
+        assert qsfp_port in range(4)
+        aurora_regs_label = 'misc-auro-regs{}'.format(qsfp_port)
+        sfp_bist_results = bist.run_aurora_bist(
+            device_args=self.device_args,
+            # Note: We're overwriting the product ID here, because the detection
+            # is currently limited to reading the Mboard EEPROM. However, only
+            # the N320 has the QSFP board.
+            product_id='n320',
+            aurora_image_type='AQ',
+            master=aurora_regs_label)
         return bist.aurora_results_to_status(sfp_bist_results)
 
     def bist_sfp_loopback(self):
