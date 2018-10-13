@@ -24,10 +24,10 @@ n3xx_common_mender_default      meta-ettus-v3.13.0.0  n3xx/meta-ettus-v3.13.0.0/
 n3xx_common_sdimg_default       meta-ettus-v3.13.0.0  n3xx/meta-ettus-v3.13.0.0/n3xx_common_sdimg_default-v3.13.0.0.zip     0
 
 # B200-Series
-b2xx_b200_fpga_default          fpga-63e630a        b2xx/fpga-63e630a/b2xx_b200_fpga_default-g63e630a.zip                   c42f010a90c9a184a2bf8ab7182dcbcc50598a259f06f9b5fda92023dc6cfed8
-b2xx_b200mini_fpga_default      fpga-63e630a        b2xx/fpga-63e630a/b2xx_b200mini_fpga_default-g63e630a.zip               75ae4b16d8dc12ab8b38e7f380cb94e81c6065031aefd2e72972f65ec8c23842
-b2xx_b210_fpga_default          fpga-63e630a        b2xx/fpga-63e630a/b2xx_b210_fpga_default-g63e630a.zip                   de7464dac5a1cd5be38811f3ec8239410ff5d9d2a8d199039e09de3c423bc63d
-b2xx_b205mini_fpga_default      fpga-63e630a        b2xx/fpga-63e630a/b2xx_b205mini_fpga_default-g63e630a.zip               d852c4f0038e6b12fed19303c7baabfd8785271aa00b327c80d22a39835661fa
+b2xx_b200_fpga_default          fpga-0ac3353f        b2xx/fpga-0ac3353f/b2xx_b200_fpga_default-g0ac3353f.zip                   762d71da3e29073955b8eb7e7dc87af8efef9f0d9162cd11d127308bec96741a
+b2xx_b200mini_fpga_default      fpga-0ac3353f        b2xx/fpga-0ac3353f/b2xx_b200mini_fpga_default-g0ac3353f.zip               0a61b1caa9672b86a243f660b4fe51b40d1e99ba7e0713c353b4040544903c1a
+b2xx_b210_fpga_default          fpga-0ac3353f        b2xx/fpga-0ac3353f/b2xx_b210_fpga_default-g0ac3353f.zip                   5f056d4dc4deaa5021ca26bef9224e2b2dd7d0774429c33f4606dc7fe9607735
+b2xx_b205mini_fpga_default      fpga-0ac3353f        b2xx/fpga-0ac3353f/b2xx_b205mini_fpga_default-g0ac3353f.zip               f1db44f781de96190a78447e1779be27baa343a37a84f548d7d49dafaf1edf08
 b2xx_common_fw_default          uhd-455a288         b2xx/uhd-455a288/b2xx_common_fw_default-g455a288.zip                  ac53d8bf9cda7508cb3ee09d190de08495ba9e519279e77f9927eccc953144f6
 
 # USRP2 Devices

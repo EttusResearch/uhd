@@ -585,6 +585,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     // Init codec - turns on clocks
     ////////////////////////////////////////////////////////////////////
     UHD_LOGGER_INFO("B200") << "Initialize CODEC control..." ;
+    reset_codec();
     ad9361_params::sptr client_settings;
     if (_product == B200MINI or _product == B205MINI) {
         client_settings = boost::make_shared<b2xxmini_ad9361_client_t>();
@@ -1228,6 +1229,14 @@ void b200_impl::update_bandsel(const std::string& which, double freq)
     update_gpio_state();
 }
 
+void b200_impl::reset_codec()
+{
+    _gpio_state.codec_arst = 1;
+    update_gpio_state();
+    _gpio_state.codec_arst = 0;
+    update_gpio_state();
+}
+
 void b200_impl::update_gpio_state(void)
 {
     const uint32_t misc_word = 0
@@ -1237,7 +1246,7 @@ void b200_impl::update_gpio_state(void)
         | (_gpio_state.rx_bandsel_a << 5)
         | (_gpio_state.rx_bandsel_b << 4)
         | (_gpio_state.rx_bandsel_c << 3)
-        // Bit 2 currently not used.
+        | (_gpio_state.codec_arst << 2)
         | (_gpio_state.mimo << 1)
         | (_gpio_state.ref_sel << 0)
     ;
