@@ -44,6 +44,7 @@ private:
 #include "../converters.hpp"
 #include <mpm/xbar_iface.hpp>
 #include <mpm/types/types_python.hpp>
+#include <mpm/i2c/i2c_python.hpp>
 #include <mpm/spi/spi_python.hpp>
 #include <mpm/ad937x/ad937x_ctrl.hpp>
 #include <mpm/dboards/magnesium_manager.hpp>
@@ -58,6 +59,7 @@ BOOST_PYTHON_MODULE(libpyusrp_periphs)
     export_converter();
     export_types();
     export_spi();
+    export_i2c();
     export_mykonos();
     export_xbar();
     export_magnesium();
