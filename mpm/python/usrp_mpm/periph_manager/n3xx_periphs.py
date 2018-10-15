@@ -99,7 +99,7 @@ class TCA6424(object):
             self.pins = self.pins_list[1]
 
         default_val = 0x860101 if rev == 2 else 0x860780
-        self._gpios = SysFSGPIO('tca6424', 0xFFF7FF, 0x86F7FF, default_val)
+        self._gpios = SysFSGPIO({'label': 'tca6424'}, 0xFFF7FF, 0x86F7FF, default_val)
 
     def set(self, name, value=None):
         """
@@ -132,7 +132,7 @@ class FrontpanelGPIO(GPIOBank):
     def __init__(self, ddr):
         GPIOBank.__init__(
             self,
-            'zynq_gpio',
+            {'label': 'zynq_gpio'},
             self.FP_GPIO_OFFSET + self.EMIO_BASE,
             0xFFF, # use_mask
             ddr
@@ -151,7 +151,7 @@ class BackpanelGPIO(GPIOBank):
     def __init__(self):
         GPIOBank.__init__(
             self,
-            'zynq_gpio',
+            {'label': 'zynq_gpio'},
             self.BP_GPIO_OFFSET + self.EMIO_BASE,
             0x7, # use_mask
             0x7, # ddr

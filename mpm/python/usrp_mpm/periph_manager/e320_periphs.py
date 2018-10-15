@@ -37,7 +37,7 @@ class FrontpanelGPIO(GPIOBank):
     def __init__(self, ddr):
         GPIOBank.__init__(
             self,
-            'zynq_gpio',
+            {'label': 'zynq_gpio'},
             self.FP_GPIO_OFFSET + self.EMIO_BASE,
             0xFF, # use_mask
             ddr
