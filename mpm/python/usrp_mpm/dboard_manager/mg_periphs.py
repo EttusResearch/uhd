@@ -29,7 +29,7 @@ class TCA6408(object):
     def __init__(self, i2c_dev):
         if i2c_dev is None:
             raise RuntimeError("Need to specify i2c device to use the TCA6408")
-        self._gpios = SysFSGPIO('tca6408', 0xBF, 0xAA, 0xAA, i2c_dev)
+        self._gpios = SysFSGPIO({'label': 'tca6408'}, 0xBF, 0xAA, 0xAA, i2c_dev)
 
     def set(self, name, value=None):
         """

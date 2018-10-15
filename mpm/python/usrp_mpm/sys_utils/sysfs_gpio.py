@@ -13,7 +13,6 @@ import pyudev
 from usrp_mpm.mpmlog import get_logger
 
 GPIO_SYSFS_BASE_DIR = '/sys/class/gpio'
-GPIO_SYSFS_LABELFILE = 'label'
 GPIO_SYSFS_VALUEFILE = 'value'
 
 def get_all_gpio_devs(parent_dev=None):
@@ -74,12 +73,51 @@ def get_gpio_map_info(gpio_dev):
     )
     return map_info
 
-def find_gpio_device(label, parent_dev=None, logger=None):
+def get_map_data(gpio_dev, path, logger=None):
     """
-    Given a label, returns a tuple (uio_device, map_info).
-    uio_device is something like 'gpio882'. map_info is a dictionary with
-    information regarding the GPIO device read from the map info sysfs dir.
+    Returns the value of the file found at the given path within a gpio_dev.
+    Example: If gpio_dev is 'gpio882' and path is 'device/of_node/name'
+    the value found at '/sys/class/gpio/gpio882/device/of_node/name' will
+    be returned.
+
+    Numbers are casted to numbers automatically. Strings remain strings.
     """
+    map_path = os.path.join(GPIO_SYSFS_BASE_DIR, path, gpio_dev)
+    if not os.path.isfile(map_path):
+        if logger:
+            logger.trace("Couldn't find a device tree file to match: `{0}'".format(map_path))
+        return None
+    map_info_value = open(map_path, 'r').read().strip().rstrip('\x00')
+    if logger:
+        logger.trace("File at `{0}' has value `{1}'".format(map_path, map_info_value))
+    try:
+        map_info_value = int(map_info_value, 0)
+    except ValueError:
+        pass
+    # Manually add GPIO number
+    return map_info_value
+
+def find_gpio_device(identifiers, parent_dev=None, logger=None):
+    """
+    Given identifiers, returns a tuple (uio_device, map_info).
+    identifiers is a dictionary of paths as keys and expected values as values
+    (e.g. {"label": "tca6404"}).
+    uio_device is something like 'gpio882'.
+    map_info is a dictionary with information regarding the GPIO device read
+    from the map info sysfs dir.
+    """
+    def id_dict_compare(identifiers, gpio_dev, logger=None):
+        """
+        Checks that a gpio_dev matches the path value pairs specified in
+        identifiers.
+        Returns True if the gpio_dev matches all path value pairs, otherwise
+        returns False
+        """
+        for k in identifiers:
+            if get_map_data(k, gpio_dev, logger) != identifiers[k]:
+                return False
+        return True
+
     gpio_devices = get_all_gpio_devs(parent_dev)
     if logger:
         logger.trace("Found the following UIO devices: `{0}'".format(','.join(gpio_devices)))
@@ -87,12 +125,12 @@ def find_gpio_device(label, parent_dev=None, logger=None):
         map_info = get_gpio_map_info(gpio_device)
         if logger:
             logger.trace("{0} has map info: {1}".format(gpio_device, map_info))
-        if map_info.get('label') == label:
+        if id_dict_compare(identifiers, gpio_device, logger):
             if logger:
-                logger.trace("Device matches label: `{0}'".format(gpio_device))
+                logger.trace("Device matches identifiers: `{0}'".format(gpio_device))
             return gpio_device, map_info
     if logger:
-        logger.warning("Found no matching gpio device for label `{0}'".format(label))
+        logger.warning("Found no matching gpio device for identifiers `{0}'".format(identifiers))
     return None, None
 
 class SysFSGPIO(object):
@@ -100,20 +138,20 @@ class SysFSGPIO(object):
     API for accessing GPIOs mapped into userland via sysfs
     """
 
-    def __init__(self, label, use_mask, ddr, init_value=0, parent_dev=None):
+    def __init__(self, identifiers, use_mask, ddr, init_value=0, parent_dev=None):
         assert (use_mask & ddr) == ddr
         self.log = get_logger("SysFSGPIO")
-        self._label = label
+        self._identifiers = identifiers
         self._use_mask = use_mask
         self._ddr = ddr
         self._init_value = init_value
-        self.log.trace("Generating SysFSGPIO object for label `{}'..."
-                       .format(label))
+        self.log.trace("Generating SysFSGPIO object for identifiers `{}'..."
+                       .format(identifiers))
         self._gpio_dev, self._map_info = \
-                find_gpio_device(label, parent_dev, self.log)
+                find_gpio_device(identifiers, parent_dev, self.log)
         if self._gpio_dev is None:
             error_msg = \
-                "Could not find GPIO device with label `{}'.".format(label)
+                "Could not find GPIO device with identifiers `{}'.".format(identifiers)
             self.log.error(error_msg)
             raise RuntimeError(error_msg)
         self.log.trace("GPIO base number is {}"
@@ -195,13 +233,13 @@ class GPIOBank(object):
     """
     Extension of a SysFSGPIO
     """
-    def __init__(self, uio_label, offset, usemask, ddr):
+    def __init__(self, uio_identifiers, offset, usemask, ddr):
         self._gpiosize = bin(usemask).count("1")
         self._offset = offset
         self._ddr = ddr
         self._usemask = usemask
         self._gpios = SysFSGPIO(
-            uio_label,
+            uio_identifiers,
             self._usemask << self._offset,
             self._ddr << self._offset
         )
@@ -244,4 +282,3 @@ class GPIOBank(object):
         """
         assert index in range(self._gpiosize)
         return self._gpios.get(self._offset + index)
-
