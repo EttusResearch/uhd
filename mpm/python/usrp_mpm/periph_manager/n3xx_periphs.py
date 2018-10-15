@@ -8,8 +8,11 @@ N3xx peripherals
 """
 
 import datetime
+from usrp_mpm import lib
 from usrp_mpm.sys_utils.sysfs_gpio import SysFSGPIO, GPIOBank
 from usrp_mpm.sys_utils.uio import UIO
+from usrp_mpm.sys_utils import i2c_dev
+from usrp_mpm.chips.ds125df410 import DS125DF410
 
 # Map register values to SFP transport types
 N3XX_SFP_TYPES = {
@@ -417,3 +420,17 @@ class MboardRegsControl(object):
         "Get the RFNoC crossbar base port"
         with self.regs:
             return self.peek32(self.MB_XBAR_BASEPORT)
+
+class RetimerQSFP(DS125DF410):
+    # (deemphasis, swing)
+    DRIVER_PRESETS = { '1m': (0x00, 0x07), '3m': (0x41, 0x06), 'Optical': (0x41, 0x04) }
+
+    def __init__(self, i2c_bus):
+        regs_iface = lib.i2c.make_i2cdev_regs_iface(
+            i2c_bus,
+            0x18,
+            False,
+            100,
+            1
+        )
+        super(RetimerQSFP, self).__init__(regs_iface)

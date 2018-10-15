@@ -21,11 +21,13 @@ from usrp_mpm.mpmtypes import SID
 from usrp_mpm.mpmutils import assert_compat_number, str2bool, poll_with_timeout
 from usrp_mpm.rpc_server import no_rpc
 from usrp_mpm.sys_utils import dtoverlay
+from usrp_mpm.sys_utils import i2c_dev
 from usrp_mpm.sys_utils.sysfs_thermal import read_thermal_sensor_value
 from usrp_mpm.xports import XportMgrUDP, XportMgrLiberio
 from usrp_mpm.periph_manager.n3xx_periphs import TCA6424
 from usrp_mpm.periph_manager.n3xx_periphs import BackpanelGPIO
 from usrp_mpm.periph_manager.n3xx_periphs import MboardRegsControl
+from usrp_mpm.periph_manager.n3xx_periphs import RetimerQSFP
 from usrp_mpm.dboard_manager.magnesium import Magnesium
 from usrp_mpm.dboard_manager.eiscat import EISCAT
 from usrp_mpm.dboard_manager.rhodium import Rhodium
@@ -36,6 +38,9 @@ N3XX_DEFAULT_TIME_SOURCE = 'internal'
 N3XX_DEFAULT_ENABLE_GPS = True
 N3XX_DEFAULT_ENABLE_FPGPIO = True
 N3XX_DEFAULT_ENABLE_PPS_EXPORT = True
+N32X_DEFAULT_QSFP_RATE_PRESET = 'Ethernet'
+N32X_DEFAULT_QSFP_DRIVER_PRESET = 'Optical'
+N32X_QSFP_I2C_LABEL = 'qsfp-i2c'
 N3XX_FPGA_COMPAT = (5, 3)
 N3XX_MONITOR_THREAD_INTERVAL = 1.0 # seconds
 
@@ -342,6 +347,18 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         self._init_meas_clock()
         # Init GPSd iface and GPS sensors
         self._init_gps_sensors()
+        # Init QSFP board (if available)
+        qsfp_i2c = i2c_dev.of_get_i2c_adapter(N32X_QSFP_I2C_LABEL)
+        if qsfp_i2c:
+            self.log.debug("Creating QSFP Retimer control object...")
+            self._qsfp_retimer = RetimerQSFP(qsfp_i2c)
+            self._qsfp_retimer.set_rate_preset(N32X_DEFAULT_QSFP_RATE_PRESET)
+            self._qsfp_retimer.set_driver_preset(N32X_DEFAULT_QSFP_DRIVER_PRESET)
+        elif self.device_info['product'] == 'n320':
+            # If we have an N320, we should also have the QSFP board, but we
+            # won't freak out if we can't find it. Maybe someone removed or
+            # disabled it.
+            self.log.warning("No QSFP board detected!")
         # Init CHDR transports
         self._xport_mgrs = {
             'udp': N3xxXportMgrUDP(self.log.getChild('UDP')),
