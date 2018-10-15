@@ -309,19 +309,23 @@ uhd::gain_range_t rhodium_radio_ctrl_impl::_get_gain_range(direction_t dir)
 
 bool rhodium_radio_ctrl_impl::_get_spur_dodging_enabled(uhd::direction_t dir) const
 {
+    UHD_ASSERT_THROW(_tree->exists(get_arg_path(SPUR_DODGING_ARG_NAME) / "value"));
+    auto block_value = _tree->access<std::string>(get_arg_path(SPUR_DODGING_ARG_NAME) / "value").get();
     auto dict = _get_tune_args(_tree, _radio_slot, dir);
 
     // get the current tune_arg for spur_dodging
-    // if the tune_arg doesn't exist, get the radio block argument instead
+    // if the tune_arg doesn't exist, use the radio block argument instead
     std::string spur_dodging_arg = dict.cast<std::string>(
-        "spur_dodging",
-        (_tree->access<std::string>(get_arg_path("spur_dodging") / "value").get()));
+        SPUR_DODGING_ARG_NAME,
+        block_value);
 
     if (spur_dodging_arg == "enabled")
     {
+        UHD_LOG_TRACE(unique_id(), "_get_spur_dodging_enabled returning enabled");
         return true;
     }
     else if (spur_dodging_arg == "disabled") {
+        UHD_LOG_TRACE(unique_id(), "_get_spur_dodging_enabled returning disabled");
         return false;
     }
     else {
@@ -333,13 +337,17 @@ bool rhodium_radio_ctrl_impl::_get_spur_dodging_enabled(uhd::direction_t dir) co
 
 double rhodium_radio_ctrl_impl::_get_spur_dodging_threshold(uhd::direction_t dir) const
 {
+    UHD_ASSERT_THROW(_tree->exists(get_arg_path(SPUR_DODGING_THRESHOLD_ARG_NAME) / "value"));
+    auto block_value = _tree->access<double>(get_arg_path(SPUR_DODGING_THRESHOLD_ARG_NAME) / "value").get();
     auto dict = _get_tune_args(_tree, _radio_slot, dir);
 
     // get the current tune_arg for spur_dodging_threshold
-    // if the tune_arg doesn't exist, get the radio block argument instead
-    return dict.cast(
-        "spur_dodging_threshold",
-        _tree->access<double>(get_arg_path("spur_dodging_threshold") / "value").get());
+    // if the tune_arg doesn't exist, use the radio block argument instead
+    auto threshold = dict.cast<double>(SPUR_DODGING_THRESHOLD_ARG_NAME, block_value);
+
+    UHD_LOG_TRACE(unique_id(), "_get_spur_dodging_threshold returning " << threshold);
+
+    return threshold;
 }
 
 size_t rhodium_radio_ctrl_impl::get_chan_from_dboard_fe(

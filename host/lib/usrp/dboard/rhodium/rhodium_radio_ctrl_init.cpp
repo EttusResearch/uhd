@@ -131,6 +131,17 @@ void rhodium_radio_ctrl_impl::_init_defaults()
     UHD_LOG_DEBUG(unique_id(),
         "Setting default spp to " << default_spp);
     _tree->access<int>(get_arg_path("spp") / "value").set(default_spp);
+
+    // Update configurable block arguments from the device arguments provided
+    if (_block_args.has_key(SPUR_DODGING_ARG_NAME)) {
+        _tree->access<std::string>(get_arg_path(SPUR_DODGING_ARG_NAME) / "value")
+            .set(_block_args.get(SPUR_DODGING_ARG_NAME));
+    }
+
+    if (_block_args.has_key(SPUR_DODGING_THRESHOLD_ARG_NAME)) {
+        _tree->access<double>(get_arg_path(SPUR_DODGING_THRESHOLD_ARG_NAME) / "value")
+            .set(boost::lexical_cast<double>(_block_args.get(SPUR_DODGING_THRESHOLD_ARG_NAME)));
+    }
 }
 
 void rhodium_radio_ctrl_impl::_init_peripherals()
