@@ -72,6 +72,24 @@ public:
         return ret;
     }
 
+    int transfer(std::vector<uint8_t> *tx, std::vector<uint8_t> *rx)
+    {
+        uint8_t *tx_data = NULL, *rx_data = NULL;
+        size_t tx_len = 0, rx_len = 0;
+
+        if (tx) {
+            tx_data = tx->data();
+            tx_len = tx->size();
+        }
+
+        if (rx) {
+            rx_data = rx->data();
+            rx_len = rx->size();
+        }
+        int ret = transfer(tx_data, tx_len, rx_data, rx_len);
+        return ret;
+    }
+
 private:
     int _fd;
     const uint16_t _addr;

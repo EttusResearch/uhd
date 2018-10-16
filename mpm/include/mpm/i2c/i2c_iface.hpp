@@ -9,6 +9,7 @@
 #include <boost/noncopyable.hpp>
 #include <memory>
 #include <string>
+#include <vector>
 
 namespace mpm { namespace i2c {
 
@@ -39,6 +40,17 @@ namespace mpm { namespace i2c {
          * \param rx_len Number of bytes to read
          */
         virtual int transfer(uint8_t *tx, size_t tx_len, uint8_t *rx, size_t rx_len) = 0;
+
+        /*!
+         * \param tx Buffer of data to send
+         * \param rx Buffer to hold read data
+         *
+         * All data in tx will be transmitted.
+         * The amount of data read will be determined by the number of elements
+         * in the rx vector. Those elements will be overwritten with the data.
+         * Use the resize() function for a new rx vector.
+         */
+        virtual int transfer(std::vector<uint8_t> *tx, std::vector<uint8_t> *rx) = 0;
     };
 
 }}; /* namespace mpm::i2c */
