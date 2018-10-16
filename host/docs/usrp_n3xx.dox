@@ -567,13 +567,15 @@ Using an internal reference is the default.
 \subsection n3xx_synchronization_external External references
 
 In order to synchronize multiple USRPs, an external reference, such as the
-CDA-2990, is required. If only a clock reference is available, it is possible
-to derive an internal PPS signal from the reference (which will allow devices
-to share a frequency, but not a time reference). If both an external clock and
-time source are provided, devices will be synchronized in frequency and time.
+CDA-2990 (OctoClock), is required. If only a clock reference is available, it is
+possible to derive an internal PPS signal from the reference (which will allow
+devices to share a frequency, but not a time reference). If both an external
+clock and time source are provided, devices will be synchronized in frequency
+and time.
 
 ```cpp
-auto usrp = uhd::usrp::multi_usrp::make("type=n3xx,clock_source=external,time_source=external");
+auto usrp = uhd::usrp::multi_usrp::make(
+    "type=n3xx,clock_source=external,time_source=external");
 ```
 
 \subsection n3xx_synchronization_whiterabbit White Rabbit
@@ -584,7 +586,7 @@ configured as a White Rabbit slave.
 
 To use White Rabbit, it is necessary to provide an appropriate reference via
 Ethernet. This reference must be connected to SFP0. Finally, a White Rabbit-compatible
-FPGA must be loaded. SFP0 will not be available for data transport in this mode.
+FPGA must be loaded. SFP0 will *not be available for data transport* in this mode.
 
 The White Rabbit image is provided as a default image. To obtain the default
 images, simply run:
@@ -593,13 +595,24 @@ images, simply run:
 
 Then, you can install the WX (or WA) image using `uhd_image_loader`:
 
-    $ uhd_image_loader --args type=n3xx,addr=ni-n3xx-<DEVICE_SERIAL> --fpga-path=”<UHD_INSTALL_DIRECTORY>/share/uhd/images/usrp_n310_fpga_WX.bit
+    $ uhd_image_loader \
+        --args type=n3xx,addr=ni-n3xx-<DEVICE_SERIAL>,WX
 
 Once the image is loaded, select `internal` as the clock source and
-`sfp0` as the time source:
+`sfp0` as the time source (note: this will fail if the WX or WA image is not
+currently loaded):
 
 ```cpp
-auto usrp = uhd::usrp::multi_usrp::make("type=n3xx,clock_source=internal,time_source=sfp0");
+auto usrp = uhd::usrp::multi_usrp::make(
+    "type=n3xx,clock_source=internal,time_source=sfp0");
+// Or if you want to change it to White Rabbit after initialization:
+usrp->set_sync_source(device_addr_t("clock_source=internal,time_source=sfp0"));
+// Using the older time/clock source APIs is also possible:
+usrp->set_time_source("sfp0");
+usrp->set_clock_source("internal");
+// The 2nd call can technically be skipped because the device implementations
+// will coerce, but for consistency with other code and for being explicit this
+// is the preferred way. The 2nd call will immediately return in this case.
 ```
 
 For more information, refer to the [White Rabbit Homepage](https://www.ohwr.org/projects/white-rabbit),
