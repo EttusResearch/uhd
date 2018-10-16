@@ -578,51 +578,6 @@ class N3XXBIST(object):
                     ).read().strip()
         return len(result) == 1, result
 
-    def bist_clock_int(self):
-        """
-        BIST for clock lock from internal (25 MHz) source.
-        Description: Checks to see if the daughtercard can lock to an internal
-        clock source.
-
-        External Equipment: None
-        Return dictionary:
-        - <sensor-name>:
-          - locked: Boolean lock status
-
-        There can be multiple ref lock sensors; for a pass condition they all
-        need to be asserted.
-        """
-        assert 'clock_int' in self.tests_to_run
-        if self.args.dry_run:
-            return True, {'ref_locked': True}
-        # FIXME implement
-        sys.stderr.write("Test not implemented.\n")
-        return True, {}
-
-    def bist_clock_ext(self):
-        """
-        BIST for clock lock from external source. Note: This test requires a
-        connected daughterboard with a 'ref lock' sensor available.
-
-        Description: Checks to see if the daughtercard can lock to the external
-        reference clock.
-
-        External Equipment: 10 MHz reference Source connected to "ref in".
-
-        Return dictionary:
-        - <sensor-name>:
-          - locked: Boolean lock status
-
-        There can be multiple ref lock sensors; for a pass condition they all
-        need to be asserted.
-        """
-        assert 'clock_ext' in self.tests_to_run
-        if self.args.dry_run:
-            return True, {'ref_locked': True}
-        # FIXME implement
-        sys.stderr.write("Test not implemented.\n")
-        return True, {}
-
     def bist_sfp0_loopback(self):
         """
         BIST for SFP+ ports:
@@ -830,6 +785,113 @@ class N3XXBIST(object):
             'lock_status': int(lock_status),
         }
         return lock_status, result
+
+    def bist_ref_clock_int(self):
+        """
+        BIST for clock and pps lock from internal (25MHz).
+        Description: Checks to see if we can lock to an internal
+        clock source.
+
+        External Equipment: None
+        Return dictionary:
+        - <sensor-name>:
+          - locked: Boolean lock status
+
+        There can be multiple ref lock sensors; for a pass condition they all
+        need to be asserted.
+        """
+        assert 'ref_clock_int' in self.tests_to_run
+        result = self.ref_clock_helper('internal', 'internal')
+        return 'error_msg' not in result, result
+
+    def bist_ref_clock_ext(self):
+        """
+        BIST for clock pps lock from external (10MHz) source.
+        Description: Checks to see if we can lock to an external
+        clock source.
+
+        External Equipment: External 10 MHz reference clock needed (from Octoclock)
+        Return dictionary:
+        - <sensor-name>:
+          - locked: Boolean lock status
+
+        There can be multiple ref lock sensors; for a pass condition they all
+        need to be asserted.
+        """
+        assert 'ref_clock_ext' in self.tests_to_run
+        result = self.ref_clock_helper('external', 'external')
+        return 'error_msg' not in result, result
+
+    def bist_ref_clock_gpsdo(self):
+        """
+        BIST for clock and pps lock from gpsdo (20MHz) source.
+        Description: Checks to see if we can lock to an external
+        clock source.
+
+        External Equipment: None
+        Return dictionary:
+        - <sensor-name>:
+          - locked: Boolean lock status
+
+        There can be multiple ref lock sensors; for a pass condition they all
+        need to be asserted.
+        """
+        assert 'ref_clock_gpsdo' in self.tests_to_run
+        result = self.ref_clock_helper('gpsdo', 'gpsdo')
+        return 'error_msg' not in result, result
+
+    def ref_clock_helper(self, clock_source, time_source):
+        """
+        Helper function to determine reference clock lock
+        Description: Checks to see if we can lock to a clock source.
+        External Equipment: None
+        Return dictionary:
+         - <sensor-name>:
+           - locked: Boolean lock status
+        """
+        assert clock_source in ("gpsdo", "internal", "external"),\
+            "Invalid clock source selected ({}). Valid choices: {}".format(
+                clock_source, ("gpsdo", "internal", "external"))
+
+        assert time_source in ("gpsdo", "internal", "external", "sfp0"),\
+            "Invalid time source selected ({}). Valid choices: {}".format(
+                time_source, ("gpsdo", "internal", "external", "sfp0"))
+
+        if self.args.dry_run:
+            return True, {'ref_locked': True}
+        result = {}
+        env = os.environ.copy()
+        env['UHD_LOG_CONSOLE_LEVEL'] = 'error'
+        cmd = ['uhd_usrp_probe', '--args',
+               'addr=127.0.0.1,'
+               'rfnoc_num_blocks=0,'
+               'skip_rfic=1,'
+               'clock_source={c},time_source={t}'.format(c=clock_source,
+                                                         t=time_source),
+               '--sensor']
+        sensor_path = '/mboards/0/sensors/ref_locked'
+        cmd.append(sensor_path)
+        ref_lock_executor = ' '.join(cmd)
+        try:
+            output = subprocess.check_output(
+                ref_lock_executor,
+                stderr=subprocess.STDOUT,
+                env=env,
+                shell=True,
+            )
+        except subprocess.CalledProcessError as ex:
+            # Don't throw errors from uhd_usrp_probe
+            output = ex.output
+        output = output.decode("utf-8")
+        mobj = re.search(r"true$", output.strip())
+        if mobj is not None:
+            result['ref_locked'] = True
+        else:
+            result['ref_locked'] = False
+            result['error_msg'] = ("Reference Clock not locked."
+                                   " Extra output:" + output)
+        return result
+
 
 
 def gpio_set_all(gpio_bank, value, gpio_size, ddr_mask):
