@@ -519,12 +519,21 @@ private:
                 }
             }
             info.data_bytes_to_copy = info[index].ifpi.num_payload_bytes;
+            // reset start_of_burst and end_of_burst states
+            info.metadata.start_of_burst = info[index].ifpi.sob;
+            info.metadata.end_of_burst = info[index].ifpi.eob;
         }
 
         //if the sequence id matches:
         //  remove this index from the list and continue
         else if (info[index].time == info.alignment_time){
             info.indexes_todo.reset(index);
+            // All channels should have sob set at the same time, so only
+            // set start_of burst if all channels have sob set.
+            info.metadata.start_of_burst &= info[index].ifpi.sob;
+            // If any channel indicates eob, no more data will be received for
+            // that channel so set end_of_burst for any eob.
+            info.metadata.end_of_burst |= info[index].ifpi.eob;
         } else {
             // Not going to use this buffer, so release it
             info[index].reset();
@@ -660,8 +669,6 @@ private:
         curr_info.metadata.time_spec = time_spec_t::from_ticks(curr_info[0].time, _tick_rate);
         curr_info.metadata.more_fragments = false;
         curr_info.metadata.fragment_offset = 0;
-        curr_info.metadata.start_of_burst = curr_info[0].ifpi.sob;
-        curr_info.metadata.end_of_burst = curr_info[0].ifpi.eob;
         curr_info.metadata.error_code = rx_metadata_t::ERROR_CODE_NONE;
 
     }
