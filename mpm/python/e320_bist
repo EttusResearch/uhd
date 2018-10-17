@@ -616,16 +616,18 @@ class E320BIST(object):
         if self.args.dry_run:
             return True, {'ref_locked': True}
         result = {}
+        env = os.environ.copy()
+        env['UHD_LOG_CONSOLE_LEVEL'] = 'error'
         cmd = ['uhd_usrp_probe', '--args', 'addr=127.0.0.1,clock_source=' + clock_source,
             '--sensor']
         sensor_path = '/mboards/0/sensors/ref_locked'
         cmd.append(sensor_path)
         ref_lock_executor = ' '.join(cmd)
-        print(ref_lock_executor)
         try:
             output = subprocess.check_output(
                 ref_lock_executor,
-                stderr=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                env=env,
                 shell=True,
             )
         except subprocess.CalledProcessError as ex:
@@ -637,7 +639,8 @@ class E320BIST(object):
             result['ref_locked'] = True
         else:
             result['ref_locked'] = False
-            result['error_msg'] = "Reference Clock not locked"
+            result['error_msg'] = ("Reference Clock not locked."
+                                   " Extra output:" + output)
         return result
 
     def bist_ref_clock_int(self):
