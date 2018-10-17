@@ -61,7 +61,8 @@ class NIJESDCore(object):
                          "tx_sysref_delay"   : 10,      # Cycles of delay added to TX SYSREF
                          "tx_driver_swing"   : 0b1111,  # See UG476, TXDIFFCTRL
                          "tx_precursor"      : 0b00000, # See UG476, TXPRECURSOR
-                         "tx_postcursor"     : 0b00000} # See UG476, TXPOSTCURSOR
+                         "tx_postcursor"     : 0b00000, # See UG476, TXPOSTCURSOR
+                         "enable_rx_eyescan" : False}   # Enable the PMA Eye Scan circuitry.
 
     def __init__(self, regs, slot_idx=0, **kwargs):
         self.regs = regs
@@ -210,6 +211,7 @@ class NIJESDCore(object):
         Initializes the core. Must happen after the reference clock is stable.
         """
         self.log.trace("Initializing JESD204B FPGA core(s)...")
+        self._gt_pma_eyescan(self.enable_rx_eyescan)
         self._gt_pll_power_control(self.qplls_used, self.cplls_used)
         self._gt_reset('tx', reset_only=True)
         self._gt_reset('rx', reset_only=True)
@@ -326,6 +328,21 @@ class NIJESDCore(object):
                     raise RuntimeError("One or more GT QPLLs failed to lock!")
                 self.log.trace("QPLL(s) reporting locked!")
 
+    def _gt_pma_eyescan(self, enable=False):
+        # According to UG476 pg. 220, for a GTX xcvr PMA_RSV2[5] should always be
+        # asserted when using Eye Scan; otherwise, the Eye Scan circuitry in the PMA
+        # will be powered down.
+        PMA_RSV2_DRP_ADDR = 0x082
+        self.log.debug("{} the eye scan circuitry in the PMA for the GTXs..."
+                       .format({True: "Enabling", False: "Disabling"}[enable]))
+        for gt_num in range(0, self.rx_lanes):
+            self.set_drp_target('mgt', gt_num)
+            drp_x082_rb = self.drp_access(rd=True, addr=PMA_RSV2_DRP_ADDR)
+            pma_rsv2_bit5 = int(enable)
+            drp_x082_wr = (drp_x082_rb & ~(0b1 << 5)) | (pma_rsv2_bit5 << 5)
+            self.drp_access(rd=False, addr=PMA_RSV2_DRP_ADDR, wr_data=drp_x082_wr)
+        self.disable_drp_target()
+
     def set_drp_target(self, mgt_or_qpll, dev_num):
         """
         Sets up access to the specified MGT or QPLL. This must be called
@@ -382,4 +399,3 @@ class NIJESDCore(object):
                 self.log.error("DRP read after write failed to match!")
 
         return rd_data
-
