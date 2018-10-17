@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Ettus Research, a National Instruments Company
+# Copyright 2017-2018 Ettus Research, a National Instruments Company
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
@@ -109,7 +109,7 @@ class ClockSynchronizer(object):
                                self.ref_clk_freq*1e-6))
             raise RuntimeError("TDC does not support the selected reference clock rate!")
         self.supported_radio_clk_freqs = [104e6, 122.88e6, 125e6, 153.6e6, 156.25e6, \
-                                          200e6, 250e6]
+                                          200e6, 245.76e6, 250e6]
         if self.radio_clk_freq not in self.supported_radio_clk_freqs:
             self.log.error("Clock synchronizer does not support the selected radio clock"
                            " frequency. Selected rate: {:.2f} MHz".format(

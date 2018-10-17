@@ -422,7 +422,8 @@ class Magnesium(DboardManagerBase):
             db_clk_control = DboardClockControl(dboard_ctrl_regs, self.log)
             db_clk_control.reset_mmcm()
             # Place the JESD204b core in reset, mainly to reset QPLL/CPLLs.
-            jesdcore = nijesdcore.NIMgJESDCore(dboard_ctrl_regs, self.slot_idx)
+            jesdcore = nijesdcore.NIJESDCore(dboard_ctrl_regs, self.slot_idx,
+                                             **MagnesiumInitManager.JESD_DEFAULT_ARGS)
             jesdcore.reset()
             # The reference clock is handled elsewhere since it is a motherboard-
             # level clock.

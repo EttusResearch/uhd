@@ -1,5 +1,5 @@
 #
-# Copyright 2017 Ettus Research, a National Instruments Company
+# Copyright 2017-2018 Ettus Research, a National Instruments Company
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
@@ -8,11 +8,12 @@ JESD FPGA Core Interface
 """
 
 import time
+from six import iteritems
 from builtins import hex
 from builtins import object
 from usrp_mpm.mpmlog import get_logger
 
-class NIMgJESDCore(object):
+class NIJESDCore(object):
     """
     Provide interface for the FPGA JESD Core.
     Works with Magnesium/Mykonos daughterboards only.
@@ -21,6 +22,13 @@ class NIMgJESDCore(object):
     regs -- regs class to use for peek/poke
     """
 
+    # Bump this whenever we stop supporting older FPGA images or boards.
+    # YYMMDDHH
+    OLDEST_COMPAT_VERSION = 0x17122214
+    # Bump this whenever changes are made to the host code.
+    CURRENT_VERSION = 0x18071209
+
+    # Register offsets for JESD core.
     DB_ID                      = 0x0630
     MGT_QPLL_CONTROL           = 0x2000
     MGT_PLL_POWER_DOWN_CONTROL = 0x200C
@@ -38,31 +46,37 @@ class NIMgJESDCore(object):
     JESD_REVISION_REG          = 0x2104
     JESD_OLD_COMPAT_REV_REG    = 0x2108
 
+    # NIJESDCore configuration attributes.
+    # These parameters should be set per board (ie. Mg, Rh, etc.) at the creation
+    # of the NIJESDCore object. Use **kwargs to pass a dict which keys correspond
+    # to the parameter's name (eg. {"lmfc_divider": 12, ...}).
+    JESDCORE_DEFAULTS = {"qplls_used"        : 1,       # Number of QPLLs used.
+                         "cplls_used"        : 0,       # Number of CPLLs used.
+                         "rx_lanes"          : 4,       # Number of RX lanes used.
+                         "tx_lanes"          : 4,       # Number of TX lanes used.
+                         "bypass_descrambler": True,    # Bypass the desrambler IP.
+                         "bypass_scrambler"  : True,    # Bypass the scrambler IP.
+                         "lmfc_divider"      : 10,      # Number of FPGA clock cycles per LMFC period.
+                         "rx_sysref_delay"   : 10,      # Cycles of delay added to RX SYSREF
+                         "tx_sysref_delay"   : 10,      # Cycles of delay added to TX SYSREF
+                         "tx_driver_swing"   : 0b1111,  # See UG476, TXDIFFCTRL
+                         "tx_precursor"      : 0b00000, # See UG476, TXPRECURSOR
+                         "tx_postcursor"     : 0b00000} # See UG476, TXPOSTCURSOR
 
-    def __init__(self, regs, slot_idx=0):
+    def __init__(self, regs, slot_idx=0, **kwargs):
         self.regs = regs
         self.log = get_logger("NIJESD204bCore-{}".format(slot_idx))
         assert hasattr(self.regs, 'peek32')
         assert hasattr(self.regs, 'poke32')
-        # FutureWork: The following are constants for the Magnesium board. These need
-        # to change to variables to support other interfaces.
-        self.qplls_used = 1
-        self.cplls_used = 0
-        self.rx_lanes = 4
-        self.tx_lanes = 4
-        self.bypass_descrambler = False
-        self.bypass_scrambler = True
-        self.lmfc_divider = 20 # Number of FPGA clock cycles per LMFC period.
-        self.rx_sysref_delay = 8  # Cycles of delay added to RX SYSREF
-        self.tx_sysref_delay = 11 # Cycles of delay added to TX SYSREF
-        self.tx_driver_swing = 0b1111 # See UG476, TXDIFFCTRL
-        self.tx_precursor = 0b00000 # See UG476, TXPRECURSOR
-        self.tx_postcursor = 0b00000 # See UG476, TXPOSTCURSOR
-        # Bump this whenever we stop supporting older FPGA images or boards.
-        # YYMMDDHH
-        self.oldest_compat_version = 0x17122214
-        # Bump this whenever changes are made to the host code.
-        self.current_version = 0x17122214
+        # Initialize the driver's attributes with the default value, or a user-given
+        # value if the attribute key exists in kwargs.
+        for key, default_value in iteritems(self.JESDCORE_DEFAULTS):
+            setattr(self, key, kwargs.get(key, default_value))
+            assert type(getattr(self, key)) == type(default_value), \
+                "Invalid type for attribute {}".format(key)
+            self.log.trace("Initialized attribute {0} = {1}."
+                           .format(key, getattr(self, key)))
+        
 
     def check_core(self):
         """
@@ -76,15 +90,15 @@ class NIMgJESDCore(object):
         #   Host Current Rev >= FPGA Oldest Compatible Rev
         fpga_current_revision    = self.regs.peek32(self.JESD_REVISION_REG) & 0xFFFFFFFF
         fpga_old_compat_revision = self.regs.peek32(self.JESD_OLD_COMPAT_REV_REG) & 0xFFFFFFFF
-        if fpga_current_revision < self.oldest_compat_version:
+        if fpga_current_revision < self.OLDEST_COMPAT_VERSION:
             self.log.error("Revision check failed! MPM oldest supported revision "
                            "(0x{:08X}) is too new for this FPGA revision (0x{:08X})."
-                           .format(self.oldest_compat_version, fpga_current_revision))
+                           .format(self.OLDEST_COMPAT_VERSION, fpga_current_revision))
             raise RuntimeError('This MPM version does not support the loaded FPGA image. Please update images!')
-        if self.current_version < fpga_old_compat_revision:
+        if self.CURRENT_VERSION < fpga_old_compat_revision:
             self.log.error("Revision check failed! FPGA oldest compatible revision "
                            "(0x{:08X}) is too new for this MPM version (0x{:08X})."
-                           .format(fpga_current_revision, self.current_version))
+                           .format(fpga_current_revision, self.CURRENT_VERSION))
             raise RuntimeError('The loaded FPGA version is too new for MPM. Please update MPM!')
         self.log.trace("JESD Core current revision: 0x{:08X}".format(fpga_current_revision))
         self.log.trace("JESD Core oldest compatible revision: 0x{:08X}".format(fpga_old_compat_revision))

@@ -76,6 +76,11 @@ class MagnesiumInitManager(object):
     # Variable PPS delay before the RP/SP pulsers begin. Fixed value for the
     # N3xx devices.
     N3XX_INT_PPS_DELAY = 4
+    # JESD core default configuration.
+    JESD_DEFAULT_ARGS = {"bypass_descrambler": False,
+                         "lmfc_divider"      : 20,
+                         "rx_sysref_delay"   : 8,
+                         "tx_sysref_delay"   : 11}
 
     def __init__(self, mg_class, spi_ifaces):
         self.mg_class = mg_class
@@ -525,7 +530,7 @@ class MagnesiumInitManager(object):
             read_only=False
         ) as dboard_ctrl_regs:
             self.log.trace("Creating jesdcore object...")
-            jesdcore = nijesdcore.NIMgJESDCore(dboard_ctrl_regs, slot_idx)
+            jesdcore = nijesdcore.NIJESDCore(dboard_ctrl_regs, slot_idx, **self.JESD_DEFAULT_ARGS)
             # Now get cracking with the actual init sequence:
             self.log.trace("Creating dboard clock control object...")
             db_clk_control = DboardClockControl(dboard_ctrl_regs, self.log)
