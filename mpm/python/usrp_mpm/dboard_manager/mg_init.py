@@ -551,8 +551,9 @@ class MagnesiumInitManager(object):
             self.log.debug(
                 "Sample Clocks and Phase DAC Configured Successfully!")
             # Clocks and PPS are now fully active!
-            self.mykonos.set_master_clock_rate(master_clock_rate)
-            self.init_jesd(jesdcore, master_clock_rate, args)
+            if args.get('skip_rfic', None) == None:
+                self.mykonos.set_master_clock_rate(master_clock_rate)
+                self.init_jesd(jesdcore, master_clock_rate, args)
             jesdcore = None # Help with garbage collection
             # That's all that requires access to the dboard regs!
         return True

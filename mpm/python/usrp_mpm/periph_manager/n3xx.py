@@ -635,7 +635,9 @@ class n3xx(ZynqComponents, PeriphManagerBase):
             dboard.update_ref_clock_freq(
                 ref_clk_freq,
                 time_source=time_source,
-                clock_source=clock_source)
+                clock_source=clock_source,
+                skip_rfic= args.get('skip_rfic', None)
+            )
 
     def set_ref_clock_freq(self, freq):
         """
