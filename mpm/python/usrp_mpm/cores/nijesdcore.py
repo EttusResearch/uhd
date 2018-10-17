@@ -41,6 +41,7 @@ class NIJESDCore(object):
     MGT_TX_SCRAMBLER_CONTROL   = 0x2068
     LMK_SYNC_CONTROL           = 0x206C
     JESD_MGT_DRP_CONTROL       = 0x2070
+    JESD_MGT_TEST_CONTROL      = 0x2074
     SYSREF_CAPTURE_CONTROL     = 0x2078
     JESD_SIGNATURE_REG         = 0x2100
     JESD_REVISION_REG          = 0x2104
@@ -342,6 +343,42 @@ class NIJESDCore(object):
             drp_x082_wr = (drp_x082_rb & ~(0b1 << 5)) | (pma_rsv2_bit5 << 5)
             self.drp_access(rd=False, addr=PMA_RSV2_DRP_ADDR, wr_data=drp_x082_wr)
         self.disable_drp_target()
+
+    def set_pattern_gen(self, mode):
+        """
+        This method configures the TX pattern generator for ALL GTs.
+        """
+        TXPRBSSEL = {'OFF'    : 0b000, 'PRBS-7' : 0b001,
+                     'PRBS-15': 0b010, 'PRBS-23': 0b011,
+                     'PRBS-31': 0b100, 'PCIE'   : 0b101,
+                     'SQR-2UI': 0b110, 'SQR-xUI': 0b111}
+        assert mode in TXPRBSSEL
+        self.log.debug("Setting TX pattern mode for all GTs: {}".format(mode))
+        self.log.trace("Writing MGT Test Register (offset 0x{:04X}) with 0x{:08X}"
+                       .format(self.JESD_MGT_TEST_CONTROL, TXPRBSSEL[mode]))
+        self.regs.poke32(self.JESD_MGT_TEST_CONTROL, TXPRBSSEL[mode])
+
+
+    def adjust_tx_phy(self, **kwargs):
+        """
+        This method provides a mechanism to adjust the GT's TX PHY settings.
+        """
+        # Cycle through the PHY TX settings for the GTs, and see what's changed.
+        tx_settings_changed = False
+        for key, new_value in iteritems(kwargs):
+            assert key in self.JESDCORE_DEFAULTS, "{} is not a valid attribute".format(key)
+            if getattr(self, key) != new_value:
+                self.log.trace("Changing TX PHY attribute {0} from {1} to {2}..."
+                               .format(key, getattr(self, key), new_value))
+                setattr(self, key, new_value)
+                tx_settings_changed = True
+        # MGT TX PHY control.
+        if tx_settings_changed:
+            reg_val = ((self.tx_driver_swing & 0x0F) << 16) | \
+                      ((self.tx_precursor    & 0x1F) <<  8) | \
+                      ((self.tx_postcursor   & 0x1F) <<  0)
+            self.regs.poke32(self.MGT_TX_TRANSCEIVER_CONTROL, reg_val)
+
 
     def set_drp_target(self, mgt_or_qpll, dev_num):
         """
