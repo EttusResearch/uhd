@@ -23,6 +23,7 @@ SET(test_sources
     constrained_device_args_test.cpp
     convert_test.cpp
     dict_test.cpp
+    eeprom_utils_test.cpp
     error_test.cpp
     fp_compare_delta_test.cpp
     fp_compare_epsilon_test.cpp
