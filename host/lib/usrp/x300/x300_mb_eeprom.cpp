@@ -1,5 +1,5 @@
 //
-// Copyright 2017 Ettus Research (National Instruments Corp.)
+// Copyright 2017-18 Ettus Research (National Instruments Corp.)
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
