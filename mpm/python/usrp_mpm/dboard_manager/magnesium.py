@@ -9,8 +9,6 @@ Magnesium dboard implementation module
 
 from __future__ import print_function
 import os
-import threading
-from six import iterkeys, iteritems
 from usrp_mpm import lib # Pulls in everything from C++-land
 from usrp_mpm.dboard_manager import DboardManagerBase
 from usrp_mpm.dboard_manager.mg_periphs import TCA6408, MgCPLD
@@ -19,8 +17,7 @@ from usrp_mpm.dboard_manager.mg_periphs import DboardClockControl
 from usrp_mpm.cores import nijesdcore
 from usrp_mpm.mpmlog import get_logger
 from usrp_mpm.sys_utils.uio import open_uio
-from usrp_mpm.sys_utils.udev import get_eeprom_paths
-from usrp_mpm.bfrfs import BufferFS
+from usrp_mpm.user_eeprom import BfrfsEEPROM
 
 ###############################################################################
 # SPI Helpers
@@ -70,7 +67,7 @@ def create_spidev_iface_phasedac(dev_node):
 ###############################################################################
 # Main dboard control class
 ###############################################################################
-class Magnesium(DboardManagerBase):
+class Magnesium(BfrfsEEPROM, DboardManagerBase):
     """
     Holds all dboard specific information and methods of the magnesium dboard
     """
@@ -109,7 +106,7 @@ class Magnesium(DboardManagerBase):
             'label': "e0004000.i2c",
             'offset': 1024,
             'max_size': 32786 - 1024,
-            'alignment': 1024,
+            'alignment': 1024, # FIXME check alignment is correct (block size)
         },
     }
     default_master_clock_rate = 125e6
@@ -117,7 +114,7 @@ class Magnesium(DboardManagerBase):
     default_current_jesd_rate = 2500e6
 
     def __init__(self, slot_idx, **kwargs):
-        super(Magnesium, self).__init__(slot_idx, **kwargs)
+        DboardManagerBase.__init__(self, slot_idx, **kwargs)
         self.log = get_logger("Magnesium-{}".format(slot_idx))
         self.log.trace("Initializing Magnesium daughterboard, slot index %d",
                        self.slot_idx)
@@ -179,9 +176,7 @@ class Magnesium(DboardManagerBase):
                 dev_rev=self.get_device_rev(),
             )
         )
-        self.eeprom_fs, self.eeprom_path = self._init_user_eeprom(
-            self._get_user_eeprom_info(self.rev)
-        )
+        BfrfsEEPROM.__init__(self)
         self.log.trace("Loading SPI devices...")
         self._spi_ifaces = {
             key: self.spi_factories[key](self._spi_nodes[key])
@@ -236,43 +231,6 @@ class Magnesium(DboardManagerBase):
                         callable(getattr(self.mykonos, x))]:
             self.log.trace("adding {}".format(method))
             setattr(self, method, export_method(myk, method))
-
-    def _get_user_eeprom_info(self, rev):
-        """
-        Return an EEPROM access map (from self.user_eeprom) based on the rev.
-        """
-        rev_for_lookup = rev
-        while rev_for_lookup not in self.user_eeprom:
-            if rev_for_lookup < 0:
-                raise RuntimeError("Could not find a user EEPROM map for "
-                                   "revision %d!", rev)
-            rev_for_lookup -= 1
-        assert rev_for_lookup in self.user_eeprom, \
-                "Invalid EEPROM lookup rev!"
-        return self.user_eeprom[rev_for_lookup]
-
-    def _init_user_eeprom(self, eeprom_info):
-        """
-        Reads out user-data EEPROM, and intializes a BufferFS object from that.
-        """
-        self.log.trace("Initializing EEPROM user data...")
-        eeprom_paths = get_eeprom_paths(eeprom_info.get('label'))
-        self.log.trace("Found the following EEPROM paths: `{}'".format(
-            eeprom_paths))
-        eeprom_path = eeprom_paths[self.slot_idx]
-        self.log.trace("Selected EEPROM path: `{}'".format(eeprom_path))
-        user_eeprom_offset = eeprom_info.get('offset', 0)
-        self.log.trace("Selected EEPROM offset: %d", user_eeprom_offset)
-        user_eeprom_data = open(eeprom_path, 'rb').read()[user_eeprom_offset:]
-        self.log.trace("Total EEPROM size is: %d bytes", len(user_eeprom_data))
-        # FIXME verify EEPROM sectors
-        return BufferFS(
-            user_eeprom_data,
-            max_size=eeprom_info.get('max_size'),
-            alignment=eeprom_info.get('alignment', 1024),
-            log=self.log
-        ), eeprom_path
-
 
     def init(self, args):
         """
@@ -337,65 +295,6 @@ class Magnesium(DboardManagerBase):
             self._init_args = args
         return result
 
-    def get_user_eeprom_data(self):
-        """
-        Return a dict of blobs stored in the user data section of the EEPROM.
-        """
-        return {
-            blob_id: self.eeprom_fs.get_blob(blob_id)
-            for blob_id in iterkeys(self.eeprom_fs.entries)
-        }
-
-    def set_user_eeprom_data(self, eeprom_data):
-        """
-        Update the local EEPROM with the data from eeprom_data.
-
-        The actual writing to EEPROM can take some time, and is thus kicked
-        into a background task. Don't call set_user_eeprom_data() quickly in
-        succession. Also, while the background task is running, reading the
-        EEPROM is unavailable and MPM won't be able to reboot until it's
-        completed.
-        However, get_user_eeprom_data() will immediately return the correct
-        data after this method returns.
-        """
-        for blob_id, blob in iteritems(eeprom_data):
-            self.eeprom_fs.set_blob(blob_id, blob)
-        self.log.trace("Writing EEPROM info to `{}'".format(self.eeprom_path))
-        eeprom_offset = self.user_eeprom[self.rev]['offset']
-        def _write_to_eeprom_task(path, offset, data, log):
-            " Writer task: Actually write to file "
-            # Note: This can be sped up by only writing sectors that actually
-            # changed. To do so, this function would need to read out the
-            # current state of the file, do some kind of diff, and then seek()
-            # to the different sectors. When very large blobs are being
-            # written, it doesn't actually help all that much, of course,
-            # because in that case, we'd anyway be changing most of the EEPROM.
-            with open(path, 'r+b') as eeprom_file:
-                log.trace("Seeking forward to `{}'".format(offset))
-                eeprom_file.seek(eeprom_offset)
-                log.trace("Writing a total of {} bytes.".format(
-                    len(self.eeprom_fs.buffer)))
-                eeprom_file.write(data)
-                log.trace("EEPROM write complete.")
-        thread_id = "eeprom_writer_task_{}".format(self.slot_idx)
-        if any([x.name == thread_id for x in threading.enumerate()]):
-            # Should this be fatal?
-            self.log.warn("Another EEPROM writer thread is already active!")
-        writer_task = threading.Thread(
-            target=_write_to_eeprom_task,
-            args=(
-                self.eeprom_path,
-                eeprom_offset,
-                self.eeprom_fs.buffer,
-                self.log
-            ),
-            name=thread_id,
-        )
-        writer_task.start()
-        # Now return and let the copy finish on its own. The thread will detach
-        # and MPM won't terminate this process until the thread is complete.
-        # This does not stop anyone from killing this process (and the thread)
-        # while the EEPROM write is happening, though.
 
     ##########################################################################
     # Clocking control APIs

@@ -23,8 +23,7 @@ from usrp_mpm.dboard_manager.dac_rh import DAC37J82Rh
 from usrp_mpm.mpmlog import get_logger
 from usrp_mpm.sys_utils.uio import open_uio
 from usrp_mpm.sys_utils.udev import get_eeprom_paths
-from usrp_mpm.bfrfs import BufferFS
-from usrp_mpm.sys_utils.dtoverlay import apply_overlay_safe, rm_overlay_safe
+from usrp_mpm.user_eeprom import BfrfsEEPROM
 
 
 ###############################################################################
@@ -131,7 +130,7 @@ def create_spidev_iface_dac(dev_node):
 # Main dboard control class
 ###############################################################################
 
-class Rhodium(DboardManagerBase):
+class Rhodium(BfrfsEEPROM, DboardManagerBase):
     """
     Holds all dboard specific information and methods of the Rhodium dboard
     """
@@ -258,6 +257,7 @@ class Rhodium(DboardManagerBase):
             self._lo_dist = None
         self.log.debug("Turning on Module and RF power supplies")
         self._power_on()
+        BfrfsEEPROM.__init__(self, self.rev, self.user_eeprom)
         self._spi_ifaces = _init_spi_devices()
         self.log.debug("Loaded SPI interfaces!")
         self.cpld = RhCPLD(self._spi_ifaces['cpld'], self.log)
@@ -369,66 +369,6 @@ class Rhodium(DboardManagerBase):
         if init_result:
             self._init_args = args
         return init_result
-
-    def get_user_eeprom_data(self):
-        """
-        Return a dict of blobs stored in the user data section of the EEPROM.
-        """
-        return {
-            blob_id: self.eeprom_fs.get_blob(blob_id)
-            for blob_id in iterkeys(self.eeprom_fs.entries)
-        }
-
-    def set_user_eeprom_data(self, eeprom_data):
-        """
-        Update the local EEPROM with the data from eeprom_data.
-
-        The actual writing to EEPROM can take some time, and is thus kicked
-        into a background task. Don't call set_user_eeprom_data() quickly in
-        succession. Also, while the background task is running, reading the
-        EEPROM is unavailable and MPM won't be able to reboot until it's
-        completed.
-        However, get_user_eeprom_data() will immediately return the correct
-        data after this method returns.
-        """
-        for blob_id, blob in iteritems(eeprom_data):
-            self.eeprom_fs.set_blob(blob_id, blob)
-        self.log.trace("Writing EEPROM info to `{}'".format(self.eeprom_path))
-        eeprom_offset = self.user_eeprom[self.rev]['offset']
-        def _write_to_eeprom_task(path, offset, data, log):
-            " Writer task: Actually write to file "
-            # Note: This can be sped up by only writing sectors that actually
-            # changed. To do so, this function would need to read out the
-            # current state of the file, do some kind of diff, and then seek()
-            # to the different sectors. When very large blobs are being
-            # written, it doesn't actually help all that much, of course,
-            # because in that case, we'd anyway be changing most of the EEPROM.
-            with open(path, 'r+b') as eeprom_file:
-                log.trace("Seeking forward to `{}'".format(offset))
-                eeprom_file.seek(eeprom_offset)
-                log.trace("Writing a total of {} bytes.".format(
-                    len(self.eeprom_fs.buffer)))
-                eeprom_file.write(data)
-                log.trace("EEPROM write complete.")
-        thread_id = "eeprom_writer_task_{}".format(self.slot_idx)
-        if any([x.name == thread_id for x in threading.enumerate()]):
-            # Should this be fatal?
-            self.log.warn("Another EEPROM writer thread is already active!")
-        writer_task = threading.Thread(
-            target=_write_to_eeprom_task,
-            args=(
-                self.eeprom_path,
-                eeprom_offset,
-                self.eeprom_fs.buffer,
-                self.log
-            ),
-            name=thread_id,
-        )
-        writer_task.start()
-        # Now return and let the copy finish on its own. The thread will detach
-        # and MPM this process won't terminate until the thread is complete.
-        # This does not stop anyone from killing this process (and the thread)
-        # while the EEPROM write is happening, though.
 
     def enable_lo_export(self, direction, enable):
         """
