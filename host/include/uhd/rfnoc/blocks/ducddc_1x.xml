@@ -1,0 +1,129 @@
+<!--This defines one NoC-Block.-->
+<nocblock>
+  <name>DUCDDC Rate Change</name>
+  <blockname>DUCDDC</blockname>
+  <key>DUCDDC</key>
+  <!--There can be several of these:-->
+  <ids>
+    <id revision="0">D0C0DDC000000001</id>
+  </ids>
+  <!-- Registers -->
+  <registers>
+    <!-- AXI rate change block registers -->
+    <setreg>
+      <name>N</name>
+      <address>128</address>
+    </setreg>
+    <setreg>
+      <name>M</name>
+      <address>129</address>
+    </setreg>
+    <setreg>
+      <!-- 1 bit, enable clear user -->
+      <name>CONFIG</name>
+      <address>130</address>
+    </setreg>
+    <!-- DUC block registers -->
+    <setreg>
+      <name>INTERP_WORD</name> <!--Includes the half-bands and the CIC-->
+      <address>131</address>
+    </setreg>
+    <setreg>
+      <name>DUC_SCALE_IQ</name>
+      <address>133</address>
+    </setreg>
+    <!-- DDC block registers -->
+    <setreg>
+      <!-- Scaling factor to compensate for gain through filters and CORDIC -->
+      <name>DDC_SCALE_IQ</name>
+      <address>142</address>
+    </setreg>
+    <setreg>
+      <!-- DDC control word, 10 bits total, 2 bits for Halfbands, 8 bits for CIC rate -->
+      <name>DECIM_WORD</name>
+      <address>143</address>
+    </setreg>
+    <setreg>
+      <!-- Real mode, swap IQ -->
+      <name>MODE</name>
+      <address>144</address>
+    </setreg>
+    <setreg>
+      <!-- Filter coefficients reload -->
+      <name>RELOAD</name>
+      <address>145</address>
+    </setreg>
+  </registers>
+  <!-- Args -->
+  <args>
+    <arg>
+      <name>interp</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>0</port>
+      <check>GE($interp, 0.0)</check>
+      <check_message>The interp factor must be a positive value.</check_message>
+    </arg>
+    <arg>
+      <name>decim</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>0</port>
+      <check>GE($decim, 0.0)</check>
+      <check_message>The decim factor must be a positive value.</check_message>
+    </arg>
+    <arg>
+      <name>input_rate</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>0</port>
+      <check>GE($input_rate, 0.0)</check>
+      <check_message>The input rate must be a positive value (in Hz).</check_message>
+    </arg>
+    <arg>
+      <name>output_rate</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>0</port>
+      <check>GE($output_rate, 0.0)</check>
+      <check_message>The output rate must be a positive value (in Hz).</check_message>
+    </arg>
+    <arg>
+      <name>fullscale</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>0</port>
+      <check>GE($fullscale, 0.0)</check>
+    </arg>
+    <arg>
+      <name>scalar_correction</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>0</port>
+    </arg>
+    <arg>
+      <name>duc_scale</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>0</port>
+    </arg>
+    <arg>
+      <name>ddc_scale</name>
+      <type>double</type>
+      <value>1.0</value>
+      <port>0</port>
+    </arg>
+</args>
+  <!--All the connections to the outside world are listed in 'ports':-->
+  <ports>
+    <sink>
+      <name>in0</name>
+      <type>sc16</type>
+    </sink>
+    <source>
+      <name>out0</name>
+      <type>sc16</type>
+    </source>
+  </ports>
+</nocblock>
+
