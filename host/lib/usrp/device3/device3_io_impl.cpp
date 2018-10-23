@@ -165,10 +165,12 @@ static size_t get_rx_flow_control_window(
             "recv_buff_fullness must be in [0.01, 1] inclusive (1% to 100%)");
     }
 
-    size_t window_in_bytes = (static_cast<size_t>(sw_buff_size * fullness_factor));
+    size_t window_in_bytes = (static_cast<size_t>(fullness_factor * sw_buff_size));
     if (rx_args.has_key("max_recv_window")) {
         window_in_bytes = std::min(
-            window_in_bytes, rx_args.cast<size_t>("max_recv_window", window_in_bytes));
+            window_in_bytes,
+            pkt_size * rx_args.cast<size_t>("max_recv_window", 1)
+        );
     }
     if (window_in_bytes < pkt_size) {
         throw uhd::value_error("recv_buff_size must be larger than the recv_frame_size.");
@@ -351,7 +353,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t& args_)
             get_rx_flow_control_window(pkt_size, xport.recv_buff_size, rx_hints)
             - pkt_size;
         const size_t fc_handle_window =
-            std::max<size_t>(1, fc_window / stream_options.rx_fc_request_freq);
+            std::max<size_t>(pkt_size, fc_window / stream_options.rx_fc_request_freq);
         UHD_RX_STREAMER_LOG() << "Flow Control Window = " << (fc_window)
                               << ", Flow Control Handler Window = " << fc_handle_window;
         blk_ctrl->configure_flow_control_out(true,
@@ -419,7 +421,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t& args_)
                 convert::get_bytes_per_item(args.otw_format); // bytes per item
             const size_t spp = std::min(args.args.cast<size_t>("spp", bpp / bpi),
                 bpp / bpi); // samples per packet
-            UHD_RX_STREAMER_LOG() << "spp == " << spp;
+            UHD_RX_STREAMER_LOG() << "bpp == " << bpp << ", bpi == " << bpi << ", spp == " << spp;
 
             my_streamer = boost::make_shared<device3_recv_packet_streamer>(
                 spp, recv_terminator, xport);
@@ -588,12 +590,14 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t& args_)
         blk_ctrl->sr_write(uhd::rfnoc::SR_CLEAR_RX_FC, 0x1, block_port);
         blk_ctrl->sr_write(uhd::rfnoc::SR_CLEAR_RX_FC, 0x0, block_port);
         // Configure flow control on downstream block
+        const size_t pkt_size = xport.send->get_send_frame_size();
         const size_t fc_window =
             std::min(tx_hints.cast<size_t>("send_buff_size", fifo_size), fifo_size);
         const size_t fc_handle_window =
-            std::max<size_t>(1, fc_window / stream_options.tx_fc_response_freq);
+            std::max<size_t>(pkt_size, fc_window / stream_options.tx_fc_response_freq);
         UHD_TX_STREAMER_LOG() << "Flow Control Window = " << fc_window
-                              << ", Flow Control Handler Window = " << fc_handle_window;
+                              << ", Flow Control Handler Window = " << fc_handle_window
+                              << ", FIFO size = " << fifo_size;
         blk_ctrl->configure_flow_control_in(fc_handle_window, /*bytes*/
             block_port);
         // Add flow control transport
@@ -669,13 +673,13 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t& args_)
             // To calculate the max number of samples per packet, we assume the maximum
             // header length to avoid fragmentation should the entire header be used.
             const size_t bpp =
-                tx_hints.cast<size_t>("bpp", xport.send->get_send_frame_size())
+                tx_hints.cast<size_t>("bpp", pkt_size)
                 - stream_options.tx_max_len_hdr;
             const size_t bpi =
                 convert::get_bytes_per_item(args.otw_format); // bytes per item
             const size_t spp = std::min(args.args.cast<size_t>("spp", bpp / bpi),
                 bpp / bpi); // samples per packet
-            UHD_TX_STREAMER_LOG() << "spp == " << spp;
+            UHD_TX_STREAMER_LOG() << "bpp == " << bpp << ", bpi == " << bpi << ", spp == " << spp;
 
             my_streamer = boost::make_shared<device3_send_packet_streamer>(
                 spp, send_terminator, xport, async_xport);
