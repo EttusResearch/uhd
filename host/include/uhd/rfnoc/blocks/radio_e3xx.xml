@@ -23,7 +23,7 @@
     <arg>
       <name>spp</name>
       <type>int</type>
-      <value>364</value>
+      <value>508</value>
       <!--<value>256</value>-->
       <!--<check>GE($spp, 16) AND LE($spp, 4096) AND IS_PWR_OF_2($spp)</check>-->
       <!--<check_message>FFT size must be in [16, 4096] and a power of two.</check_message>-->
@@ -57,4 +57,3 @@
     </source>
   </ports>
 </nocblock>
-
