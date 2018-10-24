@@ -21,7 +21,7 @@
 #include <boost/bind.hpp>
 #include <chrono>
 #include <thread>
-
+#include <uhd/utils/safe_call.hpp>
 using namespace uhd;
 using namespace uhd::rfnoc;
 using std::string;
@@ -143,18 +143,20 @@ block_ctrl_base::block_ctrl_base(
 
 block_ctrl_base::~block_ctrl_base()
 {
-    if (get_ctrl_ports().size() > 0) {
-        // Notify the data-path gatekeeper in noc_shell that we are done
-        // with this block. This operation disconnects the noc_block
-        // data-path from noc_shell which dumps all input and output
-        // packets that are in flight, for now and until the setting is
-        // disabled. This prevents long-running blocks without a tear-down
-        // mechanism to gracefully flush.
-        const size_t port = get_ctrl_ports().front();
-        sr_write(SR_CLEAR_TX_FC, 0x2, port);    // Disconnect TX data-path
-        sr_write(SR_CLEAR_RX_FC, 0x2, port);    // Disconnect RX data-path
-    }
-    _tree->remove(_root_path);
+    UHD_SAFE_CALL(
+       if (get_ctrl_ports().size() > 0) {
+           // Notify the data-path gatekeeper in noc_shell that we are done
+           // with this block. This operation disconnects the noc_block
+           // data-path from noc_shell which dumps all input and output
+           // packets that are in flight, for now and until the setting is
+           // disabled. This prevents long-running blocks without a tear-down
+           // mechanism to gracefully flush.
+           const size_t port = get_ctrl_ports().front();
+           sr_write(SR_CLEAR_TX_FC, 0x2, port);    // Disconnect TX data-path
+           sr_write(SR_CLEAR_RX_FC, 0x2, port);    // Disconnect RX data-path
+       }
+       _tree->remove(_root_path);
+    )
 }
 
 void block_ctrl_base::_init_port_defs(
