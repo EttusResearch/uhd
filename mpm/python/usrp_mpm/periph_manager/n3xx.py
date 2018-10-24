@@ -217,7 +217,7 @@ class n3xx(ZynqComponents, PeriphManagerBase):
             if not args.get('skip_boot_init', False):
                 self.init(args)
         except Exception as ex:
-            self.log.warning("Failed to init device on boot!")
+            self.log.warning("Failed to initialize device on boot: %s", str(ex))
 
     def _check_fpga_compat(self):
         " Throw an exception if the compat numbers don't match up "
