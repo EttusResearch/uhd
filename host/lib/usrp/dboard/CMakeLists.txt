@@ -2,7 +2,7 @@
 # Copyright 2010-2011 Ettus Research LLC
 # Copyright 2018 Ettus Research, a National Instruments Company
 #
-# SPDX-License-Identifier: GPL-3.0
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
 
 ########################################################################
@@ -49,6 +49,9 @@ ENDIF(ENABLE_X300)
 IF(ENABLE_N300)
     INCLUDE_SUBDIRECTORY(magnesium)
 ENDIF(ENABLE_N300)
+IF(ENABLE_N320)
+    INCLUDE_SUBDIRECTORY(rhodium)
+ENDIF(ENABLE_N320)
 IF(ENABLE_MPMD AND ENABLE_EISCAT)
     INCLUDE_SUBDIRECTORY(eiscat)
 ENDIF(ENABLE_MPMD AND ENABLE_EISCAT)

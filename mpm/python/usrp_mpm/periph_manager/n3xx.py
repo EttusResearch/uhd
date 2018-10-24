@@ -28,6 +28,7 @@ from usrp_mpm.periph_manager.n3xx_periphs import BackpanelGPIO
 from usrp_mpm.periph_manager.n3xx_periphs import MboardRegsControl
 from usrp_mpm.dboard_manager.magnesium import Magnesium
 from usrp_mpm.dboard_manager.eiscat import EISCAT
+from usrp_mpm.dboard_manager.rhodium import Rhodium
 
 N3XX_DEFAULT_EXT_CLOCK_FREQ = 10e6
 N3XX_DEFAULT_CLOCK_SOURCE = 'internal'
@@ -41,6 +42,7 @@ N3XX_MONITOR_THREAD_INTERVAL = 1.0 # seconds
 # Import daughterboard PIDs from their respective classes
 MG_PID = Magnesium.pids[0]
 EISCAT_PID = EISCAT.pids[0]
+RHODIUM_PID = Rhodium.pids[0]
 
 ###############################################################################
 # Transport managers
@@ -101,7 +103,9 @@ class n3xx(ZynqComponents, PeriphManagerBase):
                                             # still use the n310.bin image.
                                             # We'll leave this here for
                                             # debugging purposes.
-        ('n310', (EISCAT_PID, EISCAT_PID)): 'eiscat',
+        ('n310', (EISCAT_PID , EISCAT_PID )): 'eiscat',
+        ('n310', (RHODIUM_PID, RHODIUM_PID)): 'n320',
+        ('n310', (RHODIUM_PID,            )): 'n320',
     }
 
     #########################################################################

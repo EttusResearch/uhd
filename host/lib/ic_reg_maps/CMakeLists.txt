@@ -2,7 +2,7 @@
 # Copyright 2010-2013 Ettus Research LLC
 # Copyright 2018 Ettus Research, a National Instruments Company
 #
-# SPDX-License-Identifier: GPL-3.0
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
 
 ########################################################################
@@ -135,6 +135,11 @@ LIBUHD_PYTHON_GEN_SOURCE(
 LIBUHD_PYTHON_GEN_SOURCE(
     ${CMAKE_CURRENT_SOURCE_DIR}/gen_mgcpld_regs.py
     ${CMAKE_CURRENT_BINARY_DIR}/magnesium_cpld_regs.hpp
+)
+
+LIBUHD_PYTHON_GEN_SOURCE(
+    ${CMAKE_CURRENT_SOURCE_DIR}/gen_rhcpld_regs.py
+    ${CMAKE_CURRENT_BINARY_DIR}/rhodium_cpld_regs.hpp
 )
 
 SET(LIBUHD_PYTHON_GEN_SOURCE_DEPS)

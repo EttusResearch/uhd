@@ -1,0 +1,42 @@
+<!--This defines the Radio (Rhodium) NoC-Block.-->
+<nocblock>
+  <name>Radio (Rhodium)</name>
+  <blockname>Radio</blockname>
+  <key>RhodiumRadio</key>
+  <!--There can be several of these:-->
+  <ids>
+    <id revision="0">12AD100000000320</id>
+  </ids>
+  <!-- Registers -->
+  <registers>
+  </registers>
+  <!-- Args -->
+  <args>
+    <arg>
+      <name>spp</name>
+      <type>int</type>
+      <value>364</value>
+    </arg>
+    <arg>
+      <name>spur_dodging</name>
+      <type>string</type>
+      <value>disabled</value>
+    </arg>
+    <arg>
+      <name>spur_dodging_threshold</name>
+      <type>double</type>
+      <value>2e6</value>
+    </arg>
+  </args>
+  <ports>
+    <sink>
+      <name>in0</name>
+      <type>sc16</type>
+    </sink>
+    <source>
+      <name>out0</name>
+      <type>sc16</type>
+    </source>
+  </ports>
+</nocblock>
+

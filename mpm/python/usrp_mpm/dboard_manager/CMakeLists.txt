@@ -11,8 +11,16 @@ SET(USRP_MPM_FILES ${USRP_MPM_FILES})
 SET(USRP_MPM_DBMGR_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/__init__.py
     ${CMAKE_CURRENT_SOURCE_DIR}/base.py
+    ${CMAKE_CURRENT_SOURCE_DIR}/rhodium.py
+    ${CMAKE_CURRENT_SOURCE_DIR}/rh_init.py
+    ${CMAKE_CURRENT_SOURCE_DIR}/rh_periphs.py
+    ${CMAKE_CURRENT_SOURCE_DIR}/lmk_rh.py
+    ${CMAKE_CURRENT_SOURCE_DIR}/adc_rh.py
+    ${CMAKE_CURRENT_SOURCE_DIR}/dac_rh.py
     ${CMAKE_CURRENT_SOURCE_DIR}/eiscat.py
     ${CMAKE_CURRENT_SOURCE_DIR}/neon.py
+    ${CMAKE_CURRENT_SOURCE_DIR}/gain_rh.py
+    ${CMAKE_CURRENT_SOURCE_DIR}/gaintables_rh.py
     ${CMAKE_CURRENT_SOURCE_DIR}/lmk_eiscat.py
     ${CMAKE_CURRENT_SOURCE_DIR}/lmk_mg.py
     ${CMAKE_CURRENT_SOURCE_DIR}/magnesium.py

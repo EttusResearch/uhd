@@ -8,6 +8,7 @@ dboards module __init__.py
 """
 from .base import DboardManagerBase
 from .magnesium import Magnesium
+from .rhodium import Rhodium
 from .neon import Neon
 from .eiscat import EISCAT
 from .test import test
