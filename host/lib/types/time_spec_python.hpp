@@ -14,6 +14,9 @@ void export_time_spec()
     using time_spec_t = uhd::time_spec_t;
 
     bp::class_<time_spec_t>("time_spec", bp::init<double>())
+        //Additional constructors
+        .def(bp::init<int64_t, double>())
+        .def(bp::init<int64_t, long, double>())
 
         // Methods
         .def("from_ticks"     , &time_spec_t::from_ticks     )
