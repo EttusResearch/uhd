@@ -239,7 +239,7 @@ private:
     static uhd::gain_range_t _get_lo_power_range();
 
     //! Lookup the LO DSA setting from LO frequency
-    int _get_lo_dsa_setting(const double freq);
+    int _get_lo_dsa_setting(const double freq, const direction_t dir);
 
     //! Lookup the LO output power setting from LO frequency
     unsigned int _get_lo_power_setting(const double freq);

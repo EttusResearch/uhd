@@ -23,8 +23,10 @@ namespace {
             {0.45e9, 0.5e9, 1e9, 1.5e9, 2e9, 2.5e9, 3e9, 3.55e9, 4e9, 4.5e9, 5e9, 5.5e9, 6e9};
     constexpr std::array<int, NUM_THRESHOLDS> LMX_GAIN_VALUES =
             {18, 18, 17, 17, 17, 16, 12, 11, 11, 11, 10, 13, 18};
-    constexpr std::array<int, NUM_THRESHOLDS> DSA_GAIN_VALUES =
+    const std::array<int, NUM_THRESHOLDS> DSA_RX_GAIN_VALUES =
             {19, 19, 21, 21, 20, 20, 22, 21, 20, 22, 22, 24, 26};
+    const std::array<int, NUM_THRESHOLDS> DSA_TX_GAIN_VALUES =
+            {19, 19, 21, 21, 20, 20, 22, 21, 22, 24, 24, 26, 28};
 
     // Describes the lowband LO in terms of the master clock rate
     const std::map<double, double> MCR_TO_LOWBAND_IF = {
@@ -159,7 +161,7 @@ double rhodium_radio_ctrl_impl::set_tx_lo_freq(
     const auto sd_threshold = _get_spur_dodging_threshold(TX_DIRECTION);
 
     _tx_lo_freq = _tx_lo->set_frequency(freq, sd_enabled, sd_threshold);
-    set_tx_lo_gain(_get_lo_dsa_setting(_tx_lo_freq), RHODIUM_LO1, chan);
+    set_tx_lo_gain(_get_lo_dsa_setting(_tx_lo_freq, TX_DIRECTION), RHODIUM_LO1, chan);
     set_tx_lo_power(_get_lo_power_setting(_tx_lo_freq), RHODIUM_LO1, chan);
     _cpld->set_tx_lo_path(_tx_lo_freq);
 
@@ -184,7 +186,7 @@ double rhodium_radio_ctrl_impl::set_rx_lo_freq(
     const auto sd_threshold = _get_spur_dodging_threshold(RX_DIRECTION);
 
     _rx_lo_freq = _rx_lo->set_frequency(freq, sd_enabled, sd_threshold);
-    set_rx_lo_gain(_get_lo_dsa_setting(_rx_lo_freq), RHODIUM_LO1, chan);
+    set_rx_lo_gain(_get_lo_dsa_setting(_rx_lo_freq, RX_DIRECTION), RHODIUM_LO1, chan);
     set_rx_lo_power(_get_lo_power_setting(_rx_lo_freq), RHODIUM_LO1, chan);
     _cpld->set_rx_lo_path(_rx_lo_freq);
 
@@ -624,7 +626,7 @@ uhd::gain_range_t rhodium_radio_ctrl_impl::_get_lo_power_range()
     return gain_range_t(LO_MIN_POWER, LO_MAX_POWER, LO_POWER_STEP);
 }
 
-int rhodium_radio_ctrl_impl::_get_lo_dsa_setting(double freq) {
+int rhodium_radio_ctrl_impl::_get_lo_dsa_setting(const double freq, const direction_t dir) {
     int index = 0;
     while (freq > FREQ_THRESHOLDS[index+1]) {
         index++;
@@ -632,8 +634,11 @@ int rhodium_radio_ctrl_impl::_get_lo_dsa_setting(double freq) {
 
     const double freq_low = FREQ_THRESHOLDS[index];
     const double freq_high = FREQ_THRESHOLDS[index+1];
-    const double gain_low = DSA_GAIN_VALUES[index];
-    const double gain_high = DSA_GAIN_VALUES[index+1];
+
+    const auto& gain_table = (dir == RX_DIRECTION) ? DSA_RX_GAIN_VALUES : DSA_TX_GAIN_VALUES;
+    const double gain_low = gain_table[index];
+    const double gain_high = gain_table[index+1];
+
 
     const double slope = (gain_high - gain_low) / (freq_high - freq_low);
     const double gain_at_freq = gain_low + (freq - freq_low) * slope;
