@@ -8,6 +8,7 @@
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/thread.hpp>
 #include <uhd/utils/safe_main.hpp>
+#include <uhd/utils/algorithm.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/usrp_clock/multi_usrp_clock.hpp>
 #include <boost/filesystem.hpp>
@@ -111,53 +112,49 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
       return EXIT_FAILURE;
   }
 
-  std::cout << "\nSetting the reference clock source to \"gpsdo\"...\n";
-  try {
-      usrp->set_clock_source("gpsdo");
-  } catch (uhd::value_error &e) {
-      std::cout << "could not set the clock source to \"gpsdo\"; error was:" <<std::endl;
-      std::cout << e.what() << std::endl;
-      std::cout << "trying \"external\"..." <<std::endl;
-      try{
-          usrp->set_clock_source("external");
-      } catch (uhd::value_error&) {
-          std::cout << "\"external\" failed, too." << std::endl;
-      }
-  }
-  std::cout<< std::endl << "Clock source is now " << usrp->get_clock_source(0) << std::endl;
+  bool ref_set_to_gpsdo = false;
 
-  //Check for 10 MHz lock
+  // Set clock source to gpsdo if supported
+  if (uhd::has(usrp->get_clock_sources(0),"gpsdo"))
+  {
+      std::cout << "Setting the reference clock source to \"gpsdo\"..." << std::endl;
+      usrp->set_clock_source("gpsdo");
+      ref_set_to_gpsdo = true;
+  }
+  std::cout << "Clock source is now " << usrp->get_clock_source(0) << std::endl;
+
+  // Set time source to gpsdo if supported
+  if (uhd::has(usrp->get_time_sources(0),"gpsdo"))
+  {
+      std::cout << "Setting the reference clock source to \"gpsdo\"..." << std::endl;
+      usrp->set_time_source("gpsdo");
+      ref_set_to_gpsdo = true;
+  }
+  std::cout << "Time source is now " << usrp->get_time_source(0) << std::endl;
+
+  if (not ref_set_to_gpsdo)
+  {
+      std::cerr << "ERROR: Unable to set clock or time reference to \"gpsdo\"" << std::endl;
+      return EXIT_FAILURE;
+  }
+
+  //Check for ref lock
   if(std::find(sensor_names.begin(), sensor_names.end(), "ref_locked") != sensor_names.end()) {
       uhd::sensor_value_t ref_locked = usrp->get_mboard_sensor("ref_locked",0);
-      for (size_t i = 0; not ref_locked.to_bool() and i < 100; i++) {
+      for (size_t i = 0; not ref_locked.to_bool() and i < 300; i++) {
           std::this_thread::sleep_for(std::chrono::milliseconds(100));
           ref_locked = usrp->get_mboard_sensor("ref_locked",0);
       }
       if(not ref_locked.to_bool()) {
-          std::cout << boost::format("USRP NOT Locked to GPSDO 10 MHz Reference.\n");
+          std::cout << boost::format("USRP NOT Locked to Reference.\n");
           std::cout << boost::format("Double check installation instructions (N2X0/E1X0 only): https://www.ettus.com/content/files/gpsdo-kit_4.pdf\n\n");
           return EXIT_FAILURE;
       } else {
-          std::cout << boost::format("USRP Locked to GPSDO 10 MHz Reference.\n");
+          std::cout << boost::format("USRP Locked to Reference.\n");
       }
   } else {
       std::cout << boost::format("ref_locked sensor not present on this board.\n");
   }
-
-  // Explicitly set time source to gpsdo
-  try {
-      usrp->set_time_source("gpsdo");
-  } catch (uhd::value_error &e) {
-      std::cout << "could not set the time source to \"gpsdo\"; error was:" <<std::endl;
-      std::cout << e.what() << std::endl;
-      std::cout << "trying \"external\"..." <<std::endl;
-      try {
-          usrp->set_time_source("external");
-      } catch (uhd::value_error&) {
-          std::cout << "\"external\" failed, too." << std::endl;
-      }
-  }
-  std::cout << std::endl << "Time source is now " << usrp->get_time_source(0) << std::endl;
 
   print_notes();
 
