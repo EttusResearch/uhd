@@ -44,7 +44,7 @@ if(ENABLE_E300)
         set_source_files_properties(
             ${CMAKE_CURRENT_SOURCE_DIR}/e300_impl.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/e300_impl.hpp
-            ${CMAKE_CURRENT_SOURCE_DIR}/e3xx_radio_ctrl_impl.hpp
+            ${CMAKE_CURRENT_SOURCE_DIR}/e3xx_radio_ctrl_impl.cpp
             PROPERTIES COMPILE_DEFINITIONS "E300_GPSD=1"
         )
     endif(ENABLE_GPSD)
