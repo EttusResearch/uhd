@@ -18,11 +18,12 @@ import shutil
 import sys
 import tempfile
 import zipfile
-import requests
 try:
     from urllib.parse import urljoin  # Python 3
 except ImportError:
     from urlparse import urljoin      # Python 2
+from six import iteritems
+import requests
 
 
 _DEFAULT_TARGET_REGEX     = "(fpga|fw|windrv)_default"
@@ -65,7 +66,10 @@ def parse_args():
     parser.add_argument('-I', '--inventory-location', type=str, default="",
                         help="Set custom location for the inventory file")
     parser.add_argument('-l', '--list-targets', action="store_true", default=False,
-                        help="Print targets in the manifest file, and exit.")
+                        help="Print targets in the manifest file to stdout, and exit.\n"
+                        "To get relative paths only, specify an empty base URL (-b '').")
+    parser.add_argument('--url-only', action="store_true", default=False,
+                        help="With -l, only print the URLs, nothing else.")
     parser.add_argument("--buffer-size", type=int, default=_DEFAULT_BUFFER_SIZE,
                         help="Set download buffer size")
     parser.add_argument("-b", "--base-url", type=str, default=_DEFAULT_BASE_URL,
@@ -291,6 +295,8 @@ def extract(archive_path, images_dir, archive_type, test_zip=False):
 def main():
     """Download the image files requested by the user"""
     args = parse_args()
+    if not args.base_url.endswith('/') and args.base_url != "":
+        args.base_url += '/'
     archive_type = args.archive_type
     if archive_type not in _ARCHIVE_ALGS:
         log("ERROR", "Selected archive type not supported: {}".format(archive_type))
@@ -322,16 +328,22 @@ def main():
 
         manifest = parse_manifest(manifest_raw)
         if args.list_targets:
-            char_offset = max(map(len, manifest.keys()))
-            # Print a couple helpful lines,
-            # then print each (Target, URL) pair in the manifest
-            log("INFO", "Potential targets in manifest file:\n"
-                        "{} : {}\n"
-                        "{}".format(
-                "# TARGET".ljust(char_offset), "RELATIVE_URL",
-                "\n".join("{} : {}".format(key.ljust(char_offset), value["url"])
-                          for key, value in sorted(manifest.items()))
-            ))
+            char_offset = max(len(x) for x in manifest.keys())
+            if not args.url_only:
+                # Print a couple helpful lines,
+                # then print each (Target, URL) pair in the manifest
+                log("INFO", "Potential targets in manifest file:\n"
+                            "{} : {}".format(
+                                "# TARGET".ljust(char_offset),
+                                "URL" if args.base_url else "RELATIVE_URL"))
+                for key, value in sorted(manifest.items()):
+                    print("{target} : {base}{relpath}".format(
+                        target=key.ljust(char_offset),
+                        base=args.base_url,
+                        relpath=value["url"]))
+            else:
+                for manifest_item in iteritems(manifest):
+                    print(args.base_url+manifest_item[1]["url"])
             return 0
         else:
             log("TRACE", "Manifest:\n{}".format(
