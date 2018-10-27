@@ -34,10 +34,10 @@ uhd::both_xports_t make_mock_transport(const uhd::sid_t& tx_sid) {
     uhd::both_xports_t xports;
     xports.send_sid = tx_sid;
     xports.recv_sid = tx_sid.reversed();
-    xports.send_buff_size = SEND_BUFF_SIZE;
-    xports.recv_buff_size = RECV_BUFF_SIZE;
     xports.send = boost::make_shared<mock_zero_copy>(if_packet_info_t::LINK_TYPE_CHDR);
     xports.recv = xports.send;
+    xports.send_buff_size = xports.send->get_send_frame_size();
+    xports.recv_buff_size = xports.recv->get_recv_frame_size();
     return xports;
 }
 

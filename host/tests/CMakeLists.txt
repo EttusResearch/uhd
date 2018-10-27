@@ -54,6 +54,10 @@ set(test_sources
     fe_conn_test.cpp
 )
 
+set(benchmark_sources
+    packet_handler_benchmark.cpp
+)
+
 #turn each test cpp file into an executable with an int main() function
 add_definitions(-DBOOST_TEST_DYN_LINK -DBOOST_TEST_MAIN)
 
@@ -83,6 +87,7 @@ endif(ENABLE_C_API)
 
 include_directories("${CMAKE_SOURCE_DIR}/lib/include")
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/common")
+
 #for each source: build an executable, register it as a test
 foreach(test_source ${test_sources})
     get_filename_component(test_name ${test_source} NAME_WE)
@@ -91,6 +96,14 @@ foreach(test_source ${test_sources})
     UHD_ADD_TEST(${test_name} ${test_name})
     UHD_INSTALL(TARGETS ${test_name} RUNTIME DESTINATION ${PKG_LIB_DIR}/tests COMPONENT tests)
 endforeach(test_source)
+
+#for benchmarks, build executable but do not register
+foreach(benchmark_source ${benchmark_sources})
+    get_filename_component(benchmark_name ${benchmark_source} NAME_WE)
+    add_executable(${benchmark_name} ${benchmark_source})
+    target_link_libraries(${benchmark_name} uhd uhd_test ${Boost_LIBRARIES})
+    UHD_INSTALL(TARGETS ${benchmark_name} RUNTIME DESTINATION ${PKG_LIB_DIR}/tests COMPONENT tests)
+endforeach(benchmark_source)
 
 # Other tests that don't directly link with libuhd: (TODO find a nicer way to do this)
 include_directories(${CMAKE_BINARY_DIR}/lib/rfnoc/nocscript/)

@@ -14,6 +14,8 @@
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <boost/shared_ptr.hpp>
 
+namespace uhd { namespace usrp {
+
 //! Stores the state of RX flow control
 struct rx_fc_cache_t
 {
@@ -298,5 +300,7 @@ inline void tx_flow_ctrl_ack(
     // Reset for next FC
     fc_cache->fc_received = false;
 }
+
+}};
 
 #endif /* INCLUDED_DEVICE3_FLOW_CTRL_HPP */
