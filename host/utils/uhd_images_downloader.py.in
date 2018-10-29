@@ -37,6 +37,7 @@ _DEFAULT_BASE_URL         = "http://files.ettus.com/binaries/cache/"
 _INVENTORY_FILENAME       = "inventory.json"
 _CONTACT                  = "support@ettus.com"
 _DEFAULT_BUFFER_SIZE      = 8192
+_DEFAULT_DOWNLOAD_LIMIT   = 100 * 1024 * 1024 # Bytes
 _ARCHIVE_ALGS             = ["zip", "targz", "tarxz"]
 _ARCHIVE_DEFAULT_TYPE     = "zip"
 _UHD_VERSION              = "@UHD_VERSION@"
@@ -77,6 +78,10 @@ def parse_args():
                         help="With -l, only print the URLs, nothing else.")
     parser.add_argument("--buffer-size", type=int, default=_DEFAULT_BUFFER_SIZE,
                         help="Set download buffer size")
+    parser.add_argument("--download-limit", type=int, default=_DEFAULT_DOWNLOAD_LIMIT,
+                        help="Set threshold for download limits. Any download "
+                             "larger than this will require approval, either "
+                             "interactively, or by providing --yes.")
     parser.add_argument("-b", "--base-url", type=str, default=_DEFAULT_BASE_URL,
                         help="Set base URL for images download location")
     parser.add_argument("-z", "--archive-type", type=str, default=_ARCHIVE_DEFAULT_TYPE,
@@ -220,8 +225,15 @@ def lookup_urls(regex_l, manifest, inventory, refetch=False):
     return selected_targets
 
 
-def download(images_url, filename, buffer_size=_DEFAULT_BUFFER_SIZE, print_progress=False):
+def download(
+        images_url,
+        filename,
+        buffer_size=_DEFAULT_BUFFER_SIZE,
+        print_progress=False,
+        download_limit=None
+    ):
     """ Run the download, show progress """
+    download_limit = download_limit or _DEFAULT_DOWNLOAD_LIMIT
     log("TRACE", "Downloading {} to {}".format(images_url, filename))
     try:
         resp = requests.get(images_url, stream=True,
@@ -234,6 +246,12 @@ def download(images_url, filename, buffer_size=_DEFAULT_BUFFER_SIZE, print_progr
     if resp.status_code != 200:
         raise RuntimeError("URL does not exist: {}".format(images_url))
     filesize = float(resp.headers['content-length'])
+    if filesize > download_limit:
+        if not ask_permission(
+                "The file size for this target ({:.1f} MiB) exceeds the "
+                "download limit ({:.1f} MiB). Continue downloading?".format(
+                    filesize/1024**2, download_limit/1024**2)):
+            return 0, 0, ""
     filesize_dl = 0
     base_filename = os.path.basename(filename)
     if print_progress and not sys.stdout.isatty():
@@ -322,6 +340,9 @@ def main():
     args = parse_args()
     if not args.base_url.endswith('/') and args.base_url != "":
         args.base_url += '/'
+    if args.yes:
+        global _YES
+        _YES = True
     archive_type = args.archive_type
     if archive_type not in _ARCHIVE_ALGS:
         log("ERROR", "Selected archive type not supported: {}".format(archive_type))
@@ -421,6 +442,9 @@ def main():
                         buffer_size=args.buffer_size,
                         print_progress=(_LOG_LEVEL <= _LOG_LEVELS.get("INFO", 3))
                     )
+                    if downloaded_size == 0:
+                        log("INFO", "Skipping target: {}".format(target_name))
+                        continue
                     log("TRACE", "{} successfully downloaded ({} Bytes)"
                         .format(temp_path, downloaded_size))
 
