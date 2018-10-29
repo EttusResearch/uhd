@@ -162,7 +162,7 @@ class LMK04828Rh(LMK04828):
             (0x124, 0x20), # CLKout Config
             (0x125, 0x00), # CLKout Config
             (0x126, 0x72), # CLKout Config
-            (0x127, 0x15), # CLKout Config
+            (0x127, 0x10), # CLKout Config
             (0x128, lb_lo_div_val), # CLKout Config (RX LB LO)
             (0x129, lb_lo_cnt_val), # CLKout Config
             (0x12A, 0x22), # CLKout Config
