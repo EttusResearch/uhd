@@ -60,7 +60,10 @@ def log(level, message):
 
 
 def parse_args():
-    """Setup argument parser and parse"""
+    """
+    Setup argument parser and parse. Also does some sanity checks and sets some
+    global variables we want to use.
+    """
     parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument('-t', '--types', action='append',
                         help="RegEx to select image sets from the manifest file.")
@@ -102,7 +105,36 @@ def parse_args():
                         help="Decrease verbosity level")
     parser.add_argument('-v', '--verbose', action='count', default=0,
                         help="Increase verbosity level")
-    return parser.parse_args()
+    # Some sanitation that's easier to handle outside of the argparse framework:
+    args = parser.parse_args()
+    if not args.base_url.endswith('/') and args.base_url != "":
+        args.base_url += '/'
+    if args.yes:
+        global _YES
+        _YES = True
+    archive_type = args.archive_type
+    if archive_type not in _ARCHIVE_ALGS:
+        log("ERROR", "Selected archive type not supported: {}".format(archive_type))
+        return 1
+    # Set the verbosity
+    global _LOG_LEVEL
+    log("TRACE", "Default log level: {}".format(_LOG_LEVEL))
+    _LOG_LEVEL = _LOG_LEVEL - args.verbose + args.quiet
+    return args
+
+
+def get_images_dir(args):
+    """
+    Figure out where to store the images.
+    """
+    if args.install_location:
+        return args.install_location
+    if os.environ.get("UHD_IMAGES_DIR"):
+        log("DEBUG",
+            "UHD_IMAGES_DIR environment variable is set, using to set "
+            "install location.")
+        return os.environ.get("UHD_IMAGES_DIR")
+    return _DEFAULT_INSTALL_PATH
 
 
 def ask_permission(question, default_no=True):
@@ -143,6 +175,24 @@ class TemporaryDirectory:
         return exc_type is None
 
 
+def get_manifest_raw(args):
+    """
+    Return the raw content of the manifest (i.e. the text file). It
+    needs to be parsed to be of any practical use.
+    """
+    # If we're given a path to a manifest file, use it
+    if os.path.exists(args.manifest_location):
+        manifest_fn = args.manifest_location
+        log("INFO", "Using manifest file at location: {}".format(manifest_fn))
+        with open(manifest_fn, 'r') as manifest_file:
+            manifest_raw = manifest_file.read()
+    # Otherwise, use the CMake Magic manifest
+    else:
+        manifest_raw = _MANIFEST_CONTENTS
+    log("TRACE", "Raw manifest contents: {}".format(manifest_raw))
+    return manifest_raw
+
+
 def parse_manifest(manifest_contents):
     """Parse the manifest file, returns a dictionary of potential targets"""
     manifest = {}
@@ -157,7 +207,7 @@ def parse_manifest(manifest_contents):
             manifest[target] = {"repo_hash": repo_hash,
                                 "url": url,
                                 "sha256_hash": sha256_hash,
-                                }
+                               }
         except ValueError:
             log("WARN", "Warning: Invalid line in manifest file:\n"
                 "         {}".format(line))
@@ -223,6 +273,28 @@ def lookup_urls(regex_l, manifest, inventory, refetch=False):
     if not found_one:
         log("INFO", "No targets matching '{}'".format(regex_l))
     return selected_targets
+
+
+def print_target_list(manifest, args):
+    """
+    Print a list of targets.
+    """
+    char_offset = max(len(x) for x in manifest.keys())
+    if not args.url_only:
+        # Print a couple helpful lines,
+        # then print each (Target, URL) pair in the manifest
+        log("INFO", "Potential targets in manifest file:\n"
+                    "{} : {}".format(
+                        "# TARGET".ljust(char_offset),
+                        "URL" if args.base_url else "RELATIVE_URL"))
+        for key, value in sorted(manifest.items()):
+            print("{target} : {base}{relpath}".format(
+                target=key.ljust(char_offset),
+                base=args.base_url,
+                relpath=value["url"]))
+    else:
+        for manifest_item in iteritems(manifest):
+            print(args.base_url+manifest_item[1]["url"])
 
 
 def download(
@@ -335,66 +407,76 @@ def extract(archive_path, images_dir, archive_type, test_zip=False):
         raise NotImplementedError("Archive type {} not implemented".format(archive_type))
 
 
+def update_target(target_info, temp_dir, images_dir, inventory, args):
+    """
+    Handle the updating of a single target.
+    """
+    target_name = target_info.get("target")
+    target_sha256 = target_info.get("sha256_hash")
+    filename = target_info.get("filename")
+    temp_path = os.path.join(temp_dir, filename)
+    # Add a trailing slash to make sure that urljoin handles things properly
+    full_url = urljoin(args.base_url+'/', target_info.get("url"))
+    _, downloaded_size, downloaded_sha256 = download(
+        images_url=full_url,
+        filename=temp_path,
+        buffer_size=args.buffer_size,
+        print_progress=(_LOG_LEVEL <= _LOG_LEVELS.get("INFO", 3))
+    )
+    if downloaded_size == 0:
+        log("INFO", "Skipping target: {}".format(target_name))
+        return
+    log("TRACE", "{} successfully downloaded ({} Bytes)"
+        .format(temp_path, downloaded_size))
+    # If the SHA256 in the manifest has the value '0', this is a special case
+    # and we just skip the verification step
+    if target_sha256 == '0':
+        log("DEBUG", "Skipping SHA256 check for {}.".format(full_url))
+    # If the check fails, print an error and don't unzip the file
+    elif downloaded_sha256 != target_sha256:
+        log("ERROR", "Downloaded SHA256 does not match manifest for {}!"
+            .format(full_url))
+        return
+        # Note: this skips the --keep option, so we'll never keep image packages
+        #       that fail the SHA256 checksum
+    ## Now copy the contents to the final destination (the images directory)
+    delete_from_inv(target_info, inventory, images_dir)
+    if os.path.splitext(temp_path)[1].lower() == '.zip':
+        archive_namelist = extract(
+            temp_path,
+            images_dir,
+            'zip',
+            args.test)
+        if args.keep:
+            # If the user wants to keep the downloaded archive,
+            # save it to the images directory and add it to the inventory
+            shutil.copy(temp_path, images_dir)
+            archive_namelist.append(filename)
+    else:
+        archive_namelist = []
+        shutil.copy(temp_path, images_dir)
+    ## Update inventory
+    inventory[target_name] = {"repo_hash": target_info.get("repo_hash"),
+                              "contents": archive_namelist,
+                              "filename": filename}
+
+
 def main():
     """Download the image files requested by the user"""
     args = parse_args()
-    if not args.base_url.endswith('/') and args.base_url != "":
-        args.base_url += '/'
-    if args.yes:
-        global _YES
-        _YES = True
-    archive_type = args.archive_type
-    if archive_type not in _ARCHIVE_ALGS:
-        log("ERROR", "Selected archive type not supported: {}".format(archive_type))
-        return 1
-    # Set the verbosity
-    global _LOG_LEVEL
-    log("TRACE", "Default log level: {}".format(_LOG_LEVEL))
-    _LOG_LEVEL = _LOG_LEVEL - args.verbose + args.quiet
-    images_dir = _DEFAULT_INSTALL_PATH
-    if args.install_location:
-        images_dir = args.install_location
-    elif os.environ.get("UHD_IMAGES_DIR") != None and os.environ.get("UHD_IMAGES_DIR") != "":
-        images_dir = os.environ.get("UHD_IMAGES_DIR")
-        log("DEBUG",
-            "UHD_IMAGES_DIR environment variable is set, using to set "
-            "install location.")
+    images_dir = get_images_dir(args)
     log("INFO", "Images destination: {}".format(os.path.abspath(images_dir)))
     try:
-        # If we're given a path to a manifest file, use it
-        if os.path.exists(args.manifest_location):
-            manifest_fn = args.manifest_location
-            log("INFO", "Using manifest file at location: {}".format(manifest_fn))
-            with open(manifest_fn, 'r') as manifest_file:
-                manifest_raw = manifest_file.read()
-        # Otherwise, use the CMake Magic manifest
-        else:
-            manifest_raw = _MANIFEST_CONTENTS
-            log("TRACE", "Raw manifest contents: {}".format(manifest_raw))
-
-        manifest = parse_manifest(manifest_raw)
+        manifest = parse_manifest(get_manifest_raw(args))
         if args.list_targets:
-            char_offset = max(len(x) for x in manifest.keys())
-            if not args.url_only:
-                # Print a couple helpful lines,
-                # then print each (Target, URL) pair in the manifest
-                log("INFO", "Potential targets in manifest file:\n"
-                            "{} : {}".format(
-                                "# TARGET".ljust(char_offset),
-                                "URL" if args.base_url else "RELATIVE_URL"))
-                for key, value in sorted(manifest.items()):
-                    print("{target} : {base}{relpath}".format(
-                        target=key.ljust(char_offset),
-                        base=args.base_url,
-                        relpath=value["url"]))
-            else:
-                for manifest_item in iteritems(manifest):
-                    print(args.base_url+manifest_item[1]["url"])
+            print_target_list(
+                manifest,
+                args
+            )
             return 0
-        else:
-            log("TRACE", "Manifest:\n{}".format(
-                "\n".join("{}".format(item) for item in manifest.items())
-            ))
+        log("TRACE", "Manifest:\n{}".format(
+            "\n".join("{}".format(item) for item in manifest.items())
+        ))
 
         # Read the inventory into a dictionary we can perform lookups on
         if os.path.isfile(args.inventory_location):
@@ -424,67 +506,23 @@ def main():
         else:
             return 0
 
-        with TemporaryDirectory() as temp_dir:
-            # Now download all the images archives into a temp directory
+        ## Now download all the images archives into a temp directory
+        if args.dry_run:
             for target_info in targets_info:
-                target_name = target_info.get("target")
-                target_hash = target_info.get("repo_hash")
-                target_rel_url = target_info.get("url")
-                target_sha256 = target_info.get("sha256_hash")
-                filename = target_info.get("filename")
-                temp_path = os.path.join(temp_dir, filename)
-                # Add a trailing slash to make sure that urljoin handles things properly
-                full_url = urljoin(args.base_url+'/', target_rel_url)
-                if not args.dry_run:
-                    _, downloaded_size, downloaded_sha256 = download(
-                        images_url=full_url,
-                        filename=temp_path,
-                        buffer_size=args.buffer_size,
-                        print_progress=(_LOG_LEVEL <= _LOG_LEVELS.get("INFO", 3))
-                    )
-                    if downloaded_size == 0:
-                        log("INFO", "Skipping target: {}".format(target_name))
-                        continue
-                    log("TRACE", "{} successfully downloaded ({} Bytes)"
-                        .format(temp_path, downloaded_size))
-
-                    # If the SHA256 in the manifest has the value '0', this is a special case and
-                    # we just skip the verification step
-                    if target_sha256 == '0':
-                        log("DEBUG", "Skipping SHA256 check for {}.".format(full_url))
-                    # If the check fails, print an error and don't unzip the file
-                    elif downloaded_sha256 != target_sha256:
-                        log("ERROR", "Downloaded SHA256 does not match manifest for {}!".format(
-                            full_url))
-                        continue
-                        # Note: this skips the --keep option, so we'll never keep image packages
-                        #       that fail the SHA256 checksum
-
-                    # Otherwise, the check has succeeded, and we can proceed
-                    delete_from_inv(target_info, inventory, images_dir)
-                    if os.path.splitext(temp_path)[1].lower() == '.zip':
-                        archive_namelist = extract(
-                            temp_path,
-                            images_dir,
-                            archive_type,
-                            args.test)
-                        if args.keep:
-                            # If the user wants to keep the downloaded archive,
-                            # save it to the images directory and add it to the inventory
-                            shutil.copy(temp_path, images_dir)
-                            archive_namelist.append(filename)
-                    else:
-                        archive_namelist = []
-                        shutil.copy(temp_path, images_dir)
-                    inventory[target_name] = {"repo_hash": target_hash,
-                                              "contents": archive_namelist,
-                                              "filename": filename}
-                else:
-                    log("INFO", "[Dry run] {} successfully downloaded"
-                        .format(filename))
-
-        if not args.dry_run:
-            write_inventory(inventory, inventory_fn)
+                log("INFO", "[Dry Run] Fetch target: {}".format(
+                    target_info.get("filename")))
+            return
+        with TemporaryDirectory() as temp_dir:
+            for target_info in targets_info:
+                update_target(
+                    target_info,
+                    temp_dir,
+                    images_dir,
+                    inventory,
+                    args
+                )
+        ## Update inventory with all the new content
+        write_inventory(inventory, inventory_fn)
 
     except Exception as ex:
         log("ERROR", "Downloader raised an unhandled exception: {ex}\n"
