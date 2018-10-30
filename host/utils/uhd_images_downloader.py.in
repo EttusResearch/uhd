@@ -18,6 +18,9 @@ import shutil
 import sys
 import tempfile
 import zipfile
+import platform
+# For all the non-core-library imports, we will be extra paranoid and be very
+# nice with error messages so that everyone understands what's up.
 try:
     from urllib.parse import urljoin  # Python 3
 except ImportError:
@@ -26,8 +29,27 @@ try:
     from builtins import input
 except ImportError:
     input = raw_input
-from six import iteritems
-import requests
+try:
+    from six import iteritems
+except ImportError:
+    sys.stdout.write(
+        "[ERROR] Missing module 'six'! Please install it, e.g., by "
+        "running 'pip install six' or any other tool that can install "
+        "Python modules.\n")
+    if platform.system() == 'Windows':
+        input('Hit Enter to continue.')
+    exit(0)
+try:
+    import requests
+except ImportError:
+    sys.stdout.write(
+        "[ERROR] Missing module 'requests'! Please install it, e.g., by "
+        "running 'pip install requests' or any other tool that can install "
+        "Python modules.\n")
+    if platform.system() == 'Windows':
+        input('Hit Enter to continue.')
+    exit(0)
+
 
 
 _DEFAULT_TARGET_REGEX     = "(fpga|fw|windrv)_default"
@@ -523,6 +545,12 @@ def main():
             "You can run this again with the '--verbose' flag to see more information\n"
             "If the problem persists, please email the output to: {contact}"
             .format(contact=_CONTACT, ex=ex))
+        # Again, we wait on Windows systems because if this is executed in a
+        # window, and immediately fails, the user doesn't have a way to see the
+        # error message, and if they're not very savvy, they won't know how to
+        # execute this in a shell.
+        if not _YES and platform.system() == 'Windows':
+            input('Hit Enter to continue.')
         return 1
     log("INFO", "Images download complete.")
     return 0
