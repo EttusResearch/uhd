@@ -478,7 +478,11 @@ def update_target(target_info, temp_dir, images_dir, inventory, args):
 
 
 def main():
-    """Download the image files requested by the user"""
+    """
+    Main function; does whatever the user requested (download or list files).
+
+    Returns True on successful execution.
+    """
     args = parse_args()
     images_dir = get_images_dir(args)
     log("INFO", "Images destination: {}".format(os.path.abspath(images_dir)))
@@ -489,7 +493,7 @@ def main():
                 manifest,
                 args
             )
-            return 0
+            return True
         log("TRACE", "Manifest:\n{}".format(
             "\n".join("{}".format(item) for item in manifest.items())
         ))
@@ -520,14 +524,14 @@ def main():
                 "\n".join("{}".format(item) for item in target_urls)
             ))
         else:
-            return 0
+            return True
 
         ## Now download all the images archives into a temp directory
         if args.dry_run:
             for target_info in targets_info:
                 log("INFO", "[Dry Run] Fetch target: {}".format(
                     target_info.get("filename")))
-            return
+            return True
         with TemporaryDirectory() as temp_dir:
             for target_info in targets_info:
                 update_target(
@@ -551,11 +555,11 @@ def main():
         # execute this in a shell.
         if not _YES and platform.system() == 'Windows':
             input('Hit Enter to continue.')
-        return 1
+        return False
     log("INFO", "Images download complete.")
-    return 0
+    return True
 
 # Placing this near the end of the file so we don't clutter the top
 _MANIFEST_CONTENTS = """@CMAKE_MANIFEST_CONTENTS@"""
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(not main())
