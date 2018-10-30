@@ -38,7 +38,6 @@ _INVENTORY_FILENAME       = "inventory.json"
 _CONTACT                  = "support@ettus.com"
 _DEFAULT_BUFFER_SIZE      = 8192
 _DEFAULT_DOWNLOAD_LIMIT   = 100 * 1024 * 1024 # Bytes
-_ARCHIVE_ALGS             = ["zip", "targz", "tarxz"]
 _ARCHIVE_DEFAULT_TYPE     = "zip"
 _UHD_VERSION              = "@UHD_VERSION@"
 # Note: _MANIFEST_CONTENTS are placed at the bottom of this file for aesthetic reasons
@@ -87,9 +86,6 @@ def parse_args():
                              "interactively, or by providing --yes.")
     parser.add_argument("-b", "--base-url", type=str, default=_DEFAULT_BASE_URL,
                         help="Set base URL for images download location")
-    parser.add_argument("-z", "--archive-type", type=str, default=_ARCHIVE_DEFAULT_TYPE,
-                        help=("Select archiving function (options: {})"
-                              .format(",".join(_ARCHIVE_ALGS))))
     parser.add_argument("-k", "--keep", action="store_true", default=False,
                         help="Keep the downloaded images archives in the image directory")
     parser.add_argument("-T", "--test", action="store_true", default=False,
@@ -112,10 +108,6 @@ def parse_args():
     if args.yes:
         global _YES
         _YES = True
-    archive_type = args.archive_type
-    if archive_type not in _ARCHIVE_ALGS:
-        log("ERROR", "Selected archive type not supported: {}".format(archive_type))
-        return 1
     # Set the verbosity
     global _LOG_LEVEL
     log("TRACE", "Default log level: {}".format(_LOG_LEVEL))
@@ -383,28 +375,31 @@ def delete_from_inv(target_info, inventory, images_dir):
     return True
 
 
-def extract(archive_path, images_dir, archive_type, test_zip=False):
-    """Extract the contents of the archive into `images_dir`"""
-    if archive_type == "zip":
-        log("TRACE", "Attempting to extracted files from {}".format(archive_path))
-        with zipfile.ZipFile(archive_path) as images_zip:
-            # Check that the Zip file is valid, in which case `testzip()` returns None.
-            # If its bad, that function will return a list of bad files
-            try:
-                if test_zip and images_zip.testzip():
-                    log("ERROR", "Could not extract the following invalid Zip file:"
-                                 " {}".format(archive_path))
-                    return []
-            except OSError:
+def extract(archive_path, images_dir, test_zip=False):
+    """
+    Extract the contents of `archive_path` into `images_dir`
+
+    Returns a list of files that were extracted.
+
+    If test_zip is set, it will verify the zip file before extracting.
+    """
+    log("TRACE", "Attempting to extracted files from {}".format(archive_path))
+    with zipfile.ZipFile(archive_path) as images_zip:
+        # Check that the Zip file is valid, in which case `testzip()` returns
+        # None.  If it's bad, that function will return a list of bad files
+        try:
+            if test_zip and images_zip.testzip():
                 log("ERROR", "Could not extract the following invalid Zip file:"
                              " {}".format(archive_path))
                 return []
-            images_zip.extractall(images_dir)
-            archive_namelist = images_zip.namelist()
-            log("TRACE", "Extracted files: {}".format(archive_namelist))
-            return archive_namelist
-    else:
-        raise NotImplementedError("Archive type {} not implemented".format(archive_type))
+        except OSError:
+            log("ERROR", "Could not extract the following invalid Zip file:"
+                         " {}".format(archive_path))
+            return []
+        images_zip.extractall(images_dir)
+        archive_namelist = images_zip.namelist()
+        log("TRACE", "Extracted files: {}".format(archive_namelist))
+        return archive_namelist
 
 
 def update_target(target_info, temp_dir, images_dir, inventory, args):
@@ -445,7 +440,6 @@ def update_target(target_info, temp_dir, images_dir, inventory, args):
         archive_namelist = extract(
             temp_path,
             images_dir,
-            'zip',
             args.test)
         if args.keep:
             # If the user wants to keep the downloaded archive,
