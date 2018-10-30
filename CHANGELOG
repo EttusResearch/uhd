@@ -1,7 +1,7 @@
 Change Log for Releases
 ==============================
 
-## 003.013.000.003
+## 003.013.001.000
 * E320: Fix front panel GPIO readback
 * E320: Fix master_clock_rate setting
 * E320: Print extra ouptut for ref_clock BIST
