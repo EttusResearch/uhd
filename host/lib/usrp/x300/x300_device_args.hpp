@@ -116,8 +116,6 @@ private:
                 _dboard_clock_rate.set(50e6);
             } else if (_master_clock_rate.get() == 184.32e6) {
                 _dboard_clock_rate.set(46.08e6);
-            } else if (_master_clock_rate.get() == 120e6) {
-                _dboard_clock_rate.set(40e6);
             } else {
                 throw uhd::value_error(
                     "Can't infer daughterboard clock rate. Specify "
