@@ -432,6 +432,56 @@ You must power-cycle the device before you can use this new address.
 
 \section x3x0_setup_clocking Setup Clocking
 
+\subsection x3x0_set_clocking_mboard Motherboard clock
+
+The X300 series generates a master clock on the motherboard, which is then used
+to drive the ADCs, DACs, and the radio blocks. This clock rate is referred to as
+the "master clock rate". There is always a single master clock rate per
+motherboard. This rate is also the base sample rate of the radio blocks. By
+using DDC and DUC blocks (these are part of the default X300/X310 FPGA image),
+the actual sampling rate available to your application can be an integer divisor
+of the master clock rate, so for a 200 MHz master clock rate, the sampling rate
+available to the application can be 200 Msps, 100 Msps, 66.6 Msps, 50 Msps, and
+so on.
+
+The X300 series support a 200 MHz and a 184.32 MHz master clock rate, with
+200 MHz being the default. To specify a master clock rate, use the
+`master_clock_rate` device arg at initialization time. Example:
+~~~{.cpp}
+auto usrp = uhd::usrp::multi_usrp::make("type=x300,master_clock_rate=184.32e6");
+usrp->set_rx_rate(30e6); // This will coerce to the next possible value
+// The next possible value is 30.72e6, which is 184.32e6 / 6
+std::cout << usrp->get_rx_rate() << std::endl; // Prints 30.72e6
+~~~
+
+\b Note: The X300 series does not support the
+`uhd::usrp::multi_usrp::set_master_clock_rate()` API call, because it can only
+configure the clock at initialization time, but not afterwards. To switch the
+master clock rate, destroy your USRP object, and recreate a new one. Example:
+~~~{.cpp}
+// 1. Create USRP object with 184.32 MHz master clock rate
+auto usrp = uhd::usrp::multi_usrp::make("type=x300,master_clock_rate=184.32e6");
+// 2. Destroy the reference
+usrp.reset();
+// 3. Recreate the object with a 200 MHz master clock rate
+usrp = uhd::usrp::multi_usrp::make("type=x300,master_clock_rate=200e6");
+~~~
+Due to the contract of `uhd::usrp::multi_usrp::set_master_clock_rate()`, the
+call will not throw an exception, but will coerce to the previously set master
+clock rate. Effectively, it will do nothing but print a warning (but it won't
+terminate your application). Also note that the return value of said API call
+as well as the associated getter will always return accurate values. Example:
+~~~{.cpp}
+auto usrp = uhd::usrp::multi_usrp::make("type=x300,master_clock_rate=200e6");
+double desired_rate = 184.32e6;
+// This call does nothing:
+usrp->set_master_clock_rate(desired_rate);
+// At this point, desired_rate does not actually store the correct rate!
+// This prints the correct rate:
+std::cout << usrp->get_master_clock_rate() << std::endl; // Prints 200e6
+~~~
+
+
 \subsection x3x0_set_clocking_dboard Daughterboard clock
 
 The X3x0 provides a clock signal to the daughterboards which is used as a
