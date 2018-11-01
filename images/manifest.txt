@@ -20,8 +20,8 @@ e3xx_e320_sdimg_default       meta-ettus-v3.13.1.0  e3xx/meta-ettus-v3.13.1.0/e3
 # N300-Series
 n3xx_n310_fpga_default          fpga-494ae8bb        n3xx/fpga-494ae8bb/n3xx_n310_fpga_default-g494ae8bb.zip                   d473b70674c7840ae05a5858aa70f4bb39cab23f8886d7b377b477361c374b96
 n3xx_n300_fpga_default          fpga-494ae8bb        n3xx/fpga-494ae8bb/n3xx_n300_fpga_default-g494ae8bb.zip                   5082cfb49cb9cc56749d3b8a02e5bbef7252b77acb7b89902b24d6ad066d9b84
-#n3xx_n310_fpga_aurora           fpga-1107862        n3xx/fpga-1107862/n3xx_n310_fpga_aurora-g1107862.zip                    3926d6b247a8f931809460d3957cec51f8407cd3f7aea6f4f3b91d1bbb427c7d
-#n3xx_n300_fpga_aurora           fpga-1107862        n3xx/fpga-1107862/n3xx_n300_fpga_aurora-g1107862.zip                    e34e9343572adfba905433a1570cb394fe45207d442268d0fa400c3406253530
+n3xx_n310_fpga_aurora           fpga-494ae8bb        n3xx/fpga-494ae8bb/n3xx_n310_fpga_aurora-g494ae8bb.zip                    b0f7a86a6b2f0bf4816f1a0ecaca1dc3960e5962a1f809c202316c942fb1d3db
+n3xx_n300_fpga_aurora           fpga-494ae8bb        n3xx/fpga-494ae8bb/n3xx_n300_fpga_aurora-g494ae8bb.zip                    3426d83d8fd33134ef9a09551cc3da8cf9a99ed91f2044071edfa3635255af7f
 #n3xx_n310_cpld_default         fpga-6bea23d        n3xx/fpga-6bea23d/n3xx_n310_cpld_default-g6bea23d.zip                   0
 # N3XX Mykonos firmware
 #n3xx_n310_fw_default           fpga-6bea23d        n3xx/fpga-6bea23d/n3xx_n310_fw_default-g6bea23d.zip                     0
