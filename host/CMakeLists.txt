@@ -167,9 +167,7 @@ if(NOT DEFINED UHD_IMAGES_DIR)
     endif(DEFINED FPGA_IMAGES_DIR)
 endif(NOT DEFINED UHD_IMAGES_DIR)
 
-option(UHD_IMAGES_DIR "Path to installed UHD image binaries.")
 message( STATUS "Using UHD Images Directory: ${UHD_IMAGES_DIR}" )
-add_definitions(-DUHD_IMAGES_DIR=${UHD_IMAGES_DIR})
 
 if(DEFINED UHD_IMAGES_DIR_WINREG_KEY)
     add_definitions(-DUHD_IMAGES_DIR_WINREG_KEY=${UHD_IMAGES_DIR_WINREG_KEY})
