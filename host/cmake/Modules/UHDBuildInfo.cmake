@@ -15,6 +15,11 @@ macro(UHD_LOAD_BUILD_INFO)
     # Build date
     if(IGNORE_BUILD_DATE)
         set(UHD_BUILD_DATE "")
+    elseif(DEFINED ENV{SOURCE_DATE_EPOCH})
+        EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -c
+            "import time; print(time.strftime('%a, %d %b %Y %H:%M:%S UTC', time.gmtime($ENV{SOURCE_DATE_EPOCH})))"
+            OUTPUT_VARIABLE UHD_BUILD_DATE OUTPUT_STRIP_TRAILING_WHITESPACE
+        )
     else()
         execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
             "import time; print(time.strftime('%a, %d %b %Y %H:%M:%S', time.gmtime()))"
