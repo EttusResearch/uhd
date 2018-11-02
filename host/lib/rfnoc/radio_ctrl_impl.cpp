@@ -191,42 +191,42 @@ double radio_ctrl_impl::get_rate() const
 
 std::string radio_ctrl_impl::get_tx_antenna(const size_t chan) /* const */
 {
-    return _tx_antenna[chan];
+    return _tx_antenna.at(chan);
 }
 
 std::string radio_ctrl_impl::get_rx_antenna(const size_t chan) /* const */
 {
-    return _rx_antenna[chan];
+    return _rx_antenna.at(chan);
 }
 
 double radio_ctrl_impl::get_tx_frequency(const size_t chan) /* const */
 {
-    return _tx_freq[chan];
+    return _tx_freq.at(chan);
 }
 
 double radio_ctrl_impl::get_rx_frequency(const size_t chan) /* const */
 {
-    return _rx_freq[chan];
+    return _rx_freq.at(chan);
 }
 
 double radio_ctrl_impl::get_tx_gain(const size_t chan) /* const */
 {
-    return _tx_gain[chan];
+    return _tx_gain.at(chan);
 }
 
 double radio_ctrl_impl::get_rx_gain(const size_t chan) /* const */
 {
-    return _rx_gain[chan];
+    return _rx_gain.at(chan);
 }
 
 double radio_ctrl_impl::get_tx_bandwidth(const size_t chan) /* const */
 {
-    return _tx_bandwidth[chan];
+    return _tx_bandwidth.at(chan);
 }
 
 double radio_ctrl_impl::get_rx_bandwidth(const size_t chan) /* const */
 {
-    return _rx_bandwidth[chan];
+    return _rx_bandwidth.at(chan);
 }
 
 /******************************************************************************
