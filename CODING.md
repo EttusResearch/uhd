@@ -84,6 +84,11 @@ Date:   Tue Nov 22 16:19:38 2016 -0800
     Reviewed-By: Martin Braun <martin.braun@ettus.com>
 ```
 
+* Prefer `.at()` over `[]` for maps and vectors. Keep in mind that `[]` will
+  invoke a default constructor of the value type, whereas `.at()` will throw
+  an exception if the index doesn't exist -- which is usually the desired
+  behaviour.
+
 
 ## Boost-specific Guidelines
 
