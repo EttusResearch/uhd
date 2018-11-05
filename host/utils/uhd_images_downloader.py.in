@@ -70,6 +70,7 @@ _LOG_LEVELS = {"TRACE": 1,
                "ERROR": 5}
 _LOG_LEVEL = _LOG_LEVELS["INFO"]
 _YES = False
+_PROXIES = {}
 
 
 def log(level, message):
@@ -106,6 +107,11 @@ def parse_args():
                         help="Set threshold for download limits. Any download "
                              "larger than this will require approval, either "
                              "interactively, or by providing --yes.")
+    parser.add_argument("--http-proxy", type=str,
+                        help="Specify HTTP proxy in the format "
+                        "http://user:pass@1.2.3.4:port\n"
+                        "If this this option is not given, the environment "
+                        "variable HTTP_PROXY can also be used to specify a proxy.")
     parser.add_argument("-b", "--base-url", type=str, default=_DEFAULT_BASE_URL,
                         help="Set base URL for images download location")
     parser.add_argument("-k", "--keep", action="store_true", default=False,
@@ -130,6 +136,9 @@ def parse_args():
     if args.yes:
         global _YES
         _YES = True
+    if args.http_proxy:
+        global _PROXIES
+        _PROXIES['http'] = args.http_proxy
     # Set the verbosity
     global _LOG_LEVEL
     log("TRACE", "Default log level: {}".format(_LOG_LEVEL))
@@ -322,12 +331,12 @@ def download(
     download_limit = download_limit or _DEFAULT_DOWNLOAD_LIMIT
     log("TRACE", "Downloading {} to {}".format(images_url, filename))
     try:
-        resp = requests.get(images_url, stream=True,
+        resp = requests.get(images_url, stream=True, proxies=_PROXIES,
                             headers={'User-Agent': 'UHD Images Downloader'})
     except TypeError:
         # requests library versions pre-4c3b9df6091b65d8c72763222bd5fdefb7231149
         # (Dec.'12) workaround
-        resp = requests.get(images_url, prefetch=False,
+        resp = requests.get(images_url, prefetch=False, proxies=_PROXIES,
                             headers={'User-Agent': 'UHD Images Downloader'})
     if resp.status_code != 200:
         raise RuntimeError("URL does not exist: {}".format(images_url))
