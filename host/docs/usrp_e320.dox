@@ -462,6 +462,47 @@ salt-minion):
 
     $ systemctl enable salt-minion
 
+To make use of Salt, both the device needs to be configured (the "minion") and,
+typically, a server to act as the Salt master. Refer to the Salt documentation
+on how to configure the minion and the master. A typical sequence to get started
+will look like this:
+
+1. Install the salt-master package on the server (e.g. by running `apt install salt-master`
+   if the server is an Ubuntu system), and make sure the Salt master is running.
+2. Add the network address / hostname of that server to the `/etc/salt/minion`
+   file on the device by editing the `master:` line.
+3. Launch the Salt minion on the USRP by running the command `systemctl start salt-minion`.
+4. The minion will try to connect to the master. You need to authorize the
+   minion by running `salt-key -a $hostname` where `$hostname` is the name of
+   the minion.
+5. Once the device is authorized, you can try various commands to see if the
+   communication was established:
+
+    $ [sudo] salt '*' test.ping
+    ni-n3xx-$serial:
+        True
+    $ [sudo] salt '*' network.interfaces
+    ni-n3xx-$serial:
+        ----------
+        eth0:
+            ----------
+            hwaddr:
+                02:00:03:11:fe:00
+            inet:
+                |_
+                  ----------
+                  address:
+                      xx.xx.xx.xx
+                  broadcast:
+                      xx.xx.xx.xx
+                  label:
+                      eth0
+                  netmask:
+                      255.255.254.0
+            up:
+                True
+    # [...]
+
 \section e320_theory_of_ops Theory of Operation
 
 E320 is on the MPM architecture (see also: \ref page_mpm).
