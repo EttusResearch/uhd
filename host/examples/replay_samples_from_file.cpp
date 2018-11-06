@@ -344,7 +344,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
 
     stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
     cout << endl << "Stopping replay..." << endl;
-    replay_ctrl->issue_stream_cmd(stream_cmd);
+    replay_ctrl->issue_stream_cmd(stream_cmd, replay_chan);
 
 
     ///////////////////////////////////////////////////////////////////////////
@@ -353,10 +353,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     uint16_t prev_packet_count, packet_count;
 
     cout << "Waiting for replay data to flush... ";
-    prev_packet_count = replay_ctrl->sr_read64(uhd::rfnoc::SR_READBACK_REG_GLOBAL_PARAMS, 0) >> 32;
+    prev_packet_count = replay_ctrl->sr_read64(uhd::rfnoc::SR_READBACK_REG_GLOBAL_PARAMS, replay_chan) >> 32;
     while(true) {
         std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        packet_count = replay_ctrl->sr_read64(uhd::rfnoc::SR_READBACK_REG_GLOBAL_PARAMS, 0) >> 32;
+        packet_count = replay_ctrl->sr_read64(uhd::rfnoc::SR_READBACK_REG_GLOBAL_PARAMS, replay_chan) >> 32;
         if (packet_count == prev_packet_count) break;
         prev_packet_count = packet_count;
     }
