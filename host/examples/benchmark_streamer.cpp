@@ -14,10 +14,13 @@
 #include <uhd/rfnoc/duc_block_ctrl.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
+#include <boost/algorithm/string/trim_all.hpp>
 #include <iostream>
+#include <sstream>
 #include <iomanip>
 #include <thread>
 #include <chrono>
+#include <deque>
 
 namespace po = boost::program_options;
 
@@ -45,8 +48,13 @@ struct host_measurement_values {
 };
 
 struct test_results {
-    traffic_counter_values traffic_counter;
+    std::vector<traffic_counter_values> traffic_counter;
     host_measurement_values host;
+};
+
+struct noc_block_endpoint {
+    std::string block_id;
+    size_t port;
 };
 
 void enable_traffic_counters(
@@ -190,18 +198,20 @@ void print_rx_results(
     std::cout << "------------------- Benchmarking rx stream -----------------------" << std::endl;
     std::cout << "------------------------------------------------------------------" << std::endl;
     std::cout << "RX samples per packet: " << results.host.spp << std::endl;
+    std::cout << std::endl;
 
-    std::cout << std::endl;
-    std::cout << "------------------ Traffic counter values ------------------------" << std::endl;
-    print_traffic_counters(results.traffic_counter);
+    for (const auto& tc : results.traffic_counter) {
+        std::cout << "------------------ Traffic counter values ------------------------" << std::endl;
+        print_traffic_counters(tc);
+        std::cout << std::endl;
 
-    std::cout << std::endl;
-    std::cout << "------------ Values calculated from traffic counters -------------" << std::endl;
-    print_rx_statistics(results.traffic_counter, bus_clk_freq);
-    std::cout << std::endl;
-    print_utilization_statistics(results.traffic_counter);
+        std::cout << "------------ Values calculated from traffic counters -------------" << std::endl;
+        print_rx_statistics(tc, bus_clk_freq);
+        std::cout << std::endl;
+        print_utilization_statistics(tc);
+        std::cout << std::endl;
+    }
 
-    std::cout << std::endl;
     std::cout << "--------------------- Host measurements --------------------------" << std::endl;
     std::cout << "Time elapsed:          " << results.host.seconds << " s" << std::endl;
     std::cout << "Samples read:          " << results.host.num_samples << std::endl;
@@ -217,18 +227,20 @@ void print_tx_results(
     std::cout << "------------------- Benchmarking tx stream -----------------------" << std::endl;
     std::cout << "------------------------------------------------------------------" << std::endl;
     std::cout << "TX samples per packet: " << results.host.spp << std::endl;
+    std::cout << std::endl;
 
-    std::cout << std::endl;
-    std::cout << "------------------ Traffic counter values ------------------------" << std::endl;
-    print_traffic_counters(results.traffic_counter);
+    for (const auto& tc : results.traffic_counter) {
+        std::cout << "------------------ Traffic counter values ------------------------" << std::endl;
+        print_traffic_counters(tc);
 
-    std::cout << std::endl;
-    std::cout << "------------ Values calculated from traffic counters -------------" << std::endl;
-    print_tx_statistics(results.traffic_counter, bus_clk_freq);
-    std::cout << std::endl;
-    print_utilization_statistics(results.traffic_counter);
+        std::cout << std::endl;
+        std::cout << "------------ Values calculated from traffic counters -------------" << std::endl;
+        print_tx_statistics(tc, bus_clk_freq);
+        std::cout << std::endl;
+        print_utilization_statistics(tc);
+        std::cout << std::endl;
+    }
 
-    std::cout << std::endl;
     std::cout << "--------------------- Host measurements --------------------------" << std::endl;
     std::cout << "Time elapsed:          " << results.host.seconds << " s" << std::endl;
     std::cout << "Samples written:       " << results.host.num_samples << std::endl;
@@ -236,55 +248,110 @@ void print_tx_results(
     std::cout << "Calculated throughput: " << results.host.num_samples / results.host.seconds / 1e6 << " Msps" << std::endl;
 }
 
+void configure_ddc(
+    uhd::device3::sptr usrp,
+    const std::string& ddcid,
+    double ddc_decim
+) {
+    auto ddc_ctrl = usrp->get_block_ctrl<uhd::rfnoc::ddc_block_ctrl>(ddcid);
+    ddc_ctrl->set_arg<double>("input_rate", 1, 0);
+    ddc_ctrl->set_arg<double>("output_rate", 1/ddc_decim, 0);
+    double actual_rate = ddc_ctrl->get_arg<double>("output_rate", 0);
+    std::cout << "Actual DDC decimation: " << 1/actual_rate << std::endl;
+}
+
+void configure_duc(
+    uhd::device3::sptr usrp,
+   const std::string& ducid,
+    double duc_interp
+) {
+    auto duc_ctrl = usrp->get_block_ctrl<uhd::rfnoc::duc_block_ctrl>(ducid);
+    duc_ctrl->set_arg<double>("output_rate", 1, 0);
+    duc_ctrl->set_arg<double>("input_rate", 1/duc_interp, 0);
+    double actual_rate = duc_ctrl->get_arg<double>("input_rate", 0);
+    std::cout << "Actual DUC interpolation: " << 1/actual_rate << std::endl;
+}
+
 uhd::rx_streamer::sptr configure_rx_streamer(
     uhd::device3::sptr usrp,
-    const std::string& nullid,
-    const std::string& fifoid,
-    const size_t fifo_port,
-    const std::string& ddcid,
-    const double ddc_decim,
+    const std::string null_id,
+    const std::string splitter_id,
+    const std::vector<std::vector<noc_block_endpoint>>& noc_blocks,
     const size_t spp,
     const std::string& format
 ) {
-    // Configure rfnoc
-    std::string endpoint_id = nullid;
-    size_t endpoint_port = 0;
+    std::cout << "Configuring rx stream with" << std::endl;
+    std::cout << "    Null ID: " << null_id << std::endl;
+    if (not splitter_id.empty()) {
+        std::cout << "    Splitter ID: " << splitter_id << std::endl;
+    }
+    for (size_t i = 0; i < noc_blocks.size(); i++) {
+        if (noc_blocks[i].size() > 0) {
+            std::cout << "    Channel " << i << std::endl;
+            for (const auto& b : noc_blocks[i]) {
+                std::cout << "        Block ID: " << b.block_id
+                        << ", port: " << b.port << std::endl;
+            }
+        }
+    }
+
     auto rx_graph = usrp->create_graph("rx_graph");
-    if (not ddcid.empty()) {
-        rx_graph->connect(endpoint_id, ddcid);
-        endpoint_id = ddcid;
-    }
-
-    if (not fifoid.empty()) {
-        rx_graph->connect(endpoint_id, 0, fifoid, fifo_port);
-        endpoint_id = fifoid;
-        endpoint_port = fifo_port;
-    }
-
-    // Configure streamer
     uhd::stream_args_t stream_args(format, "sc16");
-    stream_args.args["block_id"] = endpoint_id;
-    stream_args.args["block_port"] = str(boost::format("%d") % endpoint_port);
+    std::vector<size_t> channels;
+    for (size_t i = 0; i < noc_blocks.size(); i++) {
+        channels.push_back(i);
+    }
+    stream_args.channels = channels;
+
+    std::vector<noc_block_endpoint> endpoints;
+
+    if (noc_blocks.size() == 1) {
+        // No splitter required
+        endpoints = {{null_id, 0}};
+    }
+    else {
+        // Connect to splitter
+        rx_graph->connect(null_id, splitter_id);
+
+        for (size_t i = 0; i < noc_blocks.size(); i++) {
+            endpoints.push_back({splitter_id, i});
+        }
+    }
+
+    for (size_t i = 0; i < noc_blocks.size(); i++) {
+        std::string endpoint_id = endpoints[i].block_id;
+        size_t endpoint_port    = endpoints[i].port;
+
+        for (size_t j = 0; j < noc_blocks[i].size(); j++) {
+            const auto& noc_block = noc_blocks[i][j];
+
+            rx_graph->connect(
+                endpoint_id,
+                endpoint_port,
+                noc_block.block_id,
+                noc_block.port);
+
+            endpoint_id = noc_block.block_id;
+            endpoint_port = noc_block.port;
+        }
+
+        const std::string id_str   = str(boost::format("block_id%d") % i);
+        const std::string port_str = str(boost::format("block_port%d") % i);
+        stream_args.args[id_str]   = endpoint_id;
+        stream_args.args[port_str] = str(boost::format("%d") % endpoint_port);
+    }
+
     if (spp != 0) {
         stream_args.args["spp"] = std::to_string(spp);
     }
     uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
 
     // Configure null source
+    auto null_ctrl = usrp->get_block_ctrl<uhd::rfnoc::null_block_ctrl>(null_id);
     const size_t otw_bytes_per_item = uhd::convert::get_bytes_per_item(stream_args.otw_format);
     const size_t samps_per_packet = rx_stream->get_max_num_samps();
-    auto null_src_ctrl = usrp->get_block_ctrl<uhd::rfnoc::null_block_ctrl>(nullid);
-    null_src_ctrl->set_arg<int>("line_rate", 0);
-    null_src_ctrl->set_arg<int>("bpp", samps_per_packet*otw_bytes_per_item);
-
-    // Configure DDC
-    if (not ddcid.empty()) {
-        auto ddc_ctrl = usrp->get_block_ctrl<uhd::rfnoc::ddc_block_ctrl>(ddcid);
-        ddc_ctrl->set_arg<double>("input_rate", 1, 0);
-        ddc_ctrl->set_arg<double>("output_rate", 1/ddc_decim, 0);
-        double actual_rate = ddc_ctrl->get_arg<double>("output_rate", 0);
-        std::cout << "Actual DDC decimation: " << 1/actual_rate << std::endl;
-    }
+    null_ctrl->set_arg<int>("line_rate", 0);
+    null_ctrl->set_arg<int>("bpp", samps_per_packet*otw_bytes_per_item);
 
     return rx_stream;
 }
@@ -301,9 +368,14 @@ test_results benchmark_rx_streamer(
     // Allocate buffer
     const size_t cpu_bytes_per_item = uhd::convert::get_bytes_per_item(format);
     const size_t samps_per_packet = rx_stream->get_max_num_samps();
-    std::vector<uint8_t> buffer(samps_per_packet*cpu_bytes_per_item);
+
+    const size_t num_channels = rx_stream->get_num_channels();
+    std::vector<std::vector<uint8_t>> buffer(num_channels);
     std::vector<void *> buffers;
-    buffers.push_back(&buffer.front());
+    for (size_t i = 0; i < num_channels; i++) {
+        buffer[i].resize(samps_per_packet*cpu_bytes_per_item);
+        buffers.push_back(&buffer[i].front());
+    }
 
     enable_traffic_counters(
         usrp->get_tree(), null_src_ctrl->get_block_id().get_tree_root());
@@ -311,7 +383,7 @@ test_results benchmark_rx_streamer(
     // Stream some packets
     uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     stream_cmd.stream_now = true;
-    rx_stream->issue_stream_cmd(stream_cmd);
+    null_src_ctrl->issue_stream_cmd(stream_cmd);
 
     const std::chrono::duration<double> requested_duration(duration);
     const auto start_time = std::chrono::steady_clock::now();
@@ -349,11 +421,12 @@ test_results benchmark_rx_streamer(
     disable_traffic_counters(
         usrp->get_tree(), null_src_ctrl->get_block_id().get_tree_root());
 
-    rx_stream->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
+    null_src_ctrl->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
 
     test_results results;
-    results.traffic_counter = read_traffic_counters(
-        usrp->get_tree(), null_src_ctrl->get_block_id().get_tree_root());
+    results.traffic_counter.push_back(
+        read_traffic_counters(
+            usrp->get_tree(), null_src_ctrl->get_block_id().get_tree_root()));
 
     const std::chrono::duration<double> elapsed_time(current_time-start_time);
     results.host.seconds = elapsed_time.count();
@@ -366,48 +439,57 @@ test_results benchmark_rx_streamer(
 
 uhd::tx_streamer::sptr configure_tx_streamer(
     uhd::device3::sptr usrp,
-    const std::string& nullid,
-    const std::string& fifoid,
-    const size_t fifo_port,
-    const std::string& ducid,
-    const double duc_interp,
+    const std::vector<std::vector<noc_block_endpoint>> noc_blocks,
     const size_t spp,
     const std::string& format
 ) {
-    // Configure rfnoc
-    std::string endpoint_id = nullid;
-    size_t endpoint_port = 0;
-    auto tx_graph = usrp->create_graph("tx_graph");
-    if (not ducid.empty()) {
-        tx_graph->connect(ducid, endpoint_id);
-        endpoint_id = ducid;
+    std::cout << "Configuring tx stream with" << std::endl;
+    for (size_t i = 0; i < noc_blocks.size(); i++) {
+        std::cout << "    Channel " << i << std::endl;
+        for (const auto& b : noc_blocks[i]) {
+            std::cout << "        Block ID: " << b.block_id
+                        << ", port: " << b.port << std::endl;
+        }
     }
 
-    if (not fifoid.empty()) {
-        tx_graph->connect(fifoid, fifo_port, endpoint_id, 0);
-        endpoint_id = fifoid;
-        endpoint_port = fifo_port;
-    }
-    // Configure streamer
+    // Configure rfnoc
+    auto tx_graph = usrp->create_graph("tx_graph");
     uhd::stream_args_t stream_args(format, "sc16");
-    stream_args.args["block_id"] = endpoint_id;
-    stream_args.args["block_port"] = str(boost::format("%d") % endpoint_port);
+    std::vector<size_t> channels;
+    for (size_t i = 0; i < noc_blocks.size(); i++) {
+        channels.push_back(i);
+    }
+    stream_args.channels = channels;
+
+    for (size_t i = 0; i < noc_blocks.size(); i++) {
+        std::string endpoint_id;
+        size_t endpoint_port;
+
+        for (size_t j = 0; j < noc_blocks[i].size(); j++) {
+            const auto& noc_block = noc_blocks[i][j];
+
+            if (j != 0) {
+                tx_graph->connect(
+                    noc_block.block_id,
+                    noc_block.port,
+                    endpoint_id,
+                    endpoint_port);
+            }
+            endpoint_id = noc_block.block_id;
+            endpoint_port = noc_block.port;
+        }
+
+        const std::string id_str   = str(boost::format("block_id%d") % i);
+        const std::string port_str = str(boost::format("block_port%d") % i);
+        stream_args.args[id_str]   = endpoint_id;
+        stream_args.args[port_str] = str(boost::format("%d") % endpoint_port);
+    }
+
+    // Configure streamer
     if (spp != 0) {
         stream_args.args["spp"] = std::to_string(spp);
     }
     uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
-
-    // Configure null sink
-    auto null_sink_ctrl = usrp->get_block_ctrl<uhd::rfnoc::null_block_ctrl>(nullid);
-
-    // Configure DUC
-    if (not ducid.empty()) {
-        auto duc_ctrl = usrp->get_block_ctrl<uhd::rfnoc::duc_block_ctrl>(ducid);
-        duc_ctrl->set_arg<double>("output_rate", 1, 0);
-        duc_ctrl->set_arg<double>("input_rate", 1/duc_interp, 0);
-        double actual_rate = duc_ctrl->get_arg<double>("input_rate", 0);
-        std::cout << "Actual DUC interpolation: " << 1/actual_rate << std::endl;
-    }
 
     return tx_stream;
 }
@@ -415,21 +497,32 @@ uhd::tx_streamer::sptr configure_tx_streamer(
 test_results benchmark_tx_streamer(
     uhd::device3::sptr usrp,
     uhd::tx_streamer::sptr tx_stream,
-    const std::string& nullid,
+    const std::vector<std::string>& null_ids,
     const double duration,
     const std::string& format
 ) {
-    auto null_sink_ctrl = usrp->get_block_ctrl<uhd::rfnoc::null_block_ctrl>(nullid);
+    std::vector<boost::shared_ptr<uhd::rfnoc::null_block_ctrl>> null_ctrls;
+    for (const auto& id : null_ids) {
+        null_ctrls.push_back(
+            usrp->get_block_ctrl<uhd::rfnoc::null_block_ctrl>(id));
+    }
 
     // Allocate buffer
     const size_t cpu_bytes_per_item = uhd::convert::get_bytes_per_item(format);
     const size_t samps_per_packet = tx_stream->get_max_num_samps();
-    std::vector<uint8_t> buffer(samps_per_packet*cpu_bytes_per_item);
-    std::vector<void *> buffers;
-    buffers.push_back(&buffer.front());
 
-    enable_traffic_counters(
-        usrp->get_tree(), null_sink_ctrl->get_block_id().get_tree_root());
+    const size_t num_channels = tx_stream->get_num_channels();
+    std::vector<std::vector<uint8_t>> buffer(num_channels);
+    std::vector<void *> buffers;
+    for (size_t i = 0; i < num_channels; i++) {
+        buffer[i].resize(samps_per_packet*cpu_bytes_per_item);
+        buffers.push_back(&buffer[i].front());
+    }
+
+    for (auto& null_ctrl : null_ctrls) {
+        enable_traffic_counters(
+            usrp->get_tree(), null_ctrl->get_block_id().get_tree_root());
+    }
 
     // Stream some packets
     uint64_t num_tx_samps = 0;
@@ -451,16 +544,21 @@ test_results benchmark_tx_streamer(
         current_time = std::chrono::steady_clock::now();
     }
 
-    disable_traffic_counters(
-        usrp->get_tree(), null_sink_ctrl->get_block_id().get_tree_root());
+    for (auto& null_ctrl : null_ctrls) {
+        disable_traffic_counters(
+            usrp->get_tree(), null_ctrl->get_block_id().get_tree_root());
+    }
 
     // Stop
     md.end_of_burst = true;
     tx_stream->send(buffers, 0, md);
 
     test_results results;
-    results.traffic_counter = read_traffic_counters(
-        usrp->get_tree(), null_sink_ctrl->get_block_id().get_tree_root());
+    for (auto& null_ctrl : null_ctrls) {
+        results.traffic_counter.push_back(
+            read_traffic_counters(
+                usrp->get_tree(), null_ctrl->get_block_id().get_tree_root()));
+    }
 
     const std::chrono::duration<double> elapsed_time(current_time-start_time);
     results.host.seconds = elapsed_time.count();
@@ -471,68 +569,130 @@ test_results benchmark_tx_streamer(
     return results;
 }
 
-int UHD_SAFE_MAIN(int argc, char *argv[]){
-    //variables to be set by po
-    std::string args, format, fifoid0, ddcid0, ducid0, ddcid1, ducid1;
-    std::string nullid0, nullid1, nullid2, nullid3;
-    double rx_duration, tx_duration, dual_rx_duration, dual_tx_duration;
-    double full_duplex_duration, dual_full_duplex_duration;
+std::vector<std::string> parse_csv(
+    const std::string& list
+) {
+    std::vector<std::string> result;
+    std::istringstream input(list);
+
+    std::string str;
+    while (std::getline(input, str, ',')) {
+        boost::algorithm::trim_all(str);
+        if (not str.empty()) {
+            result.push_back(str);
+        }
+    }
+    return result;
+}
+
+std::deque<noc_block_endpoint> create_noc_block_queue(
+    const size_t num_blocks,
+    const std::string& user_override_id_list,
+    const std::string& prefix,
+    const size_t num_ports
+) {
+    const std::vector<std::string> overrides = parse_csv(user_override_id_list);
+    std::deque<noc_block_endpoint> result;
+
+    for (size_t i = 0; i < num_blocks; i++) {
+        if (i < overrides.size()) {
+            result.push_back({overrides[i], (i % num_ports)});
+        }
+        else {
+            const std::string format_str = prefix + "_%d";
+            noc_block_endpoint block = {
+                str(boost::format(format_str) % (i/num_ports)),
+                i % num_ports};
+            result.push_back(block);
+        }
+    }
+    return result;
+}
+
+int UHD_SAFE_MAIN(int argc, char *argv[]) {
+    // Variables to be set by po
+    bool dma_fifo, ddc, duc, tx_loopback_fifo, rx_loopback_fifo;
+    std::string args, format;
+    std::string null_ids, fifo_ids, ddc_ids, duc_ids, split_stream_ids;
+    double duration;
     double ddc_decim, duc_interp, bus_clk_freq;
     size_t spp;
+    size_t num_tx_streamers, num_rx_streamers, num_tx_channels, num_rx_channels;
 
-    //setup the program options
+    // Setup the program options
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "help message")
         ("args",   po::value<std::string>(&args)->default_value(""), "single uhd device address args")
-        ("rx_duration", po::value<double>(&rx_duration)->default_value(0.0), "duration for the rx test in seconds")
-        ("tx_duration", po::value<double>(&tx_duration)->default_value(0.0), "duration for the tx test in seconds")
-        ("dual_rx_duration", po::value<double>(&dual_rx_duration)->default_value(0.0), "duration for the dual rx test in seconds")
-        ("dual_tx_duration", po::value<double>(&dual_tx_duration)->default_value(0.0), "duration for the dual tx test in seconds")
-        ("full_duplex_duration", po::value<double>(&full_duplex_duration)->default_value(0.0), "duration for the full duplex test in seconds")
-        ("dual_full_duplex_duration", po::value<double>(&dual_full_duplex_duration)->default_value(0.0), "duration for the dual full duplex test in seconds")
+        ("num_tx_streamers", po::value<size_t>(&num_tx_streamers)->default_value(0), "number of tx streamers to benchmark")
+        ("num_rx_streamers", po::value<size_t>(&num_rx_streamers)->default_value(0), "number of rx streamers to benchmark")
+        ("num_tx_channels", po::value<size_t>(&num_tx_channels)->default_value(1), "number of tx channels per streamer")
+        ("num_rx_channels", po::value<size_t>(&num_rx_channels)->default_value(1), "number of rx channels per streamer")
+        ("duration", po::value<double>(&duration)->default_value(10.0), "duration for the test in seconds")
         ("spp", po::value<size_t>(&spp)->default_value(0), "samples per packet (on FPGA and wire)")
-        ("format", po::value<std::string>(&format)->default_value("sc16"), "Host sample type: sc16, fc32, or fc64")
-        ("bus_clk_freq", po::value<double>(&bus_clk_freq)->default_value(187.5e6), "Bus clock frequency for throughput calculation (default: 187.5e6)")
-        ("nullid0", po::value<std::string>(&nullid0)->default_value("0/NullSrcSink_0"), "The block ID for the null source.")
-        ("nullid1", po::value<std::string>(&nullid1)->default_value("0/NullSrcSink_1"), "The block ID for the second null source in measurements with two streamers.")
-        ("nullid2", po::value<std::string>(&nullid2)->default_value("0/NullSrcSink_2"), "The block ID for the third null source in measuremetns with three streamers")
-        ("nullid3", po::value<std::string>(&nullid3)->default_value("0/NullSrcSink_3"), "The block ID for the fourth null source in measurements with four streamers.")
-        ("fifoid0", po::value<std::string>(&fifoid0)->default_value(""), "Optional: The block ID for a FIFO.")
-        ("ddcid0", po::value<std::string>(&ddcid0)->default_value(""), "Optional: The block ID for a DDC for the rx stream.")
-        ("ddcid1", po::value<std::string>(&ddcid1)->default_value(""), "Optional: The block ID for the second DDC in dual rx measurements.")
+        ("format", po::value<std::string>(&format)->default_value("sc16"), "host sample type: sc16, fc32, or fc64")
+        ("bus_clk_freq", po::value<double>(&bus_clk_freq)->default_value(187.5e6), "bus clock frequency for throughput calculation (default: 187.5e6)")
+        ("dma_fifo", po::bool_switch(&dma_fifo)->default_value(false), "whether to insert a DMA FIFO in the streaming path")
+        ("tx_loopback_fifo", po::bool_switch(&tx_loopback_fifo)->default_value(false), "whether to insert a loopback FIFO in the tx streaming path")
+        ("rx_loopback_fifo", po::bool_switch(&rx_loopback_fifo)->default_value(false), "whether to insert a loopback FIFO in the rx streaming path")
+        ("ddc", po::bool_switch(&ddc)->default_value(false), "whether to insert a DDC in the rx streaming path")
+        ("duc", po::bool_switch(&duc)->default_value(false), "whether to insert a DUC in the tx streaming path")
         ("ddc_decim", po::value<double>(&ddc_decim)->default_value(1), "DDC decimation, between 1 and max decimation (default: 1, no decimation)")
-        ("ducid0", po::value<std::string>(&ducid0)->default_value(""), "Optional: The block ID for a DUC for the tx stream.")
-        ("ducid1", po::value<std::string>(&ducid1)->default_value(""), "Optional: The block ID for the second DUC in dual tx measurements.")
-        ("duc_interp", po::value<double>(&duc_interp)->default_value(1), "Rate of DUC, between 1 and max interpolation (default: 1, no interpolation)")
+        ("duc_interp", po::value<double>(&duc_interp)->default_value(1), "DUC interpolation, between 1 and max interpolation (default: 1, no interpolation)")
+        ("null_ids", po::value<std::string>(&null_ids)->default_value(""), "optional: list of block IDs for the null sources")
+        ("fifo_ids", po::value<std::string>(&fifo_ids)->default_value(""), "optional: list of block IDs for the loopback FIFOs")
+        ("ddc_ids", po::value<std::string>(&ddc_ids)->default_value(""), "optional: list of block IDs for the DDCs")
+        ("duc_ids", po::value<std::string>(&duc_ids)->default_value(""), "optional: list of block IDs for the DUCs")
+        ("split_stream_ids", po::value<std::string>(&split_stream_ids)->default_value(""), "optional: list of block IDs for rx data splitters")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
 
-    //print the help message
-    const bool at_least_one_test_specified =
-        rx_duration != 0.0 or tx_duration != 0.0 or
-        dual_rx_duration != 0.0 or dual_tx_duration != 0.0 or
-        full_duplex_duration != 0.0 or dual_full_duplex_duration != 0.0;
+    // Print the help message
+    const size_t num_streamers = num_rx_streamers + num_tx_streamers;
 
-    if (vm.count("help") or (not at_least_one_test_specified)) {
+    if (vm.count("help") or (num_streamers == 0)) {
         std::cout << boost::format("UHD - Benchmark Streamer") << std::endl;
         std::cout <<
         "    Benchmark streamer connects a null sink/source to a streamer and\n"
-        "    measures maximum throughput. The null sink/source must be compiled\n"
-        "    with traffic counters enabled. Optionally, a DMA FIFO and a DUC\n"
-        "    can be inserted in the tx data path and a DMA FIFO and a DDC can\n"
-        "    be inserted in the rx data path. The benchmark can be run with\n"
-        "    multiple tx and rx streams concurrently.\n\n"
-        "    Specify --rx_duration=<seconds> to run benchmark of rx streamer.\n"
-        "    Specify --tx_duration=<seconds> to run benchmark of tx streamer.\n"
-        "    Specify --dual_rx_duration=<seconds> to run benchmark of dual rx streamers.\n"
-        "    Specify --dual_tx_duration=<seconds> to run benchmark of dual tx streamers.\n"
-        "    Specify --full_duplex_duration=<seconds> to run benchmark of full duplex streamers.\n"
-        "    Specify --dual_full_duplex_duration=<seconds> to run benchmark of dual full duplex streamers.\n"
+        "    measures maximum throughput. You can benchmark the operation of\n"
+        "    multiple streamers concurrently. Each streamer executes in a\n"
+        "    separate thread. The FPGA image on the device must contain a\n"
+        "    null source for each channel in the test.\n"
+        "    Benchmarks of common use-cases:\n"
+        "    Specify --num_tx_streamers=1 to test tx streamer.\n"
+        "    Specify --num_rx_streamers=1 to test rx streamer.\n"
+        "    Specify --num_tx_streamers=1 --num_tx_channels-2 to test tx\n"
+        "    streamer with two channels.\n"
+        "    Specify --num_rx_streamers=1 --num_rx_channels=2 to test rx\n"
+        "    rx streamer with two channels. This requires a split_stream\n"
+        "    RFNOC block.\n"
+        "    Specify --num_rx_streamers=1 --num_tx_streams=1 to test full\n"
+        "    duplex data transfer.\n"
+        "    Specify --num_rx_streamers=2 --num_rx_streams=2 to test full\n"
+        "    duplex data tranfser with two streamers in each direction.\n"
+        "    Benchmarks streamer allows DMA FIFOs, loopback FIFOs, DDCs, and\n"
+        "    DUCs to be added to the data path. Enable these by setting the\n"
+        "    corresponding Boolean option to true. The order of the blocks\n"
+        "    is fixed. If present, the DMA FIFO is connected to the host bus\n"
+        "    interface, followed by the loopback FIFOs, and then DUC on a tx\n"
+        "    stream or a DDC on an rx stream.\n"
         "    Note: for full duplex tests, if a DMA FIFO is specified, it is\n"
         "    inserted in the tx data path only.\n"
+        "    Testing multiple rx channels in a single streamer requires a\n"
+        "    split stream RFNOC block with the number of outputs equal to the\n"
+        "    number of channels. Each streamer connects to a single null\n"
+        "    source through the split stream block.\n"
+        "    In order to allow testing of blocks with different compilation\n"
+        "    parameters, such as the block FIFO size, this example provides\n"
+        "    options to override RFNOC block IDs. Block IDs can be specified\n"
+        "    as a comma-delimited list for each type of block. If the block\n"
+        "    type is used in both tx and rx streams, block IDs are assigned\n"
+        "    to tx streams first, followed by rx streams. For example, a test\n"
+        "    with two tx and two rx streams will assign the first two IDs in\n"
+        "    the null_ids list to the tx streams and the next two IDs to the\n"
+        "    rx streams.\n"
         << std::endl << desc << std::endl;
         return EXIT_SUCCESS;
     }
@@ -542,144 +702,187 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
     uhd::device3::sptr usrp = uhd::device3::make(args);
 
-    if (rx_duration != 0.0) {
-        usrp->clear();
-        auto rx_stream = configure_rx_streamer(usrp, nullid0, fifoid0, 0,
-             ddcid0, ddc_decim, spp, format);
-        auto results = benchmark_rx_streamer(usrp, rx_stream, nullid0,
-            rx_duration, format);
-        print_rx_results(results, bus_clk_freq);
+    // For each block type, calculate the number of blocks needed by the test
+    // and create block IDs, accounting for user overrides in program options.
+    // Note that for null sources, rx only uses one NULL block per streamer
+    // rather than one per channel, since the test uses split_stream blocks to
+    // ensure packets on the same streamer have matching timestamps. Also, for
+    // DMA FIFOs, if the test contains both tx and rx channels, we only insert
+    // the FIFOs in the tx data path since that is the primary use-case.
+    const size_t total_tx_channels   = num_tx_streamers * num_tx_channels;
+    const size_t total_rx_channels   = num_rx_streamers * num_rx_channels;
+    const size_t num_null_blocks     = total_tx_channels + num_rx_streamers;
+    const size_t num_duc_blocks      = duc ? total_tx_channels : 0;
+    const size_t num_ddc_blocks      = ddc ? total_rx_channels : 0;
+    const size_t num_tx_fifo_blocks  = tx_loopback_fifo ? total_tx_channels : 0;
+    const size_t num_rx_fifo_blocks  = rx_loopback_fifo ? total_rx_channels : 0;
+    const size_t num_fifo_blocks     = num_tx_fifo_blocks + num_rx_fifo_blocks;
+    const size_t num_splitter_blocks = num_rx_channels > 1 ? num_rx_streamers : 0;
+
+    size_t num_dma_fifo_blocks = 0;
+    bool tx_dma_fifo = false;
+    bool rx_dma_fifo = false;
+
+    if (dma_fifo) {
+        if (total_tx_channels == 0) {
+            num_dma_fifo_blocks = total_rx_channels;
+            rx_dma_fifo = true;
+        }
+        else {
+            num_dma_fifo_blocks = total_tx_channels;
+            tx_dma_fifo = true;
+        }
     }
 
-    if (tx_duration != 0.0) {
-        usrp->clear();
-        auto tx_stream = configure_tx_streamer(usrp, nullid0, fifoid0, 0,
-            ducid0, duc_interp, spp, format);
-        auto results = benchmark_tx_streamer(usrp, tx_stream, nullid0,
-            tx_duration, format);
-        print_tx_results(results, bus_clk_freq);
+    // Create block IDs
+    std::deque<noc_block_endpoint> null_blocks = create_noc_block_queue(
+        num_null_blocks, null_ids, "0/NullSrcSink", 1);
+
+    std::deque<noc_block_endpoint> duc_blocks = create_noc_block_queue(
+        num_duc_blocks, duc_ids, "0/DUC", 1);
+
+    std::deque<noc_block_endpoint> ddc_blocks = create_noc_block_queue(
+        num_ddc_blocks, ddc_ids, "0/DDC", 1);
+
+    std::deque<noc_block_endpoint> fifo_blocks = create_noc_block_queue(
+        num_fifo_blocks, fifo_ids, "0/FIFO", 1);
+
+    std::deque<noc_block_endpoint> dma_fifo_blocks = create_noc_block_queue(
+        num_dma_fifo_blocks, "", "0/DmaFIFO", 2);
+
+    std::deque<noc_block_endpoint> splitter_blocks = create_noc_block_queue(
+        num_splitter_blocks, split_stream_ids, "0/SplitStream", 1);
+
+    // Configure all streamers
+    usrp->clear();
+
+    std::vector<uhd::tx_streamer::sptr> tx_streamers;
+    std::vector<std::vector<std::string>> tx_null_ids;
+
+    for (size_t i = 0; i < num_tx_streamers; i++) {
+        std::vector<std::vector<noc_block_endpoint>> blocks(num_tx_channels);
+        std::vector<std::string> null_ids;
+
+        for (size_t ch = 0; ch < num_tx_channels; ch++) {
+            // Store the null ids to read traffic counters later
+            null_ids.push_back(null_blocks.front().block_id);
+
+            // Add block IDs to create the graph for each channel
+            blocks[ch].push_back(null_blocks.front());
+            null_blocks.pop_front();
+            if (duc) {
+                configure_duc(usrp, duc_blocks.front().block_id, duc_interp);
+                blocks[ch].push_back(duc_blocks.front());
+                duc_blocks.pop_front();
+            }
+            if (tx_loopback_fifo) {
+                blocks[ch].push_back(fifo_blocks.front());
+                fifo_blocks.pop_front();
+            }
+            if (tx_dma_fifo) {
+                blocks[ch].push_back(dma_fifo_blocks.front());
+                dma_fifo_blocks.pop_front();
+            }
+        };
+
+        tx_streamers.push_back(
+            configure_tx_streamer(usrp, blocks, spp, format));
+
+        tx_null_ids.push_back(null_ids);
     }
 
-    if (dual_rx_duration != 0.0) {
-        usrp->clear();
-        auto rx_stream0 = configure_rx_streamer(usrp, nullid0, fifoid0, 0,
-             ddcid0, ddc_decim, spp, format);
-        auto rx_stream1 = configure_rx_streamer(usrp, nullid1, fifoid0, 1,
-             ddcid1, ddc_decim, spp, format);
+    std::vector<uhd::rx_streamer::sptr> rx_streamers;
+    std::vector<std::string> rx_null_ids;
 
-        test_results results0, results1;
+    for (size_t i = 0; i < num_rx_streamers; i++) {
+        std::vector<std::vector<noc_block_endpoint>> blocks(num_rx_channels);
 
-        std::thread t0(
-            [&results0, usrp, rx_stream0, nullid0, dual_rx_duration, format]() {
-            results0 = benchmark_rx_streamer(usrp, rx_stream0, nullid0,
-                dual_rx_duration, format);
-        });
-        std::thread t1(
-            [&results1, usrp, rx_stream1, nullid1, dual_rx_duration, format]() {
-            results1 = benchmark_rx_streamer(usrp, rx_stream1, nullid1,
-                dual_rx_duration, format);
-        });
-        t0.join();
-        t1.join();
+        for (size_t ch = 0; ch < num_rx_channels; ch++) {
+            if (ddc) {
+                configure_ddc(usrp, ddc_blocks.front().block_id, ddc_decim);
+                blocks[ch].push_back(ddc_blocks.front());
+                ddc_blocks.pop_front();
+            }
+            if (rx_loopback_fifo) {
+                blocks[ch].push_back(fifo_blocks.front());
+                fifo_blocks.pop_front();
+            }
+            if (rx_dma_fifo) {
+                blocks[ch].push_back(dma_fifo_blocks.front());
+                dma_fifo_blocks.pop_front();
+            }
+        };
 
-        print_rx_results(results0, bus_clk_freq);
-        print_rx_results(results1, bus_clk_freq);
+        std::string splitter_id;
+        if (num_rx_channels > 1) {
+            splitter_id = splitter_blocks.front().block_id;
+            splitter_blocks.pop_front();
+        }
+
+        rx_streamers.push_back(
+            configure_rx_streamer(
+                usrp,
+                null_blocks.front().block_id,
+                splitter_id,
+                blocks,
+                spp,
+                format));
+
+        // Store the null ids to read traffic counters later
+        rx_null_ids.push_back(null_blocks.front().block_id);
+        null_blocks.pop_front();
     }
 
-    if (dual_tx_duration != 0.0) {
-        usrp->clear();
-        auto tx_stream0 = configure_tx_streamer(usrp, nullid0, fifoid0, 0,
-            ducid0, duc_interp, spp, format);
-        auto tx_stream1 = configure_tx_streamer(usrp, nullid1, fifoid0, 1,
-            ducid1, duc_interp, spp, format);
-
-        test_results results0, results1;
-
-        std::thread t0(
-            [&results0, usrp, tx_stream0, nullid0, dual_tx_duration, format]() {
-            results0 = benchmark_tx_streamer(usrp, tx_stream0, nullid0,
-                dual_tx_duration, format);
-        });
-        std::thread t1(
-            [&results1, usrp, tx_stream1, nullid1, dual_tx_duration, format]() {
-            results1 = benchmark_tx_streamer(usrp, tx_stream1, nullid1,
-                dual_tx_duration, format);
-        });
-        t0.join();
-        t1.join();
-
-        print_tx_results(results0, bus_clk_freq);
-        print_tx_results(results1, bus_clk_freq);
+    // Start threads
+    std::vector<std::thread> threads;
+    std::vector<test_results> tx_results(num_tx_streamers);
+    for (size_t i = 0; i < num_tx_streamers; i++) {
+        test_results& results = tx_results[i];
+        uhd::tx_streamer::sptr streamer = tx_streamers[i];
+        std::vector<std::string> null_ids = tx_null_ids[i];
+        threads.push_back(
+            std::thread(
+                [&results, usrp, streamer, null_ids, duration, format]() {
+                results = benchmark_tx_streamer(
+                    usrp,
+                    streamer,
+                    null_ids,
+                    duration,
+                    format);
+            })
+        );
     }
 
-    if (full_duplex_duration != 0.0) {
-        usrp->clear();
-        auto tx_stream = configure_tx_streamer(usrp, nullid0, fifoid0, 0,
-            ducid0, duc_interp, spp, format);
-        auto rx_stream = configure_rx_streamer(usrp, nullid1, "", 0,
-            ddcid0, ddc_decim, spp, format);
-
-        test_results tx_results, rx_results;
-
-        std::thread t0(
-            [&tx_results, usrp, tx_stream, nullid0, full_duplex_duration, format]() {
-            tx_results = benchmark_tx_streamer(usrp, tx_stream, nullid0,
-                full_duplex_duration, format);
-        });
-        std::thread t1(
-            [&rx_results, usrp, rx_stream, nullid1, full_duplex_duration, format]() {
-            rx_results = benchmark_rx_streamer(usrp, rx_stream, nullid1,
-                full_duplex_duration, format);
-        });
-        t0.join();
-        t1.join();
-
-        print_tx_results(tx_results, bus_clk_freq);
-        print_rx_results(rx_results, bus_clk_freq);
+    std::vector<test_results> rx_results(num_rx_streamers);
+    for (size_t i = 0; i < num_rx_streamers; i++) {
+        test_results& results = rx_results[i];
+        uhd::rx_streamer::sptr streamer = rx_streamers[i];
+        std::string null_id = rx_null_ids[i];
+        threads.push_back(
+            std::thread(
+                [&results, usrp, streamer, null_id, duration, format]() {
+                results = benchmark_rx_streamer(
+                    usrp,
+                    streamer,
+                    null_id,
+                    duration,
+                    format);
+            })
+        );
     }
 
-    if (dual_full_duplex_duration != 0.0) {
-        usrp->clear();
-        auto tx_stream0 = configure_tx_streamer(usrp, nullid0, fifoid0, 0,
-            ducid0, duc_interp, spp, format);
-        auto tx_stream1 = configure_tx_streamer(usrp, nullid1, fifoid0, 1,
-            ducid1, duc_interp, spp, format);
-        auto rx_stream0 = configure_rx_streamer(usrp, nullid2, "", 0,
-            ddcid0, ddc_decim, spp, format);
-        auto rx_stream1 = configure_rx_streamer(usrp, nullid3, "", 0,
-            ddcid1, ddc_decim, spp, format);
+    // Join threads
+    for (std::thread& t : threads) {
+        t.join();
+    }
 
-        test_results tx_results0, tx_results1;
-        test_results rx_results0, rx_results1;
-        std::thread t0(
-            [&tx_results0, usrp, tx_stream0, nullid0, dual_full_duplex_duration, format]() {
-            tx_results0 = benchmark_tx_streamer(usrp, tx_stream0, nullid0,
-                dual_full_duplex_duration, format);
-        });
-        std::thread t1(
-            [&tx_results1, usrp, tx_stream1, nullid1, dual_full_duplex_duration, format]() {
-            tx_results1 = benchmark_tx_streamer(usrp, tx_stream1, nullid1,
-                dual_full_duplex_duration, format);
-        });
-        std::thread t2(
-            [&rx_results0, usrp, rx_stream0, nullid2, dual_full_duplex_duration, format]() {
-            rx_results0 = benchmark_rx_streamer(usrp, rx_stream0, nullid2,
-                dual_full_duplex_duration, format);
-        });
-        std::thread t3(
-            [&rx_results1, usrp, rx_stream1, nullid3, dual_full_duplex_duration, format]() {
-            rx_results1 = benchmark_rx_streamer(usrp, rx_stream1, nullid3,
-                dual_full_duplex_duration, format);
-        });
-        t0.join();
-        t1.join();
-        t2.join();
-        t3.join();
+    // Print results
+    for (const test_results& result: tx_results) {
+        print_tx_results(result, bus_clk_freq);
+    }
 
-        print_tx_results(tx_results0, bus_clk_freq);
-        print_tx_results(tx_results1, bus_clk_freq);
-        print_rx_results(rx_results0, bus_clk_freq);
-        print_rx_results(rx_results1, bus_clk_freq);
+    for (const test_results& result: rx_results) {
+        print_rx_results(result, bus_clk_freq);
     }
 
     return EXIT_SUCCESS;
