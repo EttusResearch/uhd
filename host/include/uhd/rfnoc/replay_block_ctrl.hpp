@@ -60,6 +60,9 @@ public:
     //! Returns the size of the packets played by the Replay block (in 64-bit words)
     virtual uint32_t get_words_per_packet(const size_t chan) = 0;
 
+    //! Halts playback and clears the playback command FIFO
+    virtual void play_halt(const size_t chan) = 0;
+    
 }; /* class replay_block_ctrl*/
 
 }} /* namespace uhd::rfnoc */

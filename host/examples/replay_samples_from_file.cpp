@@ -346,9 +346,13 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     cout << endl << "Stopping replay..." << endl;
     replay_ctrl->issue_stream_cmd(stream_cmd, replay_chan);
 
+    // The stop takes effect after the current command has completed, so use
+    // halt to stop the command in progress and clear any queued commands.
+    replay_ctrl->play_halt(replay_chan);
+
 
     ///////////////////////////////////////////////////////////////////////////
-    // Wait for the replay data to flush out
+    // Wait for any buffered replay data to finish playing out
 
     uint16_t prev_packet_count, packet_count;
 

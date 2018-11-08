@@ -98,6 +98,10 @@ public:
     uint32_t get_words_per_packet(const size_t chan) {
         return _params[chan].words_per_packet;
     }
+
+    void play_halt(const size_t chan) {
+        sr_write("RX_CTRL_HALT", 1, chan);
+    }
     
     
    /***************************************************************************
