@@ -17,7 +17,6 @@ public:
     static const uint32_t REPLAY_WORD_SIZE    = 8;      // In bytes
     static const uint32_t SAMPLES_PER_WORD    = 2;
     static const uint32_t BYTES_PER_SAMPLE    = 4;
-    static const uint32_t WORDS_PER_PACKET    = 128;
     static const uint32_t DEFAULT_BUFFER_SIZE = 32*1024*1024;
     static const uint32_t DEFAULT_WPP         = 182;
     static const uint32_t DEFAULT_SPP         = DEFAULT_WPP * SAMPLES_PER_WORD;
@@ -29,7 +28,7 @@ public:
         _params.resize(_num_channels);
         for(size_t chan = 0; chan < _params.size(); chan++) {
             _params[chan].words_per_packet = DEFAULT_WPP;
-            sr_write("RX_CTRL_MAXLEN", WORDS_PER_PACKET, chan);
+            sr_write("RX_CTRL_MAXLEN", DEFAULT_WPP, chan);
 
             // Configure replay channels to be adjacent DEFAULT_BUFFER_SIZE'd blocks
             _params[chan].rec_base_addr  = chan*DEFAULT_BUFFER_SIZE;
@@ -147,8 +146,8 @@ public:
             
         // Calculate how many words to transfer at a time in CONTINUOUS mode
         uint32_t cont_burst_size =
-            (_params[chan].play_buffer_size > WORDS_PER_PACKET) ? 
-            WORDS_PER_PACKET : _params[chan].play_buffer_size;
+            (_params[chan].play_buffer_size > _params[chan].words_per_packet) ? 
+            _params[chan].words_per_packet : _params[chan].play_buffer_size;
             
         // Calculate the number of words to transfer in NUM_SAMPS mode
         uint32_t num_words = stream_cmd.num_samps / SAMPLES_PER_WORD;
