@@ -199,9 +199,16 @@ void rhodium_radio_ctrl_impl::_init_peripherals()
         usrp::gpio_atr::gpio_atr_3000::MASK_SET_ALL
     );
 
-    // TODO: put this in the right spot
-    UHD_LOG_TRACE(unique_id(), "Setting Switch 10 to 0x1");
-    _gpio->set_gpio_out(0x1, 0x3);
+    // Updating the TX frequency path may include an update to SW10, which is
+    // GPIO controlled, so this must follow CPLD and GPIO initialization
+    UHD_LOG_TRACE(unique_id(), "Writing initial switch values...");
+    _update_tx_freq_switches(RHODIUM_DEFAULT_FREQ);
+    _update_rx_freq_switches(RHODIUM_DEFAULT_FREQ);
+
+    // Antenna setting requires both CPLD and GPIO control
+    UHD_LOG_TRACE(unique_id(), "Setting initial antenna settings");
+    _update_tx_output_switches(RHODIUM_DEFAULT_TX_ANTENNA);
+    _update_rx_input_switches(RHODIUM_DEFAULT_RX_ANTENNA);
 
     _rx_fe_core = rx_frontend_core_3000::make(_get_ctrl(0), regs::sr_addr(RX_FE_BASE));
     _rx_fe_core->set_adc_rate(_master_clock_rate);
