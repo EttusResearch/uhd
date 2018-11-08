@@ -33,6 +33,12 @@ void export_tune()
         ;
 
     bp::class_<tune_result_t>("tune_result", bp::init<>())
+        .def_readwrite("clipped_rf_freq", &tune_result_t::clipped_rf_freq)
+        .def_readwrite("target_rf_freq" , &tune_result_t::target_rf_freq )
+        .def_readwrite("actual_rf_freq" , &tune_result_t::actual_rf_freq )
+        .def_readwrite("target_dsp_freq", &tune_result_t::target_dsp_freq)
+        .def_readwrite("actual_dsp_freq", &tune_result_t::actual_dsp_freq)
+        .def("__str__"                  , &tune_result_t::to_pp_string   )
         ;
 }
 
