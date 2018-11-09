@@ -167,6 +167,11 @@ PACKAGE_MAPPING = {
                   'usrp_n300_fpga_XA.dts.md5',
                   'usrp_n300_fpga_XA.rpt']
     },
+    "n320_cpld": {
+        "type": "n3xx",
+        "package_name": "n3xx_n320_cpld_default-g{}.zip",
+        "files": ['usrp_n320_rh_cpld.svf']
+    },
     "n310_cpld": {
         "type": "n3xx",
         "package_name": "n3xx_n310_cpld_default-g{}.zip",
