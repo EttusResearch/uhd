@@ -32,7 +32,8 @@ public:
         _niusrprio_rpc_port("niusrprio_rpc_port", NIUSRPRIO_DEFAULT_RPC_PORT),
         _has_fw_file("fw", false),
         _fw_file("fw", ""),
-        _blank_eeprom("blank_eeprom", false)
+        _blank_eeprom("blank_eeprom", false),
+        _enable_tx_dual_eth("enable_tx_dual_eth", false)
     {
         // nop
     }
@@ -92,6 +93,10 @@ public:
     bool get_blank_eeprom() const {
         return _blank_eeprom.get();
     }
+    bool get_enable_tx_dual_eth() const {
+        return _enable_tx_dual_eth.get();
+    }
+
 
     inline virtual std::string to_string() const {
         return  _master_clock_rate.to_string() + ", " +
@@ -147,6 +152,9 @@ private:
             PARSE_DEFAULT(_fw_file);
         }
         PARSE_DEFAULT(_blank_eeprom)
+        if (dev_args.has_key("enable_tx_dual_eth")){
+            _enable_tx_dual_eth.set(true);
+        }
 
         //Sanity check params
         _enforce_discrete(_master_clock_rate, TICK_RATE_OPTIONS);
@@ -173,6 +181,7 @@ private:
     constrained_device_args_t::bool_arg            _has_fw_file;
     constrained_device_args_t::str_arg<true>       _fw_file;
     constrained_device_args_t::bool_arg            _blank_eeprom;
+    constrained_device_args_t::bool_arg            _enable_tx_dual_eth;
 };
 
 }}} //namespace

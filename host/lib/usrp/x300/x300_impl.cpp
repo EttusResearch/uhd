@@ -1286,7 +1286,13 @@ uhd::both_xports_t x300_impl::make_transport(
             next_src_addr==0 ? x300::SRC_ADDR0 : x300::SRC_ADDR1;
         const uint32_t xbar_src_dst =
             conn.type==X300_IFACE_ETH0 ? x300::XB_DST_E0 : x300::XB_DST_E1;
-        if (xport_type != TX_DATA) next_src_addr = (next_src_addr + 1) % mb.eth_conns.size();
+
+        // Do not increment src addr for tx_data by default, using dual ethernet
+        // with the DMA FIFO causes sequence errors to DMA FIFO bandwidth
+        // limitations.
+        if (xport_type != TX_DATA || mb.args.get_enable_tx_dual_eth()) {
+            next_src_addr = (next_src_addr + 1) % mb.eth_conns.size();
+        }
 
         xports.send_sid = this->allocate_sid(mb, address, xbar_src_addr, xbar_src_dst);
         xports.recv_sid = xports.send_sid.reversed();
