@@ -645,7 +645,7 @@ class e320(ZynqComponents, PeriphManagerBase):
         """
         Get lock status of GPS as a sensor dict
         """
-        gps_locked = self.mboard_regs_control.get_gps_locked_val()
+        gps_locked = bool(self.mboard_regs_control.get_gps_locked_val())
         return {
             'name': 'gps_lock',
             'type': 'BOOLEAN',
