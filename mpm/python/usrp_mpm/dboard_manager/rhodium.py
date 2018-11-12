@@ -21,7 +21,7 @@ from usrp_mpm.cores import nijesdcore
 from usrp_mpm.dboard_manager.adc_rh import AD9695Rh
 from usrp_mpm.dboard_manager.dac_rh import DAC37J82Rh
 from usrp_mpm.mpmlog import get_logger
-from usrp_mpm.sys_utils.uio import UIO
+from usrp_mpm.sys_utils.uio import open_uio
 from usrp_mpm.sys_utils.udev import get_eeprom_paths
 from usrp_mpm.bfrfs import BufferFS
 from usrp_mpm.sys_utils.dtoverlay import apply_overlay_safe, rm_overlay_safe
@@ -247,13 +247,6 @@ class Rhodium(DboardManagerBase):
                 key: self.spi_factories[key](self._spi_nodes[key])
                 for key in self._spi_nodes
             }
-        def _init_dboard_regs():
-            " Create a UIO object to talk to dboard regs "
-            self.log.trace("Getting UIO to talk to dboard regs...")
-            return UIO(
-                label="dboard-regs-{}".format(self.slot_idx),
-                read_only=False
-            )
         self._port_expander = TCA6408(_get_i2c_dev())
         self._daughterboard_gpio = FPGAtoDbGPIO(self.slot_idx)
         # TODO: applying the overlay without checking for the presence of the
@@ -263,15 +256,13 @@ class Rhodium(DboardManagerBase):
             apply_overlay_safe('n321')
             self._lo_dist = FPGAtoLoDist(_get_i2c_dev())
         except RuntimeError:
-            self._lo_dist = None                
+            self._lo_dist = None
         self.log.debug("Turning on Module and RF power supplies")
         self._power_on()
         self._spi_ifaces = _init_spi_devices()
         self.log.debug("Loaded SPI interfaces!")
         self.cpld = RhCPLD(self._spi_ifaces['cpld'], self.log)
         self.log.debug("Loaded CPLD interfaces!")
-        self.radio_regs = _init_dboard_regs()
-        self.radio_regs._open()
         # Create DAC interface (analog output is disabled).
         self.log.trace("Creating DAC control object...")
         self.dac = DAC37J82Rh(self.slot_idx, self._spi_ifaces['dac'], self.log)
@@ -479,7 +470,7 @@ class Rhodium(DboardManagerBase):
             direction, port_number, {True: "active", False: "terminated"}[enable]))
         self.log.trace("Net name: {0}, Pin value: {1}".format(pin_info[0], pin_val))
         self._lo_dist.set(pin_info[0], pin_val)
-        
+
     def is_lo_dist_present(self):
         return self._lo_dist is not None
 
@@ -501,15 +492,19 @@ class Rhodium(DboardManagerBase):
         # a clock is provided to the chip.
         self.dac.tx_enable(False)
         self.adc.power_down_channel(True)
-        # Clear the Sample Clock enables and place the MMCM in reset.
-        db_clk_control = DboardClockControl(self.radio_regs, self.log)
-        db_clk_control.reset_mmcm()
-        # Place the JESD204b core in reset, mainly to reset QPLL/CPLLs.
-        jesdcore = nijesdcore.NIJESDCore(self.radio_regs, self.slot_idx,
-                                         **RhodiumInitManager.JESD_DEFAULT_ARGS)
-        jesdcore.reset()
-        # The reference clock is handled elsewhere since it is a motherboard-
-        # level clock.
+        with open_uio(
+            label="dboard-regs-{}".format(slot_idx),
+            read_only=False
+        ) as radio_regs:
+            # Clear the Sample Clock enables and place the MMCM in reset.
+            db_clk_control = DboardClockControl(radio_regs, self.log)
+            db_clk_control.reset_mmcm()
+            # Place the JESD204b core in reset, mainly to reset QPLL/CPLLs.
+            jesdcore = nijesdcore.NIJESDCore(radio_regs, self.slot_idx,
+                                             **RhodiumInitManager.JESD_DEFAULT_ARGS)
+            jesdcore.reset()
+            # The reference clock is handled elsewhere since it is a motherboard-
+            # level clock.
 
     def _reinit(self, master_clock_rate):
         """
@@ -636,9 +631,12 @@ class Rhodium(DboardManagerBase):
         """
         Debug for reading out all JESD core registers via RPC shell
         """
-        radio_regs = UIO(label="dboard-regs-{}".format(self.slot_idx))
-        for i in range(0x2000, 0x2110, 0x10):
-            print(("0x%04X " % i), end=' ')
-            for j in range(0, 0x10, 0x4):
-                print(("%08X" % radio_regs.peek32(i + j)), end=' ')
-            print("")
+        with open_uio(
+            label="dboard-regs-{}".format(slot_idx),
+            read_only=False
+        ) as radio_regs:
+            for i in range(0x2000, 0x2110, 0x10):
+                print(("0x%04X " % i), end=' ')
+                for j in range(0, 0x10, 0x4):
+                    print(("%08X" % radio_regs.peek32(i + j)), end=' ')
+                print("")

@@ -9,7 +9,7 @@ Helper class to initialize a Rhodium daughterboard
 
 from __future__ import print_function
 import time
-from usrp_mpm.sys_utils.uio import UIO
+from usrp_mpm.sys_utils.uio import open_uio
 from usrp_mpm.dboard_manager.lmk_rh import LMK04828Rh
 from usrp_mpm.dboard_manager.rh_periphs import DboardClockControl
 from usrp_mpm.cores import ClockSynchronizer
@@ -301,63 +301,71 @@ class RhodiumInitManager(object):
 
         # 1. Prerequisites
         # Open FPGA IP (Clock control and JESD core).
-        self.log.trace("Creating dboard clock control object")
-        db_clk_control = DboardClockControl(self.rh_class.radio_regs, self.log)
-        self.log.trace("Creating jesdcore object")
-        jesdcore = nijesdcore.NIJESDCore(self.rh_class.radio_regs, self.rh_class.slot_idx, **self.JESD_DEFAULT_ARGS)
-
         self.log.trace("Creating gain table object...")
         self.gain_table_loader = GainTableRh(
             self._spi_ifaces['cpld'],
             self._spi_ifaces['cpld_gain_loader'],
             self.log)
 
-        # 2. Initialize LMK and bringup clocks.
-        # Disable FPGA MMCM's outputs, and assert its reset.
-        db_clk_control.reset_mmcm()
-        # Always place the JESD204b cores in reset before modifying the clocks,
-        # otherwise high power or erroneous conditions could exist in the FPGA!
-        jesdcore.reset()
-        # Configure and bringup the LMK's clocks.
-        self.log.trace("Initializing LMK...")
-        self.rh_class.lmk = self._init_lmk(
-            self._spi_ifaces['lmk'],
-            self.rh_class.ref_clock_freq,
-            self.rh_class.sampling_clock_rate,
-            self._spi_ifaces['phase_dac'],
-            self.INIT_PHASE_DAC_WORD,
-            self.PHASE_DAC_SPI_ADDR
-        )
-        self.log.trace("LMK Initialized!")
-        # Deassert FPGA's MMCM reset, poll for lock, and enable outputs.
-        db_clk_control.enable_mmcm()
+        with open_uio(
+            label="dboard-regs-{}".format(self.rh_class.slot_idx),
+            read_only=False
+        ) as radio_regs:
+            self.log.trace("Creating dboard clock control object")
+            db_clk_control = DboardClockControl(radio_regs, self.log)
+            self.log.trace("Creating jesdcore object")
+            jesdcore = nijesdcore.NIJESDCore(radio_regs,
+                                             self.rh_class.slot_idx,
+                                             **self.JESD_DEFAULT_ARGS)
 
-        # 3. Synchronize DB Clocks.
-        # The clock synchronzation driver receives the master_clock_rate, which for
-        # Rhodium is half the sampling_clock_rate.
-        self._sync_db_clock(
-            self.rh_class.radio_regs,
-            self.rh_class.ref_clock_freq,
-            self.rh_class.sampling_clock_rate / 2,
-            args)
+            # 2. Initialize LMK and bringup clocks.
+            # Disable FPGA MMCM's outputs, and assert its reset.
+            db_clk_control.reset_mmcm()
+            # Always place the JESD204b cores in reset before modifying the clocks,
+            # otherwise high power or erroneous conditions could exist in the FPGA!
+            jesdcore.reset()
+            # Configure and bringup the LMK's clocks.
+            self.log.trace("Initializing LMK...")
+            self.rh_class.lmk = self._init_lmk(
+                self._spi_ifaces['lmk'],
+                self.rh_class.ref_clock_freq,
+                self.rh_class.sampling_clock_rate,
+                self._spi_ifaces['phase_dac'],
+                self.INIT_PHASE_DAC_WORD,
+                self.PHASE_DAC_SPI_ADDR
+            )
+            self.log.trace("LMK Initialized!")
+            # Deassert FPGA's MMCM reset, poll for lock, and enable outputs.
+            db_clk_control.enable_mmcm()
 
-        # 4. DAC Configuration.
-        self.dac.config()
+            # 3. Synchronize DB Clocks.
+            # The clock synchronzation driver receives the master_clock_rate, which for
+            # Rhodium is half the sampling_clock_rate.
+            self._sync_db_clock(
+                radio_regs,
+                self.rh_class.ref_clock_freq,
+                self.rh_class.sampling_clock_rate / 2,
+                args)
 
-        # 5. ADC Configuration.
-        self.adc.config()
+            # 4. DAC Configuration.
+            self.dac.config()
 
-        # 6-7. JESD204B Initialization.
-        self.init_jesd(jesdcore, self.rh_class.sampling_clock_rate)
-        # [Optional] Perform RX eyescan.
-        if perform_rx_eyescan:
-            self.log.info("Performing RX eye scan on ADC to FPGA link...")
-            self._rx_eyescan(jesdcore, args)
-        # [Optional] Perform TX PRBS test.
-        if perform_tx_prbs:
-            self.log.info("Performing TX PRBS-31 test on FPGA to DAC link...")
-            self._tx_prbs_test(jesdcore, args)
-        jesdcore = None # We are done using the jesdcore at this point.
+            # 5. ADC Configuration.
+            self.adc.config()
+
+            # 6-7. JESD204B Initialization.
+            self.init_jesd(jesdcore, self.rh_class.sampling_clock_rate)
+            # [Optional] Perform RX eyescan.
+            if perform_rx_eyescan:
+                self.log.info("Performing RX eye scan on ADC to FPGA link...")
+                self._rx_eyescan(jesdcore, args)
+            # [Optional] Perform TX PRBS test.
+            if perform_tx_prbs:
+                self.log.info("Performing TX PRBS-31 test on FPGA to DAC link...")
+                self._tx_prbs_test(jesdcore, args)
+            # Direct the garbage collector by removing our references
+            jesdcore = None
+            db_clk_control = None
 
         # 8. CPLD Gain Tables Initialization.
         self.gain_table_loader.init()
