@@ -166,11 +166,14 @@ void mpmd_impl::init_property_tree(
         tree->create<sensor_value_t>(
                 mb_path / "sensors" / sensor_name)
             .set_publisher([mb, sensor_name](){
-                return sensor_value_t(
+                mb->set_timeout_init();
+                auto sensor_val = sensor_value_t(
                     mb->rpc->request_with_token<sensor_value_t::sensor_map_t>(
                         "get_mb_sensor", sensor_name
                     )
                 );
+                mb->set_timeout_default();
+                return sensor_val;
             })
             .set_coercer([](const sensor_value_t &){
                 throw uhd::runtime_error(
