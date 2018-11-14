@@ -119,7 +119,7 @@ void rhodium_radio_ctrl_impl::_init_defaults()
         radio_ctrl_impl::set_tx_frequency(RHODIUM_DEFAULT_FREQ, chan);
         radio_ctrl_impl::set_tx_gain(RHODIUM_DEFAULT_INVALID_GAIN, chan);
         radio_ctrl_impl::set_tx_antenna(RHODIUM_DEFAULT_TX_ANTENNA, chan);
-        radio_ctrl_impl::set_rx_bandwidth(RHODIUM_DEFAULT_BANDWIDTH, chan);
+        radio_ctrl_impl::set_tx_bandwidth(RHODIUM_DEFAULT_BANDWIDTH, chan);
     }
 
     /** Update default SPP (overwrites the default value from the XML file) **/
