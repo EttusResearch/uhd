@@ -16,12 +16,12 @@
 #
 
 # the name of the target operating system
-SET(CMAKE_SYSTEM_NAME Generic)
+set(CMAKE_SYSTEM_NAME Generic)
 # which compilers to use for C and C++
-SET(CMAKE_C_COMPILER sdcc)
+set(CMAKE_C_COMPILER sdcc)
 
 # here is where the target environment is located
-SET(CMAKE_FIND_ROOT_PATH  /usr/bin /usr/share/sdcc /usr/libexec/sdcc)
+set(CMAKE_FIND_ROOT_PATH  /usr/bin /usr/share/sdcc /usr/libexec/sdcc)
 
 # adjust the default behaviour of the FIND_XXX() commands:
 # search headers and libraries in the target environment, search 

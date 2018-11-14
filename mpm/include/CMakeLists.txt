@@ -4,4 +4,4 @@
 # SPDX-License-Identifier: GPL-3.0
 #
 
-ADD_SUBDIRECTORY(mpm)
+add_subdirectory(mpm)

@@ -23,13 +23,13 @@ list(APPEND x300_sources x300_init.c x300_main.c)
 
 ########################################################################
 set(GEN_OUTPUTS_BIN_SIZE 0x7fff)
-SET(CMAKE_C_FLAGS_DEBUG -DX300_DEBUG_UART)
+set(CMAKE_C_FLAGS_DEBUG -DX300_DEBUG_UART)
 
 add_executable(x300_main.elf ${x300_sources})
 target_link_libraries(x300_main.elf usrp3fw)
 GEN_OUTPUTS(x300_main.elf x300)
 
-INSTALL(
+install(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/x300_main.bin
     DESTINATION share/uhd/images
     RENAME usrp_x300_fw.bin

@@ -15,22 +15,22 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+cmake_minimum_required(VERSION 2.6)
 set(CMAKE_TOOLCHAIN_FILE ${CMAKE_SOURCE_DIR}/config/Toolchain-sdcc.cmake)
-PROJECT(USRP1 C)
+project(USRP1 C)
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/config/")
-INCLUDE(FindPythonInterp)
+include(FindPythonInterp)
 
 ########################################################################
 # Set toolchain to use SDCC
 ########################################################################
 # we're doing mixed ASM and C
-ENABLE_LANGUAGE(ASM_SDCC)
+enable_language(ASM_SDCC)
 
 ########################################################################
 # C flags and linking flags
 ########################################################################
-ADD_DEFINITIONS(-DHAVE_USRP2)
+add_definitions(-DHAVE_USRP2)
 set(CMAKE_C_LINK_FLAGS "--code-loc 0x0000 --code-size 0x1800 --xram-loc 0x1800 --xram-size 0x0800 -Wl '-b USBDESCSEG = 0xE000'")
 set(CMAKE_C_FLAGS "--no-xinit-opt")
 
@@ -45,5 +45,5 @@ set(BUILD_EEPROM ${CMAKE_SOURCE_DIR}/utils/build_eeprom.py)
 ########################################################################
 # Add the subdirectories
 ########################################################################
-ADD_SUBDIRECTORY(usrp1)
-ADD_SUBDIRECTORY(b100)
+add_subdirectory(usrp1)
+add_subdirectory(b100)

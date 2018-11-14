@@ -12,7 +12,7 @@
 ########################################################################
 # Conditionally configure the USRP2 support
 ########################################################################
-IF(ENABLE_USRP2)
+if(ENABLE_USRP2)
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/clock_ctrl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/codec_ctrl.cpp
@@ -24,4 +24,4 @@ IF(ENABLE_USRP2)
         ${CMAKE_CURRENT_SOURCE_DIR}/usrp2_fifo_ctrl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/n200_image_loader.cpp
     )
-ENDIF(ENABLE_USRP2)
+endif(ENABLE_USRP2)

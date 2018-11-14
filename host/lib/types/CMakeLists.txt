@@ -24,7 +24,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/byte_vector.cpp
 )
 
-IF(ENABLE_C_API)
+if(ENABLE_C_API)
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/metadata_c.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/ranges_c.cpp
@@ -33,4 +33,4 @@ IF(ENABLE_C_API)
         ${CMAKE_CURRENT_SOURCE_DIR}/tune_c.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/usrp_info_c.cpp
     )
-ENDIF()
+endif()

@@ -27,7 +27,7 @@ project(OCTOCLOCK C)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mmcu=atmega128 -std=gnu99")
 
 if(NOT DEFINED PROGRAMMER)
-    SET(PROGRAMMER "avrisp2")
+    set(PROGRAMMER "avrisp2")
 endif(NOT DEFINED PROGRAMMER)
 
 if(OCTOCLOCK_DEBUG)

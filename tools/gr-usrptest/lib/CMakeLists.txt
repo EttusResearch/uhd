@@ -31,7 +31,7 @@ list(APPEND usrptest_sources
 
 set(usrptest_sources "${usrptest_sources}" PARENT_SCOPE)
 if(NOT usrptest_sources)
-	MESSAGE(STATUS "No C++ sources... skipping lib/")
+	message(STATUS "No C++ sources... skipping lib/")
 	return()
 endif(NOT usrptest_sources)
 

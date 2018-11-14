@@ -13,15 +13,15 @@ include(UHDUnitTest)
 ########################################################################
 # build test common
 ########################################################################
-SET(test_common_SOURCEDIR ${CMAKE_CURRENT_SOURCE_DIR}/common)
-ADD_SUBDIRECTORY(common)
-LINK_DIRECTORIES(test_common_SOURCEDIR)
+set(test_common_SOURCEDIR ${CMAKE_CURRENT_SOURCE_DIR}/common)
+add_subdirectory(common)
+link_directories(test_common_SOURCEDIR)
 
 
 ########################################################################
 # unit test suite
 ########################################################################
-SET(test_sources
+set(test_sources
     addr_test.cpp
     buffer_test.cpp
     byteswap_test.cpp
@@ -55,10 +55,10 @@ SET(test_sources
 )
 
 #turn each test cpp file into an executable with an int main() function
-ADD_DEFINITIONS(-DBOOST_TEST_DYN_LINK -DBOOST_TEST_MAIN)
+add_definitions(-DBOOST_TEST_DYN_LINK -DBOOST_TEST_MAIN)
 
-IF(ENABLE_RFNOC)
-    LIST(APPEND test_sources
+if(ENABLE_RFNOC)
+    list(APPEND test_sources
         block_id_test.cpp
         blockdef_test.cpp
         device3_test.cpp
@@ -68,10 +68,10 @@ IF(ENABLE_RFNOC)
         stream_sig_test.cpp
         tick_node_test.cpp
     )
-ENDIF(ENABLE_RFNOC)
+endif(ENABLE_RFNOC)
 
-IF(ENABLE_C_API)
-    LIST(APPEND test_sources
+if(ENABLE_C_API)
+    list(APPEND test_sources
         eeprom_c_test.c
         error_c_test.cpp
         ranges_c_test.c
@@ -79,54 +79,54 @@ IF(ENABLE_C_API)
         string_vector_c_test.c
         subdev_spec_c_test.c
     )
-ENDIF(ENABLE_C_API)
+endif(ENABLE_C_API)
 
-INCLUDE_DIRECTORIES("${CMAKE_SOURCE_DIR}/lib/include")
-INCLUDE_DIRECTORIES("${CMAKE_CURRENT_SOURCE_DIR}/common")
+include_directories("${CMAKE_SOURCE_DIR}/lib/include")
+include_directories("${CMAKE_CURRENT_SOURCE_DIR}/common")
 #for each source: build an executable, register it as a test
-FOREACH(test_source ${test_sources})
-    GET_FILENAME_COMPONENT(test_name ${test_source} NAME_WE)
-    ADD_EXECUTABLE(${test_name} ${test_source})
-    TARGET_LINK_LIBRARIES(${test_name} uhd uhd_test ${Boost_LIBRARIES})
+foreach(test_source ${test_sources})
+    get_filename_component(test_name ${test_source} NAME_WE)
+    add_executable(${test_name} ${test_source})
+    target_link_libraries(${test_name} uhd uhd_test ${Boost_LIBRARIES})
     UHD_ADD_TEST(${test_name} ${test_name})
     UHD_INSTALL(TARGETS ${test_name} RUNTIME DESTINATION ${PKG_LIB_DIR}/tests COMPONENT tests)
-ENDFOREACH(test_source)
+endforeach(test_source)
 
 # Other tests that don't directly link with libuhd: (TODO find a nicer way to do this)
-INCLUDE_DIRECTORIES(${CMAKE_BINARY_DIR}/lib/rfnoc/nocscript/)
-INCLUDE_DIRECTORIES(${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/)
-ADD_EXECUTABLE(nocscript_expr_test
+include_directories(${CMAKE_BINARY_DIR}/lib/rfnoc/nocscript/)
+include_directories(${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/)
+add_executable(nocscript_expr_test
     nocscript_expr_test.cpp
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/expression.cpp
 )
-TARGET_LINK_LIBRARIES(nocscript_expr_test uhd ${Boost_LIBRARIES})
+target_link_libraries(nocscript_expr_test uhd ${Boost_LIBRARIES})
 UHD_ADD_TEST(nocscript_expr_test nocscript_expr_test)
 UHD_INSTALL(TARGETS nocscript_expr_test RUNTIME DESTINATION ${PKG_LIB_DIR}/tests COMPONENT tests)
 
-ADD_EXECUTABLE(nocscript_ftable_test
+add_executable(nocscript_ftable_test
     nocscript_ftable_test.cpp
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/function_table.cpp
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/expression.cpp
 )
-TARGET_LINK_LIBRARIES(nocscript_ftable_test uhd ${Boost_LIBRARIES})
+target_link_libraries(nocscript_ftable_test uhd ${Boost_LIBRARIES})
 UHD_ADD_TEST(nocscript_ftable_test nocscript_ftable_test)
 UHD_INSTALL(TARGETS nocscript_ftable_test RUNTIME DESTINATION ${PKG_LIB_DIR}/tests COMPONENT tests)
 
-ADD_EXECUTABLE(nocscript_parser_test
+add_executable(nocscript_parser_test
     nocscript_parser_test.cpp
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/parser.cpp
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/function_table.cpp
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/expression.cpp
 )
-TARGET_LINK_LIBRARIES(nocscript_parser_test uhd ${Boost_LIBRARIES})
+target_link_libraries(nocscript_parser_test uhd ${Boost_LIBRARIES})
 UHD_ADD_TEST(nocscript_parser_test nocscript_parser_test)
 UHD_INSTALL(TARGETS nocscript_parser_test RUNTIME DESTINATION ${PKG_LIB_DIR}/tests COMPONENT tests)
 
-ADD_EXECUTABLE(config_parser_test
+add_executable(config_parser_test
     config_parser_test.cpp
     ${CMAKE_SOURCE_DIR}/lib/utils/config_parser.cpp
 )
-TARGET_LINK_LIBRARIES(config_parser_test uhd ${Boost_LIBRARIES})
+target_link_libraries(config_parser_test uhd ${Boost_LIBRARIES})
 UHD_ADD_TEST(config_parser_test config_parser_test)
 UHD_INSTALL(TARGETS
     config_parser_test
@@ -135,21 +135,21 @@ UHD_INSTALL(TARGETS
     COMPONENT tests
 )
 
-ADD_EXECUTABLE(paths_test
+add_executable(paths_test
     paths_test.cpp
     ${CMAKE_SOURCE_DIR}/lib/utils/pathslib.cpp
 )
 # Careful: This is to satisfy the out-of-library build of paths.cpp. This is
 # duplicate code from lib/utils/CMakeLists.txt, and it's been simplified.
-SET(UHD_LIB_DIR "lib")
-FILE(TO_NATIVE_PATH "${CMAKE_INSTALL_PREFIX}" UHD_PKG_PATH)
-STRING(REPLACE "\\" "\\\\" UHD_PKG_PATH "${UHD_PKG_PATH}")
-SET_SOURCE_FILES_PROPERTIES(
+set(UHD_LIB_DIR "lib")
+file(TO_NATIVE_PATH "${CMAKE_INSTALL_PREFIX}" UHD_PKG_PATH)
+string(REPLACE "\\" "\\\\" UHD_PKG_PATH "${UHD_PKG_PATH}")
+set_source_files_properties(
     ${CMAKE_SOURCE_DIR}/lib/utils/paths.cpp
     PROPERTIES COMPILE_DEFINITIONS
     "UHD_PKG_PATH=\"${UHD_PKG_PATH}\";UHD_LIB_DIR=\"${UHD_LIB_DIR}\""
 )
-TARGET_LINK_LIBRARIES(paths_test uhd ${Boost_LIBRARIES})
+target_link_libraries(paths_test uhd ${Boost_LIBRARIES})
 UHD_ADD_TEST(paths_test paths_test)
 UHD_INSTALL(TARGETS
     paths_test
@@ -161,9 +161,9 @@ UHD_INSTALL(TARGETS
 ########################################################################
 # demo of a loadable module
 ########################################################################
-IF(MSVC OR APPLE OR LINUX)
-    ADD_LIBRARY(module_test MODULE module_test.cpp)
-    TARGET_LINK_LIBRARIES(module_test uhd)
-ENDIF()
+if(MSVC OR APPLE OR LINUX)
+    add_library(module_test MODULE module_test.cpp)
+    target_link_libraries(module_test uhd)
+endif()
 
-ADD_SUBDIRECTORY(devtest)
+add_subdirectory(devtest)

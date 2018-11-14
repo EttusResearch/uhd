@@ -5,15 +5,15 @@
 # SPDX-License-Identifier: GPL-3.0
 #
 
-ADD_SUBDIRECTORY(rfnoc)
-ADD_SUBDIRECTORY(transport)
-ADD_SUBDIRECTORY(types)
-ADD_SUBDIRECTORY(cal)
-ADD_SUBDIRECTORY(usrp)
-ADD_SUBDIRECTORY(usrp_clock)
-ADD_SUBDIRECTORY(utils)
+add_subdirectory(rfnoc)
+add_subdirectory(transport)
+add_subdirectory(types)
+add_subdirectory(cal)
+add_subdirectory(usrp)
+add_subdirectory(usrp_clock)
+add_subdirectory(utils)
 
-CONFIGURE_FILE(
+configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/version.hpp.in
     ${CMAKE_CURRENT_BINARY_DIR}/version.hpp
 )
@@ -33,19 +33,19 @@ UHD_INSTALL(FILES
     COMPONENT headers
 )
 
-IF(ENABLE_RFNOC)
+if(ENABLE_RFNOC)
     UHD_INSTALL(FILES
         device3.hpp
         DESTINATION ${INCLUDE_DIR}/uhd
         COMPONENT headers
     )
-ENDIF(ENABLE_RFNOC)
+endif(ENABLE_RFNOC)
 
-IF(ENABLE_C_API)
+if(ENABLE_C_API)
     UHD_INSTALL(FILES
         config.h
         error.h
         DESTINATION ${INCLUDE_DIR}/uhd
         COMPONENT headers
     )
-ENDIF(ENABLE_C_API)
+endif(ENABLE_C_API)

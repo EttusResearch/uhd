@@ -33,7 +33,7 @@ UHD_INSTALL(FILES
     COMPONENT headers
 )
 
-IF(ENABLE_C_API)
+if(ENABLE_C_API)
     UHD_INSTALL(FILES
         metadata.h
         ranges.h
@@ -45,4 +45,4 @@ IF(ENABLE_C_API)
         DESTINATION ${INCLUDE_DIR}/uhd/types
         COMPONENT headers
     )
-ENDIF(ENABLE_C_API)
+endif(ENABLE_C_API)

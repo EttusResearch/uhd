@@ -12,7 +12,7 @@
 ########################################################################
 # Conditionally configure the X300 support
 ########################################################################
-IF(ENABLE_X300)
+if(ENABLE_X300)
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/x300_radio_ctrl_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/x300_impl.cpp
@@ -28,4 +28,4 @@ IF(ENABLE_X300)
         ${CMAKE_CURRENT_SOURCE_DIR}/x300_mb_eeprom.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/cdecode.c
     )
-ENDIF(ENABLE_X300)
+endif(ENABLE_X300)

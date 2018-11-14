@@ -7,7 +7,7 @@
 # This file is conditionally included if ENABLE_MPMD and ENABLE_N300 are
 # set to true.
 
-LIST(APPEND MAGNESIUM_SOURCES
+list(APPEND MAGNESIUM_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/magnesium_radio_ctrl_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/magnesium_radio_ctrl_init.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/magnesium_radio_ctrl_cpld.cpp

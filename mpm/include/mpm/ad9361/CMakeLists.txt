@@ -5,7 +5,7 @@
 #
 
 
-INSTALL(FILES
+install(FILES
     ad9361_ctrl.hpp
     e320_defaults.hpp
     DESTINATION ${INCLUDE_DIR}/mpm/catalina

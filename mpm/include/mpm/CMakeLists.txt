@@ -3,19 +3,19 @@
 #
 # SPDX-License-Identifier: GPL-3.0
 #
-INSTALL(FILES
+install(FILES
     xbar_iface.hpp
     exception.hpp
     DESTINATION ${INCLUDE_DIR}/mpm
 )
 
-IF(ENABLE_MYKONOS)
-    ADD_SUBDIRECTORY(ad937x)
-ELSEIF(ENABLE_E320)
-    ADD_SUBDIRECTORY(ad9361)
-ENDIF(ENABLE_MYKONOS)
+if(ENABLE_MYKONOS)
+    add_subdirectory(ad937x)
+elseif(ENABLE_E320)
+    add_subdirectory(ad9361)
+endif(ENABLE_MYKONOS)
 
-ADD_SUBDIRECTORY(chips)
-ADD_SUBDIRECTORY(dboards)
-ADD_SUBDIRECTORY(spi)
-ADD_SUBDIRECTORY(types)
+add_subdirectory(chips)
+add_subdirectory(dboards)
+add_subdirectory(spi)
+add_subdirectory(types)

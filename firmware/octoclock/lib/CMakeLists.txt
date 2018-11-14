@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-SET(lib_files
+set(lib_files
     arp_cache.c
     clkdist.c
     enc28j60.c
@@ -27,11 +27,11 @@ SET(lib_files
     usart.c
 )
 
-IF(OCTOCLOCK_DEBUG)
-    LIST(APPEND lib_files serial.c)
-ENDIF(OCTOCLOCK_DEBUG)
+if(OCTOCLOCK_DEBUG)
+    list(APPEND lib_files serial.c)
+endif(OCTOCLOCK_DEBUG)
 
-ADD_LIBRARY(octoclock ${lib_files})
-SET_TARGET_PROPERTIES(octoclock
+add_library(octoclock ${lib_files})
+set_target_properties(octoclock
     PROPERTIES COMPILE_FLAGS "${CMAKE_C_FLAGS} -O2 -g"
 )

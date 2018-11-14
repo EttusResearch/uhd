@@ -14,9 +14,9 @@ LIBUHD_APPEND_SOURCES(
 )
 
 # Verbose Debug output for send/recv
-SET( UHD_EXPERT_LOGGING OFF CACHE BOOL "Enable verbose logging for experts" )
-OPTION( UHD_EXPERT_LOGGING "Enable verbose logging for experts" "" )
-IF(UHD_EXPERT_LOGGING)
-    MESSAGE(STATUS "Enabling verbose logging for experts")
-    ADD_DEFINITIONS(-DUHD_EXPERT_LOGGING)
-ENDIF()
+set( UHD_EXPERT_LOGGING OFF CACHE BOOL "Enable verbose logging for experts" )
+option( UHD_EXPERT_LOGGING "Enable verbose logging for experts" "" )
+if(UHD_EXPERT_LOGGING)
+    message(STATUS "Enabling verbose logging for experts")
+    add_definitions(-DUHD_EXPERT_LOGGING)
+endif()

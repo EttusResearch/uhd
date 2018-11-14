@@ -16,27 +16,27 @@
 #
 
 ########################################################################
-INCLUDE(FindPythonInterp)
+include(FindPythonInterp)
 
-MACRO(GEN_RMI target)
-    GET_FILENAME_COMPONENT(name ${target} NAME_WE)
+macro(GEN_RMI target)
+    get_filename_component(name ${target} NAME_WE)
     #command to create a rmi from elf
-    ADD_CUSTOM_COMMAND(
+    add_custom_command(
         OUTPUT ${name}.rmi DEPENDS ${name}.bin
         COMMAND ${PYTHON_EXECUTABLE}
         ${CMAKE_SOURCE_DIR}/bin/bin_to_ram_macro_init.py ${name}.bin ${name}.rmi
     )
     #add a top level target for output files
-    ADD_CUSTOM_TARGET(
+    add_custom_target(
         ${name}_rmi ALL DEPENDS ${name}.rmi
     )
-ENDMACRO(GEN_RMI)
+endmacro(GEN_RMI)
 
 ########################################################################
-ADD_EXECUTABLE(bootloader.elf ${CMAKE_SOURCE_DIR}/apps/txrx_uhd.c)
-ADD_DEFINITIONS(-DUSRP2P)
-ADD_DEFINITIONS(-DBOOTLOADER)
-TARGET_LINK_LIBRARIES(bootloader.elf libusrp2pfw)
-SET(GEN_OUTPUTS_BIN_SIZE 0x3fff)
+add_executable(bootloader.elf ${CMAKE_SOURCE_DIR}/apps/txrx_uhd.c)
+add_definitions(-DUSRP2P)
+add_definitions(-DBOOTLOADER)
+target_link_libraries(bootloader.elf libusrp2pfw)
+set(GEN_OUTPUTS_BIN_SIZE 0x3fff)
 GEN_OUTPUTS(bootloader.elf)
 GEN_RMI(bootloader.bin)

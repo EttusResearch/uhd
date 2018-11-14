@@ -12,9 +12,9 @@
 ########################################################################
 # Setup defines for process scheduling
 ########################################################################
-MESSAGE(STATUS "")
-MESSAGE(STATUS "Configuring priority scheduling...")
-INCLUDE(CheckCXXSourceCompiles)
+message(STATUS "")
+message(STATUS "Configuring priority scheduling...")
+include(CheckCXXSourceCompiles)
 
 CHECK_CXX_SOURCE_COMPILES("
     #include <pthread.h>
@@ -26,10 +26,10 @@ CHECK_CXX_SOURCE_COMPILES("
     " HAVE_PTHREAD_SETSCHEDPARAM
 )
 
-IF(CYGWIN)
+if(CYGWIN)
     #SCHED_RR non-operational on cygwin
-    SET(HAVE_PTHREAD_SETSCHEDPARAM False)
-ENDIF(CYGWIN)
+    set(HAVE_PTHREAD_SETSCHEDPARAM False)
+endif(CYGWIN)
 
 CHECK_CXX_SOURCE_COMPILES("
     #include <windows.h>
@@ -43,19 +43,19 @@ CHECK_CXX_SOURCE_COMPILES("
 
 
 
-IF(HAVE_PTHREAD_SETSCHEDPARAM)
-    MESSAGE(STATUS "  Priority scheduling supported through pthread_setschedparam.")
-    LIST(APPEND THREAD_PRIO_DEFS HAVE_PTHREAD_SETSCHEDPARAM)
+if(HAVE_PTHREAD_SETSCHEDPARAM)
+    message(STATUS "  Priority scheduling supported through pthread_setschedparam.")
+    list(APPEND THREAD_PRIO_DEFS HAVE_PTHREAD_SETSCHEDPARAM)
     LIBUHD_APPEND_LIBS(pthread)
-ELSEIF(HAVE_WIN_SETTHREADPRIORITY)
-    MESSAGE(STATUS "  Priority scheduling supported through windows SetThreadPriority.")
-    SET(THREAD_PRIO_DEFS HAVE_WIN_SETTHREADPRIORITY)
-ELSE()
-    MESSAGE(STATUS "  Priority scheduling not supported.")
-    SET(THREAD_PRIO_DEFS HAVE_THREAD_PRIO_DUMMY)
-ENDIF()
+elseif(HAVE_WIN_SETTHREADPRIORITY)
+    message(STATUS "  Priority scheduling supported through windows SetThreadPriority.")
+    set(THREAD_PRIO_DEFS HAVE_WIN_SETTHREADPRIORITY)
+else()
+    message(STATUS "  Priority scheduling not supported.")
+    set(THREAD_PRIO_DEFS HAVE_THREAD_PRIO_DUMMY)
+endif()
 
-SET(CMAKE_REQUIRED_LIBRARIES "pthread")
+set(CMAKE_REQUIRED_LIBRARIES "pthread")
 
 CHECK_CXX_SOURCE_COMPILES("
     #include <pthread.h>
@@ -68,22 +68,22 @@ CHECK_CXX_SOURCE_COMPILES("
     " HAVE_PTHREAD_SETNAME
 )
 
-IF(CYGWIN)
+if(CYGWIN)
     #SCHED_RR non-operational on cygwin
-    SET(HAVE_PTHREAD_SETNAME False)
-ENDIF(CYGWIN)
+    set(HAVE_PTHREAD_SETNAME False)
+endif(CYGWIN)
 
-IF(HAVE_PTHREAD_SETNAME)
-    MESSAGE(STATUS "  Setting thread names is supported through pthread_setname_np.")
-    LIST(APPEND THREAD_PRIO_DEFS HAVE_PTHREAD_SETNAME)
+if(HAVE_PTHREAD_SETNAME)
+    message(STATUS "  Setting thread names is supported through pthread_setname_np.")
+    list(APPEND THREAD_PRIO_DEFS HAVE_PTHREAD_SETNAME)
     LIBUHD_APPEND_LIBS(pthread)
-ELSE()
-    MESSAGE(STATUS "  Setting thread names is not supported.")
-    LIST(APPEND THREAD_PRIO_DEFS HAVE_THREAD_SETNAME_DUMMY)
-ENDIF()
+else()
+    message(STATUS "  Setting thread names is not supported.")
+    list(APPEND THREAD_PRIO_DEFS HAVE_THREAD_SETNAME_DUMMY)
+endif()
 
 
-SET_SOURCE_FILES_PROPERTIES(
+set_source_files_properties(
     ${CMAKE_CURRENT_SOURCE_DIR}/thread.cpp
     PROPERTIES COMPILE_DEFINITIONS "${THREAD_PRIO_DEFS}"
 )
@@ -91,11 +91,11 @@ SET_SOURCE_FILES_PROPERTIES(
 ########################################################################
 # Setup defines for high resolution timing
 ########################################################################
-MESSAGE(STATUS "")
-MESSAGE(STATUS "Configuring high resolution timing...")
-INCLUDE(CheckCXXSourceCompiles)
+message(STATUS "")
+message(STATUS "Configuring high resolution timing...")
+include(CheckCXXSourceCompiles)
 
-SET(CMAKE_REQUIRED_LIBRARIES -lrt)
+set(CMAKE_REQUIRED_LIBRARIES -lrt)
 CHECK_CXX_SOURCE_COMPILES("
     #include <ctime>
     int main(){
@@ -104,9 +104,9 @@ CHECK_CXX_SOURCE_COMPILES("
     }
     " HAVE_CLOCK_GETTIME
 )
-SET(CMAKE_REQUIRED_LIBRARIES)
+set(CMAKE_REQUIRED_LIBRARIES)
 
-INCLUDE(CheckCXXSourceCompiles)
+include(CheckCXXSourceCompiles)
 CHECK_CXX_SOURCE_COMPILES("
     #include <mach/mach_time.h>
     int main(){
@@ -130,22 +130,22 @@ CHECK_CXX_SOURCE_COMPILES("
 )
 
 
-IF(HAVE_CLOCK_GETTIME)
-    MESSAGE(STATUS "  High resolution timing supported through clock_gettime.")
-    SET(SYSTEM_TIME_DEFS HAVE_CLOCK_GETTIME)
+if(HAVE_CLOCK_GETTIME)
+    message(STATUS "  High resolution timing supported through clock_gettime.")
+    set(SYSTEM_TIME_DEFS HAVE_CLOCK_GETTIME)
     LIBUHD_APPEND_LIBS("-lrt")
-ELSEIF(HAVE_MACH_ABSOLUTE_TIME)
-    MESSAGE(STATUS "  High resolution timing supported through mach_absolute_time.")
-    SET(SYSTEM_TIME_DEFS HAVE_MACH_ABSOLUTE_TIME)
-ELSEIF(HAVE_QUERY_PERFORMANCE_COUNTER)
-    MESSAGE(STATUS "  High resolution timing supported through QueryPerformanceCounter.")
-    SET(SYSTEM_TIME_DEFS HAVE_QUERY_PERFORMANCE_COUNTER)
-ELSE()
-    MESSAGE(STATUS "  High resolution timing supported though microsec_clock.")
-    SET(SYSTEM_TIME_DEFS HAVE_MICROSEC_CLOCK)
-ENDIF()
+elseif(HAVE_MACH_ABSOLUTE_TIME)
+    message(STATUS "  High resolution timing supported through mach_absolute_time.")
+    set(SYSTEM_TIME_DEFS HAVE_MACH_ABSOLUTE_TIME)
+elseif(HAVE_QUERY_PERFORMANCE_COUNTER)
+    message(STATUS "  High resolution timing supported through QueryPerformanceCounter.")
+    set(SYSTEM_TIME_DEFS HAVE_QUERY_PERFORMANCE_COUNTER)
+else()
+    message(STATUS "  High resolution timing supported though microsec_clock.")
+    set(SYSTEM_TIME_DEFS HAVE_MICROSEC_CLOCK)
+endif()
 
-SET_SOURCE_FILES_PROPERTIES(
+set_source_files_properties(
     ${CMAKE_CURRENT_SOURCE_DIR}/system_time.cpp
     PROPERTIES COMPILE_DEFINITIONS "${SYSTEM_TIME_DEFS}"
 )
@@ -153,11 +153,11 @@ SET_SOURCE_FILES_PROPERTIES(
 ########################################################################
 # Setup defines for module loading
 ########################################################################
-MESSAGE(STATUS "")
-MESSAGE(STATUS "Configuring module loading...")
-INCLUDE(CheckCXXSourceCompiles)
+message(STATUS "")
+message(STATUS "Configuring module loading...")
+include(CheckCXXSourceCompiles)
 
-SET(CMAKE_REQUIRED_LIBRARIES ${CMAKE_DL_LIBS})
+set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_DL_LIBS})
 CHECK_CXX_SOURCE_COMPILES("
     #include <dlfcn.h>
     int main(){
@@ -166,7 +166,7 @@ CHECK_CXX_SOURCE_COMPILES("
     }
     " HAVE_DLOPEN
 )
-SET(CMAKE_REQUIRED_LIBRARIES)
+set(CMAKE_REQUIRED_LIBRARIES)
 
 CHECK_CXX_SOURCE_COMPILES("
     #define WIN32_LEAN_AND_MEAN
@@ -178,19 +178,19 @@ CHECK_CXX_SOURCE_COMPILES("
     " HAVE_LOAD_LIBRARY
 )
 
-IF(HAVE_DLOPEN)
-    MESSAGE(STATUS "  Module loading supported through dlopen.")
-    SET(LOAD_MODULES_DEFS HAVE_DLOPEN)
+if(HAVE_DLOPEN)
+    message(STATUS "  Module loading supported through dlopen.")
+    set(LOAD_MODULES_DEFS HAVE_DLOPEN)
     LIBUHD_APPEND_LIBS(${CMAKE_DL_LIBS})
-ELSEIF(HAVE_LOAD_LIBRARY)
-    MESSAGE(STATUS "  Module loading supported through LoadLibrary.")
-    SET(LOAD_MODULES_DEFS HAVE_LOAD_LIBRARY)
-ELSE()
-    MESSAGE(STATUS "  Module loading not supported.")
-    SET(LOAD_MODULES_DEFS HAVE_LOAD_MODULES_DUMMY)
-ENDIF()
+elseif(HAVE_LOAD_LIBRARY)
+    message(STATUS "  Module loading supported through LoadLibrary.")
+    set(LOAD_MODULES_DEFS HAVE_LOAD_LIBRARY)
+else()
+    message(STATUS "  Module loading not supported.")
+    set(LOAD_MODULES_DEFS HAVE_LOAD_MODULES_DUMMY)
+endif()
 
-SET_SOURCE_FILES_PROPERTIES(
+set_source_files_properties(
     ${CMAKE_CURRENT_SOURCE_DIR}/load_modules.cpp
     PROPERTIES COMPILE_DEFINITIONS "${LOAD_MODULES_DEFS}"
 )
@@ -198,17 +198,17 @@ SET_SOURCE_FILES_PROPERTIES(
 ########################################################################
 # Define UHD_PKG_DATA_PATH for paths.cpp
 ########################################################################
-FILE(TO_NATIVE_PATH "${CMAKE_INSTALL_PREFIX}" UHD_PKG_PATH)
-STRING(REPLACE "\\" "\\\\" UHD_PKG_PATH "${UHD_PKG_PATH}")
+file(TO_NATIVE_PATH "${CMAKE_INSTALL_PREFIX}" UHD_PKG_PATH)
+string(REPLACE "\\" "\\\\" UHD_PKG_PATH "${UHD_PKG_PATH}")
 
-STRING(REGEX MATCH ".*/.*" SLASH "${LIB_SUFFIX}")
-IF(SLASH STREQUAL "")
-    SET(UHD_LIB_DIR "lib${LIB_SUFFIX}")
-ELSE()
-    SET(UHD_LIB_DIR "lib")
-ENDIF(SLASH STREQUAL "")
+string(REGEX MATCH ".*/.*" SLASH "${LIB_SUFFIX}")
+if(SLASH STREQUAL "")
+    set(UHD_LIB_DIR "lib${LIB_SUFFIX}")
+else()
+    set(UHD_LIB_DIR "lib")
+endif(SLASH STREQUAL "")
 
-SET_SOURCE_FILES_PROPERTIES(
+set_source_files_properties(
     ${CMAKE_CURRENT_SOURCE_DIR}/paths.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/images.cpp
     PROPERTIES COMPILE_DEFINITIONS
@@ -237,9 +237,9 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/thread.cpp
 )
 
-IF(ENABLE_C_API)
+if(ENABLE_C_API)
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/log_c.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/thread_priority_c.cpp
     )
-ENDIF(ENABLE_C_API)
+endif(ENABLE_C_API)

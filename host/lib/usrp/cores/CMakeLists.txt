@@ -9,7 +9,7 @@
 # This file included, use CMake directory variables
 ########################################################################
 
-IF(ENABLE_B100 OR ENABLE_USRP2)
+if(ENABLE_B100 OR ENABLE_USRP2)
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/gpio_core_200.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/i2c_core_200.cpp
@@ -18,7 +18,7 @@ IF(ENABLE_B100 OR ENABLE_USRP2)
         ${CMAKE_CURRENT_SOURCE_DIR}/tx_dsp_core_200.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/user_settings_core_200.cpp
     )
-ENDIF(ENABLE_B100 OR ENABLE_USRP2)
+endif(ENABLE_B100 OR ENABLE_USRP2)
 
 LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/dma_fifo_core_3000.cpp

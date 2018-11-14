@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-SET(I2C_SOURCES
+set(I2C_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/i2cdev_iface.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/i2c_regs_iface.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/i2cdev.c

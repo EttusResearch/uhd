@@ -8,23 +8,23 @@
 # This file included, use CMake directory variables
 ########################################################################
 
-MACRO(CATALINA_APPEND_SOURCES)
-    SET(catalina_sources ${catalina_sources})
-    LIST(APPEND catalina_sources ${ARGV})
-    SET(catalina_sources ${catalina_sources} PARENT_SCOPE)
-ENDMACRO(CATALINA_APPEND_SOURCES)
+macro(CATALINA_APPEND_SOURCES)
+    set(catalina_sources ${catalina_sources})
+    list(APPEND catalina_sources ${ARGV})
+    set(catalina_sources ${catalina_sources} PARENT_SCOPE)
+endmacro(CATALINA_APPEND_SOURCES)
 
-SET (CMAKE_CATALINA_SOURCE_DIR
+set (CMAKE_CATALINA_SOURCE_DIR
     ${UHD_HOST_ROOT}/lib/usrp/common
 )
 
-CONFIGURE_FILE(
+configure_file(
     ${UHD_HOST_ROOT}/include/uhd/version.hpp.in
     ${CMAKE_BINARY_DIR}/include/uhd/version.hpp
 )
 
 # TODO: Do something better than listing all the files individually
-SET(catalina_sources
+set(catalina_sources
     ${CMAKE_CATALINA_SOURCE_DIR}/ad9361_ctrl.cpp
     ${CMAKE_CATALINA_SOURCE_DIR}/ad936x_manager.cpp
     ${CMAKE_CATALINA_SOURCE_DIR}/ad9361_driver/ad9361_device.cpp
@@ -39,12 +39,12 @@ SET(catalina_sources
 
 USRP_PERIPHS_ADD_OBJECT(catalina ${catalina_sources})
 
-TARGET_INCLUDE_DIRECTORIES(catalina PUBLIC
+target_include_directories(catalina PUBLIC
                            $<BUILD_INTERFACE:${UHD_HOST_ROOT}/lib/include>)
-TARGET_INCLUDE_DIRECTORIES(catalina PUBLIC
+target_include_directories(catalina PUBLIC
                            $<BUILD_INTERFACE:${UHD_HOST_ROOT}/lib/usrp/common/ad9361_driver>)
 
-TARGET_INCLUDE_DIRECTORIES(catalina PUBLIC
+target_include_directories(catalina PUBLIC
                            $<BUILD_INTERFACE:${UHD_HOST_ROOT}/lib/include>)
-TARGET_INCLUDE_DIRECTORIES(dboards PUBLIC
+target_include_directories(dboards PUBLIC
                            $<BUILD_INTERFACE:${UHD_HOST_ROOT}/lib/usrp/common/ad9361_driver>)

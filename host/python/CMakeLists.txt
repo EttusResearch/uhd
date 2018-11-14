@@ -15,66 +15,66 @@ PYTHON_CHECK_MODULE(
 )
 
 # Get include dirs
-INCLUDE_DIRECTORIES(${PYTHON_INCLUDE_DIRS})
-EXECUTE_PROCESS(
+include_directories(${PYTHON_INCLUDE_DIRS})
+execute_process(
     COMMAND "${PYTHON_EXECUTABLE}" -c
     "from __future__ import print_function\ntry:\n import numpy\n import os\n inc_path = numpy.get_include()\n if os.path.exists(os.path.join(inc_path, 'numpy', 'arrayobject.h')):\n  print(inc_path, end='')\nexcept:\n pass"
     OUTPUT_VARIABLE PYTHON_NUMPY_INCLUDE_DIR)
 
 # Build pyuhd library
-ADD_LIBRARY(pyuhd SHARED pyuhd.cpp)
-TARGET_INCLUDE_DIRECTORIES(pyuhd PUBLIC
+add_library(pyuhd SHARED pyuhd.cpp)
+target_include_directories(pyuhd PUBLIC
     ${PYTHON_NUMPY_INCLUDE_DIR}
     ${CMAKE_SOURCE_DIR}/lib
 )
 
-TARGET_LINK_LIBRARIES(pyuhd ${BOOST_PYTHON_LIBRARY} ${Boost_LIBRARIES} ${PYTHON_LIBRARY} uhd)
+target_link_libraries(pyuhd ${BOOST_PYTHON_LIBRARY} ${Boost_LIBRARIES} ${PYTHON_LIBRARY} uhd)
 # Copy pyuhd library to the staging directory
-IF(WIN32)
-    SET(PYUHD_LIBRARY_NAME libpyuhd.pyd)
-ELSE()
-    SET(PYUHD_LIBRARY_NAME libpyuhd${CMAKE_SHARED_LIBRARY_SUFFIX})
-ENDIF(WIN32)
+if(WIN32)
+    set(PYUHD_LIBRARY_NAME libpyuhd.pyd)
+else()
+    set(PYUHD_LIBRARY_NAME libpyuhd${CMAKE_SHARED_LIBRARY_SUFFIX})
+endif(WIN32)
 
-ADD_CUSTOM_COMMAND(TARGET pyuhd
+add_custom_command(TARGET pyuhd
     POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pyuhd> ${CMAKE_CURRENT_BINARY_DIR}/uhd/${PYUHD_LIBRARY_NAME})
 
-SET(PYUHD_FILES
+set(PYUHD_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/__init__.py
   ${CMAKE_CURRENT_SOURCE_DIR}/types.py
   ${CMAKE_CURRENT_SOURCE_DIR}/usrp.py
   ${CMAKE_CURRENT_SOURCE_DIR}/filters.py
 )
 
-SET(SETUP_PY_IN    "${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in")
-SET(SETUP_PY       "${CMAKE_CURRENT_BINARY_DIR}/setup.py")
-SET(TIMESTAMP_FILE "${CMAKE_CURRENT_BINARY_DIR}/build/timestamp")
+set(SETUP_PY_IN    "${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in")
+set(SETUP_PY       "${CMAKE_CURRENT_BINARY_DIR}/setup.py")
+set(TIMESTAMP_FILE "${CMAKE_CURRENT_BINARY_DIR}/build/timestamp")
 
-CONFIGURE_FILE(${SETUP_PY_IN} ${SETUP_PY})
+configure_file(${SETUP_PY_IN} ${SETUP_PY})
 
-ADD_CUSTOM_COMMAND(OUTPUT ${TIMESTAMP_FILE}
+add_custom_command(OUTPUT ${TIMESTAMP_FILE}
   COMMAND ${CMAKE_COMMAND} -E copy ${PYUHD_FILES} ${CMAKE_CURRENT_BINARY_DIR}/uhd
   COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} -q build
   COMMAND ${CMAKE_COMMAND} -E touch ${TIMESTAMP_FILE}
   DEPENDS ${PYUHD_FILES})
 
-ADD_CUSTOM_TARGET(pyuhd_library ALL DEPENDS ${TIMESTAMP_FILE} pyuhd)
-IF(HAVE_PYTHON_VIRTUALENV)
+add_custom_target(pyuhd_library ALL DEPENDS ${TIMESTAMP_FILE} pyuhd)
+if(HAVE_PYTHON_VIRTUALENV)
     # In virtualenvs, let setuptools do its thing
-    INSTALL(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} -q install --force)")
-ELSE()
+    install(CODE "execute_process(COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} -q install --force)")
+else()
     # Otherwise, use distutils to determine the correct relative path for Python
     # packages, and install to our prefix
-    IF(NOT DEFINED UHD_PYTHON_DIR)
+    if(NOT DEFINED UHD_PYTHON_DIR)
         execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
             "from __future__ import print_function;\
             from distutils import sysconfig;\
             print(sysconfig.get_python_lib(plat_specific=True, prefix='${CMAKE_INSTALL_PREFIX}'));"
             OUTPUT_VARIABLE UHD_PYTHON_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
         )
-    ENDIF(NOT DEFINED UHD_PYTHON_DIR)
+    endif(NOT DEFINED UHD_PYTHON_DIR)
     file(TO_CMAKE_PATH ${UHD_PYTHON_DIR} UHD_PYTHON_DIR)
 
-    MESSAGE(STATUS "Utilizing the python install directory: ${UHD_PYTHON_DIR}")
-    INSTALL(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/uhd DESTINATION ${UHD_PYTHON_DIR} COMPONENT pythonapi)
-ENDIF(HAVE_PYTHON_VIRTUALENV)
+    message(STATUS "Utilizing the python install directory: ${UHD_PYTHON_DIR}")
+    install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/uhd DESTINATION ${UHD_PYTHON_DIR} COMPONENT pythonapi)
+endif(HAVE_PYTHON_VIRTUALENV)

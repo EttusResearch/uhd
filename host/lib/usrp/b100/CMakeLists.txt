@@ -12,7 +12,7 @@
 ########################################################################
 # Conditionally configure the B100 support
 ########################################################################
-IF(ENABLE_B100)
+if(ENABLE_B100)
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/b100_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/clock_ctrl.cpp
@@ -23,4 +23,4 @@ IF(ENABLE_B100)
         ${CMAKE_CURRENT_SOURCE_DIR}/usb_zero_copy_wrapper.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/fifo_ctrl_excelsior.cpp
     )
-ENDIF(ENABLE_B100)
+endif(ENABLE_B100)

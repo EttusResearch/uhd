@@ -4,11 +4,11 @@
 # SPDX-License-Identifier: GPL-3.0
 #
 
-IF(ENABLE_MPMD)
-    IF(ENABLE_LIBERIO)
-        MESSAGE(STATUS "Compiling MPMD with liberio support...")
-        ADD_DEFINITIONS(-DHAVE_LIBERIO)
-    ENDIF(ENABLE_LIBERIO)
+if(ENABLE_MPMD)
+    if(ENABLE_LIBERIO)
+        message(STATUS "Compiling MPMD with liberio support...")
+        add_definitions(-DHAVE_LIBERIO)
+    endif(ENABLE_LIBERIO)
 
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/mpmd_find.cpp
@@ -21,10 +21,10 @@ IF(ENABLE_MPMD)
         ${CMAKE_CURRENT_SOURCE_DIR}/mpmd_xport_ctrl_udp.cpp
     )
 
-    IF(ENABLE_LIBERIO)
+    if(ENABLE_LIBERIO)
         LIBUHD_APPEND_SOURCES(
             ${CMAKE_CURRENT_SOURCE_DIR}/mpmd_xport_ctrl_liberio.cpp
         )
-    ENDIF(ENABLE_LIBERIO)
+    endif(ENABLE_LIBERIO)
 
-ENDIF(ENABLE_MPMD)
+endif(ENABLE_MPMD)

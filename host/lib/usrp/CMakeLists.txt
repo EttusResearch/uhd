@@ -8,7 +8,7 @@
 ########################################################################
 # This file included, use CMake directory variables
 ########################################################################
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/dboard_base.cpp
@@ -22,21 +22,21 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/fe_connection.cpp
 )
 
-IF(ENABLE_C_API)
+if(ENABLE_C_API)
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/dboard_eeprom_c.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/mboard_eeprom_c.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/subdev_spec_c.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/usrp_c.cpp
     )
-ENDIF(ENABLE_C_API)
+endif(ENABLE_C_API)
 
-IF(ENABLE_GPSD)
+if(ENABLE_GPSD)
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/gpsd_iface.cpp
     )
     LIBUHD_APPEND_LIBS(${LIBGPS_LIBRARY})
-ENDIF(ENABLE_GPSD)
+endif(ENABLE_GPSD)
 
 INCLUDE_SUBDIRECTORY(cores)
 INCLUDE_SUBDIRECTORY(dboard)

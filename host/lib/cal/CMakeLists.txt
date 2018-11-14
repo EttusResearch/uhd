@@ -8,14 +8,14 @@
 ########################################################################
 # This file included, use CMake directory variables
 ########################################################################
-INCLUDE(CheckIncludeFileCXX)
-MESSAGE(STATUS "")
+include(CheckIncludeFileCXX)
+message(STATUS "")
 
 ########################################################################
 # Convert types generation
 ########################################################################
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/power_container_impl.cpp

@@ -4,8 +4,8 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
-IF(ENABLE_MPMD)
-    LIST(APPEND RHODIUM_SOURCES
+if(ENABLE_MPMD)
+    list(APPEND RHODIUM_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/rhodium_radio_ctrl_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/rhodium_radio_ctrl_init.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/rhodium_radio_ctrl_cpld.cpp
@@ -14,5 +14,5 @@ IF(ENABLE_MPMD)
         ${CMAKE_CURRENT_SOURCE_DIR}/rhodium_cpld_ctrl.cpp
     )
     LIBUHD_APPEND_SOURCES(${RHODIUM_SOURCES})
-ENDIF(ENABLE_MPMD)
+endif(ENABLE_MPMD)
 

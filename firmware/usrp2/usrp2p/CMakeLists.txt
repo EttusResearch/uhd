@@ -16,13 +16,13 @@
 #
 
 ########################################################################
-INCLUDE(${CMAKE_SOURCE_DIR}/lib/CMakeLists.txt)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+include(${CMAKE_SOURCE_DIR}/lib/CMakeLists.txt)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-ADD_DEFINITIONS(-DUSRP2P)
-ADD_DEFINITIONS(-DUDP_UART_MASK=4) #GPS=UART2 streaming enabled
+add_definitions(-DUSRP2P)
+add_definitions(-DUDP_UART_MASK=4) #GPS=UART2 streaming enabled
 
-ADD_LIBRARY(libusrp2pfw STATIC
+add_library(libusrp2pfw STATIC
     ${COMMON_SRCS}
     spif.c
     spi_flash.c
@@ -34,12 +34,12 @@ ADD_LIBRARY(libusrp2pfw STATIC
     u2p_init.c
 )
 
-ADD_SUBDIRECTORY(bootloader)
+add_subdirectory(bootloader)
 
 ########################################################################
-SET(GEN_OUTPUTS_BIN_SIZE 0x3fff)
+set(GEN_OUTPUTS_BIN_SIZE 0x3fff)
 
-ADD_EXECUTABLE(usrp2p_txrx_uhd.elf ${CMAKE_SOURCE_DIR}/apps/txrx_uhd.c)
-TARGET_LINK_LIBRARIES(usrp2p_txrx_uhd.elf libusrp2pfw)
+add_executable(usrp2p_txrx_uhd.elf ${CMAKE_SOURCE_DIR}/apps/txrx_uhd.c)
+target_link_libraries(usrp2p_txrx_uhd.elf libusrp2pfw)
 GEN_OUTPUTS(usrp2p_txrx_uhd.elf)
 

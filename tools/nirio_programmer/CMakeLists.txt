@@ -57,7 +57,7 @@ link_directories(${Boost_LIBRARY_DIRS})
 ### Make the executable #######################################################
 add_executable(nirio_programmer nirio_programmer.cpp)
 
-SET(CMAKE_BUILD_TYPE "Release")
+set(CMAKE_BUILD_TYPE "Release")
 
 # Shared library case: All we need to do is link against the library, and
 # anything else we need (in this case, some Boost libraries):

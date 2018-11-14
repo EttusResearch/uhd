@@ -1,6 +1,6 @@
-# CMAKE_PARSE_ARGUMENTS(<prefix> <options> <one_value_keywords> <multi_value_keywords> args...)
+# cmake_parse_arguments(<prefix> <options> <one_value_keywords> <multi_value_keywords> args...)
 #
-# CMAKE_PARSE_ARGUMENTS() is intended to be used in macros or functions for
+# cmake_parse_arguments() is intended to be used in macros or functions for
 # parsing the arguments given to that macro or function.
 # It processes the arguments and defines a set of variables which hold the
 # values of the respective options.
@@ -17,7 +17,7 @@
 # which can be followed by more than one value, like e.g. the TARGETS or
 # FILES keywords of the install() command.
 #
-# When done, CMAKE_PARSE_ARGUMENTS() will have defined for each of the
+# When done, cmake_parse_arguments() will have defined for each of the
 # keywords listed in <options>, <one_value_keywords> and
 # <multi_value_keywords> a variable composed of the given <prefix>
 # followed by "_" and the name of the respective keyword.

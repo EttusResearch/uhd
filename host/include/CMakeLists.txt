@@ -5,16 +5,16 @@
 # SPDX-License-Identifier: GPL-3.0
 #
 
-CONFIGURE_FILE(
+configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/config.h.in
     ${CMAKE_CURRENT_BINARY_DIR}/config.h
 )
 
-IF(ENABLE_C_API)
+if(ENABLE_C_API)
     UHD_INSTALL(FILES ${CMAKE_CURRENT_SOURCE_DIR}/uhd.h
         DESTINATION ${INCLUDE_DIR}
         COMPONENT headers
     )
-ENDIF(ENABLE_C_API)
+endif(ENABLE_C_API)
 
-ADD_SUBDIRECTORY(uhd)
+add_subdirectory(uhd)

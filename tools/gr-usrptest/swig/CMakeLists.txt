@@ -21,7 +21,7 @@
 # Check if there is C++ code at all
 ########################################################################
 if(NOT usrptest_sources)
-	MESSAGE(STATUS "No C++ sources... skipping swig/")
+	message(STATUS "No C++ sources... skipping swig/")
 	return()
 endif(NOT usrptest_sources)
 

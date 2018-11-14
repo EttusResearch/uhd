@@ -33,7 +33,7 @@ add_executable(n230_main.elf ${n230_sources})
 target_link_libraries(n230_main.elf usrp3fw)
 GEN_OUTPUTS(n230_main.elf n230)
 
-#INSTALL(
+#install(
 #    FILES ${CMAKE_CURRENT_BINARY_DIR}/n230_main.bin
 #    DESTINATION share/uhd/images
 #    RENAME usrp_n230_fw.bin

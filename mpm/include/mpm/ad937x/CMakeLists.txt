@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: GPL-3.0
 #
-INSTALL(FILES
+install(FILES
     adi_ctrl.hpp
     ad937x_ctrl.hpp
     DESTINATION ${INCLUDE_DIR}/mpm/mykonos

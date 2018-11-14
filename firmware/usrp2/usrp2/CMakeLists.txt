@@ -16,22 +16,22 @@
 #
 
 ########################################################################
-INCLUDE(${CMAKE_SOURCE_DIR}/lib/CMakeLists.txt)
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+include(${CMAKE_SOURCE_DIR}/lib/CMakeLists.txt)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-ADD_DEFINITIONS(-DUSRP2)
-ADD_DEFINITIONS(-DUDP_UART_MASK=0)
+add_definitions(-DUSRP2)
+add_definitions(-DUDP_UART_MASK=0)
 
-ADD_LIBRARY(libusrp2fw STATIC
+add_library(libusrp2fw STATIC
     ${COMMON_SRCS}
     sd.c
     ethernet.c
 )
 
 ########################################################################
-SET(GEN_OUTPUTS_BIN_SIZE 0x3fff)
+set(GEN_OUTPUTS_BIN_SIZE 0x3fff)
 
-ADD_EXECUTABLE(usrp2_txrx_uhd.elf ${CMAKE_SOURCE_DIR}/apps/txrx_uhd.c)
-TARGET_LINK_LIBRARIES(usrp2_txrx_uhd.elf libusrp2fw)
+add_executable(usrp2_txrx_uhd.elf ${CMAKE_SOURCE_DIR}/apps/txrx_uhd.c)
+target_link_libraries(usrp2_txrx_uhd.elf libusrp2fw)
 GEN_OUTPUTS(usrp2_txrx_uhd.elf)
 

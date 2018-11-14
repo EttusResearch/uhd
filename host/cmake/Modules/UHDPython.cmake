@@ -5,58 +5,58 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
-IF(NOT DEFINED INCLUDED_UHD_PYTHON_CMAKE)
-SET(INCLUDED_UHD_PYTHON_CMAKE TRUE)
+if(NOT DEFINED INCLUDED_UHD_PYTHON_CMAKE)
+set(INCLUDED_UHD_PYTHON_CMAKE TRUE)
 
 ########################################################################
 # Setup Python
 ########################################################################
-MESSAGE(STATUS "")
-MESSAGE(STATUS "Configuring the python interpreter...")
+message(STATUS "")
+message(STATUS "Configuring the python interpreter...")
 #this allows the user to override PYTHON_EXECUTABLE
-IF(PYTHON_EXECUTABLE)
+if(PYTHON_EXECUTABLE)
 
-    SET(PYTHONINTERP_FOUND TRUE)
+    set(PYTHONINTERP_FOUND TRUE)
 
 #otherwise if not set, try to automatically find it
-ELSE(PYTHON_EXECUTABLE)
+else(PYTHON_EXECUTABLE)
 
     #use the built-in find script
-    IF(ENABLE_PYTHON3)
-        FIND_PACKAGE(PythonInterp 3.0)
-    ELSE(ENABLE_PYTHON3)
-        FIND_PACKAGE(PythonInterp 2.0)
-    ENDIF(ENABLE_PYTHON3)
+    if(ENABLE_PYTHON3)
+        find_package(PythonInterp 3.0)
+    else(ENABLE_PYTHON3)
+        find_package(PythonInterp 2.0)
+    endif(ENABLE_PYTHON3)
 
     #and if that fails use the find program routine
-    IF(NOT PYTHONINTERP_FOUND)
-        IF(ENABLE_PYTHON3)
-            FIND_PROGRAM(PYTHON_EXECUTABLE NAMES python3 python3.5 python3.6)
-        ELSE(ENABLE_PYTHON3)
-            FIND_PROGRAM(PYTHON_EXECUTABLE NAMES python2 python2.7)
-        ENDIF(ENABLE_PYTHON3)
+    if(NOT PYTHONINTERP_FOUND)
+        if(ENABLE_PYTHON3)
+            find_program(PYTHON_EXECUTABLE NAMES python3 python3.5 python3.6)
+        else(ENABLE_PYTHON3)
+            find_program(PYTHON_EXECUTABLE NAMES python2 python2.7)
+        endif(ENABLE_PYTHON3)
 
-        IF(PYTHON_EXECUTABLE)
-            SET(PYTHONINTERP_FOUND TRUE)
-        ENDIF(PYTHON_EXECUTABLE)
-    ENDIF(NOT PYTHONINTERP_FOUND)
+        if(PYTHON_EXECUTABLE)
+            set(PYTHONINTERP_FOUND TRUE)
+        endif(PYTHON_EXECUTABLE)
+    endif(NOT PYTHONINTERP_FOUND)
 
-ENDIF(PYTHON_EXECUTABLE)
+endif(PYTHON_EXECUTABLE)
 
 #make the path to the executable appear in the cmake gui
-SET(PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE} CACHE FILEPATH "python interpreter")
+set(PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE} CACHE FILEPATH "python interpreter")
 
-MESSAGE(STATUS "Python interpreter: ${PYTHON_EXECUTABLE}")
-MESSAGE(STATUS "Override with: -DPYTHON_EXECUTABLE=<path-to-python>")
+message(STATUS "Python interpreter: ${PYTHON_EXECUTABLE}")
+message(STATUS "Override with: -DPYTHON_EXECUTABLE=<path-to-python>")
 
-IF(NOT PYTHONINTERP_FOUND)
-    MESSAGE(FATAL_ERROR "Error: Python interpreter required by the build system.")
-ENDIF(NOT PYTHONINTERP_FOUND)
+if(NOT PYTHONINTERP_FOUND)
+    message(FATAL_ERROR "Error: Python interpreter required by the build system.")
+endif(NOT PYTHONINTERP_FOUND)
 
-MACRO(PYTHON_CHECK_MODULE desc mod cmd have)
-    MESSAGE(STATUS "")
-    MESSAGE(STATUS "Python checking for ${desc}")
-    EXECUTE_PROCESS(
+macro(PYTHON_CHECK_MODULE desc mod cmd have)
+    message(STATUS "")
+    message(STATUS "Python checking for ${desc}")
+    execute_process(
         COMMAND ${PYTHON_EXECUTABLE} -c "
 #########################################
 from distutils.version import LooseVersion
@@ -68,19 +68,19 @@ exit(0)
 #########################################"
         RESULT_VARIABLE ${have}
     )
-    IF(${have} EQUAL 0)
-        MESSAGE(STATUS "Python checking for ${desc} - found")
-        SET(${have} TRUE)
-    ELSEIF(${have} EQUAL 1)
-        MESSAGE(STATUS "Python checking for ${desc} - \"import ${mod}\" failed")
-        SET(${have} FALSE)
-    ELSEIF(${have} EQUAL 2)
-        MESSAGE(STATUS "Python checking for ${desc} - \"assert ${cmd}\" failed")
-        SET(${have} FALSE)
-    ELSE()
-        MESSAGE(STATUS "Python checking for ${desc} - unknown error")
-        SET(${have} FALSE)
-    ENDIF()
-ENDMACRO(PYTHON_CHECK_MODULE)
+    if(${have} EQUAL 0)
+        message(STATUS "Python checking for ${desc} - found")
+        set(${have} TRUE)
+    elseif(${have} EQUAL 1)
+        message(STATUS "Python checking for ${desc} - \"import ${mod}\" failed")
+        set(${have} FALSE)
+    elseif(${have} EQUAL 2)
+        message(STATUS "Python checking for ${desc} - \"assert ${cmd}\" failed")
+        set(${have} FALSE)
+    else()
+        message(STATUS "Python checking for ${desc} - unknown error")
+        set(${have} FALSE)
+    endif()
+endmacro(PYTHON_CHECK_MODULE)
 
-ENDIF(NOT DEFINED INCLUDED_UHD_PYTHON_CMAKE)
+endif(NOT DEFINED INCLUDED_UHD_PYTHON_CMAKE)

@@ -12,7 +12,7 @@
 ########################################################################
 # Conditionally configure the USRP1 support
 ########################################################################
-IF(ENABLE_USRP1)
+if(ENABLE_USRP1)
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/codec_ctrl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/dboard_iface.cpp
@@ -22,4 +22,4 @@ IF(ENABLE_USRP1)
         ${CMAKE_CURRENT_SOURCE_DIR}/usrp1_iface.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/usrp1_impl.cpp
     )
-ENDIF(ENABLE_USRP1)
+endif(ENABLE_USRP1)

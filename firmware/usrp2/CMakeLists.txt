@@ -18,19 +18,19 @@
 ########################################################################
 # setup project and compiler
 ########################################################################
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+cmake_minimum_required(VERSION 2.6)
 #force the compiler because the check wont use the special flag below
-INCLUDE(CMakeForceCompiler)
-SET(CMAKE_SYSTEM_NAME Generic)
+include(CMakeForceCompiler)
+set(CMAKE_SYSTEM_NAME Generic)
 CMAKE_FORCE_C_COMPILER(zpu-elf-gcc GNU)
-PROJECT(USRP_NXXX_FW C)
+project(USRP_NXXX_FW C)
 
 ########################################################################
 # lwIP header include dirs
 ########################################################################
-SET(LWIPDIR ${CMAKE_SOURCE_DIR}/lwip/lwip-1.3.1)
+set(LWIPDIR ${CMAKE_SOURCE_DIR}/lwip/lwip-1.3.1)
 
-INCLUDE_DIRECTORIES(
+include_directories(
     ${CMAKE_SOURCE_DIR}/lwip
     ${CMAKE_SOURCE_DIR}/lwip_port
     ${LWIPDIR}/src/include
@@ -40,16 +40,16 @@ INCLUDE_DIRECTORIES(
 ########################################################################
 # misc flags for the gcc compiler
 ########################################################################
-SET(CMAKE_C_FLAGS -phi) #always needed compile time and link time
-ADD_DEFINITIONS(-Os)
-ADD_DEFINITIONS(--std=gnu99)
-ADD_DEFINITIONS(-Wall)
-ADD_DEFINITIONS(-Werror-implicit-function-declaration)
-ADD_DEFINITIONS(-ffunction-sections)
+set(CMAKE_C_FLAGS -phi) #always needed compile time and link time
+add_definitions(-Os)
+add_definitions(--std=gnu99)
+add_definitions(-Wall)
+add_definitions(-Werror-implicit-function-declaration)
+add_definitions(-ffunction-sections)
 
-MACRO(ADD_LINKER_FLAGS flags)
-    SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${flags}")
-ENDMACRO(ADD_LINKER_FLAGS)
+macro(ADD_LINKER_FLAGS flags)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${flags}")
+endmacro(ADD_LINKER_FLAGS)
 
 ADD_LINKER_FLAGS("-Wl,--gc-sections")
 ADD_LINKER_FLAGS("-Wl,--relax")
@@ -57,13 +57,13 @@ ADD_LINKER_FLAGS("-Wl,--relax")
 ########################################################################
 # define for the hal io (FIXME move?)
 ########################################################################
-#ADD_DEFINITIONS(-DHAL_IO_USES_DBOARD_PINS)
-ADD_DEFINITIONS(-DHAL_IO_USES_UART)
+#add_definitions(-DHAL_IO_USES_DBOARD_PINS)
+add_definitions(-DHAL_IO_USES_UART)
 
 ########################################################################
 # common cflags and ldflags
 ########################################################################
-INCLUDE_DIRECTORIES(
+include_directories(
     ${CMAKE_SOURCE_DIR}/../../host/lib/usrp
     ${CMAKE_SOURCE_DIR}/lib
 )
@@ -71,52 +71,52 @@ INCLUDE_DIRECTORIES(
 ########################################################################
 # setup programs for output files
 ########################################################################
-FIND_PROGRAM(LINKER zpu-elf-ld)
-FIND_PROGRAM(OBJCOPY zpu-elf-objcopy)
-FIND_PROGRAM(OBJDUMP zpu-elf-objdump)
-FIND_PROGRAM(HEXDUMP hexdump)
+find_program(LINKER zpu-elf-ld)
+find_program(OBJCOPY zpu-elf-objcopy)
+find_program(OBJDUMP zpu-elf-objdump)
+find_program(HEXDUMP hexdump)
 
 ########################################################################
 # helper functions to build output formats
 ########################################################################
-SET(GEN_OUTPUTS_BIN_SIZE "bin_size_not_set") #set before calling
-MACRO(GEN_OUTPUTS target)
-    GET_FILENAME_COMPONENT(name ${target} NAME_WE)
+set(GEN_OUTPUTS_BIN_SIZE "bin_size_not_set") #set before calling
+macro(GEN_OUTPUTS target)
+    get_filename_component(name ${target} NAME_WE)
     #command to create a map from elf
-    ADD_CUSTOM_COMMAND(
+    add_custom_command(
         OUTPUT ${name}.map DEPENDS ${target}
         COMMAND ${LINKER} -Map ${name}.map ${target}
     )
     #command to create a bin from elf
-    ADD_CUSTOM_COMMAND(
+    add_custom_command(
         OUTPUT ${name}.bin DEPENDS ${target}
         COMMAND ${OBJCOPY} -O binary ${target} ${name}.bin
         --pad-to ${GEN_OUTPUTS_BIN_SIZE}
     )
     #command to create a ihx from elf
-    ADD_CUSTOM_COMMAND(
+    add_custom_command(
         OUTPUT ${name}.ihx DEPENDS ${target}
         COMMAND ${OBJCOPY} -O ihex ${target} ${name}.ihx
         --pad-to ${GEN_OUTPUTS_BIN_SIZE}
     )
     #command to create a dump from elf
-    ADD_CUSTOM_COMMAND(
+    add_custom_command(
         OUTPUT ${name}.dump DEPENDS ${target}
         COMMAND ${OBJDUMP} -DSC ${target} > ${name}.dump
     )
     #command to create a rom from bin
-    ADD_CUSTOM_COMMAND(
+    add_custom_command(
         OUTPUT ${name}.rom DEPENDS ${name}.bin
         COMMAND ${HEXDUMP} -v -e'1/1 \"%.2X\\n\"' ${name}.bin > ${name}.rom
     )
     #add a top level target for output files
-    ADD_CUSTOM_TARGET(
+    add_custom_target(
         ${name}_outputs ALL DEPENDS ${name}.map ${name}.bin ${name}.ihx ${name}.dump ${name}.rom
     )
-ENDMACRO(GEN_OUTPUTS)
+endmacro(GEN_OUTPUTS)
 
 ########################################################################
 # Add the subdirectories
 ########################################################################
-ADD_SUBDIRECTORY(usrp2)
-ADD_SUBDIRECTORY(usrp2p)
+add_subdirectory(usrp2)
+add_subdirectory(usrp2p)

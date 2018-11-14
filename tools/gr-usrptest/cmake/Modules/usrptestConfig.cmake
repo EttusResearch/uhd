@@ -1,7 +1,7 @@
-INCLUDE(FindPkgConfig)
+include(FindPkgConfig)
 PKG_CHECK_MODULES(PC_USRPTEST usrptest)
 
-FIND_PATH(
+find_path(
     USRPTEST_INCLUDE_DIRS
     NAMES usrptest/api.h
     HINTS $ENV{USRPTEST_DIR}/include
@@ -11,7 +11,7 @@ FIND_PATH(
           /usr/include
 )
 
-FIND_LIBRARY(
+find_library(
     USRPTEST_LIBRARIES
     NAMES gnuradio-usrptest
     HINTS $ENV{USRPTEST_DIR}/lib
@@ -24,7 +24,7 @@ FIND_LIBRARY(
           /usr/lib64
 )
 
-INCLUDE(FindPackageHandleStandardArgs)
+include(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(USRPTEST DEFAULT_MSG USRPTEST_LIBRARIES USRPTEST_INCLUDE_DIRS)
-MARK_AS_ADVANCED(USRPTEST_LIBRARIES USRPTEST_INCLUDE_DIRS)
+mark_as_advanced(USRPTEST_LIBRARIES USRPTEST_INCLUDE_DIRS)
 

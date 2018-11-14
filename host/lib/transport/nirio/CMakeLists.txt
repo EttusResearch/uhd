@@ -29,10 +29,10 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/status.cpp
 )
 
-IF(WIN32)
+if(WIN32)
     LIBUHD_APPEND_SOURCES(${CMAKE_CURRENT_SOURCE_DIR}/nirio_driver_iface_win.cpp)
-ELSEIF(${CMAKE_SYSTEM_NAME} STREQUAL "Linux") #Built-in variable encompasses all UNIX-like systems
+elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux") #Built-in variable encompasses all UNIX-like systems
     LIBUHD_APPEND_SOURCES(${CMAKE_CURRENT_SOURCE_DIR}/nirio_driver_iface_linux.cpp)
-ELSE()
+else()
     LIBUHD_APPEND_SOURCES(${CMAKE_CURRENT_SOURCE_DIR}/nirio_driver_iface_unsupported.cpp)
-ENDIF(WIN32)
+endif(WIN32)

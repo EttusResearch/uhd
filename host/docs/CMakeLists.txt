@@ -12,8 +12,8 @@
 ########################################################################
 # Setup general Doxygen variables
 ########################################################################
-FIND_PACKAGE(Doxygen)
-SET(ENABLE_MANUAL_OR_DOXYGEN false)
+find_package(Doxygen)
+set(ENABLE_MANUAL_OR_DOXYGEN false)
 
 ########################################################################
 # Setup Manual (using Doxygen)
@@ -26,102 +26,102 @@ LIBUHD_REGISTER_COMPONENT("Manual" ENABLE_MANUAL ON "DOXYGEN_FOUND" OFF OFF)
 # If no:
 # - Make FPGA Manual reference link to our website
 
-IF(ENABLE_MANUAL)
-    SET(ENABLE_MANUAL_OR_DOXYGEN true)
+if(ENABLE_MANUAL)
+    set(ENABLE_MANUAL_OR_DOXYGEN true)
     # First: Set up UHD manual only
-    FILE(GLOB manual_sources "*.dox")
-    SET(DOXYGEN_DEPENDENCIES ${manual_sources})
-    SET(DOXYGEN_INPUT_DIRS "${CMAKE_SOURCE_DIR}/docs ${CMAKE_CURRENT_BINARY_DIR}")
-    SET(DOXYGEN_DEP_COMPONENT "manual")
-    SET(DOXYGEN_FPGA_MANUAL_REFERENCE "<a href=\"http://files.ettus.com/manual/md_fpga.html\">Part III: FPGA Manual</a>")
-    SET(DOXYGEN_STRIP_EXTRA "")
-    SET(DOXYGEN_EXCLUDE_DIRS "")
-    IF(NOT ENABLE_RFNOC)
-        SET(DOXYGEN_EXCLUDE_DIRS "${DOXYGEN_EXCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/include/uhd/rfnoc")
-    ENDIF(NOT ENABLE_RFNOC)
+    file(GLOB manual_sources "*.dox")
+    set(DOXYGEN_DEPENDENCIES ${manual_sources})
+    set(DOXYGEN_INPUT_DIRS "${CMAKE_SOURCE_DIR}/docs ${CMAKE_CURRENT_BINARY_DIR}")
+    set(DOXYGEN_DEP_COMPONENT "manual")
+    set(DOXYGEN_FPGA_MANUAL_REFERENCE "<a href=\"http://files.ettus.com/manual/md_fpga.html\">Part III: FPGA Manual</a>")
+    set(DOXYGEN_STRIP_EXTRA "")
+    set(DOXYGEN_EXCLUDE_DIRS "")
+    if(NOT ENABLE_RFNOC)
+        set(DOXYGEN_EXCLUDE_DIRS "${DOXYGEN_EXCLUDE_DIRS} ${CMAKE_SOURCE_DIR}/include/uhd/rfnoc")
+    endif(NOT ENABLE_RFNOC)
     # Now, check if we have the FPGA sources as well.
     # If so, pull them in:
-    IF(HAS_FPGA_SUBMODULE)
-        FILE(GLOB_RECURSE fpga_manual_sources "${FPGA_SUBMODULE_DIR}/docs/*.md")
-        LIST(APPEND manual_sources ${fpga_manual_sources})
-        SET(DOXYGEN_INPUT_DIRS "${DOXYGEN_INPUT_DIRS} ${FPGA_SUBMODULE_DIR}/docs")
-        SET(DOXYGEN_FPGA_MANUAL_REFERENCE "\\subpage md_fpga \"Part III: FPGA Manual\"")
-	SET(DOXYGEN_STRIP_EXTRA "${FPGA_SUBMODULE_DIR}/docs")
-    ENDIF(HAS_FPGA_SUBMODULE)
-    CONFIGURE_FILE(
+    if(HAS_FPGA_SUBMODULE)
+        file(GLOB_RECURSE fpga_manual_sources "${FPGA_SUBMODULE_DIR}/docs/*.md")
+        list(APPEND manual_sources ${fpga_manual_sources})
+        set(DOXYGEN_INPUT_DIRS "${DOXYGEN_INPUT_DIRS} ${FPGA_SUBMODULE_DIR}/docs")
+        set(DOXYGEN_FPGA_MANUAL_REFERENCE "\\subpage md_fpga \"Part III: FPGA Manual\"")
+	set(DOXYGEN_STRIP_EXTRA "${FPGA_SUBMODULE_DIR}/docs")
+    endif(HAS_FPGA_SUBMODULE)
+    configure_file(
         ${CMAKE_CURRENT_SOURCE_DIR}/mainpage.dox.in
         ${CMAKE_CURRENT_BINARY_DIR}/mainpage.dox
     @ONLY)
-ENDIF(ENABLE_MANUAL)
+endif(ENABLE_MANUAL)
 
 ########################################################################
 # Setup API documentation (using Doxygen)
 ########################################################################
 LIBUHD_REGISTER_COMPONENT("API/Doxygen" ENABLE_DOXYGEN ON "DOXYGEN_FOUND" OFF OFF)
-OPTION(ENABLE_DOXYGEN_FULL "Use Doxygen to document the entire source tree (not just API)" OFF)
-OPTION(ENABLE_DOXYGEN_DOT "Let Doxygen use dot (requires graphviz)" OFF)
-OPTION(ENABLE_DOXYGEN_SHORTNAMES "Let Doxygen use shorter filenames (helps on Windows)" OFF)
+option(ENABLE_DOXYGEN_FULL "Use Doxygen to document the entire source tree (not just API)" OFF)
+option(ENABLE_DOXYGEN_DOT "Let Doxygen use dot (requires graphviz)" OFF)
+option(ENABLE_DOXYGEN_SHORTNAMES "Let Doxygen use shorter filenames (helps on Windows)" OFF)
 
-IF(LIBUHDDEV_PKG)
-    SET(PKG_DOC_DIR share/doc/libuhd-dev)
-ENDIF(LIBUHDDEV_PKG)
+if(LIBUHDDEV_PKG)
+    set(PKG_DOC_DIR share/doc/libuhd-dev)
+endif(LIBUHDDEV_PKG)
 
-IF(ENABLE_DOXYGEN)
-    SET(ENABLE_MANUAL_OR_DOXYGEN true)
+if(ENABLE_DOXYGEN)
+    set(ENABLE_MANUAL_OR_DOXYGEN true)
     #make doxygen directory depend on the header files
-    FILE(GLOB_RECURSE header_files ${CMAKE_SOURCE_DIR}/include/*.hpp)
-    FILE(GLOB_RECURSE h_files ${CMAKE_SOURCE_DIR}/include/*.h)
-    LIST(APPEND header_files ${h_files})
-    SET(DOXYGEN_DEPENDENCIES ${DOXYGEN_DEPENDENCIES} ${header_files} "${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/gen_basic_funcs.py")
-    IF(ENABLE_DOXYGEN_FULL)
-        SET(DOXYGEN_INPUT_DIRS "${DOXYGEN_INPUT_DIRS} ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/lib ${CMAKE_SOURCE_DIR}/python")
-    ELSE(ENABLE_DOXYGEN_FULL)
-        SET(DOXYGEN_INPUT_DIRS "${DOXYGEN_INPUT_DIRS} ${CMAKE_SOURCE_DIR}/include")
-    ENDIF(ENABLE_DOXYGEN_FULL)
+    file(GLOB_RECURSE header_files ${CMAKE_SOURCE_DIR}/include/*.hpp)
+    file(GLOB_RECURSE h_files ${CMAKE_SOURCE_DIR}/include/*.h)
+    list(APPEND header_files ${h_files})
+    set(DOXYGEN_DEPENDENCIES ${DOXYGEN_DEPENDENCIES} ${header_files} "${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/gen_basic_funcs.py")
+    if(ENABLE_DOXYGEN_FULL)
+        set(DOXYGEN_INPUT_DIRS "${DOXYGEN_INPUT_DIRS} ${CMAKE_SOURCE_DIR}/include ${CMAKE_SOURCE_DIR}/lib ${CMAKE_SOURCE_DIR}/python")
+    else(ENABLE_DOXYGEN_FULL)
+        set(DOXYGEN_INPUT_DIRS "${DOXYGEN_INPUT_DIRS} ${CMAKE_SOURCE_DIR}/include")
+    endif(ENABLE_DOXYGEN_FULL)
 
-    SET(DOXYGEN_DEP_COMPONENT "doxygen")
-ENDIF(ENABLE_DOXYGEN)
+    set(DOXYGEN_DEP_COMPONENT "doxygen")
+endif(ENABLE_DOXYGEN)
 
 ########################################################################
 # Run Doxygen (on code and/or manual, depending on CMake flags)
 ########################################################################
-IF(ENABLE_MANUAL_OR_DOXYGEN)
+if(ENABLE_MANUAL_OR_DOXYGEN)
     #generate the doxygen configuration file
-    SET(CMAKE_CURRENT_BINARY_DIR_DOXYGEN ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
-    IF(ENABLE_DOXYGEN_DOT)
-        SET(DOXYGEN_HAVE_DOT "YES")
-    ELSE(ENABLE_DOXYGEN_DOT)
-        SET(DOXYGEN_HAVE_DOT "NO")
-    ENDIF(ENABLE_DOXYGEN_DOT)
-    IF(ENABLE_DOXYGEN_SHORTNAMES)
-        SET(DOXYGEN_SHORT_NAMES "YES")
-    ELSE(ENABLE_DOXYGEN_SHORTNAMES)
-        SET(DOXYGEN_SHORT_NAMES "NO")
-    ENDIF(ENABLE_DOXYGEN_SHORTNAMES)
+    set(CMAKE_CURRENT_BINARY_DIR_DOXYGEN ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
+    if(ENABLE_DOXYGEN_DOT)
+        set(DOXYGEN_HAVE_DOT "YES")
+    else(ENABLE_DOXYGEN_DOT)
+        set(DOXYGEN_HAVE_DOT "NO")
+    endif(ENABLE_DOXYGEN_DOT)
+    if(ENABLE_DOXYGEN_SHORTNAMES)
+        set(DOXYGEN_SHORT_NAMES "YES")
+    else(ENABLE_DOXYGEN_SHORTNAMES)
+        set(DOXYGEN_SHORT_NAMES "NO")
+    endif(ENABLE_DOXYGEN_SHORTNAMES)
 
-    CONFIGURE_FILE(
+    configure_file(
         ${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in
         ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
     @ONLY)
 
     #make doxygen directory depend on the header files
-    FILE(GLOB_RECURSE header_files ${CMAKE_SOURCE_DIR}/include/*.hpp)
-    ADD_CUSTOM_COMMAND(
+    file(GLOB_RECURSE header_files ${CMAKE_SOURCE_DIR}/include/*.hpp)
+    add_custom_command(
         OUTPUT ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN} DEPENDS ${DOXYGEN_DEPENDENCIES}
         COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
         COMMENT "Generating documentation with doxygen"
     )
 
     #make the doxygen generation a built-time dependency
-    ADD_CUSTOM_TARGET(doxygen_docs ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN})
+    add_custom_target(doxygen_docs ALL DEPENDS ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN})
     UHD_INSTALL(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR_DOXYGEN} DESTINATION ${PKG_DOC_DIR} COMPONENT ${DOXYGEN_DEP_COMPONENT})
-ENDIF(ENABLE_MANUAL_OR_DOXYGEN)
+endif(ENABLE_MANUAL_OR_DOXYGEN)
 
 ########################################################################
 # List of man page sources
 ########################################################################
 
-SET(man_page_sources
+set(man_page_sources
     octoclock_firmware_burner.1
     uhd_cal_rx_iq_balance.1
     uhd_cal_tx_dc_offset.1
@@ -139,23 +139,23 @@ SET(man_page_sources
 ########################################################################
 # Setup man pages
 ########################################################################
-FIND_PACKAGE(GZip)
+find_package(GZip)
 
 # No elegant way in CMake to reverse a boolean
-IF(NOT WIN32)
-    SET(NOT_WIN32 TRUE)
-ENDIF(NOT WIN32)
+if(NOT WIN32)
+    set(NOT_WIN32 TRUE)
+endif(NOT WIN32)
 
 LIBUHD_REGISTER_COMPONENT("Man Pages" ENABLE_MAN_PAGES ON "GZIP_FOUND;NOT_WIN32" OFF OFF)
 
-IF(ENABLE_MAN_PAGES)
+if(ENABLE_MAN_PAGES)
     #Generate man pages
-    FOREACH(manfile ${man_page_sources})
+    foreach(manfile ${man_page_sources})
         #make the gzip file depend on the text file
-        STRING(REPLACE ".1" "" PROGRAM_NAME "${manfile}")
-        SET(gzfile "${CMAKE_CURRENT_BINARY_DIR}/${manfile}.gz")
-        SET(manfile "${CMAKE_CURRENT_SOURCE_DIR}/${manfile}")
-        ADD_CUSTOM_COMMAND(
+        string(REPLACE ".1" "" PROGRAM_NAME "${manfile}")
+        set(gzfile "${CMAKE_CURRENT_BINARY_DIR}/${manfile}.gz")
+        set(manfile "${CMAKE_CURRENT_SOURCE_DIR}/${manfile}")
+        add_custom_command(
             OUTPUT ${gzfile}
             DEPENDS ${manfile}
             COMMAND ${GZIP_EXECUTABLE} -9 -cf ${manfile} > ${gzfile}
@@ -163,10 +163,10 @@ IF(ENABLE_MAN_PAGES)
         )
 
         #make the man page target depend on the gz file
-        LIST(APPEND man_page_gz_files ${gzfile})
+        list(APPEND man_page_gz_files ${gzfile})
         UHD_INSTALL(FILES ${gzfile} DESTINATION ${PKG_MAN_DIR} COMPONENT manpages)
-    ENDFOREACH(manfile ${man_page_sources})
+    endforeach(manfile ${man_page_sources})
 
     #make the man pages a build-time dependency
-    ADD_CUSTOM_TARGET(man_page_gzips ALL DEPENDS ${man_page_gz_files})
-ENDIF(ENABLE_MAN_PAGES)
+    add_custom_target(man_page_gzips ALL DEPENDS ${man_page_gz_files})
+endif(ENABLE_MAN_PAGES)
