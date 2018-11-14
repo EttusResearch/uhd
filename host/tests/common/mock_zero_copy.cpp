@@ -8,7 +8,17 @@
 #include "mock_zero_copy.hpp"
 #include <boost/shared_ptr.hpp>
 
+using namespace uhd::transport;
+
+mock_zero_copy::mock_zero_copy(
+    vrt::if_packet_info_t::link_type_t link_type
+) : _link_type(link_type) {
+}
+
 uhd::transport::managed_recv_buffer::sptr mock_zero_copy::get_recv_buff(double) {
+    if (_simulate_io_error) {
+        throw uhd::io_error("IO error exception"); //simulate an IO error
+    }
     if (_rx_mems.empty()) {
         return uhd::transport::managed_recv_buffer::sptr(); // timeout
     }
