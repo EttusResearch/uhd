@@ -28,7 +28,7 @@ UHD_INSTALL(FILES
     COMPONENT headers
 )
 
-IF(ENABLE_C_API)
+if(ENABLE_C_API)
     UHD_INSTALL(FILES
         dboard_eeprom.h
         mboard_eeprom.h
@@ -37,4 +37,4 @@ IF(ENABLE_C_API)
         DESTINATION ${INCLUDE_DIR}/uhd/usrp
         COMPONENT headers
     )
-ENDIF(ENABLE_C_API)
+endif(ENABLE_C_API)

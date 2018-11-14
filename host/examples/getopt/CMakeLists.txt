@@ -8,7 +8,7 @@
 ########################################################################
 # getopt library for C examples since MSVC does not include it
 ########################################################################
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIRECTORY})
-ADD_LIBRARY(getopt STATIC
+include_directories(${CMAKE_CURRENT_SOURCE_DIRECTORY})
+add_library(getopt STATIC
     ${CMAKE_CURRENT_SOURCE_DIR}/getopt.c
 )

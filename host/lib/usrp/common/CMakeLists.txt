@@ -8,22 +8,22 @@
 ########################################################################
 # This file included, use CMake directory variables
 ########################################################################
-IF(ENABLE_USB)
+if(ENABLE_USB)
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/fx2_ctrl.cpp
     )
-ENDIF(ENABLE_USB)
+endif(ENABLE_USB)
 
-IF(ENABLE_E300 OR ENABLE_B200 OR ENABLE_N230 OR ENABLE_E320)
-    INCLUDE_DIRECTORIES("${CMAKE_CURRENT_SOURCE_DIR}/ad9361_driver")
+if(ENABLE_E300 OR ENABLE_B200 OR ENABLE_N230 OR ENABLE_E320)
+    include_directories("${CMAKE_CURRENT_SOURCE_DIR}/ad9361_driver")
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/ad9361_ctrl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/ad936x_manager.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/ad9361_driver/ad9361_device.cpp
     )
-ENDIF(ENABLE_E300 OR ENABLE_B200 OR ENABLE_N230 OR ENABLE_E320)
+endif(ENABLE_E300 OR ENABLE_B200 OR ENABLE_N230 OR ENABLE_E320)
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
 LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/adf4001_ctrl.cpp

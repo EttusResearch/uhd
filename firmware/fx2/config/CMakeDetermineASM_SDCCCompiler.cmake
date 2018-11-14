@@ -14,9 +14,9 @@
 
 # Find the MS assembler (masm or masm64)
 
-SET(ASM_DIALECT "_SDCC")
+set(ASM_DIALECT "_SDCC")
 
-SET(CMAKE_ASM${ASM_DIALECT}_COMPILER_INIT sdas8051)
+set(CMAKE_ASM${ASM_DIALECT}_COMPILER_INIT sdas8051)
 
-INCLUDE(CMakeDetermineASMCompiler)
-SET(ASM_DIALECT)
+include(CMakeDetermineASMCompiler)
+set(ASM_DIALECT)

@@ -95,7 +95,7 @@ macro(GR_ADD_CXX_COMPILER_FLAG_IF_AVAILABLE flag have)
     CHECK_CXX_COMPILER_FLAG(${flag} ${have})
     if(${have})
       if(${CMAKE_VERSION} VERSION_GREATER "2.8.4")
-        STRING(FIND "${CMAKE_CXX_FLAGS}" "${flag}" flag_dup)
+        string(FIND "${CMAKE_CXX_FLAGS}" "${flag}" flag_dup)
         if(${flag_dup} EQUAL -1)
           set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}")
           set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${flag}")
@@ -117,7 +117,7 @@ function(GR_LIBTOOL)
 
     if(GENERATE_LIBTOOL)
         include(CMakeParseArgumentsCopy)
-        CMAKE_PARSE_ARGUMENTS(GR_LIBTOOL "" "TARGET;DESTINATION" "" ${ARGN})
+        cmake_parse_arguments(GR_LIBTOOL "" "TARGET;DESTINATION" "" ${ARGN})
 
         find_program(LIBTOOL libtool)
         if(LIBTOOL)
@@ -137,7 +137,7 @@ endfunction(GR_LIBTOOL)
 function(GR_LIBRARY_FOO target)
     #parse the arguments for component names
     include(CMakeParseArgumentsCopy)
-    CMAKE_PARSE_ARGUMENTS(GR_LIBRARY "" "RUNTIME_COMPONENT;DEVEL_COMPONENT" "" ${ARGN})
+    cmake_parse_arguments(GR_LIBRARY "" "RUNTIME_COMPONENT;DEVEL_COMPONENT" "" ${ARGN})
 
     #set additional target properties
     set_target_properties(${target} PROPERTIES SOVERSION ${LIBVER})
@@ -188,7 +188,7 @@ endfunction(GR_LIBRARY_FOO)
 # Create a dummy custom command that depends on other targets.
 # Usage:
 #   GR_GEN_TARGET_DEPS(unique_name target_deps <target1> <target2> ...)
-#   ADD_CUSTOM_COMMAND(<the usual args> ${target_deps})
+#   add_custom_command(<the usual args> ${target_deps})
 #
 # Custom command cant depend on targets, but can depend on executables,
 # and executables can depend on targets. So this is the process:
@@ -226,7 +226,7 @@ endfunction(GR_GEN_TARGET_DEPS)
 function(GR_LOGGING)
   find_package(Log4cpp)
 
-  OPTION(ENABLE_GR_LOG "Use gr_logger" ON)
+  option(ENABLE_GR_LOG "Use gr_logger" ON)
   if(ENABLE_GR_LOG)
     # If gr_logger is enabled, make it usable
     add_definitions( -DENABLE_GR_LOG )
@@ -234,22 +234,22 @@ function(GR_LOGGING)
     # also test LOG4CPP; if we have it, use this version of the logger
     # otherwise, default to the stdout/stderr model.
     if(LOG4CPP_FOUND)
-      SET(HAVE_LOG4CPP True CACHE INTERNAL "" FORCE)
+      set(HAVE_LOG4CPP True CACHE INTERNAL "" FORCE)
       add_definitions( -DHAVE_LOG4CPP )
     else(not LOG4CPP_FOUND)
-      SET(HAVE_LOG4CPP False CACHE INTERNAL "" FORCE)
-      SET(LOG4CPP_INCLUDE_DIRS "" CACHE INTERNAL "" FORCE)
-      SET(LOG4CPP_LIBRARY_DIRS "" CACHE INTERNAL "" FORCE)
-      SET(LOG4CPP_LIBRARIES "" CACHE INTERNAL "" FORCE)
+      set(HAVE_LOG4CPP False CACHE INTERNAL "" FORCE)
+      set(LOG4CPP_INCLUDE_DIRS "" CACHE INTERNAL "" FORCE)
+      set(LOG4CPP_LIBRARY_DIRS "" CACHE INTERNAL "" FORCE)
+      set(LOG4CPP_LIBRARIES "" CACHE INTERNAL "" FORCE)
     endif(LOG4CPP_FOUND)
 
-    SET(ENABLE_GR_LOG ${ENABLE_GR_LOG} CACHE INTERNAL "" FORCE)
+    set(ENABLE_GR_LOG ${ENABLE_GR_LOG} CACHE INTERNAL "" FORCE)
 
   else(ENABLE_GR_LOG)
-    SET(HAVE_LOG4CPP False CACHE INTERNAL "" FORCE)
-    SET(LOG4CPP_INCLUDE_DIRS "" CACHE INTERNAL "" FORCE)
-    SET(LOG4CPP_LIBRARY_DIRS "" CACHE INTERNAL "" FORCE)
-    SET(LOG4CPP_LIBRARIES "" CACHE INTERNAL "" FORCE)
+    set(HAVE_LOG4CPP False CACHE INTERNAL "" FORCE)
+    set(LOG4CPP_INCLUDE_DIRS "" CACHE INTERNAL "" FORCE)
+    set(LOG4CPP_LIBRARY_DIRS "" CACHE INTERNAL "" FORCE)
+    set(LOG4CPP_LIBRARIES "" CACHE INTERNAL "" FORCE)
   endif(ENABLE_GR_LOG)
 
   message(STATUS "ENABLE_GR_LOG set to ${ENABLE_GR_LOG}.")
@@ -274,7 +274,7 @@ function(GRCC)
   set(filenames ${ARGV})
   file(MAKE_DIRECTORY ${directory})
 
-  SET(GRCC_COMMAND ${CMAKE_SOURCE_DIR}/gr-utils/python/grcc)
+  set(GRCC_COMMAND ${CMAKE_SOURCE_DIR}/gr-utils/python/grcc)
 
   # GRCC uses some stuff in grc and gnuradio-runtime, so we force
   # the known paths here

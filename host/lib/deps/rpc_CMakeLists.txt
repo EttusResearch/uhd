@@ -1,26 +1,26 @@
-PROJECT(UHD_RPCLIB CXX)
+project(UHD_RPCLIB CXX)
 
-SET(RPCLIB_DEFAULT_BUFFER_SIZE "1024 << 10" CACHE STRING "Default buffer size")
+set(RPCLIB_DEFAULT_BUFFER_SIZE "1024 << 10" CACHE STRING "Default buffer size")
 
-SET(RPCLIB_VERSION_MAJOR ${rpclib_major_version})
-SET(RPCLIB_VERSION_MINOR ${rpclib_minor_version})
-SET(RPCLIB_VERSION_PATCH ${rpclib_patch_version})
+set(RPCLIB_VERSION_MAJOR ${rpclib_major_version})
+set(RPCLIB_VERSION_MINOR ${rpclib_minor_version})
+set(RPCLIB_VERSION_PATCH ${rpclib_patch_version})
 
-CONFIGURE_FILE(
+configure_file(
     ${"${CMAKE_CURRENT_SOURCE_DIR}/include/rpc/version.h.in"}
     ${"${CMAKE_CURRENT_BINARY_DIR}/version.h"})
 
-CONFIGURE_FILE(
+configure_file(
     ${"${CMAKE_CURRENT_SOURCE_DIR}/include/rpc/config.h.in"}
     ${"${CMAKE_CURRENT_BINARY_DIR}/config.h"})
 
-SET(RPCLIB_COMPILE_DEFINITIONS "")
-IF(${"${CMAKE_CXX_COMPILER_ID}"} MATCHES "Clang")
+set(RPCLIB_COMPILE_DEFINITIONS "")
+if(${"${CMAKE_CXX_COMPILER_ID}"} MATCHES "Clang")
 
-ELSEIF(${"${CMAKE_CXX_COMPILER_ID}"} STREQUAL "GNU")
+elseif(${"${CMAKE_CXX_COMPILER_ID}"} STREQUAL "GNU")
 
-ELSEIF(${"${CMAKE_CXX_COMPILER_ID}"} STREQUAL "MSVC")
-    SET(RPCLIB_COMPILE_DEFINITIONS
+elseif(${"${CMAKE_CXX_COMPILER_ID}"} STREQUAL "MSVC")
+    set(RPCLIB_COMPILE_DEFINITIONS
         "${"${RPCLIB_COMPILE_DEFINITIONS}"}"
         "WIN32_LEAN_AND_MEAN"
         "NOMINMAX"
@@ -35,11 +35,11 @@ ELSEIF(${"${CMAKE_CXX_COMPILER_ID}"} STREQUAL "MSVC")
         "ASIO_HAS_STD_SHARED_PTR"
         "ASIO_HAS_STD_TYPE_TRAITS"
     )
-ENDIF()
+endif()
 
-INCLUDE_DIRECTORIES(include)
-INCLUDE_DIRECTORIES(include/rpc)
-ADD_LIBRARY(uhd_rpclib OBJECT
+include_directories(include)
+include_directories(include/rpc)
+add_library(uhd_rpclib OBJECT
     lib/rpc/dispatcher.cc
     lib/rpc/server.cc
     lib/rpc/client.cc
@@ -51,7 +51,7 @@ ADD_LIBRARY(uhd_rpclib OBJECT
     lib/rpc/detail/response.cc
     lib/rpc/detail/client_error.cc
 )
-SET_TARGET_PROPERTIES(uhd_rpclib
+set_target_properties(uhd_rpclib
     PROPERTIES
     POSITION_INDEPENDENT_CODE ON
     COMPILE_DEFINITIONS "${"${RPCLIB_COMPILE_DEFINITIONS}"}"

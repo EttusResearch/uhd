@@ -72,8 +72,8 @@ function(GR_ADD_TEST test_name)
     #http://www.cmake.org/pipermail/cmake/2009-May/029464.html
     #Replaced this add test + set environs code with the shell script generation.
     #Its nicer to be able to manually run the shell script to diagnose problems.
-    #ADD_TEST(${ARGV})
-    #SET_TESTS_PROPERTIES(${test_name} PROPERTIES ENVIRONMENT "${environs}")
+    #add_test(${ARGV})
+    #set_tests_properties(${test_name} PROPERTIES ENVIRONMENT "${environs}")
 
     if(UNIX)
         set(LD_PATH_VAR "LD_LIBRARY_PATH")

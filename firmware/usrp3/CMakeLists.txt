@@ -18,27 +18,27 @@
 ########################################################################
 # setup project and compiler
 ########################################################################
-CMAKE_MINIMUM_REQUIRED(VERSION 2.6)
+cmake_minimum_required(VERSION 2.6)
 #force the compiler because the check wont use the special flag below
-INCLUDE(CMakeForceCompiler)
-SET(CMAKE_SYSTEM_NAME Generic)
+include(CMakeForceCompiler)
+set(CMAKE_SYSTEM_NAME Generic)
 CMAKE_FORCE_C_COMPILER(zpu-elf-gcc GNU)
-PROJECT(USRP3_FW C)
+project(USRP3_FW C)
 
-SET(UHD_VERSION_HASH 0 CACHE INTEGER "UHD Version Hash")
-EXECUTE_PROCESS(COMMAND ${CMAKE_SOURCE_DIR}/utils/git-hash.sh OUTPUT_VARIABLE UHD_VERSION_HASH)
-ADD_DEFINITIONS(-DUHD_VERSION_HASH=0x${UHD_VERSION_HASH})
+set(UHD_VERSION_HASH 0 CACHE INTEGER "UHD Version Hash")
+execute_process(COMMAND ${CMAKE_SOURCE_DIR}/utils/git-hash.sh OUTPUT_VARIABLE UHD_VERSION_HASH)
+add_definitions(-DUHD_VERSION_HASH=0x${UHD_VERSION_HASH})
 
-INCLUDE_DIRECTORIES(include)
+include_directories(include)
 
 find_package(PythonInterp)
 
 ########################################################################
 # lwIP header include dirs
 ########################################################################
-SET(LWIPDIR ${CMAKE_SOURCE_DIR}/lwip/lwip-1.3.1)
+set(LWIPDIR ${CMAKE_SOURCE_DIR}/lwip/lwip-1.3.1)
 
-INCLUDE_DIRECTORIES(
+include_directories(
     ${CMAKE_SOURCE_DIR}/lwip
     ${CMAKE_SOURCE_DIR}/lwip_port
     ${LWIPDIR}/src/include
@@ -48,17 +48,17 @@ INCLUDE_DIRECTORIES(
 ########################################################################
 # misc flags for the gcc compiler
 ########################################################################
-SET(CMAKE_C_FLAGS -phi) #always needed compile time and link time
-ADD_DEFINITIONS(-Os)
-ADD_DEFINITIONS(--std=gnu99)
-ADD_DEFINITIONS(-Wall)
-ADD_DEFINITIONS(-Werror-implicit-function-declaration)
-ADD_DEFINITIONS(-ffunction-sections)
-ADD_DEFINITIONS(-DPRINTF_LONG_SUPPORT)
+set(CMAKE_C_FLAGS -phi) #always needed compile time and link time
+add_definitions(-Os)
+add_definitions(--std=gnu99)
+add_definitions(-Wall)
+add_definitions(-Werror-implicit-function-declaration)
+add_definitions(-ffunction-sections)
+add_definitions(-DPRINTF_LONG_SUPPORT)
 
-MACRO(ADD_LINKER_FLAGS flags)
-    SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${flags}")
-ENDMACRO(ADD_LINKER_FLAGS)
+macro(ADD_LINKER_FLAGS flags)
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${flags}")
+endmacro(ADD_LINKER_FLAGS)
 
 ADD_LINKER_FLAGS("-Wl,--gc-sections")
 ADD_LINKER_FLAGS("-Wl,--relax")
@@ -66,72 +66,72 @@ ADD_LINKER_FLAGS("-Wl,--relax")
 ########################################################################
 # setup programs for output files
 ########################################################################
-FIND_PROGRAM(LINKER zpu-elf-ld)
-FIND_PROGRAM(OBJCOPY zpu-elf-objcopy)
-FIND_PROGRAM(OBJDUMP zpu-elf-objdump)
-FIND_PROGRAM(HEXDUMP hexdump)
+find_program(LINKER zpu-elf-ld)
+find_program(OBJCOPY zpu-elf-objcopy)
+find_program(OBJDUMP zpu-elf-objdump)
+find_program(HEXDUMP hexdump)
 
 ########################################################################
 # Firmware tracing support
 ########################################################################
 # Look at include/trace.h to see what the different trace levels map to.
-SET(TRACE_LEVEL "0" CACHE STRING "Firmware Trace Level") #0 by default
-OPTION(TRACE_LEVEL "Firmware Trace Level" "") 
-IF(TRACE_LEVEL)
+set(TRACE_LEVEL "0" CACHE STRING "Firmware Trace Level") #0 by default
+option(TRACE_LEVEL "Firmware Trace Level" "") 
+if(TRACE_LEVEL)
     #If TRACE_LEVEL == 0, don't define UHD_FW_TRACE_LEVEL so that the C
     #code can easily detect if tracing is requested
-    IF(${TRACE_LEVEL} GREATER 0)
-        ADD_DEFINITIONS(-DUHD_FW_TRACE_LEVEL=${TRACE_LEVEL})
-    ENDIF(${TRACE_LEVEL} GREATER 0)
-ENDIF(TRACE_LEVEL)
+    if(${TRACE_LEVEL} GREATER 0)
+        add_definitions(-DUHD_FW_TRACE_LEVEL=${TRACE_LEVEL})
+    endif(${TRACE_LEVEL} GREATER 0)
+endif(TRACE_LEVEL)
 
 ########################################################################
 # helper functions to build output formats
 ########################################################################
-SET(GEN_OUTPUTS_BIN_SIZE "bin_size_not_set") #set before calling
-MACRO(GEN_OUTPUTS target pretty_name)
-    GET_FILENAME_COMPONENT(name ${target} NAME_WE)
+set(GEN_OUTPUTS_BIN_SIZE "bin_size_not_set") #set before calling
+macro(GEN_OUTPUTS target pretty_name)
+    get_filename_component(name ${target} NAME_WE)
     #command to create a map from elf
-    ADD_CUSTOM_COMMAND(
+    add_custom_command(
         OUTPUT ${name}.map DEPENDS ${target}
         COMMAND ${LINKER} -Map ${name}.map ${target}
     )
     #command to create a bin from elf
-    ADD_CUSTOM_COMMAND(
+    add_custom_command(
         OUTPUT ${name}.bin DEPENDS ${target}
         COMMAND ${OBJCOPY} -O binary ${target} ${name}.bin
         --pad-to ${GEN_OUTPUTS_BIN_SIZE}
     )
     #command to create a ihx from elf
-    ADD_CUSTOM_COMMAND(
+    add_custom_command(
         OUTPUT ${name}.ihx DEPENDS ${target}
         COMMAND ${OBJCOPY} -O ihex ${target} ${name}.ihx
         --pad-to ${GEN_OUTPUTS_BIN_SIZE}
     )
     #command to create a dump from elf
-    ADD_CUSTOM_COMMAND(
+    add_custom_command(
         OUTPUT ${name}.dump DEPENDS ${target}
         COMMAND ${OBJDUMP} -DSC ${target} > ${name}.dump
     )
     #command to create a rom from bin
-    ADD_CUSTOM_COMMAND(
+    add_custom_command(
         OUTPUT ${name}.rom DEPENDS ${name}.bin
         COMMAND ${HEXDUMP} -v -e'1/1 \"%.2X\\n\"' ${name}.bin > ${name}.rom
     )
     #command to create a coe from bin
-    ADD_CUSTOM_COMMAND(
+    add_custom_command(
         OUTPUT ${name}.coe DEPENDS ${name}.bin
         COMMAND ${PYTHON_EXECUTABLE} ${CMAKE_SOURCE_DIR}/utils/bin_to_coe.py ${name}.bin ${name}.coe
     )
     #add a top level target for output files
-    ADD_CUSTOM_TARGET(
+    add_custom_target(
         ${pretty_name} ALL DEPENDS ${name}.map ${name}.bin ${name}.ihx ${name}.dump ${name}.rom ${name}.coe
     )
-ENDMACRO(GEN_OUTPUTS)
+endmacro(GEN_OUTPUTS)
 
 ########################################################################
 # Add the subdirectories
 ########################################################################
-ADD_SUBDIRECTORY(lib)
-ADD_SUBDIRECTORY(x300)
-ADD_SUBDIRECTORY(n230)
+add_subdirectory(lib)
+add_subdirectory(x300)
+add_subdirectory(n230)

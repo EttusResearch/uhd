@@ -3,7 +3,7 @@
 #
 # SPDX-License-Identifier: GPL-3.0
 #
-SET(SPI_SOURCES
+set(SPI_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/spidev_iface.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/spi_regs_iface.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/spidev.c

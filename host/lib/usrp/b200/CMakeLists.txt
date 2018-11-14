@@ -12,7 +12,7 @@
 ########################################################################
 # Conditionally configure the B200 support
 ########################################################################
-IF(ENABLE_B200)
+if(ENABLE_B200)
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/b200_image_loader.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/b200_impl.cpp
@@ -22,4 +22,4 @@ IF(ENABLE_B200)
         ${CMAKE_CURRENT_SOURCE_DIR}/b200_cores.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/b200_mb_eeprom.cpp
     )
-ENDIF(ENABLE_B200)
+endif(ENABLE_B200)

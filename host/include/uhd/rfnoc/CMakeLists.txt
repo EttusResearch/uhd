@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: GPL-3.0
 #
 
-IF(ENABLE_RFNOC)
+if(ENABLE_RFNOC)
     UHD_INSTALL(FILES
         # Infrastructure
         block_ctrl_base.hpp
@@ -37,8 +37,8 @@ IF(ENABLE_RFNOC)
         DESTINATION ${INCLUDE_DIR}/uhd/rfnoc
         COMPONENT headers
     )
-ENDIF(ENABLE_RFNOC)
+endif(ENABLE_RFNOC)
 
-ADD_SUBDIRECTORY(blocks)
-#ADD_SUBDIRECTORY(components)
+add_subdirectory(blocks)
+#add_subdirectory(components)
 

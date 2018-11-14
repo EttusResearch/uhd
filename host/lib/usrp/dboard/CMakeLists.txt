@@ -8,7 +8,7 @@
 ########################################################################
 # This file included, use CMake directory variables
 ########################################################################
-IF(ENABLE_X300 OR ENABLE_USRP1 OR ENABLE_USRP2 OR ENABLE_B100)
+if(ENABLE_X300 OR ENABLE_USRP1 OR ENABLE_USRP2 OR ENABLE_B100)
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/db_basic_and_lf.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/db_rfx.cpp
@@ -29,28 +29,28 @@ IF(ENABLE_X300 OR ENABLE_USRP1 OR ENABLE_USRP2 OR ENABLE_B100)
         ${CMAKE_CURRENT_SOURCE_DIR}/db_dbsrx2.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/db_tvrx2.cpp
     )
-ENDIF(ENABLE_X300 OR ENABLE_USRP1 OR ENABLE_USRP2 OR ENABLE_B100)
+endif(ENABLE_X300 OR ENABLE_USRP1 OR ENABLE_USRP2 OR ENABLE_B100)
 
-IF(ENABLE_E300)
+if(ENABLE_E300)
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/db_e3x0.cpp
     )
-ENDIF(ENABLE_E300)
+endif(ENABLE_E300)
 
-IF(ENABLE_X300)
+if(ENABLE_X300)
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/twinrx/twinrx_ctrl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/twinrx/twinrx_experts.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/twinrx/twinrx_gain_tables.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/db_twinrx.cpp
     )
-ENDIF(ENABLE_X300)
+endif(ENABLE_X300)
 
-IF(ENABLE_N300)
+if(ENABLE_N300)
     INCLUDE_SUBDIRECTORY(magnesium)
-ENDIF(ENABLE_N300)
-IF(ENABLE_MPMD AND ENABLE_EISCAT)
+endif(ENABLE_N300)
+if(ENABLE_MPMD AND ENABLE_EISCAT)
     INCLUDE_SUBDIRECTORY(eiscat)
-ENDIF(ENABLE_MPMD AND ENABLE_EISCAT)
+endif(ENABLE_MPMD AND ENABLE_EISCAT)
 
 INCLUDE_SUBDIRECTORY(neon)

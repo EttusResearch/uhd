@@ -8,13 +8,13 @@
 # This file included, use CMake directory variables
 ########################################################################
 
-MACRO(MYKONOS_APPEND_SOURCES)
-    SET(mykonos_sources ${mykonos_sources})
-    LIST(APPEND mykonos_sources ${ARGV})
-    SET(mykonos_sources ${mykonos_sources} PARENT_SCOPE)
-ENDMACRO(MYKONOS_APPEND_SOURCES)
+macro(MYKONOS_APPEND_SOURCES)
+    set(mykonos_sources ${mykonos_sources})
+    list(APPEND mykonos_sources ${ARGV})
+    set(mykonos_sources ${mykonos_sources} PARENT_SCOPE)
+endmacro(MYKONOS_APPEND_SOURCES)
 
-SET(mykonos_sources
+set(mykonos_sources
     ${CMAKE_CURRENT_SOURCE_DIR}/ad937x_ctrl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ad937x_device.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ad937x_spi_iface.cpp
@@ -22,7 +22,7 @@ SET(mykonos_sources
     ${UHD_HOST_ROOT}/lib/types/ranges.cpp
 )
 
-ADD_SUBDIRECTORY(adi)
-ADD_SUBDIRECTORY(config)
+add_subdirectory(adi)
+add_subdirectory(config)
 
 USRP_PERIPHS_ADD_OBJECT(mykonos ${mykonos_sources})

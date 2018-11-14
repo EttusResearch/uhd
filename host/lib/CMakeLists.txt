@@ -8,21 +8,21 @@
 ########################################################################
 # Helpful Macros
 ########################################################################
-MACRO(LIBUHD_APPEND_SOURCES)
-    LIST(APPEND libuhd_sources ${ARGV})
-ENDMACRO(LIBUHD_APPEND_SOURCES)
+macro(LIBUHD_APPEND_SOURCES)
+    list(APPEND libuhd_sources ${ARGV})
+endmacro(LIBUHD_APPEND_SOURCES)
 
-MACRO(LIBUHD_APPEND_LIBS)
-    LIST(APPEND libuhd_libs ${ARGV})
-ENDMACRO(LIBUHD_APPEND_LIBS)
+macro(LIBUHD_APPEND_LIBS)
+    list(APPEND libuhd_libs ${ARGV})
+endmacro(LIBUHD_APPEND_LIBS)
 
-MACRO(LIBUHD_PYTHON_GEN_SOURCE pyfile outfile)
+macro(LIBUHD_PYTHON_GEN_SOURCE pyfile outfile)
     #ensure that the directory exists for outfile
-    GET_FILENAME_COMPONENT(outfile_dir ${outfile} PATH)
-    FILE(MAKE_DIRECTORY ${outfile_dir})
+    get_filename_component(outfile_dir ${outfile} PATH)
+    file(MAKE_DIRECTORY ${outfile_dir})
 
     #make the outfile depend on the python script
-    ADD_CUSTOM_COMMAND(
+    add_custom_command(
         OUTPUT ${outfile} DEPENDS ${pyfile} ${LIBUHD_PYTHON_GEN_SOURCE_DEPS}
         COMMAND ${PYTHON_EXECUTABLE} -B ${pyfile} ${outfile}
         COMMENT "Generating ${outfile}"
@@ -30,38 +30,38 @@ MACRO(LIBUHD_PYTHON_GEN_SOURCE pyfile outfile)
 
     #make libuhd depend on the outfile
     LIBUHD_APPEND_SOURCES(${outfile})
-ENDMACRO(LIBUHD_PYTHON_GEN_SOURCE)
+endmacro(LIBUHD_PYTHON_GEN_SOURCE)
 
-MACRO(INCLUDE_SUBDIRECTORY subdir)
+macro(INCLUDE_SUBDIRECTORY subdir)
     #insert the current directories on the front of the list
-    LIST(INSERT _cmake_source_dirs 0 ${CMAKE_CURRENT_SOURCE_DIR})
-    LIST(INSERT _cmake_binary_dirs 0 ${CMAKE_CURRENT_BINARY_DIR})
+    list(INSERT _cmake_source_dirs 0 ${CMAKE_CURRENT_SOURCE_DIR})
+    list(INSERT _cmake_binary_dirs 0 ${CMAKE_CURRENT_BINARY_DIR})
 
     #set the current directories to the names of the subdirs
-    SET(CMAKE_CURRENT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${subdir})
-    SET(CMAKE_CURRENT_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/${subdir})
+    set(CMAKE_CURRENT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/${subdir})
+    set(CMAKE_CURRENT_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/${subdir})
 
     #include the subdirectory CMakeLists to run it
-    FILE(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
-    INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt)
+    file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+    include(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.txt)
 
     #reset the value of the current directories
-    LIST(GET _cmake_source_dirs 0 CMAKE_CURRENT_SOURCE_DIR)
-    LIST(GET _cmake_binary_dirs 0 CMAKE_CURRENT_BINARY_DIR)
+    list(GET _cmake_source_dirs 0 CMAKE_CURRENT_SOURCE_DIR)
+    list(GET _cmake_binary_dirs 0 CMAKE_CURRENT_BINARY_DIR)
 
     #pop the subdir names of the front of the list
-    LIST(REMOVE_AT _cmake_source_dirs 0)
-    LIST(REMOVE_AT _cmake_binary_dirs 0)
-ENDMACRO(INCLUDE_SUBDIRECTORY)
+    list(REMOVE_AT _cmake_source_dirs 0)
+    list(REMOVE_AT _cmake_binary_dirs 0)
+endmacro(INCLUDE_SUBDIRECTORY)
 
 ########################################################################
 # Register lower level components
 ########################################################################
-MESSAGE(STATUS "")
+message(STATUS "")
 # Dependencies
-FIND_PACKAGE(USB1)
-FIND_PACKAGE(GPSD)
-FIND_PACKAGE(LIBERIO)
+find_package(USB1)
+find_package(GPSD)
+find_package(LIBERIO)
 LIBUHD_REGISTER_COMPONENT("LIBERIO" ENABLE_LIBERIO ON "ENABLE_LIBUHD;LIBERIO_FOUND" OFF OFF)
 LIBUHD_REGISTER_COMPONENT("USB" ENABLE_USB ON "ENABLE_LIBUHD;LIBUSB_FOUND" OFF OFF)
 LIBUHD_REGISTER_COMPONENT("GPSD" ENABLE_GPSD OFF "ENABLE_LIBUHD;ENABLE_GPSD;LIBGPS_FOUND" OFF OFF)
@@ -96,9 +96,9 @@ INCLUDE_SUBDIRECTORY(transport)
 ########################################################################
 # Build info
 ########################################################################
-INCLUDE(UHDBuildInfo)
+include(UHDBuildInfo)
 UHD_LOAD_BUILD_INFO()
-CONFIGURE_FILE(
+configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/build_info.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/build_info.cpp
 @ONLY)
@@ -106,7 +106,7 @@ CONFIGURE_FILE(
 ########################################################################
 # Setup UHD_VERSION_STRING for version.cpp
 ########################################################################
-CONFIGURE_FILE(
+configure_file(
     ${CMAKE_CURRENT_SOURCE_DIR}/version.cpp
     ${CMAKE_CURRENT_BINARY_DIR}/version.cpp
 @ONLY)
@@ -126,80 +126,80 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_BINARY_DIR}/version.cpp
 )
 
-IF(ENABLE_C_API)
+if(ENABLE_C_API)
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/error_c.cpp
     )
-ENDIF(ENABLE_C_API)
+endif(ENABLE_C_API)
 
 ########################################################################
 # Add DLL resource file to Windows build
 ########################################################################
-IF(MSVC)
-    MATH(EXPR RC_VERSION_MAJOR_API "${UHD_VERSION_MAJOR} * 1000 + ${UHD_VERSION_API}")
-    SET(RC_VERSION_PATCH ${UHD_VERSION_PATCH})
-    IF(UHD_VERSION_DEVEL)
-        SET(RC_VERSION_PATCH "999")
-    ENDIF(UHD_VERSION_DEVEL)
+if(MSVC)
+    math(EXPR RC_VERSION_MAJOR_API "${UHD_VERSION_MAJOR} * 1000 + ${UHD_VERSION_API}")
+    set(RC_VERSION_PATCH ${UHD_VERSION_PATCH})
+    if(UHD_VERSION_DEVEL)
+        set(RC_VERSION_PATCH "999")
+    endif(UHD_VERSION_DEVEL)
 
     # Allow a custom .rc template file to be used
-    IF(CUSTOM_RC_FILE)
-        IF(IS_ABSOLUTE "${CUSTOM_RC_FILE}")
-            SET(UHD_RC_IN "${CUSTOM_RC_FILE}")
-        ELSE()
-            SET(UHD_RC_IN "${CMAKE_BINARY_DIR}/${CUSTOM_RC_FILE}")
-        ENDIF(IS_ABSOLUTE "${CUSTOM_RC_FILE}")
-        MESSAGE(STATUS "")
-        MESSAGE(STATUS "Using custom RC template: ${UHD_RC_IN}")
-        MESSAGE(STATUS "")
-    ELSE()
-        SET(UHD_RC_IN "${CMAKE_CURRENT_SOURCE_DIR}/uhd.rc.in")
-    ENDIF(CUSTOM_RC_FILE)
-    SET(UHD_RC_IN ${UHD_RC_IN} CACHE STRING "uhd.rc template filepath")
+    if(CUSTOM_RC_FILE)
+        if(IS_ABSOLUTE "${CUSTOM_RC_FILE}")
+            set(UHD_RC_IN "${CUSTOM_RC_FILE}")
+        else()
+            set(UHD_RC_IN "${CMAKE_BINARY_DIR}/${CUSTOM_RC_FILE}")
+        endif(IS_ABSOLUTE "${CUSTOM_RC_FILE}")
+        message(STATUS "")
+        message(STATUS "Using custom RC template: ${UHD_RC_IN}")
+        message(STATUS "")
+    else()
+        set(UHD_RC_IN "${CMAKE_CURRENT_SOURCE_DIR}/uhd.rc.in")
+    endif(CUSTOM_RC_FILE)
+    set(UHD_RC_IN ${UHD_RC_IN} CACHE STRING "uhd.rc template filepath")
 
-    CONFIGURE_FILE(
+    configure_file(
         ${UHD_RC_IN}
         ${CMAKE_CURRENT_BINARY_DIR}/uhd.rc
     @ONLY)
 
-    LIST(APPEND libuhd_sources ${CMAKE_CURRENT_BINARY_DIR}/uhd.rc)
-ENDIF(MSVC)
+    list(APPEND libuhd_sources ${CMAKE_CURRENT_BINARY_DIR}/uhd.rc)
+endif(MSVC)
 
 ########################################################################
 # Setup libuhd library
 ########################################################################
-IF(ENABLE_MPMD)
-    INCLUDE_DIRECTORIES(deps/rpclib/include)
-    ADD_SUBDIRECTORY(deps)
-    LIST(APPEND libuhd_sources $<TARGET_OBJECTS:uhd_rpclib>)
-ENDIF()
-ADD_LIBRARY(uhd SHARED ${libuhd_sources})
-TARGET_LINK_LIBRARIES(uhd ${Boost_LIBRARIES} ${libuhd_libs})
-SET_TARGET_PROPERTIES(uhd PROPERTIES DEFINE_SYMBOL "UHD_DLL_EXPORTS")
-IF(NOT LIBUHDDEV_PKG)
-    SET_TARGET_PROPERTIES(uhd PROPERTIES SOVERSION "${UHD_ABI_VERSION}")
-    SET_TARGET_PROPERTIES(uhd PROPERTIES VERSION "${UHD_ABI_VERSION}")
-ENDIF(NOT LIBUHDDEV_PKG)
-IF(DEFINED LIBUHD_OUTPUT_NAME)
-    SET_TARGET_PROPERTIES(uhd PROPERTIES OUTPUT_NAME ${LIBUHD_OUTPUT_NAME})
-ENDIF(DEFINED LIBUHD_OUTPUT_NAME)
+if(ENABLE_MPMD)
+    include_directories(deps/rpclib/include)
+    add_subdirectory(deps)
+    list(APPEND libuhd_sources $<TARGET_OBJECTS:uhd_rpclib>)
+endif()
+add_library(uhd SHARED ${libuhd_sources})
+target_link_libraries(uhd ${Boost_LIBRARIES} ${libuhd_libs})
+set_target_properties(uhd PROPERTIES DEFINE_SYMBOL "UHD_DLL_EXPORTS")
+if(NOT LIBUHDDEV_PKG)
+    set_target_properties(uhd PROPERTIES SOVERSION "${UHD_ABI_VERSION}")
+    set_target_properties(uhd PROPERTIES VERSION "${UHD_ABI_VERSION}")
+endif(NOT LIBUHDDEV_PKG)
+if(DEFINED LIBUHD_OUTPUT_NAME)
+    set_target_properties(uhd PROPERTIES OUTPUT_NAME ${LIBUHD_OUTPUT_NAME})
+endif(DEFINED LIBUHD_OUTPUT_NAME)
 
-IF(NOT UHDHOST_PKG) #Syntax makes it unusable by UHD_INSTALL
-    INSTALL(TARGETS uhd
+if(NOT UHDHOST_PKG) #Syntax makes it unusable by UHD_INSTALL
+    install(TARGETS uhd
         LIBRARY DESTINATION ${LIBRARY_DIR} COMPONENT libraries # .so file
         ARCHIVE DESTINATION ${LIBRARY_DIR} COMPONENT libraries # .lib file
         RUNTIME DESTINATION ${RUNTIME_DIR} COMPONENT libraries # .dll file
     )
-ENDIF(NOT UHDHOST_PKG)
+endif(NOT UHDHOST_PKG)
 
 #######################################################
 # Setup libuhd library (static)
 #######################################################
-IF(ENABLE_STATIC_LIBS)
-    ADD_LIBRARY(uhd_static STATIC ${libuhd_sources})
-    SET_TARGET_PROPERTIES(uhd_static PROPERTIES OUTPUT_NAME uhd)
-    SET_TARGET_PROPERTIES(uhd_static PROPERTIES COMPILE_DEFINITIONS UHD_STATIC_LIB)
-    INSTALL(TARGETS uhd_static
+if(ENABLE_STATIC_LIBS)
+    add_library(uhd_static STATIC ${libuhd_sources})
+    set_target_properties(uhd_static PROPERTIES OUTPUT_NAME uhd)
+    set_target_properties(uhd_static PROPERTIES COMPILE_DEFINITIONS UHD_STATIC_LIB)
+    install(TARGETS uhd_static
         ARCHIVE DESTINATION lib${LIB_SUFFIX} # .lib or .a file
     )
-ENDIF(ENABLE_STATIC_LIBS)
+endif(ENABLE_STATIC_LIBS)

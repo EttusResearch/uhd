@@ -12,10 +12,10 @@ UHD_INSTALL(FILES
     COMPONENT headers
 )
 
-IF(ENABLE_C_API)
+if(ENABLE_C_API)
     UHD_INSTALL(FILES
     usrp_clock.h
     DESTINATION ${INCLUDE_DIR}/uhd/usrp_clock
     COMPONENT headers
     )
-ENDIF(ENABLE_C_API)
+endif(ENABLE_C_API)

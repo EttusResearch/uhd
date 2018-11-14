@@ -5,32 +5,32 @@
 # SPDX-License-Identifier: GPL-3.0
 #
 
-FIND_PACKAGE(Curses)
+find_package(Curses)
 
-IF(CURSES_FOUND)
-    INCLUDE_DIRECTORIES(${CURSES_INCLUDE_DIR})
-    SET(latency_include_dir ${CMAKE_CURRENT_SOURCE_DIR}/include)
-    INCLUDE_DIRECTORIES(${latency_include_dir})
-    SET(latency_lib_path ${CMAKE_CURRENT_SOURCE_DIR}/lib/Responder.cpp)
+if(CURSES_FOUND)
+    include_directories(${CURSES_INCLUDE_DIR})
+    set(latency_include_dir ${CMAKE_CURRENT_SOURCE_DIR}/include)
+    include_directories(${latency_include_dir})
+    set(latency_lib_path ${CMAKE_CURRENT_SOURCE_DIR}/lib/Responder.cpp)
 
-    SET(sources
+    set(sources
         responder.cpp
     )
 
-    SET(latency_comp_name utilities)
-    SET(latency_comp_dest ${PKG_LIB_DIR}/utils/latency)
+    set(latency_comp_name utilities)
+    set(latency_comp_dest ${PKG_LIB_DIR}/utils/latency)
 
     #for each source: build an executable and install
-    FOREACH(source ${sources})
-        GET_FILENAME_COMPONENT(name ${source} NAME_WE)
-        ADD_EXECUTABLE(${name} ${source} ${latency_lib_path})
+    foreach(source ${sources})
+        get_filename_component(name ${source} NAME_WE)
+        add_executable(${name} ${source} ${latency_lib_path})
     	LIBUHD_APPEND_SOURCES(${name})
-        TARGET_LINK_LIBRARIES(${name} uhd ${Boost_LIBRARIES} ${CURSES_LIBRARIES})
+        target_link_libraries(${name} uhd ${Boost_LIBRARIES} ${CURSES_LIBRARIES})
     	UHD_INSTALL(TARGETS ${name} RUNTIME DESTINATION ${latency_comp_dest} COMPONENT ${latency_comp_name})
-    ENDFOREACH(source)
+    endforeach(source)
 
     UHD_INSTALL(PROGRAMS run_tests.py graph.py
                 DESTINATION ${latency_comp_dest}
                 COMPONENT ${latency_comp_name}
     )
-ENDIF(CURSES_FOUND)
+endif(CURSES_FOUND)

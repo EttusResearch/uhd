@@ -110,7 +110,7 @@ macro(GR_SWIG_MAKE name)
     # vector<long unsigned int> (on 64-bit machines). Use this to test
     # the size of size_t, then set SIZE_T_32 if it's a 32-bit machine
     # or not if it's 64-bit. The logic in gr_type.i handles the rest.
-    INCLUDE(CheckTypeSize)
+    include(CheckTypeSize)
     CHECK_TYPE_SIZE("size_t" SIZEOF_SIZE_T)
     CHECK_TYPE_SIZE("unsigned int" SIZEOF_UINT)
     if(${SIZEOF_SIZE_T} EQUAL ${SIZEOF_UINT})
@@ -173,7 +173,7 @@ macro(GR_SWIG_MAKE name)
     SWIG_ADD_MODULE(${name} python ${ifiles})
     SWIG_LINK_LIBRARIES(${name} ${PYTHON_LIBRARIES} ${GR_SWIG_LIBRARIES})
     if(${name} STREQUAL "runtime_swig")
-        SET_TARGET_PROPERTIES(${SWIG_MODULE_runtime_swig_REAL_NAME} PROPERTIES DEFINE_SYMBOL "gnuradio_runtime_EXPORTS")
+        set_target_properties(${SWIG_MODULE_runtime_swig_REAL_NAME} PROPERTIES DEFINE_SYMBOL "gnuradio_runtime_EXPORTS")
     endif(${name} STREQUAL "runtime_swig")
 
 endmacro(GR_SWIG_MAKE)
@@ -189,7 +189,7 @@ endmacro(GR_SWIG_MAKE)
 macro(GR_SWIG_INSTALL)
 
     include(CMakeParseArgumentsCopy)
-    CMAKE_PARSE_ARGUMENTS(GR_SWIG_INSTALL "" "DESTINATION;COMPONENT" "TARGETS" ${ARGN})
+    cmake_parse_arguments(GR_SWIG_INSTALL "" "DESTINATION;COMPONENT" "TARGETS" ${ARGN})
 
     foreach(name ${GR_SWIG_INSTALL_TARGETS})
         install(TARGETS ${SWIG_MODULE_${name}_REAL_NAME}

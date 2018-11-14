@@ -6,6 +6,6 @@
 #
 
 ########################################################################
-FIND_PROGRAM(RST2HTML_EXECUTABLE NAMES rst2html rst2html.py)
-INCLUDE(FindPackageHandleStandardArgs)
+find_program(RST2HTML_EXECUTABLE NAMES rst2html rst2html.py)
+include(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(Docutils DEFAULT_MSG RST2HTML_EXECUTABLE)

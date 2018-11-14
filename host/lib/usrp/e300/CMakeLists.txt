@@ -14,8 +14,8 @@
 ########################################################################
 find_package(UDev)
 
-IF(ENABLE_E300)
-    LIST(APPEND E300_SOURCES
+if(ENABLE_E300)
+    list(APPEND E300_SOURCES
         ${CMAKE_CURRENT_SOURCE_DIR}/e300_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/e300_io_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/e300_fifo_config.cpp
@@ -31,21 +31,21 @@ IF(ENABLE_E300)
         ${CMAKE_CURRENT_SOURCE_DIR}/e3xx_radio_ctrl_impl.cpp
     )
     LIBUHD_APPEND_SOURCES(${E300_SOURCES})
-    IF(UDEV_FOUND AND NOT E300_FORCE_NETWORK)
-        INCLUDE_DIRECTORIES(${UDEV_INCLUDE_DIR})
+    if(UDEV_FOUND AND NOT E300_FORCE_NETWORK)
+        include_directories(${UDEV_INCLUDE_DIR})
         LIBUHD_APPEND_LIBS(${UDEV_LIBS})
-        SET_SOURCE_FILES_PROPERTIES(
+        set_source_files_properties(
             ${E300_SOURCES}
             PROPERTIES COMPILE_DEFINITIONS "E300_NATIVE=1"
         )
-    ENDIF(UDEV_FOUND AND NOT E300_FORCE_NETWORK)
+    endif(UDEV_FOUND AND NOT E300_FORCE_NETWORK)
 
-    IF(ENABLE_GPSD)
-        SET_SOURCE_FILES_PROPERTIES(
+    if(ENABLE_GPSD)
+        set_source_files_properties(
             ${CMAKE_CURRENT_SOURCE_DIR}/e300_impl.cpp
             ${CMAKE_CURRENT_SOURCE_DIR}/e300_impl.hpp
             ${CMAKE_CURRENT_SOURCE_DIR}/e3xx_radio_ctrl_impl.hpp
             PROPERTIES COMPILE_DEFINITIONS "E300_GPSD=1"
         )
-    ENDIF(ENABLE_GPSD)
-ENDIF(ENABLE_E300)
+    endif(ENABLE_GPSD)
+endif(ENABLE_E300)

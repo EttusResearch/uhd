@@ -7,8 +7,8 @@
 ########################################################################
 # This file included, use CMake directory variables
 ########################################################################
-SET(USRP_MPM_FILES ${USRP_MPM_FILES})
-SET(USRP_MPM_TOP_FILES
+set(USRP_MPM_FILES ${USRP_MPM_FILES})
+set(USRP_MPM_TOP_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/__init__.py
     ${CMAKE_CURRENT_SOURCE_DIR}/aurora_control.py
     ${CMAKE_CURRENT_SOURCE_DIR}/bfrfs.py
@@ -24,11 +24,11 @@ SET(USRP_MPM_TOP_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/prefs.py
     ${CMAKE_CURRENT_SOURCE_DIR}/rpc_server.py
 )
-LIST(APPEND USRP_MPM_FILES ${USRP_MPM_TOP_FILES})
-ADD_SUBDIRECTORY(chips)
-ADD_SUBDIRECTORY(cores)
-ADD_SUBDIRECTORY(dboard_manager)
-ADD_SUBDIRECTORY(periph_manager)
-ADD_SUBDIRECTORY(sys_utils)
-ADD_SUBDIRECTORY(xports)
-SET(USRP_MPM_FILES ${USRP_MPM_FILES} PARENT_SCOPE)
+list(APPEND USRP_MPM_FILES ${USRP_MPM_TOP_FILES})
+add_subdirectory(chips)
+add_subdirectory(cores)
+add_subdirectory(dboard_manager)
+add_subdirectory(periph_manager)
+add_subdirectory(sys_utils)
+add_subdirectory(xports)
+set(USRP_MPM_FILES ${USRP_MPM_FILES} PARENT_SCOPE)

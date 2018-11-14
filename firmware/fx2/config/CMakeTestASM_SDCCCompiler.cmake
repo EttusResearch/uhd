@@ -18,6 +18,6 @@
 # is set and cmake stops processing commands and will not generate
 # any makefiles or projects.
 
-SET(ASM_DIALECT "_SDCC")
-INCLUDE(CMakeTestASMCompiler)
-SET(ASM_DIALECT)
+set(ASM_DIALECT "_SDCC")
+include(CMakeTestASMCompiler)
+set(ASM_DIALECT)

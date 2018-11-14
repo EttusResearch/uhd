@@ -3,14 +3,14 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-IF(ENABLE_MAGNESIUM)
-    INSTALL(FILES
+if(ENABLE_MAGNESIUM)
+    install(FILES
         magnesium_manager.hpp
         DESTINATION ${INCLUDE_DIR}/mpm/dboards
     )
-ELSEIF(ENABLE_E320)
-    INSTALL(FILES
+elseif(ENABLE_E320)
+    install(FILES
         neon_manager.hpp
         DESTINATION ${INCLUDE_DIR}/mpm/dboards
     )
-ENDIF(ENABLE_MAGNESIUM)
+endif(ENABLE_MAGNESIUM)

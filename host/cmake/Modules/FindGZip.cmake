@@ -6,6 +6,6 @@
 #
 
 ########################################################################
-FIND_PROGRAM(GZIP_EXECUTABLE NAMES gzip)
-INCLUDE(FindPackageHandleStandardArgs)
+find_program(GZIP_EXECUTABLE NAMES gzip)
+include(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(GZip DEFAULT_MSG GZIP_EXECUTABLE)

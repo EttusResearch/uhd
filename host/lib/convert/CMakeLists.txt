@@ -8,31 +8,31 @@
 ########################################################################
 # This file included, use CMake directory variables
 ########################################################################
-INCLUDE(CheckIncludeFileCXX)
-MESSAGE(STATUS "")
+include(CheckIncludeFileCXX)
+message(STATUS "")
 
 ########################################################################
 # Check for SSE2 SIMD headers
 ########################################################################
-IF(CMAKE_COMPILER_IS_GNUCXX)
-    SET(EMMINTRIN_FLAGS -msse2)
-    SET(TMMINTRIN_FLAGS -mssse3)
-ELSEIF(MSVC)
-    SET(EMMINTRIN_FLAGS /arch:SSE2)
-ENDIF()
+if(CMAKE_COMPILER_IS_GNUCXX)
+    set(EMMINTRIN_FLAGS -msse2)
+    set(TMMINTRIN_FLAGS -mssse3)
+elseif(MSVC)
+    set(EMMINTRIN_FLAGS /arch:SSE2)
+endif()
 
-SET(CMAKE_REQUIRED_FLAGS ${EMMINTRIN_FLAGS})
+set(CMAKE_REQUIRED_FLAGS ${EMMINTRIN_FLAGS})
 CHECK_INCLUDE_FILE_CXX(emmintrin.h HAVE_EMMINTRIN_H)
-SET(CMAKE_REQUIRED_FLAGS)
+set(CMAKE_REQUIRED_FLAGS)
 
-IF(ENABLE_SSSE3)
-SET(CMAKE_REQUIRED_FLAGS ${TMMINTRIN_FLAGS})
+if(ENABLE_SSSE3)
+set(CMAKE_REQUIRED_FLAGS ${TMMINTRIN_FLAGS})
 CHECK_INCLUDE_FILE_CXX(tmmintrin.h HAVE_TMMINTRIN_H)
-SET(CMAKE_REQUIRED_FLAGS)
-ENDIF(ENABLE_SSSE3)
+set(CMAKE_REQUIRED_FLAGS)
+endif(ENABLE_SSSE3)
 
-IF(HAVE_EMMINTRIN_H)
-    SET(convert_with_sse2_sources
+if(HAVE_EMMINTRIN_H)
+    set(convert_with_sse2_sources
         ${CMAKE_CURRENT_SOURCE_DIR}/sse2_sc16_to_sc16.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/sse2_sc16_to_fc64.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/sse2_sc16_to_fc32.cpp
@@ -43,50 +43,50 @@ IF(HAVE_EMMINTRIN_H)
         ${CMAKE_CURRENT_SOURCE_DIR}/sse2_fc64_to_sc8.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/sse2_fc32_to_sc8.cpp
     )
-    SET_SOURCE_FILES_PROPERTIES(
+    set_source_files_properties(
         ${convert_with_sse2_sources}
         PROPERTIES COMPILE_FLAGS "${EMMINTRIN_FLAGS}"
     )
     LIBUHD_APPEND_SOURCES(${convert_with_sse2_sources})
-ENDIF(HAVE_EMMINTRIN_H)
+endif(HAVE_EMMINTRIN_H)
 
-IF(HAVE_TMMINTRIN_H)
-    SET(convert_with_ssse3_sources
+if(HAVE_TMMINTRIN_H)
+    set(convert_with_ssse3_sources
         ${CMAKE_CURRENT_SOURCE_DIR}/ssse3_pack_sc12.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/ssse3_unpack_sc12.cpp
     )
-    SET_SOURCE_FILES_PROPERTIES(
+    set_source_files_properties(
         ${convert_with_ssse3_sources}
         PROPERTIES COMPILE_FLAGS "${TMMINTRIN_FLAGS}"
     )
     LIBUHD_APPEND_SOURCES(${convert_with_ssse3_sources})
-ENDIF(HAVE_TMMINTRIN_H)
+endif(HAVE_TMMINTRIN_H)
 
 ########################################################################
 # Check for NEON SIMD headers
 ########################################################################
-SET(NEON_SIMD_ENABLE ON CACHE BOOL
+set(NEON_SIMD_ENABLE ON CACHE BOOL
     "Use NEON SIMD instructions, if applicable")
-MARK_AS_ADVANCED(NEON_SIMD_ENABLE)
-IF(CMAKE_COMPILER_IS_GNUCXX)
+mark_as_advanced(NEON_SIMD_ENABLE)
+if(CMAKE_COMPILER_IS_GNUCXX)
     CHECK_INCLUDE_FILE_CXX(arm_neon.h HAVE_ARM_NEON_H)
-ENDIF(CMAKE_COMPILER_IS_GNUCXX)
+endif(CMAKE_COMPILER_IS_GNUCXX)
 
-IF(NEON_SIMD_ENABLE AND HAVE_ARM_NEON_H AND
+if(NEON_SIMD_ENABLE AND HAVE_ARM_NEON_H AND
    (${CMAKE_SIZEOF_VOID_P} EQUAL 4))
-    ENABLE_LANGUAGE(ASM)
+    enable_language(ASM)
 
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/convert_with_neon.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/convert_neon.S
     )
-ENDIF()
+endif()
 
 ########################################################################
 # Convert types generation
 ########################################################################
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 LIBUHD_PYTHON_GEN_SOURCE(
     ${CMAKE_CURRENT_SOURCE_DIR}/gen_convert_general.py

@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: GPL-3.0
 #
 
-FILE(GLOB xml_files "*.xml")
+file(GLOB xml_files "*.xml")
 
 # We always need this, even when RFNoC is 'disabled'
 UHD_INSTALL(

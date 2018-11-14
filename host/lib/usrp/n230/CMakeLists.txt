@@ -12,7 +12,7 @@
 ########################################################################
 # Conditionally configure the N230 support
 ########################################################################
-IF(ENABLE_N230)
+if(ENABLE_N230)
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/n230_cores.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/n230_impl.cpp
@@ -25,4 +25,4 @@ IF(ENABLE_N230)
         ${CMAKE_CURRENT_SOURCE_DIR}/n230_image_loader.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/n230_fw_ctrl_iface.cpp
    )
-ENDIF(ENABLE_N230)
+endif(ENABLE_N230)

@@ -19,14 +19,14 @@ set(ENV{UHD_CONFIG_VERSION_USED} TRUE)
 # version values as set in cmake/Modules/UHDVersion.cmake, placed
 # statically in here to avoid using Python all over again.
 
-SET(MAJOR_VERSION @UHD_VERSION_MAJOR@)
-SET(API_VERSION @UHD_VERSION_API@)
-SET(ABI_VERSION @UHD_VERSION_ABI@)
-SET(PATCH_VERSION @UHD_VERSION_PATCH@)
-SET(DEVEL_VERSION @UHD_VERSION_DEVEL@)
+set(MAJOR_VERSION @UHD_VERSION_MAJOR@)
+set(API_VERSION @UHD_VERSION_API@)
+set(ABI_VERSION @UHD_VERSION_ABI@)
+set(PATCH_VERSION @UHD_VERSION_PATCH@)
+set(DEVEL_VERSION @UHD_VERSION_DEVEL@)
 
-SET(PACKAGE_VERSION @UHD_VERSION@)
-SET(ENV{UHD_PACKAGE_VERSION} ${PACKAGE_VERSION})
+set(PACKAGE_VERSION @UHD_VERSION@)
+set(ENV{UHD_PACKAGE_VERSION} ${PACKAGE_VERSION})
 
 # There is a bug in CMake whereby calling "find_package(FOO)" within
 # "find_package(FOO)" results in the version being checked in the
@@ -34,62 +34,62 @@ SET(ENV{UHD_PACKAGE_VERSION} ${PACKAGE_VERSION})
 # "PACKAGE_FIND_VERSION" and if empty set return variables to TRUE to
 # make CMake happy.  Not the best solution, but it does the trick.
 
-IF(NOT PACKAGE_FIND_VERSION)
-  SET(PACKAGE_VERSION_COMPATIBLE TRUE)
-  SET(PACKAGE_VERSION_EXACT TRUE)
-  RETURN()
-ENDIF(NOT PACKAGE_FIND_VERSION)
+if(NOT PACKAGE_FIND_VERSION)
+  set(PACKAGE_VERSION_COMPATIBLE TRUE)
+  set(PACKAGE_VERSION_EXACT TRUE)
+  return()
+endif(NOT PACKAGE_FIND_VERSION)
 
 # Development branches of UHD don't have a patch version. This is a hack
 # to add a fake patch version that should be higher than anything the user
 # requests.
-IF(DEVEL_VERSION)
-    SET(PACKAGE_VERSION "${MAJOR_VERSION}.${API_VERSION}.${ABI_VERSION}.999")
-ENDIF(DEVEL_VERSION)
+if(DEVEL_VERSION)
+    set(PACKAGE_VERSION "${MAJOR_VERSION}.${API_VERSION}.${ABI_VERSION}.999")
+endif(DEVEL_VERSION)
 
 # assume incorrect versioning by default
-SET(PACKAGE_VERSION_COMPATIBLE FALSE)
-SET(PACKAGE_VERSION_EXACT FALSE)
+set(PACKAGE_VERSION_COMPATIBLE FALSE)
+set(PACKAGE_VERSION_EXACT FALSE)
 
 # do not use ABI for now
-SET(UHD_USE_ABI FALSE)
+set(UHD_USE_ABI FALSE)
 
 # leave the ABI checking in, for now, just in case it is wanted in the
 # future.  This code works nicely to find the ABI compatibility
 # version from <uhd/version.hpp>.
-IF(UHD_USE_ABI)
+if(UHD_USE_ABI)
 
   # find ABI compatible version from <uhd/version.hpp>
 
-  SET(UHD_INCLUDE_HINTS)
-  SET(UHD_DIR $ENV{UHD_DIR})
+  set(UHD_INCLUDE_HINTS)
+  set(UHD_DIR $ENV{UHD_DIR})
 
-  IF(UHD_DIR)
-    LIST(APPEND UHD_INCLUDE_HINTS ${UHD_DIR}/include)
-  ENDIF()
+  if(UHD_DIR)
+    list(APPEND UHD_INCLUDE_HINTS ${UHD_DIR}/include)
+  endif()
 
-  INCLUDE(FindPkgConfig)
-  IF(PKG_CONFIG_FOUND)
-    IF(NOT ${CMAKE_VERSION} VERSION_LESS "2.8.0")
-      SET(UHD_QUIET "QUIET")
-    ENDIF()
-    IF(PACKAGE_VERSION_EXACT)
+  include(FindPkgConfig)
+  if(PKG_CONFIG_FOUND)
+    if(NOT ${CMAKE_VERSION} VERSION_LESS "2.8.0")
+      set(UHD_QUIET "QUIET")
+    endif()
+    if(PACKAGE_VERSION_EXACT)
       PKG_CHECK_MODULES(PC_UHD ${UHD_QUIET} uhd=${UHD_FIND_VERSION})
-    ELSE()
+    else()
       PKG_CHECK_MODULES(PC_UHD ${UHD_QUIET} uhd>=${UHD_FIND_VERSION})
-    ENDIF()
-    IF(PC_UHD_FOUND)
-      LIST(APPEND UHD_INCLUDE_HINTS ${PC_UHD_INCLUDEDIR})
-    ENDIF()
-  ENDIF()
+    endif()
+    if(PC_UHD_FOUND)
+      list(APPEND UHD_INCLUDE_HINTS ${PC_UHD_INCLUDEDIR})
+    endif()
+  endif()
 
-  LIST(APPEND UHD_INCLUDE_HINTS ${CMAKE_INSTALL_PREFIX}/include)
+  list(APPEND UHD_INCLUDE_HINTS ${CMAKE_INSTALL_PREFIX}/include)
 
   # Verify that <uhd/config.hpp> and libuhd are available, and, if a
   # version is provided, that UHD meets the version requirements -- no
   # matter what pkg-config might think.
 
-  FIND_PATH(
+  find_path(
     UHD_INCLUDE_DIR
     NAMES uhd/version.hpp
     HINTS ${UHD_INCLUDE_HINTS}
@@ -97,72 +97,72 @@ IF(UHD_USE_ABI)
           /usr/include
   )
 
-  IF(UHD_INCLUDE_DIR)
+  if(UHD_INCLUDE_DIR)
 
     # extract the UHD API version from the installed header
 
-    FILE(STRINGS "${UHD_INCLUDE_DIR}/uhd/version.hpp"
+    file(STRINGS "${UHD_INCLUDE_DIR}/uhd/version.hpp"
       UHD_STRING_VERSION REGEX "UHD_VERSION_ABI_STRING")
-    STRING(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+"
+    string(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+"
       UHD_ABI_VERSION_CONCISE ${UHD_STRING_VERSION})
 
     # convert UHD_FIND_VERSION into concise #.#.# format for comparison
 
-    STRING(REGEX REPLACE "([^\\.]*)\\.([^\\.]*)\\.([^\\.]*)"
+    string(REGEX REPLACE "([^\\.]*)\\.([^\\.]*)\\.([^\\.]*)"
       "\\1.\\2.\\3" UHD_ABI_VERSION_TMP ${UHD_ABI_VERSION_CONCISE})
 
-    STRING(REPLACE "0" "" UHD_ABI_MAJOR ${CMAKE_MATCH_1})
-    STRING(REPLACE "0" "" UHD_ABI_MINOR ${CMAKE_MATCH_2})
-    STRING(REPLACE "0" "" UHD_ABI_PATCH ${CMAKE_MATCH_3})
+    string(REPLACE "0" "" UHD_ABI_MAJOR ${CMAKE_MATCH_1})
+    string(REPLACE "0" "" UHD_ABI_MINOR ${CMAKE_MATCH_2})
+    string(REPLACE "0" "" UHD_ABI_PATCH ${CMAKE_MATCH_3})
 
     # fix the case where the version number is "000"
 
-    IF(NOT UHD_ABI_MAJOR)
-      SET(UHD_ABI_MAJOR "0")
-    ENDIF()
-    IF(NOT UHD_ABI_MINOR)
-      SET(UHD_ABI_MINOR "0")
-    ENDIF()
-    IF(NOT UHD_ABI_PATCH)
-      SET(UHD_ABI_PATCH "0")
-    ENDIF()
+    if(NOT UHD_ABI_MAJOR)
+      set(UHD_ABI_MAJOR "0")
+    endif()
+    if(NOT UHD_ABI_MINOR)
+      set(UHD_ABI_MINOR "0")
+    endif()
+    if(NOT UHD_ABI_PATCH)
+      set(UHD_ABI_PATCH "0")
+    endif()
 
-    SET(UHD_ABI_VERSION_CONCISE ${UHD_ABI_MAJOR}.${UHD_ABI_MINOR}.${UHD_ABI_PATCH})
+    set(UHD_ABI_VERSION_CONCISE ${UHD_ABI_MAJOR}.${UHD_ABI_MINOR}.${UHD_ABI_PATCH})
 
-  ELSE(UHD_INCLUDE_DIR)
+  else(UHD_INCLUDE_DIR)
 
     # no header found ... not a good sign!  Assume ABI version is the
     # same as that known internally here.  Let UHDConfig.cmake fail if
     # it cannot find <uhd/config.hpp> or "libuhd" ...
 
-    SET(UHD_ABI_VERSION_CONCISE ${PACKAGE_VERSION})
+    set(UHD_ABI_VERSION_CONCISE ${PACKAGE_VERSION})
 
-  ENDIF(UHD_INCLUDE_DIR)
+  endif(UHD_INCLUDE_DIR)
 
   # check for ABI compatibility, both:
   #   ACTUAL VERSION >= DESIRED VERSION >= ABI VERSION
 
-  IF(NOT ${PACKAGE_FIND_VERSION} VERSION_LESS ${UHD_ABI_VERSION_CONCISE} AND
+  if(NOT ${PACKAGE_FIND_VERSION} VERSION_LESS ${UHD_ABI_VERSION_CONCISE} AND
      NOT ${PACKAGE_FIND_VERSION} VERSION_GREATER ${PACKAGE_VERSION})
-    SET(PACKAGE_VERSION_COMPATIBLE TRUE)
-  ENDIF()
+    set(PACKAGE_VERSION_COMPATIBLE TRUE)
+  endif()
 
-ELSE(UHD_USE_ABI)
+else(UHD_USE_ABI)
 
   # use API only, and assume compatible of requested <= actual
   # which is the same as "not >"
 
-  IF(NOT ${PACKAGE_FIND_VERSION} VERSION_GREATER ${PACKAGE_VERSION})
-    SET(PACKAGE_VERSION_COMPATIBLE TRUE)
-  ENDIF()
+  if(NOT ${PACKAGE_FIND_VERSION} VERSION_GREATER ${PACKAGE_VERSION})
+    set(PACKAGE_VERSION_COMPATIBLE TRUE)
+  endif()
 
-ENDIF(UHD_USE_ABI)
+endif(UHD_USE_ABI)
 
 # check for exact version
 
-IF(${PACKAGE_FIND_VERSION} VERSION_EQUAL ${PACKAGE_VERSION})
-  SET(PACKAGE_VERSION_EXACT TRUE)
-ENDIF()
+if(${PACKAGE_FIND_VERSION} VERSION_EQUAL ${PACKAGE_VERSION})
+  set(PACKAGE_VERSION_EXACT TRUE)
+endif()
 
 # Undo our patch-version-number hack
-SET(PACKAGE_VERSION @UHD_VERSION@)
+set(PACKAGE_VERSION @UHD_VERSION@)

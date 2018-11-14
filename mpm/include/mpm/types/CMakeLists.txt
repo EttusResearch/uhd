@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: GPL-3.0
 #
 
-INSTALL(FILES
+install(FILES
   regs_iface.hpp
   DESTINATION ${INCLUDE_DIR}/mpm/types
 )

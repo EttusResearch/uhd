@@ -4,17 +4,17 @@
 # SPDX-License-Identifier: GPL-3.0
 #
 
-SET(UHD_HOST_ROOT ${CMAKE_SOURCE_DIR}/../host)
+set(UHD_HOST_ROOT ${CMAKE_SOURCE_DIR}/../host)
 
-ADD_SUBDIRECTORY(dboards)
-ADD_SUBDIRECTORY(chips)
-ADD_SUBDIRECTORY(spi)
-ADD_SUBDIRECTORY(types)
+add_subdirectory(dboards)
+add_subdirectory(chips)
+add_subdirectory(spi)
+add_subdirectory(types)
 
 if(ENABLE_MYKONOS)
-    ADD_SUBDIRECTORY(mykonos)
+    add_subdirectory(mykonos)
 elseif(ENABLE_E320)
-    ADD_SUBDIRECTORY(catalina)
+    add_subdirectory(catalina)
 endif(ENABLE_MYKONOS)
 
 USRP_PERIPHS_ADD_OBJECT(periphs

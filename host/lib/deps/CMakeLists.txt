@@ -4,6 +4,6 @@
 # SPDX-License-Identifier: GPL-3.0
 #
 
-IF(ENABLE_MPMD)
-    ADD_SUBDIRECTORY(rpclib)
-ENDIF()
+if(ENABLE_MPMD)
+    add_subdirectory(rpclib)
+endif()

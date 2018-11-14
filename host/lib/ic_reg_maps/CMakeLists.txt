@@ -9,8 +9,8 @@
 # This file included, use CMake directory variables
 ########################################################################
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-SET(LIBUHD_PYTHON_GEN_SOURCE_DEPS ${CMAKE_CURRENT_SOURCE_DIR}/common.py)
+include_directories(${CMAKE_CURRENT_BINARY_DIR})
+set(LIBUHD_PYTHON_GEN_SOURCE_DEPS ${CMAKE_CURRENT_SOURCE_DIR}/common.py)
 
 LIBUHD_PYTHON_GEN_SOURCE(
     ${CMAKE_CURRENT_SOURCE_DIR}/gen_adf4350_regs.py
@@ -137,4 +137,4 @@ LIBUHD_PYTHON_GEN_SOURCE(
     ${CMAKE_CURRENT_BINARY_DIR}/magnesium_cpld_regs.hpp
 )
 
-SET(LIBUHD_PYTHON_GEN_SOURCE_DEPS)
+set(LIBUHD_PYTHON_GEN_SOURCE_DEPS)

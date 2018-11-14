@@ -6,8 +6,8 @@
 #
 
 ########################################################################
-INCLUDE(UHDPython) #requires python for parsing
-FIND_PACKAGE(Git QUIET)
+include(UHDPython) #requires python for parsing
+find_package(Git QUIET)
 
 ########################################################################
 # Setup Version Numbers
@@ -17,64 +17,64 @@ FIND_PACKAGE(Git QUIET)
 #  - Increment patch for bugfixes and docs
 #  - set UHD_VERSION_DEVEL to true for master and development branches
 ########################################################################
-SET(UHD_VERSION_MAJOR   3)
-SET(UHD_VERSION_API    13)
-SET(UHD_VERSION_ABI     1)
-SET(UHD_VERSION_PATCH   0)
-SET(UHD_VERSION_DEVEL FALSE)
+set(UHD_VERSION_MAJOR   3)
+set(UHD_VERSION_API    13)
+set(UHD_VERSION_ABI     1)
+set(UHD_VERSION_PATCH   0)
+set(UHD_VERSION_DEVEL FALSE)
 
 ########################################################################
 # If we're on a development branch, we skip the patch version
 ########################################################################
-IF(DEFINED UHD_VERSION_PATCH_OVERRIDE)
-    SET(UHD_VERSION_DEVEL FALSE)
-    SET(UHD_VERSION_PATCH ${UHD_VERSION_PATCH_OVERRIDE})
-ENDIF(DEFINED UHD_VERSION_PATCH_OVERRIDE)
-IF(NOT DEFINED UHD_VERSION_DEVEL)
-    SET(UHD_VERSION_DEVEL FALSE)
-ENDIF(NOT DEFINED UHD_VERSION_DEVEL)
-SET(UHD_GIT_BRANCH "")
-IF(GIT_FOUND)
-    EXECUTE_PROCESS(
+if(DEFINED UHD_VERSION_PATCH_OVERRIDE)
+    set(UHD_VERSION_DEVEL FALSE)
+    set(UHD_VERSION_PATCH ${UHD_VERSION_PATCH_OVERRIDE})
+endif(DEFINED UHD_VERSION_PATCH_OVERRIDE)
+if(NOT DEFINED UHD_VERSION_DEVEL)
+    set(UHD_VERSION_DEVEL FALSE)
+endif(NOT DEFINED UHD_VERSION_DEVEL)
+set(UHD_GIT_BRANCH "")
+if(GIT_FOUND)
+    execute_process(
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         COMMAND ${GIT_EXECUTABLE} rev-parse --abbrev-ref HEAD
         OUTPUT_VARIABLE _git_branch OUTPUT_STRIP_TRAILING_WHITESPACE
         RESULT_VARIABLE _git_branch_result
     )
-    IF(_git_branch_result EQUAL 0)
-        SET(UHD_GIT_BRANCH ${_git_branch})
-        IF(UHD_GIT_BRANCH MATCHES "^UHD-")
-            MESSAGE(STATUS "Operating on release branch (${UHD_GIT_BRANCH}).")
-	    SET(UHD_VERSION_DEVEL FALSE)
-        ELSEIF(UHD_GIT_BRANCH STREQUAL "master")
-            MESSAGE(STATUS "Operating on master branch.")
-            SET(UHD_VERSION_DEVEL TRUE)
-        ELSE()
-            MESSAGE(STATUS "Working off of feature or development branch. Updating version number.")
-            EXECUTE_PROCESS(
+    if(_git_branch_result EQUAL 0)
+        set(UHD_GIT_BRANCH ${_git_branch})
+        if(UHD_GIT_BRANCH MATCHES "^UHD-")
+            message(STATUS "Operating on release branch (${UHD_GIT_BRANCH}).")
+	    set(UHD_VERSION_DEVEL FALSE)
+        elseif(UHD_GIT_BRANCH STREQUAL "master")
+            message(STATUS "Operating on master branch.")
+            set(UHD_VERSION_DEVEL TRUE)
+        else()
+            message(STATUS "Working off of feature or development branch. Updating version number.")
+            execute_process(
                 COMMAND ${PYTHON_EXECUTABLE} -c "print('${_git_branch}'.replace('/', '-'))"
                 OUTPUT_VARIABLE _git_safe_branch OUTPUT_STRIP_TRAILING_WHITESPACE
             )
-            SET(UHD_VERSION_PATCH ${_git_safe_branch})
-            SET(UHD_VERSION_DEVEL TRUE)
-        ENDIF()
-    ELSE()
-        MESSAGE(STATUS "Could not determine git branch. Probably building from tarball.")
-    ENDIF()
-ELSE(GIT_FOUND)
-    MESSAGE(WARNING "Could not detect git executable! Could not determine exact version of UHD!")
-ENDIF(GIT_FOUND)
-IF(DEFINED UHD_GIT_BRANCH_OVERRIDE)
-    MESSAGE(STATUS "Overriding auto-detected git branch and setting to: ${UHD_GIT_BRANCH_OVERRIDE}")
-    SET(UHD_GIT_BRANCH ${UHD_GIT_BRANCH_OVERRIDE})
-ENDIF(DEFINED UHD_GIT_BRANCH_OVERRIDE)
+            set(UHD_VERSION_PATCH ${_git_safe_branch})
+            set(UHD_VERSION_DEVEL TRUE)
+        endif()
+    else()
+        message(STATUS "Could not determine git branch. Probably building from tarball.")
+    endif()
+else(GIT_FOUND)
+    message(WARNING "Could not detect git executable! Could not determine exact version of UHD!")
+endif(GIT_FOUND)
+if(DEFINED UHD_GIT_BRANCH_OVERRIDE)
+    message(STATUS "Overriding auto-detected git branch and setting to: ${UHD_GIT_BRANCH_OVERRIDE}")
+    set(UHD_GIT_BRANCH ${UHD_GIT_BRANCH_OVERRIDE})
+endif(DEFINED UHD_GIT_BRANCH_OVERRIDE)
 
 ########################################################################
 # Version information discovery through git log
 ########################################################################
 
 #grab the git ref id for the current head
-EXECUTE_PROCESS(
+execute_process(
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
     COMMAND ${GIT_EXECUTABLE} describe --always --abbrev=8 --long
     OUTPUT_VARIABLE _git_describe OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -82,9 +82,9 @@ EXECUTE_PROCESS(
 )
 
 #only set the build info on success
-IF(_git_describe_result EQUAL 0)
-    IF(NOT UHD_GIT_COUNT)
-        EXECUTE_PROCESS(
+if(_git_describe_result EQUAL 0)
+    if(NOT UHD_GIT_COUNT)
+        execute_process(
             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
             COMMAND ${PYTHON_EXECUTABLE} -c "
 try:
@@ -94,9 +94,9 @@ except IndexError:
 "
             OUTPUT_VARIABLE UHD_GIT_COUNT OUTPUT_STRIP_TRAILING_WHITESPACE
         )
-    ENDIF()
-    IF(NOT UHD_GIT_HASH)
-        EXECUTE_PROCESS(
+    endif()
+    if(NOT UHD_GIT_HASH)
+        execute_process(
             WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
             COMMAND ${PYTHON_EXECUTABLE} -c "
 try:
@@ -106,42 +106,42 @@ except IndexError:
 "
              OUTPUT_VARIABLE UHD_GIT_HASH OUTPUT_STRIP_TRAILING_WHITESPACE
         )
-    ENDIF()
-ENDIF()
+    endif()
+endif()
 
 ## Set default values if all fails. Make sure they're identical to the ones above.
-IF(NOT UHD_GIT_COUNT)
-    SET(UHD_GIT_COUNT "0")
-ENDIF()
+if(NOT UHD_GIT_COUNT)
+    set(UHD_GIT_COUNT "0")
+endif()
 
-IF(NOT UHD_GIT_HASH)
-    SET(UHD_GIT_HASH "unknown")
-ENDIF()
+if(NOT UHD_GIT_HASH)
+    set(UHD_GIT_HASH "unknown")
+endif()
 
-IF(UHD_RELEASE_MODE)
-    SET(UHD_GIT_HASH ${UHD_RELEASE_MODE})
+if(UHD_RELEASE_MODE)
+    set(UHD_GIT_HASH ${UHD_RELEASE_MODE})
 
     #Ignore UHD_GIT_COUNT in UHD_VERSION if the string 'release' is in UHD_RELEASE_MODE
-    EXECUTE_PROCESS(
+    execute_process(
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         COMMAND ${PYTHON_EXECUTABLE} -c "print ('release' in '${UHD_RELEASE_MODE}') or ('rc' in '${UHD_RELEASE_MODE}')"
         OUTPUT_VARIABLE TRIM_UHD_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE
     )
-ENDIF()
+endif()
 
 
 ########################################################################
 # Define the derived version variables:
-IF(DEFINED UHD_VERSION)
-    SET(UHD_VERSION "${UHD_VERSION}" CACHE STRING "Set UHD_VERSION to a custom value")
-ELSEIF(TRIM_UHD_VERSION STREQUAL "True")
-    SET(UHD_VERSION "${UHD_VERSION_MAJOR}.${UHD_VERSION_API}.${UHD_VERSION_ABI}.${UHD_VERSION_PATCH}-${UHD_GIT_HASH}")
-ELSE()
-    SET(UHD_VERSION "${UHD_VERSION_MAJOR}.${UHD_VERSION_API}.${UHD_VERSION_ABI}.${UHD_VERSION_PATCH}-${UHD_GIT_COUNT}-${UHD_GIT_HASH}")
-ENDIF()
-IF(DEFINED UHD_ABI_VERSION)
-    SET(UHD_ABI_VERSION "${UHD_ABI_VERSION}"
+if(DEFINED UHD_VERSION)
+    set(UHD_VERSION "${UHD_VERSION}" CACHE STRING "Set UHD_VERSION to a custom value")
+elseif(TRIM_UHD_VERSION STREQUAL "True")
+    set(UHD_VERSION "${UHD_VERSION_MAJOR}.${UHD_VERSION_API}.${UHD_VERSION_ABI}.${UHD_VERSION_PATCH}-${UHD_GIT_HASH}")
+else()
+    set(UHD_VERSION "${UHD_VERSION_MAJOR}.${UHD_VERSION_API}.${UHD_VERSION_ABI}.${UHD_VERSION_PATCH}-${UHD_GIT_COUNT}-${UHD_GIT_HASH}")
+endif()
+if(DEFINED UHD_ABI_VERSION)
+    set(UHD_ABI_VERSION "${UHD_ABI_VERSION}"
         CACHE STRING "Set UHD_ABI_VERSION to a custom value")
-ELSE()
-    SET(UHD_ABI_VERSION "${UHD_VERSION_MAJOR}.${UHD_VERSION_API}.${UHD_VERSION_ABI}")
-ENDIF()
+else()
+    set(UHD_ABI_VERSION "${UHD_VERSION_MAJOR}.${UHD_VERSION_API}.${UHD_VERSION_ABI}")
+endif()

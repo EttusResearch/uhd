@@ -125,6 +125,9 @@ std::map<std::string, std::string> bar =
 * Pylint is good tool for helping with following code guidelines. It's very
   fussy though, so don't get too worked up about following its suggestions.
 
+## CMake-specific Guidelines
+
+* CMake commands written in lowercase.
 
 ## Revision Control Hygiene
 

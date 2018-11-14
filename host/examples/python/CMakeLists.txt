@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
-SET(python_examples
+set(python_examples
     rx_to_file.py
     tx_waveforms.py
     curses_fft.py
