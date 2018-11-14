@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!@RUNTIME_PYTHON_EXECUTABLE@
 #
 # Copyright 2018 Ettus Research, a National Instruments Company
 #
