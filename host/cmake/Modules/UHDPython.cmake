@@ -44,7 +44,8 @@ else(PYTHON_EXECUTABLE)
 endif(PYTHON_EXECUTABLE)
 
 #make the path to the executable appear in the cmake gui
-set(PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE} CACHE FILEPATH "python interpreter")
+set(PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE} CACHE FILEPATH
+    "python buildtime interpreter")
 
 message(STATUS "Python interpreter: ${PYTHON_EXECUTABLE}")
 message(STATUS "Override with: -DPYTHON_EXECUTABLE=<path-to-python>")
@@ -52,6 +53,19 @@ message(STATUS "Override with: -DPYTHON_EXECUTABLE=<path-to-python>")
 if(NOT PYTHONINTERP_FOUND)
     message(FATAL_ERROR "Error: Python interpreter required by the build system.")
 endif(NOT PYTHONINTERP_FOUND)
+
+#this allows the user to override RUNTIME_PYTHON_EXECUTABLE
+if(NOT RUNTIME_PYTHON_EXECUTABLE)
+    #default to the buildtime interpreter
+    set(RUNTIME_PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE})
+endif(NOT RUNTIME_PYTHON_EXECUTABLE)
+
+#make the path to the executable appear in the cmake gui
+set(RUNTIME_PYTHON_EXECUTABLE ${RUNTIME_PYTHON_EXECUTABLE} CACHE FILEPATH
+    "python runtime interpreter")
+
+message(STATUS "Python runtime interpreter: ${RUNTIME_PYTHON_EXECUTABLE}")
+message(STATUS "Override with: -DRUNTIME_PYTHON_EXECUTABLE=<path-to-python>")
 
 macro(PYTHON_CHECK_MODULE desc mod cmd have)
     message(STATUS "")
