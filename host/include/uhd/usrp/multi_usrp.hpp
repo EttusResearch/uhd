@@ -144,7 +144,7 @@ public:
     //! Convenience method to get a RX streamer. See also uhd::device::get_rx_stream().
     virtual rx_streamer::sptr get_rx_stream(const stream_args_t &args) = 0;
 
-    //! Convenience method to get a TX streamer. See also uhd::device::get_rx_stream().
+    //! Convenience method to get a TX streamer. See also uhd::device::get_tx_stream().
     virtual tx_streamer::sptr get_tx_stream(const stream_args_t &args) = 0;
 
     /*!
