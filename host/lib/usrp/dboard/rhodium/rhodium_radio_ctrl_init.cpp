@@ -686,10 +686,10 @@ void rhodium_radio_ctrl_impl::_init_frontend_subtree(
             ;
             subtree->create<bool>(rx_fe_path / "los" / RHODIUM_LO1 / "lo_distribution" / port / "export")
                 .add_coerced_subscriber([this, chan_idx, port](bool enabled) {
-                    this->set_tx_lo_output_enabled(enabled, port, chan_idx);
+                    this->set_rx_lo_output_enabled(enabled, port, chan_idx);
                 })
                 .set_publisher([this, chan_idx, port]() {
-                    return this->get_tx_lo_output_enabled(port, chan_idx);
+                    return this->get_rx_lo_output_enabled(port, chan_idx);
                 })
             ;
         }
