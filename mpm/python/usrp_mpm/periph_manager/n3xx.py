@@ -518,6 +518,8 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         device_info.update({
             'fpga_version': "{}.{}".format(
                 *self.mboard_regs_control.get_compat_number()),
+            'fpga_version_hash': "{:x}.{}".format(
+                *self.mboard_regs_control.get_git_hash()),
             'fpga': self.updateable_components.get('fpga', {}).get('type', ""),
         })
         return device_info
