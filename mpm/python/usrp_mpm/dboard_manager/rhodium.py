@@ -493,7 +493,7 @@ class Rhodium(DboardManagerBase):
         self.dac.tx_enable(False)
         self.adc.power_down_channel(True)
         with open_uio(
-            label="dboard-regs-{}".format(slot_idx),
+            label="dboard-regs-{}".format(self.slot_idx),
             read_only=False
         ) as radio_regs:
             # Clear the Sample Clock enables and place the MMCM in reset.
