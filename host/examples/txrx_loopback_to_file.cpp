@@ -367,9 +367,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             rx_usrp->set_rx_bandwidth(rx_bw, channel);
             std::cout << boost::format("Actual RX Bandwidth: %f MHz...") % (rx_usrp->get_rx_bandwidth(channel)/1e6) << std::endl << std::endl;
         }
+
+        // set the receive antenna
+        if (vm.count("rx-ant")) rx_usrp->set_rx_antenna(rx_ant, channel);
     }
-    //set the receive antenna
-    if (vm.count("ant")) rx_usrp->set_rx_antenna(rx_ant);
 
     //for the const wave, set the wave freq for small samples per period
     if (wave_freq == 0 and wave_type == "CONST"){
