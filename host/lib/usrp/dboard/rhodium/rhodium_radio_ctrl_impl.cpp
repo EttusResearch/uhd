@@ -93,8 +93,10 @@ void rhodium_radio_ctrl_impl::set_tx_antenna(
         ));
     }
 
-    radio_ctrl_impl::set_tx_antenna(ant, chan);
     _update_tx_output_switches(ant);
+    // _update_atr will set the cached antenna value, so no need to do
+    // it here. See comments in _update_antenna for more info.
+    _update_atr(ant, TX_DIRECTION);
 }
 
 void rhodium_radio_ctrl_impl::set_rx_antenna(
@@ -112,8 +114,10 @@ void rhodium_radio_ctrl_impl::set_rx_antenna(
         ));
     }
 
-    radio_ctrl_impl::set_rx_antenna(ant, chan);
     _update_rx_input_switches(ant);
+    // _update_atr will set the cached antenna value, so no need to do
+    // it here. See comments in _update_antenna for more info.
+    _update_atr(ant, RX_DIRECTION);
 }
 
 void rhodium_radio_ctrl_impl::_set_tx_fe_connection(const std::string &conn)
@@ -180,6 +184,9 @@ double rhodium_radio_ctrl_impl::set_tx_frequency(
     set_tx_gain(get_tx_gain(chan), 0);
     radio_ctrl_impl::set_tx_frequency(coerced_freq, chan);
     _update_tx_freq_switches(coerced_freq);
+    // if TX lowband/highband changed and antenna is TX/RX,
+    // the ATR needs to be updated
+    _update_atr(get_tx_antenna(0), TX_DIRECTION);
 
     return coerced_freq;
 }
@@ -294,6 +301,69 @@ double rhodium_radio_ctrl_impl::set_rx_gain(
     }
 
     return index;
+}
+
+void rhodium_radio_ctrl_impl::_update_atr(
+    const std::string& ant,
+    const direction_t dir
+) {
+    // This function updates sw10 based on the value of both antennas, so we
+    // use a mutex to prevent other calls in this class instance from running
+    // at the same time.
+    std::lock_guard<std::mutex> lock(_ant_mutex);
+
+    UHD_LOG_TRACE(unique_id(),
+        "Updating ATRs for " << ((dir == RX_DIRECTION) ? "RX" : "TX") << " to " << ant);
+
+    const auto rx_ant  = (dir == RX_DIRECTION) ? ant : get_rx_antenna(0);
+    const auto tx_ant  = (dir == TX_DIRECTION) ? ant : get_tx_antenna(0);
+    const auto sw10_tx = _is_tx_lowband(get_tx_frequency(0)) ?
+        SW10_FROMTXLOWBAND : SW10_FROMTXHIGHBAND;
+
+
+    const uint32_t atr_idle = SW10_ISOLATION;
+
+    const uint32_t atr_rx = [rx_ant]{
+        if (rx_ant == "TX/RX") {
+            return SW10_TORX | LED_RX;
+        } else if (rx_ant == "RX2") {
+            return SW10_ISOLATION | LED_RX2;
+        } else {
+            return SW10_ISOLATION;
+        }
+    }();
+
+    const uint32_t atr_tx = (tx_ant == "TX/RX") ?
+        (sw10_tx | LED_TX) : SW10_ISOLATION;
+
+    const uint32_t atr_dx = [tx_ant, rx_ant, sw10_tx] {
+        uint32_t sw10_return;
+        if (tx_ant == "TX/RX") {
+            // if both channels are set to TX/RX, TX will override
+            sw10_return = sw10_tx | LED_TX;
+        } else if (rx_ant == "TX/RX") {
+            sw10_return = SW10_TORX | LED_RX;
+        } else {
+            sw10_return = SW10_ISOLATION;
+        }
+        sw10_return |= (rx_ant == "RX2") ? LED_RX2 : 0;
+        return sw10_return;
+    }();
+
+    _gpio->set_atr_reg(gpio_atr::ATR_REG_IDLE, atr_idle, RHODIUM_GPIO_MASK);
+    _gpio->set_atr_reg(gpio_atr::ATR_REG_RX_ONLY, atr_rx, RHODIUM_GPIO_MASK);
+    _gpio->set_atr_reg(gpio_atr::ATR_REG_TX_ONLY, atr_tx, RHODIUM_GPIO_MASK);
+    _gpio->set_atr_reg(gpio_atr::ATR_REG_FULL_DUPLEX, atr_dx, RHODIUM_GPIO_MASK);
+
+    UHD_LOG_TRACE(unique_id(),
+        str(boost::format("Wrote ATR registers i:0x%02X, r:0x%02X, t:0x%02X, d:0x%02X")
+            % atr_idle % atr_rx % atr_tx % atr_dx));
+
+    if (dir == RX_DIRECTION) {
+        radio_ctrl_impl::set_rx_antenna(ant, 0);
+    } else {
+        radio_ctrl_impl::set_tx_antenna(ant, 0);
+    }
 }
 
 uhd::gain_range_t rhodium_radio_ctrl_impl::_get_gain_range(direction_t dir)

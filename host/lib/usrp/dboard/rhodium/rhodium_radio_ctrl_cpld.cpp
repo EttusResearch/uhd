@@ -223,9 +223,6 @@ void rhodium_radio_ctrl_impl::_update_tx_freq_switches(
         tx_sw5,
         tx_hb_lb_sel
     );
-
-    // If TX lowband/highband changes, SW10 needs to be updated
-    _update_tx_output_switches(get_tx_antenna(0));
 }
 
 void rhodium_radio_ctrl_impl::_update_rx_input_switches(
@@ -234,9 +231,6 @@ void rhodium_radio_ctrl_impl::_update_rx_input_switches(
     UHD_LOG_TRACE(unique_id(),
         "Update all RX input related switches. input=" << input
     );
-    const sw10_t sw10 = (input == "TX/RX") ?
-        SW10_TORX :
-        SW10_ISOLATION;
     const rhodium_cpld_ctrl::cal_iso_sw_t cal_iso = (input == "CAL") ?
         rhodium_cpld_ctrl::CAL_ISO_CALLOOPBACK :
         rhodium_cpld_ctrl::CAL_ISO_ISOLATION;
@@ -261,42 +255,9 @@ void rhodium_radio_ctrl_impl::_update_rx_input_switches(
 
     UHD_LOG_TRACE(unique_id(),
         "Selected switch values:"
-        " sw10=" << sw10 <<
         " sw1=" << sw1 <<
         " cal_iso=" << cal_iso
     );
-
-    // the TX path may be using TX/RX already, in which case only override sw10 if
-    // we are attempting to use TX/RX
-    if (get_tx_antenna(0) == "TX/RX")
-    {
-        if (input == "TX/RX")
-        {
-            UHD_LOG_TRACE(unique_id(),
-                "Overriding TX antenna to TERM"
-            );
-            // TODO: setting antenna here could cause race conditions
-            set_tx_antenna("TERM", 0);
-
-            UHD_LOG_TRACE(unique_id(),
-                "Setting switch values: sw10=" << sw10
-            );
-            _gpio->set_gpio_out(sw10, SW10_GPIO_MASK);
-        }
-        else {
-            // skip setting sw10, allowing TX to continue using TX/RX
-            UHD_LOG_TRACE(unique_id(),
-                "sw10 setting was not applied because TX antenna is set to TX/RX"
-            );
-        }
-    }
-    else {
-        // TX/RX is not in use, fire away
-        UHD_LOG_TRACE(unique_id(),
-            "Setting switch values: sw10=" << sw10
-        );
-        _gpio->set_gpio_out(sw10, SW10_GPIO_MASK);
-    }
     _cpld->set_rx_input_switches(sw1, cal_iso);
 }
 
@@ -306,69 +267,32 @@ void rhodium_radio_ctrl_impl::_update_tx_output_switches(
     UHD_LOG_TRACE(unique_id(),
         "Update all TX output related switches. output=" << output
     );
-    sw10_t sw10;
     rhodium_cpld_ctrl::tx_sw1_t sw1;
 
     if (output == "TX/RX")
     {
-        //Both sw1 and sw10 need to select low/high band
-        if (_map_freq_to_tx_band(get_tx_frequency(0)) == tx_band::TX_BAND_0)
+        //SW1 needs to select low/high band
+        if (_is_tx_lowband(get_tx_frequency(0)))
         {
             sw1 = rhodium_cpld_ctrl::TX_SW1_TOLOWBAND;
-            sw10 = SW10_FROMTXLOWBAND;
         }
         else {
             sw1 = rhodium_cpld_ctrl::TX_SW1_TOSWITCH2;
-            sw10 = SW10_FROMTXHIGHBAND;
         }
     }
     else if (output == "CAL") {
         sw1 = rhodium_cpld_ctrl::TX_SW1_TOCALLOOPBACK;
-        sw10 = SW10_ISOLATION;
     }
     else if (output == "TERM") {
         sw1 = rhodium_cpld_ctrl::TX_SW1_ISOLATION;
-        sw10 = SW10_ISOLATION;
     }
     else {
         throw uhd::runtime_error("Invalid antenna in _update_tx_output_switches: " + output);
     }
 
     UHD_LOG_TRACE(unique_id(),
-        "Selected switch values: sw1=" << sw1 << " sw10=" << sw10
+        "Selected switch values: sw1=" << sw1
     );
-
-    // If RX is on TX/RX, only set sw10 if TX is requesting TX/RX
-    // and override the RX antenna value
-    if (get_rx_antenna(0) == "TX/RX")
-    {
-        if (output == "TX/RX")
-        {
-            UHD_LOG_TRACE(unique_id(),
-                "Overriding RX antenna to TERM"
-            );
-            // TODO: setting antenna here could cause race conditions
-            set_rx_antenna("TERM", 0);
-
-            UHD_LOG_TRACE(unique_id(),
-                "Setting switch values: sw10=" << sw10
-            );
-            _gpio->set_gpio_out(sw10, SW10_GPIO_MASK);
-        }
-        else {
-            // skip setting sw10, allowing RX to continue using TX/RX
-            UHD_LOG_TRACE(unique_id(),
-                "sw10 setting was not applied because RX antenna is set to TX/RX"
-            );
-        }
-    }
-    // If RX is on any other setting, set sw10 normally
-    else {
-        UHD_LOG_TRACE(unique_id(),
-            "Setting switch values: sw10=" << sw10
-        );
-        _gpio->set_gpio_out(sw10, SW10_GPIO_MASK);
-    }
 
     _cpld->set_tx_output_switches(sw1);
 }

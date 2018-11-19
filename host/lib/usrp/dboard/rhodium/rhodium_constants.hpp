@@ -56,7 +56,18 @@ static const std::vector<std::string> RHODIUM_TX_ANTENNAS = {
 static constexpr char SPUR_DODGING_ARG_NAME[] = "spur_dodging";
 static constexpr char SPUR_DODGING_THRESHOLD_ARG_NAME[] = "spur_dodging_threshold";
 
+static constexpr uint32_t RHODIUM_GPIO_MASK = 0x1F;
 static constexpr uint32_t SW10_GPIO_MASK = 0x3;
+static constexpr uint32_t LED_GPIO_MASK = 0x1C;
+
+static constexpr uint32_t SW10_FROMTXLOWBAND = 0x0;
+static constexpr uint32_t SW10_FROMTXHIGHBAND = 0x1;
+static constexpr uint32_t SW10_ISOLATION = 0x2;
+static constexpr uint32_t SW10_TORX = 0x3;
+
+static constexpr uint32_t LED_RX  = 0x04;
+static constexpr uint32_t LED_RX2 = 0x08;
+static constexpr uint32_t LED_TX  = 0x10;
 
 //! Main LO
 static constexpr char RHODIUM_LO1[] = "lo1";

@@ -191,13 +191,21 @@ void rhodium_radio_ctrl_impl::_init_peripherals()
             regs::rb_addr(regs::RB_DB_GPIO)
         );
     _gpio->set_atr_mode(
-        usrp::gpio_atr::MODE_GPIO, // Disable ATR mode
-        usrp::gpio_atr::gpio_atr_3000::MASK_SET_ALL
+        usrp::gpio_atr::MODE_ATR, // Enable ATR mode for Rhodium bits
+        RHODIUM_GPIO_MASK
+    );
+    _gpio->set_atr_mode(
+        usrp::gpio_atr::MODE_GPIO, // Disable ATR mode for unused bits
+        ~RHODIUM_GPIO_MASK
     );
     _gpio->set_gpio_ddr(
         usrp::gpio_atr::DDR_OUTPUT, // Make all GPIOs outputs
         usrp::gpio_atr::gpio_atr_3000::MASK_SET_ALL
     );
+
+    UHD_LOG_TRACE(unique_id(), "Set initial ATR values...");
+    _update_atr(RHODIUM_DEFAULT_TX_ANTENNA, TX_DIRECTION);
+    _update_atr(RHODIUM_DEFAULT_RX_ANTENNA, RX_DIRECTION);
 
     // Updating the TX frequency path may include an update to SW10, which is
     // GPIO controlled, so this must follow CPLD and GPIO initialization

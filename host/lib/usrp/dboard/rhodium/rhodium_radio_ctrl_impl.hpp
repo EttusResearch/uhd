@@ -56,13 +56,6 @@ public:
         TX_BAND_7
     };
 
-    enum sw10_t {
-        SW10_FROMTXLOWBAND = 0,
-        SW10_FROMTXHIGHBAND = 1,
-        SW10_ISOLATION = 2,
-        SW10_TORX = 3
-    };
-
     /************************************************************************
      * Structors
      ***********************************************************************/
@@ -217,6 +210,11 @@ private:
         const direction_t dir
     );
 
+    //! Configure ATR registers and update the cached antenna value from the
+    //  new antenna value.
+    //  ATR registers control SW10 and the frontend LEDs.
+    void _update_atr(const std::string& ant, const direction_t dir);
+
     //! Map a frequency in Hz to an rx_band value. Will return
     //  rx_band::INVALID_BAND if the frequency is out of range.
     static rx_band _map_freq_to_rx_band(const double freq);
@@ -285,8 +283,8 @@ private:
     /**************************************************************************
      * Private attributes
      *************************************************************************/
-    //! Locks access to setter APIs
-    std::mutex _set_lock;
+    //! Locks access to the antenna cached values
+    std::mutex _ant_mutex;
 
     //! Letter representation of the radio we're currently running
     std::string _radio_slot;
