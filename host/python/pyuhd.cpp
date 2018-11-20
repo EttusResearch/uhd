@@ -171,6 +171,15 @@ BOOST_PYTHON_MODULE(libpyuhd)
         export_metadata();
         export_sensors();
         export_tune();
+
+        // Declare some more converters
+        iterable_converter()
+            .from_python<std::vector<uhd::device_addr_t>>()
+            ;
+
+        bp::to_python_converter<
+            std::vector<uhd::device_addr_t>,
+            iterable_to_python_list<std::vector<uhd::device_addr_t>>, false >();
     }
 
     // Register usrp submodule

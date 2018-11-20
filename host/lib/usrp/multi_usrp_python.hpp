@@ -7,6 +7,7 @@
 #ifndef INCLUDED_UHD_USRP_MULTI_USRP_PYTHON_HPP
 #define INCLUDED_UHD_USRP_MULTI_USRP_PYTHON_HPP
 
+#include <uhd/types/device_addr.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
 
 //
@@ -169,6 +170,31 @@ static void set_gpio_attr_1(uhd::usrp::multi_usrp *multi_usrp,
 
 BOOST_PYTHON_FUNCTION_OVERLOADS(overload_set_gpio_attr_0, set_gpio_attr_0, 4, 6);
 BOOST_PYTHON_FUNCTION_OVERLOADS(overload_set_gpio_attr_1, set_gpio_attr_1, 4, 6);
+
+static void set_sync_source_0(uhd::usrp::multi_usrp *multi_usrp,
+                              const std::string &clock_source,
+                              const std::string &time_source)
+{
+    multi_usrp->set_sync_source(clock_source, time_source);
+}
+static void set_sync_source_1(uhd::usrp::multi_usrp *multi_usrp,
+                              const std::string &clock_source,
+                              const std::string &time_source,
+                              const size_t mboard)
+{
+    multi_usrp->set_sync_source(clock_source, time_source, mboard);
+}
+static void set_sync_source_2(uhd::usrp::multi_usrp *multi_usrp,
+                              const uhd::device_addr_t& sync_source)
+{
+    multi_usrp->set_sync_source(sync_source);
+}
+static void set_sync_source_3(uhd::usrp::multi_usrp *multi_usrp,
+                              const uhd::device_addr_t& sync_source,
+                              const size_t mboard)
+{
+    multi_usrp->set_sync_source(sync_source, mboard);
+}
 
 //
 // Boost.Python needs to know about default argument overloads
@@ -368,6 +394,12 @@ void export_multi_usrp()
         .def("set_clock_source"        , &multi_usrp::set_clock_source, overload_set_clock_source())
         .def("get_clock_source"        , &multi_usrp::get_clock_source)
         .def("get_clock_sources"       , &multi_usrp::get_clock_sources)
+        .def("set_sync_source"         , &set_sync_source_0)
+        .def("set_sync_source"         , &set_sync_source_1)
+        .def("set_sync_source"         , &set_sync_source_2)
+        .def("set_sync_source"         , &set_sync_source_3)
+        .def("get_sync_source"         , &multi_usrp::get_sync_source)
+        .def("get_sync_sources"        , &multi_usrp::get_sync_sources)
         .def("set_clock_source_out"    , &multi_usrp::set_clock_source_out, overload_set_clock_source_out())
         .def("set_time_source_out"     , &multi_usrp::set_time_source_out, overload_set_time_source_out())
         .def("get_num_mboards"         , &multi_usrp::get_num_mboards)
