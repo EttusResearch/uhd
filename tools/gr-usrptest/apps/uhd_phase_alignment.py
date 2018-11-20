@@ -64,7 +64,6 @@ def parse_args():
     module within the uhd_rf_test subpackage. See uhd_rf_test/uhd_source_gen.py
     for an example implementation.
     """
-    # TODO: Add gain steps!
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
                                      description=description)
     # Standard device args
@@ -129,6 +128,8 @@ def parse_args():
                         help="Save each set of samples")
     parser.add_argument("--easy-tune", type=bool, default=True,
                         help="Round the target frequency to the nearest MHz")
+    parser.add_argument("--skip-time", type=float, default=100e-3,
+                        help="Amount of time to wait after a tune to capture samples")
     args = parser.parse_args()
 
     # Do some sanity checking
@@ -237,6 +238,7 @@ def setup_usrp(args):
     # Set the sample rate
     for chan in args.channels:
         usrp.set_rx_rate(args.rate, chan)
+        usrp.set_rx_gain(args.gain, chan)
 
     # Actually synchronize devices
     # We already know we have >=2 channels, so don't worry about that
@@ -382,6 +384,24 @@ def plot_samps(samps, alignment):
     plt.show()
 
 
+def calc_max_drift(phase_vals):
+    """Returns the maximum drift (radians) between the mean phase values of runs
+    This works for all values, even those around +/-pi.
+    For example, calc_max_drift([179 degrees, -179 degrees]) = 2 degrees, not
+    358 degrees"""
+    def span(ll):
+        "Return max - min of values in ll"
+        return max(ll) - min(ll)
+    # Roll over negative values up to above pi, see if that improves things
+    # Ensure that phase_vals is a numpy array so that we can use nifty indexing
+    # below
+    phase_vals = np.array(phase_vals)
+    norm_span = span(phase_vals)
+    corrected = phase_vals + (phase_vals < 0)*2*np.pi
+    corr_span = span(corrected)
+    return corr_span if corr_span < norm_span else norm_span
+
+
 def check_results(alignment_stats, drift_thresh, stddev_thresh):
     """Print the alignment stats in a nice way
 
@@ -395,7 +415,7 @@ def check_results(alignment_stats, drift_thresh, stddev_thresh):
     """
     success = True  # Whether or not we've exceeded a threshold
     msg = ""
-    for freq, stats_list in alignment_stats.items():
+    for freq, stats_list in sorted(alignment_stats.items()):
         # Try to grab the test frequency for the frequency band
         try:
             test_freq = stats_list[0].get("test_freq")
@@ -422,8 +442,7 @@ def check_results(alignment_stats, drift_thresh, stddev_thresh):
             mean_list.append(mean_deg)
 
         # Report the largest difference in mean values of runs
-        # FIXME: This won't work around +-180 deg
-        max_drift = max(mean_list) - min(mean_list)
+        max_drift = calc_max_drift(mean_list)
         if max_drift > drift_thresh:
             success = False
         msg += "--Maximum drift over runs: {:.2f} degrees\n".format(max_drift)
@@ -461,8 +480,12 @@ def main():
     #    not the test passed or failed.
 
     # Determine the frequency bands we need to test
+    # We need to subtract the tone offset from the maximum frequency so that we
+    # never exceed it
     # TODO: allow users to specify test frequencies in args
-    freq_bands = get_band_limits(args.start_freq, args.stop_freq, args.freq_bands)
+    freq_bands = get_band_limits(args.start_freq,
+                                 args.stop_freq - args.tone_offset,
+                                 args.freq_bands)
     # Frequency bands to tune away to
     # TODO: make this based on the device's frequency range. This requires
     #       additional Python API bindings.
@@ -498,7 +521,7 @@ def main():
                 # Tune to a random frequency in each of the frequency bands...
                 tune_away_freq = npr.uniform(tune_away_start, tune_away_stop)
                 tune_usrp(usrp, tune_away_freq, args.channels)
-                time.sleep(0.5)
+                time.sleep(args.skip_time)
 
                 logger.info("Receiving samples, take %d, (%.2fMHz -> %.2fMHz)",
                             i, tune_away_freq/1e6, tune_freq/1e6)
@@ -522,17 +545,17 @@ def main():
                 alignment_stats.append({})
                 continue
 
-            alignment = np.angle(np.conj(samps[0]) * samps[1])[500:]
+            alignment = np.angle(np.conj(samps[0]) * samps[1])
 
             if args.plot:
                 plot_samps(samps, alignment,)
 
             if args.save:
-                # TODO: add frequency data
                 date_now = datetime.utcnow()
                 epoch = datetime(1970, 1, 1)
                 utc_now = int((date_now - epoch).total_seconds())
-                np.savez("phaseAligned_{}.npz".format(utc_now), samps)
+                np.savez("phaseAligned_{}_{}khz.npz".format(
+                    utc_now, int(tune_freq/1e3)), samps)
 
             # Store the phase alignment stats
             alignment_stats.append({
@@ -549,9 +572,8 @@ def main():
         run_stddevs = [run_stats.get("stddev", 0.) for run_stats in alignment_stats]
         logger.debug("Test freq %.3fMHz health check: %.1f deg drift, %.2f deg max stddev",
                      tune_freq/1e6,
-                     max(run_means) - min(run_means), # FIXME: This won't work around +-180 deg
-                     max(run_stddevs)
-                    )
+                     calc_max_drift(run_means) * 180 / np.pi,
+                     max(run_stddevs) * 180. / np.pi)
         all_alignment_stats[freq_start] = alignment_stats
         # Increment the power level for the next run
         current_power += args.power_step
