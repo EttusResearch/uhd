@@ -33,7 +33,7 @@ static constexpr size_t DST_ADDR   = 2;
 
 static constexpr double DEFAULT_TICK_RATE     = 200e6;    // Hz
 static constexpr double MAX_TICK_RATE         = 200e6;    // Hz
-static constexpr double MIN_TICK_RATE         = 187.5e6;  // Hz
+static constexpr double MIN_TICK_RATE         = 184.32e6; // Hz
 static constexpr double BUS_CLOCK_RATE        = 187.5e6;  // Hz
 
 static const std::string FW_FILE_NAME         = "usrp_x300_fw.bin";
