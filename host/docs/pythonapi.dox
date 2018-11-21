@@ -93,5 +93,28 @@ def recv_to_file():
 This kind of API is particularly useful in combination with Jupyter Notebooks or
 similar interactive environments.
 
+\section python_usage_gil Python Global Interpreter Lock
+
+From the <a href="https://wiki.python.org/moin/GlobalInterpreterLock">Python wiki page on the GIL:</a>
+> In CPython, the global interpreter lock, or GIL, is a mutex that protects
+> access to Python objects, preventing multiple threads from executing Python
+> bytecodes at once.
+
+During some performance-critical function calls, the UHD Python API releases the
+GIL, during which Python objects have their contents modified. The functions
+calls which do so are uhd::rx_streamer::recv, uhd::tx_streamer::send, and
+uhd::tx_streamer::recv_async_msg. To be clear, the functions listed here violate
+the expected contract set out by the GIL by accessing Python objects (from C++)
+without holding the GIL. This is necessary to achieve rates similar to what the
+C++ API can provide.
+
+To this end, users must ensure that the Python objects accessed by the listed
+functions are handled with care. In simple, single threaded applications, this
+won't require any extra work. However, in more complicated and/or multi-
+threaded applications, steps must be taken to avoid thread-unsafe behavior. For
+example, if an application needs to call recv() in one thread, and access the
+sample buffer from another thread, a synchronization method (ie. a mutex) must
+be used to safeguard access to that buffer.
+
 */
 // vim:ft=doxygen:
