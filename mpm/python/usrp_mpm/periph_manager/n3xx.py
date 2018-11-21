@@ -387,8 +387,12 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         self.enable_pps_out(False)
         # if there's no clock_source or time_source params, we added here since
         # dboards init procedures need them.
-        args['clock_source'] = args.get('clock_source', N3XX_DEFAULT_CLOCK_SOURCE)
-        args['time_source'] = args.get('time_source', N3XX_DEFAULT_TIME_SOURCE)
+        # At this point, both the self._clock_source and self._time_source global
+        # properties should have been set to either the default values (first time
+        # init() is run); or to the previous configured values (updated after a
+        # successful clocking configuration).
+        args['clock_source'] = args.get('clock_source', self._clock_source)
+        args['time_source'] = args.get('time_source', self._time_source)
         self.set_sync_source(args)
         # Uh oh, some hard coded product-related info: The N300 has no LO
         # source connectors on the front panel, so we assume that if this was
