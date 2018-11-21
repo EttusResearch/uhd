@@ -436,19 +436,19 @@ Note: On TX tests, initial Us within the first 5 seconds can be ignored and do n
 | Channels      | Master Clock Rate       | Sample Rate | Duration | Notes              |
 |---------------|-------------------------|-------------|----------|--------------------|
 | 1x RX         | 10e6                    | 1e6         | 60       | Test both channels |
-| 1x RX         | 61.44e6                 | 1.024e6     | 60       | Test both channels |
+| 1x RX         | 61.44e6                 | 3.84e6      | 60       | Test both channels |
 | 1x TX         | 10e6                    | 1e6         | 60       | Test both channels |
-| 1x TX         | 61.44e6                 | 1.024e6     | 60       | Test both channels |
+| 1x TX         | 61.44e6                 | 3.84e6      | 60       | Test both channels |
 | 2x RX         | 10e6                    | 1e6         | 60       |                    |
-| 2x RX         | 30.72e6                 | 1.024e6     | 60       |                    |
+| 2x RX         | 30.72e6                 | 1.92e6      | 60       |                    |
 | 2x TX         | 10e6                    | 1e6         | 60       |                    |
-| 2x TX         | 30.72e6                 | 1.024e6     | 60       |                    |
+| 2x TX         | 30.72e6                 | 1.92e6      | 60       |                    |
 | 1x RX & 1x TX | 10e6                    | 1e6         | 60       | Test both channels |
-| 1x RX & 1x TX | 61.44e6                 | 1.024e6     | 60       | Use channel 1      |
+| 1x RX & 1x TX | 61.44e6                 | 3.84e6      | 60       | Use channel 1      |
 | 2x RX & 2x TX | 10e6                    | 1e6         | 60       |                    |
-| 2x RX & 2x TX | 30.72e6                 | 1.024e6     | 60       |                    |
-| 1x RX & 1x TX | 61.44e6                 | 1e6         | 3600     | Use channel 0      |
-| 2x RX & 2x TX | 30.72e6                 | 1e6         | 3600     |                    |
+| 2x RX & 2x TX | 30.72e6                 | 1.92e6      | 60       |                    |
+| 1x RX & 1x TX | 61.44e6                 | 3.84e6      | 3600     | Use channel 0      |
+| 2x RX & 2x TX | 30.72e6                 | 1.92e6      | 3600     |                    |
 
 #### USRP E320: 1 GigE Interface
 
@@ -466,8 +466,8 @@ Note: On TX tests, initial Us within the first 5 seconds can be ignored and do n
 | 1x RX & 1x TX | 61.44e6                 | 1.024e6     | 60       | Use channel 1      |
 | 2x RX & 2x TX | 10e6                    | 1e6         | 60       |                    |
 | 2x RX & 2x TX | 30.72e6                 | 1.024e6     | 60       |                    |
-| 1x RX & 1x TX | 61.44e6                 | 1e6         | 3600     | Use channel 0      |
-| 2x RX & 2x TX | 30.72e6                 | 1e6         | 3600     |                    |
+| 1x RX & 1x TX | 61.44e6                 | 1.024e6     | 3600     | Use channel 0      |
+| 2x RX & 2x TX | 30.72e6                 | 1.024e6     | 3600     |                    |
 
 #### USRP E320: 10 GigE Interface
 
