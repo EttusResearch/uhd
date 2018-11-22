@@ -108,7 +108,7 @@ struct e300_fifo_poll_waiter
         boost::mutex::scoped_lock l(_mutex);
         if (_poll_claimed)
         {
-            _cond.timed_wait(l, boost::posix_time::microseconds(timeout*1000000));
+            _cond.timed_wait(l, boost::posix_time::microseconds(long(timeout*1000000)));
         }
         else
         {
