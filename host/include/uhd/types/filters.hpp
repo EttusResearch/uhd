@@ -125,7 +125,7 @@ namespace uhd{
 
         UHD_INLINE double get_rolloff()
         {
-            return _cutoff;
+            return _rolloff;
         }
 
         UHD_INLINE void set_cutoff(const double cutoff)
