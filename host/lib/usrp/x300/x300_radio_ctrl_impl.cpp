@@ -219,11 +219,25 @@ void x300_radio_ctrl_impl::set_tx_antenna(const std::string &ant, const size_t c
     ).set(ant);
 }
 
+std::string x300_radio_ctrl_impl::get_tx_antenna(const size_t chan)
+{
+    return _tree->access<std::string>(
+        fs_path("dboards" / _radio_slot / "tx_frontends" / _tx_fe_map.at(chan).db_fe_name / "antenna" / "value")
+    ).get();
+}
+
 void x300_radio_ctrl_impl::set_rx_antenna(const std::string &ant, const size_t chan)
 {
     _tree->access<std::string>(
         fs_path("dboards" / _radio_slot / "rx_frontends" / _rx_fe_map.at(chan).db_fe_name / "antenna" / "value")
     ).set(ant);
+}
+
+std::string x300_radio_ctrl_impl::get_rx_antenna(const size_t chan)
+{
+    return _tree->access<std::string>(
+        fs_path("dboards" / _radio_slot / "rx_frontends" / _rx_fe_map.at(chan).db_fe_name / "antenna" / "value")
+    ).get();
 }
 
 double x300_radio_ctrl_impl::set_tx_frequency(const double freq, const size_t chan)

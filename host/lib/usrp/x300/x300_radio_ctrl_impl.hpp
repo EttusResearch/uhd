@@ -43,6 +43,8 @@ public:
 
     void set_tx_antenna(const std::string &ant, const size_t chan);
     void set_rx_antenna(const std::string &ant, const size_t chan);
+    std::string get_tx_antenna(const size_t chan);
+    std::string get_rx_antenna(const size_t chan);
 
     double set_tx_frequency(const double freq, const size_t chan);
     double set_rx_frequency(const double freq, const size_t chan);
