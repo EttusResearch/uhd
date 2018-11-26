@@ -253,7 +253,6 @@ class Rhodium(DboardManagerBase):
         # LO dist board will create a kernel error. Fix this when the I2C API
         # is implemented by checking if the board is present before applying.
         try:
-            apply_overlay_safe('n321')
             self._lo_dist = FPGAtoLoDist(_get_i2c_dev())
         except RuntimeError:
             self._lo_dist = None
