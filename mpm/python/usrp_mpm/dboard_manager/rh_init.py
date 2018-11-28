@@ -99,13 +99,9 @@ class RhodiumInitManager(object):
             num_meas=[512, 128],
             target_offset=trace_delay_offset))
         if offset_error > 100e-12:
-            self.log.error("Clock synchronizer measured an offset of {:.1f} ps!".format(
-                offset_error*1e12
-            ))
-            self.log.warning("RuntimeError is not being thrown for Rhodium Rev. A")
-            # raise RuntimeError("Clock synchronizer measured an offset of {:.1f} ps!".format(
-            #     offset_error*1e12
-            # ))
+            self.log.error("Residual clock synchronization offset error is invalid! "
+                "Expected: <100 ps Actual: {:.1f} ps!".format(offset_error*1e12))
+            raise RuntimeError("Clock synchronization offset error is greater than expected.")
         else:
             self.log.debug("Residual synchronization error: {:.1f} ps.".format(
                 offset_error*1e12
