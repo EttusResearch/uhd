@@ -6,12 +6,12 @@
 
 #include <uhdlib/usrp/common/adf535x.hpp>
 
-adf535x_iface::sptr adf535x_iface::make_adf5355(write_fn_t write)
+adf535x_iface::sptr adf535x_iface::make_adf5355(write_fn_t write, wait_fn_t wait)
 {
-    return std::make_shared<adf535x_impl<adf5355_regs_t>>(write);
+    return std::make_shared<adf535x_impl<adf5355_regs_t>>(write, wait);
 }
 
-adf535x_iface::sptr adf535x_iface::make_adf5356(write_fn_t write)
+adf535x_iface::sptr adf535x_iface::make_adf5356(write_fn_t write, wait_fn_t wait)
 {
-    return std::make_shared<adf535x_impl<adf5356_regs_t>>(write);
+    return std::make_shared<adf535x_impl<adf5356_regs_t>>(write, wait);
 }

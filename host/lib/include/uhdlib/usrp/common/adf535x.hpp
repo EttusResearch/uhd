@@ -25,9 +25,10 @@ class adf535x_iface
 public:
     typedef std::shared_ptr<adf535x_iface> sptr;
     typedef std::function<void(std::vector<uint32_t>)> write_fn_t;
+    typedef std::function<void(uint32_t)> wait_fn_t;
 
-    static sptr make_adf5355(write_fn_t write);
-    static sptr make_adf5356(write_fn_t write);
+    static sptr make_adf5355(write_fn_t write, wait_fn_t wait);
+    static sptr make_adf5356(write_fn_t write, wait_fn_t wait);
 
     virtual ~adf535x_iface() = default;
 
@@ -82,8 +83,9 @@ template <typename adf535x_regs_t>
 class adf535x_impl : public adf535x_iface
 {
 public:
-  explicit adf535x_impl(write_fn_t write_fn) :
+  explicit adf535x_impl(write_fn_t write_fn, wait_fn_t wait_fn) :
           _write_fn(std::move(write_fn)),
+          _wait_fn(std::move(wait_fn)),
           _regs(),
           _rewrite_regs(true),
           _wait_time_us(0),
@@ -272,6 +274,7 @@ private: //Members
   typedef std::vector<uint32_t> addr_vtr_t;
 
   write_fn_t      _write_fn;
+  wait_fn_t       _wait_fn;
   adf535x_regs_t  _regs;
   bool            _rewrite_regs;
   uint32_t        _wait_time_us;
@@ -359,10 +362,9 @@ inline void adf535x_impl<adf5355_regs_t>::_commit()
       regs.push_back(_regs.get_reg(addr));
     }
     _write_fn(regs);
-    // TODO Add FPGA based delay between these writes
+    _wait_fn(_wait_time_us);
     _write_fn(addr_vtr_t(ONE_REG, _regs.get_reg(0)));
     _rewrite_regs = false;
-
   } else {
     //Frequency update sequence from data sheet
     _write_fn(addr_vtr_t(ONE_REG, _regs.get_reg(6)));
@@ -374,7 +376,6 @@ inline void adf535x_impl<adf5355_regs_t>::_commit()
     _write_fn(addr_vtr_t(ONE_REG, _regs.get_reg(0)));
     _regs.counter_reset = adf5355_regs_t::COUNTER_RESET_DISABLED;
     _write_fn(addr_vtr_t(ONE_REG, _regs.get_reg(4)));
-    // TODO Add FPGA based delay between these writes
     _regs.autocal_en = adf5355_regs_t::AUTOCAL_EN_ENABLED;
     _write_fn(addr_vtr_t(ONE_REG, _regs.get_reg(0)));
   }
@@ -458,18 +459,15 @@ inline void adf535x_impl<adf5356_regs_t>::_commit()
       regs.push_back(_regs.get_reg(addr));
     }
     _write_fn(regs);
-    // TODO Add FPGA based delay between these writes
+    _wait_fn(_wait_time_us);
     _write_fn(addr_vtr_t(ONE_REG, _regs.get_reg(0)));
     _rewrite_regs = false;
-
   } else {
     //Frequency update sequence from data sheet
     _write_fn(addr_vtr_t(ONE_REG, _regs.get_reg(13)));
-    _write_fn(addr_vtr_t(ONE_REG, _regs.get_reg(10)));
     _write_fn(addr_vtr_t(ONE_REG, _regs.get_reg(6)));
     _write_fn(addr_vtr_t(ONE_REG, _regs.get_reg(2)));
     _write_fn(addr_vtr_t(ONE_REG, _regs.get_reg(1)));
-    // TODO Add FPGA based delay between these writes
     _write_fn(addr_vtr_t(ONE_REG, _regs.get_reg(0)));
   }
 }

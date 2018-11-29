@@ -25,7 +25,7 @@ namespace {
   const double TWINRX_DESIRED_REFERENCE_FREQ = 50e6;
   const double TWINRX_REV_AB_PFD_FREQ = 6.25e6;
   const double TWINRX_REV_C_PFD_FREQ = 12.5e6;
-  const double TWINRX_SPI_CLOCK_FREQ = 3e6;
+  const double TWINRX_SPI_CLOCK_FREQ = 10e6;
 }
 
 class twinrx_ctrl_impl : public twinrx_ctrl {
@@ -99,14 +99,19 @@ public:
                 _lo1_iface[i] = adf535x_iface::make_adf5356(
                     [this](const std::vector<uint32_t>& regs) {
                         _write_lo_spi(dboard_iface::UNIT_TX, regs);
+                    },
+                    [this](uint32_t microseconds) {
+                        _db_iface->sleep(boost::chrono::microseconds(microseconds));
                     }
                 );
                 _lo1_iface[i]->set_pfd_freq(TWINRX_REV_C_PFD_FREQ);
-
             } else {
                 _lo1_iface[i] = adf535x_iface::make_adf5355(
                     [this](const std::vector<uint32_t>& regs) {
                         _write_lo_spi(dboard_iface::UNIT_TX, regs);
+                    },
+                    [this](uint32_t microseconds) {
+                        _db_iface->sleep(boost::chrono::microseconds(microseconds));
                     }
                 );
                 _lo1_iface[i]->set_pfd_freq(TWINRX_REV_AB_PFD_FREQ);
