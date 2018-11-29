@@ -25,6 +25,7 @@ namespace {
   const double TWINRX_DESIRED_REFERENCE_FREQ = 50e6;
   const double TWINRX_REV_AB_PFD_FREQ = 6.25e6;
   const double TWINRX_REV_C_PFD_FREQ = 12.5e6;
+  const double TWINRX_SPI_CLOCK_FREQ = 3e6;
 }
 
 class twinrx_ctrl_impl : public twinrx_ctrl {
@@ -36,48 +37,28 @@ public:
         const dboard_id_t rx_id
     ) : _db_iface(db_iface), _gpio_iface(gpio_iface), _cpld_regs(cpld_regmap)
     {
+        // SPI configuration
+        _spi_config.use_custom_divider = true;
+        _spi_config.divider = std::ceil(_db_iface->get_codec_rate(dboard_iface::UNIT_TX) / TWINRX_SPI_CLOCK_FREQ);
 
-        //Turn on switcher and wait for power good
-        _gpio_iface->set_field(twinrx_gpio::FIELD_SWPS_EN, 1);
-        size_t timeout_ms = 100;
-        while (_gpio_iface->get_field(twinrx_gpio::FIELD_SWPS_PWR_GOOD) == 0) {
-            std::this_thread::sleep_for(std::chrono::microseconds(1000));
-            if (--timeout_ms == 0) {
-                throw uhd::runtime_error("power supply failure");
-            }
+        //Initialize dboard clocks
+        bool found_rate = false;
+        for(double rate:  _db_iface->get_clock_rates(dboard_iface::UNIT_TX)) {
+            found_rate |= uhd::math::frequencies_are_equal(rate, TWINRX_DESIRED_REFERENCE_FREQ);
         }
-        //Initialize synthesizer objects
-        if (rx_id == twinrx::TWINRX_REV_C_ID) {
-          _lo1_iface[size_t(CH1)] = adf535x_iface::make_adf5356(
-                  std::bind(&twinrx_ctrl_impl::_write_lo_spi, this, dboard_iface::UNIT_TX, std::placeholders::_1));
-          _lo1_iface[size_t(CH2)] = adf535x_iface::make_adf5356(
-                  std::bind(&twinrx_ctrl_impl::_write_lo_spi, this, dboard_iface::UNIT_TX, std::placeholders::_1));
-
-          _lo1_iface[size_t(CH1)]->set_pfd_freq(TWINRX_REV_C_PFD_FREQ);
-          _lo1_iface[size_t(CH2)]->set_pfd_freq(TWINRX_REV_C_PFD_FREQ);
-
-        } else {
-          _lo1_iface[size_t(CH1)] = adf535x_iface::make_adf5355(
-                  std::bind(&twinrx_ctrl_impl::_write_lo_spi, this, dboard_iface::UNIT_TX, std::placeholders::_1));
-          _lo1_iface[size_t(CH2)] = adf535x_iface::make_adf5355(
-                  std::bind(&twinrx_ctrl_impl::_write_lo_spi, this, dboard_iface::UNIT_TX, std::placeholders::_1));
-
-          _lo1_iface[size_t(CH1)]->set_pfd_freq(TWINRX_REV_AB_PFD_FREQ);
-          _lo1_iface[size_t(CH2)]->set_pfd_freq(TWINRX_REV_AB_PFD_FREQ);
+        for(double rate:  _db_iface->get_clock_rates(dboard_iface::UNIT_RX)) {
+            found_rate |= uhd::math::frequencies_are_equal(rate, TWINRX_DESIRED_REFERENCE_FREQ);
         }
+        if (not found_rate) {
+            throw uhd::runtime_error("TwinRX not supported on this motherboard");
+        }
+        _db_iface->set_clock_rate(dboard_iface::UNIT_TX, TWINRX_DESIRED_REFERENCE_FREQ);
+        _db_iface->set_clock_rate(dboard_iface::UNIT_RX, TWINRX_DESIRED_REFERENCE_FREQ);
 
-        _lo2_iface[size_t(CH1)] = adf435x_iface::make_adf4351(
-                boost::bind(&twinrx_ctrl_impl::_write_lo_spi, this, dboard_iface::UNIT_RX, _1));
-        _lo2_iface[size_t(CH2)] = adf435x_iface::make_adf4351(
-                boost::bind(&twinrx_ctrl_impl::_write_lo_spi, this, dboard_iface::UNIT_RX, _1));
+        _db_iface->set_clock_enabled(dboard_iface::UNIT_TX, true);
+        _db_iface->set_clock_enabled(dboard_iface::UNIT_RX, true);
 
-        // Assert synthesizer chip enables
-        _gpio_iface->set_field(twinrx_gpio::FIELD_LO1_CE_CH1, 1);
-        _gpio_iface->set_field(twinrx_gpio::FIELD_LO1_CE_CH2, 1);
-        _gpio_iface->set_field(twinrx_gpio::FIELD_LO2_CE_CH1, 1);
-        _gpio_iface->set_field(twinrx_gpio::FIELD_LO2_CE_CH2, 1);
-
-        //Initialize default state
+        //Initialize default switch and attenuator states
         set_chan_enabled(BOTH, false, false);
         set_preamp1(BOTH, PREAMP_BYPASS, false);
         set_preamp2(BOTH, false, false);
@@ -94,40 +75,59 @@ public:
         set_lo2_export_source(LO_EXPORT_DISABLED, false);
         set_antenna_mapping(ANTX_NATIVE, false);
         set_crossover_cal_mode(CAL_DISABLED, false);
-        commit();
 
-        //Initialize clocks and LO
-        bool found_rate = false;
-        for(double rate:  _db_iface->get_clock_rates(dboard_iface::UNIT_TX)) {
-            found_rate |= uhd::math::frequencies_are_equal(rate, TWINRX_DESIRED_REFERENCE_FREQ);
+        //Turn on power and wait for power good
+        _gpio_iface->set_field(twinrx_gpio::FIELD_SWPS_EN, 1);
+        size_t timeout_ms = 100;
+        while (_gpio_iface->get_field(twinrx_gpio::FIELD_SWPS_PWR_GOOD) == 0) {
+            std::this_thread::sleep_for(std::chrono::microseconds(1000));
+            if (--timeout_ms == 0) {
+                throw uhd::runtime_error("power supply failure");
+            }
         }
-        for(double rate:  _db_iface->get_clock_rates(dboard_iface::UNIT_RX)) {
-            found_rate |= uhd::math::frequencies_are_equal(rate, TWINRX_DESIRED_REFERENCE_FREQ);
-        }
-        if (not found_rate) {
-            throw uhd::runtime_error("TwinRX not supported on this motherboard");
-        }
-        _db_iface->set_clock_rate(dboard_iface::UNIT_TX, TWINRX_DESIRED_REFERENCE_FREQ);
-        _db_iface->set_clock_rate(dboard_iface::UNIT_RX, TWINRX_DESIRED_REFERENCE_FREQ);
 
-        _db_iface->set_clock_enabled(dboard_iface::UNIT_TX, true);
-        _db_iface->set_clock_enabled(dboard_iface::UNIT_RX, true);
+        // Assert synthesizer chip enables
+        _gpio_iface->set_field(twinrx_gpio::FIELD_LO1_CE_CH1, 1);
+        _gpio_iface->set_field(twinrx_gpio::FIELD_LO1_CE_CH2, 1);
+        _gpio_iface->set_field(twinrx_gpio::FIELD_LO2_CE_CH1, 1);
+        _gpio_iface->set_field(twinrx_gpio::FIELD_LO2_CE_CH2, 1);
+
+        //Initialize synthesizers
         for (size_t i = 0; i < NUM_CHANS; i++) {
-            _config_lo1_route(i==0?LO_CONFIG_CH1:LO_CONFIG_CH2);
-            _config_lo2_route(i==0?LO_CONFIG_CH1:LO_CONFIG_CH2);
+            // LO1
+            if (rx_id == twinrx::TWINRX_REV_C_ID) {
+                _lo1_iface[i] = adf535x_iface::make_adf5356(
+                    [this](const std::vector<uint32_t>& regs) {
+                        _write_lo_spi(dboard_iface::UNIT_TX, regs);
+                    }
+                );
+                _lo1_iface[i]->set_pfd_freq(TWINRX_REV_C_PFD_FREQ);
+
+            } else {
+                _lo1_iface[i] = adf535x_iface::make_adf5355(
+                    [this](const std::vector<uint32_t>& regs) {
+                        _write_lo_spi(dboard_iface::UNIT_TX, regs);
+                    }
+                );
+                _lo1_iface[i]->set_pfd_freq(TWINRX_REV_AB_PFD_FREQ);
+            }
             _lo1_iface[i]->set_output_power(adf535x_iface::OUTPUT_POWER_5DBM);
             _lo1_iface[i]->set_reference_freq(TWINRX_DESIRED_REFERENCE_FREQ);
             _lo1_iface[i]->set_muxout_mode(adf535x_iface::MUXOUT_DLD);
             _lo1_iface[i]->set_frequency(3e9, 1.0e3);
+
+            // LO2
+            _lo2_iface[i] = adf435x_iface::make_adf4351(
+                [this](const std::vector<uint32_t>& regs) {
+                    _write_lo_spi(dboard_iface::UNIT_RX, regs);
+                }
+            );
             _lo2_iface[i]->set_feedback_select(adf435x_iface::FB_SEL_DIVIDED);
             _lo2_iface[i]->set_output_power(adf435x_iface::OUTPUT_POWER_5DBM);
             _lo2_iface[i]->set_reference_freq(TWINRX_DESIRED_REFERENCE_FREQ);
             _lo2_iface[i]->set_muxout_mode(adf435x_iface::MUXOUT_DLD);
-            _lo1_iface[i]->commit();
-            _lo2_iface[i]->commit();
         }
-        _config_lo1_route(LO_CONFIG_NONE);
-        _config_lo2_route(LO_CONFIG_NONE);
+        commit();
     }
 
     ~twinrx_ctrl_impl()
@@ -527,10 +527,7 @@ private:    //Functions
     void _write_lo_spi(dboard_iface::unit_t unit, const std::vector<uint32_t> &regs)
     {
         for(uint32_t reg:  regs) {
-             spi_config_t spi_config = spi_config_t(spi_config_t::EDGE_RISE);
-             spi_config.use_custom_divider = true;
-             spi_config.divider = 67;
-            _db_iface->write_spi(unit, spi_config, reg, 32);
+            _db_iface->write_spi(unit, _spi_config, reg, 32);
         }
     }
 
@@ -644,6 +641,7 @@ private:    //Members
     dboard_iface::sptr          _db_iface;
     twinrx_gpio::sptr           _gpio_iface;
     twinrx_cpld_regmap::sptr    _cpld_regs;
+    spi_config_t                _spi_config;
     adf535x_iface::sptr         _lo1_iface[NUM_CHANS];
     adf435x_iface::sptr         _lo2_iface[NUM_CHANS];
     lo_source_t                 _lo1_src[NUM_CHANS];
