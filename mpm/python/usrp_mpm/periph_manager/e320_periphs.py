@@ -297,10 +297,10 @@ class MboardRegsControl(object):
             sfp_info_rb = self.peek32(self.MB_SFP_PORT_INFO)
         # Print the registers values as 32-bit hex values
         self.log.trace("SFP Info: 0x{0:0{1}X}".format(sfp_info_rb, 8))
+        sfp_type = E320_SFP_TYPES.get((sfp_info_rb & 0x0000FF00) >> 8, "")
+        self.log.trace("SFP type: {}".format(sfp_type))
         try:
-            sfp_type = E320_SFP_TYPES.get((sfp_info_rb & 0x0000FF00) >> 8, "")
-            self.log.trace("SFP type: {}".format(sfp_type))
-            return sfp_type
+            return E320_FPGA_TYPES_BY_SFP[(sfp_type)]
         except KeyError:
             self.log.warning("Unrecognized SFP type: {}"
                              .format(sfp_type))
