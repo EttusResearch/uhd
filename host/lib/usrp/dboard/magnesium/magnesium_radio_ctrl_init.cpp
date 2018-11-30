@@ -118,35 +118,35 @@ void magnesium_radio_ctrl_impl::_init_peripherals()
     );
     UHD_LOG_TRACE(unique_id(), "Initializing CPLD...");
     UHD_LOG_TRACE(unique_id(), "Creating new CPLD object...");
-        spi_config_t spi_config;
-        spi_config.use_custom_divider = true;
-        spi_config.divider = 125;
-        spi_config.mosi_edge = spi_config_t::EDGE_RISE;
-        spi_config.miso_edge = spi_config_t::EDGE_FALL;
-        UHD_LOG_TRACE(unique_id(), "Making CPLD object...");
-        _cpld = std::make_shared<magnesium_cpld_ctrl>(
-            [this, spi_config](const uint32_t transaction){ // Write functor
-                this->_spi->write_spi(
-                    SEN_CPLD,
-                    spi_config,
-                    transaction,
-                    24
-                );
-            },
-            [this, spi_config](const uint32_t transaction){ // Read functor
-                return this->_spi->read_spi(
-                    SEN_CPLD,
-                    spi_config,
-                    transaction,
-                    24
-                );
-            }
-        );
-        _update_atr_switches(
-            magnesium_cpld_ctrl::BOTH,
-            DX_DIRECTION,
-            radio_ctrl_impl::get_rx_antenna(0)
-        );
+    spi_config_t spi_config;
+    spi_config.use_custom_divider = true;
+    spi_config.divider = 125;
+    spi_config.mosi_edge = spi_config_t::EDGE_RISE;
+    spi_config.miso_edge = spi_config_t::EDGE_FALL;
+    UHD_LOG_TRACE(unique_id(), "Making CPLD object...");
+    _cpld = std::make_shared<magnesium_cpld_ctrl>(
+        [this, spi_config](const uint32_t transaction){ // Write functor
+            this->_spi->write_spi(
+                SEN_CPLD,
+                spi_config,
+                transaction,
+                24
+            );
+        },
+        [this, spi_config](const uint32_t transaction){ // Read functor
+            return this->_spi->read_spi(
+                SEN_CPLD,
+                spi_config,
+                transaction,
+                24
+            );
+        }
+    );
+    _update_atr_switches(
+        magnesium_cpld_ctrl::BOTH,
+        DX_DIRECTION,
+        radio_ctrl_impl::get_rx_antenna(0)
+    );
     UHD_LOG_TRACE(unique_id(), "Initializing TX LO...");
     _tx_lo = adf435x_iface::make_adf4351(
         [this](const std::vector<uint32_t> transactions){
