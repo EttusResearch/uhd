@@ -577,6 +577,28 @@ void rhodium_radio_ctrl_impl::_init_frontend_subtree(
             .add_coerced_subscriber([this,chan_idx](bool enabled){
               this->set_rx_lo_export_enabled(enabled, RHODIUM_LO2, chan_idx);
         });
+    //RX ALL LOs
+    subtree->create<std::string>(rx_fe_path / "los" / ALL_LOS / "source/value")
+        .add_coerced_subscriber([this,chan_idx](std::string src) {
+            this->set_rx_lo_source(src, ALL_LOS, chan_idx);
+        })
+        .set_publisher([this,chan_idx]() {
+            return this->get_rx_lo_source(ALL_LOS, chan_idx);
+        })
+    ;
+    subtree->create<std::vector<std::string>>(rx_fe_path / "los" / ALL_LOS / "source/options")
+        .set_publisher([this, chan_idx]() {
+            return this->get_rx_lo_sources(ALL_LOS, chan_idx);
+        })
+    ;
+    subtree->create<bool>(rx_fe_path / "los" / ALL_LOS / "export")
+        .add_coerced_subscriber([this,chan_idx](bool enabled){
+            this->set_rx_lo_export_enabled(enabled, ALL_LOS, chan_idx);
+        })
+        .set_publisher([this,chan_idx](){
+            return this->get_rx_lo_export_enabled(ALL_LOS, chan_idx);
+        })
+    ;
     //TX LO
     //TX LO1 Frequency
     subtree->create<double>(tx_fe_path / "los"/RHODIUM_LO1/"freq/value ")
@@ -678,6 +700,28 @@ void rhodium_radio_ctrl_impl::_init_frontend_subtree(
     subtree->create<bool>(tx_fe_path / "los"/RHODIUM_LO2/"export")
         .add_coerced_subscriber([this,chan_idx](bool enabled){
             this->set_tx_lo_export_enabled(enabled, RHODIUM_LO2, chan_idx);
+        })
+    ;
+    //TX ALL LOs
+    subtree->create<std::string>(tx_fe_path / "los" / ALL_LOS / "source/value")
+        .add_coerced_subscriber([this,chan_idx](std::string src) {
+            this->set_tx_lo_source(src, ALL_LOS, chan_idx);
+        })
+        .set_publisher([this,chan_idx]() {
+            return this->get_tx_lo_source(ALL_LOS, chan_idx);
+        })
+    ;
+    subtree->create<std::vector<std::string>>(tx_fe_path / "los" / ALL_LOS / "source/options")
+        .set_publisher([this, chan_idx]() {
+            return this->get_tx_lo_sources(ALL_LOS, chan_idx);
+        })
+    ;
+    subtree->create<bool>(tx_fe_path / "los" / ALL_LOS / "export")
+        .add_coerced_subscriber([this,chan_idx](bool enabled){
+            this->set_tx_lo_export_enabled(enabled, ALL_LOS, chan_idx);
+        })
+        .set_publisher([this,chan_idx](){
+            return this->get_tx_lo_export_enabled(ALL_LOS, chan_idx);
         })
     ;
 

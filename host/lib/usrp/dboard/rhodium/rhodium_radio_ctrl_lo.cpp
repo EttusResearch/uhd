@@ -44,7 +44,7 @@ namespace {
 
     void _validate_lo_name(const std::string& name, const std::string& function_name)
     {
-        if (!uhd::has(_get_lo_names(), name)) {
+        if (!uhd::has(_get_lo_names(), name) and name != radio_ctrl::ALL_LOS) {
             throw uhd::value_error(str(boost::format(
                 "%s was called with an invalid LO name: %s")
                 % function_name
@@ -55,7 +55,7 @@ namespace {
     // object agnostic helpers
     std::vector<std::string> _get_lo_sources(const std::string& name)
     {
-        if (name == RHODIUM_LO1) {
+        if (name == RHODIUM_LO1 or name == radio_ctrl::ALL_LOS) {
             return { "internal", "external" };
         } else {
             return { "internal" };
@@ -111,9 +111,12 @@ freq_range_t rhodium_radio_ctrl_impl::_get_lo_freq_range(const std::string &name
 {
     if (name == RHODIUM_LO1) {
         return freq_range_t{ RHODIUM_LO1_MIN_FREQ, RHODIUM_LO1_MAX_FREQ };
-    } else {
+    } else if (name == RHODIUM_LO2) {
         // The Lowband LO is a fixed frequency
         return freq_range_t{ _get_lowband_lo_freq(), _get_lowband_lo_freq() };
+    } else {
+        throw uhd::runtime_error(
+            "LO frequency range must be retrieved for each stage individually");
     }
 }
 
@@ -152,6 +155,9 @@ double rhodium_radio_ctrl_impl::set_tx_lo_freq(
     UHD_ASSERT_THROW(chan == 0);
     _validate_lo_name(name, "set_tx_lo_freq");
 
+    if (name == ALL_LOS) {
+        throw uhd::runtime_error("LO frequency must be set for each stage individually");
+    }
     if (name == RHODIUM_LO2) {
         UHD_LOG_WARNING(unique_id(), "The Lowband LO cannot be tuned");
         return _get_lowband_lo_freq();
@@ -177,6 +183,9 @@ double rhodium_radio_ctrl_impl::set_rx_lo_freq(
     UHD_ASSERT_THROW(chan == 0);
     _validate_lo_name(name, "set_rx_lo_freq");
 
+    if (name == ALL_LOS) {
+        throw uhd::runtime_error("LO frequency must be set for each stage individually");
+    }
     if (name == RHODIUM_LO2) {
         UHD_LOG_WARNING(unique_id(), "The Lowband LO cannot be tuned");
         return _get_lowband_lo_freq();
@@ -201,6 +210,11 @@ double rhodium_radio_ctrl_impl::get_tx_lo_freq(
     UHD_ASSERT_THROW(chan == 0);
     _validate_lo_name(name, "get_tx_lo_freq");
 
+    if (name == ALL_LOS) {
+        throw uhd::runtime_error(
+            "LO frequency must be retrieved for each stage individually");
+    }
+
     return (name == RHODIUM_LO1) ? _tx_lo_freq : _get_lowband_lo_freq();
 }
 
@@ -211,6 +225,11 @@ double rhodium_radio_ctrl_impl::get_rx_lo_freq(
     UHD_LOG_TRACE(unique_id(), "get_rx_lo_freq(name=" << name << ", chan=" << chan << ")");
     UHD_ASSERT_THROW(chan == 0);
     _validate_lo_name(name, "get_rx_lo_freq");
+
+    if (name == ALL_LOS) {
+        throw uhd::runtime_error(
+            "LO frequency must be retrieved for each stage individually");
+    }
 
     return (name == RHODIUM_LO1) ? _rx_lo_freq : _get_lowband_lo_freq();
 }
@@ -230,7 +249,7 @@ void rhodium_radio_ctrl_impl::set_tx_lo_source(
 
     if (name == RHODIUM_LO2) {
         if (src != "internal") {
-            UHD_LOG_ERROR(unique_id(), "The Lowband LO can only be set to internal");
+            throw uhd::value_error("The Lowband LO can only be set to internal");
         }
         return;
     }
@@ -259,7 +278,7 @@ void rhodium_radio_ctrl_impl::set_rx_lo_source(
 
     if (name == RHODIUM_LO2) {
         if (src != "internal") {
-            UHD_LOG_WARNING(unique_id(), "The Lowband LO can only be internal");
+            throw uhd::value_error("The Lowband LO can only be set to internal");
         }
         return;
     }
@@ -285,7 +304,7 @@ const std::string rhodium_radio_ctrl_impl::get_tx_lo_source(
     UHD_ASSERT_THROW(chan == 0);
     _validate_lo_name(name, "get_tx_lo_source");
 
-    return (name == RHODIUM_LO1) ? _tx_lo_source : "internal";
+    return (name == RHODIUM_LO1 or name == ALL_LOS) ? _tx_lo_source : "internal";
 }
 
 const std::string rhodium_radio_ctrl_impl::get_rx_lo_source(
@@ -296,7 +315,7 @@ const std::string rhodium_radio_ctrl_impl::get_rx_lo_source(
     UHD_ASSERT_THROW(chan == 0);
     _validate_lo_name(name, "get_rx_lo_source");
 
-    return (name == RHODIUM_LO1) ? _rx_lo_source : "internal";
+    return (name == RHODIUM_LO1 or name == ALL_LOS) ? _rx_lo_source : "internal";
 }
 
 /******************************************************************************
@@ -363,7 +382,7 @@ bool rhodium_radio_ctrl_impl::get_tx_lo_export_enabled(
     UHD_ASSERT_THROW(chan == 0);
     _validate_lo_name(name, "get_tx_lo_export_enabled");
 
-    return (name == RHODIUM_LO1) ? _tx_lo_exported : false;
+    return (name == RHODIUM_LO1 or name == ALL_LOS) ? _tx_lo_exported : false;
 }
 
 bool rhodium_radio_ctrl_impl::get_rx_lo_export_enabled(
@@ -374,7 +393,7 @@ bool rhodium_radio_ctrl_impl::get_rx_lo_export_enabled(
     UHD_ASSERT_THROW(chan == 0);
     _validate_lo_name(name, "get_rx_lo_export_enabled");
 
-    return (name == RHODIUM_LO1) ? _rx_lo_exported : false;
+    return (name == RHODIUM_LO1 or name == ALL_LOS) ? _rx_lo_exported : false;
 }
 
 /******************************************************************************
@@ -479,6 +498,9 @@ double rhodium_radio_ctrl_impl::set_tx_lo_gain(
     UHD_ASSERT_THROW(chan == 0);
     _validate_lo_name(name, "set_tx_lo_gain");
 
+    if (name == ALL_LOS) {
+        throw uhd::runtime_error("LO gain must be set for each stage individually");
+    }
     if (name == RHODIUM_LO2) {
         UHD_LOG_WARNING(unique_id(), "The Lowband LO does not have configurable gain");
         return 0.0;
@@ -500,6 +522,9 @@ double rhodium_radio_ctrl_impl::set_rx_lo_gain(
     UHD_ASSERT_THROW(chan == 0);
     _validate_lo_name(name, "set_rx_lo_gain");
 
+    if (name == ALL_LOS) {
+        throw uhd::runtime_error("LO gain must be set for each stage individually");
+    }
     if (name == RHODIUM_LO2) {
         UHD_LOG_WARNING(unique_id(), "The Lowband LO does not have configurable gain");
         return 0.0;
@@ -520,6 +545,10 @@ double rhodium_radio_ctrl_impl::get_tx_lo_gain(
     UHD_ASSERT_THROW(chan == 0);
     _validate_lo_name(name, "get_tx_lo_gain");
 
+    if (name == ALL_LOS) {
+        throw uhd::runtime_error("LO gain must be retrieved for each stage individually");
+    }
+
     return (name == RHODIUM_LO1) ? _lo_rx_gain : 0.0;
 }
 
@@ -530,6 +559,10 @@ double rhodium_radio_ctrl_impl::get_rx_lo_gain(
     UHD_LOG_TRACE(unique_id(), "get_rx_lo_gain(name=" << name << ", chan=" << chan << ")");
     UHD_ASSERT_THROW(chan == 0);
     _validate_lo_name(name, "get_rx_lo_gain");
+
+    if (name == ALL_LOS) {
+        throw uhd::runtime_error("LO gain must be retrieved for each stage individually");
+    }
 
     return (name == RHODIUM_LO1) ? _lo_tx_gain : 0.0;
 }
@@ -558,6 +591,10 @@ double rhodium_radio_ctrl_impl::set_tx_lo_power(
     UHD_ASSERT_THROW(chan == 0);
     _validate_lo_name(name, "set_tx_lo_power");
 
+    if (name == ALL_LOS) {
+        throw uhd::runtime_error(
+            "LO output power must be set for each stage individually");
+    }
     if (name == RHODIUM_LO2) {
         UHD_LOG_WARNING(unique_id(), "The Lowband LO does not have configurable output power");
         return 0.0;
@@ -576,6 +613,10 @@ double rhodium_radio_ctrl_impl::set_rx_lo_power(
     UHD_ASSERT_THROW(chan == 0);
     _validate_lo_name(name, "set_rx_lo_power");
 
+    if (name == ALL_LOS) {
+        throw uhd::runtime_error(
+            "LO output power must be set for each stage individually");
+    }
     if (name == RHODIUM_LO2) {
         UHD_LOG_WARNING(unique_id(), "The Lowband LO does not have configurable output power");
         return 0.0;
@@ -593,6 +634,11 @@ double rhodium_radio_ctrl_impl::get_tx_lo_power(
     UHD_ASSERT_THROW(chan == 0);
     _validate_lo_name(name, "get_tx_lo_power");
 
+    if (name == ALL_LOS) {
+        throw uhd::runtime_error(
+            "LO output power must be retrieved for each stage individually");
+    }
+
     return (name == RHODIUM_LO1) ? _lo_tx_power : 0.0;
 }
 
@@ -603,6 +649,11 @@ double rhodium_radio_ctrl_impl::get_rx_lo_power(
     UHD_LOG_TRACE(unique_id(), "get_rx_lo_power(name=" << name << ", chan=" << chan << ")");
     UHD_ASSERT_THROW(chan == 0);
     _validate_lo_name(name, "get_rx_lo_power");
+
+    if (name == ALL_LOS) {
+        throw uhd::runtime_error(
+            "LO output power must be retrieved for each stage individually");
+    }
 
     return (name == RHODIUM_LO1) ? _lo_rx_power : 0.0;
 }
