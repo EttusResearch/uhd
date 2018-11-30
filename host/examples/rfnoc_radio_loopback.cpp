@@ -9,19 +9,17 @@
 // run a loopback.
 
 #include <uhd/device3.hpp>
-#include <uhd/rfnoc/block_ctrl.hpp>
 #include <uhd/rfnoc/radio_ctrl.hpp>
 #include <uhd/utils/math.hpp>
-#include <uhd/utils/thread_priority.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <boost/program_options.hpp>
-#include <boost/thread.hpp>
 #include <iostream>
 #include <csignal>
+#include <chrono>
+#include <thread>
 
 namespace po = boost::program_options;
 using uhd::rfnoc::radio_ctrl;
-using uhd::rfnoc::block_ctrl;
 
 /****************************************************************************
  * SIGINT handling
@@ -32,9 +30,8 @@ void sig_int_handler(int){stop_signal_called = true;}
 /****************************************************************************
  * main
  ***************************************************************************/
-int UHD_SAFE_MAIN(int argc, char *argv[]){
-    uhd::set_thread_priority_safe();
-
+int UHD_SAFE_MAIN(int argc, char *argv[])
+{
     //variables to be set by po
     std::string args, rx_args, tx_args, rx_ant, tx_ant, rx_blockid, tx_blockid, ref;
     size_t total_num_samps, spp, rx_chan, tx_chan, tx_delay;
@@ -86,7 +83,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     // Create a device session
     std::cout << std::endl;
     std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
-    uhd::device3::sptr dev = boost::dynamic_pointer_cast<uhd::device3>(uhd::device::make(args));
+    auto dev = boost::dynamic_pointer_cast<uhd::device3>(uhd::device::make(args));
     if (not dev) {
         std::cout << "Error: Could not find an RFNoC-compatible device." << std::endl;
         return EXIT_FAILURE;
@@ -103,8 +100,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             << std::endl;
         return EXIT_FAILURE;
     }
-    radio_ctrl::sptr rx_radio_ctrl = dev->get_block_ctrl<radio_ctrl>(rx_blockid);
-    radio_ctrl::sptr tx_radio_ctrl = dev->get_block_ctrl<radio_ctrl>(tx_blockid);
+    auto rx_radio_ctrl = dev->get_block_ctrl<radio_ctrl>(rx_blockid);
+    auto tx_radio_ctrl = dev->get_block_ctrl<radio_ctrl>(tx_blockid);
 
     // Configure Rx radio
     std::cout << "Configuring Rx radio..." << std::endl;
@@ -171,7 +168,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     rx_radio_ctrl->set_rx_streamer(true, rx_chan);
 
     // Allow for some setup time
-    boost::this_thread::sleep(boost::posix_time::seconds(setup_time));
+    std::this_thread::sleep_for(
+        std::chrono::milliseconds(int64_t(setup_time * 1000)));
 
     // Arm SIGINT handler
     std::signal(SIGINT, &sig_int_handler);
@@ -181,9 +179,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         const double buffer_time = 1.0; // seconds
         total_time = (1.0/rate) * total_num_samps + buffer_time;
     }
-    long total_time_milliseconds = total_time * 1000;
-    boost::posix_time::ptime start_time = boost::posix_time::microsec_clock::local_time();
-    boost::posix_time::time_duration elapsed;
 
     // Start streaming
     uhd::stream_cmd_t stream_cmd((total_num_samps == 0)?
@@ -199,7 +194,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     // Wait until we can exit
     while (not stop_signal_called) {
-        boost::this_thread::sleep_for(boost::chrono::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        // FIXME honour --duration
     }
 
     // Stop radio
