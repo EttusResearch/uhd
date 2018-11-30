@@ -41,8 +41,6 @@ public:
 
     enum antenna_mapping_t { ANTX_NATIVE, ANT1_SHARED, ANT2_SHARED, ANTX_SWAPPED, ANTX_DISABLED };
 
-    enum lo_config_route_t { LO_CONFIG_CH1, LO_CONFIG_CH2, LO_CONFIG_BOTH, LO_CONFIG_NONE };
-
     enum cal_mode_t { CAL_DISABLED, CAL_CH1, CAL_CH2 };
 
     virtual void commit() = 0;

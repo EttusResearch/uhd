@@ -20,7 +20,9 @@ using namespace dboard::twinrx;
 namespace {
   typedef twinrx_cpld_regmap rm;
 
-  uint32_t bool2bin(bool x) { return x ? 1 : 0; }
+  typedef enum { LO1, LO2 } lo_t;
+
+  inline uint32_t bool2bin(bool x) { return x ? 1 : 0; }
 
   const double TWINRX_DESIRED_REFERENCE_FREQ = 50e6;
   const double TWINRX_REV_AB_PFD_FREQ = 6.25e6;
@@ -75,6 +77,7 @@ public:
         set_lo2_export_source(LO_EXPORT_DISABLED, false);
         set_antenna_mapping(ANTX_NATIVE, false);
         set_crossover_cal_mode(CAL_DISABLED, false);
+        _cpld_regs->flush();
 
         //Turn on power and wait for power good
         _gpio_iface->set_field(twinrx_gpio::FIELD_SWPS_EN, 1);
@@ -513,19 +516,14 @@ private:    //Functions
             ch1_enabled || (ch2_enabled && (ch2_lo1_src == LO_EXTERNAL || ch2_lo1_src == LO_REIMPORT))));
     }
 
-    void _config_lo1_route(lo_config_route_t source)
+    void _config_lo_route(lo_t lo, channel_t channel)
     {
         //Route SPI LEs through CPLD (will not assert them)
-        _cpld_regs->rf0_reg2.set(rm::rf0_reg2_t::LO1_LE_CH1, bool2bin(source==LO_CONFIG_CH1||source==LO_CONFIG_BOTH));
-        _cpld_regs->rf0_reg2.set(rm::rf0_reg2_t::LO1_LE_CH2, bool2bin(source==LO_CONFIG_CH2||source==LO_CONFIG_BOTH));
+        _cpld_regs->rf0_reg2.set(rm::rf0_reg2_t::LO1_LE_CH1, bool2bin(lo == LO1 and (channel == CH1 or channel == BOTH)));
+        _cpld_regs->rf0_reg2.set(rm::rf0_reg2_t::LO1_LE_CH2, bool2bin(lo == LO1 and (channel == CH2 or channel == BOTH)));
         _cpld_regs->rf0_reg2.flush();
-    }
-
-    void _config_lo2_route(lo_config_route_t source)
-    {
-        //Route SPI LEs through CPLD (will not assert them)
-        _cpld_regs->if0_reg2.set(rm::if0_reg2_t::LO2_LE_CH1, bool2bin(source==LO_CONFIG_CH1||source==LO_CONFIG_BOTH));
-        _cpld_regs->if0_reg2.set(rm::if0_reg2_t::LO2_LE_CH2, bool2bin(source==LO_CONFIG_CH2||source==LO_CONFIG_BOTH));
+        _cpld_regs->if0_reg2.set(rm::if0_reg2_t::LO2_LE_CH1, bool2bin(lo == LO2 and (channel == CH1 or channel == BOTH)));
+        _cpld_regs->if0_reg2.set(rm::if0_reg2_t::LO2_LE_CH2, bool2bin(lo == LO2 and (channel == CH2 or channel == BOTH)));
         _cpld_regs->if0_reg2.flush();
     }
 
@@ -571,7 +569,7 @@ private:    //Functions
                                        _lo1_enable[size_t(CH1)].get() == _lo1_enable[size_t(CH2)].get();
 
         if (simultaneous_commit_lo1) {
-            _config_lo1_route(LO_CONFIG_BOTH);
+            _config_lo_route(LO1, BOTH);
             //Only commit one of the channels. The route LO_CONFIG_BOTH
             //will ensure that the LEs for both channels are enabled
             _lo1_iface[size_t(CH1)]->commit();
@@ -579,21 +577,18 @@ private:    //Functions
             _lo1_freq[size_t(CH2)].mark_clean();
             _lo1_enable[size_t(CH1)].mark_clean();
             _lo1_enable[size_t(CH2)].mark_clean();
-            _config_lo1_route(LO_CONFIG_NONE);
         } else {
             if (_lo1_freq[size_t(CH1)].is_dirty() || _lo1_enable[size_t(CH1)].is_dirty()) {
-                _config_lo1_route(LO_CONFIG_CH1);
+                _config_lo_route(LO1, CH1);
                 _lo1_iface[size_t(CH1)]->commit();
                 _lo1_freq[size_t(CH1)].mark_clean();
                 _lo1_enable[size_t(CH1)].mark_clean();
-                _config_lo1_route(LO_CONFIG_NONE);
             }
             if (_lo1_freq[size_t(CH2)].is_dirty() || _lo1_enable[size_t(CH2)].is_dirty()) {
-                _config_lo1_route(LO_CONFIG_CH2);
+                _config_lo_route(LO1, CH2);
                 _lo1_iface[size_t(CH2)]->commit();
                 _lo1_freq[size_t(CH2)].mark_clean();
                 _lo1_enable[size_t(CH2)].mark_clean();
-                _config_lo1_route(LO_CONFIG_NONE);
             }
         }
 
@@ -604,7 +599,7 @@ private:    //Functions
                                        _lo2_enable[size_t(CH1)].get() == _lo2_enable[size_t(CH2)].get();
 
         if (simultaneous_commit_lo2) {
-            _config_lo2_route(LO_CONFIG_BOTH);
+            _config_lo_route(LO2, BOTH);
             //Only commit one of the channels. The route LO_CONFIG_BOTH
             //will ensure that the LEs for both channels are enabled
             _lo2_iface[size_t(CH1)]->commit();
@@ -612,21 +607,18 @@ private:    //Functions
             _lo2_freq[size_t(CH2)].mark_clean();
             _lo2_enable[size_t(CH1)].mark_clean();
             _lo2_enable[size_t(CH2)].mark_clean();
-            _config_lo2_route(LO_CONFIG_NONE);
         } else {
             if (_lo2_freq[size_t(CH1)].is_dirty() || _lo2_enable[size_t(CH1)].is_dirty()) {
-                _config_lo2_route(LO_CONFIG_CH1);
+                _config_lo_route(LO2, CH1);
                 _lo2_iface[size_t(CH1)]->commit();
                 _lo2_freq[size_t(CH1)].mark_clean();
                 _lo2_enable[size_t(CH1)].mark_clean();
-                _config_lo2_route(LO_CONFIG_NONE);
             }
             if (_lo2_freq[size_t(CH2)].is_dirty() || _lo2_enable[size_t(CH2)].is_dirty()) {
-                _config_lo2_route(LO_CONFIG_CH2);
+                _config_lo_route(LO2, CH2);
                 _lo2_iface[size_t(CH2)]->commit();
                 _lo2_freq[size_t(CH2)].mark_clean();
                 _lo2_enable[size_t(CH2)].mark_clean();
-                _config_lo2_route(LO_CONFIG_NONE);
             }
         }
     }
