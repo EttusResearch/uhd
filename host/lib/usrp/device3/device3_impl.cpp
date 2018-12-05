@@ -164,7 +164,7 @@ void device3_impl::enumerate_rfnoc_blocks(
             ));
             uhd::rfnoc::ctrl_iface::sptr ctrl1 = uhd::rfnoc::ctrl_iface::make(
                     xport1,
-                    str(boost::format("CE_%02d_Port_%02d") % i % ctrl_sid.get_dst_endpoint())
+                    str(boost::format("CE_%02d_Port_%02X") % i % ctrl_sid.get_dst_endpoint())
             );
             make_args.ctrl_ifaces[port_number] = ctrl1;
         }
