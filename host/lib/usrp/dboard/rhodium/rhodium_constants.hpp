@@ -53,8 +53,9 @@ static const std::vector<std::string> RHODIUM_TX_ANTENNAS = {
 };
 
 // These names are taken from radio_rhodium.xml
-static constexpr char SPUR_DODGING_ARG_NAME[] = "spur_dodging";
-static constexpr char SPUR_DODGING_THRESHOLD_ARG_NAME[] = "spur_dodging_threshold";
+static constexpr char SPUR_DODGING_ARG_NAME[]            = "spur_dodging";
+static constexpr char SPUR_DODGING_THRESHOLD_ARG_NAME[]  = "spur_dodging_threshold";
+static constexpr char HIGHBAND_SPUR_REDUCTION_ARG_NAME[] = "highband_spur_reduction";
 
 static constexpr uint32_t RHODIUM_GPIO_MASK = 0x1F;
 static constexpr uint32_t SW10_GPIO_MASK = 0x3;

@@ -142,6 +142,13 @@ void rhodium_radio_ctrl_impl::_init_defaults()
         _tree->access<double>(get_arg_path(SPUR_DODGING_THRESHOLD_ARG_NAME) / "value")
             .set(boost::lexical_cast<double>(_block_args.get(SPUR_DODGING_THRESHOLD_ARG_NAME)));
     }
+
+    if (_block_args.has_key(HIGHBAND_SPUR_REDUCTION_ARG_NAME)) {
+        _tree
+            ->access<std::string>(
+                get_arg_path(HIGHBAND_SPUR_REDUCTION_ARG_NAME) / "value")
+            .set(_block_args.get(HIGHBAND_SPUR_REDUCTION_ARG_NAME));
+    }
 }
 
 void rhodium_radio_ctrl_impl::_init_peripherals()

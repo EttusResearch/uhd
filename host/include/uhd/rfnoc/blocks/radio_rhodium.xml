@@ -27,6 +27,11 @@
       <type>double</type>
       <value>2e6</value>
     </arg>
+    <arg>
+      <name>highband_spur_reduction</name>
+      <type>string</type>
+      <value>disabled</value>
+    </arg>
   </args>
   <ports>
     <sink>

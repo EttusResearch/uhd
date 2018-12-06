@@ -244,6 +244,8 @@ private:
 
     bool _get_spur_dodging_enabled(const uhd::direction_t dir) const;
     double _get_spur_dodging_threshold(const uhd::direction_t dir) const;
+    bool _get_highband_spur_reduction_enabled(const uhd::direction_t dir) const;
+    bool _get_timed_command_enabled() const;
 
     /**************************************************************************
      * Sensors

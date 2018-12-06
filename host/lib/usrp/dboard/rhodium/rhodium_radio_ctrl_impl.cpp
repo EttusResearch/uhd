@@ -163,6 +163,7 @@ double rhodium_radio_ctrl_impl::set_tx_frequency(
     UHD_LOG_TRACE(unique_id(), "set_tx_frequency(f=" << freq << ", chan=" << chan << ")");
     UHD_ASSERT_THROW(chan == 0);
 
+    const auto old_freq        = get_tx_frequency(0);
     double coerced_target_freq = uhd::clip(freq, RHODIUM_MIN_FREQ, RHODIUM_MAX_FREQ);
 
     if (freq != coerced_target_freq) {
@@ -180,9 +181,24 @@ double rhodium_radio_ctrl_impl::set_tx_frequency(
     const auto conn = is_highband ?
         TX_FE_CONNECTION_HIGHBAND : TX_FE_CONNECTION_LOWBAND;
 
+    // update the cached frequency value now so calls to set gain and update
+    // switches will read the new frequency
+    radio_ctrl_impl::set_tx_frequency(coerced_freq, chan);
+
     _set_tx_fe_connection(conn);
     set_tx_gain(get_tx_gain(chan), 0);
-    radio_ctrl_impl::set_tx_frequency(coerced_freq, chan);
+
+    if (_get_highband_spur_reduction_enabled(TX_DIRECTION)) {
+        if (_get_timed_command_enabled() and _is_tx_lowband(old_freq) != not is_highband) {
+            UHD_LOG_WARNING(unique_id(),
+                "Timed tuning commands that transition between lowband and highband, 450 "
+                "MHz, do not function correctly when highband_spur_reduction is enabled! "
+                "Disable highband_spur_reduction or avoid using timed tuning commands.");
+        }
+        UHD_LOG_TRACE(
+            unique_id(), "TX Lowband LO is " << (is_highband ? "disabled" : "enabled"));
+        _rpcc->notify_with_token(_rpc_prefix + "enable_tx_lowband_lo", (!is_highband));
+    }
     _update_tx_freq_switches(coerced_freq);
     // if TX lowband/highband changed and antenna is TX/RX,
     // the ATR and SW1 need to be updated
@@ -199,6 +215,7 @@ double rhodium_radio_ctrl_impl::set_rx_frequency(
     UHD_LOG_TRACE(unique_id(), "set_rx_frequency(f=" << freq << ", chan=" << chan << ")");
     UHD_ASSERT_THROW(chan == 0);
 
+    const auto old_freq        = get_rx_frequency(0);
     double coerced_target_freq = uhd::clip(freq, RHODIUM_MIN_FREQ, RHODIUM_MAX_FREQ);
 
     if (freq != coerced_target_freq) {
@@ -216,9 +233,24 @@ double rhodium_radio_ctrl_impl::set_rx_frequency(
     const auto conn = is_highband ?
         RX_FE_CONNECTION_HIGHBAND : RX_FE_CONNECTION_LOWBAND;
 
+    // update the cached frequency value now so calls to set gain and update
+    // switches will read the new frequency
+    radio_ctrl_impl::set_rx_frequency(coerced_freq, chan);
+
     _set_rx_fe_connection(conn);
     set_rx_gain(get_rx_gain(chan), 0);
-    radio_ctrl_impl::set_rx_frequency(coerced_freq, chan);
+
+    if (_get_highband_spur_reduction_enabled(RX_DIRECTION)) {
+        if (_get_timed_command_enabled() and _is_rx_lowband(old_freq) != not is_highband) {
+            UHD_LOG_WARNING(unique_id(),
+                "Timed tuning commands that transition between lowband and highband, 450 "
+                "MHz, do not function correctly when highband_spur_reduction is enabled! "
+                "Disable highband_spur_reduction or avoid using timed tuning commands.");
+        }
+        UHD_LOG_TRACE(
+            unique_id(), "RX Lowband LO is " << (is_highband ? "disabled" : "enabled"));
+        _rpcc->notify_with_token(_rpc_prefix + "enable_rx_lowband_lo", (!is_highband));
+    }
     _update_rx_freq_switches(coerced_freq);
 
     return coerced_freq;
@@ -419,6 +451,43 @@ double rhodium_radio_ctrl_impl::_get_spur_dodging_threshold(uhd::direction_t dir
     UHD_LOG_TRACE(unique_id(), "_get_spur_dodging_threshold returning " << threshold);
 
     return threshold;
+}
+
+bool rhodium_radio_ctrl_impl::_get_highband_spur_reduction_enabled(uhd::direction_t dir) const
+{
+    UHD_ASSERT_THROW(
+        _tree->exists(get_arg_path(HIGHBAND_SPUR_REDUCTION_ARG_NAME) / "value"));
+    auto block_value = _tree
+                           ->access<std::string>(
+                               get_arg_path(HIGHBAND_SPUR_REDUCTION_ARG_NAME) / "value")
+                           .get();
+    auto dict = _get_tune_args(_tree, _radio_slot, dir);
+
+    // get the current tune_arg for highband_spur_reduction
+    // if the tune_arg doesn't exist, use the radio block argument instead
+    std::string highband_spur_reduction_arg =
+        dict.cast<std::string>(HIGHBAND_SPUR_REDUCTION_ARG_NAME, block_value);
+
+    if (highband_spur_reduction_arg == "enabled") {
+        UHD_LOG_TRACE(unique_id(), __func__ << " returning enabled");
+        return true;
+    } else if (highband_spur_reduction_arg == "disabled") {
+        UHD_LOG_TRACE(unique_id(), __func__ << " returning disabled");
+        return false;
+    } else {
+        throw uhd::value_error(
+            str(boost::format("Invalid highband_spur_reduction argument: %s Valid "
+                              "options are [enabled, disabled]")
+                % highband_spur_reduction_arg));
+    }
+}
+
+bool rhodium_radio_ctrl_impl::_get_timed_command_enabled() const
+{
+    auto& prop = _tree->access<time_spec_t>(fs_path("time") / "cmd");
+    // if timed commands are never set, the property will be empty
+    // if timed commands were set but cleared, time_spec will be set to 0.0
+    return !prop.empty() and prop.get() != time_spec_t(0.0);
 }
 
 size_t rhodium_radio_ctrl_impl::get_chan_from_dboard_fe(
