@@ -75,7 +75,7 @@ read_program_options(po::variables_map vm)
     // read out given options
     prog.realtime = (vm.count("no-realtime") == 0);
 
-    prog.delay_step = abs(prog.delay_step);
+    prog.delay_step = std::abs(prog.delay_step);
     if (prog.delay_min > prog.delay_max)
     {
         prog.delay_step *= -1;

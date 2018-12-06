@@ -855,7 +855,7 @@ Responder::calibrate_usrp_for_test_run()
                     _stream_cmd.stream_now = true;
                     _usrp->issue_stream_cmd(_stream_cmd);
 
-                    double diff = abs(ave_high - ave_low);
+                    double diff = std::abs(ave_high - ave_low);
                     if (diff < _opt.pulse_detection_threshold)
                     {
                         _return_code = RETCODE_BAD_ARGS;
