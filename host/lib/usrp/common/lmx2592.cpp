@@ -682,16 +682,16 @@ private: // Members
         // shift away from the closest integer boundary i.e. towards 0.5
         const double delta_fnum_sign = ((((double)fnum) / ((double)fden)) < 0.5) ? 1 : -1;
 
-        while (abs(min_offset.first) < spur_dodging_threshold)
+        while (std::abs(min_offset.first) < spur_dodging_threshold)
         {
             double shift = spur_dodging_threshold;
             // if the spur is in the same direction as the desired shift direction...
             if (std::signbit(min_offset.first) == std::signbit(delta_fnum_sign))
             {
-                shift += abs(min_offset.first);
+                shift += std::abs(min_offset.first);
             }
             else {
-                shift -= abs(min_offset.first);
+                shift -= std::abs(min_offset.first);
             }
 
             // convert shift of IF value to shift of Frf_in
