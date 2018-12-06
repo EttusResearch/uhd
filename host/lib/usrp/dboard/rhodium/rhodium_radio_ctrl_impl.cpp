@@ -185,7 +185,8 @@ double rhodium_radio_ctrl_impl::set_tx_frequency(
     radio_ctrl_impl::set_tx_frequency(coerced_freq, chan);
     _update_tx_freq_switches(coerced_freq);
     // if TX lowband/highband changed and antenna is TX/RX,
-    // the ATR needs to be updated
+    // the ATR and SW1 need to be updated
+    _update_tx_output_switches(get_tx_antenna(0));
     _update_atr(get_tx_antenna(0), TX_DIRECTION);
 
     return coerced_freq;
