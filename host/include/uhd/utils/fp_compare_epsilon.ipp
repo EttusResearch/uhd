@@ -53,9 +53,9 @@ namespace uhd { namespace math { namespace fp_compare {
     template<typename float_t> UHD_INLINE
     bool operator==(fp_compare_epsilon<float_t> lhs, fp_compare_epsilon<float_t> rhs) {
 
-        bool lhs_compare = ((std::fabs(lhs._value - rhs._value) / std::fabs(lhs._value))
+        bool lhs_compare = ((std::abs(lhs._value - rhs._value) / std::abs(lhs._value))
                     <= lhs._epsilon);
-        bool rhs_compare = ((std::fabs(lhs._value - rhs._value) / std::fabs(rhs._value))
+        bool rhs_compare = ((std::abs(lhs._value - rhs._value) / std::abs(rhs._value))
                     <= rhs._epsilon);
 
         return (lhs_compare && rhs_compare);
@@ -89,9 +89,9 @@ namespace uhd { namespace math { namespace fp_compare {
     template<typename float_t> UHD_INLINE
     bool operator==(fp_compare_epsilon<float_t> lhs, double rhs) {
 
-        bool lhs_compare = ((std::fabs(lhs._value - rhs) / std::fabs(lhs._value))
+        bool lhs_compare = ((std::abs(lhs._value - rhs) / std::abs(lhs._value))
                     <= lhs._epsilon);
-        bool rhs_compare = ((std::fabs(lhs._value - rhs) / std::fabs(rhs))
+        bool rhs_compare = ((std::abs(lhs._value - rhs) / std::abs(rhs))
                     <= DOUBLE_PRECISION_EPSILON);
 
         return (lhs_compare && rhs_compare);
@@ -127,9 +127,9 @@ namespace uhd { namespace math { namespace fp_compare {
     template<typename float_t> UHD_INLINE
     bool operator==(double lhs, fp_compare_epsilon<float_t> rhs) {
 
-        bool lhs_compare = ((std::fabs(lhs - rhs._value) / std::fabs(lhs))
+        bool lhs_compare = ((std::abs(lhs - rhs._value) / std::abs(lhs))
                     <= DOUBLE_PRECISION_EPSILON);
-        bool rhs_compare = ((std::fabs(lhs - rhs._value) / std::fabs(rhs._value))
+        bool rhs_compare = ((std::abs(lhs - rhs._value) / std::abs(rhs._value))
                     <= rhs._epsilon);
 
         return (lhs_compare && rhs_compare);

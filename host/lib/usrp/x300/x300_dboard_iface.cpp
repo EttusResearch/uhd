@@ -56,7 +56,7 @@ void x300_dboard_iface::set_clock_rate(unit_t unit, double rate)
     if (unit == UNIT_BOTH) throw uhd::runtime_error("UNIT_BOTH not supported.");
 
     // Just return if the requested rate is already set
-    if (std::fabs(_clock_rates[unit] - rate) < std::numeric_limits<double>::epsilon())
+    if (std::abs(_clock_rates[unit] - rate) < std::numeric_limits<double>::epsilon())
         return;
 
     switch(unit)

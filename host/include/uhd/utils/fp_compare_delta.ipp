@@ -58,7 +58,7 @@ namespace uhd { namespace math { namespace fp_compare {
     template<typename float_t> UHD_INLINE
     bool operator==(fp_compare_delta<float_t> lhs, fp_compare_delta<float_t> rhs) {
         float_t delta = fp_compare_select_delta(lhs._delta, rhs._delta);
-        return (std::fabs(lhs._value - rhs._value) < delta);
+        return (std::abs(lhs._value - rhs._value) < delta);
     }
 
     template<typename float_t> UHD_INLINE
@@ -92,7 +92,7 @@ namespace uhd { namespace math { namespace fp_compare {
     bool operator==(fp_compare_delta<float_t> lhs, double rhs) {
         float_t delta = float_t(fp_compare_select_delta(double(lhs._delta),
                 DOUBLE_PRECISION_DELTA));
-        return (std::fabs(lhs._value - rhs) < delta);
+        return (std::abs(lhs._value - rhs) < delta);
     }
 
     template<typename float_t> UHD_INLINE
@@ -128,7 +128,7 @@ namespace uhd { namespace math { namespace fp_compare {
     bool operator==(double lhs, fp_compare_delta<float_t> rhs) {
         float_t delta = fp_compare_select_delta(DOUBLE_PRECISION_DELTA,
                 double(rhs._delta));
-        return (std::fabs(lhs - rhs._value) < delta);
+        return (std::abs(lhs - rhs._value) < delta);
     }
 
     template<typename float_t> UHD_INLINE

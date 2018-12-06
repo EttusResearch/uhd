@@ -210,9 +210,9 @@ private: // member functions
         % tm.tm_min
         % tm.tm_sec
         % (_gps_data.status ? 'A' : 'V')
-        % _zeroize(_deg_to_dm(std::fabs(_gps_data.fix.latitude)))
+        % _zeroize(_deg_to_dm(std::abs(_gps_data.fix.latitude)))
         % ((_gps_data.fix.latitude > 0) ? 'N' : 'S')
-        % _zeroize(_deg_to_dm(std::fabs(_gps_data.fix.longitude)))
+        % _zeroize(_deg_to_dm(std::abs(_gps_data.fix.longitude)))
         % ((_gps_data.fix.longitude > 0) ? 'E' : 'W')
         % _zeroize(_gps_data.fix.speed * MPS_TO_KNOTS)
         % _zeroize(_gps_data.fix.track)
@@ -242,9 +242,9 @@ private: // member functions
             % tm.tm_hour
             % tm.tm_min
             % tm.tm_sec
-            % _deg_to_dm(std::fabs(_gps_data.fix.latitude))
+            % _deg_to_dm(std::abs(_gps_data.fix.latitude))
             % ((_gps_data.fix.latitude > 0) ? 'N' : 'S')
-            % _deg_to_dm(std::fabs(_gps_data.fix.longitude))
+            % _deg_to_dm(std::abs(_gps_data.fix.longitude))
             % ((_gps_data.fix.longitude > 0) ? 'E' : 'W')
             % _gps_data.status
             % _gps_data.satellites_used);
@@ -271,7 +271,7 @@ private: // member functions
             string.append(",");
         else {
             string.append(
-                str(boost::format("%3.2f,%s") % std::fabs(mag_var)
+                str(boost::format("%3.2f,%s") % std::abs(mag_var)
                 % (mag_var > 0 ? "E" : "W")));
         }
 
