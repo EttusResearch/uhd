@@ -131,6 +131,9 @@ static device_addrs_t x300_find_with_addr(const device_addr_t &hint)
                 case x300_impl::USRP_X310_MB:
                     new_addr["product"] = "X310";
                     break;
+                case x300_impl::USRP_X310_MB_NI_2974:
+                    new_addr["product"] = "NI-2974";
+                    break;
                 default:
                     break;
             }
@@ -188,6 +191,10 @@ static device_addrs_t x300_find_pcie(const device_addr_t &hint, bool explicit_qu
             case x300_impl::USRP_X310_MB:
                 new_addr["product"] = "X310";
                 break;
+            case x300_impl::USRP_X310_MB_NI_2974:
+                new_addr["product"] = "NI-2974";
+                break;
+
             default:
                 continue;
         }
@@ -598,11 +605,12 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
                 lvbitx.reset(new x300_lvbitx(dev_addr["fpga"]));
                 break;
             case USRP_X310_MB:
+            case USRP_X310_MB_NI_2974:
                 lvbitx.reset(new x310_lvbitx(dev_addr["fpga"]));
                 break;
             default:
                 nirio_status_to_exception(status, "Motherboard detection error. Please ensure that you \
-                    have a valid USRP X3x0, NI USRP-294xR or NI USRP-295xR device and that all the device \
+                    have a valid USRP X3x0, NI USRP-294xR, NI USRP-295xR or NI USRP-2974 device and that all the device \
                     drivers have loaded successfully.");
         }
         //Load the lvbitx onto the device
@@ -733,6 +741,9 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
             break;
         case USRP_X310_MB:
             product_name = "X310";
+            break;
+        case USRP_X310_MB_NI_2974:
+            product_name = "NI-2974";
             break;
         default:
             if (not mb.args.get_recover_mb_eeprom())
@@ -1870,6 +1881,8 @@ x300_impl::x300_mboard_t x300_impl::get_mb_type_from_pcie(const std::string& res
                 case X310_2954R_40MHz_PCIE_SSID_ADC_18:
                 case X310_2955R_PCIE_SSID_ADC_18:
                     mb_type = USRP_X310_MB; break;
+                case X310_2974_PCIE_SSID_ADC_18:
+                    mb_type = USRP_X310_MB_NI_2974; break;
                 default:
                     mb_type = UNKNOWN;      break;
             }
@@ -1929,6 +1942,9 @@ x300_impl::x300_mboard_t x300_impl::get_mb_type_from_eeprom(const uhd::usrp::mbo
             case X310_2954R_40MHz_PCIE_SSID_ADC_18:
             case X310_2955R_PCIE_SSID_ADC_18:
                 mb_type = USRP_X310_MB; break;
+            case X310_2974_PCIE_SSID_ADC_18:
+                mb_type = USRP_X310_MB_NI_2974; break;
+
             default:
                 UHD_LOGGER_WARNING("X300") << "X300 unknown product code in EEPROM: " << product_num ;
                 mb_type = UNKNOWN;      break;

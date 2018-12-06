@@ -107,6 +107,7 @@ static const uint32_t X310_2953R_40MHz_PCIE_SSID_ADC_18  = 0x7859;
 static const uint32_t X310_2953R_120MHz_PCIE_SSID_ADC_18 = 0x7860;
 static const uint32_t X310_2954R_40MHz_PCIE_SSID_ADC_18  = 0x785A;
 static const uint32_t X310_2955R_PCIE_SSID_ADC_18        = 0x78F0;
+static const uint32_t X310_2974_PCIE_SSID_ADC_18         = 0x799B;
 
 static const uint32_t FPGA_X3xx_SIG_VALUE   = 0x58333030;
 

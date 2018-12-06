@@ -74,7 +74,7 @@ public:
     static void release(uhd::wb_iface::sptr iface);
 
     enum x300_mboard_t {
-        USRP_X300_MB, USRP_X310_MB, UNKNOWN
+        USRP_X300_MB, USRP_X310_MB, USRP_X310_MB_NI_2974, UNKNOWN
     };
     static x300_mboard_t get_mb_type_from_pcie(const std::string& resource, const std::string& rpc_port);
     static x300_mboard_t get_mb_type_from_eeprom(const uhd::usrp::mboard_eeprom_t& mb_eeprom);
