@@ -401,6 +401,9 @@ private:
     //! Helper to create a lambda to read tick rate
     double get_command_tick_rate(const size_t port);
 
+    //! Helper to start flushing for this block
+    void _start_drain(const size_t port = 0);
+
     //! Helper to flush any in-flight packets for this block
     bool _flush(const size_t port = 0);
 
