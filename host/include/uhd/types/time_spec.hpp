@@ -10,6 +10,7 @@
 
 #include <uhd/config.hpp>
 #include <boost/operators.hpp>
+#include <stdint.h>
 
 namespace uhd{
 
