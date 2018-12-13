@@ -57,7 +57,11 @@ def main():
         if args.action == 'read_partid':
             print(xci_info['DEVICE'] + '/' + xci_info['PACKAGE'] + '/' + xci_info['SPEEDGRADE'] + '/' + xci_info['TEMPERATURE_GRADE'] + '/' + xci_info['SILICON_REVISION'])
         if args.action == 'read_part':
-            print(xci_info['DEVICE'] + xci_info['PACKAGE'] + xci_info['SPEEDGRADE'])
+            # The UltraScale+ RFSoC family ids are expected diferently in Vivado, a '-' must separate each property.
+            if xci_info['ARCHITECTURE'] == "zynquplusRFSOC":
+                print(xci_info['DEVICE'] + "-" + xci_info['PACKAGE'] + xci_info['SPEEDGRADE'] + "-" + xci_info['TEMPERATURE_GRADE'])
+            else:
+                print(xci_info['DEVICE'] + xci_info['PACKAGE'] + xci_info['SPEEDGRADE'])
     elif args.action == 'retarget':
         # Write a new XCI file with modified target info
         if not os.path.isdir(args.output_dir):

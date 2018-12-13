@@ -325,8 +325,7 @@ function viv_create_ip {
     ip_name=$1
     ip_dir=$(readlink -f $2)
     ip_vlnv=$3
-    IFS='/' read -r -a prod_tokens <<< "${PRODUCT_ID_MAP[$4]}"
-    part_name=${prod_tokens[1]}${prod_tokens[2]}${prod_tokens[3]}
+    part_name=$(python $REPO_BASE_PATH/tools/scripts/viv_gen_part_id.py "${PRODUCT_ID_MAP[$2]}")
     if [[ -z $part_name ]]; then
         echo "ERROR: Invalid product name $4. Supported: ${!PRODUCT_ID_MAP[@]}"
         return 1
@@ -376,8 +375,7 @@ function viv_modify_bd {
     fi
 
     bd_path=$(readlink -f $1)
-    IFS='/' read -r -a prod_tokens <<< "${PRODUCT_ID_MAP[$2]}"
-    part_name=${prod_tokens[1]}${prod_tokens[2]}${prod_tokens[3]}
+    part_name=$(python $REPO_BASE_PATH/tools/scripts/viv_gen_part_id.py "${PRODUCT_ID_MAP[$2]}")
     if [[ -f $bd_path ]]; then
         $VIVADO_EXEC -mode gui -source $(resolve_viv_path $VIV_IP_UTILS) -nolog -nojournal -tclargs modify $part_name $(resolve_viv_path $bd_path)
     else
@@ -397,8 +395,7 @@ function viv_modify_tcl_bd {
     fi
 
     src_path=$(readlink -f $1)
-    IFS='/' read -r -a prod_tokens <<< "${PRODUCT_ID_MAP[$2]}"
-    part_name=${prod_tokens[1]}${prod_tokens[2]}${prod_tokens[3]}
+    part_name=$(python $REPO_BASE_PATH/tools/scripts/viv_gen_part_id.py "${PRODUCT_ID_MAP[$2]}")
     bd_ip_repo="${src_path%/top*}/lib/vivado_ipi"
     if [[ -f $src_path ]]; then
         $VIVADO_EXEC -mode gui -source $(resolve_viv_path $VIV_IP_UTILS) -nolog -nojournal -tclargs modify_bdtcl $part_name $(resolve_viv_path $src_path) $(resolve_viv_path $bd_ip_repo)
@@ -419,8 +416,7 @@ function viv_ls_ip {
         return 1
     fi
 
-    IFS='/' read -r -a prod_tokens <<< "${PRODUCT_ID_MAP[$1]}"
-    part_name=${prod_tokens[1]}${prod_tokens[2]}${prod_tokens[3]}
+    part_name=$(python $REPO_BASE_PATH/tools/scripts/viv_gen_part_id.py "${PRODUCT_ID_MAP[$2]}")
     if [[ -z $part_name ]]; then
         echo "ERROR: Invalid product name $1. Supported: ${!PRODUCT_ID_MAP[@]}"
         return 1
