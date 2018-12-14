@@ -105,6 +105,10 @@ block_ctrl_base::block_ctrl_base(
         size_t buf_size_bytes = BYTES_PER_LINE * (1 << buf_size_log2); // Bytes == 8 * 2^x
         if (buf_size_bytes > 0) n_valid_input_buffers++;
         _tree->create<size_t>(_root_path / "input_buffer_size" / ctrl_port).set(buf_size_bytes);
+        // Set default destination SIDs
+        // Otherwise, the default is someone else's SID, which we don't want
+        sr_write(SR_RESP_IN_DST_SID, 0xFFFF, ctrl_port);
+        sr_write(SR_RESP_OUT_DST_SID, 0xFFFF, ctrl_port);
     }
 
     /*** Register names *****************************************************/
