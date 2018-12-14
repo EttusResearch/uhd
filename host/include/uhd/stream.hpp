@@ -236,6 +236,26 @@ public:
      * \param stream_cmd the stream command to issue
      */
     virtual void issue_stream_cmd(const stream_cmd_t &stream_cmd) = 0;
+
+    /*!
+     * Sets the tick rate on the streamer.
+     */
+    virtual void set_tick_rate(const double rate) = 0;
+
+    /*!
+     * Sets the sample rate on the streamer.
+     */
+    virtual void set_samp_rate(const double rate) = 0;
+
+    /*!
+     * Sets the scale factor on the streamer.
+     */
+    virtual void set_scale_factor(const double scale_factor) = 0;
+
+    /*!
+     * Flushes transport buffers of the streamer.
+     */
+    virtual void flush_all(const double timeout = 0.0) = 0;
 };
 
 /*!
@@ -295,6 +315,22 @@ public:
     virtual bool recv_async_msg(
         async_metadata_t &async_metadata, double timeout = 0.1
     ) = 0;
+
+    /*!
+     * Sets the tick rate on the streamer.
+     */
+    virtual void set_tick_rate(const double rate) = 0;
+
+    /*!
+     * Sets the sample rate on the streamer.
+     */
+    virtual void set_samp_rate(const double rate) = 0;
+
+    /*!
+     * Sets the scale factor on the streamer.
+     */
+    virtual void set_scale_factor(const double scale_factor) = 0;
+
 };
 
 } //namespace uhd

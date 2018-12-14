@@ -857,6 +857,23 @@ public:
         return recv_packet_handler::issue_stream_cmd(stream_cmd);
     }
 
+    void set_tick_rate(const double rate){
+        return recv_packet_handler::set_tick_rate(rate);
+    }
+
+    void set_samp_rate(const double rate){
+        return recv_packet_handler::set_samp_rate(rate);
+    }
+
+    void set_scale_factor(const double scale_factor){
+        return recv_packet_handler::set_scale_factor(scale_factor);
+    }
+
+    void flush_all(const double timeout = 0.0)
+    {
+        return recv_packet_handler::flush_all(timeout);
+    }
+
 private:
     size_t _max_num_samps;
 };

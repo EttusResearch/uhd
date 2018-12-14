@@ -356,6 +356,22 @@ public:
         _stc->issue_stream_cmd(stream_cmd);
     }
 
+    void set_tick_rate(const double rate) {
+        return sph::recv_packet_handler::set_tick_rate(rate);
+    }
+
+    void set_samp_rate(const double rate) {
+        return sph::recv_packet_handler::set_samp_rate(rate);
+    }
+
+    void set_scale_factor(const double scale_factor) {
+        return sph::recv_packet_handler::set_scale_factor(scale_factor);
+    }
+
+    void flush_all(const double timeout) {
+        return sph::recv_packet_handler::flush_all(timeout);
+    }
+
 private:
     size_t _max_num_samps;
     soft_time_ctrl::sptr _stc;
@@ -414,6 +430,18 @@ public:
         async_metadata_t &async_metadata, double timeout = 0.1
     ){
         return _stc->get_async_queue().pop_with_timed_wait(async_metadata, timeout);
+    }
+
+    void set_tick_rate(const double rate) {
+        return sph::send_packet_handler::set_tick_rate(rate);
+    }
+
+    void set_samp_rate(const double rate) {
+        return sph::send_packet_handler::set_samp_rate(rate);
+    }
+
+    void set_scale_factor(const double scale_factor) {
+        return sph::send_packet_handler::set_scale_factor(scale_factor);
     }
 
 private:

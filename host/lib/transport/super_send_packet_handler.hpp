@@ -461,6 +461,18 @@ public:
         return send_packet_handler::recv_async_msg(async_metadata, timeout);
     }
 
+    void set_tick_rate(const double rate){
+        return send_packet_handler::set_tick_rate(rate);
+    }
+
+    void set_samp_rate(const double rate){
+        return send_packet_handler::set_samp_rate(rate);
+    }
+
+    void set_scale_factor(const double scale_factor){
+        return send_packet_handler::set_scale_factor(scale_factor);
+    }
+
 private:
     size_t _max_num_samps;
 };
