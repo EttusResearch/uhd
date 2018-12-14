@@ -824,9 +824,8 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
                 << boost::format("You requested a receive frame size of (%lu) but your NIC's max frame size is (%lu).")
                 % req_max_frame_size.recv_frame_size
                 % _max_frame_sizes.recv_frame_size
-                
                 << boost::format("Please verify your NIC's MTU setting using '%s' or set the recv_frame_size argument appropriately.")
-                % mtu_tool 
+                % mtu_tool
                 << "UHD will use the auto-detected max frame size for this connection."
                 ;
         }
@@ -837,9 +836,8 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
                 << boost::format("You requested a send frame size of (%lu) but your NIC's max frame size is (%lu).")
                 % req_max_frame_size.send_frame_size
                 % _max_frame_sizes.send_frame_size
-                
                 << boost::format("Please verify your NIC's MTU setting using '%s' or set the send_frame_size argument appropriately.")
-                % mtu_tool 
+                % mtu_tool
                 << "UHD will use the auto-detected max frame size for this connection."
                 ;
         }
@@ -1315,7 +1313,7 @@ uhd::both_xports_t x300_impl::make_transport(
         default_buff_args.recv_frame_size = std::min(system_max_recv_frame_size, x300::ETH_MSG_FRAME_SIZE);
         default_buff_args.send_buff_size = conn.link_rate / 50; // 20ms
         default_buff_args.recv_buff_size = std::max(conn.link_rate / 50, x300::ETH_MSG_NUM_FRAMES * x300::ETH_MSG_FRAME_SIZE); // enough to hold greater of 20ms or number of msg frames
-        if (xport_type == TX_DATA) 
+        if (xport_type == TX_DATA)
         {
             size_t default_frame_size = conn.link_rate == x300::MAX_RATE_1GIGE ? x300::GE_DATA_FRAME_SEND_SIZE : x300::XGE_DATA_FRAME_SEND_SIZE;
             default_buff_args.send_frame_size = args.cast<size_t>("send_frame_size", std::min(default_frame_size, system_max_send_frame_size));
@@ -1330,7 +1328,7 @@ uhd::both_xports_t x300_impl::make_transport(
                 default_buff_args.send_frame_size = system_max_send_frame_size;
             }
         }
-        else if (xport_type == RX_DATA) 
+        else if (xport_type == RX_DATA)
         {
             size_t default_frame_size = conn.link_rate == x300::MAX_RATE_1GIGE ? x300::GE_DATA_FRAME_RECV_SIZE : x300::XGE_DATA_FRAME_RECV_SIZE;
             default_buff_args.recv_frame_size = args.cast<size_t>("recv_frame_size", std::min(default_frame_size, system_max_recv_frame_size));
