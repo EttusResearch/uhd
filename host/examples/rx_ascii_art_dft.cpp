@@ -29,6 +29,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     size_t num_bins;
     double rate, freq, gain, bw, frame_rate, step;
     float ref_lvl, dyn_rng;
+    bool show_controls;
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -48,7 +49,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("ref-lvl", po::value<float>(&ref_lvl)->default_value(0), "reference level for the display (dB)")
         ("dyn-rng", po::value<float>(&dyn_rng)->default_value(60), "dynamic range for the display (dB)")
         ("ref", po::value<std::string>(&ref)->default_value("internal"), "reference source (internal, external, mimo)")
-        ("step", po::value<double>(&step)->default_value(1e6), "tuning step for rate/bw/freq [t-T]")
+        ("step", po::value<double>(&step)->default_value(1e6), "tuning step for rate/bw/freq")
+        ("show-controls", po::value<bool>(&show_controls)->default_value(true), "show the keyboard controls")
         ("int-n", "tune USRP with integer-N tuning")
     ;
     po::variables_map vm;
@@ -100,6 +102,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         usrp->set_rx_gain(gain);
         std::cout << boost::format("Actual RX Gain: %f dB...") % usrp->get_rx_gain() << std::endl << std::endl;
     }
+    else gain = usrp->get_rx_gain();
 
     //set the analog frontend filter bandwidth
     if (vm.count("bw")){
@@ -107,6 +110,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         usrp->set_rx_bandwidth(bw);
         std::cout << boost::format("Actual RX Bandwidth: %f MHz...") % (usrp->get_rx_bandwidth()/1e6) << std::endl << std::endl;
     }
+    else bw = usrp->get_rx_bandwidth();
 
     //set the antenna
     if (vm.count("ant")) usrp->set_rx_antenna(ant);
@@ -170,84 +174,81 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             ascii_art_dft::log_pwr_dft(&buff.front(), num_rx_samps)
         );
         std::string frame = ascii_art_dft::dft_to_plot(
-            lpdft, COLS, LINES-5,
+            lpdft, COLS, (show controls ? LINES-5 : LINES),
             usrp->get_rx_rate(),
             usrp->get_rx_freq(),
             dyn_rng, ref_lvl
         );
-        
+
         std::string border = std::string((COLS), '-');
 
         //curses screen handling: clear and print frame
         clear();
-        printw("%s", border.c_str());
-        printw("[f-F]req: %4.3f MHz   |   [r-R]ate: %2.2f Msps   |   [b-B]w: %2.2f MHz   |   [g-G]ain: %2.0f dB\n\n", freq/1e6, rate/1e6, bw/1e6, gain);
-        printw("[d-D]yn Range: %2.0f dB    |   Ref [l-L]evel: %2.0f dB   |   fp[s-S] : %2.0f   |   [t-T]uning step: %3.3f M\n", dyn_rng, ref_lvl, frame_rate, step/1e6);
-        printw("%s", border.c_str());       
+        
+        if (show_controls) {
+            printw("%s", border.c_str());
+            printw("[f-F]req: %4.3f MHz   |   [r-R]ate: %2.2f Msps   |"
+                   "   [b-B]w: %2.2f MHz   |   [g-G]ain: %2.0f dB\n\n",
+                   freq/1e6, rate/1e6, bw/1e6, gain);
+            printw("[d-D]yn Range: %2.0f dB    |   Ref [l-L]evel: %2.0f dB   |"
+                   "   fp[s-S] : %2.0f   |   [t-T]uning step: %3.3f M\n",
+                   dyn_rng, ref_lvl, frame_rate, step/1e6);
+            printw("%s", border.c_str());
+        }
         printw("%s", frame.c_str());
 
         //curses key handling: no timeout, any key to exit
         timeout(0);
         int ch = getch();
-        
-        // Key handling. FIXME: Do proper bounds check on all parameters
-        if (ch == 'r')
-        {
-            if ((rate - step) > 0) 
-            {
-                rate -= step;                
-                usrp->set_rx_rate(rate);
-            }           
+
+        // Key handling.
+        if (ch == 'r') {
+            rate -= step;
+            usrp->set_rx_rate(rate);
+            freq = usrp->get_rx_freq();
         }
 
-        else if (ch == 'R')
-        {
-                rate += step;
-                usrp->set_rx_rate(rate);        
+        else if (ch == 'R') {
+            rate += step;
+            usrp->set_rx_rate(rate);
+            freq = usrp->get_rx_freq();
         }
 
-        else if (ch == 'g')
-        {
-            if (gain > 1)   
-            {
+        else if (ch == 'g') {
+            if (gain > 1) {
                 gain -= 1;
                 usrp->set_rx_gain(gain);
             }
         }
 
-        else if (ch == 'G')
-        {
-                gain += 1;
-                usrp->set_rx_gain(gain);
-            
+        else if (ch == 'G') {
+            gain += 1;
+            usrp->set_rx_gain(gain);
         }
 
-        else if (ch == 'b')
-        {
-                bw -= step;
-                usrp->set_rx_bandwidth(bw);            
+        else if (ch == 'b') {
+            bw -= step;
+            usrp->set_rx_bandwidth(bw);
         }
 
-        else if (ch == 'B')
-        {
-                bw += step;
-                usrp->set_rx_bandwidth(bw);            
+        else if (ch == 'B') {
+            bw += step;
+            usrp->set_rx_bandwidth(bw);
         }
 
-        else if (ch == 'f')
-        {
-            if ((freq - step) < 0)
-            {
+        else if (ch == 'f') {
+            if ((freq - step) > 0) {
                 freq -= step;
-                            
-                usrp->set_rx_freq(freq);                           
-            }            
+
+                usrp->set_rx_freq(freq);
+                freq = usrp->get_rx_freq();
+            }
         }
 
-        else if (ch == 'F')     
-        {            
+        else if (ch == 'F') {
             freq += step;
             usrp->set_rx_freq(freq);
+            freq = usrp->get_rx_freq();
         }
 
         else if (ch == 'l') ref_lvl -= 10;
@@ -258,26 +259,28 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         else if (ch == 'S') frame_rate += 1;
         else if (ch == 't') { if (step > 1) step /= 2; }
         else if (ch == 'T') step *= 2;
- 
-        else if (ch == '\033')    // '\033' '[' 'A'/'B'/'C'/'D' -- Up / Down / Right / Left Press 
-        {
+        else if (ch == 'c') show_controls = false;
+        else if (ch == 'C') show_controls = true;
+        
+        // Arrow keypress generates 3 characters: '\033','[','A'/'B'/'C'/'D' for Up / Down / Right / Left
+        else if (ch == '\033') {
             getch();
-            switch(getch())
-            {
+            switch(getch()) {
                 case 'A':
                 case 'C':
-                    freq += step;                    
-                    usrp->set_rx_freq(freq);                
+                    freq += step;
+                    usrp->set_rx_freq(freq);
+                    freq = usrp->get_rx_freq();
                     break;
 
                 case 'B':
-                case 'D':                    
-                    freq -= step;                    
-                    usrp->set_rx_freq(freq);                        
+                case 'D':
+                    freq -= step;
+                    usrp->set_rx_freq(freq);
+                    freq = usrp->get_rx_freq();
                     break;
             }
         }
-        
         else if (ch != KEY_RESIZE and ch != ERR) break;
     }
 
