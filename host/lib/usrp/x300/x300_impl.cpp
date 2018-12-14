@@ -44,6 +44,10 @@ using namespace uhd::usrp::gpio_atr;
 using namespace uhd::usrp::x300;
 namespace asio = boost::asio;
 
+
+/******************************************************************************
+ * Helpers
+ *****************************************************************************/
 static std::string get_fpga_option(wb_iface::sptr zpu_ctrl) {
     //Possible options:
     //1G  = {0:1G, 1:1G} w/ DRAM, HG  = {0:1G, 1:10G} w/ DRAM, XG  = {0:10G, 1:10G} w/ DRAM
@@ -68,6 +72,82 @@ static std::string get_fpga_option(wb_iface::sptr zpu_ctrl) {
     }
     return option;
 }
+
+
+namespace {
+
+    /*! Return the correct motherboard type for a given product ID
+     *
+     * Note: In previous versions, we had two different mappings for PCIe and
+     * Ethernet in case the PIDs would conflict, but they never did and it was
+     * thus consolidated into one.
+     */
+    x300_impl::x300_mboard_t map_pid_to_mb_type(const uint32_t pid)
+    {
+        switch (pid) {
+            case X300_USRP_PCIE_SSID_ADC_33:
+            case X300_USRP_PCIE_SSID_ADC_18:
+                return x300_impl::USRP_X300_MB;
+            case X310_USRP_PCIE_SSID_ADC_33:
+            case X310_2940R_40MHz_PCIE_SSID_ADC_33:
+            case X310_2940R_120MHz_PCIE_SSID_ADC_33:
+            case X310_2942R_40MHz_PCIE_SSID_ADC_33:
+            case X310_2942R_120MHz_PCIE_SSID_ADC_33:
+            case X310_2943R_40MHz_PCIE_SSID_ADC_33:
+            case X310_2943R_120MHz_PCIE_SSID_ADC_33:
+            case X310_2944R_40MHz_PCIE_SSID_ADC_33:
+            case X310_2950R_40MHz_PCIE_SSID_ADC_33:
+            case X310_2950R_120MHz_PCIE_SSID_ADC_33:
+            case X310_2952R_40MHz_PCIE_SSID_ADC_33:
+            case X310_2952R_120MHz_PCIE_SSID_ADC_33:
+            case X310_2953R_40MHz_PCIE_SSID_ADC_33:
+            case X310_2953R_120MHz_PCIE_SSID_ADC_33:
+            case X310_2954R_40MHz_PCIE_SSID_ADC_33:
+            case X310_USRP_PCIE_SSID_ADC_18:
+            case X310_2940R_40MHz_PCIE_SSID_ADC_18:
+            case X310_2940R_120MHz_PCIE_SSID_ADC_18:
+            case X310_2942R_40MHz_PCIE_SSID_ADC_18:
+            case X310_2942R_120MHz_PCIE_SSID_ADC_18:
+            case X310_2943R_40MHz_PCIE_SSID_ADC_18:
+            case X310_2943R_120MHz_PCIE_SSID_ADC_18:
+            case X310_2944R_40MHz_PCIE_SSID_ADC_18:
+            case X310_2945R_PCIE_SSID_ADC_18:
+            case X310_2950R_40MHz_PCIE_SSID_ADC_18:
+            case X310_2950R_120MHz_PCIE_SSID_ADC_18:
+            case X310_2952R_40MHz_PCIE_SSID_ADC_18:
+            case X310_2952R_120MHz_PCIE_SSID_ADC_18:
+            case X310_2953R_40MHz_PCIE_SSID_ADC_18:
+            case X310_2953R_120MHz_PCIE_SSID_ADC_18:
+            case X310_2954R_40MHz_PCIE_SSID_ADC_18:
+            case X310_2955R_PCIE_SSID_ADC_18:
+                return x300_impl::USRP_X310_MB;
+            case X310_2974_PCIE_SSID_ADC_18:
+                return x300_impl::USRP_X310_MB_NI_2974;
+            default:
+                return x300_impl::UNKNOWN;
+        }
+        UHD_THROW_INVALID_CODE_PATH();
+    }
+
+    /*! Map the motherboard type to a product name
+     */
+    std::string map_mb_type_to_product_name(
+            const x300_impl::x300_mboard_t mb_type,
+            const std::string& default_name="")
+    {
+        switch (mb_type) {
+            case x300_impl::USRP_X300_MB:
+                return "X300";
+            case x300_impl::USRP_X310_MB:
+                return "X310";
+            case x300_impl::USRP_X310_MB_NI_2974:
+                return "NI-2974";
+            default:
+                return default_name;
+        }
+    }
+
+} /* namespace anon */
 
 /***********************************************************************
  * Discovery over the udp and pcie transport
@@ -124,18 +204,10 @@ static device_addrs_t x300_find_with_addr(const device_addr_t &hint)
             }
             new_addr["name"] = mb_eeprom["name"];
             new_addr["serial"] = mb_eeprom["serial"];
-            switch (x300_impl::get_mb_type_from_eeprom(mb_eeprom)) {
-                case x300_impl::USRP_X300_MB:
-                    new_addr["product"] = "X300";
-                    break;
-                case x300_impl::USRP_X310_MB:
-                    new_addr["product"] = "X310";
-                    break;
-                case x300_impl::USRP_X310_MB_NI_2974:
-                    new_addr["product"] = "NI-2974";
-                    break;
-                default:
-                    break;
+            const std::string product_name = map_mb_type_to_product_name(
+                x300_impl::get_mb_type_from_eeprom(mb_eeprom));
+            if (!product_name.empty()) {
+                new_addr["product"] = product_name;
             }
         }
         catch(const std::exception &)
@@ -157,6 +229,7 @@ static device_addrs_t x300_find_with_addr(const device_addr_t &hint)
 
     return addrs;
 }
+
 
 //We need a zpu xport registry to ensure synchronization between the static finder method
 //and the instances of the x300_impl class.
@@ -184,19 +257,12 @@ static device_addrs_t x300_find_pcie(const device_addr_t &hint, bool explicit_qu
         std::string resource_d(dev_info.resource_name);
         boost::to_upper(resource_d);
 
-        switch (x300_impl::get_mb_type_from_pcie(resource_d, rpc_port_name)) {
-            case x300_impl::USRP_X300_MB:
-                new_addr["product"] = "X300";
-                break;
-            case x300_impl::USRP_X310_MB:
-                new_addr["product"] = "X310";
-                break;
-            case x300_impl::USRP_X310_MB_NI_2974:
-                new_addr["product"] = "NI-2974";
-                break;
-
-            default:
-                continue;
+        const std::string product_name = map_mb_type_to_product_name(
+            x300_impl::get_mb_type_from_pcie(resource_d, rpc_port_name));
+        if (product_name.empty()) {
+            continue;
+        } else {
+            new_addr["product"] = product_name;
         }
 
         niriok_proxy::sptr kernel_proxy = niriok_proxy::make_and_open(dev_info.interface_path);
@@ -734,22 +800,18 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     ////////////////////////////////////////////////////////////////////
     // parse the product number
     ////////////////////////////////////////////////////////////////////
-    std::string product_name = "X300?";
-    switch (get_mb_type_from_eeprom(mb_eeprom)) {
-        case USRP_X300_MB:
-            product_name = "X300";
-            break;
-        case USRP_X310_MB:
-            product_name = "X310";
-            break;
-        case USRP_X310_MB_NI_2974:
-            product_name = "NI-2974";
-            break;
-        default:
-            if (not mb.args.get_recover_mb_eeprom())
-                throw uhd::runtime_error("Unrecognized product type.\n"
-                                         "Either the software does not support this device in which case please update your driver software to the latest version and retry OR\n"
-                                         "The product code in the EEPROM is corrupt and may require reprogramming.");
+    const std::string product_name = map_mb_type_to_product_name(
+        get_mb_type_from_eeprom(mb_eeprom), "X300?");
+    if (product_name == "X300?") {
+        if (not mb.args.get_recover_mb_eeprom()) {
+            throw uhd::runtime_error(
+                "Unrecognized product type.\n"
+                "Either the software does not support this device in which "
+                "case please update your driver software to the latest version "
+                "and retry OR\n"
+                "The product code in the EEPROM is corrupt and may require "
+                "reprogramming.");
+        }
     }
     _tree->create<std::string>(mb_path / "name").set(product_name);
     _tree->create<std::string>(mb_path / "codename").set("Yetti");
@@ -1828,71 +1890,31 @@ void x300_impl::check_fpga_compat(const fs_path &mb_path, const mboard_members_t
         << " git hash: " << git_hash_str);
 }
 
-x300_impl::x300_mboard_t x300_impl::get_mb_type_from_pcie(const std::string& resource, const std::string& rpc_port)
+x300_impl::x300_mboard_t x300_impl::get_mb_type_from_pcie(
+        const std::string& resource, const std::string& rpc_port)
 {
-    x300_mboard_t mb_type = UNKNOWN;
-
     //Detect the PCIe product ID to distinguish between X300 and X310
     nirio_status status = NiRio_Status_Success;
     uint32_t pid;
     niriok_proxy::sptr discovery_proxy =
         niusrprio_session::create_kernel_proxy(resource, rpc_port);
     if (discovery_proxy) {
-        nirio_status_chain(discovery_proxy->get_attribute(RIO_PRODUCT_NUMBER, pid), status);
+        nirio_status_chain(
+            discovery_proxy->get_attribute(RIO_PRODUCT_NUMBER, pid), status);
         discovery_proxy->close();
         if (nirio_status_not_fatal(status)) {
-            //The PCIe ID -> MB mapping may be different from the EEPROM -> MB mapping
-            switch (pid) {
-                case X300_USRP_PCIE_SSID_ADC_33:
-                case X300_USRP_PCIE_SSID_ADC_18:
-                    mb_type = USRP_X300_MB; break;
-                case X310_USRP_PCIE_SSID_ADC_33:
-                case X310_2940R_40MHz_PCIE_SSID_ADC_33:
-                case X310_2940R_120MHz_PCIE_SSID_ADC_33:
-                case X310_2942R_40MHz_PCIE_SSID_ADC_33:
-                case X310_2942R_120MHz_PCIE_SSID_ADC_33:
-                case X310_2943R_40MHz_PCIE_SSID_ADC_33:
-                case X310_2943R_120MHz_PCIE_SSID_ADC_33:
-                case X310_2944R_40MHz_PCIE_SSID_ADC_33:
-                case X310_2950R_40MHz_PCIE_SSID_ADC_33:
-                case X310_2950R_120MHz_PCIE_SSID_ADC_33:
-                case X310_2952R_40MHz_PCIE_SSID_ADC_33:
-                case X310_2952R_120MHz_PCIE_SSID_ADC_33:
-                case X310_2953R_40MHz_PCIE_SSID_ADC_33:
-                case X310_2953R_120MHz_PCIE_SSID_ADC_33:
-                case X310_2954R_40MHz_PCIE_SSID_ADC_33:
-                case X310_USRP_PCIE_SSID_ADC_18:
-                case X310_2940R_40MHz_PCIE_SSID_ADC_18:
-                case X310_2940R_120MHz_PCIE_SSID_ADC_18:
-                case X310_2942R_40MHz_PCIE_SSID_ADC_18:
-                case X310_2942R_120MHz_PCIE_SSID_ADC_18:
-                case X310_2943R_40MHz_PCIE_SSID_ADC_18:
-                case X310_2943R_120MHz_PCIE_SSID_ADC_18:
-                case X310_2944R_40MHz_PCIE_SSID_ADC_18:
-                case X310_2945R_PCIE_SSID_ADC_18:
-                case X310_2950R_40MHz_PCIE_SSID_ADC_18:
-                case X310_2950R_120MHz_PCIE_SSID_ADC_18:
-                case X310_2952R_40MHz_PCIE_SSID_ADC_18:
-                case X310_2952R_120MHz_PCIE_SSID_ADC_18:
-                case X310_2953R_40MHz_PCIE_SSID_ADC_18:
-                case X310_2953R_120MHz_PCIE_SSID_ADC_18:
-                case X310_2954R_40MHz_PCIE_SSID_ADC_18:
-                case X310_2955R_PCIE_SSID_ADC_18:
-                    mb_type = USRP_X310_MB; break;
-                case X310_2974_PCIE_SSID_ADC_18:
-                    mb_type = USRP_X310_MB_NI_2974; break;
-                default:
-                    mb_type = UNKNOWN;      break;
-            }
+            return map_pid_to_mb_type(pid);
         }
     }
 
-    return mb_type;
+    UHD_LOGGER_WARNING("X300") <<
+        "NI-RIO Error -- unable to determine motherboard type!";
+    return UNKNOWN;
 }
 
-x300_impl::x300_mboard_t x300_impl::get_mb_type_from_eeprom(const uhd::usrp::mboard_eeprom_t& mb_eeprom)
+x300_impl::x300_mboard_t x300_impl::get_mb_type_from_eeprom(
+        const uhd::usrp::mboard_eeprom_t& mb_eeprom)
 {
-    x300_mboard_t mb_type = UNKNOWN;
     if (not mb_eeprom["product"].empty())
     {
         uint16_t product_num = 0;
@@ -1902,51 +1924,9 @@ x300_impl::x300_mboard_t x300_impl::get_mb_type_from_eeprom(const uhd::usrp::mbo
             product_num = 0;
         }
 
-        switch (product_num) {
-            //The PCIe ID -> MB mapping may be different from the EEPROM -> MB mapping
-            case X300_USRP_PCIE_SSID_ADC_33:
-            case X300_USRP_PCIE_SSID_ADC_18:
-                mb_type = USRP_X300_MB; break;
-            case X310_USRP_PCIE_SSID_ADC_33:
-            case X310_2940R_40MHz_PCIE_SSID_ADC_33:
-            case X310_2940R_120MHz_PCIE_SSID_ADC_33:
-            case X310_2942R_40MHz_PCIE_SSID_ADC_33:
-            case X310_2942R_120MHz_PCIE_SSID_ADC_33:
-            case X310_2943R_40MHz_PCIE_SSID_ADC_33:
-            case X310_2943R_120MHz_PCIE_SSID_ADC_33:
-            case X310_2944R_40MHz_PCIE_SSID_ADC_33:
-            case X310_2950R_40MHz_PCIE_SSID_ADC_33:
-            case X310_2950R_120MHz_PCIE_SSID_ADC_33:
-            case X310_2952R_40MHz_PCIE_SSID_ADC_33:
-            case X310_2952R_120MHz_PCIE_SSID_ADC_33:
-            case X310_2953R_40MHz_PCIE_SSID_ADC_33:
-            case X310_2953R_120MHz_PCIE_SSID_ADC_33:
-            case X310_2954R_40MHz_PCIE_SSID_ADC_33:
-            case X310_USRP_PCIE_SSID_ADC_18:
-            case X310_2940R_40MHz_PCIE_SSID_ADC_18:
-            case X310_2940R_120MHz_PCIE_SSID_ADC_18:
-            case X310_2942R_40MHz_PCIE_SSID_ADC_18:
-            case X310_2942R_120MHz_PCIE_SSID_ADC_18:
-            case X310_2943R_40MHz_PCIE_SSID_ADC_18:
-            case X310_2943R_120MHz_PCIE_SSID_ADC_18:
-            case X310_2944R_40MHz_PCIE_SSID_ADC_18:
-            case X310_2945R_PCIE_SSID_ADC_18:
-            case X310_2950R_40MHz_PCIE_SSID_ADC_18:
-            case X310_2950R_120MHz_PCIE_SSID_ADC_18:
-            case X310_2952R_40MHz_PCIE_SSID_ADC_18:
-            case X310_2952R_120MHz_PCIE_SSID_ADC_18:
-            case X310_2953R_40MHz_PCIE_SSID_ADC_18:
-            case X310_2953R_120MHz_PCIE_SSID_ADC_18:
-            case X310_2954R_40MHz_PCIE_SSID_ADC_18:
-            case X310_2955R_PCIE_SSID_ADC_18:
-                mb_type = USRP_X310_MB; break;
-            case X310_2974_PCIE_SSID_ADC_18:
-                mb_type = USRP_X310_MB_NI_2974; break;
-
-            default:
-                UHD_LOGGER_WARNING("X300") << "X300 unknown product code in EEPROM: " << product_num ;
-                mb_type = UNKNOWN;      break;
-        }
+        return map_pid_to_mb_type(product_num);
     }
-    return mb_type;
+
+    UHD_LOGGER_WARNING("X300") << "Unable to read product ID from EEPROM!";
+    return UNKNOWN;
 }
