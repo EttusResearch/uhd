@@ -27,10 +27,7 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
-#include <boost/bind.hpp>
 #include <boost/make_shared.hpp>
-#include <boost/functional/hash.hpp>
-#include <boost/assign/list_of.hpp>
 #include <fstream>
 #include <chrono>
 #include <thread>
@@ -495,10 +492,10 @@ x300_impl::x300_impl(const uhd::device_addr_t &dev_addr)
         boost::thread_group setup_threads;
         for (size_t i = 0; i < init_usrps; i++)
         {
-            size_t index = num_usrps + i;
-            setup_threads.create_thread(
-                boost::bind(&x300_impl::setup_mb, this, index, device_args[index])
-            );
+            const size_t index = num_usrps + i;
+            setup_threads.create_thread([this, index, device_args](){
+                this->setup_mb(index, device_args[index]);
+            });
         }
         setup_threads.join_all();
         num_usrps += init_usrps;
@@ -719,7 +716,9 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     if (not try_to_claim(mb.zpu_ctrl)) {
         throw uhd::runtime_error("Failed to claim device");
     }
-    mb.claimer_task = uhd::task::make(boost::bind(&x300_impl::claimer_loop, this, mb.zpu_ctrl), "x300_claimer");
+    mb.claimer_task = uhd::task::make([this, mb](){
+        this->claimer_loop(mb.zpu_ctrl);
+    }, "x300_claimer");
 
     //extract the FW path for the X300
     //and live load fw over ethernet link
@@ -1007,7 +1006,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     // create clock properties
     ////////////////////////////////////////////////////////////////////
     _tree->create<double>(mb_path / "master_clock_rate")
-        .set_publisher(boost::bind(&x300_clock_ctrl::get_master_clock_rate, mb.clock))
+        .set_publisher([mb](){ return mb.clock->get_master_clock_rate(); })
     ;
 
     UHD_LOGGER_INFO("X300")
@@ -1034,7 +1033,10 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         if (mb.gps and mb.gps->gps_detected()) {
             for(const std::string& name : mb.gps->get_sensors()) {
                 _tree->create<sensor_value_t>(mb_path / "sensors" / name)
-                    .set_publisher(boost::bind(&gps_ctrl::get_sensor, mb.gps, name));
+                    .set_publisher([&mb, name](){
+                        return mb.gps->get_sensor(name);
+                    })
+                ;
             }
         }
         else {
@@ -1121,7 +1123,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
     // and do the misc mboard sensors
     ////////////////////////////////////////////////////////////////////
     _tree->create<sensor_value_t>(mb_path / "sensors" / "ref_locked")
-        .set_publisher(boost::bind(&x300_impl::get_ref_locked, this, mb));
+        .set_publisher([this, &mb](){ return this->get_ref_locked(mb); });
 
     //////////////// RFNOC /////////////////
     const size_t n_rfnoc_blocks = mb.zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_NUM_CE));
@@ -1162,7 +1164,9 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t &dev_addr)
         if (mb.args.get_self_cal_adc_delay()) {
             rfnoc::x300_radio_ctrl_impl::self_cal_adc_xfer_delay(
                 mb.radios, mb.clock,
-                boost::bind(&x300_impl::wait_for_clk_locked, this, mb, fw_regmap_t::clk_status_reg_t::LMK_LOCK, _1),
+                [this, &mb](const double timeout){
+                    return this->wait_for_clk_locked(mb, fw_regmap_t::clk_status_reg_t::LMK_LOCK, timeout);
+                },
                 true /* Apply ADC delay */);
         }
         if (mb.args.get_ext_adc_self_test()) {
