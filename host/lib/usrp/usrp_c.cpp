@@ -1227,6 +1227,95 @@ uhd_error uhd_usrp_get_fe_tx_freq_range(
     )
 }
 
+UHD_API uhd_error uhd_usrp_get_tx_lo_names(
+    uhd_usrp_handle h,
+    size_t chan,
+    uhd_string_vector_handle *tx_lo_names_out
+){
+    UHD_SAFE_C_SAVE_ERROR(h,
+        (*tx_lo_names_out)->string_vector_cpp = USRP(h)->get_tx_lo_names(chan);
+    )
+}
+
+UHD_API uhd_error uhd_usrp_set_tx_lo_source(
+    uhd_usrp_handle h,
+    const char* src,
+    const char* name,
+    size_t chan
+){
+    UHD_SAFE_C_SAVE_ERROR(h,
+        USRP(h)->set_tx_lo_source(src, name, chan);
+    )
+}
+
+UHD_API uhd_error uhd_usrp_get_tx_lo_source(
+    uhd_usrp_handle h,
+    const char* name,
+    size_t chan,
+    char* tx_lo_source_out,
+    size_t strbuffer_len
+){
+    UHD_SAFE_C_SAVE_ERROR(h,
+        strncpy(tx_lo_source_out, USRP(h)->get_tx_lo_source(name, chan).c_str(), strbuffer_len);
+    )
+}
+
+UHD_API uhd_error uhd_usrp_get_tx_lo_sources(
+    uhd_usrp_handle h,
+    const char* name,
+    size_t chan,
+    uhd_string_vector_handle *tx_lo_sources_out
+){
+    UHD_SAFE_C_SAVE_ERROR(h,
+        (*tx_lo_sources_out)->string_vector_cpp = USRP(h)->get_tx_lo_sources(name, chan);
+    )
+}
+
+UHD_API uhd_error uhd_usrp_set_tx_lo_export_enabled(
+    uhd_usrp_handle h,
+    bool enabled,
+    const char* name,
+    size_t chan
+){
+    UHD_SAFE_C_SAVE_ERROR(h,
+        USRP(h)->set_tx_lo_export_enabled(enabled, name, chan);
+    )
+}
+
+UHD_API uhd_error uhd_usrp_get_tx_lo_export_enabled(
+    uhd_usrp_handle h,
+    const char* name,
+    size_t chan,
+    bool* result_out
+) {
+    UHD_SAFE_C_SAVE_ERROR(h,
+        *result_out = USRP(h)->get_tx_lo_export_enabled(name, chan);
+    )
+}
+
+UHD_API uhd_error uhd_usrp_set_tx_lo_freq(
+    uhd_usrp_handle h,
+    double freq,
+    const char* name,
+    size_t chan,
+    double* coerced_freq_out
+){
+    UHD_SAFE_C_SAVE_ERROR(h,
+        *coerced_freq_out = USRP(h)->set_tx_lo_freq(freq, name, chan);
+    )
+}
+
+UHD_API uhd_error uhd_usrp_get_tx_lo_freq(
+    uhd_usrp_handle h,
+    const char* name,
+    size_t chan,
+    double* tx_lo_freq_out
+){
+    UHD_SAFE_C_SAVE_ERROR(h,
+        *tx_lo_freq_out = USRP(h)->get_tx_lo_freq(name, chan);
+    )
+}
+
 uhd_error uhd_usrp_set_tx_gain(
     uhd_usrp_handle h,
     double gain,

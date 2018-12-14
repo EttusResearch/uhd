@@ -1019,6 +1019,80 @@ UHD_API uhd_error uhd_usrp_get_fe_tx_freq_range(
     uhd_meta_range_handle freq_range_out
 );
 
+//! Get a list of possible LO stage names
+/*
+ * See uhd::usrp::multi_usrp::get_tx_lo_names() for more details.
+ */
+UHD_API uhd_error uhd_usrp_get_tx_lo_names(
+    uhd_usrp_handle h,
+    size_t chan,
+    uhd_string_vector_handle *tx_lo_names_out
+);
+
+//! Set the LO source for the USRP device
+/*
+ * See uhd::usrp::multi_usrp::set_tx_lo_source() for more details.
+ */
+UHD_API uhd_error uhd_usrp_set_tx_lo_source(
+    uhd_usrp_handle h,
+    const char* src,
+    const char* name,
+    size_t chan
+);
+
+//! Get the currently set LO source
+UHD_API uhd_error uhd_usrp_get_tx_lo_source(
+    uhd_usrp_handle h,
+    const char* name,
+    size_t chan,
+    char* tx_lo_source_out,
+    size_t strbuffer_len
+);
+
+//! Get a list of possible LO sources
+UHD_API uhd_error uhd_usrp_get_tx_lo_sources(
+    uhd_usrp_handle h,
+    const char* name,
+    size_t chan,
+    uhd_string_vector_handle *tx_lo_sources_out
+);
+
+//! Set whether the LO used by the USRP device is exported
+/*
+ * See uhd::usrp::multi_usrp::set_tx_lo_enabled() for more details.
+ */
+UHD_API uhd_error uhd_usrp_set_tx_lo_export_enabled(
+    uhd_usrp_handle h,
+    bool enabled,
+    const char* name,
+    size_t chan
+);
+
+//! Returns true if the currently selected LO is being exported.
+UHD_API uhd_error uhd_usrp_get_tx_lo_export_enabled(
+    uhd_usrp_handle h,
+    const char* name,
+    size_t chan,
+    bool* result_out
+);
+
+//! Set the Tx LO frequency.
+UHD_API uhd_error uhd_usrp_set_tx_lo_freq(
+    uhd_usrp_handle h,
+    double freq,
+    const char* name,
+    size_t chan,
+    double* coerced_freq_out
+);
+
+//! Get the current Tx LO frequency.
+UHD_API uhd_error uhd_usrp_get_tx_lo_freq(
+    uhd_usrp_handle h,
+    const char* name,
+    size_t chan,
+    double* tx_lo_freq_out
+);
+
 //! Set the TX gain for the given channel and name
 UHD_API uhd_error uhd_usrp_set_tx_gain(
     uhd_usrp_handle h,
