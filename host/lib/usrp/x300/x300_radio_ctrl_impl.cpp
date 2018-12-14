@@ -581,10 +581,31 @@ void x300_radio_ctrl_impl::set_gpio_attr(
         const uint32_t mask
 ) {
     if (bank == "FP0" and _fp_gpio) {
-        const uint32_t current = _tree->access<uint32_t>(fs_path("gpio") / bank / attr).get();
-        const uint32_t new_value = (current & ~mask) | (value & mask);
-        _tree->access<uint32_t>(fs_path("gpio") / bank / attr).set(new_value);
-        return;
+        std::vector<std::string> attr_value;
+        const auto attr_type = usrp::gpio_atr::gpio_attr_rev_map.at(attr);
+        switch(attr_type) {
+            case usrp::gpio_atr::GPIO_SRC:
+            case usrp::gpio_atr::GPIO_CTRL:
+            case usrp::gpio_atr::GPIO_DDR: {
+                attr_value = _tree->access<std::vector<std::string>>(fs_path("gpio") / bank / attr).get();
+                std::bitset<32> bit_mask = std::bitset<32>(mask);
+                std::bitset<32> new_value = std::bitset<32>(value);
+                for(size_t i = 0; i < bit_mask.size(); i++) {
+                    if(bit_mask[i] == 1) {
+                        attr_value[i] = usrp::gpio_atr::attr_value_map.at(attr_type).at(new_value[i]);
+                    }
+                }
+                _tree->access<std::vector<std::string>>(fs_path("gpio") / bank / attr).set(attr_value);
+                return;
+            }
+            break;
+            default: {
+                const uint32_t curr_value = _tree->access<uint32_t>(fs_path("gpio") / bank / attr).get();
+                uint32_t new_value = (curr_value & ~mask) | (value & mask);
+                _tree->access<uint32_t>(fs_path("gpio") / bank / attr).set(new_value);
+            }
+            break;
+        }
     }
     if (bank.size() > 2 and bank[1] == 'X')
     {
@@ -606,7 +627,24 @@ uint32_t x300_radio_ctrl_impl::get_gpio_attr(
         const std::string &attr
 ) {
     if (bank == "FP0" and _fp_gpio) {
-        return uint32_t(_tree->access<uint64_t>(fs_path("gpio") / bank / attr).get());
+        const auto attr_type = usrp::gpio_atr::gpio_attr_rev_map.at(attr);
+        switch(attr_type) {
+            case usrp::gpio_atr::GPIO_SRC:
+            case usrp::gpio_atr::GPIO_CTRL:
+            case usrp::gpio_atr::GPIO_DDR: {
+                std::vector<std::string> str_val = _tree->access<std::vector<std::string>>(fs_path("gpio") / bank / attr).get();
+                uint32_t val = 0;
+                for(size_t i = 0; i < str_val.size(); i++) {
+                    val += usrp::gpio_atr::gpio_attr_value_pair.at(attr).at(str_val[i]) << i;
+                }
+                return val;
+            }
+            break;
+            default: {
+                return _tree->access<uint32_t>(fs_path("gpio") / bank / attr).get();
+            }
+            break;
+        }
     }
     if (bank.size() > 2 and bank[1] == 'X') {
         const std::string name = bank.substr(2);
