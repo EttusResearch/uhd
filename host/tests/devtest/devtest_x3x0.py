@@ -48,7 +48,7 @@ uhd_benchmark_rate_test.tests = {
     },
 }
 
-#from rx_samples_to_file_test import rx_samples_to_file_test
+from rx_samples_to_file_test import rx_samples_to_file_test
 from tx_bursts_test import uhd_tx_bursts_test
 from test_pps_test import uhd_test_pps_test
 from gpio_test import gpio_test
