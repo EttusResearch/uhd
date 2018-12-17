@@ -144,8 +144,12 @@ e3xx_radio_ctrl_impl::~e3xx_radio_ctrl_impl()
     _tree->remove(fs_path("rx_codecs" / _radio_slot));
     _tree->remove(fs_path("tx_codecs" / _radio_slot));
     for (size_t i = 0; i < _get_num_radios(); i++) {
-        _tree->remove(fs_path("tx_dsps") / i);
-        _tree->remove(fs_path("rx_dsps") / i);
+        if (_tree->exists(fs_path("tx_dsps") / i)) {
+            _tree->remove(fs_path("tx_dsps") / i);
+        }
+        if (_tree->exists(fs_path("rx_dsps") / i)) {
+            _tree->remove(fs_path("rx_dsps") / i);
+        }
     }
     for (const auto attr : usrp::gpio_atr::gpio_attr_map) {
         const auto gpio_fs_path = fs_path("gpio") / "INT0" / attr.second;
@@ -178,7 +182,18 @@ double e3xx_radio_ctrl_impl::set_rate(double rate)
     return actual_tick_rate;
 }
 
-/*! Select antenna \p for channel \p chan.
+/*! Select TX antenna \p for channel \p chan.
+ */
+void e3xx_radio_ctrl_impl::set_tx_antenna(const std::string &ant, const size_t chan)
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+    if (ant != "TX/RX")
+        throw uhd::value_error("Unknown TX antenna option: " + ant);
+
+    radio_ctrl_impl::set_tx_antenna(ant, chan);
+}
+
+/*! Select RX antenna \p for channel \p chan.
  */
 void e3xx_radio_ctrl_impl::set_rx_antenna(const std::string &ant, const size_t chan)
 {
@@ -361,9 +376,15 @@ void e3xx_radio_ctrl_impl::_setup_radio_channel(const size_t chan)
         _tree->create<sensor_value_t>(rf_fe_path / "sensors" / "lo_locked")
             .set_publisher(boost::bind(&e3xx_radio_ctrl_impl::_get_fe_pll_lock, this, dir == TX_DIRECTION))
         ;
-        _tree->access<double>(rf_fe_path / "freq" / "value")
-            .add_coerced_subscriber(boost::bind(&e3xx_radio_ctrl_impl::_update_fe_lo_freq, this, key, _1))
+        const double freq = _tree->access<double>(rf_fe_path / "freq" / "value")
+            .add_coerced_subscriber(boost::bind(&e3xx_radio_ctrl_impl::_update_fe_lo_freq, this, key, _1)).get()
         ;
+        // Set frequency in parent (to be used to update ATR values later)
+        if (dir == RX_DIRECTION) {
+            radio_ctrl_impl::set_rx_frequency(freq, chan);
+        } else {
+            radio_ctrl_impl::set_tx_frequency(freq, chan);
+        }
 
         // Antenna Setup
         if (dir == RX_DIRECTION) {
@@ -371,13 +392,19 @@ void e3xx_radio_ctrl_impl::_setup_radio_channel(const size_t chan)
             _tree->create<std::vector<std::string> >(rf_fe_path / "antenna" / "options").set(ants);
             _tree->create<std::string>(rf_fe_path / "antenna" / "value")
                 .add_coerced_subscriber(boost::bind(&e3xx_radio_ctrl_impl::set_rx_antenna, this, _1, chan))
-                .set_publisher(boost::bind(&e3xx_radio_ctrl_impl::get_rx_antenna, this, chan))
-                .set("RX2");
+                .set_publisher(boost::bind(&e3xx_radio_ctrl_impl::get_rx_antenna, this, chan));
+            // Set default in parent (to be used to update ATR values later)
+            radio_ctrl_impl::set_rx_antenna("RX2", chan);
+            // Set up LEDs for default antenna
+            _update_atr_leds(_e3xx_perifs[chan].leds, "RX2");
         }
         else if (dir == TX_DIRECTION) {
             static const std::vector<std::string> ants(1, "TX/RX");
             _tree->create<std::vector<std::string> >(rf_fe_path / "antenna" / "options").set(ants);
-            _tree->create<std::string>(rf_fe_path / "antenna" / "value").set("TX/RX");
+            _tree->create<std::string>(rf_fe_path / "antenna" / "value")
+            .add_coerced_subscriber(boost::bind(&e3xx_radio_ctrl_impl::set_tx_antenna, this, _1, chan))
+            .set_publisher(boost::bind(&e3xx_radio_ctrl_impl::get_tx_antenna, this, chan))
+            .set("TX/RX");
         }
     }
 }
