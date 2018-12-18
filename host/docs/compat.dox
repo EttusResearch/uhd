@@ -1,0 +1,190 @@
+/*! \page page_compat Compat Numbers
+
+\tableofcontents
+
+In many cases, the UHD software suite includes parts of software or FPGA which
+need to work together over, e.g., a network connection or other type of link.
+To make sure that interfaces are matching, we use compatibility numbers (compat
+numbers) to indicate versions of various subsystems. This way, checks can be
+performed a-priori to verify if two separate pieces of software can communicate
+without error.
+
+There are many subsystems within UHD, including the FPGA codebase, MPM, and
+various modules within the UHD library itself.
+
+Example: When a USRP X310 is being used with UHD, several compat number checks
+are being performed under the hood. First, the FPGA has a compat version which
+is compared with the one that UHD expects. Similarly, the ZPU firmware code also
+has such a compat number. If any of those numbers mismatch, UHD will refuse to
+communicate with the X310, and initializing a session is impossible. Only
+updating the FPGA will fix this issue. If both compat numbers match, then the
+RFNoC subsystem is accessed. It, also, has a general compat number, and can have
+another compat number for each RFNoC block. If any of those fail, usage of the
+X310 is typically also not possible. In that case, the common remedy is to
+update the FPGA on the device to match the one that UHD expects. Typically, this
+requires running `uhd_images_downloader` to obtain the correct set of images,
+and then running `uhd_image_loader` to copy the FPGA image onto the device.
+After rebooting the device, all compat numbers will match up and UHD will be
+able to communicate with the device.
+
+
+\section compat_minor_major Major and Minor Compat Numbers
+
+In many cases, the compat number consists of a major part and a minor part. The
+difference between those numbers is that a major compat number mismatch will
+always lead to a failure, whereas as minor compat number mismatches only lead to
+failure when there is potential for UHD to rely on features that aren't yet
+supported by the device.
+
+Examples:
+- The X310 has an FPGA compat number of 30, and UHD expects a compat number of
+  31: This will \b fail. Any mismatch of major compat numbers will not work.
+- The X310 FPGA has a major compat number of 30 and a minor compat number of 2.
+  UHD expects a major compat number of 30 and a minor compat number of 1: This
+  will \b work. This just means that the FPGA has added features in a
+  backward-compatible fashion, and UHD won't need them.
+- The X310 FPGA has a major compat number of 30 and a minor compat number of 0.
+  UHD expects a major compat number of 30 and a minor compat number of 1: This
+  will <b>typically fail, but might work</b>. Depending on how UHD is using the
+  new features brought with minor compat number 1, it might not be able to
+  continue. It's possible that the change is so minor that UHD can do without
+  it and will conditionally use the new features, if available.
+
+Compat numbers are typically represented as a tuple `$MAJOR.$MINOR`, e.g., 30.1.
+
+
+\section compat_b2 B200-Series Compat Numbers
+
+The B200-series USRPs have two compat number: One for the FPGA, and one for the
+FX3 firmware. If UHD fails to communicate with a B200 device because of compat
+number errors, it is typically sufficient to run `uhd_images_downloader` to
+download
+the images matching the UHD version. Since neither image is stored on the device
+persistently, it is not necessary to manually flash the images onto the device.
+
+\section compat_x3u2 X300 and USRP2/N210 Series Compat Numbers
+
+Like the B200 series, these devices have firmware and FPGA compat numbers.
+However, the firmware is executed on a softcore within the FPGA, and is thus
+baked into the FPGA image itself. If there are FPGA/firmware compat errors, the
+typical remedy is thus to run:
+
+    uhd_images_downloader # This will get the correct images
+    uhd_image_loader --args type=x300,addr=192.168.10.1 # This will flash the image
+
+Note to change IP address (or resource) and type of the device accordingly.
+
+The X300, as a generation-3 devices, also runs RFNoC blocks which have their own
+compat numbers (see \ref compat_rfnoc).
+
+\section compat_mpm MPM Devices (N310, E320)
+
+See also \ref page_mpm.
+
+All MPM devices have a three-way dependency:
+- UHD will communicate with MPM on the device, and they share a compat number
+- MPM itself will communicate with the FPGA, so MPM and the FPGA also share a
+  compat number
+
+Note that UHD does not directly communicate with the FPGA, unless it's with
+RFNoC blocks. There is thus no shared compat number between the FPGA and UHD,
+but RFNoC components will share their own compat numbers
+(see \ref compat_rfnoc).
+
+A guaranteed way to match all compat numbers between an external host, the FPGA
+and MPM is to run (assuming an N300-series device, replace n3xx with a string
+that corresponds to your device, or leave it out to download all SD card images):
+
+    uhd_images_downloader -t sdimg -t n3xx # This will download a filesystem image
+
+And then to install the new filesystem image onto the device (See the individual
+device manuals for details, or \ref page_mpm).
+Since the UHD session will load the filesystem, the compatibility between UHD
+and MPM is now given. The FPGA images and MPM are both stored on the same
+filesystem, so these are now also in sync.
+
+Note: MPM has a `get_mpm_compat_num()` RPC call, which UHD uses to query its
+current compat number.
+
+\section compat_rfnoc RFNoC Components
+
+The most common mismatch is that between an RFNoC block on the FPGA, and its UHD
+block controller. There are two levels of compat numbers:
+
+- `noc_shell` has its own compat number, which is shared between all blocks and
+  devices (i.e., for any given version of UHD, all RFNoC blocks, regardless on
+  which device, will have the same `noc_shell` compat number).
+- Blocks itself may (but don't have to) have their own compat number. An example
+  of this are the DDC/DUC blocks. Because of changes at the register level,
+  software and FPGA for those blocks may no longer be compatible.
+
+For users running default images, the solution to resolving a compat number
+error is to simply download a matching FPGA image and flash it onto the device,
+typically by running
+
+    uhd_images_downloader
+    uhd_image_loader --args type=$TYPE,addr=$ADDR
+
+For users running their own custom FPGA images, the sequence is a bit more
+elaborate:
+
+1. Identify a commit on the FPGA repository that matches the version of UHD you
+   are running. There are multiple ways to do this. If you're on a release tag,
+   then the same release tag will exist on UHD and FPGA repositories. For
+   untagged commits, the submodule pointer in UHD will point to a compatible
+   version of the FPGA repository.
+   For most moments in time, simply using HEAD of the same branch on the two
+   repositories will also work, although this can't be guaranteed. If in doubt,
+   check that the compat numbers in the source are identical.
+2. Rebase your modifications onto that commit of the FPGA repository, or, if
+   your code is out-of-tree (which is the recommended workflow for RFNoC block
+   developers), simply rebuild your blocks against said commit of the FPGA
+   repository.
+
+The newly built FPGA image will then work with your version of UHD.
+
+
+\section compat_faq FAQ
+
+\subsection compat_faq_why1 Why is only one version of the compat number supported?
+
+Theoretically, it could be possible that UHD detects the FPGA compat number,
+and then runs different code based on which version of the FPGA image it
+detects. However, this is typically not done, for the following reasons:
+- Consistency: UHD, MPM, RFNoC, and the FPGA image are typically considered all
+  parts of the same source tree. Changes in compat numbers only happen when
+  updates are installed. It thus makes sense to extend the update to all
+  software components, instead of updating only parts of the system by itself
+  (e.g., only update UHD, but not the FPGA).
+- Stability: In some cases, compat number changes are attached to bug fixes. By
+  forcing an update of FPGA images, bug fixes are propagated more quickly. In
+  some rare cases, compat numbers are changed only to force upgrades of FPGA
+  images (i.e., compatibility itself was never affected), but this is a rare
+  exception to the process.
+- Maintainability: Tracking multiple combinations of software and FPGA
+  implementations increases the code base, and leads to more options for the
+  introduction of bugs. Forcing the compat numbers to be identical reduces the
+  number of code paths in the code, and improves code quality.
+
+\subsection compat_faq_whymany Why are there so many different compat numbers?
+
+The software architecture of UHD and RFNoC are such that there is a lot of code
+that is shared between devices. For example, many RFNoC blocks can easily be
+ported between devices without any changes to the code. This means that a single
+compat number per device wouldn't be sufficient.
+
+To keep things compartmentalized, and to avoid the meaning of compat numbers to
+bleed outside of their modules, there is one compat number for every pair of
+modules that do not run within the same process, for example:
+- Firmware and firmware control interface
+- RFNoC block and block controller
+- UHD and MPM
+- UHD and the X300 core register interface
+
+...and so on. In most cases, updating the FPGA image is the solution to
+resolving compat number errors.
+
+
+
+*/
+// vim:ft=doxygen:
