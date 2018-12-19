@@ -173,11 +173,7 @@ public:
             stream_cmd.num_samps *= interpolation;
         }
 
-        for(const node_ctrl_base::node_map_pair_t upstream_node:  list_upstream_nodes()) {
-            source_node_ctrl::sptr this_upstream_block_ctrl =
-                boost::dynamic_pointer_cast<source_node_ctrl>(upstream_node.second.lock());
-            this_upstream_block_ctrl->issue_stream_cmd(stream_cmd, chan);
-        }
+        source_block_ctrl_base::issue_stream_cmd(stream_cmd, chan);
     }
 
 private:
