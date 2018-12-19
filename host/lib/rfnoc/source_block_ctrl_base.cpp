@@ -29,9 +29,22 @@ void source_block_ctrl_base::issue_stream_cmd(
     }
 
     for(const node_ctrl_base::node_map_pair_t upstream_node:  _upstream_nodes) {
+        // FIXME:  Need proper mapping from input port to output port
+        // The code below assumes the input port and output port are the same
+        // if the number of upstream and downstream connections are the same.
+        // The stream command is limited to only that port to prevent issuing
+        // it on the wrong block and port.
+        if (_upstream_nodes.size() == _downstream_nodes.size() and
+            upstream_node.first != chan)
+        {
+            continue;
+        }
         source_node_ctrl::sptr this_upstream_block_ctrl =
             boost::dynamic_pointer_cast<source_node_ctrl>(upstream_node.second.lock());
-        this_upstream_block_ctrl->issue_stream_cmd(stream_cmd, chan);
+        if (this_upstream_block_ctrl)
+        {
+            this_upstream_block_ctrl->issue_stream_cmd(stream_cmd, get_upstream_port(chan));
+        }
     }
 }
 
