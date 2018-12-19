@@ -7,6 +7,7 @@
 #include "rhodium_radio_ctrl_impl.hpp"
 #include "rhodium_constants.hpp"
 #include <uhdlib/utils/narrow.hpp>
+#include <uhdlib/usrp/common/apply_corrections.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/rfnoc/node_ctrl_base.hpp>
 #include <uhd/transport/chdr.hpp>
@@ -200,6 +201,7 @@ double rhodium_radio_ctrl_impl::set_tx_frequency(
         _rpcc->notify_with_token(_rpc_prefix + "enable_tx_lowband_lo", (!is_highband));
     }
     _update_tx_freq_switches(coerced_freq);
+    _update_corrections(get_tx_lo_source(RHODIUM_LO1, 0), coerced_freq, TX_DIRECTION);
     // if TX lowband/highband changed and antenna is TX/RX,
     // the ATR and SW1 need to be updated
     _update_tx_output_switches(get_tx_antenna(0));
@@ -252,6 +254,7 @@ double rhodium_radio_ctrl_impl::set_rx_frequency(
         _rpcc->notify_with_token(_rpc_prefix + "enable_rx_lowband_lo", (!is_highband));
     }
     _update_rx_freq_switches(coerced_freq);
+    _update_corrections(get_rx_lo_source(RHODIUM_LO1, 0), coerced_freq, RX_DIRECTION);
 
     return coerced_freq;
 }
@@ -399,6 +402,40 @@ void rhodium_radio_ctrl_impl::_update_atr(
     }
 }
 
+void rhodium_radio_ctrl_impl::_update_corrections(
+    const std::string lo_source, 
+    const double freq, 
+    const direction_t dir)
+{
+    const std::string fe_path_part = dir == RX_DIRECTION ? "rx_fe_corrections"
+                                                            : "tx_fe_corrections";
+    const fs_path fe_corr_path = _root_path / fe_path_part / 0;
+    const fs_path dboard_path  = fs_path("dboards") / _radio_slot;
+
+    if (lo_source == "internal")
+    {
+        UHD_LOG_DEBUG(unique_id(),
+            "Enabling frontend corrections for "
+                << ((dir == RX_DIRECTION) ? "RX" : "TX"));
+        if (dir == RX_DIRECTION) {
+            apply_rx_fe_corrections(_tree, dboard_path, fe_corr_path, freq);
+        } else {
+            apply_tx_fe_corrections(_tree, dboard_path, fe_corr_path, freq);
+        }
+    } else {
+        UHD_LOG_DEBUG(unique_id(),
+            "Disabling frontend corrections for "
+                << ((dir == RX_DIRECTION) ? "RX" : "TX"));
+        if (dir == RX_DIRECTION) {
+            _rx_fe_core->set_iq_balance(rx_frontend_core_3000::DEFAULT_IQ_BALANCE_VALUE);
+        } else {
+            _tx_fe_core->set_dc_offset(tx_frontend_core_200::DEFAULT_DC_OFFSET_VALUE);
+            _tx_fe_core->set_iq_balance(tx_frontend_core_200::DEFAULT_IQ_BALANCE_VALUE);
+        }
+    }
+
+}
+
 uhd::gain_range_t rhodium_radio_ctrl_impl::_get_gain_range(direction_t dir)
 {
     if (dir == RX_DIRECTION) {
@@ -533,12 +570,12 @@ void rhodium_radio_ctrl_impl::set_rpc_client(
     radio_ctrl_impl::set_rate(_master_clock_rate);
 
     UHD_LOG_TRACE(unique_id(), "Checking for existence of Rhodium DB in slot " << _radio_slot);
-    const auto dboard_info = _rpcc->request<std::vector<std::map<std::string, std::string>>>("get_dboard_info");
+    const auto all_dboard_info = _rpcc->request<std::vector<std::map<std::string, std::string>>>("get_dboard_info");
 
     // There is a bug that if only one DB is plugged into slot B the vector
     // will only have 1 element but not be correlated to slot B at all.
     // For now, we assume a 1 element array means the DB is in slot A.
-    if (dboard_info.size() <= get_block_id().get_block_count())
+    if (all_dboard_info.size() <= get_block_id().get_block_count())
     {
         UHD_LOG_DEBUG(unique_id(), "No DB detected in slot " << _radio_slot);
         // Name and master clock rate are needed for RFNoC init, so set the
@@ -549,11 +586,10 @@ void rhodium_radio_ctrl_impl::set_rpc_client(
             ->create<std::string>("name").set("Unknown");
     }
     else {
+        _dboard_info = all_dboard_info.at(get_block_id().get_block_count());
         UHD_LOG_DEBUG(unique_id(),
-            "Rhodium DB detected in slot " <<
-            _radio_slot <<
-            ". Serial: " <<
-            dboard_info.at(get_block_id().get_block_count()).at("serial"));
+            "Rhodium DB detected in slot " << _radio_slot <<
+            ". Serial: " << _dboard_info.at("serial"));
         _init_defaults();
         _init_peripherals();
         _init_prop_tree();

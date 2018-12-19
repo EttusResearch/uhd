@@ -264,6 +264,8 @@ void rhodium_radio_ctrl_impl::set_tx_lo_source(
         throw uhd::value_error(str(boost::format("set_tx_lo_source was called with an invalid LO source: %s Valid sources are [internal, external]") % src));
     }
 
+    _update_corrections(src, get_tx_frequency(0), TX_DIRECTION);
+
     _tx_lo_source = src;
 }
 
@@ -292,6 +294,8 @@ void rhodium_radio_ctrl_impl::set_rx_lo_source(
     } else {
         throw uhd::value_error(str(boost::format("set_rx_lo_source was called with an invalid LO source: %s Valid sources for LO1 are [internal, external]") % src));
     }
+
+    _update_corrections(src, get_rx_frequency(0), RX_DIRECTION);
 
     _rx_lo_source = src;
 }

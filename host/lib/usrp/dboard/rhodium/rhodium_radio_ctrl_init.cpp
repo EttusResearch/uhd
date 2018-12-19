@@ -16,6 +16,7 @@
 #include <string>
 
 using namespace uhd;
+using namespace uhd::usrp;
 using namespace uhd::rfnoc;
 
 namespace {
@@ -166,6 +167,19 @@ void rhodium_radio_ctrl_impl::_init_peripherals()
         _generate_write_spi(this->_spi, SEN_CPLD, _get_cpld_spi_config()),
         _generate_read_spi(this->_spi, SEN_CPLD, _get_cpld_spi_config()));
 
+    UHD_LOG_TRACE(unique_id(), "Initializing TX frontend DSP core...")
+    _tx_fe_core = tx_frontend_core_200::make(_get_ctrl(0), regs::sr_addr(TX_FE_BASE));
+    _tx_fe_core->set_dc_offset(tx_frontend_core_200::DEFAULT_DC_OFFSET_VALUE);
+    _tx_fe_core->set_iq_balance(tx_frontend_core_200::DEFAULT_IQ_BALANCE_VALUE);
+    _tx_fe_core->populate_subtree(_tree->subtree(_root_path / "tx_fe_corrections" / 0));
+
+    UHD_LOG_TRACE(unique_id(), "Initializing RX frontend DSP core...")
+    _rx_fe_core = rx_frontend_core_3000::make(_get_ctrl(0), regs::sr_addr(RX_FE_BASE));
+    _rx_fe_core->set_adc_rate(_master_clock_rate);
+    _rx_fe_core->set_dc_offset(rx_frontend_core_3000::DEFAULT_DC_OFFSET_VALUE);
+    _rx_fe_core->set_dc_offset_auto(rx_frontend_core_3000::DEFAULT_DC_OFFSET_ENABLE);
+    _rx_fe_core->populate_subtree(_tree->subtree(_root_path / "rx_fe_corrections" / 0));
+
     UHD_LOG_TRACE(unique_id(), "Writing initial gain values...");
     set_tx_gain(RHODIUM_DEFAULT_GAIN, 0);
     set_tx_lo_gain(RHODIUM_DEFAULT_LO_GAIN, RHODIUM_LO1, 0);
@@ -225,17 +239,6 @@ void rhodium_radio_ctrl_impl::_init_peripherals()
     _update_tx_output_switches(RHODIUM_DEFAULT_TX_ANTENNA);
     _update_rx_input_switches(RHODIUM_DEFAULT_RX_ANTENNA);
 
-    _rx_fe_core = rx_frontend_core_3000::make(_get_ctrl(0), regs::sr_addr(RX_FE_BASE));
-    _rx_fe_core->set_adc_rate(_master_clock_rate);
-    _rx_fe_core->set_dc_offset(rx_frontend_core_3000::DEFAULT_DC_OFFSET_VALUE);
-    _rx_fe_core->set_dc_offset_auto(rx_frontend_core_3000::DEFAULT_DC_OFFSET_ENABLE);
-    _rx_fe_core->populate_subtree(_tree->subtree(_root_path / "rx_fe_corrections" / 0));
-
-    _tx_fe_core = tx_frontend_core_200::make(_get_ctrl(0), regs::sr_addr(TX_FE_BASE));
-    _tx_fe_core->set_dc_offset(tx_frontend_core_200::DEFAULT_DC_OFFSET_VALUE);
-    _tx_fe_core->set_iq_balance(tx_frontend_core_200::DEFAULT_IQ_BALANCE_VALUE);
-    _tx_fe_core->populate_subtree(_tree->subtree(_root_path / "tx_fe_corrections" / 0));
-
     UHD_LOG_TRACE(unique_id(), "Checking for existence of LO Distribution board");
     _lo_dist_present = _rpcc->request_with_token<bool>(_rpc_prefix + "is_lo_dist_present");
     UHD_LOG_DEBUG(unique_id(), str(boost::format("LO distribution board is%s present") % (_lo_dist_present ? "" : " NOT")));
@@ -290,7 +293,7 @@ void rhodium_radio_ctrl_impl::_init_frontend_subtree(
         })
     ;
     subtree->create<std::vector<std::string>>(tx_fe_path / "antenna" / "options")
-        .set({RHODIUM_DEFAULT_TX_ANTENNA})
+        .set(RHODIUM_TX_ANTENNAS)
         .add_coerced_subscriber([](const std::vector<std::string> &){
             throw uhd::runtime_error(
                     "Attempting to update antenna options!");
@@ -759,6 +762,27 @@ void rhodium_radio_ctrl_impl::_init_prop_tree()
 {
     const fs_path fe_base = fs_path("dboards") / _radio_slot;
     this->_init_frontend_subtree(_tree->subtree(fe_base), 0);
+
+    // legacy EEPROM paths
+    auto eeprom_get = [this]() {
+        auto eeprom     = dboard_eeprom_t();
+        eeprom.id       = boost::lexical_cast<uint16_t>(_dboard_info.at("pid"));
+        eeprom.revision = _dboard_info.at("rev");
+        eeprom.serial   = _dboard_info.at("serial");
+        return eeprom;
+    };
+
+    auto eeprom_set = [](dboard_eeprom_t) {
+        throw uhd::not_implemented_error("Setting DB EEPROM from this interface not implemented");
+    };
+
+    _tree->create<dboard_eeprom_t>(fe_base / "rx_eeprom")
+        .set_publisher(eeprom_get)
+        .add_coerced_subscriber(eeprom_set);
+
+    _tree->create<dboard_eeprom_t>(fe_base / "tx_eeprom")
+        .set_publisher(eeprom_get)
+        .add_coerced_subscriber(eeprom_set);
 
     // EEPROM paths subject to change FIXME
     _tree->create<eeprom_map_t>(_root_path / "eeprom")
