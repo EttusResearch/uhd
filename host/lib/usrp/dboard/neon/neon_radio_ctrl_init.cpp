@@ -74,6 +74,7 @@ void neon_radio_ctrl_impl::_init_defaults()
         radio_ctrl_impl::set_tx_frequency(NEON_DEFAULT_FREQ, chan);
         radio_ctrl_impl::set_tx_gain(NEON_DEFAULT_GAIN, chan);
         radio_ctrl_impl::set_tx_antenna(NEON_DEFAULT_TX_ANTENNA, chan);
+        radio_ctrl_impl::set_tx_bandwidth(NEON_DEFAULT_BANDWIDTH, chan);
     }
 
     /** Update default SPP (overwrites the default value from the XML file) **/
@@ -495,4 +496,3 @@ void neon_radio_ctrl_impl::_init_mpm_sensors(
         ;
     }
 }
-
