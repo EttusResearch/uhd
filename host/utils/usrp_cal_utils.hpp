@@ -54,7 +54,8 @@ static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp)
         mb_name.find("N200") != std::string::npos or
         mb_name.find("N210") != std::string::npos or
         mb_name.find("X300") != std::string::npos or
-        mb_name.find("X310") != std::string::npos)
+        mb_name.find("X310") != std::string::npos or
+        mb_name.find("n3xx") != std::string::npos)
     {
         usrp->set_tx_rate(12.5e6);
         usrp->set_rx_rate(12.5e6);
@@ -75,7 +76,8 @@ static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp)
         tx_name.find("SBX") == std::string::npos and
         tx_name.find("CBX") == std::string::npos and
         tx_name.find("RFX") == std::string::npos and
-        tx_name.find("UBX") == std::string::npos
+        tx_name.find("UBX") == std::string::npos and
+        tx_name.find("Rhodium") == std::string::npos
         )
     {
         throw std::runtime_error("self-calibration is not supported for this TX dboard");
@@ -88,7 +90,8 @@ static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp)
         rx_name.find("SBX") == std::string::npos and
         rx_name.find("CBX") == std::string::npos and
         rx_name.find("RFX") == std::string::npos and
-        rx_name.find("UBX") == std::string::npos
+        rx_name.find("UBX") == std::string::npos and
+        rx_name.find("Rhodium") == std::string::npos
         )
     {
         throw std::runtime_error("self-calibration is not supported for this RX dboard");
