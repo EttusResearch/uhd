@@ -94,6 +94,7 @@ void magnesium_radio_ctrl_impl::_init_defaults()
         radio_ctrl_impl::set_tx_frequency(MAGNESIUM_DEFAULT_FREQ, chan);
         radio_ctrl_impl::set_tx_gain(0, chan);
         radio_ctrl_impl::set_tx_antenna(MAGNESIUM_DEFAULT_TX_ANTENNA, chan);
+        radio_ctrl_impl::set_tx_bandwidth(MAGNESIUM_DEFAULT_BANDWIDTH, chan);
     }
 
 
@@ -861,4 +862,3 @@ void magnesium_radio_ctrl_impl::_init_mpm_sensors(
         ;
     }
 }
-
