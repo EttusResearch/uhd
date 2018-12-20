@@ -43,7 +43,7 @@ void source_block_ctrl_base::issue_stream_cmd(
             boost::dynamic_pointer_cast<source_node_ctrl>(upstream_node.second.lock());
         if (this_upstream_block_ctrl)
         {
-            this_upstream_block_ctrl->issue_stream_cmd(stream_cmd, get_upstream_port(chan));
+            this_upstream_block_ctrl->issue_stream_cmd(stream_cmd, get_upstream_port(upstream_node.first));
         }
     }
 }
