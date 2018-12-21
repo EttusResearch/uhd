@@ -297,7 +297,6 @@ class Rhodium(BfrfsEEPROM, DboardManagerBase):
         self.log.trace("Selected EEPROM offset: %d", user_eeprom_offset)
         user_eeprom_data = open(eeprom_path, 'rb').read()[user_eeprom_offset:]
         self.log.trace("Total EEPROM size is: %d bytes", len(user_eeprom_data))
-        # FIXME verify EEPROM sectors
         return BufferFS(
             user_eeprom_data,
             max_size=eeprom_info.get('max_size'),
@@ -411,6 +410,10 @@ class Rhodium(BfrfsEEPROM, DboardManagerBase):
         self._lo_dist.set(pin_info[0], pin_val)
 
     def is_lo_dist_present(self):
+        """
+        Returns true if this daughterboard has a LO distribution board
+        attached and initialized, otherwise false.
+        """
         return self._lo_dist is not None
 
     ##########################################################################
@@ -500,14 +503,14 @@ class Rhodium(BfrfsEEPROM, DboardManagerBase):
             self.log.info("Re-initializing daughter board. This may take some time.")
             self._reinit(self.master_clock_rate)
             self.log.debug("Daughter board re-initialization done.")
-            
+
     def enable_tx_lowband_lo(self, enable):
         """
         Enables or disables the TX lowband LO output from the LMK on the
         daughterboard.
         """
         self.lmk.enable_tx_lb_lo(enable);
-        
+
     def enable_rx_lowband_lo(self, enable):
         """
         Enables or disables the RX lowband LO output from the LMK on the

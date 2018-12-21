@@ -39,6 +39,7 @@ namespace {
     constexpr char   RHODIUM_DEFAULT_RX_ANTENNA[] = "RX2";
     constexpr char   RHODIUM_DEFAULT_TX_ANTENNA[] = "TX/RX";
     constexpr double RHODIUM_DEFAULT_BANDWIDTH    = 250e6; // Hz
+    constexpr auto   RHODIUM_DEFAULT_MASH_ORDER   = lmx2592_iface::mash_order_t::THIRD;
 
     //! Rhodium gain profile options
     const std::vector<std::string> RHODIUM_GP_OPTIONS = {
@@ -193,7 +194,7 @@ void rhodium_radio_ctrl_impl::_init_peripherals()
 
     UHD_LOG_TRACE(unique_id(), "Writing initial TX LO state...");
     _tx_lo->set_reference_frequency(RHODIUM_LO1_REF_FREQ);
-    _tx_lo->set_mash_order(lmx2592_iface::mash_order_t::THIRD);
+    _tx_lo->set_mash_order(RHODIUM_DEFAULT_MASH_ORDER);
 
     UHD_LOG_TRACE(unique_id(), "Initializing RX LO...");
     _rx_lo = lmx2592_iface::make(
@@ -202,7 +203,7 @@ void rhodium_radio_ctrl_impl::_init_peripherals()
 
     UHD_LOG_TRACE(unique_id(), "Writing initial RX LO state...");
     _rx_lo->set_reference_frequency(RHODIUM_LO1_REF_FREQ);
-    _rx_lo->set_mash_order(lmx2592_iface::mash_order_t::THIRD);
+    _rx_lo->set_mash_order(RHODIUM_DEFAULT_MASH_ORDER);
 
     UHD_LOG_TRACE(unique_id(), "Initializing GPIOs...");
     _gpio =
@@ -357,7 +358,7 @@ void rhodium_radio_ctrl_impl::_init_frontend_subtree(
         })
     ;
     subtree->create<meta_range_t>(tx_fe_path / "bandwidth" / "range")
-        .set(meta_range_t(0.0, 0.0, 0.0)) // FIXME
+        .set(meta_range_t(RHODIUM_DEFAULT_BANDWIDTH, RHODIUM_DEFAULT_BANDWIDTH))
         .add_coerced_subscriber([](const meta_range_t &){
             throw uhd::runtime_error(
                 "Attempting to update bandwidth range!");
@@ -373,7 +374,7 @@ void rhodium_radio_ctrl_impl::_init_frontend_subtree(
         })
     ;
     subtree->create<meta_range_t>(rx_fe_path / "bandwidth" / "range")
-        .set(meta_range_t(0.0, 0.0, 0.0)) // FIXME
+        .set(meta_range_t(RHODIUM_DEFAULT_BANDWIDTH, RHODIUM_DEFAULT_BANDWIDTH))
         .add_coerced_subscriber([](const meta_range_t &){
             throw uhd::runtime_error(
                 "Attempting to update bandwidth range!");

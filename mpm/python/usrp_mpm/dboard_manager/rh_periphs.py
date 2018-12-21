@@ -91,8 +91,8 @@ class FPGAtoLoDist(object):
             raise RuntimeError('LO distribution board revision did not match: Expected: {0} Actual: {1}'.format(self.EXPECTED_BOARD_REV, board_rev))
         self._gpios.set(self.pins.index('P6_8V_EN'), 1)
         if not poll_with_timeout(
-                lambda: bool(self._gpios.get(self.pins.index('P6_8V_PG'))), 
-                self.POWER_ON_TIMEOUT, 
+                lambda: bool(self._gpios.get(self.pins.index('P6_8V_PG'))),
+                self.POWER_ON_TIMEOUT,
                 self.POWER_ON_POLL_INTERVAL):
             self._gpios.set(self.pins.index('P6_8V_EN'), 0)
             raise RuntimeError('Power on failure for LO Distribution board')
@@ -200,8 +200,6 @@ class RhCPLD(object):
         This function polls and returns the DAC's ALARM signal connected to the CPLD.
         """
         return (self.peek16(self.REG_DAC_ALARM) & 0x0001)
-
-    # TODO: add more control/status functionality to this class?
 
 
 class DboardClockControl(object):

@@ -99,7 +99,7 @@ class AD9695Rh(object):
         self.log.trace("Clock status readback: 0x{:X}".format(clock_status))
         if clock_status != 0x01:
             self.log.error("Input clock not detected")
-            raise RuntimeError("Input clock not detected for ADC")            
+            raise RuntimeError("Input clock not detected for ADC")
 
         self.log.trace("ADC Configuration.")
         self.pokes8((
