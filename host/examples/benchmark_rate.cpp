@@ -192,15 +192,15 @@ void benchmark_tx_rate(
     ) % NOW() % (usrp->get_tx_rate()/1e6) % tx_stream->get_num_channels() << std::endl;
 
     //setup variables and allocate buffer
-    uhd::tx_metadata_t md;
-    md.time_spec = usrp->get_time_now() + uhd::time_spec_t(INIT_DELAY);
-    md.has_time_spec = (tx_stream->get_num_channels() > 1);
     const size_t max_samps_per_packet = tx_stream->get_max_num_samps();
     std::vector<char> buff(max_samps_per_packet*uhd::convert::get_bytes_per_item(tx_cpu));
     std::vector<const void *> buffs;
     for (size_t ch = 0; ch < tx_stream->get_num_channels(); ch++)
         buffs.push_back(&buff.front()); //same buffer for each channel
+    // Create the metadata, and populate the time spec at the latest possible moment
+    uhd::tx_metadata_t md;
     md.has_time_spec = (buffs.size() != 1);
+    md.time_spec = usrp->get_time_now() + uhd::time_spec_t(INIT_DELAY);
 
     if (random_nsamps) {
         std::srand((unsigned int)time(NULL));
