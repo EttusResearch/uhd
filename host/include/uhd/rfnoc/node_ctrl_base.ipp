@@ -64,7 +64,9 @@ namespace uhd {
                             continue;
                         }
                         if (active_only
-                            and not (downstream ? _tx_streamer_active[our_port] : _rx_streamer_active[our_port] )) {
+                            and not (downstream ?
+                                _tx_streamer_active[connected_port] :
+                                _rx_streamer_active[connected_port] )) {
                             continue;
                         }
                         sptr one_next_node = it->second.lock();
