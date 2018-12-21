@@ -794,11 +794,15 @@ void rhodium_radio_ctrl_impl::_init_prop_tree()
     _tree->create<std::string>("rx_codecs" / _radio_slot / "name").set("ad9695-625");
     _tree->create<std::string>("tx_codecs" / _radio_slot / "name").set("dac37j82");
 
-    // TODO remove this dirty hack
-    if (not _tree->exists("tick_rate"))
+    // The tick_rate is equivalent to the master clock rate of the DB in slot A
+    if (_radio_slot == "A")
     {
+        UHD_ASSERT_THROW(!_tree->exists("tick_rate"));
+        // set_rate sets the clock rate of the entire device, not just this DB,
+        // so only add DB A's set and get functions to the tree.
         _tree->create<double>("tick_rate")
             .set_publisher([this](){ return this->get_rate(); })
+            .add_coerced_subscriber([this](double rate) { return this->set_rate(rate); })
         ;
     }
 }

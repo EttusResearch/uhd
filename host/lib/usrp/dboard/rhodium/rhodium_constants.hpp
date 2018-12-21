@@ -14,7 +14,11 @@
 
 static constexpr double RHODIUM_FREQ_COMPARE_EPSILON = 1e-5;
 
-static constexpr double RHODIUM_RADIO_RATE = 122.88e6; // Hz
+static constexpr size_t NUM_RHODIUM_RADIO_RATES = 3;
+
+static constexpr std::array<double, NUM_RHODIUM_RADIO_RATES> RHODIUM_RADIO_RATES = {
+    200e6, 245.76e6, 250e6};
+
 static constexpr double RHODIUM_MIN_FREQ = 1e6; // Hz
 static constexpr double RHODIUM_MAX_FREQ = 6e9; // Hz
 

@@ -70,13 +70,36 @@ rhodium_radio_ctrl_impl::~rhodium_radio_ctrl_impl()
 /******************************************************************************
  * API Calls
  *****************************************************************************/
-double rhodium_radio_ctrl_impl::set_rate(double /* rate */)
+double rhodium_radio_ctrl_impl::set_rate(double requested_rate)
 {
-    // TODO: implement
-    // TODO: set_rate may also need to update the LO since master clock rate
-    // changes also change the lowband LO frequency.  (run set_frequency)
-    UHD_LOG_WARNING(unique_id(), "set_rate() called but not implemented");
-    return 0.0;
+    meta_range_t rates;
+    for (const double rate : RHODIUM_RADIO_RATES) {
+        rates.push_back(range_t(rate));
+    }
+
+    const double rate = rates.clip(requested_rate);
+    if (!math::frequencies_are_equal(requested_rate, rate)) {
+        UHD_LOG_WARNING(unique_id(),
+            "Coercing requested sample rate from " << (requested_rate / 1e6) << " MHz to " <<
+            (rate / 1e6) << " MHz, the closest possible rate.");
+    }
+
+    const double current_rate = get_rate();
+    if (math::frequencies_are_equal(current_rate, rate)) {
+        UHD_LOG_DEBUG(
+            unique_id(), "Rate is already at " << (rate / 1e6) << " MHz. Skipping set_rate()");
+        return current_rate;
+    }
+
+    UHD_LOG_TRACE(unique_id(), "Updating master clock rate to " << rate);
+    auto new_rate = _rpcc->request_with_token<double>(_rpc_prefix + "set_master_clock_rate", rate);
+    // The lowband LO frequency will change with the master clock rate, so
+    // update the tuning of the device.
+    set_tx_frequency(get_tx_frequency(0), 0);
+    set_rx_frequency(get_rx_frequency(0), 0);
+
+    radio_ctrl_impl::set_rate(new_rate);
+    return new_rate;
 }
 
 void rhodium_radio_ctrl_impl::set_tx_antenna(
