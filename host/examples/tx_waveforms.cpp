@@ -173,6 +173,11 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::vector<std::complex<float> > buff(spb);
     std::vector<std::complex<float> *> buffs(channel_nums.size(), &buff.front());
 
+    //pre-fill the buffer with the waveform
+    for (size_t n = 0; n < buff.size(); n++){
+        buff[n] = wave_table(index += step);
+    }
+
     std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
     if (channel_nums.size() > 1)
     {
@@ -250,15 +255,15 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             break;
         }
 
-        //fill the buffer with the waveform
-        for (size_t n = 0; n < buff.size(); n++){
-            buff[n] = wave_table(index += step);
-        }
-
         //send the entire contents of the buffer
         num_acc_samps += tx_stream->send(
             buffs, buff.size(), md
         );
+
+        //fill the buffer with the waveform
+        for (size_t n = 0; n < buff.size(); n++){
+            buff[n] = wave_table(index += step);
+        }
 
         md.start_of_burst = false;
         md.has_time_spec = false;
