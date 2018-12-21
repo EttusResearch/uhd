@@ -241,8 +241,14 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     uint64_t num_acc_samps = 0;
     while(true){
 
-        if (stop_signal_called) break;
-        if (total_num_samps > 0 and num_acc_samps >= total_num_samps) break;
+        // Break on the end of duration or CTRL-C
+        if (stop_signal_called) {
+            break;
+        }
+        // Break when we've received nsamps
+        if (total_num_samps > 0 and num_acc_samps >= total_num_samps) {
+            break;
+        }
 
         //fill the buffer with the waveform
         for (size_t n = 0; n < buff.size(); n++){
