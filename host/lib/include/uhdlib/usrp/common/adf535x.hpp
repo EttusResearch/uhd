@@ -324,13 +324,10 @@ inline double adf535x_impl<adf5355_regs_t>::_set_frequency(double target_freq, d
   const auto MOD2 = static_cast<uint16_t>(std::min(floor(_pfd_freq / gcd), static_cast<double>(ADF535X_MAX_MOD2)));
   const auto FRAC2 = static_cast<uint16_t>(std::min(ceil(residue * MOD2), static_cast<double>(ADF535X_MAX_FRAC2)));
 
-  const double coerced_vco_freq = _pfd_freq * (
-    double(INT) + (
-      (double(FRAC1) +
-      (double(FRAC2) / double(MOD2)))
-      / double(ADF535X_MOD1)
-    )
-  );
+  const double coerced_vco_freq = _pfd_freq *
+    (_fb_after_divider ? rf_divider : 1) *
+    (double(INT) + ((double(FRAC1) + (double(FRAC2) / double(MOD2))) /
+    double(ADF535X_MOD1)));
 
   const double coerced_out_freq = coerced_vco_freq / rf_divider;
 
