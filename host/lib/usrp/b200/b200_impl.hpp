@@ -45,8 +45,8 @@ static const uint16_t B200_FPGA_COMPAT_NUM = 16;
 static const uint16_t B205_FPGA_COMPAT_NUM = 7;
 static const double          B200_BUS_CLOCK_RATE = 100e6;
 static const uint32_t B200_GPSDO_ST_NONE = 0x83;
-static const size_t B200_MAX_RATE_USB2              =  53248000; // bytes/s
-static const size_t B200_MAX_RATE_USB3              = 500000000; // bytes/s
+static constexpr double B200_MAX_RATE_USB2              =  53248000; // bytes/s
+static constexpr double B200_MAX_RATE_USB3              = 500000000; // bytes/s
 
 #define FLIP_SID(sid) (((sid)<<16)|((sid)>>16))
 
