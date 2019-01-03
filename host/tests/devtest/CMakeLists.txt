@@ -48,6 +48,6 @@ if(ENABLE_N300)
 endif(ENABLE_N300)
 if(ENABLE_E320)
     ADD_DEVTEST("e320" "e3xx" "E32x")
-endif(ENABLE_MPMD)
+endif(ENABLE_E320)
 # Formatting
 message(STATUS "")
