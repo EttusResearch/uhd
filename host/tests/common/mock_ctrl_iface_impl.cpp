@@ -11,7 +11,7 @@ uint64_t mock_ctrl_iface_impl::send_cmd_pkt(
         const size_t addr,
         const size_t data,
         const bool readback,
-        const uint64_t timestamp
+        const uint64_t /* timestamp */
 ) {
     if (not readback) {
         std::cout << str(boost::format("[MOCK] poke to addr: %016X, data == %016X") % addr % data) << std::endl;
