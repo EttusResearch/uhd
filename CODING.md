@@ -35,8 +35,8 @@ helpful move for the team and future maintainability of the UHD codebase.
 
 ## C++-specific Guidelines
 
-* If in doubt, consult the [C++ Core Guidelines][https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md].
-  If the guidelines have an answer, and it works for you, just pick that.
+* If in doubt, consult the [C++ Core Guidelines][CppCoreGuidelines]. If the
+  guidelines have an answer, and it works for you, just pick that.
 * Use Doxygen doc-blocks copiously.
 * All things equal, prefer standard C++ constructs over Boost constructs (see
   also Boost guidelines).
@@ -119,8 +119,8 @@ std::map<std::string, std::string> bar =
 
 * Keep Python code compatible with Py2k and Py3k. There are plenty of tools to
   aid with this, such as `futurize`.
-* Follow the suggestions in PEP8 (https://www.python.org/dev/peps/pep-0008/)
-  and PEP257 (https://www.python.org/dev/peps/pep-0257/). The former is about
+* Follow the suggestions in [PEP8][Pep8]
+  and [PEP257][Pep257]. The former is about
   code layout in general, the latter about docstrings.
 * Pylint is good tool for helping with following code guidelines. It's very
   fussy though, so don't get too worked up about following its suggestions.
@@ -154,4 +154,7 @@ std::map<std::string, std::string> bar =
 FPGA guidelines are stored in a separate file. See [CODING.md][fpga-coding] in
 the FPGA repository.
 
+[CppCoreGuideLines]: https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md
+[PEP8]: https://www.python.org/dev/peps/pep-0008/
+[Pep257]: https://www.python.org/dev/peps/pep-0257/
 [fpga-coding]: https://github.com/EttusResearch/fpga/blob/master/CODING.md
