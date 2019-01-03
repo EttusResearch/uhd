@@ -123,7 +123,7 @@ namespace uhd {
                 const boost::posix_time::ptime &time_,
                 const uhd::log::severity_level &verbosity_,
                 const std::string &file_,
-                const size_t &line_,
+                const unsigned int &line_,
                 const std::string &component_,
                 const boost::thread::id &thread_id_
             ) : time(time_),
