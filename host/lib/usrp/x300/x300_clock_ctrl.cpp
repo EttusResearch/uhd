@@ -68,7 +68,7 @@ public:
         const double dboard_clock_rate,
         const double system_ref_rate):
         _spiface(spiface),
-        _slaveno(slaveno),
+        _slaveno(static_cast<int>(slaveno)),
         _hw_rev(hw_rev),
         _master_clock_rate(master_clock_rate),
         _dboard_clock_rate(dboard_clock_rate),
@@ -81,10 +81,10 @@ public:
         _lmk04816_regs.RESET = lmk04816_regs_t::RESET_RESET;
         this->write_regs(0);
         _lmk04816_regs.RESET = lmk04816_regs_t::RESET_NO_RESET;
-        for (size_t i = 0; i <= 16; ++i) {
+        for (uint8_t i = 0; i <= 16; ++i) {
             this->write_regs(i);
         }
-        for (size_t i = 24; i <= 31; ++i) {
+        for (uint8_t i = 24; i <= 31; ++i) {
             this->write_regs(i);
         }
         sync_clocks();
@@ -423,8 +423,8 @@ private:
         // VCXO runs at 96MHz, assume PLL2 reference doubler is enabled
         const double ref = VCXO_FREQ * 2;
 
-        const int lowest_vcodiv = std::ceil(MIN_VCO_FREQ / output_freq);
-        const int highest_vcodiv = std::floor(MAX_VCO_FREQ / output_freq);
+        const int lowest_vcodiv = static_cast<int>(std::ceil(MIN_VCO_FREQ / output_freq));
+        const int highest_vcodiv = static_cast<int>(std::floor(MAX_VCO_FREQ / output_freq));
 
         // Find the PLL2 configuration with the lowest frequency error, favoring
         // higher phase comparison frequencies.
@@ -445,8 +445,8 @@ private:
                 // the N predivider to odd values as well, and we may be able to get
                 // better spur performance by balancing the predivider and the
                 // divider.
-                const int n =
-                    boost::math::round((r * try_vco_freq) / (VCXO_PLL2_N * ref));
+                const int n = static_cast<int>(
+                    boost::math::round((r * try_vco_freq) / (VCXO_PLL2_N * ref)));
 
                 const double actual_mcr = (ref * VCXO_PLL2_N * n) / (vcodiv * r);
                 const double error = std::abs(actual_mcr - output_freq);
@@ -869,10 +869,10 @@ private:
         set_clock_delay(X300_CLOCK_WHICH_DAC0,   _delays.dac_dly_ns,   false);  //Sets both Ch0 and Ch1
 
         /* Write the configuration values into the LMK */
-        for (size_t i = 1; i <= 16; ++i) {
+        for (uint8_t i = 1; i <= 16; ++i) {
             this->write_regs(i);
         }
-        for (size_t i = 24; i <= 31; ++i) {
+        for (uint8_t i = 24; i <= 31; ++i) {
             this->write_regs(i);
         }
 
@@ -880,7 +880,7 @@ private:
     }
 
     const spi_iface::sptr   _spiface;
-    const size_t            _slaveno;
+    const int               _slaveno;
     const size_t            _hw_rev;
     // This is technically constant, but it can be coerced during initialization
     double                  _master_clock_rate;

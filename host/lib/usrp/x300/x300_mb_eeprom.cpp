@@ -95,7 +95,7 @@ mboard_eeprom_t x300_impl::get_mb_eeprom(uhd::i2c_iface::sptr iface)
     mb_eeprom["gateway"] = boost::asio::ip::address_v4(ip_addr_bytes).to_string();
     for (size_t i = 0; i < 4; i++)
     {
-        const std::string n(1, i+'0');
+        const std::string n(1, char(i)+'0');
         byte_copy(
                 byte_vector_t(
                 bytes.begin() + (offsetof(x300_eeprom_map, ip_addr)+(i*4)),
@@ -194,7 +194,7 @@ void x300_impl::set_mb_eeprom(
     }
     for (size_t i = 0; i < 4; i++)
     {
-        const std::string n(1, i+'0');
+        const std::string n(1, char(i)+'0');
         if (mb_eeprom.has_key("ip-addr"+n)){
             byte_copy(boost::asio::ip::address_v4::from_string(mb_eeprom["ip-addr"+n]).to_bytes(), ip_addr_bytes);
             iface->write_eeprom(X300_EEPROM_ADDR, offsetof(x300_eeprom_map, ip_addr)+(i*4), ip_addr_bytes);

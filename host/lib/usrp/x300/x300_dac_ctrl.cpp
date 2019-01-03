@@ -36,7 +36,7 @@ class x300_dac_ctrl_impl : public x300_dac_ctrl
 {
 public:
     x300_dac_ctrl_impl(uhd::spi_iface::sptr iface, const size_t slaveno, const double refclk):
-        _iface(iface), _slaveno(slaveno), _refclk(refclk)
+        _iface(iface), _slaveno(static_cast<int>(slaveno)), _refclk(refclk)
     {
         //Power up all DAC subsystems
         write_ad9146_reg(0x01, 0x10); //Up: I DAC, Q DAC, Receiver, Voltage Ref, Clocks
@@ -287,7 +287,7 @@ public:
 
 private:
     uhd::spi_iface::sptr _iface;
-    const size_t _slaveno;
+    const int _slaveno;
     const double _refclk;
 };
 

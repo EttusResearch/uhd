@@ -89,7 +89,7 @@ typedef struct {
     std::string                      rpc_port;
     udp_simple::sptr                 write_xport;
     udp_simple::sptr                 read_xport;
-    uint32_t                         size;
+    size_t                           size;
     uint8_t                          data_in[udp_simple::mtu];
     std::vector<char>                bitstream; // .bin image extracted from .lvbitx file
 } x300_session_t;
