@@ -63,7 +63,7 @@ static const pred_table_type pred_unpack_table(get_pred_unpack_table());
 
 //maps trailer bits to num empty bytes
 //maps num empty bytes to trailer bits
-static const size_t occ_table[] = {0, 2, 1, 3};
+static const uint32_t occ_table[] = {0, 2, 1, 3};
 
 const uint32_t VRLP = ('V' << 24) | ('R' << 16) | ('L' << 8) | ('P' << 0);
 const uint32_t VEND = ('V' << 24) | ('E' << 16) | ('N' << 8) | ('D' << 0);
