@@ -244,8 +244,7 @@ public:
     }
 
     virtual ~dma_fifo_core_3000_impl() {
-        //Clear the FIFO and hold it in that state
-        _fifo_ctrl_reg.write(fifo_ctrl_reg_t::FLUSH_PKTS, 1);
+        flush();
     }
 
     virtual bool flush(uint32_t timeout_ms = 2000) {
