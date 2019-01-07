@@ -19,7 +19,8 @@ using namespace uhd::transport;
 namespace asio = boost::asio;
 
 //A reasonable number of frames for send/recv and async/sync
-static const size_t DEFAULT_NUM_FRAMES = 32;
+constexpr size_t UDP_ZERO_COPY_DEFAULT_NUM_FRAMES = 1;
+constexpr size_t UDP_ZERO_COPY_DEFAULT_FRAME_SIZE = 1472; // Based on common 1500 byte MTU for 1GbE.
 
 /***********************************************************************
  * Check registry for correct fast-path setting (windows only)
@@ -380,6 +381,29 @@ udp_zero_copy::sptr udp_zero_copy::make(
     xport_params.num_recv_frames = size_t(hints.cast<double>("num_recv_frames", default_buff_args.num_recv_frames));
     xport_params.send_frame_size = size_t(hints.cast<double>("send_frame_size", default_buff_args.send_frame_size));
     xport_params.num_send_frames = size_t(hints.cast<double>("num_send_frames", default_buff_args.num_send_frames));
+
+    if (xport_params.num_recv_frames == 0) {
+        UHD_LOG_TRACE("UDP",
+            "Default value for num_recv_frames: " << UDP_ZERO_COPY_DEFAULT_NUM_FRAMES);
+        xport_params.num_recv_frames = UDP_ZERO_COPY_DEFAULT_NUM_FRAMES;
+    }
+    if (xport_params.num_send_frames == 0) {
+        UHD_LOG_TRACE("UDP",
+            "Default value for no num_send_frames: " << UDP_ZERO_COPY_DEFAULT_NUM_FRAMES);
+        xport_params.num_send_frames = UDP_ZERO_COPY_DEFAULT_NUM_FRAMES;
+    }
+    if (xport_params.recv_frame_size == 0) {
+        UHD_LOG_TRACE("UDP",
+            "Using default value for  recv_frame_size: "
+                << UDP_ZERO_COPY_DEFAULT_FRAME_SIZE);
+        xport_params.recv_frame_size = UDP_ZERO_COPY_DEFAULT_FRAME_SIZE;
+    }
+    if (xport_params.send_frame_size == 0) {
+        UHD_LOG_TRACE("UDP",
+            "Using default value for send_frame_size, "
+                << UDP_ZERO_COPY_DEFAULT_FRAME_SIZE);
+        xport_params.send_frame_size = UDP_ZERO_COPY_DEFAULT_FRAME_SIZE;
+    }
 
     //extract buffer size hints from the device addr and check if they match up
     size_t usr_recv_buff_size = size_t(hints.cast<double>("recv_buff_size", 0.0));
