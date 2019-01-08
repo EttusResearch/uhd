@@ -34,7 +34,7 @@ namespace {
     constexpr char TX_FE_CONNECTION_LOWBAND[]  = "QI";
     constexpr char TX_FE_CONNECTION_HIGHBAND[] = "IQ";
 
-    constexpr int DEFAULT_IDENTIFY_DURATION = 5; // seconds
+    constexpr double DEFAULT_IDENTIFY_DURATION = 5.0; // seconds
 
     const fs_path TX_FE_PATH = fs_path("tx_frontends") / 0 / "tune_args";
     const fs_path RX_FE_PATH = fs_path("rx_frontends") / 0 / "tune_args";
@@ -362,6 +362,26 @@ double rhodium_radio_ctrl_impl::set_rx_gain(
     return index;
 }
 
+void rhodium_radio_ctrl_impl::_identify_with_leds(
+    double identify_duration
+) {
+    auto duration_ms = static_cast<uint64_t>(identify_duration * 1000);
+    auto end_time =
+        std::chrono::steady_clock::now() + std::chrono::milliseconds(duration_ms);
+    bool led_state = true;
+    {
+        std::lock_guard<std::mutex> lock(_ant_mutex);
+        while (std::chrono::steady_clock::now() < end_time) {
+            auto atr = led_state ? (LED_RX | LED_RX2 | LED_TX) : 0;
+            _gpio->set_atr_reg(gpio_atr::ATR_REG_IDLE, atr, RHODIUM_GPIO_MASK);
+            led_state = !led_state;
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+        }
+    }
+    _update_atr(get_tx_antenna(0), TX_DIRECTION);
+    _update_atr(get_rx_antenna(0), RX_DIRECTION);
+}
+
 void rhodium_radio_ctrl_impl::_update_atr(
     const std::string& ant,
     const direction_t dir
@@ -616,19 +636,24 @@ void rhodium_radio_ctrl_impl::set_rpc_client(
         _init_defaults();
         _init_peripherals();
         _init_prop_tree();
-    }
 
-    if (block_args.has_key("identify")) {
-        const std::string identify_val = block_args.get("identify");
-        int identify_duration = std::atoi(identify_val.c_str());
-        if (identify_duration == 0) {
-            identify_duration = DEFAULT_IDENTIFY_DURATION;
+        if (block_args.has_key("identify")) {
+            const std::string identify_val = block_args.get("identify");
+            double identify_duration = 0.0;
+            try {
+                identify_duration = std::stod(identify_val);
+                if (!std::isnormal(identify_duration)) {
+                    identify_duration = DEFAULT_IDENTIFY_DURATION;
+                }
+            } catch (std::invalid_argument) {
+                identify_duration = DEFAULT_IDENTIFY_DURATION;
+            }
+
+            UHD_LOG_INFO(unique_id(),
+                "Running LED identification process for " << identify_duration
+                << " seconds.");
+            _identify_with_leds(identify_duration);
         }
-        // TODO: Update this when LED control is added
-        //UHD_LOG_INFO(unique_id(),
-        //    "Running LED identification process for " << identify_duration
-        //    << " seconds.");
-        //_identify_with_leds(identify_duration);
     }
 }
 

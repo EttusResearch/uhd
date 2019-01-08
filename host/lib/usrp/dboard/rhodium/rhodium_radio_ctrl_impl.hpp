@@ -210,6 +210,9 @@ private:
         const direction_t dir
     );
 
+    //! Flash all front end LEDs at 1 Hz for the specified amount of time
+    void _identify_with_leds(double identify_duration);
+
     //! Configure ATR registers and update the cached antenna value from the
     //  new antenna value.
     //  ATR registers control SW10 and the frontend LEDs.
