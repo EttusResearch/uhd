@@ -25,13 +25,16 @@
 #include <uhd/exception.hpp>
 #include <boost/program_options.hpp>
 #include <boost/format.hpp>
-#include <boost/thread.hpp>
 #include <iostream>
 #include <fstream>
 #include <csignal>
 #include <complex>
+#include <thread>
+#include <chrono>
 
 namespace po = boost::program_options;
+
+const int64_t UPDATE_INTERVAL = 1;   //1 second update interval for BW summary
 
 static bool stop_signal_called = false;
 void sig_int_handler(int){stop_signal_called = true;}
@@ -66,21 +69,30 @@ template<typename samp_type> void recv_to_file(
     stream_cmd.num_samps = size_t(num_requested_samples);
     stream_cmd.stream_now = true;
     stream_cmd.time_spec = uhd::time_spec_t();
-    std::cout << "Issueing stream cmd" << std::endl;
+    std::cout << "Issuing stream cmd" << std::endl;
     rx_stream->issue_stream_cmd(stream_cmd);
-    std::cout << "Done" << std::endl;
 
-    boost::system_time start = boost::get_system_time();
-    unsigned long long ticks_requested = (long)(time_requested * (double)boost::posix_time::time_duration::ticks_per_second());
-    boost::posix_time::time_duration ticks_diff;
-    boost::system_time last_update = start;
+    const auto start_time = std::chrono::steady_clock::now();
+    const auto stop_time =
+        start_time
+        + std::chrono::milliseconds(int64_t(1000 * time_requested));
+    // Track time and samps between updating the BW summary
+    auto last_update = start_time;
     unsigned long long last_update_samps = 0;
 
     typedef std::map<size_t,size_t> SizeMap;
     SizeMap mapSizes;
 
-    while(not stop_signal_called and (num_requested_samples != num_total_samps or num_requested_samples == 0)) {
-        boost::system_time now = boost::get_system_time();
+    // Run this loop until either time expired (if a duration was given), until
+    // the requested number of samples were collected (if such a number was
+    // given), or until Ctrl-C was pressed.
+    while (not stop_signal_called
+            and (num_requested_samples != num_total_samps
+                 or num_requested_samples == 0)
+            and (time_requested == 0.0
+                 or std::chrono::steady_clock::now() <= stop_time)
+            ) {
+        const auto now = std::chrono::steady_clock::now();
 
         size_t num_rx_samps = rx_stream->recv(&buff.front(), buff.size(), md, 3.0, enable_size_map);
 
@@ -126,27 +138,24 @@ template<typename samp_type> void recv_to_file(
 
         if (bw_summary) {
             last_update_samps += num_rx_samps;
-            boost::posix_time::time_duration update_diff = now - last_update;
-            if (update_diff.ticks() > boost::posix_time::time_duration::ticks_per_second()) {
-                double t = (double)update_diff.ticks() / (double)boost::posix_time::time_duration::ticks_per_second();
-                double r = (double)last_update_samps / t;
-                std::cout << boost::format("\t%f Msps") % (r/1e6) << std::endl;
+            const auto time_since_last_update = now - last_update;
+            if (time_since_last_update > std::chrono::seconds(UPDATE_INTERVAL)) {
+                const double time_since_last_update_s =
+                    std::chrono::duration<double>(time_since_last_update).count();
+                const double rate =
+                    double(last_update_samps) / time_since_last_update_s;
+                std::cout << "\t" << (rate/1e6) << " MSps" << std::endl;
                 last_update_samps = 0;
                 last_update = now;
             }
         }
 
-        ticks_diff = now - start;
-        if (ticks_requested > 0){
-            if ((unsigned long long)ticks_diff.ticks() > ticks_requested)
-                break;
-        }
     }
+    const auto actual_stop_time = std::chrono::steady_clock::now();
 
     stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS;
-    std::cout << "Issueing stop stream cmd" << std::endl;
+    std::cout << "Issuing stop stream cmd" << std::endl;
     rx_stream->issue_stream_cmd(stream_cmd);
-    std::cout << "Done" << std::endl;
 
     // Run recv until nothing is left
     int num_post_samps = 0;
@@ -160,10 +169,16 @@ template<typename samp_type> void recv_to_file(
     if (stats) {
         std::cout << std::endl;
 
-        double t = (double)ticks_diff.ticks() / (double)boost::posix_time::time_duration::ticks_per_second();
-        std::cout << boost::format("Received %d samples in %f seconds") % num_total_samps % t << std::endl;
-        double r = (double)num_total_samps / t;
-        std::cout << boost::format("%f Msps") % (r/1e6) << std::endl;
+        const double actual_duration_seconds =
+            std::chrono::duration<float>(actual_stop_time - start_time).count();
+
+        std::cout
+            << boost::format("Received %d samples in %f seconds")
+               % num_total_samps
+               % actual_duration_seconds
+            << std::endl;
+        const double rate = (double)num_total_samps / actual_duration_seconds;
+        std::cout << (rate/1e6) << " MSps" << std::endl;
 
         if (enable_size_map) {
             std::cout << std::endl;
@@ -180,37 +195,39 @@ bool check_locked_sensor(std::vector<std::string> sensor_names, const char* sens
     if (std::find(sensor_names.begin(), sensor_names.end(), sensor_name) == sensor_names.end())
         return false;
 
-    boost::system_time start = boost::get_system_time();
-    boost::system_time first_lock_time;
+    auto setup_timeout =
+        std::chrono::steady_clock::now()
+        + std::chrono::milliseconds(int64_t(setup_time * 1000));
+    bool lock_detected = false;
 
     std::cout << boost::format("Waiting for \"%s\": ") % sensor_name;
     std::cout.flush();
 
     while (true) {
-        if ((not first_lock_time.is_not_a_date_time()) and
-                (boost::get_system_time() > (first_lock_time + boost::posix_time::seconds(setup_time))))
-        {
+        if (lock_detected and
+            (std::chrono::steady_clock::now() > setup_timeout)) {
             std::cout << " locked." << std::endl;
             break;
         }
-        if (get_sensor_fn(sensor_name).to_bool()){
-            if (first_lock_time.is_not_a_date_time())
-                first_lock_time = boost::get_system_time();
+        if (get_sensor_fn(sensor_name).to_bool()) {
             std::cout << "+";
             std::cout.flush();
+            lock_detected = true;
         }
         else {
-            first_lock_time = boost::system_time();	//reset to 'not a date time'
-
-            if (boost::get_system_time() > (start + boost::posix_time::seconds(setup_time))){
+            if (std::chrono::steady_clock::now() > setup_timeout) {
                 std::cout << std::endl;
-                throw std::runtime_error(str(boost::format("timed out waiting for consecutive locks on sensor \"%s\"") % sensor_name));
+                throw std::runtime_error(str(
+                    boost::format("timed out waiting for consecutive locks on sensor \"%s\"")
+                    % sensor_name
+                ));
             }
             std::cout << "_";
             std::cout.flush();
         }
-        boost::this_thread::sleep(boost::posix_time::milliseconds(100));
+        std::this_thread::sleep_for(std::chrono::milliseconds(100));
     }
+
     std::cout << std::endl;
     return true;
 }
@@ -349,8 +366,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         radio_ctrl->set_rx_antenna(ant, radio_chan);
     }
 
-    boost::this_thread::sleep(boost::posix_time::milliseconds(long(setup_time*1000))); //allow for some setup time
-
+    std::this_thread::sleep_for(
+            std::chrono::milliseconds(int64_t(1000 * setup_time))
+        );
 
     //check Ref and LO Lock detect
     if (not vm.count("skip-lo")){
