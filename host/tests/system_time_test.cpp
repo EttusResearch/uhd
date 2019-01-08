@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <cstdint>
 #include <chrono>
+#include <thread>
 
 BOOST_AUTO_TEST_CASE(test_time_spec_get_system_time){
     std::cout << "Testing time specification get system time..." << std::endl;
