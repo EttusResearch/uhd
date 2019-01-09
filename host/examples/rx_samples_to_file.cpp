@@ -230,7 +230,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //variables to be set by po
     std::string args, file, type, ant, subdev, ref, wirefmt;
     size_t channel, total_num_samps, spb;
-    double rate, freq, gain, bw, total_time, setup_time;
+    double rate, freq, gain, bw, total_time, setup_time, lo_offset;
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -245,6 +245,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("spb", po::value<size_t>(&spb)->default_value(10000), "samples per buffer")
         ("rate", po::value<double>(&rate)->default_value(1e6), "rate of incoming samples")
         ("freq", po::value<double>(&freq)->default_value(0.0), "RF center frequency in Hz")
+        ("lo-offset", po::value<double>(&lo_offset)->default_value(0.0),
+            "Offset for frontend LO in Hz (optional)")
         ("gain", po::value<double>(&gain), "gain for the RF chain")
         ("ant", po::value<std::string>(&ant), "antenna selection")
         ("subdev", po::value<std::string>(&subdev), "subdevice specification")
@@ -309,7 +311,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //set the center frequency
     if (vm.count("freq")) { //with default of 0.0 this will always be true
         std::cout << boost::format("Setting RX Freq: %f MHz...") % (freq/1e6) << std::endl;
-        uhd::tune_request_t tune_request(freq);
+        std::cout << boost::format("Setting RX LO Offset: %f MHz...") % (lo_offset/1e6)
+                  << std::endl;
+        uhd::tune_request_t tune_request(freq, lo_offset);
         if(vm.count("int-n")) tune_request.args = uhd::device_addr_t("mode_n=integer");
         usrp->set_rx_freq(tune_request, channel);
         std::cout << boost::format("Actual RX Freq: %f MHz...") % (usrp->get_rx_freq(channel)/1e6) << std::endl << std::endl;
