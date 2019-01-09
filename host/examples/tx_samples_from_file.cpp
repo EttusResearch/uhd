@@ -56,7 +56,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     //variables to be set by po
     std::string args, file, type, ant, subdev, ref, wirefmt, channel;
     size_t spb;
-    double rate, freq, gain, bw, delay, lo_off;
+    double rate, freq, gain, bw, delay, lo_offset;
 
     //setup the program options
     po::options_description desc("Allowed options");
@@ -68,7 +68,10 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("spb", po::value<size_t>(&spb)->default_value(10000), "samples per buffer")
         ("rate", po::value<double>(&rate), "rate of outgoing samples")
         ("freq", po::value<double>(&freq), "RF center frequency in Hz")
-        ("lo_off", po::value<double>(&lo_off), "Offset for frontend LO in Hz (optional)")
+        ("lo-offset", po::value<double>(&lo_offset)->default_value(0.0),
+            "Offset for frontend LO in Hz (optional)")
+        ("lo_off", po::value<double>(&lo_offset),
+            "(DEPRECATED) will go away soon! Use --lo-offset instead")
         ("gain", po::value<double>(&gain), "gain for the RF chain")
         ("ant", po::value<std::string>(&ant), "antenna selection")
         ("subdev", po::value<std::string>(&subdev), "subdevice specification")
@@ -120,9 +123,9 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         return ~0;
     }
     std::cout << boost::format("Setting TX Freq: %f MHz...") % (freq/1e6) << std::endl;
+    std::cout << boost::format("Setting TX LO Offset: %f MHz...") % (lo_offset/1e6) << std::endl;
     uhd::tune_request_t tune_request;
-    if(vm.count("lo_off")) tune_request = uhd::tune_request_t(freq, lo_off);
-    else tune_request = uhd::tune_request_t(freq);
+    tune_request = uhd::tune_request_t(freq, lo_offset);
     if(vm.count("int-n")) tune_request.args = uhd::device_addr_t("mode_n=integer");
     usrp->set_tx_freq(tune_request);
     std::cout << boost::format("Actual TX Freq: %f MHz...") % (usrp->get_tx_freq()/1e6) << std::endl << std::endl;
