@@ -15,15 +15,6 @@ namespace {
     /*************************************************************************
      * Local constants
      ************************************************************************/
-    //! Time between reclaims (ms)
-    constexpr size_t MPMD_RECLAIM_INTERVAL_MS     = 1000;
-    //! Default timeout value for the init() RPC call (ms)
-    constexpr size_t MPMD_DEFAULT_INIT_TIMEOUT    = 120000;
-    //! Default timeout value for RPC calls (ms)
-    constexpr size_t MPMD_DEFAULT_RPC_TIMEOUT     = 2000;
-    //! Short timeout value for RPC calls (ms), used for calls that shouldn't
-    // take long. This value can be used to quickly determine a link status.
-    constexpr size_t MPMD_SHORT_RPC_TIMEOUT     = 2000;
     //! Timeout for pings (seconds).
     constexpr double MPMD_PING_TIMEOUT          = 0.1;
     //! Default session ID (MPM will recognize a session by this name)

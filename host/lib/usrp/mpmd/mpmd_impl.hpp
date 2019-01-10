@@ -20,6 +20,19 @@
 #include <map>
 #include <memory>
 
+/*************************************************************************
+ * RPC timeout constants for MPMD
+ ************************************************************************/
+//! Time between reclaims (ms)
+static constexpr size_t MPMD_RECLAIM_INTERVAL_MS     = 1000;
+//! Default timeout value for the init() RPC call (ms)
+static constexpr size_t MPMD_DEFAULT_INIT_TIMEOUT    = 120000;
+//! Default timeout value for RPC calls (ms)
+static constexpr size_t MPMD_DEFAULT_RPC_TIMEOUT     = 2000;
+//! Short timeout value for RPC calls (ms), used for calls that shouldn't
+// take long. This value can be used to quickly determine a link status.
+static constexpr size_t MPMD_SHORT_RPC_TIMEOUT     = 2000;
+
 namespace uhd { namespace mpmd {
 
 /*! Stores all attributes specific to a single MPM device
