@@ -12,8 +12,9 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/exception.hpp>
 #include <boost/format.hpp>
-
+constexpr uint64_t DEFAULT_RPC_TIMEOUT_MS = 2000;
 namespace uhd {
+
 
 /*! Abstraction for RPC client
  *
@@ -29,9 +30,10 @@ class rpc_client
     static sptr make(
             const std::string &addr,
             const uint16_t port,
+            const uint64_t timeout_ms = DEFAULT_RPC_TIMEOUT_MS,
             const std::string &get_last_error_cmd=""
     ) {
-        return std::make_shared<rpc_client>(addr, port, get_last_error_cmd);
+        return std::make_shared<rpc_client>(addr, port, timeout_ms, get_last_error_cmd);
     }
 
     /*!
@@ -45,10 +47,13 @@ class rpc_client
     rpc_client(
             const std::string &addr,
             const uint16_t port,
+            const uint64_t timeout_ms = DEFAULT_RPC_TIMEOUT_MS,
             std::string const &get_last_error_cmd=""
     ) : _client(addr, port)
       , _get_last_error_cmd(get_last_error_cmd)
+      , _default_timeout_ms(timeout_ms)
     {
+        _client.set_timeout(_default_timeout_ms);
         // nop
     }
 
@@ -86,7 +91,80 @@ class rpc_client
         }
     };
 
+     /*! Perform an RPC request.
+     *
+     * Thread safe (locked). This function blocks until it receives a valid
+     * response from the server.
+     *
+     * \param timeout_ms is time limit for this RPC call.
+     * \param func_name The function name that is called via RPC
+     * \param args All these arguments are passed to the RPC call
+     *
+     * \throws uhd::runtime_error in case of failure
+     */
+    template <typename return_type, typename... Args>
+    return_type request(uint64_t timeout_ms, std::string const& func_name, Args&&... args)
+    {
+        std::lock_guard<std::mutex> lock(_mutex);
+        auto holder = rpcc_timeout_holder(&_client, timeout_ms, _default_timeout_ms);
+        try {
+            return _client.call(func_name, std::forward<Args>(args)...)
+                .template as<return_type>();
+        } catch (const ::rpc::rpc_error &ex) {
+            const std::string error = _get_last_error_safe();
+            if (not error.empty()) {
+                UHD_LOG_ERROR("RPC", error);
+            }
+            throw uhd::runtime_error(str(
+                boost::format("Error during RPC call to `%s'. Error message: %s")
+                % func_name % (error.empty() ? ex.what() : error)
+            ));
+        } catch (const std::bad_cast& ex) {
+            throw uhd::runtime_error(str(
+                boost::format("Error during RPC call to `%s'. Error message: %s")
+                % func_name % ex.what()
+            ));
+        }
+    };
+
+
     /*! Perform an RPC notification.
+     *
+     * Thread safe (locked). This function does not require a response from the
+     * server, although the underlying implementation may provide one.
+     *
+     * \param timeout_ms is time limit for this RPC call.
+     * \param func_name The function name that is called via RPC
+     * \param args All these arguments are passed to the RPC call
+     *
+     * \throws uhd::runtime_error in case of failure
+     */
+    template <typename... Args>
+    void notify(uint64_t timeout_ms, std::string const& func_name, Args&&... args)
+    {
+        std::lock_guard<std::mutex> lock(_mutex);
+        auto holder = rpcc_timeout_holder(&_client, timeout_ms, _default_timeout_ms);
+        try {
+
+            _client.call(func_name, std::forward<Args>(args)...);
+        } catch (const ::rpc::rpc_error &ex) {
+            const std::string error = _get_last_error_safe();
+            if (not error.empty()) {
+                UHD_LOG_ERROR("RPC", error);
+            }
+            throw uhd::runtime_error(str(
+                boost::format("Error during RPC call to `%s'. Error message: %s")
+                % func_name % (error.empty() ? ex.what() : error)
+            ));
+        } catch (const std::bad_cast& ex) {
+            throw uhd::runtime_error(str(
+                boost::format("Error during RPC call to `%s'. Error message: %s")
+                % func_name % ex.what()
+            ));
+        }
+    };
+
+     /*! Perform an RPC notification.
      *
      * Thread safe (locked). This function does not require a response from the
      * server, although the underlying implementation may provide one.
@@ -130,6 +208,14 @@ class rpc_client
         return request<return_type>(func_name, _token, std::forward<Args>(args)...);
     };
 
+    /*! Like request_with_token(), but it can be specified different timeout than default.
+     */
+    template <typename return_type, typename... Args>
+    return_type request_with_token(uint64_t timeout_ms, std::string const& func_name, Args&&... args)
+    {
+        return request<return_type>(timeout_ms, func_name, _token, std::forward<Args>(args)...);
+    };
+
     /*! Like notify(), also provides a token.
      *
      * This is a convenience wrapper to directly call a function that requires
@@ -139,6 +225,14 @@ class rpc_client
     void notify_with_token(std::string const& func_name, Args&&... args)
     {
         notify(func_name, _token, std::forward<Args>(args)...);
+    };
+
+     /*! Like notify_with_token() but it can be specified different timeout than default.
+     */
+    template <typename... Args>
+    void notify_with_token(uint64_t timeout_ms, std::string const& func_name, Args&&... args)
+    {
+        notify(timeout_ms, func_name, _token, std::forward<Args>(args)...);
     };
 
     /*! Sets the token value. This is used by the `_with_token` methods.
@@ -154,6 +248,29 @@ class rpc_client
     }
 
   private:
+
+    /*! This is internal object to hold timeout of the rpc client
+     * it is used as an RAII in code block.
+     */
+    class rpcc_timeout_holder{
+        public:
+
+            rpcc_timeout_holder(::rpc::client *client,
+                uint64_t set_timeout,
+                uint64_t resume_timeout
+            ): _rpcc(client), _save_timeout(resume_timeout)
+            {
+                _rpcc->set_timeout(set_timeout);
+            }
+
+            ~rpcc_timeout_holder(){
+                _rpcc->set_timeout(_save_timeout);
+            }
+        private:
+            ::rpc::client *_rpcc;
+            uint64_t _save_timeout;
+    };
+
      /*! Pull the last error out of the RPC server. Not thread-safe, meant to
       * be called from notify() or request().
       *
@@ -181,7 +298,7 @@ class rpc_client
     ::rpc::client _client;
     //! If set, this is the command that will retrieve an error
     const std::string _get_last_error_cmd;
-
+    uint64_t _default_timeout_ms;
     std::string _token;
     std::mutex _mutex;
 };
