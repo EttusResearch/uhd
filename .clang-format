@@ -45,14 +45,16 @@ ForEachMacros:
   - BOOST_FOREACH
 IncludeBlocks: Merge
 IncludeCategories:
-  - Regex:           '^"(uhd)/'
+  - Regex:           '^"'
     Priority:        1
-  - Regex:           '^"(uhdlib)/'
+  - Regex:           '^"(uhd)/'
     Priority:        2
-  - Regex:           '^<(uhd)/'
+  - Regex:           '^"(uhdlib)/'
     Priority:        3
-  - Regex:           '^<(uhdlib)/'
+  - Regex:           '^<(uhd)/'
     Priority:        4
+  - Regex:           '^<(uhdlib)/'
+    Priority:        5
   - Regex:           '^<(boost)/'
     Priority:        98
   - Regex:           '^<[a-z]*>$'
