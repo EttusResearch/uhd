@@ -77,7 +77,7 @@ namespace {
     ) {
         auto init_status =
             rpc->request_with_token<std::vector<std::string>>(
-                "get_init_status");
+                MPMD_DEFAULT_INIT_TIMEOUT, "get_init_status");
         if (init_status[0] != "true") {
             throw uhd::runtime_error(
                 std::string("Device is in bad state: ") + init_status[1]
@@ -94,7 +94,7 @@ namespace {
                 mpm_device_args[key] = mb_args[key];
             }
         }
-        if (not rpc->request_with_token<bool>("init", mpm_device_args)) {
+        if (not rpc->request_with_token<bool>(MPMD_DEFAULT_INIT_TIMEOUT, "init", mpm_device_args)) {
             throw uhd::runtime_error("Failed to initialize device.");
         }
     }
@@ -201,6 +201,7 @@ namespace {
                 uhd::mpmd::mpmd_impl::MPM_RPC_PORT_KEY,
                 uhd::mpmd::mpmd_impl::MPM_RPC_PORT
             ),
+            MPMD_DEFAULT_RPC_TIMEOUT,
             uhd::mpmd::mpmd_impl::MPM_RPC_GET_LAST_ERROR_CMD);
     }
 
@@ -225,11 +226,10 @@ boost::optional<device_addr_t> mpmd_mboard_impl::is_device_reachable(
         mpmd_impl::MPM_RPC_PORT
     );
     auto rpcc = uhd::rpc_client::make(rpc_addr, rpc_port);
-    rpcc->set_timeout(MPMD_SHORT_RPC_TIMEOUT);
     // 1) Read back device info
     dev_info device_info_dict;
     try {
-        device_info_dict = rpcc->request<dev_info>("get_device_info");
+        device_info_dict = rpcc->request<dev_info>(MPMD_SHORT_RPC_TIMEOUT, "get_device_info");
     } catch (const uhd::runtime_error& e) {
         UHD_LOG_ERROR("MPMD", e.what());
     } catch (...) {
@@ -270,8 +270,7 @@ boost::optional<device_addr_t> mpmd_mboard_impl::is_device_reachable(
             UHD_LOG_TRACE("MPMD",
                 "Was able to ping device, trying RPC connection.");
             auto chdr_rpcc = uhd::rpc_client::make(chdr_addr, rpc_port);
-            chdr_rpcc->set_timeout(MPMD_SHORT_RPC_TIMEOUT);
-            auto dev_info_chdr = chdr_rpcc->request<dev_info>("get_device_info");
+            auto dev_info_chdr = chdr_rpcc->request<dev_info>(MPMD_SHORT_RPC_TIMEOUT, "get_device_info");
             if (dev_info_chdr["serial"] != device_info_dict["serial"]) {
                 UHD_LOG_DEBUG("MPMD", boost::format(
                     "Connected to CHDR interface, but got wrong device. "
@@ -365,13 +364,7 @@ mpmd_mboard_impl::~mpmd_mboard_impl()
  ****************************************************************************/
 void mpmd_mboard_impl::init()
 {
-    this->set_rpcc_timeout(mb_args.cast<size_t>(
-        "init_timeout", MPMD_DEFAULT_INIT_TIMEOUT
-    ));
     init_device(rpc, mb_args);
-    this->set_rpcc_timeout(mb_args.cast<size_t>(
-        "rpc_timeout", MPMD_DEFAULT_RPC_TIMEOUT
-    ));
     // RFNoC block clocks are now on. Noc-IDs can be read back.
 }
 
@@ -467,20 +460,6 @@ uhd::device_addr_t mpmd_mboard_impl::get_tx_hints() const
     return tx_hints;
 }
 
-void mpmd_mboard_impl::set_timeout_default()
-{
-    this->set_rpcc_timeout(mb_args.cast<size_t>(
-            "rpc_timeout", MPMD_DEFAULT_RPC_TIMEOUT
-    ));
-}
-
-void mpmd_mboard_impl::set_timeout_init()
-{
-    this->set_rpcc_timeout(mb_args.cast<size_t>(
-            "init_timeout", MPMD_DEFAULT_INIT_TIMEOUT
-    ));
-}
-
 /*****************************************************************************
  * Private methods
  ****************************************************************************/
@@ -492,13 +471,6 @@ bool mpmd_mboard_impl::claim()
         UHD_LOG_WARNING("MPMD", "Reclaim failed. Exiting claimer loop.");
         return false;
     }
-}
-
-void mpmd_mboard_impl::set_rpcc_timeout(const uint64_t timeout_ms){
-    rpc->set_timeout(timeout_ms);
-    //FIXME: remove this when we know why rpc client didn't reset timer
-    // while other rpc client not yet return.
-    _claim_rpc->set_timeout(timeout_ms);
 }
 
 uhd::task::sptr mpmd_mboard_impl::claim_device_and_make_task(

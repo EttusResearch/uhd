@@ -136,12 +136,6 @@ class mpmd_mboard_impl
     uhd::device_addr_t get_rx_hints() const;
     uhd::device_addr_t get_tx_hints() const;
 
-    //! Set the RPC call timeout to the default value
-    void set_timeout_default();
-
-    //! Set the RPC call timeout to the value for initializations
-    void set_timeout_init();
-
   private:
     /*! Reference to the RPC client that handles claiming
      */

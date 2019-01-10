@@ -242,11 +242,6 @@ class rpc_client
         _token = token;
     }
 
-    void set_timeout(size_t timeout_ms)
-    {
-        _client.set_timeout(timeout_ms);
-    }
-
   private:
 
     /*! This is internal object to hold timeout of the rpc client

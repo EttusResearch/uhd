@@ -55,10 +55,8 @@ namespace {
 
         // Now call update component
         const size_t update_component_timeout = MPMD_UPDATE_COMPONENT_TIMEOUT * comps.size();
-        mb->rpc->set_timeout(update_component_timeout);
-        mb->rpc->notify_with_token("update_component", all_metadata, all_data);
-        mb->set_timeout_default();
-
+        mb->rpc->notify_with_token(update_component_timeout,
+            "update_component", all_metadata, all_data);
         return all_comps_copy;
     }
 
@@ -114,9 +112,7 @@ void mpmd_impl::init_property_tree(
     /*** Clocking *******************************************************/
     tree->create<std::string>(mb_path / "clock_source/value")
         .add_coerced_subscriber([mb](const std::string &clock_source){
-            mb->set_timeout_init();
-            mb->rpc->notify_with_token("set_clock_source", clock_source);
-            mb->set_timeout_default();
+            mb->rpc->notify_with_token(MPMD_DEFAULT_INIT_TIMEOUT, "set_clock_source", clock_source);
         })
         .set_publisher([mb](){
             return mb->rpc->request_with_token<std::string>(
@@ -134,9 +130,7 @@ void mpmd_impl::init_property_tree(
     ;
     tree->create<std::string>(mb_path / "time_source/value")
         .add_coerced_subscriber([mb](const std::string &time_source){
-            mb->set_timeout_init();
-            mb->rpc->notify_with_token("set_time_source", time_source);
-            mb->set_timeout_default();
+            mb->rpc->notify_with_token(MPMD_DEFAULT_INIT_TIMEOUT, "set_time_source", time_source);
         })
         .set_publisher([mb](){
             return mb->rpc->request_with_token<std::string>(
@@ -168,13 +162,11 @@ void mpmd_impl::init_property_tree(
         tree->create<sensor_value_t>(
                 mb_path / "sensors" / sensor_name)
             .set_publisher([mb, sensor_name](){
-                mb->set_timeout_init();
                 auto sensor_val = sensor_value_t(
                     mb->rpc->request_with_token<sensor_value_t::sensor_map_t>(
-                        "get_mb_sensor", sensor_name
+                        MPMD_DEFAULT_INIT_TIMEOUT, "get_mb_sensor", sensor_name
                     )
                 );
-                mb->set_timeout_default();
                 return sensor_val;
             })
             .set_coercer([](const sensor_value_t &){
@@ -196,7 +188,7 @@ void mpmd_impl::init_property_tree(
                         mb_eeprom[key].cend()
                 );
             }
-            mb->rpc->notify_with_token("set_mb_eeprom", eeprom_map);
+            mb->rpc->notify_with_token(MPMD_DEFAULT_INIT_TIMEOUT, "set_mb_eeprom", eeprom_map);
         })
         .set_publisher([mb](){
             auto mb_eeprom =
