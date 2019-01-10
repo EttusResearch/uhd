@@ -17,6 +17,7 @@ po::options_description
 get_program_options_description()
 {
     po::options_description desc("Allowed options");
+    // clang-format off
     desc.add_options()
         ("help", "help message")
         ("title", po::value<std::string>(&prog.test_title)->default_value(""), "title to show during test")
@@ -66,6 +67,7 @@ get_program_options_description()
         ("priority", po::value<double>(&prog.rt_priority)->default_value(1.0), "scheduler priority")
         ("no-realtime", "don't enable real-time")
     ;
+    // clang-format on
     return desc;
 }
 

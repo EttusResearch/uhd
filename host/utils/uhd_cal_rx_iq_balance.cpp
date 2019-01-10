@@ -91,6 +91,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     double precision;
 
     po::options_description desc("Allowed options");
+    // clang-format off
     desc.add_options()
         ("help", "help message")
         ("verbose", "enable some verbose")
@@ -104,6 +105,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
         ("nsamps", po::value<size_t>(&nsamps), "Samples per data capture")
         ("precision", po::value<double>(&precision)->default_value(default_precision), "Correction precision (default=0.0001)")
     ;
+    // clang-format on
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);

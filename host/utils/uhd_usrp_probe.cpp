@@ -230,6 +230,7 @@ void print_tree(const uhd::fs_path &path, uhd::property_tree::sptr tree){
 
 int UHD_SAFE_MAIN(int argc, char *argv[]){
     po::options_description desc("Allowed options");
+    // clang-format off
     desc.add_options()
         ("help", "help message")
         ("version", "print the version string and exit")
@@ -243,6 +244,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("vector", "when querying a string, interpret that as std::vector")
         ("init-only", "skip all queries, only initialize device")
     ;
+    // clang-format on
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);

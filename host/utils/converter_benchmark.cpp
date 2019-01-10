@@ -291,6 +291,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
 
     /// Command line arguments
     po::options_description desc("Converter benchmark options:");
+    // clang-format off
     desc.add_options()
         ("help", "help message")
         ("in",  po::value<std::string>(&in_format), "Input format (e.g. 'sc16')")
@@ -305,6 +306,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
         ("seed-mode", po::value<std::string>(&seed_mode)->default_value("random"), "How to initialize the data: random, incremental")
         ("hex", "When using debug mode, dump memory in hex")
     ;
+    // clang-format on
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);

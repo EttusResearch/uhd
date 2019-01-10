@@ -109,6 +109,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     // Set up the program options
     po::options_description desc("Allowed options");
+    // clang-format off
     desc.add_options()
             ("help", "Print this help message")
             ("args", po::value<std::string>(&args)->default_value(""), "UHD device args")
@@ -123,6 +124,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             ("fft-path", po::value<std::string>(&fft_path), "Output an FFT to this file (optional)")
             ("repeat", "repeat sweep until Ctrl-C is pressed")
             ;
+    // clang-format on
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);

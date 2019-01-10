@@ -33,6 +33,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::string type;
     std::string image;
     po::options_description desc("Allowed options");
+    // clang-format off
     desc.add_options()
         ("help", "help message")
         ("image", po::value<std::string>(), "BIN image file; if not specified, use built-in image")
@@ -40,6 +41,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("pid", po::value<std::string>(), "PID of device to program")
         ("type", po::value<std::string>(&type), "device type (usrp1 or b100, required if using built-in image)")
     ;
+    // clang-format on
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);

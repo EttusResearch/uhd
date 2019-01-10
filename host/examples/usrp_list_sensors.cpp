@@ -91,10 +91,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     // Set up program options
     po::options_description desc("Allowed options");
+    // clang-format off
     desc.add_options()
         ("help", "Display this help message")
         ("args", po::value<std::string>(&usrp_args), "USRP device arguments")
     ;
+    // clang-format on
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);

@@ -621,6 +621,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
 
     // Setup the program options
     po::options_description desc("Allowed options");
+    // clang-format off
     desc.add_options()
         ("help", "help message")
         ("args",   po::value<std::string>(&args)->default_value(""), "single uhd device address args")
@@ -645,6 +646,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]) {
         ("duc_ids", po::value<std::string>(&duc_ids)->default_value(""), "optional: list of block IDs for the DUCs")
         ("split_stream_ids", po::value<std::string>(&split_stream_ids)->default_value(""), "optional: list of block IDs for rx data splitters")
     ;
+    // clang-format on
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);

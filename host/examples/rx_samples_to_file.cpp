@@ -234,6 +234,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //setup the program options
     po::options_description desc("Allowed options");
+    // clang-format off
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "multi uhd device address args")
@@ -263,6 +264,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("skip-lo", "skip checking LO lock status")
         ("int-n", "tune USRP with integer-N tuning")
     ;
+    // clang-format on
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);

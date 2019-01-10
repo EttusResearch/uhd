@@ -38,6 +38,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //Set up program options
     po::options_description desc("Allowed options");
+    // clang-format off
     desc.add_options()
         ("help", "Display this help message")
         ("clock-args", po::value<std::string>(&clock_args), "Clock device arguments")
@@ -45,6 +46,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("max-interval", po::value<uint32_t>(&max_interval)->default_value(10000), "Maximum interval between comparisons (in ms)")
         ("num-tests", po::value<uint32_t>(&num_tests)->default_value(10), "Number of times to compare device times")
     ;
+    // clang-format on
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);

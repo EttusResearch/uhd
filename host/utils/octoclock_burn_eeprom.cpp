@@ -25,12 +25,14 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::string args, input_str, key, val;
 
     po::options_description desc("Allowed options");
+    // clang-format off
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "device address args [default = \"\"]")
         ("values", po::value<std::string>(&input_str), "keys+values to read/write, separate multiple by \",\"")
         ("read-all", "Read all motherboard EEPROM values without writing")
     ;
+    // clang-format on
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);

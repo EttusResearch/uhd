@@ -242,6 +242,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //setup the program options
     po::options_description desc("Allowed options");
+    // clang-format off
     desc.add_options()
         ("help", "help message")
         ("file", po::value<std::string>(&file)->default_value("usrp_samples.dat"), "name of the file to write binary samples to")
@@ -274,6 +275,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("block-id", po::value<std::string>(&block_id)->default_value(""), "If block ID is specified, this block is inserted between radio and host.")
         ("block-args", po::value<std::string>(&block_args)->default_value(""), "These args are passed straight to the block.")
     ;
+    // clang-format on
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);

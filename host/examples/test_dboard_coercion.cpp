@@ -317,6 +317,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //Set up the program options
     po::options_description desc("Allowed Options");
+    // clang-format off
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "Specify the UHD device")
@@ -330,6 +331,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("no-rx-gain", "Do not test RX gain")
         ("verbose", "Output every frequency and gain check instead of just final summary")
     ;
+    // clang-format on
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);

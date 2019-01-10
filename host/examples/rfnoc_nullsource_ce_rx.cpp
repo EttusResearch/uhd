@@ -222,6 +222,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
 
     //setup the program options
     po::options_description desc("Allowed options");
+    // clang-format off
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value("type=x300"), "multi uhd device address args")
@@ -242,6 +243,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
         ("blockid", po::value<std::string>(&blockid)->default_value("FIFO"), "The block ID for the processing block.")
         ("blockid2", po::value<std::string>(&blockid2)->default_value(""), "Optional: The block ID for the 2nd processing block.")
     ;
+    // clang-format on
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);

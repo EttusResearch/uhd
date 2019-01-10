@@ -177,11 +177,13 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //setup the program options
     po::options_description desc("Allowed options");
+    // clang-format off
     desc.add_options()
         ("help", "help message")
         ("addr", po::value<std::string>(&addr), "the resolvable address of the usrp (must be specified)")
         ("bind", po::value<std::string>(&bind)->default_value("0.0.0.0"), "bind the server to this network address (default: any)")
     ;
+    // clang-format on
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);

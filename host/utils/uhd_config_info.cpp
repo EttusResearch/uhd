@@ -17,6 +17,7 @@ namespace po = boost::program_options;
 int UHD_SAFE_MAIN(int argc, char* argv[]) {
     // Program Options
     po::options_description desc("Allowed Options");
+    // clang-format off
     desc.add_options()
         ("build-date",         "Print build date")
         ("c-compiler",         "Print C compiler")
@@ -34,6 +35,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[]) {
         ("version",            "Print this UHD build's version")
         ("help",               "Print help message")
     ;
+    // clang-format on
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);

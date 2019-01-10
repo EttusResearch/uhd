@@ -29,6 +29,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //setup the program options
     po::options_description desc("Allowed options");
+    // clang-format off
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "single uhd device address args")
@@ -39,6 +40,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("ampl", po::value<float>(&ampl)->default_value(float(0.3)), "amplitude of each sample")
         ("dilv", "specify to disable inner-loop verbose")
     ;
+    // clang-format on
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);

@@ -34,10 +34,12 @@ static void check_network_ok(void)
 int main(int argc, char *argv[])
 {
     po::options_description desc("Allowed options");
+    // clang-format off
     desc.add_options()
         ("help", "help message")
         ("fpga", po::value<std::string>(), "fpga image to load")
     ;
+    // clang-format on
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);

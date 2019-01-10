@@ -202,6 +202,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
     //setup the program options
     po::options_description desc("Allowed options");
+    // clang-format off
     desc.add_options()
         ("help", "help message")
         ("tx-args", po::value<std::string>(&tx_args)->default_value(""), "uhd transmit device address args")
@@ -233,6 +234,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("tx-int-n", "tune USRP TX with integer-N tuning")
         ("rx-int-n", "tune USRP RX with integer-N tuning")
     ;
+    // clang-format on
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);

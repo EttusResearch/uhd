@@ -27,6 +27,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     std::string args, slot, unit;
 
     po::options_description desc("Allowed options");
+    // clang-format off
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""),    "device address args [default = \"\"]")
@@ -36,6 +37,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("ser",  po::value<std::string>(),                            "serial to burn, omit for readback")
         ("rev",  po::value<std::string>(),                            "revision to burn, omit for readback")
     ;
+    // clang-format on
 
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);

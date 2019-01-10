@@ -40,6 +40,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
 
     //setup the program options
     po::options_description desc("Allowed options");
+    // clang-format off
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "UHD device address args")
@@ -66,6 +67,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
         ("bw", po::value<double>(&bw), "Analog frontend filter bandwidth in Hz (Rx and Tx)")
         ("ref", po::value<std::string>(&ref)->default_value("internal"), "reference source (internal, external, mimo)")
     ;
+    // clang-format on
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
