@@ -1,6 +1,119 @@
 Change Log for Releases
 ==============================
 
+## 003.013.001.000
+* E320: Fix front panel GPIO readback
+* E320: Fix master_clock_rate setting
+* E320: Print extra ouptut for ref_clock BIST
+* E320: Fix gps_locked type
+* E320: Fix return value of get_fpga_type()
+* N3xx: Enable setting clock and time sources at runtime
+* N3xx: Add ref_clock BIST
+* N3xx: Improve set_time_source() and set_clock_source()
+* N3xx: Add exception for init failure
+* N3xx: Remove HA, XA images packages
+* N3xx: Change init() procedure to reduce configuration time
+* N310: Add frequency bounds
+* N310: Fix RX antenna mapping
+* N310: Add log messages when re-initializing dboards
+* N310: Add skip_rfic argument to reduce time of BIST
+* N310: Add initialization of TX bandwidth
+* E310: Fix initialization of antenna and frequency values
+* E310: Type-cast fix for Boost
+* X300: Improve firmware compat error message
+* X300: Updated niusrprio driver
+* X300: Add recovery for duplicate IP addresses in EEPROM
+* X300: Prevent duplicate MAC and IP addresses from being programmed
+* X300: New mode to configure master clock rate
+* X300: Implement RFNoC get antenna functions
+* B2xx: Fix values of MASK_GPIO_SHDN_SW and GPIO_AUX_PWR_ON in firmware
+* B2xx: Revert changes to DSP core to fix scaling factor adjustment
+* B2xx: Restore asynchronous reset of AD936x
+        (fixes LIBUSB_TRANSFER_OVERFLOW and unexpected sid errors)
+* TwinRX: enable ch1 lo amps if ch2 is using an external lo source
+* TwinRX: Correctly initialize antenna mapping on X300
+* TwinRX: Revise ADF5356 frac2 register calculation to prevent drifting spurs
+* TwinRX: Fix initialization
+* TwinRX: Tuning improvements
+* TwinRX: Enable phase resync on ADF535x
+* TwinRX: Make routing to LO1 and LO2 mutually exclusive
+* BasicRX/LFRX: Fix real mode in rx_frontend_core_3000
+* UHD: Define UHD_API as empty string when building static lib
+* UHD: Changed to 'all_matching' endpoint resolution for udp_simple transport
+* UHD: Add support for NEON SIMD
+* UHD: Fix usb_dummy_impl compilation in MSVC
+* UHD: Reconcile time_spec operators with boost concepts
+* UHD: Fix rounding in ddc/duc rate calculation
+* UHD: Increase MPMD RPC timeout when calling set_time_source()
+* UHD: Fix RX streamer SOB and EOB handling
+* UHD: Add UHD_SAFE_CALL to block_ctrl_base destructor
+* UHD: Change SOVERSION to ABI string and VERSION to full UHD version
+* UHD: Update cmake style to use lower case commands
+* UHD: Add SOURCE_DATE_EPOCH
+* UHD: Improve logic for UHD_IMAGES_DIR
+* UHD: Add RUNTIME_PYTHON_EXECUTABLE
+* UHD: Fix return value of get_rolloff() for filters
+* UHD: Properly register devtest
+* UHD: Fix log statement for Port number on RFNoC block
+* UHD: Use "MATCHES" instead of "STREQUAL" for "Clang"
+* UHD: Fix GPGGA string formatting for gpsd
+* Device3: Set default block control response SIDs
+* Device3: Fix block control flushing
+* RFNoC: Improved flushing mechanism in noc_shell and dma_fifo
+* RFNoC: Install missing dma_fifo_block_ctrl header
+* RFNoC: Replace some [] with .at() in radio_ctrl_impl
+* RFNoC: Fix graph traversal
+* MPM: Add Git hash, version to device info
+* MPM: Reset the RPC server upon reload
+* MPM: TDC: Update PDAC BIST and flatness test to use latest APIs
+* MPM: Fix handling of 0-valued dt-compat
+* MPM: Fix GPSD sensor names for N3xx and E320
+* MPM: Add args to update_ref_clock_freq to properly support dynamic setting
+*      of clock and time references
+* MPM: Fix Pylint warnings
+* MPM: Identify sysfs gpios more generically
+* MPM: Add lock_guard() function
+* MPM: Factor E320 and N3xx BIST code into common module
+* MPM: Add gpsd error handling
+* MPM: Add FPGA git hash to device info
+* MPMD: Increase RPC timeout during readng mb sensor
+* MPMD: Improve error message for compat number mismatches
+* Python API: Enable Python API on Windows
+* Python API: Change .dll to .pyd for Win32
+* Python API: Fixing Boost.Python initializer visibility
+* Python API: Fix duration of benchmark rate
+* Python API: Add missing constructors of time_spec_t
+* Python API: Expose streamer timeouts
+* Python API: Tighten the scope of releasing the GIL
+* Python API: Add device_addr_t
+* Python API: Populate the tune_result_t binding
+* Utils: Many fixes and enhancements for uhd_images_downloader
+* Utils: Update query_gpsdo_sensors to work on E310
+* Examples: Removed some legacy code patterns from RFNoC examples
+* Examples: Fix channel argument for rx_samples_to_file
+* Examples: Fix benchmark_rate MIMO synchronization
+* Examples: Add phase alignment example
+* Examples: Fix RX antenna not being applied in txrx_loopback_to_file
+* Test: Add more env vars, make Py3k compatible
+* Test: Add multi_usrp_test.py to devtest
+* Test: Clean up, refactor, and improve devtest
+* Test: Enable rx_samples_to_file in E320 devtest and N3xx devtest
+* Test: Reduce sample rate for E320 1G devtest
+* Test: Add unit test for eeprom_utils
+* Docs: Add clock_source and time_source to n3xx argument list and fix WR clock_source call
+* Docs: Minor tweaks to the Python API manual page
+* Docs: Add E320 test procedures
+* Docs: Added TwinRX page
+* Docs: Fix N210 MIMO Phase Alignment test command
+* Docs: Add E320 information
+* Docs: Improve sections on clock/time references
+* Docs: Add section on X300 motherboard clocking
+* Docs: Add more information on Salt for N3xx and E320
+* Docs: Adjust E310 functional verification tests
+* Docs: Add documentation on GIL release
+* Debian: Update control files
+* Images: Add N3xx CPLD file to manifest
+
 ## 003.013.000.002
 * N3xx: Fix issue where changing the clock/time source could result in
         clocks becoming unlocked
@@ -36,7 +149,6 @@ Change Log for Releases
        Ethernet devices
 * CMake: Allow to override UHD_GIT_BRANCH, fix Python-finding logic, add
          ENABLE_N300 target
-
 
 ## 003.012.000.000
 * N3x0: Add White Rabbit support, add N300 support, standard BIST
