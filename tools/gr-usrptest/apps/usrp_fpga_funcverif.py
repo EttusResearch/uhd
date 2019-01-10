@@ -274,14 +274,14 @@ FUNCVERIF_SETTINGS = {
 
             # | 4x RX & 4x TX | 125e6             | 1.25e6, 62.5e6          | 60
             # | 4x RX & 4x TX | 122.88e6          | 1.2288e6, 61.44e6       | 60
-            # | 4x RX & 4x TX | 153e6             | 1.536e6, 76.8e6         | 60
+            # | 4x RX & 4x TX | 153e6             | 1.536e6, 38.4e6         | 60
             {'--rx_rate': 1.25e6,   '--tx_rate': 1.25e6,   'master_clock_rate': '125e6',    '--channels': '0,1,2,3',},
             {'--rx_rate': 1.2288e6, '--tx_rate': 1.2288e6, 'master_clock_rate': '122.88e6', '--channels': '0,1,2,3',},
             {'--rx_rate': 1.536e6,  '--tx_rate': 1.536e6,  'master_clock_rate': '153.6e6',  '--channels': '0,1,2,3',},
 
             {'--rx_rate': 62.5e6,  '--tx_rate': 62.5e6,  'master_clock_rate': '125e6',    '--channels': '0,1,2,3', '--duration': 3600,},
             {'--rx_rate': 61.44e6, '--tx_rate': 61.44e6, 'master_clock_rate': '122.88e6', '--channels': '0,1,2,3', '--duration': 3600,},
-            {'--rx_rate': 76.8e6,  '--tx_rate': 76.8e6,  'master_clock_rate': '153.6e6',  '--channels': '0,1,2,3', '--duration': 3600,},
+            {'--rx_rate': 38.4e6,  '--tx_rate': 38.4e6,  'master_clock_rate': '153.6e6',  '--channels': '0,1,2,3', '--duration': 3600,},
         ],
     },
     'n300_10gige': {
@@ -365,8 +365,8 @@ FUNCVERIF_SETTINGS = {
              '--duration': 3600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
             {'--rx_rate': 122.88e6,'--tx_rate': 61.44e6, 'master_clock_rate': '122.88e6', '--channels': '0,1,2,3',
              '--duration': 3600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
-            {'--rx_rate': 153.6e6, '--tx_rate': 76.8e6,  'master_clock_rate': '153.6e6',  '--channels': '0,1,2,3',
-             '--duration': 3600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
+            #{'--rx_rate': 153.6e6, '--tx_rate': 76.8e6,  'master_clock_rate': '153.6e6',  '--channels': '0,1,2,3',
+            # '--duration': 3600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
         ],
     },
     'n300_2x_10gige': {
@@ -758,4 +758,3 @@ def main():
 
 if __name__ == "__main__":
     exit(not main())
-
