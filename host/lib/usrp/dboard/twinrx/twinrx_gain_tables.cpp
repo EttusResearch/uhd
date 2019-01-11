@@ -10,6 +10,7 @@
 
 using namespace uhd::usrp::dboard::twinrx;
 
+// clang-format off
 static const std::vector<twinrx_gain_config_t> HIGHBAND1_TABLE{
         //                     Index,   Gain, Atten1, Atten2,  Amp1,  Amp2
         twinrx_gain_config_t(      0,  -28.3,   31,   31, false, false ),
@@ -793,6 +794,7 @@ static const std::vector<twinrx_gain_config_t> LOWBAND4_TABLE{
         twinrx_gain_config_t(     92,   56.6,    0,    1,  true,  true ),
         twinrx_gain_config_t(     93,   57.6,    0,    0,  true,  true ),
 };
+// clang-format on
 
 const twinrx_gain_table twinrx_gain_table::lookup_table
 (

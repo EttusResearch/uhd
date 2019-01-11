@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+// clang-format off
 // Common IO Pins
 #define REFCLOCK_DIV_MASK    ((1 << 8)|(1 << 9)|(1 << 10))    // Three GPIO lines to CPLD for Clock Divisor Selection
 #define REFCLOCK_DIV8        ((1 << 8)|(1 << 9)|(1 << 10))    // GPIO to set clock div8 mode
@@ -37,6 +38,7 @@
 
 #define OUTPUT_MASK     (RX1_OUTPUT_MASK|RX2_OUTPUT_MASK|REFCLOCK_DIV_MASK)
 #define INPUT_MASK      (RX1_INPUT_MASK|RX2_INPUT_MASK)
+// clang-format on
 
 
 #include "tda18272hnm_regs.hpp"
@@ -100,7 +102,7 @@ struct tvrx2_tda18272_freq_map_t {
 /***********************************************************************
  * The TVRX2 constants
  **********************************************************************/
-
+// clang-format off
 static const boost::array<freq_range_t, 4> tvrx2_tda18272_rf_bands = list_of
     ( freq_range_t(  44.056e6, 144.408e6) )
     ( freq_range_t( 145.432e6, 361.496e6) )
@@ -735,6 +737,7 @@ static const uhd::dict<std::string, gain_range_t> tvrx2_gain_ranges = map_list_o
 //    ("LPF", gain_range_t(0, 9, 3))
     ("IF", gain_range_t(0, 30, 0.5))
 ;
+// clang-format on
 
 /***********************************************************************
  * The TVRX2 dboard class

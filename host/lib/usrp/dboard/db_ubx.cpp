@@ -162,6 +162,7 @@ static const std::vector<std::string> ubx_rx_antennas{"TX/RX", "RX2", "CAL"};
 static const std::vector<std::string> ubx_power_modes{"performance", "powersave"};
 static const std::vector<std::string> ubx_xcvr_modes{"FDX", "TX", "TX/RX", "RX"};
 
+// clang-format off
 static const ubx_gpio_field_info_t ubx_proto_gpio_info[] = {
     //Field         Unit                  Offset Mask      Width    Direction                   ATR    IDLE,TX,RX,FDX
     {SPI_ADDR,      dboard_iface::UNIT_TX,  0,  0x7,        3,  ubx_gpio_field_info_t::INPUT,  false,  0,  0,  0,  0},
@@ -191,6 +192,7 @@ static const ubx_gpio_field_info_t ubx_v1_gpio_info[] = {
     {RXLO2_SYNC,    dboard_iface::UNIT_RX,   7,  0x1<<7,     1,  ubx_gpio_field_info_t::INPUT,  true,   0,  0,  0,  0},
     {RX_GAIN,       dboard_iface::UNIT_RX,   10, 0x3F<<10,   10, ubx_gpio_field_info_t::INPUT,  false,  0,  0,  0,  0}
 };
+// clang-format on
 
 /***********************************************************************
  * Macros for routing and writing SPI registers

@@ -291,6 +291,7 @@ public:
 /**
  * MAX2871
  */
+// clang-format off
 // Table of frequency ranges for each VCO value.
 // The values were derived from sampling multiple
 // units over a temperature range of -10 to 40 deg C.
@@ -353,6 +354,7 @@ static const vco_map_t max2871_vco_map =
     (59,uhd::range_t(5952430629.0,6016743964.0))
     (60,uhd::range_t(6016743964.0,6090658690.0))
     (61,uhd::range_t(6090658690.0,6128133570.0));
+// clang-format on
 
 class max2871 : public max287x<max2871_regs_t>
 {

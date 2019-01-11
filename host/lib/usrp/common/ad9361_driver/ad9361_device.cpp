@@ -942,10 +942,12 @@ void ad9361_device_t::_calibrate_tx_quadrature()
  * Note that this table is fixed for all frequency settings. */
 void ad9361_device_t::_program_mixer_gm_subtable()
 {
+    // clang-format off
     uint8_t gain[] = { 0x78, 0x74, 0x70, 0x6C, 0x68, 0x64, 0x60, 0x5C, 0x58,
             0x54, 0x50, 0x4C, 0x48, 0x30, 0x18, 0x00 };
     uint8_t gm[] = { 0x00, 0x0D, 0x15, 0x1B, 0x21, 0x25, 0x29, 0x2C, 0x2F, 0x31,
             0x33, 0x34, 0x35, 0x3A, 0x3D, 0x3E };
+    // clang-format on
 
     /* Start the clock. */
     _io_iface->poke8(0x13f, 0x02);
@@ -2615,6 +2617,7 @@ filter_info_base::sptr ad9361_device_t::_get_filter_lp_bb(direction_t direction)
  * For TX direction the INT3 is returned. */
 filter_info_base::sptr ad9361_device_t::_get_filter_dec_int_3(direction_t direction)
 {
+    // clang-format off
     uint8_t enable = 0;
     double rate = _adcclock_freq;
     double full_scale;
@@ -2625,6 +2628,7 @@ filter_info_base::sptr ad9361_device_t::_get_filter_dec_int_3(direction_t direct
     int16_t taps_array_rx[] = {55, 83, 0, -393, -580, 0, 1914, 4041, 5120, 4041, 1914, 0, -580, -393, 0, 83, 55};
     int16_t taps_array_tx[] = {36, -19, 0, -156, -12, 0, 479, 233, 0, -1215, -993, 0, 3569, 6277, 8192, 6277, 3569, 0, -993, -1215, 0, 223, 479, 0, -12, -156, 0, -19, 36};
     std::vector<int16_t> taps;
+    // clang-format on
 
     filter_info_base::sptr ret;
 

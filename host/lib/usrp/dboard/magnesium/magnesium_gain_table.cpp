@@ -55,6 +55,7 @@ namespace {
     //! Maps band -> gain_tuple_map_t
     using gain_tables_t = std::map<size_t, gain_tuple_map_t>;
 
+    // clang-format off
     /*! RX gain tables
      */
     const gain_tables_t rx_gain_tables = {
@@ -436,6 +437,7 @@ namespace {
                 {65, {0, 0, false}}
         }}
     }; /* tx_gain_tables */
+    // clang-format on
 
     gain_tuple_t fine_tune_ad9371_att(
             const gain_tuple_t gain_tuple,
