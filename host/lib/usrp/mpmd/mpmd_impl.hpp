@@ -32,6 +32,8 @@ static constexpr size_t MPMD_DEFAULT_RPC_TIMEOUT     = 2000;
 //! Short timeout value for RPC calls (ms), used for calls that shouldn't
 // take long. This value can be used to quickly determine a link status.
 static constexpr size_t MPMD_SHORT_RPC_TIMEOUT     = 2000;
+//! Claimer loop timeout value for RPC calls (ms).
+static constexpr size_t MPMD_CLAIMER_RPC_TIMEOUT     = 10000;
 
 namespace uhd { namespace mpmd {
 

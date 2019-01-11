@@ -193,7 +193,8 @@ namespace {
      */
     uhd::rpc_client::sptr make_mpm_rpc_client(
         const std::string& rpc_server_addr,
-        const uhd::device_addr_t& mb_args
+        const uhd::device_addr_t& mb_args,
+        const size_t timeout_ms = MPMD_DEFAULT_RPC_TIMEOUT
     ){
         return uhd::rpc_client::make(
             rpc_server_addr,
@@ -201,7 +202,7 @@ namespace {
                 uhd::mpmd::mpmd_impl::MPM_RPC_PORT_KEY,
                 uhd::mpmd::mpmd_impl::MPM_RPC_PORT
             ),
-            MPMD_DEFAULT_RPC_TIMEOUT,
+            timeout_ms,
             uhd::mpmd::mpmd_impl::MPM_RPC_GET_LAST_ERROR_CMD);
     }
 
@@ -305,7 +306,7 @@ mpmd_mboard_impl::mpmd_mboard_impl(
 ) : mb_args(mb_args_)
     , rpc(make_mpm_rpc_client(rpc_server_addr, mb_args_))
     , num_xbars(rpc->request<size_t>("get_num_xbars"))
-    , _claim_rpc(make_mpm_rpc_client(rpc_server_addr, mb_args_))
+    , _claim_rpc(make_mpm_rpc_client(rpc_server_addr, mb_args, MPMD_CLAIMER_RPC_TIMEOUT))
     // xbar_local_addrs is not yet valid after this!
     , xbar_local_addrs(num_xbars, 0xFF)
     , _xport_mgr(xport::mpmd_xport_mgr::make(mb_args))
