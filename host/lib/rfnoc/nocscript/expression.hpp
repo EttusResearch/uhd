@@ -368,4 +368,3 @@ class expression_variable : public expression
 }}} /* namespace uhd::rfnoc::nocscript */
 
 #endif /* INCLUDED_LIBUHD_RFNOC_NOCSCRIPT_EXPR_HPP */
-// vim: sw=4 et:

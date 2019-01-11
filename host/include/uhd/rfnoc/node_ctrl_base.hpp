@@ -261,4 +261,3 @@ private:
 #include <uhd/rfnoc/node_ctrl_base.ipp>
 
 #endif /* INCLUDED_LIBUHD_NODE_CTRL_BASE_HPP */
-// vim: sw=4 et:

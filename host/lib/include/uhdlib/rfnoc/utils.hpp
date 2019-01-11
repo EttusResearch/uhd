@@ -64,4 +64,3 @@ namespace uhd { namespace rfnoc { namespace utils {
 }}}; /* namespace uhd::rfnoc::utils */
 
 #endif /* INCLUDED_LIBUHD_RFNOC_UTILS_HPP */
-// vim: sw=4 et:

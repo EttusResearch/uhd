@@ -254,4 +254,3 @@ private:
 }} /* namespace uhd::usrp */
 
 #endif /* INCLUDED_DEVICE3_IMPL_HPP */
-// vim: sw=4 expandtab:

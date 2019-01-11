@@ -40,4 +40,3 @@ void connect_nodes(uhd::rfnoc::source_node_ctrl::sptr A, uhd::rfnoc::sink_node_c
 }
 
 #endif /* INCLUDED_TEST_GRAPH_HPP */
-// vim: sw=4 et:

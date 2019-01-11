@@ -382,5 +382,4 @@ private:
 }} /* namespace uhd::rfnoc */
 
 #endif /* INCLUDED_LIBUHD_RFNOC_RHODIUM_RADIO_CTRL_IMPL_HPP */
-// vim: sw=4 et:
 

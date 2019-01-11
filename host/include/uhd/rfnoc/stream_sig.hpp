@@ -75,4 +75,3 @@ UHD_INLINE std::ostream& operator<< (std::ostream& out, stream_sig_t stream_sig)
 }} /* namespace uhd::rfnoc */
 
 #endif /* INCLUDED_LIBUHD_RFNOC_STREAMSIG_HPP */
-// vim: sw=4 et:

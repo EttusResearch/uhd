@@ -303,4 +303,3 @@ public:
 uhd::device_addrs_t mpmd_find(const uhd::device_addr_t& hint_);
 
 #endif /* INCLUDED_MPMD_IMPL_HPP */
-// vim: sw=4 expandtab:

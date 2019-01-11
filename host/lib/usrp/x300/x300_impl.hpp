@@ -241,4 +241,3 @@ private:
 };
 
 #endif /* INCLUDED_X300_IMPL_HPP */
-// vim: sw=4 expandtab:

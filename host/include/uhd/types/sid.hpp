@@ -235,4 +235,3 @@ namespace uhd {
 } //namespace uhd
 
 #endif /* INCLUDED_UHD_TYPES_SID_HPP */
-// vim: sw=4 et:

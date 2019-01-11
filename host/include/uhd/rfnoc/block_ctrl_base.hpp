@@ -434,4 +434,3 @@ private:
 }} /* namespace uhd::rfnoc */
 
 #endif /* INCLUDED_LIBUHD_BLOCK_CTRL_BASE_HPP */
-// vim: sw=4 et:

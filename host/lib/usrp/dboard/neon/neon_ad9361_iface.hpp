@@ -23,4 +23,3 @@ ad9361_ctrl::sptr make_rpc(rpc_client::sptr rpcc);
 std::string get_which_ad9361_chain(const direction_t dir, const size_t chan);
 
 #endif /* INCLUDED_LIBUHD_RFNOC_NEON_AD9361_IFACE_HPP */
-// vim: sw=4 et:

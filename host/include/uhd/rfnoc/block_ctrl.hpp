@@ -34,4 +34,3 @@ public:
 }} /* namespace uhd::rfnoc */
 
 #endif /* INCLUDED_LIBUHD_RFNOC_BLOCK_CTRL_HPP */
-// vim: sw=4 et:

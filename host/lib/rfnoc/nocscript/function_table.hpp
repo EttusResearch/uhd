@@ -80,4 +80,3 @@ class function_table
 }}} /* namespace uhd::rfnoc::nocscript */
 
 #endif /* INCLUDED_LIBUHD_RFNOC_NOCSCRIPT_FUNCTABLE_HPP */
-// vim: sw=4 et:

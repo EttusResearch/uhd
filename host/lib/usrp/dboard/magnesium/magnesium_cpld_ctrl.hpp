@@ -350,4 +350,3 @@ private:
 };
 
 #endif /* INCLUDED_LIBUHD_MAGNESIUM_CPLD_CTRL_HPP */
-// vim: sw=4 et:

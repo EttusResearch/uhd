@@ -57,4 +57,3 @@ protected:
 }} /* namespace uhd::rfnoc */
 
 #endif /* INCLUDED_LIBUHD_TICK_NODE_CTRL_BASE_HPP */
-// vim: sw=4 et:

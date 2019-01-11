@@ -81,4 +81,3 @@ class block_iface {
 }}} /* namespace uhd::rfnoc::nocscript */
 
 #endif /* INCLUDED_LIBUHD_NOCSCRIPT_BLOCK_IFACE_HPP */
-// vim: sw=4 et:

@@ -141,4 +141,3 @@ class UHD_API device3 : public uhd::device {
 } //namespace uhd
 
 #endif /* INCLUDED_UHD_DEVICE3_HPP */
-// vim: sw=4 et:

@@ -81,4 +81,3 @@ public:
 }}; /* name space uhd::rfnoc */
 
 #endif /* INCLUDED_LIBUHD_RFNOC_GRAPH_HPP */
-// vim: sw=4 et:

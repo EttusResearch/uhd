@@ -198,4 +198,3 @@ namespace uhd {
 }} //namespace uhd::rfnoc
 
 #endif /* INCLUDED_UHD_TYPES_BLOCK_ID_HPP */
-// vim: sw=4 et:

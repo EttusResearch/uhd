@@ -83,4 +83,3 @@ public:
 }}; /* namespace uhd::rfnoc */
 
 #endif /* INCLUDED_LIBUHD_RFNOC_AYNC_MSG_HANDLER_HPP */
-// vim: sw=4 et:

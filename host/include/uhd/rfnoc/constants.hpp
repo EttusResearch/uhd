@@ -99,4 +99,3 @@ static const std::string VALID_BLOCKID_REGEX = "(?:(\\d+)(?:/))?([A-Za-z][A-Za-z
 }} /* namespace uhd::rfnoc */
 
 #endif /* INCLUDED_LIBUHD_RFNOC_CONSTANTS_HPP */
-// vim: sw=4 et:

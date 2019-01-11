@@ -77,4 +77,3 @@ private:
 }} /* namespace uhd::rfnoc */
 
 #endif /* INCLUDED_LIBUHD_RFNOC_TERMINATOR_SEND_HPP */
-// vim: sw=4 et:
