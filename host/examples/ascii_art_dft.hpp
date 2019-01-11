@@ -276,8 +276,6 @@ namespace ascii_art_dft{
     }
 } //namespace ascii_dft
 
-#endif /*ASCII_ART_DFT_HPP*/
-
 /*
 
 //example main function to test the dft
@@ -321,3 +319,4 @@ int main(void){
 
 */
 
+#endif /*ASCII_ART_DFT_HPP*/
