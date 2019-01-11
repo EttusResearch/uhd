@@ -14,6 +14,28 @@ communication with a combined bandwidth of 160 MHz. The ability to share the LO 
 daughterboards enables the phase-aligned operation required to implement scalable multi-channel phased-arrays.
 The receiver is capable of fast frequency hopping to detect frequency agile emitters.
 
+The TwinRX daughterboard only works with the X300/X310 series of USRPs.
+
+\subsection twinrx_dboards_mcr Master Clock Rate, Sampling Rate, and Tick Rate
+
+Due to the specific configuration of the analog filters, the TwinRX can only
+support a master clock rate of 200 MHz. Since the X310/X300 only has a single
+master clock, this means that the only valid tick rate for the X300/X310 is
+200 MHz, even if there is another daughterboard in the same device which could
+support a different tick rate.
+
+The TwinRX uses the dual-ADC of each X300 channel to sample two separate IF
+streams, thus enabling two receive channels where there usually only is one.
+Every IF channel is sampled at 200 MHz (real sampling), and then converted to
+a 100 Msps complex sample stream per channel. This means the total output of
+one daughterboard is 2x100 Msps, which is the same aggregate sampling rate as
+with single-channel daughterboards such as the UBX.
+
+The tick rate is then also halved to match the sampling rate. Timed commands
+are executed relative to a sample edge in the I/Q domain, i.e., at a granularity
+of 1/100 MHz = 10 ns.
+
+
 \image html TwinRX_Block_Diagram.png "TwinRX Block Diagram"
 
 \subsection twinrx_frequency_bands Frequency Bands

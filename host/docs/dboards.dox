@@ -384,6 +384,9 @@ Receive Antennas: **RX1** and **RX2**
 
 Receive Gain: 0-93dB
 
+The TwinRX daughterboard only works with the X300/X310 motherboards, and
+requires a master clock rate of 200 MHz.
+
 More information:
 \li \subpage page_twinrx
 
