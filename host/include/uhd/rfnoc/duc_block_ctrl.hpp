@@ -8,13 +8,12 @@
 #ifndef INCLUDED_LIBUHD_RFNOC_DUC_BLOCK_CTRL_HPP
 #define INCLUDED_LIBUHD_RFNOC_DUC_BLOCK_CTRL_HPP
 
-#include <uhd/rfnoc/source_block_ctrl_base.hpp>
-#include <uhd/rfnoc/sink_block_ctrl_base.hpp>
 #include <uhd/rfnoc/rate_node_ctrl.hpp>
 #include <uhd/rfnoc/scalar_node_ctrl.hpp>
+#include <uhd/rfnoc/sink_block_ctrl_base.hpp>
+#include <uhd/rfnoc/source_block_ctrl_base.hpp>
 
-namespace uhd {
-    namespace rfnoc {
+namespace uhd { namespace rfnoc {
 
 /*! \brief DUC block controller
  *
@@ -24,11 +23,10 @@ namespace uhd {
  *
  * It also includes a CORDIC component to shift signals in frequency.
  */
-class UHD_RFNOC_API duc_block_ctrl :
-    public source_block_ctrl_base,
-    public sink_block_ctrl_base,
-    public rate_node_ctrl,
-    public scalar_node_ctrl
+class UHD_RFNOC_API duc_block_ctrl : public source_block_ctrl_base,
+                                     public sink_block_ctrl_base,
+                                     public rate_node_ctrl,
+                                     public scalar_node_ctrl
 {
 public:
     UHD_RFNOC_BLOCK_OBJECT(duc_block_ctrl)
@@ -38,4 +36,3 @@ public:
 }} /* namespace uhd::rfnoc */
 
 #endif /* INCLUDED_LIBUHD_RFNOC_DUC_BLOCK_CTRL_HPP */
-

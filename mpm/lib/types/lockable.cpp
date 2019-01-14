@@ -11,9 +11,7 @@ using namespace mpm::types;
 class lockable_impl : public lockable
 {
 public:
-    lockable_impl(
-            std::shared_ptr<std::mutex> spi_mutex
-    ) : _spi_mutex(spi_mutex)
+    lockable_impl(std::shared_ptr<std::mutex> spi_mutex) : _spi_mutex(spi_mutex)
     {
         /* nop */
     }
@@ -32,11 +30,7 @@ private:
     std::shared_ptr<std::mutex> _spi_mutex;
 };
 
-lockable::sptr lockable::make(
-            std::shared_ptr<std::mutex> spi_mutex
-) {
-    return std::make_shared<lockable_impl>(
-        spi_mutex
-    );
+lockable::sptr lockable::make(std::shared_ptr<std::mutex> spi_mutex)
+{
+    return std::make_shared<lockable_impl>(spi_mutex);
 }
-

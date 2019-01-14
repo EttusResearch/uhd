@@ -16,25 +16,22 @@ class source_node : public test_node
 public:
     typedef boost::shared_ptr<source_node> sptr;
 
-    source_node(const std::string &test_id, size_t output_port)
-        : test_node(test_id)
-        , active_rx_streamer_on_port(0)
-        , _output_port(output_port) {};
+    source_node(const std::string& test_id, size_t output_port)
+        : test_node(test_id), active_rx_streamer_on_port(0), _output_port(output_port){};
 
     void set_rx_streamer(bool active, const size_t port)
     {
         if (active) {
-            std::cout << "[source_node] Someone is registering a rx streamer on port " << port << std::endl;
+            std::cout << "[source_node] Someone is registering a rx streamer on port "
+                      << port << std::endl;
             active_rx_streamer_on_port = port;
         }
     }
     size_t active_rx_streamer_on_port;
 
 protected:
-    size_t _request_output_port(
-            const size_t,
-            const uhd::device_addr_t &
-    ) const {
+    size_t _request_output_port(const size_t, const uhd::device_addr_t&) const
+    {
         return _output_port;
     }
 
@@ -47,25 +44,22 @@ class sink_node : public test_node
 public:
     typedef boost::shared_ptr<sink_node> sptr;
 
-    sink_node(const std::string &test_id, size_t input_port)
-        : test_node(test_id)
-        , active_tx_streamer_on_port(0)
-        , _input_port(input_port) {};
+    sink_node(const std::string& test_id, size_t input_port)
+        : test_node(test_id), active_tx_streamer_on_port(0), _input_port(input_port){};
 
     void set_tx_streamer(bool active, const size_t port)
     {
         if (active) {
-            std::cout << "[sink_node] Someone is registering a tx streamer on port " << port << std::endl;
+            std::cout << "[sink_node] Someone is registering a tx streamer on port "
+                      << port << std::endl;
             active_tx_streamer_on_port = port;
         }
     }
     size_t active_tx_streamer_on_port;
 
 protected:
-    size_t _request_input_port(
-            const size_t,
-            const uhd::device_addr_t &
-    ) const {
+    size_t _request_input_port(const size_t, const uhd::device_addr_t&) const
+    {
         return _input_port;
     }
 

@@ -6,15 +6,14 @@
 //
 
 #include "../lib/rfnoc/nocscript/function_table.hpp"
-#include <boost/test/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
+#include "nocscript_common.hpp"
 #include <boost/bind.hpp>
-#include <boost/make_shared.hpp>
 #include <boost/format.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/unit_test.hpp>
 #include <algorithm>
 #include <iostream>
-
-#include "nocscript_common.hpp"
 
 // We need this global variable for one of the later tests
 int and_counter = 0;
@@ -65,15 +64,15 @@ BOOST_AUTO_TEST_CASE(test_literals)
     BOOST_CHECK_EQUAL(literal_int_vec.infer_type(), expression::TYPE_INT_VECTOR);
     std::vector<int> test_data{1, 2, 3};
     std::vector<int> result = literal_int_vec.get_int_vector();
-    BOOST_CHECK_EQUAL_COLLECTIONS(test_data.begin(), test_data.end(),
-                                  result.begin(), result.end());
+    BOOST_CHECK_EQUAL_COLLECTIONS(
+        test_data.begin(), test_data.end(), result.begin(), result.end());
     BOOST_REQUIRE_THROW(literal_int_vec.get_bool(), uhd::type_error);
     BOOST_REQUIRE_THROW(literal_int_vec.get_int(), uhd::type_error);
 }
 
 
 // Need those for the variable testing:
-expression::type_t variable_get_type(const std::string &var_name)
+expression::type_t variable_get_type(const std::string& var_name)
 {
     if (var_name == "spp") {
         std::cout << "Returning type for $spp..." << std::endl;
@@ -87,7 +86,7 @@ expression::type_t variable_get_type(const std::string &var_name)
     throw uhd::syntax_error("Cannot infer type (unknown variable)");
 }
 
-expression_literal variable_get_value(const std::string &var_name)
+expression_literal variable_get_value(const std::string& var_name)
 {
     if (var_name == "spp") {
         std::cout << "Returning value for $spp..." << std::endl;
@@ -103,18 +102,14 @@ expression_literal variable_get_value(const std::string &var_name)
 
 BOOST_AUTO_TEST_CASE(test_variables)
 {
-    BOOST_REQUIRE_THROW(
-        expression_variable v_fail(
-                "foo", // Invalid token
-                boost::bind(&variable_get_type, _1), boost::bind(&variable_get_value, _1)
-        ),
-        uhd::assertion_error
-    );
+    BOOST_REQUIRE_THROW(expression_variable v_fail("foo", // Invalid token
+                            boost::bind(&variable_get_type, _1),
+                            boost::bind(&variable_get_value, _1)),
+        uhd::assertion_error);
 
-    expression_variable v(
-            "$spp", // The token
-            boost::bind(&variable_get_type, _1), // type-getter
-            boost::bind(&variable_get_value, _1) // value-getter
+    expression_variable v("$spp", // The token
+        boost::bind(&variable_get_type, _1), // type-getter
+        boost::bind(&variable_get_value, _1) // value-getter
     );
     BOOST_CHECK_EQUAL(v.infer_type(), expression::TYPE_INT);
     BOOST_CHECK_EQUAL(v.eval().get_int(), 5);
@@ -123,23 +118,21 @@ BOOST_AUTO_TEST_CASE(test_variables)
 BOOST_AUTO_TEST_CASE(test_container)
 {
     // Create some sub-expressions:
-    expression_literal::sptr l_true = E(true);
+    expression_literal::sptr l_true  = E(true);
     expression_literal::sptr l_false = E(false);
-    expression_literal::sptr l_int = E(5);
+    expression_literal::sptr l_int   = E(5);
     BOOST_REQUIRE_EQUAL(l_false->get_bool(), false);
     BOOST_REQUIRE_EQUAL(l_false->to_bool(), false);
-    expression_variable::sptr l_boolvar = boost::make_shared<expression_variable>(
-        "$is_true",
-        boost::bind(&variable_get_type, _1),
-        boost::bind(&variable_get_value, _1)
-    );
+    expression_variable::sptr l_boolvar =
+        boost::make_shared<expression_variable>("$is_true",
+            boost::bind(&variable_get_type, _1),
+            boost::bind(&variable_get_value, _1));
 
     // This will throw anytime it's evaluated:
-    expression_variable::sptr l_failvar = boost::make_shared<expression_variable>(
-        "$does_not_exist",
-        boost::bind(&variable_get_type, _1),
-        boost::bind(&variable_get_value, _1)
-    );
+    expression_variable::sptr l_failvar =
+        boost::make_shared<expression_variable>("$does_not_exist",
+            boost::bind(&variable_get_type, _1),
+            boost::bind(&variable_get_value, _1));
 
     expression_container c;
     std::cout << "One true, OR: " << std::endl;
@@ -196,38 +189,32 @@ BOOST_AUTO_TEST_CASE(test_container)
 // be defined for INT and DOUBLE
 class functable_mockup_impl : public function_table
 {
-  public:
-    functable_mockup_impl(void) {};
+public:
+    functable_mockup_impl(void){};
 
-    bool function_exists(const std::string &name) const {
+    bool function_exists(const std::string& name) const
+    {
         return name == "ADD" or name == "XOR" or name == "AND";
     }
 
-    bool function_exists(
-            const std::string &name,
-            const expression_function::argtype_list_type &arg_types
-    ) const {
+    bool function_exists(const std::string& name,
+        const expression_function::argtype_list_type& arg_types) const
+    {
         if (name == "ADD") {
-            if (arg_types.size() == 2
-                and arg_types[0] == expression::TYPE_DOUBLE
-                and arg_types[1] == expression::TYPE_DOUBLE
-            ) {
+            if (arg_types.size() == 2 and arg_types[0] == expression::TYPE_DOUBLE
+                and arg_types[1] == expression::TYPE_DOUBLE) {
                 return true;
             }
-            if (arg_types.size() == 2
-                and arg_types[0] == expression::TYPE_INT
-                and arg_types[1] == expression::TYPE_INT
-            ) {
+            if (arg_types.size() == 2 and arg_types[0] == expression::TYPE_INT
+                and arg_types[1] == expression::TYPE_INT) {
                 return true;
             }
             return false;
         }
 
         if (name == "XOR" or name == "AND") {
-            if (arg_types.size() == 2
-                and arg_types[0] == expression::TYPE_BOOL
-                and arg_types[1] == expression::TYPE_BOOL
-            ) {
+            if (arg_types.size() == 2 and arg_types[0] == expression::TYPE_BOOL
+                and arg_types[1] == expression::TYPE_BOOL) {
                 return true;
             }
             return false;
@@ -236,15 +223,14 @@ class functable_mockup_impl : public function_table
         return false;
     }
 
-    expression::type_t get_type(
-            const std::string &name,
-            const expression_function::argtype_list_type &arg_types
-    ) const {
+    expression::type_t get_type(const std::string& name,
+        const expression_function::argtype_list_type& arg_types) const
+    {
         if (not function_exists(name, arg_types)) {
-            throw uhd::syntax_error(str(
-                boost::format("[EXPR_TEXT] get_type(): Unknown function: %s, %d arguments")
-                % name % arg_types.size()
-            ));
+            throw uhd::syntax_error(
+                str(boost::format(
+                        "[EXPR_TEXT] get_type(): Unknown function: %s, %d arguments")
+                    % name % arg_types.size()));
         }
 
         if (name == "XOR" or name == "AND") {
@@ -256,58 +242,48 @@ class functable_mockup_impl : public function_table
         UHD_THROW_INVALID_CODE_PATH();
     }
 
-    expression_literal eval(
-            const std::string &name,
-            const expression_function::argtype_list_type &arg_types,
-            expression_container::expr_list_type &args
-    ) {
+    expression_literal eval(const std::string& name,
+        const expression_function::argtype_list_type& arg_types,
+        expression_container::expr_list_type& args)
+    {
         if (name == "XOR") {
-            if (arg_types.size() != 2
-                or args.size() != 2
+            if (arg_types.size() != 2 or args.size() != 2
                 or arg_types[0] != expression::TYPE_BOOL
                 or arg_types[1] != expression::TYPE_BOOL
                 or args[0]->infer_type() != expression::TYPE_BOOL
-                or args[1]->infer_type() != expression::TYPE_BOOL
-            ) {
+                or args[1]->infer_type() != expression::TYPE_BOOL) {
                 throw uhd::syntax_error("eval(): XOR type mismatch");
             }
-            return expression_literal(bool(
-                args[0]->eval().get_bool() xor args[1]->eval().get_bool()
-            ));
+            return expression_literal(
+                bool(args[0]->eval().get_bool() xor args[1]->eval().get_bool()));
         }
 
         if (name == "AND") {
-            if (arg_types.size() != 2
-                or args.size() != 2
+            if (arg_types.size() != 2 or args.size() != 2
                 or arg_types[0] != expression::TYPE_BOOL
                 or arg_types[1] != expression::TYPE_BOOL
                 or args[0]->infer_type() != expression::TYPE_BOOL
-                or args[1]->infer_type() != expression::TYPE_BOOL
-            ) {
+                or args[1]->infer_type() != expression::TYPE_BOOL) {
                 throw uhd::syntax_error("eval(): AND type mismatch");
             }
             std::cout << "Calling AND" << std::endl;
             and_counter++;
-            return expression_literal(bool(
-                args[0]->eval().get_bool() and args[1]->eval().get_bool()
-            ));
+            return expression_literal(
+                bool(args[0]->eval().get_bool() and args[1]->eval().get_bool()));
         }
 
         if (name == "ADD") {
             if (args.size() != 2) {
                 throw uhd::syntax_error("eval(): ADD type mismatch");
             }
-            if ((args[0]->infer_type() == expression::TYPE_INT) and
-                (args[1]->infer_type() == expression::TYPE_INT)) {
-                return expression_literal(int(
-                    args[0]->eval().get_int() + args[1]->eval().get_int()
-                ));
-            }
-            else if ((args[0]->infer_type() == expression::TYPE_DOUBLE) and
-                (args[1]->infer_type() == expression::TYPE_DOUBLE)) {
-                return expression_literal(double(
-                    args[0]->eval().get_double() + args[1]->eval().get_double()
-                ));
+            if ((args[0]->infer_type() == expression::TYPE_INT)
+                and (args[1]->infer_type() == expression::TYPE_INT)) {
+                return expression_literal(
+                    int(args[0]->eval().get_int() + args[1]->eval().get_int()));
+            } else if ((args[0]->infer_type() == expression::TYPE_DOUBLE)
+                       and (args[1]->infer_type() == expression::TYPE_DOUBLE)) {
+                return expression_literal(
+                    double(args[0]->eval().get_double() + args[1]->eval().get_double()));
             }
             throw uhd::syntax_error("eval(): ADD type mismatch");
         }
@@ -315,13 +291,10 @@ class functable_mockup_impl : public function_table
     }
 
     // We don't actually need this
-    void register_function(
-            const std::string &,
-            const function_table::function_ptr &,
-            const expression::type_t,
-            const expression_function::argtype_list_type &
-    ) {};
-
+    void register_function(const std::string&,
+        const function_table::function_ptr&,
+        const expression::type_t,
+        const expression_function::argtype_list_type&){};
 };
 
 
@@ -342,16 +315,20 @@ BOOST_AUTO_TEST_CASE(test_functable_mockup)
     BOOST_CHECK(not functable.function_exists("XOR", no_args));
 
     BOOST_CHECK_EQUAL(functable.get_type("ADD", two_int_args), expression::TYPE_INT);
-    BOOST_CHECK_EQUAL(functable.get_type("ADD", two_double_args), expression::TYPE_DOUBLE);
+    BOOST_CHECK_EQUAL(
+        functable.get_type("ADD", two_double_args), expression::TYPE_DOUBLE);
     BOOST_CHECK_EQUAL(functable.get_type("XOR", two_bool_args), expression::TYPE_BOOL);
 
     expression_container::expr_list_type add_args_int{E(2), E(3)};
     expression_container::expr_list_type add_args_dbl{E(2.25), E(5.0)};
     expression_container::expr_list_type xor_args_bool{E(true), E(false)};
 
-    BOOST_CHECK_EQUAL(functable.eval("ADD", two_int_args, add_args_int), expression_literal(5));
-    BOOST_CHECK_EQUAL(functable.eval("ADD", two_double_args, add_args_dbl), expression_literal(7.25));
-    BOOST_CHECK_EQUAL(functable.eval("XOR", two_bool_args, xor_args_bool), expression_literal(true));
+    BOOST_CHECK_EQUAL(
+        functable.eval("ADD", two_int_args, add_args_int), expression_literal(5));
+    BOOST_CHECK_EQUAL(
+        functable.eval("ADD", two_double_args, add_args_dbl), expression_literal(7.25));
+    BOOST_CHECK_EQUAL(
+        functable.eval("XOR", two_bool_args, xor_args_bool), expression_literal(true));
 }
 
 BOOST_AUTO_TEST_CASE(test_function_expression)
@@ -402,7 +379,7 @@ BOOST_AUTO_TEST_CASE(test_function_expression_laziness)
     f3->add(E(false));
     BOOST_CHECK(not f3->eval().get_bool());
 
-    and_counter = 0;
+    and_counter                  = 0;
     expression_function::sptr f1 = boost::make_shared<expression_function>("AND", ft);
     f1->add(f2);
     f1->add(f3);
@@ -417,14 +394,12 @@ BOOST_AUTO_TEST_CASE(test_sptrs)
     BOOST_CHECK_EQUAL(c->infer_type(), expression::TYPE_BOOL);
     BOOST_CHECK(c->eval().get_bool());
 
-    expression_variable::sptr v = expression_variable::make(
-            "$spp",
-            boost::bind(&variable_get_type, _1), // type-getter
-            boost::bind(&variable_get_value, _1) // value-getter
+    expression_variable::sptr v = expression_variable::make("$spp",
+        boost::bind(&variable_get_type, _1), // type-getter
+        boost::bind(&variable_get_value, _1) // value-getter
     );
 
     c->add(v);
     BOOST_REQUIRE_EQUAL(c->infer_type(), expression::TYPE_INT);
     BOOST_CHECK_EQUAL(c->eval().get_int(), 5);
 }
-

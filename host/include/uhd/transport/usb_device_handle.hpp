@@ -9,9 +9,9 @@
 #define INCLUDED_UHD_TRANSPORT_USB_DEVICE_HANDLE_HPP
 
 #include <uhd/config.hpp>
-#include <boost/utility.hpp>
-#include <boost/shared_ptr.hpp>
 #include <stdint.h>
+#include <boost/shared_ptr.hpp>
+#include <boost/utility.hpp>
 #include <vector>
 
 namespace uhd { namespace transport {
@@ -28,7 +28,8 @@ namespace uhd { namespace transport {
  *       a true descriptor serial number string. This interface returns the
  *       actual string descriptor.
  */
-class UHD_API usb_device_handle : boost::noncopyable {
+class UHD_API usb_device_handle : boost::noncopyable
+{
 public:
     typedef boost::shared_ptr<usb_device_handle> sptr;
     typedef std::pair<uint16_t, uint16_t> vid_pid_pair_t;
@@ -75,12 +76,14 @@ public:
      * Return a vector of USB devices on this host
      * \return a vector of USB device handles that match vid and pid
      */
-    static std::vector<usb_device_handle::sptr> get_device_list(uint16_t vid, uint16_t pid);
-    static std::vector<usb_device_handle::sptr> get_device_list(const std::vector<usb_device_handle::vid_pid_pair_t>& vid_pid_pair_list);
+    static std::vector<usb_device_handle::sptr> get_device_list(
+        uint16_t vid, uint16_t pid);
+    static std::vector<usb_device_handle::sptr> get_device_list(
+        const std::vector<usb_device_handle::vid_pid_pair_t>& vid_pid_pair_list);
 
 
-}; //namespace usb
+}; // namespace usb
 
-}} //namespace
+}} // namespace uhd::transport
 
 #endif /* INCLUDED_UHD_TRANSPORT_USB_DEVICE_HANDLE_HPP */

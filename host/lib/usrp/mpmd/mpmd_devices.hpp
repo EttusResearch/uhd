@@ -8,8 +8,8 @@
 #ifndef INCLUDED_MPMD_DEVICES_HPP
 #define INCLUDED_MPMD_DEVICES_HPP
 
-#include <vector>
 #include <string>
+#include <vector>
 
 static constexpr char MPM_CATCHALL_DEVICE_TYPE[] = "mpm";
 

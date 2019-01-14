@@ -10,9 +10,9 @@
 
 #include <uhd/config.hpp>
 #include <uhd/types/serial.hpp>
-#include <boost/utility.hpp>
-#include <boost/shared_ptr.hpp>
 #include <uhd/types/wb_iface.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/utility.hpp>
 
 class x300_mb_eeprom_iface : public uhd::i2c_iface
 {

@@ -13,7 +13,7 @@
 #include <uhd/types/device_addr.hpp>
 #include <boost/shared_ptr.hpp>
 
-namespace uhd{ namespace transport{
+namespace uhd { namespace transport {
 
 /*!
  * A zero copy udp transport provides an efficient way to handle data.
@@ -25,11 +25,13 @@ namespace uhd{ namespace transport{
  * If no platform specific solution is available, make returns a boost asio
  * implementation that wraps the functionality around a standard send/recv calls.
  */
-class UHD_API udp_zero_copy : public virtual zero_copy_if{
+class UHD_API udp_zero_copy : public virtual zero_copy_if
+{
 public:
-    struct buff_params {
-        size_t  recv_buff_size;
-        size_t  send_buff_size;
+    struct buff_params
+    {
+        size_t recv_buff_size;
+        size_t send_buff_size;
     };
 
     typedef boost::shared_ptr<udp_zero_copy> sptr;
@@ -50,13 +52,11 @@ public:
      * \param[out] buff_params_out Returns the actual buffer sizes
      * \param hints optional parameters to pass to the underlying transport
      */
-    static sptr make(
-        const std::string &addr,
-        const std::string &port,
-        const zero_copy_xport_params &default_buff_args,
+    static sptr make(const std::string& addr,
+        const std::string& port,
+        const zero_copy_xport_params& default_buff_args,
         udp_zero_copy::buff_params& buff_params_out,
-        const device_addr_t &hints = device_addr_t()
-    );
+        const device_addr_t& hints = device_addr_t());
 
     /*! Return the local port of the UDP connection
      *
@@ -74,6 +74,6 @@ public:
     virtual std::string get_local_addr(void) const = 0;
 };
 
-}} //namespace
+}} // namespace uhd::transport
 
 #endif /* INCLUDED_UHD_TRANSPORT_UDP_ZERO_COPY_HPP */

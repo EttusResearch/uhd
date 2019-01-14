@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "neon_radio_ctrl_impl.hpp"
 #include "neon_constants.hpp"
+#include "neon_radio_ctrl_impl.hpp"
 #include <uhd/utils/math.hpp>
 
 /*
@@ -51,54 +51,55 @@ using namespace uhd::rfnoc;
 using namespace uhd::math::fp_compare;
 
 namespace {
-    /* Note on the RX filter bank:
-     *
-     * The RX path has 7 bands, which we call LB_B2, B3, .. HB same as
-     * the schematic.
-     *
-     * The following constants define lower cutoff frequencies for each band.
-     * LB_B2 does not have a lower cutoff frequency, it is implied by
-     * AD9361_MIN_FREQ. NEON_RX_BAND1_MIN_FREQ is the cutover frequency
-     * for switching from LB_B2 to LB_B3, and so on.
-     *
-     * Bands 1-6 have both high- and low-pass filters (effectively band
-     * passes). Frequencies need to be chosen to allow as much of the full
-     * bandwidth through unattenuated.
-     */
-    constexpr double NEON_RX_LB_BAND3_MIN_FREQ = 450e6;
-    constexpr double NEON_RX_LB_BAND4_MIN_FREQ = 700e6;
-    constexpr double NEON_RX_LB_BAND5_MIN_FREQ = 1200e6;
-    constexpr double NEON_RX_LB_BAND6_MIN_FREQ = 1800e6;
-    constexpr double NEON_RX_LB_BAND7_MIN_FREQ = 2350e6;
-    constexpr double NEON_RX_HB_MIN_FREQ = 2600e6;
+/* Note on the RX filter bank:
+ *
+ * The RX path has 7 bands, which we call LB_B2, B3, .. HB same as
+ * the schematic.
+ *
+ * The following constants define lower cutoff frequencies for each band.
+ * LB_B2 does not have a lower cutoff frequency, it is implied by
+ * AD9361_MIN_FREQ. NEON_RX_BAND1_MIN_FREQ is the cutover frequency
+ * for switching from LB_B2 to LB_B3, and so on.
+ *
+ * Bands 1-6 have both high- and low-pass filters (effectively band
+ * passes). Frequencies need to be chosen to allow as much of the full
+ * bandwidth through unattenuated.
+ */
+constexpr double NEON_RX_LB_BAND3_MIN_FREQ = 450e6;
+constexpr double NEON_RX_LB_BAND4_MIN_FREQ = 700e6;
+constexpr double NEON_RX_LB_BAND5_MIN_FREQ = 1200e6;
+constexpr double NEON_RX_LB_BAND6_MIN_FREQ = 1800e6;
+constexpr double NEON_RX_LB_BAND7_MIN_FREQ = 2350e6;
+constexpr double NEON_RX_HB_MIN_FREQ       = 2600e6;
 
-    /* Note on the TX filter bank:
-     *
-     * The TX path has 9 bands, which we name according to the schematic.
-     *
-     * The following constants define lower cutoff frequencies for each band.
-     * LB_80 does not have a lower cutoff frequency, it is implied by
-     * AD9361_MIN_FREQ. NEON_TX_LB_160_MIN_FREQ is the cutover frequency
-     * for switching from LB_80 to LB_160, and so on.
-     *
-     * On current Neon revisions, all filters on the TX filter bank are
-     * low pass filters (no high pass filters).
-     * Frequencies need to be chosen to allow as much of the full bandwidth
-     * through unattenuated (so don't go all the way up to the cutoff frequency
-     * of that filter).
-     */
-    constexpr double NEON_TX_LB_160_MIN_FREQ = 117.7e6;
-    constexpr double NEON_TX_LB_225_MIN_FREQ = 178.2e6;
-    constexpr double NEON_TX_LB_400_MIN_FREQ = 284.3e6;
-    constexpr double NEON_TX_LB_575_MIN_FREQ = 453.7e6;
-    constexpr double NEON_TX_LB_1000_MIN_FREQ = 723.8e6;
-    constexpr double NEON_TX_LB_1700_MIN_FREQ = 1154.9e6;
-    constexpr double NEON_TX_LB_2750_MIN_FREQ = 1842.6e6;
-    constexpr double NEON_TX_HB_MIN_FREQ = 2940.0e6;
-}
+/* Note on the TX filter bank:
+ *
+ * The TX path has 9 bands, which we name according to the schematic.
+ *
+ * The following constants define lower cutoff frequencies for each band.
+ * LB_80 does not have a lower cutoff frequency, it is implied by
+ * AD9361_MIN_FREQ. NEON_TX_LB_160_MIN_FREQ is the cutover frequency
+ * for switching from LB_80 to LB_160, and so on.
+ *
+ * On current Neon revisions, all filters on the TX filter bank are
+ * low pass filters (no high pass filters).
+ * Frequencies need to be chosen to allow as much of the full bandwidth
+ * through unattenuated (so don't go all the way up to the cutoff frequency
+ * of that filter).
+ */
+constexpr double NEON_TX_LB_160_MIN_FREQ  = 117.7e6;
+constexpr double NEON_TX_LB_225_MIN_FREQ  = 178.2e6;
+constexpr double NEON_TX_LB_400_MIN_FREQ  = 284.3e6;
+constexpr double NEON_TX_LB_575_MIN_FREQ  = 453.7e6;
+constexpr double NEON_TX_LB_1000_MIN_FREQ = 723.8e6;
+constexpr double NEON_TX_LB_1700_MIN_FREQ = 1154.9e6;
+constexpr double NEON_TX_LB_2750_MIN_FREQ = 1842.6e6;
+constexpr double NEON_TX_HB_MIN_FREQ      = 2940.0e6;
+} // namespace
 
-neon_radio_ctrl_impl::rx_band
-neon_radio_ctrl_impl::_map_freq_to_rx_band(const double freq) {
+neon_radio_ctrl_impl::rx_band neon_radio_ctrl_impl::_map_freq_to_rx_band(
+    const double freq)
+{
     neon_radio_ctrl_impl::rx_band band;
 
     if (fp_compare_epsilon<double>(freq) < AD9361_RX_MIN_FREQ) {
@@ -124,8 +125,9 @@ neon_radio_ctrl_impl::_map_freq_to_rx_band(const double freq) {
     return band;
 }
 
-neon_radio_ctrl_impl::tx_band
-neon_radio_ctrl_impl::_map_freq_to_tx_band(const double freq) {
+neon_radio_ctrl_impl::tx_band neon_radio_ctrl_impl::_map_freq_to_tx_band(
+    const double freq)
+{
     neon_radio_ctrl_impl::tx_band band;
 
     if (fp_compare_epsilon<double>(freq) < AD9361_TX_MIN_FREQ) {
@@ -154,4 +156,3 @@ neon_radio_ctrl_impl::_map_freq_to_tx_band(const double freq) {
 
     return band;
 }
-

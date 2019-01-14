@@ -7,21 +7,20 @@
 
 #include "../lib/rfnoc/nocscript/function_table.hpp"
 #include "../lib/rfnoc/nocscript/parser.hpp"
+#include "nocscript_common.hpp"
 #include <uhd/exception.hpp>
-#include <boost/test/unit_test.hpp>
-#include <boost/test/floating_point_comparison.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/bind.hpp>
 #include <boost/make_shared.hpp>
+#include <boost/test/floating_point_comparison.hpp>
+#include <boost/test/unit_test.hpp>
 #include <algorithm>
 #include <iostream>
-
-#include "nocscript_common.hpp"
 
 const int SPP_VALUE = 64;
 
 // Need those for the variable testing:
-expression::type_t variable_get_type(const std::string &var_name)
+expression::type_t variable_get_type(const std::string& var_name)
 {
     if (var_name == "spp") {
         std::cout << "Returning type for $spp..." << std::endl;
@@ -35,7 +34,7 @@ expression::type_t variable_get_type(const std::string &var_name)
     throw uhd::syntax_error("Cannot infer type (unknown variable)");
 }
 
-expression_literal variable_get_value(const std::string &var_name)
+expression_literal variable_get_value(const std::string& var_name)
 {
     if (var_name == "spp") {
         std::cout << "Returning value for $spp..." << std::endl;
@@ -49,13 +48,10 @@ expression_literal variable_get_value(const std::string &var_name)
     throw uhd::syntax_error("Cannot read value (unknown variable)");
 }
 
-#define SETUP_FT_AND_PARSER() \
+#define SETUP_FT_AND_PARSER()                         \
     function_table::sptr ft = function_table::make(); \
-    parser::sptr p = parser::make( \
-            ft, \
-            boost::bind(&variable_get_type, _1), \
-            boost::bind(&variable_get_value, _1) \
-    );
+    parser::sptr p          = parser::make(           \
+        ft, boost::bind(&variable_get_type, _1), boost::bind(&variable_get_value, _1));
 
 BOOST_AUTO_TEST_CASE(test_fail)
 {
@@ -79,11 +75,11 @@ BOOST_AUTO_TEST_CASE(test_adds_no_vars)
     BOOST_REQUIRE(ft->function_exists("ADD"));
 
     const std::string line("ADD(1, ADD(2, ADD(3, 4)))");
-    expression::sptr e = p->create_expr_tree(line);
+    expression::sptr e        = p->create_expr_tree(line);
     expression_literal result = e->eval();
 
     BOOST_REQUIRE_EQUAL(result.infer_type(), expression::TYPE_INT);
-    BOOST_CHECK_EQUAL(result.get_int(), 1+2+3+4);
+    BOOST_CHECK_EQUAL(result.get_int(), 1 + 2 + 3 + 4);
 }
 
 BOOST_AUTO_TEST_CASE(test_adds_with_vars)
@@ -91,11 +87,11 @@ BOOST_AUTO_TEST_CASE(test_adds_with_vars)
     SETUP_FT_AND_PARSER();
 
     const std::string line("ADD(1, ADD(2, $spp))");
-    expression::sptr e = p->create_expr_tree(line);
+    expression::sptr e        = p->create_expr_tree(line);
     expression_literal result = e->eval();
 
     BOOST_REQUIRE_EQUAL(result.infer_type(), expression::TYPE_INT);
-    BOOST_CHECK_EQUAL(result.get_int(), 1+2+SPP_VALUE);
+    BOOST_CHECK_EQUAL(result.get_int(), 1 + 2 + SPP_VALUE);
 }
 
 BOOST_AUTO_TEST_CASE(test_fft_check)
@@ -103,7 +99,7 @@ BOOST_AUTO_TEST_CASE(test_fft_check)
     SETUP_FT_AND_PARSER();
 
     const std::string line("GE($spp, 16) AND LE($spp, 4096) AND IS_PWR_OF_2($spp)");
-    expression::sptr e = p->create_expr_tree(line);
+    expression::sptr e        = p->create_expr_tree(line);
     expression_literal result = e->eval();
 
     BOOST_REQUIRE_EQUAL(result.infer_type(), expression::TYPE_BOOL);
@@ -135,11 +131,7 @@ BOOST_AUTO_TEST_CASE(test_multi_commmand)
     SETUP_FT_AND_PARSER();
 
     ft->register_function(
-            "DUMMY",
-            boost::bind(&dummy_false, _1),
-            expression::TYPE_BOOL,
-            no_args
-    );
+        "DUMMY", boost::bind(&dummy_false, _1), expression::TYPE_BOOL, no_args);
 
     dummy_false_counter = 0;
     p->create_expr_tree("DUMMY(), DUMMY(), DUMMY()")->eval();
@@ -153,4 +145,3 @@ BOOST_AUTO_TEST_CASE(test_multi_commmand)
     p->create_expr_tree("DUMMY() OR DUMMY() OR DUMMY()")->eval();
     BOOST_CHECK_EQUAL(dummy_false_counter, 3);
 }
-

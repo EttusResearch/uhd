@@ -12,15 +12,15 @@
 
 namespace uhd {
 
-    /* Returns the process ID of the current process */
-    int32_t get_process_id();
+/* Returns the process ID of the current process */
+int32_t get_process_id();
 
-    /* Returns a unique identifier for the current machine */
-    uint32_t get_host_id();
+/* Returns a unique identifier for the current machine */
+uint32_t get_host_id();
 
-    /* Get a unique identifier for the current machine and process */
-    uint32_t get_process_hash();
+/* Get a unique identifier for the current machine and process */
+uint32_t get_process_hash();
 
-} //namespace uhd
+} // namespace uhd
 
 #endif /* INCLUDED_UHD_UTILS_PLATFORM_HPP */

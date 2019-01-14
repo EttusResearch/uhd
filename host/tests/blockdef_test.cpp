@@ -5,30 +5,28 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#include <uhd/rfnoc/blockdef.hpp>
+#include <stdint.h>
+#include <boost/format.hpp>
+#include <boost/test/unit_test.hpp>
 #include <iostream>
 #include <map>
-#include <stdint.h>
-#include <boost/test/unit_test.hpp>
-#include <boost/format.hpp>
-#include <uhd/rfnoc/blockdef.hpp>
 
 using namespace uhd::rfnoc;
 
-BOOST_AUTO_TEST_CASE(test_lookup) {
-    const std::map<uint64_t, std::string> blocknames{
-        {0,                  "NullSrcSink"},
+BOOST_AUTO_TEST_CASE(test_lookup)
+{
+    const std::map<uint64_t, std::string> blocknames{{0, "NullSrcSink"},
         {0xFF70000000000000, "FFT"},
         {0xF112000000000001, "FIR"},
         {0xF1F0000000000000, "FIFO"},
         {0xD053000000000000, "Window"},
-        {0x5CC0000000000000, "SchmidlCox"}
-    };
+        {0x5CC0000000000000, "SchmidlCox"}};
     std::cout << blocknames.size() << std::endl;
 
     for (const auto block : blocknames) {
-        std::cout << "Testing " << block.second
-                  << " => " << str(boost::format("%016X") % block.first)
-                  << std::endl;
+        std::cout << "Testing " << block.second << " => "
+                  << str(boost::format("%016X") % block.first) << std::endl;
         auto block_definition = blockdef::make_from_noc_id(block.first);
         // If the previous function fails, it'll return a NULL pointer
         BOOST_REQUIRE(block_definition);
@@ -37,10 +35,11 @@ BOOST_AUTO_TEST_CASE(test_lookup) {
     }
 }
 
-BOOST_AUTO_TEST_CASE(test_ports) {
+BOOST_AUTO_TEST_CASE(test_ports)
+{
     // Create an FFT:
     blockdef::sptr block_definition = blockdef::make_from_noc_id(0xFF70000000000000);
-    blockdef::ports_t in_ports = block_definition->get_input_ports();
+    blockdef::ports_t in_ports      = block_definition->get_input_ports();
     BOOST_REQUIRE_EQUAL(in_ports.size(), 1);
     BOOST_CHECK_EQUAL(in_ports[0]["name"], "in");
     BOOST_CHECK_EQUAL(in_ports[0]["type"], "sc16");
@@ -57,20 +56,22 @@ BOOST_AUTO_TEST_CASE(test_ports) {
     BOOST_CHECK_EQUAL(block_definition->get_all_port_numbers()[0], 0);
 }
 
-BOOST_AUTO_TEST_CASE(test_args) {
+BOOST_AUTO_TEST_CASE(test_args)
+{
     // Create an FFT:
     blockdef::sptr block_definition = blockdef::make_from_noc_id(0xFF70000000000000);
-    blockdef::args_t args = block_definition->get_args();
+    blockdef::args_t args           = block_definition->get_args();
     BOOST_REQUIRE_EQUAL(args.size(), 7);
     BOOST_CHECK_EQUAL(args[0]["name"], "spp");
     BOOST_CHECK_EQUAL(args[0]["type"], "int");
     BOOST_CHECK_EQUAL(args[0]["value"], "256");
 }
 
-BOOST_AUTO_TEST_CASE(test_regs) {
+BOOST_AUTO_TEST_CASE(test_regs)
+{
     // Create an FFT:
     blockdef::sptr block_definition = blockdef::make_from_noc_id(0xFF70000000000000);
-    blockdef::registers_t sregs = block_definition->get_settings_registers();
+    blockdef::registers_t sregs     = block_definition->get_settings_registers();
     BOOST_REQUIRE_EQUAL(sregs.size(), 6);
     BOOST_CHECK_EQUAL(sregs["FFT_RESET"], 131);
     BOOST_CHECK_EQUAL(sregs["FFT_SIZE_LOG2"], 132);
@@ -80,4 +81,3 @@ BOOST_AUTO_TEST_CASE(test_regs) {
     BOOST_CHECK_EQUAL(user_regs["RB_FFT_RESET"], 0);
     BOOST_CHECK_EQUAL(user_regs["RB_MAGNITUDE_OUT"], 1);
 }
-

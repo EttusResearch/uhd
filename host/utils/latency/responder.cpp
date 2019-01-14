@@ -5,16 +5,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <boost/program_options.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <Responder.hpp>
+#include <boost/program_options.hpp>
 
 namespace po = boost::program_options;
 
 static Responder::Options prog;
 
-po::options_description
-get_program_options_description()
+po::options_description get_program_options_description()
 {
     po::options_description desc("Allowed options");
     // clang-format off
@@ -71,41 +70,40 @@ get_program_options_description()
     return desc;
 }
 
-void
-read_program_options(po::variables_map vm)
+void read_program_options(po::variables_map vm)
 {
     // read out given options
     prog.realtime = (vm.count("no-realtime") == 0);
 
     prog.delay_step = std::abs(prog.delay_step);
-    if (prog.delay_min > prog.delay_max)
-    {
+    if (prog.delay_min > prog.delay_max) {
         prog.delay_step *= -1;
     }
 
-    prog.allow_late_bursts = (vm.count("allow-late") > 0);
+    prog.allow_late_bursts               = (vm.count("allow-late") > 0);
     prog.test_iterations_is_sample_count = (vm.count("test-duration") > 0);
-    prog.invert = ((vm.count("invert") > 0) ? -1.0f : 1.0f);
-    prog.output_value = ((vm.count("invert-output") > 0) ? -1.0f : 1.0f);
-    prog.skip_eob = (vm.count("skip-eob") > 0);
-    prog.no_delay = (vm.count("no-delay") > 0);
-    prog.adjust_simulation_rate = (vm.count("adjust-simulation-rate") > 0);
+    prog.invert                          = ((vm.count("invert") > 0) ? -1.0f : 1.0f);
+    prog.output_value             = ((vm.count("invert-output") > 0) ? -1.0f : 1.0f);
+    prog.skip_eob                 = (vm.count("skip-eob") > 0);
+    prog.no_delay                 = (vm.count("no-delay") > 0);
+    prog.adjust_simulation_rate   = (vm.count("adjust-simulation-rate") > 0);
     prog.optimize_simulation_rate = (vm.count("optimize-simulation-rate") > 0);
-    prog.no_stats_file = (vm.count("no-stats-file") > 0);
-    prog.log_file = (vm.count("log-file") > 0);
-    prog.batch_mode = (vm.count("batch-mode") > 0);
-    prog.skip_if_results_exist = (vm.count("skip-if-exists") > 0);
-    prog.skip_send = (vm.count("disable-send") > 0);
-    prog.combine_eob = (vm.count("combine-eob") > 0);
-    prog.pause = (vm.count("pause") > 0);
-    prog.ignore_simulation_check = vm.count("ignore-simulation-check");
+    prog.no_stats_file            = (vm.count("no-stats-file") > 0);
+    prog.log_file                 = (vm.count("log-file") > 0);
+    prog.batch_mode               = (vm.count("batch-mode") > 0);
+    prog.skip_if_results_exist    = (vm.count("skip-if-exists") > 0);
+    prog.skip_send                = (vm.count("disable-send") > 0);
+    prog.combine_eob              = (vm.count("combine-eob") > 0);
+    prog.pause                    = (vm.count("pause") > 0);
+    prog.ignore_simulation_check  = vm.count("ignore-simulation-check");
 }
 
 /*
  * This is the MAIN function!
  * UHD_SAFE_MAIN catches all errors and prints them to stderr.
  */
-int UHD_SAFE_MAIN(int argc, char *argv[]){
+int UHD_SAFE_MAIN(int argc, char* argv[])
+{
     po::options_description desc = get_program_options_description();
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -113,13 +111,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     read_program_options(vm);
 
     // Print help message instead of executing Responder.
-    if (vm.count("help")){
+    if (vm.count("help")) {
         cout << boost::format("UHD Latency Test %s") % desc;
         return Responder::RETCODE_OK;
     }
 
-    //create a new instance of Responder and run it!
+    // create a new instance of Responder and run it!
     boost::shared_ptr<Responder> my_responder(new Responder(prog));
     return my_responder->run();
 }
-

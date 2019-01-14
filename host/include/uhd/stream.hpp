@@ -9,16 +9,16 @@
 #define INCLUDED_UHD_STREAM_HPP
 
 #include <uhd/config.hpp>
-#include <uhd/types/metadata.hpp>
 #include <uhd/types/device_addr.hpp>
-#include <uhd/types/stream_cmd.hpp>
+#include <uhd/types/metadata.hpp>
 #include <uhd/types/ref_vector.hpp>
-#include <boost/utility.hpp>
+#include <uhd/types/stream_cmd.hpp>
 #include <boost/shared_ptr.hpp>
-#include <vector>
+#include <boost/utility.hpp>
 #include <string>
+#include <vector>
 
-namespace uhd{
+namespace uhd {
 
 /*!
  * A struct of parameters to construct a streamer.
@@ -55,13 +55,11 @@ namespace uhd{
  * stream_args.args["block_port2"] = "1";
  * \endcode
  */
-struct UHD_API stream_args_t{
-
+struct UHD_API stream_args_t
+{
     //! Convenience constructor for streamer args
-    stream_args_t(
-        const std::string &cpu = "",
-        const std::string &otw = ""
-    ){
+    stream_args_t(const std::string& cpu = "", const std::string& otw = "")
+    {
         cpu_format = cpu;
         otw_format = otw;
     }
@@ -95,12 +93,12 @@ struct UHD_API stream_args_t{
      *  - s16 - R16_1 R16_0
      *  - s8 - R8_3 R8_2 R8_1 R8_0
      *
-     * Setting the OTW ("over-the-wire") format is, in theory, transparent to the application,
-     * but changing this can have some side effects. Using less bits for example (e.g. when going
-     * from `otw_format` `sc16` to `sc8`) will reduce the dynamic range, and increases quantization
-     * noise. On the other hand, it reduces the load on the data link and thus allows more bandwidth
-     * (a USRP N210 can work with 25 MHz bandwidth for 16-Bit complex samples, and 50 MHz for 8-Bit
-     * complex samples).
+     * Setting the OTW ("over-the-wire") format is, in theory, transparent to the
+     * application, but changing this can have some side effects. Using less bits for
+     * example (e.g. when going from `otw_format` `sc16` to `sc8`) will reduce the dynamic
+     * range, and increases quantization noise. On the other hand, it reduces the load on
+     * the data link and thus allows more bandwidth (a USRP N210 can work with 25 MHz
+     * bandwidth for 16-Bit complex samples, and 50 MHz for 8-Bit complex samples).
      */
     std::string otw_format;
 
@@ -113,16 +111,17 @@ struct UHD_API stream_args_t{
      * Set the "fullscale" to scale the samples in the host to the
      * expected input range and/or output range of your application.
      *
-     * - peak: specifies a fractional sample level to calculate scaling with the sc8 wire format.
-     * When using sc8 samples over the wire, the device must scale samples
-     * (both on the host and in the device) to satisfy the dynamic range needs.
-     * The peak value specifies a fraction of the maximum sample level (1.0 = 100%).
-     * Set peak to max_sample_level/full_scale_level to ensure optimum dynamic range.
+     * - peak: specifies a fractional sample level to calculate scaling with the sc8 wire
+     * format. When using sc8 samples over the wire, the device must scale samples (both
+     * on the host and in the device) to satisfy the dynamic range needs. The peak value
+     * specifies a fraction of the maximum sample level (1.0 = 100%). Set peak to
+     * max_sample_level/full_scale_level to ensure optimum dynamic range.
      *
      * - underflow_policy: how the TX DSP should recover from underflow.
      * Possible options are "next_burst" or "next_packet".
-     * In the "next_burst" mode, the DSP drops incoming packets until a new burst is started.
-     * In the "next_packet" mode, the DSP starts transmitting again at the next packet.
+     * In the "next_burst" mode, the DSP drops incoming packets until a new burst is
+     * started. In the "next_packet" mode, the DSP starts transmitting again at the next
+     * packet.
      *
      * - spp: (samples per packet) controls the size of RX packets.
      * When not specified, the packets are always maximum frame size.
@@ -150,9 +149,9 @@ struct UHD_API stream_args_t{
      * of `A:0 B:0`. This means the device has two channels available.
      *
      * Setting `stream_args.channels = (0, 1)` therefore configures MIMO streaming
-     * from both channels. By switching the channel indexes, `stream_args.channels = (1, 0)`,
-     * the channels are switched and the first channel of the USRP is mapped to
-     * the second channel in the application.
+     * from both channels. By switching the channel indexes, `stream_args.channels = (1,
+     * 0)`, the channels are switched and the first channel of the USRP is mapped to the
+     * second channel in the application.
      *
      * If only a single channel is used for streaming, `stream_args.channels = (1,)` would
      * only select a single channel (in this case, the second one). When streaming
@@ -167,7 +166,8 @@ struct UHD_API stream_args_t{
  * It represents the layer between the samples on the host
  * and samples inside the device's receive DSP processing.
  */
-class UHD_API rx_streamer : boost::noncopyable{
+class UHD_API rx_streamer : boost::noncopyable
+{
 public:
     typedef boost::shared_ptr<rx_streamer> sptr;
 
@@ -180,7 +180,7 @@ public:
     virtual size_t get_max_num_samps(void) const = 0;
 
     //! Typedef for a pointer to a single, or a collection of recv buffers
-    typedef ref_vector<void *> buffs_type;
+    typedef ref_vector<void*> buffs_type;
 
     /*!
      * Receive buffers containing samples described by the metadata.
@@ -216,13 +216,11 @@ public:
      * \param one_packet return after the first packet is received
      * \return the number of samples received or 0 on error
      */
-    virtual size_t recv(
-        const buffs_type &buffs,
+    virtual size_t recv(const buffs_type& buffs,
         const size_t nsamps_per_buff,
-        rx_metadata_t &metadata,
-        const double timeout = 0.1,
-        const bool one_packet = false
-    ) = 0;
+        rx_metadata_t& metadata,
+        const double timeout  = 0.1,
+        const bool one_packet = false) = 0;
 
     /*!
      * Issue a stream command to the usrp device.
@@ -235,7 +233,7 @@ public:
      *
      * \param stream_cmd the stream command to issue
      */
-    virtual void issue_stream_cmd(const stream_cmd_t &stream_cmd) = 0;
+    virtual void issue_stream_cmd(const stream_cmd_t& stream_cmd) = 0;
 };
 
 /*!
@@ -243,7 +241,8 @@ public:
  * It represents the layer between the samples on the host
  * and samples inside the device's transmit DSP processing.
  */
-class UHD_API tx_streamer : boost::noncopyable{
+class UHD_API tx_streamer : boost::noncopyable
+{
 public:
     typedef boost::shared_ptr<tx_streamer> sptr;
 
@@ -256,7 +255,7 @@ public:
     virtual size_t get_max_num_samps(void) const = 0;
 
     //! Typedef for a pointer to a single, or a collection of send buffers
-    typedef ref_vector<const void *> buffs_type;
+    typedef ref_vector<const void*> buffs_type;
 
     /*!
      * Send buffers containing samples described by the metadata.
@@ -279,12 +278,10 @@ public:
      * \param timeout the timeout in seconds to wait on a packet
      * \return the number of samples sent
      */
-    virtual size_t send(
-        const buffs_type &buffs,
+    virtual size_t send(const buffs_type& buffs,
         const size_t nsamps_per_buff,
-        const tx_metadata_t &metadata,
-        const double timeout = 0.1
-    ) = 0;
+        const tx_metadata_t& metadata,
+        const double timeout = 0.1) = 0;
 
     /*!
      * Receive and asynchronous message from this TX stream.
@@ -293,10 +290,9 @@ public:
      * \return true when the async_metadata is valid, false for timeout
      */
     virtual bool recv_async_msg(
-        async_metadata_t &async_metadata, double timeout = 0.1
-    ) = 0;
+        async_metadata_t& async_metadata, double timeout = 0.1) = 0;
 };
 
-} //namespace uhd
+} // namespace uhd
 
 #endif /* INCLUDED_UHD_STREAM_HPP */

@@ -5,33 +5,34 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhd/utils/thread.hpp>
-#include <uhd/utils/safe_main.hpp>
-#include <uhd/usrp/multi_usrp.hpp>
 #include "ascii_art_dft.hpp" //implementation
-#include <boost/program_options.hpp>
-#include <boost/format.hpp>
+#include <uhd/usrp/multi_usrp.hpp>
+#include <uhd/utils/safe_main.hpp>
+#include <uhd/utils/thread.hpp>
 #include <curses.h>
-#include <iostream>
+#include <boost/format.hpp>
+#include <boost/program_options.hpp>
+#include <chrono>
 #include <complex>
 #include <cstdlib>
-#include <chrono>
+#include <iostream>
 #include <thread>
 
 namespace po = boost::program_options;
 using std::chrono::high_resolution_clock;
 
-int UHD_SAFE_MAIN(int argc, char *argv[]){
+int UHD_SAFE_MAIN(int argc, char* argv[])
+{
     uhd::set_thread_priority_safe();
 
-    //variables to be set by po
+    // variables to be set by po
     std::string args, ant, subdev, ref;
     size_t num_bins;
     double rate, freq, gain, bw, frame_rate, step;
     float ref_lvl, dyn_rng;
     bool show_controls;
 
-    //setup the program options
+    // setup the program options
     po::options_description desc("Allowed options");
     // clang-format off
     desc.add_options()
@@ -59,150 +60,176 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
 
-    //print the help message
-    if (vm.count("help") or not vm.count("rate")){
+    // print the help message
+    if (vm.count("help") or not vm.count("rate")) {
         std::cout << boost::format("UHD RX ASCII Art DFT %s") % desc << std::endl;
         return EXIT_FAILURE;
     }
 
-    //create a usrp device
+    // create a usrp device
     std::cout << std::endl;
-    std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
+    std::cout << boost::format("Creating the usrp device with: %s...") % args
+              << std::endl;
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
 
-    //Lock mboard clocks
+    // Lock mboard clocks
     usrp->set_clock_source(ref);
 
-     //always select the subdevice first, the channel mapping affects the other settings
-    if (vm.count("subdev")) usrp->set_rx_subdev_spec(subdev);
+    // always select the subdevice first, the channel mapping affects the other settings
+    if (vm.count("subdev"))
+        usrp->set_rx_subdev_spec(subdev);
 
     std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
 
-    //set the sample rate
-    if (not vm.count("rate")){
+    // set the sample rate
+    if (not vm.count("rate")) {
         std::cerr << "Please specify the sample rate with --rate" << std::endl;
         return EXIT_FAILURE;
     }
-    std::cout << boost::format("Setting RX Rate: %f Msps...") % (rate/1e6) << std::endl;
+    std::cout << boost::format("Setting RX Rate: %f Msps...") % (rate / 1e6) << std::endl;
     usrp->set_rx_rate(rate);
-    std::cout << boost::format("Actual RX Rate: %f Msps...") % (usrp->get_rx_rate()/1e6) << std::endl << std::endl;
+    std::cout << boost::format("Actual RX Rate: %f Msps...") % (usrp->get_rx_rate() / 1e6)
+              << std::endl
+              << std::endl;
 
-    //set the center frequency
-    if (not vm.count("freq")){
+    // set the center frequency
+    if (not vm.count("freq")) {
         std::cerr << "Please specify the center frequency with --freq" << std::endl;
         return EXIT_FAILURE;
     }
-    std::cout << boost::format("Setting RX Freq: %f MHz...") % (freq/1e6) << std::endl;
+    std::cout << boost::format("Setting RX Freq: %f MHz...") % (freq / 1e6) << std::endl;
     uhd::tune_request_t tune_request(freq);
-    if(vm.count("int-n")) tune_request.args = uhd::device_addr_t("mode_n=integer");
+    if (vm.count("int-n"))
+        tune_request.args = uhd::device_addr_t("mode_n=integer");
     usrp->set_rx_freq(tune_request);
-    std::cout << boost::format("Actual RX Freq: %f MHz...") % (usrp->get_rx_freq()/1e6) << std::endl << std::endl;
+    std::cout << boost::format("Actual RX Freq: %f MHz...") % (usrp->get_rx_freq() / 1e6)
+              << std::endl
+              << std::endl;
 
-    //set the rf gain
-    if (vm.count("gain")){
+    // set the rf gain
+    if (vm.count("gain")) {
         std::cout << boost::format("Setting RX Gain: %f dB...") % gain << std::endl;
         usrp->set_rx_gain(gain);
-        std::cout << boost::format("Actual RX Gain: %f dB...") % usrp->get_rx_gain() << std::endl << std::endl;
+        std::cout << boost::format("Actual RX Gain: %f dB...") % usrp->get_rx_gain()
+                  << std::endl
+                  << std::endl;
     } else {
         gain = usrp->get_rx_gain();
     }
 
-    //set the analog frontend filter bandwidth
-    if (vm.count("bw")){
-        std::cout << boost::format("Setting RX Bandwidth: %f MHz...") % (bw/1e6) << std::endl;
+    // set the analog frontend filter bandwidth
+    if (vm.count("bw")) {
+        std::cout << boost::format("Setting RX Bandwidth: %f MHz...") % (bw / 1e6)
+                  << std::endl;
         usrp->set_rx_bandwidth(bw);
-        std::cout << boost::format("Actual RX Bandwidth: %f MHz...") % (usrp->get_rx_bandwidth()/1e6) << std::endl << std::endl;
+        std::cout << boost::format("Actual RX Bandwidth: %f MHz...")
+                         % (usrp->get_rx_bandwidth() / 1e6)
+                  << std::endl
+                  << std::endl;
     } else {
         bw = usrp->get_rx_bandwidth();
     }
 
-    //set the antenna
-    if (vm.count("ant")) usrp->set_rx_antenna(ant);
+    // set the antenna
+    if (vm.count("ant"))
+        usrp->set_rx_antenna(ant);
 
-    std::this_thread::sleep_for(std::chrono::seconds(1)); //allow for some setup time
+    std::this_thread::sleep_for(std::chrono::seconds(1)); // allow for some setup time
 
-    //Check Ref and LO Lock detect
+    // Check Ref and LO Lock detect
     std::vector<std::string> sensor_names;
     sensor_names = usrp->get_rx_sensor_names(0);
-    if (std::find(sensor_names.begin(), sensor_names.end(), "lo_locked") != sensor_names.end()) {
-        uhd::sensor_value_t lo_locked = usrp->get_rx_sensor("lo_locked",0);
-        std::cout << boost::format("Checking RX: %s ...") % lo_locked.to_pp_string() << std::endl;
+    if (std::find(sensor_names.begin(), sensor_names.end(), "lo_locked")
+        != sensor_names.end()) {
+        uhd::sensor_value_t lo_locked = usrp->get_rx_sensor("lo_locked", 0);
+        std::cout << boost::format("Checking RX: %s ...") % lo_locked.to_pp_string()
+                  << std::endl;
         UHD_ASSERT_THROW(lo_locked.to_bool());
     }
     sensor_names = usrp->get_mboard_sensor_names(0);
-    if ((ref == "mimo") and (std::find(sensor_names.begin(), sensor_names.end(), "mimo_locked") != sensor_names.end())) {
-        uhd::sensor_value_t mimo_locked = usrp->get_mboard_sensor("mimo_locked",0);
-        std::cout << boost::format("Checking RX: %s ...") % mimo_locked.to_pp_string() << std::endl;
+    if ((ref == "mimo")
+        and (std::find(sensor_names.begin(), sensor_names.end(), "mimo_locked")
+                != sensor_names.end())) {
+        uhd::sensor_value_t mimo_locked = usrp->get_mboard_sensor("mimo_locked", 0);
+        std::cout << boost::format("Checking RX: %s ...") % mimo_locked.to_pp_string()
+                  << std::endl;
         UHD_ASSERT_THROW(mimo_locked.to_bool());
     }
-    if ((ref == "external") and (std::find(sensor_names.begin(), sensor_names.end(), "ref_locked") != sensor_names.end())) {
-        uhd::sensor_value_t ref_locked = usrp->get_mboard_sensor("ref_locked",0);
-        std::cout << boost::format("Checking RX: %s ...") % ref_locked.to_pp_string() << std::endl;
+    if ((ref == "external")
+        and (std::find(sensor_names.begin(), sensor_names.end(), "ref_locked")
+                != sensor_names.end())) {
+        uhd::sensor_value_t ref_locked = usrp->get_mboard_sensor("ref_locked", 0);
+        std::cout << boost::format("Checking RX: %s ...") % ref_locked.to_pp_string()
+                  << std::endl;
         UHD_ASSERT_THROW(ref_locked.to_bool());
     }
 
-    //create a receive streamer
-    uhd::stream_args_t stream_args("fc32"); //complex floats
+    // create a receive streamer
+    uhd::stream_args_t stream_args("fc32"); // complex floats
     uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
 
-    //allocate recv buffer and metatdata
+    // allocate recv buffer and metatdata
     uhd::rx_metadata_t md;
-    std::vector<std::complex<float> > buff(num_bins);
+    std::vector<std::complex<float>> buff(num_bins);
     //------------------------------------------------------------------
     //-- Initialize
     //------------------------------------------------------------------
-    initscr(); //curses init
+    initscr(); // curses init
     rx_stream->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     auto next_refresh = high_resolution_clock::now();
 
     //------------------------------------------------------------------
     //-- Main loop
     //------------------------------------------------------------------
-    while (true){
-        //read a buffer's worth of samples every iteration
-        size_t num_rx_samps = rx_stream->recv(
-            &buff.front(), buff.size(), md
-        );
-        if (num_rx_samps != buff.size()) continue;
+    while (true) {
+        // read a buffer's worth of samples every iteration
+        size_t num_rx_samps = rx_stream->recv(&buff.front(), buff.size(), md);
+        if (num_rx_samps != buff.size())
+            continue;
 
-        //check and update the display refresh condition
+        // check and update the display refresh condition
         if (high_resolution_clock::now() < next_refresh) {
             continue;
         }
-        next_refresh =
-            high_resolution_clock::now()
-            + std::chrono::microseconds(int64_t(1e6/frame_rate));
+        next_refresh = high_resolution_clock::now()
+                       + std::chrono::microseconds(int64_t(1e6 / frame_rate));
 
-        //calculate the dft and create the ascii art frame
+        // calculate the dft and create the ascii art frame
         ascii_art_dft::log_pwr_dft_type lpdft(
-            ascii_art_dft::log_pwr_dft(&buff.front(), num_rx_samps)
-        );
-        std::string frame = ascii_art_dft::dft_to_plot(
-            lpdft, COLS, (show_controls ? LINES-6 : LINES),
+            ascii_art_dft::log_pwr_dft(&buff.front(), num_rx_samps));
+        std::string frame = ascii_art_dft::dft_to_plot(lpdft,
+            COLS,
+            (show_controls ? LINES - 6 : LINES),
             usrp->get_rx_rate(),
             usrp->get_rx_freq(),
-            dyn_rng, ref_lvl
-        );
+            dyn_rng,
+            ref_lvl);
 
         std::string border = std::string((COLS), '-');
 
-        //curses screen handling: clear and print frame
+        // curses screen handling: clear and print frame
         clear();
 
         if (show_controls) {
             printw("%s", border.c_str());
             printw("[f-F]req: %4.3f MHz   |   [r-R]ate: %2.2f Msps   |"
                    "   [b-B]w: %2.2f MHz   |   [g-G]ain: %2.0f dB\n\n",
-                   freq/1e6, rate/1e6, bw/1e6, gain);
+                freq / 1e6,
+                rate / 1e6,
+                bw / 1e6,
+                gain);
             printw("[d-D]yn Range: %2.0f dB    |   Ref [l-L]evel: %2.0f dB   |"
                    "   fp[s-S] : %2.0f   |   [t-T]uning step: %3.3f M\n",
-                   dyn_rng, ref_lvl, frame_rate, step/1e6);
+                dyn_rng,
+                ref_lvl,
+                frame_rate,
+                step / 1e6);
             printw("(press c to toggle controls)\n");
             printw("%s", border.c_str());
         }
         printw("%s", frame.c_str());
 
-        //curses key handling: no timeout, any key to exit
+        // curses key handling: no timeout, any key to exit
         timeout(0);
         int ch = getch();
 
@@ -255,33 +282,35 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             freq = usrp->get_rx_freq();
         }
 
-        else if (ch == 'l') ref_lvl -= 10;
-        else if (ch == 'L') ref_lvl += 10;
-        else if (ch == 'd') dyn_rng -= 10;
-        else if (ch == 'D') dyn_rng += 10;
+        else if (ch == 'l')
+            ref_lvl -= 10;
+        else if (ch == 'L')
+            ref_lvl += 10;
+        else if (ch == 'd')
+            dyn_rng -= 10;
+        else if (ch == 'D')
+            dyn_rng += 10;
         else if (ch == 's') {
             if (frame_rate > 1) {
                 frame_rate -= 1;
             }
-        }
-        else if (ch == 'S') {
+        } else if (ch == 'S') {
             frame_rate += 1;
-        }
-        else if (ch == 't') {
+        } else if (ch == 't') {
             if (step > 1) {
                 step /= 2;
             }
-        }
-        else if (ch == 'T') step *= 2;
+        } else if (ch == 'T')
+            step *= 2;
         else if (ch == 'c' || ch == 'C') {
             show_controls = !show_controls;
         }
-        
+
         // Arrow keypress generates 3 characters:
         // '\033', '[', 'A'/'B'/'C'/'D' for Up / Down / Right / Left
         else if (ch == '\033') {
             getch();
-            switch(getch()) {
+            switch (getch()) {
                 case 'A':
                 case 'C':
                     freq += step;
@@ -296,17 +325,17 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
                     freq = usrp->get_rx_freq();
                     break;
             }
-        }
-        else if (ch != KEY_RESIZE and ch != ERR) break;
+        } else if (ch != KEY_RESIZE and ch != ERR)
+            break;
     }
 
     //------------------------------------------------------------------
     //-- Cleanup
     //------------------------------------------------------------------
     rx_stream->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
-    endwin(); //curses done
+    endwin(); // curses done
 
-    //finished
+    // finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;
 
     return EXIT_SUCCESS;

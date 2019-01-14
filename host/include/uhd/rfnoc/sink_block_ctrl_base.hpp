@@ -11,8 +11,7 @@
 #include <uhd/rfnoc/block_ctrl_base.hpp>
 #include <uhd/rfnoc/sink_node_ctrl.hpp>
 
-namespace uhd {
-    namespace rfnoc {
+namespace uhd { namespace rfnoc {
 
 /*! \brief Extends block_ctrl_base with input capabilities.
  *
@@ -41,7 +40,7 @@ public:
      * \returns The stream signature for port \p block_port
      * \throws uhd::runtime_error if \p block_port is not a valid port
      */
-    stream_sig_t get_input_signature(size_t block_port=0) const;
+    stream_sig_t get_input_signature(size_t block_port = 0) const;
 
     /*! Return a list of valid input ports.
      */
@@ -62,7 +61,7 @@ public:
      *
      * Returns the size of the buffer in bytes.
      */
-    size_t get_fifo_size(size_t block_port=0) const;
+    size_t get_fifo_size(size_t block_port = 0) const;
 
     /*! Configure flow control for incoming streams.
      *
@@ -77,21 +76,18 @@ public:
      *
      * \param bytes Send an ACK after this many bytes have been consumed.
      *              Setting this to zero disables flow control acknowledgement.
-     * \param block_port Set up flow control for a stream coming in on this particular block port.
+     * \param block_port Set up flow control for a stream coming in on this particular
+     * block port.
      */
     virtual void configure_flow_control_in(
-            const size_t bytes,
-            const size_t block_port=0
-    );
+        const size_t bytes, const size_t block_port = 0);
 
     /*! Configure the behaviour for errors on incoming packets
      *  (e.g. sequence errors).
      *
      *
      */
-    virtual void set_error_policy(
-        const std::string &policy
-    );
+    virtual void set_error_policy(const std::string& policy);
 
 protected:
     /***********************************************************************
@@ -101,9 +97,7 @@ protected:
      * the port has an input signature.
      */
     virtual size_t _request_input_port(
-            const size_t suggested_port,
-            const uhd::device_addr_t &args
-    ) const;
+        const size_t suggested_port, const uhd::device_addr_t& args) const;
 
 }; /* class sink_block_ctrl_base */
 

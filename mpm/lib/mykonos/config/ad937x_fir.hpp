@@ -15,11 +15,12 @@ class ad937x_fir
 {
     std::vector<int16_t> _fir_coefficients;
     mykonosFir_t _fir;
+
 public:
     mykonosFir_t* const fir = &_fir;
     ad937x_fir();
     ad937x_fir(int8_t gain, const std::vector<int16_t>& coefficients);
 
     void set_fir(int8_t gain, const std::vector<int16_t>& coefficients);
-    std::vector<int16_t> get_fir(int8_t &gain) const;
+    std::vector<int16_t> get_fir(int8_t& gain) const;
 };

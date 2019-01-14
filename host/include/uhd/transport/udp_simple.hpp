@@ -11,19 +11,21 @@
 #include <uhd/config.hpp>
 #include <uhd/types/serial.hpp>
 #include <boost/asio/buffer.hpp>
-#include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/utility.hpp>
 
-namespace uhd{ namespace transport{
+namespace uhd { namespace transport {
 
-class UHD_API udp_simple : boost::noncopyable{
+class UHD_API udp_simple : boost::noncopyable
+{
 public:
     typedef boost::shared_ptr<udp_simple> sptr;
 
     virtual ~udp_simple(void) = 0;
 
     //! The maximum number of bytes per udp packet.
-    static const size_t mtu = 1500 - 20 - 8; //default ipv4 mtu - ipv4 header - udp header
+    static const size_t mtu = 1500 - 20 - 8; // default ipv4 mtu - ipv4 header - udp
+                                             // header
 
     /*!
      * Make a new connected udp transport:
@@ -38,7 +40,7 @@ public:
      * \param addr a string representing the destination address
      * \param port a string representing the destination port
      */
-    static sptr make_connected(const std::string &addr, const std::string &port);
+    static sptr make_connected(const std::string& addr, const std::string& port);
 
     /*!
      * Make a new broadcasting udp transport:
@@ -52,7 +54,7 @@ public:
      * \param addr a string representing the destination address
      * \param port a string representing the destination port
      */
-    static sptr make_broadcast(const std::string &addr, const std::string &port);
+    static sptr make_broadcast(const std::string& addr, const std::string& port);
 
     /*!
      * Make a UART interface from a UDP transport.
@@ -67,7 +69,7 @@ public:
      * \param buff single asio buffer
      * \return the number of bytes sent
      */
-    virtual size_t send(const boost::asio::const_buffer &buff) = 0;
+    virtual size_t send(const boost::asio::const_buffer& buff) = 0;
 
     /*!
      * Receive into the provided buffer.
@@ -76,7 +78,8 @@ public:
      * \param timeout the timeout in seconds
      * \return the number of bytes received or zero on timeout
      */
-    virtual size_t recv(const boost::asio::mutable_buffer &buff, double timeout = 0.1) = 0;
+    virtual size_t recv(
+        const boost::asio::mutable_buffer& buff, double timeout = 0.1) = 0;
 
     /*!
      * Get the last IP address as seen by recv().
@@ -90,6 +93,6 @@ public:
     virtual std::string get_send_addr(void) = 0;
 };
 
-}} //namespace
+}} // namespace uhd::transport
 
 #endif /* INCLUDED_UHD_TRANSPORT_UDP_SIMPLE_HPP */

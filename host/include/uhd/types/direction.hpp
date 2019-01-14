@@ -10,15 +10,15 @@
 
 namespace uhd {
 
-    enum direction_t {
-        //! Receive
-        RX_DIRECTION,
-        //! Transmit
-        TX_DIRECTION,
-        //! Duplex
-        DX_DIRECTION
-    };
+enum direction_t {
+    //! Receive
+    RX_DIRECTION,
+    //! Transmit
+    TX_DIRECTION,
+    //! Duplex
+    DX_DIRECTION
+};
 
-} //namespace uhd
+} // namespace uhd
 
 #endif /* INCLUDED_UHD_TYPES_DIRECTION_HPP */

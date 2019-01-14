@@ -8,31 +8,29 @@
 #ifndef INCLUDED_LIBUHD_RFNOC_RADIO_CTRL_HPP
 #define INCLUDED_LIBUHD_RFNOC_RADIO_CTRL_HPP
 
-#include <uhd/types/ranges.hpp>
-#include <uhd/types/direction.hpp>
-#include <uhd/rfnoc/source_block_ctrl_base.hpp>
-#include <uhd/rfnoc/sink_block_ctrl_base.hpp>
 #include <uhd/rfnoc/rate_node_ctrl.hpp>
-#include <uhd/rfnoc/tick_node_ctrl.hpp>
 #include <uhd/rfnoc/scalar_node_ctrl.hpp>
+#include <uhd/rfnoc/sink_block_ctrl_base.hpp>
+#include <uhd/rfnoc/source_block_ctrl_base.hpp>
 #include <uhd/rfnoc/terminator_node_ctrl.hpp>
+#include <uhd/rfnoc/tick_node_ctrl.hpp>
+#include <uhd/types/direction.hpp>
+#include <uhd/types/ranges.hpp>
 
-namespace uhd {
-    namespace rfnoc {
+namespace uhd { namespace rfnoc {
 
 /*! \brief Block controller for all RFNoC-based radio blocks
  */
-class UHD_RFNOC_API radio_ctrl :
-    public source_block_ctrl_base,
-    public sink_block_ctrl_base,
-    public rate_node_ctrl,
-    public tick_node_ctrl,
-    public terminator_node_ctrl
+class UHD_RFNOC_API radio_ctrl : public source_block_ctrl_base,
+                                 public sink_block_ctrl_base,
+                                 public rate_node_ctrl,
+                                 public tick_node_ctrl,
+                                 public terminator_node_ctrl
 {
 public:
     UHD_RFNOC_BLOCK_OBJECT(radio_ctrl)
 
-    virtual ~radio_ctrl(){}
+    virtual ~radio_ctrl() {}
 
 
     //! A wildcard channel index
@@ -69,7 +67,7 @@ public:
      *
      * \throws uhd::value_error if \p ant is not a valid value.
      */
-    virtual void set_tx_antenna(const std::string &ant, const size_t chan) = 0;
+    virtual void set_tx_antenna(const std::string& ant, const size_t chan) = 0;
 
     /*! Return the selected RX antenna for channel \p chan.
      *
@@ -81,7 +79,7 @@ public:
      *
      * \throws uhd::value_error if \p ant is not a valid value.
      */
-    virtual void set_rx_antenna(const std::string &ant, const size_t chan) = 0;
+    virtual void set_rx_antenna(const std::string& ant, const size_t chan) = 0;
 
     /*! Return the current transmit LO frequency on channel \p chan.
      *
@@ -163,10 +161,7 @@ public:
      *
      * \return The actual bandwidth value
      */
-    virtual double set_tx_bandwidth(
-        const double bandwidth,
-        const size_t chan
-    ) = 0;
+    virtual double set_tx_bandwidth(const double bandwidth, const size_t chan) = 0;
 
     /*! Return the analog filter bandwidth channel \p chan
      *
@@ -189,7 +184,7 @@ public:
      * time in alignment with a certain reference time, use
      * set_time_next_pps().
      */
-    virtual void set_time_now(const time_spec_t &time_spec) = 0;
+    virtual void set_time_now(const time_spec_t& time_spec) = 0;
 
     /*! Set the time registers at the next pps tick.
      *
@@ -202,7 +197,7 @@ public:
      *
      * \param time_spec the time to latch into the timekeeper
      */
-    virtual void set_time_next_pps(const time_spec_t &time_spec) = 0;
+    virtual void set_time_next_pps(const time_spec_t& time_spec) = 0;
 
     /*! Get the current time in the timekeeper registers.
      *
@@ -241,12 +236,10 @@ public:
      * \param value the new value for this GPIO bank
      * \param mask the bit mask to effect which pins are changed
      */
-    virtual void set_gpio_attr(
-            const std::string &bank,
-            const std::string &attr,
-            const uint32_t value,
-            const uint32_t mask
-    ) = 0;
+    virtual void set_gpio_attr(const std::string& bank,
+        const std::string& attr,
+        const uint32_t value,
+        const uint32_t mask) = 0;
 
     /*!
      * Get a GPIO attribute on a particular GPIO bank.
@@ -263,7 +256,7 @@ public:
      * \param attr the name of a GPIO attribute
      * \return the value set for this attribute
      */
-    virtual uint32_t get_gpio_attr(const std::string &bank, const std::string &attr) = 0;
+    virtual uint32_t get_gpio_attr(const std::string& bank, const std::string& attr) = 0;
 
     /**************************************************************************
      * LO Controls
@@ -283,7 +276,8 @@ public:
      * \param chan the channel index 0 to N-1
      * \return a vector of strings for possible settings
      */
-    virtual std::vector<std::string> get_rx_lo_sources(const std::string &name, const size_t chan) = 0;
+    virtual std::vector<std::string> get_rx_lo_sources(
+        const std::string& name, const size_t chan) = 0;
 
     /*!
      * Get the LO frequency range of the RX LO.
@@ -293,7 +287,8 @@ public:
      * \param chan the channel index 0 to N-1
      * \return a frequency range object
      */
-    virtual freq_range_t get_rx_lo_freq_range(const std::string &name, const size_t chan) = 0;
+    virtual freq_range_t get_rx_lo_freq_range(
+        const std::string& name, const size_t chan) = 0;
 
     /*!
      * Set the LO source for a channel.
@@ -304,7 +299,8 @@ public:
      * \param name the name of the LO stage to update
      * \param chan the channel index 0 to N-1
      */
-    virtual void set_rx_lo_source(const std::string &src, const std::string &name, const size_t chan) = 0;
+    virtual void set_rx_lo_source(
+        const std::string& src, const std::string& name, const size_t chan) = 0;
 
     /*!
      * Get the currently set LO source.
@@ -314,7 +310,8 @@ public:
      * \param chan the channel index 0 to N-1
      * \return the configured LO source
      */
-    virtual const std::string get_rx_lo_source(const std::string &name, const size_t chan) = 0;
+    virtual const std::string get_rx_lo_source(
+        const std::string& name, const size_t chan) = 0;
 
     /*!
      * Set whether the LO used by the usrp device is exported
@@ -324,14 +321,15 @@ public:
      * \param name the name of the LO stage to update
      * \param chan the channel index 0 to N-1 for the source channel
      */
-    virtual void set_rx_lo_export_enabled(bool enabled, const std::string &name, const size_t chan) = 0;
+    virtual void set_rx_lo_export_enabled(
+        bool enabled, const std::string& name, const size_t chan) = 0;
 
     /*!
      * Returns true if the currently selected LO is being exported.
      * \param name the name of the LO stage to query
      * \param chan the channel index 0 to N-1
      */
-    virtual bool get_rx_lo_export_enabled(const std::string &name, const size_t chan) = 0;
+    virtual bool get_rx_lo_export_enabled(const std::string& name, const size_t chan) = 0;
 
     /*!
      * Set the RX LO frequency (Advanced).
@@ -340,7 +338,8 @@ public:
      * \param chan the channel index 0 to N-1
      * \return a coerced LO frequency
      */
-    virtual double set_rx_lo_freq(double freq, const std::string &name, const size_t chan) = 0;
+    virtual double set_rx_lo_freq(
+        double freq, const std::string& name, const size_t chan) = 0;
 
     /*!
      * Get the current RX LO frequency (Advanced).
@@ -350,7 +349,7 @@ public:
      * \param chan the channel index 0 to N-1
      * \return the configured LO frequency
      */
-    virtual double get_rx_lo_freq(const std::string &name, const size_t chan) = 0;
+    virtual double get_rx_lo_freq(const std::string& name, const size_t chan) = 0;
 
     /*! Get a list of possible LO stage names
      *
@@ -368,9 +367,7 @@ public:
      * \return a vector of strings for possible settings
      */
     virtual std::vector<std::string> get_tx_lo_sources(
-            const std::string &name,
-            const size_t chan
-    ) = 0;
+        const std::string& name, const size_t chan) = 0;
 
     /*!
      * Get the LO frequency range of the tx LO.
@@ -381,9 +378,7 @@ public:
      * \return a frequency range object
      */
     virtual freq_range_t get_tx_lo_freq_range(
-            const std::string &name,
-            const size_t chan
-    ) = 0;
+        const std::string& name, const size_t chan) = 0;
 
     /*!
      * Set the LO source for a channel.
@@ -395,10 +390,7 @@ public:
      * \param chan the channel index 0 to N-1
      */
     virtual void set_tx_lo_source(
-            const std::string &src,
-            const std::string &name,
-            const size_t chan
-    ) = 0;
+        const std::string& src, const std::string& name, const size_t chan) = 0;
 
     /*!
      * Get the currently set LO source.
@@ -409,9 +401,7 @@ public:
      * \return the configured LO source
      */
     virtual const std::string get_tx_lo_source(
-            const std::string &name,
-            const size_t chan
-    ) = 0;
+        const std::string& name, const size_t chan) = 0;
 
     /*!
      * Set whether the LO used by the usrp device is exported
@@ -422,20 +412,14 @@ public:
      * \param chan the channel index 0 to N-1 for the source channel
      */
     virtual void set_tx_lo_export_enabled(
-            const bool enabled,
-            const std::string &name,
-            const size_t chan
-    ) = 0;
+        const bool enabled, const std::string& name, const size_t chan) = 0;
 
     /*!
      * Returns true if the currently selected LO is being exported.
      * \param name the name of the LO stage to query
      * \param chan the channel index 0 to N-1
      */
-    virtual bool get_tx_lo_export_enabled(
-            const std::string &name,
-            const size_t chan
-    ) = 0;
+    virtual bool get_tx_lo_export_enabled(const std::string& name, const size_t chan) = 0;
 
     /*!  Set the tx LO frequency (Advanced).
      *
@@ -447,10 +431,7 @@ public:
      * \return a coerced LO frequency
      */
     virtual double set_tx_lo_freq(
-            const double freq,
-            const std::string &name,
-            const size_t chan
-    ) = 0;
+        const double freq, const std::string& name, const size_t chan) = 0;
 
     /*!  Get the current TX LO frequency (Advanced).
      *
@@ -463,16 +444,13 @@ public:
      * \param chan the channel index 0 to N-1
      * \return the configured LO frequency
      */
-    virtual double get_tx_lo_freq(
-            const std::string &name,
-            const size_t chan
-    ) = 0;
+    virtual double get_tx_lo_freq(const std::string& name, const size_t chan) = 0;
 
     /**************************************************************************
      * Time and clock control
      *************************************************************************/
 
-    /*! 
+    /*!
      * Set the time source for this radio.
      *
      * May affect other radio blocks.
@@ -480,7 +458,7 @@ public:
      * \param source A string representing the time source
      * \throws uhd::value_error if the value can't be applied
      */
-    virtual void set_time_source(const std::string &source) = 0;
+    virtual void set_time_source(const std::string& source) = 0;
 
     /*!
      * Get the currently set time source.
@@ -503,7 +481,7 @@ public:
      *
      * \param source a string representing the clock source
      */
-    virtual void set_clock_source(const std::string &source) = 0;
+    virtual void set_clock_source(const std::string& source) = 0;
 
     /*!
      * Get the currently set clock source.
@@ -525,11 +503,13 @@ public:
      * map to channels 0 and 1 respectively. A BasicRX boards has alphabetical
      * frontends (A, B) which map to channels differently.
      */
-    virtual size_t get_chan_from_dboard_fe(const std::string &fe, const uhd::direction_t dir) = 0;
+    virtual size_t get_chan_from_dboard_fe(
+        const std::string& fe, const uhd::direction_t dir) = 0;
 
     /*! The inverse function to get_chan_from_dboard_fe()
      */
-    virtual std::string get_dboard_fe_from_chan(const size_t chan, const uhd::direction_t dir) = 0;
+    virtual std::string get_dboard_fe_from_chan(
+        const size_t chan, const uhd::direction_t dir) = 0;
 
     /*! Enable or disable the setting of timestamps on Rx.
      */

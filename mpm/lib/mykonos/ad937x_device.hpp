@@ -6,29 +6,27 @@
 
 #pragma once
 
+#include "ad937x_device_types.hpp"
+#include "adi/mykonos_debug/t_mykonos_dbgjesd.h"
+#include "adi/t_mykonos.h"
+#include "adi/t_mykonos_gpio.h"
 #include "config/ad937x_config_t.hpp"
 #include "config/ad937x_fir.hpp"
 #include "config/ad937x_gain_ctrl_config.hpp"
-#include "mpm/ad937x/adi_ctrl.hpp"
-#include "ad937x_device_types.hpp"
 #include "mpm/ad937x/ad937x_ctrl_types.hpp"
-#include "adi/t_mykonos.h"
-#include "adi/t_mykonos_gpio.h"
-#include "adi/mykonos_debug/t_mykonos_dbgjesd.h"
-
-#include <mpm/spi/spi_iface.hpp>
+#include "mpm/ad937x/adi_ctrl.hpp"
 #include <mpm/exception.hpp>
-#include <boost/noncopyable.hpp>
+#include <mpm/spi/spi_iface.hpp>
 #include <boost/filesystem.hpp>
-#include <memory>
+#include <boost/noncopyable.hpp>
 #include <functional>
+#include <memory>
 
 class ad937x_device : public boost::noncopyable
 {
 public:
     enum class gain_mode_t { MANUAL, AUTOMATIC, HYBRID };
-    enum pll_t : uint8_t
-    {
+    enum pll_t : uint8_t {
         CLK_SYNTH   = 0x01,
         RX_SYNTH    = 0x02,
         TX_SYNTH    = 0x04,
@@ -36,30 +34,18 @@ public:
         CALPLL_SDM  = 0x10,
     };
 
-    enum mcr_t
-    {
-        MCR_122_88MHZ,
-        MCR_125_00MHZ,
-        MCR_153_60MHZ
-    };
+    enum mcr_t { MCR_122_88MHZ, MCR_125_00MHZ, MCR_153_60MHZ };
 
-    ad937x_device(
-        mpm::types::regs_iface* iface,
+    ad937x_device(mpm::types::regs_iface* iface,
         const size_t deserializer_lane_xbar,
-        mpm::ad937x::gpio::gain_pins_t gain_pins
-    );
+        mpm::ad937x::gpio::gain_pins_t gain_pins);
 
     void begin_initialization();
     void finish_initialization();
-    void setup_cal(
-            const uint32_t init_cals_mask,
-            const uint32_t tracking_cals_mask,
-            const uint32_t timeout
-    );
-    uint8_t set_lo_source(
-            const uhd::direction_t direction,
-            const uint8_t pll_source
-    );
+    void setup_cal(const uint32_t init_cals_mask,
+        const uint32_t tracking_cals_mask,
+        const uint32_t timeout);
+    uint8_t set_lo_source(const uhd::direction_t direction, const uint8_t pll_source);
     uint8_t get_lo_source(const uhd::direction_t direction) const;
     void start_jesd_rx();
     void start_jesd_tx();
@@ -77,66 +63,38 @@ public:
     mpm::ad937x::device::api_version_t get_api_version();
     mpm::ad937x::device::arm_version_t get_arm_version();
 
-    double set_bw_filter(
-            const uhd::direction_t direction,
-            const double value
-    );
-    void set_agc_mode(
-            const uhd::direction_t direction,
-            const gain_mode_t mode
-    );
+    double set_bw_filter(const uhd::direction_t direction, const double value);
+    void set_agc_mode(const uhd::direction_t direction, const gain_mode_t mode);
     double set_clock_rate(const double value);
-    void enable_channel(
-            const uhd::direction_t direction,
-            const mpm::ad937x::device::chain_t chain,
-            const bool enable
-    );
+    void enable_channel(const uhd::direction_t direction,
+        const mpm::ad937x::device::chain_t chain,
+        const bool enable);
 
-    double set_gain(
-            const uhd::direction_t direction,
-            const mpm::ad937x::device::chain_t chain,
-            const double value
-    );
+    double set_gain(const uhd::direction_t direction,
+        const mpm::ad937x::device::chain_t chain,
+        const double value);
     double get_gain(
-            const uhd::direction_t direction,
-            const mpm::ad937x::device::chain_t chain
-    );
+        const uhd::direction_t direction, const mpm::ad937x::device::chain_t chain);
 
     double tune(
-            const uhd::direction_t direction,
-            const double value,
-            const bool wait_for_lock
-    );
+        const uhd::direction_t direction, const double value, const bool wait_for_lock);
     double get_freq(const uhd::direction_t direction);
 
-    bool get_pll_lock_status(
-            const uint8_t pll,
-            const bool wait_for_lock=false
-    );
+    bool get_pll_lock_status(const uint8_t pll, const bool wait_for_lock = false);
 
     void set_fir(
-            const uhd::direction_t direction,
-            int8_t gain,
-            const std::vector<int16_t>& fir
-    );
-    std::vector<int16_t> get_fir(
-            const uhd::direction_t direction,
-            int8_t &gain
-    );
+        const uhd::direction_t direction, int8_t gain, const std::vector<int16_t>& fir);
+    std::vector<int16_t> get_fir(const uhd::direction_t direction, int8_t& gain);
 
     int16_t get_temperature();
 
-    void set_enable_gain_pins(
-            const uhd::direction_t direction,
-            const mpm::ad937x::device::chain_t chain,
-            const bool enable
-    );
-    void set_gain_pin_step_sizes(
-            const uhd::direction_t direction,
-            const mpm::ad937x::device::chain_t chain,
-            const double inc_step,
-            const double dec_step
-    );
+    void set_enable_gain_pins(const uhd::direction_t direction,
+        const mpm::ad937x::device::chain_t chain,
+        const bool enable);
+    void set_gain_pin_step_sizes(const uhd::direction_t direction,
+        const mpm::ad937x::device::chain_t chain,
+        const double inc_step,
+        const double dec_step);
     void update_rx_lo_source(uint8_t rxPllUseExternalLo);
     void update_tx_lo_source(uint8_t rxPllUseExternalLo);
     uint8_t get_rx_lo_source();
@@ -160,9 +118,7 @@ private:
     ad937x_gain_ctrl_config_t gain_ctrl;
 
     void _apply_gain_pins(
-            const uhd::direction_t direction,
-            mpm::ad937x::device::chain_t chain
-    );
+        const uhd::direction_t direction, mpm::ad937x::device::chain_t chain);
     void _setup_rf();
     void _call_api_function(const std::function<mykonosErr_t()>& func);
     void _call_gpio_api_function(const std::function<mykonosGpioErr_t()>& func);

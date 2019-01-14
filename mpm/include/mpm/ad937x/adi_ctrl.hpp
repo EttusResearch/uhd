@@ -11,8 +11,9 @@
 
 struct ad9371_spiSettings_t
 {
-    static ad9371_spiSettings_t* make(spiSettings_t *sps) {
-        return reinterpret_cast<ad9371_spiSettings_t *>(sps);
+    static ad9371_spiSettings_t* make(spiSettings_t* sps)
+    {
+        return reinterpret_cast<ad9371_spiSettings_t*>(sps);
     }
 
     explicit ad9371_spiSettings_t(mpm::types::regs_iface*);
@@ -25,9 +26,7 @@ struct ad9371_spiSettings_t
     std::chrono::microseconds timeout_duration;
 };
 
-enum ad9371_spi_errors_t : uint32_t
-{
+enum ad9371_spi_errors_t : uint32_t {
     SPI_READ_ERROR  = 4096,
     SPI_WRITE_ERROR = 4097,
 };
-

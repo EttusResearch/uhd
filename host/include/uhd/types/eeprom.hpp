@@ -13,7 +13,7 @@
 
 namespace uhd {
 
-    typedef std::map<std::string, std::vector<uint8_t>> eeprom_map_t;
+typedef std::map<std::string, std::vector<uint8_t> > eeprom_map_t;
 
 } /* namespace uhd */
 

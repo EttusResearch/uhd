@@ -7,11 +7,10 @@
 #ifndef INCLUDED_LIBUHD_RFNOC_NULL_BLOCK_CTRL_HPP
 #define INCLUDED_LIBUHD_RFNOC_NULL_BLOCK_CTRL_HPP
 
-#include <uhd/rfnoc/source_block_ctrl_base.hpp>
 #include <uhd/rfnoc/sink_block_ctrl_base.hpp>
+#include <uhd/rfnoc/source_block_ctrl_base.hpp>
 
-namespace uhd {
-    namespace rfnoc {
+namespace uhd { namespace rfnoc {
 
 /*! \brief Provide access to a 'null block'.
  *
@@ -45,7 +44,7 @@ public:
     static const uint32_t SR_ENABLE_STREAM = 131;
 
     static const size_t DEFAULT_LINES_PER_PACKET = 32;
-    static const size_t BYTES_PER_LINE = 8;
+    static const size_t BYTES_PER_LINE           = 8;
 
     //! Custom function to set the rate at which data is produced.
     // Note: This is 'cycles per line', so the bit rate is actually
@@ -56,11 +55,11 @@ public:
     // \param The rate you want to set this to
     // \param The clock rate of this block's clock domain
     // \returns the actual line rate (will find closest possible).
-    virtual double set_line_rate(double rate, double clock_rate=166.6e6) = 0;
+    virtual double set_line_rate(double rate, double clock_rate = 166.6e6) = 0;
 
     //! Return the current line rate. Equivalent to reading line_rate/value
     // from the property tree.
-    virtual double get_line_rate(double clock_rate=166.6e6) const = 0;
+    virtual double get_line_rate(double clock_rate = 166.6e6) const = 0;
 
 }; /* class null_block_ctrl*/
 

@@ -18,7 +18,7 @@ class tick_aware_node : public test_node, public tick_node_ctrl
 public:
     typedef boost::shared_ptr<tick_aware_node> sptr;
 
-    tick_aware_node(const std::string &test_id) : test_node(test_id) {};
+    tick_aware_node(const std::string& test_id) : test_node(test_id){};
 
 }; /* class tick_aware_node */
 
@@ -28,10 +28,14 @@ class tick_setting_node : public test_node, public tick_node_ctrl
 public:
     typedef boost::shared_ptr<tick_setting_node> sptr;
 
-    tick_setting_node(const std::string &test_id, double tick_rate) : test_node(test_id), _tick_rate(tick_rate) {};
+    tick_setting_node(const std::string& test_id, double tick_rate)
+        : test_node(test_id), _tick_rate(tick_rate){};
 
 protected:
-    double _get_tick_rate() { return _tick_rate; };
+    double _get_tick_rate()
+    {
+        return _tick_rate;
+    };
 
 private:
     const double _tick_rate;
@@ -39,7 +43,8 @@ private:
 }; /* class tick_setting_node */
 
 #define MAKE_TICK_NODE(name) tick_aware_node::sptr name(new tick_aware_node(#name));
-#define MAKE_TICK_SETTING_NODE(name, rate) tick_setting_node::sptr name(new tick_setting_node(#name, rate));
+#define MAKE_TICK_SETTING_NODE(name, rate) \
+    tick_setting_node::sptr name(new tick_setting_node(#name, rate));
 
 BOOST_AUTO_TEST_CASE(test_simplest_downstream_search)
 {

@@ -8,21 +8,19 @@
 #ifndef INCLUDED_UHD_IMAGE_LOADER_HPP
 #define INCLUDED_UHD_IMAGE_LOADER_HPP
 
-#include <string>
-
-#include <boost/function.hpp>
-#include <boost/noncopyable.hpp>
-
 #include <uhd/config.hpp>
 #include <uhd/types/device_addr.hpp>
+#include <boost/function.hpp>
+#include <boost/noncopyable.hpp>
+#include <string>
 
-namespace uhd{
+namespace uhd {
 
-class UHD_API image_loader : boost::noncopyable{
-
+class UHD_API image_loader : boost::noncopyable
+{
 public:
-
-    typedef struct{
+    typedef struct
+    {
         uhd::device_addr_t args;
         bool load_firmware;
         bool load_fpga;
@@ -48,7 +46,7 @@ public:
      *    device and expect the default image(s) to be loaded, but the specific
      *    model of the device cannot be determined beyond a category.
      */
-    typedef boost::function<bool(const image_loader_args_t &)> loader_fcn_t;
+    typedef boost::function<bool(const image_loader_args_t&)> loader_fcn_t;
 
     //! Register an image loader
     /*!
@@ -56,17 +54,15 @@ public:
      * \param loader_fcn  the loader function for the given device
      * \param recovery_instructions instructions on how to restore a device
      */
-    static void register_image_loader(
-        const std::string &device_type,
-        const loader_fcn_t &loader_fcn,
-        const std::string &recovery_instructions
-    );
+    static void register_image_loader(const std::string& device_type,
+        const loader_fcn_t& loader_fcn,
+        const std::string& recovery_instructions);
 
     //! Load firmware and/or FPGA onto a device
     /*!
      * \param image_loader_args arguments to pass into image loading function
      */
-    static bool load(const image_loader_args_t &image_loader_args);
+    static bool load(const image_loader_args_t& image_loader_args);
 
     //! Get the instructions on how to recovery a particular device
     /*!
@@ -75,9 +71,9 @@ public:
      * \param device_type the "type=foo" value given in an --args option
      * \return recovery instructions
      */
-    static std::string get_recovery_instructions(const std::string &device_type);
+    static std::string get_recovery_instructions(const std::string& device_type);
 };
 
-}
+} // namespace uhd
 
 #endif /* INCLUDED_UHD_IMAGE_LOADER_HPP */

@@ -7,9 +7,9 @@
 #ifndef INCLUDED_MPMD_XPORT_ctrl_udp_HPP
 #define INCLUDED_MPMD_XPORT_ctrl_udp_HPP
 
+#include "../device3/device3_impl.hpp"
 #include "mpmd_xport_ctrl_base.hpp"
 #include <uhd/types/device_addr.hpp>
-#include "../device3/device3_impl.hpp"
 
 namespace uhd { namespace mpmd { namespace xport {
 
@@ -20,23 +20,15 @@ namespace uhd { namespace mpmd { namespace xport {
 class mpmd_xport_ctrl_udp : public mpmd_xport_ctrl_base
 {
 public:
-    mpmd_xport_ctrl_udp(
-        const uhd::device_addr_t& mb_args
-    );
+    mpmd_xport_ctrl_udp(const uhd::device_addr_t& mb_args);
 
-    both_xports_t make_transport(
-        mpmd_xport_mgr::xport_info_t& xport_info,
+    both_xports_t make_transport(mpmd_xport_mgr::xport_info_t& xport_info,
         const usrp::device3_impl::xport_type_t xport_type,
-        const uhd::device_addr_t& xport_args
-    );
+        const uhd::device_addr_t& xport_args);
 
-    bool is_valid(
-        const mpmd_xport_mgr::xport_info_t& xport_info
-    ) const;
+    bool is_valid(const mpmd_xport_mgr::xport_info_t& xport_info) const;
 
-    size_t get_mtu(
-        const uhd::direction_t dir
-    ) const;
+    size_t get_mtu(const uhd::direction_t dir) const;
 
 private:
     const uhd::device_addr_t _mb_args;

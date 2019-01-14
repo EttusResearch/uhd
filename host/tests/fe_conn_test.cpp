@@ -5,19 +5,20 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhd/usrp/fe_connection.hpp>
 #include <uhd/exception.hpp>
+#include <uhd/usrp/fe_connection.hpp>
 #include <boost/test/unit_test.hpp>
 
 using namespace uhd::usrp;
 
-BOOST_AUTO_TEST_CASE(test_quardrature){
+BOOST_AUTO_TEST_CASE(test_quardrature)
+{
     fe_connection_t IQ("IQ"), QI("QI"), IbQ("IbQ"), QbI("QbI"), QbIb("QbIb");
-    BOOST_CHECK(IQ.get_sampling_mode()==fe_connection_t::QUADRATURE);
-    BOOST_CHECK(QI.get_sampling_mode()==fe_connection_t::QUADRATURE);
-    BOOST_CHECK(IbQ.get_sampling_mode()==fe_connection_t::QUADRATURE);
-    BOOST_CHECK(QbI.get_sampling_mode()==fe_connection_t::QUADRATURE);
-    BOOST_CHECK(QbIb.get_sampling_mode()==fe_connection_t::QUADRATURE);
+    BOOST_CHECK(IQ.get_sampling_mode() == fe_connection_t::QUADRATURE);
+    BOOST_CHECK(QI.get_sampling_mode() == fe_connection_t::QUADRATURE);
+    BOOST_CHECK(IbQ.get_sampling_mode() == fe_connection_t::QUADRATURE);
+    BOOST_CHECK(QbI.get_sampling_mode() == fe_connection_t::QUADRATURE);
+    BOOST_CHECK(QbIb.get_sampling_mode() == fe_connection_t::QUADRATURE);
 
     BOOST_CHECK(not IQ.is_iq_swapped());
     BOOST_CHECK(QI.is_iq_swapped());
@@ -38,12 +39,13 @@ BOOST_AUTO_TEST_CASE(test_quardrature){
     BOOST_CHECK(QbIb.is_q_inverted());
 }
 
-BOOST_AUTO_TEST_CASE(test_heterodyne){
+BOOST_AUTO_TEST_CASE(test_heterodyne)
+{
     fe_connection_t II("II"), QQ("QQ"), IbIb("IbIb"), QbQb("QbQb");
-    BOOST_CHECK(II.get_sampling_mode()==fe_connection_t::HETERODYNE);
-    BOOST_CHECK(QQ.get_sampling_mode()==fe_connection_t::HETERODYNE);
-    BOOST_CHECK(IbIb.get_sampling_mode()==fe_connection_t::HETERODYNE);
-    BOOST_CHECK(QbQb.get_sampling_mode()==fe_connection_t::HETERODYNE);
+    BOOST_CHECK(II.get_sampling_mode() == fe_connection_t::HETERODYNE);
+    BOOST_CHECK(QQ.get_sampling_mode() == fe_connection_t::HETERODYNE);
+    BOOST_CHECK(IbIb.get_sampling_mode() == fe_connection_t::HETERODYNE);
+    BOOST_CHECK(QbQb.get_sampling_mode() == fe_connection_t::HETERODYNE);
 
     BOOST_CHECK(not II.is_iq_swapped());
     BOOST_CHECK(QQ.is_iq_swapped());
@@ -66,12 +68,13 @@ BOOST_AUTO_TEST_CASE(test_heterodyne){
     BOOST_CHECK_THROW(fe_connection_t dummy("QbQ"), uhd::value_error);
 }
 
-BOOST_AUTO_TEST_CASE(test_real){
+BOOST_AUTO_TEST_CASE(test_real)
+{
     fe_connection_t I("I"), Q("Q"), Ib("Ib"), Qb("Qb");
-    BOOST_CHECK(I.get_sampling_mode()==fe_connection_t::REAL);
-    BOOST_CHECK(Q.get_sampling_mode()==fe_connection_t::REAL);
-    BOOST_CHECK(Ib.get_sampling_mode()==fe_connection_t::REAL);
-    BOOST_CHECK(Qb.get_sampling_mode()==fe_connection_t::REAL);
+    BOOST_CHECK(I.get_sampling_mode() == fe_connection_t::REAL);
+    BOOST_CHECK(Q.get_sampling_mode() == fe_connection_t::REAL);
+    BOOST_CHECK(Ib.get_sampling_mode() == fe_connection_t::REAL);
+    BOOST_CHECK(Qb.get_sampling_mode() == fe_connection_t::REAL);
 
     BOOST_CHECK(not I.is_iq_swapped());
     BOOST_CHECK(Q.is_iq_swapped());
@@ -89,7 +92,8 @@ BOOST_AUTO_TEST_CASE(test_real){
     BOOST_CHECK(not Qb.is_q_inverted());
 }
 
-BOOST_AUTO_TEST_CASE(test_invalid){
+BOOST_AUTO_TEST_CASE(test_invalid)
+{
     BOOST_CHECK_THROW(fe_connection_t dummy("blah"), uhd::value_error);
     BOOST_CHECK_THROW(fe_connection_t dummy("123456"), uhd::value_error);
     BOOST_CHECK_THROW(fe_connection_t dummy("ii"), uhd::value_error);

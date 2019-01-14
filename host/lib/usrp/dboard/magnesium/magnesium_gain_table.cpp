@@ -15,47 +15,45 @@ using namespace uhd::rfnoc;
 using namespace magnesium;
 
 namespace {
-    typedef magnesium_radio_ctrl_impl::rx_band rx_band;
-    typedef magnesium_radio_ctrl_impl::tx_band tx_band;
+typedef magnesium_radio_ctrl_impl::rx_band rx_band;
+typedef magnesium_radio_ctrl_impl::tx_band tx_band;
 
-    const size_t TX_LOWBAND = 0;
-    const size_t TX_HIGHBAND = 1;
-    const size_t RX_LOWBAND = 0;
-    const size_t RX_MIDBAND = 1;
-    const size_t RX_HIGHBAND = 2;
+const size_t TX_LOWBAND  = 0;
+const size_t TX_HIGHBAND = 1;
+const size_t RX_LOWBAND  = 0;
+const size_t RX_MIDBAND  = 1;
+const size_t RX_HIGHBAND = 2;
 
-    size_t map_tx_band(const tx_band band)
-    {
-        if (band == tx_band::LOWBAND) {
-            return TX_LOWBAND;
-        }
-        return TX_HIGHBAND;
+size_t map_tx_band(const tx_band band)
+{
+    if (band == tx_band::LOWBAND) {
+        return TX_LOWBAND;
     }
+    return TX_HIGHBAND;
+}
 
-    size_t map_rx_band(const rx_band band)
-    {
-        if (band == rx_band::LOWBAND) {
-            return RX_LOWBAND;
-        }
-        if (band == rx_band::BAND0 or
-                band == rx_band::BAND1 or
-                band == rx_band::BAND2 or
-                band == rx_band::BAND3) {
-            return RX_MIDBAND;
-        }
-        return RX_HIGHBAND;
+size_t map_rx_band(const rx_band band)
+{
+    if (band == rx_band::LOWBAND) {
+        return RX_LOWBAND;
     }
+    if (band == rx_band::BAND0 or band == rx_band::BAND1 or band == rx_band::BAND2
+        or band == rx_band::BAND3) {
+        return RX_MIDBAND;
+    }
+    return RX_HIGHBAND;
+}
 
-    //! Maps gain index -> gain_tuple_t
-    //
-    // Note: This is an int, for easier lookups. We're basically hardcoding the
-    // knowledge that the gain map has a 1 dB granularity.
-    using gain_tuple_map_t = std::map<int, gain_tuple_t>;
+//! Maps gain index -> gain_tuple_t
+//
+// Note: This is an int, for easier lookups. We're basically hardcoding the
+// knowledge that the gain map has a 1 dB granularity.
+using gain_tuple_map_t = std::map<int, gain_tuple_t>;
 
-    //! Maps band -> gain_tuple_map_t
-    using gain_tables_t = std::map<size_t, gain_tuple_map_t>;
+//! Maps band -> gain_tuple_map_t
+using gain_tables_t = std::map<size_t, gain_tuple_map_t>;
 
-    // clang-format off
+// clang-format off
     /*! RX gain tables
      */
     const gain_tables_t rx_gain_tables = {
@@ -437,53 +435,38 @@ namespace {
                 {65, {0, 0, false}}
         }}
     }; /* tx_gain_tables */
-    // clang-format on
+// clang-format on
 
-    gain_tuple_t fine_tune_ad9371_att(
-            const gain_tuple_t gain_tuple,
-            const double gain_index
-    ) {
-        // Here, we hardcode the half-dB steps. We soak up all half-dB
-        // steps by twiddling the AD9371 attenuation, but we need to make
-        // sure we don't make it negative.
-        if (gain_index - int(gain_index) >= .5) {
-            gain_tuple_t gt2 = gain_tuple;
-            gt2.ad9371_att = std::max(0.0, gain_tuple.ad9371_att - .5);
-            return gt2;
-        }
-        return gain_tuple;
+gain_tuple_t fine_tune_ad9371_att(const gain_tuple_t gain_tuple, const double gain_index)
+{
+    // Here, we hardcode the half-dB steps. We soak up all half-dB
+    // steps by twiddling the AD9371 attenuation, but we need to make
+    // sure we don't make it negative.
+    if (gain_index - int(gain_index) >= .5) {
+        gain_tuple_t gt2 = gain_tuple;
+        gt2.ad9371_att   = std::max(0.0, gain_tuple.ad9371_att - .5);
+        return gt2;
     }
+    return gain_tuple;
+}
 
-} /* namespace ANON */
+} // namespace
 
 
 gain_tuple_t magnesium::get_rx_gain_tuple(
-    const double gain_index,
-    const magnesium_radio_ctrl_impl::rx_band band
-) {
-    UHD_ASSERT_THROW(
-        gain_index <= ALL_RX_MAX_GAIN and gain_index >= ALL_RX_MIN_GAIN
-    );
-    auto &gain_table = rx_gain_tables.at(map_rx_band(band));
+    const double gain_index, const magnesium_radio_ctrl_impl::rx_band band)
+{
+    UHD_ASSERT_THROW(gain_index <= ALL_RX_MAX_GAIN and gain_index >= ALL_RX_MIN_GAIN);
+    auto& gain_table            = rx_gain_tables.at(map_rx_band(band));
     const int gain_index_truncd = int(gain_index);
-    return fine_tune_ad9371_att(
-        gain_table.at(gain_index_truncd),
-        gain_index
-    );
+    return fine_tune_ad9371_att(gain_table.at(gain_index_truncd), gain_index);
 }
 
 gain_tuple_t magnesium::get_tx_gain_tuple(
-    const double gain_index,
-    const magnesium_radio_ctrl_impl::tx_band band
-) {
-    UHD_ASSERT_THROW(
-        gain_index <= ALL_TX_MAX_GAIN and gain_index >= ALL_TX_MIN_GAIN
-    );
-    auto &gain_table = tx_gain_tables.at(map_tx_band(band));
+    const double gain_index, const magnesium_radio_ctrl_impl::tx_band band)
+{
+    UHD_ASSERT_THROW(gain_index <= ALL_TX_MAX_GAIN and gain_index >= ALL_TX_MIN_GAIN);
+    auto& gain_table            = tx_gain_tables.at(map_tx_band(band));
     const int gain_index_truncd = int(gain_index);
-    return fine_tune_ad9371_att(
-        gain_table.at(gain_index_truncd),
-        gain_index
-    );
+    return fine_tune_ad9371_att(gain_table.at(gain_index_truncd), gain_index);
 }
-

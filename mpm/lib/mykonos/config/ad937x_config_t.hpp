@@ -10,11 +10,11 @@
 #include "ad937x_fir.hpp"
 #include <boost/noncopyable.hpp>
 // Allocates and links the entire mykonos config struct in a single class
-class ad937x_config_t  : public boost::noncopyable
+class ad937x_config_t : public boost::noncopyable
 {
 public:
     ad937x_config_t(spiSettings_t* sps, const size_t deserializer_lane_xbar);
-    mykonosDevice_t * device;
+    mykonosDevice_t* device;
 
     ad937x_fir rx_fir_config;
     ad937x_fir tx_fir_config;
@@ -35,8 +35,9 @@ public:
     static const int16_t DEFAULT_SNIFFER_FIR_15366[DEFAULT_RX_FIR_SIZE];
 
 private:
-    // The top level device struct is non-const and contains all other structs, so everything is "public"
-    // a user could technically modify the pointers in the structs, but we have no way of preventing that
+    // The top level device struct is non-const and contains all other structs, so
+    // everything is "public" a user could technically modify the pointers in the structs,
+    // but we have no way of preventing that
     mykonosDevice_t _device;
 
     ad937x_fir _orx_fir_config;

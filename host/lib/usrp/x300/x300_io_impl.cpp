@@ -5,8 +5,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "x300_regs.hpp"
 #include "x300_impl.hpp"
+#include "x300_regs.hpp"
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -35,7 +35,7 @@ void x300_impl::post_streamer_hooks(direction_t dir)
 
     // Loop through all tx streamers. Find all radios connected to one
     // streamer. Sync those.
-    for(const boost::weak_ptr<uhd::tx_streamer> &streamer_w:  _tx_streamers.vals()) {
+    for (const boost::weak_ptr<uhd::tx_streamer>& streamer_w : _tx_streamers.vals()) {
         const boost::shared_ptr<device3_send_packet_streamer> streamer =
             boost::dynamic_pointer_cast<device3_send_packet_streamer>(streamer_w.lock());
         if (not streamer) {
@@ -43,13 +43,15 @@ void x300_impl::post_streamer_hooks(direction_t dir)
         }
 
         std::vector<rfnoc::x300_radio_ctrl_impl::sptr> radio_ctrl_blks =
-            streamer->get_terminator()->find_downstream_node<rfnoc::x300_radio_ctrl_impl>();
+            streamer->get_terminator()
+                ->find_downstream_node<rfnoc::x300_radio_ctrl_impl>();
         try {
-            //UHD_LOGGER_INFO("X300") << "[X300] syncing " << radio_ctrl_blks.size() << " radios " ;
+            // UHD_LOGGER_INFO("X300") << "[X300] syncing " << radio_ctrl_blks.size() << "
+            // radios " ;
             rfnoc::x300_radio_ctrl_impl::synchronize_dacs(radio_ctrl_blks);
-        }
-        catch(const uhd::io_error &ex) {
-            throw uhd::io_error(str(boost::format("Failed to sync DACs! %s ") % ex.what()));
+        } catch (const uhd::io_error& ex) {
+            throw uhd::io_error(
+                str(boost::format("Failed to sync DACs! %s ") % ex.what()));
         }
     }
 }

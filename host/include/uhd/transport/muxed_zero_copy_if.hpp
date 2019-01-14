@@ -8,11 +8,11 @@
 #ifndef INCLUDED_LIBUHD_TRANSPORT_MUXED_ZERO_COPY_IF_HPP
 #define INCLUDED_LIBUHD_TRANSPORT_MUXED_ZERO_COPY_IF_HPP
 
-#include <uhd/transport/zero_copy.hpp>
 #include <uhd/config.hpp>
+#include <uhd/transport/zero_copy.hpp>
+#include <stdint.h>
 #include <boost/function.hpp>
 #include <boost/noncopyable.hpp>
-#include <stdint.h>
 
 namespace uhd { namespace transport {
 
@@ -25,7 +25,8 @@ namespace uhd { namespace transport {
  * appropriate virtual streams with the given classifier
  * function. A worker therad is spawned to handle the demuxing.
  */
-class muxed_zero_copy_if : private boost::noncopyable {
+class muxed_zero_copy_if : private boost::noncopyable
+{
 public:
     typedef boost::shared_ptr<muxed_zero_copy_if> sptr;
 
@@ -54,9 +55,11 @@ public:
     virtual size_t get_num_dropped_frames() const = 0;
 
     //! Make a new demuxer from a transport and parameters
-    static sptr make(zero_copy_if::sptr base_xport, stream_classifier_fn classify_fn, size_t max_streams);
+    static sptr make(zero_copy_if::sptr base_xport,
+        stream_classifier_fn classify_fn,
+        size_t max_streams);
 };
 
-}} //namespace uhd::transport
+}} // namespace uhd::transport
 
 #endif /* INCLUDED_LIBUHD_TRANSPORT_MUXED_ZERO_COPY_IF_HPP */

@@ -9,35 +9,31 @@
 #define INCLUDED_UHD_DEVICE_HPP
 
 #include <uhd/config.hpp>
-#include <uhd/stream.hpp>
 #include <uhd/deprecated.hpp>
 #include <uhd/property_tree.hpp>
+#include <uhd/stream.hpp>
 #include <uhd/types/device_addr.hpp>
-#include <boost/utility.hpp>
-#include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/utility.hpp>
 
-namespace uhd{
+namespace uhd {
 
-class property_tree; //forward declaration
+class property_tree; // forward declaration
 
 /*!
  * The device interface represents the hardware.
  * The API allows for discovery, configuration, and streaming.
  */
-class UHD_API device : boost::noncopyable{
-
+class UHD_API device : boost::noncopyable
+{
 public:
     typedef boost::shared_ptr<device> sptr;
-    typedef boost::function<device_addrs_t(const device_addr_t &)> find_t;
-    typedef boost::function<sptr(const device_addr_t &)> make_t;
+    typedef boost::function<device_addrs_t(const device_addr_t&)> find_t;
+    typedef boost::function<sptr(const device_addr_t&)> make_t;
 
     //! Device type, used as a filter in make
-    enum device_filter_t {
-        ANY,
-        USRP,
-        CLOCK
-    };
+    enum device_filter_t { ANY, USRP, CLOCK };
     virtual ~device(void) = 0;
 
     /*!
@@ -48,10 +44,7 @@ public:
      * \param filter include only USRP devices, clock devices, or both
      */
     static void register_device(
-        const find_t &find,
-        const make_t &make,
-        const device_filter_t filter
-    );
+        const find_t& find, const make_t& make, const device_filter_t filter);
 
     /*!
      * \brief Find devices attached to the host.
@@ -63,7 +56,7 @@ public:
      * \param filter an optional filter to exclude USRP or clock devices
      * \return a vector of device addresses for all devices on the system
      */
-    static device_addrs_t find(const device_addr_t &hint, device_filter_t filter = ANY);
+    static device_addrs_t find(const device_addr_t& hint, device_filter_t filter = ANY);
 
     /*!
      * \brief Create a new device from the device address hint.
@@ -79,21 +72,22 @@ public:
      * \param which which address to use when multiple are found
      * \return a shared pointer to a new device instance
      */
-    static sptr make(const device_addr_t &hint, device_filter_t filter = ANY, size_t which = 0);
+    static sptr make(
+        const device_addr_t& hint, device_filter_t filter = ANY, size_t which = 0);
 
     /*! \brief Make a new receive streamer from the streamer arguments
      *
      * Note: There can always only be one streamer. When calling get_rx_stream()
      * a second time, the first streamer must be destroyed beforehand.
      */
-    virtual rx_streamer::sptr get_rx_stream(const stream_args_t &args) = 0;
+    virtual rx_streamer::sptr get_rx_stream(const stream_args_t& args) = 0;
 
     /*! \brief Make a new transmit streamer from the streamer arguments
      *
      * Note: There can always only be one streamer. When calling get_tx_stream()
      * a second time, the first streamer must be destroyed beforehand.
      */
-    virtual tx_streamer::sptr get_tx_stream(const stream_args_t &args) = 0;
+    virtual tx_streamer::sptr get_tx_stream(const stream_args_t& args) = 0;
 
     /*!
      * Receive and asynchronous message from the device.
@@ -102,8 +96,7 @@ public:
      * \return true when the async_metadata is valid, false for timeout
      */
     virtual bool recv_async_msg(
-        async_metadata_t &async_metadata, double timeout = 0.1
-    ) = 0;
+        async_metadata_t& async_metadata, double timeout = 0.1) = 0;
 
     //! Get access to the underlying property structure
     uhd::property_tree::sptr get_tree(void) const;
@@ -116,6 +109,6 @@ protected:
     device_filter_t _type;
 };
 
-} //namespace uhd
+} // namespace uhd
 
 #endif /* INCLUDED_UHD_DEVICE_HPP */

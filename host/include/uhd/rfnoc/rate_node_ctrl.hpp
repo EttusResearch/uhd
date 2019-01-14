@@ -8,11 +8,10 @@
 #ifndef INCLUDED_LIBUHD_RATE_NODE_CTRL_BASE_HPP
 #define INCLUDED_LIBUHD_RATE_NODE_CTRL_BASE_HPP
 
-#include <uhd/rfnoc/node_ctrl_base.hpp>
 #include <uhd/rfnoc/constants.hpp>
+#include <uhd/rfnoc/node_ctrl_base.hpp>
 
-namespace uhd {
-    namespace rfnoc {
+namespace uhd { namespace rfnoc {
 
 /*! \brief Sampling-rate-aware node control
  *
@@ -45,12 +44,11 @@ public:
      * and then return that value multiplied by the decimation factor.
      *
      */
-    virtual double get_input_samp_rate(size_t port=ANY_PORT);
-    virtual double get_output_samp_rate(size_t port=ANY_PORT);
+    virtual double get_input_samp_rate(size_t port = ANY_PORT);
+    virtual double get_output_samp_rate(size_t port = ANY_PORT);
 
 }; /* class rate_node_ctrl */
 
 }} /* namespace uhd::rfnoc */
 
 #endif /* INCLUDED_LIBUHD_RATE_NODE_CTRL_BASE_HPP */
-

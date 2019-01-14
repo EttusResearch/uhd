@@ -9,25 +9,24 @@
 #define INCLUDED_UHD_UTILS_CAST_HPP
 
 #include <uhd/config.hpp>
-#include <string>
 #include <sstream>
+#include <string>
 
-namespace uhd{ namespace cast{
-    //! Convert a hexadecimal string into a value.
-    //
-    // Example:
-    //     uint16_t x = hexstr_cast<uint16_t>("0xDEADBEEF");
-    // Uses stringstream.
-    template<typename T> UHD_INLINE T hexstr_cast(const std::string &in)
-    {
-        T x;
-        std::stringstream ss;
-        ss << std::hex << in;
-        ss >> x;
-        return x;
-    }
+namespace uhd { namespace cast {
+//! Convert a hexadecimal string into a value.
+//
+// Example:
+//     uint16_t x = hexstr_cast<uint16_t>("0xDEADBEEF");
+// Uses stringstream.
+template <typename T> UHD_INLINE T hexstr_cast(const std::string& in)
+{
+    T x;
+    std::stringstream ss;
+    ss << std::hex << in;
+    ss >> x;
+    return x;
+}
 
-}} //namespace uhd::cast
+}} // namespace uhd::cast
 
 #endif /* INCLUDED_UHD_UTILS_CAST_HPP */
-

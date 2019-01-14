@@ -7,10 +7,10 @@
 
 #include <uhd/cal/power_container.hpp>
 #include <uhd/exception.hpp>
-#include <boost/test/unit_test.hpp>
 #include <boost/shared_ptr.hpp>
-#include <vector>
+#include <boost/test/unit_test.hpp>
 #include <fstream>
+#include <vector>
 
 using namespace uhd;
 using namespace uhd::cal;
@@ -18,8 +18,9 @@ using namespace uhd::cal;
 static const double eps = 1e-8;
 
 ////////////////////////////////////////////////////////////////////////
-BOOST_AUTO_TEST_CASE(test_power_container_bilinear){
-////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_CASE(test_power_container_bilinear)
+{
+    ////////////////////////////////////////////////////////////////////////
 
     // Create the data container
     power_container::sptr container = power_container::make();
@@ -51,8 +52,9 @@ BOOST_AUTO_TEST_CASE(test_power_container_bilinear){
 
 
 ////////////////////////////////////////////////////////////////////////
-BOOST_AUTO_TEST_CASE(test_power_temp_container){
-////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_CASE(test_power_temp_container)
+{
+    ////////////////////////////////////////////////////////////////////////
 
     // Create the data container
     power_container::sptr container = power_container::make();
@@ -80,8 +82,9 @@ BOOST_AUTO_TEST_CASE(test_power_temp_container){
 }
 
 ////////////////////////////////////////////////////////////////////////
-BOOST_AUTO_TEST_CASE(test_power_container_metadata){
-////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_CASE(test_power_container_metadata)
+{
+    ////////////////////////////////////////////////////////////////////////
 
     // Create the data container
     power_container::sptr container = power_container::make();
@@ -90,7 +93,7 @@ BOOST_AUTO_TEST_CASE(test_power_container_metadata){
     base_container::metadata_t data;
 
     std::string fake_serial = "F2A432";
-    data["x300"] = fake_serial;
+    data["x300"]            = fake_serial;
 
     // Add some metadata
     container->add_metadata(data);
@@ -102,8 +105,9 @@ BOOST_AUTO_TEST_CASE(test_power_container_metadata){
 }
 
 ////////////////////////////////////////////////////////////////////////
-BOOST_AUTO_TEST_CASE(test_power_serialization){
-////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_CASE(test_power_serialization)
+{
+    ////////////////////////////////////////////////////////////////////////
 
     // Create the data container
     power_container::sptr container = power_container::make();
@@ -112,7 +116,7 @@ BOOST_AUTO_TEST_CASE(test_power_serialization){
     base_container::metadata_t data;
 
     std::string fake_serial = "F2A432";
-    data["x300"] = fake_serial;
+    data["x300"]            = fake_serial;
 
     // Add some metadata
     container->add_metadata(data);
@@ -167,8 +171,9 @@ BOOST_AUTO_TEST_CASE(test_power_serialization){
 }
 
 ////////////////////////////////////////////////////////////////////////
-BOOST_AUTO_TEST_CASE(test_interp_singular){
-////////////////////////////////////////////////////////////////////////
+BOOST_AUTO_TEST_CASE(test_interp_singular)
+{
+    ////////////////////////////////////////////////////////////////////////
 
     // Create the data container
     power_container::sptr container = power_container::make();

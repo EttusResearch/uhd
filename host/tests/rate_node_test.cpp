@@ -18,7 +18,7 @@ class rate_aware_node : public test_node, public rate_node_ctrl
 public:
     typedef boost::shared_ptr<rate_aware_node> sptr;
 
-    rate_aware_node(const std::string &test_id) : test_node(test_id) {};
+    rate_aware_node(const std::string& test_id) : test_node(test_id){};
 
 }; /* class rate_aware_node */
 
@@ -28,10 +28,17 @@ class rate_setting_node : public test_node, public rate_node_ctrl
 public:
     typedef boost::shared_ptr<rate_setting_node> sptr;
 
-    rate_setting_node(const std::string &test_id, double samp_rate) : test_node(test_id), _samp_rate(samp_rate) {};
+    rate_setting_node(const std::string& test_id, double samp_rate)
+        : test_node(test_id), _samp_rate(samp_rate){};
 
-    double get_input_samp_rate(size_t) { return _samp_rate; };
-    double get_output_samp_rate(size_t) { return _samp_rate; };
+    double get_input_samp_rate(size_t)
+    {
+        return _samp_rate;
+    };
+    double get_output_samp_rate(size_t)
+    {
+        return _samp_rate;
+    };
 
 private:
     double _samp_rate;
@@ -39,7 +46,8 @@ private:
 }; /* class rate_setting_node */
 
 #define MAKE_RATE_NODE(name) rate_aware_node::sptr name(new rate_aware_node(#name));
-#define MAKE_RATE_SETTING_NODE(name, rate) rate_setting_node::sptr name(new rate_setting_node(#name, rate));
+#define MAKE_RATE_SETTING_NODE(name, rate) \
+    rate_setting_node::sptr name(new rate_setting_node(#name, rate));
 
 BOOST_AUTO_TEST_CASE(test_simplest_downstream_search)
 {
@@ -126,4 +134,3 @@ BOOST_AUTO_TEST_CASE(test_skip_upstream_search)
     double result_rate = node_C->get_output_samp_rate();
     BOOST_CHECK_EQUAL(result_rate, test_rate);
 }
-

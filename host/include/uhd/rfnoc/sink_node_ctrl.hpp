@@ -8,13 +8,12 @@
 #ifndef INCLUDED_LIBUHD_SINK_NODE_CTRL_BASE_HPP
 #define INCLUDED_LIBUHD_SINK_NODE_CTRL_BASE_HPP
 
-#include <uhd/rfnoc/node_ctrl_base.hpp>
 #include <uhd/rfnoc/constants.hpp>
+#include <uhd/rfnoc/node_ctrl_base.hpp>
 #include <uhd/rfnoc/sink_node_ctrl.hpp>
 #include <boost/thread.hpp>
 
-namespace uhd {
-    namespace rfnoc {
+namespace uhd { namespace rfnoc {
 
 /*! \brief Abstract class for sink nodes.
  *
@@ -28,8 +27,8 @@ public:
      * Types
      **********************************************************************/
     typedef boost::shared_ptr<sink_node_ctrl> sptr;
-    typedef std::map< size_t, boost::weak_ptr<sink_node_ctrl> > node_map_t;
-    typedef std::pair< size_t, boost::weak_ptr<sink_node_ctrl> > node_map_pair_t;
+    typedef std::map<size_t, boost::weak_ptr<sink_node_ctrl> > node_map_t;
+    typedef std::pair<size_t, boost::weak_ptr<sink_node_ctrl> > node_map_pair_t;
 
     /***********************************************************************
      * Sink block controls
@@ -48,11 +47,9 @@ public:
      *
      * \returns The actual port number used.
      */
-    size_t connect_upstream(
-            node_ctrl_base::sptr upstream_node,
-            size_t port=ANY_PORT,
-            const uhd::device_addr_t &args=uhd::device_addr_t()
-    );
+    size_t connect_upstream(node_ctrl_base::sptr upstream_node,
+        size_t port                    = ANY_PORT,
+        const uhd::device_addr_t& args = uhd::device_addr_t());
 
     /*! Call this function to notify a node about its streamer activity.
      *
@@ -64,7 +61,6 @@ public:
 
 
 protected:
-
     /*! Ask for a port number to connect an upstream block to.
      *
      * Typically, this will be overridden for custom behaviour.
@@ -94,16 +90,15 @@ protected:
      * \returns A valid input port, or ANY_PORT on failure.
      */
     virtual size_t _request_input_port(
-            const size_t suggested_port,
-            const uhd::device_addr_t &args
-    ) const;
+        const size_t suggested_port, const uhd::device_addr_t& args) const;
 
 private:
     /*! Makes connecting something to the input thread-safe.
      */
     boost::mutex _input_mutex;
 
-    /*! Register a node upstream of this one (i.e., a node that can send data to this node).
+    /*! Register a node upstream of this one (i.e., a node that can send data to this
+     * node).
      *
      * By definition, the upstream node must of type source_node_ctrl.
      *
@@ -113,10 +108,7 @@ private:
      * \param upstream_node A pointer to the node instantiation
      * \param port Port number the upstream node is connected to
      */
-    void _register_upstream_node(
-            node_ctrl_base::sptr upstream_node,
-            size_t port
-    );
+    void _register_upstream_node(node_ctrl_base::sptr upstream_node, size_t port);
 
 }; /* class sink_node_ctrl */
 

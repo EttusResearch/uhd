@@ -21,36 +21,39 @@
 // and then streams the result to the host, writing it into a file.
 
 #include <uhd/device3.hpp>
-#include <uhd/utils/thread.hpp>
-#include <uhd/utils/safe_main.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/rfnoc/block_ctrl.hpp>
 #include <uhd/rfnoc/null_block_ctrl.hpp>
-#include <boost/program_options.hpp>
+#include <uhd/utils/safe_main.hpp>
+#include <uhd/utils/thread.hpp>
 #include <boost/format.hpp>
-#include <iostream>
-#include <fstream>
-#include <csignal>
-#include <complex>
-#include <thread>
+#include <boost/program_options.hpp>
 #include <chrono>
+#include <complex>
+#include <csignal>
+#include <fstream>
+#include <iostream>
+#include <thread>
 
 namespace po = boost::program_options;
 
 static bool stop_signal_called = false;
-void sig_int_handler(int){stop_signal_called = true;}
+void sig_int_handler(int)
+{
+    stop_signal_called = true;
+}
 
 
-template<typename samp_type> void recv_to_file(
-    uhd::rx_streamer::sptr rx_stream,
-    const std::string &file,
+template <typename samp_type>
+void recv_to_file(uhd::rx_streamer::sptr rx_stream,
+    const std::string& file,
     size_t samps_per_buff,
     unsigned long long num_requested_samples,
-    double time_requested = 0.0,
-    bool bw_summary = false,
-    bool stats = false,
-    bool continue_on_bad_packet = false
-) {
+    double time_requested       = 0.0,
+    bool bw_summary             = false,
+    bool stats                  = false,
+    bool continue_on_bad_packet = false)
+{
     unsigned long long num_total_samps = 0;
 
     uhd::rx_metadata_t md;
@@ -61,14 +64,13 @@ template<typename samp_type> void recv_to_file(
     }
     bool overflow_message = true;
 
-    //setup streaming
-    uhd::stream_cmd_t stream_cmd((num_requested_samples == 0)?
-        uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS:
-        uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE
-    );
-    stream_cmd.num_samps = num_requested_samples;
+    // setup streaming
+    uhd::stream_cmd_t stream_cmd((num_requested_samples == 0)
+                                     ? uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS
+                                     : uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
+    stream_cmd.num_samps  = num_requested_samples;
     stream_cmd.stream_now = true;
-    stream_cmd.time_spec = uhd::time_spec_t();
+    stream_cmd.time_spec  = uhd::time_spec_t();
     std::cout << "Issuing start stream cmd" << std::endl;
     // This actually goes to the null source; the processing block
     // should propagate it.
@@ -77,19 +79,14 @@ template<typename samp_type> void recv_to_file(
 
     const auto start_time = std::chrono::steady_clock::now();
     const auto stop_time =
-        start_time
-        + std::chrono::milliseconds(int64_t(1000 * time_requested));
+        start_time + std::chrono::milliseconds(int64_t(1000 * time_requested));
     // Track time and samps between updating the BW summary
-    auto last_update = start_time;
+    auto last_update                     = start_time;
     unsigned long long last_update_samps = 0;
 
-    while(
-        not stop_signal_called
-        and (num_requested_samples != num_total_samps
-            or num_requested_samples == 0)
-        and (time_requested == 0.0
-            or std::chrono::steady_clock::now() <= stop_time)
-    ) {
+    while (not stop_signal_called
+           and (num_requested_samples != num_total_samps or num_requested_samples == 0)
+           and (time_requested == 0.0 or std::chrono::steady_clock::now() <= stop_time)) {
         const auto now = std::chrono::steady_clock::now();
 
         size_t num_rx_samps = rx_stream->recv(&buff.front(), buff.size(), md, 3.0);
@@ -98,28 +95,27 @@ template<typename samp_type> void recv_to_file(
             std::cout << "Timeout while streaming" << std::endl;
             break;
         }
-        if (md.error_code == uhd::rx_metadata_t::ERROR_CODE_OVERFLOW){
-            if (overflow_message){
+        if (md.error_code == uhd::rx_metadata_t::ERROR_CODE_OVERFLOW) {
+            if (overflow_message) {
                 overflow_message = false;
                 std::cerr << "Got an overflow indication. If writing to disk, your\n"
                              "write medium may not be able to keep up.\n";
             }
             continue;
         }
-        if (md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE){
+        if (md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE) {
             const auto error = std::string("Receiver error: ") + md.strerror();
-            if (continue_on_bad_packet){
+            if (continue_on_bad_packet) {
                 std::cerr << error << std::endl;
                 continue;
-            }
-            else {
+            } else {
                 throw std::runtime_error(error);
             }
         }
         num_total_samps += num_rx_samps;
 
         if (outfile.is_open()) {
-            outfile.write((const char*)&buff.front(), num_rx_samps*sizeof(samp_type));
+            outfile.write((const char*)&buff.front(), num_rx_samps * sizeof(samp_type));
         }
 
         if (bw_summary) {
@@ -128,11 +124,10 @@ template<typename samp_type> void recv_to_file(
             if (time_since_last_update > std::chrono::seconds(1)) {
                 const double time_since_last_update_s =
                     std::chrono::duration<double>(time_since_last_update).count();
-                const double rate =
-                    double(last_update_samps) / time_since_last_update_s;
-                std::cout << "\t" << (rate/1e6) << " Msps" << std::endl;
+                const double rate = double(last_update_samps) / time_since_last_update_s;
+                std::cout << "\t" << (rate / 1e6) << " Msps" << std::endl;
                 last_update_samps = 0;
-                last_update = now;
+                last_update       = now;
             }
         }
     }
@@ -151,13 +146,11 @@ template<typename samp_type> void recv_to_file(
         std::cout << std::endl;
         const double actual_duration_seconds =
             std::chrono::duration<float>(actual_stop_time - start_time).count();
-        std::cout
-            << boost::format("Received %d samples in %f seconds")
-               % num_total_samps
-               % actual_duration_seconds
-            << std::endl;
-        const double rate = (double) num_total_samps / actual_duration_seconds;
-        std::cout << (rate/1e6) << " Msps" << std::endl;
+        std::cout << boost::format("Received %d samples in %f seconds") % num_total_samps
+                         % actual_duration_seconds
+                  << std::endl;
+        const double rate = (double)num_total_samps / actual_duration_seconds;
+        std::cout << (rate / 1e6) << " Msps" << std::endl;
     }
 }
 
@@ -211,16 +204,16 @@ void pretty_print_flow_graph(std::vector<std::string> blocks)
 }
 
 ///////////////////// MAIN ////////////////////////////////////////////////////
-int UHD_SAFE_MAIN(int argc, char *argv[])
+int UHD_SAFE_MAIN(int argc, char* argv[])
 {
     uhd::set_thread_priority_safe();
 
-    //variables to be set by po
+    // variables to be set by po
     std::string args, file, format, nullid, blockid, blockid2;
     size_t total_num_samps, spb, spp;
     double rate, total_time, setup_time, block_rate;
 
-    //setup the program options
+    // setup the program options
     po::options_description desc("Allowed options");
     // clang-format off
     desc.add_options()
@@ -248,17 +241,16 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
 
-    //print the help message
-    if (vm.count("help")){
-        std::cout
-            << "[RFNOC] Connect a null source to another (processing) block, "
-               "and stream the result to file."
-            << desc << std::endl;
+    // print the help message
+    if (vm.count("help")) {
+        std::cout << "[RFNOC] Connect a null source to another (processing) block, "
+                     "and stream the result to file."
+                  << desc << std::endl;
         return EXIT_SUCCESS;
     }
 
-    bool bw_summary = vm.count("progress") > 0;
-    bool stats = vm.count("stats") > 0;
+    bool bw_summary             = vm.count("progress") > 0;
+    bool stats                  = vm.count("stats") > 0;
     bool continue_on_bad_packet = vm.count("continue") > 0;
 
     // Check settings
@@ -267,7 +259,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
         return ~0;
     }
     if (not uhd::rfnoc::block_id_t::is_valid_block_id(blockid)) {
-        std::cout << "Must specify a valid block ID for the processing block." << std::endl;
+        std::cout << "Must specify a valid block ID for the processing block."
+                  << std::endl;
         return ~0;
     }
     if (not blockid2.empty()) {
@@ -290,7 +283,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     std::cout << "Creating the USRP device with args: " << args << std::endl;
     uhd::device3::sptr usrp = uhd::device3::make(args);
 
-    std::this_thread::sleep_for( //allow for some setup time
+    std::this_thread::sleep_for( // allow for some setup time
         std::chrono::milliseconds(int64_t(setup_time * 1000)));
     // Reset device streaming state
     usrp->clear();
@@ -356,18 +349,18 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     }
 
     // Or, if our block has its own getters + setters, you can call those:
-    std::cout << str(boost::format("Requesting rate:   %.2f Msps (%.2f MByte/s).") % (rate / 1e6) % (rate * 4 / 1e6)) << std::endl;
+    std::cout << str(boost::format("Requesting rate:   %.2f Msps (%.2f MByte/s).")
+                     % (rate / 1e6) % (rate * 4 / 1e6))
+              << std::endl;
     const size_t SAMPLES_PER_LINE = 2;
     null_src_ctrl->set_line_rate(rate / SAMPLES_PER_LINE, block_rate);
     // Now, it's possible that this requested rate is not available.
     // Let's read back the true rate with the getter:
-    double actual_rate_mega = null_src_ctrl->get_line_rate(block_rate) / 1e6 * SAMPLES_PER_LINE;
-    std::cout
-        << str(
-                boost::format("Actually got rate: %.2f Msps (%.2f MByte/s).")
-                % actual_rate_mega % (actual_rate_mega * BYTES_PER_SAMPLE)
-           )
-        << std::endl;
+    double actual_rate_mega =
+        null_src_ctrl->get_line_rate(block_rate) / 1e6 * SAMPLES_PER_LINE;
+    std::cout << str(boost::format("Actually got rate: %.2f Msps (%.2f MByte/s).")
+                     % actual_rate_mega % (actual_rate_mega * BYTES_PER_SAMPLE))
+              << std::endl;
 
 
     /////////////////////////////////////////////////////////////////////////
@@ -376,33 +369,42 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     std::cout << "Connecting blocks..." << std::endl;
     if (proc_block_ctrl) {
         rx_graph->connect( // Yes, it's that easy!
-                null_src_ctrl->get_block_id(),
-                proc_block_ctrl->get_block_id()
-        );
+            null_src_ctrl->get_block_id(),
+            proc_block_ctrl->get_block_id());
     }
     if (proc_block_ctrl2 and proc_block_ctrl) {
         rx_graph->connect(
-            proc_block_ctrl->get_block_id(),
-            proc_block_ctrl2->get_block_id()
-        );
+            proc_block_ctrl->get_block_id(), proc_block_ctrl2->get_block_id());
     }
 
     /////////////////////////////////////////////////////////////////////////
     //////// 6. Spawn receiver //////////////////////////////////////////////
     /////////////////////////////////////////////////////////////////////////
     uhd::stream_args_t stream_args(format, "sc16");
-    stream_args.args = stream_args_args;
+    stream_args.args        = stream_args_args;
     stream_args.args["spp"] = std::to_string(spp);
-    UHD_LOGGER_DEBUG("RFNOC") << "Using streamer args: " << stream_args.args.to_string() << std::endl;
+    UHD_LOGGER_DEBUG("RFNOC") << "Using streamer args: " << stream_args.args.to_string()
+                              << std::endl;
     uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
 
 #define recv_to_file_args() \
-        (rx_stream, file, spb, total_num_samps, total_time, bw_summary, stats, continue_on_bad_packet)
-    //recv to file
-    if (format == "fc64") recv_to_file<std::complex<double> >recv_to_file_args();
-    else if (format == "fc32") recv_to_file<std::complex<float> >recv_to_file_args();
-    else if (format == "sc16") recv_to_file<std::complex<short> >recv_to_file_args();
-    else throw std::runtime_error("Unknown type sample type: " + format);
+    (rx_stream,             \
+        file,               \
+        spb,                \
+        total_num_samps,    \
+        total_time,         \
+        bw_summary,         \
+        stats,              \
+        continue_on_bad_packet)
+    // recv to file
+    if (format == "fc64")
+        recv_to_file<std::complex<double>> recv_to_file_args();
+    else if (format == "fc32")
+        recv_to_file<std::complex<float>> recv_to_file_args();
+    else if (format == "sc16")
+        recv_to_file<std::complex<short>> recv_to_file_args();
+    else
+        throw std::runtime_error("Unknown type sample type: " + format);
 
     // Finished!
     std::cout << std::endl << "Done!" << std::endl << std::endl;

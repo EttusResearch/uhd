@@ -5,14 +5,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <iostream>
-#include <boost/test/unit_test.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/rfnoc/stream_sig.hpp>
+#include <boost/test/unit_test.hpp>
+#include <iostream>
 
 using namespace uhd::rfnoc;
 
-BOOST_AUTO_TEST_CASE(test_stream_sig) {
+BOOST_AUTO_TEST_CASE(test_stream_sig)
+{
     stream_sig_t stream_sig;
 
     BOOST_CHECK_EQUAL(stream_sig.item_type, "");
@@ -26,7 +27,8 @@ BOOST_AUTO_TEST_CASE(test_stream_sig) {
     std::cout << ss.str() << std::endl;
 }
 
-BOOST_AUTO_TEST_CASE(test_stream_sig_compat) {
+BOOST_AUTO_TEST_CASE(test_stream_sig_compat)
+{
     stream_sig_t upstream_sig;
     stream_sig_t downstream_sig;
 
@@ -47,12 +49,13 @@ BOOST_AUTO_TEST_CASE(test_stream_sig_compat) {
     BOOST_CHECK(stream_sig_t::is_compatible(upstream_sig, downstream_sig));
     downstream_sig.item_type = "";
     BOOST_CHECK(stream_sig_t::is_compatible(upstream_sig, downstream_sig));
-    upstream_sig.item_type = "sc16";
+    upstream_sig.item_type   = "sc16";
     downstream_sig.item_type = "s8";
     BOOST_CHECK(not stream_sig_t::is_compatible(upstream_sig, downstream_sig));
 }
 
-BOOST_AUTO_TEST_CASE(test_stream_sig_types) {
+BOOST_AUTO_TEST_CASE(test_stream_sig_types)
+{
     stream_sig_t stream_sig;
     BOOST_CHECK_EQUAL(stream_sig.get_bytes_per_item(), 0);
     stream_sig.item_type = "sc16";

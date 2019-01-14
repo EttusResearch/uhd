@@ -7,11 +7,10 @@
 #ifndef INCLUDED_LIBUHD_RFNOC_WINDOW_BLOCK_CTRL_HPP
 #define INCLUDED_LIBUHD_RFNOC_WINDOW_BLOCK_CTRL_HPP
 
-#include <uhd/rfnoc/source_block_ctrl_base.hpp>
 #include <uhd/rfnoc/sink_block_ctrl_base.hpp>
+#include <uhd/rfnoc/source_block_ctrl_base.hpp>
 
-namespace uhd {
-    namespace rfnoc {
+namespace uhd { namespace rfnoc {
 
 /*! \brief Block controller for the standard windowing RFNoC block.
  *
@@ -24,22 +23,23 @@ namespace uhd {
  * It will perform one window operation per incoming packet, treating it
  * as a vector of samples.
  */
-class UHD_RFNOC_API window_block_ctrl : public source_block_ctrl_base, public sink_block_ctrl_base
+class UHD_RFNOC_API window_block_ctrl : public source_block_ctrl_base,
+                                        public sink_block_ctrl_base
 {
 public:
     UHD_RFNOC_BLOCK_OBJECT(window_block_ctrl)
 
-    static const size_t          MAX_COEFF_VAL          = 32767;
-    static const uint32_t SR_WINDOW_LEN          = 131;               // Note: AXI config bus uses 129 & 130
-    static const uint32_t RB_MAX_WINDOW_LEN      = 0;
-    static const uint32_t AXIS_WINDOW_LOAD       = AXIS_CONFIG_BUS+0; // 2*0+0
-    static const uint32_t AXIS_WINDOW_LOAD_TLAST = AXIS_CONFIG_BUS+1; // 2*0+1
+    static const size_t MAX_COEFF_VAL       = 32767;
+    static const uint32_t SR_WINDOW_LEN     = 131; // Note: AXI config bus uses 129 & 130
+    static const uint32_t RB_MAX_WINDOW_LEN = 0;
+    static const uint32_t AXIS_WINDOW_LOAD  = AXIS_CONFIG_BUS + 0; // 2*0+0
+    static const uint32_t AXIS_WINDOW_LOAD_TLAST = AXIS_CONFIG_BUS + 1; // 2*0+1
 
     //! Configure the window coefficients
     //
     // \p coeffs size determines the window length. If it longer than
     // the maximum window length, throws a uhd::value_error.
-    virtual void set_window(const std::vector<int> &coeffs) = 0;
+    virtual void set_window(const std::vector<int>& coeffs) = 0;
 
     //! Returns the maximum window length.
     virtual size_t get_max_len() const = 0;

@@ -8,11 +8,10 @@
 #ifndef INCLUDED_LIBUHD_SCALAR_NODE_CTRL_BASE_HPP
 #define INCLUDED_LIBUHD_SCALAR_NODE_CTRL_BASE_HPP
 
-#include <uhd/rfnoc/node_ctrl_base.hpp>
 #include <uhd/rfnoc/constants.hpp>
+#include <uhd/rfnoc/node_ctrl_base.hpp>
 
-namespace uhd {
-    namespace rfnoc {
+namespace uhd { namespace rfnoc {
 
 /*! \brief Scaling node control
  *
@@ -45,7 +44,7 @@ public:
      *
      * \param port Port Number
      */
-    virtual double get_input_scale_factor(size_t port=ANY_PORT);
+    virtual double get_input_scale_factor(size_t port = ANY_PORT);
 
     /*! Returns the scaling factor for this block on output.
      *
@@ -54,7 +53,7 @@ public:
      *
      * \param port Port Number
      */
-    virtual double get_output_scale_factor(size_t port=ANY_PORT);
+    virtual double get_output_scale_factor(size_t port = ANY_PORT);
 
 }; /* class scalar_node_ctrl */
 

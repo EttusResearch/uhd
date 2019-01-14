@@ -9,36 +9,34 @@
 #define INCLUDED_LIBUHD_BLOCK_CTRL_BASE_HPP
 
 #include <uhd/property_tree.hpp>
+#include <uhd/rfnoc/block_id.hpp>
+#include <uhd/rfnoc/blockdef.hpp>
+#include <uhd/rfnoc/constants.hpp>
+#include <uhd/rfnoc/node_ctrl_base.hpp>
+#include <uhd/rfnoc/stream_sig.hpp>
 #include <uhd/stream.hpp>
 #include <uhd/types/sid.hpp>
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/utils/static.hpp>
-#include <uhd/rfnoc/node_ctrl_base.hpp>
-#include <uhd/rfnoc/block_id.hpp>
-#include <uhd/rfnoc/stream_sig.hpp>
-#include <uhd/rfnoc/blockdef.hpp>
-#include <uhd/rfnoc/constants.hpp>
-#include <boost/shared_ptr.hpp>
 #include <stdint.h>
+#include <boost/shared_ptr.hpp>
 
-namespace uhd {
-    namespace rfnoc {
-        // Forward declarations
-        class ctrl_iface;
-        namespace nocscript {
-            class block_iface;
-        }
+namespace uhd { namespace rfnoc {
+// Forward declarations
+class ctrl_iface;
+namespace nocscript {
+class block_iface;
+}
 
 
 // TODO: Move this out of public section
 struct make_args_t
 {
-    make_args_t(const std::string &key="") :
-        device_index(0),
-        block_name(""),
-        block_key(key)
-    {}
+    make_args_t(const std::string& key = "")
+        : device_index(0), block_name(""), block_key(key)
+    {
+    }
 
     //! A valid interface that allows us to read and write registers
     std::map<size_t, boost::shared_ptr<ctrl_iface> > ctrl_ifaces;
@@ -58,25 +56,21 @@ struct make_args_t
 
 //! This macro must be put in the public section of an RFNoC
 // block class
-#define UHD_RFNOC_BLOCK_OBJECT(class_name)  \
-    typedef boost::shared_ptr< class_name > sptr;
+#define UHD_RFNOC_BLOCK_OBJECT(class_name) typedef boost::shared_ptr<class_name> sptr;
 
 //! Shorthand for block constructor
 #define UHD_RFNOC_BLOCK_CONSTRUCTOR(CLASS_NAME) \
-    CLASS_NAME##_impl( \
-        const make_args_t &make_args \
-    ) : block_ctrl_base(make_args)
+    CLASS_NAME##_impl(const make_args_t& make_args) : block_ctrl_base(make_args)
 
 //! This macro must be placed inside a block implementation file
 // after the class definition
-#define UHD_RFNOC_BLOCK_REGISTER(CLASS_NAME, BLOCK_NAME) \
-    block_ctrl_base::sptr CLASS_NAME##_make( \
-        const make_args_t &make_args \
-    ) { \
-        return block_ctrl_base::sptr(new CLASS_NAME##_impl(make_args)); \
-    } \
-    UHD_STATIC_BLOCK(register_rfnoc_##CLASS_NAME) \
-    { \
+#define UHD_RFNOC_BLOCK_REGISTER(CLASS_NAME, BLOCK_NAME)                             \
+    block_ctrl_base::sptr CLASS_NAME##_make(const make_args_t& make_args)            \
+    {                                                                                \
+        return block_ctrl_base::sptr(new CLASS_NAME##_impl(make_args));              \
+    }                                                                                \
+    UHD_STATIC_BLOCK(register_rfnoc_##CLASS_NAME)                                    \
+    {                                                                                \
         uhd::rfnoc::block_ctrl_base::register_block(&CLASS_NAME##_make, BLOCK_NAME); \
     }
 
@@ -97,7 +91,7 @@ public:
      * Types
      **********************************************************************/
     typedef boost::shared_ptr<block_ctrl_base> sptr;
-    typedef boost::function<sptr(const make_args_t &)> make_t;
+    typedef boost::function<sptr(const make_args_t&)> make_t;
 
     /***********************************************************************
      * Factory functions
@@ -113,7 +107,7 @@ public:
      * \param name A unique block name, e.g. 'FFT'. If a block has this block name,
      *             it will use \p make to generate the block controller class.
      */
-    static void register_block(const make_t &make, const std::string &name);
+    static void register_block(const make_t& make, const std::string& name);
 
     /*!
      * \brief Create a block controller class given a NoC-ID or a block name.
@@ -129,7 +123,7 @@ public:
      * \param noc_id The 64-Bit NoC-ID.
      * \return a shared pointer to a new device instance
      */
-    static sptr make(const make_args_t &make_args, uint64_t noc_id = ~0);
+    static sptr make(const make_args_t& make_args, uint64_t noc_id = ~0);
 
     /***********************************************************************
      * Block Communication and Control
@@ -139,15 +133,21 @@ public:
 
     /*! Returns the 16-Bit address for this block.
      */
-    uint32_t get_address(size_t block_port=0);
+    uint32_t get_address(size_t block_port = 0);
 
     /*! Returns the unique block ID for this block (e.g. "0/FFT_1").
      */
-    block_id_t get_block_id() const { return _block_id; };
+    block_id_t get_block_id() const
+    {
+        return _block_id;
+    };
 
     /*! Shorthand for get_block_id().to_string()
      */
-    std::string unique_id() const { return _block_id.to_string(); };
+    std::string unique_id() const
+    {
+        return _block_id.to_string();
+    };
 
     /***********************************************************************
      * FPGA control & communication
@@ -178,7 +178,7 @@ public:
      * \throw uhd::key_error if \p reg is not a valid register name
      *
      */
-    void sr_write(const std::string &reg, const uint32_t data, const size_t port = 0);
+    void sr_write(const std::string& reg, const uint32_t data, const size_t port = 0);
 
     /*! Allows reading one register on the settings bus (64-Bit version).
      *
@@ -221,7 +221,7 @@ public:
      * \returns the readback value.
      * \throws uhd::key_error if \p reg is not a valid register name
      */
-    uint64_t user_reg_read64(const std::string &reg, const size_t port = 0);
+    uint64_t user_reg_read64(const std::string& reg, const size_t port = 0);
 
     /*! Allows reading one user-defined register (32-Bit version).
      *
@@ -247,7 +247,7 @@ public:
      * \throws uhd::key_error if \p reg is not a valid register name
      * \param port Port from which to read
      */
-    uint32_t user_reg_read32(const std::string &reg, const size_t port = 0);
+    uint32_t user_reg_read32(const std::string& reg, const size_t port = 0);
 
 
     /*! Sets a command time for all future command packets.
@@ -255,7 +255,7 @@ public:
      * \throws uhd::assertion_error if the underlying interface does not
      *         actually support timing.
      */
-    void set_command_time(const time_spec_t &time_spec, const size_t port = ANY_PORT);
+    void set_command_time(const time_spec_t& time_spec, const size_t port = ANY_PORT);
 
     /*! Returns the current command time for all future command packets.
      *
@@ -307,15 +307,16 @@ public:
      * Note that this function will silently ignore any keys in \p args that
      * aren't already registered as block arguments.
      */
-    void set_args(const uhd::device_addr_t &args, const size_t port = 0);
+    void set_args(const uhd::device_addr_t& args, const size_t port = 0);
 
     //! Set a specific block argument. \p val is converted to the corresponding
     // data type using by looking up its type in the block definition.
-    void set_arg(const std::string &key, const std::string &val, const size_t port = 0);
+    void set_arg(const std::string& key, const std::string& val, const size_t port = 0);
 
     //! Direct access to set a block argument.
     template <typename T>
-    void set_arg(const std::string &key, const T &val, const size_t port = 0) {
+    void set_arg(const std::string& key, const T& val, const size_t port = 0)
+    {
         _tree->access<T>(get_arg_path(key, port) / "value").set(val);
     }
 
@@ -323,40 +324,40 @@ public:
     uhd::device_addr_t get_args(const size_t port = 0) const;
 
     //! Return a single block argument in string format.
-    std::string get_arg(const std::string &key, const size_t port = 0) const;
+    std::string get_arg(const std::string& key, const size_t port = 0) const;
 
     //! Direct access to get a block argument.
-    template <typename T>
-    T get_arg(const std::string &key, const size_t port = 0) const {
+    template <typename T> T get_arg(const std::string& key, const size_t port = 0) const
+    {
         return _tree->access<T>(get_arg_path(key, port) / "value").get();
     }
 
-    std::string get_arg_type(const std::string &key, const size_t port = 0) const;
+    std::string get_arg_type(const std::string& key, const size_t port = 0) const;
 
 protected:
     /***********************************************************************
      * Structors
      **********************************************************************/
-    block_ctrl_base(void) {}; // To allow pure virtual (interface) sub-classes
+    block_ctrl_base(void){}; // To allow pure virtual (interface) sub-classes
     virtual ~block_ctrl_base();
 
     /*! Constructor. This is only called from the internal block factory!
      *
      * \param make_args All arguments to this constructor are passed in this object.
-     *                  Its details are subject to change. Use the UHD_RFNOC_BLOCK_CONSTRUCTOR()
-     *                  macro to set up your block's constructor in a portable fashion.
+     *                  Its details are subject to change. Use the
+     * UHD_RFNOC_BLOCK_CONSTRUCTOR() macro to set up your block's constructor in a
+     * portable fashion.
      */
-    block_ctrl_base(
-            const make_args_t &make_args
-    );
+    block_ctrl_base(const make_args_t& make_args);
 
     /***********************************************************************
      * Helpers
      **********************************************************************/
-    stream_sig_t _resolve_port_def(const blockdef::port_t &port_def) const;
+    stream_sig_t _resolve_port_def(const blockdef::port_t& port_def) const;
 
     //! Return the property tree path to a block argument \p key on \p port
-    uhd::fs_path get_arg_path(const std::string &key, size_t port = 0) const {
+    uhd::fs_path get_arg_path(const std::string& key, size_t port = 0) const
+    {
         return _root_path / "args" / port / key;
     };
 
@@ -373,7 +374,8 @@ protected:
 
     //! Override this function if your block needs to specially handle
     // setting the command time
-    virtual void _set_command_time(const time_spec_t &time_spec, const size_t port = ANY_PORT);
+    virtual void _set_command_time(
+        const time_spec_t& time_spec, const size_t port = ANY_PORT);
     /***********************************************************************
      * Protected members
      **********************************************************************/
@@ -389,11 +391,9 @@ protected:
 
 private:
     //! Helper function to initialize the port definition nodes in the prop tree
-    void _init_port_defs(
-            const std::string &direction,
-            blockdef::ports_t ports,
-            const size_t first_port_index=0
-    );
+    void _init_port_defs(const std::string& direction,
+        blockdef::ports_t ports,
+        const size_t first_port_index = 0);
 
     //! Helper function to initialize the block args (used by ctor only)
     void _init_block_args();

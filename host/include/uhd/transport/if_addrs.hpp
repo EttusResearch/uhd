@@ -12,25 +12,26 @@
 #include <string>
 #include <vector>
 
-namespace uhd{ namespace transport{
+namespace uhd { namespace transport {
 
-    /*!
-     * The address for a network interface.
-     */
-    struct UHD_API if_addrs_t{
-        std::string inet;
-        std::string mask;
-        std::string bcast;
-    };
+/*!
+ * The address for a network interface.
+ */
+struct UHD_API if_addrs_t
+{
+    std::string inet;
+    std::string mask;
+    std::string bcast;
+};
 
-    /*!
-     * Get a list of network interface addresses.
-     * The internal implementation is system-dependent.
-     * \return a vector of if addrs
-     */
-    UHD_API std::vector<if_addrs_t> get_if_addrs(void);
+/*!
+ * Get a list of network interface addresses.
+ * The internal implementation is system-dependent.
+ * \return a vector of if addrs
+ */
+UHD_API std::vector<if_addrs_t> get_if_addrs(void);
 
-}} //namespace
+}} // namespace uhd::transport
 
 
 #endif /* INCLUDED_UHD_TRANSPORT_IF_ADDRS_HPP */

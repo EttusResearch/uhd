@@ -13,7 +13,7 @@
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
 
-namespace uhd{ namespace transport{
+namespace uhd { namespace transport {
 
 /*!
  * Flow control function.
@@ -25,7 +25,8 @@ typedef boost::function<bool(managed_buffer::sptr buff)> flow_ctrl_func;
 /*!
  * Adds flow control to any zero_copy_if transport.
  */
-class UHD_API zero_copy_flow_ctrl : public virtual zero_copy_if {
+class UHD_API zero_copy_flow_ctrl : public virtual zero_copy_if
+{
 public:
     typedef boost::shared_ptr<zero_copy_flow_ctrl> sptr;
 
@@ -33,16 +34,15 @@ public:
      * Make flow controlled transport.
      *
      * \param transport a shared pointer to the transport interface
-     * \param send_flow_ctrl optional send flow control function called before buffer is sent
-     * \param recv_flow_ctrl optional receive flow control function called after buffer released
+     * \param send_flow_ctrl optional send flow control function called before buffer is
+     * sent \param recv_flow_ctrl optional receive flow control function called after
+     * buffer released
      */
-    static sptr make(
-        zero_copy_if::sptr transport,
+    static sptr make(zero_copy_if::sptr transport,
         flow_ctrl_func send_flow_ctrl,
-        flow_ctrl_func recv_flow_ctrl
-    );
+        flow_ctrl_func recv_flow_ctrl);
 };
 
-}} //namespace
+}} // namespace uhd::transport
 
 #endif /* INCLUDED_ZERO_COPY_FLOW_CTRL_HPP */

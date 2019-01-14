@@ -10,13 +10,13 @@
 
 namespace uhd { namespace usrp { namespace gpio_atr {
 
-    enum gpio_atr_reg_t {
-        ATR_REG_IDLE        = int('i'),
-        ATR_REG_TX_ONLY     = int('t'),
-        ATR_REG_RX_ONLY     = int('r'),
-        ATR_REG_FULL_DUPLEX = int('f')
-    };
+enum gpio_atr_reg_t {
+    ATR_REG_IDLE        = int('i'),
+    ATR_REG_TX_ONLY     = int('t'),
+    ATR_REG_RX_ONLY     = int('r'),
+    ATR_REG_FULL_DUPLEX = int('f')
+};
 
-}}} //namespaces
+}}} // namespace uhd::usrp::gpio_atr
 
 #endif /* INCLUDED_LIBUHD_USRP_GPIO_DEFS_HPP */

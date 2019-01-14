@@ -13,8 +13,7 @@
 #include <boost/utility.hpp>
 
 
-enum x300_clock_which_t
-{
+enum x300_clock_which_t {
     X300_CLOCK_WHICH_ADC0,
     X300_CLOCK_WHICH_ADC1,
     X300_CLOCK_WHICH_DAC0,
@@ -29,17 +28,16 @@ enum x300_clock_which_t
 class x300_clock_ctrl : boost::noncopyable
 {
 public:
-
     typedef boost::shared_ptr<x300_clock_ctrl> sptr;
 
     virtual ~x300_clock_ctrl(void) = 0;
 
     static sptr make(uhd::spi_iface::sptr spiface,
-            const size_t slaveno,
-            const size_t hw_rev,
-            const double master_clock_rate,
-            const double dboard_clock_rate,
-            const double system_ref_rate);
+        const size_t slaveno,
+        const size_t hw_rev,
+        const double master_clock_rate,
+        const double dboard_clock_rate,
+        const double system_ref_rate);
 
     /*! Get the master clock rate of the device.
      * \return the clock frequency in Hz
@@ -78,7 +76,8 @@ public:
      * \param enable true=enable, false=disable
      * \return a list of clock rates in Hz
      */
-    virtual void enable_dboard_clock(const x300_clock_which_t which, const bool enable) = 0;
+    virtual void enable_dboard_clock(
+        const x300_clock_which_t which, const bool enable) = 0;
 
     /*! Turn the reference output on/off
      * \param true = on, false = off
@@ -92,7 +91,9 @@ public:
      * \return the actual delay value set
      * \throw exception when which invalid or delay_ns out of range
      */
-    virtual double set_clock_delay(const x300_clock_which_t which, const double delay_ns, const bool resync = true) = 0;
+    virtual double set_clock_delay(const x300_clock_which_t which,
+        const double delay_ns,
+        const bool resync = true) = 0;
 
     /*! Get the clock delay for the given clock divider.
      * \param which which clock

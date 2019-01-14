@@ -10,13 +10,10 @@
 
 #include <uhd/config.hpp>
 
-namespace uhd{
+namespace uhd {
 
-    enum endianness_t {
-        ENDIANNESS_BIG,
-        ENDIANNESS_LITTLE
-    };
+enum endianness_t { ENDIANNESS_BIG, ENDIANNESS_LITTLE };
 
-} //namespace uhd
+} // namespace uhd
 
 #endif /* INCLUDED_UHD_TYPES_ENDIANNESS_HPP */

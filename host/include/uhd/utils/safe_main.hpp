@@ -19,16 +19,19 @@
  * \param _argc the declaration for argc
  * \param _argv the declaration for argv
  */
-#define UHD_SAFE_MAIN(_argc, _argv) _main(int, char*[]); \
-int main(int argc, char *argv[]){ \
-    try { \
-        return _main(argc, argv); \
-    } catch(const std::exception &e) { \
-        std::cerr << "Error: " << e.what() << std::endl; \
-    } catch(...) { \
-        std::cerr << "Error: unknown exception" << std::endl; \
-    } \
-    return ~0; \
-} int _main(_argc, _argv)
+#define UHD_SAFE_MAIN(_argc, _argv)                               \
+    _main(int, char* []);                                         \
+    int main(int argc, char* argv[])                              \
+    {                                                             \
+        try {                                                     \
+            return _main(argc, argv);                             \
+        } catch (const std::exception& e) {                       \
+            std::cerr << "Error: " << e.what() << std::endl;      \
+        } catch (...) {                                           \
+            std::cerr << "Error: unknown exception" << std::endl; \
+        }                                                         \
+        return ~0;                                                \
+    }                                                             \
+    int _main(_argc, _argv)
 
 #endif /* INCLUDED_UHD_UTILS_SAFE_MAIN_HPP */

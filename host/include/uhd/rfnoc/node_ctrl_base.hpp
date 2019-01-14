@@ -8,19 +8,18 @@
 #ifndef INCLUDED_LIBUHD_NODE_CTRL_BASE_HPP
 #define INCLUDED_LIBUHD_NODE_CTRL_BASE_HPP
 
-#include <uhd/types/device_addr.hpp>
 #include <uhd/rfnoc/constants.hpp>
+#include <uhd/types/device_addr.hpp>
 #include <uhd/utils/log.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/utility.hpp>
+#include <stdint.h>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/function.hpp>
+#include <boost/shared_ptr.hpp>
+#include <boost/utility.hpp>
 #include <map>
 #include <set>
-#include <stdint.h>
 
-namespace uhd {
-    namespace rfnoc {
+namespace uhd { namespace rfnoc {
 
 #define UHD_RFNOC_BLOCK_TRACE() UHD_LOGGER_TRACE("RFNOC")
 
@@ -28,7 +27,8 @@ namespace uhd {
  *
  */
 class UHD_RFNOC_API node_ctrl_base;
-class node_ctrl_base : boost::noncopyable, public boost::enable_shared_from_this<node_ctrl_base>
+class node_ctrl_base : boost::noncopyable,
+                       public boost::enable_shared_from_this<node_ctrl_base>
 {
 public:
     /***********************************************************************
@@ -36,8 +36,8 @@ public:
      **********************************************************************/
     typedef boost::shared_ptr<node_ctrl_base> sptr;
     typedef boost::weak_ptr<node_ctrl_base> wptr;
-    typedef std::map< size_t, wptr > node_map_t;
-    typedef std::pair< size_t, wptr > node_map_pair_t;
+    typedef std::map<size_t, wptr> node_map_t;
+    typedef std::pair<size_t, wptr> node_map_pair_t;
 
     /***********************************************************************
      * Node control
@@ -52,8 +52,14 @@ public:
      */
     virtual void clear();
 
-    node_map_t list_downstream_nodes() { return _downstream_nodes; };
-    node_map_t list_upstream_nodes() { return _upstream_nodes; };
+    node_map_t list_downstream_nodes()
+    {
+        return _downstream_nodes;
+    };
+    node_map_t list_upstream_nodes()
+    {
+        return _upstream_nodes;
+    };
 
     /*! Disconnect this node from all neighbouring nodes.
      */
@@ -109,7 +115,8 @@ public:
      * Search only goes downstream.
      */
     template <typename T>
-    UHD_INLINE std::vector< boost::shared_ptr<T> > find_downstream_node(bool active_only = false)
+    UHD_INLINE std::vector<boost::shared_ptr<T> > find_downstream_node(
+        bool active_only = false)
     {
         return _find_child_node<T, true>(active_only);
     }
@@ -117,7 +124,8 @@ public:
     /*! Same as find_downstream_node(), but only search upstream.
      */
     template <typename T>
-    UHD_INLINE std::vector< boost::shared_ptr<T> > find_upstream_node(bool active_only = false)
+    UHD_INLINE std::vector<boost::shared_ptr<T> > find_upstream_node(
+        bool active_only = false)
     {
         return _find_child_node<T, false>(active_only);
     }
@@ -136,22 +144,26 @@ public:
      */
     template <typename T, typename value_type>
     UHD_INLINE value_type find_downstream_unique_property(
-            boost::function<value_type(boost::shared_ptr<T> node, size_t port)> get_property,
-            value_type null_value,
-            const std::set< boost::shared_ptr<T> > &exclude_nodes=std::set< boost::shared_ptr<T> >()
-    ) {
-        return _find_unique_property<T, value_type, true>(get_property, null_value, exclude_nodes);
+        boost::function<value_type(boost::shared_ptr<T> node, size_t port)> get_property,
+        value_type null_value,
+        const std::set<boost::shared_ptr<T> >& exclude_nodes =
+            std::set<boost::shared_ptr<T> >())
+    {
+        return _find_unique_property<T, value_type, true>(
+            get_property, null_value, exclude_nodes);
     }
 
     /*! Like find_downstream_unique_property(), but searches upstream.
      */
     template <typename T, typename value_type>
     UHD_INLINE value_type find_upstream_unique_property(
-            boost::function<value_type(boost::shared_ptr<T> node, size_t port)> get_property,
-            value_type null_value,
-            const std::set< boost::shared_ptr<T> > &exclude_nodes=std::set< boost::shared_ptr<T> >()
-    ) {
-        return _find_unique_property<T, value_type, false>(get_property, null_value, exclude_nodes);
+        boost::function<value_type(boost::shared_ptr<T> node, size_t port)> get_property,
+        value_type null_value,
+        const std::set<boost::shared_ptr<T> >& exclude_nodes =
+            std::set<boost::shared_ptr<T> >())
+    {
+        return _find_unique_property<T, value_type, false>(
+            get_property, null_value, exclude_nodes);
     }
 
 protected:
@@ -159,7 +171,10 @@ protected:
      * Structors
      **********************************************************************/
     node_ctrl_base(void) {}
-    virtual ~node_ctrl_base() { disconnect(); }
+    virtual ~node_ctrl_base()
+    {
+        disconnect();
+    }
 
     /***********************************************************************
      * Protected members
@@ -204,9 +219,7 @@ protected:
      * See also uhd::rfnoc::source_node_ctrl::_register_downstream_node().
      */
     virtual void _register_downstream_node(
-            node_ctrl_base::sptr downstream_node,
-            size_t port
-    );
+        node_ctrl_base::sptr downstream_node, size_t port);
 
     /*! Registers another node as upstream of this node, connected to a given port.
      *
@@ -214,10 +227,7 @@ protected:
      * a source node.
      * See also uhd::rfnoc::sink_node_ctrl::_register_upstream_node().
      */
-    virtual void _register_upstream_node(
-            node_ctrl_base::sptr upstream_node,
-            size_t port
-    );
+    virtual void _register_upstream_node(node_ctrl_base::sptr upstream_node, size_t port);
 
 private:
     /*! Implements the search algorithm for find_downstream_node() and
@@ -229,7 +239,7 @@ private:
      * \param downstream Set to true if search goes downstream, false for upstream.
      */
     template <typename T, bool downstream>
-    std::vector< boost::shared_ptr<T> > _find_child_node(bool active_only = false);
+    std::vector<boost::shared_ptr<T> > _find_child_node(bool active_only = false);
 
     /*! Implements the search algorithm for find_downstream_unique_property() and
      * find_upstream_unique_property().
@@ -241,10 +251,9 @@ private:
      */
     template <typename T, typename value_type, bool downstream>
     value_type _find_unique_property(
-            boost::function<value_type(boost::shared_ptr<T>, size_t)> get_property,
-            value_type NULL_VALUE,
-            const std::set< boost::shared_ptr<T> > &exclude_nodes
-    );
+        boost::function<value_type(boost::shared_ptr<T>, size_t)> get_property,
+        value_type NULL_VALUE,
+        const std::set<boost::shared_ptr<T> >& exclude_nodes);
 
     /*! Stores the remote port number of a downstream connection.
      */

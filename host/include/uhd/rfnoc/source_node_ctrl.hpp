@@ -8,13 +8,12 @@
 #ifndef INCLUDED_LIBUHD_SOURCE_NODE_CTRL_BASE_HPP
 #define INCLUDED_LIBUHD_SOURCE_NODE_CTRL_BASE_HPP
 
-#include <uhd/rfnoc/node_ctrl_base.hpp>
 #include <uhd/rfnoc/constants.hpp>
+#include <uhd/rfnoc/node_ctrl_base.hpp>
 #include <uhd/types/stream_cmd.hpp>
 #include <boost/thread.hpp>
 
-namespace uhd {
-    namespace rfnoc {
+namespace uhd { namespace rfnoc {
 
 /*! \brief Abstract class for source nodes.
  *
@@ -28,8 +27,8 @@ public:
      * Types
      **********************************************************************/
     typedef boost::shared_ptr<source_node_ctrl> sptr;
-    typedef std::map< size_t, boost::weak_ptr<source_node_ctrl> > node_map_t;
-    typedef std::pair< size_t, boost::weak_ptr<source_node_ctrl> > node_map_pair_t;
+    typedef std::map<size_t, boost::weak_ptr<source_node_ctrl> > node_map_t;
+    typedef std::pair<size_t, boost::weak_ptr<source_node_ctrl> > node_map_pair_t;
 
     /***********************************************************************
      * Source block controls
@@ -39,9 +38,7 @@ public:
      * \param chan Channel Index
      */
     virtual void issue_stream_cmd(
-        const uhd::stream_cmd_t &stream_cmd,
-        const size_t chan=0
-    ) = 0;
+        const uhd::stream_cmd_t& stream_cmd, const size_t chan = 0) = 0;
 
     /*! Connect another node downstream of this node.
      *
@@ -57,11 +54,9 @@ public:
      *
      * \returns The actual port number used.
      */
-    size_t connect_downstream(
-            node_ctrl_base::sptr downstream_node,
-            size_t port=ANY_PORT,
-            const uhd::device_addr_t &args=uhd::device_addr_t()
-    );
+    size_t connect_downstream(node_ctrl_base::sptr downstream_node,
+        size_t port                    = ANY_PORT,
+        const uhd::device_addr_t& args = uhd::device_addr_t());
 
     /*! Call this function to notify a node about its streamer activity.
      *
@@ -72,7 +67,6 @@ public:
     virtual void set_rx_streamer(bool active, const size_t port);
 
 protected:
-
     /*! Ask for a port number to connect a downstream block to.
      *
      * See sink_node_ctrl::_request_input_port(). This is the same
@@ -84,9 +78,7 @@ protected:
      * \returns A valid input port, or ANY_PORT on failure.
      */
     virtual size_t _request_output_port(
-            const size_t suggested_port,
-            const uhd::device_addr_t &args
-    ) const;
+        const size_t suggested_port, const uhd::device_addr_t& args) const;
 
 
 private:
@@ -94,7 +86,8 @@ private:
      */
     boost::mutex _output_mutex;
 
-    /*! Register a node downstream of this one (i.e., a node that receives data from this node).
+    /*! Register a node downstream of this one (i.e., a node that receives data from this
+     * node).
      *
      * By definition, the upstream node must of type sink_node_ctrl.
      *
@@ -104,10 +97,7 @@ private:
      * \param downstream_node A pointer to the node instantiation
      * \param port Port number the downstream node is connected to
      */
-    void _register_downstream_node(
-            node_ctrl_base::sptr downstream_node,
-            size_t port
-    );
+    void _register_downstream_node(node_ctrl_base::sptr downstream_node, size_t port);
 
 }; /* class source_node_ctrl */
 

@@ -25,7 +25,8 @@ public:
      * \param spiface the interface to spi
      * \return a new codec control object
      */
-    static sptr make(uhd::spi_iface::sptr iface, const size_t slaveno, const double clock_rate);
+    static sptr make(
+        uhd::spi_iface::sptr iface, const size_t slaveno, const double clock_rate);
 
     // ! Reset the DAC
     virtual void reset(void) = 0;

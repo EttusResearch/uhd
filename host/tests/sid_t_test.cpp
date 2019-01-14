@@ -5,15 +5,16 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#include <uhd/exception.hpp>
+#include <uhd/types/sid.hpp>
+#include <boost/test/unit_test.hpp>
 #include <iostream>
 #include <sstream>
-#include <boost/test/unit_test.hpp>
-#include <uhd/types/sid.hpp>
-#include <uhd/exception.hpp>
 
 using uhd::sid_t;
 
-BOOST_AUTO_TEST_CASE(test_sid_t) {
+BOOST_AUTO_TEST_CASE(test_sid_t)
+{
     uint32_t sid_value = 0x01020310;
     sid_t sid(sid_value);
 
@@ -29,7 +30,7 @@ BOOST_AUTO_TEST_CASE(test_sid_t) {
     BOOST_CHECK_EQUAL(sid == sid, true);
     BOOST_CHECK_EQUAL(sid == sid_value, true);
 
-    uint32_t check_sid_val = (uint32_t) sid;
+    uint32_t check_sid_val = (uint32_t)sid;
     BOOST_CHECK_EQUAL(check_sid_val, sid_value);
 
     std::stringstream ss_dec;
@@ -46,20 +47,21 @@ BOOST_AUTO_TEST_CASE(test_sid_t) {
     BOOST_CHECK_EQUAL(empty_sid.to_pp_string_hex(), "xx:xx>xx:xx");
     BOOST_CHECK_EQUAL(empty_sid == sid, false);
     BOOST_CHECK_EQUAL(empty_sid == sid_value, false);
-    BOOST_CHECK_EQUAL((bool) empty_sid, false);
+    BOOST_CHECK_EQUAL((bool)empty_sid, false);
 
     empty_sid = sid_value; // No longer empty
     BOOST_CHECK_EQUAL(empty_sid.is_set(), true);
     BOOST_CHECK_EQUAL(empty_sid == sid, true);
 }
 
-BOOST_AUTO_TEST_CASE(test_sid_t_set) {
+BOOST_AUTO_TEST_CASE(test_sid_t_set)
+{
     uint32_t sid_value = 0x0;
     sid_t sid(sid_value);
 
     sid.set(0x01020304);
     BOOST_CHECK_EQUAL(sid.get(), (uint32_t)0x01020304);
-    BOOST_CHECK_EQUAL(sid.get_src_addr(),(uint32_t)0x01);
+    BOOST_CHECK_EQUAL(sid.get_src_addr(), (uint32_t)0x01);
     BOOST_CHECK_EQUAL(sid.get_src_endpoint(), (uint32_t)0x02);
     BOOST_CHECK_EQUAL(sid.get_dst_addr(), (uint32_t)0x03);
     BOOST_CHECK_EQUAL(sid.get_dst_endpoint(), (uint32_t)0x04);
@@ -117,7 +119,8 @@ BOOST_AUTO_TEST_CASE(test_sid_t_set) {
     BOOST_CHECK_EQUAL(sid.get(), (uint32_t)0x0cbc0a0b);
 }
 
-BOOST_AUTO_TEST_CASE(test_sid_t_from_str) {
+BOOST_AUTO_TEST_CASE(test_sid_t_from_str)
+{
     sid_t sid("1.2>3.4");
     BOOST_CHECK_EQUAL(sid.get_src_addr(), (uint32_t)1);
     BOOST_CHECK_EQUAL(sid.get_src_endpoint(), (uint32_t)2);

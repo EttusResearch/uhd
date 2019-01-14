@@ -8,31 +8,29 @@
 
 #include "../ad937x_device_types.hpp"
 #include "../adi/t_mykonos.h"
-
 #include "mpm/ad937x/ad937x_ctrl_types.hpp"
-
-#include <vector>
 #include <unordered_map>
+#include <vector>
 
-// C++14 requires std::hash includes a specialization for enums, but gcc doesn't do that yet
-// Remove this when that happens
+// C++14 requires std::hash includes a specialization for enums, but gcc doesn't do that
+// yet Remove this when that happens
 namespace std {
-    template <> struct hash<uhd::direction_t>
+template <> struct hash<uhd::direction_t>
+{
+    size_t operator()(const uhd::direction_t& x) const
     {
-        size_t operator()(const uhd::direction_t & x) const
-        {
-            return static_cast<std::size_t>(x);
-        }
-    };
+        return static_cast<std::size_t>(x);
+    }
+};
 
-    template <> struct hash<mpm::ad937x::device::chain_t>
+template <> struct hash<mpm::ad937x::device::chain_t>
+{
+    size_t operator()(const mpm::ad937x::device::chain_t& x) const
     {
-        size_t operator()(const mpm::ad937x::device::chain_t & x) const
-        {
-            return static_cast<std::size_t>(x);
-        }
-    };
-}
+        return static_cast<std::size_t>(x);
+    }
+};
+} // namespace std
 
 // collection of the 5 attributes that define the gain pins for a channel in Mykonos
 struct ad937x_gain_ctrl_channel_t
@@ -54,9 +52,8 @@ private:
 struct ad937x_gain_ctrl_config_t
 {
     std::unordered_map<uhd::direction_t,
-        std::unordered_map<mpm::ad937x::device::chain_t, ad937x_gain_ctrl_channel_t>> config;
+        std::unordered_map<mpm::ad937x::device::chain_t, ad937x_gain_ctrl_channel_t>>
+        config;
 
     ad937x_gain_ctrl_config_t(mpm::ad937x::gpio::gain_pins_t gain_pins);
 };
-
-

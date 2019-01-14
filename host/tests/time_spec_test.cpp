@@ -5,14 +5,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <boost/test/unit_test.hpp>
 #include <uhd/types/time_spec.hpp>
-#include <boost/thread.hpp> //sleep
-#include <iostream>
-#include <iomanip>
 #include <stdint.h>
+#include <boost/test/unit_test.hpp>
+#include <boost/thread.hpp> //sleep
+#include <iomanip>
+#include <iostream>
 
-BOOST_AUTO_TEST_CASE(test_time_spec_compare){
+BOOST_AUTO_TEST_CASE(test_time_spec_compare)
+{
     std::cout << "Testing time specification compare..." << std::endl;
 
     BOOST_CHECK(uhd::time_spec_t(2.0) == uhd::time_spec_t(2.0));
@@ -31,7 +32,8 @@ BOOST_AUTO_TEST_CASE(test_time_spec_compare){
 #define CHECK_TS_EQUAL(lhs, rhs) \
     BOOST_CHECK_CLOSE((lhs).get_real_secs(), (rhs).get_real_secs(), 0.001)
 
-BOOST_AUTO_TEST_CASE(test_time_spec_arithmetic){
+BOOST_AUTO_TEST_CASE(test_time_spec_arithmetic)
+{
     std::cout << "Testing time specification arithmetic..." << std::endl;
 
     CHECK_TS_EQUAL(uhd::time_spec_t(2.3) + uhd::time_spec_t(1.0), uhd::time_spec_t(3.3));
@@ -40,7 +42,8 @@ BOOST_AUTO_TEST_CASE(test_time_spec_arithmetic){
     CHECK_TS_EQUAL(uhd::time_spec_t(1.0) - uhd::time_spec_t(2.3), uhd::time_spec_t(-1.3));
 }
 
-BOOST_AUTO_TEST_CASE(test_time_spec_parts){
+BOOST_AUTO_TEST_CASE(test_time_spec_parts)
+{
     std::cout << "Testing time specification parts..." << std::endl;
 
     BOOST_CHECK_EQUAL(uhd::time_spec_t(1.1).get_full_secs(), 1);
@@ -52,7 +55,8 @@ BOOST_AUTO_TEST_CASE(test_time_spec_parts){
     BOOST_CHECK_EQUAL(uhd::time_spec_t(-1.1).to_ticks(100), -110);
 }
 
-BOOST_AUTO_TEST_CASE(test_time_spec_neg_values){
+BOOST_AUTO_TEST_CASE(test_time_spec_neg_values)
+{
     uhd::time_spec_t ts1(0.3);
     uhd::time_spec_t ts2(1, -0.9);
     std::cout << "ts1 " << ts1.get_real_secs() << std::endl;
@@ -74,7 +78,7 @@ BOOST_AUTO_TEST_CASE(test_time_spec_neg_values){
 BOOST_AUTO_TEST_CASE(test_time_large_ticks_to_time_spec)
 {
     std::cout << "sizeof(time_t) " << sizeof(time_t) << std::endl;
-    const uint64_t ticks0 = uint64_t(100e6*1360217663.739296);
+    const uint64_t ticks0     = uint64_t(100e6 * 1360217663.739296);
     const uhd::time_spec_t t0 = uhd::time_spec_t::from_ticks(ticks0, 100e6);
     std::cout << "t0.get_real_secs() " << t0.get_real_secs() << std::endl;
     std::cout << "t0.get_full_secs() " << t0.get_full_secs() << std::endl;
@@ -84,11 +88,11 @@ BOOST_AUTO_TEST_CASE(test_time_large_ticks_to_time_spec)
 
 BOOST_AUTO_TEST_CASE(test_time_error_irrational_rate)
 {
-    static const double rate = 1625e3/6.0;
-    const long long tick_in = 23423436291667ll;
+    static const double rate  = 1625e3 / 6.0;
+    const long long tick_in   = 23423436291667ll;
     const uhd::time_spec_t ts = uhd::time_spec_t::from_ticks(tick_in, rate);
-    const long long tick_out = ts.to_ticks(rate);
-    const long long err = tick_in - tick_out;
+    const long long tick_out  = ts.to_ticks(rate);
+    const long long err       = tick_in - tick_out;
     std::streamsize precision = std::cout.precision();
 
     std::cout << std::setprecision(18);

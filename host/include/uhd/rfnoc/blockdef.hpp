@@ -8,12 +8,12 @@
 #ifndef INCLUDED_LIBUHD_RFNOC_BLOCKDEF_HPP
 #define INCLUDED_LIBUHD_RFNOC_BLOCKDEF_HPP
 
-#include <stdint.h>
-#include <boost/enable_shared_from_this.hpp>
 #include <uhd/config.hpp>
 #include <uhd/types/device_addr.hpp>
-#include <vector>
+#include <stdint.h>
+#include <boost/enable_shared_from_this.hpp>
 #include <set>
+#include <vector>
 
 namespace uhd { namespace rfnoc {
 
@@ -31,17 +31,18 @@ public:
     // to describe what kind of connection is allowed for this port.
     //
     // All the keys listed in PORT_ARGS will be available in this class.
-    class port_t : public uhd::dict<std::string, std::string> {
-      public:
+    class port_t : public uhd::dict<std::string, std::string>
+    {
+    public:
         //! A list of args a port can have.
         static const device_addr_t PORT_ARGS;
 
         port_t();
 
         //! Checks if the value at \p key is a variable (e.g. '$fftlen')
-        bool is_variable(const std::string &key) const;
+        bool is_variable(const std::string& key) const;
         //! Checks if the value at \p key is a keyword (e.g. '%vlen')
-        bool is_keyword(const std::string &key) const;
+        bool is_keyword(const std::string& key) const;
         //! Basic validity check of this port definition. Variables and
         //  keywords are not resolved.
         bool is_valid() const;
@@ -51,8 +52,9 @@ public:
     typedef std::vector<port_t> ports_t;
 
     //! Describes arguments in a block definition.
-    class arg_t : public uhd::dict<std::string, std::string> {
-      public:
+    class arg_t : public uhd::dict<std::string, std::string>
+    {
+    public:
         //! A list of args an argument can have.
         static const device_addr_t ARG_ARGS;
         static const std::set<std::string> VALID_TYPES;
@@ -63,7 +65,6 @@ public:
         bool is_valid() const;
         //! Returns a string with the most important keys
         std::string to_string() const;
-
     };
     typedef std::vector<arg_t> args_t;
 
@@ -92,7 +93,7 @@ public:
     //! Return the one NoC that is valid for this block
     virtual uint64_t noc_id() const = 0;
 
-    virtual ports_t get_input_ports() = 0;
+    virtual ports_t get_input_ports()  = 0;
     virtual ports_t get_output_ports() = 0;
 
     //! Returns the full list of port numbers used

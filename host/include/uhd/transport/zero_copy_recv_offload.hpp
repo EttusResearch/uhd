@@ -12,13 +12,14 @@
 #include <uhd/transport/zero_copy.hpp>
 #include <boost/shared_ptr.hpp>
 
-namespace uhd{ namespace transport{
+namespace uhd { namespace transport {
 
 /*!
  * A threaded transport offload that is meant to relieve the main thread of
  * the responsibility of making receive calls.
  */
-class UHD_API zero_copy_recv_offload : public virtual zero_copy_if {
+class UHD_API zero_copy_recv_offload : public virtual zero_copy_if
+{
 public:
     typedef boost::shared_ptr<zero_copy_recv_offload> sptr;
 
@@ -31,10 +32,9 @@ public:
      * \param transport a shared pointer to the transport interface
      * \param timeout a general timeout for pushing and pulling on the bounded buffer
      */
-    static sptr make(zero_copy_if::sptr transport,
-                     const double timeout);
+    static sptr make(zero_copy_if::sptr transport, const double timeout);
 };
 
-}} //namespace
+}} // namespace uhd::transport
 
 #endif /* INCLUDED_ZERO_COPY_OFFLOAD_HPP */

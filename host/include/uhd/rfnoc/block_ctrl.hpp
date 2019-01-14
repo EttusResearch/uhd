@@ -8,11 +8,10 @@
 #ifndef INCLUDED_LIBUHD_RFNOC_BLOCK_CTRL_HPP
 #define INCLUDED_LIBUHD_RFNOC_BLOCK_CTRL_HPP
 
-#include <uhd/rfnoc/source_block_ctrl_base.hpp>
 #include <uhd/rfnoc/sink_block_ctrl_base.hpp>
+#include <uhd/rfnoc/source_block_ctrl_base.hpp>
 
-namespace uhd {
-    namespace rfnoc {
+namespace uhd { namespace rfnoc {
 
 /*! \brief This is the default implementation of a block_ctrl_base.
  *
@@ -20,7 +19,8 @@ namespace uhd {
  * can be set by sr_write(). The default behaviour of functions is documented
  * in uhd::rfnoc::block_ctrl_base.
  */
-class UHD_RFNOC_API block_ctrl : public source_block_ctrl_base, public sink_block_ctrl_base
+class UHD_RFNOC_API block_ctrl : public source_block_ctrl_base,
+                                 public sink_block_ctrl_base
 {
 public:
     // Required macro in RFNoC block classes

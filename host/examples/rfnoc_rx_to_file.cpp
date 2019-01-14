@@ -15,42 +15,45 @@
 // along with this program.  If not, see <http://www.gnu.org/licenses/>.
 //
 
-#include <uhd/types/tune_request.hpp>
-#include <uhd/types/sensors.hpp>
-#include <uhd/utils/thread.hpp>
-#include <uhd/utils/safe_main.hpp>
 #include <uhd/device3.hpp>
+#include <uhd/exception.hpp>
 #include <uhd/rfnoc/radio_ctrl.hpp>
 #include <uhd/rfnoc/source_block_ctrl_base.hpp>
-#include <uhd/exception.hpp>
-#include <boost/program_options.hpp>
+#include <uhd/types/sensors.hpp>
+#include <uhd/types/tune_request.hpp>
+#include <uhd/utils/safe_main.hpp>
+#include <uhd/utils/thread.hpp>
 #include <boost/format.hpp>
-#include <iostream>
-#include <fstream>
-#include <csignal>
-#include <complex>
-#include <thread>
+#include <boost/program_options.hpp>
 #include <chrono>
+#include <complex>
+#include <csignal>
+#include <fstream>
+#include <iostream>
+#include <thread>
 
 namespace po = boost::program_options;
 
-const int64_t UPDATE_INTERVAL = 1;   //1 second update interval for BW summary
+const int64_t UPDATE_INTERVAL = 1; // 1 second update interval for BW summary
 
 static bool stop_signal_called = false;
-void sig_int_handler(int){stop_signal_called = true;}
+void sig_int_handler(int)
+{
+    stop_signal_called = true;
+}
 
-template<typename samp_type> void recv_to_file(
-    uhd::rx_streamer::sptr rx_stream,
-    const std::string &file,
+template <typename samp_type>
+void recv_to_file(uhd::rx_streamer::sptr rx_stream,
+    const std::string& file,
     const size_t samps_per_buff,
     const double rx_rate,
     const unsigned long long num_requested_samples,
-    double time_requested = 0.0,
-    bool bw_summary = false,
-    bool stats = false,
-    bool enable_size_map = false,
-    bool continue_on_bad_packet = false
-){
+    double time_requested       = 0.0,
+    bool bw_summary             = false,
+    bool stats                  = false,
+    bool enable_size_map        = false,
+    bool continue_on_bad_packet = false)
+{
     unsigned long long num_total_samps = 0;
 
     uhd::rx_metadata_t md;
@@ -61,65 +64,61 @@ template<typename samp_type> void recv_to_file(
     }
     bool overflow_message = true;
 
-    //setup streaming
-    uhd::stream_cmd_t stream_cmd((num_requested_samples == 0)?
-        uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS:
-        uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE
-    );
-    stream_cmd.num_samps = size_t(num_requested_samples);
+    // setup streaming
+    uhd::stream_cmd_t stream_cmd((num_requested_samples == 0)
+                                     ? uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS
+                                     : uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
+    stream_cmd.num_samps  = size_t(num_requested_samples);
     stream_cmd.stream_now = true;
-    stream_cmd.time_spec = uhd::time_spec_t();
+    stream_cmd.time_spec  = uhd::time_spec_t();
     std::cout << "Issuing stream cmd" << std::endl;
     rx_stream->issue_stream_cmd(stream_cmd);
 
     const auto start_time = std::chrono::steady_clock::now();
     const auto stop_time =
-        start_time
-        + std::chrono::milliseconds(int64_t(1000 * time_requested));
+        start_time + std::chrono::milliseconds(int64_t(1000 * time_requested));
     // Track time and samps between updating the BW summary
-    auto last_update = start_time;
+    auto last_update                     = start_time;
     unsigned long long last_update_samps = 0;
 
-    typedef std::map<size_t,size_t> SizeMap;
+    typedef std::map<size_t, size_t> SizeMap;
     SizeMap mapSizes;
 
     // Run this loop until either time expired (if a duration was given), until
     // the requested number of samples were collected (if such a number was
     // given), or until Ctrl-C was pressed.
     while (not stop_signal_called
-            and (num_requested_samples != num_total_samps
-                 or num_requested_samples == 0)
-            and (time_requested == 0.0
-                 or std::chrono::steady_clock::now() <= stop_time)
-            ) {
+           and (num_requested_samples != num_total_samps or num_requested_samples == 0)
+           and (time_requested == 0.0 or std::chrono::steady_clock::now() <= stop_time)) {
         const auto now = std::chrono::steady_clock::now();
 
-        size_t num_rx_samps = rx_stream->recv(&buff.front(), buff.size(), md, 3.0, enable_size_map);
+        size_t num_rx_samps =
+            rx_stream->recv(&buff.front(), buff.size(), md, 3.0, enable_size_map);
 
         if (md.error_code == uhd::rx_metadata_t::ERROR_CODE_TIMEOUT) {
             std::cout << boost::format("Timeout while streaming") << std::endl;
             break;
         }
-        if (md.error_code == uhd::rx_metadata_t::ERROR_CODE_OVERFLOW){
+        if (md.error_code == uhd::rx_metadata_t::ERROR_CODE_OVERFLOW) {
             if (overflow_message) {
                 overflow_message = false;
-                std::cerr << boost::format(
-                    "Got an overflow indication. Please consider the following:\n"
-                    "  Your write medium must sustain a rate of %fMB/s.\n"
-                    "  Dropped samples will not be written to the file.\n"
-                    "  Please modify this example for your purposes.\n"
-                    "  This message will not appear again.\n"
-                ) % (rx_rate*sizeof(samp_type)/1e6);
+                std::cerr
+                    << boost::format(
+                           "Got an overflow indication. Please consider the following:\n"
+                           "  Your write medium must sustain a rate of %fMB/s.\n"
+                           "  Dropped samples will not be written to the file.\n"
+                           "  Please modify this example for your purposes.\n"
+                           "  This message will not appear again.\n")
+                           % (rx_rate * sizeof(samp_type) / 1e6);
             }
             continue;
         }
-        if (md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE){
+        if (md.error_code != uhd::rx_metadata_t::ERROR_CODE_NONE) {
             std::string error = str(boost::format("Receiver error: %s") % md.strerror());
-            if (continue_on_bad_packet){
+            if (continue_on_bad_packet) {
                 std::cerr << error << std::endl;
                 continue;
-            }
-            else
+            } else
                 throw std::runtime_error(error);
         }
 
@@ -133,7 +132,7 @@ template<typename samp_type> void recv_to_file(
         num_total_samps += num_rx_samps;
 
         if (outfile.is_open()) {
-            outfile.write((const char*)&buff.front(), num_rx_samps*sizeof(samp_type));
+            outfile.write((const char*)&buff.front(), num_rx_samps * sizeof(samp_type));
         }
 
         if (bw_summary) {
@@ -142,14 +141,12 @@ template<typename samp_type> void recv_to_file(
             if (time_since_last_update > std::chrono::seconds(UPDATE_INTERVAL)) {
                 const double time_since_last_update_s =
                     std::chrono::duration<double>(time_since_last_update).count();
-                const double rate =
-                    double(last_update_samps) / time_since_last_update_s;
-                std::cout << "\t" << (rate/1e6) << " MSps" << std::endl;
+                const double rate = double(last_update_samps) / time_since_last_update_s;
+                std::cout << "\t" << (rate / 1e6) << " MSps" << std::endl;
                 last_update_samps = 0;
-                last_update = now;
+                last_update       = now;
             }
         }
-
     }
     const auto actual_stop_time = std::chrono::steady_clock::now();
 
@@ -161,7 +158,7 @@ template<typename samp_type> void recv_to_file(
     int num_post_samps = 0;
     do {
         num_post_samps = rx_stream->recv(&buff.front(), buff.size(), md, 3.0);
-    } while(num_post_samps and md.error_code == uhd::rx_metadata_t::ERROR_CODE_NONE);
+    } while (num_post_samps and md.error_code == uhd::rx_metadata_t::ERROR_CODE_NONE);
 
     if (outfile.is_open())
         outfile.close();
@@ -172,13 +169,11 @@ template<typename samp_type> void recv_to_file(
         const double actual_duration_seconds =
             std::chrono::duration<float>(actual_stop_time - start_time).count();
 
-        std::cout
-            << boost::format("Received %d samples in %f seconds")
-               % num_total_samps
-               % actual_duration_seconds
-            << std::endl;
+        std::cout << boost::format("Received %d samples in %f seconds") % num_total_samps
+                         % actual_duration_seconds
+                  << std::endl;
         const double rate = (double)num_total_samps / actual_duration_seconds;
-        std::cout << (rate/1e6) << " MSps" << std::endl;
+        std::cout << (rate / 1e6) << " MSps" << std::endl;
 
         if (enable_size_map) {
             std::cout << std::endl;
@@ -189,23 +184,26 @@ template<typename samp_type> void recv_to_file(
     }
 }
 
-typedef boost::function<uhd::sensor_value_t (const std::string&)> get_sensor_fn_t;
+typedef boost::function<uhd::sensor_value_t(const std::string&)> get_sensor_fn_t;
 
-bool check_locked_sensor(std::vector<std::string> sensor_names, const char* sensor_name, get_sensor_fn_t get_sensor_fn, double setup_time){
-    if (std::find(sensor_names.begin(), sensor_names.end(), sensor_name) == sensor_names.end())
+bool check_locked_sensor(std::vector<std::string> sensor_names,
+    const char* sensor_name,
+    get_sensor_fn_t get_sensor_fn,
+    double setup_time)
+{
+    if (std::find(sensor_names.begin(), sensor_names.end(), sensor_name)
+        == sensor_names.end())
         return false;
 
-    auto setup_timeout =
-        std::chrono::steady_clock::now()
-        + std::chrono::milliseconds(int64_t(setup_time * 1000));
+    auto setup_timeout = std::chrono::steady_clock::now()
+                         + std::chrono::milliseconds(int64_t(setup_time * 1000));
     bool lock_detected = false;
 
     std::cout << boost::format("Waiting for \"%s\": ") % sensor_name;
     std::cout.flush();
 
     while (true) {
-        if (lock_detected and
-            (std::chrono::steady_clock::now() > setup_timeout)) {
+        if (lock_detected and (std::chrono::steady_clock::now() > setup_timeout)) {
             std::cout << " locked." << std::endl;
             break;
         }
@@ -213,14 +211,13 @@ bool check_locked_sensor(std::vector<std::string> sensor_names, const char* sens
             std::cout << "+";
             std::cout.flush();
             lock_detected = true;
-        }
-        else {
+        } else {
             if (std::chrono::steady_clock::now() > setup_timeout) {
                 std::cout << std::endl;
-                throw std::runtime_error(str(
-                    boost::format("timed out waiting for consecutive locks on sensor \"%s\"")
-                    % sensor_name
-                ));
+                throw std::runtime_error(
+                    str(boost::format(
+                            "timed out waiting for consecutive locks on sensor \"%s\"")
+                        % sensor_name));
             }
             std::cout << "_";
             std::cout.flush();
@@ -232,15 +229,17 @@ bool check_locked_sensor(std::vector<std::string> sensor_names, const char* sens
     return true;
 }
 
-int UHD_SAFE_MAIN(int argc, char *argv[]){
+int UHD_SAFE_MAIN(int argc, char* argv[])
+{
     uhd::set_thread_priority_safe();
 
-    //variables to be set by po
-    std::string args, file, format, ant, subdev, ref, wirefmt, streamargs, radio_args, block_id, block_args;
+    // variables to be set by po
+    std::string args, file, format, ant, subdev, ref, wirefmt, streamargs, radio_args,
+        block_id, block_args;
     size_t total_num_samps, spb, radio_id, radio_chan;
     double rate, freq, gain, bw, total_time, setup_time;
 
-    //setup the program options
+    // setup the program options
     po::options_description desc("Allowed options");
     // clang-format off
     desc.add_options()
@@ -280,26 +279,27 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
 
-    //print the help message
+    // print the help message
     if (vm.count("help")) {
         std::cout << boost::format("UHD/RFNoC RX samples to file %s") % desc << std::endl;
-        std::cout
-            << std::endl
-            << "This application streams data from a single channel of a USRP device to a file.\n"
-            << std::endl;
+        std::cout << std::endl
+                  << "This application streams data from a single channel of a USRP "
+                     "device to a file.\n"
+                  << std::endl;
         return ~0;
     }
 
     bool bw_summary = vm.count("progress") > 0;
-    bool stats = vm.count("stats") > 0;
+    bool stats      = vm.count("stats") > 0;
     if (vm.count("null") > 0) {
         file = "";
     }
-    bool enable_size_map = vm.count("sizemap") > 0;
+    bool enable_size_map        = vm.count("sizemap") > 0;
     bool continue_on_bad_packet = vm.count("continue") > 0;
 
     if (enable_size_map) {
-        std::cout << "Packet size tracking enabled - will only recv one packet at a time!" << std::endl;
+        std::cout << "Packet size tracking enabled - will only recv one packet at a time!"
+                  << std::endl;
     }
 
     if (format != "sc16" and format != "fc32" and format != "fc64") {
@@ -311,12 +311,14 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
      * Create device and block controls
      ***********************************************************************/
     std::cout << std::endl;
-    std::cout << boost::format("Creating the USRP device with: %s...") % args << std::endl;
+    std::cout << boost::format("Creating the USRP device with: %s...") % args
+              << std::endl;
     uhd::device3::sptr usrp = uhd::device3::make(args);
     // Create handle for radio object
     uhd::rfnoc::block_id_t radio_ctrl_id(0, "Radio", radio_id);
     // This next line will fail if the radio is not actually available
-    uhd::rfnoc::radio_ctrl::sptr radio_ctrl = usrp->get_block_ctrl< uhd::rfnoc::radio_ctrl >(radio_ctrl_id);
+    uhd::rfnoc::radio_ctrl::sptr radio_ctrl =
+        usrp->get_block_ctrl<uhd::rfnoc::radio_ctrl>(radio_ctrl_id);
     std::cout << "Using radio " << radio_id << ", channel " << radio_chan << std::endl;
 
     /************************************************************************
@@ -324,60 +326,73 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
      ***********************************************************************/
     radio_ctrl->set_args(radio_args);
     if (vm.count("ref")) {
-        std::cout << "TODO -- Need to implement API call to set clock source." << std::endl;
-        //Lock mboard clocks TODO
-        //usrp->set_clock_source(ref);
+        std::cout << "TODO -- Need to implement API call to set clock source."
+                  << std::endl;
+        // Lock mboard clocks TODO
+        // usrp->set_clock_source(ref);
     }
 
-    //set the sample rate
-    if (rate <= 0.0){
+    // set the sample rate
+    if (rate <= 0.0) {
         std::cerr << "Please specify a valid sample rate" << std::endl;
         return EXIT_FAILURE;
     }
-    std::cout << boost::format("Setting RX Rate: %f Msps...") % (rate/1e6) << std::endl;
+    std::cout << boost::format("Setting RX Rate: %f Msps...") % (rate / 1e6) << std::endl;
     radio_ctrl->set_rate(rate);
-    std::cout << boost::format("Actual RX Rate: %f Msps...") % (radio_ctrl->get_rate()/1e6) << std::endl << std::endl;
+    std::cout << boost::format("Actual RX Rate: %f Msps...")
+                     % (radio_ctrl->get_rate() / 1e6)
+              << std::endl
+              << std::endl;
 
-    //set the center frequency
+    // set the center frequency
     if (vm.count("freq")) {
-        std::cout << boost::format("Setting RX Freq: %f MHz...") % (freq/1e6) << std::endl;
+        std::cout << boost::format("Setting RX Freq: %f MHz...") % (freq / 1e6)
+                  << std::endl;
         uhd::tune_request_t tune_request(freq);
         if (vm.count("int-n")) {
-            //tune_request.args = uhd::device_addr_t("mode_n=integer"); TODO
+            // tune_request.args = uhd::device_addr_t("mode_n=integer"); TODO
         }
         radio_ctrl->set_rx_frequency(freq, radio_chan);
-        std::cout << boost::format("Actual RX Freq: %f MHz...") % (radio_ctrl->get_rx_frequency(radio_chan)/1e6) << std::endl << std::endl;
+        std::cout << boost::format("Actual RX Freq: %f MHz...")
+                         % (radio_ctrl->get_rx_frequency(radio_chan) / 1e6)
+                  << std::endl
+                  << std::endl;
     }
 
-    //set the rf gain
+    // set the rf gain
     if (vm.count("gain")) {
         std::cout << boost::format("Setting RX Gain: %f dB...") % gain << std::endl;
         radio_ctrl->set_rx_gain(gain, radio_chan);
-        std::cout << boost::format("Actual RX Gain: %f dB...") % radio_ctrl->get_rx_gain(radio_chan) << std::endl << std::endl;
+        std::cout << boost::format("Actual RX Gain: %f dB...")
+                         % radio_ctrl->get_rx_gain(radio_chan)
+                  << std::endl
+                  << std::endl;
     }
 
-    //set the IF filter bandwidth
+    // set the IF filter bandwidth
     if (vm.count("bw")) {
-        //std::cout << boost::format("Setting RX Bandwidth: %f MHz...") % (bw/1e6) << std::endl;
-        //radio_ctrl->set_rx_bandwidth(bw, radio_chan); // TODO
-        //std::cout << boost::format("Actual RX Bandwidth: %f MHz...") % (radio_ctrl->get_rx_bandwidth(radio_chan)/1e6) << std::endl << std::endl;
+        // std::cout << boost::format("Setting RX Bandwidth: %f MHz...") % (bw/1e6) <<
+        // std::endl; radio_ctrl->set_rx_bandwidth(bw, radio_chan); // TODO std::cout <<
+        // boost::format("Actual RX Bandwidth: %f MHz...") %
+        // (radio_ctrl->get_rx_bandwidth(radio_chan)/1e6) << std::endl << std::endl;
     }
 
-    //set the antenna
+    // set the antenna
     if (vm.count("ant")) {
         radio_ctrl->set_rx_antenna(ant, radio_chan);
     }
 
-    std::this_thread::sleep_for(
-            std::chrono::milliseconds(int64_t(1000 * setup_time))
-        );
+    std::this_thread::sleep_for(std::chrono::milliseconds(int64_t(1000 * setup_time)));
 
-    //check Ref and LO Lock detect
-    if (not vm.count("skip-lo")){
+    // check Ref and LO Lock detect
+    if (not vm.count("skip-lo")) {
         // TODO
-        //check_locked_sensor(usrp->get_rx_sensor_names(0), "lo_locked", boost::bind(&uhd::usrp::multi_usrp::get_rx_sensor, usrp, _1, radio_id), setup_time);
-        //if (ref == "external")
-            //check_locked_sensor(usrp->get_mboard_sensor_names(0), "ref_locked", boost::bind(&uhd::usrp::multi_usrp::get_mboard_sensor, usrp, _1, radio_id), setup_time);
+        // check_locked_sensor(usrp->get_rx_sensor_names(0), "lo_locked",
+        // boost::bind(&uhd::usrp::multi_usrp::get_rx_sensor, usrp, _1, radio_id),
+        // setup_time); if (ref == "external")
+        // check_locked_sensor(usrp->get_mboard_sensor_names(0), "ref_locked",
+        // boost::bind(&uhd::usrp::multi_usrp::get_mboard_sensor, usrp, _1, radio_id),
+        // setup_time);
     }
 
     size_t spp = radio_ctrl->get_arg<int>("spp");
@@ -392,12 +407,13 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
     // Set the stream args on the radio:
     if (block_id.empty()) {
         // If no extra block is required, connect to the radio:
-        streamer_args["block_id"] = radio_ctrl_id.to_string();
+        streamer_args["block_id"]   = radio_ctrl_id.to_string();
         streamer_args["block_port"] = str(boost::format("%d") % radio_chan);
     } else {
         // Otherwise, see if the requested block exists and connect it to the radio:
         if (not usrp->has_block(block_id)) {
-            std::cout << "Block does not exist on current device: " << block_id << std::endl;
+            std::cout << "Block does not exist on current device: " << block_id
+                      << std::endl;
             return EXIT_FAILURE;
         }
 
@@ -409,17 +425,20 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
             blk_ctrl->set_args(uhd::device_addr_t(block_args));
         }
         // Connect:
-        std::cout << "Connecting " << radio_ctrl_id << " ==> " << blk_ctrl->get_block_id() << std::endl;
-        rx_graph->connect(radio_ctrl_id, radio_chan, blk_ctrl->get_block_id(), uhd::rfnoc::ANY_PORT);
+        std::cout << "Connecting " << radio_ctrl_id << " ==> " << blk_ctrl->get_block_id()
+                  << std::endl;
+        rx_graph->connect(
+            radio_ctrl_id, radio_chan, blk_ctrl->get_block_id(), uhd::rfnoc::ANY_PORT);
         streamer_args["block_id"] = blk_ctrl->get_block_id().to_string();
 
         spp = blk_ctrl->get_args().cast<size_t>("spp", spp);
     }
 
-    //create a receive streamer
+    // create a receive streamer
     std::cout << "Samples per packet: " << spp << std::endl;
-    uhd::stream_args_t stream_args(format, "sc16"); // We should read the wire format from the blocks
-    stream_args.args = streamer_args;
+    uhd::stream_args_t stream_args(
+        format, "sc16"); // We should read the wire format from the blocks
+    stream_args.args        = streamer_args;
     stream_args.args["spp"] = boost::lexical_cast<std::string>(spp);
     std::cout << "Using streamer args: " << stream_args.args.to_string() << std::endl;
     uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
@@ -429,14 +448,27 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         std::cout << "Press Ctrl + C to stop streaming..." << std::endl;
     }
 #define recv_to_file_args() \
-    (rx_stream, file, spb, rate, total_num_samps, total_time, bw_summary, stats, enable_size_map, continue_on_bad_packet)
-    //recv to file
-    if (format == "fc64") recv_to_file<std::complex<double> >recv_to_file_args();
-    else if (format == "fc32") recv_to_file<std::complex<float> >recv_to_file_args();
-    else if (format == "sc16") recv_to_file<std::complex<short> >recv_to_file_args();
-    else throw std::runtime_error("Unknown data format: " + format);
+    (rx_stream,             \
+        file,               \
+        spb,                \
+        rate,               \
+        total_num_samps,    \
+        total_time,         \
+        bw_summary,         \
+        stats,              \
+        enable_size_map,    \
+        continue_on_bad_packet)
+    // recv to file
+    if (format == "fc64")
+        recv_to_file<std::complex<double>> recv_to_file_args();
+    else if (format == "fc32")
+        recv_to_file<std::complex<float>> recv_to_file_args();
+    else if (format == "sc16")
+        recv_to_file<std::complex<short>> recv_to_file_args();
+    else
+        throw std::runtime_error("Unknown data format: " + format);
 
-    //finished
+    // finished
     std::cout << std::endl << "Done!" << std::endl << std::endl;
 
     return EXIT_SUCCESS;

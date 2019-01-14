@@ -9,10 +9,10 @@
 
 #include "../device3/device3_impl.hpp"
 #include <uhd/types/dict.hpp>
-#include <memory>
 #include <map>
-#include <vector>
+#include <memory>
 #include <string>
+#include <vector>
 
 namespace uhd { namespace mpmd { namespace xport {
 
@@ -21,11 +21,11 @@ namespace uhd { namespace mpmd { namespace xport {
  */
 
 //! Ethernet address for management and RPC communication
-const std::string MGMT_ADDR_KEY    = "mgmt_addr";
+const std::string MGMT_ADDR_KEY = "mgmt_addr";
 //! Primary Ethernet address for streaming and RFNoC communication
-const std::string FIRST_ADDR_KEY   = "addr";
+const std::string FIRST_ADDR_KEY = "addr";
 //! Secondary Ethernet address for streaming and RFNoC communication
-const std::string SECOND_ADDR_KEY  = "second_addr";
+const std::string SECOND_ADDR_KEY = "second_addr";
 
 /*! Return filtered subset from a device_addr_t
  *
@@ -36,9 +36,7 @@ const std::string SECOND_ADDR_KEY  = "second_addr";
  * \param prefix Key prefix to match against
  */
 uhd::dict<std::string, std::string> filter_args(
-    const uhd::device_addr_t& args,
-    const std::string& prefix
-);
+    const uhd::device_addr_t& args, const std::string& prefix);
 
 /*! MPMD Transport Manager
  *
@@ -50,8 +48,8 @@ uhd::dict<std::string, std::string> filter_args(
 class mpmd_xport_mgr
 {
 public:
-    using uptr = std::unique_ptr<mpmd_xport_mgr>;
-    using xport_info_t = std::map<std::string, std::string>;
+    using uptr              = std::unique_ptr<mpmd_xport_mgr>;
+    using xport_info_t      = std::map<std::string, std::string>;
     using xport_info_list_t = std::vector<std::map<std::string, std::string>>;
     virtual ~mpmd_xport_mgr() {}
 
@@ -65,9 +63,7 @@ public:
      * \throws uhd::key_error if \p xport_medium is not supported. The ctor of
      *         the underlying class that is requested can also throw.
      */
-    static uptr make(
-        const uhd::device_addr_t& mb_args
-    );
+    static uptr make(const uhd::device_addr_t& mb_args);
 
     /*! Create a transports object
      *
@@ -94,18 +90,14 @@ public:
      *          The latter needs to get sent back to MPM to complete the
      *          transport handshake.
      */
-    virtual both_xports_t make_transport(
-        const xport_info_list_t &xport_info_list,
+    virtual both_xports_t make_transport(const xport_info_list_t& xport_info_list,
         const usrp::device3_impl::xport_type_t xport_type,
         const uhd::device_addr_t& xport_args,
-        xport_info_t& xport_info_out
-    ) = 0;
+        xport_info_t& xport_info_out) = 0;
 
     /*! Return the path MTU for whatever this manager lets us do
      */
-    virtual size_t get_mtu(
-        const uhd::direction_t dir
-    ) const = 0;
+    virtual size_t get_mtu(const uhd::direction_t dir) const = 0;
 };
 
 }}} /* namespace uhd::mpmd::xport */

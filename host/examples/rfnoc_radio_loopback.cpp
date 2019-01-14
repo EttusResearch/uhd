@@ -13,9 +13,9 @@
 #include <uhd/utils/math.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <boost/program_options.hpp>
-#include <iostream>
-#include <csignal>
 #include <chrono>
+#include <csignal>
+#include <iostream>
 #include <thread>
 
 namespace po = boost::program_options;
@@ -25,20 +25,23 @@ using uhd::rfnoc::radio_ctrl;
  * SIGINT handling
  ***************************************************************************/
 static bool stop_signal_called = false;
-void sig_int_handler(int){stop_signal_called = true;}
+void sig_int_handler(int)
+{
+    stop_signal_called = true;
+}
 
 /****************************************************************************
  * main
  ***************************************************************************/
-int UHD_SAFE_MAIN(int argc, char *argv[])
+int UHD_SAFE_MAIN(int argc, char* argv[])
 {
-    //variables to be set by po
+    // variables to be set by po
     std::string args, rx_args, tx_args, rx_ant, tx_ant, rx_blockid, tx_blockid, ref;
     size_t total_num_samps, spp, rx_chan, tx_chan, tx_delay;
     double rate, rx_freq, tx_freq, rx_gain, tx_gain, bw, total_time, setup_time;
     bool rx_timestamps;
 
-    //setup the program options
+    // setup the program options
     po::options_description desc("Allowed options");
     // clang-format off
     desc.add_options()
@@ -72,7 +75,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
 
-    //print the help message
+    // print the help message
     if (vm.count("help")) {
         std::cout << boost::format("RFNoC: Radio loopback test %s") % desc << std::endl;
         std::cout
@@ -84,7 +87,8 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
 
     // Create a device session
     std::cout << std::endl;
-    std::cout << boost::format("Creating the usrp device with: %s...") % args << std::endl;
+    std::cout << boost::format("Creating the usrp device with: %s...") % args
+              << std::endl;
     auto dev = boost::dynamic_pointer_cast<uhd::device3>(uhd::device::make(args));
     if (not dev) {
         std::cout << "Error: Could not find an RFNoC-compatible device." << std::endl;
@@ -93,13 +97,12 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
 
     // Access block controllers
     if (not dev->has_block<uhd::rfnoc::radio_ctrl>(rx_blockid)
-            or not dev->has_block<uhd::rfnoc::radio_ctrl>(tx_blockid)) {
+        or not dev->has_block<uhd::rfnoc::radio_ctrl>(tx_blockid)) {
         std::cout << "Error: Could not access at least one of these blocks:\n"
-            << "- " << rx_blockid
-            << "- " << tx_blockid
-            << std::endl;
-        std::cout << "Please confirm these blocks are actually available on the current loaded device."
-            << std::endl;
+                  << "- " << rx_blockid << "- " << tx_blockid << std::endl;
+        std::cout << "Please confirm these blocks are actually available on the current "
+                     "loaded device."
+                  << std::endl;
         return EXIT_FAILURE;
     }
     auto rx_radio_ctrl = dev->get_block_ctrl<radio_ctrl>(rx_blockid);
@@ -110,58 +113,65 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     rx_radio_ctrl->set_args(rx_args);
     if (spp) {
         rx_radio_ctrl->set_arg<int>("spp", spp, rx_chan);
-
     }
-    std::cout << "Setting Rx rate: " << (rate/1e6) << " Msps" << std::endl;
+    std::cout << "Setting Rx rate: " << (rate / 1e6) << " Msps" << std::endl;
     double actual_rx_rate = rx_radio_ctrl->set_rate(rate);
-    std::cout << "Actual  Rx rate: " << (actual_rx_rate/1e6) << " Msps" << std::endl;
-    std::cout << "Setting Rx frequency: " << (rx_freq/1e6) << " MHz." << std::endl;
-    std::cout << "Actual  Rx frequency: " << (rx_radio_ctrl->set_rx_frequency(rx_freq, rx_chan)/1e6) << " MHz." << std::endl;
+    std::cout << "Actual  Rx rate: " << (actual_rx_rate / 1e6) << " Msps" << std::endl;
+    std::cout << "Setting Rx frequency: " << (rx_freq / 1e6) << " MHz." << std::endl;
+    std::cout << "Actual  Rx frequency: "
+              << (rx_radio_ctrl->set_rx_frequency(rx_freq, rx_chan) / 1e6) << " MHz."
+              << std::endl;
     if (rx_gain) {
         std::cout << "Setting Rx gain: " << (rx_gain) << " dB." << std::endl;
-        std::cout << "Actual  Rx gain: " << (rx_radio_ctrl->set_rx_gain(rx_gain, rx_chan)) << " dB." << std::endl;
+        std::cout << "Actual  Rx gain: " << (rx_radio_ctrl->set_rx_gain(rx_gain, rx_chan))
+                  << " dB." << std::endl;
     }
     if (not rx_ant.empty()) {
         std::cout << "Setting Rx antenna: " << (rx_ant) << "." << std::endl;
         rx_radio_ctrl->set_rx_antenna(rx_ant, rx_chan);
-        std::cout << "Actual  Rx antenna: " << rx_radio_ctrl->get_rx_antenna(rx_chan) << "." << std::endl;
+        std::cout << "Actual  Rx antenna: " << rx_radio_ctrl->get_rx_antenna(rx_chan)
+                  << "." << std::endl;
     }
     if (!rx_timestamps) {
-        std::cout << "Disabling timestamps on RX... (direct loopback, may underrun)" << std::endl;
+        std::cout << "Disabling timestamps on RX... (direct loopback, may underrun)"
+                  << std::endl;
     }
     rx_radio_ctrl->enable_rx_timestamps(rx_timestamps, 0);
     // Configure Tx radio
     std::cout << "Configuring Tx radio..." << std::endl;
     tx_radio_ctrl->set_args(tx_args);
-    std::cout << "Setting Tx rate: " << (rate/1e6) << " Msps" << std::endl;
+    std::cout << "Setting Tx rate: " << (rate / 1e6) << " Msps" << std::endl;
     double actual_tx_rate = tx_radio_ctrl->set_rate(rate);
-    std::cout << "Actual  Tx rate: " << (actual_tx_rate/1e6) << " Msps" << std::endl;
-    std::cout << "Setting Tx frequency: " << (tx_freq/1e6) << " MHz." << std::endl;
-    std::cout << "Actual  Tx frequency: " << (tx_radio_ctrl->set_tx_frequency(tx_freq, tx_chan)/1e6) << " MHz." << std::endl;
+    std::cout << "Actual  Tx rate: " << (actual_tx_rate / 1e6) << " Msps" << std::endl;
+    std::cout << "Setting Tx frequency: " << (tx_freq / 1e6) << " MHz." << std::endl;
+    std::cout << "Actual  Tx frequency: "
+              << (tx_radio_ctrl->set_tx_frequency(tx_freq, tx_chan) / 1e6) << " MHz."
+              << std::endl;
     if (tx_gain) {
         std::cout << "Setting Tx gain: " << (tx_gain) << " dB." << std::endl;
-        std::cout << "Actual  Tx gain: " << (tx_radio_ctrl->set_tx_gain(tx_gain, tx_chan)) << " dB." << std::endl;
+        std::cout << "Actual  Tx gain: " << (tx_radio_ctrl->set_tx_gain(tx_gain, tx_chan))
+                  << " dB." << std::endl;
     }
     if (not tx_ant.empty()) {
         std::cout << "Setting Tx antenna: " << (tx_ant) << "." << std::endl;
         tx_radio_ctrl->set_tx_antenna(tx_ant, tx_chan);
-        std::cout << "Actual  Tx antenna: " << tx_radio_ctrl->get_tx_antenna(tx_chan) << "." << std::endl;
+        std::cout << "Actual  Tx antenna: " << tx_radio_ctrl->get_tx_antenna(tx_chan)
+                  << "." << std::endl;
     }
 
     // Compare rates
     if (not uhd::math::frequencies_are_equal(actual_rx_rate, actual_tx_rate)) {
-        std::cout << "Error: Failed to set receive and transmit radios to same sampling rate!" << std::endl;
+        std::cout
+            << "Error: Failed to set receive and transmit radios to same sampling rate!"
+            << std::endl;
         return EXIT_FAILURE;
     }
     // Create graph and connect blocks
     uhd::rfnoc::graph::sptr graph = dev->create_graph("radio_loopback");
     std::cout << "Connecting radios..." << std::endl;
     try {
-        graph->connect(
-                rx_blockid, rx_chan,
-                tx_blockid, tx_chan
-        );
-    } catch (const uhd::runtime_error &ex) {
+        graph->connect(rx_blockid, rx_chan, tx_blockid, tx_chan);
+    } catch (const uhd::runtime_error& ex) {
         std::cout << "Error connecting blocks: " << std::endl;
         std::cout << ex.what() << std::endl;
         return EXIT_FAILURE;
@@ -170,8 +180,7 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     rx_radio_ctrl->set_rx_streamer(true, rx_chan);
 
     // Allow for some setup time
-    std::this_thread::sleep_for(
-        std::chrono::milliseconds(int64_t(setup_time * 1000)));
+    std::this_thread::sleep_for(std::chrono::milliseconds(int64_t(setup_time * 1000)));
 
     // Arm SIGINT handler
     std::signal(SIGINT, &sig_int_handler);
@@ -179,17 +188,16 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
     // Calculate timeout and set timers
     if (total_time == 0 and total_num_samps > 0) {
         const double buffer_time = 1.0; // seconds
-        total_time = (1.0/rate) * total_num_samps + buffer_time;
+        total_time               = (1.0 / rate) * total_num_samps + buffer_time;
     }
 
     // Start streaming
-    uhd::stream_cmd_t stream_cmd((total_num_samps == 0)?
-        uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS:
-        uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE
-    );
-    stream_cmd.num_samps = size_t(total_num_samps);
+    uhd::stream_cmd_t stream_cmd((total_num_samps == 0)
+                                     ? uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS
+                                     : uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
+    stream_cmd.num_samps  = size_t(total_num_samps);
     stream_cmd.stream_now = true;
-    stream_cmd.time_spec = uhd::time_spec_t();
+    stream_cmd.time_spec  = uhd::time_spec_t();
     std::cout << "Issuing start stream cmd..." << std::endl;
     rx_radio_ctrl->issue_stream_cmd(stream_cmd, rx_chan);
     std::cout << "Wait..." << std::endl;
@@ -208,4 +216,3 @@ int UHD_SAFE_MAIN(int argc, char *argv[])
 
     return EXIT_SUCCESS;
 }
-

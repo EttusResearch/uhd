@@ -14,38 +14,33 @@ using namespace uhd;
 class neon_ad9361_iface : public ad9361_ctrl
 {
 public:
-    neon_ad9361_iface(
-        rpc_client::sptr rpcc
-    ) : _rpcc(rpcc)
-    , _rpc_prefix("db_0_")
-    , _log_prefix("AD9361")
+    neon_ad9361_iface(rpc_client::sptr rpcc)
+        : _rpcc(rpcc), _rpc_prefix("db_0_"), _log_prefix("AD9361")
     {
-        UHD_LOG_TRACE(_log_prefix,
-            "Initialized controls with RPC prefix " << _rpc_prefix);
+        UHD_LOG_TRACE(
+            _log_prefix, "Initialized controls with RPC prefix " << _rpc_prefix);
     }
 
-    double set_bw_filter(const std::string &which, const double bw)
+    double set_bw_filter(const std::string& which, const double bw)
     {
         return _rpcc->request_with_token<double>(
             this->_rpc_prefix + "set_bw_filter", which, bw);
     }
 
-    double set_gain(const std::string &which, const double value)
+    double set_gain(const std::string& which, const double value)
     {
         return _rpcc->request_with_token<double>(
             this->_rpc_prefix + "set_gain", which, value);
     }
 
-    void set_agc(const std::string &which, bool enable)
+    void set_agc(const std::string& which, bool enable)
     {
-        _rpcc->request_with_token<void>(
-            this->_rpc_prefix + "set_agc", which, enable);
+        _rpcc->request_with_token<void>(this->_rpc_prefix + "set_agc", which, enable);
     }
 
-    void set_agc_mode(const std::string &which, const std::string &mode)
+    void set_agc_mode(const std::string& which, const std::string& mode)
     {
-        _rpcc->request_with_token<void>(
-            this->_rpc_prefix + "set_agc_mode", which, mode);
+        _rpcc->request_with_token<void>(this->_rpc_prefix + "set_agc_mode", which, mode);
     }
 
     double set_clock_rate(const double rate)
@@ -60,43 +55,41 @@ public:
             this->_rpc_prefix + "set_active_chains", tx1, tx2, rx1, rx2);
     }
 
-    double tune(const std::string &which, const double value)
+    double tune(const std::string& which, const double value)
     {
         return _rpcc->request_with_token<double>(
             this->_rpc_prefix + "tune", which, value);
     }
 
-    void set_dc_offset_auto(const std::string &which, const bool on)
+    void set_dc_offset_auto(const std::string& which, const bool on)
     {
         _rpcc->request_with_token<void>(
             this->_rpc_prefix + "set_dc_offset_auto", which, on);
     }
 
-    void set_timing_mode(const std::string &timing_mode)
+    void set_timing_mode(const std::string& timing_mode)
     {
         _rpcc->request_with_token<void>(
             this->_rpc_prefix + "set_timing_mode", timing_mode);
     }
 
-    void set_iq_balance_auto(const std::string &which, const bool on)
+    void set_iq_balance_auto(const std::string& which, const bool on)
     {
         _rpcc->request_with_token<void>(
             this->_rpc_prefix + "set_iq_balance_auto", which, on);
     }
 
-    double get_freq(const std::string &which)
+    double get_freq(const std::string& which)
     {
-        return _rpcc->request_with_token<double>(
-            this->_rpc_prefix + "get_freq", which);
+        return _rpcc->request_with_token<double>(this->_rpc_prefix + "get_freq", which);
     }
 
     void data_port_loopback(const bool on)
     {
-        _rpcc->request_with_token<void>(
-            this->_rpc_prefix + "data_port_loopback", on);
+        _rpcc->request_with_token<void>(this->_rpc_prefix + "data_port_loopback", on);
     }
 
-    sensor_value_t get_rssi(const std::string &which)
+    sensor_value_t get_rssi(const std::string& which)
     {
         return sensor_value_t(_rpcc->request_with_token<sensor_value_t::sensor_map_t>(
             this->_rpc_prefix + "get_rssi", which));
@@ -108,23 +101,25 @@ public:
             this->_rpc_prefix + "get_temperature"));
     }
 
-    std::vector<std::string> get_filter_names(const std::string &which)
+    std::vector<std::string> get_filter_names(const std::string& which)
     {
         return _rpcc->request_with_token<std::vector<std::string>>(
             this->_rpc_prefix + "get_filter_names", which);
     }
 
-    filter_info_base::sptr get_filter(const std::string &/*which*/,
-                                                        const std::string &/*filter_name*/)
+    filter_info_base::sptr get_filter(
+        const std::string& /*which*/, const std::string& /*filter_name*/)
     {
-        throw uhd::runtime_error("ad9361_ctrl::get_filter is not supported over an RPC connection");
+        throw uhd::runtime_error(
+            "ad9361_ctrl::get_filter is not supported over an RPC connection");
     }
 
-    void set_filter(const std::string &/*which*/,
-                                    const std::string &/*filter_name*/,
-                                    const filter_info_base::sptr /*filter*/)
+    void set_filter(const std::string& /*which*/,
+        const std::string& /*filter_name*/,
+        const filter_info_base::sptr /*filter*/)
     {
-        throw uhd::runtime_error("ad9361_ctrl::set_filter is not supported over an RPC connection");
+        throw uhd::runtime_error(
+            "ad9361_ctrl::set_filter is not supported over an RPC connection");
     }
 
     void output_digital_test_tone(bool enb)
@@ -150,13 +145,11 @@ ad9361_ctrl::sptr make_rpc(rpc_client::sptr rpcc)
     return ad9361_ctrl::sptr(new neon_ad9361_iface(rpcc));
 }
 
-/*! Helper function to convert direction and channel to the 'which' required by most Catalina
-    driver functions */
+/*! Helper function to convert direction and channel to the 'which' required by most
+   Catalina driver functions */
 std::string get_which_ad9361_chain(const direction_t dir, const size_t chan)
 {
     UHD_ASSERT_THROW(dir == RX_DIRECTION or dir == TX_DIRECTION);
     UHD_ASSERT_THROW(chan == 0 or chan == 1);
-    return str(boost::format("%s%d")
-            % (dir == RX_DIRECTION ? "RX" : "TX")
-            % (chan + 1));
+    return str(boost::format("%s%d") % (dir == RX_DIRECTION ? "RX" : "TX") % (chan + 1));
 }

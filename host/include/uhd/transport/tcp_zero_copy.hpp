@@ -13,7 +13,7 @@
 #include <uhd/types/device_addr.hpp>
 #include <boost/shared_ptr.hpp>
 
-namespace uhd{ namespace transport{
+namespace uhd { namespace transport {
 
 /*!
  * The zero copy TCP transport.
@@ -37,13 +37,11 @@ struct UHD_API tcp_zero_copy : public virtual zero_copy_if
      * \param port a string representing the destination port
      * \param hints optional parameters to pass to the underlying transport
      */
-    static zero_copy_if::sptr make(
-        const std::string &addr,
-        const std::string &port,
-        const device_addr_t &hints = device_addr_t()
-    );
+    static zero_copy_if::sptr make(const std::string& addr,
+        const std::string& port,
+        const device_addr_t& hints = device_addr_t());
 };
 
-}} //namespace
+}} // namespace uhd::transport
 
 #endif /* INCLUDED_UHD_TRANSPORT_TCP_ZERO_COPY_HPP */

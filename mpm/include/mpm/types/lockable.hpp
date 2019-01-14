@@ -12,29 +12,26 @@
 
 namespace mpm { namespace types {
 
-    /*! A lockable object
-     *
-     * Don't tell anyone, but's really just a wrapper around a mutex. This
-     * class is primarily to make it easy to safely expose that mutex into
-     * Python.
+/*! A lockable object
+ *
+ * Don't tell anyone, but's really just a wrapper around a mutex. This
+ * class is primarily to make it easy to safely expose that mutex into
+ * Python.
+ */
+class lockable : public boost::noncopyable
+{
+public:
+    using sptr = std::shared_ptr<lockable>;
+
+    /*! Lock the lock
      */
-    class lockable : public boost::noncopyable
-    {
-    public:
-        using sptr = std::shared_ptr<lockable>;
+    virtual void lock() = 0;
 
-        /*! Lock the lock
-         */
-        virtual void lock() = 0;
+    /*! Unlock the lock
+     */
+    virtual void unlock() = 0;
 
-        /*! Unlock the lock
-         */
-        virtual void unlock() = 0;
-
-        static sptr make(
-            std::shared_ptr<std::mutex> spi_mutex
-        );
-    };
+    static sptr make(std::shared_ptr<std::mutex> spi_mutex);
+};
 
 }}; /* namespace mpm::types */
-

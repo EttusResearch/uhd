@@ -4,30 +4,26 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <mpm/types/mmap_regs_iface.hpp>
+#include <fcntl.h>
 #include <mpm/exception.hpp>
+#include <mpm/types/mmap_regs_iface.hpp>
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
 #include <boost/format.hpp>
 #include <iostream>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <sys/mman.h>
-#include <unistd.h>
-#include <fcntl.h>
 #include <sstream>
 
 using namespace mpm::types;
 
 
-mmap_regs_iface::mmap_regs_iface(
-    const std::string &path,
+mmap_regs_iface::mmap_regs_iface(const std::string& path,
     const size_t length,
     const size_t offset,
     const bool read_only,
-    const bool open_now
-) : _path(path)
-  , _length(length)
-  , _offset(offset)
-  , _read_only(read_only)
+    const bool open_now)
+    : _path(path), _length(length), _offset(offset), _read_only(read_only)
 {
     if (open_now) {
         open();
@@ -53,26 +49,23 @@ void mmap_regs_iface::open()
     }
 
     if (!_mmap) {
-        _mmap = (uint32_t *) ::mmap(
-            NULL,
+        _mmap = (uint32_t*)::mmap(NULL,
             _length,
             PROT_READ | (_read_only ? 0 : PROT_WRITE),
             MAP_SHARED,
             _fd,
-            (off_t) _offset
-        );
-        if (((void *) _mmap) == MAP_FAILED) {
+            (off_t)_offset);
+        if (((void*)_mmap) == MAP_FAILED) {
             throw mpm::runtime_error("Failed to mmap!");
         }
     }
-    log(mpm::types::log_level_t::TRACE, _path,
-            "Opened mmap_regs_iface");
+    log(mpm::types::log_level_t::TRACE, _path, "Opened mmap_regs_iface");
 }
 
 void mmap_regs_iface::close()
 {
     if (_mmap) {
-        int err = munmap((void *) _mmap, _length);
+        int err = munmap((void*)_mmap, _length);
         if (err) {
             throw mpm::runtime_error("Couldn't munmap!");
         }
@@ -85,14 +78,11 @@ void mmap_regs_iface::close()
         }
         _fd = -1;
     }
-    log(mpm::types::log_level_t::TRACE, _path,
-            "Closed mmap_regs_iface");
+    log(mpm::types::log_level_t::TRACE, _path, "Closed mmap_regs_iface");
 }
 
-void mmap_regs_iface::poke32(
-    const uint32_t addr,
-    const uint32_t data
-) {
+void mmap_regs_iface::poke32(const uint32_t addr, const uint32_t data)
+{
     MPM_ASSERT_THROW(_mmap);
     _mmap[addr / sizeof(uint32_t)] = data;
 }
@@ -104,14 +94,8 @@ uint32_t mmap_regs_iface::peek32(const uint32_t addr)
 }
 
 void mmap_regs_iface::log(
-        mpm::types::log_level_t level,
-        const std::string path,
-        const char *comment
-) {
+    mpm::types::log_level_t level, const std::string path, const char* comment)
+{
     mpm::types::log_buf::make_singleton()->post(
-            level,
-            "MMAP_REGS_IFACE",
-            str(boost::format("[UIO %s] %s")
-                % path % comment)
-    );
+        level, "MMAP_REGS_IFACE", str(boost::format("[UIO %s] %s") % path % comment));
 }

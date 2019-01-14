@@ -13,8 +13,7 @@
 #include <stdint.h>
 #include <boost/shared_ptr.hpp>
 
-namespace uhd
-{
+namespace uhd {
 
 class UHD_API wb_iface
 {
@@ -85,6 +84,6 @@ public:
     virtual void set_time(const time_spec_t& t) = 0;
 };
 
-} //namespace uhd
+} // namespace uhd
 
 #endif /* INCLUDED_UHD_TYPES_WB_IFACE_HPP */

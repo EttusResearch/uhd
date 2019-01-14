@@ -8,10 +8,10 @@
 #define INCLUDED_LIBUHD_MAGNESIUM_CPLD_CTRL_HPP
 
 #include "adf4351_regs.hpp"
-#include <uhd/types/serial.hpp>
 #include "magnesium_cpld_regs.hpp"
-#include <mutex>
+#include <uhd/types/serial.hpp>
 #include <memory>
+#include <mutex>
 
 //! Controls the CPLD on a Magnesium daughterboard
 //
@@ -31,21 +31,13 @@ public:
 
     //! ATR state: The CPLD has 2 states for RX and TX each, not like the radio
     //  which has 4 states (one for every RX/TX state combo).
-    enum atr_state_t {
-        IDLE,
-        ON,
-        ANY
-    };
+    enum atr_state_t { IDLE, ON, ANY };
 
     //! Channel select: One CPLD controls both channels on a daughterboard
-    enum chan_sel_t {
-        CHAN1,
-        CHAN2,
-        BOTH
-    };
+    enum chan_sel_t { CHAN1, CHAN2, BOTH };
 
     enum tx_sw1_t {
-        TX_SW1_SHUTDOWNTXSW1 = 0,
+        TX_SW1_SHUTDOWNTXSW1         = 0,
         TX_SW1_FROMTXFILTERLP1700MHZ = 1,
         TX_SW1_FROMTXFILTERLP3400MHZ = 2,
         TX_SW1_FROMTXFILTERLP0800MHZ = 3
@@ -58,59 +50,56 @@ public:
         TX_SW2_TOTXFILTERLP6400MHZ = 8
     };
 
-    enum tx_sw3_t {
-        TX_SW3_TOTXFILTERBANKS = 0,
-        TX_SW3_BYPASSPATHTOTRXSW = 1
-    };
+    enum tx_sw3_t { TX_SW3_TOTXFILTERBANKS = 0, TX_SW3_BYPASSPATHTOTRXSW = 1 };
 
     enum sw_trx_t {
-        SW_TRX_FROMLOWERFILTERBANKTXSW1 = 0,
+        SW_TRX_FROMLOWERFILTERBANKTXSW1       = 0,
         SW_TRX_FROMTXUPPERFILTERBANKLP6400MHZ = 1,
-        SW_TRX_RXCHANNELPATH = 2,
-        SW_TRX_BYPASSPATHTOTXSW3 = 3
+        SW_TRX_RXCHANNELPATH                  = 2,
+        SW_TRX_BYPASSPATHTOTXSW3              = 3
     };
 
     enum rx_sw1_t {
-        RX_SW1_TXRXINPUT = 0,
-        RX_SW1_RXLOCALINPUT = 1,
+        RX_SW1_TXRXINPUT       = 0,
+        RX_SW1_RXLOCALINPUT    = 1,
         RX_SW1_TRXSWITCHOUTPUT = 2,
-        RX_SW1_RX2INPUT = 3
+        RX_SW1_RX2INPUT        = 3
     };
 
     enum rx_sw2_t {
-        RX_SW2_SHUTDOWNSW2 = 0,
+        RX_SW2_SHUTDOWNSW2              = 0,
         RX_SW2_LOWERFILTERBANKTOSWITCH3 = 1,
-        RX_SW2_BYPASSPATHTOSWITCH6 = 2,
+        RX_SW2_BYPASSPATHTOSWITCH6      = 2,
         RX_SW2_UPPERFILTERBANKTOSWITCH4 = 3
     };
 
     enum rx_sw3_t {
         RX_SW3_FILTER2100X2850MHZ = 0,
-        RX_SW3_FILTER0490LPMHZ = 1,
+        RX_SW3_FILTER0490LPMHZ    = 1,
         RX_SW3_FILTER1600X2250MHZ = 2,
         RX_SW3_FILTER0440X0530MHZ = 4,
         RX_SW3_FILTER0650X1000MHZ = 5,
         RX_SW3_FILTER1100X1575MHZ = 6,
-        RX_SW3_SHUTDOWNSW3 = 7
+        RX_SW3_SHUTDOWNSW3        = 7
     };
 
     enum rx_sw4_t {
         RX_SW4_FILTER2100X2850MHZFROM = 1,
         RX_SW4_FILTER1600X2250MHZFROM = 2,
-        RX_SW4_FILTER2700HPMHZ = 4
+        RX_SW4_FILTER2700HPMHZ        = 4
     };
 
     enum rx_sw5_t {
         RX_SW5_FILTER0440X0530MHZFROM = 1,
         RX_SW5_FILTER1100X1575MHZFROM = 2,
-        RX_SW5_FILTER0490LPMHZFROM = 4,
+        RX_SW5_FILTER0490LPMHZFROM    = 4,
         RX_SW5_FILTER0650X1000MHZFROM = 8
     };
 
     enum rx_sw6_t {
         RX_SW6_LOWERFILTERBANKFROMSWITCH5 = 1,
         RX_SW6_UPPERFILTERBANKFROMSWITCH4 = 2,
-        RX_SW6_BYPASSPATHFROMSWITCH2 = 4
+        RX_SW6_BYPASSPATHFROMSWITCH2      = 4
     };
 
     enum lowband_mixer_path_sel_t {
@@ -124,10 +113,7 @@ public:
      * \param write_spi_fn SPI write functor
      * \param read_spi_fn SPI read functor
      */
-    magnesium_cpld_ctrl(
-        write_spi_t write_spi_fn,
-        read_spi_t read_spi_fn
-    );
+    magnesium_cpld_ctrl(write_spi_t write_spi_fn, read_spi_t read_spi_fn);
 
     /**************************************************************************
      * API
@@ -167,16 +153,14 @@ public:
      * \param atr_state If IDLE, only update the idle register. If ON, only
      *                  enable the on register. If ANY, update both.
      */
-    void set_tx_switches(
-        const chan_sel_t chan,
+    void set_tx_switches(const chan_sel_t chan,
         const tx_sw1_t tx_sw1,
         const tx_sw2_t tx_sw2,
         const tx_sw3_t tx_sw3,
         const lowband_mixer_path_sel_t select_lowband_mixer_path,
         const bool enb_lowband_mixer,
         const atr_state_t atr_state = ANY,
-        const bool defer_commit = false
-    );
+        const bool defer_commit     = false);
 
     /*! Frequency-related settings, receive side
      *
@@ -194,8 +178,7 @@ public:
      * \param atr_state If IDLE, only update the idle register. If ON, only
      *                  enable the on register. If ANY, update both.
      */
-    void set_rx_switches(
-        const chan_sel_t chan,
+    void set_rx_switches(const chan_sel_t chan,
         const rx_sw2_t rx_sw2,
         const rx_sw3_t rx_sw3,
         const rx_sw4_t rx_sw4,
@@ -204,8 +187,7 @@ public:
         const lowband_mixer_path_sel_t select_lowband_mixer_path,
         const bool enb_lowband_mixer,
         const atr_state_t atr_state = ANY,
-        const bool defer_commit = false
-    );
+        const bool defer_commit     = false);
 
     /*! ATR settings: LEDs, PAs, LNAs, ... for TX side
      *
@@ -223,15 +205,13 @@ public:
      * \param tx_amp_enb State of the TX amp for this ATR state (on or off)
      * \param tx_myk_enb State of the AD9371 TX enable pin for this ATR state
      */
-    void set_tx_atr_bits(
-        const chan_sel_t chan,
+    void set_tx_atr_bits(const chan_sel_t chan,
         const atr_state_t atr_state,
         const bool tx_led,
         const bool tx_pa_enb,
         const bool tx_amp_enb,
         const bool tx_myk_enb,
-        const bool defer_commit = false
-    );
+        const bool defer_commit = false);
 
     /*! ATR settings: TRX switch
      *
@@ -242,12 +222,10 @@ public:
      * \param atr_state TX state for which these settings apply.
      * \param trx_sw State of the TRX switch for this ATR state
      */
-    void set_trx_sw_atr_bits(
-        const chan_sel_t chan,
+    void set_trx_sw_atr_bits(const chan_sel_t chan,
         const atr_state_t atr_state,
         const sw_trx_t trx_sw,
-        const bool defer_commit = false
-    );
+        const bool defer_commit = false);
 
     /*! ATR settings: LEDs, input switches for RX side
      *
@@ -263,14 +241,12 @@ public:
      * \param rx2_led State of the RX LED for this ATR state (on or off). This
      *               is the LED on the RX2 port.
      */
-    void set_rx_input_atr_bits(
-        const chan_sel_t chan,
+    void set_rx_input_atr_bits(const chan_sel_t chan,
         const atr_state_t atr_state,
         const rx_sw1_t rx_sw1,
         const bool rx_led,
         const bool rx2_led,
-        const bool defer_commit = false
-    );
+        const bool defer_commit = false);
 
     /*! ATR settings: Amp, Mykonos settings for RX side
      *
@@ -287,13 +263,11 @@ public:
      * \param rx_amp_enb State of RX amp for this ATR state (on or off).
      * \param rx_myk_enb State of the AD9371 RX enable pin for this ATR state
      */
-    void set_rx_atr_bits(
-        const chan_sel_t chan,
+    void set_rx_atr_bits(const chan_sel_t chan,
         const atr_state_t atr_state,
         const bool rx_amp_enb,
         const bool rx_myk_en,
-        const bool defer_commit = false
-    );
+        const bool defer_commit = false);
 
     /*! ATR settings: LNAs for RX side
      *
@@ -311,13 +285,11 @@ public:
      * \param rx_lna2_enb State of RX LNA 2 for this ATR state (on or off).
      *                    This is the low-band LNA.
      */
-    void set_rx_lna_atr_bits(
-        const chan_sel_t chan,
+    void set_rx_lna_atr_bits(const chan_sel_t chan,
         const atr_state_t atr_state,
         const bool rx_lna1_enb,
         const bool rx_lna2_enb,
-        const bool defer_commit = false
-    );
+        const bool defer_commit = false);
 
 private:
     //! Write functor: Take address / data pair, craft SPI transaction

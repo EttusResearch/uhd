@@ -7,11 +7,10 @@
 #ifndef INCLUDED_LIBUHD_RFNOC_REPLAY_BLOCK_HPP
 #define INCLUDED_LIBUHD_RFNOC_REPLAY_BLOCK_HPP
 
-#include <uhd/rfnoc/source_block_ctrl_base.hpp>
 #include <uhd/rfnoc/sink_block_ctrl_base.hpp>
+#include <uhd/rfnoc/source_block_ctrl_base.hpp>
 
-namespace uhd {
-    namespace rfnoc {
+namespace uhd { namespace rfnoc {
 
 /*! \brief Replay block controller
  *
@@ -25,23 +24,26 @@ namespace uhd {
  *   memory, usually an off-chip DRAM.
  *
  */
-class UHD_RFNOC_API replay_block_ctrl : public source_block_ctrl_base, public sink_block_ctrl_base
+class UHD_RFNOC_API replay_block_ctrl : public source_block_ctrl_base,
+                                        public sink_block_ctrl_base
 {
 public:
     UHD_RFNOC_BLOCK_OBJECT(replay_block_ctrl)
 
     //! Configure the base address and size of the record buffer region (in bytes).
-    virtual void config_record(const uint32_t base_addr, const uint32_t size, const size_t chan) = 0;
-    
+    virtual void config_record(
+        const uint32_t base_addr, const uint32_t size, const size_t chan) = 0;
+
     //! Configure the base address and size of the playback buffer region (in bytes).
-    virtual void config_play(const uint32_t base_addr, const uint32_t size, const size_t chan) = 0;
+    virtual void config_play(
+        const uint32_t base_addr, const uint32_t size, const size_t chan) = 0;
 
     //! Restarts recording at the beginning of the record buffer
     virtual void record_restart(const size_t chan) = 0;
 
     //! Returns the base address of the record buffer (in bytes).
     virtual uint32_t get_record_addr(const size_t chan) = 0;
-    
+
     //! Returns the base address of the playback buffer (in bytes).
     virtual uint32_t get_play_addr(const size_t chan) = 0;
 
@@ -50,7 +52,7 @@ public:
 
     //! Returns the current fullness of the record buffer (in bytes).
     virtual uint32_t get_record_fullness(const size_t chan) = 0;
-    
+
     //! Returns the size of the playback buffer (in bytes).
     virtual uint32_t get_play_size(const size_t chan) = 0;
 
@@ -62,7 +64,7 @@ public:
 
     //! Halts playback and clears the playback command FIFO
     virtual void play_halt(const size_t chan) = 0;
-    
+
 }; /* class replay_block_ctrl*/
 
 }} /* namespace uhd::rfnoc */
