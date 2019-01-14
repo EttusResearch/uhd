@@ -8,10 +8,10 @@
 #define DPDK_ZERO_COPY_HPP
 
 #include <uhd/config.hpp>
-#include <uhd/transport/zero_copy.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhd/transport/zero_copy.hpp>
 #include <boost/shared_ptr.hpp>
 #include <string>
 #include <vector>

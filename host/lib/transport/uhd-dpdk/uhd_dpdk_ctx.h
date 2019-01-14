@@ -14,7 +14,7 @@
 #include <rte_hash.h>
 #include <rte_eal.h>
 #include <rte_atomic.h>
-#include <uhd/transport/uhd-dpdk.h>
+#include <uhdlib/transport/uhd-dpdk.h>
 //#include <pthread.h>
 
 /* For nice scheduling options later, make sure to separate RX and TX activity */

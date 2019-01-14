@@ -8,7 +8,7 @@
 #include <uhd/config.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/log.hpp>
-#include <uhd/transport/uhd-dpdk.h>
+#include <uhdlib/transport/uhd-dpdk.h>
 #include <boost/make_shared.hpp>
 #include <sys/syslog.h>
 #include <stack>
