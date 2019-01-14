@@ -107,13 +107,11 @@ UHD_INLINE uint64_t uhd::byteswap(uint64_t x)
 /***********************************************************************
  * Define the templated network to/from host conversions
  **********************************************************************/
-#include <boost/detail/endian.hpp>
-
 namespace uhd {
 
 template <typename T> UHD_INLINE T ntohx(T num)
 {
-#ifdef BOOST_BIG_ENDIAN
+#ifdef UHD_BIG_ENDIAN
     return num;
 #else
     return uhd::byteswap(num);
@@ -122,7 +120,7 @@ template <typename T> UHD_INLINE T ntohx(T num)
 
 template <typename T> UHD_INLINE T htonx(T num)
 {
-#ifdef BOOST_BIG_ENDIAN
+#ifdef UHD_BIG_ENDIAN
     return num;
 #else
     return uhd::byteswap(num);
@@ -131,7 +129,7 @@ template <typename T> UHD_INLINE T htonx(T num)
 
 template <typename T> UHD_INLINE T wtohx(T num)
 {
-#ifdef BOOST_BIG_ENDIAN
+#ifdef UHD_BIG_ENDIAN
     return uhd::byteswap(num);
 #else
     return num;
@@ -140,7 +138,7 @@ template <typename T> UHD_INLINE T wtohx(T num)
 
 template <typename T> UHD_INLINE T htowx(T num)
 {
-#ifdef BOOST_BIG_ENDIAN
+#ifdef UHD_BIG_ENDIAN
     return uhd::byteswap(num);
 #else
     return num;

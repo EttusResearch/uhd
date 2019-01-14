@@ -9,6 +9,7 @@
 #define INCLUDED_UHD_UTILS_BYTESWAP_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/types/endianness.hpp>
 #include <stdint.h>
 
 /*! \file byteswap.hpp
