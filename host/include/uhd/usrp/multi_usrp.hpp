@@ -1191,7 +1191,7 @@ public:
      * Get the valid range for RX DC offset values.
      * \param chan the channel index 0 to N-1
      */
-    virtual meta_range_t get_rx_dc_offset_range(size_t chan = ALL_CHANS) = 0;
+    virtual meta_range_t get_rx_dc_offset_range(size_t chan = 0) = 0;
 
     /*!
      * Enable/disable the automatic IQ imbalance correction.
@@ -1480,7 +1480,7 @@ public:
      * Get the valid range for TX DC offset values.
      * \param chan the channel index 0 to N-1
      */
-    virtual meta_range_t get_tx_dc_offset_range(size_t chan = ALL_CHANS) = 0;
+    virtual meta_range_t get_tx_dc_offset_range(size_t chan = 0) = 0;
 
     /*!
      * Set the TX frontend IQ imbalance correction.
