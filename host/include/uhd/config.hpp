@@ -9,6 +9,7 @@
 #define INCLUDED_UHD_CONFIG_HPP
 
 #include <boost/config.hpp>
+#include <boost/version.hpp>
 
 #ifdef BOOST_MSVC
 // suppress warnings
