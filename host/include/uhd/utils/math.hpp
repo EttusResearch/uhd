@@ -12,6 +12,15 @@
 #include <stdint.h>
 #include <boost/numeric/conversion/bounds.hpp>
 #include <cmath>
+#if BOOST_VERSION >= 106700
+#    include <boost/integer/common_factor.hpp>
+// "bmint" for "boost math integer"
+namespace _bmint = boost::integer;
+#else
+#    include <boost/math/common_factor.hpp>
+namespace _bmint = boost::math;
+#endif
+
 
 namespace uhd {
 
@@ -221,6 +230,20 @@ UHD_INLINE bool frequencies_are_equal(double lhs, double rhs)
 {
     return (fp_compare::fp_compare_delta<double>(lhs, FREQ_COMPARISON_DELTA_HZ)
             == fp_compare::fp_compare_delta<double>(rhs, FREQ_COMPARISON_DELTA_HZ));
+}
+
+//! Portable version of lcm() across Boost versions
+template <typename IntegerType> inline IntegerType lcm(IntegerType x, IntegerType y)
+{
+    // Note: _bmint is defined conditionally at the top of the file
+    return _bmint::lcm<IntegerType>(x, y);
+}
+
+//! Portable version of gcd() across Boost versions
+template <typename IntegerType> inline IntegerType gcd(IntegerType x, IntegerType y)
+{
+    // Note: _bmint is defined conditionally at the top of the file
+    return _bmint::gcd<IntegerType>(x, y);
 }
 
 } // namespace math

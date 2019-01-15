@@ -13,7 +13,6 @@
 #include <uhd/utils/safe_call.hpp>
 #include <boost/format.hpp>
 #include <boost/function.hpp>
-#include <boost/math/common_factor_rt.hpp> //gcd
 #include <algorithm>
 #include <cstdint>
 #include <utility>

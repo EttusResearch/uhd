@@ -15,7 +15,6 @@
 #include <stdint.h>
 #include <boost/format.hpp>
 #include <boost/function.hpp>
-#include <boost/math/common_factor_rt.hpp> //gcd
 #include <algorithm>
 #include <utility>
 #include <vector>
@@ -376,8 +375,8 @@ inline double adf535x_impl<adf5355_regs_t>::_set_frequency(
     const auto FRAC1     = static_cast<uint32_t>(floor((N - INT) * ADF535X_MOD1));
     const double residue = (N - INT) * ADF535X_MOD1 - FRAC1;
 
-    const double gcd =
-        boost::math::gcd(static_cast<int>(_pfd_freq), static_cast<int>(freq_resolution));
+    const double gcd = double(
+        uhd::math::gcd(static_cast<int>(_pfd_freq), static_cast<int>(freq_resolution)));
     const auto MOD2 = static_cast<uint16_t>(
         std::min(floor(_pfd_freq / gcd), static_cast<double>(ADF535X_MAX_MOD2)));
     const auto FRAC2 = static_cast<uint16_t>(
@@ -491,8 +490,8 @@ inline double adf535x_impl<adf5356_regs_t>::_set_frequency(
     const auto FRAC1     = static_cast<uint32_t>(floor((N - INT) * ADF535X_MOD1));
     const double residue = (N - INT) * ADF535X_MOD1 - FRAC1;
 
-    const double gcd =
-        boost::math::gcd(static_cast<int>(_pfd_freq), static_cast<int>(freq_resolution));
+    const double gcd = double(
+        uhd::math::gcd(static_cast<int>(_pfd_freq), static_cast<int>(freq_resolution)));
     const auto MOD2 = static_cast<uint16_t>(
         std::min(floor(_pfd_freq / gcd), static_cast<double>(ADF535X_MAX_MOD2)));
     const auto FRAC2 = static_cast<uint16_t>(

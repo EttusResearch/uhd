@@ -9,8 +9,12 @@
 #include <stdint.h>
 #include <boost/test/unit_test.hpp>
 
-// We need an empty test
-BOOST_AUTO_TEST_CASE(test_)
+BOOST_AUTO_TEST_CASE(test_lcm)
 {
-    BOOST_CHECK_EQUAL(true, true);
+    BOOST_CHECK_EQUAL(uhd::math::lcm<int>(2, 3), 6);
+}
+
+BOOST_AUTO_TEST_CASE(test_gcd)
+{
+    BOOST_CHECK_EQUAL(uhd::math::gcd<int>(6, 15), 3);
 }
