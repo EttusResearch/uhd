@@ -9,9 +9,6 @@
 
 include(CheckCXXSymbolExistsCopy)
 
-## Check for std::log2
-CHECK_CXX_SYMBOL_EXISTS(log2 cmath HAVE_LOG2)
-
 ## Macros for the version number
 if(UHD_VERSION_DEVEL)
     math(EXPR UHD_VERSION_ADDED "1000000 * ${UHD_VERSION_MAJOR} + 10000 * ${UHD_VERSION_API} + 100 * ${UHD_VERSION_ABI} + 99")

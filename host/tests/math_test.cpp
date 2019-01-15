@@ -9,11 +9,8 @@
 #include <stdint.h>
 #include <boost/test/unit_test.hpp>
 
-// NOTE: This is not the only math test case, see e.g. special tests
-// for fp comparison.
-
-BOOST_AUTO_TEST_CASE(test_log2)
+// We need an empty test
+BOOST_AUTO_TEST_CASE(test_)
 {
-    double y = uhd::math::log2(16.0);
-    BOOST_CHECK_EQUAL(y, 4.0);
+    BOOST_CHECK_EQUAL(true, true);
 }

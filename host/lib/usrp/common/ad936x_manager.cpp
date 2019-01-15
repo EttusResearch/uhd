@@ -10,6 +10,7 @@
 #include <boost/functional/hash.hpp>
 #include <boost/make_shared.hpp>
 #include <chrono>
+#include <cmath>
 #include <thread>
 
 using namespace uhd;
@@ -167,7 +168,7 @@ public:
         // We use shifts here instead of 2^x because exp2() is not available in all
         // compilers, also this guarantees no rounding issues. The type cast to int32_t
         // serves as floor():
-        int32_t multiplier = (1 << int32_t(uhd::math::log2(max_tick_rate / lcm_rate)));
+        int32_t multiplier = (1 << int32_t(std::log2(max_tick_rate / lcm_rate)));
         if (multiplier == 2 and lcm_rate >= min_tick_rate) {
             // Don't bother (see above)
             multiplier = 1;

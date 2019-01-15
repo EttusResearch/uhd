@@ -223,15 +223,6 @@ UHD_INLINE bool frequencies_are_equal(double lhs, double rhs)
             == fp_compare::fp_compare_delta<double>(rhs, FREQ_COMPARISON_DELTA_HZ));
 }
 
-//! Portable log2()
-template <typename float_t> UHD_INLINE float_t log2(float_t x)
-{
-    // C++11 defines std::log2(), when that's universally supported
-    // we can switch over.
-    return std::log(x) / std::log(float_t(2));
-}
-
-
 } // namespace math
 } // namespace uhd
 
