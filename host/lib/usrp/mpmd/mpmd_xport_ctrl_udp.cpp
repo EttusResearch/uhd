@@ -191,13 +191,15 @@ uhd::both_xports_t mpmd_xport_ctrl_udp::make_transport(
     }
     transport::zero_copy_xport_params default_buff_args;
     // Create actual UDP transport
-    default_buff_args.recv_frame_size = get_mtu(uhd::RX_DIRECTION);
-    default_buff_args.recv_buff_size  = link_speed * MPMD_BUFFER_FILL_RATE;
-    default_buff_args.send_buff_size  = link_speed * MPMD_BUFFER_FILL_RATE;
+    default_buff_args.recv_frame_size =
+        xport_args.cast<size_t>("recv_frame_size", get_mtu(uhd::RX_DIRECTION));
+    default_buff_args.recv_buff_size = link_speed * MPMD_BUFFER_FILL_RATE;
+    default_buff_args.send_buff_size = link_speed * MPMD_BUFFER_FILL_RATE;
     if (xport_type == usrp::device3_impl::ASYNC_MSG) {
         default_buff_args.send_frame_size = MPMD_10GE_ASYNCMSG_FRAME_MAX_SIZE;
     } else {
-        default_buff_args.send_frame_size = get_mtu(uhd::TX_DIRECTION);
+        default_buff_args.send_frame_size =
+            xport_args.cast<size_t>("send_frame_size", get_mtu(uhd::TX_DIRECTION));
     }
     transport::udp_zero_copy::buff_params buff_params;
     auto recv                     = transport::udp_zero_copy::make(xport_info["ipv4"],

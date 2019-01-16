@@ -46,14 +46,15 @@ mpmd_xport_ctrl_liberio::mpmd_xport_ctrl_liberio(const uhd::device_addr_t& mb_ar
 uhd::both_xports_t mpmd_xport_ctrl_liberio::make_transport(
     mpmd_xport_mgr::xport_info_t& xport_info,
     const usrp::device3_impl::xport_type_t xport_type,
-    const uhd::device_addr_t& /*xport_args_*/
-)
+    const uhd::device_addr_t& xport_args)
 {
     transport::zero_copy_xport_params default_buff_args;
     /* default ones for RX / TX, override below */
 
-    default_buff_args.send_frame_size = get_mtu(uhd::TX_DIRECTION);
-    default_buff_args.recv_frame_size = get_mtu(uhd::RX_DIRECTION);
+    default_buff_args.send_frame_size =
+        xport_args.cast<size_t>("send_frame_size", get_mtu(uhd::TX_DIRECTION));
+    default_buff_args.recv_frame_size =
+        xport_args.cast<size_t>("recv_frame_size", get_mtu(uhd::RX_DIRECTION));
     default_buff_args.num_recv_frames = LIBERIO_NUM_RECV_FRAMES;
     default_buff_args.num_send_frames = LIBERIO_NUM_SEND_FRAMES;
 
