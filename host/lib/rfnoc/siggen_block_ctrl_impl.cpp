@@ -4,9 +4,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <boost/format.hpp>
-#include <uhd/utils/log.hpp>
 #include <uhd/rfnoc/siggen_block_ctrl.hpp>
+#include <uhd/utils/log.hpp>
+#include <boost/format.hpp>
 
 using namespace uhd::rfnoc;
 
@@ -18,7 +18,7 @@ public:
         // nop
     }
 
-    void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd, const size_t)
+    void issue_stream_cmd(const uhd::stream_cmd_t& stream_cmd, const size_t)
     {
         UHD_LOGGER_TRACE(unique_id()) << "issue_stream_cmd()" << std::endl;
         if (not stream_cmd.stream_now) {
@@ -36,14 +36,13 @@ public:
 
             case uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE:
             case uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE:
-                throw uhd::not_implemented_error(
-                    "siggen_block does not support streaming modes other than CONTINUOUS");
+                throw uhd::not_implemented_error("siggen_block does not support "
+                                                 "streaming modes other than CONTINUOUS");
 
             default:
                 UHD_THROW_INVALID_CODE_PATH();
         }
     }
-
 };
 
 UHD_RFNOC_BLOCK_REGISTER(siggen_block_ctrl, "SigGen");

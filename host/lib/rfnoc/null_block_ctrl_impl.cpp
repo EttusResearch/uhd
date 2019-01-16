@@ -4,10 +4,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhd/utils/log.hpp>
-#include <uhd/types/ranges.hpp>
 #include <uhd/rfnoc/null_block_ctrl.hpp>
 #include <uhd/rfnoc/traffic_counter.hpp>
+#include <uhd/types/ranges.hpp>
+#include <uhd/utils/log.hpp>
 #include <boost/format.hpp>
 
 using namespace uhd::rfnoc;
@@ -18,34 +18,29 @@ public:
     UHD_RFNOC_BLOCK_CONSTRUCTOR(null_block_ctrl)
     {
         // Register hooks for line_rate:
-        _tree->access<int>(_root_path / "args" / 0 /  "line_rate" / "value")
-            .add_coerced_subscriber([this](const int delay){
-                this->set_line_delay_cycles(delay);
-            })
-            .update()
-        ;
+        _tree->access<int>(_root_path / "args" / 0 / "line_rate" / "value")
+            .add_coerced_subscriber(
+                [this](const int delay) { this->set_line_delay_cycles(delay); })
+            .update();
         // Register hooks for bpp:
-        _tree->access<int>(_root_path / "args" / 0 /  "bpp" / "value")
-            .add_coerced_subscriber([this](const int bpp){
-                this->set_bytes_per_packet(bpp);
-            })
-            .update()
-        ;
+        _tree->access<int>(_root_path / "args" / 0 / "bpp" / "value")
+            .add_coerced_subscriber(
+                [this](const int bpp) { this->set_bytes_per_packet(bpp); })
+            .update();
 
-        traffic_counter::write_reg_fn_t write =
-            [this](const uint32_t addr, const uint32_t data) {
-                const uint64_t traffic_counter_sr_base = 192;
-                sr_write(addr+traffic_counter_sr_base, data);
-            };
+        traffic_counter::write_reg_fn_t write = [this](const uint32_t addr,
+                                                    const uint32_t data) {
+            const uint64_t traffic_counter_sr_base = 192;
+            sr_write(addr + traffic_counter_sr_base, data);
+        };
 
-        traffic_counter::read_reg_fn_t read =
-            [this](const uint32_t addr) {
-                const uint64_t traffic_counter_rb_base = 64;
-                return user_reg_read64(addr+traffic_counter_rb_base);
-            };
+        traffic_counter::read_reg_fn_t read = [this](const uint32_t addr) {
+            const uint64_t traffic_counter_rb_base = 64;
+            return user_reg_read64(addr + traffic_counter_rb_base);
+        };
 
-        _traffic_counter = std::make_shared<traffic_counter>(
-            _tree, _root_path, write, read);
+        _traffic_counter =
+            std::make_shared<traffic_counter>(_tree, _root_path, write, read);
     }
 
     void set_line_delay_cycles(int cycles)
@@ -84,10 +79,11 @@ public:
         return clock_rate / (reg_val + 1);
     }
 
-    void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd, const size_t)
+    void issue_stream_cmd(const uhd::stream_cmd_t& stream_cmd, const size_t)
     {
         if (not stream_cmd.stream_now) {
-            throw uhd::not_implemented_error("null_block does not support timed commands.");
+            throw uhd::not_implemented_error(
+                "null_block does not support timed commands.");
         }
         switch (stream_cmd.stream_mode) {
             case uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS:
@@ -100,17 +96,16 @@ public:
 
             case uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE:
             case uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE:
-                throw uhd::not_implemented_error("null_block does not support streaming modes other than CONTINUOUS");
+                throw uhd::not_implemented_error(
+                    "null_block does not support streaming modes other than CONTINUOUS");
 
             default:
                 UHD_THROW_INVALID_CODE_PATH();
         }
     }
 
-    void set_destination(
-            uint32_t next_address,
-            size_t output_block_port
-    ) {
+    void set_destination(uint32_t next_address, size_t output_block_port)
+    {
         uhd::sid_t sid(next_address);
         if (sid.get_src() == 0) {
             sid.set_src(get_address());
@@ -123,4 +118,3 @@ private:
 };
 
 UHD_RFNOC_BLOCK_REGISTER(null_block_ctrl, "NullSrcSink");
-

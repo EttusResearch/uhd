@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhd/rfnoc/fir_block_ctrl.hpp>
 #include <uhd/convert.hpp>
+#include <uhd/rfnoc/fir_block_ctrl.hpp>
 #include <uhd/utils/log.hpp>
 
 using namespace uhd::rfnoc;
@@ -31,20 +31,21 @@ public:
         set_taps(default_taps);
     }
 
-    void set_taps(const std::vector<int> &taps_)
+    void set_taps(const std::vector<int>& taps_)
     {
         UHD_LOGGER_TRACE(unique_id()) << "fir_block::set_taps()" << std::endl;
         if (taps_.size() > _n_taps) {
-            throw uhd::value_error(str(
-                boost::format("FIR block: Too many filter coefficients! Provided %d, FIR allows %d.\n")
-                % taps_.size() % _n_taps
-            ));
+            throw uhd::value_error(
+                str(boost::format("FIR block: Too many filter coefficients! Provided %d, "
+                                  "FIR allows %d.\n")
+                    % taps_.size() % _n_taps));
         }
         for (size_t i = 0; i < taps_.size(); i++) {
             if (taps_[i] > 32767 || taps_[i] < -32768) {
-                throw uhd::value_error(str(
-                    boost::format("FIR block: Coefficient %d out of range! Value %d, Allowed range [-32768,32767].\n")
-                    % i % taps_[i]));
+                throw uhd::value_error(
+                    str(boost::format("FIR block: Coefficient %d out of range! Value %d, "
+                                      "Allowed range [-32768,32767].\n")
+                        % i % taps_[i]));
             }
         }
         std::vector<int> taps = taps_;
@@ -58,8 +59,8 @@ public:
         }
         // Assert tlast when sending the spinal tap (haha, it's actually the final tap).
         sr_write(SR_RELOAD_TLAST, uint32_t(taps.back()));
-        // Send the configuration word to replace the existing coefficients with the new ones.
-        // Note: This configuration bus does not require tlast
+        // Send the configuration word to replace the existing coefficients with the new
+        // ones. Note: This configuration bus does not require tlast
         sr_write(SR_CONFIG, 0);
     }
 

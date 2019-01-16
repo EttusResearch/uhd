@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhd/rfnoc/window_block_ctrl.hpp>
 #include <uhd/convert.hpp>
+#include <uhd/rfnoc/window_block_ctrl.hpp>
 #include <uhd/utils/log.hpp>
 
 using namespace uhd::rfnoc;
@@ -22,21 +22,20 @@ public:
             << "window_block::window_block() max_len ==" << _max_len << std::endl;
         UHD_ASSERT_THROW(_max_len);
 
-        // TODO we need a coercer to check that spp on the prop tree doesn't get set to anything invalid
+        // TODO we need a coercer to check that spp on the prop tree doesn't get set to
+        // anything invalid
         _set_default_window(std::min<size_t>(get_arg<int>("spp"), _max_len));
     }
 
     //! Set window coefficients and length
-    void set_window(const std::vector<int> &coeffs)
+    void set_window(const std::vector<int>& coeffs)
     {
-        UHD_LOGGER_TRACE(unique_id())
-            << "window_block::set_window()" << std::endl;
+        UHD_LOGGER_TRACE(unique_id()) << "window_block::set_window()" << std::endl;
         if (coeffs.size() > _max_len) {
-            throw uhd::value_error(str(
-                boost::format("window_block::set_window(): Too many window "
-                              "coefficients! Provided %d, window allows up to %d.\n")
-                % coeffs.size() % _max_len
-            ));
+            throw uhd::value_error(
+                str(boost::format("window_block::set_window(): Too many window "
+                                  "coefficients! Provided %d, window allows up to %d.\n")
+                    % coeffs.size() % _max_len));
         }
 
         size_t window_len = coeffs.size();
@@ -46,10 +45,11 @@ public:
         std::vector<uint32_t> coeffs_;
         for (size_t i = 0; i < window_len - 1; i++) {
             if (coeffs[i] > 32767 || coeffs[i] < -32768) {
-                throw uhd::value_error(str(
-                    boost::format("window_block::set_window(): Coefficient %d "
-                                  "(index %d) outside coefficient range [-32768,32767].\n")
-                    % coeffs[i] % i));
+                throw uhd::value_error(
+                    str(boost::format(
+                            "window_block::set_window(): Coefficient %d "
+                            "(index %d) outside coefficient range [-32768,32767].\n")
+                        % coeffs[i] % i));
             }
             coeffs_.push_back(coeffs[i]);
         }
@@ -85,8 +85,9 @@ private:
     size_t _max_len;
 
     //! Default is a rectangular window
-    void _set_default_window(size_t window_len) {
-        std::vector<int> default_coeffs(window_len, (1 << 15)-1);
+    void _set_default_window(size_t window_len)
+    {
+        std::vector<int> default_coeffs(window_len, (1 << 15) - 1);
         set_window(default_coeffs);
     }
 };

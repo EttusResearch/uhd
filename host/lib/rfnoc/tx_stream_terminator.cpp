@@ -13,10 +13,10 @@ using namespace uhd::rfnoc;
 
 size_t tx_stream_terminator::_count = 0;
 
-tx_stream_terminator::tx_stream_terminator() :
-    _term_index(_count),
-    _samp_rate(rate_node_ctrl::RATE_UNDEFINED),
-    _tick_rate(tick_node_ctrl::RATE_UNDEFINED)
+tx_stream_terminator::tx_stream_terminator()
+    : _term_index(_count)
+    , _samp_rate(rate_node_ctrl::RATE_UNDEFINED)
+    , _tick_rate(tick_node_ctrl::RATE_UNDEFINED)
 {
     _count++;
 }
@@ -35,23 +35,19 @@ void tx_stream_terminator::set_tx_streamer(bool active, const size_t /* port */)
 {
     // TODO this is identical to sink_node_ctrl::set_tx_streamer() -> factor out
     UHD_RFNOC_BLOCK_TRACE() << "tx_stream_terminator::set_tx_streamer() " << active;
-    for(const node_ctrl_base::node_map_pair_t downstream_node:  _downstream_nodes) {
+    for (const node_ctrl_base::node_map_pair_t downstream_node : _downstream_nodes) {
         sink_node_ctrl::sptr curr_downstream_block_ctrl =
             boost::dynamic_pointer_cast<sink_node_ctrl>(downstream_node.second.lock());
         if (curr_downstream_block_ctrl) {
             curr_downstream_block_ctrl->set_tx_streamer(
-                    active,
-                    get_downstream_port(downstream_node.first)
-            );
+                active, get_downstream_port(downstream_node.first));
         }
         _tx_streamer_active[downstream_node.first] = active;
     }
-
 }
 
 tx_stream_terminator::~tx_stream_terminator()
 {
-    UHD_RFNOC_BLOCK_TRACE() << "tx_stream_terminator::~tx_stream_terminator() " ;
+    UHD_RFNOC_BLOCK_TRACE() << "tx_stream_terminator::~tx_stream_terminator() ";
     set_tx_streamer(false, 0);
 }
-
