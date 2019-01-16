@@ -169,6 +169,8 @@ private:
     uhd::task::sptr _claimer_task;
 
     uhd::mpmd::xport::mpmd_xport_mgr::uptr _xport_mgr;
+    uhd::device_addr_t send_args;
+    uhd::device_addr_t recv_args;
 };
 
 

@@ -290,6 +290,13 @@ mpmd_mboard_impl::mpmd_mboard_impl(
             << this_db_info.to_string();
         this->dboard_info.push_back(this_db_info);
     }
+
+    for (const std::string& key : mb_args_.keys()) {
+        if (key.find("recv") != std::string::npos)
+            recv_args[key] = mb_args_[key];
+        if (key.find("send") != std::string::npos)
+            send_args[key] = mb_args_[key];
+    }
 }
 
 mpmd_mboard_impl::~mpmd_mboard_impl()
@@ -377,16 +384,12 @@ size_t mpmd_mboard_impl::get_mtu(const uhd::direction_t dir) const
 
 uhd::device_addr_t mpmd_mboard_impl::get_rx_hints() const
 {
-    // TODO: See if we need to do anything here. get_rx_stream() might care.
-    device_addr_t rx_hints;
-    return rx_hints;
+    return recv_args;
 }
 
 uhd::device_addr_t mpmd_mboard_impl::get_tx_hints() const
 {
-    // TODO: See if we need to do anything here. get_tx_stream() might care.
-    device_addr_t tx_hints;
-    return tx_hints;
+    return send_args;
 }
 
 /*****************************************************************************
