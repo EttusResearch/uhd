@@ -128,9 +128,13 @@ bool mpmd_xport_ctrl_liberio::is_valid(
     return xport_info.at("type") == "liberio";
 }
 
-size_t mpmd_xport_ctrl_liberio::get_mtu(const uhd::direction_t /* dir */
-    ) const
+size_t mpmd_xport_ctrl_liberio::get_mtu(const uhd::direction_t dir) const
 {
+    /* TODO: this is extremely hacky. We don't know yet what broke liberio.
+     * Putting a bandaid here to help TXing. Remove this as soon as possible!
+     */
+    if (dir == uhd::TX_DIRECTION)
+        return getpagesize();
     return LIBERIO_PAGES_PER_BUF * getpagesize();
 }
 
