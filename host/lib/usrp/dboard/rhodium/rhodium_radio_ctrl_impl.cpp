@@ -36,6 +36,8 @@ namespace {
 
     constexpr double DEFAULT_IDENTIFY_DURATION = 5.0; // seconds
 
+    constexpr uint64_t SET_RATE_RPC_TIMEOUT_MS = 10000;
+
     const fs_path TX_FE_PATH = fs_path("tx_frontends") / 0 / "tune_args";
     const fs_path RX_FE_PATH = fs_path("rx_frontends") / 0 / "tune_args";
 
@@ -92,7 +94,8 @@ double rhodium_radio_ctrl_impl::set_rate(double requested_rate)
     }
 
     UHD_LOG_TRACE(unique_id(), "Updating master clock rate to " << rate);
-    auto new_rate = _rpcc->request_with_token<double>(_rpc_prefix + "set_master_clock_rate", rate);
+    auto new_rate = _rpcc->request_with_token<double>(
+        SET_RATE_RPC_TIMEOUT_MS, _rpc_prefix + "set_master_clock_rate", rate);
     // The lowband LO frequency will change with the master clock rate, so
     // update the tuning of the device.
     set_tx_frequency(get_tx_frequency(0), 0);
