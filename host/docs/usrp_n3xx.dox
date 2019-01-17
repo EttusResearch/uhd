@@ -28,15 +28,9 @@
 The N3XX series of USRPs is designed as a platform. The following USRPs are
 variants of the N3XX series:
 
-\subsection n3xx_feature_list_mg N310/N300 4-channel/2-channel ("Magnesium")
+\subsection n3xx_feature_list_mg N310/N300 4-channel/2-channel Transceiver
 
 \image html N310isoExplode.png N310 Exploded View
-
-The N310 is a 4-channel transmitter/receiver based on the AD9371 transceiver IC.
-It has two daughterboards with one AD9371 each; every daughterboard provides
-two RF channels. Note that the product code "N310" refers to the module
-consisting of mother- and daughterboard, the daughterboard itself is referred to
-by its codename, "Magnesium".
 
 - Supported master clock rates: 122.88 MHz, 125 MHz, 153.6 MHz
 - Tuning range: 10 MHz to 6 GHz (below 300 MHz, additional LOs and mixer stages
@@ -44,10 +38,46 @@ by its codename, "Magnesium".
 - Support for external LOs
 - 4 RX DDC chains in FPGA (2 for N300)
 - 4 TX DUC chain in FPGA (2 for N300)
+- 2 SFP+ connectors
+
+The N310 is a 4-channel transmitter/receiver based on the AD9371 transceiver IC.
+It has two daughterboards with one AD9371 each; every daughterboard provides
+two RF channels. Note that the product code "N310" refers to the module
+consisting of mother- and daughterboard, the daughterboard itself is referred to
+by its codename, "Magnesium".
 
 The N300 is a subset of the N310. It has 2 TX/RX channels (on a single
 daughterboard; the daughterboard itself is the same as the N310) and a smaller
 FPGA (XCZ035). Also, it does not have connectors for external LOs.
+
+\subsection n3xx_feature_list_rh N320/N321 2-channel Transceiver
+
+- Supported master clock rates: 200 MHz, 245.76 MHz, 250 MHz
+- Tuning range: 1 MHz to 6 GHz (below 450 MHz, an additional LO and mixer stage
+  is used to shift the signal into the range of the main LO stage)
+- Support for external LOs
+- 2 RX DDC chains in FPGA
+- 2 TX DUC chain in FPGA
+- LO sharing between multiple devices (N321 only)
+- 2 SFP+ connectors + 1 QSFP+ connector
+
+The N320 is a 2-channel transmitter/receiver using discrete components instead
+of an RFIC. It has two daughterboards, each has one ADC/DAC and provides one
+RF channel.
+
+The difference between the N320 and the N321 is in its LO sharing capability.
+The N320 has a single input for the TX and RX LOs, respectively. The N321 also
+has the ability to export its LO up to four times, making it possible to share
+LOs between a large number of N321 devices without having to provide an
+external, separate LO source. Due to number of connectors required to provide
+the large number of LO outputs, the N321 does not have a front-panel GPIO
+connector.
+
+The N320 has a higher maximum analog bandwidth than the N310. It can provide
+rates up to 250 Msps, resulting in a usable analog bandwidth of up to 200 MHz.
+In order to better use the high available rates, the N320/N321 devices have an
+additional QSFP+ connector on the back panel which can be used for streaming
+data to and from the radios.
 
 \section n3xx_overview Overview
 
@@ -133,7 +163,7 @@ Checklist:
 Before doing any major work with a newly acquired USRP N300/N310, it is
 recommended to update the file system. Updating the filesystem can be
 accomplished directly on the N300/N310 by using Mender or externally by
-manually writing an image onto a micro SD card and inserting it.  While 
+manually writing an image onto a micro SD card and inserting it.  While
 manual updating is faster, Mender requires no direct physical access to the
 device.  For details on using Mender, see Section \ref n3xx_rasm_mender .
 
@@ -424,8 +454,8 @@ for the specific N3XX device:
 
 \subsection n3xx_usage_subdevspec Subdev Specifications
 
-The four RF ports on the front panel correspond to the following subdev
-specifications:
+The RF ports on the front panel of the N300/N310 correspond to the following
+subdev specifications:
 
 Label | Subdev Spec
 ------|------------
@@ -433,6 +463,14 @@ RF0   | A:0
 RF1   | A:1
 RF2   | B:0 (N310 only)
 RF3   | B:1 (N310 only)
+
+The RF ports on the front panel of the N320/N321 correspond to the following
+subdev specifications:
+
+Label | Subdev Spec
+------|------------
+RF0   | A:0
+RF1   | B:0
 
 Note: Before UHD 3.12.0.0, the subdev spec options were different (A:0, B:0,
 etc.). Make sure to update your application if you migrated from an earlier UHD
@@ -1168,6 +1206,145 @@ Slave 6   | 4001_8000 - 4001_bfff | dboard-regs1     | Daughterboard control, sl
 <tr>                                                            <td>4001_7000<td>4001_7FFF<td>JESD Core 1<td>see JESD regmap (EISCAT)<td>
 <tr><td rowspan="1">Slave 6                                     <td>4001_8000 - 4001_bfff <td>see above <td>-<td>same as Slave 5<td>
 </table>
+
+\section n3xx_rh N32x-specific Features
+
+\subsection n3xx_rh_panels Front and Rear Panel
+
+Like the USRP X300 series, the N320/N321 has connectors on both the front and back
+panel. The back panel holds the power connector, all network connections, USB
+connections for serial console (see \ref n3xx_getting_started_serial), JTAG,
+peripherals, SMA connectors for GPS antenna input, 10 MHz clock reference,
+PPS time reference input and output (TRIG in/out), the slot for the SD card
+(see also \ref n3xx_sdcard), and indicator LEDs.
+
+The following indicator LEDs are used:
+
+- LINK: This LED will be lit when this USRP has been claimed by a UHD session.
+- REF: Indicates a lock to the reference clock. In particular, when using an
+       external reference clock, this LED is useful to see if the LMK04828 PLLs
+       are locking to this reference clock. Note that some software interaction
+       is necessary to enable the LMK04828, and thus this LED may be off even
+       if a valid reference clock signal is connected.
+- GPS: Indicates a GPS lock (i.e., GPS satellites are in view of the GPS
+       antenna and signal levels are sufficient)
+- PPS: This LED will blink once every second to indicate a valid PPS signal.
+
+The rear panel is identical between the N320 and the N321 with the exception of
+the product name above the SFP+ connectors.
+
+\image html N320_Rear.png N320 Rear Panel
+
+\image html N321_Rear.png N321 Rear Panel
+
+The front panel is used for all RF connections (including the external LO
+inputs, see \ref n3xx_rh_external_lo) and all TX/RX connections, as well as the
+front-panel GPIO (N320 only!).
+
+The connectors labeled RF0 are also referred to as slot A, and the connectors
+labeled RF1 are also referred as slot B (matching the internal connections to
+the daughterboard).
+
+\image html N320_Front.png N320 Front Panel
+
+\image html N321_Front.png N321 Front Panel
+
+\subsection n3xx_rh_initialization Device Initialization (Fast and Slow)
+
+When a UHD session is created, an initialization sequence is started. As part of
+the initialization sequence, the following steps are performed:
+
+- All clocking is initialized
+- The JESD links are trained and brought up (between the FPGA and the ADC/DAC)
+
+This sequence can take a while, depending on the master clock rate and the
+calibration sequence. To speed things up, the device will retain a state
+between sessions, but only if no relevant settings were touched. In particular,
+changing the master clock rate or the clock source will
+force a full re-initialization which is slower compared to the fast
+re-initialization. By setting the log level to DEBUG you will be able to observe
+the exact settings that cause fast vs. slow re-initialization.
+If you require a full re-initialization every time a UHD session is spawned,
+specify the `force_reinit` flag as a device arg. Specifying it will always do
+the full, slow initialization, but will guarantee a full reset digital chains.
+
+To maximally speed up UHD, an initialization sequence is run when the device
+(or more accurately, the MPM service) starts. This means even on the first run
+of UHD, the device will already be initialized into a usable state. Note that
+it will always come up in a default state, which can be changed by modifying the
+configuration file in `/etc/uhd/mpm.conf` (see also \ref page_configfiles),
+such as this:
+
+~~~{.ini}
+; Note: To boot into a fully initialized state, a clock reference must be
+; connected before turning the device on if it set to external here:
+[n3xx]
+master_clock_rate=200e6
+clock_source=external
+~~~
+
+If you prefer not to have the device initialize on boot, but rather have a fast
+boot time, add the line `skip_boot_init=1` to your `/etc/uhd/mpm.conf` file.
+
+
+\subsection n3xx_rh_calibrations RF Calibrations
+
+The N320/N321 can perform some simple calibration for I/Q imbalance and DC
+offset, the same way as the X300 series. Refer to \ref page_calibration for more
+details.
+
+\subsection n3xx_rh_external_lo External LOs
+
+The N320/N321 can utilize an external LO that is connected to the front panel
+connectors.  For the N320, the LO IN TX and LO IN RX connectors are used. For
+the N321, the RX LO IN1 and TX LO IN1 connectors are used. One or both
+daughterboards may use this external LO signal by setting the channel's LO
+source to "external".  When the source is set to "external", reading the LO
+frequency will return the ideal frequency for an external LO source.
+
+\subsection n3xx_rh_lo_sharing N321 LO Distribution Board
+
+The N321 has an additional board to perform LO signal splitting and
+distribution.  The 4 output ports, OUT0 through OUT3, are driven by a 1:4
+splitter which can be sourced from the corresponding IN0 front panel port or
+the LO on the daughterboard in slot A.  To use the IN0 front panel port, set LO
+export enabled to false.  To use the LO located on the daughterboard in slot A,
+set LO export enabled to true.
+
+Each of the 4 output ports, OUT0 through OUT3, have an internal terminator
+which must be disabled before use.  These can be controlled through the RFNoC
+radio block's API, the property tree, or directly through commands in the MPM
+shell.
+
+\image html N321_LO_Distribution_Block_Diagram.png "N321 LO Distribution Diagram"
+
+\subsection n3xx_rh_lo_chaining N320/N321 LO Sharing
+
+By using matched length cabling with N321s, up to 16 modules can use both of
+their RX and TX channels while sharing a single N321's LO signal, resulting in
+a 32 by 32 channel single shared LO configuration.  This 32 by 32 channel
+configuration can also utilize an external LO signal, allowing an already split
+external LO signal to support larger configurations of 64 by 64 channels, 128
+by 128 channels, and larger.
+
+The following diagram shows the connections necessary to create a 16 by 16
+channel configuration with a single shared LO source.
+
+\image html N321_16_Channel_Example.png "N321 16 Channel LO Sharing"
+
+\subsection n3xx_rh_sfp_protocols SFP+ and QSFP+ protocols
+
+The protocols supported on the SFP+ and QSFP+ ports depend on the FPGA image
+currently loaded.
+
+Interface    | HG     | XG     | XQ           | AQ
+-------------|--------|--------|--------------|--------
+SFP+ 0       | 1 GbE  | 10 GbE | White Rabbit | 10 GbE
+SFP+ 1       | 10 GbE | 10 GbE | Unused       | 10 GbE
+QSFP+ lane 0 | Unused | Unused | 10 GbE       | Aurora
+QSFP+ lane 1 | Unused | Unused | 10 GbE       | Aurora
+QSFP+ lane 2 | Unused | Unused | Unused       | Aurora
+QSFP+ lane 3 | Unused | Unused | Unused       | Aurora
 
 */
 // vim:ft=doxygen:
