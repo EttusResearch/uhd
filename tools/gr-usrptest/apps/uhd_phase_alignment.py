@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 #
-# Copyright 2018 Ettus Research, a National Instruments Company
+# Copyright 2018,2019 Ettus Research, a National Instruments Company
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
@@ -10,7 +10,6 @@ UHD Phase Alignment: Phase alignment test using the UHD Python API.
 
 
 import argparse
-from builtins import input
 from datetime import datetime, timedelta
 import itertools as itt
 import sys
@@ -28,6 +27,18 @@ NUM_RETRIES = 10  # Number of retries on a given trial before giving up
 # TODO: Add support for TX phase alignment
 
 
+def split_args(args_str):
+    """
+    Split a string of the form key1=value1,key2=value2 into a dict of the form
+    {key1 => 'value1', key2 => 'value2'}.
+    """
+    return {
+        x.split('=', 1)[0].strip(): x.split('=', 1)[1]
+        for x in args_str.split(",")
+        if x
+    }
+
+
 def parse_args():
     """Parse the command line arguments"""
     description = """UHD Phase Alignment (Python API)
@@ -43,6 +54,15 @@ def parse_args():
                            --subdev "A:0" "A:0" --runs 3 --duration 1.0
 
     Note: when specifying --subdev, put each mboard's subdev in ""
+
+    When integrating signal generation into this script, add the following
+    arguments:
+
+    --source-plugin uhd_rf_test.new_source_gen --source-args "key1=value1,key2=value2"
+
+    This looks for a child class of SourceGenerator in the `new_source_gen`
+    module within the uhd_rf_test subpackage. See uhd_rf_test/uhd_source_gen.py
+    for an example implementation.
     """
     # TODO: Add gain steps!
     parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter,
@@ -86,12 +106,22 @@ def parse_args():
     parser.add_argument("--time-source", type=str,
                         help="PPS source (internal, external, mimo, gpsdo)")
     parser.add_argument("--sync", type=str, default="default",
-                        #choices=["default", "pps", "mimo"],
                         help="Method to synchronize devices)")
     parser.add_argument("--subdev", type=str, nargs="+",
                         help="Subdevice(s) of UHD device where appropriate. Use "
                              "a space-separated list to set different boards to "
                              "different specs.")
+    # Signal Source
+    parser.add_argument("--source-plugin", type=str, default="default",
+                        help="Select source plugin. This can either be one of"
+                             " [default,], or it can be a custom plugin."
+                       )
+    parser.add_argument("--source-args", default="",
+                        help="Arguments to be passed to the source plugin. It is "
+                             "a string of the form key1=value1,key2=value2. The "
+                             "meaning of the keys and values depends on the "
+                             "source generator plugin."
+                       )
     # Extra, advanced arguments
     parser.add_argument("--plot", default=False, action="store_true",
                         help="Plot results")
@@ -257,13 +287,6 @@ def generate_time_spec(usrp, time_delta=0.05):
     return usrp.get_time_now() + uhd.types.TimeSpec(time_delta)
 
 
-def tune_siggen(freq, power_lvl):
-    """Tune the signal generator to output the correct tone"""
-    # TODO: support actual RTS equipment, or any automated way
-    input("Please tune the signal generator to {:.3f} MHz and {:.1f} dBm, "
-          "then press Enter".format(freq / 1e6, power_lvl))
-
-
 def tune_usrp(usrp, freq, channels, delay=CMD_DELAY):
     """Synchronously set the device's frequency"""
     usrp.set_command_time(generate_time_spec(usrp, time_delta=delay))
@@ -420,6 +443,10 @@ def main():
     if usrp is None:
         return False
 
+    # Setup source generator
+    from uhd_rf_test import uhd_source_gen
+    src_gen = uhd_source_gen.get_source_generator(
+        logger, args.source_plugin, **split_args(args.source_args))
     ### General test description ###
     # 1. Split the frequency range of our device into bands. For each of these
     #    bands, we'll pick a random frequency within the band to be our test
@@ -460,7 +487,7 @@ def main():
             tune_freq = np.round(tune_freq, -6)
         # Request the SigGen tune to our test frequency plus some offset away
         # the device's LO
-        tune_siggen(tune_freq + args.tone_offset, current_power)
+        src_gen.tune(tune_freq + args.tone_offset, current_power)
 
         # This is where the magic happens!
         # Store phase alignment statistics as a list of dictionaries
@@ -528,6 +555,7 @@ def main():
         all_alignment_stats[freq_start] = alignment_stats
         # Increment the power level for the next run
         current_power += args.power_step
+    src_gen.tear_down()
 
     return check_results(all_alignment_stats, args.drift_threshold, args.stddev_threshold)
 
