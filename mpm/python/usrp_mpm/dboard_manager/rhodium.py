@@ -9,8 +9,6 @@ Rhodium dboard implementation module
 
 from __future__ import print_function
 import os
-import threading
-from six import iterkeys, iteritems
 from usrp_mpm import lib # Pulls in everything from C++-land
 from usrp_mpm.dboard_manager import DboardManagerBase
 from usrp_mpm.dboard_manager.rh_periphs import TCA6408, FPGAtoDbGPIO, FPGAtoLoDist
@@ -509,14 +507,14 @@ class Rhodium(BfrfsEEPROM, DboardManagerBase):
         Enables or disables the TX lowband LO output from the LMK on the
         daughterboard.
         """
-        self.lmk.enable_tx_lb_lo(enable);
+        self.lmk.enable_tx_lb_lo(enable)
 
     def enable_rx_lowband_lo(self, enable):
         """
         Enables or disables the RX lowband LO output from the LMK on the
         daughterboard.
         """
-        self.lmk.enable_rx_lb_lo(enable);
+        self.lmk.enable_rx_lb_lo(enable)
 
 
     ##########################################################################
@@ -527,7 +525,7 @@ class Rhodium(BfrfsEEPROM, DboardManagerBase):
         """
         Debug for accessing the CPLD via the RPC shell.
         """
-        self.log.trace("CPLD Signature: 0x{:X}".format(self.cpld.peek(0x00)))
+        self.log.trace("CPLD Signature: 0x{:X}".format(self.cpld.peek16(0x00)))
         revision_msb = self.cpld.peek16(0x04)
         self.log.trace("CPLD Revision:  0x{:X}"
                        .format(self.cpld.peek16(0x03) | (revision_msb << 16)))
@@ -591,7 +589,7 @@ class Rhodium(BfrfsEEPROM, DboardManagerBase):
         Debug for reading out all JESD core registers via RPC shell
         """
         with open_uio(
-            label="dboard-regs-{}".format(slot_idx),
+            label="dboard-regs-{}".format(self.slot_idx),
             read_only=False
         ) as radio_regs:
             for i in range(0x2000, 0x2110, 0x10):
