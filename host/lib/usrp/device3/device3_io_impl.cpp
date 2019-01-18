@@ -378,7 +378,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t& args_)
             fc_cache->unpack    = vrt::chdr::if_hdr_unpack_le;
         }
         xport.recv = zero_copy_flow_ctrl::make(
-            xport.recv, NULL, [fc_cache](managed_buffer::sptr buff) {
+            xport.recv, 0, [fc_cache](managed_buffer::sptr buff) {
                 return rx_flow_ctrl(fc_cache, buff);
             });
 
@@ -614,7 +614,7 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t& args_)
             [fc_cache, xport](managed_buffer::sptr buff) {
                 return tx_flow_ctrl(fc_cache, xport.recv, buff);
             },
-            NULL);
+            0);
 
         // Configure return path for async messages
         blk_ctrl->sr_write(
