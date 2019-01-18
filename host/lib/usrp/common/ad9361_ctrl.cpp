@@ -10,11 +10,9 @@
 #include <uhd/utils/log.hpp>
 #include <uhdlib/usrp/common/ad9361_ctrl.hpp>
 #include <boost/format.hpp>
-#include <boost/function.hpp>
 #include <boost/make_shared.hpp>
-#include <boost/thread.hpp>
-#include <boost/utility.hpp>
 #include <cstring>
+#include <mutex>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -35,7 +33,7 @@ public:
 
     virtual uint8_t peek8(uint32_t reg)
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
 
         uhd::spi_config_t config;
         config.mosi_edge = uhd::spi_config_t::EDGE_FALL;
@@ -56,7 +54,7 @@ public:
 
     virtual void poke8(uint32_t reg, uint8_t val)
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
 
         uhd::spi_config_t config;
         config.mosi_edge = uhd::spi_config_t::EDGE_FALL;
@@ -74,7 +72,7 @@ public:
 private:
     uhd::spi_iface::sptr _spi_iface;
     uint32_t _slave_num;
-    boost::mutex _mutex;
+    std::mutex _mutex;
 
     static const uint32_t AD9361_SPI_WRITE_CMD  = 0x00800000;
     static const uint32_t AD9361_SPI_READ_CMD   = 0x00000000;
@@ -98,7 +96,7 @@ public:
     }
     double set_gain(const std::string& which, const double value)
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
 
         ad9361_device_t::direction_t direction = _get_direction_from_antenna(which);
         ad9361_device_t::chain_t chain         = _get_chain_from_antenna(which);
@@ -108,7 +106,7 @@ public:
 
     void set_agc(const std::string& which, bool enable)
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
 
         ad9361_device_t::chain_t chain = _get_chain_from_antenna(which);
         _device.set_agc(chain, enable);
@@ -116,7 +114,7 @@ public:
 
     void set_agc_mode(const std::string& which, const std::string& mode)
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         ad9361_device_t::chain_t chain = _get_chain_from_antenna(which);
         if (mode == "slow") {
             _device.set_agc_mode(chain, ad9361_device_t::GAIN_MODE_SLOW_AGC);
@@ -130,7 +128,7 @@ public:
     //! set a new clock rate, return the exact value
     double set_clock_rate(const double rate)
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         // clip to known bounds
         const meta_range_t clock_rate_range = ad9361_ctrl::get_clock_rate_range();
         const double clipped_rate           = clock_rate_range.clip(rate);
@@ -151,14 +149,14 @@ public:
     //! set which RX and TX chains/antennas are active
     void set_active_chains(bool tx1, bool tx2, bool rx1, bool rx2)
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
         _device.set_active_chains(tx1, tx2, rx1, rx2);
     }
 
     //! set which timing mode to use - 1R1T, 2R2T
     void set_timing_mode(const std::string& timing_mode)
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
 
         if ((timing_mode != "2R2T") && (timing_mode != "1R1T")) {
             throw uhd::assertion_error("ad9361_ctrl: Timing mode not supported");
@@ -171,7 +169,7 @@ public:
     //! tune the given frontend, return the exact value
     double tune(const std::string& which, const double freq)
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
 
         // clip to known bounds
         const meta_range_t freq_range = ad9361_ctrl::get_rf_freq_range();
@@ -186,7 +184,7 @@ public:
     //! get the current frequency for the given frontend
     double get_freq(const std::string& which)
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
 
         ad9361_device_t::direction_t direction = _get_direction_from_antenna(which);
         return _device.get_freq(direction);
@@ -195,7 +193,7 @@ public:
     //! turn on/off data port loopback
     void data_port_loopback(const bool on)
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
 
         _device.data_port_loopback(on);
     }
@@ -203,7 +201,7 @@ public:
     //! read internal RSSI sensor
     sensor_value_t get_rssi(const std::string& which)
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
 
         ad9361_device_t::chain_t chain = _get_chain_from_antenna(which);
         return sensor_value_t("RSSI", _device.get_rssi(chain), "dB");
@@ -217,7 +215,7 @@ public:
 
     void set_dc_offset_auto(const std::string& which, const bool on)
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
 
         ad9361_device_t::direction_t direction = _get_direction_from_antenna(which);
         _device.set_dc_offset_auto(direction, on);
@@ -225,7 +223,7 @@ public:
 
     void set_iq_balance_auto(const std::string& which, const bool on)
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
 
         ad9361_device_t::direction_t direction = _get_direction_from_antenna(which);
         _device.set_iq_balance_auto(direction, on);
@@ -237,7 +235,7 @@ public:
         double actual_bw                       = bw;
 
         {
-            boost::lock_guard<boost::mutex> lock(_mutex);
+            std::lock_guard<std::mutex> lock(_mutex);
             actual_bw = _device.set_bw_filter(direction, bw);
         }
 
@@ -255,7 +253,7 @@ public:
 
     std::vector<std::string> get_filter_names(const std::string& which)
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
 
         ad9361_device_t::direction_t direction = _get_direction_from_antenna(which);
         return _device.get_filter_names(direction);
@@ -264,7 +262,7 @@ public:
     filter_info_base::sptr get_filter(
         const std::string& which, const std::string& filter_name)
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
 
         ad9361_device_t::direction_t direction = _get_direction_from_antenna(which);
         ad9361_device_t::chain_t chain         = _get_chain_from_antenna(which);
@@ -275,7 +273,7 @@ public:
         const std::string& filter_name,
         const filter_info_base::sptr filter)
     {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+        std::lock_guard<std::mutex> lock(_mutex);
 
         ad9361_device_t::direction_t direction = _get_direction_from_antenna(which);
         ad9361_device_t::chain_t chain         = _get_chain_from_antenna(which);
@@ -317,7 +315,7 @@ private:
     }
 
     ad9361_device_t _device;
-    boost::mutex _mutex;
+    std::mutex _mutex;
 };
 
 //----------------------------------------------------------------------
