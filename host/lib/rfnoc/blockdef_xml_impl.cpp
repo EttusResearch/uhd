@@ -242,6 +242,8 @@ public:
         }
     }
 
+    virtual ~blockdef_xml_impl() {}
+
     bool is_block() const
     {
         return _type == DESCRIBES_BLOCK;

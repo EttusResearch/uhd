@@ -72,6 +72,8 @@ public:
     //! Create an int vector literal expression from a C++ vector<int>.
     expression_literal(std::vector<int> v);
 
+    virtual ~expression_literal() {}
+
     expression::type_t infer_type() const
     {
         return _type;
@@ -192,7 +194,7 @@ public:
 
     //! Create an empty container
     expression_container() : _combiner(COMBINE_NOTSET){};
-    virtual ~expression_container(){};
+    virtual ~expression_container() {}
 
     /*! Type-deduction rules for containers are:
      * - If the combination type is COMBINE_ALL or COMBINE_AND,
@@ -330,6 +332,8 @@ public:
     expression_variable(const std::string& token_val,
         type_getter_type type_getter,
         value_getter_type value_getter);
+
+    virtual ~expression_variable() {}
 
     /*! Looks up the variable type in the variable table.
      *
