@@ -11,17 +11,19 @@
 
 using namespace uhd::transport;
 
-usb_control::~usb_control(void){
+usb_control::~usb_control(void)
+{
     /* NOP */
 }
 
 /***********************************************************************
  * libusb-1.0 implementation of USB control transport
  **********************************************************************/
-class libusb_control_impl : public usb_control {
+class libusb_control_impl : public usb_control
+{
 public:
-    libusb_control_impl(libusb::device_handle::sptr handle, const int interface):
-        _handle(handle)
+    libusb_control_impl(libusb::device_handle::sptr handle, const int interface)
+        : _handle(handle)
     {
         _handle->claim_interface(interface);
     }
@@ -29,22 +31,22 @@ public:
     virtual ~libusb_control_impl(void);
 
     int submit(uint8_t request_type,
-               uint8_t request,
-               uint16_t value,
-               uint16_t index,
-               unsigned char *buff,
-               uint16_t length,
-               uint32_t libusb_timeout = 0
-    ){
+        uint8_t request,
+        uint16_t value,
+        uint16_t index,
+        unsigned char* buff,
+        uint16_t length,
+        uint32_t libusb_timeout = 0)
+    {
         boost::mutex::scoped_lock lock(_mutex);
         return libusb_control_transfer(_handle->get(),
-                                       request_type,
-                                       request,
-                                       value,
-                                       index,
-                                       buff,
-                                       length,
-                                       libusb_timeout);
+            request_type,
+            request,
+            value,
+            index,
+            buff,
+            length,
+            libusb_timeout);
     }
 
 private:
@@ -52,15 +54,18 @@ private:
     boost::mutex _mutex;
 };
 
-libusb_control_impl::~libusb_control_impl(void)  {
-  /* NOP */
+libusb_control_impl::~libusb_control_impl(void)
+{
+    /* NOP */
 }
 
 /***********************************************************************
  * USB control public make functions
  **********************************************************************/
-usb_control::sptr usb_control::make(usb_device_handle::sptr handle, const int interface){
-    return sptr(new libusb_control_impl(libusb::device_handle::get_cached_handle(
-        boost::static_pointer_cast<libusb::special_handle>(handle)->get_device()
-    ), interface));
+usb_control::sptr usb_control::make(usb_device_handle::sptr handle, const int interface)
+{
+    return sptr(new libusb_control_impl(
+        libusb::device_handle::get_cached_handle(
+            boost::static_pointer_cast<libusb::special_handle>(handle)->get_device()),
+        interface));
 }

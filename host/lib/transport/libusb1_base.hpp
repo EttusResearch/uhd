@@ -9,32 +9,30 @@
 #define INCLUDED_LIBUHD_TRANSPORT_LIBUSB_HPP
 
 #include <uhd/config.hpp>
-#include <boost/utility.hpp>
-#include <boost/shared_ptr.hpp>
 #include <uhd/transport/usb_device_handle.hpp>
 #include <libusb.h>
+#include <boost/shared_ptr.hpp>
+#include <boost/utility.hpp>
 
 //! Define LIBUSB_CALL when its missing (non-windows)
 #ifndef LIBUSB_CALL
-    #define LIBUSB_CALL
+#    define LIBUSB_CALL
 #endif /*LIBUSB_CALL*/
 
 //! libusb_handle_events_timeout_completed is only in newer API
 #ifndef HAVE_LIBUSB_HANDLE_EVENTS_TIMEOUT_COMPLETED
-    #define libusb_handle_events_timeout_completed(ctx, tx, completed) \
+#    define libusb_handle_events_timeout_completed(ctx, tx, completed) \
         libusb_handle_events_timeout(ctx, tx)
 #endif /* HAVE_LIBUSB_HANDLE_EVENTS_TIMEOUT_COMPLETED */
 
 //! libusb_error_name is only in newer API
 #ifndef HAVE_LIBUSB_ERROR_NAME
-    #define libusb_error_name(code) \
-        str(boost::format("LIBUSB_ERROR_CODE %d") % code)
+#    define libusb_error_name(code) str(boost::format("LIBUSB_ERROR_CODE %d") % code)
 #endif /* HAVE_LIBUSB_ERROR_NAME */
 
 //! libusb_strerror is only in newer API
 #ifndef HAVE_LIBUSB_STRERROR
-    #define libusb_strerror(code) \
-        libusb_error_name(code)
+#    define libusb_strerror(code) libusb_error_name(code)
 #endif /* HAVE_LIBUSB_STRERROR */
 
 /***********************************************************************
@@ -44,135 +42,138 @@
  * also store tables of already allocated structures to avoid multiple
  * occurrences of opened handles (for example).
  **********************************************************************/
-namespace uhd { namespace transport {
+namespace uhd { namespace transport { namespace libusb {
 
-namespace libusb {
+/*!
+ * This session class holds a global libusb context for this process.
+ * The get global session call will create a new context if none exists.
+ * When all references to session are destroyed, the context will be freed.
+ */
+class session : boost::noncopyable
+{
+public:
+    typedef boost::shared_ptr<session> sptr;
 
-    /*!
-     * This session class holds a global libusb context for this process.
-     * The get global session call will create a new context if none exists.
-     * When all references to session are destroyed, the context will be freed.
-     */
-    class session : boost::noncopyable {
-    public:
-        typedef boost::shared_ptr<session> sptr;
-
-        virtual ~session(void);
-
-        /*!
-         *   Level 0: no messages ever printed by the library (default)
-         *   Level 1: error messages are printed to stderr
-         *   Level 2: warning and error messages are printed to stderr
-         *   Level 3: informational messages are printed to stdout, warning
-         *            and error messages are printed to stderr
-         */
-        static const int debug_level = 0;
-
-        //! get a shared pointer to the global session
-        static sptr get_global_session(void);
-
-        //! get the underlying libusb context pointer
-        virtual libusb_context *get_context(void) const = 0;
-    };
+    virtual ~session(void);
 
     /*!
-     * Holds a device pointer with a reference to the session.
+     *   Level 0: no messages ever printed by the library (default)
+     *   Level 1: error messages are printed to stderr
+     *   Level 2: warning and error messages are printed to stderr
+     *   Level 3: informational messages are printed to stdout, warning
+     *            and error messages are printed to stderr
      */
-    class device : boost::noncopyable {
-    public:
-        typedef boost::shared_ptr<device> sptr;
+    static const int debug_level = 0;
 
-        virtual ~device(void);
+    //! get a shared pointer to the global session
+    static sptr get_global_session(void);
 
-        //! get the underlying device pointer
-        virtual libusb_device *get(void) const = 0;
-    };
+    //! get the underlying libusb context pointer
+    virtual libusb_context* get_context(void) const = 0;
+};
+
+/*!
+ * Holds a device pointer with a reference to the session.
+ */
+class device : boost::noncopyable
+{
+public:
+    typedef boost::shared_ptr<device> sptr;
+
+    virtual ~device(void);
+
+    //! get the underlying device pointer
+    virtual libusb_device* get(void) const = 0;
+};
+
+/*!
+ * This device list class holds a device list that will be
+ * automatically freed when the last reference is destroyed.
+ */
+class device_list : boost::noncopyable
+{
+public:
+    typedef boost::shared_ptr<device_list> sptr;
+
+    virtual ~device_list(void);
+
+    //! make a new device list
+    static sptr make(void);
+
+    //! the number of devices in this list
+    virtual size_t size() const = 0;
+
+    //! get the device pointer at a particular index
+    virtual device::sptr at(size_t index) const = 0;
+};
+
+/*!
+ * Holds a device descriptor and a reference to the device.
+ */
+class device_descriptor : boost::noncopyable
+{
+public:
+    typedef boost::shared_ptr<device_descriptor> sptr;
+
+    virtual ~device_descriptor(void);
+
+    //! make a new descriptor from a device reference
+    static sptr make(device::sptr);
+
+    //! get the underlying device descriptor
+    virtual const libusb_device_descriptor& get(void) const = 0;
+
+    virtual std::string get_ascii_property(const std::string& what) const = 0;
+};
+
+/*!
+ * Holds a device handle and a reference to the device.
+ */
+class device_handle : boost::noncopyable
+{
+public:
+    typedef boost::shared_ptr<device_handle> sptr;
+
+    virtual ~device_handle(void);
+
+    //! get a cached handle or make a new one given the device
+    static sptr get_cached_handle(device::sptr);
+
+    //! get the underlying device handle
+    virtual libusb_device_handle* get(void) const = 0;
 
     /*!
-     * This device list class holds a device list that will be
-     * automatically freed when the last reference is destroyed.
+     * Open USB interfaces for control using magic value
+     * IN interface:      2
+     * OUT interface:     1
+     * Control interface: 0
      */
-    class device_list : boost::noncopyable {
-    public:
-        typedef boost::shared_ptr<device_list> sptr;
+    virtual void claim_interface(int) = 0;
 
-        virtual ~device_list(void);
+    virtual void clear_endpoints(
+        unsigned char recv_endpoint, unsigned char send_endpoint) = 0;
 
-        //! make a new device list
-        static sptr make(void);
+    virtual void reset_device(void) = 0;
+};
 
-        //! the number of devices in this list
-        virtual size_t size() const = 0;
+/*!
+ * The special handle is our internal implementation of the
+ * usb device handle which is used publicly to identify a device.
+ */
+class special_handle : public usb_device_handle
+{
+public:
+    typedef boost::shared_ptr<special_handle> sptr;
 
-        //! get the device pointer at a particular index
-        virtual device::sptr at(size_t index) const = 0;
-    };
+    virtual ~special_handle(void);
 
-    /*!
-     * Holds a device descriptor and a reference to the device.
-     */
-    class device_descriptor : boost::noncopyable {
-    public:
-        typedef boost::shared_ptr<device_descriptor> sptr;
+    //! make a new special handle from device
+    static sptr make(device::sptr);
 
-        virtual ~device_descriptor(void);
+    //! get the underlying device reference
+    virtual device::sptr get_device(void) const = 0;
+};
 
-        //! make a new descriptor from a device reference
-        static sptr make(device::sptr);
-
-        //! get the underlying device descriptor
-        virtual const libusb_device_descriptor &get(void) const = 0;
-
-        virtual std::string get_ascii_property(const std::string &what) const = 0;
-    };
-
-    /*!
-     * Holds a device handle and a reference to the device.
-     */
-    class device_handle : boost::noncopyable {
-    public:
-        typedef boost::shared_ptr<device_handle> sptr;
-
-        virtual ~device_handle(void);
-
-        //! get a cached handle or make a new one given the device
-        static sptr get_cached_handle(device::sptr);
-
-        //! get the underlying device handle
-        virtual libusb_device_handle *get(void) const = 0;
-
-        /*!
-         * Open USB interfaces for control using magic value
-         * IN interface:      2
-         * OUT interface:     1
-         * Control interface: 0
-         */
-        virtual void claim_interface(int) = 0;
-
-        virtual void clear_endpoints(unsigned char recv_endpoint, unsigned char send_endpoint) = 0;
-
-        virtual void reset_device(void) = 0;
-    };
-
-    /*!
-     * The special handle is our internal implementation of the
-     * usb device handle which is used publicly to identify a device.
-     */
-    class special_handle : public usb_device_handle {
-    public:
-        typedef boost::shared_ptr<special_handle> sptr;
-
-        virtual ~special_handle(void);
-
-        //! make a new special handle from device
-        static sptr make(device::sptr);
-
-        //! get the underlying device reference
-        virtual device::sptr get_device(void) const = 0;
-    };
-
-}
-
-}} //namespace
+}}} // namespace uhd::transport::libusb
 
 #endif /* INCLUDED_LIBUHD_TRANSPORT_LIBUSB_HPP */

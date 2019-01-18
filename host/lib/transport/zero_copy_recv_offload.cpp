@@ -5,18 +5,17 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhd/transport/zero_copy_recv_offload.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/transport/buffer_pool.hpp>
-
+#include <uhd/transport/zero_copy_recv_offload.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/thread.hpp>
+#include <boost/bind.hpp>
 #include <boost/format.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
-#include <boost/bind.hpp>
 
 using namespace uhd;
 using namespace uhd::transport;
@@ -28,23 +27,23 @@ typedef bounded_buffer<managed_recv_buffer::sptr> bounded_buffer_t;
  * An intermediate transport that utilizes threading to free
  * the main thread from any receive work.
  **********************************************************************/
-class zero_copy_recv_offload_impl : public zero_copy_recv_offload {
+class zero_copy_recv_offload_impl : public zero_copy_recv_offload
+{
 public:
     typedef boost::shared_ptr<zero_copy_recv_offload_impl> sptr;
 
-    zero_copy_recv_offload_impl(zero_copy_if::sptr transport,
-                          const double timeout) :
-        _transport(transport), _timeout(timeout),
-        _inbox(transport->get_num_recv_frames()),
-        _recv_done(false)
+    zero_copy_recv_offload_impl(zero_copy_if::sptr transport, const double timeout)
+        : _transport(transport)
+        , _timeout(timeout)
+        , _inbox(transport->get_num_recv_frames())
+        , _recv_done(false)
     {
-        UHD_LOGGER_TRACE("XPORT") << "Created threaded transport" ;
+        UHD_LOGGER_TRACE("XPORT") << "Created threaded transport";
 
         // Create the receive and send threads to offload
         // the system calls onto other threads
-        _recv_thread = boost::thread(
-            boost::bind(&zero_copy_recv_offload_impl::enqueue_recv, this)
-        );
+        _recv_thread =
+            boost::thread(boost::bind(&zero_copy_recv_offload_impl::enqueue_recv, this));
         set_thread_name(&_recv_thread, "zero_copy_recv");
     }
 
@@ -67,9 +66,7 @@ public:
         set_recv_done();
 
         // Wait for them to join
-        UHD_SAFE_CALL(
-            _recv_thread.join();
-        )
+        UHD_SAFE_CALL(_recv_thread.join();)
     }
 
     // The receive thread function is responsible for
@@ -78,7 +75,8 @@ public:
     {
         while (not is_recv_done()) {
             managed_recv_buffer::sptr buff = _transport->get_recv_buff(_timeout);
-            if (not buff) continue;
+            if (not buff)
+                continue;
             _inbox.push_with_timed_wait(buff, _timeout);
         }
     }
@@ -135,16 +133,14 @@ private:
     // Threading
     bool _recv_done;
     boost::thread _recv_thread;
-    boost::mutex  _recv_mutex;
+    boost::mutex _recv_mutex;
 };
 
 zero_copy_recv_offload::sptr zero_copy_recv_offload::make(
-        zero_copy_if::sptr transport,
-        const double timeout)
+    zero_copy_if::sptr transport, const double timeout)
 {
     zero_copy_recv_offload_impl::sptr zero_copy_recv_offload(
-        new zero_copy_recv_offload_impl(transport, timeout)
-    );
+        new zero_copy_recv_offload_impl(transport, timeout));
 
     return zero_copy_recv_offload;
 }

@@ -8,19 +8,20 @@
 #define DPDK_ZERO_COPY_HPP
 
 #include <uhd/config.hpp>
-#include <uhd/types/device_addr.hpp>
-#include <uhd/utils/static.hpp>
-#include <uhd/utils/log.hpp>
 #include <uhd/transport/zero_copy.hpp>
+#include <uhd/types/device_addr.hpp>
+#include <uhd/utils/log.hpp>
+#include <uhd/utils/static.hpp>
 #include <boost/shared_ptr.hpp>
+#include <mutex>
 #include <string>
 #include <vector>
-#include <mutex>
 
 
 namespace uhd { namespace transport {
 
-class uhd_dpdk_ctx : boost::noncopyable {
+class uhd_dpdk_ctx : boost::noncopyable
+{
 public:
     UHD_SINGLETON_FCN(uhd_dpdk_ctx, get);
 
@@ -35,9 +36,12 @@ public:
      * \param mbuf_cache_size Size of per-core packet buffer cache from mempool
      * \param mtu MTU of NIC ports
      */
-    void init(const dict<std::string, std::string> &eal_args, unsigned int num_ports,
-              int *port_thread_mapping, int num_mbufs, int mbuf_cache_size,
-              size_t mtu);
+    void init(const dict<std::string, std::string>& eal_args,
+        unsigned int num_ports,
+        int* port_thread_mapping,
+        int num_mbufs,
+        int mbuf_cache_size,
+        size_t mtu);
 
     /*!
      * Get port ID from provided MAC address
@@ -45,14 +49,14 @@ public:
      * \param port_id Int to write ID of port corresponding to MAC address
      * \return 0 if match found, else no match
      */
-    int get_port_id(std::array<uint8_t, 6> mac_addr, unsigned int &port_id);
+    int get_port_id(std::array<uint8_t, 6> mac_addr, unsigned int& port_id);
 
     /*!
      * Get port ID for routing packet destined for given address
      * \param addr Destination address
      * \return port ID from routing table
      */
-    int get_route(const std::string &addr) const;
+    int get_route(const std::string& addr) const;
 
     /*!
      * Set IPv4 address and subnet mask of given NIC port
@@ -80,19 +84,18 @@ private:
 /*!
  * A zero copy transport interface to the dpdk DMA library.
  */
-class dpdk_zero_copy : public virtual zero_copy_if {
+class dpdk_zero_copy : public virtual zero_copy_if
+{
 public:
     typedef boost::shared_ptr<dpdk_zero_copy> sptr;
 
-    static sptr make(
-        struct uhd_dpdk_ctx &ctx,
+    static sptr make(struct uhd_dpdk_ctx& ctx,
         const unsigned int dpdk_port_id,
-        const std::string &addr,
-        const std::string &remote_port,
-        const std::string &local_port, /* 0 = auto-assign */
-        const zero_copy_xport_params &default_buff_args,
-        const device_addr_t &hints
-    );
+        const std::string& addr,
+        const std::string& remote_port,
+        const std::string& local_port, /* 0 = auto-assign */
+        const zero_copy_xport_params& default_buff_args,
+        const device_addr_t& hints);
 
     virtual uint16_t get_local_port(void) const = 0;
 
@@ -101,6 +104,6 @@ public:
     virtual uint32_t get_drop_count(void) const = 0;
 };
 
-}}
+}} // namespace uhd::transport
 
 #endif /* DPDK_ZERO_COPY_HPP */

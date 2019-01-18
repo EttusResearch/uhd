@@ -8,30 +8,28 @@
 #ifndef LIBERIO_HPP
 #define LIBERIO_HPP
 
-#include <string>
-#include <vector>
-
 #include <uhd/config.hpp>
 #include <uhd/transport/zero_copy.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <boost/shared_ptr.hpp>
+#include <string>
+#include <vector>
 
 namespace uhd { namespace transport {
 
 /*!
  * A zero copy transport interface to the liberio DMA library.
  */
-class liberio_zero_copy : public virtual zero_copy_if {
+class liberio_zero_copy : public virtual zero_copy_if
+{
 public:
     typedef boost::shared_ptr<liberio_zero_copy> sptr;
 
-    static sptr make(
-        const std::string &tx_path,
-        const std::string &rx_path,
-        const zero_copy_xport_params &default_buff_args
-    );
+    static sptr make(const std::string& tx_path,
+        const std::string& rx_path,
+        const zero_copy_xport_params& default_buff_args);
 };
 
-}}
+}} // namespace uhd::transport
 
 #endif /* LIBERIO_HPP */
