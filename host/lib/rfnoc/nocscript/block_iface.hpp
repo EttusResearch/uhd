@@ -11,7 +11,7 @@
 #include <boost/thread/mutex.hpp>
 
 #ifndef INCLUDED_LIBUHD_NOCSCRIPT_BLOCK_IFACE_HPP
-#define INCLUDED_LIBUHD_NOCSCRIPT_BLOCK_IFACE_HPP
+#    define INCLUDED_LIBUHD_NOCSCRIPT_BLOCK_IFACE_HPP
 
 namespace uhd { namespace rfnoc { namespace nocscript {
 
@@ -22,14 +22,14 @@ namespace uhd { namespace rfnoc { namespace nocscript {
  * NocScript function calls that require access to the original block
  * controller class.
  */
-class block_iface {
+class block_iface
+{
+public:
+    typedef boost::shared_ptr<block_iface> sptr;
 
-  public:
-      typedef boost::shared_ptr<block_iface> sptr;
+    static sptr make(uhd::rfnoc::block_ctrl_base* block_ptr);
 
-      static sptr make(uhd::rfnoc::block_ctrl_base* block_ptr);
-
-      block_iface(uhd::rfnoc::block_ctrl_base* block_ptr);
+    block_iface(uhd::rfnoc::block_ctrl_base* block_ptr);
 
     /*! Execute \p code and make sure it returns 'true'.
      *
@@ -39,9 +39,9 @@ class block_iface {
      * \throws uhd::runtime_error if the expression returns false.
      * \throws uhd::syntax_error if the expression is invalid.
      */
-    void run_and_check(const std::string &code, const std::string &error_message="");
+    void run_and_check(const std::string& code, const std::string& error_message = "");
 
-  private:
+private:
     //! For the local interpreter lock (lil)
     boost::mutex _lil_mutex;
 
@@ -49,22 +49,26 @@ class block_iface {
     expression_literal _nocscript__sr_write(expression_container::expr_list_type);
 
     //! Argument type getter that can be used within NocScript
-    expression::type_t _nocscript__arg_get_type(const std::string &argname);
+    expression::type_t _nocscript__arg_get_type(const std::string& argname);
 
     //! Argument value getter that can be used within NocScript
-    expression_literal _nocscript__arg_get_val(const std::string &argname);
+    expression_literal _nocscript__arg_get_val(const std::string& argname);
 
     //! Argument value setters:
-    expression_literal _nocscript__arg_set_int(const expression_container::expr_list_type &);
-    expression_literal _nocscript__arg_set_string(const expression_container::expr_list_type &);
-    expression_literal _nocscript__arg_set_double(const expression_container::expr_list_type &);
-    expression_literal _nocscript__arg_set_intvec(const expression_container::expr_list_type &);
+    expression_literal _nocscript__arg_set_int(
+        const expression_container::expr_list_type&);
+    expression_literal _nocscript__arg_set_string(
+        const expression_container::expr_list_type&);
+    expression_literal _nocscript__arg_set_double(
+        const expression_container::expr_list_type&);
+    expression_literal _nocscript__arg_set_intvec(
+        const expression_container::expr_list_type&);
 
     //! Variable value getter
-    expression_literal _nocscript__var_get(const expression_container::expr_list_type &);
+    expression_literal _nocscript__var_get(const expression_container::expr_list_type&);
 
     //! Variable value setter
-    expression_literal _nocscript__var_set(const expression_container::expr_list_type &);
+    expression_literal _nocscript__var_set(const expression_container::expr_list_type&);
 
     //! Raw pointer to the block class. Note that since block_iface may
     // only live as a member of a block_ctrl_base, we don't really need

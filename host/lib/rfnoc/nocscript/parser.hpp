@@ -10,20 +10,18 @@
 #include <boost/shared_ptr.hpp>
 
 #ifndef INCLUDED_LIBUHD_RFNOC_NOCSCRIPT_PARSER_HPP
-#define INCLUDED_LIBUHD_RFNOC_NOCSCRIPT_PARSER_HPP
+#    define INCLUDED_LIBUHD_RFNOC_NOCSCRIPT_PARSER_HPP
 
 namespace uhd { namespace rfnoc { namespace nocscript {
 
 class parser
 {
-  public:
+public:
     typedef boost::shared_ptr<parser> sptr;
 
-    static sptr make(
-        function_table::sptr ftable,
+    static sptr make(function_table::sptr ftable,
         expression_variable::type_getter_type var_type_getter,
-        expression_variable::value_getter_type var_value_getter
-    );
+        expression_variable::value_getter_type var_value_getter);
 
     /*! The main parsing call: Turn a string of code into an expression tree.
      *
@@ -31,7 +29,7 @@ class parser
      *
      * \throws uhd::syntax_error if \p code contains syntax errors
      */
-    virtual expression::sptr create_expr_tree(const std::string &code) = 0;
+    virtual expression::sptr create_expr_tree(const std::string& code) = 0;
 };
 
 }}} /* namespace uhd::rfnoc::nocscript */
