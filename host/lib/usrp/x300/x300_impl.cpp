@@ -1256,8 +1256,8 @@ static uhd::transport::muxed_zero_copy_if::sptr make_muxed_pcie_msg_xport(
     zero_copy_xport_params buff_args;
     buff_args.send_frame_size = x300::PCIE_MSG_FRAME_SIZE;
     buff_args.recv_frame_size = x300::PCIE_MSG_FRAME_SIZE;
-    buff_args.num_send_frames = x300::PCIE_MSG_NUM_FRAMES * max_muxed_ports;
-    buff_args.num_recv_frames = x300::PCIE_MSG_NUM_FRAMES * max_muxed_ports;
+    buff_args.num_send_frames = x300::PCIE_MSG_NUM_FRAMES;
+    buff_args.num_recv_frames = x300::PCIE_MSG_NUM_FRAMES;
 
     zero_copy_if::sptr base_xport = nirio_zero_copy::make(
         rio_fpga_interface, dma_channel_num, buff_args, uhd::device_addr_t());

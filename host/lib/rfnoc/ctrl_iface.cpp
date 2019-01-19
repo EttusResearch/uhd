@@ -36,7 +36,7 @@ public:
         , _name(name)
         , _seq_out(0)
         , _max_outstanding_acks(
-              uhd::rfnoc::CMD_FIFO_SIZE / 3) // Max command packet size is 3 lines
+              uhd::rfnoc::CMD_FIFO_SIZE / uhd::rfnoc::MAX_CMD_PKT_SIZE)
     {
         UHD_ASSERT_THROW(bool(_xports.send));
         UHD_ASSERT_THROW(bool(_xports.recv));

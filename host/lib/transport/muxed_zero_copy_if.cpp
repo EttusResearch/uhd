@@ -70,8 +70,8 @@ public:
         stream_impl::sptr stream =
             boost::make_shared<stream_impl>(this->shared_from_this(),
                 stream_num,
-                _base_xport->get_num_send_frames() / _max_num_streams,
-                _base_xport->get_num_recv_frames() / _max_num_streams);
+                _base_xport->get_num_send_frames(),
+                _base_xport->get_num_recv_frames());
         _streams[stream_num] = stream;
         return stream;
     }

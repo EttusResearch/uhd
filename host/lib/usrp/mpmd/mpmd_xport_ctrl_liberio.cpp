@@ -8,6 +8,7 @@
 #include "../transport/liberio_zero_copy.hpp"
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/utils/byteswap.hpp>
+#include <uhd/rfnoc/constants.hpp>
 
 using namespace uhd;
 using namespace uhd::mpmd::xport;
@@ -61,6 +62,10 @@ uhd::both_xports_t mpmd_xport_ctrl_liberio::make_transport(
     if (xport_type == usrp::device3_impl::CTRL) {
         default_buff_args.send_frame_size = LIBERIO_CTRL_FRAME_MAX_SIZE;
         default_buff_args.recv_frame_size = LIBERIO_CTRL_FRAME_MAX_SIZE;
+        default_buff_args.num_recv_frames = uhd::rfnoc::CMD_FIFO_SIZE /
+                                            uhd::rfnoc::MAX_CMD_PKT_SIZE;
+        default_buff_args.num_send_frames = uhd::rfnoc::CMD_FIFO_SIZE /
+                                            uhd::rfnoc::MAX_CMD_PKT_SIZE;
     } else if (xport_type == usrp::device3_impl::ASYNC_MSG) {
         default_buff_args.send_frame_size = LIBERIO_ASYNC_FRAME_MAX_SIZE;
         default_buff_args.recv_frame_size = LIBERIO_ASYNC_FRAME_MAX_SIZE;
@@ -78,25 +83,15 @@ uhd::both_xports_t mpmd_xport_ctrl_liberio::make_transport(
     xports.send_sid   = sid_t(xport_info["send_sid"]);
     xports.recv_sid   = xports.send_sid.reversed();
 
-    // this is kinda ghetto: scale buffer for muxed xports since we share the
-    // buffer...
-    float divisor = 1;
-    if (xport_type == usrp::device3_impl::CTRL)
-        divisor = 16;
-    else if (xport_type == usrp::device3_impl::ASYNC_MSG)
-        divisor = 4;
-
-
     // if (xport_info["muxed"] == "True") {
     //// FIXME tbw
     //}
     if (xport_type == usrp::device3_impl::CTRL) {
         UHD_ASSERT_THROW(xport_info["muxed"] == "True");
         if (not _ctrl_dma_xport) {
-            default_buff_args.send_frame_size = LIBERIO_CTRL_FRAME_MAX_SIZE;
-            default_buff_args.recv_frame_size = LIBERIO_CTRL_FRAME_MAX_SIZE;
             _ctrl_dma_xport =
-                make_muxed_liberio_xport(tx_dev, rx_dev, default_buff_args, int(divisor));
+                make_muxed_liberio_xport(tx_dev, rx_dev, default_buff_args,
+                    uhd::rfnoc::MAX_NUM_BLOCKS * uhd::rfnoc::MAX_NUM_PORTS);
         }
 
         UHD_LOGGER_TRACE("MPMD")
@@ -105,10 +100,9 @@ uhd::both_xports_t mpmd_xport_ctrl_liberio::make_transport(
     } else if (xport_type == usrp::device3_impl::ASYNC_MSG) {
         UHD_ASSERT_THROW(xport_info["muxed"] == "True");
         if (not _async_msg_dma_xport) {
-            default_buff_args.send_frame_size = LIBERIO_ASYNC_FRAME_MAX_SIZE;
-            default_buff_args.recv_frame_size = LIBERIO_ASYNC_FRAME_MAX_SIZE;
             _async_msg_dma_xport =
-                make_muxed_liberio_xport(tx_dev, rx_dev, default_buff_args, int(divisor));
+                make_muxed_liberio_xport(tx_dev, rx_dev, default_buff_args,
+                    uhd::rfnoc::MAX_NUM_BLOCKS * uhd::rfnoc::MAX_NUM_PORTS);
         }
 
         UHD_LOGGER_TRACE("MPMD")
@@ -119,16 +113,11 @@ uhd::both_xports_t mpmd_xport_ctrl_liberio::make_transport(
             transport::liberio_zero_copy::make(tx_dev, rx_dev, default_buff_args);
     }
 
-    transport::udp_zero_copy::buff_params buff_params;
-    buff_params.recv_buff_size = float(default_buff_args.recv_frame_size)
-                                 * float(default_buff_args.num_recv_frames) / divisor;
-    buff_params.send_buff_size = float(default_buff_args.send_frame_size)
-                                 * float(default_buff_args.num_send_frames) / divisor;
-
-
     // Finish both_xports_t object and return:
-    xports.recv_buff_size = buff_params.recv_buff_size;
-    xports.send_buff_size = buff_params.send_buff_size;
+    xports.recv_buff_size = default_buff_args.recv_frame_size *
+                                default_buff_args.num_recv_frames;
+    xports.send_buff_size = default_buff_args.send_frame_size *
+                                default_buff_args.num_send_frames;
     xports.send           = xports.recv;
     return xports;
 }

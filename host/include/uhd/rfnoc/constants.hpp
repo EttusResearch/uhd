@@ -83,11 +83,15 @@ static const uint32_t AXIS_CONFIG_BUS_TLAST =
     AXI_WRAPPER_BASE + 2; // tdata with tvalid & tlast asserted
 
 static const size_t CMD_FIFO_SIZE = 256; // Lines == multiples of 8 bytes
+static const size_t MAX_CMD_PKT_SIZE = 3; // Lines == multiples of 8 bytes
 
 // Named settings registers
 static const uhd::dict<std::string, uint32_t> DEFAULT_NAMED_SR =
     boost::assign::map_list_of("AXIS_CONFIG_BUS", AXIS_CONFIG_BUS)(
         "AXIS_CONFIG_BUS_TLAST", AXIS_CONFIG_BUS_TLAST);
+
+// Blocks
+static const size_t MAX_NUM_BLOCKS = 16;
 
 // Block ports
 static const size_t ANY_PORT      = size_t(~0);
