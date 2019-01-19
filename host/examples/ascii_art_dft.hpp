@@ -258,7 +258,7 @@ std::string dft_to_plot(const log_pwr_dft_type& dft_,
             (val - (ref_lvl - dyn_rng)) * (frame.get_plot_h() - 1) / dyn_rng;
         for (size_t z = 0; z < frame.get_plot_h(); z++) {
             static const std::string syms(".:!|");
-            if (scaled - z > 1)
+            if (scaled - z >= 1)
                 frame.get_plot(b, z) = syms.at(syms.size() - 1);
             else if (scaled - z > 0)
                 frame.get_plot(b, z) = syms.at(size_t((scaled - z) * syms.size()));
