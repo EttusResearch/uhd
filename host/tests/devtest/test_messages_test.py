@@ -29,7 +29,7 @@ class uhd_test_messages_test(uhd_example_test_case):
         args = [
             self.create_addr_args_str(),
         ]
-        if test_args.has_key('ntests'):
+        if 'ntests' in test_args:
             args.append('--ntests')
             args.append(test_args['ntests'])
         (app, run_results) = self.run_example('test_messages', args)

@@ -38,7 +38,7 @@ class uhd_tx_bursts_test(uhd_example_test_case):
             '--channels', str(test_args['channels']),
             '--rate', str(test_args.get('rate', 1e6)),
         ]
-        if test_args.has_key('subdev'):
+        if 'subdev' in test_args:
             args.append('--subdev')
             args.append(test_args['subdev'])
         (app, run_results) = self.run_example('tx_bursts', args)

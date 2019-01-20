@@ -153,7 +153,7 @@ class uhd_test_case(unittest.TestCase):
         """ Store a result as a key/value pair.
         After completion, all results for one test are written to the results file.
         """
-        if not self.results[self.usrp_info['serial']][self.name].has_key(testname):
+        if not testname in self.results[self.usrp_info['serial']][self.name]:
             self.results[self.usrp_info['serial']][self.name][testname] = {}
         self.results[self.usrp_info['serial']][self.name][testname][key] = value
 
@@ -214,13 +214,13 @@ class uhd_example_test_case(uhd_test_case):
                 test_name,
                 key, run_results[key]
             )
-        if run_results.has_key('passed'):
+        if 'passed' in run_results:
             self.report_result(
                 test_name,
                 'status',
                 'Passed' if run_results['passed'] else 'Failed',
             )
-        if run_results.has_key('errors'):
+        if 'errors' in run_results:
             self.report_result(
                 test_name,
                 'errors',
@@ -234,7 +234,7 @@ class uhd_example_test_case(uhd_test_case):
         """
         for test_name, test_args in iteritems(self.test_params):
             time.sleep(15) # Wait for X300 devices to reclaim them
-            if not test_args.has_key('products') \
+            if not 'products' in test_args \
                     or (self.usrp_info['product'] in test_args.get('products', [])):
                 run_results = self.run_test(test_name, test_args)
                 passed = bool(run_results)

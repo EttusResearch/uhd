@@ -27,7 +27,7 @@ class uhd_test_pps_test(uhd_example_test_case):
         args = [
             self.create_addr_args_str(),
         ]
-        if test_args.has_key('source'):
+        if 'source' in test_args:
             args.append('--source')
             args.append(test_args['source'])
         (app, run_results) = self.run_example('test_pps_input', args)

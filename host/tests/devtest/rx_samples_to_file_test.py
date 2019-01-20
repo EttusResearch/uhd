@@ -42,7 +42,7 @@ class rx_samples_to_file_test(uhd_example_test_case):
             '--rate', str(test_args.get('rate', 1e6)),
             '--wirefmt', test_args.get('wirefmt', 'sc16'),
         ]
-        if test_args.has_key('subdev'):
+        if 'subdev' in test_args:
             args.append('--subdev')
             args.append(test_args['subdev'])
         _, run_results = self.run_example('rx_samples_to_file', args)
