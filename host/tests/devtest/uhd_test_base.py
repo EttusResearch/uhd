@@ -77,7 +77,8 @@ class shell_application(object):
                 stdout=PIPE,
                 stderr=PIPE,
                 close_fds=True,
-                env=env
+                env=env,
+                universal_newlines=True
             )
             self.stdout, self.stderr = proc.communicate()
             self.returncode = proc.returncode

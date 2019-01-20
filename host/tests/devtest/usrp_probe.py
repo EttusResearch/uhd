@@ -17,7 +17,7 @@ def get_usrp_list(device_filter=None, env=None):
         cmd = ['uhd_find_devices']
         if device_filter is not None:
             cmd += ['--args', device_filter]
-        output = subprocess.check_output(cmd, env=env)
+        output = subprocess.check_output(cmd, env=env, universal_newlines=True)
     except subprocess.CalledProcessError:
         return []
     split_re = "\n*-+\n-- .*\n-+\n"

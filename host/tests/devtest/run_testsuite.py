@@ -122,6 +122,7 @@ def main():
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
+            universal_newlines=True
         )
         print(proc.communicate()[0])
         sys.stdout.flush()
