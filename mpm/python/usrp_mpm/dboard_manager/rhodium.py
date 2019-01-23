@@ -161,7 +161,7 @@ class Rhodium(BfrfsEEPROM, DboardManagerBase):
     # Map I2C channel to slot index
     i2c_chan_map = {0: 'i2c-9', 1: 'i2c-10'}
     user_eeprom = {
-        2: { # RevC
+        0: { # dt-compat=0
             'label': "e0004000.i2c",
             'offset': 1024,
             'max_size': 32786 - 1024,
@@ -192,7 +192,7 @@ class Rhodium(BfrfsEEPROM, DboardManagerBase):
         'TX' : 'TX_INSWITCH_CTRL'}
 
     def __init__(self, slot_idx, **kwargs):
-        super(Rhodium, self).__init__(slot_idx, **kwargs)
+        DboardManagerBase.__init__(self, slot_idx, **kwargs)
         self.log = get_logger("Rhodium-{}".format(slot_idx))
         self.log.trace("Initializing Rhodium daughterboard, slot index %d",
                        self.slot_idx)
@@ -255,7 +255,7 @@ class Rhodium(BfrfsEEPROM, DboardManagerBase):
             self._lo_dist = None
         self.log.debug("Turning on Module and RF power supplies")
         self._power_on()
-        BfrfsEEPROM.__init__(self, self.rev, self.user_eeprom)
+        BfrfsEEPROM.__init__(self)
         self._spi_ifaces = _init_spi_devices()
         self.log.debug("Loaded SPI interfaces!")
         self.cpld = RhCPLD(self._spi_ifaces['cpld'], self.log)
@@ -280,27 +280,6 @@ class Rhodium(BfrfsEEPROM, DboardManagerBase):
         self.log.trace("Powering off slot_idx={}...".format(self.slot_idx))
         self._daughterboard_gpio.set(FPGAtoDbGPIO.DB_POWER_ENABLE, 0)
         self._daughterboard_gpio.set(FPGAtoDbGPIO.RF_POWER_ENABLE, 0)
-
-    def _init_user_eeprom(self, eeprom_info):
-        """
-        Reads out user-data EEPROM, and intializes a BufferFS object from that.
-        """
-        self.log.trace("Initializing EEPROM user data...")
-        eeprom_paths = get_eeprom_paths(eeprom_info.get('label'))
-        self.log.trace("Found the following EEPROM paths: `{}'".format(
-            eeprom_paths))
-        eeprom_path = eeprom_paths[self.slot_idx]
-        self.log.trace("Selected EEPROM path: `{}'".format(eeprom_path))
-        user_eeprom_offset = eeprom_info.get('offset', 0)
-        self.log.trace("Selected EEPROM offset: %d", user_eeprom_offset)
-        user_eeprom_data = open(eeprom_path, 'rb').read()[user_eeprom_offset:]
-        self.log.trace("Total EEPROM size is: %d bytes", len(user_eeprom_data))
-        return BufferFS(
-            user_eeprom_data,
-            max_size=eeprom_info.get('max_size'),
-            alignment=eeprom_info.get('alignment', 1024),
-            log=self.log
-        ), eeprom_path
 
     def init(self, args):
         """
