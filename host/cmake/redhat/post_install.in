@@ -6,7 +6,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
-cp @CMAKE_INSTALL_PREFIX@/lib/uhd/utils/uhd-usrp.rules /etc/udev/rules.d/uhd-usrp.rules
+cp @CMAKE_INSTALL_PREFIX@/lib64/uhd/utils/uhd-usrp.rules /etc/udev/rules.d/uhd-usrp.rules
 udevadm control --reload-rules
 udevadm trigger
 ldconfig
