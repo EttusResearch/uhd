@@ -177,7 +177,6 @@ configure_file(
 # Setup CPack RPM
 ########################################################################
 set(CPACK_RPM_PACKAGE_REQUIRES "boost-devel, python-requests")
-#set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION "/usr/local;/usr/local/lib64;/usr/share/man;/usr/share/man/man1;/usr/lib64/pkgconfig;/usr/lib64/cmake;/usr/local/lib64/python2.7;/usr/local/lib64/python2.7/site-packages")
 set(CPACK_RPM_EXCLUDE_FROM_AUTO_FILELIST_ADDITION "/usr/share/man;/usr/share/man/man1;/usr/lib64/pkgconfig;/usr/lib64/cmake;/usr/lib64/python2.7;/usr/lib64/python2.7/site-packages")
 foreach(filename post_install post_uninstall pre_install pre_uninstall)
     string(TOUPPER ${filename} filename_upper)
