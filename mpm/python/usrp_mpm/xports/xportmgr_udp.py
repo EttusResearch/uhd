@@ -239,6 +239,7 @@ class XportMgrUDP(object):
             self,
             sid,
             xport_type,
+            alloc_limit=2
         ):
         """
         Return UDP xport info
@@ -267,7 +268,7 @@ class XportMgrUDP(object):
             if src_addr in self._previous_block_ep:
                 prev_block = self._previous_block_ep[src_addr]
             allocation = int(xport['allocation'])
-            if allocation >= 2:
+            if allocation >= alloc_limit:
                 return allocation
             else:
                 return allocation if prev_block != sid.get_dst_block() else -1;

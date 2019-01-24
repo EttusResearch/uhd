@@ -507,9 +507,14 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         # FIXME token!
         assert self.device_info['rpc_connection'] in ('remote', 'local')
         if self.device_info['rpc_connection'] == 'remote':
+            if self.device_info['product'] == 'n320':
+                alloc_limit = 1
+            else:
+                alloc_limit = 2
             return self._xport_mgrs['udp'].request_xport(
                 sid,
                 xport_type,
+                alloc_limit
             )
         elif self.device_info['rpc_connection'] == 'local':
             return self._xport_mgrs['liberio'].request_xport(
