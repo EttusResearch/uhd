@@ -2,6 +2,8 @@
 <nocblock>
   <name>FIFO</name>
   <blockname>FIFO</blockname>
+  <!--Use default block controller-->
+  <key>Block</key>
   <!--There can be several of these:-->
   <ids>
     <id revision="0">F1F00000</id>
