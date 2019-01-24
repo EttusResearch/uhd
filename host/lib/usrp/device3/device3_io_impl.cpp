@@ -731,9 +731,14 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t& args_)
         // CHDR does not support trailers
         my_streamer->set_enable_trailer(false);
 
-        my_streamer->set_xport_chan_post_send_cb(stream_i, [fc_cache, xport]() {
-            tx_flow_ctrl_ack(fc_cache, xport.send, xport.send_sid);
-        });
+        // Avoid sending FC ACKs if the transport is lossless or the user
+        // has explictly requested not to send them
+        if (not (xport.lossless or tx_hints.has_key("send_no_fc_acks")))
+        {
+            my_streamer->set_xport_chan_post_send_cb(stream_i, [fc_cache, xport]() {
+                tx_flow_ctrl_ack(fc_cache, xport.send, xport.send_sid);
+            });
+        }
     }
 
     // Notify all blocks in this chain that they are connected to an active streamer

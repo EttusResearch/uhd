@@ -79,13 +79,11 @@ uhd::both_xports_t mpmd_xport_ctrl_liberio::make_transport(
     const std::string rx_dev = xport_info["rx_dev"];
 
     both_xports_t xports;
+    xports.lossless = true;
     xports.endianness = uhd::ENDIANNESS_LITTLE;
     xports.send_sid   = sid_t(xport_info["send_sid"]);
     xports.recv_sid   = xports.send_sid.reversed();
 
-    // if (xport_info["muxed"] == "True") {
-    //// FIXME tbw
-    //}
     if (xport_type == usrp::device3_impl::CTRL) {
         UHD_ASSERT_THROW(xport_info["muxed"] == "True");
         if (not _ctrl_dma_xport) {
@@ -130,11 +128,6 @@ bool mpmd_xport_ctrl_liberio::is_valid(
 
 size_t mpmd_xport_ctrl_liberio::get_mtu(const uhd::direction_t dir) const
 {
-    /* TODO: this is extremely hacky. We don't know yet what broke liberio.
-     * Putting a bandaid here to help TXing. Remove this as soon as possible!
-     */
-    if (dir == uhd::TX_DIRECTION)
-        return getpagesize();
     return LIBERIO_PAGES_PER_BUF * getpagesize();
 }
 

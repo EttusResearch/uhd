@@ -18,7 +18,8 @@ namespace uhd {
      */
     struct both_xports_t
     {
-        both_xports_t(): recv_buff_size(0), send_buff_size(0) {}
+        both_xports_t(): recv_buff_size(0), send_buff_size(0), lossless(false)
+            {}
         uhd::transport::zero_copy_if::sptr recv;
         uhd::transport::zero_copy_if::sptr send;
         size_t recv_buff_size;
@@ -26,9 +27,9 @@ namespace uhd {
         uhd::sid_t send_sid;
         uhd::sid_t recv_sid;
         uhd::endianness_t endianness;
+        bool lossless;
     };
 
 };
 
 #endif /* INCLUDED_LIBUHD_XPORTS_HPP */
-

@@ -1277,6 +1277,7 @@ uhd::both_xports_t x300_impl::make_transport(const uhd::sid_t& address,
     both_xports_t xports;
     xports.endianness = mb.if_pkt_is_big_endian ? ENDIANNESS_BIG : ENDIANNESS_LITTLE;
     if (mb.xport_path == "nirio") {
+        xports.lossless = true;
         xports.send_sid =
             this->allocate_sid(mb, address, x300::SRC_ADDR0, x300::XB_DST_PCI);
         xports.recv_sid = xports.send_sid.reversed();
