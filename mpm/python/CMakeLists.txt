@@ -12,6 +12,8 @@ if(MPM_DEVICE STREQUAL "n3xx")
     add_library(pyusrp_periphs SHARED pyusrp_periphs/n3xx/pyusrp_periphs.cpp)
 elseif(MPM_DEVICE STREQUAL "e320")
     add_library(pyusrp_periphs SHARED pyusrp_periphs/e320/pyusrp_periphs.cpp)
+elseif(MPM_DEVICE STREQUAL "e31x")
+    add_library(pyusrp_periphs SHARED pyusrp_periphs/e31x/pyusrp_periphs.cpp)
 endif(MPM_DEVICE STREQUAL "n3xx")
 
 target_include_directories(pyusrp_periphs PUBLIC

@@ -8,8 +8,8 @@ x3xx_x300_fpga_default          fpga-4bc2c6f       x3xx/fpga-4bc2c6f/x3xx_x300_f
 #dboard_ubx_cpld_default    example_target
 
 # E-Series
-e3xx_e310_fpga_default          fpga-4bc2c6f       e3xx/fpga-4bc2c6f/e3xx_e310_fpga_default-g4bc2c6f.zip                 be090f7cd187eb020e0cc8a8a7094b9691c4b7fa3dde82ca242030287a577475
-e3xx_e310_fpga_rfnoc            fpga-d6a878b        e3xx/fpga-d6a878b/e3xx_e310_fpga_rfnoc-gd6a878b.zip                     5c9b89fb6293423644868c22e914de386a9af39ff031da6800a1cf39a90ea73b
+e3xx_e310_sg1_fpga_default      fpga-f52a643       e3xx/fpga-f52a643/e3xx_e310_sg1_fpga_default-gf52a643.zip                 03450918a7c312d53926f3318ea91a57162c545ada4058b9e83a4e0efd4755a4
+e3xx_e310_sg3_fpga_default      fpga-f52a643       e3xx/fpga-f52a643/e3xx_e310_sg3_fpga_default-gf52a643.zip                 e8264dd48c3c3f6e65c8e5ef34a3629aa79a3f17ba845659e553bdcf3dfac303
 e3xx_e320_fpga_default          fpga-4bc2c6f       e3xx/fpga-4bc2c6f/e3xx_e320_fpga_default-g4bc2c6f.zip                 0def19fda1041866273c09d3bacc7e2dba916b8848c8a17a85fecd04009bab73
 # E320 Filesystems, etc
 e3xx_e320_sdk_default         meta-ettus-v3.14.0.0-rc1  e3xx/meta-ettus-v3.14.0.0-rc1/e3xx_e320_sdk_default-v3.14.0.0-rc1.zip       0

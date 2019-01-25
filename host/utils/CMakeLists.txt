@@ -18,13 +18,6 @@ set(util_runtime_sources
     uhd_cal_tx_iq_balance.cpp
 )
 
-find_package(UDev)
-if(ENABLE_E300 AND NOT E300_FORCE_NETWORK)
-    if(UDEV_FOUND)
-        list(APPEND util_runtime_sources usrp_e3x0_network_mode.cpp)
-    endif(UDEV_FOUND)
-endif(ENABLE_E300 AND NOT E300_FORCE_NETWORK)
-
 #for each source: build an executable and install
 foreach(util_source ${util_runtime_sources})
     get_filename_component(util_name ${util_source} NAME_WE)

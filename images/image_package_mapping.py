@@ -8,21 +8,33 @@
 Container for the list of image package targets, and the information about them
 """
 PACKAGE_MAPPING = {
-    "e310": {
+    "e310_sg1": {
         "type": "e3xx",
-        "package_name": "e3xx_e310_fpga_default-g{}.zip",
-        "files": ["usrp_e310_fpga.bin",
-                  "usrp_e310_fpga_sg3.bin",
-                  "usrp_e3xx_fpga_idle.bin",
-                  "usrp_e3xx_fpga_idle_sg3.bin",
-                  "usrp_e310_fpga.bit",
-                  "usrp_e310_fpga_sg3.bit",
-                  "usrp_e3xx_fpga_idle.bit",
-                  "usrp_e3xx_fpga_idle_sg3.bit",
-                  "usrp_e310_fpga.rpt",
-                  "usrp_e310_fpga_sg3.rpt",
-                  "usrp_e3xx_fpga_idle.rpt",
-                  "usrp_e3xx_fpga_idle_sg3.rpt"]
+        "package_name": "e3xx_e310_sg1_fpga_default-g{}.zip",
+        "files": ['usrp_e310_sg1_fpga.bit',
+                  'usrp_e310_sg1_fpga.bit.md5',
+                  'usrp_e310_sg1_fpga.dts',
+                  'usrp_e310_sg1_fpga.dts.md5',
+                  'usrp_e310_sg1_fpga.rpt',
+                  'usrp_e310_sg1_idle_fpga.bit',
+                  'usrp_e310_sg1_idle_fpga.bit.md5',
+                  'usrp_e310_sg1_idle_fpga.dts',
+                  'usrp_e310_sg1_idle_fpga.dts.md5',
+                  'usrp_e310_sg1_idle_fpga.rpt']
+    },
+    "e310_sg3": {
+        "type": "e3xx",
+        "package_name": "e3xx_e310_sg3_fpga_default-g{}.zip",
+        "files": ['usrp_e310_sg3_fpga.bit',
+                  'usrp_e310_sg3_fpga.bit.md5',
+                  'usrp_e310_sg3_fpga.dts',
+                  'usrp_e310_sg3_fpga.dts.md5',
+                  'usrp_e310_sg3_fpga.rpt',
+                  'usrp_e310_sg3_idle_fpga.bit',
+                  'usrp_e310_sg3_idle_fpga.bit.md5',
+                  'usrp_e310_sg3_idle_fpga.dts',
+                  'usrp_e310_sg3_idle_fpga.dts.md5',
+                  'usrp_e310_sg3_idle_fpga.rpt']
     },
     "e320": {
         "type": "e3xx",

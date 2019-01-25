@@ -1916,7 +1916,7 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
 
 /* This function returns the RX / TX rate between AD9361 and the FPGA.
  */
-double ad9361_device_t::get_clock_rate()
+double ad9361_device_t::get_clock_rate() const
 {
     return _baseband_bw;
 }

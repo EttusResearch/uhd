@@ -13,7 +13,7 @@ install(PROGRAMS
 set(eeprom_tool_sources)
 set(eeprom_tool_libs)
 
-if(ENABLE_LIBMPM)
+if(ENABLE_LIBMPM AND NOT ENABLE_E300)
     message(STATUS "Adding MPM EEPROM tools...")
     set(eeprom_tool_libs eeprom.c)
     list(APPEND eeprom_tool_sources
@@ -23,7 +23,7 @@ if(ENABLE_LIBMPM)
         eeprom-init.c
         eeprom-set-flags.c
     )
-endif(ENABLE_LIBMPM)
+endif(ENABLE_LIBMPM AND NOT ENABLE_E300)
 if(ENABLE_MYKONOS)
     message(STATUS "Adding N3XX-specific EEPROM tools...")
     set(eeprom_tool_libs eeprom.c)

@@ -13,4 +13,9 @@ elseif(ENABLE_E320)
         neon_manager.hpp
         DESTINATION ${INCLUDE_DIR}/mpm/dboards
     )
+elseif(ENABLE_E300)
+    install(FILES
+        e31x_db_manager.hpp
+        DESTINATION ${INCLUDE_DIR}/mpm/dboards
+    )
 endif(ENABLE_MAGNESIUM)

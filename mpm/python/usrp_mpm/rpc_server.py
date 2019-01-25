@@ -286,6 +286,8 @@ class MPMServer(RPCServer):
         self._state.claim_status.value = True
         self.periph_manager.claimed = True
         self.periph_manager.claim()
+        if self.periph_manager.clear_rpc_method_registry_on_unclaim:
+            self._init_rpc_calls(self.periph_manager)
         self._state.lock.release()
         self.session_id = session_id + " ({})".format(self.client_host)
         self._reset_timer()
@@ -337,6 +339,8 @@ class MPMServer(RPCServer):
         self._state.claim_status.value = False
         self._state.claim_token.value = b''
         self.session_id = None
+        if self.periph_manager.clear_rpc_method_registry_on_unclaim:
+            self.clear_method_registry()
         try:
             self.periph_manager.claimed = False
             self.periph_manager.unclaim()
@@ -451,6 +455,20 @@ class MPMServer(RPCServer):
     ###########################################################################
     # Update components
     ###########################################################################
+    def clear_method_registry(self):
+        """
+        Clear all the methods in the RPC server method cache.
+        """
+        # RPCServer caches RPC methods, but that cache is not accessible here
+        # (because Cython). Re-running `RPCServer.__init__` clears that cache,
+        # and allows us to register new RPC methods.
+        # A note on maintenance: This has been deemed safe through inspection of
+        # the RPCServer source code. However, this is not typical Python, and
+        # changes in future versions of RPCServer may cause issues.
+        super(MPMServer, self).__init__(
+            pack_params={'use_bin_type': True},
+        )
+
     def reset_mgr(self):
         """
         Reset the Peripheral Manager for this RPC server.
@@ -460,16 +478,9 @@ class MPMServer(RPCServer):
         self.periph_manager = None
         self.periph_manager = self._mgr_generator()
         self._init_rpc_calls(self.periph_manager)
-        # RPCServer caches RPC methods, but that cache is not accessible here
-        # (because Cython). Re-running `RPCServer.__init__` clears that cache,
-        # and allows us to register new RPC methods (which we need to do because
-        # we're resetting the PeriphManager).
-        # A note on maintenance: This has been deemed safe through inspection of
-        # the RPCServer source code. However, this is not typical Python, and
-        # changes in future versions of RPCServer may cause issues.
-        super(MPMServer, self).__init__(
-            pack_params={'use_bin_type': True},
-        )
+        # Clear the method cache in order to remove stale references to
+        # methods from the old peripheral manager (the one before reset)
+        self.clear_method_registry()
 
     def update_component(self, token, file_metadata_l, data_l):
         """"

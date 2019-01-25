@@ -16,4 +16,8 @@ elseif(ENABLE_E320)
     USRP_PERIPHS_ADD_OBJECT(dboards
         neon_manager.cpp
     )
+elseif(ENABLE_E300)
+    USRP_PERIPHS_ADD_OBJECT(dboards
+        e31x_db_manager.cpp
+    )
 endif(ENABLE_MAGNESIUM)

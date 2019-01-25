@@ -14,7 +14,7 @@ add_subdirectory(types)
 
 if(ENABLE_MYKONOS)
     add_subdirectory(mykonos)
-elseif(ENABLE_E320)
+elseif(ENABLE_E320 OR ENABLE_E300)
     add_subdirectory(catalina)
 endif(ENABLE_MYKONOS)
 

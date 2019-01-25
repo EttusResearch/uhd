@@ -131,6 +131,12 @@ class PeriphManagerBase(object):
     # specific implementation. Each PeriphManagerBase-derived class should list
     # information required to update the component, like a callback function
     updateable_components = {}
+    # The RPC server checks this value to determine if it needs to clear
+    # the RPC method registry. This is typically to remove stale references
+    # to RPC methods caused by removal of overlay on unclaim() by peripheral
+    # manager. Additionally the RPC server will re-register all methods on
+    # a claim(). Override and set to True in the derived class if desired.
+    clear_rpc_method_registry_on_unclaim = False
 
     @staticmethod
     def generate_device_info(eeprom_md, mboard_info, dboard_infos):

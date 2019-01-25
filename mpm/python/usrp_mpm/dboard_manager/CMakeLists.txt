@@ -19,6 +19,7 @@ set(USRP_MPM_DBMGR_FILES
     ${CMAKE_CURRENT_SOURCE_DIR}/dac_rh.py
     ${CMAKE_CURRENT_SOURCE_DIR}/eiscat.py
     ${CMAKE_CURRENT_SOURCE_DIR}/neon.py
+    ${CMAKE_CURRENT_SOURCE_DIR}/e31x_db.py
     ${CMAKE_CURRENT_SOURCE_DIR}/gain_rh.py
     ${CMAKE_CURRENT_SOURCE_DIR}/gaintables_rh.py
     ${CMAKE_CURRENT_SOURCE_DIR}/lmk_eiscat.py
