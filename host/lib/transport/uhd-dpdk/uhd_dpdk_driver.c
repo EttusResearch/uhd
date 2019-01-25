@@ -233,13 +233,25 @@ static int _uhd_dpdk_send(struct uhd_dpdk_port *port,
             }
         }
 
+        status = rte_eth_tx_prepare(port->id, 0, &buf, 1);
+        if (status != 1) {
+            status = rte_ring_enqueue(txq->retry_queue, buf);
+            if (status) {
+                RTE_LOG(WARNING, USER1, "%s: Could not re-enqueue pkt %d\n", __func__, i);
+                rte_pktmbuf_free(buf);
+            }
+            num_tx = i;
+            break;
+        }
+
         status = rte_eth_tx_burst(port->id, 0, &buf, 1); /* Automatically frees mbuf */
         if (status != 1) {
             status = rte_ring_enqueue(txq->retry_queue, buf);
-            if (status)
+            if (status) {
                 RTE_LOG(WARNING, USER1, "%s: Could not re-enqueue pkt %d\n", __func__, i);
+                rte_pktmbuf_free(buf);
+            }
             num_tx = i;
-            rte_pktmbuf_free(buf);
             break;
         }
     }
@@ -422,8 +434,10 @@ static inline void _uhd_dpdk_rx_burst(struct uhd_dpdk_port *port)
             rte_pktmbuf_free(bufs[buf]);
             break;
         case ETHER_TYPE_IPv4:
-            if (ol_flags & PKT_RX_IP_CKSUM_BAD) {
+            if ((ol_flags & PKT_RX_IP_CKSUM_MASK) == PKT_RX_IP_CKSUM_BAD) {
                 RTE_LOG(WARNING, RING, "Buf %d: Bad IP cksum\n", buf);
+            } else if ((ol_flags & PKT_RX_IP_CKSUM_MASK) == PKT_RX_IP_CKSUM_NONE) {
+                RTE_LOG(WARNING, RING, "Buf %d: Missing IP cksum\n", buf);
             } else {
                 _uhd_dpdk_process_ipv4(port, bufs[buf], (struct ipv4_hdr *) l2_data);
             }
@@ -510,7 +524,7 @@ static inline void _uhd_dpdk_process_tx_buf_wait(struct uhd_dpdk_thread *t,
     // Attempt to restore bufs only if failed before
     unsigned int num_bufs = sock->tx_buf_count + rte_ring_count(q->queue) +
                             rte_ring_count(q->retry_queue);
-    unsigned int max_bufs = rte_ring_get_size(q->freebufs);
+    unsigned int max_bufs = rte_ring_get_capacity(q->freebufs);
     if (num_bufs < max_bufs) {
         _uhd_dpdk_restore_bufs(sock->port, q, max_bufs - num_bufs);
     }

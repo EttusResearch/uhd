@@ -13,7 +13,7 @@
 #include <rte_malloc.h>
 #include <rte_log.h>
 
-/* FIXME: Replace with configurable values */
+/* FIXME: Descriptor ring size: Replace with configurable values */
 #define DEFAULT_RING_SIZE 512
 
 /* FIXME: This needs to be protected */
@@ -111,25 +111,58 @@ static inline int uhd_dpdk_port_init(struct uhd_dpdk_port *port,
         RTE_LOG(WARNING, EAL, "Current mtu=%d\n", actual_mtu);
         mtu = actual_mtu;
     }
-    /* FIXME: Check if hw_ip_checksum is possible */
+
+    // Require checksum offloads
+    struct rte_eth_dev_info dev_info;
+    rte_eth_dev_info_get(port->id, &dev_info);
+    uint64_t rx_offloads = DEV_RX_OFFLOAD_IPV4_CKSUM;
+    uint64_t tx_offloads = DEV_TX_OFFLOAD_IPV4_CKSUM;
+    if ((dev_info.rx_offload_capa & rx_offloads) != rx_offloads) {
+        RTE_LOG(WARNING, EAL, "%d: Only supports RX offloads 0x%0llx\n", port->id, dev_info.rx_offload_capa);
+        rte_exit(EXIT_FAILURE, "Missing required RX offloads\n");
+    }
+    if ((dev_info.tx_offload_capa & tx_offloads) != tx_offloads) {
+        RTE_LOG(WARNING, EAL, "%d: Only supports TX offloads 0x%0llx\n", port->id, dev_info.tx_offload_capa);
+        rte_exit(EXIT_FAILURE, "Missing required TX offloads\n");
+    }
+
     struct rte_eth_conf port_conf = {
         .rxmode = {
+            .offloads = rx_offloads | DEV_RX_OFFLOAD_JUMBO_FRAME,
             .max_rx_pkt_len = mtu,
             .jumbo_frame = 1,
             .hw_ip_checksum = 1,
+            .ignore_offload_bitfield = 0,
+        },
+        .txmode = {
+            .offloads = tx_offloads,
         }
     };
     retval = rte_eth_dev_configure(port->id, 1, 1, &port_conf);
     if (retval != 0)
         return retval;
 
-    retval = rte_eth_rx_queue_setup(port->id, 0, DEFAULT_RING_SIZE,
+    uint16_t rx_desc = DEFAULT_RING_SIZE;
+    uint16_t tx_desc = DEFAULT_RING_SIZE;
+    retval = rte_eth_dev_adjust_nb_rx_tx_desc(port->id, &rx_desc, &tx_desc);
+    if (retval != 0)
+        return retval;
+
+    if (rx_desc != DEFAULT_RING_SIZE)
+        RTE_LOG(WARNING, EAL, "RX descriptors changed to %d\n", rx_desc);
+    if (tx_desc != DEFAULT_RING_SIZE)
+        RTE_LOG(WARNING, EAL, "TX descriptors changed to %d\n", tx_desc);
+
+    retval = rte_eth_rx_queue_setup(port->id, 0, rx_desc,
                  rte_eth_dev_socket_id(port->id), NULL, rx_mbuf_pool);
     if (retval < 0)
         return retval;
 
-    retval = rte_eth_tx_queue_setup(port->id, 0, DEFAULT_RING_SIZE,
-                 rte_eth_dev_socket_id(port->id), NULL);
+    struct rte_eth_txconf txconf = {
+        .offloads = DEV_TX_OFFLOAD_IPV4_CKSUM
+    };
+    retval = rte_eth_tx_queue_setup(port->id, 0, tx_desc,
+                 rte_eth_dev_socket_id(port->id), &txconf);
     if (retval < 0)
         goto port_init_fail;
 

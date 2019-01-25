@@ -457,11 +457,13 @@ static void uhd_dpdk_ipv4_prep(struct uhd_dpdk_port *port,
     ip_hdr->fragment_offset = rte_cpu_to_be_16(IPV4_HDR_DF_FLAG);
     ip_hdr->time_to_live = 64;
     ip_hdr->next_proto_id = proto_id;
-    ip_hdr->hdr_checksum = 0; /* FIXME: Assuming hardware can offload */
-    mbuf->ol_flags |= PKT_TX_IP_CKSUM;
+    ip_hdr->hdr_checksum = 0; // Require HW offload
     ip_hdr->src_addr = port->ipv4_addr;
     ip_hdr->dst_addr = dst_ipv4_addr;
 
+    mbuf->ol_flags = PKT_TX_IP_CKSUM | PKT_TX_IPV4;
+    mbuf->l2_len = sizeof(struct ether_hdr);
+    mbuf->l3_len = sizeof(struct ipv4_hdr);
     mbuf->pkt_len = sizeof(struct ether_hdr) + sizeof(struct ipv4_hdr) + payload_len;
     mbuf->data_len = sizeof(struct ether_hdr) + sizeof(struct ipv4_hdr) + payload_len;
 }
@@ -493,6 +495,7 @@ int uhd_dpdk_udp_prep(struct uhd_dpdk_socket *sock,
     tx_hdr->dst_port = pdata->dst_port;
     tx_hdr->dgram_len = rte_cpu_to_be_16(8 + udp_data_len);
     tx_hdr->dgram_cksum = 0;
+    mbuf->l4_len = sizeof(struct udp_hdr);
 
     return 0;
 }
