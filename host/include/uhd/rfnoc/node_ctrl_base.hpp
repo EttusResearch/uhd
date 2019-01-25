@@ -166,11 +166,31 @@ public:
             get_property, null_value, exclude_nodes);
     }
 
+    UHD_INLINE size_t get_num_input_ports(void)
+    {
+      return _num_input_ports;
+    }
+
+    UHD_INLINE void set_num_input_ports(size_t num_ports)
+    {
+        _num_input_ports = num_ports;
+    }
+
+    UHD_INLINE size_t get_num_output_ports(void)
+    {
+      return _num_output_ports;
+    }
+
+    UHD_INLINE void set_num_output_ports(size_t num_ports)
+    {
+        _num_output_ports = num_ports;
+    }
+
 protected:
     /***********************************************************************
      * Structors
      **********************************************************************/
-    node_ctrl_base(void) {}
+    node_ctrl_base(void) : _num_input_ports(0), _num_output_ports(0) {}
     virtual ~node_ctrl_base()
     {
         disconnect();
@@ -262,6 +282,14 @@ private:
     /*! Stores the remote port number of a downstream connection.
      */
     std::map<size_t, size_t> _downstream_ports;
+
+    /*! Stores the number of input ports.
+     */
+    size_t _num_input_ports;
+
+    /*! Stores the number of output ports.
+     */
+    size_t _num_output_ports;
 
 }; /* class node_ctrl_base */
 
