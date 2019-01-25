@@ -77,7 +77,10 @@ The N320 has a higher maximum analog bandwidth than the N310. It can provide
 rates up to 250 Msps, resulting in a usable analog bandwidth of up to 200 MHz.
 In order to better use the high available rates, the N320/N321 devices have an
 additional QSFP+ connector on the back panel which can be used for streaming
-data to and from the radios.
+data to and from the radios. In order to facilitate the higher bandwidth, UHD
+uses a technology called \subpage page_dpdk "Data Plane Development Kit (DPDK)".
+See the DPDK page for details on how it can improve streaming, and how to use
+it.
 
 \section n3xx_overview Overview
 

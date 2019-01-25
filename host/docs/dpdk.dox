@@ -1,0 +1,146 @@
+/*! \page page_dpdk DPDK, Data Plane Development Kit
+
+\tableofcontents
+
+\section dpdk_overview DPDK Overview
+
+Data Plane Development Kit (DPDK) is a set of libraries that allows network
+interface controller (NIC) drivers to use user space memory buffers to send and
+receive data over a network. This allows us to eliminate context switching in
+UHD's transport layer, which enables us to stream higher sample rates.
+
+\section dpdk_setup DPDK Setup
+
+DPDK is currently only available on Linux platforms, requires an input-output
+memory management unit (IOMMU), and must be run on a multicore processor. The
+following subsections will talk through the steps required to setup DPDK on your
+computer.
+
+\subsection dpdk_installation DPDK Installation Instructions
+
+As a new and developing technology, the DPDK APIs are unstable. UHD requires
+version 17.11.
+
+On Ubuntu 18.04/18.10, Fedora 28/29, or Debian Stretch (via backports), DPDK is
+available in your distribution's repositories. For example, on Debian systems,
+it can be obtained with the following command:
+
+    apt install dpdk
+
+Otherwise, you'll need to follow the build guide at
+https://doc.dpdk.org/guides-17.11/linux_gsg/build_dpdk.html . The software
+releases can be found at https://core.dpdk.org/download/.
+
+\subsection dpdk_system_configuration System Configuration
+
+The official documentation regarding system configuration can be found at
+https://doc.dpdk.org/guides-17.11/linux_gsg/sys_reqs.html.
+
+First, you'll need to enable the IOMMU and set up some hugepages. DPDK will
+completely take over all available hugepages, so don't allocate all your memory
+to them- the rest of UHD and the application need memory too.
+
+For example, on a system with 16 GB of RAM, a generous appropriation of
+512x 2 MiB pages was more than sufficient, and you likely won't need that much.
+
+For best results, hugepages should be enabled at boot. For example, using an
+Intel IOMMU with Ubuntu 18.04 IOMMU drivers, the following line was needed in
+our Grub config.
+
+    iommu=pt intel_iommu=on hugepages=2048
+
+The setup of the IOMMU and hugepages is system-specific, so consult the kernel
+documentation for more info. After you reboot, you should see
+`/sys/kernel/iommu_groups` populated.
+
+Next, many of the NIC drivers are implemented atop `vfio-pci`, so you'll need to
+load that driver with the following command:
+
+    modprobe vfio-pci
+
+For NICs that require vfio-pci (like Intel's X520), you'll want to use the
+`dpdk-devbind.py` script to the vfio-pci driver.
+See https://doc.dpdk.org/guides-17.11/linux_gsg/linux_drivers.html#binding-and-unbinding-network-ports-to-from-the-kernel-modules
+for more details.
+
+With the hugepages, IOMMU, and drivers set up, the system is ready for DPDK to
+use.
+
+\subsection dpdk_nic_config NIC Configuration
+
+In order to run, you'll need to set the permissions for your user to take over
+the vfio-pci devices, the hugepages, and the scheduler's settings for the
+threads (at a minimum). You may consider running you applications as root, at
+least while becoming familiar with DPDK. If you use a per-user config file, make
+sure it's in the correct location.
+
+The config file will have 2 different components. First are the global DPDK
+options:
+
+    ;When present in device args, use_dpdk indicates you want DPDK to take over the UDP transports
+    ;The value here represents a config, so you could have another section labeled use_dpdk=myconf
+    ;instead and swap between them
+    [use_dpdk=1]
+    ;dpdk-mtu is the NIC's MTU setting
+    ;This is separate from MPM's maximum packet size--tops out at 4000
+    dpdk-mtu=9000
+    ;dpdk-driver is the -d flag for the DPDK EAL. If DPDK doesn't pick up the driver for your NIC
+    ;automatically, you may need this argument to point it to the folder where it can find the drivers
+    ;Note that DPDK will attempt to load _everything_ in that folder as a driver, so you may want to
+    ;create a separate folder with symlinks to the librte_pmd_* and librte_mempool_* libraries.
+    dpdk-driver=/usr/local/lib/dpdk-pmds/
+    ;dpdk-corelist is the -l flag for the DPDK EAL. See more at the link
+    ; https://doc.dpdk.org/guides-17.11/linux_gsg/build_sample_apps.html#running-a-sample-application
+    dpdk-corelist=2,3
+    ;dpdk-num-bufs is the total number of packet buffers allocated
+    ;to each direction's packet buffer pool
+    ;This will be multiplied by the number of NICs, but NICs on the same
+    ;CPU socket share a pool
+    dpdk-num-bufs=4095
+    ;dpdk-mbuf-cache-size is the number of buffers to cache for a CPU
+    ;The cache reduces the interaction with the global pool
+    dpdk-mbuf-cache-size=315
+
+
+The other sections fall under per-NIC arguments. The key for NICs is the MAC
+address, and it must be in a particular format. Hex digits must all be lower
+case, and octets must be separated by colons. Here is an example:
+
+    [dpdk-mac=3c:fd:fe:a2:a9:09]
+    ;dpdk-io-cpu selects the CPU that this NIC's driver will run on
+    ;Multiple NICs may occupy one CPU, but the I/O thread will completely
+    ;consume that CPU. Also, 0 is reserved for the master thread (i.e.
+    ;the initial UHD thread that calls init() for DPDK). Attempting to
+    ;use it as an I/O thread will only result in hanging.
+    dpdk-io-cpu = 1
+    ;dpdk-ipv4 specifies the IPv4 address, and both the address and
+    ;subnet mask are required (and in this format!). DPDK uses the
+    ;netmask to create a basic routing table. Routing to other networks
+    ;(i.e. via gateways) is not permitted.
+    dpdk-ipv4 = 192.168.10.1/24
+
+    [dpdk-mac=3c:fd:fe:a2:a9:0a]
+    dpdk-io-cpu = 1
+    dpdk-ipv4 = 192.168.20.1/24
+
+\section dpdk_using Using DPDK in UHD
+
+Once DPDK is installed and configured on your system, it can be used with UHD.
+The following steps will describe how to stream using DPDK. This feature is
+currently only available with \ref mpm "MPM-enabled devices."
+
+\subsection dpdk_device_args Enabling DPDK with UHD Device Args
+
+Add the following to your device args in order to indicate that a DPDK-based UDP
+transport shall be used instead of the kernel's UDP stack.
+
+    --args="use_dpdk=1"
+
+Device discovery via DPDK is not currently implemented, so the device args
+`mgmt_addr`, `addr`, and `second_addr` (if applicable) must all be specified at
+runtime. There is no mechanism for MPM's TCP/IP control traffic to flow over a
+link that is occupied by DPDK, so mgmt_addr must point to a link that is not
+used for CHDR, such as N310's RJ45 port.
+
+*/
+// vim:ft=doxygen:
