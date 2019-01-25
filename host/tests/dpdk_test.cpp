@@ -9,6 +9,7 @@
 
 
 #include "../transport/dpdk_zero_copy.hpp"
+#include <uhdlib/transport/uhd-dpdk.h>
 #include <arpa/inet.h>
 #include <errno.h>
 #include <sched.h>
@@ -27,8 +28,8 @@ static const boost::regex colons(":");
 namespace po = boost::program_options;
 
 namespace {
-constexpr unsigned int NUM_MBUFS       = 4095; /* Total number of mbufs in pool */
-constexpr unsigned int MBUF_CACHE_SIZE = 315; /* Size of cpu-local mbuf cache */
+constexpr unsigned int NUM_MBUFS       = 8192; /* Total number of mbufs in pool */
+constexpr unsigned int MBUF_CACHE_SIZE = 384; /* Size of cpu-local mbuf cache */
 constexpr unsigned int BURST_SIZE      = 64; /* Maximum burst size for RX */
 
 constexpr unsigned int NUM_PORTS  = 2; /* Number of NIC ports */
@@ -40,9 +41,7 @@ constexpr unsigned int BENCH_SPP  = 700; /* "Samples" per packet */
 struct dpdk_test_args
 {
     unsigned int portid;
-    std::string src_port;
     std::string dst_ip;
-    std::string dst_port;
     pthread_cond_t *cond;
     pthread_mutex_t mutex;
     bool started;
@@ -121,7 +120,7 @@ static void bench(
      */
     uint64_t total_received = 0;
     uint32_t consec_no_rx   = 0;
-    while ((total_received / nb_ports) < 1000000) { //&& consec_no_rx < 10000) {
+    while ((total_received / nb_ports) < 10000000) { //&& consec_no_rx < 10000) {
         for (id = 0; id < nb_ports; id++) {
             unsigned int nb_rx = 0;
             uhd::transport::managed_recv_buffer::sptr bufs[BURST_SIZE];
@@ -134,6 +133,9 @@ static void bench(
             }
 
             if (nb_rx <= 0) {
+                if (timeout > 0.0) {
+                    send_udp(stream[id], id, true, stats);
+                }
                 consec_no_rx++;
                 if (consec_no_rx >= 100000) {
                     // uint32_t skt_drops = stream[id]->get_drop_count();
@@ -220,6 +222,16 @@ static inline void set_cpu(pthread_t t, int cpu)
     }
 }
 
+std::string get_ipv4_addr(unsigned int port_id)
+{
+    struct in_addr ipv4_addr;
+    int status = uhd_dpdk_get_ipv4_addr(port_id, &ipv4_addr.s_addr, NULL);
+    UHD_ASSERT_THROW(status == 0);
+    char addr_str[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &ipv4_addr, addr_str, sizeof(addr_str));
+    return std::string(addr_str);
+}
+
 void *prepare_and_bench_blocking(void *arg)
 {
     struct dpdk_test_args *args = (struct dpdk_test_args *) arg;
@@ -240,8 +252,8 @@ void *prepare_and_bench_blocking(void *arg)
         ctx,
         args->portid,
         args->dst_ip,
-        args->src_port,
-        args->dst_port,
+        "48888",
+        "48888",
         buff_args,
         dev_addr
     );
@@ -253,19 +265,6 @@ void *prepare_and_bench_blocking(void *arg)
 void prepare_and_bench_polling(void)
 {
     auto& ctx = uhd::transport::uhd_dpdk_ctx::get();
-    struct dpdk_test_args bench_args[2];
-    bench_args[0].cond     = NULL;
-    bench_args[0].started  = true;
-    bench_args[0].portid   = 0;
-    bench_args[0].src_port = "0xBEE7";
-    bench_args[0].dst_ip   = "192.168.0.4";
-    bench_args[0].dst_port = "0xBEE7";
-    bench_args[1].cond     = NULL;
-    bench_args[1].started  = true;
-    bench_args[1].portid   = 1;
-    bench_args[1].src_port = "0xBEE7";
-    bench_args[1].dst_ip   = "192.168.0.3";
-    bench_args[1].dst_port = "0xBEE7";
 
     uhd::transport::dpdk_zero_copy::sptr eth_data[NUM_PORTS];
     uhd::transport::zero_copy_xport_params buff_args;
@@ -274,17 +273,24 @@ void prepare_and_bench_polling(void)
     buff_args.num_send_frames = 8;
     buff_args.num_recv_frames = 8;
     auto dev_addr             = uhd::device_addr_t();
-    for (unsigned int i = 0; i < NUM_PORTS; i++) {
-        eth_data[i] = uhd::transport::dpdk_zero_copy::make(
-            ctx,
-            bench_args[i].portid,
-            bench_args[i].dst_ip,
-            bench_args[i].src_port,
-            bench_args[i].dst_port,
-            buff_args,
-            dev_addr
-        );
-    }
+    eth_data[0] = uhd::transport::dpdk_zero_copy::make(
+        ctx,
+        0,
+        get_ipv4_addr(1),
+        "48888",
+        "48888",
+        buff_args,
+        dev_addr
+    );
+    eth_data[1] = uhd::transport::dpdk_zero_copy::make(
+        ctx,
+        1,
+        get_ipv4_addr(0),
+        "48888",
+        "48888",
+        buff_args,
+        dev_addr
+    );
 
     bench(eth_data, NUM_PORTS, 0.0);
 }
@@ -292,13 +298,15 @@ void prepare_and_bench_polling(void)
 int main(int argc, char **argv)
 {
     int retval, user0_cpu = 0, user1_cpu = 2;
-    std::string args, cpusets;
+    int status = 0;
+    std::string args;
+    std::string cpusets;
     po::options_description desc("Allowed options");
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "UHD-DPDK args")
         ("polling-mode", "Use polling mode (single thread on own core)")
-        ("cpusets", po::value<std::string>(&cpusets)->default_value(""), "which core(s) to use for a given thread (specify something like \"user0=0,user1=2\")")
+        ("cpusets", po::value<std::string>(&cpusets)->default_value(""), "which core(s) to use for a given thread in blocking mode (specify something like \"user0=0,user1=2\")")
     ;
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
@@ -309,16 +317,9 @@ int main(int argc, char **argv)
         return 0;
     }
 
+   auto dpdk_args = uhd::device_addr_t(args);
 
-    auto dpdk_args = uhd::device_addr_t(args);
-    for (std::string& key : dpdk_args.keys()) {
-        /* device_addr_t splits on commas, so we use colons and replace */
-        if (key == "corelist" || key == "coremap") {
-            dpdk_args[key] = boost::regex_replace(dpdk_args[key], colons, ",");
-        }
-    }
-
-    auto cpuset_map = uhd::device_addr_t(cpusets);
+   auto cpuset_map = uhd::device_addr_t(cpusets);
     for (std::string& key : cpuset_map.keys()) {
         if (key == "user0") {
             user0_cpu = std::stoi(cpuset_map[key], NULL, 0);
@@ -327,22 +328,8 @@ int main(int argc, char **argv)
         }
     }
 
-    auto& ctx                  = uhd::transport::uhd_dpdk_ctx::get();
-    ctx.init(dpdk_args);
-
-    uint32_t eth_ip   = htonl(0xc0a80003);
-    uint32_t eth_mask = htonl(0xffffff00);
-    int status        = ctx.set_ipv4_addr(0, eth_ip, eth_mask);
-    if (status) {
-        printf("Error while setting IP0: %d\n", status);
-        return status;
-    }
-    eth_ip = htonl(0xc0a80004);
-    status = ctx.set_ipv4_addr(1, eth_ip, eth_mask);
-    if (status) {
-        printf("Error while setting IP1: %d\n", status);
-        return status;
-    }
+    auto& ctx = uhd::transport::uhd_dpdk_ctx::get();
+    ctx.init(args);
 
     if (vm.count("polling-mode")) {
         prepare_and_bench_polling();
@@ -354,18 +341,14 @@ int main(int argc, char **argv)
         pthread_mutex_init(&bench_args[1].mutex, NULL);
         bench_args[0].cpu      = user0_cpu;
         bench_args[0].cond     = &cond;
+        bench_args[0].dst_ip   = get_ipv4_addr(1);
         bench_args[0].started  = false;
         bench_args[0].portid   = 0;
-        bench_args[0].src_port = "0xBEE7";
-        bench_args[0].dst_ip   = "192.168.0.4";
-        bench_args[0].dst_port = "0xBEE7";
         bench_args[1].cpu      = user1_cpu;
         bench_args[1].cond     = &cond;
+        bench_args[1].dst_ip   = get_ipv4_addr(0);
         bench_args[1].started  = false;
         bench_args[1].portid   = 1;
-        bench_args[1].src_port = "0xBEE7";
-        bench_args[1].dst_ip   = "192.168.0.3";
-        bench_args[1].dst_port = "0xBEE7";
 
         pthread_t threads[2];
         pthread_create(&threads[0], NULL, prepare_and_bench_blocking, &bench_args[0]);
