@@ -63,6 +63,18 @@ public:
      */
     size_t get_fifo_size(size_t block_port = 0) const;
 
+    /*! Return the MTU size on a given block port.
+     *
+     * This is necessary for setting up transports, among other things.
+     *
+     * If the block port is not defined, it will return 0, and not throw.
+     *
+     * \param block_port The block port (0 through 15).
+     *
+     * Returns the MTU in bytes.
+     */
+    size_t get_mtu(size_t block_port = 0) const;
+
     /*! Configure flow control for incoming streams.
      *
      * If flow control is enabled for incoming streams, this block will periodically

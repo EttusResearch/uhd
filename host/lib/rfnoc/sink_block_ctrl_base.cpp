@@ -43,11 +43,19 @@ std::vector<size_t> sink_block_ctrl_base::get_input_ports() const
  **********************************************************************/
 size_t sink_block_ctrl_base::get_fifo_size(size_t block_port) const
 {
-    if (_tree->exists(
-            _root_path / "input_buffer_size" / str(boost::format("%d") % block_port))) {
+    if (_tree->exists(_root_path / "input_buffer_size" / std::to_string(block_port))) {
         return _tree
             ->access<size_t>(
-                _root_path / "input_buffer_size" / str(boost::format("%d") % block_port))
+                _root_path / "input_buffer_size" / std::to_string(block_port))
+            .get();
+    }
+    return 0;
+}
+
+size_t sink_block_ctrl_base::get_mtu(size_t block_port) const
+{
+    if (_tree->exists(_root_path / "mtu" / std::to_string(block_port))) {
+        return _tree->access<size_t>(_root_path / "mtu" / std::to_string(block_port))
             .get();
     }
     return 0;

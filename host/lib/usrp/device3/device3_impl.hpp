@@ -206,6 +206,9 @@ protected:
     //! Is called after a streamer is generated
     virtual void post_streamer_hooks(uhd::direction_t) {}
 
+    //! get mtu
+    virtual size_t get_mtu(const size_t, const uhd::direction_t) = 0;
+
     /***********************************************************************
      * Channel-related
      **********************************************************************/

@@ -731,6 +731,11 @@ uhd::both_xports_t e300_impl::make_transport(
     return xports;
 }
 
+size_t e300_impl::get_mtu(const size_t /*mb_index*/, const uhd::direction_t dir) {
+    return (dir == RX_DIRECTION) ? _data_xport_params.recv_frame_size :
+            _data_xport_params.send_frame_size;
+}
+
 void e300_impl::_update_clock_source(const std::string &source)
 {
     if (source != "internal") {

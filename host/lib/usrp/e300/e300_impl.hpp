@@ -166,6 +166,9 @@ private: // methods
         return uhd::ENDIANNESS_LITTLE;
     };
 
+    //! get mtu
+    size_t get_mtu(const size_t, const uhd::direction_t);
+
     /************************************************************************
      * Helpers
      ***********************************************************************/

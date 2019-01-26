@@ -246,6 +246,9 @@ public:
         uhd::usrp::device3_impl::xport_type_t,
         const uhd::device_addr_t&);
 
+    //! get mtu
+    size_t get_mtu(const size_t, const uhd::direction_t);
+
 private:
     uhd::device_addr_t get_rx_hints(size_t mb_index);
     uhd::device_addr_t get_tx_hints(size_t mb_index);

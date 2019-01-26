@@ -173,6 +173,9 @@ private:
         const xport_type_t xport_type,
         const uhd::device_addr_t& args);
 
+    //! get mtu
+    size_t get_mtu(const size_t, const uhd::direction_t);
+
     struct frame_size_t
     {
         size_t recv_frame_size;

@@ -143,6 +143,16 @@ void source_block_ctrl_base::configure_flow_control_out(const bool enable_fc_out
     sr_write(SR_FLOW_CTRL_EN, config, block_port);
 }
 
+size_t source_block_ctrl_base::get_mtu(size_t block_port) const
+{
+    if (_tree->exists(_root_path / "mtu" / std::to_string(block_port))) {
+        return _tree->access<size_t>(_root_path / "mtu" / std::to_string(block_port))
+            .get();
+    }
+    return 0;
+}
+
+
 /***********************************************************************
  * Hooks
  **********************************************************************/
