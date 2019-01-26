@@ -1526,7 +1526,7 @@ uhd::both_xports_t x300_impl::make_transport(const uhd::sid_t& address,
             // Increasing number of recv frames here because ctrl_iface uses it
             // to determine how many control packets can be in flight before it
             // must wait for an ACK
-            default_buff_args.num_recv_frames = 
+            default_buff_args.num_recv_frames =
                 uhd::rfnoc::CMD_FIFO_SIZE / uhd::rfnoc::MAX_CMD_PKT_SIZE;
         } else if (xport_type == TX_DATA) {
             size_t default_frame_size = conn.link_rate == x300::MAX_RATE_1GIGE
@@ -1991,6 +1991,11 @@ x300_impl::frame_size_t x300_impl::determine_max_frame_size(
     UHD_LOGGER_INFO("X300") << "Maximum frame size: " << frame_size.send_frame_size
                             << " bytes.";
     return frame_size;
+}
+
+size_t x300_impl::get_mtu(const size_t /*mb_index*/, const uhd::direction_t dir) {
+    return (dir == RX_DIRECTION) ? _max_frame_sizes.recv_frame_size :
+            _max_frame_sizes.send_frame_size;
 }
 
 /***********************************************************************

@@ -338,6 +338,33 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t& args_)
         // Setup the DSP transport hints
         device_addr_t rx_hints = get_rx_hints(mb_index);
 
+        // Traverse the upstream nodes for minimum mtu
+        size_t min_mtu = blk_ctrl->get_mtu(block_port);
+        UHD_RX_STREAMER_LOG() << "Maximum MTU supported by " <<  blk_ctrl->unique_id()
+                    << ": " << min_mtu;
+        std::vector<boost::shared_ptr<uhd::rfnoc::source_block_ctrl_base>>
+            upstream_source_nodes =
+                blk_ctrl->find_upstream_node<uhd::rfnoc::source_block_ctrl_base>();
+        for (const boost::shared_ptr<uhd::rfnoc::source_block_ctrl_base>& node :
+            upstream_source_nodes) {
+            // Get MTU from Port 0 of the upstream nodes. This is okay for now as
+            // currently we use port 0 of a block in case of channel 1.
+            UHD_RX_STREAMER_LOG() << "Maximum MTU supported by " << node->unique_id()
+                    << ": " << node->get_mtu(0);
+            min_mtu = std::min(min_mtu, node->get_mtu(0));
+        }
+        // Contraint min_mtu by device mtu
+        min_mtu = std::min(min_mtu, get_mtu(mb_index, uhd::direction_t::RX_DIRECTION));
+        if (rx_hints.has_key("recv_frame_size")) {
+            if (rx_hints.cast<size_t>("recv_frame_size", min_mtu) > min_mtu) {
+                UHD_RX_STREAMER_LOG() << "Requested recv_frame_size of " << rx_hints["recv_frame_size"]
+                    << " exceeds the maximum possible on this stream. Using " << min_mtu;
+            }
+            min_mtu =
+                std::min(min_mtu, rx_hints.cast<size_t>("recv_frame_size", min_mtu));
+        }
+        rx_hints["recv_frame_size"] = std::to_string(min_mtu);
+
         // allocate sid and create transport
         uhd::sid_t stream_address = blk_ctrl->get_address(block_port);
         UHD_RX_STREAMER_LOG() << "creating rx stream " << rx_hints.to_string();
@@ -577,6 +604,33 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t& args_)
 
         // Setup the dsp transport hints
         device_addr_t tx_hints = get_tx_hints(mb_index);
+
+        // Traverse the downstream nodes for minimum mtu
+        size_t min_mtu = blk_ctrl->get_mtu(block_port);
+        UHD_TX_STREAMER_LOG() << "Maximum MTU supported by " <<  blk_ctrl->unique_id()
+                    << ": " << min_mtu;
+        std::vector<boost::shared_ptr<uhd::rfnoc::sink_block_ctrl_base>>
+            downstream_sink_nodes =
+                blk_ctrl->find_downstream_node<uhd::rfnoc::sink_block_ctrl_base>();
+        for (const boost::shared_ptr<uhd::rfnoc::sink_block_ctrl_base>& node :
+            downstream_sink_nodes) {
+            // Get MTU from Port 0 of the downstream nodes. This is okay for now as
+            // currently we use port 0 of a block in case of channel 1.
+            UHD_TX_STREAMER_LOG() << "Maximum MTU supported by " <<  node->unique_id()
+                    << ": " << node->get_mtu(0);
+            min_mtu = std::min(min_mtu, node->get_mtu(0));
+        }
+        min_mtu = std::min(min_mtu, get_mtu(mb_index, uhd::direction_t::TX_DIRECTION));
+        if (tx_hints.has_key("send_frame_size")) {
+            if (tx_hints.cast<size_t>("send_frame_size", min_mtu) > min_mtu) {
+                UHD_TX_STREAMER_LOG() << "Requested send_frame_size of " << tx_hints["send_frame_size"]
+                    << " exceeds the maximum possible on this stream. Using " << min_mtu;
+            }
+            min_mtu =
+                std::min(min_mtu, tx_hints.cast<size_t>("send_frame_size", min_mtu));
+        }
+        tx_hints["send_frame_size"] = std::to_string(min_mtu);
+
         const size_t fifo_size = blk_ctrl->get_fifo_size(block_port);
         // Allocate sid and create transport
         uhd::sid_t stream_address = blk_ctrl->get_address(block_port);
