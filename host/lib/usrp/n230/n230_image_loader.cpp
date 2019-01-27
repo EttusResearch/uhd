@@ -74,7 +74,7 @@ static void _parse_bitfile_header(const std::string& filepath, xil_bitfile_hdr_t
             fields[key] = std::string(reinterpret_cast<char*>(buf + ptr), size_t(len)); ptr += len;
         }
 
-        hdr.filesize = _to_uint32(buf + ++ptr); ptr += 4;
+        hdr.filesize = _to_uint32(buf + ++ptr);
         hdr.fpga = fields[1];
         hdr.timestamp = fields[2] + std::string(" ") + fields[3];
 
