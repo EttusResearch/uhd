@@ -437,7 +437,6 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                               << i << std::endl;
                     return -1;
                 }
-                is_locked = false;
             }
         }
     }
