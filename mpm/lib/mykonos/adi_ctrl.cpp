@@ -105,8 +105,6 @@ commonErr_t CMB_SPIWriteBytes(
     ad9371_spiSettings_t* spi = ad9371_spiSettings_t::make(spiSettings);
     try {
         for (size_t i = 0; i < count; ++i) {
-            uint32_t data_word = (0) | (addr[i] << 8) | (data[i]);
-
             spi->spi_iface->poke8(addr[i], data[i]);
         }
         return COMMONERR_OK;
