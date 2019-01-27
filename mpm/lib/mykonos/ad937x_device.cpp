@@ -551,12 +551,10 @@ double ad937x_device::set_bw_filter(const direction_t direction, const double va
 double ad937x_device::set_gain(
     const direction_t direction, const chain_t chain, const double value)
 {
-    double coerced_value;
     const auto state = _move_to_config_state();
     switch (direction) {
         case TX_DIRECTION: {
             const uint16_t attenuation = _convert_tx_gain_to_mykonos(value);
-            coerced_value              = static_cast<double>(attenuation);
 
             std::function<mykonosErr_t(mykonosDevice_t*, uint16_t)> func;
             switch (chain) {
@@ -574,7 +572,6 @@ double ad937x_device::set_gain(
         }
         case RX_DIRECTION: {
             const uint8_t gain = _convert_rx_gain_to_mykonos(value);
-            coerced_value      = static_cast<double>(gain);
 
             std::function<mykonosErr_t(mykonosDevice_t*, uint8_t)> func;
             switch (chain) {
