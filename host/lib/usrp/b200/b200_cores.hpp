@@ -1,6 +1,7 @@
 //
 // Copyright 2013-2014 Ettus Research LLC
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -8,11 +9,12 @@
 #ifndef INCLUDED_B200_CORES_HPP
 #define INCLUDED_B200_CORES_HPP
 
+#include <uhd/utils/noncopyable.hpp>
 #include <uhdlib/usrp/cores/spi_core_3000.hpp>
 #include <uhdlib/usrp/common/adf4001_ctrl.hpp>
 #include <boost/thread/mutex.hpp>
 
-class b200_local_spi_core : boost::noncopyable, public uhd::spi_iface {
+class b200_local_spi_core : uhd::noncopyable, public uhd::spi_iface {
 
 public:
     typedef boost::shared_ptr<b200_local_spi_core> sptr;

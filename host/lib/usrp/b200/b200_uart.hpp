@@ -1,6 +1,7 @@
 //
 // Copyright 2013 Ettus Research LLC
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -10,10 +11,10 @@
 
 #include <uhd/transport/zero_copy.hpp>
 #include <uhd/types/serial.hpp> //uart iface
+#include <uhd/utils/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/utility.hpp>
 
-class b200_uart: boost::noncopyable, public uhd::uart_iface
+class b200_uart: uhd::noncopyable, public uhd::uart_iface
 {
 public:
     typedef boost::shared_ptr<b200_uart> sptr;
