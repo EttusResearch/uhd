@@ -20,6 +20,7 @@ UHD_INSTALL(FILES
     log_add.hpp
     math.hpp
     msg_task.hpp
+    noncopyable.hpp
     paths.hpp
     pimpl.hpp
     platform.hpp
