@@ -12,7 +12,8 @@
 #include <uhd/utils/noncopyable.hpp>
 #include <uhdlib/usrp/cores/spi_core_3000.hpp>
 #include <uhdlib/usrp/common/adf4001_ctrl.hpp>
-#include <boost/thread/mutex.hpp>
+#include <boost/shared_ptr.hpp>
+#include <mutex>
 
 class b200_local_spi_core : uhd::noncopyable, public uhd::spi_iface {
 
@@ -41,7 +42,7 @@ private:
     spi_core_3000::sptr     _spi_core;
     perif_t                 _current_perif;
     perif_t                 _last_perif;
-    boost::mutex            _mutex;
+    std::mutex              _mutex;
 };
 
 class b200_ref_pll_ctrl : public uhd::usrp::adf4001_ctrl {

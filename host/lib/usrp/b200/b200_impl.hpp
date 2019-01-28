@@ -38,6 +38,7 @@
 #include <uhdlib/usrp/common/adf4001_ctrl.hpp>
 #include <boost/assign.hpp>
 #include <boost/weak_ptr.hpp>
+#include <mutex>
 
 static const uint8_t  B200_FW_COMPAT_NUM_MAJOR = 8;
 static const uint8_t  B200_FW_COMPAT_NUM_MINOR = 0;
@@ -149,7 +150,7 @@ private:
     boost::weak_ptr<uhd::rx_streamer> _rx_streamer;
     boost::weak_ptr<uhd::tx_streamer> _tx_streamer;
 
-    boost::mutex _transport_setup_mutex;
+    std::mutex _transport_setup_mutex;
 
     //async ctrl + msgs
     uhd::msg_task::sptr _async_task;

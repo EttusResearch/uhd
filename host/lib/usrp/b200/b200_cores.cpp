@@ -8,6 +8,7 @@
 #include "b200_cores.hpp"
 #include "b200_regs.hpp"
 #include "b200_impl.hpp"
+#include <mutex>
 
 b200_local_spi_core::b200_local_spi_core(
     uhd::wb_iface::sptr iface,
@@ -26,13 +27,13 @@ uint32_t b200_local_spi_core::transact_spi(
     size_t num_bits,
     bool readback)
 {
-    boost::mutex::scoped_lock lock(_mutex);
+    std::lock_guard<std::mutex> lock(_mutex);
     return _spi_core->transact_spi(which_slave, config, data, num_bits, readback);
 }
 
 void b200_local_spi_core::change_perif(perif_t perif)
 {
-    boost::mutex::scoped_lock lock(_mutex);
+    std::lock_guard<std::mutex> lock(_mutex);
     _last_perif = _current_perif;
     _current_perif = perif;
 
