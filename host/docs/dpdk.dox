@@ -6,8 +6,15 @@
 
 Data Plane Development Kit (DPDK) is a set of libraries that allows network
 interface controller (NIC) drivers to use user space memory buffers to send and
-receive data over a network. This allows us to eliminate context switching in
-UHD's transport layer, which enables us to stream higher sample rates.
+receive data over a network. These libraries underpin one of the network
+transport options in UHD.
+
+In UHD, the DPDK-based transport will fork off I/O threads that implement the
+network services, and these I/O threads will service the NICs on cores provided
+in your configuration. The cores will be completely consumed by the I/O thread.
+Together with DPDK's polling-mode drivers, this virtually eliminates context
+switching in UHD's transport layer, which enables us to stream higher sample
+rates.
 
 \section dpdk_setup DPDK Setup
 
