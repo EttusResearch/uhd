@@ -268,7 +268,6 @@ void device3_impl::update_rx_streamers(double /* rate */)
             if (tick_rate == rfnoc::tick_node_ctrl::RATE_UNDEFINED) {
                 tick_rate = 1.0;
             }
-            my_streamer->set_tick_rate(tick_rate);
             double samp_rate = my_streamer->get_terminator()->get_output_samp_rate();
             if (samp_rate == rfnoc::rate_node_ctrl::RATE_UNDEFINED) {
                 samp_rate = 1.0;
