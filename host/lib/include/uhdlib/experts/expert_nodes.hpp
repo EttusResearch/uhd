@@ -12,6 +12,7 @@
 #include <uhd/exception.hpp>
 #include <uhd/utils/dirty_tracked.hpp>
 #include <uhd/types/time_spec.hpp>
+#include <boost/version.hpp>
 #if BOOST_VERSION >= 105600
 #include <boost/core/noncopyable.hpp>
 #endif
