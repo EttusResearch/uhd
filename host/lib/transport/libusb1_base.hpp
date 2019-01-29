@@ -12,7 +12,7 @@
 #include <uhd/transport/usb_device_handle.hpp>
 #include <libusb.h>
 #include <boost/shared_ptr.hpp>
-#include <boost/utility.hpp>
+#include <uhd/utils/noncopyable.hpp>
 
 //! Define LIBUSB_CALL when its missing (non-windows)
 #ifndef LIBUSB_CALL
@@ -49,7 +49,7 @@ namespace uhd { namespace transport { namespace libusb {
  * The get global session call will create a new context if none exists.
  * When all references to session are destroyed, the context will be freed.
  */
-class session : boost::noncopyable
+class session : uhd::noncopyable
 {
 public:
     typedef boost::shared_ptr<session> sptr;
@@ -75,7 +75,7 @@ public:
 /*!
  * Holds a device pointer with a reference to the session.
  */
-class device : boost::noncopyable
+class device : uhd::noncopyable
 {
 public:
     typedef boost::shared_ptr<device> sptr;
@@ -90,7 +90,7 @@ public:
  * This device list class holds a device list that will be
  * automatically freed when the last reference is destroyed.
  */
-class device_list : boost::noncopyable
+class device_list : uhd::noncopyable
 {
 public:
     typedef boost::shared_ptr<device_list> sptr;
@@ -110,7 +110,7 @@ public:
 /*!
  * Holds a device descriptor and a reference to the device.
  */
-class device_descriptor : boost::noncopyable
+class device_descriptor : uhd::noncopyable
 {
 public:
     typedef boost::shared_ptr<device_descriptor> sptr;
@@ -129,7 +129,7 @@ public:
 /*!
  * Holds a device handle and a reference to the device.
  */
-class device_handle : boost::noncopyable
+class device_handle : uhd::noncopyable
 {
 public:
     typedef boost::shared_ptr<device_handle> sptr;

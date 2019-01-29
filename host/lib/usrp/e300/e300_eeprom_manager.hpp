@@ -31,7 +31,7 @@ static const uint16_t E310_MB_MAP_MINOR = 0x0000;
 static const uint16_t E310_DB_MAP_MAJOR = 0x0001;
 static const uint16_t E310_DB_MAP_MINOR = 0x0000;
 
-class e300_eeprom_manager : boost::noncopyable
+class e300_eeprom_manager : uhd::noncopyable
 {
 public:
     typedef boost::shared_ptr<e300_eeprom_manager> sptr;

@@ -10,11 +10,11 @@
 
 #include "twinrx_io.hpp"
 #include <uhd/types/wb_iface.hpp>
-#include <boost/noncopyable.hpp>
+#include <uhd/utils/noncopyable.hpp>
 
 namespace uhd { namespace usrp { namespace dboard { namespace twinrx {
 
-class twinrx_ctrl : public boost::noncopyable {
+class twinrx_ctrl : public uhd::noncopyable {
 public:
     typedef std::shared_ptr<twinrx_ctrl> sptr;
 

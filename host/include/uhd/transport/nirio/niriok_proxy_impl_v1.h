@@ -9,7 +9,7 @@
 #define INCLUDED_UHD_TRANSPORT_NIRIO_NIRIO_PROXY_IMPL_V1_H
 
 #include <boost/smart_ptr.hpp>
-#include <boost/noncopyable.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <uhd/transport/nirio/nirio_driver_iface.h>
 #include <uhd/transport/nirio/nirio_quirks.h>
 #include <uhd/transport/nirio/niriok_proxy.h>

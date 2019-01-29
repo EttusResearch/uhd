@@ -37,7 +37,7 @@ namespace uhd { namespace usrp {
  *
  * Frontend numbering is as designed by the AD9361.
  */
-class ad9361_ctrl : public boost::noncopyable
+class ad9361_ctrl : public uhd::noncopyable
 {
 public:
     typedef boost::shared_ptr<ad9361_ctrl> sptr;

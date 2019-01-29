@@ -11,12 +11,12 @@
 #include <uhd/config.hpp>
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/property_tree.hpp>
-#include <boost/utility.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <complex>
 #include <string>
 
-class rx_frontend_core_200 : boost::noncopyable{
+class rx_frontend_core_200 : uhd::noncopyable{
 public:
     static const std::complex<double> DEFAULT_DC_OFFSET_VALUE;
     static const bool DEFAULT_DC_OFFSET_ENABLE;

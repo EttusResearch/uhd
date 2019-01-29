@@ -11,10 +11,10 @@
 #include <uhd/config.hpp>
 #include <uhd/types/wb_iface.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/noncopyable.hpp>
+#include <uhd/utils/noncopyable.hpp>
 
 
-class dma_fifo_core_3000 : boost::noncopyable
+class dma_fifo_core_3000 : uhd::noncopyable
 {
 public:
     typedef boost::shared_ptr<dma_fifo_core_3000> sptr;

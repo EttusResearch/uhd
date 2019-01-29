@@ -12,7 +12,7 @@
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/types/serial.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/utility.hpp>
+#include <uhd/utils/noncopyable.hpp>
 
 #define SPI_ENABLE_FPGA  0x01
 #define SPI_FMT_HDR_MASK (3 << 5)
@@ -32,7 +32,7 @@
  * Provides a set of functions to implementation layer.
  * Including spi, peek, poke, control...
  */
-class usrp1_iface : public uhd::wb_iface, public uhd::i2c_iface, public uhd::spi_iface, boost::noncopyable
+class usrp1_iface : public uhd::wb_iface, public uhd::i2c_iface, public uhd::spi_iface, uhd::noncopyable
 {
 public:
     typedef boost::shared_ptr<usrp1_iface> sptr;

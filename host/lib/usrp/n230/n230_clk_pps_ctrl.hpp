@@ -14,12 +14,12 @@
 #include <uhdlib/usrp/cores/time_core_3000.hpp>
 #include <uhdlib/usrp/common/ad9361_ctrl.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/utility.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <vector>
 
 namespace uhd { namespace usrp { namespace n230 {
 
-class n230_clk_pps_ctrl : boost::noncopyable
+class n230_clk_pps_ctrl : uhd::noncopyable
 {
 public:
     typedef boost::shared_ptr<n230_clk_pps_ctrl> sptr;

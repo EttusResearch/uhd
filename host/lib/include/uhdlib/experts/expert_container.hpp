@@ -10,7 +10,7 @@
 
 #include <uhdlib/experts/expert_nodes.hpp>
 #include <uhd/config.hpp>
-#include <boost/noncopyable.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/recursive_mutex.hpp>
 
@@ -23,7 +23,7 @@ namespace uhd { namespace experts {
         AUTO_RESOLVE_ON_READ_WRITE
     };
 
-    class UHD_API expert_container : private boost::noncopyable, public node_retriever_t {
+    class UHD_API expert_container : private uhd::noncopyable, public node_retriever_t {
     public: //Methods
         typedef boost::shared_ptr<expert_container> sptr;
 

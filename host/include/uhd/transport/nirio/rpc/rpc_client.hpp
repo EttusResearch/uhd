@@ -10,6 +10,7 @@
 
 #include "rpc_common.hpp"
 #include <uhd/utils/log.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <boost/asio.hpp>
 #include <boost/smart_ptr.hpp>
 #include <boost/thread/condition_variable.hpp>
@@ -17,7 +18,7 @@
 
 namespace uhd { namespace usrprio_rpc {
 
-class rpc_client : private boost::noncopyable
+class rpc_client : private uhd::noncopyable
 {
 public:
     static const uint32_t CURRENT_VERSION           = 1;

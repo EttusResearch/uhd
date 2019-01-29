@@ -15,11 +15,11 @@
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/usrp/fe_connection.hpp>
-#include <boost/utility.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <string>
 
-class rx_dsp_core_3000 : boost::noncopyable{
+class rx_dsp_core_3000 : uhd::noncopyable{
 public:
     static const double DEFAULT_CORDIC_FREQ;
     static const double DEFAULT_DDS_FREQ;

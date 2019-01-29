@@ -12,7 +12,7 @@
 #include <uhd/transport/nirio/nirio_driver_iface.h>
 #include <uhd/transport/nirio/niriok_proxy.h>
 #include <uhd/transport/nirio/status.h>
-#include <boost/noncopyable.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <boost/smart_ptr.hpp>
 #include <boost/thread/recursive_mutex.hpp>
 #include <boost/atomic/atomic.hpp>
@@ -30,7 +30,7 @@ struct datatype_info_t {
 };
 
 template <typename data_t>
-class nirio_fifo : private boost::noncopyable
+class nirio_fifo : private uhd::noncopyable
 {
 public:
     typedef boost::shared_ptr< nirio_fifo<data_t> > sptr;

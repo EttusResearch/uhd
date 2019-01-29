@@ -11,13 +11,13 @@
 #include <uhd/config.hpp>
 #include <uhd/stream.hpp>
 #include <uhd/types/ranges.hpp>
-#include <boost/utility.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/types/wb_iface.hpp>
 #include <string>
 
-class rx_vita_core_3000 : boost::noncopyable
+class rx_vita_core_3000 : uhd::noncopyable
 {
 public:
     typedef boost::shared_ptr<rx_vita_core_3000> sptr;

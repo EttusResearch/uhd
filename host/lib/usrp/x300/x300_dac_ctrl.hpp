@@ -9,10 +9,10 @@
 #define INCLUDED_X300_DAC_CTRL_HPP
 
 #include <uhd/types/serial.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/utility.hpp>
 
-class x300_dac_ctrl : boost::noncopyable
+class x300_dac_ctrl : uhd::noncopyable
 {
 public:
     typedef boost::shared_ptr<x300_dac_ctrl> sptr;

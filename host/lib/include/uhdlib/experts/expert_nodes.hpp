@@ -11,12 +11,8 @@
 #include <uhd/config.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/dirty_tracked.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <uhd/types/time_spec.hpp>
-#if BOOST_VERSION >= 105600
-#include <boost/core/noncopyable.hpp>
-#else
-#include <boost/noncopyable.hpp>
-#endif
 #include <boost/function.hpp>
 #include <boost/thread/recursive_mutex.hpp>
 #include <boost/thread.hpp>
@@ -38,7 +34,7 @@ namespace uhd { namespace experts {
      * graph. Data nodes and workers are derived from this class.
      * ---------------------------------------------------------
      */
-    class dag_vertex_t : private boost::noncopyable {
+    class dag_vertex_t : private uhd::noncopyable {
     public:
         typedef boost::function<void(std::string)> callback_func_t;
 

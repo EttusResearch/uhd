@@ -186,7 +186,7 @@ void export_stream()
     bp::class_<
         rx_streamer,
         boost::shared_ptr<rx_streamer>,
-        boost::noncopyable>("rx_streamer", "See: uhd::rx_streamer", bp::no_init)
+        uhd::noncopyable>("rx_streamer", "See: uhd::rx_streamer", bp::no_init)
 
         // Methods
         .def("recv"             , &wrap_recv, overload_wrap_recv()    )
@@ -198,7 +198,7 @@ void export_stream()
     bp::class_<
         tx_streamer,
         boost::shared_ptr<tx_streamer>,
-        boost::noncopyable>("tx_streamer", "See: uhd::tx_streamer", bp::no_init)
+        uhd::noncopyable>("tx_streamer", "See: uhd::tx_streamer", bp::no_init)
 
         // Methods
         .def("send"             , &wrap_send, overload_wrap_send())

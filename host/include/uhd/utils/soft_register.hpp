@@ -13,7 +13,7 @@
 #include <uhd/utils/dirty_tracked.hpp>
 #include <stdint.h>
 #include <boost/foreach.hpp>
-#include <boost/noncopyable.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <boost/thread/locks.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/tokenizer.hpp>
@@ -100,7 +100,7 @@ template <typename data_t> UHD_INLINE data_t mask(const soft_reg_field_t field)
 }
 } // namespace soft_reg_field
 
-class soft_register_base : public boost::noncopyable
+class soft_register_base : public uhd::noncopyable
 {
 public:
     virtual ~soft_register_base() {}
@@ -473,7 +473,7 @@ public:
  * Methods give convenient field-level access to soft-copy and the ability
  * to do read-modify-write operations.
  */
-class UHD_API soft_regmap_t : public soft_regmap_accessor_t, public boost::noncopyable
+class UHD_API soft_regmap_t : public soft_regmap_accessor_t, public uhd::noncopyable
 {
 public:
     soft_regmap_t(const std::string& name) : _name(name) {}
@@ -595,7 +595,7 @@ private:
  * fashion.
  * A regmap_db *does not* manage storage for regmaps. It is simply a wrapper.
  */
-class UHD_API soft_regmap_db_t : public soft_regmap_accessor_t, public boost::noncopyable
+class UHD_API soft_regmap_db_t : public soft_regmap_accessor_t, public uhd::noncopyable
 {
 public:
     typedef boost::shared_ptr<soft_regmap_db_t> sptr;

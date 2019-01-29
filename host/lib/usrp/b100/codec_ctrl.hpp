@@ -10,15 +10,15 @@
 
 #include <uhd/types/serial.hpp>
 #include <uhd/types/ranges.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/utility.hpp>
 
 /*!
  * The B100 codec control:
  * - Init/power down codec.
  * - Read aux adc, write aux dac.
  */
-class b100_codec_ctrl : boost::noncopyable{
+class b100_codec_ctrl : uhd::noncopyable{
 public:
     typedef boost::shared_ptr<b100_codec_ctrl> sptr;
 

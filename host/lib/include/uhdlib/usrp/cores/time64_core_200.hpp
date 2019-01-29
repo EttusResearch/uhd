@@ -10,13 +10,14 @@
 
 #include <uhd/config.hpp>
 #include <uhd/types/time_spec.hpp>
+#include <uhd/utils/noncopyable.hpp>
+#include <uhd/types/wb_iface.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
-#include <uhd/types/wb_iface.hpp>
 #include <string>
 #include <vector>
 
-class time64_core_200 : boost::noncopyable{
+class time64_core_200 : uhd::noncopyable{
 public:
     typedef boost::shared_ptr<time64_core_200> sptr;
 

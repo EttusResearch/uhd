@@ -16,7 +16,7 @@
 
 namespace uhd { namespace usrp { namespace n230 {
 
-class n230_eeprom_manager : boost::noncopyable
+class n230_eeprom_manager : uhd::noncopyable
 {
 public:
     n230_eeprom_manager(const std::string& addr);

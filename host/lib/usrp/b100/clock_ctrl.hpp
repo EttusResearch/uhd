@@ -9,15 +9,15 @@
 #define INCLUDED_B100_CLOCK_CTRL_HPP
 
 #include <uhd/types/serial.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/utility.hpp>
 #include <vector>
 
 /*!
  * The B100 clock control:
  * - Disable/enable clock lines.
  */
-class b100_clock_ctrl : boost::noncopyable{
+class b100_clock_ctrl : uhd::noncopyable{
 public:
     typedef boost::shared_ptr<b100_clock_ctrl> sptr;
 

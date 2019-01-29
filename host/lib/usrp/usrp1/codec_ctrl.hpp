@@ -10,15 +10,15 @@
 
 #include <uhd/types/serial.hpp>
 #include <uhd/types/ranges.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/utility.hpp>
 
 /*!
  * The usrp1 codec control:
  * - Init/power down codec.
  * - Read aux adc, write aux dac.
  */
-class usrp1_codec_ctrl : boost::noncopyable{
+class usrp1_codec_ctrl : uhd::noncopyable{
 public:
     typedef boost::shared_ptr<usrp1_codec_ctrl> sptr;
 

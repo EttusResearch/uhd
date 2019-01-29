@@ -11,12 +11,12 @@
 #include <uhd/config.hpp>
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/property_tree.hpp>
-#include <boost/utility.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <complex>
 #include <string>
 
-class tx_frontend_core_200 : boost::noncopyable{
+class tx_frontend_core_200 : uhd::noncopyable{
 public:
     typedef boost::shared_ptr<tx_frontend_core_200> sptr;
 

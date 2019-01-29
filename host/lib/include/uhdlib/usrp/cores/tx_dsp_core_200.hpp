@@ -11,11 +11,11 @@
 #include <uhd/config.hpp>
 #include <uhd/stream.hpp>
 #include <uhd/types/ranges.hpp>
-#include <boost/utility.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <uhd/types/wb_iface.hpp>
 
-class tx_dsp_core_200 : boost::noncopyable{
+class tx_dsp_core_200 : uhd::noncopyable{
 public:
     typedef boost::shared_ptr<tx_dsp_core_200> sptr;
 

@@ -7,11 +7,12 @@
 #ifndef INCLUDED_DPDK_SIMPLE_HPP
 #define INCLUDED_DPDK_SIMPLE_HPP
 
+#include <uhd/utils/noncopyable.hpp>
 #include <uhdlib/transport/dpdk_common.hpp>
 
 namespace uhd { namespace transport {
 
-class dpdk_simple : boost::noncopyable
+class dpdk_simple : uhd::noncopyable
 {
 public:
     typedef boost::shared_ptr<dpdk_simple> sptr;

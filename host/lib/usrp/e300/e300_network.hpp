@@ -9,7 +9,7 @@
 #define INCLUDED_E300_NETWORK_HPP
 
 #include <string>
-#include <boost/noncopyable.hpp>
+#include <uhd/utils/noncopyable.hpp>
 
 #include <uhd/device.hpp>
 
@@ -19,7 +19,7 @@ static const std::string E300_FPGA_FILE_NAME = "usrp_e300_fpga.bit";
 
 namespace uhd { namespace usrp { namespace e300 {
 
-class UHD_API network_server : boost::noncopyable
+class UHD_API network_server : uhd::noncopyable
 {
 public:
     typedef boost::shared_ptr<network_server> sptr;

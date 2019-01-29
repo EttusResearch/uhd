@@ -5,7 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <boost/noncopyable.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <stdint.h>
 
 #include <uhd/transport/zero_copy.hpp>
@@ -31,7 +31,7 @@ struct sensor_transaction_t {
 
 enum sensor {ZYNQ_TEMP=0, REF_LOCK=4};
 
-class e300_sensor_manager : boost::noncopyable
+class e300_sensor_manager : uhd::noncopyable
 {
 public:
     typedef boost::shared_ptr<e300_sensor_manager> sptr;

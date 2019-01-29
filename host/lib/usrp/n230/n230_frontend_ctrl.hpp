@@ -14,7 +14,7 @@
 #include <uhdlib/usrp/common/ad9361_ctrl.hpp>
 #include <uhd/types/sensors.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/utility.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <vector>
 
 namespace uhd { namespace usrp { namespace n230 {
@@ -28,7 +28,7 @@ enum self_test_mode_t {
 };
 
 
-class n230_frontend_ctrl : boost::noncopyable
+class n230_frontend_ctrl : uhd::noncopyable
 {
 public:
     typedef boost::shared_ptr<n230_frontend_ctrl> sptr;

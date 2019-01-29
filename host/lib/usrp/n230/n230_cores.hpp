@@ -14,7 +14,7 @@
 
 namespace uhd { namespace usrp { namespace n230 {
 
-class n230_core_spi_core : boost::noncopyable, public uhd::spi_iface {
+class n230_core_spi_core : uhd::noncopyable, public uhd::spi_iface {
 
 public:
     typedef boost::shared_ptr<n230_core_spi_core> sptr;

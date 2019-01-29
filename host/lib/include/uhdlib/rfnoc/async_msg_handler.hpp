@@ -13,7 +13,7 @@
 #include <uhd/types/sid.hpp>
 #include <uhd/types/endianness.hpp>
 #include <uhdlib/rfnoc/async_msg.hpp>
-#include <boost/noncopyable.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <functional>
 
 namespace uhd { namespace rfnoc {
@@ -21,7 +21,7 @@ namespace uhd { namespace rfnoc {
 /*! Async message handler for a uhd::rfnoc::graph
  *
  */
-class async_msg_handler : boost::noncopyable
+class async_msg_handler : uhd::noncopyable
 {
 public:
     typedef boost::shared_ptr<async_msg_handler> sptr;

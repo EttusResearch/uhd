@@ -18,7 +18,7 @@
 namespace uhd { namespace transport {
 
 // Test class to benchmark a low-level transport object with a VITA/C-VITA data stream
-class xport_benchmarker : boost::noncopyable
+class xport_benchmarker : uhd::noncopyable
 {
 public:
     const device_addr_t& benchmark_throughput_chdr(zero_copy_if::sptr tx_transport,

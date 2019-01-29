@@ -8,7 +8,7 @@
 #ifndef INCLUDED_E300_I2C_HPP
 #define INCLUDED_E300_I2C_HPP
 
-#include <boost/noncopyable.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <stdint.h>
 #include <boost/shared_ptr.hpp>
 
@@ -24,7 +24,7 @@ struct i2c_transaction_t {
     uint8_t  type;
 };
 
-class i2c : public boost::noncopyable
+class i2c : public uhd::noncopyable
 {
 public:
     typedef boost::shared_ptr<i2c> sptr;

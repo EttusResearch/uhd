@@ -25,7 +25,7 @@
 
 namespace uhd { namespace usrp { namespace n230 {
 
-class n230_stream_manager : public boost::noncopyable
+class n230_stream_manager : public uhd::noncopyable
 {
 public:     //Methods
     n230_stream_manager(

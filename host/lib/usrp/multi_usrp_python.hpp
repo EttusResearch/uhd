@@ -346,7 +346,7 @@ void export_multi_usrp()
     bp::class_<
         multi_usrp,
         boost::shared_ptr<multi_usrp>,
-        boost::noncopyable>("multi_usrp", bp::no_init)
+        uhd::noncopyable>("multi_usrp", bp::no_init)
 
         .def("__init__", bp::make_constructor(&multi_usrp::make))
 

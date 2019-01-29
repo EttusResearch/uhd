@@ -12,10 +12,10 @@
 #include <uhd/types/serial.hpp> //uart iface
 #include <uhd/utils/tasks.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/utility.hpp>
+#include <uhd/utils/noncopyable.hpp>
 namespace uhd { namespace usrp { namespace n230 {
 
-class n230_uart: boost::noncopyable, public uhd::uart_iface
+class n230_uart: uhd::noncopyable, public uhd::uart_iface
 {
 public:
     typedef boost::shared_ptr<n230_uart> sptr;

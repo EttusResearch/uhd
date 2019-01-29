@@ -9,6 +9,7 @@
 #define INCLUDED_UHD_TRANSPORT_BOUNDED_BUFFER_IPP
 
 #include <uhd/config.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <boost/bind.hpp>
 #include <boost/utility.hpp>
 #include <boost/function.hpp>
@@ -18,7 +19,7 @@
 
 namespace uhd{ namespace transport{
 
-    template <typename elem_type> class bounded_buffer_detail : boost::noncopyable
+    template <typename elem_type> class bounded_buffer_detail : uhd::noncopyable
     {
     public:
 

@@ -10,6 +10,7 @@
 #include <uhd/config.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <uhd/utils/static.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <array>
 #include <atomic>
 #include <mutex>
@@ -17,7 +18,7 @@
 
 namespace uhd { namespace transport {
 
-class uhd_dpdk_ctx : boost::noncopyable {
+class uhd_dpdk_ctx : uhd::noncopyable {
 public:
     UHD_SINGLETON_FCN(uhd_dpdk_ctx, get);
 

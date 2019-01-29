@@ -14,14 +14,14 @@
 #include <uhd/transport/nirio/niriok_proxy.h>
 #include <uhd/transport/nirio/nirio_resource_manager.h>
 #include <uhd/transport/nirio/nifpga_lvbitx.h>
-#include <boost/noncopyable.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <boost/smart_ptr.hpp>
 #include <boost/thread/recursive_mutex.hpp>
 #include <string>
 
 namespace uhd { namespace niusrprio {
 
-class UHD_API niusrprio_session : private boost::noncopyable
+class UHD_API niusrprio_session : private uhd::noncopyable
 {
 public:
     typedef boost::shared_ptr<niusrprio_session> sptr;

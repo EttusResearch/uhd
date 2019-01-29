@@ -10,13 +10,14 @@
 #define INCLUDED_UHD_UTILS_TASKS_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
 
 namespace uhd {
 
-class UHD_API task : boost::noncopyable
+class UHD_API task : uhd::noncopyable
 {
 public:
     typedef boost::shared_ptr<task> sptr;

@@ -10,11 +10,11 @@
 
 #include <uhd/config.hpp>
 #include <uhd/types/time_spec.hpp>
-#include <boost/utility.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <uhd/types/wb_iface.hpp>
 
-class time_core_3000 : boost::noncopyable
+class time_core_3000 : uhd::noncopyable
 {
 public:
     typedef boost::shared_ptr<time_core_3000> sptr;

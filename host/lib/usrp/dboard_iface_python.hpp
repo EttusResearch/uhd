@@ -63,7 +63,7 @@ void export_dboard_iface()
     bp::class_<
         dboard_iface,
         boost::shared_ptr<dboard_iface>,
-        boost::noncopyable>("dboard_iface", bp::no_init)
+        uhd::noncopyable>("dboard_iface", bp::no_init)
 
         // Methods
         .def("get_special_props", &dboard_iface::get_special_props)

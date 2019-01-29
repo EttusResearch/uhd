@@ -14,11 +14,11 @@
 #include <boost/function.hpp>
 #include <boost/optional/optional.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/utility.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <vector>
 
 namespace uhd {
-class UHD_API msg_task : boost::noncopyable
+class UHD_API msg_task : uhd::noncopyable
 {
 public:
     typedef boost::shared_ptr<msg_task> sptr;

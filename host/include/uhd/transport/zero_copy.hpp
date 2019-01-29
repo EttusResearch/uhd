@@ -9,6 +9,7 @@
 #define INCLUDED_UHD_TRANSPORT_ZERO_COPY_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <boost/detail/atomic_count.hpp>
 #include <boost/intrusive_ptr.hpp>
 #include <boost/shared_ptr.hpp>
@@ -162,7 +163,7 @@ struct zero_copy_xport_params
  * Provides a way to get send and receive buffers
  * with memory managed by the transport object.
  */
-class UHD_API zero_copy_if : boost::noncopyable
+class UHD_API zero_copy_if : uhd::noncopyable
 {
 public:
     typedef boost::shared_ptr<zero_copy_if> sptr;

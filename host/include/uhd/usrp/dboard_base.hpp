@@ -14,7 +14,7 @@
 #include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/utils/pimpl.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/utility.hpp>
+#include <uhd/utils/noncopyable.hpp>
 
 namespace uhd { namespace usrp {
 
@@ -22,7 +22,7 @@ namespace uhd { namespace usrp {
  * A daughter board dboard_base class for all dboards.
  * Only other dboard dboard_base classes should inherit this.
  */
-class UHD_API dboard_base : boost::noncopyable
+class UHD_API dboard_base : uhd::noncopyable
 {
 public:
     typedef boost::shared_ptr<dboard_base> sptr;

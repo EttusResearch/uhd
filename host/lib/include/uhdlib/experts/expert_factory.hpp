@@ -11,7 +11,7 @@
 #include <uhdlib/experts/expert_container.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/config.hpp>
-#include <boost/noncopyable.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <boost/bind.hpp>
 #include <memory>
 
@@ -28,7 +28,7 @@ namespace uhd { namespace experts {
      * storage on destruction.
      *
      */
-    class UHD_API expert_factory : public boost::noncopyable {
+    class UHD_API expert_factory : public uhd::noncopyable {
     public:
 
         /*!

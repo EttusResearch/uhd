@@ -12,7 +12,7 @@
 #include <uhd/types/time_spec.hpp>
 #include <uhd/types/metadata.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
-#include <boost/utility.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/function.hpp>
 
@@ -25,7 +25,7 @@ namespace uhd{ namespace usrp{
  * timed transmits, timed receive commands, device time,
  * and inline and async error messages.
  */
-class soft_time_ctrl : boost::noncopyable{
+class soft_time_ctrl : uhd::noncopyable{
 public:
     typedef boost::shared_ptr<soft_time_ctrl> sptr;
     typedef boost::function<void(bool)> cb_fcn_type;

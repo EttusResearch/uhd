@@ -10,7 +10,7 @@
 
 #include <stdint.h>
 #include <boost/smart_ptr.hpp>
-#include <boost/noncopyable.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <boost/thread/shared_mutex.hpp>
 #include <boost/thread/locks.hpp>
 #include <uhd/transport/nirio/nirio_driver_iface.h>
@@ -133,7 +133,7 @@ namespace uhd { namespace niusrprio
        uint32_t             version;
    };
 
-    class UHD_API niriok_proxy : public boost::noncopyable {
+    class UHD_API niriok_proxy : public uhd::noncopyable {
     public:
         typedef boost::shared_ptr<niriok_proxy> sptr;
 
@@ -252,7 +252,7 @@ namespace uhd { namespace niusrprio
         virtual void _close() = 0;
     };
 
-    class niriok_scoped_addr_space : public boost::noncopyable {
+    class niriok_scoped_addr_space : public uhd::noncopyable {
     public:
         explicit niriok_scoped_addr_space(niriok_proxy::sptr proxy, nirio_addr_space_t addr_space, nirio_status& status) :
             driver_proxy(proxy)

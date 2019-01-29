@@ -42,7 +42,7 @@ namespace uhd { namespace usrp_clock {
  * multi_usrp_clock::sptr clock = multi_usrp_clock::make(dev);
  * </pre>
  */
-class UHD_API multi_usrp_clock : boost::noncopyable
+class UHD_API multi_usrp_clock : uhd::noncopyable
 {
 public:
     typedef boost::shared_ptr<multi_usrp_clock> sptr;

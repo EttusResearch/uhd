@@ -9,11 +9,12 @@
 #define INCLUDED_LIBUHD_USRP_USER_SETTINGS_CORE_200_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/utils/noncopyable.hpp>
+#include <uhd/types/wb_iface.hpp>
 #include <boost/utility.hpp>
 #include <boost/shared_ptr.hpp>
-#include <uhd/types/wb_iface.hpp>
 
-class user_settings_core_200 : boost::noncopyable{
+class user_settings_core_200 : uhd::noncopyable{
 public:
     typedef boost::shared_ptr<user_settings_core_200> sptr;
     typedef std::pair<uint8_t, uint32_t> user_reg_t;

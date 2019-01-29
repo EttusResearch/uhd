@@ -9,6 +9,7 @@
 #define INCLUDED_UHD_PROPERTY_TREE_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
@@ -63,7 +64,7 @@ namespace uhd {
  * - T must have a copy constructor
  * - T must have an assignment operator
  */
-template <typename T> class property : boost::noncopyable
+template <typename T> class property : uhd::noncopyable
 {
 public:
     typedef boost::function<void(const T&)> subscriber_type;
@@ -207,7 +208,7 @@ UHD_API fs_path operator/(const fs_path&, size_t);
 /*!
  * The property tree provides a file system structure for accessing properties.
  */
-class UHD_API property_tree : boost::noncopyable
+class UHD_API property_tree : uhd::noncopyable
 {
 public:
     typedef boost::shared_ptr<property_tree> sptr;

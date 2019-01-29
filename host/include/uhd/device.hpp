@@ -13,9 +13,9 @@
 #include <uhd/property_tree.hpp>
 #include <uhd/stream.hpp>
 #include <uhd/types/device_addr.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/utility.hpp>
 
 namespace uhd {
 
@@ -25,7 +25,7 @@ class property_tree; // forward declaration
  * The device interface represents the hardware.
  * The API allows for discovery, configuration, and streaming.
  */
-class UHD_API device : boost::noncopyable
+class UHD_API device : uhd::noncopyable
 {
 public:
     typedef boost::shared_ptr<device> sptr;

@@ -9,11 +9,11 @@
 #define INCLUDED_CLOCK_CTRL_HPP
 
 #include "usrp2_iface.hpp"
+#include <uhd/utils/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
-#include <boost/utility.hpp>
 #include <vector>
 
-class usrp2_clock_ctrl : boost::noncopyable{
+class usrp2_clock_ctrl : uhd::noncopyable{
 public:
     typedef boost::shared_ptr<usrp2_clock_ctrl> sptr;
 

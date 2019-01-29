@@ -21,7 +21,7 @@ struct global_regs_transaction_t {
     uint32_t pad;
 };
 
-class global_regs : boost::noncopyable, public virtual uhd::wb_iface
+class global_regs : uhd::noncopyable, public virtual uhd::wb_iface
 {
 public:
     typedef boost::shared_ptr<global_regs> sptr;

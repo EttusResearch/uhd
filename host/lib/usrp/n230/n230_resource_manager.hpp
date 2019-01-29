@@ -71,7 +71,7 @@ enum n230_data_dir_t {
 };
 
 //Radio resources
-class radio_resource_t : public boost::noncopyable {
+class radio_resource_t : public uhd::noncopyable {
 public:
     radio_ctrl_core_3000::sptr      ctrl;
     gpio_atr::gpio_atr_3000::sptr   gpio_atr;
@@ -83,7 +83,7 @@ public:
     user_settings_core_3000::sptr   user_settings;
 };
 
-class n230_resource_manager : public boost::noncopyable
+class n230_resource_manager : public uhd::noncopyable
 {
 public:     //Methods
     n230_resource_manager(const std::vector<std::string> ip_addrs, const bool safe_mode);

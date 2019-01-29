@@ -11,7 +11,7 @@
 #include <ad9361_client.h>
 #include <uhd/types/filters.hpp>
 #include <uhd/types/sensors.hpp>
-#include <boost/noncopyable.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <complex>
 #include <vector>
 #include <map>
@@ -21,7 +21,7 @@
 
 namespace uhd { namespace usrp {
 
-class ad9361_device_t : public boost::noncopyable
+class ad9361_device_t : public uhd::noncopyable
 {
 public:
     enum direction_t { RX, TX };
