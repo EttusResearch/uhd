@@ -184,9 +184,7 @@ public:
                 }
             }
 
-            const double tick_rate =
-                _tree->access<double>(mb_root(mboard) / "tick_rate").get();
-            update_tick_rate_on_blocks(tick_rate, mboard);
+            update_sample_rate_on_blocks(mboard);
         }
     }
 
@@ -353,7 +351,12 @@ public:
     void set_tick_rate(const double tick_rate, const size_t mboard_idx = 0)
     {
         _tree->access<double>(mb_root(mboard_idx) / "tick_rate").set(tick_rate);
-        update_tick_rate_on_blocks(tick_rate, mboard_idx);
+        for (size_t radio = 0; radio < _num_radios_per_board; radio++) {
+            auto radio_block_ctrl =
+                get_block_ctrl<radio_ctrl>(mboard_idx, "Radio", radio);
+            radio_block_ctrl->set_rate(tick_rate);
+        }
+        update_sample_rate_on_blocks(mboard_idx);
     }
 
     void set_rx_rate(const double rate, const size_t chan)
@@ -1095,7 +1098,7 @@ private: // methods
         return subdev_spec;
     }
 
-    void update_tick_rate_on_blocks(const double tick_rate, const size_t mboard_idx)
+    void update_sample_rate_on_blocks(const size_t mboard_idx)
     {
         block_id_t radio_block_id(mboard_idx, RADIO_BLOCK_NAME);
         block_id_t duc_block_id(mboard_idx, DUC_BLOCK_NAME);
@@ -1107,7 +1110,6 @@ private: // methods
             ddc_block_id.set_block_count(radio);
             radio_ctrl::sptr radio_sptr =
                 _device->get_block_ctrl<radio_ctrl>(radio_block_id);
-            radio_sptr->set_rate(tick_rate);
             for (size_t chan = 0; chan < _num_rx_chans_per_radio and _has_ddcs; chan++) {
                 const double radio_output_rate = radio_sptr->get_output_samp_rate(chan);
                 _device->get_block_ctrl(ddc_block_id)
