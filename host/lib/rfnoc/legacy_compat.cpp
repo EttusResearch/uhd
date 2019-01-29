@@ -846,7 +846,7 @@ private: // methods
                             mb_root(mboard_idx) / "tx_dsps" / radio_idx / chan);
                         _tree->create<double>(tx_dsp_base_path / "rate/value")
                             .set(0.0)
-                            .set_publisher(boost::bind(&radio_ctrl::get_output_samp_rate,
+                            .set_publisher(boost::bind(&radio_ctrl::get_input_samp_rate,
                                 get_block_ctrl<radio_ctrl>(
                                     mboard_idx, RADIO_BLOCK_NAME, radio_idx),
                                 chan));
@@ -1002,7 +1002,7 @@ private: // methods
                     duc_src_flat[index].second,
                     radio_block,
                     each_snk_radio_block.second,
-                    rx_bpp);
+                    tx_bpp);
                 down_stream_block = duc_snk_block;
                 down_stream_port  = duc_snk_flat[index].second;
             }
