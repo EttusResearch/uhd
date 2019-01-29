@@ -226,6 +226,9 @@ private:
     double set_output_rate(const double requested_rate, const size_t chan)
     {
         const double input_rate = get_arg<double>("input_rate");
+        const double tick_rate = _tree->exists("tick_rate") ?
+            _tree->access<double>("tick_rate").get() : input_rate;
+        const size_t m = size_t(tick_rate / input_rate);
         const size_t decim_rate = boost::math::iround(
             input_rate / this->get_output_rates().clip(requested_rate, true));
         size_t decim = decim_rate;
@@ -241,7 +244,8 @@ private:
         sr_write("DECIM_WORD", (hb_enable << 8) | (decim & 0xff), chan);
 
         // Rate change = M/N
-        sr_write("N", std::pow(2.0, double(hb_enable)) * (decim & 0xff), chan);
+        sr_write("M", m, chan);
+        sr_write("N", m * std::pow(2.0, double(hb_enable)) * (decim & 0xff), chan);
         const auto noc_id = _tree->access<uint64_t>(_root_path / "noc_id").get();
         // FIXME this should be a rb reg in the FPGA, not based on a hard-coded
         // Noc-ID

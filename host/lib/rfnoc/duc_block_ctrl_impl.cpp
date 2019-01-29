@@ -213,6 +213,9 @@ private:
     double set_input_rate(const double requested_rate, const size_t chan)
     {
         const double output_rate = get_arg<double>("output_rate", chan);
+        const double tick_rate = _tree->exists("tick_rate") ?
+            _tree->access<double>("tick_rate").get() : output_rate;
+        const size_t n = size_t(tick_rate / output_rate);
         const size_t interp_rate = boost::math::iround(
             output_rate / get_input_rates().clip(requested_rate, true));
         size_t interp = interp_rate;
@@ -228,8 +231,8 @@ private:
         sr_write("INTERP_WORD", (hb_enable << 8) | (interp & 0xff), chan);
 
         // Rate change = M/N
-        sr_write("N", 1, chan);
-        sr_write("M", std::pow(2.0, double(hb_enable)) * (interp & 0xff), chan);
+        sr_write("N", n, chan);
+        sr_write("M", n * std::pow(2.0, double(hb_enable)) * (interp & 0xff), chan);
 
         if (interp > 1 and hb_enable == 0) {
             UHD_LOGGER_WARNING("RFNOC")
