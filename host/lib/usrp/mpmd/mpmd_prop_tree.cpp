@@ -17,8 +17,6 @@ using namespace uhd;
 using namespace uhd::mpmd;
 
 namespace {
-//! Timeout value for the update_component RPC call (ms)
-constexpr size_t MPMD_UPDATE_COMPONENT_TIMEOUT = 20000;
 
 /*! Update a component using all required files. For example, when updating the FPGA image
  * (.bit or .bin), users can provide a new overlay image (DTS) to apply in addition.
@@ -53,9 +51,8 @@ uhd::usrp::component_files_t _update_component(
     }
 
     // Now call update component
-    const size_t update_component_timeout = MPMD_UPDATE_COMPONENT_TIMEOUT * comps.size();
     mb->rpc->notify_with_token(
-        update_component_timeout, "update_component", all_metadata, all_data);
+        MPMD_DEFAULT_INIT_TIMEOUT, "update_component", all_metadata, all_data);
     return all_comps_copy;
 }
 
