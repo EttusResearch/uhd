@@ -35,9 +35,9 @@ public:
         : _xports(xports)
         , _name(name)
         , _seq_out(0)
-        , _max_outstanding_acks(
-              uhd::rfnoc::CMD_FIFO_SIZE / uhd::rfnoc::MAX_CMD_PKT_SIZE)
+        , _max_outstanding_acks(xports.recv->get_num_recv_frames())
     {
+
         UHD_ASSERT_THROW(bool(_xports.send));
         UHD_ASSERT_THROW(bool(_xports.recv));
         // Flush the response transport in case we have something over:

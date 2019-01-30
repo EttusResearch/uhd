@@ -17,15 +17,6 @@ using namespace uhd::mpmd::xport;
 
 namespace {
 
-#if defined(UHD_PLATFORM_MACOS) || defined(UHD_PLATFORM_BSD)
-//! Size of the host-side socket buffer for RX
-const size_t MPMD_RX_SW_BUFF_SIZE_ETH = 0x100000; // 1Mib
-#elif defined(UHD_PLATFORM_LINUX) || defined(UHD_PLATFORM_WIN32)
-//! Size of the host-side socket buffer for RX
-// For an ~8k frame size any size >32MiB is just wasted buffer space
-const size_t MPMD_RX_SW_BUFF_SIZE_ETH = 0x2000000; // 32 MiB
-#endif
-
 //! Maximum CHDR packet size in bytes
 const size_t MPMD_10GE_DATA_FRAME_MAX_SIZE = 4000;
 
@@ -36,7 +27,7 @@ const size_t MPMD_10GE_ASYNCMSG_FRAME_MAX_SIZE = 1472;
 const size_t MPMD_ETH_NUM_FRAMES = 32;
 
 //!
-const double MPMD_BUFFER_FILL_RATE = 20.0e-3; // s
+const double MPMD_BUFFER_DEPTH = 50.0e-3; // s
 //! For MTU discovery, the time we wait for a packet before calling it
 // oversized (seconds).
 const double MPMD_MTU_DISCOVERY_TIMEOUT = 0.02;
@@ -176,10 +167,6 @@ uhd::both_xports_t mpmd_xport_ctrl_udp::make_transport(
 {
     auto xport_args = xport_args_;
 
-    if (xport_type == usrp::device3_impl::RX_DATA
-        and not xport_args.has_key("recv_buff_size")) {
-        xport_args["recv_buff_size"] = std::to_string(MPMD_RX_SW_BUFF_SIZE_ETH);
-    }
     size_t link_speed = MAX_RATE_1GIGE;
     if (xport_info.count("link_speed") == 0) {
         UHD_LOG_WARNING("MPMD",
@@ -191,10 +178,15 @@ uhd::both_xports_t mpmd_xport_ctrl_udp::make_transport(
     }
     transport::zero_copy_xport_params default_buff_args;
     // Create actual UDP transport
+    default_buff_args.num_send_frames = 1;
+    default_buff_args.num_recv_frames =
+        xport_type == usrp::device3_impl::CTRL ?
+        (uhd::rfnoc::CMD_FIFO_SIZE / uhd::rfnoc::MAX_CMD_PKT_SIZE) :
+        1;
     default_buff_args.recv_frame_size =
         xport_args.cast<size_t>("recv_frame_size", get_mtu(uhd::RX_DIRECTION));
-    default_buff_args.recv_buff_size = link_speed * MPMD_BUFFER_FILL_RATE;
-    default_buff_args.send_buff_size = link_speed * MPMD_BUFFER_FILL_RATE;
+    default_buff_args.recv_buff_size = link_speed * MPMD_BUFFER_DEPTH;
+    default_buff_args.send_buff_size = link_speed * MPMD_BUFFER_DEPTH;
     if (xport_type == usrp::device3_impl::ASYNC_MSG) {
         default_buff_args.send_frame_size = MPMD_10GE_ASYNCMSG_FRAME_MAX_SIZE;
     } else {

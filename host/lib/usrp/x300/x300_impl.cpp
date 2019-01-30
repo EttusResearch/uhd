@@ -1372,12 +1372,24 @@ uhd::both_xports_t x300_impl::make_transport(const uhd::sid_t& address,
             std::min(system_max_send_frame_size, x300::ETH_MSG_FRAME_SIZE);
         default_buff_args.recv_frame_size =
             std::min(system_max_recv_frame_size, x300::ETH_MSG_FRAME_SIZE);
+        // Buffering is done in the socket buffers, so size them relative to
+        // the link rate
         default_buff_args.send_buff_size = conn.link_rate / 50; // 20ms
         default_buff_args.recv_buff_size = std::max(conn.link_rate / 50,
             x300::ETH_MSG_NUM_FRAMES
                 * x300::ETH_MSG_FRAME_SIZE); // enough to hold greater of 20ms or number
                                              // of msg frames
-        if (xport_type == TX_DATA) {
+        // There is no need for more than 1 send and recv frame since the
+        // buffering is done in the socket buffers
+        default_buff_args.num_send_frames = 1;
+        default_buff_args.num_recv_frames = 1;
+        if (xport_type == CTRL) {
+            // Increasing number of recv frames here because ctrl_iface uses it
+            // to determine how many control packets can be in flight before it
+            // must wait for an ACK
+            default_buff_args.num_recv_frames = 
+                uhd::rfnoc::CMD_FIFO_SIZE / uhd::rfnoc::MAX_CMD_PKT_SIZE;
+        } else if (xport_type == TX_DATA) {
             size_t default_frame_size = conn.link_rate == x300::MAX_RATE_1GIGE
                                             ? x300::GE_DATA_FRAME_SEND_SIZE
                                             : x300::XGE_DATA_FRAME_SEND_SIZE;
