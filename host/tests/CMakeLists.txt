@@ -15,8 +15,7 @@ include(UHDUnitTest)
 ########################################################################
 set(test_common_SOURCEDIR ${CMAKE_CURRENT_SOURCE_DIR}/common)
 add_subdirectory(common)
-link_directories(test_common_SOURCEDIR)
-
+link_directories(${test_common_SOURCEDIR})
 
 ########################################################################
 # unit test suite
