@@ -585,6 +585,8 @@ e300_impl::e300_impl(const uhd::device_addr_t &device_addr)
 
 e300_impl::~e300_impl(void)
 {
+    // Force RFNoC destructors to fire before loading the idle image
+    _rfnoc_block_ctrl.clear();
     if (_xport_path == AXI and not _do_not_reload)
         common::load_fpga_image(_idle_image);
 }
