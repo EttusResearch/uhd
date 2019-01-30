@@ -15,10 +15,12 @@
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/usrp/gpio_defs.hpp>
+#include <uhd/utils/gain_group.hpp>
 #include <uhdlib/rfnoc/radio_ctrl_impl.hpp>
 #include <uhdlib/usrp/cores/rx_frontend_core_3000.hpp>
 #include <uhdlib/usrp/cores/spi_core_3000.hpp>
 #include <uhdlib/usrp/cores/tx_frontend_core_200.hpp>
+#include <unordered_map>
 
 namespace uhd { namespace rfnoc {
 
@@ -54,6 +56,7 @@ public:
 
     double set_tx_gain(const double gain, const size_t chan);
     double set_rx_gain(const double gain, const size_t chan);
+    double get_rx_gain(const size_t chan);
 
     std::vector<std::string> get_rx_lo_names(const size_t chan);
     std::vector<std::string> get_rx_lo_sources(
@@ -234,6 +237,8 @@ private: // members
 
     bool _ignore_cal_file;
 
+    std::unordered_map<size_t, uhd::gain_group::sptr> _tx_gain_groups;
+    std::unordered_map<size_t, uhd::gain_group::sptr> _rx_gain_groups;
 }; /* class radio_ctrl_impl */
 
 }} /* namespace uhd::rfnoc */

@@ -29,6 +29,23 @@ using namespace uhd::usrp::x300;
 
 static const size_t IO_MASTER_RADIO = 0;
 
+namespace {
+
+gain_fcns_t make_gain_fcns_from_subtree(property_tree::sptr subtree)
+{
+    gain_fcns_t gain_fcns;
+    gain_fcns.get_range = [subtree]() {
+        return subtree->access<meta_range_t>("range").get();
+    };
+    gain_fcns.get_value = [subtree]() { return subtree->access<double>("value").get(); };
+    gain_fcns.set_value = [subtree](const double gain) {
+        subtree->access<double>("value").set(gain);
+    };
+    return gain_fcns;
+}
+
+} // namespace
+
 /****************************************************************************
  * Structors
  ***************************************************************************/
@@ -325,42 +342,25 @@ double x300_radio_ctrl_impl::get_rx_bandwidth(const size_t chan)
 
 double x300_radio_ctrl_impl::set_tx_gain(const double gain, const size_t chan)
 {
-    // TODO: This is extremely hacky!
-    fs_path path("dboards" / _radio_slot / "tx_frontends" / _tx_fe_map.at(chan).db_fe_name
-                 / "gains");
-    std::vector<std::string> gain_stages = _tree->list(path);
-    if (gain_stages.size() == 1) {
-        const double actual_gain =
-            _tree->access<double>(path / gain_stages[0] / "value").set(gain).get();
-        radio_ctrl_impl::set_tx_gain(actual_gain, chan);
-        return gain;
-    } else {
-        UHD_LOGGER_WARNING("X300 RADIO")
-            << "set_tx_gain: could not apply gain for this daughterboard.";
-        radio_ctrl_impl::set_tx_gain(0.0, chan);
-        return 0.0;
+    if (_tx_gain_groups.count(chan)) {
+        auto& gg = _tx_gain_groups.at(chan);
+        gg->set_value(gain);
+        return radio_ctrl_impl::set_tx_gain(gg->get_value(), chan);
     }
+    return radio_ctrl_impl::set_tx_gain(0.0, chan);
 }
 
 double x300_radio_ctrl_impl::set_rx_gain(const double gain, const size_t chan)
 {
-    // TODO: This is extremely hacky!
-    fs_path path("dboards" / _radio_slot / "rx_frontends" / _rx_fe_map.at(chan).db_fe_name
-                 / "gains");
-    std::vector<std::string> gain_stages = _tree->list(path);
-    if (gain_stages.size() == 1) {
-        const double actual_gain =
-            _tree->access<double>(path / gain_stages[0] / "value").set(gain).get();
-        radio_ctrl_impl::set_rx_gain(actual_gain, chan);
-        return gain;
-    } else {
-        UHD_LOGGER_WARNING("X300 RADIO")
-            << "set_rx_gain: could not apply gain for this daughterboard.";
-        radio_ctrl_impl::set_tx_gain(0.0, chan);
-        return 0.0;
-    }
+    auto& gg = _rx_gain_groups.at(chan);
+    gg->set_value(gain);
+    return radio_ctrl_impl::set_rx_gain(gg->get_value(), chan);
 }
 
+double x300_radio_ctrl_impl::get_rx_gain(const size_t chan)
+{
+    return _rx_gain_groups.at(chan)->get_value();
+}
 
 std::vector<std::string> x300_radio_ctrl_impl::get_rx_lo_names(const size_t chan)
 {
@@ -905,6 +905,55 @@ void x300_radio_ctrl_impl::setup_radio(uhd::i2c_iface::sptr zpu_i2c,
     ////////////////////////////////////////////////////////////////
     const double tick_rate = _tree->access<double>("tick_rate").get();
     radio_ctrl_impl::set_rate(tick_rate);
+
+    ////////////////////////////////////////////////////////////////
+    // Set gain groups
+    // Note: The actual gain control comes from the daughterboard drivers, thus,
+    // we need to call into the prop tree at the appropriate location in order
+    // to modify the gains.
+    ////////////////////////////////////////////////////////////////
+    // TX
+    for (size_t chan = 0; chan < _num_tx_channels; chan++) {
+        fs_path rf_gains_path(db_tx_fe_path / _tx_fe_map.at(chan).db_fe_name / "gains");
+        if (!_tree->exists(rf_gains_path)) {
+            continue;
+        }
+
+        std::vector<std::string> gain_stages = _tree->list(rf_gains_path);
+        if (gain_stages.empty()) {
+            continue;
+        }
+
+        // DAC does not have a gain path
+        auto gg = gain_group::make();
+        for (const auto& name : gain_stages) {
+            gg->register_fcns(name,
+                make_gain_fcns_from_subtree(_tree->subtree(rf_gains_path / name)),
+                1 /* high prio */);
+        }
+        _tx_gain_groups[chan] = gg;
+    }
+    // RX
+    for (size_t chan = 0; chan < _num_rx_channels; chan++) {
+        fs_path rf_gains_path(db_rx_fe_path / _rx_fe_map.at(chan).db_fe_name / "gains");
+        fs_path adc_gains_path("rx_codecs" / _radio_slot / "gains");
+
+        auto gg = gain_group::make();
+        // ADC also has a gain path
+        for (const auto& name : _tree->list(adc_gains_path)) {
+            gg->register_fcns("ADC-" + name,
+                make_gain_fcns_from_subtree(_tree->subtree(adc_gains_path / name)),
+                0 /* low prio */);
+        }
+        if (_tree->exists(rf_gains_path)) {
+            for (const auto& name : _tree->list(rf_gains_path)) {
+                gg->register_fcns(name,
+                    make_gain_fcns_from_subtree(_tree->subtree(rf_gains_path / name)),
+                    1 /* high prio */);
+            }
+        }
+        _rx_gain_groups[chan] = gg;
+    }
 }
 
 void x300_radio_ctrl_impl::set_rx_fe_corrections(
