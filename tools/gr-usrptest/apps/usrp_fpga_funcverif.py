@@ -32,6 +32,61 @@ from six import iteritems
 FUNCVERIF_SETTINGS = {
     # Every key corresponds to one target that can be run. The key is the
     # command line argument.
+    'n320_1gige': {
+        # These arguments will be passed to every run of benchmark_rate, unless
+        # overriden.
+        # Strings get expanded, so we can use Python string expansion here.
+        # If something does not start with two dashes (--foo), then we keep it
+        # as a string expansion argument. For example, the {master_clock_rate}
+        # in the following string gets expanded from the master_clock_rate key/
+        # value pair further down.
+        '--args': "type=n3xx,addr={second_addr},master_clock_rate={master_clock_rate},{args}",
+        '--seq-threshold': 0,
+        '--drop-threshold': 0,
+        '--underrun-threshold': 100,
+        '--overrun-threshold': 100,
+        '--rx_subdev': 'A:0 B:0',
+        '--tx_subdev': 'A:0 B:0',
+        '--duration': 60,
+        # __tests is a special key, it contains a list of dicts, which in turn
+        # describe the details of the test. len(__tests) equals the number of
+        # tests that get executed.
+        '__tests': [
+            # Any command line argument (i.e., a key that starts with two
+            # dashes) is also appended to the call to benchmark_rate. It will
+            # override arguments that were listed above. This lets you, e.g.,
+            # override --duration (see further down).
+            {'--rx_rate': 2.5e6,  'master_clock_rate': '250e6', '--channels': 0,},
+            {'--rx_rate': 2.5e6,  'master_clock_rate': '250e6', '--channels': 1,},
+
+            {'--rx_rate': 2.4576e6, 'master_clock_rate': '245.76e6', '--channels': 0,},
+            {'--rx_rate': 2.4576e6, 'master_clock_rate': '245.76e6', '--channels': 1,},
+
+            {'--rx_rate': 2e6,     'master_clock_rate': '200e6',   '--channels': 0,},
+            {'--rx_rate': 2e6,     'master_clock_rate': '200e6',   '--channels': 1,},
+
+            {'--tx_rate': 2.5e6,  'master_clock_rate': '250e6', '--channels': 0,},
+            {'--tx_rate': 2.5e6,  'master_clock_rate': '250e6', '--channels': 1,},
+
+            {'--tx_rate': 2.4576e6, 'master_clock_rate': '245.76e6', '--channels': 0,},
+            {'--tx_rate': 2.4576e6, 'master_clock_rate': '245.76e6', '--channels': 1,},
+
+            {'--tx_rate': 2e6,     'master_clock_rate': '200e6',   '--channels': 0,},
+            {'--tx_rate': 2e6,     'master_clock_rate': '200e6',   '--channels': 1,},
+
+            {'--rx_rate': 2.5e6,    'master_clock_rate': '250e6',    '--channels': '0,1',},
+            {'--rx_rate': 2.4576e6, 'master_clock_rate': '245.76e6', '--channels': '0,1',},
+            {'--rx_rate': 2e6,      'master_clock_rate': '200e6',    '--channels': '0,1',},
+
+            {'--tx_rate': 2.5e6,    'master_clock_rate': '250e6',    '--channels': '0,1',},
+            {'--tx_rate': 2.4576e6, 'master_clock_rate': '245.76e6', '--channels': '0,1',},
+            {'--tx_rate': 2e6,      'master_clock_rate': '200e6',    '--channels': '0,1',},
+
+            {'--rx_rate': 2.5e6,    '--tx_rate': 2.5e6,    'master_clock_rate': '250e6',    '--channels': '0,1',},
+            {'--rx_rate': 2.4576e6, '--tx_rate': 2.4576e6, 'master_clock_rate': '245.76e6', '--channels': '0,1',},
+            {'--rx_rate': 2e6,      '--tx_rate': 2e6,      'master_clock_rate': '200e6',    '--channels': '0,1',},
+        ],
+    },
     'n310_1gige': {
         # These arguments will be passed to every run of benchmark_rate, unless
         # overriden.
@@ -154,6 +209,73 @@ FUNCVERIF_SETTINGS = {
             {'--rx_rate': 1.25e6,   '--tx_rate': 1.25e6,   'master_clock_rate': '125e6',    '--channels': '0,1',},
             {'--rx_rate': 1.2288e6, '--tx_rate': 1.2288e6, 'master_clock_rate': '122.88e6', '--channels': '0,1',},
             {'--rx_rate': 1.536e6,  '--tx_rate': 1.536e6,  'master_clock_rate': '153.6e6',  '--channels': '0,1',},
+        ],
+    },
+    'n320_10gige': {
+        '--args': "type=n3xx,addr={addr},master_clock_rate={master_clock_rate},{args}",
+        '--seq-threshold': 0,
+        '--drop-threshold': 0,
+        '--underrun-threshold': 100,
+        '--overrun-threshold': 100,
+        '--rx_subdev': 'A:0 B:0',
+        '--tx_subdev': 'A:0 B:0',
+        '--duration': 60,
+        '__tests': [
+            {'--rx_rate': 2.5e6,  'master_clock_rate': '250e6', '--channels': 0,},
+            {'--rx_rate': 2.5e6,  'master_clock_rate': '250e6', '--channels': 1,},
+
+            {'--rx_rate': 2.4576e6, 'master_clock_rate': '245.76e6', '--channels': 0,},
+            {'--rx_rate': 2.4576e6, 'master_clock_rate': '245.76e6', '--channels': 1,},
+
+            {'--rx_rate': 2e6,     'master_clock_rate': '200e6',   '--channels': 0,},
+            {'--rx_rate': 2e6,     'master_clock_rate': '200e6',   '--channels': 1,},
+
+            {'--rx_rate': 125e6, 'master_clock_rate': '250e6', '--channels': 0,},
+            {'--rx_rate': 125e6, 'master_clock_rate': '250e6', '--channels': 1,},
+
+            {'--rx_rate': 122.88e6, 'master_clock_rate': '245.76e6', '--channels': 0,},
+            {'--rx_rate': 122.88e6, 'master_clock_rate': '245.76e6', '--channels': 1,},
+
+            {'--rx_rate': 200e6,   'master_clock_rate': '200e6',   '--channels': 0,},
+            {'--rx_rate': 200e6,   'master_clock_rate': '200e6',   '--channels': 1,},
+
+            {'--tx_rate': 2.5e6,  'master_clock_rate': '250e6', '--channels': 0,},
+            {'--tx_rate': 2.5e6,  'master_clock_rate': '250e6', '--channels': 1,},
+
+            {'--tx_rate': 2.4576e6, 'master_clock_rate': '245.76e6', '--channels': 0,},
+            {'--tx_rate': 2.4576e6, 'master_clock_rate': '245.76e6', '--channels': 1,},
+
+            {'--tx_rate': 2e6,     'master_clock_rate': '200e6',   '--channels': 0,},
+            {'--tx_rate': 2e6,     'master_clock_rate': '200e6',   '--channels': 1,},
+
+            {'--tx_rate': 125e6, 'master_clock_rate': '250e6', '--channels': 0,},
+            {'--tx_rate': 125e6, 'master_clock_rate': '250e6', '--channels': 1,},
+
+            {'--tx_rate': 122.88e6, 'master_clock_rate': '245.76e6', '--channels': 0,},
+            {'--tx_rate': 122.88e6, 'master_clock_rate': '245.76e6', '--channels': 1,},
+
+            {'--tx_rate': 100e6,   'master_clock_rate': '200e6',   '--channels': 0,},
+            {'--tx_rate': 100e6,   'master_clock_rate': '200e6',   '--channels': 1,},
+
+            {'--rx_rate': 2.5e6,    'master_clock_rate': '250e6',    '--channels': '0,1',},
+            {'--rx_rate': 2.4576e6, 'master_clock_rate': '245.76e6', '--channels': '0,1',},
+            {'--rx_rate': 2e6,      'master_clock_rate': '200e6',    '--channels': '0,1',},
+
+            {'--rx_rate': 125e6,    'master_clock_rate': '250e6',    '--channels': '0,1',},
+            {'--rx_rate': 122.88e6, 'master_clock_rate': '245.76e6', '--channels': '0,1',},
+            {'--rx_rate': 100e6,    'master_clock_rate': '200e6',    '--channels': '0,1',},
+
+            {'--tx_rate': 62.5e6,   'master_clock_rate': '250e6',    '--channels': '0,1',},
+            {'--tx_rate': 61.44e6,  'master_clock_rate': '245.76e6', '--channels': '0,1',},
+            {'--tx_rate': 100e6,    'master_clock_rate': '200e6',    '--channels': '0,1',},
+
+            {'--rx_rate': 2.5e6,    '--tx_rate': 2.5e6,    'master_clock_rate': '250e6',    '--channels': '0,1',},
+            {'--rx_rate': 2.4576e6, '--tx_rate': 2.4576e6, 'master_clock_rate': '245.76e6', '--channels': '0,1',},
+            {'--rx_rate': 2e6,      '--tx_rate': 2e6,      'master_clock_rate': '200e6',    '--channels': '0,1',},
+
+            {'--rx_rate': 125e6,    '--tx_rate': 62.5e6,   'master_clock_rate': '250e6',    '--channels': '0,1', '--duration': 3600,},
+            {'--rx_rate': 122.88e6, '--tx_rate': 61.44e6,  'master_clock_rate': '245.76e6', '--channels': '0,1', '--duration': 3600,},
+            {'--rx_rate': 100e6,    '--tx_rate': 66.67e6,  'master_clock_rate': '200e6',    '--channels': '0,1', '--duration': 3600,},
         ],
     },
     'n310_10gige': {
@@ -349,6 +471,42 @@ FUNCVERIF_SETTINGS = {
             {'--rx_rate': 62.5e6,  '--tx_rate': 62.5e6,  'master_clock_rate': '125e6',    '--channels': '0,1', '--duration': 3600,},
             {'--rx_rate': 61.44e6, '--tx_rate': 61.44e6, 'master_clock_rate': '122.88e6', '--channels': '0,1', '--duration': 3600,},
             {'--rx_rate': 76.8e6,  '--tx_rate': 76.8e6,  'master_clock_rate': '153.6e6',  '--channels': '0,1', '--duration': 3600,},
+        ],
+    },
+    'n320_2x_10gige': {
+        '--args': "type=n3xx,addr={addr},second_addr={second_addr},master_clock_rate={master_clock_rate},{args}",
+        '--seq-threshold': 0,
+        '--drop-threshold': 0,
+        '--underrun-threshold': 100,
+        '--overrun-threshold': 100,
+        '--rx_subdev': 'A:0 B:0',
+        '--tx_subdev': 'A:0 B:0',
+        '--duration': 60,
+        '__tests': [
+            {'--rx_rate': 125e6,   '--tx_rate': 83.33e6, 'master_clock_rate': '250e6',    '--channels': '0,1',
+             '--duration': 3600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
+            {'--rx_rate': 122.88e6,'--tx_rate': 81.92e6, 'master_clock_rate': '245.76e6', '--channels': '0,1',
+             '--duration': 3600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
+            {'--rx_rate': 200e6,   '--tx_rate': 100e6,   'master_clock_rate': '200e6',    '--channels': '0,1',
+             '--duration': 3600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
+        ],
+    },
+    'n320_2x_10gige_dpdk': {
+        '--args': "type=n3xx,addr={addr},second_addr={second_addr},master_clock_rate={master_clock_rate},{args}",
+        '--seq-threshold': 0,
+        '--drop-threshold': 0,
+        '--underrun-threshold': 100,
+        '--overrun-threshold': 100,
+        '--rx_subdev': 'A:0 B:0',
+        '--tx_subdev': 'A:0 B:0',
+        '--duration': 60,
+        '__tests': [
+            {'--rx_rate': 250e6,   '--tx_rate': 250e6,    'master_clock_rate': '250e6',    '--channels': '0,1',
+             '--duration': 3600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
+            {'--rx_rate': 245.76e6,'--tx_rate': 245.76e6, 'master_clock_rate': '245.76e6', '--channels': '0,1',
+             '--duration': 3600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
+            {'--rx_rate': 200e6,   '--tx_rate': 200e6,    'master_clock_rate': '200e6',    '--channels': '0,1',
+             '--duration': 3600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
         ],
     },
     'n310_2x_10gige': {
@@ -600,12 +758,21 @@ DEV_TO_TEST = {
     'n310ha': ['n310_1gige'],
     'n310xa': ['n310_10gige'],
     'n310wx': ['n310_10gige'],
+    'n320xg': ['n320_10gige', 'n320_2x_10gige'],
+    'n320hg': ['n320_1gige', 'n320_10gige'],
+    'n320xq': ['n320_10gige', 'n320_2x_10gige'],
+    'n320aq': ['n320_10gige', 'n320_2x_10gige'],
+    'n320wx': ['n320_10gige'],
     'n300_1gige': ['n300_1gige'],
     'n300_10gige': ['n300_10gige'],
     'n300_2x_10gige': ['n300_2x_10gige'],
     'n310_1gige': ['n310_1gige'],
     'n310_10gige': ['n310_10gige'],
     'n310_2x_10gige': ['n310_2x_10gige'],
+    'n320_1gige': ['n320_1gige'],
+    'n320_10gige': ['n320_10gige'],
+    'n320_2x_10gige': ['n320_2x_10gige'],
+    'n320_2x_10gige_dpdk': ['n320_2x_10gige_dpdk'],
     #x300
     'x3x0hg': ['x3x0_1gige', 'x3x0_10gige', 'x3x0_pcie'],
     'x3x0xg': ['x3x0_10gige', 'x3x0_2x_10gige', 'x3x0_pcie'],
