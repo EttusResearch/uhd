@@ -31,10 +31,10 @@ void source_block_ctrl_base::issue_stream_cmd(
     for (const node_ctrl_base::node_map_pair_t upstream_node : _upstream_nodes) {
         // FIXME:  Need proper mapping from input port to output port
         // The code below assumes the input port and output port are the same
-        // if the number of upstream and downstream connections are the same.
+        // if the number of upstream and downstream ports are the same.
         // The stream command is limited to only that port to prevent issuing
         // it on the wrong block and port.
-        if (get_num_input_ports() == get_num_output_ports()
+        if (_num_input_ports == _num_output_ports
             and upstream_node.first != chan) {
             continue;
         }

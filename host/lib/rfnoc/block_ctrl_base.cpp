@@ -125,8 +125,8 @@ block_ctrl_base::block_ctrl_base(const make_args_t& make_args)
     /*** Init I/O port definitions ******************************************/
     _init_port_defs("in", _block_def->get_input_ports());
     _init_port_defs("out", _block_def->get_output_ports());
-    set_num_input_ports(_block_def->get_input_ports().size());
-    set_num_output_ports(_block_def->get_output_ports().size());
+    _num_input_ports = _block_def->get_input_ports().size();
+    _num_output_ports = _block_def->get_output_ports().size();
     // FIXME this warning always fails until the input buffer code above is fixed
     // if (_tree->list(_root_path / "ports/in").size() != n_valid_input_buffers) {
     //    UHD_LOGGER_WARNING(unique_id()) <<

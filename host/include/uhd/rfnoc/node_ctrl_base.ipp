@@ -85,8 +85,8 @@ namespace uhd {
                             // map each input port directly to the same output
                             // port.  This limits the graph traversal to prevent
                             // finding nodes that are not part of this chain.
-                            if (one_next_node->get_num_input_ports() ==
-                                one_next_node->get_num_output_ports())
+                            if (one_next_node->_num_input_ports ==
+                                one_next_node->_num_output_ports)
                             {
                                 next_port = (downstream ?
                                     node->get_downstream_port(connected_port) :
