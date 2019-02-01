@@ -128,7 +128,9 @@ class e320(ZynqComponents, PeriphManagerBase):
     # Ctor and device initialization tasks
     ###########################################################################
     def __init__(self, args):
-        super(e320, self).__init__(args)
+        super(e320, self).__init__()
+        self.overlay_apply()
+        self.init_dboards(args)
         if not self._device_initialized:
             # Don't try and figure out what's going on. Just give up.
             return

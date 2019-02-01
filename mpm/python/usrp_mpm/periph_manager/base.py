@@ -169,11 +169,12 @@ class PeriphManagerBase(object):
     ###########################################################################
     # Device initialization (at MPM startup)
     ###########################################################################
-    def __init__(self, args):
+    def __init__(self):
         # Note: args is a dictionary.
         assert len(self.pids) > 0
         assert self.mboard_eeprom_magic is not None
         self.dboards = []
+        self._default_args = ""
         # Set up logging
         self.log = get_logger('PeriphManager')
         self.claimed = False
@@ -183,35 +184,46 @@ class PeriphManagerBase(object):
             self.mboard_info = self._get_mboard_info(self._eeprom_head)
             self.log.info("Device serial number: {}"
                           .format(self.mboard_info.get('serial', 'n/a')))
-            dboard_infos = self._get_dboard_eeprom_info()
+            self.dboard_infos = self._get_dboard_eeprom_info()
             self.device_info = \
                     self.generate_device_info(
                         self._eeprom_head,
                         self.mboard_info,
-                        dboard_infos
+                        self.dboard_infos
                     )
-            self._default_args = self._update_default_args(args)
-            self.log.debug("Using default args: {}".format(self._default_args))
-            self._init_mboard_overlays()
-            override_db_pids_str = self._default_args.get('override_db_pids')
-            if override_db_pids_str:
-                override_db_pids = [
-                    int(x, 0) for x in override_db_pids_str.split(",")
-                ]
-            else:
-                override_db_pids = []
-            self._init_dboards(
-                dboard_infos,
-                override_db_pids,
-                self._default_args
-            )
-            self._device_initialized = True
-            self._initialization_status = "No errors."
         except Exception as ex:
             self.log.error("Failed to initialize device: %s", str(ex))
             self._device_initialized = False
             self._initialization_status = str(ex)
         super(PeriphManagerBase, self).__init__()
+
+    def overlay_apply(self):
+        """
+        Apply FPGA overlay
+        """
+        self._init_mboard_overlays()
+
+    def init_dboards(self, args):
+        """
+        Run full initialization of daugther boards if they're exist
+        Using 'override_db_pids' args to overwrite number of dboards that need to be init.
+        """
+        self._default_args = self._update_default_args(args)
+        self.log.debug("Using default args: {}".format(self._default_args))
+        override_db_pids_str = self._default_args.get('override_db_pids')
+        if override_db_pids_str:
+            override_db_pids = [
+                int(x, 0) for x in override_db_pids_str.split(",")
+            ]
+        else:
+            override_db_pids = []
+        self._init_dboards(
+            self.dboard_infos,
+            override_db_pids,
+            self._default_args
+        )
+        self._device_initialized = True
+        self._initialization_status = "No errors."
 
     def _read_mboard_eeprom(self):
         """
