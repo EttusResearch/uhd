@@ -338,6 +338,8 @@ tbd
 | FPGAFUNCVERIF-X300-XG-v1  | USRP X300     | 2x UBX      | \ref rdtesting_fpgafuncverif_manual | \ref rdtesting_fpgafuncverif_auto |
 | FPGAFUNCVERIF-E310-SG1-v1 | USRP E310 SG1 | None        | \ref rdtesting_fpgafuncverif_manual | \ref rdtesting_fpgafuncverif_auto |
 | FPGAFUNCVERIF-E310-SG3-v1 | USRP E310 SG3 | None        | \ref rdtesting_fpgafuncverif_manual | \ref rdtesting_fpgafuncverif_auto |
+| FPGAFUNCVERIF-N320-HG-v1  | USRP N320     | None        | \ref rdtesting_fpgafuncverif_manual | \ref rdtesting_fpgafuncverif_auto |
+| FPGAFUNCVERIF-N320-XG-v1  | USRP N320     | None        | \ref rdtesting_fpgafuncverif_manual | \ref rdtesting_fpgafuncverif_auto |
 | FPGAFUNCVERIF-N310-HG-v1  | USRP N310     | None        | \ref rdtesting_fpgafuncverif_manual | \ref rdtesting_fpgafuncverif_auto |
 | FPGAFUNCVERIF-N310-XG-v1  | USRP N310     | None        | \ref rdtesting_fpgafuncverif_manual | \ref rdtesting_fpgafuncverif_auto |
 | FPGAFUNCVERIF-N300-HG-v1  | USRP N300     | None        | \ref rdtesting_fpgafuncverif_manual | \ref rdtesting_fpgafuncverif_auto |
@@ -547,6 +549,63 @@ Note: On TX tests, initial Us within the first 5 seconds can be ignored and do n
 | 2x RX & 2x TX | 122.88e6          | 122.88e6 RX, 61.44e6 TX | 60       | Use dual 10GigE, N300 XG only
 | 2x RX & 2x TX | 153e6             | 153e6 RX, 76.8e6 TX     | 60       | Use dual 10GigE, N300 XG only
 
+#### USRP N320: 1 GigE Interface
+
+- Required images to test: HG
+- Note: On TX tests, initial Us within the first 5 seconds can be ignored and do not fail the test
+
+<!--Note: If you change this table, also change tools/gr-usrptest/apps/usrp_fpga_funcverif.py!-->
+| Channels      | Master Clock Rate | Sample Rates            | Duration | Notes                             |
+|---------------|-------------------|-------------------------|----------|-----------------------------------|
+| 1x RX         | 250e6             | 2.5e6                   | 60       | One test each for both channels   |
+| 1x RX         | 245.76e6          | 2.4576e6                | 60       | One test each for both channels   |
+| 1x RX         | 200e6             | 2e6                     | 60       | One test each for both channels   |
+| 1x TX         | 250e6             | 2.5e6                   | 60       | One test each for both channels   |
+| 1x TX         | 245.76e6          | 2.4576e6                | 60       | One test each for both channels   |
+| 1x TX         | 200e6             | 2e6                     | 60       | One test each for both channels   |
+| 2x RX         | 250e6             | 2.5e6                   | 60       |                                   |
+| 2x RX         | 245.76e6          | 2.4576e6                | 60       |                                   |
+| 2x RX         | 200e6             | 2e6                     | 60       |                                   |
+| 2x TX         | 250e6             | 2.5e6                   | 60       |                                   |
+| 2x TX         | 245.76e6          | 2.4576e6                | 60       |                                   |
+| 2x TX         | 200e6             | 2e6                     | 60       |                                   |
+| 2x RX & 2x TX | 250e6             | 2.5e6                   | 60       |                                   |
+| 2x RX & 2x TX | 245.76e6          | 2.4576e6                | 60       |                                   |
+| 2x RX & 2x TX | 200e6             | 2e6                     | 60       |                                   |
+
+#### USRP N320: 10 GigE Interface
+
+- Required images to test: N320 HG + XG
+- Note: On TX tests, initial Us within the first 5 seconds can be ignored and do not fail the test
+
+<!--Note: If you change this table, also change tools/gr-usrptest/apps/usrp_fpga_funcverif.py!-->
+| Channels      | Master Clock Rate | Sample Rates            | Duration | Notes                             |
+|---------------|-------------------|-------------------------|----------|-----------------------------------|
+| 1x RX         | 250e6             | 2.5e6 , 125e6           | 60       | One test each for both channels   |
+| 1x RX         | 245.76e6          | 2.4576e6, 122.88e6      | 60       | One test each for both channels   |
+| 1x RX         | 200e6             | 2e6 , 200e6             | 60       | One test each for both channels   |
+| 1x TX         | 250e6             | 2.5e6 , 125e6           | 60       | One test each for both channels   |
+| 1x TX         | 245.76e6          | 2.4576e6 , 122.88e6     | 60       | One test each for both channels   |
+| 1x TX         | 200e6             | 2e6 , 100e6             | 60       | One test each for both channels   |
+| 2x RX         | 250e6             | 2.5e6 , 125e6           | 60       |                                   |
+| 2x RX         | 245.76e6          | 2.4576e6, 122.88e6      | 60       |                                   |
+| 2x RX         | 200e6             | 2e6 , 100e6             | 60       |                                   |
+| 2x TX         | 250e6             | 62.5e6                  | 60       |                                   |
+| 2x TX         | 245.76e6          | 61.44e6                 | 60       |                                   |
+| 2x TX         | 200e6             | 100e6                   | 60       |                                   |
+| 2x RX & 2x TX | 250e6             | 2.5e6                   | 60       |                                   |
+| 2x RX & 2x TX | 245.76e6          | 2.4576e6                | 60       |                                   |
+| 2x RX & 2x TX | 200e6             | 2e6                     | 60       |                                   |
+| 2x RX & 2x TX | 250e6             | 125e6 RX, 62.5e6 TX     | 3600     |                                   |
+| 2x RX & 2x TX | 245.76e6          | 122.88e6 RX, 61.44e6 TX | 3600     |                                   |
+| 2x RX & 2x TX | 200e6             | 100e6 RX, 66.67e6 TX    | 3600     |                                   |
+| 2x RX & 2x TX | 250e6             | 125e6 RX, 83.33e6 TX    | 3600     | Use dual 10GigE, N320 XG only     |
+| 2x RX & 2x TX | 245.76e6          | 122.88e6 RX, 81.92e6 TX | 3600     | Use dual 10GigE, N320 XG only     |
+| 2x RX & 2x TX | 200e6             | 200e6 RX, 100e6 TX      | 3600     | Use dual 10GigE, N320 XG only     |
+| 2x RX & 2x TX | 250e6             | 250e6                   | 3600     | Dual 10GigE, N320 XG, DPDK only   |
+| 2x RX & 2x TX | 245.76e6          | 245.76e6                | 3600     | Dual 10GigE, N320 XG, DPDK only   |
+| 2x RX & 2x TX | 200e6             | 200e6                   | 3600     | Dual 10GigE, N320 XG, DPDK only   |
+
 \subsection rdtesting_fpgafuncverif_auto FPGA Functional Verification: Automatic Test Procedure
 
 In all cases, make sure UHD is compiled in 'Release' mode (highest
@@ -609,6 +668,48 @@ appropriate.
 - The following command must pass:
 
          $ usrp_fpga_funcverif n310wx -a 192.168.20.2 -p /path/to/examples
+
+### N320
+
+The N320 tests depend slightly on the type of FPGA image to be tested. All
+calls to usrp_fpga_funcverif.py need to be adapted to ensure the correct IP
+addresses and paths to the examples.
+
+#### HG
+
+- Connect a 1GigE cable on SFP0, and a 10 GigE cable on SFP1.
+- The following command must pass:
+
+         $ usrp_fpga_funcverif n320hg -a 192.168.20.2 -2 192.168.10.2 -p /path/to/examples
+
+#### XG
+
+- Connect a 10GigE cable on both SFP0 and SFP1.
+- The following command must pass:
+
+         $ usrp_fpga_funcverif n320xg -a 192.168.10.2 -2 192.168.20.2 -p /path/to/examples
+
+#### XQ
+
+- Connect a QSFP+ cable, carrying 2x10GigE, to the QSFP+ port
+- The following command must pass:
+
+         $ usrp_fpga_funcverif n320xq -a 192.168.10.2 -2 192.168.20.2 -p /path/to/examples
+
+#### AQ
+
+- Connect a 10GigE cable on both SFP0 and SFP1.
+- The following command must pass:
+
+         $ usrp_fpga_funcverif n320aq -a 192.168.10.2 -2 192.168.20.2 -p /path/to/examples
+
+#### WX
+
+- Connect a 10GigE cable on SFP1.
+- The following command must pass:
+
+         $ usrp_fpga_funcverif n320wx -a 192.168.20.2 -p /path/to/examples
+
 
 ### E320
 The E320 tests depend on the FPGA image to be tested.
