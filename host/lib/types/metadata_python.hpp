@@ -1,5 +1,6 @@
 //
 // Copyright 2017-2018 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -9,7 +10,7 @@
 
 #include <uhd/types/ranges.hpp>
 
-void export_metadata()
+void export_metadata(py::module& m)
 {
     using range_t       = uhd::range_t;
     using meta_range_t  = uhd::meta_range_t;
@@ -19,7 +20,7 @@ void export_metadata()
     using async_metadata_t = uhd::async_metadata_t;
     using event_code_t = async_metadata_t::event_code_t;
 
-    bp::enum_<error_code_t>("rx_metadata_error_code")
+    py::enum_<error_code_t>(m, "rx_metadata_error_code")
         .value("none"        , error_code_t::ERROR_CODE_NONE        )
         .value("timeout"     , error_code_t::ERROR_CODE_TIMEOUT     )
         .value("late"        , error_code_t::ERROR_CODE_LATE_COMMAND)
@@ -29,11 +30,11 @@ void export_metadata()
         .value("bad_packet"  , error_code_t::ERROR_CODE_BAD_PACKET  )
         ;
 
-    bp::class_<range_t>
-        ("range", bp::init<double>())
-
+    py::class_<range_t>(m, "range")
         // Constructors
-        .def(bp::init<double, double, double>())
+        .def(py::init<double>())
+        .def(py::init<double, double>())
+        .def(py::init<double, double, double>())
 
         // Methods
         .def("start"  , &range_t::start       )
@@ -42,30 +43,28 @@ void export_metadata()
         .def("__str__", &range_t::to_pp_string)
         ;
 
-    bp::class_<std::vector<range_t> >("range_vector")
-        .def(bp::vector_indexing_suite<std::vector<range_t> >());
-
-    bp::class_<meta_range_t, bp::bases<std::vector<range_t> > >
-        ("meta_range", bp::init<>())
-
+    py::class_<meta_range_t>(m, "meta_range_t")
         // Constructors
-        .def(bp::init<double, double, double>())
+        .def(py::init<>())
+        .def(py::init<double, double>())
+        .def(py::init<double, double, double>())
 
         // Methods
         .def("start"  , &meta_range_t::start       )
         .def("stop"   , &meta_range_t::stop        )
         .def("step"   , &meta_range_t::step        )
-        .def("clip"   , &meta_range_t::clip        )
+        .def("clip"   , &meta_range_t::clip, py::arg("value"), py::arg("clip_step") = false)
         .def("__str__", &meta_range_t::to_pp_string)
         ;
 
-    bp::class_<rx_metadata_t>("rx_metadata", bp::init<>())
+    py::class_<rx_metadata_t>(m, "rx_metadata")
+        .def(py::init<>())
 
         // Methods
         .def("reset"       , &rx_metadata_t::reset       )
         .def("to_pp_string", &rx_metadata_t::to_pp_string)
         .def("strerror"    , &rx_metadata_t::strerror    )
-        .def("__str__"     , &rx_metadata_t::to_pp_string, bp::args("compact") = false)
+        .def("__str__"     , &rx_metadata_t::to_pp_string, py::arg("compact") = false)
 
         // Properties
         .def_readonly("has_time_spec"  , &rx_metadata_t::has_time_spec  )
@@ -77,7 +76,8 @@ void export_metadata()
         .def_readonly("out_of_sequence", &rx_metadata_t::out_of_sequence)
         ;
 
-    bp::class_<tx_metadata_t>("tx_metadata", bp::init<>())
+    py::class_<tx_metadata_t>(m, "tx_metadata")
+        .def(py::init<>())
 
         // Properties
         .def_readwrite("has_time_spec" , &tx_metadata_t::has_time_spec )
@@ -86,7 +86,7 @@ void export_metadata()
         .def_readwrite("end_of_burst"  , &tx_metadata_t::end_of_burst  )
         ;
 
-    bp::enum_<event_code_t>("tx_metadata_event_code")
+    py::enum_<event_code_t>(m, "tx_metadata_event_code")
         .value("burst_ack"          , event_code_t::EVENT_CODE_BURST_ACK          )
         .value("underflow"          , event_code_t::EVENT_CODE_UNDERFLOW          )
         .value("seq_error"          , event_code_t::EVENT_CODE_SEQ_ERROR          )
@@ -96,15 +96,16 @@ void export_metadata()
         .value("user_payload"       , event_code_t::EVENT_CODE_USER_PAYLOAD       )
         ;
 
-    bp::class_<async_metadata_t>("async_metadata", bp::init<>())
+    py::class_<async_metadata_t>(m, "async_metadata")
+        .def(py::init<>())
 
         // Properties
-        .def_readwrite("channel"      , &async_metadata_t::channel      )
-        .def_readwrite("has_time_spec", &async_metadata_t::has_time_spec)
-        .def_readwrite("time_spec"    , &async_metadata_t::time_spec    )
-        .def_readwrite("event_code"   , &async_metadata_t::event_code   )
+        .def_readonly("channel"      , &async_metadata_t::channel      )
+        .def_readonly("has_time_spec", &async_metadata_t::has_time_spec)
+        .def_readonly("time_spec"    , &async_metadata_t::time_spec    )
+        .def_readonly("event_code"   , &async_metadata_t::event_code   )
         // TODO: Expose user payloads
-        //.def_readwrite("user_payload" , &async_metadata_t::user_payload )
+        //.def_readonly("user_payload" , &async_metadata_t::user_payload )
         ;
 }
 

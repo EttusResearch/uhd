@@ -1,5 +1,6 @@
 //
 // Copyright 2017-2018 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -9,22 +10,22 @@
 
 #include <uhd/usrp/fe_connection.hpp>
 
-void export_fe_connection()
+void export_fe_connection(py::module& m)
 {
     using fe_connection_t = uhd::usrp::fe_connection_t;
     using sampling_t      = fe_connection_t::sampling_t;
 
-    bp::enum_<sampling_t>("sampling")
+    py::enum_<sampling_t>(m, "sampling")
         .value("QUADRATURE", sampling_t::QUADRATURE)
         .value("HETERODYNE", sampling_t::HETERODYNE)
         .value("REAL"      , sampling_t::REAL      )
         ;
 
-    bp::class_<fe_connection_t>
-        ("fe_connection", bp::init<sampling_t, bool, bool, bool, double>())
+    py::class_<fe_connection_t>(m, "fe_connection")
 
         // Constructors
-        .def(bp::init<const std::string&, double>())
+        .def(py::init<sampling_t, bool, bool, bool, double>())
+        .def(py::init<const std::string&, double>())
 
         // Methods
         .def("get_sampling_mode", &fe_connection_t::get_sampling_mode)

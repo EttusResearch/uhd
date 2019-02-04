@@ -284,11 +284,9 @@ endif(WIN32)
 # Choose a version of Python
 ########################################################################
 option(ENABLE_PYTHON3 "Enable Python 3. Default is Python 2" OFF)
-set(BOOST_PYTHON_COMPONENT python)
-set(BOOST_PYTHON_VERSION 2.7)
+set(PYBIND11_PYTHON_VERSION 2.7)
 if(${ENABLE_PYTHON3})
-    set(BOOST_PYTHON_COMPONENT python3)
-    set(BOOST_PYTHON_VERSION 3)
+    set(PYBIND11_PYTHON_VERSION 3)
 endif()
 
 ########################################################################
@@ -307,7 +305,6 @@ set(BOOST_REQUIRED_COMPONENTS
     serialization
 )
 
-set(BOOST_OPTIONAL_COMPONENTS ${BOOST_PYTHON_COMPONENT})
 if(MINGW)
     list(APPEND BOOST_REQUIRED_COMPONENTS thread_win32)
 else()
@@ -344,14 +341,6 @@ find_package(Boost ${BOOST_MIN_VERSION} COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
 include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
 
-#Check to see if the Python version we're looking for exists
-set(BOOST_PYTHON_FOUND ${Boost_PYTHON_FOUND})
-set(BOOST_PYTHON_LIBRARY ${Boost_PYTHON_LIBRARY})
-if(${ENABLE_PYTHON3})
-    set(BOOST_PYTHON_FOUND ${Boost_PYTHON3_FOUND})
-    set(BOOST_PYTHON_LIBRARY ${Boost_PYTHON3_LIBRARY})
-endif()
-
 message(STATUS "Boost include directories: ${Boost_INCLUDE_DIRS}")
 message(STATUS "Boost library directories: ${Boost_LIBRARY_DIRS}")
 message(STATUS "Boost libraries: ${Boost_LIBRARIES}")
@@ -367,8 +356,8 @@ include(UHDLog)
 ########################################################################
 # Check Python Modules
 ########################################################################
-find_package(PythonInterp ${BOOST_PYTHON_VERSION})
-find_package(PythonLibs ${BOOST_PYTHON_VERSION})
+find_package(PythonInterp ${PYBIND11_PYTHON_VERSION})
+find_package(PythonLibs ${PYBIND11_PYTHON_VERSION})
 include(UHDPython)
 
 set(PYTHON_VERSION "platform.python_version() >= '2.7' and platform.python_version() < '3.0'")
@@ -377,7 +366,7 @@ if(${ENABLE_PYTHON3})
 endif()
 
 PYTHON_CHECK_MODULE(
-    "Python version ${BOOST_PYTHON_VERSION} or greater"
+    "Python version ${PYBIND11_PYTHON_VERSION} or greater"
     "platform" ${PYTHON_VERSION}
     HAVE_PYTHON_PLAT_MIN_VERSION
 )
@@ -430,9 +419,9 @@ UHD_INSTALL(FILES
 LIBUHD_REGISTER_COMPONENT("LibUHD" ENABLE_LIBUHD ON "Boost_FOUND;HAVE_PYTHON_PLAT_MIN_VERSION;HAVE_PYTHON_MODULE_MAKO" OFF ON)
 LIBUHD_REGISTER_COMPONENT("LibUHD - C API" ENABLE_C_API ON "ENABLE_LIBUHD" OFF OFF)
 if(WIN32)
-    LIBUHD_REGISTER_COMPONENT("LibUHD - Python API" ENABLE_PYTHON_API OFF "ENABLE_LIBUHD;BOOST_PYTHON_FOUND;HAVE_PYTHON_MODULE_NUMPY;PythonLibs_FOUND" OFF OFF)
+    LIBUHD_REGISTER_COMPONENT("LibUHD - Python API" ENABLE_PYTHON_API OFF "ENABLE_LIBUHD;HAVE_PYTHON_MODULE_NUMPY;PythonLibs_FOUND" OFF OFF)
 else()
-    LIBUHD_REGISTER_COMPONENT("LibUHD - Python API" ENABLE_PYTHON_API ON "ENABLE_LIBUHD;BOOST_PYTHON_FOUND;HAVE_PYTHON_MODULE_NUMPY;PythonLibs_FOUND" OFF OFF)
+    LIBUHD_REGISTER_COMPONENT("LibUHD - Python API" ENABLE_PYTHON_API ON "ENABLE_LIBUHD;HAVE_PYTHON_MODULE_NUMPY;PythonLibs_FOUND" OFF OFF)
 endif(WIN32)
 LIBUHD_REGISTER_COMPONENT("Examples" ENABLE_EXAMPLES ON "ENABLE_LIBUHD" OFF OFF)
 LIBUHD_REGISTER_COMPONENT("Utils" ENABLE_UTILS ON "ENABLE_LIBUHD" OFF OFF)

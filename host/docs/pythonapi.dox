@@ -5,10 +5,17 @@ for your application.
 
 \section python_install Installing the Python API
 
-In order to install the Python API when building UHD from source, make sure all
-the dependencies are available (see also \ref page_build_guide, you need
-Boost.Python from your Boost library). Make sure you have the CMake variable
-`ENABLE_PYTHON_API` set to ON (e.g., by running `cmake -DENABLE_PYTHON_API=ON`).
+In order to install the Python API when building UHD from source, make sure you
+have the CMake variable `ENABLE_PYTHON_API` set to ON (e.g., by running
+`cmake -DENABLE_PYTHON_API=ON`).
+UHD requires Python header files in order to compile the Python API. On most
+Linux systems, there are packages called "python3-dev" or "python3-devel" that
+provide that functionality. On Windows, these headers always get installed when
+using the binary installers provided on https://www.python.org/downloads/windows/.
+
+If CMake can't find the Python headers or library, specify
+the `PYTHON_INCLUDE_DIRS` and/or `PYTHON_LIBRARY` CMake variables manually.
+
 
 \subsection python_install_2v3 Python 2 vs. 3
 
@@ -20,13 +27,18 @@ Python 3.
 
 \subsection python_install_windows Installing on Windows
 
-On Windows, only certain combinations of MSVC and Boost have proven functional.
-The following combinations are known to work (others might also work):
+Static linking on is unsupported on Windows. Otherwise, compiling the Python API
+on Windows is no different from other operating systems.
 
-- Visual Studio 2017 (version 15.7.3), Release X64 on Windows 10 with Boost
-  1.65.1 and Boost 1.66, Python27 x64 bit.
+\subsection python_install_adv Advanced Usage Notes
 
-Static linking on is currently unsupported on Windows.
+UHD uses the PyBind11 library to generate its Python bindings. UHD ships its own
+copy of PyBind11, in order to facilitate the access to that library, as it is
+not packaged for many operating systems, but also to lock down its version. For
+the purpose of experimentation, it is, however possible to replace the version
+of PyBind11 shipped with UHD by overriding the `PYBIND11_INCLUDE_DIR` CMake
+variable.
+
 
 \section python_usage Using the Python API
 
@@ -93,7 +105,7 @@ def recv_to_file():
 This kind of API is particularly useful in combination with Jupyter Notebooks or
 similar interactive environments.
 
-\section python_usage_gil Python Global Interpreter Lock
+\section python_usage_gil Thread Safety and the Python Global Interpreter Lock
 
 From the <a href="https://wiki.python.org/moin/GlobalInterpreterLock">Python wiki page on the GIL:</a>
 > In CPython, the global interpreter lock, or GIL, is a mutex that protects
