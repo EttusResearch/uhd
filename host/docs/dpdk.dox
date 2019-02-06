@@ -32,7 +32,7 @@ On Ubuntu 18.04/18.10, Fedora 28/29, or Debian Stretch (via backports), DPDK is
 available in your distribution's repositories. For example, on Debian systems,
 it can be obtained with the following command:
 
-    apt install dpdk
+    sudo apt install dpdk dpdk-dev
 
 Otherwise, you'll need to follow the build guide at
 https://doc.dpdk.org/guides-17.11/linux_gsg/build_dpdk.html . The software
