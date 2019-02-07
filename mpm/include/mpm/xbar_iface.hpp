@@ -1,5 +1,6 @@
 //
 // Copyright 2017 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -47,13 +48,12 @@ private:
 
 
 #ifdef LIBMPM_PYTHON
-void export_xbar()
+void export_xbar(py::module& top_module)
 {
-    LIBMPM_BOOST_PREAMBLE("xbar")
-    bp::class_<mpm::xbar_iface, boost::noncopyable, std::shared_ptr<mpm::xbar_iface>>(
-        "xbar", bp::no_init)
-        .def("make", &mpm::xbar_iface::make)
-        .staticmethod("make")
+    auto m = top_module.def_submodule("xbar");
+
+    py::class_<mpm::xbar_iface, std::shared_ptr<mpm::xbar_iface>>(m, "xbar")
+        .def(py::init(&mpm::xbar_iface::make))
         .def("set_route", &mpm::xbar_iface::set_route)
         .def("del_route", &mpm::xbar_iface::del_route);
 }

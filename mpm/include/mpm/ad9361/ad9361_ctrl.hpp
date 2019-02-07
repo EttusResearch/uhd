@@ -1,5 +1,6 @@
 //
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -20,23 +21,18 @@ using uhd::usrp::ad9361_ctrl;
 
 // TODO: pull in filter_info_base
 #ifdef LIBMPM_PYTHON
-void export_catalina()
+void export_catalina(py::module& top_module)
 {
-    LIBMPM_BOOST_PREAMBLE("ad9361")
     using namespace mpm::chips;
-    bp::class_<ad9361_ctrl, boost::noncopyable, boost::shared_ptr<ad9361_ctrl>>(
-        "ad9361_ctrl", bp::no_init)
-        .def("get_gain_names", &ad9361_ctrl::get_gain_names)
-        .staticmethod("get_gain_names")
+    auto m = top_module.def_submodule("ad9361");
+
+    py::class_<ad9361_ctrl, boost::shared_ptr<ad9361_ctrl>>(m, "ad9361_ctrl")
+        .def_static("get_gain_names", &ad9361_ctrl::get_gain_names)
         // Make this "Python private" because the return value can't be serialized
-        .def("_get_gain_range", &ad9361_ctrl::get_gain_range)
-        .staticmethod("_get_gain_range")
-        .def("get_rf_freq_range", &ad9361_ctrl::get_rf_freq_range)
-        .staticmethod("get_rf_freq_range")
-        .def("get_bw_filter_range", &ad9361_ctrl::get_bw_filter_range)
-        .staticmethod("get_bw_filter_range")
-        .def("get_clock_rate_range", &ad9361_ctrl::get_clock_rate_range)
-        .staticmethod("get_clock_rate_range")
+        .def_static("_get_gain_range", &ad9361_ctrl::get_gain_range)
+        .def_static("get_rf_freq_range", &ad9361_ctrl::get_rf_freq_range)
+        .def_static("get_bw_filter_range", &ad9361_ctrl::get_bw_filter_range)
+        .def_static("get_clock_rate_range", &ad9361_ctrl::get_clock_rate_range)
         .def("set_bw_filter", &ad9361_ctrl::set_bw_filter)
         .def("set_gain", &ad9361_ctrl::set_gain)
         .def("set_agc", &ad9361_ctrl::set_agc)

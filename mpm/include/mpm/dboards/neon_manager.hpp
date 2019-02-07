@@ -1,5 +1,6 @@
 //
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -33,11 +34,13 @@ private:
 }}; /* namespace mpm::dboards */
 
 #ifdef LIBMPM_PYTHON
-void export_neon()
+void export_neon(py::module& top_module)
 {
-    LIBMPM_BOOST_PREAMBLE("dboards")
     using namespace mpm::dboards;
-    bp::class_<mpm::dboards::neon_manager>("neon_manager", bp::init<std::string>())
+    auto m = top_module.def_submodule("dboards");
+
+    py::class_<mpm::dboards::neon_manager>(m, "neon_manager")
+        .def(py::init<std::string>())
         .def("get_radio_ctrl", &mpm::dboards::neon_manager::get_radio_ctrl);
 }
 #endif

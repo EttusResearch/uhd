@@ -83,7 +83,7 @@ class XportMgrLiberio(object):
     def commit_xport(self, sid, xport_info):
         " Commit liberio transport "
         chan = int(xport_info['dma_chan'])
-        xbar_iface = lib.xbar.xbar.make(self.xbar_dev)
+        xbar_iface = lib.xbar.xbar(self.xbar_dev)
         xbar_iface.set_route(sid.src_addr, self.xbar_port)
         self._dma_dispatcher.set_route(sid.reversed(), chan)
         self.log.trace("Liberio transport successfully committed!")

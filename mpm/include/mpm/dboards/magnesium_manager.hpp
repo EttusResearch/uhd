@@ -1,5 +1,6 @@
 //
 // Copyright 2017 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -45,12 +46,13 @@ private:
 }}; /* namespace mpm::dboards */
 
 #ifdef LIBMPM_PYTHON
-void export_magnesium()
+void export_magnesium(py::module& top_module)
 {
-    LIBMPM_BOOST_PREAMBLE("dboards")
     using namespace mpm::dboards;
-    bp::class_<mpm::dboards::magnesium_manager>(
-        "magnesium_manager", bp::init<std::string, size_t>())
+    auto m = top_module.def_submodule("dboards");
+
+    py::class_<mpm::dboards::magnesium_manager>(m, "magnesium_manager")
+        .def(py::init<std::string, size_t>())
         .def("get_spi_lock", &mpm::dboards::magnesium_manager::get_spi_lock)
         .def("get_radio_ctrl", &mpm::dboards::magnesium_manager::get_radio_ctrl);
 }

@@ -325,7 +325,7 @@ class XportMgrUDP(object):
         xbar_port = self.iface_config[eth_iface]['xbar_port']
         self.log.trace("Using Ethernet interface %s, crossbar port %d",
                        eth_iface, xbar_port)
-        xbar_iface = lib.xbar.xbar.make(self.get_xbar_dev(eth_iface))
+        xbar_iface = lib.xbar.xbar(self.get_xbar_dev(eth_iface))
         xbar_iface.set_route(sid.src_addr, xbar_port)
         self._eth_dispatchers[eth_iface].set_route(
             sid.reversed(), sender_addr, sender_port)

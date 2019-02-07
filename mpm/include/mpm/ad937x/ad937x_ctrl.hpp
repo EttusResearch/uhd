@@ -1,5 +1,6 @@
 //
 // Copyright 2017 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -274,12 +275,12 @@ public:
 }}; /* namespace mpm::chips */
 
 #ifdef LIBMPM_PYTHON
-void export_mykonos()
+void export_mykonos(py::module& top_module)
 {
-    LIBMPM_BOOST_PREAMBLE("ad937x")
     using namespace mpm::chips;
-    bp::class_<ad937x_ctrl, boost::noncopyable, std::shared_ptr<ad937x_ctrl>>(
-        "ad937x_ctrl", bp::no_init)
+    auto m = top_module.def_submodule("ad937x");
+
+    py::class_<ad937x_ctrl, std::shared_ptr<ad937x_ctrl>>(m, "ad937x_ctrl")
         .def("set_master_clock_rate", &ad937x_ctrl::set_master_clock_rate)
         .def("begin_initialization", &ad937x_ctrl::begin_initialization)
         .def("async__finish_initialization",
@@ -348,45 +349,45 @@ void export_mykonos()
         .def("set_fir", &ad937x_ctrl::set_fir)
         .def("get_fir", &ad937x_ctrl::get_fir)
         .def("get_temperature", &ad937x_ctrl::get_temperature)
-        .def_readonly("TX_BB_FILTER", &ad937x_ctrl::TX_BB_FILTER)
-        .def_readonly("ADC_TUNER", &ad937x_ctrl::ADC_TUNER)
-        .def_readonly("TIA_3DB_CORNER", &ad937x_ctrl::TIA_3DB_CORNER)
-        .def_readonly("DC_OFFSET", &ad937x_ctrl::DC_OFFSET)
-        .def_readonly("TX_ATTENUATION_DELAY", &ad937x_ctrl::TX_ATTENUATION_DELAY)
-        .def_readonly("RX_GAIN_DELAY", &ad937x_ctrl::RX_GAIN_DELAY)
-        .def_readonly("FLASH_CAL", &ad937x_ctrl::FLASH_CAL)
-        .def_readonly("PATH_DELAY", &ad937x_ctrl::PATH_DELAY)
-        .def_readonly("TX_LO_LEAKAGE_INTERNAL", &ad937x_ctrl::TX_LO_LEAKAGE_INTERNAL)
-        .def_readonly("TX_LO_LEAKAGE_EXTERNAL", &ad937x_ctrl::TX_LO_LEAKAGE_EXTERNAL)
-        .def_readonly("TX_QEC_INIT", &ad937x_ctrl::TX_QEC_INIT)
-        .def_readonly("LOOPBACK_RX_LO_DELAY", &ad937x_ctrl::LOOPBACK_RX_LO_DELAY)
-        .def_readonly("LOOPBACK_RX_RX_QEC_INIT", &ad937x_ctrl::LOOPBACK_RX_RX_QEC_INIT)
-        .def_readonly("RX_LO_DELAY", &ad937x_ctrl::RX_LO_DELAY)
-        .def_readonly("RX_QEC_INIT", &ad937x_ctrl::RX_QEC_INIT)
-        .def_readonly("DPD_INIT", &ad937x_ctrl::DPD_INIT)
-        .def_readonly("CLGC_INIT", &ad937x_ctrl::CLGC_INIT)
-        .def_readonly("VSWR_INIT", &ad937x_ctrl::VSWR_INIT)
-        .def_readonly("TRACK_RX1_QEC", &ad937x_ctrl::TRACK_RX1_QEC)
-        .def_readonly("TRACK_RX2_QEC", &ad937x_ctrl::TRACK_RX2_QEC)
-        .def_readonly("TRACK_ORX1_QEC", &ad937x_ctrl::TRACK_ORX1_QEC)
-        .def_readonly("TRACK_ORX2_QEC", &ad937x_ctrl::TRACK_ORX2_QEC)
-        .def_readonly("TRACK_TX1_LOL", &ad937x_ctrl::TRACK_TX1_LOL)
-        .def_readonly("TRACK_TX2_LOL", &ad937x_ctrl::TRACK_TX2_LOL)
-        .def_readonly("TRACK_TX1_QEC", &ad937x_ctrl::TRACK_TX1_QEC)
-        .def_readonly("TRACK_TX2_QEC", &ad937x_ctrl::TRACK_TX2_QEC)
-        .def_readonly("TRACK_TX1_DPD", &ad937x_ctrl::TRACK_TX1_DPD)
-        .def_readonly("TRACK_TX2_DPD", &ad937x_ctrl::TRACK_TX2_DPD)
-        .def_readonly("TRACK_TX1_CLGC", &ad937x_ctrl::TRACK_TX1_CLGC)
-        .def_readonly("TRACK_TX2_CLGC", &ad937x_ctrl::TRACK_TX2_CLGC)
-        .def_readonly("TRACK_TX1_VSWR", &ad937x_ctrl::TRACK_TX1_VSWR)
-        .def_readonly("TRACK_TX2_VSWR", &ad937x_ctrl::TRACK_TX2_VSWR)
-        .def_readonly("TRACK_ORX1_QEC_SNLO", &ad937x_ctrl::TRACK_ORX1_QEC_SNLO)
-        .def_readonly("TRACK_ORX2_QEC_SNLO", &ad937x_ctrl::TRACK_ORX2_QEC_SNLO)
-        .def_readonly("TRACK_SRX_QEC", &ad937x_ctrl::TRACK_SRX_QEC)
-        .def_readonly("DEFAULT_INIT_CALS_MASKS", &ad937x_ctrl::DEFAULT_INIT_CALS_MASKS)
-        .def_readonly(
+        .def_readonly_static("TX_BB_FILTER", &ad937x_ctrl::TX_BB_FILTER)
+        .def_readonly_static("ADC_TUNER", &ad937x_ctrl::ADC_TUNER)
+        .def_readonly_static("TIA_3DB_CORNER", &ad937x_ctrl::TIA_3DB_CORNER)
+        .def_readonly_static("DC_OFFSET", &ad937x_ctrl::DC_OFFSET)
+        .def_readonly_static("TX_ATTENUATION_DELAY", &ad937x_ctrl::TX_ATTENUATION_DELAY)
+        .def_readonly_static("RX_GAIN_DELAY", &ad937x_ctrl::RX_GAIN_DELAY)
+        .def_readonly_static("FLASH_CAL", &ad937x_ctrl::FLASH_CAL)
+        .def_readonly_static("PATH_DELAY", &ad937x_ctrl::PATH_DELAY)
+        .def_readonly_static("TX_LO_LEAKAGE_INTERNAL", &ad937x_ctrl::TX_LO_LEAKAGE_INTERNAL)
+        .def_readonly_static("TX_LO_LEAKAGE_EXTERNAL", &ad937x_ctrl::TX_LO_LEAKAGE_EXTERNAL)
+        .def_readonly_static("TX_QEC_INIT", &ad937x_ctrl::TX_QEC_INIT)
+        .def_readonly_static("LOOPBACK_RX_LO_DELAY", &ad937x_ctrl::LOOPBACK_RX_LO_DELAY)
+        .def_readonly_static("LOOPBACK_RX_RX_QEC_INIT", &ad937x_ctrl::LOOPBACK_RX_RX_QEC_INIT)
+        .def_readonly_static("RX_LO_DELAY", &ad937x_ctrl::RX_LO_DELAY)
+        .def_readonly_static("RX_QEC_INIT", &ad937x_ctrl::RX_QEC_INIT)
+        .def_readonly_static("DPD_INIT", &ad937x_ctrl::DPD_INIT)
+        .def_readonly_static("CLGC_INIT", &ad937x_ctrl::CLGC_INIT)
+        .def_readonly_static("VSWR_INIT", &ad937x_ctrl::VSWR_INIT)
+        .def_readonly_static("TRACK_RX1_QEC", &ad937x_ctrl::TRACK_RX1_QEC)
+        .def_readonly_static("TRACK_RX2_QEC", &ad937x_ctrl::TRACK_RX2_QEC)
+        .def_readonly_static("TRACK_ORX1_QEC", &ad937x_ctrl::TRACK_ORX1_QEC)
+        .def_readonly_static("TRACK_ORX2_QEC", &ad937x_ctrl::TRACK_ORX2_QEC)
+        .def_readonly_static("TRACK_TX1_LOL", &ad937x_ctrl::TRACK_TX1_LOL)
+        .def_readonly_static("TRACK_TX2_LOL", &ad937x_ctrl::TRACK_TX2_LOL)
+        .def_readonly_static("TRACK_TX1_QEC", &ad937x_ctrl::TRACK_TX1_QEC)
+        .def_readonly_static("TRACK_TX2_QEC", &ad937x_ctrl::TRACK_TX2_QEC)
+        .def_readonly_static("TRACK_TX1_DPD", &ad937x_ctrl::TRACK_TX1_DPD)
+        .def_readonly_static("TRACK_TX2_DPD", &ad937x_ctrl::TRACK_TX2_DPD)
+        .def_readonly_static("TRACK_TX1_CLGC", &ad937x_ctrl::TRACK_TX1_CLGC)
+        .def_readonly_static("TRACK_TX2_CLGC", &ad937x_ctrl::TRACK_TX2_CLGC)
+        .def_readonly_static("TRACK_TX1_VSWR", &ad937x_ctrl::TRACK_TX1_VSWR)
+        .def_readonly_static("TRACK_TX2_VSWR", &ad937x_ctrl::TRACK_TX2_VSWR)
+        .def_readonly_static("TRACK_ORX1_QEC_SNLO", &ad937x_ctrl::TRACK_ORX1_QEC_SNLO)
+        .def_readonly_static("TRACK_ORX2_QEC_SNLO", &ad937x_ctrl::TRACK_ORX2_QEC_SNLO)
+        .def_readonly_static("TRACK_SRX_QEC", &ad937x_ctrl::TRACK_SRX_QEC)
+        .def_readonly_static("DEFAULT_INIT_CALS_MASKS", &ad937x_ctrl::DEFAULT_INIT_CALS_MASKS)
+        .def_readonly_static(
             "DEFAULT_TRACKING_CALS_MASKS", &ad937x_ctrl::DEFAULT_TRACKING_CALS_MASKS)
-        .def_readonly(
+        .def_readonly_static(
             "DEFAULT_INIT_CALS_TIMEOUT", &ad937x_ctrl::DEFAULT_INIT_CALS_TIMEOUT);
 }
 #endif

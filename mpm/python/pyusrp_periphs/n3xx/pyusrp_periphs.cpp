@@ -1,67 +1,32 @@
 //
 // Copyright 2017 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-// include hackery to only include boost python and define the macro here
-#include <boost/python.hpp>
+#include <pybind11/pybind11.h>
+namespace py = pybind11;
 #define LIBMPM_PYTHON
-#define LIBMPM_BOOST_PREAMBLE(module)                                                 \
-    /* Register submodule types */                                                    \
-    namespace bp = boost::python;                                                     \
-    bp::object py_module(                                                             \
-        bp::handle<>(bp::borrowed(PyImport_AddModule("libpyusrp_periphs." module)))); \
-    bp::scope().attr(module) = py_module;                                             \
-    bp::scope io_scope       = py_module;
 
-//! RAII-style GIL release method
-//
-// To release the GIL using this method, simply instantiate this class in the
-// scope that needs to release the GIL.
-//
-// Note that using this class assumes that threads have already been
-// initialized. See also https://docs.python.org/3.5/c-api/init.html for more
-// documentation on Python initialization and threads.
-class scoped_gil_release
-{
-public:
-    inline scoped_gil_release()
-    {
-        _thread_state = PyEval_SaveThread();
-    }
+// Allow boost::shared_ptr<T> to be a holder class of an object (PyBind11
+// supports std::shared_ptr and std::unique_ptr out of the box)
+#include <boost/shared_ptr.hpp>
+PYBIND11_DECLARE_HOLDER_TYPE(T, boost::shared_ptr<T>);
 
-    inline ~scoped_gil_release()
-    {
-        PyEval_RestoreThread(_thread_state);
-        _thread_state = nullptr;
-    }
-
-private:
-    PyThreadState* _thread_state;
-};
-
-//#include "types.hpp"
-#include "../converters.hpp"
 #include <mpm/ad937x/ad937x_ctrl.hpp>
 #include <mpm/dboards/magnesium_manager.hpp>
 #include <mpm/i2c/i2c_python.hpp>
 #include <mpm/spi/spi_python.hpp>
 #include <mpm/types/types_python.hpp>
 #include <mpm/xbar_iface.hpp>
-#include <boost/noncopyable.hpp>
 
-namespace bp = boost::python;
-
-BOOST_PYTHON_MODULE(libpyusrp_periphs)
+PYBIND11_MODULE(libpyusrp_periphs, m)
 {
-    bp::object package       = bp::scope();
-    package.attr("__path__") = "libpyusrp_periphs";
-    export_converter();
-    export_types();
-    export_spi();
-    export_i2c();
-    export_mykonos();
-    export_xbar();
-    export_magnesium();
+    export_types(m);
+    export_spi(m);
+    export_i2c(m);
+    export_mykonos(m);
+    export_xbar(m);
+    export_magnesium(m);
 }

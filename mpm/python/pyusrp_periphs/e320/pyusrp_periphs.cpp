@@ -1,38 +1,30 @@
 //
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-// include hackery to only include boost python and define the macro here
-#include <boost/python.hpp>
+#include <pybind11/pybind11.h>
+namespace py = pybind11;
 #define LIBMPM_PYTHON
-#define LIBMPM_BOOST_PREAMBLE(module)                                                 \
-    /* Register submodule types */                                                    \
-    namespace bp = boost::python;                                                     \
-    bp::object py_module(                                                             \
-        bp::handle<>(bp::borrowed(PyImport_AddModule("libpyusrp_periphs." module)))); \
-    bp::scope().attr(module) = py_module;                                             \
-    bp::scope io_scope       = py_module;
 
-#include "../converters.hpp"
+// Allow boost::shared_ptr<T> to be a holder class of an object (PyBind11
+// supports std::shared_ptr and std::unique_ptr out of the box)
+#include <boost/shared_ptr.hpp>
+PYBIND11_DECLARE_HOLDER_TYPE(T, boost::shared_ptr<T>);
+
 #include <mpm/ad9361/ad9361_ctrl.hpp>
 #include <mpm/dboards/neon_manager.hpp>
 #include <mpm/spi/spi_python.hpp>
 #include <mpm/types/types_python.hpp>
 #include <mpm/xbar_iface.hpp>
-#include <boost/noncopyable.hpp>
 
-namespace bp = boost::python;
-
-BOOST_PYTHON_MODULE(libpyusrp_periphs)
+PYBIND11_MODULE(libpyusrp_periphs, m)
 {
-    bp::object package       = bp::scope();
-    package.attr("__path__") = "libpyusrp_periphs";
-    export_converter();
-    export_types();
-    export_spi();
-    export_xbar();
-    export_catalina();
-    export_neon();
+    export_types(m);
+    export_spi(m);
+    export_xbar(m);
+    export_catalina(m);
+    export_neon(m);
 }
