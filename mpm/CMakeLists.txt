@@ -1,5 +1,6 @@
 #
 # Copyright 2017-2018 Ettus Research, a National Instruments Company
+# Copyright 2019 Ettus Research, a National Instruments Brand
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
@@ -21,9 +22,17 @@ set(UHD_HOST_ROOT ${CMAKE_SOURCE_DIR}/../host)
 ########################################################################
 # Setup Python API
 ########################################################################
-set(PYTHON_ADDITIONAL_VERSIONS 3.4 3.5)
-find_package(PythonInterp 3 REQUIRED)
-find_package(PythonLibs 3 REQUIRED)
+# We don't need to support older versions of Python, since we will always
+# deploy this on devices where we control the Python version.
+# MPM might work with future versions of Python, but we make no guarantees.
+set(MPM_PYTHON_VERSION 3.5)
+
+# This variable is a helper for the find_package() commands below, and only
+# takes effect if the build is happening on a system where the FindPython*.cmake
+# files are older than ${MPM_PYTHON_VERSION}, which is usually not the case.
+set(PYTHON_ADDITIONAL_VERSIONS ${MPM_PYTHON_VERSION})
+find_package(PythonInterp ${MPM_PYTHON_VERSION} REQUIRED)
+find_package(PythonLibs ${MPM_PYTHON_VERSION} REQUIRED)
 # Now, we can also include CMake modules from UHD:
 list(INSERT CMAKE_MODULE_PATH 0 ${UHD_HOST_ROOT}/cmake/Modules)
 
@@ -60,37 +69,25 @@ endmacro(USRP_PERIPHS_ADD_OBJECT)
 ########################################################################
 # Setup Boost
 ########################################################################
+# Note: We can keep this short, because, again, we control the build
+# environment. This will not, out of the box, compile on Windows or
+# other platforms.
 message(STATUS "")
 message(STATUS "Configuring Boost C++ Libraries...")
 set(BOOST_REQUIRED_COMPONENTS
-  system
-  python3
+    system
+    python3
+    thread
 )
+# Same as with Python version: MPM might work with other versions of Boost,
+# but we don't make any guarantees.
+set(MPM_BOOST_VERSION "1.66")
 
-if(MINGW)
-    list(APPEND BOOST_REQUIRED_COMPONENTS thread_win32)
-else()
-    list(APPEND BOOST_REQUIRED_COMPONENTS thread)
-endif()
-
-if(UNIX AND NOT BOOST_ROOT AND EXISTS "/usr/lib64")
-    list(APPEND BOOST_LIBRARYDIR "/usr/lib64") #fedora 64-bit fix
-endif(UNIX AND NOT BOOST_ROOT AND EXISTS "/usr/lib64")
-
-if(MSVC)
-    set(BOOST_ALL_DYN_LINK "${BOOST_ALL_DYN_LINK}" CACHE BOOL "boost enable dynamic linking")
-    if(BOOST_ALL_DYN_LINK)
-        add_definitions(-DBOOST_ALL_DYN_LINK) #setup boost auto-linking in msvc
-    else(BOOST_ALL_DYN_LINK)
-        set(BOOST_REQUIRED_COMPONENTS) #empty components list for static link
-    endif(BOOST_ALL_DYN_LINK)
-endif(MSVC)
-
-set(Boost_ADDITIONAL_VERSIONS
-    "1.56.0" "1.56" "1.57" "1.57" "1.58" "1.59" "1.60" "1.61" "1.62" "1.63"
-    "1.64"
-)
-find_package(Boost 1.53 COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
+# This variable is a helper for the find_package() command below, and only
+# takes effect if the build is happening on a system where the FindBoost.cmake
+# file is older than ${MPM_BOOST_VERSION}, which is usually not the case.
+set(Boost_ADDITIONAL_VERSIONS ${MPM_BOOST_VERSION})
+find_package(Boost ${MPM_BOOST_VERSION} COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
 
 include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
@@ -103,14 +100,6 @@ message(STATUS "Boost libraries: ${Boost_LIBRARIES}")
 ########################################################################
 # Install Dirs
 ########################################################################
-#when the library suffix should be 64 (applies to redhat linux family)
-if(NOT DEFINED LIB_SUFFIX AND REDHAT AND CMAKE_SYSTEM_PROCESSOR MATCHES "64$")
-    set(LIB_SUFFIX 64)
-endif()
-if(CMAKE_INSTALL_LIBDIR MATCHES lib64)
-    set(LIB_SUFFIX 64)
-endif()
-
 set(LIB_SUFFIX ${LIB_SUFFIX} CACHE STRING "lib directory suffix")
 set(RUNTIME_DIR bin)
 set(LIBRARY_DIR lib${LIB_SUFFIX})
@@ -128,6 +117,9 @@ set(PKG_MAN_DIR share/man/man1)
 set(CMAKE_CXX_STANDARD 14)
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-Wno-psabi" _has_no_psabi)
+# -Wno-psabi lets us know if the gcc ABI changed and would cause binaries
+# to have different ABIs. We don't care, since we compile the entire
+# system with the same gcc. These warnings are also noisy.
 if(_has_no_psabi)
     message(STATUS "Disabling psABI warnings.")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-psabi")
@@ -171,12 +163,7 @@ target_link_libraries(usrp-periphs
     ${Boost_LIBRARIES}
 )
 
-if(WIN32)
-    set(DESTINATION_KEYWORD RUNTIME)
-else()
-    set(DESTINATION_KEYWORD LIBRARY)
-endif()
-install(TARGETS usrp-periphs ${DESTINATION_KEYWORD} DESTINATION ${LIBRARY_DIR} COMPONENT libraries)
+install(TARGETS usrp-periphs LIBRARY DESTINATION ${LIBRARY_DIR} COMPONENT libraries)
 
 # TODO: Come up with a versioning scheme for the MPM ABI. Not high priority
 # though... we're the only ones linking against that.
