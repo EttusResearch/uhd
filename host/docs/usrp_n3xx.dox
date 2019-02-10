@@ -751,7 +751,7 @@ Then, navigate to a location with enough disk space:
 
 Create a world-writable directory called 'build':
 
-   $ mkdir build && chmod 777 build
+    $ mkdir build && chmod 777 build
 
 Then run the Docker container:
 
@@ -764,11 +764,14 @@ Note the order of the naming above might vary by docker version, sometimes it mi
 After running the previous command, you will be inside the container. First,
 configure your build environment:
 
-   $ TEMPLATECONF=`pwd`/meta-ettus/conf/sulfur source ./oe-core/oe-init-build-env ./build ./bitbake
+    $ TEMPLATECONF=$(pwd)/meta-ettus/conf/sulfur source ./oe-core/oe-init-build-env ./build ./bitbake
 
 Then, you can invoke bitbake to build the image:
 
     $ bitbake $image_name
+
+where `$image_name` could be `developer_image` or `deployment_image`. If you
+want to build the SDK, append `-cpopulate_sdk` to the above line.
 
 If you keep the build directory, bitbake will reuse it on consecutive runs,
 which will speed up builds significantly between runs.
