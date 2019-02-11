@@ -14,6 +14,8 @@
 #include <uhd/types/time_spec.hpp>
 #if BOOST_VERSION >= 105600
 #include <boost/core/noncopyable.hpp>
+#else
+#include <boost/noncopyable.hpp>
 #endif
 #include <boost/function.hpp>
 #include <boost/thread/recursive_mutex.hpp>
