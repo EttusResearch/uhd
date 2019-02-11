@@ -298,7 +298,10 @@ class XportMgrUDP(object):
 
     def commit_xport(self, sid, xport_info):
         """
-        fuu
+        Commit transport
+        
+        Saves the transport configuration to the device.
+        Returns the status of the commit.
         """
         self.log.trace("Sanity checking xport_info %s...", str(xport_info))
         assert xport_info['type'] == 'UDP'
