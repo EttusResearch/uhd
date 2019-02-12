@@ -610,6 +610,7 @@ will look like this:
 5. Once the device is authorized, you can try various commands to see if the
    communication was established:
 
+
     $ [sudo] salt '*' test.ping
     ni-n3xx-311FE00:
         True
@@ -633,7 +634,7 @@ will look like this:
                       255.255.254.0
             up:
                 True
-    # [...]
+    $ [...]
 
 
 \section n3xx_synchronization Clock/Time Synchronization
