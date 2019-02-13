@@ -63,7 +63,9 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     // clang-format on
 
     po::variables_map vm;
-    po::store(po::parse_command_line(argc, argv, desc), vm);
+    po::positional_options_description pos_desc;
+    po::store(
+        po::command_line_parser(argc, argv).options(desc).positional(pos_desc).run(), vm);
     po::notify(vm);
 
     // Help message
