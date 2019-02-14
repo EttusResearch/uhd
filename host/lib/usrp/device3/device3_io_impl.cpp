@@ -357,6 +357,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t& args_)
         UHD_RX_STREAMER_LOG() << "Flow Control Window = " << (fc_window)
                               << ", Flow Control Handler Window = " << fc_handle_window;
         blk_ctrl->configure_flow_control_out(true,
+            xport.lossless,
             fc_window,
             rx_hints.cast<size_t>("recv_pkt_limit",
                 0), // On rfnoc-devel, update e300_impl::get_rx_hints() to set this to 32
