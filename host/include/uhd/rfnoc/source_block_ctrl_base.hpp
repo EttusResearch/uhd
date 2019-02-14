@@ -102,15 +102,17 @@ public:
      * disables byte based flow control. If both byte based flow control and the packet
      * limit are set to zero, the block will then produce data as fast as it can. \b
      * Warning: This can cause head-of-line blocking, and potentially lock up your device!
-     * \param pkt_limit Limit the maximum number of packets in flight. Setting this to
-     * zero disables packet limiting. Usually kept disabled except for special case
-     * connections (such as DMA) that support only a finite number of packets in flight.
-     * \param block_port Specify on which outgoing port this setting is valid.
-     * \param sid The SID for which this is valid. This is meant for cases where the
-     * outgoing block port is not sufficient to set the flow control, and as such is
+     * \param lossless_link The link for the connection is lossless.  Periodic sync
+     * packets will be disabled. \param pkt_limit Limit the maximum number of packets in
+     * flight. Setting this to zero disables packet limiting. Usually kept disabled except
+     * for special case connections (such as DMA) that support only a finite number of
+     * packets in flight. \param block_port Specify on which outgoing port this setting is
+     * valid. \param sid The SID for which this is valid. This is meant for cases where
+     * the outgoing block port is not sufficient to set the flow control, and as such is
      * rarely used.
      */
     virtual void configure_flow_control_out(const bool enable_output,
+        const bool lossless_link,
         const size_t buf_size_bytes,
         const size_t pkt_limit  = 0,
         const size_t block_port = 0,

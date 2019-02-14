@@ -120,17 +120,17 @@ void graph_impl::connect(const block_id_t& src_block,
                 % dst->get_block_id().get() % (dst->get_fifo_size(dst_block_port) / 1024)
                 % (pkt_size / 1024) % src->get_block_id().get()));
     }
+    const bool same_xbar = sid.get_src_addr() == sid.get_dst_addr();
     src->configure_flow_control_out(true, /* enable output */
+        same_xbar, // Lossless link if on same crossbar
         buf_size_bytes,
         0, /* no packet limit. We need to revisit this at some point. */
         src_block_port);
     // On the same crossbar, use lots of FC packets
-    size_t bytes_per_response =
-        buf_size_bytes / uhd::rfnoc::DEFAULT_FC_XBAR_RESPONSE_FREQ;
     // Over the network, use less or we'd flood the transport
-    if (sid.get_src_addr() != sid.get_dst_addr()) {
-        bytes_per_response = buf_size_bytes / uhd::rfnoc::DEFAULT_FC_TX_RESPONSE_FREQ;
-    }
+    const size_t bytes_per_response =
+        same_xbar ? buf_size_bytes / uhd::rfnoc::DEFAULT_FC_XBAR_RESPONSE_FREQ
+                  : buf_size_bytes / uhd::rfnoc::DEFAULT_FC_TX_RESPONSE_FREQ;
     UHD_ASSERT_THROW(bytes_per_response != 0);
     dst->configure_flow_control_in(bytes_per_response, dst_block_port);
 
@@ -189,7 +189,12 @@ void graph_impl::connect_src(const block_id_t& src_block,
                 % (buf_size_dst_bytes / 1024) % (pkt_size / 1024)
                 % src->get_block_id().get()));
     }
-    src->configure_flow_control_out(buf_size_pkts, src_block_port);
+
+    src->configure_flow_control_out(true, /* enable output */
+        (dst_sid.get_src_addr() == dst_sid.get_dst_addr()),
+        buf_size_dst_bytes,
+        0, /* no packet limit. We need to revisit this at some point. */
+        src_block_port);
 }
 
 void graph_impl::connect_sink(
