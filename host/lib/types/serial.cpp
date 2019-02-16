@@ -59,7 +59,7 @@ byte_vector_t i2c_iface::read_eeprom(
     byte_vector_t bytes;
     for (size_t i = 0; i < num_bytes; i++){
         //do a zero byte write to start read cycle
-        this->write_i2c(addr, byte_vector_t(1, offset+i));
+        this->write_i2c(addr, byte_vector_t(1, narrow_cast<uint8_t>(offset+i)));
         bytes.push_back(this->read_i2c(addr, 1).at(0));
     }
     return bytes;
@@ -105,7 +105,7 @@ struct eeprom16_impl : i2c_iface
         uint16_t offset,
         const byte_vector_t &bytes
     ){
-        for (size_t i = 0; i < bytes.size(); i++)
+        for (uint16_t i = 0; i < bytes.size(); i++)
         {
             //write a byte at a time, its easy that way
             uint16_t offset_i = offset+i;

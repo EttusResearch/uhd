@@ -63,7 +63,7 @@ public:
         boost::mutex::scoped_lock lock(_mutex);
         this->send_pkt(addr, data, timestamp);
         return this->wait_for_ack(
-            readback, bool(timestamp) ? MASSIVE_TIMEOUT : ACK_TIMEOUT);
+            readback, bool(timestamp != 0) ? MASSIVE_TIMEOUT : ACK_TIMEOUT);
     }
 
 private:

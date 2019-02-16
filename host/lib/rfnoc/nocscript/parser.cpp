@@ -163,7 +163,7 @@ private:
                                 P.expr_stack.top()->set_combiner_safe(
                                     expression_container::COMBINE_OR);
                             }
-                        } catch (const uhd::syntax_error& e) {
+                        } catch (const uhd::syntax_error&) {
                             P.error = str(boost::format("Operator %s is mixing operator "
                                                         "types within this container.")
                                           % val);
