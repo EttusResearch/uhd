@@ -170,6 +170,17 @@ or add it to `/etc/ld.so.conf` and make sure to run:
 
     sudo ldconfig
 
+\subsection build_instructions_unix_arm Compiling for ARM platforms
+
+When compiling for ARM platforms, the assumption is made that NEON extensions
+are available if the arm_neon.h header is found. However, this might not be
+true, e.g., when cross-compiling for an arm7l target (e.g., the Odroid XU4)
+using a standard SDK. In this case, it's necessary to tell CMake to disable NEON
+extensions:
+
+    cmake -DNEON_SIMD_ENABLE=OFF [...]
+
+
 \section build_instructions_windows Build Instructions (Windows)
 
 \subsection cmake_win Generate the project with CMake
