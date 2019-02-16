@@ -49,7 +49,7 @@ expression_literal::expression_literal(
                 _bool_val = true;
             } else {
                 // lexical cast to bool is too picky
-                _bool_val = bool(std::stoi(_val));
+                _bool_val = (std::stoi(_val) != 0);
             }
             break;
 

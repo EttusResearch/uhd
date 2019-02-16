@@ -169,8 +169,10 @@ public:
         if (stream_cmd.stream_mode == uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE
             or stream_cmd.stream_mode
                    == uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE) {
-            size_t decimation = get_arg<double>("input_rate", chan)
-                                / get_arg<double>("output_rate", chan);
+            const size_t decimation =
+                static_cast<size_t>(
+                    get_arg<double>("input_rate", chan)
+                    / get_arg<double>("output_rate", chan));
             stream_cmd.num_samps *= decimation;
         }
 
