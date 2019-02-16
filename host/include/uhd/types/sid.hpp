@@ -198,12 +198,6 @@ public:
         return *this;
     }
 
-    sid_t operator=(sid_t& sid)
-    {
-        set_sid(sid.get_sid());
-        return *this;
-    }
-
     sid_t operator=(const sid_t& sid)
     {
         set_sid(sid.get_sid());

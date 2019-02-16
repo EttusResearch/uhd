@@ -114,6 +114,9 @@ BOOST_AUTO_TEST_CASE(test_sid_t_set)
     BOOST_CHECK_EQUAL(flipped_sid.get(), (uint32_t)0x0cbc0a0b);
     BOOST_CHECK_EQUAL(flipped_sid.reversed(), sid);
 
+    const sid_t sid2 = sid_t(sid.get_sid());
+    BOOST_CHECK_EQUAL(sid2, sid);
+
     // In-place
     sid.reverse();
     BOOST_CHECK_EQUAL(sid.get(), (uint32_t)0x0cbc0a0b);
