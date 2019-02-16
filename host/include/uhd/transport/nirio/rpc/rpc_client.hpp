@@ -58,11 +58,11 @@ private:
     inline void _stop_io_service()
     {
         if (_io_service_thread.get()) {
-            UHD_LOGGER_INFO("NIRIO") << "rpc_client stopping...";
+            UHD_LOG_DEBUG("NIRIO", "rpc_client stopping...");
             _io_service.stop();
             _io_service_thread->join();
             _io_service_thread.reset();
-            UHD_LOGGER_INFO("NIRIO") << "rpc_client stopped.";
+            UHD_LOG_DEBUG("NIRIO", "rpc_client stopped.");
         }
     }
 
