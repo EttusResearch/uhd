@@ -615,7 +615,7 @@ double max287x<max287x_regs_t>::set_frequency(
         }
 
         //keep pfd freq low enough to achieve 50kHz BS clock
-        BS = std::ceil(pfd_freq / BS_FREQ);
+        BS = static_cast<int>(std::ceil(pfd_freq / BS_FREQ));
         if(BS <= MAX_BS_VALUE) break;
     }
     UHD_ASSERT_THROW(R <= r_range.stop());
