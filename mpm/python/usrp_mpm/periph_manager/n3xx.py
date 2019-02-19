@@ -115,7 +115,7 @@ class n3xx(ZynqComponents, PeriphManagerBase):
     mboard_eeprom_offset = 0
     mboard_eeprom_max_len = 256
     mboard_info = {"type": "n3xx"}
-    mboard_max_rev = 6 # 6 == RevG
+    mboard_max_rev = 7 # 7 == RevH
     mboard_sensor_callback_map = {
         'ref_locked': 'get_ref_lock_sensor',
         'gps_locked': 'get_gps_lock_sensor',
@@ -1008,4 +1008,3 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         if self._bp_leds is not None:
             # Turn off LINK
             self._bp_leds.set(self._bp_leds.LED_LINK, 0)
-
