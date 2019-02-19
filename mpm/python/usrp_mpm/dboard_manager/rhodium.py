@@ -246,13 +246,11 @@ class Rhodium(BfrfsEEPROM, DboardManagerBase):
             }
         self._port_expander = TCA6408(_get_i2c_dev())
         self._daughterboard_gpio = FPGAtoDbGPIO(self.slot_idx)
-        # TODO: applying the overlay without checking for the presence of the
-        # LO dist board will create a kernel error. Fix this when the I2C API
-        # is implemented by checking if the board is present before applying.
-        try:
+        if FPGAtoLoDist.lo_dist_present(_get_i2c_dev()):
+            self.log.info("Enabling LO distribution board")
             self._lo_dist = FPGAtoLoDist(_get_i2c_dev())
-        except RuntimeError:
-            self._lo_dist = None
+        else:
+            self.log.debug("No LO distribution board detected")
         self.log.debug("Turning on Module and RF power supplies")
         self._power_on()
         BfrfsEEPROM.__init__(self)
