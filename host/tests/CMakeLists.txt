@@ -52,6 +52,7 @@ set(test_sources
     vrt_test.cpp
     expert_test.cpp
     fe_conn_test.cpp
+    rfnoc_chdr_test.cpp
 )
 
 set(benchmark_sources
