@@ -136,6 +136,28 @@ class N3XXBIST(bist.UsrpBIST):
         assert 'ddr3' in self.tests_to_run
         if self.args.dry_run:
             return True, {'throughput': 1250e6}
+        # First, run the BIST without modifications. It will fail if there is no
+        # DmaFIFO block.
+        result = bist.test_ddr3_with_usrp_probe()
+        # If it failed, but the user specified skip_load_fpga, we also return
+        # the current result.
+        if ('error_msg' not in result) \
+                or self.args.option.get('skip_load_fpga', False):
+            return result.get('throughput', 0) > 1000e3, result
+        # Otherwise, we load the AA FPGA image, because that's one image where
+        # we think the DmaFIFO block is actually instantiated.
+        self.reload_fpga_image = True
+        try:
+            bist.load_fpga_image(
+                'AA',
+                self.device_args,
+                self.get_product_id(),
+            )
+        except Exception as ex:
+            return {
+                'throughput': 0,
+                'error_msg': "Failed to load AA image: {}".format(str(ex)),
+            }
         result = bist.test_ddr3_with_usrp_probe()
         return result.get('throughput', 0) > 1000e3, result
 
