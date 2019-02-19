@@ -273,7 +273,6 @@ def test_ddr3_with_usrp_probe():
     reporting a good throughput. This is a bit of a roundabout way of testing
     the DDR3, but it uses existing software and also tests the RFNoC pathways.
     """
-    result = {}
     ddr3_bist_executor = 'uhd_usrp_probe --args addr=127.0.0.1'
     try:
         output = subprocess.check_output(
@@ -285,14 +284,19 @@ def test_ddr3_with_usrp_probe():
         # Don't throw errors from uhd_usrp_probe
         output = ex.output
     output = output.decode("utf-8")
+    if re.search(r"DmaFIFO", output) is None:
+        return {
+            'error_msg': "DmaFIFO block not enabled. Cannot execute DDR3 BIST!",
+            'throughput': 0,
+        }
     mobj = re.search(r"Throughput: (?P<thrup>[0-9.]+)\s?MB", output)
     if mobj is not None:
-        result['throughput'] = float(mobj.group('thrup')) * 1000
+        return {'throughput': float(mobj.group('thrup')) * 1000}
     else:
-        result['throughput'] = 0
-        result['error_msg'] = result.get('error_msg', '') + \
-                                    "\n\nFailed match throughput regex!"
-    return result
+        return {
+            'throughput': 0,
+            'error_msg': "Failed match throughput regex!",
+        }
 
 
 def get_gpsd_tpv_result():
