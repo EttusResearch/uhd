@@ -9,7 +9,7 @@ Rhodium dboard peripherals (CPLD, port expander, dboard regs)
 
 
 import time
-from usrp_mpm.sys_utils.sysfs_gpio import SysFSGPIO, GPIOBank
+from usrp_mpm.sys_utils.sysfs_gpio import SysFSGPIO, GPIOBank, find_gpio_device
 from usrp_mpm.mpmutils import poll_with_timeout
 
 
@@ -56,6 +56,10 @@ class FPGAtoLoDist(object):
     EXPECTED_BOARD_REV = 0
     POWER_ON_TIMEOUT = 20 #ms
     POWER_ON_POLL_INTERVAL = 1 #ms
+    GPIO_DEV_ID = {
+        'label': 'tca6424',
+        'device/of_node/name': 'rhodium-lodist-gpio',
+    }
 
     pins = (
         'BD_REV_0', #Board revision bit 0
@@ -81,14 +85,26 @@ class FPGAtoLoDist(object):
         'P3_3V_RF_EN' #3.3V LDO for RF enable
     )
 
+    @staticmethod
+    def lo_dist_present(i2c_dev):
+        """
+        Returns True if the I2C board is present.
+        """
+        dev, _ = find_gpio_device(FPGAtoLoDist.GPIO_DEV_ID, i2c_dev)
+        return dev is not None
+
     def __init__(self, i2c_dev):
         assert i2c_dev is not None
-        self._gpios = SysFSGPIO({'label': 'tca6424', 'device/of_node/name': 'rhodium-lodist-gpio'}, 0x1FFF0F, 0x1FFF00, 0x00A500, i2c_dev)
+        self._gpios = \
+            SysFSGPIO(self.GPIO_DEV_ID, 0x1FFF0F, 0x1FFF00, 0x00A500, i2c_dev)
         board_rev = self._gpios.get(self.pins.index('BD_REV_0')) + \
                     self._gpios.get(self.pins.index('BD_REV_1')) << 1 + \
                     self._gpios.get(self.pins.index('BD_REV_2')) << 2
         if  board_rev != self.EXPECTED_BOARD_REV:
-            raise RuntimeError('LO distribution board revision did not match: Expected: {0} Actual: {1}'.format(self.EXPECTED_BOARD_REV, board_rev))
+            raise RuntimeError(
+                'LO distribution board revision did not match: '
+                'Expected: {0} Actual: {1}'
+                .format(self.EXPECTED_BOARD_REV, board_rev))
         self._gpios.set(self.pins.index('P6_8V_EN'), 1)
         if not poll_with_timeout(
                 lambda: bool(self._gpios.get(self.pins.index('P6_8V_PG'))),
