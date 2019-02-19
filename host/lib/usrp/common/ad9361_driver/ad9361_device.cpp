@@ -251,14 +251,14 @@ void ad9361_device_t::_calibrate_lock_bbpll()
     _io_iface->poke8(0x04d, 0x05);
 
     /* Wait for BBPLL lock. */
-    size_t count = 0;
-    while (!(_io_iface->peek8(0x05e) & 0x80)) {
-        if (count > 1000) {
+    auto end_time =
+        std::chrono::steady_clock::now()
+        + std::chrono::seconds(2);
+    while(_io_iface->peek8(0x05e) & 0x80) {
+        if (std::chrono::steady_clock::now() > end_time) {
             throw uhd::runtime_error("[ad9361_device_t] BBPLL not locked");
             break;
         }
-        count++;
-        std::this_thread::sleep_for(std::chrono::milliseconds(2));
     }
 }
 
@@ -275,29 +275,32 @@ void ad9361_device_t::_calibrate_synth_charge_pumps()
     }
 
     /* Calibrate the RX synthesizer charge pump. */
-    size_t count = 0;
     _io_iface->poke8(0x23d, 0x04);
-    while (!(_io_iface->peek8(0x244) & 0x80)) {
-        if (count > 5) {
+
+    auto end_time =
+        std::chrono::steady_clock::now()
+        + std::chrono::milliseconds(5);
+    while(_io_iface->peek8(0x244) & 0x80) {
+        if (std::chrono::steady_clock::now() > end_time) {
             throw uhd::runtime_error("[ad9361_device_t] RX charge pump cal failure");
             break;
         }
-        count++;
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
     _io_iface->poke8(0x23d, 0x00);
 
     /* Calibrate the TX synthesizer charge pump. */
-    count = 0;
     _io_iface->poke8(0x27d, 0x04);
-    while (!(_io_iface->peek8(0x284) & 0x80)) {
-        if (count > 5) {
+
+    end_time =
+        std::chrono::steady_clock::now()
+        + std::chrono::milliseconds(5);
+    while(_io_iface->peek8(0x284) & 0x80) {
+        if (std::chrono::steady_clock::now() > end_time) {
             throw uhd::runtime_error("[ad9361_device_t] TX charge pump cal failure");
             break;
         }
-        count++;
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
+
     _io_iface->poke8(0x27d, 0x00);
 }
 
@@ -349,15 +352,16 @@ double ad9361_device_t::_calibrate_baseband_rx_analog_filter(double req_rfbw)
     _io_iface->poke8(0x1e3, 0x02);
 
     /* Run the calibration! */
-    size_t count = 0;
     _io_iface->poke8(0x016, 0x80);
-    while (_io_iface->peek8(0x016) & 0x80) {
-        if (count > 100) {
+
+    auto end_time =
+        std::chrono::steady_clock::now()
+        + std::chrono::milliseconds(100);
+    while(_io_iface->peek8(0x016) & 0x80) {
+        if (std::chrono::steady_clock::now() > end_time) {
             throw uhd::runtime_error("[ad9361_device_t] RX baseband filter cal FAILURE");
             break;
         }
-        count++;
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
 
     /* Disable RX1 & RX2 filter tuners. */
@@ -405,17 +409,18 @@ double ad9361_device_t::_calibrate_baseband_tx_analog_filter(double req_rfbw)
     _io_iface->poke8(0x0ca, 0x22);
 
     /* Calibrate! */
-    size_t count = 0;
     _io_iface->poke8(0x016, 0x40);
-    while (_io_iface->peek8(0x016) & 0x40) {
-        if (count > 100) {
+
+    auto end_time =
+        std::chrono::steady_clock::now()
+        + std::chrono::milliseconds(100);
+    while(_io_iface->peek8(0x016) & 0x40) {
+        if (std::chrono::steady_clock::now() > end_time) {
             throw uhd::runtime_error("[ad9361_device_t] TX baseband filter cal FAILURE");
             break;
         }
-
-        count++;
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
     }
+    
 
     /* Disable the filter tuner. */
     _io_iface->poke8(0x0ca, 0x26);
@@ -726,15 +731,16 @@ void ad9361_device_t::_calibrate_baseband_dc_offset()
     _io_iface->poke8(0x194, 0x01); // More calibration settings
 
     /* Start that calibration, baby. */
-    size_t count = 0;
     _io_iface->poke8(0x016, 0x01);
-    while (_io_iface->peek8(0x016) & 0x01) {
-        if (count > 100) {
+
+    auto end_time =
+        std::chrono::steady_clock::now()
+        + std::chrono::milliseconds(500);
+    while(_io_iface->peek8(0x016) & 0x01) {
+        if (std::chrono::steady_clock::now() > end_time) {
             throw uhd::runtime_error("[ad9361_device_t] Baseband DC Offset Calibration Failure");
             break;
         }
-        count++;
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
 }
 
@@ -759,15 +765,15 @@ void ad9361_device_t::_calibrate_rf_dc_offset()
     _io_iface->poke8(0x189, 0x30);
 
     /* Run the calibration! */
-    size_t count = 0;
     _io_iface->poke8(0x016, 0x02);
-    while (_io_iface->peek8(0x016) & 0x02) {
-        if (count > 200) {
+    auto end_time =
+        std::chrono::steady_clock::now()
+        + std::chrono::seconds(10);
+    while(_io_iface->peek8(0x016) & 0x02) {
+        if (std::chrono::steady_clock::now() > end_time) {
             throw uhd::runtime_error("[ad9361_device_t] RF DC Offset Calibration Failure");
             break;
         }
-        count++;
-        std::this_thread::sleep_for(std::chrono::milliseconds(50));
     }
 
     _io_iface->poke8(0x18b, 0x8d); // Enable RF DC tracking
@@ -810,15 +816,16 @@ void ad9361_device_t::_calibrate_rx_quadrature()
     double current_tx_freq = _tx_freq;
     _tune_helper(TX, _rx_freq + _rx_bb_lp_bw / 2.0);
 
-    size_t count = 0;
     _io_iface->poke8(0x016, 0x20);
-    while (_io_iface->peek8(0x016) & 0x20) {
-        if (count > 1000) {
-            throw uhd::runtime_error("[ad9361_device_t] Rx Quadrature Calibration Failure");
+
+    auto end_time =
+        std::chrono::steady_clock::now()
+        + std::chrono::seconds(5);
+    while(_io_iface->peek8(0x016) & 0x20) {
+        if (std::chrono::steady_clock::now() > end_time) {
+            throw uhd::runtime_error("[ad9361_device_t] RX Quadrature Calibration Failure");
             break;
         }
-        count++;
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
     }
 
     _io_iface->poke8(0x057, 0x30); // Re-enable Tx mixers
@@ -878,15 +885,15 @@ void ad9361_device_t::_tx_quadrature_cal_routine() {
     _io_iface->poke8(0x0ae, 0x00); // Cal LPF gain index (split mode)
 
     /* Now, calibrate the TX quadrature! */
-    size_t count = 0;
     _io_iface->poke8(0x016, 0x10);
-    while (_io_iface->peek8(0x016) & 0x10) {
-        if (count > 100) {
+    auto end_time =
+        std::chrono::steady_clock::now()
+        + std::chrono::seconds(1);
+    while(_io_iface->peek8(0x016) & 0x10) {
+        if (std::chrono::steady_clock::now() > end_time) {
             throw uhd::runtime_error("[ad9361_device_t] TX Quadrature Calibration Failure");
             break;
         }
-        count++;
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
     }
 }
 
@@ -1311,9 +1318,14 @@ double ad9361_device_t::_tune_helper(direction_t direction, const double value)
         _io_iface->poke8(0x005, _regs.vcodivs);
 
         /* Lock the PLL! */
-        std::this_thread::sleep_for(std::chrono::milliseconds(2));
-        if ((_io_iface->peek8(0x247) & 0x02) == 0) {
-            throw uhd::runtime_error("[ad9361_device_t] RX PLL NOT LOCKED");
+        auto end_time =
+            std::chrono::steady_clock::now()
+            + std::chrono::milliseconds(2);
+        while((_io_iface->peek8(0x247) & 0x02) == 0) {
+            if (std::chrono::steady_clock::now() > end_time) {
+                throw uhd::runtime_error("[ad9361_device_t] RX PLL NOT LOCKED");
+                break;
+            }
         }
 
         _rx_freq = actual_lo;
@@ -1352,9 +1364,14 @@ double ad9361_device_t::_tune_helper(direction_t direction, const double value)
         _io_iface->poke8(0x005, _regs.vcodivs);
 
         /* Lock the PLL! */
-        std::this_thread::sleep_for(std::chrono::milliseconds(2));
-        if ((_io_iface->peek8(0x287) & 0x02) == 0) {
-            throw uhd::runtime_error("[ad9361_device_t] TX PLL NOT LOCKED");
+        auto end_time =
+            std::chrono::steady_clock::now()
+            + std::chrono::milliseconds(2);
+        while((_io_iface->peek8(0x287) & 0x02) == 0) {
+            if (std::chrono::steady_clock::now() > end_time) {
+                throw uhd::runtime_error("[ad9361_device_t] TX PLL NOT LOCKED");
+                break;
+            }
         }
 
         _tx_freq = actual_lo;
@@ -1557,12 +1574,17 @@ void ad9361_device_t::initialize()
     /* Reset the device. */
     _io_iface->poke8(0x000, 0x01);
     _io_iface->poke8(0x000, 0x00);
-    std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
     /* Check device ID to make sure iface works */
-    uint32_t device_id = (_io_iface->peek8(0x037) & 0x8);
-    if (device_id != 0x8) {
-        throw uhd::runtime_error(str(boost::format("[ad9361_device_t::initialize] Device ID readback failure. Expected: 0x8, Received: 0x%x") % device_id));
+    auto end_time =
+        std::chrono::steady_clock::now()
+        + std::chrono::milliseconds(20);
+    while((_io_iface->peek8(0x037) & 0x8) != 0x8) {
+        if (std::chrono::steady_clock::now() > end_time) {
+            uint32_t device_id = (_io_iface->peek8(0x037) & 0x8);
+            throw uhd::runtime_error(str(boost::format("[ad9361_device_t::initialize] Device ID readback failure. Expected: 0x8, Received: 0x%x") % device_id));
+            break;
+        }
     }
 
     /* There is not a WAT big enough for this. */
