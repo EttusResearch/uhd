@@ -179,6 +179,7 @@ void rhodium_radio_ctrl_impl::_init_peripherals()
     _rx_fe_core->set_adc_rate(_master_clock_rate);
     _rx_fe_core->set_dc_offset(rx_frontend_core_3000::DEFAULT_DC_OFFSET_VALUE);
     _rx_fe_core->set_dc_offset_auto(rx_frontend_core_3000::DEFAULT_DC_OFFSET_ENABLE);
+    _rx_fe_core->set_iq_balance(rx_frontend_core_3000::DEFAULT_IQ_BALANCE_VALUE);
     _rx_fe_core->populate_subtree(_tree->subtree(_root_path / "rx_fe_corrections" / 0));
 
     UHD_LOG_TRACE(unique_id(), "Writing initial gain values...");
