@@ -227,7 +227,9 @@ double rhodium_radio_ctrl_impl::set_tx_frequency(
         _rpcc->notify_with_token(_rpc_prefix + "enable_tx_lowband_lo", (!is_highband));
     }
     _update_tx_freq_switches(coerced_freq);
-    _update_corrections(get_tx_lo_source(RHODIUM_LO1, 0), coerced_freq, TX_DIRECTION);
+    const bool enable_corrections = is_highband
+                                    and (get_tx_lo_source(RHODIUM_LO1, 0) == "internal");
+    _update_corrections(actual_lo_freq, TX_DIRECTION, enable_corrections);
     // if TX lowband/highband changed and antenna is TX/RX,
     // the ATR and SW1 need to be updated
     _update_tx_output_switches(get_tx_antenna(0));
@@ -280,7 +282,9 @@ double rhodium_radio_ctrl_impl::set_rx_frequency(
         _rpcc->notify_with_token(_rpc_prefix + "enable_rx_lowband_lo", (!is_highband));
     }
     _update_rx_freq_switches(coerced_freq);
-    _update_corrections(get_rx_lo_source(RHODIUM_LO1, 0), coerced_freq, RX_DIRECTION);
+    const bool enable_corrections = is_highband
+                                    and (get_rx_lo_source(RHODIUM_LO1, 0) == "internal");
+    _update_corrections(actual_lo_freq, RX_DIRECTION, enable_corrections);
 
     return coerced_freq;
 }
@@ -449,20 +453,20 @@ void rhodium_radio_ctrl_impl::_update_atr(
 }
 
 void rhodium_radio_ctrl_impl::_update_corrections(
-    const std::string lo_source, 
     const double freq, 
-    const direction_t dir)
+    const direction_t dir,
+    const bool enable)
 {
     const std::string fe_path_part = dir == RX_DIRECTION ? "rx_fe_corrections"
                                                             : "tx_fe_corrections";
     const fs_path fe_corr_path = _root_path / fe_path_part / 0;
     const fs_path dboard_path  = fs_path("dboards") / _radio_slot;
 
-    if (lo_source == "internal")
+    if (enable)
     {
         UHD_LOG_DEBUG(unique_id(),
-            "Enabling frontend corrections for "
-                << ((dir == RX_DIRECTION) ? "RX" : "TX"));
+            "Loading any available frontend corrections for "
+                << ((dir == RX_DIRECTION) ? "RX" : "TX") << " at " << freq);
         if (dir == RX_DIRECTION) {
             apply_rx_fe_corrections(_tree, dboard_path, fe_corr_path, freq);
         } else {

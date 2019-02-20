@@ -218,8 +218,8 @@ private:
     //  ATR registers control SW10 and the frontend LEDs.
     void _update_atr(const std::string& ant, const direction_t dir);
 
-    //! Configure DSP core corrections based on current frequency and LO source
-    void _update_corrections(const std::string lo_source, const double freq, const direction_t dir);
+    //! Configure DSP core corrections based on current frequency
+    void _update_corrections(const double freq, const direction_t dir, const bool enable);
 
     //! Map a frequency in Hz to an rx_band value. Will return
     //  rx_band::INVALID_BAND if the frequency is out of range.
