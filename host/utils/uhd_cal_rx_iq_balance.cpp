@@ -28,9 +28,14 @@ namespace po = boost::program_options;
 /***********************************************************************
  * Transmit thread
  **********************************************************************/
-static void tx_thread(uhd::tx_streamer::sptr tx_stream, const double tx_wave_ampl)
+static void tx_thread(uhd::usrp::multi_usrp::sptr usrp,
+    uhd::tx_streamer::sptr tx_stream,
+    const double tx_wave_ampl)
 {
     uhd::set_thread_priority_safe();
+
+    // set max TX gain
+    usrp->set_tx_gain(usrp->get_tx_gain_range().stop());
 
     // setup variables and allocate buffer
     uhd::tx_metadata_t md;
@@ -139,7 +144,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
     // create a transmitter thread
     boost::thread_group threads;
-    threads.create_thread(boost::bind(&tx_thread, tx_stream, tx_wave_ampl));
+    threads.create_thread(boost::bind(&tx_thread, usrp, tx_stream, tx_wave_ampl));
 
     // re-usable buffer for samples
     std::vector<samp_type> buff;
