@@ -1,5 +1,6 @@
 //
 // Copyright 2017 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -301,12 +302,7 @@ mpmd_mboard_impl::mpmd_mboard_impl(
 
 mpmd_mboard_impl::~mpmd_mboard_impl()
 {
-    try {
-        dump_logs();
-    } catch (...) {
-        UHD_LOG_WARNING("MPMD", "Could not flush log queue on exit!");
-    }
-    UHD_SAFE_CALL(if (not rpc->request_with_token<bool>("unclaim")) {
+    UHD_SAFE_CALL(dump_logs(); if (not rpc->request_with_token<bool>("unclaim")) {
         UHD_LOG_WARNING("MPMD", "Failure to ack unclaim!");
     });
 }
@@ -398,10 +394,25 @@ uhd::device_addr_t mpmd_mboard_impl::get_tx_hints() const
 bool mpmd_mboard_impl::claim()
 {
     try {
-        return _claim_rpc->request_with_token<bool>("reclaim");
-    } catch (...) {
-        UHD_LOG_WARNING("MPMD", "Reclaim failed. Exiting claimer loop.");
-        return false;
+        auto result = _claim_rpc->request_with_token<bool>("reclaim");
+        // When _allow_claim_failure_flag goes from true to false, we still have
+        // to wait for a successful reclaim before we can also set
+        // _allow_claim_failure_latch to false, because we have no way of
+        // synchronizing those events.
+        // In other words, we might be setting allow_claim_failure back to false
+        // too soon, but we have no way of knowing exactly when the right time
+        // is.
+        _allow_claim_failure_latch = _allow_claim_failure_flag.load();
+        return result;
+    } catch (const uhd::runtime_error& ex) {
+        // Note: Any RPC error will raise a uhd::runtime_error. Other errors are
+        // not handled here.
+        if (_allow_claim_failure_latch) {
+            UHD_LOG_DEBUG("MPMD", ex.what());
+        } else {
+            UHD_LOG_WARNING("MPMD", ex.what());
+        }
+        return _allow_claim_failure_latch;
     }
 }
 
@@ -420,8 +431,13 @@ uhd::task::sptr mpmd_mboard_impl::claim_device_and_make_task()
         auto now = std::chrono::steady_clock::now();
         if (not this->claim()) {
             throw uhd::value_error("mpmd device reclaiming loop failed!");
-        };
-        this->dump_logs();
+        } else {
+            try {
+                this->dump_logs();
+            } catch(const uhd::runtime_error&) {
+                UHD_LOG_WARNING("MPMD", "Could not read back log queue!");
+            }
+        }
         std::this_thread::sleep_until(
             now + std::chrono::milliseconds(MPMD_RECLAIM_INTERVAL_MS));
     });

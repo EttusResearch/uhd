@@ -1,5 +1,6 @@
 //
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -178,8 +179,16 @@ void mpmd_impl::init_property_tree(
     for (const auto& comp_name : updateable_components) {
         UHD_LOG_TRACE("MPMD", "Adding motherboard component: " << comp_name);
         tree->create<uhd::usrp::component_files_t>(mb_path / "components" / comp_name)
-            .set_coercer([mb](const uhd::usrp::component_files_t& comp_files) {
-                return _update_component(comp_files, mb);
+            .set_coercer([mb, comp_name](const uhd::usrp::component_files_t& comp_files) {
+                auto comp_info = _get_component_info(comp_name, mb)[0];
+                if (comp_info.metadata.get("reset", "") == "True") {
+                    UHD_LOG_DEBUG(
+                        "MPMD", "Bracing for potential loss of RPC server connection.");
+                    mb->allow_claim_failure(true);
+                }
+                auto result = _update_component(comp_files, mb);
+                mb->allow_claim_failure(false);
+                return result;
             })
             .set_publisher([mb, comp_name]() {
                 return _get_component_info(comp_name, mb);

@@ -130,6 +130,23 @@ public:
     uhd::device_addr_t get_rx_hints() const;
     uhd::device_addr_t get_tx_hints() const;
 
+    /*! Setting this flag will enable a mode where a reclaim failure is
+     *  acceptable.
+     *
+     * The only legitimate time to do this is when a procedure is called that
+     * can cause communication with the RPC server to be interrupted
+     * legitimately, but non-critically. For example, when updating the FPGA
+     * image, the RPC server gets rebooted, but the claim loop is running in a
+     * separate thread, and needs some kind of flag to be notified that
+     * something is up.
+     */
+    void allow_claim_failure(const bool allow) {
+        if (allow) {
+            _allow_claim_failure_latch = true;
+        }
+        _allow_claim_failure_flag = allow;
+    }
+
 private:
     /*! Reference to the RPC client that handles claiming
      */
@@ -171,6 +188,17 @@ private:
     uhd::mpmd::xport::mpmd_xport_mgr::uptr _xport_mgr;
     uhd::device_addr_t send_args;
     uhd::device_addr_t recv_args;
+
+    /*! This flag is only used within the claim() function. Go look there if you
+     * really need to know what it does.
+     */
+    std::atomic<bool> _allow_claim_failure_flag{false};
+
+    /*! This flag is only used within the claim() function. Go look there if you
+     * really need to know what it does.
+     */
+    std::atomic<bool> _allow_claim_failure_latch{false};
+
 };
 
 
