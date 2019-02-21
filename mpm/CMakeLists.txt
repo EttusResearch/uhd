@@ -33,6 +33,15 @@ set(PYTHON_MIN_VERSION 3.5)
 include(UHDPython)
 
 ########################################################################
+# Find Python Modules
+########################################################################
+PYTHON_CHECK_MODULE(
+    "Mako templates 0.4.2 or greater"
+    "mako" "mako.__version__ >= '0.4.2'"
+    HAVE_PYTHON_MODULE_MAKO
+)
+
+########################################################################
 # Version Information
 ########################################################################
 include(MPMVersion)
@@ -143,6 +152,7 @@ elseif(MPM_DEVICE STREQUAL "sim")
 endif()
 
 MPM_REGISTER_COMPONENT("LibMPM" ENABLE_LIBMPM ON "Boost_FOUND" OFF ON)
+MPM_REGISTER_COMPONENT("RegMaps" ENABLE_REGMAPS ON "HAVE_PYTHON_MODULE_MAKO" OFF OFF)
 MPM_REGISTER_COMPONENT("Mykonos" ENABLE_MYKONOS OFF "ENABLE_LIBMPM" OFF OFF)
 MPM_REGISTER_COMPONENT("Magnesium" ENABLE_MAGNESIUM OFF "ENABLE_MYKONOS" OFF OFF)
 MPM_REGISTER_COMPONENT("E320" ENABLE_E320 OFF "ENABLE_LIBMPM" OFF OFF)
