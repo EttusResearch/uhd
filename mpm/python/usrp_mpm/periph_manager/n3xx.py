@@ -219,6 +219,7 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         self._available_endpoints = list(range(256))
         self._bp_leds = None
         self._gpsd = None
+        self._qsfp_retimer = None
         super(n3xx, self).__init__()
         try:
             # Init peripherals
@@ -367,10 +368,10 @@ class n3xx(ZynqComponents, PeriphManagerBase):
             self._qsfp_retimer.set_rate_preset(N32X_DEFAULT_QSFP_RATE_PRESET)
             self._qsfp_retimer.set_driver_preset(N32X_DEFAULT_QSFP_DRIVER_PRESET)
         elif self.device_info['product'] == 'n320':
-            # If we have an N320, we should also have the QSFP board, but we
-            # won't freak out if we can't find it. Maybe someone removed or
-            # disabled it.
-            self.log.warning("No QSFP board detected!")
+            self.log.info(
+                "No QSFP board detected: "
+                "Assuming it is disabled in the device tree overlay "
+                "(e.g., HG, XG images).")
         # Init CHDR transports
         self._xport_mgrs = {
             'udp': N3xxXportMgrUDP(self.log.getChild('UDP'), args),
