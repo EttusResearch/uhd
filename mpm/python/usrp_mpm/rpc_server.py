@@ -268,8 +268,11 @@ class MPMServer(RPCServer):
         """
         self._state.lock.acquire()
         if self._state.claim_status.value:
-            self.log.warning("Someone tried to claim this device again")
-            self._last_error = "Someone tried to claim this device again"
+            error_msg = \
+                "Someone tried to claim this device again (From: {})".format(
+                    self.client_host)
+            self.log.warning(error_msg)
+            self._last_error = error_msg
             self._state.lock.release()
             raise RuntimeError("Double-claim")
         self.log.debug(
