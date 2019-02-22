@@ -94,7 +94,7 @@ void mpmd_impl::init_property_tree(
         .set(mb->device_info.get("serial", "n/a"));
     tree->create<std::string>(mb_path / "connection")
         .set(mb->device_info.get("connection", "UNKNOWN"));
-    tree->create<size_t>(mb_path / "link_max_rate").set(1e9 / 8);
+    tree->create<size_t>(mb_path / "link_max_rate").set(125000000);
     tree->create<std::string>(mb_path / "mpm_version")
         .set(mb->device_info.get("mpm_version", "UNKNOWN"));
     tree->create<std::string>(mb_path / "fpga_version")
