@@ -264,7 +264,7 @@ class Rhodium(BfrfsEEPROM, DboardManagerBase):
         # Create ADC interface (JESD204B link is powered down).
         self.log.trace("Creating ADC control object...")
         self.adc = AD9695Rh(self.slot_idx, self._spi_ifaces['adc'], self.log)
-        self.log.info("Succesfully loaded all peripherals!")
+        self.log.info("Successfully loaded all peripherals!")
 
     def _power_on(self):
         " Turn on power to daughterboard "
