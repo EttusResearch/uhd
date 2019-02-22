@@ -351,7 +351,6 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         self.mboard_regs_control.get_git_hash()
         self.mboard_regs_control.get_build_timestamp()
         self._check_fpga_compat()
-        self._update_fpga_type()
         self.crossbar_base_port = self.mboard_regs_control.get_xbar_baseport()
         # Init clocking
         self.enable_ref_clock(enable=True)
@@ -372,6 +371,8 @@ class n3xx(ZynqComponents, PeriphManagerBase):
                 "No QSFP board detected: "
                 "Assuming it is disabled in the device tree overlay "
                 "(e.g., HG, XG images).")
+        # Init FPGA type
+        self._update_fpga_type()
         # Init CHDR transports
         self._xport_mgrs = {
             'udp': N3xxXportMgrUDP(self.log.getChild('UDP'), args),
@@ -1024,6 +1025,13 @@ class n3xx(ZynqComponents, PeriphManagerBase):
     def _update_fpga_type(self):
         """Update the fpga type stored in the updateable components"""
         fpga_type = self.mboard_regs_control.get_fpga_type()
+        # This is ugly, but we have no elegant way of probing QSFP capabilities
+        # through the mboard regs object, so we simply hardcode the options:
+        if self.device_info['product'] == 'n320' and self._qsfp_retimer:
+            if fpga_type == "XG":
+                fpga_type = "AQ"
+            if fpga_type == "WX":
+                fpga_type = "XQ"
         self.log.debug("Updating mboard FPGA type info to {}".format(fpga_type))
         self.updateable_components['fpga']['type'] = fpga_type
 
