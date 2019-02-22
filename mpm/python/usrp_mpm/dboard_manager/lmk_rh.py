@@ -21,8 +21,9 @@ class LMK04828Rh(LMK04828):
             parent_log.getChild("LMK04828-{}".format(slot_idx)) if parent_log is not None \
             else get_logger("LMK04828-{}".format(slot_idx))
         LMK04828.__init__(self, regs_iface, parent_log)
-        self.log.debug("Using reference clock frequency {} MHz".format(ref_clock_freq/1e6))
-        self.log.debug("Using sampling clock frequency: {} MHz".format(sampling_clock_freq/1e6))
+        self.log.debug("Using reference clock frequency {:.2f} MHz".format(ref_clock_freq/1e6))
+        self.log.debug("Using sampling clock frequency: {:.2f} MHz"
+                       .format(sampling_clock_freq/1e6))
         self.ref_clock_freq = ref_clock_freq
         self.sampling_clock_freq = sampling_clock_freq
         # VCXO on Rh runs at 122.88 MHz
