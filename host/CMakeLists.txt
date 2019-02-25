@@ -268,7 +268,7 @@ if(MSVC)
         -D_WINSOCK_DEPRECATED_NO_WARNINGS
     )
     # multi-threaded build and increases the number of addressable sections in an .obj file.
-    set (COMPILE_FLAGS ${COMPILE_FLAGS} /MP /bigobj)
+    add_compile_options(/MP /bigobj)
 endif(MSVC)
 
 if(CYGWIN)
