@@ -58,7 +58,8 @@ set(PYUHD_FILES
 set(SETUP_PY_IN    "${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in")
 set(SETUP_PY       "${CMAKE_CURRENT_BINARY_DIR}/setup.py")
 set(TIMESTAMP_FILE "${CMAKE_CURRENT_BINARY_DIR}/build/timestamp")
-
+# convert binary directory to native format to use in SETUP_PY file.
+file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR} NATIVE_CURRENT_BINARY_DIR)
 configure_file(${SETUP_PY_IN} ${SETUP_PY})
 
 add_custom_command(OUTPUT ${TIMESTAMP_FILE}
