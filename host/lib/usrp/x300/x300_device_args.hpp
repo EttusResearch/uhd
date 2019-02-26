@@ -116,10 +116,39 @@ public:
         return _enable_tx_dual_eth.get();
     }
 
-
     inline virtual std::string to_string() const
     {
-        return _master_clock_rate.to_string() + ", " + "";
+        // We leave out blank_eeprom for safety reasons
+        return (!_first_addr.get().empty() ? (_first_addr.to_string() + ", ") : "")
+               + (!_second_addr.get().empty() ? (_second_addr.to_string() + ", ") : "")
+               + _master_clock_rate.to_string() + ", " + _dboard_clock_rate.to_string()
+               + ", "
+               + (_system_ref_rate.get() != DEFAULT_SYSREF_RATE
+                         ? (_system_ref_rate.to_string() + ", ")
+                         : "")
+               + (_time_source.get() != DEFAULT_TIME_SOURCE
+                         ? (_time_source.to_string() + ", ")
+                         : "")
+               + (_clock_source.get() != DEFAULT_CLOCK_SOURCE
+                         ? (_clock_source.to_string() + ", ")
+                         : "")
+               + (_resource.get().empty() ? "" : (_resource.to_string() + ", "))
+               + (_self_cal_adc_delay.get() ? (_self_cal_adc_delay.to_string() + ", ")
+                                            : "")
+               + (_ext_adc_self_test.get() ? (_ext_adc_self_test.to_string() + ", ") : "")
+               + (_ext_adc_self_test.get() && (_ext_adc_self_test_duration.get() != 30.0)
+                         ? (_ext_adc_self_test.to_string() + ", ")
+                         : "")
+               + (_recover_mb_eeprom.get() ? (_recover_mb_eeprom.to_string() + ", ") : "")
+               + (_ignore_cal_file.get() ? (_ignore_cal_file.to_string() + ", ") : "")
+               + ((!_resource.get().empty()
+                      && _niusrprio_rpc_port.get() != NIUSRPRIO_DEFAULT_RPC_PORT)
+                         ? (_niusrprio_rpc_port.to_string() + ", ")
+                         : "")
+               + (_has_fw_file.get() ? _fw_file.to_string() + ", " : "")
+               + (_enable_tx_dual_eth.get() ? (_enable_tx_dual_eth.to_string() + ", ")
+                                            : "")
+            ;
     }
 
 private:
