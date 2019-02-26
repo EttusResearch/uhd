@@ -425,7 +425,7 @@ udp_zero_copy::sptr udp_zero_copy::make(const std::string& addr,
         < xport_params.num_recv_frames * MAX_ETHERNET_MTU) {
         UHD_LOG_WARNING("UDP",
             "The current recv_buff_size of "
-                << xport_params.recv_buff_size
+                << buff_params_out.recv_buff_size
                 << " is less than the minimum recommended size of "
                 << xport_params.num_recv_frames * MAX_ETHERNET_MTU
                 << " and may result in dropped packets on some NICs");
@@ -434,7 +434,7 @@ udp_zero_copy::sptr udp_zero_copy::make(const std::string& addr,
         < xport_params.num_send_frames * MAX_ETHERNET_MTU) {
         UHD_LOG_WARNING("UDP",
             "The current send_buff_size of "
-                << xport_params.send_buff_size
+                << buff_params_out.send_buff_size
                 << " is less than the minimum recommended size of "
                 << xport_params.num_send_frames * MAX_ETHERNET_MTU
                 << " and may result in dropped packets on some NICs");
