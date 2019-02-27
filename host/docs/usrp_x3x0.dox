@@ -15,7 +15,7 @@ More information:
 	- Dual SFP+ Transceivers (can be used with 1 GigE, 10 GigE)
 	- PCI Express over cable (MXI) gen1 x4
 	- External PPS input & output
-	- External 10 MHz input & output
+	- External reference (10 MHz, 11.52 MHz, 23.04 MHz, or 30.72 MHz) input & output
 	- Expandable via 2nd SFP+ interface
 	- Supported master clock rates: 200 MHz and 184.32 MHz
         - Variable daughterboard clock rates
@@ -663,11 +663,20 @@ Afterward, power-cycle your X-Series device for the changes to take effect.
 - **PPS/TRIG IN**: Input port for the PPS signal
 - **GPS**: Connection for the GPS antenna
 
-\subsection x3x0_hw_x3x0_hw_ref10M Ref Clock - 10 MHz
+\subsection x3x0_hw_x3x0_hw_ref10M Ref Clock (10 MHz or other frequency)
 
 Using an external 10 MHz reference clock, a square wave will offer the best phase
 noise performance, but a sinusoid is acceptable.
 The power level of the reference clock must exceed +15 dBm.
+
+The following reference frequencies are supported:
+- 10 MHz
+- 11.52 MHz
+- 23.04 MHz
+- 30.72 MHz
+
+If the external reference clock is not 10 MHz, the `system_ref_rate` device arg
+must be provided.
 
 To use the external reference in your UHD session, make sure to either call
 uhd::usrp::multi_usrp::set_clock_source() or specify `clock_source=external` in
