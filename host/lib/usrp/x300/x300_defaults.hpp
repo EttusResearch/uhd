@@ -102,6 +102,8 @@ static const size_t MAX_RATE_1GIGE  = (size_t)( // bytes/s
         / float(GE_DATA_FRAME_RECV_SIZE
                 + 8 /* UDP header */ + 20 /* Ethernet header length */)));
 
+static constexpr double DEFAULT_EXT_ADC_SELF_TEST_DURATION = 30.0;
+
 }}} /* namespace uhd::usrp::x300 */
 
 #endif /* INCLUDED_X300_DEFAULTS_HPP */
