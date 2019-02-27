@@ -45,7 +45,7 @@ static const std::vector<std::string> CLOCK_SOURCE_OPTIONS{
 static const std::vector<std::string> TIME_SOURCE_OPTIONS{
     "internal", "external", "gpsdo"};
 static const std::vector<double> EXTERNAL_FREQ_OPTIONS{
-    10e6, 11.52e6, 23.04e6, 30.72e6, 200e6};
+    10e6, 11.52e6, 23.04e6, 30.72e6};
 
 static constexpr size_t RX_SW_BUFF_SIZE_ETH =
     0x2000000; // 32MiB    For an ~8k frame size any size >32MiB is just wasted buffer
