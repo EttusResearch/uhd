@@ -25,6 +25,7 @@ void export_tune(py::module& m)
 
     py::class_<tune_request_t>(m, "tune_request")
         .def(py::init<double, double>())
+        .def(py::init<double>(), py::arg("target_freq")=0.0)
         .def_readwrite("target_freq"    , &tune_request_t::target_freq    )
         .def_readwrite("rf_freq_policy" , &tune_request_t::rf_freq_policy )
         .def_readwrite("dsp_freq_policy", &tune_request_t::dsp_freq_policy)
