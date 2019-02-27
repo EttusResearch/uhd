@@ -162,7 +162,7 @@ void rhodium_radio_ctrl_impl::_set_rx_fe_connection(const std::string &conn)
 {
     UHD_LOG_TRACE(unique_id(), "set_rx_fe_connection(conn=" << conn <<  ")");
 
-    if (conn != _tx_fe_connection)
+    if (conn != _rx_fe_connection)
     {
         _rx_fe_core->set_fe_connection(conn);
         _rx_fe_connection = conn;
