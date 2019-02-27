@@ -771,7 +771,7 @@ Then, you can invoke bitbake to build the image:
 
     $ bitbake $image_name
 
-where `$image_name` could be `developer_image` or `deployment_image`. If you
+where `$image_name` could be `developer-image` or `deployment-image`. If you
 want to build the SDK, append `-cpopulate_sdk` to the above line.
 
 If you keep the build directory, bitbake will reuse it on consecutive runs,
