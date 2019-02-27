@@ -27,7 +27,8 @@ public:
         , _resource("resource", "")
         , _self_cal_adc_delay("self_cal_adc_delay", false)
         , _ext_adc_self_test("ext_adc_self_test", false)
-        , _ext_adc_self_test_duration("ext_adc_self_test", 30.0)
+        , _ext_adc_self_test_duration(
+              "ext_adc_self_test", DEFAULT_EXT_ADC_SELF_TEST_DURATION)
         , _recover_mb_eeprom("recover_mb_eeprom", false)
         , _ignore_cal_file("ignore_cal_file", false)
         , _niusrprio_rpc_port("niusrprio_rpc_port", NIUSRPRIO_DEFAULT_RPC_PORT)
@@ -136,7 +137,9 @@ public:
                + (_self_cal_adc_delay.get() ? (_self_cal_adc_delay.to_string() + ", ")
                                             : "")
                + (_ext_adc_self_test.get() ? (_ext_adc_self_test.to_string() + ", ") : "")
-               + (_ext_adc_self_test.get() && (_ext_adc_self_test_duration.get() != 30.0)
+               + (_ext_adc_self_test.get()
+                             && (_ext_adc_self_test_duration.get()
+                                    != DEFAULT_EXT_ADC_SELF_TEST_DURATION)
                          ? (_ext_adc_self_test.to_string() + ", ")
                          : "")
                + (_recover_mb_eeprom.get() ? (_recover_mb_eeprom.to_string() + ", ") : "")
@@ -180,7 +183,23 @@ private:
         PARSE_DEFAULT(_first_addr)
         PARSE_DEFAULT(_second_addr)
         PARSE_DEFAULT(_resource)
-        PARSE_DEFAULT(_resource)
+        if (_first_addr.get().empty() && !_second_addr.get().empty()) {
+            UHD_LOG_WARNING("X300",
+                "Specifying `second_addr' without `addr'is inconsistent and has "
+                "undefined behaviour. This will be no longer allowed in future "
+                "versions of UHD.");
+        } else if (!_first_addr.get().empty() && _second_addr.get().empty()
+                   && _first_addr.get() == _second_addr.get()) {
+            UHD_LOG_WARNING("X300",
+                "Specifying `addr' identical to `second_addr' has no effect. "
+                "`second_addr' will be ignored.");
+        }
+        if (!_resource.get().empty() && !_first_addr.get().empty()) {
+            UHD_LOG_WARNING("X300",
+                "Specifying both `resource' and `addr' is inconsistent and has "
+                "undefined behaviour. This will be no longer allowed in future "
+                "versions of UHD.");
+        }
         PARSE_DEFAULT(_self_cal_adc_delay)
         if (dev_args.has_key("ext_adc_self_test")) {
             _ext_adc_self_test.set(true);
