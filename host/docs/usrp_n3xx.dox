@@ -1063,6 +1063,26 @@ Storing data on the EEPROM is done by loading a uhd::eeprom_map_t object into
 the property tree. On writing this property, the driver code will serialize
 the map into a binary representation that can be stored on the EEPROM.
 
+\subsection n3xx_mg_revs Module and Motherboard/Daughterboard Revisions
+
+The N310 module consists of three PCBs: The motherboard and two daughterboards.
+Every PCB has a hardware revision number. Modules are always assembled such that
+the daughterboards have the same revision number. The module revision number is
+derived from the combination of daughterboard and motherboard hardware
+revisions. The following table explains which module revision contains which
+PCB revisions:
+
+Module Revision | Motherboard Revision | Daughterboard Revision | Minimum UHD Version
+----------------|----------------------|------------------------|--------------------
+A               | D                    | D                      | 3.11.0.0
+B               | F                    | E                      | 3.12.0.0
+C               | G                    | E                      | 3.13.0.2
+D               | H                    | E                      | 3.14.0.0
+
+The module revision is printed on the sticker on the underside of an N310 module
+chassis, it is contained within the part number. For example, if the sticker
+says "P/N: 141064A-01L", it is a revision A module.
+
 \subsection n3xx_mg_regmap FPGA Register Map
 
 The following tables describe how FPGA registers are mapped into the PS.
