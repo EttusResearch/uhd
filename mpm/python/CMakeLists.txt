@@ -66,3 +66,5 @@ elseif (ENABLE_E320)
         DESTINATION ${RUNTIME_DIR}
     )
 endif (ENABLE_MYKONOS)
+
+add_subdirectory(tests)

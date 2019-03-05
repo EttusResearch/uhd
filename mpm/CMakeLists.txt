@@ -170,6 +170,7 @@ install(TARGETS usrp-periphs LIBRARY DESTINATION ${LIBRARY_DIR} COMPONENT librar
 set_target_properties(usrp-periphs PROPERTIES VERSION "${MPM_VERSION_MAJOR}.${MPM_VERSION_API}.${MPM_VERSION_ABI}")
 set_target_properties(usrp-periphs PROPERTIES SOVERSION ${MPM_VERSION_MAJOR})
 
+enable_testing()
 add_subdirectory(python)
 add_subdirectory(tools)
 add_subdirectory(systemd)
