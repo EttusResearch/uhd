@@ -1911,10 +1911,15 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
         break;
     };
 
-    return rate;
+    return get_clock_rate();
 }
 
-
+/* This function returns the RX / TX rate between AD9361 and the FPGA.
+ */
+double ad9361_device_t::get_clock_rate()
+{
+    return _baseband_bw;
+}
 /* Set which of the four TX / RX chains provided by AD9361 are active.
  *
  * AD9361 provides two sets of chains, Side A and Side B. Each side
@@ -2104,7 +2109,7 @@ double ad9361_device_t::tune(direction_t direction, const double value)
         _io_iface->poke8(0x014, 0x21);
     }
 
-    return tune_freq;
+    return get_freq(direction);
 }
 
 /* Get the current RX or TX frequency. */
