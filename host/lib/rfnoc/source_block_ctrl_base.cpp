@@ -102,7 +102,24 @@ void source_block_ctrl_base::configure_flow_control_out(const bool enable_fc_out
                 % buf_size_bytes % unique_id()));
     }
 
-    _flush(block_port);
+    // Disable flow control entirely and let all upstream data flush out
+    // We need to do this every time the window is changed because
+    // a) We don't know what state the flow-control module was left in
+    //   in the previous run (it should still be enabled)
+    // b) Changing the window size where data is buffered upstream may
+    //   result in stale packets entering the stream.
+    sr_write(SR_FLOW_CTRL_EN, 0, block_port);
+
+    // Wait for data to flush out.
+    // In the FPGA we are guaranteed that all buffered packets are more-or-less
+    // consecutive. 1ms@200MHz = 200,000 cycles of "flush time". 200k cycles = 200k * 8
+    // bytes (64 bits) = 1.6MB of data that can be flushed. Typically in the FPGA we have
+    // buffering in the order of kilobytes so waiting for 1MB to flush is more than enough
+    // time.
+    // TODO: Enhancement. We should get feedback from the FPGA about when the
+    // source_flow_control
+    //      module is done flushing.
+    std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
     // Enable source flow control module and conditionally enable byte based and/or packet
     // count based flow control

@@ -372,9 +372,6 @@ protected:
     // than reset register SR_CLEAR_TX_FC.
     virtual void _clear(const size_t port = 0);
 
-    //! Flush any in-flight packets for this block
-    bool _flush(const size_t port = 0);
-
     //! Override this function if your block needs to specially handle
     // setting the command time
     virtual void _set_command_time(
@@ -406,6 +403,9 @@ private:
 
     //! Helper to start flushing for this block
     void _start_drain(const size_t port = 0);
+
+    //! Helper to flush any in-flight packets for this block
+    bool _flush(const size_t port = 0);
 
     /***********************************************************************
      * Private members
