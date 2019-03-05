@@ -161,6 +161,9 @@ public:
     /* Set SPI interface */
     void set_io_iface(ad9361_io::sptr io_iface);
 
+    /* Get the current clock rate. */
+    double get_clock_rate();
+
     /* This function sets the RX / TX rate between AD9361 and the FPGA, and
      * thus determines the interpolation / decimation required in the FPGA to
      * achieve the user's requested rate.
