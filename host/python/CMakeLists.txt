@@ -42,7 +42,7 @@ target_link_libraries(pyuhd ${Boost_LIBRARIES} ${PYTHON_LIBRARY} uhd)
 if(WIN32)
     set(PYUHD_LIBRARY_NAME libpyuhd.pyd)
 else()
-    set(PYUHD_LIBRARY_NAME libpyuhd${CMAKE_SHARED_LIBRARY_SUFFIX})
+    set(PYUHD_LIBRARY_NAME libpyuhd${CMAKE_SHARED_MODULE_SUFFIX})
 endif(WIN32)
 
 add_custom_command(TARGET pyuhd
