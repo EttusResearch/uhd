@@ -48,8 +48,8 @@ const std::array<double, NUM_DIVIDERS> LMX2592_CHDIV_MIN_FREQ = {
     221.88e6, 147.92e6, 110.94e6,  55.47e6, 36.98e6,  27.73e6,  20e6
 };
 constexpr std::array<double, NUM_DIVIDERS> LMX2592_CHDIV_MAX_FREQ = {
-    6000e6,   3550.0e6, 2366.67e6, 1775.00e6, 1183.33, 887.50e6, 591.67e6,
-    443.75e6, 295.83e6, 221.88e6,  110.94e6,  73.96e6, 55.47e6,  36.98
+    6000e6,   3550.0e6, 2366.67e6, 1775.00e6, 1183.33e6, 887.50e6, 591.67e6,
+    443.75e6, 295.83e6, 221.88e6,  110.94e6,  73.96e6, 55.47e6,  36.98e6
 };
 constexpr int NUM_CHDIV_STAGES = 3;
 constexpr std::array<std::array<int, NUM_CHDIV_STAGES>, NUM_DIVIDERS> LMX2592_CHDIV_SEGS = {
