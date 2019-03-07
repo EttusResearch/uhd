@@ -1,7 +1,7 @@
 //
 // Copyright 2018 Ettus Research, A National Instruments Company
 //
-// SPDX-License-Identifier: GPL-3.0
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #ifndef INCLUDED_LMX2592_HPP

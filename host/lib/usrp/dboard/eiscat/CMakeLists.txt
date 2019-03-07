@@ -1,7 +1,7 @@
 #
 # Copyright 2017 Ettus Research, a National Instruments Company
 #
-# SPDX-License-Identifier: GPL-3.0
+# SPDX-License-Identifier: GPL-3.0-or-later
 #
 
 # This file is conditionally included if ENABLE_MPMD and ENABLE_EISCAT are
