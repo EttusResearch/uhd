@@ -31,6 +31,9 @@ class UHD_API time_spec_t : boost::additive<time_spec_t>,
                             boost::totally_ordered<time_spec_t>
 {
 public:
+    // A special value that signifies immediate execution
+    static constexpr double ASAP = 0.0;
+
     /*!
      * Create a time_spec_t from a real-valued seconds count.
      * \param secs the real-valued seconds count (default = 0)
