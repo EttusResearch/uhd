@@ -9,6 +9,7 @@
 #include "uhd_dpdk_driver.h"
 #include <stdlib.h>
 #include <sched.h>
+#include <rte_cycles.h>
 #include <rte_errno.h>
 #include <rte_malloc.h>
 #include <rte_log.h>
@@ -212,10 +213,6 @@ static inline int uhd_dpdk_port_init(struct uhd_dpdk_port *port,
                 port->mac_addr.addr_bytes[2], port->mac_addr.addr_bytes[3],
                 port->mac_addr.addr_bytes[4], port->mac_addr.addr_bytes[5]);
 
-    struct rte_eth_link link;
-    rte_eth_link_get(port->id, &link);
-    RTE_LOG(INFO, EAL, "Port %u UP: %d\n", port->id, link.link_status);
-
     return 0;
 
 free_arp_table:
@@ -377,6 +374,17 @@ int uhd_dpdk_start(unsigned int num_ports, int *port_thread_mapping,
                     i);
     }
 
+    RTE_LOG(INFO, EAL, "Waiting for links to come up...\n");
+    rte_delay_ms(1000);
+    for (unsigned int i = 0; i < num_ports; i++) {
+        struct uhd_dpdk_port *port = &ctx->ports[i];
+        if (!port->parent)
+            continue;
+        struct rte_eth_link link;
+        rte_eth_link_get(i, &link);
+        RTE_LOG(INFO, EAL, "Port %u UP: %d, %u Mbps\n", i,
+            link.link_status, link.link_speed);
+    }
     RTE_LOG(INFO, EAL, "Init DONE!\n");
 
     /* FIXME: Create functions to do this */
