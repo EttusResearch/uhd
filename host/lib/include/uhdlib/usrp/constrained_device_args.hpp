@@ -202,11 +202,15 @@ namespace usrp {
                         _value = true;
                     } else if (boost::algorithm::to_lower_copy(str_rep) == "true" ||
                         boost::algorithm::to_lower_copy(str_rep) == "yes" ||
-                        boost::algorithm::to_lower_copy(str_rep) == "y") {
+                        boost::algorithm::to_lower_copy(str_rep) == "y" ||
+                        str_rep == "1"
+                        ) {
                         _value = true;
                     } else if (boost::algorithm::to_lower_copy(str_rep) == "false" ||
                             boost::algorithm::to_lower_copy(str_rep) == "no" ||
-                            boost::algorithm::to_lower_copy(str_rep) == "n") {
+                            boost::algorithm::to_lower_copy(str_rep) == "n" ||
+                            str_rep == "0"
+                            ) {
                         _value = false;
                     } else {
                         throw uhd::value_error(str(boost::format(
