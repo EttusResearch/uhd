@@ -567,11 +567,18 @@ to mirror its environment.
 
 To unpack the SDK, simply execute it after downloading it:
 
+    $ cd /usr/local/share/uhd/images # Change this to where your images are stored
     $ ./oecore-x86_64-cortexa9hf-neon-toolchain-nodistro.0.sh
 
-This will prompt you for an installation path.  Please ensure you have
-sufficient disk space, as each of the SDKs may require several gigabytes of
-disk space (depends on the image flavor selected).
+If this doesn't work, the executable permissions of the file might have been
+lost (this can occur with some versions of Python). In that case, add those
+permissions back before executing the `.sh` file:
+
+    $ chmod +x oecore-x86_64-cortexa9hf-neon-toolchain-nodistro.0.sh
+
+Executing the `.sh` file will prompt you for an installation path.  Please
+ensure you have sufficient disk space, as each of the SDKs may require several
+gigabytes of disk space (depending on the image flavor selected).
 
 This will allow you to compile UHD as well as (depending on the image flavor)
 other software.
