@@ -228,10 +228,15 @@ static void x300_setup_session(x300_session_t& session,
         if (!session.dev_addr.has_key("product") or session.fpga_type == "") {
             throw uhd::runtime_error(
                 "Found a device but could not auto-generate an image filename.");
-        } else
+        } else {
+            std::string fpga_file_type = to_lower_copy(session.dev_addr["product"]);
+            if (fpga_file_type == "ni-2974") {
+                fpga_file_type = "x310";
+            }
             session.filepath = find_image_path(
                 str(boost::format("usrp_%s_fpga_%s.bit")
-                    % (to_lower_copy(session.dev_addr["product"])) % session.fpga_type));
+                    % fpga_file_type % session.fpga_type));
+        }
     } else
         session.filepath = filepath;
 
