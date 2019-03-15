@@ -33,6 +33,7 @@
 #include <boost/dynamic_bitset.hpp>
 #include <boost/weak_ptr.hpp>
 #include <atomic>
+#include <functional>
 
 // Ethernet ports
 enum x300_eth_iface_t {
@@ -48,7 +49,6 @@ struct x300_eth_conn_t
     size_t link_rate;
 };
 
-
 uhd::uart_iface::sptr x300_make_uart_iface(uhd::wb_iface::sptr iface);
 
 uhd::wb_iface::sptr x300_make_ctrl_iface_enet(
@@ -61,6 +61,10 @@ uhd::device_addrs_t x300_find(const uhd::device_addr_t& hint_);
 class x300_impl : public uhd::usrp::device3_impl
 {
 public:
+    //! Function to create a udp_simple::sptr (kernel-based or DPDK-based)
+    using udp_simple_factory_t =
+        std::function<uhd::transport::udp_simple::sptr(const std::string&, const std::string&)>;
+
     x300_impl(const uhd::device_addr_t&);
     void setup_mb(const size_t which, const uhd::device_addr_t&);
     ~x300_impl(void);
@@ -231,6 +235,8 @@ private:
     uhd::device_addr_t get_rx_hints(size_t mb_index);
 
     void post_streamer_hooks(uhd::direction_t dir);
+
+    udp_simple_factory_t _x300_make_udp_connected;
 };
 
 #endif /* INCLUDED_X300_IMPL_HPP */
