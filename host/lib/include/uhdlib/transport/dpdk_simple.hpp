@@ -7,15 +7,14 @@
 #ifndef INCLUDED_DPDK_SIMPLE_HPP
 #define INCLUDED_DPDK_SIMPLE_HPP
 
+#include <uhd/transport/udp_simple.hpp>
 #include <uhdlib/transport/dpdk_common.hpp>
 
 namespace uhd { namespace transport {
 
-class dpdk_simple : boost::noncopyable
+class dpdk_simple : public udp_simple
 {
 public:
-    typedef boost::shared_ptr<dpdk_simple> sptr;
-
     virtual ~dpdk_simple(void) = 0;
 
     /*!
@@ -30,7 +29,7 @@ public:
      * \param addr a string representing the destination address
      * \param port a string representing the destination port
      */
-    static sptr make_connected(struct uhd_dpdk_ctx &ctx,
+    static udp_simple::sptr make_connected(struct uhd_dpdk_ctx &ctx,
         const std::string &addr, const std::string &port);
 
     /*!
@@ -45,38 +44,26 @@ public:
      * \param addr a string representing the destination address
      * \param port a string representing the destination port
      */
-    static sptr make_broadcast(struct uhd_dpdk_ctx &ctx,
+    static udp_simple::sptr make_broadcast(struct uhd_dpdk_ctx &ctx,
         const std::string &addr, const std::string &port);
 
     /*!
-     * Request a single send buffer of specified size.
-     *
-     * \param buf a pointer to place to write buffer location
-     * \return the maximum length of the buffer in Bytes
+     * Send a single buffer.
+     * Blocks until the data is sent.
+     * \param buff single asio buffer
+     * \return the number of bytes sent
      */
-    virtual size_t get_tx_buf(void** buf) = 0;
+    virtual size_t send(const boost::asio::const_buffer& buff) = 0;
 
     /*!
-     * Send and release outstanding buffer
-     *
-     * \param number of bytes sent (releases buffer if sent)
-     */
-    virtual size_t send(size_t length) = 0;
-
-    /*!
-     * Receive a single packet.
-     * Buffer provided by transport (must be freed).
-     *
-     * \param buf a pointer to place to write buffer location
+     * Receive into the provided buffer.
+     * Blocks until data is received or a timeout occurs.
+     * \param buff a mutable buffer to receive into
      * \param timeout the timeout in seconds
      * \return the number of bytes received or zero on timeout
      */
-    virtual size_t recv(void **buf, double timeout = 0.1) = 0;
-
-    /*!
-     * Return/free receive buffer
-     */
-    virtual void put_rx_buf(void) = 0;
+    virtual size_t recv(
+        const boost::asio::mutable_buffer& buff, double timeout = 0.1) = 0;
 
     /*!
      * Get the last IP address as seen by recv().

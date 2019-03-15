@@ -56,31 +56,7 @@ public:
                                << "):" << ntohs(sockarg.local_port));
     }
 
-    ~dpdk_simple_impl(void)
-    {
-        if (_rx_mbuf)
-            uhd_dpdk_free_buf(_rx_mbuf);
-        if (_tx_mbuf)
-            uhd_dpdk_free_buf(_tx_mbuf);
-    }
-
-    /*!
-     * Request a single send buffer of specified size.
-     *
-     * \param buf a pointer to place to write buffer location
-     * \return the maximum length of the buffer
-     */
-    size_t get_tx_buf(void** buf)
-    {
-        UHD_ASSERT_THROW(!_tx_mbuf);
-        int bufs = uhd_dpdk_request_tx_bufs(_tx_sock, &_tx_mbuf, 1, 0);
-        if (bufs != 1 || !_tx_mbuf) {
-            *buf = nullptr;
-            return 0;
-        }
-        *buf = uhd_dpdk_buf_to_data(_tx_sock, _tx_mbuf);
-        return _mtu - DPDK_SIMPLE_NONDATA_SIZE;
-    }
+    ~dpdk_simple_impl(void) {}
 
     /*!
      * Send and release outstanding buffer
@@ -88,16 +64,24 @@ public:
      * \param length bytes of data to send
      * \return number of bytes sent (releases buffer if sent)
      */
-    size_t send(size_t length)
+    size_t send(const boost::asio::const_buffer& buff)
     {
-        UHD_ASSERT_THROW(_tx_mbuf)
-        _tx_mbuf->pkt_len = length;
-        _tx_mbuf->data_len = length;
-        int num_tx = uhd_dpdk_send(_tx_sock, &_tx_mbuf, 1);
+        struct rte_mbuf* tx_mbuf;
+        size_t frame_size = _get_tx_buf(&tx_mbuf);
+        UHD_ASSERT_THROW(tx_mbuf)
+        size_t nbytes = boost::asio::buffer_size(buff);
+        UHD_ASSERT_THROW(nbytes <= frame_size)
+        const uint8_t* user_data = boost::asio::buffer_cast<const uint8_t*>(buff);
+
+        uint8_t* pkt_data = (uint8_t*) uhd_dpdk_buf_to_data(_tx_sock, tx_mbuf);
+        std::memcpy(pkt_data, user_data, nbytes);
+        tx_mbuf->pkt_len = nbytes;
+        tx_mbuf->data_len = nbytes;
+
+        int num_tx = uhd_dpdk_send(_tx_sock, &tx_mbuf, 1);
         if (num_tx == 0)
             return 0;
-        _tx_mbuf = nullptr;
-        return length;
+        return nbytes;
     }
 
     /*!
@@ -108,32 +92,29 @@ public:
      * \param timeout the timeout in seconds
      * \return the number of bytes received or zero on timeout
      */
-    size_t recv(void **buf, double timeout)
+    size_t recv(const boost::asio::mutable_buffer& buff, double timeout)
     {
-        UHD_ASSERT_THROW(!_rx_mbuf);
-        int bufs = uhd_dpdk_recv(_rx_sock, &_rx_mbuf, 1, (int) (timeout*USEC));
-        if (bufs != 1 || _rx_mbuf == nullptr) {
-            *buf = nullptr;
-            return 0;
-        }
-        if ((_tx_mbuf->ol_flags & PKT_RX_IP_CKSUM_MASK) == PKT_RX_IP_CKSUM_BAD) {
-            uhd_dpdk_free_buf(_rx_mbuf);
-            _rx_mbuf = nullptr;
-            return 0;
-        }
-        uhd_dpdk_get_src_ipv4(_rx_sock, _rx_mbuf, &_last_recv_addr);
-        *buf = uhd_dpdk_buf_to_data(_rx_sock, _rx_mbuf);
-        return uhd_dpdk_get_len(_rx_sock, _rx_mbuf);
-    }
+        struct rte_mbuf *rx_mbuf;
+        size_t buff_size = boost::asio::buffer_size(buff);
+        uint8_t* user_data = boost::asio::buffer_cast<uint8_t*>(buff);
 
-    /*!
-     * Return/free receive buffer
-     * Can also use to free un-sent TX bufs
-     */
-    void put_rx_buf(void)
-    {
-        UHD_ASSERT_THROW(_rx_mbuf)
-        uhd_dpdk_free_buf(_rx_mbuf);
+        int bufs = uhd_dpdk_recv(_rx_sock, &rx_mbuf, 1, (int) (timeout*USEC));
+        if (bufs != 1 || rx_mbuf == nullptr) {
+            return 0;
+        }
+        if ((rx_mbuf->ol_flags & PKT_RX_IP_CKSUM_MASK) == PKT_RX_IP_CKSUM_BAD) {
+            uhd_dpdk_free_buf(rx_mbuf);
+            return 0;
+        }
+        uhd_dpdk_get_src_ipv4(_rx_sock, rx_mbuf, &_last_recv_addr);
+
+        const size_t nbytes = uhd_dpdk_get_len(_rx_sock, rx_mbuf);
+        UHD_ASSERT_THROW(nbytes <= buff_size);
+
+        uint8_t* pkt_data = (uint8_t*) uhd_dpdk_buf_to_data(_rx_sock, rx_mbuf);
+        std::memcpy(user_data, pkt_data, nbytes);
+        _put_rx_buf(rx_mbuf);
+        return nbytes;
     }
 
     /*!
@@ -162,12 +143,36 @@ public:
         return std::string(addr_str);
     }
 private:
+    /*!
+     * Request a single send buffer of specified size.
+     *
+     * \param buf a pointer to place to write buffer location
+     * \return the maximum length of the buffer
+     */
+    size_t _get_tx_buf(struct rte_mbuf** buf)
+    {
+        int bufs = uhd_dpdk_request_tx_bufs(_tx_sock, buf, 1, 0);
+        if (bufs != 1) {
+            *buf = nullptr;
+            return 0;
+        }
+        return _mtu - DPDK_SIMPLE_NONDATA_SIZE;
+    }
+
+    /*!
+     * Return/free receive buffer
+     * Can also use to free un-sent TX bufs
+     */
+    void _put_rx_buf(struct rte_mbuf *rx_mbuf)
+    {
+        UHD_ASSERT_THROW(rx_mbuf)
+        uhd_dpdk_free_buf(rx_mbuf);
+    }
+
     unsigned int _port_id;
     size_t _mtu;
     struct uhd_dpdk_socket *_tx_sock;
-    struct rte_mbuf *_tx_mbuf = nullptr;
     struct uhd_dpdk_socket *_rx_sock;
-    struct rte_mbuf *_rx_mbuf = nullptr;
     uint32_t _last_recv_addr;
 };
 
@@ -176,16 +181,16 @@ dpdk_simple::~dpdk_simple(void) {}
 /***********************************************************************
  * DPDK simple transport public make functions
  **********************************************************************/
-dpdk_simple::sptr dpdk_simple::make_connected(
+udp_simple::sptr dpdk_simple::make_connected(
     struct uhd_dpdk_ctx &ctx, const std::string &addr, const std::string &port
 ){
-    return sptr(new dpdk_simple_impl(ctx, addr, port, true));
+    return udp_simple::sptr(new dpdk_simple_impl(ctx, addr, port, true));
 }
 
-dpdk_simple::sptr dpdk_simple::make_broadcast(
+udp_simple::sptr dpdk_simple::make_broadcast(
     struct uhd_dpdk_ctx &ctx, const std::string &addr, const std::string &port
 ){
-    return sptr(new dpdk_simple_impl(ctx, addr, port, false));
+    return udp_simple::sptr(new dpdk_simple_impl(ctx, addr, port, false));
 }
 }} // namespace uhd::transport
 
