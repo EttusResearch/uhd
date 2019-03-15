@@ -36,6 +36,7 @@ public:
         , _fw_file("fw", "")
         , _blank_eeprom("blank_eeprom", false)
         , _enable_tx_dual_eth("enable_tx_dual_eth", false)
+        , _use_dpdk("use_dpdk", false)
     {
         // nop
     }
@@ -115,6 +116,10 @@ public:
     bool get_enable_tx_dual_eth() const
     {
         return _enable_tx_dual_eth.get();
+    }
+    bool get_use_dpdk() const
+    {
+        return _use_dpdk.get();
     }
 
     inline virtual std::string to_string() const
@@ -220,6 +225,14 @@ private:
         if (dev_args.has_key("enable_tx_dual_eth")) {
             _enable_tx_dual_eth.set(true);
         }
+        if (dev_args.has_key("use_dpdk")) {
+#ifdef HAVE_DPDK
+            _use_dpdk.set(true);
+#else
+            UHD_LOG_WARNING("DPDK",
+                "Detected use_dpdk argument, but DPDK support not built in.");
+#endif
+        }
 
         // Sanity check params
         _enforce_range(_master_clock_rate, MIN_TICK_RATE, MAX_TICK_RATE);
@@ -247,6 +260,7 @@ private:
     constrained_device_args_t::str_arg<true> _fw_file;
     constrained_device_args_t::bool_arg _blank_eeprom;
     constrained_device_args_t::bool_arg _enable_tx_dual_eth;
+    constrained_device_args_t::bool_arg _use_dpdk;
 };
 
 }}} // namespace uhd::usrp::x300
