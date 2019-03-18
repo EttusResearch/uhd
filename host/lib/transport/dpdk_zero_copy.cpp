@@ -4,10 +4,10 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "dpdk_zero_copy.hpp"
 #include <uhd/config.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/transport/uhd-dpdk.h>
+#include <uhdlib/transport/dpdk_zero_copy.hpp>
 #include <uhdlib/utils/prefs.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>

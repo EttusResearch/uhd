@@ -8,8 +8,8 @@
 #define INCLUDED_MPMD_XPORT_CTRL_DPDK_UDP_HPP
 
 #include "mpmd_xport_ctrl_base.hpp"
-#include "../transport/dpdk_zero_copy.hpp"
 #include <uhd/types/device_addr.hpp>
+#include <uhdlib/transport/dpdk_zero_copy.hpp>
 #include "../device3/device3_impl.hpp"
 
 namespace uhd { namespace mpmd { namespace xport {

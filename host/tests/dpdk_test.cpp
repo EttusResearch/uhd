@@ -8,7 +8,7 @@
  */
 
 
-#include "../transport/dpdk_zero_copy.hpp"
+#include <uhdlib/transport/dpdk_zero_copy.hpp>
 #include <uhdlib/transport/uhd-dpdk.h>
 #include <arpa/inet.h>
 #include <errno.h>
