@@ -75,6 +75,10 @@ use.
 
 \subsection dpdk_nic_config NIC Configuration
 
+Configuration of the NIC can be controlled via device arguments via the usual
+methods, but the \ref page_configfiles "UHD configuration file" is the
+recommended location.
+
 In order to run, you'll need to set the permissions for your user to take over
 the vfio-pci devices, the hugepages, and the scheduler's settings for the
 threads (at a minimum). You may consider running you applications as root, at
@@ -98,12 +102,12 @@ options:
     dpdk-driver=/usr/local/lib/dpdk-pmds/
     ;dpdk-corelist is the -l flag for the DPDK EAL. See more at the link
     ; https://doc.dpdk.org/guides-17.11/linux_gsg/build_sample_apps.html#running-a-sample-application
-    dpdk-corelist=2,3
-    ;dpdk-num-bufs is the total number of packet buffers allocated
+    dpdk-corelist=0,1
+    ;dpdk-num-mbufs is the total number of packet buffers allocated
     ;to each direction's packet buffer pool
     ;This will be multiplied by the number of NICs, but NICs on the same
     ;CPU socket share a pool
-    dpdk-num-bufs=4095
+    dpdk-num-mbufs=4095
     ;dpdk-mbuf-cache-size is the number of buffers to cache for a CPU
     ;The cache reduces the interaction with the global pool
     dpdk-mbuf-cache-size=315
