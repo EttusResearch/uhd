@@ -7,9 +7,9 @@
 #include "mpmd_impl.hpp"
 #include "mpmd_xport_mgr.hpp"
 #include "mpmd_xport_ctrl_dpdk_udp.hpp"
-#include "../../transport/dpdk_zero_copy.hpp"
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/transport/udp_constants.hpp>
+#include <uhdlib/transport/dpdk_zero_copy.hpp>
 #include <arpa/inet.h>
 
 

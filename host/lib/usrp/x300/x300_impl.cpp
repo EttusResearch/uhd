@@ -25,7 +25,7 @@
 #include <uhd/utils/static.hpp>
 #include <uhdlib/usrp/common/apply_corrections.hpp>
 #ifdef HAVE_DPDK
-#    include "../../transport/dpdk_zero_copy.hpp"
+#    include <uhdlib/transport/dpdk_zero_copy.hpp>
 #    include <uhdlib/transport/dpdk_simple.hpp>
 #endif
 #include <boost/algorithm/string.hpp>
