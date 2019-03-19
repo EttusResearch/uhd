@@ -12,7 +12,9 @@
 ########################################################################
 # Project setup
 ########################################################################
-cmake_minimum_required(VERSION 2.8.12)
+# NOTE! If you change the version in the following line, also change
+# CMAKE_MIN_VERSION below. (This won't take a variable).
+cmake_minimum_required(VERSION 3.5.1)
 if(POLICY CMP0048)
   cmake_policy(SET CMP0048 NEW) # Suppress Version warnings
 endif(POLICY CMP0048)
@@ -25,15 +27,22 @@ list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake/Modules)
 ########################################################################
 # UHD Dependency Minimum Versions
 ########################################################################
-# Full C++11 came with GCC 4.7, Clang >= 3.3.0, Apple Clang >= 500
+set(CMAKE_MIN_VERSION "3.5.1")
 set(GCC_MIN_VERSION "4.8.0")
-set(CLANG_MIN_VERSION "3.3.0")
-set(APPLECLANG_MIN_VERSION "500")
+set(CLANG_MIN_VERSION "3.4.0")
+set(APPLECLANG_MIN_VERSION "503")
 # Make sure to update the next two in unison:
 set(MSVC_MIN_VERSION "1900")
 set(MSVC_MIN_VERSION_READABLE "14.0")
+# This Python version gets used for Python API (if requested) as well as
+# all the build-time Python scripts
+set(PYTHON_MIN_VERSION "2.7")
 # Other deps
-set(BOOST_MIN_VERSION "1.53")
+set(BOOST_MIN_VERSION "1.58")
+set(NUMPY_MIN_VERSION "1.7")
+set(PY_MAKO_MIN_VERSION "0.4.2")
+set(PY_REQUESTS_MIN_VERSION "2.0")
+
 
 ########################################################################
 # Check Compiler Version
@@ -80,19 +89,7 @@ elseif(MSVC)
     endif(${MSVC_VERSION} VERSION_LESS ${MSVC_MIN_VERSION})
 endif()
 
-if(CMAKE_VERSION VERSION_LESS "3.1")
-    if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU")
-        set(CMAKE_CXX_FLAGS "--std=gnu++11 ${CMAKE_CXX_FLAGS}")
-    elseif(${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
-        if("${IS_APPLE}" STREQUAL "")
-            set(CMAKE_CXX_FLAGS "-std=c++11 ${CMAKE_CXX_FLAGS}")
-        else()
-            set(CMAKE_CXX_FLAGS "-std=c++11 -stdlib=libc++ ${CMAKE_CXX_FLAGS}")
-        endif()
-    endif()
-else()
-    set(CMAKE_CXX_STANDARD 11)
-endif()
+set(CMAKE_CXX_STANDARD 14)
 
 if(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD" AND ${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
     set(CMAKE_EXE_LINKER_FLAGS "-lthr ${CMAKE_EXE_LINKER_FLAGS}")
@@ -325,8 +322,6 @@ if(MSVC)
 endif(MSVC)
 
 set(Boost_ADDITIONAL_VERSIONS
-    "1.46.0" "1.46" "1.47.0" "1.47" "1.48.0" "1.48" "1.48.0" "1.49" "1.50.0" "1.50"
-    "1.51.0" "1.51" "1.52.0" "1.52" "1.53.0" "1.53" "1.54.0" "1.54" "1.55.0" "1.55"
     "1.56.0" "1.56" "1.57" "1.57" "1.58" "1.59" "1.60" "1.61" "1.62" "1.63"
     "1.64" "1.65" "1.66" "1.67" "1.68" "1.69"
 )
@@ -372,20 +367,20 @@ PYTHON_CHECK_MODULE(
 )
 
 PYTHON_CHECK_MODULE(
-    "Mako templates 0.4.2 or greater"
-    "mako" "mako.__version__ >= '0.4.2'"
+    "Mako templates ${PY_MAKO_MIN_VERSION} or greater"
+    "mako" "mako.__version__ >= '${PY_MAKO_MIN_VERSION}'"
     HAVE_PYTHON_MODULE_MAKO
 )
 
 PYTHON_CHECK_MODULE(
-    "requests 2.0 or greater"
-    "requests" "requests.__version__ >= '2.0'"
+    "requests ${PY_REQUESTS_MIN_VERSION} or greater"
+    "requests" "requests.__version__ >= '${PY_REQUESTS_MIN_VERSION}'"
     HAVE_PYTHON_MODULE_REQUESTS
 )
 
 PYTHON_CHECK_MODULE(
-    "numpy 1.7 or greater"
-    "numpy" "LooseVersion(numpy.__version__) >= LooseVersion('1.7')"
+    "numpy ${NUMPY_MIN_VERSION} or greater"
+    "numpy" "LooseVersion(numpy.__version__) >= LooseVersion('${NUMPY_MIN_VERSION}')"
     HAVE_PYTHON_MODULE_NUMPY
 )
 

@@ -26,17 +26,16 @@ follow the auxiliary download URL for the Windows installer (below).
 
 The following compilers are known to work and officially supported:
 
-- GCC >= 4.8
-- Clang >= 3.3
+- GCC >= 5.4
+- Clang >= 3.8
 - MSVC >= 2015 (14.0); the free version works. Users need to install the "Desktop Development with C++" Workload for Visual Studio. On Windows, it can be found in: Tools -> Get Tools and Features... -> Workloads -> Windows
-
 
 Other compilers (or lower versions) may work, but are unsupported.
 
 ### CMake
 
 - **Purpose:** generates project build files
-- **Minimum Version:** 2.8
+- **Minimum Version:** 3.5.1
 - **Usage:** build time (required)
 - **Download URL:** http://www.cmake.org/cmake/resources/software.html
 
@@ -45,7 +44,7 @@ For Windows users, copy the CMake file to Program Files, e.g. `C:\Program Files\
 ### Boost
 
 - **Purpose:** C++ library
-- **Minimum Version:** 1.53
+- **Minimum Version:** 1.58
 - **Usage:** build time + runtime (required)
 - **Download URL:** http://www.boost.org/users/download/
 - **Download URL (Windows installer):** http://sourceforge.net/projects/boost/files/boost-binaries/
