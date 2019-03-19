@@ -1,5 +1,6 @@
 #
 # Copyright 2010-2018 Ettus Research, a National Instruments Company
+# Copyright 2019 Ettus Research, a National Instruments Brand
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
