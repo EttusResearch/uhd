@@ -64,7 +64,7 @@ The directory to which you extract libusb must not contain spaces. This is to sa
 ### Python
 
 - **Purpose:** Used by mako build time,  and utility scripts and the Python API at runtime
-- **Minimum Version:** 2.7
+- **Minimum Version:** 3.5
 - **Usage:** build time + runtime utility scripts (required)
 - **Download URL:** http://www.python.org/download/
 - **Comments for Windows Users:**

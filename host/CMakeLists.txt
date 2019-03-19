@@ -10,7 +10,7 @@
 ########################################################################
 # NOTE! If you change the version in the following line, also change
 # CMAKE_MIN_VERSION below. (This won't take a variable).
-cmake_minimum_required(VERSION 3.5.1)
+cmake_minimum_required(VERSION 3.8)
 if(POLICY CMP0048)
   cmake_policy(SET CMP0048 NEW) # Suppress Version warnings
 endif(POLICY CMP0048)
@@ -23,20 +23,19 @@ list(INSERT CMAKE_MODULE_PATH 0 ${CMAKE_SOURCE_DIR}/cmake/Modules)
 ########################################################################
 # UHD Dependency Minimum Versions
 ########################################################################
-set(CMAKE_MIN_VERSION "3.5.1")
-set(GCC_MIN_VERSION "4.8.0")
-set(CLANG_MIN_VERSION "3.4.0")
-set(APPLECLANG_MIN_VERSION "503")
+set(CMAKE_MIN_VERSION "3.8")
+set(GCC_MIN_VERSION "5.4.0")
+set(CLANG_MIN_VERSION "3.8.0")
+set(APPLECLANG_MIN_VERSION "600")
 # Make sure to update the next two in unison:
-set(MSVC_MIN_VERSION "1900")
-set(MSVC_MIN_VERSION_READABLE "14.0")
+set(MSVC_MIN_VERSION "1910")
+set(MSVC_MIN_VERSION_READABLE "15.0")
 # This Python version gets used for Python API (if requested) as well as
 # all the build-time Python scripts
-set(PYTHON_MIN_VERSION "2.7")
-set(PYTHON3_MIN_VERSION "3.5")
+set(PYTHON_MIN_VERSION "3.5")
 # Other deps
 set(BOOST_MIN_VERSION "1.58")
-set(NUMPY_MIN_VERSION "1.7")
+set(NUMPY_MIN_VERSION "1.11")
 set(PY_MAKO_MIN_VERSION "0.4.2")
 set(PY_REQUESTS_MIN_VERSION "2.0")
 
@@ -360,7 +359,7 @@ UHD_INSTALL(FILES
 ########################################################################
 # Register top level components
 ########################################################################
-LIBUHD_REGISTER_COMPONENT("LibUHD" ENABLE_LIBUHD ON "Boost_FOUND;HAVE_PYTHON_PLAT_MIN_VERSION;HAVE_PYTHON_MODULE_MAKO" OFF ON)
+LIBUHD_REGISTER_COMPONENT("LibUHD" ENABLE_LIBUHD ON "Boost_FOUND;HAVE_PYTHON_MODULE_MAKO" OFF ON)
 LIBUHD_REGISTER_COMPONENT("LibUHD - C API" ENABLE_C_API ON "ENABLE_LIBUHD" OFF OFF)
 if(WIN32)
   LIBUHD_REGISTER_COMPONENT("LibUHD - Python API" ENABLE_PYTHON_API OFF "ENABLE_LIBUHD;HAVE_PYTHON_MODULE_NUMPY;HAVE_PYTHON_LIBS" OFF OFF)
