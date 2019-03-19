@@ -15,11 +15,6 @@
 #include <uhdlib/usrp/gpio_defs.hpp>
 #include <uhd/types/wb_iface.hpp>
 #include <boost/shared_ptr.hpp>
-#if BOOST_VERSION >= 105600
-#include <boost/core/noncopyable.hpp>
-#else
-#include <boost/noncopyable.hpp>
-#endif
 
 namespace uhd { namespace usrp { namespace gpio_atr {
 

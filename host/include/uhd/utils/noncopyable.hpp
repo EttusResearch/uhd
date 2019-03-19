@@ -41,11 +41,7 @@ public:
 
 #else
 
-#    if BOOST_VERSION >= 105600
-#        include <boost/core/noncopyable.hpp>
-#    else
-#        include <boost/noncopyable.hpp>
-#    endif
+#    include <boost/core/noncopyable.hpp>
 namespace uhd {
 typedef boost::noncopyable noncopyable;
 }
