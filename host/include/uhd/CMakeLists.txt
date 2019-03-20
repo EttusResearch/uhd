@@ -8,7 +8,6 @@
 add_subdirectory(rfnoc)
 add_subdirectory(transport)
 add_subdirectory(types)
-add_subdirectory(cal)
 add_subdirectory(usrp)
 add_subdirectory(usrp_clock)
 add_subdirectory(utils)
