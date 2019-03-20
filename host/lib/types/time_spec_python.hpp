@@ -27,13 +27,17 @@ void export_time_spec(py::module& m)
         .def("get_tick_count" , &time_spec_t::get_tick_count )
         .def("to_ticks"       , &time_spec_t::to_ticks       )
         .def("get_real_secs"  , &time_spec_t::get_real_secs  )
+        .def("get_full_secs"  , &time_spec_t::get_full_secs  )
         .def("get_frac_secs"  , &time_spec_t::get_frac_secs  )
 
         .def(py::self += time_spec_t())
-        .def(py::self += double())
-        .def(py::self + double())
-        .def(py::self + time_spec_t())
         .def(py::self -= time_spec_t())
+        .def(py::self + time_spec_t())
+        .def(py::self - time_spec_t())
+        .def(py::self += double())
+        .def(py::self -= double())
+        .def(py::self + double())
+        .def(py::self - double())
         ;
 }
 
