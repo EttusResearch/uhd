@@ -23,5 +23,7 @@ class mock_ctrl_iface_impl : public uhd::rfnoc::ctrl_iface
         const size_t data,
         const bool readback      = false,
         const uint64_t timestamp = 0);
+
+    void set_cmd_fifo_size(const size_t) {}
 };
 #endif /* INCLUDED_MOCK_CTRL_IFACE_IMPL_HPP */

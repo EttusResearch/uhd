@@ -66,6 +66,15 @@ public:
             readback, bool(timestamp != 0) ? MASSIVE_TIMEOUT : ACK_TIMEOUT);
     }
 
+    void set_cmd_fifo_size(const size_t num_lines)
+    {
+        _max_outstanding_acks =
+            std::min(num_lines / 3, _xports.recv->get_num_recv_frames());
+        UHD_LOG_TRACE("RFNOC",
+            "[ctrl_iface " << _name << "] Changed cmd FIFO size to "
+                           << _max_outstanding_acks);
+    }
+
 private:
     // This is the buffer type for response messages
     struct resp_buff_type
@@ -216,7 +225,7 @@ private:
     const std::string _name;
     size_t _seq_out;
     std::queue<size_t> _outstanding_seqs;
-    const size_t _max_outstanding_acks;
+    size_t _max_outstanding_acks;
 
     boost::mutex _mutex;
 };

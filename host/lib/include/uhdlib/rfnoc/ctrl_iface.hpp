@@ -59,6 +59,17 @@ public:
             const bool readback=false,
             const uint64_t timestamp=0
     ) = 0;
+
+    /*! Set the depth of the command FIFO size
+     *
+     * Note: This is not safe to call during operations. Call this during
+     * initialization.
+     *
+     * \param num_lines The number of lines of depth in the command FIFO. The
+     *                  function will calculate the number of packets that will
+     *                  fit into the command FIFO.
+     */
+    virtual void set_cmd_fifo_size(const size_t num_lines) = 0;
 };
 
 }} /* namespace uhd::rfnoc */

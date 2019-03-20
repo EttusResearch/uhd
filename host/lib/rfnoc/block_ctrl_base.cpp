@@ -21,6 +21,7 @@
 #include <boost/format.hpp>
 #include <chrono>
 #include <thread>
+
 using namespace uhd;
 using namespace uhd::rfnoc;
 using std::string;
@@ -94,16 +95,20 @@ block_ctrl_base::block_ctrl_base(const make_args_t& make_args)
         // Set source addresses:
         sr_write(SR_BLOCK_SID, get_address(ctrl_port), ctrl_port);
         // Set sink buffer sizes:
-        settingsbus_reg_t reg_fifo = SR_READBACK_REG_FIFOSIZE;
-        size_t buf_size_bytes      = size_t(sr_read64(reg_fifo, ctrl_port));
-        if (buf_size_bytes > 0)
+        const uint64_t fifo_size_reg = sr_read64(SR_READBACK_REG_FIFOSIZE, ctrl_port);
+        const size_t buf_size_bytes  = size_t(fifo_size_reg & 0xFFFFFFFF);
+        if (buf_size_bytes > 0) {
             n_valid_input_buffers++;
+        }
         _tree->create<size_t>(_root_path / "input_buffer_size" / ctrl_port)
             .set(buf_size_bytes);
         // Set MTU size and convert to bytes:
         settingsbus_reg_t reg_mtu = SR_READBACK_REG_MTU;
         size_t mtu                = 8 * (1 << size_t(sr_read64(reg_mtu, ctrl_port)));
         _tree->create<size_t>(_root_path / "mtu" / ctrl_port).set(mtu);
+        // Set command FIFO size
+        const uint32_t cmd_fifo_size = (fifo_size_reg >> 32) & 0xFFFFFFFF;
+        _ctrl_ifaces[ctrl_port]->set_cmd_fifo_size(cmd_fifo_size);
         // Set default destination SIDs
         // Otherwise, the default is someone else's SID, which we don't want
         sr_write(SR_RESP_IN_DST_SID, 0xFFFF, ctrl_port);
