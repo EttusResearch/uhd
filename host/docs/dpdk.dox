@@ -138,7 +138,8 @@ case, and octets must be separated by colons. Here is an example:
 
 Once DPDK is installed and configured on your system, it can be used with UHD.
 The following steps will describe how to stream using DPDK. This feature is
-currently only available with \ref page_mpm "MPM-enabled devices."
+currently only available with \ref page_mpm "MPM-enabled devices" and
+\ref page_usrp_x3x0 "X300-series devices."
 
 \subsection dpdk_device_args Enabling DPDK with UHD Device Args
 
