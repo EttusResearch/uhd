@@ -13,9 +13,12 @@ if(ENABLE_RFNOC)
         blockdef.hpp
         block_id.hpp
         constants.hpp
+        dirtifier.hpp
         graph.hpp
         node_ctrl_base.hpp
         node_ctrl_base.ipp
+        node.hpp
+        node.ipp
         rate_node_ctrl.hpp
         scalar_node_ctrl.hpp
         sink_block_ctrl_base.hpp

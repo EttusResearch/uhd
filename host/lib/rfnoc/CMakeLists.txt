@@ -21,6 +21,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/graph_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/legacy_compat.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/node_ctrl_base.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/node.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/rate_node_ctrl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/rx_stream_terminator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/scalar_node_ctrl.cpp

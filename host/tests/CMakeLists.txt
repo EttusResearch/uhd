@@ -53,6 +53,7 @@ set(test_sources
     expert_test.cpp
     fe_conn_test.cpp
     rfnoc_chdr_test.cpp
+    rfnoc_node_test.cpp
 )
 
 set(benchmark_sources
@@ -72,6 +73,7 @@ if(ENABLE_RFNOC)
         rate_node_test.cpp
         stream_sig_test.cpp
         tick_node_test.cpp
+        rfnoc_property_test.cpp
     )
 endif(ENABLE_RFNOC)
 
