@@ -55,7 +55,7 @@ public:
     /*!
      * Get underlying data
      */
-    UHD_INLINE const data_t& get() const
+    inline const data_t& get() const
     {
         return _data;
     }
@@ -64,7 +64,7 @@ public:
      * Has the underlying data changed since the last
      * time it was cleaned?
      */
-    UHD_INLINE bool is_dirty() const
+    inline bool is_dirty() const
     {
         return _dirty;
     }
@@ -72,7 +72,7 @@ public:
     /*!
      * Mark the underlying data as clean
      */
-    UHD_INLINE void mark_clean()
+    inline void mark_clean()
     {
         _dirty = false;
     }
@@ -80,7 +80,7 @@ public:
     /*!
      * Mark the underlying data as dirty
      */
-    UHD_INLINE void force_dirty()
+    inline void force_dirty()
     {
         _dirty = true;
     }
@@ -90,7 +90,7 @@ public:
      * Store the specified value and mark it as dirty
      * if it is not equal to the underlying data.
      */
-    UHD_INLINE dirty_tracked& operator=(const data_t& value)
+    inline dirty_tracked& operator=(const data_t& value)
     {
         if (!(_data == value)) { // data_t must have an equality operator
             _dirty = true;
@@ -106,7 +106,7 @@ public:
      * This exists to optimize out an implicit cast from dirty_tracked
      * type to data type.
      */
-    UHD_INLINE dirty_tracked& operator=(const dirty_tracked& source)
+    inline dirty_tracked& operator=(const dirty_tracked& source)
     {
         if (!(_data == source._data)) {
             _dirty = true;
@@ -118,7 +118,7 @@ public:
     /*!
      * Explicit conversion from this type to data_t
      */
-    UHD_INLINE operator const data_t&() const
+    inline operator const data_t&() const
     {
         return get();
     }
