@@ -5,11 +5,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "udp_common.hpp"
 #include <uhd/transport/buffer_pool.hpp>
 #include <uhd/transport/udp_simple.hpp> //mtu
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhdlib/transport/udp_common.hpp>
 #include <boost/format.hpp>
 #include <vector>
 

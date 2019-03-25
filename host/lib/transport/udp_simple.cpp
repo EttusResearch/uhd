@@ -5,9 +5,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "udp_common.hpp"
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhdlib/transport/udp_common.hpp>
 #include <boost/format.hpp>
 
 using namespace uhd::transport;
@@ -53,7 +53,9 @@ public:
 
     size_t recv(const asio::mutable_buffer& buff, double timeout)
     {
-        if (not wait_for_recv_ready(_socket->native_handle(), timeout))
+        const int32_t timeout_ms = static_cast<int32_t>(timeout * 1000);
+
+        if (not wait_for_recv_ready(_socket->native_handle(), timeout_ms))
             return 0;
         return _socket->receive_from(asio::buffer(buff), _recv_endpoint);
     }

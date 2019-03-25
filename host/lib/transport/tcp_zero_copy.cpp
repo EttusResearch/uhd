@@ -5,11 +5,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "udp_common.hpp"
 #include <uhd/transport/buffer_pool.hpp>
 #include <uhd/transport/tcp_zero_copy.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/utils/atomic.hpp>
+#include <uhdlib/transport/udp_common.hpp>
 #include <boost/format.hpp>
 #include <boost/make_shared.hpp>
 #include <chrono>
@@ -52,8 +52,9 @@ public:
             return make(this, _mem, size_t(_len));
         }
 #endif
+        const int32_t timeout_ms = static_cast<int32_t>(timeout * 1000);
 
-        if (wait_for_recv_ready(_sock_fd, timeout)) {
+        if (wait_for_recv_ready(_sock_fd, timeout_ms)) {
             _len = ::recv(_sock_fd, (char*)_mem, _frame_size, 0);
             index++; // advances the caller's buffer
             return make(this, _mem, size_t(_len));
