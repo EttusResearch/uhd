@@ -1,13 +1,12 @@
 //
 // Copyright 2011-2012,2014-2016 Ettus Research LLC
-// Copyright 2017-2018 Ettus Research, a National Instruments Company
+// Copyright 2018 Ettus Research, a National Instruments Company
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include <uhd/types/dict.hpp>
 #include <uhd/types/ranges.hpp>
-#include <uhd/utils/math.hpp>
 #include <uhdlib/usrp/cores/rx_frontend_core_3000.hpp>
 #include <uhdlib/usrp/cores/dsp_core_utils.hpp>
 #include <boost/math/special_functions/round.hpp>
@@ -99,10 +98,11 @@ public:
         _iface->poke32(REG_RX_FE_MAPPING, mapping_reg_val);
 
         UHD_ASSERT_THROW(_adc_rate!=0.0)
+        double cordic_freq = 0.0, actual_cordic_freq = 0.0;
         if (fe_conn.get_sampling_mode() == fe_connection_t::HETERODYNE) {
             //1. Remember the sign of the IF frequency.
             //   It will be discarded in the next step
-            const int if_freq_sign = boost::math::sign(fe_conn.get_if_freq());
+            int if_freq_sign = boost::math::sign(fe_conn.get_if_freq());
             //2. Map IF frequency to the range [0, _adc_rate)
             double if_freq = std::abs(std::fmod(fe_conn.get_if_freq(), _adc_rate));
             //3. Map IF frequency to the range [-_adc_rate/2, _adc_rate/2)
@@ -112,15 +112,11 @@ public:
             }
             //4. Set DSP offset to spin the signal in the opposite
             //   direction as the aliased frequency
-            const double cordic_freq = if_freq * (-if_freq_sign);
-            UHD_ASSERT_THROW(
-                    uhd::math::fp_compare::fp_compare_epsilon<double>(4.0) ==
-                    std::abs(_adc_rate / cordic_freq)
-            );
-
-            _iface->poke32(REG_RX_FE_HET_CORDIC_PHASE, (cordic_freq > 0) ? 0 : 1);
+            cordic_freq = if_freq * (-if_freq_sign);
         }
-
+        int32_t freq_word;
+        get_freq_and_freq_word(cordic_freq, _adc_rate, actual_cordic_freq, freq_word);
+        _iface->poke32(REG_RX_FE_HET_CORDIC_PHASE, uint32_t(freq_word));
 
         _fe_conn = fe_conn;
     }
