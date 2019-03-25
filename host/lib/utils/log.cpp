@@ -1,6 +1,7 @@
 //
 // Copyright 2012,2014,2016 Ettus Research LLC
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -20,7 +21,8 @@
 #include <mutex>
 #include <thread>
 
-namespace pt = boost::posix_time;
+namespace pt                  = boost::posix_time;
+constexpr double READ_TIMEOUT = 0.5; // Waiting time to read from the queue
 
 // Don't make these static const std::string -- we need their lifetime guaranteed!
 #define PURPLE "\033[35;1m" // purple
@@ -233,6 +235,9 @@ public:
     ~log_resource(void)
     {
         _exit = true;
+
+#ifndef BOOST_MSVC // push a final message is required, since the pop_with_wait() function
+                   // will be used.
         // We push a final message to kick the pop task out of it's wait state.
         // This wouldn't be necessary if pop_with_wait() could fail. Should
         // that ever get fixed, we can remove this.
@@ -244,9 +249,11 @@ public:
             boost::this_thread::get_id());
         final_message.message = "";
         push(final_message);
-#ifndef UHD_LOG_FASTPATH_DISABLE
+#    ifndef UHD_LOG_FASTPATH_DISABLE
         push_fastpath("");
-#endif
+#    endif
+#endif // BOOST_MSVC
+
         _pop_task->join();
         {
             std::lock_guard<std::mutex> l(_logmap_mutex);
@@ -296,8 +303,16 @@ public:
 
         // For the lifetime of this thread, we run the following loop:
         while (!_exit) {
+#ifdef BOOST_MSVC
+            // Some versions of MSVC will hang if threads are being joined after main has
+            // completed, so we need to guarantee a timeout here
+            if (_log_queue.pop_with_timed_wait(log_info, READ_TIMEOUT)) {
+                _handle_log_info(log_info);
+            }
+#else
             _log_queue.pop_with_wait(log_info); // Blocking call
             _handle_log_info(log_info);
+#endif // BOOST_MSVC
         }
 
         // Exit procedure: Clear the queue
@@ -313,8 +328,16 @@ public:
 #ifndef UHD_LOG_FASTPATH_DISABLE
         std::string msg;
         while (!_exit) {
+#    ifdef BOOST_MSVC
+            // Some versions of MSVC will hang if threads are being joined after main has
+            // completed, so we need to guarantee a timeout here
+            if (_fastpath_queue.pop_with_timed_wait(msg, READ_TIMEOUT)) {
+                std::cerr << msg << std::flush;
+            }
+#    else
             _fastpath_queue.pop_with_wait(msg);
             std::cerr << msg << std::flush;
+#    endif // BOOST_MSVC
         }
 
         // Exit procedure: Clear the queue
@@ -329,7 +352,13 @@ public:
 #ifndef UHD_LOG_FASTPATH_DISABLE
         std::string msg;
         while (!_exit) {
+#    ifdef BOOST_MSVC
+            // Some versions of MSVC will hang if threads are being joined after main has
+            // completed, so we need to guarantee a timeout here
+            _fastpath_queue.pop_with_timed_wait(msg, READ_TIMEOUT);
+#    else
             _fastpath_queue.pop_with_wait(msg);
+#    endif // BOOST_MSVC
         }
 
         // Exit procedure: Clear the queue
