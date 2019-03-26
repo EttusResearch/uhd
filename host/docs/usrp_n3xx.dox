@@ -1335,6 +1335,9 @@ daughterboards may use this external LO signal by setting the channel's LO
 source to "external".  When the source is set to "external", reading the LO
 frequency will return the ideal frequency for an external LO source.
 
+The nominal LO input level is +5 dBm. Actual LO input levels should be within
++/- 2 dB of that value (i.e., between +3 dBm and +7 dBm).
+
 \subsection n3xx_rh_lo_sharing N321 LO Distribution Board
 
 The N321 has an additional board to perform LO signal splitting and
