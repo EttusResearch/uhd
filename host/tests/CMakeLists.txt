@@ -53,6 +53,7 @@ set(test_sources
     expert_test.cpp
     fe_conn_test.cpp
     rfnoc_node_test.cpp
+    link_test.cpp
 )
 
 set(benchmark_sources
