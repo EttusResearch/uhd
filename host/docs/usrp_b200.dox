@@ -167,7 +167,7 @@ Below is a table of the B200/B210 LED indicators and their meanings:
                                                           orange = switching between transmitting and receiving</td>
   </tr>
   <tr>
-    <td>LED802</td> <td>Channel 1 TX/RX Activity</td> <td>off = no activity
+    <td>LED802</td> <td>Channel 1 TX/RX Activity</td> <td>off = no activity<br>
                                                           green = receiving<br>
                                                           red = transmitting<br>
                                                           orange = switching between transmitting and receiving</td>
@@ -203,7 +203,7 @@ Below is a table of the B200mini LED indicators and their meanings:
                                                         green = receiving</td>
   </tr>
   <tr>
-    <td>S0 LED</td> <td>Reference Lock</td> <td>off = no activity
+    <td>S0 LED</td> <td>Reference Lock</td> <td>off = no activity<br>
                                                           green = locked</td>
   </tr>
   <tr>
@@ -244,18 +244,18 @@ Below is a table showing the B200/B210 external connections and respective power
   <td>J100</td>         <td>External 10 MHz Input</td>  <td>+15 dBm max</td>
 </tr>
 <tr>
-  <td>J800</td>         <td>RF B: TX/RX</td>            <td>TX power +20dBm max<br>
-                                                            RX power -15dBm max</td>
+  <td>J800</td>         <td>RF B: TX/RX</td>            <td>TX power +20 dBm max<br>
+                                                            RX power -15 dBm max</td>
 </tr>
 <tr>
-  <td>J802</td>         <td>RF B: RX2</td>              <td>RX power -15dBm max</td>
+  <td>J802</td>         <td>RF B: RX2</td>              <td>RX power -15 dBm max</td>
 </tr>
 <tr>
-  <td>J803</td>         <td>RF A: RX2</td>              <td>RX power -15dBm max</td>
+  <td>J803</td>         <td>RF A: RX2</td>              <td>RX power -15 dBm max</td>
 </tr>
 <tr>
-  <td>J801</td>         <td>RF A: TX/RX</td>            <td>TX power +20dBm max<br>
-                                                            RX power -15dBm max</td>
+  <td>J801</td>         <td>RF A: TX/RX</td>            <td>TX power +20 dBm max<br>
+                                                            RX power -15 dBm max</td>
 </tr>
 </table>
 
@@ -269,14 +269,14 @@ Below is a table showing the B200mini external connections and respective power 
   <td>USB3</td>         <td>USB Connector</td>          <td>USB 3.0</td>
 </tr>
 <tr>
-  <td>J1</td>           <td>TRX</td>                    <td>TX power +20dBm max<br>
-                                                            RX power -15dBm max</td>
+  <td>J1</td>           <td>TRX</td>                    <td>TX power +20 dBm max<br>
+                                                            RX power -15 dBm max</td>
 </tr>
 <tr>
-  <td>J2</td>           <td>RX2</td>                    <td>RX power -15dBm max</td>
+  <td>J2</td>           <td>RX2</td>                    <td>RX power -15 dBm max</td>
 </tr>
 <tr>
-  <td>J3</td>           <td>External 10MHz/PPS Reference</td>  <td>+15 dBm max</td>
+  <td>J3</td>           <td>External 10 MHz/PPS Reference</td>  <td>+15 dBm max</td>
 </tr>
 </table>
 
