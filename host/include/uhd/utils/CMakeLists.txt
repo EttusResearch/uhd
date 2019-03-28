@@ -26,6 +26,7 @@ UHD_INSTALL(FILES
     platform.hpp
     safe_call.hpp
     safe_main.hpp
+    scope_exit.hpp
     static.hpp
     tasks.hpp
     thread_priority.hpp
