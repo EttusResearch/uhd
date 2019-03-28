@@ -119,7 +119,11 @@ private: // member functions
                 _timeout_cnt = 0;
                 _detected = true;
 
+#if GPSD_API_MAJOR_VERSION < 7
                 if (gps_read(&_gps_data) < 0)
+#else
+                if (gps_read(&_gps_data, NULL, 0) < 0)
+#endif
                     throw std::runtime_error("error while reading");
             }
         }
