@@ -163,6 +163,17 @@ struct UHD_API not_implemented_error : runtime_error
     virtual void dynamic_throw(void) const;
 };
 
+/*! Raised when a resource is being accessed without having the appropriate
+ * permissions.
+ */
+struct UHD_API access_error : runtime_error
+{
+    access_error(const std::string& what);
+    virtual unsigned code(void) const;
+    virtual access_error* dynamic_clone(void) const;
+    virtual void dynamic_throw(void) const;
+};
+
 /*! Base class for errors that occur outside of UHD.
  */
 struct UHD_API environment_error : exception
@@ -212,6 +223,77 @@ struct UHD_API syntax_error : exception
     syntax_error(const std::string& what);
     virtual unsigned code(void) const;
     virtual syntax_error* dynamic_clone(void) const;
+    virtual void dynamic_throw(void) const;
+};
+
+/*! Base class for RFNoC-related errors
+ */
+struct UHD_API rfnoc_error : exception
+{
+    rfnoc_error(const std::string& what);
+    virtual unsigned code(void) const;
+    virtual rfnoc_error* dynamic_clone(void) const;
+    virtual void dynamic_throw(void) const;
+};
+
+/*! Gets thrown when a transaction with an RFNoC block fails (IO error)
+ */
+struct UHD_API op_failed : rfnoc_error
+{
+    op_failed(const std::string& what);
+    virtual unsigned code(void) const;
+    virtual op_failed* dynamic_clone(void) const;
+    virtual void dynamic_throw(void) const;
+};
+
+/*! Gets thrown when a transaction with an RFNoC block times out (e.g., no ACK
+ *  received)
+ */
+struct UHD_API op_timeout : rfnoc_error
+{
+    op_timeout(const std::string& what);
+    virtual unsigned code(void) const;
+    virtual op_timeout* dynamic_clone(void) const;
+    virtual void dynamic_throw(void) const;
+};
+
+/*! Gets thrown when a transaction with an RFNoC yields a sequence error
+ */
+struct UHD_API op_seqerr : rfnoc_error
+{
+    op_seqerr(const std::string& what);
+    virtual unsigned code(void) const;
+    virtual op_seqerr* dynamic_clone(void) const;
+    virtual void dynamic_throw(void) const;
+};
+
+/*! Gets thrown when a transaction with an RFNoC yields a time error (late command)
+ */
+struct UHD_API op_timerr : rfnoc_error
+{
+    op_timerr(const std::string& what);
+    virtual unsigned code(void) const;
+    virtual op_timerr* dynamic_clone(void) const;
+    virtual void dynamic_throw(void) const;
+};
+
+/*! Gets thrown when a property resolution fails
+ */
+struct UHD_API resolve_error : rfnoc_error
+{
+    resolve_error(const std::string& what);
+    virtual unsigned code(void) const;
+    virtual resolve_error* dynamic_clone(void) const;
+    virtual void dynamic_throw(void) const;
+};
+
+/*! Gets thrown when there is a routing-related failure in RFNoC
+ */
+struct UHD_API routing_error : rfnoc_error
+{
+    routing_error(const std::string& what);
+    virtual unsigned code(void) const;
+    virtual routing_error* dynamic_clone(void) const;
     virtual void dynamic_throw(void) const;
 };
 
