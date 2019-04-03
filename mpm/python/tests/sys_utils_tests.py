@@ -7,11 +7,13 @@
 Tests related to usrp_mpm.sys_utils
 """
 
-import platform
+from base_tests import TestBase
 import unittest
 from usrp_mpm.sys_utils import net
+import platform
 
-class TestNet(unittest.TestCase):
+
+class TestNet(TestBase):
     """
     Tests multiple functions defined in usrp_mpm.sys_utils.net.
 
@@ -20,34 +22,6 @@ class TestNet(unittest.TestCase):
     For tests run on the USRP, it is assumed that the device has at
     least an active RJ-45 (eth0) connection.
     """
-    def skipUnlessOnLinux():
-        """
-        Test function decorator which skips tests unless the current
-        execution environment is a linux OS.
-        """
-        if 'linux' in platform.system().lower():
-            return lambda func: func
-        return unittest.skip("This test is only valid when run on a Linux system.")
-
-    def skipUnlessOnUsrp():
-        """
-        Test function decorator which skips tests unless the current
-        execution environment is a USRP.
-
-        Assumes that 'arm' in the machine name constitutes an ARM
-        processor, aka a USRP.
-        """
-        if 'arm' in platform.machine().lower():
-            return lambda func: func
-        return unittest.skip("This test is only valid when run on the USRP.")
-
-    def set_device_name(self, device_name):
-        """
-        Stores a device name attribute for tests whose success condition
-        depends on the current device.
-        """
-        self.device_name = device_name
-
     def test_get_hostname(self):
         """
         Test net.get_hostname() returns the same value as
@@ -57,7 +31,7 @@ class TestNet(unittest.TestCase):
         expected_hostname = platform.node()
         self.assertEqual(expected_hostname, net.get_hostname())
 
-    @skipUnlessOnUsrp()
+    @TestBase.skipUnlessOnUsrp()
     def test_get_valid_interfaces(self):
         """
         Test that expected network interfaces are returned as valid
@@ -75,7 +49,7 @@ class TestNet(unittest.TestCase):
         resulting_valid_ifaces = net.get_valid_interfaces(all_ifaces)
         self.assertEqual(expected_valid_ifaces, resulting_valid_ifaces)
 
-    @skipUnlessOnUsrp()
+    @TestBase.skipUnlessOnUsrp()
     def test_get_iface_info(self):
         """
         Tests the get_iface_info function.
@@ -104,7 +78,7 @@ class TestNet(unittest.TestCase):
         # Verify that an unknown interface throws a LookupError
         self.assertRaises(LookupError, net.get_iface_info, unknown_name)
 
-    @skipUnlessOnUsrp()
+    @TestBase.skipUnlessOnUsrp()
     def test_get_link_speed(self):
         """
         Tests that the link speed of 'eth0' is the expected 1GB and that
