@@ -9,7 +9,9 @@
 
 #include <uhd/types/endianness.hpp>
 #include <uhd/utils/byteswap.hpp>
+#include <uhd/exception.hpp>
 #include <cassert>
+#include <memory>
 
 namespace uhd { namespace rfnoc { namespace chdr {
 
@@ -35,13 +37,40 @@ enum class packet_type_t {
     PACKET_TYPE_DATA_WITH_TS = 0x7, // Data Packet with TimeStamp
 };
 
+
+class chdr_header_iface
+{
+public:
+    using uptr = std::unique_ptr<chdr_header_iface>;
+
+    static uptr make(size_t chdr_w, uint64_t header_val);
+    static uptr make(size_t chdr_w, packet_type_t pkt_type);
+    virtual size_t get_word_size() const                                      = 0;
+    virtual uint64_t get() const                                              = 0;
+    virtual uint8_t get_flags() const                                         = 0;
+    virtual packet_type_t get_pkt_type() const                                = 0;
+    virtual uint8_t get_num_metadata() const                                  = 0;
+    virtual uint8_t get_num_bytes_metadata() const                            = 0;
+    virtual uint16_t get_seq_num() const                                      = 0;
+    virtual uint16_t get_length() const                                       = 0;
+    virtual uint16_t get_dst_epid() const                                     = 0;
+    virtual size_t get_num_words_payload() const                              = 0;
+    virtual size_t get_num_bytes_payload() const                              = 0;
+    virtual size_t get_metadata_offset() const                                = 0;
+    virtual size_t get_payload_offset() const                                 = 0;
+    virtual void set_flags(uint8_t flags)                                     = 0;
+    virtual void set_seq_num(uint16_t seq_num)                                = 0;
+    virtual void set_dst_epid(uint16_t dst_epid)                              = 0;
+    virtual void set_packet_size(size_t num_payload, size_t num_metadata = 0) = 0;
+};
+
 /*! Header information of a data packet
  * This is the first 64-bit
  */
-template <size_t chdr_w> class chdr_header
+template <size_t chdr_w>
+class chdr_header : public chdr_header_iface
 {
 public:
-
     ~chdr_header() = default;
 
     chdr_header(packet_type_t packet_type)
@@ -49,9 +78,7 @@ public:
         _set_pkt_type(packet_type);
     }
 
-    chdr_header(uint64_t header_val) : _header_val(header_val)
-    {
-    }
+    chdr_header(uint64_t header_val) : _header_val(header_val) {}
 
     /*! Return the word size in bytes
      */
@@ -232,6 +259,26 @@ private:
         _set_value(_header_val, num_metadata, NUM_METADATA_OFFSET, NUM_METADATA_MASK);
     }
 };
+
+chdr_header_iface::uptr chdr_header_iface::make(size_t chdr_w, uint64_t header_val)
+{
+    if (chdr_w == 256)
+        return uptr(new chdr_header<256>(header_val));
+    else
+        return uptr(new chdr_header<64>(header_val));
+}
+
+chdr_header_iface::uptr chdr_header_iface::make(size_t chdr_w, packet_type_t pkt_type)
+{
+    switch (chdr_w) {
+        case 256:
+            return uptr(new chdr_header<256>(pkt_type));
+        case 64:
+            return uptr(new chdr_header<64>(pkt_type));
+        default:
+            UHD_THROW_INVALID_CODE_PATH();
+    }
+}
 
 }}} // namespace uhd::rfnoc::chdr
 
