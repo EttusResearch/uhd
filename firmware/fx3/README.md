@@ -5,7 +5,7 @@ INSTRUCTIONS
 
 The USRP B200 and B210 each use the Cypress FX3 USB3 PHY for USB3 connectivity.
 This device has an ARM core on it, which is programmed in C. This README will
-show you how to build our firmware source
+show you how to build our firmware and bootloader source.
 
 **A brief "Theory of Operations":**
 The host sends commands to the FX3, our USB3 PHY, which has an on-board ARM
@@ -32,9 +32,11 @@ tools. These variables are:
     $ export ARMGCC_VERSION=4.5.2
 ```
 
-Now, you'll need to set-up the Cypress SDK, as well. In the SDK, navigate to
-the `firmware` directory, and copy the following sub-directories into
-`uhd.git/firmware/fx3`: `common/`, `lpp_source/`, `u3p_firmware/`.
+Now, you'll need to set-up the Cypress SDK, as well. In the SDK, copy the
+following sub-directories from the `firmware` directory to 
+`uhd.git/firmware/fx3`: `common/`, `lpp_source/`, `u3p_firmware/`, `boot_fw/`.
+In addition, copy the `elf2img` sub-directory from the `util` directory to
+`uhd.git/firmware/fx3`.
 
 Your directory structure should now look like:
 
@@ -46,7 +48,9 @@ uhd.git/
                  --fx3/
                       |
                       --b200/               # From UHD
+                      --boot_fw/            # From Cypress SDK
                       --common/             # From Cypress SDK
+                      --elf2img/            # From Cypress SDK
                       --gpif2_designer/     # From UHD
                       --lpp_source/         # From Cypress SDK
                       --u3p_firmware/       # From Cypress SDK
@@ -61,22 +65,33 @@ into the `common/` directory you just copied from the Cypress SDK, and apply the
 patch `b200/fx3_mem_map.patch`.
 
 ```
-    # cd uhd.git/firmware/fx3/common/
-    $ patch -p2 < ../b200/fx3_mem_map.patch
+    # cd uhd.git/firmware/fx3
+    $ patch -p1 < ../b200/fx3_mem_map.patch
 ```
 
 If you don't see any errors print on the screen, then the patch was successful.
 
 ## Building the Firmware
 
-Now, you should be able to head into the `b200/` directory and simply build the
-firmware:
+Now, you should be able to head into the `b200/firmware` directory and simply
+build the firmware:
 
 ```
-    $ cd uhd.git/firmware/fx3/b200
+    $ cd uhd.git/firmware/fx3/b200/firmware
     $ make
 ```
 
 It will generate a `usrp_b200_fw.hex` file, which you can then give to UHD to
 program your USRP B200 or USRP B210.
 
+## Building the Bootloader
+
+The bootloader is built in the `b200/bootloader` directory:
+
+```
+    $ cd uhd.git/firmware/fx3/b200/bootloader
+    $ make
+```
+
+It will generate a `usrp_b200_bl.img` file, which you can supply as an argument
+to b2xx_fx3_utils to load it onto the device.
