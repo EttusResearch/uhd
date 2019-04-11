@@ -192,6 +192,12 @@ property<T>& property_tree::access(const fs_path& path)
     return *boost::static_pointer_cast<property<T> >(this->_access(path));
 }
 
+template <typename T>
+typename boost::shared_ptr<property<T> > property_tree::pop(const fs_path& path)
+{
+    return boost::static_pointer_cast<property<T> >(this->_pop(path));
+}
+
 } // namespace uhd
 
 #endif /* INCLUDED_UHD_PROPERTY_TREE_IPP */

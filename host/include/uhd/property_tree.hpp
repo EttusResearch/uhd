@@ -243,7 +243,14 @@ public:
     template <typename T>
     property<T>& access(const fs_path& path);
 
+    //! Pop a property off the tree, and returns the property
+    template <typename T>
+    boost::shared_ptr<property<T> > pop(const fs_path& path);
+
 private:
+    //! Internal pop function
+    virtual boost::shared_ptr<void> _pop(const fs_path& path) = 0;
+
     //! Internal create property with wild-card type
     virtual void _create(const fs_path& path, const boost::shared_ptr<void>& prop) = 0;
 

@@ -133,6 +133,29 @@ public:
         return node->keys();
     }
 
+    boost::shared_ptr<void> _pop(const fs_path& path_)
+    {
+        const fs_path path = _root / path_;
+        boost::mutex::scoped_lock lock(_guts->mutex);
+
+        node_type* parent = NULL;
+        node_type* node   = &_guts->root;
+        for (const std::string& name : path_tokenizer(path)) {
+            if (not node->has_key(name))
+                throw_path_not_found(path);
+            parent = node;
+            node   = &(*node)[name];
+        }
+
+        if (node->prop.get() == NULL)
+            throw uhd::runtime_error("Cannot access! Property uninitialized at: " + path);
+        if (parent == NULL)
+            throw uhd::runtime_error("Cannot pop");
+        auto prop = node->prop;
+        parent->pop(fs_path(path.leaf()));
+        return prop;
+    }
+
     void _create(const fs_path& path_, const boost::shared_ptr<void>& prop)
     {
         const fs_path path = _root / path_;

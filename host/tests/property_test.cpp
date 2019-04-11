@@ -192,6 +192,7 @@ BOOST_AUTO_TEST_CASE(test_prop_tree)
 
     tree->create<int>("/test/prop0");
     tree->create<int>("/test/prop1");
+    tree->create<int>("/test/prop2");
 
     BOOST_CHECK(tree->exists("/test"));
     BOOST_CHECK_THROW(tree->access<int>("/test"), std::exception);
@@ -200,6 +201,7 @@ BOOST_AUTO_TEST_CASE(test_prop_tree)
 
     tree->access<int>("/test/prop0").set(42);
     tree->access<int>("/test/prop1").set(34);
+    tree->access<int>("/test/prop2").set(107);
 
     BOOST_CHECK_EQUAL(tree->access<int>("/test/prop0").get(), 42);
     BOOST_CHECK_EQUAL(tree->access<int>("/test/prop1").get(), 34);
@@ -207,6 +209,12 @@ BOOST_AUTO_TEST_CASE(test_prop_tree)
     tree->remove("/test/prop0");
     BOOST_CHECK(not tree->exists("/test/prop0"));
     BOOST_CHECK(tree->exists("/test/prop1"));
+
+    const uhd::fs_path prop_path = "/test/prop2";
+    auto prop_sptr               = tree->pop<int>(prop_path);
+    BOOST_CHECK(not tree->exists("/test/prop2"));
+    BOOST_CHECK(tree->exists("/test/prop1"));
+    BOOST_CHECK(prop_sptr->get() == 107);
 
     tree->remove("/test");
     BOOST_CHECK(not tree->exists("/test/prop0"));
