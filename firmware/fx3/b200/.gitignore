@@ -1,4 +1,7 @@
+lib
+!common
 *.o
 *.elf
 *.hex
 *.map
+*.img

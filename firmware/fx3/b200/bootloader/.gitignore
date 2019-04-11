@@ -1,0 +1,5 @@
+cyfx3.ld
+cyfx_gcc_startup.S
+elf2img
+fx3_armgcc_config.mak
+fx3_build_config.mak

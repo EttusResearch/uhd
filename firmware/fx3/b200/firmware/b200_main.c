@@ -1,5 +1,8 @@
 //
 // Copyright 2013-2015 Ettus Research LLC
+// Copyright 2019 Ettus Research, a National Instruments Brand
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 /* This file defines the application that runs on the Cypress FX3 device, and
@@ -10,9 +13,13 @@
 #include <stdarg.h>
 #include <stdio.h>
 
-#include "b200_main.h"
+#include "b200_const.h"
 #include "b200_gpifconfig.h"
 #include "b200_i2c.h"
+
+#include "common_helpers.h"
+#include "common_descriptors.h"
+#include "b200_usb_descriptors.h"
 
 #include "cyu3dma.h"
 #include "cyu3error.h"
@@ -789,6 +796,10 @@ void reset_gpif(void) {
     g_fx3_state = STATE_RUNNING;
 }
 
+void eeprom_read(uint16_t addr, uint8_t* buffer, uint8_t length)
+{
+    CyFxUsbI2cTransfer(addr, 0xA0, length, buffer, CyTrue);
+}
 
 CyU3PReturnStatus_t b200_set_io_matrix(CyBool_t fpga_config_mode) {
     CyU3PIoMatrixConfig_t io_config_matrix;
@@ -1571,13 +1582,16 @@ CyBool_t usb_setup_callback(uint32_t data0, uint32_t data1) {
                 && (bRequest == CY_U3P_USB_SC_GET_DESCRIPTOR) \
                 && (wValue == ((CY_U3P_USB_STRING_DESCR << 8) | 0xEE))) {
             /* Make sure we do not send more data than requested. */
-            if(wLength > b200_usb_product_desc[0]) {
-                wLength = b200_usb_product_desc[0];
+            const uint8_t* product_desc = get_product_string_descriptor(
+                get_pid(&eeprom_read));
+            if (wLength > product_desc[0])
+            {
+                wLength = product_desc[0];
             }
 
             //msg("MS string desc");
 
-            CyU3PUsbSendEP0Data(wLength, ((uint8_t *) b200_usb_product_desc));
+            CyU3PUsbSendEP0Data(wLength, ((uint8_t*)product_desc));
             handled = CyTrue;
         }
 
@@ -2160,7 +2174,6 @@ void b200_gpif_init(void) {
     CyU3PPibRegisterCallback(gpif_error_cb, CYU3P_PIB_INTR_ERROR);
 }
 
-
 /*! Start and configure the FX3's SPI module.
  *
  * This module is used for programming the FPGA. After the FPGA is configured,
@@ -2222,114 +2235,65 @@ void b200_usb_init(void) {
     CyU3PUsbRegisterLPMRequestCallback(lpm_request_callback);
 
     /* Check to see if a VID/PID is in the EEPROM that we should use. */
-    uint8_t valid[4];
-    uint8_t vidpid[4];
-    CyU3PMemSet(valid, 0, 4);
-    CyFxUsbI2cTransfer(0x0, 0xA0, 4, valid, CyTrue);
-    if(*((uint32_t *) &(valid[0])) == 0xB2145943) {
+    const uint16_t vid = get_vid(&eeprom_read);
+    const uint16_t pid = get_pid(&eeprom_read);
 
-        /* Pull the programmed device serial out of the i2c EEPROM, and copy the
-         * characters into the device serial string, which is then advertised as
-         * part of the USB descriptors. */
-        CyU3PMemSet(vidpid, 0, 4);
-        CyFxUsbI2cTransfer(0x4, 0xA0, 4, vidpid, CyTrue);
-        b200_usb2_dev_desc[8] = vidpid[2];
-        b200_usb2_dev_desc[9] = vidpid[3];
-        b200_usb2_dev_desc[10] = vidpid[0];
-        b200_usb2_dev_desc[11] = vidpid[1];
+    common_usb2_dev_desc[8]  = vid & 0xFF;
+    common_usb2_dev_desc[9]  = vid >> 8;
+    common_usb2_dev_desc[10] = pid & 0xFF;
+    common_usb2_dev_desc[11] = pid >> 8;
 
-        b200_usb3_dev_desc[8] = vidpid[2];
-        b200_usb3_dev_desc[9] = vidpid[3];
-        b200_usb3_dev_desc[10] = vidpid[0];
-        b200_usb3_dev_desc[11] = vidpid[1];
-    }
+    common_usb3_dev_desc[8]  = vid & 0xFF;
+    common_usb3_dev_desc[9]  = vid >> 8;
+    common_usb3_dev_desc[10] = pid & 0xFF;
+    common_usb3_dev_desc[11] = pid >> 8;
 
-    /* We support two VIDs:
-     *  Ettus Research:         0x2500
-     *  National Instruments:   0x3923
-     *
-     * We support three PIDs:
-     *  Ettus B200/B210:        0x0020
-     *  NI USRP-2900:           0x7813
-     *  NI USRP-2901:           0x7814
-     */
-    uint8_t *mfr_string = NULL;
-    uint8_t *product_string = NULL;
-    if((vidpid[3] == 0x25) && (vidpid[2] == 0x00)) {
-        mfr_string = b200_usb_manufacture_desc;
-        product_string = b200_usb_product_desc;
-    } else if((vidpid[3] == 0x39) && (vidpid[2] == 0x23)) {
-        mfr_string = niusrp_usb_manufacture_desc;
-
-        if((vidpid[1] == 0x78) && (vidpid[0] == 0x13)) {
-            product_string = niusrp_2900_usb_product_desc;
-        } else if((vidpid[1] == 0x78) && (vidpid[0] == 0x14)) {
-            product_string = niusrp_2901_usb_product_desc;
-        } else {
-            product_string = unknown_desc;
-        }
-    } else {
-        mfr_string = unknown_desc;
-        product_string = unknown_desc;
-    }
-
-    uint8_t ascii_serial[9];
-    CyU3PMemSet(ascii_serial, 0, 9);
-    CyFxUsbI2cTransfer(0x4f7, 0xA0, 9, ascii_serial, CyTrue);
-    uint8_t count;
-    dev_serial[0] = 2;
-    for(count = 0; count < 9; count++) {
-        uint8_t byte = ascii_serial[count];
-        if (byte < 32 || byte > 127) break;
-        dev_serial[2 + (count * 2)] = byte;
-        // FIXME: Set count*2 + 1 = 0x00 ?
-        dev_serial[0] += 2;
-    }
+    const uint8_t *mfr_string = get_manufacturer_string_descriptor(vid);
+    const uint8_t *product_string = get_product_string_descriptor(pid);
+    const uint8_t *serial_string = get_serial_string_descriptor(&eeprom_read);
 
     /* Set our USB enumeration descriptors! Note that there are different
     * function calls for each USB speed: FS, HS, SS. */
 
     /* Device descriptors */
     CyU3PUsbSetDesc(CY_U3P_USB_SET_HS_DEVICE_DESCR, 0,
-            (uint8_t *) b200_usb2_dev_desc);
+        (uint8_t *)common_usb2_dev_desc);
 
     CyU3PUsbSetDesc(CY_U3P_USB_SET_SS_DEVICE_DESCR, 0,
-            (uint8_t *) b200_usb3_dev_desc);
+        (uint8_t *)common_usb3_dev_desc);
 
     /* Device qualifier descriptors */
     CyU3PUsbSetDesc(CY_U3P_USB_SET_DEVQUAL_DESCR, 0,
-            (uint8_t *) b200_dev_qual_desc);
+        (uint8_t *)common_dev_qual_desc);
 
     /* Configuration descriptors */
     CyU3PUsbSetDesc(CY_U3P_USB_SET_HS_CONFIG_DESCR, 0,
-            (uint8_t *) b200_usb_hs_config_desc);
+        (uint8_t *)b200_usb_hs_config_desc);
 
     CyU3PUsbSetDesc(CY_U3P_USB_SET_FS_CONFIG_DESCR, 0,
-            (uint8_t *) b200_usb_fs_config_desc);
+        (uint8_t *)b200_usb_fs_config_desc);
 
     CyU3PUsbSetDesc(CY_U3P_USB_SET_SS_CONFIG_DESCR, 0,
-            (uint8_t *) b200_usb_ss_config_desc);
+        (uint8_t *)b200_usb_ss_config_desc);
 
     /* BOS Descriptor */
     CyU3PUsbSetDesc(CY_U3P_USB_SET_SS_BOS_DESCR, 0,
-            (uint8_t *) b200_usb_bos_desc);
+        (uint8_t *)common_usb_bos_desc);
 
     /* String descriptors */
     CyU3PUsbSetDesc(CY_U3P_USB_SET_STRING_DESCR, 0,
-            (uint8_t *) b200_string_lang_id_desc);
+        (uint8_t *)common_string_lang_id_desc);
 
     CyU3PUsbSetDesc(CY_U3P_USB_SET_STRING_DESCR, 1,
-            (uint8_t *) mfr_string);
+        (uint8_t *)mfr_string);
 
     CyU3PUsbSetDesc(CY_U3P_USB_SET_STRING_DESCR, 2,
-            (uint8_t *) product_string);
+        (uint8_t *)product_string);
 
     CyU3PUsbSetDesc(CY_U3P_USB_SET_STRING_DESCR, 3,
-            (uint8_t *) dev_serial);
+        (uint8_t *)serial_string);
 
     ////////////////////////////////////////////////////////
-
-    // FIXME: CyU3PUsbSetTxDeemphasis(0x11); <0x1F  // Shouldn't need to change this
 
     const uint32_t tx_swing = g_config.tx_swing/*65*//*45*/;   // 65 & 45 are OK, 120 causes much link recovery. <128. 1.2V is USB3 limit.
     if (CyU3PUsbSetTxSwing(tx_swing) == CY_U3P_SUCCESS)

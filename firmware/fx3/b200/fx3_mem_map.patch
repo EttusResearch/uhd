@@ -66,3 +66,26 @@ diff -ur 1.2.3-orig/common/fx3.ld 1.2.3/common/fx3.ld
 +	PROVIDE(__heap_size = __heap_end - __heap_start);
  }
  
+diff -ur 1.2.3-orig/boot_fw/src/cyfx3.ld 1.2.3/boot_fw/src/cyfx3.ld
+--- 1.2.3-orig/boot_fw/src/cyfx3.ld	2019-02-12 16:40:48.000000000 -0800
++++ 1.2.3/boot_fw/src/cyfx3.ld	2019-03-20 14:36:18.992529192 -0700
+@@ -34,12 +34,18 @@
+ 
+ MEMORY
+ {
++	BLANK		: ORIGIN = 0x40070000	LENGTH = 0x0100
+ 	SYS_MEM		: ORIGIN = 0x40078000	LENGTH = 0x7000
+ 	DATA		: ORIGIN = 0x4007F000	LENGTH = 0x1000
+ }
+ 
+ SECTIONS
+ {
++	. = 0x40070000;
++	.blank :
++	{
++		. += 0x100;
++	} > BLANK
+ 	. = 0x40078000;
+ 	.text :
+ 	{
+

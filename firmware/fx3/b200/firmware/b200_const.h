@@ -1,9 +1,12 @@
 //
 // Copyright 2013-2014 Ettus Research LLC
+// Copyright 2019 Ettus Research, a National Instruments Brand
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef _B200_MAIN_H
-#define _B200_MAIN_H
+#ifndef _B200_CONST_H
+#define _B200_CONST_H
 
 #include "cyu3externcstart.h"
 
@@ -116,25 +119,6 @@
 #define CTRL_COMM_PPORT_SOCKET          CY_U3P_PIB_SOCKET_2
 #define CTRL_RESP_PPORT_SOCKET          CY_U3P_PIB_SOCKET_3
 
-
-/* Descriptor definitions for USB enumerations. */
-extern uint8_t b200_usb2_dev_desc[];
-extern uint8_t b200_usb3_dev_desc[];
-extern const uint8_t b200_dev_qual_desc[];
-extern const uint8_t b200_usb_fs_config_desc[];
-extern const uint8_t b200_usb_hs_config_desc[];
-extern const uint8_t b200_usb_bos_desc[];
-extern const uint8_t b200_usb_ss_config_desc[];
-extern const uint8_t b200_string_lang_id_desc[];
-extern const uint8_t b200_usb_manufacture_desc[];
-extern const uint8_t b200_usb_product_desc[];
-extern const uint8_t niusrp_usb_manufacture_desc[];
-extern const uint8_t niusrp_2900_usb_product_desc[];
-extern const uint8_t niusrp_2901_usb_product_desc[];
-extern const uint8_t unknown_desc[];
-extern uint8_t dev_serial[];
-
-
 #include "cyu3externcend.h"
 
-#endif /* _B200_MAIN_H */
+#endif /* _B200_CONST_H */
