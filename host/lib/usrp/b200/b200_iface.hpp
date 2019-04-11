@@ -1,6 +1,6 @@
 //
 // Copyright 2012-2013 Ettus Research LLC
-// Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2018-2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -45,6 +45,7 @@ static const uhd::dict<uint16_t, b200_product_t> B2XX_PID_TO_PRODUCT = boost::as
 ;
 
 static const std::string     B200_FW_FILE_NAME = "usrp_b200_fw.hex";
+static const std::string     B200_BL_FILE_NAME = "usrp_b200_bl.img";
 
 //! Map the EEPROM product ID codes to the product
 static const uhd::dict<uint16_t, b200_product_t> B2XX_PRODUCT_ID = boost::assign::map_list_of
@@ -110,6 +111,9 @@ public:
 
     //! load an FPGA image
     virtual uint32_t load_fpga(const std::string filestring, bool force=false) = 0;
+
+    //! load a bootloader image onto device EEPROM
+    virtual uint32_t load_bootloader(const std::string filestring) = 0;
 
     virtual void write_eeprom(uint16_t addr, uint16_t offset, const uhd::byte_vector_t &bytes) = 0;
 
