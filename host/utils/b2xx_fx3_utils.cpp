@@ -1,6 +1,6 @@
 //
 // Copyright 2010-2014 Ettus Research LLC
-// Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2018-2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -32,35 +32,51 @@
 namespace po = boost::program_options;
 namespace fs = boost::filesystem;
 
+namespace {
 struct vid_pid_t
 {
     uint16_t vid;
     uint16_t pid;
 };
-const static vid_pid_t known_vid_pids[] = {{FX3_VID, FX3_DEFAULT_PID},
+const vid_pid_t known_vid_pids[] = {{FX3_VID, FX3_DEFAULT_PID},
     {FX3_VID, FX3_REENUM_PID},
     {B200_VENDOR_ID, B200_PRODUCT_ID},
     {B200_VENDOR_ID, B200MINI_PRODUCT_ID},
     {B200_VENDOR_ID, B205MINI_PRODUCT_ID},
     {B200_VENDOR_NI_ID, B200_PRODUCT_NI_ID},
     {B200_VENDOR_NI_ID, B210_PRODUCT_NI_ID}};
-const static std::vector<vid_pid_t> known_vid_pid_vector(known_vid_pids,
+const std::vector<vid_pid_t> known_vid_pid_vector(known_vid_pids,
     known_vid_pids + (sizeof(known_vid_pids) / sizeof(known_vid_pids[0])));
 
-static const size_t EEPROM_INIT_VALUE_VECTOR_SIZE = 8;
-static uhd::byte_vector_t construct_eeprom_init_value_vector(uint16_t vid, uint16_t pid)
+const uhd::byte_vector_t OLD_EEPROM_SIGNATURE = {0x43, 0x59, 0x14, 0xB2};
+const uhd::byte_vector_t NEW_EEPROM_SIGNATURE = {0x43, 0x59, 0x1A, 0xB0};
+
+const size_t EEPROM_INIT_VALUE_VECTOR_SIZE = 8;
+uhd::byte_vector_t construct_eeprom_init_value_vector(uint16_t vid, uint16_t pid)
 {
-    uhd::byte_vector_t init_values(EEPROM_INIT_VALUE_VECTOR_SIZE);
-    init_values.at(0) = 0x43;
-    init_values.at(1) = 0x59;
-    init_values.at(2) = 0x14;
-    init_values.at(3) = 0xB2;
-    init_values.at(4) = static_cast<uint8_t>(pid & 0xff);
-    init_values.at(5) = static_cast<uint8_t>(pid >> 8);
-    init_values.at(6) = static_cast<uint8_t>(vid & 0xff);
-    init_values.at(7) = static_cast<uint8_t>(vid >> 8);
+    uhd::byte_vector_t init_values(OLD_EEPROM_SIGNATURE);
+    init_values.push_back(static_cast<uint8_t>(pid & 0xff));
+    init_values.push_back(static_cast<uint8_t>(pid >> 8));
+    init_values.push_back(static_cast<uint8_t>(vid & 0xff));
+    init_values.push_back(static_cast<uint8_t>(vid >> 8));
     return init_values;
 }
+
+constexpr uint8_t EEPROM_DATA_ADDR_HIGH_BYTE = 0x7F;
+constexpr uint8_t EEPROM_DATA_HEADER_ADDR    = 0x00;
+constexpr uint8_t EEPROM_DATA_VID_PID_ADDR   = 0x06;
+constexpr uint8_t EEPROM_DATA_OLD_DATA_ADDR  = 0x0A;
+
+const uhd::byte_vector_t EEPROM_DATA_HEADER = {
+    0x00,
+    0xB2, // magic
+    0x01,
+    0x00, // eeprom_revision
+    0x01,
+    0x00 // eeprom_compat
+};
+
+} // namespace
 
 //! used with lexical cast to parse a hex string
 template <class T> struct to_hex
@@ -300,29 +316,36 @@ int erase_eeprom(b200_iface::sptr& b200)
 int32_t main(int32_t argc, char* argv[])
 {
     uint16_t vid, pid;
-    std::string pid_str, vid_str, fw_file, fpga_file, writevid_str, writepid_str;
+    std::string pid_str, vid_str, fw_file, fpga_file, bl_file, writevid_str, writepid_str;
     bool user_supplied_vid_pid = false;
 
+    // clang-format off
     po::options_description visible("Allowed options");
-    visible.add_options()("help,h", "help message")(
+    visible.add_options()(
+        "help,h", "help message")(
         "vid,v", po::value<std::string>(&vid_str), "Specify VID of device to use.")(
         "pid,p", po::value<std::string>(&pid_str), "Specify PID of device to use.")(
         "speed,S", "Read back the USB mode currently in use.")(
         "reset-device,D", "Reset the B2xx Device.")(
         "reset-fpga,F", "Reset the FPGA (does not require re-programming.")(
-        "reset-usb,U", "Reset the USB subsystem on your host computer.")("load-fw,W",
-        po::value<std::string>(&fw_file),
-        "Load a firmware (hex) file into the FX3.")("load-fpga,L",
-        po::value<std::string>(&fpga_file),
-        "Load a FPGA (bin) file into the FPGA.");
+        "reset-usb,U", "Reset the USB subsystem on your host computer.")(
+        "load-fw,W", po::value<std::string>(&fw_file),
+            "Load a firmware (hex) file into the FX3.")(
+        "load-fpga,L", po::value<std::string>(&fpga_file),
+            "Load a FPGA (bin) file into the FPGA.")(
+        "load-bootloader,B", po::value<std::string>(&bl_file),
+            "Load a bootloader (img) file into the EEPROM");
 
     // Hidden options provided for testing - use at your own risk!
     po::options_description hidden("Hidden options");
-    hidden.add_options()("init-device,I", "Initialize a B2xx device.")("uninit-device",
-        "Uninitialize a B2xx device.")("read-eeprom,R", "Read first 8 bytes of EEPROM")(
+    hidden.add_options()(
+        "init-device,I", "Initialize a B2xx device.")(
+        "uninit-device", "Uninitialize a B2xx device.")(
+        "read-eeprom,R", "Read first 8 bytes of EEPROM")(
         "erase-eeprom,E", "Erase first 8 bytes of EEPROM")(
         "write-vid", po::value<std::string>(&writevid_str), "Write VID field of EEPROM")(
         "write-pid", po::value<std::string>(&writepid_str), "Write PID field of EEPROM");
+    // clang-format on
 
     po::options_description desc;
     desc.add(visible);
@@ -578,6 +601,71 @@ int32_t main(int32_t argc, char* argv[])
         }
 
         std::cout << "FPGA load complete, releasing USB interface..." << std::endl;
+    } else if (vm.count("load-bootloader")) {
+        if (bl_file.empty())
+            bl_file = uhd::find_image_path(B200_BL_FILE_NAME);
+
+        if (bl_file.empty()) {
+            std::cerr << "Bootloader image not found!" << std::endl;
+            return -1;
+        }
+
+        if (!(fs::exists(bl_file))) {
+            std::cerr << "Invalid filepath: " << bl_file << std::endl;
+            return -1;
+        }
+
+        std::cout << "Loading Bootloader image (" << bl_file << ")" << std::endl;
+
+        // In the upgrade case, we need to migrate the EEPROM data to a new
+        // location before loading the bootloader
+
+        // Use the signature to detect the old EEPROM layout
+        auto signature = b200->read_eeprom(0x0, 0x0, 4);
+        if (signature == OLD_EEPROM_SIGNATURE) {
+            std::cout << "Old EEPROM detected. Upgrading EEPROM image to latest revision."
+                      << std::endl;
+
+            // Read values that will be clobbered by the bootloader
+            auto pidvid      = b200->read_eeprom(0x00, 0x04, 4);
+            uhd::byte_vector_t vidpid = {pidvid[2], pidvid[3], pidvid[0], pidvid[1]};
+            auto eeprom_data = b200->read_eeprom(0x04, 0xDC, 36);
+
+            // Write in default header
+            b200->write_eeprom(
+                EEPROM_DATA_ADDR_HIGH_BYTE, EEPROM_DATA_HEADER_ADDR, EEPROM_DATA_HEADER);
+            // Write back data to the device
+            b200->write_eeprom(
+                EEPROM_DATA_ADDR_HIGH_BYTE, EEPROM_DATA_VID_PID_ADDR, vidpid);
+            b200->write_eeprom(
+                EEPROM_DATA_ADDR_HIGH_BYTE, EEPROM_DATA_OLD_DATA_ADDR, eeprom_data);
+        }
+
+        uint32_t fx3_state;
+        try {
+            fx3_state = b200->load_bootloader(bl_file);
+        } // returns 0 on success, or FX3 state on error
+        catch (uhd::exception& e) {
+            std::cerr << "Exception while loading bootloader: " << e.what() << std::endl;
+            return EXIT_FAILURE;
+        }
+
+        if (fx3_state != 0) {
+            std::cerr << std::flush << "Error loading bootloader. FX3 state ("
+                      << fx3_state << "): " << b200_iface::fx3_state_string(fx3_state)
+                      << std::endl;
+            return EXIT_FAILURE;
+        }
+
+        std::cout << "Bootloader load complete, resetting device..." << std::endl;
+
+        // reset the device
+        try {
+            b200->reset_fx3();
+        } catch (uhd::exception& e) {
+            std::cerr << "Exception while resetting FX3: " << e.what() << std::endl;
+            return EXIT_FAILURE;
+        }
     }
 
     std::cout << "Operation complete!  I did it!  I did it!" << std::endl;
