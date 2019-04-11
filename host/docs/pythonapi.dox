@@ -14,16 +14,16 @@ provide that functionality. On Windows, these headers always get installed when
 using the binary installers provided on https://www.python.org/downloads/windows/.
 
 If CMake can't find the Python headers or library, specify
-the `PYTHON_INCLUDE_DIRS` and/or `PYTHON_LIBRARY` CMake variables manually.
+the `PYTHON_INCLUDE_DIR` and/or `PYTHON_LIBRARY` CMake variables manually.
 
 
 \subsection python_install_2v3 Python 2 vs. 3
 
 The Python API supports both Python 2 and 3, but if you have both versions
 installed, CMake might require some hints which version is the desired one.
-To force Python 3, UHD has a CMake variable `ENABLE_PYTHON3`. If you set it,
-e.g., by running `cmake -DENABLE_PYTHON3=ON`, it will force the usage of
-Python 3.
+To force a particular version, it helps to set `-DPYTHON_EXECUTABLE=/usr/bin/python3`,
+or whatever interpreter you are expecting. The variables PYTHON_LIBRARY and
+PYTHON_INCLUDE_DIR may also need to be set.
 
 \subsection python_install_windows Installing on Windows
 

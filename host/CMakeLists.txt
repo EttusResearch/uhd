@@ -6,11 +6,6 @@
 #
 
 ########################################################################
-#if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
-#    message(FATAL_ERROR "Prevented in-tree built. This is bad practice.")
-#endif(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
-
-########################################################################
 # Project setup
 ########################################################################
 # NOTE! If you change the version in the following line, also change
@@ -38,6 +33,7 @@ set(MSVC_MIN_VERSION_READABLE "14.0")
 # This Python version gets used for Python API (if requested) as well as
 # all the build-time Python scripts
 set(PYTHON_MIN_VERSION "2.7")
+set(PYTHON3_MIN_VERSION "3.5")
 # Other deps
 set(BOOST_MIN_VERSION "1.58")
 set(NUMPY_MIN_VERSION "1.7")
@@ -279,15 +275,6 @@ if(WIN32)
 endif(WIN32)
 
 ########################################################################
-# Choose a version of Python
-########################################################################
-option(ENABLE_PYTHON3 "Enable Python 3. Default is Python 2" OFF)
-set(PYBIND11_PYTHON_VERSION 2.7)
-if(${ENABLE_PYTHON3})
-    set(PYBIND11_PYTHON_VERSION 3)
-endif()
-
-########################################################################
 # Setup Boost
 ########################################################################
 message(STATUS "")
@@ -327,7 +314,6 @@ set(Boost_ADDITIONAL_VERSIONS
     "1.64" "1.65" "1.66" "1.67" "1.68" "1.69"
 )
 
-#Python API requirements
 message(STATUS "Looking for optional Boost components...")
 find_package(Boost ${BOOST_MIN_VERSION} OPTIONAL_COMPONENTS ${BOOST_OPTIONAL_COMPONENTS})
 
@@ -352,18 +338,11 @@ include(UHDLog)
 ########################################################################
 # Check Python Modules
 ########################################################################
-find_package(PythonInterp ${PYBIND11_PYTHON_VERSION})
-find_package(PythonLibs ${PYBIND11_PYTHON_VERSION})
 include(UHDPython)
 
-set(PYTHON_VERSION "platform.python_version() >= '2.7' and platform.python_version() < '3.0'")
-if(${ENABLE_PYTHON3})
-    set(PYTHON_VERSION "platform.python_version() >= '3.0'")
-endif()
-
 PYTHON_CHECK_MODULE(
-    "Python version ${PYBIND11_PYTHON_VERSION} or greater"
-    "platform" ${PYTHON_VERSION}
+    "Python version ${PYTHON_MIN_VERSION} or greater"
+    "platform" "platform.python_version() >= '${PYTHON_MIN_VERSION}'"
     HAVE_PYTHON_PLAT_MIN_VERSION
 )
 
@@ -384,8 +363,6 @@ PYTHON_CHECK_MODULE(
     "numpy" "LooseVersion(numpy.__version__) >= LooseVersion('${NUMPY_MIN_VERSION}')"
     HAVE_PYTHON_MODULE_NUMPY
 )
-
-set(PYTHON_ADDITIONAL_VERSIONS 2.7 3.4 3.5)
 
 ########################################################################
 # Create Uninstall Target
@@ -415,9 +392,9 @@ UHD_INSTALL(FILES
 LIBUHD_REGISTER_COMPONENT("LibUHD" ENABLE_LIBUHD ON "Boost_FOUND;HAVE_PYTHON_PLAT_MIN_VERSION;HAVE_PYTHON_MODULE_MAKO" OFF ON)
 LIBUHD_REGISTER_COMPONENT("LibUHD - C API" ENABLE_C_API ON "ENABLE_LIBUHD" OFF OFF)
 if(WIN32)
-    LIBUHD_REGISTER_COMPONENT("LibUHD - Python API" ENABLE_PYTHON_API OFF "ENABLE_LIBUHD;HAVE_PYTHON_MODULE_NUMPY;PythonLibs_FOUND" OFF OFF)
+  LIBUHD_REGISTER_COMPONENT("LibUHD - Python API" ENABLE_PYTHON_API OFF "ENABLE_LIBUHD;HAVE_PYTHON_MODULE_NUMPY;HAVE_PYTHON_LIBS" OFF OFF)
 else()
-    LIBUHD_REGISTER_COMPONENT("LibUHD - Python API" ENABLE_PYTHON_API ON "ENABLE_LIBUHD;HAVE_PYTHON_MODULE_NUMPY;PythonLibs_FOUND" OFF OFF)
+  LIBUHD_REGISTER_COMPONENT("LibUHD - Python API" ENABLE_PYTHON_API ON "ENABLE_LIBUHD;HAVE_PYTHON_MODULE_NUMPY;HAVE_PYTHON_LIBS" OFF OFF)
 endif(WIN32)
 LIBUHD_REGISTER_COMPONENT("Examples" ENABLE_EXAMPLES ON "ENABLE_LIBUHD" OFF OFF)
 LIBUHD_REGISTER_COMPONENT("Utils" ENABLE_UTILS ON "ENABLE_LIBUHD" OFF OFF)

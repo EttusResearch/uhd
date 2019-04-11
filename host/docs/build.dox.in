@@ -220,10 +220,8 @@ extensions:
 
 \subsection cmake_win Generate the project with CMake
 
-- Enable Python3 option in the CMake list if the version of installed Python is >=3, otherwise go to the next step.
-  - Go to the source code: `<uhd-repo-path>/host`.
-  - Open 'CMakeLists.txt'.
-  - Find 'ENABLE_PYTHON3' option and set it to 'ON', e.g. 'option(ENABLE_PYTHON3 "Enable Python 3. Default is Python 2" ON)'.
+- Make sure the version of Python that CMake detects matches the version you
+  want it to be (check the PYTHON_VERSION variable)
 - Open the CMake GUI.
 - Set the path to the source code: `<uhd-repo-path>/host`.
 - Set the path to the build directory (this may require creating the folder \build\): `<uhd-repo-path>/host/build`.

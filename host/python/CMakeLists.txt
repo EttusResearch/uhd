@@ -36,7 +36,7 @@ target_include_directories(pyuhd PUBLIC
     ${PYBIND11_INCLUDE_DIR}
 )
 
-target_link_libraries(pyuhd ${Boost_LIBRARIES} ${PYTHON_LIBRARY} uhd)
+target_link_libraries(pyuhd ${Boost_LIBRARIES} ${PYTHON_LIBRARIES} uhd)
 # Copy pyuhd library to the staging directory
 if(WIN32)
     set(PYUHD_LIBRARY_NAME libpyuhd.pyd)
