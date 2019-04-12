@@ -16,3 +16,4 @@ if not __simulated__:
     from .eiscat import EISCAT
     from .test import test
     from .unknown import unknown
+    from .dboard_iface import DboardIface

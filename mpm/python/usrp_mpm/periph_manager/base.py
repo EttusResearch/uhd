@@ -117,6 +117,10 @@ class PeriphManagerBase(object):
     # The index of the first port of the RFNoC crossbar which is connected to
     # an RFNoC block
     crossbar_base_port = 0
+    # A DboardIface class which will be passed to the discovered DB
+    # constructors.
+    # If None, the MB does not support the DB Iface architecture.
+    db_iface = None
     # Address of the daughterboard EEPROMs. This could be something like
     # "e0004000.i2c". This value will be passed to get_eeprom_paths() to
     # determine a full path to an EEPROM device.
@@ -488,6 +492,10 @@ class PeriphManagerBase(object):
                 'spi_nodes': spi_nodes,
                 'default_args': default_args,
             })
+            # If the MB supports the DB Iface architecture, pass
+            # the corresponding DB Iface to the dboard class
+            if self.db_iface is not None:
+                dboard_info['db_iface'] = self.db_iface(dboard_idx, self)
             # This will actually instantiate the dboard class:
             self.dboards.append(db_class(dboard_idx, **dboard_info))
         self.log.info("Initialized %d daughterboard(s).", len(self.dboards))
