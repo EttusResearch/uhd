@@ -211,7 +211,8 @@ PACKAGE_MAPPING = {
     'b2xx_fw': {
         'type': 'b2xx',
         'package_name': 'b2xx_common_fw_default-g{}.zip',
-        'files': ["usrp_b200_fw.hex"],
+        'files': ["usrp_b200_fw.hex",
+                  "usrp_b200_bl.img"],
     },
     'n230': {
         'type': 'n230',
