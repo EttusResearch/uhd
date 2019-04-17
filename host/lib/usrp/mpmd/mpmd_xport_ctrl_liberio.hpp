@@ -45,6 +45,8 @@ private:
 
     //! Control transport for one liberio connection
     uhd::transport::muxed_zero_copy_if::sptr _ctrl_dma_xport;
+    //! Data transport for one liberio connection
+    uhd::transport::muxed_zero_copy_if::sptr _data_dma_xport;
     //! Control transport for one liberio connection
     uhd::transport::muxed_zero_copy_if::sptr _async_msg_dma_xport;
 };

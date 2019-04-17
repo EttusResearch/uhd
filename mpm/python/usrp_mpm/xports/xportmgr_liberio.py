@@ -64,12 +64,18 @@ class XportMgrLiberio(object):
         elif xport_type == 'ASYNC_MSG':
             chan = 1
         else:
-            chan = 2 + self._data_chan_ctr
-            self._data_chan_ctr += 1
+            if self.max_chan > 4:
+                chan = 2 + self._data_chan_ctr
+                self._data_chan_ctr += 1
+            else:
+                if xport_type == 'RX_DATA':
+                    chan = 2
+                else:
+                    chan = 3
         xport_info = {
             'type': 'liberio',
             'send_sid': str(sid),
-            'muxed': str(xport_type in ('CTRL', 'ASYNC_MSG')),
+            'muxed': str(xport_type in ('CTRL', 'ASYNC_MSG')) if (self.max_chan > 4) else 'True',
             'dma_chan': str(chan),
             'tx_dev': "/dev/tx-dma{}".format(chan),
             'rx_dev': "/dev/rx-dma{}".format(chan),

@@ -107,8 +107,22 @@ uhd::both_xports_t mpmd_xport_ctrl_liberio::make_transport(
             << "making (muxed) stream with num " << xports.recv_sid.get_dst();
         xports.recv = _async_msg_dma_xport->make_stream(xports.recv_sid.get_dst());
     } else {
-        xports.recv =
-            transport::liberio_zero_copy::make(tx_dev, rx_dev, default_buff_args);
+        // Create muxed transport in case of less DMA channels
+        if (xport_info["muxed"] == "True") {
+            if (not _data_dma_xport) {
+                _data_dma_xport =
+                    make_muxed_liberio_xport(tx_dev, rx_dev, default_buff_args,
+                        uhd::rfnoc::MAX_NUM_BLOCKS * uhd::rfnoc::MAX_NUM_PORTS);
+            }
+
+            UHD_LOGGER_TRACE("MPMD")
+                << "Making (muxed) stream with num " << xports.recv_sid.get_dst();
+            xports.recv = _data_dma_xport->make_stream(xports.recv_sid.get_dst());
+        }
+        else {
+            xports.recv =
+                transport::liberio_zero_copy::make(tx_dev, rx_dev, default_buff_args);
+        }
     }
 
     // Finish both_xports_t object and return:
