@@ -1,6 +1,7 @@
 //
 // Copyright 2014-2017 Ettus Research
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -10,8 +11,8 @@
 
 #include <uhd/config.hpp>
 #include <uhd/types/device_addr.hpp>
-#include <boost/function.hpp>
 #include <uhd/utils/noncopyable.hpp>
+#include <boost/function.hpp>
 #include <string>
 
 namespace uhd {
@@ -28,6 +29,9 @@ public:
         std::string firmware_path;
         std::string fpga_path;
         std::string out_path;
+        std::string id;
+        std::vector<uint8_t> component;
+        uhd::dict<std::string, std::string> metadata;
     } image_loader_args_t;
 
     //! Signature of an image loading function
