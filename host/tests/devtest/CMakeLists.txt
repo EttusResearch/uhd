@@ -23,12 +23,13 @@ UHD_INSTALL(PROGRAMS
 macro(ADD_DEVTEST pattern filter devtype)
     message(STATUS "Adding ${devtype} device test target")
     add_custom_target("test_${pattern}"
-        ${PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/run_testsuite.py
+        ${RUNTIME_PYTHON_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/run_testsuite.py
         "--src-dir" "${CMAKE_CURRENT_SOURCE_DIR}"
         "--devtest-pattern" "${pattern}"
         "--device-filter" "${filter}"
         "--build-type" "${CMAKE_BUILD_TYPE}"
         "--build-dir" "${CMAKE_BINARY_DIR}"
+        "--python-interp" "${RUNTIME_PYTHON_EXECUTABLE}"
         COMMENT "Running device test on all connected ${devtype} devices:"
         WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
     )

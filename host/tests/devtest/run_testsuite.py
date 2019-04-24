@@ -21,11 +21,13 @@ def setup_parser():
     """ Set up argparser """
     parser = argparse.ArgumentParser(description="Test utility for UHD/USRP.")
     parser.add_argument('--devtest-pattern', '-p', default='*', help='e.g. b2xx')
-    parser.add_argument('--device-filter', '-f', default=None, required=True, help='b200, x300, ...')
+    parser.add_argument('--device-filter', '-f', required=True, help='b200, x300, ...')
     parser.add_argument('--log-dir', '-l', default='.')
-    parser.add_argument('--src-dir', default='.', help='Directory where the test sources are stored')
-    parser.add_argument('--build-dir', default=None, help='Build dir (where examples/ and utils/ are)')
+    parser.add_argument('--src-dir', default='.',
+                        help='Directory where the test sources are stored')
+    parser.add_argument('--build-dir', help='Build dir (where examples/ and utils/ are)')
     parser.add_argument('--build-type', default='Release')
+    parser.add_argument('--python-interp', default=sys.executable)
     return parser
 
 def setup_env(args):
@@ -114,7 +116,7 @@ def main():
         env['_UHD_DEVTEST_SRC_DIR'] = str(args.src_dir)
         proc = subprocess.Popen(
             [
-                "python", "-m", "unittest", "discover", "-v",
+                args.python_interp, "-m", "unittest", "discover", "-v",
                 "-s", args.src_dir,
                 "-p", devtest_pattern,
             ],
@@ -133,4 +135,3 @@ def main():
 
 if __name__ == "__main__":
     exit(not main())
-
