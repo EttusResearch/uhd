@@ -302,9 +302,9 @@ mpmd_mboard_impl::mpmd_mboard_impl(
 
 mpmd_mboard_impl::~mpmd_mboard_impl()
 {
-    // Destroy the claimer task to avoid spurious asynchronous reclaim call after the
-    // unclaim.
-    UHD_SAFE_CALL(dump_logs(); _claimer_task.reset();
+    // Destroy the claimer task to avoid spurious asynchronous reclaim call
+    // after the unclaim.
+    UHD_SAFE_CALL(dump_logs(); _claimer_task.reset(); _xport_mgr.reset();
                   if (not rpc->request_with_token<bool>("unclaim")) {
                       UHD_LOG_WARNING("MPMD", "Failure to ack unclaim!");
                   });
