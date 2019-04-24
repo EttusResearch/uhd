@@ -231,7 +231,9 @@ mpmd_impl::mpmd_impl(const device_addr_t& device_args)
 
 mpmd_impl::~mpmd_impl()
 {
-    /* nop */
+    _rfnoc_block_ctrl.clear();
+    _tree.reset();
+    _mb.clear();
 }
 
 /*****************************************************************************
