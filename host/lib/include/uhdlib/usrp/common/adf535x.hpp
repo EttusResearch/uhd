@@ -9,6 +9,7 @@
 
 #include "adf5355_regs.hpp"
 #include "adf5356_regs.hpp"
+#include <uhd/types/ranges.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/math.hpp>
 #include <uhd/utils/safe_call.hpp>
@@ -16,6 +17,7 @@
 #include <boost/format.hpp>
 #include <boost/function.hpp>
 #include <algorithm>
+#include <iomanip>
 #include <utility>
 #include <vector>
 
@@ -67,6 +69,10 @@ public:
     virtual double set_frequency(
         double target_freq, double freq_resolution, bool flush = false) = 0;
 
+    virtual double set_charge_pump_current(double target_current, bool flush = false) = 0;
+
+    virtual uhd::meta_range_t get_charge_pump_current_range() = 0;
+
     virtual void commit() = 0;
 };
 
@@ -92,7 +98,8 @@ const uint32_t ADF535X_MAX_FRAC2 = 16383;
 // const uint16_t ADF535X_MIN_INT_PRESCALER_89 = 75;
 } // namespace
 
-template <typename adf535x_regs_t> class adf535x_impl : public adf535x_iface
+template <typename adf535x_regs_t>
+class adf535x_impl : public adf535x_iface
 {
 public:
     explicit adf535x_impl(write_fn_t write_fn, wait_fn_t wait_fn)
@@ -226,6 +233,36 @@ public:
         return _set_frequency(target_freq, freq_resolution, flush);
     }
 
+    double set_charge_pump_current(const double current, const bool flush) override
+    {
+        const auto cp_range = get_charge_pump_current_range();
+
+        const auto coerced_current = cp_range.clip(current, true);
+        const int current_step     = std::round((coerced_current / cp_range.step()) - 1);
+
+        UHD_ASSERT_THROW(current_step >= 0 and current_step < 16);
+        _regs.charge_pump_current =
+            static_cast<typename adf535x_regs_t::charge_pump_current_t>(current_step);
+
+        if (flush) {
+            commit();
+        }
+
+        if (std::abs(current - coerced_current) > 0.01e-6) {
+            UHD_LOG_WARNING("ADF535x",
+                "Requested charge pump current was coerced! Requested: "
+                    << std::setw(4) << current << " A  Actual: " << coerced_current
+                    << " A");
+        }
+
+        return coerced_current;
+    }
+
+    uhd::meta_range_t get_charge_pump_current_range() override
+    {
+        return _get_charge_pump_current_range();
+    }
+
     void set_output_power(const output_power_t power) override
     {
         typename adf535x_regs_t::output_power_t setting;
@@ -302,6 +339,7 @@ public:
 
 protected:
     double _set_frequency(double, double, bool);
+    uhd::meta_range_t _get_charge_pump_current_range();
     void _commit();
 
 private: // Members
@@ -402,7 +440,14 @@ inline double adf535x_impl<adf5355_regs_t>::_set_frequency(
     return coerced_out_freq;
 }
 
-template <> inline void adf535x_impl<adf5355_regs_t>::_commit()
+template <>
+inline uhd::meta_range_t adf535x_impl<adf5355_regs_t>::_get_charge_pump_current_range()
+{
+    return uhd::meta_range_t(.3125e-6, 5e-6, .3125e-6);
+}
+
+template <>
+inline void adf535x_impl<adf5355_regs_t>::_commit()
 {
     const size_t ONE_REG = 1;
 
@@ -517,7 +562,14 @@ inline double adf535x_impl<adf5356_regs_t>::_set_frequency(
     return coerced_out_freq;
 }
 
-template <> inline void adf535x_impl<adf5356_regs_t>::_commit()
+template <>
+inline uhd::meta_range_t adf535x_impl<adf5356_regs_t>::_get_charge_pump_current_range()
+{
+    return uhd::meta_range_t(.3e-6, 4.8e-6, .3e-6);
+}
+
+template <>
+inline void adf535x_impl<adf5356_regs_t>::_commit()
 {
     const size_t ONE_REG = 1;
     if (_rewrite_regs) {
