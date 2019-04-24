@@ -57,8 +57,6 @@ private:
     liberio_ctx* _ctx;
 };
 
-UHD_SINGLETON_FCN(liberio_context_holder, get_liberio_context_holder);
-
 class liberio_zero_copy_msb : public virtual managed_send_buffer
 {
 public:
@@ -139,7 +137,15 @@ public:
         UHD_ASSERT_THROW(xport_params.num_send_frames > 0);
         UHD_ASSERT_THROW(xport_params.num_recv_frames > 0);
 
-        liberio_ctx* ctx = get_liberio_context_holder().get();
+        {
+            std::lock_guard<std::mutex> _l(_context_lock);
+            if (!_ref_count) {
+                _context_holder = std::make_shared<liberio_context_holder>();
+            }
+
+            _ref_count++;
+        }
+        liberio_ctx* ctx = _context_holder->get();
 
         /* we hold a reference, that we'd drop immediately after,
          * so no requirement to get another one here ...
@@ -193,6 +199,13 @@ public:
     {
         liberio_chan_put(_tx_chan);
         liberio_chan_put(_rx_chan);
+        {
+            std::lock_guard<std::mutex> _l(_context_lock);
+            _ref_count--;
+            if (!_ref_count) {
+                _context_holder.reset();
+            }
+        }
     }
 
     managed_recv_buffer::sptr get_recv_buff(double timeout = 0.1)
@@ -245,7 +258,15 @@ private:
     size_t _next_send_buff_index;
     std::mutex _rx_mutex;
     std::mutex _tx_mutex;
+
+    static std::mutex _context_lock;
+    static size_t _ref_count;
+    static std::shared_ptr<liberio_context_holder> _context_holder;
 };
+
+std::mutex liberio_zero_copy_impl::_context_lock;
+size_t liberio_zero_copy_impl::_ref_count = 0;
+std::shared_ptr<liberio_context_holder> liberio_zero_copy_impl::_context_holder{};
 
 liberio_zero_copy::sptr liberio_zero_copy::make(const std::string& tx_path,
     const std::string& rx_path,
