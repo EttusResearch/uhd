@@ -81,6 +81,10 @@ public:
 
     virtual void set_charge_pump_current(charge_pump_current_t cp_current) = 0;
 
+    virtual double set_charge_pump_current(double current, bool flush = false) = 0;
+
+    virtual uhd::meta_range_t get_charge_pump_current_range() = 0;
+
     virtual uhd::range_t get_int_range() = 0;
 
     virtual double set_frequency(double target_freq, bool int_n_mode, bool flush = false) = 0;
@@ -196,6 +200,36 @@ public:
             case CHARGE_PUMP_CURRENT_5_00MA : _regs.charge_pump_current = adf435x_regs_t::CHARGE_PUMP_CURRENT_5_00MA; break;
             default: UHD_THROW_INVALID_CODE_PATH();
         }
+    }
+
+    double set_charge_pump_current(const double current, const bool flush)
+    {
+        const auto cp_range = get_charge_pump_current_range();
+
+        const auto coerced_current = cp_range.clip(current, true);
+        const int current_step     = std::round((coerced_current / cp_range.step()) - 1);
+
+        UHD_ASSERT_THROW(current_step >= 0 and current_step < 16);
+        set_charge_pump_current(
+            static_cast<adf435x_iface::charge_pump_current_t>(current_step));
+
+        if (flush) {
+            commit();
+        }
+
+        if (std::abs(current - coerced_current) > 0.01e-6) {
+            UHD_LOG_WARNING("ADF435x",
+                "Requested charge pump current was coerced! Requested: "
+                    << std::setw(4) << current << " A  Actual: " << coerced_current
+                    << " A");
+        }
+
+        return coerced_current;
+    }
+
+    uhd::meta_range_t get_charge_pump_current_range()
+    {
+        return uhd::meta_range_t(.3125e-6, 5e-6, .3125e-6);
     }
 
     uhd::range_t get_int_range()
