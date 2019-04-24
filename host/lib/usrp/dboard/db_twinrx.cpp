@@ -108,6 +108,28 @@ public:
             "los/all/export", prepend_ch("los/all/export", _ch_name),
             false, AUTO_RESOLVE_ON_WRITE);
 
+        // LO1 Charge Pump
+        get_rx_subtree()->create<meta_range_t>("los/LO1/charge_pump/range")
+            .set(_ctrl->get_lo1_charge_pump_range());
+        expert_factory::add_dual_prop_node<double>(_expert,
+            get_rx_subtree(),
+            "los/LO1/charge_pump/value",
+            prepend_ch("los/LO1/charge_pump/desired", _ch_name),
+            prepend_ch("los/LO1/charge_pump/coerced", _ch_name),
+            (get_rx_id() == twinrx::TWINRX_REV_C_ID) ? 0.3e-6 : 0.9375e-6,
+            AUTO_RESOLVE_ON_READ_WRITE);
+
+        // LO2 Charge Pump
+        get_rx_subtree()->create<meta_range_t>("los/LO2/charge_pump/range")
+            .set(_ctrl->get_lo2_charge_pump_range());
+        expert_factory::add_dual_prop_node<double>(_expert,
+            get_rx_subtree(),
+            "los/LO2/charge_pump/value",
+            prepend_ch("los/LO2/charge_pump/desired", _ch_name),
+            prepend_ch("los/LO2/charge_pump/coerced", _ch_name),
+            0.3125e-6,
+            AUTO_RESOLVE_ON_READ_WRITE);
+
         //Gain Specific
         get_rx_subtree()->create<meta_range_t>("gains/all/range")
             .set(gain_range_t(0, 93, double(1.0)));
