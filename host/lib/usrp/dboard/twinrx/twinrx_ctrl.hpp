@@ -11,6 +11,7 @@
 #include "twinrx_io.hpp"
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/utils/noncopyable.hpp>
+#include <uhd/types/ranges.hpp>
 
 namespace uhd { namespace usrp { namespace dboard { namespace twinrx {
 
@@ -80,6 +81,14 @@ public:
     virtual double set_lo1_synth_freq(channel_t ch, double freq, bool commit = true) = 0;
 
     virtual double set_lo2_synth_freq(channel_t ch, double freq, bool commit = true) = 0;
+
+    virtual double set_lo1_charge_pump(channel_t ch, double current, bool commit = true) = 0;
+
+    virtual double set_lo2_charge_pump(channel_t ch, double current, bool commit = true) = 0;
+
+    virtual uhd::meta_range_t get_lo1_charge_pump_range() = 0;
+
+    virtual uhd::meta_range_t get_lo2_charge_pump_range() = 0;
 
     virtual bool read_lo1_locked(channel_t ch) = 0;
 

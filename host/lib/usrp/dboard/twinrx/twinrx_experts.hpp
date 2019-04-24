@@ -556,6 +556,10 @@ public:
             bind_accessor(ch.lo2_freq_d);
             bind_accessor(ch.lo1_freq_c);
             bind_accessor(ch.lo2_freq_c);
+            bind_accessor(ch.lo1_charge_pump_c);
+            bind_accessor(ch.lo2_charge_pump_c);
+            bind_accessor(ch.lo1_charge_pump_d);
+            bind_accessor(ch.lo2_charge_pump_d);
         }
         bind_accessor(_lo1_synth0_mapping);
         bind_accessor(_lo1_synth1_mapping);
@@ -587,22 +591,26 @@ private:
     class ch_settings {
     public:
         ch_settings(const experts::node_retriever_t& db, const std::string& ch) :
-            chan_enabled    (db, prepend_ch("enabled", ch)),
-            preamp1         (db, prepend_ch("ant/preamp1", ch)),
-            preamp2         (db, prepend_ch("ant/preamp2", ch)),
-            lb_preamp_presel(db, prepend_ch("ant/lb_preamp_presel", ch)),
-            signal_path     (db, prepend_ch("ch/signal_path", ch)),
-            lb_presel       (db, prepend_ch("ch/lb_presel", ch)),
-            hb_presel       (db, prepend_ch("ch/hb_presel", ch)),
-            input_atten     (db, prepend_ch("ant/input_atten", ch)),
-            lb_atten        (db, prepend_ch("ch/lb_atten", ch)),
-            hb_atten        (db, prepend_ch("ch/hb_atten", ch)),
-            lo1_source      (db, prepend_ch("ch/LO1/source", ch)),
-            lo2_source      (db, prepend_ch("ch/LO2/source", ch)),
-            lo1_freq_d      (db, prepend_ch("los/LO1/freq/desired", ch)),
-            lo2_freq_d      (db, prepend_ch("los/LO2/freq/desired", ch)),
-            lo1_freq_c      (db, prepend_ch("los/LO1/freq/coerced", ch)),
-            lo2_freq_c      (db, prepend_ch("los/LO2/freq/coerced", ch))
+            chan_enabled         (db, prepend_ch("enabled", ch)),
+            preamp1              (db, prepend_ch("ant/preamp1", ch)),
+            preamp2              (db, prepend_ch("ant/preamp2", ch)),
+            lb_preamp_presel     (db, prepend_ch("ant/lb_preamp_presel", ch)),
+            signal_path          (db, prepend_ch("ch/signal_path", ch)),
+            lb_presel            (db, prepend_ch("ch/lb_presel", ch)),
+            hb_presel            (db, prepend_ch("ch/hb_presel", ch)),
+            input_atten          (db, prepend_ch("ant/input_atten", ch)),
+            lb_atten             (db, prepend_ch("ch/lb_atten", ch)),
+            hb_atten             (db, prepend_ch("ch/hb_atten", ch)),
+            lo1_source           (db, prepend_ch("ch/LO1/source", ch)),
+            lo2_source           (db, prepend_ch("ch/LO2/source", ch)),
+            lo1_freq_d           (db, prepend_ch("los/LO1/freq/desired", ch)),
+            lo2_freq_d           (db, prepend_ch("los/LO2/freq/desired", ch)),
+            lo1_charge_pump_d    (db, prepend_ch("los/LO1/charge_pump/desired", ch)),
+            lo2_charge_pump_d    (db, prepend_ch("los/LO2/charge_pump/desired", ch)),
+            lo1_freq_c           (db, prepend_ch("los/LO1/freq/coerced", ch)),
+            lo2_freq_c           (db, prepend_ch("los/LO2/freq/coerced", ch)),
+            lo1_charge_pump_c    (db, prepend_ch("los/LO1/charge_pump/coerced", ch)),
+            lo2_charge_pump_c    (db, prepend_ch("los/LO2/charge_pump/coerced", ch))
         {}
 
         //Inputs (channel specific)
@@ -613,17 +621,21 @@ private:
         experts::data_reader_t<twinrx_ctrl::signal_path_t>      signal_path;
         experts::data_reader_t<twinrx_ctrl::preselector_path_t> lb_presel;
         experts::data_reader_t<twinrx_ctrl::preselector_path_t> hb_presel;
-        experts::data_reader_t<uint8_t>                  input_atten;
-        experts::data_reader_t<uint8_t>                  lb_atten;
-        experts::data_reader_t<uint8_t>                  hb_atten;
+        experts::data_reader_t<uint8_t>                         input_atten;
+        experts::data_reader_t<uint8_t>                         lb_atten;
+        experts::data_reader_t<uint8_t>                         hb_atten;
         experts::data_reader_t<twinrx_ctrl::lo_source_t>        lo1_source;
         experts::data_reader_t<twinrx_ctrl::lo_source_t>        lo2_source;
         experts::data_reader_t<double>                          lo1_freq_d;
         experts::data_reader_t<double>                          lo2_freq_d;
+        experts::data_reader_t<double>                          lo1_charge_pump_d;
+        experts::data_reader_t<double>                          lo2_charge_pump_d;
 
         //Output (channel specific)
         experts::data_writer_t<double>                          lo1_freq_c;
         experts::data_writer_t<double>                          lo2_freq_c;
+        experts::data_writer_t<double>                          lo1_charge_pump_c;
+        experts::data_writer_t<double>                          lo2_charge_pump_c;
     };
 
     //External interface

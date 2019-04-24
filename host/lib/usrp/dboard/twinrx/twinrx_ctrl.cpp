@@ -469,6 +469,56 @@ public:
         return coerced_freq;
     }
 
+    double set_lo1_charge_pump(channel_t ch, double current, bool commit = true)
+    {
+        boost::lock_guard<boost::mutex> lock(_mutex);
+        double coerced_current = 0.0;
+        if (ch == CH1 or ch == BOTH) {
+            coerced_current =
+                _lo1_iface[size_t(CH1)]->set_charge_pump_current(current, false);
+        }
+        if (ch == CH2 or ch == BOTH) {
+            coerced_current =
+                _lo1_iface[size_t(CH2)]->set_charge_pump_current(current, false);
+        }
+
+        if (commit) {
+            _commit();
+        }
+        return coerced_current;
+    }
+
+    double set_lo2_charge_pump(channel_t ch, double current, bool commit = true)
+    {
+        boost::lock_guard<boost::mutex> lock(_mutex);
+        double coerced_current = 0.0;
+        if (ch == CH1 or ch == BOTH) {
+            coerced_current =
+                _lo2_iface[size_t(CH1)]->set_charge_pump_current(current, false);
+        }
+        if (ch == CH2 or ch == BOTH) {
+            coerced_current =
+                _lo2_iface[size_t(CH2)]->set_charge_pump_current(current, false);
+        }
+
+        if (commit) {
+            _commit();
+        }
+        return coerced_current;
+    }
+
+    uhd::meta_range_t get_lo1_charge_pump_range()
+    {
+        // assume that both channels have the same range
+        return _lo1_iface[size_t(CH1)]->get_charge_pump_current_range();
+    }
+
+    uhd::meta_range_t get_lo2_charge_pump_range()
+    {
+        // assume that both channels have the same range
+        return _lo2_iface[size_t(CH1)]->get_charge_pump_current_range();
+    }
+
     bool read_lo1_locked(channel_t ch)
     {
         boost::lock_guard<boost::mutex> lock(_mutex);

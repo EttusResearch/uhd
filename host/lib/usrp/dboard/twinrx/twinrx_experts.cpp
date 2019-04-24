@@ -543,6 +543,10 @@ void twinrx_settings_expert::resolve()
         _ctrl->set_hb_atten(ch, ch_set.hb_atten, FORCE_COMMIT);
         _ctrl->set_lo1_source(ch, ch_set.lo1_source, FORCE_COMMIT);
         _ctrl->set_lo2_source(ch, ch_set.lo2_source, FORCE_COMMIT);
+        ch_set.lo1_charge_pump_c =
+            _ctrl->set_lo1_charge_pump(ch, ch_set.lo1_charge_pump_d, FORCE_COMMIT);
+        ch_set.lo2_charge_pump_c =
+            _ctrl->set_lo2_charge_pump(ch, ch_set.lo2_charge_pump_d, FORCE_COMMIT);
     }
 
     _resolve_lox_freq(STAGE_LO1,
