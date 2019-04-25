@@ -208,6 +208,32 @@ UHD_ADD_NONAPI_TEST(
     ${CMAKE_SOURCE_DIR}/lib/utils/pathslib.cpp
 )
 
+add_executable(rfnoc_propprop_test
+    rfnoc_propprop_test.cpp
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/graph.cpp
+)
+target_link_libraries(rfnoc_propprop_test uhd ${Boost_LIBRARIES})
+UHD_ADD_TEST(rfnoc_propprop_test rfnoc_propprop_test)
+UHD_INSTALL(TARGETS
+    rfnoc_propprop_test
+    RUNTIME
+    DESTINATION ${PKG_LIB_DIR}/tests
+    COMPONENT tests
+)
+
+add_executable(rfnoc_detailgraph_test
+    rfnoc_detailgraph_test.cpp
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/graph.cpp
+)
+target_link_libraries(rfnoc_detailgraph_test uhd ${Boost_LIBRARIES})
+UHD_ADD_TEST(rfnoc_detailgraph_test rfnoc_detailgraph_test)
+UHD_INSTALL(TARGETS
+    rfnoc_detailgraph_test
+    RUNTIME
+    DESTINATION ${PKG_LIB_DIR}/tests
+    COMPONENT tests
+)
+
 ########################################################################
 # demo of a loadable module
 ########################################################################

@@ -55,7 +55,9 @@ void node_t::set_property(
         prop_ptr->set(val);
     }
 
-    // resolve_all() TODO
+    // Now trigger a property resolution. If other properties depend on this one,
+    // they will be updated.
+    resolve_all();
 }
 
 template <typename prop_data_t>
@@ -63,7 +65,9 @@ const prop_data_t& node_t::get_property(const std::string& id, const size_t inst
 {
     res_source_info src_info{res_source_info::USER, instance};
 
-    // resolve_all() TODO
+    // First, trigger a property resolution to make sure this property is
+    // updated (if necessary) before reading it out
+    resolve_all();
     auto prop_ptr = _assert_prop<prop_data_t>(
         _find_property(src_info, id), get_unique_id(), id);
 

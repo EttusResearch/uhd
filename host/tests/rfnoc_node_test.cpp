@@ -5,6 +5,7 @@
 //
 
 #include <uhd/rfnoc/node.hpp>
+#include <uhdlib/rfnoc/node_accessor.hpp>
 #include <boost/test/unit_test.hpp>
 #include <iostream>
 
@@ -16,13 +17,17 @@ public:
     test_node_t(size_t num_inputs, size_t num_outputs)
         : _num_input_ports(num_inputs), _num_output_ports(num_outputs)
     {
-        register_property(&_double_prop_user);
+        register_property(&_double_prop_user, [this]() {
+            std::cout << "Calling clean callback for user prop" << std::endl;
+            this->user_prop_cb_called = true;
+        });
         register_property(&_double_prop_in);
         register_property(&_double_prop_out);
 
         // A property with a simple 1:1 dependency
-        add_property_resolver(
-            {&_double_prop_user}, {&_double_prop_out}, []() { std::cout << "foo" << std::endl; });
+        add_property_resolver({&_double_prop_user}, {&_double_prop_out}, []() {
+            std::cout << "Executing user prop resolver" << std::endl;
+        });
     }
 
     //! Register a property for the second time, with the goal of triggering an
@@ -33,35 +38,46 @@ public:
     }
 
     //! Register an identical property for the first time, with the goal of
-    //triggering an exception
+    // triggering an exception
     void double_register_input()
     {
-        property_t<double> double_prop_in{"double_prop", 0.0, {res_source_info::INPUT_EDGE, 0}};
+        property_t<double> double_prop_in{
+            "double_prop", 0.0, {res_source_info::INPUT_EDGE, 0}};
         register_property(&double_prop_in);
     }
 
     //! This should throw an error because the property in the output isn't
     // registered
-    void add_unregistered_resolver_in() {
+    void add_unregistered_resolver_in()
+    {
         property_t<double> temp{"temp", 0.0, {res_source_info::INPUT_EDGE, 5}};
-        add_property_resolver(
-            {&temp}, {}, []() { std::cout << "foo" << std::endl; });
+        add_property_resolver({&temp}, {}, []() { std::cout << "foo" << std::endl; });
     }
 
     //! This should throw an error because the property in the output isn't
     // registered
-    void add_unregistered_resolver_out() {
+    void add_unregistered_resolver_out()
+    {
         property_t<double> temp{"temp", 0.0, {res_source_info::INPUT_EDGE, 5}};
         add_property_resolver(
             {&_double_prop_user}, {&temp}, []() { std::cout << "foo" << std::endl; });
     }
 
-    size_t get_num_input_ports() const { return _num_input_ports; }
-    size_t get_num_output_ports() const { return _num_output_ports; }
+    size_t get_num_input_ports() const
+    {
+        return _num_input_ports;
+    }
+    size_t get_num_output_ports() const
+    {
+        return _num_output_ports;
+    }
+
+    bool user_prop_cb_called = false;
 
 private:
     property_t<double> _double_prop_user{"double_prop", 0.0, {res_source_info::USER}};
-    property_t<double> _double_prop_in{"double_prop", 0.0, {res_source_info::INPUT_EDGE, 0}};
+    property_t<double> _double_prop_in{
+        "double_prop", 0.0, {res_source_info::INPUT_EDGE, 0}};
     property_t<double> _double_prop_out{
         "double_prop", 0.0, {res_source_info::OUTPUT_EDGE, 1}};
 
@@ -106,3 +122,21 @@ BOOST_AUTO_TEST_CASE(test_node_prop_access)
     BOOST_CHECK_EQUAL(TN1.get_property<double>("double_prop"), 4.2);
 }
 
+BOOST_AUTO_TEST_CASE(test_node_accessor)
+{
+    test_node_t TN1(2, 3);
+    node_accessor_t node_accessor{};
+
+    auto user_props = node_accessor.filter_props(&TN1, [](property_base_t* prop) {
+        return (prop->get_src_info().type == res_source_info::USER);
+    });
+
+    BOOST_CHECK_EQUAL(user_props.size(), 1);
+    BOOST_CHECK_EQUAL((*user_props.begin())->get_id(), "double_prop");
+    BOOST_CHECK((*user_props.begin())->get_src_info().type == res_source_info::USER);
+
+    BOOST_CHECK(!TN1.user_prop_cb_called);
+    node_accessor.init_props(&TN1);
+    BOOST_CHECK(TN1.user_prop_cb_called);
+
+}

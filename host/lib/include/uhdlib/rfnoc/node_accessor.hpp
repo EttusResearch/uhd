@@ -72,9 +72,10 @@ public:
      *
      * See node_t::forward_edge_property() for details.
      */
-    void forward_edge_property(node_t* dst_node, property_base_t* incoming_prop)
+    void forward_edge_property(
+        node_t* dst_node, const size_t dst_port, property_base_t* incoming_prop)
     {
-        dst_node->forward_edge_property(incoming_prop);
+        dst_node->forward_edge_property(incoming_prop, dst_port);
     }
 };
 
