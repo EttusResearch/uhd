@@ -1,0 +1,8 @@
+  .m_axis_ctrl_tdata(m_axis_ctrl_tdata),
+  .m_axis_ctrl_tlast(m_axis_ctrl_tlast),
+  .m_axis_ctrl_tvalid(m_axis_ctrl_tvalid),
+  .m_axis_ctrl_tready(m_axis_ctrl_tready),
+  .s_axis_ctrl_tdata(s_axis_ctrl_tdata),
+  .s_axis_ctrl_tlast(s_axis_ctrl_tlast),
+  .s_axis_ctrl_tvalid(s_axis_ctrl_tvalid),
+  .s_axis_ctrl_tready(s_axis_ctrl_tready),
