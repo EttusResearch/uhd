@@ -131,6 +131,7 @@ LIBUHD_APPEND_SOURCES(
 if(ENABLE_C_API)
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/error_c.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/version_c.cpp
     )
 endif(ENABLE_C_API)
 

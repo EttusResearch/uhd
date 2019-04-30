@@ -44,6 +44,7 @@ if(ENABLE_C_API)
     UHD_INSTALL(FILES
         config.h
         error.h
+        version.h
         DESTINATION ${INCLUDE_DIR}/uhd
         COMPONENT headers
     )
