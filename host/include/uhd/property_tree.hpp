@@ -1,6 +1,7 @@
 //
 // Copyright 2011,2014-2016 Ettus Research
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -34,8 +35,8 @@ namespace uhd {
  *    in a desired value and produces a coerced value.
  *    A property must have *exactly one* coercer.
  * 2. Manual coercion: Manually calling the set_coerced
- *    API fnction to coerce the value of the propery. In
- *    order to use manual coercion, the propery must be
+ *    API function to coerce the value of the property. In
+ *    order to use manual coercion, the property must be
  *    created with the MANUAL_COERCE mode.
  * If the coerce mode for a property is AUTO_COERCE then
  * it always has a coercer. If the set_coercer API is
@@ -53,7 +54,7 @@ namespace uhd {
  * callback to get the value of the property. Calling
  * get on the property will always call the publisher and
  * the cached desired and coerced values are updated only
- * using set* calls. A preprty must have *at most one*
+ * using set* calls. A property must have *at most one*
  * publisher. It is legal to have both a coercer
  * and publisher for a property but the only way to access
  * the desired and coerced values in that case would be by
@@ -64,7 +65,8 @@ namespace uhd {
  * - T must have a copy constructor
  * - T must have an assignment operator
  */
-template <typename T> class property : uhd::noncopyable
+template <typename T>
+class property : uhd::noncopyable
 {
 public:
     typedef boost::function<void(const T&)> subscriber_type;
@@ -181,7 +183,8 @@ public:
     virtual bool empty(void) const = 0;
 };
 
-template <typename T> property<T>::~property(void)
+template <typename T>
+property<T>::~property(void)
 {
     /* NOP */
 }
@@ -237,7 +240,8 @@ public:
     property<T>& create(const fs_path& path, coerce_mode_t coerce_mode = AUTO_COERCE);
 
     //! Get access to a property in the tree
-    template <typename T> property<T>& access(const fs_path& path);
+    template <typename T>
+    property<T>& access(const fs_path& path);
 
 private:
     //! Internal create property with wild-card type
