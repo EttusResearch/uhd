@@ -531,8 +531,9 @@ class MPMServer(RPCServer):
                 component_id = metadata['id']
                 if component_id in self.periph_manager.updateable_components:
                     # Check if that updating that component means the PM should be reset
-                    if self.periph_manager.updateable_components[component_id]['reset']:
-                        reset_now = True
+                    reset_now = (reset_now or
+                                self.periph_manager.updateable_components[component_id]['reset']) and \
+                                not metadata.get('reset', "").lower() == "false"
                 else:
                     self.log.debug("ID {} not in updateable components ({})".format(
                         component_id, self.periph_manager.updateable_components))

@@ -122,91 +122,123 @@ static bool mpmd_image_loader(const image_loader::image_loader_args_t& image_loa
     // Generate the component files
     uhd::usrp::component_files_t all_component_files;
 
-    // check if a component was provided
-    if (not image_loader_args.id.empty() && not image_loader_args.component.empty()) {
-        uhd::usrp::component_file_t component = generate_component(image_loader_args.id,
-            image_loader_args.component,
-            image_loader_args.metadata);
-        all_component_files.push_back(component);
-    } else {
-        // FPGA component struct
-        const auto fpga_path = [image_loader_args, dev_addr, tree]() -> std::string {
-            // If the user provided a path to an fpga image, use that
-            if (not image_loader_args.fpga_path.empty()) {
-                if (boost::filesystem::exists(image_loader_args.fpga_path)) {
-                    return image_loader_args.fpga_path;
-                } else {
-                    throw uhd::runtime_error(
-                        str(boost::format("FPGA file provided does not exist: %s")
-                            % image_loader_args.fpga_path));
-                }
-            }
-            // Otherwise, we need to generate one
-            else {
-                /*
-                 * The user can specify an FPGA type (HG, XG, AA), rather than a filename.
-                 * If the user does not specify one, this will default to the type
-                 * currently on the device. If this cannot be determined, then the user is
-                 * forced to specify a filename.
-                 */
-                const auto fpga_type = [image_loader_args, tree]() -> std::string {
-                    // If the user didn't provide a type, use the type of currently loaded
-                    // image on the device
-                    if (image_loader_args.args.has_key("fpga")) {
-                        return image_loader_args.args.get("fpga");
-                    } else if (tree->exists("/mboards/0/components/fpga")) {
-                        // Pull the FPGA info from the property tree
-                        // The getter should return a vector of a single component_file_t,
-                        // so grab the metadata from that
-                        auto fpga_metadata = tree->access<uhd::usrp::component_files_t>(
-                                                     "/mboards/0/components/fpga")
-                                                 .get()[0]
-                                                 .metadata;
-                        return fpga_metadata.get("type", "");
-                        // TODO: Do we want to pull the type from the filename if its not
-                        // available in the metadata directly?
-                    }
-                    return "";
-                }(); // generate_fpga_type lambda function
-                UHD_LOG_TRACE("MPMD IMAGE LOADER", "FPGA type: " << fpga_type);
+    // Determine if we need to just reload the currently-loaded components.
+    // Typically called after doing delayed reload.
+    if (image_loader_args.just_reload) {
+        UHD_LOG_TRACE("MPMD IMAGE LOADER",
+            "Just reloading components. Creating stub components for reset operation.");
+        uhd::usrp::component_file_t comp_fpga_stub;
+        comp_fpga_stub.metadata["id"] = "fpga";
+        // Set the "just_reload" field to force a MPM reset leading to
+        // component reload.
+        comp_fpga_stub.metadata["just_reload"] = "true";
 
-                if (!dev_addr.has_key("product")) {
-                    throw uhd::runtime_error(
-                        "Found a device but could not auto-generate an image filename.");
-                } else if (fpga_type == "") {
-                    return find_image_path(
-                        str(boost::format("usrp_%s_fpga.bit")
-                            % (boost::algorithm::to_lower_copy(dev_addr["product"]))));
-                } else {
-                    return find_image_path(
-                        str(boost::format("usrp_%s_fpga_%s.bit")
-                            % (boost::algorithm::to_lower_copy(dev_addr["product"]))
-                            % fpga_type));
+        all_component_files.push_back(comp_fpga_stub);
+    } else {
+        // check if a component was provided
+        if (not image_loader_args.id.empty() && not image_loader_args.component.empty()) {
+            uhd::usrp::component_file_t component =
+                generate_component(image_loader_args.id,
+                    image_loader_args.component,
+                    image_loader_args.metadata);
+            all_component_files.push_back(component);
+        } else {
+            // Determine if we need to delay the reload of fpga/dts components.
+            bool delay_reload = image_loader_args.delay_reload;
+            UHD_LOG_TRACE(
+                "MPMD IMAGE LOADER", "Delay reload?: " << (delay_reload ? "Yes" : "No"));
+
+            // FPGA component struct
+            const auto fpga_path = [image_loader_args, dev_addr, tree]() -> std::string {
+                // If the user provided a path to an fpga image, use that
+                if (not image_loader_args.fpga_path.empty()) {
+                    if (boost::filesystem::exists(image_loader_args.fpga_path)) {
+                        return image_loader_args.fpga_path;
+                    } else {
+                        throw uhd::runtime_error(
+                            str(boost::format("FPGA file provided does not exist: %s")
+                                % image_loader_args.fpga_path));
+                    }
                 }
+                // Otherwise, we need to generate one
+                else {
+                    /*
+                     * The user can specify an FPGA type (HG, XG, AA), rather than a
+                     * filename. If the user does not specify one, this will default to
+                     * the type currently on the device. If this cannot be determined,
+                     * then the user is forced to specify a filename.
+                     */
+                    const auto fpga_type = [image_loader_args, tree]() -> std::string {
+                        // If the user didn't provide a type, use the type of currently
+                        // loaded image on the device
+                        if (image_loader_args.args.has_key("fpga")) {
+                            return image_loader_args.args.get("fpga");
+                        } else if (tree->exists("/mboards/0/components/fpga")) {
+                            // Pull the FPGA info from the property tree
+                            // The getter should return a vector of a single
+                            // component_file_t, so grab the metadata from that
+                            auto fpga_metadata =
+                                tree->access<uhd::usrp::component_files_t>(
+                                        "/mboards/0/components/fpga")
+                                    .get()[0]
+                                    .metadata;
+                            return fpga_metadata.get("type", "");
+                            // TODO: Do we want to pull the type from the filename if its
+                            // not available in the metadata directly?
+                        }
+                        return "";
+                    }(); // generate_fpga_type lambda function
+                    UHD_LOG_TRACE("MPMD IMAGE LOADER", "FPGA type: " << fpga_type);
+
+                    if (!dev_addr.has_key("product")) {
+                        throw uhd::runtime_error("Found a device but could not "
+                                                 "auto-generate an image filename.");
+                    } else if (fpga_type == "") {
+                        return find_image_path(str(
+                            boost::format("usrp_%s_fpga.bit")
+                            % (boost::algorithm::to_lower_copy(dev_addr["product"]))));
+                    } else {
+                        return find_image_path(
+                            str(boost::format("usrp_%s_fpga_%s.bit")
+                                % (boost::algorithm::to_lower_copy(dev_addr["product"]))
+                                % fpga_type));
+                    }
+                }
+            }(); // generate_fpga_path lambda function
+            UHD_LOG_TRACE("MPMD IMAGE LOADER", "FPGA path: " << fpga_path);
+            uhd::usrp::component_file_t comp_fpga = generate_component("fpga", fpga_path);
+            // If we want to delay the image reloading, explicitly turn off the
+            // component reset flag
+            if (delay_reload) {
+                comp_fpga.metadata.set("reset", "false");
             }
-        }(); // generate_fpga_path lambda function
-        UHD_LOG_TRACE("MPMD IMAGE LOADER", "FPGA path: " << fpga_path);
-        uhd::usrp::component_file_t comp_fpga = generate_component("fpga", fpga_path);
-        all_component_files.push_back(comp_fpga);
-        // DTS component struct
-        // First, we need to determine the name
-        const std::string base_name =
-            boost::filesystem::change_extension(fpga_path, "").string();
-        if (base_name == fpga_path) {
-            const std::string err_msg(
-                "Can't cut extension from FPGA filename... " + fpga_path);
-            throw uhd::runtime_error(err_msg);
-        }
-        const std::string dts_path = base_name + ".dts";
-        // Then try to generate it
-        try {
-            uhd::usrp::component_file_t comp_dts = generate_component("dts", dts_path);
-            all_component_files.push_back(comp_dts);
-            UHD_LOG_TRACE("MPMD IMAGE LOADER", "FPGA and DTS images read from file.");
-        } catch (const uhd::runtime_error& ex) {
-            // If we can't find the DTS file, that's fine, continue without it
-            UHD_LOG_WARNING("MPMD IMAGE LOADER", ex.what());
-            UHD_LOG_TRACE("MPMD IMAGE LOADER", "FPGA images read from file.");
+            all_component_files.push_back(comp_fpga);
+            // DTS component struct
+            // First, we need to determine the name
+            const std::string base_name =
+                boost::filesystem::change_extension(fpga_path, "").string();
+            if (base_name == fpga_path) {
+                const std::string err_msg(
+                    "Can't cut extension from FPGA filename... " + fpga_path);
+                throw uhd::runtime_error(err_msg);
+            }
+            const std::string dts_path = base_name + ".dts";
+            // Then try to generate it
+            try {
+                uhd::usrp::component_file_t comp_dts =
+                    generate_component("dts", dts_path);
+                // If we want to delay the image reloading, explicitly turn off the
+                // component reset flag
+                if (delay_reload) {
+                    comp_dts.metadata.set("reset", "false");
+                }
+                all_component_files.push_back(comp_dts);
+                UHD_LOG_TRACE("MPMD IMAGE LOADER", "FPGA and DTS images read from file.");
+            } catch (const uhd::runtime_error& ex) {
+                // If we can't find the DTS file, that's fine, continue without it
+                UHD_LOG_WARNING("MPMD IMAGE LOADER", ex.what());
+                UHD_LOG_TRACE("MPMD IMAGE LOADER", "FPGA images read from file.");
+            }
         }
     }
     // Call RPC to update the component

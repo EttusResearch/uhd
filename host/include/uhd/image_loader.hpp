@@ -31,6 +31,8 @@ public:
         std::string id;
         std::vector<uint8_t> component;
         uhd::dict<std::string, std::string> metadata;
+        bool delay_reload = false;
+        bool just_reload  = false;
     } image_loader_args_t;
 
     //! Signature of an image loading function
