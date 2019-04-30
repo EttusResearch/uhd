@@ -504,6 +504,35 @@ class MPMServer(RPCServer):
         # methods from the old peripheral manager (the one before reset)
         self.clear_method_registry()
 
+    def reset_timer_and_mgr(self, token):
+        """
+        Pause the timers, reset the peripheral manager and restart the
+        timers.
+        """
+        # Check the claimed status
+        if not self._check_token_valid(token):
+            self._last_error =\
+                "Attempt to reset manager without valid claim from {}".format(
+                    self.client_host
+                )
+            self.log.error(self._last_error)
+            raise RuntimeError("Attempt to reset manager without valid claim.")
+
+        # Stop the timer, reset_timer_and_mgr can take some time:
+        self._disable_timeouts = True
+        try:
+            self.reset_mgr()
+            self.log.debug("Reset the periph manager")
+        except Exception as ex:
+            self.log.error(
+                "Error in reset_timer_and_mgr: {}".format(
+                    ex
+                ))
+            self._last_error = str(ex)
+
+        self.log.debug("End of reset_timer_and_mgr")
+        self._reset_timer()
+
     def update_component(self, token, file_metadata_l, data_l):
         """"
         Updates the device component files specified by the metadata and data
