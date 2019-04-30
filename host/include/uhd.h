@@ -1,6 +1,6 @@
 /*
  * Copyright 2015 Ettus Research LLC
- * Copyright 2018 Ettus Research, a National Instruments Company
+ * Copyright 2018-2019 Ettus Research, a National Instruments Company
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
@@ -10,6 +10,7 @@
 
 #include <uhd/config.h>
 #include <uhd/error.h>
+#include <uhd/version.h>
 
 #include <uhd/types/metadata.h>
 #include <uhd/types/ranges.h>
