@@ -25,6 +25,7 @@ UHD_INSTALL(FILES
     exception.hpp
     property_tree.ipp
     property_tree.hpp
+    rfnoc_graph.hpp
     stream.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/version.hpp
     DESTINATION ${INCLUDE_DIR}/uhd

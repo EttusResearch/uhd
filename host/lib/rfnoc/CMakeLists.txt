@@ -32,6 +32,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/ctrlport_endpoint.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/chdr_ctrl_endpoint.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/registry_factory.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/rfnoc_graph.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/rx_stream_terminator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/scalar_node_ctrl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/sink_block_ctrl_base.cpp
