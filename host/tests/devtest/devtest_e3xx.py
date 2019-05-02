@@ -42,6 +42,19 @@ rx_samples_to_file_test.tests = {
     },
 }
 
+from tx_waveforms_test import uhd_tx_waveforms_test
+uhd_tx_waveforms_test.tests = {
+    'chan0': {
+        'chan': '0',
+    },
+    'chan1': {
+        'chan': '0',
+    },
+    'both_chans': {
+        'chan': '0,1',
+    },
+}
+
 from tx_bursts_test import uhd_tx_bursts_test
 from test_pps_test import uhd_test_pps_test
 

@@ -1,6 +1,7 @@
 #
 # Copyright 2015-2016 Ettus Research LLC
 # Copyright 2018 Ettus Research, a National Instruments Company
+# Copyright 2019 Ettus Research, a National Instruments Brand
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
@@ -67,6 +68,21 @@ rx_samples_to_file_test.tests = {
         'subdev': 'A:A',
         'rate': 5e6,
         'products': ['B210', 'B200',],
+    },
+}
+
+from tx_waveforms_test import uhd_tx_waveforms_test
+uhd_tx_waveforms_test.tests = {
+    'chan0': {
+        'chan': '0',
+    },
+    'chan1': {
+        'chan': '1',
+        'products': ['B210',],
+    },
+    'both_chans': {
+        'chan': '0,1',
+        'products': ['B210',],
     },
 }
 
