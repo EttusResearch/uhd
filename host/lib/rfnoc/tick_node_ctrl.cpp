@@ -26,12 +26,14 @@ double tick_node_ctrl::get_tick_rate(
     // This will fail if we get different values.
     std::set<node_ctrl_base::sptr> explored_nodes(_explored_nodes);
     explored_nodes.insert(shared_from_this());
-    // Here, we need all up- and downstream nodes
+    // Here, we need all up- and downstream nodes. Note that we have the rule
+    // that there can only be one tick rate in all of the nodes, that means we
+    // don't only search active neighbouring nodes.
     std::vector<sptr> neighbouring_tick_nodes =
-        find_downstream_node<tick_node_ctrl>(true);
+        find_downstream_node<tick_node_ctrl>(false);
     {
         std::vector<sptr> upstream_neighbouring_tick_nodes =
-            find_upstream_node<tick_node_ctrl>(true);
+            find_upstream_node<tick_node_ctrl>(false);
         neighbouring_tick_nodes.insert(neighbouring_tick_nodes.end(),
             upstream_neighbouring_tick_nodes.begin(),
             upstream_neighbouring_tick_nodes.end());
