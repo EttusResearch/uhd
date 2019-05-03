@@ -12,6 +12,7 @@
 #include <uhd/types/dict.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhdlib/utils/math.hpp>
 #include <boost/function.hpp>
 #include <boost/thread.hpp>
 #include <boost/math/special_functions/round.hpp>
@@ -39,6 +40,8 @@ public:
     enum output_power_t { OUTPUT_POWER_M4DBM, OUTPUT_POWER_M1DBM, OUTPUT_POWER_2DBM, OUTPUT_POWER_5DBM };
 
     enum muxout_t { MUXOUT_3STATE, MUXOUT_DVDD, MUXOUT_DGND, MUXOUT_RDIV, MUXOUT_NDIV, MUXOUT_ALD, MUXOUT_DLD };
+
+    enum tuning_mode_t { TUNING_MODE_HIGH_RESOLUTION, TUNING_MODE_LOW_SPUR };
 
     /**
      * Charge Pump Currents
@@ -78,6 +81,20 @@ public:
     virtual void set_output_enable(output_t output, bool enable) = 0;
 
     virtual void set_muxout_mode(muxout_t mode) = 0;
+
+    //! Sets the tuning mode for subsequent tunes
+    /**
+     * High resolution mode will use the maximum modulus value to ensure an
+     * exact tune whenever possible. Low spur mode will try to find the "best"
+     * modulus for spur performance, which may result in loss of precision.
+     *
+     * To fully utilize low spur mode, the charge pump current should be
+     * decreased.  This will vary based on board design. For example, for
+     * TwinRX LO2, the current is decreased from 1.88 mA to 1.25 mA. In
+     * addition, the 8/9 prescaler should be used instead of 4/5 whenever
+     * possible.
+     */
+    virtual void set_tuning_mode(tuning_mode_t mode) = 0;
 
     virtual void set_charge_pump_current(charge_pump_current_t cp_current) = 0;
 
@@ -177,6 +194,17 @@ public:
             case MUXOUT_DLD:    _regs.muxout = adf435x_regs_t::MUXOUT_DLD; break;
             default: UHD_THROW_INVALID_CODE_PATH();
         }
+    }
+
+    void set_tuning_mode(tuning_mode_t mode)
+    {
+        // New mode applies to subsequent tunes i.e. do not re-tune now
+        _tuning_mode = mode;
+
+        _regs.low_noise_and_spur = (_tuning_mode == TUNING_MODE_HIGH_RESOLUTION)
+                                       ? adf435x_regs_t::LOW_NOISE_AND_SPUR_LOW_SPUR
+                                       : adf435x_regs_t::LOW_NOISE_AND_SPUR_LOW_NOISE;
+        _regs.phase_12_bit = (_tuning_mode == TUNING_MODE_HIGH_RESOLUTION) ? 0 : 1;
     }
 
     void set_charge_pump_current(charge_pump_current_t cp_current)
@@ -306,14 +334,26 @@ public:
             }
         } done_loop:
 
-        //Fractional-N calculation
-        MOD = 4095; //max fractional accuracy
-        FRAC = static_cast<uint16_t>(boost::math::round((feedback_freq/pfd_freq - N)*MOD));
+        double frac_part = (feedback_freq / pfd_freq) - N;
         if (int_n_mode) {
-            if (FRAC > (MOD / 2)) { //Round integer such that actual freq is closest to target
+            if (frac_part >= 0.5) { 
+                // Round integer such that actual freq is closest to target
                 N++;
             }
             FRAC = 0;
+            MOD = 2;
+        } else if (_tuning_mode == TUNING_MODE_LOW_SPUR) {
+            std::tie(FRAC, MOD) =
+                uhd::math::rational_approximation(frac_part, 4095, 0.0001);
+            if (MOD < 2)
+            {
+                FRAC *= 2;
+                MOD *= 2;
+            }
+        } else
+        {
+            MOD  = 4095; // max fractional accuracy
+            FRAC = static_cast<uint16_t>(std::round(frac_part * MOD));
         }
 
         //Reference divide-by-2 for 50% duty cycle
@@ -334,11 +374,21 @@ public:
             double((N + (double(FRAC)/double(MOD))) *
             (_reference_freq*(D?2:1)/(R*(T?2:1))))
         ) / rf_div_compensation;
+        
+        uint16_t clock_div = std::max<uint16_t>(1, uint16_t(std::ceil(PHASE_RESYNC_TIME * pfd_freq / MOD)));
+        if (clock_div > 4095)
+        {
+            // if clock_div is larger than 12-bits, increase modulus so it 
+            // fits. Asserts later will ensure these values are not too large
+            FRAC *= (clock_div >> 12) + 1;
+            MOD *= (clock_div >> 12) + 1;
+            clock_div = uint16_t(std::ceil(PHASE_RESYNC_TIME * pfd_freq / MOD));
+        }
 
         _regs.frac_12_bit            = FRAC;
         _regs.int_16_bit             = N;
         _regs.mod_12_bit             = MOD;
-        _regs.clock_divider_12_bit   = std::max<uint16_t>(1, uint16_t(std::ceil(PHASE_RESYNC_TIME*pfd_freq/MOD)));
+        _regs.clock_divider_12_bit   = clock_div;
         _regs.feedback_select        = _fb_after_divider ?
                                         adf435x_regs_t::FEEDBACK_SELECT_DIVIDED :
                                         adf435x_regs_t::FEEDBACK_SELECT_FUNDAMENTAL;
@@ -414,6 +464,7 @@ protected:
     double          _fb_after_divider;
     double          _reference_freq;
     int             _N_min;
+    tuning_mode_t _tuning_mode;
 };
 
 template <>
