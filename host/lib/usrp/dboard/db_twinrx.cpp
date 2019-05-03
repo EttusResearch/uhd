@@ -127,7 +127,7 @@ public:
             "los/LO2/charge_pump/value",
             prepend_ch("los/LO2/charge_pump/desired", _ch_name),
             prepend_ch("los/LO2/charge_pump/coerced", _ch_name),
-            0.3125e-6,
+            1.25e-6,
             AUTO_RESOLVE_ON_READ_WRITE);
 
         //Gain Specific
