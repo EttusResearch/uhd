@@ -134,6 +134,8 @@ public:
             _lo2_iface[i]->set_output_power(adf435x_iface::OUTPUT_POWER_5DBM);
             _lo2_iface[i]->set_reference_freq(TWINRX_DESIRED_REFERENCE_FREQ);
             _lo2_iface[i]->set_muxout_mode(adf435x_iface::MUXOUT_DLD);
+            _lo2_iface[i]->set_tuning_mode(adf435x_iface::TUNING_MODE_LOW_SPUR);
+            _lo2_iface[i]->set_prescaler(adf435x_iface::PRESCALER_8_9);
         }
         commit();
     }
@@ -449,18 +451,13 @@ public:
     double set_lo2_synth_freq(channel_t ch, double freq, bool commit = true)
     {
         boost::lock_guard<boost::mutex> lock(_mutex);
-        static const double PRESCALER_THRESH = 3.6e9;
 
         double coerced_freq = 0.0;
         if (ch == CH1 or ch == BOTH) {
-            _lo2_iface[size_t(CH1)]->set_prescaler(freq > PRESCALER_THRESH ?
-                adf435x_iface::PRESCALER_8_9 : adf435x_iface::PRESCALER_4_5);
             coerced_freq = _lo2_iface[size_t(CH1)]->set_frequency(freq, false, false);
             _lo2_freq[size_t(CH1)] = tune_freq_t(freq);
         }
         if (ch == CH2 or ch == BOTH) {
-            _lo2_iface[size_t(CH2)]->set_prescaler(freq > PRESCALER_THRESH ?
-                adf435x_iface::PRESCALER_8_9 : adf435x_iface::PRESCALER_4_5);
             coerced_freq = _lo2_iface[size_t(CH2)]->set_frequency(freq, false, false);
             _lo2_freq[size_t(CH2)] = tune_freq_t(freq);
         }
