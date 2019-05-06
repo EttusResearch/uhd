@@ -24,6 +24,7 @@ BOOST_AUTO_TEST_CASE(test_messages)
     UHD_LOGGER_INFO("logger_test") << "This is a test print for a info log.";
     UHD_LOGGER_WARNING("logger_test") << "This is a test print for a warning log.";
     UHD_LOGGER_ERROR("logger_test") << "This is a test print for an error log.";
+    UHD_LOGGER_FATAL("logger_test") << "This is a test print for a fatal error log.";
     UHD_HERE();
     const int x = 42;
     UHD_VAR(x);
