@@ -25,13 +25,15 @@ namespace pt                  = boost::posix_time;
 constexpr double READ_TIMEOUT = 0.5; // Waiting time to read from the queue
 
 // Don't make these static const std::string -- we need their lifetime guaranteed!
-#define PURPLE "\033[35;1m" // purple
-#define BLUE "\033[34;1m" // blue
-#define GREEN "\033[32;1m" // green
-#define YELLOW "\033[33;1m" // yellow
-#define RED "\033[31;0m" // red
-#define BRED "\033[31;1m" // bright red
-#define RESET_COLORS "\033[39;0m" // reset colors
+#define PURPLE "\033[0;35m" // purple
+#define BLUE "\033[1;34m" // blue
+#define GREEN "\033[0;32m" // green
+#define YELLOW "\033[0;33m" // yellow
+#define BYELLOW "\033[1;33m" // yellow
+#define RED "\033[0;31m" // red
+#define BRED "\033[1;31m" // bright red
+#define RED_ON_YELLOW "\033[0;31;43m" // bright red
+#define RESET_COLORS "\033[0;39m" // reset colors
 
 /***********************************************************************
  * Helpers
