@@ -49,11 +49,11 @@ std::string verbosity_color(const uhd::log::severity_level& level)
         case (uhd::log::info):
             return GREEN;
         case (uhd::log::warning):
-            return YELLOW;
+            return BYELLOW;
         case (uhd::log::error):
-            return RED;
-        case (uhd::log::fatal):
             return BRED;
+        case (uhd::log::fatal):
+            return RED_ON_YELLOW;
         default:
             return RESET_COLORS;
     }
