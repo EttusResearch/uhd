@@ -27,6 +27,7 @@ set(example_sources
     usrp_list_sensors.cpp
     latency_test.cpp
     gpio.cpp
+    gpio_x300_mux.cpp
     sync_to_gps.cpp
 )
 
@@ -37,6 +38,7 @@ if(ENABLE_RFNOC)
         rfnoc_rx_to_file.cpp
         rfnoc_radio_loopback.cpp
         benchmark_streamer.cpp
+        gpio_x300_mux_rfnoc.cpp
     )
 endif(ENABLE_RFNOC)
 
