@@ -12,6 +12,7 @@
 LIBUHD_APPEND_SOURCES(
     # Infrastructure:
     ${CMAKE_CURRENT_SOURCE_DIR}/async_msg_handler.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/block_container.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/block_ctrl_base.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/block_ctrl_base_factory.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/block_ctrl_impl.cpp
