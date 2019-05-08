@@ -220,7 +220,7 @@ class Magnesium(BfrfsEEPROM, DboardManagerBase):
             " Export a method object, including docstring "
             meth_obj = getattr(obj, method)
             def func(*args):
-                " Functor for storing docstring too "
+                " Functor for storing docstring to "
                 return meth_obj(*args)
             func.__doc__ = meth_obj.__doc__
             return func
@@ -228,7 +228,8 @@ class Magnesium(BfrfsEEPROM, DboardManagerBase):
         for method in [
                 x for x in dir(self.mykonos)
                 if not x.startswith("_") and \
-                        callable(getattr(self.mykonos, x))]:
+                        callable(getattr(self.mykonos, x)) \
+                        and not hasattr(self, x)]:
             self.log.trace("adding {}".format(method))
             setattr(self, method, export_method(myk, method))
 
