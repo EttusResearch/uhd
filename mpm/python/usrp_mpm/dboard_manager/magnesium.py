@@ -18,6 +18,7 @@ from usrp_mpm.cores import nijesdcore
 from usrp_mpm.mpmlog import get_logger
 from usrp_mpm.sys_utils.uio import open_uio
 from usrp_mpm.user_eeprom import BfrfsEEPROM
+from usrp_mpm.mpmutils import async_exec
 
 ###############################################################################
 # SPI Helpers
@@ -328,6 +329,19 @@ class Magnesium(BfrfsEEPROM, DboardManagerBase):
             # The reference clock is handled elsewhere since it is a motherboard-
             # level clock.
 
+    def set_freq(self, which, freq, wait_for_lock):
+        """
+        Perform asynchronous tuning. This will, under the hood, call set_freq()
+        on the AD937X object, but will spin it out into an asynchronous
+        execution. We do this because under some circumstances, the set_freq()
+        call can take a long time to execute, and we want to release the GIL
+        during that time.
+
+        Note: This overrides the set_freq() call provided from self.mykonos.
+        """
+        self.log.trace("Tuning {} {} {}".format(which, freq, wait_for_lock))
+        async_exec(self.mykonos, "set_freq", which, freq, wait_for_lock)
+        return self.mykonos.get_freq(which)
 
     def _reinit(self, master_clock_rate):
         """

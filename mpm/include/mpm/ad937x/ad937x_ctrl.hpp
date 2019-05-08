@@ -85,6 +85,7 @@ public:
     // Async call handles
     std::future<void> handle_finish_initialization;
     std::future<void> handle_setup_cal;
+    std::future<double> handle_set_freq;
 
     /*! \brief make a new AD9371 ctrl object using the specified SPI iface
      *
@@ -344,6 +345,30 @@ void export_mykonos(py::module& top_module)
         .def("set_clock_rate", &ad937x_ctrl::set_clock_rate)
         .def("enable_channel", &ad937x_ctrl::enable_channel)
         .def("set_freq", &ad937x_ctrl::set_freq)
+        .def("async__set_freq", +[](
+                ad937x_ctrl& self,
+                const std::string &which,
+                const double value,
+                const bool wait_for_lock
+        ){
+                self.handle_set_freq = std::async(std::launch::async,
+                    &ad937x_ctrl::set_freq,
+                    &self,
+                    which,
+                    value,
+                    wait_for_lock
+                );
+        })
+        .def("await__set_freq", +[](
+                ad937x_ctrl& self
+        )->bool{
+                if (self.handle_set_freq.wait_for(std::chrono::seconds(0))
+                        == std::future_status::ready){
+                    self.handle_set_freq.get();
+                    return true;
+                }
+                return false;
+        })
         .def("get_freq", &ad937x_ctrl::get_freq)
         .def("get_lo_locked", &ad937x_ctrl::get_lo_locked)
         .def("set_fir", &ad937x_ctrl::set_fir)
