@@ -235,6 +235,11 @@ UHD_ADD_NONAPI_TEST(
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/chdr/
 )
 
+UHD_ADD_NONAPI_TEST(
+    TARGET client_zero_test.cpp
+    EXTRA_SOURCES
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/client_zero.cpp
+)
 
 ########################################################################
 # demo of a loadable module
