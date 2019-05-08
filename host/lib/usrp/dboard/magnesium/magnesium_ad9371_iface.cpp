@@ -5,6 +5,7 @@
 //
 
 #include "magnesium_ad9371_iface.hpp"
+#include "magnesium_constants.hpp"
 #include <uhd/utils/log.hpp>
 
 using namespace uhd;
@@ -42,7 +43,8 @@ double magnesium_ad9371_iface::set_frequency(
 {
     // Note: This sets the frequency for both channels (1 and 2).
     auto which       = _get_which(dir, chan);
-    auto actual_freq = request<double>("set_freq", which, freq, false);
+    auto actual_freq =
+        request<double>(MAGNESIUM_TUNE_TIMEOUT, "set_freq", which, freq, false);
     UHD_LOG_TRACE(_log_prefix, _rpc_prefix << "set_freq returned " << actual_freq);
     return actual_freq;
 }

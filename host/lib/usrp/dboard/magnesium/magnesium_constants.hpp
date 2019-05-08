@@ -76,4 +76,7 @@ static constexpr size_t MAGNESIUM_NUM_CHANS  = 2;
 static constexpr double MAGNESIUM_RX_IF_FREQ = 2.44e9;
 static constexpr double MAGNESIUM_TX_IF_FREQ = 1.95e9;
 
+//! Max time we allow for a call to set_freq() to take
+static constexpr size_t MAGNESIUM_TUNE_TIMEOUT = 15000; // milliseconds
+
 #endif /* INCLUDED_LIBUHD_MAGNESIUM_CONSTANTS_HPP */
