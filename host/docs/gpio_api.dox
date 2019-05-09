@@ -39,11 +39,11 @@ The +3.3V is for ESD clamping purposes only and not designed to deliver high cur
 -   Pin 14: 0V
 -   Pin 15: 0V
 
-\subsection egpio_internal_gpio E3x0 Internal GPIO
+\subsection egpio_internal_gpio E310/E312/E313 Internal GPIO
 
 \subsubsection egpio_internal_conn Connector
 
-\image html e3x0_gpio_conn.png "E3x0 GPIO Connector"
+\image html e3x0_gpio_conn.png "E31x GPIO Connector"
 
 ### Pin Mapping
 

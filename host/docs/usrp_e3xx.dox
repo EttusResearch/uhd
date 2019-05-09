@@ -1,11 +1,15 @@
-/*! \page page_usrp_e320 USRP E320
+/*! \page page_usrp_e3xx USRP E3xx Series
 
 \tableofcontents
 
-\section e320_feature_list Comparative features list
+\section e3xx_feature_list Comparative features list
+There are two category of devices in the E3xx series.
+1. E310 series which includes E310, E312 and E313.
+2. E320 - OEM board-only and with enclosure.
 
-The E320 is a 2-channel transmitter/receiver based on the AD9361 transceiver IC.
-It is a monolithic board with one AD9361 and provides two RF channels.
+These devices have some differences in their hardware capabilities but both
+are 2-channel transmitter/receiver based on the AD9361 transceiver IC and
+provide two RF channels:
 
 - TX band: 47 MHz to 6.0 GHz
 - RX band: 70 MHz to 6.0 GHz
@@ -13,30 +17,135 @@ It is a monolithic board with one AD9361 and provides two RF channels.
 - 2 RX DDC chains in FPGA
 - 2 TX DUC chain in FPGA
 
+\subsection e3xx_feature_list_e310 E310
+The E310/E312/E313 has a motherboard and a daughterboard in an enclosed module
+with one AD9361 IC with 2 RF channels.
+
+- Hardware Capabilities:
+	- External PPS reference input
+	- 2 USB 2.0 Host ports
+	- Configurable clock rate
+	- Internal IMU
+	- Internal GPS
+	- Internal GPIO connector with UHD API control
+	- External USB Connection for built-in JTAG debugger and serial console
+	- Xilinx Zynq SoC with dual-core ARM Cortex A9 (Speed Grade 1 and 3) and
+          Kintex-7 FPGA (XC7Z020)
+- Software Capabilities:
+	- Full Linux system running on the ARM core
+	- Runs MPM (see also \ref page_mpm) (introduced in UHD v3.15.0.0)
+- FPGA Capabilities:
+	- RFNoC capability
+
+\subsection e3xx_feature_list_e320 E320
+The E320 is monolithic board with one AD9361 IC with 2 RF channels.
+
 - Hardware Capabilities:
 	- Single SFP+ Transceivers (can be used with 1 GigE, 10 GigE, and Aurora)
 	- External PPS input
 	- External 10 MHz input
+	- Configurable clock rate
+	- Internal IMU
 	- Internal GPSDO for timing, location, and 10 MHz reference clock + PPS
 	- External GPIO Connector with UHD API control
 	- External USB Connection for built-in JTAG debugger and serial console
-        - Xilinx Zynq SoC with dual-core ARM Cortex A9 (Speedgrade 3) and
-          Kintex-7 FPGA (XC7Z045)
-
+	- Xilinx Zynq SoC with dual-core ARM Cortex A9 (Speedgrade 3) and
+        Kintex-7 FPGA (XC7Z045)
+	- Fan connector (for board-only version)
 - Software Capabilities:
-    - Full Linux system running on the ARM core
-    - Runs MPM (see also \ref page_mpm)
-
+	- Full Linux system running on the ARM core
+	- Runs MPM (see also \ref page_mpm)
 - FPGA Capabilities:
-    - RFNoC capability
+	- RFNoC capability
 
-\section e320_overview Overview
+\section e310_overview E310 Overview
+
+\subsection e310_zynq The Zynq CPU/FPGA and host operating system
+
+The main CPU of the E310 is a Xilinx Zynq SoC XC7Z020. It
+is both a dual-core ARM Cortex A9 CPU and Kintex-7 FPGA on a single die. The
+CPU is clocked at 667 MHz (speed grade 1) and 866 MHz (speed grade 3).
+
+The programmable logic (PL, or FPGA) section of the SoC is responsible for
+handling all sampling data, DMA connections, and any other
+high-speed utility such as custom RFNoC logic. The processing system (PS, or CPU)
+is running a custom-build OpenEmbedded-based Linux operating system. The OS is
+responsible for all the device and peripheral management, such as running MPM
+(see section \ref page_mpm), running local, UHD sessions, etc.
+
+\subsection e31x_migration E310 Migration Guide to MPM architecture
+
+This section covers the details for porting your E310 to the new MPM architecture.
+MPM is a hardware daemon running on the Linux operating system on the ARM cores
+and responsible for the device to function as a USRP.
+
+A large portion of hardware-specific setup is handled by the daemon.
+
+Note that the SD cards shipped with E310s do not contain the latest filesystem images. In order
+to use MPM (see section \ref page_mpm) and all its features, the SD cards need to be
+manually flashed. Refer to \ref update_sdcard in order to upgrade to E310 with UHD v3.15.0.0 or above.
+
+After updating the SD card, you should be able to connect your device to the host OS either via SSH or
+serial console. See sections \ref e3xx_getting_started_ssh and \ref e3xx_getting_started_serial
+respectively, for more details.
+
+Once you are logged in on the device, you should be able to run uhd_usrp_probe or other UHD examples.
+
+Here is a list of a changes with the latest E310 filesystem (UHD v3.15.0.0) that can affect customer usage
+and applications:
+
+1. Hostname:
+The hostname for the devices have changed from ni-e3xx(-sg3) to ni-e31x-<serial>.
+This makes it easier to identify devices. You can change the hostname by modifying the
+`/etc/hostname` file and rebooting.
+
+2. "product" name:
+The "product" name for E310 is now "e310_<speedgrade>" i.e. e310_sg1 and e310_sg3 for speed grade 1
+and 3 respectively. Note that the "type" for e310 remains the same as before i.e. "e3xx".
+
+3. FPGA bit/bin/rpt file name and image target:
+    FPGA type                          | Old filename                | New filename
+    -----------------------------------|-----------------------------|---------------------------------
+    IDLE Image (power saving mode) SG1 | usrp_e3xx_fpga_idle.bit     | usrp_e310_sg1_idle_fpga.bit
+    IDLE Image (power saving mode) SG3 | usrp_e3xx_fpga_idle_sg3.bit | usrp_e310_sg3_idle_fpga.bit
+    NORMAL Image SG1                   | usrp_e310_fpga.bit          | usrp_e310_sg1_fpga.bit
+    NORMAL Image SG3                   | usrp_e310_fpga_sg3.bit      | usrp_e310_sg3_fpga.bit
+
+    The names of the FPGA build targets have been modified but the old FPGA targets would continue to
+    work as before. The generated bit files names in the build directory will be new as
+    mentioned above.
+    - E310_<speedgrade> for default image
+    - E310_<speedgrade>_RFNOC for RFNOC image (contains a few blocks)
+    - E310_<speedgrade>_IDLE to build idle image (Doesn't need to modified for most cases)
+
+4. Loading FPGA image:
+The device arg "fpga=" can now only be used in the uhd_image_loader; it can no longer be used to
+update the fpga image in other UHD applications. This tooling now matches X310, E320, N3XX, etc.
+devices. See section \ref e3xx_getting_started_fpga_update for details.
+
+5. With UHD v3.15.0.0. or higher, a lot of UHD dependencies have been upgraded too e.g. Boost, CMake,
+etc. The filesystem now runs a newer Linux kernel (e.g. linux-yocto_4.15 or higher). Existing customer
+applications might need to be updated in order to use the new filesystem and new UHD.
+
+6. In order to build a custom filesystem, refer to \ref e3xx_fsbuild for more details.
+
+7. E310 filesystem no longer contains GNURadio by default. Custom filesystems are need to run GNURadio.
+
+8. The network mode (streaming through RJ-45) for the E310 is not supported. In order to use the network
+mode use UHD 3.9 LTS release.
+
+9. Refer section \ref e312_battery for changes related to the battery.
+
+10. Subdev spec has been changed from "A:A and A:B" to "A:0 and A:1" to match X310, N3xx and E320.
+
+
+\section e320_overview E320 Overview
 
 \subsection e320_zynq The Zynq CPU/FPGA and host operating system
 
 The main CPU of the E320 is a Xilinx Zynq SoC XC7Z045. It
 is both a dual-core ARM Cortex A9 CPU and Kintex-7 FPGA on a single die. The
-CPU is clocked at 1GHz (speedgrade 3).
+CPU is clocked at 1GHz (speed grade 3).
 
 The programmable logic (PL, or FPGA) section of the SoC is responsible for
 handling all sampling data, the 1/10 GigE network connections, and any other
@@ -47,7 +156,7 @@ responsible for all the device and peripheral management, such as running MPM
 UHD sessions, etc.
 
 It is possible to connect to the host OS either via SSH or serial console (see
-sections \ref e320_getting_started_ssh and \ref e320_getting_started_serial,
+sections \ref e3xx_getting_started_ssh and \ref e3xx_getting_started_serial,
 respectively).
 
 \subsection e320_micro The STM32 microcontroller
@@ -61,18 +170,18 @@ It is possible to log into the STM32 using the serial interface
 controls, such as remote power cycling should the CPU have become unresponsive
 for whatever reason.
 
-\subsection e320_sdcard The SD card
+\subsection e3xx_sdcard The SD card
 
-The E320 uses a micro SD card as its main storage. The entire root file
+The E310/E312/E313/E320 use a micro SD card as its main storage. The entire root file
 system (Linux kernel, libraries) and any user data are stored on this SD card.
 
 The SD card is partitioned into four partitions:
 
-1. Boot partition (contains the bootloader). This partition usually does not
+- Boot partition (contains the bootloader). This partition usually does not
    require any modifications.
-2. A data partition, mounted in /data. This is the only partition that is not
+- A data partition, mounted in /data. This is the only partition that is not
    erased during file system updates.
-2. Two identical system partitions (root file systems). These contain the
+- Two identical system partitions (root file systems). These contain the
    operating system and the home directory (anything mounted under / that is not
    the data or boot partition). The reason there are two of these is to enable
    remote updates: An update running on one partition can update the other one
@@ -93,24 +202,35 @@ following two sections), run the following commands:
 The device node in the mount command will likely differ, depending on which
 partition is currently already mounted.
 
-\section e320_getting_started Getting started
+\section e3xx_getting_started Getting started
 
-This will run you through the first steps relevant to getting your USRP E320
+This will run you through the first steps relevant to getting your USRP E3XX
 up and running.
 Note: This guide was creating on an Ubuntu machine, and other distributions
 or OS's may have different names/methods.
 
-\subsection e320_getting_started_assembling Assembling the E320
+\subsection e3xx_getting_started_assembling Assembling the E3XX
 
-Unlike the X300 or N200 series, there is no assembly of required since it is
-a monolithic board.
+Unlike the X300 or N200 series, there is no assembly required for all E3xx devices
+as E310 motherboard and daughterboard comes in an enclosure and E320, on the other
+hand is a monolithic board (in board-only version) or comes in an enclosure.
 
 Checklist:
 - Connect power and network
 - Read security settings
 - Connect clocking (if required)
 
-\subsection e320_getting_started_fs_update Updating the file system
+\subsection e3xx_getting_started_fs_update Updating the file system
+
+\subsubsection e31x_fs E310/E312/E313 file system
+
+The SD cards shipped with E310s do not contain the latest filesystem images. In order
+to use MPM and all its features, the SD cards need to be manually flashed. Refer to
+\ref update_sdcard in order to upgrade to E310 with UHD v3.15.0.0 or above. Once it has
+been upgraded to the new filesystem, Mender can be used to remotely update the filesystems.
+For details on using Mender, see Section \ref e3xx_rasm_mender.
+
+\subsubsection e320_fs E320 file system
 
 Before doing any major work with a newly acquired USRP E320, it is
 recommended to update the file system. For the OEM/Board-only version of
@@ -119,18 +239,20 @@ accomplished directly by using Mender or externally by manually writing
 an image onto a micro SD card and inserting it. For the
 enclosure version of E320, Mender update is required as there is no direct
 physical access to the device.  For details on using Mender,
-see Section \ref e320_rasm_mender .
+see Section \ref e3xx_rasm_mender .
+
+\subsubsection update_sdcard Updating the SD card
 
 Manual updating is simply loading an image on the micro SD card.  The first step
 in that process is to obtain an image.
 
 To obtain the default micro SD card image for a specific version of UHD, install
-that version of UHD (3.13.0.2 or later) on a host system with Internet access and run:
+that version of UHD (E320 - 3.13.0.2 or later, E310 - 3.15.0.0 or later) on a host system with Internet access and run:
 
-    $ uhd_images_downloader -t e320 -t sdimg
+    $ uhd_images_downloader -t <e310/e320> -t sdimg
 
    The image will be downloaded to
-   `<UHD_INSTALL_DIR>/share/uhd/images/usrp_e320_fs.sdimg`,
+   `<UHD_INSTALL_DIR>/share/uhd/images/usrp_<e310/e320>_fs.sdimg`,
    where `<UHD_INSTALL_DIR>` is the UHD installation directory.
 
 To load an image onto the micro SD card, connect the card to the host and run:
@@ -138,7 +260,7 @@ To load an image onto the micro SD card, connect the card to the host and run:
     $ sudo dd if=<YOUR_IMAGE> of=/dev/<YOUR_SD_CARD> bs=1M
 
    The `<YOUR_IMAGE>` is the path to the micro SD card image
-   (i.e.`<UHD_INSTALL_DIR>/share/uhd/images/usrp_e320_fs.sdimg`).
+   (i.e.`<UHD_INSTALL_DIR>/share/uhd/images/usrp_<e310/e320>_fs.sdimg`).
 
    The `<YOUR_SD_CARD>` device node depends on your operating system and which
    other devices are plugged in. Typical values are `sdb` or `mmcblk0`.<br>
@@ -149,9 +271,23 @@ To load an image onto the micro SD card, connect the card to the host and run:
    system configuration.
 
 The micro SD card used can be the original SD card shipped with the device or
-another one that is at least 16 GB in size.
+another one that is at least 8GB for E310 and at least 16 GB for E320 in size.
 
-\subsection e320_getting_started_serial Serial connection
+\section e3xx_fsbuild Building custom filesystems and SD card images
+
+Ettus Research provides SD card images at regular intervals, but there can be
+good reasons to build custom SD cards, e.g., to test the very latest UHD or MPM
+for which there has not been an SD card release, to add own applications to the
+SD card, or to run a modified version of UHD.
+
+Note that building SD cards is very disk space and RAM intensive.
+
+\subsection e3xx_fsbuild_docker Using Docker to build filesystems
+
+Ettus Research provides a Docker containers to facilitate building filesystems.
+Refer to the <a href="https://github.com/EttusResearch/ettus-docker/blob/master/oe-build/README.md"> README </a> for more details.
+
+\subsection e3xx_getting_started_serial Serial connection
 
 It is possible to gain root access to the device using a serial terminal
 emulator. Most Linux, OSX, or other Unix flavours have a tool called 'screen'
@@ -168,6 +304,13 @@ devices that might be already connected. Modern Linux systems offer alternatives
 to simply trying device nodes; instead, the OS might have a directory of
 symlinks under `/dev/serial/by-id`:
 
+For E310:
+
+    $ ls /dev/serial/by-id
+    /dev/serial/by-id/usb-FTDI_FT230X_Basic_UART_DQ0041HO-if00-port0
+
+For E320:
+
     $ ls /dev/serial/by-id
     /dev/serial/by-id/usb-FTDI_Dual_RS232-HS-if00-port0
     /dev/serial/by-id/usb-FTDI_Dual_RS232-HS-if01-port0
@@ -175,6 +318,10 @@ symlinks under `/dev/serial/by-id`:
     /dev/serial/by-id/usb-Silicon_Labs_CP2105_Dual_USB_to_UART_Bridge_Controller_007F6A6C-if01-port0
 
 Note: Exact names depend on the host operating system version and may differ.
+
+Every E310 device connected to USB will by default show up as one
+device. The device labeled "FTDI_FT230X_Basic_UART_DQ0041HO" connects
+to Linux.
 
 Every E320 device connected to USB will by default show up as four
 different devices. The devices labeled "USB_to_UART_Bridge_Controller" are the
@@ -184,11 +331,17 @@ If you have multiple E320 devices connected, you may have to try out multiple
 devices. In this case, to use this symlink instead of the raw device node
 address, modify the command above to:
 
+For E310:
+
+    $ sudo screen /dev/serial/by-id/usb-FTDI_FT230X_Basic_UART_DQ0041HO-if00-port0 115200
+
+For E320:
+
     $ sudo screen /dev/usb-Silicon_Labs_CP2105_Dual_USB_to_UART_Bridge_Controller_007F6A6C-if01-port0 115200
 
 You should be presented with a shell prompt similar to the following:
 
-    root@ni-e320-311FE00:~#
+    root@ni-<e31x/e320>-<serial>:~#
 
 On this prompt, you can enter any Linux command available. Using the default
 configuration, the serial console will also show all kernel log messages (unlike
@@ -209,30 +362,32 @@ commands. A direct connection to the microcontroller can be used to hard-reset
 the device without physically accessing it (i.e., emulating a power button press)
 and other low-level diagnostics.
 
-\subsection e320_getting_started_ssh SSH connection
+\subsection e3xx_getting_started_ssh SSH connection
 
-The USRP E320 devices have two network connections: One SFP port,
-and an RJ-45 connector. The latter is by default configured by DHCP; by plugging
-it into into 1 Gigabit switch on a DHCP-capable network, it will get assigned
-an IP address and thus be accessible via ssh.
+The USRP E310 devices have just one network connection: RJ-45 connector while the
+USRP E320 has two network connections: One SFP port, and an RJ-45 connector.
+
+The RJ-45 connection is by default configured by DHCP; by plugging it into a 1 Gigabit
+switch on a DHCP-capable network, it will get assigned an IP address and thus be
+accessible via ssh.
 
 In case your network setup does not include a DHCP server, refer to the section
-\ref e320_getting_started_serial. A serial login can be used to assign an IP address manually.
+\ref e3xx_getting_started_serial. A serial login can be used to assign an IP address manually.
 
 After the device obtained an IP address you can log in from a Linux or OSX
 machine by typing:
 
-    $ ssh root@ni-e320-311FE00 # Replace with your actual device name!
+    $ ssh root@ni-<e31x/e320>-<serial> # Replace with your actual device name!
 
 Depending on your network setup, using a `.local` domain may work:
 
-    $ ssh root@ni-e320-311FE00.local
+    $ ssh root@ni-<e31x/e320>-<serial>.local
 
 Of course, you can also connect to the IP address directly if you know it (or
 set it manually using the serial console).
 
 Note: The device's hostname is derived from its serial number by default
-(`ni-e320-<SERIAL>`). You can change the hostname by modifying the `/etc/hostname`
+(`ni-<e31x/e320>-<SERIAL>`). You can change the hostname by modifying the `/etc/hostname`
 file and rebooting.
 
 On Microsoft Windows, the connection can be established using a tool such as
@@ -241,20 +396,13 @@ Putty, by selecting a username of root without password.
 Like with the serial console, you should be presented with a prompt like the
 following:
 
-    root@ni-e320-311FE00:~#
+    root@ni-<e31x/e320>-<serial>:~#
 
-\subsection e320_getting_started_connectivity Network Connectivity
+\subsection e3xx_getting_started_connectivity Network Connectivity
 
 The RJ45 port (eth0) comes up with a default configuration of DHCP,
 that will request a network address from your DHCP server (if available on your
 network).
-
-The SFP+ (sfp0) port is configured with static address 192.168.10.2/24
-
-The configuration for the sfp0 port is stored in /etc/systemd/networkd/sfp0.network.
-
-For configuration please refer to the
-<a href=https://www.freedesktop.org/software/systemd/man/systemd.network.html>systemd-networkd manual pages</a>
 
 The factory settings are as follows:
 
@@ -268,6 +416,14 @@ The factory settings are as follows:
 
         [DHCPv4]
         UseHostname=false
+
+E320 has an extra SFP+ (sfp0) port which is configured with static address 192.168.10.2/24.
+The configuration for the sfp0 port is stored in /etc/systemd/networkd/sfp0.network.
+
+For configuration please refer to the
+<a href=https://www.freedesktop.org/software/systemd/man/systemd.network.html>systemd-networkd manual pages</a>
+
+The factory settings are as follows:
 
     sfp0 (static):
 
@@ -287,7 +443,7 @@ that systemd-networkd might accidentally pick up.
 Note: Temporarily setting the IP addresses via ifconfig etc will only change the
 value until the next reboot or reload of the FPGA image.
 
-\subsection e320_getting_started_security Security-related settings
+\subsection e3xx_getting_started_security Security-related settings
 
 The E320 ships without a root password set. It is possible to ssh into the
 device by simply connecting as root, and thus gaining access to all subsystems.
@@ -297,7 +453,7 @@ To set a password, run the command
 
 on the device.
 
-\subsection e320_getting_started_fpga_update Updating the FPGA
+\subsection e3xx_getting_started_fpga_update Updating the FPGA
 
 Updating the FPGA follows the same procedure as other USRPs. Use the `uhd_image_loader`
 command line utility to upload a new FPGA image onto the device. The command can be run
@@ -312,24 +468,24 @@ version of the FPGA than is on the device). In this case, simply run
 
 to update the local cache of FPGA images. Then, run
 
-    $ uhd_image_loader --args type=e3xx,addr=ni-e320-311fe00
+    $ uhd_image_loader --args type=e3xx,addr=ni-<e31x/e320>-<serial>
 
-to update the FPGA using the default settings. Replace ni-e320-311fe00 in the addr with the
+to update the FPGA using the default settings. Replace the addr above with the
 correct device address. If a custom FPGA image is targeted for uploading, use the
 `--fpga-path` command line argument. Run
 
     $ uhd_image_loader --help
 
 to see a full list of command line options. Note that updating the FPGA image
-will force a reload of the FPGA, which will temporarily take down the SFP
-network interfaces (and temporary settings, such as applied via `ifconfig` on
-the command line, will be lost).
+will force a reload of the FPGA, and in case of E320 it will temporarily take down
+the SFP network interfaces (and temporary settings, such as applied via `ifconfig`
+on the command line, will be lost).
 
 
-\section e320_usage Using an E320 USRP from UHD
+\section e3xx_usage Using an E3XX USRP from UHD
 
-Like any other USRP, all E320 USRPs are controlled by the UHD software. To
-integrate a USRP E320 into your C++ application, you would generate a UHD
+Like any other USRP, all E series USRPs are controlled by the UHD software. To
+integrate a USRP E310/E312/E313/E320 into your C++ application, you would generate a UHD
 device in the same way you would for any other USRP:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
@@ -337,28 +493,44 @@ auto usrp = uhd::usrp::multi_usrp::make("type=e3xx");
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For a list of which arguments can be passed into make(), see Section
-\ref e320_usage_device_args.
+\ref e3xx_usage_device_args.
 
-\subsection e320_usage_device_args Device arguments
+\subsection e3xx_usage_device_args Device arguments
 
  Key                 | Description                                                                   | Example Value
 ---------------------|-------------------------------------------------------------------------------|---------------------
- addr                | IPv4 address of primary SFP+ port to connect to.                              | addr=192.168.30.2
+ addr                | IPv4 address of primary SFP+/RJ-45 port to connect to                         | addr=192.168.30.2
  find_all            | When using broadcast, find all devices, even if unreachable via CHDR.         | find_all=1
  master_clock_rate   | Master Clock Rate in Hz. Default is 16 MHz.                                   | master_clock_rate=30.72e6
- serialize_init      | Force serial initialization of daughterboards.                                | serialize_init=1
  skip_dram           | Ignore DRAM FIFO block. Connect TX streamers straight into DUC or radio.      | skip_dram=1
  skip_ddc            | Ignore DDC block. Connect Rx streamers straight into radio.                   | skip_ddc=1
  skip_duc            | Ignore DUC block. Connect Tx streamers or DRAM straight into radio.           | skip_duc=1
  skip_init           | Skip the initialization process for the device.                               | skip_init=1
- ref_clk_freq        | Specify the external reference clock frequency, default is internal (20 MHz). | ref_clk_freq=10e6
- init_cals           | Specify the bitmask for initial calibrations of the RFIC.                     | init_cals=BASIC
- init_cals_timeout   | Timeout for initial calibrations in milliseconds.                             | init_cals_timeout=45000
  discovery_port      | Override default value for MPM discovery port.                                | discovery_port=49700
  rpc_port            | Override default value for MPM RPC port.                                      | rpc_port=49701
- tracking_cals       | Specify the bitmask for tracking calibrations of the RFIC.                    | tracking_cals=ALL
 
-\subsection e320_usage_sensors The sensor API
+\subsection e3xx_usage_sensors The sensor API
+
+\subsubsection e310_sensors E31X Sensors
+
+Like other USRPs, the E310 series has RF and motherboard sensors.
+When using uhd::usrp::multi_usrp, the following API calls are relevant to
+interact with the sensor API:
+
+- uhd::usrp::multi_usrp::get_mboard_sensor_names()
+- uhd::usrp::multi_usrp::get_mboard_sensor()
+- uhd::usrp::multi_usrp::get_tx_sensor_names()
+- uhd::usrp::multi_usrp::get_rx_sensor_names()
+- uhd::usrp::multi_usrp::get_tx_sensor()
+- uhd::usrp::multi_usrp::get_rx_sensor()
+
+The following motherboard sensors are always available:
+- `temp_fpga`: temperature (in Celsius) of the FPGA die
+- `temp_mb`: temperature (in Celsius) of the motherboard
+- `ref_locked`: This will check that all the daughter boards have locked to the
+reference clock.
+
+\subsubsection e320_sensors E320 Sensors
 
 Like other USRPs, the E320 series has RF and motherboard sensors.
 When using uhd::usrp::multi_usrp, the following API calls are relevant to
@@ -372,22 +544,22 @@ interact with the sensor API:
 - uhd::usrp::multi_usrp::get_rx_sensor()
 
 The following motherboard sensors are always available:
-- `temp_internal`: temperature (in C) of Temperature Sensor on board
-- `temp_fpga`: temperature (in C) of the FPGA die
-- `temp_rf_channelA`: temperature (in C) near power amplifier RF A
-- `temp_rf_channelB`: temperature (in C) near power amplifier RF B
-- `temp_main_power`: temperature (in C) near power supply
+- `temp_internal`: temperature (in Celsius) of Temperature Sensor on board
+- `temp_fpga`: temperature (in Celsius) of the FPGA die
+- `temp_rf_channelA`: temperature (in Celsius) near power amplifier RF A
+- `temp_rf_channelB`: temperature (in Celsius) near power amplifier RF B
+- `temp_main_power`: temperature (in Celsius) near power supply
 - `gps_locked`: GPS lock
 - `gps_time`: GPS time in seconds sin ce the epch
 - `gps_tpv`: A TPV report from GPSd serialized as JSON
 - `gps_sky`: A SKY report from GPSd serialized as JSON
-- `ref_locked`: This will check that all the daughterboards have locked to the
+- `ref_locked`: This will check that all the daughter boards have locked to the
 external/internal reference clock.
 - `fan`: get fan speed (in rpm)
 
-\section e320_rasm Remote Management
+\section e3xx_rasm Remote Management
 
-\subsection e320_rasm_mender Mender: Remote update capability
+\subsection e3xx_rasm_mender Mender: Remote update capability
 
 Mender is a third-party software that enables remote updating of the root
 file system without physically accessing the device (see also the
@@ -407,7 +579,12 @@ means that if an update fails, the device will be always able to reboot into the
 partition from which the update was originally launched (which presumably is in
 a working state). Another update can be launched now to correct the previous,
 failed update, until it works.
-See also Section \ref e320_sdcard.
+See also Section \ref e3xx_sdcard.
+
+Note: For E310, the SD cards that are shipped with the device do not have the latest
+UHD and do not support MPM by default. The SD cards will have to be flashed with
+UHD v3.15.0.0 or above to be able to use mender. After the first upgrade, mender
+can be used for future upgrades. Refer to the migration guide. \ref e31x_migration
 
 To initiate an update from the device itself, download a Mender artifact
 containing the update itself. These are files with a `.mender` suffix.
@@ -441,18 +618,18 @@ device, and can update groups of USRPs with a few clicks in a web GUI. The
 dashboard can also be used to inspect the state of USRPs. This is simple way to
 update groups of rack-mounted USRPs with custom file systems.
 
-\subsection e320_rasm_salt Salt: Remote configuration management and execution
+\subsection e3xx_rasm_salt Salt: Remote configuration management and execution
 
 Salt (also known as SaltStack, see [Salt Website](https://saltstack.com)) is a
 Python-based tool for maintaining fleets of remote devices. It can be used to
-manage USRP E320 remotely for all types of settings that are not
+manage USRP E31X/E320 remotely for all types of settings that are not
 controlled by UHD. For example, if an operator would like to reset the root
 password on multiple devices, or install custom software, this tool might be a
 suitable choice.
 
 Salt is a third-party project with its [own documentation](https://docs.saltstack.com/en/latest/),
 which should be consulted for configuring it. However, the Salt minion is
-installed by default on every E320 device. To start it, simply log on to the
+installed by default on every E31X/E320 device. To start it, simply log on to the
 device and run:
 
     $ systemctl start salt-minion
@@ -478,11 +655,12 @@ will look like this:
 5. Once the device is authorized, you can try various commands to see if the
    communication was established:
 
+\code{.sh}
     $ [sudo] salt '*' test.ping
-    ni-n3xx-$serial:
+    ni-e3xx-$serial:
         True
     $ [sudo] salt '*' network.interfaces
-    ni-n3xx-$serial:
+    ni-e3xx-$serial:
         ----------
         eth0:
             ----------
@@ -502,26 +680,32 @@ will look like this:
             up:
                 True
     # [...]
+\endcode
 
-\section e320_theory_of_ops Theory of Operation
+\section e3xx_theory_of_ops Theory of Operation
 
-E320 is on the MPM architecture (see also: \ref page_mpm).
+All E series devices are on the MPM architecture (see also: \ref page_mpm).
 Inside the Linux operating system running on the ARM
-cores, there is hardware daemon which needs to be active in order for the
+cores, there is a hardware daemon which needs to be active in order for the
 device to function as a USRP (it is enabled to run by default).
 
 A large portion of hardware-specific setup is handled by the daemon.
 
-\section e320_software_dev Modifying and compiling UHD and MPM for the E320
+\section e3xx_software_dev Modifying and compiling UHD and MPM for the E320
 
 E320 devices ship with all relevant software installed on the SD card. Updating
 UHD and/or MPM on the SD card is typically easiest done by updating the
-filesystem image (see Section \ref e320_rasm_mender). However, it is certainly
+filesystem image (see Section \ref e3xx_rasm_mender). However, it is certainly
 possible to compile UHD and MPM by hand, e.g., in order to modify and try out
 changes without having to build entire filesystems in between. At Ettus R&D,
 this mode of operation is often used for rapid iteration cycles.
 
-\subsection e320_software_dev_mpm_native Compiling MPM natively
+While on E310 the SD cards that are shipped with the device do not have the latest
+UHD and do not support MPM by default. The SD cards will have to be flashed with
+UHD v3.15.0.0 or above to be able to use mender. After the first upgrade, mender
+can be used for future upgrades. Refer to the migration guide. \ref e31x_migration
+
+\subsection e3xx_software_dev_mpm_native Compiling MPM natively
 
 In general, compiling natively is not a recommended way of compiling code for
 the ARM processors. However, in the case of MPM, the amount of C++ code that
@@ -554,16 +738,18 @@ your paths appropriately.
 If you prefer cross-compiling MPM the same way as UHD, refer to the following
 sections and adapt the instructions for UHD appropriately.
 
-\subsection e320_software_dev_sdk Obtaining an SDK
+\subsection e3xx_software_dev_sdk Obtaining an SDK
 
-The recommended way to develop software for the E320 is to cross-compile. By
+The recommended way to develop software for the E31X/E320 is to cross-compile. By
 running the compiles on a desktop or laptop computer, you will be able to speed
-up compile times considerably (compiling UHD natively for the E320 would take
+up compile times considerably (compiling UHD natively would take
 many hours).
 
 SDKs are distributed along with other binaries. They contain a cross-compiler,
 a cross-linker, a cross-debugger, and all the libraries available on the device
 to mirror its environment.
+Note: The SDK for E310 has been updated for UHD versions above v.3.15.0.0. Refer to
+the migration guide for details. \ref e31x_migration
 
 To unpack the SDK, simply execute it after downloading it:
 
@@ -586,24 +772,24 @@ other software.
 Please note, that while several toolchains can be installed in parallel, they
 have to be installed to different directories.
 
-\subsection e320_software_dev_sdkusage SDK Usage
+\subsection e3xx_software_dev_sdkusage SDK Usage
 
 Having installed the toolchain in the last step,
 in order to build software for your device open a new shell and type:
 
     $ . $SDKPATH/environment-setup-armv7ahf-vfp-neon-oe-linux-gnueabi
 
-This will modify the PATH, CC, CXX etc, environment variables and allow you to compile software for your USRP E320 device.
+This will modify the PATH, CC, CXX etc, environment variables and allow you to compile software for your device.
 To verify all went well you can try:
 
     $ $CC -dumpmachine
 
 which should return 'arm-oe-linux-gnueabi'.
 
-\subsubsection e320_software_dev_uhd  Building UHD
+\subsubsection e3xx_software_dev_uhd Building UHD
 
 -# Obtain the UHD source code via git or tarball
--# Set up your environment as described in \ref e320_software_dev_sdkusage
+-# Set up your environment as described in \ref e3xx_software_dev_sdkusage
 -# Type the following in the build directory (assuming a build in host/build):
 
         $ cmake -DCMAKE_TOOLCHAIN_FILE=../host/cmake/Toolchains/oe-sdk_cross.cmake -DCMAKE_INSTALL_PREFIX=/usr .. # Add any CMake options you desire
@@ -611,12 +797,12 @@ which should return 'arm-oe-linux-gnueabi'.
 
 Note: The UHD you are cross-compiling will not run on your host computer (the
 one where you're doing the development). Compiling UHD regularly on your host
-computer (with MPMD enabled) will allow you to talk to your E320.
+computer (with MPMD enabled) will allow you to talk to your device.
 
-\subsubsection e320_software_dev_gr Building GNU Radio
+\subsubsection e3xx_software_dev_gr Building GNU Radio
 
 -# Obtain the GNU Radio source code via git or tarball
--# Set up your environment as described in \ref e320_software_dev_sdkusage
+-# Set up your environment as described in \ref e3xx_software_dev_sdkusage
 -# Use the following commands to create a build directory, configure and compile gnuradio. You only need create the build directory once.
 
 \code{.sh}
@@ -630,13 +816,360 @@ Several GNU Radio components depend on running binaries built for the build
 machine during compile. These binaries can be built and used for cross
 compiling, but this is an advanced topic.
 
+\section e31x_device E310-specific Features
+
+\subsection e31x_hw_front_panel Front Panel
+
+\image html e3x0_fp_overlay.png "USRP E310 Front panel"
+
+- **RF A Group**
+  + **TX/RX LED**: Indicates that data is streaming on the TX/RX channel on frontend side A
+  + **RX2 LED**: Indicates that data is streaming on the RX2 channel on frontend side A
+
+- **RF B Group**
+  + **TX/RX LED**: Indicates that data is streaming on the TX/RX channel on frontend B
+  + **RX2 LED**: Indicates that data is streaming on the RX2 channel on frontend B
+- **PWR**: Power switch with integrated status LED, for status description see below.
+
+- **SYNC**: Input port for external PPS signal
+
+- **GPS**: Connection for the GPS antenna
+
+The status LED in the power switch indicates the power and charge status.
+Its behavior is firmware version dependent.
+
+- **Version 1** (original E310)
+  + **Off**: Indicates device is off and not charging
+  + **Solid Red**: Indicates device is charging
+  + **Solid Green**: Indicates device is on
+  + **Fast Blinking Red**: Indicates an error code
+    + 1 - Low voltage error
+    + 2 - Regulator low voltage error
+    + 3 - FPGA power error
+    + 4 - DRAM power error
+    + 5 - 1.8V rail power error
+    + 6 - 3.3V rail power error
+    + 7 - Daughterboard / TX power error
+    + 9 - Temperature error
+
+- **Version 2** (E312 and upgraded E310)
+  + **Off**: Indicates device is off and not charging
+  + **Slow Blinking Green**: Indicates device is off and charging
+  + **Fast Blinking Green**: Indicates device is on and charging
+  + **Solid Green**: Indicates device is on (and not charging, if E312)
+  + **Solid Orange**: Indicates device is on and discharging
+  + **Fast Blinking Orange**: Indicates device is on, discharging, and charge is below 10% charge
+  + **Fast Blinking Red**: Indicates an error code
+    + 1 - Low voltage error
+    + 2 - Regulator low voltage error
+    + 3 - FPGA power error
+    + 4 - DRAM power error
+    + 5 - 1.8V rail power error
+    + 6 - 3.3V rail power error
+    + 7 - Daughterboard / TX power error
+    + 8 - Charger error
+    + 9 - Charger temperature error
+    + 10 - Battery low error
+    + 11 - Fuel Gauge temperature error
+    + 12 - Global (case) temperature error
+
+\subsection e31x_hw_rear_panel Rear Panel
+
+\image html e3x0_rp_overlay.png "USRP E310 Rear Panel"
+
+- **PWR**: Locking connector (Kycon KLDHCX-0202-A-LT) for the USRP-E Series power supply
+- **1G ETH**: RJ45 port for Ethernet interfaces
+- **USB**: USB 2.0 Port
+- **SERIAL**: Micro USB connection for serial uart console
+
+\subsection e31x_hw_sync Clock and Time Synchronization
+
+Unlike most USRP devices, the E310 does not have independent reference clock and time source inputs.
+It is possible, however, to discipline the internal reference clock using an external time (PPS) source
+connected to the SYNC input pin. The E310 FPGA has a subsystem that can use the PPS signal from the
+SYNC pin or the internal GPS to align edges of the reference clock to edges of a shared PPS signal.
+This alignment happens automatically when the time source in UHD is set to "gpsdo" or "external".
+Please note that because the SYNC input can only accept a PPS signal, the only supported value for
+the reference clock source is "internal". Also, keep in mind that the E310
+does *not* have a GPS-disciplined oscillator like other USRPs, the value "gpsdo"
+for the time source was chosen for compatibility with other USRPs.
+
+\subsection e31x_hw_pps PPS - Pulse Per Second
+Using a PPS signal for timestamp synchronization requires a LVCMOS or a 5V logic input signal.
+An external PPS can be used to discipline the internal reference clock. This feature is automatically
+enabled with the time source is set to "external".
+
+To test the PPS input, you can use the following tool from the UHD examples:
+
+- `<args>` are device address arguments (optional if only one USRP device is on your machine)
+
+    cd <install-path>/lib/uhd/examples
+    ./test_pps_input --args=\<args\>
+
+\subsection e31x_hw_gps Internal GPS
+
+Your USRP-E Series device comes with an internal GPS.
+In order to get a lock on a satellite an external GPS antenna is required.
+The PPS from the internal GPS can be used to discipline the internal reference
+clock. This feature is automatically enabled when the time source is set to
+"gpsdo". Again, keep in mind that while the E310 does not have an actual
+GPS-disciplined oscillator (GPSDO) on the board, the value "gpsdo" was named
+such for better compatibility with code written for other devices.
+
+The device provides a 3.3V supply voltage to an external antenna connected to the *GPS* port
+of your device. Note that this supply voltage is turned off in order to safe power upon destruction of the software object.
+
+\subsection e31x_hw_gpio Internal GPIO
+
+### Connector
+
+\image html e3x0_gpio_conn.png "E3xx GPIO Connector"
+
+### Pin Mapping
+
+- Pin 1:   +3.3V
+- Pin 2:   Reserved
+- Pin 3:   Data[5]
+- Pin 4:   Reserved
+- Pin 5:   Data[4]
+- Pin 6:   Data[0]
+- Pin 7:   Data[3]
+- Pin 8:   Data[1]
+- Pin 9:   0V
+- Pin 10:  Data[2]
+
+Please see the \ref page_gpio_api for information on configuring and using the GPIO bus.
+
+\subsection e31x_hw_chipscope Debugging custom FPGA designs with Xilinx Chipscope
+
+### Connector
+
+\image html e3x0_jtag_conn.png "E3xx JTAG Connector"
+
+### Pin Mapping
+
+- Pin 1: TDO
+- Pin 2: 3.3V
+- Pin 3: TCK
+- Pin 4: TDI
+- Pin 5: 0V
+- Pin 6: TMS
+
+
+Xilinx chipscope allows for debugging custom FPGA designs similar to a logic analyzer.
+USRP-E series devices can be used with Xilinx chipscope using the internal JTAG connector.
+
+Further information on how to use Chipscope can be found in the *Xilinx Chipscope Pro Software and Cores User Guide (UG029)*.
+
+\subsection e312_battery Battery notes
+
+The USRP E312 (and with upgraded firmware E310) supports LiIon Battery packs (e.g. AA Portable Power Corp, 749801-01).
+
+\subsubsection e312_battery_connector Connector
+
+The connector J1 on E312's motherboard is a Molex 53014-6310. The corresponding mating connector is a Molex 51004-0300.
+
+\image html e3xx_conn_photo.jpg "Battery pack connector"
+
+The pins are as follows:
+- Pin 1 (Red): VBat
+- Pin 2 (Black): GND
+- Pin 3 (White): Battery Thermistor
+
+\subsubsection e312_battery_information Driver
+
+The battery information is exposed on the device via the sysfs directory under:
+
+    /sys/class/power_supply/e31x-battery/
+
+and for the charger:
+
+    /sys/class/power_supply/e31x-charger/
+
+The values can be accessed via libudev or manually e.g.:
+
+    $ root@ni-e31x-<serial>: cat /sys/class/power_supply/e31x-battery/status
+
+The driver emits uevents on changes, that can be used to write custom UDev rules.
+Using UDev rules one can configure the USRP E3xx to shut down on certain events,
+such as low battery charge, high temperatures or AC power plug in.
+
+The following example will cause the system to shut down at a reported temperature
+of 73C:
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+SUBSYSTEM=="power_supply", ATTR{online}=="1", ATTR{temp}=="730", RUN+="/sbin/shutdown -h now"
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The sysfs property "capacity" is no longer supported by the battery driver in the latest filesystem. It was removed to
+comply with the Linux power supply class driver recommendations during the ongoing driver upstreaming process. The capacity
+may still be calculated by the customer application using the following formula (charge_now/charge_full) * 100
+
+For more information, please see the udev manual pages and <a href ="https://www.kernel.org/doc/Documentation/power/power_supply_class.txt"> Kernel Power Supply Docs </a>.
+
+\subsubsection e312_battery_calibration Calibration Procedure
+
+In order for the fuel gauge to give a usable indication of remaining charge it needs to be calibrated.
+The procedure for calibration is as follows:
+
+1. Completely discharge battery (e.g. by booting up without SD card, so OS doesn't auto shutdown)
+2. Unplug the battery pack and external power
+3. Reconnect the battery pack
+4. Reconnect AC power and charge until charge completed.
+
+A faster (less accurate) calibration procedure is as follows:
+
+1. Completely charge battery
+2. Type:
+
+    $ echo 3200000 > /sys/class/power_supply/e31x-battery/charge_now
+
+3. Unplug AC power
+4. Replug AC power and wait until charge completes
+
+\subsection e31x_dboards Daughterboard notes
+
+The USRP E310 MIMO XCVR daughterboard features an integrated MIMO capable RF frontend.
+
+\subsubsection e31x_dboard_e310_tuning Frontend tuning
+
+The RF frontend has individually tunable receive and transmit chains.
+Both transmit and receive can be used in a MIMO configuration. For
+the MIMO case, both receive frontends share the RX LO, and both transmit
+frontends share the TX LO. Each LO is tunable between 50 MHz and 6 GHz.
+
+As there is a single LO for each direction (RX and TX), this means that both
+channels need to use the same LO frequency (i.e., both RX channels share an LO
+frequency, and both TX channels share an LO frequency). If the two channels
+are supposed to receive on different frequencies, the digital tune stages need
+to be used for that. The two frequencies will need to be within the currently
+selected master clock rate, and the final bandwidths need to be chosen
+carefully. Example: Assume the master clock rate is set to 50 MHz, and we want
+to receive at 400 MHz and 440 MHz. We can set the LO to 420 MHz, which will
+sample the spectrum from 395 MHz to 445 MHz. The LO offsets for both channels
+need to be 20 MHz and -20 MHz respectively. However, the final bandwidth should
+be less than 10 MHz (preferably lower), or the signals would exhibit aliasing.
+
+Because both channels share an LO, tuning one channel can possibly affect the
+other channel. It is advisable to read back the actual, current frequency from
+software before assuming the device is tuned to a specific frequency.
+
+\subsubsection e31x_dboard_e310_gain Frontend gain
+
+All frontends have individual analog gain controls. The receive
+frontends have 76 dB of available gain; and the transmit frontends have
+89.5 dB of available gain. Gain settings are application specific, but
+it is recommended that users consider using at least half of the
+available gain to get reasonable dynamic range.
+
+\subsubsection e31x_dboard_e310_pll Frontend LO lock status
+
+The frontends provide a *lo-locked* sensor that can be queried through the UHD API.
+
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~{.cpp}
+// assumes 'usrp' is a valid uhd::usrp::multi_usrp::sptr instance
+
+// get status for rx frontend
+usrp->get_rx_sensor("lo-locked");
+
+// get status for tx frontend
+usrp->get_tx_sensor("lo-locked");
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+\subsubsection e31x_dboard_e310_band_select Frontend Filter and Antenna Switches
+
+The transmit and receive filter banks uses switches to select between the available filters. These paths are
+also dependent on the antenna switch settings. Incorrectly setting the switches generally results
+in attenuated input / output power. Receive filters are band pass (series high & low pass filters),
+transmit filters are low pass.
+
+Source code related to controlling the filter band and antenna switches resides in e31x_radio_ctrl_impl.cpp. The methods set the switches depending on the state of transmit and receive streams.
+
+The following sections provide switch setting tables for antenna and filter selection for frontends A & B receive and transmit paths.
+For further details refer to the schematics.
+
+\subsubsection e31x_dboard_e310_frontend_a_switches Frontend Side A Filter and Antenna Switches
+
+_Note: X = don't care, T = If full duplex, set bits according to transmit table, otherwise don't care.
+Filter range A – B will be selected if A <= freq < B._
+
+__Receive__
+RX Port | RX Filter (MHz) | VCTXRX2_V1,V2 | VCRX2_V1,V2 | RX2_BANDSEL[2:0] | RX2B_BANDSEL[1:0] | RX2C_BANDSEL[1:0]
+:-----: | :-------------: | :-----------: | :---------: | :--------------: | :---------------: | :---------------:
+TRX-A   | < 450           | 01            | 10          | 101              | XX                | 01
+TRX-A   | 450 – 700       | 01            | 10          | 011              | XX                | 11
+TRX-A   | 700 – 1200      | 01            | 10          | 001              | XX                | 10
+TRX-A   | 1200 – 1800     | 01            | 10          | 000              | 01                | XX
+TRX-A   | 1800 – 2350     | 01            | 10          | 010              | 11                | XX
+TRX-A   | 2350 – 2600     | 01            | 10          | 100              | 10                | XX
+TRX-A   | 2600 – 6000     | 01            | 01          | XXX              | XX                | XX
+RX2-A   | 70  – 450       | TT            | 01          | 101              | XX                | 01
+RX2-A   | 450 – 700       | TT            | 01          | 011              | XX                | 11
+RX2-A   | 700 – 1200      | TT            | 01          | 001              | XX                | 10
+RX2-A   | 1200 – 1800     | TT            | 01          | 000              | 01                | XX
+RX2-A   | 1800 – 2350     | TT            | 01          | 010              | 11                | XX
+RX2-A   | 2350 – 2600     | TT            | 01          | 100              | 10                | XX
+RX2-A   | >= 2600         | TT            | 10          | XXX              | XX                | XX
+
+__Transmit__
+TX Port | TX Filter (MHz) | VCTXRX2_V1,V2 | TX_ENABLE2A,2B | TX_BANDSEL[2:0]
+:-----: | :-------------: | :-----------: | :------------: | :-------------:
+TRX-A   | < 117.7         | 10            | 01             | 111
+TRX-A   | 117.7 – 178.2   | 10            | 01             | 110
+TRX-A   | 178.2 – 284.3   | 10            | 01             | 101
+TRX-A   | 284.3 – 453.7   | 10            | 01             | 100
+TRX-A   | 453.7 – 723.8   | 10            | 01             | 011
+TRX-A   | 723.8 – 1154.9  | 10            | 01             | 010
+TRX-A   | 1154.9 – 1842.6 | 10            | 01             | 001
+TRX-A   | 1842.6 – 2940.0 | 10            | 01             | 000
+TRX-A   | >= 2940.0       | 11            | 10             | XXX
+_Note: Although the transmit filters are low pass, this table describes UHD's tuning range for selecting each filter path.
+The table also includes the required transmit enable state._
+
+\subsubsection e31x_dboard_e310_frontend_b_switches Frontend Side B Filter and Antenna Switches
+
+_Note: X = don't care, T = If full duplex, set bits according to transmit table, otherwise don't care.
+Filter range A – B will be selected if A <= freq < B._
+
+__Receive__
+RX Port | RX Filter (MHz) | VCTXRX1_V1,V2 | VCRX1_V1,V2 | RX1_BANDSEL[2:0] | RX1B_BANDSEL[1:0] | RX1C_BANDSEL[1:0]
+:-----: | :-------------: | :-----------: | :---------: | :--------------: | :---------------: | :---------------:
+TRX-B   | < 450           | 10            | 01          | 100              | XX                | 10
+TRX-B   | 450 – 700       | 10            | 01          | 010              | XX                | 11
+TRX-B   | 700 – 1200      | 10            | 01          | 000              | XX                | 01
+TRX-B   | 1200 – 1800     | 10            | 01          | 001              | 10                | XX
+TRX-B   | 1800 – 2350     | 10            | 01          | 011              | 11                | XX
+TRX-B   | 2350 – 2600     | 10            | 01          | 101              | 01                | XX
+TRX-B   | 2600 – 6000     | 10            | 10          | XXX              | XX                | XX
+RX2-B   | 70  – 450       | TT            | 01          | 100              | XX                | 10
+RX2-B   | 450 – 700       | TT            | 01          | 010              | XX                | 11
+RX2-B   | 700 – 1200      | TT            | 01          | 000              | XX                | 01
+RX2-B   | 1200 – 1800     | TT            | 01          | 001              | 10                | XX
+RX2-B   | 1800 – 2350     | TT            | 01          | 011              | 11                | XX
+RX2-B   | 2350 – 2600     | TT            | 01          | 101              | 01                | XX
+RX2-B   | >= 2600         | TT            | 10          | XXX              | XX                | XX
+
+__Transmit__
+TX Port | TX Filter (MHz) | VCTXRX1_V1,V2 | TX_ENABLE1A,1B | TX1_BANDSEL[2:0]
+:-----: | :-------------: | :-----------: | :------------: | :--------------:
+TRX-B   | < 117.7         | 00            | 01             | 111
+TRX-B   | 117.7 – 178.2   | 00            | 01             | 110
+TRX-B   | 178.2 – 284.3   | 00            | 01             | 101
+TRX-B   | 284.3 – 453.7   | 00            | 01             | 100
+TRX-B   | 453.7 – 723.8   | 00            | 01             | 011
+TRX-B   | 723.8 – 1154.9  | 00            | 01             | 010
+TRX-B   | 1154.9 – 1842.6 | 00            | 01             | 001
+TRX-B   | 1842.6 – 2940.0 | 00            | 01             | 000
+TRX-B   | >= 2940.0       | 11            | 10             | XXX
+_Note: Although the transmit filters are low pass, the following table describes UHD's tuning range for selecting each filter path.
+The table also includes the required transmit enable states._
+
 \section e320_neon E320-specific Features
 
 \subsection e320_panels Front and Rear Panel
 
 Like the USRP X300 and N310 series, E320 has connectors on both the front and back
 panel. The back panel holds the power connector, all network connections, USB
-connections for serial console (see \ref e320_getting_started_serial), JTAG and
+connections for serial console (see \ref e3xx_getting_started_serial), JTAG and
 peripherals, and front-panel GPIO.
 
 The front panel is used for all RF connections, SMA connectors for GPS antenna
@@ -645,7 +1178,7 @@ input, 10 MHz external clock reference.
 The connectors are labeled RF A and RF B and are powered by the two channels of
 AD9361 RFIC.
 
-\subsection e320_regmap FPGA Register Map
+\section e3xx_regmap E3XX FPGA Register Map
 
 The following tables describe how FPGA registers are mapped into the PS.
 This is for reference only, most users will not even have to know about this table.
@@ -653,16 +1186,16 @@ This is for reference only, most users will not even have to know about this tab
 
 AXI Slave | Address Range         | UIO Label        | Description
 ----------|-----------------------|------------------|-----------------------------------
-Slave 0   | 4000_0000 - 4000_3fff | -                | Ethernet DMA SFP
-Slave 1   | 4000_4000 - 4000_4fff | misc-enet-regs   | Ethernet registers SFP
+Slave 0   | 4000_0000 - 4000_3fff | -                | Ethernet DMA SFP (only for E320)
+Slave 1   | 4000_4000 - 4000_4fff | misc-enet-regs   | Ethernet registers SFP (only for E320)
 Slave 2   | 4001_0000 - 4001_3fff | mboard-regs      | Motherboard control
 Slave 3   | 4001_4000 - 4001_41ff | dboard-regs      | Daughterboard control
 
 
 <table>
-<caption id="e320_multi_row">E320 Register Map</caption>
+<caption id="e3xx_multi_row">E3XX Register Map</caption>
 <tr><th>AXI Slave              <th>Module                       <th>Address               <th>Name            <th>Read/Write  <th>Description
-<tr><td rowspan="1">Slave 0    <td rowspan="1">axi_eth_dma      <td>4000_0000 - 4000_4fff <td>Ethernet DMA    <td>RW          <td>See Linux Driver
+<tr><td rowspan="1">Slave 0    <td rowspan="1">axi_eth_dma      <td>4000_0000 - 4000_4fff <td>Ethernet DMA    <td>RW          <td>See Linux Driver (only on E320)
 <tr><td rowspan="44">Slave 1   <td rowspan="7">e320_mgt_io_core <td>4000_4000             <td>PORT_INFO       <td>RO          <td>SFP port information
 <tr>                                                            <td>[31:24]               <td>COMPAT_NUM      <td>RO          <td>-
 <tr>                                                            <td>[23:18]               <td>6'h0	      <td>RO          <td>-
