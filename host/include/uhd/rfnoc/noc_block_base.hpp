@@ -10,6 +10,7 @@
 #include <uhd/config.hpp>
 #include <uhd/rfnoc/block_id.hpp>
 #include <uhd/rfnoc/node.hpp>
+#include <uhd/rfnoc/register_iface_holder.hpp>
 
 //! Shorthand for block constructor
 #define UHD_RFNOC_BLOCK_CONSTRUCTOR(CLASS_NAME) \
@@ -28,7 +29,7 @@ namespace uhd { namespace rfnoc {
  * The main difference between this class and its parent is the direct access to
  * registers, and the NoC&block IDs.
  */
-class UHD_API noc_block_base : public node_t
+class UHD_API noc_block_base : public node_t, public register_iface_holder
 {
 public:
     /*! A shared pointer to allow easy access to this class and for
@@ -89,4 +90,3 @@ private:
 }} /* namespace uhd::rfnoc */
 
 #endif /* INCLUDED_LIBUHD_NOC_BLOCK_BASE_HPP */
-

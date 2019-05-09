@@ -1,0 +1,40 @@
+//
+// Copyright 2019 Ettus Research, a National Instruments Brand
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+
+#ifndef INCLUDED_LIBUHD_REGISTER_IFACE_HOLDER_HPP
+#define INCLUDED_LIBUHD_REGISTER_IFACE_HOLDER_HPP
+
+#include <uhd/rfnoc/register_iface.hpp>
+
+namespace uhd { namespace rfnoc {
+
+/*! Register interface holder class
+ *
+ * Classes derived from this class have access to a uhd::rfnoc::register_iface
+ * object.
+ */
+class register_iface_holder
+{
+public:
+    register_iface_holder(register_iface::sptr reg) : _reg(reg){};
+    virtual ~register_iface_holder() = default;
+
+    /*! Return the register interface to access low-level registers
+     *
+     * \return iface A reference to an interface for low-level register access
+     */
+    register_iface& regs()
+    {
+        return *(_reg.get());
+    };
+
+private:
+    register_iface::sptr _reg;
+};
+
+}} /* namespace uhd::rfnoc */
+
+#endif /* INCLUDED_LIBUHD_REGISTER_IFACE_HOLDER_HPP */
