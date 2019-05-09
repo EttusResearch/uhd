@@ -8,6 +8,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+int derive_rev_compat(int rev)
+{
+	if (rev > 5)
+		return 5;
+
+	return rev;
+}
+
 int derive_dt_compat(int rev)
 {
 	/* up to rev6 they were individual dts */
@@ -29,12 +37,12 @@ int derive_mcu_compat(int rev)
 void usage(char *argv[])
 {
 	printf("-- Usage -- \n");
-	printf("%s serial# revision eth0 eth1 eth2 [pid] [dt-compat] [mcu-compat]\n\n", argv[0]);
+	printf("%s serial# revision eth0 eth1 eth2 [pid] [dt-compat] [mcu-compat] [rev-compat]\n\n", argv[0]);
 	printf("Example:\n");
 	printf("$ %s 310A850 2 0c:22:cc:1a:25:c1 0c:22:cc:1a:25:c2 0c:22:cc:1a:25:c3 0x4242\n",
 		argv[0]);
-	printf("or specifying dt-compat and mcu-compat explicitly:\n");
-	printf("$ %s 310A850 2 0c:22:cc:1a:25:c1 0c:22:cc:1a:25:c2 0c:22:cc:1a:25:c3 0x4242 5 5\n",
+	printf("or specifying dt-compat, mcu-compat, and rev-compat explicitly:\n");
+	printf("$ %s 310A850 2 0c:22:cc:1a:25:c1 0c:22:cc:1a:25:c2 0c:22:cc:1a:25:c3 0x4242 5 5 5\n",
 		argv[0]);
 }
 
@@ -43,8 +51,9 @@ int main(int argc, char *argv[])
 	struct usrp_sulfur_eeprom *ep, *ep2;
 	u16 mcu_compat;
 	u16 dt_compat;
+	u16 rev_compat;
 
-	if (argc < 6 || argc > 9) {
+	if (argc < 6 || argc > 10) {
 		usage(argv);
 		return EXIT_FAILURE;
 	}
@@ -61,11 +70,18 @@ int main(int argc, char *argv[])
 		dt_compat = derive_dt_compat(atoi(argv[2]));
 	}
 
-	if (argc == 9) {
+	if (argc >= 9) {
 		mcu_compat = strtol(argv[8], NULL, 0);
 		printf("mcu_compat=%u\n", mcu_compat);
 	} else {
 		mcu_compat = derive_mcu_compat(atoi(argv[2]));
+	}
+
+	if (argc >= 10) {
+		rev_compat = strtol(argv[9], NULL, 0);
+		printf("rev_compat=%u\n", rev_compat);
+	} else {
+		rev_compat = derive_rev_compat(atoi(argv[2]));
 	}
 
 	if (pid < 0 || pid > 0xFFFF) {
@@ -79,7 +95,7 @@ int main(int argc, char *argv[])
 	 */
 	ep = usrp_sulfur_eeprom_new(NULL, (u16) pid, atoi(argv[2]), argv[1],
 			            argv[3], argv[4], argv[5], dt_compat,
-				    mcu_compat);
+				    mcu_compat, rev_compat);
 
 	usrp_sulfur_eeprom_print(ep);
 	usrp_sulfur_eeprom_to_i2c(ep, "/dev/i2c-2");
