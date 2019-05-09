@@ -31,7 +31,7 @@
 
 static const u32 USRP_EEPROM_MAGIC = 0xF008AD10;
 static const u32 USRP_EEPROM_DB_MAGIC = 0xF008AD11;
-static const u32 USRP_EEPROM_VERSION = 2;
+static const u32 USRP_EEPROM_VERSION = 3;
 static const u32 USRP_EEPROM_DB_VERSION = 2;
 static const u32 USRP_EEPROM_DEFAULT_MCU_FLAGS[4] = {0x0, 0x0, 0x0, 0x0};
 
@@ -127,7 +127,8 @@ struct usrp_sulfur_eeprom *usrp_sulfur_eeprom_new(const u32 *mcu_flags,
 						  const char *eth_addr1,
 						  const char *eth_addr2,
 						  const u16 dt_compat,
-						  const u16 mcu_compat)
+						  const u16 mcu_compat,
+						  const u16 rev_compat)
 {
 	struct usrp_sulfur_eeprom *ep;
 	int i;
@@ -173,6 +174,7 @@ struct usrp_sulfur_eeprom *usrp_sulfur_eeprom_new(const u32 *mcu_flags,
 
 	ep->dt_compat = htons(dt_compat);
 	ep->mcu_compat = htons(mcu_compat);
+	ep->rev_compat = htons(rev_compat);
 
 	ep->crc = htonl(crc32(0, &ep->magic, sizeof(*ep)-4));
 
@@ -222,9 +224,13 @@ void usrp_sulfur_eeprom_print(const struct usrp_sulfur_eeprom *ep)
 	       ep->eth_addr2[0], ep->eth_addr2[1], ep->eth_addr2[2],
 	       ep->eth_addr2[3], ep->eth_addr2[4], ep->eth_addr2[5]);
 
-	if (ntohl(ep->version) == 2)
+	if (ntohl(ep->version) >= 2)
 		printf("-- DT-Compat/MCU-Compat: %04x %04x\n",
 		       ntohs(ep->dt_compat), ntohs(ep->mcu_compat));
+
+	if (ntohl(ep->version) >= 3) {
+		printf("-- Max-REV: %04x\n", ntohs(ep->rev_compat));
+	}
 
 	printf("-- CRC: %08x (%s)\n", ntohl(ep->crc),
 	       __usrp_sulfur_eeprom_check_crc(ep) ? "matches": "doesn't match!");

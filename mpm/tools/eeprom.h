@@ -33,7 +33,7 @@ struct usrp_sulfur_eeprom {
 	u8 eth_addr1[ETH_ALEN];
 	u16 mcu_compat;
 	u8 eth_addr2[ETH_ALEN];
-	u8 __pad_2[2];
+	u16 rev_compat;
 	u32 crc;
 } __attribute__((packed));
 
@@ -63,7 +63,8 @@ struct usrp_sulfur_eeprom *usrp_sulfur_eeprom_new(const u32 *mcu_flags,
 						  const char *eth_addr1,
 						  const char *eth_addr2,
 						  const u16 dt_compat,
-						  const u16 mcu_compat);
+						  const u16 mcu_compat,
+						  const u16 rev_compat);
 
 void usrp_sulfur_eeprom_to_i2c(struct usrp_sulfur_eeprom *ep, const char *path);
 

@@ -53,6 +53,20 @@ class MboardEEPROM(object):
     - 2 bytes padding
     - 4 bytes CRC
 
+    Version 3: (FWIW MPM doesn't care about the extra bytes)
+
+    - 4x4 bytes mcu_flags -> throw them away
+    - 2 bytes hw_pid
+    - 2 bytes hw_rev (starting at 0)
+    - 8 bytes serial number (zero-terminated string of 7 characters)
+    - 6 bytes MAC address for eth0
+    - 2 bytes Devicetree compatible -> throw them away
+    - 6 bytes MAC address for eth1
+    - 2 bytes EC compatible -> throw them away
+    - 6 bytes MAC address for eth2
+    - 2 bytes rev_compat
+    - 4 bytes CRC
+
     MAC addresses are ignored here; they are read elsewhere. If we really need
     to know the MAC address of an interface, we can fish it out the raw data,
     or ask the system.
@@ -61,12 +75,14 @@ class MboardEEPROM(object):
     eeprom_header_format = (
         None, # For laziness, we start at version 1 and thus index 0 stays empty
         "!I I 16s  H H 7s 1x 24s I", # Version 1
-        "!I I 16s  H H 7s 1x 24s I", # Version 2 (Ignore the extra fields, it doesn't matter to MPM)
+        "!I I 16s  H H 7s 1x 6s H 6s H 6s 2x I", # Version 2 (Ignore the extra fields, it doesn't matter to MPM)
+        "!I I 16s  H H 7s 1x 6s H 6s H 6s H I", # Version 3 (Ignore the extra fields, it doesn't matter to MPM)
     )
     eeprom_header_keys = (
         None, # For laziness, we start at version 1 and thus index 0 stays empty
         ('magic', 'eeprom_version', 'mcu_flags', 'pid', 'rev', 'serial', 'mac_addresses', 'CRC'), # Version 1
-        ('magic', 'eeprom_version', 'mcu_flags', 'pid', 'rev', 'serial', 'mac_addresses', 'CRC')  # Version 2 (Ignore the extra fields, it doesn't matter to MPM)
+        ('magic', 'eeprom_version', 'mcu_flags', 'pid', 'rev', 'serial', 'mac_eth0', 'dt_compat', 'mac_eth1', 'ec_compat', 'mac_eth2', 'CRC'),  # Version 2 (Ignore the extra fields, it doesn't matter to MPM)
+        ('magic', 'eeprom_version', 'mcu_flags', 'pid', 'rev', 'serial', 'mac_eth0', 'dt_compat', 'mac_eth1', 'ec_compat', 'mac_eth2', 'rev_compat', 'CRC'),  # Version 3
     )
 
 class DboardEEPROM(object):
