@@ -58,6 +58,20 @@ The +3.3V is for ESD clamping purposes only and not designed to deliver high cur
 - Pin 9:   0V
 - Pin 10:  Data[2]
 
+\subsection e320_gpio_conn E320 External GPIO connector
+
+### Front Panel GPIO Connections
+
+| GPIO    | Mini HDMI (Type C)   |  HDMI (Type A)  |
+|---------|----------------------|-----------------|
+| Data[0] | Data 0+  - Pin 8     | Pin 7           |
+| Data[1] | Data 0-  - Pin 9     | Pin 9           |
+| Data[2] | Clock 0+ - Pin 11    | Pin 10          |
+| Data[3] | Clock 0- - Pin 12    | Pin 12          |
+| Data[4] | CEC      - Pin 14    | Pin 13          |
+| Data[5] | SCL      - Pin 15    | Pin 15          |
+| Data[6] | SDA      - Pin 16    | Pin 16          |
+| Data[7] | Utility  - Pin 17    | Pin 14          |
 
 \subsection xgpio_fpanel_atr Explaining ATR
 

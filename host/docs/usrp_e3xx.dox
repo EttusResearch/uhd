@@ -1178,6 +1178,40 @@ input, 10 MHz external clock reference.
 The connectors are labeled RF A and RF B and are powered by the two channels of
 AD9361 RFIC.
 
+\subsection e320_gpio Front Panel GPIO
+
+### Front Panel GPIO Connections
+
+| GPIO    | Mini HDMI (Type C)   |  HDMI (Type A)  |
+|---------|----------------------|-----------------|
+| Data[0] | Data 0+  - Pin 8     | Pin 7           |
+| Data[1] | Data 0-  - Pin 9     | Pin 9           |
+| Data[2] | Clock 0+ - Pin 11    | Pin 10          |
+| Data[3] | Clock 0- - Pin 12    | Pin 12          |
+| Data[4] | CEC      - Pin 14    | Pin 13          |
+| Data[5] | SCL      - Pin 15    | Pin 15          |
+| Data[6] | SDA      - Pin 16    | Pin 16          |
+| Data[7] | Utility  - Pin 17    | Pin 14          |
+
+\subsection e320_eeprom_flags EEPROM flags
+
+EEPROM flags can be set with
+
+    $ eeprom-set-flags 0xFLAGS
+
+where FLAGS is the hex number that you can construct with the following table of bits:
+
+| Bit | Description           |
+|-----|-----------------------|
+| 0   | Auto-boot (1=on)      |
+| 1   | Fan  (1=present)      |
+| 2   | TPM (0=present)       |
+| 3   | Enclosure (1=present) |
+
+For example, to set your device to auto-boot, with TPM, and with fans, the flag value is 0x5, so
+
+    $ eeprom-set-flags 0x5
+
 \section e3xx_regmap E3XX FPGA Register Map
 
 The following tables describe how FPGA registers are mapped into the PS.
