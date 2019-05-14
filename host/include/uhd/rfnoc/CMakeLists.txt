@@ -42,7 +42,6 @@ if(ENABLE_RFNOC)
         COMPONENT headers
     )
 endif(ENABLE_RFNOC)
-add_subdirectory(chdr)
 add_subdirectory(blocks)
 #add_subdirectory(components)
 

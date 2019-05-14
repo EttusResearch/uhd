@@ -52,7 +52,6 @@ set(test_sources
     vrt_test.cpp
     expert_test.cpp
     fe_conn_test.cpp
-    rfnoc_chdr_test.cpp
     rfnoc_node_test.cpp
 )
 
@@ -190,6 +189,19 @@ UHD_ADD_NONAPI_TEST(
     TARGET "config_parser_test.cpp"
     EXTRA_SOURCES ${CMAKE_SOURCE_DIR}/lib/utils/config_parser.cpp
 )
+
+include_directories(${CMAKE_BINARY_DIR}/lib/rfnoc/chdr/)
+include_directories(${CMAKE_SOURCE_DIR}/lib/rfnoc/chdr/)
+add_executable(rfnoc_chdr_test
+    rfnoc_chdr_test.cpp
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/chdr/chdr_types.cpp
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/chdr/chdr_packet.cpp
+)
+target_link_libraries(rfnoc_chdr_test uhd ${Boost_LIBRARIES})
+UHD_ADD_TEST(rfnoc_chdr_test rfnoc_chdr_test)
+UHD_INSTALL(TARGETS rfnoc_chdr_test RUNTIME DESTINATION ${PKG_LIB_DIR}/tests COMPONENT tests)
+
+
 
 # Careful: This is to satisfy the out-of-library build of paths.cpp. This is
 # duplicate code from lib/utils/CMakeLists.txt, and it's been simplified.

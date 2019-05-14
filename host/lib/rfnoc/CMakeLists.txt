@@ -32,6 +32,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/sink_node_ctrl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/source_block_ctrl_base.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/source_node_ctrl.cpp
+#    ${CMAKE_CURRENT_SOURCE_DIR}/mgmt_portal.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/stream_sig.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/tick_node_ctrl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/tx_stream_terminator.cpp
@@ -48,4 +49,5 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/replay_block_ctrl_impl.cpp
 )
 
+INCLUDE_SUBDIRECTORY(chdr)
 INCLUDE_SUBDIRECTORY(nocscript)

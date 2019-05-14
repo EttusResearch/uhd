@@ -4,92 +4,221 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhd/rfnoc/chdr/chdr_packet.hpp>
 #include <uhd/types/endianness.hpp>
 #include <uhd/utils/byteswap.hpp>
+#include <uhdlib/rfnoc/chdr/chdr_packet.hpp>
+#include <uhdlib/rfnoc/chdr/chdr_types.hpp>
 #include <boost/format.hpp>
 #include <boost/test/unit_test.hpp>
-#include <cstring>
-#include <cstdint>
+#include <iostream>
 
+using namespace uhd;
+using namespace uhd::rfnoc;
 using namespace uhd::rfnoc::chdr;
 
-namespace {
-    constexpr size_t MAX_BUF_SIZE = 8192;
+constexpr size_t MAX_BUF_SIZE_BYTES = 1024;
+constexpr size_t MAX_BUF_SIZE_WORDS = MAX_BUF_SIZE_BYTES / sizeof(uint64_t);
+constexpr size_t NUM_ITERS          = 5000;
 
-    // Poorman's send
-    void send(const void* from, void* to, size_t len)
-    {
-        std::memcpy(to, from, len);
+static const chdr_packet_factory chdr64_be_factory(CHDR_W_64, ENDIANNESS_BIG);
+static const chdr_packet_factory chdr256_be_factory(CHDR_W_256, ENDIANNESS_BIG);
+static const chdr_packet_factory chdr64_le_factory(CHDR_W_64, ENDIANNESS_LITTLE);
+static const chdr_packet_factory chdr256_le_factory(CHDR_W_256, ENDIANNESS_LITTLE);
+
+uint64_t rand64()
+{
+    return ((uint64_t)rand() << 32) | rand();
+}
+
+ctrl_payload populate_ctrl_payload()
+{
+    ctrl_payload pyld;
+    pyld.dst_port    = rand64() & 0x03FF;
+    pyld.src_port    = rand64() & 0x03FF;
+    pyld.is_ack      = rand64() & 0x1;
+    pyld.src_epid    = rand64() & 0xFFFF;
+    pyld.data_vtr[0] = rand64() & 0xFFFFFFFF;
+    pyld.byte_enable = rand64() & 0xF;
+    pyld.op_code     = static_cast<ctrl_opcode_t>(rand64() % 8);
+    pyld.status      = static_cast<ctrl_status_t>(rand64() % 4);
+    if (rand64() % 2 == 0) {
+        pyld.timestamp = rand64();
+    } else {
+        pyld.timestamp = boost::none;
+    }
+    return pyld;
+}
+
+strs_payload populate_strs_payload()
+{
+    strs_payload pyld;
+    pyld.src_epid         = rand64() & 0xFFFF;
+    pyld.status           = static_cast<strs_status_t>(rand64() % 4);
+    pyld.capacity_bytes   = rand64() & 0xFFFFFFFFFF;
+    pyld.capacity_pkts    = 0xFFFFFF;
+    pyld.xfer_count_bytes = rand64();
+    pyld.xfer_count_pkts  = rand64() & 0xFFFFFFFFFF;
+    pyld.buff_info        = rand64() & 0xFFFF;
+    pyld.status_info      = rand64() & 0xFFFFFFFFFFFF;
+    return pyld;
+}
+
+strc_payload populate_strc_payload()
+{
+    strc_payload pyld;
+    pyld.src_epid  = rand64() & 0xFFFF;
+    pyld.op_code   = static_cast<strc_op_code_t>(rand64() % 3);
+    pyld.op_data   = rand64() & 0xF;
+    pyld.num_pkts  = rand64() & 0xFFFFFFFFFF;
+    pyld.num_bytes = rand64();
+    return pyld;
+}
+
+void byte_swap(uint64_t* buff)
+{
+    for (size_t i = 0; i < MAX_BUF_SIZE_WORDS; i++) {
+        *(buff + i) = uhd::byteswap(*(buff + i));
     }
 }
 
-uint8_t send_packet_buff[MAX_BUF_SIZE];
-uint8_t recv_packet_buff[MAX_BUF_SIZE];
-
-
-template <size_t chdr_w, uhd::endianness_t endianness>
-void test_loopback(packet_type_t pkt_type,
-    uint16_t dst_epid,
-    uint8_t flags,
-    uint16_t num_md,
-    size_t num_payload)
+BOOST_AUTO_TEST_CASE(chdr_ctrl_packet_no_swap_64)
 {
-    // Clear buffers
-    std::memset(send_packet_buff, 0, MAX_BUF_SIZE);
-    std::memset(recv_packet_buff, 0, MAX_BUF_SIZE);
+    uint64_t buff[MAX_BUF_SIZE_WORDS];
 
-    auto send_header = chdr_header<chdr_w>(pkt_type);
-    send_header.set_dst_epid(dst_epid);
-    send_header.set_flags(flags);
-    send_header.set_packet_size(num_payload, num_md);
-    chdr_packet<chdr_w, endianness> send_chdr_packet(send_header, send_packet_buff);
-    //chdr_packet<64, uhd::endianness_t::ENDIANNESS_LITTLE> send_chdr_packet(send_header, send_packet_buff);
-    uint8_t* md_buff = send_chdr_packet.template metadata_ptr_of_type<uint8_t>();
-    //* start filling in the meta data
-    for (size_t i = 0; i < send_chdr_packet.get_header().get_num_bytes_metadata(); i++) {
-        md_buff[i] = i + 1;
-    }
-    auto* pay_load = send_chdr_packet.template payload_ptr_of_type<uint8_t>();
-    //* start filling in the pay load
-    for (size_t i = 0; i < send_chdr_packet.get_header().get_num_bytes_payload(); i++) {
-        pay_load[i] = 2 * (i + 1);
-    }
-    send(send_packet_buff, recv_packet_buff, MAX_BUF_SIZE);
+    chdr_ctrl_packet::uptr tx_pkt  = chdr64_be_factory.make_ctrl();
+    chdr_ctrl_packet::cuptr rx_pkt = chdr64_be_factory.make_ctrl();
 
-    const chdr_packet<chdr_w, endianness> recv_chdr_packet(recv_packet_buff);
-    BOOST_CHECK_EQUAL((num_md + num_payload + 1
-                          + (pkt_type == packet_type_t::PACKET_TYPE_DATA_WITH_TS ? 1 : 0))
-                          * (chdr_w / 8),
-        recv_chdr_packet.get_header().get_length());
-    BOOST_CHECK_EQUAL(flags, recv_chdr_packet.get_header().get_flags());
-    BOOST_CHECK_EQUAL(dst_epid, recv_chdr_packet.get_header().get_dst_epid());
-    BOOST_CHECK_EQUAL(num_md, recv_chdr_packet.get_header().get_num_metadata());
-    BOOST_CHECK_EQUAL(num_payload, recv_chdr_packet.get_header().get_num_words_payload());
-    BOOST_CHECK(pkt_type == recv_chdr_packet.get_header().get_pkt_type());
-    const auto* out_md_buff = recv_chdr_packet.template metadata_ptr_of_type<uint8_t>();
-    for (size_t i = 0; i < recv_chdr_packet.get_header().get_num_bytes_metadata(); i++) {
-        BOOST_CHECK_EQUAL(md_buff[i], out_md_buff[i]);
-    }
-    const auto* out_payload = recv_chdr_packet.template payload_ptr_of_type<uint8_t>();
-    for (size_t i = 0; i < recv_chdr_packet.get_header().get_num_bytes_payload(); i++) {
-        BOOST_CHECK_EQUAL(pay_load[i], out_payload[i]);
+    for (size_t i = 0; i < NUM_ITERS; i++) {
+        chdr_header hdr   = chdr_header(rand64());
+        ctrl_payload pyld = populate_ctrl_payload();
+
+        memset(buff, 0, MAX_BUF_SIZE_BYTES);
+        tx_pkt->refresh(buff, hdr, pyld);
+        BOOST_CHECK(tx_pkt->get_chdr_header() == hdr);
+        BOOST_CHECK(tx_pkt->get_payload() == pyld);
+
+        rx_pkt->refresh(buff);
+        BOOST_CHECK(rx_pkt->get_chdr_header() == hdr);
+        BOOST_CHECK(rx_pkt->get_payload() == pyld);
+
+        std::cout << pyld.to_string();
     }
 }
 
-BOOST_AUTO_TEST_CASE(simple_read_if_chdr_pkt)
+BOOST_AUTO_TEST_CASE(chdr_ctrl_packet_no_swap_256)
 {
-    constexpr size_t num_payload           = 5; // in words
-    constexpr packet_type_t pkt_type       = packet_type_t::PACKET_TYPE_DATA_NO_TS;
-    constexpr uint16_t num_md              = 0x5A; // 90
-    constexpr uint16_t dst_epid            = 0xCAFE;
-    constexpr uint8_t flags                = 0x3A;
+    uint64_t buff[MAX_BUF_SIZE_WORDS];
 
-    test_loopback<64, uhd::endianness_t::ENDIANNESS_LITTLE>(pkt_type, dst_epid, flags, num_md, num_payload);
-    test_loopback<128, uhd::endianness_t::ENDIANNESS_LITTLE>(pkt_type, dst_epid, flags, num_md, num_payload);
-    test_loopback<256, uhd::endianness_t::ENDIANNESS_LITTLE>(pkt_type, dst_epid, flags, num_md, num_payload);
+    chdr_ctrl_packet::uptr tx_pkt  = chdr256_be_factory.make_ctrl();
+    chdr_ctrl_packet::cuptr rx_pkt = chdr256_be_factory.make_ctrl();
 
-    test_loopback<64, uhd::endianness_t::ENDIANNESS_BIG>(pkt_type, dst_epid, flags, num_md, num_payload);
-    test_loopback<128, uhd::endianness_t::ENDIANNESS_BIG>(pkt_type, dst_epid, flags, num_md, num_payload);
-    test_loopback<256, uhd::endianness_t::ENDIANNESS_BIG>(pkt_type, dst_epid, flags, num_md, num_payload);
+    for (size_t i = 0; i < NUM_ITERS; i++) {
+        chdr_header hdr   = chdr_header(rand64());
+        ctrl_payload pyld = populate_ctrl_payload();
+
+        memset(buff, 0, MAX_BUF_SIZE_BYTES);
+        tx_pkt->refresh(buff, hdr, pyld);
+        BOOST_CHECK(tx_pkt->get_chdr_header() == hdr);
+        BOOST_CHECK(tx_pkt->get_payload() == pyld);
+
+        rx_pkt->refresh(buff);
+        BOOST_CHECK(rx_pkt->get_chdr_header() == hdr);
+        BOOST_CHECK(rx_pkt->get_payload() == pyld);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(chdr_ctrl_packet_swap_64)
+{
+    uint64_t buff[MAX_BUF_SIZE_WORDS];
+
+    chdr_ctrl_packet::uptr tx_pkt  = chdr64_be_factory.make_ctrl();
+    chdr_ctrl_packet::cuptr rx_pkt = chdr64_le_factory.make_ctrl();
+
+    for (size_t i = 0; i < NUM_ITERS; i++) {
+        chdr_header hdr   = chdr_header(rand64());
+        ctrl_payload pyld = populate_ctrl_payload();
+
+        memset(buff, 0, MAX_BUF_SIZE_BYTES);
+        tx_pkt->refresh(buff, hdr, pyld);
+        BOOST_CHECK(tx_pkt->get_chdr_header() == hdr);
+        BOOST_CHECK(tx_pkt->get_payload() == pyld);
+
+        byte_swap(buff);
+
+        rx_pkt->refresh(buff);
+        BOOST_CHECK(rx_pkt->get_chdr_header() == hdr);
+        BOOST_CHECK(rx_pkt->get_payload() == pyld);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(chdr_ctrl_packet_swap_256)
+{
+    uint64_t buff[MAX_BUF_SIZE_WORDS];
+
+    chdr_ctrl_packet::uptr tx_pkt  = chdr256_be_factory.make_ctrl();
+    chdr_ctrl_packet::cuptr rx_pkt = chdr256_le_factory.make_ctrl();
+
+    for (size_t i = 0; i < NUM_ITERS; i++) {
+        chdr_header hdr   = chdr_header(rand64());
+        ctrl_payload pyld = populate_ctrl_payload();
+
+        memset(buff, 0, MAX_BUF_SIZE_BYTES);
+        tx_pkt->refresh(buff, hdr, pyld);
+        BOOST_CHECK(tx_pkt->get_chdr_header() == hdr);
+        BOOST_CHECK(tx_pkt->get_payload() == pyld);
+
+        byte_swap(buff);
+
+        rx_pkt->refresh(buff);
+        BOOST_CHECK(rx_pkt->get_chdr_header() == hdr);
+        BOOST_CHECK(rx_pkt->get_payload() == pyld);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(chdr_strs_packet_no_swap_64)
+{
+    uint64_t buff[MAX_BUF_SIZE_WORDS];
+
+    chdr_strs_packet::uptr tx_pkt  = chdr64_be_factory.make_strs();
+    chdr_strs_packet::cuptr rx_pkt = chdr64_be_factory.make_strs();
+
+    for (size_t i = 0; i < NUM_ITERS; i++) {
+        chdr_header hdr   = chdr_header(rand64());
+        strs_payload pyld = populate_strs_payload();
+
+        memset(buff, 0, MAX_BUF_SIZE_BYTES);
+        tx_pkt->refresh(buff, hdr, pyld);
+        BOOST_CHECK(tx_pkt->get_chdr_header() == hdr);
+        BOOST_CHECK(tx_pkt->get_payload() == pyld);
+
+        rx_pkt->refresh(buff);
+        BOOST_CHECK(rx_pkt->get_chdr_header() == hdr);
+        BOOST_CHECK(rx_pkt->get_payload() == pyld);
+
+        std::cout << pyld.to_string();
+    }
+}
+
+BOOST_AUTO_TEST_CASE(chdr_strc_packet_no_swap_64)
+{
+    uint64_t buff[MAX_BUF_SIZE_WORDS];
+
+    chdr_strc_packet::uptr tx_pkt  = chdr64_be_factory.make_strc();
+    chdr_strc_packet::cuptr rx_pkt = chdr64_be_factory.make_strc();
+
+    for (size_t i = 0; i < NUM_ITERS; i++) {
+        chdr_header hdr   = chdr_header(rand64());
+        strc_payload pyld = populate_strc_payload();
+
+        memset(buff, 0, MAX_BUF_SIZE_BYTES);
+        tx_pkt->refresh(buff, hdr, pyld);
+        BOOST_CHECK(tx_pkt->get_chdr_header() == hdr);
+        BOOST_CHECK(tx_pkt->get_payload() == pyld);
+
+        rx_pkt->refresh(buff);
+        BOOST_CHECK(rx_pkt->get_chdr_header() == hdr);
+        BOOST_CHECK(rx_pkt->get_payload() == pyld);
+
+        std::cout << pyld.to_string();
+    }
 }
