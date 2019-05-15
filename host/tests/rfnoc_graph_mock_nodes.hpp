@@ -7,7 +7,9 @@
 #ifndef INCLUDED_LIBUHD_TESTS_MOCK_NODES_HPP
 #define INCLUDED_LIBUHD_TESTS_MOCK_NODES_HPP
 
+#include <uhd/rfnoc/defaults.hpp>
 #include <uhd/rfnoc/node.hpp>
+#include <uhd/types/stream_cmd.hpp>
 
 using namespace uhd::rfnoc;
 
@@ -82,9 +84,37 @@ public:
                 rssi_resolver_count++;
                 _rssi = static_cast<double>(rssi_resolver_count);
             });
+
+
+        set_action_forwarding_policy(forwarding_policy_t::DROP);
+
+        register_action_handler(
+            "stream_cmd", [this](const res_source_info& src, action_info::sptr action) {
+                UHD_ASSERT_THROW(action->key == "stream_cmd");
+                const std::string cmd(action->payload.begin(), action->payload.end());
+                UHD_LOG_INFO(get_unique_id(),
+                    "Received stream command: " << cmd << " to " << src.to_string());
+                if (cmd == "START") {
+                    UHD_LOG_INFO(get_unique_id(), "Starting Stream!");
+                } else if (cmd == "STOP") {
+                    UHD_LOG_INFO(get_unique_id(), "Stopping Stream!");
+                } else {
+                    this->last_num_samps = std::stoul(cmd);
+                    UHD_LOG_INFO(get_unique_id(),
+                        "Streaming num samps: " <<  this->last_num_samps);
+                }
+            });
     }
 
-    std::string get_unique_id() const { return "MOCK_RADIO" + std::to_string(_radio_idx); }
+    void update_fwd_policy(forwarding_policy_t policy)
+    {
+        set_action_forwarding_policy(policy);
+    }
+
+    std::string get_unique_id() const
+    {
+        return "MOCK_RADIO" + std::to_string(_radio_idx);
+    }
 
     size_t get_num_input_ports() const
     {
@@ -100,6 +130,8 @@ public:
     size_t rssi_resolver_count = 0;
     bool disable_samp_out_resolver = false;
     double force_samp_out_value = 23e6;
+
+    size_t last_num_samps = 0;
 
 private:
     const size_t _radio_idx;
@@ -162,6 +194,31 @@ public:
                 decim = coerce_decim(int(samp_rate_in.get() / samp_rate_out.get()));
                 samp_rate_in = samp_rate_out.get() * decim.get();
             });
+
+        register_action_handler(
+            "stream_cmd", [this](const res_source_info& src, action_info::sptr action) {
+                res_source_info dst_edge{
+                    res_source_info::invert_edge(src.type), src.instance};
+                auto new_action = action_info::make(action->key);
+                std::string cmd(action->payload.begin(), action->payload.end());
+                if (cmd == "START" || cmd == "STOP") {
+                    new_action->payload = action->payload;
+                } else {
+                    unsigned long long num_samps = std::stoull(cmd);
+                    if (src.type == res_source_info::OUTPUT_EDGE) {
+                        num_samps *= _decim.get();
+                    } else {
+                        num_samps /= _decim.get();
+                    }
+                    std::string new_cmd = std::to_string(num_samps);
+                    new_action->payload.insert(
+                        new_action->payload.begin(), new_cmd.begin(), new_cmd.end());
+                }
+
+                UHD_LOG_INFO(get_unique_id(),
+                    "Forwarding stream_cmd, decim is " << _decim.get());
+                post_action(dst_edge, new_action);
+            });
     }
 
     std::string get_unique_id() const { return "MOCK_DDC"; }
@@ -203,7 +260,7 @@ private:
 
 /*! FIFO
  *
- * Not much here -- we use it to test dynamic prop forwarding.
+ * Not much here -- we use it to test dynamic prop and action forwarding.
  */
 class mock_fifo_t : public node_t
 {
@@ -211,6 +268,7 @@ public:
     mock_fifo_t(const size_t num_ports) : _num_ports(num_ports)
     {
         set_prop_forwarding_policy(forwarding_policy_t::ONE_TO_ONE);
+        set_action_forwarding_policy(forwarding_policy_t::ONE_TO_ONE);
     }
 
     std::string get_unique_id() const { return "MOCK_FIFO"; }
@@ -227,6 +285,66 @@ public:
 
 
 private:
+    const size_t _num_ports;
+};
+
+/*! Streamer
+ *
+ * Not much here -- we use it to test dynamic prop and action forwarding.
+ */
+class mock_streamer_t : public node_t
+{
+public:
+    mock_streamer_t(const size_t num_ports) : _num_ports(num_ports)
+    {
+        set_prop_forwarding_policy(forwarding_policy_t::DROP);
+        set_action_forwarding_policy(forwarding_policy_t::DROP);
+        register_property(&_samp_rate_user);
+        register_property(&_samp_rate_in);
+        add_property_resolver({&_samp_rate_user}, {&_samp_rate_in}, [this]() {
+            UHD_LOG_INFO(get_unique_id(), "Calling resolver for `samp_rate_user'...");
+            _samp_rate_in = _samp_rate_user.get();
+        });
+        add_property_resolver({&_samp_rate_in}, {}, [this]() {
+            UHD_LOG_INFO(get_unique_id(), "Calling resolver for `samp_rate_in'...");
+            // nop
+        });
+    }
+
+    std::string get_unique_id() const
+    {
+        return "MOCK_STREAMER";
+    }
+
+    size_t get_num_input_ports() const
+    {
+        return _num_ports;
+    }
+
+    size_t get_num_output_ports() const
+    {
+        return _num_ports;
+    }
+
+    void issue_stream_cmd(uhd::stream_cmd_t stream_cmd, const size_t chan)
+    {
+        std::string cmd =
+            stream_cmd.stream_mode == uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS
+                ? "START"
+                : stream_cmd.stream_mode == uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS
+                      ? "STOP"
+                      : std::to_string(stream_cmd.num_samps);
+        auto scmd = action_info::make("stream_cmd");
+        scmd->payload.insert(scmd->payload.begin(), cmd.begin(), cmd.end());
+
+        post_action({res_source_info::INPUT_EDGE, chan}, scmd);
+    }
+
+private:
+    property_t<double> _samp_rate_user{
+        "samp_rate", 1e6, {res_source_info::USER}};
+    property_t<double> _samp_rate_in{
+        "samp_rate", 1e6, {res_source_info::INPUT_EDGE}};
     const size_t _num_ports;
 };
 

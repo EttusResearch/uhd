@@ -13,6 +13,7 @@ if(ENABLE_RFNOC)
         blockdef.hpp
         block_id.hpp
         constants.hpp
+        defaults.hpp
         dirtifier.hpp
         graph.hpp
         node_ctrl_base.hpp

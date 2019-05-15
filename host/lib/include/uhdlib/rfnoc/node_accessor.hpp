@@ -7,7 +7,9 @@
 #ifndef INCLUDED_LIBUHD_NODE_ACCESSOR_HPP
 #define INCLUDED_LIBUHD_NODE_ACCESSOR_HPP
 
+#include <uhd/rfnoc/actions.hpp>
 #include <uhd/rfnoc/node.hpp>
+#include <uhd/rfnoc/res_source_info.hpp>
 #include <functional>
 
 namespace uhd { namespace rfnoc {
@@ -76,6 +78,24 @@ public:
         node_t* dst_node, const size_t dst_port, property_base_t* incoming_prop)
     {
         dst_node->forward_edge_property(incoming_prop, dst_port);
+    }
+
+    /*! Set post action callback for the node
+     *
+     * See node_t::set_post_action_callback() for details.
+     */
+    void set_post_action_callback(node_t* node, node_t::action_handler_t&& post_handler)
+    {
+        node->set_post_action_callback(std::move(post_handler));
+    }
+
+    /*! Send an action to \p node
+     *
+     * This will call node_t::receive_action() (see that for details).
+     */
+    void send_action(node_t* node, const res_source_info& port_info, action_info::sptr action)
+    {
+        node->receive_action(port_info, action);
     }
 };
 

@@ -7,13 +7,14 @@
 #ifndef INCLUDED_LIBUHD_RFNOC_NODE_HPP
 #define INCLUDED_LIBUHD_RFNOC_NODE_HPP
 
-#include <uhd/rfnoc/property.hpp>
+#include <uhd/rfnoc/actions.hpp>
 #include <uhd/rfnoc/dirtifier.hpp>
-#include <uhd/utils/scope_exit.hpp>
+#include <uhd/rfnoc/property.hpp>
 #include <uhd/utils/log.hpp>
-#include <boost/graph/adjacency_list.hpp>
+#include <uhd/utils/scope_exit.hpp>
 #include <unordered_map>
 #include <unordered_set>
+#include <boost/graph/adjacency_list.hpp>
 #include <functional>
 #include <memory>
 #include <mutex>
@@ -34,6 +35,8 @@ class UHD_API node_t
 public:
     using resolver_fn_t = std::function<void(void)>;
     using resolve_callback_t = std::function<void(void)>;
+    using action_handler_t =
+        std::function<void(const res_source_info&, action_info::sptr)>;
 
     //! Types of property/action forwarding for those not defined by the block itself
     enum class forwarding_policy_t {
@@ -134,11 +137,6 @@ public:
     const prop_data_t& get_property(
         const std::string& id, const size_t instance = 0) /* mutable */;
 
-    /******************************************
-     * Action Specific
-     ******************************************/
-    // TBW
-
 protected:
     /******************************************
      * Internal Registration Functions
@@ -207,20 +205,58 @@ protected:
     void set_prop_forwarding_policy(
         forwarding_policy_t policy, const std::string& prop_id = "");
 
-    /*! Handle a request to perform an action. The default action handler
-     *  ignores user action and forwards port actions.
-     *
-     * \param handler The function that is called to handle the action
-     */
-    // void register_action_handler(std::function<
-    // void(const action_info& info, const res_source_info& src)
-    //> handler);
-
     /******************************************
      * Internal action forwarding
      ******************************************/
-    // TBW
-    //
+    /*! Handle a request to perform an action. The default action handler
+     *  ignores user action and forwards port actions.
+     *
+     * \param id The action ID for which this action handler is valid. The first
+     *           argument to the handler will be a uhd::rfnoc::action_info::sptr,
+     *           and its `id` value will match this parameter (unless the same
+     *           action handler is registered multiple times).
+     *           If this function was previously called with the same `id` value,
+     *           the previous action handler is overwritten.
+     * \param handler The function that is called to handle the action. It needs
+     *                to accept a uhd::rfnoc::res_source_info object, and a
+     *                uhd::rfnoc::action_info::sptr.
+     */
+    void register_action_handler(const std::string& id, action_handler_t&& handler);
+
+    /*! Set an action forwarding policy
+     *
+     * Whenever this node is asked to handle an action that is not registered,
+     * this is how the node knows what to do with the action. For example, the
+     * FIFO block controller will almost always want to pass on actions to
+     * the next block.
+     *
+     * This method can be called more than once, and it will overwrite previous
+     * policies.
+     * Typically, this function should only ever be called from within the
+     * constructor.
+     *
+     * \param policy The policy that is applied (see also forwarding_policy_t).
+     * \param action_key The action key that this forwarding policy is applied
+     *                   to. If \p action_key is not given, it will apply to all
+     *                   properties, unless a different policy was given with a
+     *                   matching key.
+     */
+    void set_action_forwarding_policy(
+        forwarding_policy_t policy, const std::string& action_key = "");
+
+    /*! Post an action to an up- or downstream node in the graph.
+     *
+     * If the action is posted to an edge which is not connected, the action
+     * is lost.
+     *
+     * \param edge_info The edge to which this action is posted. If
+     *                  edge_info.type == INPUT_EDGE, the that means the action
+     *                  will be posted to an upstream node, on port edge_info.instance.
+     * \param action A reference to the action info object.
+     * \throws uhd::runtime_error if edge_info is not either INPUT_EDGE or OUTPUT_EDGE
+     */
+    void post_action(const res_source_info& edge_info, action_info::sptr action);
+
 
     //! A dirtifyer object, useful for properties that always need updating.
     static dirtifier_t ALWAYS_DIRTY;
@@ -369,6 +405,27 @@ private:
         property_base_t* incoming_prop, const size_t incoming_port);
 
     /**************************************************************************
+     * Action-Related Methods
+     *************************************************************************/
+    /*! Sets a callback that this node can call if it wants to post actions to
+     * other nodes.
+     */
+    void set_post_action_callback(action_handler_t&& post_handler)
+    {
+        _post_action_cb = std::move(post_handler);
+    }
+
+    /*! This function gets called by the framework when there's a new action for
+     * this node. It will then dispatch appropriate action handlers.
+     *
+     * \param src_info Tells us on which edge this came in. If
+     *                 src_info.type == INPUT_EDGE, then we received this action
+     *                 on an input edge.
+     * \param action A reference to the action object
+     */
+    void receive_action(const res_source_info& src_info, action_info::sptr action);
+
+    /**************************************************************************
      * Private helpers
      *************************************************************************/
     //! Return true if this node has a port that matches \p port_info
@@ -414,6 +471,23 @@ private:
     std::unordered_map<std::string, forwarding_policy_t> _prop_fwd_policies{{
         "", forwarding_policy_t::ONE_TO_ONE}};
 
+    /**************************************************************************
+     * Action-related attributes
+     *************************************************************************/
+    mutable std::mutex _action_mutex;
+
+    //! Storage for action handlers
+    std::unordered_map<std::string, action_handler_t> _action_handlers;
+
+    //! Default action forwarding policies
+    std::unordered_map<std::string, forwarding_policy_t> _action_fwd_policies{{
+        "", forwarding_policy_t::ONE_TO_ONE}};
+
+    //! Callback which allows us to post actions to other nodes in the graph
+    //
+    // The default callback will simply drop actions
+    action_handler_t _post_action_cb = [](const res_source_info&,
+                                           action_info::sptr) { /* nop */ };
 }; // class node_t
 
 }} /* namespace uhd::rfnoc */

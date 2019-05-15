@@ -113,6 +113,27 @@ void node_t::set_prop_forwarding_policy(
     _prop_fwd_policies[prop_id] = policy;
 }
 
+void node_t::register_action_handler(const std::string& id, action_handler_t&& handler)
+{
+    if (_action_handlers.count(id)) {
+        _action_handlers.erase(id);
+    }
+    _action_handlers.emplace(id, std::move(handler));
+}
+
+void node_t::set_action_forwarding_policy(
+    node_t::forwarding_policy_t policy, const std::string& action_key)
+{
+    _action_fwd_policies[action_key] = policy;
+}
+
+void node_t::post_action(
+    const res_source_info& edge_info,
+    action_info::sptr action)
+{
+    _post_action_cb(edge_info, action);
+}
+
 /*** Private methods *********************************************************/
 property_base_t* node_t::_find_property(
     res_source_info src_info, const std::string& id) const
@@ -401,6 +422,72 @@ void node_t::forward_edge_property(
 
     prop_accessor_t prop_accessor{};
     prop_accessor.forward<false>(incoming_prop, local_prop);
+}
+
+void node_t::receive_action(const res_source_info& src_info, action_info::sptr action)
+{
+    std::lock_guard<std::mutex> l(_action_mutex);
+    // See if the user defined an action handler for us:
+    if (_action_handlers.count(action->key)) {
+        _action_handlers.at(action->key)(src_info, action);
+        return;
+    }
+
+    // Otherwise, we need to figure out the correct default action handling:
+    const auto fwd_policy = [&](const std::string& id) {
+        if (_action_fwd_policies.count(id)) {
+            return _action_fwd_policies.at(id);
+        }
+        return _action_fwd_policies.at("");
+    }(action->key);
+
+    // Now implement custom forwarding for all forwarding policies:
+    if (fwd_policy == forwarding_policy_t::DROP) {
+        UHD_LOG_TRACE(
+            get_unique_id(), "Dropping action " << action->key);
+    }
+    if (fwd_policy == forwarding_policy_t::ONE_TO_ONE) {
+        UHD_LOG_TRACE(
+            get_unique_id(), "Forwarding action " << action->key << " to opposite port");
+        const res_source_info dst_info{
+            res_source_info::invert_edge(src_info.type), src_info.instance};
+        if (_has_port(dst_info)) {
+            post_action(dst_info, action);
+        }
+    }
+    if (fwd_policy == forwarding_policy_t::ONE_TO_FAN) {
+        UHD_LOG_TRACE(get_unique_id(),
+            "Forwarding action " << action->key << " to all opposite ports");
+        const auto new_edge_type = res_source_info::invert_edge(src_info.type);
+        const size_t num_ports   = new_edge_type == res_source_info::INPUT_EDGE
+                                     ? get_num_input_ports()
+                                     : get_num_output_ports();
+        for (size_t i = 0; i < num_ports; i++) {
+            post_action({new_edge_type, i}, action);
+        }
+    }
+    if (fwd_policy == forwarding_policy_t::ONE_TO_ALL
+        || fwd_policy == forwarding_policy_t::ONE_TO_ALL_IN) {
+        UHD_LOG_TRACE(get_unique_id(),
+            "Forwarding action " << action->key << " to all input ports");
+        for (size_t i = 0; i < get_num_input_ports(); i++) {
+            if (src_info.type == res_source_info::INPUT_EDGE && i == src_info.instance) {
+                continue;
+            }
+            post_action({res_source_info::INPUT_EDGE, i}, action);
+        }
+    }
+    if (fwd_policy == forwarding_policy_t::ONE_TO_ALL
+        || fwd_policy == forwarding_policy_t::ONE_TO_ALL_OUT) {
+        UHD_LOG_TRACE(get_unique_id(),
+            "Forwarding action " << action->key << " to all output ports");
+        for (size_t i = 0; i < get_num_output_ports(); i++) {
+            if (src_info.type == res_source_info::OUTPUT_EDGE && i == src_info.instance) {
+                continue;
+            }
+            post_action({res_source_info::OUTPUT_EDGE, i}, action);
+        }
+    }
 }
 
 bool node_t::_has_port(const res_source_info& port_info) const

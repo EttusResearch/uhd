@@ -246,6 +246,19 @@ UHD_INSTALL(TARGETS
     COMPONENT tests
 )
 
+add_executable(actions_test
+    actions_test.cpp
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/graph.cpp
+)
+target_link_libraries(actions_test uhd ${Boost_LIBRARIES})
+UHD_ADD_TEST(actions_test actions_test)
+UHD_INSTALL(TARGETS
+    actions_test
+    RUNTIME
+    DESTINATION ${PKG_LIB_DIR}/tests
+    COMPONENT tests
+)
+
 ########################################################################
 # demo of a loadable module
 ########################################################################

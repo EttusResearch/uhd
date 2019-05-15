@@ -7,10 +7,12 @@
 #ifndef INCLUDED_LIBUHD_GRAPH_HPP
 #define INCLUDED_LIBUHD_GRAPH_HPP
 
+#include <uhd/rfnoc/actions.hpp>
 #include <uhd/rfnoc/node.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <tuple>
 #include <memory>
+#include <deque>
 
 namespace uhd { namespace rfnoc {
 
@@ -192,6 +194,39 @@ private:
     void resolve_all_properties();
 
     /**************************************************************************
+     * Action API
+     *************************************************************************/
+    /*! Entrypoint for action delivery
+     *
+     * When a node invokes its node_t::post_action() function, eventually that
+     * call lands here. This function acts as a mailman, that is, it figures out
+     * which edge on which node is supposed to receive this action, and delivers
+     * it via the node_t::receive_action() method.
+     * Note since this is private, nodes can't directly access this functions.
+     * We provide a lambda to nodes for that purpose.
+     *
+     * When an action is posted, that may trigger further actions. In order not
+     * to go into infinite recursion, this function is also responsible for
+     * serializing the actions. Even so, it is possible that, due to
+     * misconfiguration of nodes and their behaviour, a cascade of actions is
+     * posted that never stops. Therefore, another responsibility of this
+     * function is to track the number of follow-up messages sent, and terminate
+     * an infinite cycle of messages.
+     *
+     * \param src_node Reference to the node where the post_action() call is
+     *                 originating from
+     * \param src_edge The edge on that node where the action is being posted to.
+     *                 Note that its the edge from the node's point of view, so
+     *                 if src_edge.type == OUTPUT_EDGE, then the node posted to
+     *                 its output edge.
+     *
+     * \throws uhd::runtime_error if it has to terminate a infinite cascade of
+     *         actions
+     */
+    void enqueue_action(
+        node_ref_t src_node, res_source_info src_edge, action_info::sptr action);
+
+    /**************************************************************************
      * Private graph helpers
      *************************************************************************/
     template <typename VertexContainerType>
@@ -225,7 +260,7 @@ private:
     /*! Find the neighbouring node for \p origin based on \p port_info
      *
      * This function will check port_info to identify the port number and the
-     * direction (input or output) from \p port_info. It will then return a
+     * direction (input or output) from \p origin. It will then return a
      * reference to the node that is attached to the node \p origin if such a
      * node exists, and the edge info.
      *
@@ -263,6 +298,18 @@ private:
     // descriptor without having to traverse the graph. The rfnoc_graph_t is not
     // efficient for lookups of vertices.
     node_map_t _node_map;
+
+    using action_tuple_t = std::tuple<node_ref_t, res_source_info, action_info::sptr>;
+
+    //! FIFO for incoming actions
+    std::deque<action_tuple_t> _action_queue;
+
+    //! Flag to ensure serialized handling of actions
+    std::atomic_flag _action_handling_ongoing;
+
+    //! Mutex for to avoid the user from sending one message before another
+    // message is sent
+    std::recursive_mutex _action_mutex;
 };
 
 
