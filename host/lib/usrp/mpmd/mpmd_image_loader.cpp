@@ -169,9 +169,13 @@ static bool mpmd_image_loader(const image_loader::image_loader_args_t& image_loa
                 }(); // generate_fpga_type lambda function
                 UHD_LOG_TRACE("MPMD IMAGE LOADER", "FPGA type: " << fpga_type);
 
-                if (!dev_addr.has_key("product") or fpga_type == "") {
+                if (!dev_addr.has_key("product")) {
                     throw uhd::runtime_error(
                         "Found a device but could not auto-generate an image filename.");
+                } else if (fpga_type == "") {
+                    return find_image_path(
+                        str(boost::format("usrp_%s_fpga.bit")
+                            % (boost::algorithm::to_lower_copy(dev_addr["product"]))));
                 } else {
                     return find_image_path(
                         str(boost::format("usrp_%s_fpga_%s.bit")
