@@ -104,73 +104,86 @@ foreach(benchmark_source ${benchmark_sources})
     UHD_INSTALL(TARGETS ${benchmark_name} RUNTIME DESTINATION ${PKG_LIB_DIR}/tests COMPONENT tests)
 endforeach(benchmark_source)
 
-# Other tests that don't directly link with libuhd: (TODO find a nicer way to do this)
+
+###############################################################################
+# Add a unit test that requires linkage to internal parts of UHD which are not
+# API
+###############################################################################
+macro(UHD_ADD_NONAPI_TEST)
+    cmake_parse_arguments(test "NOAUTORUN" "TARGET" "INCLUDE_DIRS;EXTRA_SOURCES;EXTRA_LIBS" ${ARGN})
+    get_filename_component(test_name ${test_TARGET} NAME_WE)
+    include_directories(${test_INCLUDE_DIRS})
+    add_executable(${test_name} ${test_TARGET} ${test_EXTRA_SOURCES})
+    target_link_libraries(${test_name} uhd ${Boost_LIBRARIES})
+    if(NOT ${test_NOAUTORUN})
+        UHD_ADD_TEST(${test_name} ${test_name})
+    endif(NOT ${test_NOAUTORUN})
+    UHD_INSTALL(TARGETS ${test_name}
+        RUNTIME
+        DESTINATION ${PKG_LIB_DIR}/tests
+        COMPONENT tests)
+endmacro(UHD_ADD_NONAPI_TEST)
+
+###############################################################################
+# Now add all unit tests that require special linkage
+###############################################################################
 if(ENABLE_DPDK)
-    include_directories(${CMAKE_BINARY_DIR}/lib/transport/)
-    include_directories(${CMAKE_SOURCE_DIR}/lib/transport/)
     find_package(DPDK)
-    include_directories(${DPDK_INCLUDE_DIR})
-    add_executable(dpdk_test
-        dpdk_test.cpp
+    UHD_ADD_NONAPI_TEST(
+        TARGET "dpdk_test.cpp"
+        EXTRA_SOURCES
         ${CMAKE_SOURCE_DIR}/lib/utils/config_parser.cpp
         ${CMAKE_SOURCE_DIR}/lib/utils/paths.cpp
         ${CMAKE_SOURCE_DIR}/lib/utils/pathslib.cpp
         ${CMAKE_SOURCE_DIR}/lib/utils/prefs.cpp
         ${CMAKE_SOURCE_DIR}/lib/transport/dpdk_zero_copy.cpp
+        INCLUDE_DIRS
+        ${DPDK_INCLUDE_DIR}
+        ${CMAKE_BINARY_DIR}/lib/transport/
+        ${CMAKE_SOURCE_DIR}/lib/transport/
+        EXTRA_LIBS ${DPDK_LIBRARIES}
+        NOAUTORUN # Don't register for auto-run, it requires special config
     )
-    target_link_libraries(dpdk_test uhd ${Boost_LIBRARIES} ${DPDK_LIBRARIES})
-    # For the DPDK test, don't automatically run (requires specific config)
-    UHD_INSTALL(TARGETS dpdk_test RUNTIME DESTINATION ${PKG_LIB_DIR}/tests COMPONENT tests)
 ENDIF(ENABLE_DPDK)
 
-include_directories(${CMAKE_BINARY_DIR}/lib/rfnoc/nocscript/)
-include_directories(${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/)
-add_executable(nocscript_expr_test
-    nocscript_expr_test.cpp
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/expression.cpp
+UHD_ADD_NONAPI_TEST(
+    TARGET "nocscript_expr_test.cpp"
+    EXTRA_SOURCES
+    "${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/expression.cpp"
+    INCLUDE_DIRS
+    ${CMAKE_BINARY_DIR}/lib/rfnoc/nocscript/
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/
 )
-target_link_libraries(nocscript_expr_test uhd ${Boost_LIBRARIES})
-UHD_ADD_TEST(nocscript_expr_test nocscript_expr_test)
-UHD_INSTALL(TARGETS nocscript_expr_test RUNTIME DESTINATION ${PKG_LIB_DIR}/tests COMPONENT tests)
 
-add_executable(nocscript_ftable_test
-    nocscript_ftable_test.cpp
+UHD_ADD_NONAPI_TEST(
+    TARGET "nocscript_ftable_test.cpp"
+    EXTRA_SOURCES
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/function_table.cpp
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/expression.cpp
+    INCLUDE_DIRS
+    ${CMAKE_BINARY_DIR}/lib/rfnoc/nocscript/
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/
 )
-target_link_libraries(nocscript_ftable_test uhd ${Boost_LIBRARIES})
-UHD_ADD_TEST(nocscript_ftable_test nocscript_ftable_test)
-UHD_INSTALL(TARGETS nocscript_ftable_test RUNTIME DESTINATION ${PKG_LIB_DIR}/tests COMPONENT tests)
 
-add_executable(nocscript_parser_test
-    nocscript_parser_test.cpp
+UHD_ADD_NONAPI_TEST(
+    TARGET "nocscript_parser_test.cpp"
+    EXTRA_SOURCES
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/parser.cpp
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/function_table.cpp
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/expression.cpp
-)
-target_link_libraries(nocscript_parser_test uhd ${Boost_LIBRARIES})
-UHD_ADD_TEST(nocscript_parser_test nocscript_parser_test)
-UHD_INSTALL(TARGETS nocscript_parser_test RUNTIME DESTINATION ${PKG_LIB_DIR}/tests COMPONENT tests)
-
-add_executable(config_parser_test
-    config_parser_test.cpp
-    ${CMAKE_SOURCE_DIR}/lib/utils/config_parser.cpp
-)
-target_link_libraries(config_parser_test uhd ${Boost_LIBRARIES})
-UHD_ADD_TEST(config_parser_test config_parser_test)
-UHD_INSTALL(TARGETS
-    config_parser_test
-    RUNTIME
-    DESTINATION ${PKG_LIB_DIR}/tests
-    COMPONENT tests
+    INCLUDE_DIRS
+    ${CMAKE_BINARY_DIR}/lib/rfnoc/nocscript/
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/
 )
 
-add_executable(paths_test
-    paths_test.cpp
-    ${CMAKE_SOURCE_DIR}/lib/utils/pathslib.cpp
+UHD_ADD_NONAPI_TEST(
+    TARGET "config_parser_test.cpp"
+    EXTRA_SOURCES ${CMAKE_SOURCE_DIR}/lib/utils/config_parser.cpp
 )
+
 # Careful: This is to satisfy the out-of-library build of paths.cpp. This is
 # duplicate code from lib/utils/CMakeLists.txt, and it's been simplified.
+# TODO Figure out if this is even needed
 set(UHD_LIB_DIR "lib")
 file(TO_NATIVE_PATH "${CMAKE_INSTALL_PREFIX}" UHD_PKG_PATH)
 string(REPLACE "\\" "\\\\" UHD_PKG_PATH "${UHD_PKG_PATH}")
@@ -179,13 +192,10 @@ set_source_files_properties(
     PROPERTIES COMPILE_DEFINITIONS
     "UHD_PKG_PATH=\"${UHD_PKG_PATH}\";UHD_LIB_DIR=\"${UHD_LIB_DIR}\""
 )
-target_link_libraries(paths_test uhd ${Boost_LIBRARIES})
-UHD_ADD_TEST(paths_test paths_test)
-UHD_INSTALL(TARGETS
-    paths_test
-    RUNTIME
-    DESTINATION ${PKG_LIB_DIR}/tests
-    COMPONENT tests
+UHD_ADD_NONAPI_TEST(
+    TARGET "paths_test.cpp"
+    EXTRA_SOURCES
+    ${CMAKE_SOURCE_DIR}/lib/utils/pathslib.cpp
 )
 
 ########################################################################
