@@ -7,7 +7,7 @@
 
 # This file sets up all the stuff for the config.h file
 
-include(CheckCXXSymbolExistsCopy)
+include(CheckCXXSymbolExists)
 
 ## Macros for the version number
 if(UHD_VERSION_DEVEL)

@@ -78,7 +78,7 @@ endmacro(LIBUHD_REGISTER_COMPONENT)
 # Install only if appropriate for package and if component is enabled
 ########################################################################
 function(UHD_INSTALL)
-    include(CMakeParseArgumentsCopy)
+    include(CMakeParseArguments)
     cmake_parse_arguments(UHD_INSTALL "" "DESTINATION;COMPONENT" "TARGETS;FILES;PROGRAMS" ${ARGN})
 
     if(UHD_INSTALL_FILES)
