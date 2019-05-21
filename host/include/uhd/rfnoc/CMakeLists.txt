@@ -39,6 +39,7 @@ if(ENABLE_RFNOC)
         replay_block_ctrl.hpp
         siggen_block_ctrl.hpp
         window_block_ctrl.hpp
+        register_iface.hpp
         DESTINATION ${INCLUDE_DIR}/uhd/rfnoc
         COMPONENT headers
     )

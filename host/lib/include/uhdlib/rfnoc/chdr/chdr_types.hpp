@@ -309,6 +309,8 @@ public: // Functions
     ctrl_payload(const ctrl_payload& rhs) = default;
     ctrl_payload(ctrl_payload&& rhs)      = default;
 
+    ctrl_payload& operator=(const ctrl_payload& rhs) = default;
+
     //! Populate the header for this type of packet
     void populate_header(chdr_header& header) const;
 
@@ -422,6 +424,8 @@ public: // Functions
     strs_payload(const strs_payload& rhs) = default;
     strs_payload(strs_payload&& rhs)      = default;
 
+    strs_payload& operator=(const strs_payload& rhs) = default;
+
     //! Populate the header for this type of packet
     void populate_header(chdr_header& header) const;
 
@@ -516,6 +520,8 @@ public: // Functions
     strc_payload()                        = default;
     strc_payload(const strc_payload& rhs) = default;
     strc_payload(strc_payload&& rhs)      = default;
+
+    strc_payload& operator=(const strc_payload& rhs) = default;
 
     //! Populate the header for this type of packet
     void populate_header(chdr_header& header) const;
@@ -750,6 +756,8 @@ public:
     mgmt_payload()                        = default;
     mgmt_payload(const mgmt_payload& rhs) = default;
     mgmt_payload(mgmt_payload&& rhs)      = default;
+
+    mgmt_payload& operator=(const mgmt_payload& rhs) = default;
 
     inline void set_header(sep_id_t src_epid, uint16_t protover, chdr_w_t chdr_w)
     {
