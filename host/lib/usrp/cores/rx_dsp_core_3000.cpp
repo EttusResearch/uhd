@@ -52,14 +52,6 @@ public:
     rx_dsp_core_3000_impl(wb_iface::sptr iface, const size_t dsp_base, const bool is_b200)
         : _iface(iface), _dsp_base(dsp_base), _is_b200(is_b200)
     {
-        // previously uninitialized - assuming zero for all
-        _link_rate = _host_extra_scaling = _fxpt_scalar_correction = 0.0;
-
-        // init to something so update method has reasonable defaults
-        _scaling_adjustment = 1.0;
-        _dsp_extra_scaling  = 1.0;
-        _tick_rate          = 1.0;
-        _dsp_freq_offset    = 0.0;
     }
 
     ~rx_dsp_core_3000_impl(void)
@@ -321,11 +313,15 @@ private:
     wb_iface::sptr _iface;
     const size_t _dsp_base;
     const bool _is_b200; // TODO: Obsolete this when we switch to the new DDC on the B200
-    double _tick_rate, _link_rate;
-    double _scaling_adjustment, _dsp_extra_scaling, _host_extra_scaling,
-        _fxpt_scalar_correction;
-    double _dsp_freq_offset;
-    double _current_freq;
+
+    double _dsp_freq_offset        = 0.0;
+    double _tick_rate              = 1.0;
+    double _link_rate              = 0.0;
+    double _scaling_adjustment     = 1.0;
+    double _dsp_extra_scaling      = 1.0;
+    double _host_extra_scaling     = 0.0;
+    double _fxpt_scalar_correction = 0.0;
+    double _current_freq           = 0.0;
 };
 
 rx_dsp_core_3000::sptr rx_dsp_core_3000::make(

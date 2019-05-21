@@ -43,12 +43,6 @@ public:
     tx_dsp_core_3000_impl(wb_iface::sptr iface, const size_t dsp_base)
         : _iface(iface), _dsp_base(dsp_base)
     {
-        // previously uninitialized - assuming zero for all
-        _link_rate = _host_extra_scaling = _fxpt_scalar_correction = 0.0;
-
-        // init to something so update method has reasonable defaults
-        _scaling_adjustment = 1.0;
-        _dsp_extra_scaling  = 1.0;
         this->set_tick_rate(1.0);
     }
 
@@ -205,10 +199,13 @@ public:
 private:
     wb_iface::sptr _iface;
     const size_t _dsp_base;
-    double _tick_rate, _link_rate;
-    double _scaling_adjustment, _dsp_extra_scaling, _host_extra_scaling,
-        _fxpt_scalar_correction;
-    double _current_freq;
+    double _tick_rate              = 1.0;
+    double _link_rate              = 0.0;
+    double _scaling_adjustment     = 1.0;
+    double _dsp_extra_scaling      = 1.0;
+    double _host_extra_scaling     = 0.0;
+    double _fxpt_scalar_correction = 0.0;
+    double _current_freq           = 0.0;
 };
 
 tx_dsp_core_3000::sptr tx_dsp_core_3000::make(wb_iface::sptr iface, const size_t dsp_base)
