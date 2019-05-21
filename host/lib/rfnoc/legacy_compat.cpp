@@ -408,7 +408,7 @@ public:
         }
         // Update streamers:
         boost::dynamic_pointer_cast<uhd::usrp::device3_impl>(_device)
-            ->update_rx_streamers(rate);
+            ->update_rx_streamers();
     }
 
     void set_tx_rate(const double rate, const size_t chan)
@@ -460,7 +460,7 @@ public:
         }
         // Update streamers:
         boost::dynamic_pointer_cast<uhd::usrp::device3_impl>(_device)
-            ->update_tx_streamers(rate);
+            ->update_tx_streamers();
     }
 
 private: // types

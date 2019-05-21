@@ -258,7 +258,7 @@ bool device3_impl::recv_async_msg(async_metadata_t& async_metadata, double timeo
 /***********************************************************************
  * Receive streamer
  **********************************************************************/
-void device3_impl::update_rx_streamers(double /* rate */)
+void device3_impl::update_rx_streamers()
 {
     for (const std::string& block_id : _rx_streamers.keys()) {
         UHD_RX_STREAMER_LOG() << "updating RX streamer to " << block_id;
@@ -523,7 +523,7 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t& args_)
 /***********************************************************************
  * Transmit streamer
  **********************************************************************/
-void device3_impl::update_tx_streamers(double /* rate */)
+void device3_impl::update_tx_streamers()
 {
     for (const std::string& block_id : _tx_streamers.keys()) {
         UHD_TX_STREAMER_LOG() << "updating TX streamer: " << block_id;
