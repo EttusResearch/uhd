@@ -9,14 +9,15 @@
 #define INCLUDED_LIBUHD_USRP_TX_DSP_CORE_3000_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/property_tree.hpp>
 #include <uhd/stream.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/wb_iface.hpp>
-#include <uhd/property_tree.hpp>
 #include <uhd/utils/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 
-class tx_dsp_core_3000 : uhd::noncopyable{
+class tx_dsp_core_3000 : uhd::noncopyable
+{
 public:
     static const double DEFAULT_CORDIC_FREQ;
     static const double DEFAULT_DDS_FREQ;
@@ -26,10 +27,7 @@ public:
 
     virtual ~tx_dsp_core_3000(void) = 0;
 
-    static sptr make(
-        uhd::wb_iface::sptr iface,
-        const size_t dsp_base
-    );
+    static sptr make(uhd::wb_iface::sptr iface, const size_t dsp_base);
 
     virtual void set_tick_rate(const double rate) = 0;
 
@@ -47,7 +45,7 @@ public:
 
     virtual double get_freq(void) = 0;
 
-    virtual void setup(const uhd::stream_args_t &stream_args) = 0;
+    virtual void setup(const uhd::stream_args_t& stream_args) = 0;
 
     virtual void populate_subtree(uhd::property_tree::sptr subtree) = 0;
 };
