@@ -22,7 +22,6 @@ set(PYBIND11_INCLUDE_DIR
     STRING
     "Location of PyBind11 includes"
 )
-message(STATUS "${PYBIND11_INCLUDE_DIR}")
 include_directories(${PYBIND11_INCLUDE_DIR})
 execute_process(
     COMMAND "${PYTHON_EXECUTABLE}" -c
