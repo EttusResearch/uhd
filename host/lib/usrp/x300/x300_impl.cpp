@@ -1162,10 +1162,8 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t& dev_addr)
             }
             return master_clock_rate;
         })
-        .add_coerced_subscriber(
-            [this](const double rate) { this->update_tx_streamers(rate); })
-        .add_coerced_subscriber(
-            [this](const double rate) { this->update_rx_streamers(rate); })
+        .add_coerced_subscriber([this](const double) { this->update_tx_streamers(); })
+        .add_coerced_subscriber([this](const double) { this->update_rx_streamers(); })
         .set(master_clock_rate);
 
     ////////////////////////////////////////////////////////////////////

@@ -170,10 +170,15 @@ protected:
     /***********************************************************************
      * Streaming-related
      **********************************************************************/
-    // The 'rate' argument is so we can use these as subscribers to rate changes
 public: // TODO make these protected again
-    void update_rx_streamers(double rate = -1.0);
-    void update_tx_streamers(double rate = -1.0);
+    /*! Update tick rate, samp rate, and scaling on the streamers by querying
+     * the graph.
+     */
+    void update_rx_streamers();
+    /*! Update tick rate, samp rate, and scaling on the streamers by querying
+     * the graph.
+     */
+    void update_tx_streamers();
 
 protected:
     /***********************************************************************
