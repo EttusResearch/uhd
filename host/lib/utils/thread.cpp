@@ -110,3 +110,15 @@ void uhd::set_thread_name(
     UHD_LOG_DEBUG("UHD", "Setting thread name is not implemented; wanted to set to " << name);
 #endif /* HAVE_THREAD_SETNAME_DUMMY */
 }
+
+void uhd::set_thread_name(
+    std::thread *thrd,
+    const std::string &name
+) {
+#ifdef HAVE_PTHREAD_SETNAME
+    pthread_setname_np(thrd->native_handle(), name.substr(0,16).c_str());
+#endif /* HAVE_PTHREAD_SETNAME */
+#ifdef HAVE_THREAD_SETNAME_DUMMY
+    UHD_LOG_DEBUG("UHD", "Setting thread name is not implemented; wanted to set to " << name);
+#endif /* HAVE_THREAD_SETNAME_DUMMY */
+}

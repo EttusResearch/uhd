@@ -11,6 +11,7 @@
 #include <uhd/config.hpp>
 #include <boost/thread/thread.hpp>
 #include <string>
+#include <thread>
 
 namespace uhd {
 
@@ -47,6 +48,13 @@ UHD_API bool set_thread_priority_safe(
  * \param name thread name with maximum length of 16 characters
  */
 UHD_API void set_thread_name(boost::thread* thread, const std::string& name);
+
+/*!
+ * Set the thread name on the given std thread.
+ * \param thread pointer to a boost thread
+ * \param name thread name with maximum length of 16 characters
+ */
+UHD_API void set_thread_name(std::thread* thread, const std::string& name);
 
 } // namespace uhd
 
