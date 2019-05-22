@@ -1,6 +1,7 @@
 //
 // Copyright 2014-2016 Ettus Research LLC
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -19,6 +20,11 @@
 #include <boost/utility.hpp>
 #include <map>
 #include <set>
+
+namespace uhd { namespace usrp {
+    // Forward declaration for friend clause
+    class device3_impl;
+}}
 
 namespace uhd { namespace rfnoc {
 
@@ -39,6 +45,7 @@ public:
     typedef boost::weak_ptr<node_ctrl_base> wptr;
     typedef std::map<size_t, wptr> node_map_t;
     typedef std::pair<size_t, wptr> node_map_pair_t;
+    typedef boost::function<void(void)> graph_update_cb_t;
 
     /***********************************************************************
      * Node control
@@ -238,7 +245,18 @@ protected:
      */
     virtual void _register_upstream_node(node_ctrl_base::sptr upstream_node, size_t port);
 
+    /*! Initiate the update graph callback
+     *
+     * Call this from your block when you've changed one of these:
+     * - sampling rate
+     * - scaling
+     * - tick rate
+     */
+    void update_graph() { _graph_update_cb(); }
+
 private:
+    friend class uhd::usrp::device3_impl;
+
     /*! Implements the search algorithm for find_downstream_node() and
      * find_upstream_node().
      *
@@ -264,6 +282,11 @@ private:
         value_type NULL_VALUE,
         const std::set<boost::shared_ptr<T> >& exclude_nodes);
 
+    void set_graph_update_cb(graph_update_cb_t graph_update_cb)
+    {
+        _graph_update_cb = graph_update_cb;
+    }
+
     /*! Stores the remote port number of a downstream connection.
      */
     std::map<size_t, size_t> _upstream_ports;
@@ -271,6 +294,8 @@ private:
     /*! Stores the remote port number of a downstream connection.
      */
     std::map<size_t, size_t> _downstream_ports;
+
+    graph_update_cb_t _graph_update_cb;
 
 }; /* class node_ctrl_base */
 
