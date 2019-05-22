@@ -345,7 +345,7 @@ message(STATUS "Boost libraries: ${Boost_LIBRARIES}")
 # Additional settings for build environment
 ########################################################################
 # Note: RFNoC never gets fully disabled, but the public APIs do
-set(ENABLE_RFNOC OFF CACHE BOOL "Export RFNoC includes and symbols")
+set(ENABLE_RFNOC ON CACHE BOOL "Export RFNoC includes and symbols")
 include(UHDGlobalDefs)
 include(UHDLog)
 
