@@ -28,8 +28,8 @@ uint64_t mock_ctrl_iface_impl::send_cmd_pkt(const size_t addr,
             case uhd::rfnoc::SR_READBACK_REG_USER:
                 return 0x0123456789ABCDEF;
             case uhd::rfnoc::SR_READBACK_COMPAT:
-                return uhd::rfnoc::NOC_SHELL_COMPAT_MAJOR << 32
-                       | uhd::rfnoc::NOC_SHELL_COMPAT_MINOR;
+                return uint64_t(uhd::rfnoc::NOC_SHELL_COMPAT_MAJOR) << 32
+                       | uint64_t(uhd::rfnoc::NOC_SHELL_COMPAT_MINOR);
             default:
                 return 0;
         }
