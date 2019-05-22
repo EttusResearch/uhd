@@ -53,11 +53,13 @@ public:
                 .set_coercer([this, chan](const double value) {
                     return this->set_input_rate(value, chan);
                 })
-                .set(default_input_rate);
+                .set(default_input_rate)
+                .add_coerced_subscriber([this](const double) { update_graph(); });
             _tree->access<double>(get_arg_path("output_rate/value", chan))
                 .add_coerced_subscriber([this, chan](const double rate) {
                     this->set_output_rate(rate, chan);
-                });
+                })
+                .add_coerced_subscriber([this](const double) { update_graph(); });
 
             // Legacy properties (for backward compat w/ multi_usrp)
             const uhd::fs_path dsp_base_path = _root_path / "legacy_api" / chan;

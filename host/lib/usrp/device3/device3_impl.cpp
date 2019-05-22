@@ -165,6 +165,10 @@ void device3_impl::enumerate_rfnoc_blocks(size_t device_index,
             boost::lock_guard<boost::mutex> lock(_block_ctrl_mutex);
             _rfnoc_block_ctrl.push_back(
                 uhd::rfnoc::block_ctrl_base::make(make_args, noc_id));
+            _rfnoc_block_ctrl.back()->set_graph_update_cb([this]() {
+                update_rx_streamers();
+                update_tx_streamers();
+            });
         }
     }
 }
