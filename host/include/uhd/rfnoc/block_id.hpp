@@ -1,5 +1,6 @@
 // Copyright 2014 Ettus Research LLC
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Company
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -21,17 +22,17 @@ namespace rfnoc {
 /*!
  * Identifies an RFNoC block.
  *
- * An RFNoC block ID is a string such as: 0/FFT_1
+ * An RFNoC block ID is a string such as: 0/FFT#1
  *
  * The rules for formatting such a string are:
  *
- * DEVICE/BLOCKNAME_COUNTER
+ * DEVICE/BLOCKNAME#COUNTER
  *
  * DEVICE: Identifies the device (usually the motherboard index)
  * BLOCKNAME: A name given to this block
  * COUNTER: If is are more than one block with a BLOCKNAME, this counts up.
  *
- * So, 0/FFT_1 means we're addressing the second block called FFT
+ * So, 0/FFT#1 means we're addressing the second block called FFT
  * on the first device.
  *
  * This class can represent these block IDs.
@@ -48,7 +49,7 @@ public:
         const std::string& block_name,
         const size_t block_ctr = 0);
 
-    //! Return a string like this: "0/FFT_1" (includes all components, if set)
+    //! Return a string like this: "0/FFT#1" (includes all components, if set)
     std::string to_string() const;
 
     //! Check if a given string is valid as a block name.
@@ -56,8 +57,9 @@ public:
     // Note: This only applies to the block *name*, not the entire block ID.
     // Examples:
     // * is_valid_blockname("FFT") will return true.
-    // * is_valid_blockname("FIR_Filter") will return false, because an underscore
-    //   is not allowed in a block name.
+    // * is_valid_blockname("FIR#Filter") will return false, because a # symbol
+    //   is not allowed in a block name. Only alphanumerical characters and
+    //   underscores are allowed.
     //
     // Internally, this matches the string with uhd::rfnoc::VALID_BLOCKNAME_REGEX.
     static bool is_valid_blockname(const std::string& block_name);
@@ -69,8 +71,8 @@ public:
     //
     // Examples:
     // * is_valid_block_id("FFT") will return true.
-    // * is_valid_block_id("0/Filter_1") will return true.
-    // * is_valid_block_id("0/Filter_Foo") will return false.
+    // * is_valid_block_id("0/Filter#1") will return true.
+    // * is_valid_block_id("0/Filter#Foo") will return false.
     //
     // Internally, this matches the string with uhd::rfnoc::VALID_BLOCKID_REGEX.
     static bool is_valid_block_id(const std::string& block_id);
@@ -79,8 +81,8 @@ public:
     //
     // A match is a less strict version of equality.
     // Less specific block IDs will match more specific ones,
-    // e.g. "FFT" will match "0/FFT_1", "1/FFT_2", etc.
-    // "FFT_1" will only match the former, etc.
+    // e.g. "FFT" will match "0/FFT#1", "1/FFT#2", etc.
+    // "FFT#1" will only match the former, etc.
     bool match(const std::string& block_str);
 
     // Getters
@@ -91,10 +93,10 @@ public:
         return to_string();
     };
 
-    //! Like get(), but only returns the local part ("FFT_1")
+    //! Like get(), but only returns the local part ("FFT#1")
     std::string get_local() const;
 
-    //! Returns the property tree root for this block (e.g. "/mboards/0/xbar/FFT_1/")
+    //! Returns the property tree root for this block (e.g. "/mboards/0/xbar/FFT#1/")
     uhd::fs_path get_tree_root() const;
 
     //! Return device number
@@ -117,7 +119,7 @@ public:
 
     // Setters
 
-    //! Set from string such as "0/FFT_1", "FFT_0", ...
+    //! Set from string such as "0/FFT#1", "FFT#0", ...
     //  Returns true if successful (i.e. if string valid)
     bool set(const std::string& new_name);
 
@@ -203,14 +205,14 @@ public:
         return to_string();
     }
 
-    //! Increment the block count ("FFT_1" -> "FFT_2")
+    //! Increment the block count ("FFT#1" -> "FFT_2")
     block_id_t operator++()
     {
         _block_ctr++;
         return *this;
     }
 
-    //! Increment the block count ("FFT_1" -> "FFT_2")
+    //! Increment the block count ("FFT#1" -> "FFT_2")
     block_id_t operator++(int)
     {
         _block_ctr++;

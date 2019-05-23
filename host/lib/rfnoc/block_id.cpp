@@ -53,7 +53,7 @@ std::string block_id_t::to_string() const
 
 std::string block_id_t::get_local() const
 {
-    return str(boost::format("%s_%d") % get_block_name() % get_block_count());
+    return str(boost::format("%s#%d") % get_block_name() % get_block_count());
 }
 
 uhd::fs_path block_id_t::get_tree_root() const

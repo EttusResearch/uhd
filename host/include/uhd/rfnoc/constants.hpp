@@ -98,9 +98,9 @@ static const size_t ANY_PORT      = size_t(~0);
 static const size_t MAX_NUM_PORTS = 16;
 
 // Regular expressions
-static const std::string VALID_BLOCKNAME_REGEX = "[A-Za-z][A-Za-z0-9]*";
+static const std::string VALID_BLOCKNAME_REGEX = "[A-Za-z][A-Za-z0-9_]*";
 static const std::string VALID_BLOCKID_REGEX =
-    "(?:(\\d+)(?:/))?([A-Za-z][A-Za-z0-9]*)(?:(?:_)(\\d\\d?))?";
+    "(?:(\\d+)(?:/))?([A-Za-z][A-Za-z0-9]*)(?:(?:#)(\\d\\d?))?";
 
 }} /* namespace uhd::rfnoc */
 

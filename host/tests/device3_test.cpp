@@ -120,15 +120,15 @@ BOOST_AUTO_TEST_CASE(test_device3)
     block_ctrl_base::sptr block0 =
         my_device->get_block_ctrl(my_device->find_blocks("Block")[0]);
     BOOST_REQUIRE(block0);
-    BOOST_CHECK_EQUAL(block0->get_block_id(), "0/Block_0");
+    BOOST_CHECK_EQUAL(block0->get_block_id(), "0/Block#0");
 
     std::cout << "Checking block 1..." << std::endl;
-    BOOST_REQUIRE(my_device->has_block(block_id_t("0/Block_1")));
+    BOOST_REQUIRE(my_device->has_block(block_id_t("0/Block#1")));
 
     std::cout << "Getting block 1..." << std::endl;
-    block_ctrl_base::sptr block1 = my_device->get_block_ctrl(block_id_t("0/Block_1"));
+    block_ctrl_base::sptr block1 = my_device->get_block_ctrl(block_id_t("0/Block#1"));
     BOOST_REQUIRE(block1);
-    BOOST_CHECK_EQUAL(block1->get_block_id(), "0/Block_1");
+    BOOST_CHECK_EQUAL(block1->get_block_id(), "0/Block#1");
 }
 
 
@@ -141,28 +141,28 @@ BOOST_AUTO_TEST_CASE(test_device3_graph)
     std::cout << "Getting block 0..." << std::endl;
     auto block0 = my_device->get_block_ctrl(my_device->find_blocks("Block")[0]);
     BOOST_REQUIRE(block0);
-    BOOST_CHECK_EQUAL(block0->get_block_id(), "0/Block_0");
+    BOOST_CHECK_EQUAL(block0->get_block_id(), "0/Block#0");
 
     std::cout << "Checking block 1..." << std::endl;
-    BOOST_REQUIRE(my_device->has_block(block_id_t("0/Block_1")));
+    BOOST_REQUIRE(my_device->has_block(block_id_t("0/Block#1")));
 
     std::cout << "Getting block 1..." << std::endl;
-    auto block1 = my_device->get_block_ctrl(block_id_t("0/Block_1"));
+    auto block1 = my_device->get_block_ctrl(block_id_t("0/Block#1"));
     BOOST_REQUIRE(block1);
-    BOOST_CHECK_EQUAL(block1->get_block_id(), "0/Block_1");
+    BOOST_CHECK_EQUAL(block1->get_block_id(), "0/Block#1");
     std::cout << "Creating graph..." << std::endl;
     auto graph = my_device->create_graph("test_graph");
     BOOST_CHECK(graph);
     std::cout << "Connecting block_0 to block_1 ..." << std::endl;
-    graph->connect(block_id_t("0/Block_0"), 0, block_id_t("0/Block_1"), 0);
+    graph->connect(block_id_t("0/Block#0"), 0, block_id_t("0/Block#1"), 0);
 
     BOOST_CHECK_EQUAL(block0->list_upstream_nodes().size(), 0);
     BOOST_CHECK_EQUAL(block0->list_downstream_nodes().size(), 1);
     BOOST_CHECK_EQUAL(
-        block0->list_downstream_nodes()[0].lock()->unique_id(), "0/Block_1");
+        block0->list_downstream_nodes()[0].lock()->unique_id(), "0/Block#1");
     BOOST_CHECK_EQUAL(block1->list_upstream_nodes().size(), 1);
     BOOST_CHECK_EQUAL(block1->list_downstream_nodes().size(), 0);
-    BOOST_CHECK_EQUAL(block1->list_upstream_nodes()[0].lock()->unique_id(), "0/Block_0");
+    BOOST_CHECK_EQUAL(block1->list_upstream_nodes()[0].lock()->unique_id(), "0/Block#0");
 }
 
 BOOST_AUTO_TEST_CASE(test_device3_cast)
@@ -171,30 +171,30 @@ BOOST_AUTO_TEST_CASE(test_device3_cast)
 
     std::cout << "Getting block 0..." << std::endl;
     block_ctrl::sptr block0 =
-        my_device->get_block_ctrl<block_ctrl>(block_id_t("0/Block_0"));
+        my_device->get_block_ctrl<block_ctrl>(block_id_t("0/Block#0"));
     BOOST_REQUIRE(block0);
-    BOOST_CHECK_EQUAL(block0->get_block_id(), "0/Block_0");
+    BOOST_CHECK_EQUAL(block0->get_block_id(), "0/Block#0");
 
     std::cout << "Getting block 1..." << std::endl;
     block_ctrl_base::sptr block1 =
-        my_device->get_block_ctrl<block_ctrl>(block_id_t("0/Block_1"));
-    BOOST_CHECK_EQUAL(block1->get_block_id(), "0/Block_1");
+        my_device->get_block_ctrl<block_ctrl>(block_id_t("0/Block#1"));
+    BOOST_CHECK_EQUAL(block1->get_block_id(), "0/Block#1");
 }
 
 BOOST_AUTO_TEST_CASE(test_device3_fail)
 {
     device3::sptr my_device = make_mock_device();
 
-    BOOST_CHECK(not my_device->has_block(block_id_t("0/FooBarBlock_0")));
-    BOOST_CHECK(not my_device->has_block<mock_block_ctrl>(block_id_t("0/Block_1")));
+    BOOST_CHECK(not my_device->has_block(block_id_t("0/FooBarBlock#0")));
+    BOOST_CHECK(not my_device->has_block<mock_block_ctrl>(block_id_t("0/Block#1")));
 
     BOOST_CHECK(my_device->find_blocks("FooBarBlock").size() == 0);
     BOOST_CHECK(my_device->find_blocks<block_ctrl>("FooBarBlock").size() == 0);
 
     BOOST_REQUIRE_THROW(
-        my_device->get_block_ctrl(block_id_t("0/FooBarBlock_17")), uhd::lookup_error);
+        my_device->get_block_ctrl(block_id_t("0/FooBarBlock#17")), uhd::lookup_error);
     BOOST_REQUIRE_THROW(
-        my_device->get_block_ctrl<mock_block_ctrl>(block_id_t("0/Block_1")),
+        my_device->get_block_ctrl<mock_block_ctrl>(block_id_t("0/Block#1")),
         uhd::lookup_error);
 }
 
