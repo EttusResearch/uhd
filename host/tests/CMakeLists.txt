@@ -190,19 +190,6 @@ UHD_ADD_NONAPI_TEST(
     EXTRA_SOURCES ${CMAKE_SOURCE_DIR}/lib/utils/config_parser.cpp
 )
 
-include_directories(${CMAKE_BINARY_DIR}/lib/rfnoc/chdr/)
-include_directories(${CMAKE_SOURCE_DIR}/lib/rfnoc/chdr/)
-add_executable(rfnoc_chdr_test
-    rfnoc_chdr_test.cpp
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/chdr/chdr_types.cpp
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/chdr/chdr_packet.cpp
-)
-target_link_libraries(rfnoc_chdr_test uhd ${Boost_LIBRARIES})
-UHD_ADD_TEST(rfnoc_chdr_test rfnoc_chdr_test)
-UHD_INSTALL(TARGETS rfnoc_chdr_test RUNTIME DESTINATION ${PKG_LIB_DIR}/tests COMPONENT tests)
-
-
-
 # Careful: This is to satisfy the out-of-library build of paths.cpp. This is
 # duplicate code from lib/utils/CMakeLists.txt, and it's been simplified.
 # TODO Figure out if this is even needed
@@ -220,44 +207,34 @@ UHD_ADD_NONAPI_TEST(
     ${CMAKE_SOURCE_DIR}/lib/utils/pathslib.cpp
 )
 
-add_executable(rfnoc_propprop_test
-    rfnoc_propprop_test.cpp
+UHD_ADD_NONAPI_TEST(
+    TARGET rfnoc_propprop_test.cpp
+    EXTRA_SOURCES
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/graph.cpp
-)
-target_link_libraries(rfnoc_propprop_test uhd ${Boost_LIBRARIES})
-UHD_ADD_TEST(rfnoc_propprop_test rfnoc_propprop_test)
-UHD_INSTALL(TARGETS
-    rfnoc_propprop_test
-    RUNTIME
-    DESTINATION ${PKG_LIB_DIR}/tests
-    COMPONENT tests
 )
 
-add_executable(rfnoc_detailgraph_test
-    rfnoc_detailgraph_test.cpp
+UHD_ADD_NONAPI_TEST(
+    TARGET rfnoc_detailgraph_test.cpp
+    EXTRA_SOURCES
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/graph.cpp
-)
-target_link_libraries(rfnoc_detailgraph_test uhd ${Boost_LIBRARIES})
-UHD_ADD_TEST(rfnoc_detailgraph_test rfnoc_detailgraph_test)
-UHD_INSTALL(TARGETS
-    rfnoc_detailgraph_test
-    RUNTIME
-    DESTINATION ${PKG_LIB_DIR}/tests
-    COMPONENT tests
 )
 
-add_executable(actions_test
-    actions_test.cpp
+UHD_ADD_NONAPI_TEST(
+    TARGET actions_test.cpp
+    EXTRA_SOURCES
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/graph.cpp
 )
-target_link_libraries(actions_test uhd ${Boost_LIBRARIES})
-UHD_ADD_TEST(actions_test actions_test)
-UHD_INSTALL(TARGETS
-    actions_test
-    RUNTIME
-    DESTINATION ${PKG_LIB_DIR}/tests
-    COMPONENT tests
+
+UHD_ADD_NONAPI_TEST(
+    TARGET rfnoc_chdr_test.cpp
+    EXTRA_SOURCES
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/chdr/chdr_types.cpp
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/chdr/chdr_packet.cpp
+    INCLUDE_DIRS
+    ${CMAKE_BINARY_DIR}/lib/rfnoc/chdr/
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/chdr/
 )
+
 
 ########################################################################
 # demo of a loadable module
