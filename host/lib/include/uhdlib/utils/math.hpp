@@ -62,7 +62,7 @@ std::pair<IntegerType, IntegerType> rational_approximation(
     // then repeating the algorithm on the fractional part of that mixed
     // number until a maximum number of terms or the fractional part is
     // nearly zero.
-    for (int i = 0; i < MAX_APPROXIMATIONS; ++i) {
+    for (size_t i = 0; i < MAX_APPROXIMATIONS; ++i) {
         double x = std::floor(1.0 / c);
         c        = (1.0 / c) - x;
 
