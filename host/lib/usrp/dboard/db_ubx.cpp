@@ -161,6 +161,7 @@ static const std::vector<std::string> ubx_tx_antennas{"TX/RX", "CAL"};
 static const std::vector<std::string> ubx_rx_antennas{"TX/RX", "RX2", "CAL"};
 static const std::vector<std::string> ubx_power_modes{"performance", "powersave"};
 static const std::vector<std::string> ubx_xcvr_modes{"FDX", "TX", "TX/RX", "RX"};
+static const std::vector<std::string> ubx_temp_comp_modes{"enabled", "disabled"};
 
 // clang-format off
 static const ubx_gpio_field_info_t ubx_proto_gpio_info[] = {
@@ -445,6 +446,13 @@ public:
         get_rx_subtree()->create<std::string>("xcvr_mode/value")
             .add_coerced_subscriber(boost::bind(&ubx_xcvr::set_xcvr_mode, this, _1))
             .set("FDX");
+        get_rx_subtree()->create<std::vector<std::string> >("temp_comp_mode/options")
+            .set(ubx_temp_comp_modes);
+        get_rx_subtree()
+            ->create<std::string>("temp_comp_mode/value")
+            .add_coerced_subscriber(
+                [this](std::string mode) { this->set_temp_comp_mode(mode); })
+            .set("disabled");
         get_tx_subtree()->create<std::vector<std::string> >("power_mode/options")
             .set(ubx_power_modes);
         get_tx_subtree()->create<std::string>("power_mode/value")
@@ -455,6 +463,21 @@ public:
         get_tx_subtree()->create<std::string>("xcvr_mode/value")
             .add_coerced_subscriber(boost::bind(&uhd::property<std::string>::set, &get_rx_subtree()->access<std::string>("xcvr_mode/value"), _1))
             .set_publisher(boost::bind(&uhd::property<std::string>::get, &get_rx_subtree()->access<std::string>("xcvr_mode/value")));
+        get_tx_subtree()->create<std::vector<std::string> >("temp_comp_mode/options")
+            .set(ubx_temp_comp_modes);
+        get_tx_subtree()
+            ->create<std::string>("temp_comp_mode/value")
+            .add_coerced_subscriber([this](std::string mode) {
+                this->get_rx_subtree()
+                    ->access<std::string>("temp_comp_mode/value")
+                    .set(mode);
+            })
+            .set_publisher([this]() {
+                return this->get_rx_subtree()
+                    ->access<std::string>("temp_comp_mode/value")
+                    .get();
+            });
+
 
         ////////////////////////////////////////////////////////////////////
         // Register TX properties
@@ -1277,6 +1300,24 @@ private:
             _tx_sync_delay = value;
         else
             _rx_sync_delay = value;
+    }
+
+    void set_temp_comp_mode(std::string mode)
+    {
+        const bool enabled = [mode]() {
+            if (mode == "enabled") {
+                return true;
+            } else if (mode == "disabled") {
+                return false;
+            } else {
+                throw uhd::value_error("invalid temperature_compensation_mode");
+            }
+        }();
+
+        boost::mutex::scoped_lock lock(_mutex);
+        for (const auto& lo : {_txlo1, _txlo2, _rxlo1, _rxlo2}) {
+            lo->set_auto_retune(enabled);
+        }
     }
 
     /***********************************************************************
