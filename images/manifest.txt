@@ -11,10 +11,19 @@ x3xx_x300_fpga_default          fpga-4bc2c6f       x3xx/fpga-4bc2c6f/x3xx_x300_f
 e3xx_e310_sg1_fpga_default      fpga-f52a643       e3xx/fpga-f52a643/e3xx_e310_sg1_fpga_default-gf52a643.zip                 03450918a7c312d53926f3318ea91a57162c545ada4058b9e83a4e0efd4755a4
 e3xx_e310_sg3_fpga_default      fpga-f52a643       e3xx/fpga-f52a643/e3xx_e310_sg3_fpga_default-gf52a643.zip                 e8264dd48c3c3f6e65c8e5ef34a3629aa79a3f17ba845659e553bdcf3dfac303
 e3xx_e320_fpga_default          fpga-4bc2c6f       e3xx/fpga-4bc2c6f/e3xx_e320_fpga_default-g4bc2c6f.zip                 0def19fda1041866273c09d3bacc7e2dba916b8848c8a17a85fecd04009bab73
+
+# E310 Filesystems
+e3xx_e310_sdk_default         meta-ettus-v3.15.0.0-e310_prerelease  e3xx/meta-ettus-v3.15.0.0-e310_prerelease/e3xx_e310_sdk_default-v3.15.0.0-e310_prerelease.zip       0
+e3xx_e310_sg1_mender_default  meta-ettus-v3.15.0.0-e310_prerelease  e3xx/meta-ettus-v3.15.0.0-e310_prerelease/e3xx_e310_sg1_mender_default-v3.15.0.0-e310_prerelease.zip    0
+e3xx_e310_sg1_sdimg_default   meta-ettus-v3.15.0.0-e310_prerelease  e3xx/meta-ettus-v3.15.0.0-e310_prerelease/e3xx_e310_sg1_sdimg_default-v3.15.0.0-e310_prerelease.zip     0
+e3xx_e310_sg3_mender_default  meta-ettus-v3.15.0.0-e310_prerelease  e3xx/meta-ettus-v3.15.0.0-e310_prerelease/e3xx_e310_sg3_mender_default-v3.15.0.0-e310_prerelease.zip    0
+e3xx_e310_sg3_sdimg_default   meta-ettus-v3.15.0.0-e310_prerelease  e3xx/meta-ettus-v3.15.0.0-e310_prerelease/e3xx_e310_sg3_sdimg_default-v3.15.0.0-e310_prerelease.zip     0
+
 # E320 Filesystems, etc
 e3xx_e320_sdk_default         meta-ettus-v3.14.0.0-rc1  e3xx/meta-ettus-v3.14.0.0-rc1/e3xx_e320_sdk_default-v3.14.0.0-rc1.zip       0
 e3xx_e320_mender_default      meta-ettus-v3.14.0.0-rc1  e3xx/meta-ettus-v3.14.0.0-rc1/e3xx_e320_mender_default-v3.14.0.0-rc1.zip    0
 e3xx_e320_sdimg_default       meta-ettus-v3.14.0.0-rc1  e3xx/meta-ettus-v3.14.0.0-rc1/e3xx_e320_sdimg_default-v3.14.0.0-rc1.zip     0
+
 # N300-Series
 n3xx_n310_fpga_default          fpga-4bc2c6f       n3xx/fpga-4bc2c6f/n3xx_n310_fpga_default-g4bc2c6f.zip                 bbe7d43c098aa847fa656d22a2c0f0d6d8e499e3d2267842d1a01591645b1472
 n3xx_n300_fpga_default          fpga-4bc2c6f       n3xx/fpga-4bc2c6f/n3xx_n300_fpga_default-g4bc2c6f.zip                 1d192a5a07601eb9b229ee604cf9ba7b32ea4fefe7b6e218a18d31f4c1f07b0a
