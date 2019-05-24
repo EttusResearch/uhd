@@ -29,7 +29,7 @@ constexpr size_t ASYNC_MESSAGE_SIZE = 6;
 constexpr double DEFAULT_TIMEOUT = 0.1;
 //! Default value for whether ACKs are always required
 constexpr bool DEFAULT_FORCE_ACKS = false;
-}
+} // namespace
 
 ctrlport_endpoint::~ctrlport_endpoint() = default;
 
@@ -259,7 +259,7 @@ public:
         } else {
             // Handle asynchronous message callback
             ctrl_status_t status = CMD_CMDERR;
-            if (rx_ctrl.op_code != OP_WRITE) {
+            if (rx_ctrl.op_code != OP_WRITE && rx_ctrl.op_code != OP_BLOCK_WRITE) {
                 UHD_LOG_ERROR(
                     "CTRLEP", "Malformed async message request: Invalid opcode");
             } else if (rx_ctrl.dst_port != _local_port) {
@@ -269,7 +269,7 @@ public:
                     "CTRLEP", "Malformed async message request: Invalid num_data");
             } else {
                 try {
-                    _handle_async_msg(rx_ctrl.address, rx_ctrl.data_vtr[0]);
+                    _handle_async_msg(rx_ctrl.address, rx_ctrl.data_vtr);
                     status = CMD_OKAY;
                 } catch (...) {
                     UHD_LOG_ERROR("CTRLEP", "Async message handler threw an exception");
@@ -434,7 +434,7 @@ private:
     const double _timebase_freq;
 
     //! The function to call to handle an async message
-    async_msg_callback_t _handle_async_msg = [](uint32_t, uint32_t) {};
+    async_msg_callback_t _handle_async_msg = async_msg_callback_t();
     //! The current control sequence number of outgoing packets
     uint8_t _tx_seq_num = 0;
     //! The number of occupied words in the downstream buffer
