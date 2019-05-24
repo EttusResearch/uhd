@@ -83,6 +83,11 @@ public:
     //! Convert a string representation of a SID into its numerical representation
     sid_t(const std::string&);
 
+    //! Copy a sid
+    sid_t(const sid_t& sid) {
+        set_sid(sid.get_sid());
+    }
+
     //! Return a decimal string representation of the SID.
     std::string to_pp_string() const;
     //! Return a hexadecimal string representation of the SID.
