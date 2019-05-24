@@ -16,6 +16,7 @@ if(ENABLE_RFNOC)
         defaults.hpp
         dirtifier.hpp
         graph.hpp
+        graph_edge.hpp
         noc_block_make_args.hpp
         node_ctrl_base.hpp
         node_ctrl_base.ipp
