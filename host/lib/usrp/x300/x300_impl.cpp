@@ -1993,7 +1993,10 @@ x300_impl::frame_size_t x300_impl::determine_max_frame_size(
     return frame_size;
 }
 
-size_t x300_impl::get_mtu(const size_t /*mb_index*/, const uhd::direction_t dir) {
+size_t x300_impl::get_mtu(const size_t mb_index, const uhd::direction_t dir) {
+    if (_mb[mb_index].xport_path == "nirio") {
+        return (dir == RX_DIRECTION ? x300::PCIE_RX_DATA_FRAME_SIZE : x300::PCIE_TX_DATA_FRAME_SIZE);
+    }
     return (dir == RX_DIRECTION) ? _max_frame_sizes.recv_frame_size :
             _max_frame_sizes.send_frame_size;
 }
