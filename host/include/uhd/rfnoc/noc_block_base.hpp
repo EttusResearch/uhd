@@ -13,8 +13,12 @@
 #include <uhd/rfnoc/register_iface_holder.hpp>
 
 //! Shorthand for block constructor
-#define UHD_RFNOC_BLOCK_CONSTRUCTOR(CLASS_NAME) \
-    CLASS_NAME##_impl(make_args_ptr make_args) : noc_block_base(std::move(make_args))
+#define RFNOC_BLOCK_CONSTRUCTOR(CLASS_NAME) \
+    CLASS_NAME##_impl(make_args_ptr make_args) : CLASS_NAME(std::move(make_args))
+
+#define RFNOC_DECLARE_BLOCK(CLASS_NAME) \
+    using sptr = std::shared_ptr<CLASS_NAME>;\
+    CLASS_NAME(make_args_ptr make_args) : noc_block_base(std::move(make_args)) {}
 
 namespace uhd { namespace rfnoc {
 
@@ -41,6 +45,14 @@ public:
      * same type have the same NoC ID.
      */
     using noc_id_t = uint32_t;
+
+    //! Forward declaration for the constructor arguments
+    struct make_args_t;
+
+    //! Opaque pointer to the constructor arguments
+    using make_args_ptr = std::unique_ptr<make_args_t>;
+
+    virtual ~noc_block_base();
 
     /**************************************************************************
      * node_t API calls
@@ -71,6 +83,9 @@ public:
      */
     const block_id_t& get_block_id() const { return _block_id; }
 
+protected:
+    noc_block_base(make_args_ptr make_args);
+
 private:
     //! This block's Noc-ID
     noc_id_t _noc_id;
@@ -88,5 +103,7 @@ private:
 }; // class noc_block_base
 
 }} /* namespace uhd::rfnoc */
+
+#include <uhd/rfnoc/noc_block_make_args.hpp>
 
 #endif /* INCLUDED_LIBUHD_NOC_BLOCK_BASE_HPP */

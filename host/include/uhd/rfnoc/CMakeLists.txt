@@ -16,11 +16,13 @@ if(ENABLE_RFNOC)
         defaults.hpp
         dirtifier.hpp
         graph.hpp
+        noc_block_make_args.hpp
         node_ctrl_base.hpp
         node_ctrl_base.ipp
         node.hpp
         node.ipp
         rate_node_ctrl.hpp
+        registry.hpp
         scalar_node_ctrl.hpp
         sink_block_ctrl_base.hpp
         sink_node_ctrl.hpp
