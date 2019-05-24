@@ -203,86 +203,71 @@ public:
                 false,
                 STREAM_SETUP_TIMEOUT);
 
-        // Compute FC frequency and headroom based on buff parameters
-        stream_buff_params_t fc_freq{
-            static_cast<uint64_t>(std::ceil(double(buff_params.bytes) * fc_freq_ratio)),
-            static_cast<uint32_t>(
-                std::ceil(double(buff_params.packets) * fc_freq_ratio))};
-        stream_buff_params_t fc_headroom{
-            static_cast<uint64_t>(
-                std::ceil(double(buff_params.bytes) * fc_headroom_ratio)),
-            static_cast<uint32_t>(
-                std::ceil(double(buff_params.packets) * fc_headroom_ratio))};
-
         // Reconfigure flow control using the new frequency and headroom
         return _mgmt_portal->config_remote_stream(*_ctrl_xport,
             dst_epid,
             src_epid,
             lossy_xport,
-            fc_freq,
-            fc_headroom,
+            _get_buff_params_ratio(buff_params, fc_freq_ratio),
+            _get_buff_params_ratio(buff_params, fc_headroom_ratio),
             reset,
             STREAM_SETUP_TIMEOUT);
     }
 
     virtual chdr_tx_data_xport::uptr create_host_to_device_data_stream(
         const sep_addr_t dst_addr,
-        const bool lossy_xport,
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
-        const double fc_freq_ratio,
-        const double fc_headroom_ratio,
         const device_addr_t& xport_args)
     {
-        // Create a new source endpoint and EPID
-        sep_addr_t sw_epid_addr(_my_device_id, SEP_INST_DATA_BASE + (_data_ep_inst++));
-        sep_id_t src_epid = _epid_alloc->allocate_epid(sw_epid_addr);
-        _allocated_epids.insert(src_epid);
         _ensure_ep_is_reachable(dst_addr);
 
-        // Generate a new destination EPID instance
+        // Generate a new destination (device) EPID instance
         sep_id_t dst_epid = _epid_alloc->allocate_epid(dst_addr);
+        _mgmt_portal->initialize_endpoint(*_ctrl_xport, dst_addr, dst_epid);
 
-        // Create the data transport that we will return to the client
-        chdr_rx_data_xport::uptr xport = _mb_iface.make_rx_data_transport(
-            _my_device_id, src_epid, dst_epid, xport_args);
-
-        chdr_ctrl_xport::sptr mgmt_xport =
-            _mb_iface.make_ctrl_transport(_my_device_id, src_epid);
-
-        // Create new temporary management portal with the transports used for this stream
-        // TODO: This is a bit excessive. Maybe we can pair down the functionality of the
-        // portal just for route setup purposes. Whatever we do, we *must* use xport in it
-        // though otherwise the transport will not behave correctly.
-        mgmt_portal::uptr data_mgmt_portal =
-            mgmt_portal::make(*mgmt_xport, _pkt_factory, sw_epid_addr, src_epid);
-
-        // Setup a route to the EPID
-        data_mgmt_portal->initialize_endpoint(*mgmt_xport, dst_addr, dst_epid);
-        data_mgmt_portal->setup_local_route(*mgmt_xport, dst_epid);
         if (!_mgmt_portal->get_endpoint_info(dst_epid).has_data) {
             throw uhd::rfnoc_error("Downstream endpoint does not support data traffic");
         }
 
-        // TODO: Implement data transport setup logic here
+        // Create a new destination (host) endpoint and EPID
+        sep_addr_t sw_epid_addr(_my_device_id, SEP_INST_DATA_BASE + (_data_ep_inst++));
+        sep_id_t src_epid = _epid_alloc->allocate_epid(sw_epid_addr);
+        _allocated_epids.insert(src_epid);
 
-
-        // Delete the portal when done
-        data_mgmt_portal.reset();
-        return xport;
+        return _mb_iface.make_tx_data_transport({sw_epid_addr, dst_addr},
+            {src_epid, dst_epid},
+            pyld_buff_fmt,
+            mdata_buff_fmt,
+            xport_args);
     }
 
-    virtual chdr_tx_data_xport::uptr create_device_to_host_data_stream(
-        const sep_addr_t src_addr,
-        const bool lossy_xport,
+    virtual chdr_rx_data_xport::uptr create_device_to_host_data_stream(
+        sep_addr_t src_addr,
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
-        const double fc_freq_ratio,
-        const double fc_headroom_ratio,
         const device_addr_t& xport_args)
     {
-        // TODO: Implement me
-        return chdr_tx_data_xport::uptr();
+        _ensure_ep_is_reachable(src_addr);
+
+        // Generate a new source (device) EPID instance
+        sep_id_t src_epid = _epid_alloc->allocate_epid(src_addr);
+        _mgmt_portal->initialize_endpoint(*_ctrl_xport, src_addr, src_epid);
+
+        if (!_mgmt_portal->get_endpoint_info(src_epid).has_data) {
+            throw uhd::rfnoc_error("Downstream endpoint does not support data traffic");
+        }
+
+        // Create a new destination (host) endpoint and EPID
+        sep_addr_t sw_epid_addr(_my_device_id, SEP_INST_DATA_BASE + (_data_ep_inst++));
+        sep_id_t dst_epid = _epid_alloc->allocate_epid(sw_epid_addr);
+        _allocated_epids.insert(dst_epid);
+
+        return _mb_iface.make_rx_data_transport({src_addr, sw_epid_addr},
+            {src_epid, dst_epid},
+            pyld_buff_fmt,
+            mdata_buff_fmt,
+            xport_args);
     }
 
 private:
@@ -295,7 +280,14 @@ private:
         throw uhd::routing_error("Specified endpoint is not reachable");
     }
 
-    // A reference to the packet factor
+    stream_buff_params_t _get_buff_params_ratio(
+        const stream_buff_params_t& buff_params, const double ratio)
+    {
+        return {static_cast<uint64_t>(std::ceil(double(buff_params.bytes) * ratio)),
+            static_cast<uint32_t>(std::ceil(double(buff_params.packets) * ratio))};
+    }
+
+    // A reference to the packet factory
     const chdr::chdr_packet_factory& _pkt_factory;
     // The device address of this software endpoint
     const device_id_t _my_device_id;

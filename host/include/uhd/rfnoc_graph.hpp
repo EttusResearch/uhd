@@ -159,16 +159,17 @@ public:
     /*! Connect a RFNOC block with block ID \p src_block to another with block ID \p
      * dst_block.
      *
+     * Note you need to also call this on statically connected blocks if you
+     * desire to use them.
+     *
      * \param src_blk The block ID of the source block to connect.
      * \param src_port The port of the source block to connect.
      * \param dst_blk The block ID of the destination block to connect to.
      * \param dst_port The port of the destination block to connect to.
      * \param skip_property_propagation Skip property propagation for this edge
      *
-     * \throws connect_disallowed_on_src
-     *     if the source port is statically connected to a *different* block
-     * \throws connect_disallowed_on_dst
-     *     if the destination port is statically connected to a *different* block
+     * \throws uhd::routing_error if the source or destination ports are
+     *                            statically connected to a *different* block
      */
     virtual void connect(const block_id_t& src_blk,
         size_t src_port,
@@ -186,7 +187,7 @@ public:
      * \throws connect_disallowed_on_dst
      *     if the destination port is statically connected to a *different* block
      */
-    virtual void connect(uhd::tx_streamer& streamer,
+    virtual void connect(uhd::tx_streamer::sptr streamer,
         size_t strm_port,
         const block_id_t& dst_blk,
         size_t dst_port) = 0;
@@ -203,7 +204,7 @@ public:
      */
     virtual void connect(const block_id_t& src_blk,
         size_t src_port,
-        uhd::rx_streamer& streamer,
+        uhd::rx_streamer::sptr streamer,
         size_t strm_port) = 0;
 
     /*! Enumerate all the possible static connections in the graph
@@ -244,10 +245,12 @@ public:
      *  start using it. If a different streamer is already connected
      *  to the intended source then that call may fail.
      *
+     * \param num_ports Number of ports that will be connected to the streamer
      * \param args Arguments to aid the construction of the streamer
      * \return a shared pointer to a new streamer
      */
-    //virtual rx_streamer::sptr create_rx_streamer(const stream_args_t& args) = 0;
+    virtual rx_streamer::sptr create_rx_streamer(const size_t num_ports,
+        const stream_args_t& args) = 0;
 
     /*! Create a new transmit streamer from the streamer arguments
      *  The created streamer is still not connected to anything yet.
@@ -255,10 +258,12 @@ public:
      *  start using it. If a different streamer is already connected
      *  to the intended sink then that call may fail.
      *
+     * \param num_ports Number of ports that will be connected to the streamer
      * \param args Arguments to aid the construction of the streamer
      * \return a shared pointer to a new streamer
      */
-    //virtual tx_streamer::sptr create_tx_streamer(const stream_args_t& args) = 0;
+    virtual tx_streamer::sptr create_tx_streamer(const size_t num_ports,
+        const stream_args_t& args) = 0;
 
     /**************************************************************************
      * Hardware Control

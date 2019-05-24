@@ -11,6 +11,7 @@
 #include <uhdlib/rfnoc/ctrlport_endpoint.hpp>
 #include <uhdlib/rfnoc/epid_allocator.hpp>
 #include <uhdlib/rfnoc/mb_iface.hpp>
+#include <uhdlib/rfnoc/chdr_rx_data_xport.hpp>
 #include <functional>
 #include <memory>
 #include <set>
@@ -112,41 +113,29 @@ public:
     /*! \brief Create a data stream going from the host to the device
      *
      * \param dst_addr The address of the destination stream endpoint
-     * \param lossy_xport Is the transport lossy?
      * \param pyld_buff_fmt Datatype of SW buffer that holds the data payload
      * \param mdata_buff_fmt Datatype of SW buffer that holds the data metadata
-     * \param fc_freq_ratio Flow control response frequency as a ratio of the buff params
-     * \param fc_headroom_ratio Flow control headroom as a ratio of the buff params
      * \param xport_args The transport arguments
      * \return An transport instance
      */
     virtual chdr_tx_data_xport::uptr create_host_to_device_data_stream(
         const sep_addr_t dst_addr,
-        const bool lossy_xport,
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
-        const double fc_freq_ratio,
-        const double fc_headroom_ratio,
         const device_addr_t& xport_args) = 0;
 
     /*! \brief Create a data stream going from the device to the host
      *
      * \param dst_addr The address of the destination stream endpoint
-     * \param lossy_xport Is the transport lossy?
      * \param pyld_buff_fmt Datatype of SW buffer that holds the data payload
      * \param mdata_buff_fmt Datatype of SW buffer that holds the data metadata
-     * \param fc_freq_ratio Flow control response frequency as a ratio of the buff params
-     * \param fc_headroom_ratio Flow control headroom as a ratio of the buff params
      * \param xport_args The transport arguments
      * \return An transport instance
      */
     virtual chdr_rx_data_xport::uptr create_device_to_host_data_stream(
         const sep_addr_t src_addr,
-        const bool lossy_xport,
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
-        const double fc_freq_ratio,
-        const double fc_headroom_ratio,
         const device_addr_t& xport_args) = 0;
 
     static uptr make(const chdr::chdr_packet_factory& pkt_factory,

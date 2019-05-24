@@ -482,6 +482,8 @@ public: // Members
     uint64_t num_pkts = 0;
     //! Number of bytes to use for operation (64 bits)
     uint64_t num_bytes = 0;
+    //! Size of a strc packet (including header)
+    static constexpr size_t PACKET_SIZE = 24;
 
 public: // Functions
     strc_payload()                        = default;

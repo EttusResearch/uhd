@@ -7,11 +7,14 @@
 #ifndef INCLUDED_LIBUHD_RFNOC_GRAPH_STREAM_MANAGER_HPP
 #define INCLUDED_LIBUHD_RFNOC_GRAPH_STREAM_MANAGER_HPP
 
+#include <uhd/stream.hpp>
 #include <uhdlib/rfnoc/chdr_packet.hpp>
 #include <uhdlib/rfnoc/client_zero.hpp>
 #include <uhdlib/rfnoc/ctrlport_endpoint.hpp>
 #include <uhdlib/rfnoc/epid_allocator.hpp>
 #include <uhdlib/rfnoc/mb_iface.hpp>
+#include <uhdlib/rfnoc/chdr_rx_data_xport.hpp>
+#include <uhdlib/rfnoc/chdr_tx_data_xport.hpp>
 #include <functional>
 #include <memory>
 #include <set>
@@ -84,6 +87,7 @@ public:
     virtual detail::client_zero::sptr get_client_zero(
         sep_addr_t dst_addr, device_id_t via_device = NULL_DEVICE_ID) const = 0;
 
+
     /*! Configure a flow controlled data stream from the endpoint with ID src_epid to the
      *  endpoint with ID dst_epid
      *
@@ -102,7 +106,33 @@ public:
         const double fc_headroom_ratio,
         const bool reset = false) = 0;
 
-    // TODO: Implement functions to get graph-wide streamers
+    /*! \brief Create a data stream going from the device to the host
+     *
+     * \param dst_addr The address of the destination stream endpoint
+     * \param pyld_buff_fmt Datatype of SW buffer that holds the data payload
+     * \param mdata_buff_fmt Datatype of SW buffer that holds the data metadata
+     * \param xport_args The transport arguments
+     * \return An transport instance
+     */
+    virtual chdr_rx_data_xport::uptr create_device_to_host_data_stream(
+        sep_addr_t dst_addr,
+        const sw_buff_t pyld_buff_fmt,
+        const sw_buff_t mdata_buff_fmt,
+        const device_addr_t& xport_args) = 0;
+
+    /*! \brief Create a data stream going from the host to the device
+     *
+     * \param dst_addr The address of the destination stream endpoint
+     * \param pyld_buff_fmt Datatype of SW buffer that holds the data payload
+     * \param mdata_buff_fmt Datatype of SW buffer that holds the data metadata
+     * \param xport_args The transport arguments
+     * \return An transport instance
+     */
+    virtual chdr_tx_data_xport::uptr create_host_to_device_data_stream(
+        sep_addr_t dst_addr,
+        const sw_buff_t pyld_buff_fmt,
+        const sw_buff_t mdata_buff_fmt,
+        const device_addr_t& xport_args) = 0;
 
     /*!
      * \brief Create a graph_stream_manager and return a unique_ptr to it

@@ -15,12 +15,18 @@
 #include <uhdlib/rfnoc/graph.hpp>
 #include <uhdlib/rfnoc/graph_stream_manager.hpp>
 #include <uhdlib/rfnoc/rfnoc_device.hpp>
+#include <uhdlib/rfnoc/rfnoc_rx_streamer.hpp>
+#include <uhdlib/rfnoc/rfnoc_tx_streamer.hpp>
 #include <uhdlib/utils/narrow.hpp>
+#include <boost/make_shared.hpp>
 #include <boost/shared_ptr.hpp> // FIXME remove when rfnoc_device is ready
 #include <memory>
 
 using namespace uhd::rfnoc;
 
+namespace {
+const std::string LOG_ID("RFNOC::GRAPH");
+}
 
 class rfnoc_graph_impl : public rfnoc_graph
 {
@@ -33,6 +39,7 @@ public:
         , _graph(std::make_unique<uhd::rfnoc::detail::graph_t>())
     {
         setup_graph(dev_addr);
+        _init_sep_map();
         _init_static_connections();
     }
 
@@ -76,31 +83,136 @@ public:
         }
         if (!has_block(dst_blk)) {
             throw uhd::lookup_error(
-                std::string("Cannot connect blocks, source block not found: ")
-                + src_blk.to_string());
+                std::string("Cannot connect blocks, destination block not found: ")
+                + dst_blk.to_string());
         }
+        auto edge_type = _physical_connect(src_blk, src_port, dst_blk, dst_port);
         _connect(get_block(src_blk),
             src_port,
             get_block(dst_blk),
             dst_port,
+            edge_type,
             skip_property_propagation);
-        _physical_connect(src_blk, src_port, dst_blk, dst_port);
     }
 
-    void connect(uhd::tx_streamer& /*streamer*/,
-        size_t /*strm_port*/,
-        const block_id_t& /*dst_blk*/,
-        size_t /*dst_port*/)
+    void connect(uhd::tx_streamer::sptr streamer,
+        size_t strm_port,
+        const block_id_t& dst_blk,
+        size_t dst_port)
     {
-        throw uhd::not_implemented_error("");
+        // Verify the streamer was created by us
+        auto rfnoc_streamer = boost::dynamic_pointer_cast<rfnoc_tx_streamer>(streamer);
+        if (!rfnoc_streamer) {
+            throw uhd::type_error("Streamer is not rfnoc capable");
+        }
+
+        // Verify src_blk even exists in this graph
+        if (!has_block(dst_blk)) {
+            throw uhd::lookup_error(
+                std::string("Cannot connect block to streamer, source block not found: ")
+                + dst_blk.to_string());
+        }
+
+        // Verify src_blk has an SEP upstream
+        graph_edge_t dst_static_edge = _assert_edge(
+            _get_static_edge(
+                [dst_blk_id = dst_blk.to_string(), dst_port](const graph_edge_t& edge) {
+                    return edge.dst_blockid == dst_blk_id && edge.dst_port == dst_port;
+                }),
+            dst_blk.to_string());
+        if (block_id_t(dst_static_edge.src_blockid).get_block_name() != NODE_ID_SEP) {
+            const std::string err_msg =
+                dst_blk.to_string() + ":" + std::to_string(dst_port)
+                + " is not connected to an SEP! Routing impossible.";
+            UHD_LOG_ERROR(LOG_ID, err_msg);
+            throw uhd::routing_error(err_msg);
+        }
+
+        // Now get the name and address of the SEP
+        const std::string sep_block_id = dst_static_edge.src_blockid;
+        const sep_addr_t sep_addr      = _sep_map.at(sep_block_id);
+
+        const sw_buff_t pyld_fmt =
+            bits_to_sw_buff(rfnoc_streamer->get_otw_item_comp_bit_width());
+        const sw_buff_t mdata_fmt = BUFF_U64;
+
+        auto xport = _gsm->create_host_to_device_data_stream(sep_addr,
+            pyld_fmt,
+            mdata_fmt,
+            rfnoc_streamer->get_stream_args().args);
+
+        rfnoc_streamer->connect_channel(strm_port, std::move(xport));
+
+        //// If this worked, then also connect the streamer in the BGL graph
+        auto dst = get_block(dst_blk);
+        graph_edge_t edge_info(strm_port, dst_port, graph_edge_t::TX_STREAM, true);
+        _graph->connect(rfnoc_streamer.get(), dst.get(), edge_info);
     }
 
-    void connect(const block_id_t& /*src_blk*/,
-        size_t /*src_port*/,
-        uhd::rx_streamer& /*streamer*/,
-        size_t /*strm_port*/)
+    void connect(const block_id_t& src_blk,
+        size_t src_port,
+        uhd::rx_streamer::sptr streamer,
+        size_t strm_port)
     {
-        throw uhd::not_implemented_error("");
+        // Verify the streamer was created by us
+        auto rfnoc_streamer = boost::dynamic_pointer_cast<rfnoc_rx_streamer>(streamer);
+        if (!rfnoc_streamer) {
+            throw uhd::type_error("Streamer is not rfnoc capable");
+        }
+
+        // Verify src_blk even exists in this graph
+        if (!has_block(src_blk)) {
+            throw uhd::lookup_error(
+                std::string("Cannot connect block to streamer, source block not found: ")
+                + src_blk.to_string());
+        }
+
+        // Verify src_blk has an SEP downstream
+        graph_edge_t src_static_edge = _assert_edge(
+            _get_static_edge(
+                [src_blk_id = src_blk.to_string(), src_port](const graph_edge_t& edge) {
+                    return edge.src_blockid == src_blk_id && edge.src_port == src_port;
+                }),
+            src_blk.to_string());
+        if (block_id_t(src_static_edge.dst_blockid).get_block_name() != NODE_ID_SEP) {
+            const std::string err_msg =
+                src_blk.to_string() + ":" + std::to_string(src_port)
+                + " is not connected to an SEP! Routing impossible.";
+            UHD_LOG_ERROR(LOG_ID, err_msg);
+            throw uhd::routing_error(err_msg);
+        }
+
+        // Now get the name and address of the SEP
+        const std::string sep_block_id = src_static_edge.dst_blockid;
+        const sep_addr_t sep_addr      = _sep_map.at(sep_block_id);
+
+        const sw_buff_t pyld_fmt =
+            bits_to_sw_buff(rfnoc_streamer->get_otw_item_comp_bit_width());
+        const sw_buff_t mdata_fmt = BUFF_U64;
+
+        auto xport = _gsm->create_device_to_host_data_stream(sep_addr,
+            pyld_fmt,
+            mdata_fmt,
+            rfnoc_streamer->get_stream_args().args);
+
+        rfnoc_streamer->connect_channel(strm_port, std::move(xport));
+
+        // If this worked, then also connect the streamer in the BGL graph
+        auto src = get_block(src_blk);
+        graph_edge_t edge_info(src_port, strm_port, graph_edge_t::RX_STREAM, true);
+        _graph->connect(src.get(), rfnoc_streamer.get(), edge_info);
+    }
+
+    uhd::rx_streamer::sptr create_rx_streamer(
+        const size_t num_chans, const uhd::stream_args_t& args)
+    {
+        return boost::make_shared<rfnoc_rx_streamer>(num_chans, args);
+    }
+
+    uhd::tx_streamer::sptr create_tx_streamer(
+        const size_t num_chans, const uhd::stream_args_t& args)
+    {
+        return boost::make_shared<rfnoc_tx_streamer>(num_chans, args);
     }
 
     std::shared_ptr<mb_controller> get_mb_controller(const size_t mb_index = 0)
@@ -152,7 +264,7 @@ private:
             throw uhd::key_error(std::string("Found no RFNoC devices for ----->\n")
                                  + dev_addr.to_pp_string());
         }
-        _tree = _device->get_tree();
+        _tree        = _device->get_tree();
         _num_mboards = _tree->list("/mboards").size();
         for (size_t i = 0; i < _num_mboards; ++i) {
             _mb_controllers.emplace(i, _device->get_mb_controller(i));
@@ -170,7 +282,8 @@ private:
         try {
             _gsm = graph_stream_manager::make(pkt_factory, epid_alloc, links);
         } catch (uhd::io_error& ex) {
-            UHD_LOG_ERROR("RFNOC::GRAPH", "IO Error during GSM initialization. " << ex.what());
+            UHD_LOG_ERROR(
+                "RFNOC::GRAPH", "IO Error during GSM initialization. " << ex.what());
             throw;
         }
 
@@ -187,6 +300,9 @@ private:
             _gsm->connect_host_to_device(ctrl_sep_addr);
             // Grab and stash the Client Zero for this mboard
             detail::client_zero::sptr mb_cz = _gsm->get_client_zero(ctrl_sep_addr);
+            // Client zero port numbers are based on the control xbar numbers,
+            // which have the client 0 interface first, followed by stream
+            // endpoints, and then the blocks.
             _client_zeros.emplace(mb_idx, mb_cz);
 
             const size_t num_blocks       = mb_cz->get_num_blocks();
@@ -204,7 +320,7 @@ private:
 
             // Iterate through and register each of the blocks in this mboard
             for (size_t portno = 0; portno < num_blocks; ++portno) {
-                auto noc_id = mb_cz->get_noc_id(portno + first_block_port);
+                auto noc_id             = mb_cz->get_noc_id(portno + first_block_port);
                 auto block_factory_info = factory::get_block_factory(noc_id);
                 auto block_info = mb_cz->get_block_info(portno + first_block_port);
                 block_id_t block_id(mb_idx,
@@ -222,24 +338,25 @@ private:
                 //   iface object through the mb_iface
                 auto ctrlport_clk_iface =
                     mb.get_clock_iface(block_factory_info.ctrlport_clk);
-                auto tb_clk_iface = (block_factory_info.timebase_clk == CLOCK_KEY_GRAPH) ?
-                    std::make_shared<clock_iface>(CLOCK_KEY_GRAPH) :
-                    mb.get_clock_iface(block_factory_info.timebase_clk);
+                auto tb_clk_iface =
+                    (block_factory_info.timebase_clk == CLOCK_KEY_GRAPH)
+                        ? std::make_shared<clock_iface>(CLOCK_KEY_GRAPH)
+                        : mb.get_clock_iface(block_factory_info.timebase_clk);
                 // A "graph" clock is always "running"
                 if (block_factory_info.timebase_clk == CLOCK_KEY_GRAPH) {
                     tb_clk_iface->set_running(true);
                 }
-                auto block_reg_iface = _gsm->get_block_register_iface(ctrl_sep_addr,
+                auto block_reg_iface   = _gsm->get_block_register_iface(ctrl_sep_addr,
                     portno,
                     *ctrlport_clk_iface.get(),
                     *tb_clk_iface.get());
-                auto make_args_uptr = std::make_unique<noc_block_base::make_args_t>();
+                auto make_args_uptr    = std::make_unique<noc_block_base::make_args_t>();
                 make_args_uptr->noc_id = noc_id;
-                make_args_uptr->block_id = block_id;
-                make_args_uptr->num_input_ports = block_info.num_inputs;
-                make_args_uptr->num_output_ports = block_info.num_outputs;
-                make_args_uptr->reg_iface = block_reg_iface;
-                make_args_uptr->tb_clk_iface = tb_clk_iface;
+                make_args_uptr->block_id           = block_id;
+                make_args_uptr->num_input_ports    = block_info.num_inputs;
+                make_args_uptr->num_output_ports   = block_info.num_outputs;
+                make_args_uptr->reg_iface          = block_reg_iface;
+                make_args_uptr->tb_clk_iface       = tb_clk_iface;
                 make_args_uptr->ctrlport_clk_iface = ctrlport_clk_iface;
                 make_args_uptr->mb_control = (factory::has_requested_mb_access(noc_id)
                                                   ? _mb_controllers.at(mb_idx)
@@ -262,40 +379,43 @@ private:
         _block_registry->init_props();
     }
 
+    void _init_sep_map()
+    {
+        for (size_t mb_idx = 0; mb_idx < get_num_mboards(); ++mb_idx) {
+            auto remote_device_id = _device->get_mb_iface(mb_idx).get_remote_device_id();
+            auto& cz              = _client_zeros.at(mb_idx);
+            for (size_t sep_idx = 0; sep_idx < cz->get_num_stream_endpoints();
+                 ++sep_idx) {
+                // Register ID in _port_block_map
+                block_id_t id(mb_idx, NODE_ID_SEP, sep_idx);
+                _port_block_map.insert({{mb_idx, sep_idx + 1}, id});
+                _sep_map.insert({id.to_string(), sep_addr_t(remote_device_id, sep_idx)});
+            }
+        }
+    }
+
     void _init_static_connections()
     {
         UHD_LOG_TRACE("RFNOC::GRAPH", "Identifying static connections...");
         for (auto& kv_cz : _client_zeros) {
-            auto& adjacency_list          = kv_cz.second->get_adjacency_list();
-            const size_t first_block_port = 1 + kv_cz.second->get_num_stream_endpoints();
-
+            auto& adjacency_list = kv_cz.second->get_adjacency_list();
             for (auto& edge : adjacency_list) {
                 // Assemble edge
                 auto graph_edge = graph_edge_t();
-                if (edge.src_blk_index < first_block_port) {
-                    block_id_t id(kv_cz.first, NODE_ID_SEP, edge.src_blk_index - 1);
-                    _port_block_map.insert({{kv_cz.first, edge.src_blk_index}, id});
-                    graph_edge.src_blockid = id.to_string();
-                } else {
-                    graph_edge.src_blockid =
-                        _port_block_map.at({kv_cz.first, edge.src_blk_index});
-                }
-                if (edge.dst_blk_index < first_block_port) {
-                    block_id_t id(kv_cz.first, NODE_ID_SEP, edge.dst_blk_index - 1);
-                    _port_block_map.insert({{kv_cz.first, edge.dst_blk_index}, id});
-                    graph_edge.dst_blockid = id.to_string();
-                } else {
-                    graph_edge.dst_blockid =
-                        _port_block_map.at({kv_cz.first, edge.dst_blk_index});
-                }
+                UHD_ASSERT_THROW(
+                    _port_block_map.count({kv_cz.first, edge.src_blk_index}));
+                graph_edge.src_blockid =
+                    _port_block_map.at({kv_cz.first, edge.src_blk_index});
+                UHD_ASSERT_THROW(
+                    _port_block_map.count({kv_cz.first, edge.dst_blk_index}));
+                graph_edge.dst_blockid =
+                    _port_block_map.at({kv_cz.first, edge.dst_blk_index});
                 graph_edge.src_port = edge.src_blk_port;
                 graph_edge.dst_port = edge.dst_blk_port;
                 graph_edge.edge     = graph_edge_t::edge_t::STATIC;
                 _static_edges.push_back(graph_edge);
-                UHD_LOG_TRACE("RFNOC::GRAPH",
-                    "Static connection: "
-                        << graph_edge.src_blockid << ":" << graph_edge.src_port << " -> "
-                        << graph_edge.dst_blockid << ":" << graph_edge.dst_port);
+                UHD_LOG_TRACE(
+                    "RFNOC::GRAPH", "Static connection: " << graph_edge.to_string());
             }
         }
     }
@@ -312,214 +432,98 @@ private:
         size_t src_port,
         std::shared_ptr<node_t> dst_blk,
         size_t dst_port,
+        graph_edge_t::edge_t edge_type,
         bool skip_property_propagation)
     {
         graph_edge_t edge_info(
-            src_port, dst_port, graph_edge_t::DYNAMIC, not skip_property_propagation);
+            src_port, dst_port, edge_type, not skip_property_propagation);
         edge_info.src_blockid = src_blk->get_unique_id();
         edge_info.dst_blockid = dst_blk->get_unique_id();
         _graph->connect(src_blk.get(), dst_blk.get(), edge_info);
-    }
-
-    /*! Helper method to find a stream endpoint connected to a block
-     *
-     * \param blk_id the block connected to the stream endpoint
-     * \param port the port connected to the stream endpoint
-     * \param blk_is_src true if the block is a data source, false if it is a
-     *                   destination
-     * \return the address of the stream endpoint, or boost::none if it is not
-     *         directly connected to a stream endpoint
-     */
-    boost::optional<sep_addr_t> _get_adjacent_sep(
-        const block_id_t& blk_id, const size_t port, const bool blk_is_src) const
-    {
-        const std::string block_id_str = get_block(blk_id)->get_block_id().to_string();
-        UHD_LOG_TRACE("RFNOC::GRAPH",
-            "Finding SEP for " << (blk_is_src ? "source" : "dst") << " block "
-                               << block_id_str << ":" << port);
-        // TODO: This is an attempt to simplify the algo, but it turns out to be
-        // as many lines as before:
-        //auto edge_predicate = [blk_is_src, block_id_str](const graph_edge_t edge) {
-            //if (blk_is_src) {
-                //return edge.src_blockid == block_id_str;
-            //}
-            //return edge.dst_blockid == block_id_str;
-        //};
-
-        //auto blk_edge_it =
-            //std::find_if(_static_edges.cbegin(), _static_edges.cend(), edge_predicate);
-        //if (blk_edge_it == _static_edges.cend()) {
-            //return boost::none;
-        //}
-
-        //const std::string sep_block_id = blk_is_src ?
-            //blk_edge_it->dst_blockid : blk_edge_it->src_blockid;
-        //UHD_LOG_TRACE("RFNOC::GRAPH",
-            //"Found SEP: " << sep_block_id);
-
-        //auto port_map_result = std::find_if(_port_block_map.cbegin(),
-            //_port_block_map.cend,
-            //[sep_block_id](std::pair<std::pair<size_t, size_t>, block_id_t> port_block) {
-                //return port_block.second == sep_block_id;
-            //});
-        //if (port_map_result == _port_block_map.cend()) {
-            //throw uhd::lookup_error(
-                //std::string("SEP `") + sep_block_id + "' not found in port/block map!");
-        //}
-        //const auto dev = _device->get_mb_iface(mb_idx).get_remote_device_id();
-        //const sep_inst_t sep_inst = blk_is_src ?
-            //edge.dst_blk_index - 1 : edge.src_blk_index - 1;
-        //return sep_addr_t(dev, sep_inst);
-
-        const auto& info  = _xbar_block_config.at(block_id_str);
-        const auto mb_idx = blk_id.get_device_no();
-        const auto cz     = _client_zeros.at(mb_idx);
-
-        const size_t first_block_port = 1 + cz->get_num_stream_endpoints();
-
-        for (const auto& edge : cz->get_adjacency_list()) {
-            const auto edge_blk_idx = blk_is_src ? edge.src_blk_index
-                                                 : edge.dst_blk_index;
-            const auto edge_blk_port = blk_is_src ? edge.src_blk_port : edge.dst_blk_port;
-
-            if ((edge_blk_idx == info.xbar_port + first_block_port)
-                and (edge_blk_port == port)) {
-                UHD_LOGGER_DEBUG("RFNOC::GRAPH")
-                    << boost::format("Block found in adjacency list. %d:%d->%d:%d")
-                           % edge.src_blk_index
-                           % static_cast<unsigned int>(edge.src_blk_port)
-                           % edge.dst_blk_index
-                           % static_cast<unsigned int>(edge.dst_blk_port);
-
-                // Check that the block is connected to a stream endpoint. The
-                // minus one here is because index zero is client 0.
-                const sep_inst_t sep_inst = blk_is_src ?
-                    edge.dst_blk_index - 1 : edge.src_blk_index - 1;
-
-                if (sep_inst < cz->get_num_stream_endpoints()) {
-                    const auto dev = _device->get_mb_iface(mb_idx).get_remote_device_id();
-                    return sep_addr_t(dev, sep_inst);
-                } else {
-                    // Block is connected to another block
-                    return boost::none;
-                }
-            }
-        }
-        return boost::none;
     }
 
     /*! Internal physical connection helper
      *
      * Make the connections in the physical device
      *
-     * \throws connect_disallowed_on_src
-     *     if the source port is statically connected to a *different* block
-     * \throws connect_disallowed_on_dst
-     *     if the destination port is statically connected to a *different* block
+     * \throws uhd::routing_error
+     *     if the blocks are statically connected to something else
      */
-    void _physical_connect(const block_id_t& src_blk,
+    graph_edge_t::edge_t _physical_connect(const block_id_t& src_blk,
         size_t src_port,
         const block_id_t& dst_blk,
         size_t dst_port)
     {
-        auto src_blk_ctrl = get_block(src_blk);
-        auto dst_blk_ctrl = get_block(dst_blk);
+        const std::string src_blk_info =
+            src_blk.to_string() + ":" + std::to_string(src_port);
+        const std::string dst_blk_info =
+            dst_blk.to_string() + ":" + std::to_string(dst_port);
 
-        /*
-         * Start by determining if the connection can be made
-         * Get the adjacency list and check if the connection is in it already
-         */
-        // Read the adjacency list for the source and destination blocks
-        auto src_mb_idx = src_blk.get_device_no();
-        auto src_cz     = _gsm->get_client_zero(
-            sep_addr_t(_device->get_mb_iface(src_mb_idx).get_remote_device_id(), 0));
-        std::vector<detail::client_zero::edge_def_t>& adj_list =
-            src_cz->get_adjacency_list();
-        // Check the src_blk
-        auto src_blk_xbar_info =
-            _xbar_block_config.at(src_blk_ctrl->get_block_id().to_string());
-        // This "xbar_port" starts at the first block, so we need to add the client zero
-        // and stream endpoint ports
-        const auto src_xbar_port =
-            src_blk_xbar_info.xbar_port + src_cz->get_num_stream_endpoints() + 1;
-        // We can also find out which stream endpoint the src block is connected to
-        sep_inst_t src_sep;
-        for (detail::client_zero::edge_def_t edge : adj_list) {
-            if ((edge.src_blk_index == src_xbar_port)
-                and (edge.src_blk_port == src_port)) {
-                UHD_LOGGER_DEBUG("RFNOC::GRAPH")
-                    << boost::format("Block found in adjacency list. %d:%d->%d:%d")
-                           % edge.src_blk_index
-                           % static_cast<unsigned int>(edge.src_blk_port)
-                           % edge.dst_blk_index
-                           % static_cast<unsigned int>(edge.dst_blk_port);
-                if (edge.dst_blk_index <= src_cz->get_num_stream_endpoints()) {
-                    src_sep =
-                        edge.dst_blk_index - 1 /* minus 1 because port 0 is client zero*/;
-                } else {
-                    // TODO connect_disallowed_on_src?
-                    // TODO put more info in exception
-                    throw uhd::routing_error(
-                        "Unable to connect to statically connected source port");
-                }
-            }
+        // Find the static edge for src_blk:src_port
+        graph_edge_t src_static_edge = _assert_edge(
+            _get_static_edge(
+                [src_blk_id = src_blk.to_string(), src_port](const graph_edge_t& edge) {
+                    return edge.src_blockid == src_blk_id && edge.src_port == src_port;
+                }),
+            src_blk_info);
+
+        // Now see if it's already connected to the destination
+        if (src_static_edge.dst_blockid == dst_blk.to_string()
+            && src_static_edge.dst_port == dst_port) {
+            UHD_LOG_TRACE(LOG_ID,
+                "Blocks " << src_blk_info << " and " << dst_blk_info
+                          << " are already statically connected, no physical connection "
+                             "required.");
+            return graph_edge_t::STATIC;
         }
 
-        // Read the dst adjacency list if its different
-        // TODO they may be on the same mboard, which would make this redundant
-        auto dst_mb_idx = dst_blk.get_device_no();
-        auto dst_cz     = _gsm->get_client_zero(
-            sep_addr_t(_device->get_mb_iface(dst_mb_idx).get_remote_device_id(), 0));
-        adj_list = dst_cz->get_adjacency_list();
-        // Check the dst blk
-        auto dst_blk_xbar_info =
-            _xbar_block_config.at(dst_blk_ctrl->get_block_id().to_string());
-        // This "xbar_port" starts at the first block, so we need to add the client zero
-        // and stream endpoint ports
-        const auto dst_xbar_port =
-            dst_blk_xbar_info.xbar_port + dst_cz->get_num_stream_endpoints() + 1;
-        // We can also find out which stream endpoint the dst block is connected to
-        sep_inst_t dst_sep;
-        for (detail::client_zero::edge_def_t edge : adj_list) {
-            if ((edge.dst_blk_index == dst_xbar_port)
-                and (edge.dst_blk_port == dst_port)) {
-                UHD_LOGGER_DEBUG("RFNOC::GRAPH")
-                    << boost::format("Block found in adjacency list. %d:%d->%d:%d")
-                           % edge.src_blk_index
-                           % static_cast<unsigned int>(edge.src_blk_port)
-                           % edge.dst_blk_index
-                           % static_cast<unsigned int>(edge.dst_blk_port);
-                if (edge.src_blk_index <= dst_cz->get_num_stream_endpoints()) {
-                    dst_sep =
-                        edge.src_blk_index - 1 /* minus 1 because port 0 is client zero*/;
-                } else {
-                    // TODO connect_disallowed_on_dst?
-                    // TODO put more info in exception
-                    throw uhd::routing_error(
-                        "Unable to connect to statically connected destination port");
-                }
-            }
+        // If they're not statically connected, the source *must* be connected
+        // to an SEP, or this route is impossible
+        if (block_id_t(src_static_edge.dst_blockid).get_block_name() != NODE_ID_SEP) {
+            const std::string err_msg =
+                src_blk_info + " is neither statically connected to " + dst_blk_info
+                + " nor to an SEP! Routing impossible.";
+            UHD_LOG_ERROR(LOG_ID, err_msg);
+            throw uhd::routing_error(err_msg);
         }
 
-        /* TODO: we checked if either port is used in a static connection (and its not if
-         * we've made it this far). We also need to check something else, but I can't
-         * remember what...
-         */
+        // OK, now we know which source SEP we have
+        const std::string src_sep_info = src_static_edge.dst_blockid;
+        const sep_addr_t src_sep_addr  = _sep_map.at(src_sep_info);
 
-        // At this point, we know the attempted connection is valid, so let's go ahead and
-        // make it
-        sep_addr_t src_sep_addr(
-            _device->get_mb_iface(src_mb_idx).get_remote_device_id(), src_sep);
-        sep_addr_t dst_sep_addr(
-            _device->get_mb_iface(dst_mb_idx).get_remote_device_id(), dst_sep);
+        // Now find the static edge for the destination SEP
+        auto dst_static_edge = _assert_edge(
+            _get_static_edge(
+                [dst_blk_id = dst_blk.to_string(), dst_port](const graph_edge_t& edge) {
+                    return edge.dst_blockid == dst_blk_id && edge.dst_port == dst_port;
+                }),
+            dst_blk_info);
+
+        // If they're not statically connected, the source *must* be connected
+        // to an SEP, or this route is impossible
+        if (block_id_t(dst_static_edge.src_blockid).get_block_name() != NODE_ID_SEP) {
+            const std::string err_msg =
+                dst_blk_info + " is neither statically connected to " + src_blk_info
+                + " nor to an SEP! Routing impossible.";
+            UHD_LOG_ERROR(LOG_ID, err_msg);
+            throw uhd::routing_error(err_msg);
+        }
+
+        // OK, now we know which destination SEP we have
+        const std::string dst_sep_info = dst_static_edge.src_blockid;
+        const sep_addr_t dst_sep_addr  = _sep_map.at(dst_sep_info);
+
+        // Now all we need to do is dynamically connect those SEPs
         auto strm_info = _gsm->create_device_to_device_data_stream(
             dst_sep_addr, src_sep_addr, false, 0.1, 0.0, false);
 
-        UHD_LOGGER_INFO("RFNOC::GRAPH")
+        UHD_LOGGER_DEBUG(LOG_ID)
             << boost::format("Data stream between EPID %d and EPID %d established "
                              "where downstream buffer can hold %lu bytes and %u packets")
                    % std::get<0>(strm_info).first % std::get<0>(strm_info).second
                    % std::get<1>(strm_info).bytes % std::get<1>(strm_info).packets;
+
+        return graph_edge_t::DYNAMIC;
     }
 
     //! Flush and reset each connected port on the mboard
@@ -541,6 +545,35 @@ private:
             mb_cz->reset_ctrl(block_portno);
         }
     }
+
+    /*! Find the static edge that matches \p pred
+     *
+     * \throws uhd::assertion_error if the edge can't be found. So be careful!
+     */
+    template <typename UnaryPredicate>
+    boost::optional<graph_edge_t> _get_static_edge(UnaryPredicate&& pred)
+    {
+        auto edge_it = std::find_if(_static_edges.cbegin(), _static_edges.cend(), pred);
+        if (edge_it == _static_edges.cend()) {
+            return boost::none;
+        }
+        return *edge_it;
+    }
+
+    /*! Make sure an optional edge info is valid, or throw.
+     */
+    graph_edge_t _assert_edge(
+        boost::optional<graph_edge_t> edge_o, const std::string& blk_info)
+    {
+        if (!bool(edge_o)) {
+            const std::string err_msg = std::string("Cannot connect block ") + blk_info
+                                        + ", port is unconnected in the FPGA!";
+            UHD_LOG_ERROR("RFNOC::GRAPH", err_msg);
+            throw uhd::routing_error(err_msg);
+        }
+        return edge_o.get();
+    }
+
     /**************************************************************************
      * Attributes
      *************************************************************************/
@@ -579,6 +612,9 @@ private:
     //! Map a pair (motherboard index, control crossbar port) to an RFNoC block
     // or SEP
     std::map<std::pair<size_t, size_t>, block_id_t> _port_block_map;
+
+    //! Map SEP block ID (e.g. 0/SEP#0) onto a sep_addr_t
+    std::unordered_map<std::string, sep_addr_t> _sep_map;
 
     //! List of statically connected edges. Includes SEPs too!
     std::vector<graph_edge_t> _static_edges;

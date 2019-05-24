@@ -31,7 +31,7 @@ public:
     {
         assert(pkt_buff);
         _pkt_buff = const_cast<uint64_t*>(reinterpret_cast<const uint64_t*>(pkt_buff));
-        _compute_mdata_offset();
+        _mdata_offset = _compute_mdata_offset(get_chdr_header());
     }
 
     virtual void refresh(void* pkt_buff, chdr_header& header, uint64_t timestamp = 0)
@@ -42,7 +42,7 @@ public:
         if (_has_timestamp(header)) {
             _pkt_buff[1] = u64_from_host(timestamp);
         }
-        _compute_mdata_offset();
+        _mdata_offset = _compute_mdata_offset(get_chdr_header());
     }
 
     virtual void update_payload_size(size_t payload_size_bytes)
@@ -115,19 +115,27 @@ public:
             + (chdr_w_stride * (_mdata_offset + get_chdr_header().get_num_mdata())));
     }
 
+    virtual size_t calculate_payload_offset(const packet_type_t pkt_type,
+        const uint8_t num_mdata = 0) const
+    {
+        chdr_header header;
+        header.set_pkt_type(pkt_type);
+        return (_compute_mdata_offset(header) + num_mdata) * chdr_w_bytes;
+    }
+
 private:
     inline bool _has_timestamp(const chdr_header& header) const
     {
         return (header.get_pkt_type() == PKT_TYPE_DATA_WITH_TS);
     }
 
-    inline void _compute_mdata_offset() const
+    inline size_t _compute_mdata_offset(const chdr_header& header) const
     {
         // The metadata offset depends on the chdr_w and whether we have a timestamp
         if (chdr_w == 64) {
-            _mdata_offset = _has_timestamp(get_chdr_header()) ? 2 : 1;
+            return _has_timestamp(header) ? 2 : 1;
         } else {
-            _mdata_offset = 1;
+            return 1;
         }
     }
 

@@ -794,12 +794,11 @@ private: // Functions
         mgmt_hop_t& hop)
     {
         // Validate flow control parameters
-        if (fc_freq.bytes >= (uint64_t(1) << 40)
-            || fc_freq.packets >= (uint64_t(1) << 24)) {
+        if (fc_freq.bytes > MAX_FC_FREQ_BYTES || fc_freq.packets > MAX_FC_FREQ_PKTS) {
             throw uhd::value_error("Flow control frequency parameters out of bounds");
         }
-        if (fc_headroom.bytes >= (uint64_t(1) << 16)
-            || fc_headroom.packets >= (uint64_t(1) << 8)) {
+        if (fc_headroom.bytes > MAX_FC_HEADROOM_BYTES
+            || fc_headroom.packets > MAX_FC_HEADROOM_PKTS) {
             throw uhd::value_error("Flow control headroom parameters out of bounds");
         }
 
@@ -992,7 +991,8 @@ private: // Functions
 
         auto send_buff = xport.get_send_buff(timeout * 1000);
         if (not send_buff) {
-            UHD_LOG_ERROR("RFNOC::MGMT", "Timed out getting send buff for management transaction");
+            UHD_LOG_ERROR(
+                "RFNOC::MGMT", "Timed out getting send buff for management transaction");
             throw uhd::io_error("Timed out getting send buff for management transaction");
         }
         _send_pkt->refresh(send_buff->data(), header, payload);

@@ -55,6 +55,8 @@ set(test_sources
     fe_conn_test.cpp
     rfnoc_node_test.cpp
     link_test.cpp
+    rx_streamer_test.cpp
+    tx_streamer_test.cpp
 )
 
 set(benchmark_sources

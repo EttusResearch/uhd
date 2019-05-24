@@ -8,7 +8,9 @@
 #include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/graph_stream_manager.hpp>
 #include <uhdlib/rfnoc/link_stream_manager.hpp>
+#include <uhdlib/rfnoc/chdr_rx_data_xport.hpp>
 #include <boost/format.hpp>
+#include <boost/make_shared.hpp>
 #include <map>
 #include <set>
 
@@ -173,6 +175,38 @@ public:
         }
         throw uhd::routing_error("The specified destination is unreachable from the "
                                  "specified source endpoint");
+    }
+
+    chdr_rx_data_xport::uptr create_device_to_host_data_stream(
+        const sep_addr_t src_addr,
+        const sw_buff_t pyld_buff_fmt,
+        const sw_buff_t mdata_buff_fmt,
+        const device_addr_t& xport_args)
+    {
+        // TODO: choose a route
+        const device_id_t via_device = NULL_DEVICE_ID;
+
+        return _link_mgrs.at(_check_dst_and_find_src(src_addr, via_device))
+            ->create_device_to_host_data_stream(src_addr,
+                pyld_buff_fmt,
+                mdata_buff_fmt,
+                xport_args);
+    }
+
+    virtual chdr_tx_data_xport::uptr create_host_to_device_data_stream(
+        sep_addr_t dst_addr,
+        const sw_buff_t pyld_buff_fmt,
+        const sw_buff_t mdata_buff_fmt,
+        const device_addr_t& xport_args)
+    {
+        // TODO: choose a route
+        const device_id_t via_device = NULL_DEVICE_ID;
+
+        return _link_mgrs.at(_check_dst_and_find_src(dst_addr, via_device))
+            ->create_host_to_device_data_stream(dst_addr,
+                pyld_buff_fmt,
+                mdata_buff_fmt,
+                xport_args);
     }
 
 private:

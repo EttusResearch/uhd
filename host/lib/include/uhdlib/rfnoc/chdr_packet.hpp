@@ -114,6 +114,15 @@ public:
      */
     virtual void* get_payload_ptr() = 0;
 
+    /*! Return the payload offset in bytes for a given type and num_mdata
+     *
+     * \param pkt_type The packet type for calculation
+     * \param num_mdata The number of metadata words for calculation
+     * \return The offset of the payload in a packet with the given params
+     */
+    virtual size_t calculate_payload_offset(const packet_type_t pkt_type,
+        const uint8_t num_mdata = 0) const = 0;
+
     //! Shortcut to return the const metadata pointer cast as a specific type
     template <typename data_t>
     inline const data_t* get_mdata_const_ptr_as() const

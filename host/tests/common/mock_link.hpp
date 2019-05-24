@@ -94,6 +94,14 @@ public:
     }
 
     /*!
+     * Return the number of packets stored in the mock link.
+     */
+    size_t get_num_packets() const
+    {
+        return _tx_mems.size();
+    }
+
+    /*!
      * Retrieve the contents of a packet sent by the link. The link
      * stores packets in a queue in the order they were sent.
      */

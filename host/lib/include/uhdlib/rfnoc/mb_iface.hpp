@@ -8,20 +8,13 @@
 #define INCLUDED_LIBUHD_MB_IFACE_HPP
 
 #include <uhdlib/rfnoc/chdr_ctrl_xport.hpp>
-#include <uhdlib/rfnoc/rfnoc_common.hpp>
+#include <uhdlib/rfnoc/chdr_rx_data_xport.hpp>
+#include <uhdlib/rfnoc/chdr_tx_data_xport.hpp>
 #include <uhdlib/rfnoc/clock_iface.hpp>
+#include <uhdlib/rfnoc/rfnoc_common.hpp>
 #include <memory>
 
 namespace uhd { namespace rfnoc {
-
-// FIXME: Update this
-class chdr_rx_data_xport
-{
-public:
-    using uptr = std::unique_ptr<chdr_rx_data_xport>;
-};
-
-using chdr_tx_data_xport = chdr_rx_data_xport;
 
 /*! Motherboard (backchannel) interface
  *
@@ -70,7 +63,8 @@ public:
 
     /*! Return a reference to a clock iface
      */
-    virtual std::shared_ptr<clock_iface> get_clock_iface(const std::string& clock_name) = 0;
+    virtual std::shared_ptr<clock_iface> get_clock_iface(
+        const std::string& clock_name) = 0;
 
     /*! Create a control transport
      *
@@ -89,30 +83,34 @@ public:
      *
      * This is typically called once per streaming channel.
      *
-     * \param local_device_id ID for the host transport adapter to use
-     * \param local_epid Host (sink) streaming endpoint ID
-     * \param remote_epid Remote device (source) streaming endpoint ID
+     * \param addrs Address of the device and host stream endpoints
+     * \param epids Endpoint IDs of the device and host stream endpoints
+     * \param pyld_buff_fmt Datatype of SW buffer that holds the data payload
+     * \param mdata_buff_fmt Datatype of SW buffer that holds the data metadata
      * \param xport_args Transport configuration args
      * \return A CHDR RX data transport
      */
-    virtual chdr_rx_data_xport::uptr make_rx_data_transport(device_id_t local_device_id,
-        const sep_id_t& local_epid,
-        const sep_id_t& remote_epid,
+    virtual chdr_rx_data_xport::uptr make_rx_data_transport(const sep_addr_pair_t& addrs,
+        const sep_id_pair_t& epids,
+        const sw_buff_t pyld_buff_fmt,
+        const sw_buff_t mdata_buff_fmt,
         const device_addr_t& xport_args) = 0;
 
     /*! Create an TX data transport
      *
      * This is typically called once per streaming channel.
      *
-     * \param local_device_id ID for the host transport adapter to use
-     * \param local_epid Host (source) streaming endpoint ID
-     * \param remote_epid Remote device (sink) streaming endpoint ID
+     * \param addrs Address of the host and device stream endpoints
+     * \param epids Endpoint IDs of the host and device stream endpoints
+     * \param pyld_buff_fmt Datatype of SW buffer that holds the data payload
+     * \param mdata_buff_fmt Datatype of SW buffer that holds the data metadata
      * \param xport_args Transport configuration args
      * \return A CHDR TX data transport
      */
-    virtual chdr_tx_data_xport::uptr make_tx_data_transport(device_id_t local_device_id,
-        const sep_id_t& local_epid,
-        const sep_id_t& remote_epid,
+    virtual chdr_tx_data_xport::uptr make_tx_data_transport(const sep_addr_pair_t& addrs,
+        const sep_id_pair_t& epids,
+        const uhd::rfnoc::sw_buff_t pyld_buff_fmt,
+        const uhd::rfnoc::sw_buff_t mdata_buff_fmt,
         const device_addr_t& xport_args) = 0;
 };
 
