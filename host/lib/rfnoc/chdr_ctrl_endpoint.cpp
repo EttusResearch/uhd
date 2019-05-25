@@ -8,13 +8,13 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/thread.hpp>
-#include <uhdlib/rfnoc/chdr/chdr_packet.hpp>
-#include <uhdlib/rfnoc/chdr/chdr_types.hpp>
 #include <uhdlib/rfnoc/chdr_ctrl_endpoint.hpp>
+#include <uhdlib/rfnoc/chdr_packet.hpp>
+#include <uhdlib/rfnoc/chdr_types.hpp>
 #include <boost/format.hpp>
+#include <atomic>
 #include <mutex>
 #include <thread>
-#include <atomic>
 
 using namespace uhd;
 using namespace uhd::rfnoc;

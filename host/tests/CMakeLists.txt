@@ -229,11 +229,11 @@ UHD_ADD_NONAPI_TEST(
 UHD_ADD_NONAPI_TEST(
     TARGET rfnoc_chdr_test.cpp
     EXTRA_SOURCES
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/chdr/chdr_types.cpp
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/chdr/chdr_packet.cpp
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/chdr_types.cpp
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/chdr_packet.cpp
     INCLUDE_DIRS
-    ${CMAKE_BINARY_DIR}/lib/rfnoc/chdr/
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/chdr/
+    ${CMAKE_BINARY_DIR}/lib/rfnoc/
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/
 )
 
 UHD_ADD_NONAPI_TEST(

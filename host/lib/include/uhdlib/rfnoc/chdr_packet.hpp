@@ -9,7 +9,7 @@
 
 #include <uhd/types/endianness.hpp>
 #include <uhd/utils/byteswap.hpp>
-#include <uhdlib/rfnoc/chdr/chdr_types.hpp>
+#include <uhdlib/rfnoc/chdr_types.hpp>
 #include <limits>
 
 namespace uhd { namespace rfnoc { namespace chdr {
@@ -213,7 +213,7 @@ public:
         payload.deserialize(_chdr_pkt->get_payload_const_ptr_as<uint64_t>(),
             _chdr_pkt->get_payload_size() / sizeof(uint64_t),
             _chdr_pkt->conv_to_host<uint64_t>());
-        return std::move(payload);
+        return payload;
     }
 
     //! Fills the CHDR payload into the specified parameter
@@ -255,6 +255,12 @@ class chdr_packet_factory
 {
 public:
     //! A parametrized ctor that takes in all the info required to generate a CHDR packet
+    //
+    // \param chdr_w The CHDR width of the remote device
+    // \param endianness The endianness of the link being used (e.g., Ethernet
+    //                   typically uses big-endian, PCIe typically uses
+    //                   little-endian). Note: The host endianness is
+    //                   automatically derived.
     chdr_packet_factory(chdr_w_t chdr_w, endianness_t endianness);
     chdr_packet_factory()                               = delete;
     chdr_packet_factory(const chdr_packet_factory& rhs) = default;

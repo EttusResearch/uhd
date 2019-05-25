@@ -7,7 +7,7 @@
 #ifndef INCLUDED_LIBUHD_MGMT_PORTAL_HPP
 #define INCLUDED_LIBUHD_MGMT_PORTAL_HPP
 
-#include <uhdlib/rfnoc/chdr/chdr_types.hpp>
+#include <uhdlib/rfnoc/chdr_types.hpp>
 #include <uhdlib/rfnoc/xports.hpp>
 #include <memory>
 

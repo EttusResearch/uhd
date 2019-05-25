@@ -20,6 +20,8 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/block_ctrl_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/blockdef_xml_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/block_id.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/chdr_types.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/chdr_packet.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/client_zero.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ctrl_iface.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/graph_impl.cpp
@@ -58,5 +60,4 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/replay_block_ctrl_impl.cpp
 )
 
-INCLUDE_SUBDIRECTORY(chdr)
 INCLUDE_SUBDIRECTORY(nocscript)

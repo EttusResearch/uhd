@@ -6,7 +6,7 @@
 
 #include <uhd/exception.hpp>
 #include <uhd/types/endianness.hpp>
-#include <uhdlib/rfnoc/chdr/chdr_types.hpp>
+#include <uhdlib/rfnoc/chdr_types.hpp>
 #include <boost/format.hpp>
 #include <cassert>
 

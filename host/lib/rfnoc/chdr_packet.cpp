@@ -4,12 +4,13 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhdlib/rfnoc/chdr/chdr_packet.hpp>
+#include <uhdlib/rfnoc/chdr_packet.hpp>
 #include <cassert>
 #include <functional>
 #include <memory>
 
 using namespace uhd;
+using namespace uhd::rfnoc;
 using namespace uhd::rfnoc::chdr;
 
 chdr_packet::~chdr_packet() = default;
@@ -17,7 +18,7 @@ chdr_packet::~chdr_packet() = default;
 //------------------------------------------------------------
 // chdr_packet
 //------------------------------------------------------------
-
+// endianness is the link endianness, not the host endianness
 template <size_t chdr_w, endianness_t endianness>
 class chdr_packet_impl : public chdr_packet
 {
@@ -39,7 +40,7 @@ public:
         _pkt_buff    = reinterpret_cast<uint64_t*>(pkt_buff);
         _pkt_buff[0] = u64_from_host(header);
         if (_has_timestamp(header)) {
-            _pkt_buff[1] = timestamp;
+            _pkt_buff[1] = u64_from_host(timestamp);
         }
         _compute_mdata_offset();
     }

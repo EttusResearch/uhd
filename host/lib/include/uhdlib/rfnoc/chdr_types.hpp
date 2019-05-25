@@ -9,46 +9,13 @@
 
 #include <uhd/types/endianness.hpp>
 #include <uhd/utils/byteswap.hpp>
+#include <uhdlib/rfnoc/rfnoc_common.hpp>
 #include <boost/optional.hpp>
 #include <list>
 #include <memory>
 #include <vector>
 
-namespace uhd { namespace rfnoc {
-
-enum chdr_w_t {
-    //! CHDR_W = 64 bits
-    CHDR_W_64 = 0,
-    //! CHDR_W = 128 bits
-    CHDR_W_128 = 1,
-    //! CHDR_W = 256 bits
-    CHDR_W_256 = 2,
-    //! CHDR_W = 512 bits
-    CHDR_W_512 = 3
-};
-
-using device_id_t = uint16_t;
-using sep_inst_t  = uint16_t;
-using sep_addr_t  = std::pair<device_id_t, sep_inst_t>;
-using sep_id_t    = uint16_t;
-
-constexpr size_t chdr_w_to_bits(chdr_w_t chdr_w)
-{
-    switch (chdr_w) {
-        case CHDR_W_64:
-            return 64;
-        case CHDR_W_128:
-            return 128;
-        case CHDR_W_256:
-            return 256;
-        case CHDR_W_512:
-            return 512;
-        default:
-            return 0;
-    }
-}
-
-namespace chdr {
+namespace uhd { namespace rfnoc { namespace chdr {
 
 enum packet_type_t {
     PKT_TYPE_MGMT         = 0x0, //! Management packet
@@ -832,6 +799,12 @@ public:
     //! Return a string representation of this object
     const std::string to_string() const;
 
+    //! Return the source EPID for this transaction
+    inline const sep_id_t get_src_epid() const
+    {
+        return _src_epid;
+    }
+
 private:
     sep_id_t _src_epid = 0;
     uint16_t _protover = 0;
@@ -839,7 +812,6 @@ private:
     std::vector<mgmt_hop_t> _hops;
 };
 
-} // namespace chdr
-}} // namespace uhd::rfnoc
+}}} // namespace uhd::rfnoc::chdr
 
 #endif /* INCLUDED_RFNOC_CHDR_TYPES_HPP */

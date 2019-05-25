@@ -6,8 +6,8 @@
 
 #include <uhd/types/endianness.hpp>
 #include <uhd/utils/byteswap.hpp>
-#include <uhdlib/rfnoc/chdr/chdr_packet.hpp>
-#include <uhdlib/rfnoc/chdr/chdr_types.hpp>
+#include <uhdlib/rfnoc/chdr_packet.hpp>
+#include <uhdlib/rfnoc/chdr_types.hpp>
 #include <boost/format.hpp>
 #include <boost/test/unit_test.hpp>
 #include <iostream>
