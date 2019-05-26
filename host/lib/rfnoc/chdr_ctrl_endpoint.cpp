@@ -67,8 +67,8 @@ public:
     virtual ctrlport_endpoint::sptr get_ctrlport_ep(uint16_t port,
         size_t buff_capacity,
         size_t max_outstanding_async_msgs,
-        double ctrl_clk_freq,
-        double timebase_freq)
+        const clock_iface& client_clk,
+        const clock_iface& timebase_clk)
     {
         std::lock_guard<std::mutex> lock(_mutex);
 
@@ -93,8 +93,8 @@ public:
                 port,
                 buff_capacity,
                 max_outstanding_async_msgs,
-                ctrl_clk_freq,
-                timebase_freq);
+                client_clk,
+                timebase_clk);
             _endpoint_map.insert(std::make_pair(port, ctrlport_ep));
             UHD_LOG_DEBUG("RFNOC",
                 boost::format("Created ctrlport endpoint for port %d on EPID %d") % port

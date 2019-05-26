@@ -38,8 +38,8 @@ public:
     virtual ctrlport_endpoint::sptr get_ctrlport_ep(uint16_t port,
         size_t buff_capacity,
         size_t max_outstanding_async_msgs,
-        double ctrl_clk_freq,
-        double timebase_freq) = 0;
+        const clock_iface& client_clk,
+        const clock_iface& timebase_clk) = 0;
 
     //! Returns the number of dropped packets due to misclassification
     virtual size_t get_num_drops() const = 0;

@@ -13,6 +13,7 @@
 
 namespace uhd { namespace rfnoc {
 
+class clock_iface;
 /*! Data structure to hold the arguments passed into the noc_block_base ctor
  *
  * We want to hide these from the user, so she can't futz around with them.
@@ -35,6 +36,8 @@ struct noc_block_base::make_args_t
     //! Register interface to this block's register space
     register_iface::sptr reg_iface;
 
+    //! Clock interface object that is shared with the reg_iface
+    std::shared_ptr<clock_iface> clk_iface;
     //! The subtree for this block
     uhd::property_tree::sptr tree;
 };

@@ -9,6 +9,7 @@
 
 #include <uhd/rfnoc/register_iface.hpp>
 #include <uhdlib/rfnoc/chdr/chdr_types.hpp>
+#include <uhdlib/rfnoc/clock_iface.hpp>
 #include <memory>
 
 namespace uhd { namespace rfnoc {
@@ -51,8 +52,8 @@ public:
         uint16_t local_port,
         size_t buff_capacity,
         size_t max_outstanding_async_msgs,
-        double ctrl_clk_freq,
-        double timebase_freq);
+        const clock_iface& client_clk,
+        const clock_iface& timebase_clk);
 
 }; // class ctrlport_endpoint
 

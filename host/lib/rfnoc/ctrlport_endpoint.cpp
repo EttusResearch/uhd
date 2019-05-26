@@ -41,15 +41,15 @@ public:
         uint16_t local_port,
         size_t buff_capacity,
         size_t max_outstanding_async_msgs,
-        double ctrl_clk_freq,
-        double timebase_freq)
+        const clock_iface& client_clk,
+        const clock_iface& timebase_clk)
         : _handle_send(send_fcn)
         , _my_epid(my_epid)
         , _local_port(local_port)
         , _buff_capacity(buff_capacity)
         , _max_outstanding_async_msgs(max_outstanding_async_msgs)
-        , _ctrl_clk_freq(ctrl_clk_freq)
-        , _timebase_freq(timebase_freq)
+        , _client_clk(client_clk)
+        , _timebase_clk(timebase_clk)
     {
     }
 
@@ -166,7 +166,7 @@ public:
         // Send request
         auto request = send_request_packet(OP_POLL,
             addr,
-            {data, mask, static_cast<uint32_t>(timeout.get_real_secs() * _ctrl_clk_freq)},
+            {data, mask, static_cast<uint32_t>(timeout.to_ticks(_client_clk.get_freq()))},
             timestamp,
             timeout_time);
         // Optionally wait for an ACK
@@ -182,7 +182,7 @@ public:
         // Send request
         auto request = send_request_packet(OP_SLEEP,
             0,
-            {static_cast<uint32_t>(duration.get_real_secs() * _ctrl_clk_freq)},
+            {static_cast<uint32_t>(duration.to_ticks(_client_clk.get_freq()))},
             uhd::time_spec_t::ASAP,
             timeout_time);
         // Optionally wait for an ACK
@@ -313,10 +313,17 @@ private:
     {
         std::unique_lock<std::mutex> lock(_mutex);
 
+        if (!_client_clk.is_running()) {
+            throw uhd::system_error("Ctrlport client clock is not running");
+        }
+
         // Convert from uhd::time_spec to timestamp
         boost::optional<uint64_t> timestamp;
         if (time_spec != time_spec_t::ASAP) {
-            timestamp = time_spec.to_ticks(_timebase_freq);
+            if (!_timebase_clk.is_running()) {
+                throw uhd::system_error("Timebase clock is not running");
+            }
+            timestamp = time_spec.to_ticks(_timebase_clk.get_freq());
         }
 
         // Assemble the control payload
@@ -428,10 +435,10 @@ private:
     const size_t _buff_capacity;
     //! The max number of outstanding async messages that a block can have at any time
     const size_t _max_outstanding_async_msgs;
-    //! The clock rate of the clock that drives the ctrlport endpoint
-    const double _ctrl_clk_freq;
-    //! The clock rate of the primary timebase used for timed commands
-    const double _timebase_freq;
+    //! The clock that drives the ctrlport endpoint
+    const clock_iface& _client_clk;
+    //! The clock that drives the timing logic for the ctrlport endpoint
+    const clock_iface& _timebase_clk;
 
     //! The function to call to handle an async message
     async_msg_callback_t _handle_async_msg = async_msg_callback_t();
@@ -458,14 +465,14 @@ ctrlport_endpoint::sptr ctrlport_endpoint::make(const send_fn_t& handle_send,
     uint16_t local_port,
     size_t buff_capacity,
     size_t max_outstanding_async_msgs,
-    double ctrl_clk_freq,
-    double timebase_freq)
+    const clock_iface& client_clk,
+    const clock_iface& timebase_clk)
 {
     return std::make_shared<ctrlport_endpoint_impl>(handle_send,
         this_epid,
         local_port,
         buff_capacity,
         max_outstanding_async_msgs,
-        ctrl_clk_freq,
-        timebase_freq);
+        client_clk,
+        timebase_clk);
 }
