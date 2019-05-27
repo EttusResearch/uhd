@@ -222,6 +222,13 @@ UHD_API void set_logger_level(const std::string& logger, uhd::log::severity_leve
 #    define UHD_LOG_FATAL(component, message)
 #endif
 
+#define RFNOC_LOG_TRACE(message) UHD_LOG_TRACE(this->get_unique_id(), message)
+#define RFNOC_LOG_DEBUG(message) UHD_LOG_DEBUG(this->get_unique_id(), message)
+#define RFNOC_LOG_INFO(message) UHD_LOG_INFO(this->get_unique_id(), message)
+#define RFNOC_LOG_WARNING(message) UHD_LOG_WARNING(this->get_unique_id(), message)
+#define RFNOC_LOG_ERROR(message) UHD_LOG_ERROR(this->get_unique_id(), message)
+#define RFNOC_LOG_FATAL(message) UHD_LOG_FATAL(this->get_unique_id(), message)
+
 #ifndef UHD_LOG_FASTPATH_DISABLE
 //! Extra-fast logging macro for when speed matters.
 // No metadata is tracked. Only the message is displayed. This does not go
