@@ -45,6 +45,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/tx_stream_terminator.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/wb_iface_adapter.cpp
     # Default block control classes:
+    ${CMAKE_CURRENT_SOURCE_DIR}/ddc_block_control.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ddc_block_ctrl_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/duc_block_ctrl_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/fir_block_ctrl_impl.cpp
