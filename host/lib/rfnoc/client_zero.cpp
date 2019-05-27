@@ -103,7 +103,7 @@ uint32_t client_zero::get_noc_id(uint16_t portno)
 {
     _check_port_number(portno);
     // The NOC ID is the second entry in the port's register space
-    return regs().peek32(_get_port_base_addr(portno) + 1);
+    return regs().peek32(_get_port_base_addr(portno) + 4);
 }
 
 bool client_zero::get_flush_active(uint16_t portno)
@@ -175,15 +175,17 @@ void client_zero::reset_chdr(uint16_t portno)
 client_zero::block_config_info client_zero::get_block_info(uint16_t portno)
 {
     _check_port_number(portno);
-    // The configuration information is in the port's first register
-    uint32_t config_reg_val = regs().peek32(_get_port_base_addr(portno));
-    return {uhd::narrow_cast<uint8_t>((config_reg_val & 0x000000FF) >> 0),
-        uhd::narrow_cast<uint8_t>((config_reg_val & 0x00003F00) >> 8),
-        uhd::narrow_cast<uint8_t>((config_reg_val & 0x000FC000) >> 14),
-        uhd::narrow_cast<uint8_t>((config_reg_val & 0x03F00000) >> 20),
-        uhd::narrow_cast<uint8_t>((config_reg_val & 0xFC000000) >> 26)};
+    // The block and ctrl information is in the port's first register
+    uint32_t config_reg_val = regs().peek32(_get_port_base_addr(portno) + 0);
+    // The block and ctrl information is in the port's third register
+    uint32_t data_reg_val = regs().peek32(_get_port_base_addr(portno) + 8);
+    return {uhd::narrow_cast<uint8_t>((config_reg_val & 0x0000003F) >> 0),
+        uhd::narrow_cast<uint8_t>((config_reg_val & 0x00000FC0) >> 6),
+        uhd::narrow_cast<uint8_t>((config_reg_val & 0x0003F000) >> 12),
+        uhd::narrow_cast<uint8_t>((config_reg_val & 0x00FC0000) >> 18),
+        uhd::narrow_cast<uint8_t>((config_reg_val & 0xFF000000) >> 24),
+        uhd::narrow_cast<uint8_t>((data_reg_val & 0x000000FC) >> 2)};
 }
-
 
 uint32_t client_zero::_get_port_base_addr(uint16_t portno)
 {
@@ -209,5 +211,5 @@ uint32_t client_zero::_get_flush_status_flags(uint16_t portno)
 {
     _check_port_number(portno);
     // The flush status flags are in the third register of the port
-    return regs().peek32(_get_port_base_addr(portno) + 2);
+    return regs().peek32(_get_port_base_addr(portno) + 8);
 }

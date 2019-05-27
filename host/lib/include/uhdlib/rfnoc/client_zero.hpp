@@ -8,8 +8,11 @@
 #define INCLUDED_LIBUHD_CLIENT_ZERO_HPP
 
 #include <uhd/rfnoc/register_iface_holder.hpp>
+#include <uhdlib/rfnoc/chdr_ctrl_endpoint.hpp>
 #include <chrono>
 #include <cstdint>
+#include <functional>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -40,7 +43,8 @@ public:
         uint8_t num_inputs;
         uint8_t num_outputs;
         uint8_t ctrl_fifo_size;
-        uint8_t mtu;
+        uint8_t ctrl_max_async_msgs;
+        uint8_t data_mtu;
     };
 
     //! Return the RFNoC protocol version for this motherboard

@@ -7,7 +7,7 @@
 #ifndef INCLUDED_LIBUHD_RFNOC_CHDR_CTRL_ENDPOINT_HPP
 #define INCLUDED_LIBUHD_RFNOC_CHDR_CTRL_ENDPOINT_HPP
 
-#include <uhdlib/rfnoc/chdr/chdr_types.hpp>
+#include <uhdlib/rfnoc/chdr/chdr_packet.hpp>
 #include <uhdlib/rfnoc/ctrlport_endpoint.hpp>
 #include <uhdlib/rfnoc/xports.hpp>
 #include <functional>

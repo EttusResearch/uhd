@@ -41,16 +41,18 @@ public:
     size_t register_block(const size_t num_in,
         const size_t num_out,
         const size_t ctrl_fifo_size,
+        const size_t ctrl_max_async_msgs,
         const size_t mtu,
         const uint32_t noc_id)
     {
         const uint32_t block_offset =
             (1 + NUM_STREAM_ENDPOINTS + num_registered_blocks) * SLOT_OFFSET;
-        read_memory[block_offset] = BLOCK_PROTOVER | (num_in & 0x3F) << 8
-                                    | (num_out & 0x3F) << 14
-                                    | (ctrl_fifo_size & 0x3F) << 20 | (mtu & 0x3F) << 26;
-        read_memory[block_offset + 1] = noc_id;
-        read_memory[block_offset + 2] = 0x2; // flush flags: active is low, done is high
+        read_memory[block_offset + 0] =
+            (BLOCK_PROTOVER & 0x3F) | (num_in & 0x3F) << 6 | (num_out & 0x3F) << 12
+            | (ctrl_fifo_size & 0x3F) << 18 | (ctrl_max_async_msgs & 0xFF) << 24;
+        read_memory[block_offset + 4] = noc_id;
+        read_memory[block_offset + 8] = (mtu & 0x3F) << 2
+                                        | 0x2; // flush flags: active is low, done is high
         num_registered_blocks++;
         set_port_cnt_reg(num_registered_blocks);
         return num_registered_blocks - 1;
@@ -112,7 +114,7 @@ public:
      * Memory banks and defaults
      *************************************************************************/
     uint16_t GLOBAL_PROTOVER      = 23; // 16 bits
-    uint8_t BLOCK_PROTOVER        = 42; // 8 bits
+    uint8_t BLOCK_PROTOVER        = 42; // 6 bits
     uint8_t STATIC_ROUTER_PRESENT = 1; // 1 bit
     uint8_t CHDR_XBAR_PRESENT     = 1; // 1 bit
     uint16_t NUM_XPORTS           = 3 & 0x3FF; // 10 bits
@@ -137,24 +139,25 @@ BOOST_AUTO_TEST_CASE(simple_read_if_chdr_pkt)
 {
     constexpr uint16_t DEVICE_ID      = 0xBEEF;
     constexpr uint16_t CTRL_FIFO_SIZE = 5; // in words
+    constexpr uint16_t CTRL_MAX_ASYNC_MSGS = 2;
     constexpr uint16_t MTU            = 40; // FIXME in words?
     auto mock_reg_iface = std::make_shared<client_zero_test_iface>(DEVICE_ID);
 
     // Prime the pump: We add some blocks and connections
-    size_t sep0_id = 0;
-    size_t sep1_id = 1;
-    size_t radio0_id =
-        mock_reg_iface->register_block(1, 1, CTRL_FIFO_SIZE, MTU, 0x12AD1000);
-    size_t ddc0_id =
-        mock_reg_iface->register_block(1, 1, CTRL_FIFO_SIZE, MTU, 0xDDC00000);
-    size_t duc0_id =
-        mock_reg_iface->register_block(1, 1, CTRL_FIFO_SIZE, MTU, 0xD11C0000);
-    size_t radio1_id =
-        mock_reg_iface->register_block(1, 1, CTRL_FIFO_SIZE, MTU, 0x12AD1000);
-    size_t ddc1_id =
-        mock_reg_iface->register_block(1, 1, CTRL_FIFO_SIZE, MTU, 0xDDC00000);
-    size_t duc1_id =
-        mock_reg_iface->register_block(1, 1, CTRL_FIFO_SIZE, MTU, 0xD11C0000);
+    size_t sep0_id   = 0;
+    size_t sep1_id   = 1;
+    size_t radio0_id = mock_reg_iface->register_block(
+        1, 1, CTRL_FIFO_SIZE, CTRL_MAX_ASYNC_MSGS, MTU, 0x12AD1000);
+    size_t ddc0_id = mock_reg_iface->register_block(
+        1, 1, CTRL_FIFO_SIZE, CTRL_MAX_ASYNC_MSGS, MTU, 0xDDC00000);
+    size_t duc0_id = mock_reg_iface->register_block(
+        1, 1, CTRL_FIFO_SIZE, CTRL_MAX_ASYNC_MSGS, MTU, 0xD11C0000);
+    size_t radio1_id = mock_reg_iface->register_block(
+        1, 1, CTRL_FIFO_SIZE, CTRL_MAX_ASYNC_MSGS, MTU, 0x12AD1000);
+    size_t ddc1_id = mock_reg_iface->register_block(
+        1, 1, CTRL_FIFO_SIZE, CTRL_MAX_ASYNC_MSGS, MTU, 0xDDC00000);
+    size_t duc1_id = mock_reg_iface->register_block(
+        1, 1, CTRL_FIFO_SIZE, CTRL_MAX_ASYNC_MSGS, MTU, 0xD11C0000);
     // Connect SEP -> DUC -> RADIO -> DDC -> SEP
     mock_reg_iface->add_connection(sep0_id, 0, duc0_id, 0);
     mock_reg_iface->add_connection(duc0_id, 0, radio0_id, 0);
@@ -220,5 +223,6 @@ BOOST_AUTO_TEST_CASE(simple_read_if_chdr_pkt)
     BOOST_CHECK_EQUAL(mock_config.num_inputs, 1);
     BOOST_CHECK_EQUAL(mock_config.num_outputs, 1);
     BOOST_CHECK_EQUAL(mock_config.ctrl_fifo_size, CTRL_FIFO_SIZE);
-    BOOST_CHECK_EQUAL(mock_config.mtu, MTU);
+    BOOST_CHECK_EQUAL(mock_config.ctrl_max_async_msgs, CTRL_MAX_ASYNC_MSGS);
+    BOOST_CHECK_EQUAL(mock_config.data_mtu, MTU);
 }
