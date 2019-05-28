@@ -9,7 +9,6 @@
 
 #include <uhdlib/rfnoc/chdr_packet.hpp>
 #include <uhdlib/rfnoc/ctrlport_endpoint.hpp>
-#include <uhdlib/rfnoc/xports.hpp>
 #include <functional>
 #include <memory>
 
@@ -35,7 +34,8 @@ public:
     // \param ctrl_clk_freq Frequency of the clock driving the ctrlport logic
     // \param timebase_freq Frequency of the timebase (for timed commands)
     //
-    virtual ctrlport_endpoint::sptr get_ctrlport_ep(uint16_t port,
+    virtual ctrlport_endpoint::sptr get_ctrlport_ep(sep_id_t dst_epid,
+        uint16_t dst_port,
         size_t buff_capacity,
         size_t max_outstanding_async_msgs,
         const clock_iface& client_clk,
@@ -50,9 +50,8 @@ public:
     // \param pkt_factor An instance of the CHDR packet factory
     // \param my_epid The endpoint ID of this software endpoint
     //
-    static uptr make(const both_xports_t& xports,
+    static uptr make(const chdr_ctrl_xport_t& xports,
         const chdr::chdr_packet_factory& pkt_factory,
-        sep_id_t dst_epid,
         sep_id_t my_epid);
 
 }; // class chdr_ctrl_endpoint

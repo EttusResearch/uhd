@@ -27,13 +27,11 @@ chdr_ctrl_endpoint::~chdr_ctrl_endpoint() = default;
 class chdr_ctrl_endpoint_impl : public chdr_ctrl_endpoint
 {
 public:
-    chdr_ctrl_endpoint_impl(const both_xports_t& xports,
+    chdr_ctrl_endpoint_impl(const chdr_ctrl_xport_t& xport,
         const chdr::chdr_packet_factory& pkt_factory,
-        sep_id_t dst_epid,
         sep_id_t my_epid)
-        : _dst_epid(dst_epid)
-        , _my_epid(my_epid)
-        , _xports(xports)
+        : _my_epid(my_epid)
+        , _xport(xport)
         , _send_seqnum(0)
         , _send_pkt(pkt_factory.make_ctrl())
         , _recv_pkt(pkt_factory.make_ctrl())
@@ -43,9 +41,9 @@ public:
         const std::string thread_name(str(boost::format("uhd_ctrl_ep%04x") % _my_epid));
         uhd::set_thread_name(&_recv_thread, thread_name);
         UHD_LOG_DEBUG("RFNOC",
-            boost::format("Started thread %s to process messages for CHDR Ctrl EP for "
-                          "EPID %d -> EPID %d")
-                % thread_name % _my_epid % _dst_epid);
+            boost::format(
+                "Started thread %s to process messages control messages on EPID %d")
+                % thread_name % _my_epid);
     }
 
     virtual ~chdr_ctrl_endpoint_impl()
@@ -59,12 +57,13 @@ public:
             // there are no timed blocks on the underlying.
             _recv_thread.join();
             // Flush base transport
-            while (_xports.recv->get_recv_buff(0.0001)) /*NOP*/;
+            while (_xport.recv->get_recv_buff(0.0001)) /*NOP*/;
             // Release child endpoints
             _endpoint_map.clear(););
     }
 
-    virtual ctrlport_endpoint::sptr get_ctrlport_ep(uint16_t port,
+    virtual ctrlport_endpoint::sptr get_ctrlport_ep(sep_id_t dst_epid,
+        uint16_t dst_port,
         size_t buff_capacity,
         size_t max_outstanding_async_msgs,
         const clock_iface& client_clk,
@@ -72,36 +71,37 @@ public:
     {
         std::lock_guard<std::mutex> lock(_mutex);
 
+        ep_map_key_t key{dst_epid, dst_port};
         // Function to send a control payload
-        auto send_fn = [this](const ctrl_payload& payload, double timeout) {
+        auto send_fn = [this, dst_epid](const ctrl_payload& payload, double timeout) {
             std::lock_guard<std::mutex> lock(_mutex);
             // Build header
             chdr_header header;
             header.set_pkt_type(PKT_TYPE_CTRL);
             header.set_num_mdata(0);
             header.set_seq_num(_send_seqnum++);
-            header.set_dst_epid(_dst_epid);
+            header.set_dst_epid(dst_epid);
             // Acquire send buffer and send the packet
-            auto send_buff = _xports.send->get_send_buff(timeout);
+            auto send_buff = _xport.send->get_send_buff(timeout);
             _send_pkt->refresh(send_buff->cast<void*>(), header, payload);
             send_buff->commit(header.get_length());
         };
 
-        if (_endpoint_map.find(port) == _endpoint_map.end()) {
+        if (_endpoint_map.find(key) == _endpoint_map.end()) {
             ctrlport_endpoint::sptr ctrlport_ep = ctrlport_endpoint::make(send_fn,
                 _my_epid,
-                port,
+                dst_port,
                 buff_capacity,
                 max_outstanding_async_msgs,
                 client_clk,
                 timebase_clk);
-            _endpoint_map.insert(std::make_pair(port, ctrlport_ep));
+            _endpoint_map.insert(std::make_pair(key, ctrlport_ep));
             UHD_LOG_DEBUG("RFNOC",
-                boost::format("Created ctrlport endpoint for port %d on EPID %d") % port
-                    % _my_epid);
+                boost::format("Created ctrlport endpoint for port %d on EPID %d")
+                    % dst_port % _my_epid);
             return ctrlport_ep;
         } else {
-            return _endpoint_map.at(port);
+            return _endpoint_map.at(key);
         }
     }
 
@@ -118,14 +118,15 @@ private:
         // - Route them based on the dst_port
         // - Pass them to the ctrlport_endpoint for additional processing
         while (not _stop_recv_thread) {
-            auto buff = _xports.recv->get_recv_buff(0.0);
+            auto buff = _xport.recv->get_recv_buff(0.0);
             if (buff) {
                 std::lock_guard<std::mutex> lock(_mutex);
                 try {
                     _recv_pkt->refresh(buff->cast<void*>());
                     const ctrl_payload payload = _recv_pkt->get_payload();
-                    if (_endpoint_map.find(payload.dst_port) != _endpoint_map.end()) {
-                        _endpoint_map.at(payload.dst_port)->handle_recv(payload);
+                    ep_map_key_t key{payload.src_epid, payload.dst_port};
+                    if (_endpoint_map.find(key) != _endpoint_map.end()) {
+                        _endpoint_map.at(key)->handle_recv(payload);
                     }
                 } catch (...) {
                     // Ignore all errors
@@ -148,12 +149,12 @@ private:
         }
     }
 
-    // The endpoint ID of the destination
-    const sep_id_t _dst_epid;
+    using ep_map_key_t = std::pair<sep_id_t, uint16_t>;
+
     // The endpoint ID of this software endpoint
     const sep_id_t _my_epid;
     // Send/recv transports
-    const uhd::both_xports_t _xports;
+    const chdr_ctrl_xport_t _xport;
     // The curent sequence number for a send packet
     size_t _send_seqnum = 0;
     // The number of packets dropped
@@ -162,7 +163,7 @@ private:
     chdr_ctrl_packet::uptr _send_pkt;
     chdr_ctrl_packet::cuptr _recv_pkt;
     // A collection of ctrlport endpoints (keyed by the port number)
-    std::map<uint16_t, ctrlport_endpoint::sptr> _endpoint_map;
+    std::map<ep_map_key_t, ctrlport_endpoint::sptr> _endpoint_map;
     // A thread that will handle all responses and async message requests
     std::atomic_bool _stop_recv_thread;
     std::thread _recv_thread;
@@ -170,11 +171,9 @@ private:
     std::mutex _mutex;
 };
 
-chdr_ctrl_endpoint::uptr chdr_ctrl_endpoint::make(const both_xports_t& xports,
+chdr_ctrl_endpoint::uptr chdr_ctrl_endpoint::make(const chdr_ctrl_xport_t& xport,
     const chdr::chdr_packet_factory& pkt_factory,
-    sep_id_t dst_epid,
     sep_id_t my_epid)
 {
-    return std::make_unique<chdr_ctrl_endpoint_impl>(
-        xports, pkt_factory, dst_epid, my_epid);
+    return std::make_unique<chdr_ctrl_endpoint_impl>(xport, pkt_factory, my_epid);
 }

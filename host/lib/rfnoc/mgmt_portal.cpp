@@ -73,16 +73,16 @@ enum node_type {
 struct node_id_t
 {
     //! A unique ID for device that houses this node
-    device_id_t device_id;
+    device_id_t device_id = NULL_DEVICE_ID;
     //! The type of this node
-    node_type type;
+    node_type type = NODE_TYPE_INVALID;
     //! The instance number of this node in the device
-    sep_inst_t inst;
+    sep_inst_t inst = 0;
     //! Extended info about node (not used for comparisons)
-    uint32_t extended_info;
+    uint32_t extended_info = 0;
 
     // ctors and operators
-    node_id_t()                     = delete;
+    node_id_t()                     = default;
     node_id_t(const node_id_t& rhs) = default;
     node_id_t(device_id_t device_id_, node_type type_, sep_inst_t inst_)
         : device_id(device_id_), type(type_), inst(inst_), extended_info(0)
@@ -166,18 +166,16 @@ mgmt_portal::~mgmt_portal() {}
 class mgmt_portal_impl : public mgmt_portal
 {
 public:
-    mgmt_portal_impl(const both_xports_t& xports,
+    mgmt_portal_impl(const chdr_ctrl_xport_t& xport,
         const chdr::chdr_packet_factory& pkt_factory,
-        uint16_t protover,
-        chdr_w_t chdr_w,
-        sep_id_t my_epid,
-        device_id_t my_device_id)
+        sep_addr_t my_sep_addr,
+        sep_id_t my_epid)
         : _my_epid(my_epid)
-        , _protover(protover)
-        , _chdr_w(chdr_w)
-        , _my_node_id(my_device_id, NODE_TYPE_STRM_EP, my_epid)
-        , _recv_xport(xports.recv)
-        , _send_xport(xports.send)
+        , _protover(pkt_factory.get_protover())
+        , _chdr_w(pkt_factory.get_chdr_w())
+        , _my_node_id(my_sep_addr.first, NODE_TYPE_STRM_EP, my_epid)
+        , _recv_xport(xport.recv)
+        , _send_xport(xport.send)
         , _send_seqnum(0)
         , _send_pkt(std::move(pkt_factory.make_mgmt()))
         , _recv_pkt(std::move(pkt_factory.make_mgmt()))
@@ -188,9 +186,9 @@ public:
 
     virtual ~mgmt_portal_impl() {}
 
-    virtual const std::vector<sep_addr_t>& get_reachable_endpoints() const
+    virtual const std::set<sep_addr_t>& get_reachable_endpoints() const
     {
-        return _discovered_ep_vtr;
+        return _discovered_ep_set;
     }
 
     virtual void initialize_endpoint(const sep_addr_t& addr, const sep_id_t& epid)
@@ -603,9 +601,27 @@ private: // Functions
             disc_hop.add_op(mgmt_op_t(mgmt_op_t::MGMT_OP_INFO_REQ));
             disc_hop.add_op(mgmt_op_t(mgmt_op_t::MGMT_OP_RETURN));
             disc_req_xact.add_hop(disc_hop);
-            const mgmt_payload disc_resp_xact =
-                _send_recv_mgmt_transaction(disc_req_xact);
-            const node_id_t new_node = _pop_node_discovery_hop(disc_resp_xact);
+
+            node_id_t new_node;
+            try {
+                // Send the discovery transaction
+                const mgmt_payload disc_resp_xact =
+                    _send_recv_mgmt_transaction(disc_req_xact);
+                new_node = _pop_node_discovery_hop(disc_resp_xact);
+            } catch (uhd::io_error& io_err) {
+                // We received an IO error. This could happen if we have a legitimate
+                // error or if there is no node to discover downstream. We can't tell for
+                // sure why but we can guess. If the next_path for this node is -1 then we
+                // expect something to be here, in which case we treat this as a
+                // legitimate error. In all other cases we assume that there was nothing
+                // to discover downstream.
+                if (next_path.second < 0) {
+                    throw io_err;
+                } else {
+                    // Move to the next pending path
+                    continue;
+                }
+            }
 
             // We found a node!
             // First check if we have already seen this node in the past. If not, we have
@@ -664,8 +680,8 @@ private: // Functions
                     case NODE_TYPE_STRM_EP: {
                         // Stop searching when we find a stream endpoint
                         // Add the endpoint to the discovered endpoint vector
-                        _discovered_ep_vtr.push_back(
-                            std::make_pair(new_node.device_id, new_node.inst));
+                        _discovered_ep_set.insert(
+                            sep_addr_t(new_node.device_id, new_node.inst));
                     } break;
                     case NODE_TYPE_XPORT: {
                         // A transport has only one output. We don't need to take
@@ -964,7 +980,7 @@ private: // Members
     // node but we only store the shortest path here.
     std::map<node_id_t, node_addr_t> _node_addr_map;
     // A list of all discovered endpoints
-    std::vector<sep_addr_t> _discovered_ep_vtr;
+    std::set<sep_addr_t> _discovered_ep_set;
     // A table that maps a stream endpoint ID to the physical address of the stream
     // endpoint
     std::map<sep_id_t, sep_addr_t> _epid_addr_map;
@@ -983,15 +999,12 @@ private: // Members
 }; // namespace mgmt
 
 
-mgmt_portal::uptr mgmt_portal::make(const both_xports_t& xports,
+mgmt_portal::uptr mgmt_portal::make(const chdr_ctrl_xport_t& xport,
     const chdr::chdr_packet_factory& pkt_factory,
-    uint16_t protover,
-    chdr_w_t chdr_w,
-    sep_id_t epid,
-    device_id_t device_id)
+    sep_addr_t my_sep_addr,
+    sep_id_t my_epid)
 {
-    return std::make_unique<mgmt_portal_impl>(
-        xports, pkt_factory, protover, chdr_w, epid, device_id);
+    return std::make_unique<mgmt_portal_impl>(xport, pkt_factory, my_sep_addr, my_epid);
 }
 
 }}} // namespace uhd::rfnoc::mgmt

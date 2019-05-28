@@ -286,6 +286,18 @@ public:
     chdr_mgmt_packet::uptr make_mgmt(
         size_t mtu_bytes = std::numeric_limits<size_t>::max()) const;
 
+    //! Get the CHDR width
+    inline chdr_w_t get_chdr_w() const
+    {
+        return _chdr_w;
+    }
+
+    //! Get the protocol version for RFNoC and the CHDR format
+    inline uint16_t get_protover() const
+    {
+        return RFNOC_PROTO_VER;
+    }
+
 private:
     const chdr_w_t _chdr_w;
     const endianness_t _endianness;

@@ -8,7 +8,6 @@
 #define INCLUDED_LIBUHD_MGMT_PORTAL_HPP
 
 #include <uhdlib/rfnoc/chdr_types.hpp>
-#include <uhdlib/rfnoc/xports.hpp>
 #include <memory>
 
 namespace uhd { namespace rfnoc { namespace mgmt {
@@ -60,7 +59,7 @@ public:
     //  Note that the endpoints that are not physically connected/reachable from
     //  the underlying transport will not be discovered.
     //
-    virtual const std::vector<sep_addr_t>& get_reachable_endpoints() const = 0;
+    virtual const std::set<sep_addr_t>& get_reachable_endpoints() const = 0;
 
     //! Initialize a stream endpoint and assign an endpoint ID to it
     //
@@ -178,12 +177,10 @@ public:
 
     //! Create an endpoint manager object
     //
-    static uptr make(const both_xports_t& xports,
+    static uptr make(const chdr_ctrl_xport_t& xport,
         const chdr::chdr_packet_factory& pkt_factory,
-        uint16_t protover,
-        chdr_w_t chdr_w,
-        sep_id_t epid,
-        device_id_t device_id);
+        sep_addr_t my_sep_addr,
+        sep_id_t my_epid);
 };
 
 }}} // namespace uhd::rfnoc::mgmt
