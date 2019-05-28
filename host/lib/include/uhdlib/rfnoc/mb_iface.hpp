@@ -7,7 +7,7 @@
 #ifndef INCLUDED_LIBUHD_MB_IFACE_HPP
 #define INCLUDED_LIBUHD_MB_IFACE_HPP
 
-#include <uhdlib/rfnoc/chdr_types.hpp>
+#include <uhdlib/rfnoc/rfnoc_common.hpp>
 #include <memory>
 
 namespace uhd { namespace rfnoc {
@@ -22,54 +22,52 @@ namespace uhd { namespace rfnoc {
  * It's up to the various device implementations (e.g., x300_impl) to implement
  * this interface.
  */
-class mb_iface {
+class mb_iface
+{
 public:
     using uptr = std::unique_ptr<mb_iface>;
 
-    virtual ~mb_iface() = 0;
+    virtual ~mb_iface() = default;
 
-    /*! Return the RFNoC protocol version for this motherboard
+    /*! Return the RFNoC protocol version of the firmware running on this motherboard
      */
     virtual uint16_t get_proto_ver() = 0;
 
-    /*! Return the CHDR width for this motherboard
+    /*! Return the CHDR width of the firmware running on this motherboard
      */
-    virtual chdr_w_t get_chdr_width() = 0;
+    virtual chdr_w_t get_chdr_w() = 0;
 
-    /*! Set the device ID of this motherboard
+    /*! Get the device ID assigned to the motherboard
      *
-     * Every motherboard in a multi-USRP setup needs a unique device ID. It is
-     * up to the rfnoc_graph to choose the various IDs, and then call this
-     * function to set it.
-     */
-    virtual void set_device_id(const uint16_t id) = 0;
-
-    /*! Get device ID
-     *
-     * Returns the value previously written by set_device_id(). A freshly
-     * resetted motherboard which has not been assigned a device ID should
-     * return 0xFFFF.
+     * A freshly reset motherboard should return 0.
      *
      * \returns the motherboard's device ID
      */
-    virtual uint16_t get_device_id() = 0;
+    virtual device_id_t get_remote_device_id() = 0;
+
+    /*! Get the local (software) device IDs on this motherboard that can actively
+     * communicate with the sea of RFNoC FPGAs. The number of local devices returned
+     * should be equal to the number of physical links on the motherboard that are
+     * actively connected.
+     *
+     * \returns The active software device IDs
+     */
+    virtual std::vector<device_id_t> get_local_device_ids() = 0;
 
     /*! Reset the device
      */
     virtual void reset_network() = 0;
 
-    /*! Return a list of all physical links available from the current UHD
-     * session to the motherboard.
-     *
-     * FIXME determine appropriate return type
+    /*! Create a control transport
      */
-    //virtual <link info> enumerate_links() = 0;
+    virtual chdr_ctrl_xport_t make_ctrl_transport(
+        device_id_t local_device_id, const sep_id_t& src_epid) = 0;
 
-    /*!
-     *
-     * FIXME determine appropriate return type and arg types
+    /*! Create a data transport
      */
-    //virtual link_iface::uptr create_link(<link_params>) = 0;
+    virtual chdr_data_xport_t make_data_transport(device_id_t local_device_id,
+        const sep_id_t& src_epid,
+        const device_addr_t& xport_args) = 0;
 };
 
 }} /* namespace uhd::rfnoc */

@@ -213,3 +213,21 @@ uint32_t client_zero::_get_flush_status_flags(uint16_t portno)
     // The flush status flags are in the third register of the port
     return regs().peek32(_get_port_base_addr(portno) + 8);
 }
+
+client_zero::sptr client_zero::make(chdr_ctrl_endpoint& chdr_ctrl_ep, sep_id_t dst_epid)
+{
+    // Create a control port endpoint for client zero
+    static constexpr uint16_t CLIENT_ZERO_PORT         = 0;
+    static constexpr size_t CLIENT_ZERO_BUFF_CAPACITY  = 32;
+    static constexpr size_t CLIENT_ZERO_MAX_ASYNC_MSGS = 0;
+    static clock_iface client_zero_clk{"client_zero"};
+    client_zero_clk.set_running(true); // Client zero clock must be always-on.
+    client_zero_clk.set_freq(100e6); // The freq is unused. No timed ops or sleeps.
+
+    return std::make_shared<client_zero>(chdr_ctrl_ep.get_ctrlport_ep(dst_epid,
+        CLIENT_ZERO_PORT,
+        CLIENT_ZERO_BUFF_CAPACITY,
+        CLIENT_ZERO_MAX_ASYNC_MSGS,
+        client_zero_clk,
+        client_zero_clk));
+}

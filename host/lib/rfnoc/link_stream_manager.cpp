@@ -1,0 +1,266 @@
+//
+// Copyright 2019 Ettus Research, a National Instruments Brand
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+
+#include <uhd/exception.hpp>
+#include <uhd/transport/muxed_zero_copy_if.hpp>
+#include <uhd/utils/log.hpp>
+#include <uhdlib/rfnoc/chdr_ctrl_endpoint.hpp>
+#include <uhdlib/rfnoc/link_stream_manager.hpp>
+#include <uhdlib/rfnoc/mgmt_portal.hpp>
+#include <boost/format.hpp>
+
+using namespace uhd;
+using namespace uhd::rfnoc;
+using namespace uhd::transport;
+using namespace uhd::rfnoc::chdr;
+using namespace uhd::rfnoc::mgmt;
+using namespace uhd::rfnoc::detail;
+
+constexpr sep_inst_t SEP_INST_MGMT_CTRL = 0;
+constexpr sep_inst_t SEP_INST_DATA_BASE = 1;
+
+link_stream_manager::~link_stream_manager() = default;
+
+class link_stream_manager_impl : public link_stream_manager
+{
+public:
+    link_stream_manager_impl(const chdr::chdr_packet_factory& pkt_factory,
+        mb_iface& mb_if,
+        const epid_allocator::sptr& epid_alloc,
+        device_id_t device_id)
+        : _pkt_factory(pkt_factory)
+        , _my_device_id(device_id)
+        , _mb_iface(mb_if)
+        , _epid_alloc(epid_alloc)
+        , _data_ep_inst(0)
+    {
+        // Sanity check if we can access our device ID from this motherboard
+        const auto& mb_devs = _mb_iface.get_local_device_ids();
+        if (std::find(mb_devs.begin(), mb_devs.end(), _my_device_id) == mb_devs.end()) {
+            throw uhd::rfnoc_error("The device bound to this link manager cannot be "
+                                   "accessed from this motherboard");
+        }
+
+        // Sanity check the protocol version and CHDR width
+        if ((_pkt_factory.get_protover() & 0xFF00)
+            != (_mb_iface.get_proto_ver() & 0xFF00)) {
+            throw uhd::rfnoc_error("RFNoC protocol mismatch between SW and HW");
+        }
+        if (_pkt_factory.get_chdr_w() != _mb_iface.get_chdr_w()) {
+            throw uhd::rfnoc_error("RFNoC CHDR width mismatch between SW and HW");
+        }
+
+        // Create a transport and EPID for management and control traffic
+        _my_mgmt_ctrl_epid =
+            epid_alloc->allocate_epid(sep_addr_t(_my_device_id, SEP_INST_MGMT_CTRL));
+        _allocated_epids.insert(_my_mgmt_ctrl_epid);
+
+        // Create a muxed transport to share between the mgmt_portal and
+        // chdr_ctrl_endpoint. We have to use the same base transport here to ensure that
+        // the route setup logic in the FPGA transport works correctly.
+        // TODO: This needs to be cleaned up. A muxed_zero_copy_if is excessive here
+        chdr_ctrl_xport_t base_xport =
+            _mb_iface.make_ctrl_transport(_my_device_id, _my_mgmt_ctrl_epid);
+        UHD_ASSERT_THROW(base_xport.send.get() == base_xport.recv.get())
+
+        auto classify_fn = [&pkt_factory](void* buff, size_t) -> uint32_t {
+            if (buff) {
+                chdr_packet::cuptr pkt = pkt_factory.make_generic();
+                pkt->refresh(buff);
+                return (pkt->get_chdr_header().get_pkt_type() == PKT_TYPE_MGMT) ? 0 : 1;
+            } else {
+                throw uhd::assertion_error("null pointer");
+            }
+        };
+        _muxed_xport = muxed_zero_copy_if::make(base_xport.send, classify_fn, 2);
+
+        // Create child transports
+        chdr_ctrl_xport_t mgmt_xport = base_xport;
+        mgmt_xport.send              = _muxed_xport->make_stream(0);
+        mgmt_xport.recv              = mgmt_xport.send;
+        _ctrl_xport                  = base_xport;
+        _ctrl_xport.send             = _muxed_xport->make_stream(1);
+        _ctrl_xport.recv             = _ctrl_xport.send;
+
+        // Create management portal using one of the child transports
+        _mgmt_portal = mgmt_portal::make(mgmt_xport,
+            _pkt_factory,
+            sep_addr_t(_my_device_id, SEP_INST_MGMT_CTRL),
+            _my_mgmt_ctrl_epid);
+    }
+
+    virtual ~link_stream_manager_impl()
+    {
+        for (const auto& epid : _allocated_epids) {
+            _epid_alloc->deallocate_epid(epid);
+        }
+    }
+
+    virtual device_id_t get_self_device_id() const
+    {
+        return _my_device_id;
+    }
+
+    virtual const std::set<sep_addr_t>& get_reachable_endpoints() const
+    {
+        return _mgmt_portal->get_reachable_endpoints();
+    }
+
+    virtual sep_id_pair_t init_ctrl_stream(sep_addr_t dst_addr)
+    {
+        // Allocate EPIDs
+        sep_id_t dst_epid = _epid_alloc->allocate_epid(dst_addr);
+        UHD_LOGGER_DEBUG("RFNOC::LINK_MGR")
+            << boost::format("Initializing control stream to Endpoint %d:%d with EPID "
+                             "%d...")
+                   % dst_addr.first % dst_addr.second % dst_epid;
+        _ensure_ep_is_reachable(dst_addr);
+
+        // Make sure that the software side of the endpoint is initialized and reachable
+        if (_ctrl_ep == nullptr) {
+            // Create a control endpoint with that xport
+            _ctrl_ep =
+                chdr_ctrl_endpoint::make(_ctrl_xport, _pkt_factory, _my_mgmt_ctrl_epid);
+        }
+
+        // Setup a route to the EPID
+        _mgmt_portal->initialize_endpoint(dst_addr, dst_epid);
+        _mgmt_portal->setup_local_route(dst_epid);
+        if (!_mgmt_portal->get_endpoint_info(dst_epid).has_ctrl) {
+            throw uhd::rfnoc_error(
+                "Downstream endpoint does not support control traffic");
+        }
+
+        // Create a client zero instance
+        if (_client_zero_map.count(dst_epid) == 0) {
+            _client_zero_map.insert(
+                std::make_pair(dst_epid, client_zero::make(*_ctrl_ep, dst_epid)));
+        }
+        return sep_id_pair_t(_my_mgmt_ctrl_epid, dst_epid);
+    }
+
+    virtual ctrlport_endpoint::sptr get_block_register_iface(sep_id_t dst_epid,
+        uint16_t block_index,
+        const clock_iface& client_clk,
+        const clock_iface& timebase_clk)
+    {
+        // Ensure that the endpoint is initialized for control at the specified EPID
+        if (_ctrl_ep == nullptr) {
+            throw uhd::runtime_error("Software endpoint not initialized for control");
+        }
+        if (_client_zero_map.count(dst_epid) == 0) {
+            throw uhd::runtime_error(
+                "Control for the specified EPID was not initialized");
+        }
+        const client_zero::sptr& c0_ctrl = _client_zero_map.at(dst_epid);
+        uint16_t dst_port = 1 + c0_ctrl->get_num_stream_endpoints() + block_index;
+        if (block_index >= c0_ctrl->get_num_blocks()) {
+            throw uhd::value_error("Requested block index out of range");
+        }
+
+        // Create control endpoint
+        return _ctrl_ep->get_ctrlport_ep(dst_epid,
+            dst_port,
+            (size_t(1) << c0_ctrl->get_block_info(dst_port).ctrl_fifo_size),
+            c0_ctrl->get_block_info(dst_port).ctrl_max_async_msgs,
+            client_clk,
+            timebase_clk);
+    }
+
+    virtual client_zero::sptr get_client_zero(sep_id_t dst_epid) const
+    {
+        if (_client_zero_map.count(dst_epid) == 0) {
+            throw uhd::runtime_error(
+                "Control for the specified EPID was not initialized");
+        }
+        return _client_zero_map.at(dst_epid);
+    }
+
+    virtual chdr_data_xport_t create_data_stream(
+        sep_addr_t dst_addr, sep_vc_t /*vc*/, const device_addr_t& xport_args)
+    {
+        // Create a new source endpoint and EPID
+        sep_addr_t sw_epid_addr(_my_device_id, SEP_INST_DATA_BASE + (_data_ep_inst++));
+        sep_id_t src_epid = _epid_alloc->allocate_epid(sw_epid_addr);
+        _allocated_epids.insert(src_epid);
+        _ensure_ep_is_reachable(dst_addr);
+
+        // Generate a new destination EPID instance
+        sep_id_t dst_epid = _epid_alloc->allocate_epid(dst_addr);
+
+        // Create the data transport that we will return to the client
+        chdr_data_xport_t xport =
+            _mb_iface.make_data_transport(_my_device_id, src_epid, xport_args);
+        xport.src_epid = src_epid;
+        xport.dst_epid = dst_epid;
+
+        // Create new temporary management portal with the transports used for this stream
+        // TODO: This is a bit excessive. Maybe we can pair down the functionality of the
+        // portal just for route setup purposes. Whatever we do, we *must* use xport in it
+        // though otherwise the transport will not behave correctly.
+        mgmt_portal::uptr data_mgmt_portal =
+            mgmt_portal::make(xport, _pkt_factory, sw_epid_addr, src_epid);
+
+        // Setup a route to the EPID
+        data_mgmt_portal->initialize_endpoint(dst_addr, dst_epid);
+        data_mgmt_portal->setup_local_route(dst_epid);
+        if (!_mgmt_portal->get_endpoint_info(dst_epid).has_data) {
+            throw uhd::rfnoc_error("Downstream endpoint does not support data traffic");
+        }
+
+        // TODO: Implement data transport setup logic here
+
+
+        // Delete the portal when done
+        data_mgmt_portal.reset();
+        return xport;
+    }
+
+private:
+    void _ensure_ep_is_reachable(const sep_addr_t& ep_addr_)
+    {
+        for (const auto& ep_addr : _mgmt_portal->get_reachable_endpoints()) {
+            if (ep_addr == ep_addr_)
+                return;
+        }
+        throw uhd::routing_error("Specified endpoint is not reachable");
+    }
+
+    // A reference to the packet factor
+    const chdr::chdr_packet_factory& _pkt_factory;
+    // The device address of this software endpoint
+    const device_id_t _my_device_id;
+
+    // Motherboard interface
+    mb_iface& _mb_iface;
+    // A pointer to the EPID allocator
+    epid_allocator::sptr _epid_alloc;
+    // A set of all allocated EPIDs
+    std::set<sep_id_t> _allocated_epids;
+    // The software EPID for all management and control traffic
+    sep_id_t _my_mgmt_ctrl_epid;
+    // Transports
+    muxed_zero_copy_if::sptr _muxed_xport;
+    chdr_ctrl_xport_t _ctrl_xport;
+    // Management portal for control endpoints
+    mgmt_portal::uptr _mgmt_portal;
+    // The CHDR control endpoint
+    chdr_ctrl_endpoint::uptr _ctrl_ep;
+    // A map of all client zero instances indexed by the destination
+    std::map<sep_id_t, client_zero::sptr> _client_zero_map;
+    // Data endpoint instance
+    sep_inst_t _data_ep_inst;
+};
+
+link_stream_manager::uptr link_stream_manager::make(
+    const chdr::chdr_packet_factory& pkt_factory,
+    mb_iface& mb_if,
+    const epid_allocator::sptr& epid_alloc,
+    device_id_t device_id)
+{
+    return std::make_unique<link_stream_manager_impl>(
+        pkt_factory, mb_if, epid_alloc, device_id);
+}

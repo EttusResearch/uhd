@@ -25,6 +25,10 @@ namespace uhd { namespace rfnoc { namespace detail {
 class client_zero : public uhd::rfnoc::register_iface_holder
 {
 public:
+    using sptr = std::shared_ptr<client_zero>;
+
+    static sptr make(chdr_ctrl_endpoint& chdr_ctrl_ep, sep_id_t dst_epid);
+
     client_zero(register_iface::sptr reg);
 
     //! Definition of an edge in the static router
