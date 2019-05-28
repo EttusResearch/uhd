@@ -1,6 +1,26 @@
 Change Log for Releases
 ==============================
 
+## 003.014.001.000
+E320: Add support for rev E
+X300: Add DPDK support
+X300: add capability to flash NI-2974 FPGA
+B200: Add bootloader for FX3 (fix for B2xx failing to enumerate)
+TwinRX: Expose charge pump current for LO2
+TwinRX: Add low spur mode for LO2
+Device3: Constraint send/recv_frame_size based on down/upstream MTU
+RFNoC: Search all nodes for tick rates
+MPMD: Fix spurious reclaim call after unclaim
+MPMD: Release resources on destruction
+MPM: Add SW/HW compat
+liberio: Release context holder on destruction of last liberio xport
+GPSD: fix API for 'gps_read'
+AD9361: Fix return values for tune and set_clock_rate
+Logging: fix deadlock issue on Windows machines
+Logging: Fix ANSI colour codes
+Utils: Add X300/X310 reset utility
+Docs: Improved Windows-related build instructions
+
 ## 003.014.000.000
 * N320: Add support for N320 and N321
 * USRP-2974: Add support for USRP-2974
