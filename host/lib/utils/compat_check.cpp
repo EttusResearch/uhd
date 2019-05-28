@@ -112,3 +112,21 @@ void uhd::assert_fpga_compat(
     }
     // We got here? Then all is good.
 }
+
+void uhd::assert_fpga_compat(const size_t uhd_major,
+    const size_t uhd_minor,
+    const uint32_t fpga_compat,
+    const std::string& fpga_component,
+    const std::string& log_component,
+    const bool fail_on_minor_behind)
+{
+    const size_t fpga_major    = fpga_compat >> 16;
+    const size_t fpga_minor    = fpga_compat & 0xFFFF;
+    const uint64_t fpga_scaled = uint64_t(fpga_major) << 32 | fpga_minor;
+    uhd::assert_fpga_compat(uhd_major,
+        uhd_minor,
+        fpga_scaled,
+        fpga_component,
+        log_component,
+        fail_on_minor_behind);
+}
