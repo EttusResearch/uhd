@@ -252,6 +252,12 @@ UHD_ADD_NONAPI_TEST(
     ${CMAKE_SOURCE_DIR}/lib/usrp/cores/dsp_core_utils.cpp
 )
 
+UHD_ADD_NONAPI_TEST(
+    TARGET "transport_test.cpp"
+    EXTRA_SOURCES
+    ${CMAKE_SOURCE_DIR}/lib/transport/inline_io_service.cpp
+)
+
 ########################################################################
 # demo of a loadable module
 ########################################################################

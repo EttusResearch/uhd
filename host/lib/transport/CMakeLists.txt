@@ -121,6 +121,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/chdr.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/muxed_zero_copy_if.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/zero_copy_flow_ctrl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/inline_io_service.cpp
 )
 
 if(ENABLE_X300)
