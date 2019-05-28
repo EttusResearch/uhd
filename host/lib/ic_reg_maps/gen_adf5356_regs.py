@@ -44,7 +44,7 @@ power_down              4[6]        0       disabled, enabled
 pd_polarity             4[7]        1       negative, positive
 mux_logic               4[8]        1       1_8V, 3_3V
 ref_mode                4[9]        0       single, diff
-charge_pump_current     4[10:13]    0       0_30ma, 0_60ma, 0_90ma, 1_20ma, 1_50ma, 1_80ma, 2_10ma, 2_40ma, 2_70ma, 3_00ma, 3_30ma, 3_60ma, 3_90ma, 4_20ma, 4_50ma, 4_80ma
+charge_pump_current     4[10:13]    2       0_30ma, 0_60ma, 0_90ma, 1_20ma, 1_50ma, 1_80ma, 2_10ma, 2_40ma, 2_70ma, 3_00ma, 3_30ma, 3_60ma, 3_90ma, 4_20ma, 4_50ma, 4_80ma
 double_buff_div         4[14]       0       disabled, enabled
 r_counter_10_bit        4[15:24]    0
 reference_divide_by_2   4[25]       0       disabled, enabled
