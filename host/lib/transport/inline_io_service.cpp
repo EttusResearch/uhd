@@ -272,10 +272,8 @@ recv_io_if::sptr inline_io_service::make_recv_client(recv_link_if::sptr data_lin
     recv_io_if::fc_callback_t fc_cb)
 {
     UHD_ASSERT_THROW(data_link);
-    UHD_ASSERT_THROW(num_recv_frames > 0);
     UHD_ASSERT_THROW(cb);
     if (fc_link) {
-        UHD_ASSERT_THROW(num_send_frames > 0);
         UHD_ASSERT_THROW(fc_cb);
         connect_sender(fc_link.get(), num_send_frames);
     }
@@ -302,14 +300,12 @@ send_io_if::sptr inline_io_service::make_send_client(send_link_if::sptr send_lin
     recv_callback_t recv_cb)
 {
     UHD_ASSERT_THROW(send_link);
-    UHD_ASSERT_THROW(num_send_frames > 0);
     UHD_ASSERT_THROW(send_cb);
     connect_sender(send_link.get(), num_send_frames);
     sptr io_srv  = shared_from_this();
     auto send_io = std::make_shared<inline_send_io>(
         io_srv, send_link, num_send_frames, send_cb, recv_link, num_recv_frames, recv_cb);
     if (recv_link) {
-        UHD_ASSERT_THROW(num_recv_frames > 0);
         UHD_ASSERT_THROW(recv_cb);
         connect_receiver(recv_link.get(), send_io.get(), num_recv_frames);
     }
