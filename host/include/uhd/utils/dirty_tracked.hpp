@@ -44,13 +44,7 @@ public:
     {
     }
 
-    /*!
-     * Copy ctor: Assign source to this type
-     */
-    dirty_tracked(const dirty_tracked& source)
-    {
-        *this = source;
-    }
+    dirty_tracked(const uhd::dirty_tracked<data_t>&) = default;
 
     /*!
      * Get underlying data
