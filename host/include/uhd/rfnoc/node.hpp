@@ -242,6 +242,36 @@ protected:
     void set_prop_forwarding_policy(
         forwarding_policy_t policy, const std::string& prop_id = "");
 
+    /*! Set a specific property that belongs to this block.
+     *
+     * This is like set_property(), but it also allows setting edge properties.
+     * All comments from set_property() still apply.
+     *
+     * \param prop_data_t The data type of the property
+     * \param id The identifier of the property to write. To find out which
+     *           values of \p id are valid, call get_property_ids()
+     * \param val The new value of the property.
+     * \param src_info Source info of the property
+     */
+    template <typename prop_data_t>
+    void set_property(
+        const std::string& id, const prop_data_t& val, const res_source_info& src_info);
+
+    /*! Get the value of a property.
+     *
+     * This is like get_property(), but it also allows reading edge properties.
+     * All comments from get_property() still apply.
+     *
+     * \param prop_data_t The data type of the property
+     * \param id The identifier of the property to write.
+     * \param src_info Source info of this property
+     * \return The value of the property.
+     * \throws uhd::lookup_error if the property can't be found.
+     */
+    template <typename prop_data_t>
+    const prop_data_t& get_property(
+        const std::string& id, const res_source_info& src_info) /* mutable */;
+
     /******************************************
      * Internal action forwarding
      ******************************************/
