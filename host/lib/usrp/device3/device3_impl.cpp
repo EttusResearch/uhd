@@ -135,7 +135,7 @@ void device3_impl::enumerate_rfnoc_blocks(size_t device_index,
                 "for block with NOC ID: "
                     + str(boost::format("0x%08X") % noc_id));
             block_def =
-                uhd::rfnoc::blockdef::make_from_noc_id(uhd::rfnoc::DEFAULT_NOC_ID);
+                uhd::rfnoc::blockdef::make_from_noc_id(uhd::rfnoc::DEFAULT_NOC_ID_64);
         }
         UHD_ASSERT_THROW(block_def);
         make_args.ctrl_ifaces[0] = ctrl;

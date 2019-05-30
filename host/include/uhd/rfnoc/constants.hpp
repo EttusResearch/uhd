@@ -9,6 +9,7 @@
 #define INCLUDED_LIBUHD_RFNOC_CONSTANTS_HPP
 
 #include <uhd/types/dict.hpp>
+#include <uhd/rfnoc/defaults.hpp>
 #include <stdint.h>
 #include <boost/assign/list_of.hpp>
 #include <string>
@@ -21,11 +22,9 @@ static const std::string XML_DEFAULT_PATH = "share/uhd/rfnoc";
 //! The name of the environment variable storing the bath to the block definition files
 static const std::string XML_PATH_ENV = "UHD_RFNOC_DIR";
 
-//! If the block name can't be automatically detected, this name is used
-static const std::string DEFAULT_BLOCK_NAME = "Block";
-static const uint64_t DEFAULT_NOC_ID        = 0xFFFFFFFFFFFFFFFF;
-static const size_t NOC_SHELL_COMPAT_MAJOR  = 6;
-static const size_t NOC_SHELL_COMPAT_MINOR  = 0;
+static const uint64_t DEFAULT_NOC_ID_64     = 0xFFFFFFFFFFFFFFFF;
+static const size_t NOC_SHELL_COMPAT_MAJOR  = 5;
+static const size_t NOC_SHELL_COMPAT_MINOR  = 1;
 
 static const size_t MAX_PACKET_SIZE     = 8000; // bytes
 static const size_t DEFAULT_PACKET_SIZE = 1456; // bytes

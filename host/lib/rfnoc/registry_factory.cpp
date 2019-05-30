@@ -6,6 +6,7 @@
 
 #include <uhd/exception.hpp>
 #include <uhd/rfnoc/registry.hpp>
+#include <uhd/rfnoc/defaults.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhdlib/rfnoc/factory.hpp>
 #include <unordered_map>
@@ -81,7 +82,7 @@ std::pair<registry::factory_t, std::string> factory::get_block_factory(
         UHD_LOG_WARNING("RFNOC::BLOCK_FACTORY",
             "Could not find block with Noc-ID "
                 << std::hex << std::setw(sizeof(noc_block_base::noc_id_t) * 2) << noc_id);
-        throw uhd::key_error("Block not found!");
+        noc_id = DEFAULT_NOC_ID;
     }
     auto& block_info = get_direct_block_registry().at(noc_id);
     return {std::get<1>(block_info), std::get<0>(block_info)};

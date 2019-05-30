@@ -10,6 +10,7 @@ if(ENABLE_RFNOC)
         # Infrastructure
         block_ctrl_base.hpp
         block_ctrl.hpp
+        block_control.hpp
         blockdef.hpp
         block_id.hpp
         constants.hpp

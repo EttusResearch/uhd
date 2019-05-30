@@ -44,7 +44,7 @@ block_ctrl_base::block_ctrl_base(const make_args_t& make_args)
             "No block definition found, using default block configuration "
             "for block with NOC ID: "
                 + str(boost::format("0x%08X") % _noc_id));
-        _block_def = blockdef::make_from_noc_id(DEFAULT_NOC_ID);
+        _block_def = blockdef::make_from_noc_id(DEFAULT_NOC_ID_64);
     }
     UHD_ASSERT_THROW(_block_def);
     // For the block ID, we start with block count 0 and increase until
