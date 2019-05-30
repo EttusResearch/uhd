@@ -45,6 +45,29 @@ std::vector<std::string> node_t::get_property_ids() const
     return return_value;
 }
 
+void node_t::set_command_time(uhd::time_spec_t time, const size_t instance)
+{
+    if (_cmd_timespecs.size() <= instance) {
+        _cmd_timespecs.resize(instance + 1, uhd::time_spec_t(0.0));
+    }
+
+    _cmd_timespecs[instance] = time;
+}
+
+uhd::time_spec_t node_t::get_command_time(const size_t instance) const
+{
+    if (instance >= _cmd_timespecs.size()) {
+        return uhd::time_spec_t::ASAP;
+    }
+
+    return _cmd_timespecs.at(instance);
+}
+
+void node_t::clear_command_time(const size_t instance)
+{
+    set_command_time(uhd::time_spec_t(0.0), instance);
+}
+
 /*** Protected methods *******************************************************/
 void node_t::register_property(property_base_t* prop, resolve_callback_t&& clean_callback)
 {

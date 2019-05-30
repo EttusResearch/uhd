@@ -12,6 +12,7 @@
 #include <uhd/rfnoc/property.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/scope_exit.hpp>
+#include <uhd/types/time_spec.hpp>
 #include <unordered_map>
 #include <unordered_set>
 #include <boost/graph/adjacency_list.hpp>
@@ -55,8 +56,14 @@ public:
         DROP
     };
 
+    static const size_t ANY_PORT = size_t(~0);
 
+    /**************************************************************************
+     * Structors
+     *************************************************************************/
     node_t();
+
+    virtual ~node_t() {}
 
     /******************************************
      * Basic Operations
@@ -136,6 +143,36 @@ public:
     template <typename prop_data_t>
     const prop_data_t& get_property(
         const std::string& id, const size_t instance = 0) /* mutable */;
+
+    /*! Standard API for setting the command time
+     *
+     * There are instances where commands need a time associated with them.
+     * For example, a block could have a 'freq' user property, which should be
+     * changed at a certain time. In that case, the block would have to be
+     * written to handle command times.
+     *
+     * The reason there is no 'time' parameter in set_property() or other API
+     * calls is because there is no uniform definition of what the time means;
+     * it can change from block to block. The transformation of \p time to a
+     * tick count, for example, is non-standard.
+     *
+     * The default implementation will simply stash away the time; it can be
+     * retrieved by calling get_command_time();
+     */
+    virtual void set_command_time(uhd::time_spec_t time, const size_t instance);
+
+    /*! Return a previously set command time
+     *
+     * When no time was set, this will return uhd::time_spec_t::ASAP
+     */
+    virtual uhd::time_spec_t get_command_time(const size_t instance) const;
+
+    /*! Standard API for resetting the command time
+     *
+     * This will clear the time previously set by set_command_time(). It
+     * defaults to calling set_command_time(time_spec_t(0.0), instance)
+     */
+    virtual void clear_command_time(const size_t instance);
 
 protected:
     /******************************************
@@ -488,6 +525,11 @@ private:
     // The default callback will simply drop actions
     action_handler_t _post_action_cb = [](const res_source_info&,
                                            action_info::sptr) { /* nop */ };
+
+    /**************************************************************************
+     * Other attributes
+     *************************************************************************/
+    std::vector<uhd::time_spec_t> _cmd_timespecs;
 }; // class node_t
 
 }} /* namespace uhd::rfnoc */
