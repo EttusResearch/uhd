@@ -54,3 +54,11 @@ void get_freq_and_freq_word(
     actual_freq = (double(freq_word) / scale_factor) * tick_rate;
 }
 
+std::tuple<double, int> get_freq_and_freq_word(const double requested_freq, const double tick_rate)
+{
+    double actual_freq;
+    int32_t freq_word;
+    get_freq_and_freq_word(requested_freq, tick_rate, actual_freq, freq_word);
+    return std::make_tuple(actual_freq, freq_word);
+}
+
