@@ -435,7 +435,7 @@ private:
             }
 
             // extract packet info
-            memset(&info.ifpi, 0, sizeof(vrt::if_packet_info_t));
+            info.ifpi                    = {};
             info.ifpi.num_packet_words32 = num_packet_words32 - _header_offset_words32;
             info.vrt_hdr = buff->cast<const uint32_t*>() + _header_offset_words32;
             _vrt_unpacker(info.vrt_hdr, info.ifpi);
@@ -684,9 +684,9 @@ private:
                     curr_info.metadata.time_spec =
                         prev_info.metadata.time_spec
                         + time_spec_t::from_ticks(
-                              prev_info[index].ifpi.num_payload_words32 * sizeof(uint32_t)
-                                  / _bytes_per_otw_item,
-                              _samp_rate);
+                            prev_info[index].ifpi.num_payload_words32 * sizeof(uint32_t)
+                                / _bytes_per_otw_item,
+                            _samp_rate);
                     curr_info.metadata.out_of_sequence = true;
                     curr_info.metadata.error_code = rx_metadata_t::ERROR_CODE_OVERFLOW;
                     UHD_LOG_FASTPATH("D");
