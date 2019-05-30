@@ -20,7 +20,7 @@ namespace uhd { namespace rfnoc { namespace mgmt {
 using namespace chdr;
 using namespace transport;
 
-constexpr bool ALLOW_DAISY_CHAINING = false;
+constexpr bool ALLOW_DAISY_CHAINING = true;
 
 constexpr uint16_t REG_EPID_SELF               = 0x00; // RW
 constexpr uint16_t REG_RESET_AND_FLUSH         = 0x04; // W
@@ -182,6 +182,11 @@ public:
     {
         std::lock_guard<std::recursive_mutex> lock(_mutex);
         _discover_topology();
+        UHD_LOG_DEBUG("RFNOC::MGMT",
+            "The following endpoints are reachable from " << _my_node_id.to_string());
+        for (const auto& ep : _discovered_ep_set) {
+            UHD_LOG_DEBUG("RFNOC::MGMT", "* " << ep.first << ":" << ep.second);
+        }
     }
 
     virtual ~mgmt_portal_impl() {}
@@ -619,6 +624,10 @@ private: // Functions
                     throw io_err;
                 } else {
                     // Move to the next pending path
+                    UHD_LOG_TRACE("RFNOC::MGMT",
+                        "Nothing connected on " << next_path.first.to_string() << "->"
+                                                << next_path.second
+                                                << ". Ignoring that path.");
                     continue;
                 }
             }
@@ -672,10 +681,10 @@ private: // Functions
                             }
                         }
                         UHD_LOG_TRACE("RFNOC::MGMT",
-                            "Discovered crossbar has "
-                                << nports << " ports, " << nports_xport
-                                << " transports and we are hooked up on port "
-                                << new_node.inst);
+                            "* " << new_node.to_string() << " has " << nports
+                                 << " ports, " << nports_xport
+                                 << " transports and we are hooked up on port "
+                                 << new_node.inst);
                     } break;
                     case NODE_TYPE_STRM_EP: {
                         // Stop searching when we find a stream endpoint
