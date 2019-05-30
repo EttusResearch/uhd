@@ -72,25 +72,22 @@ void node_t::clear_command_time(const size_t instance)
 void node_t::register_property(property_base_t* prop, resolve_callback_t&& clean_callback)
 {
     std::lock_guard<std::mutex> _l(_prop_mutex);
-
     const auto src_type          = prop->get_src_info().type;
-    auto prop_already_registered = [prop](const property_base_t* existing_prop) {
-        return (prop->get_src_info() == existing_prop->get_src_info()
-                   && prop->get_id() == existing_prop->get_id())
-               || (prop == existing_prop);
-    };
 
     // If the map is empty for this source type, create an empty vector
     if (_props.count(src_type) == 0) {
         _props[src_type] = {};
     }
 
-    // Now go and make sure no one has registered this property before
-    auto& props = _props[src_type];
-    for (const auto& existing_prop : props) {
-        if (prop_already_registered(existing_prop)) {
-            throw uhd::runtime_error("Attempting to double-register prop");
-        }
+    auto prop_already_registered = [prop](const property_base_t* existing_prop) {
+        return (prop == existing_prop) ||
+            (prop->get_src_info() == existing_prop->get_src_info()
+                   && prop->get_id() == existing_prop->get_id());
+    };
+    if (!filter_props(prop_already_registered).empty()) {
+        throw uhd::runtime_error(std::string("Attempting to double-register property: ")
+                                 + prop->get_id() + "[" + prop->get_src_info().to_string()
+                                 + "]");
     }
 
     _props[src_type].push_back(prop);
@@ -347,43 +344,56 @@ void node_t::init_props()
 void node_t::resolve_props()
 {
     prop_accessor_t prop_accessor{};
-    const prop_ptrs_t dirty_props =
+    const prop_ptrs_t initial_dirty_props =
         filter_props([](property_base_t* prop) { return prop->is_dirty(); });
+    std::list<property_base_t*> all_dirty_props(
+        initial_dirty_props.cbegin(), initial_dirty_props.cend());
+    prop_ptrs_t processed_props{};
     prop_ptrs_t written_props{};
-    UHD_LOG_TRACE(get_unique_id(),
-        "Locally resolving " << dirty_props.size() << " dirty properties.");
+    RFNOC_LOG_TRACE("Locally resolving " << all_dirty_props.size()
+                                         << " dirty properties plus dependencies.");
 
-    // Helper to determine if any element from inputs is in dirty_props
-    auto in_dirty_props = [&dirty_props](const prop_ptrs_t inputs) {
-        return std::any_of(
-            inputs.cbegin(), inputs.cend(), [&dirty_props](property_base_t* prop) {
-                return dirty_props.count(prop) != 1;
-            });
-    };
-
-    for (auto& resolver_tuple : _prop_resolvers) {
-        auto& inputs  = std::get<0>(resolver_tuple);
-        auto& outputs = std::get<1>(resolver_tuple);
-        if (in_dirty_props(inputs)) {
+    // Loop through all dirty properties. The list can be amended during the
+    // loop execution.
+    for (auto it = all_dirty_props.begin(); it != all_dirty_props.end(); ++it) {
+        auto current_input_prop = *it;
+        if (processed_props.count(current_input_prop)) {
             continue;
         }
+        // Find all resolvers that take this dirty property as an input:
+        for (auto& resolver_tuple : _prop_resolvers) {
+            auto& inputs  = std::get<0>(resolver_tuple);
+            auto& outputs = std::get<1>(resolver_tuple);
+            if (!inputs.count(current_input_prop)) {
+                continue;
+            }
 
-        // Enable outputs
-        std::vector<uhd::utils::scope_exit::uptr> access_holder;
-        access_holder.reserve(outputs.size());
-        for (auto& output : outputs) {
-            access_holder.emplace_back(prop_accessor.get_scoped_prop_access(*output,
-                written_props.count(output) ? property_base_t::access_t::RWLOCKED
-                                            : property_base_t::access_t::RW));
+            // Enable outputs
+            std::vector<uhd::utils::scope_exit::uptr> access_holder;
+            access_holder.reserve(outputs.size());
+            for (auto& output : outputs) {
+                access_holder.emplace_back(prop_accessor.get_scoped_prop_access(*output,
+                    written_props.count(output) ? property_base_t::access_t::RWLOCKED
+                                                : property_base_t::access_t::RW));
+            }
+
+            // Run resolver
+            std::get<2>(resolver_tuple)();
+
+            // Take note of outputs
+            written_props.insert(outputs.cbegin(), outputs.cend());
+
+            // Add all outputs that are dirty to the list, unless they have
+            // already been processed
+            for (auto& output_prop : outputs) {
+                if (output_prop->is_dirty() && processed_props.count(output_prop) == 0) {
+                    all_dirty_props.push_back(output_prop);
+                }
+            }
+
+            // RW or RWLOCKED gets released here as access_holder goes out of scope.
         }
-
-        // Run resolver
-        std::get<2>(resolver_tuple)();
-
-        // Take note of outputs
-        written_props.insert(outputs.cbegin(), outputs.cend());
-
-        // RW or RWLOCKED gets released here as access_holder goes out of scope.
+        processed_props.insert(current_input_prop);
     }
 }
 

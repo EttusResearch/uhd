@@ -111,6 +111,52 @@ private:
     property_t<double> _out{"out", 2.0, {res_source_info::OUTPUT_EDGE}};
 };
 
+/*! Mock node, circular prop deps
+ */
+class mock_circular_prop_node_t : public node_t
+{
+public:
+    mock_circular_prop_node_t()
+    {
+        register_property(&_x1);
+        register_property(&_x2);
+        register_property(&_x4);
+
+        add_property_resolver({&_x1}, {&_x2}, [this]() {
+            RFNOC_LOG_INFO("Calling resolver for _x1");
+            _x2 = 2.0 * _x1.get();
+        });
+        add_property_resolver({&_x2}, {&_x4}, [this]() {
+            RFNOC_LOG_INFO("Calling resolver for _x2");
+            _x4 = 2.0 * _x2.get();
+        });
+        add_property_resolver({&_x4}, {&_x1}, [this]() {
+            RFNOC_LOG_INFO("Calling resolver for _x4");
+            _x1 = _x4.get() / 4.0;
+        });
+    }
+
+    size_t get_num_input_ports() const
+    {
+        return 1;
+    }
+
+    size_t get_num_output_ports() const
+    {
+        return 1;
+    }
+
+    std::string get_unique_id() const
+    {
+        return "MOCK_CIRCULAR_PROPS";
+    }
+
+    property_t<double> _x1{"x1", 1.0, {res_source_info::USER}};
+    property_t<double> _x2{"x2", 2.0, {res_source_info::USER}};
+    property_t<double> _x4{"x4", 4.0, {res_source_info::USER}};
+};
+
+
 // Do some sanity checks on the mock just so we don't get surprised later
 BOOST_AUTO_TEST_CASE(test_mock)
 {
@@ -363,4 +409,18 @@ BOOST_AUTO_TEST_CASE(test_graph_crisscross_fifo)
     graph.connect(&mock_fifo, &mock_tx_radio1, {0, 0, graph_edge_t::DYNAMIC, true});
     UHD_LOG_INFO("TEST", "Now testing criss-cross prop resolution");
     graph.initialize();
+}
+
+BOOST_AUTO_TEST_CASE(test_circular_deps)
+{
+    node_accessor_t node_accessor{};
+    // Define some mock nodes:
+    // Source radios
+    mock_circular_prop_node_t mock_circular_prop_node{};
+
+    // These init calls would normally be done by the framework
+    node_accessor.init_props(&mock_circular_prop_node);
+
+    mock_circular_prop_node.set_property<double>("x1", 5.0, 0);
+    BOOST_CHECK_EQUAL(mock_circular_prop_node.get_property<double>("x4"), 4 * 5.0);
 }
