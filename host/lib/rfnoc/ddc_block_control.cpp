@@ -56,8 +56,7 @@ public:
     , _fpga_compat(regs().peek32(RB_COMPAT_NUM)),
         _num_halfbands(regs().peek32(RB_NUM_HB)),
         _cic_max_decim(regs().peek32(RB_CIC_MAX_DECIM)),
-        _residual_scaling(get_num_input_ports(), DEFAULT_SCALING),
-        _tick_rate(get_num_input_ports(), DEFAULT_RATE)
+        _residual_scaling(get_num_input_ports(), DEFAULT_SCALING)
     {
         UHD_ASSERT_THROW(get_num_input_ports() == get_num_output_ports());
         UHD_ASSERT_THROW(_cic_max_decim > 0 && _cic_max_decim <= 0xFF);
@@ -87,8 +86,6 @@ public:
         // space, because we use push_back() further down, and properties must
         // not change their base address after registration and resolver
         // creation.
-        _tick_rate_in.reserve(get_num_ports());
-        _tick_rate_out.reserve(get_num_ports());
         _samp_rate_in.reserve(get_num_ports());
         _samp_rate_out.reserve(get_num_ports());
         _scaling_in.reserve(get_num_ports());
@@ -194,10 +191,6 @@ private:
     void _register_props(const size_t chan)
     {
         // Create actual properties and store them
-        _tick_rate_in.push_back(property_t<double>(
-            PROP_KEY_TICK_RATE, DEFAULT_RATE, {res_source_info::INPUT_EDGE, chan}));
-        _tick_rate_out.push_back(property_t<double>(
-            PROP_KEY_TICK_RATE, DEFAULT_RATE, {res_source_info::OUTPUT_EDGE, chan}));
         _samp_rate_in.push_back(property_t<double>(
             PROP_KEY_SAMP_RATE, DEFAULT_RATE, {res_source_info::INPUT_EDGE, chan}));
         _samp_rate_out.push_back(property_t<double>(
@@ -214,8 +207,6 @@ private:
             PROP_KEY_TYPE, IO_TYPE_SC16, {res_source_info::INPUT_EDGE, chan}));
         _type_out.emplace_back(property_t<std::string>(
             PROP_KEY_TYPE, IO_TYPE_SC16, {res_source_info::OUTPUT_EDGE, chan}));
-        UHD_ASSERT_THROW(_tick_rate_in.size() == chan + 1);
-        UHD_ASSERT_THROW(_tick_rate_out.size() == chan + 1);
         UHD_ASSERT_THROW(_samp_rate_in.size() == chan + 1);
         UHD_ASSERT_THROW(_samp_rate_out.size() == chan + 1);
         UHD_ASSERT_THROW(_scaling_in.size() == chan + 1);
@@ -226,8 +217,6 @@ private:
         UHD_ASSERT_THROW(_type_out.size() == chan + 1);
 
         // give us some shorthands for the rest of this function
-        property_t<double>* tick_rate_in  = &_tick_rate_in.back();
-        property_t<double>* tick_rate_out = &_tick_rate_out.back();
         property_t<double>* samp_rate_in  = &_samp_rate_in.back();
         property_t<double>* samp_rate_out = &_samp_rate_out.back();
         property_t<double>* scaling_in    = &_scaling_in.back();
@@ -238,8 +227,6 @@ private:
         property_t<std::string>* type_out = &_type_out.back();
 
         // register them
-        register_property(tick_rate_in);
-        register_property(tick_rate_out);
         register_property(samp_rate_in);
         register_property(samp_rate_out);
         register_property(scaling_in);
@@ -252,24 +239,6 @@ private:
         /**********************************************************************
          * Add resolvers
          *********************************************************************/
-        // Resolver for the tick rate: The input and output edges can have
-        // different time bases. However, we might want to forward the time base,
-        // e.g., if the upstream block is a radio, but the downstream block is a
-        // streamer and wouldn't know about time bases itself.
-        // We therefore propagate tick rates only if the opposite edge has the
-        // same tick rate as we do. For the output, we accept any tick rate,
-        // so it gets no resolver.
-        add_property_resolver({tick_rate_in},
-            {tick_rate_out},
-            [this,
-                chan,
-                &tick_rate_in  = *tick_rate_in,
-                &tick_rate_out = *tick_rate_out]() {
-                if (tick_rate_out.get() == _tick_rate.at(chan)) {
-                    tick_rate_out = tick_rate_in.get();
-                }
-                _tick_rate[chan] = tick_rate_in.get();
-            });
         // Resolver for the output scaling: This cannot be updated, we reset it
         // to its previous value.
         add_property_resolver({scaling_out},
@@ -529,17 +498,10 @@ private:
     //! Cache the current residual scaling
     std::vector<double> _residual_scaling;
 
-    //! Tick rate for every input channel
-    std::vector<double> _tick_rate;
-
     //! Properties for type_in (one per port)
     std::vector<property_t<std::string>> _type_in;
     //! Properties for type_out (one per port)
     std::vector<property_t<std::string>> _type_out;
-    //! Properties for tick_rate_in (one per port)
-    std::vector<property_t<double>> _tick_rate_in;
-    //! Properties for tick_rate_out (one per port)
-    std::vector<property_t<double>> _tick_rate_out;
     //! Properties for samp_rate_in (one per port)
     std::vector<property_t<double>> _samp_rate_in;
     //! Properties for samp_rate_out (one per port)

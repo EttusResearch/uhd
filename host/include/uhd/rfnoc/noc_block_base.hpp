@@ -22,6 +22,8 @@
 
 namespace uhd { namespace rfnoc {
 
+class clock_iface;
+
 /*!
  * The primary interface to a NoC block in the FPGA
  *
@@ -83,10 +85,30 @@ public:
      */
     const block_id_t& get_block_id() const { return _block_id; }
 
+    /*! Returns the tick rate of the current time base
+     *
+     * Note there is only ever one time base (or tick rate) per block.
+     */
+    double get_tick_rate() const { return _tick_rate; }
+
 protected:
     noc_block_base(make_args_ptr make_args);
 
+    /*! Update tick rate for this node and all the connected nodes
+     *
+     * Careful: Calling this function will trigger a property propagation to any
+     * block this block is connected to.
+     */
+    void set_tick_rate(const double tick_rate);
+
 private:
+    /*! Update the tick rate of this block
+     *
+     * This will make sure that the underlying register_iface is notified of the
+     * change in timebase.
+     */
+    void _set_tick_rate(const double tick_rate);
+
     //! This block's Noc-ID
     noc_id_t _noc_id;
 
@@ -100,6 +122,16 @@ private:
 
     //! Number of output ports
     size_t _num_output_ports;
+
+    //! Container for the 'tick rate' property. This will hold one edge property
+    // for all in- and output edges.
+    std::vector<property_t<double>> _tick_rate_props;
+
+    //! The actual tick rate of the current time base
+    double _tick_rate;
+
+    std::shared_ptr<clock_iface> _clock_iface;
+
 }; // class noc_block_base
 
 }} /* namespace uhd::rfnoc */

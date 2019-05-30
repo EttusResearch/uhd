@@ -8,6 +8,7 @@
 #include <uhd/rfnoc/ddc_block_control.hpp>
 #include <uhdlib/rfnoc/clock_iface.hpp>
 #include <uhdlib/rfnoc/node_accessor.hpp>
+#include <uhdlib/rfnoc/clock_iface.hpp>
 #include <boost/test/unit_test.hpp>
 #include <iostream>
 
