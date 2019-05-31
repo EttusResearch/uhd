@@ -27,7 +27,19 @@ sep_id_t epid_allocator::allocate_epid(const sep_addr_t& addr)
     }
 }
 
-sep_addr_t epid_allocator::lookup_epid(const sep_id_t& epid) const
+sep_id_t epid_allocator::get_epid(const sep_addr_t& addr)
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+
+    if (_epid_map.count(addr) != 0) {
+        return _epid_map.at(addr);
+    } else {
+        throw uhd::lookup_error(
+            "An EPID has not been allocated for the requested endpoint");
+    }
+}
+
+sep_addr_t epid_allocator::lookup_addr(const sep_id_t& epid) const
 {
     std::lock_guard<std::mutex> lock(_mutex);
 

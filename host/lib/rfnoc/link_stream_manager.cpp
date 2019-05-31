@@ -6,7 +6,6 @@
 
 #include <uhd/exception.hpp>
 #include <uhd/transport/muxed_zero_copy_if.hpp>
-#include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/chdr_ctrl_endpoint.hpp>
 #include <uhdlib/rfnoc/link_stream_manager.hpp>
 #include <uhdlib/rfnoc/mgmt_portal.hpp>
@@ -21,6 +20,8 @@ using namespace uhd::rfnoc::detail;
 
 constexpr sep_inst_t SEP_INST_MGMT_CTRL = 0;
 constexpr sep_inst_t SEP_INST_DATA_BASE = 1;
+
+constexpr double STREAM_SETUP_TIMEOUT = 0.2;
 
 link_stream_manager::~link_stream_manager() = default;
 
@@ -109,15 +110,18 @@ public:
         return _mgmt_portal->get_reachable_endpoints();
     }
 
-    virtual sep_id_pair_t init_ctrl_stream(sep_addr_t dst_addr)
+    virtual bool can_connect_device_to_device(
+        sep_addr_t dst_addr, sep_addr_t src_addr) const
     {
+        return _mgmt_portal->can_remote_route(dst_addr, src_addr);
+    }
+
+    virtual sep_id_pair_t connect_host_to_device(sep_addr_t dst_addr)
+    {
+        _ensure_ep_is_reachable(dst_addr);
+
         // Allocate EPIDs
         sep_id_t dst_epid = _epid_alloc->allocate_epid(dst_addr);
-        UHD_LOGGER_DEBUG("RFNOC::LINK_MGR")
-            << boost::format("Initializing control stream to Endpoint %d:%d with EPID "
-                             "%d...")
-                   % dst_addr.first % dst_addr.second % dst_epid;
-        _ensure_ep_is_reachable(dst_addr);
 
         // Make sure that the software side of the endpoint is initialized and reachable
         if (_ctrl_ep == nullptr) {
@@ -140,6 +144,25 @@ public:
                 std::make_pair(dst_epid, client_zero::make(*_ctrl_ep, dst_epid)));
         }
         return sep_id_pair_t(_my_mgmt_ctrl_epid, dst_epid);
+    }
+
+    virtual sep_id_pair_t connect_device_to_device(
+        sep_addr_t dst_addr, sep_addr_t src_addr)
+    {
+        _ensure_ep_is_reachable(dst_addr);
+        _ensure_ep_is_reachable(src_addr);
+
+        // Allocate EPIDs
+        sep_id_t dst_epid = _epid_alloc->allocate_epid(dst_addr);
+        sep_id_t src_epid = _epid_alloc->allocate_epid(src_addr);
+
+        // Initialize endpoints
+        _mgmt_portal->initialize_endpoint(dst_addr, dst_epid);
+        _mgmt_portal->initialize_endpoint(src_addr, src_epid);
+
+        _mgmt_portal->setup_remote_route(dst_epid, src_epid);
+
+        return sep_id_pair_t(src_epid, dst_epid);
     }
 
     virtual ctrlport_endpoint::sptr get_block_register_iface(sep_id_t dst_epid,
@@ -179,8 +202,54 @@ public:
         return _client_zero_map.at(dst_epid);
     }
 
-    virtual chdr_data_xport_t create_data_stream(
-        sep_addr_t dst_addr, sep_vc_t /*vc*/, const device_addr_t& xport_args)
+    virtual stream_buff_params_t create_device_to_device_data_stream(
+        const sep_id_t& dst_epid,
+        const sep_id_t& src_epid,
+        const bool lossy_xport,
+        const double fc_freq_ratio,
+        const double fc_headroom_ratio,
+        const bool reset = false)
+    {
+        // We assume that the devices are already connected (because this API requires
+        // EPIDs)
+
+        // Setup a stream
+        stream_buff_params_t buff_params = _mgmt_portal->config_remote_stream(dst_epid,
+            src_epid,
+            lossy_xport,
+            stream_buff_params_t{1, 1}, // Dummy frequency
+            stream_buff_params_t{0, 0}, // Dummy headroom
+            false,
+            STREAM_SETUP_TIMEOUT);
+
+        // Compute FC frequency and headroom based on buff parameters
+        stream_buff_params_t fc_freq{
+            static_cast<uint64_t>(std::ceil(double(buff_params.bytes) * fc_freq_ratio)),
+            static_cast<uint32_t>(
+                std::ceil(double(buff_params.packets) * fc_freq_ratio))};
+        stream_buff_params_t fc_headroom{
+            static_cast<uint64_t>(
+                std::ceil(double(buff_params.bytes) * fc_headroom_ratio)),
+            static_cast<uint32_t>(
+                std::ceil(double(buff_params.packets) * fc_headroom_ratio))};
+
+        // Reconfigure flow control using the new frequency and headroom
+        return _mgmt_portal->config_remote_stream(dst_epid,
+            src_epid,
+            lossy_xport,
+            fc_freq,
+            fc_headroom,
+            reset,
+            STREAM_SETUP_TIMEOUT);
+    }
+
+    virtual chdr_data_xport_t create_host_to_device_data_stream(const sep_addr_t dst_addr,
+        const bool lossy_xport,
+        const sw_buff_t pyld_buff_fmt,
+        const sw_buff_t mdata_buff_fmt,
+        const double fc_freq_ratio,
+        const double fc_headroom_ratio,
+        const device_addr_t& xport_args)
     {
         // Create a new source endpoint and EPID
         sep_addr_t sw_epid_addr(_my_device_id, SEP_INST_DATA_BASE + (_data_ep_inst++));
@@ -217,6 +286,17 @@ public:
         // Delete the portal when done
         data_mgmt_portal.reset();
         return xport;
+    }
+
+    virtual chdr_data_xport_t create_device_to_host_data_stream(const sep_addr_t src_addr,
+        const bool lossy_xport,
+        const sw_buff_t pyld_buff_fmt,
+        const sw_buff_t mdata_buff_fmt,
+        const double fc_freq_ratio,
+        const double fc_headroom_ratio,
+        const device_addr_t& xport_args)
+    {
+        // TODO: Implement me
     }
 
 private:

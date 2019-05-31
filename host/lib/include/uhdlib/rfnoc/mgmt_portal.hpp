@@ -9,6 +9,7 @@
 
 #include <uhdlib/rfnoc/chdr_types.hpp>
 #include <memory>
+#include <set>
 
 namespace uhd { namespace rfnoc { namespace mgmt {
 
@@ -26,13 +27,6 @@ public:
     using xport_cfg_fn_t = std::function<void(
         device_id_t devid, uint16_t inst, uint8_t subtype, chdr::mgmt_hop_t& hop)>;
 
-    //! Flow control buffer configuration parameters
-    struct buff_params_t
-    {
-        uint64_t bytes;
-        uint32_t packets;
-    };
-
     //! Information about a stream endpoint
     struct sep_info_t
     {
@@ -49,9 +43,6 @@ public:
         //! Address of the endpoint
         sep_addr_t addr;
     };
-
-    //! The data type of the buffer used to capture/generate data
-    enum sw_buff_t { BUFF_U64 = 0, BUFF_U32 = 1, BUFF_U16 = 2, BUFF_U8 = 3 };
 
     virtual ~mgmt_portal() = 0;
 
@@ -90,6 +81,14 @@ public:
     //
     virtual void setup_local_route(const sep_id_t& dst_epid) = 0;
 
+    //! Can a route from between the source and destination endpoints be established?
+    //
+    // \param dst_epid The endpoint ID of the destination
+    // \param src_epid The endpoint ID of the source
+    //
+    virtual bool can_remote_route(
+        const sep_addr_t& dst_addr, const sep_addr_t& src_addr) const = 0;
+
     //! Setup a route from between the source and destination endpoints
     //
     //  After a route is established, it should be possible for the source to send packets
@@ -121,8 +120,8 @@ public:
         const bool lossy_xport,
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
-        const buff_params_t& fc_freq,
-        const buff_params_t& fc_headroom,
+        const stream_buff_params_t& fc_freq,
+        const stream_buff_params_t& fc_headroom,
         const bool reset = false) = 0;
 
     //! Finish configuring a flow controlled receive data stream from the endpoint with
@@ -130,7 +129,7 @@ public:
     //
     // \param epid The endpoint ID of the data source
     //
-    virtual buff_params_t config_local_rx_stream_commit(
+    virtual stream_buff_params_t config_local_rx_stream_commit(
         const sep_id_t& epid, const double timeout = 0.2) = 0;
 
     //! Configure a flow controlled transmit data stream from this SW mgmt portal to the
@@ -156,11 +155,11 @@ public:
     // \param fc_freq Flow control response frequency parameters
     // \param fc_freq Flow control headroom parameters
     //
-    virtual buff_params_t config_remote_stream(const sep_id_t& dst_epid,
+    virtual stream_buff_params_t config_remote_stream(const sep_id_t& dst_epid,
         const sep_id_t& src_epid,
         const bool lossy_xport,
-        const buff_params_t& fc_freq,
-        const buff_params_t& fc_headroom,
+        const stream_buff_params_t& fc_freq,
+        const stream_buff_params_t& fc_headroom,
         const bool reset     = false,
         const double timeout = 0.2) = 0;
 

@@ -43,10 +43,8 @@ constexpr uint32_t RESET_AND_FLUSH_ISTRM = (1 << 1);
 constexpr uint32_t RESET_AND_FLUSH_CTRL  = (1 << 2);
 constexpr uint32_t RESET_AND_FLUSH_ALL   = 0x7;
 
-constexpr uint32_t BUILD_CTRL_STATUS_WORD(bool cfg_start,
-    bool xport_lossy,
-    mgmt_portal::sw_buff_t pyld_buff_fmt,
-    mgmt_portal::sw_buff_t mdata_buff_fmt)
+constexpr uint32_t BUILD_CTRL_STATUS_WORD(
+    bool cfg_start, bool xport_lossy, sw_buff_t pyld_buff_fmt, sw_buff_t mdata_buff_fmt)
 {
     return (cfg_start ? 1 : 0) | (xport_lossy ? 2 : 0)
            | (static_cast<uint32_t>(pyld_buff_fmt) << 2)
@@ -346,29 +344,52 @@ public:
                 % dst_epid % to_string(node_addr)));
     }
 
+    virtual bool can_remote_route(
+        const sep_addr_t& dst_addr, const sep_addr_t& src_addr) const
+    {
+        std::lock_guard<std::recursive_mutex> lock(_mutex);
+
+        if ((_discovered_ep_set.count(dst_addr) == 0)
+            || (_discovered_ep_set.count(src_addr) == 0)) {
+            // Can't route to/from something if we don't know about it
+            return false;
+        }
+
+        UHD_ASSERT_THROW(_node_addr_map.count(node_id_t(dst_addr)) > 0);
+        UHD_ASSERT_THROW(_node_addr_map.count(node_id_t(src_addr)) > 0);
+
+        // Lookup the src and dst node address using the endpoint ID
+        const node_addr_t& dst_node_addr = _node_addr_map.at(node_id_t(dst_addr));
+        const node_addr_t& src_node_addr = _node_addr_map.at(node_id_t(src_addr));
+
+        // Find a common parent (could be faster than n^2 but meh, this is easier)
+        for (const auto& dnode : dst_node_addr) {
+            for (const auto& snode : src_node_addr) {
+                if (dnode.first == snode.first && dnode.first.type == NODE_TYPE_XBAR) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     virtual void setup_remote_route(const sep_id_t& dst_epid, const sep_id_t& src_epid)
     {
         std::lock_guard<std::recursive_mutex> lock(_mutex);
 
-        // Lookup the src and dst node address using the endpoint ID
-        const node_addr_t& dst_node_addr = _lookup_sep_node_addr(dst_epid);
-        const node_addr_t& src_node_addr = _lookup_sep_node_addr(src_epid);
-
-        // Find a common parent (could be faster than n^2 but meh, this is easier)
-        bool found_common_parent = false;
-        for (const auto& dnode : dst_node_addr) {
-            for (const auto& snode : src_node_addr) {
-                found_common_parent =
-                    ((dnode.first == snode.first) && dnode.first.type == NODE_TYPE_XBAR);
-                if (found_common_parent)
-                    break;
-            }
-            if (found_common_parent)
-                break;
+        if (not is_endpoint_initialized(dst_epid)) {
+            throw uhd::routing_error("Route setup failed. The destination endpoint was "
+                                     "not initialized and bound to an EPID");
         }
-        if (!found_common_parent) {
-            throw uhd::routing_error("setup_remote_route: Route setup failed. The "
-                                     "endpoints don't share a common crossbar parent.");
+        if (not is_endpoint_initialized(src_epid)) {
+            throw uhd::routing_error("Route setup failed. The source endpoint was "
+                                     "not initialized and bound to an EPID");
+        }
+
+        if (not can_remote_route(
+                _epid_addr_map.at(dst_epid), _epid_addr_map.at(src_epid))) {
+            throw uhd::routing_error("Route setup failed. The endpoints don't share a "
+                                     "common crossbar parent.");
         }
 
         // If we setup local routes from this host to both the source and destination
@@ -393,8 +414,8 @@ public:
         const bool lossy_xport,
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
-        const buff_params_t& fc_freq,
-        const buff_params_t& fc_headroom,
+        const stream_buff_params_t& fc_freq,
+        const stream_buff_params_t& fc_headroom,
         const bool reset = false)
     {
         std::lock_guard<std::recursive_mutex> lock(_mutex);
@@ -433,7 +454,7 @@ public:
             (boost::format("Initiated RX stream setup for EPID=%d") % epid));
     }
 
-    virtual buff_params_t config_local_rx_stream_commit(
+    virtual stream_buff_params_t config_local_rx_stream_commit(
         const sep_id_t& epid, const double timeout = 0.2)
     {
         std::lock_guard<std::recursive_mutex> lock(_mutex);
@@ -487,11 +508,11 @@ public:
             (boost::format("Finished TX stream setup for EPID=%d") % epid));
     }
 
-    virtual buff_params_t config_remote_stream(const sep_id_t& dst_epid,
+    virtual stream_buff_params_t config_remote_stream(const sep_id_t& dst_epid,
         const sep_id_t& src_epid,
         const bool lossy_xport,
-        const buff_params_t& fc_freq,
-        const buff_params_t& fc_headroom,
+        const stream_buff_params_t& fc_freq,
+        const stream_buff_params_t& fc_headroom,
         const bool reset     = false,
         const double timeout = 0.2)
     {
@@ -743,8 +764,8 @@ private: // Functions
     void _push_ostrm_flow_control_config(const bool lossy_xport,
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
-        const buff_params_t& fc_freq,
-        const buff_params_t& fc_headroom,
+        const stream_buff_params_t& fc_freq,
+        const stream_buff_params_t& fc_headroom,
         mgmt_hop_t& hop)
     {
         // Validate flow control parameters
@@ -780,7 +801,8 @@ private: // Functions
     }
 
     // Send/recv a management transaction that will get the output stream status
-    std::tuple<uint32_t, buff_params_t> _get_ostrm_status(const node_addr_t& node_addr)
+    std::tuple<uint32_t, stream_buff_params_t> _get_ostrm_status(
+        const node_addr_t& node_addr)
     {
         // Build a management transaction to first get to the node
         mgmt_payload status_xact;
@@ -824,7 +846,7 @@ private: // Functions
         mgmt_op_t::cfg_payload cap_bytes_hi = rhop.get_op(3).get_op_payload();
         mgmt_op_t::cfg_payload cap_pkts     = rhop.get_op(4).get_op_payload();
 
-        buff_params_t buff_params;
+        stream_buff_params_t buff_params;
         buff_params.bytes = static_cast<uint64_t>(cap_bytes_lo.data)
                             | (static_cast<uint64_t>(cap_bytes_hi.data) << 32);
         buff_params.packets = static_cast<uint32_t>(cap_pkts.data);

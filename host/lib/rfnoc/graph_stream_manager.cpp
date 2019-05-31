@@ -61,30 +61,118 @@ public:
         return retval;
     }
 
-    virtual sep_id_pair_t init_ctrl_stream(
-        sep_addr_t dst_addr, device_id_t via_device = NULL_DEVICE_ID)
+    virtual sep_id_pair_t connect_host_to_device(
+        sep_addr_t dst_addr, device_id_t host_device = NULL_DEVICE_ID)
     {
-        return _link_mgrs.at(_check_dst_and_find_src(dst_addr, via_device))
-            ->init_ctrl_stream(dst_addr);
+        UHD_LOGGER_DEBUG("RFNOC::GRAPH")
+            << boost::format("Connecting the Host to Endpoint %d:%d through Device "
+                             "%d (0 = no preference)... ")
+                   % dst_addr.first % dst_addr.second % host_device;
+
+        // When we connect, we setup a route and fire up a control stream between
+        // the endpoints
+        device_id_t gateway = _check_dst_and_find_src(dst_addr, host_device);
+        sep_id_pair_t epid_pair =
+            _link_mgrs.at(gateway)->connect_host_to_device(dst_addr);
+        UHD_LOGGER_DEBUG("RFNOC::GRAPH")
+            << boost::format("Connection to Endpoint %d:%d completed through Device %d. "
+                             "Using EPIDs %d -> %d.")
+                   % dst_addr.first % dst_addr.second % gateway % epid_pair.first
+                   % epid_pair.second;
+
+        return epid_pair;
     }
 
-    virtual ctrlport_endpoint::sptr get_block_register_iface(sep_id_t dst_epid,
+    virtual sep_id_pair_t connect_device_to_device(
+        sep_addr_t dst_addr, sep_addr_t src_addr)
+    {
+        UHD_LOGGER_DEBUG("RFNOC::GRAPH")
+            << boost::format("Connecting the Endpoint %d:%d to Endpoint %d:%d...")
+                   % src_addr.first % src_addr.second % dst_addr.first % dst_addr.second;
+
+        // Iterate through all link managers and check if they are capable of connecting
+        // the requested endpoints. If no one can connect then the endpoints may actually
+        // not share a common crossbar or we don't have enough connectivity in the
+        // software session to reach the common crossbar.
+        for (auto& kv : _link_mgrs) {
+            if (kv.second->can_connect_device_to_device(dst_addr, src_addr)) {
+                sep_id_pair_t epid_pair =
+                    kv.second->connect_device_to_device(dst_addr, src_addr);
+                UHD_LOGGER_DEBUG("RFNOC::GRAPH")
+                    << boost::format("Connection from Endpoint %d:%d to Endpoint %d:%d "
+                                     "completed through Device %d. Using "
+                                     "EPIDs %d -> %d.")
+                           % src_addr.first % src_addr.second % dst_addr.first
+                           % dst_addr.second % kv.first % epid_pair.first
+                           % epid_pair.second;
+                return epid_pair;
+            }
+        }
+        throw uhd::routing_error("The specified destination is unreachable from the "
+                                 "specified source endpoint");
+    }
+
+    virtual ctrlport_endpoint::sptr get_block_register_iface(sep_addr_t dst_addr,
         uint16_t block_index,
         const clock_iface& client_clk,
         const clock_iface& timebase_clk,
         device_id_t via_device = NULL_DEVICE_ID)
     {
-        sep_addr_t dst_addr = _epid_alloc->lookup_epid(dst_epid);
+        // We must be connected to dst_addr before getting a register iface
+        sep_id_t dst_epid = _epid_alloc->get_epid(dst_addr);
         return _link_mgrs.at(_check_dst_and_find_src(dst_addr, via_device))
             ->get_block_register_iface(dst_epid, block_index, client_clk, timebase_clk);
     }
 
     virtual detail::client_zero::sptr get_client_zero(
-        sep_id_t dst_epid, device_id_t via_device = NULL_DEVICE_ID) const
+        sep_addr_t dst_addr, device_id_t via_device = NULL_DEVICE_ID) const
     {
-        sep_addr_t dst_addr = _epid_alloc->lookup_epid(dst_epid);
+        // We must be connected to dst_addr before getting a client zero
+        sep_id_t dst_epid = _epid_alloc->get_epid(dst_addr);
         return _link_mgrs.at(_check_dst_and_find_src(dst_addr, via_device))
             ->get_client_zero(dst_epid);
+    }
+
+    virtual std::tuple<sep_id_pair_t, stream_buff_params_t>
+    create_device_to_device_data_stream(const sep_addr_t dst_addr,
+        const sep_addr_t src_addr,
+        const bool lossy_xport,
+        const double fc_freq_ratio,
+        const double fc_headroom_ratio,
+        const bool reset = false)
+    {
+        UHD_LOGGER_DEBUG("RFNOC::GRAPH")
+            << boost::format(
+                   "Initializing data stream from Endpoint %d:%d to Endpoint %d:%d...")
+                   % src_addr.first % src_addr.second % dst_addr.first % dst_addr.second;
+
+        // Iterate through all link managers and check if they are capable of connecting
+        // the requested endpoints. If no one can connect then the endpoints may actually
+        // not share a common crossbar or we don't have enough connectivity in the
+        // software session to reach the common crossbar.
+        for (auto& kv : _link_mgrs) {
+            if (kv.second->can_connect_device_to_device(dst_addr, src_addr)) {
+                sep_id_pair_t epid_pair =
+                    kv.second->connect_device_to_device(dst_addr, src_addr);
+                UHD_LOGGER_DEBUG("RFNOC::GRAPH")
+                    << boost::format("Connection from Endpoint %d:%d to Endpoint %d:%d "
+                                     "completed through Device %d. Using "
+                                     "EPIDs %d -> %d.")
+                           % src_addr.first % src_addr.second % dst_addr.first
+                           % dst_addr.second % kv.first % epid_pair.first
+                           % epid_pair.second;
+                stream_buff_params_t buff_params =
+                    kv.second->create_device_to_device_data_stream(epid_pair.second,
+                        epid_pair.first,
+                        lossy_xport,
+                        fc_freq_ratio,
+                        fc_headroom_ratio,
+                        reset);
+                return std::make_tuple(epid_pair, buff_params);
+            }
+        }
+        throw uhd::routing_error("The specified destination is unreachable from the "
+                                 "specified source endpoint");
     }
 
 private:

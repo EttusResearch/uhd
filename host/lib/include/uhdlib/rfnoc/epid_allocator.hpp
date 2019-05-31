@@ -33,12 +33,19 @@ public:
      */
     sep_id_t allocate_epid(const sep_addr_t& addr);
 
+    /*! \brief Get a pre-allocated EPID. Throws an exception is not allocated
+     *
+     * \param addr The physical address (device, instance) of the stream endpoint
+     * \return The allocated EPID
+     */
+    sep_id_t get_epid(const sep_addr_t& addr);
+
     /*! \brief Lookup an EPID and return the address associated with it.
      *
      * \param epid The allocated EPID
      * \return The physical address (device, instance) of the stream endpoint
      */
-    sep_addr_t lookup_epid(const sep_id_t& epid) const;
+    sep_addr_t lookup_addr(const sep_id_t& epid) const;
 
     /*! \brief Deallocate the specified EPID.
      *
