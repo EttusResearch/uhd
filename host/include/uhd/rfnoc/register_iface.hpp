@@ -58,6 +58,33 @@ public:
         uhd::time_spec_t time = uhd::time_spec_t::ASAP,
         bool ack              = false) = 0;
 
+    /*! Write two consecutive 32-bit registers implemented in the NoC block from
+     * one 64-bit value.
+     *
+     * Note: This is a convenience call, because all register pokes are 32-bits.
+     * This will concatenate two pokes in a block poke, and then return the
+     * combined result of the two pokes.
+     *
+     * \param addr The byte address of the lower 32-bit register to read from
+     *             (truncated to 20 bits).
+     * \param data New value of the register(s).
+     * \param time The time at which the transaction should be executed.
+     *
+     * \throws op_failed if the transaction fails
+     * \throws op_timeout if no response is received
+     * \throws op_seqerr if a sequence error occurs
+     */
+    void poke64(uint32_t addr,
+        uint64_t data,
+        time_spec_t time = uhd::time_spec_t::ASAP,
+        bool ack         = false)
+    {
+        block_poke32(addr,
+            {uint32_t(data & 0xFFFFFFFF), uint32_t((data >> 32) & 0xFFFFFFFF)},
+            time,
+            ack);
+    }
+
     /*! Write multiple 32-bit registers implemented in the NoC block.
      *
      * This method should be called when multiple writes need to happen that are
@@ -110,13 +137,33 @@ public:
      *
      * \param addr The byte address of the register to read from (truncated to 20 bits).
      * \param time The time at which the transaction should be executed.
-     * \return data New value of this register.
      *
      * \throws op_failed if the transaction fails
      * \throws op_timeout if no response is received
      * \throws op_seqerr if a sequence error occurs
      */
     virtual uint32_t peek32(uint32_t addr, time_spec_t time = uhd::time_spec_t::ASAP) = 0;
+
+    /*! Read two consecutive 32-bit registers implemented in the NoC block
+     * and return them as one 64-bit value.
+     *
+     * Note: This is a convenience call, because all register peeks are 32-bits.
+     * This will concatenate two peeks in a block peek, and then return the
+     * combined result of the two peeks.
+     *
+     * \param addr The byte address of the lower 32-bit register to read from
+     *             (truncated to 20 bits).
+     * \param time The time at which the transaction should be executed.
+     *
+     * \throws op_failed if the transaction fails
+     * \throws op_timeout if no response is received
+     * \throws op_seqerr if a sequence error occurs
+     */
+    uint64_t peek64(uint32_t addr, time_spec_t time = uhd::time_spec_t::ASAP)
+    {
+        const auto vals = block_peek32(addr, 2, time);
+        return uint64_t(vals[0]) | (uint64_t(vals[1]) << 32);
+    }
 
     /*! Read multiple 32-bit consecutive registers implemented in the NoC block.
      *
@@ -215,6 +262,20 @@ public:
      * \param args Additional arguments to pass to the policy governor
      */
     virtual void set_policy(const std::string& name, const uhd::device_addr_t& args) = 0;
+
+    /*! Get the endpoint ID of the software counterpart of this register interface.
+     *  This information is useful to send async messages to the host.
+     *
+     * \return The 16-bit endpoint ID
+     */
+    virtual uint16_t get_src_epid() const = 0;
+
+    /*! Get the port number of the software counterpart of this register interface.
+     *  This information is useful to send async messages to the host.
+     *
+     * \return The 10-bit port number
+     */
+    virtual uint16_t get_port_num() const = 0;
 
 }; // class register_iface
 

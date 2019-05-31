@@ -106,6 +106,15 @@ public:
             "Requested to set policy for " << name << " to " << args.to_string());
     }
 
+    uint16_t get_src_epid() const
+    {
+        return 0;
+    }
+
+    uint16_t get_port_num() const
+    {
+        return 0;
+    }
 
     bool force_timeout = false;
 
@@ -113,7 +122,8 @@ public:
     std::unordered_map<uint32_t, uint32_t> write_memory;
 
 protected:
-    virtual void _poke_cb(uint32_t /*addr*/, uint32_t /*data*/, uhd::time_spec_t /*time*/, bool /*ack*/)
+    virtual void _poke_cb(
+        uint32_t /*addr*/, uint32_t /*data*/, uhd::time_spec_t /*time*/, bool /*ack*/)
     {
     }
     virtual void _peek_cb(uint32_t /*addr*/, uhd::time_spec_t /*time*/) {}
@@ -121,4 +131,3 @@ protected:
 
 
 #endif /* INCLUDED_LIBUHD_TESTS_MOCK_REG_IFACE_HPP */
-

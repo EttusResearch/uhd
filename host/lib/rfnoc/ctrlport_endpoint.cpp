@@ -263,7 +263,10 @@ public:
                 UHD_LOG_ERROR(
                     "CTRLEP", "Malformed async message request: Invalid opcode");
             } else if (rx_ctrl.dst_port != _local_port) {
-                UHD_LOG_ERROR("CTRLEP", "Malformed async message request: Invalid port");
+                UHD_LOG_ERROR("CTRLEP",
+                    "Malformed async message request: Invalid port "
+                        << rx_ctrl.dst_port << ", expected my local port "
+                        << _local_port);
             } else if (rx_ctrl.data_vtr.empty()) {
                 UHD_LOG_ERROR(
                     "CTRLEP", "Malformed async message request: Invalid num_data");
@@ -289,6 +292,16 @@ public:
                     "Encountered an error sending a response for an async message");
             }
         }
+    }
+
+    virtual uint16_t get_src_epid() const
+    {
+        return _my_epid;
+    }
+
+    virtual uint16_t get_port_num() const
+    {
+        return _local_port;
     }
 
 private:
