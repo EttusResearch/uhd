@@ -1,0 +1,289 @@
+//
+// Copyright 2019 Ettus Research, a National Instruments Brand
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+
+#include <uhd/rfnoc/defaults.hpp>
+#include <uhd/rfnoc/radio_control.hpp>
+#include <unordered_map>
+#include <mutex>
+
+#define RFNOC_RADIO_CONSTRUCTOR(CLASS_NAME) \
+    CLASS_NAME##_impl(make_args_ptr make_args) : radio_control_impl(std::move(make_args))
+
+namespace uhd { namespace rfnoc {
+
+/*! Base class of radio controllers
+ *
+ * All radio control classes should derive from this class (e.g., the X300 radio
+ * controller, etc.)
+ *
+ * Many of the radio_control API calls have virtual (default) implementations
+ * here, but they can be overridden.
+ */
+class radio_control_impl : public radio_control
+{
+public:
+    /**************************************************************************
+     * Structors
+     *************************************************************************/
+    radio_control_impl(make_args_ptr make_args);
+
+    virtual void deinit() {}
+
+    virtual ~radio_control_impl() {}
+
+    /**************************************************************************
+     * Stream control API calls
+     *************************************************************************/
+    void issue_stream_cmd(const uhd::stream_cmd_t& stream_cmd, const size_t port);
+
+    /**************************************************************************
+     * Rate-Related API Calls
+     *************************************************************************/
+    virtual double set_rate(const double rate);
+    virtual double get_rate() const;
+    virtual meta_range_t get_rate_range() const;
+
+    /**************************************************************************
+     * RF-specific API calls
+     *************************************************************************/
+    // Setters
+    virtual void set_tx_antenna(const std::string &ant, const size_t chan);
+    virtual void set_rx_antenna(const std::string &ant, const size_t chan);
+    virtual double set_tx_frequency(const double freq, const size_t chan);
+    virtual double set_rx_frequency(const double freq, const size_t chan);
+    virtual void set_tx_tune_args(const uhd::device_addr_t&, const size_t chan);
+    virtual void set_rx_tune_args(const uhd::device_addr_t&, const size_t chan);
+    virtual double set_tx_gain(const double gain, const size_t chan);
+    virtual double set_tx_gain(const double gain, const std::string& name, const size_t chan);
+    virtual double set_rx_gain(const double gain, const size_t chan);
+    virtual double set_rx_gain(const double gain, const std::string& name, const size_t chan);
+    virtual void set_rx_agc(const bool enable, const size_t chan);
+    virtual double set_tx_bandwidth(const double bandwidth, const size_t chan);
+    virtual double set_rx_bandwidth(const double bandwidth, const size_t chan);
+    virtual void set_tx_gain_profile(const std::string& profile, const size_t chan);
+    virtual void set_rx_gain_profile(const std::string& profile, const size_t chan);
+
+    // Getters
+    virtual std::string get_tx_antenna(const size_t chan) const;
+    virtual std::string get_rx_antenna(const size_t chan) const;
+    virtual std::vector<std::string> get_tx_antennas(const size_t chan) const;
+    virtual std::vector<std::string> get_rx_antennas(const size_t chan) const;
+    virtual double get_tx_frequency(const size_t);
+    virtual double get_rx_frequency(const size_t);
+    virtual uhd::freq_range_t get_tx_frequency_range(const size_t chan) const;
+    virtual uhd::freq_range_t get_rx_frequency_range(const size_t chan) const;
+    virtual std::vector<std::string> get_tx_gain_names(const size_t) const;
+    virtual std::vector<std::string> get_rx_gain_names(const size_t) const;
+    virtual double get_tx_gain(const size_t);
+    virtual double get_tx_gain(const std::string&, size_t);
+    virtual double get_rx_gain(const size_t);
+    virtual double get_rx_gain(const std::string&, size_t);
+    virtual uhd::gain_range_t get_tx_gain_range(const size_t) const;
+    virtual uhd::gain_range_t get_tx_gain_range(const std::string&, const size_t) const;
+    virtual uhd::gain_range_t get_rx_gain_range(const size_t) const;
+    virtual uhd::gain_range_t get_rx_gain_range(const std::string&, const size_t) const;
+    virtual std::vector<std::string> get_tx_gain_profile_names(const size_t chan) const;
+    virtual std::vector<std::string> get_rx_gain_profile_names(const size_t chan) const;
+    virtual std::string get_tx_gain_profile(const size_t chan) const;
+    virtual std::string get_rx_gain_profile(const size_t chan) const;
+    virtual double get_tx_bandwidth(const size_t);
+    virtual double get_rx_bandwidth(const size_t);
+    virtual meta_range_t get_tx_bandwidth_range(size_t chan) const;
+    virtual meta_range_t get_rx_bandwidth_range(size_t chan) const;
+
+    /**************************************************************************
+     * LO Controls
+     *************************************************************************/
+    virtual std::vector<std::string> get_rx_lo_names(const size_t chan) const;
+    virtual std::vector<std::string> get_rx_lo_sources(
+        const std::string& name, const size_t chan) const;
+    virtual freq_range_t get_rx_lo_freq_range(
+        const std::string& name, const size_t chan) const;
+    virtual void set_rx_lo_source(
+        const std::string& src, const std::string& name, const size_t chan);
+    virtual const std::string get_rx_lo_source(
+        const std::string& name, const size_t chan);
+    virtual void set_rx_lo_export_enabled(
+        bool enabled, const std::string& name, const size_t chan);
+    virtual bool get_rx_lo_export_enabled(
+        const std::string& name, const size_t chan) const;
+    virtual double set_rx_lo_freq(
+        double freq, const std::string& name, const size_t chan);
+    virtual double get_rx_lo_freq(const std::string& name, const size_t chan);
+    virtual std::vector<std::string> get_tx_lo_names(const size_t chan) const;
+    virtual std::vector<std::string> get_tx_lo_sources(
+        const std::string& name, const size_t chan);
+    virtual freq_range_t get_tx_lo_freq_range(
+        const std::string& name, const size_t chan);
+    virtual void set_tx_lo_source(
+        const std::string& src, const std::string& name, const size_t chan);
+    virtual const std::string get_tx_lo_source(
+        const std::string& name, const size_t chan);
+    virtual void set_tx_lo_export_enabled(
+        const bool enabled, const std::string& name, const size_t chan);
+    virtual bool get_tx_lo_export_enabled(const std::string& name, const size_t chan);
+    virtual double set_tx_lo_freq(
+        const double freq, const std::string& name, const size_t chan);
+    virtual double get_tx_lo_freq(const std::string& name, const size_t chan);
+
+    /**************************************************************************
+     * Calibration-Related API Calls
+     *************************************************************************/
+    virtual void set_tx_dc_offset(const std::complex<double>& offset, size_t chan);
+    virtual meta_range_t get_tx_dc_offset_range(size_t chan) const;
+    virtual void set_tx_iq_balance(const std::complex<double>& correction, size_t chan);
+    virtual void set_rx_dc_offset(const bool enb, size_t chan = ALL_CHANS);
+    virtual void set_rx_dc_offset(const std::complex<double>& offset, size_t chan);
+    virtual meta_range_t get_rx_dc_offset_range(size_t chan) const;
+    virtual void set_rx_iq_balance(const bool enb, size_t chan);
+    virtual void set_rx_iq_balance(const std::complex<double>& correction, size_t chan);
+
+    /**************************************************************************
+     * GPIO Controls
+     *************************************************************************/
+    virtual std::vector<std::string> get_gpio_banks() const;
+    virtual void set_gpio_attr(const std::string& bank,
+        const std::string& attr,
+        const uint32_t value,
+        const uint32_t mask);
+    virtual uint32_t get_gpio_attr(const std::string& bank, const std::string& attr);
+
+    /**************************************************************************
+     * Sensor API
+     *************************************************************************/
+    virtual std::vector<std::string> get_rx_sensor_names(size_t chan) const;
+    virtual uhd::sensor_value_t get_rx_sensor(const std::string& name, size_t chan);
+    virtual std::vector<std::string> get_tx_sensor_names(size_t chan) const;
+    virtual uhd::sensor_value_t get_tx_sensor(const std::string& name, size_t chan);
+
+    /**************************************************************************
+     * Identification API
+     *************************************************************************/
+    virtual std::string get_fe_name(
+        const size_t chan, const uhd::direction_t direction) const
+    {
+        return get_dboard_fe_from_chan(chan, direction);
+    }
+
+    /**************************************************************************
+     * EEPROM API
+     *************************************************************************/
+    virtual void set_db_eeprom(const uhd::eeprom_map_t& db_eeprom);
+    virtual uhd::eeprom_map_t get_db_eeprom();
+
+    /***********************************************************************
+     * Reg Map
+     **********************************************************************/
+    static const uint16_t MAJOR_COMPAT;
+    static const uint16_t MINOR_COMPAT;
+
+    /*! Register map common to all radios
+     *
+     * See rfnoc_block_radio_regs.vh for details
+     */
+    struct regmap {
+        static const uint32_t REG_COMPAT_NUM = 0x00;  // Compatibility number register offset
+        static const uint32_t REG_RADIO_WIDTH   = 0x1000 + 0x04;   // Upper 16 bits is sample width, lower 16 bits is NSPC
+
+        static const uint32_t RADIO_BASE_ADDR = 0x1000;
+        static const uint32_t REG_CHAN_OFFSET = 128;
+        static const uint32_t RADIO_ADDR_W     = 7;     // Address space size per radio
+
+        // General Radio Registers
+        static const uint32_t REG_LOOPBACK_EN   = 0x00;   // Loopback enable (connect Tx output to Rx input)
+
+        // Note on the RX and TX Control Registers: These are per-channel,
+        // which means the values here are offsets. The base address per
+        // channel is RADIO_BASE_ADDR + i * REG_CHAN_OFFSET, where i is the
+        // channel index.
+
+        // RX Control Registers
+        static const uint32_t REG_RX_STATUS            = 0x10; // Status of Rx radio
+        static const uint32_t REG_RX_CMD               = 0x14; // The next radio command to execute
+        static const uint32_t REG_RX_CMD_NUM_WORDS_LO  = 0x18; // Number of radio words for the next command (low word)
+        static const uint32_t REG_RX_CMD_NUM_WORDS_HI  = 0x1C; // Number of radio words for the next command (high word)
+        static const uint32_t REG_RX_CMD_TIME_LO       = 0x20; // Time for the next command (low word)
+        static const uint32_t REG_RX_CMD_TIME_HI       = 0x24; // Time for the next command (high word)
+        static const uint32_t REG_RX_MAX_WORDS_PER_PKT = 0x28; // Maximum packet length to build from Rx data
+        static const uint32_t REG_RX_ERR_PORT          = 0x2C; // Port ID for error reporting
+        static const uint32_t REG_RX_ERR_REM_PORT      = 0x30; // Remote port ID for error reporting
+        static const uint32_t REG_RX_ERR_REM_EPID      = 0x34; // Remote EPID (endpoint ID) for error reporting
+        static const uint32_t REG_RX_ERR_ADDR          = 0x38; // Offset to which to write error code (ADDR+0) and time (ADDR+8)
+        static const uint32_t REG_RX_DATA = 0x3C;
+
+        // TX Control Registers
+        static const uint32_t REG_TX_IDLE_VALUE   = 0x40; // Value to output when transmitter is idle
+        static const uint32_t REG_TX_ERROR_POLICY = 0x44; // Tx error policy
+        static const uint32_t REG_TX_ERR_PORT     = 0x48; // Port ID for error reporting
+        static const uint32_t REG_TX_ERR_REM_PORT = 0x4C; // Remote port ID for error reporting
+        static const uint32_t REG_TX_ERR_REM_EPID = 0x50; // Remote EPID (endpoint ID) for error reporting
+        static const uint32_t REG_TX_ERR_ADDR     = 0x54; // Offset to which to write error code (ADDR+0) and time (ADDR+8)
+
+        static const uint32_t RX_CMD_STOP       = 0; // Stop acquiring at end of next packet
+        static const uint32_t RX_CMD_FINITE     = 1; // Acquire NUM_SAMPS then stop
+        static const uint32_t RX_CMD_CONTINUOUS = 2; // Acquire until stopped
+
+        static const uint32_t RX_CMD_TIMED_POS = 31;
+
+        static const uint32_t REG_SPI_W = 0x80000 + 168*8; // FIXME
+        static const uint32_t REG_SPI_R = 0x80000 + 17*8; // FIXME
+
+        static const uint32_t PERIPH_BASE = 0x80000;
+        static const uint32_t PERIPH_REG_OFFSET = 8;
+    };
+
+    //! Tree path to the dboard-specific properties
+    static const uhd::fs_path DB_PATH;
+    //! Tree path to the radio frontends' properties
+    static const uhd::fs_path FE_PATH;
+
+protected:
+    //! Properties for samp_rate (one per port)
+    std::vector<property_t<double>> _samp_rate_in;
+    //! Properties for samp_rate (one per port)
+    std::vector<property_t<double>> _samp_rate_out;
+
+private:
+    //! Receiver for the async messages
+    //
+    // This block will receive all async messages. The following async messages
+    // are expected to show up:
+    // - Overrun info
+    // - Underrun info
+    // - Late data packets
+    void async_message_handler(uint32_t addr, const std::vector<uint32_t>& data);
+
+    //! FPGA compat number
+    const uint32_t _fpga_compat;
+
+    //! Copy of the REG_RADIO_WIDTH register
+    const uint32_t _radio_width;
+
+    //! Sample width (total width, sc16 == 32 bits per complex sample)
+    const uint32_t _samp_width;
+
+    //! Samples per cycle
+    const uint32_t _spc;
+
+    std::vector<property_t<int>> _spp_prop;
+    //! Properties for type_in (one per port)
+    std::vector<property_t<io_type_t>> _type_in;
+    //! Properties for type_out (one per port)
+    std::vector<property_t<io_type_t>> _type_out;
+
+    mutable std::mutex _cache_mutex;
+    double _rate = 1.0;
+    std::unordered_map<size_t, std::string> _tx_antenna;
+    std::unordered_map<size_t, std::string> _rx_antenna;
+    std::unordered_map<size_t, double> _tx_freq;
+    std::unordered_map<size_t, double> _rx_freq;
+    std::unordered_map<size_t, double> _tx_gain;
+    std::unordered_map<size_t, double> _rx_gain;
+    std::unordered_map<size_t, double> _tx_bandwidth;
+    std::unordered_map<size_t, double> _rx_bandwidth;
+};
+
+}} // namespace uhd::rfnoc

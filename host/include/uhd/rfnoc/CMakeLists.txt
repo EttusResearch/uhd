@@ -41,6 +41,7 @@ if(ENABLE_RFNOC)
         fir_block_ctrl.hpp
         null_block_ctrl.hpp
         radio_ctrl.hpp
+        radio_control.hpp
         replay_block_ctrl.hpp
         siggen_block_ctrl.hpp
         window_block_ctrl.hpp
