@@ -24,8 +24,11 @@ public:
      */
     static std::pair<registry::factory_t, std::string>
     get_block_factory(noc_block_base::noc_id_t noc_id);
-};
 
+    /*! Check if this block has requested access to the motherboard controller
+     */
+    static bool has_requested_mb_access(noc_block_base::noc_id_t noc_id);
+};
 
 }} /* namespace uhd::rfnoc */
 

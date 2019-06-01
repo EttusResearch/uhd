@@ -37,6 +37,7 @@ set(test_sources
     isatty_test.cpp
     log_test.cpp
     math_test.cpp
+    mb_controller_test.cpp
     narrow_cast_test.cpp
     property_test.cpp
     ranges_test.cpp

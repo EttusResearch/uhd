@@ -14,6 +14,7 @@
 namespace uhd { namespace rfnoc {
 
 class clock_iface;
+class mb_controller;
 
 /*! Data structure to hold the arguments passed into the noc_block_base ctor
  *
@@ -41,6 +42,12 @@ struct noc_block_base::make_args_t
 
     //! Clock interface object that is shared with the reg_iface
     std::shared_ptr<clock_iface> clk_iface;
+
+    //! Reference to the motherboard controller associated with this block.
+    //
+    // Note that this may not be populated -- most blocks do not gain access to
+    // the motherboard controller.
+    std::shared_ptr<mb_controller> mb_control;
 
     //! The subtree for this block
     uhd::property_tree::sptr tree;

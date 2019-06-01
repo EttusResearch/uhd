@@ -24,6 +24,7 @@ noc_block_base::noc_block_base(make_args_ptr make_args)
     , _num_input_ports(make_args->num_input_ports)
     , _num_output_ports(make_args->num_output_ports)
     , _clock_iface(make_args->clk_iface)
+    , _mb_controller(std::move(make_args->mb_control))
 {
     // First, create one tick_rate property for every port
     _tick_rate_props.reserve(get_num_input_ports() + get_num_output_ports());
@@ -86,4 +87,9 @@ void noc_block_base::_set_tick_rate(const double tick_rate)
     RFNOC_LOG_TRACE("Updating tick rate to " << (tick_rate / 1e6) << " MHz");
     _clock_iface->set_freq(tick_rate);
     _tick_rate = tick_rate;
+}
+
+std::shared_ptr<mb_controller> noc_block_base::get_mb_controller()
+{
+    return _mb_controller;
 }

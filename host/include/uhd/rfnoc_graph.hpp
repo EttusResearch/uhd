@@ -20,6 +20,8 @@
 
 namespace uhd { namespace rfnoc {
 
+class mb_controller;
+
 /*! The core class for a UHD session with (an) RFNoC device(s)
  *
  * This class is a superset of uhd::device. It does not only hold a device
@@ -226,6 +228,15 @@ public:
      * \return a shared pointer to a new streamer
      */
     //virtual tx_streamer::sptr create_tx_streamer(const stream_args_t& args) = 0;
+
+    /**************************************************************************
+     * Hardware Control
+     *************************************************************************/
+    //! Return a reference to a motherboard controller
+    //
+    // See also uhd::rfnoc::mb_controller
+    virtual std::shared_ptr<mb_controller> get_mb_controller(
+        const size_t mb_index = 0) = 0;
 }; // class rfnoc_graph
 
 }}; // namespace uhd::rfnoc

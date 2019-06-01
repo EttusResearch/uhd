@@ -23,6 +23,7 @@
 namespace uhd { namespace rfnoc {
 
 class clock_iface;
+class mb_controller;
 
 /*!
  * The primary interface to a NoC block in the FPGA
@@ -101,6 +102,19 @@ protected:
      */
     void set_tick_rate(const double tick_rate);
 
+    /*! Get access to the motherboard controller for this block's motherboard
+     *
+     * This will return a nullptr if this block doesn't have access to the
+     * motherboard. In order to gain access to the motherboard, the block needs
+     * to have requested access to the motherboard during the registration
+     * procedure. See also registry.hpp.
+     *
+     * Even if this block requested access to the motherboard controller, there
+     * is no guarantee that UHD will honour that request. It is therefore
+     * important to verify that the returned pointer is valid.
+     */
+    std::shared_ptr<mb_controller> get_mb_controller();
+
 private:
     /*! Update the tick rate of this block
      *
@@ -130,7 +144,12 @@ private:
     //! The actual tick rate of the current time base
     double _tick_rate;
 
+    //! Reference to the clock_iface object shared with the register_iface
     std::shared_ptr<clock_iface> _clock_iface;
+
+    //! Stores a reference to this block's motherboard's controller, if this
+    // block had requested and was granted access
+    std::shared_ptr<mb_controller> _mb_controller;
 
 }; // class noc_block_base
 

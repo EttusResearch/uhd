@@ -6,6 +6,7 @@
 
 #include <uhd/rfnoc/node.hpp>
 #include <uhd/rfnoc_graph.hpp>
+#include <uhd/rfnoc/mb_controller.hpp>
 #include <uhdlib/rfnoc/block_container.hpp>
 #include <uhdlib/rfnoc/graph.hpp>
 #include <uhdlib/rfnoc/rfnoc_device.hpp>
@@ -90,6 +91,16 @@ public:
         throw uhd::not_implemented_error("");
     }
 
+    std::shared_ptr<mb_controller> get_mb_controller(const size_t mb_index = 0)
+    {
+        if (!_mb_controllers.count(mb_index)) {
+            throw uhd::index_error(
+                std::string("Could not get mb controller for motherboard index ")
+                + std::to_string(mb_index));
+        }
+        return _mb_controllers.at(mb_index);
+    }
+
 private:
     /**************************************************************************
      * Device Setup
@@ -148,6 +159,8 @@ private:
     //! Reference to the graph
     std::unique_ptr<detail::graph_t> _graph;
 
+    //! Stash a list of motherboard controllers
+    std::unordered_map<size_t, mb_controller::sptr> _mb_controllers;
 }; /* class rfnoc_graph_impl */
 
 

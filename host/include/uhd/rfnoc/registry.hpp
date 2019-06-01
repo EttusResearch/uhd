@@ -27,6 +27,12 @@
             NOC_ID, BLOCK_NAME, &CLASS_NAME##_make);                      \
     }
 
+#define UHD_RFNOC_BLOCK_REQUEST_MB_ACCESS(NOC_ID)              \
+    UHD_STATIC_BLOCK(rfnoc_block_##NOC_ID##_request_mb_access) \
+    {                                                          \
+        uhd::rfnoc::registry::request_mb_access(NOC_ID);       \
+    }
+
 namespace uhd { namespace rfnoc {
 
 /*! RFNoC Block Registry
@@ -71,6 +77,25 @@ public:
      */
     static void register_block_descriptor(const std::string& block_key,
         factory_t factory_fn);
+
+    /*! Call this after registering a block if it requires access to the
+     * mb_controller
+     *
+     * Note: This is a request to the framework, and may be denied.
+     *
+     * \param noc_id Noc-ID of the block that requires access to the mb_controller
+     */
+    static void request_mb_access(noc_block_base::noc_id_t noc_id);
+
+    /*! Call this after registering a block if it requires access to the
+     * mb_controller
+     *
+     * Note: This is a request to the framework, and may be denied.
+     *
+     * \param noc_id Noc-ID of the block that requires access to the mb_controller
+     */
+    static void request_mb_access(const std::string& block_key);
+
 };
 
 }} /* namespace uhd::rfnoc */

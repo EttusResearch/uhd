@@ -30,6 +30,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/legacy_compat.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/link_stream_manager.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/graph_stream_manager.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/mb_controller.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/noc_block_base.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/node_ctrl_base.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/node.cpp
