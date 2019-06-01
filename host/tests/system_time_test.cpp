@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: GPL-3.0+
 //
 
-#include "system_time.hpp"
 #include <uhd/types/time_spec.hpp>
+#include <uhdlib/utils/system_time.hpp>
 #include <boost/test/unit_test.hpp>
 #include <chrono>
 #include <cstdint>

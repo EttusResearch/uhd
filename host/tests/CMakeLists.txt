@@ -157,6 +157,12 @@ UHD_ADD_NONAPI_TEST(
 )
 
 UHD_ADD_NONAPI_TEST(
+    TARGET "system_time_test.cpp"
+    EXTRA_SOURCES
+    "${CMAKE_SOURCE_DIR}/lib/utils/system_time.cpp"
+)
+
+UHD_ADD_NONAPI_TEST(
     TARGET "nocscript_ftable_test.cpp"
     EXTRA_SOURCES
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/function_table.cpp
