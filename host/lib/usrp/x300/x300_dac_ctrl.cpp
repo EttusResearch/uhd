@@ -11,7 +11,6 @@
 #include <uhd/types/time_spec.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
-#include <uhdlib/utils/system_time.hpp>
 #include <boost/format.hpp>
 #include <chrono>
 #include <thread>
@@ -216,14 +215,14 @@ public:
 
         // Verify PLL is Locked. 1 sec timeout.
         // NOTE: Data sheet inconsistent about which pins give PLL lock status. FIXME!
-        const time_spec_t exit_time = uhd::get_system_time() + time_spec_t(1.0);
+        const auto exit_time = std::chrono::steady_clock::now() + std::chrono::seconds(1);
         while (true) {
             const size_t reg_e = read_ad9146_reg(0x0E); // PLL Status (Expect bit 7 = 1)
             const size_t reg_6 =
                 read_ad9146_reg(0x06); // Event Flags (Expect bit 7 = 0 and bit 6 = 1)
             if ((((reg_e >> 7) & 0x1) == 0x1) && (((reg_6 >> 6) & 0x3) == 0x1))
                 break;
-            if (exit_time < uhd::get_system_time())
+            if (exit_time < std::chrono::steady_clock::now())
                 throw uhd::runtime_error(
                     "x300_dac_ctrl: timeout waiting for DAC PLL to lock");
             if (reg_6 & (1 << 7)) // Lock lost?
@@ -241,7 +240,7 @@ public:
         write_ad9146_reg(0x06, 0x30);
         write_ad9146_reg(0x12, 0x00);
 
-        const time_spec_t exit_time = uhd::get_system_time() + time_spec_t(1.0);
+        const auto exit_time = std::chrono::steady_clock::now() + std::chrono::seconds(1);
         while (true) {
             std::this_thread::sleep_for(
                 std::chrono::milliseconds(1)); // wait for sync to complete
@@ -251,7 +250,7 @@ public:
                 read_ad9146_reg(0x06); // Event Flags (Expect bit 5 = 0 and bit 4 = 1)
             if ((((reg_12 >> 6) & 0x3) == 0x1) && (((reg_6 >> 4) & 0x3) == 0x1))
                 break;
-            if (exit_time < uhd::get_system_time())
+            if (exit_time < std::chrono::steady_clock::now())
                 throw uhd::runtime_error(
                     "x300_dac_ctrl: timeout waiting for backend synchronization");
             if (reg_6 & (1 << 5))
