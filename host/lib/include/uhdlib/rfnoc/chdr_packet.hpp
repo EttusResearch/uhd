@@ -292,6 +292,12 @@ public:
         return _chdr_w;
     }
 
+    //! Get the link endianness
+    inline endianness_t get_endianness() const
+    {
+        return _endianness;
+    }
+
     //! Get the protocol version for RFNoC and the CHDR format
     inline uint16_t get_protover() const
     {

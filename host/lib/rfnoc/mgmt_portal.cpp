@@ -43,17 +43,27 @@ constexpr uint32_t RESET_AND_FLUSH_ISTRM = (1 << 1);
 constexpr uint32_t RESET_AND_FLUSH_CTRL  = (1 << 2);
 constexpr uint32_t RESET_AND_FLUSH_ALL   = 0x7;
 
-constexpr uint32_t BUILD_CTRL_STATUS_WORD(
-    bool cfg_start, bool xport_lossy, sw_buff_t pyld_buff_fmt, sw_buff_t mdata_buff_fmt)
+#ifdef UHD_BIG_ENDIAN
+constexpr endianness_t HOST_ENDIANNESS = ENDIANNESS_BIG;
+#else
+constexpr endianness_t HOST_ENDIANNESS = ENDIANNESS_LITTLE;
+#endif
+
+constexpr uint32_t BUILD_CTRL_STATUS_WORD(bool cfg_start,
+    bool xport_lossy,
+    sw_buff_t pyld_buff_fmt,
+    sw_buff_t mdata_buff_fmt,
+    bool byte_swap)
 {
     return (cfg_start ? 1 : 0) | (xport_lossy ? 2 : 0)
            | (static_cast<uint32_t>(pyld_buff_fmt) << 2)
-           | (static_cast<uint32_t>(mdata_buff_fmt) << 4);
+           | (static_cast<uint32_t>(mdata_buff_fmt) << 4) | (byte_swap ? (1 << 6) : 0);
 }
 
 constexpr uint32_t STRM_STATUS_FC_ENABLED    = 0x80000000;
 constexpr uint32_t STRM_STATUS_SETUP_ERR     = 0x40000000;
 constexpr uint32_t STRM_STATUS_SETUP_PENDING = 0x20000000;
+
 
 //! The type of a node in the data-flow graph
 enum node_type {
@@ -171,6 +181,7 @@ public:
         : _my_epid(my_epid)
         , _protover(pkt_factory.get_protover())
         , _chdr_w(pkt_factory.get_chdr_w())
+        , _endianness(pkt_factory.get_endianness())
         , _my_node_id(my_sep_addr.first, NODE_TYPE_STRM_EP, my_epid)
         , _recv_xport(xport.recv)
         , _send_xport(xport.send)
@@ -440,8 +451,13 @@ public:
         cfg_hop.add_op(mgmt_op_t(mgmt_op_t::MGMT_OP_CFG_WR_REQ,
             mgmt_op_t::cfg_payload(REG_OSTRM_DST_EPID, _my_epid)));
         // Configure flow control parameters
-        _push_ostrm_flow_control_config(
-            lossy_xport, pyld_buff_fmt, mdata_buff_fmt, fc_freq, fc_headroom, cfg_hop);
+        _push_ostrm_flow_control_config(lossy_xport,
+            pyld_buff_fmt,
+            mdata_buff_fmt,
+            _endianness != HOST_ENDIANNESS,
+            fc_freq,
+            fc_headroom,
+            cfg_hop);
         // Return the packet back to us
         cfg_hop.add_op(mgmt_op_t(mgmt_op_t::MGMT_OP_RETURN));
 
@@ -496,7 +512,11 @@ public:
         // Configure buffer types
         cfg_hop.add_op(mgmt_op_t(mgmt_op_t::MGMT_OP_CFG_WR_REQ,
             mgmt_op_t::cfg_payload(REG_ISTRM_CTRL_STATUS,
-                BUILD_CTRL_STATUS_WORD(false, false, pyld_buff_fmt, mdata_buff_fmt))));
+                BUILD_CTRL_STATUS_WORD(false,
+                    false,
+                    pyld_buff_fmt,
+                    mdata_buff_fmt,
+                    _endianness != HOST_ENDIANNESS))));
         cfg_hop.add_op(mgmt_op_t(mgmt_op_t::MGMT_OP_RETURN));
         cfg_xact.add_hop(cfg_hop);
 
@@ -552,7 +572,7 @@ public:
                 mgmt_op_t::cfg_payload(REG_OSTRM_DST_EPID, dst_epid)));
             // Configure flow control parameters
             _push_ostrm_flow_control_config(
-                lossy_xport, BUFF_U64, BUFF_U64, fc_freq, fc_headroom, cfg_hop);
+                lossy_xport, BUFF_U64, BUFF_U64, false, fc_freq, fc_headroom, cfg_hop);
             // Return the packet back to us
             cfg_hop.add_op(mgmt_op_t(mgmt_op_t::MGMT_OP_RETURN));
 
@@ -764,6 +784,7 @@ private: // Functions
     void _push_ostrm_flow_control_config(const bool lossy_xport,
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
+        const bool byte_swap,
         const stream_buff_params_t& fc_freq,
         const stream_buff_params_t& fc_headroom,
         mgmt_hop_t& hop)
@@ -797,7 +818,7 @@ private: // Functions
         hop.add_op(mgmt_op_t(mgmt_op_t::MGMT_OP_CFG_WR_REQ,
             mgmt_op_t::cfg_payload(REG_OSTRM_CTRL_STATUS,
                 BUILD_CTRL_STATUS_WORD(
-                    true, lossy_xport, pyld_buff_fmt, mdata_buff_fmt))));
+                    true, lossy_xport, pyld_buff_fmt, mdata_buff_fmt, byte_swap))));
     }
 
     // Send/recv a management transaction that will get the output stream status
@@ -1004,6 +1025,8 @@ private: // Members
     const uint16_t _protover;
     // CHDR Width for this design/application
     const chdr_w_t _chdr_w;
+    // Endianness for the transport
+    const endianness_t _endianness;
     // The node ID for this software endpoint
     const node_id_t _my_node_id;
     // A table that maps a node_id_t to a node_addr_t. This map allows looking up the
