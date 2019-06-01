@@ -64,6 +64,26 @@ noc_block_base::~noc_block_base()
     // nop
 }
 
+void noc_block_base::set_num_input_ports(const size_t num_ports)
+{
+    if (num_ports > get_num_input_ports()) {
+        throw uhd::value_error(
+            "New number of input ports must not exceed current number!");
+    }
+
+    _num_input_ports = num_ports;
+}
+
+void noc_block_base::set_num_output_ports(const size_t num_ports)
+{
+    if (num_ports > get_num_output_ports()) {
+        throw uhd::value_error(
+            "New number of output ports must not exceed current number!");
+    }
+
+    _num_output_ports = num_ports;
+}
+
 
 void noc_block_base::set_tick_rate(const double tick_rate)
 {
