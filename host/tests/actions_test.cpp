@@ -25,10 +25,8 @@ BOOST_AUTO_TEST_CASE(test_actions_single_node)
     // Define some mock nodes:
     mock_radio_node_t mock_radio(0);
 
-    auto stream_cmd         = action_info::make(STREAM_CMD_KEY);
-    std::string cmd_payload = "START";
-    stream_cmd->payload = std::vector<uint8_t>(cmd_payload.begin(), cmd_payload.end());
-
+    auto stream_cmd =
+        stream_cmd_action_info::make(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     auto other_cmd = action_info::make("FOO");
 
     node_accessor.send_action(&mock_radio, {res_source_info::INPUT_EDGE, 0}, stream_cmd);

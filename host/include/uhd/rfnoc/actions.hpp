@@ -8,6 +8,8 @@
 #define INCLUDED_LIBUHD_RFNOC_ACTIONS_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/rfnoc/defaults.hpp>
+#include <uhd/types/stream_cmd.hpp>
 #include <string>
 #include <vector>
 #include <memory>
@@ -24,6 +26,8 @@ namespace uhd { namespace rfnoc {
 struct UHD_API action_info
 {
 public:
+    virtual ~action_info() {}
+
     using sptr = std::shared_ptr<action_info>;
     //! A unique counter for this action
     const size_t id;
@@ -34,14 +38,24 @@ public:
     std::vector<uint8_t> payload;
 
     //! Factory function
-    static sptr make(const std::string& key="")
-    {
-        //return std::make_shared<action_info>(key);
-        return sptr(new action_info(key));
-    }
+    static sptr make(const std::string& key="");
+
+protected:
+    action_info(const std::string& key);
+};
+
+struct UHD_API stream_cmd_action_info : public action_info
+{
+public:
+    using sptr = std::shared_ptr<stream_cmd_action_info>;
+
+    uhd::stream_cmd_t stream_cmd;
+
+    //! Factory function
+    static sptr make(const uhd::stream_cmd_t::stream_mode_t stream_mode);
 
 private:
-    action_info(const std::string& key);
+    stream_cmd_action_info(const uhd::stream_cmd_t::stream_mode_t stream_mode);
 };
 
 }} /* namespace uhd::rfnoc */

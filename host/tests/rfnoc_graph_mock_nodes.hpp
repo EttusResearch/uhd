@@ -88,20 +88,23 @@ public:
 
         set_action_forwarding_policy(forwarding_policy_t::DROP);
 
-        register_action_handler(
-            "stream_cmd", [this](const res_source_info& src, action_info::sptr action) {
-                UHD_ASSERT_THROW(action->key == "stream_cmd");
-                const std::string cmd(action->payload.begin(), action->payload.end());
-                UHD_LOG_INFO(get_unique_id(),
-                    "Received stream command: " << cmd << " to " << src.to_string());
-                if (cmd == "START") {
+        register_action_handler(ACTION_KEY_STREAM_CMD,
+            [this](const res_source_info& src, action_info::sptr action) {
+                stream_cmd_action_info::sptr stream_cmd_action =
+                    std::dynamic_pointer_cast<stream_cmd_action_info>(action);
+                UHD_ASSERT_THROW(stream_cmd_action);
+                uhd::stream_cmd_t::stream_mode_t stream_mode =
+                    stream_cmd_action->stream_cmd.stream_mode;
+                RFNOC_LOG_INFO("Received stream command: " << stream_mode << " to "
+                                                           << src.to_string()
+                                                           << ", id==" << action->id);
+                if (stream_mode == uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS) {
                     UHD_LOG_INFO(get_unique_id(), "Starting Stream!");
-                } else if (cmd == "STOP") {
+                } else if (stream_mode == uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS) {
                     UHD_LOG_INFO(get_unique_id(), "Stopping Stream!");
                 } else {
-                    this->last_num_samps = std::stoul(cmd);
-                    UHD_LOG_INFO(get_unique_id(),
-                        "Streaming num samps: " <<  this->last_num_samps);
+                    this->last_num_samps = stream_cmd_action->stream_cmd.num_samps;
+                    RFNOC_LOG_INFO("Streaming num samps: " <<  this->last_num_samps);
                 }
             });
     }
@@ -196,27 +199,32 @@ public:
             });
 
         register_action_handler(
-            "stream_cmd", [this](const res_source_info& src, action_info::sptr action) {
+            ACTION_KEY_STREAM_CMD, [this](const res_source_info& src, action_info::sptr action) {
                 res_source_info dst_edge{
                     res_source_info::invert_edge(src.type), src.instance};
-                auto new_action = action_info::make(action->key);
-                std::string cmd(action->payload.begin(), action->payload.end());
-                if (cmd == "START" || cmd == "STOP") {
-                    new_action->payload = action->payload;
-                } else {
-                    unsigned long long num_samps = std::stoull(cmd);
+                stream_cmd_action_info::sptr stream_cmd_action =
+                    std::dynamic_pointer_cast<stream_cmd_action_info>(action);
+                UHD_ASSERT_THROW(stream_cmd_action);
+                uhd::stream_cmd_t::stream_mode_t stream_mode =
+                    stream_cmd_action->stream_cmd.stream_mode;
+                RFNOC_LOG_INFO("Received stream command: " << stream_mode << " to "
+                                                           << src.to_string()
+                                                           << ", id==" << action->id);
+                auto new_action = stream_cmd_action_info::make(stream_mode);
+                new_action->stream_cmd = stream_cmd_action->stream_cmd;
+                if (stream_mode == uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE
+                    || stream_mode == uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE) {
                     if (src.type == res_source_info::OUTPUT_EDGE) {
-                        num_samps *= _decim.get();
+                        RFNOC_LOG_INFO("Multiplying num_samps by " << _decim.get());
+                        new_action->stream_cmd.num_samps *= _decim.get();
                     } else {
-                        num_samps /= _decim.get();
+                        RFNOC_LOG_INFO("Dividing num_samps by " << _decim.get());
+                        new_action->stream_cmd.num_samps /= _decim.get();
                     }
-                    std::string new_cmd = std::to_string(num_samps);
-                    new_action->payload.insert(
-                        new_action->payload.begin(), new_cmd.begin(), new_cmd.end());
                 }
 
-                UHD_LOG_INFO(get_unique_id(),
-                    "Forwarding stream_cmd, decim is " << _decim.get());
+                RFNOC_LOG_INFO("Forwarding stream_cmd, num_samps is "
+                               << new_action->stream_cmd.num_samps << ", id==" << new_action->id);
                 post_action(dst_edge, new_action);
             });
     }
@@ -328,15 +336,9 @@ public:
 
     void issue_stream_cmd(uhd::stream_cmd_t stream_cmd, const size_t chan)
     {
-        std::string cmd =
-            stream_cmd.stream_mode == uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS
-                ? "START"
-                : stream_cmd.stream_mode == uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS
-                      ? "STOP"
-                      : std::to_string(stream_cmd.num_samps);
-        auto scmd = action_info::make("stream_cmd");
-        scmd->payload.insert(scmd->payload.begin(), cmd.begin(), cmd.end());
-
+        auto scmd =
+            stream_cmd_action_info::make(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
+        scmd->stream_cmd = stream_cmd;
         post_action({res_source_info::INPUT_EDGE, chan}, scmd);
     }
 
