@@ -14,6 +14,7 @@
 #include <tuple>
 #include <memory>
 #include <deque>
+#include <atomic>
 
 namespace uhd { namespace rfnoc { namespace detail {
 
@@ -44,7 +45,7 @@ public:
         //const size_t dst_port);
         //
 
-    /*! Run initial checks for graph
+    /*! Commit graph and run initial checks
      *
      * This method can be called anytime, but it's intended to be called when
      * the graph has been committed. It will run checks on the graph and run a
@@ -52,8 +53,14 @@ public:
      *
      * \throws uhd::resolve_error if the properties fail to resolve.
      */
-    void initialize();
+    void commit();
 
+    /*! Opposite of commit()
+     *
+     * Calling this will disable property propagation until commit() has been
+     * called an equal number of times.
+     */
+    void release();
 
 private:
     friend class graph_accessor_t;
@@ -254,6 +261,10 @@ private:
     //! Mutex for to avoid the user from sending one message before another
     // message is sent
     std::recursive_mutex _action_mutex;
+
+    //! This counter gets decremented everytime commit() is called. When zero,
+    // the graph is committed.
+    std::atomic<size_t> _release_count{1};
 };
 
 

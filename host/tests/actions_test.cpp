@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_CASE(test_actions_simple_graph)
     graph.connect(&mock_rx_radio, &mock_ddc, {0, 0, graph_edge_t::DYNAMIC, true});
     graph.connect(&mock_ddc, &mock_fifo, {0, 0, graph_edge_t::DYNAMIC, true});
     graph.connect(&mock_fifo, &mock_streamer, {0, 0, graph_edge_t::DYNAMIC, true});
-    graph.initialize();
+    graph.commit();
 
     // Force the DDC to actually set a decimation rate != 1
     mock_streamer.set_property<double>("samp_rate", 10e6, 0);

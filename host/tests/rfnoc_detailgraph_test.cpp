@@ -151,7 +151,7 @@ BOOST_AUTO_TEST_CASE(test_graph)
         topo_sorted_nodes.at(0)->get_unique_id(), mock_rx_radio.get_unique_id());
 
     // Now initialize the graph (will force a call to resolve_all_properties())
-    graph.initialize();
+    graph.commit();
 
     // This will be ignored
     graph.connect(&mock_rx_radio, &mock_tx_radio, edge_info);
@@ -195,7 +195,7 @@ BOOST_AUTO_TEST_CASE(test_graph_unresolvable)
 
     // Now create the graph and commit:
     graph.connect(&mock_rx_radio, &mock_tx_radio, edge_info);
-    graph.initialize();
+    graph.commit();
 
     // Now set a property that will cause the graph to fail to resolve:
     BOOST_REQUIRE_THROW(mock_tx_radio.set_property<double>("master_clock_rate", 100e6, 0),

@@ -246,7 +246,7 @@ BOOST_AUTO_TEST_CASE(test_graph_resolve_ddc_radio)
     // Now create the graph and commit:
     graph.connect(&mock_rx_radio, &mock_ddc, edge_info);
     graph.connect(&mock_ddc, &mock_tx_radio, edge_info);
-    graph.initialize();
+    graph.commit();
     BOOST_CHECK_EQUAL(mock_ddc._decim.get(), 1);
 
     mock_tx_radio.set_property<double>("master_clock_rate", 100e6, 0);
@@ -256,6 +256,13 @@ BOOST_AUTO_TEST_CASE(test_graph_resolve_ddc_radio)
     mock_ddc.set_property<int>("decim", 42, 0);
     // It will bounce back:
     BOOST_CHECK_EQUAL(mock_ddc._decim.get(), 2);
+
+    graph.release();
+    mock_tx_radio.set_property<double>("master_clock_rate", 200e6, 0);
+    // Won't change yet:
+    BOOST_CHECK_EQUAL(mock_ddc._decim.get(), 2);
+    graph.commit();
+    BOOST_CHECK_EQUAL(mock_ddc._decim.get(), 1);
 }
 
 
@@ -284,7 +291,7 @@ BOOST_AUTO_TEST_CASE(test_graph_catch_invalid_graph)
 
     // Now create the graph and commit:
     graph.connect(&mock_rx_radio, &mock_tx_radio, edge_info);
-    BOOST_REQUIRE_THROW(graph.initialize(), uhd::resolve_error);
+    BOOST_REQUIRE_THROW(graph.commit(), uhd::resolve_error);
     UHD_LOG_INFO("TEST", "^^^ Expected an error message.");
 }
 
@@ -314,7 +321,7 @@ BOOST_AUTO_TEST_CASE(test_graph_ro_prop)
 
     // Now create the graph and commit:
     graph.connect(&mock_rx_radio, &mock_tx_radio, edge_info);
-    graph.initialize();
+    graph.commit();
 
     const size_t rx_rssi_resolver_count = mock_rx_radio.rssi_resolver_count;
     UHD_LOG_DEBUG("TEST", "RX RSSI: " << mock_rx_radio.get_property<double>("rssi"));
@@ -408,7 +415,7 @@ BOOST_AUTO_TEST_CASE(test_graph_crisscross_fifo)
     graph.connect(&mock_fifo, &mock_tx_radio0, {1, 0, graph_edge_t::DYNAMIC, true});
     graph.connect(&mock_fifo, &mock_tx_radio1, {0, 0, graph_edge_t::DYNAMIC, true});
     UHD_LOG_INFO("TEST", "Now testing criss-cross prop resolution");
-    graph.initialize();
+    graph.commit();
 }
 
 BOOST_AUTO_TEST_CASE(test_circular_deps)

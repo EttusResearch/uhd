@@ -101,6 +101,16 @@ public:
         return _mb_controllers.at(mb_index);
     }
 
+    void commit()
+    {
+        _graph->commit();
+    }
+
+    void release()
+    {
+        _graph->release();
+    }
+
 private:
     /**************************************************************************
      * Device Setup

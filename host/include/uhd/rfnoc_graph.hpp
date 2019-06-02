@@ -203,6 +203,22 @@ public:
      */
     std::vector<graph_edge_t> enumerate_connections();
 
+    /*! Commit graph and run initial checks
+     *
+     * This method needs to be called when the graph is ready for action.
+     * It will run checks on the graph and run a property propagation.
+     *
+     * \throws uhd::resolve_error if the properties fail to resolve.
+     */
+    virtual void commit() = 0;
+
+    /*! Release graph: Opposite of commit()
+     *
+     * Calling this will disable property propagation until commit() has been
+     * called an equal number of times.
+     */
+    virtual void release() = 0;
+
     /******************************************
      * Streaming
      ******************************************/

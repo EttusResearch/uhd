@@ -173,10 +173,19 @@ void graph_t::connect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t edg
     }
 }
 
-void graph_t::initialize()
+void graph_t::commit()
 {
-    UHD_LOG_DEBUG(LOG_ID, "Initializing graph.");
+    if (_release_count) {
+        _release_count--;
+    }
+    UHD_LOG_TRACE(LOG_ID, "graph::commit() => " << _release_count.load());
     resolve_all_properties();
+}
+
+void graph_t::release()
+{
+    UHD_LOG_TRACE(LOG_ID, "graph::release() => " << _release_count.load());
+    _release_count++;
 }
 
 
@@ -186,6 +195,9 @@ void graph_t::initialize()
 void graph_t::resolve_all_properties()
 {
     if (boost::num_vertices(_graph) == 0) {
+        return;
+    }
+    if (_release_count) {
         return;
     }
     node_accessor_t node_accessor{};
@@ -323,6 +335,13 @@ void graph_t::resolve_all_properties()
 void graph_t::enqueue_action(
     node_ref_t src_node, res_source_info src_edge, action_info::sptr action)
 {
+    if (_release_count) {
+        UHD_LOG_WARNING(LOG_ID,
+            "Action propagation is not enabled, graph is not committed! Will not "
+            "propagate action `"
+                << action->key << "'");
+        return;
+    }
     // First, make sure that once we start action handling, no other node from
     // a different thread can throw in their own actions
     std::lock_guard<std::recursive_mutex> l(_action_mutex);
