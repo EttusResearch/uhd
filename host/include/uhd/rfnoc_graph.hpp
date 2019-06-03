@@ -36,8 +36,15 @@ public:
      */
     using sptr = std::shared_ptr<rfnoc_graph>;
 
-
     virtual ~rfnoc_graph() {}
+
+
+    //! Stuct to store information about which blocks are actually stored at a given port on the crossbar
+    struct block_xbar_info {
+        size_t xbar_port;
+        noc_block_base::noc_id_t noc_id;
+        size_t inst_num;
+    };
 
     /******************************************
      * Factory
@@ -113,7 +120,7 @@ public:
      * \param block_id Canonical block name (e.g. "0/FFT#1").
      * \note this access is not thread safe if peformed during block enumeration
      */
-    noc_block_base::sptr get_block(const block_id_t& block_id) const;
+    virtual noc_block_base::sptr get_block(const block_id_t& block_id) const = 0;
 
     /*! Same as get_block(), but with a type cast.
      *
@@ -161,11 +168,11 @@ public:
      * \throws connect_disallowed_on_dst
      *     if the destination port is statically connected to a *different* block
      */
-    void connect(const block_id_t& src_blk,
+    virtual void connect(const block_id_t& src_blk,
         size_t src_port,
         const block_id_t& dst_blk,
         size_t dst_port,
-        bool skip_property_propagation = false);
+        bool skip_property_propagation = false) = 0;
 
     /*! Connect TX streamer to an input of an NoC block
      *
@@ -177,10 +184,10 @@ public:
      * \throws connect_disallowed_on_dst
      *     if the destination port is statically connected to a *different* block
      */
-    void connect(uhd::tx_streamer& streamer,
+    virtual void connect(uhd::tx_streamer& streamer,
         size_t strm_port,
         const block_id_t& dst_blk,
-        size_t dst_port);
+        size_t dst_port) = 0;
 
     /*! Connect RX streamer to an output of an NoC block
      *
@@ -192,10 +199,10 @@ public:
      * \throws connect_disallowed_on_src
      *     if the source port is statically connected to a *different* block
      */
-    void connect(const block_id_t& src_blk,
+    virtual void connect(const block_id_t& src_blk,
         size_t src_port,
         uhd::rx_streamer& streamer,
-        size_t strm_port);
+        size_t strm_port) = 0;
 
     /*! Enumerate all the connections in the graph
      *
