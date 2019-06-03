@@ -19,8 +19,8 @@ different platforms, development guidelines and reference documentation as well
 as device usage guidance.
 
 Additionally, be sure to check out the Ettus Research
-[FAQ](http://www.ettus.com/kb/detail/frequently-asked-questions), and the
-[Knowledge Base](http://www.ettus.com/kb) for useful application notes and
+[FAQ](https://kb.ettus.com/Technical_FAQ), and the
+[Knowledge Base](http://kb.ettus.com) for useful application notes and
 tutorials.
 
 ## OS Support
