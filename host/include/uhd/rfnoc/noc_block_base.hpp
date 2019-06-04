@@ -11,6 +11,7 @@
 #include <uhd/rfnoc/block_id.hpp>
 #include <uhd/rfnoc/node.hpp>
 #include <uhd/rfnoc/register_iface_holder.hpp>
+#include <uhd/types/device_addr.hpp>
 
 //! Shorthand for block constructor
 #define RFNOC_BLOCK_CONSTRUCTOR(CLASS_NAME) \
@@ -100,6 +101,10 @@ public:
      */
     double get_tick_rate() const { return _tick_rate; }
 
+    /*! Return the arguments that were passed into this block from the framework
+     */
+    uhd::device_addr_t get_block_args() const { return _block_args; }
+
 protected:
     noc_block_base(make_args_ptr make_args);
 
@@ -183,6 +188,9 @@ private:
     //! Stores a reference to this block's motherboard's controller, if this
     // block had requested and was granted access
     std::shared_ptr<mb_controller> _mb_controller;
+
+    //! Arguments that were passed into this block
+    const uhd::device_addr_t _block_args;
 
 }; // class noc_block_base
 

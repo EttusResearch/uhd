@@ -49,12 +49,14 @@ BOOST_AUTO_TEST_CASE(test_ddc_block)
     constexpr noc_block_base::noc_id_t mock_noc_id = 0x7E57DDC0;
 
     auto ddc_make_args = make_make_args(mock_noc_id, "0/DDC#0", num_chans, num_chans);
+    ddc_make_args->args = uhd::device_addr_t("foo=bar");
     auto ddc_reg_iface = std::dynamic_pointer_cast<mock_reg_iface_t>(ddc_make_args->reg_iface);
     ddc_reg_iface->read_memory[ddc_block_control::RB_COMPAT_NUM] =
         (ddc_block_control::MAJOR_COMPAT << 16) | ddc_block_control::MINOR_COMPAT;
     ddc_reg_iface->read_memory[ddc_block_control::RB_NUM_HB]        = num_hb;
     ddc_reg_iface->read_memory[ddc_block_control::RB_CIC_MAX_DECIM] = max_cic;
     auto test_ddc = ddc_block_control_make(std::move(ddc_make_args));
+    BOOST_CHECK_EQUAL(test_ddc->get_block_args().get("foo"), "bar");
 
     node_accessor.init_props(test_ddc.get());
     UHD_LOG_DEBUG("TEST", "Init done.");

@@ -25,6 +25,7 @@ noc_block_base::noc_block_base(make_args_ptr make_args)
     , _num_output_ports(make_args->num_output_ports)
     , _clock_iface(make_args->clk_iface)
     , _mb_controller(std::move(make_args->mb_control))
+    , _block_args(make_args->args)
 {
     // First, create one tick_rate property for every port
     _tick_rate_props.reserve(get_num_input_ports() + get_num_output_ports());

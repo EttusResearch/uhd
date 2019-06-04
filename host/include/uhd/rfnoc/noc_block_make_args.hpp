@@ -51,6 +51,9 @@ struct noc_block_base::make_args_t
 
     //! The subtree for this block
     uhd::property_tree::sptr tree;
+
+    //! Additional args that can be parsed and used by this block
+    uhd::device_addr_t args;
 };
 
 }} /* namespace uhd::rfnoc */
