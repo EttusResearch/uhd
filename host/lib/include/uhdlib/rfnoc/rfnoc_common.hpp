@@ -7,7 +7,7 @@
 #ifndef INCLUDED_RFNOC_RFNOC_COMMON_HPP
 #define INCLUDED_RFNOC_RFNOC_COMMON_HPP
 
-#include <uhd/transport/zero_copy.hpp>
+#include <uhdlib/transport/link_if.hpp>
 #include <memory>
 
 namespace uhd { namespace rfnoc {
@@ -65,20 +65,6 @@ struct stream_buff_params_t
 
 //! The data type of the buffer used to capture/generate data
 enum sw_buff_t { BUFF_U64 = 0, BUFF_U32 = 1, BUFF_U16 = 2, BUFF_U8 = 3 };
-
-// TODO: Update these
-struct chdr_ctrl_xport_t
-{
-    chdr_ctrl_xport_t() = default;
-    uhd::transport::zero_copy_if::sptr recv;
-    uhd::transport::zero_copy_if::sptr send;
-    stream_buff_params_t recv_buff_params{0, 0};
-    stream_buff_params_t send_buff_params{0, 0};
-    sep_id_t src_epid{0};
-    sep_id_t dst_epid{0};
-};
-
-using chdr_data_xport_t = chdr_ctrl_xport_t;
 
 //----------------------------------------------
 // Constants

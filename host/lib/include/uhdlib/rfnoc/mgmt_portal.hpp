@@ -7,6 +7,7 @@
 #ifndef INCLUDED_LIBUHD_MGMT_PORTAL_HPP
 #define INCLUDED_LIBUHD_MGMT_PORTAL_HPP
 
+#include <uhdlib/rfnoc/chdr_ctrl_xport.hpp>
 #include <uhdlib/rfnoc/chdr_types.hpp>
 #include <memory>
 #include <set>
@@ -54,10 +55,12 @@ public:
 
     //! Initialize a stream endpoint and assign an endpoint ID to it
     //
+    // \param xport The host stream endpoint's CTRL transport
     // \param addr The physical address of the stream endpoint
     // \param epid The endpoint ID to assign to this endpoint
     //
-    virtual void initialize_endpoint(const sep_addr_t& addr, const sep_id_t& epid) = 0;
+    virtual void initialize_endpoint(
+        chdr_ctrl_xport& xport, const sep_addr_t& addr, const sep_id_t& epid) = 0;
 
     //! Get information about a discovered (reachable) stream endpoint
     //
@@ -77,9 +80,10 @@ public:
     //  destination simply by setting the DstEPID in the CHDR header to the specified
     //  dst_epid
     //
+    // \param xport The host stream endpoint's CTRL transport
     // \param dst_epid The endpoint ID of the destination
     //
-    virtual void setup_local_route(const sep_id_t& dst_epid) = 0;
+    virtual void setup_local_route(chdr_ctrl_xport& xport, const sep_id_t& dst_epid) = 0;
 
     //! Can a route from between the source and destination endpoints be established?
     //
@@ -95,11 +99,12 @@ public:
     //  to the destination simply by setting the DstEPID in the CHDR header to the
     //  specified dst_epid
     //
+    // \param xport The host stream endpoint's CTRL transport
     // \param dst_epid The endpoint ID of the destination
     // \param src_epid The endpoint ID of the source
     //
     virtual void setup_remote_route(
-        const sep_id_t& dst_epid, const sep_id_t& src_epid) = 0;
+        chdr_ctrl_xport& xport, const sep_id_t& dst_epid, const sep_id_t& src_epid) = 0;
 
     //! Start configuring a flow controlled receive data stream from the endpoint with the
     //  specified ID to this SW mgmt portal.
@@ -108,6 +113,7 @@ public:
     //  control handler needs to acknoweledge the setup transaction then call the commit
     //  function below.
     //
+    // \param xport The host stream endpoint's CTRL transport (same EPID as RX stream)
     // \param epid The endpoint ID of the data source
     // \param lossy_xport Is the transport lossy? (e.g. UDP, not liberio)
     // \param pyld_buff_fmt Datatype of SW buffer that holds the data payload
@@ -116,7 +122,8 @@ public:
     // \param fc_freq Flow control headroom parameters
     // \param reset Reset ingress stream endpoint state
     //
-    virtual void config_local_rx_stream_start(const sep_id_t& epid,
+    virtual void config_local_rx_stream_start(chdr_ctrl_xport& xport,
+        const sep_id_t& epid,
         const bool lossy_xport,
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
@@ -127,19 +134,22 @@ public:
     //! Finish configuring a flow controlled receive data stream from the endpoint with
     //  the specified ID to this SW mgmt portal.
     //
+    // \param xport The host stream endpoint's CTRL transport (same EPID as RX stream)
     // \param epid The endpoint ID of the data source
     //
     virtual stream_buff_params_t config_local_rx_stream_commit(
-        const sep_id_t& epid, const double timeout = 0.2) = 0;
+        chdr_ctrl_xport& xport, const sep_id_t& epid, const double timeout = 0.2) = 0;
 
     //! Configure a flow controlled transmit data stream from this SW mgmt portal to the
     //  endpoint with the specified ID.
     //
+    // \param xport The host stream endpoint's CTRL transport (same EPID as TX stream)
     // \param pyld_buff_fmt Datatype of SW buffer that holds the data payload
     // \param mdata_buff_fmt Datatype of SW buffer that holds the data metadata
     // \param reset Reset ingress stream endpoint state
     //
-    virtual void config_local_tx_stream(const sep_id_t& epid,
+    virtual void config_local_tx_stream(chdr_ctrl_xport& xport,
+        const sep_id_t& epid,
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
         const bool reset = false) = 0;
@@ -147,6 +157,7 @@ public:
     //! Configure a flow controlled data stream from the endpoint with ID src_epid to the
     //  endpoint with ID dst_epid
     //
+    // \param xport The host stream endpoint's CTRL transport
     // \param dst_epid The endpoint ID of the destination
     // \param src_epid The endpoint ID of the source
     // \param lossy_xport Is the transport lossy?
@@ -155,7 +166,8 @@ public:
     // \param fc_freq Flow control response frequency parameters
     // \param fc_freq Flow control headroom parameters
     //
-    virtual stream_buff_params_t config_remote_stream(const sep_id_t& dst_epid,
+    virtual stream_buff_params_t config_remote_stream(chdr_ctrl_xport& xport,
+        const sep_id_t& dst_epid,
         const sep_id_t& src_epid,
         const bool lossy_xport,
         const stream_buff_params_t& fc_freq,
@@ -176,7 +188,7 @@ public:
 
     //! Create an endpoint manager object
     //
-    static uptr make(const chdr_ctrl_xport_t& xport,
+    static uptr make(chdr_ctrl_xport& xport,
         const chdr::chdr_packet_factory& pkt_factory,
         sep_addr_t my_sep_addr,
         sep_id_t my_epid);

@@ -63,31 +63,10 @@ public:
         // chdr_ctrl_endpoint. We have to use the same base transport here to ensure that
         // the route setup logic in the FPGA transport works correctly.
         // TODO: This needs to be cleaned up. A muxed_zero_copy_if is excessive here
-        chdr_ctrl_xport_t base_xport =
-            _mb_iface.make_ctrl_transport(_my_device_id, _my_mgmt_ctrl_epid);
-        UHD_ASSERT_THROW(base_xport.send.get() == base_xport.recv.get())
-
-        auto classify_fn = [&pkt_factory](void* buff, size_t) -> uint32_t {
-            if (buff) {
-                chdr_packet::cuptr pkt = pkt_factory.make_generic();
-                pkt->refresh(buff);
-                return (pkt->get_chdr_header().get_pkt_type() == PKT_TYPE_MGMT) ? 0 : 1;
-            } else {
-                throw uhd::assertion_error("null pointer");
-            }
-        };
-        _muxed_xport = muxed_zero_copy_if::make(base_xport.send, classify_fn, 2);
-
-        // Create child transports
-        chdr_ctrl_xport_t mgmt_xport = base_xport;
-        mgmt_xport.send              = _muxed_xport->make_stream(0);
-        mgmt_xport.recv              = mgmt_xport.send;
-        _ctrl_xport                  = base_xport;
-        _ctrl_xport.send             = _muxed_xport->make_stream(1);
-        _ctrl_xport.recv             = _ctrl_xport.send;
+        _ctrl_xport = _mb_iface.make_ctrl_transport(_my_device_id, _my_mgmt_ctrl_epid);
 
         // Create management portal using one of the child transports
-        _mgmt_portal = mgmt_portal::make(mgmt_xport,
+        _mgmt_portal = mgmt_portal::make(*_ctrl_xport,
             _pkt_factory,
             sep_addr_t(_my_device_id, SEP_INST_MGMT_CTRL),
             _my_mgmt_ctrl_epid);
@@ -131,8 +110,8 @@ public:
         }
 
         // Setup a route to the EPID
-        _mgmt_portal->initialize_endpoint(dst_addr, dst_epid);
-        _mgmt_portal->setup_local_route(dst_epid);
+        _mgmt_portal->initialize_endpoint(*_ctrl_xport, dst_addr, dst_epid);
+        _mgmt_portal->setup_local_route(*_ctrl_xport, dst_epid);
         if (!_mgmt_portal->get_endpoint_info(dst_epid).has_ctrl) {
             throw uhd::rfnoc_error(
                 "Downstream endpoint does not support control traffic");
@@ -157,10 +136,10 @@ public:
         sep_id_t src_epid = _epid_alloc->allocate_epid(src_addr);
 
         // Initialize endpoints
-        _mgmt_portal->initialize_endpoint(dst_addr, dst_epid);
-        _mgmt_portal->initialize_endpoint(src_addr, src_epid);
+        _mgmt_portal->initialize_endpoint(*_ctrl_xport, dst_addr, dst_epid);
+        _mgmt_portal->initialize_endpoint(*_ctrl_xport, src_addr, src_epid);
 
-        _mgmt_portal->setup_remote_route(dst_epid, src_epid);
+        _mgmt_portal->setup_remote_route(*_ctrl_xport, dst_epid, src_epid);
 
         return sep_id_pair_t(src_epid, dst_epid);
     }
@@ -214,13 +193,15 @@ public:
         // EPIDs)
 
         // Setup a stream
-        stream_buff_params_t buff_params = _mgmt_portal->config_remote_stream(dst_epid,
-            src_epid,
-            lossy_xport,
-            stream_buff_params_t{1, 1}, // Dummy frequency
-            stream_buff_params_t{0, 0}, // Dummy headroom
-            false,
-            STREAM_SETUP_TIMEOUT);
+        stream_buff_params_t buff_params =
+            _mgmt_portal->config_remote_stream(*_ctrl_xport,
+                dst_epid,
+                src_epid,
+                lossy_xport,
+                stream_buff_params_t{1, 1}, // Dummy frequency
+                stream_buff_params_t{0, 0}, // Dummy headroom
+                false,
+                STREAM_SETUP_TIMEOUT);
 
         // Compute FC frequency and headroom based on buff parameters
         stream_buff_params_t fc_freq{
@@ -234,7 +215,8 @@ public:
                 std::ceil(double(buff_params.packets) * fc_headroom_ratio))};
 
         // Reconfigure flow control using the new frequency and headroom
-        return _mgmt_portal->config_remote_stream(dst_epid,
+        return _mgmt_portal->config_remote_stream(*_ctrl_xport,
+            dst_epid,
             src_epid,
             lossy_xport,
             fc_freq,
@@ -243,7 +225,8 @@ public:
             STREAM_SETUP_TIMEOUT);
     }
 
-    virtual chdr_data_xport_t create_host_to_device_data_stream(const sep_addr_t dst_addr,
+    virtual chdr_tx_data_xport::uptr create_host_to_device_data_stream(
+        const sep_addr_t dst_addr,
         const bool lossy_xport,
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
@@ -261,21 +244,22 @@ public:
         sep_id_t dst_epid = _epid_alloc->allocate_epid(dst_addr);
 
         // Create the data transport that we will return to the client
-        chdr_data_xport_t xport =
-            _mb_iface.make_data_transport(_my_device_id, src_epid, xport_args);
-        xport.src_epid = src_epid;
-        xport.dst_epid = dst_epid;
+        chdr_rx_data_xport::uptr xport = _mb_iface.make_rx_data_transport(
+            _my_device_id, src_epid, dst_epid, xport_args);
+
+        chdr_ctrl_xport::sptr mgmt_xport =
+            _mb_iface.make_ctrl_transport(_my_device_id, src_epid);
 
         // Create new temporary management portal with the transports used for this stream
         // TODO: This is a bit excessive. Maybe we can pair down the functionality of the
         // portal just for route setup purposes. Whatever we do, we *must* use xport in it
         // though otherwise the transport will not behave correctly.
         mgmt_portal::uptr data_mgmt_portal =
-            mgmt_portal::make(xport, _pkt_factory, sw_epid_addr, src_epid);
+            mgmt_portal::make(*mgmt_xport, _pkt_factory, sw_epid_addr, src_epid);
 
         // Setup a route to the EPID
-        data_mgmt_portal->initialize_endpoint(dst_addr, dst_epid);
-        data_mgmt_portal->setup_local_route(dst_epid);
+        data_mgmt_portal->initialize_endpoint(*mgmt_xport, dst_addr, dst_epid);
+        data_mgmt_portal->setup_local_route(*mgmt_xport, dst_epid);
         if (!_mgmt_portal->get_endpoint_info(dst_epid).has_data) {
             throw uhd::rfnoc_error("Downstream endpoint does not support data traffic");
         }
@@ -288,7 +272,8 @@ public:
         return xport;
     }
 
-    virtual chdr_data_xport_t create_device_to_host_data_stream(const sep_addr_t src_addr,
+    virtual chdr_tx_data_xport::uptr create_device_to_host_data_stream(
+        const sep_addr_t src_addr,
         const bool lossy_xport,
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
@@ -297,6 +282,7 @@ public:
         const device_addr_t& xport_args)
     {
         // TODO: Implement me
+        return chdr_tx_data_xport::uptr();
     }
 
 private:
@@ -323,8 +309,7 @@ private:
     // The software EPID for all management and control traffic
     sep_id_t _my_mgmt_ctrl_epid;
     // Transports
-    muxed_zero_copy_if::sptr _muxed_xport;
-    chdr_ctrl_xport_t _ctrl_xport;
+    chdr_ctrl_xport::sptr _ctrl_xport;
     // Management portal for control endpoints
     mgmt_portal::uptr _mgmt_portal;
     // The CHDR control endpoint

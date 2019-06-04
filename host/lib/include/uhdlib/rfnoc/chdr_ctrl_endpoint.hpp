@@ -7,6 +7,7 @@
 #ifndef INCLUDED_LIBUHD_RFNOC_CHDR_CTRL_ENDPOINT_HPP
 #define INCLUDED_LIBUHD_RFNOC_CHDR_CTRL_ENDPOINT_HPP
 
+#include <uhdlib/rfnoc/chdr_ctrl_xport.hpp>
 #include <uhdlib/rfnoc/chdr_packet.hpp>
 #include <uhdlib/rfnoc/ctrlport_endpoint.hpp>
 #include <functional>
@@ -46,11 +47,11 @@ public:
 
     //! Creates a control endpoint object
     //
-    // \param xports The transports used to send and recv packets
+    // \param xport The transport used to send and recv packets
     // \param pkt_factor An instance of the CHDR packet factory
     // \param my_epid The endpoint ID of this software endpoint
     //
-    static uptr make(const chdr_ctrl_xport_t& xports,
+    static uptr make(chdr_ctrl_xport::sptr xport,
         const chdr::chdr_packet_factory& pkt_factory,
         sep_id_t my_epid);
 

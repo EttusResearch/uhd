@@ -17,8 +17,8 @@
 
 namespace uhd { namespace rfnoc {
 
-/*! A class that is responsible managing all data endpoints, control endpoints and client
- * zero instances accessible via a logical link between the host device and
+/*! A class that is responsible for managing all data endpoints, control endpoints and
+ * client zero instances accessible via a logical link between the host device and
  * motherboard.
  *
  * Note that each transport adapter on the host has its own set of streaming endpoints,
@@ -120,7 +120,8 @@ public:
      * \param xport_args The transport arguments
      * \return An transport instance
      */
-    virtual chdr_data_xport_t create_host_to_device_data_stream(const sep_addr_t dst_addr,
+    virtual chdr_tx_data_xport::uptr create_host_to_device_data_stream(
+        const sep_addr_t dst_addr,
         const bool lossy_xport,
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
@@ -139,7 +140,8 @@ public:
      * \param xport_args The transport arguments
      * \return An transport instance
      */
-    virtual chdr_data_xport_t create_device_to_host_data_stream(const sep_addr_t src_addr,
+    virtual chdr_rx_data_xport::uptr create_device_to_host_data_stream(
+        const sep_addr_t src_addr,
         const bool lossy_xport,
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
