@@ -177,6 +177,7 @@ void graph_t::commit()
 {
     if (_release_count) {
         _release_count--;
+        _check_topology();
     }
     UHD_LOG_TRACE(LOG_ID, "graph::commit() => " << _release_count.load());
     resolve_all_properties();
@@ -522,6 +523,41 @@ bool graph_t::_assert_edge_props_consistent(rfnoc_graph_t::edge_descriptor edge)
     }
 
     return props_match;
+}
+
+void graph_t::_check_topology()
+{
+    node_accessor_t node_accessor{};
+    bool topo_ok = true;
+    auto v_iterators = boost::vertices(_graph);
+    for (auto it = v_iterators.first; it != v_iterators.second; ++it) {
+        node_ref_t node = boost::get(vertex_property_t(), _graph, *it);
+        std::vector<size_t> connected_inputs;
+        std::vector<size_t> connected_outputs;
+        auto ie_iters = boost::in_edges(*it, _graph);
+        for (auto it = ie_iters.first; it != ie_iters.second; ++it) {
+            graph_edge_t edge_info = boost::get(edge_property_t(), _graph, *it);
+            connected_inputs.push_back(edge_info.dst_port);
+        }
+        auto oe_iters = boost::out_edges(*it, _graph);
+        for (auto it = oe_iters.first; it != oe_iters.second; ++it) {
+            graph_edge_t edge_info = boost::get(edge_property_t(), _graph, *it);
+            connected_outputs.push_back(edge_info.src_port);
+        }
+
+        if (!node_accessor.check_topology(node, connected_inputs, connected_outputs)) {
+            UHD_LOG_ERROR(LOG_ID,
+                "Node " << node->get_unique_id()
+                        << "cannot handle its current topology! ("
+                        << connected_inputs.size() << "inputs, "
+                        << connected_outputs.size() << " outputs)");
+            topo_ok = false;
+        }
+    }
+
+    if (!topo_ok) {
+        throw uhd::runtime_error("Graph topology is not valid!");
+    }
 }
 
 std::pair<graph_t::node_ref_t, graph_t::graph_edge_t> graph_t::_find_neighbour(

@@ -324,7 +324,35 @@ protected:
      */
     void post_action(const res_source_info& edge_info, action_info::sptr action);
 
+    /**************************************************************************
+     * Graph Interaction
+     *************************************************************************/
+    /*! Check if the current connections "work" for this block
+     *
+     * The default implementation simply checks if all connections are within
+     * the valid range, i.e., no \p connected_inputs element is larger than
+     * get_num_input_ports(), etc. This can be overridden, but keep in mind that
+     * blocks need some kind of tolerance here, because blocks may simply not
+     * be part of the current application, and left unconnected. This check is
+     * more meant for blocks that simply don't work of only one of two ports is
+     * connected, or situations like that.
+     *
+     * Note that this method is always called when a graph is committed, i.e.,
+     * no connections will be added or removed without calling this method
+     * again, unless the user bypasses calling uhd::rfnoc_graph::commit(). This
+     * method can therefore be used to make decisions about the behaviour of
+     * the block.
+     *
+     * \param connected_inputs A list of input ports that are connected
+     * \param connected_outputs A list of output ports that are connected
+     * \returns true if the block can deal with this configuration
+     */
+    virtual bool check_topology(const std::vector<size_t>& connected_inputs,
+        const std::vector<size_t>& connected_outputs);
 
+    /**************************************************************************
+     * Attributes
+     *************************************************************************/
     //! A dirtifyer object, useful for properties that always need updating.
     static dirtifier_t ALWAYS_DIRTY;
 

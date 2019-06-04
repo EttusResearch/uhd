@@ -154,6 +154,23 @@ void node_t::post_action(
     _post_action_cb(edge_info, action);
 }
 
+bool node_t::check_topology(const std::vector<size_t>& connected_inputs,
+    const std::vector<size_t>& connected_outputs)
+{
+    for (size_t port : connected_inputs) {
+        if (port >= get_num_input_ports()) {
+            return false;
+        }
+    }
+    for (size_t port : connected_outputs) {
+        if (port >= get_num_output_ports()) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 /*** Private methods *********************************************************/
 property_base_t* node_t::_find_property(
     res_source_info src_info, const std::string& id) const

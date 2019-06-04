@@ -97,6 +97,17 @@ public:
     {
         node->receive_action(port_info, action);
     }
+
+    /*! Check topology for this block
+     *
+     * See node_t::check_topology() for details
+     */
+    bool check_topology(node_t* node,
+        const std::vector<size_t>& connected_inputs,
+        const std::vector<size_t>& connected_outputs)
+    {
+        return node->check_topology(connected_inputs, connected_outputs);
+    }
 };
 
 

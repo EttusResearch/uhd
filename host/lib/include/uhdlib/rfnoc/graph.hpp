@@ -236,6 +236,13 @@ private:
      */
     bool _assert_edge_props_consistent(rfnoc_graph_t::edge_descriptor edge);
 
+    /*! Query all blocks on their topology
+     *
+     * \throws uhd::runtime_error if any of the blocks doesn't like its
+     * configuration
+     */
+    void _check_topology();
+
     /**************************************************************************
      * Attributes
      *************************************************************************/
