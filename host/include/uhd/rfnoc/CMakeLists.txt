@@ -41,6 +41,7 @@ if(ENABLE_RFNOC)
         duc_block_ctrl.hpp
         fir_block_ctrl.hpp
         null_block_ctrl.hpp
+        null_block_control.hpp
         radio_ctrl.hpp
         radio_control.hpp
         replay_block_ctrl.hpp
