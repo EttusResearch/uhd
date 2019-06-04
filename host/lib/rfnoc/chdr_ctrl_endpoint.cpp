@@ -74,7 +74,6 @@ public:
         ep_map_key_t key{dst_epid, dst_port};
         // Function to send a control payload
         auto send_fn = [this, dst_epid](const ctrl_payload& payload, double timeout) {
-            std::lock_guard<std::mutex> lock(_mutex);
             // Build header
             chdr_header header;
             header.set_pkt_type(PKT_TYPE_CTRL);
@@ -82,6 +81,7 @@ public:
             header.set_seq_num(_send_seqnum++);
             header.set_dst_epid(dst_epid);
             // Acquire send buffer and send the packet
+            std::lock_guard<std::mutex> lock(_send_mutex);
             auto send_buff = _xport.send->get_send_buff(timeout);
             _send_pkt->refresh(send_buff->cast<void*>(), header, payload);
             send_buff->commit(header.get_length());
@@ -167,8 +167,10 @@ private:
     // A thread that will handle all responses and async message requests
     std::atomic_bool _stop_recv_thread;
     std::thread _recv_thread;
-    // Mutex that protects all state in this class
+    // Mutex that protects all state in this class except for _send_pkt
     std::mutex _mutex;
+    // Mutex that protects _send_pkt and _xport.send
+    std::mutex _send_mutex;
 };
 
 chdr_ctrl_endpoint::uptr chdr_ctrl_endpoint::make(const chdr_ctrl_xport_t& xport,
