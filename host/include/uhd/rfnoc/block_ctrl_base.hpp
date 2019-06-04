@@ -242,10 +242,9 @@ public:
      * defined in the block definition file.
      *
      * \param reg The user register name.
-     * \param port Destination port.
+     * \param port Destination port from which to read.
      * \returns the readback value.
      * \throws uhd::key_error if \p reg is not a valid register name
-     * \param port Port from which to read
      */
     uint32_t user_reg_read32(const std::string& reg, const size_t port = 0);
 
@@ -327,7 +326,8 @@ public:
     std::string get_arg(const std::string& key, const size_t port = 0) const;
 
     //! Direct access to get a block argument.
-    template <typename T> T get_arg(const std::string& key, const size_t port = 0) const
+    template <typename T>
+    T get_arg(const std::string& key, const size_t port = 0) const
     {
         return _tree->access<T>(get_arg_path(key, port) / "value").get();
     }
