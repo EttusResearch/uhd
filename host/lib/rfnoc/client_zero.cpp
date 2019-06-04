@@ -68,7 +68,7 @@ client_zero::client_zero(register_iface::sptr reg)
 
     // Set the default flushing timeout for each block
     for (uint16_t portno = 1 + get_num_stream_endpoints();
-         portno < (get_num_blocks() + get_num_stream_endpoints());
+         portno < (1 + get_num_blocks() + get_num_stream_endpoints());
          ++portno) {
         set_flush_timeout(DEFAULT_FLUSH_TIMEOUT, portno);
     }
@@ -152,6 +152,40 @@ bool client_zero::complete_flush(uint16_t portno)
     _check_port_number(portno);
     set_flush(portno);
     return poll_flush_done(portno);
+}
+
+void client_zero::complete_flush_all_blocks()
+{
+    const size_t num_blocks       = get_num_blocks();
+    const size_t first_block_port = 1 + get_num_stream_endpoints();
+
+    // Issue flush commands
+    auto flush_done = std::vector<bool>();
+    for (size_t portno = 0; portno < num_blocks; ++portno) {
+        auto block_portno = portno + first_block_port;
+        set_flush(block_portno);
+        flush_done.push_back(false);
+    }
+
+    // Poll for flush done
+    auto start          = std::chrono::steady_clock::now();
+    size_t flushes_done = 0;
+    while (flushes_done < num_blocks) {
+        for (size_t portno = 0; portno < num_blocks; ++portno) {
+            if (flush_done[portno]) {
+                continue;
+            }
+            if (std::chrono::steady_clock::now() > (start + DEFAULT_POLL_TIMEOUT)) {
+                throw uhd::runtime_error(
+                    str(boost::format("Timeout while flushing port %d") % portno));
+            }
+            auto block_portno = portno + first_block_port;
+            if (get_flush_done(block_portno)) {
+                flush_done[portno] = true;
+                flushes_done++;
+            }
+        }
+    }
 }
 
 void client_zero::reset_ctrl(uint16_t portno)

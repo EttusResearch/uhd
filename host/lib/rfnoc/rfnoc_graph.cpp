@@ -174,9 +174,19 @@ private:
             // Ask GSM to allow us to talk to our remote mb
             sep_addr_t ctrl_sep_addr(mb.get_remote_device_id(), 0);
             _gsm->connect_host_to_device(ctrl_sep_addr);
+            // Grab and stash the Client Zero for this mboard
             detail::client_zero::sptr mb_cz = _gsm->get_client_zero(ctrl_sep_addr);
-            const size_t num_blocks         = mb_cz->get_num_blocks();
-            const size_t first_block_port   = 1 + mb_cz->get_num_stream_endpoints();
+            _client_zeros.emplace(mb_idx, mb_cz);
+
+            const size_t num_blocks       = mb_cz->get_num_blocks();
+            const size_t first_block_port = 1 + mb_cz->get_num_stream_endpoints();
+
+            /* Flush and reset each block in the mboard
+             * We do this before we enumerate the blocks to ensure they're in a clean
+             * state before we construct their block controller, and so that we don't
+             * reset any setting that the block controller writes
+             */
+            _flush_and_reset_mboard(mb_idx, mb_cz, num_blocks, first_block_port);
 
             // Make a map to count the number of each block we have
             std::unordered_map<std::string, uint16_t> block_count_map;
@@ -369,6 +379,25 @@ private:
                    % std::get<1>(strm_info).bytes % std::get<1>(strm_info).packets;
     }
 
+    //! Flush and reset each connected port on the mboard
+    void _flush_and_reset_mboard(size_t mb_idx,
+        detail::client_zero::sptr mb_cz,
+        const size_t num_blocks,
+        const size_t first_block_port)
+    {
+        UHD_LOG_TRACE("RFNOC::GRAPH",
+            std::string("Flushing and resetting blocks on mboard ")
+                + std::to_string(mb_idx));
+
+        mb_cz->complete_flush_all_blocks();
+
+        // Reset
+        for (size_t portno = 0; portno < num_blocks; ++portno) {
+            auto block_portno = portno + first_block_port;
+            mb_cz->reset_chdr(block_portno);
+            mb_cz->reset_ctrl(block_portno);
+        }
+    }
     /**************************************************************************
      * Attributes
      *************************************************************************/
