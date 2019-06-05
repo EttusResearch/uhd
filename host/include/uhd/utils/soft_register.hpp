@@ -215,9 +215,7 @@ public:
             // If flush mode is ALWAYS, the dirty flag should get optimized
             // out by the compiler because it is never read
             if (_flush_mode == ALWAYS_FLUSH || _soft_copy.is_dirty()) {
-                if (get_bitwidth() <= 16) {
-                    _iface->poke16(_wr_addr, static_cast<uint16_t>(_soft_copy));
-                } else if (get_bitwidth() <= 32) {
+                if (get_bitwidth() <= 32) {
                     _iface->poke32(_wr_addr, static_cast<uint32_t>(_soft_copy));
                 } else if (get_bitwidth() <= 64) {
                     _iface->poke64(_wr_addr, static_cast<uint64_t>(_soft_copy));
@@ -239,9 +237,7 @@ public:
     UHD_INLINE void refresh()
     {
         if (readable && _iface) {
-            if (get_bitwidth() <= 16) {
-                _soft_copy = static_cast<reg_data_t>(_iface->peek16(_rd_addr));
-            } else if (get_bitwidth() <= 32) {
+            if (get_bitwidth() <= 32) {
                 _soft_copy = static_cast<reg_data_t>(_iface->peek32(_rd_addr));
             } else if (get_bitwidth() <= 64) {
                 _soft_copy = static_cast<reg_data_t>(_iface->peek64(_rd_addr));
@@ -385,18 +381,11 @@ private:
  * - soft_reg<bits>_<mode>_sync_t: Soft register object with a synchronized soft-copy.
  *                                 Thread safe but with memory/speed overhead.
  * where:
- * - <bits> = {16, 32 or 64}
+ * - <bits> = {32 or 64}
  * - <mode> = {wo(write-only), rw(read-write) or ro(read-only)}
  *
  */
 
-// 16-bit shortcuts
-typedef soft_register_t<uint16_t, false, true> soft_reg16_wo_t;
-typedef soft_register_t<uint16_t, true, false> soft_reg16_ro_t;
-typedef soft_register_t<uint16_t, true, true> soft_reg16_rw_t;
-typedef soft_register_sync_t<uint16_t, false, true> soft_reg16_wo_sync_t;
-typedef soft_register_sync_t<uint16_t, true, false> soft_reg16_ro_sync_t;
-typedef soft_register_sync_t<uint16_t, true, true> soft_reg16_rw_sync_t;
 // 32-bit shortcuts
 typedef soft_register_t<uint32_t, false, true> soft_reg32_wo_t;
 typedef soft_register_t<uint32_t, true, false> soft_reg32_ro_t;

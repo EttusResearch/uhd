@@ -2368,13 +2368,6 @@ public:
             }
 
             switch (reg.get_bitwidth()) {
-            case 16:
-                if (reg.is_readable())
-                    uhd::soft_register_base::cast<uhd::soft_reg16_rw_t>(reg).write(field, static_cast<uint16_t>(value));
-                else
-                    uhd::soft_register_base::cast<uhd::soft_reg16_wo_t>(reg).write(field, static_cast<uint16_t>(value));
-            break;
-
             case 32:
                 if (reg.is_readable())
                     uhd::soft_register_base::cast<uhd::soft_reg32_rw_t>(reg).write(field, static_cast<uint32_t>(value));
@@ -2411,13 +2404,6 @@ public:
             }
 
             switch (reg.get_bitwidth()) {
-            case 16:
-                if (reg.is_writable())
-                    return static_cast<uint64_t>(uhd::soft_register_base::cast<uhd::soft_reg16_rw_t>(reg).read(field));
-                else
-                    return static_cast<uint64_t>(uhd::soft_register_base::cast<uhd::soft_reg16_ro_t>(reg).read(field));
-            break;
-
             case 32:
                 if (reg.is_writable())
                     return static_cast<uint64_t>(uhd::soft_register_base::cast<uhd::soft_reg32_rw_t>(reg).read(field));
