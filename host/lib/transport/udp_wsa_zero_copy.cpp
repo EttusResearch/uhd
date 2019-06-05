@@ -21,7 +21,8 @@ namespace asio = boost::asio;
 constexpr size_t UDP_ZERO_COPY_DEFAULT_NUM_FRAMES = 1;
 constexpr size_t UDP_ZERO_COPY_DEFAULT_FRAME_SIZE =
     1472; // Based on common 1500 byte MTU for 1GbE.
-
+constexpr size_t UDP_ZERO_COPY_DEFAULT_BUFF_SIZE =
+    2500000; // 20ms of data for 1GbE link (in bytes)
 /***********************************************************************
  * Check registry for correct fast-path setting (windows only)
  **********************************************************************/
@@ -234,8 +235,8 @@ public:
         // ioctlsocket(_sock_fd, FIONBIO, &mode);
 
         // resize the socket buffers
-        const int recv_buff_size = int(hints.cast<double>("recv_buff_size", 0.0));
-        const int send_buff_size = int(hints.cast<double>("send_buff_size", 0.0));
+        const int recv_buff_size = xport_params.recv_buff_size;
+        const int send_buff_size = xport_params.send_buff_size;
         if (recv_buff_size > 0)
             setsockopt(_sock_fd,
                 SOL_SOCKET,
@@ -427,6 +428,10 @@ udp_zero_copy::sptr udp_zero_copy::make(const std::string& addr,
         size_t(hints.cast<double>("send_frame_size", default_buff_args.send_frame_size));
     xport_params.num_send_frames =
         size_t(hints.cast<double>("num_send_frames", default_buff_args.num_send_frames));
+    xport_params.recv_buff_size =
+        size_t(hints.cast<double>("recv_buff_size", default_buff_args.recv_buff_size));
+    xport_params.send_buff_size =
+        size_t(hints.cast<double>("send_buff_size", default_buff_args.send_buff_size));
 
     if (xport_params.num_recv_frames == 0) {
         UHD_LOG_TRACE("UDP",
@@ -449,6 +454,19 @@ udp_zero_copy::sptr udp_zero_copy::make(const std::string& addr,
             "Using default value for send_frame_size, "
                 << UDP_ZERO_COPY_DEFAULT_FRAME_SIZE);
         xport_params.send_frame_size = UDP_ZERO_COPY_DEFAULT_FRAME_SIZE;
+    }
+
+    if (xport_params.recv_buff_size == 0) {
+        UHD_LOG_TRACE("UDP", "Using default value for recv_buff_size");
+        xport_params.recv_buff_size = std::max(UDP_ZERO_COPY_DEFAULT_BUFF_SIZE,
+            xport_params.num_recv_frames * MAX_ETHERNET_MTU);
+        UHD_LOG_TRACE("UDP",
+            "Using default value for recv_buff_size" << xport_params.recv_buff_size);
+    }
+    if (xport_params.send_buff_size == 0) {
+        UHD_LOG_TRACE("UDP", "default_buff_args has no send_buff_size");
+        xport_params.send_buff_size = std::max(UDP_ZERO_COPY_DEFAULT_BUFF_SIZE,
+            xport_params.num_send_frames * MAX_ETHERNET_MTU);
     }
 
     // extract buffer size hints from the device addr and check if they match up
