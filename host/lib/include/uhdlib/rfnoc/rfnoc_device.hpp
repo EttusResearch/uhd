@@ -9,6 +9,7 @@
 
 #include <uhd/device.hpp>
 #include <uhd/exception.hpp>
+#include <uhd/rfnoc/mb_controller.hpp>
 #include <uhdlib/rfnoc/client_zero.hpp>
 #include <uhdlib/rfnoc/mb_iface.hpp>
 #include <boost/shared_ptr.hpp>
@@ -39,6 +40,12 @@ public:
                 + std::to_string(mb_idx));
         }
         return *_iface_registry.at(mb_idx);
+    }
+
+    //! Return a reference to an MB controller
+    mb_controller::sptr get_mb_controller(const size_t mb_idx) const
+    {
+        return _mbc_registry.at(mb_idx);
     }
 
     /*! Return the number of motherboards in this device
@@ -73,8 +80,14 @@ protected:
         _iface_registry.emplace(mb_idx, std::move(mb_if));
     }
 
+    void register_mb_controller(const size_t mb_idx, mb_controller::sptr mbc)
+    {
+        _mbc_registry.emplace(mb_idx, mbc);
+    }
+
 private:
     std::unordered_map<size_t, mb_iface::uptr> _iface_registry;
+    std::unordered_map<size_t, mb_controller::sptr> _mbc_registry;
 }; // class rfnoc_device
 
 }}} // namespace uhd::rfnoc::detail

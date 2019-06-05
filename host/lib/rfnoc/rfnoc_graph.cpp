@@ -140,6 +140,11 @@ private:
             throw uhd::key_error(std::string("Found no RFNoC devices for ----->\n")
                                  + dev_addr.to_pp_string());
         }
+        _tree = _device->get_tree();
+        _num_mboards = _tree->list("/mboards").size();
+        for (size_t i = 0; i < _num_mboards; ++i) {
+            _mb_controllers.emplace(i, _device->get_mb_controller(i));
+        }
 
         // Create a graph stream manager
         // FIXME get these from mb_iface or something

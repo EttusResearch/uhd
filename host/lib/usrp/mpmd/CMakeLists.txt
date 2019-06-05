@@ -20,6 +20,7 @@ if(ENABLE_MPMD)
         ${CMAKE_CURRENT_SOURCE_DIR}/mpmd_image_loader.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/mpmd_impl.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/mpmd_mboard_impl.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/mpmd_mb_controller.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/mpmd_prop_tree.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/mpmd_xport.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/mpmd_xport_mgr.cpp
