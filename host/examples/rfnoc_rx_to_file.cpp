@@ -1,24 +1,16 @@
 //
 // Copyright 2014-2016 Ettus Research LLC
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program.  If not, see <http://www.gnu.org/licenses/>.
+// SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhd/device3.hpp>
 #include <uhd/exception.hpp>
-#include <uhd/rfnoc/radio_ctrl.hpp>
-#include <uhd/rfnoc/source_block_ctrl_base.hpp>
+#include <uhd/rfnoc/ddc_block_control.hpp>
+#include <uhd/rfnoc/defaults.hpp>
+#include <uhd/rfnoc/mb_controller.hpp>
+#include <uhd/rfnoc/radio_control.hpp>
+#include <uhd/rfnoc_graph.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/types/tune_request.hpp>
 #include <uhd/utils/safe_main.hpp>
@@ -232,9 +224,9 @@ bool check_locked_sensor(std::vector<std::string> sensor_names,
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
     // variables to be set by po
-    std::string args, file, format, ant, subdev, ref, wirefmt, streamargs, radio_args,
-        block_id, block_args;
-    size_t total_num_samps, spb, radio_id, radio_chan;
+    std::string args, file, format, ant, subdev, ref, wirefmt, streamargs, block_id,
+        block_args;
+    size_t total_num_samps, spb, spp, radio_id, radio_chan;
     double rate, freq, gain, bw, total_time, setup_time;
 
     // setup the program options
@@ -247,6 +239,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("duration", po::value<double>(&total_time)->default_value(0), "total number of seconds to receive")
         ("nsamps", po::value<size_t>(&total_num_samps)->default_value(0), "total number of samples to receive")
         ("spb", po::value<size_t>(&spb)->default_value(10000), "samples per buffer")
+        ("spp", po::value<size_t>(&spp)->default_value(64), "samples per packet (on FPGA and wire)")
         ("streamargs", po::value<std::string>(&streamargs)->default_value(""), "stream args")
         ("progress", "periodically display short-term bandwidth")
         ("stats", "show average bandwidth on exit")
@@ -259,7 +252,6 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
         ("radio-id", po::value<size_t>(&radio_id)->default_value(0), "Radio ID to use (0 or 1).")
         ("radio-chan", po::value<size_t>(&radio_chan)->default_value(0), "Radio channel")
-        ("radio-args", po::value<std::string>(&radio_args), "Radio channel")
         ("rate", po::value<double>(&rate)->default_value(1e6), "RX rate of the radio block")
         ("freq", po::value<double>(&freq)->default_value(0.0), "RF center frequency in Hz")
         ("gain", po::value<double>(&gain), "gain for the RF chain")
@@ -309,24 +301,57 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
      * Create device and block controls
      ***********************************************************************/
     std::cout << std::endl;
-    std::cout << boost::format("Creating the USRP device with: %s...") % args
+    std::cout << boost::format("Creating the RFNoC graph with args: %s...") % args
               << std::endl;
-    uhd::device3::sptr usrp = uhd::device3::make(args);
+    uhd::rfnoc::rfnoc_graph::sptr graph = uhd::rfnoc::rfnoc_graph::make(args);
+
     // Create handle for radio object
     uhd::rfnoc::block_id_t radio_ctrl_id(0, "Radio", radio_id);
     // This next line will fail if the radio is not actually available
-    uhd::rfnoc::radio_ctrl::sptr radio_ctrl =
-        usrp->get_block_ctrl<uhd::rfnoc::radio_ctrl>(radio_ctrl_id);
+    uhd::rfnoc::radio_control::sptr radio_ctrl =
+        graph->get_block<uhd::rfnoc::radio_control>(radio_ctrl_id);
     std::cout << "Using radio " << radio_id << ", channel " << radio_chan << std::endl;
+
+    // Enumerate blocks in the chain
+    auto edges = graph->enumerate_static_connections();
+
+    std::string source_block = radio_ctrl->get_block_id();
+    size_t source_port       = radio_chan;
+    auto chain               = std::vector<uhd::rfnoc::graph_edge_t>();
+    uhd::rfnoc::ddc_block_control::sptr ddc_ctrl;
+    size_t ddc_chan = 0;
+    while (true) {
+        std::cout << "Looking for source block " << source_block << ", port "
+                  << source_port << std::endl;
+        bool src_found = false;
+        for (auto& edge : edges) {
+            if (edge.src_blockid == source_block && edge.src_port == source_port) {
+                auto blockid = uhd::rfnoc::block_id_t(source_block);
+                if (blockid.match("DDC")) {
+                    ddc_ctrl = graph->get_block<uhd::rfnoc::ddc_block_control>(blockid);
+                    ddc_chan = edge.src_port;
+                }
+                src_found = true;
+                chain.push_back(edge);
+                source_block = edge.dst_blockid;
+                source_port  = edge.dst_port;
+            }
+        }
+        if (not src_found) {
+            std::cerr << "ERROR: Failed to find target source block" << std::endl;
+            break;
+        }
+        if (uhd::rfnoc::block_id_t(source_block).match(uhd::rfnoc::NODE_ID_SEP)) {
+            break;
+        }
+    }
 
     /************************************************************************
      * Set up radio
      ***********************************************************************/
-    radio_ctrl->set_args(radio_args);
-
     // Lock mboard clocks
     if (vm.count("ref")) {
-        radio_ctrl->set_clock_source(ref);
+        graph->get_mb_controller(0)->set_clock_source(ref);
     }
 
     // set the sample rate
@@ -335,10 +360,19 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         return EXIT_FAILURE;
     }
     std::cout << boost::format("Setting RX Rate: %f Msps...") % (rate / 1e6) << std::endl;
-    radio_ctrl->set_rate(rate);
-    std::cout << boost::format("Actual RX Rate: %f Msps...")
-                     % (radio_ctrl->get_rate() / 1e6)
-              << std::endl
+    double radio_rate = radio_ctrl->get_rate();
+    if (ddc_ctrl) {
+        std::cout << "DDC block found" << std::endl;
+        int decim = (int)(radio_rate / rate);
+        std::cout << boost::format("Setting decimation value to %d") % decim << std::endl;
+        ddc_ctrl->set_property<int>("decim", decim, ddc_chan);
+        decim = ddc_ctrl->get_property<int>("decim", ddc_chan);
+        std::cout << boost::format("Actual decimation value is %d") % decim << std::endl;
+        rate = radio_rate / decim;
+    } else {
+        rate = radio_ctrl->set_rate(rate);
+    }
+    std::cout << boost::format("Actual RX Rate: %f Msps...") % (rate / 1e6) << std::endl
               << std::endl;
 
     // set the center frequency
@@ -392,53 +426,68 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         // setup_time);
     }
 
-    size_t spp = radio_ctrl->get_arg<int>("spp");
+    std::cout << "Setting samples per packet to: " << spp << std::endl;
+    radio_ctrl->set_property<int>("spp", spp, 0);
+    spp = radio_ctrl->get_property<int>("spp", 0);
+    std::cout << "Actual samples per packet = " << spp << std::endl;
 
     /************************************************************************
      * Set up streaming
      ***********************************************************************/
     uhd::device_addr_t streamer_args(streamargs);
 
-    uhd::rfnoc::graph::sptr rx_graph = usrp->create_graph("rfnoc_rx_to_file");
-    usrp->clear();
-    // Set the stream args on the radio:
-    if (block_id.empty()) {
-        // If no extra block is required, connect to the radio:
-        streamer_args["block_id"]   = radio_ctrl_id.to_string();
-        streamer_args["block_port"] = str(boost::format("%d") % radio_chan);
-    } else {
-        // Otherwise, see if the requested block exists and connect it to the radio:
-        if (not usrp->has_block(block_id)) {
-            std::cout << "Block does not exist on current device: " << block_id
-                      << std::endl;
-            return EXIT_FAILURE;
-        }
-
-        uhd::rfnoc::source_block_ctrl_base::sptr blk_ctrl =
-            usrp->get_block_ctrl<uhd::rfnoc::source_block_ctrl_base>(block_id);
-
-        if (not block_args.empty()) {
-            // Set the block args on the other block:
-            blk_ctrl->set_args(uhd::device_addr_t(block_args));
-        }
-        // Connect:
-        std::cout << "Connecting " << radio_ctrl_id << " ==> " << blk_ctrl->get_block_id()
-                  << std::endl;
-        rx_graph->connect(
-            radio_ctrl_id, radio_chan, blk_ctrl->get_block_id(), uhd::rfnoc::ANY_PORT);
-        streamer_args["block_id"] = blk_ctrl->get_block_id().to_string();
-
-        spp = blk_ctrl->get_args().cast<size_t>("spp", spp);
-    }
-
     // create a receive streamer
-    std::cout << "Samples per packet: " << spp << std::endl;
+    // std::cout << "Samples per packet: " << spp << std::endl;
     uhd::stream_args_t stream_args(
         format, "sc16"); // We should read the wire format from the blocks
-    stream_args.args        = streamer_args;
-    stream_args.args["spp"] = boost::lexical_cast<std::string>(spp);
+    stream_args.args = streamer_args;
+    // TODO?
+    // stream_args.args["spp"] = boost::lexical_cast<std::string>(spp);
     std::cout << "Using streamer args: " << stream_args.args.to_string() << std::endl;
-    uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
+    uhd::rx_streamer::sptr rx_stream = graph->create_rx_streamer(1, stream_args);
+
+    // Set the stream args on the radio:
+    // if (block_id.empty()) {
+    //    // If no extra block is required, connect to the radio:
+    //    streamer_args["block_id"]   = radio_ctrl_id.to_string();
+    //    streamer_args["block_port"] = str(boost::format("%d") % radio_chan);
+    //} else {
+    //    // Otherwise, see if the requested block exists and connect it to the radio:
+    //    if (not usrp->has_block(block_id)) {
+    //        std::cout << "Block does not exist on current device: " << block_id
+    //                  << std::endl;
+    //        return EXIT_FAILURE;
+    //    }
+
+    //    uhd::rfnoc::source_block_ctrl_base::sptr blk_ctrl =
+    //        usrp->get_block_ctrl<uhd::rfnoc::source_block_ctrl_base>(block_id);
+
+    //    if (not block_args.empty()) {
+    //        // Set the block args on the other block:
+    //        blk_ctrl->set_args(uhd::device_addr_t(block_args));
+    //    }
+    //    // Connect:
+    //    std::cout << "Connecting " << radio_ctrl_id << " ==> " <<
+    //    blk_ctrl->get_block_id()
+    //              << std::endl;
+    //    rx_graph->connect(
+    //        radio_ctrl_id, radio_chan, blk_ctrl->get_block_id(), uhd::rfnoc::ANY_PORT);
+    //    streamer_args["block_id"] = blk_ctrl->get_block_id().to_string();
+
+    //    spp = blk_ctrl->get_args().cast<size_t>("spp", spp);
+    //}
+
+    // Connect blocks and commit the graph
+    for (auto& edge : chain) {
+        if (uhd::rfnoc::block_id_t(edge.dst_blockid).match(uhd::rfnoc::NODE_ID_SEP)) {
+            graph->connect(edge.src_blockid, edge.src_port, rx_stream, 0);
+        } else {
+            graph->connect(
+                edge.src_blockid, edge.src_port, edge.dst_blockid, edge.dst_port);
+        }
+    }
+    graph->commit();
+
 
     if (total_num_samps == 0) {
         std::signal(SIGINT, &sig_int_handler);

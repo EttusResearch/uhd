@@ -1,6 +1,7 @@
 //
 // Copyright 2010-2013 Ettus Research LLC
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -48,14 +49,14 @@ bool test_late_command_message(uhd::usrp::multi_usrp::sptr usrp,
 
     switch (md.error_code) {
         case uhd::rx_metadata_t::ERROR_CODE_LATE_COMMAND:
-            std::cout << boost::format("success:\n"
-                                       "    Got error code late command message.\n")
+            std::cout << "success:\n"
+                      << "    Got error code late command message.\n"
                       << std::endl;
             return true;
 
         case uhd::rx_metadata_t::ERROR_CODE_TIMEOUT:
-            std::cout << boost::format("failed:\n"
-                                       "    Inline message recv timed out.\n")
+            std::cout << "failed:\n"
+                      << "    Inline message recv timed out.\n"
                       << std::endl;
             return false;
 
@@ -141,16 +142,16 @@ bool test_burst_ack_message(
 
     uhd::async_metadata_t async_md;
     if (not tx_stream->recv_async_msg(async_md)) {
-        std::cout << boost::format("failed:\n"
-                                   "    Async message recv timed out.\n")
+        std::cout << "failed:\n"
+                  << "    Async message recv timed out.\n"
                   << std::endl;
         return false;
     }
 
     switch (async_md.event_code) {
         case uhd::async_metadata_t::EVENT_CODE_BURST_ACK:
-            std::cout << boost::format("success:\n"
-                                       "    Got event code burst ack message.\n")
+            std::cout << "success:\n"
+                      << "    Got event code burst ack message.\n"
                       << std::endl;
             return true;
 
@@ -182,27 +183,35 @@ bool test_underflow_message(
     tx_stream->send(&buff.front(), buff.size(), md);
 
     uhd::async_metadata_t async_md;
+    bool result = false;
     if (not tx_stream->recv_async_msg(async_md, 1)) {
         std::cout << boost::format("failed:\n"
                                    "    Async message recv timed out.\n")
                   << std::endl;
-        return false;
+    } else {
+        switch (async_md.event_code) {
+            case uhd::async_metadata_t::EVENT_CODE_UNDERFLOW:
+                std::cout << boost::format("success:\n"
+                                           "    Got event code underflow message.\n")
+                          << std::endl;
+                result = true;
+                break;
+
+            default:
+                std::cout << boost::format("failed:\n"
+                                           "    Got unexpected event code 0x%x.\n")
+                                 % async_md.event_code
+                          << std::endl;
+                break;
+        }
     }
 
-    switch (async_md.event_code) {
-        case uhd::async_metadata_t::EVENT_CODE_UNDERFLOW:
-            std::cout << boost::format("success:\n"
-                                       "    Got event code underflow message.\n")
-                      << std::endl;
-            return true;
-
-        default:
-            std::cout << boost::format("failed:\n"
-                                       "    Got unexpected event code 0x%x.\n")
-                             % async_md.event_code
-                      << std::endl;
-            return false;
-    }
+    // Finish the burst to avoid affecting other tests. The DUC only considers
+    // time specs from the beginning of a burst, if other tests need a time
+    // spec they would be affected by an unfinished burst.
+    md.end_of_burst = true;
+    tx_stream->send(&buff.front(), buff.size(), md);
+    return result;
 }
 
 /*!
@@ -314,12 +323,15 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     //------------------------------------------------------------------
     // begin messages test
     //------------------------------------------------------------------
-    static uhd::dict<std::string,
-        boost::function<bool(
-            uhd::usrp::multi_usrp::sptr, uhd::rx_streamer::sptr, uhd::tx_streamer::sptr)>>
-        tests = boost::assign::map_list_of("Test Burst ACK ", &test_burst_ack_message)(
-            "Test Underflow ", &test_underflow_message)("Test Time Error",
-            &test_time_error_message)("Test Late Command", &test_late_command_message);
+    using test_executor_fn = std::function<bool(
+        uhd::usrp::multi_usrp::sptr, uhd::rx_streamer::sptr, uhd::tx_streamer::sptr)>;
+    // clang-format off
+    uhd::dict<std::string, test_executor_fn> tests = boost::assign::map_list_of
+        ("Test Burst ACK ", &test_burst_ack_message)
+        ("Test Underflow ", &test_underflow_message)
+        ("Test Time Error", &test_time_error_message)
+        ("Test Late Command", &test_late_command_message);
+    // clang-format on
 
     if (vm.count("test-chain")) {
         tests["Test Broken Chain"] = &test_broken_chain_message;
