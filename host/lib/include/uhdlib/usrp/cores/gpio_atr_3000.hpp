@@ -24,7 +24,7 @@ public:
 
     static const uint32_t MASK_SET_ALL = 0xFFFFFFFF;
 
-    virtual ~gpio_atr_3000(void) {};
+    virtual ~gpio_atr_3000(void) {}
 
     /*!
      * Create a read-write GPIO ATR interface object
@@ -32,20 +32,23 @@ public:
      * \param iface register iface to GPIO ATR registers
      * \param base base settings offset for GPIO ATR registers
      * \param rb_addr readback offset for GPIO ATR registers
+     * \param reg_offset Delta between the register addresses
      */
-    static sptr make(
-        uhd::wb_iface::sptr iface,
+    static sptr make(uhd::wb_iface::sptr iface,
         const uhd::wb_iface::wb_addr_type base,
-        const uhd::wb_iface::wb_addr_type rb_addr);
+        const uhd::wb_iface::wb_addr_type rb_addr,
+        const size_t reg_offset = 4);
 
     /*!
      * Create a write-only GPIO ATR interface object
      *
      * \param iface register iface to GPIO ATR registers
      * \param base base settings offset for GPIO ATR registers
+     * \param reg_offset Delta between the register addresses
      */
-    static sptr make_write_only(
-        uhd::wb_iface::sptr iface, const uhd::wb_iface::wb_addr_type base);
+    static sptr make_write_only(uhd::wb_iface::sptr iface,
+        const uhd::wb_iface::wb_addr_type base,
+        const size_t reg_offset = 4);
 
     /*!
      * Select the ATR mode for all bits in the mask
@@ -104,7 +107,7 @@ public:
 
     typedef uhd::usrp::dboard_iface::unit_t db_unit_t;
 
-    virtual ~db_gpio_atr_3000(void) {};
+    virtual ~db_gpio_atr_3000(void) {}
 
     /*!
      * Create a read-write GPIO ATR interface object for a daughterboard connector
@@ -112,11 +115,12 @@ public:
      * \param iface register iface to GPIO ATR registers
      * \param base base settings offset for GPIO ATR registers
      * \param rb_addr readback offset for GPIO ATR registers
+     * \param reg_offset Delta between the register addresses
      */
-    static sptr make(
-        uhd::wb_iface::sptr iface,
+    static sptr make(uhd::wb_iface::sptr iface,
         const uhd::wb_iface::wb_addr_type base,
-        const uhd::wb_iface::wb_addr_type rb_addr);
+        const uhd::wb_iface::wb_addr_type rb_addr,
+        const size_t reg_offset = 4);
 
     /*!
      * Configure the GPIO mode for all pins in the daughterboard connector

@@ -16,29 +16,35 @@ using namespace usrp;
 // gpio_atr_3000
 //-------------------------------------------------------------
 
-#define REG_ATR_IDLE_OFFSET     (base + 0)
-#define REG_ATR_RX_OFFSET       (base + 4)
-#define REG_ATR_TX_OFFSET       (base + 8)
-#define REG_ATR_FDX_OFFSET      (base + 12)
-#define REG_DDR_OFFSET          (base + 16)
-#define REG_ATR_DISABLE_OFFSET  (base + 20)
+#define REG_ATR_IDLE_OFFSET     (base + reg_offset * 0)
+#define REG_ATR_RX_OFFSET       (base + reg_offset * 1)
+#define REG_ATR_TX_OFFSET       (base + reg_offset * 2)
+#define REG_ATR_FDX_OFFSET      (base + reg_offset * 3)
+#define REG_DDR_OFFSET          (base + reg_offset * 4)
+#define REG_ATR_DISABLE_OFFSET  (base + reg_offset * 5)
+
+namespace {
+    //Special RB addr value to indicate no readback
+    //This value is invalid as a real address because it is not a multiple of 4
+    static constexpr wb_iface::wb_addr_type READBACK_DISABLED = 0xFFFFFFFF;
+};
 
 namespace uhd { namespace usrp { namespace gpio_atr {
 
 class gpio_atr_3000_impl : public gpio_atr_3000{
 public:
-    gpio_atr_3000_impl(
-        wb_iface::sptr iface,
+    gpio_atr_3000_impl(wb_iface::sptr iface,
         const wb_iface::wb_addr_type base,
-        const wb_iface::wb_addr_type rb_addr = READBACK_DISABLED
-    ):
-        _iface(iface), _rb_addr(rb_addr),
-        _atr_idle_reg(REG_ATR_IDLE_OFFSET, _atr_disable_reg),
-        _atr_rx_reg(REG_ATR_RX_OFFSET),
-        _atr_tx_reg(REG_ATR_TX_OFFSET),
-        _atr_fdx_reg(REG_ATR_FDX_OFFSET),
-        _ddr_reg(REG_DDR_OFFSET),
-        _atr_disable_reg(REG_ATR_DISABLE_OFFSET)
+        const wb_iface::wb_addr_type rb_addr,
+        const size_t reg_offset)
+        : _iface(iface)
+        , _rb_addr(rb_addr)
+        , _atr_idle_reg(REG_ATR_IDLE_OFFSET, _atr_disable_reg)
+        , _atr_rx_reg(REG_ATR_RX_OFFSET)
+        , _atr_tx_reg(REG_ATR_TX_OFFSET)
+        , _atr_fdx_reg(REG_ATR_FDX_OFFSET)
+        , _ddr_reg(REG_DDR_OFFSET)
+        , _atr_disable_reg(REG_ATR_DISABLE_OFFSET)
     {
         _atr_idle_reg.initialize(*_iface, true);
         _atr_rx_reg.initialize(*_iface, true);
@@ -160,10 +166,6 @@ public:
     }
 
 protected:
-    //Special RB addr value to indicate no readback
-    //This value is invalid as a real address because it is not a multiple of 4
-    static const wb_iface::wb_addr_type READBACK_DISABLED = 0xFFFFFFFF;
-
     class masked_reg_t : public uhd::soft_reg32_wo_t {
     public:
         masked_reg_t(const wb_iface::wb_addr_type offset): uhd::soft_reg32_wo_t(offset) {
@@ -232,16 +234,19 @@ protected:
     masked_reg_t            _atr_disable_reg;
 };
 
-gpio_atr_3000::sptr gpio_atr_3000::make(
-    wb_iface::sptr iface, const wb_iface::wb_addr_type base, const wb_iface::wb_addr_type rb_addr
-) {
-    return sptr(new gpio_atr_3000_impl(iface, base, rb_addr));
+gpio_atr_3000::sptr gpio_atr_3000::make(wb_iface::sptr iface,
+    const wb_iface::wb_addr_type base,
+    const wb_iface::wb_addr_type rb_addr,
+    const size_t reg_offset)
+{
+    return sptr(new gpio_atr_3000_impl(iface, base, rb_addr, reg_offset));
 }
 
 gpio_atr_3000::sptr gpio_atr_3000::make_write_only(
-    wb_iface::sptr iface, const wb_iface::wb_addr_type base
+    wb_iface::sptr iface, const wb_iface::wb_addr_type base, const size_t reg_offset
 ) {
-    gpio_atr_3000::sptr gpio_iface(new gpio_atr_3000_impl(iface, base));
+    gpio_atr_3000::sptr gpio_iface(
+        new gpio_atr_3000_impl(iface, base, READBACK_DISABLED, reg_offset));
     gpio_iface->set_gpio_ddr(DDR_OUTPUT, MASK_SET_ALL);
     return gpio_iface;
 }
@@ -252,8 +257,13 @@ gpio_atr_3000::sptr gpio_atr_3000::make_write_only(
 
 class db_gpio_atr_3000_impl : public gpio_atr_3000_impl, public db_gpio_atr_3000 {
 public:
-    db_gpio_atr_3000_impl(wb_iface::sptr iface, const wb_iface::wb_addr_type base, const wb_iface::wb_addr_type rb_addr):
-        gpio_atr_3000_impl(iface, base, rb_addr) { /* NOP */ }
+    db_gpio_atr_3000_impl(wb_iface::sptr iface,
+        const wb_iface::wb_addr_type base,
+        const wb_iface::wb_addr_type rb_addr,
+        const size_t reg_offset)
+        : gpio_atr_3000_impl(iface, base, rb_addr, reg_offset)
+    { /* NOP */
+    }
 
     inline void set_pin_ctrl(const db_unit_t unit, const uint32_t value, const uint32_t mask)
     {
@@ -331,10 +341,12 @@ private:
     }
 };
 
-db_gpio_atr_3000::sptr db_gpio_atr_3000::make(
-    wb_iface::sptr iface, const wb_iface::wb_addr_type base, const wb_iface::wb_addr_type rb_addr
-) {
-    return sptr(new db_gpio_atr_3000_impl(iface, base, rb_addr));
+db_gpio_atr_3000::sptr db_gpio_atr_3000::make(wb_iface::sptr iface,
+    const wb_iface::wb_addr_type base,
+    const wb_iface::wb_addr_type rb_addr,
+    const size_t reg_offset)
+{
+    return sptr(new db_gpio_atr_3000_impl(iface, base, rb_addr, reg_offset));
 }
 
 }}}
