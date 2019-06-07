@@ -32,27 +32,12 @@ public:
 
     /*! Return a reference to the mb_iface for a given motherboard
      */
-    uhd::rfnoc::mb_iface& get_mb_iface(const size_t mb_idx)
-    {
-        if (mb_idx >= _iface_registry.size()) {
-            throw uhd::index_error(
-                std::string("Cannot get mb_iface, invalid motherboard index: ")
-                + std::to_string(mb_idx));
-        }
-        return *_iface_registry.at(mb_idx);
-    }
+    virtual uhd::rfnoc::mb_iface& get_mb_iface(const size_t mb_idx) = 0;
 
     //! Return a reference to an MB controller
     mb_controller::sptr get_mb_controller(const size_t mb_idx) const
     {
         return _mbc_registry.at(mb_idx);
-    }
-
-    /*! Return the number of motherboards in this device
-     */
-    size_t get_num_mbs()
-    {
-        return _iface_registry.size();
     }
 
     //! Directly getting a streamer no longer supported
@@ -75,18 +60,12 @@ public:
 
 
 protected:
-    void register_mb_iface(const size_t mb_idx, mb_iface* mb_if)
-    {
-        _iface_registry.emplace(mb_idx, std::move(mb_if));
-    }
-
     void register_mb_controller(const size_t mb_idx, mb_controller::sptr mbc)
     {
         _mbc_registry.emplace(mb_idx, mbc);
     }
 
 private:
-    std::unordered_map<size_t, mb_iface::uptr> _iface_registry;
     std::unordered_map<size_t, mb_controller::sptr> _mbc_registry;
 }; // class rfnoc_device
 
