@@ -14,17 +14,10 @@
 void export_multi_usrp(py::module& m)
 {
     using multi_usrp      = uhd::usrp::multi_usrp;
-    using register_info_t = multi_usrp::register_info_t;
 
     const auto ALL_MBOARDS = multi_usrp::ALL_MBOARDS;
     const auto ALL_CHANS = multi_usrp::ALL_CHANS;
     const auto ALL_LOS = multi_usrp::ALL_LOS;
-
-    py::class_<register_info_t>(m, "register_info")
-        .def_readwrite("bitwidth", &register_info_t::bitwidth)
-        .def_readwrite("readable", &register_info_t::readable)
-        .def_readwrite("writable", &register_info_t::writable)
-        ;
 
     py::class_<multi_usrp, multi_usrp::sptr>(m, "multi_usrp")
 
@@ -172,18 +165,19 @@ void export_multi_usrp(py::module& m)
 
         // GPIO methods
         .def("get_gpio_banks"          , &multi_usrp::get_gpio_banks)
-        .def("set_gpio_attr"           , (void (multi_usrp::*)(const std::string&, const std::string&, const std::string&, const uint32_t, const size_t)) &multi_usrp::set_gpio_attr, py::arg("bank"), py::arg("attr"), py::arg("value"), py::arg("mask") = 0xffffffff, py::arg("mboard") = 0)
         .def("set_gpio_attr"           , (void (multi_usrp::*)(const std::string&, const std::string&, const uint32_t, const uint32_t, const size_t)) &multi_usrp::set_gpio_attr, py::arg("bank"), py::arg("attr"), py::arg("value"), py::arg("mask") = 0xffffffff, py::arg("mboard") = 0)
         .def("get_gpio_attr"           , &multi_usrp::get_gpio_attr, py::arg("bank"), py::arg("attr"), py::arg("mboard") = 0)
-        .def("enumerate_registers"     , &multi_usrp::enumerate_registers, py::arg("mboard") = 0)
-        .def("get_register_info"       , &multi_usrp::get_register_info, py::arg("path"), py::arg("mboard") = 0)
-        .def("write_register"          , &multi_usrp::write_register, py::arg("path"), py::arg("field"), py::arg("value"), py::arg("mboard") = 0)
-        .def("read_register"           , &multi_usrp::read_register, py::arg("path"), py::arg("field"), py::arg("mboard") = 0)
+        .def("get_gpio_srcs"           , &multi_usrp::get_gpio_srcs, py::arg("bank"), py::arg("mboard") = 0)
+        .def("get_gpio_src"            , &multi_usrp::get_gpio_src, py::arg("bank"), py::arg("mboard") = 0)
+        .def("set_gpio_src"            , &multi_usrp::set_gpio_src, py::arg("bank"), py::arg("src"), py::arg("mboard") = 0)
 
         // Filter API methods
-        .def("get_filter_names"        , &multi_usrp::get_filter_names, py::arg("search_mask") = "")
-        .def("get_filter"              , &multi_usrp::get_filter)
-        .def("set_filter"              , &multi_usrp::set_filter)
+        .def("get_rx_filter_names"     , &multi_usrp::get_rx_filter_names)
+        .def("get_rx_filter"           , &multi_usrp::get_rx_filter)
+        .def("set_rx_filter"           , &multi_usrp::set_rx_filter)
+        .def("get_tx_filter_names"     , &multi_usrp::get_tx_filter_names)
+        .def("get_tx_filter"           , &multi_usrp::get_tx_filter)
+        .def("set_tx_filter"           , &multi_usrp::set_tx_filter)
         ;
 }
 

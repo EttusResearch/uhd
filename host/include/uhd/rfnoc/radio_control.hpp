@@ -586,8 +586,7 @@ public:
      */
     virtual void set_gpio_attr(const std::string& bank,
         const std::string& attr,
-        const uint32_t value,
-        const uint32_t mask) = 0;
+        const uint32_t value) = 0;
 
     /*!
      * Get a GPIO attribute on a particular GPIO bank.

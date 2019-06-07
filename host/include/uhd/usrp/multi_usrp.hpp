@@ -127,20 +127,6 @@ public:
      */
     virtual device::sptr get_device(void) = 0;
 
-    /*! Returns true if this is a generation-3 device.
-     */
-    virtual bool is_device3(void) = 0;
-
-    /*!
-     * Get the underlying device3 object. Only works for generation-3 (or later) devices.
-     *
-     * This is needed to get access to the streaming API and properties.
-     *
-     * \return The uhd::device3 object for this USRP.
-     * \throws uhd::type_error if this device is not actually a generation-3 device.
-     */
-    virtual boost::shared_ptr<uhd::device3> get_device3(void) = 0;
-
     //! Convenience method to get a RX streamer. See also uhd::device::get_rx_stream().
     virtual rx_streamer::sptr get_rx_stream(const stream_args_t& args) = 0;
 
@@ -1488,42 +1474,6 @@ public:
         const size_t mboard = 0) = 0;
 
     /*!
-     * Set a GPIO attribute on a particular GPIO bank.
-     * Possible attribute names:
-     *  - SRC  - "PS" for handling by processing system
-     *         - "RADIO_N/M" for handling by radio block with N is in [0..Number of
-     * Radio]; M is in [0..Number of port per Radio]
-     *  - CTRL - "ATR"  for ATR mode
-     *         - "GPIO" for GPIO mode
-     *  - DDR  - "OUT" for output
-     *         - "IN"  for input
-     *  - OUT -  a string of numbers representing GPIO output level (not ATR mode)
-     *        - "HIGH"or "LOW" as GPIO output level that apply for each bit mask that is 1
-     *  - ATR_0X - a string of numbers representing a value of the ATR idle state register
-     *           - "HIGH" or "LOW" as a value set on each bit on of the ATR idle state
-     * register
-     *  - ATR_RX - a string of numbers representing a value of a ATR receive only state
-     * register
-     *           - "HIGH" or "LOW" as a value set on each bit on of the ATR receive only
-     * state register
-     *  - ATR_TX - a string of numbers representing a value of the ATR transmit only state
-     * register
-     *           - "HIGH" or "LOW" as a value set on each bit on of the ATR transmit only
-     * state register
-     *  - ATR_XX - a string of numbers representing a value of the ATR full duplex state
-     * register
-     *           - "HIGH" or "LOW" as a value set on each bit on of the ATR full duplex
-     * state register \param bank the name of a GPIO bank \param attr the name of a GPIO
-     * attribute \param value the new value for this GPIO bank \param mask the bit mask to
-     * effect which pins are changed \param mboard the motherboard index 0 to M-1
-     */
-    virtual void set_gpio_attr(const std::string& bank,
-        const std::string& attr,
-        const std::string& value,
-        const uint32_t mask = 0xffffffff,
-        const size_t mboard = 0) = 0;
-
-    /*!
      * Get a GPIO attribute on a particular GPIO bank.
      * Possible attribute names:
      *  - CTRL - 1 for ATR mode 0 for GPIO mode
@@ -1543,122 +1493,85 @@ public:
         const std::string& bank, const std::string& attr, const size_t mboard = 0) = 0;
 
     /*!
-     * Get a GPIO attribute on a particular GPIO bank.
-     * Possible attribute names:
-     *  - SRC  - "PS" for handling by processing system
-     *         - "RADIO_N/M" for handling by radio block with N is in [0..Number of
-     * Radio]; M is in [0..Number of port per Radio]
-     *  - CTRL - "ATR"  for ATR mode
-     *         - "GPIO" for GPIO mode
-     *  - DDR  - "OUT" for output
-     *         - "IN"  for input
-     *  - OUT -  a string of numbers representing GPIO output level (not ATR mode)
-     *        - "HIGH"or "LOW" as GPIO output level that apply for each bit mask that is 1
-     *  - ATR_0X - a string of numbers representing a value of the ATR idle state register
-     *           - "HIGH" or "LOW" as a value set on each bit on of the ATR idle state
-     * register
-     *  - ATR_RX - a string of numbers representing a value of a ATR receive only state
-     * register
-     *           - "HIGH" or "LOW" as a value set on each bit on of the ATR receive only
-     * state register
-     *  - ATR_TX - a string of numbers representing a value of the ATR transmit only state
-     * register
-     *           - "HIGH" or "LOW" as a value set on each bit on of the ATR transmit only
-     * state register
-     *  - ATR_XX - a string of numbers representing a value of the ATR full duplex state
-     * register
-     *           - "HIGH" or "LOW" as a value set on each bit on of the ATR full duplex
-     * state register
-     *  - READBACK - readback input GPIOs
+     * Enumerate sources for a gpio bank on the specified device. Each of the pins in the
+     * chosen bank can be driven from one of the returned sources. \param bank the name of
+     * a GPIO bank \param mboard the motherboard index 0 to M-1 \return a list of strings
+     * with each valid source for the chosen bank
+     */
+    virtual std::vector<std::string> get_gpio_srcs(
+        const std::string& bank, const size_t mboard = 0) = 0;
+
+    /*!
+     * Get the current source for each pin in a GPIO bank.
      * \param bank the name of a GPIO bank
-     * \param attr the name of a GPIO attribute
      * \param mboard the motherboard index 0 to M-1
-     * \return the value set for this attribute in vector of strings
+     * \return a list of strings for current source of each GPIO pin in the chosen bank
      */
-    virtual std::vector<std::string> get_gpio_string_attr(
-        const std::string& bank, const std::string& attr, const size_t mboard = 0) = 0;
-
-    /*******************************************************************
-     * Register IO methods
-     ******************************************************************/
-    struct register_info_t
-    {
-        size_t bitwidth;
-        bool readable;
-        bool writable;
-    };
+    virtual std::vector<std::string> get_gpio_src(
+        const std::string& bank, const size_t mboard = 0) = 0;
 
     /*!
-     * Enumerate the full paths of all low-level USRP registers accessible to read/write
+     * Set the current source for each pin in a GPIO bank.
+     * \param bank the name of a GPIO bank
+     * \param src a list of strings specifying the source of each pin in a GPIO bank
      * \param mboard the motherboard index 0 to M-1
-     * \return a vector of register paths
      */
-    virtual std::vector<std::string> enumerate_registers(const size_t mboard = 0) = 0;
-
-    /*!
-     * Get more information about a low-level device register
-     * \param path the full path to the register
-     * \param mboard the motherboard index 0 to M-1
-     * \return the info struct which contains the bitwidth and read-write access
-     * information
-     */
-    virtual register_info_t get_register_info(
-        const std::string& path, const size_t mboard = 0) = 0;
-
-    /*!
-     * Write a low-level register field for a register in the USRP hardware
-     * \param path the full path to the register
-     * \param field the identifier of bitfield to be written (all other bits remain
-     * unchanged) \param value the value to write to the register field \param mboard the
-     * motherboard index 0 to M-1
-     */
-    virtual void write_register(const std::string& path,
-        const uint32_t field,
-        const uint64_t value,
+    virtual void set_gpio_src(const std::string& bank,
+        const std::vector<std::string>& src,
         const size_t mboard = 0) = 0;
-
-    /*!
-     * Read a low-level register field from a register in the USRP hardware
-     * \param path the full path to the register
-     * \param field the identifier of bitfield to be read
-     * \param mboard the motherboard index 0 to M-1
-     * \return the value of the register field
-     */
-    virtual uint64_t read_register(
-        const std::string& path, const uint32_t field, const size_t mboard = 0) = 0;
 
     /*******************************************************************
      * Filter API methods
      ******************************************************************/
-
+    // TODO: This should be a const function, but I don't want to wrestle with the compiler right now
     /*!
-     * Enumerate the available filters in the signal path.
-     * \param search_mask
-     * \parblock
-     * Select only certain filter names by specifying this search mask.
-     *
-     * E.g. if search mask is set to "rx_frontends/A" only filter names including that
-     * string will be returned. \endparblock \return a vector of strings representing the
-     * selected filter names.
+     * Enumerate the available filters in the RX signal path.
+     * \param chan RX channel index 0 to N-1
+     * \return a vector of strings representing the selected filter names.
+     * \returnblock Filter names will follow the pattern BLOCK_ID:FILTER_NAME. For example, "0/Radio#0:HB_0"
      */
-    virtual std::vector<std::string> get_filter_names(
-        const std::string& search_mask = "") = 0;
+    virtual std::vector<std::string> get_rx_filter_names(const size_t chan) = 0;
 
     /*!
-     * Return the filter object for the given name.
-     * \param path the name of the filter as returned from get_filter_names().
+     * Return the filter object for the given RX filter name.
+     * \param name the name of the filter as returned from get_rx_filter_names().
      * \return a filter_info_base::sptr.
      */
-    virtual filter_info_base::sptr get_filter(const std::string& path) = 0;
+    virtual uhd::filter_info_base::sptr get_rx_filter(const std::string& name, const size_t chan) = 0;
 
     /*!
-     * Write back a filter obtained by get_filter() to the signal path.
+     * Write back a filter obtained by get_rx_filter() to the signal path.
      * This filter can be a modified version of the originally returned one.
-     * The information about Rx or Tx is contained in the path parameter.
-     * \param path the name of the filter as returned from get_filter_names().
+     * \param name the name of the filter as returned from get_rx_filter_names().
      * \param filter the filter_info_base::sptr of the filter object to be written
      */
-    virtual void set_filter(const std::string& path, filter_info_base::sptr filter) = 0;
+    virtual void set_rx_filter(
+        const std::string& name, uhd::filter_info_base::sptr filter, const size_t chan) = 0;
+
+    // TODO: This should be a const function, but I don't want to wrestle with the compiler right now
+    /*!
+     * Enumerate the available filters in the TX signal path.
+     * \param chan TX channel index 0 to N-1
+     * \return a vector of strings representing the selected filter names.
+     * \returnblock Filter names will follow the pattern BLOCK_ID:FILTER_NAME. For example, "0/Radio#0:HB_0"
+     */
+    virtual std::vector<std::string> get_tx_filter_names(const size_t chan) = 0;
+
+    /*!
+     * Return the filter object for the given TX filter name.
+     * \param name the name of the filter as returned from get_tx_filter_names().
+     * \return a filter_info_base::sptr.
+     */
+    virtual uhd::filter_info_base::sptr get_tx_filter(const std::string& name, const size_t chan) = 0;
+
+    /*!
+     * Write back a filter obtained by get_tx_filter() to the signal path.
+     * This filter can be a modified version of the originally returned one.
+     * \param name the name of the filter as returned from get_tx_filter_names().
+     * \param filter the filter_info_base::sptr of the filter object to be written
+     */
+    virtual void set_tx_filter(
+        const std::string& name, uhd::filter_info_base::sptr filter, const size_t chan) = 0;
 };
 
 } // namespace usrp

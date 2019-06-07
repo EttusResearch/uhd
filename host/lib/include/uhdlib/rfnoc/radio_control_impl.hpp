@@ -147,8 +147,7 @@ public:
     virtual std::vector<std::string> get_gpio_banks() const;
     virtual void set_gpio_attr(const std::string& bank,
         const std::string& attr,
-        const uint32_t value,
-        const uint32_t mask);
+        const uint32_t value);
     virtual uint32_t get_gpio_attr(const std::string& bank, const std::string& attr);
 
     /**************************************************************************

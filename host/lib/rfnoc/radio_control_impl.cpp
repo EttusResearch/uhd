@@ -728,7 +728,7 @@ std::vector<std::string> radio_control_impl::get_gpio_banks() const
 }
 
 void radio_control_impl::set_gpio_attr(
-    const std::string&, const std::string&, const uint32_t, const uint32_t)
+    const std::string&, const std::string&, const uint32_t)
 {
     throw uhd::not_implemented_error("set_gpio_attr() not implemented on this radio!");
 }

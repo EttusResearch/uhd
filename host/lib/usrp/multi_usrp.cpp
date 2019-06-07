@@ -1,6 +1,7 @@
 //
 // Copyright 2010-2016 Ettus Research LLC
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -20,14 +21,26 @@
 #include <uhd/utils/soft_register.hpp>
 #include <uhdlib/usrp/gpio_defs.hpp>
 #include <uhdlib/rfnoc/legacy_compat.hpp>
+#include <uhdlib/rfnoc/rfnoc_device.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/make_shared.hpp>
 #include <algorithm>
 #include <cmath>
 #include <bitset>
 #include <chrono>
 #include <thread>
+
+namespace uhd { namespace rfnoc {
+
+//! Factory function for RFNoC devices specifically
+uhd::usrp::multi_usrp::sptr make_rfnoc_device(
+    uhd::rfnoc::detail::rfnoc_device::sptr rfnoc_device,
+    const uhd::device_addr_t& dev_addr);
+
+}} /* namespace uhd::rfnoc */
+
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -384,29 +397,14 @@ static double derive_freq_from_xx_subdev_and_dsp(
  **********************************************************************/
 class multi_usrp_impl : public multi_usrp{
 public:
-    multi_usrp_impl(const device_addr_t &addr){
-        _dev = device::make(addr, device::USRP);
+    multi_usrp_impl(device::sptr dev, const device_addr_t& addr)
+        : _dev(dev)
+    {
         _tree = _dev->get_tree();
-        _is_device3 = bool(boost::dynamic_pointer_cast<uhd::device3>(_dev));
-
-        if (is_device3() and not addr.has_key("recover_mb_eeprom")) {
-            _legacy_compat = rfnoc::legacy_compat::make(get_device3(), addr);
-        }
     }
 
     device::sptr get_device(void){
         return _dev;
-    }
-
-    bool is_device3(void) {
-        return _is_device3;
-    }
-
-    device3::sptr get_device3(void) {
-        if (not is_device3()) {
-            throw uhd::type_error("Cannot call get_device3() on a non-generation 3 device.");
-        }
-        return boost::dynamic_pointer_cast<uhd::device3>(_dev);
     }
 
     dict<std::string, std::string> get_usrp_rx_info(size_t chan){
@@ -684,12 +682,7 @@ public:
 
     void issue_stream_cmd(const stream_cmd_t &stream_cmd, size_t chan){
         if (chan != ALL_CHANS){
-            if (is_device3()) {
-                mboard_chan_pair mcp = rx_chan_to_mcp(chan);
-                _legacy_compat->issue_stream_cmd(stream_cmd, mcp.mboard, mcp.chan);
-            } else {
-                _tree->access<stream_cmd_t>(rx_dsp_root(chan) / "stream_cmd").set(stream_cmd);
-            }
+            _tree->access<stream_cmd_t>(rx_dsp_root(chan) / "stream_cmd").set(stream_cmd);
             return;
         }
         for (size_t c = 0; c < get_rx_num_channels(); c++){
@@ -970,9 +963,6 @@ public:
      ******************************************************************/
     rx_streamer::sptr get_rx_stream(const stream_args_t &args) {
         _check_link_rate(args, false);
-        if (is_device3()) {
-            return _legacy_compat->get_rx_stream(args);
-        }
         return this->get_device()->get_rx_stream(args);
     }
 
@@ -1020,18 +1010,6 @@ public:
     }
 
     void set_rx_rate(double rate, size_t chan){
-        if (is_device3()) {
-            _legacy_compat->set_rx_rate(rate, chan);
-            if (chan == ALL_CHANS) {
-                for (size_t c = 0; c < get_rx_num_channels(); c++){
-                    do_samp_rate_warning_message(rate, get_rx_rate(c), "RX");
-                }
-            } else {
-                do_samp_rate_warning_message(rate, get_rx_rate(chan), "RX");
-            }
-            return;
-        }
-
         if (chan != ALL_CHANS){
             _tree->access<double>(rx_dsp_root(chan) / "rate" / "value").set(rate);
             do_samp_rate_warning_message(rate, get_rx_rate(chan), "RX");
@@ -1725,85 +1703,108 @@ public:
         }
     }
 
-    std::vector<std::string> get_filter_names(const std::string &search_mask)
+    std::vector<std::string> get_rx_filter_names(const size_t chan)
     {
+        if (chan >= get_rx_num_channels()) {
+            throw uhd::index_error("Attempting to get non-existent RX filter names");
+        }
         std::vector<std::string> ret;
 
-        for (size_t chan = 0; chan < get_rx_num_channels(); chan++){
-
-            if (_tree->exists(rx_rf_fe_root(chan) / "filters")) {
-                std::vector<std::string> names = _tree->list(rx_rf_fe_root(chan) / "filters");
-                for(size_t i = 0; i < names.size(); i++)
-                {
-                    std::string name = rx_rf_fe_root(chan) / "filters" / names[i];
-                    if((search_mask.empty()) or boost::contains(name, search_mask)) {
-                        ret.push_back(name);
-                    }
-                }
+        if (_tree->exists(rx_rf_fe_root(chan) / "filters")) {
+            std::vector<std::string> names = _tree->list(rx_rf_fe_root(chan) / "filters");
+            for (size_t i = 0; i < names.size(); i++) {
+                std::string name = rx_rf_fe_root(chan) / "filters" / names[i];
+                ret.push_back(name);
             }
-            if (_tree->exists(rx_dsp_root(chan) / "filters")) {
-                std::vector<std::string> names = _tree->list(rx_dsp_root(chan) / "filters");
-                for(size_t i = 0; i < names.size(); i++)
-                {
-                    std::string name = rx_dsp_root(chan) / "filters" / names[i];
-                    if((search_mask.empty()) or (boost::contains(name, search_mask))) {
-                        ret.push_back(name);
-                    }
-                }
-            }
-
         }
-
-        for (size_t chan = 0; chan < get_tx_num_channels(); chan++){
-
-            if (_tree->exists(tx_rf_fe_root(chan) / "filters")) {
-                std::vector<std::string> names = _tree->list(tx_rf_fe_root(chan) / "filters");
-                for(size_t i = 0; i < names.size(); i++)
-                {
-                    std::string name = tx_rf_fe_root(chan) / "filters" / names[i];
-                    if((search_mask.empty()) or (boost::contains(name, search_mask))) {
-                        ret.push_back(name);
-                    }
-                }
+        if (_tree->exists(rx_dsp_root(chan) / "filters")) {
+            std::vector<std::string> names = _tree->list(rx_dsp_root(chan) / "filters");
+            for (size_t i = 0; i < names.size(); i++) {
+                std::string name = rx_dsp_root(chan) / "filters" / names[i];
+                ret.push_back(name);
             }
-            if (_tree->exists(rx_dsp_root(chan) / "filters")) {
-                std::vector<std::string> names = _tree->list(tx_dsp_root(chan) / "filters");
-                for(size_t i = 0; i < names.size(); i++)
-                {
-                    std::string name = tx_dsp_root(chan) / "filters" / names[i];
-                    if((search_mask.empty()) or (boost::contains(name, search_mask))) {
-                        ret.push_back(name);
-                    }
-                }
-            }
-
         }
 
         return ret;
     }
 
-    filter_info_base::sptr get_filter(const std::string &path)
+    uhd::filter_info_base::sptr get_rx_filter(const std::string& name, const size_t chan)
     {
-        std::vector<std::string> possible_names = get_filter_names("");
+        std::vector<std::string> possible_names = get_rx_filter_names(chan);
         std::vector<std::string>::iterator it;
-        it = find(possible_names.begin(), possible_names.end(), path);
+        it = find(possible_names.begin(), possible_names.end(), name);
         if (it == possible_names.end()) {
-            throw uhd::runtime_error("Attempting to get non-existing filter: "+path);
+            throw uhd::runtime_error("Attempting to get non-existing filter: " + name);
         }
 
-        return _tree->access<filter_info_base::sptr>(path / "value").get();
+        return _tree->access<filter_info_base::sptr>(rx_rf_fe_root(chan) / name / "value")
+            .get();
     }
 
-    void set_filter(const std::string &path, filter_info_base::sptr filter)
+    void set_rx_filter(
+        const std::string& name, uhd::filter_info_base::sptr filter, const size_t chan)
     {
-        std::vector<std::string> possible_names = get_filter_names("");
+        std::vector<std::string> possible_names = get_rx_filter_names(chan);
         std::vector<std::string>::iterator it;
-        it = find(possible_names.begin(), possible_names.end(), path);
+        it = find(possible_names.begin(), possible_names.end(), name);
         if (it == possible_names.end()) {
-            throw uhd::runtime_error("Attempting to set non-existing filter: "+path);
+            throw uhd::runtime_error("Attempting to set non-existing filter: " + name);
         }
 
-        _tree->access<filter_info_base::sptr>(path / "value").set(filter);
+        _tree->access<filter_info_base::sptr>(rx_rf_fe_root(chan) / name / "value")
+            .set(filter);
+    }
+
+    std::vector<std::string> get_tx_filter_names(const size_t chan)
+    {
+        if (chan >= get_tx_num_channels()) {
+            throw uhd::index_error("Attempting to get non-existent TX filter names");
+        }
+        std::vector<std::string> ret;
+
+        if (_tree->exists(tx_rf_fe_root(chan) / "filters")) {
+            std::vector<std::string> names = _tree->list(tx_rf_fe_root(chan) / "filters");
+            for (size_t i = 0; i < names.size(); i++) {
+                std::string name = tx_rf_fe_root(chan) / "filters" / names[i];
+                ret.push_back(name);
+            }
+        }
+        if (_tree->exists(rx_dsp_root(chan) / "filters")) {
+            std::vector<std::string> names = _tree->list(tx_dsp_root(chan) / "filters");
+            for (size_t i = 0; i < names.size(); i++) {
+                std::string name = tx_dsp_root(chan) / "filters" / names[i];
+                ret.push_back(name);
+            }
+        }
+
+        return ret;
+    }
+
+    uhd::filter_info_base::sptr get_tx_filter(const std::string& name, const size_t chan)
+    {
+        std::vector<std::string> possible_names = get_tx_filter_names(chan);
+        std::vector<std::string>::iterator it;
+        it = find(possible_names.begin(), possible_names.end(), name);
+        if (it == possible_names.end()) {
+            throw uhd::runtime_error("Attempting to get non-existing filter: " + name);
+        }
+
+        return _tree->access<filter_info_base::sptr>(tx_rf_fe_root(chan) / name / "value")
+            .get();
+    }
+
+    void set_tx_filter(
+        const std::string& name, uhd::filter_info_base::sptr filter, const size_t chan)
+    {
+        std::vector<std::string> possible_names = get_tx_filter_names(chan);
+        std::vector<std::string>::iterator it;
+        it = find(possible_names.begin(), possible_names.end(), name);
+        if (it == possible_names.end()) {
+            throw uhd::runtime_error("Attempting to set non-existing filter: " + name);
+        }
+
+        _tree->access<filter_info_base::sptr>(tx_rf_fe_root(chan) / name / "value")
+            .set(filter);
     }
 
     /*******************************************************************
@@ -1811,9 +1812,6 @@ public:
      ******************************************************************/
     tx_streamer::sptr get_tx_stream(const stream_args_t &args) {
         _check_link_rate(args, true);
-        if (is_device3()) {
-            return _legacy_compat->get_tx_stream(args);
-        }
         return this->get_device()->get_tx_stream(args);
     }
 
@@ -1861,18 +1859,6 @@ public:
     }
 
     void set_tx_rate(double rate, size_t chan){
-        if (is_device3()) {
-            _legacy_compat->set_tx_rate(rate, chan);
-            if (chan == ALL_CHANS) {
-                for (size_t c = 0; c < get_tx_num_channels(); c++){
-                    do_samp_rate_warning_message(rate, get_tx_rate(c), "TX");
-                }
-            } else {
-                do_samp_rate_warning_message(rate, get_tx_rate(chan), "TX");
-            }
-            return;
-        }
-
         if (chan != ALL_CHANS){
             _tree->access<double>(tx_dsp_root(chan) / "rate" / "value").set(rate);
             do_samp_rate_warning_message(rate, get_tx_rate(chan), "TX");
@@ -2196,71 +2182,6 @@ public:
         ));
     }
 
-    void set_gpio_attr(
-            const std::string &bank,
-            const std::string &attr,
-            const std::string &str_value,
-            const uint32_t mask,
-            const size_t mboard
-    ) {
-        const auto attr_type = gpio_atr::gpio_attr_rev_map.at(attr);
-        if (_tree->exists(mb_root(mboard) / "gpio" / bank)) {
-            if (_tree->exists(mb_root(mboard) / "gpio" / bank / attr)) {
-                switch (attr_type){
-                    case gpio_atr::GPIO_SRC:
-                    case gpio_atr::GPIO_CTRL:
-                    case gpio_atr::GPIO_DDR:{
-                        auto attr_value =
-                            _tree->access<std::vector<std::string>>(
-                                mb_root(mboard) / "gpio" / bank / attr).get();
-                        UHD_ASSERT_THROW(attr_value.size() <= 32);
-                        std::bitset<32> bit_mask = std::bitset<32>(mask);
-                        for (size_t i = 0 ; i < bit_mask.size(); i++) {
-                            if (bit_mask[i] == 1) {
-                                attr_value[i] = str_value;
-                            }
-                        }
-                        _tree->access<std::vector<std::string>>(
-                               mb_root(mboard) / "gpio" / bank / attr
-                        ).set(attr_value);
-                    }
-                    break;
-                    default: {
-                        const uint32_t value =
-                            gpio_atr::gpio_attr_value_pair.at(attr).at(str_value) == 0 ? -1 : 0;
-                        const uint32_t current = _tree->access<uint32_t>(
-                            mb_root(mboard) / "gpio" / bank / attr).get();
-                        const uint32_t new_value =
-                            (current & ~mask) | (value & mask);
-                        _tree->access<uint32_t>(
-                            mb_root(mboard) / "gpio" / bank / attr
-                        ).set(new_value);
-                    }
-                    break;
-                }
-                return;
-            } else {
-                throw uhd::runtime_error(str(
-                    boost::format("The hardware has no gpio attribute `%s'")
-                    % attr
-                ));
-            }
-        }
-        // If the bank is not in the prop tree, convert string value to integer
-        // value and have it handled by the other set_gpio_attr()
-        const uint32_t value =
-            gpio_atr::gpio_attr_value_pair.at(attr).at(str_value) == 0
-            ? -1
-            : 0;
-        set_gpio_attr(
-            bank,
-            attr,
-            value,
-            mask,
-            mboard
-        );
-    }
-
     uint32_t get_gpio_attr(
             const std::string &bank,
             const std::string &attr,
@@ -2316,149 +2237,28 @@ public:
         ));
     }
 
-    std::vector<std::string> get_gpio_string_attr(
-        const std::string &bank,
-        const std::string &attr,
-        const size_t mboard
-    ) {
-        const auto attr_type = gpio_atr::gpio_attr_rev_map.at(attr);
-        auto str_val = std::vector<std::string>(32, gpio_atr::default_attr_value_map.at(attr_type));
-        if (_tree->exists(mb_root(mboard) / "gpio" / bank)) {
-            if (_tree->exists(mb_root(mboard) / "gpio" / bank / attr)) {
-                const auto attr_type = gpio_atr::gpio_attr_rev_map.at(attr);
-                switch (attr_type){
-                    case gpio_atr::GPIO_SRC:
-                    case gpio_atr::GPIO_CTRL:
-                    case gpio_atr::GPIO_DDR:
-                        return _tree->access<std::vector<std::string>>(mb_root(mboard) / "gpio" / bank / attr).get();
-                    default: {
-                        uint32_t value = uint32_t(_tree->access<uint32_t>(mb_root(mboard) / "gpio" / bank / attr).get());
-                        std::bitset<32> bit_value = std::bitset<32>(value);
-                        for (size_t i = 0; i < bit_value.size(); i++)
-                        {
-                            str_val[i] = bit_value[i] == 0 ? "LOW" : "HIGH";
-                        }
-                        return str_val;
-                    }
-                }
-            }
-            else {
-                throw uhd::runtime_error(str(
-                    boost::format("The hardware has no gpio attribute: `%s'")
-                    % attr
-                ));
-            }
-        }
-        throw uhd::runtime_error(str(
-            boost::format("The hardware has no support for given gpio bank name `%s'")
-            % bank
-        ));
+    // The next three methods are only for RFNoC devices
+    std::vector<std::string> get_gpio_srcs(const std::string&, const size_t)
+    {
+        throw uhd::not_implemented_error(
+            "get_gpio_srcs() not implemented for this motherboard!");
     }
 
-    void write_register(const std::string &path, const uint32_t field, const uint64_t value, const size_t mboard)
+    std::vector<std::string> get_gpio_src(const std::string&, const size_t)
     {
-        if (_tree->exists(mb_root(mboard) / "registers"))
-        {
-            uhd::soft_regmap_accessor_t::sptr accessor =
-                _tree->access<uhd::soft_regmap_accessor_t::sptr>(mb_root(mboard) / "registers").get();
-            uhd::soft_register_base& reg = accessor->lookup(path);
-
-            if (not reg.is_writable()) {
-                throw uhd::runtime_error("multi_usrp::write_register - register not writable: " + path);
-            }
-
-            switch (reg.get_bitwidth()) {
-            case 32:
-                if (reg.is_readable())
-                    uhd::soft_register_base::cast<uhd::soft_reg32_rw_t>(reg).write(field, static_cast<uint32_t>(value));
-                else
-                    uhd::soft_register_base::cast<uhd::soft_reg32_wo_t>(reg).write(field, static_cast<uint32_t>(value));
-            break;
-
-            case 64:
-                if (reg.is_readable())
-                    uhd::soft_register_base::cast<uhd::soft_reg64_rw_t>(reg).write(field, value);
-                else
-                    uhd::soft_register_base::cast<uhd::soft_reg64_wo_t>(reg).write(field, value);
-            break;
-
-            default:
-                throw uhd::assertion_error("multi_usrp::write_register - register has invalid bitwidth");
-            }
-
-        } else {
-            throw uhd::not_implemented_error("multi_usrp::write_register - register IO not supported for this device");
-        }
+        throw uhd::not_implemented_error(
+            "get_gpio_src() not implemented for this motherboard!");
     }
 
-    uint64_t read_register(const std::string &path, const uint32_t field, const size_t mboard)
+    void set_gpio_src(const std::string&, const std::vector<std::string>&, const size_t)
     {
-        if (_tree->exists(mb_root(mboard) / "registers"))
-        {
-            uhd::soft_regmap_accessor_t::sptr accessor =
-                _tree->access<uhd::soft_regmap_accessor_t::sptr>(mb_root(mboard) / "registers").get();
-            uhd::soft_register_base& reg = accessor->lookup(path);
-
-            if (not reg.is_readable()) {
-                throw uhd::runtime_error("multi_usrp::read_register - register not readable: " + path);
-            }
-
-            switch (reg.get_bitwidth()) {
-            case 32:
-                if (reg.is_writable())
-                    return static_cast<uint64_t>(uhd::soft_register_base::cast<uhd::soft_reg32_rw_t>(reg).read(field));
-                else
-                    return static_cast<uint64_t>(uhd::soft_register_base::cast<uhd::soft_reg32_ro_t>(reg).read(field));
-            break;
-
-            case 64:
-                if (reg.is_writable())
-                    return uhd::soft_register_base::cast<uhd::soft_reg64_rw_t>(reg).read(field);
-                else
-                    return uhd::soft_register_base::cast<uhd::soft_reg64_ro_t>(reg).read(field);
-            break;
-
-            default:
-                throw uhd::assertion_error("multi_usrp::read_register - register has invalid bitwidth: " + path);
-            }
-        }
-        throw uhd::not_implemented_error("multi_usrp::read_register - register IO not supported for this device");
-    }
-
-    std::vector<std::string> enumerate_registers(const size_t mboard)
-    {
-        if (_tree->exists(mb_root(mboard) / "registers"))
-        {
-            uhd::soft_regmap_accessor_t::sptr accessor =
-                _tree->access<uhd::soft_regmap_accessor_t::sptr>(mb_root(mboard) / "registers").get();
-            return accessor->enumerate();
-        } else {
-            return std::vector<std::string>();
-        }
-    }
-
-    register_info_t get_register_info(const std::string &path, const size_t mboard = 0)
-    {
-        if (_tree->exists(mb_root(mboard) / "registers"))
-        {
-            uhd::soft_regmap_accessor_t::sptr accessor =
-                _tree->access<uhd::soft_regmap_accessor_t::sptr>(mb_root(mboard) / "registers").get();
-            uhd::soft_register_base& reg = accessor->lookup(path);
-
-            register_info_t info;
-            info.bitwidth = reg.get_bitwidth();
-            info.readable = reg.is_readable();
-            info.writable = reg.is_writable();
-            return info;
-        } else {
-            throw uhd::not_implemented_error("multi_usrp::read_register - register IO not supported for this device");
-        }
+        throw uhd::not_implemented_error(
+            "set_gpio_src() not implemented for this motherboard!");
     }
 
 private:
     device::sptr _dev;
     property_tree::sptr _tree;
-    bool _is_device3;
     uhd::rfnoc::legacy_compat::sptr _legacy_compat;
 
     struct mboard_chan_pair{
@@ -2516,10 +2316,6 @@ private:
     fs_path rx_dsp_root(const size_t chan)
     {
         mboard_chan_pair mcp = rx_chan_to_mcp(chan);
-        if (is_device3()) {
-            return _legacy_compat->rx_dsp_root(mcp.mboard, mcp.chan);
-        }
-
         if (_tree->exists(mb_root(mcp.mboard) / "rx_chan_dsp_mapping")) {
             std::vector<size_t> map = _tree->access<std::vector<size_t> >(mb_root(mcp.mboard) / "rx_chan_dsp_mapping").get();
             UHD_ASSERT_THROW(map.size() > mcp.chan);
@@ -2544,10 +2340,6 @@ private:
     fs_path tx_dsp_root(const size_t chan)
     {
         mboard_chan_pair mcp = tx_chan_to_mcp(chan);
-        if (is_device3()) {
-            return _legacy_compat->tx_dsp_root(mcp.mboard, mcp.chan);
-        }
-
         if (_tree->exists(mb_root(mcp.mboard) / "tx_chan_dsp_mapping")) {
             std::vector<size_t> map = _tree->access<std::vector<size_t> >(mb_root(mcp.mboard) / "tx_chan_dsp_mapping").get();
             UHD_ASSERT_THROW(map.size() > mcp.chan);
@@ -2571,9 +2363,6 @@ private:
     fs_path rx_fe_root(const size_t chan)
     {
         mboard_chan_pair mcp = rx_chan_to_mcp(chan);
-        if (is_device3()) {
-            return _legacy_compat->rx_fe_root(mcp.mboard, mcp.chan);
-        }
         try
         {
             const subdev_spec_pair_t spec = get_rx_subdev_spec(mcp.mboard).at(mcp.chan);
@@ -2588,9 +2377,6 @@ private:
     fs_path tx_fe_root(const size_t chan)
     {
         mboard_chan_pair mcp = tx_chan_to_mcp(chan);
-        if (is_device3()) {
-            return _legacy_compat->tx_fe_root(mcp.mboard, mcp.chan);
-        }
         try
         {
             const subdev_spec_pair_t spec = get_tx_subdev_spec(mcp.mboard).at(mcp.chan);
@@ -2709,10 +2495,27 @@ multi_usrp::~multi_usrp(void){
     /* NOP */
 }
 
+
 /***********************************************************************
  * The Make Function
  **********************************************************************/
-multi_usrp::sptr multi_usrp::make(const device_addr_t &dev_addr){
-    UHD_LOGGER_TRACE("MULTI_USRP") << "multi_usrp::make with args " << dev_addr.to_pp_string() ;
-    return sptr(new multi_usrp_impl(dev_addr));
+namespace uhd { namespace rfnoc { namespace detail {
+// Forward declare
+multi_usrp::sptr make_rfnoc_device(
+    detail::rfnoc_device::sptr rfnoc_device, const uhd::device_addr_t& dev_addr);
+}}} // namespace uhd::rfnoc::detail
+
+
+multi_usrp::sptr multi_usrp::make(const device_addr_t& dev_addr)
+{
+    UHD_LOGGER_TRACE("MULTI_USRP")
+        << "multi_usrp::make with args " << dev_addr.to_pp_string();
+
+    device::sptr dev = device::make(dev_addr, device::USRP);
+
+    auto rfnoc_dev = boost::dynamic_pointer_cast<rfnoc::detail::rfnoc_device>(dev);
+    if (rfnoc_dev) {
+        return rfnoc::detail::make_rfnoc_device(rfnoc_dev, dev_addr);
+    }
+    return boost::make_shared<multi_usrp_impl>(dev, dev_addr);
 }

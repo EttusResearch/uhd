@@ -97,6 +97,16 @@ public:
     virtual uint32_t read_gpio() = 0;
 
     /*!
+     * Get a GPIO attribute
+     * This will likely returned a cached value, and not read the state from the physical
+     * GPIO controller.
+     *
+     * \param attr the attribute to read
+     * \return the current value of that attribute
+     */
+    virtual uint32_t get_attr_reg(const gpio_attr_t attr) = 0;
+
+    /*!
      * Set a GPIO attribute
      *
      * \param attr the attribute to set

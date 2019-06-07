@@ -8,6 +8,7 @@
 #include <uhd/types/dict.hpp>
 #include <uhd/utils/soft_register.hpp>
 #include <uhdlib/usrp/cores/gpio_atr_3000.hpp>
+#include <unordered_map>
 
 using namespace uhd;
 using namespace usrp;
@@ -53,6 +54,14 @@ public:
         _atr_fdx_reg.initialize(*_iface, true);
         _ddr_reg.initialize(*_iface, true);
         _atr_disable_reg.initialize(*_iface, true);
+        for (const gpio_attr_map_t::value_type attr : gpio_attr_map) {
+            if (attr.first == usrp::gpio_atr::GPIO_SRC
+                || attr.first == usrp::gpio_atr::GPIO_READBACK) {
+                // Don't set the SRC and READBACK, they're handled elsewhere.
+                continue;
+            }
+            _attr_reg_state.emplace(attr.first, 0);
+        }
     }
 
     virtual void set_atr_mode(const gpio_atr_mode_t mode, const uint32_t mask)
@@ -62,20 +71,23 @@ public:
         // bit position, a 1 means that the bit is static and 0 means that the bit is
         // driven by the ATR state machine. This setting will only get applied to all bits
         // in the "mask" that are 1. All other bits will retain their old value.
-        _atr_disable_reg.set_with_mask(
-            (mode == MODE_ATR) ? ~MASK_SET_ALL : MASK_SET_ALL, mask);
+        auto value = (mode == MODE_ATR) ? ~MASK_SET_ALL : MASK_SET_ALL;
+        _atr_disable_reg.set_with_mask(value, mask);
         _atr_disable_reg.flush();
+        _update_attr_state(GPIO_CTRL, value, mask);
     }
 
     virtual void set_gpio_ddr(const gpio_ddr_t dir, const uint32_t mask)
     {
         // Each bit in the "DDR" register determines whether the respective bit in the
-        // GPIO bus is an input or an output. For each bit position, a 1 means that the bit
-        // is an output and 0 means that the bit is an input. This setting will only get
-        // applied to all bits in the "mask" that are 1. All other bits will retain their
-        // old value.
-        _ddr_reg.set_with_mask((dir == DDR_INPUT) ? ~MASK_SET_ALL : MASK_SET_ALL, mask);
+        // GPIO bus is an input or an output. For each bit position, a 1 means that the
+        // bit is an output and 0 means that the bit is an input. This setting will only
+        // get applied to all bits in the "mask" that are 1. All other bits will retain
+        // their old value.
+        auto value = (dir == DDR_INPUT) ? ~MASK_SET_ALL : MASK_SET_ALL;
+        _ddr_reg.set_with_mask(value, mask);
         _ddr_reg.flush();
+        _update_attr_state(GPIO_DDR, value, mask);
     }
 
     virtual void set_atr_reg(const gpio_atr_reg_t atr,
@@ -87,27 +99,38 @@ public:
         // applied to all bits in the "mask" that are 1. All other bits will retain their
         // old value.
         masked_reg_t* reg = NULL;
+        gpio_attr_t attr;
         switch (atr) {
             case ATR_REG_IDLE:
-                reg = &_atr_idle_reg;
+                reg  = &_atr_idle_reg;
+                attr = GPIO_ATR_0X;
+
                 break;
             case ATR_REG_RX_ONLY:
-                reg = &_atr_rx_reg;
+                reg  = &_atr_rx_reg;
+                attr = GPIO_ATR_RX;
+
                 break;
             case ATR_REG_TX_ONLY:
-                reg = &_atr_tx_reg;
+                reg  = &_atr_tx_reg;
+                attr = GPIO_ATR_TX;
+
                 break;
             case ATR_REG_FULL_DUPLEX:
-                reg = &_atr_fdx_reg;
+                reg  = &_atr_fdx_reg;
+                attr = GPIO_ATR_XX;
+
                 break;
             default:
-                reg = &_atr_idle_reg;
+                reg  = &_atr_idle_reg;
+                attr = GPIO_ATR_0X;
                 break;
         }
         // For protection we only write to bits that have the mode ATR by masking the user
         // specified "mask" with ~atr_disable.
         reg->set_with_mask(value, mask);
         reg->flush();
+        _update_attr_state(attr, value, mask);
     }
 
     virtual void set_gpio_out(const uint32_t value, const uint32_t mask = MASK_SET_ALL)
@@ -120,6 +143,7 @@ public:
         // user specified "mask" with atr_disable.
         _atr_idle_reg.set_gpio_out_with_mask(value, mask);
         _atr_idle_reg.flush();
+        _update_attr_state(GPIO_OUT, value, mask);
     }
 
     virtual uint32_t read_gpio()
@@ -132,6 +156,21 @@ public:
         } else {
             throw uhd::runtime_error("read_gpio not supported for write-only interface.");
         }
+    }
+
+    virtual uint32_t get_attr_reg(const gpio_attr_t attr)
+    {
+        if (attr == GPIO_SRC) {
+            throw uhd::runtime_error("Can't get GPIO source by GPIO ATR interface.");
+        }
+        if (attr == GPIO_READBACK) {
+            return read_gpio();
+        }
+        if (!_attr_reg_state.count(attr)) {
+            throw uhd::runtime_error("Invalid GPIO attr!");
+        }
+        // Return the cached value of the requested attr
+        return _attr_reg_state.at(attr);
     }
 
     inline virtual void set_gpio_attr(const gpio_attr_t attr, const uint32_t value)
@@ -253,6 +292,7 @@ protected:
         masked_reg_t& _atr_disable_reg;
     };
 
+    std::unordered_map<gpio_attr_t, uint32_t, std::hash<size_t>> _attr_reg_state;
     wb_iface::sptr _iface;
     wb_iface::wb_addr_type _rb_addr;
     atr_idle_reg_t _atr_idle_reg;
@@ -261,6 +301,12 @@ protected:
     masked_reg_t _atr_fdx_reg;
     masked_reg_t _ddr_reg;
     masked_reg_t _atr_disable_reg;
+
+    void _update_attr_state(
+        const gpio_attr_t attr, const uint32_t val, const uint32_t mask)
+    {
+        _attr_reg_state[attr] = (_attr_reg_state.at(attr) & ~mask) | (val & mask);
+    }
 };
 
 gpio_atr_3000::sptr gpio_atr_3000::make(wb_iface::sptr iface,
