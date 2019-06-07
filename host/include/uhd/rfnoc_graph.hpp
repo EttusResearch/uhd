@@ -255,6 +255,7 @@ public:
     /**************************************************************************
      * Hardware Control
      *************************************************************************/
+    virtual size_t get_num_mboards() const = 0;
     //! Return a reference to a motherboard controller
     //
     // See also uhd::rfnoc::mb_controller

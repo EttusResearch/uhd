@@ -111,6 +111,12 @@ public:
         return _mb_controllers.at(mb_index);
     }
 
+
+    size_t get_num_mboards() const
+    {
+        return _num_mboards;
+    }
+
     void commit()
     {
         _graph->commit();
@@ -156,7 +162,7 @@ private:
 
         // Enumerate blocks, load them into the block registry
         // Iterate through the mboards
-        for (size_t mb_idx = 0; mb_idx < _device->get_num_mbs(); ++mb_idx) {
+        for (size_t mb_idx = 0; mb_idx < get_num_mboards(); ++mb_idx) {
             // Setup the interfaces for this mboard and get some configuration info
             mb_iface& mb = _device->get_mb_iface(mb_idx);
             // Ask GSM to allow us to talk to our remote mb
@@ -342,6 +348,10 @@ private:
      *************************************************************************/
     //! Reference to the underlying device implementation
     detail::rfnoc_device::sptr _device;
+
+    //! Number of motherboards, this is technically redundant but useful for
+    // easy lookups.
+    size_t _num_mboards;
 
     //! Reference to the property tree
     uhd::property_tree::sptr _tree;
