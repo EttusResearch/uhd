@@ -574,7 +574,7 @@ public:
 
     /*! Return a user settings interface object
      *
-     * This is only supported by some USRPs (B2xx series, N230). It will return
+     * This is only supported by the B2xx series. It will return
      * an object that will allow to peek and poke user settings, which typically
      * are implemented by custom FPGA images.
      * If the device does not support such an interface, it will return a null
