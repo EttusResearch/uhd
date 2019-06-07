@@ -8,6 +8,7 @@
 #define INCLUDED_LIBUHD_NOC_BLOCK_BASE_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/property_tree.hpp>
 #include <uhd/rfnoc/block_id.hpp>
 #include <uhd/rfnoc/node.hpp>
 #include <uhd/rfnoc/register_iface_holder.hpp>
@@ -105,6 +106,12 @@ public:
      */
     uhd::device_addr_t get_block_args() const { return _block_args; }
 
+    //! Return a reference to this block's subtree
+    uhd::property_tree::sptr& get_tree() const { return _tree; }
+
+    //! Return a reference to this block's subtree (non-const version)
+    uhd::property_tree::sptr& get_tree() { return _tree; }
+
 protected:
     noc_block_base(make_args_ptr make_args);
 
@@ -191,6 +198,12 @@ private:
 
     //! Arguments that were passed into this block
     const uhd::device_addr_t _block_args;
+
+    //! Reference to this block's subtree
+    //
+    // It is mutable because _tree->access<>(..).get() is not const, but we
+    // need to do just that in some const contexts
+    mutable uhd::property_tree::sptr _tree;
 
 }; // class noc_block_base
 
