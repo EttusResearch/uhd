@@ -37,6 +37,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/node_ctrl_base.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/node.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/rate_node_ctrl.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/register_iface_holder.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ctrlport_endpoint.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/chdr_ctrl_endpoint.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/registry_factory.cpp

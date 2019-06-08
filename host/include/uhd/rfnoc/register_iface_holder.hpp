@@ -31,6 +31,9 @@ public:
         return *(_reg.get());
     };
 
+protected:
+    void update_reg_iface(register_iface::sptr new_iface = nullptr);
+
 private:
     register_iface::sptr _reg;
 };
