@@ -38,6 +38,7 @@ public:
     ~rfnoc_graph_impl()
     {
         _graph.reset();
+        _block_registry->shutdown();
     }
 
     /**************************************************************************

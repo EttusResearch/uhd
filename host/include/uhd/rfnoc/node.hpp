@@ -350,6 +350,13 @@ protected:
     virtual bool check_topology(const std::vector<size_t>& connected_inputs,
         const std::vector<size_t>& connected_outputs);
 
+    /*! Perform a shutdown sequence
+     *
+     * This is mostly relevant for noc_block_base implementations. See also
+     * noc_block_base::shutdown().
+     */
+    virtual void shutdown();
+
     /**************************************************************************
      * Attributes
      *************************************************************************/

@@ -108,6 +108,15 @@ public:
     {
         return node->check_topology(connected_inputs, connected_outputs);
     }
+
+    /*! Put a node into shutdown
+     *
+     * See node_t::shutdown(), and also noc_block_base::shutdown() for details.
+     */
+    void shutdown(node_t* node)
+    {
+        node->shutdown();
+    }
 };
 
 

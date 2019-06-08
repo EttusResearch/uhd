@@ -43,6 +43,12 @@ public:
      */
     noc_block_base::sptr get_block(const block_id_t& block_id) const;
 
+    /*! Call shutdown() on all blocks
+     *
+     * After calling this, blocks won't be able to do anything anymore!
+     */
+    void shutdown();
+
 private:
     //! Lock access to the storage
     mutable std::mutex _mutex;

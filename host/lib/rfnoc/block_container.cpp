@@ -6,6 +6,7 @@
 
 #include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/block_container.hpp>
+#include <uhdlib/rfnoc/node_accessor.hpp>
 #include <boost/format.hpp>
 #include <algorithm>
 
@@ -72,3 +73,11 @@ noc_block_base::sptr block_container_t::get_block(const block_id_t& block_id) co
     return *block_itr;
 }
 
+void block_container_t::shutdown()
+{
+    node_accessor_t node_accessor{};
+    for (auto it = _blocks.begin(); it != _blocks.end(); ++it) {
+        node_accessor.shutdown(it->get());
+    }
+
+}

@@ -160,6 +160,25 @@ protected:
      */
     std::shared_ptr<mb_controller> get_mb_controller();
 
+    /*! Safely de-initialize the block
+     *
+     * This function is called by the framework when the RFNoC session is about
+     * to finish to allow blocks to safely perform actions to shut down a block.
+     * For example, if your block is producing samples, like a radio or signal
+     * generator, this is a good place to issue a "stop" command.
+     *
+     * After this function is called, register access is no more possible. So
+     * make sure not to interact with regs() after this was called. Future
+     * access to regs() won't throw, but will print error messages and do
+     * nothing.
+     *
+     * The rationale for having this separate from the destructor is because
+     * rfnoc_graph allows exporting references to blocks, and this function
+     * ensures that blocks are safely shut down when the rest of the device
+     * control goes away.
+     */
+    virtual void deinit();
+
 private:
     /*! Update the tick rate of this block
      *
@@ -168,6 +187,16 @@ private:
      */
     void _set_tick_rate(const double tick_rate);
 
+    /*! Perform a shutdown sequence.
+     *
+     * - Call deinit()
+     * - Invalidate regs()
+     */
+    void shutdown();
+
+    /**************************************************************************
+     * Attributes
+     **************************************************************************/
     //! This block's Noc-ID
     noc_id_t _noc_id;
 

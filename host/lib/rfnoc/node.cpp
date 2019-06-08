@@ -540,6 +540,11 @@ void node_t::receive_action(const res_source_info& src_info, action_info::sptr a
     }
 }
 
+void node_t::shutdown()
+{
+    RFNOC_LOG_DEBUG("shutdown() not implemented.");
+}
+
 bool node_t::_has_port(const res_source_info& port_info) const
 {
     return (port_info.type == res_source_info::INPUT_EDGE

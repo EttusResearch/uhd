@@ -125,6 +125,12 @@ BOOST_AUTO_TEST_CASE(test_null_block)
     stream_cmd.stream_mode = stream_cmd_t::STREAM_MODE_START_CONTINUOUS;
     test_null->issue_stream_cmd(stream_cmd);
     BOOST_CHECK_EQUAL(get_mem(null_block_control::REG_CTRL_STATUS) & 0x2, 0x2);
+    node_accessor.shutdown(test_null.get());
+    BOOST_CHECK_EQUAL(get_mem(null_block_control::REG_CTRL_STATUS) & 0x2, 0x0);
+    test_null->issue_stream_cmd(stream_cmd);
+    UHD_LOG_INFO("TEST", "Expected error message here ^^^");
+    // The last issue_stream_cmd should do nothing b/c we called shutdown
+    BOOST_CHECK_EQUAL(get_mem(null_block_control::REG_CTRL_STATUS) & 0x2, 0x0);
 }
 
 BOOST_AUTO_TEST_CASE(test_ddc_block)
