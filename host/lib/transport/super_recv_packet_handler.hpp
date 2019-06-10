@@ -642,8 +642,6 @@ private:
                     break;
 
                 case PACKET_INLINE_MESSAGE:
-                    curr_info[index].buff.reset(); // No data, so release the buffer
-                    curr_info[index].copy_buff = nullptr;
                     std::swap(curr_info, next_info); // save progress from curr -> next
                     curr_info.metadata.has_time_spec = next_info[index].ifpi.has_tsf;
                     curr_info.metadata.time_spec =
@@ -667,6 +665,9 @@ private:
                         curr_info.metadata = metadata;
                         UHD_LOG_FASTPATH("O");
                     }
+                    next_info[index].buff.reset(); // No data, so release the buffer
+                    next_info[index].copy_buff = nullptr;
+
                     return;
 
                 case PACKET_TIMEOUT_ERROR:
