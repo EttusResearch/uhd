@@ -300,7 +300,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     double rx_rate, tx_rate;
     std::string rx_otw, tx_otw;
     std::string rx_cpu, tx_cpu;
-    std::string mode, ref, pps;
+    std::string ref, pps;
     std::string channel_list, rx_channel_list, tx_channel_list;
     bool random_nsamps = false;
     std::atomic<bool> burst_timer_elapsed(false);
@@ -323,7 +323,6 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("tx_cpu", po::value<std::string>(&tx_cpu)->default_value("fc32"), "specify the host/cpu sample mode for TX")
         ("ref", po::value<std::string>(&ref), "clock reference (internal, external, mimo, gpsdo)")
         ("pps", po::value<std::string>(&pps), "PPS source (internal, external, mimo, gpsdo)")
-        ("mode", po::value<std::string>(&mode), "DEPRECATED - use \"ref\" and \"pps\" instead (none, mimo)")
         ("random", "Run with random values of samples in send() and recv() to stress-test the I/O.")
         ("channels", po::value<std::string>(&channel_list)->default_value("0"), "which channel(s) to use (specify \"0\", \"1\", \"0,1\", etc)")
         ("rx_channels", po::value<std::string>(&rx_channel_list), "which RX channel(s) to use (specify \"0\", \"1\", \"0,1\", etc)")
@@ -357,20 +356,6 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         std::cout << "Using random number of samples in send() and recv() calls."
                   << std::endl;
         random_nsamps = true;
-    }
-
-    if (vm.count("mode")) {
-        if (vm.count("pps") or vm.count("ref")) {
-            std::cout << "ERROR: The \"mode\" parameter cannot be used with the \"ref\" "
-                         "and \"pps\" parameters.\n"
-                      << std::endl;
-            return -1;
-        } else if (mode == "mimo") {
-            ref = pps = "mimo";
-            std::cout << "The use of the \"mode\" parameter is deprecated.  Please use "
-                         "\"ref\" and \"pps\" parameters instead\n"
-                      << std::endl;
-        }
     }
 
     // create a usrp device

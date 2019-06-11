@@ -25,7 +25,6 @@
 #include <uhd/utils/pimpl.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/types/stream_cmd.hpp>
-#include <uhd/types/clock_config.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/udp_simple.hpp>

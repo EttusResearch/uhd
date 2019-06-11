@@ -697,29 +697,6 @@ public:
         }
     }
 
-    void set_clock_config(const clock_config_t &clock_config, size_t mboard){
-        //set the reference source...
-        std::string clock_source;
-        switch(clock_config.ref_source){
-        case clock_config_t::REF_INT: clock_source = "internal"; break;
-        case clock_config_t::REF_SMA: clock_source = "external"; break;
-        case clock_config_t::REF_MIMO: clock_source = "mimo"; break;
-        default: clock_source = "unknown";
-        }
-        this->set_clock_source(clock_source, mboard);
-
-        //set the time source
-        std::string time_source;
-        switch(clock_config.pps_source){
-        case clock_config_t::PPS_INT: time_source = "internal"; break;
-        case clock_config_t::PPS_SMA: time_source = "external"; break;
-        case clock_config_t::PPS_MIMO: time_source = "mimo"; break;
-        default: time_source = "unknown";
-        }
-        if (time_source == "external" and clock_config.pps_polarity == clock_config_t::PPS_NEG) time_source = "_external_";
-        this->set_time_source(time_source, mboard);
-    }
-
     void set_time_source(const std::string &source, const size_t mboard){
         if (mboard != ALL_MBOARDS){
             const auto time_source_path =

@@ -70,8 +70,6 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("freq", po::value<double>(&freq), "RF center frequency in Hz")
         ("lo-offset", po::value<double>(&lo_offset)->default_value(0.0),
             "Offset for frontend LO in Hz (optional)")
-        ("lo_off", po::value<double>(&lo_offset),
-            "(DEPRECATED) will go away soon! Use --lo-offset instead")
         ("gain", po::value<double>(&gain), "gain for the RF chain")
         ("ant", po::value<std::string>(&ant), "antenna selection")
         ("subdev", po::value<std::string>(&subdev), "subdevice specification")

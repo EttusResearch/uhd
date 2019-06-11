@@ -12,8 +12,6 @@
 #include <uhd/property_tree.hpp>
 #include <uhd/utils/pimpl.hpp>
 #include <uhd/types/dict.hpp>
-#include <uhd/types/otw_type.hpp>
-#include <uhd/types/clock_config.hpp>
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/usrp/dboard_id.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>

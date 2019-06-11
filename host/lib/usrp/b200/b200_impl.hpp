@@ -17,7 +17,6 @@
 #include <uhd/utils/tasks.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/types/sensors.hpp>
-#include <uhd/types/clock_config.hpp>
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/usrp/subdev_spec.hpp>

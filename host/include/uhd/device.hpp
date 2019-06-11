@@ -9,7 +9,6 @@
 #define INCLUDED_UHD_DEVICE_HPP
 
 #include <uhd/config.hpp>
-#include <uhd/deprecated.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/stream.hpp>
 #include <uhd/types/device_addr.hpp>

@@ -25,7 +25,6 @@
 #define UHD_USRP_MULTI_USRP_TX_LO_CONFIG_API
 
 #include <uhd/config.hpp>
-#include <uhd/deprecated.hpp>
 #include <uhd/device.hpp>
 #include <uhd/types/filters.hpp>
 #include <uhd/types/ranges.hpp>
@@ -336,17 +335,6 @@ public:
      */
     virtual void issue_stream_cmd(
         const stream_cmd_t& stream_cmd, size_t chan = ALL_CHANS) = 0;
-
-    /*!
-     * Set the clock configuration for the usrp device.
-     * DEPRECATED in favor of set time and clock source calls.
-     * This tells the usrp how to get a 10MHz reference and PPS clock.
-     * See the documentation for clock_config_t for more info.
-     * \param clock_config the clock configuration to set
-     * \param mboard which motherboard to set the config
-     */
-    virtual void set_clock_config(
-        const clock_config_t& clock_config, size_t mboard = ALL_MBOARDS) = 0;
 
     /*!  Set the time source for the USRP device
      *

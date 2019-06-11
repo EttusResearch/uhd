@@ -567,7 +567,6 @@ def run_api_test(usrp):
                     'set_tx_lo_export_enabled',  # Not supported w/all devices.
                     'set_time_source_out',  # Not supported on all devices.
                     'get_register_info',  # Requires path to register
-                    'set_clock_config',  # Requires clock_config_t input
                     'get_rx_stream', 'get_tx_stream',  # Require stream_args_t
                     # Need register path, but enumerate_registers returns None
                     'read_register', 'write_register',

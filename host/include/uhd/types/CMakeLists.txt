@@ -8,7 +8,6 @@
 
 UHD_INSTALL(FILES
     byte_vector.hpp
-    clock_config.hpp
     device_addr.hpp
     dict.ipp
     dict.hpp
@@ -17,7 +16,6 @@ UHD_INSTALL(FILES
     io_type.hpp
     mac_addr.hpp
     metadata.hpp
-    otw_type.hpp
     ranges.hpp
     ref_vector.hpp
     sensors.hpp
