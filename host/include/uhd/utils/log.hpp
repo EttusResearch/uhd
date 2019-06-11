@@ -11,6 +11,7 @@
 #include <uhd/config.hpp>
 #include <boost/current_function.hpp>
 #include <boost/thread/thread.hpp>
+#include <iomanip>
 #include <iostream>
 #include <ostream>
 #include <sstream>

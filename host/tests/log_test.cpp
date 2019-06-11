@@ -28,4 +28,5 @@ BOOST_AUTO_TEST_CASE(test_messages)
     UHD_HERE();
     const int x = 42;
     UHD_VAR(x);
+    UHD_HEX(x);
 }
