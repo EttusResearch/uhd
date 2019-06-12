@@ -369,6 +369,18 @@ Notes:
 - When used in the X300/X310 at frequencies below 1 GHz, it is necessary to
   reduce the daughterboard clock rate to 20 MHz to achieve phase
   synchronization and best RF performance (see \ref config_devaddr).
+- The LO lock sensor for the UBX can intermittently fail to report True. In that
+  case, the UBX has a temperature compensation mode, which can be activated to
+  help the synthesizer to lock. It may also increase the tuning time, though,
+  which is why the default is to disable the temperature compensation mode.
+  To enable the temperature compensation mode, identify the property tree path
+  to the daughterboard, and set the `temp_comp_mode` to "enabled":
+~~~~{.cpp}
+// Assume DEV is a valid device, and we are talking to the UBX in motherboard 0
+// in slot A:
+DEV->get_tree()->access<std::string>("/mboards/0/rx_frontends/A/temp_comp_mode/value")
+    .set("enabled");
+~~~~
 
 \subsection dboards_twinrx TwinRX
 
