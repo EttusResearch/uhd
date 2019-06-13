@@ -1009,12 +1009,15 @@ class n3xx(ZynqComponents, PeriphManagerBase):
                 self.log.error(error_msg)
                 raise RuntimeError(error_msg)
             if not isinstance(blob, str) and not isinstance(blob, bytes):
-                error_msg = "Blob data for ID `{}' is not a " \
-                            "string!".format(blob_id)
+                error_msg = "Blob data for ID `{}' is neither a " \
+                            "string nor already bytes!".format(blob_id)
                 self.log.error(error_msg)
                 raise RuntimeError(error_msg)
-            assert isinstance(blob, str)
-            safe_db_eeprom_user_data[blob_id] = blob.encode('ascii')
+            if isinstance(blob, str):
+                safe_db_eeprom_user_data[blob_id] = blob.encode('ascii')
+            else:
+                safe_db_eeprom_user_data[blob_id] = blob
+
         dboard.set_user_eeprom_data(safe_db_eeprom_user_data)
 
     ###########################################################################
