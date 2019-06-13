@@ -184,27 +184,47 @@ private:
             // Iterate through and register each of the blocks in this mboard
             for (size_t portno = 0; portno < num_blocks; ++portno) {
                 auto noc_id = mb_cz->get_noc_id(portno + first_block_port);
-                auto block_factory_pair = factory::get_block_factory(noc_id);
+                auto block_factory_info = factory::get_block_factory(noc_id);
                 auto block_info = mb_cz->get_block_info(portno + first_block_port);
                 block_id_t block_id(mb_idx,
-                    block_factory_pair.second,
-                    block_count_map[block_factory_pair.second]++);
-                auto clk_iface = std::make_shared<clock_iface>(block_id.to_string() + "_clock");
+                    block_factory_info.block_name,
+                    block_count_map[block_factory_info.block_name]++);
+                // Get access to the clock interface objects. We have some rules
+                // here:
+                // - The ctrlport clock must always be provided through the
+                //   BSP via mb_iface
+                // - The timebase clock can be set to "graph", which means the
+                //   block takes care of the timebase itself (via property
+                //   propagation). In that case, we generate a clock iface
+                //   object on the fly here.
+                // - In all other cases, the BSP must provide us that clock
+                //   iface object through the mb_iface
+                auto ctrlport_clk_iface =
+                    mb.get_clock_iface(block_factory_info.ctrlport_clk);
+                auto tb_clk_iface = (block_factory_info.timebase_clk == CLOCK_KEY_GRAPH) ?
+                    std::make_shared<clock_iface>(CLOCK_KEY_GRAPH) :
+                    mb.get_clock_iface(block_factory_info.timebase_clk);
+                // A "graph" clock is always "running"
+                if (block_factory_info.timebase_clk == CLOCK_KEY_GRAPH) {
+                    tb_clk_iface->set_running(true);
+                }
                 auto block_reg_iface = _gsm->get_block_register_iface(ctrl_sep_addr,
                     portno,
-                    *clk_iface.get(),
-                    *clk_iface.get());
+                    *ctrlport_clk_iface.get(),
+                    *tb_clk_iface.get());
                 auto make_args_uptr = std::make_unique<noc_block_base::make_args_t>();
                 make_args_uptr->noc_id = noc_id;
                 make_args_uptr->block_id = block_id;
                 make_args_uptr->num_input_ports = block_info.num_inputs;
                 make_args_uptr->num_output_ports = block_info.num_outputs;
                 make_args_uptr->reg_iface = block_reg_iface;
-                make_args_uptr->clk_iface = clk_iface;
+                make_args_uptr->tb_clk_iface = tb_clk_iface;
+                make_args_uptr->ctrlport_clk_iface = ctrlport_clk_iface;
                 make_args_uptr->mb_control = (factory::has_requested_mb_access(noc_id) ? _mb_controllers.at(mb_idx) : nullptr);
                 make_args_uptr->tree = _tree->subtree("/mboards/0"); /* FIXME Get the block's subtree */
                 make_args_uptr->args = dev_addr; // TODO filter the device args
-                _block_registry->register_block(block_factory_pair.first(std::move(make_args_uptr)));
+                _block_registry->register_block(
+                    block_factory_info.factory_fn(std::move(make_args_uptr)));
                 _xbar_block_config[block_id.to_string()] = {
                     portno, noc_id, block_id.get_block_count()};
             }

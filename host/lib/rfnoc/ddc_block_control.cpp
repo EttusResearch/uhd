@@ -516,4 +516,5 @@ private:
     std::vector<property_t<double>> _freq;
 };
 
-UHD_RFNOC_BLOCK_REGISTER_DIRECT(ddc_block_control, 0xDDC00000, "DDC")
+UHD_RFNOC_BLOCK_REGISTER_DIRECT(
+    ddc_block_control, 0xDDC00000, "DDC", CLOCK_KEY_GRAPH, "bus_clk")

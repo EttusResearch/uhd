@@ -15,16 +15,17 @@
 
 //! This macro must be placed inside a block implementation file
 // after the class definition
-#define UHD_RFNOC_BLOCK_REGISTER_DIRECT(CLASS_NAME, NOC_ID, BLOCK_NAME)   \
-    uhd::rfnoc::noc_block_base::sptr CLASS_NAME##_make(                   \
-        uhd::rfnoc::noc_block_base::make_args_ptr make_args)              \
-    {                                                                     \
-        return std::make_shared<CLASS_NAME##_impl>(std::move(make_args)); \
-    }                                                                     \
-    UHD_STATIC_BLOCK(register_rfnoc_##CLASS_NAME)                         \
-    {                                                                     \
-        uhd::rfnoc::registry::register_block_direct(                      \
-            NOC_ID, BLOCK_NAME, &CLASS_NAME##_make);                      \
+#define UHD_RFNOC_BLOCK_REGISTER_DIRECT(                                   \
+    CLASS_NAME, NOC_ID, BLOCK_NAME, TB_CLOCK, CTRL_CLOCK)                  \
+    uhd::rfnoc::noc_block_base::sptr CLASS_NAME##_make(                    \
+        uhd::rfnoc::noc_block_base::make_args_ptr make_args)               \
+    {                                                                      \
+        return std::make_shared<CLASS_NAME##_impl>(std::move(make_args));  \
+    }                                                                      \
+    UHD_STATIC_BLOCK(register_rfnoc_##CLASS_NAME)                          \
+    {                                                                      \
+        uhd::rfnoc::registry::register_block_direct(                       \
+            NOC_ID, BLOCK_NAME, TB_CLOCK, CTRL_CLOCK, &CLASS_NAME##_make); \
     }
 
 #define UHD_RFNOC_BLOCK_REQUEST_MB_ACCESS(NOC_ID)              \
@@ -62,6 +63,8 @@ public:
      */
     static void register_block_direct(noc_block_base::noc_id_t noc_id,
         const std::string& block_name,
+        const std::string& timebase_clock,
+        const std::string& ctrlport_clock,
         factory_t factory_fn);
 
     /*! Register a block that does use a block descriptor file

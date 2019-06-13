@@ -12,12 +12,15 @@
 #include <uhd/utils/log.hpp>
 #include <atomic>
 #include <string>
+#include <memory>
 
 namespace uhd { namespace rfnoc {
 
 class clock_iface
 {
 public:
+    using sptr = std::shared_ptr<clock_iface>;
+
     clock_iface(const std::string& name) : _name(name), _is_mutable(true)
     {
         _is_running = false;

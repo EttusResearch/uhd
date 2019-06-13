@@ -40,8 +40,11 @@ struct noc_block_base::make_args_t
     //! Register interface to this block's register space
     register_iface::sptr reg_iface;
 
-    //! Clock interface object that is shared with the reg_iface
-    std::shared_ptr<clock_iface> clk_iface;
+    //! Timebase clock interface object that is shared with the reg_iface
+    std::shared_ptr<clock_iface> tb_clk_iface;
+
+    //! Controlport clock interface object that is shared with the reg_iface
+    std::shared_ptr<clock_iface> ctrlport_clk_iface;
 
     //! Reference to the motherboard controller associated with this block.
     //

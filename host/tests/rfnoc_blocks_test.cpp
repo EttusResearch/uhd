@@ -24,14 +24,15 @@ noc_block_base::make_args_ptr make_make_args(noc_block_base::noc_id_t noc_id,
     const size_t n_inputs,
     const size_t n_outputs)
 {
-    auto make_args              = std::make_unique<noc_block_base::make_args_t>();
-    make_args->noc_id           = noc_id;
-    make_args->num_input_ports  = n_inputs;
-    make_args->num_output_ports = n_outputs;
-    make_args->reg_iface        = std::make_shared<mock_reg_iface_t>();
-    make_args->block_id         = block_id;
-    make_args->clk_iface        = std::make_shared<clock_iface>("MOCK_CLOCK");
-    make_args->tree             = uhd::property_tree::make();
+    auto make_args                = std::make_unique<noc_block_base::make_args_t>();
+    make_args->noc_id             = noc_id;
+    make_args->num_input_ports    = n_inputs;
+    make_args->num_output_ports   = n_outputs;
+    make_args->reg_iface          = std::make_shared<mock_reg_iface_t>();
+    make_args->block_id           = block_id;
+    make_args->ctrlport_clk_iface = std::make_shared<clock_iface>("MOCK_CLOCK");
+    make_args->tb_clk_iface       = std::make_shared<clock_iface>("MOCK_CLOCK");
+    make_args->tree               = uhd::property_tree::make();
     return make_args;
 }
 

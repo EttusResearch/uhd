@@ -100,7 +100,7 @@ public:
      *
      * Note there is only ever one time base (or tick rate) per block.
      */
-    double get_tick_rate() const { return _tick_rate; }
+    double get_tick_rate() const;
 
     /*! Return the arguments that were passed into this block from the framework
      */
@@ -215,11 +215,11 @@ private:
     // for all in- and output edges.
     std::vector<property_t<double>> _tick_rate_props;
 
-    //! The actual tick rate of the current time base
-    double _tick_rate;
+    //! Reference to the ctrlport clock_iface object shared with the register_iface
+    std::shared_ptr<clock_iface> _ctrlport_clock_iface;
 
-    //! Reference to the clock_iface object shared with the register_iface
-    std::shared_ptr<clock_iface> _clock_iface;
+    //! Reference to the timebase clock_iface object shared with the register_iface
+    std::shared_ptr<clock_iface> _tb_clock_iface;
 
     //! Stores a reference to this block's motherboard's controller, if this
     // block had requested and was granted access

@@ -24,9 +24,8 @@ using namespace uhd::rfnoc;
 //   descriptor file
 //
 // This is the direct registry:
-using block_direct_reg_t = std::unordered_map<noc_block_base::noc_id_t,
-    std::tuple<std::string /* block_name */,
-        registry::factory_t>>;
+using block_direct_reg_t =
+    std::unordered_map<noc_block_base::noc_id_t, block_factory_info_t>;
 UHD_SINGLETON_FCN(block_direct_reg_t, get_direct_block_registry);
 //
 // This is the descriptor registry:
@@ -54,6 +53,8 @@ UHD_SINGLETON_FCN(
  *****************************************************************************/
 void registry::register_block_direct(noc_block_base::noc_id_t noc_id,
     const std::string& block_name,
+    const std::string& timebase_clock,
+    const std::string& ctrlport_clock,
     factory_t factory_fn)
 {
     if (get_direct_block_registry().count(noc_id)) {
@@ -63,8 +64,9 @@ void registry::register_block_direct(noc_block_base::noc_id_t noc_id,
             << std::hex << noc_id << std::dec << std::endl;
         return;
     }
-    get_direct_block_registry().emplace(
-        noc_id, std::make_tuple(block_name, std::move(factory_fn)));
+    get_direct_block_registry().emplace(noc_id,
+        block_factory_info_t{
+            block_name, timebase_clock, ctrlport_clock, std::move(factory_fn)});
 }
 
 void registry::register_block_descriptor(
@@ -96,8 +98,7 @@ void registry::request_mb_access(const std::string& block_key)
 /******************************************************************************
  * Factory functions
  *****************************************************************************/
-std::pair<registry::factory_t, std::string> factory::get_block_factory(
-    noc_block_base::noc_id_t noc_id)
+block_factory_info_t factory::get_block_factory(noc_block_base::noc_id_t noc_id)
 {
     // First, check the descriptor registry
     // FIXME TODO
@@ -109,8 +110,7 @@ std::pair<registry::factory_t, std::string> factory::get_block_factory(
                 << std::hex << std::setw(sizeof(noc_block_base::noc_id_t) * 2) << noc_id);
         noc_id = DEFAULT_NOC_ID;
     }
-    auto& block_info = get_direct_block_registry().at(noc_id);
-    return {std::get<1>(block_info), std::get<0>(block_info)};
+    return get_direct_block_registry().at(noc_id);
 }
 
 bool factory::has_requested_mb_access(noc_block_base::noc_id_t noc_id)

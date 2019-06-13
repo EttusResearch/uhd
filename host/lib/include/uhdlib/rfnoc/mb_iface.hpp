@@ -9,6 +9,7 @@
 
 #include <uhdlib/rfnoc/chdr_ctrl_xport.hpp>
 #include <uhdlib/rfnoc/rfnoc_common.hpp>
+#include <uhdlib/rfnoc/clock_iface.hpp>
 #include <memory>
 
 namespace uhd { namespace rfnoc {
@@ -66,6 +67,10 @@ public:
     /*! Reset the device
      */
     virtual void reset_network() = 0;
+
+    /*! Return a reference to a clock iface
+     */
+    virtual std::shared_ptr<clock_iface> get_clock_iface(const std::string& clock_name) = 0;
 
     /*! Create a control transport
      *

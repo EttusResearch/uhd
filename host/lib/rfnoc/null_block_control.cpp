@@ -181,4 +181,5 @@ private:
     uint32_t _item_width;
 };
 
-UHD_RFNOC_BLOCK_REGISTER_DIRECT(null_block_control, 0x00000001, "NullSrcSink")
+UHD_RFNOC_BLOCK_REGISTER_DIRECT(
+    null_block_control, 0x00000001, "NullSrcSink", CLOCK_KEY_GRAPH, "bus_clk")

@@ -220,9 +220,10 @@ client_zero::sptr client_zero::make(chdr_ctrl_endpoint& chdr_ctrl_ep, sep_id_t d
     static constexpr uint16_t CLIENT_ZERO_PORT         = 0;
     static constexpr size_t CLIENT_ZERO_BUFF_CAPACITY  = 32;
     static constexpr size_t CLIENT_ZERO_MAX_ASYNC_MSGS = 0;
-    static clock_iface client_zero_clk{"client_zero"};
+    // This clock_iface doesn't really matter because client_zero doesn't do timed
+    // commands
+    static clock_iface client_zero_clk("client_zero", 100e6, true);
     client_zero_clk.set_running(true); // Client zero clock must be always-on.
-    client_zero_clk.set_freq(100e6); // The freq is unused. No timed ops or sleeps.
 
     return std::make_shared<client_zero>(chdr_ctrl_ep.get_ctrlport_ep(dst_epid,
         CLIENT_ZERO_PORT,
