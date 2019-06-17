@@ -50,7 +50,7 @@ execute_process(COMMAND ${PYTHON_EXECUTABLE} -c
     "from __future__ import print_function; from distutils import sysconfig; print(sysconfig.get_python_lib(plat_specific=True, prefix=''))"
     OUTPUT_VARIABLE USRP_MPM_PYTHON_DIR OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/build/lib/usrp_mpm DESTINATION ${CMAKE_INSTALL_PREFIX}/${USRP_MPM_PYTHON_DIR})
+install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/build/lib/usrp_mpm DESTINATION ${USRP_MPM_PYTHON_DIR})
 install(PROGRAMS
     aurora_bist_test.py
     usrp_update_fs
