@@ -1,5 +1,6 @@
 //
 // Copyright 2017 Ettus Research, National Instruments Company
+// Copyright 2019 Ettus Research, National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -20,11 +21,20 @@ namespace {
 //! Maximum CHDR packet size in bytes
 const size_t MPMD_10GE_DATA_FRAME_MAX_SIZE = 4000;
 
-//! Maximum CHDR packet size in bytes
-const size_t MPMD_10GE_ASYNCMSG_FRAME_MAX_SIZE = 1472;
-
-//! Number of send/recv frames
-const size_t MPMD_ETH_NUM_FRAMES = 32;
+//! Default number of send frames
+const size_t MPMD_UDP_DEFAULT_NUM_SEND_FRAMES = 1;
+//! Default number of recv frames
+const size_t MPMD_UDP_DEFAULT_NUM_RECV_FRAMES = 1;
+//! Default message frame size
+const size_t MPMD_UDP_MSG_FRAME_SIZE = 256;
+//! Default 1GbE send frame size
+const size_t MPMD_UDP_1GE_DEFAULT_SEND_FRAME_SIZE = 1472;
+//! Default 1GbE receive frame size
+const size_t MPMD_UDP_1GE_DEFAULT_RECV_FRAME_SIZE = 1472;
+//! Default 10GbE send frame size
+const size_t MPMD_UDP_10GE_DEFAULT_SEND_FRAME_SIZE = 4000;
+//! Default 10GbE receive frame size
+const size_t MPMD_UDP_10GE_DEFAULT_RECV_FRAME_SIZE = 4000;
 
 //!
 const double MPMD_BUFFER_DEPTH = 50.0e-3; // s
@@ -33,8 +43,8 @@ const double MPMD_BUFFER_DEPTH = 50.0e-3; // s
 const double MPMD_MTU_DISCOVERY_TIMEOUT = 0.02;
 
 // TODO: move these to appropriate header file for all other devices
-const size_t MAX_RATE_1GIGE  = 1e9 / 8; // byte/s
-const size_t MAX_RATE_10GIGE = 10e9 / 8; // byte/s
+const double MAX_RATE_1GIGE  = 1e9 / 8; // byte/s
+const double MAX_RATE_10GIGE = 10e9 / 8; // byte/s
 
 std::vector<std::string> get_addrs_from_mb_args(const uhd::device_addr_t& mb_args)
 {
@@ -163,11 +173,10 @@ mpmd_xport_ctrl_udp::mpmd_xport_ctrl_udp(const uhd::device_addr_t& mb_args)
 uhd::both_xports_t mpmd_xport_ctrl_udp::make_transport(
     mpmd_xport_mgr::xport_info_t& xport_info,
     const usrp::device3_impl::xport_type_t xport_type,
-    const uhd::device_addr_t& xport_args_)
+    const uhd::device_addr_t& xport_args)
 {
-    auto xport_args = xport_args_;
 
-    size_t link_speed = MAX_RATE_1GIGE;
+    double link_speed = MAX_RATE_1GIGE;
     if (xport_info.count("link_speed") == 0) {
         UHD_LOG_WARNING("MPMD",
             "Could not determine link speed; using 1GibE max speed of "
@@ -176,29 +185,54 @@ uhd::both_xports_t mpmd_xport_ctrl_udp::make_transport(
         link_speed = xport_info.at("link_speed") == "10000" ? MAX_RATE_10GIGE
                                                             : MAX_RATE_1GIGE;
     }
-    transport::zero_copy_xport_params default_buff_args;
+
+    // Constrain by this transport's MTU and the MTU in the xport_args
+    const size_t send_mtu = std::min(get_mtu(uhd::TX_DIRECTION),
+        xport_args.cast<size_t>("mtu", get_mtu(uhd::TX_DIRECTION)));
+    const size_t recv_mtu = std::min(get_mtu(uhd::RX_DIRECTION),
+        xport_args.cast<size_t>("mtu", get_mtu(uhd::RX_DIRECTION)));
+
     // Create actual UDP transport
-    default_buff_args.num_send_frames = 1;
-    default_buff_args.num_recv_frames =
-        xport_type == usrp::device3_impl::CTRL ?
-        (uhd::rfnoc::CMD_FIFO_SIZE / uhd::rfnoc::MAX_CMD_PKT_SIZE) :
-        1;
-    default_buff_args.recv_frame_size =
-        xport_args.cast<size_t>("recv_frame_size", get_mtu(uhd::RX_DIRECTION));
-    default_buff_args.recv_buff_size = link_speed * MPMD_BUFFER_DEPTH;
-    default_buff_args.send_buff_size = link_speed * MPMD_BUFFER_DEPTH;
-    if (xport_type == usrp::device3_impl::ASYNC_MSG) {
-        default_buff_args.send_frame_size = MPMD_10GE_ASYNCMSG_FRAME_MAX_SIZE;
-    } else {
+    transport::zero_copy_xport_params default_buff_args;
+    default_buff_args.num_send_frames = MPMD_UDP_DEFAULT_NUM_SEND_FRAMES;
+    default_buff_args.num_recv_frames = MPMD_UDP_DEFAULT_NUM_RECV_FRAMES;
+    default_buff_args.recv_frame_size = MPMD_UDP_MSG_FRAME_SIZE;
+    default_buff_args.send_frame_size = MPMD_UDP_MSG_FRAME_SIZE;
+    if (xport_type == usrp::device3_impl::CTRL) {
+        default_buff_args.num_recv_frames =
+            uhd::rfnoc::CMD_FIFO_SIZE / uhd::rfnoc::MAX_CMD_PKT_SIZE;
+    } else if (xport_type == usrp::device3_impl::TX_DATA) {
+        const size_t default_frame_size = (link_speed == MAX_RATE_10GIGE ?
+            MPMD_UDP_10GE_DEFAULT_SEND_FRAME_SIZE :
+            MPMD_UDP_1GE_DEFAULT_SEND_FRAME_SIZE);
         default_buff_args.send_frame_size =
-            xport_args.cast<size_t>("send_frame_size", get_mtu(uhd::TX_DIRECTION));
+            xport_args.cast<size_t>("send_frame_size",
+            std::min(default_frame_size, send_mtu));
+        default_buff_args.num_send_frames =
+            xport_args.cast<size_t>("num_send_frames",
+            default_buff_args.num_send_frames);
+        default_buff_args.send_buff_size =
+            xport_args.cast<size_t>("send_buff_size",
+            default_buff_args.send_buff_size);
+    } else if (xport_type == usrp::device3_impl::RX_DATA) {
+        const size_t default_frame_size = (link_speed == MAX_RATE_10GIGE ?
+            MPMD_UDP_10GE_DEFAULT_RECV_FRAME_SIZE :
+            MPMD_UDP_1GE_DEFAULT_RECV_FRAME_SIZE);
+        default_buff_args.recv_frame_size =
+            xport_args.cast<size_t>("recv_frame_size",
+            std::min(default_frame_size, recv_mtu));
+        default_buff_args.num_recv_frames =
+            xport_args.cast<size_t>("num_recv_frames",
+            default_buff_args.num_recv_frames);
+        default_buff_args.recv_buff_size =
+            xport_args.cast<size_t>("recv_buff_size",
+            default_buff_args.recv_buff_size);
     }
     transport::udp_zero_copy::buff_params buff_params;
     auto recv                     = transport::udp_zero_copy::make(xport_info["ipv4"],
         xport_info["port"],
         default_buff_args,
-        buff_params,
-        xport_args);
+        buff_params);
     const uint16_t port           = recv->get_local_port();
     const std::string src_ip_addr = recv->get_local_addr();
     xport_info["src_port"]        = std::to_string(port);

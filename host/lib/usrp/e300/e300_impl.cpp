@@ -706,13 +706,22 @@ uhd::sid_t e300_impl::_allocate_sid(
 uhd::both_xports_t e300_impl::make_transport(
     const uhd::sid_t &address,
     const xport_type_t type,
-    const uhd::device_addr_t &)
+    const uhd::device_addr_t &hints)
 {
     uhd::both_xports_t xports;
     xports.endianness = ENDIANNESS_LITTLE;
 
-    const uhd::transport::zero_copy_xport_params params =
+    uhd::transport::zero_copy_xport_params params =
         (type == CTRL) ? _ctrl_xport_params : _data_xport_params;
+
+    // Constrain frame sizes to MTU if supplied
+    if (type == TX_DATA) {
+        params.send_frame_size = std::min(params.send_frame_size,
+        hints.cast<size_t>("mtu", params.send_frame_size));
+    } else if (type == RX_DATA) {
+        params.recv_frame_size = std::min(params.recv_frame_size,
+        hints.cast<size_t>("mtu", params.recv_frame_size));
+    }
 
     xports.send_sid = _allocate_sid(address);
     xports.recv_sid = xports.send_sid.reversed();

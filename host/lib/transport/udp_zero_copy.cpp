@@ -384,6 +384,11 @@ udp_zero_copy::sptr udp_zero_copy::make(const std::string& addr,
         xport_params.send_frame_size = UDP_ZERO_COPY_DEFAULT_FRAME_SIZE;
     }
 
+    UHD_LOG_TRACE("UDP",
+        "send_frame_size: " << xport_params.send_frame_size);
+    UHD_LOG_TRACE("UDP",
+        "recv_frame_size: " << xport_params.recv_frame_size);
+
     if (xport_params.recv_buff_size == 0) {
         UHD_LOG_TRACE("UDP", "Using default value for recv_buff_size");
         xport_params.recv_buff_size = std::max(UDP_ZERO_COPY_DEFAULT_BUFF_SIZE,
