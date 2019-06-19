@@ -903,7 +903,11 @@ void x300_radio_ctrl_impl::setup_radio(uhd::i2c_iface::sptr zpu_i2c,
     ////////////////////////////////////////////////////////////////
     // Set tick rate
     ////////////////////////////////////////////////////////////////
-    const double tick_rate = _tree->access<double>("tick_rate").get();
+    const double tick_rate = get_output_samp_rate(0);
+    if (_radio_type == PRIMARY) {
+        // Slot A is the highlander timekeeper
+        _tree->access<double>("tick_rate").set(tick_rate);
+    }
     radio_ctrl_impl::set_rate(tick_rate);
 
     ////////////////////////////////////////////////////////////////
