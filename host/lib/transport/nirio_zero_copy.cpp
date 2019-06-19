@@ -411,7 +411,7 @@ nirio_zero_copy::sptr nirio_zero_copy::make(
     size_t usr_num_recv_frames = static_cast<size_t>(
         hints.cast<double>("num_recv_frames", default_buff_args.num_recv_frames));
     size_t usr_recv_buff_size = static_cast<size_t>(
-        hints.cast<double>("recv_buff_size", default_buff_args.num_recv_frames));
+        hints.cast<double>("recv_buff_size", default_buff_args.recv_buff_size));
 
     if (hints.has_key("recv_buff_size")) {
         if (usr_recv_buff_size % page_size != 0) {
