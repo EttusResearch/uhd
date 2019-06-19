@@ -869,9 +869,12 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t& dev_addr)
     _tree->create<std::string>(mb_path / "codename").set("Yetti");
 
     ////////////////////////////////////////////////////////////////////
-    // discover ethernet interfaces, frame sizes, and link rates
+    // discover interfaces, frame sizes, and link rates
     ////////////////////////////////////////////////////////////////////
-    if (mb.xport_path == "eth") {
+    if (mb.xport_path == "nirio") {
+        _max_frame_sizes.recv_frame_size = PCIE_RX_DATA_FRAME_SIZE;
+        _max_frame_sizes.send_frame_size = PCIE_TX_DATA_FRAME_SIZE;
+    } else if (mb.xport_path == "eth") {
         double link_max_rate = 0.0;
 
         // Discover ethernet interfaces
@@ -1315,12 +1318,17 @@ uhd::both_xports_t x300_impl::make_transport(const uhd::sid_t& address,
 {
     const size_t mb_index                = address.get_dst_addr() - x300::DST_ADDR;
     mboard_members_t& mb                 = _mb[mb_index];
-    const uhd::device_addr_t& xport_args = (xport_type == CTRL) ? uhd::device_addr_t()
-                                                                : args;
     zero_copy_xport_params default_buff_args;
 
     both_xports_t xports;
     xports.endianness = mb.if_pkt_is_big_endian ? ENDIANNESS_BIG : ENDIANNESS_LITTLE;
+
+    // Calculate MTU based on MTU in args and device limitations
+    const size_t send_mtu = args.cast<size_t>("mtu",
+        get_mtu(mb_index, uhd::TX_DIRECTION));
+    const size_t recv_mtu = args.cast<size_t>("mtu",
+        get_mtu(mb_index, uhd::RX_DIRECTION));
+
     if (mb.xport_path == "nirio") {
         xports.lossless = true;
         xports.send_sid =
@@ -1350,26 +1358,30 @@ uhd::both_xports_t x300_impl::make_transport(const uhd::sid_t& address,
             }
             // Create a virtual async message transport
             xports.recv = mb.async_msg_dma_xport->make_stream(xports.recv_sid.get_dst());
-        } else {
-            // Transport for data stream
-            default_buff_args.send_frame_size = (xport_type == TX_DATA)
-                                                    ? x300::PCIE_TX_DATA_FRAME_SIZE
-                                                    : x300::PCIE_MSG_FRAME_SIZE;
-
-            default_buff_args.recv_frame_size = (xport_type == RX_DATA)
-                                                    ? x300::PCIE_RX_DATA_FRAME_SIZE
-                                                    : x300::PCIE_MSG_FRAME_SIZE;
-
-            default_buff_args.num_send_frames = (xport_type == TX_DATA)
-                                                    ? x300::PCIE_TX_DATA_NUM_FRAMES
-                                                    : x300::PCIE_MSG_NUM_FRAMES;
-
-            default_buff_args.num_recv_frames = (xport_type == RX_DATA)
-                                                    ? x300::PCIE_RX_DATA_NUM_FRAMES
-                                                    : x300::PCIE_MSG_NUM_FRAMES;
-
+        } else if (xport_type == TX_DATA) {
+            default_buff_args.send_frame_size = args.cast<size_t>(
+                "send_frame_size", std::min(send_mtu,
+                x300::PCIE_TX_DATA_FRAME_SIZE));
+            default_buff_args.num_send_frames = args.cast<size_t>(
+                "num_send_frames", x300::PCIE_TX_DATA_NUM_FRAMES);
+            default_buff_args.send_buff_size = args.cast<size_t>(
+                "send_buff_size", 0);
+            default_buff_args.recv_frame_size = x300::PCIE_MSG_FRAME_SIZE;
+            default_buff_args.num_recv_frames = x300::PCIE_MSG_NUM_FRAMES;
             xports.recv = nirio_zero_copy::make(
-                mb.rio_fpga_interface, dma_channel_num, default_buff_args, xport_args);
+                mb.rio_fpga_interface, dma_channel_num, default_buff_args);
+        } else if (xport_type == RX_DATA) {
+            default_buff_args.send_frame_size = x300::PCIE_MSG_FRAME_SIZE;
+            default_buff_args.num_send_frames = x300::PCIE_MSG_NUM_FRAMES;
+            default_buff_args.recv_frame_size = args.cast<size_t>(
+                "recv_frame_size", std::min(recv_mtu,
+                x300::PCIE_RX_DATA_FRAME_SIZE));
+            default_buff_args.num_recv_frames = args.cast<size_t>(
+                "num_recv_frames", x300::PCIE_RX_DATA_NUM_FRAMES);
+            default_buff_args.recv_buff_size = args.cast<size_t>(
+                "recv_buff_size", 0);
+            xports.recv = nirio_zero_copy::make(
+                mb.rio_fpga_interface, dma_channel_num, default_buff_args);
         }
 
         xports.send = xports.recv;
@@ -1413,22 +1425,42 @@ uhd::both_xports_t x300_impl::make_transport(const uhd::sid_t& address,
         xports.recv_sid = xports.send_sid.reversed();
 
         // Set size and number of frames
-        size_t system_max_send_frame_size = (size_t)_max_frame_sizes.send_frame_size;
-        size_t system_max_recv_frame_size = (size_t)_max_frame_sizes.recv_frame_size;
-        default_buff_args.send_frame_size = xport_args.cast<size_t>("send_frame_size",
-            std::min(system_max_send_frame_size, x300::ETH_MSG_FRAME_SIZE));
-        default_buff_args.recv_frame_size = xport_args.cast<size_t>("recv_frame_size",
-            std::min(system_max_recv_frame_size, x300::ETH_MSG_FRAME_SIZE));
-        default_buff_args.num_recv_frames =
-            xport_args.cast<size_t>("num_recv_frames", x300::ETH_MSG_NUM_FRAMES);
-        default_buff_args.num_send_frames =
-            xport_args.cast<size_t>("num_send_frames", x300::ETH_MSG_NUM_FRAMES);
+        default_buff_args.send_frame_size = std::min(send_mtu,
+                x300::ETH_MSG_FRAME_SIZE);
+        default_buff_args.recv_frame_size = std::min(recv_mtu,
+                x300::ETH_MSG_FRAME_SIZE);
+        default_buff_args.num_recv_frames = x300::ETH_MSG_NUM_FRAMES;
+        default_buff_args.num_send_frames = x300::ETH_MSG_NUM_FRAMES;
         if (xport_type == CTRL) {
             // Increasing number of recv frames here because ctrl_iface uses it
             // to determine how many control packets can be in flight before it
             // must wait for an ACK
             default_buff_args.num_recv_frames =
                 uhd::rfnoc::CMD_FIFO_SIZE / uhd::rfnoc::MAX_CMD_PKT_SIZE;
+        } else if (xport_type == TX_DATA) {
+            size_t default_frame_size = conn.link_rate == x300::MAX_RATE_1GIGE
+                                            ? x300::GE_DATA_FRAME_SEND_SIZE
+                                            : x300::XGE_DATA_FRAME_SEND_SIZE;
+            default_buff_args.send_frame_size =
+                args.cast<size_t>("send_frame_size",
+                std::min(default_frame_size, send_mtu));
+            default_buff_args.num_send_frames =
+                args.cast<size_t>("num_send_frames",
+                default_buff_args.num_send_frames);
+            default_buff_args.send_buff_size =
+                args.cast<size_t>("send_buff_size", 0);
+        } else if (xport_type == RX_DATA) {
+            size_t default_frame_size = conn.link_rate == x300::MAX_RATE_1GIGE
+                                            ? x300::GE_DATA_FRAME_RECV_SIZE
+                                            : x300::XGE_DATA_FRAME_RECV_SIZE;
+            default_buff_args.recv_frame_size =
+                args.cast<size_t>("recv_frame_size",
+                std::min(default_frame_size, recv_mtu));
+            default_buff_args.num_recv_frames =
+                args.cast<size_t>("num_recv_frames",
+                default_buff_args.num_recv_frames);
+            default_buff_args.recv_buff_size =
+                args.cast<size_t>("recv_buff_size", 0);
         }
 
         int dpdk_port_id = dpdk_ctx.get_route(conn.addr);
@@ -1436,13 +1468,15 @@ uhd::both_xports_t x300_impl::make_transport(const uhd::sid_t& address,
             throw uhd::runtime_error(
                 "Could not find a DPDK port with route to " + conn.addr);
         }
-        auto recv = transport::dpdk_zero_copy::make(dpdk_ctx,
-            (const unsigned int)dpdk_port_id,
+        auto recv = transport::dpdk_zero_copy::make(
+            dpdk_ctx,
+            (const unsigned int) dpdk_port_id,
             conn.addr,
             BOOST_STRINGIZE(X300_VITA_UDP_PORT),
             "0",
             default_buff_args,
-            xport_args);
+            uhd::device_addr_t()
+        );
 
         xports.recv = recv; // Note: This is a type cast!
         xports.send = xports.recv;
@@ -1504,12 +1538,10 @@ uhd::both_xports_t x300_impl::make_transport(const uhd::sid_t& address,
         xports.recv_sid = xports.send_sid.reversed();
 
         // Set size and number of frames
-        size_t system_max_send_frame_size = (size_t)_max_frame_sizes.send_frame_size;
-        size_t system_max_recv_frame_size = (size_t)_max_frame_sizes.recv_frame_size;
-        default_buff_args.send_frame_size =
-            std::min(system_max_send_frame_size, x300::ETH_MSG_FRAME_SIZE);
-        default_buff_args.recv_frame_size =
-            std::min(system_max_recv_frame_size, x300::ETH_MSG_FRAME_SIZE);
+        default_buff_args.send_frame_size = std::min(send_mtu,
+                x300::ETH_MSG_FRAME_SIZE);
+        default_buff_args.recv_frame_size = std::min(recv_mtu,
+                x300::ETH_MSG_FRAME_SIZE);
         // Buffering is done in the socket buffers, so size them relative to
         // the link rate
         default_buff_args.send_buff_size = conn.link_rate / 50; // 20ms
@@ -1531,33 +1563,29 @@ uhd::both_xports_t x300_impl::make_transport(const uhd::sid_t& address,
             size_t default_frame_size = conn.link_rate == x300::MAX_RATE_1GIGE
                                             ? x300::GE_DATA_FRAME_SEND_SIZE
                                             : x300::XGE_DATA_FRAME_SEND_SIZE;
-            default_buff_args.send_frame_size = args.cast<size_t>("send_frame_size",
-                std::min(default_frame_size, system_max_send_frame_size));
-            if (default_buff_args.send_frame_size > system_max_send_frame_size) {
-                UHD_LOGGER_WARNING("X300")
-                    << boost::format("Requested send_frame_size of %d exceeds the "
-                                     "maximum allowed on the %s connection.  Using %d.")
-                           % default_buff_args.send_frame_size % conn.addr
-                           % system_max_send_frame_size;
-                default_buff_args.send_frame_size = system_max_send_frame_size;
-            }
+            default_buff_args.send_frame_size =
+                args.cast<size_t>("send_frame_size",
+                std::min(default_frame_size, send_mtu));
+            default_buff_args.num_send_frames =
+                args.cast<size_t>("num_send_frames",
+                default_buff_args.num_send_frames);
+            default_buff_args.send_buff_size =
+                args.cast<size_t>("send_buff_size",
+                default_buff_args.send_buff_size);
         } else if (xport_type == RX_DATA) {
             size_t default_frame_size = conn.link_rate == x300::MAX_RATE_1GIGE
                                             ? x300::GE_DATA_FRAME_RECV_SIZE
                                             : x300::XGE_DATA_FRAME_RECV_SIZE;
-            default_buff_args.recv_frame_size = args.cast<size_t>("recv_frame_size",
-                std::min(default_frame_size, system_max_recv_frame_size));
-            if (default_buff_args.recv_frame_size > system_max_recv_frame_size) {
-                UHD_LOGGER_WARNING("X300")
-                    << boost::format("Requested recv_frame_size of %d exceeds the "
-                                     "maximum allowed on the %s connection.  Using %d.")
-                           % default_buff_args.recv_frame_size % conn.addr
-                           % system_max_recv_frame_size;
-                default_buff_args.recv_frame_size = system_max_recv_frame_size;
-            }
+            default_buff_args.recv_frame_size =
+                args.cast<size_t>("recv_frame_size",
+                std::min(default_frame_size, recv_mtu));
+            // set some buffers so the offload thread actually offloads the
+            // socket I/O
             default_buff_args.num_recv_frames =
-                2; // set some buffers so the offload thread actually offloads the socket
-                   // I/O
+                args.cast<size_t>("num_recv_frames", 2);
+            default_buff_args.recv_buff_size =
+                args.cast<size_t>("recv_buff_size",
+                default_buff_args.recv_buff_size);
         }
 
         // make a new transport - fpga has no idea how to talk to us on this yet
@@ -1565,8 +1593,7 @@ uhd::both_xports_t x300_impl::make_transport(const uhd::sid_t& address,
         xports.recv = udp_zero_copy::make(conn.addr,
             BOOST_STRINGIZE(X300_VITA_UDP_PORT),
             default_buff_args,
-            buff_params,
-            xport_args);
+            buff_params);
 
         // Create a threaded transport for the receive chain only
         // Note that this shouldn't affect PCIe
@@ -1992,14 +2019,10 @@ x300_impl::frame_size_t x300_impl::determine_max_frame_size(
     return frame_size;
 }
 
-size_t x300_impl::get_mtu(const size_t mb_index, const uhd::direction_t dir)
+size_t x300_impl::get_mtu(const size_t /*mb_index*/, const uhd::direction_t dir)
 {
-    if (_mb[mb_index].xport_path == "nirio") {
-        return (dir == RX_DIRECTION ? x300::PCIE_RX_DATA_FRAME_SIZE
-                                    : x300::PCIE_TX_DATA_FRAME_SIZE);
-    }
-    return (dir == RX_DIRECTION) ? _max_frame_sizes.recv_frame_size
-                                 : _max_frame_sizes.send_frame_size;
+    return (dir == RX_DIRECTION) ? _max_frame_sizes.recv_frame_size :
+                                   _max_frame_sizes.send_frame_size;
 }
 
 /***********************************************************************

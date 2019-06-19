@@ -47,15 +47,49 @@ mpmd_xport_ctrl_liberio::mpmd_xport_ctrl_liberio(const uhd::device_addr_t& mb_ar
 uhd::both_xports_t mpmd_xport_ctrl_liberio::make_transport(
     mpmd_xport_mgr::xport_info_t& xport_info,
     const usrp::device3_impl::xport_type_t xport_type,
-    const uhd::device_addr_t& xport_args)
+    const uhd::device_addr_t& xport_args_)
 {
+    auto xport_args = (xport_type == usrp::device3_impl::CTRL) ?
+                        uhd::device_addr_t() : xport_args_;
+
+    // Constrain by this transport's MTU and the MTU passed in
+    const size_t send_mtu = std::min(get_mtu(uhd::TX_DIRECTION),
+        xport_args.cast<size_t>("mtu", get_mtu(uhd::TX_DIRECTION)));
+    const size_t recv_mtu = std::min(get_mtu(uhd::RX_DIRECTION),
+        xport_args.cast<size_t>("mtu", get_mtu(uhd::RX_DIRECTION)));
+    size_t send_frame_size = xport_args.cast<size_t>("send_frame_size", send_mtu);
+    size_t recv_frame_size = xport_args.cast<size_t>("recv_frame_size", recv_mtu);
+
+    // Check any user supplied frame sizes and constrain to MTU
+    if (xport_args.has_key("send_frame_size") and
+        xport_type == usrp::device3_impl::TX_DATA)
+    {
+        if (send_frame_size > send_mtu) {
+            UHD_LOGGER_WARNING("MPMD")
+                << boost::format("Requested send_frame_size of %d exceeds the "
+                                 "maximum supported by the hardware.  Using %d.")
+                       % send_frame_size % send_mtu;
+            send_frame_size = send_mtu;
+        }
+    }
+    if (xport_args.has_key("recv_frame_size") and
+        xport_type == usrp::device3_impl::RX_DATA)
+    {
+        size_t recv_frame_size = xport_args.cast<size_t>("recv_frame_size", recv_mtu);
+        if (recv_frame_size > recv_mtu) {
+            UHD_LOGGER_WARNING("MPMD")
+                << boost::format("Requested recv_frame_size of %d exceeds the "
+                                 "maximum supported by the hardware.  Using %d.")
+                       % recv_frame_size % recv_mtu;
+            recv_frame_size = recv_mtu;
+        }
+    }
+
     transport::zero_copy_xport_params default_buff_args;
     /* default ones for RX / TX, override below */
 
-    default_buff_args.send_frame_size =
-        xport_args.cast<size_t>("send_frame_size", get_mtu(uhd::TX_DIRECTION));
-    default_buff_args.recv_frame_size =
-        xport_args.cast<size_t>("recv_frame_size", get_mtu(uhd::RX_DIRECTION));
+    default_buff_args.send_frame_size = send_mtu;
+    default_buff_args.recv_frame_size = recv_mtu;
     default_buff_args.num_recv_frames = LIBERIO_NUM_RECV_FRAMES;
     default_buff_args.num_send_frames = LIBERIO_NUM_SEND_FRAMES;
 
@@ -70,9 +104,11 @@ uhd::both_xports_t mpmd_xport_ctrl_liberio::make_transport(
         default_buff_args.send_frame_size = LIBERIO_ASYNC_FRAME_MAX_SIZE;
         default_buff_args.recv_frame_size = LIBERIO_ASYNC_FRAME_MAX_SIZE;
     } else if (xport_type == usrp::device3_impl::RX_DATA) {
+        default_buff_args.recv_frame_size = recv_frame_size;
         default_buff_args.send_frame_size = LIBERIO_FC_FRAME_MAX_SIZE;
     } else {
         default_buff_args.recv_frame_size = LIBERIO_FC_FRAME_MAX_SIZE;
+        default_buff_args.send_frame_size = send_frame_size;
     }
 
     const std::string tx_dev = xport_info["tx_dev"];
@@ -140,7 +176,7 @@ bool mpmd_xport_ctrl_liberio::is_valid(
     return xport_info.at("type") == "liberio";
 }
 
-size_t mpmd_xport_ctrl_liberio::get_mtu(const uhd::direction_t dir) const
+size_t mpmd_xport_ctrl_liberio::get_mtu(const uhd::direction_t /*dir*/) const
 {
     return LIBERIO_PAGES_PER_BUF * getpagesize();
 }
