@@ -77,7 +77,7 @@ def get_iface_info(ifname):
 def get_link_speed(ifname):
     """
     Given an interface name (e.g 'eth0'), return link speed
-    of that interface as unsigned interger.
+    of that interface as unsigned integer.
     If interface is not found, IndexError will be thrown.
     The speed is Megabits/sec
     (from kernel at https://www.kernel.org/doc/Documentation/ABI/testing/sysfs-class-net)
