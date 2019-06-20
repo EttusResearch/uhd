@@ -79,5 +79,12 @@ void block_container_t::shutdown()
     for (auto it = _blocks.begin(); it != _blocks.end(); ++it) {
         node_accessor.shutdown(it->get());
     }
+}
 
+void block_container_t::init_props()
+{
+    node_accessor_t node_accessor{};
+    for (auto it = _blocks.begin(); it != _blocks.end(); ++it) {
+        node_accessor.init_props(it->get());
+    }
 }

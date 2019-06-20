@@ -43,6 +43,10 @@ public:
      */
     noc_block_base::sptr get_block(const block_id_t& block_id) const;
 
+    /*! Initialize properties on all registered blocks
+     */
+    void init_props();
+
     /*! Call shutdown() on all blocks
      *
      * After calling this, blocks won't be able to do anything anymore!

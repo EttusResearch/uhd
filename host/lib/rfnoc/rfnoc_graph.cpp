@@ -240,6 +240,9 @@ private:
             }
         }
 
+        UHD_LOG_TRACE("RFNOC::GRAPH", "Initializing properties on all blocks...");
+        _block_registry->init_props();
+
         // Create graph, connect all static routes
         // FIXME
     }
