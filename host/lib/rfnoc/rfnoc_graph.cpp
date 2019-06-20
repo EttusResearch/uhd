@@ -33,6 +33,7 @@ public:
         , _graph(std::make_unique<uhd::rfnoc::detail::graph_t>())
     {
         setup_graph(dev_addr);
+        _init_static_connections();
     }
 
     ~rfnoc_graph_impl()
@@ -116,6 +117,16 @@ public:
     size_t get_num_mboards() const
     {
         return _num_mboards;
+    }
+
+    std::vector<graph_edge_t> enumerate_active_connections()
+    {
+        return _graph->enumerate_edges();
+    }
+
+    std::vector<graph_edge_t> enumerate_static_connections() const
+    {
+        return _static_edges;
     }
 
     void commit()
@@ -242,14 +253,51 @@ private:
                     block_factory_info.factory_fn(std::move(make_args_uptr)));
                 _xbar_block_config[block_id.to_string()] = {
                     portno, noc_id, block_id.get_block_count()};
+
+                _port_block_map.insert({{mb_idx, portno + first_block_port}, block_id});
             }
         }
 
         UHD_LOG_TRACE("RFNOC::GRAPH", "Initializing properties on all blocks...");
         _block_registry->init_props();
+    }
 
-        // Create graph, connect all static routes
-        // FIXME
+    void _init_static_connections()
+    {
+        UHD_LOG_TRACE("RFNOC::GRAPH", "Identifying static connections...");
+        for (auto& kv_cz : _client_zeros) {
+            auto& adjacency_list          = kv_cz.second->get_adjacency_list();
+            const size_t first_block_port = 1 + kv_cz.second->get_num_stream_endpoints();
+
+            for (auto& edge : adjacency_list) {
+                // Assemble edge
+                auto graph_edge = graph_edge_t();
+                if (edge.src_blk_index < first_block_port) {
+                    block_id_t id(kv_cz.first, NODE_ID_SEP, edge.src_blk_index - 1);
+                    _port_block_map.insert({{kv_cz.first, edge.src_blk_index}, id});
+                    graph_edge.src_blockid = id.to_string();
+                } else {
+                    graph_edge.src_blockid =
+                        _port_block_map.at({kv_cz.first, edge.src_blk_index});
+                }
+                if (edge.dst_blk_index < first_block_port) {
+                    block_id_t id(kv_cz.first, NODE_ID_SEP, edge.dst_blk_index - 1);
+                    _port_block_map.insert({{kv_cz.first, edge.dst_blk_index}, id});
+                    graph_edge.dst_blockid = id.to_string();
+                } else {
+                    graph_edge.dst_blockid =
+                        _port_block_map.at({kv_cz.first, edge.dst_blk_index});
+                }
+                graph_edge.src_port = edge.src_blk_port;
+                graph_edge.dst_port = edge.dst_blk_port;
+                graph_edge.edge     = graph_edge_t::edge_t::STATIC;
+                _static_edges.push_back(graph_edge);
+                UHD_LOG_TRACE("RFNOC::GRAPH",
+                    "Static connection: "
+                        << graph_edge.src_blockid << ":" << graph_edge.src_port << " -> "
+                        << graph_edge.dst_blockid << ":" << graph_edge.dst_port);
+            }
+        }
     }
 
     /**************************************************************************
@@ -271,6 +319,93 @@ private:
         edge_info.src_blockid = src_blk->get_unique_id();
         edge_info.dst_blockid = dst_blk->get_unique_id();
         _graph->connect(src_blk.get(), dst_blk.get(), edge_info);
+    }
+
+    /*! Helper method to find a stream endpoint connected to a block
+     *
+     * \param blk_id the block connected to the stream endpoint
+     * \param port the port connected to the stream endpoint
+     * \param blk_is_src true if the block is a data source, false if it is a
+     *                   destination
+     * \return the address of the stream endpoint, or boost::none if it is not
+     *         directly connected to a stream endpoint
+     */
+    boost::optional<sep_addr_t> _get_adjacent_sep(
+        const block_id_t& blk_id, const size_t port, const bool blk_is_src) const
+    {
+        const std::string block_id_str = get_block(blk_id)->get_block_id().to_string();
+        UHD_LOG_TRACE("RFNOC::GRAPH",
+            "Finding SEP for " << (blk_is_src ? "source" : "dst") << " block "
+                               << block_id_str << ":" << port);
+        // TODO: This is an attempt to simplify the algo, but it turns out to be
+        // as many lines as before:
+        //auto edge_predicate = [blk_is_src, block_id_str](const graph_edge_t edge) {
+            //if (blk_is_src) {
+                //return edge.src_blockid == block_id_str;
+            //}
+            //return edge.dst_blockid == block_id_str;
+        //};
+
+        //auto blk_edge_it =
+            //std::find_if(_static_edges.cbegin(), _static_edges.cend(), edge_predicate);
+        //if (blk_edge_it == _static_edges.cend()) {
+            //return boost::none;
+        //}
+
+        //const std::string sep_block_id = blk_is_src ?
+            //blk_edge_it->dst_blockid : blk_edge_it->src_blockid;
+        //UHD_LOG_TRACE("RFNOC::GRAPH",
+            //"Found SEP: " << sep_block_id);
+
+        //auto port_map_result = std::find_if(_port_block_map.cbegin(),
+            //_port_block_map.cend,
+            //[sep_block_id](std::pair<std::pair<size_t, size_t>, block_id_t> port_block) {
+                //return port_block.second == sep_block_id;
+            //});
+        //if (port_map_result == _port_block_map.cend()) {
+            //throw uhd::lookup_error(
+                //std::string("SEP `") + sep_block_id + "' not found in port/block map!");
+        //}
+        //const auto dev = _device->get_mb_iface(mb_idx).get_remote_device_id();
+        //const sep_inst_t sep_inst = blk_is_src ?
+            //edge.dst_blk_index - 1 : edge.src_blk_index - 1;
+        //return sep_addr_t(dev, sep_inst);
+
+        const auto& info  = _xbar_block_config.at(block_id_str);
+        const auto mb_idx = blk_id.get_device_no();
+        const auto cz     = _client_zeros.at(mb_idx);
+
+        const size_t first_block_port = 1 + cz->get_num_stream_endpoints();
+
+        for (const auto& edge : cz->get_adjacency_list()) {
+            const auto edge_blk_idx = blk_is_src ? edge.src_blk_index
+                                                 : edge.dst_blk_index;
+            const auto edge_blk_port = blk_is_src ? edge.src_blk_port : edge.dst_blk_port;
+
+            if ((edge_blk_idx == info.xbar_port + first_block_port)
+                and (edge_blk_port == port)) {
+                UHD_LOGGER_DEBUG("RFNOC::GRAPH")
+                    << boost::format("Block found in adjacency list. %d:%d->%d:%d")
+                           % edge.src_blk_index
+                           % static_cast<unsigned int>(edge.src_blk_port)
+                           % edge.dst_blk_index
+                           % static_cast<unsigned int>(edge.dst_blk_port);
+
+                // Check that the block is connected to a stream endpoint. The
+                // minus one here is because index zero is client 0.
+                const sep_inst_t sep_inst = blk_is_src ?
+                    edge.dst_blk_index - 1 : edge.src_blk_index - 1;
+
+                if (sep_inst < cz->get_num_stream_endpoints()) {
+                    const auto dev = _device->get_mb_iface(mb_idx).get_remote_device_id();
+                    return sep_addr_t(dev, sep_inst);
+                } else {
+                    // Block is connected to another block
+                    return boost::none;
+                }
+            }
+        }
+        return boost::none;
     }
 
     /*! Internal physical connection helper
@@ -440,6 +575,13 @@ private:
 
     //! Stash of the client zeros for all motherboards
     std::unordered_map<size_t, detail::client_zero::sptr> _client_zeros;
+
+    //! Map a pair (motherboard index, control crossbar port) to an RFNoC block
+    // or SEP
+    std::map<std::pair<size_t, size_t>, block_id_t> _port_block_map;
+
+    //! List of statically connected edges. Includes SEPs too!
+    std::vector<graph_edge_t> _static_edges;
 
     //! uptr to graph stream manager
     graph_stream_manager::uptr _gsm;

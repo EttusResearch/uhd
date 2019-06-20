@@ -189,6 +189,20 @@ void graph_t::release()
     _release_count++;
 }
 
+std::vector<graph_t::graph_edge_t> graph_t::enumerate_edges()
+{
+    auto e_iterators = boost::edges(_graph);
+    std::vector<graph_edge_t> result;
+    for (auto e_it = e_iterators.first; e_it != e_iterators.second; ++e_it) {
+        graph_edge_t edge_info = boost::get(edge_property_t(), _graph, *e_it);
+        // This is probably the dumbest way to make sure that the in- and out-
+        // edges don't both get stashed, but it works for now
+        if (std::find(result.begin(), result.end(), edge_info) == result.end()) {
+            result.push_back(boost::get(edge_property_t(), _graph, *e_it));
+        }
+    }
+    return result;
+}
 
 /******************************************************************************
  * Private methods to be called by friends

@@ -8,12 +8,12 @@
 #define INCLUDED_LIBUHD_RFNOCDEV_GRAPH_HPP
 
 #include <uhd/config.hpp>
-#include <uhd/stream.hpp>
-#include <uhd/utils/noncopyable.hpp>
-#include <uhd/rfnoc/graph_edge.hpp>
 #include <uhd/rfnoc/block_id.hpp>
+#include <uhd/rfnoc/graph_edge.hpp>
 #include <uhd/rfnoc/noc_block_base.hpp>
+#include <uhd/stream.hpp>
 #include <uhd/types/device_addr.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <boost/units/detail/utility.hpp> // for demangle
 #include <memory>
 #include <vector>
@@ -39,8 +39,10 @@ public:
     virtual ~rfnoc_graph() {}
 
 
-    //! Stuct to store information about which blocks are actually stored at a given port on the crossbar
-    struct block_xbar_info {
+    //! Stuct to store information about which blocks are actually stored at a given port
+    //! on the crossbar
+    struct block_xbar_info
+    {
         size_t xbar_port;
         noc_block_base::noc_id_t noc_id;
         size_t inst_num;
@@ -75,7 +77,8 @@ public:
      * \endcode
      * \note this access is not thread safe if performed during block enumeration
      */
-    virtual std::vector<block_id_t> find_blocks(const std::string& block_id_hint) const = 0;
+    virtual std::vector<block_id_t> find_blocks(
+        const std::string& block_id_hint) const = 0;
 
     /*! Type-cast version of find_blocks().
      */
@@ -139,8 +142,7 @@ public:
     template <typename T>
     std::shared_ptr<T> get_block(const block_id_t& block_id) const
     {
-        std::shared_ptr<T> blk =
-            std::dynamic_pointer_cast<T>(get_block(block_id));
+        std::shared_ptr<T> blk = std::dynamic_pointer_cast<T>(get_block(block_id));
         if (blk) {
             return blk;
         } else {
@@ -204,11 +206,17 @@ public:
         uhd::rx_streamer& streamer,
         size_t strm_port) = 0;
 
-    /*! Enumerate all the connections in the graph
+    /*! Enumerate all the possible static connections in the graph
      *
-     * \return A vector containing all the edges in the graph.
+     * \return A vector containing all the static edges in the graph.
      */
-    std::vector<graph_edge_t> enumerate_connections();
+    virtual std::vector<graph_edge_t> enumerate_static_connections() const = 0;
+
+    /*! Enumerate all the active connections in the graph
+     *
+     * \return A vector containing all the active edges in the graph.
+     */
+    virtual std::vector<graph_edge_t> enumerate_active_connections() = 0;
 
     /*! Commit graph and run initial checks
      *

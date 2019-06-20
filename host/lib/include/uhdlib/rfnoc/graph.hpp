@@ -62,6 +62,10 @@ public:
      */
     void release();
 
+    /*! Return a list of all edges
+     */
+    std::vector<graph_edge_t> enumerate_edges();
+
 private:
     friend class graph_accessor_t;
 

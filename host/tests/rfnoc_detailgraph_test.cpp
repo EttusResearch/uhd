@@ -157,6 +157,13 @@ BOOST_AUTO_TEST_CASE(test_graph)
     graph.connect(&mock_rx_radio, &mock_tx_radio, edge_info);
     BOOST_CHECK_EQUAL(boost::num_vertices(bgl_graph), 2);
 
+    BOOST_REQUIRE_EQUAL(graph.enumerate_edges().size(), 1);
+    auto edge0_info = graph.enumerate_edges().at(0);
+    BOOST_CHECK_EQUAL(edge0_info.src_blockid, "MOCK_RADIO0");
+    BOOST_CHECK_EQUAL(edge0_info.src_port, 0);
+    BOOST_CHECK_EQUAL(edge0_info.dst_blockid, "MOCK_RADIO1");
+    BOOST_CHECK_EQUAL(edge0_info.dst_port, 0);
+
     // Now attempt illegal connections (they must all fail)
     edge_info.src_port = 1;
     edge_info.dst_port = 0;
@@ -171,6 +178,7 @@ BOOST_AUTO_TEST_CASE(test_graph)
     edge_info.property_propagation_active = false;
     BOOST_REQUIRE_THROW(
         graph.connect(&mock_rx_radio, &mock_tx_radio, edge_info), uhd::rfnoc_error);
+    BOOST_CHECK_EQUAL(graph.enumerate_edges().size(), 1);
 }
 
 BOOST_AUTO_TEST_CASE(test_graph_unresolvable)
