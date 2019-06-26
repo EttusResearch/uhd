@@ -1,0 +1,59 @@
+schema: rfnoc_modtool_args
+module_name: duc
+version: 1.0
+rfnoc_version: 1.0
+chdr_width: 64
+noc_id: 0xD0C00000
+
+clocks:
+  - name: rfnoc_chdr
+    freq: "[]"
+  - name: rfnoc_ctrl
+    freq: "[]"
+  - name: duc
+    freq: "[]"
+
+control:
+  sw_iface: nocscript
+  fpga_iface: ctrlport
+  interface_direction: master_slave
+  fifo_depth: 32
+  clk_domain: duc
+  ctrlport:
+    byte_mode: True
+    timed: False
+    has_status: False
+
+parameters:
+  NUM_PORTS: 1
+  NUM_HB: 3
+  CIC_MAX_INTERP: 255
+
+data:
+  fpga_iface: axis_chdr
+  clk_domain: duc
+  mtu: 1024
+  inputs:
+    port0:
+      index: 0
+      item_width: 32
+      nipc: 2
+      context_fifo_depth: 1
+      payload_fifo_depth: 1
+      format: int32
+      mdata_sig: ~
+  outputs:
+    port0:
+      index: 0
+      item_width: 32
+      nipc: 2
+      context_fifo_depth: 1
+      payload_fifo_depth: 1
+      format: int32
+      mdata_sig: ~
+
+io_port:
+
+registers:
+
+properties:

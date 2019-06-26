@@ -1,0 +1,72 @@
+schema: rfnoc_modtool_args
+module_name: radio
+version: 1.0
+rfnoc_version: 1.0
+chdr_width: 64
+noc_id: 0x12AD1000
+
+clocks:
+  - name: rfnoc_chdr
+    freq: "[]"
+  - name: rfnoc_ctrl
+    freq: "[]"
+  - name: radio
+    freq: "[]"
+
+control:
+  sw_iface: nocscript
+  fpga_iface: ctrlport
+  interface_direction: master_slave
+  fifo_depth: 32
+  clk_domain: rfnoc_ctrl
+  ctrlport:
+    byte_mode: True
+    timed: False
+    has_status: False
+
+# The parameters section lists parameters that get added to the generated
+# Verilog for the module instantiation. Any parameter listed here may be set to
+# different value in the image builder YAML file.
+parameters:
+  NUM_PORTS: 1
+
+data:
+  fpga_iface: axis_chdr
+  clk_domain: radio
+  mtu: 1024
+  inputs:
+    port0:
+      index: 0
+      item_width: 32
+      nipc: 2
+      context_fifo_depth: 1
+      payload_fifo_depth: 1
+      format: int32
+      mdata_sig: ~
+  outputs:
+    port0:
+      index: 0
+      item_width: 32
+      nipc: 2
+      context_fifo_depth: 1
+      payload_fifo_depth: 1
+      format: int32
+      mdata_sig: ~
+
+io_ports:
+  ctrl_port:
+    type: ctrl_port
+    drive: master
+    rename:
+      pattern: (.*)
+      repl: m_\1
+  time_keeper:
+    type: time_keeper
+    drive: listener
+  x300_radio:
+    type: x300_radio
+    drive: slave
+
+registers:
+
+properties:

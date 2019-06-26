@@ -1,0 +1,57 @@
+ctrl_port:
+  type: master-slave
+  ports:
+  - name: ctrlport_req_wr
+    type: from-master
+  - name: ctrlport_req_rd
+    type: from-master
+  - name: ctrlport_req_addr
+    type: from-master
+    width: 20
+  - name: ctrlport_req_data
+    type: from-master
+    width: 32
+  - name: ctrlport_req_byte_en
+    type: from-master
+    width: 4
+  - name: ctrlport_req_has_time
+    type: from-master
+  - name: ctrlport_req_time
+    type: from-master
+    width: 64
+  - name: ctrlport_resp_ack
+    type: to-master
+  - name: ctrlport_resp_status
+    type: to-master
+    width: 2
+  - name: ctrlport_resp_data
+    type: to-master
+    width: 32
+
+time_keeper:
+  type: broadcaster-listener
+  ports:
+  - name: radio_time
+    width: 64
+    
+x300_radio:
+  type: master-slave
+  ports:
+  - name: radio_rx_data
+    type: from-master
+    width: 64
+  - name: radio_rx_stb
+    type: from-master
+    width: 2
+  - name: radio_rx_running
+    type: to-master
+    width: 2
+  - name: radio_tx_data
+    type: to-master
+    width: 64
+  - name: radio_tx_stb
+    type: from-master
+    width: 2
+  - name: radio_tx_running
+    type: to-master
+    width: 2

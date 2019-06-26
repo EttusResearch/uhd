@@ -1,0 +1,45 @@
+type: x300
+type_id: DEAD
+family: 7SERIES
+transports:
+- name: eth0
+  type: 10G
+  width: 64
+- name: eth1
+  type: 1G
+  width: 64
+- name: pcie
+  type: PCIe
+  width: 64
+
+clocks:
+- name: radio
+
+io_ports:
+  ctrlport_radio0:
+    type: ctrl_port
+    drive: slave
+    rename:
+      pattern: (ctrlport_)(.*)
+      repl: m_\1radio0_\2
+  ctrlport_radio1:
+    type: ctrl_port
+    drive: slave
+    rename:
+      pattern: (ctrlport_)(.*)
+      repl: m_\1radio1_\2
+  time_keeper:
+    type: time_keeper
+    drive: broadcaster
+  x300_radio0:
+    type: x300_radio
+    drive: master
+    rename:
+      pattern: (.*)
+      repl: \1_radio0
+  x300_radio1:
+    type: x300_radio
+    drive: master
+    rename:
+      pattern: (.*)
+      repl: \1_radio1

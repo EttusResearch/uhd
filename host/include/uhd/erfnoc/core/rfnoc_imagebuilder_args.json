@@ -1,0 +1,78 @@
+{
+    "type": "object",
+    "properties": {
+        "schema":           { "const": "rfnoc_imagebuilder_args" },
+        "copyright":        { "type":  "string" },
+        "version":          { "type":  "number" },
+        "license":          { "type":  "string" },
+        "device_desc":      { "type":  "string" },
+        "rfnoc_version":    { "type":  "number" },
+        "chdr_width":       { "enum":  [64, 256] },
+
+        "stream_endpoints": { "$ref": "#/definitions/stream_endpoints" },
+        "noc_blocks":       { "$ref": "#/definitions/noc_blocks" },
+        "clk_domains":      { "type": "array",
+                              "items": { "$ref": "#/definitions/connection" } },
+        "connections":      { "type": "array",
+                              "items": { "$ref": "#/definitions/connection" } }
+    },
+    "required":             ["schema",
+                             "chdr_width",
+                             "noc_blocks"],
+    "additionalProperties": false,
+
+    "definitions": {
+
+        "stream_endpoints": {
+            "type": "object",
+            "patternProperties": {
+                ".*": { "$ref": "#/definitions/stream_endpoint" }
+            }
+        },
+
+        "noc_blocks": {
+            "type": "object",
+            "patternProperties": {
+                ".*": { "$ref": "#/definitions/noc_block" }
+            }
+        },
+
+        "stream_endpoint": {
+            "type": "object",
+            "properties": {
+                "ctrl":      { "type": "boolean" },
+                "data":      { "type": "boolean" },
+                "num_data_i":{ "type": "integer", "minimum": 1 },
+                "num_data_o":{ "type": "integer", "minimum": 1 },
+                "buff_size": { "type": "integer", "minimum": 0 }
+            },
+            "additionalProperties": false
+        },
+
+        "noc_block": {
+            "type": "object",
+            "properties": {
+                "block_desc": { "type": "string", "pattern": "^.*\\.yml" },
+                "parameters": { "$ref": "#/definitions/parameter" }
+            },
+            "required": ["block_desc"],
+            "additionalProperties": false
+        },
+
+        "parameter": {
+            "type": "object"
+        },
+
+        "connection": {
+            "type": "object",
+            "properties": {
+                "srcblk":  { "type": "string", "minLength": 1 },
+                "srcport": { "type": "string", "minLength": 1 },
+                "dstblk":  { "type": "string", "minLength": 1 },
+                "dstport": { "type": "string", "minLength": 1 }
+            },
+            "required": ["srcblk", "srcport", "dstblk", "dstport"],
+            "additionalProperties": false
+        }
+    }
+}

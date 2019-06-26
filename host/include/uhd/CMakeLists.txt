@@ -5,6 +5,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
+# This is a temporary include - remove once rfnoc is replaced by erfnoc
+add_subdirectory(erfnoc)
+
 add_subdirectory(rfnoc)
 add_subdirectory(transport)
 add_subdirectory(types)

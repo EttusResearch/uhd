@@ -36,6 +36,7 @@ set(PYTHON_MIN_VERSION "3.5")
 # Other deps
 set(BOOST_MIN_VERSION "1.58")
 set(NUMPY_MIN_VERSION "1.11")
+set(RUAMEL.YAML_MIN_VERSION "0.15")
 set(PY_MAKO_MIN_VERSION "0.4.2")
 set(PY_REQUESTS_MIN_VERSION "2.0")
 
@@ -332,6 +333,12 @@ PYTHON_CHECK_MODULE(
     "numpy ${NUMPY_MIN_VERSION} or greater"
     "numpy" "LooseVersion(numpy.__version__) >= LooseVersion('${NUMPY_MIN_VERSION}')"
     HAVE_PYTHON_MODULE_NUMPY
+)
+
+PYTHON_CHECK_MODULE(
+    "ruamel.yaml ${RUAMEL.YAML_MIN_VERSION} or greater"
+    "ruamel.yaml" "LooseVersion(ruamel.yaml.__version__) >= LooseVersion('${RUAMEL.YAML_MIN_VERSION}')"
+    HAVE_PYTHON_MODULE_YAML
 )
 
 ########################################################################
