@@ -23,12 +23,18 @@ block_iface::block_iface(block_ctrl_base* block_ptr) : _block_ptr(block_ptr)
     function_table::sptr ft = function_table::make();
 
     // Add the SR_WRITE() function
-    expression_function::argtype_list_type sr_write_args =
+    expression_function::argtype_list_type sr_write_args_wo_port =
         boost::assign::list_of(expression::TYPE_STRING)(expression::TYPE_INT);
+    expression_function::argtype_list_type sr_write_args_w_port = boost::assign::list_of(
+        expression::TYPE_STRING)(expression::TYPE_INT)(expression::TYPE_INT);
     ft->register_function("SR_WRITE",
         boost::bind(&block_iface::_nocscript__sr_write, this, _1),
         expression::TYPE_BOOL,
-        sr_write_args);
+        sr_write_args_wo_port);
+    ft->register_function("SR_WRITE",
+        boost::bind(&block_iface::_nocscript__sr_write, this, _1),
+        expression::TYPE_BOOL,
+        sr_write_args_w_port);
 
     // Add read access to arguments ($foo)
     expression_function::argtype_list_type arg_set_args_wo_port =
@@ -105,10 +111,15 @@ expression_literal block_iface::_nocscript__sr_write(
 {
     const std::string reg_name = args[0]->eval().get_string();
     const uint32_t reg_val     = uint32_t(args[1]->eval().get_int());
-    bool result                = true;
+    size_t port                = 0;
+    if (args.size() == 3) {
+        port = size_t(args[2]->eval().get_int());
+    }
+
+    bool result = true;
     try {
         UHD_NOCSCRIPT_LOG() << "[NocScript] Executing SR_WRITE() ";
-        _block_ptr->sr_write(reg_name, reg_val);
+        _block_ptr->sr_write(reg_name, reg_val, port);
     } catch (const uhd::exception& e) {
         UHD_LOGGER_ERROR("RFNOC")
             << boost::format("[NocScript] Error while executing SR_WRITE(%s, 0x%X):\n%s")
