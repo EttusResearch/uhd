@@ -6,11 +6,12 @@
 
 #include <uhd/exception.hpp>
 #include <uhd/rfnoc/ddc_block_control.hpp>
+#include <uhd/rfnoc/defaults.hpp>
 #include <uhd/rfnoc/property.hpp>
 #include <uhd/rfnoc/registry.hpp>
-#include <uhd/rfnoc/defaults.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhd/utils/math.hpp>
 #include <uhdlib/usrp/cores/dsp_core_utils.hpp>
 #include <uhdlib/utils/compat_check.hpp>
 #include <uhdlib/utils/math.hpp>
@@ -20,11 +21,10 @@
 
 namespace {
 
-constexpr double DEFAULT_RATE    = 1e9;
-constexpr double DEFAULT_SCALING = 1.0;
-constexpr int DEFAULT_DECIM      = 1;
-constexpr double DEFAULT_FREQ    = 0.0;
-const uhd::rfnoc::io_type_t DEFAULT_TYPE     = uhd::rfnoc::IO_TYPE_SC16;
+constexpr double DEFAULT_SCALING         = 1.0;
+constexpr int DEFAULT_DECIM              = 1;
+constexpr double DEFAULT_FREQ            = 0.0;
+const uhd::rfnoc::io_type_t DEFAULT_TYPE = uhd::rfnoc::IO_TYPE_SC16;
 
 //! Space (in bytes) between register banks per channel
 constexpr uint32_t REG_CHAN_OFFSET = 2048;
@@ -74,7 +74,7 @@ public:
         // Load list of valid decimation values
         std::set<size_t> decims{1}; // 1 is always a valid decimatino
         for (size_t hb = 0; hb < _num_halfbands; hb++) {
-            for (size_t cic_decim = 0; cic_decim < _cic_max_decim; cic_decim++) {
+            for (size_t cic_decim = 1; cic_decim <= _cic_max_decim; cic_decim++) {
                 decims.insert((1 << hb) * cic_decim);
             }
         }
@@ -122,24 +122,29 @@ public:
 
     uhd::freq_range_t get_frequency_range(const size_t chan) const
     {
-        const double input_rate = _samp_rate_in.at(chan).get();
+        const double input_rate =
+            _samp_rate_in.at(chan).is_valid() ? _samp_rate_in.at(chan).get() : 1.0;
         // TODO add steps
         return uhd::freq_range_t(-input_rate / 2, input_rate / 2);
     }
 
     double get_input_rate(const size_t chan) const
     {
-        return _samp_rate_in.at(chan).get();
+        return _samp_rate_in.at(chan).is_valid() ? _samp_rate_in.at(chan).get() : 1.0;
     }
 
     double get_output_rate(const size_t chan) const
     {
-        return _samp_rate_out.at(chan).get();
+        return _samp_rate_out.at(chan).is_valid() ? _samp_rate_out.at(chan).get() : 1.0;
     }
 
     uhd::meta_range_t get_output_rates(const size_t chan) const
     {
         uhd::meta_range_t result;
+        if (!_samp_rate_in.at(chan).is_valid()) {
+            result.push_back(uhd::range_t(1.0));
+            return result;
+        }
         const double input_rate = _samp_rate_in.at(chan).get();
         // The decimations are stored in order (from smallest to biggest), so
         // iterate in reverse order so we can add rates from smallest to biggest
@@ -151,9 +156,17 @@ public:
 
     double set_output_rate(const double rate, const size_t chan)
     {
-        const int coerced_decim = coerce_decim(get_input_rate(chan) / rate);
-        set_property<int>("decim", coerced_decim, chan);
-        return _decim.at(chan).get();
+        if (_samp_rate_in.at(chan).is_valid()) {
+            const int coerced_decim = coerce_decim(get_input_rate(chan) / rate);
+            set_property<int>("decim", coerced_decim, chan);
+        } else {
+            RFNOC_LOG_DEBUG(
+                "Property samp_rate@"
+                << chan
+                << " is not valid, attempting to set output rate via the edge property.");
+            set_property<double>("samp_rate", rate, {res_source_info::OUTPUT_EDGE, chan});
+        }
+        return _samp_rate_out.at(chan).get();
     }
 
     // Somewhat counter-intuitively, we post a stream command as a message to
@@ -191,10 +204,10 @@ private:
     void _register_props(const size_t chan)
     {
         // Create actual properties and store them
-        _samp_rate_in.push_back(property_t<double>(
-            PROP_KEY_SAMP_RATE, DEFAULT_RATE, {res_source_info::INPUT_EDGE, chan}));
-        _samp_rate_out.push_back(property_t<double>(
-            PROP_KEY_SAMP_RATE, DEFAULT_RATE, {res_source_info::OUTPUT_EDGE, chan}));
+        _samp_rate_in.push_back(
+            property_t<double>(PROP_KEY_SAMP_RATE, {res_source_info::INPUT_EDGE, chan}));
+        _samp_rate_out.push_back(
+            property_t<double>(PROP_KEY_SAMP_RATE, {res_source_info::OUTPUT_EDGE, chan}));
         _scaling_in.push_back(property_t<double>(
             PROP_KEY_SCALING, DEFAULT_SCALING, {res_source_info::INPUT_EDGE, chan}));
         _scaling_out.push_back(property_t<double>(
@@ -239,22 +252,11 @@ private:
         /**********************************************************************
          * Add resolvers
          *********************************************************************/
-        // Resolver for the output scaling: This cannot be updated, we reset it
-        // to its previous value.
-        add_property_resolver({scaling_out},
-            {scaling_out},
-            [this,
-                chan,
-                &decim       = *decim,
-                &scaling_in  = *scaling_in,
-                &scaling_out = *scaling_out]() {
-                scaling_out = scaling_in.get() * _residual_scaling.at(chan);
-            });
         // Resolver for _decim: this gets executed when the user directly
         // modifies _decim. the desired behaviour is to coerce it first, then
         // keep the input rate constant, and re-calculate the output rate.
         add_property_resolver({decim},
-            {decim, samp_rate_out, scaling_in},
+            {decim, samp_rate_out, samp_rate_in, scaling_in},
             [this,
                 chan,
                 &decim         = *decim,
@@ -264,7 +266,11 @@ private:
                 RFNOC_LOG_TRACE("Calling resolver for `decim'@" << chan);
                 decim = coerce_decim(double(decim.get()));
                 set_decim(decim.get(), chan);
-                samp_rate_out = samp_rate_in.get() / decim.get();
+                if (samp_rate_in.is_valid()) {
+                    samp_rate_out = samp_rate_in.get() / decim.get();
+                } else if (samp_rate_out.is_valid()) {
+                    samp_rate_in = samp_rate_out.get() * decim.get();
+                }
                 scaling_in.force_dirty();
             });
         // Resolver for _freq: this gets executed when the user directly
@@ -272,73 +278,80 @@ private:
         add_property_resolver(
             {freq}, {freq}, [this, chan, &samp_rate_in = *samp_rate_in, &freq = *freq]() {
                 RFNOC_LOG_TRACE("Calling resolver for `freq'@" << chan);
-                freq = _set_freq(freq.get(), samp_rate_in.get(), chan);
+                if (samp_rate_in.is_valid()) {
+                    const double new_freq =
+                        _set_freq(freq.get(), samp_rate_in.get(), chan);
+                    // If the frequency we just set is sufficiently close to the old
+                    // frequency, don't bother updating the property in software
+                    if (!uhd::math::frequencies_are_equal(new_freq, freq.get())) {
+                        freq = new_freq;
+                    }
+                } else {
+                    RFNOC_LOG_DEBUG("Not setting frequency until sampling rate is set.");
+                }
             });
         // Resolver for the input rate: we try and match decim so that the output
         // rate is not modified. if decim needs to be coerced, only then the
         // output rate is modified.
         // Note this will also affect the frequency.
-        add_property_resolver({samp_rate_in},
-            {decim, samp_rate_out, scaling_in, freq},
+        add_property_resolver({samp_rate_in, scaling_in},
+            {decim, samp_rate_out, freq, scaling_out},
             [this,
                 chan,
                 &decim         = *decim,
                 &freq          = *freq,
-                &scaling_in    = *scaling_in,
                 &samp_rate_out = *samp_rate_out,
-                &samp_rate_in  = *samp_rate_in]() {
-                RFNOC_LOG_TRACE("Calling resolver for `samp_rate_in'@" << chan);
-                // If decim changes, it will trigger the decim resolver to run
-                decim         = coerce_decim(samp_rate_in.get() / samp_rate_out.get());
-                samp_rate_out = samp_rate_in.get() / decim.get();
-                // If the input rate changes, we need to update the DDS, too,
-                // since it works on frequencies normalized by the input rate.
-                freq.force_dirty();
+                &samp_rate_in  = *samp_rate_in,
+                &scaling_in    = *scaling_in,
+                &scaling_out   = *scaling_out]() {
+                RFNOC_LOG_TRACE(
+                    "Calling resolver for `samp_rate_in/scaling_in'@" << chan);
+                if (samp_rate_in.is_valid()) {
+                    RFNOC_LOG_TRACE("New samp_rate_in is " << samp_rate_in.get());
+                    // decim takes priority over samp_rate_out if set
+                    // If decim changes, it will trigger the decim resolver to run
+                    if (not decim.is_valid()) {
+                        decim = coerce_decim(samp_rate_in.get() / samp_rate_out.get());
+                    }
+                    samp_rate_out = samp_rate_in.get() / decim.get();
+                    RFNOC_LOG_TRACE("New samp_rate_out is " << samp_rate_out.get());
+                    // If the input rate changes, we need to update the DDS, too,
+                    // since it works on frequencies normalized by the input rate.
+                    freq.force_dirty();
+                }
+                scaling_out = scaling_in.get() * _residual_scaling.at(chan);
             });
         // Resolver for the output rate: like the previous one, but flipped.
-        add_property_resolver({samp_rate_out},
-            {decim, samp_rate_in},
+        add_property_resolver({samp_rate_out, scaling_out},
+            {decim, samp_rate_in, scaling_out},
             [this,
                 chan,
                 &decim         = *decim,
-                &scaling_in    = *scaling_in,
                 &samp_rate_out = *samp_rate_out,
-                &samp_rate_in  = *samp_rate_in]() {
-                RFNOC_LOG_TRACE("Calling resolver for `samp_rate_out'@" << chan);
-                decim = coerce_decim(int(samp_rate_in.get() / samp_rate_out.get()));
-                // If decim is dirty, it will trigger the decim resolver.
-                // However, the decim resolver will set the output rate based
-                // on the input rate, so we need to force the input rate first.
-                if (decim.is_dirty()) {
-                    samp_rate_in = samp_rate_out.get() * decim.get();
+                &samp_rate_in  = *samp_rate_in,
+                &scaling_in    = *scaling_in,
+                &scaling_out   = *scaling_out]() {
+                RFNOC_LOG_TRACE(
+                    "Calling resolver for `samp_rate_out/scaling_out'@" << chan);
+                if (samp_rate_out.is_valid()) {
+                    if (samp_rate_in.is_valid()) {
+                        decim =
+                            coerce_decim(int(samp_rate_in.get() / samp_rate_out.get()));
+                    }
+                    // If decim is dirty, it will trigger the decim resolver.
+                    // However, the decim resolver will set the output rate based
+                    // on the input rate, so we need to force the input rate first.
+                    if (decim.is_dirty()) {
+                        samp_rate_in = samp_rate_out.get() * decim.get();
+                    }
                 }
-            });
-        // Resolver for the input scaling: When updated, we forward the changes
-        // to the output scaling.
-        add_property_resolver({scaling_in},
-            {scaling_out},
-            [this, chan, &decim = *decim, &scaling_out = *scaling_out]() {
-                // We don't actually change the value here, because the
-                // resolution might be not be complete. The resolver for the
-                // output scaling can take care of things.
-                scaling_out.force_dirty();
-            });
-        // Resolver for the output scaling: This cannot be updated, we reset it
-        // to its previous value.
-        add_property_resolver({scaling_out},
-            {scaling_out},
-            [this,
-                chan,
-                &decim       = *decim,
-                &scaling_in  = *scaling_in,
-                &scaling_out = *scaling_out]() {
                 scaling_out = scaling_in.get() * _residual_scaling.at(chan);
             });
         // Resolvers for type: These are constants
-        add_property_resolver({type_in}, {type_in}, [this, &type_in = *type_in]() {
+        add_property_resolver({type_in}, {type_in}, [&type_in = *type_in]() {
             type_in.set(IO_TYPE_SC16);
         });
-        add_property_resolver({type_out}, {type_out}, [this, &type_out = *type_out]() {
+        add_property_resolver({type_out}, {type_out}, [&type_out = *type_out]() {
             type_out.set(IO_TYPE_SC16);
         });
     }
@@ -396,6 +409,7 @@ private:
      */
     void set_decim(int decim, const size_t chan)
     {
+        RFNOC_LOG_TRACE("Set decim to " << decim);
         // Step 1: Calculate number of halfbands
         uint32_t hb_enable = 0;
         uint32_t cic_decim = decim;
@@ -465,7 +479,7 @@ private:
      */
     int coerce_decim(const double requested_decim) const
     {
-        UHD_ASSERT_THROW(requested_decim > 0);
+        UHD_ASSERT_THROW(requested_decim >= 0);
         return static_cast<int>(_valid_decims.clip(requested_decim, true));
     }
 

@@ -245,17 +245,25 @@ UHD_ADD_NONAPI_TEST(
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/client_zero.cpp
 )
 
+set_source_files_properties(
+    ${CMAKE_SOURCE_DIR}/lib/utils/system_time.cpp
+    PROPERTIES COMPILE_DEFINITIONS
+    "HAVE_MICROSEC_CLOCK"
+)
 UHD_ADD_NONAPI_TEST(
     TARGET rfnoc_blocks_test.cpp
     EXTRA_SOURCES
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/noc_block_base.cpp
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/block_id.cpp
     ${CMAKE_SOURCE_DIR}/lib/utils/compat_check.cpp
+    ${CMAKE_SOURCE_DIR}/lib/utils/system_time.cpp
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/ddc_block_control.cpp
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/null_block_control.cpp
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/radio_control_impl.cpp
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/register_iface_holder.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/cores/dsp_core_utils.cpp
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/graph.cpp
+    INCLUDE_DIRS
+    ${CMAKE_BINARY_DIR}/lib/ic_reg_maps/
 )
 
 UHD_ADD_NONAPI_TEST(

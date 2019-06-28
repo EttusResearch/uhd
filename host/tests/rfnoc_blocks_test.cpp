@@ -5,12 +5,14 @@
 //
 
 #include "rfnoc_mock_reg_iface.hpp"
-#include <uhd/rfnoc/null_block_control.hpp>
-#include <uhd/rfnoc/ddc_block_control.hpp>
+#include "rfnoc_graph_mock_nodes.hpp"
 #include <uhd/rfnoc/actions.hpp>
+#include <uhd/rfnoc/ddc_block_control.hpp>
+#include <uhd/rfnoc/defaults.hpp>
+#include <uhd/rfnoc/null_block_control.hpp>
 #include <uhdlib/rfnoc/clock_iface.hpp>
 #include <uhdlib/rfnoc/node_accessor.hpp>
-#include <uhdlib/rfnoc/clock_iface.hpp>
+#include <uhdlib/rfnoc/graph.hpp>
 #include <uhdlib/utils/narrow.hpp>
 #include <boost/test/unit_test.hpp>
 #include <iostream>
@@ -22,7 +24,9 @@ namespace {
 noc_block_base::make_args_ptr make_make_args(noc_block_base::noc_id_t noc_id,
     const std::string& block_id,
     const size_t n_inputs,
-    const size_t n_outputs)
+    const size_t n_outputs,
+    const std::string& tb_clock_name = CLOCK_KEY_GRAPH,
+    const std::string& cp_clock_name = "MOCK_CLOCK")
 {
     auto make_args                = std::make_unique<noc_block_base::make_args_t>();
     make_args->noc_id             = noc_id;
@@ -30,8 +34,8 @@ noc_block_base::make_args_ptr make_make_args(noc_block_base::noc_id_t noc_id,
     make_args->num_output_ports   = n_outputs;
     make_args->reg_iface          = std::make_shared<mock_reg_iface_t>();
     make_args->block_id           = block_id;
-    make_args->ctrlport_clk_iface = std::make_shared<clock_iface>("MOCK_CLOCK");
-    make_args->tb_clk_iface       = std::make_shared<clock_iface>("MOCK_CLOCK");
+    make_args->ctrlport_clk_iface = std::make_shared<clock_iface>(cp_clock_name);
+    make_args->tb_clk_iface       = std::make_shared<clock_iface>(tb_clock_name);
     make_args->tree               = uhd::property_tree::make();
     return make_args;
 }
@@ -141,6 +145,7 @@ BOOST_AUTO_TEST_CASE(test_ddc_block)
     constexpr uint32_t max_cic                     = 128;
     constexpr size_t num_chans                     = 4;
     constexpr noc_block_base::noc_id_t mock_noc_id = 0x7E57DDC0;
+    constexpr int TEST_DECIM                       = 20;
 
     auto ddc_make_args = make_make_args(mock_noc_id, "0/DDC#0", num_chans, num_chans);
     ddc_make_args->args = uhd::device_addr_t("foo=bar");
@@ -154,10 +159,62 @@ BOOST_AUTO_TEST_CASE(test_ddc_block)
 
     node_accessor.init_props(test_ddc.get());
     UHD_LOG_DEBUG("TEST", "Init done.");
-    test_ddc->set_property<int>("decim", 4, 0);
+    test_ddc->set_property<int>("decim", TEST_DECIM, 0);
 
     BOOST_REQUIRE(ddc_reg_iface->write_memory.count(ddc_block_control::SR_DECIM_ADDR));
     BOOST_CHECK_EQUAL(
-        ddc_reg_iface->write_memory.at(ddc_block_control::SR_DECIM_ADDR), 2 << 8 | 1);
+        ddc_reg_iface->write_memory.at(ddc_block_control::SR_DECIM_ADDR), 2 << 8 | 5);
+
+    // Now plop it in a graph
+    detail::graph_t graph{};
+    detail::graph_t::graph_edge_t edge_info;
+    edge_info.src_port                    = 0;
+    edge_info.dst_port                    = 0;
+    edge_info.property_propagation_active = true;
+    edge_info.edge = detail::graph_t::graph_edge_t::DYNAMIC;
+
+    mock_terminator_t mock_source_term(1);
+    mock_terminator_t mock_sink_term(1);
+
+    UHD_LOG_INFO("TEST", "Priming mock source node props");
+    mock_source_term.set_edge_property<std::string>(
+        "type", "sc16", {res_source_info::OUTPUT_EDGE, 0});
+    mock_source_term.set_edge_property<double>(
+        "scaling", 1.0, {res_source_info::OUTPUT_EDGE, 0});
+    mock_source_term.set_edge_property<double>(
+        "samp_rate", 1.0, {res_source_info::OUTPUT_EDGE, 0});
+
+    UHD_LOG_INFO("TEST", "Creating graph");
+    graph.connect(&mock_source_term, test_ddc.get(), edge_info);
+    graph.connect(test_ddc.get(), &mock_sink_term, edge_info);
+    graph.commit();
+    // We need to set the decimation again, because the rates will screw it
+    // change it w.r.t. to the previous setting
+    test_ddc->set_property<int>("decim", TEST_DECIM, 0);
+    BOOST_CHECK_EQUAL(test_ddc->get_property<int>("decim", 0), TEST_DECIM);
+    BOOST_CHECK(mock_source_term.get_edge_property<double>(
+                    "samp_rate", {res_source_info::OUTPUT_EDGE, 0})
+                == mock_sink_term.get_edge_property<double>(
+                       "samp_rate", {res_source_info::INPUT_EDGE, 0})
+                       * TEST_DECIM);
+    BOOST_CHECK(mock_sink_term.get_edge_property<double>(
+                    "scaling", {res_source_info::INPUT_EDGE, 0})
+                != 1.0);
+
+    UHD_LOG_INFO("TEST", "Setting freq to 1/8 of input rate");
+    constexpr double TEST_FREQ = 1.0/8;
+    test_ddc->set_property<double>("freq", TEST_FREQ, 0);
+    const uint32_t freq_word_1 =
+        ddc_reg_iface->write_memory.at(ddc_block_control::SR_FREQ_ADDR);
+    BOOST_REQUIRE(freq_word_1 != 0);
+    UHD_LOG_INFO("TEST", "Doubling input rate (to 2.0)");
+    // Now this should change the freq word, but not the absolute frequency
+    mock_source_term.set_edge_property<double>(
+        "samp_rate", 2.0, {res_source_info::OUTPUT_EDGE, 0});
+    const double freq_word_2 =
+        ddc_reg_iface->write_memory.at(ddc_block_control::SR_FREQ_ADDR);
+    // The frequency word is the phase increment, which will halve. We skirt
+    // around fixpoint/floating point accuracy issues by using CLOSE.
+    BOOST_CHECK_CLOSE(double(freq_word_1) / double(freq_word_2), 2.0, 1e-6);
 }
 

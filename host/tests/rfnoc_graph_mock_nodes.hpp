@@ -10,6 +10,7 @@
 #include <uhd/rfnoc/defaults.hpp>
 #include <uhd/rfnoc/node.hpp>
 #include <uhd/types/stream_cmd.hpp>
+#include <uhdlib/rfnoc/node_accessor.hpp>
 
 using namespace uhd::rfnoc;
 
@@ -349,5 +350,65 @@ private:
         "samp_rate", 1e6, {res_source_info::INPUT_EDGE}};
     const size_t _num_ports;
 };
+
+/*! Terminator: Probe edge properties
+ */
+class mock_terminator_t : public node_t
+{
+public:
+    static size_t counter;
+
+    mock_terminator_t(const size_t num_ports)
+        : _num_ports(num_ports), _term_count(counter++)
+    {
+        set_prop_forwarding_policy(forwarding_policy_t::DROP);
+        set_action_forwarding_policy(forwarding_policy_t::DROP);
+    }
+
+    std::string get_unique_id() const
+    {
+        return "MOCK_TERMINATOR" + std::to_string(_term_count);
+    }
+
+    size_t get_num_input_ports() const
+    {
+        return _num_ports;
+    }
+
+    size_t get_num_output_ports() const
+    {
+        return _num_ports;
+    }
+
+    template <typename data_t>
+    void set_edge_property(const std::string& id, data_t val, res_source_info edge_info)
+    {
+        UHD_ASSERT_THROW(edge_info.type == res_source_info::INPUT_EDGE
+                         || edge_info.type == res_source_info::OUTPUT_EDGE);
+        try {
+            set_property<data_t>(id, val, edge_info);
+        } catch (const uhd::lookup_error&) {
+            node_accessor_t node_accessor{};
+            auto edge_info_inverted = edge_info;
+            edge_info_inverted.type = res_source_info::invert_edge(edge_info.type);
+            property_t<data_t> new_prop(id, val, edge_info_inverted);
+            node_accessor.forward_edge_property(this, edge_info.instance, &new_prop);
+            set_property<data_t>(id, val, edge_info);
+        }
+    }
+
+    template <typename data_t>
+    data_t get_edge_property(const std::string& id, res_source_info edge_info)
+    {
+        UHD_ASSERT_THROW(edge_info.type == res_source_info::INPUT_EDGE
+                         || edge_info.type == res_source_info::OUTPUT_EDGE);
+        return get_property<data_t>(id, edge_info);
+    }
+
+private:
+    const size_t _num_ports;
+    const size_t _term_count;
+};
+size_t mock_terminator_t::counter = 0;
 
 #endif /* INCLUDED_LIBUHD_TESTS_MOCK_NODES_HPP */
