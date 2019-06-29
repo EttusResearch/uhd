@@ -1,6 +1,7 @@
 //
 // Copyright 2010-2013 Ettus Research LLC
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -158,7 +159,8 @@ public:
     UHD_INLINE typename buffer_type::sptr get_new(const double timeout)
     {
         if (wait_for_completion(timeout)) {
-            if (result.status != LIBUSB_TRANSFER_COMPLETED)
+            if (result.status != LIBUSB_TRANSFER_COMPLETED
+                && result.status != LIBUSB_TRANSFER_CANCELLED)
                 throw uhd::io_error(str(boost::format("usb %s transfer status: %d")
                                         % _name % libusb_error_name(result.status)));
             result.completed = 0;
