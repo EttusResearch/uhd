@@ -139,7 +139,7 @@ public:
     {
         if (wait_for_completion(timeout))
         {
-            if (result.status != LIBUSB_TRANSFER_COMPLETED)
+            if (result.status != LIBUSB_TRANSFER_COMPLETED || result.status != LIBUSB_TRANSFER_CANCELLED)
                 throw uhd::io_error(str(boost::format("usb %s transfer status: %d")
                                         % _name % libusb_error_name(result.status)));
             result.completed = 0;
