@@ -22,7 +22,8 @@ block_id_t::block_id_t(const std::string& block_str)
     : _device_no(0), _block_name(""), _block_ctr(0)
 {
     if (not set(block_str)) {
-        throw uhd::value_error("block_id_t: Invalid block ID string.");
+        throw uhd::value_error(
+            "block_id_t: Invalid block ID string: `" + block_str + "'");
     }
 }
 
