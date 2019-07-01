@@ -202,7 +202,7 @@ double magnesium_radio_ctrl_impl::set_tx_frequency(
     UHD_ASSERT_THROW(adf4351_source == "internal");
     double coerced_if_freq = freq;
 
-    if (_map_freq_to_tx_band(freq) == tx_band::LOWBAND) {
+    if (_map_freq_to_tx_band(_tx_band_map, freq) == tx_band::LOWBAND) {
         _is_low_band[TX_DIRECTION]    = true;
         const double desired_low_freq = MAGNESIUM_TX_IF_FREQ - freq;
         coerced_if_freq =
@@ -273,7 +273,7 @@ double magnesium_radio_ctrl_impl::set_rx_frequency(
     UHD_ASSERT_THROW(adf4351_source == "internal");
     double coerced_if_freq = freq;
 
-    if (_map_freq_to_rx_band(freq) == rx_band::LOWBAND) {
+    if (_map_freq_to_rx_band(_rx_band_map, freq) == rx_band::LOWBAND) {
         _is_low_band[RX_DIRECTION]    = true;
         const double desired_low_freq = MAGNESIUM_RX_IF_FREQ - freq;
         coerced_if_freq =
@@ -422,7 +422,7 @@ double magnesium_radio_ctrl_impl::_set_rx_gain(
         this->get_rx_frequency(chan),
         chan,
         RX_DIRECTION);
-    return clip_gain; // not really any coreced here (only clip) for individual gain
+    return clip_gain; // not really any coerced here (only clip) for individual gain
 }
 
 double magnesium_radio_ctrl_impl::_get_rx_gain(
@@ -698,6 +698,44 @@ std::string magnesium_radio_ctrl_impl::get_dboard_fe_from_chan(
 }
 
 
+void magnesium_radio_ctrl_impl::_remap_band_limits(
+    const std::string band_map, const uhd::direction_t dir)
+{
+    const size_t dflt_band_size = (dir == RX_DIRECTION) ? _rx_band_map.size()
+                                                        : _tx_band_map.size();
+
+    std::vector<std::string> band_map_split;
+    double band_lim;
+
+    UHD_LOG_DEBUG(unique_id(), "Using user specified frequency band limits");
+    boost::split(band_map_split, band_map, boost::is_any_of(";"));
+    if (band_map_split.size() != dflt_band_size) {
+        throw uhd::runtime_error((
+            boost::format(
+                "size %s of given frequency band map doesn't match the required size: %s")
+            % band_map_split.size() % dflt_band_size)
+                                     .str());
+    }
+    UHD_LOG_DEBUG(unique_id(), "newly used band limits: ");
+    for (size_t i = 0; i < band_map_split.size(); i++) {
+        try {
+            band_lim = std::stod(band_map_split.at(i));
+        } catch (...) {
+            throw uhd::value_error(
+                (boost::format("error while converting given frequency string %s "
+                               "to a double value")
+                    % band_map_split.at(i))
+                    .str());
+        }
+        UHD_LOG_DEBUG(unique_id(), "band " << i << " limit: " << band_lim << "Hz");
+        if (dir == RX_DIRECTION)
+            _rx_band_map.at(i) = band_lim;
+        else
+            _tx_band_map.at(i) = band_lim;
+    }
+}
+
+
 void magnesium_radio_ctrl_impl::set_rpc_client(
     uhd::rpc_client::sptr rpcc, const uhd::device_addr_t& block_args)
 {
@@ -717,6 +755,30 @@ void magnesium_radio_ctrl_impl::set_rpc_client(
             "Running LED identification process for " << identify_duration
                                                       << " seconds.");
         _identify_with_leds(identify_duration);
+    }
+
+    if (block_args.has_key("tx_gain_profile")) {
+        UHD_LOG_INFO(unique_id(),
+            "Using user specified TX gain profile: " << block_args.get(
+                "tx_gain_profile"));
+        _gain_profile[TX_DIRECTION] = block_args.get("tx_gain_profile");
+    }
+
+    if (block_args.has_key("rx_gain_profile")) {
+        UHD_LOG_INFO(unique_id(),
+            "Using user specified RX gain profile: " << block_args.get(
+                "rx_gain_profile"));
+        _gain_profile[RX_DIRECTION] = block_args.get("rx_gain_profile");
+    }
+
+    if (block_args.has_key("rx_band_map")) {
+        UHD_LOG_INFO(unique_id(), "Using user specified RX band limits");
+        _remap_band_limits(block_args.get("rx_band_map"), RX_DIRECTION);
+    }
+
+    if (block_args.has_key("tx_band_map")) {
+        UHD_LOG_INFO(unique_id(), "Using user specified TX band limits");
+        _remap_band_limits(block_args.get("tx_band_map"), TX_DIRECTION);
     }
 
     // Note: MCR gets set during the init() call (prior to this), which takes
@@ -771,7 +833,7 @@ bool magnesium_radio_ctrl_impl::get_lo_lock_status(const direction_t dir)
         _rpcc->request_with_token<bool>(_rpc_prefix + "get_ad9371_lo_lock", trx);
     UHD_LOG_TRACE(unique_id(),
         "AD9371 " << trx << " LO reports lock: " << (lo_lock ? "Yes" : "No"));
-    if (lo_lock and _map_freq_to_rx_band(freq) == rx_band::LOWBAND) {
+    if (lo_lock and _map_freq_to_rx_band(_rx_band_map, freq) == rx_band::LOWBAND) {
         lo_lock =
             lo_lock
             && _rpcc->request_with_token<bool>(_rpc_prefix + "get_lowband_lo_lock", trx);

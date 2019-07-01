@@ -28,7 +28,10 @@ constexpr char MAGNESIUM_DEFAULT_RX_ANTENNA[] = "RX2";
 constexpr char MAGNESIUM_DEFAULT_TX_ANTENNA[] = "TX/RX";
 
 //! Magnesium gain profile options
-const std::vector<std::string> MAGNESIUM_GP_OPTIONS = {"manual", "default"};
+const std::vector<std::string> MAGNESIUM_GP_OPTIONS = {"manual",
+    "default",
+    "default_rf_filter_bypass_always_on",
+    "default_rf_filter_bypass_always_off"};
 } // namespace
 
 //! Helper function to extract single value of port number.
@@ -261,10 +264,11 @@ void magnesium_radio_ctrl_impl::_init_frontend_subtree(
         });
 
     subtree->create<std::vector<std::string>>(tx_fe_path / "gains/all/profile/options")
-        .set({"manual", "default"});
+        .set(MAGNESIUM_GP_OPTIONS);
 
     subtree->create<std::string>(tx_fe_path / "gains/all/profile/value")
         .set_coercer([this](const std::string& profile) {
+            // check if given profile is valid, otherwise use default profile
             std::string return_profile = profile;
             if (std::find(
                     MAGNESIUM_GP_OPTIONS.begin(), MAGNESIUM_GP_OPTIONS.end(), profile)
@@ -300,6 +304,7 @@ void magnesium_radio_ctrl_impl::_init_frontend_subtree(
 
     subtree->create<std::string>(rx_fe_path / "gains/all/profile/value")
         .set_coercer([this](const std::string& profile) {
+            // check if given profile is valid, otherwise use default profile
             std::string return_profile = profile;
             if (std::find(
                     MAGNESIUM_GP_OPTIONS.begin(), MAGNESIUM_GP_OPTIONS.end(), profile)

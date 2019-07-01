@@ -67,12 +67,6 @@ namespace {
  * passes). Frequencies need to be chosen to allow as much of the full
  * bandwidth through unattenuated.
  */
-constexpr double MAGNESIUM_RX_BAND1_MIN_FREQ = 430e6;
-constexpr double MAGNESIUM_RX_BAND2_MIN_FREQ = 600e6;
-constexpr double MAGNESIUM_RX_BAND3_MIN_FREQ = 1050e6;
-constexpr double MAGNESIUM_RX_BAND4_MIN_FREQ = 1600e6;
-constexpr double MAGNESIUM_RX_BAND5_MIN_FREQ = 2100e6;
-constexpr double MAGNESIUM_RX_BAND6_MIN_FREQ = 2700e6;
 
 /* Note on the TX filter bank:
  *
@@ -96,13 +90,12 @@ constexpr double MAGNESIUM_RX_BAND6_MIN_FREQ = 2700e6;
  * through unattenuated (so don't go all the way up to the cutoff frequency
  * of that filter, OK).
  */
-constexpr double MAGNESIUM_TX_BAND1_MIN_FREQ = 723.17e6;
-constexpr double MAGNESIUM_TX_BAND2_MIN_FREQ = 1623.17e6;
-constexpr double MAGNESIUM_TX_BAND3_MIN_FREQ = 3323.17e6;
+
 } // namespace
 
+
 magnesium_radio_ctrl_impl::rx_band magnesium_radio_ctrl_impl::_map_freq_to_rx_band(
-    const double freq)
+    const band_map_t band_map, const double freq)
 {
     magnesium_radio_ctrl_impl::rx_band band;
 
@@ -110,17 +103,17 @@ magnesium_radio_ctrl_impl::rx_band magnesium_radio_ctrl_impl::_map_freq_to_rx_ba
         band = rx_band::INVALID_BAND;
     } else if (fp_compare_epsilon<double>(freq) < MAGNESIUM_LOWBAND_FREQ) {
         band = rx_band::LOWBAND;
-    } else if (fp_compare_epsilon<double>(freq) < MAGNESIUM_RX_BAND1_MIN_FREQ) {
+    } else if (fp_compare_epsilon<double>(freq) < band_map.at(1)) {
         band = rx_band::BAND0;
-    } else if (fp_compare_epsilon<double>(freq) < MAGNESIUM_RX_BAND2_MIN_FREQ) {
+    } else if (fp_compare_epsilon<double>(freq) < band_map.at(2)) {
         band = rx_band::BAND1;
-    } else if (fp_compare_epsilon<double>(freq) < MAGNESIUM_RX_BAND3_MIN_FREQ) {
+    } else if (fp_compare_epsilon<double>(freq) < band_map.at(3)) {
         band = rx_band::BAND2;
-    } else if (fp_compare_epsilon<double>(freq) < MAGNESIUM_RX_BAND4_MIN_FREQ) {
+    } else if (fp_compare_epsilon<double>(freq) < band_map.at(4)) {
         band = rx_band::BAND3;
-    } else if (fp_compare_epsilon<double>(freq) < MAGNESIUM_RX_BAND5_MIN_FREQ) {
+    } else if (fp_compare_epsilon<double>(freq) < band_map.at(5)) {
         band = rx_band::BAND4;
-    } else if (fp_compare_epsilon<double>(freq) < MAGNESIUM_RX_BAND6_MIN_FREQ) {
+    } else if (fp_compare_epsilon<double>(freq) < band_map.at(6)) {
         band = rx_band::BAND5;
     } else if (fp_compare_epsilon<double>(freq) <= MAGNESIUM_MAX_FREQ) {
         band = rx_band::BAND6;
@@ -132,7 +125,7 @@ magnesium_radio_ctrl_impl::rx_band magnesium_radio_ctrl_impl::_map_freq_to_rx_ba
 }
 
 magnesium_radio_ctrl_impl::tx_band magnesium_radio_ctrl_impl::_map_freq_to_tx_band(
-    const double freq)
+    const band_map_t band_map, const double freq)
 {
     magnesium_radio_ctrl_impl::tx_band band;
 
@@ -140,11 +133,11 @@ magnesium_radio_ctrl_impl::tx_band magnesium_radio_ctrl_impl::_map_freq_to_tx_ba
         band = tx_band::INVALID_BAND;
     } else if (fp_compare_epsilon<double>(freq) < MAGNESIUM_LOWBAND_FREQ) {
         band = tx_band::LOWBAND;
-    } else if (fp_compare_epsilon<double>(freq) < MAGNESIUM_TX_BAND1_MIN_FREQ) {
+    } else if (fp_compare_epsilon<double>(freq) < band_map.at(1)) {
         band = tx_band::BAND0;
-    } else if (fp_compare_epsilon<double>(freq) < MAGNESIUM_TX_BAND2_MIN_FREQ) {
+    } else if (fp_compare_epsilon<double>(freq) < band_map.at(2)) {
         band = tx_band::BAND1;
-    } else if (fp_compare_epsilon<double>(freq) < MAGNESIUM_TX_BAND3_MIN_FREQ) {
+    } else if (fp_compare_epsilon<double>(freq) < band_map.at(3)) {
         band = tx_band::BAND2;
     } else if (fp_compare_epsilon<double>(freq) <= MAGNESIUM_MAX_FREQ) {
         band = tx_band::BAND3;
