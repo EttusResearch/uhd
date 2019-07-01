@@ -230,8 +230,13 @@ private:
                 make_args_uptr->reg_iface = block_reg_iface;
                 make_args_uptr->tb_clk_iface = tb_clk_iface;
                 make_args_uptr->ctrlport_clk_iface = ctrlport_clk_iface;
-                make_args_uptr->mb_control = (factory::has_requested_mb_access(noc_id) ? _mb_controllers.at(mb_idx) : nullptr);
-                make_args_uptr->tree = _tree->subtree("/mboards/0"); /* FIXME Get the block's subtree */
+                make_args_uptr->mb_control = (factory::has_requested_mb_access(noc_id)
+                                                  ? _mb_controllers.at(mb_idx)
+                                                  : nullptr);
+                const uhd::fs_path block_path(
+                    uhd::fs_path("/blocks") / block_id.to_string());
+                _tree->create<uint32_t>(block_path / "noc_id").set(noc_id);
+                make_args_uptr->tree = _tree->subtree(block_path);
                 make_args_uptr->args = dev_addr; // TODO filter the device args
                 _block_registry->register_block(
                     block_factory_info.factory_fn(std::move(make_args_uptr)));
