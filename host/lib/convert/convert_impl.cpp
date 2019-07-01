@@ -135,7 +135,7 @@ size_t convert::get_bytes_per_item(const std::string &format){
         return get_bytes_per_item(format.substr(0, pos));
     }
 
-    throw uhd::key_error("Cannot find an item size:\n" + format);
+    throw uhd::key_error("[convert] Cannot find an item size for: `" + format + "'");
 }
 
 UHD_STATIC_BLOCK(convert_register_item_sizes){
