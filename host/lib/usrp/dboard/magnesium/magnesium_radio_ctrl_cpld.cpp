@@ -132,7 +132,7 @@ void magnesium_radio_ctrl_impl::_update_rx_freq_switches(const double freq,
     auto rx_sw4           = magnesium_cpld_ctrl::RX_SW4_FILTER2100X2850MHZFROM;
     auto rx_sw5           = magnesium_cpld_ctrl::RX_SW5_FILTER1100X1575MHZFROM;
     auto rx_sw6           = magnesium_cpld_ctrl::RX_SW6_BYPASSPATHFROMSWITCH2;
-    const auto band       = _map_freq_to_rx_band(freq);
+    const auto band       = _map_freq_to_rx_band(_rx_band_map, freq);
     const bool is_lowband = (band == rx_band::LOWBAND);
     const auto select_lowband_mixer_path =
         is_lowband ? magnesium_cpld_ctrl::LOWBAND_MIXER_PATH_SEL_LOBAND
@@ -235,7 +235,7 @@ void magnesium_radio_ctrl_impl::_update_tx_freq_switches(const double freq,
     auto tx_sw1           = magnesium_cpld_ctrl::TX_SW1_SHUTDOWNTXSW1;
     auto tx_sw2           = magnesium_cpld_ctrl::TX_SW2_TOTXFILTERLP6400MHZ;
     auto tx_sw3           = magnesium_cpld_ctrl::TX_SW3_BYPASSPATHTOTRXSW;
-    const auto band       = _map_freq_to_tx_band(freq);
+    const auto band       = _map_freq_to_tx_band(_tx_band_map, freq);
     const bool is_lowband = (band == tx_band::LOWBAND);
     const auto select_lowband_mixer_path =
         is_lowband ? magnesium_cpld_ctrl::LOWBAND_MIXER_PATH_SEL_LOBAND

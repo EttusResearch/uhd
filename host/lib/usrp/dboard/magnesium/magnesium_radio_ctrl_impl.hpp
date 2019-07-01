@@ -29,6 +29,8 @@ namespace uhd { namespace rfnoc {
  *
  * This daughterboard is used on the USRP N310 and N300.
  */
+
+
 class magnesium_radio_ctrl_impl : public radio_ctrl_impl, public rpc_block_ctrl
 {
 public:
@@ -49,6 +51,19 @@ public:
 
     //! Frequency bands for TX. Bands are a function of the analog filter banks
     enum class tx_band { INVALID_BAND, LOWBAND, BAND0, BAND1, BAND2, BAND3 };
+
+    typedef std::unordered_map<size_t, double> band_map_t;
+
+    band_map_t rx_band_map_dflt = {{0, 0.0},
+        {1, 430e6},
+        {2, 600e6},
+        {3, 1050e6},
+        {4, 1600e6},
+        {5, 2100e6},
+        {6, 2700e6}};
+
+    band_map_t tx_band_map_dflt = {
+        {0, 0.0}, {1, 723.17e6}, {2, 1623.17e6}, {3, 3323.17e6}};
 
     /************************************************************************
      * Structors
@@ -146,10 +161,10 @@ private:
 
     //! Map a frequency in Hz to an rx_band value. Will return
     //  rx_band::INVALID_BAND if the frequency is out of range.
-    rx_band _map_freq_to_rx_band(const double freq);
+    rx_band _map_freq_to_rx_band(const band_map_t band_map, const double freq);
     //! Map a frequency in Hz to an tx_band value. Will return
     //  tx_band::INVALID_BAND if the frequency is out of range.
-    tx_band _map_freq_to_tx_band(const double freq);
+    tx_band _map_freq_to_tx_band(const band_map_t band_map, const double freq);
 
     /**************************************************************************
      * Sensors
@@ -179,6 +194,8 @@ private:
 
     void _update_freq(const size_t chan, const uhd::direction_t dir);
 
+    void _remap_band_limits(const std::string band_map, const uhd::direction_t dir);
+
     /**************************************************************************
      * CPLD Controls (implemented in magnesium_radio_ctrl_cpld.cpp)
      *************************************************************************/
@@ -207,6 +224,7 @@ private:
         const std::string name,
         const double freq,
         const size_t chan);
+
     /**************************************************************************
      * Private attributes
      *************************************************************************/
@@ -288,6 +306,9 @@ private:
 
     bool _rx_bypass_lnas = true;
     bool _tx_bypass_amp  = true;
+
+    band_map_t _rx_band_map = rx_band_map_dflt;
+    band_map_t _tx_band_map = tx_band_map_dflt;
 
     //! TRX switch state of 2 channels
     std::map<magnesium_cpld_ctrl::chan_sel_t, magnesium_cpld_ctrl::sw_trx_t> _sw_trx = {

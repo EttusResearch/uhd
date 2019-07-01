@@ -7,6 +7,7 @@
 #include "magnesium_constants.hpp"
 #include "magnesium_gain_table.hpp"
 #include "magnesium_radio_ctrl_impl.hpp"
+#include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
 
 using namespace uhd;
@@ -27,23 +28,36 @@ double magnesium_radio_ctrl_impl::_set_all_gain(
                  << chan
                  << ", "
                     "dir="
-                 << dir);
+                 << dir << ")");
     const size_t ad9371_chan = chan;
     auto chan_sel            = static_cast<magnesium_cpld_ctrl::chan_sel_t>(chan);
-    gain_tuple_t gain_tuple  = (dir == RX_DIRECTION)
-                                  ? get_rx_gain_tuple(gain, _map_freq_to_rx_band(freq))
-                                  : get_tx_gain_tuple(gain, _map_freq_to_tx_band(freq));
+    gain_tuple_t gain_tuple;
+    std::string gp = _gain_profile[dir];
 
-    if (_gain_profile[dir] == "manual") {
+    UHD_LOG_TRACE(unique_id(), "Gain profile: " << gp);
+    if (gp == "manual") {
         UHD_LOG_TRACE(unique_id(), "Manual gain mode. Getting gain from property tree.");
         gain_tuple = {DSA_MAX_GAIN - _dsa_att[dir],
             ((dir == RX_DIRECTION) ? AD9371_MAX_RX_GAIN : AD9371_MAX_TX_GAIN)
                 - _ad9371_att[dir],
             _amp_bypass[dir]};
-    } else if (_gain_profile[dir] == "default") {
+    } else if (gp.find("default") != gp.npos) {
         UHD_LOG_TRACE(unique_id(), "Getting gain from gain table.");
+        gain_tuple =
+            (dir == RX_DIRECTION)
+                ? get_rx_gain_tuple(gain, _map_freq_to_rx_band(_rx_band_map, freq))
+                : get_tx_gain_tuple(gain, _map_freq_to_tx_band(_tx_band_map, freq));
+        if (gp == "default_rf_filter_bypass_always_on") {
+            UHD_LOG_TRACE(unique_id(), "Enable filter bypass for all gains");
+            gain_tuple.bypass = true;
+        } else if (gp == "default_rf_filter_bypass_always_off") {
+            UHD_LOG_TRACE(unique_id(), "Disable filter bypass for all gains");
+            gain_tuple.bypass = false;
+        }
     } else {
-        UHD_LOG_ERROR(unique_id(), "Unsupported gain mode: " << _gain_profile[dir])
+        UHD_LOG_ERROR(unique_id(), "Unsupported gain mode: " << gp);
+        throw uhd::value_error(
+            str(boost::format("[%s] Unsupported gain mode: %s") % unique_id() % gp));
     }
     const double ad9371_gain =
         ((dir == RX_DIRECTION) ? AD9371_MAX_RX_GAIN : AD9371_MAX_TX_GAIN)
@@ -89,8 +103,7 @@ double magnesium_radio_ctrl_impl::_dsa_set_att(
     const double att, const size_t chan, const direction_t dir)
 {
     UHD_LOG_TRACE(unique_id(),
-        __func__ << "(att="
-                 << "att dB, chan=" << chan << ", dir=" << dir << ")")
+        __func__ << "(att=" << att << "dB, chan=" << chan << ", dir=" << dir << ")")
     const uint32_t dsa_val = 2 * att;
 
     _set_dsa_val(chan, dir, dsa_val);
