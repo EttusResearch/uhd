@@ -34,13 +34,33 @@ public:
     /**************************************************************************
      * Structors
      *************************************************************************/
-    rfnoc_graph_impl(const uhd::device_addr_t& dev_addr)
-        : _block_registry(std::make_unique<detail::block_container_t>())
-        , _graph(std::make_unique<uhd::rfnoc::detail::graph_t>())
-    {
-        setup_graph(dev_addr);
+    rfnoc_graph_impl(
+        detail::rfnoc_device::sptr dev, const uhd::device_addr_t& dev_addr) try
+        : _device(dev),
+          _tree(_device->get_tree()),
+          _num_mboards(_tree->list("/mboards").size()),
+          _block_registry(std::make_unique<detail::block_container_t>()),
+          _graph(std::make_unique<uhd::rfnoc::detail::graph_t>()) {
+        // Now initialize all subsystems:
+        _init_mb_controllers();
+        _init_gsm(); // Graph Stream Manager
+        for (size_t mb_idx = 0; mb_idx < _num_mboards; ++mb_idx) {
+            try {
+                // If anything fails here, we immediately deinit all the other
+                // blocks to avoid any more fallout, then safely bring down the
+                // device.
+                _init_blocks(mb_idx, dev_addr);
+            } catch (...) {
+                _block_registry->shutdown();
+                throw;
+            }
+        }
+        UHD_LOG_TRACE(LOG_ID, "Initializing properties on all blocks...");
+        _block_registry->init_props();
         _init_sep_map();
         _init_static_connections();
+    } catch (...) {
+        throw uhd::runtime_error("Failure to create rfnoc_graph.");
     }
 
     ~rfnoc_graph_impl()
@@ -255,21 +275,17 @@ private:
     /**************************************************************************
      * Device Setup
      *************************************************************************/
-    void setup_graph(const uhd::device_addr_t& dev_addr)
+    void _init_mb_controllers()
     {
-        // Phase I: Initialize the motherboards
-        auto dev = uhd::device::make(dev_addr);
-        _device  = boost::dynamic_pointer_cast<detail::rfnoc_device>(dev);
-        if (!_device) {
-            throw uhd::key_error(std::string("Found no RFNoC devices for ----->\n")
-                                 + dev_addr.to_pp_string());
-        }
-        _tree        = _device->get_tree();
-        _num_mboards = _tree->list("/mboards").size();
+        UHD_LOG_TRACE(LOG_ID, "Initializing MB controllers...");
         for (size_t i = 0; i < _num_mboards; ++i) {
             _mb_controllers.emplace(i, _device->get_mb_controller(i));
         }
+    }
 
+    void _init_gsm()
+    {
+        UHD_LOG_TRACE(LOG_ID, "Initializing GSM...");
         // Create a graph stream manager
         // FIXME get these from mb_iface or something
         static const chdr::chdr_packet_factory pkt_factory(
@@ -282,106 +298,104 @@ private:
         try {
             _gsm = graph_stream_manager::make(pkt_factory, epid_alloc, links);
         } catch (uhd::io_error& ex) {
-            UHD_LOG_ERROR(
-                "RFNOC::GRAPH", "IO Error during GSM initialization. " << ex.what());
+            UHD_LOG_ERROR(LOG_ID, "IO Error during GSM initialization. " << ex.what());
             throw;
         }
 
         // Configure endpoint_manager, make sure all routes are established
         // FIXME
+    }
 
-        // Enumerate blocks, load them into the block registry
-        // Iterate through the mboards
-        for (size_t mb_idx = 0; mb_idx < get_num_mboards(); ++mb_idx) {
-            // Setup the interfaces for this mboard and get some configuration info
-            mb_iface& mb = _device->get_mb_iface(mb_idx);
-            // Ask GSM to allow us to talk to our remote mb
-            sep_addr_t ctrl_sep_addr(mb.get_remote_device_id(), 0);
-            _gsm->connect_host_to_device(ctrl_sep_addr);
-            // Grab and stash the Client Zero for this mboard
-            detail::client_zero::sptr mb_cz = _gsm->get_client_zero(ctrl_sep_addr);
-            // Client zero port numbers are based on the control xbar numbers,
-            // which have the client 0 interface first, followed by stream
-            // endpoints, and then the blocks.
-            _client_zeros.emplace(mb_idx, mb_cz);
+    // Initialize client zero and all block controllers for motherboard mb_idx
+    void _init_blocks(const size_t mb_idx, const uhd::device_addr_t& dev_addr)
+    {
+        UHD_LOG_TRACE(LOG_ID, "Initializing blocks for MB " << mb_idx << "...");
+        // Setup the interfaces for this mboard and get some configuration info
+        mb_iface& mb = _device->get_mb_iface(mb_idx);
+        // Ask GSM to allow us to talk to our remote mb
+        sep_addr_t ctrl_sep_addr(mb.get_remote_device_id(), 0);
+        _gsm->connect_host_to_device(ctrl_sep_addr);
+        // Grab and stash the Client Zero for this mboard
+        detail::client_zero::sptr mb_cz = _gsm->get_client_zero(ctrl_sep_addr);
+        // Client zero port numbers are based on the control xbar numbers,
+        // which have the client 0 interface first, followed by stream
+        // endpoints, and then the blocks.
+        _client_zeros.emplace(mb_idx, mb_cz);
 
-            const size_t num_blocks       = mb_cz->get_num_blocks();
-            const size_t first_block_port = 1 + mb_cz->get_num_stream_endpoints();
+        const size_t num_blocks       = mb_cz->get_num_blocks();
+        const size_t first_block_port = 1 + mb_cz->get_num_stream_endpoints();
 
-            /* Flush and reset each block in the mboard
-             * We do this before we enumerate the blocks to ensure they're in a clean
-             * state before we construct their block controller, and so that we don't
-             * reset any setting that the block controller writes
-             */
-            _flush_and_reset_mboard(mb_idx, mb_cz, num_blocks, first_block_port);
+        /* Flush and reset each block in the mboard
+         * We do this before we enumerate the blocks to ensure they're in a clean
+         * state before we construct their block controller, and so that we don't
+         * reset any setting that the block controller writes
+         */
+        _flush_and_reset_mboard(mb_idx, mb_cz, num_blocks, first_block_port);
 
-            // Make a map to count the number of each block we have
-            std::unordered_map<std::string, uint16_t> block_count_map;
+        // Make a map to count the number of each block we have
+        std::unordered_map<std::string, uint16_t> block_count_map;
 
-            // Iterate through and register each of the blocks in this mboard
-            for (size_t portno = 0; portno < num_blocks; ++portno) {
-                auto noc_id             = mb_cz->get_noc_id(portno + first_block_port);
-                auto block_factory_info = factory::get_block_factory(noc_id);
-                auto block_info = mb_cz->get_block_info(portno + first_block_port);
-                block_id_t block_id(mb_idx,
-                    block_factory_info.block_name,
-                    block_count_map[block_factory_info.block_name]++);
-                // Get access to the clock interface objects. We have some rules
-                // here:
-                // - The ctrlport clock must always be provided through the
-                //   BSP via mb_iface
-                // - The timebase clock can be set to "graph", which means the
-                //   block takes care of the timebase itself (via property
-                //   propagation). In that case, we generate a clock iface
-                //   object on the fly here.
-                // - In all other cases, the BSP must provide us that clock
-                //   iface object through the mb_iface
-                auto ctrlport_clk_iface =
-                    mb.get_clock_iface(block_factory_info.ctrlport_clk);
-                auto tb_clk_iface =
-                    (block_factory_info.timebase_clk == CLOCK_KEY_GRAPH)
-                        ? std::make_shared<clock_iface>(CLOCK_KEY_GRAPH)
-                        : mb.get_clock_iface(block_factory_info.timebase_clk);
-                // A "graph" clock is always "running"
-                if (block_factory_info.timebase_clk == CLOCK_KEY_GRAPH) {
-                    tb_clk_iface->set_running(true);
-                }
-                auto block_reg_iface   = _gsm->get_block_register_iface(ctrl_sep_addr,
-                    portno,
-                    *ctrlport_clk_iface.get(),
-                    *tb_clk_iface.get());
-                auto make_args_uptr    = std::make_unique<noc_block_base::make_args_t>();
-                make_args_uptr->noc_id = noc_id;
-                make_args_uptr->block_id           = block_id;
-                make_args_uptr->num_input_ports    = block_info.num_inputs;
-                make_args_uptr->num_output_ports   = block_info.num_outputs;
-                make_args_uptr->reg_iface          = block_reg_iface;
-                make_args_uptr->tb_clk_iface       = tb_clk_iface;
-                make_args_uptr->ctrlport_clk_iface = ctrlport_clk_iface;
-                make_args_uptr->mb_control = (factory::has_requested_mb_access(noc_id)
-                                                  ? _mb_controllers.at(mb_idx)
-                                                  : nullptr);
-                const uhd::fs_path block_path(
-                    uhd::fs_path("/blocks") / block_id.to_string());
-                _tree->create<uint32_t>(block_path / "noc_id").set(noc_id);
-                make_args_uptr->tree = _tree->subtree(block_path);
-                make_args_uptr->args = dev_addr; // TODO filter the device args
+        // Iterate through and register each of the blocks in this mboard
+        for (size_t portno = 0; portno < num_blocks; ++portno) {
+            const auto noc_id       = mb_cz->get_noc_id(portno + first_block_port);
+            auto block_factory_info = factory::get_block_factory(noc_id);
+            auto block_info         = mb_cz->get_block_info(portno + first_block_port);
+            block_id_t block_id(mb_idx,
+                block_factory_info.block_name,
+                block_count_map[block_factory_info.block_name]++);
+            // Get access to the clock interface objects. We have some rules
+            // here:
+            // - The ctrlport clock must always be provided through the
+            //   BSP via mb_iface
+            // - The timebase clock can be set to CLOCK_KEY_GRAPH, which means
+            //   the block takes care of the timebase itself (via property
+            //   propagation). In that case, we generate a clock iface
+            //   object on the fly here.
+            // - In all other cases, the BSP must provide us that clock
+            //   iface object through the mb_iface
+            auto ctrlport_clk_iface = mb.get_clock_iface(block_factory_info.ctrlport_clk);
+            auto tb_clk_iface       = (block_factory_info.timebase_clk == CLOCK_KEY_GRAPH)
+                                    ? std::make_shared<clock_iface>(CLOCK_KEY_GRAPH)
+                                    : mb.get_clock_iface(block_factory_info.timebase_clk);
+            // A "graph" clock is always "running"
+            if (block_factory_info.timebase_clk == CLOCK_KEY_GRAPH) {
+                tb_clk_iface->set_running(true);
+            }
+            auto block_reg_iface = _gsm->get_block_register_iface(
+                ctrl_sep_addr, portno, *ctrlport_clk_iface.get(), *tb_clk_iface.get());
+            auto make_args_uptr      = std::make_unique<noc_block_base::make_args_t>();
+            make_args_uptr->noc_id   = noc_id;
+            make_args_uptr->block_id = block_id;
+            make_args_uptr->num_input_ports    = block_info.num_inputs;
+            make_args_uptr->num_output_ports   = block_info.num_outputs;
+            make_args_uptr->reg_iface          = block_reg_iface;
+            make_args_uptr->tb_clk_iface       = tb_clk_iface;
+            make_args_uptr->ctrlport_clk_iface = ctrlport_clk_iface;
+            make_args_uptr->mb_control         = (factory::has_requested_mb_access(noc_id)
+                                              ? _mb_controllers.at(mb_idx)
+                                              : nullptr);
+            const uhd::fs_path block_path(uhd::fs_path("/blocks") / block_id.to_string());
+            _tree->create<uint32_t>(block_path / "noc_id").set(noc_id);
+            make_args_uptr->tree = _tree->subtree(block_path);
+            make_args_uptr->args = dev_addr; // TODO filter the device args
+            try {
                 _block_registry->register_block(
                     block_factory_info.factory_fn(std::move(make_args_uptr)));
-                _xbar_block_config[block_id.to_string()] = {
-                    portno, noc_id, block_id.get_block_count()};
-
-                _port_block_map.insert({{mb_idx, portno + first_block_port}, block_id});
+            } catch (...) {
+                UHD_LOG_ERROR(
+                    LOG_ID, "Error during initialization of block " << block_id << "!");
+                throw;
             }
-        }
+            _xbar_block_config[block_id.to_string()] = {
+                portno, noc_id, block_id.get_block_count()};
 
-        UHD_LOG_TRACE("RFNOC::GRAPH", "Initializing properties on all blocks...");
-        _block_registry->init_props();
+            _port_block_map.insert({{mb_idx, portno + first_block_port}, block_id});
+        }
     }
 
     void _init_sep_map()
     {
-        for (size_t mb_idx = 0; mb_idx < get_num_mboards(); ++mb_idx) {
+        for (size_t mb_idx = 0; mb_idx < _num_mboards; ++mb_idx) {
             auto remote_device_id = _device->get_mb_iface(mb_idx).get_remote_device_id();
             auto& cz              = _client_zeros.at(mb_idx);
             for (size_t sep_idx = 0; sep_idx < cz->get_num_stream_endpoints();
@@ -396,7 +410,7 @@ private:
 
     void _init_static_connections()
     {
-        UHD_LOG_TRACE("RFNOC::GRAPH", "Identifying static connections...");
+        UHD_LOG_TRACE(LOG_ID, "Identifying static connections...");
         for (auto& kv_cz : _client_zeros) {
             auto& adjacency_list = kv_cz.second->get_adjacency_list();
             for (auto& edge : adjacency_list) {
@@ -414,8 +428,7 @@ private:
                 graph_edge.dst_port = edge.dst_blk_port;
                 graph_edge.edge     = graph_edge_t::edge_t::STATIC;
                 _static_edges.push_back(graph_edge);
-                UHD_LOG_TRACE(
-                    "RFNOC::GRAPH", "Static connection: " << graph_edge.to_string());
+                UHD_LOG_TRACE(LOG_ID, "Static connection: " << graph_edge.to_string());
             }
         }
     }
@@ -532,7 +545,7 @@ private:
         const size_t num_blocks,
         const size_t first_block_port)
     {
-        UHD_LOG_TRACE("RFNOC::GRAPH",
+        UHD_LOG_TRACE(LOG_ID,
             std::string("Flushing and resetting blocks on mboard ")
                 + std::to_string(mb_idx));
 
@@ -568,7 +581,7 @@ private:
         if (!bool(edge_o)) {
             const std::string err_msg = std::string("Cannot connect block ") + blk_info
                                         + ", port is unconnected in the FPGA!";
-            UHD_LOG_ERROR("RFNOC::GRAPH", err_msg);
+            UHD_LOG_ERROR(LOG_ID, err_msg);
             throw uhd::routing_error(err_msg);
         }
         return edge_o.get();
@@ -580,12 +593,12 @@ private:
     //! Reference to the underlying device implementation
     detail::rfnoc_device::sptr _device;
 
+    //! Reference to the property tree
+    uhd::property_tree::sptr _tree;
+
     //! Number of motherboards, this is technically redundant but useful for
     // easy lookups.
     size_t _num_mboards;
-
-    //! Reference to the property tree
-    uhd::property_tree::sptr _tree;
 
     //! Registry for the blocks (it's a separate class)
     std::unique_ptr<detail::block_container_t> _block_registry;
@@ -627,7 +640,26 @@ private:
 /******************************************************************************
  * Factory
  *****************************************************************************/
+namespace uhd { namespace rfnoc { namespace detail {
+
+// Simple factory: If we already have the device, simply pass it on
+rfnoc_graph::sptr make_rfnoc_graph(
+    detail::rfnoc_device::sptr dev, const uhd::device_addr_t& device_addr)
+{
+    return std::make_shared<rfnoc_graph_impl>(dev, device_addr);
+}
+
+}}} /* namespace uhd::rfnoc::detail */
+
+// If we don't have a device yet, create it and see if it's really an RFNoC
+// device. This is used by multi_usrp_rfnoc, for example.
 rfnoc_graph::sptr rfnoc_graph::make(const uhd::device_addr_t& device_addr)
 {
-    return std::make_shared<rfnoc_graph_impl>(device_addr);
+    auto dev =
+        boost::dynamic_pointer_cast<detail::rfnoc_device>(uhd::device::make(device_addr));
+    if (!dev) {
+        throw uhd::key_error(std::string("No RFNoC devices found for ----->\n")
+                             + device_addr.to_pp_string());
+    }
+    return std::make_shared<rfnoc_graph_impl>(dev, device_addr);
 }
