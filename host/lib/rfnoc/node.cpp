@@ -94,6 +94,8 @@ void node_t::register_property(property_base_t* prop, resolve_callback_t&& clean
     if (clean_callback) {
         _clean_cb_registry[prop] = std::move(clean_callback);
     }
+
+    prop_accessor_t{}.set_access(prop, property_base_t::RW);
 }
 
 void node_t::add_property_resolver(
@@ -353,7 +355,7 @@ void node_t::init_props()
         }
     }
 
-    // 4) Mark properties as clean
+    // 4) Mark properties as clean and read-only
     clean_props();
 }
 
@@ -429,6 +431,7 @@ void node_t::clean_props()
                 _clean_cb_registry.at(prop)();
             }
             prop_accessor.mark_clean(*prop);
+            prop_accessor.set_access(prop, property_base_t::RO);
         }
     }
 }

@@ -182,6 +182,15 @@ protected:
 
     /*! Register a property for this block
      *
+     * This is typically called from the constructor. It is possible to register
+     * properties later, but then the node must take care of serialization.
+     *
+     * This has the intentional side-effect of setting the access mode to RW for
+     * the property. The idea is that after registering a property, the node
+     * might need some time to settle on the default value. The access mode will
+     * either be reset after the constructor is finished, or the next time
+     * properties are resolved.
+     *
      * \param prop A reference to the property
      * \param clean_callback A callback that gets executed whenever this property
      *                       is dirty and gets marked clean
@@ -454,7 +463,7 @@ private:
      */
     void resolve_all();
 
-    /*! Mark all properties as clean
+    /*! Mark all properties as clean and read-only
      *
      * When dirty properties have a clean-callback registered, that will also
      * get triggered.
