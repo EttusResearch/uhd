@@ -8,6 +8,7 @@
 
 #include "mpmd_devices.hpp"
 #include "mpmd_impl.hpp"
+#include "mpmd_link_if_mgr.hpp"
 #include <uhdlib/transport/dpdk_common.hpp>
 #include <uhd/transport/if_addrs.hpp>
 #include <uhd/transport/udp_simple.hpp>
@@ -89,7 +90,7 @@ device_addrs_t mpmd_find_with_addr(
 
         // Create result to return
         device_addr_t new_addr;
-        new_addr[xport::MGMT_ADDR_KEY] = recv_addr;
+        new_addr[MGMT_ADDR_KEY] = recv_addr;
         new_addr["type"]               = "mpmd"; // hwd will overwrite this
         // remove ident string and put other informations into device_args dict
         result.erase(result.begin());
@@ -101,7 +102,7 @@ device_addrs_t mpmd_find_with_addr(
                 el,
                 [](const char& in) { return in == '='; },
                 boost::token_compress_on);
-            if (value[0] != xport::MGMT_ADDR_KEY) {
+            if (value[0] != MGMT_ADDR_KEY) {
                 new_addr[value[0]] = value[1];
             }
         }
@@ -132,12 +133,12 @@ device_addrs_t mpmd_find_with_addrs(const device_addrs_t& hints)
     found_devices.reserve(hints.size());
     for (const auto& hint : hints) {
         if (not(hint.has_key(xport::FIRST_ADDR_KEY)
-                or hint.has_key(xport::MGMT_ADDR_KEY))) {
+                or hint.has_key(MGMT_ADDR_KEY))) {
             UHD_LOG_DEBUG("MPMD FIND", "No address given in hint " << hint.to_string());
             continue;
         }
         const std::string mgmt_addr =
-            hint.get(xport::MGMT_ADDR_KEY, hint.get(xport::FIRST_ADDR_KEY, ""));
+            hint.get(MGMT_ADDR_KEY, hint.get(xport::FIRST_ADDR_KEY, ""));
         device_addrs_t reply_addrs = mpmd_find_with_addr(mgmt_addr, hint);
         if (reply_addrs.size() > 1) {
             UHD_LOG_ERROR("MPMD",
@@ -217,7 +218,7 @@ device_addrs_t mpmd_find(const device_addr_t& hint_)
     // Scenario 1): User gave us at least one address
     if (not hints.empty()
         and (hints[0].has_key(xport::FIRST_ADDR_KEY)
-                or hints[0].has_key(xport::MGMT_ADDR_KEY))) {
+                or hints[0].has_key(MGMT_ADDR_KEY))) {
         // Note: We don't try and connect to the devices in this mode, because
         // we only get here if the user specified addresses, and we assume she
         // knows what she's doing.

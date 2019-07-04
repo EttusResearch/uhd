@@ -194,16 +194,4 @@ void mpmd_impl::init_property_tree(
                 return _get_component_info(comp_name, mb);
             }); // Done adding component to property tree
     }
-
-    /*** MTUs ***********************************************************/
-    tree->create<size_t>(mb_path / "mtu/recv")
-        .add_coerced_subscriber([](const size_t) {
-            throw uhd::runtime_error("Attempting to write read-only value (MTU)!");
-        })
-        .set_publisher([mb]() { return mb->get_mtu(uhd::RX_DIRECTION); });
-    tree->create<size_t>(mb_path / "mtu/send")
-        .add_coerced_subscriber([](const size_t) {
-            throw uhd::runtime_error("Attempting to write read-only value (MTU)!");
-        })
-        .set_publisher([mb]() { return mb->get_mtu(uhd::TX_DIRECTION); });
 }

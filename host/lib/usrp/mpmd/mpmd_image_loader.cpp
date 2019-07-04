@@ -13,6 +13,7 @@
 #include <uhd/types/component_file.hpp>
 #include <uhd/types/eeprom.hpp>
 #include <uhd/utils/paths.hpp>
+#include <uhd/utils/static.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/filesystem/convenience.hpp>
 #include <fstream>
@@ -216,6 +217,7 @@ static bool mpmd_image_loader(const image_loader::image_loader_args_t& image_loa
 
     return true;
 }
+
 }} // namespace uhd::
 
 UHD_STATIC_BLOCK(register_mpm_image_loader)

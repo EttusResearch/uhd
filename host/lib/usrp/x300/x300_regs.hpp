@@ -11,6 +11,7 @@
 #include <uhd/config.hpp>
 #include <uhd/utils/soft_register.hpp>
 #include <stdint.h>
+#include <memory>
 
 static const int BL_ADDRESS = 0;
 static const int BL_DATA    = 1;
@@ -171,7 +172,7 @@ namespace uhd { namespace usrp { namespace x300 {
 class fw_regmap_t : public uhd::soft_regmap_t
 {
 public:
-    typedef boost::shared_ptr<fw_regmap_t> sptr;
+    using sptr = std::shared_ptr<fw_regmap_t>;
 
     class clk_ctrl_reg_t : public uhd::soft_reg32_wo_t
     {

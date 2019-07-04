@@ -82,18 +82,15 @@ static std::complex<double> get_fe_correction(
     );
 }
 
-static void apply_fe_corrections(
-    uhd::property_tree::sptr sub_tree,
-    const uhd::fs_path &db_path,
-    const uhd::fs_path &fe_path,
-    const std::string &file_prefix,
-    const double lo_freq
-){
-    //extract eeprom serial
-    const uhd::usrp::dboard_eeprom_t db_eeprom = sub_tree->access<uhd::usrp::dboard_eeprom_t>(db_path).get();
-
+static void apply_fe_corrections(uhd::property_tree::sptr sub_tree,
+    const std::string& db_serial,
+    const uhd::fs_path& fe_path,
+    const std::string& file_prefix,
+    const double lo_freq)
+{
     //make the calibration file path
-    const fs::path cal_data_path = fs::path(uhd::get_app_path()) / ".uhd" / "cal" / (file_prefix + db_eeprom.serial + ".csv");
+    const fs::path cal_data_path = fs::path(uhd::get_app_path()) / ".uhd" / "cal"
+                                   / (file_prefix + db_serial + ".csv");
     if (not fs::exists(cal_data_path)) return;
 
     //parse csv file or get from cache
@@ -133,28 +130,26 @@ static void apply_fe_corrections(
 /***********************************************************************
  * Wrapper routines with nice try/catch + print
  **********************************************************************/
-void uhd::usrp::apply_tx_fe_corrections( //overloading to work according to rfnoc tree struct
-    property_tree::sptr sub_tree, //starts at mboards/x
-    const uhd::fs_path db_path,
+void uhd::usrp::apply_tx_fe_corrections( // overloading to work according to rfnoc tree
+                                         // struct
+    property_tree::sptr sub_tree, // starts at mboards/x
+    const std::string& db_serial,
     const uhd::fs_path tx_fe_corr_path,
-    const double lo_freq //actual lo freq
-){
+    const double lo_freq // actual lo freq
+)
+{
     boost::mutex::scoped_lock l(corrections_mutex);
     try{
-        apply_fe_corrections(
-            sub_tree,
-            db_path + "/tx_eeprom",
+        apply_fe_corrections(sub_tree,
+            db_serial,
             tx_fe_corr_path + "/iq_balance/value",
             "tx_iq_cal_v0.2_",
-            lo_freq
-        );
-        apply_fe_corrections(
-            sub_tree,
-            db_path + "/tx_eeprom",
+            lo_freq);
+        apply_fe_corrections(sub_tree,
+            db_serial,
             tx_fe_corr_path + "/dc_offset/value",
             "tx_dc_cal_v0.2_",
-            lo_freq
-        );
+            lo_freq);
     }
     catch(const std::exception &e){
         UHD_LOGGER_ERROR("CAL") << "Failure in apply_tx_fe_corrections: " << e.what();
@@ -167,42 +162,44 @@ void uhd::usrp::apply_tx_fe_corrections(
     const double lo_freq //actual lo freq
 ){
     boost::mutex::scoped_lock l(corrections_mutex);
+
+    // extract eeprom serial
+    const uhd::fs_path db_path = "dboards/" + slot + "/tx_eeprom";
+    const std::string db_serial =
+        sub_tree->access<uhd::usrp::dboard_eeprom_t>(db_path).get().serial;
+
     try{
-        apply_fe_corrections(
-            sub_tree,
-            "dboards/" + slot + "/tx_eeprom",
+        apply_fe_corrections(sub_tree,
+            db_serial,
             "tx_frontends/" + slot + "/iq_balance/value",
             "tx_iq_cal_v0.2_",
-            lo_freq
-        );
-        apply_fe_corrections(
-            sub_tree,
-            "dboards/" + slot + "/tx_eeprom",
+            lo_freq);
+        apply_fe_corrections(sub_tree,
+            db_serial,
             "tx_frontends/" + slot + "/dc_offset/value",
             "tx_dc_cal_v0.2_",
-            lo_freq
-        );
+            lo_freq);
     }
     catch(const std::exception &e){
         UHD_LOGGER_ERROR("CAL") << "Failure in apply_tx_fe_corrections: " << e.what();
     }
 }
 
-void uhd::usrp::apply_rx_fe_corrections( //overloading to work according to rfnoc tree struct
-    property_tree::sptr sub_tree, //starts at mboards/x
-    const uhd::fs_path db_path,
+void uhd::usrp::apply_rx_fe_corrections( // overloading to work according to rfnoc tree
+                                         // struct
+    property_tree::sptr sub_tree, // starts at mboards/x
+    const std::string& db_serial,
     const uhd::fs_path rx_fe_corr_path,
-    const double lo_freq //actual lo freq
-){
+    const double lo_freq // actual lo freq
+)
+{
     boost::mutex::scoped_lock l(corrections_mutex);
     try{
-        apply_fe_corrections(
-            sub_tree,
-            db_path + "/rx_eeprom",
+        apply_fe_corrections(sub_tree,
+            db_serial,
             rx_fe_corr_path + "/iq_balance/value",
             "rx_iq_cal_v0.2_",
-            lo_freq
-        );
+            lo_freq);
     }
     catch(const std::exception &e){
         UHD_LOGGER_ERROR("CAL") << "Failure in apply_tx_fe_corrections: " << e.what();
@@ -215,14 +212,15 @@ void uhd::usrp::apply_rx_fe_corrections(
     const double lo_freq //actual lo freq
 ){
     boost::mutex::scoped_lock l(corrections_mutex);
+    const uhd::fs_path db_path = "dboards/" + slot + "/rx_eeprom";
+    const std::string db_serial =
+        sub_tree->access<uhd::usrp::dboard_eeprom_t>(db_path).get().serial;
     try{
-        apply_fe_corrections(
-            sub_tree,
-            "dboards/" + slot + "/rx_eeprom",
+        apply_fe_corrections(sub_tree,
+            db_serial,
             "rx_frontends/" + slot + "/iq_balance/value",
             "rx_iq_cal_v0.2_",
-            lo_freq
-        );
+            lo_freq);
     }
     catch(const std::exception &e){
         UHD_LOGGER_ERROR("CAL") << "Failure in apply_rx_fe_corrections: " << e.what();

@@ -12,12 +12,11 @@
 #include <vector>
 
 static constexpr size_t FPGPIO_MASTER_RADIO     = 0;
-static constexpr size_t TOTAL_RADIO_PORTS       = 2;
-static constexpr double AD9361_RX_MIN_BANDWIDTH = 20.0e6; // HZ
-static constexpr double AD9361_RX_MAX_BANDWIDTH = 40.0e6; // HZ
+static constexpr double AD9361_RX_MIN_BANDWIDTH = 20.0e6; // Hz
+static constexpr double AD9361_RX_MAX_BANDWIDTH = 40.0e6; // Hz
 
-static constexpr double AD9361_TX_MIN_BANDWIDTH = 20.0e6; // HZ
-static constexpr double AD9361_TX_MAX_BANDWIDTH = 40.0e6; // HZ
+static constexpr double AD9361_TX_MIN_BANDWIDTH = 20.0e6; // Hz
+static constexpr double AD9361_TX_MAX_BANDWIDTH = 40.0e6; // Hz
 
 static constexpr double AD9361_TX_MIN_FREQ = 47.0e6; // Hz
 static constexpr double AD9361_TX_MAX_FREQ = 6.0e9; // Hz
@@ -44,7 +43,10 @@ static constexpr double E3XX_DEFAULT_BANDWIDTH  = 40e6; // Hz
 static constexpr char E3XX_DEFAULT_RX_ANTENNA[] = "RX2";
 static constexpr char E3XX_DEFAULT_TX_ANTENNA[] = "TX/RX";
 
-static const std::vector<std::string> E3XX_RX_ANTENNAS = {"RX2", "TX/RX"};
+static const std::vector<std::string> E3XX_RX_ANTENNAS = {
+    E3XX_DEFAULT_RX_ANTENNA, E3XX_DEFAULT_TX_ANTENNA};
+
+static constexpr char E3XX_GPIO_BANK[] = "INT0";
 
 static constexpr size_t E3XX_NUM_CHANS = 2;
 

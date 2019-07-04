@@ -14,40 +14,63 @@
 #include "x300_defaults.hpp"
 #include "x300_device_args.hpp"
 #include "x300_fw_common.h"
+#include "x300_mb_controller.hpp"
 #include "x300_mboard_type.hpp"
-#include "x300_radio_ctrl_impl.hpp"
 #include "x300_regs.hpp"
+#include <uhd/property_tree.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/types/wb_iface.hpp>
-#include <uhd/usrp/gps_ctrl.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
+#include <uhd/utils/tasks.hpp>
+#include <uhdlib/rfnoc/chdr_types.hpp>
+#include <uhdlib/rfnoc/clock_iface.hpp>
+#include <uhdlib/rfnoc/mb_iface.hpp>
+#include <uhdlib/rfnoc/mgmt_portal.hpp>
+#include <uhdlib/rfnoc/rfnoc_common.hpp>
+#include <uhdlib/rfnoc/rfnoc_device.hpp>
+#include <uhdlib/transport/links.hpp>
 #include <uhdlib/usrp/cores/i2c_core_100_wb32.hpp>
+#include <uhdlib/usrp/cores/spi_core_3000.hpp>
 #include <atomic>
+#include <functional>
 #include <memory>
+#include <mutex>
+
 
 uhd::device_addrs_t x300_find(const uhd::device_addr_t& hint_);
 
-class x300_impl : public uhd::usrp::device3_impl
+class x300_impl : public uhd::rfnoc::detail::rfnoc_device
 {
 public:
     x300_impl(const uhd::device_addr_t&);
     void setup_mb(const size_t which, const uhd::device_addr_t&);
     ~x300_impl(void);
 
-protected:
-    void subdev_to_blockid(const uhd::usrp::subdev_spec_pair_t& spec,
-        const size_t mb_i,
-        uhd::rfnoc::block_id_t& block_id,
-        uhd::device_addr_t& block_args);
-    uhd::usrp::subdev_spec_pair_t blockid_to_subdev(
-        const uhd::rfnoc::block_id_t& blockid, const uhd::device_addr_t& block_args);
+    /**************************************************************************
+     * rfnoc_device API
+     *************************************************************************/
+    virtual uhd::rfnoc::mb_iface& get_mb_iface(const size_t mb_idx)
+    {
+        if (mb_idx >= _mb_ifaces.size()) {
+            throw uhd::index_error(
+                std::string("Cannot get mb_iface, invalid motherboard index: ")
+                + std::to_string(mb_idx));
+        }
+        return _mb_ifaces.at(mb_idx);
+    }
 
 private:
+    /**************************************************************************
+     * Types
+     *************************************************************************/
     // vector of member objects per motherboard
     struct mboard_members_t
     {
         uhd::usrp::x300::x300_device_args_t args;
+
+        //! Remote Device ID for this motherboard
+        uhd::rfnoc::device_id_t device_id;
 
         bool initialization_done = false;
         uhd::task::sptr claimer_task;
@@ -62,9 +85,6 @@ private:
 
         // other perifs on mboard
         x300_clock_ctrl::sptr clock;
-        uhd::gps_ctrl::sptr gps;
-
-        uhd::usrp::x300::fw_regmap_t::sptr fw_regmap;
 
         // which FPGA image is loaded
         std::string loaded_fpga_image;
@@ -72,46 +92,66 @@ private:
         size_t hw_rev;
         std::string current_refclk_src;
 
-        std::vector<uhd::rfnoc::x300_radio_ctrl_impl::sptr> radios;
-
         uhd::usrp::x300::conn_manager::sptr conn_mgr;
     };
-    std::vector<mboard_members_t> _mb;
 
-    std::atomic<size_t> _sid_framer;
+    //! X300-Specific Implementation of rfnoc::mb_iface
+    class x300_mb_iface : public uhd::rfnoc::mb_iface
+    {
+    public:
+        x300_mb_iface(uhd::usrp::x300::conn_manager::sptr conn_mgr,
+            const double radio_clk_freq,
+            const uhd::rfnoc::device_id_t remote_dev_id);
+        ~x300_mb_iface();
+        uint16_t get_proto_ver();
+        uhd::rfnoc::chdr_w_t get_chdr_w();
+        uhd::endianness_t get_endianness(const uhd::rfnoc::device_id_t local_device_id);
+        uhd::rfnoc::device_id_t get_remote_device_id();
+        std::vector<uhd::rfnoc::device_id_t> get_local_device_ids();
+        uhd::transport::adapter_id_t get_adapter_id(const uhd::rfnoc::device_id_t local_device_id);
+        void reset_network();
+        uhd::rfnoc::clock_iface::sptr get_clock_iface(const std::string& clock_name);
+        uhd::rfnoc::chdr_ctrl_xport::sptr make_ctrl_transport(
+            uhd::rfnoc::device_id_t local_device_id,
+            const uhd::rfnoc::sep_id_t& local_epid);
+        uhd::rfnoc::chdr_rx_data_xport::uptr make_rx_data_transport(
+            uhd::rfnoc::mgmt::mgmt_portal& mgmt_portal,
+            const uhd::rfnoc::sep_addr_pair_t& addrs,
+            const uhd::rfnoc::sep_id_pair_t& epids,
+            const uhd::rfnoc::sw_buff_t pyld_buff_fmt,
+            const uhd::rfnoc::sw_buff_t mdata_buff_fmt,
+            const uhd::device_addr_t& xport_args);
+        uhd::rfnoc::chdr_tx_data_xport::uptr make_tx_data_transport(
+            uhd::rfnoc::mgmt::mgmt_portal& mgmt_portal,
+            const uhd::rfnoc::sep_addr_pair_t& addrs,
+            const uhd::rfnoc::sep_id_pair_t& epids,
+            const uhd::rfnoc::sw_buff_t pyld_buff_fmt,
+            const uhd::rfnoc::sw_buff_t mdata_buff_fmt,
+            const uhd::device_addr_t& xport_args);
 
-    uhd::sid_t allocate_sid(mboard_members_t& mb,
-        const uhd::sid_t& address,
-        const uint32_t src_addr,
-        const uint32_t src_dst);
-    uhd::both_xports_t make_transport(const uhd::sid_t& address,
-        const xport_type_t xport_type,
-        const uhd::device_addr_t& args);
+    private:
+        const uhd::rfnoc::device_id_t _remote_dev_id;
+        std::unordered_map<uhd::rfnoc::device_id_t, uhd::transport::adapter_id_t> _adapter_map;
+        uhd::rfnoc::clock_iface::sptr _bus_clk;
+        uhd::rfnoc::clock_iface::sptr _radio_clk;
+        uhd::usrp::x300::conn_manager::sptr _conn_mgr;
+    };
 
-    //! get mtu
-    size_t get_mtu(const size_t, const uhd::direction_t);
-
-    bool _ignore_cal_file;
-
-    void update_clock_control(mboard_members_t&);
-    void initialize_clock_control(mboard_members_t& mb);
-    void set_time_source_out(mboard_members_t&, const bool);
-    void update_clock_source(mboard_members_t&, const std::string&);
-    void update_time_source(mboard_members_t&, const std::string&);
-    void sync_times(mboard_members_t&, const uhd::time_spec_t&);
-
-    uhd::sensor_value_t get_ref_locked(mboard_members_t& mb);
-    bool wait_for_clk_locked(mboard_members_t& mb, uint32_t which, double timeout);
-    bool is_pps_present(mboard_members_t& mb);
-
+    /**************************************************************************
+     * Private Methods
+     *************************************************************************/
     void check_fw_compat(const uhd::fs_path& mb_path, const mboard_members_t& members);
     void check_fpga_compat(const uhd::fs_path& mb_path, const mboard_members_t& members);
 
-    /// More IO stuff
-    uhd::device_addr_t get_tx_hints(size_t mb_index);
-    uhd::device_addr_t get_rx_hints(size_t mb_index);
+    /**************************************************************************
+     * Private Attributes
+     *************************************************************************/
+    std::vector<mboard_members_t> _mb;
 
-    void post_streamer_hooks(uhd::direction_t dir);
+    std::mutex _mb_iface_mutex;
+    std::unordered_map<size_t, x300_mb_iface> _mb_ifaces;
+
+    static const uhd::rfnoc::chdr::chdr_packet_factory _pkt_factory;
 };
 
 #endif /* INCLUDED_X300_IMPL_HPP */

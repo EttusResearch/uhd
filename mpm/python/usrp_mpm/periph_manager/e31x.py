@@ -30,7 +30,7 @@ from usrp_mpm import e31x_legacy_eeprom
 E310_DEFAULT_CLOCK_SOURCE = 'internal'
 E310_DEFAULT_TIME_SOURCE = 'internal'
 E310_DEFAULT_ENABLE_FPGPIO = True
-E310_FPGA_COMPAT = (1,0)
+E310_FPGA_COMPAT = (4,0)
 E310_DBOARD_SLOT_IDX = 0
 
 ###############################################################################
@@ -39,9 +39,7 @@ E310_DBOARD_SLOT_IDX = 0
 
 class E310XportMgrLiberio(XportMgrLiberio):
     " E310-specific Liberio configuration "
-    max_chan = 4
-    xbar_dev = "/dev/crossbar0"
-    xbar_port = 0
+    max_chan = 5
 
 ###############################################################################
 # Main Class
@@ -178,7 +176,6 @@ class e31x(ZynqComponents, PeriphManagerBase):
         self._tear_down = False
         self._clock_source = None
         self._time_source = None
-        self._available_endpoints = list(range(256))
         self.dboard = self.dboards[E310_DBOARD_SLOT_IDX]
         try:
             self._init_peripherals(self.args_cached)
@@ -277,9 +274,6 @@ class e31x(ZynqComponents, PeriphManagerBase):
         self.mboard_regs_control.get_build_timestamp()
         self._check_fpga_compat()
         self._update_fpga_type()
-        self.crossbar_base_port = self.mboard_regs_control.get_xbar_baseport()
-        self.log.debug("crossbar base port: {}".format(self.crossbar_base_port))
-
         # Init clocking
         self._init_ref_clock_and_time(args)
         # Init CHDR transports
@@ -443,7 +437,6 @@ class e31x(ZynqComponents, PeriphManagerBase):
         for xport_mgr in itervalues(self._xport_mgrs):
             xport_mgr.deinit()
         self.log.trace("Resetting SID pool...")
-        self._available_endpoints = list(range(256))
         if not self._do_not_reload:
             self.tear_down()
         # Reset back to value from _default_args (mpm.conf)
@@ -480,56 +473,22 @@ class e31x(ZynqComponents, PeriphManagerBase):
             self.log.trace("Found idle overlay: %s", idle_overlay)
         return is_idle
 
+
     ###########################################################################
     # Transport API
     ###########################################################################
-    def request_xport(
-            self,
-            dst_address,
-            suggested_src_address,
-            xport_type
-        ):
+    def get_chdr_link_types(self):
         """
-        See PeriphManagerBase.request_xport() for docs.
+        See PeriphManagerBase.get_chdr_link_types() for docs.
         """
-        # Try suggested address first, then just pick the first available one:
-        src_address = suggested_src_address
-        if src_address not in self._available_endpoints:
-            if not self._available_endpoints:
-                raise RuntimeError(
-                    "Depleted pool of SID endpoints for this device!")
-            else:
-                src_address = self._available_endpoints[0]
-        sid = SID(src_address << 16 | dst_address)
-        # Note: This SID may change its source address!
-        self.log.trace(
-            "request_xport(dst=0x%04X, suggested_src_address=0x%04X, xport_type=%s): " \
-            "operating on temporary SID: %s",
-            dst_address, suggested_src_address, str(xport_type), str(sid))
-        assert self.mboard_info['rpc_connection'] in ('local')
-        if self.mboard_info['rpc_connection'] == 'local':
-            return self._xport_mgrs['liberio'].request_xport(
-                sid,
-                xport_type,
-            )
+        return ['liberio']
 
-    def commit_xport(self, xport_info):
+    def get_chdr_link_options(self, xport_type):
         """
-        See PeriphManagerBase.commit_xport() for docs.
-
-        Reminder: All connections are incoming, i.e. "send" or "TX" means
-        remote device to local device, and "receive" or "RX" means this local
-        device to remote device. "Remote device" can be, for example, a UHD
-        session.
+        See PeriphManagerBase.get_chdr_link_options() for docs.
         """
-        ## Go, go, go
-        assert self.mboard_info['rpc_connection'] in ('local')
-        sid = SID(xport_info['send_sid'])
-        self._available_endpoints.remove(sid.src_ep)
-        self.log.debug("Committing transport for SID %s, xport info: %s",
-                       str(sid), str(xport_info))
-        if self.mboard_info['rpc_connection'] == 'local':
-            return self._xport_mgrs['liberio'].commit_xport(sid, xport_info)
+        if xport_type == 'liberio':
+            return self._xport_mgrs['liberio'].get_chdr_link_options()
 
     ###########################################################################
     # Device info
@@ -549,6 +508,39 @@ class e31x(ZynqComponents, PeriphManagerBase):
             'fpga': self.updateable_components.get('fpga', {}).get('type', ""),
         })
         return device_info
+
+    def set_device_id(self, device_id):
+        """
+        Sets the device ID for this motherboard.
+        The device ID is used to identify the RFNoC components associated with
+        this motherboard.
+        """
+        self.log.debug("Setting device ID to `{}'".format(device_id))
+        self.mboard_regs_control.set_device_id(device_id)
+
+    def get_device_id(self):
+        """
+        Gets the device ID for this motherboard.
+        The device ID is used to identify the RFNoC components associated with
+        this motherboard.
+        """
+        return self.mboard_regs_control.get_device_id()
+
+    def get_proto_ver(self):
+        """
+        Return RFNoC protocol version
+        """
+        proto_ver = self.mboard_regs_control.get_proto_ver()
+        self.log.debug("RFNoC protocol version supported by this device is {}".format(proto_ver))
+        return proto_ver
+
+    def get_chdr_width(self):
+        """
+        Return RFNoC CHDR width
+        """
+        chdr_width = self.mboard_regs_control.get_chdr_width()
+        self.log.debug("CHDR width supported by the device is {}".format(chdr_width))
+        return chdr_width
 
     ###########################################################################
     # Clock/Time API
@@ -742,3 +734,59 @@ class e31x(ZynqComponents, PeriphManagerBase):
         fpga_type = self.mboard_regs_control.get_fpga_type()
         self.log.debug("Updating mboard FPGA type info to {}".format(fpga_type))
         self.updateable_components['fpga']['type'] = fpga_type
+
+    #######################################################################
+    # Timekeeper API
+    #######################################################################
+    def get_num_timekeepers(self):
+        """
+        Return the number of timekeepers
+        """
+        return self.mboard_regs_control.get_num_timekeepers()
+
+    def get_timekeeper_time(self, tk_idx, last_pps):
+        """
+        Get the time in ticks
+
+        Arguments:
+        tk_idx: Index of timekeeper
+        next_pps: If True, get time at last PPS. Otherwise, get time now.
+        """
+        return self.mboard_regs_control.get_timekeeper_time(tk_idx, last_pps)
+
+    def set_timekeeper_time(self, tk_idx, ticks, next_pps):
+        """
+        Set the time in ticks
+
+        Arguments:
+        tk_idx: Index of timekeeper
+        ticks: Time in ticks
+        next_pps: If True, set time at next PPS. Otherwise, set time now.
+        """
+        self.mboard_regs_control.set_timekeeper_time(tk_idx, ticks, next_pps)
+
+    def set_tick_period(self, tk_idx, period_ns):
+        """
+        Set the time per tick in nanoseconds (tick period)
+
+        Arguments:
+        tk_idx: Index of timekeeper
+        period_ns: Period in nanoseconds
+        """
+        self.mboard_regs_control.set_tick_period(tk_idx, period_ns)
+
+    def get_clocks(self):
+        """
+        Gets the RFNoC-related clocks present in the FPGA design
+        """
+        return [
+            {
+                'name': 'radio_clk',
+                'freq': str(self.dboard.get_master_clock_rate()),
+                'mutable': 'true'
+            },
+            {
+                'name': 'bus_clk',
+                'freq': str(100e6),
+            }
+        ]

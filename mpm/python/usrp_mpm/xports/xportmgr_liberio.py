@@ -8,8 +8,6 @@ Liberio Transport manager
 """
 
 from builtins import object
-from usrp_mpm.liberiotable import LiberioDispatcherTable
-from usrp_mpm import lib
 
 class XportMgrLiberio(object):
     """
@@ -19,14 +17,9 @@ class XportMgrLiberio(object):
     liberio_label = 'liberio'
     # Number of available DMA channels
     max_chan = 4
-    # Crossbar to which the Liberio DMA engine is connected
-    xbar_dev = "/dev/crossbar0"
-    xbar_port = 2
 
     def __init__(self, log):
-        self.log = log
-        self._dma_dispatcher = LiberioDispatcherTable(self.liberio_label)
-        self._data_chan_ctr = 0
+        self.log = log.getChild('Liberio')
 
     def init(self, args):
         """
@@ -36,7 +29,7 @@ class XportMgrLiberio(object):
 
     def deinit(self):
         " Clean up after a session terminates "
-        self._data_chan_ctr = 0
+        pass
 
     def get_xport_info(self):
         """
@@ -48,50 +41,22 @@ class XportMgrLiberio(object):
 
         In this case, returns an empty dict.
         """
+        assert hasattr(self, 'log')
         return {}
 
-    def request_xport(
-            self,
-            sid,
-            xport_type,
-        ):
+    def get_chdr_link_options(self):
         """
-        Return liberio xport info
+        Returns a list of dictionaries for returning by
+        PeriphManagerBase.get_chdr_link_options().
+
+        Note: This requires a claim, which means that init() was called, and
+        deinit() was not yet called.
         """
-        assert xport_type in ('CTRL', 'ASYNC_MSG', 'TX_DATA', 'RX_DATA')
-        if xport_type == 'CTRL':
-            chan = 0
-        elif xport_type == 'ASYNC_MSG':
-            chan = 1
-        else:
-            if self.max_chan > 4:
-                chan = 2 + self._data_chan_ctr
-                self._data_chan_ctr += 1
-            else:
-                if xport_type == 'RX_DATA':
-                    chan = 2
-                else:
-                    chan = 3
-        xport_info = {
-            'type': 'liberio',
-            'send_sid': str(sid),
-            'muxed': str(xport_type in ('CTRL', 'ASYNC_MSG')) if (self.max_chan > 4) else 'True',
-            'dma_chan': str(chan),
-            'tx_dev': "/dev/tx-dma{}".format(chan),
-            'rx_dev': "/dev/rx-dma{}".format(chan),
-        }
-        self.log.trace("Liberio: Chan: {} TX Device: {} RX Device: {}".format(
-            chan, xport_info['tx_dev'], xport_info['rx_dev']))
-        self.log.trace("Liberio channel is muxed: %s",
-                       "Yes" if xport_info['muxed'] else "No")
-        return [xport_info]
-
-    def commit_xport(self, sid, xport_info):
-        " Commit liberio transport "
-        chan = int(xport_info['dma_chan'])
-        xbar_iface = lib.xbar.xbar(self.xbar_dev)
-        xbar_iface.set_route(sid.src_addr, self.xbar_port)
-        self._dma_dispatcher.set_route(sid.reversed(), chan)
-        self.log.trace("Liberio transport successfully committed!")
-        return True
-
+        return [
+            {
+                'tx_dev': "/dev/tx-dma{}".format(chan),
+                'rx_dev': "/dev/rx-dma{}".format(chan),
+                'dma_chan': str(chan),
+            }
+            for chan in range(self.max_chan)
+        ]

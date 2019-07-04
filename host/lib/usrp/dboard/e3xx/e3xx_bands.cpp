@@ -5,7 +5,7 @@
 //
 
 #include "e3xx_constants.hpp"
-#include "e3xx_radio_ctrl_impl.hpp"
+#include "e3xx_radio_control_impl.hpp"
 #include <uhd/utils/math.hpp>
 
 /*
@@ -131,9 +131,9 @@ constexpr double E3XX_TX_LB_2750_MIN_FREQ = 1842.6e6;
 constexpr double E3XX_TX_HB_MIN_FREQ      = 2940.0e6;
 } // namespace
 
-e3xx_radio_ctrl_impl::rx_band e3xx_radio_ctrl_impl::map_freq_to_rx_band(const double freq)
+e3xx_radio_control_impl::rx_band e3xx_radio_control_impl::map_freq_to_rx_band(const double freq)
 {
-    e3xx_radio_ctrl_impl::rx_band band;
+    e3xx_radio_control_impl::rx_band band;
 
     if (fp_compare_epsilon<double>(freq) < AD9361_RX_MIN_FREQ) {
         band = rx_band::INVALID_BAND;
@@ -158,9 +158,9 @@ e3xx_radio_ctrl_impl::rx_band e3xx_radio_ctrl_impl::map_freq_to_rx_band(const do
     return band;
 }
 
-e3xx_radio_ctrl_impl::tx_band e3xx_radio_ctrl_impl::map_freq_to_tx_band(const double freq)
+e3xx_radio_control_impl::tx_band e3xx_radio_control_impl::map_freq_to_tx_band(const double freq)
 {
-    e3xx_radio_ctrl_impl::tx_band band;
+    e3xx_radio_control_impl::tx_band band;
 
     if (fp_compare_epsilon<double>(freq) < AD9361_TX_MIN_FREQ) {
         band = tx_band::INVALID_BAND;

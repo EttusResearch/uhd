@@ -286,8 +286,8 @@ class Neon(DboardManagerBase):
         return {
             'name': 'ad9361_lock',
             'type': 'BOOLEAN',
-           'unit': 'locked' if lo_locked else 'unlocked',
-           'value': str(lo_locked).lower(),
+            'unit': 'locked' if lo_locked else 'unlocked',
+            'value': str(lo_locked).lower(),
         }
 
     def get_catalina_temp_sensor(self, _):

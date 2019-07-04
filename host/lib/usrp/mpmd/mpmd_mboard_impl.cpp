@@ -6,11 +6,13 @@
 //
 
 #include "mpmd_impl.hpp"
+#include "mpmd_mb_iface.hpp"
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <chrono>
 #include <thread>
+#include <memory>
 
 namespace {
 /*************************************************************************
@@ -177,8 +179,8 @@ boost::optional<device_addr_t> mpmd_mboard_impl::is_device_reachable(
 {
     UHD_LOG_TRACE(
         "MPMD", "Checking accessibility of device `" << device_addr.to_string() << "'");
-    UHD_ASSERT_THROW(device_addr.has_key(xport::MGMT_ADDR_KEY));
-    const std::string rpc_addr = device_addr.get(xport::MGMT_ADDR_KEY);
+    UHD_ASSERT_THROW(device_addr.has_key(MGMT_ADDR_KEY));
+    const std::string rpc_addr = device_addr.get(MGMT_ADDR_KEY);
     const size_t rpc_port =
         device_addr.cast<size_t>(mpmd_impl::MPM_RPC_PORT_KEY, mpmd_impl::MPM_RPC_PORT);
     // 1) Read back device info
@@ -258,15 +260,10 @@ mpmd_mboard_impl::mpmd_mboard_impl(
     const device_addr_t& mb_args_, const std::string& rpc_server_addr)
     : mb_args(mb_args_)
     , rpc(make_mpm_rpc_client(rpc_server_addr, mb_args_))
-    , num_xbars(rpc->request<size_t>("get_num_xbars"))
     , _claim_rpc(make_mpm_rpc_client(rpc_server_addr, mb_args, MPMD_CLAIMER_RPC_TIMEOUT))
-    // xbar_local_addrs is not yet valid after this!
-    , xbar_local_addrs(num_xbars, 0xFF)
-    , _xport_mgr(xport::mpmd_xport_mgr::make(mb_args))
 {
     UHD_LOGGER_TRACE("MPMD") << "Initializing mboard, connecting to RPC server address: "
-                             << rpc_server_addr << " mboard args: " << mb_args.to_string()
-                             << " number of crossbars: " << num_xbars;
+                             << rpc_server_addr << " mboard args: " << mb_args.to_string();
 
     _claimer_task = claim_device_and_make_task();
     if (mb_args_.has_key(MPMD_MEAS_LATENCY_KEY)) {
@@ -278,7 +275,7 @@ mpmd_mboard_impl::mpmd_mboard_impl(
     for (const auto& info_pair : device_info_dict) {
         device_info[info_pair.first] = info_pair.second;
     }
-    UHD_LOGGER_TRACE("MPMD") << "MPM reports device info: " << device_info.to_string();
+    UHD_LOG_DEBUG("MPMD", "MPM reports device info: " << device_info.to_string());
     /// Get dboard info
     const auto dboards_info = rpc->request<std::vector<dev_info>>("get_dboard_info");
     UHD_ASSERT_THROW(this->dboard_info.size() == 0);
@@ -293,19 +290,16 @@ mpmd_mboard_impl::mpmd_mboard_impl(
         this->dboard_info.push_back(this_db_info);
     }
 
-    for (const std::string& key : mb_args_.keys()) {
-        if (key.find("recv") != std::string::npos)
-            recv_args[key] = mb_args_[key];
-        if (key.find("send") != std::string::npos)
-            send_args[key] = mb_args_[key];
-    }
+    // Initialize mb_iface and mb_controller
+    mb_iface = std::make_unique<mpmd_mb_iface>(mb_args, rpc);
+    mb_ctrl = std::make_shared<rfnoc::mpmd_mb_controller>(rpc, device_info);
 }
 
 mpmd_mboard_impl::~mpmd_mboard_impl()
 {
     // Destroy the claimer task to avoid spurious asynchronous reclaim call
     // after the unclaim.
-    UHD_SAFE_CALL(dump_logs(); _claimer_task.reset(); _xport_mgr.reset();
+    UHD_SAFE_CALL(dump_logs(); _claimer_task.reset();
                   if (not rpc->request_with_token<bool>("unclaim")) {
                       UHD_LOG_WARNING("MPMD", "Failure to ack unclaim!");
                   });
@@ -317,79 +311,15 @@ mpmd_mboard_impl::~mpmd_mboard_impl()
 void mpmd_mboard_impl::init()
 {
     init_device(rpc, mb_args);
-    // RFNoC block clocks are now on. Noc-IDs can be read back.
+    mb_iface->init();
 }
 
 /*****************************************************************************
  * API
  ****************************************************************************/
-void mpmd_mboard_impl::set_xbar_local_addr(
-    const size_t xbar_index, const size_t local_addr)
+uhd::rfnoc::mb_iface& mpmd_mboard_impl::get_mb_iface()
 {
-    UHD_ASSERT_THROW(
-        rpc->request_with_token<bool>("set_xbar_local_addr", xbar_index, local_addr));
-    UHD_ASSERT_THROW(xbar_index < xbar_local_addrs.size());
-    xbar_local_addrs.at(xbar_index) = local_addr;
-}
-
-uhd::both_xports_t mpmd_mboard_impl::make_transport(const sid_t& sid,
-    usrp::device3_impl::xport_type_t xport_type,
-    const uhd::device_addr_t& xport_args)
-{
-    const std::string xport_type_str = [xport_type]() {
-        switch (xport_type) {
-            case mpmd_impl::CTRL:
-                return "CTRL";
-            case mpmd_impl::ASYNC_MSG:
-                return "ASYNC_MSG";
-            case mpmd_impl::RX_DATA:
-                return "RX_DATA";
-            case mpmd_impl::TX_DATA:
-                return "TX_DATA";
-            default:
-                UHD_THROW_INVALID_CODE_PATH();
-        };
-    }();
-
-    UHD_LOGGER_TRACE("MPMD") << __func__
-                             << "(): Creating new transport of type: " << xport_type_str;
-
-    using namespace uhd::mpmd::xport;
-    const auto xport_info_list =
-        rpc->request_with_token<mpmd_xport_mgr::xport_info_list_t>(
-            "request_xport", sid.get_dst(), sid.get_src(), xport_type_str);
-    UHD_LOGGER_TRACE("MPMD") << __func__ << "(): request_xport() gave us "
-                             << xport_info_list.size() << " option(s).";
-    if (xport_info_list.empty()) {
-        UHD_LOG_ERROR("MPMD", "No viable transport path found!");
-        throw uhd::runtime_error("No viable transport path found!");
-    }
-
-    xport::mpmd_xport_mgr::xport_info_t xport_info_out;
-    auto xports = _xport_mgr->make_transport(
-        xport_info_list, xport_type, xport_args, xport_info_out);
-
-    if (not rpc->request_with_token<bool>("commit_xport", xport_info_out)) {
-        UHD_LOG_ERROR("MPMD", "Failed to create UDP transport!");
-        throw uhd::runtime_error("commit_xport() failed!");
-    }
-
-    return xports;
-}
-
-size_t mpmd_mboard_impl::get_mtu(const uhd::direction_t dir) const
-{
-    return _xport_mgr->get_mtu(dir);
-}
-
-uhd::device_addr_t mpmd_mboard_impl::get_rx_hints() const
-{
-    return recv_args;
-}
-
-uhd::device_addr_t mpmd_mboard_impl::get_tx_hints() const
-{
-    return send_args;
+    return *(mb_iface.get());
 }
 
 /*****************************************************************************

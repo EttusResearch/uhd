@@ -41,7 +41,7 @@ N3XX_DEFAULT_ENABLE_PPS_EXPORT = True
 N32X_DEFAULT_QSFP_RATE_PRESET = 'Ethernet'
 N32X_DEFAULT_QSFP_DRIVER_PRESET = 'Optical'
 N32X_QSFP_I2C_LABEL = 'qsfp-i2c'
-N3XX_FPGA_COMPAT = (5, 3)
+N3XX_FPGA_COMPAT = (6, 0)
 N3XX_MONITOR_THREAD_INTERVAL = 1.0 # seconds
 
 # Import daughterboard PIDs from their respective classes
@@ -52,39 +52,24 @@ RHODIUM_PID = Rhodium.pids[0]
 ###############################################################################
 # Transport managers
 ###############################################################################
+# pylint: disable=too-few-public-methods
 class N3xxXportMgrUDP(XportMgrUDP):
     " N3xx-specific UDP configuration "
-    xbar_dev = "/dev/crossbar0"
     iface_config = {
         'bridge0': {
             'label': 'misc-enet-regs0',
-            'xbar': 0,
-            'xbar_port': 0,
-            'ctrl_src_addr': 0,
         },
         'sfp0': {
             'label': 'misc-enet-regs0',
-            'xbar': 0,
-            'xbar_port': 0,
-            'ctrl_src_addr': 0,
         },
         'sfp1': {
             'label': 'misc-enet-regs1',
-            'xbar': 0,
-            'xbar_port': 1,
-            'ctrl_src_addr': 1,
         },
         'eth1': {
             'label': 'misc-enet-regs0',
-            'xbar': 0,
-            'xbar_port': 0,
-            'ctrl_src_addr': 0,
         },
         'eth2': {
             'label': 'misc-enet-regs1',
-            'xbar': 0,
-            'xbar_port': 1,
-            'ctrl_src_addr': 1,
         },
     }
     bridges = {'bridge0': ['sfp0', 'sfp1', 'bridge0']}
@@ -92,8 +77,7 @@ class N3xxXportMgrUDP(XportMgrUDP):
 class N3xxXportMgrLiberio(XportMgrLiberio):
     " N3xx-specific Liberio configuration "
     max_chan = 10
-    xbar_dev = "/dev/crossbar0"
-    xbar_port = 2
+# pylint: enable=too-few-public-methods
 
 ###############################################################################
 # Main Class
@@ -216,7 +200,6 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         self._ext_clock_freq = None
         self._clock_source = None
         self._time_source = None
-        self._available_endpoints = list(range(256))
         self._bp_leds = None
         self._gpsd = None
         self._qsfp_retimer = None
@@ -352,7 +335,6 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         self.mboard_regs_control.get_git_hash()
         self.mboard_regs_control.get_build_timestamp()
         self._check_fpga_compat()
-        self.crossbar_base_port = self.mboard_regs_control.get_xbar_baseport()
         # Init clocking
         self.enable_ref_clock(enable=True)
         self._ext_clock_freq = None
@@ -463,8 +445,6 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         super(n3xx, self).deinit()
         for xport_mgr in itervalues(self._xport_mgrs):
             xport_mgr.deinit()
-        self.log.trace("Resetting SID pool...")
-        self._available_endpoints = list(range(256))
 
     def tear_down(self):
         """
@@ -489,66 +469,37 @@ class n3xx(ZynqComponents, PeriphManagerBase):
     ###########################################################################
     # Transport API
     ###########################################################################
-    def request_xport(
-            self,
-            dst_address,
-            suggested_src_address,
-            xport_type
-        ):
+    def get_chdr_link_types(self):
         """
-        See PeriphManagerBase.request_xport() for docs.
+        This will only ever return a single item (udp or liberio).
         """
-        # Try suggested address first, then just pick the first available one:
-        src_address = suggested_src_address
-        if src_address not in self._available_endpoints:
-            if len(self._available_endpoints) == 0:
-                raise RuntimeError(
-                    "Depleted pool of SID endpoints for this device!")
-            else:
-                src_address = self._available_endpoints[0]
-        sid = SID(src_address << 16 | dst_address)
-        # Note: This SID may change its source address!
-        self.log.trace(
-            "request_xport(dst=0x%04X, suggested_src_address=0x%04X, xport_type=%s): " \
-            "operating on temporary SID: %s",
-            dst_address, suggested_src_address, str(xport_type), str(sid))
-        # FIXME token!
-        assert self.device_info['rpc_connection'] in ('remote', 'local')
-        if self.device_info['rpc_connection'] == 'remote':
-            if self.device_info['product'] == 'n320':
-                alloc_limit = 1
-            else:
-                alloc_limit = 2
-            return self._xport_mgrs['udp'].request_xport(
-                sid,
-                xport_type,
-                alloc_limit
-            )
-        elif self.device_info['rpc_connection'] == 'local':
-            return self._xport_mgrs['liberio'].request_xport(
-                sid,
-                xport_type,
-            )
+        assert self.mboard_info['rpc_connection'] in ('remote', 'local')
+        if self.mboard_info['rpc_connection'] == 'remote':
+            return ["udp"]
+        # else:
+        return ["liberio"]
 
-    def commit_xport(self, xport_info):
+    def get_chdr_link_options(self, xport_type):
         """
-        See PeriphManagerBase.commit_xport() for docs.
+        Returns a list of dictionaries. Every dictionary contains information
+        about one way to connect to this device in order to initiate CHDR
+        traffic.
 
-        Reminder: All connections are incoming, i.e. "send" or "TX" means
-        remote device to local device, and "receive" or "RX" means this local
-        device to remote device. "Remote device" can be, for example, a UHD
-        session.
+        The interpretation of the return value is very highly dependant on the
+        transport type (xport_type).
+        For UDP, the every entry of the list has the following keys:
+        - ipv4 (IP Address)
+        - port (UDP port)
+        - link_rate (bps of the link, e.g. 10e9 for 10GigE)
+
+        For Liberio, every entry has the following keys:
+        - tx_dev: TX device (/dev/tx-dma*)
+        - rx_dev: RX device (/dev/rx-dma*)
         """
-        ## Go, go, go
-        assert self.device_info['rpc_connection'] in ('remote', 'local')
-        sid = SID(xport_info['send_sid'])
-        self._available_endpoints.remove(sid.src_ep)
-        self.log.debug("Committing transport for SID %s, xport info: %s",
-                       str(sid), str(xport_info))
-        if self.device_info['rpc_connection'] == 'remote':
-            return self._xport_mgrs['udp'].commit_xport(sid, xport_info)
-        elif self.device_info['rpc_connection'] == 'local':
-            return self._xport_mgrs['liberio'].commit_xport(sid, xport_info)
+        if xport_type not in self._xport_mgrs:
+            self.log.warning("Can't get link options for unknown link type: `{}'.")
+            return []
+        return self._xport_mgrs[xport_type].get_chdr_link_options()
 
     ###########################################################################
     # Device info
@@ -568,6 +519,39 @@ class n3xx(ZynqComponents, PeriphManagerBase):
             'fpga': self.updateable_components.get('fpga', {}).get('type', ""),
         })
         return device_info
+
+    def set_device_id(self, device_id):
+        """
+        Sets the device ID for this motherboard.
+        The device ID is used to identify the RFNoC components associated with
+        this motherboard.
+        """
+        self.log.debug("Setting device ID to `{}'".format(device_id))
+        self.mboard_regs_control.set_device_id(device_id)
+
+    def get_device_id(self):
+        """
+        Gets the device ID for this motherboard.
+        The device ID is used to identify the RFNoC components associated with
+        this motherboard.
+        """
+        return self.mboard_regs_control.get_device_id()
+
+    def get_proto_ver(self):
+        """
+        Return RFNoC protocol version
+        """
+        proto_ver = self.mboard_regs_control.get_proto_ver()
+        self.log.debug("RFNoC protocol version supported by this device is {}".format(proto_ver))
+        return proto_ver
+
+    def get_chdr_width(self):
+        """
+        Return RFNoC CHDR width
+        """
+        chdr_width = self.mboard_regs_control.get_chdr_width()
+        self.log.debug("CHDR width supported by the device is {}".format(chdr_width))
+        return chdr_width
 
     ###########################################################################
     # Clock/Time API
@@ -1065,3 +1049,60 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         if self._bp_leds is not None:
             # Turn off LINK
             self._bp_leds.set(self._bp_leds.LED_LINK, 0)
+
+    #######################################################################
+    # Timekeeper API
+    #######################################################################
+    def get_num_timekeepers(self):
+        """
+        Return the number of timekeepers
+        """
+        return self.mboard_regs_control.get_num_timekeepers()
+
+    def get_timekeeper_time(self, tk_idx, last_pps):
+        """
+        Get the time in ticks
+
+        Arguments:
+        tk_idx: Index of timekeeper
+        next_pps: If True, get time at last PPS. Otherwise, get time now.
+        """
+        return self.mboard_regs_control.get_timekeeper_time(tk_idx, last_pps)
+
+    def set_timekeeper_time(self, tk_idx, ticks, next_pps):
+        """
+        Set the time in ticks
+
+        Arguments:
+        tk_idx: Index of timekeeper
+        ticks: Time in ticks
+        next_pps: If True, set time at next PPS. Otherwise, set time now.
+        """
+        self.mboard_regs_control.set_timekeeper_time(tk_idx, ticks, next_pps)
+
+    def set_tick_period(self, tk_idx, period_ns):
+        """
+        Set the time per tick in nanoseconds (tick period)
+
+        Arguments:
+        tk_idx: Index of timekeeper
+        period_ns: Period in nanoseconds
+        """
+        self.mboard_regs_control.set_tick_period(tk_idx, period_ns)
+
+    def get_clocks(self):
+        """
+        Gets the RFNoC-related clocks present in the FPGA design
+        """
+        return [
+            {
+                'name': 'radio_clk',
+                'freq': str(self.dboards[0].get_master_clock_rate()),
+                'mutable': 'true'
+            },
+            {
+                'name': 'bus_clk',
+                'freq': str(200e6),
+            }
+        ]
+

@@ -8,10 +8,10 @@
 # set to true.
 
 list(APPEND MAGNESIUM_SOURCES
-    ${CMAKE_CURRENT_SOURCE_DIR}/magnesium_radio_ctrl_impl.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/magnesium_radio_ctrl_init.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/magnesium_radio_ctrl_cpld.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/magnesium_radio_ctrl_gain.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/magnesium_radio_control.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/magnesium_radio_control_init.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/magnesium_radio_control_cpld.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/magnesium_radio_control_gain.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/magnesium_ad9371_iface.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/magnesium_bands.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/magnesium_cpld_ctrl.cpp

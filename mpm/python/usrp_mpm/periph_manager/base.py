@@ -177,7 +177,7 @@ class PeriphManagerBase(object):
     ###########################################################################
     def __init__(self):
         # Note: args is a dictionary.
-        assert len(self.pids) > 0
+        assert self.pids
         assert self.mboard_eeprom_magic is not None
         self.dboards = []
         self._default_args = ""
@@ -241,14 +241,17 @@ class PeriphManagerBase(object):
 
         If no EEPROM is defined, returns empty values.
         """
-        if len(self.mboard_eeprom_addr):
+        if self.mboard_eeprom_addr:
             self.log.trace("Reading EEPROM from address `{}'..."
                            .format(self.mboard_eeprom_addr))
-            if (not get_eeprom_paths(self.mboard_eeprom_addr)):
-                raise RuntimeError("No EEPROM found at address `{}'"
-                    .format(self.mboard_eeprom_addr))
+            eeprom_paths = get_eeprom_paths(self.mboard_eeprom_addr)
+            if not eeprom_paths:
+                self.log.error("Could not identify EEPROM paths for %s!",
+                               self.mboard_eeprom_addr)
+                return {}, b''
+            self.log.trace("Found mboard EEPROM path: %s", eeprom_paths[0])
             (eeprom_head, eeprom_rawdata) = eeprom.read_eeprom(
-                get_eeprom_paths(self.mboard_eeprom_addr)[0],
+                eeprom_paths[0],
                 self.mboard_eeprom_offset,
                 eeprom.MboardEEPROM.eeprom_header_format,
                 eeprom.MboardEEPROM.eeprom_header_keys,
@@ -512,6 +515,22 @@ class PeriphManagerBase(object):
     ###########################################################################
     # Misc device status controls and indicators
     ###########################################################################
+    def set_device_id(self, device_id):
+        """
+        Sets the device ID for this motherboard.
+        The device ID is used to identify the RFNoC components associated with
+        this motherboard.
+        """
+        raise NotImplementedError("set_device_id() not implemented.")
+
+    def get_device_id(self):
+        """
+        Gets the device ID for this motherboard.
+        The device ID is used to identify the RFNoC components associated with
+        this motherboard.
+        """
+        raise NotImplementedError("get_device_id() not implemented.")
+
     def get_init_status(self):
         """
         Returns the status of the device after its initialization (that happens
@@ -592,6 +611,20 @@ class PeriphManagerBase(object):
         """
         return [dboard.device_info for dboard in self.dboards]
 
+    @no_claim
+    def get_proto_ver(self):
+        """
+        Return RFNoC protocol version
+        """
+        raise NotImplementedError("get_proto_ver() not implemented.")
+
+    @no_claim
+    def get_chdr_width(self):
+        """
+        Return RFNoC CHDR width
+        """
+        raise NotImplementedError("get_chdr_width() not implemented.")
+
     ###########################################################################
     # Component updating
     ###########################################################################
@@ -670,64 +703,10 @@ class PeriphManagerBase(object):
             self.log.trace("Component info: {}".format(metadata))
             # Convert all values to str
             return dict([a, str(x)] for a, x in metadata.items())
-        else:
-            self.log.trace("Component not found in updateable components: {}"
-                           .format(component_name))
-            return {}
-
-    ###########################################################################
-    # Crossbar control
-    ###########################################################################
-    @no_claim
-    def get_num_xbars(self):
-        """
-        Returns the number of crossbars instantiated in the current design
-        """
-        return 1 # FIXME
-
-    @no_claim
-    def get_num_blocks(self, xbar_index):
-        """
-        Returns the number of blocks connected to crossbar with index
-        xbar_index.
-
-        xbar_index -- The index of the crossbar that's being queried.
-        docstring for get_num_blocks"""
-        # FIXME udev lookup
-        xbar_sysfs_path = '/sys/class/rfnoc_crossbar/crossbar{}/nports'.format(
-            xbar_index
-        )
-        return int(open(xbar_sysfs_path).read().strip()) - \
-                self.get_base_port(xbar_index)
-
-    @no_claim
-    def get_base_port(self, xbar_index):
-        """
-        Returns the index of the first port which is connected to an RFNoC
-        block. Example: Assume there are two SFPs connected to the crossbar, and
-        one DMA engine for CHDR traffic. The convention would be to connect
-        those to ports 0, 1, and 2, respectively. This makes port 3 the first
-        block to be connected to an RFNoC block.
-
-        xbar_index -- The index of the crossbar that's being queried
-        """
-        return self.crossbar_base_port
-
-    def set_xbar_local_addr(self, xbar_index, local_addr):
-        """
-        Program crossbar xbar_index to have the local address local_addr.
-        """
-        # FIXME udev lookup
-        xbar_sysfs_path = '/sys/class/rfnoc_crossbar/crossbar{}/local_addr'.format(
-            xbar_index
-        )
-        laddr_value = "0x{:X}".format(local_addr)
-        self.log.trace("Setting local address for xbar {} to {}.".format(
-            xbar_sysfs_path, laddr_value
-        ))
-        with open(xbar_sysfs_path, "w") as xbar_file:
-            xbar_file.write(laddr_value)
-        return True
+        # else:
+        self.log.trace("Component not found in updateable components: {}"
+                       .format(component_name))
+        return {}
 
     ##########################################################################
     # Mboard Sensors
@@ -823,86 +802,44 @@ class PeriphManagerBase(object):
     #######################################################################
     # Transport API
     #######################################################################
-    def request_xport(
-            self,
-            dst_address,
-            suggested_src_address,
-            xport_type,
-        ):
+    def get_chdr_link_types(self):
         """
-        When setting up a CHDR connection, this is the first call to be
-        made. This function will return a list of dictionaries, each
-        describing a way to open an CHDR connection. The list of dictionaries
-        is sorted by preference, meaning that the caller should use the first
-        option, if possible.
-        All transports requested are bidirectional.
+        Return a list of ways how the UHD session can connect to this device to
+        initiate CHDR traffic.
 
-        The callee must maintain a lock on the available CHDR xports. After
-        calling request_xport(), the caller needs to pick one of the
-        dictionaries, possibly amend data (e.g., if the connection is an
-        Ethernet connection, then we need to know the source port, but more
-        details on that in commit_xport()'s documentation).
-        One way to implement a lock is to simply lock a mutex here and
-        unlock it in commit_xport(), even though there are probably more
-        nuanced solutions.
+        The return value is a list of strings. Every string is a key for a
+        transport type. Values include:
+        - "udp": Means this device can be reached via UDP
+        - "liberio": Means this device can be reached via Liberio (local DMA)
 
-        Arguments:
-        dst_sid -- The destination part of the connection, i.e., which
-                   RFNoC block are we connecting to. Example: 0x0230
-        suggested_src_sid -- The source part of the connection, i.e.,
-                             what's the source address of packets going to
-                             the destination at dst_sid. This is a
-                             suggestion, MPM can override this. Example:
-                             0x0001.
-        xport_type -- One of the following strings: CTRL, ASYNC_MSG,
-                      TX_DATA, RX_DATA. See also xports_type_t in UHD.
+        The list is filtered based on what the device knows about where the UHD
+        session is. For example, on an N310, it will only either return "UDP"
+        or "Liberio", depending on if we're remotely launching UHD, or locally.
 
-        The return value is a list of dictionaries. Every dictionary has
-        the following key/value pairs:
-        - type: Type of transport, e.g., "UDP", "liberio".
-        - ipv4 (UDP only): IPv4 address to connect to.
-        - port (UDP only): IP port to connect to.
-        - send_sid: String version of the SID used for this transport. This is
-                    the definitive version of the SID, the suggested_src_address
-                    can be ignored at this point.
-        - allocation: This is an integer value which represents a score of
-                      how much bandwidth is used. Note: Currently does not
-                      have any unit, is just a counter. Higher numbers mean
-                      higher utilization. RX means device to UHD, for
-                      example, committing an RX streamer would increase this
-                      value.
-                      This key is optional, MPM does not have to provide it.
-                      If the allocation affects the preference, it will be
-                      factored into the order of the results, meaning the
-                      caller does not strictly have to check its value even if
-                      the transport option with the smallest allocation is
-                      preferred.
-
-        Note: The dictionary may include other keys which should be ignored,
-        or at the very least, kept intact. commit_xport() might be requiring
-        them.
+        In order to get further information about how to connect to the device,
+        the keys returned from this function can be used with
+        get_chdr_link_options().
         """
-        raise NotImplementedError("request_xport() not implemented.")
+        raise NotImplementedError("get_chdr_link_types() not implemented.")
 
-    def commit_xport(self, xport_info):
+    def get_chdr_link_options(self, xport_type):
         """
-        When setting up a CHDR connection, this is the second call to be
-        made.
+        Returns a list of dictionaries. Every dictionary contains information
+        about one way to connect to this device in order to initiate CHDR
+        traffic.
 
-        Arguments:
-        xport_info -- A dictionary (string -> string). The dictionary must
-                      have been originally created by request_xport(), but
-                      additional key/value pairs need to be added.
+        The interpretation of the return value is very highly dependant on the
+        transport type (xport_type).
+        For UDP, the every entry of the list has the following keys:
+        - ipv4 (IP Address)
+        - port (UDP port)
+        - link_rate (bps of the link, e.g. 10e9 for 10GigE)
 
-        All transports need to also provide:
-        - rx_mtu: In bytes, the max number of bytes going from device to UHD
-        - tx_mtu: In bytes, the max number of bytes going from UHD to device
-
-        UDP transports need to also provide:
-        - src_ipv4: IPv4 address the connection is coming from.
-        - src_port: IP port the connection is coming from.
+        For Liberio, every entry has the following keys:
+        - tx_dev: TX device (/dev/tx-dma*)
+        - rx_dev: RX device (/dev/rx-dma*)
         """
-        raise NotImplementedError("commit_xport() not implemented.")
+        raise NotImplementedError("get_chdr_link_options() not implemented.")
 
     #######################################################################
     # Claimer API
@@ -927,3 +864,52 @@ class PeriphManagerBase(object):
         """
         self.log.debug("Device was unclaimed. No actions defined.")
 
+    #######################################################################
+    # Timekeeper API
+    #######################################################################
+    def get_num_timekeepers(self):
+        """
+        Return the number of timekeepers
+        """
+        raise NotImplementedError("get_num_timekeepers() not implemented.")
+
+    def get_timekeeper_time(self, tk_idx, last_pps):
+        """
+        Get the time in ticks
+
+        Arguments:
+        tk_idx: Index of timekeeper
+        next_pps: If True, get time at last PPS. Otherwise, get time now.
+        """
+        raise NotImplementedError(
+            "get_ticks_now({}, {}) not implemented.".format(tk_idx, last_pps))
+
+    def set_timekeeper_time(self, tk_idx, ticks, next_pps):
+        """
+        Set the time in ticks
+
+        Arguments:
+        tk_idx: Index of timekeeper
+        ticks: Time in ticks
+        next_pps: If True, set time at next PPS. Otherwise, set time now.
+        """
+        raise NotImplementedError(
+            "set_ticks_last_pps({}, {}, {}) not implemented."
+            .format(tk_idx, ticks, next_pps))
+
+    def set_tick_period(self, tk_idx, period_ns):
+        """
+        Set the time per tick in nanoseconds (tick period)
+
+        Arguments:
+        tk_idx: Index of timekeeper
+        period_ns: Period in nanoseconds
+        """
+        raise NotImplementedError(
+            "set_tick_period({}) not implemented.".format(tk_idx, period_ns))
+
+    def get_clocks(self):
+        """
+        Gets the RFNoC-related clocks present in the FPGA design
+        """
+        raise NotImplementedError("get_clocks() not implemented.")

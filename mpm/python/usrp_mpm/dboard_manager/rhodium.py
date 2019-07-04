@@ -20,7 +20,6 @@ from usrp_mpm.dboard_manager.adc_rh import AD9695Rh
 from usrp_mpm.dboard_manager.dac_rh import DAC37J82Rh
 from usrp_mpm.mpmlog import get_logger
 from usrp_mpm.sys_utils.uio import open_uio
-from usrp_mpm.sys_utils.udev import get_eeprom_paths
 from usrp_mpm.user_eeprom import BfrfsEEPROM
 
 

@@ -12,22 +12,21 @@
 #include "x300_mboard_type.hpp"
 #include "x300_regs.hpp"
 #include "x310_lvbitx.hpp"
-#include <uhd/transport/nirio_zero_copy.hpp>
-#include <uhd/transport/zero_copy.hpp>
 #include <uhd/types/device_addr.hpp>
-#include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
+#include <uhdlib/rfnoc/device_id.hpp>
+#include <uhdlib/transport/nirio_link.hpp>
 #include <uhdlib/usrp/cores/i2c_core_100_wb32.hpp>
 #include <unordered_map>
 #include <mutex>
 
 namespace {
 
-uint32_t extract_sid_from_pkt(void* pkt, size_t)
-{
-    return uhd::sid_t(uhd::wtohx(static_cast<const uint32_t*>(pkt)[1])).get_dst();
-}
+//uint32_t extract_sid_from_pkt(void* pkt, size_t)
+//{
+    //return uhd::sid_t(uhd::wtohx(static_cast<const uint32_t*>(pkt)[1])).get_dst();
+//}
 
 constexpr uint32_t RADIO_DEST_PREFIX_TX = 0;
 
@@ -198,9 +197,8 @@ device_addrs_t pcie_manager::find(const device_addr_t& hint, bool explicit_query
 /******************************************************************************
  * Structors
  *****************************************************************************/
-pcie_manager::pcie_manager(const x300_device_args_t& args,
-    uhd::property_tree::sptr tree,
-    const uhd::fs_path& root_path)
+pcie_manager::pcie_manager(
+    const x300_device_args_t& args, uhd::property_tree::sptr, const uhd::fs_path&)
     : _args(args), _resource(args.get_resource())
 {
     nirio_status status = 0;
@@ -237,9 +235,7 @@ pcie_manager::pcie_manager(const x300_device_args_t& args,
     _rio_fpga_interface->get_kernel_proxy()->get_rio_quirks().register_tx_streams(
         tx_data_fifos, 2);
 
-    tree->create<size_t>(root_path / "mtu/recv").set(PCIE_RX_DATA_FRAME_SIZE);
-    tree->create<size_t>(root_path / "mtu/send").set(PCIE_TX_DATA_FRAME_SIZE);
-    tree->create<double>(root_path / "link_max_rate").set(MAX_RATE_PCIE);
+    _local_device_id = rfnoc::allocate_device_id();
 }
 
 /******************************************************************************
@@ -276,115 +272,124 @@ void pcie_manager::release_ctrl_iface(std::function<void(void)>&& release_fn)
 }
 
 uint32_t pcie_manager::allocate_pcie_dma_chan(
-    const uhd::sid_t& tx_sid, const uhd::usrp::device3_impl::xport_type_t xport_type)
+    const rfnoc::sep_id_t& /*remote_epid*/, const link_type_t /*link_type*/)
 {
-    constexpr uint32_t CTRL_CHANNEL       = 0;
-    constexpr uint32_t ASYNC_MSG_CHANNEL  = 1;
-    constexpr uint32_t FIRST_DATA_CHANNEL = 2;
-    if (xport_type == uhd::usrp::device3_impl::CTRL) {
-        return CTRL_CHANNEL;
-    } else if (xport_type == uhd::usrp::device3_impl::ASYNC_MSG) {
-        return ASYNC_MSG_CHANNEL;
-    } else {
-        // sid_t has no comparison defined, so we need to convert it uint32_t
-        uint32_t raw_sid = tx_sid.get();
+    throw uhd::not_implemented_error("allocate_pcie_dma_chan()");
+    //constexpr uint32_t CTRL_CHANNEL       = 0;
+    //constexpr uint32_t ASYNC_MSG_CHANNEL  = 1;
+    //constexpr uint32_t FIRST_DATA_CHANNEL = 2;
+    //if (link_type == uhd::usrp::device3_impl::CTRL) {
+        //return CTRL_CHANNEL;
+    //} else if (link_type == uhd::usrp::device3_impl::ASYNC_MSG) {
+        //return ASYNC_MSG_CHANNEL;
+    //} else {
+        //// sid_t has no comparison defined, so we need to convert it uint32_t
+        //uint32_t raw_sid = tx_sid.get();
 
-        if (_dma_chan_pool.count(raw_sid) == 0) {
-            size_t channel = _dma_chan_pool.size() + FIRST_DATA_CHANNEL;
-            if (channel > PCIE_MAX_CHANNELS) {
-                throw uhd::runtime_error(
-                    "Trying to allocate more DMA channels than are available");
-            }
-            _dma_chan_pool[raw_sid] = channel;
-            UHD_LOGGER_DEBUG("X300")
-                << "Assigning PCIe DMA channel " << _dma_chan_pool[raw_sid] << " to SID "
-                << tx_sid.to_pp_string_hex();
-        }
+        //if (_dma_chan_pool.count(raw_sid) == 0) {
+            //size_t channel = _dma_chan_pool.size() + FIRST_DATA_CHANNEL;
+            //if (channel > PCIE_MAX_CHANNELS) {
+                //throw uhd::runtime_error(
+                    //"Trying to allocate more DMA channels than are available");
+            //}
+            //_dma_chan_pool[raw_sid] = channel;
+            //UHD_LOGGER_DEBUG("X300")
+                //<< "Assigning PCIe DMA channel " << _dma_chan_pool[raw_sid] << " to SID "
+                //<< tx_sid.to_pp_string_hex();
+        //}
 
-        return _dma_chan_pool[raw_sid];
-    }
+        //return _dma_chan_pool[raw_sid];
+    //}
 }
 
 muxed_zero_copy_if::sptr pcie_manager::make_muxed_pcie_msg_xport(
     uint32_t dma_channel_num, size_t max_muxed_ports)
 {
-    zero_copy_xport_params buff_args;
-    buff_args.send_frame_size = PCIE_MSG_FRAME_SIZE;
-    buff_args.recv_frame_size = PCIE_MSG_FRAME_SIZE;
-    buff_args.num_send_frames = PCIE_MSG_NUM_FRAMES;
-    buff_args.num_recv_frames = PCIE_MSG_NUM_FRAMES;
+    throw uhd::not_implemented_error("NI-RIO links not yet implemented!");
+    //zero_copy_xport_params buff_args;
+    //buff_args.send_frame_size = PCIE_MSG_FRAME_SIZE;
+    //buff_args.recv_frame_size = PCIE_MSG_FRAME_SIZE;
+    //buff_args.num_send_frames = PCIE_MSG_NUM_FRAMES;
+    //buff_args.num_recv_frames = PCIE_MSG_NUM_FRAMES;
 
-    zero_copy_if::sptr base_xport = nirio_zero_copy::make(
-        _rio_fpga_interface, dma_channel_num, buff_args, uhd::device_addr_t());
-    return muxed_zero_copy_if::make(base_xport, extract_sid_from_pkt, max_muxed_ports);
+    //zero_copy_if::sptr base_xport = nirio_zero_copy::make(
+        //_rio_fpga_interface, dma_channel_num, buff_args, uhd::device_addr_t());
+    //return muxed_zero_copy_if::make(base_xport, extract_sid_from_pkt, max_muxed_ports);
 }
 
-both_xports_t pcie_manager::make_transport(both_xports_t xports,
-    const uhd::usrp::device3_impl::xport_type_t xport_type,
-    const uhd::device_addr_t& args,
-    const size_t send_mtu,
-    const size_t recv_mtu)
+both_links_t pcie_manager::get_links(link_type_t /*link_type*/,
+    const rfnoc::device_id_t local_device_id,
+    const rfnoc::sep_id_t& /*local_epid*/,
+    const rfnoc::sep_id_t& /*remote_epid*/,
+    const device_addr_t& /*link_args*/)
 {
-    zero_copy_xport_params default_buff_args;
-    xports.endianness              = ENDIANNESS_LITTLE;
-    xports.lossless                = true;
-    const uint32_t dma_channel_num = allocate_pcie_dma_chan(xports.send_sid, xport_type);
-    if (xport_type == uhd::usrp::device3_impl::CTRL) {
-        // Transport for control stream
-        if (not _ctrl_dma_xport) {
-            // One underlying DMA channel will handle
-            // all control traffic
-            _ctrl_dma_xport =
-                make_muxed_pcie_msg_xport(dma_channel_num, PCIE_MAX_MUXED_CTRL_XPORTS);
-        }
-        // Create a virtual control transport
-        xports.recv = _ctrl_dma_xport->make_stream(xports.recv_sid.get_dst());
-    } else if (xport_type == uhd::usrp::device3_impl::ASYNC_MSG) {
-        // Transport for async message stream
-        if (not _async_msg_dma_xport) {
-            // One underlying DMA channel will handle
-            // all async message traffic
-            _async_msg_dma_xport =
-                make_muxed_pcie_msg_xport(dma_channel_num, PCIE_MAX_MUXED_ASYNC_XPORTS);
-        }
-        // Create a virtual async message transport
-        xports.recv = _async_msg_dma_xport->make_stream(xports.recv_sid.get_dst());
-    } else if (xport_type == uhd::usrp::device3_impl::TX_DATA) {
-        default_buff_args.send_frame_size = args.cast<size_t>(
-            "send_frame_size", std::min(send_mtu, PCIE_TX_DATA_FRAME_SIZE));
-        default_buff_args.num_send_frames =
-            args.cast<size_t>("num_send_frames", PCIE_TX_DATA_NUM_FRAMES);
-        default_buff_args.send_buff_size  = args.cast<size_t>("send_buff_size", 0);
-        default_buff_args.recv_frame_size = PCIE_MSG_FRAME_SIZE;
-        default_buff_args.num_recv_frames = PCIE_MSG_NUM_FRAMES;
-        xports.recv                       = nirio_zero_copy::make(
-            _rio_fpga_interface, dma_channel_num, default_buff_args);
-    } else if (xport_type == uhd::usrp::device3_impl::RX_DATA) {
-        default_buff_args.send_frame_size = PCIE_MSG_FRAME_SIZE;
-        default_buff_args.num_send_frames = PCIE_MSG_NUM_FRAMES;
-        default_buff_args.recv_frame_size = args.cast<size_t>(
-            "recv_frame_size", std::min(recv_mtu, PCIE_RX_DATA_FRAME_SIZE));
-        default_buff_args.num_recv_frames =
-            args.cast<size_t>("num_recv_frames", PCIE_RX_DATA_NUM_FRAMES);
-        default_buff_args.recv_buff_size = args.cast<size_t>("recv_buff_size", 0);
-        xports.recv                      = nirio_zero_copy::make(
-            _rio_fpga_interface, dma_channel_num, default_buff_args);
+    throw uhd::not_implemented_error("NI-RIO links not yet implemented!");
+    if (local_device_id != _local_device_id) {
+        throw uhd::runtime_error(
+            std::string("[X300] Cannot create NI-RIO link through local device ID ")
+            + std::to_string(local_device_id)
+            + ", no such device associated with this motherboard!");
     }
+    //zero_copy_xport_params default_buff_args;
+    //xports.endianness              = ENDIANNESS_LITTLE;
+    //xports.lossless                = true;
+    //const uint32_t dma_channel_num = allocate_pcie_dma_chan(xports.send_sid, xport_type);
+    //if (xport_type == uhd::usrp::device3_impl::CTRL) {
+        //// Transport for control stream
+        //if (not _ctrl_dma_xport) {
+            //// One underlying DMA channel will handle
+            //// all control traffic
+            //_ctrl_dma_xport =
+                //make_muxed_pcie_msg_xport(dma_channel_num, PCIE_MAX_MUXED_CTRL_XPORTS);
+        //}
+        //// Create a virtual control transport
+        //xports.recv = _ctrl_dma_xport->make_stream(xports.recv_sid.get_dst());
+    //} else if (xport_type == uhd::usrp::device3_impl::ASYNC_MSG) {
+        //// Transport for async message stream
+        //if (not _async_msg_dma_xport) {
+            //// One underlying DMA channel will handle
+            //// all async message traffic
+            //_async_msg_dma_xport =
+                //make_muxed_pcie_msg_xport(dma_channel_num, PCIE_MAX_MUXED_ASYNC_XPORTS);
+        //}
+        //// Create a virtual async message transport
+        //xports.recv = _async_msg_dma_xport->make_stream(xports.recv_sid.get_dst());
+    //} else if (xport_type == uhd::usrp::device3_impl::TX_DATA) {
+        //default_buff_args.send_frame_size = args.cast<size_t>(
+            //"send_frame_size", std::min(send_mtu, PCIE_TX_DATA_FRAME_SIZE));
+        //default_buff_args.num_send_frames =
+            //args.cast<size_t>("num_send_frames", PCIE_TX_DATA_NUM_FRAMES);
+        //default_buff_args.send_buff_size  = args.cast<size_t>("send_buff_size", 0);
+        //default_buff_args.recv_frame_size = PCIE_MSG_FRAME_SIZE;
+        //default_buff_args.num_recv_frames = PCIE_MSG_NUM_FRAMES;
+        //xports.recv                       = nirio_zero_copy::make(
+            //_rio_fpga_interface, dma_channel_num, default_buff_args);
+    //} else if (xport_type == uhd::usrp::device3_impl::RX_DATA) {
+        //default_buff_args.send_frame_size = PCIE_MSG_FRAME_SIZE;
+        //default_buff_args.num_send_frames = PCIE_MSG_NUM_FRAMES;
+        //default_buff_args.recv_frame_size = args.cast<size_t>(
+            //"recv_frame_size", std::min(recv_mtu, PCIE_RX_DATA_FRAME_SIZE));
+        //default_buff_args.num_recv_frames =
+            //args.cast<size_t>("num_recv_frames", PCIE_RX_DATA_NUM_FRAMES);
+        //default_buff_args.recv_buff_size = args.cast<size_t>("recv_buff_size", 0);
+        //xports.recv                      = nirio_zero_copy::make(
+            //_rio_fpga_interface, dma_channel_num, default_buff_args);
+    //}
 
-    xports.send = xports.recv;
+    //xports.send = xports.recv;
 
-    // Router config word is:
-    // - Upper 16 bits: Destination address (e.g. 0.0)
-    // - Lower 16 bits: DMA channel
-    uint32_t router_config_word = (xports.recv_sid.get_dst() << 16) | dma_channel_num;
-    _rio_fpga_interface->get_kernel_proxy()->poke(PCIE_ROUTER_REG(0), router_config_word);
+    //// Router config word is:
+    //// - Upper 16 bits: Destination address (e.g. 0.0)
+    //// - Lower 16 bits: DMA channel
+    //uint32_t router_config_word = (xports.recv_sid.get_dst() << 16) | dma_channel_num;
+    //_rio_fpga_interface->get_kernel_proxy()->poke(PCIE_ROUTER_REG(0), router_config_word);
 
-    // For the nirio transport, buffer size is depends on the frame size and num
-    // frames
-    xports.recv_buff_size =
-        xports.recv->get_num_recv_frames() * xports.recv->get_recv_frame_size();
-    xports.send_buff_size =
-        xports.send->get_num_send_frames() * xports.send->get_send_frame_size();
+    //// For the nirio transport, buffer size is depends on the frame size and num
+    //// frames
+    //xports.recv_buff_size =
+        //xports.recv->get_num_recv_frames() * xports.recv->get_recv_frame_size();
+    //xports.send_buff_size =
+        //xports.send->get_num_send_frames() * xports.send->get_send_frame_size();
 
-    return xports;
+    //return xports;
 }

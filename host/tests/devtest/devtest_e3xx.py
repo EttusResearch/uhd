@@ -1,12 +1,16 @@
 #
 # Copyright 2015 Ettus Research LLC
 # Copyright 2018 Ettus Research, a National Instruments Company
+# Copyright 2019 Ettus Research, a National Instruments Brand
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 """
-Run device tests for the E3XX series.
+Run device tests for the E31X series.
 """
+
+# pylint: disable=wrong-import-position
+# pylint: disable=unused-import
 from usrp_probe_test import uhd_usrp_probe_test
 from benchmark_rate_test import uhd_benchmark_rate_test
 uhd_benchmark_rate_test.tests = {
@@ -35,10 +39,15 @@ uhd_benchmark_rate_test.tests = {
 
 from rx_samples_to_file_test import rx_samples_to_file_test
 rx_samples_to_file_test.tests = {
-    'default': {
+    'chan0': {
         'duration': 1,
         'subdev': 'A:0',
-        'rate': 5e6,
+        'rate': 1e6,
+    },
+    'chan1': {
+        'duration': 1,
+        'subdev': 'A:1',
+        'rate': 1e6,
     },
 }
 
@@ -48,7 +57,7 @@ uhd_tx_waveforms_test.tests = {
         'chan': '0',
     },
     'chan1': {
-        'chan': '0',
+        'chan': '1',
     },
     'both_chans': {
         'chan': '0,1',
@@ -57,4 +66,3 @@ uhd_tx_waveforms_test.tests = {
 
 from tx_bursts_test import uhd_tx_bursts_test
 from test_pps_test import uhd_test_pps_test
-

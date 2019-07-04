@@ -69,6 +69,13 @@ static constexpr char MAGNESIUM_GAIN2[] = "dsa";
 //! Amplifier gain
 static constexpr char MAGNESIUM_AMP[] = "amp";
 
+static constexpr char MAGNESIUM_FE_NAME[] = "Magnesium";
+
+static constexpr char MAGNESIUM_DEFAULT_RX_ANTENNA[] = "RX2";
+static constexpr char MAGNESIUM_DEFAULT_TX_ANTENNA[] = "TX/RX";
+
+static constexpr char MAGNESIUM_FPGPIO_BANK[] = "FP0";
+
 // Note: MAGNESIUM_NUM_CHANS is independent of the number of chans per
 // RFNoC block. TODO: When we go to one radio per dboard, this comment can
 // be deleted.
@@ -78,5 +85,21 @@ static constexpr double MAGNESIUM_TX_IF_FREQ = 1.95e9;
 
 //! Max time we allow for a call to set_freq() to take
 static constexpr size_t MAGNESIUM_TUNE_TIMEOUT = 15000; // milliseconds
+
+//! Magnesium gain profile options
+static const std::vector<std::string> MAGNESIUM_GP_OPTIONS = {"manual",
+    "default",
+    "default_rf_filter_bypass_always_on",
+    "default_rf_filter_bypass_always_off"};
+
+namespace n310_regs {
+
+constexpr uint32_t DB_GPIO_BASE = 0x80000; // FIXME
+constexpr uint32_t DB_GPIO_RB = 0x80000; // FIXME
+constexpr uint32_t DB_GPIO_OFFSET = 0x100; // FIXME
+constexpr uint32_t FP_GPIO = 0x80000; // FIXME
+constexpr uint32_t RB_FP_GPIO = 0x80000; // FIXME
+
+}
 
 #endif /* INCLUDED_LIBUHD_MAGNESIUM_CONSTANTS_HPP */

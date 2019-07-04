@@ -1,0 +1,27 @@
+type: e320
+type_id: E320
+family: 7SERIES
+transports:
+- name: eth
+  type: 10G
+  width: 64
+- name: dma
+  type: dma
+  width: 64
+
+clocks:
+- name: radio
+
+io_ports:
+  ctrl_port:
+    type: ctrl_port
+    drive: slave
+    rename:
+      pattern: (ctrlport_)(.*)
+      repl: m_\1\2
+  time_keeper:
+    type: time_keeper
+    drive: broadcaster
+  x300_radio:
+    type: x300_radio
+    drive: master

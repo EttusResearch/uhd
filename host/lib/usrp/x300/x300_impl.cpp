@@ -10,19 +10,16 @@
 #include "x300_claim.hpp"
 #include "x300_eth_mgr.hpp"
 #include "x300_mb_eeprom.hpp"
+#include "x300_mb_controller.hpp"
 #include "x300_mb_eeprom_iface.hpp"
 #include "x300_mboard_type.hpp"
 #include "x300_pcie_mgr.hpp"
 #include <uhd/transport/if_addrs.hpp>
-#include <uhd/types/sid.hpp>
-#include <uhd/usrp/subdev_spec.hpp>
 #include <uhd/utils/log.hpp>
-#include <uhd/utils/math.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/static.hpp>
-#include <boost/algorithm/string.hpp>
-#include <boost/make_shared.hpp>
+#include <uhdlib/rfnoc/device_id.hpp>
 #include <chrono>
 #include <fstream>
 #include <thread>
@@ -34,6 +31,17 @@ using namespace uhd::usrp;
 using namespace uhd::rfnoc;
 using namespace uhd::usrp::x300;
 namespace asio = boost::asio;
+
+namespace uhd { namespace usrp { namespace x300 {
+
+void init_prop_tree(
+    const size_t mb_idx, uhd::rfnoc::x300_mb_controller* mbc, property_tree::sptr pt);
+
+}}} // namespace uhd::usrp::x300
+
+
+const uhd::rfnoc::chdr::chdr_packet_factory x300_impl::_pkt_factory(
+    CHDR_W_64, ENDIANNESS_BIG);
 
 
 /***********************************************************************
@@ -168,10 +176,10 @@ static void x300_load_fw(wb_iface::sptr fw_reg_ctrl, const std::string& file_nam
     UHD_LOGGER_INFO("X300") << "Firmware loaded!";
 }
 
-x300_impl::x300_impl(const uhd::device_addr_t& dev_addr) : device3_impl(), _sid_framer(0)
+x300_impl::x300_impl(const uhd::device_addr_t& dev_addr)
+    : rfnoc_device()
 {
     UHD_LOGGER_INFO("X300") << "X300 initialization sequence...";
-    _tree->create<std::string>("/name").set("X-Series Device");
 
     const device_addrs_t device_args = separate_device_addr(dev_addr);
     _mb.resize(device_args.size());
@@ -216,6 +224,10 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t& dev_addr)
             mb.send_args[key] = dev_addr[key];
     }
 
+    mb.device_id = allocate_device_id();
+    UHD_LOG_DEBUG(
+        "X300", "Motherboard " << mb_i << " has remote device ID: " << mb.device_id);
+
     UHD_LOGGER_DEBUG("X300") << "Setting up basic communication...";
     if (mb.xport_path == xport_path_t::NIRIO) {
         mb.conn_mgr = std::make_shared<pcie_manager>(mb.args, _tree, mb_path);
@@ -243,9 +255,6 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t& dev_addr)
     this->check_fpga_compat(mb_path, mb);
     this->check_fw_compat(mb_path, mb);
 
-    mb.fw_regmap = boost::make_shared<fw_regmap_t>();
-    mb.fw_regmap->initialize(*mb.zpu_ctrl.get(), true);
-
     // store which FPGA image is loaded
     mb.loaded_fpga_image = get_fpga_option(mb.zpu_ctrl);
 
@@ -254,28 +263,6 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t& dev_addr)
         mb.zpu_ctrl, SR_ADDR(SET0_BASE, ZPU_SR_SPI), SR_ADDR(SET0_BASE, ZPU_RB_SPI));
     mb.zpu_i2c = i2c_core_100_wb32::make(mb.zpu_ctrl, I2C1_BASE);
     mb.zpu_i2c->set_clock_rate(x300::BUS_CLOCK_RATE / 2);
-
-    ////////////////////////////////////////////////////////////////////
-    // print network routes mapping
-    ////////////////////////////////////////////////////////////////////
-    /*
-    const uint32_t routes_addr = mb.zpu_ctrl->peek32(SR_ADDR(X300_FW_SHMEM_BASE,
-    X300_FW_SHMEM_ROUTE_MAP_ADDR)); const uint32_t routes_len =
-    mb.zpu_ctrl->peek32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_ROUTE_MAP_LEN));
-    UHD_VAR(routes_len);
-    for (size_t i = 0; i < routes_len; i+=1)
-    {
-        const uint32_t node_addr = mb.zpu_ctrl->peek32(SR_ADDR(routes_addr, i*2+0));
-        const uint32_t nbor_addr = mb.zpu_ctrl->peek32(SR_ADDR(routes_addr, i*2+1));
-        if (node_addr != 0 and nbor_addr != 0)
-        {
-            UHD_LOGGER_INFO("X300") << boost::format("%u: %s -> %s")
-                % i
-                % asio::ip::address_v4(node_addr).to_string()
-                % asio::ip::address_v4(nbor_addr).to_string();
-        }
-    }
-    */
 
     ////////////////////////////////////////////////////////////////////
     // setup the mboard eeprom
@@ -322,8 +309,6 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t& dev_addr)
                 "reprogramming.");
         }
     }
-    _tree->create<std::string>(mb_path / "name").set(product_name);
-    _tree->create<std::string>(mb_path / "codename").set("Yetti");
 
     ////////////////////////////////////////////////////////////////////
     // discover interfaces, frame sizes, and link rates
@@ -344,190 +329,56 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t& dev_addr)
     // create clock control objects
     ////////////////////////////////////////////////////////////////////
     UHD_LOGGER_DEBUG("X300") << "Setting up RF frontend clocking...";
-
-    // Initialize clock control registers. NOTE: This does not configure the LMK yet.
+    // Initialize clock control registers.
+    // NOTE: This does not configure the LMK yet.
     mb.clock = x300_clock_ctrl::make(mb.zpu_spi,
         1 /*slaveno*/,
         mb.hw_rev,
         mb.args.get_master_clock_rate(),
         mb.args.get_dboard_clock_rate(),
         mb.args.get_system_ref_rate());
-    mb.fw_regmap->ref_freq_reg.write(
-        fw_regmap_t::ref_freq_reg_t::REF_FREQ, uint32_t(mb.args.get_system_ref_rate()));
-
-    // Initialize clock source to use internal reference and generate
-    // a valid radio clock. This may change after configuration is done.
-    // This will configure the LMK and wait for lock
-    update_clock_source(mb, mb.args.get_clock_source());
 
     ////////////////////////////////////////////////////////////////////
-    // create clock properties
+    // create motherboard controller
     ////////////////////////////////////////////////////////////////////
-    _tree->create<double>(mb_path / "master_clock_rate").set_publisher([&mb]() {
-        return mb.clock->get_master_clock_rate();
-    });
+    // Now we have all the peripherals, create the MB controller. It will also
+    // initialize the clock source, and the time source.
+    auto mb_ctrl = std::make_shared<x300_mb_controller>(
+        mb.hw_rev, product_name, mb.zpu_i2c, mb.zpu_ctrl, mb.clock, mb_eeprom, mb.args);
 
+    register_mb_controller(mb_i, mb_ctrl);
+    // Clock should be up now!
     UHD_LOGGER_INFO("X300") << "Radio 1x clock: "
                             << (mb.clock->get_master_clock_rate() / 1e6) << " MHz";
 
     ////////////////////////////////////////////////////////////////////
-    // Create the GPSDO control
+    // setup properties
     ////////////////////////////////////////////////////////////////////
-    static constexpr uint32_t dont_look_for_gpsdo = 0x1234abcdul;
-
-    // otherwise if not disabled, look for the internal GPSDO
-    if (mb.zpu_ctrl->peek32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_GPSDO_STATUS))
-        != dont_look_for_gpsdo) {
-        UHD_LOG_DEBUG("X300", "Detecting internal GPSDO....");
-        try {
-            // gps_ctrl will print its own log statements if a GPSDO was found
-            mb.gps = gps_ctrl::make(x300_make_uart_iface(mb.zpu_ctrl));
-        } catch (std::exception& e) {
-            UHD_LOGGER_ERROR("X300")
-                << "An error occurred making GPSDO control: " << e.what();
-        }
-        if (mb.gps and mb.gps->gps_detected()) {
-            for (const std::string& name : mb.gps->get_sensors()) {
-                _tree->create<sensor_value_t>(mb_path / "sensors" / name)
-                    .set_publisher([&mb, name]() { return mb.gps->get_sensor(name); });
-            }
-        } else {
-            mb.zpu_ctrl->poke32(SR_ADDR(X300_FW_SHMEM_BASE, X300_FW_SHMEM_GPSDO_STATUS),
-                dont_look_for_gpsdo);
-        }
-    }
+    init_prop_tree(mb_i, mb_ctrl.get(), _tree);
 
     ////////////////////////////////////////////////////////////////////
-    // setup time sources and properties
+    // RFNoC Stuff
     ////////////////////////////////////////////////////////////////////
-    _tree->create<std::string>(mb_path / "time_source" / "value")
-        .set(mb.args.get_time_source())
-        .add_coerced_subscriber([this, &mb](const std::string& time_source) {
-            this->update_time_source(mb, time_source);
-        });
-    _tree->create<std::vector<std::string>>(mb_path / "time_source" / "options")
-        .set(TIME_SOURCE_OPTIONS);
+    // Set the remote device ID
+    mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, ZPU_SR_XB_LOCAL), mb.device_id);
+    // Configure the CHDR port number in the dispatcher
+    mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, (ZPU_SR_ETHINT0 + 8 + 3)), X300_VITA_UDP_PORT);
+    mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, (ZPU_SR_ETHINT1 + 8 + 3)), X300_VITA_UDP_PORT);
+    // Peek to finish transaction
+    mb.zpu_ctrl->peek32(0);
 
-    // setup the time output, default to ON
-    _tree->create<bool>(mb_path / "time_source" / "output")
-        .add_coerced_subscriber([this, &mb](const bool time_output) {
-            this->set_time_source_out(mb, time_output);
-        })
-        .set(true);
-
-    ////////////////////////////////////////////////////////////////////
-    // setup clock sources and properties
-    ////////////////////////////////////////////////////////////////////
-    _tree->create<std::string>(mb_path / "clock_source" / "value")
-        .set(mb.args.get_clock_source())
-        .add_coerced_subscriber([this, &mb](const std::string& clock_source) {
-            this->update_clock_source(mb, clock_source);
-        });
-    _tree->create<std::vector<std::string>>(mb_path / "clock_source" / "options")
-        .set(CLOCK_SOURCE_OPTIONS);
-
-    // setup external reference options. default to 10 MHz input reference
-    _tree->create<std::string>(mb_path / "clock_source" / "external");
-    _tree
-        ->create<std::vector<double>>(
-            mb_path / "clock_source" / "external" / "freq" / "options")
-        .set(x300::EXTERNAL_FREQ_OPTIONS);
-    _tree->create<double>(mb_path / "clock_source" / "external" / "value")
-        .set(mb.clock->get_sysref_clock_rate());
-    // FIXME the external clock source settings need to be more robust
-
-    // setup the clock output, default to ON
-    _tree->create<bool>(mb_path / "clock_source" / "output")
-        .add_coerced_subscriber(
-            [&mb](const bool clock_output) { mb.clock->set_ref_out(clock_output); });
-
-    // Initialize tick rate (must be done before setting time)
-    // Note: The master tick rate can't be changed at runtime!
-    const double master_clock_rate = mb.clock->get_master_clock_rate();
-    _tree->create<double>(mb_path / "tick_rate")
-        .set_coercer([master_clock_rate](const double rate) {
-            // The contract of multi_usrp::set_master_clock_rate() is to coerce
-            // and not throw, so we'll follow that behaviour here.
-            if (!uhd::math::frequencies_are_equal(rate, master_clock_rate)) {
-                UHD_LOGGER_WARNING("X300")
-                    << "Cannot update master clock rate! X300 Series does not "
-                       "allow changing the clock rate during runtime.";
-            }
-            return master_clock_rate;
-        })
-        .add_coerced_subscriber([this](const double) { this->update_tx_streamers(); })
-        .add_coerced_subscriber([this](const double) { this->update_rx_streamers(); })
-        .set(master_clock_rate);
-
-    ////////////////////////////////////////////////////////////////////
-    // and do the misc mboard sensors
-    ////////////////////////////////////////////////////////////////////
-    _tree->create<sensor_value_t>(mb_path / "sensors" / "ref_locked")
-        .set_publisher([this, &mb]() { return this->get_ref_locked(mb); });
-
-    //////////////// RFNOC /////////////////
-    const size_t n_rfnoc_blocks = mb.zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_NUM_CE));
-    enumerate_rfnoc_blocks(mb_i,
-        n_rfnoc_blocks,
-        x300::XB_DST_PCI + 1, /* base port */
-        uhd::sid_t(x300::SRC_ADDR0, 0, x300::DST_ADDR + mb_i, 0),
-        dev_addr);
-    //////////////// RFNOC /////////////////
-
-    // If we have a radio, we must configure its codec control:
-    const std::string radio_blockid_hint = str(boost::format("%d/Radio") % mb_i);
-    std::vector<rfnoc::block_id_t> radio_ids =
-        find_blocks<rfnoc::x300_radio_ctrl_impl>(radio_blockid_hint);
-    if (not radio_ids.empty()) {
-        if (radio_ids.size() > 2) {
-            UHD_LOGGER_WARNING("X300")
-                << "Too many Radio Blocks found. Using only the first two.";
-            radio_ids.resize(2);
+    { // Need to lock access to _mb_ifaces, so we can run setup_mb() in
+      // parallel
+        std::lock_guard<std::mutex> l(_mb_iface_mutex);
+        _mb_ifaces.insert({mb_i,
+            x300_mb_iface(mb.conn_mgr, mb.clock->get_master_clock_rate(), mb.device_id)});
+        UHD_LOG_DEBUG("X300", "Motherboard " << mb_i << " has local device IDs: ");
+        for (const auto local_dev_id : _mb_ifaces.at(mb_i).get_local_device_ids()) {
+            UHD_LOG_DEBUG("X300", "* " << local_dev_id);
         }
+    } // End of locked section
 
-        for (const rfnoc::block_id_t& id : radio_ids) {
-            rfnoc::x300_radio_ctrl_impl::sptr radio(
-                get_block_ctrl<rfnoc::x300_radio_ctrl_impl>(id));
-            mb.radios.push_back(radio);
-            radio->setup_radio(mb.zpu_i2c,
-                mb.clock,
-                mb.args.get_ignore_cal_file(),
-                mb.args.get_self_cal_adc_delay());
-        }
-
-        ////////////////////////////////////////////////////////////////////
-        // ADC test and cal
-        ////////////////////////////////////////////////////////////////////
-        if (mb.args.get_self_cal_adc_delay()) {
-            rfnoc::x300_radio_ctrl_impl::self_cal_adc_xfer_delay(mb.radios,
-                mb.clock,
-                [this, &mb](const double timeout) {
-                    return this->wait_for_clk_locked(
-                        mb, fw_regmap_t::clk_status_reg_t::LMK_LOCK, timeout);
-                },
-                true /* Apply ADC delay */);
-        }
-        if (mb.args.get_ext_adc_self_test()) {
-            rfnoc::x300_radio_ctrl_impl::extended_adc_test(
-                mb.radios, mb.args.get_ext_adc_self_test_duration());
-        } else {
-            for (size_t i = 0; i < mb.radios.size(); i++) {
-                mb.radios.at(i)->self_test_adc();
-            }
-        }
-
-        ////////////////////////////////////////////////////////////////////
-        // Synchronize times (dboard initialization can desynchronize them)
-        ////////////////////////////////////////////////////////////////////
-        if (radio_ids.size() == 2) {
-            this->sync_times(mb, mb.radios[0]->get_time_now());
-        }
-
-    } else {
-        UHD_LOGGER_INFO("X300") << "No Radio Block found. Assuming radio-less operation.";
-    } /* end of radio block(s) initialization */
-
-    mb.initialization_done = true;
+    mb_ctrl->set_initialization_done();
 }
 
 x300_impl::~x300_impl(void)
@@ -546,283 +397,6 @@ x300_impl::~x300_impl(void)
     } catch (...) {
         UHD_SAFE_CALL(throw;)
     }
-}
-
-uhd::both_xports_t x300_impl::make_transport(const uhd::sid_t& address,
-    const xport_type_t xport_type,
-    const uhd::device_addr_t& args)
-{
-    const size_t mb_index = address.get_dst_addr() - x300::DST_ADDR;
-    mboard_members_t& mb  = _mb[mb_index];
-    both_xports_t xports;
-
-    // Calculate MTU based on MTU in args and device limitations
-    const size_t send_mtu = args.cast<size_t>("mtu",
-        get_mtu(mb_index, uhd::TX_DIRECTION));
-    const size_t recv_mtu = args.cast<size_t>("mtu",
-        get_mtu(mb_index, uhd::RX_DIRECTION));
-
-    if (mb.xport_path == xport_path_t::NIRIO) {
-        xports.send_sid =
-            this->allocate_sid(mb, address, x300::SRC_ADDR0, x300::XB_DST_PCI);
-        xports.recv_sid = xports.send_sid.reversed();
-        return std::dynamic_pointer_cast<pcie_manager>(mb.conn_mgr)
-            ->make_transport(xports, xport_type, args, send_mtu, recv_mtu);
-    } else if (mb.xport_path == xport_path_t::ETH) {
-        xports = std::dynamic_pointer_cast<eth_manager>(mb.conn_mgr)
-                     ->make_transport(xports,
-                         xport_type,
-                         args,
-                         send_mtu,
-                         recv_mtu,
-                         [this, &mb, address](
-                             const uint32_t src_addr, const uint32_t src_dst) {
-                             return this->allocate_sid(mb, address, src_addr, src_dst);
-                         });
-
-        // reprogram the ethernet dispatcher's udp port (should be safe to always set)
-        UHD_LOGGER_TRACE("X300")
-            << "reprogram the ethernet dispatcher's udp port to " << X300_VITA_UDP_PORT;
-        mb.zpu_ctrl->poke32(
-            SR_ADDR(SET0_BASE, (ZPU_SR_ETHINT0 + 8 + 3)), X300_VITA_UDP_PORT);
-        mb.zpu_ctrl->poke32(
-            SR_ADDR(SET0_BASE, (ZPU_SR_ETHINT1 + 8 + 3)), X300_VITA_UDP_PORT);
-
-        // Do a peek to an arbitrary address to guarantee that the
-        // ethernet framer has been programmed before we return.
-        mb.zpu_ctrl->peek32(0);
-
-        return xports;
-    }
-    UHD_THROW_INVALID_CODE_PATH();
-}
-
-
-uhd::sid_t x300_impl::allocate_sid(mboard_members_t& mb,
-    const uhd::sid_t& address,
-    const uint32_t src_addr,
-    const uint32_t src_dst)
-{
-    uhd::sid_t sid = address;
-    sid.set_src_addr(src_addr);
-    sid.set_src_endpoint(_sid_framer++); // increment for next setup
-
-    // TODO Move all of this setup_mb()
-    // Program the X300 to recognise it's own local address.
-    mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, ZPU_SR_XB_LOCAL), address.get_dst_addr());
-    // Program CAM entry for outgoing packets matching a X300 resource (for example a
-    // Radio) This type of packet matches the XB_LOCAL address and is looked up in the
-    // upper half of the CAM
-    mb.zpu_ctrl->poke32(SR_ADDR(SETXB_BASE, 256 + address.get_dst_endpoint()),
-        address.get_dst_xbarport());
-    // Program CAM entry for returning packets to us (for example GR host via Eth0)
-    // This type of packet does not match the XB_LOCAL address and is looked up in the
-    // lower half of the CAM
-    mb.zpu_ctrl->poke32(SR_ADDR(SETXB_BASE, 0 + src_addr), src_dst);
-
-    UHD_LOGGER_TRACE("X300") << "done router config for sid " << sid;
-
-    return sid;
-}
-
-/***********************************************************************
- * clock and time control logic
- **********************************************************************/
-void x300_impl::set_time_source_out(mboard_members_t& mb, const bool enb)
-{
-    mb.fw_regmap->clock_ctrl_reg.write(
-        fw_regmap_t::clk_ctrl_reg_t::PPS_OUT_EN, enb ? 1 : 0);
-}
-
-void x300_impl::update_clock_source(mboard_members_t& mb, const std::string& source)
-{
-    // Optimize for the case when the current source is internal and we are trying
-    // to set it to internal. This is the only case where we are guaranteed that
-    // the clock has not gone away so we can skip setting the MUX and reseting the LMK.
-    const bool reconfigure_clks = (mb.current_refclk_src != "internal")
-                                  or (source != "internal");
-    if (reconfigure_clks) {
-        // Update the clock MUX on the motherboard to select the requested source
-        if (source == "internal") {
-            mb.fw_regmap->clock_ctrl_reg.set(fw_regmap_t::clk_ctrl_reg_t::CLK_SOURCE,
-                fw_regmap_t::clk_ctrl_reg_t::SRC_INTERNAL);
-            mb.fw_regmap->clock_ctrl_reg.set(fw_regmap_t::clk_ctrl_reg_t::TCXO_EN, 1);
-        } else if (source == "external") {
-            mb.fw_regmap->clock_ctrl_reg.set(fw_regmap_t::clk_ctrl_reg_t::CLK_SOURCE,
-                fw_regmap_t::clk_ctrl_reg_t::SRC_EXTERNAL);
-            mb.fw_regmap->clock_ctrl_reg.set(fw_regmap_t::clk_ctrl_reg_t::TCXO_EN, 0);
-        } else if (source == "gpsdo") {
-            mb.fw_regmap->clock_ctrl_reg.set(fw_regmap_t::clk_ctrl_reg_t::CLK_SOURCE,
-                fw_regmap_t::clk_ctrl_reg_t::SRC_GPSDO);
-            mb.fw_regmap->clock_ctrl_reg.set(fw_regmap_t::clk_ctrl_reg_t::TCXO_EN, 0);
-        } else {
-            throw uhd::key_error("update_clock_source: unknown source: " + source);
-        }
-        mb.fw_regmap->clock_ctrl_reg.flush();
-
-        // Reset the LMK to make sure it re-locks to the new reference
-        mb.clock->reset_clocks();
-    }
-
-    // Wait for the LMK to lock (always, as a sanity check that the clock is useable)
-    //* Currently the LMK can take as long as 30 seconds to lock to a reference but we
-    // don't
-    //* want to wait that long during initialization.
-    // TODO: Need to verify timeout and settings to make sure lock can be achieved in
-    // < 1.0 seconds
-    double timeout = mb.initialization_done ? 30.0 : 1.0;
-
-    // The programming code in x300_clock_ctrl is not compatible with revs <= 4 and may
-    // lead to locking issues. So, disable the ref-locked check for older (unsupported)
-    // boards.
-    if (mb.hw_rev > 4) {
-        if (not wait_for_clk_locked(
-                mb, fw_regmap_t::clk_status_reg_t::LMK_LOCK, timeout)) {
-            // failed to lock on reference
-            if (mb.initialization_done) {
-                throw uhd::runtime_error(
-                    (boost::format("Reference Clock PLL failed to lock to %s source.")
-                        % source)
-                        .str());
-            } else {
-                // TODO: Re-enable this warning when we figure out a reliable lock time
-                // UHD_LOGGER_WARNING("X300") << "Reference clock failed to lock to " +
-                // source + " during device initialization.  " <<
-                //    "Check for the lock before operation or ignore this warning if using
-                //    another clock source." ;
-            }
-        }
-    }
-
-    if (reconfigure_clks) {
-        // Reset the radio clock PLL in the FPGA
-        mb.zpu_ctrl->poke32(
-            SR_ADDR(SET0_BASE, ZPU_SR_SW_RST), ZPU_SR_SW_RST_RADIO_CLK_PLL);
-        mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, ZPU_SR_SW_RST), 0);
-
-        // Wait for radio clock PLL to lock
-        if (not wait_for_clk_locked(
-                mb, fw_regmap_t::clk_status_reg_t::RADIO_CLK_LOCK, 0.01)) {
-            throw uhd::runtime_error(
-                (boost::format("Reference Clock PLL in FPGA failed to lock to %s source.")
-                    % source)
-                    .str());
-        }
-
-        // Reset the IDELAYCTRL used to calibrate the data interface delays
-        mb.zpu_ctrl->poke32(
-            SR_ADDR(SET0_BASE, ZPU_SR_SW_RST), ZPU_SR_SW_RST_ADC_IDELAYCTRL);
-        mb.zpu_ctrl->poke32(SR_ADDR(SET0_BASE, ZPU_SR_SW_RST), 0);
-
-        // Wait for the ADC IDELAYCTRL to be ready
-        if (not wait_for_clk_locked(
-                mb, fw_regmap_t::clk_status_reg_t::IDELAYCTRL_LOCK, 0.01)) {
-            throw uhd::runtime_error(
-                (boost::format(
-                     "ADC Calibration Clock in FPGA failed to lock to %s source.")
-                    % source)
-                    .str());
-        }
-
-        // Reset ADCs and DACs
-        for (rfnoc::x300_radio_ctrl_impl::sptr r : mb.radios) {
-            r->reset_codec();
-        }
-    }
-
-    // Update cache value
-    mb.current_refclk_src = source;
-}
-
-void x300_impl::update_time_source(mboard_members_t& mb, const std::string& source)
-{
-    if (source == "internal") {
-        mb.fw_regmap->clock_ctrl_reg.write(fw_regmap_t::clk_ctrl_reg_t::PPS_SELECT,
-            fw_regmap_t::clk_ctrl_reg_t::SRC_INTERNAL);
-    } else if (source == "external") {
-        mb.fw_regmap->clock_ctrl_reg.write(fw_regmap_t::clk_ctrl_reg_t::PPS_SELECT,
-            fw_regmap_t::clk_ctrl_reg_t::SRC_EXTERNAL);
-    } else if (source == "gpsdo") {
-        mb.fw_regmap->clock_ctrl_reg.write(fw_regmap_t::clk_ctrl_reg_t::PPS_SELECT,
-            fw_regmap_t::clk_ctrl_reg_t::SRC_GPSDO);
-    } else {
-        throw uhd::key_error("update_time_source: unknown source: " + source);
-    }
-
-    /* TODO - Implement intelligent PPS detection
-    //check for valid pps
-    if (!is_pps_present(mb)) {
-        throw uhd::runtime_error((boost::format("The %d PPS was not detected.  Please
-    check the PPS source and try again.") % source).str());
-    }
-    */
-}
-
-void x300_impl::sync_times(mboard_members_t& mb, const uhd::time_spec_t& t)
-{
-    std::vector<rfnoc::block_id_t> radio_ids =
-        find_blocks<rfnoc::x300_radio_ctrl_impl>("Radio");
-    for (const rfnoc::block_id_t& id : radio_ids) {
-        get_block_ctrl<rfnoc::x300_radio_ctrl_impl>(id)->set_time_sync(t);
-    }
-
-    mb.fw_regmap->clock_ctrl_reg.write(fw_regmap_t::clk_ctrl_reg_t::TIME_SYNC, 0);
-    mb.fw_regmap->clock_ctrl_reg.write(fw_regmap_t::clk_ctrl_reg_t::TIME_SYNC, 1);
-    mb.fw_regmap->clock_ctrl_reg.write(fw_regmap_t::clk_ctrl_reg_t::TIME_SYNC, 0);
-}
-
-bool x300_impl::wait_for_clk_locked(mboard_members_t& mb, uint32_t which, double timeout)
-{
-    const auto timeout_time = std::chrono::steady_clock::now()
-                              + std::chrono::milliseconds(int64_t(timeout * 1000));
-    do {
-        if (mb.fw_regmap->clock_status_reg.read(which) == 1) {
-            return true;
-        }
-        std::this_thread::sleep_for(std::chrono::milliseconds(1));
-    } while (std::chrono::steady_clock::now() < timeout_time);
-
-    // Check one last time
-    return (mb.fw_regmap->clock_status_reg.read(which) == 1);
-}
-
-sensor_value_t x300_impl::get_ref_locked(mboard_members_t& mb)
-{
-    mb.fw_regmap->clock_status_reg.refresh();
-    const bool lock =
-        (mb.fw_regmap->clock_status_reg.get(fw_regmap_t::clk_status_reg_t::LMK_LOCK) == 1)
-        && (mb.fw_regmap->clock_status_reg.get(
-                fw_regmap_t::clk_status_reg_t::RADIO_CLK_LOCK)
-               == 1)
-        && (mb.fw_regmap->clock_status_reg.get(
-                fw_regmap_t::clk_status_reg_t::IDELAYCTRL_LOCK)
-               == 1);
-    return sensor_value_t("Ref", lock, "locked", "unlocked");
-}
-
-bool x300_impl::is_pps_present(mboard_members_t& mb)
-{
-    // The ZPU_RB_CLK_STATUS_PPS_DETECT bit toggles with each rising edge of the PPS.
-    // We monitor it for up to 1.5 seconds looking for it to toggle.
-    uint32_t pps_detect =
-        mb.fw_regmap->clock_status_reg.read(fw_regmap_t::clk_status_reg_t::PPS_DETECT);
-    for (int i = 0; i < 15; i++) {
-        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-        if (pps_detect
-            != mb.fw_regmap->clock_status_reg.read(
-                   fw_regmap_t::clk_status_reg_t::PPS_DETECT))
-            return true;
-    }
-    return false;
-}
-
-/***********************************************************************
- * Frame size detection
- **********************************************************************/
-size_t x300_impl::get_mtu(const size_t mb_index, const uhd::direction_t dir)
-{
-    auto& mb = _mb.at(mb_index);
-    return mb.conn_mgr->get_mtu(dir);
 }
 
 /***********************************************************************

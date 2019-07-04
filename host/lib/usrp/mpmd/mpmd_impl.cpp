@@ -14,11 +14,11 @@
 #include <uhd/utils/tasks.hpp>
 #include <uhdlib/rfnoc/radio_ctrl_impl.hpp>
 #include <uhdlib/rfnoc/rpc_block_ctrl.hpp>
-#include <../device3/device3_impl.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/thread.hpp>
+#include <chrono>
 #include <future>
 #include <memory>
 #include <mutex>
@@ -34,11 +34,10 @@ namespace {
 /*************************************************************************
  * Local constants
  ************************************************************************/
-const size_t MPMD_CROSSBAR_MAX_LADDR = 255;
 //! Most pessimistic time for a CHDR query to go to device and back
 const double MPMD_CHDR_MAX_RTT = 0.02;
-//! MPM Compatibility number
-const std::vector<size_t> MPM_COMPAT_NUM = {1, 2};
+//! MPM Compatibility number {MAJOR, MINOR}
+const std::vector<size_t> MPM_COMPAT_NUM = {2, 0};
 
 /*************************************************************************
  * Helper functions
@@ -155,7 +154,7 @@ const std::string mpmd_impl::MPM_ECHO_CMD               = "MPM-ECHO";
  * Structors
  ****************************************************************************/
 mpmd_impl::mpmd_impl(const device_addr_t& device_args)
-    : usrp::device3_impl(), _device_args(device_args)
+    : rfnoc_device(), _device_args(device_args)
 {
     const device_addrs_t mb_args = separate_device_addr(device_args);
     const size_t num_mboards     = mb_args.size();
@@ -175,20 +174,12 @@ mpmd_impl::mpmd_impl(const device_addr_t& device_args)
         _mb.push_back(claim_and_make(mb_args[mb_i]));
     }
 
-    // Next figure out the number of base xport addresses. This way, we
-    // can run _mb[*]->init() in parallel on all the _mb.
-    // This can *not* be parallelized.
-    std::vector<size_t> base_xport_addr(num_mboards, 2); // Starts at 2 [sic]
-    for (size_t mb_i = 0; mb_i < num_mboards - 1; ++mb_i) {
-        base_xport_addr[mb_i + 1] = base_xport_addr[mb_i] + _mb[mb_i]->num_xbars;
-    }
-
     if (not skip_init) {
         // Run the actual device initialization. This can run in parallel.
         for (size_t mb_i = 0; mb_i < num_mboards; ++mb_i) {
             // Note: This is the only place we do compat number checks. They're
             // effectively disabled for skip_init=1
-            setup_mb(_mb[mb_i].get(), mb_i, base_xport_addr[mb_i]);
+            setup_mb(_mb[mb_i].get(), mb_i);
         }
     } else {
         UHD_LOG_DEBUG("MPMD", "Claimed device, but skipped init.");
@@ -205,12 +196,6 @@ mpmd_impl::mpmd_impl(const device_addr_t& device_args)
     }
 
     if (not skip_init) {
-        // This can be parallelized, because the blocks of individual mboards
-        // live on different subtrees.
-        for (size_t mb_i = 0; mb_i < mb_args.size(); ++mb_i) {
-            setup_rfnoc_blocks(_mb[mb_i].get(), mb_i, mb_args[mb_i]);
-        }
-
         // FIXME this section only makes sense for when the time source is external.
         // So, check for that, or something similar.
         // This section of code assumes that the prop tree is set and we have access
@@ -218,12 +203,6 @@ mpmd_impl::mpmd_impl(const device_addr_t& device_args)
         if (device_args.has_key("sync_time")) {
             reset_time_synchronized(_tree);
         }
-
-        auto filtered_block_args = device_args; // TODO actually filter
-        // Blocks will finalize their own setup in this function. They have
-        // (and might need) full access to the prop tree, the timekeepers, etc.
-        // This is already internally parallelized.
-        setup_rpc_blocks(filtered_block_args, serialize_init);
     } else {
         UHD_LOG_INFO("MPMD", "Claimed device without full initialization.");
     }
@@ -231,7 +210,6 @@ mpmd_impl::mpmd_impl(const device_addr_t& device_args)
 
 mpmd_impl::~mpmd_impl()
 {
-    _rfnoc_block_ctrl.clear();
     _tree.reset();
     _mb.clear();
 }
@@ -241,7 +219,7 @@ mpmd_impl::~mpmd_impl()
  ****************************************************************************/
 mpmd_mboard_impl::uptr mpmd_impl::claim_and_make(const uhd::device_addr_t& device_args)
 {
-    const std::string rpc_addr = device_args.get(xport::MGMT_ADDR_KEY);
+    const std::string rpc_addr = device_args.get(MGMT_ADDR_KEY);
     UHD_LOGGER_DEBUG("MPMD") << "Device args: `" << device_args.to_string()
                              << "'. RPC address: " << rpc_addr;
 
@@ -254,8 +232,7 @@ mpmd_mboard_impl::uptr mpmd_impl::claim_and_make(const uhd::device_addr_t& devic
     return mpmd_mboard_impl::make(device_args, rpc_addr);
 }
 
-void mpmd_impl::setup_mb(
-    mpmd_mboard_impl* mb, const size_t mb_index, const size_t base_xport_addr)
+void mpmd_impl::setup_mb(mpmd_mboard_impl* mb, const size_t mb_index)
 {
     assert_compat_number_throw("MPM",
         MPM_COMPAT_NUM,
@@ -264,94 +241,8 @@ void mpmd_impl::setup_mb(
 
     UHD_LOG_DEBUG("MPMD", "Initializing mboard " << mb_index);
     mb->init();
-    for (size_t xbar_index = 0; xbar_index < mb->num_xbars; xbar_index++) {
-        mb->set_xbar_local_addr(xbar_index, base_xport_addr + xbar_index);
-    }
-}
-
-void mpmd_impl::setup_rfnoc_blocks(mpmd_mboard_impl* mb,
-    const size_t mb_index,
-    const uhd::device_addr_t& ctrl_xport_args)
-{
-    UHD_LOG_TRACE(
-        "MPMD", "Mboard " << mb_index << " reports " << mb->num_xbars << " crossbar(s).");
-    // TODO: The args apply to all xbars, which may or may not be true
-    for (size_t xbar_index = 0; xbar_index < mb->num_xbars; xbar_index++) {
-        // Pull the number of blocks and base port from the args, if available.
-        // Otherwise, get the values from MPM.
-        const size_t num_blocks =
-            ctrl_xport_args.has_key("rfnoc_num_blocks")
-                ? ctrl_xport_args.cast<size_t>("rfnoc_num_blocks", 0)
-                : mb->rpc->request<size_t>("get_num_blocks", xbar_index);
-        const size_t base_port =
-            ctrl_xport_args.has_key("rfnoc_base_port")
-                ? ctrl_xport_args.cast<size_t>("rfnoc_base_port", 0)
-                : mb->rpc->request<size_t>("get_base_port", xbar_index);
-        const size_t local_addr = mb->get_xbar_local_addr(xbar_index);
-        UHD_LOGGER_TRACE("MPMD")
-            << "Enumerating RFNoC blocks for xbar " << xbar_index
-            << ". Total blocks: " << num_blocks << " Base port: " << base_port
-            << " Local address: " << local_addr;
-        if (ctrl_xport_args.has_key("rfnoc_num_blocks")
-            or ctrl_xport_args.has_key("rfnoc_base_port")) {
-            // TODO: Remove this warning once we're confident this is
-            //       (relatively) safe and useful. Also add documentation to
-            //       usrp_n3xx.dox
-            UHD_LOGGER_WARNING("MPMD")
-                << "Overriding default RFNoC configuration. You are using an "
-                << "experimental development feature, which may go away in "
-                << "future versions.";
-        }
-
-        try {
-            enumerate_rfnoc_blocks(mb_index,
-                num_blocks,
-                base_port,
-                uhd::sid_t(0, 0, local_addr, 0),
-                ctrl_xport_args);
-        } catch (const std::exception& ex) {
-            UHD_LOGGER_ERROR("MPMD") << "Failure during block enumeration: " << ex.what();
-            throw uhd::runtime_error("Failed to run enumerate_rfnoc_blocks()");
-        }
-    }
-}
-
-void mpmd_impl::setup_rpc_blocks(
-    const device_addr_t& block_args, const bool serialize_init)
-{
-    std::vector<std::future<void>> task_list;
-    // If we don't force async, most compilers, at least now, will default to
-    // deferred.
-    const auto launch_policy = serialize_init ? std::launch::deferred
-                                              : std::launch::async;
-
-    // Preload all the tasks (they might start running on emplace_back)
-    for (const auto& block_ctrl : _rfnoc_block_ctrl) {
-        auto rpc_block_id = block_ctrl->get_block_id();
-        if (has_block<uhd::rfnoc::rpc_block_ctrl>(rpc_block_id)) {
-            const size_t mboard_idx = rpc_block_id.get_device_no();
-            auto rpc_block_ctrl =
-                get_block_ctrl<uhd::rfnoc::rpc_block_ctrl>(rpc_block_id);
-            auto rpc_sptr = _mb[mboard_idx]->rpc;
-            task_list.emplace_back(std::async(
-                launch_policy, [rpc_block_id, rpc_block_ctrl, &block_args, rpc_sptr]() {
-                    UHD_LOGGER_DEBUG("MPMD")
-                        << "Adding RPC access to block: " << rpc_block_id
-                        << " Block args: " << block_args.to_string();
-                    rpc_block_ctrl->set_rpc_client(rpc_sptr, block_args);
-                }));
-        }
-    }
-
-    // Execute all the calls to set_rpc_client(), either concurrently, or
-    // serially
-    for (auto& task : task_list) {
-        task.get();
-    }
-}
-
-size_t mpmd_impl::get_mtu(const size_t mb_index, const uhd::direction_t dir) {
-    return _mb[mb_index]->get_mtu(dir);
+    UHD_ASSERT_THROW(mb->mb_ctrl);
+    register_mb_controller(mb_index, mb->mb_ctrl);
 }
 
 /*****************************************************************************

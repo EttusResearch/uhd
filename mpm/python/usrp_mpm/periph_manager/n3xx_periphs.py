@@ -165,12 +165,12 @@ class MboardRegsControl(object):
     Control the FPGA Motherboard registers
     """
     # Motherboard registers
-    M_COMPAT_NUM    = 0x0000
+    MB_COMPAT_NUM   = 0x0000
     MB_DATESTAMP    = 0x0004
     MB_GIT_HASH     = 0x0008
     MB_SCRATCH      = 0x000C
-    MB_NUM_CE       = 0x0010
-    MB_NUM_IO_CE    = 0x0014
+    MB_DEVICE_ID    = 0x0010
+    MB_RFNOC_INFO   = 0x0014
     MB_CLOCK_CTRL   = 0x0018
     MB_XADC_RB      = 0x001C
     MB_BUS_CLK_RATE = 0x0020
@@ -179,7 +179,22 @@ class MboardRegsControl(object):
     MB_SFP1_INFO    = 0x002C
     MB_GPIO_MASTER  = 0x0030
     MB_GPIO_RADIO_SRC  = 0x0034
-    MB_XBAR_BASEPORT   = 0x0038
+    MB_NUM_TIMEKEEPERS = 0x0048
+    # Timekeeper registers
+    MB_TIME_NOW_LO         = 0x1000
+    MB_TIME_NOW_HI         = 0x1004
+    MB_TIME_EVENT_LO       = 0x1008
+    MB_TIME_EVENT_HI       = 0x100C
+    MB_TIME_CTRL           = 0x1010
+    MB_TIME_LAST_PPS_LO    = 0x1014
+    MB_TIME_LAST_PPS_HI    = 0x1018
+    MB_TIME_BASE_PERIOD_LO = 0x101C
+    MB_TIME_BASE_PERIOD_HI = 0x1020
+    MB_TIMEKEEPER_OFFSET   = 12
+
+    # Bitfield locations for the MB_RFNOC_INFO register.
+    MB_RFNOC_INFO_PROTO_VER = 0
+    MB_RFNOC_INFO_CHDR_WIDTH = 16
 
     # Bitfield locations for the MB_CLOCK_CTRL register.
     MB_CLOCK_CTRL_PPS_SEL_INT_10 = 0 # pps_sel is one-hot encoded!
@@ -210,10 +225,48 @@ class MboardRegsControl(object):
         2 numbers: (major compat number, minor compat number )
         """
         with self.regs:
-            compat_number = self.peek32(self.M_COMPAT_NUM)
+            compat_number = self.peek32(self.MB_COMPAT_NUM)
         minor = compat_number & 0xff
         major = (compat_number>>16) & 0xff
         return (major, minor)
+
+    def set_device_id(self, device_id):
+        """
+        Set device ID
+        """
+        with self.regs:
+            self.log.trace("Writing MB_DEVICE_ID with 0x{:08X}".format(device_id))
+            return self.poke32(self.MB_DEVICE_ID, device_id)
+
+    def get_device_id(self):
+        """
+        Get device ID
+        """
+        with self.regs:
+            reg_val = self.peek32(self.MB_DEVICE_ID)
+            device_id = reg_val & 0x0000ffff
+            self.log.trace("Read MB_DEVICE_ID 0x{:08X}".format(device_id))
+            return device_id
+
+    def get_proto_ver(self):
+        """
+        Return RFNoC protocol version
+        """
+        with self.regs:
+            reg_val = self.peek32(self.MB_RFNOC_INFO)
+            proto_ver = (reg_val & 0x0000ffff) >> self.MB_RFNOC_INFO_PROTO_VER
+            self.log.trace("Read RFNOC_PROTO_VER 0x{:08X}".format(proto_ver))
+            return proto_ver;
+
+    def get_chdr_width(self):
+        """
+        Return RFNoC CHDR width
+        """
+        with self.regs:
+            reg_val = self.peek32(self.MB_RFNOC_INFO)
+            chdr_width = (reg_val & 0xffff0000) >> self.MB_RFNOC_INFO_CHDR_WIDTH
+            self.log.trace("Read RFNOC_CHDR_WIDTH 0x{:08X}".format(chdr_width))
+            return chdr_width
 
     def set_fp_gpio_master(self, value):
         """set driver for front panel GPIO
@@ -416,10 +469,6 @@ class MboardRegsControl(object):
                              .format(sfp0_type, sfp1_type))
         return ""
 
-    def get_xbar_baseport(self):
-        "Get the RFNoC crossbar base port"
-        with self.regs:
-            return self.peek32(self.MB_XBAR_BASEPORT)
 
 class RetimerQSFP(DS125DF410):
     # (deemphasis, swing)

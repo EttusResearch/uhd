@@ -7,7 +7,7 @@
 // The band plan
 
 #include "magnesium_constants.hpp"
-#include "magnesium_radio_ctrl_impl.hpp"
+#include "magnesium_radio_control.hpp"
 #include <uhd/utils/math.hpp>
 
 /*
@@ -93,11 +93,10 @@ namespace {
 
 } // namespace
 
-
-magnesium_radio_ctrl_impl::rx_band magnesium_radio_ctrl_impl::_map_freq_to_rx_band(
+magnesium_radio_control_impl::rx_band magnesium_radio_control_impl::_map_freq_to_rx_band(
     const band_map_t band_map, const double freq)
 {
-    magnesium_radio_ctrl_impl::rx_band band;
+    magnesium_radio_control_impl::rx_band band;
 
     if (fp_compare_epsilon<double>(freq) < MAGNESIUM_MIN_FREQ) {
         band = rx_band::INVALID_BAND;
@@ -124,10 +123,10 @@ magnesium_radio_ctrl_impl::rx_band magnesium_radio_ctrl_impl::_map_freq_to_rx_ba
     return band;
 }
 
-magnesium_radio_ctrl_impl::tx_band magnesium_radio_ctrl_impl::_map_freq_to_tx_band(
+magnesium_radio_control_impl::tx_band magnesium_radio_control_impl::_map_freq_to_tx_band(
     const band_map_t band_map, const double freq)
 {
-    magnesium_radio_ctrl_impl::tx_band band;
+    magnesium_radio_control_impl::tx_band band;
 
     if (fp_compare_epsilon<double>(freq) < MAGNESIUM_MIN_FREQ) {
         band = tx_band::INVALID_BAND;

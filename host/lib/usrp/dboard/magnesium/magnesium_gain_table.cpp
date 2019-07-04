@@ -15,8 +15,8 @@ using namespace uhd::rfnoc;
 using namespace magnesium;
 
 namespace {
-typedef magnesium_radio_ctrl_impl::rx_band rx_band;
-typedef magnesium_radio_ctrl_impl::tx_band tx_band;
+typedef magnesium_radio_control_impl::rx_band rx_band;
+typedef magnesium_radio_control_impl::tx_band tx_band;
 
 const size_t TX_LOWBAND  = 0;
 const size_t TX_HIGHBAND = 1;
@@ -454,7 +454,7 @@ gain_tuple_t fine_tune_ad9371_att(const gain_tuple_t gain_tuple, const double ga
 
 
 gain_tuple_t magnesium::get_rx_gain_tuple(
-    const double gain_index, const magnesium_radio_ctrl_impl::rx_band band)
+    const double gain_index, const magnesium_radio_control_impl::rx_band band)
 {
     UHD_ASSERT_THROW(gain_index <= ALL_RX_MAX_GAIN and gain_index >= ALL_RX_MIN_GAIN);
     auto& gain_table            = rx_gain_tables.at(map_rx_band(band));
@@ -463,7 +463,7 @@ gain_tuple_t magnesium::get_rx_gain_tuple(
 }
 
 gain_tuple_t magnesium::get_tx_gain_tuple(
-    const double gain_index, const magnesium_radio_ctrl_impl::tx_band band)
+    const double gain_index, const magnesium_radio_control_impl::tx_band band)
 {
     UHD_ASSERT_THROW(gain_index <= ALL_TX_MAX_GAIN and gain_index >= ALL_TX_MIN_GAIN);
     auto& gain_table            = tx_gain_tables.at(map_tx_band(band));

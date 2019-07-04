@@ -7,7 +7,7 @@
 #ifndef INCLUDED_LIBUHD_MAGNESIUM_GAIN_TABLE_HPP
 #define INCLUDED_LIBUHD_MAGNESIUM_GAIN_TABLE_HPP
 
-#include "magnesium_radio_ctrl_impl.hpp"
+#include "magnesium_radio_control.hpp"
 #include <uhd/types/direction.hpp>
 
 namespace magnesium {
@@ -31,12 +31,12 @@ struct gain_tuple_t
 /*! Given a gain index, return a tuple of gain-related settings (Rx)
  */
 gain_tuple_t get_rx_gain_tuple(
-    const double gain_index, const uhd::rfnoc::magnesium_radio_ctrl_impl::rx_band band_);
+    const double gain_index, const uhd::rfnoc::magnesium_radio_control_impl::rx_band band_);
 
 /*! Given a gain index, return a tuple of gain-related settings (Tx)
  */
 gain_tuple_t get_tx_gain_tuple(
-    const double gain_index, const uhd::rfnoc::magnesium_radio_ctrl_impl::tx_band band_);
+    const double gain_index, const uhd::rfnoc::magnesium_radio_control_impl::tx_band band_);
 
 } /* namespace magnesium */
 

@@ -10,13 +10,14 @@
 #include "x300_conn_mgr.hpp"
 #include "x300_device_args.hpp"
 #include "x300_mboard_type.hpp"
+#include <uhd/property_tree.hpp>
 #include <uhd/transport/if_addrs.hpp>
 #include <uhd/transport/udp_constants.hpp>
 #include <uhd/transport/udp_simple.hpp> //mtu
-#include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/types/device_addr.hpp>
-#include <uhdlib/rfnoc/xports.hpp>
+#include <uhd/types/direction.hpp>
 #include <functional>
+#include <map>
 #include <vector>
 
 namespace uhd { namespace usrp { namespace x300 {
@@ -52,12 +53,20 @@ public:
      */
     void release_ctrl_iface(std::function<void(void)>&& release_fn);
 
-    both_xports_t make_transport(both_xports_t xports,
-        const uhd::usrp::device3_impl::xport_type_t xport_type,
-        const uhd::device_addr_t& args,
-        const size_t send_mtu,
-        const size_t recv_mtu,
-        std::function<uhd::sid_t(uint32_t, uint32_t)>&& allocate_sid);
+    /*! Return the list of local device IDs associated with this link
+     *
+     * Note: this will only be valid after init_link() is called.
+     */
+    std::vector<uhd::rfnoc::device_id_t> get_local_device_ids()
+    {
+        return _local_device_ids;
+    }
+
+    uhd::transport::both_links_t get_links(uhd::transport::link_type_t link_type,
+        const uhd::rfnoc::device_id_t local_device_id,
+        const uhd::rfnoc::sep_id_t& local_epid,
+        const uhd::rfnoc::sep_id_t& remote_epid,
+        const uhd::device_addr_t& link_args);
 
 private:
     //! Function to create a udp_simple::sptr (kernel-based or DPDK-based)
@@ -87,7 +96,7 @@ private:
     // Get the primary ethernet connection
     inline const x300_eth_conn_t& get_pri_eth() const
     {
-        return eth_conns[0];
+        return eth_conns.at(_local_device_ids.at(0));
     }
 
     static udp_simple_factory_t x300_get_udp_factory(const device_addr_t& args);
@@ -111,15 +120,14 @@ private:
 
     udp_simple_factory_t _x300_make_udp_connected;
 
-    std::vector<x300_eth_conn_t> eth_conns;
-    size_t _next_src_addr    = 0;
-    size_t _next_tx_src_addr = 0;
-    size_t _next_rx_src_addr = 0;
+    std::map<uhd::rfnoc::device_id_t, x300_eth_conn_t> eth_conns;
 
     frame_size_t _max_frame_sizes;
 
     uhd::device_addr_t recv_args;
     uhd::device_addr_t send_args;
+
+    std::vector<uhd::rfnoc::device_id_t> _local_device_ids;
 };
 
 }}} // namespace uhd::usrp::x300
