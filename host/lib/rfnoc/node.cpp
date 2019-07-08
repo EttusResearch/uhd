@@ -444,6 +444,15 @@ void node_t::forward_edge_property(
         "Incoming edge property: `" << incoming_prop->get_id() << "`, source info: "
                                     << incoming_prop->get_src_info().to_string());
 
+    // Don't forward properties that are not yet valid
+    if (!incoming_prop->is_valid()) {
+        UHD_LOG_TRACE(get_unique_id(),
+            "Skipped empty edge property: `"
+                << incoming_prop->get_id()
+                << "`, source info: " << incoming_prop->get_src_info().to_string());
+        return;
+    }
+
     // The source type of my local prop (it's the opposite of the source type
     // of incoming_prop)
     const auto prop_src_type =

@@ -65,7 +65,7 @@ public:
      *
      * Note: This method will grant temporary write access to the destination
      * property!
-     * If \p safe is set to true, it'll only allow RWLOCKED forwarding, i.e., 
+     * If \p safe is set to true, it'll only allow RWLOCKED forwarding, i.e.,
      * the new value cannot be different.
      *
      * \throws uhd::type_error if types mismatch

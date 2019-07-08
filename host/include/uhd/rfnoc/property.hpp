@@ -10,8 +10,8 @@
 #include <uhd/exception.hpp>
 #include <uhd/rfnoc/res_source_info.hpp>
 #include <uhd/utils/dirty_tracked.hpp>
-#include <string>
 #include <memory>
+#include <string>
 
 
 namespace uhd { namespace rfnoc {
@@ -27,9 +27,10 @@ class UHD_API property_base_t
 public:
     enum access_t {
         NONE, //!< Neither reading nor writing to this property is permitted
-        RO = 0x1, //!< Read-Only
-        RW = 0x3, //!< Read-Write
-        RWLOCKED = 0x5 //!< Write is locked. This lets you call set(), but only if the value is unchanged.
+        RO       = 0x1, //!< Read-Only
+        RW       = 0x3, //!< Read-Write
+        RWLOCKED = 0x5 //!< Write is locked. This lets you call set(), but only if the
+                       //!< value is unchanged.
     };
 
     property_base_t(const std::string& id, const res_source_info& source_info)
@@ -54,6 +55,12 @@ public:
     // If it's true, that means this property was recently changed, but changes
     // have not propagated yet and still need resolving.
     virtual bool is_dirty() const = 0;
+
+    //! Query this property's valid flag.
+    //
+    // If it's false, that means this property has a default value that should
+    // NOT be forwarded.
+    virtual bool is_valid() const = 0;
 
     //! Returns true if this property can be read.
     bool read_access_granted() const
@@ -132,6 +139,8 @@ public:
     property_t(
         const std::string& id, const data_t& value, const res_source_info& source_info);
 
+    property_t(const std::string& id, const res_source_info& source_info);
+
     property_t(const property_t<data_t>& prop) = default;
 
     //! Returns the dirty state of this property
@@ -141,6 +150,15 @@ public:
     bool is_dirty() const
     {
         return _data.is_dirty();
+    }
+
+    //! Query this property's valid flag.
+    //
+    // If it's false, that means this property has a default value that should
+    // NOT be used.
+    bool is_valid() const
+    {
+        return _valid;
     }
 
     bool equal(property_base_t* rhs) const
@@ -153,8 +171,8 @@ public:
 
     std::unique_ptr<property_base_t> clone(res_source_info new_src_info) override
     {
-        return std::unique_ptr<property_base_t>(new property_t<data_t>(
-                    get_id(), get(), new_src_info));
+        return std::unique_ptr<property_base_t>(
+            new property_t<data_t>(get_id(), get(), new_src_info));
     }
 
     //! Returns the source info for the property
@@ -168,7 +186,8 @@ public:
     void set(const data_t& value)
     {
         if (write_access_granted()) {
-            _data = value;
+            _data  = value;
+            _valid = true;
         } else if (get_access_mode() == RWLOCKED) {
             if (_data.get() != value) {
                 throw uhd::resolve_error(std::string("Attempting to overwrite property `")
@@ -198,8 +217,16 @@ public:
     }
 
     //! Get the value of this property
+    //
+    // \throws uhd::access_error if either the property is flagged as invalid,
+    //         or if no read access was granted.
     const data_t& get() const
     {
+        if (!is_valid()) {
+            throw uhd::access_error(std::string("Attempting to read property `")
+                                    + get_id() + "@" + get_src_info().to_string()
+                                    + "' before it was initialized!");
+        }
         if (read_access_granted()) {
             return _data;
         }
@@ -231,6 +258,10 @@ private:
 
     void forward(property_base_t* next_prop)
     {
+        if (not _valid) {
+            throw uhd::resolve_error(
+                std::string("Unable to forward invalid property ") + get_id());
+        }
         property_t<data_t>* prop_ptr = dynamic_cast<property_t<data_t>*>(next_prop);
         if (prop_ptr == nullptr) {
             throw uhd::type_error(std::string("Unable to cast property ")
@@ -247,6 +278,7 @@ private:
     }
 
     dirty_tracked<data_t> _data;
+    bool _valid;
 }; // class property_t
 
 }} /* namespace uhd::rfnoc */
@@ -254,4 +286,3 @@ private:
 #include <uhd/rfnoc/property.ipp>
 
 #endif /* INCLUDED_LIBUHD_PROPERTY_HPP */
-

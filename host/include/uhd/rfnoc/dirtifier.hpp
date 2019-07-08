@@ -26,10 +26,22 @@ public:
     }
 
     //! This property is always dirty
-    bool is_dirty() const { return true; }
+    bool is_dirty() const
+    {
+        return true;
+    }
+
+    //! This property is always invalid
+    bool is_valid() const
+    {
+        return false;
+    }
 
     //! This property is never equal to anything else
-    bool equal(property_base_t*) const { return false; }
+    bool equal(property_base_t*) const
+    {
+        return false;
+    }
 
     //! Always dirty, so this can be called as often as we like
     void force_dirty() {}
@@ -45,10 +57,12 @@ private:
     }
 
     //! This property never has the same type as another type
-    bool is_type_equal(property_base_t*) const { return false; }
+    bool is_type_equal(property_base_t*) const
+    {
+        return false;
+    }
 };
 
 }} /* namespace uhd::rfnoc */
 
 #endif /* INCLUDED_LIBUHD_DIRTIFYIER_HPP */
-
