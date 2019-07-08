@@ -8,6 +8,7 @@
 #define INCLUDED_LIBUHD_RFNOC_REGISTRY_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/rfnoc/defaults.hpp>
 #include <uhd/rfnoc/noc_block_base.hpp>
 #include <uhd/utils/static.hpp>
 #include <functional>
@@ -15,8 +16,8 @@
 
 //! This macro must be placed inside a block implementation file
 // after the class definition
-#define UHD_RFNOC_BLOCK_REGISTER_DIRECT(                                   \
-    CLASS_NAME, NOC_ID, BLOCK_NAME, TB_CLOCK, CTRL_CLOCK)                  \
+#define UHD_RFNOC_BLOCK_REGISTER_FOR_DEVICE_DIRECT(CLASS_NAME,             \
+    NOC_ID, DEVICE_ID, BLOCK_NAME, MB_ACCESS, TB_CLOCK, CTRL_CLOCK)        \
     uhd::rfnoc::noc_block_base::sptr CLASS_NAME##_make(                    \
         uhd::rfnoc::noc_block_base::make_args_ptr make_args)               \
     {                                                                      \
@@ -24,15 +25,20 @@
     }                                                                      \
     UHD_STATIC_BLOCK(register_rfnoc_##CLASS_NAME)                          \
     {                                                                      \
-        uhd::rfnoc::registry::register_block_direct(                       \
-            NOC_ID, BLOCK_NAME, TB_CLOCK, CTRL_CLOCK, &CLASS_NAME##_make); \
+        uhd::rfnoc::registry::register_block_direct(NOC_ID, DEVICE_ID,     \
+            BLOCK_NAME, MB_ACCESS,                                         \
+            TB_CLOCK, CTRL_CLOCK, &CLASS_NAME##_make);                     \
     }
 
-#define UHD_RFNOC_BLOCK_REQUEST_MB_ACCESS(NOC_ID)              \
-    UHD_STATIC_BLOCK(rfnoc_block_##NOC_ID##_request_mb_access) \
-    {                                                          \
-        uhd::rfnoc::registry::request_mb_access(NOC_ID);       \
-    }
+#define UHD_RFNOC_BLOCK_REGISTER_DIRECT(                                   \
+    CLASS_NAME, NOC_ID, BLOCK_NAME, TB_CLOCK, CTRL_CLOCK)                  \
+    UHD_RFNOC_BLOCK_REGISTER_FOR_DEVICE_DIRECT(CLASS_NAME,                 \
+        NOC_ID, ANY_DEVICE, BLOCK_NAME, false, TB_CLOCK, CTRL_CLOCK)
+
+#define UHD_RFNOC_BLOCK_REGISTER_DIRECT_MB_ACCESS(                         \
+    CLASS_NAME, NOC_ID, BLOCK_NAME, TB_CLOCK, CTRL_CLOCK)                  \
+    UHD_RFNOC_BLOCK_REGISTER_FOR_DEVICE_DIRECT(CLASS_NAME,                 \
+        NOC_ID, ANY_DEVICE, BLOCK_NAME, true, TB_CLOCK, CTRL_CLOCK)
 
 namespace uhd { namespace rfnoc {
 
@@ -56,13 +62,17 @@ public:
      * If the Noc-ID is already registered, it will print an error to stderr and
      * ignore the new block.
      *
-     * \param noc_id The 32-bit Noc-ID for this block (e.g. 0xDDC00000)
-     * \param block_name The name used for the block ID (e.g. "Radio")
+     * \param noc_id The 32-bit Noc-ID for this block (e.g. 0xDDC00000).
+     * \param device_id The 16-bit Device-ID for this block
+     *        (ANY_DEVICE for device agnostic blocks).
+     * \param block_name The name used for the block ID (e.g. "Radio").
      * \param factory_fn A factory function that returns a reference to the
-     *                   block
+     *                   block.
      */
-    static void register_block_direct(noc_block_base::noc_id_t noc_id,
+    static void register_block_direct(noc_id_t noc_id,
+        device_type_t device_id,
         const std::string& block_name,
+        bool mb_access,
         const std::string& timebase_clock,
         const std::string& ctrlport_clock,
         factory_t factory_fn);
@@ -80,24 +90,6 @@ public:
      */
     static void register_block_descriptor(const std::string& block_key,
         factory_t factory_fn);
-
-    /*! Call this after registering a block if it requires access to the
-     * mb_controller
-     *
-     * Note: This is a request to the framework, and may be denied.
-     *
-     * \param noc_id Noc-ID of the block that requires access to the mb_controller
-     */
-    static void request_mb_access(noc_block_base::noc_id_t noc_id);
-
-    /*! Call this after registering a block if it requires access to the
-     * mb_controller
-     *
-     * Note: This is a request to the framework, and may be denied.
-     *
-     * \param noc_id Noc-ID of the block that requires access to the mb_controller
-     */
-    static void request_mb_access(const std::string& block_key);
 
 };
 

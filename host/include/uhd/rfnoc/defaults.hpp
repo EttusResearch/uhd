@@ -39,6 +39,36 @@ static const double DEFAULT_TICK_RATE = 1.0;
 // block/device-specific constraints. It will keep the frame size below 1500.
 static const int DEFAULT_SPP = 1996;
 
+/*! The NoC ID is the unique identifier of the block type. All blocks of the
+ * same type have the same NoC ID.
+ */
+using noc_id_t = uint32_t;
+
+/*** Device Identifiers ******************************************************/
+//! Device ID Type
+using device_type_t = uint16_t;
+// first nibble for device family (E = E, N = 1, X = A), remaining three nibbles
+// for device number
+//! placeholder for unspecified device
+static const device_type_t ANY_DEVICE = 0xFFFF;
+//! E300 device family
+static const device_type_t E300 = 0xE300;
+//! E310 device
+static const device_type_t E310 = 0xE310;
+//! E320
+static const device_type_t E320 = 0xE320;
+//! N300 device family (N300, N310)
+static const device_type_t N300 = 0x1300;
+//! N320 device
+static const device_type_t N320 = 0x1320;
+//! X300 device family (X300, X310)
+static const device_type_t X300 = 0xA300;
+
+// block identifiers
+static const noc_id_t RADIO_BLOCK = 0x12AD1000;
+static const noc_id_t DUC_BLOCK   = 0xD0C00000;
+static const noc_id_t DDC_BLOCK   = 0xDDC00000;
+
 }} // namespace uhd::rfnoc
 
 #endif /* INCLUDED_LIBUHD_RFNOC_DEFAULTS_HPP */

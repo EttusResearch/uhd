@@ -44,7 +44,7 @@ public:
     struct block_xbar_info
     {
         size_t xbar_port;
-        noc_block_base::noc_id_t noc_id;
+        noc_id_t noc_id;
         size_t inst_num;
     };
 

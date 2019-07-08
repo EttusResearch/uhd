@@ -10,6 +10,7 @@
 #include <uhd/config.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/rfnoc/block_id.hpp>
+#include <uhd/rfnoc/defaults.hpp>
 #include <uhd/rfnoc/node.hpp>
 #include <uhd/rfnoc/register_iface_holder.hpp>
 #include <uhd/types/device_addr.hpp>
@@ -45,11 +46,6 @@ public:
      *  automatic memory management.
      */
     using sptr = std::shared_ptr<noc_block_base>;
-
-    /*! The NoC ID is the unique identifier of the block type. All blocks of the
-     * same type have the same NoC ID.
-     */
-    using noc_id_t = uint32_t;
 
     //! Forward declaration for the constructor arguments
     struct make_args_t;

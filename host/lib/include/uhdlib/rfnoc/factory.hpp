@@ -7,14 +7,16 @@
 #ifndef INCLUDED_LIBUHD_RFNOC_FACTORY_HPP
 #define INCLUDED_LIBUHD_RFNOC_FACTORY_HPP
 
-#include <uhd/rfnoc/registry.hpp>
+#include <uhd/rfnoc/defaults.hpp>
 #include <uhd/rfnoc/noc_block_base.hpp>
+#include <uhd/rfnoc/registry.hpp>
 
 namespace uhd { namespace rfnoc {
 
 struct block_factory_info_t
 {
     std::string block_name;
+    bool mb_access;
     std::string timebase_clk;
     std::string ctrlport_clk;
     registry::factory_t factory_fn;
@@ -30,11 +32,8 @@ public:
      * \returns a block_factory_info_t object
      * \throws uhd::lookup_error if no block is found
      */
-    static block_factory_info_t get_block_factory(noc_block_base::noc_id_t noc_id);
-
-    /*! Check if this block has requested access to the motherboard controller
-     */
-    static bool has_requested_mb_access(noc_block_base::noc_id_t noc_id);
+    static block_factory_info_t get_block_factory(
+        noc_id_t noc_id, device_type_t device_id);
 };
 
 }} /* namespace uhd::rfnoc */

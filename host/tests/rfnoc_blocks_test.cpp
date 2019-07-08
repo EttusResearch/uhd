@@ -21,7 +21,7 @@ using namespace uhd::rfnoc;
 
 namespace {
 
-noc_block_base::make_args_ptr make_make_args(noc_block_base::noc_id_t noc_id,
+noc_block_base::make_args_ptr make_make_args(noc_id_t noc_id,
     const std::string& block_id,
     const size_t n_inputs,
     const size_t n_outputs,
@@ -55,7 +55,7 @@ BOOST_AUTO_TEST_CASE(test_null_block)
     constexpr size_t num_chans                 = 2;
     constexpr uint32_t nipc                    = 2;
     constexpr uint32_t item_width              = 32;
-    constexpr noc_block_base::noc_id_t mock_id = 0x7E570000;
+    constexpr noc_id_t mock_id                 = 0x7E570000;
 
     auto make_args = make_make_args(mock_id, "0/NullSrcSink#0", num_chans, num_chans);
     auto reg_iface = std::dynamic_pointer_cast<mock_reg_iface_t>(make_args->reg_iface);
@@ -144,7 +144,7 @@ BOOST_AUTO_TEST_CASE(test_ddc_block)
     constexpr uint32_t num_hb                      = 2;
     constexpr uint32_t max_cic                     = 128;
     constexpr size_t num_chans                     = 4;
-    constexpr noc_block_base::noc_id_t mock_noc_id = 0x7E57DDC0;
+    constexpr noc_id_t mock_noc_id                 = 0x7E57DDC0;
     constexpr int TEST_DECIM                       = 20;
 
     auto ddc_make_args = make_make_args(mock_noc_id, "0/DDC#0", num_chans, num_chans);

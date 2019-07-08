@@ -10,6 +10,7 @@
 #include <uhd/rfnoc/noc_block_make_args.hpp>
 #include <uhd/rfnoc/node.hpp>
 #include <uhd/rfnoc_graph.hpp>
+#include <uhd/rfnoc/constants.hpp>
 #include <uhdlib/rfnoc/block_container.hpp>
 #include <uhdlib/rfnoc/factory.hpp>
 #include <uhdlib/rfnoc/graph.hpp>
@@ -377,7 +378,8 @@ private:
         // Iterate through and register each of the blocks in this mboard
         for (size_t portno = 0; portno < num_blocks; ++portno) {
             const auto noc_id       = mb_cz->get_noc_id(portno + first_block_port);
-            auto block_factory_info = factory::get_block_factory(noc_id);
+            const auto device_type  = mb_cz->get_device_type();
+            auto block_factory_info = factory::get_block_factory(noc_id, device_type);
             auto block_info         = mb_cz->get_block_info(portno + first_block_port);
             block_id_t block_id(mb_idx,
                 block_factory_info.block_name,
@@ -410,9 +412,9 @@ private:
             make_args_uptr->reg_iface          = block_reg_iface;
             make_args_uptr->tb_clk_iface       = tb_clk_iface;
             make_args_uptr->ctrlport_clk_iface = ctrlport_clk_iface;
-            make_args_uptr->mb_control         = (factory::has_requested_mb_access(noc_id)
+            make_args_uptr->mb_control         = block_factory_info.mb_access
                                               ? _mb_controllers.at(mb_idx)
-                                              : nullptr);
+                                              : nullptr;
             const uhd::fs_path block_path(uhd::fs_path("/blocks") / block_id.to_string());
             _tree->create<uint32_t>(block_path / "noc_id").set(noc_id);
             make_args_uptr->tree = _tree->subtree(block_path);
