@@ -286,17 +286,56 @@ private:
     void _init_gsm()
     {
         UHD_LOG_TRACE(LOG_ID, "Initializing GSM...");
-        // Create a graph stream manager
-        // FIXME get these from mb_iface or something
-        static const chdr::chdr_packet_factory pkt_factory(
-            CHDR_W_64, uhd::ENDIANNESS_BIG);
-        epid_allocator::sptr epid_alloc = std::make_shared<epid_allocator>();
+        auto e2s = [](uhd::endianness_t endianness) {
+            return endianness == uhd::ENDIANNESS_BIG ? "BIG" : "LITTLE";
+        };
+        const chdr_w_t chdr_w = _device->get_mb_iface(0).get_chdr_w();
+        const uhd::endianness_t endianness = _device->get_mb_iface(0).get_endianness();
+        for (size_t mb_idx = 1; mb_idx < _num_mboards; mb_idx++) {
+            if (_device->get_mb_iface(mb_idx).get_chdr_w() != chdr_w) {
+                throw uhd::runtime_error(
+                    std::string("Non-homogenous devices: Graph CHDR width is ")
+                    + std::to_string(chdr_w_to_bits(chdr_w)) + " but device "
+                    + std::to_string(mb_idx) + " has CHDR width of "
+                    + std::to_string(
+                          chdr_w_to_bits(_device->get_mb_iface(mb_idx).get_chdr_w()))
+                    + " bits!");
+            }
+            if (_device->get_mb_iface(mb_idx).get_endianness() != endianness) {
+                throw uhd::runtime_error(
+                    std::string("Non-homogenous devices: Graph endianness is ")
+                    + e2s(endianness) + " but device " + std::to_string(mb_idx)
+                    + " has endianness " + e2s(endianness) + "!");
+            }
+        }
+        UHD_LOG_TRACE(LOG_ID,
+            "Creating packet factory with CHDR width "
+                << chdr_w_to_bits(chdr_w) << " bits and endianness " << e2s(endianness));
+        _pkt_factory = std::make_unique<chdr::chdr_packet_factory>(chdr_w, endianness);
         // Create a collection of link definitions: (ID, MB) pairs
         std::vector<std::pair<device_id_t, mb_iface*>> links;
-        // TODO fix device_id we're creating
-        links.push_back(std::make_pair(100, &_device->get_mb_iface(0)));
+        for (size_t mb_idx = 0; mb_idx < _num_mboards; mb_idx++) {
+            const auto device_ids = _device->get_mb_iface(mb_idx).get_local_device_ids();
+            for (const device_id_t local_device_id : device_ids) {
+                if (_device->get_mb_iface(mb_idx).get_endianness(local_device_id)
+                    != endianness) {
+                    throw uhd::runtime_error(
+                        std::string("Non-homogenous devices: Graph endianness is ")
+                        + e2s(endianness) + " but device " + std::to_string(mb_idx)
+                        + " has endianness " + e2s(endianness) + "!");
+                }
+                links.push_back(
+                    std::make_pair(local_device_id, &_device->get_mb_iface(mb_idx)));
+            }
+        }
+        if (links.empty()) {
+            UHD_LOG_ERROR(
+                LOG_ID, "No links found for " << _num_mboards << " motherboards!");
+            throw uhd::runtime_error("[rfnoc_graph] No links found!");
+        }
+        UHD_LOG_TRACE(LOG_ID, "Found a total of " << links.size() << " links.");
         try {
-            _gsm = graph_stream_manager::make(pkt_factory, epid_alloc, links);
+            _gsm = graph_stream_manager::make(*_pkt_factory, _epid_alloc, links);
         } catch (uhd::io_error& ex) {
             UHD_LOG_ERROR(LOG_ID, "IO Error during GSM initialization. " << ex.what());
             throw;
@@ -634,6 +673,13 @@ private:
 
     //! uptr to graph stream manager
     graph_stream_manager::uptr _gsm;
+
+    //! EPID allocator. Technically not required by the rfnoc_graph, but we'll
+    // store it here because it's such a central thing.
+    epid_allocator::sptr _epid_alloc = std::make_shared<epid_allocator>();
+
+    //! Reference to a packet factory object. Gets initialized just before the GSM
+    std::unique_ptr<chdr::chdr_packet_factory> _pkt_factory;
 }; /* class rfnoc_graph_impl */
 
 
