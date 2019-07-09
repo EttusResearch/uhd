@@ -721,6 +721,34 @@ set the host computer MTU to 8000 as well:
 Of course, you can also reduce the MTU on the device to match your host
 computer, see Section \ref n3xx_getting_started_connectivity.
 
+\subsection n3xx_troubleshooting_bist Built-in Self-Test (BiST)
+
+The N3x0 series devices have a built-in self-test that can be used to verify
+the hardware. It is not automatically run, but it can be invoked anytime by
+running the `n3xx_bist` executable. Calling
+
+    n3xx_bist -h
+
+will list the available options. Tests can be run by specifying their name, e.g.
+
+    n3xx_bist gpsdo
+
+will test the functionality of the GPSDO. Calling `n3xx_bist standard` will run
+a standard set of tests, verifying some base peripherals such as the RTC, the
+fan and temperature sensors, etc.
+
+Some tests require special hardware connected. For example, there are multiple
+tests to verify the SFP+ adapters. There are two types of test for those: For
+the `sfp0_loopback` and `sfp1_loopback` tests, a loopback module must be plugged
+into the SFP+. For the `sfp_loopback` test, the two ports need to be connected
+together.
+
+Tests may also load different FPGA images, if required. The aforementioned
+SFP tests will load the AA FPGA image and use Aurora to run the BER tests on
+the SFP ports. This is particularly relevant if either a custom image was
+loaded, or if there is an active SSH or other connection coming in via the SFP+
+ports.
+
 \section n3xx_theory_of_ops Theory of Operation
 
 The N3xx-series are devices based on the MPM architecture (see

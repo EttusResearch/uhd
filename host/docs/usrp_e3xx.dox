@@ -682,6 +682,33 @@ will look like this:
     # [...]
 \endcode
 
+\section e3xx_troubleshooting Troubleshooting
+
+\subsection e3xx_troubleshooting_bist E320 Built-in Self-Test (BiST)
+
+The E320 series devices have a built-in self-test that can be used to verify
+the hardware. It is not automatically run, but it can be invoked anytime by
+running the `e320_bist` executable. Calling
+
+    e320_bist -h
+
+will list the available options. Tests can be run by specifying their name, e.g.
+
+    e320_bist gpsdo
+
+will test the functionality of the GPSDO. Calling `e320_bist standard` will run
+a standard set of tests, verifying some base peripherals such as the RTC, the
+fan and temperature sensors, etc.
+
+Some tests require special hardware connected. For example, for the `sfp_loopback`
+tests, a loopback module must be plugged into the SFP+.
+
+Tests may also load different FPGA images, if required. The aforementioned
+SFP tests will load the Aurora FPGA image and use Aurora to run the BER tests on
+the SFP port. This is particularly relevant if either a custom image was
+loaded, or if there is an active SSH or other connection coming in via the SFP+
+ports.
+
 \section e3xx_theory_of_ops Theory of Operation
 
 All E series devices are on the MPM architecture (see also: \ref page_mpm).
