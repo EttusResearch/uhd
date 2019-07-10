@@ -168,9 +168,7 @@ static size_t get_rx_flow_control_window(
     size_t window_in_bytes = (static_cast<size_t>(fullness_factor * sw_buff_size));
     if (rx_args.has_key("max_recv_window")) {
         window_in_bytes = std::min(
-            window_in_bytes,
-            pkt_size * rx_args.cast<size_t>("max_recv_window", 1)
-        );
+            window_in_bytes, pkt_size * rx_args.cast<size_t>("max_recv_window", 1));
     }
     if (window_in_bytes < pkt_size) {
         throw uhd::value_error("recv_buff_size must be larger than the recv_frame_size.");
@@ -340,8 +338,8 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t& args_)
 
         // Traverse the upstream nodes for minimum mtu
         size_t min_mtu = blk_ctrl->get_mtu(block_port);
-        UHD_RX_STREAMER_LOG() << "Maximum MTU supported by " <<  blk_ctrl->unique_id()
-                    << ": " << min_mtu;
+        UHD_RX_STREAMER_LOG() << "Maximum MTU supported by " << blk_ctrl->unique_id()
+                              << ": " << min_mtu;
         std::vector<boost::shared_ptr<uhd::rfnoc::source_block_ctrl_base>>
             upstream_source_nodes =
                 blk_ctrl->find_upstream_node<uhd::rfnoc::source_block_ctrl_base>();
@@ -350,14 +348,15 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t& args_)
             // Get MTU from Port 0 of the upstream nodes. This is okay for now as
             // currently we use port 0 of a block in case of channel 1.
             UHD_RX_STREAMER_LOG() << "Maximum MTU supported by " << node->unique_id()
-                    << ": " << node->get_mtu(0);
+                                  << ": " << node->get_mtu(0);
             min_mtu = std::min(min_mtu, node->get_mtu(0));
         }
         // Contraint min_mtu by device mtu
         min_mtu = std::min(min_mtu, get_mtu(mb_index, uhd::direction_t::RX_DIRECTION));
         if (rx_hints.has_key("recv_frame_size")) {
             if (rx_hints.cast<size_t>("recv_frame_size", min_mtu) > min_mtu) {
-                UHD_RX_STREAMER_LOG() << "Requested recv_frame_size of " << rx_hints["recv_frame_size"]
+                UHD_RX_STREAMER_LOG()
+                    << "Requested recv_frame_size of " << rx_hints["recv_frame_size"]
                     << " exceeds the maximum possible on this stream. Using " << min_mtu;
             }
             min_mtu =
@@ -449,7 +448,8 @@ rx_streamer::sptr device3_impl::get_rx_stream(const stream_args_t& args_)
                 convert::get_bytes_per_item(args.otw_format); // bytes per item
             const size_t spp = std::min(args.args.cast<size_t>("spp", bpp / bpi),
                 bpp / bpi); // samples per packet
-            UHD_RX_STREAMER_LOG() << "bpp == " << bpp << ", bpi == " << bpi << ", spp == " << spp;
+            UHD_RX_STREAMER_LOG()
+                << "bpp == " << bpp << ", bpi == " << bpi << ", spp == " << spp;
 
             my_streamer = boost::make_shared<device3_recv_packet_streamer>(
                 spp, recv_terminator, xport);
@@ -607,8 +607,8 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t& args_)
 
         // Traverse the downstream nodes for minimum mtu
         size_t min_mtu = blk_ctrl->get_mtu(block_port);
-        UHD_TX_STREAMER_LOG() << "Maximum MTU supported by " <<  blk_ctrl->unique_id()
-                    << ": " << min_mtu;
+        UHD_TX_STREAMER_LOG() << "Maximum MTU supported by " << blk_ctrl->unique_id()
+                              << ": " << min_mtu;
         std::vector<boost::shared_ptr<uhd::rfnoc::sink_block_ctrl_base>>
             downstream_sink_nodes =
                 blk_ctrl->find_downstream_node<uhd::rfnoc::sink_block_ctrl_base>();
@@ -616,14 +616,15 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t& args_)
             downstream_sink_nodes) {
             // Get MTU from Port 0 of the downstream nodes. This is okay for now as
             // currently we use port 0 of a block in case of channel 1.
-            UHD_TX_STREAMER_LOG() << "Maximum MTU supported by " <<  node->unique_id()
-                    << ": " << node->get_mtu(0);
+            UHD_TX_STREAMER_LOG() << "Maximum MTU supported by " << node->unique_id()
+                                  << ": " << node->get_mtu(0);
             min_mtu = std::min(min_mtu, node->get_mtu(0));
         }
         min_mtu = std::min(min_mtu, get_mtu(mb_index, uhd::direction_t::TX_DIRECTION));
         if (tx_hints.has_key("send_frame_size")) {
             if (tx_hints.cast<size_t>("send_frame_size", min_mtu) > min_mtu) {
-                UHD_TX_STREAMER_LOG() << "Requested send_frame_size of " << tx_hints["send_frame_size"]
+                UHD_TX_STREAMER_LOG()
+                    << "Requested send_frame_size of " << tx_hints["send_frame_size"]
                     << " exceeds the maximum possible on this stream. Using " << min_mtu;
             }
             min_mtu =
@@ -728,13 +729,13 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t& args_)
             // To calculate the max number of samples per packet, we assume the maximum
             // header length to avoid fragmentation should the entire header be used.
             const size_t bpp =
-                tx_hints.cast<size_t>("bpp", pkt_size)
-                - stream_options.tx_max_len_hdr;
+                tx_hints.cast<size_t>("bpp", pkt_size) - stream_options.tx_max_len_hdr;
             const size_t bpi =
                 convert::get_bytes_per_item(args.otw_format); // bytes per item
             const size_t spp = std::min(args.args.cast<size_t>("spp", bpp / bpi),
                 bpp / bpi); // samples per packet
-            UHD_TX_STREAMER_LOG() << "bpp == " << bpp << ", bpi == " << bpi << ", spp == " << spp;
+            UHD_TX_STREAMER_LOG()
+                << "bpp == " << bpp << ", bpi == " << bpi << ", spp == " << spp;
 
             my_streamer = boost::make_shared<device3_send_packet_streamer>(
                 spp, send_terminator, xport, async_xport);
@@ -791,8 +792,7 @@ tx_streamer::sptr device3_impl::get_tx_stream(const uhd::stream_args_t& args_)
 
         // Avoid sending FC ACKs if the transport is lossless or the user
         // has explictly requested not to send them
-        if (not (xport.lossless or tx_hints.has_key("send_no_fc_acks")))
-        {
+        if (not(xport.lossless or tx_hints.has_key("send_no_fc_acks"))) {
             my_streamer->set_xport_chan_post_send_cb(stream_i, [fc_cache, xport]() {
                 tx_flow_ctrl_ack(fc_cache, xport.send, xport.send_sid);
             });

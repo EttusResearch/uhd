@@ -25,8 +25,8 @@
 #include <uhd/utils/static.hpp>
 #include <uhdlib/usrp/common/apply_corrections.hpp>
 #ifdef HAVE_DPDK
-#    include <uhdlib/transport/dpdk_zero_copy.hpp>
 #    include <uhdlib/transport/dpdk_simple.hpp>
+#    include <uhdlib/transport/dpdk_zero_copy.hpp>
 #endif
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
@@ -151,8 +151,7 @@ std::string map_mb_type_to_product_name(
 
 } // namespace
 
-static x300_impl::udp_simple_factory_t x300_get_udp_factory(
-    const device_addr_t& args)
+static x300_impl::udp_simple_factory_t x300_get_udp_factory(const device_addr_t& args)
 {
     x300_impl::udp_simple_factory_t udp_make_connected = udp_simple::make_connected;
     if (args.has_key("use_dpdk")) {
@@ -162,8 +161,8 @@ static x300_impl::udp_simple_factory_t x300_get_udp_factory(
             return dpdk_simple::make_connected(ctx, addr, port);
         };
 #else
-        UHD_LOG_WARNING("DPDK",
-            "Detected use_dpdk argument, but DPDK support not built in.");
+        UHD_LOG_WARNING(
+            "DPDK", "Detected use_dpdk argument, but DPDK support not built in.");
 #endif
     }
     return udp_make_connected;
@@ -176,8 +175,7 @@ static x300_impl::udp_simple_factory_t x300_get_udp_factory(
 static device_addrs_t x300_find_with_addr(const device_addr_t& hint)
 {
     x300_impl::udp_simple_factory_t udp_make_broadcast = udp_simple::make_broadcast;
-    x300_impl::udp_simple_factory_t udp_make_connected =
-        x300_get_udp_factory(hint);
+    x300_impl::udp_simple_factory_t udp_make_connected = x300_get_udp_factory(hint);
 #ifdef HAVE_DPDK
     if (hint.has_key("use_dpdk")) {
         auto& dpdk_ctx = uhd::transport::uhd_dpdk_ctx::get();
@@ -538,8 +536,7 @@ x300_impl::x300_impl(const uhd::device_addr_t& dev_addr) : device3_impl(), _sid_
 void x300_impl::mboard_members_t::discover_eth(
     const mboard_eeprom_t mb_eeprom, const std::vector<std::string>& ip_addrs)
 {
-    x300_impl::udp_simple_factory_t udp_make_connected =
-        x300_get_udp_factory(send_args);
+    x300_impl::udp_simple_factory_t udp_make_connected = x300_get_udp_factory(send_args);
 
     // Clear any previous addresses added
     eth_conns.clear();
@@ -1438,27 +1435,31 @@ uhd::both_xports_t x300_impl::make_transport(const uhd::sid_t& address,
 
         int dpdk_port_id = dpdk_ctx.get_route(conn.addr);
         if (dpdk_port_id < 0) {
-            throw uhd::runtime_error("Could not find a DPDK port with route to " +
-                conn.addr);
+            throw uhd::runtime_error(
+                "Could not find a DPDK port with route to " + conn.addr);
         }
-        auto recv = transport::dpdk_zero_copy::make(
-            dpdk_ctx,
-            (const unsigned int) dpdk_port_id,
+        auto recv = transport::dpdk_zero_copy::make(dpdk_ctx,
+            (const unsigned int)dpdk_port_id,
             conn.addr,
             BOOST_STRINGIZE(X300_VITA_UDP_PORT),
             "0",
             default_buff_args,
-            xport_args
-        );
+            xport_args);
 
         xports.recv = recv; // Note: This is a type cast!
         xports.send = xports.recv;
-        xports.recv_buff_size = (default_buff_args.recv_frame_size-X300_UDP_RESERVED_FRAME_SIZE)*default_buff_args.num_recv_frames;
-        xports.send_buff_size = (default_buff_args.send_frame_size-X300_UDP_RESERVED_FRAME_SIZE)*default_buff_args.num_send_frames;
-        UHD_LOG_TRACE("BUFF", "num_recv_frames=" << default_buff_args.num_recv_frames
-                         << ", num_send_frames=" << default_buff_args.num_send_frames
-                         << ", recv_frame_size=" << default_buff_args.recv_frame_size
-                         << ", send_frame_size=" << default_buff_args.send_frame_size);
+        xports.recv_buff_size =
+            (default_buff_args.recv_frame_size - X300_UDP_RESERVED_FRAME_SIZE)
+            * default_buff_args.num_recv_frames;
+        xports.send_buff_size =
+            (default_buff_args.send_frame_size - X300_UDP_RESERVED_FRAME_SIZE)
+            * default_buff_args.num_send_frames;
+        UHD_LOG_TRACE("BUFF",
+            "num_recv_frames="
+                << default_buff_args.num_recv_frames
+                << ", num_send_frames=" << default_buff_args.num_send_frames
+                << ", recv_frame_size=" << default_buff_args.recv_frame_size
+                << ", send_frame_size=" << default_buff_args.send_frame_size);
         // send a mini packet with SID into the ZPU
         // ZPU will reprogram the ethernet framer
         UHD_LOGGER_DEBUG("X300") << "programming packet for new xport on " << conn.addr
@@ -1993,12 +1994,14 @@ x300_impl::frame_size_t x300_impl::determine_max_frame_size(
     return frame_size;
 }
 
-size_t x300_impl::get_mtu(const size_t mb_index, const uhd::direction_t dir) {
+size_t x300_impl::get_mtu(const size_t mb_index, const uhd::direction_t dir)
+{
     if (_mb[mb_index].xport_path == "nirio") {
-        return (dir == RX_DIRECTION ? x300::PCIE_RX_DATA_FRAME_SIZE : x300::PCIE_TX_DATA_FRAME_SIZE);
+        return (dir == RX_DIRECTION ? x300::PCIE_RX_DATA_FRAME_SIZE
+                                    : x300::PCIE_TX_DATA_FRAME_SIZE);
     }
-    return (dir == RX_DIRECTION) ? _max_frame_sizes.recv_frame_size :
-            _max_frame_sizes.send_frame_size;
+    return (dir == RX_DIRECTION) ? _max_frame_sizes.recv_frame_size
+                                 : _max_frame_sizes.send_frame_size;
 }
 
 /***********************************************************************
