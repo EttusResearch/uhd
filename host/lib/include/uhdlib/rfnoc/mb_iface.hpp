@@ -7,6 +7,7 @@
 #ifndef INCLUDED_LIBUHD_MB_IFACE_HPP
 #define INCLUDED_LIBUHD_MB_IFACE_HPP
 
+#include <uhd/types/endianness.hpp>
 #include <uhdlib/rfnoc/chdr_ctrl_xport.hpp>
 #include <uhdlib/rfnoc/chdr_rx_data_xport.hpp>
 #include <uhdlib/rfnoc/chdr_tx_data_xport.hpp>
@@ -39,6 +40,14 @@ public:
     /*! Return the CHDR width of the firmware running on this motherboard
      */
     virtual chdr_w_t get_chdr_w() = 0;
+
+    /*! Return the endianness for the link associated with \p local_device_id
+     *
+     * When \p local_device_id is set to NULL_DEVICE_ID, it will return any
+     * endianness associated with this device.
+     */
+    virtual uhd::endianness_t get_endianness(
+        const device_id_t local_device_id = NULL_DEVICE_ID) = 0;
 
     /*! Get the device ID assigned to the motherboard
      *
