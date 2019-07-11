@@ -330,12 +330,14 @@ double sbx_xcvr::set_lo_freq(dboard_iface::unit_t unit, double target_freq) {
 
 sensor_value_t sbx_xcvr::get_locked(dboard_iface::unit_t unit) {
     const bool locked = (this->get_iface()->read_gpio(unit) & LOCKDET_MASK) != 0;
+    bool& lock_cache  = (unit == dboard_iface::UNIT_RX) ? _rx_lo_lock_cache
+                                                       : _tx_lo_lock_cache;
 
-    if (unit == dboard_iface::UNIT_RX) _rx_lo_lock_cache = locked;
-    if (unit == dboard_iface::UNIT_TX) _tx_lo_lock_cache = locked;
-
-    //write the new lock cache setting to atr regs
-    update_atr();
+    if (lock_cache != locked) {
+        lock_cache = locked;
+        // write the new lock cache setting to atr regs
+        update_atr();
+    }
 
     return sensor_value_t("LO", locked, "locked", "unlocked");
 }
