@@ -8,11 +8,11 @@
 #define INCLUDED_LIBUHD_RFNOC_ACTIONS_HPP
 
 #include <uhd/config.hpp>
-#include <uhd/rfnoc/defaults.hpp>
+#include <uhd/types/metadata.hpp>
 #include <uhd/types/stream_cmd.hpp>
+#include <memory>
 #include <string>
 #include <vector>
-#include <memory>
 
 namespace uhd { namespace rfnoc {
 
@@ -56,6 +56,21 @@ public:
 
 private:
     stream_cmd_action_info(const uhd::stream_cmd_t::stream_mode_t stream_mode);
+};
+
+struct UHD_API rx_event_action_info : public action_info
+{
+public:
+    using sptr = std::shared_ptr<rx_event_action_info>;
+
+    //! The error code that describes the event
+    uhd::rx_metadata_t::error_code_t error_code = uhd::rx_metadata_t::ERROR_CODE_NONE;
+
+    //! Factory function
+    static sptr make();
+
+private:
+    rx_event_action_info();
 };
 
 }} /* namespace uhd::rfnoc */
