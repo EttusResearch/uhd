@@ -233,6 +233,21 @@ public:
 
         static const uint32_t PERIPH_BASE = 0x80000;
         static const uint32_t PERIPH_REG_OFFSET = 8;
+
+        static const uint32_t SWREG_TX_ERR      = 0x0000;
+        static const uint32_t SWREG_RX_ERR      = 0x1000;
+        static const uint32_t SWREG_CHAN_OFFSET = 64;
+    };
+
+    struct err_codes
+    {
+        static const uint32_t ERR_RX_LATE_CMD =
+            1; // Late command (arrived after indicated time)
+        static const uint32_t ERR_RX_OVERRUN = 2; // FIFO overflow
+        static const uint32_t ERR_TX_UNDERRUN =
+            1; // Data underflow (data not available when needed)
+        static const uint32_t ERR_TX_LATE_DATA =
+            2; // Late data (arrived after indicated time)
     };
 
     //! Tree path to the dboard-specific properties
@@ -284,6 +299,8 @@ private:
     std::unordered_map<size_t, double> _rx_gain;
     std::unordered_map<size_t, double> _tx_bandwidth;
     std::unordered_map<size_t, double> _rx_bandwidth;
+
+    std::vector<uhd::stream_cmd_t> _last_stream_cmd;
 };
 
 }} // namespace uhd::rfnoc

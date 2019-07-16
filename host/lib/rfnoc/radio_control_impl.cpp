@@ -72,6 +72,8 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
     , _radio_width(regs().peek32(regmap::REG_RADIO_WIDTH))
     , _samp_width(_radio_width >> 16)
     , _spc(_radio_width & 0xFFFF)
+    , _last_stream_cmd(
+          get_num_output_ports(), uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS)
 {
     uhd::assert_fpga_compat(MAJOR_COMPAT,
         MINOR_COMPAT,
@@ -85,10 +87,6 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
                                   << ", num_outputs=" << get_num_output_ports());
     set_prop_forwarding_policy(forwarding_policy_t::DROP);
     set_action_forwarding_policy(forwarding_policy_t::DROP);
-    regs().register_async_msg_handler(
-        [this](uint32_t addr, const std::vector<uint32_t>& data) {
-            this->async_message_handler(addr, data);
-        });
     register_action_handler(ACTION_KEY_STREAM_CMD,
         [this](const res_source_info& src, action_info::sptr action) {
             stream_cmd_action_info::sptr stream_cmd_action =
@@ -173,7 +171,43 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
             {&_type_out.back()},
             [& type_out = _type_out.back()]() { type_out.set(IO_TYPE_SC16); });
     }
-}
+    // Enable async messages coming from the radio
+    const uint32_t xbar_port = 1; // FIXME: Find a better way to figure this out
+    RFNOC_LOG_TRACE("Sending async messages to EPID "
+                    << regs().get_src_epid() << ", remote port " << regs().get_port_num()
+                    << ", xbar port " << xbar_port);
+    for (size_t tx_chan = 0; tx_chan < get_num_output_ports(); tx_chan++) {
+        // Set the EPID and port of our regs() object (all async messages go to
+        // the same location)
+        regs().poke32(
+            get_addr(regmap::REG_TX_ERR_REM_EPID, tx_chan), regs().get_src_epid());
+        regs().poke32(
+            get_addr(regmap::REG_TX_ERR_REM_PORT, tx_chan), regs().get_port_num());
+        // Set the crossbar port for the async packet routing
+        regs().poke32(get_addr(regmap::REG_TX_ERR_PORT, tx_chan), xbar_port);
+        // Set the async message address
+        regs().poke32(get_addr(regmap::REG_TX_ERR_ADDR, tx_chan),
+            regmap::SWREG_TX_ERR + regmap::SWREG_CHAN_OFFSET * tx_chan);
+    }
+    for (size_t rx_chan = 0; rx_chan < get_num_input_ports(); rx_chan++) {
+        // Set the EPID and port of our regs() object (all async messages go to
+        // the same location)
+        regs().poke32(
+            get_addr(regmap::REG_RX_ERR_REM_EPID, rx_chan), regs().get_src_epid());
+        regs().poke32(
+            get_addr(regmap::REG_RX_ERR_REM_PORT, rx_chan), regs().get_port_num());
+        // Set the crossbar port for the async packet routing
+        regs().poke32(get_addr(regmap::REG_RX_ERR_PORT, rx_chan), xbar_port);
+        // Set the async message address
+        regs().poke32(get_addr(regmap::REG_RX_ERR_ADDR, rx_chan),
+            regmap::SWREG_RX_ERR + regmap::SWREG_CHAN_OFFSET * rx_chan);
+    }
+    // Now register a function to receive the async messages
+    regs().register_async_msg_handler(
+        [this](uint32_t addr, const std::vector<uint32_t>& data) {
+            this->async_message_handler(addr, data);
+        });
+} /* ctor */
 
 /******************************************************************************
  * Rate-Related API Calls
@@ -374,11 +408,6 @@ double radio_control_impl::set_rx_bandwidth(const double bandwidth, const size_t
     std::lock_guard<std::mutex> l(_cache_mutex);
     return _rx_bandwidth[chan] = bandwidth;
 }
-
-//void radio_control_impl::set_time_sync(const uhd::time_spec_t& time)
-//{
-    //// FIXME
-//}
 
 std::string radio_control_impl::get_tx_antenna(const size_t chan) const
 {
@@ -709,8 +738,7 @@ void radio_control_impl::issue_stream_cmd(
     // std::lock_guard<std::mutex> lock(_mutex);
     RFNOC_LOG_TRACE("radio_control_impl::issue_stream_cmd(chan="
                     << chan << ", mode=" << char(stream_cmd.stream_mode) << ")");
-    //_continuous_streaming[chan] =
-    //(stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
+    _last_stream_cmd[chan] = stream_cmd;
 
     // calculate the command word
     const std::unordered_map<stream_cmd_t::stream_mode_t, uint32_t, std::hash<size_t>>
@@ -765,7 +793,67 @@ void radio_control_impl::issue_stream_cmd(
 void radio_control_impl::async_message_handler(
     uint32_t addr, const std::vector<uint32_t>& data)
 {
+    if (data.empty()) {
+        RFNOC_LOG_WARNING(
+            str(boost::format("Received async message with invalid length %d!")
+                % data.size()));
+        return;
+    }
+    if (data.size() > 1) {
+        RFNOC_LOG_WARNING(
+            str(boost::format("Received async message with extra data, length %d!")
+                % data.size()));
+    }
+    // Reminder: The address is calculated as:
+    // BASE + 64 * chan + addr_offset
+    // BASE == 0x0000 for RX, 0x1000 for TX
+    const uint32_t addr_base = (addr >= regmap::SWREG_RX_ERR) ? regmap::SWREG_RX_ERR
+                                                              : regmap::SWREG_TX_ERR;
+    const uint32_t chan        = (addr - addr_base) / regmap::SWREG_CHAN_OFFSET;
+    const uint32_t addr_offset = addr % regmap::SWREG_CHAN_OFFSET;
+    const uint32_t code        = data[0];
     RFNOC_LOG_TRACE(
-        str(boost::format("Received async message to addr 0x%08X, data length %d words.")
-            % addr % data.size()));
+        str(boost::format("Received async message to addr 0x%08X, data length %d words, "
+                          "%s channel %d, addr_offset %d")
+            % addr % data.size() % (addr_base == regmap::SWREG_TX_ERR ? "TX" : "RX")
+            % chan % addr_offset));
+    switch (addr_base + addr_offset) {
+        case regmap::SWREG_TX_ERR: {
+            switch (code) {
+                case err_codes::ERR_TX_UNDERRUN:
+                    UHD_LOG_FASTPATH("U");
+                    break;
+                case err_codes::ERR_TX_LATE_DATA:
+                    UHD_LOG_FASTPATH("L");
+                    break;
+            }
+            break;
+        }
+        case regmap::SWREG_RX_ERR: {
+            switch (code) {
+                case err_codes::ERR_RX_OVERRUN: {
+                    UHD_LOG_FASTPATH("O");
+                    auto rx_event_action        = rx_event_action_info::make();
+                    rx_event_action->error_code = uhd::rx_metadata_t::ERROR_CODE_OVERFLOW;
+                    RFNOC_LOG_TRACE("Posting overrun event action message.");
+                    post_action(res_source_info{res_source_info::OUTPUT_EDGE, chan},
+                        rx_event_action);
+                    break;
+                }
+                case err_codes::ERR_RX_LATE_CMD:
+                    UHD_LOG_FASTPATH("L");
+                    break;
+            }
+            break;
+        }
+        case regmap::SWREG_TX_ERR + 8:
+        case regmap::SWREG_TX_ERR + 12:
+        case regmap::SWREG_RX_ERR + 8:
+        case regmap::SWREG_RX_ERR + 12:
+            RFNOC_LOG_TRACE("Dropping timestamp info for async message.");
+            break;
+        default:
+            RFNOC_LOG_WARNING(str(
+                boost::format("Received async message to invalid addr 0x%08X!") % addr));
+    }
 }
