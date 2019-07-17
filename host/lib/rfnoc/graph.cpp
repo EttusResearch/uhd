@@ -417,8 +417,9 @@ void graph_t::enqueue_action(
         // The following call can cause other nodes to add more actions to
         // the end of _action_queue!
         UHD_LOG_TRACE(LOG_ID,
-            "Now delivering action " << next_action_sptr->key << "#"
-                                     << next_action_sptr->id);
+            "Now delivering action "
+                << next_action_sptr->key << "#" << next_action_sptr->id << " to "
+                << recipient_node->get_unique_id() << "@" << recipient_port.to_string());
         node_accessor_t{}.send_action(recipient_node, recipient_port, next_action_sptr);
     }
     UHD_LOG_TRACE(LOG_ID, "Delivered all actions, terminating action handling.");

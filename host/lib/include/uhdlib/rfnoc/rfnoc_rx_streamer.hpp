@@ -11,6 +11,7 @@
 #include <uhdlib/rfnoc/chdr_rx_data_xport.hpp>
 #include <uhdlib/transport/rx_streamer_impl.hpp>
 #include <string>
+#include <atomic>
 
 namespace uhd { namespace rfnoc {
 
@@ -77,6 +78,13 @@ public:
 private:
     void _register_props(const size_t chan, const std::string& otw_format);
 
+    void _handle_rx_event_action(
+        const res_source_info& src, rx_event_action_info::sptr rx_event_action);
+    void _handle_restart_request(
+        const res_source_info& src, action_info::sptr rx_event_action);
+    void _handle_stream_cmd_action(
+        const res_source_info& src, stream_cmd_action_info::sptr stream_cmd_action);
+
     // Properties
     std::vector<property_t<double>> _scaling_in;
     std::vector<property_t<double>> _samp_rate_in;
@@ -88,6 +96,8 @@ private:
 
     // Stream args provided at construction
     const uhd::stream_args_t _stream_args;
+
+    std::atomic<bool> _overrun_handling_mode{false};
 };
 
 }} // namespace uhd::rfnoc

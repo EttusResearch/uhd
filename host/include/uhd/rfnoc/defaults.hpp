@@ -29,6 +29,7 @@ static const io_type_t IO_TYPE_SC16 = "sc16";
 
 static const std::string ACTION_KEY_STREAM_CMD("stream_cmd");
 static const std::string ACTION_KEY_RX_EVENT("rx_event");
+static const std::string ACTION_KEY_RX_RESTART_REQ("restart_request");
 
 //! If the block name can't be automatically detected, this name is used
 static const std::string DEFAULT_BLOCK_NAME = "Block";
