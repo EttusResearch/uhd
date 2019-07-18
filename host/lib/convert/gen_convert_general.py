@@ -5,6 +5,9 @@
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
+"""
+Auto-Generator for generic converters
+"""
 
 TMPL_HEADER = """
 <%
@@ -16,6 +19,7 @@ TMPL_HEADER = """
 
 #include "convert_common.hpp"
 #include <uhd/utils/byteswap.hpp>
+#include <algorithm>
 
 using namespace uhd::convert;
 
@@ -27,6 +31,48 @@ DECLARE_CONVERTER(item32, 1, item32, 1, PRIORITY_GENERAL) {
 
     memcpy(output, input, nsamps * sizeof(item32_t));
 }
+"""
+
+TMPL_CONV_CHDR_SC16_TO_FP = """
+DECLARE_CONVERTER({fctype}, 1, sc16_chdr, 1, PRIORITY_GENERAL) {{
+    // Note: We convert I and Q separately, because there's no optimized
+    // constructor to create a complex<{fptype}> from a complex<int16_t>. This
+    // means we need to multiply nsamps by 2
+    const {fptype}* input = reinterpret_cast<const {fptype}*>(inputs[0]);
+    int16_t* output = reinterpret_cast<int16_t*>(outputs[0]);
+
+    for (size_t i = 0; i < nsamps * 2; i += 2) {{
+        output[i]   = static_cast<int16_t>(input[i]   * {fptype}(scale_factor));
+        output[i+1] = static_cast<int16_t>(input[i+1] * {fptype}(scale_factor));
+    }}
+}}
+
+DECLARE_CONVERTER(sc16_chdr, 1, {fctype}, 1, PRIORITY_GENERAL) {{
+    // Note: We convert I and Q separately, because there's no optimized
+    // constructor to create a complex<{fptype}> from a complex<int16_t>. This
+    // means we need to multiply nsamps by 2
+    const int16_t* input = reinterpret_cast<const int16_t*>(inputs[0]);
+    {fptype}* output = reinterpret_cast<{fptype}*>(outputs[0]);
+
+    for (size_t i = 0; i < nsamps * 2; i += 2) {{
+        output[i]   = static_cast<{fptype}>(input[i])   * {fptype}(scale_factor);
+        output[i+1] = static_cast<{fptype}>(input[i+1]) * {fptype}(scale_factor);
+    }}
+}}
+"""
+
+# For CHDR converters, all converters where the input and output type are the
+# same can be done by a memcpy, because we can do the endianness adaptation in
+# the FPGA.
+TMPL_CONV_CHDR_MEMCPY = """
+DECLARE_CONVERTER({in_type}, 1, {out_type}, 1, PRIORITY_GENERAL) {{
+    const {ptr_type} *input = reinterpret_cast<const {ptr_type} *>(inputs[0]);
+    {ptr_type}* output = reinterpret_cast<{ptr_type}*>(outputs[0]);
+
+    // Benchmark shows that copy_n can be significantly slower in some cases
+    //std::copy_n(input, nsamps, output);
+    memcpy(output, input, sizeof({ptr_type}) * nsamps);
+}}
 """
 
 # Some 32-bit types converters are also defined in convert_item32.cpp to
@@ -177,10 +223,35 @@ def parse_tmpl(_tmpl_text, **kwargs):
     return Template(_tmpl_text).render(**kwargs)
 
 if __name__ == '__main__':
-    import sys, os
+    import sys
+    import os
     file = os.path.basename(__file__)
     output = parse_tmpl(TMPL_HEADER, file=file)
 
+    for fctype, fptype in (
+            ('fc32', 'float'),
+            ('fc64', 'double'),
+        ):
+        output += TMPL_CONV_CHDR_SC16_TO_FP.format(
+            fctype=fctype, fptype=fptype)
+
+    ## Generate CHDR converters
+    # These guys don't have to worry about endianness
+    for uhd_type, ptr_type in (
+            ('u8', 'uint8_t'),
+            ('s8', 'int8_t'),
+            ('s16', 'int16_t'),
+            ('f32', 'float'),
+            ('sc8', 'std::complex<int8_t>'),
+            ('sc16', 'std::complex<int16_t>'),
+            ('fc32', 'std::complex<float>'),
+            ('fc64', 'std::complex<double>'),
+    ):
+        for in_type, out_type in ((uhd_type + '_chdr', uhd_type), (uhd_type, uhd_type + '_chdr')):
+            output += TMPL_CONV_CHDR_MEMCPY.format(
+                in_type=in_type,
+                out_type=out_type,
+                ptr_type=ptr_type)
     ## Generate all data types that are exactly
     ## item32 or multiples thereof:
     for end in ('be', 'le'):

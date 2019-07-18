@@ -110,6 +110,20 @@ BOOST_AUTO_TEST_CASE(test_convert_types_le_sc16)
     }
 }
 
+BOOST_AUTO_TEST_CASE(test_convert_types_chdr_sc16)
+{
+    convert::id_type id;
+    id.input_format  = "sc16";
+    id.num_inputs    = 1;
+    id.output_format = "sc16_chdr";
+    id.num_outputs   = 1;
+
+    // try various lengths to test edge cases
+    for (size_t nsamps = 1; nsamps < 16; nsamps++) {
+        test_convert_types_sc16(nsamps, id);
+    }
+}
+
 /***********************************************************************
  * Test float conversion
  **********************************************************************/
@@ -175,6 +189,20 @@ BOOST_AUTO_TEST_CASE(test_convert_types_le_fc32)
     }
 }
 
+BOOST_AUTO_TEST_CASE(test_convert_types_chdr_fc32)
+{
+    convert::id_type id;
+    id.input_format  = "fc32";
+    id.num_inputs    = 1;
+    id.output_format = "sc16_chdr";
+    id.num_outputs   = 1;
+
+    // try various lengths to test edge cases
+    for (size_t nsamps = 1; nsamps < 16; nsamps++) {
+        test_convert_types_for_floats<fc32_t>(nsamps, id);
+    }
+}
+
 BOOST_AUTO_TEST_CASE(test_convert_types_be_fc64)
 {
     convert::id_type id;
@@ -195,6 +223,20 @@ BOOST_AUTO_TEST_CASE(test_convert_types_le_fc64)
     id.input_format  = "fc64";
     id.num_inputs    = 1;
     id.output_format = "sc16_item32_le";
+    id.num_outputs   = 1;
+
+    // try various lengths to test edge cases
+    for (size_t nsamps = 1; nsamps < 16; nsamps++) {
+        test_convert_types_for_floats<fc64_t>(nsamps, id);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(test_convert_types_chdr_fc64)
+{
+    convert::id_type id;
+    id.input_format  = "fc64";
+    id.num_inputs    = 1;
+    id.output_format = "sc16_chdr";
     id.num_outputs   = 1;
 
     // try various lengths to test edge cases
@@ -286,6 +328,20 @@ BOOST_AUTO_TEST_CASE(test_convert_types_be_fc32_with_fc32)
     id.input_format  = "fc32";
     id.num_inputs    = 1;
     id.output_format = "fc32_item32_be";
+    id.num_outputs   = 1;
+
+    // try various lengths to test edge cases
+    for (size_t nsamps = 1; nsamps < 16; nsamps++) {
+        test_convert_types_for_floats<fc32_t>(nsamps, id);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(test_convert_types_fc32_with_fc32_chdr)
+{
+    convert::id_type id;
+    id.input_format  = "fc32";
+    id.num_inputs    = 1;
+    id.output_format = "fc32_chdr";
     id.num_outputs   = 1;
 
     // try various lengths to test edge cases
@@ -488,6 +544,20 @@ BOOST_AUTO_TEST_CASE(test_convert_types_u8_and_u8)
     }
 }
 
+BOOST_AUTO_TEST_CASE(test_convert_types_u8_and_u8_chdr)
+{
+    convert::id_type id;
+    id.input_format  = "u8";
+    id.output_format = "u8_chdr";
+    id.num_inputs    = 1;
+    id.num_outputs   = 1;
+
+    // try various lengths to test edge cases
+    for (size_t nsamps = 1; nsamps < 16; nsamps++) {
+        test_convert_types_u8(nsamps, id);
+    }
+}
+
 /***********************************************************************
  * Test s8 conversion
  **********************************************************************/
@@ -528,6 +598,20 @@ BOOST_AUTO_TEST_CASE(test_convert_types_s8_and_s8)
     }
 }
 
+BOOST_AUTO_TEST_CASE(test_convert_types_s8_and_s8_chdr)
+{
+    convert::id_type id;
+    id.input_format  = "s8";
+    id.output_format = "s8_chdr";
+    id.num_inputs    = 1;
+    id.num_outputs   = 1;
+
+    // try various lengths to test edge cases
+    for (size_t nsamps = 1; nsamps < 16; nsamps++) {
+        test_convert_types_s8(nsamps, id);
+    }
+}
+
 /***********************************************************************
  * Test s16 conversion
  **********************************************************************/
@@ -563,6 +647,20 @@ BOOST_AUTO_TEST_CASE(test_convert_types_s16_and_s16)
 
     // try various lengths to test edge cases
     id.output_format = "s16_item32_be";
+    for (size_t nsamps = 1; nsamps < 16; nsamps++) {
+        test_convert_types_s16(nsamps, id);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(test_convert_types_s16_and_s16_chdr)
+{
+    convert::id_type id;
+    id.input_format  = "s16";
+    id.output_format = "s16_chdr";
+    id.num_inputs    = 1;
+    id.num_outputs   = 1;
+
+    // try various lengths to test edge cases
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
         test_convert_types_s16(nsamps, id);
     }
@@ -611,43 +709,16 @@ BOOST_AUTO_TEST_CASE(test_convert_types_fc32_and_fc32)
     }
 }
 
-/***********************************************************************
- * Test f32 -> f32 conversion
- **********************************************************************/
-static void test_convert_types_f32(size_t nsamps, convert::id_type& id)
-{
-    // fill the input samples
-    std::vector<float> input(nsamps), output(nsamps);
-    for (float& in : input)
-        in = float((float(std::rand()) / float(RAND_MAX / 2)) - 1);
-
-    // run the loopback and test
-    convert::id_type in_id  = id;
-    convert::id_type out_id = id;
-    std::swap(out_id.input_format, out_id.output_format);
-    std::swap(out_id.num_inputs, out_id.num_outputs);
-    loopback(nsamps, in_id, out_id, input, output);
-    for (size_t i = 0; i < nsamps; i++) {
-        MY_CHECK_CLOSE(input[i], output[i], float(1. / (1 << 16)));
-    }
-}
-
-BOOST_AUTO_TEST_CASE(test_convert_types_f32_and_f32)
+BOOST_AUTO_TEST_CASE(test_convert_types_fc32_and_fc32_chdr)
 {
     convert::id_type id;
-    id.input_format = "f32";
+    id.input_format  = "fc32";
+    id.output_format = "fc32_chdr";
     id.num_inputs   = 1;
     id.num_outputs  = 1;
 
     // try various lengths to test edge cases
-    id.output_format = "f32_item32_le";
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {
-        test_convert_types_f32(nsamps, id);
-    }
-
-    // try various lengths to test edge cases
-    id.output_format = "f32_item32_be";
-    for (size_t nsamps = 1; nsamps < 16; nsamps++) {
-        test_convert_types_f32(nsamps, id);
+        test_convert_types_fc32(nsamps, id);
     }
 }
