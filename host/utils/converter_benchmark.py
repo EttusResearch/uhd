@@ -13,6 +13,7 @@ from __future__ import print_function
 import argparse
 import csv
 import subprocess
+from six import iteritems
 
 INTRO_SETUP = {
     'n_samples': {
@@ -38,7 +39,7 @@ TABLE_SETUP = {
 def run_benchmark(args):
     """ Run the tool with the given arguments, return the section in the {{{ }}} brackets """
     call_args = ['./converter_benchmark',]
-    for k, v in args.__dict__.iteritems():
+    for k, v in iteritems(args.__dict__):
         k = k.replace('_', '-')
         if v is None:
             continue
@@ -50,7 +51,7 @@ def run_benchmark(args):
         call_args.append(str(v))
     print(call_args)
     try:
-        output = subprocess.check_output(call_args)
+        output = subprocess.check_output(call_args).decode('utf-8')
     except subprocess.CalledProcessError as ex:
         print(ex.output)
         exit(ex.returncode)
@@ -64,12 +65,12 @@ def print_stats_table(args, csv_output):
     Print stats.
     """
     reader = csv.reader(csv_output.strip().split('\n'), delimiter=',')
-    title_row = reader.next()
+    title_row = next(reader)
     row_widths = [0,] * len(TABLE_SETUP)
     for idx, row in enumerate(reader):
         if idx == 0:
             # Print intro:
-            for k, v in INTRO_SETUP.iteritems():
+            for k, v in iteritems(INTRO_SETUP):
                 print("{title}: {value}".format(
                     title=v['title'],
                     value=row[title_row.index(k)],
