@@ -114,6 +114,26 @@ UHD_INLINE void xx_to_item32_sc16(
     }
 }
 
+template <typename T>
+UHD_FORCE_INLINE sc16_t xx_to_sc16_x1(
+    const std::complex<T>& num, const double scale_factor)
+{
+    uint16_t real = int16_t(num.real() * T(scale_factor));
+    uint16_t imag = int16_t(num.imag() * T(scale_factor));
+    return sc16_t(real, imag);
+}
+
+template <typename T>
+UHD_FORCE_INLINE void xx_to_chdr_sc16(const std::complex<T>* input,
+    sc16_t* output,
+    const size_t nsamps,
+    const double scale_factor)
+{
+    for (size_t i = 0; i < nsamps; i++) {
+        output[i] = xx_to_sc16_x1(input[i], scale_factor);
+    }
+}
+
 /***********************************************************************
  * Convert items32 sc16 buffer to xx
  **********************************************************************/
@@ -144,6 +164,25 @@ UHD_INLINE void item32_sc16_to_xx(
     for (size_t i = 0; i < nsamps; i++){
         const item32_t item_i = to_host(input[i]);
         output[i] = item32_sc16_x1_to_xx<T>(item_i, scale_factor);
+    }
+}
+
+template <typename T>
+UHD_FORCE_INLINE std::complex<T> chdr_sc16_x1_to_xx(
+    const sc16_t item, const double scale_factor)
+{
+    return std::complex<T>(
+        T(item.real()) * T(scale_factor), T(item.imag()) * T(scale_factor));
+}
+
+template <typename T>
+UHD_FORCE_INLINE void chdr_sc16_to_xx(const sc16_t* input,
+    std::complex<T>* output,
+    const size_t nsamps,
+    const double scale_factor)
+{
+    for (size_t i = 0; i < nsamps; i++) {
+        output[i] = chdr_sc16_x1_to_xx<T>(input[i], scale_factor);
     }
 }
 

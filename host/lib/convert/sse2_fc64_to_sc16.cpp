@@ -107,3 +107,48 @@ DECLARE_CONVERTER(fc64, 1, sc16_item32_be, 1, PRIORITY_SIMD)
     // convert remainder
     xx_to_item32_sc16<uhd::htonx>(input + i, output + i, nsamps - i, scale_factor);
 }
+
+DECLARE_CONVERTER(fc64, 1, sc16_chdr, 1, PRIORITY_SIMD)
+{
+    const fc64_t* input = reinterpret_cast<const fc64_t*>(inputs[0]);
+    sc16_t* output      = reinterpret_cast<sc16_t*>(outputs[0]);
+
+    const __m128d scalar = _mm_set1_pd(scale_factor);
+
+#define convert_fc64_1_to_chdr_1_guts(_al_)                                           \
+    for (; i + 3 < nsamps; i += 4) {                                                  \
+        /* load from input */                                                         \
+        __m128d tmp0 =                                                                \
+            _mm_load##_al_##pd(reinterpret_cast<const double*>(input + i + 0));       \
+        __m128d tmp1 =                                                                \
+            _mm_load##_al_##pd(reinterpret_cast<const double*>(input + i + 1));       \
+        __m128d tmp2 =                                                                \
+            _mm_load##_al_##pd(reinterpret_cast<const double*>(input + i + 2));       \
+        __m128d tmp3 =                                                                \
+            _mm_load##_al_##pd(reinterpret_cast<const double*>(input + i + 3));       \
+                                                                                      \
+        /* convert and scale */                                                       \
+        __m128i tmpi0  = _mm_cvttpd_epi32(_mm_mul_pd(tmp0, scalar));                  \
+        __m128i tmpi1  = _mm_cvttpd_epi32(_mm_mul_pd(tmp1, scalar));                  \
+        __m128i tmpilo = _mm_unpacklo_epi64(tmpi0, tmpi1);                            \
+        __m128i tmpi2  = _mm_cvttpd_epi32(_mm_mul_pd(tmp2, scalar));                  \
+        __m128i tmpi3  = _mm_cvttpd_epi32(_mm_mul_pd(tmp3, scalar));                  \
+        __m128i tmpihi = _mm_unpacklo_epi64(tmpi2, tmpi3);                            \
+                                                                                      \
+        /* store to output */                                                         \
+        _mm_storeu_si128(                                                             \
+            reinterpret_cast<__m128i*>(output + i), _mm_packs_epi32(tmpilo, tmpihi)); \
+    }
+
+    size_t i = 0;
+
+    // dispatch according to alignment
+    if ((size_t(input) & 0xf) == 0) {
+        convert_fc64_1_to_chdr_1_guts(_)
+    } else {
+        convert_fc64_1_to_chdr_1_guts(u_)
+    }
+
+    // convert remainder
+    xx_to_chdr_sc16(input + i, output + i, nsamps - i, scale_factor);
+}
