@@ -1162,7 +1162,7 @@ void ad9361_device_t::_setup_synth(direction_t direction, double vcorate)
  * fed to the public set_clock_rate function. */
 double ad9361_device_t::_tune_bbvco(const double rate)
 {
-    UHD_LOGGER_TRACE("AD936X")<< boost::format("[ad9361_device_t::_tune_bbvco] rate=%.10f\n") % rate;
+    UHD_LOG_TRACE("AD936X", "[ad9361_device_t::_tune_bbvco] rate=" << rate);
 
     /* Let's not re-tune to the same frequency over and over... */
     if (freq_is_nearly_equal(rate, _req_coreclk)) {
@@ -1190,13 +1190,18 @@ double ad9361_device_t::_tune_bbvco(const double rate)
     if (i == 7)
         throw uhd::runtime_error("[ad9361_device_t] _tune_bbvco: wrong vcorate");
 
-    UHD_LOGGER_TRACE("AD936X")<< boost::format("[ad9361_device_t::_tune_bbvco] vcodiv=%d vcorate=%.10f\n") % vcodiv % vcorate;
+    UHD_LOG_TRACE("AD936X",
+        boost::format("[ad9361_device_t::_tune_bbvco] vcodiv=%d vcorate=%.10f") % vcodiv
+            % vcorate);
     /* Fo = Fref * (Nint + Nfrac / mod) */
     int nint = static_cast<int>(vcorate / fref);
-    UHD_LOGGER_TRACE("AD936X")<< boost::format("[ad9361_device_t::_tune_bbvco] (nint)=%.10f\n") % (vcorate / fref);
+    UHD_LOG_TRACE("AD936X", "[ad9361_device_t::_tune_bbvco] (nint)=" << (vcorate / fref));
     int nfrac = static_cast<int>(boost::math::round(((vcorate / fref) - (double) nint) * (double) modulus));
-    UHD_LOGGER_TRACE("AD936X")<< boost::format("[ad9361_device_t::_tune_bbvco] (nfrac)=%.10f\n") % (((vcorate / fref) - (double) nint) * (double) modulus);
-    UHD_LOGGER_TRACE("AD936X")<< boost::format("[ad9361_device_t::_tune_bbvco] nint=%d nfrac=%d\n") % nint % nfrac;
+    UHD_LOG_TRACE("AD936X",
+        "[ad9361_device_t::_tune_bbvco] (nfrac)=" << ((vcorate / fref) - (double)nint)
+                                                         * (double)modulus);
+    UHD_LOG_TRACE("AD936X",
+        boost::format("[ad9361_device_t::_tune_bbvco] nint=%d nfrac=%d") % nint % nfrac);
     double actual_vcorate = fref
             * ((double) nint + ((double) nfrac / (double) modulus));
 
@@ -1374,7 +1379,7 @@ double ad9361_device_t::_setup_rates(const double rate)
     /* If we make it into this function, then we are tuning to a new rate.
      * Store the new rate. */
     _req_clock_rate = rate;
-    UHD_LOGGER_TRACE("AD936X")<< boost::format("[ad9361_device_t::_setup_rates] rate=%.6d\n") % rate;
+    UHD_LOG_TRACE("AD936X", "[ad9361_device_t::_setup_rates] rate=" << rate);
 
     /* Set the decimation and interpolation values in the RX and TX chains.
      * This also switches filters in / out. Note that all transmitters and
@@ -1461,7 +1466,7 @@ double ad9361_device_t::_setup_rates(const double rate)
         throw uhd::runtime_error("[ad9361_device_t] [_setup_rates] INVALID_CODE_PATH");
     }
 
-    UHD_LOGGER_TRACE("AD936X")<< boost::format("[ad9361_device_t::_setup_rates] divfactor=%d\n") % divfactor;
+    UHD_LOG_TRACE("AD936X", "[ad9361_device_t::_setup_rates] divfactor=" << divfactor);
 
     /* Tune the BBPLL to get the ADC and DAC clocks. */
     const double adcclk = _tune_bbvco(rate * divfactor);
@@ -1483,7 +1488,7 @@ double ad9361_device_t::_setup_rates(const double rate)
     _io_iface->poke8(0x004, _regs.inputsel);
     _io_iface->poke8(0x00A, _regs.bbpll);
 
-    UHD_LOGGER_TRACE("AD936X")<< boost::format("[ad9361_device_t::_setup_rates] adcclk=%f\n") % adcclk;
+    UHD_LOG_TRACE("AD936X", "[ad9361_device_t::_setup_rates] adcclk=" << adcclk);
     _baseband_bw = (adcclk / divfactor);
 
     /*
@@ -1792,7 +1797,7 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
         throw uhd::runtime_error("[ad9361_device_t] Requested master clock rate outside range");
     }
 
-    UHD_LOGGER_TRACE("AD936X")<< boost::format("[ad9361_device_t::set_clock_rate] req_rate=%.10f\n") % req_rate;
+    UHD_LOG_TRACE("AD936X", "[ad9361_device_t::set_clock_rate] req_rate=" << req_rate);
 
     /* UHD has a habit of requesting the same rate like four times when it
      * starts up. This prevents that, and any bugs in user code that request
@@ -1834,7 +1839,7 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
      * all the hard work gets done. */
     double rate = _setup_rates(req_rate);
 
-    UHD_LOGGER_TRACE("AD936X")<< boost::format("[ad9361_device_t::set_clock_rate] rate=%.10f\n") % rate;
+    UHD_LOG_TRACE("AD936X", "[ad9361_device_t::set_clock_rate] rate=" << rate);
 
     /* Transition to the ALERT state and calibrate everything. */
     _io_iface->poke8(0x015, 0x04); //dual synth mode, synth en ctrl en
