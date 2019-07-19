@@ -57,7 +57,6 @@ static uint8_t checksum(const byte_vector_t &bytes){
     for (size_t i = 0; i < std::min(bytes.size(), size_t(DB_EEPROM_CHKSUM)); i++){
         sum -= int(bytes.at(i));
     }
-    UHD_LOG_TRACE("DB_EEPROM", boost::format("byte sum: 0x%02x") % sum)
     return uint8_t(sum);
 }
 
@@ -70,13 +69,6 @@ void dboard_eeprom_t::load(i2c_iface &iface, uint8_t addr){
     byte_vector_t bytes = iface.read_eeprom(addr, 0, DB_EEPROM_CLEN);
 
     std::ostringstream ss;
-    for (size_t i = 0; i < bytes.size(); i++){
-        UHD_LOG_TRACE("DB_EEPROM",
-            boost::format("eeprom byte[0x%02x] = 0x%02x")
-            % i
-            % int(bytes.at(i))
-        );
-    }
 
     try{
         UHD_ASSERT_THROW(bytes.size() >= DB_EEPROM_CLEN);
