@@ -9,15 +9,16 @@
 #define INCLUDED_LIBUHD_USRP_TX_FRONTEND_CORE_3000_HPP
 
 #include <uhd/config.hpp>
-#include <uhd/types/wb_iface.hpp>
 #include <uhd/property_tree.hpp>
+#include <uhd/types/wb_iface.hpp>
 #include <uhd/usrp/fe_connection.hpp>
 #include <uhd/utils/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <complex>
 #include <string>
 
-class rx_frontend_core_3000 : uhd::noncopyable{
+class rx_frontend_core_3000 : uhd::noncopyable
+{
 public:
     static const std::complex<double> DEFAULT_DC_OFFSET_VALUE;
     static const bool DEFAULT_DC_OFFSET_ENABLE;
@@ -39,9 +40,9 @@ public:
 
     virtual void set_dc_offset_auto(const bool enb) = 0;
 
-    virtual std::complex<double> set_dc_offset(const std::complex<double> &off) = 0;
+    virtual std::complex<double> set_dc_offset(const std::complex<double>& off) = 0;
 
-    virtual void set_iq_balance(const std::complex<double> &cor) = 0;
+    virtual void set_iq_balance(const std::complex<double>& cor) = 0;
 
     virtual void populate_subtree(uhd::property_tree::sptr subtree) = 0;
 
@@ -53,7 +54,6 @@ public:
      * \returns RX sampling rate
      */
     virtual double get_output_rate(void) = 0;
-
 };
 
 #endif /* INCLUDED_LIBUHD_USRP_TX_FRONTEND_CORE_3000_HPP */
