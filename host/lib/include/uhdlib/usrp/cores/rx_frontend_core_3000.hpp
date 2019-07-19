@@ -28,7 +28,8 @@ public:
 
     virtual ~rx_frontend_core_3000(void) = 0;
 
-    static sptr make(uhd::wb_iface::sptr iface, const size_t base);
+    static sptr make(
+        uhd::wb_iface::sptr iface, const size_t base, const size_t reg_offset = 4);
 
     /*! Set the input sampling rate (i.e. ADC rate)
      */

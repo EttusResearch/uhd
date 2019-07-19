@@ -16,12 +16,12 @@
 
 using namespace uhd;
 
-#define REG_RX_FE_MAG_CORRECTION (_base + 0) // 18 bits
-#define REG_RX_FE_PHASE_CORRECTION (_base + 4) // 18 bits
-#define REG_RX_FE_OFFSET_I (_base + 8) // 18 bits
-#define REG_RX_FE_OFFSET_Q (_base + 12) // 18 bits
-#define REG_RX_FE_MAPPING (_base + 16)
-#define REG_RX_FE_HET_CORDIC_PHASE (_base + 20)
+#define REG_RX_FE_MAG_CORRECTION (base + reg_offset * 0) // 18 bits
+#define REG_RX_FE_PHASE_CORRECTION (base + reg_offset * 1) // 18 bits
+#define REG_RX_FE_OFFSET_I (base + reg_offset * 2) // 18 bits
+#define REG_RX_FE_OFFSET_Q (base + reg_offset * 3) // 18 bits
+#define REG_RX_FE_MAPPING (base + reg_offset * 4)
+#define REG_RX_FE_HET_CORDIC_PHASE (base + reg_offset * 5)
 
 #define FLAG_DSP_RX_MAPPING_SWAP_IQ (1 << 0)
 #define FLAG_DSP_RX_MAPPING_REAL_MODE (1 << 1)
@@ -62,13 +62,19 @@ const std::complex<double> rx_frontend_core_3000::DEFAULT_IQ_BALANCE_VALUE =
 class rx_frontend_core_3000_impl : public rx_frontend_core_3000
 {
 public:
-    rx_frontend_core_3000_impl(wb_iface::sptr iface, const size_t base)
+    rx_frontend_core_3000_impl(
+        wb_iface::sptr iface, const size_t base, const size_t reg_offset)
         : _i_dc_off(0)
         , _q_dc_off(0)
         , _adc_rate(0.0)
         , _fe_conn(fe_connection_t("IQ"))
         , _iface(iface)
-        , _base(base)
+        , _rx_fe_mag_corr_reg(REG_RX_FE_MAG_CORRECTION)
+        , _rx_fe_phase_corr_reg(REG_RX_FE_PHASE_CORRECTION)
+        , _rx_fe_offset_i_reg(REG_RX_FE_OFFSET_I)
+        , _rx_fe_offset_q_reg(REG_RX_FE_OFFSET_Q)
+        , _rx_fe_mapping_reg(REG_RX_FE_MAPPING)
+        , _rx_fe_het_cordic_phase_reg(REG_RX_FE_HET_CORDIC_PHASE)
     {
         // NOP
     }
@@ -81,7 +87,7 @@ public:
     void bypass_all(bool bypass_en)
     {
         if (bypass_en) {
-            _iface->poke32(REG_RX_FE_MAPPING, FLAG_DSP_RX_MAPPING_BYPASS_ALL);
+            _iface->poke32(_rx_fe_mapping_reg, FLAG_DSP_RX_MAPPING_BYPASS_ALL);
         } else {
             set_fe_connection(_fe_conn);
         }
@@ -110,7 +116,7 @@ public:
         if (fe_conn.is_q_inverted())
             mapping_reg_val |= FLAG_DSP_RX_MAPPING_INVERT_Q;
 
-        _iface->poke32(REG_RX_FE_MAPPING, mapping_reg_val);
+        _iface->poke32(_rx_fe_mapping_reg, mapping_reg_val);
 
         UHD_ASSERT_THROW(_adc_rate != 0.0)
         if (fe_conn.get_sampling_mode() == fe_connection_t::HETERODYNE) {
@@ -130,7 +136,7 @@ public:
             UHD_ASSERT_THROW(uhd::math::fp_compare::fp_compare_epsilon<double>(4.0)
                              == std::abs(_adc_rate / cordic_freq));
 
-            _iface->poke32(REG_RX_FE_HET_CORDIC_PHASE, (cordic_freq > 0) ? 0 : 1);
+            _iface->poke32(_rx_fe_het_cordic_phase_reg, (cordic_freq > 0) ? 0 : 1);
         }
 
 
@@ -155,14 +161,14 @@ public:
 
     void _set_dc_offset(const uint32_t flags)
     {
-        _iface->poke32(REG_RX_FE_OFFSET_I, flags | (_i_dc_off & ~FLAG_MASK));
-        _iface->poke32(REG_RX_FE_OFFSET_Q, flags | (_q_dc_off & ~FLAG_MASK));
+        _iface->poke32(_rx_fe_offset_i_reg, flags | (_i_dc_off & ~FLAG_MASK));
+        _iface->poke32(_rx_fe_offset_q_reg, flags | (_q_dc_off & ~FLAG_MASK));
     }
 
     void set_iq_balance(const std::complex<double>& cor)
     {
-        _iface->poke32(REG_RX_FE_MAG_CORRECTION, fs_to_bits(cor.real(), 18));
-        _iface->poke32(REG_RX_FE_PHASE_CORRECTION, fs_to_bits(cor.imag(), 18));
+        _iface->poke32(_rx_fe_mag_corr_reg, fs_to_bits(cor.real(), 18));
+        _iface->poke32(_rx_fe_phase_corr_reg, fs_to_bits(cor.imag(), 18));
     }
 
     void populate_subtree(uhd::property_tree::sptr subtree)
@@ -198,11 +204,16 @@ private:
     double _adc_rate;
     fe_connection_t _fe_conn;
     wb_iface::sptr _iface;
-    const size_t _base;
+    const size_t _rx_fe_mag_corr_reg;
+    const size_t _rx_fe_phase_corr_reg;
+    const size_t _rx_fe_offset_i_reg;
+    const size_t _rx_fe_offset_q_reg;
+    const size_t _rx_fe_mapping_reg;
+    const size_t _rx_fe_het_cordic_phase_reg;
 };
 
 rx_frontend_core_3000::sptr rx_frontend_core_3000::make(
-    wb_iface::sptr iface, const size_t base)
+    wb_iface::sptr iface, const size_t base, const size_t reg_offset)
 {
-    return sptr(new rx_frontend_core_3000_impl(iface, base));
+    return sptr(new rx_frontend_core_3000_impl(iface, base, reg_offset));
 }
