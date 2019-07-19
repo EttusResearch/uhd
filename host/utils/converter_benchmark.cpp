@@ -46,8 +46,8 @@ void configure_conv(
 {
     if (in_type == "sc16") {
         if (out_type == "fc32") {
-            std::cout << "Setting scalar to 32767." << std::endl;
-            conv->set_scalar(32767.);
+            std::cout << "Setting scalar to 1./32767." << std::endl;
+            conv->set_scalar(1./32767.);
             return;
         }
     }
