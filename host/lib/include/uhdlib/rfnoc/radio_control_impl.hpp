@@ -269,7 +269,9 @@ private:
     // - Overrun info
     // - Underrun info
     // - Late data packets
-    void async_message_handler(uint32_t addr, const std::vector<uint32_t>& data);
+    void async_message_handler(uint32_t addr,
+        const std::vector<uint32_t>& data,
+        boost::optional<uint64_t> timestamp);
 
     //! FPGA compat number
     const uint32_t _fpga_compat;

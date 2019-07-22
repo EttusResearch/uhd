@@ -203,10 +203,11 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
             regmap::SWREG_RX_ERR + regmap::SWREG_CHAN_OFFSET * rx_chan);
     }
     // Now register a function to receive the async messages
-    regs().register_async_msg_handler(
-        [this](uint32_t addr, const std::vector<uint32_t>& data) {
-            this->async_message_handler(addr, data);
-        });
+    regs().register_async_msg_handler([this](uint32_t addr,
+                                          const std::vector<uint32_t>& data,
+                                          boost::optional<uint64_t> timestamp) {
+        this->async_message_handler(addr, data, timestamp);
+    });
 } /* ctor */
 
 /******************************************************************************
@@ -791,7 +792,7 @@ void radio_control_impl::issue_stream_cmd(
  * Private methods
  *****************************************************************************/
 void radio_control_impl::async_message_handler(
-    uint32_t addr, const std::vector<uint32_t>& data)
+    uint32_t addr, const std::vector<uint32_t>& data, boost::optional<uint64_t> timestamp)
 {
     if (data.empty()) {
         RFNOC_LOG_WARNING(
@@ -817,6 +818,10 @@ void radio_control_impl::async_message_handler(
                           "%s channel %d, addr_offset %d")
             % addr % data.size() % (addr_base == regmap::SWREG_TX_ERR ? "TX" : "RX")
             % chan % addr_offset));
+    if (timestamp) {
+        RFNOC_LOG_TRACE(
+            str(boost::format("Async message timestamp: %ul") % timestamp.get()));
+    }
     switch (addr_base + addr_offset) {
         case regmap::SWREG_TX_ERR: {
             switch (code) {

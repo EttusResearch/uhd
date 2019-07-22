@@ -275,7 +275,8 @@ public:
                     "CTRLEP", "Malformed async message request: Invalid num_data");
             } else {
                 try {
-                    _handle_async_msg(rx_ctrl.address, rx_ctrl.data_vtr);
+                    _handle_async_msg(
+                        rx_ctrl.address, rx_ctrl.data_vtr, rx_ctrl.timestamp);
                     status = CMD_OKAY;
                 } catch (...) {
                     UHD_LOG_ERROR("CTRLEP", "Async message handler threw an exception");

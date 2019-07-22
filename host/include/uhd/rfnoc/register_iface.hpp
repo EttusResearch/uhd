@@ -38,8 +38,8 @@ public:
      *  modelled as a simple register write (key-value pair with addr/data) that
      *  is initiated by the FPGA.
      */
-    using async_msg_callback_t =
-        std::function<void(uint32_t addr, const std::vector<uint32_t>& data)>;
+    using async_msg_callback_t = std::function<void(
+        uint32_t addr, const std::vector<uint32_t>& data, boost::optional<uint64_t>)>;
 
     /*! Write a 32-bit register implemented in the NoC block.
      *
