@@ -265,11 +265,19 @@ private: // member functions
             string.append(
                 str(boost::format("%.2f,M,") % _gps_data.fix.altitude));
 
+#if GPSD_API_MAJOR_VERSION < 9
         if (boost::math::isnan(_gps_data.separation))
             string.append(",,");
         else
             string.append(
                 str(boost::format("%.3f,M,") % _gps_data.separation));
+#else
+        if (boost::math::isnan(_gps_data.fix.geoid_sep))
+            string.append(",,");
+        else
+            string.append(
+                str(boost::format("%.3f,M,") % _gps_data.fix.geoid_sep));
+#endif
 
         if (boost::math::isnan(mag_var))
             string.append(",");
