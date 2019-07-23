@@ -15,20 +15,25 @@ namespace {
     std::atomic<size_t> action_counter{0};
 }
 
-action_info::action_info(const std::string& key_) : id(action_counter++), key(key_)
+action_info::action_info(const std::string& key, const uhd::device_addr_t& args)
+    : id(action_counter++), key(key), args(args)
 {
     // nop
 }
 
 //! Factory function
-action_info::sptr action_info::make(const std::string& key)
+action_info::sptr action_info::make(
+    const std::string& key, const uhd::device_addr_t& args)
 {
+    struct action_info_make_shared : public action_info
+    {
+    };
     if (key == ACTION_KEY_STREAM_CMD) {
         return stream_cmd_action_info::make(
             uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
     }
-    //return std::make_shared<action_info>(key);
-    return sptr(new action_info(key));
+    // return std::make_shared<action_info_make_shared>(key, args);
+    return sptr(new action_info(key, args));
 }
 
 /*** Stream Command Action Info **********************************************/

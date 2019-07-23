@@ -8,6 +8,7 @@
 #define INCLUDED_LIBUHD_RFNOC_ACTIONS_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/types/device_addr.hpp>
 #include <uhd/types/metadata.hpp>
 #include <uhd/types/stream_cmd.hpp>
 #include <memory>
@@ -36,12 +37,16 @@ public:
     //! An arbitrary payload. It is up to consumers and producers to
     // (de-)serialize it.
     std::vector<uint8_t> payload;
+    //! A dictionary of key-value pairs. May be used as desired.
+    uhd::device_addr_t args;
 
     //! Factory function
-    static sptr make(const std::string& key="");
+    static sptr make(const std::string& key = "",
+        const uhd::device_addr_t& args      = uhd::device_addr_t(""));
 
 protected:
-    action_info(const std::string& key);
+    action_info(
+        const std::string& key, const uhd::device_addr_t& args = uhd::device_addr_t(""));
 };
 
 struct UHD_API stream_cmd_action_info : public action_info
