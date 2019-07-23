@@ -495,6 +495,12 @@ void node_t::receive_action(const res_source_info& src_info, action_info::sptr a
         return;
     }
 
+    // We won't forward actions if they were for us
+    if (src_info.type == res_source_info::USER) {
+        RFNOC_LOG_TRACE("Dropping USER action " << action->key << "#" << action->id);
+        return;
+    }
+
     // Otherwise, we need to figure out the correct default action handling:
     const auto fwd_policy = [&](const std::string& id) {
         if (_action_fwd_policies.count(id)) {

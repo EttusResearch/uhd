@@ -43,11 +43,14 @@ BOOST_AUTO_TEST_CASE(test_actions_single_node)
     mock_radio.update_fwd_policy(node_t::forwarding_policy_t::ONE_TO_ALL_OUT);
     node_accessor.send_action(&mock_radio, {res_source_info::INPUT_EDGE, 0}, other_cmd);
 
+    uhd::rfnoc::detail::graph_t graph{};
+    graph.connect(&mock_radio, &mock_radio, {0, 0, graph_edge_t::DYNAMIC, false});
+    graph.commit();
     stream_cmd =
         stream_cmd_action_info::make(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
     stream_cmd->stream_cmd.num_samps = 37;
-    node_accessor.send_action(&mock_radio, {res_source_info::USER, 0}, stream_cmd);
-    BOOST_CHECK_EQUAL(mock_radio.last_num_samps, 37);
+    node_accessor.post_action(&mock_radio, {res_source_info::USER, 0}, stream_cmd);
+    BOOST_REQUIRE_EQUAL(mock_radio.last_num_samps, 37);
 }
 
 BOOST_AUTO_TEST_CASE(test_actions_simple_graph)

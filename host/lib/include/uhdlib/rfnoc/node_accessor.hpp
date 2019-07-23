@@ -98,6 +98,16 @@ public:
         node->receive_action(port_info, action);
     }
 
+    /*! Fake a post_action() call from this node
+     *
+     * This will call node_t::post_action() (see that for details).
+     */
+    void post_action(
+        node_t* node, const res_source_info& edge_info, action_info::sptr action)
+    {
+        node->post_action(edge_info, action);
+    }
+
     /*! Check topology for this block
      *
      * See node_t::check_topology() for details

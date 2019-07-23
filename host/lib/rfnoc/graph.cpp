@@ -390,29 +390,36 @@ void graph_t::enqueue_action(
         _action_queue.pop_front();
 
         // Find the node that is supposed to receive this action, and if we find
-        // something, then send the action
-        auto recipient_info =
-            _find_neighbour(_node_map.at(action_src_node), action_src_port);
-        if (recipient_info.first == nullptr) {
-            UHD_LOG_WARNING(LOG_ID,
-                "Cannot forward action "
-                    << action->key << " from " << src_node->get_unique_id()
-                    << ":" << src_edge.to_string() << ", no neighbour found!");
+        // something, then send the action. If the source port's type is USER,
+        // that means the action is meant for us.
+        node_ref_t recipient_node;
+        res_source_info recipient_port(action_src_port);
+
+        if (action_src_port.type == res_source_info::USER) {
+            recipient_node = action_src_node;
+            recipient_port = action_src_port;
         } else {
-            node_ref_t recipient_node      = recipient_info.first;
-            res_source_info recipient_port = {
-                res_source_info::invert_edge(action_src_port.type),
+            auto recipient_info =
+                _find_neighbour(_node_map.at(action_src_node), action_src_port);
+            recipient_node = recipient_info.first;
+            if (recipient_node == nullptr) {
+                UHD_LOG_WARNING(LOG_ID,
+                    "Cannot forward action "
+                        << action->key << " from " << src_node->get_unique_id() << ":"
+                        << src_edge.to_string() << ", no neighbour found!");
+                continue;
+            }
+            recipient_port = {res_source_info::invert_edge(action_src_port.type),
                 action_src_port.type == res_source_info::INPUT_EDGE
-                    ? recipient_info.second.dst_port
-                    : recipient_info.second.src_port};
-            // The following call can cause other nodes to add more actions to
-            // the end of _action_queue!
-            UHD_LOG_TRACE(LOG_ID,
-                "Now delivering action " << next_action_sptr->key << "#"
-                                         << next_action_sptr->id);
-            node_accessor_t{}.send_action(
-                recipient_node, recipient_port, next_action_sptr);
+                    ? recipient_info.second.src_port
+                    : recipient_info.second.dst_port};
         }
+        // The following call can cause other nodes to add more actions to
+        // the end of _action_queue!
+        UHD_LOG_TRACE(LOG_ID,
+            "Now delivering action " << next_action_sptr->key << "#"
+                                     << next_action_sptr->id);
+        node_accessor_t{}.send_action(recipient_node, recipient_port, next_action_sptr);
     }
     UHD_LOG_TRACE(LOG_ID, "Delivered all actions, terminating action handling.");
 
