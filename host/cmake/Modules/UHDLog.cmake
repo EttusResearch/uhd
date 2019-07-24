@@ -65,7 +65,7 @@ if(UHD_LOG_CONSOLE_COLOR)
     add_definitions(-DUHD_LOG_CONSOLE_COLOR)
 endif()
 
-set(UHD_LOG_FILE "" CACHE FILE "Set UHD log file to a file in a existing directory")
+set(UHD_LOG_FILE "" CACHE STRING "Set UHD log file to a file in a existing directory")
 if(NOT UHD_LOG_FILE STREQUAL "")
     add_definitions(-DUHD_LOG_FILE=${UHD_LOG_FILE})
 endif()
