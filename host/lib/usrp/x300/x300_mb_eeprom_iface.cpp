@@ -18,6 +18,7 @@
  */
 
 #include "x300_mb_eeprom_iface.hpp"
+#include "x300_claim.hpp"
 #include "x300_fw_common.h"
 #include "x300_impl.hpp"
 #include "x300_regs.hpp"
@@ -52,7 +53,7 @@ public:
     void write_i2c(uint16_t addr, const byte_vector_t& buf)
     {
         UHD_ASSERT_THROW(addr == MBOARD_EEPROM_ADDR);
-        if (x300_impl::claim_status(_wb) != x300_impl::CLAIMED_BY_US) {
+        if (uhd::usrp::x300::claim_status(_wb) != uhd::usrp::x300::CLAIMED_BY_US) {
             throw uhd::io_error("Attempted to write MB EEPROM without claim to device.");
         }
         _i2c->write_i2c(addr, buf);
@@ -71,13 +72,14 @@ public:
         if (_compat_num > X300_FW_SHMEM_IDENT_MIN_VERSION) {
             bytes = read_eeprom(addr, 0, num_bytes);
         } else {
-            x300_impl::claim_status_t status = x300_impl::claim_status(_wb);
+            auto status = uhd::usrp::x300::claim_status(_wb);
             // Claim device before driving the I2C bus
-            if (status == x300_impl::CLAIMED_BY_US or x300_impl::try_to_claim(_wb)) {
+            if (status == uhd::usrp::x300::CLAIMED_BY_US
+                or uhd::usrp::x300::try_to_claim(_wb)) {
                 bytes = _i2c->read_i2c(addr, num_bytes);
-                if (status != x300_impl::CLAIMED_BY_US) {
+                if (status != uhd::usrp::x300::CLAIMED_BY_US) {
                     // We didn't originally have the claim, so give it up
-                    x300_impl::release(_wb);
+                    uhd::usrp::x300::release(_wb);
                 }
             }
         }
@@ -93,7 +95,7 @@ public:
     void write_eeprom(uint16_t addr, uint16_t offset, const byte_vector_t& buf)
     {
         UHD_ASSERT_THROW(addr == MBOARD_EEPROM_ADDR);
-        if (x300_impl::claim_status(_wb) != x300_impl::CLAIMED_BY_US) {
+        if (uhd::usrp::x300::claim_status(_wb) != uhd::usrp::x300::CLAIMED_BY_US) {
             throw uhd::io_error("Attempted to write MB EEPROM without claim to device.");
         }
         _i2c->write_eeprom(addr, offset, buf);
@@ -110,7 +112,7 @@ public:
     {
         UHD_ASSERT_THROW(addr == MBOARD_EEPROM_ADDR);
         byte_vector_t bytes;
-        x300_impl::claim_status_t status = x300_impl::claim_status(_wb);
+        uhd::usrp::x300::claim_status_t status = uhd::usrp::x300::claim_status(_wb);
         if (_compat_num >= X300_FW_SHMEM_IDENT_MIN_VERSION) {
             // Get MB EEPROM data from firmware memory
             if (num_bytes == 0)
@@ -128,11 +130,12 @@ public:
             }
         } else {
             // Claim device before driving the I2C bus
-            if (status == x300_impl::CLAIMED_BY_US or x300_impl::try_to_claim(_wb)) {
+            if (status == uhd::usrp::x300::CLAIMED_BY_US
+                or uhd::usrp::x300::try_to_claim(_wb)) {
                 bytes = _i2c->read_eeprom(addr, offset, num_bytes);
-                if (status != x300_impl::CLAIMED_BY_US) {
+                if (status != uhd::usrp::x300::CLAIMED_BY_US) {
                     // We didn't originally have the claim, so give it up
-                    x300_impl::release(_wb);
+                    uhd::usrp::x300::release(_wb);
                 }
             }
         }

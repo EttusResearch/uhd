@@ -4,7 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "x300_impl.hpp"
+#include "x300_mb_eeprom.hpp"
 #include <uhd/types/serial.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhdlib/utils/eeprom_utils.hpp>
@@ -41,7 +41,7 @@ struct x300_eeprom_map
 using namespace uhd;
 using uhd::usrp::mboard_eeprom_t;
 
-mboard_eeprom_t x300_impl::get_mb_eeprom(uhd::i2c_iface::sptr iface)
+mboard_eeprom_t uhd::usrp::x300::get_mb_eeprom(uhd::i2c_iface::sptr iface)
 {
     byte_vector_t bytes =
         iface->read_eeprom(X300_EEPROM_ADDR, 0, sizeof(struct x300_eeprom_map));
@@ -110,9 +110,10 @@ mboard_eeprom_t x300_impl::get_mb_eeprom(uhd::i2c_iface::sptr iface)
     return mb_eeprom;
 }
 
-void x300_impl::set_mb_eeprom(i2c_iface::sptr iface, const mboard_eeprom_t& mb_eeprom)
+void uhd::usrp::x300::set_mb_eeprom(
+    i2c_iface::sptr iface, const mboard_eeprom_t& mb_eeprom)
 {
-    const mboard_eeprom_t curr_eeprom = get_mb_eeprom(iface);
+    const mboard_eeprom_t curr_eeprom = uhd::usrp::x300::get_mb_eeprom(iface);
 
     // Check for duplicate MAC and IP addresses
     const std::vector<std::string> mac_keys{"mac-addr0", "mac-addr1"};

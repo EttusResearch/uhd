@@ -8,7 +8,7 @@
 #define INCLUDED_X300_DEV_ARGS_HPP
 
 #include "x300_defaults.hpp"
-#include "x300_impl.hpp"
+#include <uhd/utils/log.hpp>
 #include <uhdlib/usrp/constrained_device_args.hpp>
 
 namespace uhd { namespace usrp { namespace x300 {
@@ -37,6 +37,10 @@ public:
         , _blank_eeprom("blank_eeprom", false)
         , _enable_tx_dual_eth("enable_tx_dual_eth", false)
         , _use_dpdk("use_dpdk", false)
+        , _fpga_option("fpga", "")
+        , _download_fpga("download-fpga", false)
+        , _recv_frame_size("recv_frame_size", DATA_FRAME_MAX_SIZE)
+        , _send_frame_size("send_frame_size", DATA_FRAME_MAX_SIZE)
     {
         // nop
     }
@@ -121,6 +125,26 @@ public:
     {
         return _use_dpdk.get();
     }
+    std::string get_fpga_option() const
+    {
+        return _fpga_option.get();
+    }
+    bool get_download_fpga() const
+    {
+        return _download_fpga.get();
+    }
+    size_t get_recv_frame_size() const
+    {
+        return _recv_frame_size.get();
+    }
+    size_t get_send_frame_size() const
+    {
+        return _send_frame_size.get();
+    }
+    device_addr_t get_orig_args() const
+    {
+        return _orig_args;
+    }
 
     inline virtual std::string to_string() const
     {
@@ -156,12 +180,14 @@ public:
                + (_has_fw_file.get() ? _fw_file.to_string() + ", " : "")
                + (_enable_tx_dual_eth.get() ? (_enable_tx_dual_eth.to_string() + ", ")
                                             : "")
-            ;
+               + (_fpga_option.get().empty() ? "" : _fpga_option.to_string() + ", ")
+               + (_download_fpga.get() ? _download_fpga.to_string() + ", " : "");
     }
 
 private:
     virtual void _parse(const device_addr_t& dev_args)
     {
+        _orig_args = dev_args;
         // Extract parameters from dev_args
 #define PARSE_DEFAULT(arg) parse_arg_default(dev_args, arg);
         PARSE_DEFAULT(_master_clock_rate)
@@ -188,6 +214,8 @@ private:
         PARSE_DEFAULT(_first_addr)
         PARSE_DEFAULT(_second_addr)
         PARSE_DEFAULT(_resource)
+        PARSE_DEFAULT(_fpga_option)
+        PARSE_DEFAULT(_download_fpga)
         if (_first_addr.get().empty() && !_second_addr.get().empty()) {
             UHD_LOG_WARNING("X300",
                 "Specifying `second_addr' without `addr'is inconsistent and has "
@@ -233,6 +261,8 @@ private:
                 "Detected use_dpdk argument, but DPDK support not built in.");
 #endif
         }
+        PARSE_DEFAULT(_recv_frame_size)
+        PARSE_DEFAULT(_send_frame_size)
 
         // Sanity check params
         _enforce_range(_master_clock_rate, MIN_TICK_RATE, MAX_TICK_RATE);
@@ -261,6 +291,12 @@ private:
     constrained_device_args_t::bool_arg _blank_eeprom;
     constrained_device_args_t::bool_arg _enable_tx_dual_eth;
     constrained_device_args_t::bool_arg _use_dpdk;
+    constrained_device_args_t::str_arg<true> _fpga_option;
+    constrained_device_args_t::bool_arg _download_fpga;
+    constrained_device_args_t::num_arg<size_t> _recv_frame_size;
+    constrained_device_args_t::num_arg<size_t> _send_frame_size;
+
+    device_addr_t _orig_args;
 };
 
 }}} // namespace uhd::usrp::x300

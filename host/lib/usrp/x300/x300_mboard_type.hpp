@@ -13,6 +13,8 @@
 
 namespace uhd { namespace usrp { namespace x300 {
 
+enum class xport_path_t { ETH, NIRIO };
+
 enum x300_mboard_t { USRP_X300_MB, USRP_X310_MB, USRP_X310_MB_NI_2974, UNKNOWN };
 
 /*! Return the correct motherboard type for a given product ID
