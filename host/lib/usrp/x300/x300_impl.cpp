@@ -8,6 +8,7 @@
 #include "x300_impl.hpp"
 #include "x300_lvbitx.hpp"
 #include "x300_mb_eeprom_iface.hpp"
+#include "x300_mboard_type.hpp"
 #include "x310_lvbitx.hpp"
 #include <uhd/transport/if_addrs.hpp>
 #include <uhd/transport/nirio/niusrprio_session.h>
@@ -48,106 +49,9 @@ namespace asio = boost::asio;
 /******************************************************************************
  * Helpers
  *****************************************************************************/
-static std::string get_fpga_option(wb_iface::sptr zpu_ctrl)
-{
-    // Possible options:
-    // 1G  = {0:1G, 1:1G} w/ DRAM, HG  = {0:1G, 1:10G} w/ DRAM, XG  = {0:10G, 1:10G} w/
-    // DRAM HA  = {0:1G, 1:Aurora} w/ DRAM, XA  = {0:10G, 1:Aurora} w/ DRAM
-
-    std::string option;
-    uint32_t sfp0_type = zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_SFP0_TYPE));
-    uint32_t sfp1_type = zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_SFP1_TYPE));
-
-    if (sfp0_type == RB_SFP_1G_ETH and sfp1_type == RB_SFP_1G_ETH) {
-        option = "1G";
-    } else if (sfp0_type == RB_SFP_1G_ETH and sfp1_type == RB_SFP_10G_ETH) {
-        option = "HG";
-    } else if (sfp0_type == RB_SFP_10G_ETH and sfp1_type == RB_SFP_10G_ETH) {
-        option = "XG";
-    } else if (sfp0_type == RB_SFP_1G_ETH and sfp1_type == RB_SFP_AURORA) {
-        option = "HA";
-    } else if (sfp0_type == RB_SFP_10G_ETH and sfp1_type == RB_SFP_AURORA) {
-        option = "XA";
-    } else {
-        option = "HG"; // Default
-    }
-    return option;
-}
-
-
 namespace {
 
 constexpr unsigned int X300_UDP_RESERVED_FRAME_SIZE = 64;
-
-/*! Return the correct motherboard type for a given product ID
- *
- * Note: In previous versions, we had two different mappings for PCIe and
- * Ethernet in case the PIDs would conflict, but they never did and it was
- * thus consolidated into one.
- */
-x300_impl::x300_mboard_t map_pid_to_mb_type(const uint32_t pid)
-{
-    switch (pid) {
-        case X300_USRP_PCIE_SSID_ADC_33:
-        case X300_USRP_PCIE_SSID_ADC_18:
-            return x300_impl::USRP_X300_MB;
-        case X310_USRP_PCIE_SSID_ADC_33:
-        case X310_2940R_40MHz_PCIE_SSID_ADC_33:
-        case X310_2940R_120MHz_PCIE_SSID_ADC_33:
-        case X310_2942R_40MHz_PCIE_SSID_ADC_33:
-        case X310_2942R_120MHz_PCIE_SSID_ADC_33:
-        case X310_2943R_40MHz_PCIE_SSID_ADC_33:
-        case X310_2943R_120MHz_PCIE_SSID_ADC_33:
-        case X310_2944R_40MHz_PCIE_SSID_ADC_33:
-        case X310_2950R_40MHz_PCIE_SSID_ADC_33:
-        case X310_2950R_120MHz_PCIE_SSID_ADC_33:
-        case X310_2952R_40MHz_PCIE_SSID_ADC_33:
-        case X310_2952R_120MHz_PCIE_SSID_ADC_33:
-        case X310_2953R_40MHz_PCIE_SSID_ADC_33:
-        case X310_2953R_120MHz_PCIE_SSID_ADC_33:
-        case X310_2954R_40MHz_PCIE_SSID_ADC_33:
-        case X310_USRP_PCIE_SSID_ADC_18:
-        case X310_2940R_40MHz_PCIE_SSID_ADC_18:
-        case X310_2940R_120MHz_PCIE_SSID_ADC_18:
-        case X310_2942R_40MHz_PCIE_SSID_ADC_18:
-        case X310_2942R_120MHz_PCIE_SSID_ADC_18:
-        case X310_2943R_40MHz_PCIE_SSID_ADC_18:
-        case X310_2943R_120MHz_PCIE_SSID_ADC_18:
-        case X310_2944R_40MHz_PCIE_SSID_ADC_18:
-        case X310_2945R_PCIE_SSID_ADC_18:
-        case X310_2950R_40MHz_PCIE_SSID_ADC_18:
-        case X310_2950R_120MHz_PCIE_SSID_ADC_18:
-        case X310_2952R_40MHz_PCIE_SSID_ADC_18:
-        case X310_2952R_120MHz_PCIE_SSID_ADC_18:
-        case X310_2953R_40MHz_PCIE_SSID_ADC_18:
-        case X310_2953R_120MHz_PCIE_SSID_ADC_18:
-        case X310_2954R_40MHz_PCIE_SSID_ADC_18:
-        case X310_2955R_PCIE_SSID_ADC_18:
-            return x300_impl::USRP_X310_MB;
-        case X310_2974_PCIE_SSID_ADC_18:
-            return x300_impl::USRP_X310_MB_NI_2974;
-        default:
-            return x300_impl::UNKNOWN;
-    }
-    UHD_THROW_INVALID_CODE_PATH();
-}
-
-/*! Map the motherboard type to a product name
- */
-std::string map_mb_type_to_product_name(
-    const x300_impl::x300_mboard_t mb_type, const std::string& default_name = "")
-{
-    switch (mb_type) {
-        case x300_impl::USRP_X300_MB:
-            return "X300";
-        case x300_impl::USRP_X310_MB:
-            return "X310";
-        case x300_impl::USRP_X310_MB_NI_2974:
-            return "NI-2974";
-        default:
-            return default_name;
-    }
-}
 
 } // namespace
 
@@ -238,8 +142,8 @@ static device_addrs_t x300_find_with_addr(const device_addr_t& hint)
             }
             new_addr["name"]               = mb_eeprom["name"];
             new_addr["serial"]             = mb_eeprom["serial"];
-            const std::string product_name = map_mb_type_to_product_name(
-                x300_impl::get_mb_type_from_eeprom(mb_eeprom));
+            const std::string product_name =
+                map_mb_type_to_product_name(get_mb_type_from_eeprom(mb_eeprom));
             if (!product_name.empty()) {
                 new_addr["product"] = product_name;
             }
@@ -1001,50 +905,7 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t& dev_addr)
     ////////////////////////////////////////////////////////////////////
     // read hardware revision and compatibility number
     ////////////////////////////////////////////////////////////////////
-    mb.hw_rev = 0;
-    if (mb_eeprom.has_key("revision") and not mb_eeprom["revision"].empty()) {
-        try {
-            mb.hw_rev = boost::lexical_cast<size_t>(mb_eeprom["revision"]);
-        } catch (...) {
-            throw uhd::runtime_error(
-                "Revision in EEPROM is invalid! Please reprogram your EEPROM.");
-        }
-    } else {
-        throw uhd::runtime_error("No revision detected. MB EEPROM must be reprogrammed!");
-    }
-
-    size_t hw_rev_compat = 0;
-    if (mb.hw_rev >= 7) { // Revision compat was added with revision 7
-        if (mb_eeprom.has_key("revision_compat")
-            and not mb_eeprom["revision_compat"].empty()) {
-            try {
-                hw_rev_compat = boost::lexical_cast<size_t>(mb_eeprom["revision_compat"]);
-            } catch (...) {
-                throw uhd::runtime_error("Revision compat in EEPROM is invalid! Please "
-                                         "reprogram your EEPROM.");
-            }
-        } else {
-            throw uhd::runtime_error(
-                "No revision compat detected. MB EEPROM must be reprogrammed!");
-        }
-    } else {
-        // For older HW just assume that revision_compat = revision
-        hw_rev_compat = mb.hw_rev;
-    }
-
-    if (hw_rev_compat > X300_REVISION_COMPAT) {
-        throw uhd::runtime_error(
-            str(boost::format("Hardware is too new for this software. Please upgrade to "
-                              "a driver that supports hardware revision %d.")
-                % mb.hw_rev));
-    } else if (mb.hw_rev < X300_REVISION_MIN) { // Compare min against the revision (and
-                                                // not compat) to give us more leeway for
-                                                // partial support for a compat
-        throw uhd::runtime_error(
-            str(boost::format("Software is too new for this hardware. Please downgrade "
-                              "to a driver that supports hardware revision %d.")
-                % mb.hw_rev));
-    }
+    mb.hw_rev = get_and_check_hw_rev(mb_eeprom);
 
     ////////////////////////////////////////////////////////////////////
     // create clock control objects
@@ -2106,7 +1967,7 @@ void x300_impl::check_fpga_compat(const fs_path& mb_path, const mboard_members_t
                                << " git hash: " << git_hash_str);
 }
 
-x300_impl::x300_mboard_t x300_impl::get_mb_type_from_pcie(
+x300_mboard_t x300_impl::get_mb_type_from_pcie(
     const std::string& resource, const std::string& rpc_port)
 {
     // Detect the PCIe product ID to distinguish between X300 and X310
@@ -2127,20 +1988,3 @@ x300_impl::x300_mboard_t x300_impl::get_mb_type_from_pcie(
     return UNKNOWN;
 }
 
-x300_impl::x300_mboard_t x300_impl::get_mb_type_from_eeprom(
-    const uhd::usrp::mboard_eeprom_t& mb_eeprom)
-{
-    if (not mb_eeprom["product"].empty()) {
-        uint16_t product_num = 0;
-        try {
-            product_num = boost::lexical_cast<uint16_t>(mb_eeprom["product"]);
-        } catch (const boost::bad_lexical_cast&) {
-            product_num = 0;
-        }
-
-        return map_pid_to_mb_type(product_num);
-    }
-
-    UHD_LOGGER_WARNING("X300") << "Unable to read product ID from EEPROM!";
-    return UNKNOWN;
-}

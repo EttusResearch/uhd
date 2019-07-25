@@ -13,6 +13,7 @@
 #include "x300_defaults.hpp"
 #include "x300_device_args.hpp"
 #include "x300_fw_common.h"
+#include "x300_mboard_type.hpp"
 #include "x300_radio_ctrl_impl.hpp"
 #include "x300_regs.hpp"
 #include <uhd/property_tree.hpp>
@@ -76,11 +77,8 @@ public:
     static bool try_to_claim(uhd::wb_iface::sptr iface, long timeout = 2000);
     static void release(uhd::wb_iface::sptr iface);
 
-    enum x300_mboard_t { USRP_X300_MB, USRP_X310_MB, USRP_X310_MB_NI_2974, UNKNOWN };
-    static x300_mboard_t get_mb_type_from_pcie(
+    static uhd::usrp::x300::x300_mboard_t get_mb_type_from_pcie(
         const std::string& resource, const std::string& rpc_port);
-    static x300_mboard_t get_mb_type_from_eeprom(
-        const uhd::usrp::mboard_eeprom_t& mb_eeprom);
 
     //! Read out the on-board EEPROM, convert to dict, and return
     static uhd::usrp::mboard_eeprom_t get_mb_eeprom(uhd::i2c_iface::sptr i2c);
