@@ -20,6 +20,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/legacy_compat.hpp>
 #include <boost/make_shared.hpp>
+#include <set>
 
 #define UHD_LEGACY_LOG() UHD_LOGGER_TRACE("RFNOC")
 
@@ -880,9 +881,10 @@ private: // methods
             }
         }
     }
-    //! Flatten block list into a list of <block, port_index>
-    // For example block list {b0[0,1] ,b1[0,1]} (i.e block 0 with 2 port 0 and 1,etc ..)
-    // this will return {<b0,0> <b1,0> <b0,1> <b1,1>}
+
+    //! Flatten and sort a block list into a list of <block, port_index>
+    // For a block list {b0 ,b1} where each block has ports {p0, p1}, this will
+    // return {<b0,p0> <b0,p1> <b1,p0> <b1,p1>}
     std::vector<source_port_t> _flatten_blocks_by_n_ports(source_block_list_t block_list)
     {
         std::vector<source_port_t> result;
@@ -891,25 +893,12 @@ private: // methods
                 result.push_back(std::make_pair(block, port));
             }
         }
-        // assign to block prior ports
-        size_t port = 0;
-        size_t i    = 0;
-        for (size_t j = 0; j < result.size(); j++) {
-            auto block = block_list[j % block_list.size()];
-            UHD_ASSERT_THROW(port < block->get_output_ports().size());
-            if (i == block_list.size()) {
-                i = 0;
-                port++;
-            }
-            result[j] = std::make_pair(block, port);
-            i++;
-        }
         return result;
     }
 
-    //! Flatten block list into a list of <block, port_index>
-    // For example block list {b0[0,1] ,b1[0,1]} (i.e block 0 with 2 port 0 and 1,etc ..)
-    // this will return {<b0,0> <b1,0> <b0,1> <b1,1>}
+    //! Flatten and sort a block list into a list of <block, port_index>
+    // For a block list {b0 ,b1} where each block has ports {p0, p1}, this will
+    // return {<b0,p0> <b0,p1> <b1,p0> <b1,p1>}
     std::vector<sink_port_t> _flatten_blocks_by_n_ports(sink_block_list_t block_list)
     {
         std::vector<sink_port_t> result;
@@ -918,19 +907,19 @@ private: // methods
                 result.push_back(std::make_pair(block, port));
             }
         }
-        // assign to block prior ports
-        size_t port = 0;
-        size_t i    = 0;
-        for (size_t j = 0; j < result.size(); j++) {
-            auto block = block_list[j % block_list.size()];
-            UHD_ASSERT_THROW(port < block->get_input_ports().size());
-            if (i == block_list.size()) {
-                i = 0;
-                port++;
-            }
-            result[j] = std::make_pair(block, port);
-            i++;
-        }
+        return result;
+    }
+
+    template <typename T>
+    std::vector<std::pair<T, size_t>> _filter_flattened_blocks(
+        const std::vector<std::pair<T, size_t>>& blocks, size_t device_number)
+    {
+        const auto pred = [&device_number](const std::pair<T, size_t>& block) {
+            return (block.first->get_block_id().get_device_no() == device_number);
+        };
+
+        std::vector<std::pair<T, size_t>> result;
+        std::copy_if(blocks.begin(), blocks.end(), std::back_inserter(result), pred);
         return result;
     }
 
@@ -950,86 +939,108 @@ private: // methods
      */
     void connect_blocks()
     {
-        _graph              = _device->create_graph("legacy");
         const size_t rx_bpp = _rx_spp * BYTES_PER_SAMPLE + MAX_BYTES_PER_HEADER;
         const size_t tx_bpp = _tx_spp * BYTES_PER_SAMPLE + MAX_BYTES_PER_HEADER;
+        _graph              = _device->create_graph("legacy");
+
         block_name_to_block_map_t legacy_block_map = get_legacy_blocks(_device);
-        size_t index = 0, sram_fifo_index = 0, dma_fifo_index = 0;
-        auto ddc_snk_flat =
-            _flatten_blocks_by_n_ports(legacy_block_map[DDC_BLOCK_NAME].second);
-        auto duc_src_flat =
-            _flatten_blocks_by_n_ports(legacy_block_map[DUC_BLOCK_NAME].first);
-        auto duc_snk_flat =
-            _flatten_blocks_by_n_ports(legacy_block_map[DUC_BLOCK_NAME].second);
-        auto radio_src_flat =
-            _flatten_blocks_by_n_ports(legacy_block_map[RADIO_BLOCK_NAME].first);
-        auto radio_snk_flat =
-            _flatten_blocks_by_n_ports(legacy_block_map[RADIO_BLOCK_NAME].second);
-        auto sfifo_src_flat =
-            _flatten_blocks_by_n_ports(legacy_block_map[SFIFO_BLOCK_NAME].first);
-        auto dfifo_src_flat =
-            _flatten_blocks_by_n_ports(legacy_block_map[DFIFO_BLOCK_NAME].first);
-        for (auto each_src_radio_block : radio_src_flat) {
-            auto radio_block = each_src_radio_block.first->get_block_id();
-            if (_has_ddcs) {
-                UHD_ASSERT_THROW(index < ddc_snk_flat.size());
-                auto ddc_block = ddc_snk_flat[index].first->get_block_id();
-                _graph->connect(radio_block,
-                    each_src_radio_block.second,
-                    ddc_block,
-                    ddc_snk_flat[index].second,
-                    rx_bpp);
+        // create a list of all devices in the legacy block map
+        std::set<size_t> device_numbers;
+        for (const auto& block_list : legacy_block_map) {
+            for (const auto& block : block_list.second.first) {
+                device_numbers.insert(block->get_block_id().get_device_no());
             }
-            index++;
+            for (const auto& block : block_list.second.second) {
+                device_numbers.insert(block->get_block_id().get_device_no());
+            }
         }
-        index = 0;
-        for (auto each_snk_radio_block : radio_snk_flat) {
-            auto radio_block       = each_snk_radio_block.first->get_block_id();
-            auto down_stream_block = radio_block;
-            auto down_stream_port  = each_snk_radio_block.second;
+
+        // Generate lists of all available ports in the graph
+        // RX connections:
+        // Radio => DDC
+        auto radio_sources =
+            _flatten_blocks_by_n_ports(legacy_block_map[RADIO_BLOCK_NAME].first);
+        auto ddc_sinks =
+            _flatten_blocks_by_n_ports(legacy_block_map[DDC_BLOCK_NAME].second);
+
+        // TX connections:
+        // DUC => Radio
+        auto duc_sources =
+            _flatten_blocks_by_n_ports(legacy_block_map[DUC_BLOCK_NAME].first);
+        auto radio_sinks =
+            _flatten_blocks_by_n_ports(legacy_block_map[RADIO_BLOCK_NAME].second);
+
+        // FIFO (SRAM or DMA) => DUC
+        auto duc_sinks =
+            _flatten_blocks_by_n_ports(legacy_block_map[DUC_BLOCK_NAME].second);
+        auto sfifo_sources =
+            _flatten_blocks_by_n_ports(legacy_block_map[SFIFO_BLOCK_NAME].first);
+        auto dfifo_sources =
+            _flatten_blocks_by_n_ports(legacy_block_map[DFIFO_BLOCK_NAME].first);
+
+        for (const auto& device_number : device_numbers) {
+            // for RX, if there are DDCs, connect them to the radios
+            if (_has_ddcs) {
+                auto filtered_radio_sources =
+                    _filter_flattened_blocks(radio_sources, device_number);
+                auto filtered_ddc_sinks =
+                    _filter_flattened_blocks(ddc_sinks, device_number);
+                UHD_ASSERT_THROW(
+                    filtered_radio_sources.size() <= filtered_ddc_sinks.size());
+
+                for (size_t i = 0; i < filtered_radio_sources.size(); ++i) {
+                    _graph->connect(filtered_radio_sources[i].first->get_block_id(),
+                        filtered_radio_sources[i].second,
+                        filtered_ddc_sinks[i].first->get_block_id(),
+                        filtered_ddc_sinks[i].second,
+                        rx_bpp);
+                }
+            }
+
+            // for TX, if there are DUCs, connect them to the radios
             if (_has_ducs) {
-                UHD_ASSERT_THROW(index < duc_snk_flat.size());
-                UHD_ASSERT_THROW(index < duc_src_flat.size());
-                auto duc_snk_block = duc_snk_flat[index].first->get_block_id();
-                auto duc_src_block = duc_src_flat[index].first->get_block_id();
-                _graph->connect(duc_src_block,
-                    duc_src_flat[index].second,
-                    radio_block,
-                    each_snk_radio_block.second,
-                    tx_bpp);
-                down_stream_block = duc_snk_block;
-                down_stream_port  = duc_snk_flat[index].second;
-            }
-            if (_has_sramfifo) {
-                if (sram_fifo_index < sfifo_src_flat.size()) {
-                    auto sfifo_block =
-                        sfifo_src_flat[sram_fifo_index].first->get_block_id();
-                    _graph->connect(sfifo_block,
-                        sfifo_src_flat[sram_fifo_index].second,
-                        down_stream_block,
-                        down_stream_port,
+                auto filtered_duc_sources =
+                    _filter_flattened_blocks(duc_sources, device_number);
+                auto filtered_radio_sinks =
+                    _filter_flattened_blocks(radio_sinks, device_number);
+
+                UHD_ASSERT_THROW(
+                    filtered_duc_sources.size() <= filtered_radio_sinks.size());
+
+                for (size_t i = 0; i < filtered_duc_sources.size(); ++i) {
+                    _graph->connect(filtered_duc_sources[i].first->get_block_id(),
+                        filtered_duc_sources[i].second,
+                        filtered_radio_sinks[i].first->get_block_id(),
+                        filtered_radio_sinks[i].second,
                         tx_bpp);
-                    sram_fifo_index++;
-                } else {
-                    UHD_LOGGER_WARNING("RFNOC")
-                        << "[legacy compat] Running out of SRAM FIFO ports to connect.";
-                }
-            } else if (_has_dmafifo) {
-                if (dma_fifo_index < dfifo_src_flat.size()) {
-                    auto dfifo_block =
-                        dfifo_src_flat[dma_fifo_index].first->get_block_id();
-                    _graph->connect(dfifo_block,
-                        dfifo_src_flat[dma_fifo_index].second,
-                        down_stream_block,
-                        down_stream_port,
-                        tx_bpp);
-                    dma_fifo_index++;
-                } else {
-                    UHD_LOGGER_WARNING("RFNOC")
-                        << "[legacy compat] Running out of DRAM FIFO ports to connect.";
                 }
             }
-            index++;
+
+            // for TX, if there are SRAM or DMA fifos, connect them to the DUCs
+            // (or radios, if there are no DUCs)
+            if (_has_sramfifo or _has_dmafifo) {
+                auto filtered_sources =
+                    (_has_sramfifo)
+                        ? _filter_flattened_blocks(sfifo_sources, device_number)
+                        : _filter_flattened_blocks(dfifo_sources, device_number);
+                auto filtered_sinks =
+                    (_has_ducs) ? _filter_flattened_blocks(duc_sinks, device_number)
+                                : _filter_flattened_blocks(radio_sinks, device_number);
+
+                if (filtered_sources.size() < filtered_sinks.size()) {
+                    UHD_LOG_WARNING("RFNOC",
+                        "[legacy compat] Not enough FIFO ports to connect, not all TX "
+                        "sinks will be connected");
+                }
+
+                for (size_t i = 0; i < filtered_sources.size(); ++i) {
+                    _graph->connect(filtered_sources[i].first->get_block_id(),
+                        filtered_sources[i].second,
+                        filtered_sinks[i].first->get_block_id(),
+                        filtered_sinks[i].second,
+                        tx_bpp);
+                }
+            }
         }
     }
 
