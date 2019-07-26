@@ -170,10 +170,20 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
         register_property(&_samp_rate_out.back());
         register_property(&_type_in.back());
         register_property(&_type_out.back());
-        add_property_resolver({&_spp_prop.back()},
+        add_property_resolver(
+            {&_spp_prop.back(), get_mtu_prop_ref({res_source_info::OUTPUT_EDGE, chan})},
             {&_spp_prop.back()},
             [this, chan, &spp = _spp_prop.back()]() {
                 RFNOC_LOG_TRACE("Calling resolver for spp@" << chan);
+                const int mtu =
+                    static_cast<int>(get_mtu({res_source_info::OUTPUT_EDGE, chan}));
+                const int max_spp_per_mtu = mtu / (_samp_width / 8) - (mtu % _spc);
+                if (spp.get() > max_spp_per_mtu) {
+                    RFNOC_LOG_WARNING("spp value " << spp.get() << " exceeds MTU of "
+                                                   << mtu << "! Coercing to "
+                                                   << max_spp_per_mtu);
+                    spp = max_spp_per_mtu;
+                }
                 if (spp.get() % _spc) {
                     spp = spp.get() - (spp.get() % _spc);
                     RFNOC_LOG_WARNING(

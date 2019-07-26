@@ -37,6 +37,9 @@ struct noc_block_base::make_args_t
     //! Number of output ports (gets reported from the FPGA)
     size_t num_output_ports;
 
+    //! Value of the MTU register
+    size_t mtu;
+
     //! Register interface to this block's register space
     register_iface::sptr reg_iface;
 

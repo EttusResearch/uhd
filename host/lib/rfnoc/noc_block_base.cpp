@@ -48,14 +48,14 @@ noc_block_base::noc_block_base(make_args_ptr make_args)
             {res_source_info::OUTPUT_EDGE, output_port}));
     }
     // Register all the tick_rate properties and create a default resolver
-    prop_ptrs_t prop_refs;
-    prop_refs.reserve(_tick_rate_props.size());
+    prop_ptrs_t tick_rate_prop_refs;
+    tick_rate_prop_refs.reserve(_tick_rate_props.size());
     for (auto& prop : _tick_rate_props) {
-        prop_refs.insert(&prop);
+        tick_rate_prop_refs.insert(&prop);
         register_property(&prop);
     }
     for (auto& prop : _tick_rate_props) {
-        auto prop_refs_copy = prop_refs;
+        auto prop_refs_copy = tick_rate_prop_refs;
         add_property_resolver(
             {&prop}, std::move(prop_refs_copy), [this, source_prop = &prop]() {
                 // _set_tick_rate() will update _tick_rate, but only if that's
@@ -65,6 +65,68 @@ noc_block_base::noc_block_base(make_args_ptr make_args)
                 // tick_rate properties
                 for (property_t<double>& tick_rate_prop : _tick_rate_props) {
                     tick_rate_prop = get_tick_rate();
+                }
+            });
+    }
+    // Now, the same thing for MTU props
+    // Create one mtu property for every port
+    _mtu_props.reserve(_num_input_ports + _num_output_ports);
+    for (size_t input_port = 0; input_port < _num_input_ports; input_port++) {
+        _mtu_props.push_back(property_t<size_t>(
+            PROP_KEY_MTU, make_args->mtu, {res_source_info::INPUT_EDGE, input_port}));
+        _mtu.insert({{res_source_info::INPUT_EDGE, input_port}, make_args->mtu});
+    }
+    for (size_t output_port = 0; output_port < _num_output_ports; output_port++) {
+        _mtu_props.push_back(property_t<size_t>(
+            PROP_KEY_MTU, make_args->mtu, {res_source_info::OUTPUT_EDGE, output_port}));
+        _mtu.insert({{res_source_info::OUTPUT_EDGE, output_port}, make_args->mtu});
+    }
+    // Register all the mtu properties and create a default resolver
+    prop_ptrs_t mtu_prop_refs;
+    mtu_prop_refs.reserve(_mtu_props.size());
+    for (auto& prop : _mtu_props) {
+        mtu_prop_refs.insert(&prop);
+        register_property(&prop);
+    }
+    for (auto& prop : _mtu_props) {
+        auto prop_refs_copy = mtu_prop_refs;
+        add_property_resolver(
+            {&prop}, std::move(prop_refs_copy), [this, source_prop = &prop]() {
+                const res_source_info src_edge = source_prop->get_src_info();
+                // First, coerce the MTU to its appropriate min value
+                const size_t new_mtu = std::min(source_prop->get(), _mtu.at(src_edge));
+                source_prop->set(new_mtu);
+                _mtu.at(src_edge) = source_prop->get();
+                RFNOC_LOG_TRACE("MTU is now " << _mtu.at(src_edge) << " on edge "
+                                              << src_edge.to_string());
+                auto update_pred = [src_edge, fwd_policy = _mtu_fwd_policy](
+                                       const res_source_info& mtu_src) -> bool {
+                    switch (fwd_policy) {
+                        case forwarding_policy_t::DROP:
+                            return false;
+                        case forwarding_policy_t::ONE_TO_ONE:
+                            return res_source_info::invert_edge(mtu_src.type)
+                                       == src_edge.type
+                                   && mtu_src.instance == src_edge.instance;
+                        case forwarding_policy_t::ONE_TO_ALL:
+                            return mtu_src.type != src_edge.type && mtu_src.instance
+                                   && src_edge.instance;
+                        case forwarding_policy_t::ONE_TO_FAN:
+                            return res_source_info::invert_edge(mtu_src.type)
+                                   == src_edge.type;
+                        default:
+                            UHD_THROW_INVALID_CODE_PATH();
+                    }
+                };
+
+                for (auto& mtu_prop : _mtu_props) {
+                    if (update_pred(mtu_prop.get_src_info())
+                        && mtu_prop.get() != new_mtu) {
+                        RFNOC_LOG_TRACE("Forwarding new MTU value to edge "
+                                        << mtu_prop.get_src_info().to_string());
+                        mtu_prop.set(new_mtu);
+                        _mtu.at(mtu_prop.get_src_info()) = mtu_prop.get();
+                    }
                 }
             });
     }
@@ -135,6 +197,50 @@ void noc_block_base::_set_tick_rate(const double tick_rate)
                           << (tick_rate / 1e6)
                           << " MHz, this clock is not configurable by the graph!");
     }
+}
+
+void noc_block_base::set_mtu_forwarding_policy(const forwarding_policy_t policy)
+{
+    if (policy == forwarding_policy_t::DROP || policy == forwarding_policy_t::ONE_TO_ONE
+        || policy == forwarding_policy_t::ONE_TO_ALL
+        || policy == forwarding_policy_t::ONE_TO_FAN) {
+        _mtu_fwd_policy = policy;
+        return;
+    }
+    RFNOC_LOG_ERROR("Setting invalid MTU forwarding policy!");
+    throw uhd::value_error("MTU forwarding policy must be either DROP, ONE_TO_ONE, "
+                           "ONE_TO_ALL, or ONE_TO_FAN!");
+}
+
+void noc_block_base::set_mtu(const res_source_info& edge, const size_t new_mtu)
+{
+    if (edge.type != res_source_info::INPUT_EDGE
+        && edge.type != res_source_info::OUTPUT_EDGE) {
+        throw uhd::value_error(
+            "set_mtu() must be called on either an input or output edge!");
+    }
+    set_property<size_t>(PROP_KEY_MTU, new_mtu, edge);
+}
+
+
+size_t noc_block_base::get_mtu(const res_source_info& edge)
+{
+    if (!_mtu.count(edge)) {
+        throw uhd::value_error(
+            std::string("Cannot get MTU on edge: ") + edge.to_string());
+    }
+    return _mtu.at(edge);
+}
+
+property_base_t* noc_block_base::get_mtu_prop_ref(const res_source_info& edge)
+{
+    for (size_t mtu_prop_idx = 0; mtu_prop_idx < _mtu_props.size(); mtu_prop_idx++) {
+        if (_mtu_props.at(mtu_prop_idx).get_src_info() == edge) {
+            return &_mtu_props.at(mtu_prop_idx);
+        }
+    }
+    throw uhd::value_error(
+        std::string("Could not find MTU property for edge: ") + edge.to_string());
 }
 
 void noc_block_base::shutdown()

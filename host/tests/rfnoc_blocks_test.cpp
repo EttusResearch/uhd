@@ -21,6 +21,8 @@ using namespace uhd::rfnoc;
 
 namespace {
 
+constexpr size_t DEFAULT_MTU = 8000;
+
 noc_block_base::make_args_ptr make_make_args(noc_id_t noc_id,
     const std::string& block_id,
     const size_t n_inputs,
@@ -32,6 +34,7 @@ noc_block_base::make_args_ptr make_make_args(noc_id_t noc_id,
     make_args->noc_id             = noc_id;
     make_args->num_input_ports    = n_inputs;
     make_args->num_output_ports   = n_outputs;
+    make_args->mtu                = DEFAULT_MTU;
     make_args->reg_iface          = std::make_shared<mock_reg_iface_t>();
     make_args->block_id           = block_id;
     make_args->ctrlport_clk_iface = std::make_shared<clock_iface>(cp_clock_name);
@@ -164,6 +167,7 @@ BOOST_AUTO_TEST_CASE(test_ddc_block)
     BOOST_REQUIRE(ddc_reg_iface->write_memory.count(ddc_block_control::SR_DECIM_ADDR));
     BOOST_CHECK_EQUAL(
         ddc_reg_iface->write_memory.at(ddc_block_control::SR_DECIM_ADDR), 2 << 8 | 5);
+    BOOST_CHECK_EQUAL(test_ddc->get_mtu({res_source_info::INPUT_EDGE, 0}), DEFAULT_MTU);
 
     // Now plop it in a graph
     detail::graph_t graph{};
@@ -183,11 +187,16 @@ BOOST_AUTO_TEST_CASE(test_ddc_block)
         "scaling", 1.0, {res_source_info::OUTPUT_EDGE, 0});
     mock_source_term.set_edge_property<double>(
         "samp_rate", 1.0, {res_source_info::OUTPUT_EDGE, 0});
+    constexpr size_t NEW_MTU = 4000;
+    mock_source_term.set_edge_property<size_t>(
+        "mtu", NEW_MTU, {res_source_info::OUTPUT_EDGE, 0});
 
-    UHD_LOG_INFO("TEST", "Creating graph");
+    UHD_LOG_INFO("TEST", "Creating graph...");
     graph.connect(&mock_source_term, test_ddc.get(), edge_info);
     graph.connect(test_ddc.get(), &mock_sink_term, edge_info);
+    UHD_LOG_INFO("TEST", "Committing graph...");
     graph.commit();
+    UHD_LOG_INFO("TEST", "Commit complete.");
     // We need to set the decimation again, because the rates will screw it
     // change it w.r.t. to the previous setting
     test_ddc->set_property<int>("decim", TEST_DECIM, 0);
@@ -216,5 +225,15 @@ BOOST_AUTO_TEST_CASE(test_ddc_block)
     // The frequency word is the phase increment, which will halve. We skirt
     // around fixpoint/floating point accuracy issues by using CLOSE.
     BOOST_CHECK_CLOSE(double(freq_word_1) / double(freq_word_2), 2.0, 1e-6);
+
+    UHD_LOG_INFO("TEST", "Testing DDC MTU propagation");
+    BOOST_CHECK_EQUAL(test_ddc->get_mtu({res_source_info::INPUT_EDGE, 0}), NEW_MTU);
+    BOOST_CHECK_EQUAL(test_ddc->get_mtu({res_source_info::OUTPUT_EDGE, 0}), NEW_MTU);
+    BOOST_CHECK_EQUAL(test_ddc->get_mtu({res_source_info::INPUT_EDGE, 1}), DEFAULT_MTU);
+    BOOST_CHECK_EQUAL(test_ddc->get_mtu({res_source_info::OUTPUT_EDGE, 1}), DEFAULT_MTU);
+    mock_source_term.set_edge_property<size_t>(
+        "mtu", NEW_MTU / 2, {res_source_info::OUTPUT_EDGE, 0});
+    BOOST_CHECK_EQUAL(test_ddc->get_mtu({res_source_info::INPUT_EDGE, 0}), NEW_MTU / 2);
+    BOOST_CHECK_EQUAL(test_ddc->get_mtu({res_source_info::OUTPUT_EDGE, 0}), NEW_MTU / 2);
 }
 

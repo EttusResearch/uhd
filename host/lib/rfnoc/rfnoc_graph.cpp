@@ -409,6 +409,8 @@ private:
             make_args_uptr->block_id = block_id;
             make_args_uptr->num_input_ports    = block_info.num_inputs;
             make_args_uptr->num_output_ports   = block_info.num_outputs;
+            make_args_uptr->mtu =
+                (1 << block_info.data_mtu) * chdr_w_to_bits(mb.get_chdr_w()) / 8;
             make_args_uptr->reg_iface          = block_reg_iface;
             make_args_uptr->tb_clk_iface       = tb_clk_iface;
             make_args_uptr->ctrlport_clk_iface = ctrlport_clk_iface;

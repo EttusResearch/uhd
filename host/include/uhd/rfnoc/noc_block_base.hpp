@@ -98,6 +98,20 @@ public:
      */
     double get_tick_rate() const;
 
+    /*! Return the current MTU on a given edge
+     *
+     * The MTU is determined by the block itself (i.e., how big of a packet can
+     * this block handle on this edge), but also the neighboring block, and
+     * possibly the transport medium between the blocks. This value can thus be
+     * lower than what the block defines as MTU, but never higher.
+     *
+     * \param edge The edge on which the MTU is queried. edge.type must be
+     *             INPUT_EDGE or OUTPUT_EDGE!
+     * \returns the MTU as determined by the overall graph on this edge
+     * \throws uhd::value_error if edge is not referring to a valid edge
+     */
+    size_t get_mtu(const res_source_info& edge);
+
     /*! Return the arguments that were passed into this block from the framework
      */
     uhd::device_addr_t get_block_args() const { return _block_args; }
@@ -142,6 +156,43 @@ protected:
      * block this block is connected to.
      */
     void set_tick_rate(const double tick_rate);
+
+    /*! Change the way MTUs are forwarded
+     *
+     * The policy will have the following effect:
+     * - DROP: This means that the MTU of one port has no bearing on the MTU
+     *   of another port. This is usually a valid choice if the FPGA is
+     *   repacking data, for example, a block could be consuming continous
+     *   streams of data, and producing small packets of a different type.
+     * - ONE_TO_ONE: This means the MTU is passed through from input to output
+     *   and vice versa. This is typically a good choice if packets are being
+     *   passed through without modifying their size. The DDC/DUC blocks will
+     *   choose this policy, because the want to relay MTU information to the
+     *   radio.
+     * - ONE_TO_ALL: This means the MTU is being set to the same value on all
+     *   ports.
+     * - ONE_TO_FAN: This means the MTU is forwarded from any input port to
+     *   all opposite side ports. This is an appropriate policy for the
+     *   split-stream block.
+     *
+     * The default policy is DROP.
+     */
+    void set_mtu_forwarding_policy(const forwarding_policy_t policy);
+
+    /*! Update the MTU
+     *
+     * This is another data point in the MTU discovery process. This means that
+     * the MTU cannot be increased using the method, only decreased.
+     */
+    void set_mtu(const res_source_info& edge, const size_t new_mtu);
+
+    /*! Return a reference to an MTU property
+     *
+     * This can be used to make the MTU an input to a property resolver. For
+     * example, blocks that have an spp property, such as the radio, can now
+     * trigger a property resolver based on the MTU.
+     */
+    property_base_t* get_mtu_prop_ref(const res_source_info& edge);
 
     /*! Get access to the motherboard controller for this block's motherboard
      *
@@ -210,6 +261,16 @@ private:
     //! Container for the 'tick rate' property. This will hold one edge property
     // for all in- and output edges.
     std::vector<property_t<double>> _tick_rate_props;
+
+    //! Forwarding policy for the MTU properties
+    forwarding_policy_t _mtu_fwd_policy = forwarding_policy_t::DROP;
+
+    //! Container for the 'mtu' property. This will hold one edge property
+    // for all in- and output edges.
+    std::vector<property_t<size_t> > _mtu_props;
+
+    //! The actual MTU value
+    std::unordered_map<res_source_info, size_t> _mtu;
 
     //! Reference to the ctrlport clock_iface object shared with the register_iface
     std::shared_ptr<clock_iface> _ctrlport_clock_iface;

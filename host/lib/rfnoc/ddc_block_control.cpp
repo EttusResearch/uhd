@@ -71,6 +71,7 @@ public:
                                             << " halfbands and "
                                                "max CIC decimation "
                                             << _cic_max_decim);
+        set_mtu_forwarding_policy(forwarding_policy_t::ONE_TO_ONE);
         // Load list of valid decimation values
         std::set<size_t> decims{1}; // 1 is always a valid decimatino
         for (size_t hb = 0; hb < _num_halfbands; hb++) {

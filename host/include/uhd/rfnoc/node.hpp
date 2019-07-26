@@ -217,6 +217,15 @@ protected:
      *   property access is not violated. All properties can be read during
      *   execution, but only properties in the \p outputs list can be written
      *   to.
+     * - Resolvers are stored and executed in the same order they are added.
+     *   That is to say, if two resolvers both share a condition that will
+     *   trigger them, the first resolver to be added will be the first resolver
+     *   to be executed. This allows to make some assumptions on the order of
+     *   execution, in case resolvers have dependencies.
+     * - This method has no built-in thread safety, since it is typically only
+     *   called in the constructor. If resolvers need to be added at runtime
+     *   (which is considered advanced usage), then the block needs to serialize
+     *   access to this function itself.
      *
      * \param inputs The properties that will cause this resolver to run
      * \param outputs The properties that this resolver will write to
