@@ -258,6 +258,7 @@ UHD_ADD_NONAPI_TEST(
     ${CMAKE_SOURCE_DIR}/lib/utils/compat_check.cpp
     ${CMAKE_SOURCE_DIR}/lib/utils/system_time.cpp
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/ddc_block_control.cpp
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/duc_block_control.cpp
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/null_block_control.cpp
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/register_iface_holder.cpp
     ${CMAKE_SOURCE_DIR}/lib/usrp/cores/dsp_core_utils.cpp

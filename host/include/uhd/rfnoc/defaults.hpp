@@ -15,6 +15,7 @@ namespace uhd { namespace rfnoc {
 static const std::string CLOCK_KEY_GRAPH("__graph__");
 
 static const std::string PROP_KEY_DECIM("decim");
+static const std::string PROP_KEY_INTERP("interp");
 static const std::string PROP_KEY_SAMP_RATE("samp_rate");
 static const std::string PROP_KEY_SCALING("scaling");
 static const std::string PROP_KEY_TYPE("type");

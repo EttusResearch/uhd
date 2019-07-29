@@ -11,6 +11,7 @@
 #include <uhd/rfnoc/node.hpp>
 #include <uhd/types/stream_cmd.hpp>
 #include <uhdlib/rfnoc/node_accessor.hpp>
+#include <list>
 
 using namespace uhd::rfnoc;
 
@@ -358,11 +359,22 @@ class mock_terminator_t : public node_t
 public:
     static size_t counter;
 
-    mock_terminator_t(const size_t num_ports)
+    mock_terminator_t(
+        const size_t num_ports, const std::vector<std::string> expected_actions = {})
         : _num_ports(num_ports), _term_count(counter++)
     {
         set_prop_forwarding_policy(forwarding_policy_t::DROP);
         set_action_forwarding_policy(forwarding_policy_t::DROP);
+        for (const auto& action_key : expected_actions) {
+            RFNOC_LOG_DEBUG("Adding action handler for key " << action_key);
+            register_action_handler(
+                action_key, [this](const res_source_info& src, action_info::sptr action) {
+                    RFNOC_LOG_INFO(
+                        "Received action: key=" << action->key << ", id=" << action->id
+                                                << ", src edge=" << src.to_string());
+                    received_actions.push_back(action);
+                });
+        }
     }
 
     std::string get_unique_id() const
@@ -404,6 +416,8 @@ public:
                          || edge_info.type == res_source_info::OUTPUT_EDGE);
         return get_property<data_t>(id, edge_info);
     }
+
+    std::list<action_info::sptr> received_actions;
 
 private:
     const size_t _num_ports;

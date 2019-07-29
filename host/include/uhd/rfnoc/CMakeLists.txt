@@ -36,6 +36,7 @@ if(ENABLE_RFNOC)
         tick_node_ctrl.hpp
         # Block controllers
         ddc_block_control.hpp
+        duc_block_control.hpp
         ddc_block_ctrl.hpp
         dma_fifo_block_ctrl.hpp
         duc_block_ctrl.hpp
