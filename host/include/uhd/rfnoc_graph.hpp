@@ -156,6 +156,19 @@ public:
     /**************************************************************************
      * Connection APIs
      *************************************************************************/
+    /*! Verify if two blocks/ports are connectable.
+     *
+     * If this call returns true, then connect() can be called with the same
+     * arguments. It does not, however, check if the block was already
+     * connnected.
+     *
+     * \returns true if the two blocks are connectable
+     */
+    virtual bool is_connectable(const block_id_t& src_blk,
+        size_t src_port,
+        const block_id_t& dst_blk,
+        size_t dst_port) = 0;
+
     /*! Connect a RFNOC block with block ID \p src_block to another with block ID \p
      * dst_block.
      *

@@ -91,6 +91,79 @@ public:
     /**************************************************************************
      * Graph Connections
      *************************************************************************/
+    bool is_connectable(const block_id_t& src_blk,
+        size_t src_port,
+        const block_id_t& dst_blk,
+        size_t dst_port)
+    {
+        try {
+            const std::string src_blk_info =
+                src_blk.to_string() + ":" + std::to_string(src_port);
+            const std::string dst_blk_info =
+                dst_blk.to_string() + ":" + std::to_string(dst_port);
+
+            // Find the static edge for src_blk:src_port
+            auto src_static_edge_o = _get_static_edge(
+                [src_blk_id = src_blk.to_string(), src_port](const graph_edge_t& edge) {
+                    return edge.src_blockid == src_blk_id && edge.src_port == src_port;
+                });
+            // If the edge doesn't exist, then it's not even connected in the
+            // FPGA.
+            if (!src_static_edge_o) {
+                return false;
+            }
+            graph_edge_t src_static_edge = src_static_edge_o.get();
+
+            // Now see if it's already connected to the destination
+            if (src_static_edge.dst_blockid == dst_blk.to_string()
+                && src_static_edge.dst_port == dst_port) {
+                return true;
+            }
+
+            // If they're not statically connected, the source *must* be connected
+            // to an SEP, or this route is impossible
+            if (block_id_t(src_static_edge.dst_blockid).get_block_name() != NODE_ID_SEP) {
+                return false;
+            }
+
+            // OK, now we know which source SEP we have
+            const std::string src_sep_info = src_static_edge.dst_blockid;
+            // const sep_addr_t src_sep_addr  = _sep_map.at(src_sep_info);
+
+            // Now find the static edge for the destination SEP
+            auto dst_static_edge_o = _get_static_edge(
+                [dst_blk_id = dst_blk.to_string(), dst_port](const graph_edge_t& edge) {
+                    return edge.dst_blockid == dst_blk_id && edge.dst_port == dst_port;
+                });
+            // If the edge doesn't exist, then it's not even connected in the
+            // FPGA.
+            if (!dst_static_edge_o) {
+                return false;
+            }
+            graph_edge_t dst_static_edge = dst_static_edge_o.get();
+
+            // If they're not statically connected, the source *must* be connected
+            // to an SEP, or this route is impossible
+            if (block_id_t(dst_static_edge.src_blockid).get_block_name() != NODE_ID_SEP) {
+                return false;
+            }
+
+            // OK, now we know which destination SEP we have
+            const std::string dst_sep_info = dst_static_edge.src_blockid;
+            // const sep_addr_t dst_sep_addr  = _sep_map.at(dst_sep_info);
+
+            UHD_LOG_WARNING(LOG_ID,
+                "is_connectable() currently assuming that SEPs"
+                    << dst_sep_info << " and " << src_sep_info
+                    << " are connectable. "
+                       "Please implement a better check.");
+        } catch (...) {
+            return false;
+        }
+        return true;
+    }
+
+
     void connect(const block_id_t& src_blk,
         size_t src_port,
         const block_id_t& dst_blk,
