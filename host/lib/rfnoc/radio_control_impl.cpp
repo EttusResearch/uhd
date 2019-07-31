@@ -175,9 +175,12 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
             {&_spp_prop.back()},
             [this, chan, &spp = _spp_prop.back()]() {
                 RFNOC_LOG_TRACE("Calling resolver for spp@" << chan);
+                // TODO: Replace the magic number 16 (the protocol overhead)
+                // with something else that is calculated based on the CHDR width
                 const int mtu =
-                    static_cast<int>(get_mtu({res_source_info::OUTPUT_EDGE, chan}));
-                const int max_spp_per_mtu = mtu / (_samp_width / 8) - (mtu % _spc);
+                    static_cast<int>(get_mtu({res_source_info::OUTPUT_EDGE, chan})) - 16;
+                const int mtu_samps       = mtu / (_samp_width / 8);
+                const int max_spp_per_mtu = mtu_samps - (mtu_samps % _spc);
                 if (spp.get() > max_spp_per_mtu) {
                     RFNOC_LOG_WARNING("spp value " << spp.get() << " exceeds MTU of "
                                                    << mtu << "! Coercing to "
@@ -196,13 +199,15 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
                         "spp must be greater than zero! Coercing to " << spp.get());
                 }
             });
+        // Note: The following resolver calls coerce_rate(), which is virtual.
+        // At run time, it will use the implementation by the child class.
         add_property_resolver({&_samp_rate_in.back(), &_samp_rate_out.back()},
             {&_samp_rate_in.back(), &_samp_rate_out.back()},
             [this, chan,
                 &samp_rate_in  = _samp_rate_in.at(chan),
                 &samp_rate_out = _samp_rate_out.at(chan)]() {
                 RFNOC_LOG_TRACE("Calling resolver for samp_rate@" << chan);
-                samp_rate_in = set_rate(samp_rate_in.get());
+                samp_rate_in  = coerce_rate(samp_rate_in.get());
                 samp_rate_out = samp_rate_in.get();
             });
         // Resolvers for type: These are constants

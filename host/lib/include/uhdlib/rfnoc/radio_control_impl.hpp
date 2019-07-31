@@ -256,6 +256,22 @@ public:
     static const uhd::fs_path FE_PATH;
 
 protected:
+    /*! Helper function for property propagation: Like set_rate(), but called
+     * during a different context.
+     *
+     * This function is called from the samp_rate property resolver. The
+     * difference to set_rate() is that the latter is a user API, and may
+     * trigger different kinds of warnings or errors.
+     * If the radio supports changing its sampling rate at runtime, it is OK to
+     * call set_rate() within this function.
+     *
+     * Default implementation is to simply return the current rate.
+     */
+    virtual double coerce_rate(const double /* rate */)
+    {
+        return _rate;
+    }
+
     //! Properties for samp_rate (one per port)
     std::vector<property_t<double>> _samp_rate_in;
     //! Properties for samp_rate (one per port)
