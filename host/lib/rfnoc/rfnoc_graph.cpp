@@ -5,12 +5,12 @@
 //
 
 #include <uhd/exception.hpp>
+#include <uhd/rfnoc/constants.hpp>
 #include <uhd/rfnoc/defaults.hpp>
 #include <uhd/rfnoc/mb_controller.hpp>
 #include <uhd/rfnoc/noc_block_make_args.hpp>
 #include <uhd/rfnoc/node.hpp>
 #include <uhd/rfnoc_graph.hpp>
-#include <uhd/rfnoc/constants.hpp>
 #include <uhdlib/rfnoc/block_container.hpp>
 #include <uhdlib/rfnoc/factory.hpp>
 #include <uhdlib/rfnoc/graph.hpp>
@@ -230,10 +230,8 @@ public:
             bits_to_sw_buff(rfnoc_streamer->get_otw_item_comp_bit_width());
         const sw_buff_t mdata_fmt = BUFF_U64;
 
-        auto xport = _gsm->create_host_to_device_data_stream(sep_addr,
-            pyld_fmt,
-            mdata_fmt,
-            rfnoc_streamer->get_stream_args().args);
+        auto xport = _gsm->create_host_to_device_data_stream(
+            sep_addr, pyld_fmt, mdata_fmt, rfnoc_streamer->get_stream_args().args);
 
         rfnoc_streamer->connect_channel(strm_port, std::move(xport));
 
@@ -284,10 +282,8 @@ public:
             bits_to_sw_buff(rfnoc_streamer->get_otw_item_comp_bit_width());
         const sw_buff_t mdata_fmt = BUFF_U64;
 
-        auto xport = _gsm->create_device_to_host_data_stream(sep_addr,
-            pyld_fmt,
-            mdata_fmt,
-            rfnoc_streamer->get_stream_args().args);
+        auto xport = _gsm->create_device_to_host_data_stream(
+            sep_addr, pyld_fmt, mdata_fmt, rfnoc_streamer->get_stream_args().args);
 
         rfnoc_streamer->connect_channel(strm_port, std::move(xport));
 
@@ -363,7 +359,7 @@ private:
         auto e2s = [](uhd::endianness_t endianness) {
             return endianness == uhd::ENDIANNESS_BIG ? "BIG" : "LITTLE";
         };
-        const chdr_w_t chdr_w = _device->get_mb_iface(0).get_chdr_w();
+        const chdr_w_t chdr_w              = _device->get_mb_iface(0).get_chdr_w();
         const uhd::endianness_t endianness = _device->get_mb_iface(0).get_endianness();
         for (size_t mb_idx = 1; mb_idx < _num_mboards; mb_idx++) {
             if (_device->get_mb_iface(mb_idx).get_chdr_w() != chdr_w) {
@@ -480,16 +476,15 @@ private:
             auto make_args_uptr      = std::make_unique<noc_block_base::make_args_t>();
             make_args_uptr->noc_id   = noc_id;
             make_args_uptr->block_id = block_id;
-            make_args_uptr->num_input_ports    = block_info.num_inputs;
-            make_args_uptr->num_output_ports   = block_info.num_outputs;
+            make_args_uptr->num_input_ports  = block_info.num_inputs;
+            make_args_uptr->num_output_ports = block_info.num_outputs;
             make_args_uptr->mtu =
                 (1 << block_info.data_mtu) * chdr_w_to_bits(mb.get_chdr_w()) / 8;
             make_args_uptr->reg_iface          = block_reg_iface;
             make_args_uptr->tb_clk_iface       = tb_clk_iface;
             make_args_uptr->ctrlport_clk_iface = ctrlport_clk_iface;
-            make_args_uptr->mb_control         = block_factory_info.mb_access
-                                              ? _mb_controllers.at(mb_idx)
-                                              : nullptr;
+            make_args_uptr->mb_control =
+                block_factory_info.mb_access ? _mb_controllers.at(mb_idx) : nullptr;
             const uhd::fs_path block_path(uhd::fs_path("/blocks") / block_id.to_string());
             _tree->create<uint32_t>(block_path / "noc_id").set(noc_id);
             make_args_uptr->tree = _tree->subtree(block_path);
