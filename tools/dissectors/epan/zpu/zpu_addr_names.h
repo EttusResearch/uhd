@@ -33,6 +33,7 @@ static const value_string X300_SHMEM_NAMES[] = {
     { 9, "X300_FW_SHMEM_UART_TX_ADDR" },
     { 10, "X300_FW_SHMEM_UART_WORDS32" },
     { 11, "X300_FW_SHMEM_ROUTE_MAP_ADDR" },
-    { 12, "X300_FW_SHMEM_ROUTE_MAP_LEN" }
+    { 12, "X300_FW_SHMEM_ROUTE_MAP_LEN" },
+    { 0, NULL }
 };
 

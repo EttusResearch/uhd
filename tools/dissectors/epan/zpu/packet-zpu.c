@@ -2,20 +2,9 @@
  * Dissector for ZPU packets (communication with X300 firmware)
  *
  * Copyright 2013-2014 Ettus Research LLC
+ * Copyright 2019 Ettus Research, a National Instruments brand
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 /* Format of ZPU packets is defined in x300_fw_commons.h,
@@ -29,15 +18,26 @@
  *  uint32_t data;
  */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#ifdef HAVE_CONFIG_H
 #include "config.h"
+#endif
 
 #include <glib.h>
 #include <epan/packet.h>
+
+#ifdef __cplusplus
+}
+#endif
+
 #include <ctype.h>
 #include <stdio.h>
 #include <endian.h>
 
-#include "../../host/lib/usrp/x300/x300_fw_common.h"
+#include "../../../../host/lib/usrp/x300/x300_fw_common.h"
 #include "zpu_addr_names.h"
 
 #define LOG_HEADER  "[ZPU] "
@@ -68,10 +68,10 @@ static gint ett_zpu_flags = -1;
 /* Forward-declare the dissector functions */
 void proto_register_zpu(void);
 void proto_reg_handoff_zpu(void);
-static void dissect_zpu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree);
+static int dissect_zpu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data);
 
 /* The dissector itself */
-static void dissect_zpu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
+static int dissect_zpu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
 {
     proto_item *item;
     proto_tree *zpu_tree;
@@ -127,6 +127,8 @@ static void dissect_zpu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
                     guint8 *bytes = tvb_get_string(tvb, 8, 4);
 #elif VERSION_MAJOR == 2
                     guint8 *bytes = tvb_get_string(wmem_packet_scope(), tvb, 8, 4);
+#elif VERSION_MAJOR == 3
+                    guint8 *bytes = tvb_get_string_enc(wmem_packet_scope(), tvb, 8, 4, ENC_ASCII);
 #else
 #error Wireshark version not found or not compatible
 #endif
@@ -159,6 +161,7 @@ static void dissect_zpu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
             }
         }
     }
+    return len;
 }
 
 void proto_register_zpu(void)
@@ -172,26 +175,26 @@ void proto_register_zpu(void)
         },
             { &hf_zpu_flags_ack,
                 { "ACK", "zpu.flags.ack",
-                    FT_BOOLEAN, BASE_NONE,
-                    NULL, 0x1,
+                    FT_BOOLEAN, 32,
+                    TFS(&tfs_set_notset), 0x1,
                     NULL, HFILL }
             },
             { &hf_zpu_flags_error,
                 { "Error", "zpu.flags.error",
-                    FT_BOOLEAN, BASE_NONE,
-                    NULL, 0x2,
+                    FT_BOOLEAN, 32,
+                    TFS(&tfs_set_notset), 0x2,
                     NULL, HFILL }
             },
             { &hf_zpu_flags_poke,
                 { "Poke", "zpu.flags.poke",
-                    FT_BOOLEAN, BASE_NONE,
-                    NULL, 0x4,
+                    FT_BOOLEAN, 32,
+                    TFS(&tfs_set_notset), 0x4,
                     NULL, HFILL }
             },
             { &hf_zpu_flags_peek,
                 { "Peek", "zpu.flags.peek",
-                    FT_BOOLEAN, BASE_NONE,
-                    NULL, 0x8,
+                    FT_BOOLEAN, 32,
+                    TFS(&tfs_set_notset), 0x8,
                     NULL, HFILL }
             },
         { &hf_zpu_seq,
