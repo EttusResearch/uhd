@@ -182,3 +182,14 @@ private:
 gain_group::sptr gain_group::make(void){
     return sptr(new gain_group_impl());
 }
+
+gain_group::sptr gain_group::make_zero()
+{
+    gain_fcns_t gain_fcns;
+    gain_fcns.get_range = []() { return meta_range_t(0.0, 0.0); };
+    gain_fcns.get_value = []() { return 0.0; };
+    gain_fcns.set_value = [](const double) {};
+    auto gg             = make();
+    gg->register_fcns("null", gain_fcns);
+    return gg;
+}
