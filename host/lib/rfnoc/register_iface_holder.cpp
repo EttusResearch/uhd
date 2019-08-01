@@ -64,6 +64,11 @@ public:
         UHD_LOG_ERROR("REGS", "Attempting to use invalidated register interface!");
     }
 
+    void register_async_msg_validator(async_msg_validator_t)
+    {
+        UHD_LOG_ERROR("REGS", "Attempting to use invalidated register interface!");
+    }
+
     void set_policy(const std::string&, const uhd::device_addr_t&)
     {
         UHD_LOG_ERROR("REGS", "Attempting to use invalidated register interface!");

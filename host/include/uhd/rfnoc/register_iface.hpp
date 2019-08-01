@@ -32,11 +32,26 @@ public:
 
     virtual ~register_iface() = default;
 
-    /*! Callback function for an asynchronous message.
+    /*! Callback function for validating an asynchronous message.
+     *
      *  When a block in the FPGA sends an asynchronous message to the software,
-     *  the async message callback function is called. An async message can be
+     *  the async message validator function is called. An async message can be
      *  modelled as a simple register write (key-value pair with addr/data) that
      *  is initiated by the FPGA.
+     *  If this message returns true, the message is considered valid.
+     */
+    using async_msg_validator_t =
+        std::function<bool(uint32_t addr, const std::vector<uint32_t>& data)>;
+
+    /*! Callback function for acting upon an asynchronous message.
+     *
+     *  When a block in the FPGA sends an asynchronous message to the software,
+     *  and it has been validated, the async message callback function is called.
+     *  An async message can be modelled as a simple register write (key-value
+     *  pair with addr/data) that is initiated by the FPGA.
+     *
+     *  When this message is called, the async message was previously verified
+     *  by calling the async message validator callback.
      */
     using async_msg_callback_t = std::function<void(
         uint32_t addr, const std::vector<uint32_t>& data, boost::optional<uint64_t>)>;
@@ -244,6 +259,27 @@ public:
      * \throws op_seqerr if an ACK is requested and a sequence error occurs
      */
     virtual void sleep(time_spec_t duration, bool ack = false) = 0;
+
+    /*! Register a callback function to validate a received async message
+     *
+     * The purpose of this callback is to provide a method to the framework to
+     * make sure a received async message is valid. If this callback is
+     * provided, the framework will first pass the message to the validator for
+     * validation. If the validator returns true, the async message is ACK'd
+     * with a ctrl_status_t::CMD_OKAY response, and then the async message is
+     * executed. If the validator returns false, then the async message is ACK'd
+     * with a ctrl_status_t::CMD_CMDERR, and the async message handler is not
+     * excecuted.
+     *
+     * This callback may not communicate with the device, it can only look at
+     * the data and make a valid/not valid decision.
+     *
+     * Only one callback function can be registered. When calling this multiple
+     * times, only the last callback will be accepted.
+     *
+     * \param callback_f The function to call when an asynchronous message is received.
+     */
+    virtual void register_async_msg_validator(async_msg_validator_t callback_f) = 0;
 
     /*! Register a callback function for when an async message is received
      *

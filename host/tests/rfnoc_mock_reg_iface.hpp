@@ -95,6 +95,11 @@ public:
         // nop
     }
 
+    void register_async_msg_validator(async_msg_validator_t /*callback_f*/)
+    {
+        // nop
+    }
+
     void register_async_msg_handler(async_msg_callback_t /*callback_f*/)
     {
         // nop

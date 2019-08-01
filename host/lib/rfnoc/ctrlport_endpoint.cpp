@@ -191,6 +191,12 @@ public:
         }
     }
 
+    virtual void register_async_msg_validator(async_msg_validator_t callback_f)
+    {
+        std::unique_lock<std::mutex> lock(_mutex);
+        _validate_async_msg = callback_f;
+    }
+
     virtual void register_async_msg_handler(async_msg_callback_t callback_f)
     {
         std::unique_lock<std::mutex> lock(_mutex);
@@ -274,12 +280,12 @@ public:
                 UHD_LOG_ERROR(
                     "CTRLEP", "Malformed async message request: Invalid num_data");
             } else {
-                try {
-                    _handle_async_msg(
-                        rx_ctrl.address, rx_ctrl.data_vtr, rx_ctrl.timestamp);
+                if (!_validate_async_msg(rx_ctrl.address, rx_ctrl.data_vtr)) {
+                    UHD_LOG_ERROR("CTRLEP",
+                        "Malformed async message request: Async message was not "
+                        "validated by block controller!");
+                } else {
                     status = CMD_OKAY;
-                } catch (...) {
-                    UHD_LOG_ERROR("CTRLEP", "Async message handler threw an exception");
                 }
             }
             try {
@@ -298,6 +304,19 @@ public:
             } catch (...) {
                 UHD_LOG_ERROR("CTRLEP",
                     "Encountered an error sending a response for an async message");
+                return;
+            }
+            if (status == CMD_OKAY) {
+                try {
+                    _handle_async_msg(
+                        rx_ctrl.address, rx_ctrl.data_vtr, rx_ctrl.timestamp);
+                } catch (const std::exception& ex) {
+                    UHD_LOG_ERROR("CTRLEP",
+                        "Caught exception during async message handling: " << ex.what());
+                } catch (...) {
+                    UHD_LOG_ERROR("CTRLEP",
+                        "Caught unknown exception during async message handling!");
+                }
             }
         }
     }
@@ -463,6 +482,10 @@ private:
     //! The clock that drives the timing logic for the ctrlport endpoint
     const clock_iface& _timebase_clk;
 
+    //! The function to call to validate an async message (by default, all async
+    // messages are considered valid)
+    async_msg_validator_t _validate_async_msg =
+        [](uint32_t, const std::vector<uint32_t>&) { return true; };
     //! The function to call to handle an async message
     async_msg_callback_t _handle_async_msg = async_msg_callback_t();
     //! The current control sequence number of outgoing packets
