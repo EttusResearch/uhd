@@ -278,6 +278,11 @@ protected:
     std::vector<property_t<double>> _samp_rate_out;
 
 private:
+    //! Validator for the async messages
+    //
+    // We only know about overruns, underruns, and late commands/packets.
+    bool async_message_validator(uint32_t addr, const std::vector<uint32_t>& data);
+
     //! Receiver for the async messages
     //
     // This block will receive all async messages. The following async messages

@@ -250,6 +250,10 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
             regmap::SWREG_RX_ERR + regmap::SWREG_CHAN_OFFSET * rx_chan);
     }
     // Now register a function to receive the async messages
+    regs().register_async_msg_validator(
+        [this](uint32_t addr, const std::vector<uint32_t>& data) {
+            return this->async_message_validator(addr, data);
+        });
     regs().register_async_msg_handler([this](uint32_t addr,
                                           const std::vector<uint32_t>& data,
                                           boost::optional<uint64_t> timestamp) {
@@ -838,6 +842,50 @@ void radio_control_impl::issue_stream_cmd(
 /******************************************************************************
  * Private methods
  *****************************************************************************/
+bool radio_control_impl::async_message_validator(
+    uint32_t addr, const std::vector<uint32_t>& data)
+{
+    if (data.empty()) {
+        return false;
+    }
+    // For these calculations, see below
+    const uint32_t addr_base = (addr >= regmap::SWREG_RX_ERR) ? regmap::SWREG_RX_ERR
+                                                              : regmap::SWREG_TX_ERR;
+    const uint32_t chan        = (addr - addr_base) / regmap::SWREG_CHAN_OFFSET;
+    const uint32_t addr_offset = addr % regmap::SWREG_CHAN_OFFSET;
+    const uint32_t code        = data[0];
+    if (addr_offset > 0) {
+        return false;
+    }
+    if (addr_base == regmap::SWREG_RX_ERR) {
+        if (chan > get_num_output_ports()) {
+            return false;
+        }
+        switch (code) {
+            case err_codes::ERR_RX_OVERRUN:
+                return true;
+            case err_codes::ERR_RX_LATE_CMD:
+                return true;
+            default:
+                return false;
+        }
+    }
+    if (addr_base == regmap::SWREG_TX_ERR) {
+        if (chan > get_num_input_ports()) {
+            return false;
+        }
+        switch (code) {
+            case err_codes::ERR_TX_UNDERRUN:
+                return true;
+            case err_codes::ERR_TX_LATE_DATA:
+                return true;
+            default:
+                return false;
+        }
+    }
+    return false;
+}
+
 void radio_control_impl::async_message_handler(
     uint32_t addr, const std::vector<uint32_t>& data, boost::optional<uint64_t> timestamp)
 {
