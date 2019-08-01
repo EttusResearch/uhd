@@ -805,5 +805,10 @@ they can be queried through the API.
 - **ref_locked** - clock reference locked (internal/external)
 - Other sensors are added when the GPSDO is enabled
 
+\subsection x3x0_misc_timed_cmds_lockup Multiple Timed Command Advisory
+
+When issuing multiple timed commands to an x3xx device, it is important to ensure that the device is streaming data in some capacity. In the HG and XG images, the DDC & DUC derive their sense of time from the header of passing packets. This sense of time is necessary to execute timed commands. Repeatedly issuing timed commands without streaming will result in the command queue of the DDC / DUC backing up and overflowing, putting the device in a state where a full restart is required.
+
+
 */
 // vim:ft=doxygen:
