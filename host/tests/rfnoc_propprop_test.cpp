@@ -324,11 +324,10 @@ BOOST_AUTO_TEST_CASE(test_graph_ro_prop)
     graph.commit();
 
     const size_t rx_rssi_resolver_count = mock_rx_radio.rssi_resolver_count;
+    UHD_LOG_INFO("TEST", "Now testing mock RSSI resolver/get prop");
     UHD_LOG_DEBUG("TEST", "RX RSSI: " << mock_rx_radio.get_property<double>("rssi"));
     // The next value must match the value in graph.cpp
-    constexpr size_t MAX_NUM_ITERATIONS = 2;
-    BOOST_CHECK_EQUAL(
-        rx_rssi_resolver_count + MAX_NUM_ITERATIONS, mock_rx_radio.rssi_resolver_count);
+    BOOST_CHECK_EQUAL(rx_rssi_resolver_count + 1, mock_rx_radio.rssi_resolver_count);
 }
 
 BOOST_AUTO_TEST_CASE(test_graph_double_connect)

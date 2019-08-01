@@ -116,11 +116,20 @@ void graph_t::connect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t edg
     edge_info.src_blockid = src_node->get_unique_id();
     edge_info.dst_blockid = dst_node->get_unique_id();
 
+    // Add nodes to graph, if not already in there:
+    _add_node(src_node);
+    _add_node(dst_node);
+    // Find vertex descriptors
+    auto src_vertex_desc = _node_map.at(src_node);
+    auto dst_vertex_desc = _node_map.at(dst_node);
+
     // Set resolver callbacks:
-    node_accessor.set_resolve_all_callback(
-        src_node, [this]() { this->resolve_all_properties(); });
-    node_accessor.set_resolve_all_callback(
-        dst_node, [this]() { this->resolve_all_properties(); });
+    node_accessor.set_resolve_all_callback(src_node, [this, src_vertex_desc]() {
+        this->resolve_all_properties(resolve_context::NODE_PROP, src_vertex_desc);
+    });
+    node_accessor.set_resolve_all_callback(dst_node, [this, dst_vertex_desc]() {
+        this->resolve_all_properties(resolve_context::NODE_PROP, dst_vertex_desc);
+    });
     // Set post action callbacks:
     node_accessor.set_post_action_callback(
         src_node, [this, src_node](const res_source_info& src, action_info::sptr action) {
@@ -130,13 +139,6 @@ void graph_t::connect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t edg
         dst_node, [this, dst_node](const res_source_info& src, action_info::sptr action) {
             this->enqueue_action(dst_node, src, action);
         });
-
-    // Add nodes to graph, if not already in there:
-    _add_node(src_node);
-    _add_node(dst_node);
-    // Find vertex descriptors
-    auto src_vertex_desc = _node_map.at(src_node);
-    auto dst_vertex_desc = _node_map.at(dst_node);
 
     // Check if connection exists
     // This can be optimized: Edges can appear in both out_edges and in_edges,
@@ -181,7 +183,7 @@ void graph_t::commit()
     }
     if (_release_count == 0) {
         _check_topology();
-        resolve_all_properties();
+        resolve_all_properties(resolve_context::INIT, *boost::vertices(_graph).first);
     }
 }
 
@@ -210,8 +212,11 @@ std::vector<graph_t::graph_edge_t> graph_t::enumerate_edges()
 /******************************************************************************
  * Private methods to be called by friends
  *****************************************************************************/
-void graph_t::resolve_all_properties()
+void graph_t::resolve_all_properties(
+    resolve_context context, rfnoc_graph_t::vertex_descriptor initial_node)
 {
+    node_accessor_t node_accessor{};
+
     if (boost::num_vertices(_graph) == 0) {
         return;
     }
@@ -221,9 +226,16 @@ void graph_t::resolve_all_properties()
     // running.
     std::lock_guard<std::recursive_mutex> l(_release_mutex);
     if (_release_count) {
+        node_ref_t current_node = boost::get(vertex_property_t(), _graph, initial_node);
+        UHD_LOG_TRACE(LOG_ID,
+            "Only resolving node " << current_node->get_unique_id()
+                                   << ", graph is not committed!");
+        // On current node, call local resolution.
+        node_accessor.resolve_props(current_node);
+        // Now mark all properties on this node as clean
+        node_accessor.clean_props(current_node);
         return;
     }
-    node_accessor_t node_accessor{};
 
     // First, find the node on which we'll start.
     auto initial_dirty_nodes = _find_dirty_nodes();
@@ -237,14 +249,6 @@ void graph_t::resolve_all_properties()
             UHD_LOG_WARNING(LOG_ID, "Dirty: " << node->get_unique_id());
         }
     }
-    if (initial_dirty_nodes.empty()) {
-        UHD_LOG_DEBUG(LOG_ID,
-            "In resolve_all_properties(): No dirty properties found. Starting on "
-            "arbitrary node.");
-        initial_dirty_nodes.push_back(*boost::vertices(_graph).first);
-    }
-    UHD_ASSERT_THROW(!initial_dirty_nodes.empty());
-    auto initial_node = initial_dirty_nodes.front();
 
     // Now get all nodes in topologically sorted order, and the appropriate
     // iterators.
@@ -286,6 +290,14 @@ void graph_t::resolve_all_properties()
         // Now mark all properties on this node as clean
         node_accessor.clean_props(current_node);
 
+        // If the property resolution was triggered by a node updating one of
+        // its properties, we can stop anytime there are no more dirty nodes.
+        if (context == resolve_context::NODE_PROP && _find_dirty_nodes().empty()) {
+            UHD_LOG_TRACE(LOG_ID,
+                "Terminating graph resolution early during iteration " << num_iterations);
+            break;
+        }
+
         // The rest of the code in this loop is to figure out who's the next
         // node. First, increment (or decrement) iterator:
         if (forward_dir) {
@@ -312,7 +324,7 @@ void graph_t::resolve_all_properties()
         // we've gone full circle (one full iteration).
         if (forward_dir && (*node_it == initial_node)) {
             num_iterations++;
-            if (num_iterations == MAX_NUM_ITERATIONS) {
+            if (num_iterations == MAX_NUM_ITERATIONS || _find_dirty_nodes().empty()) {
                 UHD_LOG_TRACE(LOG_ID,
                     "Terminating graph resolution after iteration " << num_iterations);
                 break;

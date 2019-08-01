@@ -10,6 +10,7 @@
 #include <uhd/rfnoc/actions.hpp>
 #include <uhd/rfnoc/graph_edge.hpp>
 #include <uhd/rfnoc/node.hpp>
+#include <uhdlib/rfnoc/resolve_context.hpp>
 #include <boost/graph/adjacency_list.hpp>
 #include <deque>
 #include <memory>
@@ -146,7 +147,8 @@ private:
      *************************************************************************/
     /*! Implementation of the property propagation algorithm
      */
-    void resolve_all_properties();
+    void resolve_all_properties(uhd::rfnoc::resolve_context context,
+        rfnoc_graph_t::vertex_descriptor initial_node);
 
     /**************************************************************************
      * Action API
