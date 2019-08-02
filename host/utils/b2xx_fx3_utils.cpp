@@ -334,7 +334,8 @@ int32_t main(int32_t argc, char* argv[])
         "load-fpga,L", po::value<std::string>(&fpga_file),
             "Load a FPGA (bin) file into the FPGA.")(
         "load-bootloader,B", po::value<std::string>(&bl_file),
-            "Load a bootloader (img) file into the EEPROM");
+            "Load a bootloader (img) file into the EEPROM")(
+        "query-bootloader,Q", "Check if bootloader is loaded.");
 
     // Hidden options provided for testing - use at your own risk!
     po::options_description hidden("Hidden options");
@@ -666,6 +667,13 @@ int32_t main(int32_t argc, char* argv[])
             std::cerr << "Exception while resetting FX3: " << e.what() << std::endl;
             return EXIT_FAILURE;
         }
+    } else if (vm.count("query-bootloader")) {
+        auto signature = b200->read_eeprom(0x0, 0x0, 4);
+        if (signature != NEW_EEPROM_SIGNATURE) {
+            std::cout << "No bootloader found on device" << std::endl;
+            return EXIT_FAILURE;
+        }
+        std::cout << "Bootloader is present" << std::endl;
     }
 
     std::cout << "Operation complete!  I did it!  I did it!" << std::endl;
