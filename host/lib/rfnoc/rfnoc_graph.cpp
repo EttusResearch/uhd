@@ -60,7 +60,11 @@ public:
         _block_registry->init_props();
         _init_sep_map();
         _init_static_connections();
+    } catch (const std::exception& ex) {
+        UHD_LOG_ERROR(LOG_ID, "Caught exception while initializing graph: " << ex.what());
+        throw uhd::runtime_error("Failure to create rfnoc_graph.");
     } catch (...) {
+        UHD_LOG_ERROR(LOG_ID, "Caught unknown exception while initializing graph!");
         throw uhd::runtime_error("Failure to create rfnoc_graph.");
     }
 
