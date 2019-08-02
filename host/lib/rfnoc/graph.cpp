@@ -175,17 +175,20 @@ void graph_t::connect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t edg
 
 void graph_t::commit()
 {
+    std::lock_guard<std::recursive_mutex> l(_release_mutex);
     if (_release_count) {
         _release_count--;
-        _check_topology();
     }
-    UHD_LOG_TRACE(LOG_ID, "graph::commit() => " << _release_count.load());
-    resolve_all_properties();
+    if (_release_count == 0) {
+        _check_topology();
+        resolve_all_properties();
+    }
 }
 
 void graph_t::release()
 {
-    UHD_LOG_TRACE(LOG_ID, "graph::release() => " << _release_count.load());
+    std::lock_guard<std::recursive_mutex> l(_release_mutex);
+    UHD_LOG_TRACE(LOG_ID, "graph::release() => " << _release_count);
     _release_count++;
 }
 
@@ -212,6 +215,11 @@ void graph_t::resolve_all_properties()
     if (boost::num_vertices(_graph) == 0) {
         return;
     }
+    // We can't release during property propagation, so we lock this entire
+    // method to make sure that a) different threads can't interfere with each
+    // other, and b) that we don't release the graph while this method is still
+    // running.
+    std::lock_guard<std::recursive_mutex> l(_release_mutex);
     if (_release_count) {
         return;
     }
@@ -350,6 +358,10 @@ void graph_t::resolve_all_properties()
 void graph_t::enqueue_action(
     node_ref_t src_node, res_source_info src_edge, action_info::sptr action)
 {
+    // We can't release during action handling, so we lock this entire
+    // method to make sure that we don't release the graph while this method is
+    // still running.
+    std::lock_guard<std::recursive_mutex> release_lock(_release_mutex);
     if (_release_count) {
         UHD_LOG_WARNING(LOG_ID,
             "Action propagation is not enabled, graph is not committed! Will not "

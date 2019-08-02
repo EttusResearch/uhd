@@ -7,14 +7,14 @@
 #ifndef INCLUDED_LIBUHD_GRAPH_HPP
 #define INCLUDED_LIBUHD_GRAPH_HPP
 
-#include <uhd/rfnoc/graph_edge.hpp>
 #include <uhd/rfnoc/actions.hpp>
+#include <uhd/rfnoc/graph_edge.hpp>
 #include <uhd/rfnoc/node.hpp>
 #include <boost/graph/adjacency_list.hpp>
-#include <tuple>
-#include <memory>
 #include <deque>
-#include <atomic>
+#include <memory>
+#include <mutex>
+#include <tuple>
 
 namespace uhd { namespace rfnoc { namespace detail {
 
@@ -273,9 +273,12 @@ private:
     // message is sent
     std::recursive_mutex _action_mutex;
 
+    //! Changes to the release/commit state of the graph are locked with this mutex
+    std::recursive_mutex _release_mutex;
+
     //! This counter gets decremented everytime commit() is called. When zero,
     // the graph is committed.
-    std::atomic<size_t> _release_count{1};
+    size_t _release_count{1};
 };
 
 
