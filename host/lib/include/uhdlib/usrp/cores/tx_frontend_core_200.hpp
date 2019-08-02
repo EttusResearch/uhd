@@ -25,7 +25,7 @@ public:
 
     virtual ~tx_frontend_core_200(void) = 0;
 
-    static sptr make(uhd::wb_iface::sptr iface, const size_t base);
+    static sptr make(uhd::wb_iface::sptr iface, const size_t base, const size_t offset=4);
 
     virtual void set_mux(const std::string &mode) = 0;
 

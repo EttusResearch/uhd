@@ -15,11 +15,11 @@
 
 using namespace uhd;
 
-#define REG_TX_FE_DC_OFFSET_I         _base + 0 //24 bits
-#define REG_TX_FE_DC_OFFSET_Q         _base + 4 //24 bits
-#define REG_TX_FE_MAG_CORRECTION      _base + 8 //18 bits
-#define REG_TX_FE_PHASE_CORRECTION    _base + 12 //18 bits
-#define REG_TX_FE_MUX                 _base + 16 //8 bits (std output = 0x10, reversed = 0x01)
+#define REG_TX_FE_DC_OFFSET_I         _base + 0 * _offset  //24 bits
+#define REG_TX_FE_DC_OFFSET_Q         _base + 1 * _offset  //24 bits
+#define REG_TX_FE_MAG_CORRECTION      _base + 2 * _offset  //18 bits
+#define REG_TX_FE_PHASE_CORRECTION    _base + 3 * _offset  //18 bits
+#define REG_TX_FE_MUX                 _base + 4 * _offset  //8 bits (std output = 0x10, reversed = 0x01)
 
 const std::complex<double> tx_frontend_core_200::DEFAULT_DC_OFFSET_VALUE = std::complex<double>(0.0, 0.0);
 const std::complex<double> tx_frontend_core_200::DEFAULT_IQ_BALANCE_VALUE = std::complex<double>(0.0, 0.0);
@@ -39,8 +39,8 @@ tx_frontend_core_200::~tx_frontend_core_200(void){
 
 class tx_frontend_core_200_impl : public tx_frontend_core_200{
 public:
-    tx_frontend_core_200_impl(wb_iface::sptr iface, const size_t base):
-        _iface(iface), _base(base)
+    tx_frontend_core_200_impl(wb_iface::sptr iface, const size_t base, const size_t offset):
+        _iface(iface), _base(base), _offset(offset)
     {
         //NOP
     }
@@ -89,8 +89,9 @@ public:
 private:
     wb_iface::sptr _iface;
     const size_t _base;
+    const size_t _offset;
 };
 
-tx_frontend_core_200::sptr tx_frontend_core_200::make(wb_iface::sptr iface, const size_t base){
-    return sptr(new tx_frontend_core_200_impl(iface, base));
+tx_frontend_core_200::sptr tx_frontend_core_200::make(wb_iface::sptr iface, const size_t base, const size_t offset){
+    return sptr(new tx_frontend_core_200_impl(iface, base, offset));
 }
