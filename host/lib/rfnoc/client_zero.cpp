@@ -154,38 +154,25 @@ bool client_zero::complete_flush(uint16_t portno)
     return poll_flush_done(portno);
 }
 
-void client_zero::complete_flush_all_blocks()
+bool client_zero::complete_flush_all_blocks()
 {
     const size_t num_blocks       = get_num_blocks();
     const size_t first_block_port = 1 + get_num_stream_endpoints();
 
     // Issue flush commands
-    auto flush_done = std::vector<bool>();
     for (size_t portno = 0; portno < num_blocks; ++portno) {
         auto block_portno = portno + first_block_port;
         set_flush(block_portno);
-        flush_done.push_back(false);
     }
 
     // Poll for flush done
-    auto start          = std::chrono::steady_clock::now();
-    size_t flushes_done = 0;
-    while (flushes_done < num_blocks) {
-        for (size_t portno = 0; portno < num_blocks; ++portno) {
-            if (flush_done[portno]) {
-                continue;
-            }
-            if (std::chrono::steady_clock::now() > (start + DEFAULT_POLL_TIMEOUT)) {
-                throw uhd::runtime_error(
-                    str(boost::format("Timeout while flushing port %d") % portno));
-            }
-            auto block_portno = portno + first_block_port;
-            if (get_flush_done(block_portno)) {
-                flush_done[portno] = true;
-                flushes_done++;
-            }
-        }
+    bool all_ports_flushed = true;
+    for (size_t portno = 0; portno < num_blocks; ++portno) {
+        size_t block_portno = portno + first_block_port;
+        all_ports_flushed   = all_ports_flushed && poll_flush_done(block_portno);
     }
+
+    return all_ports_flushed;
 }
 
 void client_zero::reset_ctrl(uint16_t portno)

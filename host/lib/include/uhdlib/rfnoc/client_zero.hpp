@@ -154,9 +154,9 @@ public:
     bool complete_flush(uint16_t portno);
 
     /*! Go through the entire flush process for all ports
-     * \throws uhd::runtime_error if flush failed
+     * \return whether or not the flush succeeded
      */
-    void complete_flush_all_blocks();
+    bool complete_flush_all_blocks();
 
     /*! Reset a port's control logic
      *

@@ -663,7 +663,9 @@ private:
             std::string("Flushing and resetting blocks on mboard ")
                 + std::to_string(mb_idx));
 
-        mb_cz->complete_flush_all_blocks();
+        if (!mb_cz->complete_flush_all_blocks()) {
+            UHD_LOG_WARNING(LOG_ID, "One or more blocks timed out during flush!");
+        }
 
         // Reset
         for (size_t portno = 0; portno < num_blocks; ++portno) {
