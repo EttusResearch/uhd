@@ -28,8 +28,6 @@ static void tx_thread(uhd::usrp::multi_usrp::sptr usrp,
     const double tx_wave_freq,
     const double tx_wave_ampl)
 {
-    uhd::set_thread_priority_safe();
-
     // set max TX gain
     usrp->set_tx_gain(usrp->get_tx_gain_range().stop());
 

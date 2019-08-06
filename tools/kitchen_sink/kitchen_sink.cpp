@@ -1037,8 +1037,6 @@ std::vector<size_t> get_channels(const std::string& channel_list, size_t max = -
  * Main code + dispatcher
  **********************************************************************/
 int UHD_SAFE_MAIN(int argc, char *argv[]){
-    uhd::set_thread_priority_safe();
-
     //variables to be set by po
     std::string args;
     double duration;

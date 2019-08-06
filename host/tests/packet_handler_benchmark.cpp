@@ -319,8 +319,6 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    uhd::set_thread_priority_safe();
-
     const char* formats[]   = {"sc16", "fc32", "fc64"};
     constexpr size_t rx_spp = 2000;
     constexpr size_t tx_spp = 1000;

@@ -20,8 +20,10 @@ static const float default_thread_priority = float(0.5);
 /*!
  * Set the scheduling priority on the current thread.
  *
- * A new thread or calling process should make this call
- * with the defaults this to enable realtime scheduling.
+ * To enable realtime scheduling on a new thread, call this function with
+ * the default values. Warning: realtime scheduling can cause UHD worker
+ * threads to not share resources such as network interfaces fairly,
+ * potentially causing it to malfunction.
  *
  * A priority of zero corresponds to normal priority.
  * Positive priority values are higher than normal.
