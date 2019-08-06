@@ -99,7 +99,9 @@ public:
      * \param xport_args Transport configuration args
      * \return A CHDR RX data transport
      */
-    virtual chdr_rx_data_xport::uptr make_rx_data_transport(const sep_addr_pair_t& addrs,
+    virtual chdr_rx_data_xport::uptr make_rx_data_transport(
+        mgmt::mgmt_portal& mgmt_portal,
+        const sep_addr_pair_t& addrs,
         const sep_id_pair_t& epids,
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
@@ -116,7 +118,9 @@ public:
      * \param xport_args Transport configuration args
      * \return A CHDR TX data transport
      */
-    virtual chdr_tx_data_xport::uptr make_tx_data_transport(const sep_addr_pair_t& addrs,
+    virtual chdr_tx_data_xport::uptr make_tx_data_transport(
+        mgmt::mgmt_portal& mgmt_portal,
+        const sep_addr_pair_t& addrs,
         const sep_id_pair_t& epids,
         const uhd::rfnoc::sw_buff_t pyld_buff_fmt,
         const uhd::rfnoc::sw_buff_t mdata_buff_fmt,

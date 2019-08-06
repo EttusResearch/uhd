@@ -45,8 +45,8 @@ public:
         size_t num_send_frames,
         size_t num_recv_frames)
     {
-        return std::make_shared<chdr_ctrl_xport>(io_srv, send_link, recv_link, my_epid,
-            num_send_frames, num_recv_frames);
+        return std::make_shared<chdr_ctrl_xport>(
+            io_srv, send_link, recv_link, my_epid, num_send_frames, num_recv_frames);
     }
 
     /*!
@@ -110,6 +110,13 @@ public:
      * \param buffer frame buffer to release for reuse by the link
      */
     void release_recv_buff(frame_buff::uptr buff);
+
+    /*!
+     * Get this xport's EPID
+     *
+     * \return the source EPID for this transport
+     */
+    sep_id_t get_epid() const;
 
 private:
     chdr_ctrl_xport(const chdr_ctrl_xport&) = delete;

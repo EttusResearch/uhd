@@ -190,8 +190,7 @@ public:
     //
     static uptr make(chdr_ctrl_xport& xport,
         const chdr::chdr_packet_factory& pkt_factory,
-        sep_addr_t my_sep_addr,
-        sep_id_t my_epid);
+        sep_addr_t my_sep_addr);
 };
 
 }}} // namespace uhd::rfnoc::mgmt

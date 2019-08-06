@@ -158,7 +158,8 @@ std::string to_string(const node_addr_t& node_addr)
     if (!node_addr.empty()) {
         std::string str("");
         for (const auto& hop : node_addr) {
-            str += hop.first.to_string() + std::string(",") + std::to_string(hop.second) + std::string("->");
+            str += hop.first.to_string() + std::string(",") + std::to_string(hop.second)
+                   + std::string("->");
         }
         return str;
     } else {
@@ -177,13 +178,11 @@ class mgmt_portal_impl : public mgmt_portal
 public:
     mgmt_portal_impl(chdr_ctrl_xport& xport,
         const chdr::chdr_packet_factory& pkt_factory,
-        sep_addr_t my_sep_addr,
-        sep_id_t my_epid)
-        : _my_epid(my_epid)
-        , _protover(pkt_factory.get_protover())
+        sep_addr_t my_sep_addr)
+        : _protover(pkt_factory.get_protover())
         , _chdr_w(pkt_factory.get_chdr_w())
         , _endianness(pkt_factory.get_endianness())
-        , _my_node_id(my_sep_addr.first, NODE_TYPE_STRM_EP, my_epid)
+        , _my_node_id(my_sep_addr.first, NODE_TYPE_STRM_EP, xport.get_epid())
         , _send_seqnum(0)
         , _send_pkt(std::move(pkt_factory.make_mgmt()))
         , _recv_pkt(std::move(pkt_factory.make_mgmt()))
@@ -208,6 +207,7 @@ public:
         chdr_ctrl_xport& xport, const sep_addr_t& addr, const sep_id_t& epid)
     {
         std::lock_guard<std::recursive_mutex> lock(_mutex);
+        auto my_epid = xport.get_epid();
 
         // Create a node ID from lookup info
         node_id_t lookup_node(addr.first, NODE_TYPE_STRM_EP, addr.second);
@@ -216,10 +216,13 @@ public:
                 "initialize_endpoint(): Cannot reach node with specified address.");
         }
         const node_addr_t& node_addr = _node_addr_map.at(lookup_node);
+        if (is_endpoint_initialized(epid)) {
+            return;
+        }
 
         // Build a management transaction to first get to the node
         mgmt_payload cfg_xact;
-        cfg_xact.set_header(_my_epid, _protover, _chdr_w);
+        cfg_xact.set_header(my_epid, _protover, _chdr_w);
         _traverse_to_node(cfg_xact, node_addr);
 
         mgmt_hop_t cfg_hop;
@@ -283,14 +286,27 @@ public:
     virtual void setup_local_route(chdr_ctrl_xport& xport, const sep_id_t& dst_epid)
     {
         std::lock_guard<std::recursive_mutex> lock(_mutex);
+        auto my_epid = xport.get_epid();
 
         // Lookup the physical stream endpoint address using the endpoint ID
         const node_addr_t& node_addr = _lookup_sep_node_addr(dst_epid);
 
+        node_addr_t route_addr = node_addr_t();
+        route_addr.push_back(std::make_pair(_my_node_id, next_dest_t(-1)));
+        for (const auto& addr_pair : node_addr) {
+            mgmt_payload init_req_xact;
+            _traverse_to_node(init_req_xact, route_addr);
+            _push_node_init_hop(init_req_xact, addr_pair.first, my_epid);
+            const mgmt_payload resp_xact =
+                _send_recv_mgmt_transaction(xport, init_req_xact);
+            route_addr.push_back(addr_pair);
+        }
+
         // Build a management transaction to configure all the nodes in the path going to
         // dst_epid
         mgmt_payload cfg_xact;
-        cfg_xact.set_header(_my_epid, _protover, _chdr_w);
+        cfg_xact.set_header(my_epid, _protover, _chdr_w);
+
         for (const auto& addr_pair : node_addr) {
             const node_id_t& curr_node   = addr_pair.first;
             const next_dest_t& curr_dest = addr_pair.second;
@@ -347,8 +363,8 @@ public:
         }
 
         UHD_LOG_DEBUG("RFNOC::MGMT",
-            (boost::format("Established a route from EPID=%d (SW) to EPID=%d") % _my_epid
-                % dst_epid));
+            (boost::format("Established a route from EPID=%d (SW) to EPID=%d")
+                % xport.get_epid() % dst_epid));
         UHD_LOG_TRACE("RFNOC::MGMT",
             (boost::format("The destination for EPID=%d has been added to all routers in "
                            "the path: %s")
@@ -432,6 +448,7 @@ public:
         const bool reset = false)
     {
         std::lock_guard<std::recursive_mutex> lock(_mutex);
+        auto my_epid = xport.get_epid();
 
         // The discovery process has already setup a route from the
         // destination to us. No additional action is necessary.
@@ -440,7 +457,7 @@ public:
 
         // Build a management transaction to first get to the node
         mgmt_payload cfg_xact;
-        cfg_xact.set_header(_my_epid, _protover, _chdr_w);
+        cfg_xact.set_header(my_epid, _protover, _chdr_w);
         _traverse_to_node(cfg_xact, node_addr);
 
         mgmt_hop_t cfg_hop;
@@ -451,7 +468,7 @@ public:
         }
         // Set destination of the stream to us (this endpoint)
         cfg_hop.add_op(mgmt_op_t(mgmt_op_t::MGMT_OP_CFG_WR_REQ,
-            mgmt_op_t::cfg_payload(REG_OSTRM_DST_EPID, _my_epid)));
+            mgmt_op_t::cfg_payload(REG_OSTRM_DST_EPID, my_epid)));
         // Configure flow control parameters
         _push_ostrm_flow_control_config(lossy_xport,
             pyld_buff_fmt,
@@ -495,6 +512,7 @@ public:
         const bool reset = false)
     {
         std::lock_guard<std::recursive_mutex> lock(_mutex);
+        auto my_epid = xport.get_epid();
 
         // First setup a route between to the endpoint
         setup_local_route(xport, epid);
@@ -503,7 +521,7 @@ public:
 
         // Build a management transaction to first get to the node
         mgmt_payload cfg_xact;
-        cfg_xact.set_header(_my_epid, _protover, _chdr_w);
+        cfg_xact.set_header(my_epid, _protover, _chdr_w);
         _traverse_to_node(cfg_xact, node_addr);
 
         mgmt_hop_t cfg_hop;
@@ -541,6 +559,7 @@ public:
         const double timeout = 0.2)
     {
         std::lock_guard<std::recursive_mutex> lock(_mutex);
+        auto my_epid = xport.get_epid();
 
         // First setup a route between the two endpoints
         setup_remote_route(xport, dst_epid, src_epid);
@@ -553,7 +572,7 @@ public:
             // Reset source and destination (in that order)
             for (size_t i = 0; i < 2; i++) {
                 mgmt_payload rst_xact;
-                rst_xact.set_header(_my_epid, _protover, _chdr_w);
+                rst_xact.set_header(my_epid, _protover, _chdr_w);
                 _traverse_to_node(rst_xact, (i == 0) ? src_node_addr : dst_node_addr);
                 mgmt_hop_t rst_hop;
                 rst_hop.add_op(mgmt_op_t(mgmt_op_t::MGMT_OP_CFG_WR_REQ,
@@ -568,7 +587,7 @@ public:
         // Build a management transaction to configure the source node
         {
             mgmt_payload cfg_xact;
-            cfg_xact.set_header(_my_epid, _protover, _chdr_w);
+            cfg_xact.set_header(my_epid, _protover, _chdr_w);
             _traverse_to_node(cfg_xact, src_node_addr);
             mgmt_hop_t cfg_hop;
             // Set destination of the stream to dst_epid
@@ -615,6 +634,7 @@ private: // Functions
         // traversal of the dataflow graph. The queue consists of a previously discovered
         // node and the next destination to take from that node.
         std::queue<std::pair<node_id_t, next_dest_t>> pending_paths;
+        auto my_epid = xport.get_epid();
 
         // Add ourselves to the the pending queue to kick off the search
         UHD_LOG_DEBUG("RFNOC::MGMT",
@@ -641,7 +661,7 @@ private: // Functions
             // Build a management transaction to first get to our destination so that we
             // can ask it to identify itself
             mgmt_payload route_xact;
-            route_xact.set_header(_my_epid, _protover, _chdr_w);
+            route_xact.set_header(my_epid, _protover, _chdr_w);
             _traverse_to_node(route_xact, next_addr);
 
             // Discover downstream node (we ask the node to identify itself)
@@ -697,7 +717,7 @@ private: // Functions
 
                 // Initialize the node (first time config)
                 mgmt_payload init_req_xact(route_xact);
-                _push_node_init_hop(init_req_xact, new_node);
+                _push_node_init_hop(init_req_xact, new_node, my_epid);
                 const mgmt_payload init_resp_xact =
                     _send_recv_mgmt_transaction(xport, init_req_xact);
                 UHD_LOG_DEBUG("RFNOC::MGMT", "Initialized node " << new_node.to_string());
@@ -828,9 +848,10 @@ private: // Functions
     std::tuple<uint32_t, stream_buff_params_t> _get_ostrm_status(
         chdr_ctrl_xport& xport, const node_addr_t& node_addr)
     {
+        auto my_epid = xport.get_epid();
         // Build a management transaction to first get to the node
         mgmt_payload status_xact;
-        status_xact.set_header(_my_epid, _protover, _chdr_w);
+        status_xact.set_header(my_epid, _protover, _chdr_w);
         _traverse_to_node(status_xact, node_addr);
 
         // Read all the status registers
@@ -929,16 +950,17 @@ private: // Functions
     }
 
     // Push a hop onto a transaction to initialize the current node
-    void _push_node_init_hop(mgmt_payload& transaction, const node_id_t& node)
+    void _push_node_init_hop(
+        mgmt_payload& transaction, const node_id_t& node, const sep_id_t& my_epid)
     {
         mgmt_hop_t init_hop;
         switch (node.type) {
             case NODE_TYPE_XBAR: {
-                // Configure the routing table to route all packets going to _my_epid back
+                // Configure the routing table to route all packets going to my_epid back
                 // to the port where the packet is entering
                 // The address for the transaction is the EPID and the data is the port #
                 init_hop.add_op(mgmt_op_t(mgmt_op_t::MGMT_OP_CFG_WR_REQ,
-                    mgmt_op_t::cfg_payload(_my_epid, node.inst)));
+                    mgmt_op_t::cfg_payload(my_epid, node.inst)));
             } break;
             case NODE_TYPE_STRM_EP: {
                 // Do nothing
@@ -1004,8 +1026,9 @@ private: // Functions
     const mgmt_payload _send_recv_mgmt_transaction(
         chdr_ctrl_xport& xport, const mgmt_payload& transaction, double timeout = 0.1)
     {
+        auto my_epid = xport.get_epid();
         mgmt_payload send(transaction);
-        send.set_header(_my_epid, _protover, _chdr_w);
+        send.set_header(my_epid, _protover, _chdr_w);
         // If we are expecting to receive a response then we have to add an additional
         // NO-OP hop for the receive endpoint. All responses will be appended to this hop.
         mgmt_hop_t nop_hop;
@@ -1020,15 +1043,13 @@ private: // Functions
         }
         _recv_pkt->refresh(recv_buff->data());
         mgmt_payload recv;
-        recv.set_header(_my_epid, _protover, _chdr_w);
+        recv.set_header(my_epid, _protover, _chdr_w);
         _recv_pkt->fill_payload(recv);
         xport.release_recv_buff(std::move(recv_buff));
         return recv;
     }
 
 private: // Members
-    // The endpoint ID of this software endpoint
-    const sep_id_t _my_epid;
     // The software RFNoC protocol version
     const uint16_t _protover;
     // CHDR Width for this design/application
@@ -1061,10 +1082,9 @@ private: // Members
 
 mgmt_portal::uptr mgmt_portal::make(chdr_ctrl_xport& xport,
     const chdr::chdr_packet_factory& pkt_factory,
-    sep_addr_t my_sep_addr,
-    sep_id_t my_epid)
+    sep_addr_t my_sep_addr)
 {
-    return std::make_unique<mgmt_portal_impl>(xport, pkt_factory, my_sep_addr, my_epid);
+    return std::make_unique<mgmt_portal_impl>(xport, pkt_factory, my_sep_addr);
 }
 
 }}} // namespace uhd::rfnoc::mgmt

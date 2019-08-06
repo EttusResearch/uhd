@@ -121,7 +121,6 @@ public:
      * \param recv_link The recv link, already attached to the I/O service
      * \param send_link The send link, already attached to the I/O service
      * \param pkt_factory Factory to create packets with the desired chdr_w and endianness
-     * \param addrs Source and destination addresses
      * \param epids Source and destination endpoint IDs
      * \param pyld_buff_fmt Datatype of SW buffer that holds the data payload
      * \param mdata_buff_fmt Datatype of SW buffer that holds the data metadata
@@ -132,8 +131,8 @@ public:
     chdr_tx_data_xport(uhd::transport::io_service::sptr io_srv,
         uhd::transport::recv_link_if::sptr recv_link,
         uhd::transport::send_link_if::sptr send_link,
+        uhd::rfnoc::mgmt::mgmt_portal& mgmt_portal,
         const chdr::chdr_packet_factory& pkt_factory,
-        const uhd::rfnoc::sep_addr_pair_t& addrs,
         const uhd::rfnoc::sep_id_pair_t& epids,
         const uhd::rfnoc::sw_buff_t pyld_buff_fmt,
         const uhd::rfnoc::sw_buff_t mdata_buff_fmt,
@@ -142,8 +141,6 @@ public:
         const double fc_headroom_ratio)
         : _fc_sender(pkt_factory, epids), _epid(epids.first)
     {
-        const sep_addr_t remote_sep_addr = addrs.second;
-        const sep_addr_t local_sep_addr  = addrs.first;
         const sep_id_t remote_epid       = epids.second;
         const sep_id_t local_epid        = epids.first;
 
@@ -163,10 +160,8 @@ public:
         _configure_sep(io_srv,
             recv_link,
             send_link,
-            pkt_factory,
-            local_sep_addr,
+            mgmt_portal,
             local_epid,
-            remote_sep_addr,
             remote_epid,
             pyld_buff_fmt,
             mdata_buff_fmt);
@@ -236,8 +231,8 @@ public:
      * \param info Information to include in the header
      * \return A pointer to the payload data area and the packet size in bytes
      */
-    std::pair<void*, size_t> write_packet_header(buff_t::uptr& buff,
-        const packet_info_t& info)
+    std::pair<void*, size_t> write_packet_header(
+        buff_t::uptr& buff, const packet_info_t& info)
     {
         uint64_t tsf = 0;
 
@@ -254,8 +249,7 @@ public:
         _send_packet->refresh(buff->data(), _send_header, tsf);
         _send_packet->update_payload_size(info.payload_bytes);
 
-        return std::make_pair(
-            _send_packet->get_payload_ptr(),
+        return std::make_pair(_send_packet->get_payload_ptr(),
             _send_packet->get_chdr_header().get_length());
     }
 
@@ -289,8 +283,8 @@ private:
                 _recv_packet->get_payload_size() / sizeof(uint64_t),
                 _recv_packet->conv_to_host<uint64_t>());
 
-            _fc_state.update_dest_recv_count({strs.xfer_count_bytes,
-                static_cast<uint32_t>(strs.xfer_count_pkts)});
+            _fc_state.update_dest_recv_count(
+                {strs.xfer_count_bytes, static_cast<uint32_t>(strs.xfer_count_pkts)});
 
             // TODO: check strs status here and push into async msg queue
 
@@ -339,10 +333,8 @@ private:
     void _configure_sep(uhd::transport::io_service::sptr io_srv,
         uhd::transport::recv_link_if::sptr recv_link,
         uhd::transport::send_link_if::sptr send_link,
-        const chdr::chdr_packet_factory& pkt_factory,
-        const uhd::rfnoc::sep_addr_t& local_sep_addr,
+        uhd::rfnoc::mgmt::mgmt_portal& mgmt_portal,
         const uhd::rfnoc::sep_id_t& local_epid,
-        const uhd::rfnoc::sep_addr_t& remote_sep_addr,
         const uhd::rfnoc::sep_id_t& remote_epid,
         const uhd::rfnoc::sw_buff_t pyld_buff_fmt,
         const uhd::rfnoc::sw_buff_t mdata_buff_fmt)
@@ -356,23 +348,14 @@ private:
             1, // num_send_frames
             1); // num_recv_frames
 
-        // Create new temporary management portal with the transports used for this stream
-        // TODO: This is a bit excessive. Maybe we can pare down the functionality of the
-        // portal just for route setup purposes. Whatever we do, we *must* use xport in it
-        // though otherwise the transport will not behave correctly.
-        auto data_mgmt_portal = uhd::rfnoc::mgmt::mgmt_portal::make(
-            *ctrl_xport, pkt_factory, local_sep_addr, local_epid);
-
         // Setup a route to the EPID
-        data_mgmt_portal->initialize_endpoint(*ctrl_xport, remote_sep_addr, remote_epid);
-        data_mgmt_portal->setup_local_route(*ctrl_xport, remote_epid);
+        mgmt_portal.setup_local_route(*ctrl_xport, remote_epid);
 
-        data_mgmt_portal->config_local_tx_stream(
+        mgmt_portal.config_local_tx_stream(
             *ctrl_xport, remote_epid, pyld_buff_fmt, mdata_buff_fmt);
 
-        // We no longer need the control xport and mgmt_portal, release them so
+        // We no longer need the control xport, release it so
         // the control xport is no longer connected to the I/O service.
-        data_mgmt_portal.reset();
         ctrl_xport.reset();
     }
 
@@ -481,8 +464,7 @@ private:
 
             recv_io->release_recv_buff(std::move(buff));
 
-            return {strs.capacity_bytes,
-                static_cast<uint32_t>(strs.capacity_pkts)};
+            return {strs.capacity_bytes, static_cast<uint32_t>(strs.capacity_pkts)};
         };
 
         // Send a strc init to get the buffer size
@@ -491,14 +473,13 @@ private:
         _fc_state.set_dest_capacity(capacity);
 
         UHD_LOG_TRACE("XPORT::TX_DATA_XPORT",
-            "Received strs initializing buffer capacity to "
-            << capacity.bytes << " bytes");
+            "Received strs initializing buffer capacity to " << capacity.bytes
+                                                             << " bytes");
 
         // Calculate the requested fc_freq parameters
         uhd::rfnoc::stream_buff_params_t fc_freq = {
             static_cast<uint64_t>(std::ceil(double(capacity.bytes) * fc_freq_ratio)),
-            static_cast<uint32_t>(
-                std::ceil(double(capacity.packets) * fc_freq_ratio))};
+            static_cast<uint32_t>(std::ceil(double(capacity.packets) * fc_freq_ratio))};
 
         const size_t headroom_bytes =
             static_cast<uint64_t>(std::ceil(double(capacity.bytes) * fc_headroom_ratio));

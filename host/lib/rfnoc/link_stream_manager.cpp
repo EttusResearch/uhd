@@ -66,10 +66,8 @@ public:
         _ctrl_xport = _mb_iface.make_ctrl_transport(_my_device_id, _my_mgmt_ctrl_epid);
 
         // Create management portal using one of the child transports
-        _mgmt_portal = mgmt_portal::make(*_ctrl_xport,
-            _pkt_factory,
-            sep_addr_t(_my_device_id, SEP_INST_MGMT_CTRL),
-            _my_mgmt_ctrl_epid);
+        _mgmt_portal = mgmt_portal::make(
+            *_ctrl_xport, _pkt_factory, sep_addr_t(_my_device_id, SEP_INST_MGMT_CTRL));
     }
 
     virtual ~link_stream_manager_impl()
@@ -235,7 +233,8 @@ public:
         sep_id_t src_epid = _epid_alloc->allocate_epid(sw_epid_addr);
         _allocated_epids.insert(src_epid);
 
-        return _mb_iface.make_tx_data_transport({sw_epid_addr, dst_addr},
+        return _mb_iface.make_tx_data_transport(*_mgmt_portal,
+            {sw_epid_addr, dst_addr},
             {src_epid, dst_epid},
             pyld_buff_fmt,
             mdata_buff_fmt,
@@ -263,7 +262,8 @@ public:
         sep_id_t dst_epid = _epid_alloc->allocate_epid(sw_epid_addr);
         _allocated_epids.insert(dst_epid);
 
-        return _mb_iface.make_rx_data_transport({src_addr, sw_epid_addr},
+        return _mb_iface.make_rx_data_transport(*_mgmt_portal,
+            {src_addr, sw_epid_addr},
             {src_epid, dst_epid},
             pyld_buff_fmt,
             mdata_buff_fmt,

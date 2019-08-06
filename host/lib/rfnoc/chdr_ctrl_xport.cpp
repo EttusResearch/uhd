@@ -52,12 +52,8 @@ chdr_ctrl_xport::chdr_ctrl_xport(io_service::sptr io_srv,
             link->release_recv_buff(std::move(buff));
         };
 
-    _ctrl_recv_if = io_srv->make_recv_client(recv_link,
-        num_recv_frames,
-        ctrl_recv_cb,
-        send_link_if::sptr(),
-        0,
-        release_cb);
+    _ctrl_recv_if = io_srv->make_recv_client(
+        recv_link, num_recv_frames, ctrl_recv_cb, send_link_if::sptr(), 0, release_cb);
 
     uhd::transport::recv_callback_t mgmt_recv_cb = [this](frame_buff::uptr& buff,
                                                        recv_link_if* /*recv_link*/,
@@ -144,4 +140,12 @@ void chdr_ctrl_xport::release_recv_buff(frame_buff::uptr buff)
     // FIXME: Remove mutex when have threaded_io_service
     std::lock_guard<std::mutex> lock(_mutex);
     _ctrl_recv_if->release_recv_buff(std::move(buff));
+}
+
+/*!
+ * Get this xport's EPID
+ */
+sep_id_t chdr_ctrl_xport::get_epid() const
+{
+    return _my_epid;
 }

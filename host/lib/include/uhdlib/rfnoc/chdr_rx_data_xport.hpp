@@ -125,7 +125,6 @@ public:
      * \param recv_link The recv link, already attached to the I/O service
      * \param send_link The send link, already attached to the I/O service
      * \param pkt_factory Factory to create packets with the desired chdr_w and endianness
-     * \param addrs Source and destination addresses
      * \param epids Source and destination endpoint IDs
      * \param pyld_buff_fmt Datatype of SW buffer that holds the data payload
      * \param mdata_buff_fmt Datatype of SW buffer that holds the data metadata
@@ -138,8 +137,8 @@ public:
     chdr_rx_data_xport(uhd::transport::io_service::sptr io_srv,
         uhd::transport::recv_link_if::sptr recv_link,
         uhd::transport::send_link_if::sptr send_link,
+        uhd::rfnoc::mgmt::mgmt_portal& mgmt_portal,
         const chdr::chdr_packet_factory& pkt_factory,
-        const uhd::rfnoc::sep_addr_pair_t& addrs,
         const uhd::rfnoc::sep_id_pair_t& epids,
         const uhd::rfnoc::sw_buff_t pyld_buff_fmt,
         const uhd::rfnoc::sw_buff_t mdata_buff_fmt,
@@ -150,8 +149,6 @@ public:
         const bool lossy_xport)
         : _fc_state(epids), _fc_sender(pkt_factory, epids), _epid(epids.second)
     {
-        const sep_addr_t remote_sep_addr = addrs.first;
-        const sep_addr_t local_sep_addr  = addrs.second;
         const sep_id_t remote_epid       = epids.first;
         const sep_id_t local_epid        = epids.second;
 
@@ -198,22 +195,14 @@ public:
             0, // num_send_frames
             0); // num_recv_frames
 
-        // Create new temporary management portal with the transports used for this stream
-        // TODO: This is a bit excessive. Maybe we can pare down the functionality of the
-        // portal just for route setup purposes. Whatever we do, we *must* use xport in it
-        // though otherwise the transport will not behave correctly.
-        auto data_mgmt_portal = uhd::rfnoc::mgmt::mgmt_portal::make(
-            *ctrl_xport, pkt_factory, local_sep_addr, local_epid);
-
         // Setup a route to the EPID
         // Note that this may be gratuitous--The endpoint may already have been set up
-        data_mgmt_portal->initialize_endpoint(*ctrl_xport, remote_sep_addr, remote_epid);
-        data_mgmt_portal->setup_local_route(*ctrl_xport, remote_epid);
+        mgmt_portal.setup_local_route(*ctrl_xport, remote_epid);
 
         // Initialize flow control - management portal sends a stream command
         // containing its requested flow control frequency, the rx transport
         // responds with a stream status containing its buffer capacity.
-        data_mgmt_portal->config_local_rx_stream_start(*ctrl_xport,
+        mgmt_portal.config_local_rx_stream_start(*ctrl_xport,
             remote_epid,
             lossy_xport,
             pyld_buff_fmt,
@@ -221,7 +210,7 @@ public:
             fc_freq,
             fc_headroom);
 
-        data_mgmt_portal->config_local_rx_stream_commit(*ctrl_xport, remote_epid);
+        mgmt_portal.config_local_rx_stream_commit(*ctrl_xport, remote_epid);
 
         UHD_LOG_TRACE("XPORT::RX_DATA_XPORT",
             "Stream endpoint was configured with:"
@@ -233,9 +222,8 @@ public:
                 << "fc frequency bytes=" << fc_freq.bytes
                 << ", packets=" << fc_freq.packets);
 
-        // We no longer need the control xport and mgmt_portal, release them so
+        // We no longer need the control xport, release it so
         // the control xport is no longer connected to the I/O service.
-        data_mgmt_portal.reset();
         ctrl_xport.reset();
     }
 
