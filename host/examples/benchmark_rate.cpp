@@ -65,8 +65,6 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp,
     const boost::posix_time::ptime& start_time,
     std::atomic<bool>& burst_timer_elapsed)
 {
-    uhd::set_thread_priority_safe();
-
     // print pre-test summary
     std::cout << boost::format("[%s] Testing receive rate %f Msps on %u channels") % NOW()
                      % (usrp->get_rx_rate() / 1e6) % rx_stream->get_num_channels()
@@ -192,8 +190,6 @@ void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp,
     const boost::posix_time::ptime& start_time,
     bool random_nsamps = false)
 {
-    uhd::set_thread_priority_safe();
-
     // print pre-test summary
     std::cout << boost::format("[%s] Testing transmit rate %f Msps on %u channels")
                      % NOW() % (usrp->get_tx_rate() / 1e6) % tx_stream->get_num_channels()
@@ -297,8 +293,6 @@ void benchmark_tx_rate_async_helper(uhd::tx_streamer::sptr tx_stream,
  **********************************************************************/
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
-    uhd::set_thread_priority_safe();
-
     // variables to be set by po
     std::string args;
     std::string rx_subdev, tx_subdev;

@@ -23,8 +23,6 @@ using std::chrono::high_resolution_clock;
 
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
-    uhd::set_thread_priority_safe();
-
     // variables to be set by po
     std::string args, ant, subdev, ref;
     size_t num_bins;

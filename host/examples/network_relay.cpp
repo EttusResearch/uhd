@@ -128,7 +128,6 @@ private:
 
     void server_thread(void)
     {
-        uhd::set_thread_priority_safe();
         std::cout << "    entering server_thread..." << std::endl;
         wait_for_thread.notify_one(); // notify constructor that this thread has started
         std::vector<char> buff(insane_mtu);
@@ -157,7 +156,6 @@ private:
 
     void client_thread(void)
     {
-        uhd::set_thread_priority_safe();
         std::cout << "    entering client_thread..." << std::endl;
         wait_for_thread.notify_one(); // notify constructor that this thread has started
         std::vector<char> buff(insane_mtu);
@@ -188,8 +186,6 @@ private:
  **********************************************************************/
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
-    uhd::set_thread_priority_safe();
-
     // variables to be set by po
     std::string addr;
     std::string bind;

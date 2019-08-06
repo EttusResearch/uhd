@@ -206,8 +206,6 @@ void pretty_print_flow_graph(std::vector<std::string> blocks)
 ///////////////////// MAIN ////////////////////////////////////////////////////
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
-    uhd::set_thread_priority_safe();
-
     // variables to be set by po
     std::string args, file, format, nullid, blockid, blockid2;
     size_t total_num_samps, spb, spp;

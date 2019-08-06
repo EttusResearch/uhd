@@ -231,8 +231,6 @@ bool check_locked_sensor(std::vector<std::string> sensor_names,
 
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
-    uhd::set_thread_priority_safe();
-
     // variables to be set by po
     std::string args, file, format, ant, subdev, ref, wirefmt, streamargs, radio_args,
         block_id, block_args;

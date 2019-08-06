@@ -35,10 +35,6 @@ void print_help(void){
 
 int main(int argc, char* argv[])
 {
-    if(uhd_set_thread_priority(uhd_default_thread_priority, true)){
-        fprintf(stderr, "Unable to set thread priority. Continuing anyway.\n");
-    }
-
     int option = 0;
     double freq = 500e6;
     double rate = 1e6;

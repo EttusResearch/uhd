@@ -26,8 +26,6 @@ void sig_int_handler(int)
 
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
-    uhd::set_thread_priority_safe();
-
     // variables to be set by po
     std::string args, channel_list;
     double seconds_in_future;

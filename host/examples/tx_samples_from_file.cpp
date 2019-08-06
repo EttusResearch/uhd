@@ -52,8 +52,6 @@ void send_from_file(
 
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
-    uhd::set_thread_priority_safe();
-
     // variables to be set by po
     std::string args, file, type, ant, subdev, ref, wirefmt, channel;
     size_t spb;

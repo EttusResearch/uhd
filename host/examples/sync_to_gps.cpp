@@ -35,8 +35,6 @@ void print_notes(void)
 
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
-    uhd::set_thread_priority_safe();
-
     std::string args;
 
     // Set up program options

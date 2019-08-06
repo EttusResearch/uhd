@@ -30,8 +30,6 @@ void get_usrp_time(multi_usrp::sptr usrp, size_t mboard, std::vector<int64_t>* t
 
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
-    uhd::set_thread_priority_safe();
-
     // Variables to be set by command line options
     std::string clock_args, usrp_args;
     uint32_t max_interval, num_tests;

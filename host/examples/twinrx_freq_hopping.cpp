@@ -101,8 +101,6 @@ static void write_fft_to_file(const std::string& fft_path)
 
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
-    uhd::set_thread_priority_safe();
-
     // Program options
     std::string args, fft_path, subdev, ant;
     double rate, gain;

@@ -92,10 +92,6 @@ int main(int argc, char* argv[]){
         }
     }
 
-    if(uhd_set_thread_priority(uhd_default_thread_priority, true)){
-        fprintf(stderr, "Unable to set thread priority. Continuing anyway.\n");
-    }
-
     if (!device_args)
         device_args = strdup("");
 

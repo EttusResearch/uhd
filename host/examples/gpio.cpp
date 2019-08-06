@@ -131,8 +131,6 @@ void output_reg_values(const std::string bank,
 
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
-    uhd::set_thread_priority_safe();
-
     // variables to be set by po
     std::string args;
     std::string cpu, otw;

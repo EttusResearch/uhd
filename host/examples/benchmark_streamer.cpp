@@ -709,8 +709,6 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         return EXIT_SUCCESS;
     }
 
-    uhd::set_thread_priority_safe();
-
     std::cout << boost::format("Creating the usrp device with: %s...") % args
               << std::endl;
     uhd::device3::sptr usrp = uhd::device3::make(args);
