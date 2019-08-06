@@ -230,7 +230,7 @@ boost::optional<device_addr_t> mpmd_mboard_impl::is_device_reachable(
                     boost::format("Connected to CHDR interface, but got wrong device. "
                                   "Tried to reach serial %s, got %s")
                         % device_info_dict["serial"] % dev_info_chdr["serial"]);
-                return boost::optional<device_addr_t>();
+                continue;
             } else {
                 UHD_LOG_TRACE("MPMD",
                     boost::format("Reachable device matches expected device (serial=%s)")
