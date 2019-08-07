@@ -12,7 +12,6 @@ using namespace uhd::rfnoc;
 
 epid_allocator::epid_allocator(sep_id_t start_epid) : _next_epid(start_epid) {}
 
-
 sep_id_t epid_allocator::allocate_epid(const sep_addr_t& addr)
 {
     std::lock_guard<std::mutex> lock(_mutex);
@@ -24,6 +23,24 @@ sep_id_t epid_allocator::allocate_epid(const sep_addr_t& addr)
         return new_epid;
     } else {
         return _epid_map.at(addr);
+    }
+}
+
+sep_id_t epid_allocator::allocate_epid(
+    const sep_addr_t& addr, mgmt::mgmt_portal& mgmt_portal, chdr_ctrl_xport& xport)
+{
+    std::lock_guard<std::mutex> lock(_mutex);
+
+    if (_epid_map.count(addr) == 0) {
+        sep_id_t new_epid   = _next_epid++;
+        _epid_map[addr]     = new_epid;
+        _addr_map[new_epid] = addr;
+        mgmt_portal.initialize_endpoint(xport, addr, new_epid);
+        return new_epid;
+    } else {
+        sep_id_t epid = _epid_map.at(addr);
+        mgmt_portal.register_endpoint(addr, epid);
+        return epid;
     }
 }
 

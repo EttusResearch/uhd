@@ -7,6 +7,7 @@
 #ifndef INCLUDED_LIBUHD_EPID_ALLOCATOR_HPP
 #define INCLUDED_LIBUHD_EPID_ALLOCATOR_HPP
 
+#include <uhdlib/rfnoc/mgmt_portal.hpp>
 #include <uhdlib/rfnoc/rfnoc_common.hpp>
 #include <map>
 #include <memory>
@@ -27,11 +28,23 @@ public:
     epid_allocator(epid_allocator&& rhs)      = delete;
 
     /*! \brief Allocate an EPID for the specified endpoint.
+     * Does not initialize the specified endpoint (ideal for SW endpoints).
      *
      * \param addr The physical address (device, instance) of the stream endpoint
      * \return The allocated EPID
      */
     sep_id_t allocate_epid(const sep_addr_t& addr);
+
+    /*! \brief Allocate an EPID for the specified endpoint.
+     * Also initialize the specified endpoint.
+     *
+     * \param addr The physical address (device, instance) of the stream endpoint
+     * \param mgmt_portal The management portal to use for initializing the SEP/EPID
+     * \param chdr_ctrl_xport The ctrl xport to use for initializing the SEP/EPID
+     * \return The allocated EPID
+     */
+    sep_id_t allocate_epid(const sep_addr_t& addr, mgmt::mgmt_portal& mgmt_portal,
+        chdr_ctrl_xport& xport);
 
     /*! \brief Get a pre-allocated EPID. Throws an exception is not allocated
      *

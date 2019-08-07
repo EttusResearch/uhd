@@ -98,7 +98,8 @@ public:
         _ensure_ep_is_reachable(dst_addr);
 
         // Allocate EPIDs
-        sep_id_t dst_epid = _epid_alloc->allocate_epid(dst_addr);
+        sep_id_t dst_epid = _epid_alloc->allocate_epid(dst_addr, *_mgmt_portal,
+            *_ctrl_xport);
 
         // Make sure that the software side of the endpoint is initialized and reachable
         if (_ctrl_ep == nullptr) {
@@ -108,7 +109,6 @@ public:
         }
 
         // Setup a route to the EPID
-        _mgmt_portal->initialize_endpoint(*_ctrl_xport, dst_addr, dst_epid);
         _mgmt_portal->setup_local_route(*_ctrl_xport, dst_epid);
         if (!_mgmt_portal->get_endpoint_info(dst_epid).has_ctrl) {
             throw uhd::rfnoc_error(
@@ -129,14 +129,13 @@ public:
         _ensure_ep_is_reachable(dst_addr);
         _ensure_ep_is_reachable(src_addr);
 
-        // Allocate EPIDs
-        sep_id_t dst_epid = _epid_alloc->allocate_epid(dst_addr);
-        sep_id_t src_epid = _epid_alloc->allocate_epid(src_addr);
+        // Allocate EPIDs and initialize endpoints
+        sep_id_t dst_epid = _epid_alloc->allocate_epid(dst_addr, *_mgmt_portal,
+            *_ctrl_xport);
+        sep_id_t src_epid = _epid_alloc->allocate_epid(src_addr, *_mgmt_portal,
+            *_ctrl_xport);
 
-        // Initialize endpoints
-        _mgmt_portal->initialize_endpoint(*_ctrl_xport, dst_addr, dst_epid);
-        _mgmt_portal->initialize_endpoint(*_ctrl_xport, src_addr, src_epid);
-
+        // Set up routes
         _mgmt_portal->setup_remote_route(*_ctrl_xport, dst_epid, src_epid);
 
         return sep_id_pair_t(src_epid, dst_epid);
@@ -221,8 +220,8 @@ public:
         _ensure_ep_is_reachable(dst_addr);
 
         // Generate a new destination (device) EPID instance
-        sep_id_t dst_epid = _epid_alloc->allocate_epid(dst_addr);
-        _mgmt_portal->initialize_endpoint(*_ctrl_xport, dst_addr, dst_epid);
+        sep_id_t dst_epid = _epid_alloc->allocate_epid(dst_addr, *_mgmt_portal,
+            *_ctrl_xport);
 
         if (!_mgmt_portal->get_endpoint_info(dst_epid).has_data) {
             throw uhd::rfnoc_error("Downstream endpoint does not support data traffic");
@@ -250,8 +249,8 @@ public:
         _ensure_ep_is_reachable(src_addr);
 
         // Generate a new source (device) EPID instance
-        sep_id_t src_epid = _epid_alloc->allocate_epid(src_addr);
-        _mgmt_portal->initialize_endpoint(*_ctrl_xport, src_addr, src_epid);
+        sep_id_t src_epid = _epid_alloc->allocate_epid(src_addr, *_mgmt_portal,
+            *_ctrl_xport);
 
         if (!_mgmt_portal->get_endpoint_info(src_epid).has_data) {
             throw uhd::rfnoc_error("Downstream endpoint does not support data traffic");

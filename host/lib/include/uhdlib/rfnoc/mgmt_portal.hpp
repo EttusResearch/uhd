@@ -8,6 +8,7 @@
 #define INCLUDED_LIBUHD_MGMT_PORTAL_HPP
 
 #include <uhdlib/rfnoc/chdr_ctrl_xport.hpp>
+#include <uhdlib/rfnoc/chdr_packet.hpp>
 #include <uhdlib/rfnoc/chdr_types.hpp>
 #include <memory>
 #include <set>
@@ -55,6 +56,8 @@ public:
 
     //! Initialize a stream endpoint and assign an endpoint ID to it
     //
+    // This should only be called by the epid_allocator
+    //
     // \param xport The host stream endpoint's CTRL transport
     // \param addr The physical address of the stream endpoint
     // \param epid The endpoint ID to assign to this endpoint
@@ -62,11 +65,21 @@ public:
     virtual void initialize_endpoint(
         chdr_ctrl_xport& xport, const sep_addr_t& addr, const sep_id_t& epid) = 0;
 
+    //! Register an already-initialized stream endpoint's endpoint ID
+    //
+    // This should only be called by the epid_allocator
+    //
+    // \param addr The physical address of the stream endpoint
+    // \param epid The endpoint ID to assign to this endpoint
+    //
+    virtual void register_endpoint(
+        const sep_addr_t& addr, const sep_id_t& epid) = 0;
+
     //! Get information about a discovered (reachable) stream endpoint
     //
     // \param epid The endpoint ID of the endpoint to lookup
     //
-    virtual bool is_endpoint_initialized(const sep_id_t& epid) const = 0;
+    virtual bool is_endpoint_registered(const sep_id_t& epid) const = 0;
 
     //! Get information about a discovered (reachable) stream endpoint
     //

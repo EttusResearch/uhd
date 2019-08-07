@@ -207,6 +207,7 @@ public:
         chdr_ctrl_xport& xport, const sep_addr_t& addr, const sep_id_t& epid)
     {
         std::lock_guard<std::recursive_mutex> lock(_mutex);
+
         auto my_epid = xport.get_epid();
 
         // Create a node ID from lookup info
@@ -216,9 +217,6 @@ public:
                 "initialize_endpoint(): Cannot reach node with specified address.");
         }
         const node_addr_t& node_addr = _node_addr_map.at(lookup_node);
-        if (is_endpoint_initialized(epid)) {
-            return;
-        }
 
         // Build a management transaction to first get to the node
         mgmt_payload cfg_xact;
@@ -236,7 +234,22 @@ public:
         // Send the transaction and receive a response.
         // We don't care about the contents of the response.
         _send_recv_mgmt_transaction(xport, cfg_xact);
+        register_endpoint(addr, epid);
+    }
 
+    virtual void register_endpoint(const sep_addr_t& addr, const sep_id_t& epid)
+    {
+        std::lock_guard<std::recursive_mutex> lock(_mutex);
+        if (is_endpoint_registered(epid)) {
+            return;
+        }
+        // Create a node ID from lookup info
+        node_id_t lookup_node(addr.first, NODE_TYPE_STRM_EP, addr.second);
+        if (_node_addr_map.count(lookup_node) == 0) {
+            throw uhd::lookup_error(
+                "initialize_endpoint(): Cannot reach node with specified address.");
+        }
+        const node_addr_t& node_addr = _node_addr_map.at(lookup_node);
         // Add/update the entry in the stream endpoint ID map
         _epid_addr_map[epid] = addr;
         UHD_LOG_DEBUG("RFNOC::MGMT",
@@ -248,7 +261,7 @@ public:
                 % epid % to_string(node_addr)));
     }
 
-    virtual bool is_endpoint_initialized(const sep_id_t& epid) const
+    virtual bool is_endpoint_registered(const sep_id_t& epid) const
     {
         std::lock_guard<std::recursive_mutex> lock(_mutex);
         return (_epid_addr_map.count(epid) > 0);
@@ -405,13 +418,13 @@ public:
     {
         std::lock_guard<std::recursive_mutex> lock(_mutex);
 
-        if (not is_endpoint_initialized(dst_epid)) {
+        if (not is_endpoint_registered(dst_epid)) {
             throw uhd::routing_error("Route setup failed. The destination endpoint was "
-                                     "not initialized and bound to an EPID");
+                                     "not bound to an EPID and registered");
         }
-        if (not is_endpoint_initialized(src_epid)) {
+        if (not is_endpoint_registered(src_epid)) {
             throw uhd::routing_error("Route setup failed. The source endpoint was "
-                                     "not initialized and bound to an EPID");
+                                     "not bound to an EPID and registered");
         }
 
         if (not can_remote_route(
@@ -1065,7 +1078,7 @@ private: // Members
     // A list of all discovered endpoints
     std::set<sep_addr_t> _discovered_ep_set;
     // A table that maps a stream endpoint ID to the physical address of the stream
-    // endpoint
+    // endpoint. This is a cache of the values from the epid_allocator
     std::map<sep_id_t, sep_addr_t> _epid_addr_map;
     // Send/recv transports
     size_t _send_seqnum;

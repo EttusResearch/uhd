@@ -802,7 +802,7 @@ public:
     const std::string to_string() const;
 
     //! Return the source EPID for this transaction
-    inline const sep_id_t get_src_epid() const
+    inline sep_id_t get_src_epid() const
     {
         return _src_epid;
     }
