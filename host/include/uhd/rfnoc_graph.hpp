@@ -196,6 +196,7 @@ public:
      * \param strm_port The port of the streamer to connect.
      * \param dst_blk The block ID of the destination block to connect to.
      * \param dst_port The port of the destination block to connect to.
+     * \param via_device The local device ID (transport) to use for this connection.
      *
      * \throws connect_disallowed_on_dst
      *     if the destination port is statically connected to a *different* block
@@ -203,14 +204,16 @@ public:
     virtual void connect(uhd::tx_streamer::sptr streamer,
         size_t strm_port,
         const block_id_t& dst_blk,
-        size_t dst_port) = 0;
+        size_t dst_port,
+        device_id_t via_device = NULL_DEVICE_ID) = 0;
 
     /*! Connect RX streamer to an output of an NoC block
      *
-     * \param src_blk The block ID of the destination block to connect to.
-     * \param src_port The port of the destination block to connect to.
+     * \param src_blk The block ID of the source block to connect.
+     * \param src_port The port of the source block to connect.
      * \param streamer The streamer to connect.
      * \param strm_port The port of the streamer to connect.
+     * \param via_device The local device ID (transport) to use for this connection.
      *
      * \throws connect_disallowed_on_src
      *     if the source port is statically connected to a *different* block
@@ -218,7 +221,32 @@ public:
     virtual void connect(const block_id_t& src_blk,
         size_t src_port,
         uhd::rx_streamer::sptr streamer,
-        size_t strm_port) = 0;
+        size_t strm_port,
+        device_id_t via_device = NULL_DEVICE_ID) = 0;
+
+    /*! Enumerate all the possible via devices that can be used to receive
+     * from the specified block
+     *
+     * If addr and second_addr were specified in device_args, the device_id_t
+     * associated with addr will come first in the vector, then second_addr.
+     *
+     * \param src_blk The block ID of the source block to connect to.
+     * \param src_port The port of the source block to connect to.
+     */
+    virtual std::vector<device_id_t> enumerate_dst_via_devices(const block_id_t& src_blk,
+        size_t src_port) = 0;
+
+    /*! Enumerate all the possible via devices that can be used to send to the
+     * specified block
+     *
+     * If addr and second_addr were specified in device_args, the device_id_t
+     * associated with addr will come first in the vector, then second_addr.
+     *
+     * \param dst_blk The block ID of the destination block to connect to.
+     * \param dst_port The port of the destination block to connect to.
+     */
+    virtual std::vector<device_id_t> enumerate_src_via_devices(const block_id_t& dst_blk,
+        size_t dst_port) = 0;
 
     /*! Enumerate all the possible static connections in the graph
      *

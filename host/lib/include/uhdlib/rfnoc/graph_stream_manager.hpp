@@ -111,6 +111,7 @@ public:
      * \param dst_addr The address of the destination stream endpoint
      * \param pyld_buff_fmt Datatype of SW buffer that holds the data payload
      * \param mdata_buff_fmt Datatype of SW buffer that holds the data metadata
+     * \param via_device The preference for the device to take to get to the destination
      * \param xport_args The transport arguments
      * \return An transport instance
      */
@@ -118,6 +119,7 @@ public:
         sep_addr_t dst_addr,
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
+        const device_id_t via_device,
         const device_addr_t& xport_args) = 0;
 
     /*! \brief Create a data stream going from the host to the device
@@ -125,6 +127,7 @@ public:
      * \param dst_addr The address of the destination stream endpoint
      * \param pyld_buff_fmt Datatype of SW buffer that holds the data payload
      * \param mdata_buff_fmt Datatype of SW buffer that holds the data metadata
+     * \param via_device The preference for the device to take to get to the destination
      * \param xport_args The transport arguments
      * \return An transport instance
      */
@@ -132,7 +135,15 @@ public:
         sep_addr_t dst_addr,
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
+        const device_id_t via_device,
         const device_addr_t& xport_args) = 0;
+
+    /*! \brief Get all the via_devices that can reach the specified endpoint
+     *
+     * \param addr The address of the stream endpoint
+     * \return A vector of all the via_devices
+     */
+    virtual std::vector<device_id_t> get_via_devices(sep_addr_t addr) const = 0;
 
     /*!
      * \brief Create a graph_stream_manager and return a unique_ptr to it

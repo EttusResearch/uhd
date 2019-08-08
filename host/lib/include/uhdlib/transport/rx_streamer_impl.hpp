@@ -90,6 +90,7 @@ public:
     }
 
     //! Connect a new channel to the streamer
+    // FIXME: Needs some way to handle virtual channels, since xport could be shared among them
     void connect_channel(const size_t channel, typename transport_t::uptr xport)
     {
         const size_t max_pyld_size = xport->get_max_payload_size();

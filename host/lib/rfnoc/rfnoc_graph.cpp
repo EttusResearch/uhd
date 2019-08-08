@@ -199,7 +199,8 @@ public:
     void connect(uhd::tx_streamer::sptr streamer,
         size_t strm_port,
         const block_id_t& dst_blk,
-        size_t dst_port)
+        size_t dst_port,
+        device_id_t via_device)
     {
         // Verify the streamer was created by us
         auto rfnoc_streamer = boost::dynamic_pointer_cast<rfnoc_tx_streamer>(streamer);
@@ -238,7 +239,8 @@ public:
         const sw_buff_t mdata_fmt = BUFF_U64;
 
         auto xport = _gsm->create_host_to_device_data_stream(
-            sep_addr, pyld_fmt, mdata_fmt, rfnoc_streamer->get_stream_args().args);
+            sep_addr, pyld_fmt, mdata_fmt, via_device,
+            rfnoc_streamer->get_stream_args().args);
 
         rfnoc_streamer->connect_channel(strm_port, std::move(xport));
 
@@ -251,7 +253,8 @@ public:
     void connect(const block_id_t& src_blk,
         size_t src_port,
         uhd::rx_streamer::sptr streamer,
-        size_t strm_port)
+        size_t strm_port,
+        device_id_t via_device)
     {
         // Verify the streamer was created by us
         auto rfnoc_streamer = boost::dynamic_pointer_cast<rfnoc_rx_streamer>(streamer);
@@ -290,7 +293,8 @@ public:
         const sw_buff_t mdata_fmt = BUFF_U64;
 
         auto xport = _gsm->create_device_to_host_data_stream(
-            sep_addr, pyld_fmt, mdata_fmt, rfnoc_streamer->get_stream_args().args);
+            sep_addr, pyld_fmt, mdata_fmt, via_device,
+            rfnoc_streamer->get_stream_args().args);
 
         rfnoc_streamer->connect_channel(strm_port, std::move(xport));
 
@@ -328,7 +332,74 @@ public:
         return _num_mboards;
     }
 
+    std::vector<device_id_t> enumerate_src_via_devices(const block_id_t& dst_blk,
+        size_t dst_port)
+    {
+        // Verify dst_blk even exists in this graph
+        if (!has_block(dst_blk)) {
+            throw uhd::lookup_error(
+                std::string("Cannot connect block to streamer, source block not found: ")
+                + dst_blk.to_string());
+        }
+
+        // Verify dst_blk has an SEP upstream
+        graph_edge_t dst_static_edge = _assert_edge(
+            _get_static_edge(
+                [dst_blk_id = dst_blk.to_string(), dst_port](const graph_edge_t& edge) {
+                    return edge.dst_blockid == dst_blk_id && edge.dst_port == dst_port;
+                }),
+            dst_blk.to_string());
+        if (block_id_t(dst_static_edge.src_blockid).get_block_name() != NODE_ID_SEP) {
+            const std::string err_msg =
+                dst_blk.to_string() + ":" + std::to_string(dst_port)
+                + " is not connected to an SEP! Routing impossible.";
+            UHD_LOG_ERROR(LOG_ID, err_msg);
+            throw uhd::routing_error(err_msg);
+        }
+
+        // Now get the name and address of the SEP
+        const std::string sep_block_id = dst_static_edge.src_blockid;
+        const sep_addr_t sep_addr      = _sep_map.at(sep_block_id);
+
+        // Find links that can reach the SEP
+        return _gsm->get_via_devices(sep_addr);
+    }
+
+    std::vector<device_id_t> enumerate_dst_via_devices(const block_id_t& src_blk,
+        size_t src_port)
+    {
+        // Verify src_blk even exists in this graph
+        if (!has_block(src_blk)) {
+            throw uhd::lookup_error(
+                std::string("Cannot connect block to streamer, source block not found: ")
+                + src_blk.to_string());
+        }
+
+        // Verify src_blk has an SEP downstream
+        graph_edge_t src_static_edge = _assert_edge(
+            _get_static_edge(
+                [src_blk_id = src_blk.to_string(), src_port](const graph_edge_t& edge) {
+                    return edge.src_blockid == src_blk_id && edge.src_port == src_port;
+                }),
+            src_blk.to_string());
+        if (block_id_t(src_static_edge.dst_blockid).get_block_name() != NODE_ID_SEP) {
+            const std::string err_msg =
+                src_blk.to_string() + ":" + std::to_string(src_port)
+                + " is not connected to an SEP! Routing impossible.";
+            UHD_LOG_ERROR(LOG_ID, err_msg);
+            throw uhd::routing_error(err_msg);
+        }
+
+        // Now get the name and address of the SEP
+        const std::string sep_block_id = src_static_edge.dst_blockid;
+        const sep_addr_t sep_addr      = _sep_map.at(sep_block_id);
+
+        // Find links that can reach the SEP
+        return _gsm->get_via_devices(sep_addr);
+    }
+
     std::vector<graph_edge_t> enumerate_active_connections()
+
     {
         return _graph->enumerate_edges();
     }

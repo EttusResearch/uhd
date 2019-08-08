@@ -181,11 +181,9 @@ public:
         const sep_addr_t src_addr,
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
+        const device_id_t via_device,
         const device_addr_t& xport_args)
     {
-        // TODO: choose a route
-        const device_id_t via_device = NULL_DEVICE_ID;
-
         return _link_mgrs.at(_check_dst_and_find_src(src_addr, via_device))
             ->create_device_to_host_data_stream(src_addr,
                 pyld_buff_fmt,
@@ -197,11 +195,9 @@ public:
         sep_addr_t dst_addr,
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
+        const device_id_t via_device,
         const device_addr_t& xport_args)
     {
-        // TODO: choose a route
-        const device_id_t via_device = NULL_DEVICE_ID;
-
         return _link_mgrs.at(_check_dst_and_find_src(dst_addr, via_device))
             ->create_host_to_device_data_stream(dst_addr,
                 pyld_buff_fmt,
@@ -209,6 +205,14 @@ public:
                 xport_args);
     }
 
+    std::vector<device_id_t> get_via_devices(sep_addr_t addr) const
+    {
+        if (_src_map.count(addr) > 0) {
+            return _src_map.at(addr);
+        } else {
+            throw uhd::rfnoc_error("Specified address is unreachable. No via_devices.");
+        }
+    }
 private:
     device_id_t _check_dst_and_find_src(sep_addr_t dst_addr, device_id_t via_device) const
     {
