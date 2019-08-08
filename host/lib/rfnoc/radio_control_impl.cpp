@@ -928,12 +928,24 @@ void radio_control_impl::async_message_handler(
                 return;
             }
             switch (code) {
-                case err_codes::ERR_TX_UNDERRUN:
+                case err_codes::ERR_TX_UNDERRUN: {
+                    auto tx_event_action = tx_event_action_info::make(
+                        uhd::async_metadata_t::EVENT_CODE_UNDERFLOW);
+                    post_action(res_source_info{res_source_info::INPUT_EDGE, chan},
+                        tx_event_action);
                     UHD_LOG_FASTPATH("U");
+                    RFNOC_LOG_TRACE("Posting underrun event action message.");
                     break;
-                case err_codes::ERR_TX_LATE_DATA:
+                }
+                case err_codes::ERR_TX_LATE_DATA: {
+                    auto tx_event_action = tx_event_action_info::make(
+                        uhd::async_metadata_t::EVENT_CODE_TIME_ERROR);
+                    post_action(res_source_info{res_source_info::INPUT_EDGE, chan},
+                        tx_event_action);
                     UHD_LOG_FASTPATH("L");
+                    RFNOC_LOG_TRACE("Posting late data event action message.");
                     break;
+                }
             }
             break;
         }

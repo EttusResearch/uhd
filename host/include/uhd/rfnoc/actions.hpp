@@ -78,7 +78,27 @@ private:
     rx_event_action_info();
 };
 
+struct UHD_API tx_event_action_info : public action_info
+{
+public:
+    using sptr = std::shared_ptr<tx_event_action_info>;
+
+    //! The event code that describes the event
+    uhd::async_metadata_t::event_code_t event_code;
+
+    //! Has time specification?
+    bool has_tsf;
+
+    //! When the async event occurred
+    uint64_t tsf;
+
+    //! Factory function
+    static sptr make(uhd::async_metadata_t::event_code_t event_code);
+
+protected:
+    tx_event_action_info(uhd::async_metadata_t::event_code_t event_code);
+};
+
 }} /* namespace uhd::rfnoc */
 
 #endif /* INCLUDED_LIBUHD_RFNOC_ACTIONS_HPP */
-

@@ -9,6 +9,7 @@
 
 #include <uhd/rfnoc/node.hpp>
 #include <uhdlib/rfnoc/chdr_tx_data_xport.hpp>
+#include <uhdlib/rfnoc/tx_async_msg_queue.hpp>
 #include <uhdlib/transport/tx_streamer_impl.hpp>
 #include <string>
 
@@ -78,8 +79,24 @@ public:
      */
     void connect_channel(const size_t channel, chdr_tx_data_xport::uptr xport);
 
+    /*! Receive an asynchronous message from this tx stream
+     *
+     *  Implementation of tx_streamer API method.
+     *
+     * \param async_metadata the metadata to be filled in
+     * \param timeout the timeout in seconds to wait for a message
+     * \return true when the async_metadata is valid, false for timeout
+     */
+    bool recv_async_msg(uhd::async_metadata_t& async_metadata, double timeout);
+
 private:
     void _register_props(const size_t chan, const std::string& otw_format);
+
+    void _handle_tx_event_action(
+        const res_source_info& src, tx_event_action_info::sptr tx_event_action);
+
+    // Queue for async messages
+    tx_async_msg_queue::sptr _async_msg_queue;
 
     // Properties
     std::vector<property_t<double>> _scaling_out;

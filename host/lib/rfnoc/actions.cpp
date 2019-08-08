@@ -63,3 +63,23 @@ rx_event_action_info::sptr rx_event_action_info::make()
     };
     return std::make_shared<rx_event_action_info_make_shared>();
 }
+
+/*** TX Metadata Action Info *************************************************/
+tx_event_action_info::tx_event_action_info(
+    uhd::async_metadata_t::event_code_t event_code_)
+    : action_info(ACTION_KEY_TX_EVENT), event_code(event_code_)
+{
+}
+
+tx_event_action_info::sptr tx_event_action_info::make(
+    uhd::async_metadata_t::event_code_t event_code)
+{
+    struct tx_event_action_info_make_shared : public tx_event_action_info
+    {
+        tx_event_action_info_make_shared(uhd::async_metadata_t::event_code_t event_code)
+            : tx_event_action_info(event_code)
+        {
+        }
+    };
+    return std::make_shared<tx_event_action_info_make_shared>(event_code);
+}

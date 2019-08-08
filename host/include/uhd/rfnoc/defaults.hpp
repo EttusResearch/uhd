@@ -32,11 +32,12 @@ static const io_type_t IO_TYPE_SC16 = "sc16";
 static const std::string ACTION_KEY_STREAM_CMD("stream_cmd");
 static const std::string ACTION_KEY_RX_EVENT("rx_event");
 static const std::string ACTION_KEY_RX_RESTART_REQ("restart_request");
+static const std::string ACTION_KEY_TX_EVENT("tx_event");
 
 //! If the block name can't be automatically detected, this name is used
 static const std::string DEFAULT_BLOCK_NAME = "Block";
 //! This NOC-ID is used to look up the default block
-static const uint32_t DEFAULT_NOC_ID = 0xFFFFFFFF;
+static const uint32_t DEFAULT_NOC_ID  = 0xFFFFFFFF;
 static const double DEFAULT_TICK_RATE = 1.0;
 // Whenever we need a default spp value use this, unless there are some
 // block/device-specific constraints. It will keep the frame size below 1500.

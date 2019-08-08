@@ -86,6 +86,12 @@ public:
     {
         tx_streamer_impl::set_scale_factor(chan, scale_factor);
     }
+
+    bool recv_async_msg(uhd::async_metadata_t& /*async_metadata*/,
+        double /*timeout = 0.1*/)
+    {
+        return false;
+    }
 };
 
 }} // namespace uhd::transport

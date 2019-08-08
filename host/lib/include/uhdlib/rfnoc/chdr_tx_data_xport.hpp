@@ -7,6 +7,7 @@
 #ifndef INCLUDED_LIBUHD_CHDR_TX_DATA_XPORT_HPP
 #define INCLUDED_LIBUHD_CHDR_TX_DATA_XPORT_HPP
 
+#include <uhd/types/metadata.hpp>
 #include <uhdlib/rfnoc/chdr_packet.hpp>
 #include <uhdlib/rfnoc/chdr_types.hpp>
 #include <uhdlib/rfnoc/mgmt_portal.hpp>
@@ -103,8 +104,9 @@ private:
 class chdr_tx_data_xport
 {
 public:
-    using uptr   = std::unique_ptr<chdr_tx_data_xport>;
-    using buff_t = transport::frame_buff;
+    using uptr                   = std::unique_ptr<chdr_tx_data_xport>;
+    using buff_t                 = transport::frame_buff;
+    using enqueue_async_msg_fn_t = std::function<void(async_metadata_t::event_code_t, bool, uint64_t)>;
 
     //! Information about data packet
     struct packet_info_t
@@ -215,6 +217,16 @@ public:
     }
 
     /*!
+     * Configure a function to call to enqueue async msgs
+     *
+     * \param fn Function to enqueue async messages
+     */
+    void set_enqueue_async_msg_fn(enqueue_async_msg_fn_t fn)
+    {
+        _enqueue_async_msg = fn;
+    }
+
+    /*!
      * Sends a TX data packet
      *
      * \param buff the frame buffer containing the packet to send
@@ -286,7 +298,27 @@ private:
             _fc_state.update_dest_recv_count(
                 {strs.xfer_count_bytes, static_cast<uint32_t>(strs.xfer_count_pkts)});
 
-            // TODO: check strs status here and push into async msg queue
+            if (strs.status != chdr::STRS_OKAY) {
+                switch (strs.status) {
+                case chdr::STRS_SEQERR:
+                    UHD_LOG_FASTPATH("S");
+                    if (_enqueue_async_msg) {
+                        _enqueue_async_msg(async_metadata_t::EVENT_CODE_SEQ_ERROR, false, 0);
+                    }
+                    break;
+                case chdr::STRS_DATAERR:
+                    UHD_LOG_WARNING("XPORT::TX_DATA_XPORT", "Received data error in tx stream!");
+                    break;
+                case chdr::STRS_RTERR:
+                    UHD_LOG_WARNING("XPORT::TX_DATA_XPORT", "Received routing error in tx stream!");
+                    break;
+                case chdr::STRS_CMDERR:
+                    UHD_LOG_WARNING("XPORT::TX_DATA_XPORT", "Received command error in tx stream!");
+                    break;
+                default:
+                    break;
+                }
+            }
 
             // Packet belongs to this transport, release buff and return true
             recv_link->release_recv_buff(std::move(buff));
@@ -521,6 +553,9 @@ private:
 
     // Handles sending of strc flow control ack packets
     detail::tx_flow_ctrl_sender _fc_sender;
+
+    // Function to enqueue an async msg
+    enqueue_async_msg_fn_t _enqueue_async_msg;
 
     // Local / Source EPID
     sep_id_t _epid;

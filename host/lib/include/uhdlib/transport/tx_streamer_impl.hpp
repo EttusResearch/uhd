@@ -99,7 +99,6 @@ public:
         return _spp;
     }
 
-
     /*! Get width of each over-the-wire item component. For complex items,
      *  returns the width of one component only (real or imaginary).
      */
@@ -178,15 +177,13 @@ public:
         }
     }
 
-    //! Implementation of rx_streamer API method
-    bool recv_async_msg(
-        uhd::async_metadata_t& /*async_metadata*/, double /*timeout = 0.1*/)
+protected:
+    //! Returns the tick rate for conversion of timestamp
+    double get_tick_rate() const
     {
-        // TODO: implement me
-        return false;
+        return _zero_copy_streamer.get_tick_rate();
     }
 
-protected:
     //! Returns the size in bytes of a sample in a packet
     size_t get_mtu() const
     {

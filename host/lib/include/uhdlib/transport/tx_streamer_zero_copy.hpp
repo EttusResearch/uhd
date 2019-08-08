@@ -51,6 +51,12 @@ public:
         return _xports.size();
     }
 
+    //! Returns the tick rate for conversion of timestamp
+    double get_tick_rate() const
+    {
+        return _tick_rate;
+    }
+
     //! Configures tick rate for conversion of timestamp
     void set_tick_rate(const double rate)
     {
