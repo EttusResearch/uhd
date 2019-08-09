@@ -5,6 +5,7 @@
 //
 
 #include <uhd/utils/log.hpp>
+#include <uhdlib/transport/adapter.hpp>
 #include <uhdlib/transport/udp_boost_asio_link.hpp>
 #include <boost/format.hpp>
 
@@ -39,10 +40,13 @@ udp_boost_asio_link::udp_boost_asio_link(
     _socket  = open_udp_socket(addr, port, _io_service);
     _sock_fd = _socket->native_handle();
 
-    UHD_LOGGER_TRACE("UDP")
-        << boost::format("Created UDP link to %s:%s") % addr % port;
+    auto info   = udp_boost_asio_adapter_info(*_socket);
+    auto& ctx   = adapter_ctx::get();
+    _adapter_id = ctx.register_adapter(info);
+
+    UHD_LOGGER_TRACE("UDP") << boost::format("Created UDP link to %s:%s") % addr % port;
     UHD_LOGGER_TRACE("UDP") << boost::format("Local UDP socket endpoint: %s:%s")
-        % get_local_addr() % get_local_port();
+                                   % get_local_addr() % get_local_port();
 }
 
 uint16_t udp_boost_asio_link::get_local_port() const
@@ -91,8 +95,7 @@ udp_boost_asio_link::sptr udp_boost_asio_link::make(const std::string& addr,
     }
 #endif
 
-    udp_boost_asio_link::sptr link(
-        new udp_boost_asio_link(addr, port, params));
+    udp_boost_asio_link::sptr link(new udp_boost_asio_link(addr, port, params));
 
     // call the helper to resize send and recv buffers
 

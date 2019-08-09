@@ -10,6 +10,7 @@
 #include <uhd/config.hpp>
 #include <uhd/transport/buffer_pool.hpp>
 #include <uhd/types/device_addr.hpp>
+#include <uhdlib/transport/adapter_info.hpp>
 #include <uhdlib/transport/link_base.hpp>
 #include <uhdlib/transport/links.hpp>
 #include <uhdlib/transport/udp_common.hpp>
@@ -26,6 +27,29 @@ public:
     {
         _data = mem;
     }
+};
+
+class udp_boost_asio_adapter_info : public adapter_info
+{
+public:
+    udp_boost_asio_adapter_info(boost::asio::ip::udp::socket& s)
+        : _src_ip(s.local_endpoint().address()) {}
+
+    ~udp_boost_asio_adapter_info() {}
+
+    std::string to_string()
+    {
+        return std::string("Ethernet(kernel):") + _src_ip.to_string();
+    }
+
+    bool operator==(const udp_boost_asio_adapter_info& rhs) const
+    {
+        return (_src_ip == rhs._src_ip);
+    }
+
+private:
+    // Use source IP addr
+    boost::asio::ip::address _src_ip;
 };
 
 class udp_boost_asio_link : public recv_link_base<udp_boost_asio_link>,
@@ -61,6 +85,22 @@ public:
      *          not be identified.
      */
     std::string get_local_addr() const;
+
+    /*!
+     * Get the physical adapter ID used for this link
+     */
+    adapter_id_t get_send_adapter_id() const
+    {
+        return _adapter_id;
+    }
+
+    /*!
+     * Get the physical adapter ID used for this link
+     */
+    adapter_id_t get_recv_adapter_id() const
+    {
+        return _adapter_id;
+    }
 
 private:
     using recv_link_base_t = recv_link_base<udp_boost_asio_link>;
@@ -108,8 +148,10 @@ private:
     boost::asio::io_service _io_service;
     std::shared_ptr<boost::asio::ip::udp::socket> _socket;
     int _sock_fd;
+    adapter_id_t _adapter_id;
 };
 
 }} // namespace uhd::transport
+
 
 #endif /* INCLUDED_UHD_TRANSPORT_UDP_BOOST_ASIO_LINK_HPP */

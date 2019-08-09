@@ -128,6 +128,11 @@ public:
         _simulate_io_timeout = simulate_io_timeout;
     }
 
+    adapter_id_t get_send_adapter_id() const
+    {
+        return NULL_ADAPTER_ID;
+    }
+
 private:
     // Friend declaration to allow base class to call private methods
     friend base_t;
@@ -221,6 +226,11 @@ public:
     {
         _rx_mems.push_back(data);
         _rx_lens.push_back(len);
+    }
+
+    adapter_id_t get_recv_adapter_id() const
+    {
+        return NULL_ADAPTER_ID;
     }
 
 private:

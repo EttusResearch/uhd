@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#include <uhd/transport/adapter_id.hpp>
 #include <uhd/transport/frame_buff.hpp>
 #include <memory>
 
@@ -51,6 +52,11 @@ public:
      */
     virtual void release_send_buff(frame_buff::uptr buff) = 0;
 
+    /*!
+     * Get the physical adapter id used for this link
+     */
+    virtual adapter_id_t get_send_adapter_id() const = 0;
+
     send_link_if()                    = default;
     send_link_if(const send_link_if&) = delete;
     send_link_if& operator=(const send_link_if&) = delete;
@@ -90,6 +96,11 @@ public:
      * \param buffer frame buffer to release for reuse by the link
      */
     virtual void release_recv_buff(frame_buff::uptr buff) = 0;
+
+    /*!
+     * Get the physical adapter ID used for this link
+     */
+    virtual adapter_id_t get_recv_adapter_id() const = 0;
 
     recv_link_if()                    = default;
     recv_link_if(const recv_link_if&) = delete;
