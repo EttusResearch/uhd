@@ -253,18 +253,8 @@ set_source_files_properties(
 UHD_ADD_NONAPI_TEST(
     TARGET rfnoc_blocks_test.cpp
     EXTRA_SOURCES
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/noc_block_base.cpp
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/block_id.cpp
-    ${CMAKE_SOURCE_DIR}/lib/utils/compat_check.cpp
-    ${CMAKE_SOURCE_DIR}/lib/utils/system_time.cpp
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/ddc_block_control.cpp
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/duc_block_control.cpp
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/null_block_control.cpp
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/register_iface_holder.cpp
-    ${CMAKE_SOURCE_DIR}/lib/usrp/cores/dsp_core_utils.cpp
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/graph.cpp
-    INCLUDE_DIRS
-    ${CMAKE_BINARY_DIR}/lib/ic_reg_maps/
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/registry_factory.cpp
 )
 
 UHD_ADD_NONAPI_TEST(

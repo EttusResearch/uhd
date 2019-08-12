@@ -12,6 +12,7 @@
 #include <uhd/rfnoc/duc_block_control.hpp>
 #include <uhd/rfnoc/null_block_control.hpp>
 #include <uhdlib/rfnoc/clock_iface.hpp>
+#include <uhdlib/rfnoc/factory.hpp>
 #include <uhdlib/rfnoc/graph.hpp>
 #include <uhdlib/rfnoc/node_accessor.hpp>
 #include <uhdlib/utils/narrow.hpp>
@@ -19,6 +20,9 @@
 #include <iostream>
 
 using namespace uhd::rfnoc;
+
+// Redeclare this here, since it's only defined outside of UHD_API
+noc_block_base::make_args_t::~make_args_t() = default;
 
 namespace {
 
@@ -44,35 +48,42 @@ noc_block_base::make_args_ptr make_make_args(noc_id_t noc_id,
     return make_args;
 }
 
+noc_block_base::sptr make_block(noc_block_base::make_args_ptr&& make_args)
+{
+    try {
+        auto block_factory_info =
+            factory::get_block_factory(make_args->noc_id, ANY_DEVICE);
+        return block_factory_info.factory_fn(std::move(make_args));
+    } catch (std::out_of_range&) {
+        UHD_LOG_WARNING("TEST",
+            "Skipping tests due to Windows linker misconfiguration that needs to be "
+            "resolved.");
+        exit(0);
+    }
+}
+
 } // namespace
-
-#define MOCK_REGISTER(BLOCK_NAME)                       \
-    uhd::rfnoc::noc_block_base::sptr BLOCK_NAME##_make( \
-        uhd::rfnoc::noc_block_base::make_args_ptr make_args);
-
-MOCK_REGISTER(null_block_control)
-MOCK_REGISTER(ddc_block_control)
-MOCK_REGISTER(duc_block_control)
 
 BOOST_AUTO_TEST_CASE(test_null_block)
 {
     node_accessor_t node_accessor{};
-    constexpr size_t num_chans                 = 2;
-    constexpr uint32_t nipc                    = 2;
-    constexpr uint32_t item_width              = 32;
-    constexpr noc_id_t mock_id                 = 0x7E570000;
+    constexpr size_t num_chans    = 2;
+    constexpr uint32_t nipc       = 2;
+    constexpr uint32_t item_width = 32;
+    constexpr noc_id_t noc_id     = 0x00000001;
 
-    auto make_args = make_make_args(mock_id, "0/NullSrcSink#0", num_chans, num_chans);
+    auto make_args = make_make_args(noc_id, "0/NullSrcSink#0", num_chans, num_chans);
     auto reg_iface = std::dynamic_pointer_cast<mock_reg_iface_t>(make_args->reg_iface);
     auto set_mem   = [&](const uint32_t addr, const uint32_t data) {
         reg_iface->read_memory[addr] = data;
     };
-    auto get_mem = [&](const uint32_t addr) { return reg_iface->write_memory[addr]; };
+    auto get_mem  = [&](const uint32_t addr) { return reg_iface->write_memory[addr]; };
     auto copy_mem = [&](const uint32_t addr) { set_mem(addr, get_mem(addr)); };
 
     set_mem(null_block_control::REG_CTRL_STATUS, (nipc << 24) | (item_width << 16));
-    auto test_null = std::dynamic_pointer_cast<null_block_control>(
-        null_block_control_make(std::move(make_args)));
+    auto test_null =
+        std::dynamic_pointer_cast<null_block_control>(make_block(std::move(make_args)));
+    BOOST_REQUIRE(test_null);
 
     using uhd::stream_cmd_t;
     node_accessor.init_props(test_null.get());
@@ -81,10 +92,10 @@ BOOST_AUTO_TEST_CASE(test_null_block)
     stream_cmd.stream_mode = stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE;
     BOOST_REQUIRE_THROW(test_null->issue_stream_cmd(stream_cmd), uhd::runtime_error);
 
-    constexpr uint64_t snk_count = 1000000000;
+    constexpr uint64_t snk_count      = 1000000000;
     constexpr uint64_t snk_count_pkts = 5;
-    constexpr uint64_t src_count = 2323232323;
-    constexpr uint64_t loop_count = 4242424242;
+    constexpr uint64_t src_count      = 2323232323;
+    constexpr uint64_t loop_count     = 4242424242;
     set_mem(null_block_control::REG_SNK_LINE_CNT_LO,
         uhd::narrow_cast<uint32_t>(snk_count & 0xFFFFFFFF));
     set_mem(null_block_control::REG_SNK_LINE_CNT_HI,
@@ -125,8 +136,8 @@ BOOST_AUTO_TEST_CASE(test_null_block)
     auto sca = stream_cmd_action_info::make(stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     node_accessor.send_action(test_null.get(), {res_source_info::OUTPUT_EDGE, 0}, sca);
     BOOST_CHECK_EQUAL(get_mem(null_block_control::REG_CTRL_STATUS) & 0x2, 0x2);
-    BOOST_REQUIRE_THROW(
-        node_accessor.send_action(test_null.get(), {res_source_info::OUTPUT_EDGE, 1}, sca),
+    BOOST_REQUIRE_THROW(node_accessor.send_action(
+                            test_null.get(), {res_source_info::OUTPUT_EDGE, 1}, sca),
         uhd::runtime_error);
     BOOST_REQUIRE_THROW(
         node_accessor.send_action(test_null.get(), {res_source_info::INPUT_EDGE, 0}, sca),
@@ -146,20 +157,22 @@ BOOST_AUTO_TEST_CASE(test_null_block)
 BOOST_AUTO_TEST_CASE(test_ddc_block)
 {
     node_accessor_t node_accessor{};
-    constexpr uint32_t num_hb                      = 2;
-    constexpr uint32_t max_cic                     = 128;
-    constexpr size_t num_chans                     = 4;
-    constexpr noc_id_t mock_noc_id                 = 0x7E57DDC0;
-    constexpr int TEST_DECIM                       = 20;
+    constexpr uint32_t num_hb  = 2;
+    constexpr uint32_t max_cic = 128;
+    constexpr size_t num_chans = 4;
+    constexpr noc_id_t noc_id  = DDC_BLOCK;
+    constexpr int TEST_DECIM   = 20;
 
-    auto ddc_make_args = make_make_args(mock_noc_id, "0/DDC#0", num_chans, num_chans);
+    auto ddc_make_args  = make_make_args(noc_id, "0/DDC#0", num_chans, num_chans);
     ddc_make_args->args = uhd::device_addr_t("foo=bar");
-    auto ddc_reg_iface = std::dynamic_pointer_cast<mock_reg_iface_t>(ddc_make_args->reg_iface);
+    auto ddc_reg_iface =
+        std::dynamic_pointer_cast<mock_reg_iface_t>(ddc_make_args->reg_iface);
     ddc_reg_iface->read_memory[ddc_block_control::RB_COMPAT_NUM] =
         (ddc_block_control::MAJOR_COMPAT << 16) | ddc_block_control::MINOR_COMPAT;
     ddc_reg_iface->read_memory[ddc_block_control::RB_NUM_HB]        = num_hb;
     ddc_reg_iface->read_memory[ddc_block_control::RB_CIC_MAX_DECIM] = max_cic;
-    auto test_ddc = ddc_block_control_make(std::move(ddc_make_args));
+    auto test_ddc = make_block(std::move(ddc_make_args));
+    BOOST_REQUIRE(test_ddc);
     BOOST_CHECK_EQUAL(test_ddc->get_block_args().get("foo"), "bar");
 
     node_accessor.init_props(test_ddc.get());
@@ -177,7 +190,7 @@ BOOST_AUTO_TEST_CASE(test_ddc_block)
     edge_info.src_port                    = 0;
     edge_info.dst_port                    = 0;
     edge_info.property_propagation_active = true;
-    edge_info.edge = detail::graph_t::graph_edge_t::DYNAMIC;
+    edge_info.edge                        = detail::graph_t::graph_edge_t::DYNAMIC;
 
     mock_terminator_t mock_source_term(1);
     mock_terminator_t mock_sink_term(1);
@@ -213,7 +226,7 @@ BOOST_AUTO_TEST_CASE(test_ddc_block)
                 != 1.0);
 
     UHD_LOG_INFO("TEST", "Setting freq to 1/8 of input rate");
-    constexpr double TEST_FREQ = 1.0/8;
+    constexpr double TEST_FREQ = 1.0 / 8;
     test_ddc->set_property<double>("freq", TEST_FREQ, 0);
     const uint32_t freq_word_1 =
         ddc_reg_iface->write_memory.at(ddc_block_control::SR_FREQ_ADDR);
@@ -242,13 +255,13 @@ BOOST_AUTO_TEST_CASE(test_ddc_block)
 BOOST_AUTO_TEST_CASE(test_duc_block)
 {
     node_accessor_t node_accessor{};
-    constexpr uint32_t num_hb      = 2;
-    constexpr uint32_t max_cic     = 128;
-    constexpr size_t num_chans     = 4;
-    constexpr noc_id_t mock_noc_id = 0x7E57D0C0;
-    constexpr int TEST_INTERP      = 20; // 2 halfbands, CIC==5
+    constexpr uint32_t num_hb  = 2;
+    constexpr uint32_t max_cic = 128;
+    constexpr size_t num_chans = 4;
+    constexpr noc_id_t noc_id  = DUC_BLOCK;
+    constexpr int TEST_INTERP  = 20; // 2 halfbands, CIC==5
 
-    auto duc_make_args  = make_make_args(mock_noc_id, "0/DUC#0", num_chans, num_chans);
+    auto duc_make_args  = make_make_args(noc_id, "0/DUC#0", num_chans, num_chans);
     duc_make_args->args = uhd::device_addr_t();
     auto duc_reg_iface =
         std::dynamic_pointer_cast<mock_reg_iface_t>(duc_make_args->reg_iface);
@@ -256,7 +269,8 @@ BOOST_AUTO_TEST_CASE(test_duc_block)
         (duc_block_control::MAJOR_COMPAT << 16) | duc_block_control::MINOR_COMPAT;
     duc_reg_iface->read_memory[duc_block_control::RB_NUM_HB]         = num_hb;
     duc_reg_iface->read_memory[duc_block_control::RB_CIC_MAX_INTERP] = max_cic;
-    auto test_duc = duc_block_control_make(std::move(duc_make_args));
+    auto test_duc = make_block(std::move(duc_make_args));
+    BOOST_REQUIRE(test_duc);
 
     node_accessor.init_props(test_duc.get());
     UHD_LOG_DEBUG("TEST", "Init done.");
