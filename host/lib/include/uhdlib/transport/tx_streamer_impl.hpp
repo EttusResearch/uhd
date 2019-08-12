@@ -79,14 +79,14 @@ public:
         _spp = stream_args.args.cast<size_t>("spp", _spp);
     }
 
-    void connect_channel(const size_t channel, typename transport_t::uptr xport)
+    virtual void connect_channel(const size_t channel, typename transport_t::uptr xport)
     {
-        const size_t max_pyld_size = xport->get_max_payload_size();
+        const size_t mtu = xport->get_max_payload_size();
         _zero_copy_streamer.connect_channel(channel, std::move(xport));
 
-        // Set spp based on the transport frame size
-        const size_t xport_spp = max_pyld_size / _convert_info.bytes_per_otw_item;
-        _spp                   = std::min(_spp, xport_spp);
+        if (mtu < _mtu) {
+            set_mtu(mtu);
+        }
     }
 
     size_t get_num_channels() const
@@ -187,6 +187,22 @@ public:
     }
 
 protected:
+    //! Returns the size in bytes of a sample in a packet
+    size_t get_mtu() const
+    {
+        return _mtu;
+    }
+
+    //! Sets the MTU and calculates spp
+    void set_mtu(const size_t mtu)
+    {
+        _mtu = mtu;
+
+        // Check if spp needs to be lowered. SPP may already be lower than the
+        // value allowed by mtu if the user specified it using stream_args.
+        _spp = std::min(_spp, _mtu / _convert_info.bytes_per_otw_item);
+    }
+
     //! Configures scaling factor for conversion
     void set_scale_factor(const size_t chan, const double scale_factor)
     {
@@ -294,6 +310,9 @@ private:
 
     // Sample rate used to calculate metadata time_spec_t
     double _samp_rate = 1.0;
+
+    // Maximum payload size
+    size_t _mtu = std::numeric_limits<std::size_t>::max();
 
     // Maximum number of samples per packet
     size_t _spp = std::numeric_limits<std::size_t>::max();

@@ -30,9 +30,33 @@ rfnoc_tx_streamer::rfnoc_tx_streamer(const size_t num_chans,
     _samp_rate_out.reserve(num_chans);
     _tick_rate_out.reserve(num_chans);
     _type_out.reserve(num_chans);
+    _mtu_out.reserve(num_chans);
 
     for (size_t i = 0; i < num_chans; i++) {
         _register_props(i, stream_args.otw_format);
+    }
+
+    for (size_t i = 0; i < num_chans; i++) {
+        prop_ptrs_t mtu_resolver_out;
+        for (auto& mtu_prop : _mtu_out) {
+            mtu_resolver_out.insert(&mtu_prop);
+        }
+        //property_t<size_t>* mtu_out = &_mtu_out.back();
+
+        add_property_resolver({&_mtu_out[i]}, std::move(mtu_resolver_out),
+            [&mtu_out = _mtu_out[i], i, this]() {
+                RFNOC_LOG_TRACE("Calling resolver for `mtu_out'@" << i);
+                if (mtu_out.is_valid()) {
+                    const size_t mtu = mtu_out.get();
+                    // If the current MTU changes, set the same value for all chans
+                    if (mtu < tx_streamer_impl::get_mtu()) {
+                        for (auto& prop : this->_mtu_out) {
+                            prop.set(mtu);
+                        }
+                        tx_streamer_impl::set_mtu(mtu);
+                    }
+                }
+            });
     }
 
     node_accessor_t node_accessor;
@@ -72,8 +96,19 @@ bool rfnoc_tx_streamer::check_topology(
     return node_t::check_topology(connected_inputs, connected_outputs);
 }
 
-void rfnoc_tx_streamer::_register_props(const size_t chan,
-    const std::string& otw_format)
+void rfnoc_tx_streamer::connect_channel(
+    const size_t channel, chdr_tx_data_xport::uptr xport)
+{
+    UHD_ASSERT_THROW(channel < _mtu_out.size());
+
+    // Update MTU property based on xport limits
+    const size_t mtu = xport->get_max_payload_size();
+    set_property<size_t>(PROP_KEY_MTU, mtu, {res_source_info::OUTPUT_EDGE, channel});
+
+    tx_streamer_impl<chdr_tx_data_xport>::connect_channel(channel, std::move(xport));
+}
+
+void rfnoc_tx_streamer::_register_props(const size_t chan, const std::string& otw_format)
 {
     // Create actual properties and store them
     _scaling_out.push_back(property_t<double>(
@@ -84,18 +119,22 @@ void rfnoc_tx_streamer::_register_props(const size_t chan,
         PROP_KEY_TICK_RATE, {res_source_info::OUTPUT_EDGE, chan}));
     _type_out.emplace_back(property_t<std::string>(
         PROP_KEY_TYPE, otw_format, {res_source_info::OUTPUT_EDGE, chan}));
+    _mtu_out.push_back(property_t<size_t>(
+        PROP_KEY_MTU, {res_source_info::OUTPUT_EDGE, chan}));
 
     // Give us some shorthands for the rest of this function
     property_t<double>* scaling_out   = &_scaling_out.back();
     property_t<double>* samp_rate_out = &_samp_rate_out.back();
     property_t<double>* tick_rate_out = &_tick_rate_out.back();
     property_t<std::string>* type_out = &_type_out.back();
+    property_t<size_t>* mtu_out       = &_mtu_out.back();
 
     // Register them
     register_property(scaling_out);
     register_property(samp_rate_out);
     register_property(tick_rate_out);
     register_property(type_out);
+    register_property(mtu_out);
 
     // Add resolvers
     add_property_resolver({scaling_out}, {},

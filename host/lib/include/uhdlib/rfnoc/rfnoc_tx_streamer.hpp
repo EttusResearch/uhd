@@ -69,6 +69,15 @@ public:
     bool check_topology(const std::vector<size_t>& connected_inputs,
         const std::vector<size_t>& connected_outputs);
 
+    /*! Connects a channel to the streamer port
+     *
+     * Overrides method in tx_streamer_impl.
+     *
+     * \param channel The streamer channel to which to connect
+     * \param xport The transport for the specified channel
+     */
+    void connect_channel(const size_t channel, chdr_tx_data_xport::uptr xport);
+
 private:
     void _register_props(const size_t chan, const std::string& otw_format);
 
@@ -77,6 +86,7 @@ private:
     std::vector<property_t<double>> _samp_rate_out;
     std::vector<property_t<double>> _tick_rate_out;
     std::vector<property_t<std::string>> _type_out;
+    std::vector<property_t<size_t>> _mtu_out;
 
     // Streamer unique ID
     const std::string _unique_id;
