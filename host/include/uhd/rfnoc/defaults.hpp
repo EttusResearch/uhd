@@ -49,11 +49,6 @@ static const int DEFAULT_SPP = 1996;
 using noc_id_t = uint32_t;
 
 /*** Device Identifiers ******************************************************/
-//! Device ID
-using device_id_t = uint16_t;
-//! NULL/unassigned device ID
-static const device_id_t NULL_DEVICE_ID = 0;
-
 //! Device Type
 using device_type_t = uint16_t;
 // first nibble for device family (E = E, N = 1, X = A), remaining three nibbles
@@ -81,4 +76,3 @@ static const noc_id_t DDC_BLOCK   = 0xDDC00000;
 }} // namespace uhd::rfnoc
 
 #endif /* INCLUDED_LIBUHD_RFNOC_DEFAULTS_HPP */
-

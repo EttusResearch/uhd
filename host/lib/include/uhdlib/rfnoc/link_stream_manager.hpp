@@ -7,11 +7,12 @@
 #ifndef INCLUDED_LIBUHD_RFNOC_LINK_STREAM_MANAGER_HPP
 #define INCLUDED_LIBUHD_RFNOC_LINK_STREAM_MANAGER_HPP
 
+#include <uhd/transport/adapter_id.hpp>
+#include <uhdlib/rfnoc/chdr_rx_data_xport.hpp>
 #include <uhdlib/rfnoc/client_zero.hpp>
 #include <uhdlib/rfnoc/ctrlport_endpoint.hpp>
 #include <uhdlib/rfnoc/epid_allocator.hpp>
 #include <uhdlib/rfnoc/mb_iface.hpp>
-#include <uhdlib/rfnoc/chdr_rx_data_xport.hpp>
 #include <functional>
 #include <memory>
 #include <set>
@@ -26,6 +27,9 @@ namespace uhd { namespace rfnoc {
  * and thus, the host's device_id_t uniquely identifies the host-side transport adapter
  * to use for packet transmission/reception.
  *
+ * For convenience, the link_stream_manager also provides a method to get the
+ * host's transport adapter ID directly.
+ *
  * There must be one instance of this class per logical link.
  */
 class link_stream_manager
@@ -37,9 +41,15 @@ public:
 
     /*! \brief Get the software device ID associated with this instance
      *
-     * \return A vector of addresses for all reachable endpoints
+     * \return The software device ID associated with this instance
      */
     virtual device_id_t get_self_device_id() const = 0;
+
+    /*! \brief Get the transport adapter ID associated with this instance
+     *
+     * \return The adapter ID associated with this instance
+     */
+    virtual uhd::transport::adapter_id_t get_adapter_id() const = 0;
 
     /*! \brief Get all the endpoints reachable from this link
      *

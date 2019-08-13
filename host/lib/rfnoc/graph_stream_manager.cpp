@@ -18,9 +18,6 @@ using namespace uhd;
 using namespace uhd::rfnoc;
 using namespace uhd::rfnoc::chdr;
 
-namespace uhd { namespace rfnoc { namespace detail {
-}}} // uhd::rfnoc::detail
-
 graph_stream_manager::~graph_stream_manager() = default;
 
 class graph_stream_manager_impl : public graph_stream_manager
@@ -36,8 +33,9 @@ public:
             _link_mgrs.emplace(lnk.first,
                 std::move(link_stream_manager::make(
                     pkt_factory, *lnk.second, epid_alloc, lnk.first)));
-            if (_alloc_map.count(lnk.first) == 0) {
-                _alloc_map[lnk.first] = allocation_info{0, 0};
+            auto adapter = _link_mgrs.at(lnk.first)->get_adapter_id();
+            if (_alloc_map.count(adapter) == 0) {
+                _alloc_map[adapter] = allocation_info{0, 0};
             }
         }
         for (const auto& mgr_pair : _link_mgrs) {
@@ -69,18 +67,18 @@ public:
         return retval;
     }
 
-    virtual sep_id_pair_t connect_host_to_device(
-        sep_addr_t dst_addr, device_id_t host_device = NULL_DEVICE_ID)
+    virtual sep_id_pair_t connect_host_to_device(sep_addr_t dst_addr,
+        uhd::transport::adapter_id_t adapter = uhd::transport::NULL_ADAPTER_ID)
     {
         UHD_LOGGER_DEBUG("RFNOC::GRAPH")
-            << boost::format("Connecting the Host to Endpoint %d:%d through Device "
+            << boost::format("Connecting the Host to Endpoint %d:%d through Adapter "
                              "%d (0 = no preference)... ")
-                   % dst_addr.first % dst_addr.second % host_device;
+                   % dst_addr.first % dst_addr.second % adapter;
 
         // When we connect, we setup a route and fire up a control stream between
         // the endpoints
-        device_id_t gateway = _check_dst_and_find_src(dst_addr, host_device,
-            uhd::transport::link_type_t::CTRL);
+        device_id_t gateway =
+            _check_dst_and_find_src(dst_addr, adapter, uhd::transport::link_type_t::CTRL);
         sep_id_pair_t epid_pair =
             _link_mgrs.at(gateway)->connect_host_to_device(dst_addr);
         UHD_LOGGER_DEBUG("RFNOC::GRAPH")
@@ -125,23 +123,23 @@ public:
         uint16_t block_index,
         const clock_iface& client_clk,
         const clock_iface& timebase_clk,
-        device_id_t via_device = NULL_DEVICE_ID)
+        uhd::transport::adapter_id_t adapter = uhd::transport::NULL_ADAPTER_ID)
     {
         // We must be connected to dst_addr before getting a register iface
         sep_id_t dst_epid = _epid_alloc->get_epid(dst_addr);
-        auto dev = _check_dst_and_find_src(dst_addr, via_device,
-                uhd::transport::link_type_t::CTRL);
-        return _link_mgrs.at(dev)->get_block_register_iface(dst_epid, block_index,
-                client_clk, timebase_clk);
+        auto dev =
+            _check_dst_and_find_src(dst_addr, adapter, uhd::transport::link_type_t::CTRL);
+        return _link_mgrs.at(dev)->get_block_register_iface(
+            dst_epid, block_index, client_clk, timebase_clk);
     }
 
-    virtual detail::client_zero::sptr get_client_zero(
-        sep_addr_t dst_addr, device_id_t via_device = NULL_DEVICE_ID) const
+    virtual detail::client_zero::sptr get_client_zero(sep_addr_t dst_addr,
+        uhd::transport::adapter_id_t adapter = uhd::transport::NULL_ADAPTER_ID) const
     {
         // We must be connected to dst_addr before getting a client zero
         sep_id_t dst_epid = _epid_alloc->get_epid(dst_addr);
-        auto dev = _check_dst_and_find_src(dst_addr, via_device,
-                    uhd::transport::link_type_t::CTRL);
+        auto dev =
+            _check_dst_and_find_src(dst_addr, adapter, uhd::transport::link_type_t::CTRL);
         return _link_mgrs.at(dev)->get_client_zero(dst_epid);
     }
 
@@ -187,73 +185,82 @@ public:
                                  "specified source endpoint");
     }
 
-    chdr_rx_data_xport::uptr create_device_to_host_data_stream(
-        const sep_addr_t src_addr,
+    chdr_rx_data_xport::uptr create_device_to_host_data_stream(const sep_addr_t src_addr,
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
-        const device_id_t via_device,
+        const uhd::transport::adapter_id_t adapter,
         const device_addr_t& xport_args)
     {
-        auto dev = _check_dst_and_find_src(src_addr, via_device,
-                uhd::transport::link_type_t::RX_DATA);
-        auto allocs = _alloc_map.at(dev);
+        device_id_t dev = _check_dst_and_find_src(
+            src_addr, adapter, uhd::transport::link_type_t::RX_DATA);
+        uhd::transport::adapter_id_t chosen = _link_mgrs.at(dev)->get_adapter_id();
+        auto allocs                         = _alloc_map.at(chosen);
         allocs.rx++;
-        _alloc_map[dev] = allocs;
-        return _link_mgrs.at(dev)->create_device_to_host_data_stream(src_addr,
-                pyld_buff_fmt,
-                mdata_buff_fmt,
-                xport_args);
+        _alloc_map[chosen] = allocs;
+        return _link_mgrs.at(dev)->create_device_to_host_data_stream(
+            src_addr, pyld_buff_fmt, mdata_buff_fmt, xport_args);
     }
 
     virtual chdr_tx_data_xport::uptr create_host_to_device_data_stream(
         sep_addr_t dst_addr,
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
-        const device_id_t via_device,
+        const uhd::transport::adapter_id_t adapter,
         const device_addr_t& xport_args)
     {
-        auto dev = _check_dst_and_find_src(dst_addr, via_device,
-                    uhd::transport::link_type_t::TX_DATA);
-        auto allocs = _alloc_map.at(dev);
+        device_id_t dev = _check_dst_and_find_src(
+            dst_addr, adapter, uhd::transport::link_type_t::TX_DATA);
+        uhd::transport::adapter_id_t chosen = _link_mgrs.at(dev)->get_adapter_id();
+        auto allocs                         = _alloc_map.at(chosen);
         allocs.tx++;
-        _alloc_map[dev] = allocs;
-        return _link_mgrs.at(dev)->create_host_to_device_data_stream(dst_addr,
-                pyld_buff_fmt,
-                mdata_buff_fmt,
-                xport_args);
+        _alloc_map[chosen] = allocs;
+        return _link_mgrs.at(dev)->create_host_to_device_data_stream(
+            dst_addr, pyld_buff_fmt, mdata_buff_fmt, xport_args);
     }
 
-    std::vector<device_id_t> get_via_devices(sep_addr_t addr) const
+    std::vector<uhd::transport::adapter_id_t> get_adapters(sep_addr_t addr) const
     {
+        auto adapters = std::vector<uhd::transport::adapter_id_t>();
         if (_src_map.count(addr) > 0) {
-            return _src_map.at(addr);
+            const auto& src_devs = _src_map.at(addr);
+            for (auto src : src_devs) {
+                // Returns in order specified in device args
+                // Assumption: the device_id_t will be incremented sequentially
+                // and the std::map will then provide the link_stream_managers
+                // in the same order as the adapters were specified
+                adapters.push_back(_link_mgrs.at(src)->get_adapter_id());
+            }
+            return adapters;
         } else {
             throw uhd::rfnoc_error("Specified address is unreachable. No via_devices.");
         }
     }
+
 private:
-    device_id_t _check_dst_and_find_src(sep_addr_t dst_addr, device_id_t via_device,
+    device_id_t _check_dst_and_find_src(sep_addr_t dst_addr,
+        uhd::transport::adapter_id_t adapter,
         uhd::transport::link_type_t link_type) const
     {
         if (_src_map.count(dst_addr) > 0) {
             const auto& src_devs = _src_map.at(dst_addr);
-            if (via_device == NULL_DEVICE_ID) {
+            if (adapter == uhd::transport::NULL_ADAPTER_ID) {
                 // TODO: Maybe we can come up with a better heuristic for when the user
                 // gives no preference
-                auto dev = src_devs[0];
-                auto dev_alloc = _alloc_map.at(dev);
+                auto dev       = src_devs[0];
+                auto dev_alloc = _alloc_map.at(_link_mgrs.at(dev)->get_adapter_id());
                 for (auto candidate : src_devs) {
-                    auto candidate_alloc = _alloc_map.at(candidate);
+                    auto candidate_alloc =
+                        _alloc_map.at(_link_mgrs.at(candidate)->get_adapter_id());
                     switch (link_type) {
                         case uhd::transport::link_type_t::TX_DATA:
                             if (candidate_alloc.tx < dev_alloc.tx) {
-                                dev = candidate;
+                                dev       = candidate;
                                 dev_alloc = candidate_alloc;
                             }
                             break;
                         case uhd::transport::link_type_t::RX_DATA:
                             if (candidate_alloc.rx < dev_alloc.rx) {
-                                dev = candidate;
+                                dev       = candidate;
                                 dev_alloc = candidate_alloc;
                             }
                             break;
@@ -265,7 +272,7 @@ private:
                 return dev;
             } else {
                 for (const auto& src : src_devs) {
-                    if (src == via_device) {
+                    if (_link_mgrs.at(src)->get_adapter_id() == adapter) {
                         return src;
                     }
                 }
@@ -287,16 +294,14 @@ private:
     std::map<sep_addr_t, std::vector<device_id_t>> _src_map;
 
     // Data used for heuristic to determine which link to use
-    struct allocation_info {
+    struct allocation_info
+    {
         size_t rx;
         size_t tx;
     };
 
-    // A map of allocations for each local_device
-    // NOTE: Multiple local device IDs can refer to the same local xport adapter.
-    // The scheme does not account for a NIC that is used to connect to multiple
-    // remote devices, for example.
-    std::map<device_id_t, allocation_info> _alloc_map;
+    // A map of allocations for each host transport adapter
+    std::map<uhd::transport::adapter_id_t, allocation_info> _alloc_map;
 };
 
 graph_stream_manager::uptr graph_stream_manager::make(

@@ -36,6 +36,8 @@ constexpr size_t chdr_w_to_bits(chdr_w_t chdr_w)
     }
 }
 
+//! Device ID Type
+using device_id_t = uint16_t;
 //! Stream Endpoint Instance Number Type
 using sep_inst_t = uint16_t;
 //! Stream Endpoint Physical Address Type
@@ -49,6 +51,8 @@ using sep_id_pair_t = std::pair<sep_id_t, sep_id_t>;
 //! Stream Endpoint Virtual Channel Type
 using sep_vc_t = uint8_t;
 
+//! NULL/unassigned device ID
+static constexpr device_id_t NULL_DEVICE_ID = 0;
 //! NULL/unassigned device address
 static constexpr sep_addr_t NULL_DEVICE_ADDR{NULL_DEVICE_ID, 0};
 //! NULL/unassigned stream endpoint ID

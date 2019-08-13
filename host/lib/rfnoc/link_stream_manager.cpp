@@ -65,6 +65,8 @@ public:
         // TODO: This needs to be cleaned up. A muxed_zero_copy_if is excessive here
         _ctrl_xport = _mb_iface.make_ctrl_transport(_my_device_id, _my_mgmt_ctrl_epid);
 
+        _my_adapter_id = _mb_iface.get_adapter_id(_my_device_id);
+
         // Create management portal using one of the child transports
         _mgmt_portal = mgmt_portal::make(
             *_ctrl_xport, _pkt_factory, sep_addr_t(_my_device_id, SEP_INST_MGMT_CTRL));
@@ -80,6 +82,11 @@ public:
     virtual device_id_t get_self_device_id() const
     {
         return _my_device_id;
+    }
+
+    virtual uhd::transport::adapter_id_t get_adapter_id() const
+    {
+        return _my_adapter_id;
     }
 
     virtual const std::set<sep_addr_t>& get_reachable_endpoints() const
@@ -98,8 +105,8 @@ public:
         _ensure_ep_is_reachable(dst_addr);
 
         // Allocate EPIDs
-        sep_id_t dst_epid = _epid_alloc->allocate_epid(dst_addr, *_mgmt_portal,
-            *_ctrl_xport);
+        sep_id_t dst_epid =
+            _epid_alloc->allocate_epid(dst_addr, *_mgmt_portal, *_ctrl_xport);
 
         // Make sure that the software side of the endpoint is initialized and reachable
         if (_ctrl_ep == nullptr) {
@@ -130,10 +137,10 @@ public:
         _ensure_ep_is_reachable(src_addr);
 
         // Allocate EPIDs and initialize endpoints
-        sep_id_t dst_epid = _epid_alloc->allocate_epid(dst_addr, *_mgmt_portal,
-            *_ctrl_xport);
-        sep_id_t src_epid = _epid_alloc->allocate_epid(src_addr, *_mgmt_portal,
-            *_ctrl_xport);
+        sep_id_t dst_epid =
+            _epid_alloc->allocate_epid(dst_addr, *_mgmt_portal, *_ctrl_xport);
+        sep_id_t src_epid =
+            _epid_alloc->allocate_epid(src_addr, *_mgmt_portal, *_ctrl_xport);
 
         // Set up routes
         _mgmt_portal->setup_remote_route(*_ctrl_xport, dst_epid, src_epid);
@@ -220,8 +227,8 @@ public:
         _ensure_ep_is_reachable(dst_addr);
 
         // Generate a new destination (device) EPID instance
-        sep_id_t dst_epid = _epid_alloc->allocate_epid(dst_addr, *_mgmt_portal,
-            *_ctrl_xport);
+        sep_id_t dst_epid =
+            _epid_alloc->allocate_epid(dst_addr, *_mgmt_portal, *_ctrl_xport);
 
         if (!_mgmt_portal->get_endpoint_info(dst_epid).has_data) {
             throw uhd::rfnoc_error("Downstream endpoint does not support data traffic");
@@ -249,8 +256,8 @@ public:
         _ensure_ep_is_reachable(src_addr);
 
         // Generate a new source (device) EPID instance
-        sep_id_t src_epid = _epid_alloc->allocate_epid(src_addr, *_mgmt_portal,
-            *_ctrl_xport);
+        sep_id_t src_epid =
+            _epid_alloc->allocate_epid(src_addr, *_mgmt_portal, *_ctrl_xport);
 
         if (!_mgmt_portal->get_endpoint_info(src_epid).has_data) {
             throw uhd::rfnoc_error("Downstream endpoint does not support data traffic");
@@ -290,6 +297,8 @@ private:
     const chdr::chdr_packet_factory& _pkt_factory;
     // The device address of this software endpoint
     const device_id_t _my_device_id;
+    // The host adapter ID associated with this software endpoint
+    adapter_id_t _my_adapter_id;
 
     // Motherboard interface
     mb_iface& _mb_iface;

@@ -7,6 +7,7 @@
 #ifndef INCLUDED_LIBUHD_MB_IFACE_HPP
 #define INCLUDED_LIBUHD_MB_IFACE_HPP
 
+#include <uhd/transport/adapter_id.hpp>
 #include <uhd/types/endianness.hpp>
 #include <uhdlib/rfnoc/chdr_ctrl_xport.hpp>
 #include <uhdlib/rfnoc/chdr_rx_data_xport.hpp>
@@ -65,6 +66,16 @@ public:
      * \returns The active software device IDs
      */
     virtual std::vector<device_id_t> get_local_device_ids() = 0;
+
+    /*! Return the uhd::transport::adapter_id for the link associated with
+     * \p local_device_id
+     *
+     * A transport must be created on the adapter before this will be valid.
+     * Since link_stream_managers always create a chdr_ctrl_xport on
+     * construction, the requirement is satisfied.
+     */
+    virtual uhd::transport::adapter_id_t get_adapter_id(
+        const device_id_t local_device_id) = 0;
 
     /*! Reset the device
      */

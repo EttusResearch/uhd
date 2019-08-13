@@ -35,9 +35,8 @@ public:
     /**************************************************************************
      * Structors
      *************************************************************************/
-    rfnoc_graph_impl(
-        detail::rfnoc_device::sptr dev, const uhd::device_addr_t& dev_addr) try
-        : _device(dev),
+    rfnoc_graph_impl(detail::rfnoc_device::sptr dev, const uhd::device_addr_t& dev_addr)
+    try : _device(dev),
           _tree(_device->get_tree()),
           _num_mboards(_tree->list("/mboards").size()),
           _block_registry(std::make_unique<detail::block_container_t>()),
@@ -200,7 +199,7 @@ public:
         size_t strm_port,
         const block_id_t& dst_blk,
         size_t dst_port,
-        device_id_t via_device)
+        uhd::transport::adapter_id_t adapter_id)
     {
         // Verify the streamer was created by us
         auto rfnoc_streamer = boost::dynamic_pointer_cast<rfnoc_tx_streamer>(streamer);
@@ -238,8 +237,10 @@ public:
             bits_to_sw_buff(rfnoc_streamer->get_otw_item_comp_bit_width());
         const sw_buff_t mdata_fmt = BUFF_U64;
 
-        auto xport = _gsm->create_host_to_device_data_stream(
-            sep_addr, pyld_fmt, mdata_fmt, via_device,
+        auto xport = _gsm->create_host_to_device_data_stream(sep_addr,
+            pyld_fmt,
+            mdata_fmt,
+            adapter_id,
             rfnoc_streamer->get_stream_args().args);
 
         rfnoc_streamer->connect_channel(strm_port, std::move(xport));
@@ -254,7 +255,7 @@ public:
         size_t src_port,
         uhd::rx_streamer::sptr streamer,
         size_t strm_port,
-        device_id_t via_device)
+        uhd::transport::adapter_id_t adapter_id)
     {
         // Verify the streamer was created by us
         auto rfnoc_streamer = boost::dynamic_pointer_cast<rfnoc_rx_streamer>(streamer);
@@ -292,8 +293,10 @@ public:
             bits_to_sw_buff(rfnoc_streamer->get_otw_item_comp_bit_width());
         const sw_buff_t mdata_fmt = BUFF_U64;
 
-        auto xport = _gsm->create_device_to_host_data_stream(
-            sep_addr, pyld_fmt, mdata_fmt, via_device,
+        auto xport = _gsm->create_device_to_host_data_stream(sep_addr,
+            pyld_fmt,
+            mdata_fmt,
+            adapter_id,
             rfnoc_streamer->get_stream_args().args);
 
         rfnoc_streamer->connect_channel(strm_port, std::move(xport));
@@ -332,8 +335,8 @@ public:
         return _num_mboards;
     }
 
-    std::vector<device_id_t> enumerate_src_via_devices(const block_id_t& dst_blk,
-        size_t dst_port)
+    std::vector<uhd::transport::adapter_id_t> enumerate_adapters_to_dst(
+        const block_id_t& dst_blk, size_t dst_port)
     {
         // Verify dst_blk even exists in this graph
         if (!has_block(dst_blk)) {
@@ -362,11 +365,11 @@ public:
         const sep_addr_t sep_addr      = _sep_map.at(sep_block_id);
 
         // Find links that can reach the SEP
-        return _gsm->get_via_devices(sep_addr);
+        return _gsm->get_adapters(sep_addr);
     }
 
-    std::vector<device_id_t> enumerate_dst_via_devices(const block_id_t& src_blk,
-        size_t src_port)
+    std::vector<uhd::transport::adapter_id_t> enumerate_adapters_from_src(
+        const block_id_t& src_blk, size_t src_port)
     {
         // Verify src_blk even exists in this graph
         if (!has_block(src_blk)) {
@@ -395,7 +398,7 @@ public:
         const sep_addr_t sep_addr      = _sep_map.at(sep_block_id);
 
         // Find links that can reach the SEP
-        return _gsm->get_via_devices(sep_addr);
+        return _gsm->get_adapters(sep_addr);
     }
 
     std::vector<graph_edge_t> enumerate_active_connections()
@@ -446,7 +449,7 @@ private:
                     + std::to_string(chdr_w_to_bits(chdr_w)) + " but device "
                     + std::to_string(mb_idx) + " has CHDR width of "
                     + std::to_string(
-                          chdr_w_to_bits(_device->get_mb_iface(mb_idx).get_chdr_w()))
+                        chdr_w_to_bits(_device->get_mb_iface(mb_idx).get_chdr_w()))
                     + " bits!");
             }
             if (_device->get_mb_iface(mb_idx).get_endianness() != endianness) {

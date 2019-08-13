@@ -8,13 +8,14 @@
 #define INCLUDED_LIBUHD_RFNOC_GRAPH_STREAM_MANAGER_HPP
 
 #include <uhd/stream.hpp>
+#include <uhd/transport/adapter_id.hpp>
 #include <uhdlib/rfnoc/chdr_packet.hpp>
+#include <uhdlib/rfnoc/chdr_rx_data_xport.hpp>
+#include <uhdlib/rfnoc/chdr_tx_data_xport.hpp>
 #include <uhdlib/rfnoc/client_zero.hpp>
 #include <uhdlib/rfnoc/ctrlport_endpoint.hpp>
 #include <uhdlib/rfnoc/epid_allocator.hpp>
 #include <uhdlib/rfnoc/mb_iface.hpp>
-#include <uhdlib/rfnoc/chdr_rx_data_xport.hpp>
-#include <uhdlib/rfnoc/chdr_tx_data_xport.hpp>
 #include <functional>
 #include <memory>
 #include <set>
@@ -48,11 +49,11 @@ public:
     /*! \brief Connect the host to the specified destination and create a control stream
      *
      * \param dst_addr The physical address of the destination endpoint
-     * \param via_device The preference for the device to take to get to the destination
+     * \param adapter The preference for the adapter to use to get to the destination
      * \return A pair (source, destination) endpoint IDs for the control stream
      */
-    virtual sep_id_pair_t connect_host_to_device(
-        sep_addr_t dst_addr, device_id_t host_device = NULL_DEVICE_ID) = 0;
+    virtual sep_id_pair_t connect_host_to_device(sep_addr_t dst_addr,
+        uhd::transport::adapter_id_t adapter = uhd::transport::NULL_ADAPTER_ID) = 0;
 
     /*! \brief Connect two remote endpoints to each other
      *
@@ -69,23 +70,23 @@ public:
      * \param block_index The index of the block in the device
      * \param client_clk The clock that is driving the ctrlport slave
      * \param timebase_clk The clock that is driving the timebase
-     * \param via_device The preference for the device to take to get to the destination
+     * \param adapter The preference for the adapter to use to get to the destination
      * \return An interface to the ctrlport endpoint
      */
     virtual ctrlport_endpoint::sptr get_block_register_iface(sep_addr_t dst_addr,
         uint16_t block_index,
         const clock_iface& client_clk,
         const clock_iface& timebase_clk,
-        device_id_t via_device = NULL_DEVICE_ID) = 0;
+        uhd::transport::adapter_id_t adapter = uhd::transport::NULL_ADAPTER_ID) = 0;
 
     /*! \brief Get a pointer to the client zero instance for the specified EPID
      *
      * \param dst_epid The endpoint ID of the destination
-     * \param via_device The preference for the device to take to get to the destination
+     * \param adapter The preference for the adapter to use to get to the destination
      * \return An interface to the client zero instance
      */
-    virtual detail::client_zero::sptr get_client_zero(
-        sep_addr_t dst_addr, device_id_t via_device = NULL_DEVICE_ID) const = 0;
+    virtual detail::client_zero::sptr get_client_zero(sep_addr_t dst_addr,
+        uhd::transport::adapter_id_t adapter = uhd::transport::NULL_ADAPTER_ID) const = 0;
 
 
     /*! Configure a flow controlled data stream from the endpoint with ID src_epid to the
@@ -111,7 +112,7 @@ public:
      * \param dst_addr The address of the destination stream endpoint
      * \param pyld_buff_fmt Datatype of SW buffer that holds the data payload
      * \param mdata_buff_fmt Datatype of SW buffer that holds the data metadata
-     * \param via_device The preference for the device to take to get to the destination
+     * \param adapter The preference for the adapter to use to get to the destination
      * \param xport_args The transport arguments
      * \return An transport instance
      */
@@ -119,7 +120,7 @@ public:
         sep_addr_t dst_addr,
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
-        const device_id_t via_device,
+        const uhd::transport::adapter_id_t adapter,
         const device_addr_t& xport_args) = 0;
 
     /*! \brief Create a data stream going from the host to the device
@@ -127,7 +128,7 @@ public:
      * \param dst_addr The address of the destination stream endpoint
      * \param pyld_buff_fmt Datatype of SW buffer that holds the data payload
      * \param mdata_buff_fmt Datatype of SW buffer that holds the data metadata
-     * \param via_device The preference for the device to take to get to the destination
+     * \param adapter The preference for the adapter to use to get to the destination
      * \param xport_args The transport arguments
      * \return An transport instance
      */
@@ -135,15 +136,16 @@ public:
         sep_addr_t dst_addr,
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
-        const device_id_t via_device,
+        const uhd::transport::adapter_id_t adapter,
         const device_addr_t& xport_args) = 0;
 
-    /*! \brief Get all the via_devices that can reach the specified endpoint
+    /*! \brief Get all the adapters that can reach the specified endpoint
      *
      * \param addr The address of the stream endpoint
-     * \return A vector of all the via_devices
+     * \return A vector of adapter IDs
      */
-    virtual std::vector<device_id_t> get_via_devices(sep_addr_t addr) const = 0;
+    virtual std::vector<uhd::transport::adapter_id_t> get_adapters(
+        sep_addr_t addr) const = 0;
 
     /*!
      * \brief Create a graph_stream_manager and return a unique_ptr to it
