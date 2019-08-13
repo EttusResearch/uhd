@@ -18,16 +18,18 @@ using namespace uhd::rfnoc;
 const std::string STREAMER_ID = "RxStreamer";
 static std::atomic<uint64_t> streamer_inst_ctr;
 
-rfnoc_rx_streamer::rfnoc_rx_streamer(const size_t num_chans,
-    const uhd::stream_args_t stream_args)
+rfnoc_rx_streamer::rfnoc_rx_streamer(
+    const size_t num_chans, const uhd::stream_args_t stream_args)
     : rx_streamer_impl<chdr_rx_data_xport>(num_chans, stream_args)
     , _unique_id(STREAMER_ID + "#" + std::to_string(streamer_inst_ctr++))
     , _stream_args(stream_args)
 {
+    set_overrun_handler([this]() { this->_handle_overrun(); });
+
     // No block to which to forward properties or actions
     set_prop_forwarding_policy(forwarding_policy_t::DROP);
     set_action_forwarding_policy(forwarding_policy_t::DROP);
-    //
+
     register_action_handler(ACTION_KEY_RX_EVENT,
         [this](const res_source_info& src, action_info::sptr action) {
             rx_event_action_info::sptr rx_event_action =
@@ -37,10 +39,6 @@ rfnoc_rx_streamer::rfnoc_rx_streamer(const size_t num_chans,
                 return;
             }
             _handle_rx_event_action(src, rx_event_action);
-        });
-    register_action_handler(ACTION_KEY_RX_RESTART_REQ,
-        [this](const res_source_info& src, action_info::sptr action) {
-            _handle_restart_request(src, action);
         });
     register_action_handler(ACTION_KEY_STREAM_CMD,
         [this](const res_source_info& src, action_info::sptr action) {
@@ -117,6 +115,15 @@ bool rfnoc_rx_streamer::check_topology(
     return node_t::check_topology(connected_inputs, connected_outputs);
 }
 
+void rfnoc_rx_streamer::_handle_overrun()
+{
+    if (_overrun_handling_mode) {
+        RFNOC_LOG_TRACE("Requesting restart from overrun-reporting node...");
+        post_action({res_source_info::INPUT_EDGE, _overrun_channel},
+            action_info::make(ACTION_KEY_RX_RESTART_REQ));
+    }
+}
+
 void rfnoc_rx_streamer::_register_props(const size_t chan,
     const std::string& otw_format)
 {
@@ -178,6 +185,7 @@ void rfnoc_rx_streamer::_handle_rx_event_action(
             RFNOC_LOG_TRACE("Ignoring duplicate overrun message.");
             return;
         }
+        _overrun_channel = src.instance;
         RFNOC_LOG_TRACE(
             "Switching to overrun-handling mode: Stopping all upstream producers...");
         auto stop_action =
@@ -188,30 +196,15 @@ void rfnoc_rx_streamer::_handle_rx_event_action(
             post_action({res_source_info::INPUT_EDGE, i}, stop_action);
         }
         if (!rx_event_action->args.cast<bool>("cont_mode", false)) {
-            // FIXME wait until it's safe to restart radios
-            // If we don't need to restart, that's all we need to do
+            // If we don't need to restart, that's all we need to do. Clear this
+            // flag before setting the stopped due to overrun status below to
+            // avoid a potential race condition with the overrun handler.
             _overrun_handling_mode = false;
         }
+        // Tell the streamer to flag an overrun to the user after the data that
+        // was buffered prior to the overrun is read.
+        set_stopped_due_to_overrun();
     }
-}
-
-void rfnoc_rx_streamer::_handle_restart_request(
-    const res_source_info& src, action_info::sptr)
-{
-    // FIXME: Now we need to wait until it's safe to restart the radios.
-    // A flush would achieve this, albeit at the cost of possibly losing
-    // samples.
-    // The earliest we can restart is when the FIFOs in upstream producers
-    // are empty.
-    RFNOC_LOG_TRACE("Waiting for FIFOs to clear");
-
-    std::this_thread::sleep_for(100ms);
-
-    // Once it's safe to restart the radios, we ask a radio to send us a
-    // stream command with its current time.
-    RFNOC_LOG_TRACE("Requesting restart from overrun-reporting node...");
-    post_action({res_source_info::INPUT_EDGE, src.instance},
-        action_info::make(ACTION_KEY_RX_RESTART_REQ));
 }
 
 void rfnoc_rx_streamer::_handle_stream_cmd_action(

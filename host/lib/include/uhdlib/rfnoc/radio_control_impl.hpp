@@ -324,7 +324,6 @@ private:
     std::unordered_map<size_t, double> _rx_bandwidth;
 
     std::vector<uhd::stream_cmd_t> _last_stream_cmd;
-    std::vector<bool> _restart_cont;
 };
 
 }} // namespace uhd::rfnoc

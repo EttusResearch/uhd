@@ -6,6 +6,7 @@
 
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhd/rfnoc/mb_controller.hpp>
 #include <uhdlib/rfnoc/radio_control_impl.hpp>
 #include <uhdlib/utils/compat_check.hpp>
 #include <map>
@@ -63,6 +64,8 @@ const uint32_t radio_control_impl::regmap::RX_CMD_TIMED_POS;
 const uhd::fs_path radio_control_impl::DB_PATH("dboard");
 const uhd::fs_path radio_control_impl::FE_PATH("frontends");
 
+static constexpr double OVERRUN_RESTART_DELAY = 0.05;
+
 /****************************************************************************
  * Structors
  ***************************************************************************/
@@ -74,7 +77,6 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
     , _spc(_radio_width & 0xFFFF)
     , _last_stream_cmd(
           get_num_output_ports(), uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS)
-    , _restart_cont(get_num_output_ports(), false)
 {
     uhd::assert_fpga_compat(MAJOR_COMPAT,
         MINOR_COMPAT,
@@ -110,16 +112,6 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
                 return;
             }
             issue_stream_cmd(stream_cmd_action->stream_cmd, port);
-            if (stream_cmd_action->stream_cmd.stream_mode
-                    == uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS
-                && _restart_cont.at(port)) {
-                RFNOC_LOG_TRACE("Received stop command after reporting overrun, will now "
-                                "request restart.");
-                _restart_cont[port] = false;
-                auto restart_request_action =
-                    action_info::make(ACTION_KEY_RX_RESTART_REQ);
-                post_action({res_source_info::OUTPUT_EDGE, port}, restart_request_action);
-            }
         });
     register_action_handler(ACTION_KEY_RX_RESTART_REQ,
         [this](const res_source_info& src, action_info::sptr /*action*/) {
@@ -131,9 +123,10 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
             }
             auto stream_cmd_action = stream_cmd_action_info::make(
                 uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
-            // FIXME
-            // stream_cmd_action->stream_cmd.stream_now = false;
-            // stream_cmd_action->stream_cmd.time_spec = get_time_now() + DELTA;
+            stream_cmd_action->stream_cmd.stream_now = false;
+            stream_cmd_action->stream_cmd.time_spec =
+                get_mb_controller()->get_timekeeper(0)->get_time_now() +
+                uhd::time_spec_t(OVERRUN_RESTART_DELAY);
             const size_t port = src.instance;
             if (port > get_num_output_ports()) {
                 RFNOC_LOG_WARNING("Received stream command to invalid output port!");
@@ -962,7 +955,6 @@ void radio_control_impl::async_message_handler(
                     rx_event_action->error_code = uhd::rx_metadata_t::ERROR_CODE_OVERFLOW;
                     const bool cont_mode        = _last_stream_cmd.at(chan).stream_mode
                                            == stream_cmd_t::STREAM_MODE_START_CONTINUOUS;
-                    _restart_cont[chan]                = cont_mode;
                     rx_event_action->args["cont_mode"] = std::to_string(cont_mode);
                     RFNOC_LOG_TRACE("Posting overrun event action message.");
                     post_action(res_source_info{res_source_info::OUTPUT_EDGE, chan},
