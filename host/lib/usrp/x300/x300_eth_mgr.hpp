@@ -7,6 +7,7 @@
 #ifndef INCLUDED_X300_ETH_MGR_HPP
 #define INCLUDED_X300_ETH_MGR_HPP
 
+#include "x300_conn_mgr.hpp"
 #include "x300_device_args.hpp"
 #include "x300_mboard_type.hpp"
 #include <uhd/transport/if_addrs.hpp>
@@ -22,7 +23,7 @@ namespace uhd { namespace usrp { namespace x300 {
 
 /*! Helper class to manage the eth connections
  */
-class eth_manager
+class eth_manager : public conn_manager
 {
 public:
     eth_manager(const x300_device_args_t& args,

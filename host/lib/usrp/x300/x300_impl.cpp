@@ -8,9 +8,11 @@
 
 #include "x300_impl.hpp"
 #include "x300_claim.hpp"
+#include "x300_eth_mgr.hpp"
 #include "x300_mb_eeprom.hpp"
 #include "x300_mb_eeprom_iface.hpp"
 #include "x300_mboard_type.hpp"
+#include "x300_pcie_mgr.hpp"
 #include <uhd/transport/if_addrs.hpp>
 #include <uhd/types/sid.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
@@ -216,14 +218,11 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t& dev_addr)
 
     UHD_LOGGER_DEBUG("X300") << "Setting up basic communication...";
     if (mb.xport_path == xport_path_t::NIRIO) {
-        mb.pcie_mgr =
-            std::unique_ptr<pcie_manager>(new pcie_manager(mb.args, _tree, mb_path));
-        mb.zpu_ctrl = mb.pcie_mgr->get_ctrl_iface();
+        mb.conn_mgr = std::make_shared<pcie_manager>(mb.args, _tree, mb_path);
     } else {
-        mb.eth_mgr =
-            std::unique_ptr<eth_manager>(new eth_manager(mb.args, _tree, mb_path));
-        mb.zpu_ctrl = mb.eth_mgr->get_ctrl_iface();
+        mb.conn_mgr = std::make_shared<eth_manager>(mb.args, _tree, mb_path);
     }
+    mb.zpu_ctrl = mb.conn_mgr->get_ctrl_iface();
 
     // Claim device
     if (not try_to_claim(mb.zpu_ctrl)) {
@@ -330,9 +329,10 @@ void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t& dev_addr)
     // discover interfaces, frame sizes, and link rates
     ////////////////////////////////////////////////////////////////////
     if (mb.xport_path == xport_path_t::NIRIO) {
-        mb.pcie_mgr->init_link();
+        std::dynamic_pointer_cast<pcie_manager>(mb.conn_mgr)->init_link();
     } else if (mb.xport_path == xport_path_t::ETH) {
-        mb.eth_mgr->init_link(mb_eeprom, mb.loaded_fpga_image);
+        std::dynamic_pointer_cast<eth_manager>(mb.conn_mgr)
+            ->init_link(mb_eeprom, mb.loaded_fpga_image);
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -537,7 +537,8 @@ x300_impl::~x300_impl(void)
             // kill the claimer task and unclaim the device
             mb.claimer_task.reset();
             if (mb.xport_path == xport_path_t::NIRIO) {
-                mb.pcie_mgr->release_ctrl_iface([&mb]() { release(mb.zpu_ctrl); });
+                std::dynamic_pointer_cast<pcie_manager>(mb.conn_mgr)
+                    ->release_ctrl_iface([&mb]() { release(mb.zpu_ctrl); });
             } else {
                 release(mb.zpu_ctrl);
             }
@@ -565,16 +566,19 @@ uhd::both_xports_t x300_impl::make_transport(const uhd::sid_t& address,
         xports.send_sid =
             this->allocate_sid(mb, address, x300::SRC_ADDR0, x300::XB_DST_PCI);
         xports.recv_sid = xports.send_sid.reversed();
-        return mb.pcie_mgr->make_transport(xports, xport_type, args, send_mtu, recv_mtu);
+        std::dynamic_pointer_cast<pcie_manager>(mb.conn_mgr)
+            ->make_transport(xports, xport_type, args, send_mtu, recv_mtu);
     } else if (mb.xport_path == xport_path_t::ETH) {
-        xports = mb.eth_mgr->make_transport(xports,
-            xport_type,
-            args,
-            send_mtu,
-            recv_mtu,
-            [this, &mb, address](const uint32_t src_addr, const uint32_t src_dst) {
-                return this->allocate_sid(mb, address, src_addr, src_dst);
-            });
+        xports = std::dynamic_pointer_cast<eth_manager>(mb.conn_mgr)
+                     ->make_transport(xports,
+                         xport_type,
+                         args,
+                         send_mtu,
+                         recv_mtu,
+                         [this, &mb, address](
+                             const uint32_t src_addr, const uint32_t src_dst) {
+                             return this->allocate_sid(mb, address, src_addr, src_dst);
+                         });
 
         // reprogram the ethernet dispatcher's udp port (should be safe to always set)
         UHD_LOGGER_TRACE("X300")
@@ -818,10 +822,7 @@ bool x300_impl::is_pps_present(mboard_members_t& mb)
 size_t x300_impl::get_mtu(const size_t mb_index, const uhd::direction_t dir)
 {
     auto& mb = _mb.at(mb_index);
-    if (mb.xport_path == xport_path_t::NIRIO) {
-        return mb.pcie_mgr->get_mtu(dir);
-    }
-    return mb.eth_mgr->get_mtu(dir);
+    return mb.conn_mgr->get_mtu(dir);
 }
 
 /***********************************************************************

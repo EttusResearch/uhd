@@ -10,12 +10,11 @@
 #define INCLUDED_X300_IMPL_HPP
 
 #include "x300_clock_ctrl.hpp"
+#include "x300_conn_mgr.hpp"
 #include "x300_defaults.hpp"
 #include "x300_device_args.hpp"
-#include "x300_eth_mgr.hpp"
 #include "x300_fw_common.h"
 #include "x300_mboard_type.hpp"
-#include "x300_pcie_mgr.hpp"
 #include "x300_radio_ctrl_impl.hpp"
 #include "x300_regs.hpp"
 #include <uhd/types/device_addr.hpp>
@@ -75,11 +74,7 @@ private:
 
         std::vector<uhd::rfnoc::x300_radio_ctrl_impl::sptr> radios;
 
-        // Ethernet-specific components:
-        std::unique_ptr<uhd::usrp::x300::eth_manager> eth_mgr;
-
-        // PCIe-specific components:
-        std::unique_ptr<uhd::usrp::x300::pcie_manager> pcie_mgr;
+        uhd::usrp::x300::conn_manager::sptr conn_mgr;
     };
     std::vector<mboard_members_t> _mb;
 

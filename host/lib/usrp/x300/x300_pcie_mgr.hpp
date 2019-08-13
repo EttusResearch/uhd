@@ -8,6 +8,7 @@
 #define INCLUDED_X300_PCI_MGR_HPP
 
 #include "../device3/device3_impl.hpp"
+#include "x300_conn_mgr.hpp"
 #include "x300_device_args.hpp"
 #include "x300_mboard_type.hpp"
 #include <uhd/transport/muxed_zero_copy_if.hpp>
@@ -18,7 +19,7 @@ namespace uhd { namespace usrp { namespace x300 {
 
 /*! Helper class to manage the PCIe connections
  */
-class pcie_manager
+class pcie_manager : public conn_manager
 {
 public:
     pcie_manager(const x300_device_args_t& args,
