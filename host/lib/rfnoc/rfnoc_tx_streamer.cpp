@@ -60,12 +60,12 @@ rfnoc_tx_streamer::rfnoc_tx_streamer(const size_t num_chans,
             [&mtu_out = _mtu_out[i], i, this]() {
                 RFNOC_LOG_TRACE("Calling resolver for `mtu_out'@" << i);
                 if (mtu_out.is_valid()) {
-                    const size_t mtu = mtu_out.get();
-                    // If the current MTU changes, set the same value for all chans
+                    const size_t mtu = std::min(mtu_out.get(), tx_streamer_impl::get_mtu());
+                    // Set the same MTU value for all chans
+                    for (auto& prop : this->_mtu_out) {
+                        prop.set(mtu);
+                    }
                     if (mtu < tx_streamer_impl::get_mtu()) {
-                        for (auto& prop : this->_mtu_out) {
-                            prop.set(mtu);
-                        }
                         tx_streamer_impl::set_mtu(mtu);
                     }
                 }
@@ -155,7 +155,7 @@ void rfnoc_tx_streamer::_register_props(const size_t chan,
     _type_out.emplace_back(property_t<std::string>(
         PROP_KEY_TYPE, otw_format, {res_source_info::OUTPUT_EDGE, chan}));
     _mtu_out.push_back(property_t<size_t>(
-        PROP_KEY_MTU, {res_source_info::OUTPUT_EDGE, chan}));
+        PROP_KEY_MTU, get_mtu(), {res_source_info::OUTPUT_EDGE, chan}));
 
     // Give us some shorthands for the rest of this function
     property_t<double>* scaling_out   = &_scaling_out.back();

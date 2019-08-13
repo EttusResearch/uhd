@@ -56,10 +56,34 @@ rfnoc_rx_streamer::rfnoc_rx_streamer(
     _samp_rate_in.reserve(num_chans);
     _tick_rate_in.reserve(num_chans);
     _type_in.reserve(num_chans);
+    _mtu_in.reserve(num_chans);
 
     for (size_t i = 0; i < num_chans; i++) {
         _register_props(i, stream_args.otw_format);
     }
+
+    for (size_t i = 0; i < num_chans; i++) {
+        prop_ptrs_t mtu_resolver_out;
+        for (auto& mtu_prop : _mtu_in) {
+            mtu_resolver_out.insert(&mtu_prop);
+        }
+
+        add_property_resolver({&_mtu_in[i]}, std::move(mtu_resolver_out),
+            [&mtu_in = _mtu_in[i], i, this]() {
+                RFNOC_LOG_TRACE("Calling resolver for `mtu_in'@" << i);
+                if (mtu_in.is_valid()) {
+                    const size_t mtu = std::min(mtu_in.get(), rx_streamer_impl::get_mtu());
+                    // Set the same MTU value for all chans
+                    for (auto& prop : this->_mtu_in) {
+                        prop.set(mtu);
+                    }
+                    if (mtu < rx_streamer_impl::get_mtu()) {
+                        rx_streamer_impl::set_mtu(mtu);
+                    }
+                }
+            });
+    }
+
     node_accessor_t node_accessor{};
     node_accessor.init_props(this);
 }
@@ -124,6 +148,18 @@ void rfnoc_rx_streamer::_handle_overrun()
     }
 }
 
+void rfnoc_rx_streamer::connect_channel(
+    const size_t channel, chdr_rx_data_xport::uptr xport)
+{
+    UHD_ASSERT_THROW(channel < _mtu_in.size());
+
+    // Update MTU property based on xport limits
+    const size_t mtu = xport->get_max_payload_size();
+    set_property<size_t>(PROP_KEY_MTU, mtu, {res_source_info::INPUT_EDGE, channel});
+
+    rx_streamer_impl<chdr_rx_data_xport>::connect_channel(channel, std::move(xport));
+}
+
 void rfnoc_rx_streamer::_register_props(const size_t chan,
     const std::string& otw_format)
 {
@@ -136,18 +172,22 @@ void rfnoc_rx_streamer::_register_props(const size_t chan,
         PROP_KEY_TICK_RATE, {res_source_info::INPUT_EDGE, chan}));
     _type_in.emplace_back(property_t<std::string>(
         PROP_KEY_TYPE, otw_format, {res_source_info::INPUT_EDGE, chan}));
+    _mtu_in.emplace_back(property_t<size_t>(
+        PROP_KEY_MTU, get_mtu(), {res_source_info::INPUT_EDGE, chan}));
 
     // Give us some shorthands for the rest of this function
     property_t<double>* scaling_in   = &_scaling_in.back();
     property_t<double>* samp_rate_in = &_samp_rate_in.back();
     property_t<double>* tick_rate_in = &_tick_rate_in.back();
     property_t<std::string>* type_in = &_type_in.back();
+    property_t<size_t>* mtu_in = &_mtu_in.back();
 
     // Register them
     register_property(scaling_in);
     register_property(samp_rate_in);
     register_property(tick_rate_in);
     register_property(type_in);
+    register_property(mtu_in);
 
     // Add resolvers
     add_property_resolver({scaling_in}, {},

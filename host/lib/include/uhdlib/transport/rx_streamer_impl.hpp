@@ -87,18 +87,23 @@ public:
         _setup_converters(num_ports, stream_args);
         _zero_copy_streamer.set_samp_rate(_samp_rate);
         _zero_copy_streamer.set_bytes_per_item(_convert_info.bytes_per_otw_item);
+
+        if (stream_args.args.has_key("spp")) {
+            _spp = stream_args.args.cast<size_t>("spp", _spp);
+            _mtu = _spp * _convert_info.bytes_per_otw_item;
+        }
     }
 
     //! Connect a new channel to the streamer
     // FIXME: Needs some way to handle virtual channels, since xport could be shared among them
-    void connect_channel(const size_t channel, typename transport_t::uptr xport)
+    virtual void connect_channel(const size_t channel, typename transport_t::uptr xport)
     {
-        const size_t max_pyld_size = xport->get_max_payload_size();
+        const size_t mtu = xport->get_max_payload_size();
         _zero_copy_streamer.connect_channel(channel, std::move(xport));
 
-        // Set spp based on the transport frame size
-        const size_t xport_spp = max_pyld_size / _convert_info.bytes_per_otw_item;
-        _spp = std::min(_spp, xport_spp);
+        if (mtu < _mtu) {
+            set_mtu(mtu);
+        }
     }
 
     //! Implementation of rx_streamer API method
@@ -181,6 +186,19 @@ protected:
     void set_scale_factor(const size_t chan, const double scale_factor)
     {
         _converters[chan]->set_scalar(scale_factor);
+    }
+
+    //! Returns the maximum payload size
+    size_t get_mtu() const
+    {
+        return _mtu;
+    }
+
+    //! Sets the MTU and calculates spp
+    void set_mtu(const size_t mtu)
+    {
+        _mtu = mtu;
+        _spp = _mtu / _convert_info.bytes_per_otw_item;
     }
 
     //! Configures sample rate for conversion of timestamp
@@ -335,6 +353,9 @@ private:
 
     // Sample rate used to calculate metadata time_spec_t
     double _samp_rate = 1.0;
+
+    // MTU, determined when xport is connected and modifiable by subclass
+    size_t _mtu = std::numeric_limits<std::size_t>::max();
 
     // Maximum number of samples per packet
     size_t _spp = std::numeric_limits<std::size_t>::max();
