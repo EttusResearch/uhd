@@ -53,6 +53,7 @@ typedef ptrdiff_t ssize_t;
 #    define UHD_DEPRECATED __declspec(deprecated)
 #    define UHD_ALIGNED(x) __declspec(align(x))
 #    define UHD_UNUSED(x) x
+#    define UHD_FALLTHROUGH
 #elif defined(__MINGW32__)
 #    define UHD_EXPORT __declspec(dllexport)
 #    define UHD_IMPORT __declspec(dllimport)
@@ -61,6 +62,7 @@ typedef ptrdiff_t ssize_t;
 #    define UHD_DEPRECATED __declspec(deprecated)
 #    define UHD_ALIGNED(x) __declspec(align(x))
 #    define UHD_UNUSED(x) x __attribute__((unused))
+#    define UHD_FALLTHROUGH
 #elif defined(__GNUG__) && __GNUG__ >= 4
 #    define UHD_EXPORT __attribute__((visibility("default")))
 #    define UHD_IMPORT __attribute__((visibility("default")))
@@ -69,6 +71,11 @@ typedef ptrdiff_t ssize_t;
 #    define UHD_DEPRECATED __attribute__((deprecated))
 #    define UHD_ALIGNED(x) __attribute__((aligned(x)))
 #    define UHD_UNUSED(x) x __attribute__((unused))
+#    if __GNUG__ >= 7
+#        define UHD_FALLTHROUGH __attribute__((fallthrough));
+#    else
+#        define UHD_FALLTHROUGH
+#    endif
 #elif defined(__clang__)
 #    define UHD_EXPORT __attribute__((visibility("default")))
 #    define UHD_IMPORT __attribute__((visibility("default")))
@@ -77,6 +84,11 @@ typedef ptrdiff_t ssize_t;
 #    define UHD_DEPRECATED __attribute__((deprecated))
 #    define UHD_ALIGNED(x) __attribute__((aligned(x)))
 #    define UHD_UNUSED(x) x __attribute__((unused))
+#    if __clang_major__ > 3 || (__clang_major__ == 3 && __clang_minor__ >= 8)
+#        define UHD_FALLTHROUGH [[clang:fallthrough]]
+#    else
+#        define UHD_FALLTHROUGH
+#    endif
 #else
 #    define UHD_EXPORT
 #    define UHD_IMPORT
@@ -85,6 +97,7 @@ typedef ptrdiff_t ssize_t;
 #    define UHD_DEPRECATED
 #    define UHD_ALIGNED(x)
 #    define UHD_UNUSED(x) x
+#    define UHD_FALLTHROUGH
 #endif
 
 // Define API declaration macro
