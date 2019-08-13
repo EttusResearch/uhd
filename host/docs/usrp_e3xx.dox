@@ -95,7 +95,7 @@ Here is a list of a changes with the latest E310 filesystem (UHD v3.15.0.0) that
 and applications:
 
 1. Hostname:
-The hostname for the devices have changed from ni-e3xx(-sg3) to ni-e31x-<serial>.
+The hostname for the devices have changed from ni-e3xx(-sg3) to `ni-e31x-$serial`.
 This makes it easier to identify devices. You can change the hostname by modifying the
 `/etc/hostname` file and rebooting.
 
