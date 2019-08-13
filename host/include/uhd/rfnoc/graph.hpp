@@ -48,12 +48,13 @@ public:
      * \param src_block_port Source block port
      * \param dst_sid SID to route traffic to
      * \param buf_size_dst_bytes Destination window buffer in bytes
+     * \param pkt_size Hint what the packet size over this link will be
      */
     virtual void connect_src(const block_id_t& src_block,
         const size_t src_block_port,
         const uhd::sid_t dst_sid,
         const size_t buf_size_dst_bytes,
-        const size_t pkt_size_) = 0;
+        const size_t pkt_size) = 0;
 
     /*! Anonymous connection
      *
