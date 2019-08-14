@@ -259,11 +259,15 @@ class MboardRegsControl(object):
             pps_sel_val = 0b1 << self.MB_CLOCK_CTRL_PPS_SEL_EXT
         else:
             assert False, "Cannot set to invalid time source: {}".format(time_source)
+
+        pps_sel_mask = ((0b1 << self.MB_CLOCK_CTRL_PPS_SEL_INT) |
+                        (0b1 << self.MB_CLOCK_CTRL_PPS_SEL_EXT))
         with self.regs:
-            reg_val = self.peek32(self.MB_CLOCK_CTRL) & 0xFFFFFF90
             # prevent glitches by writing a cleared value first, then the final value.
+            reg_val = self.peek32(self.MB_CLOCK_CTRL) & ~pps_sel_mask
+            self.log.trace("Writing MB_CLOCK_CTRL to 0x{:08X}".format(reg_val))
             self.poke32(self.MB_CLOCK_CTRL, reg_val)
-            reg_val = reg_val | (pps_sel_val & 0x6F)
+            reg_val = reg_val | pps_sel_val
             self.log.trace("Writing MB_CLOCK_CTRL to 0x{:08X}".format(reg_val))
             self.poke32(self.MB_CLOCK_CTRL, reg_val)
 
