@@ -122,7 +122,7 @@ void graph_impl::connect(const block_id_t& src_block,
     }
     const bool same_xbar = sid.get_src_addr() == sid.get_dst_addr();
     src->configure_flow_control_out(true, /* enable output */
-        same_xbar, // Lossless link if on same crossbar
+        false, // Keep packets from jamming the crossbar
         buf_size_bytes,
         0, /* no packet limit. We need to revisit this at some point. */
         src_block_port);
