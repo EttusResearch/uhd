@@ -1,6 +1,18 @@
 Change Log for Releases
 ==============================
 
+## 003.014.001.001
+Device3: latch n on m in axi_rate_change in DUC/DDC
+Device3: UART: fix TX <-> RX, FIFO size as parameter
+RFNoC: Fix off by one error in window.v
+B200: Add command to query bootloader status
+RFNoC: fix multidevice graph connections
+MPMD: Fix corner case in MPM device discovery
+Docs: x300: update docs for multiple timed commands
+Docs: Fix Doxygen warnings due to spurious backslashes
+Docs: RFNoC: Fix Doxygen warning due to undoc'd parameter
+RFNoC: Re-enable flow ctrl for blocks on same xbar
+
 ## 003.014.001.000
 N320: Terminate the DAC when not transmitting
 E320: Add support for rev E

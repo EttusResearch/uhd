@@ -1,38 +1,38 @@
 # UHD Image Manifest File
 # Target    hash    url     SHA256
 # X300-Series
-x3xx_x310_fpga_default          fpga-e39334fe       x3xx/fpga-e39334fe/x3xx_x310_fpga_default-ge39334fe.zip                 13414ff4582377670e54a6ff7ea541b42947e0dccc470085c41a766a20c3aff3
-x3xx_x300_fpga_default          fpga-e39334fe       x3xx/fpga-e39334fe/x3xx_x300_fpga_default-ge39334fe.zip                 27851ee3929e102d4bf86569efae9c160f85f6856ed83b8d5126e81f5dbacc9d
+x3xx_x310_fpga_default          fpga-bb85bdff       x3xx/fpga-bb85bdff/x3xx_x310_fpga_default-gbb85bdff.zip                 8c3877c0eb3ba4c3cd42d2bc31bcabde69968406fb5bfb19731cf027b78fe66a
+x3xx_x300_fpga_default          fpga-bb85bdff       x3xx/fpga-bb85bdff/x3xx_x300_fpga_default-gbb85bdff.zip                 5467dc82da9e80409722e46f03492754528c80c43f13c27e9e142b6afdcd8d82
 # Example daughterboard targets (none currently exist)
 #x3xx_twinrx_cpld_default   example_target
 #dboard_ubx_cpld_default    example_target
 
 # E-Series
-e3xx_e310_fpga_default          fpga-e39334fe       e3xx/fpga-e39334fe/e3xx_e310_fpga_default-ge39334fe.zip                 f83ece467c807667e2e3b8e1b7cf123c65d032a169c5fdf8c68aaf1e0acec15e
+e3xx_e310_fpga_default          fpga-bb85bdff       e3xx/fpga-bb85bdff/e3xx_e310_fpga_default-gbb85bdff.zip                 dd437fadd6df0bdd20b03c902806a2f1e1adc2cb9f7c52f3546bace0bf39bf81
 e3xx_e310_fpga_rfnoc            fpga-d6a878b        e3xx/fpga-d6a878b/e3xx_e310_fpga_rfnoc-gd6a878b.zip                     5c9b89fb6293423644868c22e914de386a9af39ff031da6800a1cf39a90ea73b
-e3xx_e320_fpga_default          fpga-e39334fe       e3xx/fpga-e39334fe/e3xx_e320_fpga_default-ge39334fe.zip                 bd8a7af1ff0dd464af2ee5f4eb5b35e6526ca6f4b519dbb99e7648c7f7f932d6
+e3xx_e320_fpga_default          fpga-bb85bdff       e3xx/fpga-bb85bdff/e3xx_e320_fpga_default-gbb85bdff.zip                 4c03a82483eec25fd4908911b2981315d80e4e57edd40632549caf87f697b9f1
 # E320 Filesystems, etc
-e3xx_e320_sdk_default         meta-ettus-v3.14.1.0  e3xx/meta-ettus-v3.14.1.0/e3xx_e320_sdk_default-v3.14.1.0.zip       0
-e3xx_e320_mender_default      meta-ettus-v3.14.1.0  e3xx/meta-ettus-v3.14.1.0/e3xx_e320_mender_default-v3.14.1.0.zip    0
-e3xx_e320_sdimg_default       meta-ettus-v3.14.1.0  e3xx/meta-ettus-v3.14.1.0/e3xx_e320_sdimg_default-v3.14.1.0.zip     0
+e3xx_e320_sdk_default         meta-ettus-v3.14.1.1  e3xx/meta-ettus-v3.14.1.1/e3xx_e320_sdk_default-v3.14.1.1.zip       0
+e3xx_e320_mender_default      meta-ettus-v3.14.1.1  e3xx/meta-ettus-v3.14.1.1/e3xx_e320_mender_default-v3.14.1.1.zip    0
+e3xx_e320_sdimg_default       meta-ettus-v3.14.1.1  e3xx/meta-ettus-v3.14.1.1/e3xx_e320_sdimg_default-v3.14.1.1.zip     0
 # N300-Series
-n3xx_n310_fpga_default          fpga-e39334fe       n3xx/fpga-e39334fe/n3xx_n310_fpga_default-ge39334fe.zip                 8c557cc5fa4f413609335f50fd7e0eb977af0f4d2ba13ef9f0545d0166ac7ffb
-n3xx_n300_fpga_default          fpga-e39334fe       n3xx/fpga-e39334fe/n3xx_n300_fpga_default-ge39334fe.zip                 8b91bc960a7735c8611a1b1aad6d511f362625d06c82744456449cad8d3542a9
-n3xx_n320_fpga_default          fpga-e39334fe        n3xx/fpga-e39334fe/n3xx_n320_fpga_default-ge39334fe.zip                cd79274b5efda0b93433badd7191ccac6a160537c30ec6113fe7a4e000ece6a8
+n3xx_n310_fpga_default          fpga-bb85bdff       n3xx/fpga-bb85bdff/n3xx_n310_fpga_default-gbb85bdff.zip                 394d1de1362b72aec0e891b57a1a83cad02d5c985694a224144520cb0bbef2a6
+n3xx_n300_fpga_default          fpga-bb85bdff       n3xx/fpga-bb85bdff/n3xx_n300_fpga_default-gbb85bdff.zip                 6c32d9d0022bfa94c903245e7e39d05fdd877ea38090f096bbe8f656dce3266b
+n3xx_n320_fpga_default          fpga-bb85bdff        n3xx/fpga-bb85bdff/n3xx_n320_fpga_default-gbb85bdff.zip                a152289292bca238b4d84baee407e2e3297655d94ef6a817bb844db23b3eb338
 n3xx_n310_cpld_default          fpga-6bea23d        n3xx/fpga-6bea23d/n3xx_n310_cpld_default-g6bea23d.zip                ef128dcd265ee8615b673021d4ee84c39357012ffe8b28c8ad7f893f9dcb94cb
 n3xx_n320_cpld_default          fpga-4bc2c6f       n3xx/fpga-4bc2c6f/n3xx_n320_cpld_default-g4bc2c6f.zip              6680a9363efc5fa8b5a68beb3dff44f2e314b94e716e3a1751aba0fed1f384da
 # N3XX Mykonos firmware
 #n3xx_n310_fw_default           fpga-6bea23d        n3xx/fpga-6bea23d/n3xx_n310_fw_default-g6bea23d.zip                     0
 # N300-Series Filesystems, etc
-n3xx_common_sdk_default         meta-ettus-v3.14.1.0  n3xx/meta-ettus-v3.14.1.0/n3xx_common_sdk_default-v3.14.1.0.zip       0
-n3xx_common_mender_default      meta-ettus-v3.14.1.0  n3xx/meta-ettus-v3.14.1.0/n3xx_common_mender_default-v3.14.1.0.zip    0
-n3xx_common_sdimg_default       meta-ettus-v3.14.1.0  n3xx/meta-ettus-v3.14.1.0/n3xx_common_sdimg_default-v3.14.1.0.zip     0
+n3xx_common_sdk_default         meta-ettus-v3.14.1.1  n3xx/meta-ettus-v3.14.1.1/n3xx_common_sdk_default-v3.14.1.1.zip       0
+n3xx_common_mender_default      meta-ettus-v3.14.1.1  n3xx/meta-ettus-v3.14.1.1/n3xx_common_mender_default-v3.14.1.1.zip    0
+n3xx_common_sdimg_default       meta-ettus-v3.14.1.1  n3xx/meta-ettus-v3.14.1.1/n3xx_common_sdimg_default-v3.14.1.1.zip     0
 
 # B200-Series
-b2xx_b200_fpga_default          fpga-e39334fe       b2xx/fpga-e39334fe/b2xx_b200_fpga_default-ge39334fe.zip               212cf4e7b59436d74b25b5dc7f3f8cdf48f6e4983be9fb440dd9827aebd9918a
-b2xx_b200mini_fpga_default      fpga-e39334fe       b2xx/fpga-e39334fe/b2xx_b200mini_fpga_default-ge39334fe.zip           df37c9e2e9e09f8ab4bf28295d9016f75b75917a41b0b95aa55af768fe2014e3
-b2xx_b210_fpga_default          fpga-e39334fe       b2xx/fpga-e39334fe/b2xx_b210_fpga_default-ge39334fe.zip               f6fe158d64b96b75632e5cd0ef8c30c301fd10fd850070f9385ea8cf3285a99c
-b2xx_b205mini_fpga_default      fpga-e39334fe       b2xx/fpga-e39334fe/b2xx_b205mini_fpga_default-ge39334fe.zip           64aae1720a7af23bbb554f46f97e6193728ab61ff8fc97f8ac7343d424b1a91d
+b2xx_b200_fpga_default          fpga-bb85bdff       b2xx/fpga-bb85bdff/b2xx_b200_fpga_default-gbb85bdff.zip               a1e657d0c58dc9a2ecc88e38c55fcc939a6c15483bac048f05004ab5572027d2
+b2xx_b200mini_fpga_default      fpga-bb85bdff       b2xx/fpga-bb85bdff/b2xx_b200mini_fpga_default-gbb85bdff.zip           0bf2e84a78b1b3279bf9fa4e07603583898665a8caf7f019cc9655a8fed391c3
+b2xx_b210_fpga_default          fpga-bb85bdff       b2xx/fpga-bb85bdff/b2xx_b210_fpga_default-gbb85bdff.zip               64981ea6fc2e5445d6fe41f6efac0fb744b8a2f5dc801454a47aea055d26a9ce
+b2xx_b205mini_fpga_default      fpga-bb85bdff       b2xx/fpga-bb85bdff/b2xx_b205mini_fpga_default-gbb85bdff.zip           b65e80429a43b4c308a8b8260934b6c5717fc9869c2a29004e6911419d70107c
 b2xx_common_fw_default          uhd-2bdad498         b2xx/uhd-2bdad498/b2xx_common_fw_default-g2bdad498.zip                  a6a867466448f2f75d9d5d290c57ceb8e1d3219391c9f275824fbeb3e7931732
 
 # USRP2 Devices
@@ -42,7 +42,7 @@ usrp2_n200_fpga_default         fpga-6bea23d        usrp2/fpga-6bea23d/usrp2_n20
 usrp2_n200_fw_default           fpga-6bea23d        usrp2/fpga-6bea23d/usrp2_n200_fw_default-g6bea23d.zip                   3eee2a6195caafe814912167fccf2dfc369f706446f8ecee36e97d2c0830116f
 usrp2_n210_fpga_default         fpga-6bea23d        usrp2/fpga-6bea23d/usrp2_n210_fpga_default-g6bea23d.zip                 5ce68ac539ee6eeb7d04fb3127c1fabcaff442a8edfaaa2f3746590f9df909bd
 usrp2_n210_fw_default           fpga-6bea23d        usrp2/fpga-6bea23d/usrp2_n210_fw_default-g6bea23d.zip                   3646fcd3fc974d18c621cb10dfe97c4dad6d282036dc63b7379995dfad95fb98
-n230_n230_fpga_default          fpga-e39334fe        n230/fpga-e39334fe/n230_n230_fpga_default-ge39334fe.zip                   c30f4d0625bb8c65bdedd263b8a08972fca401bcd7b5cb288a314a7490a84ff9
+n230_n230_fpga_default          fpga-bb85bdff        n230/fpga-bb85bdff/n230_n230_fpga_default-gbb85bdff.zip                   f7f5b30c6b881b619cf1de4adcad2f10392c73f0348f2fef2ec8c9d98f9fa911
 
 # USRP1 Devices
 usrp1_usrp1_fpga_default        fpga-6bea23d        usrp1/fpga-6bea23d/usrp1_usrp1_fpga_default-g6bea23d.zip                03bf72868c900dd0853bf48e2ede91058d579829b0e70c021e51b0e282d1d5be
