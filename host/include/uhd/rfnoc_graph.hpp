@@ -14,6 +14,7 @@
 #include <uhd/stream.hpp>
 #include <uhd/transport/adapter_id.hpp>
 #include <uhd/types/device_addr.hpp>
+#include <uhd/types/time_spec.hpp>
 #include <uhd/utils/noncopyable.hpp>
 #include <boost/units/detail/utility.hpp> // for demangle
 #include <memory>
@@ -38,16 +39,6 @@ public:
     using sptr = std::shared_ptr<rfnoc_graph>;
 
     virtual ~rfnoc_graph() {}
-
-
-    //! Stuct to store information about which blocks are actually stored at a given port
-    //! on the crossbar
-    struct block_xbar_info
-    {
-        size_t xbar_port;
-        noc_id_t noc_id;
-        size_t inst_num;
-    };
 
     /******************************************
      * Factory
@@ -316,6 +307,32 @@ public:
     // See also uhd::rfnoc::mb_controller
     virtual std::shared_ptr<mb_controller> get_mb_controller(
         const size_t mb_index = 0) = 0;
+
+    /*! Run any routines necessary to synchronize devices
+     *
+     * The specific implementation of this call are device-specific. In all
+     * cases, it will set the time to a common value.
+     *
+     * Any application that requires any kind of phase or time alignment (if
+     * supported by the hardware) must call this before operation.
+     *
+     * \param time_spec The timestamp to be used to sync the devices. It will be
+     *                  an input to set_time_next_pps() on the motherboard
+     *                  controllers.
+     * \param quiet If true, there will be no errors or warnings printed if the
+     *              synchronization happens. This call will always be called
+     *              during initialization, but preconditions might not yet be
+     *              met (e.g., the time and reference sources might still be
+     *              internal), and will fail quietly in that case.
+     *
+     * \returns the success status of this call (true means devices are now
+     *          synchronized)
+     */
+    virtual bool synchronize_devices(
+        const uhd::time_spec_t& time_spec, const bool quiet) = 0;
+
+    //! Return a reference to the property tree
+    virtual uhd::property_tree::sptr get_tree(void) const = 0;
 }; // class rfnoc_graph
 
 }}; // namespace uhd::rfnoc

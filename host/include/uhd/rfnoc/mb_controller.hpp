@@ -135,6 +135,10 @@ public:
     /**************************************************************************
      * Motherboard Control
      *************************************************************************/
+    /*! Run initializations of this motherboard that have to occur post-block init
+     */
+    virtual void init() {}
+
     /*! Get canonical name for this USRP motherboard
      *
      * \return a string representing the name
@@ -332,6 +336,51 @@ public:
     /*! Return the motherboard EEPROM data
      */
     virtual uhd::usrp::mboard_eeprom_t get_eeprom() = 0;
+
+    /*! Synchronize a list of motherboards
+     *
+     * \param mb_controllers A list of motherboard controllers to synchronize.
+     *                       Any motherboard controllers that could not be
+     *                       synchronized because they're incompatible with this
+     *                       motherboard controller are removed from the list.
+     *                       On return, the list should be (ideally) identical
+     *                       to its value at call time.
+     * \param quiet If true, don't print any errors or warnings if
+     *              synchronization fails.
+     * \returns true if all motherboards that were removed from \p mb_controllers
+     *          could be synchronized.
+     */
+    virtual bool synchronize(std::vector<mb_controller::sptr>& mb_controllers,
+        const uhd::time_spec_t& time_spec = uhd::time_spec_t(0.0),
+        const bool quiet                  = false);
+
+    /*! Return the list of GPIO banks that are controlled by this MB controller
+     *
+     * Note that this list may be empty. Only if the MB controller has any
+     * control over GPIOs, do the get listed here.
+     */
+    virtual std::vector<std::string> get_gpio_banks() const;
+
+    /*! Return a list of possible sources to drive GPIOs
+     *
+     * Sources can be "PS", for when an embedded device can drive the pins from
+     * software, "Radio#0", if a radio block can drive them, and so on.
+     */
+    virtual std::vector<std::string> get_gpio_srcs(const std::string& bank) const;
+
+    /*! Return the current sources for a given GPIO bank
+     */
+    virtual std::vector<std::string> get_gpio_src(const std::string& bank);
+
+    /*! Set the source for GPIO pins on a given bank.
+     *
+     * \throws uhd::key_error if the bank does not exist
+     * \throws uhd::value_error if the source does not exist
+     * \throws uhd::not_implemented_error if the current motherboard does not
+     *         support this feature
+     */
+    virtual void set_gpio_src(
+        const std::string& bank, const std::vector<std::string>& src);
 
 protected:
     /*! Stash away a timekeeper. This needs to be called by the implementer of

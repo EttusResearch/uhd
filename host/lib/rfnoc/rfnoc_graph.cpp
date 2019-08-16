@@ -27,6 +27,14 @@ using namespace uhd::rfnoc;
 
 namespace {
 const std::string LOG_ID("RFNOC::GRAPH");
+
+//! Which blocks are actually stored at a given port on the crossbar
+struct block_xbar_info
+{
+    size_t xbar_port;
+    noc_id_t noc_id;
+    size_t inst_num;
+};
 }
 
 class rfnoc_graph_impl : public rfnoc_graph
@@ -41,6 +49,7 @@ public:
           _num_mboards(_tree->list("/mboards").size()),
           _block_registry(std::make_unique<detail::block_container_t>()),
           _graph(std::make_unique<uhd::rfnoc::detail::graph_t>()) {
+        _mb_controllers.reserve(_num_mboards);
         // Now initialize all subsystems:
         _init_mb_controllers();
         _init_gsm(); // Graph Stream Manager
@@ -59,6 +68,9 @@ public:
         _block_registry->init_props();
         _init_sep_map();
         _init_static_connections();
+        _init_mbc();
+        // Start with time set to zero, but don't complain if sync fails
+        rfnoc_graph_impl::synchronize_devices(uhd::time_spec_t(0.0), true);
     } catch (const std::exception& ex) {
         UHD_LOG_ERROR(LOG_ID, "Caught exception while initializing graph: " << ex.what());
         throw uhd::runtime_error("Failure to create rfnoc_graph.");
@@ -319,9 +331,14 @@ public:
         return boost::make_shared<rfnoc_tx_streamer>(num_chans, args);
     }
 
+    size_t get_num_mboards() const
+    {
+        return _num_mboards;
+    }
+
     std::shared_ptr<mb_controller> get_mb_controller(const size_t mb_index = 0)
     {
-        if (!_mb_controllers.count(mb_index)) {
+        if (_mb_controllers.size() <= mb_index) {
             throw uhd::index_error(
                 std::string("Could not get mb controller for motherboard index ")
                 + std::to_string(mb_index));
@@ -329,10 +346,23 @@ public:
         return _mb_controllers.at(mb_index);
     }
 
-
-    size_t get_num_mboards() const
+    bool synchronize_devices(const uhd::time_spec_t& time_spec, const bool quiet)
     {
-        return _num_mboards;
+        auto mb_controllers_copy = _mb_controllers;
+        bool result =
+            _mb_controllers.at(0)->synchronize(mb_controllers_copy, time_spec, quiet);
+        if (mb_controllers_copy.size() != _mb_controllers.size()) {
+            // This shouldn't happen until we allow different device types in a
+            // rfnoc_graph
+            UHD_LOG_ERROR(LOG_ID, "Some devices wouldn't be sync'd!");
+            return false;
+        }
+        return result;
+    }
+
+    uhd::property_tree::sptr get_tree(void) const
+    {
+        return _tree;
     }
 
     std::vector<uhd::transport::adapter_id_t> enumerate_adapters_to_dst(
@@ -430,7 +460,7 @@ private:
     {
         UHD_LOG_TRACE(LOG_ID, "Initializing MB controllers...");
         for (size_t i = 0; i < _num_mboards; ++i) {
-            _mb_controllers.emplace(i, _device->get_mb_controller(i));
+            _mb_controllers.push_back(_device->get_mb_controller(i));
         }
     }
 
@@ -625,6 +655,15 @@ private:
         }
     }
 
+    //! Initialize the motherboard controllers, if they require it
+    void _init_mbc()
+    {
+        for (size_t i = 0; i < _mb_controllers.size(); ++i) {
+            UHD_LOG_TRACE(LOG_ID, "Calling MBC init for motherboard " << i);
+            _mb_controllers.at(i)->init();
+        }
+    }
+
     /**************************************************************************
      * Helpers
      *************************************************************************/
@@ -811,7 +850,7 @@ private:
     std::unique_ptr<detail::graph_t> _graph;
 
     //! Stash a list of motherboard controllers
-    std::unordered_map<size_t, mb_controller::sptr> _mb_controllers;
+    std::vector<mb_controller::sptr> _mb_controllers;
 
     //! Stash of the client zeros for all motherboards
     std::unordered_map<size_t, detail::client_zero::sptr> _client_zeros;
