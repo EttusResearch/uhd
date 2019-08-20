@@ -87,6 +87,11 @@ public:
     static niriok_proxy::sptr create_kernel_proxy(
         const std::string& resource_name, const std::string& rpc_port_name);
 
+    std::string get_resource() const
+    {
+        return _resource_name;
+    }
+
 private:
     nirio_status _verify_signature();
     std::string _read_bitstream_checksum();
