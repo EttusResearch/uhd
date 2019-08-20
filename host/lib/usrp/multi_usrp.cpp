@@ -984,7 +984,7 @@ public:
             return _tree->access<wb_iface::sptr>(user_settings_path).get();
         }
         UHD_LOG_WARNING("MULTI_USRP",
-            "Attempting to read back non-existant user settings iface!");
+            "Attempting to read back non-existent user settings iface!");
         return nullptr;
     }
 
