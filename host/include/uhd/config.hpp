@@ -111,13 +111,6 @@ typedef ptrdiff_t ssize_t;
 #    endif // UHD_DLL_EXPORTS
 #endif // UHD_STATIC_LIB
 
-#ifdef UHD_RFNOC_ENABLED
-#    define UHD_RFNOC_API UHD_API
-#else
-#    define UHD_RFNOC_API
-#endif // UHD_RFNOC_ENABLED
-
-
 // Platform defines for conditional parts of headers:
 // Taken from boost/config/select_platform_config.hpp,
 // however, we define macros, not strings for platforms.

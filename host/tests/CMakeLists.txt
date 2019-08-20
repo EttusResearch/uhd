@@ -42,7 +42,6 @@ set(test_sources
     property_test.cpp
     ranges_test.cpp
     scope_exit_test.cpp
-    sid_t_test.cpp
     sensors_test.cpp
     soft_reg_test.cpp
     sph_recv_test.cpp
@@ -53,28 +52,15 @@ set(test_sources
     vrt_test.cpp
     expert_test.cpp
     fe_conn_test.cpp
-    rfnoc_node_test.cpp
     link_test.cpp
     rx_streamer_test.cpp
     tx_streamer_test.cpp
+    block_id_test.cpp
+    rfnoc_property_test.cpp
 )
 
 #turn each test cpp file into an executable with an int main() function
 add_definitions(-DBOOST_TEST_DYN_LINK -DBOOST_TEST_MAIN)
-
-if(ENABLE_RFNOC)
-    list(APPEND test_sources
-        block_id_test.cpp
-        blockdef_test.cpp
-        device3_test.cpp
-        graph_search_test.cpp
-        node_connect_test.cpp
-        rate_node_test.cpp
-        stream_sig_test.cpp
-        tick_node_test.cpp
-        rfnoc_property_test.cpp
-    )
-endif(ENABLE_RFNOC)
 
 if(ENABLE_C_API)
     list(APPEND test_sources
@@ -149,15 +135,6 @@ if(ENABLE_DPDK)
 ENDIF(ENABLE_DPDK)
 
 UHD_ADD_NONAPI_TEST(
-    TARGET "nocscript_expr_test.cpp"
-    EXTRA_SOURCES
-    "${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/expression.cpp"
-    INCLUDE_DIRS
-    ${CMAKE_BINARY_DIR}/lib/rfnoc/nocscript/
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/
-)
-
-UHD_ADD_NONAPI_TEST(
     TARGET "system_time_test.cpp"
     EXTRA_SOURCES
     "${CMAKE_SOURCE_DIR}/lib/utils/system_time.cpp"
@@ -173,36 +150,6 @@ UHD_ADD_NONAPI_TEST(
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/chdr_tx_data_xport.cpp
     ${CMAKE_SOURCE_DIR}/lib/transport/inline_io_service.cpp
     NOAUTORUN # Don't register for auto-run
-)
-
-#UHD_ADD_NONAPI_TEST(
-    #TARGET "nocscript_expr_test.cpp"
-    #EXTRA_SOURCES
-    #"${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/expression.cpp"
-    #INCLUDE_DIRS
-    #${CMAKE_BINARY_DIR}/lib/rfnoc/nocscript/
-    #${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/
-#)
-
-#UHD_ADD_NONAPI_TEST(
-    #TARGET "nocscript_ftable_test.cpp"
-    #EXTRA_SOURCES
-    #${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/function_table.cpp
-    #${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/expression.cpp
-    #INCLUDE_DIRS
-    #${CMAKE_BINARY_DIR}/lib/rfnoc/nocscript/
-    #${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/
-#)
-
-UHD_ADD_NONAPI_TEST(
-    TARGET "nocscript_parser_test.cpp"
-    EXTRA_SOURCES
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/parser.cpp
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/function_table.cpp
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/expression.cpp
-    INCLUDE_DIRS
-    ${CMAKE_BINARY_DIR}/lib/rfnoc/nocscript/
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/
 )
 
 UHD_ADD_NONAPI_TEST(

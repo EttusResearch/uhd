@@ -37,7 +37,7 @@ namespace rfnoc {
  *
  * This class can represent these block IDs.
  */
-class UHD_RFNOC_API block_id_t
+class UHD_API block_id_t
 {
 public:
     block_id_t();

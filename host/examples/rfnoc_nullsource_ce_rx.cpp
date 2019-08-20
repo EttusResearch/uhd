@@ -20,7 +20,6 @@
 // crossbar (provided it has stream-through capabilities)
 // and then streams the result to the host, writing it into a file.
 
-#include <uhd/device3.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/rfnoc/block_control.hpp>
 #include <uhd/rfnoc/null_block_control.hpp>

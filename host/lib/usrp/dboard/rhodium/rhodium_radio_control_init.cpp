@@ -7,7 +7,6 @@
 
 #include "rhodium_constants.hpp"
 #include "rhodium_radio_control.hpp"
-#include <uhd/transport/chdr.hpp>
 #include <uhd/types/eeprom.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/utils/algorithm.hpp>

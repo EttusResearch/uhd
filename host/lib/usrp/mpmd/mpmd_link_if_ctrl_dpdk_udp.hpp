@@ -10,7 +10,6 @@
 #include "mpmd_link_if_ctrl_base.hpp"
 #include <uhd/types/device_addr.hpp>
 #include <uhdlib/transport/dpdk_zero_copy.hpp>
-#include "../device3/device3_impl.hpp"
 
 namespace uhd { namespace mpmd { namespace xport {
 
@@ -23,12 +22,6 @@ class mpmd_link_if_ctrl_dpdk_udp : public mpmd_link_if_ctrl_base
 public:
     mpmd_link_if_ctrl_dpdk_udp(
         const uhd::device_addr_t& mb_args
-    );
-
-    both_xports_t make_transport(
-        mpmd_link_if_mgr::xport_info_t& xport_info,
-        const usrp::device3_impl::xport_type_t xport_type,
-        const uhd::device_addr_t& xport_args
     );
 
     bool is_valid(

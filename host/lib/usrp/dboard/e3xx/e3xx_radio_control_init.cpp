@@ -6,7 +6,6 @@
 
 #include "e3xx_constants.hpp"
 #include "e3xx_radio_control_impl.hpp"
-#include <uhd/transport/chdr.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/reg_iface_adapter.hpp>

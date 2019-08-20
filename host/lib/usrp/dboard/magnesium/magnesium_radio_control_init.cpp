@@ -6,7 +6,6 @@
 
 #include "magnesium_constants.hpp"
 #include "magnesium_radio_control.hpp"
-#include <uhd/transport/chdr.hpp>
 #include <uhd/types/eeprom.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/utils/log.hpp>

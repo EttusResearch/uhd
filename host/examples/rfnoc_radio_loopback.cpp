@@ -8,7 +8,6 @@
 // Example UHD/RFNoC application: Connect an rx radio to a tx radio and
 // run a loopback.
 
-#include <uhd/device3.hpp>
 #include <uhd/rfnoc/radio_ctrl.hpp>
 #include <uhd/utils/math.hpp>
 #include <uhd/utils/safe_main.hpp>

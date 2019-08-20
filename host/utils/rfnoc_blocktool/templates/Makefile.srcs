@@ -7,7 +7,7 @@
 ${'##################################################'}
 # RFNoC Utility Sources
 ${'##################################################'}
-RFNOC_BLOCK_${config.module_name.upper()}_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/erfnoc/blocks/${destination}/, ${"\\"}
-rfnoc_block_${config.module_name}.v ${"\\"}
-noc_shell_${config.module_name}.v ${"\\"}
+RFNOC_BLOCK_${config['module_name'].upper()}_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/rfnoc/blocks/${destination}/, ${"\\"}
+rfnoc_block_${config['module_name']}.v ${"\\"}
+noc_shell_${config['module_name']}.v ${"\\"}
 ))

@@ -19,7 +19,7 @@ namespace uhd { namespace rfnoc {
 
 /*! Reads and stores block definitions for blocks and components.
  */
-class UHD_RFNOC_API blockdef : public boost::enable_shared_from_this<blockdef>
+class UHD_API blockdef : public boost::enable_shared_from_this<blockdef>
 {
 public:
     typedef boost::shared_ptr<blockdef> sptr;

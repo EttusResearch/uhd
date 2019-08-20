@@ -301,8 +301,6 @@ link_directories(${Boost_LIBRARY_DIRS})
 ########################################################################
 # Additional settings for build environment
 ########################################################################
-# Note: RFNoC never gets fully disabled, but the public APIs do
-set(ENABLE_RFNOC ON CACHE BOOL "Export RFNoC includes and symbols")
 include(UHDGlobalDefs)
 include(UHDLog)
 
@@ -470,12 +468,7 @@ endforeach(Boost_Comp)
 if(ENABLE_USB)
     list(APPEND UHD_LINK_LIST_STATIC "usb-1.0")
 endif(ENABLE_USB)
-# UHDConfig.cmake also needs UHD_RFNOC_FOUND
-if(ENABLE_RFNOC)
-    set(UHD_RFNOC_FOUND "TRUE")
-else()
-    set(UHD_RFNOC_FOUND "FALSE")
-endif(ENABLE_RFNOC)
+set(UHD_RFNOC_FOUND "TRUE")
 
 configure_file(
     ${CMAKE_SOURCE_DIR}/cmake/Modules/UHDConfigVersion.cmake.in

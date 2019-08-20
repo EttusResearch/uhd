@@ -1,6 +1,7 @@
 #
 # Copyright 2011-2013,2015 Ettus Research LLC
 # Copyright 2018 Ettus Research, a National Instruments Company
+# Copyright 2019 Ettus Research, a National Instruments Brand
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
@@ -15,7 +16,6 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/ranges.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/sensors.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/serial.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/sid.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/time_spec.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/tune.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/types.cpp

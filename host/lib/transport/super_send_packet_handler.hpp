@@ -18,21 +18,11 @@
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhd/utils/thread.hpp>
-#include <uhdlib/rfnoc/tx_stream_terminator.hpp>
 #include <boost/function.hpp>
 #include <chrono>
 #include <iostream>
 #include <thread>
 #include <vector>
-
-#ifdef UHD_TXRX_DEBUG_PRINTS
-// Included for debugging
-#    include "boost/date_time/posix_time/posix_time.hpp"
-#    include <boost/format.hpp>
-#    include <boost/thread/thread.hpp>
-#    include <fstream>
-#    include <map>
-#endif
 
 namespace uhd { namespace transport { namespace sph {
 
@@ -240,9 +230,6 @@ public:
 
             size_t nsamps_sent =
                 send_one_packet(buffs, nsamps_per_buff, if_packet_info, timeout);
-#ifdef UHD_TXRX_DEBUG_PRINTS
-            dbg_print_send(nsamps_per_buff, nsamps_sent, metadata, timeout);
-#endif
             return nsamps_sent;
         }
         size_t total_num_samps_sent = 0;
@@ -281,10 +268,6 @@ public:
                                    if_packet_info,
                                    timeout,
                                    total_num_samps_sent * _bytes_per_cpu_item);
-#ifdef UHD_TXRX_DEBUG_PRINTS
-        dbg_print_send(nsamps_per_buff, nsamps_sent, metadata, timeout);
-
-#endif
         return nsamps_sent;
     }
 
@@ -314,67 +297,6 @@ private:
     bool _cached_metadata;
     uhd::tx_metadata_t _metadata_cache;
 
-#ifdef UHD_TXRX_DEBUG_PRINTS
-    struct dbg_send_stat_t
-    {
-        dbg_send_stat_t(long wc,
-            size_t nspb,
-            size_t nss,
-            uhd::tx_metadata_t md,
-            double to,
-            double rate)
-            : wallclock(wc)
-            , nsamps_per_buff(nspb)
-            , nsamps_sent(nss)
-            , metadata(md)
-            , timeout(to)
-            , samp_rate(rate)
-        {
-        }
-        long wallclock;
-        size_t nsamps_per_buff;
-        size_t nsamps_sent;
-        uhd::tx_metadata_t metadata;
-        double timeout;
-        double samp_rate;
-        // Create a formatted print line for all the info gathered in this struct.
-        std::string print_line()
-        {
-            boost::format fmt("send,%ld,%f,%i,%i,%s,%s,%s,%ld");
-            fmt % wallclock;
-            fmt % timeout % (int)nsamps_per_buff % (int)nsamps_sent;
-            fmt % (metadata.start_of_burst ? "true" : "false")
-                % (metadata.end_of_burst ? "true" : "false");
-            fmt % (metadata.has_time_spec ? "true" : "false")
-                % metadata.time_spec.to_ticks(samp_rate);
-            return fmt.str();
-        }
-    };
-
-    void dbg_print_send(size_t nsamps_per_buff,
-        size_t nsamps_sent,
-        const uhd::tx_metadata_t& metadata,
-        const double timeout,
-        bool dbg_print_directly = true)
-    {
-        dbg_send_stat_t data(boost::get_system_time().time_of_day().total_microseconds(),
-            nsamps_per_buff,
-            nsamps_sent,
-            metadata,
-            timeout,
-            _samp_rate);
-        if (dbg_print_directly) {
-            dbg_print_err(data.print_line());
-        }
-    }
-    void dbg_print_err(std::string msg)
-    {
-        msg = "super_send_packet_handler," + msg;
-        fprintf(stderr, "%s\n", msg.c_str());
-    }
-
-
-#endif
 
     /*******************************************************************
      * Send a single packet:

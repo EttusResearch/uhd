@@ -13,13 +13,11 @@
 
 #include "../lib/transport/super_recv_packet_handler.hpp"
 #include "../lib/transport/super_send_packet_handler.hpp"
-#include "../lib/usrp/device3/device3_flow_ctrl.hpp"
 #include "common/mock_zero_copy.hpp"
 #include <uhd/convert.hpp>
 #include <uhd/transport/chdr.hpp>
 #include <uhd/transport/zero_copy.hpp>
 #include <uhd/transport/zero_copy_flow_ctrl.hpp>
-#include <uhd/types/sid.hpp>
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/thread.hpp>
 #include <boost/program_options.hpp>
@@ -47,7 +45,6 @@ struct rx_fc_cache_t
     uint32_t total_packets_consumed = 0;
     //! Sequence number of next flow control packet
     uint64_t seq_num = 0;
-    uhd::sid_t sid;
     uhd::transport::zero_copy_if::sptr xport;
     std::function<uint32_t(uint32_t)> to_host;
     std::function<uint32_t(uint32_t)> from_host;
@@ -155,8 +152,7 @@ inline bool tx_flow_ctrl(boost::shared_ptr<tx_fc_cache_t> fc_cache,
 }
 
 inline void tx_flow_ctrl_ack(boost::shared_ptr<tx_fc_cache_t> fc_cache,
-    uhd::transport::zero_copy_if::sptr /*send_xport*/,
-    uhd::sid_t /*send_sid*/)
+    uhd::transport::zero_copy_if::sptr /*send_xport*/)
 {
     if (not fc_cache->fc_received) {
         return;
@@ -296,7 +292,7 @@ void benchmark_send_packet_handler(
 
     // Configure flow control ack
     streamer->set_xport_chan_post_send_cb(0, [fc_cache, zero_copy_xport]() {
-        tx_flow_ctrl_ack(fc_cache, zero_copy_xport, 0);
+        tx_flow_ctrl_ack(fc_cache, zero_copy_xport);
     });
 
     // Allocate buffer

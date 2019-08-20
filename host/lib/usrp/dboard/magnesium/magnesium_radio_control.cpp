@@ -1,5 +1,6 @@
 //
 // Copyright 2017 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -8,9 +9,7 @@
 #include "magnesium_constants.hpp"
 #include "magnesium_gain_table.hpp"
 #include <uhd/exception.hpp>
-#include <uhd/rfnoc/node_ctrl_base.hpp>
 #include <uhd/rfnoc/registry.hpp>
-#include <uhd/transport/chdr.hpp>
 #include <uhd/types/direction.hpp>
 #include <uhd/types/eeprom.hpp>
 #include <uhd/utils/algorithm.hpp>

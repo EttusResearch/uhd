@@ -20,7 +20,6 @@ endif(ENABLE_MYKONOS)
 
 USRP_PERIPHS_ADD_OBJECT(periphs
     exception.cpp
-    xbar_iface.cpp
     ${UHD_HOST_ROOT}/lib/exception.cpp
 )
 

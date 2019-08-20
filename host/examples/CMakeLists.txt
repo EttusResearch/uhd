@@ -28,18 +28,12 @@ set(example_sources
     latency_test.cpp
     gpio.cpp
     sync_to_gps.cpp
+    rfnoc_nullsource_ce_rx.cpp
+    rfnoc_rx_to_file.cpp
+    #rfnoc_radio_loopback.cpp
+    #benchmark_streamer.cpp
+    #replay_samples_from_file.cpp
 )
-
-if(ENABLE_RFNOC)
-    list(APPEND
-        example_sources
-        rfnoc_nullsource_ce_rx.cpp
-        rfnoc_rx_to_file.cpp
-        rfnoc_radio_loopback.cpp
-        replay_samples_from_file.cpp
-        benchmark_streamer.cpp
-    )
-endif(ENABLE_RFNOC)
 
 if(ENABLE_OCTOCLOCK)
     list(APPEND example_sources test_clock_synch.cpp)

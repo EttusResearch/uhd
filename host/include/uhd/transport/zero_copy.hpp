@@ -23,11 +23,6 @@ class UHD_API managed_buffer
 public:
     managed_buffer(void) : _ref_count(0), _buffer(NULL), _length(0)
     {
-#ifdef UHD_TXRX_DEBUG_PRINTS
-        _mb_num = s_buffer_count;
-        // From Boost website: atomic_count seems only to have precrement operator.
-        ++s_buffer_count;
-#endif
     }
 
     virtual ~managed_buffer(void) {}
@@ -83,24 +78,11 @@ public:
         return (int)_ref_count;
     }
 
-#ifdef UHD_TXRX_DEBUG_PRINTS
-    int num() const
-    {
-        return _mb_num;
-    }
-#endif
-
 protected:
     void* _buffer;
     size_t _length;
-#ifdef UHD_TXRX_DEBUG_PRINTS
-    int _mb_num;
-#endif
 
 private:
-#ifdef UHD_TXRX_DEBUG_PRINTS
-    static boost::detail::atomic_count s_buffer_count;
-#endif
 };
 
 UHD_INLINE void intrusive_ptr_add_ref(managed_buffer* p)

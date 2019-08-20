@@ -449,7 +449,7 @@ def collect_module_paths(config_path):
     :return: list of noc block directories
     """
     # rfnoc blocks
-    result = [os.path.join(config_path, 'erfnoc', 'blocks')]
+    result = [os.path.join(config_path, 'rfnoc', 'blocks')]
     # additional OOT blocks
     # TODO parse modules from external includes as well
     return result
@@ -675,7 +675,7 @@ def get_core_config_path(config_path):
     """
     returns the path where core configuration files are stored
     """
-    return os.path.join(config_path, 'erfnoc', 'core')
+    return os.path.join(config_path, 'rfnoc', 'core')
 
 def generate_image_core_path(output_path, source):
     """

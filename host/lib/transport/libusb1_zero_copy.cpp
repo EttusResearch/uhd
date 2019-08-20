@@ -21,12 +21,6 @@
 #include <boost/thread/mutex.hpp>
 #include <list>
 
-#ifdef UHD_TXRX_DEBUG_PRINTS
-#    include <boost/format.hpp>
-#    include <fstream>
-#    include <vector>
-#endif
-
 using namespace uhd;
 using namespace uhd::transport;
 

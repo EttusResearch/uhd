@@ -9,7 +9,6 @@
 #include "rhodium_constants.hpp"
 #include <uhd/exception.hpp>
 #include <uhd/rfnoc/registry.hpp>
-#include <uhd/transport/chdr.hpp>
 #include <uhd/types/direction.hpp>
 #include <uhd/types/eeprom.hpp>
 #include <uhd/utils/algorithm.hpp>

@@ -130,10 +130,10 @@ public:
      *          The latter needs to get sent back to MPM to complete the
      *          transport handshake.
      */
-    //virtual both_xports_t make_transport(const xport_info_list_t& xport_info_list,
-        //const usrp::device3_impl::xport_type_t xport_type,
-        //const uhd::device_addr_t& xport_args,
-        //xport_info_t& xport_info_out) = 0;
+    // virtual both_xports_t make_transport(const xport_info_list_t& xport_info_list,
+    // const uhd::transport::link_type_t::xport_type_t xport_type,
+    // const uhd::device_addr_t& xport_args,
+    // xport_info_t& xport_info_out) = 0;
 
     /*! Return the path MTU for whatever this manager lets us do
      */

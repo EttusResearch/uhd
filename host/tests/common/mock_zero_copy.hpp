@@ -12,9 +12,7 @@
 #include <uhd/transport/vrt_if_packet.hpp>
 #include <uhd/transport/zero_copy.hpp>
 #include <uhd/types/endianness.hpp>
-#include <uhd/types/sid.hpp>
 #include <uhd/utils/byteswap.hpp>
-#include <uhdlib/rfnoc/xports.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/shared_array.hpp>
 #include <boost/shared_ptr.hpp>

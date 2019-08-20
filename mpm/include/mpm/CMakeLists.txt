@@ -4,7 +4,6 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 install(FILES
-    xbar_iface.hpp
     exception.hpp
     DESTINATION ${INCLUDE_DIR}/mpm
 )

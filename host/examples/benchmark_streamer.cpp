@@ -5,7 +5,6 @@
 //
 
 #include <uhd/convert.hpp>
-#include <uhd/device3.hpp>
 #include <uhd/rfnoc/block_ctrl.hpp>
 #include <uhd/rfnoc/ddc_block_ctrl.hpp>
 #include <uhd/rfnoc/duc_block_ctrl.hpp>

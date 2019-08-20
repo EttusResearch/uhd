@@ -20,7 +20,6 @@
 #include <uhd/convert.hpp>
 #include <uhd/utils/soft_register.hpp>
 #include <uhdlib/usrp/gpio_defs.hpp>
-#include <uhdlib/rfnoc/legacy_compat.hpp>
 #include <uhdlib/rfnoc/rfnoc_device.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
@@ -397,8 +396,7 @@ static double derive_freq_from_xx_subdev_and_dsp(
  **********************************************************************/
 class multi_usrp_impl : public multi_usrp{
 public:
-    multi_usrp_impl(device::sptr dev, const device_addr_t& addr)
-        : _dev(dev)
+    multi_usrp_impl(device::sptr dev) : _dev(dev)
     {
         _tree = _dev->get_tree();
     }
@@ -2259,7 +2257,6 @@ public:
 private:
     device::sptr _dev;
     property_tree::sptr _tree;
-    uhd::rfnoc::legacy_compat::sptr _legacy_compat;
 
     struct mboard_chan_pair{
         size_t mboard, chan;
@@ -2517,5 +2514,5 @@ multi_usrp::sptr multi_usrp::make(const device_addr_t& dev_addr)
     if (rfnoc_dev) {
         return rfnoc::detail::make_rfnoc_device(rfnoc_dev, dev_addr);
     }
-    return boost::make_shared<multi_usrp_impl>(dev, dev_addr);
+    return boost::make_shared<multi_usrp_impl>(dev);
 }

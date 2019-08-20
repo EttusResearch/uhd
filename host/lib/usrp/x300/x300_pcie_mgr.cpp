@@ -275,13 +275,13 @@ uint32_t pcie_manager::allocate_pcie_dma_chan(
     const rfnoc::sep_id_t& /*remote_epid*/, const link_type_t /*link_type*/)
 {
     throw uhd::not_implemented_error("allocate_pcie_dma_chan()");
-    //constexpr uint32_t CTRL_CHANNEL       = 0;
-    //constexpr uint32_t ASYNC_MSG_CHANNEL  = 1;
-    //constexpr uint32_t FIRST_DATA_CHANNEL = 2;
-    //if (link_type == uhd::usrp::device3_impl::CTRL) {
-        //return CTRL_CHANNEL;
-    //} else if (link_type == uhd::usrp::device3_impl::ASYNC_MSG) {
-        //return ASYNC_MSG_CHANNEL;
+    // constexpr uint32_t CTRL_CHANNEL       = 0;
+    // constexpr uint32_t ASYNC_MSG_CHANNEL  = 1;
+    // constexpr uint32_t FIRST_DATA_CHANNEL = 2;
+    // if (link_type == uhd::transport::link_type_t::CTRL) {
+    // return CTRL_CHANNEL;
+    //} else if (link_type == uhd::transport::link_type_t::ASYNC_MSG) {
+    // return ASYNC_MSG_CHANNEL;
     //} else {
         //// sid_t has no comparison defined, so we need to convert it uint32_t
         //uint32_t raw_sid = tx_sid.get();
@@ -330,50 +330,50 @@ both_links_t pcie_manager::get_links(link_type_t /*link_type*/,
             + std::to_string(local_device_id)
             + ", no such device associated with this motherboard!");
     }
-    //zero_copy_xport_params default_buff_args;
-    //xports.endianness              = ENDIANNESS_LITTLE;
-    //xports.lossless                = true;
-    //const uint32_t dma_channel_num = allocate_pcie_dma_chan(xports.send_sid, xport_type);
-    //if (xport_type == uhd::usrp::device3_impl::CTRL) {
-        //// Transport for control stream
-        //if (not _ctrl_dma_xport) {
-            //// One underlying DMA channel will handle
-            //// all control traffic
-            //_ctrl_dma_xport =
-                //make_muxed_pcie_msg_xport(dma_channel_num, PCIE_MAX_MUXED_CTRL_XPORTS);
-        //}
-        //// Create a virtual control transport
-        //xports.recv = _ctrl_dma_xport->make_stream(xports.recv_sid.get_dst());
-    //} else if (xport_type == uhd::usrp::device3_impl::ASYNC_MSG) {
-        //// Transport for async message stream
-        //if (not _async_msg_dma_xport) {
-            //// One underlying DMA channel will handle
-            //// all async message traffic
-            //_async_msg_dma_xport =
-                //make_muxed_pcie_msg_xport(dma_channel_num, PCIE_MAX_MUXED_ASYNC_XPORTS);
-        //}
-        //// Create a virtual async message transport
-        //xports.recv = _async_msg_dma_xport->make_stream(xports.recv_sid.get_dst());
-    //} else if (xport_type == uhd::usrp::device3_impl::TX_DATA) {
-        //default_buff_args.send_frame_size = args.cast<size_t>(
-            //"send_frame_size", std::min(send_mtu, PCIE_TX_DATA_FRAME_SIZE));
-        //default_buff_args.num_send_frames =
-            //args.cast<size_t>("num_send_frames", PCIE_TX_DATA_NUM_FRAMES);
-        //default_buff_args.send_buff_size  = args.cast<size_t>("send_buff_size", 0);
-        //default_buff_args.recv_frame_size = PCIE_MSG_FRAME_SIZE;
-        //default_buff_args.num_recv_frames = PCIE_MSG_NUM_FRAMES;
-        //xports.recv                       = nirio_zero_copy::make(
-            //_rio_fpga_interface, dma_channel_num, default_buff_args);
-    //} else if (xport_type == uhd::usrp::device3_impl::RX_DATA) {
-        //default_buff_args.send_frame_size = PCIE_MSG_FRAME_SIZE;
-        //default_buff_args.num_send_frames = PCIE_MSG_NUM_FRAMES;
-        //default_buff_args.recv_frame_size = args.cast<size_t>(
-            //"recv_frame_size", std::min(recv_mtu, PCIE_RX_DATA_FRAME_SIZE));
-        //default_buff_args.num_recv_frames =
-            //args.cast<size_t>("num_recv_frames", PCIE_RX_DATA_NUM_FRAMES);
-        //default_buff_args.recv_buff_size = args.cast<size_t>("recv_buff_size", 0);
-        //xports.recv                      = nirio_zero_copy::make(
-            //_rio_fpga_interface, dma_channel_num, default_buff_args);
+    // zero_copy_xport_params default_buff_args;
+    // xports.endianness              = ENDIANNESS_LITTLE;
+    // xports.lossless                = true;
+    // const uint32_t dma_channel_num = allocate_pcie_dma_chan(xports.send_sid,
+    // xport_type); if (xport_type == uhd::transport::link_type_t::CTRL) {
+    //// Transport for control stream
+    // if (not _ctrl_dma_xport) {
+    //// One underlying DMA channel will handle
+    //// all control traffic
+    //_ctrl_dma_xport =
+    // make_muxed_pcie_msg_xport(dma_channel_num, PCIE_MAX_MUXED_CTRL_XPORTS);
+    //}
+    //// Create a virtual control transport
+    // xports.recv = _ctrl_dma_xport->make_stream(xports.recv_sid.get_dst());
+    //} else if (xport_type == uhd::transport::link_type_t::ASYNC_MSG) {
+    //// Transport for async message stream
+    // if (not _async_msg_dma_xport) {
+    //// One underlying DMA channel will handle
+    //// all async message traffic
+    //_async_msg_dma_xport =
+    // make_muxed_pcie_msg_xport(dma_channel_num, PCIE_MAX_MUXED_ASYNC_XPORTS);
+    //}
+    //// Create a virtual async message transport
+    // xports.recv = _async_msg_dma_xport->make_stream(xports.recv_sid.get_dst());
+    //} else if (xport_type == uhd::transport::link_type_t::TX_DATA) {
+    // default_buff_args.send_frame_size = args.cast<size_t>(
+    //"send_frame_size", std::min(send_mtu, PCIE_TX_DATA_FRAME_SIZE));
+    // default_buff_args.num_send_frames =
+    // args.cast<size_t>("num_send_frames", PCIE_TX_DATA_NUM_FRAMES);
+    // default_buff_args.send_buff_size  = args.cast<size_t>("send_buff_size", 0);
+    // default_buff_args.recv_frame_size = PCIE_MSG_FRAME_SIZE;
+    // default_buff_args.num_recv_frames = PCIE_MSG_NUM_FRAMES;
+    // xports.recv                       = nirio_zero_copy::make(
+    //_rio_fpga_interface, dma_channel_num, default_buff_args);
+    //} else if (xport_type == uhd::transport::link_type_t::RX_DATA) {
+    // default_buff_args.send_frame_size = PCIE_MSG_FRAME_SIZE;
+    // default_buff_args.num_send_frames = PCIE_MSG_NUM_FRAMES;
+    // default_buff_args.recv_frame_size = args.cast<size_t>(
+    //"recv_frame_size", std::min(recv_mtu, PCIE_RX_DATA_FRAME_SIZE));
+    // default_buff_args.num_recv_frames =
+    // args.cast<size_t>("num_recv_frames", PCIE_RX_DATA_NUM_FRAMES);
+    // default_buff_args.recv_buff_size = args.cast<size_t>("recv_buff_size", 0);
+    // xports.recv                      = nirio_zero_copy::make(
+    //_rio_fpga_interface, dma_channel_num, default_buff_args);
     //}
 
     //xports.send = xports.recv;

@@ -6,7 +6,6 @@
 //
 
 #include <uhd/device.hpp>
-#include <uhd/device3.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/sensors.hpp>

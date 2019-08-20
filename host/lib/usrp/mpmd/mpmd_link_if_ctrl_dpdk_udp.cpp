@@ -192,77 +192,79 @@ mpmd_link_if_ctrl_dpdk_udp::mpmd_link_if_ctrl_dpdk_udp(
     }
 }
 
-uhd::both_xports_t
-mpmd_link_if_ctrl_dpdk_udp::make_transport(
-        mpmd_link_if_mgr::xport_info_t &xport_info,
-        const usrp::device3_impl::xport_type_t xport_type,
-        const uhd::device_addr_t& xport_args
-) {
+// uhd::both_xports_t
+// mpmd_link_if_ctrl_dpdk_udp::make_transport(
+// mpmd_link_if_mgr::xport_info_t &xport_info,
+// const uhd::transport::link_type_t xport_type,
+// const uhd::device_addr_t& xport_args
+//) {
 
-    // Constrain by this transport's MTU and the MTU in the xport_args
-    const size_t send_mtu = std::min(get_mtu(uhd::TX_DIRECTION),
-        xport_args.cast<size_t>("mtu", get_mtu(uhd::TX_DIRECTION)));
-    const size_t recv_mtu = std::min(get_mtu(uhd::RX_DIRECTION),
-        xport_args.cast<size_t>("mtu", get_mtu(uhd::RX_DIRECTION)));
+//// Constrain by this transport's MTU and the MTU in the xport_args
+// const size_t send_mtu = std::min(get_mtu(uhd::TX_DIRECTION),
+// xport_args.cast<size_t>("mtu", get_mtu(uhd::TX_DIRECTION)));
+// const size_t recv_mtu = std::min(get_mtu(uhd::RX_DIRECTION),
+// xport_args.cast<size_t>("mtu", get_mtu(uhd::RX_DIRECTION)));
 
-    // Create actual UHD-DPDK UDP transport
-    transport::zero_copy_xport_params default_buff_args;
-    default_buff_args.num_recv_frames = MPMD_ETH_NUM_CTRL_FRAMES;
-    default_buff_args.num_send_frames = MPMD_ETH_NUM_CTRL_FRAMES;
-    default_buff_args.recv_frame_size = MPMD_10GE_MSG_FRAME_DEFAULT_SIZE;
-    default_buff_args.send_frame_size = MPMD_10GE_MSG_FRAME_DEFAULT_SIZE;
+//// Create actual UHD-DPDK UDP transport
+// transport::zero_copy_xport_params default_buff_args;
+// default_buff_args.num_recv_frames = MPMD_ETH_NUM_CTRL_FRAMES;
+// default_buff_args.num_send_frames = MPMD_ETH_NUM_CTRL_FRAMES;
+// default_buff_args.recv_frame_size = MPMD_10GE_MSG_FRAME_DEFAULT_SIZE;
+// default_buff_args.send_frame_size = MPMD_10GE_MSG_FRAME_DEFAULT_SIZE;
 
-    if (xport_type == usrp::device3_impl::RX_DATA) {
-        default_buff_args.num_recv_frames =
-            xport_args.cast<size_t>("num_recv_frames", MPMD_ETH_NUM_RECV_FRAMES);
-        default_buff_args.recv_frame_size = std::min(
-            xport_args.cast<size_t>("recv_frame_size",
-                MPMD_10GE_DATA_FRAME_DEFAULT_SIZE),
-            recv_mtu);
-    } else if (xport_type == usrp::device3_impl::TX_DATA) {
-        default_buff_args.num_send_frames =
-            xport_args.cast<size_t>("num_send_frames", MPMD_ETH_NUM_SEND_FRAMES);
-        default_buff_args.send_frame_size = std::min(
-            xport_args.cast<size_t>("send_frame_size",
-                MPMD_10GE_DATA_FRAME_DEFAULT_SIZE),
-            send_mtu);
-    }
+// if (xport_type == uhd::transport::link_type_t::RX_DATA) {
+// default_buff_args.num_recv_frames =
+// xport_args.cast<size_t>("num_recv_frames", MPMD_ETH_NUM_RECV_FRAMES);
+// default_buff_args.recv_frame_size = std::min(
+// xport_args.cast<size_t>("recv_frame_size",
+// MPMD_10GE_DATA_FRAME_DEFAULT_SIZE),
+// recv_mtu);
+//} else if (xport_type == uhd::transport::link_type_t::TX_DATA) {
+// default_buff_args.num_send_frames =
+// xport_args.cast<size_t>("num_send_frames", MPMD_ETH_NUM_SEND_FRAMES);
+// default_buff_args.send_frame_size = std::min(
+// xport_args.cast<size_t>("send_frame_size",
+// MPMD_10GE_DATA_FRAME_DEFAULT_SIZE),
+// send_mtu);
+//}
 
-    UHD_LOG_TRACE("BUFF", "num_recv_frames=" << default_buff_args.num_recv_frames
-                     << ", num_send_frames=" << default_buff_args.num_send_frames
-                     << ", recv_frame_size=" << default_buff_args.recv_frame_size
-                     << ", send_frame_size=" << default_buff_args.send_frame_size);
+// UHD_LOG_TRACE("BUFF", "num_recv_frames=" << default_buff_args.num_recv_frames
+//<< ", num_send_frames=" << default_buff_args.num_send_frames
+//<< ", recv_frame_size=" << default_buff_args.recv_frame_size
+//<< ", send_frame_size=" << default_buff_args.send_frame_size);
 
-    int dpdk_port_id = _ctx.get_route(xport_info["ipv4"]);
-    if (dpdk_port_id < 0) {
-        throw uhd::runtime_error("Could not find a DPDK port with route to " +
-            xport_info["ipv4"]);
-    }
-    auto recv = transport::dpdk_zero_copy::make(
-        _ctx,
-        (const unsigned int) dpdk_port_id,
-        xport_info["ipv4"],
-        xport_info["port"],
-        "0",
-        default_buff_args,
-        uhd::device_addr_t()
-    );
-    const uint16_t port = recv->get_local_port();
-    const std::string src_ip_addr = recv->get_local_addr();
-    xport_info["src_port"] = std::to_string(port);
-    xport_info["src_ipv4"] = src_ip_addr;
+// int dpdk_port_id = _ctx.get_route(xport_info["ipv4"]);
+// if (dpdk_port_id < 0) {
+// throw uhd::runtime_error("Could not find a DPDK port with route to " +
+// xport_info["ipv4"]);
+//}
+// auto recv = transport::dpdk_zero_copy::make(
+//_ctx,
+//(const unsigned int) dpdk_port_id,
+// xport_info["ipv4"],
+// xport_info["port"],
+//"0",
+// default_buff_args,
+// uhd::device_addr_t()
+//);
+// const uint16_t port = recv->get_local_port();
+// const std::string src_ip_addr = recv->get_local_addr();
+// xport_info["src_port"] = std::to_string(port);
+// xport_info["src_ipv4"] = src_ip_addr;
 
-    // Create both_xports_t object and finish:
-    both_xports_t xports;
-    xports.endianness = uhd::ENDIANNESS_BIG;
-    xports.send_sid = sid_t(xport_info["send_sid"]);
-    xports.recv_sid = xports.send_sid.reversed();
-    xports.recv_buff_size = (default_buff_args.recv_frame_size-MPMD_UDP_RESERVED_FRAME_SIZE)*default_buff_args.num_recv_frames;
-    xports.send_buff_size = (default_buff_args.send_frame_size-MPMD_UDP_RESERVED_FRAME_SIZE)*default_buff_args.num_send_frames;
-    xports.recv = recv; // Note: This is a type cast!
-    xports.send = recv; // This too
-    return xports;
-}
+//// Create both_xports_t object and finish:
+// both_xports_t xports;
+// xports.endianness = uhd::ENDIANNESS_BIG;
+// xports.send_sid = sid_t(xport_info["send_sid"]);
+// xports.recv_sid = xports.send_sid.reversed();
+// xports.recv_buff_size =
+// (default_buff_args.recv_frame_size-MPMD_UDP_RESERVED_FRAME_SIZE)*default_buff_args.num_recv_frames;
+// xports.send_buff_size =
+// (default_buff_args.send_frame_size-MPMD_UDP_RESERVED_FRAME_SIZE)*default_buff_args.num_send_frames;
+// xports.recv = recv; // Note: This is a type cast!
+// xports.send = recv; // This too
+// return xports;
+//}
 
 bool mpmd_link_if_ctrl_dpdk_udp::is_valid(
     const mpmd_link_if_mgr::xport_info_t& xport_info

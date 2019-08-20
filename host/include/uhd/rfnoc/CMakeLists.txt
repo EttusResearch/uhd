@@ -1,58 +1,45 @@
 #
 # Copyright 2014-2016 Ettus Research LLC
 # Copyright 2018 Ettus Research, a National Instruments Company
+# Copyright 2019 Ettus Research, a National Instruments Brand
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
-if(ENABLE_RFNOC)
-    UHD_INSTALL(FILES
-        # Infrastructure
-        block_ctrl_base.hpp
-        block_ctrl.hpp
-        block_control.hpp
-        blockdef.hpp
-        block_id.hpp
-        constants.hpp
-        defaults.hpp
-        dirtifier.hpp
-        graph.hpp
-        graph_edge.hpp
-        mb_controller.hpp
-        noc_block_make_args.hpp
-        node_ctrl_base.hpp
-        node_ctrl_base.ipp
-        node.hpp
-        node.ipp
-        rate_node_ctrl.hpp
-        registry.hpp
-        scalar_node_ctrl.hpp
-        sink_block_ctrl_base.hpp
-        sink_node_ctrl.hpp
-        source_block_ctrl_base.hpp
-        source_node_ctrl.hpp
-        stream_sig.hpp
-        terminator_node_ctrl.hpp
-        tick_node_ctrl.hpp
-        # Block controllers
-        ddc_block_control.hpp
-        duc_block_control.hpp
-        ddc_block_ctrl.hpp
-        dma_fifo_block_ctrl.hpp
-        duc_block_ctrl.hpp
-        fir_block_ctrl.hpp
-        null_block_ctrl.hpp
-        null_block_control.hpp
-        radio_ctrl.hpp
-        radio_control.hpp
-        replay_block_ctrl.hpp
-        siggen_block_ctrl.hpp
-        window_block_ctrl.hpp
-        register_iface.hpp
-        DESTINATION ${INCLUDE_DIR}/uhd/rfnoc
-        COMPONENT headers
-    )
-endif(ENABLE_RFNOC)
+UHD_INSTALL(FILES
+    # Infrastructure
+    actions.hpp
+    block_id.hpp
+    blockdef.hpp
+    constants.hpp
+    defaults.hpp
+    dirtifier.hpp
+    filter_node.hpp
+    graph_edge.hpp
+    mb_controller.hpp
+    noc_block_base.hpp
+    noc_block_make_args.hpp
+    node.hpp
+    node.ipp
+    property.hpp
+    property.ipp
+    radio_control.hpp
+    register_iface.hpp
+    register_iface_holder.hpp
+    registry.hpp
+    res_source_info.hpp
+    traffic_counter.hpp
+    # Block controllers
+    block_control.hpp
+    ddc_block_control.hpp
+    duc_block_control.hpp
+    null_block_control.hpp
+    radio_control.hpp
+
+    DESTINATION ${INCLUDE_DIR}/uhd/rfnoc
+    COMPONENT headers
+)
+
 add_subdirectory(blocks)
-#add_subdirectory(components)
+add_subdirectory(core)
 

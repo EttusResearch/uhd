@@ -18,20 +18,12 @@
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/tasks.hpp>
-#include <uhdlib/rfnoc/rx_stream_terminator.hpp>
 #include <boost/dynamic_bitset.hpp>
 #include <boost/format.hpp>
 #include <boost/function.hpp>
 #include <boost/make_shared.hpp>
 #include <iostream>
 #include <vector>
-
-// Included for debugging
-#ifdef UHD_TXRX_DEBUG_PRINTS
-#    include "boost/date_time/posix_time/posix_time.hpp"
-#    include <boost/format.hpp>
-#    include <boost/thread/thread.hpp>
-#endif
 
 namespace uhd { namespace transport { namespace sph {
 
@@ -250,10 +242,6 @@ public:
             recv_one_packet(buffs, nsamps_per_buff, metadata, timeout);
 
         if (one_packet or metadata.end_of_burst) {
-#ifdef UHD_TXRX_DEBUG_PRINTS
-            dbg_gather_data(
-                nsamps_per_buff, accum_num_samps, metadata, timeout, one_packet);
-#endif
             return accum_num_samps;
         }
 
@@ -285,9 +273,6 @@ public:
                 break;
             }
         }
-#ifdef UHD_TXRX_DEBUG_PRINTS
-        dbg_gather_data(nsamps_per_buff, accum_num_samps, metadata, timeout, one_packet);
-#endif
         return accum_num_samps;
     }
 
@@ -813,84 +798,6 @@ private:
     size_t _convert_buffer_offset_bytes;
     size_t _convert_bytes_to_copy;
 
-    /*
-     * This last section is only for debugging purposes.
-     * It causes a lot of prints to stderr which can be piped to a file.
-     * Gathered data can be used to post process it with external tools.
-     */
-#ifdef UHD_TXRX_DEBUG_PRINTS
-    struct dbg_recv_stat_t
-    {
-        dbg_recv_stat_t(long wc,
-            size_t nspb,
-            size_t nsr,
-            uhd::rx_metadata_t md,
-            double to,
-            bool op,
-            double rate)
-            : wallclock(wc)
-            , nsamps_per_buff(nspb)
-            , nsamps_recv(nsr)
-            , metadata(md)
-            , timeout(to)
-            , one_packet(op)
-            , samp_rate(rate)
-        {
-        }
-        long wallclock;
-        size_t nsamps_per_buff;
-        size_t nsamps_recv;
-        uhd::rx_metadata_t metadata;
-        double timeout;
-        bool one_packet;
-        double samp_rate;
-        // Create a formatted print line for all the info gathered in this struct.
-        std::string print_line()
-        {
-            boost::format fmt("recv,%ld,%f,%i,%i,%s,%i,%s,%s,%s,%i,%s,%ld");
-            fmt % wallclock;
-            fmt % timeout % (int)nsamps_per_buff % (int)nsamps_recv;
-            fmt % (one_packet ? "true" : "false");
-            fmt % metadata.error_code;
-            fmt % (metadata.start_of_burst ? "true" : "false")
-                % (metadata.end_of_burst ? "true" : "false");
-            fmt % (metadata.more_fragments ? "true" : "false")
-                % (int)metadata.fragment_offset;
-            fmt % (metadata.has_time_spec ? "true" : "false")
-                % metadata.time_spec.to_ticks(samp_rate);
-            return fmt.str();
-        }
-    };
-
-    void dbg_gather_data(const size_t nsamps_per_buff,
-        const size_t nsamps_recv,
-        uhd::rx_metadata_t& metadata,
-        const double timeout,
-        const bool one_packet,
-        bool dbg_print_directly = true)
-    {
-        // Initialize a struct with all available data. It can return a formatted string
-        // with all infos if wanted.
-        dbg_recv_stat_t data(boost::get_system_time().time_of_day().total_microseconds(),
-            nsamps_per_buff,
-            nsamps_recv,
-            metadata,
-            timeout,
-            one_packet,
-            _samp_rate);
-        if (dbg_print_directly) {
-            dbg_print_err(data.print_line());
-        }
-    }
-
-
-    void dbg_print_err(std::string msg)
-    {
-        std::string dbg_prefix("super_recv_packet_handler,");
-        msg = dbg_prefix + msg;
-        fprintf(stderr, "%s\n", msg.c_str());
-    }
-#endif
 };
 
 class recv_packet_streamer : public recv_packet_handler, public rx_streamer

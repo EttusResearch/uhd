@@ -165,7 +165,7 @@ add_subdirectory(rfnoc)
 set(OUTPUT      "${CMAKE_CURRENT_BINARY_DIR}/build/timestamp")
 set(SETUP_PY_IN "${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in")
 set(SETUP_PY    "${CMAKE_CURRENT_BINARY_DIR}/setup.py")
-set(CONFIG_PATH "${CMAKE_INSTALL_PREFIX}/share/uhd")
+set(CONFIG_PATH "${CMAKE_INSTALL_PREFIX}/${PKG_DATA_DIR}")
 
 # construct site-package folder from install prefix
 execute_process(COMMAND ${PYTHON_EXECUTABLE} -c

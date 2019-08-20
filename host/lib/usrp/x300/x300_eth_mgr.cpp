@@ -239,46 +239,46 @@ both_links_t eth_manager::get_links(link_type_t link_type,
 //#ifdef HAVE_DPDK
         // auto& dpdk_ctx = uhd::transport::uhd_dpdk_ctx::get();
 
-        // default_buff_args.num_recv_frames = ETH_MSG_NUM_FRAMES;
-        // default_buff_args.num_send_frames = ETH_MSG_NUM_FRAMES;
-        // if (link_type == link_type_t::CTRL) {
-        //// Increasing number of recv frames here because ctrl_iface uses it
-        //// to determine how many control packets can be in flight before it
-        //// must wait for an ACK
-        // default_buff_args.num_recv_frames =
-        // uhd::rfnoc::CMD_FIFO_SIZE / uhd::rfnoc::MAX_CMD_PKT_SIZE;
-        //} else if (xport_type == uhd::usrp::device3_impl::TX_DATA) {
-        // size_t default_frame_size = conn.link_rate == MAX_RATE_1GIGE
-        //? GE_DATA_FRAME_SEND_SIZE
-        //: XGE_DATA_FRAME_SEND_SIZE;
-        // default_buff_args.send_frame_size = args.cast<size_t>(
-        //"send_frame_size", std::min(default_frame_size, send_mtu));
-        // default_buff_args.num_send_frames =
-        // args.cast<size_t>("num_send_frames", default_buff_args.num_send_frames);
-        // default_buff_args.send_buff_size = args.cast<size_t>("send_buff_size", 0);
-        //} else if (xport_type == uhd::usrp::device3_impl::RX_DATA) {
-        // size_t default_frame_size = conn.link_rate == MAX_RATE_1GIGE
-        //? GE_DATA_FRAME_RECV_SIZE
-        //: XGE_DATA_FRAME_RECV_SIZE;
-        // default_buff_args.recv_frame_size = args.cast<size_t>(
-        //"recv_frame_size", std::min(default_frame_size, recv_mtu));
-        // default_buff_args.num_recv_frames =
-        // args.cast<size_t>("num_recv_frames", default_buff_args.num_recv_frames);
-        // default_buff_args.recv_buff_size = args.cast<size_t>("recv_buff_size", 0);
-        //}
+// default_buff_args.num_recv_frames = ETH_MSG_NUM_FRAMES;
+// default_buff_args.num_send_frames = ETH_MSG_NUM_FRAMES;
+// if (link_type == link_type_t::CTRL) {
+//// Increasing number of recv frames here because ctrl_iface uses it
+//// to determine how many control packets can be in flight before it
+//// must wait for an ACK
+// default_buff_args.num_recv_frames =
+// uhd::rfnoc::CMD_FIFO_SIZE / uhd::rfnoc::MAX_CMD_PKT_SIZE;
+//} else if (xport_type == uhd::transport::link_type_t::TX_DATA) {
+// size_t default_frame_size = conn.link_rate == MAX_RATE_1GIGE
+//? GE_DATA_FRAME_SEND_SIZE
+//: XGE_DATA_FRAME_SEND_SIZE;
+// default_buff_args.send_frame_size = args.cast<size_t>(
+//"send_frame_size", std::min(default_frame_size, send_mtu));
+// default_buff_args.num_send_frames =
+// args.cast<size_t>("num_send_frames", default_buff_args.num_send_frames);
+// default_buff_args.send_buff_size = args.cast<size_t>("send_buff_size", 0);
+//} else if (xport_type == uhd::transport::link_type_t::RX_DATA) {
+// size_t default_frame_size = conn.link_rate == MAX_RATE_1GIGE
+//? GE_DATA_FRAME_RECV_SIZE
+//: XGE_DATA_FRAME_RECV_SIZE;
+// default_buff_args.recv_frame_size = args.cast<size_t>(
+//"recv_frame_size", std::min(default_frame_size, recv_mtu));
+// default_buff_args.num_recv_frames =
+// args.cast<size_t>("num_recv_frames", default_buff_args.num_recv_frames);
+// default_buff_args.recv_buff_size = args.cast<size_t>("recv_buff_size", 0);
+//}
 
-        // int dpdk_port_id = dpdk_ctx.get_route(conn.addr);
-        // if (dpdk_port_id < 0) {
-        // throw uhd::runtime_error(
-        //"Could not find a DPDK port with route to " + conn.addr);
-        //}
-        // auto recv = transport::dpdk_zero_copy::make(dpdk_ctx,
-        //(const unsigned int)dpdk_port_id,
-        // conn.addr,
-        // BOOST_STRINGIZE(X300_VITA_UDP_PORT),
-        //"0",
-        // default_buff_args,
-        // uhd::device_addr_t());
+// int dpdk_port_id = dpdk_ctx.get_route(conn.addr);
+// if (dpdk_port_id < 0) {
+// throw uhd::runtime_error(
+//"Could not find a DPDK port with route to " + conn.addr);
+//}
+// auto recv = transport::dpdk_zero_copy::make(dpdk_ctx,
+//(const unsigned int)dpdk_port_id,
+// conn.addr,
+// BOOST_STRINGIZE(X300_VITA_UDP_PORT),
+//"0",
+// default_buff_args,
+// uhd::device_addr_t());
 
 //#else
         UHD_LOG_WARNING("X300", "Cannot create DPDK transport, falling back to UDP");

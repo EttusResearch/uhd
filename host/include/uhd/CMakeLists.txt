@@ -1,12 +1,10 @@
 #
 # Copyright 2010-2011,2013-2015 Ettus Research LLC
 # Copyright 2018 Ettus Research, a National Instruments Company
+# Copyright 2019 Ettus Research, a National Instruments Brand
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
-
-# This is a temporary include - remove once rfnoc is replaced by erfnoc
-add_subdirectory(erfnoc)
 
 add_subdirectory(rfnoc)
 add_subdirectory(transport)
@@ -34,14 +32,6 @@ UHD_INSTALL(FILES
     DESTINATION ${INCLUDE_DIR}/uhd
     COMPONENT headers
 )
-
-if(ENABLE_RFNOC)
-    UHD_INSTALL(FILES
-        device3.hpp
-        DESTINATION ${INCLUDE_DIR}/uhd
-        COMPONENT headers
-    )
-endif(ENABLE_RFNOC)
 
 if(ENABLE_C_API)
     UHD_INSTALL(FILES
