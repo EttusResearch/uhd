@@ -138,7 +138,7 @@ if(ENABLE_LIBERIO)
     include_directories(${LIBERIO_INCLUDE_DIRS})
     LIBUHD_APPEND_LIBS(${LIBERIO_LIBRARIES})
     LIBUHD_APPEND_SOURCES(
-        ${CMAKE_CURRENT_SOURCE_DIR}/liberio_zero_copy.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/liberio_link.cpp
     )
 endif(ENABLE_LIBERIO)
 
