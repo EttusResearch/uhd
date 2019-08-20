@@ -129,6 +129,7 @@ LIBUHD_APPEND_SOURCES(
 
 if(ENABLE_X300)
     LIBUHD_APPEND_SOURCES(
+        ${CMAKE_CURRENT_SOURCE_DIR}/nirio_link.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/nirio_zero_copy.cpp
     )
 endif(ENABLE_X300)
