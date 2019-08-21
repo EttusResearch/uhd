@@ -354,13 +354,13 @@ def print_statistics(rx_statistics, tx_statistics, tx_async_statistics):
         rx_statistics.get("num_rx_seqerr", 0),
         tx_async_statistics.get("num_tx_underrun", 0),
         rx_statistics.get("num_rx_late", 0),
-        rx_statistics.get("num_rx_timeouts", 0),
-        tx_async_statistics.get("num_tx_timeouts", 0))
+        tx_async_statistics.get("num_tx_timeouts", 0),
+        rx_statistics.get("num_rx_timeouts", 0))
     logger.info(statistics_msg)
 
 
 def main():
-    """RX samples and write to file"""
+    """Run the benchmarking tool"""
     args = parse_args()
     # Setup some argument parsing
     if not (args.rx_rate or args.tx_rate):
