@@ -244,6 +244,10 @@ void rfnoc_rx_streamer::_handle_rx_event_action(
         // Tell the streamer to flag an overrun to the user after the data that
         // was buffered prior to the overrun is read.
         set_stopped_due_to_overrun();
+    } else if (rx_event_action->error_code
+               == uhd::rx_metadata_t::ERROR_CODE_LATE_COMMAND) {
+        RFNOC_LOG_DEBUG("Received late command message on port " << src.instance);
+        set_stopped_due_to_late_command();
     }
 }
 

@@ -241,13 +241,16 @@ public:
 
     struct err_codes
     {
-        static const uint32_t ERR_RX_LATE_CMD =
-            1; // Late command (arrived after indicated time)
-        static const uint32_t ERR_RX_OVERRUN = 2; // FIFO overflow
-        static const uint32_t ERR_TX_UNDERRUN =
-            1; // Data underflow (data not available when needed)
-        static const uint32_t ERR_TX_LATE_DATA =
-            2; // Late data (arrived after indicated time)
+        //! Late command (stream command arrived after indicated time)
+        static const uint32_t ERR_RX_LATE_CMD = 1;
+        //! FIFO overflow
+        static const uint32_t ERR_RX_OVERRUN = 2;
+        // FIFO underrun (data not available when needed)
+        static const uint32_t ERR_TX_UNDERRUN = 1;
+        //! Late data (arrived after indicated time)
+        static const uint32_t ERR_TX_LATE_DATA = 2;
+        //! Acknowledge a TX burst with an EOB
+        static const uint32_t EVENT_TX_BURST_ACK = 3;
     };
 
     //! Tree path to the dboard-specific properties

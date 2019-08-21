@@ -872,6 +872,8 @@ bool radio_control_impl::async_message_validator(
                 return true;
             case err_codes::ERR_TX_LATE_DATA:
                 return true;
+            case err_codes::EVENT_TX_BURST_ACK:
+                return true;
             default:
                 return false;
         }
@@ -939,6 +941,14 @@ void radio_control_impl::async_message_handler(
                     RFNOC_LOG_TRACE("Posting late data event action message.");
                     break;
                 }
+                case err_codes::EVENT_TX_BURST_ACK: {
+                    auto tx_event_action = tx_event_action_info::make(
+                        uhd::async_metadata_t::EVENT_CODE_BURST_ACK);
+                    post_action(res_source_info{res_source_info::INPUT_EDGE, chan},
+                        tx_event_action);
+                    RFNOC_LOG_TRACE("Posting burst ack event action message.");
+                    break;
+                }
             }
             break;
         }
@@ -963,6 +973,12 @@ void radio_control_impl::async_message_handler(
                 }
                 case err_codes::ERR_RX_LATE_CMD:
                     UHD_LOG_FASTPATH("L");
+                    auto rx_event_action = rx_event_action_info::make();
+                    rx_event_action->error_code =
+                        uhd::rx_metadata_t::ERROR_CODE_LATE_COMMAND;
+                    RFNOC_LOG_TRACE("Posting RX late command message.");
+                    post_action(res_source_info{res_source_info::OUTPUT_EDGE, chan},
+                        rx_event_action);
                     break;
             }
             break;

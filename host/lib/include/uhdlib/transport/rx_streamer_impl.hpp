@@ -220,6 +220,12 @@ protected:
         _zero_copy_streamer.set_stopped_due_to_overrun();
     }
 
+    //! Notifies the streamer that an overrun has occured
+    void set_stopped_due_to_late_command()
+    {
+        _zero_copy_streamer.set_stopped_due_to_late_command();
+    }
+
     //! Provides a callback to handle overruns
     void set_overrun_handler(
         typename rx_streamer_zero_copy<transport_t>::overrun_handler_t handler)

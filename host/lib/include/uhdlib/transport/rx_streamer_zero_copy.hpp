@@ -93,6 +93,12 @@ public:
         _stopped_due_to_overrun = true;
     }
 
+    //! Notifies the streamer that a late command has occured
+    void set_stopped_due_to_late_command()
+    {
+        _stopped_due_to_late_cmd = true;
+    }
+
     //! Provides a callback to handle overruns
     void set_overrun_handler(overrun_handler_t handler)
     {
@@ -161,6 +167,12 @@ public:
                 // Packets were not available with zero timeout, wait for them
                 // to arrive using the specified timeout.
                 result = _get_aligned_buffs(timeout_ms);
+                if (_stopped_due_to_late_cmd) {
+                    metadata.has_time_spec   = false;
+                    metadata.error_code      = rx_metadata_t::ERROR_CODE_LATE_COMMAND;
+                    _stopped_due_to_late_cmd = false;
+                    return 0;
+                }
             }
         }
 
@@ -284,6 +296,10 @@ private:
     // Flag that indicates an overrun occurred. The streamer will return an
     // overrun error when no more packets are available.
     std::atomic<bool> _stopped_due_to_overrun{false};
+
+    // Flag that indicates a late command occurred. The streamer will return a
+    // late command error when no more packets are available.
+    std::atomic<bool> _stopped_due_to_late_cmd{false};
 
     // Callback for overrun
     overrun_handler_t _overrun_handler;
