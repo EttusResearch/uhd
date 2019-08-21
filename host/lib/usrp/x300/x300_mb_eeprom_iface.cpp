@@ -27,6 +27,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/platform.hpp>
 #include <boost/thread.hpp>
+#include <boost/make_shared.hpp>
 
 using namespace uhd;
 
