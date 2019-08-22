@@ -172,5 +172,30 @@ software:
 -   Continue through the installation wizard until the driver is
     installed.
 
+\section transport_pcie PCIe Transport (NI-RIO)
+
+The NI-RIO-based PCIe transport is only used with the X300/X310. It uses a
+separate driver stack (NI-RIO) which must be installed separately (see also
+\ref page_ni_rio_kernel).
+
+More information on how to set it up can be found here: \ref x3x0_hw_pcie.
+
+The X3x0 PCIe transport has 6 separate bidirectional DMA channels, and UHD will
+use two of those for command, control, and asynchronous messages. That means a
+total of four DMA channels can be used for streaming (either 4xRX, for TwinRX
+operations, or 2xRX + 2xTX for full-duplex operation).
+
+\subsection transport_usb_params Transport parameters
+
+The following parameters can be used to alter the transport's default
+behavior:
+
+-   `recv_frame_size:` The size of a single receive transfers in bytes
+-   `num_recv_frames:` The number of simultaneous receive transfers
+-   `recv_buff_size:` The socket buffer size. Must be a multiple of pages
+-   `send_frame_size:` The size of a single send transfers in bytes
+-   `num_send_frames:` The number of simultaneous send transfers
+-   `send_buff_size:` The socket buffer size. Must be a multiple of pages
+
 */
 // vim:ft=doxygen:
