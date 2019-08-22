@@ -208,7 +208,10 @@ public:
      *
      * Note on threading: recv() is *not* thread-safe, to avoid locking
      * overhead. The application calling recv() is responsible for making
-     * sure that not more than one thread can call recv() at the same time.
+     * sure that not more than one thread can call recv() on the same streamer
+     * at the same time. If there are multiple streamers, receiving from
+     * different sources, then those may be called from different threads
+     * simultaneously.
      *
      * \param buffs a vector of writable memory to fill with samples
      * \param nsamps_per_buff the size of each buffer in number of samples
@@ -272,6 +275,13 @@ public:
      * of samples returned have been read out of each buffer.
      * Under a timeout condition, the number of samples returned
      * may be less than the number of samples specified.
+     *
+     * Note on threading: send() is *not* thread-safe, to avoid locking
+     * overhead. The application calling send() is responsible for making
+     * sure that not more than one thread can call send() on the same streamer
+     * at the same time. If there are multiple streamers, transmitting to
+     * different destinations, then those may be called from different threads
+     * simultaneously.
      *
      * \param buffs a vector of read-only memory containing samples
      * \param nsamps_per_buff the number of samples to send, per buffer

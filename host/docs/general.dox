@@ -189,7 +189,8 @@ Underflow occurs when the host does not produce data fast enough. When
 UHD software detects the underflow, it prints a "U" to stdout, and
 pushes a message packet into the async message stream.
 
-<b>Note:</b> "O" and "U" message are generally harmless, and just mean the host machine can't keep up with the requested rates.
+<b>Note:</b> "O" and "U" message are generally harmless, and just mean the host
+machine can't keep up with the requested rates.
 
 \section general_threading Threading Notes
 
@@ -199,11 +200,16 @@ For the most part, UHD software is thread-safe. Please observe the
 following limitations:
 
 <b>Fast-path thread requirements:</b> There are three fast-path methods for
-a device: uhd::tx_streamer::send(), uhd::rx_streamer::recv(), and uhd::tx_streamer::recv_async_msg().
-All three methods are thread-safe and can be called from different thread
-contexts. For performance, the user should call each method from a
-separate thread context. These methods can also be used in a
-non-blocking fashion by using a timeout of zero.
+a device: uhd::tx_streamer::send(), uhd::rx_streamer::recv(), and
+uhd::tx_streamer::recv_async_msg().
+It is safe to call all three methods from different threads, and that may even
+be advantageous from a performance perspective in the user application.
+It is not safe, however, to call `recv()` or `send()` on the same streamer from
+different threads (for example, it is not allowed to have a multi-producer
+software architecture, and share access to the `send()` call without serializing
+its access).
+These methods can also be used in a non-blocking fashion by using a timeout of
+zero.
 
 <b>Slow-path thread requirements:</b> It is safe to change multiple
 settings simultaneously. However, this could leave the settings for a
