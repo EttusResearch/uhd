@@ -45,6 +45,25 @@ std::vector<std::string> node_t::get_property_ids() const
     return return_value;
 }
 
+void node_t::set_properties(const uhd::device_addr_t& props, const size_t instance)
+{
+    for (const auto& key : props.keys()) {
+        property_base_t* prop_ref =
+            _find_property({res_source_info::USER, instance}, key);
+        if (!prop_ref) {
+            RFNOC_LOG_WARNING("set_properties() cannot set property `"
+                              << key << "': No such property.");
+            continue;
+        }
+        auto prop_access = _request_property_access(prop_ref, property_base_t::RW);
+        prop_ref->set_from_str(props.get(key));
+    }
+
+    // Now trigger a property resolution. If other properties depend on modified
+    // properties, they will be updated.
+    resolve_all();
+}
+
 void node_t::set_command_time(uhd::time_spec_t time, const size_t instance)
 {
     if (_cmd_timespecs.size() <= instance) {

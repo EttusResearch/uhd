@@ -250,6 +250,11 @@ BOOST_AUTO_TEST_CASE(test_ddc_block)
         "mtu", NEW_MTU / 2, {res_source_info::OUTPUT_EDGE, 0});
     BOOST_CHECK_EQUAL(test_ddc->get_mtu({res_source_info::INPUT_EDGE, 0}), NEW_MTU / 2);
     BOOST_CHECK_EQUAL(test_ddc->get_mtu({res_source_info::OUTPUT_EDGE, 0}), NEW_MTU / 2);
+
+    // Now reset the props using set_properties
+    test_ddc->set_properties(uhd::device_addr_t("decim=1,freq=0.0,foo=bar"), 0);
+    BOOST_CHECK_EQUAL(test_ddc->get_property<int>("decim", 0), 1);
+    BOOST_CHECK_EQUAL(test_ddc->get_property<double>("freq", 0), 0.0);
 }
 
 BOOST_AUTO_TEST_CASE(test_duc_block)

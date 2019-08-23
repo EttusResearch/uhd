@@ -10,9 +10,10 @@
 #include <uhd/rfnoc/actions.hpp>
 #include <uhd/rfnoc/dirtifier.hpp>
 #include <uhd/rfnoc/property.hpp>
+#include <uhd/types/device_addr.hpp>
+#include <uhd/types/time_spec.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/scope_exit.hpp>
-#include <uhd/types/time_spec.hpp>
 #include <unordered_map>
 #include <unordered_set>
 #include <boost/graph/adjacency_list.hpp>
@@ -122,6 +123,19 @@ public:
     template <typename prop_data_t>
     void set_property(
         const std::string& id, const prop_data_t& val, const size_t instance = 0);
+
+    /*! Set multiple properties coming from a dictionary
+     *
+     * This is equivalent to calling set_property() individually for every
+     * key/value pair of props. However, the type of the property will be
+     * automatically derived using RTTI. Only certain types are supported.
+     *
+     * Property resolution happens after all properties have been updated.
+     *
+     * If a key in \p props is not a valid property of this block, a warning is
+     * logged, but no error is raised.
+     */
+    void set_properties(const uhd::device_addr_t& props, const size_t instance = 0);
 
     /*! Get the value of a specific block argument. \p The type of an argument
      *  must be known at compile time.
