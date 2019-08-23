@@ -150,3 +150,30 @@ BOOST_AUTO_TEST_CASE(test_dirtifier)
     BOOST_CHECK(!prop_accessor.are_compatible(&prop_i, &dirtifier));
     BOOST_CHECK(!prop_accessor.are_compatible(&dirtifier, &prop_i));
 }
+
+BOOST_AUTO_TEST_CASE(test_from_str)
+{
+    prop_accessor_t prop_accessor{};
+    property_t<double> prop_d{"double_prop", 0.0, {res_source_info::USER}};
+    property_t<int> prop_i{"int_prop", 0, {res_source_info::USER}};
+    property_t<std::string> prop_s{"str_prop", "0", {res_source_info::USER}};
+    prop_accessor.set_access(prop_d, property_base_t::RW);
+    prop_accessor.set_access(prop_i, property_base_t::RW);
+    prop_accessor.set_access(prop_s, property_base_t::RW);
+
+    property_base_t* prop_base_ptr_d = static_cast<property_base_t*>(&prop_d);
+    property_base_t* prop_base_ptr_i = static_cast<property_base_t*>(&prop_i);
+    property_base_t* prop_base_ptr_s = static_cast<property_base_t*>(&prop_s);
+
+    prop_base_ptr_d->set_from_str(".25");
+    BOOST_CHECK_EQUAL(prop_d.get(), 0.25);
+
+    prop_base_ptr_i->set_from_str("23");
+    BOOST_CHECK_EQUAL(prop_i.get(), 23);
+
+    prop_base_ptr_s->set_from_str("foo");
+    BOOST_CHECK_EQUAL(prop_s.get(), "foo");
+
+    BOOST_REQUIRE_THROW(prop_base_ptr_d->set_from_str("banana"), uhd::runtime_error);
+    BOOST_REQUIRE_THROW(prop_base_ptr_i->set_from_str("potato"), uhd::runtime_error);
+}

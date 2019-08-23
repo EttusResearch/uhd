@@ -9,6 +9,7 @@
 
 #include <uhd/exception.hpp>
 #include <uhd/rfnoc/res_source_info.hpp>
+#include <uhd/utils/cast.hpp>
 #include <uhd/utils/dirty_tracked.hpp>
 #include <memory>
 #include <string>
@@ -98,6 +99,16 @@ public:
 
     virtual void force_dirty() = 0;
 
+    /*! Set this property's value using a string
+     *
+     * This requires the underlying property type to be convertible from a
+     * string.
+     *
+     * \throws uhd::runtime_error if the underlying type has no conversion from
+     *         a string
+     */
+    virtual void set_from_str(const std::string& new_val_str) = 0;
+
 private:
     friend class prop_accessor_t;
 
@@ -173,6 +184,16 @@ public:
     {
         return std::unique_ptr<property_base_t>(
             new property_t<data_t>(get_id(), get(), new_src_info));
+    }
+
+    void set_from_str(const std::string& new_val_str)
+    {
+        try {
+            set(uhd::cast::from_str<data_t>(new_val_str));
+        } catch (uhd::runtime_error& ex) {
+            throw uhd::runtime_error(
+                std::string("Property ") + get_id() + ":" + ex.what());
+        }
     }
 
     //! Returns the source info for the property

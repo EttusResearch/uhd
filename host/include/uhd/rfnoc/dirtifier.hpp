@@ -46,6 +46,11 @@ public:
     //! Always dirty, so this can be called as often as we like
     void force_dirty() {}
 
+    void set_from_str(const std::string&)
+    {
+        throw uhd::runtime_error("Dirtifier property can never be set!");
+    }
+
 private:
     //! This property cannot be marked clean, but nothing happens if you try
     void mark_clean() {}
