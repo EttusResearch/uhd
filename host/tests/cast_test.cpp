@@ -20,3 +20,11 @@ BOOST_AUTO_TEST_CASE(test_mac_addr)
               << "?" << std::endl;
     BOOST_CHECK_EQUAL(x, correct_result);
 }
+
+BOOST_AUTO_TEST_CASE(test_from_str)
+{
+    using namespace uhd::cast;
+    BOOST_CHECK_EQUAL(5.0, from_str<double>("5.0"));
+    BOOST_CHECK_EQUAL(23, from_str<int>("23"));
+    BOOST_CHECK_EQUAL("foo", from_str<std::string>("foo"));
+}

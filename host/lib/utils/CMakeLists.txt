@@ -219,6 +219,7 @@ set_source_files_properties(
 # Append sources
 ########################################################################
 LIBUHD_APPEND_SOURCES(
+    ${CMAKE_CURRENT_SOURCE_DIR}/cast.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/csv.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/config_parser.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/compat_check.cpp
