@@ -14,8 +14,8 @@ namespace mpm { namespace spi {
 mpm::types::regs_iface::sptr make_spi_regs_iface(mpm::spi::spi_iface::sptr spi_iface,
     uint32_t addr_shift,
     uint32_t data_shift,
-    uint32_t read_flags,
-    uint32_t write_flags = 0);
+    uint64_t read_flags,
+    uint64_t write_flags = 0);
 
 /*! Convenience factory for regs_iface based on SPI based on spidev
  */
@@ -24,7 +24,7 @@ mpm::types::regs_iface::sptr make_spidev_regs_iface(const std::string& device,
     const int spi_mode,
     uint32_t addr_shift,
     uint32_t data_shift,
-    uint32_t read_flags,
-    uint32_t write_flags = 0);
+    uint64_t read_flags,
+    uint64_t write_flags = 0);
 
 }}; /* namespace mpm::spi */

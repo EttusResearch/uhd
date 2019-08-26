@@ -93,6 +93,18 @@ public:
         }
     }
 
+    uint32_t peek32(const uint64_t addr)
+    {
+        throw mpm::not_implemented_error(
+            "I2C regs iface does not implement 32 bit transactions.");
+    }
+
+    void poke32(const uint64_t addr, const uint32_t data)
+    {
+        throw mpm::not_implemented_error(
+            "I2C regs iface does not implement 32 bit transactions.");
+    }
+
 private:
     mpm::i2c::i2c_iface::sptr _i2c_iface;
 

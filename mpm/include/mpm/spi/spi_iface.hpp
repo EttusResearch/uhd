@@ -36,6 +36,14 @@ public:
      */
     virtual uint32_t transfer24_16(const uint32_t data) = 0;
 
+    /*! Convenience function: SPI xfer is 64 bits write, 40 bits read.
+     *
+     * \param data The write data for this xfer
+     *
+     * \return 40 bits worth of the return xfer
+     */
+    virtual uint64_t transfer64_40(const uint64_t data) = 0;
+
     /*!
      * \param device The path to the spidev used (e.g. "/dev/spidev0.0")
      * \param speed_hz Transaction speed in Hz

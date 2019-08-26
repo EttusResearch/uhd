@@ -33,6 +33,14 @@ public:
     /*! Write a 16-bit value to a given address
      */
     virtual void poke16(const uint32_t addr, const uint16_t data) = 0;
+
+    /*! Return a 32-bit value from a given address
+     */
+    virtual uint32_t peek32(const uint64_t addr) = 0;
+
+    /*! Write a 32-bit value to a given address
+     */
+    virtual void poke32(const uint64_t addr, const uint32_t data) = 0;
 };
 
 }}; // namespace mpm::types

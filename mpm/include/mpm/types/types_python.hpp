@@ -25,7 +25,9 @@ void export_types(py::module& top_module)
         .def("peek8", &regs_iface::peek8)
         .def("poke8", &regs_iface::poke8)
         .def("peek16", &regs_iface::peek16)
-        .def("poke16", &regs_iface::poke16);
+        .def("poke16", &regs_iface::poke16)
+        .def("peek32", &regs_iface::peek32)
+        .def("poke32", &regs_iface::poke32);
 
     py::class_<log_buf, std::shared_ptr<log_buf>>(m, "log_buf")
         .def_static("make_singleton", &log_buf::make_singleton)

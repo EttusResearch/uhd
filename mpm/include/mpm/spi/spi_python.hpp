@@ -18,5 +18,6 @@ void export_spi(py::module& top_module)
     m.def("make_spidev", &mpm::spi::spi_iface::make_spidev);
 
     py::class_<mpm::spi::spi_iface, std::shared_ptr<mpm::spi::spi_iface>>(m, "spi_iface")
-        .def("transfer24_8", &mpm::spi::spi_iface::transfer24_8);
+        .def("transfer24_8", &mpm::spi::spi_iface::transfer24_8)
+        .def("transfer64_40", &mpm::spi::spi_iface::transfer64_40);
 }
