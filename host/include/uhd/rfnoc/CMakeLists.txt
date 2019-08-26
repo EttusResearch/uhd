@@ -34,6 +34,7 @@ UHD_INSTALL(FILES
     ddc_block_control.hpp
     duc_block_control.hpp
     dmafifo_block_control.hpp
+    fft_block_control.hpp
     null_block_control.hpp
     radio_control.hpp
 
