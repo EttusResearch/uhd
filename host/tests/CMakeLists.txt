@@ -107,7 +107,6 @@ foreach(benchmark_source ${benchmark_sources})
     UHD_INSTALL(TARGETS ${benchmark_name} RUNTIME DESTINATION ${PKG_LIB_DIR}/tests COMPONENT tests)
 endforeach(benchmark_source)
 
-
 ###############################################################################
 # Add a unit test that requires linkage to internal parts of UHD which are not
 # API
@@ -165,14 +164,35 @@ UHD_ADD_NONAPI_TEST(
 )
 
 UHD_ADD_NONAPI_TEST(
-    TARGET "nocscript_ftable_test.cpp"
+    TARGET "streamer_benchmark.cpp"
     EXTRA_SOURCES
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/function_table.cpp
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/expression.cpp
-    INCLUDE_DIRS
-    ${CMAKE_BINARY_DIR}/lib/rfnoc/nocscript/
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/chdr_packet.cpp
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/chdr_types.cpp
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/chdr_ctrl_xport.cpp
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/chdr_rx_data_xport.cpp
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/chdr_tx_data_xport.cpp
+    ${CMAKE_SOURCE_DIR}/lib/transport/inline_io_service.cpp
+    NOAUTORUN # Don't register for auto-run
 )
+
+#UHD_ADD_NONAPI_TEST(
+    #TARGET "nocscript_expr_test.cpp"
+    #EXTRA_SOURCES
+    #"${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/expression.cpp"
+    #INCLUDE_DIRS
+    #${CMAKE_BINARY_DIR}/lib/rfnoc/nocscript/
+    #${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/
+#)
+
+#UHD_ADD_NONAPI_TEST(
+    #TARGET "nocscript_ftable_test.cpp"
+    #EXTRA_SOURCES
+    #${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/function_table.cpp
+    #${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/expression.cpp
+    #INCLUDE_DIRS
+    #${CMAKE_BINARY_DIR}/lib/rfnoc/nocscript/
+    #${CMAKE_SOURCE_DIR}/lib/rfnoc/nocscript/
+#)
 
 UHD_ADD_NONAPI_TEST(
     TARGET "nocscript_parser_test.cpp"
