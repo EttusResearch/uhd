@@ -7,6 +7,7 @@
 #ifndef INCLUDED_RFNOC_CHDR_CTRL_XPORT_HPP
 #define INCLUDED_RFNOC_CHDR_CTRL_XPORT_HPP
 
+#include <uhdlib/rfnoc/chdr_packet.hpp>
 #include <uhdlib/rfnoc/chdr_types.hpp>
 #include <uhdlib/transport/io_service.hpp>
 #include <mutex>
@@ -41,12 +42,18 @@ public:
     static sptr make(io_service::sptr io_srv,
         send_link_if::sptr send_link,
         recv_link_if::sptr recv_link,
+        const chdr::chdr_packet_factory& pkt_factory,
         sep_id_t my_epid,
         size_t num_send_frames,
         size_t num_recv_frames)
     {
-        return std::make_shared<chdr_ctrl_xport>(
-            io_srv, send_link, recv_link, my_epid, num_send_frames, num_recv_frames);
+        return std::make_shared<chdr_ctrl_xport>(io_srv,
+            send_link,
+            recv_link,
+            pkt_factory,
+            my_epid,
+            num_send_frames,
+            num_recv_frames);
     }
 
     /*!
@@ -62,6 +69,7 @@ public:
     chdr_ctrl_xport(io_service::sptr io_srv,
         send_link_if::sptr send_link,
         recv_link_if::sptr recv_link,
+        const chdr::chdr_packet_factory& pkt_factory,
         sep_id_t my_epid,
         size_t num_send_frames,
         size_t num_recv_frames);
@@ -122,9 +130,14 @@ private:
     chdr_ctrl_xport(const chdr_ctrl_xport&) = delete;
 
     sep_id_t _my_epid;
+
+    // Packet for received data
+    chdr::chdr_packet::uptr _recv_packet;
+
     send_io_if::sptr _send_if;
     recv_io_if::sptr _ctrl_recv_if;
     recv_io_if::sptr _mgmt_recv_if;
+
 
     // FIXME: Remove this when have threaded_io_service
     std::mutex _mutex;

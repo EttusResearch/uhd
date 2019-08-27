@@ -23,6 +23,8 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/chdr_types.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/chdr_packet.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/chdr_ctrl_xport.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/chdr_rx_data_xport.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/chdr_tx_data_xport.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/client_zero.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ctrl_iface.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/device_id.cpp

@@ -17,12 +17,10 @@ class rx_flow_ctrl_state
 {
 public:
     //! Constructor
-    rx_flow_ctrl_state(const rfnoc::sep_id_pair_t epids) : _epids(epids) {}
-
-    //! Initialize frequency parameters
-    void initialize(const stream_buff_params_t fc_freq)
+    rx_flow_ctrl_state(
+        const rfnoc::sep_id_pair_t epids, const stream_buff_params_t fc_freq)
+        : _fc_freq(fc_freq), _epids(epids)
     {
-        _fc_freq = fc_freq;
     }
 
     //! Resynchronize with transfer counts from the sender
@@ -48,15 +46,6 @@ public:
 
             _recv_counts = counts;
         }
-    }
-
-    //! Reset the transfer counts (happens during init)
-    void reset_counts()
-    {
-        UHD_LOGGER_TRACE("rx_flow_ctrl_state")
-            << "Resetting transfer counts" << std::endl;
-        _recv_counts = {0, 0};
-        _xfer_counts = {0, 0};
     }
 
     //! Update state when data is received

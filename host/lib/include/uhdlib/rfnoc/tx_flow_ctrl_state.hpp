@@ -15,11 +15,8 @@ namespace uhd { namespace rfnoc {
 class tx_flow_ctrl_state
 {
 public:
-    //! Updates destination capacity
-    void set_dest_capacity(const stream_buff_params_t& capacity)
-    {
-        _dest_capacity = capacity;
-    }
+    //! Constructor
+    tx_flow_ctrl_state(const stream_buff_params_t& capacity) : _dest_capacity(capacity) {}
 
     //! Updates destination received count
     void update_dest_recv_count(const stream_buff_params_t& recv_count)
@@ -67,7 +64,7 @@ public:
     //! Clears fc resync request pending status
     void clear_fc_resync_req_pending()
     {
-        _fc_resync_req = false;
+        _fc_resync_req        = false;
         _last_fc_resync_bytes = _xfer_counts.bytes;
     }
 

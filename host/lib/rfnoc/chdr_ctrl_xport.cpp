@@ -16,10 +16,11 @@ using namespace uhd::transport;
 chdr_ctrl_xport::chdr_ctrl_xport(io_service::sptr io_srv,
     send_link_if::sptr send_link,
     recv_link_if::sptr recv_link,
+    const chdr::chdr_packet_factory& pkt_factory,
     sep_id_t my_epid,
     size_t num_send_frames,
     size_t num_recv_frames)
-    : _my_epid(my_epid)
+    : _my_epid(my_epid), _recv_packet(pkt_factory.make_generic())
 {
     /* Make dumb send pipe */
     send_io_if::send_callback_t send_cb = [this](frame_buff::uptr& buff,
@@ -34,10 +35,10 @@ chdr_ctrl_xport::chdr_ctrl_xport(io_service::sptr io_srv,
                                                        recv_link_if* /*recv_link*/,
                                                        send_link_if
                                                            * /*send_link*/) -> bool {
-        uint64_t* data = (uint64_t*)buff->data();
-        auto hdr       = chdr_header(uhd::ntohx<uint64_t>(*data));
-        auto pkt_type  = hdr.get_pkt_type();
-        auto dst_epid  = hdr.get_dst_epid();
+        _recv_packet->refresh(buff->data());
+        auto hdr      = _recv_packet->get_chdr_header();
+        auto pkt_type = hdr.get_pkt_type();
+        auto dst_epid = hdr.get_dst_epid();
 
         /* Check type and destination EPID */
         if ((pkt_type == PKT_TYPE_CTRL) && (dst_epid == _my_epid)) {
@@ -59,10 +60,10 @@ chdr_ctrl_xport::chdr_ctrl_xport(io_service::sptr io_srv,
                                                        recv_link_if* /*recv_link*/,
                                                        send_link_if
                                                            * /*send_link*/) -> bool {
-        uint64_t* data = (uint64_t*)buff->data();
-        auto hdr       = chdr_header(uhd::ntohx<uint64_t>(*data));
-        auto pkt_type  = hdr.get_pkt_type();
-        auto dst_epid  = hdr.get_dst_epid();
+        _recv_packet->refresh(buff->data());
+        auto hdr      = _recv_packet->get_chdr_header();
+        auto pkt_type = hdr.get_pkt_type();
+        auto dst_epid = hdr.get_dst_epid();
 
         /* Check type and destination EPID */
         if ((pkt_type == PKT_TYPE_MGMT) && (dst_epid == _my_epid)) {

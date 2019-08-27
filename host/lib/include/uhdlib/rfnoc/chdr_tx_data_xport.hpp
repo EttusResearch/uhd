@@ -7,10 +7,11 @@
 #ifndef INCLUDED_LIBUHD_CHDR_TX_DATA_XPORT_HPP
 #define INCLUDED_LIBUHD_CHDR_TX_DATA_XPORT_HPP
 
+#include <uhd/exception.hpp>
 #include <uhd/types/metadata.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/chdr_packet.hpp>
 #include <uhdlib/rfnoc/chdr_types.hpp>
-#include <uhdlib/rfnoc/mgmt_portal.hpp>
 #include <uhdlib/rfnoc/rfnoc_common.hpp>
 #include <uhdlib/rfnoc/tx_flow_ctrl_state.hpp>
 #include <uhdlib/transport/io_service.hpp>
@@ -18,6 +19,10 @@
 #include <memory>
 
 namespace uhd { namespace rfnoc {
+
+namespace mgmt {
+class mgmt_portal;
+}
 
 namespace detail {
 
@@ -29,13 +34,7 @@ class tx_flow_ctrl_sender
 public:
     //! Constructor
     tx_flow_ctrl_sender(
-        const chdr::chdr_packet_factory& pkt_factory, const sep_id_pair_t sep_ids)
-        : _dst_epid(sep_ids.second)
-    {
-        _fc_packet             = pkt_factory.make_strc();
-        _fc_strc_pyld.src_epid = sep_ids.first;
-        _fc_strc_pyld.op_code  = chdr::STRC_RESYNC;
-    }
+        const chdr::chdr_packet_factory& pkt_factory, const sep_id_pair_t sep_ids);
 
     /*!
      * Sends a flow control resync packet
@@ -104,9 +103,10 @@ private:
 class chdr_tx_data_xport
 {
 public:
-    using uptr                   = std::unique_ptr<chdr_tx_data_xport>;
-    using buff_t                 = transport::frame_buff;
-    using enqueue_async_msg_fn_t = std::function<void(async_metadata_t::event_code_t, bool, uint64_t)>;
+    using uptr   = std::unique_ptr<chdr_tx_data_xport>;
+    using buff_t = transport::frame_buff;
+    using enqueue_async_msg_fn_t =
+        std::function<void(async_metadata_t::event_code_t, bool, uint64_t)>;
 
     //! Information about data packet
     struct packet_info_t
@@ -117,6 +117,37 @@ public:
         size_t payload_bytes = 0;
     };
 
+    //! Flow control parameters
+    struct fc_params_t
+    {
+        stream_buff_params_t buff_capacity;
+    };
+
+    /*! Configure route to the sep and flow control
+     *
+     * \param io_srv The I/O service to be used with the transport
+     * \param recv_link The recv link, already attached to the I/O service
+     * \param send_link The send link, already attached to the I/O service
+     * \param pkt_factory Factory to create packets with the desired chdr_w and endianness
+     * \param mgmt_portal Management portal to configure stream endpoint
+     * \param epids Source and destination endpoint IDs
+     * \param pyld_buff_fmt Datatype of SW buffer that holds the data payload
+     * \param mdata_buff_fmt Datatype of SW buffer that holds the data metadata
+     * \param fc_freq_ratio Ratio to use to configure the device fc frequency
+     * \param fc_headroom_ratio Ratio to use to configure the device fc headroom
+     * \return Parameters for xport flow control
+     */
+    static fc_params_t configure_sep(uhd::transport::io_service::sptr io_srv,
+        uhd::transport::recv_link_if::sptr recv_link,
+        uhd::transport::send_link_if::sptr send_link,
+        const chdr::chdr_packet_factory& pkt_factory,
+        uhd::rfnoc::mgmt::mgmt_portal& mgmt_portal,
+        const uhd::rfnoc::sep_id_pair_t& epids,
+        const uhd::rfnoc::sw_buff_t pyld_buff_fmt,
+        const uhd::rfnoc::sw_buff_t mdata_buff_fmt,
+        const double fc_freq_ratio,
+        const double fc_headroom_ratio);
+
     /*! Constructor
      *
      * \param io_srv The service that will schedule the xport I/O
@@ -124,77 +155,16 @@ public:
      * \param send_link The send link, already attached to the I/O service
      * \param pkt_factory Factory to create packets with the desired chdr_w and endianness
      * \param epids Source and destination endpoint IDs
-     * \param pyld_buff_fmt Datatype of SW buffer that holds the data payload
-     * \param mdata_buff_fmt Datatype of SW buffer that holds the data metadata
      * \param num_send_frames Num frames to reserve from the send link
-     * \param fc_freq_ratio Ratio to use to configure the device fc frequency
-     * \param fc_headroom_ratio Ratio to use to configure the device fc headroom
+     * \param fc_params Parameters for flow control
      */
     chdr_tx_data_xport(uhd::transport::io_service::sptr io_srv,
         uhd::transport::recv_link_if::sptr recv_link,
         uhd::transport::send_link_if::sptr send_link,
-        uhd::rfnoc::mgmt::mgmt_portal& mgmt_portal,
         const chdr::chdr_packet_factory& pkt_factory,
         const uhd::rfnoc::sep_id_pair_t& epids,
-        const uhd::rfnoc::sw_buff_t pyld_buff_fmt,
-        const uhd::rfnoc::sw_buff_t mdata_buff_fmt,
         const size_t num_send_frames,
-        const double fc_freq_ratio,
-        const double fc_headroom_ratio)
-        : _fc_sender(pkt_factory, epids), _epid(epids.first)
-    {
-        const sep_id_t remote_epid       = epids.second;
-        const sep_id_t local_epid        = epids.first;
-
-        UHD_LOG_TRACE("XPORT::TX_DATA_XPORT",
-            "Creating tx xport with local epid=" << local_epid
-                                                 << ", remote epid=" << remote_epid);
-
-        _send_header.set_dst_epid(epids.second);
-        _send_packet = pkt_factory.make_generic();
-        _recv_packet = pkt_factory.make_generic();
-
-        // Calculate max payload size
-        const size_t pyld_offset =
-            _send_packet->calculate_payload_offset(chdr::PKT_TYPE_DATA_WITH_TS);
-        _max_payload_size = send_link->get_send_frame_size() - pyld_offset;
-
-        _configure_sep(io_srv,
-            recv_link,
-            send_link,
-            mgmt_portal,
-            local_epid,
-            remote_epid,
-            pyld_buff_fmt,
-            mdata_buff_fmt);
-
-        _initialize_flow_ctrl(io_srv,
-            recv_link,
-            send_link,
-            pkt_factory,
-            epids,
-            fc_freq_ratio,
-            fc_headroom_ratio);
-
-        // Now create the send I/O we will use for data
-        auto send_cb = [this](buff_t::uptr& buff, transport::send_link_if* send_link) {
-            this->_send_callback(buff, send_link);
-        };
-
-        auto recv_cb = [this](buff_t::uptr& buff,
-                           transport::recv_link_if* recv_link,
-                           transport::send_link_if* send_link) {
-            return this->_recv_callback(buff, recv_link, send_link);
-        };
-
-        // Needs just a single recv frame for strs packets
-        _send_io = io_srv->make_send_client(send_link,
-            num_send_frames,
-            send_cb,
-            recv_link,
-            /* num_recv_frames */ 1,
-            recv_cb);
-    }
+        const fc_params_t fc_params);
 
     /*! Returns maximum number of payload bytes
      *
@@ -300,23 +270,27 @@ private:
 
             if (strs.status != chdr::STRS_OKAY) {
                 switch (strs.status) {
-                case chdr::STRS_SEQERR:
-                    UHD_LOG_FASTPATH("S");
-                    if (_enqueue_async_msg) {
-                        _enqueue_async_msg(async_metadata_t::EVENT_CODE_SEQ_ERROR, false, 0);
-                    }
-                    break;
-                case chdr::STRS_DATAERR:
-                    UHD_LOG_WARNING("XPORT::TX_DATA_XPORT", "Received data error in tx stream!");
-                    break;
-                case chdr::STRS_RTERR:
-                    UHD_LOG_WARNING("XPORT::TX_DATA_XPORT", "Received routing error in tx stream!");
-                    break;
-                case chdr::STRS_CMDERR:
-                    UHD_LOG_WARNING("XPORT::TX_DATA_XPORT", "Received command error in tx stream!");
-                    break;
-                default:
-                    break;
+                    case chdr::STRS_SEQERR:
+                        UHD_LOG_FASTPATH("S");
+                        if (_enqueue_async_msg) {
+                            _enqueue_async_msg(
+                                async_metadata_t::EVENT_CODE_SEQ_ERROR, false, 0);
+                        }
+                        break;
+                    case chdr::STRS_DATAERR:
+                        UHD_LOG_WARNING(
+                            "XPORT::TX_DATA_XPORT", "Received data error in tx stream!");
+                        break;
+                    case chdr::STRS_RTERR:
+                        UHD_LOG_WARNING("XPORT::TX_DATA_XPORT",
+                            "Received routing error in tx stream!");
+                        break;
+                    case chdr::STRS_CMDERR:
+                        UHD_LOG_WARNING("XPORT::TX_DATA_XPORT",
+                            "Received command error in tx stream!");
+                        break;
+                    default:
+                        break;
                 }
             }
 
@@ -357,177 +331,6 @@ private:
                 _fc_state.data_sent(strc_size);
             }
         }
-    }
-
-    /*!
-     * Configures the stream endpoint using mgmt_portal
-     */
-    void _configure_sep(uhd::transport::io_service::sptr io_srv,
-        uhd::transport::recv_link_if::sptr recv_link,
-        uhd::transport::send_link_if::sptr send_link,
-        uhd::rfnoc::mgmt::mgmt_portal& mgmt_portal,
-        const uhd::rfnoc::sep_id_t& local_epid,
-        const uhd::rfnoc::sep_id_t& remote_epid,
-        const uhd::rfnoc::sw_buff_t pyld_buff_fmt,
-        const uhd::rfnoc::sw_buff_t mdata_buff_fmt)
-    {
-        // Create a control transport with the tx data links to send mgmt packets
-        // needed to setup the stream. Only need one frame for this.
-        auto ctrl_xport = uhd::rfnoc::chdr_ctrl_xport::make(io_srv,
-            send_link,
-            recv_link,
-            local_epid,
-            1, // num_send_frames
-            1); // num_recv_frames
-
-        // Setup a route to the EPID
-        mgmt_portal.setup_local_route(*ctrl_xport, remote_epid);
-
-        mgmt_portal.config_local_tx_stream(
-            *ctrl_xport, remote_epid, pyld_buff_fmt, mdata_buff_fmt);
-
-        // We no longer need the control xport, release it so
-        // the control xport is no longer connected to the I/O service.
-        ctrl_xport.reset();
-    }
-
-    /*!
-     * Initializes flow control
-     *
-     * To initialize flow control, we need to send an init strc packet, then
-     * receive a strs containing the stream endpoint ingress buffer size. We
-     * then repeat this (now that we know the buffer size) to configure the flow
-     * control frequency. To avoid having this logic within the data packet
-     * processing flow, we use temporary send and recv I/O instances with
-     * simple callbacks here.
-     */
-    void _initialize_flow_ctrl(uhd::transport::io_service::sptr io_srv,
-        uhd::transport::recv_link_if::sptr recv_link,
-        uhd::transport::send_link_if::sptr send_link,
-        const chdr::chdr_packet_factory& pkt_factory,
-        const sep_id_pair_t sep_ids,
-        const double fc_freq_ratio,
-        const double fc_headroom_ratio)
-    {
-        // No flow control at initialization, just release all send buffs
-        auto send_cb = [this](buff_t::uptr& buff, transport::send_link_if* send_link) {
-            send_link->release_send_buff(std::move(buff));
-            buff = nullptr;
-        };
-
-        // For recv, just queue strs packets for recv_io to read
-        auto recv_cb = [this](buff_t::uptr& buff,
-                           transport::recv_link_if* /*recv_link*/,
-                           transport::send_link_if* /*send_link*/) {
-            _recv_packet->refresh(buff->data());
-            const auto header   = _recv_packet->get_chdr_header();
-            const auto type     = header.get_pkt_type();
-            const auto dst_epid = header.get_dst_epid();
-
-            return (dst_epid == _epid && type == chdr::PKT_TYPE_STRS);
-        };
-
-        // No flow control at initialization, just release all recv buffs
-        auto fc_cb = [this](buff_t::uptr buff,
-                         transport::recv_link_if* recv_link,
-                         transport::send_link_if* /*send_link*/) {
-            recv_link->release_recv_buff(std::move(buff));
-        };
-
-        auto send_io = io_srv->make_send_client(send_link,
-            1, // num_send_frames
-            send_cb,
-            nullptr,
-            0, // num_recv_frames
-            nullptr);
-
-        auto recv_io = io_srv->make_recv_client(recv_link,
-            1, // num_recv_frames
-            recv_cb,
-            nullptr,
-            0, // num_send_frames
-            fc_cb);
-
-        chdr::chdr_strc_packet::uptr strc_packet = pkt_factory.make_strc();
-        chdr::chdr_packet::uptr& recv_packet     = _recv_packet;
-
-        // Function to send a strc init
-        auto send_strc_init = [&send_io, sep_ids, &strc_packet](
-                                  const stream_buff_params_t fc_freq = {0, 0}) {
-            transport::frame_buff::uptr buff = send_io->get_send_buff(0);
-
-            if (!buff) {
-                throw uhd::runtime_error(
-                    "tx xport timed out getting a send buffer for strc init");
-            }
-
-            chdr::chdr_header header;
-            header.set_seq_num(0);
-            header.set_dst_epid(sep_ids.second);
-
-            chdr::strc_payload strc_pyld;
-            strc_pyld.src_epid  = sep_ids.first;
-            strc_pyld.op_code   = chdr::STRC_INIT;
-            strc_pyld.num_bytes = fc_freq.bytes;
-            strc_pyld.num_pkts  = fc_freq.packets;
-            strc_packet->refresh(buff->data(), header, strc_pyld);
-
-            const size_t size = header.get_length();
-            buff->set_packet_size(size);
-            send_io->release_send_buff(std::move(buff));
-        };
-
-        // Function to receive a strs, returns buffer capacity
-        auto recv_strs = [&recv_io, &recv_packet]() -> stream_buff_params_t {
-            transport::frame_buff::uptr buff = recv_io->get_recv_buff(200);
-
-            if (!buff) {
-                throw uhd::runtime_error(
-                    "tx xport timed out wating for a strs packet during initialization");
-            }
-
-            recv_packet->refresh(buff->data());
-            UHD_ASSERT_THROW(
-                recv_packet->get_chdr_header().get_pkt_type() == chdr::PKT_TYPE_STRS);
-            chdr::strs_payload strs;
-            strs.deserialize(recv_packet->get_payload_const_ptr_as<uint64_t>(),
-                recv_packet->get_payload_size() / sizeof(uint64_t),
-                recv_packet->conv_to_host<uint64_t>());
-
-            recv_io->release_recv_buff(std::move(buff));
-
-            return {strs.capacity_bytes, static_cast<uint32_t>(strs.capacity_pkts)};
-        };
-
-        // Send a strc init to get the buffer size
-        send_strc_init();
-        stream_buff_params_t capacity = recv_strs();
-        _fc_state.set_dest_capacity(capacity);
-
-        UHD_LOG_TRACE("XPORT::TX_DATA_XPORT",
-            "Received strs initializing buffer capacity to " << capacity.bytes
-                                                             << " bytes");
-
-        // Calculate the requested fc_freq parameters
-        uhd::rfnoc::stream_buff_params_t fc_freq = {
-            static_cast<uint64_t>(std::ceil(double(capacity.bytes) * fc_freq_ratio)),
-            static_cast<uint32_t>(std::ceil(double(capacity.packets) * fc_freq_ratio))};
-
-        const size_t headroom_bytes =
-            static_cast<uint64_t>(std::ceil(double(capacity.bytes) * fc_headroom_ratio));
-        const size_t headroom_packets = static_cast<uint32_t>(
-            std::ceil(double(capacity.packets) * fc_headroom_ratio));
-
-        fc_freq.bytes -= headroom_bytes;
-        fc_freq.packets -= headroom_packets;
-
-        // Send a strc init to configure fc freq
-        send_strc_init(fc_freq);
-        recv_strs();
-
-        // Release temporary I/O service interfaces to disconnect from it
-        send_io.reset();
-        recv_io.reset();
     }
 
     // Interface to the I/O service
