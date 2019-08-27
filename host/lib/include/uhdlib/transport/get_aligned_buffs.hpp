@@ -27,7 +27,7 @@ constexpr size_t ALIGNMENT_FAILURE_THRESHOLD = 1000;
  * match those of other channels due to dropped packets. Packets that do not
  * have a tsf are not checked for alignment and never dropped.
  */
-template <typename transport_t>
+template <typename transport_t, bool ignore_seq_err = false>
 class get_aligned_buffs
 {
 public:
@@ -144,7 +144,8 @@ public:
 
             // If this packet had a sequence error, stop to return the error.
             // Keep the packet for the next call to get_aligned_buffs.
-            if (seq_error) {
+            if (seq_error && !ignore_seq_err) {
+                UHD_LOG_FASTPATH("D");
                 return SEQUENCE_ERROR;
             }
         }

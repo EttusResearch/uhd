@@ -69,7 +69,7 @@ private:
 /*!
  * Implementation of rx streamer API
  */
-template <typename transport_t>
+template <typename transport_t, bool ignore_seq_err = false>
 class rx_streamer_impl : public rx_streamer
 {
 public:
@@ -352,7 +352,7 @@ private:
     std::vector<uhd::convert::converter::sptr> _converters;
 
     // Implementation of frame buffer management and packet info
-    rx_streamer_zero_copy<transport_t> _zero_copy_streamer;
+    rx_streamer_zero_copy<transport_t, ignore_seq_err> _zero_copy_streamer;
 
     // Container for buffer pointers used in recv method
     std::vector<const void*> _in_buffs;

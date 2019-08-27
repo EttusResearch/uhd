@@ -13,8 +13,8 @@
 #include <uhd/utils/log.hpp>
 #include <uhdlib/transport/get_aligned_buffs.hpp>
 #include <boost/format.hpp>
-#include <vector>
 #include <atomic>
+#include <vector>
 
 namespace uhd { namespace transport {
 
@@ -23,7 +23,7 @@ namespace uhd { namespace transport {
  * This class is part of rx_streamer_impl, split into a separate unit as it is
  * a mostly self-contained portion of the streamer logic.
  */
-template <typename transport_t>
+template <typename transport_t, bool ignore_seq_err = false>
 class rx_streamer_zero_copy
 {
 public:
@@ -219,7 +219,7 @@ public:
     }
 
 private:
-    using get_aligned_buffs_t = get_aligned_buffs<transport_t>;
+    using get_aligned_buffs_t = get_aligned_buffs<transport_t, ignore_seq_err>;
 
     void _handle_overrun()
     {
@@ -232,7 +232,7 @@ private:
                 _frame_buffs[chan] = nullptr;
             }
 
-            frame_buff::uptr buff;
+            typename transport_t::buff_t::uptr buff;
             while (true) {
                 std::tie(buff, std::ignore, std::ignore) =
                     _xports[chan]->get_recv_buff(0);
