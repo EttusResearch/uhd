@@ -155,16 +155,16 @@ public:
                 "Control for the specified EPID was not initialized");
         }
         const client_zero::sptr& c0_ctrl = _client_zero_map.at(dst_epid);
-        uint16_t dst_port = 1 + c0_ctrl->get_num_stream_endpoints() + block_index;
+        const uint16_t block_slot = 1 + c0_ctrl->get_num_stream_endpoints() + block_index;
         if (block_index >= c0_ctrl->get_num_blocks()) {
             throw uhd::value_error("Requested block index out of range");
         }
 
         // Create control endpoint
         return _ctrl_ep->get_ctrlport_ep(dst_epid,
-            dst_port,
-            (size_t(1) << c0_ctrl->get_block_info(dst_port).ctrl_fifo_size),
-            c0_ctrl->get_block_info(dst_port).ctrl_max_async_msgs,
+            c0_ctrl->get_ctrl_xbar_port(block_index),
+            (size_t(1) << c0_ctrl->get_block_info(block_slot).ctrl_fifo_size),
+            c0_ctrl->get_block_info(block_slot).ctrl_max_async_msgs,
             client_clk,
             timebase_clk);
     }

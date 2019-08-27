@@ -75,11 +75,23 @@ public:
         return _num_stream_endpoints;
     };
 
+    //! Return the number of stream endpoints connected to the control crossbar
+    size_t get_num_ctrl_endpoints() const
+    {
+        return _num_ctrl_endpoints;
+    };
+
     //! Return the number of transports available
     size_t get_num_transports()
     {
         return _num_transports;
     };
+
+    //! Return the control crossbar port of the block \p block_idx
+    size_t get_ctrl_xbar_port(const size_t block_idx) const
+    {
+        return 1 + _num_ctrl_endpoints + block_idx;
+    }
 
     //! Return whether or not the device includes a CHDR crossbar
     bool has_chdr_crossbar()
@@ -189,6 +201,7 @@ private:
     uint16_t _device_type;
     uint16_t _num_blocks;
     uint16_t _num_stream_endpoints;
+    uint16_t _num_ctrl_endpoints;
     uint16_t _num_transports;
     bool _has_chdr_crossbar;
     uint16_t _num_edges;

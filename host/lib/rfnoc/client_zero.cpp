@@ -28,6 +28,8 @@ constexpr int PORT_CNT_ADDR = 1 * 4;
 constexpr int EDGE_CNT_ADDR = 2 * 4;
 //! Register address of the device information
 constexpr int DEVICE_INFO_ADDR = 3 * 4;
+//! Register address of the controlport information
+constexpr int CTRLPORT_CNT_ADDR = 4 * 4;
 //! (Write) Register address of the flush and reset controls
 constexpr int FLUSH_RESET_ADDR = 1 * 4;
 
@@ -46,6 +48,7 @@ client_zero::client_zero(register_iface::sptr reg)
     const uint32_t port_reg_val        = regs().peek32(PORT_CNT_ADDR);
     const uint32_t edge_reg_val        = regs().peek32(EDGE_CNT_ADDR);
     const uint32_t device_info_reg_val = regs().peek32(DEVICE_INFO_ADDR);
+    const uint32_t cport_info_reg_val  = regs().peek32(CTRLPORT_CNT_ADDR);
 
     // Parse the PROTOVER_ADDR register
     _proto_ver = proto_reg_val & 0xFFFF;
@@ -55,6 +58,7 @@ client_zero::client_zero(register_iface::sptr reg)
     _num_transports       = uhd::narrow_cast<uint16_t>((port_reg_val & 0x3FF00000) >> 20);
     _num_blocks           = uhd::narrow_cast<uint16_t>((port_reg_val & 0x000FFC00) >> 10);
     _num_stream_endpoints = uhd::narrow_cast<uint16_t>((port_reg_val & 0x000003FF));
+    _num_ctrl_endpoints   = uhd::narrow_cast<uint16_t>(cport_info_reg_val & 0x3FF);
 
     // Parse the EDGE_CNT_ADDR register
     // The only non-zero entry here is _num_edges

@@ -30,6 +30,7 @@ public:
         read_memory[0x0004] = (STATIC_ROUTER_PRESENT << 31) | (CHDR_XBAR_PRESENT << 30)
                               | (NUM_XPORTS << 20) | ((NUM_BLOCKS & 0X3FF) << 10)
                               | NUM_STREAM_ENDPOINTS;
+        read_memory[0x0010] = NUM_XPORTS;
         read_memory[0x000C] = device_id | (DEVICE_TYPE << 16);
     }
 
