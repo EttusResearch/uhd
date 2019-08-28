@@ -11,6 +11,7 @@
 #include <boost/make_shared.hpp>
 #include <boost/thread/mutex.hpp>
 #include <iostream>
+#include <typeindex>
 
 using namespace uhd;
 
@@ -156,7 +157,8 @@ public:
         return prop;
     }
 
-    void _create(const fs_path& path_, const boost::shared_ptr<void>& prop)
+    void _create(const fs_path& path_, const boost::shared_ptr<void>& prop,
+        std::type_index prop_type)
     {
         const fs_path path = _root / path_;
         boost::mutex::scoped_lock lock(_guts->mutex);
@@ -171,6 +173,7 @@ public:
             throw uhd::runtime_error(
                 "Cannot create! Property already exists at: " + path);
         node->prop = prop;
+        node->prop_type_hash = prop_type.hash_code();
     }
 
     boost::shared_ptr<void>& _access(const fs_path& path_) const
@@ -189,6 +192,25 @@ public:
         return node->prop;
     }
 
+    boost::shared_ptr<void>& _access_with_type_check(
+        const fs_path& path_, std::type_index expected_prop_type) const
+    {
+        const fs_path path = _root / path_;
+        boost::mutex::scoped_lock lock(_guts->mutex);
+
+        node_type* node = &_guts->root;
+        for (const std::string& name : path_tokenizer(path)) {
+            if (not node->has_key(name))
+                throw_path_not_found(path);
+            node = &(*node)[name];
+        }
+        if (node->prop.get() == NULL)
+            throw uhd::runtime_error("Cannot access! Property uninitialized at: " + path);
+        if (node->prop_type_hash != expected_prop_type.hash_code())
+            throw uhd::runtime_error("Cannot access! Property types do not match at: " + path);
+        return node->prop;
+    }
+
 private:
     void throw_path_not_found(const fs_path& path) const
     {
@@ -199,6 +221,7 @@ private:
     struct node_type : uhd::dict<std::string, node_type>
     {
         boost::shared_ptr<void> prop;
+        std::size_t prop_type_hash;
     };
 
     // tree guts which may be referenced in a subtree
