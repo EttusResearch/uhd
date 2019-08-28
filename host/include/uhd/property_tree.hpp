@@ -14,6 +14,7 @@
 #include <boost/function.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/utility.hpp>
+#include <typeindex>
 #include <vector>
 
 namespace uhd {
@@ -252,10 +253,15 @@ private:
     virtual boost::shared_ptr<void> _pop(const fs_path& path) = 0;
 
     //! Internal create property with wild-card type
-    virtual void _create(const fs_path& path, const boost::shared_ptr<void>& prop) = 0;
+    virtual void _create(const fs_path& path, const boost::shared_ptr<void>& prop,
+        std::type_index prop_type) = 0;
 
     //! Internal access property with wild-card type
     virtual boost::shared_ptr<void>& _access(const fs_path& path) const = 0;
+
+    //! Internal access property with wild-card type but with type verification
+    virtual boost::shared_ptr<void>& _access_with_type_check(
+        const fs_path& path, std::type_index expected_prop_type) const = 0;
 };
 
 } // namespace uhd
