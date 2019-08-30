@@ -313,6 +313,12 @@ public: // Functions
         deserialize(buff, num_elems, conv_byte_order);
     }
 
+    // Return whether or not we have a valid timestamp
+    bool has_timestamp() const
+    {
+        return bool(timestamp);
+    }
+
     //! Comparison operator (==)
     bool operator==(const ctrl_payload& rhs) const;
 

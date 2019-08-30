@@ -11,7 +11,9 @@
 #include <uhdlib/rfnoc/ctrlport_endpoint.hpp>
 #include <condition_variable>
 #include <boost/format.hpp>
+#include <deque>
 #include <mutex>
+#include <numeric>
 #include <queue>
 
 
@@ -27,6 +29,8 @@ namespace {
 constexpr size_t ASYNC_MESSAGE_SIZE = 6;
 //! Default completion timeout for transactions
 constexpr double DEFAULT_TIMEOUT = 0.1;
+//! Long timeout for when we wait on a timed command
+constexpr double MASSIVE_TIMEOUT = 10.0;
 //! Default value for whether ACKs are always required
 constexpr bool DEFAULT_FORCE_ACKS = false;
 } // namespace
@@ -229,7 +233,7 @@ public:
                     resp_status = RESP_SIZEERR;
                 }
                 // Pop the request from the queue
-                _req_queue.pop();
+                _req_queue.pop_front();
                 // Push the response into the response queue
                 _resp_queue.push(std::make_tuple(rx_ctrl, resp_status));
                 _resp_ready_cond.notify_one();
@@ -246,7 +250,7 @@ public:
                 _resp_queue.push(std::make_tuple(resp, RESP_DROPPED));
                 _resp_ready_cond.notify_one();
                 // Pop the request from the queue
-                _req_queue.pop();
+                _req_queue.pop_front();
             };
 
             // Peek at the request queue to check the expected sequence number
@@ -346,6 +350,17 @@ private:
         return steady_clock::now() + (static_cast<int>(std::ceil(duration / 1e-6)) * 1us);
     }
 
+    //! Returns whether or not we have a timed command queued
+    bool check_timed_in_queue() const
+    {
+        for (auto pyld : _req_queue) {
+            if (pyld.has_timestamp()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     //! Sends a request control packet to a remote device
     const ctrl_payload send_request_packet(ctrl_opcode_t op_code,
         uint32_t address,
@@ -394,13 +409,18 @@ private:
                           - (ASYNC_MESSAGE_SIZE * _max_outstanding_async_msgs));
         };
         if (!buff_not_full()) {
-            if (not _buff_free_cond.wait_until(lock, timeout_time, buff_not_full)) {
+            // If we're sending a timed command or if we have a timed command in the
+            // queue, use the MASSIVE_TIMEOUT instead
+            auto timed_timeout = (check_timed_in_queue()
+                                      ? start_timeout(MASSIVE_TIMEOUT)
+                                      : timeout_time);
+            if (not _buff_free_cond.wait_until(lock, timed_timeout, buff_not_full)) {
                 throw uhd::op_timeout(
                     "Control operation timed out waiting for space in command buffer");
             }
         }
         _buff_occupied += pyld_size;
-        _req_queue.push(tx_ctrl);
+        _req_queue.push_back(tx_ctrl);
 
         // Send the payload as soon as there is room in the buffer
         _handle_send(tx_ctrl, _policy.timeout);
@@ -497,7 +517,7 @@ private:
     //! A condition variable that hold the "downstream buffer is free" condition
     std::condition_variable _buff_free_cond;
     //! A queue that holds all outstanding requests
-    std::queue<ctrl_payload> _req_queue;
+    std::deque<ctrl_payload> _req_queue;
     //! A queue that holds all outstanding responses and their status
     std::queue<std::tuple<ctrl_payload, response_status_t>> _resp_queue;
     //! A condition variable that hold the "response is available" condition
