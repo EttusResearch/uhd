@@ -102,13 +102,6 @@ static void sig_int_handler(int signal)
     abort_event.notify_all();
 }
 
-typedef std::map<char,size_t> msg_count_map_t;
-
-static boost::mutex msg_count_map_mutex;
-static msg_count_map_t msg_count_map;
-static boost::system_time start_time, last_msg_print_time;
-static double msg_print_interval = 0.0;
-
 // Derived from: http://cc.byexamples.com/2007/04/08/non-blocking-user-input-in-loop-without-ncurses/
 static bool kbhit(size_t timeout = 0/*ms*/)
 {
@@ -163,108 +156,6 @@ static std::string get_stringified_time(struct timeval* tv = NULL)
         boost::str(boost::format(".%06ld") % tv->tv_usec) +
         std::string(COLOUR_RESET)
     ;
-}
-
-static void _select_msg_colour(char c, std::stringstream& ss)
-{
-    switch (c)
-    {
-        case 'U':
-            ss << COLOUR_MAGENTA;
-            break;
-        case 'L':
-            ss << COLOUR_RED;
-            break;
-        case 'S':
-            ss << COLOUR_CYAN;
-            break;
-        case 'O':
-            ss << COLOUR_GREEN;
-            break;
-        case 'D':
-            ss << COLOUR_YELLOW;
-            break;
-        default:
-            ss << COLOUR_BLACK;
-    }
-}
-
-static void print_msgs(void)
-{
-    if (msg_print_interval <= 0.0)
-        return;
-
-    boost::system_time time_now = boost::get_system_time();
-    boost::posix_time::time_duration update_diff = time_now - last_msg_print_time;
-    if (((double)update_diff.ticks() / (double)TICKS_PER_SEC) >= msg_print_interval)
-    {
-        boost::mutex::scoped_lock l(msg_count_map_mutex);
-
-        if (msg_count_map.size() > 0)
-        {
-            std::stringstream ss;
-
-            ss << HEADER_WARN "(" << get_stringified_time() << ") ";
-
-            for (msg_count_map_t::iterator it = msg_count_map.begin(); it != msg_count_map.end(); ++it)
-            {
-                if (it != msg_count_map.begin())
-                    ss << ", ";
-                ss << COLOUR_START COLOUR_HIGH;
-                _select_msg_colour(it->first, ss);
-                ss << COLOUR_END;
-                ss << it->first;
-                ss << COLOUR_RESET;
-                ss << boost::str(boost::format(": %05d") % it->second);
-            }
-
-            std::cout << ss.str() << std::endl << std::flush;
-
-            last_msg_print_time = time_now;
-            msg_count_map.clear();
-        }
-    }
-}
-
-static void msg_handler(uhd::msg::type_t type, const std::string& msg)
-{
-    if ((type == uhd::msg::fastpath) && (msg.size() == 1))
-    {
-        char c = msg.c_str()[0];
-
-        if (c == 'L')
-            ++num_late_packets_msg;
-
-        if (msg_print_interval <= 0.0)
-        {
-            std::stringstream ss;
-
-            ss << COLOUR_START COLOUR_BACK;
-
-            _select_msg_colour(c, ss);
-
-            ss << ";" COLOUR_HIGH COLOUR_WHITE COLOUR_END;
-            ss << msg;
-            ss << COLOUR_RESET;
-
-            std::cout << ss.str() << std::flush;
-        }
-        else
-        {
-            {
-                boost::mutex::scoped_lock l(msg_count_map_mutex);
-
-                if (msg_count_map.find(c) == msg_count_map.end())
-                    msg_count_map[c] = 1;
-                else
-                    msg_count_map[c] += 1;
-            }
-
-            print_msgs();
-        }
-    }
-    else
-        std::cout << msg << std::flush;
 }
 
 /***********************************************************************
@@ -613,8 +504,6 @@ void benchmark_rx_rate(
                     break;
                 }
             }
-
-            print_msgs();
         }
     }
     catch (const std::runtime_error& e)
@@ -1010,8 +899,6 @@ void benchmark_tx_rate(
                 last_late_check_time = time_now;
             }
         }
-
-        print_msgs();
     }
 
     if (params.send_final_eob)
@@ -1221,7 +1108,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
         ("rx-start-delay", po::value<double>(&recv_start_delay)->default_value(0.0), "recv start delay (seconds)")
         ("tx-start-delay", po::value<double>(&send_start_delay)->default_value(0.0), "send start delay (seconds)")
         ("interrupt-timeout", po::value<double>(&interrupt_timeout)->default_value(0.0), "time before re-enabling boost thread interruption")
-        ("msg-interval", po::value<double>(&msg_print_interval)->default_value(0.0), "seconds between printing UHD fastpath status messages")
         ("progress-interval", po::value<double>(&progress_interval)->default_value(progress_interval), "seconds between bandwidth updates (0 disables)")
         ("rx-progress-interval", po::value<double>(&rx_progress_interval), "seconds between RX bandwidth updates (0 disables)")
         ("tx-progress-interval", po::value<double>(&tx_progress_interval), "seconds between TX bandwidth updates (0 disables)")
@@ -1796,8 +1682,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
 
             std::signal(SIGINT, &sig_int_handler);
 
-            uhd::msg::register_handler(&msg_handler);
-
             begin.notify_all();
 
             // RTT is longer, so skip this
@@ -1859,8 +1743,6 @@ int UHD_SAFE_MAIN(int argc, char *argv[]){
                         }
                     }
 
-                    print_msgs();
-                    
                     abort_event.timed_wait(l_stop, boost::posix_time::milliseconds(interactive_sleep));
                 } while (stop_signal_called == false);
             }
