@@ -42,7 +42,7 @@ namespace po = boost::program_options;
 
 #define COLOUR_START        "\033["
 #define COLOUR_END          "m"
-#define COLOUR_RESET        COLOUR_START"0"COLOUR_END
+#define COLOUR_RESET        COLOUR_START "0" COLOUR_END
 #define COLOUR_BLACK        "0"
 #define COLOUR_RED          "1"
 #define COLOUR_GREEN        "2"
