@@ -540,9 +540,12 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     }
 
     // sleep for the required duration
-    const bool wait_for_multichan =
-        (rx_channel_nums.size() <= 1 and tx_channel_nums.size() <= 1);
-    const int64_t secs = int64_t(duration + (wait_for_multichan ? 0 : INIT_DELAY * 1000));
+    if (rx_channel_nums.size() > 1 or tx_channel_nums.size() > 1) {
+        // If we have multiple channels, we need to account for the INIT_DELAY in order to
+        // send/receive the proper number of samples.
+        duration += INIT_DELAY;
+    }
+    const int64_t secs = int64_t(duration);
     const int64_t usecs = int64_t((duration - secs) * 1e6);
     std::this_thread::sleep_for(
         std::chrono::seconds(secs) + std::chrono::microseconds(usecs));
