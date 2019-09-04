@@ -20,7 +20,7 @@ using namespace uhd::transport;
 using namespace uhd::mpmd::xport;
 
 const uhd::rfnoc::chdr::chdr_packet_factory mpmd_link_if_ctrl_udp::_pkt_factory(
-    uhd::rfnoc::CHDR_W_64, ENDIANNESS_BIG);
+    uhd::rfnoc::CHDR_W_64, ENDIANNESS_LITTLE);
 
 namespace {
 

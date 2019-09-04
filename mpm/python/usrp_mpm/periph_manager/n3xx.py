@@ -41,7 +41,7 @@ N3XX_DEFAULT_ENABLE_PPS_EXPORT = True
 N32X_DEFAULT_QSFP_RATE_PRESET = 'Ethernet'
 N32X_DEFAULT_QSFP_DRIVER_PRESET = 'Optical'
 N32X_QSFP_I2C_LABEL = 'qsfp-i2c'
-N3XX_FPGA_COMPAT = (6, 0)
+N3XX_FPGA_COMPAT = (7, 0)
 N3XX_MONITOR_THREAD_INTERVAL = 1.0 # seconds
 
 # Import daughterboard PIDs from their respective classes

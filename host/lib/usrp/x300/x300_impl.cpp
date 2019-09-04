@@ -41,7 +41,7 @@ void init_prop_tree(
 
 
 const uhd::rfnoc::chdr::chdr_packet_factory x300_impl::_pkt_factory(
-    CHDR_W_64, ENDIANNESS_BIG);
+    CHDR_W_64, ENDIANNESS_LITTLE);
 
 
 /***********************************************************************

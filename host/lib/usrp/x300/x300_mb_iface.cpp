@@ -44,7 +44,7 @@ uhd::endianness_t x300_impl::x300_mb_iface::get_endianness(
     const uhd::rfnoc::device_id_t /*local_device_id*/)
 {
     // FIXME
-    return uhd::ENDIANNESS_BIG;
+    return uhd::ENDIANNESS_LITTLE;
 }
 
 uhd::rfnoc::device_id_t x300_impl::x300_mb_iface::get_remote_device_id()

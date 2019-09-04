@@ -30,7 +30,7 @@ from usrp_mpm import e31x_legacy_eeprom
 E310_DEFAULT_CLOCK_SOURCE = 'internal'
 E310_DEFAULT_TIME_SOURCE = 'internal'
 E310_DEFAULT_ENABLE_FPGPIO = True
-E310_FPGA_COMPAT = (4,0)
+E310_FPGA_COMPAT = (5,0)
 E310_DBOARD_SLOT_IDX = 0
 
 ###############################################################################

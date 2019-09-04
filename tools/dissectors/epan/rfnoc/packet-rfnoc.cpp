@@ -28,7 +28,7 @@ extern "C" {
 #include <uhdlib/rfnoc/chdr_packet.hpp>
 
 constexpr unsigned int RFNOC_PORT = X300_VITA_UDP_PORT;
-static const uhd::rfnoc::chdr::chdr_packet_factory pkt_factory(uhd::rfnoc::CHDR_W_64, uhd::ENDIANNESS_BIG);
+static const uhd::rfnoc::chdr::chdr_packet_factory pkt_factory(uhd::rfnoc::CHDR_W_64, uhd::ENDIANNESS_LITTLE);
 
 static int proto_rfnoc = -1;
 static int hf_rfnoc_hdr = -1;
@@ -203,7 +203,7 @@ static int dissect_rfnoc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
     if (pinfo->match_uint == RFNOC_PORT) {
         is_network = TRUE;
         flag_offset = 0;
-        endianness = ENC_BIG_ENDIAN;
+        endianness = ENC_LITTLE_ENDIAN;
     }
 
     col_set_str(pinfo->cinfo, COL_PROTOCOL, "RFNoC");
@@ -213,7 +213,7 @@ static int dissect_rfnoc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
     len = tvb_reported_length(tvb);
 
     if (tree){
-        guint64 hdr = tvb_get_ntoh64(tvb, 0);
+        guint64 hdr = tvb_get_letoh64(tvb, 0);
         uhd::rfnoc::chdr::chdr_header chdr_hdr(hdr);
         chdr_len = chdr_hdr.get_length();
         len = (len < chdr_len) ? len : chdr_len;
@@ -235,17 +235,17 @@ static int dissect_rfnoc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
             header_tree = proto_item_add_subtree(header_item, ett_rfnoc_hdr);
             /* Let us query hdr.type */
             proto_tree_add_string(
-                header_tree, hf_rfnoc_hdr_pkttype, tvb, offset+1, 1,
+                header_tree, hf_rfnoc_hdr_pkttype, tvb, offset+6, 1,
                 val_to_str(chdr_hdr.get_pkt_type(), RFNOC_PACKET_TYPES_SHORT, "invalid")
             );
 
             /* Add Dst EPID */
             proto_item_append_text(header_item, ", Dst EPID: %02x", chdr_hdr.get_dst_epid());
-            proto_tree_add_uint(header_tree, hf_rfnoc_hdr_dst_epid, tvb, offset+6, 2, chdr_hdr.get_dst_epid());
+            proto_tree_add_uint(header_tree, hf_rfnoc_hdr_dst_epid, tvb, offset, 2, chdr_hdr.get_dst_epid());
             /* Add length */
-            proto_tree_add_uint(header_tree, hf_rfnoc_hdr_len, tvb, offset+4, 2, chdr_hdr.get_length());
+            proto_tree_add_uint(header_tree, hf_rfnoc_hdr_len, tvb, offset+2, 2, chdr_hdr.get_length());
             /* Add sequence number */
-            proto_tree_add_uint(header_tree, hf_rfnoc_hdr_seqnum, tvb, offset+2, 2, chdr_hdr.get_seq_num());
+            proto_tree_add_uint(header_tree, hf_rfnoc_hdr_seqnum, tvb, offset+4, 2, chdr_hdr.get_seq_num());
 
             if (chdr_hdr.get_num_mdata()) {
                 /* Can't decode packets with metadata */
@@ -264,30 +264,35 @@ static int dissect_rfnoc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
                 auto payload = pkt->get_payload();
 
                 /* Add source EPID */
-                proto_tree_add_uint(ctrl_tree, hf_rfnoc_src_epid, tvb, offset+2, 2, payload.src_epid);
+                proto_tree_add_uint(ctrl_tree, hf_rfnoc_src_epid, tvb, offset+4, 2, payload.src_epid);
                 /* Add source port */
-                proto_tree_add_uint(ctrl_tree, hf_rfnoc_ctrl_src_port, tvb, offset+5, 2, payload.src_port);
+                proto_tree_add_uint(ctrl_tree, hf_rfnoc_ctrl_src_port, tvb, offset+1, 2, payload.src_port);
                 /* Add dest port */
-                proto_tree_add_uint(ctrl_tree, hf_rfnoc_ctrl_dst_port, tvb, offset+6, 2, payload.dst_port);
+                proto_tree_add_uint(ctrl_tree, hf_rfnoc_ctrl_dst_port, tvb, offset, 2, payload.dst_port);
                 /* Add num data */
-                proto_tree_add_uint(ctrl_tree, hf_rfnoc_ctrl_num_data, tvb, offset+5, 1, payload.data_vtr.size());
+                proto_tree_add_uint(ctrl_tree, hf_rfnoc_ctrl_num_data, tvb, offset+2, 1, payload.data_vtr.size());
                 /* Add is_ack */
-                proto_tree_add_boolean(ctrl_tree, hf_rfnoc_ctrl_is_ack, tvb, offset+4, 1, payload.is_ack);
+                proto_tree_add_boolean(ctrl_tree, hf_rfnoc_ctrl_is_ack, tvb, offset+3, 1, payload.is_ack);
                 /* Add sequence number */
-                proto_tree_add_uint(ctrl_tree, hf_rfnoc_ctrl_seqnum, tvb, offset+4, 1, payload.seq_num);
+                proto_tree_add_uint(ctrl_tree, hf_rfnoc_ctrl_seqnum, tvb, offset+3, 1, payload.seq_num);
                 if (payload.timestamp) {
                     proto_tree_add_uint64(ctrl_tree, hf_rfnoc_timestamp, tvb, offset+8, 8, *payload.timestamp);
                     offset += 8;
                 }
                 /* Add data0 */
-                proto_tree_add_uint(ctrl_tree, hf_rfnoc_ctrl_data0, tvb, offset+8, 4, payload.data_vtr[0]);
+                proto_tree_add_uint(ctrl_tree, hf_rfnoc_ctrl_data0, tvb, offset+12, 4, payload.data_vtr[0]);
 		/* Add op code */
                 proto_tree_add_string(
-                    ctrl_tree, hf_rfnoc_ctrl_opcode, tvb, offset+12, 1,
+                    ctrl_tree, hf_rfnoc_ctrl_opcode, tvb, offset+11, 1,
                     val_to_str(payload.op_code, RFNOC_CTRL_OPCODES, "reserved")
                 );
                 /* Add address */
-                proto_tree_add_uint(ctrl_tree, hf_rfnoc_ctrl_address, tvb, offset+13, 3, payload.address);
+                proto_tree_add_uint(ctrl_tree, hf_rfnoc_ctrl_address, tvb, offset+8, 3, payload.address);
+		/* Add status */
+                proto_tree_add_string(
+                    ctrl_tree, hf_rfnoc_ctrl_status, tvb, offset+11, 1,
+                    val_to_str(payload.status, RFNOC_CTRL_STATUS, "reserved")
+                );
             }
 
             if (pkttype == uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_STRS) {
@@ -303,13 +308,13 @@ static int dissect_rfnoc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
                 );
 
                 /* Add source EPID */
-                proto_tree_add_uint(strs_tree, hf_rfnoc_src_epid, tvb, offset+6, 2, payload.src_epid);
+                proto_tree_add_uint(strs_tree, hf_rfnoc_src_epid, tvb, offset, 2, payload.src_epid);
                 /* Add capacities */
-                proto_tree_add_uint64(strs_tree, hf_rfnoc_strs_capacity_bytes, tvb, offset, 5, payload.capacity_bytes);
-                proto_tree_add_uint(strs_tree, hf_rfnoc_strs_capacity_pkts, tvb, offset+13, 3, payload.capacity_pkts);
+                proto_tree_add_uint64(strs_tree, hf_rfnoc_strs_capacity_bytes, tvb, offset+3, 5, payload.capacity_bytes);
+                proto_tree_add_uint(strs_tree, hf_rfnoc_strs_capacity_pkts, tvb, offset+8, 3, payload.capacity_pkts);
                 /* Add xfer amounts */
                 proto_tree_add_uint64(strs_tree, hf_rfnoc_strs_xfer_bytes, tvb, offset+16, 8, payload.xfer_count_bytes);
-                proto_tree_add_uint64(strs_tree, hf_rfnoc_strs_xfer_pkts, tvb, offset+8, 5, payload.xfer_count_pkts);
+                proto_tree_add_uint64(strs_tree, hf_rfnoc_strs_xfer_pkts, tvb, offset+11, 5, payload.xfer_count_pkts);
             }
 
             if (pkttype == uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_STRC) {
@@ -320,15 +325,15 @@ static int dissect_rfnoc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
                 auto payload = pkt->get_payload();
 
                 proto_tree_add_string(
-                    strc_tree, hf_rfnoc_strc_opcode, tvb, offset+5, 1,
+                    strc_tree, hf_rfnoc_strc_opcode, tvb, offset+2, 1,
                     val_to_str(payload.op_code, RFNOC_STRC_OPCODES, "invalid")
                 );
 
                 /* Add source EPID */
-                proto_tree_add_uint(strc_tree, hf_rfnoc_src_epid, tvb, offset+6, 2, payload.src_epid);
+                proto_tree_add_uint(strc_tree, hf_rfnoc_src_epid, tvb, offset, 2, payload.src_epid);
                 /* Add transfer amounts */
                 proto_tree_add_uint64(strc_tree, hf_rfnoc_strc_num_bytes, tvb, offset+8, 8, payload.num_bytes);
-                proto_tree_add_uint64(strc_tree, hf_rfnoc_strc_num_pkts, tvb, offset, 5, payload.num_pkts);
+                proto_tree_add_uint64(strc_tree, hf_rfnoc_strc_num_pkts, tvb, offset+3, 5, payload.num_pkts);
             }
 
             if (pkttype == uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_MGMT) {
@@ -338,7 +343,7 @@ static int dissect_rfnoc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
                 pkt->refresh(tvb_get_ptr(tvb, 0, chdr_len));
                 auto payload = pkt->get_payload();
                 /* Add source EPID */
-                proto_tree_add_uint(mgmt_tree, hf_rfnoc_src_epid, tvb, offset+6, 2, payload.get_src_epid());
+                proto_tree_add_uint(mgmt_tree, hf_rfnoc_src_epid, tvb, offset, 2, payload.get_src_epid());
                 size_t num_hops = payload.get_num_hops();
                 offset += 8;
 
@@ -356,7 +361,7 @@ static int dissect_rfnoc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
 
                         /* Add op code */
                         proto_tree_add_string(
-                            mgmt_op_tree, hf_rfnoc_mgmt_op_code, tvb, offset+6, 1,
+                            mgmt_op_tree, hf_rfnoc_mgmt_op_code, tvb, offset+1, 1,
                             val_to_str(opcode, RFNOC_MGMT_OPCODES, "invalid")
                         );
 
@@ -364,27 +369,27 @@ static int dissect_rfnoc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
                         if (opcode == uhd::rfnoc::chdr::mgmt_op_t::op_code_t::MGMT_OP_SEL_DEST) {
                             auto opdata = uhd::rfnoc::chdr::mgmt_op_t::sel_dest_payload(
                                 op.get_op_payload());
-                            proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_dest, tvb, offset+4, 2, opdata.dest);
+                            proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_dest, tvb, offset+2, 2, opdata.dest);
                         } else if (opcode == uhd::rfnoc::chdr::mgmt_op_t::op_code_t::MGMT_OP_INFO_RESP) {
                             auto opdata = uhd::rfnoc::chdr::mgmt_op_t::node_info_payload(
                                 op.get_op_payload());
-                            proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_device_id, tvb, offset, 6, opdata.device_id);
-                            proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_node_type, tvb, offset, 6, opdata.node_type);
-                            proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_node_inst, tvb, offset, 6, opdata.node_inst);
+                            proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_device_id, tvb, offset+2, 6, opdata.device_id);
+                            proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_node_type, tvb, offset+2, 6, opdata.node_type);
+                            proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_node_inst, tvb, offset+2, 6, opdata.node_inst);
                         } else if (opcode == uhd::rfnoc::chdr::mgmt_op_t::op_code_t::MGMT_OP_CFG_WR_REQ) {
                             auto opdata = uhd::rfnoc::chdr::mgmt_op_t::cfg_payload(
                                 op.get_op_payload());
-                            proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_cfg_address, tvb, offset, 6, opdata.addr);
-                            proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_cfg_data, tvb, offset, 6, opdata.data);
+                            proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_cfg_address, tvb, offset+2, 6, opdata.addr);
+                            proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_cfg_data, tvb, offset+2, 6, opdata.data);
                         } else if (opcode == uhd::rfnoc::chdr::mgmt_op_t::op_code_t::MGMT_OP_CFG_RD_REQ) {
                             auto opdata = uhd::rfnoc::chdr::mgmt_op_t::cfg_payload(
                                 op.get_op_payload());
-                            proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_cfg_address, tvb, offset, 6, opdata.addr);
+                            proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_cfg_address, tvb, offset+2, 6, opdata.addr);
                         } else if (opcode == uhd::rfnoc::chdr::mgmt_op_t::op_code_t::MGMT_OP_CFG_RD_RESP) {
                             auto opdata = uhd::rfnoc::chdr::mgmt_op_t::cfg_payload(
                                 op.get_op_payload());
-                            proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_cfg_address, tvb, offset, 6, opdata.addr);
-                            proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_cfg_data, tvb, offset, 6, opdata.data);
+                            proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_cfg_address, tvb, offset+2, 6, opdata.addr);
+                            proto_tree_add_uint(mgmt_op_tree, hf_rfnoc_mgmt_op_cfg_data, tvb, offset+2, 6, opdata.data);
                         }
                         offset += chdr_w_bytes;
                     }
@@ -516,7 +521,7 @@ void proto_register_rfnoc(void)
         },
         { &hf_rfnoc_ctrl_address,
             { "Address", "rfnoc.ctrl.address",
-                FT_UINT16, BASE_HEX,
+                FT_UINT32, BASE_HEX,
                 NULL, 0x00,
                 NULL, HFILL }
         },
