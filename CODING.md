@@ -120,10 +120,9 @@ std::map<std::string, std::string> bar =
 
 ## Python-specific Guidelines
 
-* Keep Python code compatible with Py2k and Py3k. There are plenty of tools to
-  aid with this, such as `futurize`.
-* Follow the suggestions in [PEP8][Pep8]
-  and [PEP257][Pep257]. The former is about
+* Starting with UHD 4.0, Python 2 is no longer supported, and we don't need to
+  accommodate for it any longer. Prefer Python 3 constructs.
+* Follow the suggestions in [PEP8][Pep8] and [PEP257][Pep257]. The former is about
   code layout in general, the latter about docstrings.
 * Pylint is good tool for helping with following code guidelines. It's very
   fussy though, so don't get too worked up about following its suggestions.
