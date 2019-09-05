@@ -77,3 +77,291 @@ x300_radio:
   - name: radio_tx_running
     type: to-master
     width: 2
+
+# A 2-port AXI4 memory-mapped interface with 64-bit data, and 2 GiB address
+# space (32-bit).
+axi4_mm_2x64_4g:
+  type: master-slave
+  ports:
+  - name: mem_clk
+    type: from-master
+    width: 1
+  - name: mem_rst
+    type: from-master
+    width: 1
+  - name: m_axi_awid
+    type: to-master
+    width: 2
+  - name: m_axi_awaddr
+    type: to-master
+    width: 64
+  - name: m_axi_awlen
+    type: to-master
+    width: 16
+  - name: m_axi_awsize
+    type: to-master
+    width: 6
+  - name: m_axi_awburst
+    type: to-master
+    width: 4
+  - name: m_axi_awlock
+    type: to-master
+    width: 2
+  - name: m_axi_awcache
+    type: to-master
+    width: 8
+  - name: m_axi_awprot
+    type: to-master
+    width: 6
+  - name: m_axi_awqos
+    type: to-master
+    width: 8
+  - name: m_axi_awregion
+    type: to-master
+    width: 8
+  - name: m_axi_awuser
+    type: to-master
+    width: 2
+  - name: m_axi_awvalid
+    type: to-master
+    width: 2
+  - name: m_axi_awready
+    type: from-master
+    width: 2
+  - name: m_axi_wdata
+    type: to-master
+    width: 128
+  - name: m_axi_wstrb
+    type: to-master
+    width: 16
+  - name: m_axi_wlast
+    type: to-master
+    width: 2
+  - name: m_axi_wuser
+    type: to-master
+    width: 2
+  - name: m_axi_wvalid
+    type: to-master
+    width: 2
+  - name: m_axi_wready
+    type: from-master
+    width: 2
+  - name: m_axi_bid
+    type: from-master
+    width: 2
+  - name: m_axi_bresp
+    type: from-master
+    width: 4
+  - name: m_axi_buser
+    type: from-master
+    width: 2
+  - name: m_axi_bvalid
+    type: from-master
+    width: 2
+  - name: m_axi_bready
+    type: to-master
+    width: 2
+  - name: m_axi_arid
+    type: to-master
+    width: 2
+  - name: m_axi_araddr
+    type: to-master
+    width: 64
+  - name: m_axi_arlen
+    type: to-master
+    width: 16
+  - name: m_axi_arsize
+    type: to-master
+    width: 6
+  - name: m_axi_arburst
+    type: to-master
+    width: 4
+  - name: m_axi_arlock
+    type: to-master
+    width: 2
+  - name: m_axi_arcache
+    type: to-master
+    width: 8
+  - name: m_axi_arprot
+    type: to-master
+    width: 6
+  - name: m_axi_arqos
+    type: to-master
+    width: 8
+  - name: m_axi_arregion
+    type: to-master
+    width: 8
+  - name: m_axi_aruser
+    type: to-master
+    width: 2
+  - name: m_axi_arvalid
+    type: to-master
+    width: 2
+  - name: m_axi_arready
+    type: from-master
+    width: 2
+  - name: m_axi_rid
+    type: from-master
+    width: 2
+  - name: m_axi_rdata
+    type: from-master
+    width: 128
+  - name: m_axi_rresp
+    type: from-master
+    width: 4
+  - name: m_axi_rlast
+    type: from-master
+    width: 2
+  - name: m_axi_ruser
+    type: from-master
+    width: 2
+  - name: m_axi_rvalid
+    type: from-master
+    width: 2
+  - name: m_axi_rready
+    type: to-master
+    width: 2
+
+# A 4-port AXI4 memory-mapped interface with 64-bit data, and 4 GiB address
+# space (32-bit).
+axi4_mm_4x64_4g:
+  type: master-slave
+  ports:
+  - name: mem_clk
+    type: from-master
+    width: 1
+  - name: mem_rst
+    type: from-master
+    width: 1
+  - name: m_axi_awid
+    type: to-master
+    width: 4
+  - name: m_axi_awaddr
+    type: to-master
+    width: 128
+  - name: m_axi_awlen
+    type: to-master
+    width: 32
+  - name: m_axi_awsize
+    type: to-master
+    width: 12
+  - name: m_axi_awburst
+    type: to-master
+    width: 8
+  - name: m_axi_awlock
+    type: to-master
+    width: 4
+  - name: m_axi_awcache
+    type: to-master
+    width: 16
+  - name: m_axi_awprot
+    type: to-master
+    width: 12
+  - name: m_axi_awqos
+    type: to-master
+    width: 16
+  - name: m_axi_awregion
+    type: to-master
+    width: 16
+  - name: m_axi_awuser
+    type: to-master
+    width: 4
+  - name: m_axi_awvalid
+    type: to-master
+    width: 4
+  - name: m_axi_awready
+    type: from-master
+    width: 4
+  - name: m_axi_wdata
+    type: to-master
+    width: 256
+  - name: m_axi_wstrb
+    type: to-master
+    width: 32
+  - name: m_axi_wlast
+    type: to-master
+    width: 4
+  - name: m_axi_wuser
+    type: to-master
+    width: 4
+  - name: m_axi_wvalid
+    type: to-master
+    width: 4
+  - name: m_axi_wready
+    type: from-master
+    width: 4
+  - name: m_axi_bid
+    type: from-master
+    width: 4
+  - name: m_axi_bresp
+    type: from-master
+    width: 8
+  - name: m_axi_buser
+    type: from-master
+    width: 4
+  - name: m_axi_bvalid
+    type: from-master
+    width: 4
+  - name: m_axi_bready
+    type: to-master
+    width: 4
+  - name: m_axi_arid
+    type: to-master
+    width: 4
+  - name: m_axi_araddr
+    type: to-master
+    width: 128
+  - name: m_axi_arlen
+    type: to-master
+    width: 32
+  - name: m_axi_arsize
+    type: to-master
+    width: 12
+  - name: m_axi_arburst
+    type: to-master
+    width: 8
+  - name: m_axi_arlock
+    type: to-master
+    width: 4
+  - name: m_axi_arcache
+    type: to-master
+    width: 16
+  - name: m_axi_arprot
+    type: to-master
+    width: 12
+  - name: m_axi_arqos
+    type: to-master
+    width: 16
+  - name: m_axi_arregion
+    type: to-master
+    width: 16
+  - name: m_axi_aruser
+    type: to-master
+    width: 4
+  - name: m_axi_arvalid
+    type: to-master
+    width: 4
+  - name: m_axi_arready
+    type: from-master
+    width: 4
+  - name: m_axi_rid
+    type: from-master
+    width: 4
+  - name: m_axi_rdata
+    type: from-master
+    width: 256
+  - name: m_axi_rresp
+    type: from-master
+    width: 8
+  - name: m_axi_rlast
+    type: from-master
+    width: 4
+  - name: m_axi_ruser
+    type: from-master
+    width: 4
+  - name: m_axi_rvalid
+    type: from-master
+    width: 4
+  - name: m_axi_rready
+    type: to-master
+    width: 4

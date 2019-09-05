@@ -1,6 +1,7 @@
 //
 // Copyright 2015 Ettus Research LLC
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -9,68 +10,48 @@
 #define INCLUDED_LIBUHD_USRP_DMA_FIFO_CORE_3000_HPP
 
 #include <uhd/config.hpp>
-#include <uhd/types/wb_iface.hpp>
-#include <boost/shared_ptr.hpp>
 #include <uhd/utils/noncopyable.hpp>
-
+#include <functional>
+#include <memory>
 
 class dma_fifo_core_3000 : uhd::noncopyable
 {
 public:
-    typedef boost::shared_ptr<dma_fifo_core_3000> sptr;
+    using sptr        = std::shared_ptr<dma_fifo_core_3000>;
+    using poke32_fn_t = std::function<void(uint32_t, uint32_t)>;
+    using peek32_fn_t = std::function<uint32_t(uint32_t)>;
+
     virtual ~dma_fifo_core_3000(void) = 0;
 
-    /*!
-     * Create a DMA FIFO controller using the given bus, settings and readback base
-     * Throws uhd::runtime_error if a DMA FIFO is not instantiated in the FPGA
-     */
-    static sptr make(uhd::wb_iface::sptr iface, const size_t set_base, const size_t rb_addr);
+    //! Create a DMA FIFO controller for a specific channel
+    static sptr make(
+        poke32_fn_t&& poke_fn, peek32_fn_t&& peek_fn, const size_t fifo_index);
 
-    /*!
-     * Check if a DMA FIFO is instantiated in the FPGA
-     */
-    static bool check(uhd::wb_iface::sptr iface, const size_t set_base, const size_t rb_addr);
+    /**************************************************************************
+     * API
+     *************************************************************************/
+    virtual bool has_bist() const = 0;
 
-    /*!
-     * Flush the DMA FIFO. Will clear all contents.
-     */
-    virtual bool flush(uint32_t timeout_ms = 2000) = 0;
+    //! Return the fullness of the FIFO in bytes
+    virtual uint64_t get_fifo_fullness() = 0;
 
-    /*!
-     * Resize and rebase the DMA FIFO. Will clear all contents.
-     */
-    virtual void resize(const uint32_t base_addr, const uint32_t size) = 0;
+    //! Get the transfer timeout value for the transfer in memory interface
+    // clock cycles
+    virtual uint16_t get_fifo_timeout() = 0;
 
-    /*!
-     * Get the (approx) number of bytes currently in the DMA FIFO
-     */
-    virtual uint32_t get_bytes_occupied() = 0;
+    //! Set the transfer timeout value for the transfer in memory interface
+    // clock cycles
+    virtual void set_fifo_timeout(const uint16_t timeout_cycles) = 0;
 
     /*!
      * Run the built-in-self-test routine for the DMA FIFO
+     *
+     * Returns an approximation of the RAM throughput.
      */
-    virtual uint8_t run_bist(bool finite = true, uint32_t timeout_ms = 500) = 0;
+    virtual double run_bist(const uint64_t num_bytes, const double timeout_s) = 0;
 
-    /*!
-     * Is extended BIST supported
-     */
-    virtual bool ext_bist_supported() = 0;
-
-    /*!
-     * Run the built-in-self-test routine for the DMA FIFO (extended BIST only)
-     */
-    virtual uint8_t run_ext_bist(
-        bool finite,
-        uint32_t rx_samp_delay,
-        uint32_t tx_pkt_delay,
-        uint32_t sid,
-        uint32_t timeout_ms = 500) = 0;
-
-    /*!
-     * Get the throughput measured from the last invocation of the BIST (extended BIST only)
-     */
-    virtual double get_bist_throughput() = 0;
-
+    //! Return the number of packats that have been transferred
+    virtual uint32_t get_packet_count() = 0;
 };
 
 #endif /* INCLUDED_LIBUHD_USRP_DMA_FIFO_CORE_3000_HPP */

@@ -446,7 +446,7 @@ void node_t::clean_props()
     prop_accessor_t prop_accessor{};
     for (const auto& type_prop_pair : _props) {
         for (const auto& prop : type_prop_pair.second) {
-            if (prop->is_dirty() && _clean_cb_registry.count(prop)) {
+            if (prop->is_valid() && prop->is_dirty() && _clean_cb_registry.count(prop)) {
                 _clean_cb_registry.at(prop)();
             }
             prop_accessor.mark_clean(*prop);

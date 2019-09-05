@@ -1,426 +1,322 @@
 //
 // Copyright 2015 Ettus Research LLC
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
 #include <uhd/exception.hpp>
-#include <uhd/utils/soft_register.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/usrp/cores/dma_fifo_core_3000.hpp>
-#include <boost/format.hpp>
 #include <chrono>
+#include <mutex>
 #include <thread>
 
 using namespace uhd;
+using namespace std::chrono_literals;
 
-#define SR_DRAM_BIST_BASE 16
+namespace {
 
-dma_fifo_core_3000::~dma_fifo_core_3000(void) {
+//! Info register: [0]: Indicates presence of BIST [31:16]: Magic word
+const uint32_t REG_FIFO_INFO = 0x0000;
+const uint16_t FIFO_MAGIC    = 0xF1F0;
+
+//! Mem size register: [RAM Word Size | Address size]
+const uint32_t REG_FIFO_MEM_SIZE      = 0x0008;
+const uint32_t REG_FIFO_TIMEOUT       = 0x000C;
+const uint32_t REG_FIFO_FULLNESS      = 0x0010;
+const uint32_t REG_FIFO_ADDR_BASE     = 0x0018;
+const uint32_t REG_FIFO_ADDR_MASK     = 0x0020;
+const uint32_t REG_FIFO_PACKET_CNT    = 0x0028;
+const uint32_t REG_BIST_CTRL          = 0x0030;
+const uint32_t REG_BIST_CLK_RATE      = 0x0034;
+const uint32_t REG_BIST_NUM_BYTES     = 0x0038;
+const uint32_t REG_BIST_TX_BYTE_COUNT = 0x0040;
+const uint32_t REG_BIST_RX_BYTE_COUNT = 0x0048;
+const uint32_t REG_BIST_ERROR_COUNT   = 0x0050;
+const uint32_t REG_BIST_CYCLE_COUNT   = 0x0058;
+
+//! Read FIFO info register, check for magic, return "has bist" flag all in one
+// go
+bool unpack_fifo_info(const uint32_t fifo_info)
+{
+    if (fifo_info >> 16 != FIFO_MAGIC) {
+        throw uhd::runtime_error("DMA FIFO: Incorrect magic value returned!");
+    }
+
+    return bool(fifo_info & 0x1);
+}
+
+} // namespace
+
+dma_fifo_core_3000::~dma_fifo_core_3000(void)
+{
     /* NOP */
 }
 
 class dma_fifo_core_3000_impl : public dma_fifo_core_3000
 {
-protected:
-    class rb_addr_reg_t : public soft_reg32_wo_t {
-    public:
-        UHD_DEFINE_SOFT_REG_FIELD(ADDR, /*width*/ 3, /*shift*/ 0);  //[2:0]
-
-        static const uint32_t RB_FIFO_STATUS     = 0;
-        static const uint32_t RB_BIST_STATUS     = 1;
-        static const uint32_t RB_BIST_XFER_CNT   = 2;
-        static const uint32_t RB_BIST_CYC_CNT    = 3;
-        static const uint32_t RB_BUS_CLK_RATE    = 4;
-        static const uint32_t RB_OUT_PKT_CNT     = 5;
-
-        rb_addr_reg_t(uint32_t base):
-            soft_reg32_wo_t(base + 0)
-        {
-            //Initial values
-            set(ADDR, RB_FIFO_STATUS);
-        }
-    };
-
-    class fifo_ctrl_reg_t : public soft_reg32_wo_t {
-    public:
-        UHD_DEFINE_SOFT_REG_FIELD(CLEAR_FIFO,           /*width*/  1, /*shift*/  0);  //[0]
-        UHD_DEFINE_SOFT_REG_FIELD(RD_SUPPRESS_EN,       /*width*/  1, /*shift*/  1);  //[1]
-        UHD_DEFINE_SOFT_REG_FIELD(FLUSH_PKTS,           /*width*/  1, /*shift*/  2);  //[2]
-        UHD_DEFINE_SOFT_REG_FIELD(BURST_TIMEOUT,        /*width*/ 12, /*shift*/  4);  //[15:4]
-        UHD_DEFINE_SOFT_REG_FIELD(RD_SUPPRESS_THRESH,   /*width*/ 16, /*shift*/ 16);  //[31:16]
-
-        fifo_ctrl_reg_t(uint32_t base):
-            soft_reg32_wo_t(base + 4)
-        {
-            //Initial values
-            set(CLEAR_FIFO, 0);
-            set(RD_SUPPRESS_EN, 0);
-            set(FLUSH_PKTS, 0);
-            set(BURST_TIMEOUT, 256);
-            set(RD_SUPPRESS_THRESH, 0);
-        }
-    };
-
-    class base_addr_reg_t : public soft_reg32_wo_t {
-    public:
-        UHD_DEFINE_SOFT_REG_FIELD(BASE_ADDR, /*width*/ 30, /*shift*/ 0);  //[29:0]
-
-        base_addr_reg_t(uint32_t base):
-            soft_reg32_wo_t(base + 8)
-        {
-            //Initial values
-            set(BASE_ADDR, 0x00000000);
-        }
-    };
-
-    class addr_mask_reg_t : public soft_reg32_wo_t {
-    public:
-        UHD_DEFINE_SOFT_REG_FIELD(ADDR_MASK, /*width*/ 30, /*shift*/ 0);  //[29:0]
-
-        addr_mask_reg_t(uint32_t base):
-            soft_reg32_wo_t(base + 12)
-        {
-            //Initial values
-            set(ADDR_MASK, 0xFF000000);
-        }
-    };
-
-    class bist_ctrl_reg_t : public soft_reg32_wo_t {
-    public:
-        UHD_DEFINE_SOFT_REG_FIELD(GO,               /*width*/ 1, /*shift*/ 0);  //[0]
-        UHD_DEFINE_SOFT_REG_FIELD(CONTINUOUS_MODE,  /*width*/ 1, /*shift*/ 1);  //[1]
-        UHD_DEFINE_SOFT_REG_FIELD(TEST_PATT,        /*width*/ 2, /*shift*/ 4);  //[5:4]
-
-        static const uint32_t TEST_PATT_ZERO_ONE     = 0;
-        static const uint32_t TEST_PATT_CHECKERBOARD = 1;
-        static const uint32_t TEST_PATT_COUNT        = 2;
-        static const uint32_t TEST_PATT_COUNT_INV    = 3;
-
-        bist_ctrl_reg_t(uint32_t base):
-            soft_reg32_wo_t(base + 16)
-        {
-            //Initial values
-            set(GO, 0);
-            set(CONTINUOUS_MODE, 0);
-            set(TEST_PATT, TEST_PATT_ZERO_ONE);
-        }
-    };
-
-    class bist_cfg_reg_t : public soft_reg32_wo_t {
-    public:
-        UHD_DEFINE_SOFT_REG_FIELD(MAX_PKTS,         /*width*/ 18, /*shift*/ 0);  //[17:0]
-        UHD_DEFINE_SOFT_REG_FIELD(MAX_PKT_SIZE,     /*width*/ 13, /*shift*/ 18); //[30:18]
-        UHD_DEFINE_SOFT_REG_FIELD(PKT_SIZE_RAMP,    /*width*/ 1,  /*shift*/ 31); //[31]
-
-        bist_cfg_reg_t(uint32_t base):
-            soft_reg32_wo_t(base + 20)
-        {
-            //Initial values
-            set(MAX_PKTS, 0);
-            set(MAX_PKT_SIZE, 0);
-            set(PKT_SIZE_RAMP, 0);
-        }
-    };
-
-    class bist_delay_reg_t : public soft_reg32_wo_t {
-    public:
-        UHD_DEFINE_SOFT_REG_FIELD(TX_PKT_DELAY,     /*width*/ 16, /*shift*/ 0);  //[15:0]
-        UHD_DEFINE_SOFT_REG_FIELD(RX_SAMP_DELAY,    /*width*/  8, /*shift*/ 16); //[23:16]
-
-        bist_delay_reg_t(uint32_t base):
-            soft_reg32_wo_t(base + 24)
-        {
-            //Initial values
-            set(TX_PKT_DELAY, 0);
-            set(RX_SAMP_DELAY, 0);
-        }
-    };
-
-    class bist_sid_reg_t : public soft_reg32_wo_t {
-    public:
-        UHD_DEFINE_SOFT_REG_FIELD(SID,     /*width*/ 32, /*shift*/ 0);  //[31:0]
-
-        bist_sid_reg_t(uint32_t base):
-            soft_reg32_wo_t(base + 28)
-        {
-            //Initial values
-            set(SID, 0);
-        }
-    };
-
 public:
-    class fifo_readback {
-    public:
-        fifo_readback(wb_iface::sptr iface,  const size_t base, const size_t rb_addr) :
-            _iface(iface), _addr_reg(base), _rb_addr(rb_addr)
-        {
-            _addr_reg.initialize(*iface, true);
-        }
-
-        bool is_fifo_instantiated() {
-            boost::lock_guard<boost::mutex> lock(_mutex);
-            _addr_reg.write(rb_addr_reg_t::ADDR, rb_addr_reg_t::RB_FIFO_STATUS);
-            return _iface->peek32(_rb_addr) & 0x80000000;
-        }
-
-        uint32_t get_occupied_cnt() {
-            boost::lock_guard<boost::mutex> lock(_mutex);
-            _addr_reg.write(rb_addr_reg_t::ADDR, rb_addr_reg_t::RB_FIFO_STATUS);
-            return _iface->peek32(_rb_addr) & 0x7FFFFFF;
-        }
-
-        uint32_t get_out_pkt_cnt() {
-            boost::lock_guard<boost::mutex> lock(_mutex);
-            _addr_reg.write(rb_addr_reg_t::ADDR, rb_addr_reg_t::RB_OUT_PKT_CNT);
-            return _iface->peek32(_rb_addr);
-        }
-
-        struct bist_status_t {
-            bool running;
-            bool finished;
-            uint8_t error;
-        };
-
-        bist_status_t get_bist_status() {
-            boost::lock_guard<boost::mutex> lock(_mutex);
-            _addr_reg.write(rb_addr_reg_t::ADDR, rb_addr_reg_t::RB_BIST_STATUS);
-            uint32_t st32 = _iface->peek32(_rb_addr) & 0xF;
-            bist_status_t status;
-            status.running = st32 & 0x1;
-            status.finished = st32 & 0x2;
-            status.error = static_cast<uint8_t>((st32>>2) & 0x3);
-            return status;
-        }
-
-        bool is_ext_bist_supported() {
-            boost::lock_guard<boost::mutex> lock(_mutex);
-            _addr_reg.write(rb_addr_reg_t::ADDR, rb_addr_reg_t::RB_BIST_STATUS);
-            return _iface->peek32(_rb_addr) & 0x80000000;
-        }
-
-        double get_xfer_ratio() {
-            boost::lock_guard<boost::mutex> lock(_mutex);
-            uint32_t xfer_cnt = 0, cyc_cnt = 0;
-            _addr_reg.write(rb_addr_reg_t::ADDR, rb_addr_reg_t::RB_BIST_XFER_CNT);
-            xfer_cnt = _iface->peek32(_rb_addr);
-            _addr_reg.write(rb_addr_reg_t::ADDR, rb_addr_reg_t::RB_BIST_CYC_CNT);
-            cyc_cnt = _iface->peek32(_rb_addr);
-            return (static_cast<double>(xfer_cnt)/cyc_cnt);
-        }
-
-        double get_bus_clk_rate() {
-            uint32_t bus_clk_rate = 0;
-            boost::lock_guard<boost::mutex> lock(_mutex);
-            _addr_reg.write(rb_addr_reg_t::ADDR, rb_addr_reg_t::RB_BUS_CLK_RATE);
-            bus_clk_rate = _iface->peek32(_rb_addr);
-            return (static_cast<double>(bus_clk_rate));
-        }
-
-    private:
-        wb_iface::sptr  _iface;
-        rb_addr_reg_t   _addr_reg;
-        const size_t    _rb_addr;
-        boost::mutex    _mutex;
-    };
-
-public:
-    dma_fifo_core_3000_impl(wb_iface::sptr iface, const size_t base, const size_t readback):
-        _iface(iface), _fifo_readback(iface, base, readback),
-        _fifo_ctrl_reg(base), _base_addr_reg(base), _addr_mask_reg(base),
-        _bist_ctrl_reg(base), _bist_cfg_reg(base), _bist_delay_reg(base), _bist_sid_reg(base)
+    /**************************************************************************
+     * Structors
+     *************************************************************************/
+    dma_fifo_core_3000_impl(
+        poke32_fn_t&& poke_fn, peek32_fn_t&& peek_fn, const size_t fifo_index)
+        : _fifo_index(fifo_index)
+        , poke32(std::move(poke_fn))
+        , peek32(std::move(peek_fn))
+        , _has_bist(unpack_fifo_info(peek32(REG_FIFO_INFO)))
+        , _mem_size(peek32(REG_FIFO_MEM_SIZE))
+        , _bist_clk_rate(_has_bist ? peek32(REG_BIST_CLK_RATE) : 0.0)
     {
-        _fifo_ctrl_reg.initialize(*iface, true);
-        _base_addr_reg.initialize(*iface, true);
-        _addr_mask_reg.initialize(*iface, true);
-        _bist_ctrl_reg.initialize(*iface, true);
-        _bist_cfg_reg.initialize(*iface, true);
-        _has_ext_bist = _fifo_readback.is_ext_bist_supported();
-        if (_has_ext_bist) {
-            _bist_delay_reg.initialize(*iface, true);
-            _bist_sid_reg.initialize(*iface, true);
-        }
+        UHD_LOG_DEBUG("DMA FIFO",
+            "Initializing FIFO core "
+                << _fifo_index << ": RAM Word Width: " << _mem_size.word_size << " bits, "
+                << "address width: " << _mem_size.addr_size
+                << " bits, base address: " << this->get_addr_base()
+                << ", FIFO size: " << (uint64_t(get_addr_mask()) + 1) / 1024 / 1024
+                << " MiB, has BIST: " << (_has_bist ? "Yes" : "No")
+                << ", BIST clock rate: " << (_bist_clk_rate / 1e6)
+                << " MHz, Initial FIFO fullness: "
+                << dma_fifo_core_3000_impl::get_fifo_fullness() << ", FIFO timeout: "
+                << dma_fifo_core_3000_impl::get_fifo_timeout() << " cycles");
     }
 
-    virtual ~dma_fifo_core_3000_impl() {
-        //Clear the FIFO and hold it in that state
-        _fifo_ctrl_reg.write(fifo_ctrl_reg_t::FLUSH_PKTS, 1);
+    virtual ~dma_fifo_core_3000_impl() {}
+
+    /**************************************************************************
+     * API
+     *************************************************************************/
+    bool has_bist() const
+    {
+        return _has_bist;
     }
 
-    virtual bool flush(uint32_t timeout_ms = 2000) {
-        //Flush the FIFO and wait for packets to drain
-        _fifo_ctrl_reg.write(fifo_ctrl_reg_t::FLUSH_PKTS, 1);
-        bool success = _wait_for_fifo_empty(timeout_ms);
-        _fifo_ctrl_reg.write(fifo_ctrl_reg_t::FLUSH_PKTS, 0);
-        return success;
+    uint64_t get_addr_size() const
+    {
+        return _mem_size.addr_size;
     }
 
-    virtual void resize(const uint32_t base_addr, const uint32_t size) {
-        //Validate parameters
-        if (size < 8192) throw uhd::runtime_error("DMA FIFO must be larger than 8KiB");
-        uint32_t size_mask = size - 1;
-        if (size & size_mask) throw uhd::runtime_error("DMA FIFO size must be a power of 2");
+    // TODO: read suppress API
 
-        //Flush the FIFO and wait for packets to drain
-        flush();
-        //Clear the FIFO and hold it in that state
-        _fifo_ctrl_reg.write(fifo_ctrl_reg_t::CLEAR_FIFO, 1);
-        //Write base address and mask
-        _base_addr_reg.write(base_addr_reg_t::BASE_ADDR, base_addr);
-        _addr_mask_reg.write(addr_mask_reg_t::ADDR_MASK, ~size_mask);
-        //Re-arm the FIFO
-        _fifo_ctrl_reg.write(fifo_ctrl_reg_t::CLEAR_FIFO, 0);
+    // fullness in bytes
+    uint64_t get_fifo_fullness()
+    {
+        return peek64(REG_FIFO_FULLNESS);
     }
 
-    virtual uint32_t get_bytes_occupied() {
-        return _fifo_readback.get_occupied_cnt() * 8;
+    uint16_t get_fifo_timeout()
+    {
+        return peek32(REG_FIFO_TIMEOUT) & 0xFFF;
     }
 
-    virtual bool ext_bist_supported() {
-        return _fifo_readback.is_ext_bist_supported();
+    void set_fifo_timeout(const uint16_t timeout_cycles)
+    {
+        UHD_ASSERT_THROW(timeout_cycles <= 0xFFF);
+        poke32(timeout_cycles, REG_FIFO_TIMEOUT);
     }
 
-    virtual uint8_t run_bist(bool finite = true, uint32_t timeout_ms = 500) {
-        return run_ext_bist(finite, 0, 0, 0, timeout_ms);
+    uint64_t get_addr_base()
+    {
+        return peek64(REG_FIFO_ADDR_BASE);
     }
 
-    virtual uint8_t run_ext_bist(
-        bool finite,
-        uint32_t rx_samp_delay,
-        uint32_t tx_pkt_delay,
-        uint32_t sid,
-        uint32_t timeout_ms = 500
-    ) {
-        boost::lock_guard<boost::mutex> lock(_mutex);
+    uint64_t get_addr_mask()
+    {
+        return peek64(REG_FIFO_ADDR_MASK);
+    }
 
-        //Stop previous BIST and wait (if running)
-        _wait_for_bist_done(timeout_ms, true);
+    void set_addr_mask(uint64_t addr_mask)
+    {
+        return poke64(REG_FIFO_ADDR_MASK, addr_mask);
+    }
 
-        //Flush the FIFO and wait for packets to drain
-        flush();
-        //Clear the FIFO and reset the BIST engine
-        _fifo_ctrl_reg.write(fifo_ctrl_reg_t::CLEAR_FIFO, 1);
-        _fifo_ctrl_reg.write(fifo_ctrl_reg_t::CLEAR_FIFO, 0);
+    void set_addr_base(const uint64_t base_addr)
+    {
+        // FIXME verify we're within bounds
+        poke64(REG_FIFO_ADDR_BASE, base_addr);
+    }
 
-        _bist_cfg_reg.set(bist_cfg_reg_t::MAX_PKTS, (2^18)-1);
-        _bist_cfg_reg.set(bist_cfg_reg_t::MAX_PKT_SIZE, 8000);
-        _bist_cfg_reg.set(bist_cfg_reg_t::PKT_SIZE_RAMP, 0);
-        _bist_cfg_reg.flush();
+    uint32_t get_packet_count()
+    {
+        return peek32(REG_FIFO_PACKET_CNT);
+    }
 
-        if (_has_ext_bist) {
-            _bist_delay_reg.set(bist_delay_reg_t::RX_SAMP_DELAY, rx_samp_delay);
-            _bist_delay_reg.set(bist_delay_reg_t::TX_PKT_DELAY, tx_pkt_delay);
-            _bist_delay_reg.flush();
+    /***** BIST controls *****************************************************/
+    bool get_bist_running()
+    {
+        return bool(peek32(REG_BIST_CTRL) & (1 << 4));
+    }
 
-            _bist_sid_reg.write(bist_sid_reg_t::SID, sid);
-        } else {
-            if (rx_samp_delay != 0 || tx_pkt_delay != 0 || sid != 0) {
-                throw uhd::not_implemented_error(
-                    "dma_fifo_core_3000: Runtime delay and SID support only available on FPGA images with extended BIST enabled");
+    void bist_clear_counters()
+    {
+        // strobe
+        poke32(REG_BIST_CTRL, 1 << 2);
+    }
+
+    uint64_t get_bist_num_bytes()
+    {
+        return peek64(REG_BIST_NUM_BYTES);
+    }
+
+    void set_bist_num_bytes(uint64_t num_bytes)
+    {
+        poke64(REG_BIST_NUM_BYTES, num_bytes);
+    }
+
+    uint64_t get_bist_tx_byte_count()
+    {
+        return peek64(REG_BIST_TX_BYTE_COUNT);
+    }
+
+    uint64_t get_bist_rx_byte_count()
+    {
+        return peek64(REG_BIST_RX_BYTE_COUNT);
+    }
+
+    uint64_t get_bist_error_count()
+    {
+        return peek64(REG_BIST_ERROR_COUNT);
+    }
+
+    uint64_t get_bist_cycle_count()
+    {
+        return peek64(REG_BIST_CYCLE_COUNT);
+    }
+
+    void start_bist(const bool cont)
+    {
+        // strobe
+        poke32(REG_BIST_CTRL, 1 | (cont ? (1 << 3) : 0));
+    }
+
+    void stop_bist()
+    {
+        // strobe
+        poke32(REG_BIST_CTRL, 1 << 2);
+    }
+
+    double run_bist(const uint64_t num_bytes, const double timeout_s)
+    {
+        // The number of cycles it will take to transfer all the BIST data if
+        // there is a transfer on every clock cycle (this is the minimum time it
+        // will take to execute the BIST):
+        const uint64_t min_cycles = (num_bytes / (_mem_size.word_size / 8))
+                                    + (num_bytes % (_mem_size.word_size / 8) ? 1 : 0);
+        const auto min_duration =
+            std::chrono::milliseconds(int64_t(min_cycles / _bist_clk_rate * 1e3));
+        // The user could specify inconsistent values where the timeout is
+        // smaller than the time it actually takes to execute the BIST, but we
+        // simply interpret that as "as soon as possible" and don't throw an
+        // error.
+        const auto end_time = std::chrono::steady_clock::now()
+                              + std::chrono::milliseconds(int64_t(timeout_s * 1000));
+        bist_clear_counters();
+        set_bist_num_bytes(num_bytes);
+        // Start BIST in non-continuous mode
+        start_bist(false);
+        // Now wait at least for the minimum time it takes to execute the BIST
+        std::this_thread::sleep_for(min_duration);
+        // Now poll for finished until timeout
+        while (get_bist_running()) {
+            if (std::chrono::steady_clock::now() > end_time) {
+                UHD_LOG_ERROR("DMA FIFO", "Timeout during BIST!");
+                UHD_LOG_DEBUG("DMA FIFO",
+                    "TX bytes transferred: "
+                        << get_bist_tx_byte_count()
+                        << " RX bytes transferred: " << get_bist_rx_byte_count()
+                        << " Cycle count: " << get_bist_cycle_count());
+                throw uhd::runtime_error("[DMA FIFO] Timeout during BIST!");
             }
+            std::this_thread::sleep_for(5ms);
         }
-
-        _bist_ctrl_reg.set(bist_ctrl_reg_t::TEST_PATT, bist_ctrl_reg_t::TEST_PATT_COUNT);
-        _bist_ctrl_reg.set(bist_ctrl_reg_t::CONTINUOUS_MODE, finite ? 0 : 1);
-        _bist_ctrl_reg.write(bist_ctrl_reg_t::GO, 1);
-
-        if (!finite) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(timeout_ms));
+        // Now the BIST is complete, we check all the transfers were accurate
+        // and there were no errors
+        bool error                = false;
+        const uint64_t tx_bytes   = get_bist_tx_byte_count();
+        const uint64_t rx_bytes   = get_bist_rx_byte_count();
+        const uint64_t num_errors = get_bist_error_count();
+        const uint64_t num_cycles = get_bist_cycle_count();
+        const double bist_time    = double(num_cycles) / _bist_clk_rate;
+        if (tx_bytes != num_bytes) {
+            UHD_LOG_ERROR("DMA FIFO",
+                "BIST Error: Incorrect number of TX bytes! "
+                "Transmitted: "
+                    << tx_bytes << " Expected: " << num_bytes);
+            error = true;
         }
-
-        _wait_for_bist_done(timeout_ms, !finite);
-        if (!_fifo_readback.get_bist_status().finished) {
-            throw uhd::runtime_error("dma_fifo_core_3000: DRAM BIST state machine is in a bad state.");
+        if (rx_bytes != num_bytes) {
+            UHD_LOG_ERROR("DMA FIFO",
+                "BIST Error: Incorrect number of RX bytes! "
+                "Received: "
+                    << rx_bytes << " Expected: " << num_bytes);
+            error = true;
         }
-
-        return _fifo_readback.get_bist_status().error;
-    }
-
-    virtual double get_bist_throughput() {
-        if (_has_ext_bist) {
-            _wait_for_bist_done(1000);
-            static const double BYTES_PER_CYC = 8;
-            double bus_clk_rate = _fifo_readback.get_bus_clk_rate();
-            return _fifo_readback.get_xfer_ratio() * bus_clk_rate * BYTES_PER_CYC;
-        } else {
-            throw uhd::not_implemented_error(
-                "dma_fifo_core_3000: Throughput counter only available on FPGA images with extended BIST enabled");
+        if (num_errors != 0) {
+            UHD_LOG_ERROR("DMA FIFO", "BIST Error: Error count is " << num_errors);
+            error = true;
         }
+        UHD_LOG_DEBUG("DMA FIFO",
+            "BIST: Cycles elapsed: " << num_cycles << " Best Case: " << min_cycles);
+        if (error) {
+            throw uhd::runtime_error("[DMA FIFO] Bist failed!");
+        }
+        bist_clear_counters();
+
+        // Return throughput in byte/s
+        return num_bytes / bist_time;
     }
 
 private:
-    bool _wait_for_fifo_empty(uint32_t timeout_ms = 2000) {
-        auto is_data_streaming = [this](uint32_t time_ms) -> bool {
-            auto old_cnts = _fifo_readback.get_out_pkt_cnt();
-            std::this_thread::sleep_for(std::chrono::milliseconds(time_ms));
-            auto new_cnts = _fifo_readback.get_out_pkt_cnt();
-            return (new_cnts != old_cnts);
-        };
+    const size_t _fifo_index;
+    poke32_fn_t poke32;
+    peek32_fn_t peek32;
 
-        // Check for activity. Default timeout is 2s. For a 200MHz bus_clk that's 3200MB of data.
-        // We use a 10ms window to check for activity which detects a stream with approx
-        // 100 packets per second. All timeouts are approximate. No need to make a kernel
-        // call to get system time.
-        constexpr uint32_t CHK_WINDOW_MS = 10;
-        for (uint32_t i = 0; i < timeout_ms/CHK_WINDOW_MS; i++) {
-            if (not is_data_streaming(CHK_WINDOW_MS)) {
-                return true;
-            }
-        }
-        return false;
+    //! Convenience function to do two consecutive peek32's
+    uint64_t peek64(const uint32_t addr)
+    {
+        const uint32_t lo = peek32(addr);
+        const uint32_t hi = peek32(addr + 4);
+        return static_cast<uint64_t>(lo) | (static_cast<uint64_t>(hi) << 32);
     }
 
-    bool _wait_for_bist_done(uint32_t timeout_ms, bool force_stop = false) {
-        // Stop the BIST if requested and it is running
-        if (_fifo_readback.get_bist_status().running) {
-            if (force_stop) {
-                _bist_ctrl_reg.write(bist_ctrl_reg_t::GO, 0);
-            }
-        } else {
-            return true;
-        }
-
-        // BIST is still running. Wait for it to finish
-        // Timeout is approximate. No need to make a kernel call to get system time.
-        for (uint32_t i = 0; i < timeout_ms; i++) {
-            std::this_thread::sleep_for(std::chrono::milliseconds(1));
-            if (not _fifo_readback.get_bist_status().running) {
-                return true;
-            }
-        }
-        return false;
+    //! Convenience function to do two consecutive poke32's
+    void poke64(const uint32_t addr, const uint64_t data)
+    {
+        const uint32_t lo = static_cast<uint32_t>(data & 0xFFFFFFFF);
+        const uint32_t hi = static_cast<uint32_t>((data >> 32) & 0xFFFFFFFF);
+        poke32(addr, lo);
+        poke32(addr + 4, hi);
     }
 
-private:
-    wb_iface::sptr  _iface;
-    boost::mutex    _mutex;
-    bool            _has_ext_bist;
+    //! True if we can do BISTs with this FIFO
+    const bool _has_bist;
+    struct mem_size_t
+    {
+        mem_size_t(const uint32_t mem_size)
+            : word_size((mem_size >> 16) & 0xFFFF), addr_size(mem_size & 0xFFFF)
+        {
+        }
 
-    fifo_readback       _fifo_readback;
-    fifo_ctrl_reg_t     _fifo_ctrl_reg;
-    base_addr_reg_t     _base_addr_reg;
-    addr_mask_reg_t     _addr_mask_reg;
-    bist_ctrl_reg_t     _bist_ctrl_reg;
-    bist_cfg_reg_t      _bist_cfg_reg;
-    bist_delay_reg_t    _bist_delay_reg;
-    bist_sid_reg_t      _bist_sid_reg;
+        //! RAM word width (e.g., 64)
+        const uint16_t word_size;
+        //! Width of the max available address size (in bits)
+        const uint16_t addr_size;
+    };
+    //! Cache the contents of the MEM_SIZE register
+    const mem_size_t _mem_size;
+
+    //! Clock rate of the BIST circuitry in Hz
+    const double _bist_clk_rate;
 };
 
 //
-// Static make function
+// Factory
 //
-dma_fifo_core_3000::sptr dma_fifo_core_3000::make(wb_iface::sptr iface, const size_t set_base, const size_t rb_addr)
+dma_fifo_core_3000::sptr dma_fifo_core_3000::make(
+    poke32_fn_t&& poke_fn, peek32_fn_t&& peek_fn, const size_t fifo_index)
 {
-    if (check(iface, set_base, rb_addr)) {
-        return sptr(new dma_fifo_core_3000_impl(iface, set_base, rb_addr));
-    } else {
-        throw uhd::runtime_error("");
-    }
-}
-
-bool dma_fifo_core_3000::check(wb_iface::sptr iface, const size_t set_base, const size_t rb_addr)
-{
-    dma_fifo_core_3000_impl::fifo_readback fifo_rb(iface, set_base, rb_addr);
-    return fifo_rb.is_fifo_instantiated();
+    return std::make_shared<dma_fifo_core_3000_impl>(
+        std::move(poke_fn), std::move(peek_fn), fifo_index);
 }
