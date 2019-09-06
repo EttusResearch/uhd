@@ -10,9 +10,10 @@
 
 #include <uhd/config.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
-#include <vector>
 #include <stdint.h>
+#include <boost/shared_ptr.hpp>
+#include <string>
+#include <vector>
 
 namespace uhd { namespace transport {
 
