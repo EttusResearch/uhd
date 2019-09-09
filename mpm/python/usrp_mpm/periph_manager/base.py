@@ -176,6 +176,8 @@ class PeriphManagerBase(object):
     # Device initialization (at MPM startup)
     ###########################################################################
     def __init__(self):
+        # This gets set in the child class
+        self.mboard_regs_control = None
         # Note: args is a dictionary.
         assert self.pids
         assert self.mboard_eeprom_magic is not None
@@ -513,7 +515,7 @@ class PeriphManagerBase(object):
         self.log.trace("Teardown called for Peripheral Manager base.")
 
     ###########################################################################
-    # Misc device status controls and indicators
+    # RFNoC and Device info
     ###########################################################################
     def set_device_id(self, device_id):
         """
@@ -521,7 +523,8 @@ class PeriphManagerBase(object):
         The device ID is used to identify the RFNoC components associated with
         this motherboard.
         """
-        raise NotImplementedError("set_device_id() not implemented.")
+        self.log.debug("Setting device ID to `{}'".format(device_id))
+        self.mboard_regs_control.set_device_id(device_id)
 
     def get_device_id(self):
         """
@@ -529,8 +532,28 @@ class PeriphManagerBase(object):
         The device ID is used to identify the RFNoC components associated with
         this motherboard.
         """
-        raise NotImplementedError("get_device_id() not implemented.")
+        return self.mboard_regs_control.get_device_id()
 
+    def get_proto_ver(self):
+        """
+        Return RFNoC protocol version
+        """
+        proto_ver = self.mboard_regs_control.get_proto_ver()
+        self.log.debug("RFNoC protocol version supported by this device is {}".format(proto_ver))
+        return proto_ver
+
+    def get_chdr_width(self):
+        """
+        Return RFNoC CHDR width
+        """
+        chdr_width = self.mboard_regs_control.get_chdr_width()
+        self.log.debug("CHDR width supported by the device is {}".format(chdr_width))
+        return chdr_width
+
+
+    ###########################################################################
+    # Misc device status controls and indicators
+    ###########################################################################
     def get_init_status(self):
         """
         Returns the status of the device after its initialization (that happens
@@ -610,20 +633,6 @@ class PeriphManagerBase(object):
         Returns a list of dicts. One dict per dboard.
         """
         return [dboard.device_info for dboard in self.dboards]
-
-    @no_claim
-    def get_proto_ver(self):
-        """
-        Return RFNoC protocol version
-        """
-        raise NotImplementedError("get_proto_ver() not implemented.")
-
-    @no_claim
-    def get_chdr_width(self):
-        """
-        Return RFNoC CHDR width
-        """
-        raise NotImplementedError("get_chdr_width() not implemented.")
 
     ###########################################################################
     # Component updating
@@ -871,7 +880,7 @@ class PeriphManagerBase(object):
         """
         Return the number of timekeepers
         """
-        raise NotImplementedError("get_num_timekeepers() not implemented.")
+        return self.mboard_regs_control.get_num_timekeepers()
 
     def get_timekeeper_time(self, tk_idx, last_pps):
         """
@@ -881,8 +890,7 @@ class PeriphManagerBase(object):
         tk_idx: Index of timekeeper
         next_pps: If True, get time at last PPS. Otherwise, get time now.
         """
-        raise NotImplementedError(
-            "get_ticks_now({}, {}) not implemented.".format(tk_idx, last_pps))
+        return self.mboard_regs_control.get_timekeeper_time(tk_idx, last_pps)
 
     def set_timekeeper_time(self, tk_idx, ticks, next_pps):
         """
@@ -893,9 +901,7 @@ class PeriphManagerBase(object):
         ticks: Time in ticks
         next_pps: If True, set time at next PPS. Otherwise, set time now.
         """
-        raise NotImplementedError(
-            "set_ticks_last_pps({}, {}, {}) not implemented."
-            .format(tk_idx, ticks, next_pps))
+        self.mboard_regs_control.set_timekeeper_time(tk_idx, ticks, next_pps)
 
     def set_tick_period(self, tk_idx, period_ns):
         """
@@ -905,8 +911,7 @@ class PeriphManagerBase(object):
         tk_idx: Index of timekeeper
         period_ns: Period in nanoseconds
         """
-        raise NotImplementedError(
-            "set_tick_period({}) not implemented.".format(tk_idx, period_ns))
+        self.mboard_regs_control.set_tick_period(tk_idx, period_ns)
 
     def get_clocks(self):
         """

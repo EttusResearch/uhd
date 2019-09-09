@@ -43,6 +43,7 @@ N32X_DEFAULT_QSFP_DRIVER_PRESET = 'Optical'
 N32X_QSFP_I2C_LABEL = 'qsfp-i2c'
 N3XX_FPGA_COMPAT = (7, 0)
 N3XX_MONITOR_THREAD_INTERVAL = 1.0 # seconds
+N3XX_BUS_CLK = 200e6
 
 # Import daughterboard PIDs from their respective classes
 MG_PID = Magnesium.pids[0]
@@ -524,39 +525,6 @@ class n3xx(ZynqComponents, PeriphManagerBase):
             'fpga': self.updateable_components.get('fpga', {}).get('type', ""),
         })
         return device_info
-
-    def set_device_id(self, device_id):
-        """
-        Sets the device ID for this motherboard.
-        The device ID is used to identify the RFNoC components associated with
-        this motherboard.
-        """
-        self.log.debug("Setting device ID to `{}'".format(device_id))
-        self.mboard_regs_control.set_device_id(device_id)
-
-    def get_device_id(self):
-        """
-        Gets the device ID for this motherboard.
-        The device ID is used to identify the RFNoC components associated with
-        this motherboard.
-        """
-        return self.mboard_regs_control.get_device_id()
-
-    def get_proto_ver(self):
-        """
-        Return RFNoC protocol version
-        """
-        proto_ver = self.mboard_regs_control.get_proto_ver()
-        self.log.debug("RFNoC protocol version supported by this device is {}".format(proto_ver))
-        return proto_ver
-
-    def get_chdr_width(self):
-        """
-        Return RFNoC CHDR width
-        """
-        chdr_width = self.mboard_regs_control.get_chdr_width()
-        self.log.debug("CHDR width supported by the device is {}".format(chdr_width))
-        return chdr_width
 
     ###########################################################################
     # Clock/Time API
@@ -1051,43 +1019,6 @@ class n3xx(ZynqComponents, PeriphManagerBase):
     #######################################################################
     # Timekeeper API
     #######################################################################
-    def get_num_timekeepers(self):
-        """
-        Return the number of timekeepers
-        """
-        return self.mboard_regs_control.get_num_timekeepers()
-
-    def get_timekeeper_time(self, tk_idx, last_pps):
-        """
-        Get the time in ticks
-
-        Arguments:
-        tk_idx: Index of timekeeper
-        next_pps: If True, get time at last PPS. Otherwise, get time now.
-        """
-        return self.mboard_regs_control.get_timekeeper_time(tk_idx, last_pps)
-
-    def set_timekeeper_time(self, tk_idx, ticks, next_pps):
-        """
-        Set the time in ticks
-
-        Arguments:
-        tk_idx: Index of timekeeper
-        ticks: Time in ticks
-        next_pps: If True, set time at next PPS. Otherwise, set time now.
-        """
-        self.mboard_regs_control.set_timekeeper_time(tk_idx, ticks, next_pps)
-
-    def set_tick_period(self, tk_idx, period_ns):
-        """
-        Set the time per tick in nanoseconds (tick period)
-
-        Arguments:
-        tk_idx: Index of timekeeper
-        period_ns: Period in nanoseconds
-        """
-        self.mboard_regs_control.set_tick_period(tk_idx, period_ns)
-
     def get_clocks(self):
         """
         Gets the RFNoC-related clocks present in the FPGA design
@@ -1100,7 +1031,6 @@ class n3xx(ZynqComponents, PeriphManagerBase):
             },
             {
                 'name': 'bus_clk',
-                'freq': str(200e6),
+                'freq': str(N3XX_BUS_CLK),
             }
         ]
-
