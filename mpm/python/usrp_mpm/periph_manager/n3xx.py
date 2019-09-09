@@ -82,6 +82,9 @@ class N3xxXportMgrLiberio(XportMgrLiberio):
 ###############################################################################
 # Main Class
 ###############################################################################
+# We need to disable the no-self-use check, because we might require self to
+# become an RPC method, but PyLint doesnt' know that.
+# pylint: disable=no-self-use
 class n3xx(ZynqComponents, PeriphManagerBase):
     """
     Holds N3xx specific attributes and methods
@@ -90,11 +93,12 @@ class n3xx(ZynqComponents, PeriphManagerBase):
     # it uses a new daughterboard, also import that PID from the dboard
     # manager class. The format of this map is:
     # (motherboard product code, (Slot-A DB PID, [Slot-B DB PID])) -> product
+    # pylint: disable=bad-whitespace
     product_map = {
-        ('n300', tuple()) : 'n300',
-        ('n300', (MG_PID,       )): 'n300', # Slot B is empty
-        ('n310', tuple()) : 'n310',
-        ('n310', (MG_PID, MG_PID)): 'n310',
+        ('n300', tuple()        ) : 'n300', # No dboards
+        ('n300', (MG_PID,       )): 'n300', # Normal case: Slot B is empty
+        ('n310', tuple()        ) : 'n310', # No dboards
+        ('n310', (MG_PID, MG_PID)): 'n310', # Normal case: No slots are empty
         ('n310', (MG_PID,       )): 'n310', # If Slot B is empty, we can
                                             # still use the n310.bin image.
                                             # We'll leave this here for
@@ -103,6 +107,7 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         ('n310', (RHODIUM_PID, RHODIUM_PID)): 'n320',
         ('n310', (RHODIUM_PID,            )): 'n320',
     }
+    # pylint: enable=bad-whitespace
 
     #########################################################################
     # Overridables
@@ -235,14 +240,14 @@ class n3xx(ZynqComponents, PeriphManagerBase):
                 # Don't try and figure out what's going on. Just give up.
                 return
             self._init_peripherals(args)
-        except Exception as ex:
+        except BaseException as ex:
             self.log.error("Failed to initialize motherboard: %s", str(ex))
             self._initialization_status = str(ex)
             self._device_initialized = False
         try:
             if not args.get('skip_boot_init', False):
                 self.init(args)
-        except Exception as ex:
+        except BaseException as ex:
             self.log.warning("Failed to initialize device on boot: %s", str(ex))
 
     def _check_fpga_compat(self):
@@ -267,7 +272,7 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         self._ext_clock_freq = float(
             default_args.get('ext_clock_freq', N3XX_DEFAULT_EXT_CLOCK_FREQ)
         )
-        if len(self.dboards) == 0:
+        if not self.dboards:
             self.log.warning(
                 "No dboards found, skipping setting clock and time source " \
                 "configuration."
@@ -694,7 +699,7 @@ class n3xx(ZynqComponents, PeriphManagerBase):
             self.log.debug("Waiting for {} timebase to lock..." \
                            .format(time_source))
             if not poll_with_timeout(
-                    lambda: wr_regs_control.get_time_lock_status(),
+                    wr_regs_control.get_time_lock_status,
                     40000, # Try for x ms... this number is set from a few benchtop tests
                     1000, # Poll every... second! why not?
                 ):
@@ -941,13 +946,6 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         the user wants to know/see.
         """
         return self.mboard_info
-
-    def set_mb_eeprom(self, eeprom_vals):
-        """
-        See PeriphManagerBase.set_mb_eeprom() for docs.
-        """
-        self.log.warn("Called set_mb_eeprom(), but not implemented!")
-        raise NotImplementedError
 
     def get_db_eeprom(self, dboard_idx):
         """

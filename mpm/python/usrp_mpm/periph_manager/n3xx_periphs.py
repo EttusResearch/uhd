@@ -471,8 +471,13 @@ class MboardRegsControl(object):
 
 
 class RetimerQSFP(DS125DF410):
+    """
+    Thin wrapper around an I2C device that controls the QSFP retimer
+    """
     # (deemphasis, swing)
-    DRIVER_PRESETS = { '1m': (0x00, 0x07), '3m': (0x41, 0x06), 'Optical': (0x41, 0x04) }
+    DRIVER_PRESETS = {
+        '1m': (0x00, 0x07), '3m': (0x41, 0x06), 'Optical': (0x41, 0x04)
+    }
 
     def __init__(self, i2c_bus):
         regs_iface = lib.i2c.make_i2cdev_regs_iface(
