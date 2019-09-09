@@ -1,0 +1,36 @@
+#!/usr/bin/env python3
+
+from pathlib import Path
+import sys
+
+DT_BASE = Path("/sys/firmware/devicetree/base")
+
+def find_eeprom(name):
+    with open(DT_BASE / "__symbols__" / name) as f:
+        dt_path = DT_BASE / f.read()[1:-1]
+
+    for dev in Path("/sys/bus/nvmem/devices").glob("*"):
+        of_node_path = dev / "of_node"
+        if of_node_path.exists() and dt_path.samefile(of_node_path):
+            return dev / "nvmem"
+
+def list_eeproms():
+    return [dev.name for dev in Path(DT_BASE / "__symbols__").glob("*_eeprom")]
+
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Return the path to an eeprom")
+        print("usage: %s <eeprom_name>" % sys.argv[0])
+        print("valid eeprom_names: " + ', '.join(list_eeproms()))
+        sys.exit(1)
+    name = sys.argv[1]
+    try:
+        path = find_eeprom(name)
+        if path is None:
+            print("%s: found symbol, but nvmem device not present"% sys.argv[0], file=sys.stderr)
+            sys.exit(1)
+    except:
+        print("%s: could not find nvmem device for devicetree symbol %s" % (sys.argv[0], name), file=sys.stderr)
+        sys.exit(1)
+
+    print(path)

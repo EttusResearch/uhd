@@ -1,0 +1,13 @@
+#!/bin/bash
+
+set -e
+
+util=$(basename $0)
+if [ $# -ge 1 ]; then
+    symbol=$1
+    if [ -n "$symbol" ] && [ "${symbol:(-7)}" != "_eeprom" ]; then
+        symbol="${symbol}_eeprom"
+    fi
+    path=$(eeprom-path $symbol)
+fi
+$util-core $path ${*:2} 2> >( sed "s!-core <\(eeprom\|output_file\)>! <symbol>!" >&2)
