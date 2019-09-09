@@ -40,7 +40,6 @@ set(NUMPY_MIN_VERSION "1.7")
 set(PY_MAKO_MIN_VERSION "0.4.2")
 set(PY_REQUESTS_MIN_VERSION "2.0")
 
-
 ########################################################################
 # Check Compiler Version
 ########################################################################
@@ -281,7 +280,9 @@ endif(WIN32)
 ########################################################################
 message(STATUS "")
 message(STATUS "Configuring Boost C++ Libraries...")
-set(BOOST_REQUIRED_COMPONENTS
+# NO optional Boost components!
+# ALL required Boost components!
+set(UHD_BOOST_REQUIRED_COMPONENTS
     chrono
     date_time
     filesystem
@@ -290,44 +291,12 @@ set(BOOST_REQUIRED_COMPONENTS
     system
     unit_test_framework
     serialization
+    thread
 )
-
-if(MINGW)
-    list(APPEND BOOST_REQUIRED_COMPONENTS thread_win32)
-else()
-    list(APPEND BOOST_REQUIRED_COMPONENTS thread)
-endif()
-
-if(UNIX AND NOT BOOST_ROOT AND EXISTS "/usr/lib64")
-    list(APPEND BOOST_LIBRARYDIR "/usr/lib64") #fedora 64-bit fix
-endif(UNIX AND NOT BOOST_ROOT AND EXISTS "/usr/lib64")
-
-if(MSVC)
-    set(BOOST_ALL_DYN_LINK "${BOOST_ALL_DYN_LINK}" CACHE BOOL "boost enable dynamic linking")
-    if(BOOST_ALL_DYN_LINK)
-        add_definitions(-DBOOST_ALL_DYN_LINK) #setup boost auto-linking in msvc
-    else(BOOST_ALL_DYN_LINK)
-        set(BOOST_REQUIRED_COMPONENTS) #empty components list for static link
-    endif(BOOST_ALL_DYN_LINK)
-endif(MSVC)
-
-set(Boost_ADDITIONAL_VERSIONS
-    "1.56.0" "1.56" "1.57" "1.57" "1.58" "1.59" "1.60" "1.61" "1.62" "1.63"
-    "1.64" "1.65" "1.66" "1.67" "1.68" "1.69"
-)
-
-message(STATUS "Looking for optional Boost components...")
-find_package(Boost ${BOOST_MIN_VERSION} OPTIONAL_COMPONENTS ${BOOST_OPTIONAL_COMPONENTS})
-
-message(STATUS "Looking for required Boost components...")
-find_package(Boost ${BOOST_MIN_VERSION} COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
+include(UHDBoost)
 
 include_directories(${Boost_INCLUDE_DIRS})
 link_directories(${Boost_LIBRARY_DIRS})
-
-message(STATUS "Boost include directories: ${Boost_INCLUDE_DIRS}")
-message(STATUS "Boost library directories: ${Boost_LIBRARY_DIRS}")
-message(STATUS "Boost libraries: ${Boost_LIBRARIES}")
 
 ########################################################################
 # Additional settings for build environment
@@ -401,7 +370,6 @@ endif(WIN32)
 LIBUHD_REGISTER_COMPONENT("Examples" ENABLE_EXAMPLES ON "ENABLE_LIBUHD" OFF OFF)
 LIBUHD_REGISTER_COMPONENT("Utils" ENABLE_UTILS ON "ENABLE_LIBUHD" OFF OFF)
 LIBUHD_REGISTER_COMPONENT("Tests" ENABLE_TESTS ON "ENABLE_LIBUHD" OFF OFF)
-
 
 ########################################################################
 # Check for fpga-src submodule
@@ -488,7 +456,7 @@ endif(NOT CMAKE_MODULES_DIR)
 # UHDConfig.cmake needs UHD_LINK_LIST_STATIC set:
 list(APPEND UHD_LINK_LIST_STATIC "dl")
 list(APPEND UHD_LINK_LIST_STATIC "pthread")
-foreach(Boost_Comp ${BOOST_REQUIRED_COMPONENTS})
+foreach(Boost_Comp ${UHD_BOOST_REQUIRED_COMPONENTS})
     if(NOT ${Boost_Comp} STREQUAL "unit_test_framework")
         list(APPEND UHD_LINK_LIST_STATIC "boost_${Boost_Comp}")
     endif(NOT ${Boost_Comp} STREQUAL "unit_test_framework")
@@ -514,13 +482,14 @@ configure_file(
     @ONLY
 )
 
-set(cmake_configs
+set(uhd_cmake_scripts
     ${CMAKE_BINARY_DIR}/cmake/Modules/UHDConfig.cmake
     ${CMAKE_BINARY_DIR}/cmake/Modules/UHDConfigVersion.cmake
+    ${CMAKE_SOURCE_DIR}/cmake/Modules/UHDBoost.cmake
 )
 
 UHD_INSTALL(
-    FILES ${cmake_configs}
+    FILES ${uhd_cmake_scripts}
     DESTINATION ${CMAKE_MODULES_DIR}/uhd
     COMPONENT "devel"
 )

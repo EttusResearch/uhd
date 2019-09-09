@@ -18,6 +18,9 @@
 #
 ########################################################################
 
+# Allows us to use all .cmake files in this directory
+list(INSERT CMAKE_MODULE_PATH 0 "${CMAKE_CURRENT_LIST_DIR}")
+
 # set that this file was found, for use in GNU Radio's FindUHD.cmake.
 # Have to use the ENV, since this file might not allow CACHE changes.
 
@@ -50,7 +53,6 @@ endif()
 
 list(APPEND UHD_INCLUDE_HINTS ${CMAKE_INSTALL_PREFIX}/include)
 list(APPEND UHD_LIBDIR_HINTS ${CMAKE_INSTALL_PREFIX}/lib)
-
 
 # Search for static libs if so required
 if( UHD_USE_STATIC_LIBS )
