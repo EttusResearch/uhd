@@ -85,7 +85,7 @@ class PeriphManagerBase(object):
     # For checking revision numbers, this is the highest revision that this
     # particular version of MPM supports. Leave at None to skip a max rev
     # check.
-    mboard_last_rev_compat = None
+    mboard_max_rev = None
     # A list of available sensors on the motherboard. This dictionary is a map
     # of the form sensor_name -> method name
     mboard_sensor_callback_map = {}
@@ -282,15 +282,10 @@ class PeriphManagerBase(object):
                 )
                 raise RuntimeError("Invalid PID found in EEPROM.")
         # The rev_compat is either directly stored in the EEPROM, or we fall
-        # back first to the dt_compat, then the rev itself (because every rev is
-        # compatible with itself).
-        # The dt_compat solution is a technically a hack, but it works because
-        # all hardware we have released until we made this change happened to
-        # have a dt_compat that also works as a rev_compat.
+        # back to the the rev itself (because every rev is compatible with
+        # itself).
         rev_compat = \
-            eeprom_head.get('rev_compat',
-                            eeprom_head.get('dt_compat',
-                                            eeprom_head.get('rev')))
+            eeprom_head.get('rev_compat', eeprom_head.get('rev'))
         try:
             rev_compat = int(rev_compat)
         except (ValueError, TypeError):
@@ -301,16 +296,16 @@ class PeriphManagerBase(object):
         # In order for the software to be able to understand the hardware, the
         # rev_compat value (stored on the EEPROM) must be smaller or equal to
         # the value stored in the software itself.
-        if self.mboard_last_rev_compat is None:
+        if self.mboard_max_rev is None:
             self.log.warning("Skipping HW/SW compatibility check!")
         else:
-            if rev_compat > self.mboard_last_rev_compat:
+            if rev_compat > self.mboard_max_rev:
                 raise RuntimeError(
                     "Software is maximally compatible with revision `{}', but "
                     "the hardware has revision `{}' and is minimally compatible "
                     "with hardware revision `{}'. Please upgrade your version of"
                     "MPM in order to use this device."
-                    .format(self.mboard_last_rev_compat, mboard_info['rev'], rev_compat)
+                    .format(self.mboard_max_rev, mboard_info['rev'], rev_compat)
                 )
         return mboard_info
 

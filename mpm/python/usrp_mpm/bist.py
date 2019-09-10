@@ -495,7 +495,7 @@ class UsrpBIST(object):
         # If this is true, trigger a reload of the default FPGA image
         self.reload_fpga_image = False
         try:
-            default_rev = self.get_mb_periph_mgr().mboard_last_rev_compat
+            default_rev = self.get_mb_periph_mgr().mboard_max_rev
         except ImportError:
             # This means we're in dry run mode or something like that, so just
             # pick something
