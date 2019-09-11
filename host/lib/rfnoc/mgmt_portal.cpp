@@ -1050,15 +1050,15 @@ private: // Functions
         // Send the transaction over the wire
         _send_mgmt_transaction(xport, send);
 
-        auto recv_buff = xport.get_mgmt_buff(timeout * 1000);
-        if (not recv_buff) {
+        auto mgmt_buff = xport.get_mgmt_buff(timeout * 1000);
+        if (not mgmt_buff) {
             throw uhd::io_error("Timed out getting recv buff for management transaction");
         }
-        _recv_pkt->refresh(recv_buff->data());
+        _recv_pkt->refresh(mgmt_buff->data());
         mgmt_payload recv;
         recv.set_header(my_epid, _protover, _chdr_w);
         _recv_pkt->fill_payload(recv);
-        xport.release_recv_buff(std::move(recv_buff));
+        xport.release_mgmt_buff(std::move(mgmt_buff));
         return recv;
     }
 

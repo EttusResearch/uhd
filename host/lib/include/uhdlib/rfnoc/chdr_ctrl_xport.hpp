@@ -120,6 +120,13 @@ public:
     void release_recv_buff(frame_buff::uptr buff);
 
     /*!
+     * Release a frame buffer, allowing the recv link driver to reuse it.
+     *
+     * \param buffer frame buffer to release for reuse by the link
+     */
+    void release_mgmt_buff(frame_buff::uptr buff);
+
+    /*!
      * Get this xport's EPID
      *
      * \return the source EPID for this transport

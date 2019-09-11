@@ -74,9 +74,8 @@ chdr_ctrl_xport::chdr_ctrl_xport(io_service::sptr io_srv,
         return false;
     };
 
-    // No additional frames reserved specifically for this virtual interface
     _mgmt_recv_if = io_srv->make_recv_client(
-        recv_link, 0, mgmt_recv_cb, send_link_if::sptr(), 0, release_cb);
+        recv_link, 1, mgmt_recv_cb, send_link_if::sptr(), 0, release_cb);
 }
 
 /*!
@@ -141,6 +140,13 @@ void chdr_ctrl_xport::release_recv_buff(frame_buff::uptr buff)
     // FIXME: Remove mutex when have threaded_io_service
     std::lock_guard<std::mutex> lock(_mutex);
     _ctrl_recv_if->release_recv_buff(std::move(buff));
+}
+
+void chdr_ctrl_xport::release_mgmt_buff(frame_buff::uptr buff)
+{
+    // FIXME: Remove mutex when have threaded_io_service
+    std::lock_guard<std::mutex> lock(_mutex);
+    _mgmt_recv_if->release_recv_buff(std::move(buff));
 }
 
 /*!

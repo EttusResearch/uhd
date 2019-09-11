@@ -143,10 +143,10 @@ chdr_rx_data_xport::fc_params_t chdr_rx_data_xport::configure_sep(io_service::sp
 
     // Create a temporary recv_io to receive the strc init
     auto recv_io = io_srv->make_recv_client(recv_link,
-        /* num_recv_frames*/ 1,
+        1, // num_recv_frames
         recv_cb,
         send_link,
-        /* num_send_frames*/ 1,
+        1, // num_send_frames
         fc_cb);
 
     // Create a control transport with the rx data links to send mgmt packets
@@ -157,8 +157,8 @@ chdr_rx_data_xport::fc_params_t chdr_rx_data_xport::configure_sep(io_service::sp
         recv_link,
         pkt_factory,
         local_epid,
-        0, // num_send_frames
-        0); // num_recv_frames
+        1, // num_send_frames
+        1); // num_recv_frames
 
     // Setup a route to the EPID
     // Note that this may be gratuitous--The endpoint may already have been set up

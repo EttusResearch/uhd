@@ -71,9 +71,8 @@ private:
      * Disconnect the sender and free resources
      *
      * \param link the link that was used for sending data
-     * \param num_frames number of frames to release (same as reservation)
      */
-    void disconnect_sender(send_link_if* link, size_t num_frames);
+    void disconnect_sender(send_link_if* link);
 
     /*!
      * Connect a receiver to the link and reserve resources
@@ -87,9 +86,8 @@ private:
      * Disconnect the receiver from the provided link and free resources
      * \param link the recv link that was used for reception
      * \param cb the callback to disassociate
-     * \param num_frames the number of frames that was reserved for the cb
      */
-    void disconnect_receiver(recv_link_if* link, inline_recv_cb* cb, size_t num_frames);
+    void disconnect_receiver(recv_link_if* link, inline_recv_cb* cb);
 
     /*
      * Function to perform recv operations on a link, which is potentially
@@ -103,13 +101,10 @@ private:
     frame_buff::uptr recv(
         inline_recv_cb* recv_io_cb, recv_link_if* recv_link, int32_t timeout_ms);
 
-    /* Track whether link is muxed, the callback, and buffer reservations */
+    /* Track whether link is muxed and the callback */
     std::unordered_map<recv_link_if*,
-        std::tuple<inline_recv_mux*, inline_recv_cb*, size_t>>
+        std::tuple<inline_recv_mux*, inline_recv_cb*>>
         _recv_tbl;
-
-    /* Track how many send_frames have been reserved for each link */
-    std::unordered_map<send_link_if*, size_t> _send_tbl;
 
     /* Shared ptr kept to avoid untimely release */
     std::list<send_link_if::sptr> _send_links;
