@@ -231,6 +231,12 @@ UHD_ADD_NONAPI_TEST(
     ${CMAKE_SOURCE_DIR}/lib/transport/inline_io_service.cpp
 )
 
+UHD_ADD_NONAPI_TEST(
+    TARGET "offload_io_srv_test.cpp"
+    EXTRA_SOURCES
+    ${CMAKE_SOURCE_DIR}/lib/transport/offload_io_service.cpp
+)
+
 ########################################################################
 # demo of a loadable module
 ########################################################################
