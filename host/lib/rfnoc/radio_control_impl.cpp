@@ -168,10 +168,10 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
             {&_spp_prop.back()},
             [this, chan, &spp = _spp_prop.back()]() {
                 RFNOC_LOG_TRACE("Calling resolver for spp@" << chan);
-                // TODO: Replace the magic number 16 (the protocol overhead)
-                // with something else that is calculated based on the CHDR width
+                // MTU is max payload size, header with timestamp is already
+                // accounted for
                 const int mtu =
-                    static_cast<int>(get_mtu({res_source_info::OUTPUT_EDGE, chan})) - 16;
+                    static_cast<int>(get_mtu({res_source_info::OUTPUT_EDGE, chan}));
                 const int mtu_samps       = mtu / (_samp_width / 8);
                 const int max_spp_per_mtu = mtu_samps - (mtu_samps % _spc);
                 if (spp.get() > max_spp_per_mtu) {
