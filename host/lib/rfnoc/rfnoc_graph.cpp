@@ -23,6 +23,7 @@
 #include <boost/shared_ptr.hpp> // FIXME remove when rfnoc_device is ready
 #include <memory>
 
+using namespace uhd;
 using namespace uhd::rfnoc;
 
 namespace {
@@ -322,13 +323,15 @@ public:
     uhd::rx_streamer::sptr create_rx_streamer(
         const size_t num_chans, const uhd::stream_args_t& args)
     {
-        return boost::make_shared<rfnoc_rx_streamer>(num_chans, args);
+        _rx_streamers.push_back(boost::make_shared<rfnoc_rx_streamer>(num_chans, args));
+        return _rx_streamers.back();
     }
 
     uhd::tx_streamer::sptr create_tx_streamer(
         const size_t num_chans, const uhd::stream_args_t& args)
     {
-        return boost::make_shared<rfnoc_tx_streamer>(num_chans, args);
+        _tx_streamers.push_back(boost::make_shared<rfnoc_tx_streamer>(num_chans, args));
+        return _tx_streamers.back();
     }
 
     size_t get_num_mboards() const
@@ -874,6 +877,12 @@ private:
 
     //! Reference to a packet factory object. Gets initialized just before the GSM
     std::unique_ptr<chdr::chdr_packet_factory> _pkt_factory;
+
+    //! Reference to RX streamers
+    std::vector<rx_streamer::sptr> _rx_streamers;
+
+    //! Reference to TX streamers
+    std::vector<tx_streamer::sptr> _tx_streamers;
 }; /* class rfnoc_graph_impl */
 
 
