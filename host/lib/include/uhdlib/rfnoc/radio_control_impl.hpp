@@ -39,6 +39,8 @@ public:
      *************************************************************************/
     void issue_stream_cmd(const uhd::stream_cmd_t& stream_cmd, const size_t port);
 
+    void enable_rx_timestamps(const bool enable, const size_t chan);
+
     /**************************************************************************
      * Rate-Related API Calls
      *************************************************************************/
@@ -211,7 +213,8 @@ public:
         static const uint32_t REG_RX_ERR_REM_PORT      = 0x30; // Remote port ID for error reporting
         static const uint32_t REG_RX_ERR_REM_EPID      = 0x34; // Remote EPID (endpoint ID) for error reporting
         static const uint32_t REG_RX_ERR_ADDR          = 0x38; // Offset to which to write error code (ADDR+0) and time (ADDR+8)
-        static const uint32_t REG_RX_DATA = 0x3C;
+        static const uint32_t REG_RX_DATA              = 0x3C;
+        static const uint32_t REG_RX_HAS_TIME          = 0x70; // Set to one if radio output packets should have timestamps
 
         // TX Control Registers
         static const uint32_t REG_TX_IDLE_VALUE   = 0x40; // Value to output when transmitter is idle

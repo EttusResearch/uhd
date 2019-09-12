@@ -832,6 +832,11 @@ void radio_control_impl::issue_stream_cmd(
     regs().poke32(get_addr(regmap::REG_RX_CMD, chan), cmd_word);
 }
 
+void radio_control_impl::enable_rx_timestamps(const bool enable, const size_t chan)
+{
+    regs().poke32(get_addr(regmap::REG_RX_HAS_TIME, chan), enable ? 0x1 : 0x0);
+}
+
 /******************************************************************************
  * Private methods
  *****************************************************************************/

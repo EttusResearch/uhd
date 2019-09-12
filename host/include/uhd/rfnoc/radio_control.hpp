@@ -647,6 +647,10 @@ public:
     virtual void issue_stream_cmd(
         const uhd::stream_cmd_t& stream_cmd, const size_t port) = 0;
 
+    /*! Enable or disable the setting of timestamps on Rx.
+     */
+    virtual void enable_rx_timestamps(const bool enable, const size_t chan) = 0;
+
     /**************************************************************************
      * Radio Identification API Calls
      *************************************************************************/
