@@ -54,24 +54,24 @@ public:
         // Now initialize all subsystems:
         _init_mb_controllers();
         _init_gsm(); // Graph Stream Manager
-        for (size_t mb_idx = 0; mb_idx < _num_mboards; ++mb_idx) {
-            try {
-                // If anything fails here, we immediately deinit all the other
-                // blocks to avoid any more fallout, then safely bring down the
-                // device.
+        try {
+            // If anything fails here, we immediately deinit all the other
+            // blocks to avoid any more fallout, then safely bring down the
+            // device.
+            for (size_t mb_idx = 0; mb_idx < _num_mboards; ++mb_idx) {
                 _init_blocks(mb_idx, dev_addr);
-            } catch (...) {
-                _block_registry->shutdown();
-                throw;
             }
+            UHD_LOG_TRACE(LOG_ID, "Initializing properties on all blocks...");
+            _block_registry->init_props();
+            _init_sep_map();
+            _init_static_connections();
+            _init_mbc();
+            // Start with time set to zero, but don't complain if sync fails
+            rfnoc_graph_impl::synchronize_devices(uhd::time_spec_t(0.0), true);
+        } catch (...) {
+            _block_registry->shutdown();
+            throw;
         }
-        UHD_LOG_TRACE(LOG_ID, "Initializing properties on all blocks...");
-        _block_registry->init_props();
-        _init_sep_map();
-        _init_static_connections();
-        _init_mbc();
-        // Start with time set to zero, but don't complain if sync fails
-        rfnoc_graph_impl::synchronize_devices(uhd::time_spec_t(0.0), true);
     } catch (const std::exception& ex) {
         UHD_LOG_ERROR(LOG_ID, "Caught exception while initializing graph: " << ex.what());
         throw uhd::runtime_error("Failure to create rfnoc_graph.");
