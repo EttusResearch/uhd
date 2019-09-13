@@ -428,6 +428,15 @@ inline double adf535x_impl<adf5355_regs_t>::_set_frequency(
 
     const double coerced_out_freq = coerced_vco_freq / rf_divider;
 
+    UHD_LOG_TRACE("ADF5355",
+        boost::format("ADF5355 Frequencies (MHz): Requested=%f "
+                      "Actual=%f TargetVCO=%f ActualVCO=%f")
+            % (target_freq / 1e6) % (coerced_out_freq / 1e6) % (target_vco_freq / 1e6)
+            % (coerced_vco_freq / 1e6));
+    UHD_LOG_TRACE("ADF5355",
+        boost::format("ADF5355 Settings: N=%f INT=%d FRAC1=%u MOD2=%d FRAC2=%u") % N % INT
+            % FRAC1 % MOD2 % FRAC2);
+
     /* Update registers */
     _regs.int_16_bit   = INT;
     _regs.frac1_24_bit = FRAC1;
@@ -549,6 +558,15 @@ inline double adf535x_impl<adf5356_regs_t>::_set_frequency(
                     / double(ADF535X_MOD1)));
 
     const double coerced_out_freq = coerced_vco_freq / rf_divider;
+
+    UHD_LOG_TRACE("ADF5356",
+        boost::format("ADF5356 Frequencies (MHz): Requested=%f "
+                      "Actual=%f TargetVCO=%f ActualVCO=%f")
+            % (target_freq / 1e6) % (coerced_out_freq / 1e6) % (target_vco_freq / 1e6)
+            % (coerced_vco_freq / 1e6));
+    UHD_LOG_TRACE("ADF5356",
+        boost::format("ADF5356 Settings: N=%f INT=%d FRAC1=%u MOD2=%d FRAC2=%u") % N % INT
+            % FRAC1 % MOD2 % FRAC2);
 
     /* Update registers */
     _regs.int_16_bit   = INT;
