@@ -38,7 +38,8 @@ static uint32_t get_reg(wb_iface::wb_addr_type addr) {
 }
 }
 
-class twinrx_gpio : public timed_wb_iface {
+class twinrx_gpio : public wb_iface
+{
 public:
     typedef boost::shared_ptr<twinrx_gpio> sptr;
 
@@ -105,16 +106,6 @@ public:
         _db_iface->set_gpio_out(dboard_iface::UNIT_BOTH,
             (static_cast<uint32_t>(addr) << shift(CPLD_FULL_ADDR)) | (data << shift(CPLD_DATA)),
             mask<uint32_t>(CPLD_FULL_ADDR)|mask<uint32_t>(CPLD_DATA));
-    }
-
-    // Timed command interface
-    inline time_spec_t get_time() {
-        return _db_iface->get_command_time();
-    }
-
-    void set_time(const time_spec_t& t) {
-        boost::lock_guard<boost::mutex> lock(_mutex);
-        _db_iface->set_command_time(t);
     }
 
 private:    //Members/definitions
