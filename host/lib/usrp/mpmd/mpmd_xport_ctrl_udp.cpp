@@ -198,6 +198,8 @@ uhd::both_xports_t mpmd_xport_ctrl_udp::make_transport(
     default_buff_args.num_recv_frames = MPMD_UDP_DEFAULT_NUM_RECV_FRAMES;
     default_buff_args.recv_frame_size = MPMD_UDP_MSG_FRAME_SIZE;
     default_buff_args.send_frame_size = MPMD_UDP_MSG_FRAME_SIZE;
+    default_buff_args.recv_buff_size = link_speed * MPMD_BUFFER_DEPTH;
+    default_buff_args.send_buff_size = link_speed * MPMD_BUFFER_DEPTH;
     if (xport_type == usrp::device3_impl::CTRL) {
         default_buff_args.num_recv_frames =
             uhd::rfnoc::CMD_FIFO_SIZE / uhd::rfnoc::MAX_CMD_PKT_SIZE;
