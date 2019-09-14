@@ -33,7 +33,29 @@ time_keeper:
   ports:
   - name: radio_time
     width: 64
-    
+
+radio_1x32:
+  type: master-slave
+  ports:
+  - name: radio_rx_data
+    type: from-master
+    width: 32
+  - name: radio_rx_stb
+    type: from-master
+    width: 1
+  - name: radio_rx_running
+    type: to-master
+    width: 1
+  - name: radio_tx_data
+    type: to-master
+    width: 32
+  - name: radio_tx_stb
+    type: from-master
+    width: 1
+  - name: radio_tx_running
+    type: to-master
+    width: 1
+
 x300_radio:
   type: master-slave
   ports:

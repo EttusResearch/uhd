@@ -63,8 +63,8 @@ io_ports:
   time_keeper:
     type: time_keeper
     drive: listener
-  x300_radio:
-    type: x300_radio
+  radio_iface:
+    type: radio_1x32
     drive: slave
 
 registers:
