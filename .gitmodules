@@ -1,4 +1,0 @@
-[submodule "fpga-src"]
-	path = fpga-src
-	url = https://github.com/EttusResearch/fpga.git
-	branch = maint
