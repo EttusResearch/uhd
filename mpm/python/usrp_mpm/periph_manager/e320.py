@@ -78,7 +78,7 @@ class e320(ZynqComponents, PeriphManagerBase):
     mboard_info = {"type": "e3xx",
                    "product": "e320"
                   }
-    mboard_max_rev = 0
+    mboard_max_rev = 4  # rev E
     mboard_sensor_callback_map = {
         'ref_locked': 'get_ref_lock_sensor',
         'gps_locked': 'get_gps_lock_sensor',
