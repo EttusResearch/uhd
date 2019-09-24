@@ -86,6 +86,16 @@ class PeriphManagerBase(object):
     # read. It's usually safe to not override this, as EEPROMs typically aren't
     # that big.
     mboard_eeprom_max_len = None
+    # lambda expression for motherboard EEPROM readers. path is the only dynamic
+    # parameter that is passed to the reader. Subclasses change the lambda
+    # expression to use EEPROM readers with different signatures.
+    mboard_eeprom_reader = lambda path: eeprom.read_eeprom(
+        path,
+        PeriphManagerBase.mboard_eeprom_offset,
+        eeprom.MboardEEPROM.eeprom_header_format,
+        eeprom.MboardEEPROM.eeprom_header_keys,
+        PeriphManagerBase.mboard_eeprom_magic,
+        PeriphManagerBase.mboard_eeprom_max_len)
     # This is the *default* mboard info. The keys from this dict will be copied
     # into the current device info before it actually gets initialized. This
     # means that keys from this dict could be overwritten during the
@@ -130,6 +140,16 @@ class PeriphManagerBase(object):
     # read. It's usually safe to not override this, as EEPROMs typically aren't
     # that big.
     dboard_eeprom_max_len = None
+    # lambda expression for daughterboard EEPROM readers. path is the only
+    # dynamic parameter that is passed to the reader. Subclasses change the
+    # lambda expression to use EEPROM readers with different signatures.
+    dboard_eeprom_reader = lambda path: eeprom.read_eeprom(
+        path,
+        PeriphManagerBase.dboard_eeprom_offset,
+        eeprom.DboardEEPROM.eeprom_header_format,
+        eeprom.DboardEEPROM.eeprom_header_keys,
+        PeriphManagerBase.dboard_eeprom_magic,
+        PeriphManagerBase.dboard_eeprom_max_len)
     # If the dboard requires spidev access, the following attribute is a list
     # of SPI master addrs (typically something like 'e0006000.spi'). You
     # usually want the length of this list to be as long as the number of
@@ -285,14 +305,8 @@ class PeriphManagerBase(object):
                                self.mboard_eeprom_addr)
                 return {}, b''
             self.log.trace("Found mboard EEPROM path: %s", eeprom_paths[0])
-            (eeprom_head, eeprom_rawdata) = eeprom.read_eeprom(
-                eeprom_paths[0],
-                self.mboard_eeprom_offset,
-                eeprom.MboardEEPROM.eeprom_header_format,
-                eeprom.MboardEEPROM.eeprom_header_keys,
-                self.mboard_eeprom_magic,
-                self.mboard_eeprom_max_len,
-            )
+            (eeprom_head, eeprom_rawdata) = \
+                self.__class__.mboard_eeprom_reader(eeprom_paths[0])
             self.log.trace("Found EEPROM metadata: `{}'"
                            .format(str(eeprom_head)))
             self.log.trace("Read {} bytes of EEPROM data."
@@ -381,13 +395,8 @@ class PeriphManagerBase(object):
         dboard_info = []
         for dboard_idx, dboard_eeprom_path in enumerate(dboard_eeprom_paths):
             self.log.debug("Reading EEPROM info for dboard %d...", dboard_idx)
-            dboard_eeprom_md, dboard_eeprom_rawdata = eeprom.read_eeprom(
-                dboard_eeprom_path,
-                self.dboard_eeprom_offset,
-                eeprom.DboardEEPROM.eeprom_header_format,
-                eeprom.DboardEEPROM.eeprom_header_keys,
-                self.dboard_eeprom_magic,
-                self.dboard_eeprom_max_len,
+            dboard_eeprom_md, dboard_eeprom_rawdata = self._read_dboard_eeprom(
+                dboard_eeprom_path
             )
             self.log.trace("Found dboard EEPROM metadata: `{}'"
                            .format(str(dboard_eeprom_md)))
@@ -405,6 +414,9 @@ class PeriphManagerBase(object):
                 'pid': db_pid,
             })
         return dboard_info
+
+    def _read_dboard_eeprom(self, dboard_eeprom_path):
+        return self.__class__.dboard_eeprom_reader(dboard_eeprom_path)
 
     def _update_default_args(self, default_args):
         """

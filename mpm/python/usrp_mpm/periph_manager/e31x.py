@@ -361,18 +361,8 @@ class e31x(ZynqComponents, PeriphManagerBase):
         self.log.trace("Read %d bytes of EEPROM data.", len(eeprom_rawdata))
         return eeprom_head, eeprom_rawdata
 
-    def _get_dboard_eeprom_info(self):
-        """
-        Read back EEPROM info from the daughterboards
-        """
-        assert self.dboard_eeprom_addr
-        self.log.trace("Identifying dboard EEPROM paths from `{}'..."
-                       .format(self.dboard_eeprom_addr))
-        dboard_eeprom_path = \
-            get_eeprom_paths(self.dboard_eeprom_addr)[self.dboard_eeprom_path_index]
-        self.log.trace("Using dboard EEPROM paths: {}".format(dboard_eeprom_path))
-        self.log.debug("Reading EEPROM info for dboard...")
-        dboard_eeprom_md, dboard_eeprom_rawdata = e31x_legacy_eeprom.read_eeprom(
+    def _read_dboard_eeprom(self, dboard_eeprom_path):
+        return e31x_legacy_eeprom.read_eeprom(
             False, # is not motherboard.
             dboard_eeprom_path,
             self.dboard_eeprom_offset,
@@ -380,18 +370,6 @@ class e31x(ZynqComponents, PeriphManagerBase):
             e31x_legacy_eeprom.DboardEEPROM.eeprom_header_keys,
             self.dboard_eeprom_max_len
         )
-        self.log.trace("Read %d bytes of dboard EEPROM data.",
-                       len(dboard_eeprom_rawdata))
-        db_pid = dboard_eeprom_md.get('pid')
-        if db_pid is None:
-            self.log.warning("No DB PID found in dboard EEPROM!")
-        else:
-            self.log.debug("Found DB PID in EEPROM: 0x{:04X}".format(db_pid))
-        return [{
-            'eeprom_md': dboard_eeprom_md,
-            'eeprom_rawdata': dboard_eeprom_rawdata,
-            'pid': db_pid,
-        }]
 
     ###########################################################################
     # Session init and deinit
