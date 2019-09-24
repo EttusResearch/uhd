@@ -110,6 +110,10 @@ def parse_args():
                         help="Subdevice(s) of UHD device where appropriate. Use "
                              "a space-separated list to set different boards to "
                              "different specs.")
+    parser.add_argument("--lo-export",
+                       help="Set LO export {True, False} for each channel with a comma-separated list.")
+    parser.add_argument("--lo-source",
+                       help="Set LO source {None, internal, companion, external} for each channel with a comma-separated list. None skips this channel.")
     # Signal Source
     parser.add_argument("--source-plugin", type=str, default="default",
                         help="Select source plugin. This can either be one of"
@@ -137,6 +141,17 @@ def parse_args():
         logger.warning("Tone offset may be outside the received bandwidth!")
 
     return args
+
+
+def normalize_lo_source_export_sel(args):
+    """Parses and returns the lo inputs and makes sure there is one argument per channel"""
+    lo_source = [x.strip() for x in args.lo_source.split(",")]
+    lo_export = [x.strip() for x in args.lo_export.split(",")]
+    if len(lo_source) != len(args.channels):
+        raise ValueError("Invalid number of lo-source settings {n} for {c} channels. Must be one argument per channel.".format(n=len(lo_source), c=len(args.channels)))
+    if len(lo_export) != len(args.channels):
+        raise ValueError("Invalid number of lo-export settings {n} for {c} channels. Must be one argument per channel.".format(n=len(lo_source), c=len(args.channels)))
+    return (lo_source, lo_export)
 
 
 class LogFormatter(logging.Formatter):
@@ -228,6 +243,19 @@ def setup_usrp(args):
         # If we wanted to set a PPS source and it failed, return
         return None
     # At this point, we can assume our device has valid and locked clock and PPS
+
+    # Set the LO source and export
+    if (args.lo_export is not None) and (args.lo_source is not None):
+        (args.lo_source, args.lo_export) = normalize_lo_source_export_sel(args)
+        for chan, lo_source, lo_export in zip(args.channels, args.lo_source, args.lo_export):
+            if lo_export == "True":
+                logger.info("LO export enabled on channel %s", chan)
+                usrp.set_rx_lo_export_enabled(True, "all", chan)
+                usrp.set_tx_lo_export_enabled(True, "all", chan)
+            if lo_source != "None":
+                logger.info("Channel %s source set to %s", chan, lo_source)
+                usrp.set_rx_lo_source(lo_source, "all", chan)
+                usrp.set_tx_lo_source(lo_source, "all", chan)
 
     # Determine channel settings
     # TODO: Add support for >2 channels! (TwinRX)
