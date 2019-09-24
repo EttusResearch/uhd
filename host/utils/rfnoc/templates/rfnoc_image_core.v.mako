@@ -131,7 +131,7 @@ module rfnoc_image_core #(
   // Blocks
   // ----------------------------------------------------
 %for i, name in enumerate(config.noc_blocks):
-<%include file="/modules/rfnoc_block.v.mako" args="block_id=i + len(config.stream_endpoints) + 1, block_number=i, block_name=name, block=config.blocks[config.noc_blocks[name]['block_desc']], block_params=config.noc_blocks[name]['parameters']"/>
+<%include file="/modules/rfnoc_block.v.mako" args="block_id=i + len(ctrl_seps) + 1, block_number=i, block_name=name, block=config.blocks[config.noc_blocks[name]['block_desc']], block_params=config.noc_blocks[name]['parameters']"/>
 %endfor
 
   // ----------------------------------------------------
