@@ -4,14 +4,22 @@ Change Log for Releases
 ## 003.014.001.001
 Device3: latch n on m in axi_rate_change in DUC/DDC
 Device3: UART: fix TX <-> RX, FIFO size as parameter
+Device3: Restore default buffer sizes for MPMD UDP
 RFNoC: Fix off by one error in window.v
+E320: fix time source clobbering ref source
 B200: Add command to query bootloader status
 RFNoC: fix multidevice graph connections
 MPMD: Fix corner case in MPM device discovery
+MPM: fixed mboard_max_revision value (MPM compat check failures)
+MPM: Fix version string for logger
 Docs: x300: update docs for multiple timed commands
 Docs: Fix Doxygen warnings due to spurious backslashes
 Docs: RFNoC: Fix Doxygen warning due to undoc'd parameter
+Docs: Adjust FPGA functional verification tests
+Docs: Fix MPM cmake command for E320
 RFNoC: Re-enable flow ctrl for blocks on same xbar
+Tools: Fix build issues with kitchen_sink
+cmake: Add UHD_COMPONENT variable
 
 ## 003.014.001.000
 N320: Terminate the DAC when not transmitting
