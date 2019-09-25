@@ -244,6 +244,9 @@ class PeriphManagerBase(object):
         if len(self.mboard_eeprom_addr):
             self.log.trace("Reading EEPROM from address `{}'..."
                            .format(self.mboard_eeprom_addr))
+            if (not get_eeprom_paths(self.mboard_eeprom_addr)):
+                raise RuntimeError("No EEPROM found at address `{}'"
+                    .format(self.mboard_eeprom_addr))
             (eeprom_head, eeprom_rawdata) = eeprom.read_eeprom(
                 get_eeprom_paths(self.mboard_eeprom_addr)[0],
                 self.mboard_eeprom_offset,
