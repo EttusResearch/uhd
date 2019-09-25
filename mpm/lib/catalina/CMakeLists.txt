@@ -18,9 +18,16 @@ set (CMAKE_CATALINA_SOURCE_DIR
     ${UHD_HOST_ROOT}/lib/usrp/common
 )
 
+########################################################################
+# Setup UHD_VERSION and UHD_COMPONENT for version.cpp
+########################################################################
 configure_file(
     ${UHD_HOST_ROOT}/include/uhd/version.hpp.in
     ${CMAKE_BINARY_DIR}/include/uhd/version.hpp
+)
+configure_file(
+    ${UHD_HOST_ROOT}/lib/version.cpp
+    ${CMAKE_BINARY_DIR}/lib/version.cpp
 )
 
 # TODO: Do something better than listing all the files individually
@@ -34,7 +41,7 @@ set(catalina_sources
     ${UHD_HOST_ROOT}/lib/types/serial.cpp
     ${UHD_HOST_ROOT}/lib/property_tree.cpp
     ${UHD_HOST_ROOT}/lib/utils/log.cpp
-    ${UHD_HOST_ROOT}/lib/version.cpp
+    ${CMAKE_BINARY_DIR}/lib/version.cpp
 )
 
 USRP_PERIPHS_ADD_OBJECT(catalina ${catalina_sources})
