@@ -273,9 +273,9 @@ FUNCVERIF_SETTINGS = {
             {'--rx_rate': 2.4576e6, '--tx_rate': 2.4576e6, 'master_clock_rate': '245.76e6', '--channels': '0,1',},
             {'--rx_rate': 2e6,      '--tx_rate': 2e6,      'master_clock_rate': '200e6',    '--channels': '0,1',},
 
-            {'--rx_rate': 125e6,    '--tx_rate': 62.5e6,   'master_clock_rate': '250e6',    '--channels': '0,1', '--duration': 3600,},
-            {'--rx_rate': 122.88e6, '--tx_rate': 61.44e6,  'master_clock_rate': '245.76e6', '--channels': '0,1', '--duration': 3600,},
-            {'--rx_rate': 100e6,    '--tx_rate': 66.67e6,  'master_clock_rate': '200e6',    '--channels': '0,1', '--duration': 3600,},
+            {'--rx_rate': 125e6,    '--tx_rate': 62.5e6,   'master_clock_rate': '250e6',    '--channels': '0,1', '--duration': 600,},
+            {'--rx_rate': 122.88e6, '--tx_rate': 61.44e6,  'master_clock_rate': '245.76e6', '--channels': '0,1', '--duration': 600,},
+            {'--rx_rate': 100e6,    '--tx_rate': 50e6,  'master_clock_rate': '200e6',    '--channels': '0,1', '--duration': 600,},
         ],
     },
     'n310_10gige': {
@@ -354,7 +354,6 @@ FUNCVERIF_SETTINGS = {
 
             {'--rx_rate': 125e6,    'master_clock_rate': '125e6',    '--channels': '0,2',},
             {'--rx_rate': 122.88e6, 'master_clock_rate': '122.88e6', '--channels': '0,2',},
-            {'--rx_rate': 153.6e6,  'master_clock_rate': '153.6e6',  '--channels': '0,2',},
 
             {'--rx_rate': 1.25e6,   'master_clock_rate': '125e6',    '--channels': '0,1,2',},
             {'--rx_rate': 1.2288e6, 'master_clock_rate': '122.88e6', '--channels': '0,1,2',},
@@ -401,9 +400,9 @@ FUNCVERIF_SETTINGS = {
             {'--rx_rate': 1.2288e6, '--tx_rate': 1.2288e6, 'master_clock_rate': '122.88e6', '--channels': '0,1,2,3',},
             {'--rx_rate': 1.536e6,  '--tx_rate': 1.536e6,  'master_clock_rate': '153.6e6',  '--channels': '0,1,2,3',},
 
-            {'--rx_rate': 62.5e6,  '--tx_rate': 62.5e6,  'master_clock_rate': '125e6',    '--channels': '0,1,2,3', '--duration': 3600,},
-            {'--rx_rate': 61.44e6, '--tx_rate': 61.44e6, 'master_clock_rate': '122.88e6', '--channels': '0,1,2,3', '--duration': 3600,},
-            {'--rx_rate': 76.8e6,  '--tx_rate': 76.8e6,  'master_clock_rate': '153.6e6',  '--channels': '0,1,2,3', '--duration': 3600,},
+            {'--rx_rate': 62.5e6,  '--tx_rate': 62.5e6,  'master_clock_rate': '125e6',    '--channels': '0,1,2,3', '--duration': 600,},
+            {'--rx_rate': 61.44e6, '--tx_rate': 61.44e6, 'master_clock_rate': '122.88e6', '--channels': '0,1,2,3', '--duration': 600,},
+            {'--rx_rate': 76.8e6,  '--tx_rate': 76.8e6,  'master_clock_rate': '153.6e6',  '--channels': '0,1,2,3', '--duration': 600,},
         ],
     },
     'n300_10gige': {
@@ -458,7 +457,7 @@ FUNCVERIF_SETTINGS = {
 
             {'--rx_rate': 125e6,    'master_clock_rate': '125e6',    '--channels': '0,1',},
             {'--rx_rate': 122.88e6, 'master_clock_rate': '122.88e6', '--channels': '0,1',},
-            {'--rx_rate': 153.6e6,  'master_clock_rate': '153.6e6',  '--channels': '0,1',},
+            #{'--rx_rate': 153.6e6,  'master_clock_rate': '153.6e6',  '--channels': '0,1',},
 
             {'--rx_rate': 1.25e6,   '--tx_rate': 1.25e6,   'master_clock_rate': '125e6',    '--channels': '0,1',},
             {'--rx_rate': 1.2288e6, '--tx_rate': 1.2288e6, 'master_clock_rate': '122.88e6', '--channels': '0,1',},
@@ -468,9 +467,9 @@ FUNCVERIF_SETTINGS = {
             {'--rx_rate': 61.44e6, '--tx_rate': 61.44e6, 'master_clock_rate': '122.88e6', '--channels': '0,1',},
             {'--rx_rate': 76.8e6,  '--tx_rate': 76.8e6,  'master_clock_rate': '153.6e6',  '--channels': '0,1',},
 
-            {'--rx_rate': 62.5e6,  '--tx_rate': 62.5e6,  'master_clock_rate': '125e6',    '--channels': '0,1', '--duration': 3600,},
-            {'--rx_rate': 61.44e6, '--tx_rate': 61.44e6, 'master_clock_rate': '122.88e6', '--channels': '0,1', '--duration': 3600,},
-            {'--rx_rate': 76.8e6,  '--tx_rate': 76.8e6,  'master_clock_rate': '153.6e6',  '--channels': '0,1', '--duration': 3600,},
+            {'--rx_rate': 62.5e6,  '--tx_rate': 62.5e6,  'master_clock_rate': '125e6',    '--channels': '0,1', '--duration': 600,},
+            {'--rx_rate': 61.44e6, '--tx_rate': 61.44e6, 'master_clock_rate': '122.88e6', '--channels': '0,1', '--duration': 600,},
+            {'--rx_rate': 76.8e6,  '--tx_rate': 76.8e6,  'master_clock_rate': '153.6e6',  '--channels': '0,1', '--duration': 600,},
         ],
     },
     'n320_2x_10gige': {
@@ -484,11 +483,11 @@ FUNCVERIF_SETTINGS = {
         '--duration': 60,
         '__tests': [
             {'--rx_rate': 125e6,   '--tx_rate': 83.33e6, 'master_clock_rate': '250e6',    '--channels': '0,1',
-             '--duration': 3600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
+             '--duration': 600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
             {'--rx_rate': 122.88e6,'--tx_rate': 81.92e6, 'master_clock_rate': '245.76e6', '--channels': '0,1',
-             '--duration': 3600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
+             '--duration': 600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
             {'--rx_rate': 200e6,   '--tx_rate': 100e6,   'master_clock_rate': '200e6',    '--channels': '0,1',
-             '--duration': 3600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
+             '--duration': 600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
         ],
     },
     'n320_2x_10gige_dpdk': {
@@ -502,11 +501,11 @@ FUNCVERIF_SETTINGS = {
         '--duration': 60,
         '__tests': [
             {'--rx_rate': 250e6,   '--tx_rate': 250e6,    'master_clock_rate': '250e6',    '--channels': '0,1',
-             '--duration': 3600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
+             '--duration': 600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
             {'--rx_rate': 245.76e6,'--tx_rate': 245.76e6, 'master_clock_rate': '245.76e6', '--channels': '0,1',
-             '--duration': 3600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
+             '--duration': 600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
             {'--rx_rate': 200e6,   '--tx_rate': 200e6,    'master_clock_rate': '200e6',    '--channels': '0,1',
-             '--duration': 3600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
+             '--duration': 600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
         ],
     },
     'n310_2x_10gige': {
@@ -520,11 +519,11 @@ FUNCVERIF_SETTINGS = {
         '--duration': 60,
         '__tests': [
             {'--rx_rate': 125e6,   '--tx_rate': 62.5e6,  'master_clock_rate': '125e6',    '--channels': '0,1,2,3',
-             '--duration': 3600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
+             '--duration': 600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
             {'--rx_rate': 122.88e6,'--tx_rate': 61.44e6, 'master_clock_rate': '122.88e6', '--channels': '0,1,2,3',
-             '--duration': 3600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
+             '--duration': 600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
             {'--rx_rate': 153.6e6, '--tx_rate': 76.8e6,  'master_clock_rate': '153.6e6',  '--channels': '0,1,2,3',
-             '--duration': 3600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
+             '--duration': 600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
         ],
     },
     'n300_2x_10gige': {
@@ -538,11 +537,11 @@ FUNCVERIF_SETTINGS = {
         '--duration': 60,
         '__tests': [
             {'--rx_rate': 125e6,   '--tx_rate': 62.5e6,  'master_clock_rate': '125e6',    '--channels': '0,1',
-             '--duration': 3600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
+             '--duration': 600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
             {'--rx_rate': 122.88e6,'--tx_rate': 61.44e6, 'master_clock_rate': '122.88e6', '--channels': '0,1',
-             '--duration': 3600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
+             '--duration': 600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
             {'--rx_rate': 153.6e6, '--tx_rate': 76.8e6,  'master_clock_rate': '153.6e6',  '--channels': '0,1',
-             '--duration': 3600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
+             '--duration': 600, '--underrun-threshold': 1000, '--overrun-threshold': 1000,},
         ],
     },
     'x3x0_10gige': {
@@ -588,8 +587,8 @@ FUNCVERIF_SETTINGS = {
             {'--rx_rate': 10e6,   '--tx_rate': 10e6, '--channels': '0,1'},
             {'--rx_rate': 50e6,   '--tx_rate': 50e6, '--channels': '0,1'},
 
-            {'--rx_rate': 200e6, '--tx_rate': 200e6, '--channels': '1',   '--duration': 3600},
-            {'--rx_rate': 100e6, '--tx_rate': 100e6, '--channels': '0,1', '--duration': 3600}
+            {'--rx_rate': 200e6, '--tx_rate': 200e6, '--channels': '1',   '--duration': 600},
+            {'--rx_rate': 100e6, '--tx_rate': 100e6, '--channels': '0,1', '--duration': 600}
         ],
     },
     'x3x0_1gige': {
@@ -696,8 +695,8 @@ FUNCVERIF_SETTINGS = {
             {'--rx_rate': 1.024e6,   '--tx_rate': 1.024e6,   'master_clock_rate': '30.72e6',    '--channels': '1',},
             {'--rx_rate': 1e6,   '--tx_rate': 1e6,   'master_clock_rate': '10e6',    '--channels': '0,1',},
             {'--rx_rate': 1.024e6, '--tx_rate': 1.024e6, 'master_clock_rate': '30.72e6', '--channels': '0,1',},
-            {'--rx_rate': 1e6,  '--tx_rate': 1e6,  'master_clock_rate': '61.44e6',  '--channels': '0', ' --duration': 3600, },
-            {'--rx_rate': 1e6,  '--tx_rate': 1e6,  'master_clock_rate': '30.72e6',  '--channels': '0,1', ' --duration': 3600, },
+            {'--rx_rate': 1e6,  '--tx_rate': 1e6,  'master_clock_rate': '61.44e6',  '--channels': '0', ' --duration': 600, },
+            {'--rx_rate': 1e6,  '--tx_rate': 1e6,  'master_clock_rate': '30.72e6',  '--channels': '0,1', ' --duration': 600, },
         ],
     },
     'e320_10gige': {
@@ -737,10 +736,10 @@ FUNCVERIF_SETTINGS = {
             {'--rx_rate': 30.72e6,   '--tx_rate': 30.72e6,   'master_clock_rate': '61.44e6',    '--channels': '1',},
             {'--rx_rate': 1.024e6, '--tx_rate': 1.024e6, 'master_clock_rate': '30.72e6', '--channels': '0,1',},
             {'--rx_rate': 30.72e6, '--tx_rate': 30.72e6, 'master_clock_rate': '30.72e6', '--channels': '0,1',},
-            {'--rx_rate': 1e6,  '--tx_rate': 1e6,  'master_clock_rate': '61.44e6',  '--channels': '0', ' --duration': 3600, },
-            {'--rx_rate': 30.72e6,  '--tx_rate': 30.72e6,  'master_clock_rate': '61.44e6',  '--channels': '0', ' --duration': 3600, },
-            {'--rx_rate': 1e6,  '--tx_rate': 1e6,  'master_clock_rate': '30.72e6',  '--channels': '0,1', ' --duration': 3600, },
-            {'--rx_rate': 30.72e6,  '--tx_rate': 30.72e6,  'master_clock_rate': '30.72e6',  '--channels': '0,1', ' --duration': 3600, },
+            {'--rx_rate': 1e6,  '--tx_rate': 1e6,  'master_clock_rate': '61.44e6',  '--channels': '0', ' --duration': 600, },
+            {'--rx_rate': 30.72e6,  '--tx_rate': 30.72e6,  'master_clock_rate': '61.44e6',  '--channels': '0', ' --duration': 600, },
+            {'--rx_rate': 1e6,  '--tx_rate': 1e6,  'master_clock_rate': '30.72e6',  '--channels': '0,1', ' --duration': 600, },
+            {'--rx_rate': 30.72e6,  '--tx_rate': 30.72e6,  'master_clock_rate': '30.72e6',  '--channels': '0,1', ' --duration': 600, },
         ],
     },
 }

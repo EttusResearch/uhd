@@ -397,8 +397,8 @@ rates and channel configurations without any data flow issues.
 | 1x RX & 1x TX | 10e6, 50e6, 100e6        | 60       | Test both channels |
 | 1x RX & 1x TX | 200e6                    | 60       | Use channel 0      |
 | 2x RX & 2x TX | 10e6, 50e6               | 60       |                    |
-| 1x RX & 1x TX | 200e6                    | 3600     | Use channel 1      |
-| 2x RX & 2x TX | 100e6                    | 3600     |                    |
+| 1x RX & 1x TX | 200e6                    | 600      | Use channel 1      |
+| 2x RX & 2x TX | 100e6                    | 600      |                    |
 
 #### USRP X3x0: 1 GigE Interface
 
@@ -449,8 +449,8 @@ Note: On TX tests, initial Us within the first 5 seconds can be ignored and do n
 | 1x RX & 1x TX | 61.44e6                 | 3.84e6      | 60       | Use channel 1      |
 | 2x RX & 2x TX | 10e6                    | 1e6         | 60       |                    |
 | 2x RX & 2x TX | 30.72e6                 | 1.92e6      | 60       |                    |
-| 1x RX & 1x TX | 61.44e6                 | 3.84e6      | 3600     | Use channel 0      |
-| 2x RX & 2x TX | 30.72e6                 | 1.92e6      | 3600     |                    |
+| 1x RX & 1x TX | 61.44e6                 | 3.84e6      | 600      | Use channel 0      |
+| 2x RX & 2x TX | 30.72e6                 | 1.92e6      | 600      |                    |
 
 #### USRP E320: 1 GigE Interface
 
@@ -468,8 +468,8 @@ Note: On TX tests, initial Us within the first 5 seconds can be ignored and do n
 | 1x RX & 1x TX | 61.44e6                 | 1.024e6     | 60       | Use channel 1      |
 | 2x RX & 2x TX | 10e6                    | 1e6         | 60       |                    |
 | 2x RX & 2x TX | 30.72e6                 | 1.024e6     | 60       |                    |
-| 1x RX & 1x TX | 61.44e6                 | 1.024e6     | 3600     | Use channel 0      |
-| 2x RX & 2x TX | 30.72e6                 | 1.024e6     | 3600     |                    |
+| 1x RX & 1x TX | 61.44e6                 | 1.024e6     | 600      | Use channel 0      |
+| 2x RX & 2x TX | 30.72e6                 | 1.024e6     | 600      |                    |
 
 #### USRP E320: 10 GigE Interface
 
@@ -481,8 +481,8 @@ Note: On TX tests, initial Us within the first 5 seconds can be ignored and do n
 | 2x TX         | 30.72e6                 | 1.024e6, 30.72e6     | 60       |                    |
 | 1x RX & 1x TX | 61.44e6                 | 1.024e6, 30.72e6     | 60       | Test both channels |
 | 2x RX & 2x TX | 30.72e6                 | 1.024e6, 30.72e6     | 60       |                    |
-| 1x RX & 1x TX | 61.44e6                 | 1e6, 30.72e6         | 3600     | Use channel 0      |
-| 2x RX & 2x TX | 30.72e6                 | 1e6, 30.72e6         | 3600     |                    |
+| 1x RX & 1x TX | 61.44e6                 | 1e6, 30.72e6         | 600      | Use channel 0      |
+| 2x RX & 2x TX | 30.72e6                 | 1e6, 30.72e6         | 600      |                    |
 
 #### USRP N300/N310: 1 GigE Interface
 
@@ -524,7 +524,7 @@ Note: On TX tests, initial Us within the first 5 seconds can be ignored and do n
 | 1x TX         | 153.6e6           | 1.536e6, 153.6e6        | 60       | One test each for all 4 channels  |
 | 2x RX         | 125e6             | 1.25e6, 125e6           | 60       |                                   |
 | 2x RX         | 122.88e6          | 1.2288e6, 122.88e6      | 60       |                                   |
-| 2x RX         | 153.6e6           | 1.536e6, 153.6e6        | 60       |                                   |
+| 2x RX         | 153.6e6           | 1.536e6                 | 60       |                                   |
 | 3x RX         | 125e6             | 1.25e6                  | 60       | N310 only                         |
 | 3x RX         | 122.88e6          | 1.2288e6                | 60       | N310 only                         |
 | 3x RX         | 153.6e6           | 1.536e6                 | 60       | N310 only                         |
@@ -539,9 +539,9 @@ Note: On TX tests, initial Us within the first 5 seconds can be ignored and do n
 | 4x RX & 4x TX | 125e6             | 1.25e6, 62.5e6          | 60       | Drop to 2 channels for N300
 | 4x RX & 4x TX | 122.88e6          | 1.2288e6, 61.44e6       | 60       | Drop to 2 channels for N300
 | 4x RX & 4x TX | 153e6             | 1.536e6, 76.8e6         | 60       | Drop to 2 channels for N300
-| 4x RX & 4x TX | 125e6             | 62.5e6                  | 3600     | Drop to 2 channels for N300
-| 4x RX & 4x TX | 122.88e6          | 61.44e6                 | 3600     | Drop to 2 channels for N300
-| 4x RX & 4x TX | 153e6             | 76.8e6                  | 3600     | Drop to 2 channels for N300
+| 4x RX & 4x TX | 125e6             | 62.5e6                  | 600      | Drop to 2 channels for N300
+| 4x RX & 4x TX | 122.88e6          | 61.44e6                 | 600      | Drop to 2 channels for N300
+| 4x RX & 4x TX | 153e6             | 76.8e6                  | 600      | Drop to 2 channels for N300
 | 4x RX & 4x TX | 125e6             | 125e6 RX, 62.5e6 TX     | 60       | Use dual 10GigE, N310 XG only
 | 4x RX & 4x TX | 122.88e6          | 122.88e6 RX, 61.44e6 TX | 60       | Use dual 10GigE, N310 XG only
 | 4x RX & 4x TX | 153e6             | 153e6 RX, 76.8e6 TX     | 60       | Use dual 10GigE, N310 XG only
@@ -596,15 +596,15 @@ Note: On TX tests, initial Us within the first 5 seconds can be ignored and do n
 | 2x RX & 2x TX | 250e6             | 2.5e6                   | 60       |                                   |
 | 2x RX & 2x TX | 245.76e6          | 2.4576e6                | 60       |                                   |
 | 2x RX & 2x TX | 200e6             | 2e6                     | 60       |                                   |
-| 2x RX & 2x TX | 250e6             | 125e6 RX, 62.5e6 TX     | 3600     |                                   |
-| 2x RX & 2x TX | 245.76e6          | 122.88e6 RX, 61.44e6 TX | 3600     |                                   |
-| 2x RX & 2x TX | 200e6             | 100e6 RX, 66.67e6 TX    | 3600     |                                   |
-| 2x RX & 2x TX | 250e6             | 125e6 RX, 83.33e6 TX    | 3600     | Use dual 10GigE, N320 XG only     |
-| 2x RX & 2x TX | 245.76e6          | 122.88e6 RX, 81.92e6 TX | 3600     | Use dual 10GigE, N320 XG only     |
-| 2x RX & 2x TX | 200e6             | 200e6 RX, 100e6 TX      | 3600     | Use dual 10GigE, N320 XG only     |
-| 2x RX & 2x TX | 250e6             | 250e6                   | 3600     | Dual 10GigE, N320 XG, DPDK only   |
-| 2x RX & 2x TX | 245.76e6          | 245.76e6                | 3600     | Dual 10GigE, N320 XG, DPDK only   |
-| 2x RX & 2x TX | 200e6             | 200e6                   | 3600     | Dual 10GigE, N320 XG, DPDK only   |
+| 2x RX & 2x TX | 250e6             | 125e6 RX, 62.5e6 TX     | 600      |                                   |
+| 2x RX & 2x TX | 245.76e6          | 122.88e6 RX, 61.44e6 TX | 600      |                                   |
+| 2x RX & 2x TX | 200e6             | 100e6 RX, 66.67e6 TX    | 600      |                                   |
+| 2x RX & 2x TX | 250e6             | 125e6 RX, 83.33e6 TX    | 600      | Use dual 10GigE, N320 XG only     |
+| 2x RX & 2x TX | 245.76e6          | 122.88e6 RX, 81.92e6 TX | 600      | Use dual 10GigE, N320 XG only     |
+| 2x RX & 2x TX | 200e6             | 200e6 RX, 100e6 TX      | 600      | Use dual 10GigE, N320 XG only     |
+| 2x RX & 2x TX | 250e6             | 250e6                   | 600      | Dual 10GigE, N320 XG, DPDK only   |
+| 2x RX & 2x TX | 245.76e6          | 245.76e6                | 600      | Dual 10GigE, N320 XG, DPDK only   |
+| 2x RX & 2x TX | 200e6             | 200e6                   | 600      | Dual 10GigE, N320 XG, DPDK only   |
 
 \subsection rdtesting_fpgafuncverif_auto FPGA Functional Verification: Automatic Test Procedure
 
