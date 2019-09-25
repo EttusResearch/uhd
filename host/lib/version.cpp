@@ -18,3 +18,7 @@ std::string uhd::get_version_string(void){
 std::string uhd::get_abi_string(void){
     return UHD_VERSION_ABI_STRING;
 }
+
+std::string uhd::get_component(void){
+    return "@UHD_COMPONENT@";
+}

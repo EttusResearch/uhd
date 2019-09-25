@@ -205,7 +205,7 @@ public:
             std::ostringstream sys_info;
             sys_info << BOOST_PLATFORM << "; " << BOOST_COMPILER << "; "
                      << "Boost_" << BOOST_VERSION << "; "
-                     << "UHD_" << uhd::get_version_string();
+                     << uhd::get_component() << "_" << uhd::get_version_string();
             _publish_log_msg(sys_info.str(), uhd::log::info, "UHD");
         }
 
