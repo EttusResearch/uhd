@@ -544,7 +544,7 @@ to create the build directory outside of the repository directory:
 
     $ mkdir build_mpm
     $ cd build_mpm # You are now in /home/root/build_mpm
-    $ cmake ../uhd/mpm
+    $ cmake -DMPM_DEVICE=e320 ../uhd/mpm
     $ make -j2 install # This will take several minutes
 
 Note that this overwrites your system MPM. You can install MPM to another
