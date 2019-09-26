@@ -25,3 +25,6 @@ io_ports:
   x300_radio:
     type: x300_radio
     drive: master
+  dram:
+    type: axi4_mm_2x64_4g
+    drive: master
