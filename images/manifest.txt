@@ -8,9 +8,9 @@ x3xx_x300_fpga_default          fpga-fe9dcb6       x3xx/fpga-fe9dcb6/x3xx_x300_f
 #dboard_ubx_cpld_default    example_target
 
 # E-Series
-e3xx_e310_sg1_fpga_default      fpga-fe9dcb6       e3xx/fpga-fe9dcb6/e3xx_e310_sg1_fpga_default-gfe9dcb6.zip                 a0200f38f40e6062648a9463213e99443ee08a8460ed1da37103d318978fc112
-e3xx_e310_sg3_fpga_default      fpga-fe9dcb6       e3xx/fpga-fe9dcb6/e3xx_e310_sg3_fpga_default-gfe9dcb6.zip                 128a5fbee6cffaec5a498fa49ddf00a5e5f8c54ea703ece7037f1b041b6b377c
-e3xx_e320_fpga_default          fpga-fe9dcb6       e3xx/fpga-fe9dcb6/e3xx_e320_fpga_default-gfe9dcb6.zip                 0902a9014caf9a7b8b0d45df81b5eb32ee06f9f4402d720cce0cd70bb059fdfb
+e3xx_e310_sg1_fpga_default      fpga-9e3d00c       e3xx/fpga-9e3d00c/e3xx_e310_sg1_fpga_default-g9e3d00c.zip                 9df2a6749f6a307eaccc6956f17e753689719ecbf9563ae77f492e7f7776d257
+e3xx_e310_sg3_fpga_default      fpga-9e3d00c       e3xx/fpga-9e3d00c/e3xx_e310_sg3_fpga_default-g9e3d00c.zip                 1cd58559ae009319b7f1d48ca4adb7ccd15d6c116dd91c0662d6ab26fbbc1b0c
+e3xx_e320_fpga_default          fpga-9e3d00c       e3xx/fpga-9e3d00c/e3xx_e320_fpga_default-g9e3d00c.zip                 c27221bb1199ab37f4a977d532d58b54993ea979d6d872394dca841071acdc1f
 
 # E310 Filesystems
 e3xx_e310_sdk_default         meta-ettus-v3.15.0.0-e310_prerelease  e3xx/meta-ettus-v3.15.0.0-e310_prerelease/e3xx_e310_sdk_default-v3.15.0.0-e310_prerelease.zip       0
@@ -25,9 +25,9 @@ e3xx_e320_mender_default      meta-ettus-v3.14.0.0-rc1  e3xx/meta-ettus-v3.14.0.
 e3xx_e320_sdimg_default       meta-ettus-v3.14.0.0-rc1  e3xx/meta-ettus-v3.14.0.0-rc1/e3xx_e320_sdimg_default-v3.14.0.0-rc1.zip     0
 
 # N300-Series
-n3xx_n310_fpga_default          fpga-fe9dcb6       n3xx/fpga-fe9dcb6/n3xx_n310_fpga_default-gfe9dcb6.zip                 5e4a412c18da9530a5adfb929c385e184e1eb4581793887ae76159974df034dc
-n3xx_n300_fpga_default          fpga-fe9dcb6       n3xx/fpga-fe9dcb6/n3xx_n300_fpga_default-gfe9dcb6.zip                 3b7ed905939600b3d1c00ebec903e9b5566feb5872fb4eca6920173c8de476a8
-n3xx_n320_fpga_default          fpga-fe9dcb6        n3xx/fpga-fe9dcb6/n3xx_n320_fpga_default-gfe9dcb6.zip                b2f96cf9d2a522a399e9318f7849d8bbf5314ed9a003a362e36528925e16e261
+n3xx_n310_fpga_default          fpga-9e3d00c       n3xx/fpga-9e3d00c/n3xx_n310_fpga_default-g9e3d00c.zip                 b6ba63f0b36081526aec085708676d727039ee8fb639cd0a944ba4ac719c3640
+n3xx_n300_fpga_default          fpga-9e3d00c       n3xx/fpga-9e3d00c/n3xx_n300_fpga_default-g9e3d00c.zip                 fb6af0d9d4744a1354b7f42fc8583b37964b36ef8ea4cddc073eac68fc0533bc
+n3xx_n320_fpga_default          fpga-9e3d00c        n3xx/fpga-9e3d00c/n3xx_n320_fpga_default-g9e3d00c.zip                40dfb873a294cd574d5ca24de6d1908bb6257bc0db5204c70de90589227915c6
 n3xx_n310_cpld_default          fpga-6bea23d        n3xx/fpga-6bea23d/n3xx_n310_cpld_default-g6bea23d.zip                ef128dcd265ee8615b673021d4ee84c39357012ffe8b28c8ad7f893f9dcb94cb
 n3xx_n320_cpld_default          fpga-4bc2c6f       n3xx/fpga-4bc2c6f/n3xx_n320_cpld_default-g4bc2c6f.zip              6680a9363efc5fa8b5a68beb3dff44f2e314b94e716e3a1751aba0fed1f384da
 # N3XX Mykonos firmware
