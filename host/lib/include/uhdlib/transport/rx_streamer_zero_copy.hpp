@@ -18,6 +18,66 @@
 
 namespace uhd { namespace transport {
 
+namespace detail {
+
+class eov_data_wrapper
+{
+public:
+    eov_data_wrapper(uhd::rx_metadata_t& metadata)
+        : _metadata(metadata)
+        , _data(metadata.eov_positions)
+        , _size(metadata.eov_positions_size)
+        , _remaining(metadata.eov_positions_size)
+        , _write_pos(0)
+        , _running_sample_count(0)
+    {
+    }
+
+    ~eov_data_wrapper()
+    {
+        _metadata.eov_positions = _data;
+        _metadata.eov_positions_size = _size;
+        _metadata.eov_positions_count = _write_pos;
+    }
+
+    UHD_FORCE_INLINE size_t* data() const
+    {
+        return _data;
+    }
+
+    UHD_FORCE_INLINE size_t remaining() const
+    {
+        return _remaining;
+    }
+
+    UHD_FORCE_INLINE void push_back(size_t value)
+    {
+        assert(_data && _remaining > 0);
+        _data[_write_pos++] = value;
+        _remaining--;
+    }
+
+    UHD_FORCE_INLINE void update_running_sample_count(size_t num_samples)
+    {
+        _running_sample_count += num_samples;
+    }
+
+    UHD_FORCE_INLINE size_t get_running_sample_count() const
+    {
+        return _running_sample_count;
+    }
+
+private:
+    uhd::rx_metadata_t& _metadata;
+    size_t*            _data;
+    size_t             _size;
+    size_t             _remaining;
+    size_t             _write_pos;
+    size_t             _running_sample_count;
+};
+
+} // namespace uhd::transport::detail
+
 /*!
  * Implementation of rx streamer manipulation of frame buffers and packet info.
  * This class is part of rx_streamer_impl, split into a separate unit as it is
@@ -115,6 +175,7 @@ public:
      */
     size_t get_recv_buffs(std::vector<const void*>& buffs,
         rx_metadata_t& metadata,
+        detail::eov_data_wrapper& eov_positions,
         const int32_t timeout_ms)
     {
         // Function to set metadata based on alignment error
@@ -184,10 +245,14 @@ public:
         // Get payload pointers for each buffer and aggregate eob. We set eob to
         // true if any channel has it set, since no more data will be received for
         // that channel. In most cases, all channels should have the same value.
+        // We do the same for eov here, as it is expected that eov will be the
+        // same for all channels.
         bool eob = false;
+        bool eov = false;
         for (size_t i = 0; i < buffs.size(); i++) {
             buffs[i] = _infos[i].payload;
             eob |= _infos[i].eob;
+            eov |= _infos[i].eov;
         }
 
         // Set the metadata from the buffer information at index zero
@@ -199,10 +264,21 @@ public:
         metadata.end_of_burst   = eob;
         metadata.error_code     = rx_metadata_t::ERROR_CODE_NONE;
 
+        // If the caller wants eov indications via metadata, then check
+        // eov and set the metadata values appropriately. Note that only
+        // channel 0 is checked for eov--in most cases, it should be the
+        // same for all channels.
+        if (eov_positions.data() && eov) {
+            eov_positions.push_back(
+                eov_positions.get_running_sample_count() +
+                info_0.payload_bytes / _bytes_per_item);
+        }
+
         // Done with these packets, save timestamp info for next call
         _last_read_time_info.has_time_spec = metadata.has_time_spec;
         _last_read_time_info.time_spec     = metadata.time_spec;
         _last_read_time_info.num_samps     = info_0.payload_bytes / _bytes_per_item;
+        eov_positions.update_running_sample_count(_last_read_time_info.num_samps);
 
         return _last_read_time_info.num_samps;
     }
@@ -292,6 +368,9 @@ private:
 
     // Information about the last data packet processed
     last_read_time_info_t _last_read_time_info;
+
+    // Total number of samples read, used in determining EOV positions
+    size_t _total_num_samps = 0;
 
     // Flag that indicates an overrun occurred. The streamer will return an
     // overrun error when no more packets are available.

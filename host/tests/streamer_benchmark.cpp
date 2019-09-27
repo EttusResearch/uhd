@@ -47,6 +47,7 @@ public:
     struct packet_info_t
     {
         bool eob             = false;
+        bool eov             = false;
         bool has_tsf         = false;
         uint64_t tsf         = 0;
         size_t payload_bytes = 0;
@@ -108,6 +109,7 @@ public:
     struct packet_info_t
     {
         bool eob             = false;
+        bool eov             = false;
         bool has_tsf         = false;
         uint64_t tsf         = 0;
         size_t payload_bytes = 0;

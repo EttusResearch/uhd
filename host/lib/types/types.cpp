@@ -24,11 +24,11 @@ stream_cmd_t::stream_cmd_t(const stream_mode_t &stream_mode):
 /***********************************************************************
  * metadata
  **********************************************************************/
-tx_metadata_t::tx_metadata_t(void):
-    has_time_spec(false),
-    time_spec(time_spec_t()),
-    start_of_burst(false),
-    end_of_burst(false)
+tx_metadata_t::tx_metadata_t(void)
+    : has_time_spec(false)
+    , time_spec(time_spec_t())
+    , start_of_burst(false)
+    , end_of_burst(false)
 {
     /* NOP */
 }

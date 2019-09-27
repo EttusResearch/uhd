@@ -75,12 +75,14 @@ public:
      * \param buffs returns a pointer to the buffer data
      * \param nsamps_per_buff the number of samples that will be written to each buffer
      * \param metadata the metadata to write to the packet header
+     * \param eov EOV flag to write to the packet header
      * \param timeout_ms timeout in milliseconds
      * \return true if the operation was sucessful, false if timeout occurs
      */
     UHD_FORCE_INLINE bool get_send_buffs(std::vector<void*>& buffs,
         const size_t nsamps_per_buff,
         const tx_metadata_t& metadata,
+        const bool eov,
         const int32_t timeout_ms)
     {
         // Try to get a buffer per channel
@@ -106,6 +108,7 @@ public:
 
         info.payload_bytes = nsamps_per_buff * _bytes_per_item;
         info.eob           = metadata.end_of_burst;
+        info.eov           = eov;
 
         // Write packet header
         for (size_t i = 0; i < buffs.size(); i++) {

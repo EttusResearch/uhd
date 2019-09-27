@@ -31,14 +31,17 @@ struct UHD_API rx_metadata_t
     //! Reset values.
     void reset()
     {
-        has_time_spec   = false;
-        time_spec       = time_spec_t(0.0);
-        more_fragments  = false;
-        fragment_offset = 0;
-        start_of_burst  = false;
-        end_of_burst    = false;
-        error_code      = ERROR_CODE_NONE;
-        out_of_sequence = false;
+        has_time_spec       = false;
+        time_spec           = time_spec_t(0.0);
+        more_fragments      = false;
+        fragment_offset     = 0;
+        start_of_burst      = false;
+        end_of_burst        = false;
+        eov_positions       = nullptr;
+        eov_positions_size  = 0;
+        eov_positions_count = 0;
+        error_code          = ERROR_CODE_NONE;
+        out_of_sequence     = false;
     }
 
     //! Has time specification?
@@ -68,6 +71,31 @@ struct UHD_API rx_metadata_t
 
     //! End of burst will be true for the last packet in the chain.
     bool end_of_burst;
+
+    /*!
+     * If this pointer is not null, it specifies the address of an array of
+     * `size_t`s into which the sample offset relative to the beginning of
+     * a call to `recv()` of each vector (as denoted by packets with the `eov`
+     * header byte set) will be written.
+     *
+     * The caller is responsible for allocating and deallocating the storage
+     * for the array and for indicating the maximum number of elements in
+     * the array via the `eov_positions_size` value below.
+     *
+     * Upon return from `recv()`, `eov_positions_count` will be updated to
+     * indicate the number of valid entries written to the
+     * `end_of_vector_positions` array. It shall never exceed the value of
+     * `eov_positions_size`. However, if in the process of `recv()`, storage
+     * for new positions is exhausted, then `recv()` shall return.
+     */
+    size_t* eov_positions;
+    size_t eov_positions_size;
+
+    /*!
+     * Upon return from `recv()`, holds the number of end-of-vector indications
+     * in the `eov_positions` array.
+     */
+    size_t eov_positions_count;
 
     /*!
      * The error condition on a receive call.
@@ -149,6 +177,18 @@ struct UHD_API tx_metadata_t
 
     //! Set end of burst to true for the last packet in the chain.
     bool end_of_burst;
+
+    /*!
+     * If this pointer is not null, it specifies the address of an array of
+     * `size_t`s specifying the sample offset relative to the beginning of
+     * the call to `send()` where an EOV should be signalled.
+     *
+     * The caller is responsible for allocating and deallocating the storage
+     * for the array and for indicating the maximum number of elements in
+     * the array via the `eov_positions_size` value below.
+     */
+    size_t* eov_positions = nullptr;
+    size_t eov_positions_size = 0;
 
     /*!
      * The default constructor:

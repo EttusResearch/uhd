@@ -18,6 +18,7 @@ namespace uhd { namespace transport {
 struct mock_header_t
 {
     bool eob             = false;
+    bool eov             = false;
     bool has_tsf         = false;
     uint64_t tsf         = 0;
     size_t payload_bytes = 0;
@@ -39,6 +40,7 @@ public:
     struct packet_info_t
     {
         bool eob             = false;
+        bool eov             = false;
         bool has_tsf         = false;
         uint64_t tsf         = 0;
         size_t payload_bytes = 0;
@@ -55,6 +57,7 @@ public:
 
         packet_info_t info;
         info.eob           = header.eob;
+        info.eov           = header.eov;
         info.has_tsf       = header.has_tsf;
         info.tsf           = header.tsf;
         info.payload_bytes = header.payload_bytes;
@@ -741,4 +744,110 @@ BOOST_AUTO_TEST_CASE(test_recv_alignment_error)
     num_samps_ret = streamer->recv(buffers, num_samps, metadata, 1.0, false);
     BOOST_CHECK_EQUAL(num_samps_ret, 0);
     BOOST_CHECK_EQUAL(metadata.error_code, uhd::rx_metadata_t::ERROR_CODE_ALIGNMENT);
+}
+
+BOOST_AUTO_TEST_CASE(test_recv_one_channel_one_eov)
+{
+    const size_t NUM_PACKETS = 5;
+    const std::string format("fc64");
+
+    auto recv_links = make_links(1);
+    auto streamer   = make_rx_streamer(recv_links, format);
+
+    const size_t spp       = streamer->get_max_num_samps();
+    const size_t num_samps = spp * NUM_PACKETS;
+    std::vector<std::complex<double>> buff(num_samps);
+
+    for (size_t i = 0; i < NUM_PACKETS; i++) {
+        mock_header_t header;
+        header.eob     = false;
+        header.has_tsf = true;
+        header.tsf     = i;
+
+        for (size_t j = 0; j < NUM_PACKETS; j++) {
+            header.eov = (i == j);
+            push_back_recv_packet(recv_links[0], header, spp);
+        }
+
+        uhd::rx_metadata_t metadata;
+        // Create a vector with storage for two EOVs even though we expect
+        // only one, since filling the EOV vector results in an early
+        // termination of `recv()` (which we don't want here).
+        std::vector<size_t> eov_positions(2);
+        metadata.eov_positions = eov_positions.data();
+        metadata.eov_positions_size = eov_positions.size();
+
+        std::cout << "receiving packet " << i << std::endl;
+
+        size_t num_samps_ret =
+            streamer->recv(buff.data(), buff.size(), metadata, 1.0, false);
+
+        BOOST_CHECK_EQUAL(num_samps_ret, num_samps);
+        BOOST_CHECK_EQUAL(metadata.eov_positions, eov_positions.data());
+        BOOST_CHECK_EQUAL(metadata.eov_positions_size, eov_positions.size());
+        BOOST_CHECK_EQUAL(metadata.eov_positions_count, 1);
+        BOOST_CHECK_EQUAL(eov_positions[0], (i + 1) * spp);
+    }
+}
+
+BOOST_AUTO_TEST_CASE(test_recv_two_channel_aggregate_eov)
+{
+    const size_t NUM_PACKETS = 20;
+    const std::string format("fc64");
+
+    // This vector defines which packets in each channel's mock link will
+    // signal EOV in their packet headers.
+    //
+    // For example, for a vector with 3 values, [3, 5, 8]:
+    //   Link 0 packets with EOV: 3rd, 6th, 9th, 12th, 15th, ...
+    //   Link 1 packets with EOV: 5th, 10th, 15th, 20th, ...
+    //   Link 2 packets with EOV: 8th, 16th, 24th, 32nd, ...
+    const std::vector<size_t> eov_every_nth_packet{3, 5};
+
+    const size_t num_chans = eov_every_nth_packet.size();
+    auto recv_links = make_links(num_chans);
+    auto streamer   = make_rx_streamer(recv_links, format);
+
+    const size_t spp       = streamer->get_max_num_samps();
+    const size_t num_samps = spp * NUM_PACKETS;
+
+    std::vector<std::vector<std::complex<double>>> buffer(num_chans);
+    std::vector<void*> buffers;
+    for (size_t i = 0; i < num_chans; i++) {
+        buffer[i].resize(num_samps);
+        buffers.push_back(&buffer[i].front());
+    }
+
+    mock_header_t header;
+    std::vector<size_t> expected_eov_offsets;
+    for (size_t i = 0; i < NUM_PACKETS; i++) {
+        bool eov = false;
+        for (size_t ch = 0; ch < num_chans; ch++) {
+            header.eob     = false;
+            header.has_tsf = false;
+            header.eov = ((i + 1) % eov_every_nth_packet[ch]) == 0;
+
+            push_back_recv_packet(recv_links[ch], header, spp);
+
+            eov |= header.eov;
+        }
+        if(eov) {
+            expected_eov_offsets.push_back(spp * (i + 1));
+        }
+    }
+
+    uhd::rx_metadata_t metadata;
+
+    std::vector<size_t> eov_positions(expected_eov_offsets.size() + 1);
+    metadata.eov_positions = eov_positions.data();
+    metadata.eov_positions_size = eov_positions.size();
+
+    size_t num_samps_ret =
+        streamer->recv(buffers, num_samps, metadata, 1.0, false);
+
+    BOOST_CHECK_EQUAL(num_samps_ret, num_samps);
+    BOOST_CHECK_EQUAL(metadata.eov_positions_count, expected_eov_offsets.size());
+    for(size_t i = 0; i < metadata.eov_positions_count; i++) {
+        BOOST_CHECK_EQUAL(expected_eov_offsets[i], metadata.eov_positions[i]);
+    }
 }

@@ -139,10 +139,13 @@ public:
 
         const int32_t timeout_ms = static_cast<int32_t>(timeout * 1000);
 
-        size_t total_samps_recv =
-            _recv_one_packet(buffs, nsamps_per_buff, metadata, timeout_ms);
+        detail::eov_data_wrapper eov_positions(metadata);
 
-        if (one_packet or metadata.end_of_burst) {
+        size_t total_samps_recv =
+            _recv_one_packet(buffs, nsamps_per_buff, metadata, eov_positions, timeout_ms);
+
+        if (one_packet or metadata.end_of_burst or
+            (eov_positions.data() and eov_positions.remaining() == 0)) {
             return total_samps_recv;
         }
 
@@ -153,13 +156,14 @@ public:
 
         // Loop until buffer is filled or error code. This method returns the
         // metadata from the first packet received, with the exception of
-        // end-of-burst.
+        // end-of-burst and end-of-vector indications (if requested).
         uhd::rx_metadata_t loop_metadata;
 
         while (total_samps_recv < nsamps_per_buff) {
             size_t num_samps = _recv_one_packet(buffs,
                 nsamps_per_buff - total_samps_recv,
                 loop_metadata,
+                eov_positions,
                 timeout_ms,
                 total_samps_recv * _convert_info.bytes_per_cpu_item);
 
@@ -174,6 +178,10 @@ public:
             // Return immediately if end of burst
             if (loop_metadata.end_of_burst) {
                 metadata.end_of_burst = true;
+                break;
+            }
+            // Return if the end-of-vector position array has been exhausted
+            if (eov_positions.data() and eov_positions.remaining() == 0) {
                 break;
             }
         }
@@ -246,13 +254,15 @@ private:
     UHD_FORCE_INLINE size_t _recv_one_packet(const uhd::rx_streamer::buffs_type& buffs,
         const size_t nsamps_per_buff,
         uhd::rx_metadata_t& metadata,
+        detail::eov_data_wrapper& eov_positions,
         const int32_t timeout_ms,
         const size_t buffer_offset_bytes = 0)
     {
         if (_buff_samps_remaining == 0) {
             // Current set of buffers has expired, get the next one
             _buff_samps_remaining =
-                _zero_copy_streamer.get_recv_buffs(_in_buffs, metadata, timeout_ms);
+                _zero_copy_streamer.get_recv_buffs(
+                    _in_buffs, metadata, eov_positions, timeout_ms);
             _fragment_offset_in_samps = 0;
         } else {
             // There are samples still left in the current set of buffers

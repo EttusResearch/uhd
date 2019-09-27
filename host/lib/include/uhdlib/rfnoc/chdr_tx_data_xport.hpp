@@ -112,6 +112,7 @@ public:
     struct packet_info_t
     {
         bool eob             = false;
+        bool eov             = false;
         bool has_tsf         = false;
         uint64_t tsf         = 0;
         size_t payload_bytes = 0;
@@ -226,6 +227,7 @@ public:
         }
 
         _send_header.set_eob(info.eob);
+        _send_header.set_eov(info.eov);
         _send_header.set_seq_num(_data_seq_num++);
 
         _send_packet->refresh(buff->data(), _send_header, tsf);

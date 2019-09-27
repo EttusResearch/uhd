@@ -108,6 +108,7 @@ public:
     struct packet_info_t
     {
         bool eob             = false;
+        bool eov             = false;
         bool has_tsf         = false;
         uint64_t tsf         = 0;
         size_t payload_bytes = 0;
@@ -347,6 +348,7 @@ private:
 
         packet_info_t info;
         info.eob           = header.get_eob();
+        info.eov           = header.get_eov();
         info.has_tsf       = optional_time.is_initialized();
         info.tsf           = optional_time ? *optional_time : 0;
         info.payload_bytes = _recv_packet->get_payload_size();
