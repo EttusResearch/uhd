@@ -12,7 +12,7 @@
 #include <uhd/utils/noncopyable.hpp>
 #include <boost/bind.hpp>
 #include <boost/utility.hpp>
-#include <boost/function.hpp>
+#include <functional>
 #include <boost/circular_buffer.hpp>
 #include <boost/thread/condition.hpp>
 #include <boost/thread/locks.hpp>
@@ -133,7 +133,7 @@ namespace uhd{ namespace transport{
         bool not_full(void) const{return not _buffer.full();}
         bool not_empty(void) const{return not _buffer.empty();}
 
-        boost::function<bool(void)> _not_full_fcn, _not_empty_fcn;
+        std::function<bool(void)> _not_full_fcn, _not_empty_fcn;
 
         /*!
          * Three part operation to pop an element:

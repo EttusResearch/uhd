@@ -176,7 +176,7 @@ void recv_to_file(uhd::rx_streamer::sptr rx_stream,
     }
 }
 
-typedef boost::function<uhd::sensor_value_t(const std::string&)> get_sensor_fn_t;
+typedef std::function<uhd::sensor_value_t(const std::string&)> get_sensor_fn_t;
 
 bool check_locked_sensor(std::vector<std::string> sensor_names,
     const char* sensor_name,

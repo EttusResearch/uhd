@@ -15,7 +15,7 @@
 #include <uhd/utils/safe_call.hpp>
 #include <stdint.h>
 #include <boost/format.hpp>
-#include <boost/function.hpp>
+#include <functional>
 #include <algorithm>
 #include <iomanip>
 #include <utility>

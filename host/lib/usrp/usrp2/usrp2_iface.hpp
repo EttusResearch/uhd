@@ -13,7 +13,7 @@
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <memory>
 #include <boost/utility.hpp>
-#include <boost/function.hpp>
+#include <functional>
 #include "usrp2_regs.hpp"
 #include <uhd/types/wb_iface.hpp>
 #include <string>

@@ -11,7 +11,7 @@
 #include <uhd/config.hpp>
 #include <uhd/transport/zero_copy.hpp>
 #include <stdint.h>
-#include <boost/function.hpp>
+#include <functional>
 #include <uhd/utils/noncopyable.hpp>
 
 namespace uhd { namespace transport {
@@ -40,7 +40,7 @@ public:
      * \param size number of bytes in the frame payload
      * \return stream number
      */
-    typedef boost::function<uint32_t(void* buff, size_t size)> stream_classifier_fn;
+    typedef std::function<uint32_t(void* buff, size_t size)> stream_classifier_fn;
 
     //! virtual dtor
     virtual ~muxed_zero_copy_if() {}

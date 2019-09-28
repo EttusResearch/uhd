@@ -20,6 +20,7 @@ TMPL_HEADER = """
 #include "convert_common.hpp"
 #include <uhd/utils/byteswap.hpp>
 #include <algorithm>
+#include <cstring>
 
 using namespace uhd::convert;
 

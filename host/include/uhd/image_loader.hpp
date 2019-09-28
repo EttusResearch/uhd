@@ -12,7 +12,7 @@
 #include <uhd/config.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <boost/function.hpp>
+#include <functional>
 #include <string>
 
 namespace uhd {
@@ -50,7 +50,7 @@ public:
      *    device and expect the default image(s) to be loaded, but the specific
      *    model of the device cannot be determined beyond a category.
      */
-    typedef boost::function<bool(const image_loader_args_t&)> loader_fcn_t;
+    typedef std::function<bool(const image_loader_args_t&)> loader_fcn_t;
 
     //! Register an image loader
     /*!

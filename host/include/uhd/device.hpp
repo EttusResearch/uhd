@@ -13,7 +13,7 @@
 #include <uhd/stream.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <boost/function.hpp>
+#include <functional>
 #include <memory>
 
 namespace uhd {
@@ -28,8 +28,8 @@ class UHD_API device : uhd::noncopyable
 {
 public:
     typedef std::shared_ptr<device> sptr;
-    typedef boost::function<device_addrs_t(const device_addr_t&)> find_t;
-    typedef boost::function<sptr(const device_addr_t&)> make_t;
+    typedef std::function<device_addrs_t(const device_addr_t&)> find_t;
+    typedef std::function<sptr(const device_addr_t&)> make_t;
 
     //! Device type, used as a filter in make
     enum device_filter_t { ANY, USRP, CLOCK };

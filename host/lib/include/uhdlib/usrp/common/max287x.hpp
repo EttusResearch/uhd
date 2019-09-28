@@ -17,7 +17,7 @@
 #include <uhd/utils/math.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <boost/assign.hpp>
-#include <boost/function.hpp>
+#include <functional>
 #include <boost/math/special_functions/round.hpp>
 #include <vector>
 #include <chrono>
@@ -32,7 +32,7 @@ class max287x_iface
 public:
     typedef std::shared_ptr<max287x_iface> sptr;
 
-    typedef boost::function<void(std::vector<uint32_t>)> write_fn;
+    typedef std::function<void(std::vector<uint32_t>)> write_fn;
 
     /**
      * LD Pin Modes

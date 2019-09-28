@@ -10,7 +10,7 @@
 
 #include <uhd/config.hpp>
 #include <uhd/transport/zero_copy.hpp>
-#include <boost/function.hpp>
+#include <functional>
 #include <memory>
 
 namespace uhd { namespace transport {
@@ -20,7 +20,7 @@ namespace uhd { namespace transport {
  * \param buff buffer to be sent or receive buffer being released
  * \return true if OK, false if not
  */
-typedef boost::function<bool(managed_buffer::sptr buff)> flow_ctrl_func;
+typedef std::function<bool(managed_buffer::sptr buff)> flow_ctrl_func;
 
 /*!
  * Adds flow control to any zero_copy_if transport.

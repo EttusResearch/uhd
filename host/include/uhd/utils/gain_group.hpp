@@ -11,7 +11,7 @@
 #include <uhd/config.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <boost/function.hpp>
+#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -23,9 +23,9 @@ namespace uhd {
  */
 struct UHD_API gain_fcns_t
 {
-    boost::function<gain_range_t(void)> get_range;
-    boost::function<double(void)> get_value;
-    boost::function<void(double)> set_value;
+    std::function<gain_range_t(void)> get_range;
+    std::function<double(void)> get_value;
+    std::function<void(double)> set_value;
 };
 
 class UHD_API gain_group : uhd::noncopyable

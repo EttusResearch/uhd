@@ -33,7 +33,7 @@
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
 #include <memory>
-#include <boost/function.hpp>
+#include <functional>
 #include <atomic>
 
 static const double USRP2_LINK_RATE_BPS = 1000e6/8;

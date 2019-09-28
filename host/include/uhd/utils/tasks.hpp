@@ -12,7 +12,7 @@
 
 #include <uhd/config.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <boost/function.hpp>
+#include <functional>
 #include <memory>
 #include <string>
 
@@ -22,7 +22,7 @@ class UHD_API task : uhd::noncopyable
 {
 public:
     typedef std::shared_ptr<task> sptr;
-    typedef boost::function<void(void)> task_fcn_type;
+    typedef std::function<void(void)> task_fcn_type;
 
     /*!
      * Create a new task object with function callback.

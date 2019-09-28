@@ -37,8 +37,9 @@ public:
 
     property<T>& set_coercer(const typename property<T>::coercer_type& coercer)
     {
-        if (not _coercer.empty())
+        if (_coercer) {
             uhd::assertion_error("cannot register more than one coercer for a property");
+        }
         if (_coerce_mode == property_tree::MANUAL_COERCE)
             uhd::assertion_error(
                 "cannot register coercer for a manually coerced property");
@@ -49,9 +50,10 @@ public:
 
     property<T>& set_publisher(const typename property<T>::publisher_type& publisher)
     {
-        if (not _publisher.empty())
+        if (_publisher) {
             uhd::assertion_error(
                 "cannot register more than one publisher for a property");
+        }
 
         _publisher = publisher;
         return *this;
@@ -91,7 +93,7 @@ public:
         for (typename property<T>::subscriber_type& dsub : _desired_subscribers) {
             dsub(get_value_ref(_value)); // let errors propagate
         }
-        if (not _coercer.empty()) {
+        if (_coercer) {
             _set_coerced(_coercer(get_value_ref(_value)));
         } else {
             if (_coerce_mode == property_tree::AUTO_COERCE)
@@ -113,7 +115,7 @@ public:
         if (empty()) {
             throw uhd::runtime_error("Cannot get() on an uninitialized (empty) property");
         }
-        if (not _publisher.empty()) {
+        if (_publisher) {
             return _publisher();
         } else {
             if (_coerced_value.get() == NULL
@@ -135,7 +137,7 @@ public:
 
     bool empty(void) const
     {
-        return _publisher.empty() and _value.get() == NULL;
+        return !bool(_publisher) and _value.get() == NULL;
     }
 
 private:

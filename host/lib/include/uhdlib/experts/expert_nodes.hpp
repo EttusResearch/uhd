@@ -13,7 +13,7 @@
 #include <uhd/utils/dirty_tracked.hpp>
 #include <uhd/utils/noncopyable.hpp>
 #include <uhd/types/time_spec.hpp>
-#include <boost/function.hpp>
+#include <functional>
 #include <boost/thread/recursive_mutex.hpp>
 #include <boost/thread.hpp>
 #include <boost/core/demangle.hpp>
@@ -36,7 +36,7 @@ namespace uhd { namespace experts {
      */
     class dag_vertex_t : private uhd::noncopyable {
     public:
-        typedef boost::function<void(std::string)> callback_func_t;
+        typedef std::function<void(std::string)> callback_func_t;
 
         virtual ~dag_vertex_t() {}
 
@@ -195,11 +195,11 @@ namespace uhd { namespace experts {
         }
 
         virtual bool has_write_callback() const {
-            return not _wr_callback.empty();
+            return bool(_wr_callback);
         }
 
         virtual void clear_write_callback() {
-            _wr_callback.clear();
+            _wr_callback = nullptr;
         }
 
         virtual void set_read_callback(const callback_func_t& func) {
@@ -207,11 +207,11 @@ namespace uhd { namespace experts {
         }
 
         virtual bool has_read_callback() const {
-            return not _rd_callback.empty();
+            return bool(_rd_callback);
         }
 
         virtual void clear_read_callback() {
-            _rd_callback.clear();
+            _rd_callback = nullptr;
         }
 
         boost::recursive_mutex* _callback_mutex;

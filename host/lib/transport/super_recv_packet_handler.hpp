@@ -20,7 +20,7 @@
 #include <uhd/utils/tasks.hpp>
 #include <boost/dynamic_bitset.hpp>
 #include <boost/format.hpp>
-#include <boost/function.hpp>
+#include <functional>
 #include <memory>
 #include <iostream>
 #include <vector>
@@ -36,7 +36,7 @@ UHD_INLINE uint32_t get_context_code(
     return word0 & 0xff;
 }
 
-typedef boost::function<void(void)> handle_overflow_type;
+typedef std::function<void(void)> handle_overflow_type;
 static inline void handle_overflow_nop(void) {}
 
 /***********************************************************************
@@ -49,12 +49,12 @@ static inline void handle_overflow_nop(void) {}
 class recv_packet_handler
 {
 public:
-    typedef boost::function<managed_recv_buffer::sptr(double)> get_buff_type;
-    typedef boost::function<void(const size_t)> handle_flowctrl_type;
+    typedef std::function<managed_recv_buffer::sptr(double)> get_buff_type;
+    typedef std::function<void(const size_t)> handle_flowctrl_type;
     typedef std::function<void(const uint32_t*)> handle_flowctrl_ack_type;
-    typedef boost::function<void(const stream_cmd_t&)> issue_stream_cmd_type;
+    typedef std::function<void(const stream_cmd_t&)> issue_stream_cmd_type;
     typedef void (*vrt_unpacker_type)(const uint32_t*, vrt::if_packet_info_t&);
-    // typedef boost::function<void(const uint32_t *, vrt::if_packet_info_t &)>
+    // typedef std::function<void(const uint32_t *, vrt::if_packet_info_t &)>
     // vrt_unpacker_type;
 
     /*!

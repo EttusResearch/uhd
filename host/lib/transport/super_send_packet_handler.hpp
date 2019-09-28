@@ -18,7 +18,7 @@
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhd/utils/thread.hpp>
-#include <boost/function.hpp>
+#include <functional>
 #include <chrono>
 #include <iostream>
 #include <thread>

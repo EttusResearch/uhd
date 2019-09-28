@@ -76,7 +76,7 @@ struct offset_send_buffer{
  **********************************************************************/
 class offset_managed_send_buffer : public managed_send_buffer{
 public:
-    typedef boost::function<void(offset_send_buffer&, offset_send_buffer&, size_t)> commit_cb_type;
+    typedef std::function<void(offset_send_buffer&, offset_send_buffer&, size_t)> commit_cb_type;
     offset_managed_send_buffer(const commit_cb_type &commit_cb):
         _commit_cb(commit_cb)
     {
@@ -366,7 +366,7 @@ private:
  **********************************************************************/
 class usrp1_send_packet_streamer : public sph::send_packet_handler, public tx_streamer{
 public:
-    usrp1_send_packet_streamer(const size_t max_num_samps, soft_time_ctrl::sptr stc, boost::function<void(bool)> tx_enb_fcn){
+    usrp1_send_packet_streamer(const size_t max_num_samps, soft_time_ctrl::sptr stc, std::function<void(bool)> tx_enb_fcn){
         _max_num_samps = max_num_samps;
         this->set_max_samples_per_packet(_max_num_samps);
         _stc = stc;
@@ -419,7 +419,7 @@ public:
 private:
     size_t _max_num_samps;
     soft_time_ctrl::sptr _stc;
-    boost::function<void(bool)> _tx_enb_fcn;
+    std::function<void(bool)> _tx_enb_fcn;
 };
 
 /***********************************************************************
@@ -687,7 +687,7 @@ tx_streamer::sptr usrp1_impl::get_tx_stream(const uhd::stream_args_t &args_){
     const size_t spp = bpp/convert::get_bytes_per_item(args.otw_format);
 
     //make the new streamer given the samples per packet
-    boost::function<void(bool)> tx_fcn = boost::bind(&usrp1_impl::tx_stream_on_off, this, _1);
+    std::function<void(bool)> tx_fcn = boost::bind(&usrp1_impl::tx_stream_on_off, this, _1);
     std::shared_ptr<usrp1_send_packet_streamer> my_streamer =
         std::make_shared<usrp1_send_packet_streamer>(spp, _soft_time_ctrl, tx_fcn);
 

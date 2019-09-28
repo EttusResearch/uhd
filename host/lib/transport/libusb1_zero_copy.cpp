@@ -15,7 +15,7 @@
 #include <boost/bind.hpp>
 #include <boost/circular_buffer.hpp>
 #include <boost/format.hpp>
-#include <boost/function.hpp>
+#include <functional>
 #include <memory>
 #include <boost/thread/condition_variable.hpp>
 #include <boost/thread/mutex.hpp>
@@ -115,7 +115,7 @@ class libusb_zero_copy_mb : public managed_buffer
 public:
     libusb_zero_copy_mb(libusb_transfer* lut,
         const size_t frame_size,
-        boost::function<void(libusb_zero_copy_mb*)> release_cb,
+        std::function<void(libusb_zero_copy_mb*)> release_cb,
         const bool is_recv,
         const std::string& name)
         : _release_cb(release_cb)
@@ -192,7 +192,7 @@ public:
     }
 
 private:
-    boost::function<void(libusb_zero_copy_mb*)> _release_cb;
+    std::function<void(libusb_zero_copy_mb*)> _release_cb;
     const bool _is_recv;
     const std::string _name;
     libusb_context* _ctx;

@@ -15,7 +15,7 @@
 #include <uhd/types/ranges.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/utils/math.hpp>
-#include <boost/function.hpp>
+#include <functional>
 #include <boost/math/special_functions/round.hpp>
 #include <boost/thread.hpp>
 #include <vector>
@@ -24,7 +24,7 @@ class adf435x_iface
 {
 public:
     typedef std::shared_ptr<adf435x_iface> sptr;
-    typedef boost::function<void(std::vector<uint32_t>)> write_fn_t;
+    typedef std::function<void(std::vector<uint32_t>)> write_fn_t;
 
     static sptr make_adf4350(write_fn_t write);
     static sptr make_adf4351(write_fn_t write);

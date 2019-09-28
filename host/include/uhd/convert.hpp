@@ -10,7 +10,7 @@
 
 #include <uhd/config.hpp>
 #include <uhd/types/ref_vector.hpp>
-#include <boost/function.hpp>
+#include <functional>
 #include <boost/operators.hpp>
 #include <memory>
 #include <string>
@@ -51,7 +51,7 @@ private:
 };
 
 //! Conversion factory function typedef
-typedef boost::function<converter::sptr(void)> function_type;
+typedef std::function<converter::sptr(void)> function_type;
 
 //! Priority of conversion routines
 typedef int priority_type;

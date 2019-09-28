@@ -113,7 +113,7 @@ private:
     boost::condition _fc_cond;
     seq_type _last_seq_out, _last_seq_ack;
     const seq_type _max_seqs_out;
-    boost::function<bool(void)> _ready_fcn;
+    std::function<bool(void)> _ready_fcn;
 };
 
 /***********************************************************************

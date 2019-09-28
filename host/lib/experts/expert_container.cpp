@@ -10,7 +10,7 @@
 #include <uhdlib/experts/expert_container.hpp>
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
-#include <boost/function.hpp>
+#include <functional>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/depth_first_search.hpp>
 #include <boost/graph/graph_traits.hpp>

@@ -11,7 +11,7 @@
 
 #include <uhd/config.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <boost/function.hpp>
+#include <functional>
 #include <memory>
 #include <typeindex>
 #include <vector>
@@ -70,9 +70,9 @@ template <typename T>
 class property : uhd::noncopyable
 {
 public:
-    typedef boost::function<void(const T&)> subscriber_type;
-    typedef boost::function<T(void)> publisher_type;
-    typedef boost::function<T(const T&)> coercer_type;
+    typedef std::function<void(const T&)> subscriber_type;
+    typedef std::function<T(void)> publisher_type;
+    typedef std::function<T(const T&)> coercer_type;
 
     virtual ~property<T>(void) = 0;
 
