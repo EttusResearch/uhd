@@ -17,8 +17,8 @@
 #include <boost/thread/locks.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/tokenizer.hpp>
-#include <boost/unordered_map.hpp>
 #include <list>
+#include <unordered_map>
 
 /*! \file soft_register.hpp
  * Utilities to access and index hardware registers.
@@ -568,7 +568,7 @@ protected:
     }
 
 private:
-    typedef boost::unordered_map<std::string, soft_register_base*> regmap_t;
+    typedef std::unordered_map<std::string, soft_register_base*> regmap_t;
     typedef std::list<soft_register_base*> reglist_t;
 
     const std::string _name;
