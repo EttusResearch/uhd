@@ -8,7 +8,7 @@
 #include <uhd/exception.hpp>
 #include <uhdlib/utils/ihex.hpp>
 #include <boost/format.hpp>
-#include <boost/make_shared.hpp>
+#include <memory>
 #include <sstream>
 #include <fstream>
 
@@ -180,7 +180,7 @@ void ihex_reader::read(ihex_reader::record_handle_type record_handler)
 
 // We need a functor for the cast, a lambda would be perfect...
 int _file_writer_callback(
-    boost::shared_ptr<std::ofstream> output_file,
+    std::shared_ptr<std::ofstream> output_file,
     unsigned char *buff,
     uint16_t len
 ) {
@@ -190,7 +190,7 @@ int _file_writer_callback(
 
 void ihex_reader::to_bin_file(const std::string &bin_filename)
 {
-    boost::shared_ptr<std::ofstream> output_file(boost::make_shared<std::ofstream>());
+    std::shared_ptr<std::ofstream> output_file(std::make_shared<std::ofstream>());
     output_file->open(bin_filename.c_str(), std::ios::out | std::ios::binary);
     if (not output_file->is_open()) {
         throw uhd::io_error(str(boost::format("Could not open file for writing: %s") % bin_filename));

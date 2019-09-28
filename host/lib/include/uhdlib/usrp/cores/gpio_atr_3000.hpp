@@ -14,14 +14,14 @@
 #include <uhd/usrp/gpio_defs.hpp>
 #include <uhd/utils/noncopyable.hpp>
 #include <uhdlib/usrp/gpio_defs.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 namespace uhd { namespace usrp { namespace gpio_atr {
 
 class gpio_atr_3000 : uhd::noncopyable
 {
 public:
-    typedef boost::shared_ptr<gpio_atr_3000> sptr;
+    typedef std::shared_ptr<gpio_atr_3000> sptr;
 
     static const uint32_t MASK_SET_ALL = 0xFFFFFFFF;
 
@@ -118,7 +118,7 @@ public:
 class db_gpio_atr_3000
 {
 public:
-    typedef boost::shared_ptr<db_gpio_atr_3000> sptr;
+    typedef std::shared_ptr<db_gpio_atr_3000> sptr;
 
     typedef uhd::usrp::dboard_iface::unit_t db_unit_t;
 

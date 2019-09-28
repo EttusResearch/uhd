@@ -14,7 +14,7 @@
 #include <uhd/types/time_spec.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <boost/thread.hpp>
-#include <boost/enable_shared_from_this.hpp>
+#include <memory>
 #include <queue>
 #include <map>
 #include <chrono>
@@ -22,9 +22,9 @@
 
 namespace uhd{ namespace usrp{
 
-    struct recv_packet_demuxer_3000 : boost::enable_shared_from_this<recv_packet_demuxer_3000>
+    struct recv_packet_demuxer_3000 : std::enable_shared_from_this<recv_packet_demuxer_3000>
     {
-        typedef boost::shared_ptr<recv_packet_demuxer_3000> sptr;
+        typedef std::shared_ptr<recv_packet_demuxer_3000> sptr;
         static sptr make(transport::zero_copy_if::sptr xport)
         {
             return sptr(new recv_packet_demuxer_3000(xport));

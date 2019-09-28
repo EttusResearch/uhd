@@ -11,7 +11,7 @@
 #include <uhd/config.hpp>
 #include <uhd/transport/zero_copy.hpp>
 #include <boost/function.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 namespace uhd { namespace transport {
 
@@ -28,7 +28,7 @@ typedef boost::function<bool(managed_buffer::sptr buff)> flow_ctrl_func;
 class UHD_API zero_copy_flow_ctrl : public virtual zero_copy_if
 {
 public:
-    typedef boost::shared_ptr<zero_copy_flow_ctrl> sptr;
+    typedef std::shared_ptr<zero_copy_flow_ctrl> sptr;
 
     /*!
      * Make flow controlled transport.

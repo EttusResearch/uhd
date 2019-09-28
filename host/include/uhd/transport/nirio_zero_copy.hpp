@@ -13,14 +13,14 @@
 #include <uhd/transport/zero_copy.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <stdint.h>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 namespace uhd { namespace transport {
 
 class UHD_API nirio_zero_copy : public virtual zero_copy_if
 {
 public:
-    typedef boost::shared_ptr<nirio_zero_copy> sptr;
+    typedef std::shared_ptr<nirio_zero_copy> sptr;
 
     static sptr make(uhd::niusrprio::niusrprio_session::sptr fpga_session,
         const uint32_t instance,

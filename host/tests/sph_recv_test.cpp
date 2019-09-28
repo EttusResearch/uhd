@@ -336,7 +336,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_normal)
     std::vector<mock_zero_copy::sptr> xports;
     for (size_t i = 0; i < NCHANNELS; i++) {
         xports.push_back(
-            boost::make_shared<mock_zero_copy>(vrt::if_packet_info_t::LINK_TYPE_VRLP));
+            std::make_shared<mock_zero_copy>(vrt::if_packet_info_t::LINK_TYPE_VRLP));
     }
 
     // generate a bunch of packets
@@ -432,7 +432,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_sequence_error)
     std::vector<mock_zero_copy::sptr> xports;
     for (size_t i = 0; i < NCHANNELS; i++) {
         xports.push_back(
-            boost::make_shared<mock_zero_copy>(vrt::if_packet_info_t::LINK_TYPE_VRLP));
+            std::make_shared<mock_zero_copy>(vrt::if_packet_info_t::LINK_TYPE_VRLP));
     }
 
     // generate a bunch of packets
@@ -540,7 +540,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_time_error)
     std::vector<mock_zero_copy::sptr> xports;
     for (size_t i = 0; i < NCHANNELS; i++) {
         xports.push_back(
-            boost::make_shared<mock_zero_copy>(vrt::if_packet_info_t::LINK_TYPE_VRLP));
+            std::make_shared<mock_zero_copy>(vrt::if_packet_info_t::LINK_TYPE_VRLP));
     }
 
     // generate a bunch of packets
@@ -642,7 +642,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_exception)
     std::vector<mock_zero_copy::sptr> xports;
     for (size_t i = 0; i < NCHANNELS; i++) {
         xports.push_back(
-            boost::make_shared<mock_zero_copy>(vrt::if_packet_info_t::LINK_TYPE_VRLP));
+            std::make_shared<mock_zero_copy>(vrt::if_packet_info_t::LINK_TYPE_VRLP));
     }
 
     // generate a bunch of packets
@@ -720,7 +720,7 @@ BOOST_AUTO_TEST_CASE(test_sph_recv_multi_channel_fragment)
     std::vector<mock_zero_copy::sptr> xports;
     for (size_t i = 0; i < NCHANNELS; i++) {
         xports.push_back(
-            boost::make_shared<mock_zero_copy>(vrt::if_packet_info_t::LINK_TYPE_VRLP));
+            std::make_shared<mock_zero_copy>(vrt::if_packet_info_t::LINK_TYPE_VRLP));
     }
 
     // generate a bunch of packets

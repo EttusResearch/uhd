@@ -19,7 +19,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
 #include "dboard_ctor_args.hpp"
-#include <boost/make_shared.hpp>
+#include <memory>
 #include <boost/thread.hpp>
 #include <boost/thread/mutex.hpp>
 //#include <fstream>    //Needed for _expert->to_dot() below
@@ -229,13 +229,13 @@ private:
 class twinrx_rcvr : public rx_dboard_base
 {
 public:
-    typedef boost::shared_ptr<twinrx_rcvr> sptr;
+    typedef std::shared_ptr<twinrx_rcvr> sptr;
 
     twinrx_rcvr(ctor_args_t args) : rx_dboard_base(args)
     {
         _db_iface = get_iface();
-        twinrx_gpio::sptr gpio_iface = boost::make_shared<twinrx_gpio>(_db_iface);
-        twinrx_cpld_regmap::sptr cpld_regs = boost::make_shared<twinrx_cpld_regmap>();
+        twinrx_gpio::sptr gpio_iface = std::make_shared<twinrx_gpio>(_db_iface);
+        twinrx_cpld_regmap::sptr cpld_regs = std::make_shared<twinrx_cpld_regmap>();
         cpld_regs->initialize(*gpio_iface, false);
         _ctrl = twinrx_ctrl::make(_db_iface, gpio_iface, cpld_regs, get_rx_id());
         _expert = expert_factory::create_container("twinrx_expert");
@@ -304,7 +304,7 @@ public:
     static dboard_base::sptr make_twinrx_fe(dboard_base::ctor_args_t args)
     {
         const dboard_ctor_args_t& db_args = dboard_ctor_args_t::cast(args);
-        sptr container = boost::dynamic_pointer_cast<twinrx_rcvr>(db_args.rx_container);
+        sptr container = std::dynamic_pointer_cast<twinrx_rcvr>(db_args.rx_container);
         if (container) {
             dboard_base::sptr fe = dboard_base::sptr(
                 new twinrx_rcvr_fe(args, container->get_expert(), container->get_ctrl()));

@@ -10,7 +10,7 @@
 #include <uhdlib/transport/dpdk_common.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <uhd/transport/zero_copy.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <string>
 
 
@@ -21,7 +21,7 @@ namespace uhd { namespace transport {
  */
 class dpdk_zero_copy : public virtual zero_copy_if {
 public:
-    typedef boost::shared_ptr<dpdk_zero_copy> sptr;
+    typedef std::shared_ptr<dpdk_zero_copy> sptr;
 
     static sptr make(
         const struct uhd_dpdk_ctx &ctx,

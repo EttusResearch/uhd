@@ -11,7 +11,7 @@
 #include <uhd/config.hpp>
 #include <uhd/transport/usb_device_handle.hpp>
 #include <libusb.h>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <uhd/utils/noncopyable.hpp>
 
 //! Define LIBUSB_CALL when its missing (non-windows)
@@ -52,7 +52,7 @@ namespace uhd { namespace transport { namespace libusb {
 class session : uhd::noncopyable
 {
 public:
-    typedef boost::shared_ptr<session> sptr;
+    typedef std::shared_ptr<session> sptr;
 
     virtual ~session(void);
 
@@ -78,7 +78,7 @@ public:
 class device : uhd::noncopyable
 {
 public:
-    typedef boost::shared_ptr<device> sptr;
+    typedef std::shared_ptr<device> sptr;
 
     virtual ~device(void);
 
@@ -93,7 +93,7 @@ public:
 class device_list : uhd::noncopyable
 {
 public:
-    typedef boost::shared_ptr<device_list> sptr;
+    typedef std::shared_ptr<device_list> sptr;
 
     virtual ~device_list(void);
 
@@ -113,7 +113,7 @@ public:
 class device_descriptor : uhd::noncopyable
 {
 public:
-    typedef boost::shared_ptr<device_descriptor> sptr;
+    typedef std::shared_ptr<device_descriptor> sptr;
 
     virtual ~device_descriptor(void);
 
@@ -132,7 +132,7 @@ public:
 class device_handle : uhd::noncopyable
 {
 public:
-    typedef boost::shared_ptr<device_handle> sptr;
+    typedef std::shared_ptr<device_handle> sptr;
 
     virtual ~device_handle(void);
 
@@ -163,7 +163,7 @@ public:
 class special_handle : public usb_device_handle
 {
 public:
-    typedef boost::shared_ptr<special_handle> sptr;
+    typedef std::shared_ptr<special_handle> sptr;
 
     virtual ~special_handle(void);
 

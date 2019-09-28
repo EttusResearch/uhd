@@ -8,13 +8,12 @@
 #ifndef INCLUDED_UHD_TRANSPORT_NIRIO_NIRIO_INTERFACE_H
 #define INCLUDED_UHD_TRANSPORT_NIRIO_NIRIO_INTERFACE_H
 
-#include <stdint.h>
-#include <boost/smart_ptr.hpp>
-#include <uhd/utils/noncopyable.hpp>
-#include <boost/thread/shared_mutex.hpp>
-#include <boost/thread/locks.hpp>
 #include <uhd/transport/nirio/nirio_driver_iface.h>
 #include <uhd/transport/nirio/nirio_quirks.h>
+#include <uhd/utils/noncopyable.hpp>
+#include <stdint.h>
+#include <boost/thread/locks.hpp>
+#include <boost/thread/shared_mutex.hpp>
 
 #define NI_VENDOR_NUM   0x1093
 
@@ -135,7 +134,7 @@ namespace uhd { namespace niusrprio
 
     class UHD_API niriok_proxy : public uhd::noncopyable {
     public:
-        typedef boost::shared_ptr<niriok_proxy> sptr;
+        typedef std::shared_ptr<niriok_proxy> sptr;
 
         static sptr make_and_open(const std::string& interface_path);
 

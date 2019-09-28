@@ -12,7 +12,7 @@
 #include <uhdlib/transport/inline_io_service.hpp>
 #include <uhdlib/transport/rx_streamer_impl.hpp>
 #include <uhdlib/transport/tx_streamer_impl.hpp>
-#include <boost/make_shared.hpp>
+#include <memory>
 #include <boost/program_options.hpp>
 #include <chrono>
 #include <iostream>
@@ -219,11 +219,11 @@ using tx_streamer_mock_link  = mock_tx_streamer<chdr_tx_data_xport>;
 /*!
  * Helper functions
  */
-static boost::shared_ptr<rx_streamer_mock_xport> make_rx_streamer_mock_xport(
+static std::shared_ptr<rx_streamer_mock_xport> make_rx_streamer_mock_xport(
     const size_t spp, const std::string& format)
 {
     const uhd::stream_args_t stream_args(format, "sc16");
-    auto streamer = boost::make_shared<rx_streamer_mock_xport>(1, stream_args);
+    auto streamer = std::make_shared<rx_streamer_mock_xport>(1, stream_args);
     streamer->set_tick_rate(TICK_RATE);
     streamer->set_samp_rate(SAMP_RATE);
     streamer->set_scale_factor(0, SCALE_FACTOR);
@@ -238,11 +238,11 @@ static boost::shared_ptr<rx_streamer_mock_xport> make_rx_streamer_mock_xport(
     return streamer;
 }
 
-static boost::shared_ptr<tx_streamer_mock_xport> make_tx_streamer_mock_xport(
+static std::shared_ptr<tx_streamer_mock_xport> make_tx_streamer_mock_xport(
     const size_t spp, const std::string& format)
 {
     const uhd::stream_args_t stream_args(format, "sc16");
-    auto streamer = boost::make_shared<tx_streamer_mock_xport>(1, stream_args);
+    auto streamer = std::make_shared<tx_streamer_mock_xport>(1, stream_args);
     streamer->set_tick_rate(TICK_RATE);
     streamer->set_samp_rate(SAMP_RATE);
     streamer->set_scale_factor(0, SCALE_FACTOR);
@@ -257,11 +257,11 @@ static boost::shared_ptr<tx_streamer_mock_xport> make_tx_streamer_mock_xport(
     return streamer;
 }
 
-static boost::shared_ptr<rx_streamer_mock_link> make_rx_streamer_mock_link(
+static std::shared_ptr<rx_streamer_mock_link> make_rx_streamer_mock_link(
     const size_t spp, const std::string& format)
 {
     const uhd::stream_args_t stream_args(format, "sc16");
-    auto streamer = boost::make_shared<rx_streamer_mock_link>(1, stream_args);
+    auto streamer = std::make_shared<rx_streamer_mock_link>(1, stream_args);
     streamer->set_tick_rate(TICK_RATE);
     streamer->set_samp_rate(SAMP_RATE);
     streamer->set_scale_factor(0, SCALE_FACTOR);
@@ -307,11 +307,11 @@ static boost::shared_ptr<rx_streamer_mock_link> make_rx_streamer_mock_link(
     return streamer;
 }
 
-static boost::shared_ptr<tx_streamer_mock_link> make_tx_streamer_mock_link(
+static std::shared_ptr<tx_streamer_mock_link> make_tx_streamer_mock_link(
     const size_t spp, const std::string& format)
 {
     const uhd::stream_args_t stream_args(format, "sc16");
-    auto streamer = boost::make_shared<tx_streamer_mock_link>(1, stream_args);
+    auto streamer = std::make_shared<tx_streamer_mock_link>(1, stream_args);
     streamer->set_tick_rate(TICK_RATE);
     streamer->set_samp_rate(SAMP_RATE);
     streamer->set_scale_factor(0, SCALE_FACTOR);

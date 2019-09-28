@@ -13,7 +13,7 @@
 #include <uhd/types/serial.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/exception.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <ad9361_device.h>
 #include <string>
 #include <complex>
@@ -40,7 +40,7 @@ namespace uhd { namespace usrp {
 class ad9361_ctrl : public uhd::noncopyable
 {
 public:
-    typedef boost::shared_ptr<ad9361_ctrl> sptr;
+    typedef std::shared_ptr<ad9361_ctrl> sptr;
 
     virtual ~ad9361_ctrl(void) {}
 

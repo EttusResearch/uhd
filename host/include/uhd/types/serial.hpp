@@ -10,7 +10,7 @@
 
 #include <uhd/config.hpp>
 #include <stdint.h>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -36,7 +36,7 @@ typedef std::vector<uint8_t> byte_vector_t;
 class UHD_API i2c_iface
 {
 public:
-    typedef boost::shared_ptr<i2c_iface> sptr;
+    typedef std::shared_ptr<i2c_iface> sptr;
 
     virtual ~i2c_iface(void);
 
@@ -115,7 +115,7 @@ struct UHD_API spi_config_t
 class UHD_API spi_iface
 {
 public:
-    typedef boost::shared_ptr<spi_iface> sptr;
+    typedef std::shared_ptr<spi_iface> sptr;
 
     virtual ~spi_iface(void);
 
@@ -162,7 +162,7 @@ public:
 class UHD_API uart_iface
 {
 public:
-    typedef boost::shared_ptr<uart_iface> sptr;
+    typedef std::shared_ptr<uart_iface> sptr;
 
     virtual ~uart_iface(void);
 

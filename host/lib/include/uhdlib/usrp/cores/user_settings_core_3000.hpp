@@ -10,7 +10,7 @@
 
 #include <uhd/config.hpp>
 #include <boost/utility.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <uhd/types/wb_iface.hpp>
 
 class user_settings_core_3000 : public uhd::wb_iface {

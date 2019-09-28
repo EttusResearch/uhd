@@ -12,7 +12,7 @@
 #include <uhd/types/ref_vector.hpp>
 #include <boost/function.hpp>
 #include <boost/operators.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <string>
 
 namespace uhd { namespace convert {
@@ -21,7 +21,7 @@ namespace uhd { namespace convert {
 class converter
 {
 public:
-    typedef boost::shared_ptr<converter> sptr;
+    typedef std::shared_ptr<converter> sptr;
     typedef uhd::ref_vector<void*> output_type;
     typedef uhd::ref_vector<const void*> input_type;
 

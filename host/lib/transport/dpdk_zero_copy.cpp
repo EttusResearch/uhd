@@ -11,7 +11,7 @@
 #include <uhdlib/utils/prefs.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
-#include <boost/make_shared.hpp>
+#include <memory>
 #include <stack>
 #include <sys/syslog.h>
 #include <arpa/inet.h>

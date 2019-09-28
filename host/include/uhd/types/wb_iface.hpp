@@ -11,14 +11,14 @@
 #include <uhd/config.hpp>
 #include <uhd/types/time_spec.hpp>
 #include <stdint.h>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 namespace uhd {
 
 class UHD_API wb_iface
 {
 public:
-    typedef boost::shared_ptr<wb_iface> sptr;
+    typedef std::shared_ptr<wb_iface> sptr;
     typedef uint32_t wb_addr_type;
 
     virtual ~wb_iface(void);
@@ -69,7 +69,7 @@ public:
 class UHD_API timed_wb_iface : public wb_iface
 {
 public:
-    typedef boost::shared_ptr<timed_wb_iface> sptr;
+    typedef std::shared_ptr<timed_wb_iface> sptr;
 
     /*!
      * Get the command time.

@@ -15,7 +15,7 @@
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
 #include <boost/thread.hpp>
-#include <boost/make_shared.hpp>
+#include <memory>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -38,22 +38,22 @@ void b100_impl::update_tick_rate(const double rate){
 
     //update the tick rate on all existing streamers -> thread safe
     for (size_t i = 0; i < _rx_streamers.size(); i++){
-        boost::shared_ptr<sph::recv_packet_streamer> my_streamer =
-            boost::dynamic_pointer_cast<sph::recv_packet_streamer>(_rx_streamers[i].lock());
+        std::shared_ptr<sph::recv_packet_streamer> my_streamer =
+            std::dynamic_pointer_cast<sph::recv_packet_streamer>(_rx_streamers[i].lock());
         if (my_streamer.get() == NULL) continue;
         my_streamer->set_tick_rate(rate);
     }
     for (size_t i = 0; i < _tx_streamers.size(); i++){
-        boost::shared_ptr<sph::send_packet_streamer> my_streamer =
-            boost::dynamic_pointer_cast<sph::send_packet_streamer>(_tx_streamers[i].lock());
+        std::shared_ptr<sph::send_packet_streamer> my_streamer =
+            std::dynamic_pointer_cast<sph::send_packet_streamer>(_tx_streamers[i].lock());
         if (my_streamer.get() == NULL) continue;
         my_streamer->set_tick_rate(rate);
     }
 }
 
 void b100_impl::update_rx_samp_rate(const size_t dspno, const double rate){
-    boost::shared_ptr<sph::recv_packet_streamer> my_streamer =
-        boost::dynamic_pointer_cast<sph::recv_packet_streamer>(_rx_streamers[dspno].lock());
+    std::shared_ptr<sph::recv_packet_streamer> my_streamer =
+        std::dynamic_pointer_cast<sph::recv_packet_streamer>(_rx_streamers[dspno].lock());
     if (my_streamer.get() == NULL) return;
 
     my_streamer->set_samp_rate(rate);
@@ -62,8 +62,8 @@ void b100_impl::update_rx_samp_rate(const size_t dspno, const double rate){
 }
 
 void b100_impl::update_tx_samp_rate(const size_t dspno, const double rate){
-    boost::shared_ptr<sph::send_packet_streamer> my_streamer =
-        boost::dynamic_pointer_cast<sph::send_packet_streamer>(_tx_streamers[dspno].lock());
+    std::shared_ptr<sph::send_packet_streamer> my_streamer =
+        std::dynamic_pointer_cast<sph::send_packet_streamer>(_tx_streamers[dspno].lock());
     if (my_streamer.get() == NULL) return;
 
     my_streamer->set_samp_rate(rate);
@@ -129,7 +129,7 @@ rx_streamer::sptr b100_impl::get_rx_stream(const uhd::stream_args_t &args_){
     const size_t spp = unsigned(args.args.cast<double>("spp", bpp/bpi));
 
     //make the new streamer given the samples per packet
-    boost::shared_ptr<sph::recv_packet_streamer> my_streamer = boost::make_shared<sph::recv_packet_streamer>(spp);
+    std::shared_ptr<sph::recv_packet_streamer> my_streamer = std::make_shared<sph::recv_packet_streamer>(spp);
 
     //init some streamer stuff
     my_streamer->resize(args.channels.size());
@@ -188,7 +188,7 @@ tx_streamer::sptr b100_impl::get_tx_stream(const uhd::stream_args_t &args_){
     const size_t spp = bpp/convert::get_bytes_per_item(args.otw_format);
 
     //make the new streamer given the samples per packet
-    boost::shared_ptr<sph::send_packet_streamer> my_streamer = boost::make_shared<sph::send_packet_streamer>(spp);
+    std::shared_ptr<sph::send_packet_streamer> my_streamer = std::make_shared<sph::send_packet_streamer>(spp);
 
     //init some streamer stuff
     my_streamer->resize(args.channels.size());

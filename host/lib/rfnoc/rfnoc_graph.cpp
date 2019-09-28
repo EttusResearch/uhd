@@ -19,8 +19,6 @@
 #include <uhdlib/rfnoc/rfnoc_rx_streamer.hpp>
 #include <uhdlib/rfnoc/rfnoc_tx_streamer.hpp>
 #include <uhdlib/utils/narrow.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/shared_ptr.hpp> // FIXME remove when rfnoc_device is ready
 #include <memory>
 
 using namespace uhd;
@@ -215,7 +213,7 @@ public:
         uhd::transport::adapter_id_t adapter_id)
     {
         // Verify the streamer was created by us
-        auto rfnoc_streamer = boost::dynamic_pointer_cast<rfnoc_tx_streamer>(streamer);
+        auto rfnoc_streamer = std::dynamic_pointer_cast<rfnoc_tx_streamer>(streamer);
         if (!rfnoc_streamer) {
             throw uhd::type_error("Streamer is not rfnoc capable");
         }
@@ -271,7 +269,7 @@ public:
         uhd::transport::adapter_id_t adapter_id)
     {
         // Verify the streamer was created by us
-        auto rfnoc_streamer = boost::dynamic_pointer_cast<rfnoc_rx_streamer>(streamer);
+        auto rfnoc_streamer = std::dynamic_pointer_cast<rfnoc_rx_streamer>(streamer);
         if (!rfnoc_streamer) {
             throw uhd::type_error("Streamer is not rfnoc capable");
         }
@@ -323,14 +321,14 @@ public:
     uhd::rx_streamer::sptr create_rx_streamer(
         const size_t num_chans, const uhd::stream_args_t& args)
     {
-        _rx_streamers.push_back(boost::make_shared<rfnoc_rx_streamer>(num_chans, args));
+        _rx_streamers.push_back(std::make_shared<rfnoc_rx_streamer>(num_chans, args));
         return _rx_streamers.back();
     }
 
     uhd::tx_streamer::sptr create_tx_streamer(
         const size_t num_chans, const uhd::stream_args_t& args)
     {
-        _tx_streamers.push_back(boost::make_shared<rfnoc_tx_streamer>(num_chans, args));
+        _tx_streamers.push_back(std::make_shared<rfnoc_tx_streamer>(num_chans, args));
         return _tx_streamers.back();
     }
 
@@ -905,7 +903,7 @@ rfnoc_graph::sptr make_rfnoc_graph(
 rfnoc_graph::sptr rfnoc_graph::make(const uhd::device_addr_t& device_addr)
 {
     auto dev =
-        boost::dynamic_pointer_cast<detail::rfnoc_device>(uhd::device::make(device_addr));
+        std::dynamic_pointer_cast<detail::rfnoc_device>(uhd::device::make(device_addr));
     if (!dev) {
         throw uhd::key_error(std::string("No RFNoC devices found for ----->\n")
                              + device_addr.to_pp_string());

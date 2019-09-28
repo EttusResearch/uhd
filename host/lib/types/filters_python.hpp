@@ -40,7 +40,7 @@ void export_filters(py::module& m)
         .def("get_analog_type", &analog_filter_base::get_analog_type)
     ;
 
-    py::class_<analog_filter_lp, boost::shared_ptr<analog_filter_lp>>(m, "analog_filter_lp")
+    py::class_<analog_filter_lp, std::shared_ptr<analog_filter_lp>>(m, "analog_filter_lp")
         .def(py::init<filter_info_type, bool, size_t, const std::string, double, double>())
 
         // Methods

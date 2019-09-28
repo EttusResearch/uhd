@@ -9,21 +9,20 @@
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/transport/muxed_zero_copy_if.hpp>
 #include <uhd/utils/safe_call.hpp>
-#include <boost/enable_shared_from_this.hpp>
-#include <boost/make_shared.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/locks.hpp>
 #include <map>
+#include <memory>
 
 using namespace uhd;
 using namespace uhd::transport;
 
 class muxed_zero_copy_if_impl
     : public muxed_zero_copy_if,
-      public boost::enable_shared_from_this<muxed_zero_copy_if_impl>
+      public std::enable_shared_from_this<muxed_zero_copy_if_impl>
 {
 public:
-    typedef boost::shared_ptr<muxed_zero_copy_if_impl> sptr;
+    typedef std::shared_ptr<muxed_zero_copy_if_impl> sptr;
 
     muxed_zero_copy_if_impl(zero_copy_if::sptr base_xport,
         stream_classifier_fn classify_fn,
@@ -68,7 +67,7 @@ public:
         // Only allocate a portion of the base transport's frames to each stream
         // to prevent all streams from attempting to use all the frames.
         stream_impl::sptr stream =
-            boost::make_shared<stream_impl>(this->shared_from_this(),
+            std::make_shared<stream_impl>(this->shared_from_this(),
                 stream_num,
                 _base_xport->get_num_send_frames(),
                 _base_xport->get_num_recv_frames());
@@ -117,8 +116,8 @@ private:
     class stream_impl : public zero_copy_if
     {
     public:
-        typedef boost::shared_ptr<stream_impl> sptr;
-        typedef boost::weak_ptr<stream_impl> wptr;
+        typedef std::shared_ptr<stream_impl> sptr;
+        typedef std::weak_ptr<stream_impl> wptr;
 
         stream_impl(muxed_zero_copy_if_impl::sptr muxed_xport,
             const uint32_t stream_num,
@@ -135,7 +134,7 @@ private:
             , _buffer_index(0)
         {
             for (size_t i = 0; i < num_recv_frames; i++) {
-                _buffers[i] = boost::make_shared<stream_mrb>(_recv_frame_size);
+                _buffers[i] = std::make_shared<stream_mrb>(_recv_frame_size);
             }
         }
 
@@ -201,7 +200,7 @@ private:
         const size_t _num_recv_frames;
         const size_t _recv_frame_size;
         bounded_buffer<managed_recv_buffer::sptr> _buff_queue;
-        std::vector<boost::shared_ptr<stream_mrb>> _buffers;
+        std::vector<std::shared_ptr<stream_mrb>> _buffers;
         size_t _buffer_index;
     };
 
@@ -299,6 +298,6 @@ muxed_zero_copy_if::sptr muxed_zero_copy_if::make(zero_copy_if::sptr base_xport,
     muxed_zero_copy_if::stream_classifier_fn classify_fn,
     size_t max_streams)
 {
-    return boost::make_shared<muxed_zero_copy_if_impl>(
+    return std::make_shared<muxed_zero_copy_if_impl>(
         base_xport, classify_fn, max_streams);
 }

@@ -12,7 +12,7 @@
 #include <uhd/utils/safe_call.hpp>
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
-#include <boost/make_shared.hpp>
+#include <memory>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
 
@@ -97,7 +97,7 @@ private:
 class zero_copy_flow_ctrl_impl : public zero_copy_flow_ctrl
 {
 public:
-    typedef boost::shared_ptr<zero_copy_flow_ctrl_impl> sptr;
+    typedef std::shared_ptr<zero_copy_flow_ctrl_impl> sptr;
 
     zero_copy_flow_ctrl_impl(zero_copy_if::sptr transport,
         flow_ctrl_func send_flow_ctrl,
@@ -114,11 +114,11 @@ public:
 
         for (size_t i = 0; i < transport->get_num_send_frames(); i++) {
             _send_buffers[i] =
-                boost::make_shared<zero_copy_flow_ctrl_msb>(_send_flow_ctrl);
+                std::make_shared<zero_copy_flow_ctrl_msb>(_send_flow_ctrl);
         }
         for (size_t i = 0; i < transport->get_num_recv_frames(); i++) {
             _recv_buffers[i] =
-                boost::make_shared<zero_copy_flow_ctrl_mrb>(_recv_flow_ctrl);
+                std::make_shared<zero_copy_flow_ctrl_mrb>(_recv_flow_ctrl);
         }
     }
 
@@ -133,7 +133,7 @@ public:
         managed_recv_buffer::sptr ptr;
         managed_recv_buffer::sptr buff = _transport->get_recv_buff(timeout);
         if (buff) {
-            boost::shared_ptr<zero_copy_flow_ctrl_mrb> mb =
+            std::shared_ptr<zero_copy_flow_ctrl_mrb> mb =
                 _recv_buffers[_recv_buff_index++];
             _recv_buff_index %= _recv_buffers.size();
             ptr = mb->get(buff);
@@ -160,7 +160,7 @@ public:
         managed_send_buffer::sptr ptr;
         managed_send_buffer::sptr buff = _transport->get_send_buff(timeout);
         if (buff) {
-            boost::shared_ptr<zero_copy_flow_ctrl_msb> mb =
+            std::shared_ptr<zero_copy_flow_ctrl_msb> mb =
                 _send_buffers[_send_buff_index++];
             _send_buff_index %= _send_buffers.size();
             ptr = mb->get(buff);
@@ -183,8 +183,8 @@ private:
     zero_copy_if::sptr _transport;
 
     // buffers
-    std::vector<boost::shared_ptr<zero_copy_flow_ctrl_msb>> _send_buffers;
-    std::vector<boost::shared_ptr<zero_copy_flow_ctrl_mrb>> _recv_buffers;
+    std::vector<std::shared_ptr<zero_copy_flow_ctrl_msb>> _send_buffers;
+    std::vector<std::shared_ptr<zero_copy_flow_ctrl_mrb>> _recv_buffers;
     size_t _send_buff_index;
     size_t _recv_buff_index;
 

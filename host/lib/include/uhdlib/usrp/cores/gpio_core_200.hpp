@@ -12,14 +12,14 @@
 #include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/usrp/gpio_defs.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <uhd/types/wb_iface.hpp>
 #include <map>
 #include <stdint.h>
 
 class gpio_core_200 : uhd::noncopyable{
 public:
-    typedef boost::shared_ptr<gpio_core_200> sptr;
+    typedef std::shared_ptr<gpio_core_200> sptr;
 
     typedef uhd::usrp::dboard_iface::unit_t unit_t;
     typedef uhd::usrp::dboard_iface::atr_reg_t atr_reg_t;
@@ -58,7 +58,7 @@ public:
 //! Simple wrapper for 32 bit write only
 class gpio_core_200_32wo : uhd::noncopyable{
 public:
-    typedef boost::shared_ptr<gpio_core_200_32wo> sptr;
+    typedef std::shared_ptr<gpio_core_200_32wo> sptr;
 
     typedef uhd::usrp::dboard_iface::atr_reg_t atr_reg_t;
 

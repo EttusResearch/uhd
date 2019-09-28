@@ -56,7 +56,7 @@ struct rx_fc_cache_t
 };
 
 inline bool rx_flow_ctrl(
-    boost::shared_ptr<rx_fc_cache_t> fc_cache, uhd::transport::managed_buffer::sptr buff)
+    std::shared_ptr<rx_fc_cache_t> fc_cache, uhd::transport::managed_buffer::sptr buff)
 {
     // If the caller supplied a buffer
     if (buff) {
@@ -92,7 +92,7 @@ inline bool rx_flow_ctrl(
 }
 
 inline void handle_rx_flowctrl_ack(
-    boost::shared_ptr<rx_fc_cache_t> /*fc_cache*/, const uint32_t* /*payload*/)
+    std::shared_ptr<rx_fc_cache_t> /*fc_cache*/, const uint32_t* /*payload*/)
 {
     // For the benchmark, we should never reach this
     UHD_THROW_INVALID_CODE_PATH();
@@ -119,7 +119,7 @@ struct tx_fc_cache_t
         pack;
 };
 
-inline bool tx_flow_ctrl(boost::shared_ptr<tx_fc_cache_t> fc_cache,
+inline bool tx_flow_ctrl(std::shared_ptr<tx_fc_cache_t> fc_cache,
     uhd::transport::zero_copy_if::sptr /*xport*/,
     uhd::transport::managed_buffer::sptr buff)
 {
@@ -151,7 +151,7 @@ inline bool tx_flow_ctrl(boost::shared_ptr<tx_fc_cache_t> fc_cache,
     return false;
 }
 
-inline void tx_flow_ctrl_ack(boost::shared_ptr<tx_fc_cache_t> fc_cache,
+inline void tx_flow_ctrl_ack(std::shared_ptr<tx_fc_cache_t> fc_cache,
     uhd::transport::zero_copy_if::sptr /*send_xport*/)
 {
     if (not fc_cache->fc_received) {
@@ -187,7 +187,7 @@ void benchmark_recv_packet_handler(const size_t spp, const std::string& format)
     xport->set_reuse_recv_memory(true);
 
     // Configure xport flow control
-    boost::shared_ptr<rx_fc_cache_t> fc_cache(new rx_fc_cache_t());
+    std::shared_ptr<rx_fc_cache_t> fc_cache(new rx_fc_cache_t());
     fc_cache->to_host   = uhd::ntohx<uint32_t>;
     fc_cache->from_host = uhd::htonx<uint32_t>;
     fc_cache->pack      = vrt::chdr::if_hdr_pack_be;
@@ -201,7 +201,7 @@ void benchmark_recv_packet_handler(const size_t spp, const std::string& format)
         });
 
     // Create streamer
-    auto streamer = boost::make_shared<sph::recv_packet_streamer>(spp);
+    auto streamer = std::make_shared<sph::recv_packet_streamer>(spp);
     streamer->set_tick_rate(1.0);
     streamer->set_samp_rate(1.0);
 
@@ -260,7 +260,7 @@ void benchmark_send_packet_handler(
     xport->set_reuse_send_memory(true);
 
     // Configure flow control
-    boost::shared_ptr<tx_fc_cache_t> fc_cache(new tx_fc_cache_t());
+    std::shared_ptr<tx_fc_cache_t> fc_cache(new tx_fc_cache_t());
     fc_cache->to_host   = uhd::ntohx<uint32_t>;
     fc_cache->from_host = uhd::htonx<uint32_t>;
     fc_cache->pack      = vrt::chdr::if_hdr_pack_be;
@@ -274,7 +274,7 @@ void benchmark_send_packet_handler(
         0);
 
     // Create streamer
-    auto streamer = boost::make_shared<sph::send_packet_streamer>(spp);
+    auto streamer = std::make_shared<sph::send_packet_streamer>(spp);
     streamer->set_vrt_packer(&vrt::chdr::if_hdr_pack_be);
 
     // Configure converter

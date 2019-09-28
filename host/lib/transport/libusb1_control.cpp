@@ -66,6 +66,6 @@ usb_control::sptr usb_control::make(usb_device_handle::sptr handle, const int in
 {
     return sptr(new libusb_control_impl(
         libusb::device_handle::get_cached_handle(
-            boost::static_pointer_cast<libusb::special_handle>(handle)->get_device()),
+            std::static_pointer_cast<libusb::special_handle>(handle)->get_device()),
         interface));
 }

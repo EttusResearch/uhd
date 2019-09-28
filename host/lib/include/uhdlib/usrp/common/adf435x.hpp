@@ -23,7 +23,7 @@
 class adf435x_iface
 {
 public:
-    typedef boost::shared_ptr<adf435x_iface> sptr;
+    typedef std::shared_ptr<adf435x_iface> sptr;
     typedef boost::function<void(std::vector<uint32_t>)> write_fn_t;
 
     static sptr make_adf4350(write_fn_t write);

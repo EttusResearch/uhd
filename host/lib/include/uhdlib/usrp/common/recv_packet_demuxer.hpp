@@ -10,14 +10,14 @@
 
 #include <uhd/config.hpp>
 #include <uhd/transport/zero_copy.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <stdint.h>
 
 namespace uhd{ namespace usrp{
 
     class recv_packet_demuxer{
     public:
-        typedef boost::shared_ptr<recv_packet_demuxer> sptr;
+        typedef std::shared_ptr<recv_packet_demuxer> sptr;
 
         virtual ~recv_packet_demuxer(void) = 0;
 

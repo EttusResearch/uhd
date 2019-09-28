@@ -10,7 +10,7 @@
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/make_shared.hpp>
+#include <memory>
 #include <boost/thread.hpp>
 #include <chrono>
 #include <future>
@@ -244,7 +244,7 @@ void mpmd_impl::setup_mb(mpmd_mboard_impl* mb, const size_t mb_index)
  ****************************************************************************/
 static device::sptr mpmd_make(const device_addr_t& device_args)
 {
-    return device::sptr(boost::make_shared<mpmd_impl>(device_args));
+    return device::sptr(std::make_shared<mpmd_impl>(device_args));
 }
 
 UHD_STATIC_BLOCK(register_mpmd_device)

@@ -22,7 +22,7 @@
 namespace po   = boost::program_options;
 namespace asio = boost::asio;
 
-typedef boost::shared_ptr<asio::ip::udp::socket> socket_type;
+typedef std::shared_ptr<asio::ip::udp::socket> socket_type;
 
 static const size_t insane_mtu = 9000;
 
@@ -81,7 +81,7 @@ public:
             asio::ip::udp::resolver::query query(asio::ip::udp::v4(), server_addr, port);
             asio::ip::udp::endpoint endpoint = *resolver.resolve(query);
 
-            _server_socket = boost::shared_ptr<asio::ip::udp::socket>(
+            _server_socket = std::shared_ptr<asio::ip::udp::socket>(
                 new asio::ip::udp::socket(_io_service, endpoint));
             resize_buffs(_server_socket, server_rx_size, server_tx_size);
         }
@@ -90,7 +90,7 @@ public:
             asio::ip::udp::resolver::query query(asio::ip::udp::v4(), client_addr, port);
             asio::ip::udp::endpoint endpoint = *resolver.resolve(query);
 
-            _client_socket = boost::shared_ptr<asio::ip::udp::socket>(
+            _client_socket = std::shared_ptr<asio::ip::udp::socket>(
                 new asio::ip::udp::socket(_io_service));
             _client_socket->open(asio::ip::udp::v4());
             _client_socket->connect(endpoint);
@@ -215,14 +215,14 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     }
 
     {
-        boost::shared_ptr<udp_relay_type> ctrl(new udp_relay_type(bind, addr, "49152"));
-        boost::shared_ptr<udp_relay_type> rxdsp0(new udp_relay_type(
+        std::shared_ptr<udp_relay_type> ctrl(new udp_relay_type(bind, addr, "49152"));
+        std::shared_ptr<udp_relay_type> rxdsp0(new udp_relay_type(
             bind, addr, "49156", 0, tx_dsp_buff_size, rx_dsp_buff_size, 0));
-        boost::shared_ptr<udp_relay_type> txdsp0(new udp_relay_type(
+        std::shared_ptr<udp_relay_type> txdsp0(new udp_relay_type(
             bind, addr, "49157", tx_dsp_buff_size, 0, 0, tx_dsp_buff_size));
-        boost::shared_ptr<udp_relay_type> rxdsp1(new udp_relay_type(
+        std::shared_ptr<udp_relay_type> rxdsp1(new udp_relay_type(
             bind, addr, "49158", 0, tx_dsp_buff_size, rx_dsp_buff_size, 0));
-        boost::shared_ptr<udp_relay_type> gps(new udp_relay_type(bind, addr, "49172"));
+        std::shared_ptr<udp_relay_type> gps(new udp_relay_type(bind, addr, "49172"));
 
         std::signal(SIGINT, &sig_int_handler);
         std::cout << "Press Ctrl + C to stop streaming..." << std::endl;

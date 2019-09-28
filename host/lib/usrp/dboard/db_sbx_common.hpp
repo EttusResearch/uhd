@@ -272,7 +272,7 @@ protected:
      * sbx_version* subclass, and invoke any relevant functions through that
      * object.  This pointer is set to the proper object at construction time.
      */
-    typedef boost::shared_ptr<sbx_versionx> sbx_versionx_sptr;
+    typedef std::shared_ptr<sbx_versionx> sbx_versionx_sptr;
     sbx_versionx_sptr db_actual;
 };
 

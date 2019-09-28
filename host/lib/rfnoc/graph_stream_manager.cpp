@@ -10,7 +10,7 @@
 #include <uhdlib/rfnoc/link_stream_manager.hpp>
 #include <uhdlib/transport/links.hpp>
 #include <boost/format.hpp>
-#include <boost/make_shared.hpp>
+#include <memory>
 #include <map>
 #include <set>
 

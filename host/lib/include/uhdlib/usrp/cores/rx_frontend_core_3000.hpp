@@ -13,7 +13,7 @@
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/usrp/fe_connection.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <complex>
 #include <string>
 
@@ -24,7 +24,7 @@ public:
     static const bool DEFAULT_DC_OFFSET_ENABLE;
     static const std::complex<double> DEFAULT_IQ_BALANCE_VALUE;
 
-    typedef boost::shared_ptr<rx_frontend_core_3000> sptr;
+    typedef std::shared_ptr<rx_frontend_core_3000> sptr;
 
     virtual ~rx_frontend_core_3000(void) = 0;
 

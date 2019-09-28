@@ -12,10 +12,10 @@
 #include <uhd/config.hpp>
 #include <uhd/utils/noncopyable.hpp>
 #include <boost/function.hpp>
-#include <boost/shared_ptr.hpp>
-#include <boost/utility.hpp>
+#include <memory>
 #include <typeindex>
 #include <vector>
+#include <string>
 
 namespace uhd {
 
@@ -215,7 +215,7 @@ UHD_API fs_path operator/(const fs_path&, size_t);
 class UHD_API property_tree : uhd::noncopyable
 {
 public:
-    typedef boost::shared_ptr<property_tree> sptr;
+    typedef std::shared_ptr<property_tree> sptr;
 
     enum coerce_mode_t { AUTO_COERCE, MANUAL_COERCE };
 
@@ -246,21 +246,21 @@ public:
 
     //! Pop a property off the tree, and returns the property
     template <typename T>
-    boost::shared_ptr<property<T> > pop(const fs_path& path);
+    std::shared_ptr<property<T> > pop(const fs_path& path);
 
 private:
     //! Internal pop function
-    virtual boost::shared_ptr<void> _pop(const fs_path& path) = 0;
+    virtual std::shared_ptr<void> _pop(const fs_path& path) = 0;
 
     //! Internal create property with wild-card type
-    virtual void _create(const fs_path& path, const boost::shared_ptr<void>& prop,
+    virtual void _create(const fs_path& path, const std::shared_ptr<void>& prop,
         std::type_index prop_type) = 0;
 
     //! Internal access property with wild-card type
-    virtual boost::shared_ptr<void>& _access(const fs_path& path) const = 0;
+    virtual std::shared_ptr<void>& _access(const fs_path& path) const = 0;
 
     //! Internal access property with wild-card type but with type verification
-    virtual boost::shared_ptr<void>& _access_with_type_check(
+    virtual std::shared_ptr<void>& _access_with_type_check(
         const fs_path& path, std::type_index expected_prop_type) const = 0;
 };
 

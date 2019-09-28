@@ -10,7 +10,7 @@
 
 #include <uhd/types/serial.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 
 enum x300_clock_which_t {
@@ -28,7 +28,7 @@ enum x300_clock_which_t {
 class x300_clock_ctrl : uhd::noncopyable
 {
 public:
-    typedef boost::shared_ptr<x300_clock_ctrl> sptr;
+    typedef std::shared_ptr<x300_clock_ctrl> sptr;
 
     virtual ~x300_clock_ctrl(void) = 0;
 

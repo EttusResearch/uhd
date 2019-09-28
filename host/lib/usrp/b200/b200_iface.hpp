@@ -13,7 +13,7 @@
 #include <uhd/types/dict.hpp>
 #include <uhdlib/usrp/common/ad9361_ctrl.hpp>
 #include <boost/assign/list_of.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <uhd/utils/noncopyable.hpp>
 #include <stdint.h>
 
@@ -79,7 +79,7 @@ static const uhd::dict<b200_product_t, std::string> B2XX_FPGA_FILE_NAME = boost:
 
 class UHD_API b200_iface: uhd::noncopyable, public virtual uhd::i2c_iface {
 public:
-    typedef boost::shared_ptr<b200_iface> sptr;
+    typedef std::shared_ptr<b200_iface> sptr;
 
     /*!
      * Make a b200 interface object from a control transport

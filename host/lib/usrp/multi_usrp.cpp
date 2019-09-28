@@ -24,7 +24,7 @@
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/make_shared.hpp>
+#include <memory>
 #include <algorithm>
 #include <cmath>
 #include <bitset>
@@ -2510,9 +2510,9 @@ multi_usrp::sptr multi_usrp::make(const device_addr_t& dev_addr)
 
     device::sptr dev = device::make(dev_addr, device::USRP);
 
-    auto rfnoc_dev = boost::dynamic_pointer_cast<rfnoc::detail::rfnoc_device>(dev);
+    auto rfnoc_dev = std::dynamic_pointer_cast<rfnoc::detail::rfnoc_device>(dev);
     if (rfnoc_dev) {
         return rfnoc::detail::make_rfnoc_device(rfnoc_dev, dev_addr);
     }
-    return boost::make_shared<multi_usrp_impl>(dev);
+    return std::make_shared<multi_usrp_impl>(dev);
 }

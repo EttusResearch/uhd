@@ -13,7 +13,7 @@
 #include <uhd/types/metadata.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <boost/function.hpp>
 
 namespace uhd{ namespace usrp{
@@ -27,7 +27,7 @@ namespace uhd{ namespace usrp{
  */
 class soft_time_ctrl : uhd::noncopyable{
 public:
-    typedef boost::shared_ptr<soft_time_ctrl> sptr;
+    typedef std::shared_ptr<soft_time_ctrl> sptr;
     typedef boost::function<void(bool)> cb_fcn_type;
 
     virtual ~soft_time_ctrl(void) = 0;

@@ -138,7 +138,7 @@ template <typename reg_data_t, bool readable, bool writable>
 class UHD_API soft_register_t : public soft_register_base
 {
 public:
-    typedef boost::shared_ptr<soft_register_t<reg_data_t, readable, writable> > sptr;
+    typedef std::shared_ptr<soft_register_t<reg_data_t, readable, writable> > sptr;
 
     // Reserved field. Represents all bits in the register.
     UHD_DEFINE_SOFT_REG_FIELD(REGISTER, sizeof(reg_data_t) * 8, 0); //[WIDTH-1:0]
@@ -312,7 +312,7 @@ class UHD_API soft_register_sync_t
     : public soft_register_t<reg_data_t, readable, writable>
 {
 public:
-    typedef boost::shared_ptr<soft_register_sync_t<reg_data_t, readable, writable> > sptr;
+    typedef std::shared_ptr<soft_register_sync_t<reg_data_t, readable, writable> > sptr;
 
     soft_register_sync_t(wb_iface::wb_addr_type wr_addr,
         wb_iface::wb_addr_type rd_addr,
@@ -428,7 +428,7 @@ typedef soft_register_sync_t<uint64_t, true, true> soft_reg64_rw_sync_t;
     reg_obj.initialize(iface);
     reg_obj.write(example_reg_t::FIELD2, 0x1234);
 
-    example_reg_t::sptr reg_sptr = boost::make_shared<example_reg_t>();
+    example_reg_t::sptr reg_sptr = std::make_shared<example_reg_t>();
     reg_obj->initialize(iface);
     reg_obj->write(example_reg_t::FIELD2, 0x1234);
   }
@@ -444,7 +444,7 @@ namespace uhd {
 class UHD_API soft_regmap_accessor_t
 {
 public:
-    typedef boost::shared_ptr<soft_regmap_accessor_t> sptr;
+    typedef std::shared_ptr<soft_regmap_accessor_t> sptr;
 
     virtual ~soft_regmap_accessor_t(){};
     virtual soft_register_base& lookup(const std::string& path) const = 0;
@@ -587,7 +587,7 @@ private:
 class UHD_API soft_regmap_db_t : public soft_regmap_accessor_t, public uhd::noncopyable
 {
 public:
-    typedef boost::shared_ptr<soft_regmap_db_t> sptr;
+    typedef std::shared_ptr<soft_regmap_db_t> sptr;
 
     /*!
      * Use the default constructor if this is the top-level DB

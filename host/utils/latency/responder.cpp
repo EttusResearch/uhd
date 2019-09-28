@@ -117,6 +117,6 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     }
 
     // create a new instance of Responder and run it!
-    boost::shared_ptr<Responder> my_responder(new Responder(prog));
+    std::shared_ptr<Responder> my_responder(new Responder(prog));
     return my_responder->run();
 }

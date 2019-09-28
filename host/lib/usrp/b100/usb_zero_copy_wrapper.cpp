@@ -11,7 +11,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhdlib/utils/atomic.hpp>
-#include <boost/make_shared.hpp>
+#include <memory>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/condition_variable.hpp>
 #include <boost/bind.hpp>
@@ -161,9 +161,9 @@ public:
         _next_recv_buff_index(0)
     {
         for (size_t i = 0; i < this->get_num_recv_frames(); i++){
-            _mrb_pool.push_back(boost::make_shared<usb_zero_copy_wrapper_mrb>());
+            _mrb_pool.push_back(std::make_shared<usb_zero_copy_wrapper_mrb>());
         }
-        _the_only_msb = boost::make_shared<usb_zero_copy_wrapper_msb>(usb_zc, frame_boundary);
+        _the_only_msb = std::make_shared<usb_zero_copy_wrapper_msb>(usb_zc, frame_boundary);
     }
 
     managed_recv_buffer::sptr get_recv_buff(double timeout){
@@ -211,8 +211,8 @@ public:
 private:
     zero_copy_if::sptr _internal_zc;
     size_t _frame_boundary;
-    std::vector<boost::shared_ptr<usb_zero_copy_wrapper_mrb> > _mrb_pool;
-    boost::shared_ptr<usb_zero_copy_wrapper_msb> _the_only_msb;
+    std::vector<std::shared_ptr<usb_zero_copy_wrapper_mrb> > _mrb_pool;
+    std::shared_ptr<usb_zero_copy_wrapper_msb> _the_only_msb;
 
     //state for last recv buffer to create multiple managed buffers
     managed_recv_buffer::sptr _last_recv_buff;

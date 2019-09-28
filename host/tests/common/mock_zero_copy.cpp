@@ -6,7 +6,7 @@
 
 
 #include "mock_zero_copy.hpp"
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 using namespace uhd::transport;
 

@@ -10,11 +10,11 @@
 #include <uhd/config.hpp>
 #include <uhd/rfnoc/register_iface.hpp>
 #include <uhd/types/wb_iface.hpp>
-#include <boost/make_shared.hpp>
+#include <memory>
 
 //! Convenience macro to generate a reg_iface_adapter from within an RFNoC block
 #define RFNOC_MAKE_WB_IFACE(BASE_OFFSET, CHAN)                               \
-    boost::make_shared<reg_iface_adapter>(                                   \
+    std::make_shared<reg_iface_adapter>(                                   \
         [this]() -> register_iface& { return regs(); },                      \
         [this, chan = CHAN]() { return get_command_time(chan); },            \
         [this, chan = CHAN](                                                 \
@@ -28,7 +28,7 @@ namespace uhd { namespace rfnoc {
  * From within a noc_block_base derivative, this call will work to create a
  * wb_iface:
  *
- * wb_iface::sptr ctrl = boost::make_shared<reg_iface_adapter>(
+ * wb_iface::sptr ctrl = std::make_shared<reg_iface_adapter>(
  *     [this]() -> register_iface& { return regs(); }, offset);
  *
  * Or you use the macro:

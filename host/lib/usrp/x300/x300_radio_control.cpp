@@ -28,7 +28,7 @@
 #include <uhdlib/usrp/cores/spi_core_3000.hpp>
 #include <uhdlib/usrp/cores/tx_frontend_core_200.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/make_shared.hpp>
+#include <memory>
 #include <algorithm>
 #include <chrono>
 #include <functional>
@@ -1492,7 +1492,7 @@ private:
 
         // create a new dboard manager
         RFNOC_LOG_TRACE("Creating DB interface...");
-        _db_iface = boost::make_shared<x300_dboard_iface>(db_config);
+        _db_iface = std::make_shared<x300_dboard_iface>(db_config);
         RFNOC_LOG_TRACE("Creating DB manager...");
         _db_manager = dboard_manager::make(_db_eeproms[RX_EEPROM_ADDR + DB_OFFSET],
             _db_eeproms[TX_EEPROM_ADDR + DB_OFFSET],
@@ -1889,7 +1889,7 @@ private:
     //! Reference to DB manager
     usrp::dboard_manager::sptr _db_manager;
     //! Reference to DB iface
-    boost::shared_ptr<x300_dboard_iface> _db_iface;
+    std::shared_ptr<x300_dboard_iface> _db_iface;
 
     enum radio_connection_t { PRIMARY, SECONDARY };
     radio_connection_t _radio_type;

@@ -29,7 +29,7 @@ namespace uhd { namespace rfnoc {
 class rhodium_radio_control_impl : public radio_control_impl
 {
 public:
-    typedef boost::shared_ptr<rhodium_radio_control_impl> sptr;
+    typedef std::shared_ptr<rhodium_radio_control_impl> sptr;
 
     //! Frequency bands for RX. Bands are a function of the analog filter banks
     enum class rx_band {

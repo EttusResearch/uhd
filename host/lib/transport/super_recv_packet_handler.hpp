@@ -21,7 +21,7 @@
 #include <boost/dynamic_bitset.hpp>
 #include <boost/format.hpp>
 #include <boost/function.hpp>
-#include <boost/make_shared.hpp>
+#include <memory>
 #include <iostream>
 #include <vector>
 

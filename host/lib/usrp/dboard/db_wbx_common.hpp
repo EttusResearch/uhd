@@ -61,7 +61,7 @@
 #include <uhd/usrp/dboard_base.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <boost/math/special_functions/round.hpp>
 #include <boost/bind.hpp>
 
@@ -200,7 +200,7 @@ protected:
      * wbx_version_* subclass, and invoke any relevant functions through that
      * object.  This pointer is set to the proper object at construction time.
      */
-    typedef boost::shared_ptr<wbx_versionx> wbx_versionx_sptr;
+    typedef std::shared_ptr<wbx_versionx> wbx_versionx_sptr;
     wbx_versionx_sptr db_actual;
 
     uhd::dict<std::string, double> _tx_gains, _rx_gains;

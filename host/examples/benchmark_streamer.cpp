@@ -514,7 +514,7 @@ test_results benchmark_tx_streamer(uhd::device3::sptr usrp,
     const double duration,
     const std::string& format)
 {
-    std::vector<boost::shared_ptr<uhd::rfnoc::null_block_ctrl>> null_ctrls;
+    std::vector<std::shared_ptr<uhd::rfnoc::null_block_ctrl>> null_ctrls;
     for (const auto& id : null_ids) {
         null_ctrls.push_back(usrp->get_block_ctrl<uhd::rfnoc::null_block_ctrl>(id));
     }

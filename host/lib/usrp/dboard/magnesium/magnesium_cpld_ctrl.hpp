@@ -1,5 +1,6 @@
 //
 // Copyright 2017 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -12,6 +13,7 @@
 #include <uhd/types/serial.hpp>
 #include <memory>
 #include <mutex>
+#include <functional>
 
 //! Controls the CPLD on a Magnesium daughterboard
 //

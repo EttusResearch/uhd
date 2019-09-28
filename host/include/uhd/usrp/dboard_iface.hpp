@@ -15,7 +15,7 @@
 #include <uhd/usrp/gpio_defs.hpp>
 #include <uhd/utils/pimpl.hpp>
 #include <stdint.h>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <boost/thread/thread.hpp>
 #include <string>
 #include <vector>
@@ -53,7 +53,7 @@ struct UHD_API dboard_iface_special_props_t
 class UHD_API dboard_iface : public uhd::i2c_iface
 {
 public:
-    typedef boost::shared_ptr<dboard_iface> sptr;
+    typedef std::shared_ptr<dboard_iface> sptr;
     typedef dboard_iface_special_props_t special_props_t;
 
     //! tells the host which unit to use

@@ -11,13 +11,13 @@
 #include <uhd/config.hpp>
 #include <uhd/types/time_spec.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <uhd/types/wb_iface.hpp>
 
 class time_core_3000 : uhd::noncopyable
 {
 public:
-    typedef boost::shared_ptr<time_core_3000> sptr;
+    typedef std::shared_ptr<time_core_3000> sptr;
 
     struct readback_bases_type
     {

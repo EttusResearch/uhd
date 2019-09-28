@@ -16,7 +16,7 @@
 #include <boost/circular_buffer.hpp>
 #include <boost/format.hpp>
 #include <boost/function.hpp>
-#include <boost/make_shared.hpp>
+#include <memory>
 #include <boost/thread/condition_variable.hpp>
 #include <boost/thread/mutex.hpp>
 #include <list>
@@ -29,7 +29,7 @@ static const size_t DEFAULT_XFER_SIZE = 32 * 512; // bytes
 
 //! type for sharing the release queue with managed buffers
 class libusb_zero_copy_mb;
-typedef boost::shared_ptr<bounded_buffer<libusb_zero_copy_mb*>> mb_queue_sptr;
+typedef std::shared_ptr<bounded_buffer<libusb_zero_copy_mb*>> mb_queue_sptr;
 
 /*!
  * The libusb docs state that status and actual length can only be read in the callback.
@@ -251,7 +251,7 @@ public:
             libusb_transfer* lut = libusb_alloc_transfer(0);
             UHD_ASSERT_THROW(lut != NULL);
 
-            _mb_pool.push_back(boost::make_shared<libusb_zero_copy_mb>(lut,
+            _mb_pool.push_back(std::make_shared<libusb_zero_copy_mb>(lut,
                 this->get_frame_size(),
                 boost::bind(&libusb_zero_copy_single::enqueue_buffer, this, _1),
                 is_recv,
@@ -345,7 +345,7 @@ private:
 
     //! Storage for transfer related objects
     buffer_pool::sptr _buffer_pool;
-    std::vector<boost::shared_ptr<libusb_zero_copy_mb>> _mb_pool;
+    std::vector<std::shared_ptr<libusb_zero_copy_mb>> _mb_pool;
 
     boost::mutex _queue_mutex;
     boost::condition_variable _buff_ready_cond;
@@ -440,7 +440,7 @@ struct libusb_zero_copy_impl : usb_zero_copy
         return _send_impl->get_frame_size();
     }
 
-    boost::shared_ptr<libusb_zero_copy_single> _recv_impl, _send_impl;
+    std::shared_ptr<libusb_zero_copy_single> _recv_impl, _send_impl;
     boost::mutex _recv_mutex, _send_mutex;
 };
 
@@ -468,7 +468,7 @@ usb_zero_copy::sptr usb_zero_copy::make(usb_device_handle::sptr handle,
     const device_addr_t& hints)
 {
     libusb::device_handle::sptr dev_handle(libusb::device_handle::get_cached_handle(
-        boost::static_pointer_cast<libusb::special_handle>(handle)->get_device()));
+        std::static_pointer_cast<libusb::special_handle>(handle)->get_device()));
     return sptr(new libusb_zero_copy_impl(
         dev_handle, recv_interface, recv_endpoint, send_interface, send_endpoint, hints));
 }

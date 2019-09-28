@@ -12,7 +12,7 @@
 #include <uhd/utils/log.hpp>
 #include <stdint.h>
 #include <boost/scoped_array.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <iostream>
 #include <ostream>
 #include <sstream>
@@ -24,7 +24,7 @@ namespace uhd {
 class UHD_API filter_info_base
 {
 public:
-    typedef boost::shared_ptr<filter_info_base> sptr;
+    typedef std::shared_ptr<filter_info_base> sptr;
     enum filter_type { ANALOG_LOW_PASS, ANALOG_BAND_PASS, DIGITAL_I16, DIGITAL_FIR_I16 };
 
     filter_info_base(filter_type type, bool bypass, size_t position_index)
@@ -63,7 +63,7 @@ class UHD_API analog_filter_base : public filter_info_base
     std::string _analog_type;
 
 public:
-    typedef boost::shared_ptr<analog_filter_base> sptr;
+    typedef std::shared_ptr<analog_filter_base> sptr;
     analog_filter_base(filter_type type,
         bool bypass,
         size_t position_index,
@@ -87,7 +87,7 @@ class UHD_API analog_filter_lp : public analog_filter_base
     double _rolloff;
 
 public:
-    typedef boost::shared_ptr<analog_filter_lp> sptr;
+    typedef std::shared_ptr<analog_filter_lp> sptr;
     analog_filter_lp(filter_type type,
         bool bypass,
         size_t position_index,
@@ -130,7 +130,7 @@ protected:
     std::vector<tap_t> _taps;
 
 public:
-    typedef boost::shared_ptr<digital_filter_base> sptr;
+    typedef std::shared_ptr<digital_filter_base> sptr;
     digital_filter_base(filter_type type,
         bool bypass,
         size_t position_index,
@@ -208,7 +208,7 @@ template <typename tap_t>
 class UHD_API digital_filter_fir : public digital_filter_base<tap_t>
 {
 public:
-    typedef boost::shared_ptr<digital_filter_fir<tap_t> > sptr;
+    typedef std::shared_ptr<digital_filter_fir<tap_t> > sptr;
 
     digital_filter_fir(filter_info_base::filter_type type,
         bool bypass,

@@ -8,7 +8,7 @@
 
 #include <uhd/property_tree.hpp>
 #include <uhd/types/dict.hpp>
-#include <boost/make_shared.hpp>
+#include <memory>
 #include <boost/thread/mutex.hpp>
 #include <iostream>
 #include <typeindex>
@@ -74,7 +74,7 @@ class property_tree_impl : public uhd::property_tree
 public:
     property_tree_impl(const fs_path& root = fs_path()) : _root(root)
     {
-        _guts = boost::make_shared<tree_guts_type>();
+        _guts = std::make_shared<tree_guts_type>();
     }
 
     sptr subtree(const fs_path& path_) const
@@ -134,7 +134,7 @@ public:
         return node->keys();
     }
 
-    boost::shared_ptr<void> _pop(const fs_path& path_)
+    std::shared_ptr<void> _pop(const fs_path& path_)
     {
         const fs_path path = _root / path_;
         boost::mutex::scoped_lock lock(_guts->mutex);
@@ -157,7 +157,7 @@ public:
         return prop;
     }
 
-    void _create(const fs_path& path_, const boost::shared_ptr<void>& prop,
+    void _create(const fs_path& path_, const std::shared_ptr<void>& prop,
         std::type_index prop_type)
     {
         const fs_path path = _root / path_;
@@ -176,7 +176,7 @@ public:
         node->prop_type_hash = prop_type.hash_code();
     }
 
-    boost::shared_ptr<void>& _access(const fs_path& path_) const
+    std::shared_ptr<void>& _access(const fs_path& path_) const
     {
         const fs_path path = _root / path_;
         boost::mutex::scoped_lock lock(_guts->mutex);
@@ -192,7 +192,7 @@ public:
         return node->prop;
     }
 
-    boost::shared_ptr<void>& _access_with_type_check(
+    std::shared_ptr<void>& _access_with_type_check(
         const fs_path& path_, std::type_index expected_prop_type) const
     {
         const fs_path path = _root / path_;
@@ -220,7 +220,7 @@ private:
     // basic structural node element
     struct node_type : uhd::dict<std::string, node_type>
     {
-        boost::shared_ptr<void> prop;
+        std::shared_ptr<void> prop;
         std::size_t prop_type_hash;
     };
 
@@ -232,7 +232,7 @@ private:
     };
 
     // members, the tree and root prefix
-    boost::shared_ptr<tree_guts_type> _guts;
+    std::shared_ptr<tree_guts_type> _guts;
     const fs_path _root;
 };
 

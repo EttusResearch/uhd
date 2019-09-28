@@ -11,7 +11,7 @@
 #include <uhd/config.hpp>
 #include <uhd/utils/noncopyable.hpp>
 #include <stdint.h>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -32,7 +32,7 @@ namespace uhd { namespace transport {
 class UHD_API usb_device_handle : uhd::noncopyable
 {
 public:
-    typedef boost::shared_ptr<usb_device_handle> sptr;
+    typedef std::shared_ptr<usb_device_handle> sptr;
     typedef std::pair<uint16_t, uint16_t> vid_pid_pair_t;
 
     virtual ~usb_device_handle(void);

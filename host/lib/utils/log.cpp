@@ -14,7 +14,7 @@
 #include <uhd/version.hpp>
 #include <uhdlib/utils/isatty.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <boost/make_shared.hpp>
+#include <memory>
 #include <atomic>
 #include <cctype>
 #include <fstream>

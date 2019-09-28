@@ -11,9 +11,9 @@
 
 #include <uhd/exception.hpp>
 #include <boost/foreach.hpp>
-#include <boost/scoped_ptr.hpp>
 #include <typeindex>
 #include <vector>
+#include <memory>
 
 /***********************************************************************
  * Implement templated property impl
@@ -147,7 +147,7 @@ private:
         return value;
     }
 
-    static void init_or_set_value(boost::scoped_ptr<T>& scoped_value, const T& init_val)
+    static void init_or_set_value(std::unique_ptr<T>& scoped_value, const T& init_val)
     {
         if (scoped_value.get() == NULL) {
             scoped_value.reset(new T(init_val));
@@ -156,7 +156,7 @@ private:
         }
     }
 
-    static const T& get_value_ref(const boost::scoped_ptr<T>& scoped_value)
+    static const T& get_value_ref(const std::unique_ptr<T>& scoped_value)
     {
         if (scoped_value.get() == NULL)
             throw uhd::assertion_error("Cannot use uninitialized property data");
@@ -168,8 +168,8 @@ private:
     std::vector<typename property<T>::subscriber_type> _coerced_subscribers;
     typename property<T>::publisher_type _publisher;
     typename property<T>::coercer_type _coercer;
-    boost::scoped_ptr<T> _value;
-    boost::scoped_ptr<T> _coerced_value;
+    std::unique_ptr<T> _value;
+    std::unique_ptr<T> _coerced_value;
 };
 
 }} // namespace uhd::
@@ -183,7 +183,7 @@ template <typename T>
 property<T>& property_tree::create(const fs_path& path, coerce_mode_t coerce_mode)
 {
     this->_create(path,
-        typename boost::shared_ptr<property<T> >(new property_impl<T>(coerce_mode)),
+        typename std::shared_ptr<property<T> >(new property_impl<T>(coerce_mode)),
         std::type_index(typeid(T)));
     return this->access<T>(path);
 }
@@ -191,14 +191,14 @@ property<T>& property_tree::create(const fs_path& path, coerce_mode_t coerce_mod
 template <typename T>
 property<T>& property_tree::access(const fs_path& path)
 {
-    return *boost::static_pointer_cast<property<T> >(
+    return *std::static_pointer_cast<property<T> >(
         this->_access_with_type_check(path, std::type_index(typeid(T))));
 }
 
 template <typename T>
-typename boost::shared_ptr<property<T> > property_tree::pop(const fs_path& path)
+typename std::shared_ptr<property<T> > property_tree::pop(const fs_path& path)
 {
-    return boost::static_pointer_cast<property<T> >(this->_pop(path));
+    return std::static_pointer_cast<property<T> >(this->_pop(path));
 }
 
 } // namespace uhd

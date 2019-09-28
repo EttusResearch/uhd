@@ -12,7 +12,7 @@
 #include <uhd/rfnoc/mb_controller.hpp>
 #include <uhdlib/rfnoc/client_zero.hpp>
 #include <uhdlib/rfnoc/mb_iface.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 namespace uhd { namespace rfnoc { namespace detail {
 
@@ -21,7 +21,7 @@ namespace uhd { namespace rfnoc { namespace detail {
 class rfnoc_device : public uhd::device
 {
 public:
-    using sptr = boost::shared_ptr<rfnoc_device>; // FIXME make std::shared_ptr when
+    using sptr = std::shared_ptr<rfnoc_device>; // FIXME make std::shared_ptr when
                                                   // uhd::device is ready
 
     rfnoc_device()

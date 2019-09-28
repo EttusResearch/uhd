@@ -20,7 +20,7 @@
 #include <uhd/utils/safe_call.hpp>
 #include <uhdlib/usrp/common/max287x.hpp>
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <boost/math/special_functions/round.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/thread/mutex.hpp>
@@ -1329,10 +1329,10 @@ private:
     ubx_cpld_reg_t _cpld_reg;
     uint32_t _prev_cpld_value;
     std::map<ubx_gpio_field_id_t,ubx_gpio_field_info_t> _gpio_map;
-    boost::shared_ptr<max287x_iface> _txlo1;
-    boost::shared_ptr<max287x_iface> _txlo2;
-    boost::shared_ptr<max287x_iface> _rxlo1;
-    boost::shared_ptr<max287x_iface> _rxlo2;
+    std::shared_ptr<max287x_iface> _txlo1;
+    std::shared_ptr<max287x_iface> _txlo2;
+    std::shared_ptr<max287x_iface> _rxlo1;
+    std::shared_ptr<max287x_iface> _rxlo2;
     double _tx_target_pfd_freq;
     double _rx_target_pfd_freq;
     double _tx_gain;

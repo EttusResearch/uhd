@@ -8,7 +8,7 @@
 #ifndef INCLUDED_AD9361_CLIENT_H
 #define INCLUDED_AD9361_CLIENT_H
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 namespace uhd { namespace usrp {
 
@@ -49,7 +49,7 @@ typedef struct {
 
 class ad9361_params {
 public:
-    typedef boost::shared_ptr<ad9361_params> sptr;
+    typedef std::shared_ptr<ad9361_params> sptr;
 
     virtual ~ad9361_params() {}
 
@@ -62,7 +62,7 @@ public:
 class ad9361_io
 {
 public:
-    typedef boost::shared_ptr<ad9361_io> sptr;
+    typedef std::shared_ptr<ad9361_io> sptr;
 
     virtual ~ad9361_io() {}
 

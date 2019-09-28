@@ -11,18 +11,18 @@
 #include <uhd/config.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <stdint.h>
-#include <boost/enable_shared_from_this.hpp>
 #include <set>
 #include <vector>
+#include <memory>
 
 namespace uhd { namespace rfnoc {
 
 /*! Reads and stores block definitions for blocks and components.
  */
-class UHD_API blockdef : public boost::enable_shared_from_this<blockdef>
+class UHD_API blockdef : public std::enable_shared_from_this<blockdef>
 {
 public:
-    typedef boost::shared_ptr<blockdef> sptr;
+    typedef std::shared_ptr<blockdef> sptr;
 
     //! Describes port options for a block definition.
     //

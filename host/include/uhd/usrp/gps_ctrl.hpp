@@ -11,7 +11,7 @@
 #include <uhd/types/sensors.hpp>
 #include <uhd/types/serial.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <vector>
 
 namespace uhd {
@@ -19,7 +19,7 @@ namespace uhd {
 class UHD_API gps_ctrl : uhd::noncopyable
 {
 public:
-    typedef boost::shared_ptr<gps_ctrl> sptr;
+    typedef std::shared_ptr<gps_ctrl> sptr;
 
     virtual ~gps_ctrl(void) = 0;
 

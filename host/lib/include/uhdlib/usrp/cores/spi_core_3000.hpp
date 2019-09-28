@@ -12,14 +12,14 @@
 #include <uhd/types/serial.hpp>
 #include <uhd/utils/noncopyable.hpp>
 #include <uhd/types/wb_iface.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <memory>
 #include <functional>
 
 class spi_core_3000 : uhd::noncopyable, public uhd::spi_iface
 {
 public:
-    using sptr = boost::shared_ptr<spi_core_3000>;
+    using sptr = std::shared_ptr<spi_core_3000>;
     using poke32_fn_t = std::function<void(uint32_t, uint32_t)>;
     using peek32_fn_t = std::function<uint32_t(uint32_t)>;
 

@@ -12,14 +12,14 @@
 #include <uhd/types/serial.hpp>
 #include <uhd/utils/noncopyable.hpp>
 #include <boost/asio/buffer.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 namespace uhd { namespace transport {
 
 class UHD_API udp_simple : uhd::noncopyable
 {
 public:
-    typedef boost::shared_ptr<udp_simple> sptr;
+    typedef std::shared_ptr<udp_simple> sptr;
 
     virtual ~udp_simple(void) = 0;
 

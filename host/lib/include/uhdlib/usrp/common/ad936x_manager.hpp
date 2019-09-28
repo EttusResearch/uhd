@@ -14,7 +14,7 @@
 #include <uhd/types/direction.hpp>
 #include <uhdlib/usrp/common/ad9361_ctrl.hpp>
 #include <boost/format.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <stdint.h>
 #include <functional>
 
@@ -29,7 +29,7 @@ namespace uhd { namespace usrp {
 class ad936x_manager
 {
 public:
-    typedef boost::shared_ptr<ad936x_manager> sptr;
+    typedef std::shared_ptr<ad936x_manager> sptr;
 
     static const double DEFAULT_GAIN;
     static const double DEFAULT_BANDWIDTH;

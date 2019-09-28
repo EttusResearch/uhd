@@ -1050,8 +1050,8 @@ public:
     //         std::auto_ptr<msgpack:zone> z = result.zone();
     //         on_message(obj, z);
     //
-    //         //// boost::shared_ptr is also usable:
-    //         // boost::shared_ptr<zone> life(z.release());
+    //         //// std::shared_ptr is also usable:
+    //         // std::shared_ptr<zone> life(z.release());
     //         // on_message(result.get(), life);
     //     }
     //

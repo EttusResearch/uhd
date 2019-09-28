@@ -14,7 +14,7 @@
 #include <uhd/types/device_addr.hpp>
 #include <uhd/utils/noncopyable.hpp>
 #include <boost/function.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 namespace uhd {
 
@@ -27,7 +27,7 @@ class property_tree; // forward declaration
 class UHD_API device : uhd::noncopyable
 {
 public:
-    typedef boost::shared_ptr<device> sptr;
+    typedef std::shared_ptr<device> sptr;
     typedef boost::function<device_addrs_t(const device_addr_t&)> find_t;
     typedef boost::function<sptr(const device_addr_t&)> make_t;
 

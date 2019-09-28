@@ -117,10 +117,10 @@ void recv_to_file(uhd::usrp::multi_usrp::sptr usrp,
 
     // Create one ofstream object per channel
     // (use shared_ptr because ofstream is non-copyable)
-    std::vector<boost::shared_ptr<std::ofstream>> outfiles;
+    std::vector<std::shared_ptr<std::ofstream>> outfiles;
     for (size_t i = 0; i < buffs.size(); i++) {
         const std::string this_filename = generate_out_filename(file, buffs.size(), i);
-        outfiles.push_back(boost::shared_ptr<std::ofstream>(
+        outfiles.push_back(std::shared_ptr<std::ofstream>(
             new std::ofstream(this_filename.c_str(), std::ofstream::binary)));
     }
     UHD_ASSERT_THROW(outfiles.size() == buffs.size());

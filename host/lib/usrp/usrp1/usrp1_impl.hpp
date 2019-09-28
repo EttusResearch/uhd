@@ -5,23 +5,23 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "usrp1_iface.hpp"
 #include "codec_ctrl.hpp"
 #include "soft_time_ctrl.hpp"
+#include "usrp1_iface.hpp"
 #include <uhd/device.hpp>
 #include <uhd/property_tree.hpp>
-#include <uhd/utils/pimpl.hpp>
+#include <uhd/transport/usb_zero_copy.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/types/stream_cmd.hpp>
+#include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/dboard_id.hpp>
+#include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
-#include <uhd/usrp/dboard_eeprom.hpp>
-#include <uhd/usrp/dboard_manager.hpp>
-#include <uhd/transport/usb_zero_copy.hpp>
-#include <boost/weak_ptr.hpp>
-#include <complex>
+#include <uhd/utils/pimpl.hpp>
 #include <atomic>
+#include <complex>
+#include <memory>
 
 #ifndef INCLUDED_USRP1_IMPL_HPP
 #define INCLUDED_USRP1_IMPL_HPP
@@ -89,8 +89,8 @@ private:
     double _master_clock_rate; //clock rate shadow
 
     //weak pointers to streamers for update purposes
-    boost::weak_ptr<uhd::rx_streamer> _rx_streamer;
-    boost::weak_ptr<uhd::tx_streamer> _tx_streamer;
+    std::weak_ptr<uhd::rx_streamer> _rx_streamer;
+    std::weak_ptr<uhd::tx_streamer> _tx_streamer;
 
     void set_mb_eeprom(const uhd::usrp::mboard_eeprom_t &);
     void set_db_eeprom(const std::string &, const std::string &, const uhd::usrp::dboard_eeprom_t &);

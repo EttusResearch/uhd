@@ -13,13 +13,13 @@
 #include <uhd/utils/noncopyable.hpp>
 #include <uhd/types/wb_iface.hpp>
 #include <boost/utility.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <string>
 #include <vector>
 
 class time64_core_200 : uhd::noncopyable{
 public:
-    typedef boost::shared_ptr<time64_core_200> sptr;
+    typedef std::shared_ptr<time64_core_200> sptr;
 
     struct readback_bases_type{
         size_t rb_hi_now, rb_lo_now;

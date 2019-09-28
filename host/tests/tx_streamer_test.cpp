@@ -6,7 +6,7 @@
 
 #include "../common/mock_link.hpp"
 #include <uhdlib/transport/tx_streamer_impl.hpp>
-#include <boost/make_shared.hpp>
+#include <memory>
 #include <boost/test/unit_test.hpp>
 #include <iostream>
 
@@ -121,11 +121,11 @@ static std::vector<mock_send_link::sptr> make_links(const size_t num)
     return links;
 }
 
-static boost::shared_ptr<mock_tx_streamer> make_tx_streamer(
+static std::shared_ptr<mock_tx_streamer> make_tx_streamer(
     std::vector<mock_send_link::sptr> send_links, const std::string& format)
 {
     const uhd::stream_args_t stream_args(format, "sc16");
-    auto streamer = boost::make_shared<mock_tx_streamer>(send_links.size(), stream_args);
+    auto streamer = std::make_shared<mock_tx_streamer>(send_links.size(), stream_args);
     streamer->set_tick_rate(TICK_RATE);
     streamer->set_samp_rate(SAMP_RATE);
 
@@ -379,7 +379,7 @@ BOOST_AUTO_TEST_CASE(test_spp)
         auto send_links = make_links(1);
         uhd::stream_args_t stream_args("fc64", "sc16");
         stream_args.args["spp"] = std::to_string(10);
-        auto streamer = boost::make_shared<mock_tx_streamer>(send_links.size(), stream_args);
+        auto streamer = std::make_shared<mock_tx_streamer>(send_links.size(), stream_args);
         mock_tx_data_xport::uptr xport(std::make_unique<mock_tx_data_xport>(send_links[0]));
         streamer->connect_channel(0, std::move(xport));
         BOOST_CHECK_EQUAL(streamer->get_max_num_samps(), 10);
@@ -390,7 +390,7 @@ BOOST_AUTO_TEST_CASE(test_spp)
         auto send_links = make_links(1);
         uhd::stream_args_t stream_args("fc64", "sc16");
         stream_args.args["spp"] = std::to_string(10000);
-        auto streamer = boost::make_shared<mock_tx_streamer>(send_links.size(), stream_args);
+        auto streamer = std::make_shared<mock_tx_streamer>(send_links.size(), stream_args);
         mock_tx_data_xport::uptr xport(std::make_unique<mock_tx_data_xport>(send_links[0]));
         const size_t max_pyld = xport->get_max_payload_size();
         streamer->connect_channel(0, std::move(xport));

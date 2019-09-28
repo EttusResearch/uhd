@@ -20,8 +20,7 @@
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/functional/hash.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/weak_ptr.hpp>
+#include <memory>
 #include <cstdio>
 #include <ctime>
 #include <cmath>
@@ -255,7 +254,7 @@ static device::sptr b200_make(const device_addr_t &device_addr)
     catch (const uhd::usb_error &) {
         UHD_LOGGER_INFO("B200") << "Detected bad USB state; resetting." ;
         libusb::device_handle::sptr dev_handle(libusb::device_handle::get_cached_handle(
-            boost::static_pointer_cast<libusb::special_handle>(handle)->get_device()
+            std::static_pointer_cast<libusb::special_handle>(handle)->get_device()
         ));
         dev_handle->clear_endpoints(B200_USB_CTRL_RECV_ENDPOINT, B200_USB_CTRL_SEND_ENDPOINT);
         dev_handle->clear_endpoints(B200_USB_DATA_RECV_ENDPOINT, B200_USB_DATA_SEND_ENDPOINT);
@@ -578,7 +577,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     ////////////////////////////////////////////////////////////////////
     _spi_iface = b200_local_spi_core::make(_local_ctrl);
     if (not (_product == B200MINI or _product == B205MINI)) {
-        _adf4001_iface = boost::make_shared<b200_ref_pll_ctrl>(_spi_iface);
+        _adf4001_iface = std::make_shared<b200_ref_pll_ctrl>(_spi_iface);
     }
 
     ////////////////////////////////////////////////////////////////////
@@ -588,9 +587,9 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     reset_codec();
     ad9361_params::sptr client_settings;
     if (_product == B200MINI or _product == B205MINI) {
-        client_settings = boost::make_shared<b2xxmini_ad9361_client_t>();
+        client_settings = std::make_shared<b2xxmini_ad9361_client_t>();
     } else {
-        client_settings = boost::make_shared<b200_ad9361_client_t>();
+        client_settings = std::make_shared<b200_ad9361_client_t>();
     }
     _codec_ctrl = ad9361_ctrl::make_spi(client_settings, _spi_iface, AD9361_SLAVENO);
 

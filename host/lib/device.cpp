@@ -15,12 +15,12 @@
 #include <uhdlib/utils/prefs.hpp>
 
 #include <boost/format.hpp>
-#include <boost/weak_ptr.hpp>
 #include <boost/functional/hash.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/thread/mutex.hpp>
 
 #include <future>
+#include <memory>
 
 using namespace uhd;
 
@@ -172,7 +172,7 @@ device::sptr device::make(const device_addr_t &hint, device_filter_t filter, siz
     }
 
     //map device address hash to created devices
-    static uhd::dict<size_t, boost::weak_ptr<device> > hash_to_device;
+    static uhd::dict<size_t, std::weak_ptr<device> > hash_to_device;
 
     //try to find an existing device
     if (hash_to_device.has_key(dev_hash) and not hash_to_device[dev_hash].expired()){

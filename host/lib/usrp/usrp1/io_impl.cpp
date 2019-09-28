@@ -21,7 +21,7 @@
 #include <boost/thread/thread.hpp>
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
-#include <boost/make_shared.hpp>
+#include <memory>
 #include <atomic>
 #include <chrono>
 #include <thread>
@@ -508,8 +508,8 @@ double usrp1_impl::update_rx_samp_rate(size_t dspno, const double samp_rate){
         this->restore_rx(s);
 
         //update the streamer if created
-        boost::shared_ptr<usrp1_recv_packet_streamer> my_streamer =
-            boost::dynamic_pointer_cast<usrp1_recv_packet_streamer>(_rx_streamer.lock());
+        std::shared_ptr<usrp1_recv_packet_streamer> my_streamer =
+            std::dynamic_pointer_cast<usrp1_recv_packet_streamer>(_rx_streamer.lock());
         if (my_streamer.get() != NULL){
             my_streamer->set_samp_rate(_master_clock_rate / rate);
         }
@@ -530,8 +530,8 @@ double usrp1_impl::update_tx_samp_rate(size_t dspno, const double samp_rate){
         this->restore_tx(s);
 
         //update the streamer if created
-        boost::shared_ptr<usrp1_send_packet_streamer> my_streamer =
-            boost::dynamic_pointer_cast<usrp1_send_packet_streamer>(_tx_streamer.lock());
+        std::shared_ptr<usrp1_send_packet_streamer> my_streamer =
+            std::dynamic_pointer_cast<usrp1_send_packet_streamer>(_tx_streamer.lock());
         if (my_streamer.get() != NULL){
             my_streamer->set_samp_rate(_master_clock_rate / rate);
         }
@@ -631,8 +631,8 @@ rx_streamer::sptr usrp1_impl::get_rx_stream(const uhd::stream_args_t &args_){
     const size_t spp = bpp/convert::get_bytes_per_item(args.otw_format);
 
     //make the new streamer given the samples per packet
-    boost::shared_ptr<usrp1_recv_packet_streamer> my_streamer =
-        boost::make_shared<usrp1_recv_packet_streamer>(spp, _soft_time_ctrl);
+    std::shared_ptr<usrp1_recv_packet_streamer> my_streamer =
+        std::make_shared<usrp1_recv_packet_streamer>(spp, _soft_time_ctrl);
 
     //init some streamer stuff
     my_streamer->set_tick_rate(_master_clock_rate);
@@ -688,8 +688,8 @@ tx_streamer::sptr usrp1_impl::get_tx_stream(const uhd::stream_args_t &args_){
 
     //make the new streamer given the samples per packet
     boost::function<void(bool)> tx_fcn = boost::bind(&usrp1_impl::tx_stream_on_off, this, _1);
-    boost::shared_ptr<usrp1_send_packet_streamer> my_streamer =
-        boost::make_shared<usrp1_send_packet_streamer>(spp, _soft_time_ctrl, tx_fcn);
+    std::shared_ptr<usrp1_send_packet_streamer> my_streamer =
+        std::make_shared<usrp1_send_packet_streamer>(spp, _soft_time_ctrl, tx_fcn);
 
     //init some streamer stuff
     my_streamer->set_tick_rate(_master_clock_rate);

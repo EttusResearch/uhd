@@ -28,7 +28,7 @@ namespace uhd { namespace transport {
 class muxed_zero_copy_if : private uhd::noncopyable
 {
 public:
-    typedef boost::shared_ptr<muxed_zero_copy_if> sptr;
+    typedef std::shared_ptr<muxed_zero_copy_if> sptr;
 
     /*!
      * Function to classify the stream based on the payload.

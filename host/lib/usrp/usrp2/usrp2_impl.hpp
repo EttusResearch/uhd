@@ -32,8 +32,7 @@
 #include <uhd/types/device_addr.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
-#include <boost/weak_ptr.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <boost/function.hpp>
 #include <atomic>
 
@@ -84,8 +83,8 @@ private:
         rx_frontend_core_200::sptr rx_fe;
         tx_frontend_core_200::sptr tx_fe;
         std::vector<rx_dsp_core_200::sptr> rx_dsps;
-        std::vector<boost::weak_ptr<uhd::rx_streamer> > rx_streamers;
-        std::vector<boost::weak_ptr<uhd::tx_streamer> > tx_streamers;
+        std::vector<std::weak_ptr<uhd::rx_streamer> > rx_streamers;
+        std::vector<std::weak_ptr<uhd::tx_streamer> > tx_streamers;
         tx_dsp_core_200::sptr tx_dsp;
         time64_core_200::sptr time64;
         user_settings_core_200::sptr user;

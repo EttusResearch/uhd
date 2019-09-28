@@ -12,11 +12,11 @@
 #include <uhd/types/serial.hpp>
 #include <uhd/utils/noncopyable.hpp>
 #include <uhd/types/wb_iface.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 class i2c_core_100_wb32 : uhd::noncopyable, public uhd::i2c_iface{
 public:
-    typedef boost::shared_ptr<i2c_core_100_wb32> sptr;
+    typedef std::shared_ptr<i2c_core_100_wb32> sptr;
 
     virtual ~i2c_core_100_wb32(void) = 0;
 

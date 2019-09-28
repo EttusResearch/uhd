@@ -45,7 +45,7 @@ namespace uhd { namespace usrp_clock {
 class UHD_API multi_usrp_clock : uhd::noncopyable
 {
 public:
-    typedef boost::shared_ptr<multi_usrp_clock> sptr;
+    typedef std::shared_ptr<multi_usrp_clock> sptr;
 
     virtual ~multi_usrp_clock(void) = 0;
 

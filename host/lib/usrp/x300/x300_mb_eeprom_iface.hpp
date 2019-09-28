@@ -11,13 +11,13 @@
 #include <uhd/config.hpp>
 #include <uhd/types/serial.hpp>
 #include <uhd/types/wb_iface.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <boost/utility.hpp>
 
 class x300_mb_eeprom_iface : public uhd::i2c_iface
 {
 public:
-    typedef boost::shared_ptr<x300_mb_eeprom_iface> sptr;
+    typedef std::shared_ptr<x300_mb_eeprom_iface> sptr;
 
     virtual ~x300_mb_eeprom_iface(void) = 0;
 

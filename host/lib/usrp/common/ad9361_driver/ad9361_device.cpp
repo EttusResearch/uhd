@@ -2733,8 +2733,8 @@ filter_info_base::sptr ad9361_device_t::_get_filter_hb_2(direction_t direction)
     int16_t taps_array[] = {-9, 0, 73, 128, 73, 0, -9};
     std::vector<int16_t> taps(taps_array, taps_array + sizeof(taps_array) / sizeof(int16_t) );
 
-    digital_filter_base<int16_t>::sptr hb_3 = boost::dynamic_pointer_cast<digital_filter_base<int16_t> >(_get_filter_hb_3(direction));
-    digital_filter_base<int16_t>::sptr dec_int_3 = boost::dynamic_pointer_cast<digital_filter_base<int16_t> >(_get_filter_dec_int_3(direction));
+    digital_filter_base<int16_t>::sptr hb_3 = std::dynamic_pointer_cast<digital_filter_base<int16_t> >(_get_filter_hb_3(direction));
+    digital_filter_base<int16_t>::sptr dec_int_3 = std::dynamic_pointer_cast<digital_filter_base<int16_t> >(_get_filter_dec_int_3(direction));
 
     if(direction == RX)
     {
@@ -2791,7 +2791,7 @@ filter_info_base::sptr ad9361_device_t::_get_filter_hb_1(direction_t direction)
     int16_t taps_rx_array[] = {-8, 0, 42, 0, -147, 0, 619, 1013, 619, 0, -147, 0, 42, 0, -8};
     int16_t taps_tx_array[] = {-53, 0, 313, 0, -1155, 0, 4989, 8192, 4989, 0, -1155, 0, 313, 0, -53};
 
-    digital_filter_base<int16_t>::sptr hb_2 = boost::dynamic_pointer_cast<digital_filter_base<int16_t> >(_get_filter_hb_2(direction));
+    digital_filter_base<int16_t>::sptr hb_2 = std::dynamic_pointer_cast<digital_filter_base<int16_t> >(_get_filter_hb_2(direction));
 
     if(direction == RX)
     {
@@ -2826,7 +2826,7 @@ filter_info_base::sptr ad9361_device_t::_get_filter_fir(direction_t direction, c
     size_t max_num_taps = 128;
     uint8_t enable = 1;
 
-    digital_filter_base<int16_t>::sptr hb_1 = boost::dynamic_pointer_cast<digital_filter_base<int16_t> >(_get_filter_hb_1(direction));
+    digital_filter_base<int16_t>::sptr hb_1 = std::dynamic_pointer_cast<digital_filter_base<int16_t> >(_get_filter_hb_1(direction));
 
     if(direction == RX)
     {
@@ -2861,7 +2861,7 @@ filter_info_base::sptr ad9361_device_t::_get_filter_fir(direction_t direction, c
 
 void ad9361_device_t::_set_filter_fir(direction_t direction, chain_t channel, filter_info_base::sptr filter)
 {
-    digital_filter_fir<int16_t>::sptr fir = boost::dynamic_pointer_cast<digital_filter_fir<int16_t> >(filter);
+    digital_filter_fir<int16_t>::sptr fir = std::dynamic_pointer_cast<digital_filter_fir<int16_t> >(filter);
     //only write taps. Ignore everything else for now
     _set_fir_taps(direction, channel, fir->get_taps());
 }
@@ -2873,7 +2873,7 @@ void ad9361_device_t::_set_filter_fir(direction_t direction, chain_t channel, fi
  */
 void ad9361_device_t::_set_filter_lp_bb(direction_t direction, filter_info_base::sptr filter)
 {
-    analog_filter_lp::sptr lpf = boost::dynamic_pointer_cast<analog_filter_lp>(filter);
+    analog_filter_lp::sptr lpf = std::dynamic_pointer_cast<analog_filter_lp>(filter);
     double bw = lpf->get_cutoff();
     if(direction == RX)
     {
@@ -2888,7 +2888,7 @@ void ad9361_device_t::_set_filter_lp_bb(direction_t direction, filter_info_base:
 
 void ad9361_device_t::_set_filter_lp_tia_sec(direction_t direction, filter_info_base::sptr filter)
 {
-    analog_filter_lp::sptr lpf = boost::dynamic_pointer_cast<analog_filter_lp>(filter);
+    analog_filter_lp::sptr lpf = std::dynamic_pointer_cast<analog_filter_lp>(filter);
     double bw = lpf->get_cutoff();
     if(direction == RX)
     {

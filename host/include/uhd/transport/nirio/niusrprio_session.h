@@ -15,7 +15,6 @@
 #include <uhd/transport/nirio/rpc/usrprio_rpc_client.hpp>
 #include <uhd/utils/noncopyable.hpp>
 #include <stdint.h>
-#include <boost/smart_ptr.hpp>
 #include <boost/thread/recursive_mutex.hpp>
 #include <string>
 
@@ -24,7 +23,7 @@ namespace uhd { namespace niusrprio {
 class UHD_API niusrprio_session : private uhd::noncopyable
 {
 public:
-    typedef boost::shared_ptr<niusrprio_session> sptr;
+    typedef std::shared_ptr<niusrprio_session> sptr;
     typedef uhd::usrprio_rpc::usrprio_device_info device_info;
     typedef uhd::usrprio_rpc::usrprio_device_info_vtr device_info_vtr;
 
@@ -42,7 +41,7 @@ public:
 
     template <typename data_t>
     nirio_status create_tx_fifo(
-        const char* fifo_name, boost::shared_ptr<nirio_fifo<data_t>>& fifo)
+        const char* fifo_name, std::shared_ptr<nirio_fifo<data_t>>& fifo)
     {
         if (!_session_open)
             return NiRio_Status_ResourceNotInitialized;
@@ -51,7 +50,7 @@ public:
 
     template <typename data_t>
     nirio_status create_tx_fifo(
-        uint32_t fifo_instance, boost::shared_ptr<nirio_fifo<data_t>>& fifo)
+        uint32_t fifo_instance, std::shared_ptr<nirio_fifo<data_t>>& fifo)
     {
         if ((size_t)fifo_instance >= _lvbitx->get_output_fifo_count())
             return NiRio_Status_InvalidParameter;
@@ -60,7 +59,7 @@ public:
 
     template <typename data_t>
     nirio_status create_rx_fifo(
-        const char* fifo_name, boost::shared_ptr<nirio_fifo<data_t>>& fifo)
+        const char* fifo_name, std::shared_ptr<nirio_fifo<data_t>>& fifo)
     {
         if (!_session_open)
             return NiRio_Status_ResourceNotInitialized;
@@ -69,7 +68,7 @@ public:
 
     template <typename data_t>
     nirio_status create_rx_fifo(
-        uint32_t fifo_instance, boost::shared_ptr<nirio_fifo<data_t>>& fifo)
+        uint32_t fifo_instance, std::shared_ptr<nirio_fifo<data_t>>& fifo)
     {
         if ((size_t)fifo_instance >= _lvbitx->get_input_fifo_count())
             return NiRio_Status_InvalidParameter;

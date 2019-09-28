@@ -8,7 +8,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhdlib/usrp/common/ad936x_manager.hpp>
 #include <boost/functional/hash.hpp>
-#include <boost/make_shared.hpp>
+#include <memory>
 #include <chrono>
 #include <cmath>
 #include <thread>
@@ -329,5 +329,5 @@ private:
 ad936x_manager::sptr ad936x_manager::make(
     const ad9361_ctrl::sptr& codec_ctrl, const size_t n_frontends)
 {
-    return boost::make_shared<ad936x_manager_impl>(codec_ctrl, n_frontends);
+    return std::make_shared<ad936x_manager_impl>(codec_ctrl, n_frontends);
 }

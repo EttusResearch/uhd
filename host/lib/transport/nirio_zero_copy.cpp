@@ -13,7 +13,7 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/format.hpp>
 #include <boost/interprocess/mapped_region.hpp> //get_page_size()
-#include <boost/make_shared.hpp>
+#include <memory>
 #include <algorithm> // std::max
 #include <chrono>
 #include <thread>
@@ -136,7 +136,7 @@ private:
 class nirio_zero_copy_impl : public nirio_zero_copy
 {
 public:
-    typedef boost::shared_ptr<nirio_zero_copy_impl> sptr;
+    typedef std::shared_ptr<nirio_zero_copy_impl> sptr;
 
     nirio_zero_copy_impl(uhd::niusrprio::niusrprio_session::sptr fpga_session,
         uint32_t instance,
@@ -224,13 +224,13 @@ public:
             if (nirio_status_not_fatal(status)) {
                 // allocate re-usable managed receive buffers
                 for (size_t i = 0; i < get_num_recv_frames(); i++) {
-                    _mrb_pool.push_back(boost::shared_ptr<nirio_zero_copy_mrb>(
+                    _mrb_pool.push_back(std::shared_ptr<nirio_zero_copy_mrb>(
                         new nirio_zero_copy_mrb(*_recv_fifo, get_recv_frame_size())));
                 }
 
                 // allocate re-usable managed send buffers
                 for (size_t i = 0; i < get_num_send_frames(); i++) {
-                    _msb_pool.push_back(boost::shared_ptr<nirio_zero_copy_msb>(
+                    _msb_pool.push_back(std::shared_ptr<nirio_zero_copy_msb>(
                         new nirio_zero_copy_msb(*_send_fifo, get_send_frame_size())));
                 }
             }
@@ -383,8 +383,8 @@ private:
     uint32_t _fifo_instance;
     nirio_fifo<fifo_data_t>::sptr _recv_fifo, _send_fifo;
     const zero_copy_xport_params _xport_params;
-    std::vector<boost::shared_ptr<nirio_zero_copy_msb>> _msb_pool;
-    std::vector<boost::shared_ptr<nirio_zero_copy_mrb>> _mrb_pool;
+    std::vector<std::shared_ptr<nirio_zero_copy_msb>> _msb_pool;
+    std::vector<std::shared_ptr<nirio_zero_copy_mrb>> _mrb_pool;
     size_t _next_recv_buff_index, _next_send_buff_index;
 };
 

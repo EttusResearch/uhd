@@ -13,10 +13,10 @@
 #include <uhd/utils/tasks.hpp>
 #include <boost/bind.hpp>
 #include <boost/thread/mutex.hpp>
-#include <boost/weak_ptr.hpp>
 #include <cstdlib>
 #include <iostream>
 #include <mutex>
+#include <memory>
 
 using namespace uhd;
 using namespace uhd::transport;
@@ -86,7 +86,7 @@ libusb_session_impl::~libusb_session_impl(void)
 
 libusb::session::sptr libusb::session::get_global_session(void)
 {
-    static boost::weak_ptr<session> global_session;
+    static std::weak_ptr<session> global_session;
     // this mutex is to ensure a global session is not currently being created
     // before checking for the existence of one
     static std::mutex global_session_mutex;
@@ -336,7 +336,7 @@ libusb_device_handle_impl::~libusb_device_handle_impl(void)
 
 libusb::device_handle::sptr libusb::device_handle::get_cached_handle(device::sptr dev)
 {
-    static uhd::dict<libusb_device*, boost::weak_ptr<device_handle>> handles;
+    static uhd::dict<libusb_device*, std::weak_ptr<device_handle>> handles;
 
     // lock for atomic access to static table above
     static boost::mutex mutex;

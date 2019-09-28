@@ -9,7 +9,7 @@
 #include <uhdlib/experts/expert_container.hpp>
 #include <uhdlib/experts/expert_factory.hpp>
 #include <boost/format.hpp>
-#include <boost/make_shared.hpp>
+#include <memory>
 #include <boost/test/unit_test.hpp>
 #include <fstream>
 
@@ -112,7 +112,7 @@ private:
 class worker5_t : public worker_node_t
 {
 public:
-    worker5_t(const node_retriever_t& db, boost::shared_ptr<int> output)
+    worker5_t(const node_retriever_t& db, std::shared_ptr<int> output)
         : worker_node_t("Consume_G"), _g(db, "G"), _c(db, "C"), _output(output)
     {
         bind_accessor(_g);
@@ -128,7 +128,7 @@ private:
     data_reader_t<int> _g;
     data_writer_t<int> _c;
 
-    boost::shared_ptr<int> _output;
+    std::shared_ptr<int> _output;
 };
 
 class worker6_t : public worker_node_t
@@ -174,7 +174,7 @@ BOOST_AUTO_TEST_CASE(test_experts)
     uhd::property_tree::sptr tree    = uhd::property_tree::make();
 
     // Output of expert tree
-    boost::shared_ptr<int> final_output = boost::make_shared<int>();
+    std::shared_ptr<int> final_output = std::make_shared<int>();
 
     // Add data nodes to container
     expert_factory::add_dual_prop_node<int>(

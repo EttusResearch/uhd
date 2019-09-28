@@ -35,7 +35,7 @@
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <uhd/utils/noncopyable.hpp>
 #include <complex>
 #include <string>
@@ -95,7 +95,7 @@ namespace usrp {
 class UHD_API multi_usrp : uhd::noncopyable
 {
 public:
-    typedef boost::shared_ptr<multi_usrp> sptr;
+    typedef std::shared_ptr<multi_usrp> sptr;
 
     virtual ~multi_usrp(void) = 0;
 

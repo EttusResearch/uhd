@@ -58,7 +58,7 @@ using namespace uhd::niusrprio;
 
 // We need a zpu xport registry to ensure synchronization between the static
 // finder method and the instances of the x300_impl class.
-typedef std::unordered_map<std::string, boost::weak_ptr<uhd::wb_iface>>
+typedef std::unordered_map<std::string, std::weak_ptr<uhd::wb_iface>>
     pcie_zpu_iface_registry_t;
 UHD_SINGLETON_FCN(pcie_zpu_iface_registry_t, get_pcie_zpu_iface_registry)
 static std::mutex pcie_zpu_iface_registry_mutex;
@@ -249,7 +249,7 @@ wb_iface::sptr pcie_manager::get_ctrl_iface()
             "Someone else has a ZPU transport to the device open. Internal error!");
     }
     auto zpu_ctrl = x300_make_ctrl_iface_pcie(_rio_fpga_interface->get_kernel_proxy());
-    get_pcie_zpu_iface_registry()[_resource] = boost::weak_ptr<wb_iface>(zpu_ctrl);
+    get_pcie_zpu_iface_registry()[_resource] = std::weak_ptr<wb_iface>(zpu_ctrl);
     return zpu_ctrl;
 }
 

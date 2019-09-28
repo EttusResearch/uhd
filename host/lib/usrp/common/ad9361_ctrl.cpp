@@ -10,7 +10,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhdlib/usrp/common/ad9361_ctrl.hpp>
 #include <boost/format.hpp>
-#include <boost/make_shared.hpp>
+#include <memory>
 #include <cstring>
 #include <mutex>
 
@@ -325,8 +325,8 @@ ad9361_ctrl::sptr ad9361_ctrl::make_spi(ad9361_params::sptr client_settings,
     uhd::spi_iface::sptr spi_iface,
     uint32_t slave_num)
 {
-    boost::shared_ptr<ad9361_io_spi> spi_io_iface =
-        boost::make_shared<ad9361_io_spi>(spi_iface, slave_num);
+    std::shared_ptr<ad9361_io_spi> spi_io_iface =
+        std::make_shared<ad9361_io_spi>(spi_iface, slave_num);
     return sptr(new ad9361_ctrl_impl(client_settings, spi_io_iface));
 }
 

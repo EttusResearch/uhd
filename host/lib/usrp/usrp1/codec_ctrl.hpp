@@ -11,7 +11,7 @@
 #include <uhd/types/serial.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 /*!
  * The usrp1 codec control:
@@ -20,7 +20,7 @@
  */
 class usrp1_codec_ctrl : uhd::noncopyable{
 public:
-    typedef boost::shared_ptr<usrp1_codec_ctrl> sptr;
+    typedef std::shared_ptr<usrp1_codec_ctrl> sptr;
 
     static const uhd::gain_range_t tx_pga_gain_range;
     static const uhd::gain_range_t rx_pga_gain_range;

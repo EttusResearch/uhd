@@ -30,7 +30,7 @@
 #include <uhdlib/usrp/cores/tx_dsp_core_200.hpp>
 #include <uhdlib/usrp/cores/time64_core_200.hpp>
 #include <uhdlib/usrp/cores/user_settings_core_200.hpp>
-#include <boost/weak_ptr.hpp>
+#include <memory>
 
 static const double          B100_LINK_RATE_BPS = 256e6/5; //pratical link rate (< 480 Mbps)
 static const std::string     B100_FW_FILE_NAME = "usrp_b100_fw.ihx";
@@ -112,14 +112,14 @@ private:
     //transports
     uhd::transport::zero_copy_if::sptr _ctrl_transport;
     uhd::transport::zero_copy_if::sptr _data_transport;
-    boost::shared_ptr<uhd::usrp::recv_packet_demuxer_3000> _recv_demuxer;
+    std::shared_ptr<uhd::usrp::recv_packet_demuxer_3000> _recv_demuxer;
 
     //dboard stuff
     uhd::usrp::dboard_manager::sptr _dboard_manager;
     bool _ignore_cal_file;
 
-    std::vector<boost::weak_ptr<uhd::rx_streamer> > _rx_streamers;
-    std::vector<boost::weak_ptr<uhd::tx_streamer> > _tx_streamers;
+    std::vector<std::weak_ptr<uhd::rx_streamer> > _rx_streamers;
+    std::vector<std::weak_ptr<uhd::tx_streamer> > _tx_streamers;
 
     void check_fw_compat(void);
     void check_fpga_compat(void);

@@ -12,7 +12,7 @@
 #include <uhd/types/time_spec.hpp>
 #include <uhd/transport/zero_copy.hpp>
 #include <uhd/types/wb_iface.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <boost/utility.hpp>
 #include <string>
 
@@ -22,7 +22,7 @@
 class radio_ctrl_core_3000 : public uhd::timed_wb_iface
 {
 public:
-    typedef boost::shared_ptr<radio_ctrl_core_3000> sptr;
+    typedef std::shared_ptr<radio_ctrl_core_3000> sptr;
 
     virtual ~radio_ctrl_core_3000(void) = 0;
 

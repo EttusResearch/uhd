@@ -36,8 +36,8 @@
 #include <uhdlib/usrp/common/ad936x_manager.hpp>
 #include <uhdlib/usrp/common/adf4001_ctrl.hpp>
 #include <boost/assign.hpp>
-#include <boost/weak_ptr.hpp>
 #include <mutex>
+#include <memory>
 
 static const uint8_t  B200_FW_COMPAT_NUM_MAJOR = 8;
 static const uint8_t  B200_FW_COMPAT_NUM_MINOR = 0;
@@ -138,7 +138,7 @@ private:
     uhd::usrp::ad9361_ctrl::sptr _codec_ctrl;
     uhd::usrp::ad936x_manager::sptr _codec_mgr;
     b200_local_spi_core::sptr _spi_iface;
-    boost::shared_ptr<uhd::usrp::adf4001_ctrl> _adf4001_iface;
+    std::shared_ptr<uhd::usrp::adf4001_ctrl> _adf4001_iface;
     uhd::gps_ctrl::sptr _gps;
 
     //transports
@@ -146,8 +146,8 @@ private:
     uhd::transport::zero_copy_if::sptr _ctrl_transport;
     uhd::usrp::recv_packet_demuxer_3000::sptr _demux;
 
-    boost::weak_ptr<uhd::rx_streamer> _rx_streamer;
-    boost::weak_ptr<uhd::tx_streamer> _tx_streamer;
+    std::weak_ptr<uhd::rx_streamer> _rx_streamer;
+    std::weak_ptr<uhd::tx_streamer> _tx_streamer;
 
     std::mutex _transport_setup_mutex;
 
@@ -156,13 +156,13 @@ private:
     typedef uhd::transport::bounded_buffer<uhd::async_metadata_t> async_md_type;
     struct AsyncTaskData
     {
-        boost::shared_ptr<async_md_type> async_md;
-        boost::weak_ptr<radio_ctrl_core_3000> local_ctrl;
-        boost::weak_ptr<radio_ctrl_core_3000> radio_ctrl[2];
+        std::shared_ptr<async_md_type> async_md;
+        std::weak_ptr<radio_ctrl_core_3000> local_ctrl;
+        std::weak_ptr<radio_ctrl_core_3000> radio_ctrl[2];
         b200_uart::sptr gpsdo_uart;
     };
-    boost::shared_ptr<AsyncTaskData> _async_task_data;
-    boost::optional<uhd::msg_task::msg_type_t> handle_async_task(uhd::transport::zero_copy_if::sptr, boost::shared_ptr<AsyncTaskData>);
+    std::shared_ptr<AsyncTaskData> _async_task_data;
+    boost::optional<uhd::msg_task::msg_type_t> handle_async_task(uhd::transport::zero_copy_if::sptr, std::shared_ptr<AsyncTaskData>);
 
     void register_loopback_self_test(uhd::wb_iface::sptr iface);
     void set_mb_eeprom(const uhd::usrp::mboard_eeprom_t &);
@@ -191,8 +191,8 @@ private:
         rx_dsp_core_3000::sptr ddc;
         tx_vita_core_3000::sptr deframer;
         tx_dsp_core_3000::sptr duc;
-        boost::weak_ptr<uhd::rx_streamer> rx_streamer;
-        boost::weak_ptr<uhd::tx_streamer> tx_streamer;
+        std::weak_ptr<uhd::rx_streamer> rx_streamer;
+        std::weak_ptr<uhd::tx_streamer> tx_streamer;
         user_settings_core_3000::sptr user_settings;
         bool ant_rx2;
     };

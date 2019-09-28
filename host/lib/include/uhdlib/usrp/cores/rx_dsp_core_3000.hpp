@@ -16,7 +16,7 @@
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/usrp/fe_connection.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <string>
 
 class rx_dsp_core_3000 : uhd::noncopyable
@@ -26,7 +26,7 @@ public:
     static const double DEFAULT_DDS_FREQ;
     static const double DEFAULT_RATE;
 
-    typedef boost::shared_ptr<rx_dsp_core_3000> sptr;
+    typedef std::shared_ptr<rx_dsp_core_3000> sptr;
 
     virtual ~rx_dsp_core_3000(void) = 0;
 

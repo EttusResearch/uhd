@@ -11,7 +11,7 @@
 #include <uhdlib/experts/expert_nodes.hpp>
 #include <uhd/config.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <boost/thread/recursive_mutex.hpp>
 
 namespace uhd { namespace experts {
@@ -25,7 +25,7 @@ namespace uhd { namespace experts {
 
     class UHD_API expert_container : private uhd::noncopyable, public node_retriever_t {
     public: //Methods
-        typedef boost::shared_ptr<expert_container> sptr;
+        typedef std::shared_ptr<expert_container> sptr;
 
         virtual ~expert_container() {};
 

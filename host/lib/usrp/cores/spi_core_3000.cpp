@@ -8,7 +8,7 @@
 
 #include <uhd/exception.hpp>
 #include <uhdlib/usrp/cores/spi_core_3000.hpp>
-#include <boost/make_shared.hpp>
+#include <memory>
 #include <chrono>
 #include <mutex>
 #include <thread>
@@ -128,7 +128,7 @@ private:
 spi_core_3000::sptr spi_core_3000::make(
     wb_iface::sptr iface, const size_t base, const size_t readback)
 {
-    return boost::make_shared<spi_core_3000_impl>(
+    return std::make_shared<spi_core_3000_impl>(
         [iface](
             const uint32_t addr, const uint32_t value) { iface->poke32(addr, value); },
         [iface](const uint32_t addr) { return iface->peek32(addr); },
@@ -143,6 +143,6 @@ spi_core_3000::sptr spi_core_3000::make(spi_core_3000::poke32_fn_t&& poke32_fn,
     const size_t reg_offset,
     const size_t readback)
 {
-    return boost::make_shared<spi_core_3000_impl>(
+    return std::make_shared<spi_core_3000_impl>(
         std::move(poke32_fn), std::move(peek32_fn), base, reg_offset, readback);
 }

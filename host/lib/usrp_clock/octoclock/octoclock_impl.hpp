@@ -8,7 +8,7 @@
 #ifndef INCLUDED_OCTOCLOCK_IMPL_HPP
 #define INCLUDED_OCTOCLOCK_IMPL_HPP
 
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <boost/thread.hpp>
 
 #include <uhd/device.hpp>

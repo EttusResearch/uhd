@@ -41,7 +41,7 @@ static uint32_t get_reg(wb_iface::wb_addr_type addr) {
 class twinrx_gpio : public wb_iface
 {
 public:
-    typedef boost::shared_ptr<twinrx_gpio> sptr;
+    typedef std::shared_ptr<twinrx_gpio> sptr;
 
     //----------------------------------------------
     //Public GPIO fields
@@ -123,7 +123,7 @@ private:    //Members/definitions
 
 class twinrx_cpld_regmap : public uhd::soft_regmap_t {
 public:
-    typedef boost::shared_ptr<twinrx_cpld_regmap> sptr;
+    typedef std::shared_ptr<twinrx_cpld_regmap> sptr;
 
     //----------------------------------------------
     // IF CCA: CPLD 1

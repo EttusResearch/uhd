@@ -11,7 +11,7 @@
 #include <uhd/config.hpp>
 #include <uhd/transport/zero_copy.hpp>
 #include <uhd/types/device_addr.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 
 namespace uhd { namespace transport {
 
@@ -34,7 +34,7 @@ public:
         size_t send_buff_size;
     };
 
-    typedef boost::shared_ptr<udp_zero_copy> sptr;
+    typedef std::shared_ptr<udp_zero_copy> sptr;
 
     /*!
      * Make a new zero copy udp transport:

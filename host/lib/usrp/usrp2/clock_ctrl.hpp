@@ -10,12 +10,12 @@
 
 #include "usrp2_iface.hpp"
 #include <uhd/utils/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <vector>
 
 class usrp2_clock_ctrl : uhd::noncopyable{
 public:
-    typedef boost::shared_ptr<usrp2_clock_ctrl> sptr;
+    typedef std::shared_ptr<usrp2_clock_ctrl> sptr;
 
     virtual ~usrp2_clock_ctrl(void) = 0;
 

@@ -30,7 +30,7 @@
 class max287x_iface
 {
 public:
-    typedef boost::shared_ptr<max287x_iface> sptr;
+    typedef std::shared_ptr<max287x_iface> sptr;
 
     typedef boost::function<void(std::vector<uint32_t>)> write_fn;
 

@@ -11,7 +11,7 @@
 #include <uhdlib/usrp/common/fx2_ctrl.hpp>
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/types/serial.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <uhd/utils/noncopyable.hpp>
 
 #define SPI_ENABLE_FPGA  0x01
@@ -35,7 +35,7 @@
 class usrp1_iface : public uhd::wb_iface, public uhd::i2c_iface, public uhd::spi_iface, uhd::noncopyable
 {
 public:
-    typedef boost::shared_ptr<usrp1_iface> sptr;
+    typedef std::shared_ptr<usrp1_iface> sptr;
 
     /*!
      * Make a new usrp1 interface with the control transport.

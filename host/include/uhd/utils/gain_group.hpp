@@ -12,7 +12,7 @@
 #include <uhd/types/ranges.hpp>
 #include <uhd/utils/noncopyable.hpp>
 #include <boost/function.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -31,7 +31,7 @@ struct UHD_API gain_fcns_t
 class UHD_API gain_group : uhd::noncopyable
 {
 public:
-    typedef boost::shared_ptr<gain_group> sptr;
+    typedef std::shared_ptr<gain_group> sptr;
 
     virtual ~gain_group(void) = 0;
 

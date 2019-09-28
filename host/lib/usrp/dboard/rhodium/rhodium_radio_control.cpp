@@ -18,7 +18,7 @@
 #include <uhdlib/utils/narrow.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
-#include <boost/make_shared.hpp>
+#include <memory>
 #include <cmath>
 #include <cstdlib>
 #include <sstream>

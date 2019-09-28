@@ -187,7 +187,7 @@ private:
 class udp_zero_copy_wsa_impl : public udp_zero_copy
 {
 public:
-    typedef boost::shared_ptr<udp_zero_copy_wsa_impl> sptr;
+    typedef std::shared_ptr<udp_zero_copy_wsa_impl> sptr;
 
     udp_zero_copy_wsa_impl(const std::string& addr,
         const std::string& port,
@@ -272,14 +272,14 @@ public:
         // allocate re-usable managed receive buffers
         for (size_t i = 0; i < get_num_recv_frames(); i++) {
             _mrb_pool.push_back(
-                boost::shared_ptr<udp_zero_copy_asio_mrb>(new udp_zero_copy_asio_mrb(
+                std::shared_ptr<udp_zero_copy_asio_mrb>(new udp_zero_copy_asio_mrb(
                     _recv_buffer_pool->at(i), _sock_fd, get_recv_frame_size())));
         }
 
         // allocate re-usable managed send buffers
         for (size_t i = 0; i < get_num_send_frames(); i++) {
             _msb_pool.push_back(
-                boost::shared_ptr<udp_zero_copy_asio_msb>(new udp_zero_copy_asio_msb(
+                std::shared_ptr<udp_zero_copy_asio_msb>(new udp_zero_copy_asio_msb(
                     _send_buffer_pool->at(i), _sock_fd, get_send_frame_size())));
         }
     }
@@ -383,8 +383,8 @@ private:
     const size_t _recv_frame_size, _num_recv_frames;
     const size_t _send_frame_size, _num_send_frames;
     buffer_pool::sptr _recv_buffer_pool, _send_buffer_pool;
-    std::vector<boost::shared_ptr<udp_zero_copy_asio_msb>> _msb_pool;
-    std::vector<boost::shared_ptr<udp_zero_copy_asio_mrb>> _mrb_pool;
+    std::vector<std::shared_ptr<udp_zero_copy_asio_msb>> _msb_pool;
+    std::vector<std::shared_ptr<udp_zero_copy_asio_mrb>> _mrb_pool;
     size_t _next_recv_buff_index, _next_send_buff_index;
 
     // socket guts

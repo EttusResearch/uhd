@@ -12,13 +12,13 @@
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <complex>
 #include <string>
 
 class tx_frontend_core_200 : uhd::noncopyable{
 public:
-    typedef boost::shared_ptr<tx_frontend_core_200> sptr;
+    typedef std::shared_ptr<tx_frontend_core_200> sptr;
 
     static const std::complex<double> DEFAULT_DC_OFFSET_VALUE;
     static const std::complex<double> DEFAULT_IQ_BALANCE_VALUE;

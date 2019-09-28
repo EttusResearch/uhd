@@ -13,9 +13,9 @@
 #include <uhd/transport/zero_copy.hpp>
 #include <uhd/types/endianness.hpp>
 #include <uhd/utils/byteswap.hpp>
-#include <boost/make_shared.hpp>
+#include <memory>
 #include <boost/shared_array.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <list>
 #include <vector>
 
@@ -71,7 +71,7 @@ private:
 class mock_zero_copy : public uhd::transport::zero_copy_if
 {
 public:
-    typedef boost::shared_ptr<mock_zero_copy> sptr;
+    typedef std::shared_ptr<mock_zero_copy> sptr;
 
     mock_zero_copy(uhd::transport::vrt::if_packet_info_t::link_type_t type,
         size_t recv_frame_size = DEFAULT_RECV_FRAME_SIZE,

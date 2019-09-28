@@ -12,7 +12,7 @@
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/dboard_id.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <uhd/utils/noncopyable.hpp>
 #include <string>
 #include <vector>
@@ -27,7 +27,7 @@ namespace uhd { namespace usrp {
 class UHD_API dboard_manager : uhd::noncopyable
 {
 public:
-    typedef boost::shared_ptr<dboard_manager> sptr;
+    typedef std::shared_ptr<dboard_manager> sptr;
 
     // dboard constructor (each dboard should have a ::make with this signature)
     typedef dboard_base::sptr (*dboard_ctor_t)(dboard_base::ctor_args_t);

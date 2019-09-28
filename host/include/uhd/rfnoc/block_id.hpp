@@ -10,7 +10,7 @@
 
 #include <uhd/config.hpp>
 #include <stdint.h>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <iostream>
 #include <string>
 

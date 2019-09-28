@@ -13,7 +13,7 @@
 #include <uhd/usrp/dboard_id.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/utils/pimpl.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <uhd/utils/noncopyable.hpp>
 
 namespace uhd { namespace usrp {
@@ -25,7 +25,7 @@ namespace uhd { namespace usrp {
 class UHD_API dboard_base : uhd::noncopyable
 {
 public:
-    typedef boost::shared_ptr<dboard_base> sptr;
+    typedef std::shared_ptr<dboard_base> sptr;
     /*!
      * An opaque type for the dboard constructor args.
      * Derived classes should pass the args into the base class,

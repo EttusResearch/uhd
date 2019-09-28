@@ -12,7 +12,7 @@
 #include <uhd/utils/noncopyable.hpp>
 #include <boost/detail/atomic_count.hpp>
 #include <boost/intrusive_ptr.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <boost/utility.hpp>
 
 namespace uhd { namespace transport {
@@ -148,7 +148,7 @@ struct zero_copy_xport_params
 class UHD_API zero_copy_if : uhd::noncopyable
 {
 public:
-    typedef boost::shared_ptr<zero_copy_if> sptr;
+    typedef std::shared_ptr<zero_copy_if> sptr;
 
     /*!
      * Clean up tasks before releasing the transport object.

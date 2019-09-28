@@ -12,9 +12,9 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/noncopyable.hpp>
 #include <boost/asio.hpp>
-#include <boost/smart_ptr.hpp>
 #include <boost/thread/condition_variable.hpp>
 #include <boost/thread/thread.hpp>
+#include <memory>
 
 namespace uhd { namespace usrprio_rpc {
 
@@ -68,7 +68,7 @@ private:
 
     // Services
     boost::asio::io_service _io_service;
-    boost::scoped_ptr<boost::thread> _io_service_thread;
+    std::unique_ptr<boost::thread> _io_service_thread;
     boost::asio::ip::tcp::socket _socket;
     // Handshake info
     hshake_args_t _hshake_args_client;

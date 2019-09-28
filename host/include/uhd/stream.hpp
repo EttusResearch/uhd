@@ -14,7 +14,7 @@
 #include <uhd/types/ref_vector.hpp>
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <boost/utility.hpp>
 #include <string>
 #include <vector>
@@ -170,7 +170,7 @@ struct UHD_API stream_args_t
 class UHD_API rx_streamer : uhd::noncopyable
 {
 public:
-    typedef boost::shared_ptr<rx_streamer> sptr;
+    typedef std::shared_ptr<rx_streamer> sptr;
 
     virtual ~rx_streamer(void);
 
@@ -248,7 +248,7 @@ public:
 class UHD_API tx_streamer : uhd::noncopyable
 {
 public:
-    typedef boost::shared_ptr<tx_streamer> sptr;
+    typedef std::shared_ptr<tx_streamer> sptr;
 
     virtual ~tx_streamer(void);
 

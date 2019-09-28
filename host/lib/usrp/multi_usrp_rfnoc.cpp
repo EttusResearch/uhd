@@ -15,10 +15,10 @@
 #include <uhdlib/rfnoc/rfnoc_device.hpp>
 #include <uhdlib/usrp/gpio_defs.hpp>
 #include <unordered_set>
-#include <boost/make_shared.hpp>
 #include <boost/pointer_cast.hpp>
 #include <algorithm>
 #include <chrono>
+#include <memory>
 #include <mutex>
 #include <thread>
 #include <vector>
@@ -2211,7 +2211,7 @@ multi_usrp::sptr make_rfnoc_device(
     detail::rfnoc_device::sptr rfnoc_device, const uhd::device_addr_t& dev_addr)
 {
     auto graph = uhd::rfnoc::detail::make_rfnoc_graph(rfnoc_device, dev_addr);
-    return boost::make_shared<multi_usrp_rfnoc>(graph, dev_addr);
+    return std::make_shared<multi_usrp_rfnoc>(graph, dev_addr);
 }
 
 }}} // namespace uhd::rfnoc::detail

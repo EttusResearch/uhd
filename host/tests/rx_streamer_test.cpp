@@ -6,7 +6,7 @@
 
 #include "../common/mock_link.hpp"
 #include <uhdlib/transport/rx_streamer_impl.hpp>
-#include <boost/make_shared.hpp>
+#include <memory>
 #include <boost/test/unit_test.hpp>
 #include <iostream>
 
@@ -148,13 +148,13 @@ static std::vector<mock_recv_link::sptr> make_links(const size_t num)
     return links;
 }
 
-static boost::shared_ptr<mock_rx_streamer> make_rx_streamer(
+static std::shared_ptr<mock_rx_streamer> make_rx_streamer(
     std::vector<mock_recv_link::sptr> recv_links,
     const std::string& host_format,
     const std::string& otw_format = "sc16")
 {
     const uhd::stream_args_t stream_args(host_format, otw_format);
-    auto streamer = boost::make_shared<mock_rx_streamer>(recv_links.size(), stream_args);
+    auto streamer = std::make_shared<mock_rx_streamer>(recv_links.size(), stream_args);
     streamer->set_tick_rate(TICK_RATE);
     streamer->set_samp_rate(SAMP_RATE);
 

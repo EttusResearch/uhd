@@ -14,7 +14,6 @@
 #include <uhd/transport/nirio/niriok_proxy.h>
 #include <uhd/transport/nirio/status.h>
 #include <uhd/utils/noncopyable.hpp>
-#include <boost/smart_ptr.hpp>
 #include <boost/thread/recursive_mutex.hpp>
 #include <atomic>
 #include <string>
@@ -34,7 +33,7 @@ template <typename data_t>
 class nirio_fifo : private uhd::noncopyable
 {
 public:
-    typedef boost::shared_ptr< nirio_fifo<data_t> > sptr;
+    typedef std::shared_ptr< nirio_fifo<data_t> > sptr;
 
     typedef enum {
         MINIMIZE_LATENCY,

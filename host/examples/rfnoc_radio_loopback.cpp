@@ -88,7 +88,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     std::cout << std::endl;
     std::cout << boost::format("Creating the usrp device with: %s...") % args
               << std::endl;
-    auto dev = boost::dynamic_pointer_cast<uhd::device3>(uhd::device::make(args));
+    auto dev = std::dynamic_pointer_cast<uhd::device3>(uhd::device::make(args));
     if (not dev) {
         std::cout << "Error: Could not find an RFNoC-compatible device." << std::endl;
         return EXIT_FAILURE;

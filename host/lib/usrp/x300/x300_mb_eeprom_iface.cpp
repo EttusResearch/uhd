@@ -27,7 +27,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/platform.hpp>
 #include <boost/thread.hpp>
-#include <boost/make_shared.hpp>
+#include <memory>
 
 using namespace uhd;
 
@@ -158,5 +158,5 @@ x300_mb_eeprom_iface::~x300_mb_eeprom_iface(void)
 x300_mb_eeprom_iface::sptr x300_mb_eeprom_iface::make(
     wb_iface::sptr wb, i2c_iface::sptr i2c)
 {
-    return boost::make_shared<x300_mb_eeprom_iface_impl>(wb, i2c->eeprom16());
+    return std::make_shared<x300_mb_eeprom_iface_impl>(wb, i2c->eeprom16());
 }

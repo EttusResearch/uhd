@@ -8,7 +8,7 @@
 #include "soft_time_ctrl.hpp"
 #include <uhdlib/utils/system_time.hpp>
 #include <uhd/utils/tasks.hpp>
-#include <boost/make_shared.hpp>
+#include <memory>
 #include <boost/thread/condition_variable.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <iostream>
@@ -116,7 +116,7 @@ public:
     }
 
     void issue_stream_cmd(const stream_cmd_t &cmd){
-        _cmd_queue.push_with_wait(boost::make_shared<stream_cmd_t>(cmd));
+        _cmd_queue.push_with_wait(std::make_shared<stream_cmd_t>(cmd));
     }
 
     void stream_on_off(bool enb){
@@ -190,7 +190,7 @@ public:
     }
 
     void recv_cmd_task(void){ //task is looped
-        boost::shared_ptr<stream_cmd_t> cmd;
+        std::shared_ptr<stream_cmd_t> cmd;
         if (_cmd_queue.pop_with_timed_wait(cmd, 0.25)) {
             recv_cmd_handle_cmd(*cmd);
         }
@@ -213,7 +213,7 @@ private:
     size_t _nsamps_remaining;
     stream_cmd_t::stream_mode_t _stream_mode;
     time_spec_t _time_offset;
-    bounded_buffer<boost::shared_ptr<stream_cmd_t> > _cmd_queue;
+    bounded_buffer<std::shared_ptr<stream_cmd_t> > _cmd_queue;
     bounded_buffer<async_metadata_t> _async_msg_queue;
     bounded_buffer<rx_metadata_t> _inline_msg_queue;
     const cb_fcn_type _stream_on_off;

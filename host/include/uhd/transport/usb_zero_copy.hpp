@@ -27,7 +27,7 @@ namespace uhd { namespace transport {
 class UHD_API usb_zero_copy : public virtual zero_copy_if
 {
 public:
-    typedef boost::shared_ptr<usb_zero_copy> sptr;
+    typedef std::shared_ptr<usb_zero_copy> sptr;
 
     virtual ~usb_zero_copy(void);
 

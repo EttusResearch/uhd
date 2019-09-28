@@ -5,20 +5,19 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhdlib/experts/expert_container.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhdlib/experts/expert_container.hpp>
+#include <boost/bind.hpp>
 #include <boost/format.hpp>
 #include <boost/function.hpp>
-#include <boost/bind.hpp>
-#include <boost/make_shared.hpp>
-#include <boost/scoped_ptr.hpp>
-#include <boost/thread/mutex.hpp>
-#include <boost/thread.hpp>
-#include <boost/graph/graph_traits.hpp>
-#include <boost/graph/depth_first_search.hpp>
-#include <boost/graph/topological_sort.hpp>
 #include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/depth_first_search.hpp>
+#include <boost/graph/graph_traits.hpp>
+#include <boost/graph/topological_sort.hpp>
+#include <boost/thread.hpp>
+#include <boost/thread/mutex.hpp>
+#include <memory>
 
 #ifdef UHD_EXPERT_LOGGING
 #define EX_LOG(depth, str) _log(depth, str)
@@ -517,7 +516,7 @@ private:
 
 expert_container::sptr expert_container::make(const std::string& name)
 {
-    return boost::make_shared<expert_container_impl>(name);
+    return std::make_shared<expert_container_impl>(name);
 }
 
 }}

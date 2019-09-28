@@ -12,7 +12,7 @@
 #include <uhd/stream.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <boost/shared_ptr.hpp>
+#include <memory>
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/types/wb_iface.hpp>
 #include <string>
@@ -20,7 +20,7 @@
 class tx_vita_core_3000 : uhd::noncopyable
 {
 public:
-    typedef boost::shared_ptr<tx_vita_core_3000> sptr;
+    typedef std::shared_ptr<tx_vita_core_3000> sptr;
 
     enum fc_monitor_loc {
         FC_DEFAULT,
