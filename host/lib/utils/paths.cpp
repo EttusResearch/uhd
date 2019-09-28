@@ -14,7 +14,7 @@
 #include <boost/bind.hpp>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
-#include <boost/regex.hpp>
+#include <regex>
 #include <boost/tokenizer.hpp>
 
 #include <cstdio>
@@ -200,16 +200,16 @@ std::vector<fs::path> uhd::get_module_paths(void){
  * \return The images path, formatted for windows.
  */
 std::string _get_images_path_from_registry(const std::string& registry_key_path) {
-    boost::smatch reg_key_match;
+    std::smatch reg_key_match;
     //If a substring in the search path is enclosed in [] (square brackets) then it is interpreted as a registry path
-    if (not boost::regex_search(registry_key_path, reg_key_match, boost::regex("\\[(.+)\\](.*)", boost::regex::icase)))
+    if (not std::regex_search(registry_key_path, reg_key_match, std::regex("\\[(.+)\\](.*)", std::regex::icase)))
         return std::string();
     std::string reg_key_path = std::string(reg_key_match[1].first, reg_key_match[1].second);
     std::string path_suffix = std::string(reg_key_match[2].first, reg_key_match[2].second);
 
     //Split the registry path into parent, key-path and value.
-    boost::smatch reg_parent_match;
-    if (not boost::regex_search(reg_key_path, reg_parent_match, boost::regex("^(.+?)\\\\(.+)\\\\(.+)$", boost::regex::icase)))
+    std::smatch reg_parent_match;
+    if (not std::regex_search(reg_key_path, reg_parent_match, std::regex("^(.+?)\\\\(.+)\\\\(.+)$", std::regex::icase)))
         return std::string();
     std::string reg_parent = std::string(reg_parent_match[1].first, reg_parent_match[1].second);
     std::string reg_path = std::string(reg_parent_match[2].first, reg_parent_match[2].second);

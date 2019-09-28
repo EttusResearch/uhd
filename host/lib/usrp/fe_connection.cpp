@@ -7,7 +7,7 @@
 
 #include <uhd/usrp/fe_connection.hpp>
 #include <uhd/exception.hpp>
-#include <boost/regex.hpp>
+#include <regex>
 #include <uhd/utils/math.hpp>
 
 using namespace uhd::usrp;
@@ -21,9 +21,9 @@ fe_connection_t::fe_connection_t(
 }
 
 fe_connection_t::fe_connection_t(const std::string& conn_str, double if_freq) {
-    static const boost::regex conn_regex("([IQ])(b?)(([IQ])(b?))?");
-    boost::cmatch matches;
-    if (boost::regex_match(conn_str.c_str(), matches, conn_regex)) {
+    static const std::regex conn_regex("([IQ])(b?)(([IQ])(b?))?");
+    std::cmatch matches;
+    if (std::regex_match(conn_str.c_str(), matches, conn_regex)) {
         if (matches[3].length() == 0) {
             //Connection in {I, Q, Ib, Qb}
             _sampling_mode = REAL;

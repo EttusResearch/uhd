@@ -287,7 +287,6 @@ set(UHD_BOOST_REQUIRED_COMPONENTS
     date_time
     filesystem
     program_options
-    regex
     system
     unit_test_framework
     serialization

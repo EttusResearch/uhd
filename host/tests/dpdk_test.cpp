@@ -17,13 +17,10 @@
 #include <sys/time.h>
 #include <unistd.h>
 #include <boost/program_options.hpp>
-#include <boost/regex.hpp>
 #include <cstdbool>
 #include <cstdio>
 #include <cstring>
 #include <iostream>
-
-static const boost::regex colons(":");
 
 namespace po = boost::program_options;
 

@@ -9,7 +9,7 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/format.hpp>
-#include <boost/regex.hpp>
+#include <regex>
 #include <stdexcept>
 #include <sstream>
 
@@ -93,8 +93,8 @@ device_addrs_t uhd::separate_device_addr(const device_addr_t &dev_addr){
     device_addrs_t dev_addrs(1); //must be at least one (obviously)
     std::vector<std::string> global_keys; //keys that apply to all (no numerical suffix)
     for(const std::string &key:  dev_addr.keys()){
-        boost::cmatch matches;
-        if (not boost::regex_match(key.c_str(), matches, boost::regex("^(\\D+)(\\d*)$"))){
+        std::cmatch matches;
+        if (not std::regex_match(key.c_str(), matches, std::regex("^(\\D+)(\\d*)$"))){
             throw std::runtime_error("unknown key format: " + key);
         }
         std::string key_part(matches[1].first, matches[1].second);

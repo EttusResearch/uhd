@@ -11,15 +11,15 @@
 #include <fstream>
 #include <streambuf>
 #include <boost/algorithm/string.hpp>
-#include <boost/regex.hpp>
+#include <regex>
 
 namespace uhd { namespace niusrprio {
 
 std::string nifpga_lvbitx::_get_bitstream_checksum(const std::string& file_path)
 {
-    const boost::regex md5_regex(
+    const std::regex md5_regex(
         "<BitstreamMD5>([a-fA-F0-9]{32})<\\/BitstreamMD5>",
-        boost::regex::icase);
+        std::regex::icase);
 
     std::ifstream lvbitx_stream(file_path.c_str());
     if (!lvbitx_stream.is_open()) {
@@ -32,9 +32,9 @@ std::string nifpga_lvbitx::_get_bitstream_checksum(const std::string& file_path)
         try {
             // short-circuiting the regex search with a simple find is faster
             // for cases where the tag doesn't exist
-            boost::smatch md5_match;
+            std::smatch md5_match;
             if (line.find("<BitstreamMD5>") != std::string::npos &&
-                boost::regex_search(line, md5_match, md5_regex))
+                std::regex_search(line, md5_match, md5_regex))
             {
                 checksum = std::string(md5_match[1].first, md5_match[1].second);
                 break;

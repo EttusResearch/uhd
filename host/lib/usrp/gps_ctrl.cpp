@@ -14,7 +14,7 @@
 #include <boost/thread/thread.hpp>
 #include <boost/tokenizer.hpp>
 #include <boost/format.hpp>
-#include <boost/regex.hpp>
+#include <regex>
 #include <boost/thread/mutex.hpp>
 #include <boost/date_time.hpp>
 #include <boost/tuple/tuple.hpp>
@@ -137,8 +137,8 @@ private:
     }
 
     const std::list<std::string> keys{"GPGGA", "GPRMC", "SERVO"};
-    static const boost::regex servo_regex("^\\d\\d-\\d\\d-\\d\\d.*$");
-    static const boost::regex gp_msg_regex("^\\$GP.*,\\*[0-9A-F]{2}$");
+    static const std::regex servo_regex("^\\d\\d-\\d\\d-\\d\\d.*$");
+    static const std::regex gp_msg_regex("^\\$GP.*,\\*[0-9A-F]{2}$");
     std::map<std::string,std::string> msgs;
 
     // Get all GPSDO messages available
@@ -162,11 +162,11 @@ private:
         }
 
         // Look for SERVO message
-        if (boost::regex_search(msg, servo_regex, boost::regex_constants::match_continuous))
+        if (std::regex_search(msg, servo_regex, std::regex_constants::match_continuous))
         {
             msgs["SERVO"] = msg;
         }
-        else if (boost::regex_match(msg, gp_msg_regex) and is_nmea_checksum_ok(msg))
+        else if (std::regex_match(msg, gp_msg_regex) and is_nmea_checksum_ok(msg))
         {
             msgs[msg.substr(1,5)] = msg;
         }
