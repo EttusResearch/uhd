@@ -22,7 +22,6 @@ static const double SAMP_RATE = 1e6;
 
 namespace po = boost::program_options;
 
-typedef std::pair<double, double> double_pair; // BOOST_FOREACH doesn't like commas
 typedef std::vector<std::pair<double, double>> pair_vector;
 
 /************************************************************************
@@ -340,7 +339,7 @@ std::string coercion_test(uhd::usrp::multi_usrp::sptr usrp,
         } else {
             results +=
                 "USRP did not successfully set gain under the following circumstances:";
-            for (double_pair bad_pair : bad_gain_vals) {
+            for (auto& bad_pair : bad_gain_vals) {
                 double bad_freq = bad_pair.first;
                 double bad_gain = bad_pair.second;
                 results += str(boost::format("\nFrequency: %s, Gain: %5.2f")

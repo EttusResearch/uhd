@@ -315,7 +315,7 @@ private:
         if_packet_info.packet_count = _next_packet_seq;
 
         // get a buffer for each channel or timeout
-        BOOST_FOREACH (xport_chan_props_type& props, _props) {
+        for (xport_chan_props_type& props : _props) {
             if (not props.buff)
                 props.buff = props.get_buff(timeout);
             if (not props.buff)

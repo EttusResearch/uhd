@@ -12,7 +12,6 @@
 #include <uhd/exception.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/foreach.hpp>
 
 namespace uhd{
 
@@ -24,7 +23,7 @@ namespace uhd{
         if (uhd::has(range, value)) return;
         std::string possible_values = "";
         size_t i = 0;
-        BOOST_FOREACH(const T &v, range){
+        for(const T &v : range){
             if (i++ > 0) possible_values += ", ";
             possible_values += boost::lexical_cast<std::string>(v);
         }
