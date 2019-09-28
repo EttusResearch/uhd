@@ -12,6 +12,7 @@
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhd/version.hpp>
+#include <uhdlib/utils/isatty.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/make_shared.hpp>
 #include <atomic>
@@ -41,6 +42,10 @@ constexpr double READ_TIMEOUT = 0.5; // Waiting time to read from the queue
 namespace {
 std::string verbosity_color(const uhd::log::severity_level& level)
 {
+    static const bool tty = uhd::is_a_tty(2); // is stderr a tty?
+    if (!tty) {
+        return "";
+    }
     switch (level) {
         case (uhd::log::trace):
             return PURPLE;
@@ -108,7 +113,7 @@ void console_log(const uhd::log::logging_info& log_info)
         << "[" << verbosity_name(log_info.verbosity) << "] "
         << "[" << log_info.component << "] "
 #ifdef UHD_LOG_CONSOLE_COLOR
-        << RESET_COLORS
+        << verbosity_color(uhd::log::off) // This will reset colors
 #endif
         << log_info.message << std::endl;
 }
