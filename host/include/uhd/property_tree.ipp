@@ -12,7 +12,6 @@
 #include <uhd/exception.hpp>
 #include <boost/foreach.hpp>
 #include <boost/scoped_ptr.hpp>
-#include <typeindex>
 #include <vector>
 
 /***********************************************************************
@@ -183,16 +182,14 @@ template <typename T>
 property<T>& property_tree::create(const fs_path& path, coerce_mode_t coerce_mode)
 {
     this->_create(path,
-        typename boost::shared_ptr<property<T> >(new property_impl<T>(coerce_mode)),
-        std::type_index(typeid(T)));
+        typename boost::shared_ptr<property<T> >(new property_impl<T>(coerce_mode)));
     return this->access<T>(path);
 }
 
 template <typename T>
 property<T>& property_tree::access(const fs_path& path)
 {
-    return *boost::static_pointer_cast<property<T> >(
-        this->_access_with_type_check(path, std::type_index(typeid(T))));
+    return *boost::static_pointer_cast<property<T> >(this->_access(path));
 }
 
 template <typename T>
