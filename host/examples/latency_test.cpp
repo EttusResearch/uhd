@@ -36,6 +36,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("nruns",  po::value<size_t>(&nruns)->default_value(1000),   "number of tests to perform")
         ("rtt",    po::value<double>(&rtt)->default_value(0.001),    "delay between receive and transmit (seconds)")
         ("rate",   po::value<double>(&rate)->default_value(100e6/4), "sample rate for receive and transmit (sps)")
+        ("from-eob", "specify to define rtt to not include the time to clock out the RX samples (removes dependence on nsamps and rate)")
         ("verbose", "specify to enable inner-loop verbose")
     ;
     // clang-format on
@@ -61,7 +62,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         return EXIT_SUCCESS;
     }
 
-    bool verbose = vm.count("verbose") != 0;
+    bool verbose  = vm.count("verbose") != 0;
+    bool from_eob = vm.count("from-eob") != 0;
 
     // create a usrp device
     std::cout << std::endl;
@@ -80,8 +82,16 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
     // set the rx sample rate
     usrp->set_rx_rate(rate);
-    std::cout << boost::format("Actual RX Rate: %f Msps...") % (usrp->get_rx_rate() / 1e6)
+    double actual_rx_rate = usrp->get_rx_rate();
+    std::cout << boost::format("Actual RX Rate: %f Msps...") % (actual_rx_rate / 1e6)
               << std::endl;
+
+    double rx_time = nsamps / actual_rx_rate;
+    if (from_eob) {
+        std::cout << boost::format("Will add %f seconds to timespec for RX samples...")
+                         % (rx_time)
+                  << std::endl;
+    }
 
     // allocate a buffer to use
     std::vector<std::complex<float>> buffer(nsamps);
@@ -131,7 +141,10 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         tx_md.end_of_burst   = true;
         tx_md.has_time_spec  = true;
         tx_md.time_spec      = rx_md.time_spec + uhd::time_spec_t(rtt);
-        size_t num_tx_samps  = tx_stream->send(&buffer.front(), buffer.size(), tx_md);
+        if (from_eob) {
+            tx_md.time_spec += uhd::time_spec_t(rx_time);
+        }
+        size_t num_tx_samps = tx_stream->send(&buffer.front(), buffer.size(), tx_md);
         if (verbose) {
             std::cout << boost::format("Sent %d samples") % num_tx_samps << std::endl;
         }
