@@ -144,34 +144,75 @@ set(man_page_sources
 ########################################################################
 # Setup man pages
 ########################################################################
-find_package(GZip)
-
 # No elegant way in CMake to reverse a boolean
 if(NOT WIN32)
     set(NOT_WIN32 TRUE)
 endif(NOT WIN32)
 
-LIBUHD_REGISTER_COMPONENT("Man Pages" ENABLE_MAN_PAGES ON "GZIP_FOUND;NOT_WIN32" OFF OFF)
+set(MAN_PAGES_DEPS "NOT_WIN32")
+
+# check to see if ENABLE_MAN_PAGE_COMPRESSION was set in the cmake
+# call, one way or the other
+if(ENABLE_MAN_PAGE_COMPRESSION)
+  set(MAN_PAGE_COMPRESSION_FORCE TRUE)
+else()
+  set(MAN_PAGE_COMPRESSION_FORCE FALSE)
+endif()
+
+option(ENABLE_MAN_PAGE_COMPRESSION "Compress Man Pages if installed." ON)
+
+message(STATUS "")
+if(ENABLE_MAN_PAGE_COMPRESSION)
+    find_package(GZip QUIET)
+    if(GZIP_FOUND)
+        message(STATUS "Found GZip: ${GZIP_EXECUTABLE}")
+        message(STATUS "")
+        list(APPEND MAN_PAGES_DEPS "GZIP_FOUND")
+        message(STATUS "Compressed Man Pages enabled")
+    else()
+        message(STATUS "GZip compression program - not found")
+        message(STATUS "")
+        # was using compressed man pages forced?
+        if(MAN_PAGE_COMPRESSION_FORCE)
+            # yes: GZIP wasn't found
+            # force failure in LIBUHD_REGISTER_COMPONENT for ENABLE_MAN_PAGES
+            list(APPEND MAN_PAGES_DEPS "GZIP_FOUND")
+            message(STATUS "Compressed Man Pages force enabled")
+        else()
+            # no not forced; just don't use compression
+            message(STATUS "Compressed Man Pages optional; disabling")
+        endif()
+    endif()
+else()
+    message(STATUS "Compressed Man Pages force disabled")
+endif(ENABLE_MAN_PAGE_COMPRESSION)
+message(STATUS "  Override with -DENABLE_MAN_PAGE_COMPRESSION=ON/OFF")
+
+LIBUHD_REGISTER_COMPONENT("Man Pages" ENABLE_MAN_PAGES ON "${MAN_PAGES_DEPS}" OFF OFF)
 
 if(ENABLE_MAN_PAGES)
-    #Generate man pages
-    foreach(manfile ${man_page_sources})
-        #make the gzip file depend on the text file
-        string(REPLACE ".1" "" PROGRAM_NAME "${manfile}")
-        set(gzfile "${CMAKE_CURRENT_BINARY_DIR}/${manfile}.gz")
-        set(manfile "${CMAKE_CURRENT_SOURCE_DIR}/${manfile}")
-        add_custom_command(
-            OUTPUT ${gzfile}
-            DEPENDS ${manfile}
-            COMMAND ${GZIP_EXECUTABLE} -9 -cf ${manfile} > ${gzfile}
-            COMMENT "Generating ${PROGRAM_NAME} man page"
-        )
-
-        #make the man page target depend on the gz file
-        list(APPEND man_page_gz_files ${gzfile})
-        UHD_INSTALL(FILES ${gzfile} DESTINATION ${PKG_MAN_DIR} COMPONENT manpages)
-    endforeach(manfile ${man_page_sources})
-
-    #make the man pages a build-time dependency
-    add_custom_target(man_page_gzips ALL DEPENDS ${man_page_gz_files})
+    #Generate man pages; either compressed or not
+    if(ENABLE_MAN_PAGE_COMPRESSION)
+        # compress man pages
+        foreach(manfile ${man_page_sources})
+            #make the gzip file depend on the text file
+            string(REPLACE ".1" "" PROGRAM_NAME "${manfile}")
+            set(gzfile "${CMAKE_CURRENT_BINARY_DIR}/${manfile}.gz")
+            set(manfile "${CMAKE_CURRENT_SOURCE_DIR}/${manfile}")
+            add_custom_command(
+                OUTPUT ${gzfile}
+                DEPENDS ${manfile}
+                COMMAND ${GZIP_EXECUTABLE} -9 -cf ${manfile} > ${gzfile}
+                COMMENT "Generating ${PROGRAM_NAME} man page"
+            )
+            #make the man page target depend on the gz file
+            list(APPEND man_page_gz_files ${gzfile})
+        endforeach(manfile ${man_page_sources})
+        #make the man pages a build-time dependency
+        UHD_INSTALL(FILES ${man_page_gz_files} DESTINATION ${PKG_MAN_DIR} COMPONENT manpages)
+        add_custom_target(man_page_gzips ALL DEPENDS ${man_page_gz_files})
+    else(ENABLE_MAN_PAGE_COMPRESSION)
+        # uncompressed man pages; just install them
+        UHD_INSTALL(FILES ${man_page_sources} DESTINATION ${PKG_MAN_DIR} COMPONENT manpages)
+    endif(ENABLE_MAN_PAGE_COMPRESSION)
 endif(ENABLE_MAN_PAGES)
