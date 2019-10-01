@@ -122,7 +122,9 @@ set(PKG_DATA_DIR share/uhd)
 if(NOT DEFINED PKG_LIB_DIR)
     set(PKG_LIB_DIR ${LIBRARY_DIR}/uhd)
 endif()
-set(PKG_DOC_DIR share/doc/uhd)
+if(NOT DEFINED PKG_DOC_DIR)
+    set(PKG_DOC_DIR share/doc/uhd)
+endif()
 set(PKG_MAN_DIR share/man/man1)
 
 ########################################################################
