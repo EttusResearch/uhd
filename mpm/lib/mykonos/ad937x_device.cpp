@@ -11,6 +11,7 @@
 #include "config/ad937x_config_t.hpp"
 #include "config/ad937x_default_config.hpp"
 #include <boost/format.hpp>
+#include <cmath>
 #include <fstream>
 #include <functional>
 #include <iostream>
@@ -39,6 +40,15 @@ static const uint32_t AD9371_XBCZ_PRODUCT_ID = 0x1;
 static const size_t ARM_BINARY_SIZE          = 98304;
 
 static const uint32_t PLL_LOCK_TIMEOUT_MS = 200;
+
+// Amount of time to average samples for RX DC offset
+// A larger averaging window will result in:
+// Longer latency to correct DC offset changes
+// Fewer discontinuities at lower signal frequencies
+// Minimum value is 0.8 ms, enforced by ADI's API
+static constexpr double RX_DC_OFFSET_AVERAGING_WINDOW_MS = 1.0;
+static_assert(RX_DC_OFFSET_AVERAGING_WINDOW_MS >= 0.8, 
+    "RX DC offset averaging window must be greater than 0.8 ms");
 
 /******************************************************
 Helper functions
@@ -288,6 +298,15 @@ void ad937x_device::setup_cal(const uint32_t init_cals_mask,
         throw mpm::runtime_error("Init cals failed!");
         // TODO: add more debugging information here
     }
+
+    // Set the DC offset averaging window
+    // ADI requires a minimum of 800us
+    // Parameter is (number of samples / 1024)
+    uint16_t window = std::ceil((RX_DC_OFFSET_AVERAGING_WINDOW_MS
+                                    * (mykonos_config.device->rx->rxProfile->iqRate_kHz))
+                                / 1024);
+    CALL_API(MYKONOS_setRfDcOffsetCnt(mykonos_config.device, MYK_DC_OFFSET_RX_CHN, window));
+
     CALL_API(MYKONOS_enableTrackingCals(mykonos_config.device, tracking_cals_mask));
     // ready for radioOn
 }
