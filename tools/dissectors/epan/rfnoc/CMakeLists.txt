@@ -19,7 +19,10 @@ register_plugin_files(${CMAKE_CURRENT_BINARY_DIR}/plugin.c
 
 add_plugin_library(rfnoc epan)
 
-set_target_properties(rfnoc PROPERTIES PREFIX "")
+set_target_properties(rfnoc PROPERTIES PREFIX ""
+	CXX_STANDARD 14
+	CXX_STANDARD_REQUIRED YES
+)
 set_target_properties(rfnoc PROPERTIES LINK_FLAGS "${WS_LINK_FLAGS}")
 target_link_libraries(rfnoc wireshark epan)
 
