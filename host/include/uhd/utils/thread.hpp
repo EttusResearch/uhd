@@ -56,6 +56,12 @@ UHD_API void set_thread_name(boost::thread* thread, const std::string& name);
  */
 UHD_API void set_thread_name(std::thread* thread, const std::string& name);
 
+/*!
+ * Set the affinity of the current thread to a (set of) CPU(s).
+ * \param cpu_affinity_list list of CPU numbers to affinitize the thread to
+ */
+UHD_API void set_thread_affinity(const std::vector<size_t>& cpu_affinity_list);
+
 } // namespace uhd
 
 #endif /* INCLUDED_UHD_UTILS_THREAD_HPP */

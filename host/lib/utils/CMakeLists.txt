@@ -55,6 +55,10 @@ else()
     set(THREAD_PRIO_DEFS HAVE_THREAD_PRIO_DUMMY)
 endif()
 
+########################################################################
+# Setup defines for thread naming
+########################################################################
+
 set(CMAKE_REQUIRED_LIBRARIES "pthread")
 
 CHECK_CXX_SOURCE_COMPILES("
@@ -80,6 +84,45 @@ if(HAVE_PTHREAD_SETNAME)
 else()
     message(STATUS "  Setting thread names is not supported.")
     list(APPEND THREAD_PRIO_DEFS HAVE_THREAD_SETNAME_DUMMY)
+endif()
+
+########################################################################
+# Setup defines for thread affinitizing
+########################################################################
+
+CHECK_CXX_SOURCE_COMPILES("
+    #include <pthread.h>
+    int main(){
+        pthread_t pt;
+        cpu_set_t cs;
+        pthread_setaffinity_np(pt, sizeof(cpu_set_t), &cs);
+        return 0;
+    }
+    " HAVE_PTHREAD_SETAFFINITY_NP
+)
+
+if(CYGWIN)
+    set(HAVE_PTHREAD_SETAFFINITY_NP False)
+endif(CYGWIN)
+
+CHECK_CXX_SOURCE_COMPILES("
+    #include <windows.h>
+    int main(){
+        SetThreadAffinityMask(GetCurrentThread(), 0);
+        return 0;
+    }
+    " HAVE_WIN_SETTHREADAFFINITYMASK
+)
+if(HAVE_PTHREAD_SETAFFINITY_NP)
+    message(STATUS "  Setting thread affinity is supported through pthread_setaffinity_np.")
+    list(APPEND THREAD_PRIO_DEFS HAVE_PTHREAD_SETAFFINITY_NP)
+    LIBUHD_APPEND_LIBS(pthread)
+elseif(HAVE_WIN_SETTHREADPRIORITY)
+    message(STATUS "  Setting thread affinity is supported through windows SetThreadAffinityMask.")
+    list(APPEND THREAD_PRIO_DEFS HAVE_WIN_SETTHREADAFFINITYMASK)
+else()
+    message(STATUS "  Setting thread affinity is not supported.")
+    list(APPEND THREAD_PRIO_DEFS HAVE_THREAD_SETAFFINITY_DUMMY)
 endif()
 
 

@@ -58,9 +58,37 @@ static void check_priority_range(float priority){
     }
 #endif /* HAVE_PTHREAD_SETSCHEDPARAM */
 
-/***********************************************************************
- * Windows API to set priority
- **********************************************************************/
+    /***********************************************************************
+     * Pthread API to set affinity
+     **********************************************************************/
+#ifdef HAVE_PTHREAD_SETAFFINITY_NP
+#    include <pthread.h>
+    void uhd::set_thread_affinity(const std::vector<size_t>& cpu_affinity_list)
+    {
+        if (cpu_affinity_list.empty()) {
+            return;
+        }
+
+        cpu_set_t cpu_set;
+        CPU_ZERO(&cpu_set);
+        for (auto cpu_num : cpu_affinity_list) {
+            if (cpu_num > CPU_SETSIZE) {
+                UHD_LOG_WARNING(
+                    "UHD", "CPU index " << cpu_num << " in affinity list out of range");
+            }
+            CPU_SET(cpu_num, &cpu_set);
+        }
+
+        int status = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpu_set);
+        if (status != 0) {
+            UHD_LOG_WARNING("UHD", "Failed to set desired affinity for thread");
+        }
+    }
+#endif /* HAVE_PTHREAD_SETAFFINITYNP */
+
+    /***********************************************************************
+     * Windows API to set priority
+     **********************************************************************/
 #ifdef HAVE_WIN_SETTHREADPRIORITY
     #include <windows.h>
 
@@ -89,20 +117,55 @@ static void check_priority_range(float priority){
     }
 #endif /* HAVE_WIN_SETTHREADPRIORITY */
 
-/***********************************************************************
- * Unimplemented API to set priority
- **********************************************************************/
+    /***********************************************************************
+     * Windows API to set affinity
+     **********************************************************************/
+#ifdef HAVE_WIN_SETTHREADAFFINITYMASK
+#    include <windows.h>
+    void uhd::set_thread_affinity(const std::vector<size_t>& cpu_affinity_list)
+    {
+        if (cpu_affinity_list.empty()) {
+            return;
+        }
+
+        DWORD_PTR cpu_set{0};
+        for (auto cpu_num : cpu_affinity_list) {
+            if (cpu_num > 8 * sizeof(DWORD_PTR)) {
+                UHD_LOG_WARNING(
+                    "UHD", "CPU index " << cpu_num << " in affinity list out of range");
+            }
+            cpu_set |= ((DWORD_PTR)1 << cpu_num);
+        }
+
+        DWORD_PTR status = SetThreadAffinityMask(GetCurrentThread(), cpu_set);
+        if (status == 0) {
+            UHD_LOG_WARNING("UHD", "Failed to set desired affinity for thread");
+        }
+    }
+#endif /* HAVE_WIN_SETTHREADAFFINITYMASK */
+
+    /***********************************************************************
+     * Unimplemented API to set priority
+     **********************************************************************/
 #ifdef HAVE_THREAD_PRIO_DUMMY
     void uhd::set_thread_priority(float, bool){
-        throw uhd::not_implemented_error("set thread priority not implemented");
+        UHD_LOG_DEBUG("UHD", "Setting thread priority is not implemented");
     }
 
 #endif /* HAVE_THREAD_PRIO_DUMMY */
 
-void uhd::set_thread_name(
-    boost::thread *thrd,
-    const std::string &name
-) {
+    /***********************************************************************
+     * Unimplemented API to set affinity
+     **********************************************************************/
+#ifdef HAVE_THREAD_SETAFFINITY_DUMMY
+    void uhd::set_thread_affinity(const std::vector<size_t>& cpu_affinity_list)
+    {
+        UHD_LOG_DEBUG("UHD", "Setting thread affinity is not implemented");
+    }
+#endif /* HAVE_THREAD_SETAFFINITY_DUMMY */
+
+    void uhd::set_thread_name(boost::thread* thrd, const std::string& name)
+    {
 #ifdef HAVE_PTHREAD_SETNAME
     pthread_setname_np(thrd->native_handle(), name.substr(0,16).c_str());
 #endif /* HAVE_PTHREAD_SETNAME */
