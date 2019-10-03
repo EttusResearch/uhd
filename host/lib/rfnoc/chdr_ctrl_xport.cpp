@@ -78,6 +78,16 @@ chdr_ctrl_xport::chdr_ctrl_xport(io_service::sptr io_srv,
         recv_link, 1, mgmt_recv_cb, send_link_if::sptr(), 0, release_cb);
 }
 
+
+chdr_ctrl_xport::~chdr_ctrl_xport()
+{
+    // Release I/O service clients before allowing members needed by callbacks
+    // be destroyed
+    _send_if.reset();
+    _ctrl_recv_if.reset();
+    _mgmt_recv_if.reset();
+}
+
 /*!
  * Get an empty frame buffer in which to write packet contents.
  *

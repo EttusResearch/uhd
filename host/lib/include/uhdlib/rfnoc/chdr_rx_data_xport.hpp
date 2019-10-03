@@ -169,6 +169,10 @@ public:
         const size_t num_recv_frames,
         const fc_params_t& fc_params);
 
+    /*! Destructor
+     */
+    ~chdr_rx_data_xport();
+
     /*! Returns maximum number payload bytes
      *
      * \return maximum payload bytes per packet
@@ -227,8 +231,8 @@ private:
         transport::recv_link_if* recv_link,
         transport::send_link_if* send_link)
     {
-        _recv_packet->refresh(buff->data());
-        const auto header   = _recv_packet->get_chdr_header();
+        _recv_packet_cb->refresh(buff->data());
+        const auto header   = _recv_packet_cb->get_chdr_header();
         const auto dst_epid = header.get_dst_epid();
 
         if (dst_epid != _epid) {
@@ -240,9 +244,9 @@ private:
 
         if (type == chdr::PKT_TYPE_STRC) {
             chdr::strc_payload strc;
-            strc.deserialize(_recv_packet->get_payload_const_ptr_as<uint64_t>(),
-                _recv_packet->get_payload_size() / sizeof(uint64_t),
-                _recv_packet->conv_to_host<uint64_t>());
+            strc.deserialize(_recv_packet_cb->get_payload_const_ptr_as<uint64_t>(),
+                _recv_packet_cb->get_payload_size() / sizeof(uint64_t),
+                _recv_packet_cb->conv_to_host<uint64_t>());
 
             const stream_buff_params_t strc_counts = {
                 strc.num_bytes, static_cast<uint32_t>(strc.num_pkts)};
@@ -296,8 +300,8 @@ private:
         transport::recv_link_if* recv_link,
         transport::send_link_if* send_link)
     {
-        _recv_packet->refresh(buff->data());
-        const auto header        = _recv_packet->get_chdr_header();
+        _recv_packet_cb->refresh(buff->data());
+        const auto header        = _recv_packet_cb->get_chdr_header();
         const size_t packet_size = header.get_length();
         recv_link->release_recv_buff(std::move(buff));
         _fc_state.xfer_done(packet_size);
@@ -381,6 +385,9 @@ private:
 
     // Packet for received data
     chdr::chdr_packet::uptr _recv_packet;
+
+    // Packet for received data used in callbacks
+    chdr::chdr_packet::uptr _recv_packet_cb;
 
     // Handles sending of strs flow control response packets
     detail::rx_flow_ctrl_sender _fc_sender;

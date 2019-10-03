@@ -45,7 +45,8 @@ chdr_rx_data_xport::chdr_rx_data_xport(uhd::transport::io_service::sptr io_srv,
         "Creating rx xport with local epid=" << epids.second
                                              << ", remote epid=" << epids.first);
 
-    _recv_packet = pkt_factory.make_generic();
+    _recv_packet    = pkt_factory.make_generic();
+    _recv_packet_cb = pkt_factory.make_generic();
     _fc_sender.set_capacity(fc_params.buff_capacity);
 
     // Calculate max payload size
@@ -79,6 +80,12 @@ chdr_rx_data_xport::chdr_rx_data_xport(uhd::transport::io_service::sptr io_srv,
             << ", packets=" << fc_params.buff_capacity.packets << std::endl
             << "fc frequency bytes=" << fc_params.freq.bytes
             << ", packets=" << fc_params.freq.packets);
+}
+
+chdr_rx_data_xport::~chdr_rx_data_xport()
+{
+    // Release recv_io before allowing members needed by callbacks be destroyed
+    _recv_io.reset();
 }
 
 chdr_rx_data_xport::fc_params_t chdr_rx_data_xport::configure_sep(io_service::sptr io_srv,

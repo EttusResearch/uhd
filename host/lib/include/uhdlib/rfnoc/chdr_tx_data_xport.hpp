@@ -167,6 +167,10 @@ public:
         const size_t num_send_frames,
         const fc_params_t fc_params);
 
+    /*! Destructor
+     */
+    ~chdr_tx_data_xport();
+
     /*! Returns maximum number of payload bytes
      *
      * \return maximum number of payload bytes

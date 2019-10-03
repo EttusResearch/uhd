@@ -74,7 +74,7 @@ public:
         size_t num_send_frames,
         size_t num_recv_frames);
 
-    ~chdr_ctrl_xport() = default;
+    ~chdr_ctrl_xport();
 
     /*!
       * Get an empty frame buffer in which to write packet contents.

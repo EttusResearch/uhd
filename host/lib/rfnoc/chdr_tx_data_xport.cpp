@@ -69,6 +69,12 @@ chdr_tx_data_xport::chdr_tx_data_xport(uhd::transport::io_service::sptr io_srv,
         recv_cb);
 }
 
+chdr_tx_data_xport::~chdr_tx_data_xport()
+{
+    // Release send_io before allowing members needed by callbacks be destroyed
+    _send_io.reset();
+}
+
 /*
  * To configure flow control, we need to send an init strc packet, then
  * receive a strs containing the stream endpoint ingress buffer size. We
