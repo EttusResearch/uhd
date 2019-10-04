@@ -181,14 +181,15 @@ boost::optional<device_addr_t> mpmd_mboard_impl::is_device_reachable(
     const std::string rpc_addr = device_addr.get(xport::MGMT_ADDR_KEY);
     const size_t rpc_port =
         device_addr.cast<size_t>(mpmd_impl::MPM_RPC_PORT_KEY, mpmd_impl::MPM_RPC_PORT);
-    auto rpcc = uhd::rpc_client::make(rpc_addr, rpc_port);
     // 1) Read back device info
     dev_info device_info_dict;
     try {
+        auto rpcc = uhd::rpc_client::make(rpc_addr, rpc_port);
         device_info_dict =
             rpcc->request<dev_info>(MPMD_SHORT_RPC_TIMEOUT, "get_device_info");
     } catch (const uhd::runtime_error& e) {
-        UHD_LOG_ERROR("MPMD", e.what());
+        UHD_LOG_DEBUG("MPMD", e.what());
+        return boost::optional<device_addr_t>();
     } catch (...) {
         UHD_LOG_DEBUG("MPMD",
             "Unexpected exception when trying to query device info. Flagging "
