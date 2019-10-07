@@ -12,6 +12,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/exception.hpp>
 #include <boost/format.hpp>
+#include <memory>
 constexpr uint64_t DEFAULT_RPC_TIMEOUT_MS = 2000;
 namespace uhd {
 
@@ -49,11 +50,11 @@ class rpc_client
             const uint16_t port,
             const uint64_t timeout_ms = DEFAULT_RPC_TIMEOUT_MS,
             std::string const &get_last_error_cmd=""
-    ) : _client(addr, port)
+    ) : _client(std::make_shared<rpc::client>(addr, port)) 
       , _get_last_error_cmd(get_last_error_cmd)
       , _default_timeout_ms(timeout_ms)
     {
-        _client.set_timeout(_default_timeout_ms);
+        _client->set_timeout(_default_timeout_ms);
         // nop
     }
 
@@ -72,7 +73,7 @@ class rpc_client
     {
         std::lock_guard<std::mutex> lock(_mutex);
         try {
-            return _client.call(func_name, std::forward<Args>(args)...)
+            return _client->call(func_name, std::forward<Args>(args)...)
                 .template as<return_type>();
         } catch (const ::rpc::rpc_error &ex) {
             const std::string error = _get_last_error_safe();
@@ -106,9 +107,9 @@ class rpc_client
     return_type request(uint64_t timeout_ms, std::string const& func_name, Args&&... args)
     {
         std::lock_guard<std::mutex> lock(_mutex);
-        auto holder = rpcc_timeout_holder(&_client, timeout_ms, _default_timeout_ms);
+        auto holder = rpcc_timeout_holder(_client, timeout_ms, _default_timeout_ms);
         try {
-            return _client.call(func_name, std::forward<Args>(args)...)
+            return _client->call(func_name, std::forward<Args>(args)...)
                 .template as<return_type>();
         } catch (const ::rpc::rpc_error &ex) {
             const std::string error = _get_last_error_safe();
@@ -143,10 +144,10 @@ class rpc_client
     void notify(uint64_t timeout_ms, std::string const& func_name, Args&&... args)
     {
         std::lock_guard<std::mutex> lock(_mutex);
-        auto holder = rpcc_timeout_holder(&_client, timeout_ms, _default_timeout_ms);
+        auto holder = rpcc_timeout_holder(_client, timeout_ms, _default_timeout_ms);
         try {
 
-            _client.call(func_name, std::forward<Args>(args)...);
+            _client->call(func_name, std::forward<Args>(args)...);
         } catch (const ::rpc::rpc_error &ex) {
             const std::string error = _get_last_error_safe();
             if (not error.empty()) {
@@ -179,7 +180,7 @@ class rpc_client
     {
         std::lock_guard<std::mutex> lock(_mutex);
         try {
-            _client.call(func_name, std::forward<Args>(args)...);
+            _client->call(func_name, std::forward<Args>(args)...);
         } catch (const ::rpc::rpc_error &ex) {
             const std::string error = _get_last_error_safe();
             if (not error.empty()) {
@@ -250,7 +251,7 @@ class rpc_client
     class rpcc_timeout_holder{
         public:
 
-            rpcc_timeout_holder(::rpc::client *client,
+            rpcc_timeout_holder(std::shared_ptr<rpc::client> client,
                 uint64_t set_timeout,
                 uint64_t resume_timeout
             ): _rpcc(client), _save_timeout(resume_timeout)
@@ -262,7 +263,7 @@ class rpc_client
                 _rpcc->set_timeout(_save_timeout);
             }
         private:
-            ::rpc::client *_rpcc;
+            std::shared_ptr<rpc::client> _rpcc;
             uint64_t _save_timeout;
     };
 
@@ -278,7 +279,7 @@ class rpc_client
             return "";
         }
         try {
-            return _client.call(_get_last_error_cmd).as<std::string>();
+            return _client->call(_get_last_error_cmd).as<std::string>();
         } catch (const ::rpc::rpc_error &ex) {
             // nop
         } catch (const std::bad_cast& ex) {
@@ -290,7 +291,7 @@ class rpc_client
     }
 
     //! Reference the actual RPC client
-    ::rpc::client _client;
+    std::shared_ptr<rpc::client> _client;
     //! If set, this is the command that will retrieve an error
     const std::string _get_last_error_cmd;
     uint64_t _default_timeout_ms;
