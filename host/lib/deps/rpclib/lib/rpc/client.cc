@@ -46,8 +46,8 @@ struct client::impl {
         boost::asio::async_connect(
             writer_->socket_, endpoint_iterator,
             [this](boost::system::error_code ec, tcp::resolver::iterator) {
+                std::unique_lock<std::mutex> lock(mut_connection_finished_);
                 if (!ec) {
-                    std::unique_lock<std::mutex> lock(mut_connection_finished_);
                     LOG_INFO("Client connected to {}:{}", addr_, port_);
                     is_connected_ = true;
                     state_ = client::connection_state::connected;
@@ -55,6 +55,9 @@ struct client::impl {
                     do_read();
                 } else {
                     LOG_ERROR("Error during connection: {}", ec);
+                    is_connected_ = false;
+                    state_ = client::connection_state::disconnected;
+                    conn_finished_.notify_all();
                 }
             });
     }
