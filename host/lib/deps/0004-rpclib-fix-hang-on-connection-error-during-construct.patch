@@ -1,0 +1,36 @@
+From 22f1bc70f5033f2848f1d97059ba05cad8aa88a0 Mon Sep 17 00:00:00 2001
+From: Mark Meserve <mark.meserve@ni.com>
+Date: Mon, 7 Oct 2019 18:53:59 -0500
+Subject: [PATCH] rpclib: fix hang on connection error during construction
+
+---
+ host/lib/deps/rpclib/lib/rpc/client.cc | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/host/lib/deps/rpclib/lib/rpc/client.cc b/host/lib/deps/rpclib/lib/rpc/client.cc
+index 219bc3480..1b366e491 100644
+--- a/host/lib/deps/rpclib/lib/rpc/client.cc
++++ b/host/lib/deps/rpclib/lib/rpc/client.cc
+@@ -46,8 +46,8 @@ struct client::impl {
+         boost::asio::async_connect(
+             writer_->socket_, endpoint_iterator,
+             [this](boost::system::error_code ec, tcp::resolver::iterator) {
++                std::unique_lock<std::mutex> lock(mut_connection_finished_);
+                 if (!ec) {
+-                    std::unique_lock<std::mutex> lock(mut_connection_finished_);
+                     LOG_INFO("Client connected to {}:{}", addr_, port_);
+                     is_connected_ = true;
+                     state_ = client::connection_state::connected;
+@@ -55,6 +55,9 @@ struct client::impl {
+                     do_read();
+                 } else {
+                     LOG_ERROR("Error during connection: {}", ec);
++                    is_connected_ = false;
++                    state_ = client::connection_state::disconnected;
++                    conn_finished_.notify_all();
+                 }
+             });
+     }
+-- 
+2.13.2.windows.1
+
