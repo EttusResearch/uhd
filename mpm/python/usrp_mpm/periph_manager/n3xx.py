@@ -225,6 +225,7 @@ class n3xx(ZynqComponents, PeriphManagerBase):
             # Init peripherals
             # these peripherals are specific to mboard and
             # need to configured before applying fpga overlay
+            args = self._update_default_args(args)
             self._gpios = TCA6424(int(self.mboard_info['rev']))
             self.log.trace("Enabling power of MGT156MHZ clk")
             self._gpios.set("PWREN-CLK-MGT156MHz")
@@ -669,9 +670,9 @@ class n3xx(ZynqComponents, PeriphManagerBase):
             self._gpios.set("CLK-MAINSEL-GPS")
         else: # external
             self._gpios.reset("CLK-MAINSEL-EX_B")
-            self._gpios.reset("CLK-MAINSEL-GPS")
+            self._gpios.set("CLK-MAINSEL-GPS")
             # SKY13350 needs to be in known state
-            self._gpios.set("CLK-MAINSEL-25MHz")
+            self._gpios.reset("CLK-MAINSEL-25MHz")
         self._clock_source = clock_source
         self.log.debug("Reference clock source is: {}" \
                        .format(self._clock_source))

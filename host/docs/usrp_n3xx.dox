@@ -664,6 +664,9 @@ and time.
 auto usrp = uhd::usrp::multi_usrp::make(
     "type=n3xx,clock_source=external,time_source=external");
 ```
+To reduce phase noise, it may be necessary to power down the GPSDO when using
+an external reference.  To do this, just add `enable_gps=False` to the
+configuration file in `/etc/uhd/mpm.conf` (see also \ref page_configfiles).
 
 
 Note: When disabling the GPS with `enable_gps=0` in the configuration file, or
