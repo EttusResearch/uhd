@@ -13,7 +13,31 @@
 #include <uhd/exception.hpp>
 #include <boost/format.hpp>
 #include <memory>
+
+namespace {
+
 constexpr uint64_t DEFAULT_RPC_TIMEOUT_MS = 2000;
+
+bool await_rpc_connected_state(
+    std::shared_ptr<rpc::client> client, std::chrono::milliseconds timeout)
+{
+    const auto timeout_time             = std::chrono::steady_clock::now() + timeout;
+    rpc::client::connection_state state = client->get_connection_state();
+    while (state == rpc::client::connection_state::initial
+           and std::chrono::steady_clock::now() < timeout_time) {
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        state = client->get_connection_state();
+    }
+
+    // guarantee at least one check at the end of timeout
+    if (state == rpc::client::connection_state::initial) {
+        state = client->get_connection_state();
+    }
+
+    return state == rpc::client::connection_state::connected;
+}
+} // namespace
+
 namespace uhd {
 
 
@@ -50,12 +74,21 @@ class rpc_client
             const uint16_t port,
             const uint64_t timeout_ms = DEFAULT_RPC_TIMEOUT_MS,
             std::string const &get_last_error_cmd=""
-    ) : _client(std::make_shared<rpc::client>(addr, port)) 
-      , _get_last_error_cmd(get_last_error_cmd)
+    ) : _get_last_error_cmd(get_last_error_cmd)
       , _default_timeout_ms(timeout_ms)
     {
+        _client = std::make_shared<rpc::client>(addr, port);
+
+        // wait for asynchronous creation to finish
+        if (!await_rpc_connected_state(
+                _client, std::chrono::milliseconds(DEFAULT_RPC_TIMEOUT_MS))) {
+            throw uhd::runtime_error(str(
+                boost::format(
+                    "Unknown error during attempt to establish RPC connection at %s:%d")
+                % addr % port));
+        }
+
         _client->set_timeout(_default_timeout_ms);
-        // nop
     }
 
     /*! Perform an RPC request.
