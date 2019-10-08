@@ -17,7 +17,12 @@ import re
 import time
 import logging
 from subprocess import Popen, PIPE
-import yaml
+# For what we're doing here, ruamel.yaml and yaml are copatible, and we'll use
+# whatever we can find
+try:
+    from ruamel import yaml
+except:
+    import yaml
 from six import iteritems
 from usrp_probe import get_usrp_list
 
