@@ -12,7 +12,10 @@ import sys
 import time
 import argparse
 from gevent import signal
-from gevent.hub import BlockingSwitchOutError
+try:
+    from gevent.hub import BlockingSwitchOutError
+except ImportError:
+    from gevent.exceptions import BlockingSwitchOutError
 import usrp_mpm as mpm
 from usrp_mpm.mpmtypes import SharedState
 from usrp_mpm.sys_utils import watchdog
@@ -187,4 +190,3 @@ def main():
 
 if __name__ == '__main__':
     exit(not main())
-
