@@ -17,6 +17,7 @@ UHD_INSTALL(FILES
     fp_compare_delta.ipp
     fp_compare_epsilon.ipp
     gain_group.hpp
+    graph_utils.hpp
     log.hpp
     log_add.hpp
     math.hpp
