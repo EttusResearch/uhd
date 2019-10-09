@@ -93,9 +93,10 @@ double rhodium_radio_ctrl_impl::set_rate(double requested_rate)
         return current_rate;
     }
 
+    // The master clock rate is always set by requesting db0's clock rate.
     UHD_LOG_TRACE(unique_id(), "Updating master clock rate to " << rate);
     auto new_rate = _rpcc->request_with_token<double>(
-        SET_RATE_RPC_TIMEOUT_MS, _rpc_prefix + "set_master_clock_rate", rate);
+        SET_RATE_RPC_TIMEOUT_MS, "db_0_set_master_clock_rate", rate);
     // The lowband LO frequency will change with the master clock rate, so
     // update the tuning of the device.
     set_tx_frequency(get_tx_frequency(0), 0);
