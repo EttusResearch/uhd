@@ -462,6 +462,9 @@ private:
         const uhd::log::severity_level level = uhd::log::info,
         const std::string& component         = "LOGGING")
     {
+        if (level < global_level) {
+            return;
+        }
         auto log_msg    = uhd::log::logging_info(pt::microsec_clock::local_time(),
             level,
             __FILE__,
