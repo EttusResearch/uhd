@@ -566,7 +566,7 @@ uhd::both_xports_t x300_impl::make_transport(const uhd::sid_t& address,
         xports.send_sid =
             this->allocate_sid(mb, address, x300::SRC_ADDR0, x300::XB_DST_PCI);
         xports.recv_sid = xports.send_sid.reversed();
-        std::dynamic_pointer_cast<pcie_manager>(mb.conn_mgr)
+        return std::dynamic_pointer_cast<pcie_manager>(mb.conn_mgr)
             ->make_transport(xports, xport_type, args, send_mtu, recv_mtu);
     } else if (mb.xport_path == xport_path_t::ETH) {
         xports = std::dynamic_pointer_cast<eth_manager>(mb.conn_mgr)
