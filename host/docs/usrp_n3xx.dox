@@ -643,7 +643,10 @@ will look like this:
 
 The N3xx series has an onboard GPSDO as well as a 25 MHz reference oscillator,
 which can both be used as time- and clock references. The GPSDO will function
-as a reference even when there is no GPS reception.
+as a reference even when there is no GPS reception. It can be powered off to
+reduce power usage and interference by supplying the `enable_gps=0` option in
+the configuration file (in this case, `gpsdo` cannot be used as a time or clock
+reference).
 
 Note that this does not enable the synchronization of multiple devices.
 Using an internal reference is the default.
@@ -661,6 +664,10 @@ and time.
 auto usrp = uhd::usrp::multi_usrp::make(
     "type=n3xx,clock_source=external,time_source=external");
 ```
+
+
+Note: When disabling the GPS with `enable_gps=0` in the configuration file, or
+when manually launching MPM, the `gpsdo` reference source is not available.
 
 \subsection n3xx_synchronization_whiterabbit White Rabbit
 
