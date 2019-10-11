@@ -228,13 +228,13 @@ class n3xx(ZynqComponents, PeriphManagerBase):
             self._gpios = TCA6424(int(self.mboard_info['rev']))
             self.log.trace("Enabling power of MGT156MHZ clk")
             self._gpios.set("PWREN-CLK-MGT156MHz")
+            self._gps_enabled = str2bool(
+                args.get('enable_gps', N3XX_DEFAULT_ENABLE_GPS))
+            if not self._gps_enabled:
+                self.log.info("Disabling GPS (gpsdo reference and time/location data).")
             self.enable_1g_ref_clock()
             self.enable_wr_ref_clock()
-            self.enable_gps(
-                enable=str2bool(
-                    args.get('enable_gps', N3XX_DEFAULT_ENABLE_GPS)
-                )
-            )
+            self.enable_gps(enable=self._gps_enabled)
             self.enable_fp_gpio(
                 enable=str2bool(
                     args.get(
@@ -573,8 +573,9 @@ class n3xx(ZynqComponents, PeriphManagerBase):
     ###########################################################################
     def get_clock_sources(self):
         " Lists all available clock sources. "
-        self.log.trace("Listing available clock sources...")
-        return ('external', 'internal', 'gpsdo')
+        if self._gps_enabled:
+            return 'external', 'internal', 'gpsdo'
+        return 'external', 'internal'
 
     def get_clock_source(self):
         " Returns the currently selected clock source "
@@ -600,7 +601,9 @@ class n3xx(ZynqComponents, PeriphManagerBase):
 
     def get_time_sources(self):
         " Returns list of valid time sources "
-        return ['internal', 'external', 'gpsdo', 'sfp0']
+        if self._gps_enabled:
+            return ['internal', 'external', 'gpsdo', 'sfp0']
+        return ['internal', 'external', 'sfp0']
 
     def get_time_source(self):
         " Return the currently selected time source "
@@ -630,13 +633,16 @@ class n3xx(ZynqComponents, PeriphManagerBase):
         Selects reference clock and PPS sources. Unconditionally re-applies the time
         source to ensure continuity between the reference clock and time rates.
         """
-
         clock_source = args.get('clock_source', self._clock_source)
-        assert clock_source in self.get_clock_sources()
+        assert clock_source in self.get_clock_sources(), \
+                "`{}' is not a valid clock source, valid choices are: {}".format(
+                    clock_source, ",".join(self.get_clock_sources()))
         time_source = args.get('time_source', self._time_source)
-        assert time_source in self.get_time_sources()
+        assert time_source in self.get_time_sources(), \
+                "`{}' is not a valid time source, valid choices are: {}".format(
+                    clock_source, ",".join(self.get_clock_sources()))
         if (clock_source == self._clock_source) and (time_source == self._time_source):
-            # Nothing change no need to do anything
+            # Nothing changed, no need to do anything
             self.log.trace("New sync source assignment matches"
                            "previous assignment. Ignoring update command.")
             return
