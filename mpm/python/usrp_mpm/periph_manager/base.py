@@ -211,8 +211,9 @@ class PeriphManagerBase(object):
 
     def init_dboards(self, args):
         """
-        Run full initialization of daugther boards if they're exist
-        Using 'override_db_pids' args to overwrite number of dboards that need to be init.
+        Run full initialization of daughter boards if they exist.
+        Use 'override_db_pids' args to overwrite number of dboards that get
+        initialized.
         """
         self._default_args = self._update_default_args(args)
         self.log.debug("Using default args: {}".format(self._default_args))
