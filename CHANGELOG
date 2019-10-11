@@ -1,193 +1,327 @@
 Change Log for Releases
 ==============================
 
+## 003.015.000.000
+* N320: Fix MCR initialization, fix checks for LO distribution board, reset RX
+  IQ balance on init, replace DRAM FIFO with replay block, improve constraints,
+  fix I/Q imbalance compensation
+* N310: increase default dc offset averaging window, make tunes asynchronous,
+  add capability to control RF filter bypass and freq.band limits, fix setting
+  user DB EEPROM, correctly report N321 vs N320, improve DDR3 BIST, update max
+  revision to 7, fix DMA arbitration to use contiguous packets, replace DRAM
+  FIFO with replay block, fix SFP link up status
+* X310: Fix max bitfile size, fix GPIO ATR property access type, heavily
+  refactor, introduce conn_mgr, add DPDK support, add
+  capability to flash NI-2974 FPGA, fix clocking code, enable 11.52 MHz and
+  23.04 MHz system ref rates, improve usage of constrained device args, enable
+  ADC gain through RFNoC API
+* E320: Fix time source clobbering ref source, add support for RevE, fix
+  reporting of FPGA version hash, fix SFP link up status, fix missing ce_clk
+  driver
+* E310: Convert to MPM architecture, fix uhd_image_loader usage, fix DMA
+  arbitration to use contiguous packets, reduced DMA chans to 4 (using data
+  stream muxing), fix DRAM_TEST target build
+* B200: Add command to query bootloader status, fix sc12 streaming, fix FIFO
+  sizes on GPIFII interface
+* UBX: add temperature compensation mode
+* SBX: Only update ATRs when lock state changes
+* TwinRX: add LO charge pump properties, increase default charge pump value on
+  LO1, add low spur tuning mode, fix duplicate write to N value in DDC
+* RFNoC/device3: Read command FIFO size from device instead of hardcoding
+  values, fix multidevice graph connections, ENABLE_RFNOC now defaults to ON,
+  search all nodes for tick rate, add update_graph() call which lets blocks do
+  a graph-wide update of properties, fix missing port arg in SR_WRITE Noc-Script
+  call, constrain send/recv_frame_size baed on MTU, fix flushing on init/deinit,
+  disable FC ACKs for lossless links
+* RFNOC/FPGA: Fix rb_stb in split stream block, fix off-by-one error in the
+  window block, fix phase reset and -accumulator for DDC and DUC blocks, fix
+  flushing on split-stream block, fix DC offset issue with DDS by using proper
+  rounding, fix DUC/DDC sample rate switching by latching N on M in
+  axi_rate_change, various fixes to uhd_image_builder, fix MTU settings in
+  blocks, align byte count to 8-byte word
+* Python API: Replace Boost.Python with PyBind11, fix benchmark_rate statistics,
+  fix phase alignment test script
+* UHD: Allow ignoring fallthrough warnings, reduce Boost footprint, remove gpsd
+  dependency, improve streaming, reduced the number of compiler warnings,
+  introduce pop() to the prop tree
+* MPM/mpmd: Introduce compatible rev numbers to support future hardware, fix
+  some resource leaks in mpmd, fix spurious reclaims causing unnecessary
+  warnings, fix resource leaks in liberio xport, allow to mux data streams over
+  liberio transports (e.g. to require fewer DMA channels on E310), wait for DPDK
+  links to come up before proceeding, relax failure handling when updating
+  components (fixes spurious errors when updating FPGA images over SFP)
+* FPGA: Use new device-tree overlay syntax, upgraded to Vivado 2018.3, broke
+  various paths with critical timing, allow SystemVerilog source files, improve
+  viv_modify_bd and viv_modify_tcl_bd, fix resets on 2clk FIFOs
+* USB: Allow cancelled USB requests to occur
+* Logging: Always honour log level, don't log colours for non-ttys, fix
+  includes, demote various log messages, fix logging colours, fix deadlock on
+  Windows machines
+* Examples: Fix benchmark_rate INIT_DELAY, fix memory leak in tx_samples_c
+* Tests: Make the Python interpreter for devtests a parameter, add unit tests to
+  MPM
+* Utilities: Fix converter benchmark for Py3k and scaling issue
+* Tools: Fix kitchen_sink
+* Docs: Various fixes, fix Doxygen warnings, fix links to KB
+* C API: Add uhd_get_abi_string, uhd_get_version_string
+* CMake: Make manpage compression optional, allow setting of PKG_DOC_DIR from
+  the CMake commandline, add replay example, fix missing 'project', replace
+  ENABLE_PYTHON3 with a simpler Python detection, clean up superfluous modules,
+  improve log statements, bump dependency min versions, add MPM unit testing,
+  fix missing BIGOBJ for MSVC
+* Formatting: Apply clang-format to all files, break after template<>
+
+
+
+## 003.014.001.000
+N320: Terminate the DAC when not transmitting
+E320: Add support for rev E
+E320: Added .gitignore for FPGA build products
+X300: Add DPDK support
+X300: add capability to flash NI-2974 FPGA
+X300: Broke two critical timing paths in FPGA
+X300: fixed udp WSA buffer size assignment issue
+E310: Fix DRAM_TEST target build
+B200: Add bootloader for FX3 (fix for B2xx failing to enumerate)
+TwinRX: Expose charge pump current for LO2
+TwinRX: Add low spur mode for LO2
+TwinRX: increase rev c lo1 charge pump default value
+TwinRX: Fix tick rate
+Device3: Constraint send/recv_frame_size based on down/upstream MTU
+Device3: Fix MTU and default frame sizes
+RFNoC: Search all nodes for tick rates
+RFNoC: Change default address for the reg readbacks
+uhd_image_builder: Let the OOT module point to folders not named "rfnoc"
+uhd_image_builder: Add --auto-inst-src
+MPMD: Fix spurious reclaim call after unclaim
+MPMD: Release resources on destruction
+MPM: Add SW/HW compat
+liberio: Release context holder on destruction of last liberio xport
+transport: fixed a pre-mature buffer reset
+nirio: Fix typo in nirio_zero_copy
+GPSD: fix API for 'gps_read'
+AD9361: Fix return values for tune and set_clock_rate
+DUC/DDC: Fix phase reset and accumulation
+cores: Use NSDMI consistently in ?x_dsp_core_3000.*
+Logging: fix deadlock issue on Windows machines
+Logging: Fix ANSI colour codes
+Utils: Add X300/X310 reset utility
+Docs: Improved Windows-related build instructions
+Docs: Add link to README for building custom filesystems for N3xx
+sim: Fixing the port number in use for connection
+tools: Fix for proj creation in ip_utils for tcl-based IP
+tests: Fix mock_ctrl_iface for 32-bit MSVC
+
 ## 003.014.000.000
-* N320: Add N320 and N321
-* Test: Add Python API test
-* Device3: Move from packet-based to byte-based flow control
+* N320: Add support for N320 and N321
+* USRP-2974: Add support for USRP-2974
+* DPDK: Add DPDK-based sockets-like library (for N3xx)
+* N3xx: clocking API changes for transitioning clock and time sources
+* N3xx: Bump max rev to G/6
+* N3xx: Improve error messages for invalid clock/time settings
+* N3xx: Get RFNoC crossbar baseport from FPGA
+* N3xx: init peripherals before loading FPGA (to fix SFP0 init issues)
+* N3xx: Move Linux kernel to 4.15
+* N3xx/E320: Prepend SDK filename with device name
+* N3xx: Update max rev to 7 (H)
+* N3xx: Remove DDR3 from standard BIST collection
+* N3xx: BIST: Improve DDR3 BIST to check for DmaFIFO
+* N3xx: BIST: Auto-load the AA image for the ddr3 BIST
+* N3xx: BIST: DDR3 test only enumerates first block
+* N310: Modify AD9371 reset function to keep it in reset
+* N310: move init_rf_cal before JESD de/framer bringup
+* N310: Fix sporadic power on failures (requires firmware update)
+* E3xx: Increase spp limit for E3xx radio
+* E320: bist: Fix ref_clock lock test implementation
+* E320: bist: Add link_up test
+* E320: Add all 5 temp sensors, fan sensor and rssi sensors per channel
+* E320: Fix tx/rx atr - antenna and frequency settings
+* E320: Enable devtest for E320
+* E320: images: Separate images package for Aurora image
+* E320: Get RFNoC crossbar baseport from FPGA
+* E320: add fpga_version_hash to e320 device info
+* E310: Fix initialization of antenna and frequency values
+* E31x: Destruct RFNoC before loading idle image
 * X300: Reduce default send_frame_size to 4000 over Ethernet
-* UHD: Release recv buffers earlier in rx_streamer
-* Device3: Constrain send_buff_size to input fifo size
 * X300: Change Ethernet buffering
-* MPMD: Parallelize broadcast-finding
-* Device: Parallelize device discovery
-* Docs: Fix Doxygen warnings
+* X300: Log git hash and compat number as debug message
+* X300: Move defaults to their own header
+* X300: Use constrained_args
+* X300: Enable clock_source and time_source device args
+* X300: NIRIO: Demote RPC client cancel/abort to TRACE
+* X300: remove default_buff_args properties
+* X300: Remove 120 MHz master_clock_rate option
+* X300: Set minimum master clock rate to 184.32 MHz
+* X300: Factor our PID -> MB type and MB type -> product name mapping
+* X300: Remove usage of boost::bind
+* X300: Fix compiler warnings related to type conversions
+* X300: Fix tick and sample rate setting
+* X300: Enable ADC gain through RFNoC API
+* X300: Demote NIRIO rpc client start/stop log messages to DEBUG
+* X300: Enable 11.52 MHz and 23.04 MHz system ref rates
+* X300: Enable x300_device_args.to_string()
+* X300: Catch more inconsistencies in x300_device_args
+* X300: Removed invalid 200 MHz sysref rate
+* X300: Change PLL CP currents in x300_clock_ctrl
+* B200: Remove superfluous fake lambda
+* B200: Add support for user regs
+* B200: Fix compiler warnings related to type conversions
 * B100: Move fifo_ctrl_excelsior to b100 subdir
 * B100: Fix fifo_ctrl_excelsior not exiting
 * B100: Remove all Boostisms from fifo_ctrl_excelsior
 * B100: Demote some clocking-related log messages to trace
-* X300: Log git hash and compat number as debug message
-* N310: Modify AD9371 reset function to keep it in reset
-* N3xx: clocking API changes for transitioning clock and time sources
-* E320: bist: Fix ref_clock lock test implementation
-* UHD: Fix ADF400x driver for ref counter and charge pump mode
-* E320: bist: Add link_up test
 * MPM: Get list of temperatures from all thermal zones
-* E320: Add all 5 temp sensors, fan sensor and rssi sensors per channel
-* E320: Fix tx/rx atr - antenna and frequency settings
-* E320: Enable devtest for E320
-* X300: Move defaults to their own header
-* UHD: Improve constrained_device_args_t
-* X300: Use constrained_args
-* X300: Enable clock_source and time_source device args
-* Test: Integrate Python API Tester into Devtest
-* N3xx: Bump max rev to G/6
-* N3xx: Improve error messages for invalid clock/time settings
-* E320: images: Separate images package for Aurora image
-* B200: Remove superfluous fake lambda
-* B200: Add support for user regs
-* Docs: Add info on how to implement user regs on B200
-* UHD API: Add multi_usrp::get_user_settings_iface()
-* N310: move init_rf_cal before JESD de/framer bringup
-* UHD: Remove usage of time_t (except when required)
-* NIRIO: Demote RPC client cancel/abort to TRACE
-* RFNoC: Convert SR_READBACK_REG_FIFOSIZE to bytes
-* Utils: Add Zip test to downloader
-* Utils: Factor wait_for_lo_lock() out of cal utils
-* DPDK: Add DPDK-based sockets-like library
-* MPMD: add option to enum rfnoc blocks from args
-* E320: Get RFNoC crossbar baseport from FPGA
-* N3xx: Get RFNoC crossbar baseport from FPGA
-* UHD: add default xport params to udp_zero_copy
 * MPM: add link_speed xport_info
-* MPMD: add link speed to xport udp
-* Device3: remove tx_hint[send_buff_size]
-* X300: remove default_buff_args properties
-* RFNoC: Add ability to enable/disable RX timestamp
-* RFNoC: add async message handler
-* Examples: add rfnoc_radio_loopback example
-* UHD: Update rx_frontend_gen3.v controls for 1/4-rate mixer
-* UHD API: Move definition of ALL_MBOARDS and ALL_CHANS constants to
-           CPP file.
 * MPM: Add __mpm_device__ as usrp_hwd module variable
 * MPM: Add usrp_update_fs
-* UHD: Add traffic counter to null source sink
-* Examples: Add benchmark_streamer example
-* Tools: Add tool to analyze settling time of gain and freq changes
-* UHD API: Add multi_usrp::set_sync_source() API
-* UHD: Improve documentation for the UHD exception types
-* Examples: Add dual measurements to benchmark_streamer
 * MPM: Add i2c APIs for simple transfers
 * MPM: Add vector-based transfer function for i2c
-* UHD: Improve documentation for set_{time,clock,sync}_source
-* CMake: Bump CMake minimum version to 2.8.12
 * MPM: Add variable configuration support to nijesdcore
 * MPM: Add eyescan utility to nijesdcore
 * MPM: Add PRBS-31 testing to nijesdcore
-* CMake: Change SOVERSION and VERSION for the library files
-* Test: Add graph impl test to device3_test
-* RFNoC: Changes to traffic counter register names
-* X300: Remove 120 MHz master_clock_rate option
 * MPM: Add convenience function to pull i2c bus from device tree
-* UHD: add .clang-format file
 * MPM: Open and close i2c file descriptor on every access
-* UHD: Add device arg to enable dual ethernet for tx
-* Test: Retrofit sph test to use new mock transport
-* X300: Set minimum master clock rate to 184.32 MHz
-* RFNoC: Fix replay example port args
-* RFNoC: Fix default SPP for replay
-* RFNoC: Add halt to replay API
-* UHD API: Add sync source to Python API
-* Examples: Clean up rfnoc_radio_loopback example
-* UHD: Improve compatibility of abs() calls
-* UHD: include <stdint.h> for int64_t for time_spec
-* USRP-2974: Add support for USRP-2974
-* UHD API: Add support for Tx LO control to C API
-* E310: Fix initialization of antenna and frequency values
-* Test: Enable rx_samples_to_file in devtest for X300
-* Examples: Add keyboard controls to rx_ascii_art_dft
-* Examples: Add benchmark_streamer support for multi-channel streamer
 * MPM: Multiprocessing instead of threading for claimer loop
 * MPM: Factor out user EEPROM code into own module
-* RFNoC: Fix late packet errors
-* X300: Factor our PID -> MB type and MB type -> product name mapping
-* X300: Remove usage of boost::bind
-* Docs: Add manual page on compat numbers
-* UHD: Updates to coding guidelines
-* Examples: Optimize benchmark_rate start time
-* Examples: Improve formatting and comments in tx_waveforms
-* Examples: Optimize tx_waveforms memory allocations
-* UHD: Fix MSVC warnings by changing a size_t to unsigned int or
-       uint32_t
-* Test: Fix CMake `endif` warning for devtest
 * MPM: Add gpgga sensor function to GPSd iface
-* Test: Fix compiler warning about unused timestamp
-* X300: Fix compiler warnings related to type conversions
-* B200: Fix compiler warnings related to type conversions
-* Test: Add #include <thread> in system time test
-* Examples: change boost to std for time commands
-* UHD: Add potentially missing but sometimes inferred include for
-       experts
-* UHD: Add default xport params to udp_wsa_zero_copy
-* Examples: Add LO Offset to rx_samples_to_file
-* Examples: update lo-offset naming in tx from file
-* Examples: Add lo-offset to tx_waveforms
-* UHD: Move device3 flow control functions to header for benchmark
-       utility
-* Test: Add benchmark of streaming code paths
+* MPM: Add bridge mode support
+* MPM: Parameterize max UDP link allocation
+* MPM: xport: add commit_xport docstring
+* MPM: Improve error message on double-claim
+* MPMD: Parallelize broadcast-finding
+* MPMD: add option to enum rfnoc blocks from args
+* MPMD: add link speed to xport udp
 * MPMD: Add API to set RPC timeout atomically
 * MPMD: Move timeout constants to header
 * MPMD: Use new RPC API with timeout
 * MPMD: Increase claim_rpc call timeout
-* Examples: Improved error message in tx_waveforms
+* MPMD: implement get_*x_hints
+* MPMD: honor user supplied send/recv_frame_size args
+* MPMD: Use 4096 bytes for frame size for liberio transport
+* MPMD: Use init timeout for update_component
+* MPMD: Allow reclaim failures on component updates
+* MPMD: Fix typecast warning in property tree default settings
+* Device: Parallelize device discovery
+* Device3: Move from packet-based to byte-based flow control
+* Device3: Constrain send_buff_size to input fifo size
+* Device3: remove tx_hint[send_buff_size]
+* Device3: Replace NULL with 0 for empty function pointers
+* Device3: Remove redundant function call
+* Device3: Fix flow control window and interval
+* UHD: Release recv buffers earlier in rx_streamer
+* UHD: Fix ADF400x driver for ref counter and charge pump mode
+* UHD: Improve constrained_device_args_t
+* UHD API: Add multi_usrp::get_user_settings_iface()
+* UHD: Remove usage of time_t (except when required)
+* UHD: add default xport params to udp_zero_copy
+* UHD: Update rx_frontend_gen3.v controls for 1/4-rate mixer
+* UHD API: Move definition of ALL_MBOARDS and ALL_CHANS constants to
+           CPP file.
+* UHD: Add traffic counter to null source sink
+* UHD API: Add multi_usrp::set_sync_source() API
+* UHD: Improve documentation for the UHD exception types
+* UHD: Improve documentation for set_{time,clock,sync}_source
+* UHD: add .clang-format file
+* UHD: Add device arg to enable dual ethernet for tx
+* UHD API: Add sync source to Python API
+* UHD API: Add support for Tx LO control to C API
+* UHD: Improve compatibility of abs() calls
+* UHD: include <stdint.h> for int64_t for time_spec
+* UHD: Updates to coding guidelines
+* UHD: Fix MSVC warnings by changing a size_t to unsigned int or
+       uint32_t
+* UHD: Add potentially missing but sometimes inferred include for
+       experts
+* UHD: Add default xport params to udp_wsa_zero_copy
+* UHD: Move device3 flow control functions to header for benchmark
+       utility
 * UHD: Make sure BOOST_VERSION is always available
-* Docs: Add comments for TwinRX and MCR
-* DPDK: Add ARP responder, set MTU, and clean up API
-* DPDK: Add blocking recv calls to uhd-dpdk
-* DPDK: Add dpdk_zero_copy transport
-* Test: Add unit test for DPDK transport
-* Test: Add arguments to dpdk_test to control core mapping
-* DPDK: Move uhd-dpdk header to uhdlib
 * UHD: Make clang-format skip formatting for some data structures
 * UHD: Remove vim hints in headers
-* Examples: Move ascii_art_dft main function within include guard
 * UHD/MPM: Apply clang-format to all files
 * UHD: Add modified clang-format for headers
-* MPM: Add bridge mode support
-* RFNoC: Fix detection of outstanding acks by ctrl_iface
 * UHD: Replace uhd::math::log2 with std::log2
 * UHD: Replace boost::*::{lcm,gcd}() with portable versions
 * UHD API: Change get_{tx/rx}_dc_offset_range default from ALL_CHANS
            to 0
 * UHD: Revert to boost instead of std for sleep in some instances
 * UHD: Replace Boost macros with custom ones for endianness
-* MPMD: implement get_*x_hints
-* MPMD: honor user supplied send/recv_frame_size args
 * UHD: muxed_zero_copy_if fixes
-* Examples: Fix boundary condition in ascii_art_dft plotting
-* CMake: Extend list of additional Boost versions
-* Device3: Replace NULL with 0 for empty function pointers
-* RFNoC: Add some missing virtual destructors
-* Test: replace has_key by using 'in'
-* Test: Add universal_newlines to subprocess call in devtest
-* MPMD: Use 4096 bytes for frame size for liberio transport
-* DPDK: Add xport_mgr for dpdk_zero_copy
-* DPDK: Cover all paths to request TX offloads
-* Test: Fix up dpdk_test to use current APIs
-* MPM: Parameterize max UDP link allocation
 * UHD: Replace Boost lock & mutex with std variety for AD9361 code
-* CPack: Fix RPM generation
-* Utils: Add check for gdb_eeprom before accessing
+* UHD: fix includes for boost::noncopyable
+* UHD: Fix buffer size warning on UDP transport
+* UHD: Remove duplicate operator=() for sid_t
+* UHD: Fix conversion warning in max287x
+* UHD: Fix various type-conversion compiler warnings
+* RFNoC: Convert SR_READBACK_REG_FIFOSIZE to bytes
+* RFNoC: Add ability to enable/disable RX timestamp
+* RFNoC: add async message handler
+* RFNoC: Changes to traffic counter register names
+* RFNoC: Fix replay example port args
+* RFNoC: Fix default SPP for replay
+* RFNoC: Add halt to replay API
+* RFNoC: Fix late packet errors
+* RFNoC: Fix detection of outstanding acks by ctrl_iface
+* RFNoC: Add some missing virtual destructors
 * RFNoC: Update FIFO XML definition
-* MPMD: Use init timeout for update_component
-* Docs: Add manual page for DPDK
-* Docs: Add information about what dpdk_zero_copy is doing
-* Tools: Make the UHD source gen a plugin for the phase alignment test
-* CMake: fix variable usage
 * RFNoC: Prevent unnecessary FC ACK packets
 * RFNoC: More graph traversal fixes
-* Device3: Remove redundant function call
 * RFNoC: Fix scaling of M and N values in DDC/DUC
-* X300: Fix tick and sample rate setting
 * RFNoC: Fix typos in legacy_compat
 * RFNoC: Limit number of control packets in flight
-* Device3: Fix flow control window and interval
-* E3xx: Increase spp limit for E3xx radio
-* E31x: Destruct RFNoC before loading idle image
-* N3xx: init peripherals before loading FPGA (to fix SFP0 init issues)
-* N3xx: Move Linux kernel to 4.15
-* N3xx/E320: Prepend SDK filename with device name
-* N310: Fix sporadic power on failures (requires firmware update)
+* RFNoC: Disable FC ACK packets for lossless links
+* RFNoC: Add valid num_input_ports check to node_ctrl_base
+* Utils: Add Zip test to downloader
+* Utils: Factor wait_for_lo_lock() out of cal utils
+* Utils: Add check for gdb_eeprom before accessing
+* Utils: Deny positional options in uhd_image_loader
+* Utils: Set tx gain to max for rx iq cal
+* Tools: Add tool to analyze settling time of gain and freq changes
+* Tools: Make the UHD source gen a plugin for the phase alignment test
+* Test: Add Python API test
+* Test: Integrate Python API Tester into Devtest
+* Test: Add graph impl test to device3_test
+* Test: Retrofit sph test to use new mock transport
+* Test: Enable rx_samples_to_file in devtest for X300
+* Test: Fix CMake `endif` warning for devtest
+* Test: Fix compiler warning about unused timestamp
+* Test: Add #include <thread> in system time test
+* Test: Add benchmark of streaming code paths
+* Test: replace has_key by using 'in'
+* Test: Add universal_newlines to subprocess call in devtest
+* Examples: add rfnoc_radio_loopback example
+* Examples: Add benchmark_streamer example
+* Examples: Add dual measurements to benchmark_streamer
+* Examples: Clean up rfnoc_radio_loopback example
+* Examples: Add keyboard controls to rx_ascii_art_dft
+* Examples: Add benchmark_streamer support for multi-channel streamer
+* Examples: Optimize benchmark_rate start time
+* Examples: Improve formatting and comments in tx_waveforms
+* Examples: Optimize tx_waveforms memory allocations
+* Examples: change boost to std for time commands
+* Examples: Add LO Offset to rx_samples_to_file
+* Examples: update lo-offset naming in tx from file
+* Examples: Add lo-offset to tx_waveforms
+* Examples: Improved error message in tx_waveforms
+* Examples: Move ascii_art_dft main function within include guard
+* Examples: Fix boundary condition in ascii_art_dft plotting
+* Docs: Fix Doxygen warnings
+* Docs: Add info on how to implement user regs on B200
+* Docs: Add manual page on compat numbers
+* Docs: Add comments for TwinRX and MCR
+* Docs: N3xx page shell formatting and bb image
+* Docs: n3xx: fix Salt formatting
+* Docs: Add note on manually disabling NEON extensions
+* Docs: Fixed typos in N3xx image names (SD card build)
+* Docs: Add notes on external reference frequencies for X300
+* CMake: Bump CMake minimum version to 2.8.12
+* CMake: Change SOVERSION and VERSION for the library files
+* CMake: Extend list of additional Boost versions
+* CMake: fix variable usage
+* Cmake: remove Boost from dyn libs for tests on Apple
+* Cmake: Fix MSVC options (add /bigobj)
+* Cmake: Use native format for setup.py
+* CPack: Fix RPM generation
 
 ## 003.013.001.000
 * E320: Fix front panel GPIO readback
