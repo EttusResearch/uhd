@@ -9,10 +9,12 @@
 
 #include "adf4351_regs.hpp"
 #include "rhodium_cpld_regs.hpp"
-#include <uhd/types/serial.hpp>
 #include <uhd/types/direction.hpp>
-#include <mutex>
+#include <uhd/types/serial.hpp>
+#include <functional>
 #include <memory>
+#include <mutex>
+#include <vector>
 
 //! Controls the CPLD on a Rhodium daughterboard
 //
