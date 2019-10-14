@@ -2,75 +2,84 @@ Change Log for Releases
 ==============================
 
 ## 003.015.000.000
-* N320: Fix MCR initialization, fix checks for LO distribution board, reset RX
-  IQ balance on init, replace DRAM FIFO with replay block, improve constraints,
-  fix I/Q imbalance compensation
-* N310: increase default dc offset averaging window, make tunes asynchronous,
-  add capability to control RF filter bypass and freq.band limits, fix setting
-  user DB EEPROM, correctly report N321 vs N320, improve DDR3 BIST, update max
-  revision to 7, fix DMA arbitration to use contiguous packets, replace DRAM
-  FIFO with replay block, fix SFP link up status
+* N320: Fix MCR initialization, fix checks for LO distribution board,
+  reset RX IQ balance on init, replace DRAM FIFO with replay block,
+  improve constraints, fix I/Q imbalance compensation
+* N310: increase default dc offset averaging window, make tunes
+  asynchronous, add capability to control RF filter bypass and freq.band
+  limits, fix setting user DB EEPROM, correctly report N321 vs N320,
+  improve DDR3 BIST, update max revision to 7, fix DMA arbitration to
+  use contiguous packets, replace DRAM FIFO with replay block, fix SFP
+  link up status, add workaround for clocking interference with external
+  reference clocks, disable gpsdo clock/time source options when
+  enable_gps=0
 * X310: Fix max bitfile size, fix GPIO ATR property access type, heavily
   refactor, introduce conn_mgr, add DPDK support, add
-  capability to flash NI-2974 FPGA, fix clocking code, enable 11.52 MHz and
-  23.04 MHz system ref rates, improve usage of constrained device args, enable
-  ADC gain through RFNoC API
+  capability to flash NI-2974 FPGA, fix clocking code, enable 11.52 MHz
+  and 23.04 MHz system ref rates, improve usage of constrained device
+  args, enable ADC gain through RFNoC API, add mode to set master clock
+  rate to arbitrary values between 184.32 and 200 MHz
 * E320: Fix time source clobbering ref source, add support for RevE, fix
-  reporting of FPGA version hash, fix SFP link up status, fix missing ce_clk
-  driver
+  reporting of FPGA version hash, fix SFP link up status, fix missing
+  ce_clk driver
 * E310: Convert to MPM architecture, fix uhd_image_loader usage, fix DMA
-  arbitration to use contiguous packets, reduced DMA chans to 4 (using data
-  stream muxing), fix DRAM_TEST target build
-* B200: Add command to query bootloader status, fix sc12 streaming, fix FIFO
-  sizes on GPIFII interface
+  arbitration to use contiguous packets, reduced DMA chans to 4 (using
+  data stream muxing), fix DRAM_TEST target build
+* B200: Add command to query bootloader status, fix sc12 streaming, fix
+  FIFO sizes on GPIFII interface
 * UBX: add temperature compensation mode
 * SBX: Only update ATRs when lock state changes
-* TwinRX: add LO charge pump properties, increase default charge pump value on
-  LO1, add low spur tuning mode, fix duplicate write to N value in DDC
-* RFNoC/device3: Read command FIFO size from device instead of hardcoding
-  values, fix multidevice graph connections, ENABLE_RFNOC now defaults to ON,
-  search all nodes for tick rate, add update_graph() call which lets blocks do
-  a graph-wide update of properties, fix missing port arg in SR_WRITE Noc-Script
-  call, constrain send/recv_frame_size baed on MTU, fix flushing on init/deinit,
-  disable FC ACKs for lossless links
-* RFNOC/FPGA: Fix rb_stb in split stream block, fix off-by-one error in the
-  window block, fix phase reset and -accumulator for DDC and DUC blocks, fix
-  flushing on split-stream block, fix DC offset issue with DDS by using proper
-  rounding, fix DUC/DDC sample rate switching by latching N on M in
-  axi_rate_change, various fixes to uhd_image_builder, fix MTU settings in
-  blocks, align byte count to 8-byte word
-* Python API: Replace Boost.Python with PyBind11, fix benchmark_rate statistics,
-  fix phase alignment test script
-* UHD: Allow ignoring fallthrough warnings, reduce Boost footprint, remove gpsd
-  dependency, improve streaming, reduced the number of compiler warnings,
-  introduce pop() to the prop tree
-* MPM/mpmd: Introduce compatible rev numbers to support future hardware, fix
-  some resource leaks in mpmd, fix spurious reclaims causing unnecessary
-  warnings, fix resource leaks in liberio xport, allow to mux data streams over
-  liberio transports (e.g. to require fewer DMA channels on E310), wait for DPDK
-  links to come up before proceeding, relax failure handling when updating
-  components (fixes spurious errors when updating FPGA images over SFP)
-* FPGA: Use new device-tree overlay syntax, upgraded to Vivado 2018.3, broke
-  various paths with critical timing, allow SystemVerilog source files, improve
-  viv_modify_bd and viv_modify_tcl_bd, fix resets on 2clk FIFOs
+* TwinRX: add LO charge pump properties, increase default charge pump
+  value on LO1, add low spur tuning mode, fix duplicate write to N value
+  in DDC
+* RFNoC/device3: Read command FIFO size from device instead of
+  hardcoding values, fix multidevice graph connections, ENABLE_RFNOC now
+  defaults to ON, search all nodes for tick rate, add update_graph()
+  call which lets blocks do a graph-wide update of properties, fix
+  missing port arg in SR_WRITE Noc-Script call, constrain
+  send/recv_frame_size baed on MTU, fix flushing on init/deinit, disable
+  FC ACKs for lossless links
+* RFNOC/FPGA: Fix rb_stb in split stream block, fix off-by-one error in
+  the window block, fix phase reset and -accumulator for DDC and DUC
+  blocks, fix flushing on split-stream block, fix DC offset issue with
+  DDS by using proper rounding, fix DUC/DDC sample rate switching by
+  latching N on M in axi_rate_change, various fixes to
+  uhd_image_builder, fix MTU settings in blocks, align byte count to
+  8-byte word
+* Python API: Replace Boost.Python with PyBind11, fix benchmark_rate
+  statistics, fix phase alignment test script
+* UHD: Allow ignoring fallthrough warnings, reduce Boost footprint,
+  remove gpsd dependency, improve streaming, reduced the number of
+  compiler warnings, introduce pop() to the prop tree
+* MPM/mpmd: Introduce compatible rev numbers to support future hardware,
+  fix some resource leaks in mpmd, fix spurious reclaims causing
+  unnecessary warnings, fix resource leaks in liberio xport, allow to
+  mux data streams over liberio transports (e.g. to require fewer DMA
+  channels on E310), wait for DPDK links to come up before proceeding,
+  relax failure handling when updating components (fixes spurious errors
+  when updating FPGA images over SFP)
+* FPGA: Use new device-tree overlay syntax, upgraded to Vivado 2018.3,
+  broke various paths with critical timing, allow SystemVerilog source
+  files, improve viv_modify_bd and viv_modify_tcl_bd, fix resets on 2clk
+  FIFOs
 * USB: Allow cancelled USB requests to occur
 * Logging: Always honour log level, don't log colours for non-ttys, fix
-  includes, demote various log messages, fix logging colours, fix deadlock on
-  Windows machines
-* Examples: Fix benchmark_rate INIT_DELAY, fix memory leak in tx_samples_c
-* Tests: Make the Python interpreter for devtests a parameter, add unit tests to
-  MPM
+  includes, demote various log messages, fix logging colours, fix
+  deadlock on Windows machines
+* Examples: Fix benchmark_rate INIT_DELAY, fix memory leak in
+  tx_samples_c
+* Tests: Make the Python interpreter for devtests a parameter, add unit
+  tests to MPM
 * Utilities: Fix converter benchmark for Py3k and scaling issue
 * Tools: Fix kitchen_sink
 * Docs: Various fixes, fix Doxygen warnings, fix links to KB
 * C API: Add uhd_get_abi_string, uhd_get_version_string
-* CMake: Make manpage compression optional, allow setting of PKG_DOC_DIR from
-  the CMake commandline, add replay example, fix missing 'project', replace
-  ENABLE_PYTHON3 with a simpler Python detection, clean up superfluous modules,
-  improve log statements, bump dependency min versions, add MPM unit testing,
-  fix missing BIGOBJ for MSVC
+* CMake: Make manpage compression optional, allow setting of PKG_DOC_DIR
+  from the CMake commandline, add replay example, fix missing 'project',
+  replace ENABLE_PYTHON3 with a simpler Python detection, clean up
+  superfluous modules, improve log statements, bump dependency min
+  versions, add MPM unit testing, fix missing BIGOBJ for MSVC
 * Formatting: Apply clang-format to all files, break after template<>
-
 
 
 ## 003.014.001.000
