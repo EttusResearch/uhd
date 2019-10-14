@@ -151,45 +151,32 @@ endif(NOT WIN32)
 
 set(MAN_PAGES_DEPS "NOT_WIN32")
 
-# check to see if ENABLE_MAN_PAGE_COMPRESSION was set in the cmake
-# call, one way or the other
-if(ENABLE_MAN_PAGE_COMPRESSION)
-  set(MAN_PAGE_COMPRESSION_FORCE TRUE)
-else()
-  set(MAN_PAGE_COMPRESSION_FORCE FALSE)
-endif()
-
-option(ENABLE_MAN_PAGE_COMPRESSION "Compress Man Pages if installed." ON)
+# Quietly see if we have GZip, if not, we can skip trying to compress
+# the man pages
+find_package(GZip QUIET)
+set(ENABLE_MAN_PAGE_COMPRESSION ${GZIP_FOUND} CACHE BOOL "Compress Man Pages")
 
 message(STATUS "")
 if(ENABLE_MAN_PAGE_COMPRESSION)
-    find_package(GZip QUIET)
+    # If gzip is not found, this will force failure in
+    # LIBUHD_REGISTER_COMPONENT for ENABLE_MAN_PAGES
+    list(APPEND MAN_PAGES_DEPS "GZIP_FOUND")
     if(GZIP_FOUND)
         message(STATUS "Found GZip: ${GZIP_EXECUTABLE}")
         message(STATUS "")
-        list(APPEND MAN_PAGES_DEPS "GZIP_FOUND")
         message(STATUS "Compressed Man Pages enabled")
     else()
-        message(STATUS "GZip compression program - not found")
+        message(FATAL_ERROR
+                "ENABLE_MAN_PAGE_COMPRESSION is set, "
+                "but GZip compression program not found!")
         message(STATUS "")
-        # was using compressed man pages forced?
-        if(MAN_PAGE_COMPRESSION_FORCE)
-            # yes: GZIP wasn't found
-            # force failure in LIBUHD_REGISTER_COMPONENT for ENABLE_MAN_PAGES
-            list(APPEND MAN_PAGES_DEPS "GZIP_FOUND")
-            message(STATUS "Compressed Man Pages force enabled")
-        else()
-            # no not forced; just don't use compression
-            message(STATUS "Compressed Man Pages optional; disabling")
-        endif()
     endif()
 else()
-    message(STATUS "Compressed Man Pages force disabled")
+    message(STATUS "Compressed Man Pages disabled")
 endif(ENABLE_MAN_PAGE_COMPRESSION)
 message(STATUS "  Override with -DENABLE_MAN_PAGE_COMPRESSION=ON/OFF")
 
 LIBUHD_REGISTER_COMPONENT("Man Pages" ENABLE_MAN_PAGES ON "${MAN_PAGES_DEPS}" OFF OFF)
-
 if(ENABLE_MAN_PAGES)
     #Generate man pages; either compressed or not
     if(ENABLE_MAN_PAGE_COMPRESSION)
