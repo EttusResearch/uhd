@@ -1,5 +1,6 @@
 #
 # Copyright 2014-2015 Ettus Research LLC
+# Copyright 2019 Ettus Research, a National Instruments Brand
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +16,9 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.5.1)
+project(NIRIO_PROGRAMMER CXX)
+set(CMAKE_CXX_STANDARD 11)
 
 ### Set up build environment ##################################################
 # Choose a static or shared-library build (shared is default, and static will
@@ -23,28 +26,21 @@ cmake_minimum_required(VERSION 2.8)
 # Set this to ON in order to link a static build of UHD:
 option(UHD_USE_STATIC_LIBS OFF)
 
+# To add UHD as a dependency to this project, add a line such as this:
+find_package(UHD 3.15.0.0 REQUIRED)
+# The version in  ^^^^^  here is a minimum version.
+# To specify an exact version:
+#find_package(UHD 3.8.1 EXACT REQUIRED)
+
 # This example also requires Boost:
-set(BOOST_REQUIRED_COMPONENTS
+set(UHD_BOOST_REQUIRED_COMPONENTS
     program_options
     system
     thread
     regex
 )
-if(MSVC)
-    set(BOOST_ALL_DYN_LINK "${BOOST_ALL_DYN_LINK}" CACHE BOOL "boost enable dynamic linking")
-    if(BOOST_ALL_DYN_LINK)
-        add_definitions(-DBOOST_ALL_DYN_LINK) #setup boost auto-linking in msvc
-    else(BOOST_ALL_DYN_LINK)
-        set(BOOST_REQUIRED_COMPONENTS) #empty components list for static link
-    endif(BOOST_ALL_DYN_LINK)
-endif(MSVC)
-find_package(Boost "1.46" REQUIRED ${BOOST_REQUIRED_COMPONENTS})
-
-# To add UHD as a dependency to this project, add a line such as this:
-find_package(UHD "3.8.0" REQUIRED)
-# The version in  ^^^^^  here is a minimum version.
-# To specify an exact version:
-#find_package(UHD 3.8.1 EXACT REQUIRED)
+set(BOOST_MIN_VERSION "1.58")
+include(UHDBoost)
 
 ### Configure Compiler ########################################################
 include_directories(

@@ -1,5 +1,6 @@
 #
 # Copyright 2010-2012 Ettus Research LLC
+# Copyright 2019 Ettus Research, a National Instruments Brand
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.5.1)
 project(kitchen_sink CXX)
 
 ###############################################################################
@@ -28,8 +29,11 @@ endif(NOT CMAKE_BUILD_TYPE)
 set(CMAKE_BUILD_TYPE ${CMAKE_BUILD_TYPE} CACHE STRING "")
 
 ### Set up build environment ##################################################
+#### Set up UHD:
+find_package(UHD 3.15.0.0 REQUIRED)
+
 #### Set up Boost:
-set(BOOST_REQUIRED_COMPONENTS
+set(UHD_BOOST_REQUIRED_COMPONENTS
     date_time
     filesystem
     program_options
@@ -38,30 +42,8 @@ set(BOOST_REQUIRED_COMPONENTS
     thread
     unit_test_framework
 )
-if(UNIX AND EXISTS "/usr/lib64")
-    list(APPEND BOOST_LIBRARYDIR "/usr/lib64") #fedora 64-bit fix
-endif(UNIX AND EXISTS "/usr/lib64")
-
-if(MSVC)
-    set(BOOST_ALL_DYN_LINK "${BOOST_ALL_DYN_LINK}" CACHE BOOL "boost enable dynamic linking")
-    if(BOOST_ALL_DYN_LINK)
-        add_definitions(-DBOOST_ALL_DYN_LINK) #setup boost auto-linking in msvc
-    else(BOOST_ALL_DYN_LINK)
-        unset(BOOST_REQUIRED_COMPONENTS) #empty components list for static link
-    endif(BOOST_ALL_DYN_LINK)
-endif(MSVC)
-
-set(Boost_ADDITIONAL_VERSIONS
-    "1.45.0" "1.45" "1.46.0" "1.46" "1.47.0" "1.47" "1.48.0" "1.48" "1.49.0" "1.49"
-    "1.50.0" "1.50" "1.51.0" "1.51" "1.52.0" "1.52" "1.53.0" "1.53" "1.54.0" "1.54"
-    "1.55.0" "1.55" "1.56.0" "1.56" "1.57.0" "1.57" "1.58.0" "1.58" "1.59.0" "1.59"
-    "1.60.0" "1.60" "1.61.0" "1.61" "1.62.0" "1.62" "1.63.0" "1.63" "1.64.0" "1.64"
-    "1.65.0" "1.65" "1.66.0" "1.66" "1.67.0" "1.67" "1.68.0" "1.68" "1.69.0" "1.69"
-)
-find_package(Boost 1.46 COMPONENTS ${BOOST_REQUIRED_COMPONENTS})
-
-#### Set up UHD:
-find_package(UHD "3.7.3" REQUIRED)
+set(BOOST_MIN_VERSION "1.58")
+include(UHDBoost)
 
 ### Configure Compiler ########################################################
 include_directories(
