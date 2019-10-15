@@ -7,10 +7,9 @@ Building the actual FPGA images is not handled with these tools.
 
 ## Making image packages
 
-At any point in time, when the FPGA images change, you will need to create new
-FPGA images packages. Use the `package_images.py` script for that purpose.
+This functionality was moved to the FPGA repository in usrp3/tools/utils.
 
-## Create image tarballs for releases
+# Create image tarballs for releases
 
 If you're on a release tag and want to create images packages for uploading to
 github, run
