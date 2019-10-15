@@ -1,0 +1,51 @@
+schema: rfnoc_modtool_args
+module_name: gain
+version: 1.0
+rfnoc_version: 1.0
+chdr_width: 64
+noc_id: 0xB16
+
+clocks:
+  - name: rfnoc_chdr
+    freq: "[]"
+  - name: rfnoc_ctrl
+    freq: "[]"
+
+control:
+  sw_iface: nocscript
+  fpga_iface: ctrlport
+  interface_direction: slave
+  fifo_depth: 32
+  clk_domain: rfnoc_chdr
+  ctrlport:
+    byte_mode: False
+    timed: False
+    has_status: False
+
+data:
+  fpga_iface: axis_pyld_ctxt
+  clk_domain: rfnoc_chdr
+  inputs:
+    in:
+      index: 0
+      item_width: 32
+      nipc: 1
+      context_fifo_depth: 2
+      payload_fifo_depth: 2
+      format: int32
+      mdata_sig: ~
+  outputs:
+    out:
+      index: 0
+      item_width: 32
+      nipc: 1
+      context_fifo_depth: 2
+      payload_fifo_depth: 2
+      format: int32
+      mdata_sig: ~
+
+io_port:
+
+registers:
+
+properties:

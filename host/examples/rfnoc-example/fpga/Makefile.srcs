@@ -1,0 +1,21 @@
+#
+# Copyright 2019 Ettus Research, A National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+# We first need to figure out our own path, in case this file is being included
+# from somewhere else (e.g., from a fpgadev/top/$device directory)
+RFNOC_EXAMPLE_DIR := $(dir $(abspath $(lastword $(MAKEFILE_LIST))))
+
+# One include statement for every RFNoC block with its own subdirectory, which
+# itself will contain a Makefile.srcs
+include $(RFNOC_EXAMPLE_DIR)/rfnoc_block_gain/Makefile.srcs
+
+# If there are additional modules or IP (other than what is in the RFNoC block
+# subdirectories) that needs to get installed in order to synthesize blocks from
+# this module, list them here:
+#RFNOC_OOT_SRCS += $(abspath $(addprefix ${RFNOC_EXAMPLE_DIR},
+#my_other_module.v \
+#ip/my_ip_core/my_ip_core.xci \
+#))
