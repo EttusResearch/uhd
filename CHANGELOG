@@ -57,7 +57,8 @@ Change Log for Releases
   mux data streams over liberio transports (e.g. to require fewer DMA
   channels on E310), wait for DPDK links to come up before proceeding,
   relax failure handling when updating components (fixes spurious errors
-  when updating FPGA images over SFP)
+  when updating FPGA images over SFP), fix issue where RPC
+  initialization would hang on failure
 * FPGA: Use new device-tree overlay syntax, upgraded to Vivado 2018.3,
   broke various paths with critical timing, allow SystemVerilog source
   files, improve viv_modify_bd and viv_modify_tcl_bd, fix resets on 2clk
@@ -78,7 +79,8 @@ Change Log for Releases
   from the CMake commandline, add replay example, fix missing 'project',
   replace ENABLE_PYTHON3 with a simpler Python detection, clean up
   superfluous modules, improve log statements, bump dependency min
-  versions, add MPM unit testing, fix missing BIGOBJ for MSVC
+  versions, add MPM unit testing, fix missing BIGOBJ for MSVC, add our
+  own UHDBoost.cmake to better find Boost across versions and systems
 * Formatting: Apply clang-format to all files, break after template<>
 
 
