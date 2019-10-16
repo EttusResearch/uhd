@@ -13,9 +13,9 @@
 #include <uhdlib/usrp/cores/tx_dsp_core_3000.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/math/special_functions/round.hpp>
-#include <boost/thread/thread.hpp> //sleep
 #include <algorithm>
 #include <cmath>
+#include <functional>
 
 #define REG_DSP_TX_FREQ _dsp_base + 0
 #define REG_DSP_TX_SCALE_IQ _dsp_base + 4
@@ -184,16 +184,16 @@ public:
     void populate_subtree(property_tree::sptr subtree)
     {
         subtree->create<meta_range_t>("rate/range")
-            .set_publisher(boost::bind(&tx_dsp_core_3000::get_host_rates, this));
+            .set_publisher(std::bind(&tx_dsp_core_3000::get_host_rates, this));
         subtree->create<double>("rate/value")
             .set(DEFAULT_RATE)
-            .set_coercer(boost::bind(&tx_dsp_core_3000::set_host_rate, this, _1));
+            .set_coercer(std::bind(&tx_dsp_core_3000::set_host_rate, this, std::placeholders::_1));
         subtree->create<double>("freq/value")
             .set(DEFAULT_CORDIC_FREQ)
-            .set_coercer(boost::bind(&tx_dsp_core_3000::set_freq, this, _1))
+            .set_coercer(std::bind(&tx_dsp_core_3000::set_freq, this, std::placeholders::_1))
             .set_publisher([this]() { return this->get_freq(); });
         subtree->create<meta_range_t>("freq/range")
-            .set_publisher(boost::bind(&tx_dsp_core_3000::get_freq_range, this));
+            .set_publisher(std::bind(&tx_dsp_core_3000::get_freq_range, this));
     }
 
 private:

@@ -20,7 +20,6 @@ using namespace uhd;
 using namespace uhd::rfnoc;
 using namespace uhd::rfnoc::chdr;
 
-using namespace std::placeholders;
 
 chdr_ctrl_endpoint::~chdr_ctrl_endpoint() = default;
 

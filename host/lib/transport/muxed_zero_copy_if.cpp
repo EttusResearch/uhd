@@ -11,6 +11,7 @@
 #include <uhd/utils/safe_call.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/locks.hpp>
+#include <functional>
 #include <map>
 #include <memory>
 
@@ -35,7 +36,7 @@ public:
         // Create the receive thread to poll the underlying transport
         // and classify packets into queues
         _recv_thread =
-            boost::thread(boost::bind(&muxed_zero_copy_if_impl::_update_queues, this));
+            boost::thread(std::bind(&muxed_zero_copy_if_impl::_update_queues, this));
     }
 
     virtual ~muxed_zero_copy_if_impl()

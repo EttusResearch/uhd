@@ -10,7 +10,7 @@
 #include <uhd/transport/zero_copy_flow_ctrl.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
-#include <boost/bind.hpp>
+#include <functional>
 #include <boost/format.hpp>
 #include <memory>
 #include <boost/thread/mutex.hpp>

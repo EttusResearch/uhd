@@ -15,6 +15,7 @@
 #include <chrono>
 #include <csignal>
 #include <cstdlib>
+#include <functional>
 #include <iostream>
 #include <thread>
 #include <vector>
@@ -101,10 +102,10 @@ public:
         boost::unique_lock<boost::mutex> lock(
             spawn_mutex); // lock in preparation to wait for threads to spawn
         (void)_thread_group.create_thread(
-            boost::bind(&udp_relay_type::server_thread, this));
+            std::bind(&udp_relay_type::server_thread, this));
         wait_for_thread.wait(lock); // wait for thread to spin up
         (void)_thread_group.create_thread(
-            boost::bind(&udp_relay_type::client_thread, this));
+            std::bind(&udp_relay_type::client_thread, this));
         wait_for_thread.wait(lock); // wait for thread to spin up
         std::cout << "    done!" << std::endl << std::endl;
     }

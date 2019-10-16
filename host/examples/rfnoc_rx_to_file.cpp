@@ -21,6 +21,7 @@
 #include <complex>
 #include <csignal>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <thread>
 
@@ -419,10 +420,10 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     if (not vm.count("skip-lo")) {
         // TODO
         // check_locked_sensor(usrp->get_rx_sensor_names(0), "lo_locked",
-        // boost::bind(&uhd::usrp::multi_usrp::get_rx_sensor, usrp, _1, radio_id),
+        // std::bind(&uhd::usrp::multi_usrp::get_rx_sensor, usrp, _1, radio_id),
         // setup_time); if (ref == "external")
         // check_locked_sensor(usrp->get_mboard_sensor_names(0), "ref_locked",
-        // boost::bind(&uhd::usrp::multi_usrp::get_mboard_sensor, usrp, _1, radio_id),
+        // std::bind(&uhd::usrp::multi_usrp::get_mboard_sensor, usrp, _1, radio_id),
         // setup_time);
     }
 

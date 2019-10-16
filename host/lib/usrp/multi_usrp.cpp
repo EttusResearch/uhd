@@ -6,29 +6,30 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#include <uhd/convert.hpp>
+#include <uhd/exception.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/types/eeprom.hpp>
-#include <uhd/usrp/multi_usrp.hpp>
+#include <uhd/usrp/dboard_eeprom.hpp>
+#include <uhd/usrp/dboard_id.hpp>
 #include <uhd/usrp/gpio_defs.hpp>
-#include <uhd/exception.hpp>
+#include <uhd/usrp/mboard_eeprom.hpp>
+#include <uhd/usrp/multi_usrp.hpp>
+#include <uhd/utils/gain_group.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/math.hpp>
-#include <uhd/utils/gain_group.hpp>
-#include <uhd/usrp/dboard_id.hpp>
-#include <uhd/usrp/mboard_eeprom.hpp>
-#include <uhd/usrp/dboard_eeprom.hpp>
-#include <uhd/convert.hpp>
 #include <uhd/utils/soft_register.hpp>
-#include <uhdlib/usrp/gpio_defs.hpp>
 #include <uhdlib/rfnoc/rfnoc_device.hpp>
+#include <uhdlib/usrp/gpio_defs.hpp>
+#include <boost/algorithm/string.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
-#include <boost/algorithm/string.hpp>
-#include <memory>
 #include <algorithm>
-#include <cmath>
 #include <bitset>
 #include <chrono>
+#include <cmath>
+#include <functional>
+#include <memory>
 #include <thread>
 
 namespace uhd { namespace rfnoc {
@@ -39,7 +40,6 @@ uhd::usrp::multi_usrp::sptr make_rfnoc_device(
     const uhd::device_addr_t& dev_addr);
 
 }} /* namespace uhd::rfnoc */
-
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -226,9 +226,9 @@ static meta_range_t get_gain_range(property_tree::sptr subtree){
 
 static gain_fcns_t make_gain_fcns_from_subtree(property_tree::sptr subtree){
     gain_fcns_t gain_fcns;
-    gain_fcns.get_range = boost::bind(&get_gain_range, subtree);
-    gain_fcns.get_value = boost::bind(&get_gain_value, subtree);
-    gain_fcns.set_value = boost::bind(&set_gain_value, subtree, _1);
+    gain_fcns.get_range = std::bind(&get_gain_range, subtree);
+    gain_fcns.get_value = std::bind(&get_gain_value, subtree);
+    gain_fcns.set_value = std::bind(&set_gain_value, subtree, std::placeholders::_1);
     return gain_fcns;
 }
 

@@ -11,9 +11,9 @@
 #include <uhd/types/serial.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/tasks.hpp>
-#include <boost/bind.hpp>
 #include <boost/thread/mutex.hpp>
 #include <cstdlib>
+#include <functional>
 #include <iostream>
 #include <mutex>
 #include <memory>
@@ -37,7 +37,7 @@ public:
         UHD_ASSERT_THROW(libusb_init(&_context) == 0);
         libusb_set_debug(_context, debug_level);
         task_handler = task::make(
-            boost::bind(&libusb_session_impl::libusb_event_handler_task, this, _context));
+            std::bind(&libusb_session_impl::libusb_event_handler_task, this, _context));
     }
 
     virtual ~libusb_session_impl(void);

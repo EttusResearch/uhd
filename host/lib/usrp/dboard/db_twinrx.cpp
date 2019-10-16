@@ -5,12 +5,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "twinrx/twinrx_experts.hpp"
+#include "dboard_ctor_args.hpp"
 #include "twinrx/twinrx_ctrl.hpp"
-#include "twinrx/twinrx_io.hpp"
+#include "twinrx/twinrx_experts.hpp"
 #include "twinrx/twinrx_ids.hpp"
-
-#include <uhdlib/experts/expert_factory.hpp>
+#include "twinrx/twinrx_io.hpp"
 #include <uhd/types/device_addr.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/sensors.hpp>
@@ -18,10 +17,10 @@
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
-#include "dboard_ctor_args.hpp"
-#include <memory>
+#include <uhdlib/experts/expert_factory.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/mutex.hpp>
+#include <memory>
 //#include <fstream>    //Needed for _expert->to_dot() below
 
 using namespace uhd;
@@ -153,8 +152,9 @@ public:
             false, AUTO_RESOLVE_ON_WRITE);
 
         //Readback
-        get_rx_subtree()->create<sensor_value_t>("sensors/lo_locked")
-            .set_publisher(boost::bind(&twinrx_rcvr_fe::get_lo_locked, this));
+        get_rx_subtree()
+            ->create<sensor_value_t>("sensors/lo_locked")
+            .set_publisher([this]() { return this->get_lo_locked(); });
 
         //---------------------------------------------------------
         // Add internal channel-specific data nodes to expert

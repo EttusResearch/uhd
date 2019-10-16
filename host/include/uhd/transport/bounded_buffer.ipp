@@ -10,12 +10,11 @@
 
 #include <uhd/config.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <boost/bind.hpp>
-#include <boost/utility.hpp>
-#include <functional>
 #include <boost/circular_buffer.hpp>
 #include <boost/thread/condition.hpp>
 #include <boost/thread/locks.hpp>
+#include <boost/utility.hpp>
+#include <functional>
 
 namespace uhd{ namespace transport{
 
@@ -26,8 +25,8 @@ namespace uhd{ namespace transport{
         bounded_buffer_detail(size_t capacity):
             _buffer(capacity)
         {
-            _not_full_fcn  = boost::bind(&bounded_buffer_detail<elem_type>::not_full, this);
-            _not_empty_fcn = boost::bind(&bounded_buffer_detail<elem_type>::not_empty, this);
+            _not_full_fcn  = std::bind(&bounded_buffer_detail<elem_type>::not_full, this);
+            _not_empty_fcn = std::bind(&bounded_buffer_detail<elem_type>::not_empty, this);
         }
 
         UHD_INLINE bool push_with_haste(const elem_type &elem)

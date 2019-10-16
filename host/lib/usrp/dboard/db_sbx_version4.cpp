@@ -9,6 +9,7 @@
 #include "db_sbx_common.hpp"
 #include <uhd/types/tune_request.hpp>
 #include <boost/algorithm/string.hpp>
+#include <functional>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -20,8 +21,8 @@ using namespace boost::assign;
 sbx_xcvr::sbx_version4::sbx_version4(sbx_xcvr *_self_sbx_xcvr) {
     //register the handle to our base SBX class
     self_base = _self_sbx_xcvr;
-    _txlo = adf435x_iface::make_adf4351(boost::bind(&sbx_xcvr::sbx_version4::write_lo_regs, this, dboard_iface::UNIT_TX, _1));
-    _rxlo = adf435x_iface::make_adf4351(boost::bind(&sbx_xcvr::sbx_version4::write_lo_regs, this, dboard_iface::UNIT_RX, _1));
+    _txlo = adf435x_iface::make_adf4351(std::bind(&sbx_xcvr::sbx_version4::write_lo_regs, this, dboard_iface::UNIT_TX, std::placeholders::_1));
+    _rxlo = adf435x_iface::make_adf4351(std::bind(&sbx_xcvr::sbx_version4::write_lo_regs, this, dboard_iface::UNIT_RX, std::placeholders::_1));
 }
 
 

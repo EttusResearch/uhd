@@ -11,7 +11,7 @@
 #include <uhdlib/utils/paths.hpp>
 
 #include <boost/algorithm/string.hpp>
-#include <boost/bind.hpp>
+#include <functional>
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <regex>

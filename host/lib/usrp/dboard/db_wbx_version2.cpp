@@ -6,19 +6,19 @@
 //
 
 #include "db_wbx_common.hpp"
-#include <uhd/types/tune_request.hpp>
-#include <uhd/utils/log.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/sensors.hpp>
-#include <uhd/utils/assert_has.hpp>
-#include <uhd/utils/algorithm.hpp>
-
+#include <uhd/types/tune_request.hpp>
 #include <uhd/usrp/dboard_base.hpp>
+#include <uhd/utils/algorithm.hpp>
+#include <uhd/utils/assert_has.hpp>
+#include <uhd/utils/log.hpp>
+#include <boost/algorithm/string.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <boost/math/special_functions/round.hpp>
-#include <boost/algorithm/string.hpp>
+#include <functional>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -65,15 +65,15 @@ static double tx_pga0_gain_to_dac_volts(double &gain){
 wbx_base::wbx_version2::wbx_version2(wbx_base *_self_wbx_base) {
     //register our handle on the primary wbx_base instance
     self_base = _self_wbx_base;
-    _txlo = adf435x_iface::make_adf4350(boost::bind(&wbx_base::wbx_versionx::write_lo_regs, this, dboard_iface::UNIT_TX, _1));
-    _rxlo = adf435x_iface::make_adf4350(boost::bind(&wbx_base::wbx_versionx::write_lo_regs, this, dboard_iface::UNIT_RX, _1));
+    _txlo = adf435x_iface::make_adf4350(std::bind(&wbx_base::wbx_versionx::write_lo_regs, this, dboard_iface::UNIT_TX, std::placeholders::_1));
+    _rxlo = adf435x_iface::make_adf4350(std::bind(&wbx_base::wbx_versionx::write_lo_regs, this, dboard_iface::UNIT_RX, std::placeholders::_1));
 
     ////////////////////////////////////////////////////////////////////
     // Register RX properties
     ////////////////////////////////////////////////////////////////////
     this->get_rx_subtree()->create<std::string>("name").set("WBXv2 RX");
     this->get_rx_subtree()->create<double>("freq/value")
-         .set_coercer(boost::bind(&wbx_base::wbx_version2::set_lo_freq, this, dboard_iface::UNIT_RX, _1))
+         .set_coercer(std::bind(&wbx_base::wbx_version2::set_lo_freq, this, dboard_iface::UNIT_RX, std::placeholders::_1))
          .set((wbx_v2_freq_range.start() + wbx_v2_freq_range.stop())/2.0);
     this->get_rx_subtree()->create<meta_range_t>("freq/range").set(wbx_v2_freq_range);
 
@@ -83,17 +83,17 @@ wbx_base::wbx_version2::wbx_version2(wbx_base *_self_wbx_base) {
     this->get_tx_subtree()->create<std::string>("name").set("WBXv2 TX");
     for(const std::string &name:  wbx_v2_tx_gain_ranges.keys()){
         self_base->get_tx_subtree()->create<double>("gains/"+name+"/value")
-            .set_coercer(boost::bind(&wbx_base::wbx_version2::set_tx_gain, this, _1, name))
+            .set_coercer(std::bind(&wbx_base::wbx_version2::set_tx_gain, this, std::placeholders::_1, name))
             .set(wbx_v2_tx_gain_ranges[name].start());
         self_base->get_tx_subtree()->create<meta_range_t>("gains/"+name+"/range")
             .set(wbx_v2_tx_gain_ranges[name]);
     }
     this->get_tx_subtree()->create<double>("freq/value")
-         .set_coercer(boost::bind(&wbx_base::wbx_version2::set_lo_freq, this, dboard_iface::UNIT_TX, _1))
+         .set_coercer(std::bind(&wbx_base::wbx_version2::set_lo_freq, this, dboard_iface::UNIT_TX, std::placeholders::_1))
          .set((wbx_v2_freq_range.start() + wbx_v2_freq_range.stop())/2.0);
     this->get_tx_subtree()->create<meta_range_t>("freq/range").set(wbx_v2_freq_range);
     this->get_tx_subtree()->create<bool>("enabled")
-        .add_coerced_subscriber(boost::bind(&wbx_base::wbx_version2::set_tx_enabled, this, _1))
+        .add_coerced_subscriber(std::bind(&wbx_base::wbx_version2::set_tx_enabled, this, std::placeholders::_1))
         .set(true); //start enabled
 
     //set attenuator control bits

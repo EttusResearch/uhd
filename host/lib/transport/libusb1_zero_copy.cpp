@@ -12,14 +12,13 @@
 #include <uhd/transport/buffer_pool.hpp>
 #include <uhd/transport/usb_zero_copy.hpp>
 #include <uhd/utils/log.hpp>
-#include <boost/bind.hpp>
 #include <boost/circular_buffer.hpp>
 #include <boost/format.hpp>
-#include <functional>
-#include <memory>
 #include <boost/thread/condition_variable.hpp>
 #include <boost/thread/mutex.hpp>
+#include <functional>
 #include <list>
+#include <memory>
 
 using namespace uhd;
 using namespace uhd::transport;
@@ -253,7 +252,7 @@ public:
 
             _mb_pool.push_back(std::make_shared<libusb_zero_copy_mb>(lut,
                 this->get_frame_size(),
-                boost::bind(&libusb_zero_copy_single::enqueue_buffer, this, _1),
+                std::bind(&libusb_zero_copy_single::enqueue_buffer, this, std::placeholders::_1),
                 is_recv,
                 name));
 

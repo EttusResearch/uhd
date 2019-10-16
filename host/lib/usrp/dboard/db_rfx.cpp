@@ -26,18 +26,17 @@
 #include <uhd/types/dict.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/sensors.hpp>
+#include <uhd/usrp/dboard_base.hpp>
+#include <uhd/usrp/dboard_id.hpp>
+#include <uhd/usrp/dboard_manager.hpp>
+#include <uhd/utils/algorithm.hpp>
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
-#include <uhd/utils/algorithm.hpp>
-
-#include <uhd/usrp/dboard_id.hpp>
-#include <uhd/usrp/dboard_base.hpp>
-#include <uhd/usrp/dboard_manager.hpp>
 #include <boost/assign/list_of.hpp>
-#include <boost/bind.hpp>
 #include <boost/format.hpp>
 #include <boost/math/special_functions/round.hpp>
+#include <functional>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -173,20 +172,20 @@ rfx_xcvr::rfx_xcvr(
     else this->get_rx_subtree()->create<std::string>("name").set("RFX RX");
 
     this->get_rx_subtree()->create<sensor_value_t>("sensors/lo_locked")
-        .set_publisher(boost::bind(&rfx_xcvr::get_locked, this, dboard_iface::UNIT_RX));
+        .set_publisher(std::bind(&rfx_xcvr::get_locked, this, dboard_iface::UNIT_RX));
     for(const std::string &name:  _rx_gain_ranges.keys()){
         this->get_rx_subtree()->create<double>("gains/"+name+"/value")
-            .set_coercer(boost::bind(&rfx_xcvr::set_rx_gain, this, _1, name))
+            .set_coercer(std::bind(&rfx_xcvr::set_rx_gain, this, std::placeholders::_1, name))
             .set(_rx_gain_ranges[name].start());
         this->get_rx_subtree()->create<meta_range_t>("gains/"+name+"/range")
             .set(_rx_gain_ranges[name]);
     }
     this->get_rx_subtree()->create<double>("freq/value")
-        .set_coercer(boost::bind(&rfx_xcvr::set_lo_freq, this, dboard_iface::UNIT_RX, _1))
+        .set_coercer(std::bind(&rfx_xcvr::set_lo_freq, this, dboard_iface::UNIT_RX, std::placeholders::_1))
         .set((_freq_range.start() + _freq_range.stop())/2.0);
     this->get_rx_subtree()->create<meta_range_t>("freq/range").set(_freq_range);
     this->get_rx_subtree()->create<std::string>("antenna/value")
-        .add_coerced_subscriber(boost::bind(&rfx_xcvr::set_rx_ant, this, _1))
+        .add_coerced_subscriber(std::bind(&rfx_xcvr::set_rx_ant, this, std::placeholders::_1))
         .set("RX2");
     this->get_rx_subtree()->create<std::vector<std::string> >("antenna/options")
         .set(rfx_rx_antennas);
@@ -209,14 +208,14 @@ rfx_xcvr::rfx_xcvr(
     else this->get_tx_subtree()->create<std::string>("name").set("RFX TX");
 
     this->get_tx_subtree()->create<sensor_value_t>("sensors/lo_locked")
-        .set_publisher(boost::bind(&rfx_xcvr::get_locked, this, dboard_iface::UNIT_TX));
+        .set_publisher(std::bind(&rfx_xcvr::get_locked, this, dboard_iface::UNIT_TX));
     this->get_tx_subtree()->create<int>("gains"); //phony property so this dir exists
     this->get_tx_subtree()->create<double>("freq/value")
-        .set_coercer(boost::bind(&rfx_xcvr::set_lo_freq, this, dboard_iface::UNIT_TX, _1))
+        .set_coercer(std::bind(&rfx_xcvr::set_lo_freq, this, dboard_iface::UNIT_TX, std::placeholders::_1))
         .set((_freq_range.start() + _freq_range.stop())/2.0);
     this->get_tx_subtree()->create<meta_range_t>("freq/range").set(_freq_range);
     this->get_tx_subtree()->create<std::string>("antenna/value")
-        .add_coerced_subscriber(boost::bind(&rfx_xcvr::set_tx_ant, this, _1)).set(rfx_tx_antennas.at(0));
+        .add_coerced_subscriber(std::bind(&rfx_xcvr::set_tx_ant, this, std::placeholders::_1)).set(rfx_tx_antennas.at(0));
     this->get_tx_subtree()->create<std::vector<std::string> >("antenna/options")
         .set(rfx_tx_antennas);
     this->get_tx_subtree()->create<std::string>("connection").set("IQ");

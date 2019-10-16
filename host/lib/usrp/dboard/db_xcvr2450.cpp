@@ -38,22 +38,23 @@
 #define RX_DIS_RXIO              0
 
 #include "max2829_regs.hpp"
-#include <uhd/utils/log.hpp>
-#include <uhd/utils/static.hpp>
-#include <uhd/utils/safe_call.hpp>
-#include <uhd/utils/assert_has.hpp>
-#include <uhd/utils/algorithm.hpp>
+#include <uhd/types/dict.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/sensors.hpp>
-#include <uhd/types/dict.hpp>
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
+#include <uhd/utils/algorithm.hpp>
+#include <uhd/utils/assert_has.hpp>
+#include <uhd/utils/log.hpp>
+#include <uhd/utils/safe_call.hpp>
+#include <uhd/utils/static.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
 #include <boost/math/special_functions/round.hpp>
-#include <utility>
 #include <chrono>
+#include <functional>
 #include <thread>
+#include <utility>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -222,23 +223,23 @@ xcvr2450::xcvr2450(ctor_args_t args) : xcvr_dboard_base(args){
     this->get_rx_subtree()->create<std::string>("name")
         .set("XCVR2450 RX");
     this->get_rx_subtree()->create<sensor_value_t>("sensors/lo_locked")
-        .set_publisher(boost::bind(&xcvr2450::get_locked, this));
+        .set_publisher(std::bind(&xcvr2450::get_locked, this));
     this->get_rx_subtree()->create<sensor_value_t>("sensors/rssi")
-        .set_publisher(boost::bind(&xcvr2450::get_rssi, this));
+        .set_publisher(std::bind(&xcvr2450::get_rssi, this));
     for(const std::string &name:  xcvr_rx_gain_ranges.keys()){
         this->get_rx_subtree()->create<double>("gains/"+name+"/value")
-            .set_coercer(boost::bind(&xcvr2450::set_rx_gain, this, _1, name))
+            .set_coercer(std::bind(&xcvr2450::set_rx_gain, this, std::placeholders::_1, name))
             .set(xcvr_rx_gain_ranges[name].start());
         this->get_rx_subtree()->create<meta_range_t>("gains/"+name+"/range")
             .set(xcvr_rx_gain_ranges[name]);
     }
     this->get_rx_subtree()->create<double>("freq/value")
-        .set_coercer(boost::bind(&xcvr2450::set_lo_freq, this, _1))
+        .set_coercer(std::bind(&xcvr2450::set_lo_freq, this, std::placeholders::_1))
         .set(double(2.45e9));
     this->get_rx_subtree()->create<meta_range_t>("freq/range")
         .set(xcvr_freq_range);
     this->get_rx_subtree()->create<std::string>("antenna/value")
-        .add_coerced_subscriber(boost::bind(&xcvr2450::set_rx_ant, this, _1))
+        .add_coerced_subscriber(std::bind(&xcvr2450::set_rx_ant, this, std::placeholders::_1))
         .set(xcvr_antennas.at(0));
     this->get_rx_subtree()->create<std::vector<std::string> >("antenna/options")
         .set(xcvr_antennas);
@@ -249,7 +250,7 @@ xcvr2450::xcvr2450(ctor_args_t args) : xcvr_dboard_base(args){
     this->get_rx_subtree()->create<bool>("use_lo_offset")
         .set(false);
     this->get_rx_subtree()->create<double>("bandwidth/value")
-        .set_coercer(boost::bind(&xcvr2450::set_rx_bandwidth, this, _1)) //complex bandpass bandwidth 
+        .set_coercer(std::bind(&xcvr2450::set_rx_bandwidth, this, std::placeholders::_1)) //complex bandpass bandwidth 
         .set(2.0*_rx_bandwidth); //_rx_bandwidth in lowpass, convert to complex bandpass
     this->get_rx_subtree()->create<meta_range_t>("bandwidth/range")
         .set(xcvr_rx_bandwidth_range);
@@ -260,21 +261,21 @@ xcvr2450::xcvr2450(ctor_args_t args) : xcvr_dboard_base(args){
     this->get_tx_subtree()->create<std::string>("name")
         .set("XCVR2450 TX");
     this->get_tx_subtree()->create<sensor_value_t>("sensors/lo_locked")
-        .set_publisher(boost::bind(&xcvr2450::get_locked, this));
+        .set_publisher(std::bind(&xcvr2450::get_locked, this));
     for(const std::string &name:  xcvr_tx_gain_ranges.keys()){
         this->get_tx_subtree()->create<double>("gains/"+name+"/value")
-            .set_coercer(boost::bind(&xcvr2450::set_tx_gain, this, _1, name))
+            .set_coercer(std::bind(&xcvr2450::set_tx_gain, this, std::placeholders::_1, name))
             .set(xcvr_tx_gain_ranges[name].start());
         this->get_tx_subtree()->create<meta_range_t>("gains/"+name+"/range")
             .set(xcvr_tx_gain_ranges[name]);
     }
     this->get_tx_subtree()->create<double>("freq/value")
-        .set_coercer(boost::bind(&xcvr2450::set_lo_freq, this, _1))
+        .set_coercer(std::bind(&xcvr2450::set_lo_freq, this, std::placeholders::_1))
         .set(double(2.45e9));
     this->get_tx_subtree()->create<meta_range_t>("freq/range")
         .set(xcvr_freq_range);
     this->get_tx_subtree()->create<std::string>("antenna/value")
-        .add_coerced_subscriber(boost::bind(&xcvr2450::set_tx_ant, this, _1))
+        .add_coerced_subscriber(std::bind(&xcvr2450::set_tx_ant, this, std::placeholders::_1))
         .set(xcvr_antennas.at(1));
     this->get_tx_subtree()->create<std::vector<std::string> >("antenna/options")
         .set(xcvr_antennas);
@@ -285,7 +286,7 @@ xcvr2450::xcvr2450(ctor_args_t args) : xcvr_dboard_base(args){
     this->get_tx_subtree()->create<bool>("use_lo_offset")
         .set(false);
     this->get_tx_subtree()->create<double>("bandwidth/value")
-        .set_coercer(boost::bind(&xcvr2450::set_tx_bandwidth, this, _1)) //complex bandpass bandwidth
+        .set_coercer(std::bind(&xcvr2450::set_tx_bandwidth, this, std::placeholders::_1)) //complex bandpass bandwidth
         .set(2.0*_tx_bandwidth); //_tx_bandwidth in lowpass, convert to complex bandpass
     this->get_tx_subtree()->create<meta_range_t>("bandwidth/range")
         .set(xcvr_tx_bandwidth_range);

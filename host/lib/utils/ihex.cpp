@@ -8,9 +8,10 @@
 #include <uhd/exception.hpp>
 #include <uhdlib/utils/ihex.hpp>
 #include <boost/format.hpp>
+#include <fstream>
+#include <functional>
 #include <memory>
 #include <sstream>
-#include <fstream>
 
 using namespace uhd;
 
@@ -196,7 +197,7 @@ void ihex_reader::to_bin_file(const std::string &bin_filename)
         throw uhd::io_error(str(boost::format("Could not open file for writing: %s") % bin_filename));
     }
 
-    this->read(boost::bind(&_file_writer_callback, output_file, _3, _4));
+    this->read(std::bind(&_file_writer_callback, output_file, std::placeholders::_3, std::placeholders::_4));
 
     output_file->close();
 }
@@ -219,7 +220,7 @@ std::vector<uint8_t> ihex_reader::to_vector(const size_t size_estimate)
     std::vector<uint8_t> buf;
     buf.reserve(size_estimate == 0 ? DEFAULT_SIZE_ESTIMATE : size_estimate);
 
-    this->read(boost::bind(&_vector_writer_callback, boost::ref(buf), _3, _4));
+    this->read(std::bind(&_vector_writer_callback, std::ref(buf), std::placeholders::_3, std::placeholders::_4));
 
     return buf;
 }

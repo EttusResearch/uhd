@@ -5,18 +5,19 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhd/utils/tasks.hpp>
-#include <uhd/utils/msg_task.hpp>
-#include <uhd/utils/thread.hpp>
-#include <uhd/utils/log.hpp>
 #include <uhd/exception.hpp>
-#include <boost/thread/thread.hpp>
+#include <uhd/utils/log.hpp>
+#include <uhd/utils/msg_task.hpp>
+#include <uhd/utils/tasks.hpp>
+#include <uhd/utils/thread.hpp>
 #include <boost/thread/barrier.hpp>
-#include <exception>
-#include <iostream>
-#include <vector>
-#include <thread>
+#include <boost/thread/thread.hpp>
 #include <atomic>
+#include <exception>
+#include <functional>
+#include <iostream>
+#include <thread>
+#include <vector>
 
 using namespace uhd;
 
@@ -88,7 +89,7 @@ public:
     msg_task_impl(const task_fcn_type &task_fcn):
         _spawn_barrier(2)
     {
-        (void)_thread_group.create_thread(boost::bind(&msg_task_impl::task_loop, this, task_fcn));
+        (void)_thread_group.create_thread(std::bind(&msg_task_impl::task_loop, this, task_fcn));
         _spawn_barrier.wait();
     }
 

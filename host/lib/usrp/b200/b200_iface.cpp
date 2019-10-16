@@ -6,25 +6,24 @@
 //
 
 #include "b200_iface.hpp"
-
 #include <uhd/config.hpp>
-#include <uhd/utils/log.hpp>
 #include <uhd/exception.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhdlib/utils/ihex.hpp>
-
+#include <libusb.h>
+#include <stdint.h>
+#include <boost/filesystem.hpp>
+#include <boost/format.hpp>
 #include <boost/functional/hash.hpp>
 #include <boost/lexical_cast.hpp>
-#include <boost/format.hpp>
-#include <boost/filesystem.hpp>
-#include <libusb.h>
-#include <fstream>
-#include <string>
-#include <vector>
-#include <cstring>
-#include <iomanip>
 #include <chrono>
+#include <cstring>
+#include <fstream>
+#include <functional>
+#include <iomanip>
+#include <string>
 #include <thread>
-#include <stdint.h>
+#include <vector>
 
 //! libusb_error_name is only in newer API
 #ifndef HAVE_LIBUSB_ERROR_NAME
@@ -215,9 +214,9 @@ public:
         ihex_reader file_reader(filestring);
         try {
             file_reader.read(
-                boost::bind(
+                std::bind(
                     &b200_iface_impl::fx3_control_write, this,
-                    FX3_FIRMWARE_LOAD, _1, _2, _3, _4, 0
+                    FX3_FIRMWARE_LOAD, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3, std::placeholders::_4, 0
                 )
             );
         } catch (const uhd::io_error &e) {

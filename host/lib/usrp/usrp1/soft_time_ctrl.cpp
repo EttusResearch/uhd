@@ -6,12 +6,13 @@
 //
 
 #include "soft_time_ctrl.hpp"
-#include <uhdlib/utils/system_time.hpp>
 #include <uhd/utils/tasks.hpp>
-#include <memory>
-#include <boost/thread/condition_variable.hpp>
+#include <uhdlib/utils/system_time.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/thread/condition_variable.hpp>
+#include <functional>
 #include <iostream>
+#include <memory>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -39,7 +40,7 @@ public:
         _stream_on_off(stream_on_off)
     {
         //synchronously spawn a new thread
-        _recv_cmd_task = task::make(boost::bind(&soft_time_ctrl_impl::recv_cmd_task, this));
+        _recv_cmd_task = task::make(std::bind(&soft_time_ctrl_impl::recv_cmd_task, this));
 
         //initialize the time to something
         this->set_time(time_spec_t(0.0));

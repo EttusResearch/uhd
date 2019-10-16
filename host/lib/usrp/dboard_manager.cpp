@@ -14,7 +14,7 @@
 #include <uhd/types/dict.hpp>
 #include <boost/tuple/tuple.hpp>
 #include <boost/format.hpp>
-#include <boost/bind.hpp>
+#include <functional>
 #include <boost/assign/list_of.hpp>
 
 using namespace uhd;

@@ -13,7 +13,7 @@
 #include <uhd/utils/static.hpp>
 #include <uhd/utils/thread.hpp>
 #include <boost/assign/list_of.hpp>
-#include <boost/bind.hpp>
+#include <functional>
 #include <boost/format.hpp>
 #include <boost/program_options.hpp>
 #include <complex>

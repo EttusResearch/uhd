@@ -11,8 +11,8 @@
 #include <uhdlib/usrp/cores/dsp_core_utils.hpp>
 #include <uhdlib/usrp/cores/rx_frontend_core_3000.hpp>
 #include <boost/assign/list_of.hpp>
-#include <boost/bind.hpp>
 #include <boost/math/special_functions/round.hpp>
+#include <functional>
 
 using namespace uhd;
 
@@ -177,15 +177,15 @@ public:
             .set(meta_range_t(DC_OFFSET_MIN, DC_OFFSET_MAX));
         subtree->create<std::complex<double>>("dc_offset/value")
             .set(DEFAULT_DC_OFFSET_VALUE)
-            .set_coercer(boost::bind(&rx_frontend_core_3000::set_dc_offset, this, _1));
+            .set_coercer(std::bind(&rx_frontend_core_3000::set_dc_offset, this, std::placeholders::_1));
         subtree->create<bool>("dc_offset/enable")
             .set(DEFAULT_DC_OFFSET_ENABLE)
             .add_coerced_subscriber(
-                boost::bind(&rx_frontend_core_3000::set_dc_offset_auto, this, _1));
+                std::bind(&rx_frontend_core_3000::set_dc_offset_auto, this, std::placeholders::_1));
         subtree->create<std::complex<double>>("iq_balance/value")
             .set(DEFAULT_IQ_BALANCE_VALUE)
             .add_coerced_subscriber(
-                boost::bind(&rx_frontend_core_3000::set_iq_balance, this, _1));
+                std::bind(&rx_frontend_core_3000::set_iq_balance, this, std::placeholders::_1));
     }
 
     double get_output_rate()

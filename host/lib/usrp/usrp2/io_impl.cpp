@@ -5,28 +5,27 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhdlib/usrp/common/validate_subdev_spec.hpp>
-#include <uhdlib/usrp/common/async_packet_handler.hpp>
 #include "../../transport/super_recv_packet_handler.hpp"
 #include "../../transport/super_send_packet_handler.hpp"
+#include "fw_common.h"
 #include "usrp2_impl.hpp"
 #include "usrp2_regs.hpp"
-#include "fw_common.h"
-#include <uhd/utils/log.hpp>
-
-#include <uhd/utils/tasks.hpp>
 #include <uhd/exception.hpp>
-#include <uhd/utils/byteswap.hpp>
-#include <uhd/utils/thread.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
-#include <boost/thread/thread.hpp>
-#include <boost/format.hpp>
-#include <boost/bind.hpp>
+#include <uhd/utils/byteswap.hpp>
+#include <uhd/utils/log.hpp>
+#include <uhd/utils/tasks.hpp>
+#include <uhd/utils/thread.hpp>
+#include <uhdlib/usrp/common/async_packet_handler.hpp>
+#include <uhdlib/usrp/common/validate_subdev_spec.hpp>
 #include <boost/asio.hpp>
+#include <boost/format.hpp>
 #include <boost/thread/mutex.hpp>
-#include <memory>
-#include <iostream>
+#include <boost/thread/thread.hpp>
 #include <chrono>
+#include <functional>
+#include <iostream>
+#include <memory>
 #include <thread>
 
 using namespace uhd;
@@ -63,7 +62,7 @@ public:
      */
     flow_control_monitor(seq_type max_seqs_out):_max_seqs_out(max_seqs_out){
         this->clear();
-        _ready_fcn = boost::bind(&flow_control_monitor::ready, this);
+        _ready_fcn = std::bind(&flow_control_monitor::ready, this);
     }
 
     //! Clear the monitor, Ex: when a streamer is created
@@ -242,10 +241,10 @@ void usrp2_impl::io_init(void){
     size_t index = 0;
     for(const std::string &mb:  _mbc.keys()){
         //spawn a new pirate to plunder the recv booty
-        _io_impl->pirate_tasks.push_back(task::make(boost::bind(
+        _io_impl->pirate_tasks.push_back(task::make(std::bind(
             &usrp2_impl::io_impl::recv_pirate_loop, _io_impl.get(),
             _mbc[mb].tx_dsp_xport, index++,
-            boost::ref(_pirate_task_exit)
+            std::ref(_pirate_task_exit)
         )));
     }
 }
@@ -454,11 +453,11 @@ rx_streamer::sptr usrp2_impl::get_rx_stream(const uhd::stream_args_t &args_){
                 _mbc[mb].rx_dsps[dsp]->set_nsamps_per_packet(spp); //seems to be a good place to set this
                 _mbc[mb].rx_dsps[dsp]->setup(args);
                 this->program_stream_dest(_mbc[mb].rx_dsp_xports[dsp], args);
-                my_streamer->set_xport_chan_get_buff(chan_i, boost::bind(
-                    &zero_copy_if::get_recv_buff, _mbc[mb].rx_dsp_xports[dsp], _1
+                my_streamer->set_xport_chan_get_buff(chan_i, std::bind(
+                    &zero_copy_if::get_recv_buff, _mbc[mb].rx_dsp_xports[dsp], std::placeholders::_1
                 ), true /*flush*/);
-                my_streamer->set_issue_stream_cmd(chan_i, boost::bind(
-                    &rx_dsp_core_200::issue_stream_command, _mbc[mb].rx_dsps[dsp], _1));
+                my_streamer->set_issue_stream_cmd(chan_i, std::bind(
+                    &rx_dsp_core_200::issue_stream_command, _mbc[mb].rx_dsps[dsp], std::placeholders::_1));
                 _mbc[mb].rx_streamers[dsp] = my_streamer; //store weak pointer
                 break;
             }
@@ -525,10 +524,10 @@ tx_streamer::sptr usrp2_impl::get_tx_stream(const uhd::stream_args_t &args_){
                     _io_impl->fc_mons[abs]->clear();
                 }
                 _mbc[mb].tx_dsp->setup(args);
-                my_streamer->set_xport_chan_get_buff(chan_i, boost::bind(
-                    &usrp2_impl::io_impl::get_send_buff, _io_impl.get(), abs, _1
+                my_streamer->set_xport_chan_get_buff(chan_i, std::bind(
+                    &usrp2_impl::io_impl::get_send_buff, _io_impl.get(), abs, std::placeholders::_1
                 ));
-                my_streamer->set_async_receiver(boost::bind(&bounded_buffer<async_metadata_t>::pop_with_timed_wait, &(_io_impl->async_msg_fifo), _1, _2));
+                my_streamer->set_async_receiver(std::bind(&bounded_buffer<async_metadata_t>::pop_with_timed_wait, &(_io_impl->async_msg_fifo), std::placeholders::_1, std::placeholders::_2));
                 _mbc[mb].tx_streamers[dsp] = my_streamer; //store weak pointer
                 break;
             }

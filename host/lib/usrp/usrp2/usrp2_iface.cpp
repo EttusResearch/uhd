@@ -5,29 +5,28 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "usrp2_regs.hpp"
-#include "usrp2_impl.hpp"
-#include "fw_common.h"
 #include "usrp2_iface.hpp"
+#include "fw_common.h"
+#include "usrp2_impl.hpp"
+#include "usrp2_regs.hpp"
 #include <uhd/exception.hpp>
+#include <uhd/types/dict.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/paths.hpp>
-#include <uhd/utils/tasks.hpp>
-#include <uhd/utils/paths.hpp>
+#include <uhd/utils/platform.hpp>
 #include <uhd/utils/safe_call.hpp>
-#include <uhd/types/dict.hpp>
+#include <uhd/utils/tasks.hpp>
 #include <boost/asio.hpp> //used for htonl and ntohl
 #include <boost/assign/list_of.hpp>
-#include <boost/format.hpp>
-#include <boost/bind.hpp>
-#include <boost/tokenizer.hpp>
-#include <boost/functional/hash.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/format.hpp>
+#include <boost/functional/hash.hpp>
+#include <boost/tokenizer.hpp>
 #include <algorithm>
-#include <iostream>
 #include <chrono>
+#include <functional>
+#include <iostream>
 #include <thread>
-#include <uhd/utils/platform.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -88,7 +87,7 @@ public:
     void lock_device(bool lock){
         if (lock){
             this->pokefw(U2_FW_REG_LOCK_GPID, get_process_hash());
-            _lock_task = task::make(boost::bind(&usrp2_iface_impl::lock_task, this));
+            _lock_task = task::make(std::bind(&usrp2_iface_impl::lock_task, this));
         }
         else{
             _lock_task.reset(); //shutdown the task

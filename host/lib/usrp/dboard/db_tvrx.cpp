@@ -17,26 +17,26 @@
 //max freq: 860e6
 //gain range: [0:1dB:115dB]
 
-#include <uhd/utils/log.hpp>
-#include <uhd/utils/static.hpp>
-#include <uhd/utils/assert_has.hpp>
-#include <uhd/utils/algorithm.hpp>
-
+#include <uhd/types/dict.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/sensors.hpp>
-#include <uhd/types/dict.hpp>
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
+#include <uhd/utils/algorithm.hpp>
+#include <uhd/utils/assert_has.hpp>
+#include <uhd/utils/log.hpp>
+#include <uhd/utils/static.hpp>
+#include <tuner_4937di5_regs.hpp>
+#include <boost/array.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
-#include <boost/thread.hpp>
-#include <boost/array.hpp>
 #include <boost/math/special_functions/round.hpp>
-#include <utility>
-#include <cmath>
+#include <boost/thread.hpp>
 #include <cfloat>
+#include <cmath>
+#include <functional>
 #include <limits>
-#include <tuner_4937di5_regs.hpp>
+#include <utility>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -180,12 +180,12 @@ tvrx::tvrx(ctor_args_t args) : rx_dboard_base(args){
     this->get_rx_subtree()->create<int>("sensors"); //phony property so this dir exists
     for(const std::string &name:  get_tvrx_gain_ranges().keys()){
         this->get_rx_subtree()->create<double>("gains/"+name+"/value")
-            .set_coercer(boost::bind(&tvrx::set_gain, this, _1, name));
+            .set_coercer(std::bind(&tvrx::set_gain, this, std::placeholders::_1, name));
         this->get_rx_subtree()->create<meta_range_t>("gains/"+name+"/range")
             .set(get_tvrx_gain_ranges()[name]);
     }
     this->get_rx_subtree()->create<double>("freq/value")
-        .set_coercer(boost::bind(&tvrx::set_freq, this, _1));
+        .set_coercer(std::bind(&tvrx::set_freq, this, std::placeholders::_1));
     this->get_rx_subtree()->create<meta_range_t>("freq/range")
         .set(tvrx_freq_range);
     this->get_rx_subtree()->create<std::string>("antenna/value")

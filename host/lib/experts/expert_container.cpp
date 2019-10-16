@@ -8,15 +8,14 @@
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/experts/expert_container.hpp>
-#include <boost/bind.hpp>
 #include <boost/format.hpp>
-#include <functional>
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/depth_first_search.hpp>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/topological_sort.hpp>
 #include <boost/thread.hpp>
 #include <boost/thread/mutex.hpp>
+#include <functional>
 #include <memory>
 
 #ifdef UHD_EXPERT_LOGGING
@@ -24,6 +23,7 @@
 #else
 #define EX_LOG(depth, str)
 #endif
+
 
 namespace uhd { namespace experts {
 
@@ -298,11 +298,11 @@ protected:
             //Add resolve callbacks
             if (resolve_mode == AUTO_RESOLVE_ON_WRITE or resolve_mode == AUTO_RESOLVE_ON_READ_WRITE) {
                 EX_LOG(2, str(boost::format("added write callback")));
-                data_node->set_write_callback(boost::bind(&expert_container_impl::resolve_from, this, _1));
+                data_node->set_write_callback(std::bind(&expert_container_impl::resolve_from, this, std::placeholders::_1));
             }
             if (resolve_mode == AUTO_RESOLVE_ON_READ or resolve_mode == AUTO_RESOLVE_ON_READ_WRITE) {
                 EX_LOG(2, str(boost::format("added read callback")));
-                data_node->set_read_callback(boost::bind(&expert_container_impl::resolve_to, this, _1));
+                data_node->set_read_callback(std::bind(&expert_container_impl::resolve_to, this, std::placeholders::_1));
             }
         } catch (...) {
             clear();

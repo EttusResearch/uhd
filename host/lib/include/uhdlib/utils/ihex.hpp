@@ -8,7 +8,7 @@
 #ifndef INCLUDED_IHEX_READER_HPP
 #define INCLUDED_IHEX_READER_HPP
 
-#include <boost/bind.hpp>
+#include <functional>
 #include <functional>
 #include <stdint.h>
 #include <string>

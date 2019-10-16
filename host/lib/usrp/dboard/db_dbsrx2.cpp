@@ -8,19 +8,20 @@
 // No RX IO Pins Used
 
 #include "max2112_regs.hpp"
-#include <uhd/utils/log.hpp>
-#include <uhd/utils/static.hpp>
-#include <uhd/utils/assert_has.hpp>
-#include <uhd/utils/algorithm.hpp>
+#include <uhd/types/dict.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/types/sensors.hpp>
-#include <uhd/types/dict.hpp>
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
+#include <uhd/utils/algorithm.hpp>
+#include <uhd/utils/assert_has.hpp>
+#include <uhd/utils/log.hpp>
+#include <uhd/utils/static.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/format.hpp>
-#include <boost/thread.hpp>
 #include <boost/math/special_functions/round.hpp>
+#include <boost/thread.hpp>
+#include <functional>
 #include <utility>
 
 using namespace uhd;
@@ -176,16 +177,16 @@ dbsrx2::dbsrx2(ctor_args_t args) : rx_dboard_base(args){
     this->get_rx_subtree()->create<std::string>("name")
         .set("DBSRX");
     this->get_rx_subtree()->create<sensor_value_t>("sensors/lo_locked")
-        .set_publisher(boost::bind(&dbsrx2::get_locked, this));
+        .set_publisher(std::bind(&dbsrx2::get_locked, this));
     for(const std::string &name:  dbsrx2_gain_ranges.keys()){
         this->get_rx_subtree()->create<double>("gains/"+name+"/value")
-            .set_coercer(boost::bind(&dbsrx2::set_gain, this, _1, name))
+            .set_coercer(std::bind(&dbsrx2::set_gain, this, std::placeholders::_1, name))
             .set(dbsrx2_gain_ranges[name].start());
         this->get_rx_subtree()->create<meta_range_t>("gains/"+name+"/range")
             .set(dbsrx2_gain_ranges[name]);
     }
     this->get_rx_subtree()->create<double>("freq/value")
-        .set_coercer(boost::bind(&dbsrx2::set_lo_freq, this, _1))
+        .set_coercer(std::bind(&dbsrx2::set_lo_freq, this, std::placeholders::_1))
         .set(dbsrx2_freq_range.start());
     this->get_rx_subtree()->create<meta_range_t>("freq/range")
         .set(dbsrx2_freq_range);
@@ -203,7 +204,7 @@ dbsrx2::dbsrx2(ctor_args_t args) : rx_dboard_base(args){
     double codec_rate = this->get_iface()->get_codec_rate(dboard_iface::UNIT_RX);
 
     this->get_rx_subtree()->create<double>("bandwidth/value")
-        .set_coercer(boost::bind(&dbsrx2::set_bandwidth, this, _1))
+        .set_coercer(std::bind(&dbsrx2::set_bandwidth, this, std::placeholders::_1))
         .set(2.0*(0.8*codec_rate/2.0)); //bandwidth in lowpass, convert to complex bandpass
                                         //default to anti-alias at different codec_rate
     this->get_rx_subtree()->create<meta_range_t>("bandwidth/range")

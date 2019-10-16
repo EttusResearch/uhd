@@ -5,18 +5,18 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhd/transport/usb_zero_copy.hpp>
 #include <uhd/transport/buffer_pool.hpp>
+#include <uhd/transport/usb_zero_copy.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhdlib/utils/atomic.hpp>
-#include <memory>
-#include <boost/thread/mutex.hpp>
 #include <boost/thread/condition_variable.hpp>
-#include <boost/bind.hpp>
-#include <vector>
+#include <boost/thread/mutex.hpp>
+#include <functional>
 #include <iostream>
+#include <memory>
+#include <vector>
 
 using namespace uhd;
 using namespace uhd::transport;
@@ -75,7 +75,7 @@ public:
         _internal(internal), _fragmentation_size(fragmentation_size)
     {
         _ok_to_auto_flush = false;
-        _task = uhd::task::make(boost::bind(&usb_zero_copy_wrapper_msb::auto_flush, this));
+        _task = uhd::task::make(std::bind(&usb_zero_copy_wrapper_msb::auto_flush, this));
     }
 
     ~usb_zero_copy_wrapper_msb(void)

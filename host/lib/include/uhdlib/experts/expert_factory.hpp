@@ -8,12 +8,13 @@
 #ifndef INCLUDED_UHD_EXPERTS_EXPERT_FACTORY_HPP
 #define INCLUDED_UHD_EXPERTS_EXPERT_FACTORY_HPP
 
-#include <uhdlib/experts/expert_container.hpp>
-#include <uhd/property_tree.hpp>
 #include <uhd/config.hpp>
+#include <uhd/property_tree.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <boost/bind.hpp>
+#include <uhdlib/experts/expert_container.hpp>
+#include <functional>
 #include <memory>
+
 
 namespace uhd { namespace experts {
 
@@ -94,8 +95,8 @@ namespace uhd { namespace experts {
             data_node_t<data_t>* node_ptr =
                 new data_node_t<data_t>(name, init_val, &container->resolve_mutex());
             prop.set(init_val);
-            prop.add_desired_subscriber(boost::bind(&data_node_t<data_t>::commit, node_ptr, _1));
-            prop.set_publisher(boost::bind(&data_node_t<data_t>::retrieve, node_ptr));
+            prop.add_desired_subscriber(std::bind(&data_node_t<data_t>::commit, node_ptr, std::placeholders::_1));
+            prop.set_publisher(std::bind(&data_node_t<data_t>::retrieve, node_ptr));
             container->add_data_node(node_ptr, mode);
             return prop;
         }
@@ -161,8 +162,8 @@ namespace uhd { namespace experts {
                 new data_node_t<data_t>(coerced_name, init_val, &container->resolve_mutex());
             prop.set(init_val);
             prop.set_coerced(init_val);
-            prop.add_desired_subscriber(boost::bind(&data_node_t<data_t>::commit, desired_node_ptr, _1));
-            prop.set_publisher(boost::bind(&data_node_t<data_t>::retrieve, coerced_node_ptr));
+            prop.add_desired_subscriber(std::bind(&data_node_t<data_t>::commit, desired_node_ptr, std::placeholders::_1));
+            prop.set_publisher(std::bind(&data_node_t<data_t>::retrieve, coerced_node_ptr));
 
             container->add_data_node(desired_node_ptr,
                 auto_resolve_desired ? AUTO_RESOLVE_ON_WRITE : AUTO_RESOLVE_OFF);

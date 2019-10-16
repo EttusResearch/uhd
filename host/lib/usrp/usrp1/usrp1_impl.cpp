@@ -6,20 +6,20 @@
 //
 
 #include "usrp1_impl.hpp"
-#include <uhd/utils/log.hpp>
-#include <uhd/utils/safe_call.hpp>
-#include <uhd/transport/usb_control.hpp>
-#include <uhd/utils/log.hpp>
-#include <uhd/utils/cast.hpp>
 #include <uhd/exception.hpp>
-#include <uhd/utils/static.hpp>
+#include <uhd/transport/usb_control.hpp>
+#include <uhd/utils/cast.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhd/utils/paths.hpp>
-#include <boost/format.hpp>
+#include <uhd/utils/safe_call.hpp>
+#include <uhd/utils/static.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/math/special_functions/round.hpp>
-#include <cstdio>
 #include <chrono>
+#include <cstdio>
+#include <functional>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -176,7 +176,7 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     );
     _iface = usrp1_iface::make(_fx2_ctrl);
     _soft_time_ctrl = soft_time_ctrl::make(
-        boost::bind(&usrp1_impl::rx_stream_on_off, this, _1)
+        std::bind(&usrp1_impl::rx_stream_on_off, this, std::placeholders::_1)
     );
     _dbc["A"]; _dbc["B"]; //ensure that keys exist
 
@@ -201,13 +201,13 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     const fs_path mb_path = "/mboards/0";
     _tree->create<std::string>(mb_path / "name").set("USRP1");
     _tree->create<std::string>(mb_path / "load_eeprom")
-        .add_coerced_subscriber(boost::bind(&fx2_ctrl::usrp_load_eeprom, _fx2_ctrl, _1));
+        .add_coerced_subscriber(std::bind(&fx2_ctrl::usrp_load_eeprom, _fx2_ctrl, std::placeholders::_1));
 
     ////////////////////////////////////////////////////////////////////
     // create user-defined control objects
     ////////////////////////////////////////////////////////////////////
     _tree->create<std::pair<uint8_t, uint32_t> >(mb_path / "user" / "regs")
-        .add_coerced_subscriber(boost::bind(&usrp1_impl::set_reg, this, _1));
+        .add_coerced_subscriber(std::bind(&usrp1_impl::set_reg, this, std::placeholders::_1));
 
     ////////////////////////////////////////////////////////////////////
     // setup the mboard eeprom
@@ -216,7 +216,7 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     const mboard_eeprom_t mb_eeprom = this->get_mb_eeprom(_fx2_ctrl);
     _tree->create<mboard_eeprom_t>(mb_path / "eeprom")
         .set(mb_eeprom)
-        .add_coerced_subscriber(boost::bind(&usrp1_impl::set_mb_eeprom, this, _1));
+        .add_coerced_subscriber(std::bind(&usrp1_impl::set_mb_eeprom, this, std::placeholders::_1));
 
     ////////////////////////////////////////////////////////////////////
     // create clock control objects
@@ -240,7 +240,7 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     }
     UHD_LOGGER_INFO("USRP1") << boost::format("Using FPGA clock rate of %fMHz...") % (_master_clock_rate/1e6) ;
     _tree->create<double>(mb_path / "tick_rate")
-        .add_coerced_subscriber(boost::bind(&usrp1_impl::update_tick_rate, this, _1))
+        .add_coerced_subscriber(std::bind(&usrp1_impl::update_tick_rate, this, std::placeholders::_1))
         .set(_master_clock_rate);
 
     ////////////////////////////////////////////////////////////////////
@@ -253,13 +253,13 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
         _tree->create<std::string>(rx_codec_path / "name").set("ad9522");
         _tree->create<meta_range_t>(rx_codec_path / "gains/pga/range").set(usrp1_codec_ctrl::rx_pga_gain_range);
         _tree->create<double>(rx_codec_path / "gains/pga/value")
-            .set_coercer(boost::bind(&usrp1_impl::update_rx_codec_gain, this, db, _1))
+            .set_coercer(std::bind(&usrp1_impl::update_rx_codec_gain, this, db, std::placeholders::_1))
             .set(0.0);
         _tree->create<std::string>(tx_codec_path / "name").set("ad9522");
         _tree->create<meta_range_t>(tx_codec_path / "gains/pga/range").set(usrp1_codec_ctrl::tx_pga_gain_range);
         _tree->create<double>(tx_codec_path / "gains/pga/value")
-            .add_coerced_subscriber(boost::bind(&usrp1_codec_ctrl::set_tx_pga_gain, _dbc[db].codec, _1))
-            .set_publisher(boost::bind(&usrp1_codec_ctrl::get_tx_pga_gain, _dbc[db].codec))
+            .add_coerced_subscriber(std::bind(&usrp1_codec_ctrl::set_tx_pga_gain, _dbc[db].codec, std::placeholders::_1))
+            .set_publisher(std::bind(&usrp1_codec_ctrl::get_tx_pga_gain, _dbc[db].codec))
             .set(0.0);
     }
 
@@ -274,18 +274,18 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     ////////////////////////////////////////////////////////////////////
     _tree->create<subdev_spec_t>(mb_path / "rx_subdev_spec")
         .set(subdev_spec_t())
-        .add_coerced_subscriber(boost::bind(&usrp1_impl::update_rx_subdev_spec, this, _1));
+        .add_coerced_subscriber(std::bind(&usrp1_impl::update_rx_subdev_spec, this, std::placeholders::_1));
     _tree->create<subdev_spec_t>(mb_path / "tx_subdev_spec")
         .set(subdev_spec_t())
-        .add_coerced_subscriber(boost::bind(&usrp1_impl::update_tx_subdev_spec, this, _1));
+        .add_coerced_subscriber(std::bind(&usrp1_impl::update_tx_subdev_spec, this, std::placeholders::_1));
 
     for(const std::string &db:  _dbc.keys()){
         const fs_path rx_fe_path = mb_path / "rx_frontends" / db;
         _tree->create<std::complex<double> >(rx_fe_path / "dc_offset" / "value")
-            .set_coercer(boost::bind(&usrp1_impl::set_rx_dc_offset, this, db, _1))
+            .set_coercer(std::bind(&usrp1_impl::set_rx_dc_offset, this, db, std::placeholders::_1))
             .set(std::complex<double>(0.0, 0.0));
         _tree->create<bool>(rx_fe_path / "dc_offset" / "enable")
-            .add_coerced_subscriber(boost::bind(&usrp1_impl::set_enb_rx_dc_offset, this, db, _1))
+            .add_coerced_subscriber(std::bind(&usrp1_impl::set_enb_rx_dc_offset, this, db, std::placeholders::_1))
             .set(true);
     }
 
@@ -296,19 +296,19 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     for (size_t dspno = 0; dspno < get_num_ddcs(); dspno++){
         fs_path rx_dsp_path = mb_path / str(boost::format("rx_dsps/%u") % dspno);
         _tree->create<meta_range_t>(rx_dsp_path / "rate/range")
-            .set_publisher(boost::bind(&usrp1_impl::get_rx_dsp_host_rates, this));
+            .set_publisher(std::bind(&usrp1_impl::get_rx_dsp_host_rates, this));
         _tree->create<double>(rx_dsp_path / "rate/value")
             .set(1e6) //some default rate
-            .set_coercer(boost::bind(&usrp1_impl::update_rx_samp_rate, this, dspno, _1));
+            .set_coercer(std::bind(&usrp1_impl::update_rx_samp_rate, this, dspno, std::placeholders::_1));
         _tree->create<double>(rx_dsp_path / "freq/value")
-            .set_coercer(boost::bind(&usrp1_impl::update_rx_dsp_freq, this, dspno, _1));
+            .set_coercer(std::bind(&usrp1_impl::update_rx_dsp_freq, this, dspno, std::placeholders::_1));
         _tree->create<meta_range_t>(rx_dsp_path / "freq/range")
-            .set_publisher(boost::bind(&usrp1_impl::get_rx_dsp_freq_range, this));
+            .set_publisher(std::bind(&usrp1_impl::get_rx_dsp_freq_range, this));
         _tree->create<stream_cmd_t>(rx_dsp_path / "stream_cmd");
         if (dspno == 0){
             //only add_coerced_subscriber the callback for dspno 0 since it will stream all dsps
             _tree->access<stream_cmd_t>(rx_dsp_path / "stream_cmd")
-                .add_coerced_subscriber(boost::bind(&soft_time_ctrl::issue_stream_cmd, _soft_time_ctrl, _1));
+                .add_coerced_subscriber(std::bind(&soft_time_ctrl::issue_stream_cmd, _soft_time_ctrl, std::placeholders::_1));
         }
     }
 
@@ -319,22 +319,22 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
     for (size_t dspno = 0; dspno < get_num_ducs(); dspno++){
         fs_path tx_dsp_path = mb_path / str(boost::format("tx_dsps/%u") % dspno);
         _tree->create<meta_range_t>(tx_dsp_path / "rate/range")
-            .set_publisher(boost::bind(&usrp1_impl::get_tx_dsp_host_rates, this));
+            .set_publisher(std::bind(&usrp1_impl::get_tx_dsp_host_rates, this));
         _tree->create<double>(tx_dsp_path / "rate/value")
             .set(1e6) //some default rate
-            .set_coercer(boost::bind(&usrp1_impl::update_tx_samp_rate, this, dspno, _1));
+            .set_coercer(std::bind(&usrp1_impl::update_tx_samp_rate, this, dspno, std::placeholders::_1));
         _tree->create<double>(tx_dsp_path / "freq/value")
-            .set_coercer(boost::bind(&usrp1_impl::update_tx_dsp_freq, this, dspno, _1));
+            .set_coercer(std::bind(&usrp1_impl::update_tx_dsp_freq, this, dspno, std::placeholders::_1));
         _tree->create<meta_range_t>(tx_dsp_path / "freq/range")
-            .set_publisher(boost::bind(&usrp1_impl::get_tx_dsp_freq_range, this));
+            .set_publisher(std::bind(&usrp1_impl::get_tx_dsp_freq_range, this));
     }
 
     ////////////////////////////////////////////////////////////////////
     // create time control objects
     ////////////////////////////////////////////////////////////////////
     _tree->create<time_spec_t>(mb_path / "time/now")
-        .set_publisher(boost::bind(&soft_time_ctrl::get_time, _soft_time_ctrl))
-        .add_coerced_subscriber(boost::bind(&soft_time_ctrl::set_time, _soft_time_ctrl, _1));
+        .set_publisher(std::bind(&soft_time_ctrl::get_time, _soft_time_ctrl))
+        .add_coerced_subscriber(std::bind(&soft_time_ctrl::set_time, _soft_time_ctrl, std::placeholders::_1));
 
     _tree->create<std::vector<std::string> >(mb_path / "clock_source/options").set(std::vector<std::string>(1, "internal"));
     _tree->create<std::vector<std::string> >(mb_path / "time_source/options").set(std::vector<std::string>(1, "none"));
@@ -358,13 +358,13 @@ usrp1_impl::usrp1_impl(const device_addr_t &device_addr){
         //create the properties and register subscribers
         _tree->create<dboard_eeprom_t>(mb_path / "dboards" / db/ "rx_eeprom")
             .set(rx_db_eeprom)
-            .add_coerced_subscriber(boost::bind(&usrp1_impl::set_db_eeprom, this, db, "rx", _1));
+            .add_coerced_subscriber(std::bind(&usrp1_impl::set_db_eeprom, this, db, "rx", std::placeholders::_1));
         _tree->create<dboard_eeprom_t>(mb_path / "dboards" / db/ "tx_eeprom")
             .set(tx_db_eeprom)
-            .add_coerced_subscriber(boost::bind(&usrp1_impl::set_db_eeprom, this, db, "tx", _1));
+            .add_coerced_subscriber(std::bind(&usrp1_impl::set_db_eeprom, this, db, "tx", std::placeholders::_1));
         _tree->create<dboard_eeprom_t>(mb_path / "dboards" / db/ "gdb_eeprom")
             .set(gdb_eeprom)
-            .add_coerced_subscriber(boost::bind(&usrp1_impl::set_db_eeprom, this, db, "gdb", _1));
+            .add_coerced_subscriber(std::bind(&usrp1_impl::set_db_eeprom, this, db, "gdb", std::placeholders::_1));
 
         //create a new dboard interface and manager
         dboard_iface::sptr dboard_iface = make_dboard_iface(

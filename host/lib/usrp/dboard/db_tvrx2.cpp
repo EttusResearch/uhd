@@ -61,6 +61,7 @@
 #include <cmath>
 #include <chrono>
 #include <thread>
+#include <functional>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -951,19 +952,19 @@ tvrx2::tvrx2(ctor_args_t args) : rx_dboard_base(args){
     this->get_rx_subtree()->create<std::string>("name")
         .set("TVRX2");
     this->get_rx_subtree()->create<sensor_value_t>("sensors/lo_locked")
-        .set_publisher(boost::bind(&tvrx2::get_locked, this));
+        .set_publisher(std::bind(&tvrx2::get_locked, this));
     this->get_rx_subtree()->create<sensor_value_t>("sensors/rssi")
-        .set_publisher(boost::bind(&tvrx2::get_rssi, this));
+        .set_publisher(std::bind(&tvrx2::get_rssi, this));
     this->get_rx_subtree()->create<sensor_value_t>("sensors/temperature")
-        .set_publisher(boost::bind(&tvrx2::get_temp, this));
+        .set_publisher(std::bind(&tvrx2::get_temp, this));
     for(const std::string &name:  tvrx2_gain_ranges.keys()){
         this->get_rx_subtree()->create<double>("gains/"+name+"/value")
-            .set_coercer(boost::bind(&tvrx2::set_gain, this, _1, name));
+            .set_coercer(std::bind(&tvrx2::set_gain, this, std::placeholders::_1, name));
         this->get_rx_subtree()->create<meta_range_t>("gains/"+name+"/range")
             .set(tvrx2_gain_ranges[name]);
     }
     this->get_rx_subtree()->create<double>("freq/value")
-        .set_coercer(boost::bind(&tvrx2::set_lo_freq, this, _1));
+        .set_coercer(std::bind(&tvrx2::set_lo_freq, this, std::placeholders::_1));
     this->get_rx_subtree()->create<meta_range_t>("freq/range")
         .set(tvrx2_freq_range);
     this->get_rx_subtree()->create<std::string>("antenna/value")
@@ -973,12 +974,12 @@ tvrx2::tvrx2(ctor_args_t args) : rx_dboard_base(args){
     this->get_rx_subtree()->create<std::string>("connection")
         .set(tvrx2_sd_name_to_conn[get_subdev_name()]);
     this->get_rx_subtree()->create<bool>("enabled")
-        .set_coercer(boost::bind(&tvrx2::set_enabled, this, _1))
+        .set_coercer(std::bind(&tvrx2::set_enabled, this, std::placeholders::_1))
         .set(_enabled);
     this->get_rx_subtree()->create<bool>("use_lo_offset")
         .set(false);
     this->get_rx_subtree()->create<double>("bandwidth/value")
-        .set_coercer(boost::bind(&tvrx2::set_bandwidth, this, _1))
+        .set_coercer(std::bind(&tvrx2::set_bandwidth, this, std::placeholders::_1))
         .set(_bandwidth);
     this->get_rx_subtree()->create<meta_range_t>("bandwidth/range")
         .set(tvrx2_bandwidth_range);

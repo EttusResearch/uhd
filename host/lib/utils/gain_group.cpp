@@ -10,8 +10,8 @@
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/utils/gain_group.hpp>
 #include <uhd/utils/log.hpp>
-#include <boost/bind.hpp>
 #include <algorithm>
+#include <functional>
 #include <vector>
 
 using namespace uhd;
@@ -130,7 +130,7 @@ public:
         }
         std::sort(indexes_step_size_dec.begin(),
             indexes_step_size_dec.end(),
-            boost::bind(&compare_by_step_size, _1, _2, all_fcns));
+            std::bind(&compare_by_step_size, std::placeholders::_1, std::placeholders::_2, all_fcns));
         UHD_ASSERT_THROW(all_fcns.at(indexes_step_size_dec.front()).get_range().step()
                          >= all_fcns.at(indexes_step_size_dec.back()).get_range().step());
 

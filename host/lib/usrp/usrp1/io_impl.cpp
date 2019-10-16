@@ -12,18 +12,18 @@
 #include "../../transport/super_recv_packet_handler.hpp"
 #define SSPH_DONT_PAD_TO_ONE
 #include "../../transport/super_send_packet_handler.hpp"
-#include <uhd/utils/log.hpp>
-#include <uhd/utils/tasks.hpp>
-#include <uhd/utils/safe_call.hpp>
 #include <uhd/transport/bounded_buffer.hpp>
-#include <boost/math/special_functions/sign.hpp>
-#include <boost/math/special_functions/round.hpp>
-#include <boost/thread/thread.hpp>
-#include <boost/bind.hpp>
+#include <uhd/utils/log.hpp>
+#include <uhd/utils/safe_call.hpp>
+#include <uhd/utils/tasks.hpp>
 #include <boost/format.hpp>
-#include <memory>
+#include <boost/math/special_functions/round.hpp>
+#include <boost/math/special_functions/sign.hpp>
+#include <boost/thread/thread.hpp>
 #include <atomic>
 #include <chrono>
+#include <functional>
+#include <memory>
 #include <thread>
 
 #define bmFR_RX_FORMAT_SHIFT_SHIFT 0
@@ -140,7 +140,7 @@ struct usrp1_impl::io_impl{
     io_impl(zero_copy_if::sptr data_transport):
         data_transport(data_transport),
         curr_buff(offset_send_buffer(data_transport->get_send_buff())),
-        omsb(boost::bind(&usrp1_impl::io_impl::commit_send_buff, this, _1, _2, _3)),
+        omsb(std::bind(&usrp1_impl::io_impl::commit_send_buff, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)),
         vandal_loop_exit(false)
     {
         /* NOP */
@@ -242,7 +242,7 @@ void usrp1_impl::io_init(void){
     _io_impl->flush_send_buff();
 
     //create a new vandal thread to poll xerflow conditions
-    _io_impl->vandal_task = task::make(boost::bind(
+    _io_impl->vandal_task = task::make(std::bind(
         &usrp1_impl::vandal_conquest_loop, this, std::ref(_io_impl->vandal_loop_exit)
     ));
 }
@@ -637,8 +637,8 @@ rx_streamer::sptr usrp1_impl::get_rx_stream(const uhd::stream_args_t &args_){
     //init some streamer stuff
     my_streamer->set_tick_rate(_master_clock_rate);
     my_streamer->set_vrt_unpacker(&usrp1_bs_vrt_unpacker);
-    my_streamer->set_xport_chan_get_buff(0, boost::bind(
-        &uhd::transport::zero_copy_if::get_recv_buff, _io_impl->data_transport, _1
+    my_streamer->set_xport_chan_get_buff(0, std::bind(
+        &uhd::transport::zero_copy_if::get_recv_buff, _io_impl->data_transport, std::placeholders::_1
     ));
 
     //set the converter
@@ -687,15 +687,15 @@ tx_streamer::sptr usrp1_impl::get_tx_stream(const uhd::stream_args_t &args_){
     const size_t spp = bpp/convert::get_bytes_per_item(args.otw_format);
 
     //make the new streamer given the samples per packet
-    std::function<void(bool)> tx_fcn = boost::bind(&usrp1_impl::tx_stream_on_off, this, _1);
+    std::function<void(bool)> tx_fcn = std::bind(&usrp1_impl::tx_stream_on_off, this, std::placeholders::_1);
     std::shared_ptr<usrp1_send_packet_streamer> my_streamer =
         std::make_shared<usrp1_send_packet_streamer>(spp, _soft_time_ctrl, tx_fcn);
 
     //init some streamer stuff
     my_streamer->set_tick_rate(_master_clock_rate);
     my_streamer->set_vrt_packer(&usrp1_bs_vrt_packer);
-    my_streamer->set_xport_chan_get_buff(0, boost::bind(
-        &usrp1_impl::io_impl::get_send_buff, _io_impl.get(), _1
+    my_streamer->set_xport_chan_get_buff(0, std::bind(
+        &usrp1_impl::io_impl::get_send_buff, _io_impl.get(), std::placeholders::_1
     ));
 
     //set the converter
