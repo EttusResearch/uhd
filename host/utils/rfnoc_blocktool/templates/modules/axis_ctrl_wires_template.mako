@@ -13,10 +13,12 @@
     out_wire = ""
     term = ";"
 %>\
+  // AXIS-Ctrl to User Logic
   ${out_wire}wire [31:0]        ${ma_pre}axis_ctrl_tdata${term}
   ${out_wire}wire               ${ma_pre}axis_ctrl_tlast${term}
   ${out_wire}wire               ${ma_pre}axis_ctrl_tvalid${term}
   ${in_wire}wire               ${ma_pre}axis_ctrl_tready${term}
+  // AXIS-Ctrl Control from User Logic
   ${in_wire}wire [31:0]        ${sl_pre}axis_ctrl_tdata${term}
   ${in_wire}wire               ${sl_pre}axis_ctrl_tlast${term}
   ${in_wire}wire               ${sl_pre}axis_ctrl_tvalid${term}

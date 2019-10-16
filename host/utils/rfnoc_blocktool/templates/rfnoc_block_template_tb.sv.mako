@@ -1,3 +1,4 @@
+<%namespace name="func" file="/functions.mako"/>\
 //
 // Copyright 2019 Ettus Research, A National Instruments Company
 //
@@ -5,42 +6,53 @@
 //
 // Module: rfnoc_block_${config['module_name']}_tb
 //
+// Description: Testbench for the ${config['module_name']} RFNoC block.
+//
 
 `default_nettype none
 
 
 module rfnoc_block_${config['module_name']}_tb;
 
-  // Simulation Timing
-  timeunit 1ns;
-  timeprecision 1ps;
+  `include "test_exec.svh"
 
   import PkgTestExec::*;
   import PkgChdrUtils::*;
   import PkgRfnocBlockCtrlBfm::*;
   import PkgRfnocItemUtils::*;
 
-  // Parameters
-  localparam [9:0]  THIS_PORTID  = 10'h17;
-  localparam [15:0] THIS_EPID    = 16'hDEAD;
-  localparam int    CHDR_W       = 64;
-  localparam int    SPP          = 201;
-  localparam int    LPP          = ((SPP+1)/2);
-  localparam int    NUM_PKTS     = 50;
+  //---------------------------------------------------------------------------
+  // Testbench Configuration
+  //---------------------------------------------------------------------------
 
-  localparam int    PORT_SRCSNK  = 0;
-  localparam int    PORT_LOOP    = 1;
-
-  //adjust clocks to testbench needs
-  localparam int    CHDR_CLK_PER = 5; // 200 MHz
+  localparam [ 9:0] THIS_PORTID     = 10'h123;
+  localparam [31:0] NOC_ID          = 32'h${format(config['noc_id'], "08X")};
+  localparam int    CHDR_W          = ${config['chdr_width']};
+%if 'parameters' in config:
+%for param, value in config['parameters'].items():
+  localparam int    ${'{:<15}'.format(param)} = ${value};
+% endfor
+%endif
+  localparam int    NUM_PORTS_I     = ${func.num_ports_in_str()};
+  localparam int    NUM_PORTS_O     = ${func.num_ports_out_str()};
+  localparam int    MTU             = 13;
+  localparam int    SPP             = 64;
+  localparam int    PKT_SIZE_BYTES  = SPP * 4; // Assumes 4 bytes per sample
+  localparam int    STALL_PROB      = 25;      // Default BFM stall probability
+  localparam real   CHDR_CLK_PER    = 5.0;     // 200 MHz
+  localparam real   CTRL_CLK_PER    = 25.0;    // 40 MHz
 %for clock in config['clocks']:
   %if clock['name'] not in ["rfnoc_chdr", "rfnoc_ctrl"]:
-  localparam int    ${clock['name'].upper()}_CLK_PER = 5; // 200 MHz
+  localparam real   ${clock['name'].upper()}_CLK_PER = 5.0;  // 200 MHz
   %endif
 %endfor
 
-  // Clock and Reset Definition
+  //---------------------------------------------------------------------------
+  // Clocks and Resets
+  //---------------------------------------------------------------------------
+
   bit rfnoc_chdr_clk;
+  bit rfnoc_ctrl_clk;
 %for clock in config['clocks']:
   %if clock['name'] not in ["rfnoc_chdr", "rfnoc_ctrl"]:
   bit ${clock['name']}_clk;
@@ -48,82 +60,158 @@ module rfnoc_block_${config['module_name']}_tb;
 %endfor
 
   sim_clock_gen #(CHDR_CLK_PER) rfnoc_chdr_clk_gen (.clk(rfnoc_chdr_clk), .rst());
+  sim_clock_gen #(CTRL_CLK_PER) rfnoc_ctrl_clk_gen (.clk(rfnoc_ctrl_clk), .rst());
 %for clock in config['clocks']:
   %if clock['name'] not in ["rfnoc_chdr", "rfnoc_ctrl"]:
   sim_clock_gen #(${clock['name'].upper()}_CLK_PER) ${clock['name']}_clk_gen (.clk(${clock['name']}_clk), .rst());
   %endif
 %endfor
 
-  // ----------------------------------------
-  // Instantiate DUT
-  // ----------------------------------------
+  //---------------------------------------------------------------------------
+  // Bus Functional Models
+  //---------------------------------------------------------------------------
 
-  // Connections to DUT as interfaces:
-  RfnocBackendIf        backend (rfnoc_chdr_clk, rfnoc_chdr_clk); // Required backend iface
-  AxiStreamIf #(32)     m_ctrl  (rfnoc_chdr_clk);                 // Required control iface
-  AxiStreamIf #(32)     s_ctrl  (rfnoc_chdr_clk);                 // Required control iface
-  AxiStreamIf #(CHDR_W) m0_chdr (rfnoc_chdr_clk);                 // Optional data iface
-  AxiStreamIf #(CHDR_W) m1_chdr (rfnoc_chdr_clk);                 // Optional data iface
-  AxiStreamIf #(CHDR_W) s0_chdr (rfnoc_chdr_clk);                 // Optional data iface
-  AxiStreamIf #(CHDR_W) s1_chdr (rfnoc_chdr_clk);                 // Optional data iface
+  // Backend Interface
+  RfnocBackendIf backend (rfnoc_chdr_clk, rfnoc_ctrl_clk);
 
-  // Bus functional model for a software block controller
-  RfnocBlockCtrlBfm #(.CHDR_W(CHDR_W)) blk_ctrl;
+  // AXIS-Ctrl Interface
+  AxiStreamIf #(32) m_ctrl (rfnoc_ctrl_clk, 1'b0);
+  AxiStreamIf #(32) s_ctrl (rfnoc_ctrl_clk, 1'b0);
 
-  // DUT
-  rfnoc_block_${config['module_name']} #(
-    .THIS_PORTID        (THIS_PORTID),
-    .CHDR_W             (CHDR_W),
-    .MTU                (10)
-  ) dut (
-    .rfnoc_chdr_clk     (backend.chdr_clk),
-    .rfnoc_ctrl_clk     (backend.ctrl_clk),
-%for clock in config['clocks']:
-  %if clock['name'] not in ["rfnoc_chdr", "rfnoc_ctrl"]:
-    .${clock['name']}_clk(${clock['name']}_clk_gen.clk),
-    .${clock['name']}_rst(${clock['name']}_clk_gen.rst),
-  %endif
-%endfor
-    .rfnoc_core_config  (backend.cfg),
-    .rfnoc_core_status  (backend.sts),
-    .s_rfnoc_chdr_tdata ({m1_chdr.tdata  , m0_chdr.tdata  }),
-    .s_rfnoc_chdr_tlast ({m1_chdr.tlast  , m0_chdr.tlast  }),
-    .s_rfnoc_chdr_tvalid({m1_chdr.tvalid , m0_chdr.tvalid }),
-    .s_rfnoc_chdr_tready({m1_chdr.tready , m0_chdr.tready }),
-    .m_rfnoc_chdr_tdata ({s1_chdr.tdata , s0_chdr.tdata }),
-    .m_rfnoc_chdr_tlast ({s1_chdr.tlast , s0_chdr.tlast }),
-    .m_rfnoc_chdr_tvalid({s1_chdr.tvalid, s0_chdr.tvalid}),
-    .m_rfnoc_chdr_tready({s1_chdr.tready, s0_chdr.tready}),
-    .s_rfnoc_ctrl_tdata (m_ctrl.tdata  ),
-    .s_rfnoc_ctrl_tlast (m_ctrl.tlast  ),
-    .s_rfnoc_ctrl_tvalid(m_ctrl.tvalid ),
-    .s_rfnoc_ctrl_tready(m_ctrl.tready ),
-    .m_rfnoc_ctrl_tdata (s_ctrl.tdata ),
-    .m_rfnoc_ctrl_tlast (s_ctrl.tlast ),
-    .m_rfnoc_ctrl_tvalid(s_ctrl.tvalid),
-    .m_rfnoc_ctrl_tready(s_ctrl.tready)
-  );
+  // AXIS-CHDR Interfaces
+  AxiStreamIf #(CHDR_W) m_chdr [NUM_PORTS_I] (rfnoc_chdr_clk, 1'b0);
+  AxiStreamIf #(CHDR_W) s_chdr [NUM_PORTS_O] (rfnoc_chdr_clk, 1'b0);
 
-  // ----------------------------------------
-  // Test Process
-  // ----------------------------------------
-  TestExec test;
-  initial begin
-    // Shared Variables
-    // ----------------------------------------
-    timeout_t    timeout;
-    ctrl_word_t  rvalue;
-    rvalue = 0;
+  // Block Controller BFM
+  RfnocBlockCtrlBfm #(.CHDR_W(CHDR_W)) blk_ctrl = new(backend, m_ctrl, s_ctrl);
 
-    // Initialize
-    // ----------------------------------------
-    test = new("noc_block_${config['module_name']}_tb.v");
-    test.start_tb();
-
-    // Finish Up
-    // ----------------------------------------
-    // Display final statistics and results
-    test.end_tb();
+  // Connect block controller to BFMs
+  for (genvar i = 0; i < NUM_PORTS_I; i++) begin : gen_bfm_input_connections
+    initial begin
+      blk_ctrl.connect_master_data_port(i, m_chdr[i], PKT_SIZE_BYTES);
+      blk_ctrl.set_master_stall_prob(i, STALL_PROB);
+    end
+  end
+  for (genvar i = 0; i < NUM_PORTS_O; i++) begin : gen_bfm_output_connections
+    initial begin
+      blk_ctrl.connect_slave_data_port(i, s_chdr[i]);
+      blk_ctrl.set_slave_stall_prob(i, STALL_PROB);
+    end
   end
 
-endmodule
+  //---------------------------------------------------------------------------
+  // Device Under Test (DUT)
+  //---------------------------------------------------------------------------
+
+  // DUT Slave (Input) Port Signals
+  logic [CHDR_W*NUM_PORTS_I-1:0] s_rfnoc_chdr_tdata;
+  logic [       NUM_PORTS_I-1:0] s_rfnoc_chdr_tlast;
+  logic [       NUM_PORTS_I-1:0] s_rfnoc_chdr_tvalid;
+  logic [       NUM_PORTS_I-1:0] s_rfnoc_chdr_tready;
+
+  // DUT Master (Output) Port Signals
+  logic [CHDR_W*NUM_PORTS_O-1:0] m_rfnoc_chdr_tdata;
+  logic [       NUM_PORTS_O-1:0] m_rfnoc_chdr_tlast;
+  logic [       NUM_PORTS_O-1:0] m_rfnoc_chdr_tvalid;
+  logic [       NUM_PORTS_O-1:0] m_rfnoc_chdr_tready;
+
+  // Map the array of BFMs to a flat vector for the DUT connections
+  for (genvar i = 0; i < NUM_PORTS_I; i++) begin : gen_dut_input_connections
+    // Connect BFM master to DUT slave port
+    assign s_rfnoc_chdr_tdata[CHDR_W*i+:CHDR_W] = m_chdr[i].tdata;
+    assign s_rfnoc_chdr_tlast[i]                = m_chdr[i].tlast;
+    assign s_rfnoc_chdr_tvalid[i]               = m_chdr[i].tvalid;
+    assign m_chdr[i].tready                     = s_rfnoc_chdr_tready[i];
+  end
+  for (genvar i = 0; i < NUM_PORTS_O; i++) begin : gen_dut_output_connections
+    // Connect BFM slave to DUT master port
+    assign s_chdr[i].tdata        = m_rfnoc_chdr_tdata[CHDR_W*i+:CHDR_W];
+    assign s_chdr[i].tlast        = m_rfnoc_chdr_tlast[i];
+    assign s_chdr[i].tvalid       = m_rfnoc_chdr_tvalid[i];
+    assign m_rfnoc_chdr_tready[i] = s_chdr[i].tready;
+  end
+
+  rfnoc_block_${config['module_name']} #(
+    .THIS_PORTID         (THIS_PORTID),
+    .CHDR_W              (CHDR_W),
+    .MTU                 (MTU)
+  ) dut (
+    .rfnoc_chdr_clk      (rfnoc_chdr_clk),
+    .rfnoc_ctrl_clk      (rfnoc_ctrl_clk),
+%for clock in config['clocks']:
+  %if clock['name'] not in ["rfnoc_chdr", "rfnoc_ctrl"]:
+    .${'{:<19}'.format(clock['name']+'_clk')} (${clock['name']}_clk),
+  %endif
+%endfor
+    .rfnoc_core_config   (backend.cfg),
+    .rfnoc_core_status   (backend.sts),
+    .s_rfnoc_chdr_tdata  (s_rfnoc_chdr_tdata),
+    .s_rfnoc_chdr_tlast  (s_rfnoc_chdr_tlast),
+    .s_rfnoc_chdr_tvalid (s_rfnoc_chdr_tvalid),
+    .s_rfnoc_chdr_tready (s_rfnoc_chdr_tready),
+    .m_rfnoc_chdr_tdata  (m_rfnoc_chdr_tdata),
+    .m_rfnoc_chdr_tlast  (m_rfnoc_chdr_tlast),
+    .m_rfnoc_chdr_tvalid (m_rfnoc_chdr_tvalid),
+    .m_rfnoc_chdr_tready (m_rfnoc_chdr_tready),
+    .s_rfnoc_ctrl_tdata  (m_ctrl.tdata),
+    .s_rfnoc_ctrl_tlast  (m_ctrl.tlast),
+    .s_rfnoc_ctrl_tvalid (m_ctrl.tvalid),
+    .s_rfnoc_ctrl_tready (m_ctrl.tready),
+    .m_rfnoc_ctrl_tdata  (s_ctrl.tdata),
+    .m_rfnoc_ctrl_tlast  (s_ctrl.tlast),
+    .m_rfnoc_ctrl_tvalid (s_ctrl.tvalid),
+    .m_rfnoc_ctrl_tready (s_ctrl.tready)
+  );
+
+  //---------------------------------------------------------------------------
+  // Main Test Process
+  //---------------------------------------------------------------------------
+
+  initial begin : tb_main
+
+    // Initialize the test exec object for this testbench
+    test.start_tb("rfnoc_block_${config['module_name']}_tb");
+
+    // Start the BFMs running
+    blk_ctrl.run();
+
+    //--------------------------------
+    // Reset
+    //--------------------------------
+
+    test.start_test("Flush block then reset it", 10us);
+    blk_ctrl.flush_and_reset();
+    test.end_test();
+
+    //--------------------------------
+    // Verify Block Info
+    //--------------------------------
+
+    test.start_test("Verify Block Info", 2us);
+    `ASSERT_ERROR(blk_ctrl.get_noc_id() == NOC_ID, "Incorrect NOC_ID Value");
+    `ASSERT_ERROR(blk_ctrl.get_num_data_i() == NUM_PORTS_I, "Incorrect NUM_DATA_I Value");
+    `ASSERT_ERROR(blk_ctrl.get_num_data_o() == NUM_PORTS_O, "Incorrect NUM_DATA_O Value");
+    `ASSERT_ERROR(blk_ctrl.get_mtu() == MTU, "Incorrect MTU Value");
+    test.end_test();
+
+    //--------------------------------
+    // Test Sequences
+    //--------------------------------
+
+    // <Add your test code here>
+    test.start_test("<Name your first test", 10us);
+    `ASSERT_WARNING(0, "This testbench doesn't test anything yet!");
+    test.end_test();
+
+    //--------------------------------
+    // Finish Up
+    //--------------------------------
+
+    // Display final statistics and results
+    test.end_tb();
+  end : tb_main
+
+endmodule : rfnoc_block_${config['module_name']}_tb
+
+
+`default_nettype wire

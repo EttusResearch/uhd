@@ -1,48 +1,58 @@
 <%!
 import math
-%>
+%>\
+<%namespace name="func" file="/functions.mako"/>\
 //
 // Copyright 2019 Ettus Research, A National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
 // Module: rfnoc_block_${config['module_name']}
+//
 // Description:
+//
+//   <Add block description here>
 //
 // Parameters:
 //
-// Signals:
+//   THIS_PORTID : Control crossbar port to which this block is connected
+//   CHDR_W      : AXIS-CHDR data bus width
+//   MTU         : Maximum transmission unit (i.e., maximum packet size in
+//                 CHDR words is 2**MTU).
+//
 
-<%
-num_inputs = len(config['data']['inputs'])
-num_outputs = len(config['data']['outputs'])
-%>
+`default_nettype none
+
 
 module rfnoc_block_${config['module_name']} #(
-  parameter  [9:0] THIS_PORTID = 10'd0,
-  parameter        CHDR_W      = 64,
-  parameter  [5:0] MTU         = ${math.ceil(math.log2(config['data']['mtu']))}
+  parameter [9:0] THIS_PORTID     = 10'd0,
+  parameter       CHDR_W          = 64,
+  parameter [5:0] MTU             = 10${"," if ('parameters' in config) else ""}
+%if 'parameters' in config:
+<% param_count = 1 %>\
+%for param, value in config['parameters'].items():
+  parameter       ${'{:<15}'.format(param)} = ${value}${',' if param_count < len(config['parameters']) else ''}
+<% param_count = param_count+1 %>\
+% endfor
+%endif
 )(
   // RFNoC Framework Clocks and Resets
 %for clock in config['clocks']:
   input  wire                   ${clock['name']}_clk,
-  %if not clock['name'] in ["rfnoc_chdr", "rfnoc_ctrl"]:
-  input  wire                   ${clock['name']}_rst,
-  %endif
 %endfor
   // RFNoC Backend Interface
   input  wire [511:0]           rfnoc_core_config,
   output wire [511:0]           rfnoc_core_status,
-  // 2 CHDR Input Ports (from framework)
-  input  wire [(CHDR_W*${num_inputs})-1:0]  s_rfnoc_chdr_tdata,
-  input  wire [1:0]             s_rfnoc_chdr_tlast,
-  input  wire [1:0]             s_rfnoc_chdr_tvalid,
-  output wire [1:0]             s_rfnoc_chdr_tready,
-  // 2 CHDR Output Ports (to framework)
-  output wire [(CHDR_W*${num_outputs})-1:0]  m_rfnoc_chdr_tdata,
-  output wire [1:0]             m_rfnoc_chdr_tlast,
-  output wire [1:0]             m_rfnoc_chdr_tvalid,
-  input  wire [1:0]             m_rfnoc_chdr_tready,
+  // AXIS-CHDR Input Ports (from framework)
+  input  wire [(${func.num_ports_in_str()})*CHDR_W-1:0] s_rfnoc_chdr_tdata,
+  input  wire [(${func.num_ports_in_str()})-1:0]        s_rfnoc_chdr_tlast,
+  input  wire [(${func.num_ports_in_str()})-1:0]        s_rfnoc_chdr_tvalid,
+  output wire [(${func.num_ports_in_str()})-1:0]        s_rfnoc_chdr_tready,
+  // AXIS-CHDR Output Ports (to framework)
+  output wire [(${func.num_ports_out_str()})*CHDR_W-1:0] m_rfnoc_chdr_tdata,
+  output wire [(${func.num_ports_out_str()})-1:0]        m_rfnoc_chdr_tlast,
+  output wire [(${func.num_ports_out_str()})-1:0]        m_rfnoc_chdr_tvalid,
+  input  wire [(${func.num_ports_out_str()})-1:0]        m_rfnoc_chdr_tready,
   // AXIS-Ctrl Input Port (from framework)
   input  wire [31:0]            s_rfnoc_ctrl_tdata,
   input  wire                   s_rfnoc_ctrl_tlast,
@@ -55,97 +65,177 @@ module rfnoc_block_${config['module_name']} #(
   input  wire                   m_rfnoc_ctrl_tready
 );
 
-%for clock in config['clocks']:
-  %if clock['name'] in ["rfnoc_chdr", "rfnoc_ctrl"]:
-  wire ${clock['name']}_rst;
-  %endif
-%endfor
+  //---------------------------------------------------------------------------
+  // Signal Declarations
+  //---------------------------------------------------------------------------
 
+  // Clocks and Resets
+%if config['control']['fpga_iface'] == "ctrlport":
   wire               ctrlport_clk;
   wire               ctrlport_rst;
-
+%elif config['control']['fpga_iface'] == "axis_ctrl":
+  wire               axis_ctrl_clk;
+  wire               axis_ctrl_rst;
+%endif
+%if config['data']['fpga_iface'] == "axis_chdr":
+  wire               axis_chdr_clk;
+  wire               axis_chdr_rst;
+%elif config['data']['fpga_iface'] == "axis_pyld_ctxt":
   wire               axis_data_clk;
   wire               axis_data_rst;
+%elif config['data']['fpga_iface'] == "axis_data":
+  wire               axis_data_clk;
+  wire               axis_data_rst;
+%endif
+%if config['control']['fpga_iface'] == "ctrlport":
+<%include file="/modules/ctrlport_wires_template.mako" args="mode='block'"/>\
+%elif config['control']['fpga_iface'] == "axis_ctrl":
+<%include file="/modules/axis_ctrl_wires_template.mako" args="mode='block'"/>\
+%endif
+%if config['data']['fpga_iface'] == "axis_chdr":
+<%include file="/modules/axis_chdr_wires_template.mako" args="mode='block'"/>\
+%elif config['data']['fpga_iface'] == "axis_pyld_ctxt":
+<%include file="/modules/axis_pyld_ctxt_wires_template.mako" args="mode='block'"/>\
+%elif config['data']['fpga_iface'] == "axis_data":
+<%include file="/modules/axis_data_wires_template.mako" args="mode='block'"/>\
+%endif
+
+  //---------------------------------------------------------------------------
+  // NoC Shell
+  //---------------------------------------------------------------------------
+
+  noc_shell_${config['module_name']} #(
+    .CHDR_W      (CHDR_W),
+    .THIS_PORTID (THIS_PORTID),
+    .MTU         (MTU)
+  ) noc_shell_${config['module_name']}_i (
+    //---------------------
+    // Framework Interface
+    //---------------------
+
+    // Clock Inputs
+  %for clock in config['clocks']:
+    .${'{:<19}'.format(clock['name']+'_clk')} (${clock['name']}_clk),
+  %endfor
+    // Reset Outputs
+  %for clock in config['clocks']:
+    .${'{:<19}'.format(clock['name']+'_rst')} (),
+  %endfor
+    // RFNoC Backend Interface
+    .rfnoc_core_config   (rfnoc_core_config),
+    .rfnoc_core_status   (rfnoc_core_status),
+    // CHDR Input Ports  (from framework)
+    .s_rfnoc_chdr_tdata  (s_rfnoc_chdr_tdata),
+    .s_rfnoc_chdr_tlast  (s_rfnoc_chdr_tlast),
+    .s_rfnoc_chdr_tvalid (s_rfnoc_chdr_tvalid),
+    .s_rfnoc_chdr_tready (s_rfnoc_chdr_tready),
+    // CHDR Output Ports (to framework)
+    .m_rfnoc_chdr_tdata  (m_rfnoc_chdr_tdata),
+    .m_rfnoc_chdr_tlast  (m_rfnoc_chdr_tlast),
+    .m_rfnoc_chdr_tvalid (m_rfnoc_chdr_tvalid),
+    .m_rfnoc_chdr_tready (m_rfnoc_chdr_tready),
+    // AXIS-Ctrl Input Port (from framework)
+    .s_rfnoc_ctrl_tdata  (s_rfnoc_ctrl_tdata),
+    .s_rfnoc_ctrl_tlast  (s_rfnoc_ctrl_tlast),
+    .s_rfnoc_ctrl_tvalid (s_rfnoc_ctrl_tvalid),
+    .s_rfnoc_ctrl_tready (s_rfnoc_ctrl_tready),
+    // AXIS-Ctrl Output Port (to framework)
+    .m_rfnoc_ctrl_tdata  (m_rfnoc_ctrl_tdata),
+    .m_rfnoc_ctrl_tlast  (m_rfnoc_ctrl_tlast),
+    .m_rfnoc_ctrl_tvalid (m_rfnoc_ctrl_tvalid),
+    .m_rfnoc_ctrl_tready (m_rfnoc_ctrl_tready),
+
+    //---------------------
+    // Client Interface
+    //---------------------
 
 %if config['control']['fpga_iface'] == "ctrlport":
-<%include file="modules/ctrlport_wires_template.mako" args="mode='block'"/>
+<%include file="/modules/ctrlport_connect_template.mako"/>\
 %elif config['control']['fpga_iface'] == "axis_ctrl":
-<%include file="modules/axis_ctrl_wires_template.mako" args="mode='block'"/>
-%else:
-<%include file="control wires template.mako"/>
+<%include file="/modules/axis_ctrl_connect_template.mako"/>\
 %endif
 
 %if config['data']['fpga_iface'] == "axis_chdr":
-<%include file="modules/axis_chdr_wires_template.mako" args="mode='block', num_inputs=num_inputs, num_outputs=num_outputs"/>
-%elif config['data']['fpga_iface'] == "axis_rawdata":
-<%include file="modules/axis_raw_wires_template.mako" args="mode='block', num_inputs=num_inputs, num_outputs=num_outputs"/>
-%else:
-<%include file="data wires template.mako"/>
+<%include file="/modules/axis_chdr_connect_template.mako"/>\
+%elif config['data']['fpga_iface'] == "axis_pyld_ctxt":
+<%include file="/modules/axis_pyld_ctxt_connect_template.mako"/>\
+%elif config['data']['fpga_iface'] == "axis_data":
+<%include file="/modules/axis_data_connect_template.mako"/>\
 %endif
+  );
 
-//NoC Shell
-noc_shell_${config['module_name']} #(
-  .CHDR_W      (CHDR_W),
-  .THIS_PORTID (THIS_PORTID),
-  .MTU         (MTU)
-) noc_shell (
-%for clock in config['clocks']:
-  .${clock['name']}_clk(${clock['name']}_clk),
-  .${clock['name']}_rst(${clock['name']}_rst),
-%endfor
+  //---------------------------------------------------------------------------
+  // User Logic
+  //---------------------------------------------------------------------------
 
-  // RFNoC Backend Interface
-  .rfnoc_core_config(rfnoc_core_config),
-  .rfnoc_core_status(rfnoc_core_status),
+  // < Replace this section with your logic >
 
-  // CHDR Input Ports (from framework)
-  .s_rfnoc_chdr_tdata(s_rfnoc_chdr_tdata),
-  .s_rfnoc_chdr_tlast(s_rfnoc_chdr_tlast),
-  .s_rfnoc_chdr_tvalid(s_rfnoc_chdr_tvalid),
-  .s_rfnoc_chdr_tready(s_rfnoc_chdr_tready),
-
-  // CHDR Output Ports (to framework)
-  .m_rfnoc_chdr_tdata(m_rfnoc_chdr_tdata),
-  .m_rfnoc_chdr_tlast(m_rfnoc_chdr_tlast),
-  .m_rfnoc_chdr_tvalid(m_rfnoc_chdr_tvalid),
-  .m_rfnoc_chdr_tready(m_rfnoc_chdr_tready),
-  // AXIS-Ctrl Input Port (from framework)
-  .s_rfnoc_ctrl_tdata(s_rfnoc_ctrl_tdata),
-  .s_rfnoc_ctrl_tlast(s_rfnoc_ctrl_tlast),
-  .s_rfnoc_ctrl_tvalid(s_rfnoc_ctrl_tvalid),
-  .s_rfnoc_ctrl_tready(s_rfnoc_ctrl_tready),
-  // AXIS-Ctrl Output Port (to framework)
-  .m_rfnoc_ctrl_tdata(m_rfnoc_ctrl_tdata),
-  .m_rfnoc_ctrl_tlast(m_rfnoc_ctrl_tlast),
-  .m_rfnoc_ctrl_tvalid(m_rfnoc_ctrl_tvalid),
-  .m_rfnoc_ctrl_tready(m_rfnoc_ctrl_tready),
-
-  // Client Interface
-  //------------------------------------------------------------
-  .ctrlport_clk(ctrlport_clk),
-  .ctrlport_rst(ctrlport_rst),
-
+  // Nothing to do yet, so just drive control signals to default values
 %if config['control']['fpga_iface'] == "ctrlport":
-<%include file="modules/ctrlport_connect_template.mako"/>\
+  assign m_ctrlport_resp_ack = 1'b0;
+  %if config['control']['ctrlport']['has_status']:
+  assign m_ctrlport_resp_status = 2'b0;
+  %endif
+  %if config['control']['interface_direction'] != "slave":
+  assign s_ctrlport_req_wr = 1'b0;
+  assign s_ctrlport_req_rd = 1'b0;
+  %endif
 %elif config['control']['fpga_iface'] == "axis_ctrl":
-<%include file="modules/axis_ctrl_connect_template.mako"/>\
-%else:
-<%include file="control connect template.mako"/>\
+  assign m_axis_ctrl_tready = 1'b0;
+  assign s_axis_ctrl_tvalid = 1'b0;
 %endif
-
-  .axis_data_clk(axis_data_clk),
-  .axis_data_rst(axis_data_rst),
-
 %if config['data']['fpga_iface'] == "axis_chdr":
-<%include file="modules/axis_chdr_connect_template.mako" args="num_inputs=num_inputs, num_outputs=num_outputs"/>\
-%elif config['data']['fpga_iface'] == "axis_rawdata":
-<%include file="modules/axis_raw_connect_template.mako" args="num_inputs=num_inputs, num_outputs=num_outputs"/>\
-%else:
-<%include file="data connect template.mako"/>\
+  %for port_name, port_info in config['data']['inputs'].items():
+    %if 'num_ports' in port_info:
+  assign m_${port_name}_chdr_tready = {${port_info['num_ports']}{1'b0}};
+    %else:
+  assign m_${port_name}_chdr_tready = 1'b0;
+    %endif
+  %endfor
+  %for port_name, port_info in config['data']['outputs'].items():
+    %if 'num_ports' in port_info:
+  assign s_${port_name}_chdr_tvalid = {${port_info['num_ports']}{1'b0}};
+    %else:
+  assign s_${port_name}_chdr_tvalid = 1'b0;
+    %endif
+  %endfor
+%elif config['data']['fpga_iface'] == "axis_pyld_ctxt":
+  %for port_name, port_info in config['data']['inputs'].items():
+    %if 'num_ports' in port_info:
+  assign m_${port_name}_payload_tready = {${port_info['num_ports']}{1'b0}};
+  assign m_${port_name}_context_tready = {${port_info['num_ports']}{1'b0}};
+    %else:
+  assign m_${port_name}_payload_tready = 1'b0;
+  assign m_${port_name}_context_tready = 1'b0;
+    %endif
+  %endfor
+  %for port_name, port_info in config['data']['outputs'].items():
+    %if 'num_ports' in port_info:
+  assign s_${port_name}_payload_tvalid = {${port_info['num_ports']}{1'b0}};
+  assign s_${port_name}_context_tvalid = {${port_info['num_ports']}{1'b0}};
+    %else:
+  assign s_${port_name}_payload_tvalid = 1'b0;
+  assign s_${port_name}_context_tvalid = 1'b0;
+    %endif
+  %endfor
+%elif config['data']['fpga_iface'] == "axis_data":
+  %for port_name, port_info in config['data']['inputs'].items():
+    %if 'num_ports' in port_info:
+  assign m_${port_name}_axis_tready = {${port_info['num_ports']}{1'b0}};
+    %else:
+  assign m_${port_name}_axis_tready = 1'b0;
+    %endif
+  %endfor
+  %for port_name, port_info in config['data']['outputs'].items():
+    %if 'num_ports' in port_info:
+  assign s_${port_name}_axis_tvalid = {${port_info['num_ports']}{1'b0}};
+    %else:
+  assign s_${port_name}_axis_tvalid = 1'b0;
+    %endif
+  %endfor
 %endif
-);
-
-
-//user code goes here
 
 endmodule // rfnoc_block_${config['module_name']}
+
+
+`default_nettype wire

@@ -18,7 +18,6 @@ import os
 import re
 import sys
 from collections import namedtuple
-import six
 import mako.template
 import mako.lookup
 from mako import exceptions
@@ -93,8 +92,11 @@ class BlockGenerator:
         final filename is derived from the template file by substitute template
         by the module name from the YAML configuration.
         """
-        lookup = mako.lookup.TemplateLookup(directories=['.'])
-        filename = os.path.join("templates", self.template_file)
+        # Create absolute paths for templates so run location doesn't matter
+        template_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), 
+                                                    "templates"))
+        lookup = mako.lookup.TemplateLookup(directories=[template_dir])
+        filename = os.path.join(template_dir, self.template_file)
         tpl = mako.template.Template(filename=filename, lookup=lookup,
                                      strict_undefined=True)
         # Render and return

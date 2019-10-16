@@ -14,7 +14,7 @@
     ma_wire = ""
     term = ";"
 %>\
-  // Control Port Master
+  // CtrlPort Master
   ${ma_wire}wire               ${ma_pre}ctrlport_req_wr${term}
   ${ma_wire}wire               ${ma_pre}ctrlport_req_rd${term}
   ${ma_wire}wire [19:0]        ${ma_pre}ctrlport_req_addr${term}
@@ -23,7 +23,7 @@
   ${ma_wire}wire [3:0]         ${ma_pre}ctrlport_req_byte_en${term}
 %endif
 %if config['control']['ctrlport']['timed']:
-  ${ma_wire}wire               ${ma_pre}ctrlport_req_ha${sl_pre}time${term}
+  ${ma_wire}wire               ${ma_pre}ctrlport_req_has_time${term}
   ${ma_wire}wire [63:0]        ${ma_pre}ctrlport_req_time${term}
 %endif
   ${sl_wire}wire               ${ma_pre}ctrlport_resp_ack${term}
@@ -31,9 +31,8 @@
   ${sl_wire}wire [1:0]         ${ma_pre}ctrlport_resp_status${term}
 %endif
   ${sl_wire}wire [31:0]        ${ma_pre}ctrlport_resp_data${term}
-
 %if config['control']['interface_direction'] != "slave":
-  // Control Port Slave
+  // CtrlPort Slave
   ${sl_wire}wire               ${sl_pre}ctrlport_req_wr${term}
   ${sl_wire}wire               ${sl_pre}ctrlport_req_rd${term}
   ${sl_wire}wire [19:0]        ${sl_pre}ctrlport_req_addr${term}
