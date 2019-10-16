@@ -16,6 +16,7 @@
 #include <boost/weak_ptr.hpp>
 #include <cstdlib>
 #include <iostream>
+#include <mutex>
 
 using namespace uhd;
 using namespace uhd::transport;
@@ -86,6 +87,10 @@ libusb_session_impl::~libusb_session_impl(void)
 libusb::session::sptr libusb::session::get_global_session(void)
 {
     static boost::weak_ptr<session> global_session;
+    // this mutex is to ensure a global session is not currently being created
+    // before checking for the existence of one
+    static std::mutex global_session_mutex;
+    std::lock_guard<std::mutex> lock(global_session_mutex);
 
     // not expired -> get existing session
     if (not global_session.expired())
