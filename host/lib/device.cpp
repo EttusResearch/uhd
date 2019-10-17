@@ -16,11 +16,11 @@
 
 #include <boost/format.hpp>
 #include <boost/functional/hash.hpp>
-#include <boost/tuple/tuple.hpp>
 #include <boost/thread/mutex.hpp>
 
 #include <future>
 #include <memory>
+#include <tuple>
 
 using namespace uhd;
 
@@ -70,7 +70,7 @@ static size_t hash_device_addr(
 /***********************************************************************
  * Registration
  **********************************************************************/
-typedef boost::tuple<device::find_t, device::make_t, device::device_filter_t> dev_fcn_reg_t;
+typedef std::tuple<device::find_t, device::make_t, device::device_filter_t> dev_fcn_reg_t;
 
 // instantiate the device function registry container
 UHD_SINGLETON_FCN(std::vector<dev_fcn_reg_t>, get_dev_fcn_regs)
@@ -97,10 +97,10 @@ device_addrs_t device::find(const device_addr_t &hint, device_filter_t filter){
     device_addrs_t device_addrs;
     std::vector<std::future<device_addrs_t>> find_tasks;
     for (const auto& fcn : get_dev_fcn_regs()) {
-        if (filter == ANY or fcn.get<2>() == filter) {
+        if (filter == ANY or std::get<2>(fcn) == filter) {
             find_tasks.emplace_back(std::async(std::launch::async,
                 [fcn, hint](){
-                    return fcn.get<0>()(hint);
+                    return std::get<0>(fcn)(hint);
                 }
             ));
         }
@@ -128,15 +128,15 @@ device_addrs_t device::find(const device_addr_t &hint, device_filter_t filter){
 device::sptr device::make(const device_addr_t &hint, device_filter_t filter, size_t which){
     boost::mutex::scoped_lock lock(_device_mutex);
 
-    typedef boost::tuple<device_addr_t, make_t> dev_addr_make_t;
+    typedef std::tuple<device_addr_t, make_t> dev_addr_make_t;
     std::vector<dev_addr_make_t> dev_addr_makers;
 
     for(const dev_fcn_reg_t &fcn:  get_dev_fcn_regs()){
         try{
-            if(filter == ANY or fcn.get<2>() == filter){
-                for(device_addr_t dev_addr:  fcn.get<0>()(hint)){
+            if(filter == ANY or std::get<2>(fcn) == filter){
+                for(device_addr_t dev_addr:  std::get<0>(fcn)(hint)){
                     //append the discovered address and its factory function
-                    dev_addr_makers.push_back(dev_addr_make_t(dev_addr, fcn.get<1>()));
+                    dev_addr_makers.push_back(dev_addr_make_t(dev_addr, std::get<1>(fcn)));
                 }
             }
         }
@@ -161,7 +161,7 @@ device::sptr device::make(const device_addr_t &hint, device_filter_t filter, siz
 
     //create a unique hash for the device address
     device_addr_t dev_addr; make_t maker;
-    boost::tie(dev_addr, maker) = dev_addr_makers.at(which);
+    std::tie(dev_addr, maker) = dev_addr_makers.at(which);
     size_t dev_hash = hash_device_addr(dev_addr);
     UHD_LOGGER_TRACE("UHD") << boost::format("Device hash: %u") % dev_hash ;
 

@@ -17,9 +17,9 @@
 #include <regex>
 #include <boost/thread/mutex.hpp>
 #include <boost/date_time.hpp>
-#include <boost/tuple/tuple.hpp>
 #include <ctime>
 #include <string>
+#include <tuple>
 #include <thread>
 #include <chrono>
 #include <stdint.h>
@@ -47,7 +47,7 @@ gps_ctrl::~gps_ctrl(void){
 
 class gps_ctrl_impl : public gps_ctrl{
 private:
-    std::map<std::string, boost::tuple<std::string, boost::system_time, bool> > sentences;
+    std::map<std::string, std::tuple<std::string, boost::system_time, bool>> sentences;
     boost::mutex cache_mutex;
     boost::system_time _last_cache_update;
 
@@ -64,7 +64,7 @@ private:
             update_cache();
             //mark sentence as touched
             if (sentences.find(which) != sentences.end())
-                sentences[which].get<2>() = true;
+                std::get<2>(sentences[which]) = true;
         }
         while (1)
         {
@@ -82,12 +82,12 @@ private:
                 {
                     age = milliseconds(max_age_ms);
                 } else {
-                    age = boost::get_system_time() - sentences[which].get<1>();
+                    age = boost::get_system_time() - std::get<1>(sentences[which]);
                 }
-                if (age < milliseconds(max_age_ms) and (not (wait_for_next and sentences[which].get<2>())))
+                if (age < milliseconds(max_age_ms) and (not (wait_for_next and std::get<2>(sentences[which]))))
                 {
-                    sentence = sentences[which].get<0>();
-                    sentences[which].get<2>() = true;
+                    sentence = std::get<0>(sentences[which]);
+                    std::get<2>(sentences[which]) = true;
                 }
             } catch(std::exception &e) {
                 UHD_LOGGER_DEBUG("GPS") << "get_sentence: " << e.what();
@@ -183,7 +183,7 @@ private:
     {
         if (not msgs[key].empty())
         {
-            sentences[key] = boost::make_tuple(msgs[key], time, false);
+            sentences[key] = std::make_tuple(msgs[key], time, false);
         }
     }
 

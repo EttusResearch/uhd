@@ -9,10 +9,10 @@
 #include <uhd/utils/safe_call.hpp>
 #include <uhdlib/usrp/cores/rx_vita_core_3000.hpp>
 #include <boost/assign/list_of.hpp>
-#include <boost/tuple/tuple.hpp>
 #include <boost/date_time.hpp>
 #include <thread>
 #include <chrono>
+#include <tuple>
 
 #define REG_FRAMER_MAXLEN    _base + 4*4 + 0
 #define REG_FRAMER_SID       _base + 4*4 + 4
@@ -94,7 +94,7 @@ struct rx_vita_core_3000_impl : rx_vita_core_3000
         _continuous_streaming = stream_cmd.stream_mode == stream_cmd_t::STREAM_MODE_START_CONTINUOUS;
 
         //setup the mode to instruction flags
-        typedef boost::tuple<bool, bool, bool, bool> inst_t;
+        typedef std::tuple<bool, bool, bool, bool> inst_t;
         static const uhd::dict<stream_cmd_t::stream_mode_t, inst_t> mode_to_inst = boost::assign::map_list_of
                                                                 //reload, chain, samps, stop
             (stream_cmd_t::STREAM_MODE_START_CONTINUOUS,   inst_t(true,  true,  false, false))
@@ -105,7 +105,7 @@ struct rx_vita_core_3000_impl : rx_vita_core_3000
 
         //setup the instruction flag values
         bool inst_reload, inst_chain, inst_samps, inst_stop;
-        boost::tie(inst_reload, inst_chain, inst_samps, inst_stop) = mode_to_inst[stream_cmd.stream_mode];
+        std::tie(inst_reload, inst_chain, inst_samps, inst_stop) = mode_to_inst[stream_cmd.stream_mode];
 
         //calculate the word from flags and length
         uint32_t cmd_word = 0;

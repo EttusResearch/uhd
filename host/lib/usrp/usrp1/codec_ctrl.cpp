@@ -15,11 +15,11 @@
 #include <uhd/utils/byteswap.hpp>
 #include <stdint.h>
 #include <boost/format.hpp>
-#include <boost/tuple/tuple.hpp>
 #include <boost/math/special_functions/round.hpp>
 #include <boost/math/special_functions/sign.hpp>
 #include <boost/assign/list_of.hpp>
 #include <iomanip>
+#include <tuple>
 
 using namespace uhd;
 
@@ -245,7 +245,7 @@ void usrp1_codec_ctrl_impl::write_aux_dac(aux_dac_t which, double volts)
     uint8_t dac_word = uhd::clip(boost::math::iround(volts*0xff/3.3), 0, 0xff);
 
     //setup a lookup table for the aux dac params (reg ref, reg addr)
-    typedef boost::tuple<uint8_t*, uint8_t> dac_params_t;
+    typedef std::tuple<uint8_t*, uint8_t> dac_params_t;
     uhd::dict<aux_dac_t, dac_params_t> aux_dac_to_params = boost::assign::map_list_of
         (AUX_DAC_A, dac_params_t(&_ad9862_regs.aux_dac_a, 36))
         (AUX_DAC_B, dac_params_t(&_ad9862_regs.aux_dac_b, 37))
@@ -255,7 +255,7 @@ void usrp1_codec_ctrl_impl::write_aux_dac(aux_dac_t which, double volts)
     //set the aux dac register
     UHD_ASSERT_THROW(aux_dac_to_params.has_key(which));
     uint8_t *reg_ref, reg_addr;
-    boost::tie(reg_ref, reg_addr) = aux_dac_to_params[which];
+    std::tie(reg_ref, reg_addr) = aux_dac_to_params[which];
     *reg_ref = dac_word;
     this->send_reg(reg_addr);
 }
