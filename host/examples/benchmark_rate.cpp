@@ -296,6 +296,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     // variables to be set by po
     std::string args;
     std::string rx_subdev, tx_subdev;
+    std::string rx_stream_args, tx_stream_args;
     double duration;
     double rx_rate, tx_rate;
     std::string rx_otw, tx_otw;
@@ -315,6 +316,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("duration", po::value<double>(&duration)->default_value(10.0), "duration for the test in seconds")
         ("rx_subdev", po::value<std::string>(&rx_subdev), "specify the device subdev for RX")
         ("tx_subdev", po::value<std::string>(&tx_subdev), "specify the device subdev for TX")
+        ("rx_stream_args", po::value<std::string>(&rx_stream_args)->default_value(""), "stream args for RX streamer")
+        ("tx_stream_args", po::value<std::string>(&tx_stream_args)->default_value(""), "stream args for TX streamer")
         ("rx_rate", po::value<double>(&rx_rate), "specify to perform a RX rate test (sps)")
         ("tx_rate", po::value<double>(&tx_rate), "specify to perform a TX rate test (sps)")
         ("rx_otw", po::value<std::string>(&rx_otw)->default_value("sc16"), "specify the over-the-wire sample mode for RX")
@@ -492,6 +495,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         // create a receive streamer
         uhd::stream_args_t stream_args(rx_cpu, rx_otw);
         stream_args.channels             = rx_channel_nums;
+        stream_args.args                 = uhd::device_addr_t(rx_stream_args);
         uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
         auto rx_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
             benchmark_rx_rate(
@@ -506,6 +510,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         // create a transmit streamer
         uhd::stream_args_t stream_args(tx_cpu, tx_otw);
         stream_args.channels             = tx_channel_nums;
+        stream_args.args                 = uhd::device_addr_t(tx_stream_args);
         uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
         auto tx_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
             benchmark_tx_rate(
