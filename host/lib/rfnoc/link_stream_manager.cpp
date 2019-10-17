@@ -222,7 +222,8 @@ public:
         const sep_addr_t dst_addr,
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
-        const device_addr_t& xport_args)
+        const device_addr_t& xport_args,
+        const std::string& streamer_id)
     {
         _ensure_ep_is_reachable(dst_addr);
 
@@ -244,14 +245,16 @@ public:
             {src_epid, dst_epid},
             pyld_buff_fmt,
             mdata_buff_fmt,
-            xport_args);
+            xport_args,
+            streamer_id);
     }
 
     virtual chdr_rx_data_xport::uptr create_device_to_host_data_stream(
         sep_addr_t src_addr,
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
-        const device_addr_t& xport_args)
+        const device_addr_t& xport_args,
+        const std::string& streamer_id)
     {
         _ensure_ep_is_reachable(src_addr);
 
@@ -273,7 +276,8 @@ public:
             {src_epid, dst_epid},
             pyld_buff_fmt,
             mdata_buff_fmt,
-            xport_args);
+            xport_args,
+            streamer_id);
     }
 
 private:

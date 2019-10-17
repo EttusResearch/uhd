@@ -18,6 +18,7 @@
 #include <uhdlib/rfnoc/rfnoc_device.hpp>
 #include <uhdlib/rfnoc/rfnoc_rx_streamer.hpp>
 #include <uhdlib/rfnoc/rfnoc_tx_streamer.hpp>
+#include <uhdlib/usrp/common/io_service_mgr.hpp>
 #include <uhdlib/utils/narrow.hpp>
 #include <memory>
 
@@ -50,6 +51,7 @@ public:
           _graph(std::make_unique<uhd::rfnoc::detail::graph_t>()) {
         _mb_controllers.reserve(_num_mboards);
         // Now initialize all subsystems:
+        _init_io_srv_mgr(dev_addr); // Global I/O Service Manager
         _init_mb_controllers();
         _init_gsm(); // Graph Stream Manager
         try {
@@ -252,11 +254,12 @@ public:
             pyld_fmt,
             mdata_fmt,
             adapter_id,
-            rfnoc_streamer->get_stream_args().args);
+            rfnoc_streamer->get_stream_args().args,
+            rfnoc_streamer->get_unique_id());
 
         rfnoc_streamer->connect_channel(strm_port, std::move(xport));
 
-        //// If this worked, then also connect the streamer in the BGL graph
+        // If this worked, then also connect the streamer in the BGL graph
         auto dst = get_block(dst_blk);
         graph_edge_t edge_info(strm_port, dst_port, graph_edge_t::TX_STREAM, true);
         _graph->connect(rfnoc_streamer.get(), dst.get(), edge_info);
@@ -308,7 +311,8 @@ public:
             pyld_fmt,
             mdata_fmt,
             adapter_id,
-            rfnoc_streamer->get_stream_args().args);
+            rfnoc_streamer->get_stream_args().args,
+            rfnoc_streamer->get_unique_id());
 
         rfnoc_streamer->connect_channel(strm_port, std::move(xport));
 
@@ -457,6 +461,14 @@ private:
     /**************************************************************************
      * Device Setup
      *************************************************************************/
+    void _init_io_srv_mgr(const uhd::device_addr_t& dev_addr)
+    {
+        _io_srv_mgr = usrp::io_service_mgr::make(dev_addr);
+        for (size_t mb_idx = 0; mb_idx < _num_mboards; mb_idx++) {
+            _device->get_mb_iface(mb_idx).set_io_srv_mgr(_io_srv_mgr);
+        }
+    }
+
     void _init_mb_controllers()
     {
         UHD_LOG_TRACE(LOG_ID, "Initializing MB controllers...");
@@ -833,6 +845,9 @@ private:
     //! Number of motherboards, this is technically redundant but useful for
     // easy lookups.
     size_t _num_mboards;
+
+    //! Reference to the global I/O Service Manager
+    uhd::usrp::io_service_mgr::sptr _io_srv_mgr;
 
     //! Registry for the blocks (it's a separate class)
     std::unique_ptr<detail::block_container_t> _block_registry;

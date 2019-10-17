@@ -126,13 +126,15 @@ public:
      * \param pyld_buff_fmt Datatype of SW buffer that holds the data payload
      * \param mdata_buff_fmt Datatype of SW buffer that holds the data metadata
      * \param xport_args The transport arguments
+     * \param streamer_id A unique identifier for the streamer that will own the transport
      * \return An transport instance
      */
     virtual chdr_tx_data_xport::uptr create_host_to_device_data_stream(
         const sep_addr_t dst_addr,
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
-        const device_addr_t& xport_args) = 0;
+        const device_addr_t& xport_args,
+        const std::string& streamer_id) = 0;
 
     /*! \brief Create a data stream going from the device to the host
      *
@@ -140,13 +142,15 @@ public:
      * \param pyld_buff_fmt Datatype of SW buffer that holds the data payload
      * \param mdata_buff_fmt Datatype of SW buffer that holds the data metadata
      * \param xport_args The transport arguments
+     * \param streamer_id A unique identifier for the streamer that will own the transport
      * \return An transport instance
      */
     virtual chdr_rx_data_xport::uptr create_device_to_host_data_stream(
         const sep_addr_t src_addr,
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
-        const device_addr_t& xport_args) = 0;
+        const device_addr_t& xport_args,
+        const std::string& streamer_id) = 0;
 
     static uptr make(const chdr::chdr_packet_factory& pkt_factory,
         mb_iface& mb_if,

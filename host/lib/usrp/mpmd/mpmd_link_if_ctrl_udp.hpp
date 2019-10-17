@@ -45,8 +45,6 @@ public:
 
 private:
     const uhd::device_addr_t _mb_args;
-    const uhd::dict<std::string, std::string> _recv_args;
-    const uhd::dict<std::string, std::string> _send_args;
     //!
     udp_link_info_map _udp_info;
     //! A list of IP addresses we can connect our CHDR connections to

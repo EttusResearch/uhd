@@ -189,7 +189,8 @@ public:
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
         const uhd::transport::adapter_id_t adapter,
-        const device_addr_t& xport_args)
+        const device_addr_t& xport_args,
+        const std::string& streamer_id)
     {
         device_id_t dev = _check_dst_and_find_src(
             src_addr, adapter, uhd::transport::link_type_t::RX_DATA);
@@ -198,7 +199,7 @@ public:
         allocs.rx++;
         _alloc_map[chosen] = allocs;
         return _link_mgrs.at(dev)->create_device_to_host_data_stream(
-            src_addr, pyld_buff_fmt, mdata_buff_fmt, xport_args);
+            src_addr, pyld_buff_fmt, mdata_buff_fmt, xport_args, streamer_id);
     }
 
     virtual chdr_tx_data_xport::uptr create_host_to_device_data_stream(
@@ -206,7 +207,8 @@ public:
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
         const uhd::transport::adapter_id_t adapter,
-        const device_addr_t& xport_args)
+        const device_addr_t& xport_args,
+        const std::string& streamer_id)
     {
         device_id_t dev = _check_dst_and_find_src(
             dst_addr, adapter, uhd::transport::link_type_t::TX_DATA);
@@ -215,7 +217,7 @@ public:
         allocs.tx++;
         _alloc_map[chosen] = allocs;
         return _link_mgrs.at(dev)->create_host_to_device_data_stream(
-            dst_addr, pyld_buff_fmt, mdata_buff_fmt, xport_args);
+            dst_addr, pyld_buff_fmt, mdata_buff_fmt, xport_args, streamer_id);
     }
 
     std::vector<uhd::transport::adapter_id_t> get_adapters(sep_addr_t addr) const

@@ -37,6 +37,9 @@ public:
     void attach_recv_link(recv_link_if::sptr link);
     void attach_send_link(send_link_if::sptr link);
 
+    void detach_recv_link(recv_link_if::sptr link);
+    void detach_send_link(send_link_if::sptr link);
+
     recv_io_if::sptr make_recv_client(recv_link_if::sptr data_link,
         size_t num_recv_frames,
         recv_callback_t cb,
@@ -102,8 +105,7 @@ private:
         inline_recv_cb* recv_io_cb, recv_link_if* recv_link, int32_t timeout_ms);
 
     /* Track whether link is muxed and the callback */
-    std::unordered_map<recv_link_if*,
-        std::tuple<inline_recv_mux*, inline_recv_cb*>>
+    std::unordered_map<recv_link_if*, std::tuple<inline_recv_mux*, inline_recv_cb*>>
         _recv_tbl;
 
     /* Shared ptr kept to avoid untimely release */

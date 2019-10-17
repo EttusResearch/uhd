@@ -14,9 +14,21 @@
 using namespace uhd::rfnoc;
 using namespace uhd::mpmd;
 
+static uhd::usrp::io_service_args_t get_default_io_srv_args()
+{
+    // TODO: Need better defaults, taking into account the link type and ensuring
+    // that the number of frames is appropriate
+    uhd::usrp::io_service_args_t args;
+    args.recv_offload = false;
+    args.send_offload = false;
+    return args;
+}
+
 mpmd_mboard_impl::mpmd_mb_iface::mpmd_mb_iface(
     const uhd::device_addr_t& mb_args, uhd::rpc_client::sptr rpc)
-    : _mb_args(mb_args), _rpc(rpc), _link_if_mgr(xport::mpmd_link_if_mgr::make(mb_args))
+    : _mb_args(mb_args)
+    , _rpc(rpc)
+    , _link_if_mgr(xport::mpmd_link_if_mgr::make(mb_args))
 {
     _remote_device_id = allocate_device_id();
     UHD_LOG_TRACE("MPMD::MB_IFACE", "Assigning device_id " << _remote_device_id);
@@ -153,15 +165,17 @@ uhd::rfnoc::chdr_ctrl_xport::sptr mpmd_mboard_impl::mpmd_mb_iface::make_ctrl_tra
                              + std::to_string(local_device_id));
     }
     const size_t link_idx = _local_device_id_map.at(local_device_id);
-    uhd::transport::io_service::sptr io_srv;
     uhd::transport::send_link_if::sptr send_link;
     uhd::transport::recv_link_if::sptr recv_link;
-    std::tie(io_srv, send_link, std::ignore, recv_link, std::ignore, std::ignore) =
+    std::tie(send_link, std::ignore, recv_link, std::ignore, std::ignore) =
         _link_if_mgr->get_link(
             link_idx, uhd::transport::link_type_t::CTRL, uhd::device_addr_t());
 
     /* Associate local device ID with the adapter */
     _adapter_map[local_device_id] = send_link->get_send_adapter_id();
+
+    auto io_srv = get_io_srv_mgr()->connect_links(
+        recv_link, send_link, transport::link_type_t::CTRL);
 
     auto pkt_factory = _link_if_mgr->get_packet_factory(link_idx);
     auto xport       = uhd::rfnoc::chdr_ctrl_xport::make(io_srv,
@@ -181,7 +195,8 @@ mpmd_mboard_impl::mpmd_mb_iface::make_rx_data_transport(
     const uhd::rfnoc::sep_id_pair_t& epids,
     const uhd::rfnoc::sw_buff_t pyld_buff_fmt,
     const uhd::rfnoc::sw_buff_t mdata_buff_fmt,
-    const uhd::device_addr_t& xport_args)
+    const uhd::device_addr_t& xport_args,
+    const std::string& streamer_id)
 {
     const uhd::rfnoc::sep_addr_t local_sep_addr = addrs.second;
 
@@ -192,12 +207,11 @@ mpmd_mboard_impl::mpmd_mb_iface::make_rx_data_transport(
     }
     const size_t link_idx = _local_device_id_map.at(local_sep_addr.first);
 
-    uhd::transport::io_service::sptr io_srv;
     uhd::transport::send_link_if::sptr send_link;
     uhd::transport::recv_link_if::sptr recv_link;
     bool lossy_xport;
     size_t recv_buff_size;
-    std::tie(io_srv, send_link, std::ignore, recv_link, recv_buff_size, lossy_xport) =
+    std::tie(send_link, std::ignore, recv_link, recv_buff_size, lossy_xport) =
         _link_if_mgr->get_link(
             link_idx, uhd::transport::link_type_t::RX_DATA, xport_args);
 
@@ -217,9 +231,12 @@ mpmd_mboard_impl::mpmd_mb_iface::make_rx_data_transport(
 
     stream_buff_params_t fc_headroom = {0, 0};
 
+    auto cfg_io_srv = get_io_srv_mgr()->connect_links(
+        recv_link, send_link, transport::link_type_t::CTRL);
+
     // Create the data transport
     auto pkt_factory = _link_if_mgr->get_packet_factory(link_idx);
-    auto fc_params   = chdr_rx_data_xport::configure_sep(io_srv,
+    auto fc_params   = chdr_rx_data_xport::configure_sep(cfg_io_srv,
         recv_link,
         send_link,
         pkt_factory,
@@ -231,7 +248,18 @@ mpmd_mboard_impl::mpmd_mb_iface::make_rx_data_transport(
         fc_freq,
         fc_headroom,
         lossy_xport);
-    auto rx_xport    = std::make_unique<chdr_rx_data_xport>(io_srv,
+
+    get_io_srv_mgr()->disconnect_links(recv_link, send_link);
+    cfg_io_srv.reset();
+
+    // Connect the links to an I/O service
+    auto io_srv = get_io_srv_mgr()->connect_links(recv_link,
+        send_link,
+        transport::link_type_t::RX_DATA,
+        usrp::read_io_service_args(xport_args, get_default_io_srv_args()),
+        streamer_id);
+
+    auto rx_xport = std::make_unique<chdr_rx_data_xport>(io_srv,
         recv_link,
         send_link,
         pkt_factory,
@@ -249,7 +277,8 @@ mpmd_mboard_impl::mpmd_mb_iface::make_tx_data_transport(
     const uhd::rfnoc::sep_id_pair_t& epids,
     const uhd::rfnoc::sw_buff_t pyld_buff_fmt,
     const uhd::rfnoc::sw_buff_t mdata_buff_fmt,
-    const uhd::device_addr_t& xport_args)
+    const uhd::device_addr_t& xport_args,
+    const std::string& streamer_id)
 {
     const uhd::rfnoc::sep_addr_t local_sep_addr = addrs.first;
 
@@ -260,11 +289,10 @@ mpmd_mboard_impl::mpmd_mb_iface::make_tx_data_transport(
     }
     const size_t link_idx = _local_device_id_map.at(local_sep_addr.first);
 
-    uhd::transport::io_service::sptr io_srv;
     uhd::transport::send_link_if::sptr send_link;
     uhd::transport::recv_link_if::sptr recv_link;
     bool lossy_xport;
-    std::tie(io_srv, send_link, std::ignore, recv_link, std::ignore, lossy_xport) =
+    std::tie(send_link, std::ignore, recv_link, std::ignore, lossy_xport) =
         _link_if_mgr->get_link(
             link_idx, uhd::transport::link_type_t::TX_DATA, xport_args);
 
@@ -275,8 +303,11 @@ mpmd_mboard_impl::mpmd_mb_iface::make_tx_data_transport(
     const double fc_freq_ratio     = 1.0 / 8;
     const double fc_headroom_ratio = 0;
 
+    auto cfg_io_srv = get_io_srv_mgr()->connect_links(
+        recv_link, send_link, transport::link_type_t::CTRL);
+
     auto pkt_factory         = _link_if_mgr->get_packet_factory(link_idx);
-    const auto buff_capacity = chdr_tx_data_xport::configure_sep(io_srv,
+    const auto buff_capacity = chdr_tx_data_xport::configure_sep(cfg_io_srv,
         recv_link,
         send_link,
         pkt_factory,
@@ -287,6 +318,16 @@ mpmd_mboard_impl::mpmd_mb_iface::make_tx_data_transport(
         fc_freq_ratio,
         fc_headroom_ratio);
 
+    get_io_srv_mgr()->disconnect_links(recv_link, send_link);
+    cfg_io_srv.reset();
+
+    // Connect the links to an I/O service
+    auto io_srv = get_io_srv_mgr()->connect_links(recv_link,
+        send_link,
+        transport::link_type_t::TX_DATA,
+        usrp::read_io_service_args(xport_args, get_default_io_srv_args()),
+        streamer_id);
+
     // Create the data transport
     auto tx_xport = std::make_unique<chdr_tx_data_xport>(io_srv,
         recv_link,
@@ -295,7 +336,6 @@ mpmd_mboard_impl::mpmd_mb_iface::make_tx_data_transport(
         epids,
         send_link->get_num_send_frames(),
         buff_capacity);
-
 
     return tx_xport;
 }

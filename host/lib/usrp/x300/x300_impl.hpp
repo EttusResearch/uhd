@@ -108,7 +108,8 @@ private:
         uhd::endianness_t get_endianness(const uhd::rfnoc::device_id_t local_device_id);
         uhd::rfnoc::device_id_t get_remote_device_id();
         std::vector<uhd::rfnoc::device_id_t> get_local_device_ids();
-        uhd::transport::adapter_id_t get_adapter_id(const uhd::rfnoc::device_id_t local_device_id);
+        uhd::transport::adapter_id_t get_adapter_id(
+            const uhd::rfnoc::device_id_t local_device_id);
         void reset_network();
         uhd::rfnoc::clock_iface::sptr get_clock_iface(const std::string& clock_name);
         uhd::rfnoc::chdr_ctrl_xport::sptr make_ctrl_transport(
@@ -120,18 +121,21 @@ private:
             const uhd::rfnoc::sep_id_pair_t& epids,
             const uhd::rfnoc::sw_buff_t pyld_buff_fmt,
             const uhd::rfnoc::sw_buff_t mdata_buff_fmt,
-            const uhd::device_addr_t& xport_args);
+            const uhd::device_addr_t& xport_args,
+            const std::string& streamer_id);
         uhd::rfnoc::chdr_tx_data_xport::uptr make_tx_data_transport(
             uhd::rfnoc::mgmt::mgmt_portal& mgmt_portal,
             const uhd::rfnoc::sep_addr_pair_t& addrs,
             const uhd::rfnoc::sep_id_pair_t& epids,
             const uhd::rfnoc::sw_buff_t pyld_buff_fmt,
             const uhd::rfnoc::sw_buff_t mdata_buff_fmt,
-            const uhd::device_addr_t& xport_args);
+            const uhd::device_addr_t& xport_args,
+            const std::string& streamer_id);
 
     private:
         const uhd::rfnoc::device_id_t _remote_dev_id;
-        std::unordered_map<uhd::rfnoc::device_id_t, uhd::transport::adapter_id_t> _adapter_map;
+        std::unordered_map<uhd::rfnoc::device_id_t, uhd::transport::adapter_id_t>
+            _adapter_map;
         uhd::rfnoc::clock_iface::sptr _bus_clk;
         uhd::rfnoc::clock_iface::sptr _radio_clk;
         uhd::usrp::x300::conn_manager::sptr _conn_mgr;

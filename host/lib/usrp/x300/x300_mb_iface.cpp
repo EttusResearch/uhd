@@ -10,6 +10,15 @@
 using namespace uhd::rfnoc;
 using uhd::transport::link_type_t;
 
+static uhd::usrp::io_service_args_t get_default_io_srv_args()
+{
+    // TODO: Need better defaults, taking into account the link type and ensuring
+    // that the number of frames is appropriate
+    uhd::usrp::io_service_args_t args;
+    args.recv_offload = false;
+    args.send_offload = false;
+    return args;
+}
 
 x300_impl::x300_mb_iface::x300_mb_iface(uhd::usrp::x300::conn_manager::sptr conn_mgr,
     const double radio_clk_freq,
@@ -84,10 +93,12 @@ uhd::rfnoc::clock_iface::sptr x300_impl::x300_mb_iface::get_clock_iface(
 uhd::rfnoc::chdr_ctrl_xport::sptr x300_impl::x300_mb_iface::make_ctrl_transport(
     uhd::rfnoc::device_id_t local_device_id, const uhd::rfnoc::sep_id_t& local_epid)
 {
-    uhd::transport::io_service::sptr io_srv;
-    uhd::transport::send_link_if::sptr send_link;
-    uhd::transport::recv_link_if::sptr recv_link;
-    std::tie(io_srv, send_link, std::ignore, recv_link, std::ignore, std::ignore) =
+    using namespace uhd::transport;
+
+    send_link_if::sptr send_link;
+    recv_link_if::sptr recv_link;
+    bool lossy_xport;
+    std::tie(send_link, std::ignore, recv_link, std::ignore, lossy_xport) =
         _conn_mgr->get_links(link_type_t::CTRL,
             local_device_id,
             local_epid,
@@ -97,7 +108,10 @@ uhd::rfnoc::chdr_ctrl_xport::sptr x300_impl::x300_mb_iface::make_ctrl_transport(
     /* Associate local device ID with the adapter */
     _adapter_map[local_device_id] = send_link->get_send_adapter_id();
 
-    auto xport = uhd::rfnoc::chdr_ctrl_xport::make(io_srv,
+    auto io_srv =
+        get_io_srv_mgr()->connect_links(recv_link, send_link, link_type_t::CTRL);
+
+    auto xport = chdr_ctrl_xport::make(io_srv,
         send_link,
         recv_link,
         _pkt_factory,
@@ -113,18 +127,20 @@ uhd::rfnoc::chdr_rx_data_xport::uptr x300_impl::x300_mb_iface::make_rx_data_tran
     const uhd::rfnoc::sep_id_pair_t& epids,
     const uhd::rfnoc::sw_buff_t pyld_buff_fmt,
     const uhd::rfnoc::sw_buff_t mdata_buff_fmt,
-    const uhd::device_addr_t& xport_args)
+    const uhd::device_addr_t& xport_args,
+    const std::string& streamer_id)
 {
+    using namespace uhd::transport;
+
     const uhd::rfnoc::sep_addr_t local_sep_addr = addrs.second;
     const uhd::rfnoc::sep_id_t remote_epid      = epids.first;
     const uhd::rfnoc::sep_id_t local_epid       = epids.second;
 
-    uhd::transport::io_service::sptr io_srv;
-    uhd::transport::send_link_if::sptr send_link;
-    uhd::transport::recv_link_if::sptr recv_link;
+    send_link_if::sptr send_link;
+    recv_link_if::sptr recv_link;
     size_t recv_buff_size;
     bool lossy_xport;
-    std::tie(io_srv, send_link, std::ignore, recv_link, recv_buff_size, lossy_xport) =
+    std::tie(send_link, std::ignore, recv_link, recv_buff_size, lossy_xport) =
         _conn_mgr->get_links(link_type_t::RX_DATA,
             local_sep_addr.first,
             local_epid,
@@ -147,8 +163,10 @@ uhd::rfnoc::chdr_rx_data_xport::uptr x300_impl::x300_mb_iface::make_rx_data_tran
 
     uhd::rfnoc::stream_buff_params_t fc_headroom = {0, 0};
 
-    // Create the data transport
-    auto fc_params = uhd::rfnoc::chdr_rx_data_xport::configure_sep(io_srv,
+    auto cfg_io_srv =
+        get_io_srv_mgr()->connect_links(recv_link, send_link, link_type_t::CTRL);
+
+    auto fc_params = uhd::rfnoc::chdr_rx_data_xport::configure_sep(cfg_io_srv,
         recv_link,
         send_link,
         _pkt_factory,
@@ -161,6 +179,17 @@ uhd::rfnoc::chdr_rx_data_xport::uptr x300_impl::x300_mb_iface::make_rx_data_tran
         fc_headroom,
         lossy_xport);
 
+    get_io_srv_mgr()->disconnect_links(recv_link, send_link);
+    cfg_io_srv.reset();
+
+    // Connect the links to an I/O service
+    auto io_srv = get_io_srv_mgr()->connect_links(recv_link,
+        send_link,
+        link_type_t::RX_DATA,
+        uhd::usrp::read_io_service_args(xport_args, get_default_io_srv_args()),
+        streamer_id);
+
+    // Create the data transport
     auto rx_xport = std::make_unique<uhd::rfnoc::chdr_rx_data_xport>(io_srv,
         recv_link,
         send_link,
@@ -178,17 +207,19 @@ uhd::rfnoc::chdr_tx_data_xport::uptr x300_impl::x300_mb_iface::make_tx_data_tran
     const uhd::rfnoc::sep_id_pair_t& epids,
     const uhd::rfnoc::sw_buff_t pyld_buff_fmt,
     const uhd::rfnoc::sw_buff_t mdata_buff_fmt,
-    const uhd::device_addr_t& xport_args)
+    const uhd::device_addr_t& xport_args,
+    const std::string& streamer_id)
 {
+    using namespace uhd::transport;
+
     const uhd::rfnoc::sep_addr_t local_sep_addr = addrs.first;
     const uhd::rfnoc::sep_id_t remote_epid      = epids.second;
     const uhd::rfnoc::sep_id_t local_epid       = epids.first;
 
-    uhd::transport::io_service::sptr io_srv;
-    uhd::transport::send_link_if::sptr send_link;
-    uhd::transport::recv_link_if::sptr recv_link;
+    send_link_if::sptr send_link;
+    recv_link_if::sptr recv_link;
     bool lossy_xport;
-    std::tie(io_srv, send_link, std::ignore, recv_link, std::ignore, lossy_xport) =
+    std::tie(send_link, std::ignore, recv_link, std::ignore, lossy_xport) =
         _conn_mgr->get_links(link_type_t::TX_DATA,
             local_sep_addr.first,
             local_epid,
@@ -202,7 +233,10 @@ uhd::rfnoc::chdr_tx_data_xport::uptr x300_impl::x300_mb_iface::make_tx_data_tran
     const double fc_freq_ratio     = 1.0 / 8;
     const double fc_headroom_ratio = 0;
 
-    const auto buff_capacity = chdr_tx_data_xport::configure_sep(io_srv,
+    auto cfg_io_srv =
+        get_io_srv_mgr()->connect_links(recv_link, send_link, link_type_t::CTRL);
+
+    const auto buff_capacity = chdr_tx_data_xport::configure_sep(cfg_io_srv,
         recv_link,
         send_link,
         _pkt_factory,
@@ -212,6 +246,16 @@ uhd::rfnoc::chdr_tx_data_xport::uptr x300_impl::x300_mb_iface::make_tx_data_tran
         mdata_buff_fmt,
         fc_freq_ratio,
         fc_headroom_ratio);
+
+    get_io_srv_mgr()->disconnect_links(recv_link, send_link);
+    cfg_io_srv.reset();
+
+    // Connect the links to an I/O service
+    auto io_srv = get_io_srv_mgr()->connect_links(recv_link,
+        send_link,
+        link_type_t::TX_DATA,
+        uhd::usrp::read_io_service_args(xport_args, get_default_io_srv_args()),
+        streamer_id);
 
     // Create the data transport
     auto tx_xport = std::make_unique<chdr_tx_data_xport>(io_srv,

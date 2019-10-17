@@ -8,6 +8,7 @@
 #define INCLUDED_UHDLIB_TRANSPORT_OFFLOAD_IO_SERVICE_HPP
 
 #include <uhdlib/transport/io_service.hpp>
+#include <vector>
 
 namespace uhd { namespace transport {
 
@@ -21,18 +22,9 @@ namespace uhd { namespace transport {
 class offload_io_service : public io_service
 {
 public:
-    enum client_type_t
-    {
-        RECV_ONLY,
-        SEND_ONLY,
-        BOTH_SEND_AND_RECV
-    };
+    enum client_type_t { RECV_ONLY, SEND_ONLY, BOTH_SEND_AND_RECV };
 
-    enum wait_mode_t
-    {
-        POLL,
-        BLOCK
-    };
+    enum wait_mode_t { POLL, BLOCK };
 
     /*!
      * Options for configuring offload I/O service

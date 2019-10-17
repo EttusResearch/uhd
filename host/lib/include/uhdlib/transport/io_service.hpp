@@ -282,10 +282,19 @@ public:
      */
     virtual void attach_send_link(send_link_if::sptr link) = 0;
 
-    /* TODO: Cleanup functions
+    /*!
+     * Detach a recv_link_if previously attached to this I/O service.
+     *
+     * \param link the recv_link_if to detach
+     */
     virtual void detach_recv_link(recv_link_if::sptr link) = 0;
+
+    /*!
+     * Detach a send_link_if previously attached to this I/O service.
+     *
+     * \param link the send_link_if to detach
+     */
     virtual void detach_send_link(send_link_if::sptr link) = 0;
-    */
 
     /*!
      * Create a send_io_if so a transport may send packets through the link.

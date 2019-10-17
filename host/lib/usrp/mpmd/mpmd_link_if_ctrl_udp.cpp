@@ -7,11 +7,13 @@
 #include "mpmd_link_if_ctrl_udp.hpp"
 #include "mpmd_impl.hpp"
 #include "mpmd_link_if_mgr.hpp"
+#include <uhd/rfnoc/constants.hpp>
 #include <uhd/transport/udp_constants.hpp>
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/transport/udp_zero_copy.hpp>
-#include <uhdlib/transport/inline_io_service.hpp>
+#include <uhdlib/rfnoc/rfnoc_common.hpp>
 #include <uhdlib/transport/udp_boost_asio_link.hpp>
+#include <uhdlib/transport/udp_common.hpp>
 #include <uhdlib/utils/narrow.hpp>
 #include <string>
 
@@ -26,9 +28,8 @@ namespace {
 
 //! Maximum CHDR packet size in bytes
 const size_t MPMD_10GE_DATA_FRAME_MAX_SIZE = 8000;
-
-//! Maximum CHDR packet size in bytes
-const size_t MPMD_10GE_ASYNCMSG_FRAME_MAX_SIZE = 1472;
+const size_t MPMD_1GE_DATA_FRAME_MAX_SIZE     = 1472;
+const size_t MPMD_1GE_ASYNCMSG_FRAME_MAX_SIZE = 1472;
 
 //! Number of send/recv frames
 const size_t MPMD_ETH_NUM_FRAMES = 32;
@@ -194,8 +195,6 @@ size_t discover_mtu(const std::string& address,
 mpmd_link_if_ctrl_udp::mpmd_link_if_ctrl_udp(const uhd::device_addr_t& mb_args,
     const mpmd_link_if_mgr::xport_info_list_t& xport_info)
     : _mb_args(mb_args)
-    , _recv_args(filter_args(mb_args, "recv"))
-    , _send_args(filter_args(mb_args, "send"))
     , _udp_info(get_udp_info_from_xport_info(xport_info))
     , _mtu(MPMD_10GE_DATA_FRAME_MAX_SIZE)
 {
@@ -228,36 +227,52 @@ mpmd_link_if_ctrl_udp::mpmd_link_if_ctrl_udp(const uhd::device_addr_t& mb_args,
  * API
  *****************************************************************************/
 uhd::transport::both_links_t mpmd_link_if_ctrl_udp::get_link(const size_t link_idx,
-    const uhd::transport::link_type_t /*link_type*/,
-    const uhd::device_addr_t& /*link_args*/)
+    const uhd::transport::link_type_t link_type,
+    const uhd::device_addr_t& link_args)
 {
     UHD_ASSERT_THROW(link_idx < _available_addrs.size());
     const std::string ip_addr  = _available_addrs.at(link_idx);
     const std::string udp_port = _udp_info.at(ip_addr).udp_port;
 
-    /* FIXME: Should have common infrastructure for creating I/O services */
-    auto io_srv = uhd::transport::inline_io_service::make();
-    link_params_t link_params;
-    link_params.num_recv_frames = MPMD_ETH_NUM_FRAMES; // FIXME
-    link_params.num_send_frames = MPMD_ETH_NUM_FRAMES; // FIXME
-    link_params.recv_frame_size = get_mtu(uhd::RX_DIRECTION); // FIXME
-    link_params.send_frame_size = get_mtu(uhd::TX_DIRECTION); // FIXME
-    link_params.recv_buff_size  = MPMD_BUFFER_DEPTH * MAX_RATE_10GIGE; // FIXME
-    link_params.send_buff_size  = MPMD_BUFFER_DEPTH * MAX_RATE_10GIGE; // FIXME
-    auto link                   = uhd::transport::udp_boost_asio_link::make(ip_addr,
+    const size_t link_rate = get_link_rate(link_idx);
+    link_params_t default_link_params;
+    default_link_params.num_send_frames = MPMD_ETH_NUM_FRAMES;
+    default_link_params.num_recv_frames = MPMD_ETH_NUM_FRAMES;
+    default_link_params.send_frame_size = (link_rate == MAX_RATE_10GIGE)
+                                              ? MPMD_10GE_DATA_FRAME_MAX_SIZE
+                                              : (link_rate == MAX_RATE_1GIGE)
+                                                    ? MPMD_1GE_DATA_FRAME_MAX_SIZE
+                                                    : get_mtu(uhd::TX_DIRECTION);
+    default_link_params.recv_frame_size = (link_rate == MAX_RATE_10GIGE)
+                                              ? MPMD_10GE_DATA_FRAME_MAX_SIZE
+                                              : (link_rate == MAX_RATE_1GIGE)
+                                                    ? MPMD_1GE_DATA_FRAME_MAX_SIZE
+                                                    : get_mtu(uhd::RX_DIRECTION);
+    default_link_params.send_buff_size  = get_link_rate(link_idx) * MPMD_BUFFER_DEPTH;
+    default_link_params.recv_buff_size  = get_link_rate(link_idx) * MPMD_BUFFER_DEPTH;
+
+    link_params_t link_params = calculate_udp_link_params(link_type,
+        get_mtu(uhd::TX_DIRECTION),
+        get_mtu(uhd::RX_DIRECTION),
+        default_link_params,
+        _mb_args,
+        link_args);
+
+    // Enforce a minimum bound of the number of receive and send frames.
+    link_params.num_send_frames = std::max(uhd::rfnoc::MIN_NUM_FRAMES, link_params.num_send_frames);
+    link_params.num_recv_frames = std::max(uhd::rfnoc::MIN_NUM_FRAMES, link_params.num_recv_frames);
+
+    auto link = uhd::transport::udp_boost_asio_link::make(ip_addr,
         udp_port,
         link_params,
-        link_params.recv_buff_size, // FIXME
-        link_params.send_buff_size); // FIXME
-    io_srv->attach_send_link(link);
-    io_srv->attach_recv_link(link);
-    return std::tuple<io_service::sptr,
-        send_link_if::sptr,
+        link_params.recv_buff_size,
+        link_params.send_buff_size);
+    return std::tuple<send_link_if::sptr,
         size_t,
         recv_link_if::sptr,
         size_t,
         bool>(
-        io_srv, link, link_params.send_buff_size, link, link_params.recv_buff_size, true);
+        link, link_params.send_buff_size, link, link_params.recv_buff_size, true);
 }
 
 size_t mpmd_link_if_ctrl_udp::get_num_links() const
@@ -277,3 +292,4 @@ mpmd_link_if_ctrl_udp::get_packet_factory() const
 {
     return _pkt_factory;
 }
+

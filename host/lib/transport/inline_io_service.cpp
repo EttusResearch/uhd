@@ -272,10 +272,19 @@ void inline_io_service::attach_recv_link(recv_link_if::sptr link)
 {
     auto link_ptr = link.get();
     UHD_ASSERT_THROW(_recv_tbl.count(link_ptr) == 0);
-    _recv_tbl[link_ptr] =
-        std::tuple<inline_recv_mux*, inline_recv_cb*>(nullptr, nullptr);
+    _recv_tbl[link_ptr] = std::tuple<inline_recv_mux*, inline_recv_cb*>(nullptr, nullptr);
     _recv_links.push_back(link);
-};
+}
+
+void inline_io_service::detach_recv_link(recv_link_if::sptr link)
+{
+    auto link_ptr = link.get();
+    UHD_ASSERT_THROW(_recv_tbl.count(link_ptr) != 0);
+    _recv_tbl.erase(link_ptr);
+
+    _recv_links.remove_if(
+        [link_ptr](recv_link_if::sptr& item) { return item.get() == link_ptr; });
+}
 
 recv_io_if::sptr inline_io_service::make_recv_client(recv_link_if::sptr data_link,
     size_t num_recv_frames,
@@ -301,9 +310,17 @@ recv_io_if::sptr inline_io_service::make_recv_client(recv_link_if::sptr data_lin
 
 void inline_io_service::attach_send_link(send_link_if::sptr link)
 {
-    UHD_ASSERT_THROW(std::find(_send_links.begin(), _send_links.end(), link) == _send_links.end());
+    UHD_ASSERT_THROW(
+        std::find(_send_links.begin(), _send_links.end(), link) == _send_links.end());
     _send_links.push_back(link);
-};
+}
+
+void inline_io_service::detach_send_link(send_link_if::sptr link)
+{
+    auto link_ptr = link.get();
+    _send_links.remove_if(
+        [link_ptr](send_link_if::sptr& item) { return item.get() == link_ptr; });
+}
 
 send_io_if::sptr inline_io_service::make_send_client(send_link_if::sptr send_link,
     size_t num_send_frames,
@@ -365,8 +382,7 @@ void inline_io_service::connect_receiver(
     _recv_tbl[link] = std::make_tuple(mux, rcvr);
 }
 
-void inline_io_service::disconnect_receiver(
-    recv_link_if* link, inline_recv_cb* cb)
+void inline_io_service::disconnect_receiver(recv_link_if* link, inline_recv_cb* cb)
 {
     inline_recv_mux* mux;
     inline_recv_cb* rcvr;

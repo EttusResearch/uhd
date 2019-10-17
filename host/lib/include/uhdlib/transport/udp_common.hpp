@@ -10,7 +10,10 @@
 
 #include <uhd/config.hpp>
 #include <uhd/exception.hpp>
+#include <uhd/rfnoc/constants.hpp>
+#include <uhd/types/device_addr.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhdlib/transport/links.hpp>
 #include <boost/asio.hpp>
 #include <boost/format.hpp>
 #include <thread>
@@ -192,6 +195,78 @@ UHD_INLINE size_t resize_udp_socket_buffer_with_warning(
     }
 
     return actual_size;
+}
+
+/*!
+ * Determines a set of values to use for a UDP CHDR link based on defaults and
+ * any overrides that the user may have provided. In cases where both device
+ * and stream arguments can be used to override a value, note that the stream
+ * argument will always take precedence.
+ *
+ * \param link_type the link type (CTRL, RX, TX) to calculate parameters for
+ * \param send_mtu the MTU of link for Tx cases
+ * \param recv_mtu the MTU of link for Rx cases
+ * \param default_link_params default values to use for the link parameters
+ * \param device_args device-level argument dictionary for overrides
+ * \param link_args argument dictionary with stream-level overrides (come from
+ *        stream params)
+ * \return Parameters to apply
+ */
+inline link_params_t calculate_udp_link_params(
+    const uhd::transport::link_type_t link_type,
+    const size_t send_mtu,
+    const size_t recv_mtu,
+    const link_params_t& default_link_params,
+    const uhd::device_addr_t& device_args,
+    const uhd::device_addr_t& link_args)
+{
+    // Apply any device-level overrides to the default values first.
+    // If the MTU is overridden, it will be capped to the value provided by
+    // the caller.
+    const size_t constrained_send_mtu =
+        std::min(send_mtu, device_args.cast<size_t>("mtu", send_mtu));
+    const size_t constrained_recv_mtu =
+        std::min(recv_mtu, device_args.cast<size_t>("mtu", recv_mtu));
+
+    link_params_t link_params;
+    link_params.num_send_frames =
+        device_args.cast<size_t>("num_send_frames", default_link_params.num_send_frames);
+    link_params.num_recv_frames =
+        device_args.cast<size_t>("num_recv_frames", default_link_params.num_recv_frames);
+    link_params.send_frame_size =
+        device_args.cast<size_t>("send_frame_size", default_link_params.send_frame_size);
+    link_params.recv_frame_size =
+        device_args.cast<size_t>("recv_frame_size", default_link_params.recv_frame_size);
+    link_params.send_buff_size =
+        device_args.cast<size_t>("send_buff_size", default_link_params.send_buff_size);
+    link_params.recv_buff_size =
+        device_args.cast<size_t>("recv_buff_size", default_link_params.recv_buff_size);
+
+    // Now apply stream-level overrides based on the link type.
+    if (link_type == link_type_t::CTRL) {
+        // Control links typically do not allow the number of frames to be
+        // configured.
+        link_params.num_recv_frames =
+            uhd::rfnoc::CMD_FIFO_SIZE / uhd::rfnoc::MAX_CMD_PKT_SIZE;
+    } else if (link_type == link_type_t::TX_DATA) {
+        // Note that the send frame size will be capped to the Tx MTU.
+        link_params.send_frame_size = link_args.cast<size_t>("send_frame_size",
+            std::min(link_params.send_frame_size, constrained_send_mtu));
+        link_params.num_send_frames =
+            link_args.cast<size_t>("num_send_frames", link_params.num_send_frames);
+        link_params.send_buff_size =
+            link_args.cast<size_t>("send_buff_size", link_params.send_buff_size);
+    } else if (link_type == link_type_t::RX_DATA) {
+        // Note that the receive frame size will be capped to the Rx MTU.
+        link_params.recv_frame_size = link_args.cast<size_t>("recv_frame_size",
+            std::min(link_params.recv_frame_size, constrained_recv_mtu));
+        link_params.num_recv_frames =
+            link_args.cast<size_t>("num_recv_frames", link_params.num_recv_frames);
+        link_params.recv_buff_size =
+            link_args.cast<size_t>("recv_buff_size", link_params.recv_buff_size);
+    }
+
+    return link_params;
 }
 
 

@@ -54,6 +54,20 @@ public:
         _send_tbl[send_link.get()] = 0;
     }
 
+    void unregister_link(const recv_link_if::sptr& recv_link)
+    {
+        auto link_ptr = recv_link.get();
+        UHD_ASSERT_THROW(_recv_tbl.count(link_ptr) != 0);
+        _recv_tbl.erase(link_ptr);
+    }
+
+    void unregister_link(const send_link_if::sptr& send_link)
+    {
+        auto link_ptr = send_link.get();
+        UHD_ASSERT_THROW(_send_tbl.count(link_ptr) != 0);
+        _send_tbl.erase(link_ptr);
+    }
+
     void reserve_frames(const frame_reservation_t& reservation)
     {
         if (reservation.recv_link) {
@@ -358,6 +372,9 @@ public:
     void attach_recv_link(recv_link_if::sptr link);
     void attach_send_link(send_link_if::sptr link);
 
+    void detach_recv_link(recv_link_if::sptr link);
+    void detach_send_link(send_link_if::sptr link);
+
     recv_io_if::sptr make_recv_client(recv_link_if::sptr recv_link,
         size_t num_recv_frames,
         recv_callback_t cb,
@@ -400,6 +417,7 @@ private:
         frame_reservation_t frames_reserved;
     };
 
+    void _queue_client_req(std::function<void()> fn);
     void _get_recv_buff(recv_client_info_t& info, int32_t timeout_ms);
     void _get_send_buff(send_client_info_t& info);
     void _release_recv_buff(recv_client_info_t& info, frame_buff* buff);
@@ -661,12 +679,7 @@ void offload_io_service_impl::attach_recv_link(recv_link_if::sptr link)
         _io_srv->attach_recv_link(link);
     };
 
-    client_req_t queue_element;
-    queue_element.req  = {new std::function<void()>(req_fn)};
-    const bool success = _client_connect_queue.push(queue_element);
-    if (!success) {
-        throw uhd::runtime_error("Failed to push attach_recv_link request");
-    }
+    _queue_client_req(req_fn);
 }
 
 void offload_io_service_impl::attach_send_link(send_link_if::sptr link)
@@ -683,6 +696,28 @@ void offload_io_service_impl::attach_send_link(send_link_if::sptr link)
     if (!success) {
         throw uhd::runtime_error("Failed to push attach_send_link request");
     }
+}
+
+void offload_io_service_impl::detach_recv_link(recv_link_if::sptr link)
+{
+    // Create a request to detach link in the offload thread
+    auto req_fn = [this, link]() {
+        _reservation_mgr.unregister_link(link);
+        _io_srv->detach_recv_link(link);
+    };
+
+    _queue_client_req(req_fn);
+}
+
+void offload_io_service_impl::detach_send_link(send_link_if::sptr link)
+{
+    // Create a request to detach link in the offload thread
+    auto req_fn = [this, link]() {
+        _reservation_mgr.unregister_link(link);
+        _io_srv->detach_send_link(link);
+    };
+
+    _queue_client_req(req_fn);
 }
 
 recv_io_if::sptr offload_io_service_impl::make_recv_client(recv_link_if::sptr recv_link,
@@ -720,13 +755,7 @@ recv_io_if::sptr offload_io_service_impl::make_recv_client(recv_link_if::sptr re
             port->offload_thread_set_connected(true);
         };
 
-    client_req_t queue_element;
-    queue_element.req  = {new std::function<void()>(req_fn)};
-    const bool success = _client_connect_queue.push(queue_element);
-    if (!success) {
-        throw uhd::runtime_error("Failed to push make_recv_client request");
-    }
-
+    _queue_client_req(req_fn);
     port->client_wait_until_connected();
 
     // Return a new recv client to the caller that just operates on the queues
@@ -775,13 +804,7 @@ send_io_if::sptr offload_io_service_impl::make_send_client(send_link_if::sptr se
         port->offload_thread_set_connected(true);
     };
 
-    client_req_t queue_element;
-    queue_element.req  = {new std::function<void()>(req_fn)};
-    const bool success = _client_connect_queue.push(queue_element);
-    if (!success) {
-        throw uhd::runtime_error("Failed to push make_send_client request");
-    }
-
+    _queue_client_req(req_fn);
     port->client_wait_until_connected();
 
     // Wait for buffer queue to be full
@@ -792,6 +815,16 @@ send_io_if::sptr offload_io_service_impl::make_send_client(send_link_if::sptr se
     // Return a new recv client to the caller that just operates on the queues
     return std::make_shared<offload_send_io>(
         shared_from_this(), num_recv_frames, num_send_frames, port);
+}
+
+void offload_io_service_impl::_queue_client_req(std::function<void()> fn)
+{
+    client_req_t queue_element;
+    queue_element.req  = {new std::function<void()>(fn)};
+    const bool success = _client_connect_queue.push(queue_element);
+    if (!success) {
+        throw uhd::runtime_error("Failed to queue client request");
+    }
 }
 
 // Get a single receive buffer if available and update client info

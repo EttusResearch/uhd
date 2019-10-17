@@ -19,8 +19,9 @@
 #include <uhd/transport/udp_zero_copy.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhdlib/rfnoc/device_id.hpp>
-#include <uhdlib/transport/inline_io_service.hpp>
+#include <uhdlib/rfnoc/rfnoc_common.hpp>
 #include <uhdlib/transport/udp_boost_asio_link.hpp>
+#include <uhdlib/transport/udp_common.hpp>
 #include <uhdlib/usrp/cores/i2c_core_100_wb32.hpp>
 //#ifdef HAVE_DPDK
 //#    include <uhdlib/transport/dpdk_simple.hpp>
@@ -287,53 +288,32 @@ both_links_t eth_manager::get_links(link_type_t link_type,
 
     // Buffering is done in the socket buffers, so size them relative to
     // the link rate
-    default_buff_args.send_buff_size = conn.link_rate / 50; // 20ms
-    default_buff_args.recv_buff_size = std::max(conn.link_rate / 50,
-        ETH_MSG_NUM_FRAMES * ETH_MSG_FRAME_SIZE); // enough to hold greater of 20ms or
-                                                  // number of msg frames
+    link_params_t default_link_params;
     // There is no need for more than 1 send and recv frame since the
     // buffering is done in the socket buffers
-    default_buff_args.num_send_frames = 1; // or 2?
-    default_buff_args.num_recv_frames = 1;
-    if (link_type == link_type_t::CTRL) {
-        // Increasing number of recv frames here because ctrl_iface uses it
-        // to determine how many control packets can be in flight before it
-        // must wait for an ACK
-        // FIXME this is no longer true, find a good value
-        default_buff_args.num_recv_frames = 85; // 256/3
-    } else if (link_type == link_type_t::TX_DATA) {
-        size_t default_frame_size = conn.link_rate == MAX_RATE_1GIGE
-                                        ? GE_DATA_FRAME_SEND_SIZE
-                                        : XGE_DATA_FRAME_SEND_SIZE;
-        default_buff_args.send_frame_size = link_args.cast<size_t>(
-            "send_frame_size", std::min(default_frame_size, send_mtu));
-        default_buff_args.num_send_frames = link_args.cast<size_t>(
-            "num_send_frames", default_buff_args.num_send_frames);
-        default_buff_args.send_buff_size = link_args.cast<size_t>(
-            "send_buff_size", default_buff_args.send_buff_size);
-    } else if (link_type == link_type_t::RX_DATA) {
-        size_t default_frame_size = conn.link_rate == MAX_RATE_1GIGE
-                                        ? GE_DATA_FRAME_RECV_SIZE
-                                        : XGE_DATA_FRAME_RECV_SIZE;
-        default_buff_args.recv_frame_size = link_args.cast<size_t>(
-            "recv_frame_size", std::min(default_frame_size, recv_mtu));
-        // set some buffers so the offload thread actually offloads the
-        // socket I/O
-        default_buff_args.num_recv_frames =
-            link_args.cast<size_t>("num_recv_frames", 2);
-        default_buff_args.recv_buff_size = link_args.cast<size_t>(
-            "recv_buff_size", default_buff_args.recv_buff_size);
-    }
+    default_link_params.num_send_frames = 1; // or 2?
+    default_link_params.num_recv_frames = 2;
+    default_link_params.send_frame_size = conn.link_rate == MAX_RATE_1GIGE
+                                              ? GE_DATA_FRAME_SEND_SIZE
+                                              : XGE_DATA_FRAME_SEND_SIZE;
+    default_link_params.recv_frame_size = conn.link_rate == MAX_RATE_1GIGE
+                                              ? GE_DATA_FRAME_RECV_SIZE
+                                              : XGE_DATA_FRAME_RECV_SIZE;
+    default_link_params.send_buff_size  = conn.link_rate / 50;
+    default_link_params.recv_buff_size  = std::max(conn.link_rate / 50,
+        ETH_MSG_NUM_FRAMES * ETH_MSG_FRAME_SIZE); // enough to hold greater of 20 ms or
+                                                  // number of msg frames
 
-    /* FIXME: Should have common infrastructure for creating I/O services */
-    auto io_srv = uhd::transport::inline_io_service::make();
-    link_params_t link_params;
-    link_params.num_recv_frames = default_buff_args.num_recv_frames;
-    link_params.num_send_frames = default_buff_args.num_send_frames;
-    link_params.recv_frame_size = default_buff_args.recv_frame_size;
-    link_params.send_frame_size = default_buff_args.send_frame_size;
-    link_params.recv_buff_size  = default_buff_args.recv_buff_size;
-    link_params.send_buff_size  = default_buff_args.send_buff_size;
+    link_params_t link_params = calculate_udp_link_params(link_type,
+        get_mtu(uhd::TX_DIRECTION),
+        get_mtu(uhd::RX_DIRECTION),
+        default_link_params,
+        _args.get_orig_args(),
+        link_args);
+
+    // Enforce a minimum bound of the number of receive and send frames.
+    link_params.num_send_frames = std::max(uhd::rfnoc::MIN_NUM_FRAMES, link_params.num_send_frames);
+    link_params.num_recv_frames = std::max(uhd::rfnoc::MIN_NUM_FRAMES, link_params.num_recv_frames);
 
     size_t recv_buff_size, send_buff_size;
     auto link = uhd::transport::udp_boost_asio_link::make(conn.addr,
@@ -341,9 +321,7 @@ both_links_t eth_manager::get_links(link_type_t link_type,
         link_params,
         recv_buff_size,
         send_buff_size);
-    io_srv->attach_send_link(link);
-    io_srv->attach_recv_link(link);
-    return std::make_tuple(io_srv, link, send_buff_size, link, recv_buff_size, true);
+    return std::make_tuple(link, send_buff_size, link, recv_buff_size, true);
 }
 
 /******************************************************************************

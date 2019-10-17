@@ -19,6 +19,7 @@
 #include <functional>
 #include <memory>
 #include <set>
+#include <string>
 #include <tuple>
 
 namespace uhd { namespace rfnoc {
@@ -114,6 +115,7 @@ public:
      * \param mdata_buff_fmt Datatype of SW buffer that holds the data metadata
      * \param adapter The preference for the adapter to use to get to the destination
      * \param xport_args The transport arguments
+     * \param streamer_id A unique identifier for the streamer that will own the transport
      * \return An transport instance
      */
     virtual chdr_rx_data_xport::uptr create_device_to_host_data_stream(
@@ -121,7 +123,8 @@ public:
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
         const uhd::transport::adapter_id_t adapter,
-        const device_addr_t& xport_args) = 0;
+        const device_addr_t& xport_args,
+        const std::string& streamer_id) = 0;
 
     /*! \brief Create a data stream going from the host to the device
      *
@@ -130,6 +133,7 @@ public:
      * \param mdata_buff_fmt Datatype of SW buffer that holds the data metadata
      * \param adapter The preference for the adapter to use to get to the destination
      * \param xport_args The transport arguments
+     * \param streamer_id A unique identifier for the streamer that will own the transport
      * \return An transport instance
      */
     virtual chdr_tx_data_xport::uptr create_host_to_device_data_stream(
@@ -137,7 +141,8 @@ public:
         const sw_buff_t pyld_buff_fmt,
         const sw_buff_t mdata_buff_fmt,
         const uhd::transport::adapter_id_t adapter,
-        const device_addr_t& xport_args) = 0;
+        const device_addr_t& xport_args,
+        const std::string& streamer_id) = 0;
 
     /*! \brief Get all the adapters that can reach the specified endpoint
      *

@@ -95,6 +95,11 @@ constexpr uint32_t MAX_FC_FREQ_PKTS      = (uint32_t(1) << 24) - 1;
 constexpr uint64_t MAX_FC_HEADROOM_BYTES = (uint64_t(1) << 16) - 1;
 constexpr uint32_t MAX_FC_HEADROOM_PKTS  = (uint32_t(1) << 8) - 1;
 
+// RFNoC devices need a minimum of two frame buffers to be available from the
+// link--one for the data transport and one for the control transport to
+// simultaneously handle MGMT and STRC/STRS initialization packets.
+constexpr size_t MIN_NUM_FRAMES = 2;
+
 }} // namespace uhd::rfnoc
 
 #endif /* INCLUDED_RFNOC_RFNOC_COMMON_HPP */

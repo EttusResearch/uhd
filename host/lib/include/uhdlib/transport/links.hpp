@@ -16,8 +16,7 @@ namespace uhd { namespace transport {
 enum class link_type_t { CTRL = 0, ASYNC_MSG, TX_DATA, RX_DATA };
 
 //! Contains all information regarding a link interface
-using both_links_t = std::tuple<uhd::transport::io_service::sptr,
-    uhd::transport::send_link_if::sptr,
+using both_links_t = std::tuple<uhd::transport::send_link_if::sptr,
     size_t, // num_send_frames
     uhd::transport::recv_link_if::sptr,
     size_t, // num_recv_frames
