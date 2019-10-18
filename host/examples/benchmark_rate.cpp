@@ -10,7 +10,6 @@
 #include <uhd/utils/safe_main.hpp>
 #include <uhd/utils/thread.hpp>
 #include <boost/algorithm/string.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/format.hpp>
 #include <boost/program_options.hpp>
 #include <boost/thread/thread.hpp>
@@ -22,11 +21,14 @@
 #include <thread>
 
 namespace po = boost::program_options;
+using namespace std::chrono_literals;
 
 namespace {
-constexpr int64_t CLOCK_TIMEOUT = 1000; // 1000mS timeout for external clock locking
-constexpr float INIT_DELAY      = 0.05; // 50mS initial delay before transmit
+constexpr auto CLOCK_TIMEOUT = 1000ms; // 1000mS timeout for external clock locking
+constexpr float INIT_DELAY   = 0.05; // 50mS initial delay before transmit
 } // namespace
+
+using start_time_type = std::chrono::time_point<std::chrono::steady_clock>;
 
 /***********************************************************************
  * Test result variables
@@ -42,15 +44,23 @@ unsigned long long num_late_commands = 0;
 unsigned long long num_timeouts_rx   = 0;
 unsigned long long num_timeouts_tx   = 0;
 
-inline boost::posix_time::time_duration time_delta(
-    const boost::posix_time::ptime& ref_time)
+inline auto time_delta(const start_time_type& ref_time)
 {
-    return boost::posix_time::microsec_clock::local_time() - ref_time;
+    return std::chrono::steady_clock::now() - ref_time;
 }
 
-inline std::string time_delta_str(const boost::posix_time::ptime& ref_time)
+inline std::string time_delta_str(const start_time_type& ref_time)
 {
-    return boost::posix_time::to_simple_string(time_delta(ref_time));
+    const auto delta   = time_delta(ref_time);
+    const auto hours   = std::chrono::duration_cast<std::chrono::hours>(delta);
+    const auto minutes = std::chrono::duration_cast<std::chrono::minutes>(delta - hours);
+    const auto seconds =
+        std::chrono::duration_cast<std::chrono::seconds>(delta - hours - minutes);
+    const auto nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(
+        delta - hours - minutes - seconds);
+
+    return str(boost::format("%02d:%02d:%02d.%06d") % hours.count() % minutes.count()
+               % seconds.count() % nanoseconds.count());
 }
 
 #define NOW() (time_delta_str(start_time))
@@ -62,7 +72,7 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp,
     const std::string& rx_cpu,
     uhd::rx_streamer::sptr rx_stream,
     bool random_nsamps,
-    const boost::posix_time::ptime& start_time,
+    const start_time_type& start_time,
     std::atomic<bool>& burst_timer_elapsed)
 {
     // print pre-test summary
@@ -93,8 +103,6 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp,
 
     bool stop_called = false;
     while (true) {
-        // if (burst_timer_elapsed.load(boost::memory_order_relaxed) and not stop_called)
-        // {
         if (burst_timer_elapsed and not stop_called) {
             rx_stream->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
             stop_called = true;
@@ -187,7 +195,7 @@ void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp,
     const std::string& tx_cpu,
     uhd::tx_streamer::sptr tx_stream,
     std::atomic<bool>& burst_timer_elapsed,
-    const boost::posix_time::ptime& start_time,
+    const start_time_type& start_time,
     bool random_nsamps = false)
 {
     // print pre-test summary
@@ -246,7 +254,7 @@ void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp,
 }
 
 void benchmark_tx_rate_async_helper(uhd::tx_streamer::sptr tx_stream,
-    const boost::posix_time::ptime& start_time,
+    const start_time_type& start_time,
     std::atomic<bool>& burst_timer_elapsed)
 {
     // setup variables and allocate buffer
@@ -370,7 +378,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                      "features.\n"
                   << std::endl;
     }
-    boost::posix_time::ptime start_time(boost::posix_time::microsec_clock::local_time());
+    start_time_type start_time(std::chrono::steady_clock::now());
     std::cout << boost::format("[%s] Creating the usrp device with: %s...") % NOW() % args
               << std::endl;
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
@@ -404,15 +412,14 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         if (ref != "internal") {
             std::cout << "Now confirming lock on clock signals..." << std::endl;
             bool is_locked = false;
-            auto end_time =
-                boost::get_system_time() + boost::posix_time::milliseconds(CLOCK_TIMEOUT);
+            auto end_time  = std::chrono::steady_clock::now() + CLOCK_TIMEOUT;
             for (int i = 0; i < num_mboards; i++) {
                 if (ref == "mimo" and i == 0)
                     continue;
                 while ((is_locked = usrp->get_mboard_sensor("ref_locked", i).to_bool())
                            == false
-                       and boost::get_system_time() < end_time) {
-                    std::this_thread::sleep_for(std::chrono::milliseconds(1));
+                       and std::chrono::steady_clock::now() < end_time) {
+                    std::this_thread::sleep_for(1ms);
                 }
                 if (is_locked == false) {
                     std::cerr << "ERROR: Unable to confirm clock signal locked on board:"
