@@ -20,6 +20,24 @@ import mako.lookup
 import mako.template
 from ruamel import yaml
 
+# Adapted from code found at
+# https://stackoverflow.com/questions/5121931/
+#     in-python-how-can-you-load-yaml-mappings-as-ordereddicts
+# (Accessed 17 October 2019)
+def ordered_load(stream, Loader=yaml.SafeLoader, object_pairs_hook=OrderedDict):
+    """
+    In Python 3.5, element insertion order into dictionaries is not preserved.
+    This function uses an OrderedDict to read a YAML file, which does preserve order.
+    """
+    class OrderedLoader(Loader):
+        pass
+    def construct_mapping(loader, node):
+        loader.flatten_mapping(node)
+        return object_pairs_hook(loader.construct_pairs(node))
+    OrderedLoader.add_constructor(
+        yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+        construct_mapping)
+    return yaml.load(stream, OrderedLoader)
 
 def split(iterable, function):
     """
@@ -90,6 +108,7 @@ class IOConfig:
     """
     def __init__(self, config, signatures):
         # read configuration from config dictionary
+        # TODO: Is this guaranteed ordered?
         self.__dict__.update(**config)
         if hasattr(self, "io_ports"):
             expand_io_port_desc(getattr(self, "io_ports"), signatures)
@@ -109,7 +128,7 @@ class ImageBuilderConfig:
         self.stream_endpoints = OrderedDict()
         self.connections = []
         self.clk_domains = []
-        self.block_ports = {}
+        self.block_ports = OrderedDict()
         self.io_ports = OrderedDict()
         self.clocks = OrderedDict()
         self.block_con = []
@@ -168,7 +187,7 @@ class ImageBuilderConfig:
             if not hasattr(desc, "parameters"):
                 setattr(desc, "parameters", {})
             if "parameters" not in block:
-                block["parameters"] = {}
+                block["parameters"] = OrderedDict()
             for key in block["parameters"].keys():
                 if key not in desc.parameters:
                     logging.error("Unknown parameter %s for block %s", key, name)
@@ -318,7 +337,7 @@ def load_config(filename):
         with open(filename) as stream:
             logging.info(
                 "Using %s from %s.", basename, os.path.normpath(dirname))
-            config = yaml.safe_load(stream)
+            config = ordered_load(stream)
         return config
     except IOError:
         logging.error("%s misses %s", os.path.normpath(dirname), basename)
@@ -359,7 +378,7 @@ def read_grc_block_configs(path):
         for name in names:
             if re.match(r".*\.block\.yml", name):
                 with open (os.path.join(root, name)) as stream:
-                    config = yaml.safe_load(stream)
+                    config = ordered_load(stream)
                     result[config["id"]] = config
 
     return result
@@ -463,13 +482,13 @@ def read_block_descriptions(signatures, *paths):
     :return: dictionary of noc blocks. Key is filename of the block, value
              is an IOConfig object
     """
-    blocks = {}
+    blocks = OrderedDict()
     for path in paths:
         for root, dirs, files, in os.walk(path):
             for filename in files:
                 if re.match(r".*\.yml$", filename):
                     with open(os.path.join(root, filename)) as stream:
-                        block = yaml.safe_load(stream)
+                        block = ordered_load(stream)
                         if "schema" in block and \
                                 block["schema"] == "rfnoc_modtool_args":
                             logging.info("Adding block description from "
