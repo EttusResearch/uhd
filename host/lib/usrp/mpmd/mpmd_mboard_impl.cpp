@@ -364,6 +364,14 @@ uhd::task::sptr mpmd_mboard_impl::claim_device_and_make_task()
     // Save token for both RPC clients
     _claim_rpc->set_token(rpc_token);
     rpc->set_token(rpc_token);
+    // Optionally clear log buf
+    if (mb_args.has_key("skip_oldlog")) {
+        try {
+            this->dump_logs(true);
+        } catch (const uhd::runtime_error&) {
+            UHD_LOG_WARNING("MPMD", "Could not read back log queue!");
+        }
+    }
     return uhd::task::make([this] {
         auto now = std::chrono::steady_clock::now();
         if (not this->claim()) {
