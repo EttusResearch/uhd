@@ -192,6 +192,8 @@ static int dissect_rfnoc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
     gint flag_offset;
     guint8 *bytes;
     guint8 hdr_bits = 0;
+    gboolean is_eob = 0;
+    gboolean is_eov = 0;
     uint64_t timestamp;
     int chdr_len = 0;
     gboolean is_network;
@@ -212,7 +214,7 @@ static int dissect_rfnoc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
 
     len = tvb_reported_length(tvb);
 
-    if (tree){
+    if (tree) {
         guint64 hdr = tvb_get_letoh64(tvb, 0);
         uhd::rfnoc::chdr::chdr_header chdr_hdr(hdr);
         chdr_len = chdr_hdr.get_length();
@@ -281,14 +283,14 @@ static int dissect_rfnoc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
                 }
                 /* Add data0 */
                 proto_tree_add_uint(ctrl_tree, hf_rfnoc_ctrl_data0, tvb, offset+12, 4, payload.data_vtr[0]);
-		/* Add op code */
+                /* Add op code */
                 proto_tree_add_string(
                     ctrl_tree, hf_rfnoc_ctrl_opcode, tvb, offset+11, 1,
                     val_to_str(payload.op_code, RFNOC_CTRL_OPCODES, "reserved")
                 );
                 /* Add address */
                 proto_tree_add_uint(ctrl_tree, hf_rfnoc_ctrl_address, tvb, offset+8, 3, payload.address);
-		/* Add status */
+                /* Add status */
                 proto_tree_add_string(
                     ctrl_tree, hf_rfnoc_ctrl_status, tvb, offset+11, 1,
                     val_to_str(payload.status, RFNOC_CTRL_STATUS, "reserved")
@@ -395,7 +397,14 @@ static int dissect_rfnoc(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, vo
                     }
                 }
             }
-            if (pkttype == uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_DATA_NO_TS) {
+            if (pkttype == uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_DATA_NO_TS
+                || pkttype == uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_DATA_WITH_TS) {
+                is_eob = chdr_hdr.get_eob();
+                is_eov = chdr_hdr.get_eov();
+                proto_tree_add_boolean(
+                    rfnoc_tree, hf_rfnoc_hdr_eob, tvb, offset + 7, 1, is_eob);
+                proto_tree_add_boolean(
+                    rfnoc_tree, hf_rfnoc_hdr_eov, tvb, offset + 7, 1, is_eov);
             }
             if (pkttype == uhd::rfnoc::chdr::packet_type_t::PKT_TYPE_DATA_WITH_TS) {
                 auto pkt = pkt_factory.make_generic();
