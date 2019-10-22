@@ -50,7 +50,6 @@ def setup_parser():
     config_group.add_argument(
         "-r", "--grc_config",
         help="Path to grc file to generate config from")
-
     parser.add_argument(
         "-F", "--fpga-dir",
         help="Path directory of the FPGA source tree",
@@ -65,13 +64,11 @@ def setup_parser():
         help="Path to where to save the static router hex file. "
              "Defaults to the location of the YAML file, filename $device_static_router.hex",
         default=None)
-
     parser.add_argument(
         "-I", "--include-dir",
         help="Path directory of the RFNoC Out-of-Tree module",
         nargs='+',
         default=None)
-
     parser.add_argument(
         "-b", "--grc-blocks",
         help="Path directory of GRC block descriptions (needed for --grc-config only)",
@@ -86,11 +83,13 @@ def setup_parser():
         action="store_true")
     parser.add_argument(
         "-d", "--device",
-        help="Device to be programmed [x300, x310, e310, e320, n300, n310, n320]",
-        default="x310")
+        help="Device to be programmed [x300, x310, e310, e320, n300, n310, n320]."
+             "Needs to be specified either here, or in the configuration file.",
+        default=None)
     parser.add_argument(
         "-t", "--target",
-        help="Build target (e.g. X310_HG, N320_XG, ...)",
+        help="Build target (e.g. X310_HG, N320_XG, ...). Needs to be specified "
+             "either here, on the configuration file.",
         default=None)
     parser.add_argument(
         "-g", "--GUI",
@@ -115,14 +114,16 @@ def image_config(args):
     :return: image configuration as dictionary
     """
     if args.yaml_config:
-        return rfnoc.yaml_utils.load_config(args.yaml_config, get_config_path()), \
-                args.yaml_config
-
+        config = \
+            rfnoc.yaml_utils.load_config(args.yaml_config, get_config_path())
+        device = config.get('device') if args.device is None else args.device
+        target = config.get('default_target') if args.target is None else args.target
+        return config, args.yaml_config, device, target
     with open(args.grc_config) as grc_file:
         config = yaml.load(grc_file)
         logging.info("Converting GNU Radio Companion file to image builder format")
         config = rfnoc.image_builder.convert_to_image_config(config, args.grc_blocks)
-        return config, args.grc_config
+        return config, args.grc_config, args.device, args.target
 
 
 def resolve_path(path, local):
@@ -170,7 +171,7 @@ def main():
     if args.log_level is not None:
         logging.root.setLevel(args.log_level.upper())
 
-    config, source = image_config(args)
+    config, source, device, target = image_config(args)
     source_hash = hashlib.sha256()
     with open(source, "rb") as source_file:
         source_hash.update(source_file.read())
@@ -179,8 +180,8 @@ def main():
         config=config,
         fpga_path=args.fpga_dir,
         config_path=get_config_path(),
-        device=args.device,
-        target=args.target,
+        device=device,
+        target=target,
         generate_only=args.generate_only,
         clean_all=args.clean_all,
         gui=args.GUI,
@@ -188,6 +189,7 @@ def main():
         source_hash=source_hash.hexdigest(),
         output_path=args.image_core_output,
         router_hex_path=args.router_hex_output,
+        include_paths=args.include_dir,
         )
 
 if __name__ == "__main__":

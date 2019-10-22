@@ -461,16 +461,15 @@ def convert_to_image_config(grc, grc_config_path):
     return result
 
 
-def collect_module_paths(config_path):
+def collect_module_paths(config_path, include_paths):
     """
-    Create a list of directorties that contain noc block configuration files.
+    Create a list of directories that contain noc block configuration files.
     :param config_path: root path holding configuration files
     :return: list of noc block directories
     """
     # rfnoc blocks
-    result = [os.path.join(config_path, 'rfnoc', 'blocks')]
-    # additional OOT blocks
-    # TODO parse modules from external includes as well
+    result = [os.path.join(config_path, 'rfnoc', 'blocks')] + \
+            [os.path.join(x, 'blocks') for x in include_paths]
     return result
 
 
@@ -732,6 +731,7 @@ def build_image(config, fpga_path, config_path, device, **args):
                    generate_only: Do not build the code after generation.
                    clean_all: passed to Makefile
                    GUI: passed to Makefile
+                   include_paths: Paths to additional blocks
     :return: Exit result of build process or 0 if generate-only is given.
     """
     logging.info("Selected device %s", device)
@@ -749,7 +749,7 @@ def build_image(config, fpga_path, config_path, device, **args):
     device_conf = IOConfig(device_config(core_config_path, device),
                            signatures_conf)
 
-    block_paths = collect_module_paths(config_path)
+    block_paths = collect_module_paths(config_path, args.get('include_paths'))
     logging.debug("Looking for block descriptors in:")
     for path in block_paths:
         logging.debug("    %s", os.path.normpath(path))

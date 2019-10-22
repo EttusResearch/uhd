@@ -5,7 +5,8 @@
         "copyright":        { "type":  "string" },
         "version":          { "type":  "number" },
         "license":          { "type":  "string" },
-        "device_desc":      { "type":  "string" },
+        "device":           { "type":  "string" },
+        "default_target":   { "type":  "string" },
         "rfnoc_version":    { "type":  "number" },
         "chdr_width":       { "enum":  [64, 256] },
 
