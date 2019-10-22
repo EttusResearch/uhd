@@ -54,8 +54,7 @@ class E320XportMgrUDP(XportMgrUDP):
     }
 
 class E320XportMgrLiberio(XportMgrLiberio):
-    " E320-specific Liberio configuration "
-    max_chan = 6
+    "E320-specific liberio configuration"
 # pylint: enable=too-few-public-methods
 
 ###############################################################################
@@ -375,8 +374,10 @@ class e320(ZynqComponents, PeriphManagerBase):
         assert self.mboard_info['rpc_connection'] in ('remote', 'local')
         if self.mboard_info['rpc_connection'] == 'remote':
             return ["udp"]
-        # else:
-        return ["liberio"]
+        elif self._xport_mgrs["liberio"].max_chan > 0:
+            return ["liberio"]
+        else:
+            return ["udp"]
 
     def get_chdr_link_options(self, xport_type):
         """

@@ -8,6 +8,7 @@ Liberio Transport manager
 """
 
 from builtins import object
+import pyudev
 
 class XportMgrLiberio(object):
     """
@@ -18,8 +19,19 @@ class XportMgrLiberio(object):
     # Number of available DMA channels
     max_chan = 4
 
-    def __init__(self, log):
+    def __init__(self, log, max_chan=-1):
         self.log = log.getChild('Liberio')
+        if max_chan < 0:
+            context = pyudev.Context()
+            rx_of_nodes = list(context.list_devices(subsystem="platform",
+                OF_COMPATIBLE_0="ettus,usrp-rx-dma"))
+            tx_of_nodes = list(context.list_devices(subsystem="platform",
+                OF_COMPATIBLE_0="ettus,usrp-tx-dma"))
+            self.max_chan = min(len(rx_of_nodes), len(tx_of_nodes))
+            self.log.debug("Found {} channels".format(self.max_chan))
+        else:
+            self.max_chan = max_chan
+            self.log.debug("Reporting {} channels".format(self.max_chan))
 
     def init(self, args):
         """
