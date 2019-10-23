@@ -12,6 +12,15 @@
 static const std::string LOG_ID            = "IO_SRV";
 static const size_t MAX_NUM_XPORT_ADAPTERS = 2;
 
+static const char* recv_offload_str             = "recv_offload";
+static const char* send_offload_str             = "send_offload";
+static const char* recv_offload_wait_mode_str   = "recv_offload_wait_mode";
+static const char* send_offload_wait_mode_str   = "send_offload_wait_mode";
+static const char* recv_offload_thread_cpu_str  = "recv_offload_thread_cpu";
+static const char* send_offload_thread_cpu_str  = "send_offload_thread_cpu";
+static const char* num_poll_offload_threads_str = "num_poll_offload_threads";
+static const char* poll_offload_thread_cpu_str  = "poll_offload_thread_cpu_str";
+
 namespace uhd { namespace usrp {
 
 namespace {
@@ -47,16 +56,16 @@ io_service_args_t read_io_service_args(
     io_service_args_t io_srv_args;
     std::string tmp_str, default_str;
 
-    io_srv_args.recv_offload = get_bool_arg(args, "recv_offload", defaults.recv_offload);
-    io_srv_args.send_offload = get_bool_arg(args, "send_offload", defaults.send_offload);
+    io_srv_args.recv_offload = get_bool_arg(args, recv_offload_str, defaults.recv_offload);
+    io_srv_args.send_offload = get_bool_arg(args, send_offload_str, defaults.send_offload);
 
     io_srv_args.recv_offload_wait_mode = get_wait_mode_arg(
-        args, "recv_offload_wait_mode", defaults.recv_offload_wait_mode);
+        args, recv_offload_wait_mode_str, defaults.recv_offload_wait_mode);
     io_srv_args.send_offload_wait_mode = get_wait_mode_arg(
-        args, "send_offload_wait_mode", defaults.send_offload_wait_mode);
+        args, send_offload_wait_mode_str, defaults.send_offload_wait_mode);
 
     io_srv_args.num_poll_offload_threads =
-        args.cast<size_t>("num_poll_offload_threads", defaults.num_poll_offload_threads);
+        args.cast<size_t>(num_poll_offload_threads_str, defaults.num_poll_offload_threads);
     if (io_srv_args.num_poll_offload_threads == 0) {
         UHD_LOG_WARNING(LOG_ID,
             "Invalid value for num_poll_offload_threads. "
@@ -69,7 +78,7 @@ io_service_args_t read_io_service_args(
     };
 
     for (size_t i = 0; i < MAX_NUM_XPORT_ADAPTERS; i++) {
-        std::string key = create_key("recv_offload_thread_cpu", i);
+        std::string key = create_key(recv_offload_thread_cpu_str, i);
         if (args.has_key(key)) {
             io_srv_args.recv_offload_thread_cpu.push_back(args.cast<size_t>(key, 0));
         } else {
@@ -78,7 +87,7 @@ io_service_args_t read_io_service_args(
     }
 
     for (size_t i = 0; i < MAX_NUM_XPORT_ADAPTERS; i++) {
-        std::string key = create_key("send_offload_thread_cpu", i);
+        std::string key = create_key(send_offload_thread_cpu_str, i);
         if (args.has_key(key)) {
             io_srv_args.send_offload_thread_cpu.push_back(args.cast<size_t>(key, 0));
         } else {
@@ -87,7 +96,7 @@ io_service_args_t read_io_service_args(
     }
 
     for (size_t i = 0; i < io_srv_args.num_poll_offload_threads; i++) {
-        std::string key = create_key("poll_offload_thread_cpu", i);
+        std::string key = create_key(poll_offload_thread_cpu_str, i);
         if (args.has_key(key)) {
             io_srv_args.poll_offload_thread_cpu.push_back(args.cast<size_t>(key, 0));
         } else {
@@ -96,6 +105,31 @@ io_service_args_t read_io_service_args(
     }
 
     return io_srv_args;
+}
+
+device_addr_t merge_io_service_dev_args(
+    const device_addr_t& dev_args, const device_addr_t& stream_args)
+{
+    device_addr_t args = stream_args;
+
+    auto merge_args = [&dev_args, stream_args, &args](const char* key) {
+        if (!stream_args.has_key(key)) {
+            if (dev_args.has_key(key)) {
+                args[key] = dev_args[key];
+            }
+        }
+    };
+
+    merge_args(recv_offload_str);
+    merge_args(send_offload_str);
+    merge_args(recv_offload_wait_mode_str);
+    merge_args(send_offload_wait_mode_str);
+    merge_args(recv_offload_thread_cpu_str);
+    merge_args(send_offload_thread_cpu_str);
+    merge_args(num_poll_offload_threads_str);
+    merge_args(poll_offload_thread_cpu_str);
+
+    return args;
 }
 
 }} // namespace uhd::usrp

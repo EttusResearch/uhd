@@ -21,20 +21,23 @@ static const std::string LOG_ID = "IO_SRV";
 
 namespace uhd { namespace usrp {
 
+/* This file defines an I/O service manager implementation, io_service_mgr_impl.
+ * Its implementation is divided into three other classes, inline_io_service_mgr,
+ * blocking_io_service_mgr, and polling_io_service_mgr. The io_service_mgr_impl
+ * object selects which one to invoke based on the provided stream args.
+ */
+
 /* Inline I/O service manager
  *
  * I/O service manager for inline I/O services. Creates a new inline_io_service
  * for every new pair of links, unless they are already attached to an I/O
  * service (muxed links).
  */
-class inline_io_service_mgr : public io_service_mgr
+class inline_io_service_mgr
 {
 public:
     io_service::sptr connect_links(recv_link_if::sptr recv_link,
-        send_link_if::sptr send_link,
-        const link_type_t link_type,
-        const io_service_args_t& args,
-        const std::string& streamer_id);
+        send_link_if::sptr send_link);
 
     void disconnect_links(recv_link_if::sptr recv_link, send_link_if::sptr send_link);
 
@@ -50,10 +53,7 @@ private:
 };
 
 io_service::sptr inline_io_service_mgr::connect_links(recv_link_if::sptr recv_link,
-    send_link_if::sptr send_link,
-    const link_type_t /*link_type*/,
-    const io_service_args_t& /*args*/,
-    const std::string& /*streamer_id*/)
+    send_link_if::sptr send_link)
 {
     // Check if links are already connected
     const link_pair_t links{recv_link, send_link};
@@ -106,7 +106,7 @@ void inline_io_service_mgr::disconnect_links(
  * a streamer. If there are multiple streamers, this manager creates a separate
  * set of I/O services for each streamer.
  */
-class blocking_io_service_mgr : public io_service_mgr
+class blocking_io_service_mgr
 {
 public:
     io_service::sptr connect_links(recv_link_if::sptr recv_link,
@@ -276,14 +276,12 @@ io_service::sptr blocking_io_service_mgr::_create_new_io_service(
  * links among them. New connections always go to the offload thread containing
  * the fewest connections, with lowest numbered thread as a second criterion.
  */
-class polling_io_service_mgr : public io_service_mgr
+class polling_io_service_mgr
 {
 public:
     io_service::sptr connect_links(recv_link_if::sptr recv_link,
         send_link_if::sptr send_link,
-        const link_type_t link_type,
-        const io_service_args_t& args,
-        const std::string& streamer_id);
+        const io_service_args_t& args);
 
     void disconnect_links(recv_link_if::sptr recv_link, send_link_if::sptr send_link);
 
@@ -311,9 +309,7 @@ private:
 
 io_service::sptr polling_io_service_mgr::connect_links(recv_link_if::sptr recv_link,
     send_link_if::sptr send_link,
-    const link_type_t /*link_type*/,
-    const io_service_args_t& args,
-    const std::string& /*streamer_id*/)
+    const io_service_args_t& args)
 {
     // Check if links are already connected
     const link_pair_t links{recv_link, send_link};
@@ -414,12 +410,19 @@ public:
     io_service::sptr connect_links(recv_link_if::sptr recv_link,
         send_link_if::sptr send_link,
         const link_type_t link_type,
-        const io_service_args_t& args,
+        const io_service_args_t& default_args,
+        const uhd::device_addr_t& stream_args,
         const std::string& streamer_id);
 
     void disconnect_links(recv_link_if::sptr recv_link, send_link_if::sptr send_link);
 
 private:
+    enum io_service_type_t
+    {
+        INLINE_IO_SRV,
+        BLOCKING_IO_SRV,
+        POLLING_IO_SRV
+    };
     struct xport_args_t
     {
         bool offload                              = false;
@@ -428,7 +431,7 @@ private:
     struct link_info_t
     {
         io_service::sptr io_srv;
-        io_service_mgr* mgr = nullptr;
+        io_service_type_t io_srv_type;
     };
     using link_pair_t = std::pair<recv_link_if::sptr, send_link_if::sptr>;
 
@@ -450,10 +453,14 @@ io_service_mgr::sptr io_service_mgr::make(const uhd::device_addr_t& args)
 io_service::sptr io_service_mgr_impl::connect_links(recv_link_if::sptr recv_link,
     send_link_if::sptr send_link,
     const link_type_t link_type,
-    const io_service_args_t& args,
+    const io_service_args_t& default_args,
+    const uhd::device_addr_t& stream_args,
     const std::string& streamer_id)
 {
     UHD_ASSERT_THROW(link_type != link_type_t::ASYNC_MSG);
+
+    const io_service_args_t args = read_io_service_args(
+        merge_io_service_dev_args(_args, stream_args), default_args);
 
     // Check if the links are already attached to an I/O service. If they are,
     // then use the same manager to connect, since links can only be connected
@@ -462,16 +469,16 @@ io_service::sptr io_service_mgr_impl::connect_links(recv_link_if::sptr recv_link
     auto it = _link_info_map.find(links);
 
     io_service::sptr io_srv;
-    io_service_mgr* mgr = nullptr;
+    io_service_type_t io_srv_type;
 
     if (it != _link_info_map.end()) {
-        io_srv = it->second.io_srv;
-        mgr    = it->second.mgr;
+        io_srv      = it->second.io_srv;
+        io_srv_type = it->second.io_srv_type;
     } else {
         // Links not already attached, pick an io_service_mgr to connect based
         // on user parameters and connect them.
         if (link_type == link_type_t::CTRL) {
-            mgr = &_inline_io_srv_mgr;
+            io_srv_type = INLINE_IO_SRV;
         } else {
             bool offload = (link_type == link_type_t::RX_DATA) ? args.recv_offload
                                                                : args.send_offload;
@@ -481,19 +488,32 @@ io_service::sptr io_service_mgr_impl::connect_links(recv_link_if::sptr recv_link
 
             if (offload) {
                 if (wait_mode == io_service_args_t::POLL) {
-                    mgr = &_polling_io_srv_mgr;
+                    io_srv_type = POLLING_IO_SRV;
                 } else {
-                    mgr = &_blocking_io_srv_mgr;
+                    io_srv_type = BLOCKING_IO_SRV;
                 }
             } else {
-                mgr = &_inline_io_srv_mgr;
+                io_srv_type = INLINE_IO_SRV;
             }
         }
     }
 
-    io_srv = mgr->connect_links(recv_link, send_link, link_type, args, streamer_id);
+    switch (io_srv_type) {
+        case INLINE_IO_SRV:
+            io_srv = _inline_io_srv_mgr.connect_links(recv_link, send_link);
+            break;
+        case BLOCKING_IO_SRV:
+            io_srv = _blocking_io_srv_mgr.connect_links(
+                recv_link, send_link, link_type, args, streamer_id);
+            break;
+        case POLLING_IO_SRV:
+            io_srv = _polling_io_srv_mgr.connect_links(recv_link, send_link, args);
+            break;
+        default:
+            UHD_THROW_INVALID_CODE_PATH();
+    }
 
-    _link_info_map[links] = {io_srv, mgr};
+    _link_info_map[links] = {io_srv, io_srv_type};
     return io_srv;
 }
 
@@ -504,7 +524,20 @@ void io_service_mgr_impl::disconnect_links(
     auto it = _link_info_map.find(links);
 
     UHD_ASSERT_THROW(it != _link_info_map.end());
-    it->second.mgr->disconnect_links(recv_link, send_link);
+    switch (it->second.io_srv_type) {
+        case INLINE_IO_SRV:
+            _inline_io_srv_mgr.disconnect_links(recv_link, send_link);
+            break;
+        case BLOCKING_IO_SRV:
+            _blocking_io_srv_mgr.disconnect_links(recv_link, send_link);
+            break;
+        case POLLING_IO_SRV:
+            _polling_io_srv_mgr.disconnect_links(recv_link, send_link);
+            break;
+        default:
+            UHD_THROW_INVALID_CODE_PATH();
+    }
+
     _link_info_map.erase(it);
 }
 

@@ -72,7 +72,8 @@ public:
      * \param recv_link The recv link to connect to an I/O service
      * \param send_link The send link to connect to an I/O service
      * \param link_type The type of transport in which the links will be used
-     * \param io_srv_args The user-requested options for the stream
+     * \param io_srv_args The default stream args for the device
+     * \param stream_args The user-provided stream args
      * \param streamer_id A unique ID for the streamer that will use the links
      * \return The I/O service to which the links are connected
      */
@@ -80,8 +81,9 @@ public:
         transport::recv_link_if::sptr recv_link,
         transport::send_link_if::sptr send_link,
         const transport::link_type_t link_type,
-        const io_service_args_t& io_srv_args = io_service_args_t(),
-        const std::string& streamer_id       = "") = 0;
+        const io_service_args_t& default_args = io_service_args_t(),
+        const uhd::device_addr_t& stream_args = uhd::device_addr_t(),
+        const std::string& streamer_id        = "") = 0;
 
     /*! Disconnects links from their I/O service
      *

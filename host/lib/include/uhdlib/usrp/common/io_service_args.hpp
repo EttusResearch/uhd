@@ -88,6 +88,19 @@ struct io_service_args_t
 io_service_args_t read_io_service_args(
     const device_addr_t& args, const io_service_args_t& defaults);
 
+/*! Merges device_args with stream_args
+ *
+ * Copies args related to I/O services from device args to stream args, and
+ * returns the merged result. If the same arg is specified in device_args and
+ * stream args, the value in stream_args is returned.
+ *
+ * \param args The device args provided when the graph is created
+ * \param args The stream args provided when a streamer is created
+ * \return The merged device args
+ */
+device_addr_t merge_io_service_dev_args(
+    const device_addr_t& dev_args, const device_addr_t& stream_args);
+
 }} // namespace uhd::usrp
 
 #endif /* INCLUDED_LIBUHD_IO_SERVICE_ARGS_HPP */

@@ -256,7 +256,8 @@ mpmd_mboard_impl::mpmd_mb_iface::make_rx_data_transport(
     auto io_srv = get_io_srv_mgr()->connect_links(recv_link,
         send_link,
         transport::link_type_t::RX_DATA,
-        usrp::read_io_service_args(xport_args, get_default_io_srv_args()),
+        get_default_io_srv_args(),
+        xport_args,
         streamer_id);
 
     auto rx_xport = std::make_unique<chdr_rx_data_xport>(io_srv,
@@ -325,7 +326,8 @@ mpmd_mboard_impl::mpmd_mb_iface::make_tx_data_transport(
     auto io_srv = get_io_srv_mgr()->connect_links(recv_link,
         send_link,
         transport::link_type_t::TX_DATA,
-        usrp::read_io_service_args(xport_args, get_default_io_srv_args()),
+        get_default_io_srv_args(),
+        xport_args,
         streamer_id);
 
     // Create the data transport

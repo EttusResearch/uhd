@@ -186,7 +186,8 @@ uhd::rfnoc::chdr_rx_data_xport::uptr x300_impl::x300_mb_iface::make_rx_data_tran
     auto io_srv = get_io_srv_mgr()->connect_links(recv_link,
         send_link,
         link_type_t::RX_DATA,
-        uhd::usrp::read_io_service_args(xport_args, get_default_io_srv_args()),
+        get_default_io_srv_args(),
+        xport_args,
         streamer_id);
 
     // Create the data transport
@@ -254,7 +255,8 @@ uhd::rfnoc::chdr_tx_data_xport::uptr x300_impl::x300_mb_iface::make_tx_data_tran
     auto io_srv = get_io_srv_mgr()->connect_links(recv_link,
         send_link,
         link_type_t::TX_DATA,
-        uhd::usrp::read_io_service_args(xport_args, get_default_io_srv_args()),
+        get_default_io_srv_args(),
+        xport_args,
         streamer_id);
 
     // Create the data transport
