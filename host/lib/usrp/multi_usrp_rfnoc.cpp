@@ -8,10 +8,12 @@
 #include <uhd/rfnoc/ddc_block_control.hpp>
 #include <uhd/rfnoc/duc_block_control.hpp>
 #include <uhd/rfnoc/filter_node.hpp>
+#include <uhd/rfnoc/graph_edge.hpp>
 #include <uhd/rfnoc/radio_control.hpp>
 #include <uhd/rfnoc_graph.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
+#include <uhd/utils/graph_utils.hpp>
 #include <uhdlib/rfnoc/rfnoc_device.hpp>
 #include <uhdlib/usrp/gpio_defs.hpp>
 #include <unordered_set>
@@ -76,6 +78,7 @@ public:
         radio_control::sptr radio;
         ddc_block_control::sptr ddc; // can be nullptr
         size_t block_chan;
+        std::vector<graph_edge_t> edge_list;
     };
 
     struct tx_chan_t
@@ -83,6 +86,7 @@ public:
         radio_control::sptr radio;
         duc_block_control::sptr duc; // can be nullptr
         size_t block_chan;
+        std::vector<graph_edge_t> edge_list;
     };
 
     /**************************************************************************
@@ -118,76 +122,39 @@ public:
         size_t musrp_tx_channel = 0;
         for (auto radio_id : radio_blk_ids) {
             auto radio_blk = _graph->get_block<uhd::rfnoc::radio_control>(radio_id);
-            // We assume that the DDC connected to this radio block has the same mboard,
-            // instance, and port number
-            auto ddc_id =
-                block_id_t(radio_id.get_device_no(), "DDC", radio_id.get_block_count());
-            uhd::rfnoc::ddc_block_control::sptr ddc_blk;
-            try {
-                ddc_blk = _graph->get_block<uhd::rfnoc::ddc_block_control>(ddc_id);
-            } catch (const uhd::exception&) {
-                UHD_LOGGER_TRACE("MULTI_USRP")
-                    << boost::format("No DDC found: %s") % ddc_id.to_string();
-            }
             for (size_t block_chan = 0; block_chan < radio_blk->get_num_output_ports();
                  ++block_chan) {
-                // Figure out if this channel has a DDC available
-                auto this_chan_ddc =
-                    ddc_blk
-                            && _graph->is_connectable(
-                                   radio_id, block_chan, ddc_id, block_chan)
-                        ? ddc_blk
-                        : nullptr;
-                _rx_chans.emplace(
-                    musrp_rx_channel, rx_chan_t({radio_blk, this_chan_ddc, block_chan}));
-                if (!this_chan_ddc) {
-                    UHD_LOGGER_DEBUG("MULTI_USRP")
-                        << boost::format(
-                               "Radio %s unable to connect to DDC %s on channel %d")
-                               % radio_id.to_string() % ddc_id.to_string() % block_chan;
-                } else {
-                    UHD_LOG_DEBUG("MULTI_USRP",
-                        "RX Channel " << musrp_rx_channel << " has "
-                                      << radio_id.to_string() << " and DDC "
-                                      << ddc_id.to_string());
+                // Create the RX chan
+                uhd::usrp::subdev_spec_t rx_radio_subdev;
+                rx_radio_subdev.push_back(uhd::usrp::subdev_spec_pair_t(
+                    radio_blk->get_slot_name(),
+                    radio_blk->get_dboard_fe_from_chan(block_chan, uhd::RX_DIRECTION)));
+                auto rx_chans =
+                    _generate_mboard_rx_chans(rx_radio_subdev, radio_id.get_device_no());
+                // TODO: we're passing the same info around here; there has to be a
+                // cleaner way
+                for (auto rx_chan : rx_chans) {
+                    _rx_chans.emplace(musrp_rx_channel, rx_chan);
+                    ++musrp_rx_channel; // Increment after logging so we print the correct
+                                        // value
                 }
-                ++musrp_rx_channel; // Increment after logging so we print the correct
-                                    // value
-            }
-            // We assume that the DUC connected to this radio block has the same mboard,
-            // instance, and port number
-            auto duc_id =
-                block_id_t(radio_id.get_device_no(), "DUC", radio_id.get_block_count());
-            uhd::rfnoc::duc_block_control::sptr duc_blk;
-            try {
-                duc_blk = _graph->get_block<uhd::rfnoc::duc_block_control>(duc_id);
-            } catch (const uhd::exception&) {
-                UHD_LOGGER_TRACE("MULTI_USRP")
-                    << boost::format("No DUC found: %s") % duc_id.to_string();
             }
             for (size_t block_chan = 0; block_chan < radio_blk->get_num_input_ports();
                  ++block_chan) {
-                auto this_chan_duc =
-                    duc_blk
-                            && _graph->is_connectable(
-                                   duc_id, block_chan, radio_id, block_chan)
-                        ? duc_blk
-                        : nullptr;
-                _tx_chans.emplace(
-                    musrp_tx_channel, tx_chan_t({radio_blk, this_chan_duc, block_chan}));
-                if (!this_chan_duc) {
-                    UHD_LOGGER_DEBUG("MULTI_USRP")
-                        << boost::format(
-                               "Radio %s unable to connect to DUC %s on channel %d")
-                               % radio_id.to_string() % duc_id.to_string() % block_chan;
-                } else {
-                    UHD_LOG_DEBUG("MULTI_USRP",
-                        "TX Channel " << musrp_tx_channel << " has "
-                                      << radio_id.to_string() << " and DUC "
-                                      << duc_id.to_string());
+                // Create the TX chan
+                uhd::usrp::subdev_spec_t tx_radio_subdev;
+                tx_radio_subdev.push_back(uhd::usrp::subdev_spec_pair_t(
+                    radio_blk->get_slot_name(),
+                    radio_blk->get_dboard_fe_from_chan(block_chan, uhd::TX_DIRECTION)));
+                auto tx_chans =
+                    _generate_mboard_tx_chans(tx_radio_subdev, radio_id.get_device_no());
+                // TODO: we're passing the same info around here; there has to be a
+                // cleaner way
+                for (auto tx_chan : tx_chans) {
+                    _tx_chans.emplace(musrp_tx_channel, tx_chan);
+                    ++musrp_tx_channel; // Increment after logging so we print the correct
+                                        // value
                 }
-                ++musrp_tx_channel; // Increment after logging so we print the correct
-                                    // value
             }
         }
         _graph->commit();
@@ -218,15 +185,24 @@ public:
         for (size_t strm_port = 0; strm_port < args.channels.size(); ++strm_port) {
             auto rx_channel = args.channels.at(strm_port);
             auto rx_chain   = _get_rx_chan(rx_channel);
-            if (rx_chain.ddc) {
-                _graph->connect(rx_chain.radio->get_block_id(),
-                    rx_chain.block_chan,
-                    rx_chain.ddc->get_block_id(),
-                    rx_chain.block_chan);
+            // Make all of the connections in our chain
+            for (auto edge : rx_chain.edge_list) {
+                if (block_id_t(edge.dst_blockid).match(NODE_ID_SEP)) {
+                    break;
+                }
+                UHD_LOG_TRACE("MULTI_USRP",
+                    boost::format("Connecting RX edge: %s:%d -> %s:%d") % edge.src_blockid
+                        % edge.src_port % edge.dst_blockid % edge.dst_port);
+                _graph->connect(
+                    edge.src_blockid, edge.src_port, edge.dst_blockid, edge.dst_port);
             }
-            _graph->connect((rx_chain.ddc) ? rx_chain.ddc->get_block_id()
-                                           : rx_chain.radio->get_block_id(),
-                rx_chain.block_chan,
+            // Including the connection to the streamer
+            UHD_LOG_TRACE("MULTI_USRP",
+                boost::format("Connecting %s:%d -> RxStreamer:%d")
+                    % rx_chain.edge_list.back().src_blockid
+                    % rx_chain.edge_list.back().src_port % strm_port);
+            _graph->connect(rx_chain.edge_list.back().src_blockid,
+                rx_chain.edge_list.back().src_port,
                 rx_streamer,
                 strm_port);
             const double chan_rate =
@@ -277,17 +253,26 @@ public:
         for (size_t strm_port = 0; strm_port < args.channels.size(); ++strm_port) {
             auto tx_channel = args.channels.at(strm_port);
             auto tx_chain   = _get_tx_chan(tx_channel);
-            if (tx_chain.duc) {
-                _graph->connect(tx_chain.duc->get_block_id(),
-                    tx_chain.block_chan,
-                    tx_chain.radio->get_block_id(),
-                    tx_chain.block_chan);
+            // Make all of the connections in our chain
+            for (auto edge : tx_chain.edge_list) {
+                if (block_id_t(edge.src_blockid).match(NODE_ID_SEP)) {
+                    break;
+                }
+                UHD_LOG_TRACE("MULTI_USRP",
+                    boost::format("Connecting TX edge %s:%d -> %s:%d") % edge.src_blockid
+                        % edge.src_port % edge.dst_blockid % edge.dst_port);
+                _graph->connect(
+                    edge.src_blockid, edge.src_port, edge.dst_blockid, edge.dst_port);
             }
+            // Including the connection to the streamer
+            UHD_LOG_TRACE("MULTI_USRP",
+                boost::format("Connecting TxStreamer:%d -> %s:%d") % strm_port
+                    % tx_chain.edge_list.back().dst_blockid
+                    % tx_chain.edge_list.back().dst_port);
             _graph->connect(tx_streamer,
                 strm_port,
-                (tx_chain.duc) ? tx_chain.duc->get_block_id()
-                               : tx_chain.radio->get_block_id(),
-                tx_chain.block_chan);
+                tx_chain.edge_list.back().dst_blockid,
+                tx_chain.edge_list.back().dst_port);
             const double chan_rate =
                 _tx_rates.count(tx_channel) ? _tx_rates.at(tx_channel) : 1.0;
             if (chan_rate > 1.0 && rate != chan_rate) {
@@ -862,23 +847,45 @@ public:
      ******************************************************************/
     rx_chan_t _generate_rx_radio_chan(block_id_t radio_id, size_t block_chan)
     {
-        auto radio_blk = _graph->get_block<uhd::rfnoc::radio_control>(radio_id);
-        // We assume that the DDC connected to this radio block has the same mboard,
-        // instance, and port number
-        auto ddc_id =
-            block_id_t(radio_id.get_device_no(), "DDC", radio_id.get_block_count());
-        uhd::rfnoc::ddc_block_control::sptr ddc_blk;
-        try {
-            ddc_blk = _graph->get_block<uhd::rfnoc::ddc_block_control>(ddc_id);
-        } catch (const uhd::lookup_error&) {
-            UHD_LOGGER_TRACE("MULTI_USRP") << "No DDC found: " << ddc_id.to_string();
-        }
-        // Figure out if this channel has a DDC available
-        auto this_chan_ddc =
-            ddc_blk && _graph->is_connectable(radio_id, block_chan, ddc_id, block_chan)
-                ? ddc_blk
-                : nullptr;
-        return {radio_blk, this_chan_ddc, block_chan};
+        auto radio_blk          = _graph->get_block<uhd::rfnoc::radio_control>(radio_id);
+        auto radio_source_chain = get_block_chain(_graph, radio_id, block_chan, true);
+
+        // Find out if we have a DDC in the radio block chain
+        auto ddc_port_def = [this, radio_source_chain, radio_id, block_chan]() {
+            try {
+                for (auto edge : radio_source_chain) {
+                    if (block_id_t(edge.dst_blockid).match("DDC")) {
+                        if (edge.dst_port != block_chan) {
+                            /*  We don't expect this to happen very often. But in
+                             * the case that port numbers don't match, we need to
+                             * disable DDC control to ensure we're not controlling
+                             * another channel's DDC
+                             */
+                            UHD_LOGGER_WARNING("MULTI_USRP")
+                                << "DDC in radio chain " << radio_id << ":"
+                                << std::to_string(block_chan)
+                                << " not connected to the same port number! "
+                                   "Disabling DDC control.";
+                            break;
+                        }
+                        auto ddc_blk = _graph->get_block<uhd::rfnoc::ddc_block_control>(
+                            edge.dst_blockid);
+                        return std::tuple<uhd::rfnoc::ddc_block_control::sptr, size_t>(
+                            ddc_blk, block_chan);
+                    }
+                }
+            } catch (const uhd::exception&) {
+                UHD_LOGGER_DEBUG("MULTI_USRP")
+                    << "No DDC found for radio block " << radio_id << ":"
+                    << std::to_string(block_chan);
+                // Then just return a nullptr
+            }
+            return std::tuple<uhd::rfnoc::ddc_block_control::sptr, size_t>(nullptr, 0);
+        }();
+
+        // Create the RX chan
+        return rx_chan_t(
+            {radio_blk, std::get<0>(ddc_port_def), block_chan, radio_source_chain});
     }
 
     std::vector<rx_chan_t> _generate_mboard_rx_chans(
@@ -1446,23 +1453,45 @@ public:
     tx_chan_t _generate_tx_radio_chan(block_id_t radio_id, size_t block_chan)
     {
         auto radio_blk = _graph->get_block<uhd::rfnoc::radio_control>(radio_id);
-        // We assume that the duc connected to this radio block has the same mboard,
-        // instance, and port number
-        auto duc_id =
-            block_id_t(radio_id.get_device_no(), "DUC", radio_id.get_block_count());
-        uhd::rfnoc::duc_block_control::sptr duc_blk;
-        try {
-            duc_blk = _graph->get_block<uhd::rfnoc::duc_block_control>(duc_id);
-        } catch (const uhd::exception&) {
-            UHD_LOGGER_TRACE("MULTI_USRP_RFNOC")
-                << boost::format("No DUC found: %s") % duc_id.to_string();
-        }
-        // Figure out if this channel has a DUC available
-        auto this_chan_duc =
-            duc_blk && _graph->is_connectable(duc_id, block_chan, radio_id, block_chan)
-                ? duc_blk
-                : nullptr;
-        return {radio_blk, this_chan_duc, block_chan};
+        // Now on to the DUC chain
+        auto radio_sink_chain = get_block_chain(_graph, radio_id, block_chan, false);
+
+        // Find out if we have a DUC in the radio block chain
+        auto duc_port_def = [this, radio_sink_chain, radio_id, block_chan]() {
+            try {
+                for (auto edge : radio_sink_chain) {
+                    if (block_id_t(edge.src_blockid).match("DUC")) {
+                        if (edge.src_port != block_chan) {
+                            /*  We don't expect this to happen very often. But in
+                             * the case that port numbers don't match, we need to
+                             * disable DUC control to ensure we're not controlling
+                             * another channel's DDC
+                             */
+                            UHD_LOGGER_WARNING("MULTI_USRP")
+                                << "DUC in radio chain " << radio_id << ":"
+                                << std::to_string(block_chan)
+                                << " not connected to the same port number! "
+                                   "Disabling DUC control.";
+                            break;
+                        }
+                        auto ddc_blk = _graph->get_block<uhd::rfnoc::duc_block_control>(
+                            edge.src_blockid);
+                        return std::tuple<uhd::rfnoc::duc_block_control::sptr, size_t>(
+                            ddc_blk, block_chan);
+                    }
+                }
+            } catch (const uhd::exception&) {
+                UHD_LOGGER_DEBUG("MULTI_USRP")
+                    << "No DDC found for radio block " << radio_id << ":"
+                    << std::to_string(block_chan);
+                // Then just return a nullptr
+            }
+            return std::tuple<uhd::rfnoc::duc_block_control::sptr, size_t>(nullptr, 0);
+        }();
+
+        // Create the TX chan
+        return tx_chan_t(
+            {radio_blk, std::get<0>(duc_port_def), block_chan, radio_sink_chain});
     }
 
     std::vector<tx_chan_t> _generate_mboard_tx_chans(
