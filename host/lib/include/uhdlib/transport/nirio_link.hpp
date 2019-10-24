@@ -104,6 +104,24 @@ public:
         return _adapter_id;
     }
 
+    /*!
+     * Returns whether this link type supports releasing the frame buffers
+     * in an order different from that in which they were acquired.
+     */
+    bool supports_send_buff_out_of_order() const
+    {
+        return false;
+    }
+
+    /*!
+     * Returns whether this link type supports releasing the frame buffers
+     * in an order different from that in which they were acquired.
+     */
+    bool supports_recv_buff_out_of_order() const
+    {
+        return false;
+    }
+
 private:
     using recv_link_base_t = recv_link_base<nirio_link>;
     using send_link_base_t = send_link_base<nirio_link>;

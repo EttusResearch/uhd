@@ -57,6 +57,15 @@ public:
      */
     virtual adapter_id_t get_send_adapter_id() const = 0;
 
+    /*!
+     * Returns whether this link type supports releasing the frame buffers
+     * in an order different from that in which they were acquired.
+     */
+    virtual bool supports_send_buff_out_of_order() const
+    {
+        return true;
+    }
+
     send_link_if()                    = default;
     send_link_if(const send_link_if&) = delete;
     send_link_if& operator=(const send_link_if&) = delete;
@@ -101,6 +110,15 @@ public:
      * Get the physical adapter ID used for this link
      */
     virtual adapter_id_t get_recv_adapter_id() const = 0;
+
+    /*!
+     * Returns whether this link type supports releasing the frame buffers
+     * in an order different from that in which they were acquired.
+     */
+    virtual bool supports_recv_buff_out_of_order() const
+    {
+        return true;
+    }
 
     recv_link_if()                    = default;
     recv_link_if(const recv_link_if&) = delete;

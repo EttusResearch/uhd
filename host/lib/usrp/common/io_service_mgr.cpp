@@ -435,6 +435,9 @@ private:
     };
     using link_pair_t = std::pair<recv_link_if::sptr, send_link_if::sptr>;
 
+    bool _out_of_order_supported(
+        recv_link_if::sptr recv_link, send_link_if::sptr send_link) const;
+
     const uhd::device_addr_t _args;
 
     inline_io_service_mgr _inline_io_srv_mgr;
@@ -453,11 +456,18 @@ io_service_mgr::sptr io_service_mgr::make(const uhd::device_addr_t& args)
 io_service::sptr io_service_mgr_impl::connect_links(recv_link_if::sptr recv_link,
     send_link_if::sptr send_link,
     const link_type_t link_type,
-    const io_service_args_t& default_args,
+    const io_service_args_t& default_args_,
     const uhd::device_addr_t& stream_args,
     const std::string& streamer_id)
 {
     UHD_ASSERT_THROW(link_type != link_type_t::ASYNC_MSG);
+
+    io_service_args_t default_args = default_args_;
+
+    if (!_out_of_order_supported(recv_link, send_link)) {
+        default_args.recv_offload = false;
+        default_args.send_offload = false;
+    }
 
     const io_service_args_t args = read_io_service_args(
         merge_io_service_dev_args(_args, stream_args), default_args);
@@ -496,6 +506,15 @@ io_service::sptr io_service_mgr_impl::connect_links(recv_link_if::sptr recv_link
                 io_srv_type = INLINE_IO_SRV;
             }
         }
+    }
+
+    // If the link doesn't support buffers out of order, then we can only use
+    // the inline I/O service. Warn if a different one was requested.
+    if (!_out_of_order_supported(recv_link, send_link)) {
+        if (io_srv_type != INLINE_IO_SRV) {
+            UHD_LOG_WARNING(LOG_ID, "Link type does not support send/recv offload, ignoring");
+        }
+        io_srv_type = INLINE_IO_SRV;
     }
 
     switch (io_srv_type) {
@@ -539,6 +558,19 @@ void io_service_mgr_impl::disconnect_links(
     }
 
     _link_info_map.erase(it);
+}
+
+bool io_service_mgr_impl::_out_of_order_supported(
+    recv_link_if::sptr recv_link, send_link_if::sptr send_link) const
+{
+    bool supported = true;
+    if (recv_link) {
+        supported = recv_link->supports_recv_buff_out_of_order();
+    }
+    if (send_link) {
+        supported = supported && send_link->supports_send_buff_out_of_order();
+    }
+    return supported;
 }
 
 }} // namespace uhd::usrp
