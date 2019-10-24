@@ -1,15 +1,22 @@
-<%page args="block_id, block_number, block_name, block, block_params"/>\
+<%page args="block_id, block_number, block_name, block, block_params, block_ports"/>\
 \
 <%
   import re
   import six
+
+  # Create two strings, one for the input and one for the output, that each
+  # contains all the signal names to be connected to the input or output 
+  # AXIS-CHDR ports of this block.
   axis_inputs = ""
   axis_outputs = ""
-  for input in list(block.data["inputs"].keys()):
-    axis_inputs = "{0}_%s_%s_{1}, " % (block_name, input) + axis_inputs
+  for port_desc in block_ports:
+    if port_desc[0] == block_name:
+      port_name = port_desc[1]
+      if port_desc[2] == "input":
+        axis_inputs = "{0}_%s_%s_{1}, " % (block_name, port_name) + axis_inputs
+      elif port_desc[2] == "output":
+        axis_outputs = "{0}_%s_%s_{1}, " % (block_name, port_name) + axis_outputs
   axis_inputs = axis_inputs[:-2]
-  for output in list(block.data["outputs"].keys()):
-    axis_outputs = "{0}_%s_%s_{1}, " % (block_name, output) + axis_outputs
   axis_outputs = axis_outputs[:-2]
 %>\
 

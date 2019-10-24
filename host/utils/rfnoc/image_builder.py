@@ -18,6 +18,7 @@ import sys
 import six
 import mako.lookup
 import mako.template
+from mako import exceptions
 from ruamel import yaml
 
 # Adapted from code found at
@@ -100,7 +101,7 @@ class IOConfig:
     Class containing configuration from a yml file.
 
     Each top level entry is translated into a class member variable. If the
-    configuration contains an io_ports section the ports get an wire list which
+    configuration contains an io_ports section the ports get a wire list which
     is derived from the signature file. This allows easier processing of IO
     ports in the mako templates and failures from yml configuration files fail
     in this script rather than during template processing which is easier to
@@ -173,16 +174,12 @@ class ImageBuilderConfig:
     def _collect_noc_ports(self):
         """
         Create lookup table for noc blocks. The key is a tuple of block
-        name, port name and flow direction.
+        name, port name and flow direction. If any block port has num_ports > 1
+        then unroll that port into multiple ports of the same name plus a
+        number to make its name unique.
         """
         for name, block in six.iteritems(self.noc_blocks):
             desc = self.blocks[block["block_desc"]]
-            ports = desc.data["inputs"]
-            self.block_ports.update({(name, port, "input"):
-                                     ports[port] for port in ports})
-            ports = desc.data["outputs"]
-            self.block_ports.update({(name, port, "output"):
-                                     ports[port] for port in ports})
             # Update per-instance parameters
             if not hasattr(desc, "parameters"):
                 setattr(desc, "parameters", {})
@@ -195,6 +192,43 @@ class ImageBuilderConfig:
             for param, value in six.iteritems(desc.parameters):
                 if param not in block["parameters"]:
                     block["parameters"][param] = value
+            # Generate list of block ports, adding 'index' to each port's dict
+            for direction in ("inputs", "outputs"):
+                index = 0
+                for port_name, port_info in desc.data[direction].items():
+                    num_ports = 1
+                    if "num_ports" in port_info:
+                        parameter = port_info["num_ports"]
+                        num_ports = parameter
+                        if parameter in block["parameters"]:
+                            num_ports = block["parameters"][parameter]
+                    # Make sure the parameter resolved to a number
+                    if not isinstance(num_ports, int):
+                        logging.error(
+                            "'num_ports' of port '%s' on block '%s' "
+                            "resolved to invalid value of '%s'",
+                            port_name, name, str(num_ports))
+                        sys.exit(1)
+                    if num_ports < 1 or num_ports > 64:
+                        logging.error(
+                            "'num_ports' of port '%s' on block '%s' "
+                            "has invalid value '%s', must be in [1, 64]",
+                            port_name, name, str(num_ports))
+                        sys.exit(1)
+                    if "num_ports" in port_info:
+                        # If num_ports was a variable in the YAML, unroll into
+                        # multiple ports
+                        for i in range(num_ports):
+                            new_port_info = port_info.copy()
+                            new_port_info['index'] = index
+                            index = index + 1
+                            self.block_ports.update({(name, port_name + "_" \
+                                + str(i), direction[:-1]) : new_port_info})
+                    else:
+                        port_info['index'] = index
+                        self.block_ports.update(
+                            {(name, port_name, direction[:-1]) : port_info})
+                        index = index + 1
         ports = self.stream_endpoints
         for sep in self.stream_endpoints:
             inputs = {(sep, "in%d" % port, "input") :
@@ -578,11 +612,15 @@ def write_verilog(config, destination, source, source_hash):
         lookup=lookup,
         strict_undefined=True)
 
-    block = tpl.render(**{
-        "config": config,
-        "source": source,
-        "source_hash": source_hash,
-        })
+    try:
+        block = tpl.render(**{
+            "config": config,
+            "source": source,
+            "source_hash": source_hash,
+            })
+    except:
+        print(exceptions.text_error_template().render())
+        sys.exit(1)
 
     logging.info("Writing image core to %s", destination)
     with open(destination, "w") as image_core_file:
