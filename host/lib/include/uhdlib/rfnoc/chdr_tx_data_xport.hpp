@@ -320,23 +320,31 @@ private:
      */
     void _send_callback(buff_t::uptr& buff, transport::send_link_if* send_link)
     {
-        const size_t packet_size = buff->packet_size();
+        // If the packet size is not a multiple of the word size, then we will
+        // still occupy an integer multiple of word size bytes in the FPGA, so
+        // we need to calculate appropriately.
+        const size_t packet_size_rounded = _round_pkt_size(buff->packet_size());
 
-        if (_fc_state.dest_has_space(packet_size)) {
+        if (_fc_state.dest_has_space(packet_size_rounded)) {
             send_link->release_send_buff(std::move(buff));
             buff = nullptr;
 
-            _fc_state.data_sent(packet_size);
+            _fc_state.data_sent(packet_size_rounded);
 
             if (_fc_state.get_fc_resync_req_pending()
-                && _fc_state.dest_has_space(chdr::strc_payload::PACKET_SIZE)) {
+                && _fc_state.dest_has_space(chdr::strc_payload::MAX_PACKET_SIZE)) {
                 const auto& xfer_counts = _fc_state.get_xfer_counts();
                 const size_t strc_size =
-                    _fc_sender.send_strc_resync(send_link, xfer_counts);
+                    _round_pkt_size(_fc_sender.send_strc_resync(send_link, xfer_counts));
                 _fc_state.clear_fc_resync_req_pending();
                 _fc_state.data_sent(strc_size);
             }
         }
+    }
+
+    inline size_t _round_pkt_size(const size_t pkt_size_bytes)
+    {
+        return ((pkt_size_bytes + _chdr_w_bytes - 1) / _chdr_w_bytes) * _chdr_w_bytes;
     }
 
     // Interface to the I/O service
@@ -368,6 +376,9 @@ private:
 
     // Local / Source EPID
     sep_id_t _epid;
+
+    //! The CHDR width in bytes.
+    size_t _chdr_w_bytes;
 };
 
 }} // namespace uhd::rfnoc

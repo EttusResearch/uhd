@@ -35,6 +35,7 @@ chdr_tx_data_xport::chdr_tx_data_xport(uhd::transport::io_service::sptr io_srv,
     : _fc_state(fc_params.buff_capacity)
     , _fc_sender(pkt_factory, epids)
     , _epid(epids.first)
+    , _chdr_w_bytes(chdr_w_to_bits(pkt_factory.get_chdr_w()) / 8)
 {
     UHD_LOG_TRACE("XPORT::TX_DATA_XPORT",
         "Creating tx xport with local epid=" << epids.first

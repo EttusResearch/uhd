@@ -40,6 +40,7 @@ chdr_rx_data_xport::chdr_rx_data_xport(uhd::transport::io_service::sptr io_srv,
     : _fc_state(epids, fc_params.freq)
     , _fc_sender(pkt_factory, epids)
     , _epid(epids.second)
+    , _chdr_w_bytes(chdr_w_to_bits(pkt_factory.get_chdr_w()) / 8)
 {
     UHD_LOG_TRACE("XPORT::RX_DATA_XPORT",
         "Creating rx xport with local epid=" << epids.second

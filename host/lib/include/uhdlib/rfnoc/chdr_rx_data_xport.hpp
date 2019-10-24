@@ -239,8 +239,11 @@ private:
             return false;
         }
 
-        const auto type        = header.get_pkt_type();
-        const auto packet_size = header.get_length();
+        const auto type = header.get_pkt_type();
+        // We need to round the packet size to the nearest multiple of a CHDR
+        // width, because that's how the FPGA tracks bytes, and want to match
+        // that behaviour.
+        const auto packet_size_rounded = _round_pkt_size(header.get_length());
 
         if (type == chdr::PKT_TYPE_STRC) {
             chdr::strc_payload strc;
@@ -257,11 +260,11 @@ private:
                 _fc_state.resynchronize(strc_counts);
 
                 // Update state that we received a packet
-                _fc_state.data_received(packet_size);
+                _fc_state.data_received(packet_size_rounded);
 
                 recv_link->release_recv_buff(std::move(buff));
                 buff = buff_t::uptr();
-                _fc_state.xfer_done(packet_size);
+                _fc_state.xfer_done(packet_size_rounded);
                 _send_fc_response(send_link);
             } else {
                 throw uhd::value_error("Unexpected opcode value in STRC packet.");
@@ -275,7 +278,7 @@ private:
         } else if (type == chdr::PKT_TYPE_DATA_NO_TS
                    || type == chdr::PKT_TYPE_DATA_WITH_TS) {
             // Update state that we received a packet
-            _fc_state.data_received(packet_size);
+            _fc_state.data_received(packet_size_rounded);
 
             // If this is a data packet, just claim it by returning true. The
             // I/O service will queue this packet in the recv_io_if.
@@ -302,7 +305,7 @@ private:
     {
         _recv_packet_cb->refresh(buff->data());
         const auto header        = _recv_packet_cb->get_chdr_header();
-        const size_t packet_size = header.get_length();
+        const size_t packet_size = _round_pkt_size(header.get_length());
         recv_link->release_recv_buff(std::move(buff));
         _fc_state.xfer_done(packet_size);
         _send_fc_response(send_link);
@@ -371,6 +374,11 @@ private:
         return std::make_tuple(info, header.get_seq_num());
     }
 
+    inline size_t _round_pkt_size(const size_t pkt_size_bytes)
+    {
+        return ((pkt_size_bytes + _chdr_w_bytes - 1) / _chdr_w_bytes) * _chdr_w_bytes;
+    }
+
     // Interface to the I/O service
     transport::recv_io_if::sptr _recv_io;
 
@@ -394,6 +402,9 @@ private:
 
     // Local / Sink EPID
     sep_id_t _epid;
+
+    //! The CHDR width in bytes.
+    size_t _chdr_w_bytes;
 };
 
 }} // namespace uhd::rfnoc

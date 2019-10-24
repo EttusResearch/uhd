@@ -37,10 +37,12 @@ public:
             _xfer_counts.packets += pkts_dropped;
 
             UHD_LOGGER_DEBUG("rx_flow_ctrl_state")
-                << "oh noes: bytes_sent=" << counts.bytes
-                << "  bytes_received=" << _recv_counts.bytes
-                << "  pkts_sent=" << counts.packets
-                << "  pkts_received=" << _recv_counts.packets
+                << "Flow control state mismatch: bytes reported: " << counts.bytes
+                << " bytes counted locally: " << _recv_counts.bytes
+                << " delta: " << (counts.bytes - _recv_counts.bytes)
+                << " Packets reported: " << counts.packets
+                << " Packets counted locally: " << _recv_counts.packets
+                << " delta: " << (counts.packets - _recv_counts.packets)
                 << " src_epid=" << _epids.first << " dst_epid=" << _epids.second
                 << std::endl;
 
