@@ -16,8 +16,9 @@
 #include <uhd/utils/graph_utils.hpp>
 #include <uhdlib/rfnoc/rfnoc_device.hpp>
 #include <uhdlib/usrp/gpio_defs.hpp>
+#include <uhdlib/utils/narrow.hpp>
 #include <unordered_set>
-#include <boost/pointer_cast.hpp>
+#include <boost/format.hpp>
 #include <algorithm>
 #include <chrono>
 #include <memory>
@@ -1042,6 +1043,20 @@ public:
                        % (rate / 1.0e6) % (actual_rate / 1.0e6);
         }
         _rx_rates[chan] = actual_rate;
+    }
+
+    void set_rx_spp(const size_t spp, const size_t chan = ALL_CHANS)
+    {
+        std::lock_guard<std::recursive_mutex> l(_graph_mutex);
+        if (chan == ALL_CHANS) {
+            for (size_t chan = 0; chan < _rx_chans.size(); ++chan) {
+                set_rx_spp(spp, chan);
+            }
+            return;
+        }
+        auto rx_chain = _get_rx_chan(chan);
+        rx_chain.radio->set_property<int>(
+            "spp", narrow_cast<int>(spp), rx_chain.block_chan);
     }
 
     double get_rx_rate(size_t chan)

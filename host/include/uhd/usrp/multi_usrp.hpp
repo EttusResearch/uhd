@@ -614,6 +614,17 @@ public:
      */
     virtual void set_rx_rate(double rate, size_t chan = ALL_CHANS) = 0;
 
+    /*! Set the number of samples sent per packet (spp) for RX streaming
+     *
+     * On RFNoC devices, this will set the spp value on the radio itself. For
+     * older devices, it will inject the spp value into a later get_rx_stream()
+     * call, but it won't change anything in existing streamers.
+     *
+     * \param spp the new spp value
+     * \param chan the channel index 0 to N-1
+     */
+    virtual void set_rx_spp(const size_t spp, const size_t chan = ALL_CHANS) = 0;
+
     /*!
      * Gets the RX sample rate.
      * \param chan the channel index 0 to N-1

@@ -961,7 +961,16 @@ public:
      ******************************************************************/
     rx_streamer::sptr get_rx_stream(const stream_args_t &args) {
         _check_link_rate(args, false);
-        return this->get_device()->get_rx_stream(args);
+        stream_args_t args_ = args;
+        if (!args.args.has_key("spp")) {
+            for (auto chan : args.channels) {
+                if (_rx_spp.count(chan)) {
+                    args_.args.set("spp", std::to_string(_rx_spp.at(chan)));
+                    break;
+                }
+            }
+        }
+        return this->get_device()->get_rx_stream(args_);
     }
 
     void set_rx_subdev_spec(const subdev_spec_t &spec, size_t mboard){
@@ -1016,6 +1025,11 @@ public:
         for (size_t c = 0; c < get_rx_num_channels(); c++){
             set_rx_rate(rate, c);
         }
+    }
+
+    void set_rx_spp(const size_t spp, const size_t chan = ALL_CHANS)
+    {
+        _rx_spp[chan] = spp;
     }
 
     double get_rx_rate(size_t chan){
@@ -2257,6 +2271,9 @@ public:
 private:
     device::sptr _dev;
     property_tree::sptr _tree;
+
+    //! Container for spp values set in set_rx_spp()
+    std::unordered_map<size_t, size_t> _rx_spp;
 
     struct mboard_chan_pair{
         size_t mboard, chan;
