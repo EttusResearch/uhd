@@ -645,6 +645,7 @@ def build(fpga_path, device, image_core_path, edge_file, **args):
                    clean_all: passed to Makefile
                    GUI: passed to Makefile
                    source: The source of the build (YAML or GRC file path)
+                   include_paths: List of paths to OOT modules
     :return: exit value of build process
     """
     ret_val = 0
@@ -653,7 +654,13 @@ def build(fpga_path, device, image_core_path, edge_file, **args):
     if not os.path.isdir(build_dir):
         logging.error("Not a valid directory: %s", build_dir)
         return 1
-    logging.debug("Changing temporarily working directory to %s", build_dir)
+    makefile_src_paths = [
+        os.path.join(
+            os.path.abspath(os.path.normpath(x)),
+            os.path.join('fpga', 'Makefile.srcs'))
+        for x in args.get("include_paths", [])
+    ]
+    logging.debug("Temporarily changing working directory to %s", build_dir)
     os.chdir(build_dir)
     make_cmd = ". ./setupenv.sh "
     if "clean_all" in args and args["clean_all"]:
@@ -662,6 +669,8 @@ def build(fpga_path, device, image_core_path, edge_file, **args):
     make_cmd = make_cmd + "&& make " + default_target(device, target)
     make_cmd += " IMAGE_CORE={} EDGE_FILE={}".format(image_core_path,
                                                      edge_file)
+    if makefile_src_paths:
+        make_cmd += " RFNOC_OOT_MAKEFILE_SRCS=" + "\\ ".join(makefile_src_paths)
     if "GUI" in args and args["GUI"]:
         make_cmd = make_cmd + " GUI=1"
     logging.info("Launching build with the following settings:")
@@ -669,9 +678,10 @@ def build(fpga_path, device, image_core_path, edge_file, **args):
     logging.info(" * Target: %s", target)
     logging.info(" * Image Core File: %s", image_core_path)
     logging.info(" * Edge Table File: %s", edge_file)
-    logging.debug("Calling build with '%s'", make_cmd)
     # Wrap it into a bash call:
-    make_cmd = '/bin/bash -c "{0}"'.format(make_cmd)
+    bash_executable = '/bin/bash' # FIXME this should come from somewhere
+    make_cmd = '{bash} -c "{cmd}"'.format(bash=bash_executable, cmd=make_cmd)
+    logging.debug("Executing the following command: %s", make_cmd)
     ret_val = os.system(make_cmd)
     os.chdir(cwd)
     return ret_val
@@ -787,7 +797,7 @@ def build_image(config, fpga_path, config_path, device, **args):
     device_conf = IOConfig(device_config(core_config_path, device),
                            signatures_conf)
 
-    block_paths = collect_module_paths(config_path, args.get('include_paths'))
+    block_paths = collect_module_paths(config_path, args.get('include_paths', []))
     logging.debug("Looking for block descriptors in:")
     for path in block_paths:
         logging.debug("    %s", os.path.normpath(path))

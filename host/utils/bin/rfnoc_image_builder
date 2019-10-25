@@ -67,8 +67,8 @@ def setup_parser():
     parser.add_argument(
         "-I", "--include-dir",
         help="Path directory of the RFNoC Out-of-Tree module",
-        nargs='+',
-        default=None)
+        action='append', default=[]
+        )
     parser.add_argument(
         "-b", "--grc-blocks",
         help="Path directory of GRC block descriptions (needed for --grc-config only)",
