@@ -50,7 +50,7 @@ static frame_buff::uptr client_get_buff(pop_func_t pop, const int32_t timeout_ms
 /*!
  * Recv I/O client for offload I/O service
  */
-template <typename io_service_t>
+template <typename io_service_t, bool polling>
 class offload_recv_io : public recv_io_if
 {
 public:
@@ -75,13 +75,19 @@ public:
 
     frame_buff::uptr get_recv_buff(int32_t timeout_ms)
     {
-        return detail::client_get_buff(
-            [this]() {
-                frame_buff* buff = _port->client_pop();
-                _num_frames_in_use += buff ? 1 : 0;
-                return buff;
-            },
-            timeout_ms);
+        if (polling) {
+            return detail::client_get_buff(
+                [this]() {
+                    frame_buff* buff = _port->client_pop();
+                    _num_frames_in_use += buff ? 1 : 0;
+                    return buff;
+                },
+                timeout_ms);
+        } else {
+            frame_buff* buff = _port->client_pop(timeout_ms);
+            _num_frames_in_use += buff ? 1 : 0;
+            return frame_buff::uptr(buff);
+        }
     }
 
     void release_recv_buff(frame_buff::uptr buff)
@@ -103,7 +109,7 @@ private:
 /*!
  * Send I/O client for offload I/O service
  */
-template <typename io_service_t>
+template <typename io_service_t, bool polling>
 class offload_send_io : public send_io_if
 {
 public:
@@ -128,13 +134,19 @@ public:
 
     frame_buff::uptr get_send_buff(int32_t timeout_ms)
     {
-        return detail::client_get_buff(
-            [this]() {
-                frame_buff* buff = _port->client_pop();
-                _num_frames_in_use += buff ? 1 : 0;
-                return buff;
-            },
-            timeout_ms);
+        if (polling) {
+            return detail::client_get_buff(
+                [this]() {
+                    frame_buff* buff = _port->client_pop();
+                    _num_frames_in_use += buff ? 1 : 0;
+                    return buff;
+                },
+                timeout_ms);
+        } else {
+            frame_buff* buff = _port->client_pop(timeout_ms);
+            _num_frames_in_use += buff ? 1 : 0;
+            return frame_buff::uptr(buff);
+        }
     }
 
     void release_send_buff(frame_buff::uptr buff)

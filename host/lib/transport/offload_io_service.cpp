@@ -24,7 +24,7 @@ namespace uhd { namespace transport {
 
 namespace {
 
-constexpr int32_t blocking_timeout_ms = 100;
+constexpr int32_t blocking_timeout_ms = 10;
 
 // Fixed-size queue that supports blocking semantics
 template <typename queue_item_t>
@@ -105,6 +105,13 @@ public:
     {
         from_offload_thread_t queue_element;
         _from_offload_thread.pop(queue_element);
+        return queue_element.buff;
+    }
+
+    frame_buff* client_pop(int32_t timeout_ms)
+    {
+        from_offload_thread_t queue_element;
+        _from_offload_thread.pop(queue_element, timeout_ms);
         return queue_element.buff;
     }
 
@@ -474,8 +481,13 @@ recv_io_if::sptr offload_io_service_impl::make_recv_client(recv_link_if::sptr re
     port->client_wait_until_connected();
 
     // Return a new recv client to the caller that just operates on the queues
-    return std::make_shared<offload_recv_io<offload_io_service_impl>>(
-        shared_from_this(), num_recv_frames, num_send_frames, port);
+    if (_offload_thread_params.wait_mode == POLL) {
+        return std::make_shared<offload_recv_io<offload_io_service_impl, true>>(
+            shared_from_this(), num_recv_frames, num_send_frames, port);
+    } else {
+        return std::make_shared<offload_recv_io<offload_io_service_impl, false>>(
+            shared_from_this(), num_recv_frames, num_send_frames, port);
+    }
 }
 
 send_io_if::sptr offload_io_service_impl::make_send_client(send_link_if::sptr send_link,
@@ -528,8 +540,13 @@ send_io_if::sptr offload_io_service_impl::make_send_client(send_link_if::sptr se
     }
 
     // Return a new recv client to the caller that just operates on the queues
-    return std::make_shared<offload_send_io<offload_io_service_impl>>(
-        shared_from_this(), num_recv_frames, num_send_frames, port);
+    if (_offload_thread_params.wait_mode == POLL) {
+        return std::make_shared<offload_send_io<offload_io_service_impl, true>>(
+            shared_from_this(), num_recv_frames, num_send_frames, port);
+    } else {
+        return std::make_shared<offload_send_io<offload_io_service_impl, false>>(
+            shared_from_this(), num_recv_frames, num_send_frames, port);
+    }
 }
 
 void offload_io_service_impl::_queue_client_req(std::function<void()> fn)

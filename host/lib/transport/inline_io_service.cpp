@@ -144,6 +144,41 @@ public:
         }
     }
 
+    void recv_flow_ctrl(inline_recv_cb* cb, recv_link_if* recv_link, int32_t timeout_ms)
+    {
+        while (true) {
+            frame_buff::uptr buff = recv_link->get_recv_buff(timeout_ms);
+            /* Process buffer */
+            if (buff) {
+                bool rcvr_found = false;
+                for (auto& rcvr : _callbacks) {
+                    if (rcvr->callback(buff, recv_link)) {
+                        rcvr_found = true;
+                        if (rcvr == cb) {
+                            assert(!buff);
+                            return;
+                        } else if (buff) {
+                            /* NOTE: Should not overflow, by construction
+                             * Every queue can hold link->get_num_recv_frames()
+                             */
+                            _queues[rcvr]->push_back(buff.release());
+                        } else {
+                            /* Continue looping if buffer was consumed and
+                               receiver is not the requested one */
+                            break;
+                        }
+                    }
+                }
+                if (not rcvr_found) {
+                    UHD_LOG_DEBUG("IO_SRV", "Dropping packet with no receiver");
+                    recv_link->release_recv_buff(std::move(buff));
+                }
+            } else { /* Timeout */
+                return;
+            }
+        }
+    }
+
 private:
     recv_link_if* _link;
     std::list<inline_recv_cb*> _callbacks;
@@ -248,11 +283,18 @@ public:
 
     void release_send_buff(frame_buff::uptr buff)
     {
-        while (buff) { /* TODO: Possibly don't loop indefinitely here */
-            if (_recv_link) {
-                _io_srv->recv(this, _recv_link.get(), 0);
-            }
+        while (buff) {
+            // Try to send a packet
             _send_cb(buff, _send_link.get());
+            if (_recv_link) {
+                // If the buffer was not released, use a timeout to receive
+                // the flow control packet, to avoid wasting CPU.
+                if (!buff) {
+                    _io_srv->recv_flow_ctrl(this, _recv_link.get(), 0);
+                } else {
+                    _io_srv->recv_flow_ctrl(this, _recv_link.get(), 100);
+                }
+            }
         }
         _num_frames_in_use--;
     }
@@ -430,7 +472,38 @@ frame_buff::uptr inline_io_service::recv(
             return frame_buff::uptr();
         }
     }
-    return frame_buff::uptr();
+}
+
+void inline_io_service::recv_flow_ctrl(
+    inline_recv_cb* recv_io_cb, recv_link_if* recv_link, int32_t timeout_ms)
+{
+    inline_recv_mux* mux;
+    inline_recv_cb* rcvr;
+    std::tie(mux, rcvr) = _recv_tbl.at(recv_link);
+
+    if (mux) {
+        /* Defer to mux's recv_flow_ctrl() if present */
+        mux->recv_flow_ctrl(recv_io_cb, recv_link, timeout_ms);
+        return;
+    } else {
+        assert(recv_io_cb == rcvr);
+    }
+
+    while (true) {
+        frame_buff::uptr buff = recv_link->get_recv_buff(timeout_ms);
+        /* Process buffer */
+        if (buff) {
+            if (rcvr->callback(buff, recv_link)) {
+                assert(!buff);
+                return;
+            } else {
+                UHD_LOG_DEBUG("IO_SRV", "Dropping packet with no receiver");
+                recv_link->release_recv_buff(std::move(buff));
+            }
+        } else { /* Timeout */
+            return;
+        }
+    }
 }
 
 }} // namespace uhd::transport

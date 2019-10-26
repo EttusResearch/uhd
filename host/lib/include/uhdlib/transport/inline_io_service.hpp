@@ -104,6 +104,19 @@ private:
     frame_buff::uptr recv(
         inline_recv_cb* recv_io_cb, recv_link_if* recv_link, int32_t timeout_ms);
 
+    /*
+     * Function to perform recv operations on a link, which is potentially
+     * muxed. This function is only called from send_io::release_send_buff, and
+     * always expects recv_io_cb to release its incoming buffer. Packets are
+     * forwarded to the appropriate mux or callback.
+     *
+     * \param recv_io_cb the callback+interface initiating the operation
+     * \param recv_link link to perform receive on
+     * \param timeout_ms timeout to wait for a buffer on the link
+     */
+    void recv_flow_ctrl(
+        inline_recv_cb* recv_io_cb, recv_link_if* recv_link, int32_t timeout_ms);
+
     /* Track whether link is muxed and the callback */
     std::unordered_map<recv_link_if*, std::tuple<inline_recv_mux*, inline_recv_cb*>>
         _recv_tbl;
