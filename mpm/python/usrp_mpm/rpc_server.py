@@ -528,6 +528,9 @@ class MPMServer(RPCServer):
                 ))
             self._last_error = str(ex)
 
+        # Re-enable timeouts before we reset the timer, so the MPM session can
+        # timeout if something goes wrong
+        self._disable_timeouts = False
         self.log.debug("End of update_component")
         self._reset_timer()
 
