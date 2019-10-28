@@ -36,6 +36,7 @@ chdr_tx_data_xport::chdr_tx_data_xport(uhd::transport::io_service::sptr io_srv,
     , _fc_sender(pkt_factory, epids)
     , _epid(epids.first)
     , _chdr_w_bytes(chdr_w_to_bits(pkt_factory.get_chdr_w()) / 8)
+    , _frame_size(send_link->get_send_frame_size())
 {
     UHD_LOG_TRACE("XPORT::TX_DATA_XPORT",
         "Creating tx xport with local epid=" << epids.first
@@ -51,8 +52,8 @@ chdr_tx_data_xport::chdr_tx_data_xport(uhd::transport::io_service::sptr io_srv,
     _max_payload_size = send_link->get_send_frame_size() - pyld_offset;
 
     // Now create the send I/O we will use for data
-    auto send_cb = [this](buff_t::uptr& buff, transport::send_link_if* send_link) {
-        this->_send_callback(buff, send_link);
+    auto send_cb = [this](buff_t::uptr buff, transport::send_link_if* send_link) {
+        this->_send_callback(std::move(buff), send_link);
     };
 
     auto recv_cb = [this](buff_t::uptr& buff,
@@ -61,13 +62,18 @@ chdr_tx_data_xport::chdr_tx_data_xport(uhd::transport::io_service::sptr io_srv,
         return this->_recv_callback(buff, recv_link, send_link);
     };
 
+    auto fc_cb = [this](size_t num_bytes) {
+        return this->_fc_callback(num_bytes);
+    };
+
     // Needs just a single recv frame for strs packets
     _send_io = io_srv->make_send_client(send_link,
         num_send_frames,
         send_cb,
         recv_link,
         /* num_recv_frames */ 1,
-        recv_cb);
+        recv_cb,
+        fc_cb);
 }
 
 chdr_tx_data_xport::~chdr_tx_data_xport()
@@ -96,9 +102,8 @@ static chdr_tx_data_xport::fc_params_t configure_flow_ctrl(io_service::sptr io_s
     chdr::chdr_packet::uptr recv_packet      = pkt_factory.make_generic();
 
     // No flow control at initialization, just release all send buffs
-    auto send_cb = [](frame_buff::uptr& buff, send_link_if* send_link) {
+    auto send_cb = [](frame_buff::uptr buff, send_link_if* send_link) {
         send_link->release_send_buff(std::move(buff));
-        buff = nullptr;
     };
 
     // For recv, just queue strs packets for recv_io to read
@@ -124,6 +129,7 @@ static chdr_tx_data_xport::fc_params_t configure_flow_ctrl(io_service::sptr io_s
         send_cb,
         nullptr,
         0, // num_recv_frames
+        nullptr,
         nullptr);
 
     auto recv_io = io_srv->make_recv_client(recv_link,

@@ -188,7 +188,11 @@ public:
      */
     buff_t::uptr get_send_buff(const int32_t timeout_ms)
     {
-        return _send_io->get_send_buff(timeout_ms);
+        if (_send_io->wait_for_dest_ready(_frame_size, timeout_ms)) {
+            return _send_io->get_send_buff(timeout_ms);
+        } else {
+            return nullptr;
+        }
     }
 
     /*!
@@ -318,33 +322,45 @@ private:
      * \param buff the frame buffer to release
      * \param send_link the send link for flow control messages
      */
-    void _send_callback(buff_t::uptr& buff, transport::send_link_if* send_link)
+    void _send_callback(buff_t::uptr buff, transport::send_link_if* send_link)
     {
         // If the packet size is not a multiple of the word size, then we will
         // still occupy an integer multiple of word size bytes in the FPGA, so
         // we need to calculate appropriately.
         const size_t packet_size_rounded = _round_pkt_size(buff->packet_size());
+        send_link->release_send_buff(std::move(buff));
 
-        if (_fc_state.dest_has_space(packet_size_rounded)) {
-            send_link->release_send_buff(std::move(buff));
-            buff = nullptr;
+        _fc_state.data_sent(packet_size_rounded);
 
-            _fc_state.data_sent(packet_size_rounded);
-
-            if (_fc_state.get_fc_resync_req_pending()
-                && _fc_state.dest_has_space(chdr::strc_payload::MAX_PACKET_SIZE)) {
-                const auto& xfer_counts = _fc_state.get_xfer_counts();
-                const size_t strc_size =
-                    _round_pkt_size(_fc_sender.send_strc_resync(send_link, xfer_counts));
-                _fc_state.clear_fc_resync_req_pending();
-                _fc_state.data_sent(strc_size);
-            }
+        if (_fc_state.get_fc_resync_req_pending()
+            && _fc_state.dest_has_space(chdr::strc_payload::MAX_PACKET_SIZE)) {
+            const auto& xfer_counts = _fc_state.get_xfer_counts();
+            const size_t strc_size =
+                _round_pkt_size(_fc_sender.send_strc_resync(send_link, xfer_counts));
+            _fc_state.clear_fc_resync_req_pending();
+            _fc_state.data_sent(strc_size);
         }
     }
 
     inline size_t _round_pkt_size(const size_t pkt_size_bytes)
     {
         return ((pkt_size_bytes + _chdr_w_bytes - 1) / _chdr_w_bytes) * _chdr_w_bytes;
+    }
+
+    /*!
+     * Flow control callback for I/O service
+     *
+     * The I/O service invokes this callback in the send_io::wait_for_dest_ready
+     * method.
+     *
+     * \param num_bytes The number of bytes in the packet to be sent
+     * \return Whether there are enough flow control credits for num_bytes
+     */
+    bool _fc_callback(const size_t num_bytes)
+    {
+        // No need to round num_bytes since the transport always checks for
+        // enough space for a full frame.
+        return _fc_state.dest_has_space(num_bytes);
     }
 
     // Interface to the I/O service
@@ -379,6 +395,9 @@ private:
 
     //! The CHDR width in bytes.
     size_t _chdr_w_bytes;
+
+    //! The size of the send frame
+    size_t _frame_size;
 };
 
 }} // namespace uhd::rfnoc

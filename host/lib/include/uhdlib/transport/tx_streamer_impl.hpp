@@ -284,7 +284,7 @@ public:
                     (eob_on_last_packet and final_length == nsamps_to_send_remaining);
 
                 num_samps_sent = _send_one_packet(
-                    buffs, total_nsamps_sent, final_length, metadata, eov, timeout);
+                    buffs, total_nsamps_sent, final_length, metadata, eov, timeout_ms);
             }
 
             // Advance sample accumulator and decrement remaining samples

@@ -52,7 +52,8 @@ public:
         send_io_if::send_callback_t send_cb,
         recv_link_if::sptr recv_link,
         size_t num_recv_frames,
-        recv_callback_t recv_cb);
+        recv_callback_t recv_cb,
+        send_io_if::fc_callback_t fc_cb);
 
 private:
     friend class inline_recv_io;
@@ -113,8 +114,9 @@ private:
      * \param recv_io_cb the callback+interface initiating the operation
      * \param recv_link link to perform receive on
      * \param timeout_ms timeout to wait for a buffer on the link
+     * \return Whether a flow control update was received
      */
-    void recv_flow_ctrl(
+    bool recv_flow_ctrl(
         inline_recv_cb* recv_io_cb, recv_link_if* recv_link, int32_t timeout_ms);
 
     /* Track whether link is muxed and the callback */

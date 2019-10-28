@@ -76,6 +76,11 @@ public:
         return _link->get_send_buff(timeout_ms);
     }
 
+    bool wait_for_dest_ready(size_t, int32_t)
+    {
+        return true;
+    }
+
     void release_send_buff(frame_buff::uptr buff)
     {
         _link->release_send_buff(std::move(buff));
@@ -108,7 +113,8 @@ public:
         send_io_if::send_callback_t /*cb*/,
         recv_link_if::sptr /*recv_link*/,
         size_t /*num_recv_frames*/,
-        recv_callback_t /*recv_cb*/)
+        recv_callback_t /*recv_cb*/,
+        send_io_if::fc_callback_t /*fc_cb*/)
     {
         return std::make_shared<mock_send_io>(send_link);
     }
@@ -156,7 +162,7 @@ BOOST_AUTO_TEST_CASE(test_construction)
         auto send_link   = make_send_link(5);
         io_srv->attach_send_link(send_link);
         auto send_client =
-            io_srv->make_send_client(send_link, 5, nullptr, nullptr, 0, nullptr);
+            io_srv->make_send_client(send_link, 5, nullptr, nullptr, 0, nullptr, nullptr);
     }
     for (const auto wait_mode : wait_modes) {
         params_t params{{}, RECV_ONLY, wait_mode};
@@ -181,7 +187,7 @@ BOOST_AUTO_TEST_CASE(test_construction_with_options)
     auto recv_link = make_recv_link(5);
     io_srv->attach_recv_link(recv_link);
     auto send_client =
-        io_srv->make_send_client(send_link, 5, nullptr, nullptr, 0, nullptr);
+        io_srv->make_send_client(send_link, 5, nullptr, nullptr, 0, nullptr, nullptr);
     auto recv_client =
         io_srv->make_recv_client(recv_link, 5, nullptr, nullptr, 0, nullptr);
 }
@@ -195,7 +201,7 @@ BOOST_AUTO_TEST_CASE(test_send)
         auto send_link   = make_send_link(5);
         io_srv->attach_send_link(send_link);
         auto send_client =
-            io_srv->make_send_client(send_link, 1, nullptr, nullptr, 0, nullptr);
+            io_srv->make_send_client(send_link, 1, nullptr, nullptr, 0, nullptr, nullptr);
 
         for (size_t i = 0; i < 10; i++) {
             auto buff = send_client->get_send_buff(100);
@@ -244,7 +250,7 @@ BOOST_AUTO_TEST_CASE(test_send_recv)
     io_srv->attach_recv_link(recv_link);
 
     auto send_client =
-        io_srv->make_send_client(send_link, 1, nullptr, nullptr, 0, nullptr);
+        io_srv->make_send_client(send_link, 1, nullptr, nullptr, 0, nullptr, nullptr);
     auto recv_client =
         io_srv->make_recv_client(recv_link, 1, nullptr, nullptr, 0, nullptr);
 
@@ -262,7 +268,7 @@ BOOST_AUTO_TEST_CASE(test_send_recv)
     auto recv_client2 =
         io_srv->make_recv_client(recv_link, 1, nullptr, nullptr, 0, nullptr);
     auto send_client2 =
-        io_srv->make_send_client(send_link, 1, nullptr, nullptr, 0, nullptr);
+        io_srv->make_send_client(send_link, 1, nullptr, nullptr, 0, nullptr, nullptr);
     for (size_t i = 0; i < 5; i++) {
         mock_io_srv->allocate_recv_frames(1, 1);
         recv_client2->release_recv_buff(recv_client2->get_recv_buff(100));
@@ -297,11 +303,11 @@ BOOST_AUTO_TEST_CASE(test_attach_detach)
     auto recv_client0 =
         io_srv->make_recv_client(recv_link0, 1, nullptr, nullptr, 0, nullptr);
     auto send_client0 =
-        io_srv->make_send_client(send_link0, 1, nullptr, nullptr, 0, nullptr);
+        io_srv->make_send_client(send_link0, 1, nullptr, nullptr, 0, nullptr, nullptr);
     auto recv_client1 =
         io_srv->make_recv_client(recv_link1, 1, nullptr, nullptr, 0, nullptr);
     auto send_client1 =
-        io_srv->make_send_client(send_link1, 1, nullptr, nullptr, 0, nullptr);
+        io_srv->make_send_client(send_link1, 1, nullptr, nullptr, 0, nullptr, nullptr);
 
     recv_link0->push_back_recv_packet(
         boost::shared_array<uint8_t>(new uint8_t[FRAME_SIZE]), FRAME_SIZE);
@@ -337,7 +343,7 @@ BOOST_AUTO_TEST_CASE(test_attach_detach)
     auto recv_client2 =
         io_srv->make_recv_client(recv_link0, 1, nullptr, nullptr, 0, nullptr);
     auto send_client2 =
-        io_srv->make_send_client(send_link0, 1, nullptr, nullptr, 0, nullptr);
+        io_srv->make_send_client(send_link0, 1, nullptr, nullptr, 0, nullptr, nullptr);
 
     recv_link0->push_back_recv_packet(
         boost::shared_array<uint8_t>(new uint8_t[FRAME_SIZE]), FRAME_SIZE);

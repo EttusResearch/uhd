@@ -40,12 +40,13 @@ public:
         uint16_t src_addr,
         uint32_t credits)
         : _credits(credits)
+        , _frame_size(send_link->get_send_frame_size())
     {
         _send_addr = (dst_addr << 16) | (src_addr << 0);
         _recv_addr = (src_addr << 16) | (dst_addr << 0);
 
         /* Make message client for sending side-band messages */
-        send_io_if::send_callback_t msg_send_cb = [this](frame_buff::uptr& buff,
+        send_io_if::send_callback_t msg_send_cb = [this](frame_buff::uptr buff,
                                                       send_link_if* link) {
             uint32_t* data    = (uint32_t*)buff->data();
             data[ADDR_OFFSET] = this->_send_addr;
@@ -53,21 +54,25 @@ public:
             link->release_send_buff(std::move(buff));
         };
         _msg_if = io_srv->make_send_client(
-            send_link, MSG_BUFFS, msg_send_cb, recv_link_if::sptr(), 0, nullptr);
+            send_link, MSG_BUFFS, msg_send_cb, recv_link_if::sptr(), 0, nullptr, nullptr);
 
         /* Make client for sending streaming data */
-        send_io_if::send_callback_t send_cb = [this](frame_buff::uptr& buff,
+        send_io_if::send_callback_t send_cb = [this](frame_buff::uptr buff,
                                                   send_link_if* link) {
-            this->send_buff(buff, link);
+            this->send_buff(std::move(buff), link);
         };
         recv_callback_t recv_cb = [this](frame_buff::uptr& buff,
                                       recv_link_if* link,
                                       send_link_if* /*send_link*/) {
             return this->recv_buff(buff, link);
         };
+        send_io_if::fc_callback_t fc_cb = [this](size_t) {
+            return this->_seqno < this->_ackno + this->_credits;
+        };
+
         /* Pretend get 1 flow control message per sent packet */
         _send_if = io_srv->make_send_client(
-            send_link, credits, send_cb, recv_link, credits, recv_cb);
+            send_link, credits, send_cb, recv_link, credits, recv_cb, fc_cb);
     }
 
     ~mock_send_transport() {}
@@ -99,6 +104,10 @@ public:
       */
     frame_buff::uptr get_data_buff(int32_t timeout_ms)
     {
+        if (!_send_if->wait_for_dest_ready(_frame_size, timeout_ms)) {
+            return frame_buff::uptr();
+        }
+
         frame_buff::uptr buff = _send_if->get_send_buff(timeout_ms);
         if (!buff) {
             return frame_buff::uptr();
@@ -138,11 +147,8 @@ public:
      * Callbacks execute on the I/O thread! Be careful about what state is
      * touched. In addition, this callback should NOT sleep.
      */
-    void send_buff(frame_buff::uptr& buff, send_link_if* send_link)
+    void send_buff(frame_buff::uptr buff, send_link_if* send_link)
     {
-        if (_seqno >= _ackno + _credits) {
-            return;
-        }
         uint32_t* data     = (uint32_t*)buff->data();
         data[ADDR_OFFSET]  = _send_addr;
         data[SEQNO_OFFSET] = _seqno;
@@ -202,6 +208,7 @@ private:
     send_io_if::sptr _send_if;
     uint32_t _seqno = 0;
     uint32_t _ackno = 0;
+    size_t _frame_size;
 };
 
 /*!

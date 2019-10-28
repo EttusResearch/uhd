@@ -183,19 +183,25 @@ public:
     using sptr = std::shared_ptr<send_io_if>;
 
     /*!
-     * Callback for sending the packet. Callback is responsible for calling
-     * release_send_buff() if it wants to send the packet. This will require
-     * moving the uptr's reference. If the packet will NOT be sent, the
-     * callback must NOT release the uptr.
-     *
-     * Function should update any internal state needed. For example, flow
-     * control state could be updated here, and the header could be filled out
-     * as well, like the packet's sequence number and/or addresses.
+     * Callback for sending the packet. Callback should call release_send_buff()
+     * and update any internal state needed. For example, flow control state
+     * could be updated here, and the header could be filled out as well, like
+     * the packet's sequence number and/or addresses.
      *
      * Callbacks execute on the I/O thread! Be careful about what state is
      * touched. In addition, this callback should NOT sleep.
      */
-    using send_callback_t = std::function<void(frame_buff::uptr&, send_link_if*)>;
+    using send_callback_t = std::function<void(frame_buff::uptr, send_link_if*)>;
+
+    /*!
+     * Callback to check whether a packet can be sent. For flow controlled
+     * links, the callback should return whether the requested number of bytes
+     * can be received by the destination.
+     *
+     * Callbacks execute on the I/O thread! Be careful about what state is
+     * touched. In addition, this callback should NOT sleep.
+     */
+    using fc_callback_t = std::function<bool(const size_t)>;
 
     /* Transport client methods */
     /*!
@@ -207,6 +213,19 @@ public:
      *         maximum capacity of the buffer.
      */
     virtual frame_buff::uptr get_send_buff(int32_t timeout_ms) = 0;
+
+    /*!
+     * Wait until the destination is ready for a packet. For flow controlled
+     * transports, this method must be called prior to release_send_buff. If
+     * the transport is not flow controlled, you do not need to call this
+     * method.
+     *
+     * \param num_bytes the number of bytes to be sent in release_send_buff
+     * \param timeout_ms timeout in milliseconds to wait for destination to be
+     *                   ready
+     * \return whether the destination is ready for the requested bytes
+     */
+    virtual bool wait_for_dest_ready(size_t num_bytes, int32_t timeout_ms) = 0;
 
     /*!
      * Release the send buffer to the send queue.
@@ -307,6 +326,7 @@ public:
      * \param recv_link the link used to observe flow control (can be empty)
      * \param num_recv_frames Number of buffers to reserve in recv_link
      * \param recv_cb callback function for receiving packets from recv_link
+     * \param fc_cb callback function to check if destination is ready for data
      * \return a send_io_if for interfacing with the link
      */
     virtual send_io_if::sptr make_send_client(send_link_if::sptr send_link,
@@ -314,7 +334,8 @@ public:
         send_io_if::send_callback_t cb,
         recv_link_if::sptr recv_link,
         size_t num_recv_frames,
-        recv_callback_t recv_cb) = 0;
+        recv_callback_t recv_cb,
+        send_io_if::fc_callback_t fc_cb) = 0;
 
     /*!
      * Create a recv_io_if and registers the transport's callbacks.

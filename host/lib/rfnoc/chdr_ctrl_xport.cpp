@@ -23,12 +23,12 @@ chdr_ctrl_xport::chdr_ctrl_xport(io_service::sptr io_srv,
     : _my_epid(my_epid), _recv_packet(pkt_factory.make_generic())
 {
     /* Make dumb send pipe */
-    send_io_if::send_callback_t send_cb = [this](frame_buff::uptr& buff,
+    send_io_if::send_callback_t send_cb = [this](frame_buff::uptr buff,
                                               send_link_if* link) {
         link->release_send_buff(std::move(buff));
     };
     _send_if = io_srv->make_send_client(
-        send_link, num_send_frames, send_cb, recv_link_if::sptr(), 0, nullptr);
+        send_link, num_send_frames, send_cb, recv_link_if::sptr(), 0, nullptr, nullptr);
 
     /* Make dumb recv pipe that matches management and control packets */
     uhd::transport::recv_callback_t ctrl_recv_cb = [this](frame_buff::uptr& buff,

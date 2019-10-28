@@ -132,6 +132,14 @@ public:
         }
     }
 
+    bool wait_for_dest_ready(size_t /*num_bytes*/, int32_t /*timeout_ms*/)
+    {
+        // For offload_io_service, the destination is the queue to the offload
+        // thread. The queue is always able to accomodate new packets since it
+        // is sized to fit all the frames reserved from the link.
+        return true;
+    }
+
     frame_buff::uptr get_send_buff(int32_t timeout_ms)
     {
         if (polling) {
