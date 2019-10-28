@@ -204,12 +204,8 @@ uhd::both_xports_t mpmd_xport_ctrl_udp::make_transport(
         default_buff_args.num_recv_frames =
             uhd::rfnoc::CMD_FIFO_SIZE / uhd::rfnoc::MAX_CMD_PKT_SIZE;
     } else if (xport_type == usrp::device3_impl::TX_DATA) {
-        const size_t default_frame_size = (link_speed == MAX_RATE_10GIGE ?
-            MPMD_UDP_10GE_DEFAULT_SEND_FRAME_SIZE :
-            MPMD_UDP_1GE_DEFAULT_SEND_FRAME_SIZE);
         default_buff_args.send_frame_size =
-            xport_args.cast<size_t>("send_frame_size",
-            std::min(default_frame_size, send_mtu));
+            xport_args.cast<size_t>("send_frame_size", send_mtu);
         default_buff_args.num_send_frames =
             xport_args.cast<size_t>("num_send_frames",
             default_buff_args.num_send_frames);
@@ -217,12 +213,8 @@ uhd::both_xports_t mpmd_xport_ctrl_udp::make_transport(
             xport_args.cast<size_t>("send_buff_size",
             default_buff_args.send_buff_size);
     } else if (xport_type == usrp::device3_impl::RX_DATA) {
-        const size_t default_frame_size = (link_speed == MAX_RATE_10GIGE ?
-            MPMD_UDP_10GE_DEFAULT_RECV_FRAME_SIZE :
-            MPMD_UDP_1GE_DEFAULT_RECV_FRAME_SIZE);
         default_buff_args.recv_frame_size =
-            xport_args.cast<size_t>("recv_frame_size",
-            std::min(default_frame_size, recv_mtu));
+            xport_args.cast<size_t>("recv_frame_size", recv_mtu);
         default_buff_args.num_recv_frames =
             xport_args.cast<size_t>("num_recv_frames",
             default_buff_args.num_recv_frames);
