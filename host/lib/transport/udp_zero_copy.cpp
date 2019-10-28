@@ -363,43 +363,43 @@ udp_zero_copy::sptr udp_zero_copy::make(const std::string& addr,
 
     if (xport_params.num_recv_frames == 0) {
         UHD_LOG_TRACE("UDP",
-            "Default value for num_recv_frames: " << UDP_ZERO_COPY_DEFAULT_NUM_FRAMES);
+            "Using default value for num_recv_frames: "
+                << UDP_ZERO_COPY_DEFAULT_NUM_FRAMES);
         xport_params.num_recv_frames = UDP_ZERO_COPY_DEFAULT_NUM_FRAMES;
     }
     if (xport_params.num_send_frames == 0) {
         UHD_LOG_TRACE("UDP",
-            "Default value for no num_send_frames: " << UDP_ZERO_COPY_DEFAULT_NUM_FRAMES);
+            "Using default value for num_send_frames: "
+                << UDP_ZERO_COPY_DEFAULT_NUM_FRAMES);
         xport_params.num_send_frames = UDP_ZERO_COPY_DEFAULT_NUM_FRAMES;
     }
     if (xport_params.recv_frame_size == 0) {
         UHD_LOG_TRACE("UDP",
-            "Using default value for  recv_frame_size: "
+            "Using default value for recv_frame_size: "
                 << UDP_ZERO_COPY_DEFAULT_FRAME_SIZE);
         xport_params.recv_frame_size = UDP_ZERO_COPY_DEFAULT_FRAME_SIZE;
     }
     if (xport_params.send_frame_size == 0) {
         UHD_LOG_TRACE("UDP",
-            "Using default value for send_frame_size, "
+            "Using default value for send_frame_size: "
                 << UDP_ZERO_COPY_DEFAULT_FRAME_SIZE);
         xport_params.send_frame_size = UDP_ZERO_COPY_DEFAULT_FRAME_SIZE;
     }
 
-    UHD_LOG_TRACE("UDP",
-        "send_frame_size: " << xport_params.send_frame_size);
-    UHD_LOG_TRACE("UDP",
-        "recv_frame_size: " << xport_params.recv_frame_size);
+    UHD_LOG_TRACE("UDP", "send_frame_size: " << xport_params.send_frame_size);
+    UHD_LOG_TRACE("UDP", "recv_frame_size: " << xport_params.recv_frame_size);
 
     if (xport_params.recv_buff_size == 0) {
-        UHD_LOG_TRACE("UDP", "Using default value for recv_buff_size");
         xport_params.recv_buff_size = std::max(UDP_ZERO_COPY_DEFAULT_BUFF_SIZE,
             xport_params.num_recv_frames * MAX_ETHERNET_MTU);
         UHD_LOG_TRACE("UDP",
-            "Using default value for recv_buff_size" << xport_params.recv_buff_size);
+            "Using default value for recv_buff_size: " << xport_params.recv_buff_size);
     }
     if (xport_params.send_buff_size == 0) {
-        UHD_LOG_TRACE("UDP", "default_buff_args has no send_buff_size");
         xport_params.send_buff_size = std::max(UDP_ZERO_COPY_DEFAULT_BUFF_SIZE,
             xport_params.num_send_frames * MAX_ETHERNET_MTU);
+        UHD_LOG_TRACE("UDP",
+            "Using default value for send_buff_size: " << xport_params.send_buff_size);
     }
 
 #if defined(UHD_PLATFORM_MACOS) || defined(UHD_PLATFORM_BSD)
