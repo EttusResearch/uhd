@@ -37,7 +37,7 @@ from rx_samples_to_file_test import rx_samples_to_file_test
 rx_samples_to_file_test.tests = {
     'default': {
         'duration': 1,
-        'subdev': 'A:A',
+        'subdev': 'A:0',
         'rate': 5e6,
     },
 }
