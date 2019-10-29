@@ -16,6 +16,7 @@
 #include <boost/lexical_cast.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
+#include <boost/tokenizer.hpp>
 #include <cstdlib>
 
 using namespace uhd;
@@ -152,6 +153,40 @@ class blockdef_xml_impl : public blockdef
 public:
     enum xml_repr_t { DESCRIBES_BLOCK, DESCRIBES_COMPONENT };
 
+    static std::vector<std::string> get_env_paths(const std::string& var_name)
+    {
+#ifdef UHD_PLATFORM_WIN32
+        static const std::string env_path_sep = ";";
+#else
+        static const std::string env_path_sep = ":";
+#endif /*UHD_PLATFORM_WIN32*/
+
+#define path_tokenizer(inp)                        \
+    boost::tokenizer<boost::char_separator<char>>( \
+        inp, boost::char_separator<char>(env_path_sep.c_str()))
+
+        std::string var_value = "";
+        char* env_var_str     = NULL;
+        env_var_str           = std::getenv(var_name.c_str());
+        if (env_var_str != NULL) {
+            var_value = std::string(env_var_str);
+        }
+
+        std::vector<std::string> paths;
+        if (var_value.empty()) {
+            return paths;
+        }
+        // convert to full filesystem path, filter blank paths
+        for (const std::string& path_string : path_tokenizer(var_value)) {
+            if (path_string.empty()) {
+                continue;
+            }
+            paths.push_back(fs::system_complete(path_string).string());
+        }
+
+        return paths;
+    }
+
     //! Returns a list of base paths for the XML files.
     // It is assumed that block definitions are in a subdir with name
     // XML_BLOCKS_SUBDIR and component definitions in a subdir with name
@@ -160,15 +195,20 @@ public:
     {
         std::vector<boost::filesystem::path> paths;
 
-        // Path from environment variable
-        if (std::getenv(XML_PATH_ENV.c_str()) != NULL) {
-            paths.push_back(boost::filesystem::path(std::getenv(XML_PATH_ENV.c_str())));
+        std::vector<std::string> xml_paths = get_env_paths(XML_PATH_ENV);
+        for (std::string& str_path : xml_paths) {
+            UHD_LOG_DEBUG("RFNOC", "Adding XML path: " << str_path);
+            if (str_path.empty()) {
+                continue;
+            }
+            paths.push_back(boost::filesystem::path(str_path.c_str()));
         }
 
         // Finally, the default path
         const boost::filesystem::path pkg_path = uhd::get_pkg_path();
         paths.push_back(pkg_path / XML_DEFAULT_PATH);
-
+        UHD_LOG_DEBUG(
+            "RFNOC", "Adding Default XML path: " << pkg_path / XML_DEFAULT_PATH);
         return paths;
     }
 
