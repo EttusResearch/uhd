@@ -12,6 +12,10 @@
 
 #include <boost/algorithm/string.hpp>
 #include <functional>
+#include <boost/version.hpp>
+#if BOOST_VERSION >= 106100
+#include <boost/dll/runtime_symbol_info.hpp>
+#endif
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
 #include <regex>
@@ -173,9 +177,27 @@ std::string uhd::get_app_path(void){
     return uhd::get_tmp_path();
 }
 
+#if BOOST_VERSION >= 106100
+std::string uhd::get_pkg_path(void) {
+    fs::path pkg_path = fs::path(uhd::get_lib_path()).parent_path().lexically_normal();
+    return get_env_var("UHD_PKG_PATH", pkg_path.string());
+}
+
+std::string uhd::get_lib_path(void) {
+    fs::path runtime_libfile_path = boost::dll::this_line_location();
+    return runtime_libfile_path.remove_filename().string();
+}
+#else
 std::string uhd::get_pkg_path(void) {
     return get_env_var("UHD_PKG_PATH", UHD_PKG_PATH);
 }
+
+std::string uhd::get_lib_path(void) {
+    fs::path lib_path = fs::path(uhd::get_pkg_path()) / UHD_LIB_DIR;
+    return lib_path.string();
+}
+#endif
+
 
 std::vector<fs::path> uhd::get_module_paths(void){
     std::vector<fs::path> paths;
@@ -185,7 +207,7 @@ std::vector<fs::path> uhd::get_module_paths(void){
         paths.push_back(str_path);
     }
 
-    paths.push_back(fs::path(uhd::get_pkg_path()) / UHD_LIB_DIR / "uhd" / "modules");
+    paths.push_back(fs::path(uhd::get_lib_path()) / "uhd" / "modules");
     paths.push_back(fs::path(uhd::get_pkg_path()) / "share" / "uhd" / "modules");
 
     return paths;
@@ -351,7 +373,7 @@ std::string uhd::find_image_path(const std::string &image_name, const std::strin
 }
 
 std::string uhd::find_utility(const std::string &name) {
-    return fs::path(fs::path(uhd::get_pkg_path()) / UHD_LIB_DIR / "uhd" / "utils" / name)
+    return fs::path(fs::path(uhd::get_lib_path()) / "uhd" / "utils" / name)
         .string();
 }
 
