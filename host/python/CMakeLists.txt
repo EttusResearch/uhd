@@ -42,7 +42,16 @@ target_include_directories(pyuhd PUBLIC
     ${PYBIND11_INCLUDE_DIR}
 )
 
-target_link_libraries(pyuhd ${Boost_LIBRARIES} ${PYTHON_LIBRARIES} uhd)
+if(WIN32)
+    target_link_libraries(pyuhd ${Boost_LIBRARIES} ${PYTHON_LIBRARIES} uhd)
+else()
+    # for extension module, proper to NOT link against python library and instead
+    # add dynamic lookup link option on OSX
+    target_link_libraries(pyuhd ${Boost_LIBRARIES} uhd)
+    if(APPLE)
+        target_link_options(pyuhd PRIVATE "LINKER:-undefined,dynamic_lookup")
+    endif(APPLE)
+endif(WIN32)
 # Copy pyuhd library to the staging directory
 add_custom_command(TARGET pyuhd
     POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pyuhd> ${CMAKE_CURRENT_BINARY_DIR}/uhd/$<TARGET_FILE_NAME:pyuhd>)
