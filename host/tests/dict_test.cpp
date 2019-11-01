@@ -8,6 +8,7 @@
 #include <uhd/types/dict.hpp>
 #include <boost/assign/list_of.hpp>
 #include <boost/test/unit_test.hpp>
+#include <map>
 
 BOOST_AUTO_TEST_CASE(test_dict_init)
 {
@@ -41,6 +42,9 @@ BOOST_AUTO_TEST_CASE(test_const_dict)
     BOOST_CHECK(d.vals()[1] == 4);
     BOOST_CHECK_EQUAL(d[-1], 3);
     BOOST_CHECK_THROW(d[2], std::exception);
+
+    std::map<int, int> m = static_cast<std::map<int, int>>(d);
+    BOOST_CHECK_EQUAL(m[-1], 3);
 }
 
 BOOST_AUTO_TEST_CASE(test_dict_pop)

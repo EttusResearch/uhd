@@ -157,6 +157,16 @@ namespace uhd{
         }
     }
 
+    template <typename Key, typename Val>
+    dict<Key, Val>::operator std::map<Key, Val>() const
+    {
+        std::map<Key, Val> new_map;
+        BOOST_FOREACH (const pair_t& p, _map) {
+            new_map[p.first] = p.second;
+        }
+        return new_map;
+    }
+
 } //namespace uhd
 
 #endif /* INCLUDED_UHD_TYPES_DICT_IPP */

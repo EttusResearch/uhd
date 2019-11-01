@@ -10,6 +10,7 @@
 
 #include <uhd/config.hpp>
 #include <list>
+#include <map>
 #include <vector>
 
 namespace uhd {
@@ -137,6 +138,10 @@ public:
      * \throws uhd::value_error
      */
     void update(const dict<Key, Val>& new_dict, bool fail_on_conflict = true);
+
+    /*! Typecast operator to std::map<>
+     */
+    operator std::map<Key, Val>() const;
 
 private:
     typedef std::pair<Key, Val> pair_t;
