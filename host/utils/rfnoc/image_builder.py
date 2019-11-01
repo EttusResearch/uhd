@@ -21,6 +21,40 @@ import mako.template
 from mako import exceptions
 from ruamel import yaml
 
+### DATA ######################################################################
+# Directory under the FPGA repo where the device directories are
+USRP3_TOP_DIR = os.path.join('usrp3', 'top')
+
+# Subdirectory for the core YAML files
+RFNOC_CORE_DIR = os.path.join('rfnoc', 'core')
+
+# Path to the system's bash executable
+BASH_EXECUTABLE = '/bin/bash' # FIXME this should come from somewhere
+
+# Map device names to the corresponding directory under usrp3/top
+DEVICE_DIR_MAP = {
+    'x300': 'x300',
+    'x310': 'x300',
+    'e300': 'e300',
+    'e310': 'e31x',
+    'e320': 'e320',
+    'n300': 'n3xx',
+    'n310': 'n3xx',
+    'n320': 'n3xx',
+}
+
+# Picks the default make target per device
+DEVICE_DEFAULTTARGET_MAP = {
+    'x300': 'X300_HG',
+    'x310': 'X310_HG',
+    'e310': 'E310_SG3',
+    'e320': 'E320_1G',
+    'n300': 'N300_HG',
+    'n310': 'N310_HG',
+    'n320': 'N320_XG',
+}
+
+
 # Adapted from code found at
 # https://stackoverflow.com/questions/5121931/
 #     in-python-how-can-you-load-yaml-mappings-as-ordereddicts
@@ -679,8 +713,7 @@ def build(fpga_path, device, image_core_path, edge_file, **args):
     logging.info(" * Image Core File: %s", image_core_path)
     logging.info(" * Edge Table File: %s", edge_file)
     # Wrap it into a bash call:
-    bash_executable = '/bin/bash' # FIXME this should come from somewhere
-    make_cmd = '{bash} -c "{cmd}"'.format(bash=bash_executable, cmd=make_cmd)
+    make_cmd = '{bash} -c "{cmd}"'.format(bash=BASH_EXECUTABLE, cmd=make_cmd)
     logging.debug("Executing the following command: %s", make_cmd)
     ret_val = os.system(make_cmd)
     os.chdir(cwd)
@@ -693,22 +726,11 @@ def target_dir(device):
     :param device: device to build for
     :return: target directory (relative path)
     """
-    target_dir_lookup = {
-        'x300': 'x300',
-        'x310': 'x300',
-        'e300': 'e300',
-        'e310': 'e31x',
-        'e320': 'e320',
-        'n300': 'n3xx',
-        'n310': 'n3xx',
-        'n320': 'n3xx',
-    }
-    if not device.lower() in target_dir_lookup:
+    if not device.lower() in DEVICE_DIR_MAP:
         logging.error("Unsupported device %s. Supported devices are %s",
-                      device, target_dir_lookup.keys())
+                      device, DEVICE_DIR_MAP.keys())
         sys.exit(1)
-    return target_dir_lookup[device.lower()]
-
+    return DEVICE_DIR_MAP[device.lower()]
 
 def default_target(device, target):
     """
@@ -716,32 +738,20 @@ def default_target(device, target):
     targeted device
     """
     if target is None:
-        default_target_lookup = {
-            'x300': 'X300_HG',
-            'x310': 'X310_HG',
-            'e310': 'E310_SG3',
-            'e320': 'E320_1G',
-            'n300': 'N300_HG',
-            'n310': 'N310_HG',
-            'n320': 'N320_XG',
-        }
-        return default_target_lookup[device.lower()]
-
+        return DEVICE_DEFAULTTARGET_MAP.get(device.lower())
     return target
-
 
 def get_top_path(fpga_root):
     """
     returns the path where FPGA top level sources reside
     """
-    return os.path.join(fpga_root, 'usrp3', 'top')
-
+    return os.path.join(fpga_root, USRP3_TOP_DIR)
 
 def get_core_config_path(config_path):
     """
     returns the path where core configuration files are stored
     """
-    return os.path.join(config_path, 'rfnoc', 'core')
+    return os.path.join(config_path, RFNOC_CORE_DIR)
 
 def generate_image_core_path(output_path, source):
     """
