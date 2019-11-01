@@ -48,8 +48,18 @@ void export_multi_usrp(py::module& m)
         .def("set_tx_gain"             , (void (multi_usrp::*)(double, const std::string&, size_t)) &multi_usrp::set_tx_gain, py::arg("gain"), py::arg("name"), py::arg("chan") = 0)
         .def("set_tx_gain"             , (void (multi_usrp::*)(double, size_t)) &multi_usrp::set_tx_gain, py::arg("gain"), py::arg("chan") = 0)
         .def("set_tx_rate"             , &multi_usrp::set_tx_rate, py::arg("rate"), py::arg("chan") = ALL_CHANS)
-        .def("get_usrp_rx_info"        , &multi_usrp::get_usrp_rx_info, py::arg("chan") = 0)
-        .def("get_usrp_tx_info"        , &multi_usrp::get_usrp_tx_info, py::arg("chan") = 0)
+        .def("get_usrp_rx_info",
+            [](multi_usrp& self, const size_t chan = 0) {
+                return static_cast<std::map<std::string, std::string>>(
+                    self.get_usrp_rx_info(chan));
+            },
+            py::arg("chan") = 0)
+        .def("get_usrp_tx_info",
+            [](multi_usrp& self, const size_t chan = 0) {
+                return static_cast<std::map<std::string, std::string>>(
+                    self.get_usrp_tx_info(chan));
+            },
+            py::arg("chan") = 0)
         .def("set_master_clock_rate"   , &multi_usrp::set_master_clock_rate, py::arg("rate"), py::arg("mboard") = ALL_MBOARDS)
         .def("get_master_clock_rate"   , &multi_usrp::get_master_clock_rate, py::arg("mboard") = 0)
         .def("get_master_clock_rate_range", &multi_usrp::get_master_clock_rate_range, py::arg("mboard") = ALL_MBOARDS)
