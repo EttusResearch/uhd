@@ -25,6 +25,8 @@ from ruamel import yaml
 # Directory under the FPGA repo where the device directories are
 USRP3_TOP_DIR = os.path.join('usrp3', 'top')
 
+USRP3_LIB_RFNOC_DIR = os.path.join('usrp3', 'lib', 'rfnoc')
+
 # Subdirectory for the core YAML files
 RFNOC_CORE_DIR = os.path.join('rfnoc', 'core')
 
@@ -680,6 +682,9 @@ def build(fpga_path, device, image_core_path, edge_file, **args):
                    GUI: passed to Makefile
                    source: The source of the build (YAML or GRC file path)
                    include_paths: List of paths to OOT modules
+                   extra_makefile_srcs: An additional list of paths to modules
+                   that don't follow the OOT module layout. These paths must
+                   point directly to a Makefile.srcs file.
     :return: exit value of build process
     """
     ret_val = 0
@@ -693,7 +698,7 @@ def build(fpga_path, device, image_core_path, edge_file, **args):
             os.path.abspath(os.path.normpath(x)),
             os.path.join('fpga', 'Makefile.srcs'))
         for x in args.get("include_paths", [])
-    ]
+    ] + args.get("extra_makefile_srcs", [])
     logging.debug("Temporarily changing working directory to %s", build_dir)
     os.chdir(build_dir)
     make_cmd = ". ./setupenv.sh "
@@ -827,4 +832,16 @@ def build_image(config, fpga_path, config_path, device, **args):
         logging.info("Skip build (generate only option given)")
         return 0
 
+    # Check if the YAML files require additional Makefile.srcs
+    extra_makefile_srcs = set()
+    for block_info in builder_conf.noc_blocks.values():
+        block_desc = blocks[block_info['block_desc']]
+        if hasattr(block_desc, 'makefile_srcs'):
+            extra_path = mako.template.Template(block_desc.makefile_srcs).render(**{
+                "fpga_lib_dir": os.path.join(fpga_path, USRP3_LIB_RFNOC_DIR),
+            })
+            if extra_path not in extra_makefile_srcs:
+                logging.debug("Adding additional Makefile.srcs path: %s", extra_path)
+                extra_makefile_srcs.add(extra_path)
+    args['extra_makefile_srcs'] = list(extra_makefile_srcs)
     return build(fpga_path, device, image_core_path, edge_file, **args)

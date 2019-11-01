@@ -4,6 +4,9 @@ version: 1.0
 rfnoc_version: 1.0
 chdr_width: 64
 noc_id: 0x1
+# Provide a custom path to Makefile.srcs for this block relative to the
+# FPGA repository
+makefile_srcs: "${fpga_lib_dir}/blocks/rfnoc_block_null_src_sink/Makefile.srcs"
 
 clocks:
   - name: rfnoc_chdr
