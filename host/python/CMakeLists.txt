@@ -30,6 +30,12 @@ execute_process(
 
 # Build pyuhd library
 add_library(pyuhd SHARED pyuhd.cpp)
+# python expects extension modules with a particular suffix
+if(WIN32)
+    set_target_properties(pyuhd PROPERTIES PREFIX "lib" SUFFIX ".pyd")
+else()
+    set_target_properties(pyuhd PROPERTIES PREFIX "lib" SUFFIX ".so")
+endif(WIN32)
 target_include_directories(pyuhd PUBLIC
     ${PYTHON_NUMPY_INCLUDE_DIR}
     ${CMAKE_SOURCE_DIR}/lib
@@ -38,14 +44,8 @@ target_include_directories(pyuhd PUBLIC
 
 target_link_libraries(pyuhd ${Boost_LIBRARIES} ${PYTHON_LIBRARIES} uhd)
 # Copy pyuhd library to the staging directory
-if(WIN32)
-    set(PYUHD_LIBRARY_NAME libpyuhd.pyd)
-else()
-    set(PYUHD_LIBRARY_NAME libpyuhd${CMAKE_SHARED_MODULE_SUFFIX})
-endif(WIN32)
-
 add_custom_command(TARGET pyuhd
-    POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pyuhd> ${CMAKE_CURRENT_BINARY_DIR}/uhd/${PYUHD_LIBRARY_NAME})
+    POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pyuhd> ${CMAKE_CURRENT_BINARY_DIR}/uhd/$<TARGET_FILE_NAME:pyuhd>)
 
 set(PYUHD_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/__init__.py
