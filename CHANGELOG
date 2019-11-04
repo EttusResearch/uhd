@@ -25,6 +25,7 @@ Change Log for Releases
 * E310: Convert to MPM architecture, fix uhd_image_loader usage, fix DMA
   arbitration to use contiguous packets, reduced DMA chans to 4 (using
   data stream muxing), fix DRAM_TEST target build
+* E3xx: Correct frontend name in devtest
 * B200: Add command to query bootloader status, fix sc12 streaming, fix
   FIFO sizes on GPIFII interface
 * UBX: add temperature compensation mode
@@ -46,11 +47,16 @@ Change Log for Releases
   latching N on M in axi_rate_change, various fixes to
   uhd_image_builder, fix MTU settings in blocks, align byte count to
   8-byte word
+* RFNOC: Allow UHD_RFNOC_DIR to contain multiple paths
 * Python API: Replace Boost.Python with PyBind11, fix benchmark_rate
   statistics, fix phase alignment test script
+* Python API: Added include of complex.h to allow pybind to convert
+  complex data types
+* Python API: Make multi_usrp::get_*_usrp_info() return a Python dict
 * UHD: Allow ignoring fallthrough warnings, reduce Boost footprint,
   remove gpsd dependency, improve streaming, reduced the number of
   compiler warnings, introduce pop() to the prop tree
+* UHD: Add typecast operator from uhd::dict<> to std::map<>
 * MPM/mpmd: Introduce compatible rev numbers to support future hardware,
   fix some resource leaks in mpmd, fix spurious reclaims causing
   unnecessary warnings, fix resource leaks in liberio xport, allow to
@@ -59,16 +65,20 @@ Change Log for Releases
   relax failure handling when updating components (fixes spurious errors
   when updating FPGA images over SFP), fix issue where RPC
   initialization would hang on failure
+* MPM:  Re-enable RPC server timeouts after components have been updated
+* MPMD: Remove arbitraty frame size defaults for UDP transports
 * FPGA: Use new device-tree overlay syntax, upgraded to Vivado 2018.3,
   broke various paths with critical timing, allow SystemVerilog source
   files, improve viv_modify_bd and viv_modify_tcl_bd, fix resets on 2clk
   FIFOs
 * USB: Allow cancelled USB requests to occur
+* USB: Fix global session race condition
 * Logging: Always honour log level, don't log colours for non-ttys, fix
   includes, demote various log messages, fix logging colours, fix
   deadlock on Windows machines
 * Examples: Fix benchmark_rate INIT_DELAY, fix memory leak in
   tx_samples_c
+* Examples: Remove thread priority elevation
 * Tests: Make the Python interpreter for devtests a parameter, add unit
   tests to MPM
 * Utilities: Fix converter benchmark for Py3k and scaling issue
