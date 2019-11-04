@@ -148,6 +148,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "multi uhd device address args")
         ("repeat", "repeat loop until Ctrl-C is pressed")
+        ("list-banks", "print list of banks before running tests")
         ("cpu", po::value<std::string>(&cpu)->default_value(GPIO_DEFAULT_CPU_FORMAT), "cpu data format")
         ("otw", po::value<std::string>(&otw)->default_value(GPIO_DEFAULT_OTW_FORMAT), "over the wire data format")
         ("rx_rate", po::value<double>(&rx_rate)->default_value(GPIO_DEFAULT_RX_RATE), "rx sample rate")
@@ -176,6 +177,14 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
               << std::endl;
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
     std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
+
+    if (vm.count("list-banks")) {
+        std::cout << "Available GPIO banks: " << std::endl;
+        auto banks = usrp->get_gpio_banks(0);
+        for (auto& bank : banks) {
+            std::cout << "* " << bank << std::endl;
+        }
+    }
 
     // print out initial unconfigured state of FP GPIO
     std::cout << "Initial GPIO values:" << std::endl;
