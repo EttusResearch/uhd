@@ -115,6 +115,27 @@ endmacro(UHD_ADD_NONAPI_TEST)
 ###############################################################################
 # Now add all unit tests that require special linkage
 ###############################################################################
+if(ENABLE_DPDK)
+    find_package(DPDK)
+    UHD_ADD_NONAPI_TEST(
+        TARGET "dpdk_port_test.cpp"
+        EXTRA_SOURCES
+        ${CMAKE_SOURCE_DIR}/lib/utils/config_parser.cpp
+        ${CMAKE_SOURCE_DIR}/lib/utils/paths.cpp
+        ${CMAKE_SOURCE_DIR}/lib/utils/pathslib.cpp
+        ${CMAKE_SOURCE_DIR}/lib/utils/prefs.cpp
+        ${CMAKE_SOURCE_DIR}/lib/transport/uhd-dpdk/dpdk_common.cpp
+        INCLUDE_DIRS
+        ${DPDK_INCLUDE_DIR}
+        EXTRA_LIBS ${DPDK_LIBRARIES}
+        NOAUTORUN # Don't register for auto-run, it requires special config
+    )
+    set_source_files_properties(
+        ${CMAKE_SOURCE_DIR}/lib/transport/uhd-dpdk/dpdk_common.cpp
+        PROPERTIES COMPILE_FLAGS "-march=native -D_GNU_SOURCE"
+    )
+ENDIF(ENABLE_DPDK)
+
 UHD_ADD_NONAPI_TEST(
     TARGET "system_time_test.cpp"
     EXTRA_SOURCES
