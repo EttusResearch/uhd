@@ -11,8 +11,9 @@ if(ENABLE_MPMD)
     endif(ENABLE_LIBERIO)
 
     if(ENABLE_DPDK)
-        message(STATUS "Compiling MPMD with DPDK support...")
-        add_definitions(-DHAVE_DPDK)
+        message(STATUS "Compiling MPMD without DPDK support for now...")
+	#        message(STATUS "Compiling MPMD with DPDK support...")
+	#        add_definitions(-DHAVE_DPDK)
     endif(ENABLE_DPDK)
 
     LIBUHD_APPEND_SOURCES(
@@ -33,10 +34,10 @@ if(ENABLE_MPMD)
         )
     endif(ENABLE_LIBERIO)
 
-    if(ENABLE_DPDK)
-        LIBUHD_APPEND_SOURCES(
-            ${CMAKE_CURRENT_SOURCE_DIR}/mpmd_link_if_ctrl_dpdk_udp.cpp
-        )
-    endif(ENABLE_DPDK)
+    #    if(ENABLE_DPDK)
+    #        LIBUHD_APPEND_SOURCES(
+    #            ${CMAKE_CURRENT_SOURCE_DIR}/mpmd_link_if_ctrl_dpdk_udp.cpp
+    #        )
+    #    endif(ENABLE_DPDK)
 
 endif(ENABLE_MPMD)

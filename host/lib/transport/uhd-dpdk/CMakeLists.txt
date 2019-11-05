@@ -18,19 +18,9 @@ if(ENABLE_DPDK)
     include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
     LIBUHD_APPEND_SOURCES(
-        ${CMAKE_CURRENT_SOURCE_DIR}/uhd_dpdk.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/uhd_dpdk_driver.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/uhd_dpdk_fops.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/uhd_dpdk_udp.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/uhd_dpdk_wait.c
         ${CMAKE_CURRENT_SOURCE_DIR}/dpdk_common.cpp
     )
     set_source_files_properties(
-        ${CMAKE_CURRENT_SOURCE_DIR}/uhd_dpdk.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/uhd_dpdk_driver.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/uhd_dpdk_fops.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/uhd_dpdk_udp.c
-        ${CMAKE_CURRENT_SOURCE_DIR}/uhd_dpdk_wait.c
         ${CMAKE_CURRENT_SOURCE_DIR}/dpdk_common.cpp
         PROPERTIES COMPILE_FLAGS "${UHD_DPDK_CFLAGS} -D_GNU_SOURCE"
     )

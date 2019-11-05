@@ -143,9 +143,5 @@ endif(ENABLE_LIBERIO)
 
 if(ENABLE_DPDK)
     INCLUDE_SUBDIRECTORY(uhd-dpdk)
-    LIBUHD_APPEND_SOURCES(
-        ${CMAKE_CURRENT_SOURCE_DIR}/dpdk_zero_copy.cpp
-        ${CMAKE_CURRENT_SOURCE_DIR}/dpdk_simple.cpp
-    )
 endif(ENABLE_DPDK)
 
