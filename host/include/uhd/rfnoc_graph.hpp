@@ -57,17 +57,23 @@ public:
      * Block Discovery/Retrieval
      ******************************************/
     /*! Returns the block ids of all blocks that match the specified hint
+     *
      * Uses block_id_t::match() internally.
      * If no matching block is found, it returns an empty vector.
      *
-     * To access specialized block controller classes (i.e. derived from noc_block_base),
-     * use the templated version of this function, e.g.
+     * The returned vector is sorted lexicographically.
+     *
+     * To access specialized block controller classes (i.e. derived from
+     * uhd::rfnoc::noc_block_base), use the templated version of this function:
      * \code{.cpp}
      * // Assume DEV is an rfnoc_graph::sptr
-     * auto null_blocks = DEV->find_blocks<null_noc_block>("NullSrcSink");
+     * auto null_blocks = DEV->find_blocks<null_block_control>("NullSrcSink");
      * if (null_blocks.empty()) { cout << "No null blocks found!" << endl; }
      * \endcode
+     *
      * \note this access is not thread safe if performed during block enumeration
+     *
+     * \returns A sorted list of block IDs that match the hint
      */
     virtual std::vector<block_id_t> find_blocks(
         const std::string& block_id_hint) const = 0;

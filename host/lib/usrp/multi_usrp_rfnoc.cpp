@@ -96,20 +96,9 @@ public:
     multi_usrp_rfnoc(rfnoc_graph::sptr graph, const device_addr_t& addr)
         : _args(addr), _graph(graph), _tree(_graph->get_tree())
     {
-        // Discover all of the radios on our devices and create a mapping between radio
-        // chains and channel numbers
+        // Discover all of the radios on our devices and create a mapping between
+        // radio chains and channel numbers. The result is sorted.
         auto radio_blk_ids = _graph->find_blocks("Radio");
-        // find_blocks doesn't sort, so we need to
-        std::sort(radio_blk_ids.begin(),
-            radio_blk_ids.end(),
-            [](uhd::rfnoc::block_id_t i, uhd::rfnoc::block_id_t j) -> bool {
-                if (i.get_device_no() != j.get_device_no()) {
-                    return i.get_device_no() < j.get_device_no();
-                } else {
-                    return i.get_block_count() < j.get_block_count();
-                }
-            });
-
         // If we don't find any radios, we don't have a multi_usrp object
         if (radio_blk_ids.empty()) {
             throw uhd::runtime_error(
@@ -895,17 +884,6 @@ public:
         // Discover all of the radios on our devices and create a mapping between radio
         // chains and channel numbers
         auto radio_blk_ids = _graph->find_blocks(std::to_string(mboard) + "/Radio");
-        // find_blocks doesn't sort, so we need to
-        std::sort(radio_blk_ids.begin(),
-            radio_blk_ids.end(),
-            [](uhd::rfnoc::block_id_t i, uhd::rfnoc::block_id_t j) -> bool {
-                if (i.get_device_no() != j.get_device_no()) {
-                    return i.get_device_no() < j.get_device_no();
-                } else {
-                    return i.get_block_count() < j.get_block_count();
-                }
-            });
-
         // If we don't find any radios, we don't have a multi_usrp object
         if (radio_blk_ids.empty()) {
             throw uhd::runtime_error(
@@ -1515,17 +1493,6 @@ public:
         // Discover all of the radios on our devices and create a mapping between radio
         // chains and channel numbers
         auto radio_blk_ids = _graph->find_blocks(std::to_string(mboard) + "/Radio");
-        // find_blocks doesn't sort, so we need to
-        std::sort(radio_blk_ids.begin(),
-            radio_blk_ids.end(),
-            [](uhd::rfnoc::block_id_t i, uhd::rfnoc::block_id_t j) -> bool {
-                if (i.get_device_no() != j.get_device_no()) {
-                    return i.get_device_no() < j.get_device_no();
-                } else {
-                    return i.get_block_count() < j.get_block_count();
-                }
-            });
-
         // If we don't find any radios, we don't have a multi_usrp object
         if (radio_blk_ids.empty()) {
             throw uhd::runtime_error(

@@ -48,6 +48,11 @@ std::vector<block_id_t> block_container_t::find_blocks(
             block_ids.push_back(id);
         }
     }
+    std::sort(block_ids.begin(),
+        block_ids.end(),
+        [](const uhd::rfnoc::block_id_t& i, const uhd::rfnoc::block_id_t& j) {
+            return i < j;
+        });
     return block_ids;
 }
 
