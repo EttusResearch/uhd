@@ -1900,19 +1900,73 @@ public:
     /*******************************************************************
      * GPIO methods
      ******************************************************************/
-    /* Helper function to get the radio block controller which controls the GPIOs for a
-     * given motherboard
+    /*! Helper function to identify the radio and the bank on that radio.
+     *
+     * Background: Historically, multi_usrp has made up its own GPIO bank names,
+     * unrelated to the radios. Now, we need to be a bit more clever to get that
+     * legacy behaviour to work.
+     *
+     * Here's the algorithm:
+     * - If the bank ends with 'A' or 'B' we'll use that to identify the radio
+     * - Otherwise, we'll pick the first radio
+     * - If the bank ends with 'A' or 'B' we strip that suffix
+     *
+     * The returned radio will now have a GPIO bank with the returned name.
      */
-    uhd::rfnoc::radio_control::sptr _get_gpio_radio(const size_t mboard)
+    std::pair<uhd::rfnoc::radio_control::sptr, std::string> _get_gpio_radio_bank(
+        const std::string& bank, const size_t mboard)
     {
-        // We assume that the first radio block on each board controls the GPIO banks
-        return _graph->get_block<uhd::rfnoc::radio_control>(
-            block_id_t(mboard, "Radio", 0));
+        UHD_ASSERT_THROW(!bank.empty());
+        char suffix = bank[bank.size() - 1];
+        std::string slot_name;
+        if (suffix == 'A' || suffix == 'a') {
+            slot_name = "A";
+        }
+        if (suffix == 'B' || suffix == 'b') {
+            slot_name = "B";
+        }
+
+        uhd::rfnoc::radio_control::sptr radio = [bank, mboard, slot_name, this]() {
+            auto radio_blocks = _graph->find_blocks<uhd::rfnoc::radio_control>(
+                std::to_string(mboard) + "/Radio");
+            for (auto radio_id : radio_blocks) {
+                auto radio = _graph->get_block<uhd::rfnoc::radio_control>(radio_id);
+                if (slot_name.empty() || radio->get_slot_name() == slot_name) {
+                    return radio;
+                }
+            }
+            throw uhd::runtime_error(std::string("Could not match GPIO bank ") + bank
+                                     + " to a radio block controller.");
+        }();
+
+        const std::string normalized_bank = [radio, bank]() {
+            auto radio_banks = radio->get_gpio_banks();
+            for (auto& radio_bank : radio_banks) {
+                if (bank.find(radio_bank) == 0) {
+                    return radio_bank;
+                }
+            }
+            throw uhd::runtime_error(std::string("Could not match GPIO bank ") + bank
+                                     + " to radio " + radio->get_unique_id());
+        }();
+
+        return {radio, normalized_bank};
     }
 
     std::vector<std::string> get_gpio_banks(const size_t mboard)
     {
-        return _get_gpio_radio(mboard)->get_gpio_banks();
+        auto radio_blocks = _graph->find_blocks<uhd::rfnoc::radio_control>(
+            std::to_string(mboard) + "/Radio");
+        std::vector<std::string> gpio_banks;
+        for (auto radio_id : radio_blocks) {
+            auto radio       = _graph->get_block<uhd::rfnoc::radio_control>(radio_id);
+            auto radio_banks = radio->get_gpio_banks();
+            for (const auto& bank : radio_banks) {
+                gpio_banks.push_back(bank + radio->get_slot_name());
+            }
+        }
+
+        return gpio_banks;
     }
 
     void set_gpio_attr(const std::string& bank,
@@ -1921,15 +1975,18 @@ public:
         const uint32_t mask = 0xffffffff,
         const size_t mboard = 0)
     {
-        const uint32_t current   = get_gpio_attr(bank, attr, mboard);
+        auto radio_bank_pair = _get_gpio_radio_bank(bank, mboard);
+        const uint32_t current =
+            radio_bank_pair.first->get_gpio_attr(radio_bank_pair.second, attr);
         const uint32_t new_value = (current & ~mask) | (value & mask);
-        return _get_gpio_radio(mboard)->set_gpio_attr(bank, attr, new_value);
+        radio_bank_pair.first->set_gpio_attr(radio_bank_pair.second, attr, new_value);
     }
 
     uint32_t get_gpio_attr(
         const std::string& bank, const std::string& attr, const size_t mboard)
     {
-        return _get_gpio_radio(mboard)->get_gpio_attr(bank, attr);
+        auto radio_bank_pair = _get_gpio_radio_bank(bank, mboard);
+        return radio_bank_pair.first->get_gpio_attr(radio_bank_pair.second, attr);
     }
 
     std::vector<std::string> get_gpio_srcs(const std::string& bank, const size_t mboard)
