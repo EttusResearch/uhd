@@ -549,10 +549,11 @@ Note: On TX tests, initial Us within the first 5 seconds can be ignored and do n
 | 2x RX & 2x TX | 122.88e6          | 122.88e6 RX, 61.44e6 TX | 60       | Use dual 10GigE, N300 XG only
 | 2x RX & 2x TX | 153e6             | 153e6 RX, 76.8e6 TX     | 60       | Use dual 10GigE, N300 XG only
 
-#### USRP N320: 1 GigE Interface
+#### USRP N320/N321: 1 GigE Interface
 
 - Required images to test: HG
 - Note: On TX tests, initial Us within the first 5 seconds can be ignored and do not fail the test
+- Note: The following tests need to be completed only on either N320 OR N321
 
 <!--Note: If you change this table, also change tools/gr-usrptest/apps/usrp_fpga_funcverif.py!-->
 | Channels      | Master Clock Rate | Sample Rates            | Duration | Notes                             |
@@ -573,10 +574,11 @@ Note: On TX tests, initial Us within the first 5 seconds can be ignored and do n
 | 2x RX & 2x TX | 245.76e6          | 2.4576e6                | 60       |                                   |
 | 2x RX & 2x TX | 200e6             | 2e6                     | 60       |                                   |
 
-#### USRP N320: 10 GigE Interface
+#### USRP N320/N321: 10 GigE Interface
 
 - Required images to test: N320 HG + XG
 - Note: On TX tests, initial Us within the first 5 seconds can be ignored and do not fail the test
+- Note: The following tests need to be completed only on either N320 OR N321
 
 <!--Note: If you change this table, also change tools/gr-usrptest/apps/usrp_fpga_funcverif.py!-->
 | Channels      | Master Clock Rate | Sample Rates            | Duration | Notes                             |
@@ -599,12 +601,12 @@ Note: On TX tests, initial Us within the first 5 seconds can be ignored and do n
 | 2x RX & 2x TX | 250e6             | 125e6 RX, 62.5e6 TX     | 600      |                                   |
 | 2x RX & 2x TX | 245.76e6          | 122.88e6 RX, 61.44e6 TX | 600      |                                   |
 | 2x RX & 2x TX | 200e6             | 100e6 RX, 66.67e6 TX    | 600      |                                   |
-| 2x RX & 2x TX | 250e6             | 125e6 RX, 83.33e6 TX    | 600      | Use dual 10GigE, N320 XG only     |
-| 2x RX & 2x TX | 245.76e6          | 122.88e6 RX, 81.92e6 TX | 600      | Use dual 10GigE, N320 XG only     |
-| 2x RX & 2x TX | 200e6             | 200e6 RX, 100e6 TX      | 600      | Use dual 10GigE, N320 XG only     |
-| 2x RX & 2x TX | 250e6             | 250e6                   | 600      | Dual 10GigE, N320 XG, DPDK only   |
-| 2x RX & 2x TX | 245.76e6          | 245.76e6                | 600      | Dual 10GigE, N320 XG, DPDK only   |
-| 2x RX & 2x TX | 200e6             | 200e6                   | 600      | Dual 10GigE, N320 XG, DPDK only   |
+| 2x RX & 2x TX | 250e6             | 125e6 RX, 83.33e6 TX    | 600      | Use dual 10GigE, N320/1 XG only   |
+| 2x RX & 2x TX | 245.76e6          | 122.88e6 RX, 81.92e6 TX | 600      | Use dual 10GigE, N320/1 XG only   |
+| 2x RX & 2x TX | 200e6             | 200e6 RX, 100e6 TX      | 600      | Use dual 10GigE, N320/1 XG only   |
+| 2x RX & 2x TX | 250e6             | 250e6                   | 600      | Dual 10GigE, N320/1 XG, DPDK only |
+| 2x RX & 2x TX | 245.76e6          | 245.76e6                | 600      | Dual 10GigE, N320/1 XG, DPDK only |
+| 2x RX & 2x TX | 200e6             | 200e6                   | 600      | Dual 10GigE, N320/1 XG, DPDK only |
 
 \subsection rdtesting_fpgafuncverif_auto FPGA Functional Verification: Automatic Test Procedure
 
@@ -669,11 +671,12 @@ appropriate.
 
          $ usrp_fpga_funcverif n310wx -a 192.168.20.2 -p /path/to/examples
 
-### N320
+### N320/N321
 
-The N320 tests depend slightly on the type of FPGA image to be tested. All
+The N320/N321 tests depend slightly on the type of FPGA image to be tested. All
 calls to usrp_fpga_funcverif.py need to be adapted to ensure the correct IP
-addresses and paths to the examples.
+addresses and paths to the examples. Also, the following test need to be run only
+on either N320 OR N321.
 
 #### HG
 
