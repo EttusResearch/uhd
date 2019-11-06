@@ -119,7 +119,7 @@ device_addr_t uhd::prefs::get_dpdk_nic_args(
     const uhd::device_addr_t &user_args
 ) {
     const std::vector<std::string> keys_to_update_from = {
-        "dpdk-mac"
+        "dpdk_mac"
     };
     return get_args(user_args, keys_to_update_from);
 }
