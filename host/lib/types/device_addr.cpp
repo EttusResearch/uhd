@@ -94,7 +94,11 @@ device_addrs_t uhd::separate_device_addr(const device_addr_t &dev_addr){
     std::vector<std::string> global_keys; //keys that apply to all (no numerical suffix)
     for(const std::string &key:  dev_addr.keys()){
         std::cmatch matches;
-        if (not std::regex_match(key.c_str(), matches, std::regex("^(\\D+)(\\d*)$"))){
+        // Key must start with a non-digit, and may optionally end with a digit
+        // that indicates the mb index. Also allow keys that have integers within
+        // the name, such as recv_offload_thread_0_cpu.
+        if (not std::regex_match(
+                key.c_str(), matches, std::regex("^(\\D+\\d*\\D+)(\\d*)$"))) {
             throw std::runtime_error("unknown key format: " + key);
         }
         std::string key_part(matches[1].first, matches[1].second);
