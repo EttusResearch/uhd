@@ -389,6 +389,30 @@ will force a reload of the FPGA, which will temporarily take down the SFP
 network interfaces (and temporary settings, such as applied via `ifconfig` on
 the command line, will be lost).
 
+\subsubsection n3xx_getting_started_fpga_update_flavors FPGA Image Flavors
+
+The USRP-N300 Series devices contains two SFP+ ports for the two Ethernet channels.
+Because SFP+ ports can be used for either 1 Gigabit (SFP) or 10 Gigabit (SFP+)
+transceivers, several FPGA images are shipped with UHD to determine the
+behavior of the above interfaces.
+
+Interfaces can be used for either 1 Gigabit Ethernet, 10 Gigabit Ethernet,
+Aurora (using 10 Gigabit speeds), and White Rabbit (the White Rabbit interface
+does *not* support streaming, it only provides a time reference). See also
+\ref n3xx_synchronization_whiterabbit. We provide the following flavors of FPGA
+images in our default image set:
+
+|  FPGA Image Flavor  |  SFP+ Port 0 Interface |  SFP+ Port 1 Interface |
+|---------------------|------------------------|------------------------|
+|  HG (Default)       |  1 Gigabit Ethernet    |  10 Gigabit Ethernet   |
+|  XG                 |  10 Gigabit Ethernet   |  10 Gigabit Ethernet   |
+|  HA                 |  1 Gigabit Ethernet    |  Aurora                |
+|  XA                 |  10 Gigabit Ethernet   |  Aurora                |
+|  AA                 |  Aurora                |  Aurora                |
+|  WX                 |  White Rabbit          |  10 Gigabit Ethernet   |
+
+The N320 has an additional QSFP port, and therefore has additional FPGA flavors
+(AQ, XQ). For more information on those, see \ref n3xx_rh_sfp_protocols.
 
 \section n3xx_usage Using an N3XX USRP from UHD
 

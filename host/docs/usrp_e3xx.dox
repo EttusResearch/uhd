@@ -170,7 +170,32 @@ It is possible to log into the STM32 using the serial interface
 controls, such as remote power cycling should the CPU have become unresponsive
 for whatever reason.
 
-\subsection e3xx_sdcard The SD card
+\subsection e320_fpga_flavours FPGA Image Flavors
+
+The USRP E320 Series devices has an SFP+ port for Ethernet.
+Because the SFP+ port supports both 1 Gigabit (SFP) and 10 Gigabit (SFP+)
+transceivers, several FPGA images are shipped with UHD to determine the
+behavior of the interface.
+
+|  FPGA Image Flavor  |  SFP+ Port 0 Interface |
+|---------------------|------------------------|
+|  1G (Default)       |  1 Gigabit Ethernet    |
+|  XG                 |  10 Gigabit Ethernet   |
+|  AA                 |  Aurora                |
+
+The Aurora image can be used to run BISTs on the SFP.
+
+Images can be updated and swapped using the image loader tool. First, make sure
+your version of UHD is running the correct images by downloading them from the
+internet:
+
+    [sudo] uhd_images_downloader
+
+Then, use the image loader tool to pick an FPGA image:
+
+    uhd_image_loader -a type=e3xx,addr=<IP Address>,fpga=XG
+
+\section e3xx_sdcard The SD card
 
 The E310/E312/E313/E320 use a micro SD card as its main storage. The entire root file
 system (Linux kernel, libraries) and any user data are stored on this SD card.
