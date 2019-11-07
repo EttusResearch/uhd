@@ -8,7 +8,7 @@
 #define INCLUDED_LIBUHD_IO_SERVICE_ARGS_HPP
 
 #include <uhd/types/device_addr.hpp>
-#include <boost/optional.hpp>
+#include <map>
 
 namespace uhd { namespace usrp {
 
@@ -29,20 +29,20 @@ namespace uhd { namespace usrp {
  *                           always go to the offload thread containing the fewest
  *                           connections, with lowest numbered thread as a second
  *                           criterion. The default is 1.
- * recv_offload_cpu_<N>: an integer to specify cpu affinity of the offload thread.
- *                       N indicates the thread instance, starting with 0 for each
- *                       streamer and ending with the number of transport adapters
- *                       minus one. Only used if the I/O service is configured to
- *                       block.
- * send_offload_cpu_<N>: an integer to specify cpu affinity of the offload thread.
- *                       N indicates the thread instance, starting with 0 for each
- *                       streamer and ending with the number of transport adapters
- *                       minus one. Only used if the I/O service is configured to
- *                       block.
- * poll_offload_cpu_<N>: an integer to specify cpu affinity of the offload thread.
- *                       N indicates the thread instance, starting with 0 and up to
- *                       num_poll_offload_threads minus 1. Only used if the I/O
- *                       service is configured to poll.
+ * recv_offload_thread_<N>_cpu: an integer to specify cpu affinity of the offload
+ *                              thread. N indicates the thread instance, starting
+ *                              with 0 for each streamer and ending with the number
+ *                              of transport adapters minus one. Only used if the
+ *                              I/O service is configured to block.
+ * send_offload_thread_<N>_cpu: an integer to specify cpu affinity of the offload
+ *                              thread. N indicates the thread instance, starting
+ *                              with 0 for each streamer and ending with the number
+ *                              of transport adapters minus one. Only used if the
+ *                              I/O service is configured to block.
+ * poll_offload_thread_<N>_cpu: an integer to specify cpu affinity of the offload
+ *                              thread. N indicates the thread instance, starting
+ *                              with 0 and up to num_poll_offload_threads minus 1.
+ *                              Only used if the I/O service is configured to poll.
  */
 struct io_service_args_t
 {
@@ -63,17 +63,14 @@ struct io_service_args_t
     //! Number of polling threads to use, if wait_mode is set to POLL
     size_t num_poll_offload_threads = 1;
 
-    //! CPU affinity of offload threads, if wait_mode is set to BLOCK (one item
-    //! per thread)
-    std::vector<boost::optional<size_t>> recv_offload_thread_cpu;
+    //! CPU affinity of offload threads, if wait_mode is set to BLOCK
+    std::map<size_t,size_t> recv_offload_thread_cpu;
 
-    //! CPU affinity of offload threads, if wait_mode is set to BLOCK (one item
-    //! per thread)
-    std::vector<boost::optional<size_t>> send_offload_thread_cpu;
+    //! CPU affinity of offload threads, if wait_mode is set to BLOCK
+    std::map<size_t, size_t> send_offload_thread_cpu;
 
-    //! CPU affinity of offload threads, if wait_mode is set to POLL (one item
-    //! per thread)
-    std::vector<boost::optional<size_t>> poll_offload_thread_cpu;
+    //! CPU affinity of offload threads, if wait_mode is set to POLL
+    std::map<size_t,size_t> poll_offload_thread_cpu;
 };
 
 /*! Reads I/O service args from provided dictionary

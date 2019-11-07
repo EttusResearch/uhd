@@ -7,19 +7,21 @@
 #include <uhd/utils/log.hpp>
 #include <uhdlib/usrp/common/io_service_args.hpp>
 #include <uhdlib/usrp/constrained_device_args.hpp>
+#include <boost/format.hpp>
+#include <regex>
 #include <string>
 
-static const std::string LOG_ID            = "IO_SRV";
-static const size_t MAX_NUM_XPORT_ADAPTERS = 2;
+static const std::string LOG_ID = "IO_SRV";
 
 static const char* recv_offload_str             = "recv_offload";
 static const char* send_offload_str             = "send_offload";
 static const char* recv_offload_wait_mode_str   = "recv_offload_wait_mode";
 static const char* send_offload_wait_mode_str   = "send_offload_wait_mode";
-static const char* recv_offload_thread_cpu_str  = "recv_offload_thread_cpu";
-static const char* send_offload_thread_cpu_str  = "send_offload_thread_cpu";
 static const char* num_poll_offload_threads_str = "num_poll_offload_threads";
-static const char* poll_offload_thread_cpu_str  = "poll_offload_thread_cpu_str";
+
+static const std::regex recv_offload_thread_cpu_expr("^recv_offload_thread_(\\d+)_cpu");
+static const std::regex send_offload_thread_cpu_expr("^send_offload_thread_(\\d+)_cpu");
+static const std::regex poll_offload_thread_cpu_expr("^poll_offload_thread_(\\d+)_cpu");
 
 namespace uhd { namespace usrp {
 
@@ -73,36 +75,22 @@ io_service_args_t read_io_service_args(
         io_srv_args.num_poll_offload_threads = 1;
     }
 
-    auto create_key = [](const std::string& base, size_t index) {
-        return base + "_" + std::to_string(index);
+    auto read_thread_args = [&args](const std::regex& expr, std::map<size_t, size_t>& dest) {
+        auto keys = args.keys();
+        for (const auto& key : keys) {
+            std::smatch match;
+            if (std::regex_match(key, match, expr)) {
+                UHD_ASSERT_THROW(match.size() == 2); // first match is the entire key
+                const size_t thread = std::stoul(match.str(1));
+                const size_t cpu    = args.cast<size_t>(key, 0);
+                dest[thread]        = cpu;
+            }
+        }
     };
 
-    for (size_t i = 0; i < MAX_NUM_XPORT_ADAPTERS; i++) {
-        std::string key = create_key(recv_offload_thread_cpu_str, i);
-        if (args.has_key(key)) {
-            io_srv_args.recv_offload_thread_cpu.push_back(args.cast<size_t>(key, 0));
-        } else {
-            io_srv_args.recv_offload_thread_cpu.push_back({});
-        }
-    }
-
-    for (size_t i = 0; i < MAX_NUM_XPORT_ADAPTERS; i++) {
-        std::string key = create_key(send_offload_thread_cpu_str, i);
-        if (args.has_key(key)) {
-            io_srv_args.send_offload_thread_cpu.push_back(args.cast<size_t>(key, 0));
-        } else {
-            io_srv_args.send_offload_thread_cpu.push_back({});
-        }
-    }
-
-    for (size_t i = 0; i < io_srv_args.num_poll_offload_threads; i++) {
-        std::string key = create_key(poll_offload_thread_cpu_str, i);
-        if (args.has_key(key)) {
-            io_srv_args.poll_offload_thread_cpu.push_back(args.cast<size_t>(key, 0));
-        } else {
-            io_srv_args.poll_offload_thread_cpu.push_back({});
-        }
-    }
+    read_thread_args(recv_offload_thread_cpu_expr, io_srv_args.recv_offload_thread_cpu);
+    read_thread_args(send_offload_thread_cpu_expr, io_srv_args.send_offload_thread_cpu);
+    read_thread_args(poll_offload_thread_cpu_expr, io_srv_args.poll_offload_thread_cpu);
 
     return io_srv_args;
 }
@@ -112,22 +100,37 @@ device_addr_t merge_io_service_dev_args(
 {
     device_addr_t args = stream_args;
 
-    auto merge_args = [&dev_args, stream_args, &args](const char* key) {
+    auto merge_args = [](const device_addr_t& dev_args,
+                          device_addr_t& stream_args,
+                          const std::string& key) {
         if (!stream_args.has_key(key)) {
             if (dev_args.has_key(key)) {
-                args[key] = dev_args[key];
+                stream_args[key] = dev_args[key];
             }
         }
     };
 
-    merge_args(recv_offload_str);
-    merge_args(send_offload_str);
-    merge_args(recv_offload_wait_mode_str);
-    merge_args(send_offload_wait_mode_str);
-    merge_args(recv_offload_thread_cpu_str);
-    merge_args(send_offload_thread_cpu_str);
-    merge_args(num_poll_offload_threads_str);
-    merge_args(poll_offload_thread_cpu_str);
+    merge_args(dev_args, args, recv_offload_str);
+    merge_args(dev_args, args, send_offload_str);
+    merge_args(dev_args, args, recv_offload_wait_mode_str);
+    merge_args(dev_args, args, send_offload_wait_mode_str);
+    merge_args(dev_args, args, num_poll_offload_threads_str);
+
+    auto merge_thread_args = [&merge_args](const device_addr_t& dev_args,
+                                 device_addr_t& stream_args,
+                                 const std::regex& expr) {
+        auto keys = dev_args.keys();
+        for (const auto& key : keys) {
+            std::smatch match;
+            if (std::regex_match(key, match, expr)) {
+                merge_args(dev_args, stream_args, key);
+            }
+        }
+    };
+
+    merge_thread_args(dev_args, args, recv_offload_thread_cpu_expr);
+    merge_thread_args(dev_args, args, send_offload_thread_cpu_expr);
+    merge_thread_args(dev_args, args, poll_offload_thread_cpu_expr);
 
     return args;
 }

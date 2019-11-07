@@ -247,13 +247,13 @@ io_service::sptr blocking_io_service_mgr::_create_new_io_service(
                              ? offload_io_service::RECV_ONLY
                              : offload_io_service::SEND_ONLY;
 
-    const auto& cpu_vtr = (link_type == link_type_t::RX_DATA)
+    const auto& cpu_map = (link_type == link_type_t::RX_DATA)
                               ? args.recv_offload_thread_cpu
                               : args.send_offload_thread_cpu;
 
     std::string cpu_affinity_str;
-    if (cpu_vtr.size() > thread_index && cpu_vtr[thread_index]) {
-        const size_t cpu         = *cpu_vtr[thread_index];
+    if (cpu_map.count(thread_index) != 0) {
+        const size_t cpu         = cpu_map.at(thread_index);
         params.cpu_affinity_list = {cpu};
         cpu_affinity_str         = ", cpu affinity: " + std::to_string(cpu);
     } else {
@@ -381,11 +381,11 @@ io_service::sptr polling_io_service_mgr::_create_new_io_service(
     params.client_type = offload_io_service::BOTH_SEND_AND_RECV;
     params.wait_mode   = offload_io_service::POLL;
 
-    const auto& cpu_vtr = args.poll_offload_thread_cpu;
+    const auto& cpu_map = args.poll_offload_thread_cpu;
 
     std::string cpu_affinity_str;
-    if (cpu_vtr.size() > thread_index && cpu_vtr[thread_index]) {
-        const size_t cpu         = *cpu_vtr[thread_index];
+    if (cpu_map.count(thread_index) != 0) {
+        const size_t cpu         = cpu_map.at(thread_index);
         params.cpu_affinity_list = {cpu};
         cpu_affinity_str         = ", cpu affinity: " + std::to_string(cpu);
     } else {
