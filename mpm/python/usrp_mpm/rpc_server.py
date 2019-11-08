@@ -286,7 +286,7 @@ class MPMServer(RPCServer):
         self._state.claim_status.value = True
         self.periph_manager.claimed = True
         self.periph_manager.claim()
-        if self.periph_manager.clear_rpc_method_registry_on_unclaim:
+        if self.periph_manager.clear_rpc_registry_on_unclaim:
             self._init_rpc_calls(self.periph_manager)
         self._state.lock.release()
         self.session_id = session_id + " ({})".format(self.client_host)
@@ -339,14 +339,14 @@ class MPMServer(RPCServer):
         self._state.claim_status.value = False
         self._state.claim_token.value = b''
         self.session_id = None
-        if self.periph_manager.clear_rpc_method_registry_on_unclaim:
+        if self.periph_manager.clear_rpc_registry_on_unclaim:
             self.clear_method_registry()
         try:
             self.periph_manager.claimed = False
             self.periph_manager.unclaim()
             self.periph_manager.set_connection_type(None)
             self.periph_manager.deinit()
-        except Exception as ex:
+        except BaseException as ex:
             self._last_error = str(ex)
             self.log.error("deinit() failed: %s", str(ex))
             # Don't want to propagate this failure -- the session is over

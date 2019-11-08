@@ -40,6 +40,7 @@ E320_DBOARD_SLOT_IDX = 0
 ###############################################################################
 # Transport managers
 ###############################################################################
+# pylint: disable=too-few-public-methods
 class E320XportMgrUDP(XportMgrUDP):
     "E320-specific UDP configuration"
     iface_config = {
@@ -51,10 +52,14 @@ class E320XportMgrUDP(XportMgrUDP):
 class E320XportMgrLiberio(XportMgrLiberio):
     " E320-specific Liberio configuration "
     max_chan = 6
+# pylint: enable=too-few-public-methods
 
 ###############################################################################
 # Main Class
 ###############################################################################
+# We need to disable the no-self-use check, because we might require self to
+# become an RPC method, but PyLint doesnt' know that.
+# pylint: disable=no-self-use
 class e320(ZynqComponents, PeriphManagerBase):
     """
     Holds E320 specific attributes and methods
@@ -141,7 +146,7 @@ class e320(ZynqComponents, PeriphManagerBase):
                 setattr(self, sensor_cb_name, partial(self.get_temp_sensor, sensor_name))
         try:
             self._init_peripherals(args)
-        except Exception as ex:
+        except BaseException as ex:
             self.log.error("Failed to initialize motherboard: %s", str(ex))
             self._initialization_status = str(ex)
             self._device_initialized = False
@@ -387,7 +392,8 @@ class e320(ZynqComponents, PeriphManagerBase):
         - rx_dev: RX device (/dev/rx-dma*)
         """
         if xport_type not in self._xport_mgrs:
-            self.log.warning("Can't get link options for unknown link type: `{}'.")
+            self.log.warning("Can't get link options for unknown link type: `{}'."
+                             .format(xport_type))
             return []
         return self._xport_mgrs[xport_type].get_chdr_link_options()
 
@@ -473,8 +479,8 @@ class e320(ZynqComponents, PeriphManagerBase):
         clock_source = self.get_clock_source()
         if clock_source == "internal" or clock_source == "gpsdo":
             return E320_DEFAULT_INT_CLOCK_FREQ
-        elif clock_source == "external":
-            return self._ext_clock_freq
+        # elif clock_source == "external":
+        return self._ext_clock_freq
 
     def get_time_sources(self):
         " Returns list of valid time sources "

@@ -1,5 +1,6 @@
 #
 # Copyright 2017-2018 Ettus Research, a National Instruments Company
+# Copyright 2019 Ettus Research, a National Instruments Brand
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
@@ -40,6 +41,12 @@ def get_dboard_class_from_pid(pid):
     return None
 
 
+# We need to disable the no-self-use check, because we might require self to
+# become an RPC method, but PyLint doesnt' know that. We'll also disable
+# warnings about this being a god class.
+# pylint: disable=no-self-use
+# pylint: disable=too-many-public-methods
+# pylint: disable=too-many-instance-attributes
 class PeriphManagerBase(object):
     """"
     Base class for all motherboards. Common function and API calls should
@@ -136,8 +143,11 @@ class PeriphManagerBase(object):
     # to RPC methods caused by removal of overlay on unclaim() by peripheral
     # manager. Additionally the RPC server will re-register all methods on
     # a claim(). Override and set to True in the derived class if desired.
-    clear_rpc_method_registry_on_unclaim = False
+    clear_rpc_registry_on_unclaim = False
 
+    # Disable checks for unused args in the overridables, because the default
+    # implementations don't need to use them.
+    # pylint: disable=unused-argument
     @staticmethod
     def generate_device_info(eeprom_md, mboard_info, dboard_infos):
         """
@@ -150,8 +160,8 @@ class PeriphManagerBase(object):
         try:
             from usrp_mpm import __version__, __githash__
             version_string = __version__
-            if len(__githash__):
-                version_string += "-g" + __githash__
+            if __githash__:
+                version_string += "-g" + str(__githash__)
         except ImportError:
             version_string = ""
         mboard_info["mpm_version"] = version_string
@@ -169,6 +179,7 @@ class PeriphManagerBase(object):
         device_args -- Arbitrary dictionary of info, typically user-defined
         """
         return []
+    # pylint: enable=unused-argument
     ### End of overridables ###################################################
 
 
@@ -199,7 +210,7 @@ class PeriphManagerBase(object):
                         self.mboard_info,
                         self.dboard_infos
                     )
-        except Exception as ex:
+        except BaseException as ex:
             self.log.error("Failed to initialize device: %s", str(ex))
             self._device_initialized = False
             self._initialization_status = str(ex)
@@ -291,8 +302,7 @@ class PeriphManagerBase(object):
                     "Found invalid PID in EEPROM: 0x{:04X}. " \
                     "Valid PIDs are: {}".format(
                         eeprom_head['pid'],
-                        ", ".join(["0x{:04X}".format(x)
-                                   for x in self.pids.keys()]),
+                        ", ".join(["0x{:04X}".format(x) for x in self.pids]),
                     )
                 )
                 raise RuntimeError("Invalid PID found in EEPROM.")
@@ -389,8 +399,8 @@ class PeriphManagerBase(object):
         if periph_section_name is not None:
             prefs_cache.read_dict({periph_section_name: default_args})
             return dict(prefs_cache[periph_section_name])
-        else:
-            return default_args
+        # else:
+        return default_args
 
     def _init_mboard_overlays(self):
         """
@@ -421,7 +431,7 @@ class PeriphManagerBase(object):
             self.log.warning("Overriding daughterboard PIDs with: {}"
                              .format(",".join(override_dboard_pids)))
         assert len(dboard_infos) <= self.max_num_dboards
-        if len(override_dboard_pids) and \
+        if override_dboard_pids and \
                 len(override_dboard_pids) < len(dboard_infos):
             self.log.warning("--override-db-pids is going to skip dboards.")
             dboard_infos = dboard_infos[:len(override_dboard_pids)]
@@ -476,7 +486,7 @@ class PeriphManagerBase(object):
             self.log.error(
                 "Cannot run init(), device was never fully initialized!")
             return False
-        if len(self.dboards) == 0:
+        if not self.dboards:
             return True
         if args.get("serialize_init", False):
             self.log.debug("Initializing dboards serially...")
@@ -515,7 +525,7 @@ class PeriphManagerBase(object):
         self.log.trace("Teardown called for Peripheral Manager base.")
 
     ###########################################################################
-    # RFNoC and Device info
+    # RFNoC & Device Info
     ###########################################################################
     def set_device_id(self, device_id):
         """
@@ -655,8 +665,6 @@ class PeriphManagerBase(object):
         # We need a 'metadata' and a 'data' for each file we want to update
         assert (len(metadata_l) == len(data_l)),\
             "update_component arguments must be the same length"
-        # TODO: Update the manifest file
-
         # Iterate through the components, updating each in turn
         for metadata, data in zip(metadata_l, data_l):
             id_str = metadata['id']
@@ -692,8 +700,8 @@ class PeriphManagerBase(object):
                 self.log.trace("Creating directory {}".format(basepath))
                 os.makedirs(basepath)
             self.log.trace("Writing data to {}".format(filepath))
-            with open(filepath, 'wb') as f:
-                f.write(data)
+            with open(filepath, 'wb') as comp_file:
+                comp_file.write(data)
             update_func = \
                 getattr(self, self.updateable_components[id_str]['callback'])
             self.log.info("Updating component `%s'", id_str)
@@ -777,7 +785,6 @@ class PeriphManagerBase(object):
         self.log.warn("Called set_mb_eeprom(), but not implemented!")
         self.log.debug("Skipping writing EEPROM keys: {}"
                        .format(list(eeprom_vals.keys())))
-        raise NotImplementedError
 
     def get_db_eeprom(self, dboard_idx):
         """
@@ -807,7 +814,6 @@ class PeriphManagerBase(object):
                       "is not implemented.", dboard_idx)
         self.log.debug("Skipping writing EEPROM keys: {}"
                        .format(list(eeprom_data.keys())))
-        raise NotImplementedError
 
     #######################################################################
     # Transport API

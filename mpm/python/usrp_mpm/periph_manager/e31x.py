@@ -1,5 +1,6 @@
 #
 # Copyright 2018-2019 Ettus Research, a National Instruments Company
+# Copyright 2019 Ettus Research, a National Instruments Brand
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
@@ -8,11 +9,8 @@ E310 implementation module
 """
 
 from __future__ import print_function
-import bisect
 import copy
-import re
-import threading
-from six import iteritems, itervalues
+from six import itervalues
 from usrp_mpm.components import ZynqComponents
 from usrp_mpm.dboard_manager import E31x_db
 from usrp_mpm.mpmtypes import SID
@@ -30,20 +28,24 @@ from usrp_mpm import e31x_legacy_eeprom
 E310_DEFAULT_CLOCK_SOURCE = 'internal'
 E310_DEFAULT_TIME_SOURCE = 'internal'
 E310_DEFAULT_ENABLE_FPGPIO = True
-E310_FPGA_COMPAT = (5,0)
+E310_FPGA_COMPAT = (5, 0)
 E310_DBOARD_SLOT_IDX = 0
 
 ###############################################################################
 # Transport managers
 ###############################################################################
-
+# pylint: disable=too-few-public-methods
 class E310XportMgrLiberio(XportMgrLiberio):
     " E310-specific Liberio configuration "
     max_chan = 5
+# pylint: enable=too-few-public-methods
 
 ###############################################################################
 # Main Class
 ###############################################################################
+# We need to disable the no-self-use check, because we might require self to
+# become an RPC method, but PyLint doesnt' know that.
+# pylint: disable=no-self-use
 class e31x(ZynqComponents, PeriphManagerBase):
     """
     Holds E310 specific attributes and methods
@@ -101,7 +103,7 @@ class e31x(ZynqComponents, PeriphManagerBase):
     # in stale references to methods in the RPC server. Setting
     # this to True ensures that the RPC server clears all registered
     # methods on unclaim() and registers them on the following claim().
-    clear_rpc_method_registry_on_unclaim = True
+    clear_rpc_registry_on_unclaim = True
 
     @classmethod
     def generate_device_info(cls, eeprom_md, mboard_info, dboard_infos):
@@ -145,6 +147,15 @@ class e31x(ZynqComponents, PeriphManagerBase):
         """
         Does partial initialization which loads low power idle image
         """
+        self._do_not_reload = False
+        self._tear_down = False
+        self._clock_source = None
+        self._time_source = None
+        self.dboards = []
+        self.dboard = None
+        self.mboard_regs_control = None
+        self._xport_mgrs = {}
+        self._initialization_status = ""
         super(e31x, self).__init__()
         # Start clean by removing MPM-owned overlays.
         active_overlays = self.list_active_overlays()
@@ -160,7 +171,9 @@ class e31x(ZynqComponents, PeriphManagerBase):
 
     def _init_normal(self):
         """
-        Does full initialization
+        Does full initialization. This gets called during claim(), because the
+        E310 usually gets freshly initialized on every UHD session for power
+        usage reasons.
         """
         if self._device_initialized:
             return
@@ -179,7 +192,7 @@ class e31x(ZynqComponents, PeriphManagerBase):
         self.dboard = self.dboards[E310_DBOARD_SLOT_IDX]
         try:
             self._init_peripherals(self.args_cached)
-        except Exception as ex:
+        except BaseException as ex:
             self.log.error("Failed to initialize motherboard: %s", str(ex))
             self._initialization_status = str(ex)
             self._device_initialized = False
@@ -193,32 +206,20 @@ class e31x(ZynqComponents, PeriphManagerBase):
         override_dboard_pids -- List of dboard PIDs to force
         default_args -- Default args
         """
-        # Override the base class's implementation in order to avoid initializing our one "dboard"
-        # in the same way that, for example, N310's dboards are initialized. Specifically,
-        # - skip dboard EEPROM setup (we don't have one)
-        # - change the way we handle SPI devices
+        # Overriding DB PIDs doesn't work here, the DB is coupled to the MB
         if override_dboard_pids:
-            self.log.warning("Overriding daughterboard PIDs with: {}"
-                             .format(override_dboard_pids))
             raise NotImplementedError("Can't override dboard pids")
         # We have only one dboard
         dboard_info = dboard_infos[0]
         # Set up the SPI nodes
-        spi_nodes = []
-        for spi_addr in self.dboard_spimaster_addrs:
-            for spi_node in get_spidev_nodes(spi_addr):
-                bisect.insort(spi_nodes, spi_node)
-
-        self.log.trace("Found spidev nodes: {0}".format(spi_nodes))
-
-        if not spi_nodes:
-            self.log.warning("No SPI nodes for dboard %d.", E310_DBOARD_SLOT_IDX)
-        else:
-            dboard_info.update({
-                    'spi_nodes': spi_nodes,
-                    'default_args': default_args,
-                })
-
+        assert len(self.dboard_spimaster_addrs) == 1
+        spi_nodes = [get_spidev_nodes(self.dboard_spimaster_addrs[0])]
+        self.log.trace("Found spidev node: {0}".format(spi_nodes[0]))
+        assert spi_nodes
+        dboard_info.update({
+            'spi_nodes': spi_nodes,
+            'default_args': default_args,
+        })
         self.dboards.append(E31x_db(E310_DBOARD_SLOT_IDX, **dboard_info))
         self.log.info("Found %d daughterboard(s).", len(self.dboards))
 
@@ -292,7 +293,7 @@ class e31x(ZynqComponents, PeriphManagerBase):
 
         If no EEPROM is defined, returns empty values.
         """
-        if len(self.mboard_eeprom_addr):
+        if not self.mboard_eeprom_addr:
             (eeprom_head, eeprom_rawdata) = e31x_legacy_eeprom.read_eeprom(
                 True, # isMotherboard
                 get_eeprom_paths(self.mboard_eeprom_addr)[self.mboard_eeprom_path_index],
@@ -301,10 +302,8 @@ class e31x(ZynqComponents, PeriphManagerBase):
                 e31x_legacy_eeprom.MboardEEPROM.eeprom_header_keys,
                 self.mboard_eeprom_max_len
             )
-            self.log.trace("Found EEPROM metadata: `{}'"
-                           .format(str(eeprom_head)))
-            self.log.trace("Read {} bytes of EEPROM data."
-                           .format(len(eeprom_rawdata)))
+            self.log.trace("Found EEPROM metadata: `%s'", str(eeprom_head))
+            self.log.trace("Read %d bytes of EEPROM data.", len(eeprom_rawdata))
             return eeprom_head, eeprom_rawdata
         # Nothing defined? Return defaults.
         self.log.trace("No mboard EEPROM path defined. "
@@ -372,9 +371,9 @@ class e31x(ZynqComponents, PeriphManagerBase):
         """
         super(e31x, self).claim()
         try:
-             self._init_normal()
-        except Exception as ex:
-                self.log.error("e31x claim() failed: %s", str(ex))
+            self._init_normal()
+        except BaseException as ex:
+            self.log.error("e31x claim() failed: %s", str(ex))
 
     def init(self, args):
         """
@@ -395,7 +394,6 @@ class e31x(ZynqComponents, PeriphManagerBase):
         for xport_mgr in itervalues(self._xport_mgrs):
             xport_mgr.init(args)
         return result
-
 
     def apply_idle_overlay(self):
         """
@@ -487,8 +485,9 @@ class e31x(ZynqComponents, PeriphManagerBase):
         """
         See PeriphManagerBase.get_chdr_link_options() for docs.
         """
-        if xport_type == 'liberio':
-            return self._xport_mgrs['liberio'].get_chdr_link_options()
+        assert xport_type == 'liberio', \
+            "Invalid xport_type! Must be 'liberio'"
+        self._xport_mgrs['liberio'].get_chdr_link_options()
 
     ###########################################################################
     # Device info
@@ -556,7 +555,6 @@ class e31x(ZynqComponents, PeriphManagerBase):
     ###########################################################################
     # Hardware peripheral controls
     ###########################################################################
-
     def set_fp_gpio_master(self, value):
         """set driver for front panel GPIO
         Arguments:
@@ -619,12 +617,13 @@ class e31x(ZynqComponents, PeriphManagerBase):
         data_probes = ['temp1_input']
         try:
             for data_probe in data_probes:
-                raw_val[data_probe] = read_sysfs_sensors_value('jc-42.4-temp', data_probe, 'hwmon', 'name')[0]
+                raw_val[data_probe] = read_sysfs_sensors_value(
+                    'jc-42.4-temp', data_probe, 'hwmon', 'name')[0]
             temp = str(raw_val['temp1_input'] / 1000)
         except ValueError:
             self.log.warning("Error when converting temperature value")
         except KeyError:
-            self.log.warning("Can't read temp on thermal_zone".format(sensor))
+            self.log.warning("Can't read MB temperature!")
         return {
             'name': 'temp_mb',
             'type': 'REALNUM',
@@ -642,12 +641,14 @@ class e31x(ZynqComponents, PeriphManagerBase):
         data_probes = ['in_temp0_raw', 'in_temp0_scale', 'in_temp0_offset']
         try:
             for data_probe in data_probes:
-                raw_val[data_probe] = read_sysfs_sensors_value('xadc', data_probe, 'iio', 'name')[0]
-            temp = str((raw_val['in_temp0_raw'] + raw_val['in_temp0_offset']) * raw_val['in_temp0_scale'] / 1000)
+                raw_val[data_probe] = read_sysfs_sensors_value(
+                    'xadc', data_probe, 'iio', 'name')[0]
+            temp = str((raw_val['in_temp0_raw'] + raw_val['in_temp0_offset']) \
+                    * raw_val['in_temp0_scale'] / 1000)
         except ValueError:
             self.log.warning("Error when converting temperature value")
         except KeyError:
-            self.log.warning("Can't read temp on thermal_zone".format(sensor))
+            self.log.warning("Can't read FPGA temperature!")
         return {
             'name': 'temp_fpga',
             'type': 'REALNUM',
@@ -688,6 +689,9 @@ class e31x(ZynqComponents, PeriphManagerBase):
         return db_eeprom_data
 
     def set_db_eeprom(self, dboard_idx, eeprom_data):
+        """
+        See PeriphManagerBase.set_db_eeprom() for docs.
+        """
         self.log.warn("Called set_db_eeprom(), but not implemented!")
         raise NotImplementedError
 

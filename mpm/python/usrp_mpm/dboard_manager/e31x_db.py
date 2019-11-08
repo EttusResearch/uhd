@@ -1,5 +1,6 @@
 #
 # Copyright 2018 Ettus Research, a National Instruments Company
+# Copyright 2019 Ettus Research, a National Instruments Brand
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
@@ -7,21 +8,19 @@
 E310 dboard (RF and control) implementation module
 """
 
-import threading
-import time
-from six import iterkeys, iteritems
 from usrp_mpm import lib # Pulls in everything from C++-land
-from usrp_mpm.bfrfs import BufferFS
 from usrp_mpm.dboard_manager import DboardManagerBase
 from usrp_mpm.mpmlog import get_logger
-from usrp_mpm.sys_utils.udev import get_eeprom_paths
-from usrp_mpm.sys_utils.uio import UIO
 from usrp_mpm.periph_manager.e31x_periphs import MboardRegsControl
 from usrp_mpm.mpmutils import async_exec
 
 ###############################################################################
 # Main dboard control class
 ###############################################################################
+DEFAULT_MASTER_CLOCK_RATE = 16E6
+MIN_MASTER_CLK_RATE = 220E3
+MAX_MASTER_CLK_RATE = 61.44E6
+
 class E31x_db(DboardManagerBase):
     """
     Holds all dboard specific information and methods of the E31x_db dboard
@@ -41,12 +40,10 @@ class E31x_db(DboardManagerBase):
         'ad9361_temperature': 'get_catalina_temp_sensor',
     }
     # Maps the chipselects to the corresponding devices:
-    spi_chipselect = {"catalina": 0,
-    }
-
-    default_master_clock_rate = 16e6
-    MIN_MASTER_CLK_RATE = 220e3
-    MAX_MASTER_CLK_RATE = 61.44e6
+    spi_chipselect = {"catalina": 0}
+    ### End of overridables #################################################
+    # MB regs label: Needed to access the lock bit
+    mboard_regs_label = "mboard-regs"
 
     def __init__(self, slot_idx, **kwargs):
         super(E31x_db, self).__init__(slot_idx, **kwargs)
@@ -67,9 +64,8 @@ class E31x_db(DboardManagerBase):
         try:
             self._init_periphs()
             self._periphs_initialized = True
-        except Exception as ex:
-            self.log.error("Failed to initialize peripherals: %s",
-                           str(ex))
+        except BaseException as ex:
+            self.log.error("Failed to initialize peripherals: %s", str(ex))
             self._periphs_initialized = False
 
     def _init_periphs(self):
@@ -106,14 +102,17 @@ class E31x_db(DboardManagerBase):
             setattr(self, method, export_method(cat, method))
 
     def init(self, args):
+        """
+        Initialize RF. Remember that we might have to do this from scratch every
+        time because of the FPGA reload.
+        """
         if not self._periphs_initialized:
             error_msg = "Cannot run init(), peripherals are not initialized!"
             self.log.error(error_msg)
             raise RuntimeError(error_msg)
         master_clock_rate = \
-            float(args.get('master_clock_rate',
-                           self.default_master_clock_rate))
-        assert self.MIN_MASTER_CLK_RATE <= master_clock_rate <= self.MAX_MASTER_CLK_RATE, \
+            float(args.get('master_clock_rate', DEFAULT_MASTER_CLOCK_RATE))
+        assert MIN_MASTER_CLK_RATE <= master_clock_rate <= MAX_MASTER_CLK_RATE, \
             "Invalid master clock rate: {:.02f} MHz".format(
                 master_clock_rate / 1e6)
         master_clock_rate_changed = master_clock_rate != self.master_clock_rate
@@ -125,7 +124,6 @@ class E31x_db(DboardManagerBase):
         # Some default chains on -- needed for setup purposes
         self.catalina.set_active_chains(True, False, True, False)
         self.set_catalina_clock_rate(self.master_clock_rate)
-
         return True
 
     def get_master_clock_rate(self):
@@ -140,16 +138,15 @@ class E31x_db(DboardManagerBase):
         Return LO lock status (Boolean!) of AD9361. 'which' must be
         either 'tx' or 'rx'
         """
-        self.mboard_regs_label = "mboard-regs"
-        self.mboard_regs_control = MboardRegsControl(
-            self.mboard_regs_label, self.log)
+        mboard_regs_control = \
+            MboardRegsControl(self.mboard_regs_label, self.log)
         if which == "tx":
-            locked = self. mboard_regs_control.get_ad9361_tx_lo_lock()
+            return mboard_regs_control.get_ad9361_tx_lo_lock()
         elif which == "rx":
-            locked = self. mboard_regs_control.get_ad9361_rx_lo_lock()
-        else:
-            locked = False
-        return locked
+            return mboard_regs_control.get_ad9361_rx_lo_lock()
+        self.log.warning("get_ad9361_lo_lock(): Invalid which param `{}'"
+                         .format(which))
+        return False
 
     def get_lo_lock_sensor(self, which):
         """
@@ -160,8 +157,8 @@ class E31x_db(DboardManagerBase):
         return {
             'name': 'ad9361_lock',
             'type': 'BOOLEAN',
-           'unit': 'locked' if lo_locked else 'unlocked',
-           'value': str(lo_locked).lower(),
+            'unit': 'locked' if lo_locked else 'unlocked',
+            'value': str(lo_locked).lower(),
         }
 
     def get_catalina_temp_sensor(self, _):
@@ -185,7 +182,8 @@ class E31x_db(DboardManagerBase):
 
     def get_rssi_sensor(self, chan):
         """
-        Return a sensor dictionary containing the current RSSI of `which` chain in Catalina
+        Return a sensor dictionary containing the current RSSI of `which` chain
+        in the RFIC
         """
         which = 'RX' + str(chan+1)
         return {
