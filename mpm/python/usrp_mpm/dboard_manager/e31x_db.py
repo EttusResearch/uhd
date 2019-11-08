@@ -126,6 +126,18 @@ class E31x_db(DboardManagerBase):
         self.set_catalina_clock_rate(self.master_clock_rate)
         return True
 
+    def tear_down(self):
+        """
+        De-init this object as much as possible.
+        """
+        self.log.trace("Tearing down E310 DB object!")
+        for method in [
+                x for x in dir(self.catalina)
+                if not x.startswith("_") and \
+                        callable(getattr(self.catalina, x))]:
+            delattr(self, method)
+        self.catalina = None
+
     def get_master_clock_rate(self):
         " Return master clock rate (== sampling rate) "
         return self.master_clock_rate
@@ -197,7 +209,7 @@ class E31x_db(DboardManagerBase):
         """
         Async call to catalina set_clock_rate
         """
-        self.log.trace("Setting Clock rate to {}".format(rate))
+        self.log.trace("Setting Clock rate to {} MHz".format(rate/1e6))
         async_exec(lib.ad9361, "set_clock_rate", self.catalina, rate)
         return rate
 

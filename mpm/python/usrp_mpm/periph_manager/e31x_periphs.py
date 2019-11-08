@@ -48,26 +48,14 @@ class MboardRegsControl(MboardRegsCommon):
     MB_DBOARD_CTRL      = 0x0040
     MB_DBOARD_STATUS    = 0x0044
 
+    # PPS select values for MB_CLOCK_CTRL (for reading and writing)
+    MB_CLOCK_CTRL_PPS_SEL_GPS = 0
+    # Note: 1 is also valid, but we've always used 2 in SW so let's keep doing that
+    MB_CLOCK_CTRL_PPS_SEL_INT = 2
+    MB_CLOCK_CTRL_PPS_SEL_INT_ALT = 1
+    MB_CLOCK_CTRL_PPS_SEL_EXT = 3
     # Bitfield locations for the MB_CLOCK_CTRL register.
-    MB_CLOCK_CTRL_PPS_SEL_INT = 0
-    MB_CLOCK_CTRL_PPS_SEL_EXT = 1
-    # FIXME: This value is probably wrong
-    MB_CLOCK_CTRL_PPS_SEL_GPS = 2
-    MB_CLOCK_CTRL_REF_CLK_LOCKED = 2
-
-    # Bitfield locations for the MB_GPS_CTRL register.
-    #FIXME: Update for E310
-    MB_GPS_CTRL_PWR_EN = 0
-    MB_GPS_CTRL_RST_N = 1
-    MB_GPS_CTRL_INITSURV_N = 2
-
-    # Bitfield locations for the MB_GPS_STATUS register.
-    #FIXME: Update for E310
-    MB_GPS_STATUS_LOCK = 0
-    MB_GPS_STATUS_ALARM = 1
-    MB_GPS_STATUS_PHASELOCK = 2
-    MB_GPS_STATUS_SURVEY = 3
-    MB_GPS_STATUS_WARMUP = 4
+    MB_CLOCK_CTRL_REF_CLK_LOCKED = 3
 
     # Bitfield locations for the MB_DBOARD_CTRL register.
     MB_DBOARD_CTRL_MIMO = 0
@@ -141,15 +129,6 @@ class MboardRegsControl(MboardRegsCommon):
             self.log.trace("Writing MB_CLOCK_CTRL to 0x{:08X}".format(reg_val))
             self.poke32(self.MB_CLOCK_CTRL, reg_val)
 
-    def set_clock_source(self, clock_source):
-        """
-        Set clock source
-        """
-        if clock_source == 'internal':
-            self.log.trace("Setting clock source to internal")
-        else:
-            assert False, "Cannot set to invalid clock source: {}".format(clock_source)
-
     def get_fpga_type(self):
         """
         Reads the type of the FPGA image currently loaded
@@ -157,15 +136,6 @@ class MboardRegsControl(MboardRegsCommon):
         """
         #TODO: Add SG1 and SG3?
         return ""
-
-    def get_gps_status(self):
-        """
-        Get GPS status
-        """
-        mask = 0x1F
-        with self.regs:
-            gps_status = self.peek32(self.MB_GPS_STATUS) & mask
-        return gps_status
 
     def get_refclk_lock(self):
         """
@@ -224,7 +194,7 @@ class MboardRegsControl(MboardRegsCommon):
 
     def get_ad9361_rx_lo_lock(self):
         """
-        Check the status of RX LO lock from CTRL_OUT pins from Catalina
+        Check the status of RX LO lock from CTRL_OUT pins from the RFIC
         """
         mask = 0b1 << self.MB_DBOARD_STATUS_RX_LOCK
         with self.regs:

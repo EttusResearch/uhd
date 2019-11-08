@@ -28,6 +28,7 @@ from usrp_mpm import e31x_legacy_eeprom
 E310_DEFAULT_CLOCK_SOURCE = 'internal'
 E310_DEFAULT_TIME_SOURCE = 'internal'
 E310_DEFAULT_ENABLE_FPGPIO = True
+E310_DEFAULT_DONT_RELOAD_FPGA = False # False means idle image gets reloaded
 E310_FPGA_COMPAT = (5, 0)
 E310_DBOARD_SLOT_IDX = 0
 
@@ -59,6 +60,7 @@ class e31x(ZynqComponents, PeriphManagerBase):
     # 0x77d2 and 0x77d3
     pids = {0x77D2: 'e310_sg1', #sg1
             0x77D3: 'e310_sg3'} #sg3
+    # The E310 has a single EEPROM that stores both DB and MB information
     mboard_eeprom_addr = "e0004000.i2c"
     mboard_eeprom_offset = 0
     mboard_eeprom_max_len = 64
@@ -71,14 +73,13 @@ class e31x(ZynqComponents, PeriphManagerBase):
         'temp_fpga' : 'get_fpga_temp_sensor',
         'temp_mb' : 'get_mb_temp_sensor',
     }
+    # The E310 has a single EEPROM that stores both DB and MB information
     dboard_eeprom_addr = "e0004000.i2c"
-
+    dboard_eeprom_path_index = 0
     # Actual DB EEPROM bytes are just 28. Reading just a couple more.
     # Refer e300_eeprom_manager.hpp
     dboard_eeprom_max_len = 32
-
     max_num_dboards = 1
-
     # We're on a Zynq target, so the following two come from the Zynq standard
     # device tree overlay (tree/arch/arm/boot/dts/zynq-7000.dtsi)
     dboard_spimaster_addrs = ["e0006000.spi"]
@@ -121,15 +122,11 @@ class e31x(ZynqComponents, PeriphManagerBase):
     @staticmethod
     def list_required_dt_overlays(device_info):
         """
-        Lists device tree overlays that need to be applied before this class can
-        be used. List of strings.
-        Are applied in order.
-
-        eeprom_md -- Dictionary of info read out from the mboard EEPROM
-        device_args -- Arbitrary dictionary of info, typically user-defined
+        Returns the name of the overlay for the regular image (not idle).
+        Either returns e310_sg1 or e310_sg3.
         """
         return [device_info['product']]
-
+    ### End of overridables ###################################################
 
     @staticmethod
     def get_idle_dt_overlay(device_info):
@@ -147,8 +144,6 @@ class e31x(ZynqComponents, PeriphManagerBase):
         """
         Does partial initialization which loads low power idle image
         """
-        self._do_not_reload = False
-        self._tear_down = False
         self._clock_source = None
         self._time_source = None
         self.dboards = []
@@ -156,24 +151,42 @@ class e31x(ZynqComponents, PeriphManagerBase):
         self.mboard_regs_control = None
         self._xport_mgrs = {}
         self._initialization_status = ""
-        super(e31x, self).__init__()
-        # Start clean by removing MPM-owned overlays.
-        active_overlays = self.list_active_overlays()
-        mpm_overlays = self.list_owned_overlays()
-        for overlay in active_overlays:
-            if overlay in mpm_overlays:
-                dtoverlay.rm_overlay(overlay)
-        # Apply idle overlay on boot to save power until
-        # an application tries to use the device.
-        self.args_cached = args
-        self.apply_idle_overlay()
         self._device_initialized = False
+        self.args_cached = args
+        # This will load the regular image to obtain all FPGA info
+        super(e31x, self).__init__()
+        args = self._update_default_args(args)
+        # Permanently store the value from mpm.conf:
+        self._do_not_reload_default = \
+            str2bool(args.get("no_reload_fpga", E310_DEFAULT_DONT_RELOAD_FPGA))
+        # This flag can change depending on UHD args:
+        self._do_not_reload = self._do_not_reload_default
+        # If we don't want to reload, we'll complete initialization now:
+        if self._do_not_reload:
+            try:
+                self.log.info("Not reloading FPGA images!")
+                self._init_normal()
+            except BaseException as ex:
+                self.log.error("Failed to initialize motherboard: %s", str(ex))
+                self._initialization_status = str(ex)
+                self._device_initialized = False
+        else: # Otherwise, put the USRP into low-power mode:
+            # Start clean by removing MPM-owned overlays.
+            active_overlays = self.list_active_overlays()
+            mpm_overlays = self.list_owned_overlays()
+            for overlay in active_overlays:
+                if overlay in mpm_overlays:
+                    dtoverlay.rm_overlay(overlay)
+            # Apply idle overlay on boot to save power until
+            # an application tries to use the device.
+            self.apply_idle_overlay()
+            self._device_initialized = False
 
     def _init_normal(self):
         """
         Does full initialization. This gets called during claim(), because the
         E310 usually gets freshly initialized on every UHD session for power
-        usage reasons.
+        usage reasons, unless no_reload_fpga was provided in mpm.conf.
         """
         if self._device_initialized:
             return
@@ -184,9 +197,6 @@ class e31x(ZynqComponents, PeriphManagerBase):
         if not self._device_initialized:
             # Don't try and figure out what's going on. Just give up.
             return
-        # Initialize _do_not_reload with value from _default_args (mpm.conf)
-        self._do_not_reload = str2bool(self._default_args.get("no_reload_fpga", "False"))
-        self._tear_down = False
         self._clock_source = None
         self._time_source = None
         self.dboard = self.dboards[E310_DBOARD_SLOT_IDX]
@@ -213,9 +223,9 @@ class e31x(ZynqComponents, PeriphManagerBase):
         dboard_info = dboard_infos[0]
         # Set up the SPI nodes
         assert len(self.dboard_spimaster_addrs) == 1
-        spi_nodes = [get_spidev_nodes(self.dboard_spimaster_addrs[0])]
-        self.log.trace("Found spidev node: {0}".format(spi_nodes[0]))
+        spi_nodes = get_spidev_nodes(self.dboard_spimaster_addrs[0])
         assert spi_nodes
+        self.log.trace("Found spidev nodes: {0}".format(str(spi_nodes)))
         dboard_info.update({
             'spi_nodes': spi_nodes,
             'default_args': default_args,
@@ -293,72 +303,55 @@ class e31x(ZynqComponents, PeriphManagerBase):
 
         If no EEPROM is defined, returns empty values.
         """
-        if not self.mboard_eeprom_addr:
-            (eeprom_head, eeprom_rawdata) = e31x_legacy_eeprom.read_eeprom(
-                True, # isMotherboard
-                get_eeprom_paths(self.mboard_eeprom_addr)[self.mboard_eeprom_path_index],
-                self.mboard_eeprom_offset,
-                e31x_legacy_eeprom.MboardEEPROM.eeprom_header_format,
-                e31x_legacy_eeprom.MboardEEPROM.eeprom_header_keys,
-                self.mboard_eeprom_max_len
-            )
-            self.log.trace("Found EEPROM metadata: `%s'", str(eeprom_head))
-            self.log.trace("Read %d bytes of EEPROM data.", len(eeprom_rawdata))
-            return eeprom_head, eeprom_rawdata
-        # Nothing defined? Return defaults.
-        self.log.trace("No mboard EEPROM path defined. "
-                       "Skipping mboard EEPROM readout.")
-        return {}, b''
+        eeprom_path = \
+            get_eeprom_paths(self.mboard_eeprom_addr)[self.mboard_eeprom_path_index]
+        if not eeprom_path:
+            self.log.error("Could not identify EEPROM path for %s!",
+                           self.mboard_eeprom_addr)
+            return {}, b''
+        self.log.trace("MB EEPROM: Using path {}".format(eeprom_path))
+        (eeprom_head, eeprom_rawdata) = e31x_legacy_eeprom.read_eeprom(
+            True, # is_motherboard
+            eeprom_path,
+            self.mboard_eeprom_offset,
+            e31x_legacy_eeprom.MboardEEPROM.eeprom_header_format,
+            e31x_legacy_eeprom.MboardEEPROM.eeprom_header_keys,
+            self.mboard_eeprom_max_len
+        )
+        self.log.trace("Read %d bytes of EEPROM data.", len(eeprom_rawdata))
+        return eeprom_head, eeprom_rawdata
 
     def _get_dboard_eeprom_info(self):
         """
         Read back EEPROM info from the daughterboards
         """
-        if self.dboard_eeprom_addr is None:
-            self.log.debug("No dboard EEPROM addresses given.")
-            return []
-        dboard_eeprom_addrs = self.dboard_eeprom_addr \
-                              if isinstance(self.dboard_eeprom_addr, list) \
-                              else [self.dboard_eeprom_addr]
-        dboard_eeprom_paths = []
-        self.log.trace("Identifying dboard EEPROM paths from addrs `{}'..."
-                       .format(",".join(dboard_eeprom_addrs)))
-        for dboard_eeprom_addr in dboard_eeprom_addrs:
-            self.log.trace("Resolving %s...", dboard_eeprom_addr)
-            dboard_eeprom_paths += get_eeprom_paths(dboard_eeprom_addr)
-        self.log.trace("Found dboard EEPROM paths: {}"
-                       .format(",".join(dboard_eeprom_paths)))
-        if len(dboard_eeprom_paths) > self.max_num_dboards:
-            self.log.warning("Found more EEPROM paths than daughterboards. "
-                             "Ignoring some of them.")
-            dboard_eeprom_paths = dboard_eeprom_paths[:self.max_num_dboards]
-        dboard_info = []
-        for dboard_idx, dboard_eeprom_path in enumerate(dboard_eeprom_paths):
-            self.log.debug("Reading EEPROM info for dboard %d...", dboard_idx)
-            dboard_eeprom_md, dboard_eeprom_rawdata = e31x_legacy_eeprom.read_eeprom(
-                False, # is not motherboard.
-                dboard_eeprom_path,
-                self.dboard_eeprom_offset,
-                e31x_legacy_eeprom.DboardEEPROM.eeprom_header_format,
-                e31x_legacy_eeprom.DboardEEPROM.eeprom_header_keys,
-                self.dboard_eeprom_max_len
-            )
-            self.log.trace("Found dboard EEPROM metadata: `{}'"
-                           .format(str(dboard_eeprom_md)))
-            self.log.trace("Read %d bytes of dboard EEPROM data.",
-                           len(dboard_eeprom_rawdata))
-            db_pid = dboard_eeprom_md.get('pid')
-            if db_pid is None:
-                self.log.warning("No dboard PID found in dboard EEPROM!")
-            else:
-                self.log.debug("Found dboard PID in EEPROM: 0x{:04X}"
-                               .format(db_pid))
-            dboard_info.append({
-                'eeprom_md': dboard_eeprom_md,
-                'eeprom_rawdata': dboard_eeprom_rawdata,
-                'pid': db_pid,
-            })
-        return dboard_info
+        assert self.dboard_eeprom_addr
+        self.log.trace("Identifying dboard EEPROM paths from `{}'..."
+                       .format(self.dboard_eeprom_addr))
+        dboard_eeprom_path = \
+            get_eeprom_paths(self.dboard_eeprom_addr)[self.dboard_eeprom_path_index]
+        self.log.trace("Using dboard EEPROM paths: {}".format(dboard_eeprom_path))
+        self.log.debug("Reading EEPROM info for dboard...")
+        dboard_eeprom_md, dboard_eeprom_rawdata = e31x_legacy_eeprom.read_eeprom(
+            False, # is not motherboard.
+            dboard_eeprom_path,
+            self.dboard_eeprom_offset,
+            e31x_legacy_eeprom.DboardEEPROM.eeprom_header_format,
+            e31x_legacy_eeprom.DboardEEPROM.eeprom_header_keys,
+            self.dboard_eeprom_max_len
+        )
+        self.log.trace("Read %d bytes of dboard EEPROM data.",
+                       len(dboard_eeprom_rawdata))
+        db_pid = dboard_eeprom_md.get('pid')
+        if db_pid is None:
+            self.log.warning("No DB PID found in dboard EEPROM!")
+        else:
+            self.log.debug("Found DB PID in EEPROM: 0x{:04X}".format(db_pid))
+        return [{
+            'eeprom_md': dboard_eeprom_md,
+            'eeprom_rawdata': dboard_eeprom_rawdata,
+            'pid': db_pid,
+        }]
 
     ###########################################################################
     # Session init and deinit
@@ -377,8 +370,7 @@ class e31x(ZynqComponents, PeriphManagerBase):
 
     def init(self, args):
         """
-        Calls init() on the parent class, and then programs the Ethernet
-        dispatchers accordingly.
+        Calls init() on the parent class, and updates time/clock source.
         """
         if not self._device_initialized:
             self.log.warning(
@@ -389,7 +381,8 @@ class e31x(ZynqComponents, PeriphManagerBase):
         if args.get("time_source", "") != "":
             self.set_time_source(args.get("time_source"))
         if "no_reload_fpga" in args:
-            self._do_not_reload = str2bool(args.get("no_reload_fpga")) or args.get("no_reload_fpga") == ""
+            self._do_not_reload = \
+                str2bool(args.get("no_reload_fpga")) or args.get("no_reload_fpga") == ""
         result = super(e31x, self).init(args)
         for xport_mgr in itervalues(self._xport_mgrs):
             xport_mgr.init(args)
@@ -434,11 +427,10 @@ class e31x(ZynqComponents, PeriphManagerBase):
         super(e31x, self).deinit()
         for xport_mgr in itervalues(self._xport_mgrs):
             xport_mgr.deinit()
-        self.log.trace("Resetting SID pool...")
         if not self._do_not_reload:
             self.tear_down()
         # Reset back to value from _default_args (mpm.conf)
-        self._do_not_reload = str2bool(self._default_args.get("no_reload_fpga", "False"))
+        self._do_not_reload = self._do_not_reload_default
 
     def tear_down(self):
         """
@@ -447,8 +439,8 @@ class e31x(ZynqComponents, PeriphManagerBase):
         For E310, this means the overlay.
         """
         self.log.trace("Tearing down E310 device...")
-        self._tear_down = True
         self.dboards = []
+        self.dboard.tear_down()
         self.dboard = None
         self.mboard_regs_control = None
         self._device_initialized = False
@@ -459,6 +451,7 @@ class e31x(ZynqComponents, PeriphManagerBase):
         for overlay in active_overlays:
             dtoverlay.rm_overlay(overlay)
         self.apply_idle_overlay()
+        self.log.debug("Teardown complete!")
 
     def is_idle(self):
         """
@@ -487,7 +480,7 @@ class e31x(ZynqComponents, PeriphManagerBase):
         """
         assert xport_type == 'liberio', \
             "Invalid xport_type! Must be 'liberio'"
-        self._xport_mgrs['liberio'].get_chdr_link_options()
+        return self._xport_mgrs['liberio'].get_chdr_link_options()
 
     ###########################################################################
     # Device info
@@ -522,18 +515,12 @@ class e31x(ZynqComponents, PeriphManagerBase):
 
     def set_clock_source(self, *args):
         """
-        Switch reference clock.
-
-        Throws if clock_source is not a valid value.
+        Note: E310 only supports one clock source ('internal'), so no need to do
+        an awful lot here.
         """
         clock_source = args[0]
-        assert clock_source in self.get_clock_sources()
-        self.log.debug("Setting clock source to `{}'".format(clock_source))
-        if clock_source == self.get_clock_source():
-            self.log.trace("Nothing to do -- clock source already set.")
-            return
-        self._clock_source = clock_source
-        self.mboard_regs_control.set_clock_source(clock_source)
+        assert clock_source in self.get_clock_sources(), \
+            "Cannot set to invalid clock source: {}".format(clock_source)
 
     def get_time_sources(self):
         " Returns list of valid time sources "
@@ -545,7 +532,8 @@ class e31x(ZynqComponents, PeriphManagerBase):
 
     def set_time_source(self, time_source):
         " Set a time source "
-        assert time_source in self.get_time_sources()
+        assert time_source in self.get_time_sources(), \
+            "Cannot set to invalid time source: {}".format(time_source)
         if time_source == self.get_time_source():
             self.log.trace("Nothing to do -- time source already set.")
             return
@@ -596,7 +584,8 @@ class e31x(ZynqComponents, PeriphManagerBase):
     ###########################################################################
     def get_ref_lock_sensor(self):
         """
-        #TODO: Where is ref lock signal coming from?
+        Return main refclock lock status. In the FPGA, this is the reflck output
+        of the ppsloop module.
         """
         self.log.trace("Querying ref lock status.")
         lock_status = bool(self.mboard_regs_control.get_refclk_lock())
@@ -676,7 +665,6 @@ class e31x(ZynqComponents, PeriphManagerBase):
         See PeriphManagerBase.set_mb_eeprom() for docs.
         """
         self.log.warn("Called set_mb_eeprom(), but not implemented!")
-        raise NotImplementedError
 
     def get_db_eeprom(self, dboard_idx):
         """
@@ -693,7 +681,6 @@ class e31x(ZynqComponents, PeriphManagerBase):
         See PeriphManagerBase.set_db_eeprom() for docs.
         """
         self.log.warn("Called set_db_eeprom(), but not implemented!")
-        raise NotImplementedError
 
     ###########################################################################
     # Component updating
