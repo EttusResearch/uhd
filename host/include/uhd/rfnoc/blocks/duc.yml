@@ -6,7 +6,7 @@ chdr_width: 64
 noc_id: 0xD0C00000
 
 parameters:
-  NUM_PORTS: 2
+  NUM_PORTS: 1
   NUM_HB: 3
   CIC_MAX_INTERP: 255
 
@@ -33,32 +33,20 @@ data:
   fpga_iface: axis_data
   clk_domain: ce
   inputs:
-    in_0:
+    in:
+      num_ports: NUM_PORTS
       item_width: 32
       nipc: 1
-      info_fifo_depth: 5
-      payload_fifo_depth: MTU
-      format: int32
-      mdata_sig: ~
-    in_1:
-      item_width: 32
-      nipc: 1
-      info_fifo_depth: 5
+      info_fifo_depth: 32
       payload_fifo_depth: MTU
       format: int32
       mdata_sig: ~
   outputs:
-    out_0:
+    out:
+      num_ports: NUM_PORTS
       item_width: 32
       nipc: 1
-      info_fifo_depth: 5
-      payload_fifo_depth: MTU
-      format: int32
-      mdata_sig: ~
-    out_1:
-      item_width: 32
-      nipc: 1
-      info_fifo_depth: 5
+      info_fifo_depth: 32
       payload_fifo_depth: MTU
       format: int32
       mdata_sig: ~
