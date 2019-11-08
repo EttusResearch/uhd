@@ -2,15 +2,16 @@ type: e320
 type_id: E320
 family: 7SERIES
 transports:
-- name: eth
-  type: 10G
-  width: 64
-- name: dma
-  type: dma
-  width: 64
+  - name: eth
+    type: 10G
+    width: 64
+  - name: dma
+    type: dma
+    width: 64
 
 clocks:
-- name: radio
+  - name: radio
+  - name: dram
 
 io_ports:
   ctrl_port:

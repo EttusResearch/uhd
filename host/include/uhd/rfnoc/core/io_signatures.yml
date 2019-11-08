@@ -83,10 +83,7 @@ x300_radio:
 axi4_mm_2x64_4g:
   type: master-slave
   ports:
-  - name: mem_clk
-    type: from-master
-    width: 1
-  - name: mem_rst
+  - name: axi_rst
     type: from-master
     width: 1
   - name: m_axi_awid
@@ -227,10 +224,7 @@ axi4_mm_2x64_4g:
 axi4_mm_4x64_4g:
   type: master-slave
   ports:
-  - name: mem_clk
-    type: from-master
-    width: 1
-  - name: mem_rst
+  - name: axi_rst
     type: from-master
     width: 1
   - name: m_axi_awid
