@@ -84,12 +84,12 @@ void mpmd_mboard_impl::mpmd_mb_iface::init()
  *****************************************************************************/
 uint16_t mpmd_mboard_impl::mpmd_mb_iface::get_proto_ver()
 {
-    return _rpc->request_with_token<uint16_t>("get_proto_ver");
+    return _rpc->request<uint16_t>("get_proto_ver");
 }
 
 uhd::rfnoc::chdr_w_t mpmd_mboard_impl::mpmd_mb_iface::get_chdr_w()
 {
-    const auto chdr_w_bits = _rpc->request_with_token<size_t>("get_chdr_width");
+    const auto chdr_w_bits = _rpc->request<size_t>("get_chdr_width");
     switch (chdr_w_bits) {
         case 512:
             return CHDR_W_512;

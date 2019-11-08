@@ -534,6 +534,7 @@ class PeriphManagerBase(object):
         """
         return self.mboard_regs_control.get_device_id()
 
+    @no_claim
     def get_proto_ver(self):
         """
         Return RFNoC protocol version
@@ -542,6 +543,7 @@ class PeriphManagerBase(object):
         self.log.debug("RFNoC protocol version supported by this device is {}".format(proto_ver))
         return proto_ver
 
+    @no_claim
     def get_chdr_width(self):
         """
         Return RFNoC CHDR width
@@ -549,7 +551,6 @@ class PeriphManagerBase(object):
         chdr_width = self.mboard_regs_control.get_chdr_width()
         self.log.debug("CHDR width supported by the device is {}".format(chdr_width))
         return chdr_width
-
 
     ###########################################################################
     # Misc device status controls and indicators
