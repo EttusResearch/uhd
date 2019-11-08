@@ -5,6 +5,9 @@ rfnoc_version: 1.0
 chdr_width: 64
 noc_id: 0x12AD1000
 
+parameters:
+  NUM_PORTS: 2
+
 clocks:
   - name: rfnoc_chdr
     freq: "[]"
@@ -18,54 +21,43 @@ control:
   fpga_iface: ctrlport
   interface_direction: master_slave
   fifo_depth: 32
-  clk_domain: rfnoc_ctrl
+  clk_domain: radio
   ctrlport:
     byte_mode: True
-    timed: False
-    has_status: False
-
-# The parameters section lists parameters that get added to the generated
-# Verilog for the module instantiation. Any parameter listed here may be set to
-# different value in the image builder YAML file.
-parameters:
-  NUM_PORTS: 2
+    timed: True
+    has_status: True
 
 data:
-  fpga_iface: axis_chdr
-  clk_domain: rfnoc_chdr
-  mtu: 1024
+  fpga_iface: axis_data
+  clk_domain: radio
   inputs:
-    port0:
-      index: 0
+    in_0:
       item_width: 32
-      nipc: 2
-      context_fifo_depth: 1
-      payload_fifo_depth: 1
+      nipc: 1
+      info_fifo_depth: 32
+      payload_fifo_depth: MTU
       format: int32
       mdata_sig: ~
-    port1:
-      index: 1
+    in_1:
       item_width: 32
-      nipc: 2
-      context_fifo_depth: 1
-      payload_fifo_depth: 1
+      nipc: 1
+      info_fifo_depth: 32
+      payload_fifo_depth: MTU
       format: int32
       mdata_sig: ~
   outputs:
-    port0:
-      index: 0
+    out_0:
       item_width: 32
-      nipc: 2
-      context_fifo_depth: 1
-      payload_fifo_depth: 1
+      nipc: 1
+      info_fifo_depth: 32
+      payload_fifo_depth: MTU
       format: int32
       mdata_sig: ~
-    port1:
-      index: 1
+    out_1:
       item_width: 32
-      nipc: 2
-      context_fifo_depth: 1
-      payload_fifo_depth: 1
+      nipc: 1
+      info_fifo_depth: 32
+      payload_fifo_depth: MTU
       format: int32
       mdata_sig: ~
 

@@ -8,6 +8,12 @@ noc_id: 0xFF700000
 # FPGA repository
 makefile_srcs: "${fpga_lib_dir}/blocks/rfnoc_block_fft/Makefile.srcs"
 
+parameters:
+  EN_MAGNITUDE_OUT: 0
+  EN_MAGNITUDE_APPROX_OUT: 1
+  EN_MAGNITUDE_SQ_OUT: 1
+  EN_FFT_SHIFT: 1
+
 clocks:
   - name: rfnoc_chdr
     freq: "[]"
@@ -19,36 +25,31 @@ clocks:
 control:
   sw_iface: nocscript
   fpga_iface: ctrlport
-  interface_direction: master_slave
+  interface_direction: slave
   fifo_depth: 32
   clk_domain: ce
   ctrlport:
-    byte_mode: True
+    byte_mode: False
     timed: False
     has_status: False
 
-# parameters:
-
 data:
-  fpga_iface: axis_chdr
+  fpga_iface: axis_pyld_ctxt
   clk_domain: ce
-  mtu: 1024
   inputs:
-    port0:
-      index: 0
+    in_0:
       item_width: 32
-      nipc: 2
-      context_fifo_depth: 1
-      payload_fifo_depth: 1
+      nipc: 1
+      context_fifo_depth: 2
+      payload_fifo_depth: 32
       format: int32
       mdata_sig: ~
   outputs:
-    port0:
-      index: 0
+    out_0:
       item_width: 32
-      nipc: 2
-      context_fifo_depth: 1
-      payload_fifo_depth: 1
+      nipc: 1
+      context_fifo_depth: 2
+      payload_fifo_depth: 32
       format: int32
       mdata_sig: ~
 

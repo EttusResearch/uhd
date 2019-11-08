@@ -7,6 +7,7 @@ noc_id: 0x12AD1000
 
 parameters:
   NUM_PORTS: 2
+  NIPC: 1
 
 clocks:
   - name: rfnoc_chdr
@@ -23,9 +24,9 @@ control:
   fifo_depth: 32
   clk_domain: radio
   ctrlport:
-    byte_mode: False
-    timed: False
-    has_status: False
+    byte_mode: True
+    timed: True
+    has_status: True
 
 data:
   fpga_iface: axis_data
@@ -34,8 +35,8 @@ data:
     in:
       num_ports: NUM_PORTS
       item_width: 32
-      nipc: 2
-      info_fifo_depth: 16
+      nipc: NIPC
+      info_fifo_depth: 32
       payload_fifo_depth: MTU
       format: int32
       mdata_sig: ~
@@ -43,8 +44,8 @@ data:
     out:
       num_ports: NUM_PORTS
       item_width: 32
-      nipc: 2
-      info_fifo_depth: 16
+      nipc: NIPC
+      info_fifo_depth: 32
       payload_fifo_depth: MTU
       format: int32
       mdata_sig: ~
@@ -60,7 +61,7 @@ io_ports:
     type: time_keeper
     drive: listener
   x300_radio:
-    type: x300_radio
+    type: radio_1x32
     drive: slave
 
 registers:

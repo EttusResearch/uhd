@@ -17,50 +17,45 @@ clocks:
 control:
   sw_iface: nocscript
   fpga_iface: ctrlport
-  interface_direction: master_slave
+  interface_direction: slave
   fifo_depth: 32
-  clk_domain: rfnoc_ctrl
+  clk_domain: rfnoc_chdr
   ctrlport:
-    byte_mode: True
+    byte_mode: False
     timed: False
     has_status: False
 
 data:
-  fpga_iface: axis_chdr
+  fpga_iface: axis_pyld_ctxt
   clk_domain: rfnoc_chdr
-  mtu: 1024
   inputs:
     sink:
-      index: 0
       item_width: 32
       nipc: 2
-      context_fifo_depth: 1
-      payload_fifo_depth: 1
+      context_fifo_depth: 2
+      payload_fifo_depth: 2
       format: int32
       mdata_sig: ~
     loop:
-      index: 1
       item_width: 32
       nipc: 2
-      context_fifo_depth: 1
-      payload_fifo_depth: 1
+      context_fifo_depth: 2
+      payload_fifo_depth: 2
       format: int32
       mdata_sig: ~
   outputs:
     source:
-      index: 0
       item_width: 32
       nipc: 2
-      context_fifo_depth: 1
-      payload_fifo_depth: 1
+      context_fifo_depth: 2
+      payload_fifo_depth: 2
       format: int32
       mdata_sig: ~
     loop:
-      index: 1
       item_width: 32
       nipc: 2
-      context_fifo_depth: 1
-      payload_fifo_depth: 1
+      context_fifo_depth: 2
+      payload_fifo_depth: 2
       format: int32
       mdata_sig: ~
 
