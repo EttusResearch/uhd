@@ -1,5 +1,6 @@
 #
 # Copyright 2018 Ettus Research, a National Instruments Company
+# Copyright 2019 Ettus Research, a National Instruments Brand
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
@@ -7,11 +8,10 @@
 E310 peripherals
 """
 
-import datetime
-import math
 from usrp_mpm.sys_utils.sysfs_gpio import SysFSGPIO, GPIOBank
-from usrp_mpm.sys_utils.uio import UIO
+from usrp_mpm.periph_manager.common import MboardRegsCommon
 
+# pylint: disable=too-few-public-methods
 class FrontpanelGPIO(GPIOBank):
     """
     Abstraction layer for the front panel GPIO
@@ -27,48 +27,32 @@ class FrontpanelGPIO(GPIOBank):
             0xFF, # use_mask
             ddr
         )
+# pylint: enable=too-few-public-methods
 
-class MboardRegsControl(object):
+class MboardRegsControl(MboardRegsCommon):
     """
     Control the FPGA Motherboard registers
     """
+    # pylint: disable=bad-whitespace
     # Motherboard registers
-    MB_COMPAT_NUM     = 0x0000
-    MB_DATESTAMP      = 0x0004
-    MB_GIT_HASH       = 0x0008
-    MB_SCRATCH        = 0x000C
-    MB_NUM_CE         = 0x0010
-    MB_NUM_IO_CE      = 0x0014
     MB_CLOCK_CTRL     = 0x0018
     MB_XADC_RB        = 0x001C
     MB_BUS_CLK_RATE   = 0x0020
     MB_BUS_COUNTER    = 0x0024
     MB_GPIO_MASTER    = 0x0030
     MB_GPIO_RADIO_SRC = 0x0034
-    MB_GPS_CTRL       = 0x0038
-    MB_GPS_STATUS     = 0x003C
     MB_DBOARD_CTRL    = 0x0040
     MB_DBOARD_STATUS  = 0x0044
     MB_XBAR_BASEPORT  = 0x0048
 
+    # PPS select values for MB_CLOCK_CTRL (for reading and writing)
+    MB_CLOCK_CTRL_PPS_SEL_GPS = 0
+    # Note: 1 is also valid, but we've always used 2 in SW so let's keep doing that
+    MB_CLOCK_CTRL_PPS_SEL_INT = 2
+    MB_CLOCK_CTRL_PPS_SEL_INT_ALT = 1
+    MB_CLOCK_CTRL_PPS_SEL_EXT = 3
     # Bitfield locations for the MB_CLOCK_CTRL register.
-    MB_CLOCK_CTRL_PPS_SEL_INT = 0
-    MB_CLOCK_CTRL_PPS_SEL_EXT = 1
-    MB_CLOCK_CTRL_REF_CLK_LOCKED = 2
-
-    # Bitfield locations for the MB_GPS_CTRL register.
-    #FIXME: Update for E310
-    MB_GPS_CTRL_PWR_EN = 0
-    MB_GPS_CTRL_RST_N = 1
-    MB_GPS_CTRL_INITSURV_N = 2
-
-    # Bitfield locations for the MB_GPS_STATUS register.
-    #FIXME: Update for E310
-    MB_GPS_STATUS_LOCK = 0
-    MB_GPS_STATUS_ALARM = 1
-    MB_GPS_STATUS_PHASELOCK = 2
-    MB_GPS_STATUS_SURVEY = 3
-    MB_GPS_STATUS_WARMUP = 4
+    MB_CLOCK_CTRL_REF_CLK_LOCKED = 3
 
     # Bitfield locations for the MB_DBOARD_CTRL register.
     MB_DBOARD_CTRL_MIMO = 0
@@ -77,28 +61,10 @@ class MboardRegsControl(object):
     # Bitfield locations for the MB_DBOARD_STATUS register.
     MB_DBOARD_STATUS_RX_LOCK = 6
     MB_DBOARD_STATUS_TX_LOCK = 7
+    # pylint: enable=bad-whitespace
 
     def __init__(self, label, log):
-        self.log = log
-        self.regs = UIO(
-            label=label,
-            read_only=False
-        )
-        self.poke32 = self.regs.poke32
-        self.peek32 = self.regs.peek32
-
-    def get_compat_number(self):
-        """get FPGA compat number
-
-        This function reads back FPGA compat number.
-        The return is a tuple of
-        2 numbers: (major compat number, minor compat number )
-        """
-        with self.regs:
-            compat_number = self.peek32(self.MB_COMPAT_NUM)
-        minor = compat_number & 0xff
-        major = (compat_number>>16) & 0xff
-        return (major, minor)
+        MboardRegsCommon.__init__(self, label, log)
 
     def set_fp_gpio_master(self, value):
         """set driver for front panel GPIO
@@ -136,43 +102,6 @@ class MboardRegsControl(object):
         with self.regs:
             return self.peek32(self.MB_GPIO_RADIO_SRC) & 0xffffff
 
-    def get_build_timestamp(self):
-        """
-        Returns the build date/time for the FPGA image.
-        The return is datetime string with the  ISO 8601 format
-        (YYYY-MM-DD HH:MM:SS.mmmmmm)
-        """
-        with self.regs:
-            datestamp_rb = self.peek32(self.MB_DATESTAMP)
-        if datestamp_rb > 0:
-            dt_str = datetime.datetime(
-                year=((datestamp_rb>>17)&0x3F)+2000,
-                month=(datestamp_rb>>23)&0x0F,
-                day=(datestamp_rb>>27)&0x1F,
-                hour=(datestamp_rb>>12)&0x1F,
-                minute=(datestamp_rb>>6)&0x3F,
-                second=((datestamp_rb>>0)&0x3F))
-            self.log.trace("FPGA build timestamp: {}".format(str(dt_str)))
-            return str(dt_str)
-        else:
-            # Compatibility with FPGAs without datestamp capability
-            return ''
-
-    def get_git_hash(self):
-        """
-        Returns the GIT hash for the FPGA build.
-        The return is a tuple of
-        2 numbers: (short git hash, bool: is the tree dirty?)
-        """
-        with self.regs:
-            git_hash_rb = self.peek32(self.MB_GIT_HASH)
-        git_hash = git_hash_rb & 0x0FFFFFFF
-        tree_dirty = ((git_hash_rb & 0xF0000000) > 0)
-        dirtiness_qualifier = 'dirty' if tree_dirty else 'clean'
-        self.log.trace("FPGA build GIT Hash: {:07x} ({})".format(
-            git_hash, dirtiness_qualifier))
-        return (git_hash, dirtiness_qualifier)
-
     def set_time_source(self, time_source):
         """
         Set time source
@@ -197,15 +126,6 @@ class MboardRegsControl(object):
             self.log.trace("Writing MB_CLOCK_CTRL to 0x{:08X}".format(reg_val))
             self.poke32(self.MB_CLOCK_CTRL, reg_val)
 
-    def set_clock_source(self, clock_source):
-        """
-        Set clock source
-        """
-        if clock_source == 'internal':
-            self.log.trace("Setting clock source to internal")
-        else:
-            assert False, "Cannot set to invalid clock source: {}".format(clock_source)
-
     def get_fpga_type(self):
         """
         Reads the type of the FPGA image currently loaded
@@ -213,15 +133,6 @@ class MboardRegsControl(object):
         """
         #TODO: Add SG1 and SG3?
         return ""
-
-    def get_gps_status(self):
-        """
-        Get GPS status
-        """
-        mask = 0x1F
-        with self.regs:
-            gps_status = self.peek32(self.MB_GPS_STATUS) & mask
-        return gps_status
 
     def get_refclk_lock(self):
         """
@@ -248,7 +159,8 @@ class MboardRegsControl(object):
             reg_val = self.peek32(self.MB_DBOARD_CTRL)
             if channel_mode == "MIMO":
                 reg_val = (0b1 << self.MB_DBOARD_CTRL_MIMO)
-                self.log.trace("Setting channel mode in AD9361 interface: {}".format("2R2T" if channel_mode == 2 else "1R1T"))
+                self.log.trace("Setting channel mode in AD9361 interface: %s",
+                               "2R2T" if channel_mode == 2 else "1R1T")
             else:
                 # Warn if user tries to set either tx0/tx1 in mimo mode
                 # as both will be set automatically
@@ -269,7 +181,7 @@ class MboardRegsControl(object):
         """
         mask = 0b1 << self.MB_DBOARD_STATUS_TX_LOCK
         with self.regs:
-            reg_val =  self.peek32(self.MB_DBOARD_STATUS)
+            reg_val = self.peek32(self.MB_DBOARD_STATUS)
         locked = (reg_val & mask) > 0
         if not locked:
             self.log.warning("TX RF PLL reporting unlocked. ")
@@ -279,11 +191,11 @@ class MboardRegsControl(object):
 
     def get_ad9361_rx_lo_lock(self):
         """
-        Check the status of RX LO lock from CTRL_OUT pins from Catalina
+        Check the status of RX LO lock from CTRL_OUT pins from the RFIC
         """
         mask = 0b1 << self.MB_DBOARD_STATUS_RX_LOCK
         with self.regs:
-            reg_val =  self.peek32(self.MB_DBOARD_STATUS)
+            reg_val = self.peek32(self.MB_DBOARD_STATUS)
         locked = (reg_val & mask) > 0
         if not locked:
             self.log.warning("RX RF PLL reporting unlocked. ")
