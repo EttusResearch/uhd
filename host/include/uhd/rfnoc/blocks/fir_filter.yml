@@ -1,0 +1,61 @@
+schema: rfnoc_modtool_args
+module_name: fir_filter
+version: 1.0
+rfnoc_version: 1.0
+chdr_width: 64
+noc_id: 0xF1120000
+
+parameters:
+  NUM_PORTS: 1
+  COEFF_WIDTH: 16
+  NUM_COEFFS: 41
+  COEFFS_VEC: "{ {1'b0, {(COEFF_WIDTH-1){1'b1}} }, {(COEFF_WIDTH*(NUM_COEFFS-1)){1'b0}} }"
+  RELOADABLE_COEFFS: 1
+  SYMMETRIC_COEFFS: 0
+  SKIP_ZERO_COEFFS: 0
+  USE_EMBEDDED_REGS_COEFFS: 1
+
+clocks:
+  - name: rfnoc_chdr
+    freq: "[]"
+  - name: rfnoc_ctrl
+    freq: "[]"
+  - name: ce
+    freq: "[]"
+
+control:
+  sw_iface: nocscript
+  fpga_iface: ctrlport
+  interface_direction: slave
+  fifo_depth: 32
+  clk_domain: ce
+  ctrlport:
+    byte_mode: False
+    timed: False
+    has_status: False
+
+data:
+  fpga_iface: axis_pyld_ctxt
+  clk_domain: ce
+  inputs:
+    in:
+      num_ports: NUM_PORTS
+      item_width: 32
+      nipc: 1
+      context_fifo_depth: 2
+      payload_fifo_depth: 32
+      format: int32
+      mdata_sig: ~
+  outputs:
+    out:
+      num_ports: NUM_PORTS
+      item_width: 32
+      nipc: 1
+      context_fifo_depth: 2
+      payload_fifo_depth: 32
+      format: int32
+      mdata_sig: ~
+
+registers:
+
+properties:
