@@ -136,8 +136,7 @@ bool test_burst_ack_message(
     md.end_of_burst   = true;
     md.has_time_spec  = false;
 
-    // 3 times max-sps guarantees a SOB, no burst, and EOB packet
-    std::vector<std::complex<float>> buff(tx_stream->get_max_num_samps() * 3);
+    std::vector<std::complex<float>> buff(tx_stream->get_max_num_samps());
     tx_stream->send(&buff.front(), buff.size(), md);
 
     uhd::async_metadata_t async_md;
@@ -330,7 +329,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("Test Burst ACK ", &test_burst_ack_message)
         ("Test Underflow ", &test_underflow_message)
         ("Test Time Error", &test_time_error_message)
-        ("Test Late Command", &test_late_command_message);
+        ("Test Late Command", &test_late_command_message)
+    ;
     // clang-format on
 
     if (vm.count("test-chain")) {
