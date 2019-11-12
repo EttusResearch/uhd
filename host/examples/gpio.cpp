@@ -185,6 +185,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             std::cout << "* " << bank << std::endl;
         }
     }
+    std::cout << "Using GPIO bank: " << gpio << std::endl;
 
     // print out initial unconfigured state of FP GPIO
     std::cout << "Initial GPIO values:" << std::endl;
