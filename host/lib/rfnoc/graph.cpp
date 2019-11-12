@@ -8,8 +8,9 @@
 #include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/graph.hpp>
 #include <uhdlib/rfnoc/node_accessor.hpp>
-#include <boost/graph/topological_sort.hpp>
 #include <boost/graph/filtered_graph.hpp>
+#include <boost/graph/topological_sort.hpp>
+#include <limits>
 #include <utility>
 
 using namespace uhd::rfnoc;
@@ -194,6 +195,14 @@ void graph_t::release()
     _release_count++;
 }
 
+void graph_t::shutdown()
+{
+    std::lock_guard<std::recursive_mutex> l(_release_mutex);
+    UHD_LOG_TRACE(LOG_ID, "graph::shutdown()");
+    _shutdown      = true;
+    _release_count = std::numeric_limits<size_t>::max();
+}
+
 std::vector<graph_t::graph_edge_t> graph_t::enumerate_edges()
 {
     auto e_iterators = boost::edges(_graph);
@@ -215,16 +224,19 @@ std::vector<graph_t::graph_edge_t> graph_t::enumerate_edges()
 void graph_t::resolve_all_properties(
     resolve_context context, rfnoc_graph_t::vertex_descriptor initial_node)
 {
-    node_accessor_t node_accessor{};
-
     if (boost::num_vertices(_graph) == 0) {
         return;
     }
+
+    node_accessor_t node_accessor{};
     // We can't release during property propagation, so we lock this entire
     // method to make sure that a) different threads can't interfere with each
     // other, and b) that we don't release the graph while this method is still
     // running.
     std::lock_guard<std::recursive_mutex> l(_release_mutex);
+    if (_shutdown) {
+        return;
+    }
     if (_release_count) {
         node_ref_t current_node = boost::get(vertex_property_t(), _graph, initial_node);
         UHD_LOG_TRACE(LOG_ID,
@@ -373,7 +385,11 @@ void graph_t::enqueue_action(
     // We can't release during action handling, so we lock this entire
     // method to make sure that we don't release the graph while this method is
     // still running.
+    // It also prevents a different thread from throwing in their own actions.
     std::lock_guard<std::recursive_mutex> release_lock(_release_mutex);
+    if (_shutdown) {
+        return;
+    }
     if (_release_count) {
         UHD_LOG_WARNING(LOG_ID,
             "Action propagation is not enabled, graph is not committed! Will not "
@@ -381,16 +397,13 @@ void graph_t::enqueue_action(
                 << action->key << "'");
         return;
     }
-    // First, make sure that once we start action handling, no other node from
-    // a different thread can throw in their own actions
-    std::lock_guard<std::recursive_mutex> l(_action_mutex);
 
     // Check if we're already in the middle of handling actions. In that case,
     // we're already in the loop below, and then all we want to do is to enqueue
     // this action tuple. The first call to enqueue_action() within this thread
     // context will have handling_ongoing == false.
     const bool handling_ongoing = _action_handling_ongoing.test_and_set();
-
+    // In any case, stash the new action at the end of the action queue
     _action_queue.emplace_back(std::make_tuple(src_node, src_edge, action));
     if (handling_ongoing) {
         UHD_LOG_TRACE(LOG_ID,
@@ -450,7 +463,7 @@ void graph_t::enqueue_action(
 
     // Release the action handling flag
     _action_handling_ongoing.clear();
-    // Now, the _action_mutex is released, and someone else can start sending
+    // Now, the _release_mutex is released, and someone else can start sending
     // actions.
 }
 

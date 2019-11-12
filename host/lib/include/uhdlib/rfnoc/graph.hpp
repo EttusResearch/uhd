@@ -63,6 +63,15 @@ public:
      */
     void release();
 
+    /*! Shutdown graph: Permenanently release
+     *
+     * This will release the graph permanently and safely. All ongoing property
+     * and action handling is completed and then disabled (this means that
+     * calling shutdown while blocks are still working will cause actions to not
+     * get delivered).
+     */
+    void shutdown();
+
     /*! Return a list of all edges
      */
     std::vector<graph_edge_t> enumerate_edges();
@@ -271,16 +280,15 @@ private:
     //! Flag to ensure serialized handling of actions
     std::atomic_flag _action_handling_ongoing;
 
-    //! Mutex for to avoid the user from sending one message before another
-    // message is sent
-    std::recursive_mutex _action_mutex;
-
     //! Changes to the release/commit state of the graph are locked with this mutex
     std::recursive_mutex _release_mutex;
 
     //! This counter gets decremented everytime commit() is called. When zero,
     // the graph is committed.
     size_t _release_count{1};
+
+    //! A flag if the graph has shut down. Is protected by _release_mutex
+    bool _shutdown{false};
 };
 
 

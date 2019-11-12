@@ -82,8 +82,8 @@ public:
 
     ~rfnoc_graph_impl()
     {
-        UHD_LOG_TRACE(LOG_ID, "Releasing detail::graph...");
-        _graph->release();
+        UHD_LOG_TRACE(LOG_ID, "Shutting down detail::graph...");
+        _graph->shutdown();
         UHD_LOG_TRACE(LOG_ID, "Shutting down all blocks ...");
         _block_registry->shutdown();
         _graph.reset();
