@@ -243,7 +243,8 @@ class uhd_example_test_case(uhd_test_case):
         Hook for test runner. Needs to be a class method that starts with 'test'.
         Calls run_test().
         """
-        for test_name, test_args in iteritems(self.test_params):
+        test_params = getattr(self, 'test_params', {})
+        for test_name, test_args in iteritems(test_params):
             time.sleep(15) # Wait for X300 devices to reclaim them
             if not 'products' in test_args \
                     or (self.usrp_info['product'] in test_args.get('products', [])):

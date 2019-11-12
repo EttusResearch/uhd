@@ -8,6 +8,8 @@
 Run device tests for the X3x0 series.
 """
 
+# pylint: disable=wrong-import-position
+# pylint: disable=unused-import
 from benchmark_rate_test import uhd_benchmark_rate_test
 uhd_benchmark_rate_test.tests = {
     'mimo_slow': {
@@ -67,4 +69,4 @@ from test_pps_test import uhd_test_pps_test
 from gpio_test import gpio_test
 from bitbang_test import bitbang_test
 from list_sensors_test import list_sensors_test
-
+from test_messages_test import test_messages_test

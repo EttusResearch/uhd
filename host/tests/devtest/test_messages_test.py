@@ -2,6 +2,7 @@
 #
 # Copyright 2015 Ettus Research LLC
 # Copyright 2018 Ettus Research, a National Instruments Company
+# Copyright 2019 Ettus Research, a National Instruments Brand
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
@@ -10,7 +11,7 @@
 import re
 from uhd_test_base import uhd_example_test_case
 
-class uhd_test_messages_test(uhd_example_test_case):
+class test_messages_test(uhd_example_test_case):
     """
     Run test_messages and check output.
     """
@@ -20,11 +21,11 @@ class uhd_test_messages_test(uhd_example_test_case):
         """
         Set args.
         """
-        self.test_params = uhd_test_messages_test.tests
+        self.test_params = test_messages_test.tests
 
     def run_test(self, test_name, test_args):
         """ Run the app and scrape for the failure messages. """
-        self.log.info('Running test {n}'.format(n=test_name,))
+        self.log.info('Running test %s', test_name)
         # Run example:
         args = [
             self.create_addr_args_str(),
@@ -35,13 +36,11 @@ class uhd_test_messages_test(uhd_example_test_case):
         (app, run_results) = self.run_example('test_messages', args)
         # Evaluate pass/fail:
         succ_fail_re = re.compile(r'(?P<test>.*)->\s+(?P<succ>\d+) successes,\s+(?P<fail>\d+) +failures')
-        for mo in succ_fail_re.finditer(app.stdout):
-            key = mo.group("test").strip().replace(' ', '_').lower()
-            successes = int(mo.group("succ"))
-            failures = int(mo.group("fail"))
+        for mobj in succ_fail_re.finditer(app.stdout):
+            key = mobj.group("test").strip().replace(' ', '_').lower()
+            successes = int(mobj.group("succ"))
+            failures = int(mobj.group("fail"))
             run_results[key] = "{}/{}".format(successes, successes+failures)
-            run_results['passed'] = bool(failures)
-
+            run_results['passed'] = (failures == 0)
         self.report_example_results(test_name, run_results)
         return run_results
-
