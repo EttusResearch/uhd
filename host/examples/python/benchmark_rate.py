@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 #
 # Copyright 2018 Ettus Research, a National Instruments Company
+# Copyright 2019 Ettus Research, a National Instruments Brand
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
@@ -48,6 +49,10 @@ def parse_args():
                         help="specify the host/cpu sample mode for RX")
     parser.add_argument("--tx_cpu", type=str, default="fc32",
                         help="specify the host/cpu sample mode for TX")
+    parser.add_argument("--rx_stream_args",
+                        help="stream args for RX streamer", default="")
+    parser.add_argument("--tx_stream_args", help="stream args for TX streamer",
+                        default="")
     parser.add_argument("--ref", type=str,
                         help="clock reference (internal, external, mimo, gpsdo)")
     parser.add_argument("--pps", type=str, help="PPS source (internal, external, mimo, gpsdo)")
@@ -86,7 +91,7 @@ def setup_ref(usrp, ref, num_mboards):
     if ref == "mimo":
         if num_mboards != 2:
             logger.error("ref = \"mimo\" implies 2 motherboards; "
-                          "your system has %d boards", num_mboards)
+                         "your system has %d boards", num_mboards)
             return False
         usrp.set_clock_source("mimo", 1)
     else:
@@ -114,7 +119,7 @@ def setup_pps(usrp, pps, num_mboards):
     if pps == "mimo":
         if num_mboards != 2:
             logger.error("ref = \"mimo\" implies 2 motherboards; "
-                          "your system has %d boards", num_mboards)
+                         "your system has %d boards", num_mboards)
             return False
         # make mboard 1 a slave over the MIMO Cable
         usrp.set_time_source("mimo", 1)
@@ -419,6 +424,7 @@ def main():
         usrp.set_rx_rate(args.rx_rate)
         st_args = uhd.usrp.StreamArgs(args.rx_cpu, args.rx_otw)
         st_args.channels = rx_channels
+        st_args.args = uhd.types.DeviceAddr(args.rx_stream_args)
         rx_streamer = usrp.get_rx_stream(st_args)
         rx_thread = threading.Thread(target=benchmark_rx_rate,
                                      args=(usrp, rx_streamer, args.random, quit_event,
@@ -437,6 +443,7 @@ def main():
         usrp.set_tx_rate(args.tx_rate)
         st_args = uhd.usrp.StreamArgs(args.tx_cpu, args.tx_otw)
         st_args.channels = tx_channels
+        st_args.args = uhd.types.DeviceAddr(args.tx_stream_args)
         tx_streamer = usrp.get_tx_stream(st_args)
         tx_thread = threading.Thread(target=benchmark_tx_rate,
                                      args=(usrp, tx_streamer, args.random, quit_event,
