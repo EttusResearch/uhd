@@ -2,6 +2,7 @@
 #
 # Copyright 2015-2016 Ettus Research LLC
 # Copyright 2018 Ettus Research, a National Instruments Company
+# Copyright 2019 Ettus Research, a National Instruments Brand
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
@@ -114,7 +115,8 @@ class uhd_test_case(unittest.TestCase):
         self.results = {}
         self.results_file = os.getenv('_UHD_TEST_RESULTSFILE', "")
         if self.results_file and os.path.isfile(self.results_file):
-            self.results = yaml.safe_load(open(self.results_file).read()) or {}
+            with open(self.results_file) as res_file:
+                self.results = yaml.safe_load(res_file.read()) or {}
         self.args_str = os.getenv('_UHD_TEST_ARGS_STR', "")
         self.usrp_info = get_usrp_list(self.args_str)[0]
         if self.usrp_info['serial'] not in self.results:
@@ -151,8 +153,8 @@ class uhd_test_case(unittest.TestCase):
     def tearDown(self):
         self.tear_down()
         if self.results_file:
-            open(self.results_file, 'w').write(
-                yaml.dump(self.results, default_flow_style=False))
+            with open(self.results_file, 'w') as res_file:
+                res_file.write(yaml.dump(self.results, default_flow_style=False))
         time.sleep(15)
 
     def report_result(self, testname, key, value):
@@ -165,7 +167,7 @@ class uhd_test_case(unittest.TestCase):
 
     def create_addr_args_str(self, argname="args"):
         """ Returns an args string, usually '--args "type=XXX,serial=YYY" """
-        if len(self.args_str) == 0:
+        if not self.args_str:
             return ''
         return '--{}={}'.format(argname, self.args_str)
 
@@ -214,6 +216,9 @@ class uhd_example_test_case(uhd_test_case):
 
 
     def report_example_results(self, test_name, run_results):
+        """
+        Helper function for report_result() when running examples.
+        """
         for key in sorted(run_results):
             self.log.info('%s = %s', str(key), str(run_results[key]))
             self.report_result(
@@ -259,4 +264,3 @@ class uhd_example_test_case(uhd_test_case):
                             r=yaml.dump(run_results, default_flow_style=False)
                         )
                 )
-
