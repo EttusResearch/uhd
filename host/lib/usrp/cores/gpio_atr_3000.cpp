@@ -74,7 +74,9 @@ public:
         auto value = (mode == MODE_ATR) ? ~MASK_SET_ALL : MASK_SET_ALL;
         _atr_disable_reg.set_with_mask(value, mask);
         _atr_disable_reg.flush();
-        _update_attr_state(GPIO_CTRL, value, mask);
+        // The attr state is inverted from _atr_disable_reg. In _atr_disable_reg,
+        // 1 == disable, whereas in CTRL, 1 means enable ATR.
+        _update_attr_state(GPIO_CTRL, ~value, mask);
     }
 
     virtual void set_gpio_ddr(const gpio_ddr_t dir, const uint32_t mask)
