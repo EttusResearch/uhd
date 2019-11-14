@@ -2249,7 +2249,13 @@ public:
         ));
     }
 
-    // The next three methods are only for RFNoC devices
+    // The next four methods are only for RFNoC devices
+    std::vector<std::string> get_gpio_src_banks(const size_t)
+    {
+        throw uhd::not_implemented_error(
+            "get_gpio_src_banks() not implemented for this motherboard!");
+    }
+
     std::vector<std::string> get_gpio_srcs(const std::string&, const size_t)
     {
         throw uhd::not_implemented_error(

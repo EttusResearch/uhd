@@ -1503,27 +1503,53 @@ public:
     virtual uint32_t get_gpio_attr(
         const std::string& bank, const std::string& attr, const size_t mboard = 0) = 0;
 
-    /*!
-     * Enumerate sources for a gpio bank on the specified device. Each of the pins in the
-     * chosen bank can be driven from one of the returned sources. \param bank the name of
-     * a GPIO bank \param mboard the motherboard index 0 to M-1 \return a list of strings
-     * with each valid source for the chosen bank
+    /*! Return a list of GPIO banks that can be source-controlled on this motherboard
+     *
+     * This is a different set of banks than those returned from get_gpio_banks().
+     * Here, we return a list of banks that can be used as arguments for
+     * get_gpio_src(), get_gpio_srcs(), and set_gpio_src().
+     *
+     * Some motherboards have GPIO banks that can be driven from different
+     * sources, e.g., the N310 can have any radio channel drive the FP-GPIOs,
+     * or the PS.
+     *
+     * \param mboard the motherboard index 0 to M-1
+     * \return a list of valid bank names
+     */
+    virtual std::vector<std::string> get_gpio_src_banks(const size_t mboard = 0) = 0;
+
+    /*! Enumerate sources for a gpio bank on the specified device.
+     *
+     * Each of the pins in the chosen bank can be driven from one of the
+     * returned sources.
+     *
+     * \param bank the name of a GPIO bank. Valid values can be obtained by
+     *        calling get_gpio_src_banks().
+     * \param mboard the motherboard index 0 to M-1
+     * \return a list of strings with each valid source for the chosen bank
      */
     virtual std::vector<std::string> get_gpio_srcs(
         const std::string& bank, const size_t mboard = 0) = 0;
 
-    /*!
-     * Get the current source for each pin in a GPIO bank.
-     * \param bank the name of a GPIO bank
+    /*! Get the current source for each pin in a GPIO bank.
+     *
+     * \param bank the name of a GPIO bank. Valid values can be obtained by
+     *        calling get_gpio_src_banks().
      * \param mboard the motherboard index 0 to M-1
-     * \return a list of strings for current source of each GPIO pin in the chosen bank
+     * \return a list of strings for current source of each GPIO pin in the
+     *         chosen bank. The length of the return value matches the number of
+     *         programmable GPIO pins.
      */
     virtual std::vector<std::string> get_gpio_src(
         const std::string& bank, const size_t mboard = 0) = 0;
 
-    /*!
-     * Set the current source for each pin in a GPIO bank.
-     * \param bank the name of a GPIO bank
+    /*! Set the current source for each pin in a GPIO bank.
+     *
+     * Note: The length of the vector must be identical to the number of
+     * programmable GPIO pins.
+     *
+     * \param bank the name of a GPIO bank. Valid values can be obtained by
+     *        calling get_gpio_src_banks().
      * \param src a list of strings specifying the source of each pin in a GPIO bank
      * \param mboard the motherboard index 0 to M-1
      */

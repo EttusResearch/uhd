@@ -1956,6 +1956,11 @@ public:
         return radio_bank_pair.first->get_gpio_attr(radio_bank_pair.second, attr);
     }
 
+    std::vector<std::string> get_gpio_src_banks(const size_t mboard)
+    {
+        return get_mbc(mboard)->get_gpio_banks();
+    }
+
     std::vector<std::string> get_gpio_srcs(const std::string& bank, const size_t mboard)
     {
         return get_mbc(mboard)->get_gpio_srcs(bank);
