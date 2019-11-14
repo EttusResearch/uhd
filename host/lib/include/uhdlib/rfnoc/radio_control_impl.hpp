@@ -230,9 +230,6 @@ public:
 
         static const uint32_t RX_CMD_TIMED_POS = 31;
 
-        static const uint32_t REG_SPI_W = 0x80000 + 168*8; // FIXME
-        static const uint32_t REG_SPI_R = 0x80000 + 17*8; // FIXME
-
         static const uint32_t PERIPH_BASE = 0x80000;
         static const uint32_t PERIPH_REG_OFFSET = 8;
 

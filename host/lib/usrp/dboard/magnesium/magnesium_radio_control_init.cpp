@@ -76,11 +76,13 @@ void magnesium_radio_control_impl::_init_peripherals()
     RFNOC_LOG_TRACE("Initializing peripherals...");
     RFNOC_LOG_TRACE("Initializing SPI core...");
     _spi = spi_core_3000::make(
-        [this](uint32_t addr, uint32_t data){ regs().poke32(addr, data, get_command_time(0)); },
-        [this](uint32_t addr){ return regs().peek32(addr, get_command_time(0)); },
-        regmap::REG_SPI_W,
+        [this](uint32_t addr, uint32_t data) {
+            regs().poke32(addr, data, get_command_time(0));
+        },
+        [this](uint32_t addr) { return regs().peek32(addr, get_command_time(0)); },
+        n310_regs::SR_SPI,
         8,
-        regmap::REG_SPI_R);
+        n310_regs::RB_SPI);
     RFNOC_LOG_TRACE("Initializing CPLD...");
     RFNOC_LOG_TRACE("Creating new CPLD object...");
     spi_config_t spi_config;
@@ -117,10 +119,9 @@ void magnesium_radio_control_impl::_init_peripherals()
     for (size_t radio_idx = 0; radio_idx < get_num_input_ports(); radio_idx++) {
         _wb_ifaces.push_back(RFNOC_MAKE_WB_IFACE(0, radio_idx));
         RFNOC_LOG_TRACE("Initializing GPIOs for channel " << radio_idx);
-        _gpio.emplace_back(usrp::gpio_atr::gpio_atr_3000::make(
-                _wb_ifaces.back(),
-                n310_regs::DB_GPIO_BASE + radio_idx * n310_regs::DB_GPIO_OFFSET,
-                n310_regs::DB_GPIO_RB + radio_idx * n310_regs::DB_GPIO_OFFSET));
+        _gpio.emplace_back(usrp::gpio_atr::gpio_atr_3000::make(_wb_ifaces.back(),
+            n310_regs::SR_DB_GPIO + radio_idx * n310_regs::CHAN_REG_OFFSET,
+            n310_regs::RB_DB_GPIO + radio_idx * n310_regs::CHAN_REG_OFFSET));
         // DSA and AD9371 gain bits do *not* toggle on ATR modes. If we ever
         // connect anything else to this core, we might need to set_atr_mode()
         // to MODE_ATR on those bits. For now, all bits simply do what they're
@@ -131,8 +132,8 @@ void magnesium_radio_control_impl::_init_peripherals()
             usrp::gpio_atr::gpio_atr_3000::MASK_SET_ALL);
     }
     RFNOC_LOG_TRACE("Initializing front-panel GPIO control...")
-    _fp_gpio = usrp::gpio_atr::gpio_atr_3000::make(_wb_ifaces.front(),
-        n310_regs::FP_GPIO, n310_regs::RB_FP_GPIO);
+    _fp_gpio = usrp::gpio_atr::gpio_atr_3000::make(
+        _wb_ifaces.front(), n310_regs::SR_FP_GPIO, n310_regs::RB_FP_GPIO);
 }
 
 void magnesium_radio_control_impl::_init_frontend_subtree(

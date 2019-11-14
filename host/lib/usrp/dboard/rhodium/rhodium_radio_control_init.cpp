@@ -141,9 +141,9 @@ void rhodium_radio_control_impl::_init_peripherals()
             regs().poke32(addr, data, get_command_time(0));
         },
         [this](uint32_t addr) { return regs().peek32(addr, get_command_time(0)); },
-        regmap::REG_SPI_W,
+        n320_regs::SR_SPI,
         8,
-        regmap::REG_SPI_R);
+        n320_regs::RB_SPI);
     _wb_iface = RFNOC_MAKE_WB_IFACE(0, 0);
 
     RFNOC_LOG_TRACE("Initializing CPLD...");

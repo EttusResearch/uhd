@@ -94,12 +94,22 @@ static const std::vector<std::string> MAGNESIUM_GP_OPTIONS = {"manual",
 
 namespace n310_regs {
 
-constexpr uint32_t DB_GPIO_BASE = 0x80000; // FIXME
-constexpr uint32_t DB_GPIO_RB = 0x80000; // FIXME
-constexpr uint32_t DB_GPIO_OFFSET = 0x100; // FIXME
-constexpr uint32_t FP_GPIO = 0x80000; // FIXME
-constexpr uint32_t RB_FP_GPIO = 0x80000; // FIXME
+static constexpr uint32_t PERIPH_BASE = 0x80000;
+// Space between registers
+static constexpr uint32_t PERIPH_REG_OFFSET = 8;
+// Space between channels on the same dboard
+static constexpr uint32_t CHAN_REG_OFFSET = 0x100 * PERIPH_REG_OFFSET;
 
+// db_control registers
+static constexpr uint32_t SR_MISC_OUTS = PERIPH_BASE + 160 * PERIPH_REG_OFFSET;
+static constexpr uint32_t SR_SPI       = PERIPH_BASE + 168 * PERIPH_REG_OFFSET;
+static constexpr uint32_t SR_FP_GPIO   = PERIPH_BASE + 184 * PERIPH_REG_OFFSET;
+static constexpr uint32_t SR_DB_GPIO   = PERIPH_BASE + 192 * PERIPH_REG_OFFSET;
+
+static constexpr uint32_t RB_MISC_IO = PERIPH_BASE + 16 * PERIPH_REG_OFFSET;
+static constexpr uint32_t RB_SPI     = PERIPH_BASE + 17 * PERIPH_REG_OFFSET;
+static constexpr uint32_t RB_DB_GPIO = PERIPH_BASE + 19 * PERIPH_REG_OFFSET;
+static constexpr uint32_t RB_FP_GPIO = PERIPH_BASE + 20 * PERIPH_REG_OFFSET;
 }
 
 #endif /* INCLUDED_LIBUHD_MAGNESIUM_CONSTANTS_HPP */
