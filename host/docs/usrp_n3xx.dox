@@ -736,6 +736,61 @@ usrp->set_clock_source("internal");
 For more information, refer to the [White Rabbit Homepage](https://www.ohwr.org/projects/white-rabbit),
 or the [Ettus Research Knowledge Base](https://kb.ettus.com/Using_Ethernet-Based_Synchronization_on_the_USRP%E2%84%A2_N3xx_Devices).
 
+\section n3xx_fpgio The Front-Panel GPIO
+
+\b Note: The N321 does not have a front-panel GPIO due to lack of panel space.
+
+\b Note: Do not source high currents (more than 5 mA) per pin. The GPIOs are not
+designed to drive high loads!
+
+\b Note: Unlike the X300 series, the N3XX series does not have user-programmable
+daughterboard GPIOs. The front-panel GPIOs can still be used to track the ATR
+state of the radios, though (see below).
+
+The USRP N3xx series has 12 programmable GPIO pins, accessible through the DB15
+connector on the front panel. The front-panel GPIO on the N3xx series has a
+programmable source per pin. For every pin, it is possible to either drive it
+from the PS (i.e., from Linux), or via UHD.
+
+When UHD is driving a pin, each one of the radios (up to four in the case of the
+N310) can drive the GPIO pin. In that case, the pin can either track the ATR
+register of that radio channel, or it can be freely programmed.
+
+When the PS is driving the pin, UHD releases control of the GPIO pin and it can
+be programmed from Linux using udev.
+
+The following example demonstrates how the GPIO can be used:
+
+~~~{.cpp}
+auto usrp = uhd::usrp::multi_usrp::make("type=n3xx");
+auto banks = usrp->get_gpio_src_banks();
+// banks[0] == "FP0"
+auto gpio_src = usrp->get_gpio_src("FP0");
+// Pin 0 shall be controlled by the PS:
+gpio_src[0] = "PS";
+// Pin 1 and 2 shall be controlled by channel 0:
+gpio_src[1] = "RF0";
+gpio_src[2] = "RF0";
+// Pin 3 shall be controlled by channel 1:
+gpio_src[3] = "RF1";
+// Now update who is driving which pin:
+usrp->set_gpio_src("FP0", gpio_src);
+// Pin 0 is no longer accessible from UHD.
+// Pin 1 shall go high when channel 0 is receiving, or during full-duplex
+// Pin 2 shall be hard-coded to go high (GPIO mode)
+usrp->set_gpio_attr("FP0A", "CTRL", 0x2, 0x6); // 1 == ATR, 0 == GPIO
+// Set the pins to be outputs:
+usrp->set_gpio_attr("FP0A", "DDR", 0x6, 0x6); // 1 == output, 0 == input
+// ATR on pin 1 is off when not receiving:
+usrp->set_gpio_attr("FP0A", "ATR_0X", 0x0, 0x2);
+usrp->set_gpio_attr("FP0A", "ATR_TX", 0x0, 0x2);
+usrp->set_gpio_attr("FP0A", "ATR_RX", 0x2, 0x2);
+usrp->set_gpio_attr("FP0A", "ATR_XX", 0x2, 0x2);
+// Hard-code pin 2 to stay high:
+usrp->set_gpio_attr("FP0A", "OUT", 0x4, 0x4);
+~~~
+
+
 \section n3xx_troubleshooting Troubleshooting
 
 \subsection n3xx_troubleshooting_seqerrs Errors while streaming

@@ -707,6 +707,60 @@ will look like this:
     # [...]
 \endcode
 
+\section e3xx_gpio The Front-Panel GPIO
+
+\b Note: Do not source high currents (more than 5 mA) per pin. The GPIOs are not
+designed to drive high loads!
+
+\b Note: Unlike the X300 series, the E3XX series does not have user-programmable
+daughterboard GPIOs. The front-panel GPIOs can still be used to track the ATR
+state of the radios, though (see below).
+
+The USRP E310 has 6 programmable GPIO pins, accessible through an internal
+connector (see also \ref e31x_hw_gpio). The E320 has 8 GPIO pins, accessible
+through the HDMI connector (see \ref e320_gpio).
+
+These GPIOs have a programmable source per pin. For every pin, it is possible to
+either drive it from the PS (i.e., from Linux), or via UHD.
+
+When UHD is driving a pin, both of the radio channels  can drive the GPIO pin.
+In that case, the pin can either track the ATR register of that radio channel,
+or it can be freely programmed.
+
+When the PS is driving the pin, UHD releases control of the GPIO pin and it can
+be programmed from Linux using udev.
+
+The following example demonstrates how the GPIO can be used:
+
+~~~{.cpp}
+auto usrp = uhd::usrp::multi_usrp::make("type=e31x");
+auto banks = usrp->get_gpio_src_banks();
+// banks[0] == "FP0"
+auto gpio_src = usrp->get_gpio_src("FP0");
+// Pin 0 shall be controlled by the PS:
+gpio_src[0] = "PS";
+// Pin 1 and 2 shall be controlled by channel 0:
+gpio_src[1] = "RFA";
+gpio_src[2] = "RFA";
+// Pin 3 shall be controlled by channel 1:
+gpio_src[3] = "RFB";
+// Now update who is driving which pin:
+usrp->set_gpio_src("FP0", gpio_src);
+// Pin 0 is no longer accessible from UHD.
+// Pin 1 shall go high when channel 0 is receiving, or during full-duplex
+// Pin 2 shall be hard-coded to go high (GPIO mode)
+usrp->set_gpio_attr("FP0A", "CTRL", 0x2, 0x6); // 1 == ATR, 0 == GPIO
+// Set the pins to be outputs:
+usrp->set_gpio_attr("FP0A", "DDR", 0x6, 0x6); // 1 == output, 0 == input
+// ATR on pin 1 is off when not receiving:
+usrp->set_gpio_attr("FP0A", "ATR_0X", 0x0, 0x2);
+usrp->set_gpio_attr("FP0A", "ATR_TX", 0x0, 0x2);
+usrp->set_gpio_attr("FP0A", "ATR_RX", 0x2, 0x2);
+usrp->set_gpio_attr("FP0A", "ATR_XX", 0x2, 0x2);
+// Hard-code pin 2 to stay high:
+usrp->set_gpio_attr("FP0A", "OUT", 0x4, 0x4);
+~~~
+
 \section e3xx_troubleshooting Troubleshooting
 
 \subsection e3xx_troubleshooting_bist E320 Built-in Self-Test (BiST)
