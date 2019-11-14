@@ -82,6 +82,10 @@ public:
     uhd::sensor_value_t get_sensor(const std::string& name);
     std::vector<std::string> get_sensor_names();
     uhd::usrp::mboard_eeprom_t get_eeprom();
+    std::vector<std::string> get_gpio_banks() const;
+    std::vector<std::string> get_gpio_srcs(const std::string& bank) const;
+    std::vector<std::string> get_gpio_src(const std::string& bank);
+    void set_gpio_src(const std::string& bank, const std::vector<std::string>& src);
 
 private:
     /**************************************************************************
@@ -94,6 +98,10 @@ private:
 
     //! List of MB sensor names
     std::unordered_set<std::string> _sensor_names;
+
+    //! Cache of available GPIO sources
+    std::vector<std::string> _gpio_banks;
+    std::unordered_map<std::string, std::vector<std::string>> _gpio_srcs;
 };
 
 }} // namespace uhd::rfnoc

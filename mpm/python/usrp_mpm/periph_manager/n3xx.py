@@ -44,6 +44,9 @@ N32X_QSFP_I2C_LABEL = 'qsfp-i2c'
 N3XX_FPGA_COMPAT = (7, 0)
 N3XX_MONITOR_THREAD_INTERVAL = 1.0 # seconds
 N3XX_BUS_CLK = 200e6
+N3XX_GPIO_BANKS = "FP0"
+N3XX_GPIO_SRC_PS = "PS"
+N3XX_FPGPIO_WIDTH = 12
 
 # Import daughterboard PIDs from their respective classes
 MG_PID = Magnesium.pids[0]
@@ -362,6 +365,17 @@ class n3xx(ZynqComponents, PeriphManagerBase):
                 "(e.g., HG, XG images).")
         # Init FPGA type
         self._update_fpga_type()
+        # Init FP-GPIO sources
+        self._fp_gpio_srcs = [N3XX_GPIO_SRC_PS,]
+        if self.device_info['product'] == 'n320':
+            for chan_idx in range(len(self.dboards)):
+                self._fp_gpio_srcs.append("RF{}".format(chan_idx))
+        else:
+            for chan_idx in range(len(self.dboards)):
+                self._fp_gpio_srcs.append("RF{}".format(2*chan_idx))
+                self._fp_gpio_srcs.append("RF{}".format(2*chan_idx+1))
+        self.log.debug("Found the following GPIO sources: {}"
+                       .format(",".join(self._fp_gpio_srcs)))
         # Init CHDR transports
         self._xport_mgrs = {
             'udp': N3xxXportMgrUDP(self.log.getChild('UDP'), args),
@@ -727,41 +741,67 @@ class n3xx(ZynqComponents, PeriphManagerBase):
             'gpsdo': 20e6,
         }[self._clock_source]
 
-    def set_fp_gpio_master(self, value):
-        """set driver for front panel GPIO
-        Arguments:
-            value {unsigned} -- value is a single bit bit mask of 12 pins GPIO
+    ###########################################################################
+    # GPIO API
+    ###########################################################################
+    def get_gpio_banks(self):
         """
-        self.mboard_regs_control.set_fp_gpio_master(value)
+        Returns a list of GPIO banks over which MPM has any control
+        """
+        return N3XX_GPIO_BANKS
 
-    def get_fp_gpio_master(self):
-        """get "who" is driving front panel gpio
-           The return value is a bit mask of 12 pins GPIO.
-           0: means the pin is driven by PL
-           1: means the pin is driven by PS
+    def get_gpio_srcs(self, bank):
         """
-        return self.mboard_regs_control.get_fp_gpio_master()
+        Return a list of valid GPIO sources for a given bank
+        """
+        assert bank in self.get_gpio_banks(), "Invalid GPIO bank: {}".format(bank)
+        return self._fp_gpio_srcs
 
-    def set_fp_gpio_radio_src(self, value):
-        """set driver for front panel GPIO
-        Arguments:
-            value {unsigned} -- value is 2-bit bit mask of 12 pins GPIO
-           00: means the pin is driven by radio 0
-           01: means the pin is driven by radio 1
-           10: means the pin is driven by radio 2
-           11: means the pin is driven by radio 3
+    def get_gpio_src(self, bank):
         """
-        self.mboard_regs_control.set_fp_gpio_radio_src(value)
+        Return the currently selected GPIO source for a given bank. The return
+        value is a list of strings. The length of the vector is identical to
+        the number of controllable GPIO pins on this bank.
+        """
+        assert bank in self.get_gpio_banks(), "Invalid GPIO bank: {}".format(bank)
+        gpio_master_reg = self.mboard_regs_control.get_fp_gpio_master()
+        gpio_radio_src_reg = self.mboard_regs_control.get_fp_gpio_radio_src()
+        def get_gpio_src_i(gpio_pin_index):
+            """
+            Return the current radio source given a pin index.
+            """
+            if gpio_master_reg & (1 << gpio_pin_index):
+                return N3XX_GPIO_SRC_PS
+            radio_src = (gpio_radio_src_reg >> (2 * gpio_pin_index)) & 0b11
+            return "RF{}".format(radio_src)
+        return [get_gpio_src_i(i) for i in range(N3XX_FPGPIO_WIDTH)]
 
-    def get_fp_gpio_radio_src(self):
-        """get which radio is driving front panel gpio
-           The return value is 2-bit bit mask of 12 pins GPIO.
-           00: means the pin is driven by radio 0
-           01: means the pin is driven by radio 1
-           10: means the pin is driven by radio 2
-           11: means the pin is driven by radio 3
+    def set_gpio_src(self, bank, src):
         """
-        return self.mboard_regs_control.get_fp_gpio_radio_src()
+        Set the GPIO source for a given bank.
+        """
+        assert bank in self.get_gpio_banks(), "Invalid GPIO bank: {}".format(bank)
+        assert len(src) == N3XX_FPGPIO_WIDTH, \
+            "Invalid number of GPIO sources!"
+        gpio_master_reg = 0x000
+        gpio_radio_src_reg = self.mboard_regs_control.get_fp_gpio_radio_src()
+        for src_index, src_name in enumerate(src):
+            if src_name not in self.get_gpio_srcs(bank):
+                raise RuntimeError(
+                    "Invalid GPIO source name `{}' at bit position {}!"
+                    .format(src_name, src_index))
+            gpio_master_flag = (src_name == N3XX_GPIO_SRC_PS)
+            gpio_master_reg = gpio_master_reg | (gpio_master_flag << src_index)
+            if gpio_master_flag:
+                continue
+            # If PS is not the master, we also need to update the radio source:
+            radio_index = int(src_name[2:]) & 0b11
+            gpio_radio_src_reg = gpio_radio_src_reg | (radio_index << (2*src_index))
+        self.log.trace("Updating GPIO source: master==0x{:03X} radio_src={:06X}"
+                       .format(gpio_master_reg, gpio_radio_src_reg))
+        self.mboard_regs_control.set_fp_gpio_master(gpio_master_reg)
+        self.mboard_regs_control.set_fp_gpio_radio_src(gpio_radio_src_reg)
+
     ###########################################################################
     # Hardware periphal controls
     ###########################################################################

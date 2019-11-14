@@ -246,7 +246,9 @@ def get_tpm_caps_info():
     return result
 
 def gpio_set_all(gpio_bank, value, gpio_size, ddr_mask):
-    """Helper function for set gpio.
+    """
+    Helper function to set GPIOs
+
     What this function do is take decimal value and convert to a binary string
     then try to set those individual bits to the gpio_bank.
     Arguments:

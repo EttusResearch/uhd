@@ -195,6 +195,8 @@ class MboardRegsControl(MboardRegsCommon):
         """set driver for front panel GPIO
         Arguments:
             value {unsigned} -- value is a single bit bit mask of 12 pins GPIO
+           0: means the pin is driven by PL
+           1: means the pin is driven by PS
         """
         with self.regs:
             return self.poke32(self.MB_GPIO_MASTER, value)
@@ -211,7 +213,7 @@ class MboardRegsControl(MboardRegsCommon):
     def set_fp_gpio_radio_src(self, value):
         """set driver for front panel GPIO
         Arguments:
-            value {unsigned} -- value is 2-bit bit mask of 12 pins GPIO
+            value {unsigned} -- value is 2x12 bits, two bits per GPIO pin
            00: means the pin is driven by radio 0
            01: means the pin is driven by radio 1
            10: means the pin is driven by radio 2

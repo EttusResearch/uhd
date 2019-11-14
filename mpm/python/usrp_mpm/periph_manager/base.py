@@ -925,3 +925,41 @@ class PeriphManagerBase(object):
         Gets the RFNoC-related clocks present in the FPGA design
         """
         raise NotImplementedError("get_clocks() not implemented.")
+
+    #######################################################################
+    # GPIO API
+    #######################################################################
+    def get_gpio_banks(self):
+        """
+        Returns a list of GPIO banks over which MPM has any control
+        """
+        self.log.debug("get_gpio_banks(): No banks defined on this device.")
+        return []
+
+    def get_gpio_srcs(self, bank):
+        """
+        Return a list of valid GPIO sources for a given bank
+        """
+        assert bank in self.get_gpio_banks(), \
+            "Invalid GPIO bank: {}".format(bank)
+        return []
+
+    def get_gpio_src(self, bank):
+        """
+        Return the currently selected GPIO source for a given bank. The return
+        value is a list of strings. The length of the vector is identical to
+        the number of controllable GPIO pins on this bank.
+        """
+        assert bank in self.get_gpio_banks(), \
+            "Invalid GPIO bank: {}".format(bank)
+        raise NotImplementedError("get_gpio_src() not available on this device!")
+
+    def set_gpio_src(self, bank, src):
+        """
+        Set the GPIO source for a given bank.
+        """
+        assert bank in self.get_gpio_banks(), \
+            "Invalid GPIO bank: {}".format(bank)
+        assert src in self.get_gpio_srcs(bank), \
+            "Invalid GPIO source: {}".format(src)
+        raise NotImplementedError("set_gpio_src() not available on this device!")

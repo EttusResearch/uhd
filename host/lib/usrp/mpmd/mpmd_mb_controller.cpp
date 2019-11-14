@@ -23,10 +23,18 @@ mpmd_mb_controller::mpmd_mb_controller(
         register_timekeeper(tk_idx, std::make_shared<mpmd_timekeeper>(tk_idx, _rpc));
     }
 
+    // Enumerate sensors
     auto sensor_list =
         _rpc->request_with_token<std::vector<std::string>>("get_mb_sensors");
     UHD_LOG_DEBUG("MPMD", "Found " << sensor_list.size() << " motherboard sensors.");
     _sensor_names.insert(sensor_list.cbegin(), sensor_list.cend());
+
+    // Enumerate GPIO banks that are under mb_controller control
+    _gpio_banks = _rpc->request_with_token<std::vector<std::string>>("get_gpio_banks");
+    for (const auto& bank : _gpio_banks) {
+        _gpio_srcs.insert({bank,
+            _rpc->request_with_token<std::vector<std::string>>("get_gpio_srcs", bank)});
+    }
 }
 
 /******************************************************************************
@@ -174,3 +182,35 @@ uhd::usrp::mboard_eeprom_t mpmd_mb_controller::get_eeprom()
     return mb_eeprom_dict;
 }
 
+std::vector<std::string> mpmd_mb_controller::get_gpio_banks() const
+{
+    return _gpio_banks;
+}
+
+std::vector<std::string> mpmd_mb_controller::get_gpio_srcs(const std::string& bank) const
+{
+    if (!_gpio_srcs.count(bank)) {
+        UHD_LOG_ERROR("MPMD", "Invalid GPIO bank: `" << bank << "'");
+        throw uhd::key_error(std::string("Invalid GPIO bank: ") + bank);
+    }
+    return _gpio_srcs.at(bank);
+}
+
+std::vector<std::string> mpmd_mb_controller::get_gpio_src(const std::string& bank)
+{
+    if (!_gpio_srcs.count(bank)) {
+        UHD_LOG_ERROR("MPMD", "Invalid GPIO bank: `" << bank << "'");
+        throw uhd::key_error(std::string("Invalid GPIO bank: ") + bank);
+    }
+    return _rpc->request_with_token<std::vector<std::string>>("get_gpio_srcs", bank);
+}
+
+void mpmd_mb_controller::set_gpio_src(
+    const std::string& bank, const std::vector<std::string>& src)
+{
+    if (!_gpio_srcs.count(bank)) {
+        UHD_LOG_ERROR("MPMD", "Invalid GPIO bank: `" << bank << "'");
+        throw uhd::key_error(std::string("Invalid GPIO bank: ") + bank);
+    }
+    _rpc->notify_with_token("set_gpio_src", bank, src);
+}

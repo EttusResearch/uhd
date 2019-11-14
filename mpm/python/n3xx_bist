@@ -472,8 +472,8 @@ class N3XXBIST(bist.UsrpBIST):
         - read_patterns: A list of patterns that were read back
         """
         assert 'gpio' in self.tests_to_run
-        # patterns = list(range(64))
-        GPIO_WIDTH = 12
+        # Our FP-GPIO has 12 programmable pins
+        gpio_width = 12
         patterns = range(64)
         if self.args.dry_run:
             return True, {
@@ -484,16 +484,17 @@ class N3XXBIST(bist.UsrpBIST):
         gpio_tca6424 = n3xx_periphs.TCA6424(self.mb_rev)
         gpio_tca6424.set("FPGA-GPIO-EN")
         mb_regs = n3xx_periphs.MboardRegsControl(n3xx.n3xx.mboard_regs_label, self.log)
+        # We set all 12 pins to be driven by the PS
         mb_regs.set_fp_gpio_master(0xFFF)
         # Allow some time for the front-panel GPIOs to become usable
         time.sleep(.5)
-        ddr1 = 0x03f
-        ddr2 = 0xfc0
+        ddr1 = 0x03f # Lower 6 pins are outputs
+        ddr2 = 0xfc0 # Upper 6 pins are inputs
         def _run_gpio(ddr, patterns):
             " Run a GPIO test for a given set of patterns "
             gpio_ctrl = n3xx_periphs.FrontpanelGPIO(ddr)
             for pattern in patterns:
-                bist.gpio_set_all(gpio_ctrl, pattern, GPIO_WIDTH, ddr)
+                bist.gpio_set_all(gpio_ctrl, pattern, gpio_width, ddr)
                 time.sleep(0.1)
                 gpio_rb = gpio_ctrl.get_all()
                 if  pattern != gpio_rb:
@@ -502,7 +503,7 @@ class N3XXBIST(bist.UsrpBIST):
             return True, {'write_patterns': list(patterns),
                           'read_patterns': list(patterns)}
         status, data = _run_gpio(ddr1, patterns)
-        if  not status:
+        if not status:
             return status, data
         status, data = _run_gpio(ddr2, patterns)
         return status, data
