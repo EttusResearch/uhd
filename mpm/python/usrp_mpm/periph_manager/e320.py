@@ -35,7 +35,11 @@ E320_DEFAULT_ENABLE_FPGPIO = True
 E320_FPGA_COMPAT = (5, 0)
 E320_MONITOR_THREAD_INTERVAL = 1.0 # seconds
 E320_DBOARD_SLOT_IDX = 0
-
+E320_GPIO_BANKS = "FP0"
+E320_GPIO_SRC_PS = "PS"
+# We use the index positions of RFA and RFB to map between name and radio index
+E320_GPIO_SRCS = ("RFA", "RFB", E320_GPIO_SRC_PS)
+E320_FPGPIO_WIDTH = 8
 
 ###############################################################################
 # Transport managers
@@ -500,41 +504,70 @@ class e320(ZynqComponents, PeriphManagerBase):
         self.mboard_regs_control.set_time_source(time_source, self.get_ref_clock_freq())
 
     ###########################################################################
+    # GPIO API
+    ###########################################################################
+    def get_gpio_banks(self):
+        """
+        Returns a list of GPIO banks over which MPM has any control
+        """
+        return E320_GPIO_BANKS
+
+    def get_gpio_srcs(self, bank):
+        """
+        Return a list of valid GPIO sources for a given bank
+        """
+        assert bank in self.get_gpio_banks(), "Invalid GPIO bank: {}".format(bank)
+        return self._fp_gpio_srcs
+
+    def get_gpio_src(self, bank):
+        """
+        Return the currently selected GPIO source for a given bank. The return
+        value is a list of strings. The length of the vector is identical to
+        the number of controllable GPIO pins on this bank.
+        """
+        assert bank in self.get_gpio_banks(), "Invalid GPIO bank: {}".format(bank)
+        gpio_master_reg = self.mboard_regs_control.get_fp_gpio_master()
+        gpio_radio_src_reg = self.mboard_regs_control.get_fp_gpio_radio_src()
+        def get_gpio_src_i(gpio_pin_index):
+            """
+            Return the current radio source given a pin index.
+            """
+            if gpio_master_reg & (1 << gpio_pin_index):
+                return E320_GPIO_SRC_PS
+            radio_src = (gpio_radio_src_reg >> (2 * gpio_pin_index)) & 0b11
+            assert radio_src in (0, 1)
+            return E320_GPIO_SRCS[radio_src]
+        return [get_gpio_src_i(i) for i in range(E320_FPGPIO_WIDTH)]
+
+    def set_gpio_src(self, bank, src):
+        """
+        Set the GPIO source for a given bank.
+        """
+        assert bank in self.get_gpio_banks(), "Invalid GPIO bank: {}".format(bank)
+        assert len(src) == E320_FPGPIO_WIDTH, \
+            "Invalid number of GPIO sources!"
+        gpio_master_reg = 0x00
+        gpio_radio_src_reg = self.mboard_regs_control.get_fp_gpio_radio_src()
+        for src_index, src_name in enumerate(src):
+            if src_name not in self.get_gpio_srcs(bank):
+                raise RuntimeError(
+                    "Invalid GPIO source name `{}' at bit position {}!"
+                    .format(src_name, src_index))
+            gpio_master_flag = (src_name == E320_GPIO_SRC_PS)
+            gpio_master_reg = gpio_master_reg | (gpio_master_flag << src_index)
+            if gpio_master_flag:
+                continue
+            # If PS is not the master, we also need to update the radio source:
+            radio_index = E320_GPIO_SRCS.index(src_name)
+            gpio_radio_src_reg = gpio_radio_src_reg | (radio_index << (2*src_index))
+        self.log.trace("Updating GPIO source: master==0x{:02X} radio_src={:04X}"
+                       .format(gpio_master_reg, gpio_radio_src_reg))
+        self.mboard_regs_control.set_fp_gpio_master(gpio_master_reg)
+        self.mboard_regs_control.set_fp_gpio_radio_src(gpio_radio_src_reg)
+
+    ###########################################################################
     # Hardware peripheral controls
     ###########################################################################
-
-    def set_fp_gpio_master(self, value):
-        """set driver for front panel GPIO
-        Arguments:
-            value {unsigned} -- value is a single bit bit mask of 12 pins GPIO
-        """
-        self.mboard_regs_control.set_fp_gpio_master(value)
-
-    def get_fp_gpio_master(self):
-        """get "who" is driving front panel gpio
-           The return value is a bit mask of 8 pins GPIO.
-           0: means the pin is driven by PL
-           1: means the pin is driven by PS
-        """
-        return self.mboard_regs_control.get_fp_gpio_master()
-
-    def set_fp_gpio_radio_src(self, value):
-        """set driver for front panel GPIO
-        Arguments:
-            value {unsigned} -- value is 2-bit bit mask of 8 pins GPIO
-           00: means the pin is driven by radio 0
-           01: means the pin is driven by radio 1
-        """
-        self.mboard_regs_control.set_fp_gpio_radio_src(value)
-
-    def get_fp_gpio_radio_src(self):
-        """get which radio is driving front panel gpio
-           The return value is 2-bit bit mask of 8 pins GPIO.
-           00: means the pin is driven by radio 0
-           01: means the pin is driven by radio 1
-        """
-        return self.mboard_regs_control.get_fp_gpio_radio_src()
-
     def enable_gps(self, enable):
         """
         Turn power to the GPS (CLK_GPS_PWR_EN) off or on.

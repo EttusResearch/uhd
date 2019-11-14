@@ -153,7 +153,7 @@ class MboardRegsControl(MboardRegsCommon):
             value {unsigned} -- value is a single bit bit mask of 8 pins GPIO
         """
         with self.regs:
-            return self.poke32(self.MB_GPIO_MASTER, value)
+            self.poke32(self.MB_GPIO_MASTER, value)
 
     def get_fp_gpio_master(self):
         """get "who" is driving front panel gpio
@@ -162,7 +162,7 @@ class MboardRegsControl(MboardRegsCommon):
            1: means the pin is driven by PS
         """
         with self.regs:
-            return self.peek32(self.MB_GPIO_MASTER) & 0xfff
+            return self.peek32(self.MB_GPIO_MASTER) & 0xff
 
     def set_fp_gpio_radio_src(self, value):
         """set driver for front panel GPIO
@@ -172,7 +172,7 @@ class MboardRegsControl(MboardRegsCommon):
            01: means the pin is driven by radio 1
         """
         with self.regs:
-            return self.poke32(self.MB_GPIO_RADIO_SRC, value)
+            self.poke32(self.MB_GPIO_RADIO_SRC, value)
 
     def get_fp_gpio_radio_src(self):
         """get which radio is driving front panel gpio
@@ -181,7 +181,7 @@ class MboardRegsControl(MboardRegsCommon):
            01: means the pin is driven by radio 1
         """
         with self.regs:
-            return self.peek32(self.MB_GPIO_RADIO_SRC) & 0xffffff
+            return self.peek32(self.MB_GPIO_RADIO_SRC) & 0xffff
 
     def set_time_source(self, time_source, ref_clk_freq):
         """

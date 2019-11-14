@@ -72,24 +72,24 @@ class MboardRegsControl(MboardRegsCommon):
     def set_fp_gpio_master(self, value):
         """set driver for front panel GPIO
         Arguments:
-            value {unsigned} -- value is a single bit bit mask of 8 pins GPIO
+            value {unsigned} -- value is a single bit bit mask of 6 pins GPIO
         """
         with self.regs:
             return self.poke32(self.MB_GPIO_MASTER, value)
 
     def get_fp_gpio_master(self):
         """get "who" is driving front panel gpio
-           The return value is a bit mask of 8 pins GPIO.
+           The return value is a bit mask of 6 pins GPIO.
            0: means the pin is driven by PL
            1: means the pin is driven by PS
         """
         with self.regs:
-            return self.peek32(self.MB_GPIO_MASTER) & 0xfff
+            return self.peek32(self.MB_GPIO_MASTER) & 0xff
 
     def set_fp_gpio_radio_src(self, value):
         """set driver for front panel GPIO
         Arguments:
-            value {unsigned} -- value is 2-bit bit mask of 8 pins GPIO
+            value {unsigned} -- value is 2-bit bit mask of 6 pins GPIO
            00: means the pin is driven by radio 0
            01: means the pin is driven by radio 1
         """
@@ -98,12 +98,12 @@ class MboardRegsControl(MboardRegsCommon):
 
     def get_fp_gpio_radio_src(self):
         """get which radio is driving front panel gpio
-           The return value is 2-bit bit mask of 8 pins GPIO.
+           The return value is 2-bit bit mask of 6 pins GPIO.
            00: means the pin is driven by radio 0
            01: means the pin is driven by radio 1
         """
         with self.regs:
-            return self.peek32(self.MB_GPIO_RADIO_SRC) & 0xffffff
+            return self.peek32(self.MB_GPIO_RADIO_SRC) & 0xfff
 
     def set_time_source(self, time_source):
         """
@@ -114,10 +114,10 @@ class MboardRegsControl(MboardRegsCommon):
             self.log.trace("Setting time source to internal")
             pps_sel_val = self.MB_CLOCK_CTRL_PPS_SEL_INT
         elif time_source == 'gpsdo':
-            self.log.debug("Setting time source to gpsdo...")
+            self.log.trace("Setting time source to gpsdo...")
             pps_sel_val = self.MB_CLOCK_CTRL_PPS_SEL_GPS
         elif time_source == 'external':
-            self.log.debug("Setting time source to external...")
+            self.log.trace("Setting time source to external...")
             pps_sel_val = self.MB_CLOCK_CTRL_PPS_SEL_EXT
         else:
             assert False, "Cannot set to invalid time source: {}".format(time_source)

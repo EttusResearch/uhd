@@ -334,7 +334,7 @@ class E320BIST(bist.UsrpBIST):
         - read_patterns: A list of patterns that were read back
         """
         assert 'gpio' in self.tests_to_run
-        GPIO_WIDTH = 8
+        gpio_width = 8
         patterns = range(16)
         if self.args.dry_run:
             return True, {
@@ -353,7 +353,7 @@ class E320BIST(bist.UsrpBIST):
             " Run a GPIO test for a given set of patterns "
             gpio_ctrl = e320_periphs.FrontpanelGPIO(ddr)
             for pattern in patterns:
-                bist.gpio_set_all(gpio_ctrl, pattern, GPIO_WIDTH, ddr)
+                bist.gpio_set_all(gpio_ctrl, pattern, gpio_width, ddr)
                 time.sleep(0.1)
                 gpio_rb = gpio_ctrl.get_all()
                 if pattern != gpio_rb:
