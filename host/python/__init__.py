@@ -10,3 +10,4 @@ UHD Python API module
 from . import types
 from . import usrp
 from . import filters
+from . import rfnoc

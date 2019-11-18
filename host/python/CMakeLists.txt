@@ -52,6 +52,7 @@ set(PYUHD_FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/types.py
   ${CMAKE_CURRENT_SOURCE_DIR}/usrp.py
   ${CMAKE_CURRENT_SOURCE_DIR}/filters.py
+  ${CMAKE_CURRENT_SOURCE_DIR}/rfnoc.py
 )
 
 set(SETUP_PY_IN    "${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in")

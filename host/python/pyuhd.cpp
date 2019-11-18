@@ -13,6 +13,8 @@
 
 namespace py = pybind11;
 
+#include "rfnoc/rfnoc_python.hpp"
+
 #include "stream_python.hpp"
 
 #include "types/types_python.hpp"
@@ -72,5 +74,9 @@ PYBIND11_MODULE(libpyuhd, m)
     // Register filters submodule
     auto filters_module = m.def_submodule("filters", "Filter Submodule");
     export_filters(filters_module);
+
+    // Register RFNoC submodule
+    auto rfnoc_module = m.def_submodule("rfnoc", "RFNoC Objects");
+    export_rfnoc(rfnoc_module);
 }
 
