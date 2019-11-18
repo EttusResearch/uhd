@@ -274,9 +274,9 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     uhd::tx_metadata_t tx_md;
     tx_md.has_time_spec  = false;
     tx_md.start_of_burst = true;
-    uhd::time_spec_t stop_time;
     double timeout = 0.01;
-    uhd::time_spec_t dwell_time(dwell);
+    auto dwell_time      = std::chrono::milliseconds(static_cast<int64_t>(dwell * 1000));
+
     int loop = 0;
     uint32_t rb, expected;
 
@@ -309,8 +309,9 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
         if (vm.count("bitbang")) {
             // dwell and continuously read back GPIO values
-            stop_time = usrp->get_time_now() + dwell_time;
-            while (not stop_signal_called and usrp->get_time_now() < stop_time) {
+            auto stop_time = std::chrono::steady_clock::now() + dwell_time;
+            while (
+                not stop_signal_called and std::chrono::steady_clock::now() < stop_time) {
                 rb = usrp->get_gpio_attr(gpio, "READBACK");
                 std::cout << "\rREADBACK: " << to_bit_string(rb, num_bits);
                 std::this_thread::sleep_for(std::chrono::milliseconds(10));
@@ -321,8 +322,9 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             std::cout << "\nTesting user controlled GPIO and ATR idle output..."
                       << std::flush;
             usrp->set_gpio_attr(gpio, "OUT", GPIO_BIT(4), GPIO_BIT(4));
-            stop_time = usrp->get_time_now() + dwell_time;
-            while (not stop_signal_called and usrp->get_time_now() < stop_time) {
+            auto stop_time = std::chrono::steady_clock::now() + dwell_time;
+            while (
+                not stop_signal_called and std::chrono::steady_clock::now() < stop_time) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
             }
             rb       = usrp->get_gpio_attr(gpio, "READBACK");
@@ -346,8 +348,9 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             std::cout << "\nTesting ATR RX output..." << std::flush;
             rx_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS;
             rx_stream->issue_stream_cmd(rx_cmd);
-            stop_time = usrp->get_time_now() + dwell_time;
-            while (not stop_signal_called and usrp->get_time_now() < stop_time) {
+            stop_time = std::chrono::steady_clock::now() + dwell_time;
+            while (
+                not stop_signal_called and std::chrono::steady_clock::now() < stop_time) {
                 try {
                     rx_stream->recv(rx_buffs, nsamps_per_buff, rx_md, timeout);
                 } catch (...) {
@@ -374,10 +377,11 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
             // test ATR TX by transmitting for 1 second
             std::cout << "\nTesting ATR TX output..." << std::flush;
-            stop_time            = usrp->get_time_now() + dwell_time;
+            stop_time            = std::chrono::steady_clock::now() + dwell_time;
             tx_md.start_of_burst = true;
             tx_md.end_of_burst   = false;
-            while (not stop_signal_called and usrp->get_time_now() < stop_time) {
+            while (
+                not stop_signal_called and std::chrono::steady_clock::now() < stop_time) {
                 try {
                     tx_stream->send(tx_buffs, nsamps_per_buff, tx_md, timeout);
                     tx_md.start_of_burst = false;
@@ -408,8 +412,9 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             rx_stream->issue_stream_cmd(rx_cmd);
             tx_md.start_of_burst = true;
             tx_md.end_of_burst   = false;
-            stop_time            = usrp->get_time_now() + dwell_time;
-            while (not stop_signal_called and usrp->get_time_now() < stop_time) {
+            stop_time            = std::chrono::steady_clock::now() + dwell_time;
+            while (
+                not stop_signal_called and std::chrono::steady_clock::now() < stop_time) {
                 try {
                     tx_stream->send(tx_buffs, nsamps_per_buff, tx_md, timeout);
                     tx_md.start_of_burst = false;
