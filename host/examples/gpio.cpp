@@ -310,7 +310,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             // test user controlled GPIO and ATR idle by setting bit 4 high for 1 second
             std::cout << "\nTesting user controlled GPIO and ATR idle output..."
                       << std::flush;
-            usrp->set_gpio_attr(gpio, "OUT", 1 << 4, 1 << 4);
+            usrp->set_gpio_attr(gpio, "OUT", GPIO_BIT(4), GPIO_BIT(4));
             stop_time = usrp->get_time_now() + dwell_time;
             while (not stop_signal_called and usrp->get_time_now() < stop_time) {
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -401,9 +401,9 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
             stop_time            = usrp->get_time_now() + dwell_time;
             while (not stop_signal_called and usrp->get_time_now() < stop_time) {
                 try {
-                    tx_stream->send(rx_buffs, nsamps_per_buff, tx_md, timeout);
+                    tx_stream->send(tx_buffs, nsamps_per_buff, tx_md, timeout);
                     tx_md.start_of_burst = false;
-                    rx_stream->recv(tx_buffs, nsamps_per_buff, rx_md, timeout);
+                    rx_stream->recv(rx_buffs, nsamps_per_buff, rx_md, timeout);
                 } catch (...) {
                 }
             }
