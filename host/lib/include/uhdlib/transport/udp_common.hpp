@@ -1,6 +1,7 @@
 //
 // Copyright 2011 Ettus Research LLC
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, A National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -14,6 +15,7 @@
 #include <uhd/types/device_addr.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/transport/links.hpp>
+#include <uhdlib/utils/narrow.hpp>
 #include <boost/asio.hpp>
 #include <boost/format.hpp>
 #include <thread>
@@ -110,7 +112,7 @@ UHD_INLINE size_t recv_udp_packet(
 #endif
 
     if (wait_for_recv_ready(sock_fd, timeout_ms)) {
-        len = ::recv(sock_fd, (char*)mem, frame_size, 0);
+        len = uhd::narrow_cast<ssize_t>(::recv(sock_fd, (char*)mem, frame_size, 0));
         if (len == 0) {
             throw uhd::io_error("socket closed");
         }
@@ -130,7 +132,7 @@ UHD_INLINE void send_udp_packet(int sock_fd, void* mem, size_t len)
     // This is known to occur at least on some OSX systems.
     // But it should be safe to always check for the error.
     while (true) {
-        const ssize_t ret = ::send(sock_fd, (const char*)mem, len, 0);
+        const ssize_t ret = uhd::narrow_cast<ssize_t>(::send(sock_fd, (const char*)mem, len, 0));
         if (ret == ssize_t(len))
             break;
         if (ret == -1 and errno == ENOBUFS) {

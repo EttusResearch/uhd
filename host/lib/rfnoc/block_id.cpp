@@ -1,6 +1,7 @@
 //
 // Copyright 2014 Ettus Research LLC
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, A National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -74,7 +75,7 @@ bool block_id_t::match(const std::string& block_str)
                and (matches[3] == ""
                        or boost::lexical_cast<size_t>(matches[3]) == _block_ctr)
                and not(matches[1] == "" and matches[2] == "" and matches[3] == "");
-    } catch (const std::bad_cast& e) {
+    } catch (const std::bad_cast&) {
         return false;
     }
     return false;

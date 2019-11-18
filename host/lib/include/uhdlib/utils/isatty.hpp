@@ -8,6 +8,7 @@
 #define INCLUDED_UHDLIB_UTILS_ISATTY_HPP
 
 #include <uhd/config.hpp>
+#include <uhdlib/utils/narrow.hpp>
 
 namespace uhd {
 
@@ -23,7 +24,7 @@ namespace uhd {
      */
     bool is_a_tty(const int fd)
     {
-        return _isatty(fd);
+        return uhd::narrow_cast<bool>(_isatty(fd));
     }
 
 #elif _POSIX_C_SOURCE >= _200112L

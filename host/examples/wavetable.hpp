@@ -1,6 +1,7 @@
 //
 // Copyright 2010-2012,2014 Ettus Research LLC
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, A National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -23,19 +24,21 @@ public:
         std::vector<float> real_wave_table(wave_table_len);
         if (wave_type == "CONST") {
             for (size_t i = 0; i < wave_table_len; i++)
-                real_wave_table[i] = 1.0;
+                real_wave_table[i] = 1.0f;
         } else if (wave_type == "SQUARE") {
             for (size_t i = 0; i < wave_table_len; i++)
-                real_wave_table[i] = (i < wave_table_len / 2) ? 0.0 : 1.0;
+                real_wave_table[i] = (i < wave_table_len / 2) ? 0.0f : 1.0f;
         } else if (wave_type == "RAMP") {
             for (size_t i = 0; i < wave_table_len; i++)
-                real_wave_table[i] = 2.0 * i / (wave_table_len - 1) - 1.0;
+                real_wave_table[i] = 2.0f * i / (wave_table_len - 1) - 1.0f;
         } else if (wave_type == "SINE") {
             static const double tau = 2 * std::acos(-1.0);
-            for (size_t i = 0; i < wave_table_len; i++)
-                real_wave_table[i] = std::sin((tau * i) / wave_table_len);
-        } else
+            for (size_t i = 0; i < wave_table_len; i++) {
+                real_wave_table[i] = static_cast<float>(std::sin((tau * i) / wave_table_len));
+            }
+        } else {
             throw std::runtime_error("unknown waveform type: " + wave_type);
+        }
 
         // compute i and q pairs with 90% offset and scale to amplitude
         for (size_t i = 0; i < wave_table_len; i++) {

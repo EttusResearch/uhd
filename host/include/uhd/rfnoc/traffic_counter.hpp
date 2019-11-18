@@ -1,5 +1,6 @@
 //
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, A National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -8,6 +9,7 @@
 #define INCLUDED_LIBUHD_TRAFFIC_COUNTER_HPP
 
 #include <uhd/property_tree.hpp>
+#include <uhdlib/utils/narrow.hpp>
 #include <stdint.h>
 #include <type_traits>
 #include <functional>
@@ -57,7 +59,8 @@ public:
             for (size_t i = 0; i < std::extent<decltype(counters)>::value; i++) {
                 tree->create<uint64_t>(root_path / "traffic_counter" / counters[i])
                     .set_publisher([this, i, first_counter_offset]() {
-                        return _read_reg_fn(i + first_counter_offset);
+                        return _read_reg_fn(
+                            uhd::narrow_cast<uint32_t>(i) + first_counter_offset);
                     });
             }
         }

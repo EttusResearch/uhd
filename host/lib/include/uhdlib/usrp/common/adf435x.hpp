@@ -1,6 +1,7 @@
 //
 // Copyright 2015 Ettus Research LLC
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, A National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -15,6 +16,7 @@
 #include <uhd/types/ranges.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/utils/math.hpp>
+#include <uhdlib/utils/narrow.hpp>
 #include <functional>
 #include <boost/math/special_functions/round.hpp>
 #include <boost/thread.hpp>
@@ -112,7 +114,8 @@ public:
 
     virtual void set_charge_pump_current(charge_pump_current_t cp_current) = 0;
 
-    virtual double set_charge_pump_current(double current, bool flush = false) = 0;
+    virtual double set_charge_pump_current(
+        const double current, const bool flush = false) = 0;
 
     virtual uhd::meta_range_t get_charge_pump_current_range() = 0;
 
@@ -321,7 +324,8 @@ public:
         const auto cp_range = get_charge_pump_current_range();
 
         const auto coerced_current = cp_range.clip(current, true);
-        const int current_step     = std::round((coerced_current / cp_range.step()) - 1);
+        const int current_step =
+            uhd::narrow_cast<int>(std::round((coerced_current / cp_range.step()) - 1));
 
         UHD_ASSERT_THROW(current_step >= 0 and current_step < 16);
         set_charge_pump_current(

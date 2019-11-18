@@ -1,5 +1,6 @@
 //
 // Copyright 2015, 2017 Ettus Research, A National Instruments Company
+// Copyright 2019 Ettus Research, A National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -13,6 +14,7 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/math.hpp>
 #include <uhd/utils/safe_call.hpp>
+#include <uhdlib/utils/narrow.hpp>
 #include <stdint.h>
 #include <boost/format.hpp>
 #include <functional>
@@ -54,22 +56,24 @@ public:
         MUXOUT_DLD
     };
 
-    virtual void set_reference_freq(double fref, bool force = false) = 0;
+    virtual void set_reference_freq(const double fref, const bool force = false) = 0;
 
-    virtual void set_pfd_freq(double pfd_freq) = 0;
+    virtual void set_pfd_freq(const double pfd_freq) = 0;
 
-    virtual void set_feedback_select(feedback_sel_t fb_sel) = 0;
+    virtual void set_feedback_select(const feedback_sel_t fb_sel) = 0;
 
-    virtual void set_output_power(output_power_t power) = 0;
+    virtual void set_output_power(const output_power_t power) = 0;
 
-    virtual void set_output_enable(output_t output, bool enable) = 0;
+    virtual void set_output_enable(const output_t output, const bool enable) = 0;
 
-    virtual void set_muxout_mode(muxout_t mode) = 0;
+    virtual void set_muxout_mode(const muxout_t mode) = 0;
 
-    virtual double set_frequency(
-        double target_freq, double freq_resolution, bool flush = false) = 0;
+    virtual double set_frequency(const double target_freq,
+        const double freq_resolution,
+        const bool flush = false) = 0;
 
-    virtual double set_charge_pump_current(double target_current, bool flush = false) = 0;
+    virtual double set_charge_pump_current(
+        const double target_current, const bool flush = false) = 0;
 
     virtual uhd::meta_range_t get_charge_pump_current_range() = 0;
 
@@ -238,7 +242,8 @@ public:
         const auto cp_range = get_charge_pump_current_range();
 
         const auto coerced_current = cp_range.clip(current, true);
-        const int current_step     = std::round((coerced_current / cp_range.step()) - 1);
+        const int current_step =
+            uhd::narrow_cast<int>(std::round((coerced_current / cp_range.step()) - 1));
 
         UHD_ASSERT_THROW(current_step >= 0 and current_step < 16);
         _regs.charge_pump_current =

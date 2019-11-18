@@ -1,5 +1,6 @@
 //
 // Copyright 2015-2017 Ettus Research, A National Instruments Company
+// Copyright 2019 Ettus Research, A National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -8,6 +9,7 @@
 #include "twinrx_ids.hpp"
 #include <uhdlib/usrp/common/adf435x.hpp>
 #include <uhdlib/usrp/common/adf535x.hpp>
+#include <uhdlib/utils/narrow.hpp>
 #include <uhd/utils/math.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <chrono>
@@ -41,7 +43,8 @@ public:
     {
         // SPI configuration
         _spi_config.use_custom_divider = true;
-        _spi_config.divider = std::ceil(_db_iface->get_codec_rate(dboard_iface::UNIT_TX) / TWINRX_SPI_CLOCK_FREQ);
+        _spi_config.divider            = uhd::narrow_cast<size_t>(std::ceil(
+            _db_iface->get_codec_rate(dboard_iface::UNIT_TX) / TWINRX_SPI_CLOCK_FREQ));
 
         //Initialize dboard clocks
         bool found_rate = false;

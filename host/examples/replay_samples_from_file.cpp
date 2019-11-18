@@ -1,5 +1,6 @@
 //
 // Copyright 2018 Ettus Research, A National Instruments Company
+// Copyright 2019 Ettus Research, A National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -203,7 +204,6 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     ///////////////////////////////////////////////////////////////////////////
     // Setup streamer to Replay block
 
-    uint64_t noc_id;
     uhd::device_addr_t streamer_args;
     uhd::stream_args_t stream_args(cpu_format, wire_format);
     uhd::tx_streamer::sptr tx_stream;

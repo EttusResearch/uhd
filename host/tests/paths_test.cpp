@@ -1,5 +1,6 @@
 //
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, A National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -16,7 +17,7 @@
 BOOST_AUTO_TEST_CASE(test_paths_expandvars)
 {
 #ifdef UHD_PLATFORM_WIN32
-    const std::string path_to_expand("\%programdata%/uhd/uhd.conf");
+    const std::string path_to_expand("%programdata%/uhd/uhd.conf");
 #else
     const std::string path_to_expand("$HOME/.uhd/uhd.conf");
 #endif

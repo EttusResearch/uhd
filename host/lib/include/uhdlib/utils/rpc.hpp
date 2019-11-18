@@ -1,5 +1,6 @@
 //
 // Copyright 2017 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, A National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -305,9 +306,9 @@ private:
         }
         try {
             return _client->call(_get_last_error_cmd).as<std::string>();
-        } catch (const ::rpc::rpc_error& ex) {
+        } catch (const ::rpc::rpc_error&) {
             // nop
-        } catch (const std::bad_cast& ex) {
+        } catch (const std::bad_cast&) {
             // nop
         } catch (...) {
             // nop

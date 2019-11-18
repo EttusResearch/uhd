@@ -1,6 +1,7 @@
 //
 // Copyright 2010-2012,2014 Ettus Research LLC
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -11,6 +12,7 @@
 #include "usrp2_clk_regs.hpp"
 #include <uhd/utils/safe_call.hpp>
 #include <uhd/utils/assert_has.hpp>
+#include <uhdlib/utils/narrow.hpp>
 #include <stdint.h>
 #include <boost/math/special_functions/round.hpp>
 #include <iostream>
@@ -96,8 +98,8 @@ public:
                 ad9510_regs_t::POWER_DOWN_LVPECL_OUT2_SAFE_PD;
             _ad9510_regs.output_level_lvpecl_out2 = ad9510_regs_t::OUTPUT_LEVEL_LVPECL_OUT2_810MV;
             //set the registers (divider - 1)
-            _ad9510_regs.divider_low_cycles_out2 = low - 1;
-            _ad9510_regs.divider_high_cycles_out2 = high - 1;
+            _ad9510_regs.divider_low_cycles_out2 = uhd::narrow_cast<uint8_t>(low - 1);
+            _ad9510_regs.divider_high_cycles_out2 = uhd::narrow_cast<uint8_t>(high - 1);
             _ad9510_regs.bypass_divider_out2 = 0;
             break;
 
@@ -106,8 +108,8 @@ public:
             _ad9510_regs.lvds_cmos_select_out5 = ad9510_regs_t::LVDS_CMOS_SELECT_OUT5_LVDS;
             _ad9510_regs.output_level_lvds_out5 = ad9510_regs_t::OUTPUT_LEVEL_LVDS_OUT5_1_75MA;
             //set the registers (divider - 1)
-            _ad9510_regs.divider_low_cycles_out5 = low - 1;
-            _ad9510_regs.divider_high_cycles_out5 = high - 1;
+            _ad9510_regs.divider_low_cycles_out5 = uhd::narrow_cast<uint8_t>(low - 1);
+            _ad9510_regs.divider_high_cycles_out5 = uhd::narrow_cast<uint8_t>(high - 1);
             _ad9510_regs.bypass_divider_out5 = 0;
             break;
             
@@ -116,8 +118,8 @@ public:
             _ad9510_regs.lvds_cmos_select_out6 = ad9510_regs_t::LVDS_CMOS_SELECT_OUT6_LVDS;
             _ad9510_regs.output_level_lvds_out6 = ad9510_regs_t::OUTPUT_LEVEL_LVDS_OUT6_1_75MA;
             //set the registers (divider - 1)
-            _ad9510_regs.divider_low_cycles_out6 = low - 1;
-            _ad9510_regs.divider_high_cycles_out6 = high - 1;
+            _ad9510_regs.divider_low_cycles_out6 = uhd::narrow_cast<uint8_t>(low - 1);
+            _ad9510_regs.divider_high_cycles_out6 = uhd::narrow_cast<uint8_t>(high - 1);
             _ad9510_regs.bypass_divider_out5 = 0;
             break;
 
@@ -159,8 +161,8 @@ public:
         size_t high = divider/2;
         size_t low = divider - high;
         //set the registers (divider - 1)
-        _ad9510_regs.divider_low_cycles_out7 = low - 1;
-        _ad9510_regs.divider_high_cycles_out7 = high - 1;
+        _ad9510_regs.divider_low_cycles_out7 = uhd::narrow_cast<uint8_t>(low - 1);
+        _ad9510_regs.divider_high_cycles_out7 = uhd::narrow_cast<uint8_t>(high - 1);
         //write the registers
         this->write_reg(clk_regs.div_lo(clk_regs.rx_db));
         this->write_reg(clk_regs.div_hi(clk_regs.rx_db));
@@ -217,15 +219,15 @@ public:
         switch(clk_regs.tx_db) {
         case 5: //USRP2+
           _ad9510_regs.bypass_divider_out5 = (divider == 1)? 1 : 0;
-          _ad9510_regs.divider_low_cycles_out5 = low - 1;
-          _ad9510_regs.divider_high_cycles_out5 = high - 1;
+          _ad9510_regs.divider_low_cycles_out5 = uhd::narrow_cast<uint8_t>(low - 1);
+          _ad9510_regs.divider_high_cycles_out5 = uhd::narrow_cast<uint8_t>(high - 1);
           break;
         case 6: //USRP2
           //bypass when the divider ratio is one
           _ad9510_regs.bypass_divider_out6 = (divider == 1)? 1 : 0;
           //set the registers (divider - 1)
-          _ad9510_regs.divider_low_cycles_out6 = low - 1;
-          _ad9510_regs.divider_high_cycles_out6 = high - 1;
+          _ad9510_regs.divider_low_cycles_out6 = uhd::narrow_cast<uint8_t>(low - 1);
+          _ad9510_regs.divider_high_cycles_out6 = uhd::narrow_cast<uint8_t>(high - 1);
           break;
         }
 

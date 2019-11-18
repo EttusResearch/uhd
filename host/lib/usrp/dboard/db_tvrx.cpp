@@ -1,6 +1,7 @@
 //
 // Copyright 2010-2012 Ettus Research LLC
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, A National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -26,6 +27,7 @@
 #include <uhd/utils/assert_has.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
+#include <uhdlib/utils/narrow.hpp>
 #include <tuner_4937di5_regs.hpp>
 #include <boost/array.hpp>
 #include <boost/assign/list_of.hpp>
@@ -264,7 +266,9 @@ static double gain_interp(double gain, const boost::array<double, 17>& db_vector
     uint8_t gain_step = 0;
     //find which bin we're in
     for(size_t i = 0; i < db_vector.size()-1; i++) {
-        if(gain >= db_vector[i] && gain <= db_vector[i+1]) gain_step = i;
+        if (gain >= db_vector[i] && gain <= db_vector[i+1]) {
+            gain_step = uhd::narrow_cast<uint8_t>(i);
+        }
     }
 
     //find the current slope for linear interpolation
