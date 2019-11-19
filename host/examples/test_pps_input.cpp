@@ -7,15 +7,21 @@
 
 #include <uhd/usrp/multi_usrp.hpp>
 #include <uhd/utils/safe_main.hpp>
-#include <uhd/utils/thread.hpp>
-#include <boost/format.hpp>
 #include <boost/program_options.hpp>
 #include <chrono>
-#include <complex>
 #include <iostream>
 #include <thread>
 
 namespace po = boost::program_options;
+
+bool product_requires_reflock(const std::string& product)
+{
+    if (product.find("e31") == 0 || product.find("E31") == 0) {
+        return true;
+    }
+
+    return false;
+}
 
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
@@ -38,7 +44,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
     // print the help message
     if (vm.count("help")) {
-        std::cout << boost::format("UHD Test PPS Input %s") % desc << std::endl;
+        std::cout << "UHD Test PPS Input " << desc << std::endl;
         std::cout
             << std::endl
             << "Tests if the PPS input signal is working. Will throw an error if not."
@@ -49,17 +55,17 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
     // create a usrp device
     std::cout << std::endl;
-    std::cout << boost::format("Creating the usrp device with: %s...") % args
-              << std::endl;
-    uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
-    std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
+    std::cout << "Creating the USRP device with: " << args << "..." << std::endl;
+    auto usrp = uhd::usrp::multi_usrp::make(args);
+    std::cout << "Using Device: " << usrp->get_pp_string() << std::endl;
 
     // sleep off if gpsdo detected and time next pps already set
     std::this_thread::sleep_for(std::chrono::seconds(1));
 
     // set time source if specified
-    if (not time_source.empty())
+    if (not time_source.empty()) {
         usrp->set_time_source(time_source);
+    }
 
     // set the time at an unknown pps (will throw if no pps)
     std::cout << std::endl
@@ -67,5 +73,16 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
               << std::endl;
     usrp->set_time_unknown_pps(uhd::time_spec_t(0.0));
     std::cout << std::endl << "Success!" << std::endl << std::endl;
+
+    if (product_requires_reflock(usrp->get_mboard_name())) {
+        std::cout << "Product requires verification of ref_locked sensor!" << std::endl;
+        std::cout << "Checking ref_locked sensor..." << std::flush;
+        if (!usrp->get_mboard_sensor("ref_locked").to_bool()) {
+            std::cout << "FAIL!" << std::endl;
+            return EXIT_FAILURE;
+        }
+        std::cout << "PASS!" << std::endl;
+    }
+
     return EXIT_SUCCESS;
 }
