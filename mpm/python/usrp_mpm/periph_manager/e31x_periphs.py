@@ -126,14 +126,6 @@ class MboardRegsControl(MboardRegsCommon):
             self.log.trace("Writing MB_CLOCK_CTRL to 0x{:08X}".format(reg_val))
             self.poke32(self.MB_CLOCK_CTRL, reg_val)
 
-    def get_fpga_type(self):
-        """
-        Reads the type of the FPGA image currently loaded
-        Returns a string with the type (SG1, SG3)
-        """
-        #TODO: Add SG1 and SG3?
-        return ""
-
     def get_refclk_lock(self):
         """
         Check the status of the reference clock in FPGA.
@@ -142,11 +134,7 @@ class MboardRegsControl(MboardRegsCommon):
         with self.regs:
             reg_val = self.peek32(self.MB_CLOCK_CTRL)
         locked = (reg_val & mask) > 0
-        if not locked:
-            self.log.warning("Reference Clock reporting unlocked. "
-                             "MB_CLOCK_CTRL reg: 0x{:08X}".format(reg_val))
-        else:
-            self.log.trace("Reference Clock locked!")
+        self.log.trace("Reference Clock %slocked!", "" if locked else "un")
         return locked
 
     def set_channel_mode(self, channel_mode):
