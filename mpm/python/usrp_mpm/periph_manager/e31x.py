@@ -725,7 +725,7 @@ class e31x(ZynqComponents, PeriphManagerBase):
     @no_rpc
     def _update_fpga_type(self):
         """Update the fpga type stored in the updateable components"""
-        fpga_type = self.mboard_regs_control.get_fpga_type()
+        fpga_type = "" # FIXME
         self.log.debug("Updating mboard FPGA type info to {}".format(fpga_type))
         self.updateable_components['fpga']['type'] = fpga_type
 
