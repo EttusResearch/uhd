@@ -1,9 +1,9 @@
 //
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
-
 
 #include "i2cdev.h"
 #include <fcntl.h>
@@ -11,8 +11,6 @@
 #include <linux/i2c.h>
 #include <mpm/exception.hpp>
 #include <mpm/i2c/i2c_iface.hpp>
-#include <boost/format.hpp>
-#include <iostream>
 
 using namespace mpm::i2c;
 
@@ -32,22 +30,25 @@ public:
         , _ten_bit_addr(ten_bit_addr)
         , _timeout_ms(timeout_ms)
     {
-        if (do_open)
+        if (do_open) {
             _open();
-        else
+        } else {
             _fd = -ENODEV;
+        }
     }
 
     ~i2cdev_iface_impl()
     {
-        if (_fd >= 0)
+        if (_fd >= 0) {
             close(_fd);
+        }
     }
 
     int transfer(uint8_t* tx, size_t tx_len, uint8_t* rx, size_t rx_len, bool do_close)
     {
-        if (_fd < 0)
+        if (_fd < 0) {
             _open();
+        }
 
         int ret = i2cdev_transfer(_fd, _addr, _ten_bit_addr, tx, tx_len, rx, rx_len);
 
@@ -57,7 +58,7 @@ public:
         }
 
         if (ret) {
-            throw mpm::runtime_error(str(boost::format("I2C Transaction failed!")));
+            throw mpm::runtime_error("I2C Transaction failed!");
         }
 
         return ret;
@@ -89,16 +90,16 @@ private:
     const bool _ten_bit_addr;
     const unsigned int _timeout_ms;
 
-    int _open(void)
+    void _open(void)
     {
         if (i2cdev_open(&_fd, _device.c_str(), _timeout_ms) < 0) {
             throw mpm::runtime_error(
-                str(boost::format("Could not initialize i2cdev device %s") % _device));
+                std::string("Could not initialize i2cdev device ") + _device);
         }
 
         if (_fd < 0) {
             throw mpm::runtime_error(
-                str(boost::format("Could not open i2cdev device %s") % _device));
+                std::string("Could not open i2cdev device ") + _device);
         }
     }
 };
