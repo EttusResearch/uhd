@@ -147,7 +147,6 @@ class e31x(ZynqComponents, PeriphManagerBase):
         """
         Does partial initialization which loads low power idle image
         """
-        self._clock_source = None
         self._time_source = None
         self._gpsd = None
         self.dboards = []
@@ -224,7 +223,6 @@ class e31x(ZynqComponents, PeriphManagerBase):
         if not self._device_initialized:
             # Don't try and figure out what's going on. Just give up.
             return
-        self._clock_source = None
         self._time_source = None
         self.dboard = self.dboards[E310_DBOARD_SLOT_IDX]
         try:
@@ -284,7 +282,6 @@ class e31x(ZynqComponents, PeriphManagerBase):
                 "No dboards found, skipping setting clock and time source "
                 "configuration."
             )
-            self._clock_source = E310_DEFAULT_CLOCK_SOURCE
             self._time_source = E310_DEFAULT_TIME_SOURCE
         else:
             self.set_clock_source(
@@ -538,7 +535,7 @@ class e31x(ZynqComponents, PeriphManagerBase):
 
     def get_clock_source(self):
         " Returns the currently selected clock source "
-        return self._clock_source
+        return E310_DEFAULT_CLOCK_SOURCE
 
     def set_clock_source(self, *args):
         """
