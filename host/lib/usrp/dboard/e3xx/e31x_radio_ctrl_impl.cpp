@@ -206,9 +206,7 @@ uint32_t e31x_radio_ctrl_impl::get_rx_switches(
         vctxrx_sw = (fe_chan == 0) ? VCTXRX1_SW_RX: VCTXRX2_SW_RX;
     }
 
-    UHD_LOG_INFO(unique_id(), "RX freq = " << freq);
     const auto band = e3xx_radio_ctrl_impl::map_freq_to_rx_band(freq);
-    UHD_LOG_INFO(unique_id(), "RX band = " << int(band));
 
     switch(band) {
     case rx_band::LB_B2:
@@ -253,11 +251,11 @@ uint32_t e31x_radio_ctrl_impl::get_rx_switches(
         UHD_THROW_INVALID_CODE_PATH();
         break;
     }
-    UHD_LOG_INFO(unique_id(), "RX SW1 = " << rx_sw1);
-    UHD_LOG_INFO(unique_id(), "RX SWC = " << rx_swc);
-    UHD_LOG_INFO(unique_id(), "RX SWB = " << rx_swb);
-    UHD_LOG_INFO(unique_id(), "RX VCRX_SW = " << vcrx_sw);
-    UHD_LOG_INFO(unique_id(), "RX VCTXRX_SW = " << vctxrx_sw);
+
+    UHD_LOG_TRACE(unique_id(),
+        "RX band = " << int(band) << "RX SW1 = " << rx_sw1 << "RX SWC = " << rx_swc
+                     << "RX SWB = " << rx_swb << "RX VCRX_SW = " << vcrx_sw
+                     << "RX VCTXRX_SW = " << vctxrx_sw);
 
     auto rx_regs = 0 |
              vcrx_sw << VCRX_SW_SHIFT |
