@@ -1,5 +1,6 @@
 //
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -22,7 +23,7 @@ int i2cdev_open(int *fd, const char *device, const unsigned int timeout_ms)
         return -EINVAL;
     }
 
-    *fd = open(device, O_RDWR);
+    *fd = open(device, O_RDWR | O_LARGEFILE);
     if (*fd < 0) {
         fprintf(stderr, "%s: Failed to open device. %s\n",
             __func__, strerror(*fd));
