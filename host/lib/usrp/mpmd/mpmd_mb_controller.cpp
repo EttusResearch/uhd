@@ -67,7 +67,7 @@ void mpmd_mb_controller::mpmd_timekeeper::update_tick_rate(const double tick_rat
  *****************************************************************************/
 std::string mpmd_mb_controller::get_mboard_name() const
 {
-    return _device_info.get("name", "UNKNOWN");
+    return _device_info.get("product", "UNKNOWN");
 }
 
 void mpmd_mb_controller::set_time_source(const std::string& source)
