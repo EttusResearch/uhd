@@ -10,9 +10,11 @@ E310 implementation module
 
 from __future__ import print_function
 import copy
+import re
 from six import itervalues
 from usrp_mpm.components import ZynqComponents
 from usrp_mpm.dboard_manager import E31x_db
+from usrp_mpm.gpsd_iface import GPSDIfaceExtension
 from usrp_mpm.mpmtypes import SID
 from usrp_mpm.mpmutils import assert_compat_number, str2bool
 from usrp_mpm.periph_manager import PeriphManagerBase
@@ -70,6 +72,7 @@ class e31x(ZynqComponents, PeriphManagerBase):
     mboard_info = {"type": "e3xx"}
     mboard_sensor_callback_map = {
         'ref_locked': 'get_ref_lock_sensor',
+        'gps_locked': 'get_gps_lock_sensor',
         'temp_fpga' : 'get_fpga_temp_sensor',
         'temp_mb' : 'get_mb_temp_sensor',
     }
@@ -146,6 +149,7 @@ class e31x(ZynqComponents, PeriphManagerBase):
         """
         self._clock_source = None
         self._time_source = None
+        self._gpsd = None
         self.dboards = []
         self.dboard = None
         self.mboard_regs_control = None
@@ -181,6 +185,29 @@ class e31x(ZynqComponents, PeriphManagerBase):
             # an application tries to use the device.
             self.apply_idle_overlay()
             self._device_initialized = False
+        self._init_gps_sensors()
+
+    def _init_gps_sensors(self):
+        """
+        Init and register the GPSd Iface and related sensor functions
+
+        Note: The GPS chip is not connected to the FPGA, so this is initialized
+        regardless of the idle state
+        """
+        self.log.trace("Initializing GPSd interface")
+        self._gpsd = GPSDIfaceExtension()
+        new_methods = self._gpsd.extend(self)
+        for method_name in new_methods:
+            try:
+                # Extract the sensor name from the getter
+                sensor_name = re.search(r"get_(.*)_sensor", method_name).group(1)
+                # Register it with the MB sensor framework
+                self.mboard_sensor_callback_map[sensor_name] = method_name
+                self.log.trace("Adding %s sensor function", sensor_name)
+            except AttributeError:
+                # re.search will return None is if can't find the sensor name
+                self.log.warning("Error while registering sensor function: %s", method_name)
+
 
     def _init_normal(self):
         """
@@ -594,6 +621,18 @@ class e31x(ZynqComponents, PeriphManagerBase):
             'type': 'BOOLEAN',
             'unit': 'locked' if lock_status else 'unlocked',
             'value': str(lock_status).lower(),
+        }
+
+    def get_gps_lock_sensor(self):
+        """
+        Get lock status of GPS as a sensor dict
+        """
+        gps_locked = self._gpsd.get_gps_lock()
+        return {
+            'name': 'gps_lock',
+            'type': 'BOOLEAN',
+            'unit': 'locked' if gps_locked else 'unlocked',
+            'value': str(gps_locked).lower(),
         }
 
     def get_mb_temp_sensor(self):

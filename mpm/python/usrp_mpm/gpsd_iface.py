@@ -191,18 +191,26 @@ class GPSDIfaceExtension(object):
     """
     def __init__(self):
         self._gpsd_iface = GPSDIface()
-        self._gpsd_iface.open()
         self._log = self._gpsd_iface.log
+        self._initialized = False
+        try:
+            self._gpsd_iface.open()
+            self._initialized = True
+        except (ConnectionRefusedError, ConnectionResetError):
+            self._log.warning(
+                "Could not connect to GPSd! None of the GPS sensors will work!")
 
     def __del__(self):
-        self._gpsd_iface.close()
+        if self._initialized:
+            self._gpsd_iface.close()
 
     def extend(self, context):
         """Register the GSPDIfaceExtension object's public function with `context`"""
         new_methods = [method_name for method_name in dir(self)
                        if not method_name.startswith('_') \
                        and callable(getattr(self, method_name)) \
-                       and method_name != "extend"]
+                       and method_name.endswith("sensor") \
+                       and self._initialized]
         for method_name in new_methods:
             new_method = getattr(self, method_name)
             self._log.trace("%s: Adding %s method", context, method_name)
@@ -377,6 +385,26 @@ class GPSDIfaceExtension(object):
             'value': gpgga,
         }
 
+    def get_gps_lock(self):
+        """
+        Get the GPS lock status using the TPV data.
+
+        The Jackson Labs GPS modules have a pin to query GPS lock, which is a
+        better option.
+        """
+        if not self._initialized:
+            self._log.warning("Cannot query GPS lock, GPSd not initialized!")
+            return False
+        # Read responses from GPSD until we get a non-trivial mode
+        while True:
+            gps_info = self._gpsd_iface.get_gps_info(resp_class='tpv', timeout=15)
+            self._log.trace("GPS info: {}".format(gps_info))
+            if gps_info.get("mode", 0) > 0:
+                break
+        # 2 == 2D fix, 3 == 3D fix.
+        # https://gpsd.gitlab.io/gpsd/gpsd_json.html
+        return gps_info.get("mode", 0) >= 2
+
 
 def main():
     """Test functionality of the GPSDIface class"""
@@ -401,8 +429,6 @@ def main():
     gps_ext = GPSDIfaceExtension()
     for _ in range(10):
         print(gps_ext.get_gps_time_sensor().get('value'))
-    #TODO Add GPSDIfaceExtension code
-
 
 if __name__ == "__main__":
     main()
