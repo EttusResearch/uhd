@@ -1,19 +1,23 @@
 //
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include "rhodium_radio_ctrl_impl.hpp"
 #include "rhodium_constants.hpp"
-#include <uhdlib/usrp/cores/spi_core_3000.hpp>
-#include <uhd/utils/log.hpp>
-#include <uhd/utils/algorithm.hpp>
+#include "rhodium_radio_ctrl_impl.hpp"
+#include <uhd/transport/chdr.hpp>
 #include <uhd/types/eeprom.hpp>
 #include <uhd/types/sensors.hpp>
-#include <uhd/transport/chdr.hpp>
-#include <vector>
+#include <uhd/utils/algorithm.hpp>
+#include <uhd/utils/log.hpp>
+#include <uhdlib/usrp/cores/spi_core_3000.hpp>
+#include <boost/algorithm/string.hpp>
+#include <boost/algorithm/string/case_conv.hpp>
+#include <boost/algorithm/string/split.hpp>
 #include <string>
+#include <vector>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -97,6 +101,44 @@ namespace {
         return [spi, slave, config](const uint32_t transaction) {
             return spi->read_spi(slave, config, transaction, 24);
         };
+    }
+
+    //! Helper function to extract single value of port number.
+    //
+    // Each GPIO pins can be controlled by each radio output ports.
+    // This function convert the format of attribute "Radio_N_M"
+    // to a single value port number = N*number_of_port_per_radio + M
+
+    uint32_t extract_port_number(
+        std::string radio_src_string, uhd::property_tree::sptr ptree)
+    {
+        std::string s_val = "0";
+        std::vector<std::string> radio_strings;
+        boost::algorithm::split(radio_strings,
+            radio_src_string,
+            boost::is_any_of("_/"),
+            boost::token_compress_on);
+        boost::to_lower(radio_strings[0]);
+        if (radio_strings.size() < 3) {
+            throw uhd::runtime_error(
+                str(boost::format("%s is an invalid GPIO source string.")
+                    % radio_src_string));
+        }
+        size_t radio_num = std::stoi(radio_strings[1]);
+        size_t port_num  = std::stoi(radio_strings[2]);
+        if (radio_strings[0] != "radio") {
+            throw uhd::runtime_error(
+                "Front panel GPIO bank can only accept a radio block as its driver.");
+        }
+        std::string radio_port_out  = "Radio_" + radio_strings[1] + "/ports/out";
+        std::string radio_port_path = radio_port_out + "/" + radio_strings[2];
+        auto found                  = ptree->exists(fs_path("xbar") / radio_port_path);
+        if (not found) {
+            throw uhd::runtime_error(
+                str(boost::format("Could not find radio port %s.\n") % radio_port_path));
+        }
+        size_t port_size = ptree->list(fs_path("xbar") / radio_port_out).size();
+        return radio_num * port_size + port_num;
     }
 }
 
@@ -225,6 +267,10 @@ void rhodium_radio_ctrl_impl::_init_peripherals()
         usrp::gpio_atr::DDR_OUTPUT, // Make all GPIOs outputs
         usrp::gpio_atr::gpio_atr_3000::MASK_SET_ALL
     );
+
+    UHD_LOG_TRACE(unique_id(), "Initializing front-panel GPIO control...")
+    _fp_gpio = usrp::gpio_atr::gpio_atr_3000::make(
+        _get_ctrl(0), regs::sr_addr(regs::FP_GPIO), regs::rb_addr(regs::RB_FP_GPIO));
 
     UHD_LOG_TRACE(unique_id(), "Set initial ATR values...");
     _update_atr(RHODIUM_DEFAULT_TX_ANTENNA, TX_DIRECTION);
@@ -805,6 +851,106 @@ void rhodium_radio_ctrl_impl::_init_prop_tree()
             .set_publisher([this](){ return this->get_rate(); })
             .add_coerced_subscriber([this](double rate) { return this->set_rate(rate); })
         ;
+    }
+
+    // *****FP_GPIO************************
+    for (const auto& attr : usrp::gpio_atr::gpio_attr_map) {
+        if (not _tree->exists(fs_path("gpio") / "FP0" / attr.second)) {
+            switch (attr.first) {
+                case usrp::gpio_atr::GPIO_SRC:
+                    // This is not really the place to configure the source
+                    // setting of the GPIO, don't have a better place to put this.
+                    // Note: In UHD 4.0, this will move to the mb_controller
+                    // object.
+                    _tree
+                        ->create<std::vector<std::string>>(
+                            fs_path("gpio") / "FP0" / attr.second)
+                        .set(std::vector<std::string>(
+                            32, usrp::gpio_atr::default_attr_value_map.at(attr.first)))
+                        .add_coerced_subscriber(
+                            [this, attr](const std::vector<std::string> str_val) {
+                                uint32_t radio_src_value = 0;
+                                uint32_t master_value    = 0;
+                                for (size_t i = 0; i < str_val.size(); i++) {
+                                    if (str_val[i] == "PS") {
+                                        master_value += 1 << i;
+                                        ;
+                                    } else {
+                                        auto port_num =
+                                            extract_port_number(str_val[i], _tree);
+                                        radio_src_value =
+                                            (1 << (2 * i)) * port_num + radio_src_value;
+                                    }
+                                }
+                                _rpcc->notify_with_token(
+                                    "set_fp_gpio_master", master_value);
+                                _rpcc->notify_with_token(
+                                    "set_fp_gpio_radio_src", radio_src_value);
+                            });
+                    break;
+                case usrp::gpio_atr::GPIO_CTRL:
+                case usrp::gpio_atr::GPIO_DDR:
+                    _tree
+                        ->create<std::vector<std::string>>(
+                            fs_path("gpio") / "FP0" / attr.second)
+                        .set(std::vector<std::string>(
+                            32, usrp::gpio_atr::default_attr_value_map.at(attr.first)))
+                        .add_coerced_subscriber(
+                            [this, attr](const std::vector<std::string> str_val) {
+                                uint32_t val = 0;
+                                for (size_t i = 0; i < str_val.size(); i++) {
+                                    val += usrp::gpio_atr::gpio_attr_value_pair
+                                               .at(attr.second)
+                                               .at(str_val[i])
+                                           << i;
+                                }
+                                _fp_gpio->set_gpio_attr(attr.first, val);
+                            });
+                    break;
+                case usrp::gpio_atr::GPIO_READBACK: {
+                    _tree->create<uint32_t>(fs_path("gpio") / "FP0" / attr.second)
+                        .set_publisher([this]() { return _fp_gpio->read_gpio(); });
+                } break;
+                default:
+                    _tree->create<uint32_t>(fs_path("gpio") / "FP0" / attr.second)
+                        .set(0)
+                        .add_coerced_subscriber([this, attr](const uint32_t val) {
+                            _fp_gpio->set_gpio_attr(attr.first, val);
+                        });
+            }
+        } else {
+            switch (attr.first) {
+                case usrp::gpio_atr::GPIO_SRC:
+                    break;
+                case usrp::gpio_atr::GPIO_CTRL:
+                case usrp::gpio_atr::GPIO_DDR:
+                    _tree
+                        ->access<std::vector<std::string>>(
+                            fs_path("gpio") / "FP0" / attr.second)
+                        .set(std::vector<std::string>(
+                            32, usrp::gpio_atr::default_attr_value_map.at(attr.first)))
+                        .add_coerced_subscriber(
+                            [this, attr](const std::vector<std::string> str_val) {
+                                uint32_t val = 0;
+                                for (size_t i = 0; i < str_val.size(); i++) {
+                                    val += usrp::gpio_atr::gpio_attr_value_pair
+                                               .at(attr.second)
+                                               .at(str_val[i])
+                                           << i;
+                                }
+                                _fp_gpio->set_gpio_attr(attr.first, val);
+                            });
+                    break;
+                case usrp::gpio_atr::GPIO_READBACK:
+                    break;
+                default:
+                    _tree->access<uint32_t>(fs_path("gpio") / "FP0" / attr.second)
+                        .set(0)
+                        .add_coerced_subscriber([this, attr](const uint32_t val) {
+                            _fp_gpio->set_gpio_attr(attr.first, val);
+                        });
+            }
+        }
     }
 }
 
