@@ -34,7 +34,16 @@ add_library(pyuhd SHARED pyuhd.cpp)
 if(WIN32)
     set_target_properties(pyuhd PROPERTIES PREFIX "lib" SUFFIX ".pyd")
 else()
-    set_target_properties(pyuhd PROPERTIES PREFIX "lib" SUFFIX ".so")
+    execute_process(
+        COMMAND "${PYTHON_EXECUTABLE}" -c
+        "from distutils.sysconfig import get_config_var; print(get_config_var('EXT_SUFFIX'))"
+        OUTPUT_VARIABLE PYTHON_EXTENSION_SUFFIX
+    )
+    string(STRIP ${PYTHON_EXTENSION_SUFFIX} PYTHON_EXTENSION_SUFFIX)
+    if(${PYTHON_EXTENSION_SUFFIX} STREQUAL "None")
+        set(PYTHON_EXTENSION_SUFFIX ${CMAKE_SHARED_MODULE_SUFFIX})
+    endif()
+    set_target_properties(pyuhd PROPERTIES PREFIX "lib" SUFFIX ${PYTHON_EXTENSION_SUFFIX})
 endif(WIN32)
 target_include_directories(pyuhd PUBLIC
     ${PYTHON_NUMPY_INCLUDE_DIR}
