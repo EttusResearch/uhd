@@ -47,4 +47,4 @@ io_ports:
       repl: \1_radio1
   dram:
     type: axi4_mm_2x64_4g
-    drive: master
+    drive: slave
