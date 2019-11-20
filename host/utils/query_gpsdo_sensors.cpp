@@ -162,10 +162,13 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     // Check for ref lock
     if (std::find(sensor_names.begin(), sensor_names.end(), "ref_locked")
         != sensor_names.end()) {
+        std::cout << "Waiting for ref_locked..." << std::flush;
         uhd::sensor_value_t ref_locked = usrp->get_mboard_sensor("ref_locked", 0);
-        for (size_t i = 0; not ref_locked.to_bool() and i < 300; i++) {
+        auto end = std::chrono::steady_clock::now() + std::chrono::seconds(30);
+        while (!ref_locked.to_bool() && std::chrono::steady_clock::now() < end) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             ref_locked = usrp->get_mboard_sensor("ref_locked", 0);
+            std::cout << "." << std::flush;
         }
         if (not ref_locked.to_bool()) {
             std::cout << boost::format("USRP NOT Locked to Reference.\n");
