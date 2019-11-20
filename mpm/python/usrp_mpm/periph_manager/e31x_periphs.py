@@ -52,7 +52,7 @@ class MboardRegsControl(MboardRegsCommon):
     MB_CLOCK_CTRL_PPS_SEL_INT_ALT = 1
     MB_CLOCK_CTRL_PPS_SEL_EXT = 3
     # Bitfield locations for the MB_CLOCK_CTRL register.
-    MB_CLOCK_CTRL_REF_CLK_LOCKED = 3
+    MB_CLOCK_CTRL_REF_CLK_LOCKED = 2
 
     # Bitfield locations for the MB_DBOARD_CTRL register.
     MB_DBOARD_CTRL_MIMO = 0
