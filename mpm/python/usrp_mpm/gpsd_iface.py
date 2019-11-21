@@ -134,19 +134,32 @@ class GPSDIface(object):
                 return json_result
 
     def get_gps_info(self, resp_class='', timeout=60):
-        """Convenience function for getting a response which contains a response class"""
-        # Read results until we see one which contains the requested response class, ie TPV or SKY
+        """
+        This will do:
+        - Poll gpsd for info until we get a response that contains the requested
+          response class (tpv or sky)
+        - If no response class is requested, just return the entire dictionary
+        - Otherwise, filter out the response class value and return that
+        - The return value is always a dictionary
+        - If the request times out, we return an empty dictionary
+        """
         result = {}
         end_time = time.time() + timeout
-        while not result.get(resp_class, {}):
+        while not result.get(resp_class):
             try:
                 # Do poll request with socket timeout of 5s here.
                 # It should not be that long, since GPSD should send POLL object promptly.
                 result = self.poll_request(5)
-                if (resp_class == "") or (time.time() > end_time):
-                    # If we don't have a response class filter, just return the first response
-                    # or if we timeout
-                    break
+                # If we don't have a response class filter, just return the
+                # first response
+                if not resp_class:
+                    return result
+                # If we time out, return nothing
+                if time.time() > end_time:
+                    self.log.warning(
+                        "Timeout trying to get GPS info (response class `{}')"
+                        .format(resp_class))
+                    return {}
             except json.JSONDecodeError:
                 # If we get an incomplete packet, this will trigger
                 # In this case, just retry
@@ -155,7 +168,7 @@ class GPSDIface(object):
         # Filter the result by resp_class or return the entire thing
         # In the filtered case, the result contains a list of 'resp_class' responses,
         # so we need to get one valid one.
-        return result if (resp_class == "") else result.get(resp_class, [{}])[0]
+        return result.get(resp_class, [{}])[0]
 
 
 class GPSDIfaceExtension(object):
