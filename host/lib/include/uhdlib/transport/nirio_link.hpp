@@ -155,7 +155,7 @@ private:
         fifo_data_t** data_ptr = static_cast<nirio_frame_buff&>(buff).get_fifo_ptr_ref();
         nirio_status_chain(_recv_fifo->acquire(*data_ptr,
                                _link_params.recv_frame_size / sizeof(fifo_data_t),
-                               static_cast<uint32_t>(timeout_ms * 1000),
+                               static_cast<uint32_t>(timeout_ms),
                                elems_acquired,
                                elems_remaining),
             status);
@@ -185,7 +185,7 @@ private:
         fifo_data_t** data_ptr = static_cast<nirio_frame_buff&>(buff).get_fifo_ptr_ref();
         nirio_status_chain(_send_fifo->acquire(*data_ptr,
                                _link_params.send_frame_size / sizeof(fifo_data_t),
-                               static_cast<uint32_t>(timeout_ms * 1000),
+                               static_cast<uint32_t>(timeout_ms),
                                elems_acquired,
                                elems_remaining),
             status);
