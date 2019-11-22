@@ -17,6 +17,8 @@ import math
 import re
 from usrp_mpm.mpmlog import get_logger
 
+GPSD_GET_SENSOR_TIMEOUT = 60 # seconds
+GPSD_GET_INFO_TIMEOUT = 15 # seconds
 
 class GPSDIface(object):
     """
@@ -234,8 +236,9 @@ class GPSDIfaceExtension(object):
             return (time_dt - epoch_dt).total_seconds()
         # Read responses from GPSD until we get a non-trivial mode and until next second.
         gps_time_prev = 0
-        while True:
-            gps_info = self._gpsd_iface.get_gps_info(resp_class='tpv', timeout=15)
+        end_time = time.time() + GPSD_GET_SENSOR_TIMEOUT
+        while time.time() < end_time:
+            gps_info = self._gpsd_iface.get_gps_info(resp_class='tpv', timeout=GPSD_GET_INFO_TIMEOUT)
             gps_mode = gps_info.get("mode", 0)
             gps_time = parse_time(gps_info.get("time", ""))
             if gps_mode == 0:
@@ -253,16 +256,23 @@ class GPSDIfaceExtension(object):
                         'unit': 'seconds',
                         'value': str(int(gps_time)),
                     }
+        raise RuntimeError("Could not get GPS time within {} seconds!"
+                           .format(GPSD_GET_SENSOR_TIMEOUT))
 
     def get_gps_tpv_sensor(self):
         """Get a TPV response from GPSd as a sensor dict"""
         self._log.trace("Polling GPS TPV results from GPSD")
         # Read responses from GPSD until we get a non-trivial mode
-        while True:
-            gps_info = self._gpsd_iface.get_gps_info(resp_class='tpv', timeout=15)
+        end_time = time.time() + GPSD_GET_SENSOR_TIMEOUT
+        while time.time() < end_time:
+            gps_info = self._gpsd_iface.get_gps_info(resp_class='tpv', timeout=GPSD_GET_INFO_TIMEOUT)
             self._log.trace("GPS info: {}".format(gps_info))
             if gps_info.get("mode", 0) > 0:
                 break
+        if gps_info.get("mode", 0) == 0:
+            raise RuntimeError(
+                "get_gps_tpv_sensor(): Could not get non-zero GPSd mode "
+                "within {} seconds!".format(GPSD_GET_SENSOR_TIMEOUT))
         # Return the JSON'd results
         gps_tpv = json.dumps(gps_info)
         return {
@@ -276,7 +286,7 @@ class GPSDIfaceExtension(object):
         """Get a SKY response from GPSd as a sensor dict"""
         self._log.trace("Polling GPS SKY results from GPSD")
         # Just get the first SKY result
-        gps_info = self._gpsd_iface.get_gps_info(resp_class='sky', timeout=15)
+        gps_info = self._gpsd_iface.get_gps_info(resp_class='sky', timeout=GPSD_GET_INFO_TIMEOUT)
         # Return the JSON'd results
         gps_sky = json.dumps(gps_info)
         return {
@@ -307,13 +317,18 @@ class GPSDIfaceExtension(object):
         self._log.trace("Polling GPS TPV and SKY results from GPSD")
         # Read responses from GPSD until we get both a SKY response and TPV
         # response in non-trivial mode
+        end_time = time.time() + GPSD_GET_SENSOR_TIMEOUT
         while True:
-            gps_info = self._gpsd_iface.get_gps_info(resp_class='', timeout=15)
+            gps_info = self._gpsd_iface.get_gps_info(resp_class='', timeout=GPSD_GET_INFO_TIMEOUT)
             self._log.trace("GPS info: {}".format(gps_info))
             tpv_sensor_data = gps_info.get('tpv', [{}])[0]
             sky_sensor_data = gps_info.get('sky', [{}])[0]
             if tpv_sensor_data and sky_sensor_data and tpv_sensor_data.get("mode", 0) > 0:
                 break
+            if time.time() > end_time:
+                raise RuntimeError(
+                    "get_gps_gpgga_sensor(): Could not get non-zero GPSd mode "
+                    "within {} seconds!".format(GPSD_GET_SENSOR_TIMEOUT))
 
         gpgga = "$GPGGA,"
 
@@ -396,11 +411,16 @@ class GPSDIfaceExtension(object):
             self._log.warning("Cannot query GPS lock, GPSd not initialized!")
             return False
         # Read responses from GPSD until we get a non-trivial mode
+        end_time = time.time() + GPSD_GET_SENSOR_TIMEOUT
         while True:
-            gps_info = self._gpsd_iface.get_gps_info(resp_class='tpv', timeout=15)
+            gps_info = self._gpsd_iface.get_gps_info(resp_class='tpv', timeout=GPSD_GET_INFO_TIMEOUT)
             self._log.trace("GPS info: {}".format(gps_info))
             if gps_info.get("mode", 0) > 0:
                 break
+            if time.time() > end_time:
+                raise RuntimeError(
+                    "get_gps_lock(): Could not get non-zero GPSd mode "
+                    "within {} seconds!".format(GPSD_GET_SENSOR_TIMEOUT))
         # 2 == 2D fix, 3 == 3D fix.
         # https://gpsd.gitlab.io/gpsd/gpsd_json.html
         return gps_info.get("mode", 0) >= 2
