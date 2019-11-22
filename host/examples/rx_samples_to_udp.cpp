@@ -65,7 +65,9 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
 
     // Lock mboard clocks
-    usrp->set_clock_source(ref);
+    if (vm.count("ref")) {
+        usrp->set_clock_source(ref);
+    }
 
     // always select the subdevice first, the channel mapping affects the other settings
     if (vm.count("subdev")) {

@@ -103,7 +103,9 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
 
     // Lock mboard clocks
-    usrp->set_clock_source(ref);
+    if (vm.count("ref")) {
+        usrp->set_clock_source(ref);
+    }
 
     // always select the subdevice first, the channel mapping affects the other settings
     if (vm.count("subdev"))
