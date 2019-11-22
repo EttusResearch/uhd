@@ -104,7 +104,9 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     }
 
     // Lock mboard clocks
-    usrp->set_clock_source(ref);
+    if (vm.count("ref")) {
+        usrp->set_clock_source(ref);
+    }
 
     std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
 

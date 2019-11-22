@@ -123,8 +123,10 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     // Configure radio
 
     // Lock clocks
-    radio_ctrl->set_clock_source(ref);
-
+    if (vm.count("ref")) {
+        radio_ctrl->set_clock_source(ref);
+    }
+    
     // Apply any radio arguments provided
     radio_ctrl->set_args(radio_args);
 
