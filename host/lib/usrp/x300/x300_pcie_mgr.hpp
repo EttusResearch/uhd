@@ -62,7 +62,7 @@ private:
         const uhd::sid_t& tx_sid, const uhd::usrp::device3_impl::xport_type_t xport_type);
 
     uhd::transport::muxed_zero_copy_if::sptr make_muxed_pcie_msg_xport(
-        uint32_t dma_channel_num, size_t max_muxed_ports);
+        uint32_t dma_channel_num, size_t max_muxed_ports, const double recv_timeout_s);
 
     const x300_device_args_t _args;
     const std::string _resource;

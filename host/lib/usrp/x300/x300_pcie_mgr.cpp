@@ -47,6 +47,11 @@ constexpr size_t PCIE_MAX_MUXED_CTRL_XPORTS  = 32;
 constexpr size_t PCIE_MAX_MUXED_ASYNC_XPORTS = 4;
 constexpr size_t PCIE_MAX_CHANNELS           = 6;
 constexpr size_t MAX_RATE_PCIE               = 800000000; // bytes/s
+
+//! Default timeout value for receiving muxed control messages
+constexpr double PCIE_DEFAULT_RECV_TIMEOUT_CTRL = 0.5; // seconds
+//! Default timeout value for receiving muxed async messages
+constexpr double PCIE_DEFAULT_RECV_TIMEOUT_ASYNC = 0.1; // seconds
 }
 
 uhd::wb_iface::sptr x300_make_ctrl_iface_pcie(
@@ -306,7 +311,7 @@ uint32_t pcie_manager::allocate_pcie_dma_chan(
 }
 
 muxed_zero_copy_if::sptr pcie_manager::make_muxed_pcie_msg_xport(
-    uint32_t dma_channel_num, size_t max_muxed_ports)
+    uint32_t dma_channel_num, size_t max_muxed_ports, const double recv_timeout_s)
 {
     zero_copy_xport_params buff_args;
     buff_args.send_frame_size = PCIE_MSG_FRAME_SIZE;
@@ -316,7 +321,8 @@ muxed_zero_copy_if::sptr pcie_manager::make_muxed_pcie_msg_xport(
 
     zero_copy_if::sptr base_xport = nirio_zero_copy::make(
         _rio_fpga_interface, dma_channel_num, buff_args, uhd::device_addr_t());
-    return muxed_zero_copy_if::make(base_xport, extract_sid_from_pkt, max_muxed_ports);
+    return muxed_zero_copy_if::make(
+        base_xport, extract_sid_from_pkt, max_muxed_ports, recv_timeout_s);
 }
 
 both_xports_t pcie_manager::make_transport(both_xports_t xports,
@@ -332,20 +338,22 @@ both_xports_t pcie_manager::make_transport(both_xports_t xports,
     if (xport_type == uhd::usrp::device3_impl::CTRL) {
         // Transport for control stream
         if (not _ctrl_dma_xport) {
+            const double recv_timeout = PCIE_DEFAULT_RECV_TIMEOUT_CTRL;
             // One underlying DMA channel will handle
             // all control traffic
-            _ctrl_dma_xport =
-                make_muxed_pcie_msg_xport(dma_channel_num, PCIE_MAX_MUXED_CTRL_XPORTS);
+            _ctrl_dma_xport = make_muxed_pcie_msg_xport(
+                dma_channel_num, PCIE_MAX_MUXED_CTRL_XPORTS, recv_timeout);
         }
         // Create a virtual control transport
         xports.recv = _ctrl_dma_xport->make_stream(xports.recv_sid.get_dst());
     } else if (xport_type == uhd::usrp::device3_impl::ASYNC_MSG) {
         // Transport for async message stream
         if (not _async_msg_dma_xport) {
+            const double recv_timeout = PCIE_DEFAULT_RECV_TIMEOUT_ASYNC;
             // One underlying DMA channel will handle
             // all async message traffic
-            _async_msg_dma_xport =
-                make_muxed_pcie_msg_xport(dma_channel_num, PCIE_MAX_MUXED_ASYNC_XPORTS);
+            _async_msg_dma_xport = make_muxed_pcie_msg_xport(
+                dma_channel_num, PCIE_MAX_MUXED_ASYNC_XPORTS, recv_timeout);
         }
         // Create a virtual async message transport
         xports.recv = _async_msg_dma_xport->make_stream(xports.recv_sid.get_dst());
