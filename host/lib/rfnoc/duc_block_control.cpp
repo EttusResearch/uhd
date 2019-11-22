@@ -252,9 +252,29 @@ private:
                     set_interp(interp.get(), chan);
                 }
                 if (samp_rate_out.is_valid()) {
-                    samp_rate_in = samp_rate_out.get() / interp.get();
+                    const double new_samp_rate_in = samp_rate_out.get() / interp.get();
+                    if (samp_rate_in.is_valid()) {
+                        // Only update the samp_rate_in if the new value is not the same
+                        // frequency. However, we still want to call the operator= to make
+                        // sure metadata gets handled
+                        samp_rate_in = uhd::math::frequencies_are_equal(
+                                           new_samp_rate_in, samp_rate_in.get())
+                                           ? samp_rate_in.get()
+                                           : new_samp_rate_in;
+                    } else {
+                        samp_rate_in = new_samp_rate_in;
+                    }
                 } else if (samp_rate_in.is_valid()) {
-                    samp_rate_out = samp_rate_in.get() * interp.get();
+                    const double new_samp_rate_out = samp_rate_in.get() * interp.get();
+                    if (samp_rate_out.is_valid()) {
+                        // Only update if the new value is not the same frequency
+                        samp_rate_out = uhd::math::frequencies_are_equal(
+                                            new_samp_rate_out, samp_rate_out.get())
+                                            ? samp_rate_out.get()
+                                            : new_samp_rate_out;
+                    } else {
+                        samp_rate_out = new_samp_rate_out;
+                    }
                 }
                 // The scaling is independent of the actual rates
                 if (scaling_out.is_valid()) {
@@ -298,7 +318,16 @@ private:
                     if (samp_rate_out.is_valid()) {
                         interp = coerce_interp(samp_rate_out.get() / samp_rate_in.get());
                     }
-                    samp_rate_out = samp_rate_in.get() * interp.get();
+                    const double new_samp_rate_out = samp_rate_in.get() * interp.get();
+                    if (samp_rate_out.is_valid()) {
+                        // Only update if the new value is not the same frequency
+                        samp_rate_out = uhd::math::frequencies_are_equal(
+                                            new_samp_rate_out, samp_rate_out.get())
+                                            ? samp_rate_out.get()
+                                            : new_samp_rate_out;
+                    } else {
+                        samp_rate_out = new_samp_rate_out;
+                    }
                     RFNOC_LOG_TRACE("New samp_rate_out is " << samp_rate_out.get());
                 }
             });
@@ -318,7 +347,16 @@ private:
                         interp =
                             coerce_interp(int(samp_rate_out.get() / samp_rate_in.get()));
                     }
-                    samp_rate_in = samp_rate_out.get() / interp.get();
+                    const double new_samp_rate_in = samp_rate_out.get() / interp.get();
+                    if (samp_rate_in.is_valid()) {
+                        // Only update if the new value is not the same frequency
+                        samp_rate_in = uhd::math::frequencies_are_equal(
+                                           new_samp_rate_in, samp_rate_in.get())
+                                           ? samp_rate_in.get()
+                                           : new_samp_rate_in;
+                    } else {
+                        samp_rate_in = new_samp_rate_in;
+                    }
                     // We now need to force the resolver for freq to run so it can
                     // update its phase increment
                     freq.force_dirty();

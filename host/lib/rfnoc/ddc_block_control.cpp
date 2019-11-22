@@ -314,7 +314,18 @@ private:
                     if (not decim.is_valid()) {
                         decim = coerce_decim(samp_rate_in.get() / samp_rate_out.get());
                     }
-                    samp_rate_out = samp_rate_in.get() / decim.get();
+                    const double new_samp_rate_out = samp_rate_in.get() / decim.get();
+                    // Only update the samp_rate_out if the new value is not the same
+                    // frequency. However, we still want to call the operator= to make
+                    // sure metadata gets handled
+                    if (samp_rate_out.is_valid()) {
+                        samp_rate_out = (uhd::math::frequencies_are_equal(
+                                            samp_rate_out, new_samp_rate_out))
+                                            ? samp_rate_out.get()
+                                            : new_samp_rate_out;
+                    } else {
+                        samp_rate_out = new_samp_rate_out;
+                    }
                     RFNOC_LOG_TRACE("New samp_rate_out is " << samp_rate_out.get());
                     // If the input rate changes, we need to update the DDS, too,
                     // since it works on frequencies normalized by the input rate.
@@ -343,7 +354,19 @@ private:
                     // However, the decim resolver will set the output rate based
                     // on the input rate, so we need to force the input rate first.
                     if (decim.is_dirty()) {
-                        samp_rate_in = samp_rate_out.get() * decim.get();
+                        const double new_samp_rate_in = samp_rate_out.get() * decim.get();
+                        // Only update the samp_rate_in if the new value is not the same
+                        // frequency. However, we still want to call the operator= to make
+                        // sure metadata gets handled
+                        if (samp_rate_in.is_valid()) {
+                            samp_rate_in = (uhd::math::frequencies_are_equal(
+                                               samp_rate_in, new_samp_rate_in))
+                                               ? samp_rate_in.get()
+                                               : new_samp_rate_in;
+                        } else {
+                            samp_rate_in = new_samp_rate_in;
+                        }
+                        RFNOC_LOG_TRACE("New samp_rate_in is " << samp_rate_in.get());
                     }
                 }
                 scaling_out = scaling_in.get() * _residual_scaling.at(chan);
