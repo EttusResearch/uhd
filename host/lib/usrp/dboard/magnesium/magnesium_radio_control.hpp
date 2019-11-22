@@ -274,7 +274,7 @@ private:
      * Private attributes
      *************************************************************************/
     //! Locks access to setter APIs
-    std::mutex _set_lock;
+    std::recursive_mutex _set_lock;
 
     //! Letter representation of the radio we're currently running
     std::string _radio_slot;

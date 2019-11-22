@@ -152,7 +152,7 @@ double magnesium_radio_control_impl::set_rate(double requested_rate)
         return current_rate;
     }
 
-    std::lock_guard<std::mutex> l(_set_lock);
+    std::lock_guard<std::recursive_mutex> l(_set_lock);
     // Now commit to device. First, disable LOs.
     _lo_disable(_tx_lo);
     _lo_disable(_rx_lo);
@@ -238,7 +238,7 @@ double magnesium_radio_control_impl::set_tx_frequency(const double req_freq, con
     const double freq = MAGNESIUM_FREQ_RANGE.clip(req_freq);
     RFNOC_LOG_TRACE("set_tx_frequency(f=" << freq << ", chan=" << chan << ")");
     _desired_rf_freq[TX_DIRECTION] = freq;
-    std::lock_guard<std::mutex> l(_set_lock);
+    std::lock_guard<std::recursive_mutex> l(_set_lock);
     // We need to set the switches on both channels, because they share an LO.
     // This way, if we tune channel 0 it will not put channel 1 into a bad
     // state.
@@ -306,7 +306,7 @@ double magnesium_radio_control_impl::set_rx_frequency(const double req_freq, con
     const double freq = MAGNESIUM_FREQ_RANGE.clip(req_freq);
     RFNOC_LOG_TRACE("set_rx_frequency(f=" << freq << ", chan=" << chan << ")");
     _desired_rf_freq[RX_DIRECTION] = freq;
-    std::lock_guard<std::mutex> l(_set_lock);
+    std::lock_guard<std::recursive_mutex> l(_set_lock);
     // We need to set the switches on both channels, because they share an LO.
     // This way, if we tune channel 0 it will not put channel 1 into a bad
     // state.
@@ -342,7 +342,7 @@ double magnesium_radio_control_impl::set_rx_frequency(const double req_freq, con
 double magnesium_radio_control_impl::set_rx_bandwidth(
     const double bandwidth, const size_t chan)
 {
-    std::lock_guard<std::mutex> l(_set_lock);
+    std::lock_guard<std::recursive_mutex> l(_set_lock);
     _ad9371->set_bandwidth(bandwidth, chan, RX_DIRECTION);
     // FIXME: setting analog bandwidth on AD9371 take no effect.
     // Remove this warning when ADI can confirm that it works.
@@ -354,7 +354,7 @@ double magnesium_radio_control_impl::set_rx_bandwidth(
 double magnesium_radio_control_impl::set_tx_bandwidth(
     const double bandwidth, const size_t chan)
 {
-    std::lock_guard<std::mutex> l(_set_lock);
+    std::lock_guard<std::recursive_mutex> l(_set_lock);
     _ad9371->set_bandwidth(bandwidth, chan, TX_DIRECTION);
     // FIXME: setting analog bandwidth on AD9371 take no effect.
     // Remove this warning when ADI can confirm that it works.
@@ -389,7 +389,7 @@ void magnesium_radio_control_impl::set_rx_gain_profile(
 
 double magnesium_radio_control_impl::set_tx_gain(const double gain, const size_t chan)
 {
-    std::lock_guard<std::mutex> l(_set_lock);
+    std::lock_guard<std::recursive_mutex> l(_set_lock);
     RFNOC_LOG_TRACE("set_tx_gain(gain=" << gain << ", chan=" << chan << ")");
     const double coerced_gain =
         _set_all_gain(gain, this->get_tx_frequency(chan), chan, TX_DIRECTION);
@@ -400,7 +400,7 @@ double magnesium_radio_control_impl::set_tx_gain(const double gain, const size_t
 double magnesium_radio_control_impl::_set_tx_gain(
     const std::string& name, const double gain, const size_t chan)
 {
-    std::lock_guard<std::mutex> l(_set_lock);
+    std::lock_guard<std::recursive_mutex> l(_set_lock);
     RFNOC_LOG_TRACE(
         "_set_tx_gain(name=" << name << ", gain=" << gain << ", chan=" << chan << ")");
     RFNOC_LOG_TRACE(
@@ -430,7 +430,7 @@ double magnesium_radio_control_impl::_get_tx_gain(
     const std::string& name, const size_t /*chan*/
 )
 {
-    std::lock_guard<std::mutex> l(_set_lock);
+    std::lock_guard<std::recursive_mutex> l(_set_lock);
     if (name == MAGNESIUM_GAIN1) {
         return _ad9371_att[TX_DIRECTION];
     } else if (name == MAGNESIUM_GAIN2) {
@@ -444,7 +444,7 @@ double magnesium_radio_control_impl::_get_tx_gain(
 
 double magnesium_radio_control_impl::set_rx_gain(const double gain, const size_t chan)
 {
-    std::lock_guard<std::mutex> l(_set_lock);
+    std::lock_guard<std::recursive_mutex> l(_set_lock);
     RFNOC_LOG_TRACE("set_rx_gain(gain=" << gain << ", chan=" << chan << ")");
     const double coerced_gain =
         _set_all_gain(gain, this->get_rx_frequency(chan), chan, RX_DIRECTION);
@@ -455,7 +455,7 @@ double magnesium_radio_control_impl::set_rx_gain(const double gain, const size_t
 double magnesium_radio_control_impl::_set_rx_gain(
     const std::string& name, const double gain, const size_t chan)
 {
-    std::lock_guard<std::mutex> l(_set_lock);
+    std::lock_guard<std::recursive_mutex> l(_set_lock);
     RFNOC_LOG_TRACE(
         "_set_rx_gain(name=" << name << ", gain=" << gain << ", chan=" << chan << ")");
     double clip_gain = 0;
@@ -483,7 +483,7 @@ double magnesium_radio_control_impl::_get_rx_gain(
     const std::string& name, const size_t /*chan*/
 )
 {
-    std::lock_guard<std::mutex> l(_set_lock);
+    std::lock_guard<std::recursive_mutex> l(_set_lock);
 
     if (name == MAGNESIUM_GAIN1) {
         return _ad9371_att[RX_DIRECTION];
@@ -777,7 +777,7 @@ void magnesium_radio_control_impl::set_rx_lo_source(
 )
 {
     // TODO: checking what options are there
-    std::lock_guard<std::mutex> l(_set_lock);
+    std::lock_guard<std::recursive_mutex> l(_set_lock);
     RFNOC_LOG_TRACE("Setting RX LO " << name << " to " << src);
 
     if (name == MAGNESIUM_LO1) {
@@ -834,7 +834,7 @@ double magnesium_radio_control_impl::set_rx_lo_freq(
     double freq, const std::string& name, const size_t chan)
 {
     RFNOC_LOG_TRACE("set_rx_lo_freq(freq=" << freq << ", name=" << name << ")");
-    std::lock_guard<std::mutex> l(_set_lock);
+    std::lock_guard<std::recursive_mutex> l(_set_lock);
     std::string source           = this->get_rx_lo_source(name, chan);
     const double coerced_lo_freq = this->_set_rx_lo_freq(source, name, freq, chan);
     this->_update_freq(chan, RX_DIRECTION);
@@ -896,7 +896,7 @@ void magnesium_radio_control_impl::set_tx_lo_source(
 )
 {
     // TODO: checking what options are there
-    std::lock_guard<std::mutex> l(_set_lock);
+    std::lock_guard<std::recursive_mutex> l(_set_lock);
     RFNOC_LOG_TRACE("set_tx_lo_source(name=" << name << ", src=" << src << ")");
     if (name == MAGNESIUM_LO1) {
         _ad9371->set_lo_source(src, TX_DIRECTION);
