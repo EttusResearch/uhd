@@ -1,6 +1,6 @@
 //
 // Copyright 2010-2011,2014 Ettus Research LLC
-// Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2018,2019 Ettus Research, a National Instruments Company
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -27,14 +27,10 @@ void sig_int_handler(int)
 int UHD_SAFE_MAIN(int argc, char* argv[])
 {
     // variables to be set by po
-    std::string args, channel_list;
-    double seconds_in_future;
+    std::string args, channel_list, subdev, ref;
+    double seconds_in_future, rate, freq, rep_rate, gain, lo_offset, bw;
     size_t total_num_samps;
-    double rate;
     float ampl;
-    double freq;
-    double rep_rate;
-    double gain;
 
     // setup the program options
     po::options_description desc("Allowed options");
@@ -53,6 +49,11 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("dilv", "specify to disable inner-loop verbose")
         ("channels", po::value<std::string>(&channel_list)->default_value("0"), "which channel(s) to use (specify \"0\", \"1\", \"0,1\", etc")
         ("int-n", "tune USRP with integer-n tuning")
+        ("subdev", po::value<std::string>(&subdev), "subdevice specification")
+        ("ref", po::value<std::string>(&ref)->default_value("internal"), "reference source (internal, external, mimo)")
+        ("lo-offset", po::value<double>(&lo_offset)->default_value(0.0),
+            "Offset for frontend LO in Hz (optional)")
+        ("bw", po::value<double>(&bw), "analog frontend filter bandwidth in Hz")
     ;
     // clang-format on
     po::variables_map vm;
@@ -73,6 +74,16 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     std::cout << boost::format("Creating the usrp device with: %s...") % args
               << std::endl;
     uhd::usrp::multi_usrp::sptr usrp = uhd::usrp::multi_usrp::make(args);
+
+    // Lock mboard clocks
+    if (vm.count("ref")) {
+        usrp->set_clock_source(ref);
+    }
+
+    // always select the subdevice first, the channel mapping affects the other settings
+    if (vm.count("subdev"))
+        usrp->set_tx_subdev_spec(subdev);
+
     std::cout << boost::format("Using Device: %s") % usrp->get_pp_string() << std::endl;
 
     // detect which channels to use
@@ -94,9 +105,20 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
               << std::endl
               << std::endl;
 
+    // set the center frequency
+    if (not vm.count("freq")) {
+        std::cerr << "Please specify the center frequency with --freq" << std::endl;
+        return ~0;
+    }
+
     std::cout << boost::format("Setting TX Freq: %f MHz...") % (freq / 1e6) << std::endl;
+    std::cout << boost::format("Setting TX LO Offset: %f MHz...") % (lo_offset / 1e6)
+              << std::endl;
+
     for (size_t i = 0; i < channel_nums.size(); i++) {
-        uhd::tune_request_t tune_request(freq);
+        uhd::tune_request_t tune_request;
+        tune_request = uhd::tune_request_t(freq, lo_offset);
+
         if (vm.count("int-n"))
             tune_request.args = uhd::device_addr_t("mode_n=integer");
         usrp->set_tx_freq(tune_request, channel_nums[i]);
@@ -111,6 +133,17 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     std::cout << boost::format("Actual TX Gain: %f...") % (usrp->get_tx_gain())
               << std::endl
               << std::endl;
+
+    // set the analog frontend filter bandwidth
+    if (vm.count("bw")) {
+        std::cout << boost::format("Setting TX Bandwidth: %f MHz...") % (bw / 1e6)
+                  << std::endl;
+        usrp->set_tx_bandwidth(bw);
+        std::cout << boost::format("Actual TX Bandwidth: %f MHz...")
+                         % (usrp->get_tx_bandwidth() / 1e6)
+                  << std::endl
+                  << std::endl;
+    }
 
     std::cout << boost::format("Setting device timestamp to 0...") << std::endl;
     usrp->set_time_now(uhd::time_spec_t(0.0));
