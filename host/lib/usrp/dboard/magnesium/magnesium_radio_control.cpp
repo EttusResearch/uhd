@@ -156,7 +156,39 @@ double magnesium_radio_control_impl::set_rate(double requested_rate)
     // Now commit to device. First, disable LOs.
     _lo_disable(_tx_lo);
     _lo_disable(_rx_lo);
-    _master_clock_rate = _ad9371->set_master_clock_rate(rate);
+    // DANGER ZONE! The only way we can change the master clock rate on N310 is
+    // if we first change the master clock rate on side A, then side B. We can't
+    // do it in the other order.
+    // When we change the other radio's clock rate, however, the other radio
+    // block controller doesn't know about that. So, we need to call set_rate()
+    // on both radios every time we call it on any radio, unless the other radio
+    // block is not participating in the graph.
+    // Note: Updating the master clock rate is a no-op on the second call.
+    const size_t num_dboards =
+        _rpcc->request<std::vector<std::map<std::string, std::string>>>("get_dboard_info")
+            .size();
+    // Explicitly go and update rate on radio 0
+    RFNOC_LOG_DEBUG("Setting master clock rate on DB0 to " << (rate / 1e6) << " MHz...");
+    _master_clock_rate = _rpcc->request_with_token<double>(
+        MAGNESIUM_TUNE_TIMEOUT, "db_0_set_master_clock_rate", rate);
+    // Now go to the other side
+    if (num_dboards == 2) {
+        RFNOC_LOG_DEBUG(
+            "Setting master clock rate on DB1 to " << (rate / 1e6) << " MHz...");
+        const double sideB_rate = _rpcc->request_with_token<double>(
+            MAGNESIUM_TUNE_TIMEOUT, "db_1_set_master_clock_rate", rate);
+        if (!math::frequencies_are_equal(sideB_rate, _master_clock_rate)) {
+            RFNOC_LOG_ERROR("set_rate(): Error updating rates. Slot A now has rate "
+                            << (_master_clock_rate / 1e6) << " MHz, but slot B has "
+                            << (sideB_rate / 1e6)
+                            << " MHz. They should always be the same.");
+            throw uhd::runtime_error("Different rates on radios 0 and 1!");
+        }
+    }
+    RFNOC_LOG_DEBUG("Set MCR on both radios.");
+    // Now, both radios are running at the new rate. Update all dependent
+    // settings for this radio block. The other radio block needs to call
+    // set_rate() too before it is in a valid state.
     _n3xx_timekeeper->update_tick_rate(_master_clock_rate);
     radio_control_impl::set_rate(_master_clock_rate);
     // Frequency settings apply to both channels, no loop needed. Will also

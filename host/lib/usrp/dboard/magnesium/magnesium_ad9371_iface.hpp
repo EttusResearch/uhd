@@ -28,8 +28,6 @@ public:
 
     double get_gain(const size_t chan, const uhd::direction_t dir);
 
-    double set_master_clock_rate(const double freq);
-
     double set_bandwidth(
         const double bandwidth, const size_t chan, const uhd::direction_t dir);
 
