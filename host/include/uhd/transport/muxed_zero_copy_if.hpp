@@ -1,6 +1,7 @@
 //
 // Copyright 2016 Ettus Research LLC
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -55,9 +56,19 @@ public:
     virtual size_t get_num_dropped_frames() const = 0;
 
     //! Make a new demuxer from a transport and parameters
+    //
+    // \param classify_fn See also stream_classifier_fn.
+    // \param max_streams Max number of streams that can be muxed/demuxed
+    // \param recv_timeout_s This is a timeout that is used in the receiver thread
+    //                       when fetching the next packet. Its specific effect
+    //                       depends on the type of the underlying transport.
+    //                       A longer timeout means the thread can block on
+    //                       outstanding I/O for longer. A lower value will
+    //                       increase CPU utilization.
     static sptr make(zero_copy_if::sptr base_xport,
         stream_classifier_fn classify_fn,
-        size_t max_streams);
+        size_t max_streams,
+        const double recv_timeout_s = 0.0);
 };
 
 }} // namespace uhd::transport

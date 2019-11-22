@@ -1,6 +1,7 @@
 //
 // Copyright 2016 Ettus Research LLC
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -9,6 +10,7 @@
 #include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/transport/muxed_zero_copy_if.hpp>
 #include <uhd/utils/safe_call.hpp>
+#include <uhd/utils/thread.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/make_shared.hpp>
 #include <boost/thread.hpp>
@@ -27,16 +29,18 @@ public:
 
     muxed_zero_copy_if_impl(zero_copy_if::sptr base_xport,
         stream_classifier_fn classify_fn,
-        size_t max_streams)
+        size_t max_streams,
+        const double recv_timeout_s)
         : _base_xport(base_xport)
         , _classify(classify_fn)
         , _max_num_streams(max_streams)
         , _num_dropped_frames(0)
+        , _recv_timeout(recv_timeout_s)
     {
         // Create the receive thread to poll the underlying transport
         // and classify packets into queues
-        _recv_thread =
-            boost::thread(boost::bind(&muxed_zero_copy_if_impl::_update_queues, this));
+        _recv_thread = boost::thread([this]() { this->_update_queues(); });
+        set_thread_name(&_recv_thread, "muxed_0copy_if");
     }
 
     virtual ~muxed_zero_copy_if_impl()
@@ -248,7 +252,7 @@ private:
 
     bool _process_next_buffer()
     {
-        managed_recv_buffer::sptr buff = _base_xport->get_recv_buff(0.0);
+        managed_recv_buffer::sptr buff = _base_xport->get_recv_buff(_recv_timeout);
         if (buff) {
             stream_impl::sptr stream;
             try {
@@ -291,14 +295,17 @@ private:
     stream_map_t _streams;
     const size_t _max_num_streams;
     size_t _num_dropped_frames;
+    //! The timeout value for the receiver thread in seconds
+    const double _recv_timeout;
     boost::thread _recv_thread;
     boost::mutex _mutex;
 };
 
 muxed_zero_copy_if::sptr muxed_zero_copy_if::make(zero_copy_if::sptr base_xport,
     muxed_zero_copy_if::stream_classifier_fn classify_fn,
-    size_t max_streams)
+    size_t max_streams,
+    const double recv_timeout_s)
 {
     return boost::make_shared<muxed_zero_copy_if_impl>(
-        base_xport, classify_fn, max_streams);
+        base_xport, classify_fn, max_streams, recv_timeout_s);
 }
