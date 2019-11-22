@@ -179,10 +179,10 @@ public:
     // our output port.
     void issue_stream_cmd(const uhd::stream_cmd_t& stream_cmd, const size_t port)
     {
-        RFNOC_LOG_TRACE("issue_stream_cmd(stream_mode="
-                        << char(stream_cmd.stream_mode) << ", port=" << port);
+        RFNOC_LOG_TRACE("issue_stream_cmd(stream_mode=" << char(stream_cmd.stream_mode)
+                                                        << ", port=" << port);
         res_source_info dst_edge{res_source_info::OUTPUT_EDGE, port};
-        auto new_action = stream_cmd_action_info::make(stream_cmd.stream_mode);
+        auto new_action        = stream_cmd_action_info::make(stream_cmd.stream_mode);
         new_action->stream_cmd = stream_cmd;
         issue_stream_cmd_action_handler(dst_edge, new_action);
     }
@@ -349,10 +349,10 @@ private:
                 scaling_out = scaling_in.get() * _residual_scaling.at(chan);
             });
         // Resolvers for type: These are constants
-        add_property_resolver({type_in}, {type_in}, [&type_in = *type_in]() {
+        add_property_resolver({type_in}, {type_in}, [& type_in = *type_in]() {
             type_in.set(IO_TYPE_SC16);
         });
-        add_property_resolver({type_out}, {type_out}, [&type_out = *type_out]() {
+        add_property_resolver({type_out}, {type_out}, [& type_out = *type_out]() {
             type_out.set(IO_TYPE_SC16);
         });
     }
@@ -374,15 +374,14 @@ private:
     void issue_stream_cmd_action_handler(
         const res_source_info& src, stream_cmd_action_info::sptr stream_cmd_action)
     {
-        res_source_info dst_edge{
-            res_source_info::invert_edge(src.type), src.instance};
+        res_source_info dst_edge{res_source_info::invert_edge(src.type), src.instance};
         const size_t chan = src.instance;
         uhd::stream_cmd_t::stream_mode_t stream_mode =
             stream_cmd_action->stream_cmd.stream_mode;
         RFNOC_LOG_TRACE("Received stream command: " << char(stream_mode) << " to "
                                                     << src.to_string()
                                                     << ", id==" << stream_cmd_action->id);
-        auto new_action = stream_cmd_action_info::make(stream_mode);
+        auto new_action        = stream_cmd_action_info::make(stream_mode);
         new_action->stream_cmd = stream_cmd_action->stream_cmd;
         if (stream_mode == uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE
             || stream_mode == uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE) {
