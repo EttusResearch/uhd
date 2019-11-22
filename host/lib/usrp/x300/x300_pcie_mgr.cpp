@@ -16,10 +16,16 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhdlib/rfnoc/device_id.hpp>
+#include <uhdlib/transport/inline_io_service.hpp>
 #include <uhdlib/transport/nirio_link.hpp>
 #include <uhdlib/usrp/cores/i2c_core_100_wb32.hpp>
 #include <unordered_map>
 #include <mutex>
+
+using namespace uhd;
+using namespace uhd::transport;
+using namespace uhd::usrp::x300;
+using namespace uhd::niusrprio;
 
 namespace {
 
@@ -42,19 +48,47 @@ constexpr size_t PCIE_TX_DATA_FRAME_SIZE     = 4096; // bytes
 constexpr size_t PCIE_TX_DATA_NUM_FRAMES     = 4096;
 constexpr size_t PCIE_MSG_FRAME_SIZE         = 256; // bytes
 constexpr size_t PCIE_MSG_NUM_FRAMES         = 64;
-constexpr size_t PCIE_MAX_MUXED_CTRL_XPORTS  = 32;
-constexpr size_t PCIE_MAX_MUXED_ASYNC_XPORTS = 4;
 constexpr size_t PCIE_MAX_CHANNELS           = 6;
-constexpr size_t MAX_RATE_PCIE               = 800000000; // bytes/s
+// constexpr size_t MAX_RATE_PCIE               = 800000000; // bytes/s
+
+
+//! Get default send/recv num frames and frame size per link type
+link_params_t get_default_link_params(const link_type_t link_type)
+{
+    link_params_t link_params;
+    switch (link_type) {
+        case link_type_t::CTRL:
+            link_params.send_frame_size = PCIE_MSG_FRAME_SIZE;
+            link_params.recv_frame_size = PCIE_MSG_FRAME_SIZE;
+            link_params.num_send_frames = PCIE_MSG_NUM_FRAMES;
+            link_params.num_recv_frames = PCIE_MSG_NUM_FRAMES;
+            break;
+        case link_type_t::TX_DATA:
+            link_params.send_frame_size = PCIE_TX_DATA_FRAME_SIZE;
+            link_params.recv_frame_size = PCIE_MSG_FRAME_SIZE;
+            link_params.num_send_frames = PCIE_TX_DATA_NUM_FRAMES;
+            link_params.num_recv_frames = PCIE_MSG_NUM_FRAMES;
+            break;
+        case link_type_t::RX_DATA:
+            link_params.send_frame_size = PCIE_MSG_FRAME_SIZE;
+            link_params.recv_frame_size = PCIE_RX_DATA_FRAME_SIZE;
+            link_params.num_send_frames = PCIE_MSG_NUM_FRAMES;
+            link_params.num_recv_frames = PCIE_RX_DATA_NUM_FRAMES;
+            break;
+        default:
+            UHD_THROW_INVALID_CODE_PATH();
+    }
+    link_params.recv_buff_size =
+        link_params.num_recv_frames * link_params.recv_frame_size;
+    link_params.send_buff_size =
+        link_params.num_send_frames * link_params.send_frame_size;
+    return link_params;
 }
+
+} // namespace
 
 uhd::wb_iface::sptr x300_make_ctrl_iface_pcie(
     uhd::niusrprio::niriok_proxy::sptr drv_proxy, bool enable_errors = true);
-
-using namespace uhd;
-using namespace uhd::transport;
-using namespace uhd::usrp::x300;
-using namespace uhd::niusrprio;
 
 // We need a zpu xport registry to ensure synchronization between the static
 // finder method and the instances of the x300_impl class.
@@ -272,124 +306,59 @@ void pcie_manager::release_ctrl_iface(std::function<void(void)>&& release_fn)
 }
 
 uint32_t pcie_manager::allocate_pcie_dma_chan(
-    const rfnoc::sep_id_t& /*remote_epid*/, const link_type_t /*link_type*/)
+    const rfnoc::sep_id_t& remote_epid, const link_type_t link_type)
 {
-    throw uhd::not_implemented_error("allocate_pcie_dma_chan()");
-    // constexpr uint32_t CTRL_CHANNEL       = 0;
-    // constexpr uint32_t ASYNC_MSG_CHANNEL  = 1;
-    // constexpr uint32_t FIRST_DATA_CHANNEL = 2;
-    // if (link_type == uhd::transport::link_type_t::CTRL) {
-    // return CTRL_CHANNEL;
-    //} else if (link_type == uhd::transport::link_type_t::ASYNC_MSG) {
-    // return ASYNC_MSG_CHANNEL;
-    //} else {
-        //// sid_t has no comparison defined, so we need to convert it uint32_t
-        //uint32_t raw_sid = tx_sid.get();
+    constexpr uint32_t CTRL_CHANNEL       = 0;
+    constexpr uint32_t FIRST_DATA_CHANNEL = 1;
 
-        //if (_dma_chan_pool.count(raw_sid) == 0) {
-            //size_t channel = _dma_chan_pool.size() + FIRST_DATA_CHANNEL;
-            //if (channel > PCIE_MAX_CHANNELS) {
-                //throw uhd::runtime_error(
-                    //"Trying to allocate more DMA channels than are available");
-            //}
-            //_dma_chan_pool[raw_sid] = channel;
-            //UHD_LOGGER_DEBUG("X300")
-                //<< "Assigning PCIe DMA channel " << _dma_chan_pool[raw_sid] << " to SID "
-                //<< tx_sid.to_pp_string_hex();
-        //}
+    std::lock_guard<std::mutex> l(_dma_chan_mutex);
+    uint32_t dma_chan = CTRL_CHANNEL;
+    if (link_type == link_type_t::CTRL) {
+        if (_dma_chan_pool.count(CTRL_CHANNEL)) {
+            throw uhd::runtime_error("[X300] Cannot reallocate PCIe control channel!");
+        }
+    } else {
+        dma_chan = FIRST_DATA_CHANNEL;
+        while (_dma_chan_pool.count(dma_chan)) {
+            dma_chan++;
+        }
+        if (dma_chan >= PCIE_MAX_CHANNELS) {
+            throw uhd::runtime_error(
+                "Trying to allocate more DMA channels than are available");
+        }
+    }
 
-        //return _dma_chan_pool[raw_sid];
-    //}
+    _dma_chan_pool[dma_chan] = remote_epid;
+    UHD_LOG_DEBUG("X300",
+        "Assigning DMA channel " << dma_chan << " to remote EPID " << remote_epid);
+    return dma_chan;
 }
 
-muxed_zero_copy_if::sptr pcie_manager::make_muxed_pcie_msg_xport(
-    uint32_t dma_channel_num, size_t max_muxed_ports)
-{
-    throw uhd::not_implemented_error("NI-RIO links not yet implemented!");
-    //zero_copy_xport_params buff_args;
-    //buff_args.send_frame_size = PCIE_MSG_FRAME_SIZE;
-    //buff_args.recv_frame_size = PCIE_MSG_FRAME_SIZE;
-    //buff_args.num_send_frames = PCIE_MSG_NUM_FRAMES;
-    //buff_args.num_recv_frames = PCIE_MSG_NUM_FRAMES;
-
-    //zero_copy_if::sptr base_xport = nirio_zero_copy::make(
-        //_rio_fpga_interface, dma_channel_num, buff_args, uhd::device_addr_t());
-    //return muxed_zero_copy_if::make(base_xport, extract_sid_from_pkt, max_muxed_ports);
-}
-
-both_links_t pcie_manager::get_links(link_type_t /*link_type*/,
+both_links_t pcie_manager::get_links(link_type_t link_type,
     const rfnoc::device_id_t local_device_id,
     const rfnoc::sep_id_t& /*local_epid*/,
-    const rfnoc::sep_id_t& /*remote_epid*/,
-    const device_addr_t& /*link_args*/)
+    const rfnoc::sep_id_t& remote_epid,
+    const device_addr_t& link_args)
 {
-    throw uhd::not_implemented_error("NI-RIO links not yet implemented!");
     if (local_device_id != _local_device_id) {
         throw uhd::runtime_error(
             std::string("[X300] Cannot create NI-RIO link through local device ID ")
             + std::to_string(local_device_id)
             + ", no such device associated with this motherboard!");
     }
-    // zero_copy_xport_params default_buff_args;
-    // xports.endianness              = ENDIANNESS_LITTLE;
-    // xports.lossless                = true;
-    // const uint32_t dma_channel_num = allocate_pcie_dma_chan(xports.send_sid,
-    // xport_type); if (xport_type == uhd::transport::link_type_t::CTRL) {
-    //// Transport for control stream
-    // if (not _ctrl_dma_xport) {
-    //// One underlying DMA channel will handle
-    //// all control traffic
-    //_ctrl_dma_xport =
-    // make_muxed_pcie_msg_xport(dma_channel_num, PCIE_MAX_MUXED_CTRL_XPORTS);
-    //}
-    //// Create a virtual control transport
-    // xports.recv = _ctrl_dma_xport->make_stream(xports.recv_sid.get_dst());
-    //} else if (xport_type == uhd::transport::link_type_t::ASYNC_MSG) {
-    //// Transport for async message stream
-    // if (not _async_msg_dma_xport) {
-    //// One underlying DMA channel will handle
-    //// all async message traffic
-    //_async_msg_dma_xport =
-    // make_muxed_pcie_msg_xport(dma_channel_num, PCIE_MAX_MUXED_ASYNC_XPORTS);
-    //}
-    //// Create a virtual async message transport
-    // xports.recv = _async_msg_dma_xport->make_stream(xports.recv_sid.get_dst());
-    //} else if (xport_type == uhd::transport::link_type_t::TX_DATA) {
-    // default_buff_args.send_frame_size = args.cast<size_t>(
-    //"send_frame_size", std::min(send_mtu, PCIE_TX_DATA_FRAME_SIZE));
-    // default_buff_args.num_send_frames =
-    // args.cast<size_t>("num_send_frames", PCIE_TX_DATA_NUM_FRAMES);
-    // default_buff_args.send_buff_size  = args.cast<size_t>("send_buff_size", 0);
-    // default_buff_args.recv_frame_size = PCIE_MSG_FRAME_SIZE;
-    // default_buff_args.num_recv_frames = PCIE_MSG_NUM_FRAMES;
-    // xports.recv                       = nirio_zero_copy::make(
-    //_rio_fpga_interface, dma_channel_num, default_buff_args);
-    //} else if (xport_type == uhd::transport::link_type_t::RX_DATA) {
-    // default_buff_args.send_frame_size = PCIE_MSG_FRAME_SIZE;
-    // default_buff_args.num_send_frames = PCIE_MSG_NUM_FRAMES;
-    // default_buff_args.recv_frame_size = args.cast<size_t>(
-    //"recv_frame_size", std::min(recv_mtu, PCIE_RX_DATA_FRAME_SIZE));
-    // default_buff_args.num_recv_frames =
-    // args.cast<size_t>("num_recv_frames", PCIE_RX_DATA_NUM_FRAMES);
-    // default_buff_args.recv_buff_size = args.cast<size_t>("recv_buff_size", 0);
-    // xports.recv                      = nirio_zero_copy::make(
-    //_rio_fpga_interface, dma_channel_num, default_buff_args);
-    //}
 
-    //xports.send = xports.recv;
+    const uint32_t dma_channel_num = allocate_pcie_dma_chan(remote_epid, link_type);
+    // Note: The nirio_link object's factory has a lot of code for sanity
+    // checking the link params, and merging the link_args with the default
+    // link_params, so we use that.
+    link_params_t link_params      = get_default_link_params(link_type);
 
-    //// Router config word is:
-    //// - Upper 16 bits: Destination address (e.g. 0.0)
-    //// - Lower 16 bits: DMA channel
-    //uint32_t router_config_word = (xports.recv_sid.get_dst() << 16) | dma_channel_num;
-    //_rio_fpga_interface->get_kernel_proxy()->poke(PCIE_ROUTER_REG(0), router_config_word);
+    // PCIe: Lossless, and little endian
+    size_t recv_buff_size, send_buff_size;
+    auto link = nirio_link::make(_rio_fpga_interface,
+        dma_channel_num,
+        link_params,
+        link_args);
 
-    //// For the nirio transport, buffer size is depends on the frame size and num
-    //// frames
-    //xports.recv_buff_size =
-        //xports.recv->get_num_recv_frames() * xports.recv->get_recv_frame_size();
-    //xports.send_buff_size =
-        //xports.send->get_num_send_frames() * xports.send->get_send_frame_size();
-
-    //return xports;
+    return std::make_tuple(link, send_buff_size, link, recv_buff_size, false /*not lossy*/);
 }

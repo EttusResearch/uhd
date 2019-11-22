@@ -16,6 +16,7 @@
 #include <uhd/types/direction.hpp>
 #include <uhdlib/rfnoc/rfnoc_common.hpp>
 #include <uhdlib/transport/links.hpp>
+#include <mutex>
 
 namespace uhd { namespace usrp { namespace x300 {
 
@@ -67,26 +68,20 @@ private:
      *
      * Note the SID is always the transmit SID (i.e. from host to device).
      */
-    uint32_t allocate_pcie_dma_chan(
-        const uhd::rfnoc::sep_id_t& remote_epid, const uhd::transport::link_type_t link_type);
+    uint32_t allocate_pcie_dma_chan(const uhd::rfnoc::sep_id_t& remote_epid,
+        const uhd::transport::link_type_t link_type);
 
-    uhd::transport::muxed_zero_copy_if::sptr make_muxed_pcie_msg_xport(
-        uint32_t dma_channel_num, size_t max_muxed_ports);
-
+    /*** Attributes **********************************************************/
     const x300_device_args_t _args;
     const std::string _resource;
-
     uhd::niusrprio::niusrprio_session::sptr _rio_fpga_interface;
-
-    //! Maps Remote EPID -> DMA channel
-    std::map<uhd::rfnoc::sep_id_t, uint32_t> _dma_chan_pool;
-
-    //! Control transport for one PCIe connection
-    uhd::transport::muxed_zero_copy_if::sptr _ctrl_dma_xport;
-    //! Async message transport
-    uhd::transport::muxed_zero_copy_if::sptr _async_msg_dma_xport;
-
     uhd::rfnoc::device_id_t _local_device_id;
+
+    //! Maps Remote DMA channel -> EPID
+    std::unordered_map<uint32_t, uhd::rfnoc::sep_id_t> _dma_chan_pool;
+
+    //! Locks access to the map
+    std::mutex _dma_chan_mutex;
 };
 
 }}} // namespace uhd::usrp::x300
