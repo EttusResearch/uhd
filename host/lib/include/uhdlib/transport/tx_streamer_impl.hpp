@@ -229,7 +229,7 @@ public:
                 // Send requests with no samples are handled here, such as end of
                 // burst. Send packets need to have at least one sample based on the
                 // chdr specification, so we use _zero_buffs here.
-                _send_one_packet(_zero_buffs.data(),
+                _send_one_packet(_zero_buffs,
                     0, // buffer offset
                     1, // num samples
                     metadata,
@@ -368,6 +368,8 @@ private:
         const bool eov,
         const int32_t timeout_ms)
     {
+        assert(buffs.size() == get_num_channels());
+
         if (!_zero_copy_streamer.get_send_buffs(
                 _out_buffs, num_samples, metadata, eov, timeout_ms)) {
             return 0;
