@@ -292,7 +292,12 @@ void graph_t::resolve_all_properties(
 
         // On current node, call local resolution. This may cause other
         // properties to become dirty.
-        node_accessor.resolve_props(current_node);
+        try {
+            node_accessor.resolve_props(current_node);
+        } catch (const uhd::resolve_error& ex) {
+            UHD_LOG_ERROR(LOG_ID, current_node->get_unique_id() + ": " + ex.what());
+            throw;
+        }
 
         //  Forward all edge props in all directions from current node. We make
         //  sure to skip properties if the edge is flagged as
