@@ -372,20 +372,22 @@ uhd::task::sptr mpmd_mboard_impl::claim_device_and_make_task()
             UHD_LOG_WARNING("MPMD", "Could not read back log queue!");
         }
     }
-    return uhd::task::make([this] {
-        auto now = std::chrono::steady_clock::now();
-        if (not this->claim()) {
-            throw uhd::value_error("mpmd device reclaiming loop failed!");
-        } else {
-            try {
-                this->dump_logs();
-            } catch(const uhd::runtime_error&) {
-                UHD_LOG_WARNING("MPMD", "Could not read back log queue!");
+    return uhd::task::make(
+        [this] {
+            auto now = std::chrono::steady_clock::now();
+            if (not this->claim()) {
+                throw uhd::value_error("mpmd device reclaiming loop failed!");
+            } else {
+                try {
+                    this->dump_logs();
+                } catch (const uhd::runtime_error&) {
+                    UHD_LOG_WARNING("MPMD", "Could not read back log queue!");
+                }
             }
-        }
-        std::this_thread::sleep_until(
-            now + std::chrono::milliseconds(MPMD_RECLAIM_INTERVAL_MS));
-    });
+            std::this_thread::sleep_until(
+                now + std::chrono::milliseconds(MPMD_RECLAIM_INTERVAL_MS));
+        },
+        "mpmd_claimer_task");
 }
 
 void mpmd_mboard_impl::dump_logs(const bool dump_to_null)
