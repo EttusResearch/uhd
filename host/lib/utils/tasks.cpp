@@ -29,9 +29,7 @@ public:
     {
         _task = std::thread([this, task_fcn](){ this->task_loop(task_fcn); });
         if (not name.empty()) {
-#ifdef HAVE_PTHREAD_SETNAME
-            pthread_setname_np(_task->native_handle(), name.substr(0,16).c_str());
-#endif /* HAVE_PTHREAD_SETNAME */
+            set_thread_name(&_task, name);
         }
     }
 
