@@ -218,7 +218,7 @@ called "Volk", which should be used to guarantee optimum performance.
 
 If you are using GNURadio to build applications, you should compile
 GNURadio with Volk. For instructions on how to do this,
-<a href="http://gnuradio.org/redmine/projects/gnuradio/wiki/Volk">refer to the GNURadio wiki</a>.
+<a href="http://wiki.gnuradio.org/index.php/Volk">refer to the GNURadio wiki</a>.
 
 \section x3x0cfg_hosthw Host PC Hardware Selection
 
