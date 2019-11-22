@@ -1,5 +1,6 @@
 //
 // Copyright 2017 Ettus Research, National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -27,6 +28,13 @@ const size_t LIBERIO_PAGES_PER_BUF = 2;
 const size_t LIBERIO_NUM_RECV_FRAMES = 128;
 //! Number of descriptors that liberio allocates (send)
 const size_t LIBERIO_NUM_SEND_FRAMES = 128;
+
+//! Default timeout value for receiving muxed control messages
+constexpr double LIBERIO_DEFAULT_RECV_TIMEOUT_CTRL = 0.5; // seconds
+//! Default timeout value for receiving muxed async messages
+constexpr double LIBERIO_DEFAULT_RECV_TIMEOUT_ASYNC = 0.1; // seconds
+//! Default timeout value for receiving muxed data packets
+constexpr double LIBERIO_DEFAULT_RECV_TIMEOUT_STRM = 0.1; // seconds
 
 uint32_t extract_sid_from_pkt(void* pkt, size_t)
 {
@@ -123,9 +131,13 @@ uhd::both_xports_t mpmd_xport_ctrl_liberio::make_transport(
     if (xport_type == usrp::device3_impl::CTRL) {
         UHD_ASSERT_THROW(xport_info["muxed"] == "True");
         if (not _ctrl_dma_xport) {
-            _ctrl_dma_xport =
-                make_muxed_liberio_xport(tx_dev, rx_dev, default_buff_args,
-                    uhd::rfnoc::MAX_NUM_BLOCKS * uhd::rfnoc::MAX_NUM_PORTS);
+            const double recv_timeout = LIBERIO_DEFAULT_RECV_TIMEOUT_CTRL;
+            // We could also try and get the timeout value from xport_args
+            _ctrl_dma_xport = make_muxed_liberio_xport(tx_dev,
+                rx_dev,
+                default_buff_args,
+                uhd::rfnoc::MAX_NUM_BLOCKS * uhd::rfnoc::MAX_NUM_PORTS,
+                recv_timeout);
         }
 
         UHD_LOGGER_TRACE("MPMD")
@@ -134,9 +146,13 @@ uhd::both_xports_t mpmd_xport_ctrl_liberio::make_transport(
     } else if (xport_type == usrp::device3_impl::ASYNC_MSG) {
         UHD_ASSERT_THROW(xport_info["muxed"] == "True");
         if (not _async_msg_dma_xport) {
-            _async_msg_dma_xport =
-                make_muxed_liberio_xport(tx_dev, rx_dev, default_buff_args,
-                    uhd::rfnoc::MAX_NUM_BLOCKS * uhd::rfnoc::MAX_NUM_PORTS);
+            const double recv_timeout = LIBERIO_DEFAULT_RECV_TIMEOUT_ASYNC;
+            // We could also try and get the timeout value from xport_args
+            _async_msg_dma_xport = make_muxed_liberio_xport(tx_dev,
+                rx_dev,
+                default_buff_args,
+                uhd::rfnoc::MAX_NUM_BLOCKS * uhd::rfnoc::MAX_NUM_PORTS,
+                recv_timeout);
         }
 
         UHD_LOGGER_TRACE("MPMD")
@@ -146,9 +162,13 @@ uhd::both_xports_t mpmd_xport_ctrl_liberio::make_transport(
         // Create muxed transport in case of less DMA channels
         if (xport_info["muxed"] == "True") {
             if (not _data_dma_xport) {
-                _data_dma_xport =
-                    make_muxed_liberio_xport(tx_dev, rx_dev, default_buff_args,
-                        uhd::rfnoc::MAX_NUM_BLOCKS * uhd::rfnoc::MAX_NUM_PORTS);
+                const double recv_timeout = LIBERIO_DEFAULT_RECV_TIMEOUT_STRM;
+                // We could also try and get the timeout value from xport_args
+                _data_dma_xport = make_muxed_liberio_xport(tx_dev,
+                    rx_dev,
+                    default_buff_args,
+                    uhd::rfnoc::MAX_NUM_BLOCKS * uhd::rfnoc::MAX_NUM_PORTS,
+                    recv_timeout);
             }
 
             UHD_LOGGER_TRACE("MPMD")
@@ -185,10 +205,11 @@ uhd::transport::muxed_zero_copy_if::sptr
 mpmd_xport_ctrl_liberio::make_muxed_liberio_xport(const std::string& tx_dev,
     const std::string& rx_dev,
     const uhd::transport::zero_copy_xport_params& buff_args,
-    const size_t max_muxed_ports)
+    const size_t max_muxed_ports,
+    const double recv_timeout_s)
 {
     auto base_xport = transport::liberio_zero_copy::make(tx_dev, rx_dev, buff_args);
 
     return uhd::transport::muxed_zero_copy_if::make(
-        base_xport, extract_sid_from_pkt, max_muxed_ports);
+        base_xport, extract_sid_from_pkt, max_muxed_ports, recv_timeout_s);
 }

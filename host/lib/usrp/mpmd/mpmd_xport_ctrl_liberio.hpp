@@ -1,5 +1,6 @@
 //
 // Copyright 2017 Ettus Research, a National Instruments Company
+// Copyright 2019 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -37,7 +38,8 @@ private:
         const std::string& tx_dev,
         const std::string& rx_dev,
         const uhd::transport::zero_copy_xport_params& buff_args,
-        const size_t max_muxed_ports);
+        const size_t max_muxed_ports,
+        const double recv_timeout_s);
 
     const uhd::device_addr_t _mb_args;
     const uhd::dict<std::string, std::string> _recv_args;
