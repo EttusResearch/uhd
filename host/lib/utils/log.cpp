@@ -11,10 +11,10 @@
 #include <uhd/utils/log_add.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhd/utils/static.hpp>
+#include <uhd/utils/thread.hpp>
 #include <uhd/version.hpp>
 #include <uhdlib/utils/isatty.hpp>
 #include <boost/date_time/posix_time/posix_time.hpp>
-#include <memory>
 #include <atomic>
 #include <cctype>
 #include <fstream>
@@ -22,8 +22,7 @@
 #include <mutex>
 #include <thread>
 
-namespace pt                  = boost::posix_time;
-constexpr double READ_TIMEOUT = 0.5; // Waiting time to read from the queue
+namespace pt = boost::posix_time;
 
 // Don't make these static const std::string -- we need their lifetime guaranteed!
 #define PURPLE "\033[0;35m" // purple
@@ -40,6 +39,15 @@ constexpr double READ_TIMEOUT = 0.5; // Waiting time to read from the queue
  * Helpers
  **********************************************************************/
 namespace {
+
+#ifdef BOOST_MSVC
+constexpr double READ_TIMEOUT = 0.5; // Waiting time to read from the queue
+#endif
+
+constexpr char LOG_THREAD_NAME[]          = "uhd_log";
+constexpr char LOG_THREAD_NAME_FP[]       = "uhd_log_fastpath";
+constexpr char LOG_THREAD_NAME_FP_DUMMY[] = "uhd_log_fp_dummy";
+
 std::string verbosity_color(const uhd::log::severity_level& level)
 {
     static const bool tty = uhd::is_a_tty(2); // is stderr a tty?
@@ -204,14 +212,15 @@ public:
         {
             std::ostringstream sys_info;
             sys_info << BOOST_PLATFORM << "; " << BOOST_COMPILER << "; "
-                     << "Boost_" << BOOST_VERSION << "; "
-                     << uhd::get_component() << "_" << uhd::get_version_string();
+                     << "Boost_" << BOOST_VERSION << "; " << uhd::get_component() << "_"
+                     << uhd::get_version_string();
             _publish_log_msg(sys_info.str(), uhd::log::info, "UHD");
         }
 
         // Launch log message consumer
         _pop_task =
             std::make_shared<std::thread>(std::thread([this]() { this->pop_task(); }));
+        uhd::set_thread_name(_pop_task.get(), LOG_THREAD_NAME);
 
         // Fastpath message consumer
 #ifndef UHD_LOG_FASTPATH_DISABLE
@@ -227,9 +236,11 @@ public:
         if (enable_fastpath) {
             _pop_fastpath_task = std::make_shared<std::thread>(
                 std::thread([this]() { this->pop_fastpath_task(); }));
+            uhd::set_thread_name(_pop_fastpath_task.get(), LOG_THREAD_NAME_FP);
         } else {
             _pop_fastpath_task = std::make_shared<std::thread>(
                 std::thread([this]() { this->pop_fastpath_dummy_task(); }));
+            uhd::set_thread_name(_pop_fastpath_task.get(), LOG_THREAD_NAME_FP_DUMMY);
             _publish_log_msg("Fastpath logging disabled at runtime.");
         }
 #else
