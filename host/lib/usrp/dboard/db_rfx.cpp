@@ -359,7 +359,7 @@ double rfx_xcvr::set_lo_freq(
     int R=0, BS=0, P=0, B=0, A=0;
 
     /*
-     * The goal here to to loop though possible R dividers,
+     * The goal here to to loop through possible R dividers,
      * band select clock dividers, and prescaler values.
      * Calculate the A and B counters for each set of values.
      * The loop exits when it meets all of the constraints.
@@ -368,23 +368,30 @@ double rfx_xcvr::set_lo_freq(
      * fvco = [P*B + A] * fref/R
      * fvco*R/fref = P*B + A = N
      */
-    for(R = 2; R <= 32; R+=2){
-        for(auto BS:  bandsel_to_enum.keys()){
-            if (ref_freq/R/BS > 1e6) continue; //constraint on band select clock
-            for(auto P:  prescaler_to_enum.keys()){
-                //calculate B and A from N
-                double N = target_freq*R/ref_freq;
-                B = int(std::floor(N/P));
-                A = boost::math::iround(N - P*B);
-                if (B < A or B > 8191 or B < 3 or A > 31) continue; //constraints on A, B
-                //calculate the actual frequency
-                actual_freq = double(P*B + A)*ref_freq/R;
-                if (actual_freq/P > 300e6) continue; //constraint on prescaler output
-                //constraints met: exit loop
+    for (R = 2; R <= 32; R += 2) { // Search through all valid R values
+        for (BS = 1; BS <= 8; BS *= 2) { // Search through all valid band selects
+            if (ref_freq / R / BS > 1e6) {
+                continue; // constraint on band select clock
+            }
+            for (P = 8; P <= 32; P *= 2) { // Search through all prescaler values
+                // calculate B and A from N
+                double N = target_freq * R / ref_freq;
+                B        = int(std::floor(N / P));
+                A        = boost::math::iround(N - P * B);
+                if (B < A or B > 8191 or B < 3 or A > 31) {
+                    continue; // constraints on A, B
+                }
+                // calculate the actual frequency
+                actual_freq = double(P * B + A) * ref_freq / R;
+                if (actual_freq / P > 300e6) {
+                    continue; // constraint on prescaler output
+                }
+                // constraints met: exit loop
                 goto done_loop;
             }
         }
-    } done_loop:
+    }
+done_loop:
 
     UHD_LOGGER_TRACE("RFX") << boost::format(
         "RFX tune: R=%d, BS=%d, P=%d, B=%d, A=%d, DIV2=%d"
