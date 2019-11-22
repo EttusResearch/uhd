@@ -86,6 +86,7 @@ public:
     std::future<void> handle_finish_initialization;
     std::future<void> handle_setup_cal;
     std::future<double> handle_set_freq;
+    std::future<void> handle_set_master_clock_rate;
 
     /*! \brief make a new AD9371 ctrl object using the specified SPI iface
      *
@@ -283,6 +284,20 @@ void export_mykonos(py::module& top_module)
 
     py::class_<ad937x_ctrl, std::shared_ptr<ad937x_ctrl>>(m, "ad937x_ctrl")
         .def("set_master_clock_rate", &ad937x_ctrl::set_master_clock_rate)
+        .def("async__set_master_clock_rate",
+            +[](ad937x_ctrl& self, const double rate) {
+                self.handle_set_master_clock_rate = std::async(std::launch::async,
+                    [&self, rate]() { self.set_master_clock_rate(rate); });
+            })
+        .def("await__set_master_clock_rate",
+            +[](ad937x_ctrl& self) -> bool {
+                if (self.handle_set_master_clock_rate.wait_for(std::chrono::seconds(0))
+                    == std::future_status::ready) {
+                    self.handle_set_master_clock_rate.get();
+                    return true;
+                }
+                return false;
+            })
         .def("begin_initialization", &ad937x_ctrl::begin_initialization)
         .def("async__finish_initialization",
             +[](ad937x_ctrl& self) {
