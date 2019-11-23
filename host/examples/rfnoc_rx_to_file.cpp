@@ -323,11 +323,10 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
      * Set up radio
      ***********************************************************************/
     radio_ctrl->set_args(radio_args);
+
+    // Lock mboard clocks
     if (vm.count("ref")) {
-        std::cout << "TODO -- Need to implement API call to set clock source."
-                  << std::endl;
-        // Lock mboard clocks TODO
-        // usrp->set_clock_source(ref);
+        radio_ctrl->set_clock_source(ref);
     }
 
     // set the sample rate
