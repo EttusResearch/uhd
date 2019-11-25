@@ -12,6 +12,7 @@
 #include "mpmd_xport_ctrl_base.hpp"
 #include <uhd/transport/muxed_zero_copy_if.hpp>
 #include <uhd/types/device_addr.hpp>
+#include <unordered_map>
 
 namespace uhd { namespace mpmd { namespace xport {
 
@@ -48,7 +49,7 @@ private:
     //! Control transport for one liberio connection
     uhd::transport::muxed_zero_copy_if::sptr _ctrl_dma_xport;
     //! Data transport for one liberio connection
-    uhd::transport::muxed_zero_copy_if::sptr _data_dma_xport;
+    std::unordered_map<size_t, uhd::transport::muxed_zero_copy_if::sptr> _data_dma_xport;
     //! Control transport for one liberio connection
     uhd::transport::muxed_zero_copy_if::sptr _async_msg_dma_xport;
 };

@@ -161,19 +161,22 @@ uhd::both_xports_t mpmd_xport_ctrl_liberio::make_transport(
     } else {
         // Create muxed transport in case of less DMA channels
         if (xport_info["muxed"] == "True") {
-            if (not _data_dma_xport) {
+            const size_t dma_chan = std::stoul(xport_info["dma_chan"]);
+            if (not _data_dma_xport.count(dma_chan)) {
                 const double recv_timeout = LIBERIO_DEFAULT_RECV_TIMEOUT_STRM;
                 // We could also try and get the timeout value from xport_args
-                _data_dma_xport = make_muxed_liberio_xport(tx_dev,
-                    rx_dev,
-                    default_buff_args,
-                    uhd::rfnoc::MAX_NUM_BLOCKS * uhd::rfnoc::MAX_NUM_PORTS,
-                    recv_timeout);
+                _data_dma_xport.insert({dma_chan,
+                    make_muxed_liberio_xport(tx_dev,
+                        rx_dev,
+                        default_buff_args,
+                        uhd::rfnoc::MAX_NUM_BLOCKS * uhd::rfnoc::MAX_NUM_PORTS,
+                        recv_timeout)});
             }
 
             UHD_LOGGER_TRACE("MPMD")
                 << "Making (muxed) stream with num " << xports.recv_sid.get_dst();
-            xports.recv = _data_dma_xport->make_stream(xports.recv_sid.get_dst());
+            xports.recv =
+                _data_dma_xport.at(dma_chan)->make_stream(xports.recv_sid.get_dst());
         }
         else {
             xports.recv =
