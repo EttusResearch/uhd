@@ -519,7 +519,7 @@ size_t eth_manager::get_mtu(uhd::direction_t dir)
 void eth_manager::discover_eth(
     const mboard_eeprom_t mb_eeprom, const std::string& loaded_fpga_image)
 {
-    udp_simple_factory_t udp_make_connected = x300_get_udp_factory(send_args);
+    udp_simple_factory_t udp_make_connected = x300_get_udp_factory(_args.get_orig_args());
     // Load all valid, non-duplicate IP addrs
     std::vector<std::string> ip_addrs{_args.get_first_addr()};
     if (not _args.get_second_addr().empty()
