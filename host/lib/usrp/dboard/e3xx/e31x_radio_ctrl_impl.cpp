@@ -17,6 +17,8 @@ e31x_radio_ctrl_impl::e31x_radio_ctrl_impl(
 {
     // Swap front ends for E310
     _fe_swap = true;
+    // The E310 has INT0, not FP0, as the GPIO bank name
+    _fp_gpio_bank_name = "INT0";
 }
 
 e31x_radio_ctrl_impl::~e31x_radio_ctrl_impl()

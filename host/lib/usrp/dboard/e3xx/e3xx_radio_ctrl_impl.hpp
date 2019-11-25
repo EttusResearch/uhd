@@ -135,6 +135,9 @@ protected:
     //! Swap RFA and RFB for catalina
     bool _fe_swap;
 
+    //! Name of the external GPIO bank
+    std::string _fp_gpio_bank_name = "FP0";
+
 private:
     /**************************************************************************
      * Helpers

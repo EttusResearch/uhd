@@ -283,17 +283,16 @@ void e3xx_radio_ctrl_impl::_init_prop_tree()
     }
 
     // *****FP_GPIO************************
+    const fs_path ext_gpio_path = fs_path("gpio") / _fp_gpio_bank_name;
     for (const auto& attr : usrp::gpio_atr::gpio_attr_map) {
-        if (not _tree->exists(fs_path("gpio") / "INT0" / attr.second)) {
+        if (not _tree->exists(ext_gpio_path / attr.second)) {
             switch (attr.first) {
                 case usrp::gpio_atr::GPIO_SRC:
                     // This is not really the place to configure the source
                     // setting of the GPIO, don't have a better place to put this.
                     // Note: In UHD 4.0, this will move to the mb_controller
                     // object.
-                    _tree
-                        ->create<std::vector<std::string>>(
-                            fs_path("gpio") / "INT0" / attr.second)
+                    _tree->create<std::vector<std::string>>(ext_gpio_path / attr.second)
                         .set(std::vector<std::string>(
                             32, usrp::gpio_atr::default_attr_value_map.at(attr.first)))
                         .add_coerced_subscriber(
@@ -319,9 +318,7 @@ void e3xx_radio_ctrl_impl::_init_prop_tree()
                     break;
                 case usrp::gpio_atr::GPIO_CTRL:
                 case usrp::gpio_atr::GPIO_DDR:
-                    _tree
-                        ->create<std::vector<std::string>>(
-                            fs_path("gpio") / "INT0" / attr.second)
+                    _tree->create<std::vector<std::string>>(ext_gpio_path / attr.second)
                         .set(std::vector<std::string>(
                             32, usrp::gpio_atr::default_attr_value_map.at(attr.first)))
                         .add_coerced_subscriber(
@@ -337,11 +334,11 @@ void e3xx_radio_ctrl_impl::_init_prop_tree()
                             });
                     break;
                 case usrp::gpio_atr::GPIO_READBACK: {
-                    _tree->create<uint32_t>(fs_path("gpio") / "INT0" / attr.second)
+                    _tree->create<uint32_t>(ext_gpio_path / attr.second)
                         .set_publisher([this]() { return _fp_gpio->read_gpio(); });
                 } break;
                 default:
-                    _tree->create<uint32_t>(fs_path("gpio") / "INT0" / attr.second)
+                    _tree->create<uint32_t>(ext_gpio_path / attr.second)
                         .set(0)
                         .add_coerced_subscriber([this, attr](const uint32_t val) {
                             _fp_gpio->set_gpio_attr(attr.first, val);
@@ -353,9 +350,7 @@ void e3xx_radio_ctrl_impl::_init_prop_tree()
                     break;
                 case usrp::gpio_atr::GPIO_CTRL:
                 case usrp::gpio_atr::GPIO_DDR:
-                    _tree
-                        ->access<std::vector<std::string>>(
-                            fs_path("gpio") / "INT0" / attr.second)
+                    _tree->access<std::vector<std::string>>(ext_gpio_path / attr.second)
                         .set(std::vector<std::string>(
                             32, usrp::gpio_atr::default_attr_value_map.at(attr.first)))
                         .add_coerced_subscriber(
@@ -373,7 +368,7 @@ void e3xx_radio_ctrl_impl::_init_prop_tree()
                 case usrp::gpio_atr::GPIO_READBACK:
                     break;
                 default:
-                    _tree->access<uint32_t>(fs_path("gpio") / "INT0" / attr.second)
+                    _tree->access<uint32_t>(ext_gpio_path / attr.second)
                         .set(0)
                         .add_coerced_subscriber([this, attr](const uint32_t val) {
                             _fp_gpio->set_gpio_attr(attr.first, val);
