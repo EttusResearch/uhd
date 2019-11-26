@@ -248,3 +248,4 @@ if(MSVC OR APPLE OR LINUX)
 endif()
 
 add_subdirectory(devtest)
+add_subdirectory(streaming_performance)
