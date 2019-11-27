@@ -62,32 +62,46 @@ private:
     };
 
     enum rx_sw1_t {
-        RX_SW1_LB_B2 = 4,
-        RX_SW1_LB_B3 = 2,
-        RX_SW1_LB_B4 = 0,
-        RX_SW1_LB_B5 = 1,
-        RX_SW1_LB_B6 = 3,
-        RX_SW1_LB_B7 = 5,
+        RX2_SW1_LB_B2 = 5,
+        RX2_SW1_LB_B3 = 3,
+        RX2_SW1_LB_B4 = 1,
+        RX2_SW1_LB_B5 = 0,
+        RX2_SW1_LB_B6 = 2,
+        RX2_SW1_LB_B7 = 4,
+        RX1_SW1_LB_B2 = 4,
+        RX1_SW1_LB_B3 = 2,
+        RX1_SW1_LB_B4 = 0,
+        RX1_SW1_LB_B5 = 1,
+        RX1_SW1_LB_B6 = 3,
+        RX1_SW1_LB_B7 = 5,
         RX_SW1_OFF = 7
     };
 
     enum rx_swc_t {
-        RX_SWC_LB_B2 = 2,
-        RX_SWC_LB_B3 = 3,
-        RX_SWC_LB_B4 = 1,
+        RX2_SWC_LB_B2 = 1,
+        RX2_SWC_LB_B3 = 3,
+        RX2_SWC_LB_B4 = 2,
+        RX1_SWC_LB_B2 = 2,
+        RX1_SWC_LB_B3 = 3,
+        RX1_SWC_LB_B4 = 1,
         RX_SWC_OFF = 0
     };
 
     enum rx_swb_t {
-        RX_SWB_LB_B5 = 2,
-        RX_SWB_LB_B6 = 3,
-        RX_SWB_LB_B7 = 1,
+        RX2_SWB_LB_B5 = 1,
+        RX2_SWB_LB_B6 = 3,
+        RX2_SWB_LB_B7 = 2,
+        RX1_SWB_LB_B5 = 2,
+        RX1_SWB_LB_B6 = 3,
+        RX1_SWB_LB_B7 = 1,
         RX_SWB_OFF = 0
     };
 
     enum vcrx_sw_t {
-        VCRX_SW_LB = 1,
-        VCRX_SW_HB = 2,
+        VCRX_RX_SW_LB = 1,
+        VCRX_RX_SW_HB = 2,
+        VCRX_TXRX_SW_LB = 2,
+        VCRX_TXRX_SW_HB = 1,
         VCRX_SW_OFF = 0 //or 3
     };
 

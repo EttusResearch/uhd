@@ -87,6 +87,11 @@ uint32_t e31x_radio_control_impl::get_tx_switches(
         UHD_THROW_INVALID_CODE_PATH();
         break;
     }
+
+    RFNOC_LOG_TRACE("TX band = " << int(band) << "TX SW1 = " << tx_sw1
+                                 << "TX VCTXRX_SW = " << vctxrx_sw
+                                 << "TX_BIAS = " << tx_bias);
+
     auto tx_regs = 0 |
              vctxrx_sw << VCTXRX_SW_SHIFT |
              tx_bias << TX_BIAS_SHIFT |
@@ -99,9 +104,7 @@ uint32_t e31x_radio_control_impl::get_rx_switches(
     const double freq,
     const std::string &ant
 ){
-    RFNOC_LOG_TRACE(
-        "Update all RX freq related switches. f=" << freq << " Hz, "
-    );
+    RFNOC_LOG_TRACE("Update all E310 RX freq related switches. f=" << freq << " Hz, ");
 
     size_t fe_chan = _fe_swap ? (chan ? 0 : 1): chan;
 
@@ -110,7 +113,7 @@ uint32_t e31x_radio_control_impl::get_rx_switches(
     auto rx_swc = RX_SWC_OFF;
     auto rx_swb = RX_SWB_OFF;
     auto vctxrx_sw = VCTXRX_SW_OFF;
-    auto vcrx_sw = VCRX_SW_LB;
+    auto vcrx_sw = (ant == "TX/RX") ? VCRX_TXRX_SW_LB: VCRX_RX_SW_LB;
     if (ant == "TX/RX") {
         vctxrx_sw = (fe_chan == 0) ? VCTXRX1_SW_RX: VCTXRX2_SW_RX;
     }
@@ -119,40 +122,40 @@ uint32_t e31x_radio_control_impl::get_rx_switches(
 
     switch(band) {
     case rx_band::LB_B2:
-        rx_sw1 = RX_SW1_LB_B2;
-        rx_swc = RX_SWC_LB_B2;
+        rx_sw1 = (fe_chan == 0) ? RX1_SW1_LB_B2: RX2_SW1_LB_B2;
+        rx_swc = (fe_chan == 0) ? RX1_SWC_LB_B2: RX2_SWC_LB_B2;
         rx_swb = RX_SWB_OFF;
         break;
     case rx_band::LB_B3:
-        rx_sw1 = RX_SW1_LB_B3;
-        rx_swc = RX_SWC_LB_B3;
+        rx_sw1 = (fe_chan == 0) ? RX1_SW1_LB_B3: RX2_SW1_LB_B3;
+        rx_swc = (fe_chan == 0) ? RX1_SWC_LB_B3: RX2_SWC_LB_B3;
         rx_swb = RX_SWB_OFF;
         break;
     case rx_band::LB_B4:
-        rx_sw1 = RX_SW1_LB_B4;
-        rx_swc = RX_SWC_LB_B4;
+        rx_sw1 = (fe_chan == 0) ? RX1_SW1_LB_B4: RX2_SW1_LB_B4;
+        rx_swc = (fe_chan == 0) ? RX1_SWC_LB_B4: RX2_SWC_LB_B4;
         rx_swb = RX_SWB_OFF;
         break;
     case rx_band::LB_B5:
-        rx_sw1 = RX_SW1_LB_B5;
+        rx_sw1 = (fe_chan == 0) ? RX1_SW1_LB_B5: RX2_SW1_LB_B5;
         rx_swc = RX_SWC_OFF;
-        rx_swb = RX_SWB_LB_B5;
+        rx_swb = (fe_chan == 0) ? RX1_SWB_LB_B5: RX2_SWB_LB_B5;
         break;
     case rx_band::LB_B6:
-        rx_sw1 = RX_SW1_LB_B6;
+        rx_sw1 = (fe_chan == 0) ? RX1_SW1_LB_B6: RX2_SW1_LB_B6;
         rx_swc = RX_SWC_OFF;
-        rx_swb = RX_SWB_LB_B6;
+        rx_swb = (fe_chan == 0) ? RX1_SWB_LB_B6: RX2_SWB_LB_B6;
         break;
     case rx_band::LB_B7:
-        rx_sw1 = RX_SW1_LB_B7;
+        rx_sw1 = (fe_chan == 0) ? RX1_SW1_LB_B7: RX2_SW1_LB_B7;
         rx_swc = RX_SWC_OFF;
-        rx_swb = RX_SWB_LB_B7;
+        rx_swb = (fe_chan == 0) ? RX1_SWB_LB_B7: RX2_SWB_LB_B7;
         break;
     case rx_band::HB:
         rx_sw1 = RX_SW1_OFF;
         rx_swc = RX_SWC_OFF;
         rx_swb = RX_SWB_OFF;
-        vcrx_sw = VCRX_SW_HB;
+        vcrx_sw = (ant == "TX/RX") ? VCRX_TXRX_SW_HB: VCRX_RX_SW_HB;
         break;
     case rx_band::INVALID_BAND:
         RFNOC_LOG_ERROR("Cannot map RX frequency to band: " << freq);
