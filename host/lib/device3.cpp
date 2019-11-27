@@ -50,7 +50,8 @@ std::vector<rfnoc::block_id_t> device3::find_blocks(const std::string &block_id_
 {
     std::vector<rfnoc::block_id_t> block_ids;
     for (size_t i = 0; i < _rfnoc_block_ctrl.size(); i++) {
-        if (_rfnoc_block_ctrl[i]->get_block_id().match(block_id_hint)) {
+        if (block_id_hint.empty()
+            || _rfnoc_block_ctrl[i]->get_block_id().match(block_id_hint)) {
             block_ids.push_back(_rfnoc_block_ctrl[i]->get_block_id());
         }
     }

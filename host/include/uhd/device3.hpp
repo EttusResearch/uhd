@@ -104,15 +104,26 @@ public:
 
     /*! Returns the block ids of all blocks that match the specified hint
      * Uses block_ctrl_base::match() internally.
+     *
      * If no matching block is found, it returns an empty vector.
+     *
+     * To return a list of all blocks, pass in an empty string as a hint.
      *
      * To access specialized block controller classes (i.e. derived from block_ctrl_base),
      * use the templated version of this function, e.g.
      * \code{.cpp}
      * // Assume DEV is a device3::sptr
      * null_block_ctrl::sptr null_block =
-     * DEV->find_blocks<null_block_ctrl>("NullSrcSink"); \endcode \note this access is not
-     * thread safe if peformed during block enumeration
+     * DEV->find_blocks<null_block_ctrl>("NullSrcSink");
+     * \endcode
+     *
+     * \note this access is not thread safe if peformed during block enumeration
+     *
+     * \param block_id_hint Either an empty string (will return all blocks), or
+     *                      block ID hint (e.g. "FFT"). This hint will be
+     *                      matched against the block IDs against all the blocks
+     *                      in this device using uhd::block_id_t::match().
+     * \returns a list of all block IDs that match the hint
      */
     std::vector<rfnoc::block_id_t> find_blocks(const std::string& block_id_hint) const;
 
