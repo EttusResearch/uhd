@@ -4,17 +4,27 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#ifndef INCLUDED_LIBUHD_TESTS_MOCK_REG_IFACE_HPP
-#define INCLUDED_LIBUHD_TESTS_MOCK_REG_IFACE_HPP
+#ifndef INCLUDED_LIBUHD_MOCK_BLOCK_HPP
+#define INCLUDED_LIBUHD_MOCK_BLOCK_HPP
 
+#include <uhd/config.hpp>
+#include <uhd/property_tree.hpp>
+#include <uhd/rfnoc/defaults.hpp>
+#include <uhd/rfnoc/noc_block_base.hpp>
 #include <uhd/rfnoc/register_iface.hpp>
-#include <uhd/utils/log.hpp>
 #include <uhd/types/time_spec.hpp>
-#include <boost/format.hpp>
+#include <uhd/utils/log.hpp>
 #include <unordered_map>
+#include <boost/format.hpp>
 #include <vector>
 
-class mock_reg_iface_t : public uhd::rfnoc::register_iface
+namespace uhd { namespace rfnoc {
+
+/*! Mock version of a register interface
+ *
+ * This can be used for mock blocks, usually for the sake of unit testing.
+ */
+class UHD_API mock_reg_iface_t : public register_iface
 {
 public:
     mock_reg_iface_t()          = default;
@@ -58,7 +68,8 @@ public:
         try {
             return read_memory.at(addr);
         } catch (const std::out_of_range&) {
-            throw uhd::runtime_error(str(boost::format("No data defined for address: 0x%04X") % addr));
+            throw uhd::runtime_error(
+                str(boost::format("No data defined for address: 0x%04X") % addr));
         }
     }
 
@@ -123,7 +134,10 @@ public:
 
     bool force_timeout = false;
 
+    //! All pokes end up writing to this map
     std::unordered_map<uint32_t, uint32_t> read_memory;
+    //! All peeks read from this map. A peek will fail if the address has not
+    // been previously set.
     std::unordered_map<uint32_t, uint32_t> write_memory;
 
 protected:
@@ -131,8 +145,49 @@ protected:
         uint32_t /*addr*/, uint32_t /*data*/, uhd::time_spec_t /*time*/, bool /*ack*/)
     {
     }
+
     virtual void _peek_cb(uint32_t /*addr*/, uhd::time_spec_t /*time*/) {}
 };
 
+/*! Container for all the items required for running a mock block
+ */
+struct UHD_API mock_block_container
+{
+    friend class get_mock_block;
+    //! Reference to the register interface object
+    std::shared_ptr<mock_reg_iface_t> reg_iface;
 
-#endif /* INCLUDED_LIBUHD_TESTS_MOCK_REG_IFACE_HPP */
+    //! Reference to the prop tree object the block sees
+    uhd::property_tree::sptr tree;
+
+    //! Use this to retrieve a reference to the block controller. Make sure that
+    // the register space is appropiately primed before doing so.
+    template<typename block_type = noc_block_base>
+    std::shared_ptr<block_type> get_block()
+    {
+        return std::dynamic_pointer_cast<block_type>(factory(std::move(make_args)));
+    }
+
+    //! Factory to get the block. Use get_block() instead.
+    std::function<noc_block_base::sptr(noc_block_base::make_args_ptr)> factory;
+
+    // Note: The make args would ideally be captured by the factory function,
+    // but std::functions need to be CopyConstructible, and this struct doesn't,
+    // so it needs to live out here in the open.
+    noc_block_base::make_args_ptr make_args;
+
+};
+
+/*! Factory function for mock block controllers
+ */
+UHD_API mock_block_container get_mock_block(const noc_id_t noc_id,
+    const size_t num_inputs        = 1,
+    const size_t num_outputs       = 1,
+    const uhd::device_addr_t& args = uhd::device_addr_t(),
+    const size_t mtu               = 8000,
+    const device_type_t device_id        = ANY_DEVICE);
+
+
+}}; // namespace uhd::rfnoc
+
+#endif /* INCLUDED_LIBUHD_MOCK_BLOCK_HPP */

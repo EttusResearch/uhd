@@ -5,6 +5,7 @@
 //
 
 #include <uhd/rfnoc/register_iface.hpp>
+#include <uhd/rfnoc/mock_block.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/client_zero.hpp>
 #include <uhdlib/utils/narrow.hpp>
@@ -13,8 +14,6 @@
 #include <cstdint>
 #include <cstring>
 #include <memory>
-
-#include "rfnoc_mock_reg_iface.hpp"
 
 using namespace uhd;
 using namespace uhd::rfnoc;

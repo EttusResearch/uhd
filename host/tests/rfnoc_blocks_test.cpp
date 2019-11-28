@@ -5,14 +5,12 @@
 //
 
 #include "rfnoc_graph_mock_nodes.hpp"
-#include "rfnoc_mock_reg_iface.hpp"
+#include <uhd/rfnoc/mock_block.hpp>
 #include <uhd/rfnoc/actions.hpp>
 #include <uhd/rfnoc/ddc_block_control.hpp>
 #include <uhd/rfnoc/defaults.hpp>
 #include <uhd/rfnoc/duc_block_control.hpp>
 #include <uhd/rfnoc/null_block_control.hpp>
-#include <uhdlib/rfnoc/clock_iface.hpp>
-#include <uhdlib/rfnoc/factory.hpp>
 #include <uhdlib/rfnoc/graph.hpp>
 #include <uhdlib/rfnoc/node_accessor.hpp>
 #include <uhdlib/utils/narrow.hpp>
@@ -21,46 +19,9 @@
 
 using namespace uhd::rfnoc;
 
-// Redeclare this here, since it's only defined outside of UHD_API
-noc_block_base::make_args_t::~make_args_t() = default;
-
 namespace {
 
 constexpr size_t DEFAULT_MTU = 8000;
-
-noc_block_base::make_args_ptr make_make_args(noc_id_t noc_id,
-    const std::string& block_id,
-    const size_t n_inputs,
-    const size_t n_outputs,
-    const std::string& tb_clock_name = CLOCK_KEY_GRAPH,
-    const std::string& cp_clock_name = "MOCK_CLOCK")
-{
-    auto make_args                = std::make_unique<noc_block_base::make_args_t>();
-    make_args->noc_id             = noc_id;
-    make_args->num_input_ports    = n_inputs;
-    make_args->num_output_ports   = n_outputs;
-    make_args->mtu                = DEFAULT_MTU;
-    make_args->reg_iface          = std::make_shared<mock_reg_iface_t>();
-    make_args->block_id           = block_id;
-    make_args->ctrlport_clk_iface = std::make_shared<clock_iface>(cp_clock_name);
-    make_args->tb_clk_iface       = std::make_shared<clock_iface>(tb_clock_name);
-    make_args->tree               = uhd::property_tree::make();
-    return make_args;
-}
-
-noc_block_base::sptr make_block(noc_block_base::make_args_ptr&& make_args)
-{
-    try {
-        auto block_factory_info =
-            factory::get_block_factory(make_args->noc_id, ANY_DEVICE);
-        return block_factory_info.factory_fn(std::move(make_args));
-    } catch (std::out_of_range&) {
-        UHD_LOG_WARNING("TEST",
-            "Skipping tests due to Windows linker misconfiguration that needs to be "
-            "resolved.");
-        exit(0);
-    }
-}
 
 } // namespace
 
@@ -72,17 +33,17 @@ BOOST_AUTO_TEST_CASE(test_null_block)
     constexpr uint32_t item_width = 32;
     constexpr noc_id_t noc_id     = 0x00000001;
 
-    auto make_args = make_make_args(noc_id, "0/NullSrcSink#0", num_chans, num_chans);
-    auto reg_iface = std::dynamic_pointer_cast<mock_reg_iface_t>(make_args->reg_iface);
-    auto set_mem   = [&](const uint32_t addr, const uint32_t data) {
+    auto block_container = get_mock_block(noc_id, num_chans, num_chans);
+    // Shorthand to save typing
+    auto& reg_iface = block_container.reg_iface;
+    auto set_mem    = [&](const uint32_t addr, const uint32_t data) {
         reg_iface->read_memory[addr] = data;
     };
     auto get_mem  = [&](const uint32_t addr) { return reg_iface->write_memory[addr]; };
     auto copy_mem = [&](const uint32_t addr) { set_mem(addr, get_mem(addr)); };
-
     set_mem(null_block_control::REG_CTRL_STATUS, (nipc << 24) | (item_width << 16));
-    auto test_null =
-        std::dynamic_pointer_cast<null_block_control>(make_block(std::move(make_args)));
+
+    auto test_null = block_container.get_block<null_block_control>();
     BOOST_REQUIRE(test_null);
 
     using uhd::stream_cmd_t;
@@ -163,15 +124,14 @@ BOOST_AUTO_TEST_CASE(test_ddc_block)
     constexpr noc_id_t noc_id  = DDC_BLOCK;
     constexpr int TEST_DECIM   = 20;
 
-    auto ddc_make_args  = make_make_args(noc_id, "0/DDC#0", num_chans, num_chans);
-    ddc_make_args->args = uhd::device_addr_t("foo=bar");
-    auto ddc_reg_iface =
-        std::dynamic_pointer_cast<mock_reg_iface_t>(ddc_make_args->reg_iface);
+    auto block_container =
+        get_mock_block(noc_id, num_chans, num_chans, uhd::device_addr_t("foo=bar"));
+    auto& ddc_reg_iface = block_container.reg_iface;
     ddc_reg_iface->read_memory[ddc_block_control::RB_COMPAT_NUM] =
         (ddc_block_control::MAJOR_COMPAT << 16) | ddc_block_control::MINOR_COMPAT;
     ddc_reg_iface->read_memory[ddc_block_control::RB_NUM_HB]        = num_hb;
     ddc_reg_iface->read_memory[ddc_block_control::RB_CIC_MAX_DECIM] = max_cic;
-    auto test_ddc = make_block(std::move(ddc_make_args));
+    auto test_ddc = block_container.get_block<ddc_block_control>();
     BOOST_REQUIRE(test_ddc);
     BOOST_CHECK_EQUAL(test_ddc->get_block_args().get("foo"), "bar");
 
@@ -266,15 +226,13 @@ BOOST_AUTO_TEST_CASE(test_duc_block)
     constexpr noc_id_t noc_id  = DUC_BLOCK;
     constexpr int TEST_INTERP  = 20; // 2 halfbands, CIC==5
 
-    auto duc_make_args  = make_make_args(noc_id, "0/DUC#0", num_chans, num_chans);
-    duc_make_args->args = uhd::device_addr_t();
-    auto duc_reg_iface =
-        std::dynamic_pointer_cast<mock_reg_iface_t>(duc_make_args->reg_iface);
+    auto block_container = get_mock_block(noc_id, num_chans, num_chans);
+    auto& duc_reg_iface = block_container.reg_iface;
     duc_reg_iface->read_memory[duc_block_control::RB_COMPAT_NUM] =
         (duc_block_control::MAJOR_COMPAT << 16) | duc_block_control::MINOR_COMPAT;
     duc_reg_iface->read_memory[duc_block_control::RB_NUM_HB]         = num_hb;
     duc_reg_iface->read_memory[duc_block_control::RB_CIC_MAX_INTERP] = max_cic;
-    auto test_duc = make_block(std::move(duc_make_args));
+    auto test_duc = block_container.get_block<duc_block_control>();
     BOOST_REQUIRE(test_duc);
 
     node_accessor.init_props(test_duc.get());

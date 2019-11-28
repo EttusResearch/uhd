@@ -38,6 +38,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/rfnoc_rx_streamer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/rfnoc_tx_streamer.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/tx_async_msg_queue.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/mock_block.cpp
     # Default block control classes:
     ${CMAKE_CURRENT_SOURCE_DIR}/block_control.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/ddc_block_control.cpp

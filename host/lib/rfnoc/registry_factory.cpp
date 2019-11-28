@@ -5,13 +5,14 @@
 //
 
 #include <uhd/exception.hpp>
-#include <uhd/rfnoc/registry.hpp>
-#include <uhd/rfnoc/defaults.hpp>
 #include <uhd/rfnoc/constants.hpp>
+#include <uhd/rfnoc/defaults.hpp>
+#include <uhd/rfnoc/mock_block.hpp>
+#include <uhd/rfnoc/registry.hpp>
 #include <uhd/utils/static.hpp>
 #include <uhdlib/rfnoc/factory.hpp>
-#include <boost/functional/hash.hpp>
 #include <unordered_map>
+#include <boost/functional/hash.hpp>
 #include <iomanip>
 #include <iostream>
 #include <sstream>
@@ -106,3 +107,4 @@ block_factory_info_t factory::get_block_factory(noc_id_t noc_id, device_type_t d
     }
     return get_direct_block_registry().at(key);
 }
+

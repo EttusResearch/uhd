@@ -245,7 +245,6 @@ UHD_ADD_NONAPI_TEST(
     TARGET rfnoc_blocks_test.cpp
     EXTRA_SOURCES
     ${CMAKE_SOURCE_DIR}/lib/rfnoc/graph.cpp
-    ${CMAKE_SOURCE_DIR}/lib/rfnoc/registry_factory.cpp
 )
 
 UHD_ADD_NONAPI_TEST(
