@@ -143,5 +143,14 @@ endif(ENABLE_LIBERIO)
 
 if(ENABLE_DPDK)
     INCLUDE_SUBDIRECTORY(uhd-dpdk)
+
+    LIBUHD_APPEND_SOURCES(
+        ${CMAKE_CURRENT_SOURCE_DIR}/udp_dpdk_link.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/dpdk_simple.cpp
+    )
+    set_source_files_properties(
+        ${CMAKE_CURRENT_SOURCE_DIR}/udp_dpdk_link.cpp
+        PROPERTIES COMPILE_FLAGS "${UHD_DPDK_CFLAGS} -D_GNU_SOURCE"
+    )
 endif(ENABLE_DPDK)
 

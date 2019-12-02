@@ -75,7 +75,23 @@ load that driver with the following command:
     modprobe vfio-pci
 
 For NICs that require vfio-pci (like Intel's X520), you'll want to use the
-`dpdk-devbind.py` script to the vfio-pci driver.
+`dpdk-devbind.py` script to the vfio-pci driver. This script is shipped with
+DPDK and installed to `$prefix/share/dpdk/usertools`. If the NIC uses the
+vfio-pci driver, and the package was installed apt-get, then a typical invocation
+might be
+
+    /usr/share/dpdk/usertools/dpdk-devbind.py --bind=vfio-pci ens6f0
+
+If successful, the script might provide an updated status like this:
+
+    /usr/share/dpdk/usertools/dpdk-devbind.py -s
+    
+    Network devices using DPDK-compatible driver
+    ============================================
+    0000:02:00.0 '82599ES 10-Gigabit SFI/SFP+ Network Connection 10fb' drv=vfio-pci unused=ixgbe
+    [...]
+
+
 See https://doc.dpdk.org/guides-18.11/linux_gsg/linux_drivers.html#binding-and-unbinding-network-ports-to-from-the-kernel-modules
 for more details.
 
@@ -102,7 +118,7 @@ options:
     ;instead and swap between them
     [use_dpdk=1]
     ;dpdk_mtu is the NIC's MTU setting
-    ;This is separate from MPM's maximum packet size--tops out at 4000
+    ;This is separate from MPM's maximum packet size
     dpdk_mtu=9000
     ;dpdk_driver is the -d flag for the DPDK EAL. If DPDK doesn't pick up the driver for your NIC
     ;automatically, you may need this argument to point it to the folder where it can find the drivers
@@ -115,8 +131,8 @@ options:
     ;dpdk_num_mbufs is the total number of packet buffers allocated
     ;to each direction's packet buffer pool
     ;This will be multiplied by the number of NICs, but NICs on the same
-    ;CPU socket share a pool
-    dpdk_num_mbufs=512
+    ;CPU socket share a pool.
+    dpdk_num_mbufs=4096
     ;dpdk_mbuf_cache_size is the number of buffers to cache for a CPU
     ;The cache reduces the interaction with the global pool
     dpdk_mbuf_cache_size=64
@@ -127,20 +143,24 @@ address, and it must be in a particular format. Hex digits must all be lower
 case, and octets must be separated by colons. Here is an example:
 
     [dpdk_mac=3c:fd:fe:a2:a9:09]
-    ;dpdk_io_cpu selects the CPU that this NIC's driver will run on
-    ;Multiple NICs may occupy one CPU, but the I/O thread will completely
-    ;consume that CPU. Also, 0 is reserved for the master thread (i.e.
+    ;dpdk_lcore selects the lcore that this NIC's driver will run on
+    ;Multiple NICs may occupy one lcore, but the I/O thread will completely
+    ;consume that lcore's CPU. Also, 0 is reserved for the master thread (i.e.
     ;the initial UHD thread that calls init() for DPDK). Attempting to
     ;use it as an I/O thread will only result in hanging.
-    dpdk_io_cpu = 1
+    ;Note also that by default, the lcore ID will be the same as the CPU ID.
+    dpdk_lcore = 1
     ;dpdk_ipv4 specifies the IPv4 address, and both the address and
     ;subnet mask are required (and in this format!). DPDK uses the
     ;netmask to create a basic routing table. Routing to other networks
     ;(i.e. via gateways) is not permitted.
     dpdk_ipv4 = 192.168.10.1/24
+    ;dpdk_num_desc is the number of descriptors in each DMA ring.
+    ;Must be a power of 2.
+    dpdk_num_desc=4096
 
     [dpdk_mac=3c:fd:fe:a2:a9:0a]
-    dpdk_io_cpu = 1
+    dpdk_lcore = 1
     dpdk_ipv4 = 192.168.20.1/24
 
 \section dpdk_using Using DPDK in UHD

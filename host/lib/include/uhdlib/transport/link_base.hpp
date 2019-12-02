@@ -56,7 +56,7 @@ private:
  * the link interface methods.
  *
  * This template requires the following methods in the derived class:
- *   bool get_send_buf_derived(frame_buff& buf, int32_t timeout_ms);
+ *   bool get_send_buff_derived(frame_buff& buf, int32_t timeout_ms);
  *   void release_send_buf_derived(frame_buff& buf);
  *
  * Additionally, the subclass must call preload_free_buf for each frame_buff
@@ -145,7 +145,7 @@ private:
  * the link interface methods.
  *
  * This template requires the following methods in the derived class:
- *   bool get_recv_buff_derived(frame_buff& buff, int32_t timeout_ms);
+ *   size_t get_recv_buff_derived(frame_buff& buff, int32_t timeout_ms);
  *   void release_recv_buff_derived(frame_buff& buff);
  *
  * Additionally, the subclass must call preload_free_buff for each

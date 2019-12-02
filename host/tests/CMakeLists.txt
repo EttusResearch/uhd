@@ -124,7 +124,10 @@ if(ENABLE_DPDK)
         ${CMAKE_SOURCE_DIR}/lib/utils/paths.cpp
         ${CMAKE_SOURCE_DIR}/lib/utils/pathslib.cpp
         ${CMAKE_SOURCE_DIR}/lib/utils/prefs.cpp
+        ${CMAKE_SOURCE_DIR}/lib/transport/adapter.cpp
         ${CMAKE_SOURCE_DIR}/lib/transport/uhd-dpdk/dpdk_common.cpp
+        ${CMAKE_SOURCE_DIR}/lib/transport/uhd-dpdk/dpdk_io_service.cpp
+        ${CMAKE_SOURCE_DIR}/lib/transport/udp_dpdk_link.cpp
         INCLUDE_DIRS
         ${DPDK_INCLUDE_DIR}
         EXTRA_LIBS ${DPDK_LIBRARIES}
@@ -132,6 +135,8 @@ if(ENABLE_DPDK)
     )
     set_source_files_properties(
         ${CMAKE_SOURCE_DIR}/lib/transport/uhd-dpdk/dpdk_common.cpp
+        ${CMAKE_SOURCE_DIR}/lib/transport/uhd-dpdk/dpdk_io_service.cpp
+        ${CMAKE_SOURCE_DIR}/lib/transport/udp_dpdk_link.cpp
         PROPERTIES COMPILE_FLAGS "-march=native -D_GNU_SOURCE"
     )
 ENDIF(ENABLE_DPDK)

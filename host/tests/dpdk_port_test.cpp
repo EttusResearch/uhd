@@ -6,6 +6,8 @@
 
 #include <uhdlib/transport/dpdk/common.hpp>
 #include <uhdlib/transport/dpdk/service_queue.hpp>
+#include <uhdlib/transport/dpdk_io_service.hpp>
+#include <uhdlib/transport/udp_dpdk_link.hpp>
 #include <boost/program_options.hpp>
 #include <iostream>
 #include <memory>
@@ -101,6 +103,46 @@ int main(int argc, char **argv)
     service_thread.join();
     std::cout << "PASS: Service thread terminated" << std::endl;
     delete queue;
+
+    std::cout << "Starting up ARP thread..." << std::endl;
+    std::vector<uhd::transport::dpdk::dpdk_port*> ports;
+    ports.push_back(port);
+    //auto io_srv = uhd::transport::dpdk_io_service::make(1, ports, 16);
+    auto io_srv = ctx->get_io_service(1);
+
+    // Create link
+    std::cout << "Creating UDP link..." << std::endl;
+    uhd::transport::link_params_t params;
+    params.recv_frame_size = 8000;
+    params.send_frame_size = 8000;
+    params.num_recv_frames = 511;
+    params.num_send_frames = 511;
+    params.recv_buff_size = params.recv_frame_size*params.num_recv_frames;
+    params.send_buff_size = params.send_frame_size*params.num_send_frames;
+    auto link = uhd::transport::udp_dpdk_link::make("192.168.10.2", "49600", params);
+
+    // Attach link
+    std::cout << "Attaching UDP send link..." << std::endl;
+    io_srv->attach_send_link(link);
+    struct ether_addr dest_mac;
+    link->get_remote_mac(dest_mac);
+    char mac_str[20];
+    ether_format_addr(mac_str, 20, &dest_mac);
+    std::cout << "Remote MAC address is " << mac_str << std::endl;
+    std::cout << std::endl;
+    std::cout << "Attaching UDP recv link..." << std::endl;
+    io_srv->attach_recv_link(link);
+    std::cout << "Press any key to quit..." << std::endl;
+    std::cin.get();
+
+    // Shut down
+    std::cout << "Detaching UDP send link..." << std::endl;
+    io_srv->detach_send_link(link);
+    std::cout << "Detaching UDP recv link..." << std::endl;
+    io_srv->detach_recv_link(link);
+    std::cout << "Shutting down I/O service..." << std::endl;
+    io_srv.reset();
+    std::cout << "Shutting down context..." << std::endl;
     ctx.reset();
     return 0;
 }

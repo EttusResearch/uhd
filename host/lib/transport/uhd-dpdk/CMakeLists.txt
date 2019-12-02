@@ -19,9 +19,11 @@ if(ENABLE_DPDK)
 
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/dpdk_common.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/dpdk_io_service.cpp
     )
     set_source_files_properties(
         ${CMAKE_CURRENT_SOURCE_DIR}/dpdk_common.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/dpdk_io_service.cpp
         PROPERTIES COMPILE_FLAGS "${UHD_DPDK_CFLAGS} -D_GNU_SOURCE"
     )
     include_directories(${DPDK_INCLUDE_DIR})

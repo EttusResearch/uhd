@@ -28,6 +28,14 @@ enum wait_type {
     WAIT_FLOW_OPEN,
     //! Wake once the flow/socket is destroyed
     WAIT_FLOW_CLOSE,
+    //! Wake once the new transport is connected
+    WAIT_XPORT_CONNECT,
+    //! Wake once the transport is disconnected
+    WAIT_XPORT_DISCONNECT,
+    //! Wake when MAC address found for IP address
+    WAIT_ARP,
+    //! Wake once the I/O worker terminates
+    WAIT_LCORE_TERM,
     //! Number of possible reasons for waiting
     WAIT_TYPE_COUNT
 };
@@ -50,6 +58,8 @@ struct wait_req
     std::mutex mutex;
     //! Whether the request was completed
     bool complete;
+    //! The status or error code associated with the request
+    int retval;
     //! An atomic reference counter for managing this request object's memory
     rte_atomic32_t refcnt;
 };
@@ -110,7 +120,7 @@ class service_queue
 public:
     /*!
      * Create a service queue
-     * \param depth Must be a power of 2
+     * \param depth Must be a power of 2. Actual size is less.
      * \param lcore_id The DPDK lcore_id associated with this service queue
      */
     service_queue(size_t depth, unsigned int lcore_id)
@@ -225,6 +235,24 @@ public:
         req->mutex.unlock();
         wait_req_put(req);
         return stat;
+    }
+
+    /*!
+     * Get the size of the service queue
+     * \return size of the service queue
+     */
+    inline size_t get_size()
+    {
+        return rte_ring_get_size(_waiter_ring);
+    }
+
+    /*!
+     * Get the capacity of the service queue
+     * \return capacity of the service queue
+     */
+    inline size_t get_capacity()
+    {
+        return rte_ring_get_capacity(_waiter_ring);
     }
 
 private:
