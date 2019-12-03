@@ -345,6 +345,7 @@ public:
      *                       motherboard controller are removed from the list.
      *                       On return, the list should be (ideally) identical
      *                       to its value at call time.
+     * \param time_spec Time specification to syncrhonize \p mb_controllers to
      * \param quiet If true, don't print any errors or warnings if
      *              synchronization fails.
      * \returns true if all motherboards that were removed from \p mb_controllers

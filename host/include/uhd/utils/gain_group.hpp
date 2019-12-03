@@ -94,7 +94,6 @@ public:
 
     /*!
      * Make a new gain group with all zero values.
-     * \param name the name of the (only and zero-valued) gain element
      * \return a gain group object populated with zeroes
      */
     static sptr make_zero();

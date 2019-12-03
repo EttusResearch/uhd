@@ -70,7 +70,7 @@ The directory to which you extract libusb must not contain spaces. This is to sa
 - **Comments for Windows Users:**
   - The Python binary installer must be selected to match the system processor. Although, the 32-bit Python version can be used with 32-bit or 64-bit Windows system, it is recommended to match between Python and Windows installers. If the system is occupied with 64-bit Windows and x64-based processor, the `Windows x86-64 MSI Installer -> python-version.amd64.msi` needs to be used.
   - The Python path needs to be added to the environment variables.
-  - Install fundamental packages for Python: On Windows Terminal, navigate to Python scripts folder, e.g. `C:\\local\\Python37\\Scripts`, and execute the following commands to install requests, numpy and six packages, respectively:
+  - Install fundamental packages for Python: On Windows Terminal, navigate to Python scripts folder, e.g. `C:\local\Python37\Scripts`, and execute the following commands to install requests, numpy and six packages, respectively:
 
     pip install requests
     pip install numpy
@@ -93,7 +93,7 @@ The directory to which you extract libusb must not contain spaces. This is to sa
 - **Minimum Version:** @PY_MAKO_MIN_VERSION@
 - **Usage:** build time (required)
 - **Download URL:** http://www.makotemplates.org/download.html
-- **Alternative method:** You can use `pip` or `easy_install` to install Mako from PyPi. To install it using 'pip' on Windows, navigate to Python scripts folder, e.g. ´C:\\local\\Python37\\Scripts`, and run the following command:
+- **Alternative method:** You can use `pip` or `easy_install` to install Mako from PyPi. To install it using 'pip' on Windows, navigate to Python scripts folder, e.g. `C:\local\Python37\Scripts`, and run the following command:
 
     pip install mako
 
@@ -224,7 +224,7 @@ extensions:
   want it to be (check the PYTHON_VERSION variable)
 - Open the CMake GUI.
 - Set the path to the source code: `<uhd-repo-path>/host`.
-- Set the path to the build directory (this may require creating the folder \build\): `<uhd-repo-path>/host/build`.
+- Set the path to the build directory (this may require creating the folder \\build\\): `<uhd-repo-path>\host\build`.
 - Make sure that the paths do not contain spaces.
 - Check the Advanced checkbox.
 - Click "Configure".
@@ -242,7 +242,7 @@ extensions:
   - Click on "Generate", and a project file will be created in the build directory.
 
 \subsection msvc_generate Compile and Install with Visual Studio
-- Open the `<uhd-repo-path>\\host\\build\\ALL_BUILD.vcxproj` in visual studio, generate the project. Watch the output console for errors.
+- Open the `<uhd-repo-path>\host\build\ALL_BUILD.vcxproj` in visual studio, generate the project. Watch the output console for errors.
 - If you did not specify a `CMAKE_INSTALL_PREFIX` where your user has write privileges, you must close Visual Studio, run it again with Administrator Privileges, and open `ALL_BUILD.vcxproj`.
 - Right click on the **INSTALL** project in the project explorer, generate it. Watch the output console for errors.
 
@@ -252,15 +252,15 @@ On Windows, CMake does not have the advantage of `pkg-config`,
 so we must manually tell CMake how to locate the LibUSB header and lib.
 
 - From the CMake GUI, select "Advanced View".
-- Set or add the following entry with type PATH `LIBUSB_INCLUDE_DIRS` to the directory for `libusb.h`, e.g. `C:\\local\\libusb-1.0.22\\include\\libusb-1.0`.
-- Set or add the following entry with type FILEPATH `LIBUSB_LIBRARIES` to the full path for `libusb-1.0.lib`, e.g. `C:\\local\\libusb-1.0.22\\MS64\\dll\\libusb-1.0.lib`.
+- Set or add the following entry with type PATH `LIBUSB_INCLUDE_DIRS` to the directory for `libusb.h`, e.g. `C:\local\libusb-1.0.22\include\libusb-1.0`.
+- Set or add the following entry with type FILEPATH `LIBUSB_LIBRARIES` to the full path for `libusb-1.0.lib`, e.g. `C:\local\libusb-1.0.22\MS64\dll\libusb-1.0.lib`.
 - Recommend the static `libusb-1.0.lib` to simplify runtime dependencies.
 - Check the box to enable USB support, click "Configure" and "Generate".
 
 <b>Note:</b> On Windows, LibUSB v1.0.19 is required to use most USB3 controllers.
 
 \subsection build_in_msvc Build the project in MSVC
-- Open the generated project file in MSVC, e.g. `C:\\cygwin64\\home\\admin\\uhd\\host\\build\\UHD.sln`.
+- Open the generated project file in MSVC, e.g. `C:\cygwin64\home\admin\uhd\host\build\UHD.sln`.
 - Change the build type from "Debug" to "Release".
 - Select the "Build All" target, right-click, and choose "Build".
 - Select the install target, right-click, and choose "Build".
@@ -272,7 +272,7 @@ You need to be an administrator or to run MSVC as administrator.
 \subsection build_msvc_cmd_line Build the project in MSVC (command line)
 Open the Visual Studio Command Prompt Shorcut:
 
-    cd <uhd-repo-path>\\host\\build
+    cd <uhd-repo-path>\host\build
     DevEnv uhd.sln /build Release /project ALL_BUILD
     DevEnv uhd.sln /build Release /project INSTALL
 
@@ -281,7 +281,7 @@ Open the Visual Studio Command Prompt Shorcut:
 - Select the "PACKAGE" project in the Solution Explorer, right-click, and choose "Build".
 
 \subsection path_env Setup the PATH environment variable
-* Add the UHD bin path to `%PATH%` (usually `C:\\Program Files\\UHD\\bin`)
+* Add the UHD bin path to `%PATH%` (usually `C:\Program Files\UHD\bin`)
 
 <b>Note:</b>
 The default interface for editing environment variable paths in Windows is very poor.

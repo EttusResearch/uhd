@@ -84,6 +84,7 @@ public:
      *             (truncated to 20 bits).
      * \param data New value of the register(s).
      * \param time The time at which the transaction should be executed.
+     * \param ack Should transaction completion be acknowledged?
      *
      * \throws op_failed if the transaction fails
      * \throws op_timeout if no response is received

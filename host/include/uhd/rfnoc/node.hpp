@@ -114,7 +114,7 @@ public:
      * be of a different type than \p prop_data_t due to the usage of runtime
      * type information (RTTI), a lookup_error is thrown.
      *
-     * \param prop_data_t The data type of the property
+     * \tparam prop_data_t The data type of the property
      * \param id The identifier of the property to write. To find out which
      *           values of \p id are valid, call get_property_ids()
      * \param instance The instance number of this property
@@ -148,7 +148,7 @@ public:
      * This is because internally, it can resolve properties, which may cause
      * changes within the object.
      *
-     * \param prop_data_t The data type of the property
+     * \tparam prop_data_t The data type of the property
      * \param id The identifier of the property to write.
      * \param instance The instance number of this property
      * \return The value of the property.
@@ -279,7 +279,7 @@ protected:
      * This is like set_property(), but it also allows setting edge properties.
      * All comments from set_property() still apply.
      *
-     * \param prop_data_t The data type of the property
+     * \tparam prop_data_t The data type of the property
      * \param id The identifier of the property to write. To find out which
      *           values of \p id are valid, call get_property_ids()
      * \param val The new value of the property.
@@ -294,7 +294,7 @@ protected:
      * This is like get_property(), but it also allows reading edge properties.
      * All comments from get_property() still apply.
      *
-     * \param prop_data_t The data type of the property
+     * \tparam prop_data_t The data type of the property
      * \param id The identifier of the property to write.
      * \param src_info Source info of this property
      * \return The value of the property.

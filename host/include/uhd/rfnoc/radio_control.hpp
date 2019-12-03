@@ -554,7 +554,7 @@ public:
 
     /*! Enable/disable the automatic IQ imbalance correction.
      *
-     * \param enb true to enable automatic IQ balance correction
+     * \param correction the complex correction (1.0 is full-scale)
      * \param chan the channel index 0 to N-1
      */
     virtual void set_rx_iq_balance(
@@ -582,7 +582,6 @@ public:
      * \param bank the name of a GPIO bank (e.g., FP0)
      * \param attr the name of a GPIO attribute (e.g., CTRL)
      * \param value the new value for this GPIO bank
-     * \param mask the bit mask to effect which pins are changed
      */
     virtual void set_gpio_attr(const std::string& bank,
         const std::string& attr,

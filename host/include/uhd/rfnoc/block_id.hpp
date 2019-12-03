@@ -26,7 +26,7 @@ namespace rfnoc {
  *
  * The rules for formatting such a string are:
  *
- * DEVICE/BLOCKNAME#COUNTER
+ * DEVICE/BLOCKNAME\#COUNTER
  *
  * DEVICE: Identifies the device (usually the motherboard index)
  * BLOCKNAME: A name given to this block

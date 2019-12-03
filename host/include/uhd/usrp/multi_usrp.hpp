@@ -1539,13 +1539,14 @@ public:
      * Enumerate the available filters in the RX signal path.
      * \param chan RX channel index 0 to N-1
      * \return a vector of strings representing the selected filter names.
-     * \returnblock Filter names will follow the pattern BLOCK_ID:FILTER_NAME. For example, "0/Radio#0:HB_0"
+     * \return Filter names will follow the pattern BLOCK_ID:FILTER_NAME. For example, "0/Radio#0:HB_0"
      */
     virtual std::vector<std::string> get_rx_filter_names(const size_t chan) = 0;
 
     /*!
      * Return the filter object for the given RX filter name.
      * \param name the name of the filter as returned from get_rx_filter_names().
+     * \param chan RX channel index 0 to N-1
      * \return a filter_info_base::sptr.
      */
     virtual uhd::filter_info_base::sptr get_rx_filter(const std::string& name, const size_t chan) = 0;
@@ -1555,6 +1556,7 @@ public:
      * This filter can be a modified version of the originally returned one.
      * \param name the name of the filter as returned from get_rx_filter_names().
      * \param filter the filter_info_base::sptr of the filter object to be written
+     * \param chan RX channel index 0 to N-1
      */
     virtual void set_rx_filter(
         const std::string& name, uhd::filter_info_base::sptr filter, const size_t chan) = 0;
@@ -1564,13 +1566,14 @@ public:
      * Enumerate the available filters in the TX signal path.
      * \param chan TX channel index 0 to N-1
      * \return a vector of strings representing the selected filter names.
-     * \returnblock Filter names will follow the pattern BLOCK_ID:FILTER_NAME. For example, "0/Radio#0:HB_0"
+     * \return Filter names will follow the pattern BLOCK_ID:FILTER_NAME. For example, "0/Radio#0:HB_0"
      */
     virtual std::vector<std::string> get_tx_filter_names(const size_t chan) = 0;
 
     /*!
      * Return the filter object for the given TX filter name.
      * \param name the name of the filter as returned from get_tx_filter_names().
+     * \param chan TX channel index 0 to N-1
      * \return a filter_info_base::sptr.
      */
     virtual uhd::filter_info_base::sptr get_tx_filter(const std::string& name, const size_t chan) = 0;
@@ -1580,6 +1583,7 @@ public:
      * This filter can be a modified version of the originally returned one.
      * \param name the name of the filter as returned from get_tx_filter_names().
      * \param filter the filter_info_base::sptr of the filter object to be written
+     * \param chan TX channel index 0 to N-1
      */
     virtual void set_tx_filter(
         const std::string& name, uhd::filter_info_base::sptr filter, const size_t chan) = 0;
