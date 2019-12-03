@@ -2722,10 +2722,10 @@ private:
         for(const size_t chan:  args.channels) {
             mboard_chan_pair mcp = is_tx ? tx_chan_to_mcp(chan) : rx_chan_to_mcp(chan);
             if (_tree->exists(mb_root(mcp.mboard) / "link_max_rate")) {
-                max_link_rate = std::max(
-                    max_link_rate,
-                   _tree->access<double>(mb_root(mcp.mboard) / "link_max_rate").get()
-                );
+                max_link_rate = std::max(max_link_rate,
+                    static_cast<double>(
+                        _tree->access<size_t>(mb_root(mcp.mboard) / "link_max_rate")
+                            .get()));
             }
             sum_rate += is_tx ? get_tx_rate(chan) : get_rx_rate(chan);
         }
