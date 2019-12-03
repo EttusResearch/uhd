@@ -90,7 +90,6 @@ private:
         std::string loaded_fpga_image;
 
         size_t hw_rev;
-        std::string current_refclk_src;
 
         uhd::usrp::x300::conn_manager::sptr conn_mgr;
     };

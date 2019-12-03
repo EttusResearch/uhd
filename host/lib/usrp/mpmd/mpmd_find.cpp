@@ -9,13 +9,15 @@
 #include "mpmd_devices.hpp"
 #include "mpmd_impl.hpp"
 #include "mpmd_link_if_mgr.hpp"
-#include <uhdlib/transport/dpdk_common.hpp>
 #include <uhd/transport/if_addrs.hpp>
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
 #include <future>
+#ifdef HAVE_DPDK
+#    include <uhdlib/transport/dpdk/common.hpp>
+#endif
 
 using namespace uhd;
 using namespace uhd::mpmd;
@@ -198,9 +200,9 @@ device_addrs_t mpmd_find(const device_addr_t& hint_)
 #ifdef HAVE_DPDK
     // Start DPDK so links come up
     if (hint_.has_key("use_dpdk")) {
-        auto& dpdk_ctx = uhd::transport::uhd_dpdk_ctx::get();
-        if (not dpdk_ctx.is_init_done()) {
-            dpdk_ctx.init(hint_);
+        auto dpdk_ctx = uhd::transport::dpdk::dpdk_ctx::get();
+        if (not dpdk_ctx->is_init_done()) {
+            dpdk_ctx->init(hint_);
         }
     }
 #endif

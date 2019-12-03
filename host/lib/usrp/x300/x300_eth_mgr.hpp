@@ -99,7 +99,13 @@ private:
         return eth_conns.at(_local_device_ids.at(0));
     }
 
-    static udp_simple_factory_t x300_get_udp_factory(const device_addr_t& args);
+    //! Create a factory function for UDP traffic
+    //
+    // \note This is static rather than local to x300_eth_mgr.cpp to get access
+    //       to udp_simple_factory_t
+    // \param use_dpdk If true, use a DPDK transport instead of a regular UDP
+    //                 transport
+    static udp_simple_factory_t x300_get_udp_factory(const bool use_dpdk);
 
     /*!
      * Automatically determine the maximum frame size available by sending a UDP packet
@@ -109,14 +115,21 @@ private:
     frame_size_t determine_max_frame_size(
         const std::string& addr, const frame_size_t& user_mtu);
 
-    // Discover the ethernet connections per motherboard
+    //! Discover the ethernet connections per motherboard
+    //
+    // - Gets called during init_link()
+    // - Populates eth_conn
+    // - Populates _local_device_ids
+    //
+    // \throws uhd::runtime_error if no Ethernet connections can be found
     void discover_eth(
         const uhd::usrp::mboard_eeprom_t mb_eeprom, const std::string& loaded_fpga_image);
 
-
+    /**************************************************************************
+     * Attributes
+     *************************************************************************/
+    // Cache the initial device args that brought up this motherboard
     const x300_device_args_t _args;
-
-    uhd::property_tree::sptr _tree;
 
     udp_simple_factory_t _x300_make_udp_connected;
 

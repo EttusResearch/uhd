@@ -23,6 +23,9 @@
 #include <chrono>
 #include <fstream>
 #include <thread>
+#ifdef HAVE_DPDK
+#    include <uhdlib/transport/dpdk/common.hpp>
+#endif
 
 uhd::uart_iface::sptr x300_make_uart_iface(uhd::wb_iface::sptr iface);
 

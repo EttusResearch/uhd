@@ -35,4 +35,8 @@ if(ENABLE_X300)
         ${CMAKE_CURRENT_SOURCE_DIR}/x300_prop_tree.cpp
         ${CMAKE_CURRENT_SOURCE_DIR}/cdecode.c
     )
+
+    if(ENABLE_DPDK)
+        add_definitions(-DHAVE_DPDK)
+    endif(ENABLE_DPDK)
 endif(ENABLE_X300)

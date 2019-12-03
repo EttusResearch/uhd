@@ -14,7 +14,7 @@
 
 namespace uhd { namespace mpmd { namespace xport {
 
-/*! UDP link interface controller
+/*! UDP link interface controller (for both kernel-based UDP and DPDK)
  *
  * Opens UDP sockets
  */

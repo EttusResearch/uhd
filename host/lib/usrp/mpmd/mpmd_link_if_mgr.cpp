@@ -12,9 +12,6 @@
 #ifdef HAVE_LIBERIO
 #    include "mpmd_link_if_ctrl_liberio.hpp"
 #endif
-#ifdef HAVE_DPDK
-#    include "mpmd_link_if_ctrl_dpdk_udp.hpp"
-#endif
 
 uhd::dict<std::string, std::string> uhd::mpmd::xport::filter_args(
     const uhd::device_addr_t& args, const std::string& prefix)

@@ -7,6 +7,7 @@
 #include "x300_eth_mgr.hpp"
 #include "x300_claim.hpp"
 #include "x300_defaults.hpp"
+#include "x300_device_args.hpp"
 #include "x300_fw_common.h"
 #include "x300_mb_eeprom.hpp"
 #include "x300_mb_eeprom_iface.hpp"
@@ -17,16 +18,17 @@
 #include <uhd/transport/udp_constants.hpp>
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/transport/udp_zero_copy.hpp>
+#include <uhd/utils/algorithm.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <uhdlib/rfnoc/device_id.hpp>
 #include <uhdlib/rfnoc/rfnoc_common.hpp>
 #include <uhdlib/transport/udp_boost_asio_link.hpp>
 #include <uhdlib/transport/udp_common.hpp>
 #include <uhdlib/usrp/cores/i2c_core_100_wb32.hpp>
-//#ifdef HAVE_DPDK
-//#    include <uhdlib/transport/dpdk_simple.hpp>
-//#    include <uhdlib/transport/dpdk_zero_copy.hpp>
-//#endif
+#ifdef HAVE_DPDK
+#    include <uhdlib/transport/dpdk_simple.hpp>
+#    include <uhdlib/transport/udp_dpdk_link.hpp>
+#endif
 #include <boost/asio.hpp>
 #include <string>
 
@@ -69,42 +71,41 @@ constexpr size_t MAX_RATE_1GIGE           = (size_t)( // bytes/s
 /******************************************************************************
  * Static Methods
  *****************************************************************************/
-eth_manager::udp_simple_factory_t eth_manager::x300_get_udp_factory(
-    const device_addr_t& args)
+eth_manager::udp_simple_factory_t eth_manager::x300_get_udp_factory(const bool use_dpdk)
 {
     udp_simple_factory_t udp_make_connected = udp_simple::make_connected;
-    if (args.has_key("use_dpdk")) {
-//#ifdef HAVE_DPDK
-//        udp_make_connected = [](const std::string& addr, const std::string& port) {
-//            auto& ctx = uhd::transport::uhd_dpdk_ctx::get();
-//            return dpdk_simple::make_connected(ctx, addr, port);
-//        };
-//#else
+    if (use_dpdk) {
+#ifdef HAVE_DPDK
+        udp_make_connected = [](const std::string& addr, const std::string& port) {
+            return dpdk_simple::make_connected(addr, port);
+        };
+#else
         UHD_LOG_WARNING(
             "DPDK", "Detected use_dpdk argument, but DPDK support not built in.");
-//#endif
+#endif
     }
     return udp_make_connected;
 }
 
 device_addrs_t eth_manager::find(const device_addr_t& hint)
 {
+    x300_device_args_t hint_args;
+    hint_args.parse(hint);
+
     udp_simple_factory_t udp_make_broadcast = udp_simple::make_broadcast;
-    udp_simple_factory_t udp_make_connected = x300_get_udp_factory(hint);
+    udp_simple_factory_t udp_make_connected =
+        x300_get_udp_factory(hint_args.get_use_dpdk());
 #ifdef HAVE_DPDK
-    if (hint.has_key("use_dpdk")) {
-//        auto& dpdk_ctx = uhd::transport::uhd_dpdk_ctx::get();
-//        if (not dpdk_ctx.is_init_done()) {
-//            dpdk_ctx.init(hint);
-//        }
-//        udp_make_broadcast = [](const std::string& addr, const std::string& port) {
-//            auto& ctx = uhd::transport::uhd_dpdk_ctx::get();
-//            return dpdk_simple::make_broadcast(ctx, addr, port);
-//        };
+    if (hint_args.get_use_dpdk()) {
+        auto dpdk_ctx = uhd::transport::dpdk::dpdk_ctx::get();
+        if (not dpdk_ctx->is_init_done()) {
+            dpdk_ctx->init(hint);
+        }
+        udp_make_broadcast = dpdk_simple::make_broadcast;
     }
 #endif
-    udp_simple::sptr comm =
-        udp_make_broadcast(hint["addr"], BOOST_STRINGIZE(X300_FW_COMMS_UDP_PORT));
+    udp_simple::sptr comm = udp_make_broadcast(
+        hint_args.get_first_addr(), BOOST_STRINGIZE(X300_FW_COMMS_UDP_PORT));
 
     // load request struct
     x300_fw_comms_t request = x300_fw_comms_t();
@@ -177,9 +178,8 @@ device_addrs_t eth_manager::find(const device_addr_t& hint)
 /******************************************************************************
  * Structors
  *****************************************************************************/
-eth_manager::eth_manager(const x300_device_args_t& args,
-    uhd::property_tree::sptr tree,
-    const uhd::fs_path& root_path)
+eth_manager::eth_manager(
+    const x300_device_args_t& args, uhd::property_tree::sptr, const uhd::fs_path&)
     : _args(args)
 {
     UHD_ASSERT_THROW(!args.get_first_addr().empty());
@@ -201,10 +201,7 @@ eth_manager::eth_manager(const x300_device_args_t& args,
     _local_device_ids.push_back(device_id);
     eth_conns[device_id] = init;
 
-    _x300_make_udp_connected = x300_get_udp_factory(dev_addr);
-
-    tree->create<double>(root_path / "link_max_rate").set(10e9);
-    _tree = tree->subtree(root_path);
+    _x300_make_udp_connected = x300_get_udp_factory(args.get_use_dpdk());
 }
 
 both_links_t eth_manager::get_links(link_type_t link_type,
@@ -213,12 +210,13 @@ both_links_t eth_manager::get_links(link_type_t link_type,
     const sep_id_t& /*remote_epid*/,
     const device_addr_t& link_args)
 {
-    if (std::find(_local_device_ids.cbegin(), _local_device_ids.cend(), local_device_id)
-        == _local_device_ids.cend()) {
-        throw uhd::runtime_error(
-            std::string("[X300] Cannot create Ethernet link through local device ID ")
+    if (!uhd::has(_local_device_ids, local_device_id)) {
+        const std::string err_msg =
+            std::string("Cannot create Ethernet link through local device ID ")
             + std::to_string(local_device_id)
-            + ", no such device associated with this motherboard!");
+            + ", no such device associated with this motherboard!";
+        UHD_LOG_ERROR("X300", err_msg);
+        throw uhd::runtime_error(err_msg);
     }
     // FIXME: We now need to properly associate local_device_id with the right
     // entry in eth_conn. We should probably do the load balancing elsewhere,
@@ -235,56 +233,6 @@ both_links_t eth_manager::get_links(link_type_t link_type,
     // Set size and number of frames
     default_buff_args.send_frame_size = std::min(send_mtu, ETH_MSG_FRAME_SIZE);
     default_buff_args.recv_frame_size = std::min(recv_mtu, ETH_MSG_FRAME_SIZE);
-
-    if (_args.get_use_dpdk()) {
-//#ifdef HAVE_DPDK
-        // auto& dpdk_ctx = uhd::transport::uhd_dpdk_ctx::get();
-
-// default_buff_args.num_recv_frames = ETH_MSG_NUM_FRAMES;
-// default_buff_args.num_send_frames = ETH_MSG_NUM_FRAMES;
-// if (link_type == link_type_t::CTRL) {
-//// Increasing number of recv frames here because ctrl_iface uses it
-//// to determine how many control packets can be in flight before it
-//// must wait for an ACK
-// default_buff_args.num_recv_frames =
-// uhd::rfnoc::CMD_FIFO_SIZE / uhd::rfnoc::MAX_CMD_PKT_SIZE;
-//} else if (xport_type == uhd::transport::link_type_t::TX_DATA) {
-// size_t default_frame_size = conn.link_rate == MAX_RATE_1GIGE
-//? GE_DATA_FRAME_SEND_SIZE
-//: XGE_DATA_FRAME_SEND_SIZE;
-// default_buff_args.send_frame_size = args.cast<size_t>(
-//"send_frame_size", std::min(default_frame_size, send_mtu));
-// default_buff_args.num_send_frames =
-// args.cast<size_t>("num_send_frames", default_buff_args.num_send_frames);
-// default_buff_args.send_buff_size = args.cast<size_t>("send_buff_size", 0);
-//} else if (xport_type == uhd::transport::link_type_t::RX_DATA) {
-// size_t default_frame_size = conn.link_rate == MAX_RATE_1GIGE
-//? GE_DATA_FRAME_RECV_SIZE
-//: XGE_DATA_FRAME_RECV_SIZE;
-// default_buff_args.recv_frame_size = args.cast<size_t>(
-//"recv_frame_size", std::min(default_frame_size, recv_mtu));
-// default_buff_args.num_recv_frames =
-// args.cast<size_t>("num_recv_frames", default_buff_args.num_recv_frames);
-// default_buff_args.recv_buff_size = args.cast<size_t>("recv_buff_size", 0);
-//}
-
-// int dpdk_port_id = dpdk_ctx.get_route(conn.addr);
-// if (dpdk_port_id < 0) {
-// throw uhd::runtime_error(
-//"Could not find a DPDK port with route to " + conn.addr);
-//}
-// auto recv = transport::dpdk_zero_copy::make(dpdk_ctx,
-//(const unsigned int)dpdk_port_id,
-// conn.addr,
-// BOOST_STRINGIZE(X300_VITA_UDP_PORT),
-//"0",
-// default_buff_args,
-// uhd::device_addr_t());
-
-//#else
-        UHD_LOG_WARNING("X300", "Cannot create DPDK transport, falling back to UDP");
-//#endif
-    }
 
     // Buffering is done in the socket buffers, so size them relative to
     // the link rate
@@ -315,7 +263,19 @@ both_links_t eth_manager::get_links(link_type_t link_type,
     link_params.num_send_frames = std::max(uhd::rfnoc::MIN_NUM_FRAMES, link_params.num_send_frames);
     link_params.num_recv_frames = std::max(uhd::rfnoc::MIN_NUM_FRAMES, link_params.num_recv_frames);
 
+    // Dummy variables for populating the return tuple
     size_t recv_buff_size, send_buff_size;
+    if (_args.get_use_dpdk()) {
+#ifdef HAVE_DPDK
+         auto link = uhd::transport::udp_dpdk_link::make(
+             conn.addr, BOOST_STRINGIZE(X300_VITA_UDP_PORT), link_params);
+         return std::make_tuple(link, send_buff_size, link, recv_buff_size, true);
+#else
+        UHD_LOG_WARNING("X300", "Cannot create DPDK transport, falling back to UDP");
+#endif
+    }
+
+    // No DPDK, then return regular/kernel UDP
     auto link = uhd::transport::udp_boost_asio_link::make(conn.addr,
         BOOST_STRINGIZE(X300_VITA_UDP_PORT),
         link_params,
@@ -333,11 +293,10 @@ wb_iface::sptr eth_manager::get_ctrl_iface()
         get_pri_eth().addr, BOOST_STRINGIZE(X300_FW_COMMS_UDP_PORT)));
 }
 
+// - Populates _max_frame_sizes
 void eth_manager::init_link(
     const mboard_eeprom_t& mb_eeprom, const std::string& loaded_fpga_image)
 {
-    double link_max_rate = 0.0;
-
     // Discover ethernet interfaces on the device
     discover_eth(mb_eeprom, loaded_fpga_image);
 
@@ -392,6 +351,8 @@ void eth_manager::init_link(
         UHD_LOGGER_ERROR("X300") << e.what();
     }
 
+    // Check actual frame sizes against user-requested frame sizes, and print
+    // warnings if they don't match
     if ((recv_args.has_key("recv_frame_size"))
         && (req_max_frame_size.recv_frame_size > _max_frame_sizes.recv_frame_size)) {
         UHD_LOGGER_WARNING("X300")
@@ -416,11 +377,10 @@ void eth_manager::init_link(
             << "UHD will use the auto-detected max frame size for this connection.";
     }
 
-    // Check frame sizes
+    // Check actual frame sizes against detected frame sizes, and print
+    // warnings if they don't match
     for (auto conn_pair : eth_conns) {
         auto conn = conn_pair.second;
-        link_max_rate += conn.link_rate;
-
         size_t rec_send_frame_size = conn.link_rate == MAX_RATE_1GIGE
                                          ? GE_DATA_FRAME_SEND_SIZE
                                          : XGE_DATA_FRAME_SEND_SIZE;
@@ -452,10 +412,6 @@ void eth_manager::init_link(
                    "argument.";
         }
     }
-
-    _tree->create<size_t>("mtu/recv").set(_max_frame_sizes.recv_frame_size);
-    _tree->create<size_t>("mtu/send").set(_max_frame_sizes.send_frame_size);
-    _tree->access<double>("link_max_rate").set(link_max_rate);
 }
 
 size_t eth_manager::get_mtu(uhd::direction_t dir)
@@ -468,7 +424,7 @@ size_t eth_manager::get_mtu(uhd::direction_t dir)
 void eth_manager::discover_eth(
     const mboard_eeprom_t mb_eeprom, const std::string& loaded_fpga_image)
 {
-    udp_simple_factory_t udp_make_connected = x300_get_udp_factory(_args.get_orig_args());
+    udp_simple_factory_t udp_make_connected = x300_get_udp_factory(_args.get_use_dpdk());
     // Load all valid, non-duplicate IP addrs
     std::vector<std::string> ip_addrs{_args.get_first_addr()};
     if (not _args.get_second_addr().empty()
