@@ -8,6 +8,7 @@
 #ifndef INCLUDED_UHD_UTILS_ALGORITHM_HPP
 #define INCLUDED_UHD_UTILS_ALGORITHM_HPP
 
+#include <uhd/config.hpp>
 #include <stdint.h>
 #include <boost/range/begin.hpp>
 #include <boost/range/end.hpp>
