@@ -36,3 +36,11 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/io_service_mgr.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/io_service_args.cpp
 )
+
+if(ENABLE_DPDK)
+    set_property(
+        SOURCE
+        ${CMAKE_CURRENT_SOURCE_DIR}/io_service_mgr.cpp
+        PROPERTY COMPILE_DEFINITIONS HAVE_DPDK
+    )
+endif(ENABLE_DPDK)

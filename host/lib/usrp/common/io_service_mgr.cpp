@@ -10,7 +10,11 @@
 #include <uhd/utils/log.hpp>
 #include <uhdlib/transport/inline_io_service.hpp>
 #include <uhdlib/transport/offload_io_service.hpp>
+#ifdef HAVE_DPDK
+#    include <uhdlib/usrp/common/dpdk_io_service_mgr.hpp>
+#endif
 #include <uhdlib/usrp/common/io_service_mgr.hpp>
+#include <uhdlib/usrp/constrained_device_args.hpp>
 #include <map>
 #include <vector>
 
@@ -450,6 +454,18 @@ private:
 
 io_service_mgr::sptr io_service_mgr::make(const uhd::device_addr_t& args)
 {
+    constrained_device_args_t::bool_arg use_dpdk("use_dpdk", false);
+    if (args.has_key(use_dpdk.key())) {
+        use_dpdk.parse(args[use_dpdk.key()]);
+    }
+
+    if (use_dpdk.get()) {
+#ifdef HAVE_DPDK
+        return std::make_shared<dpdk_io_service_mgr_impl>();
+#else
+        UHD_LOG_WARNING(LOG_ID, "Cannot instantiate DPDK I/O service. Proceeding with regular I/O service.");
+#endif
+    }
     return std::make_shared<io_service_mgr_impl>(args);
 }
 
