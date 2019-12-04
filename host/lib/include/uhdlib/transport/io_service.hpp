@@ -101,7 +101,7 @@ public:
     /*!
      * Callback for producing a flow control response (or any other response
      * needed when a received frame_buff is released via
-     * recv_io_if::get_recv_buff()).
+     * recv_io_if::release_recv_buff()).
      *
      * The callback must release the buffer, but it can update internal state
      * as well. It can also send a response with the send_link_if, should it
