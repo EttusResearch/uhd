@@ -88,6 +88,7 @@ config_parser& uhd::prefs::get_uhd_config()
         } catch (const std::exception &) {
             // nop
         }
+        init_done = true;
         UHD_LOG_TRACE("PREFS", "Done initializing.");
     }
 
