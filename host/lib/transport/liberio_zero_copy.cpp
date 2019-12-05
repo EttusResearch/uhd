@@ -153,8 +153,6 @@ public:
         _tx_chan = liberio_ctx_alloc_chan(ctx, tx_path.c_str(), TX, USRP_MEMORY_MMAP);
 
         UHD_ASSERT_THROW(_tx_chan);
-        liberio_chan_stop_streaming(_tx_chan);
-        liberio_chan_request_buffers(_tx_chan, 0);
         UHD_ASSERT_THROW(
             !liberio_chan_set_fixed_size(_tx_chan, 0, xport_params.send_frame_size));
         UHD_ASSERT_THROW(
@@ -175,9 +173,7 @@ public:
         /* done with the local reference, the channel keeps its own */
         liberio_ctx_put(ctx);
 
-        /* stop the channel, free the buffers, set the size, allocate */
-        liberio_chan_stop_streaming(_rx_chan);
-        liberio_chan_request_buffers(_rx_chan, 0);
+        /* set the size, allocate */
         UHD_ASSERT_THROW(
             !liberio_chan_set_fixed_size(_rx_chan, 0, xport_params.recv_frame_size));
         UHD_ASSERT_THROW(
@@ -197,7 +193,13 @@ public:
 
     ~liberio_zero_copy_impl(void)
     {
+        /* stop the channel, free the buffers */
+        liberio_chan_stop_streaming(_tx_chan);
+        liberio_chan_request_buffers(_tx_chan, 0);
         liberio_chan_put(_tx_chan);
+
+        liberio_chan_stop_streaming(_rx_chan);
+        liberio_chan_request_buffers(_rx_chan, 0);
         liberio_chan_put(_rx_chan);
         {
             std::lock_guard<std::mutex> _l(_context_lock);
