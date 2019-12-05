@@ -137,6 +137,7 @@ if(ENABLE_SIM)
                        ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/mpmtypes.py
                        ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/mpmutils.py
                        ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/prefs.py
+                       ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/tlv_eeprom.py
                        ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/rpc_server.py
                        ${CMAKE_CURRENT_BINARY_DIR}/simulator/usrp_mpm/__init__.py
                        ${CMAKE_CURRENT_BINARY_DIR}/usrp_mpm)
