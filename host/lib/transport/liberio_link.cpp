@@ -75,9 +75,7 @@ liberio_link::liberio_link(
     _tx_chan = ctx_holder.alloc_tx_chan(tx_path);
     UHD_ASSERT_THROW(_tx_chan);
 
-    /* Reset channel */
-    liberio_chan_stop_streaming(_tx_chan);
-    liberio_chan_request_buffers(_tx_chan, 0);
+    /* set the size, allocate */
     UHD_ASSERT_THROW(!liberio_chan_set_fixed_size(_tx_chan, 0, params.send_frame_size));
     UHD_ASSERT_THROW(!liberio_chan_request_buffers(_tx_chan, params.num_send_frames));
 
@@ -93,9 +91,7 @@ liberio_link::liberio_link(
     _rx_chan = ctx_holder.alloc_rx_chan(rx_path);
     UHD_ASSERT_THROW(_rx_chan);
 
-    /* stop the channel, free the buffers, set the size, allocate */
-    liberio_chan_stop_streaming(_rx_chan);
-    liberio_chan_request_buffers(_rx_chan, 0);
+    /* set the size, allocate */
     UHD_ASSERT_THROW(!liberio_chan_set_fixed_size(_rx_chan, 0, params.recv_frame_size));
     UHD_ASSERT_THROW(!liberio_chan_request_buffers(_rx_chan, params.num_recv_frames));
     /* TODO: Check params in factory and adjust them there instead of throwing exception
@@ -134,7 +130,13 @@ liberio_link::liberio_link(
 
 liberio_link::~liberio_link()
 {
+    /* stop the channel, free the buffers */
+    liberio_chan_stop_streaming(_tx_chan);
+    liberio_chan_request_buffers(_tx_chan, 0);
     liberio_chan_put(_tx_chan);
+
+    liberio_chan_stop_streaming(_rx_chan);
+    liberio_chan_request_buffers(_rx_chan, 0);
     liberio_chan_put(_rx_chan);
 }
 
