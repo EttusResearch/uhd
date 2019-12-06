@@ -785,12 +785,12 @@ Software Required
 3.  Connect host to both X3x0s.
 4.  Connect 10 MHz and PPS from Octoclock-G to both X3x0s.
 5.  Connect Signal Generator to input of splitter and outputs of the splitter to the RX2 port on each daughterboard.
-6.  Set Signal Generator output power at -30 dBm.
+6.  Set Signal Generator output power at -35 dBm for UBX and -29 dBm for SBX.
 7.  From the top of the UHD source, run the command:
 
-  -  `./tools/gr-usrptest/apps/usrp_phasealignment.py --args "addr0=<first X3x0 IP addr>,addr1=<second X3x0 IP addr>,dboard_clock_rate=20e6" --clock-source external --time-source external --sync pps --spec "A:0" --channels 0,1 -s 10e6 -g 25 -f \<lowest DB freq\> --freq-bands \<# frequency bands\> --start-freq \<lowest freq\> --stop-freq \<highest freq\> --duration 2.0 --auto`
+  -  `./tools/gr-usrptest/apps/usrp_phasealignment.py --args "addr0=<first X3x0 IP addr>,addr1=<second X3x0 IP addr>,dboard_clock_rate=20e6" --clock-source external --time-source external --sync pps --spec "A:0" --channels 0,1 -s 10e6 -g \<33 if UBX 37.5 if SBX\> -f \<lowest DB freq\> --freq-bands \<# frequency bands\> --start-freq \<lowest freq\> --stop-freq \<highest freq\> --duration 2.0 --auto`
 
-8.  At each frequency step, tune Signal Generator to the displayed frequency + 1 MHz and increase output power by 2dB.
+8.  At each frequency step, tune Signal Generator to the displayed frequency + 1 MHz and increase output power by 1dB.
 9.  Analyze terminal output.  The "run avg" across all runs should not deviate more than 2 degrees and the "stddev" for any run should not deviate more than 2 degrees.
 
 \subsection rdtesting_phase_rx_N2x0_MIMO N2x0 MIMO with SBX
