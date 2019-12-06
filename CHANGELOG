@@ -1,6 +1,13 @@
 Change Log for Releases
 ==============================
 
+## 003.014.001.001.L
+NOTE: THIS VARIANT IS NOT API COMPATIBLE WITH 3.14.x
+N310: add capability to control RF filter bypass and freq.band limits
+(THE CHANGE ABOVE BREAKS API COMPATIBILITY)
+N3xx: Remove close-in noise on TX
+N3xx: Disable gpsdo reference source when enable_gps=0
+
 ## 003.014.001.001
 Device3: latch n on m in axi_rate_change in DUC/DDC
 Device3: UART: fix TX <-> RX, FIFO size as parameter

@@ -27,10 +27,10 @@ Standards-Version: 3.9.7
 Homepage: https://www.ettus.com
 Vcs-Git: git://github.com/EttusResearch/uhd.git
 
-Package: uhd-host
+Package: uhd-host-3.14.L
 Architecture: any
 Depends: adduser,
-         libuhd3.14.1 (= ${binary:Version}),
+         libuhd3.14.L (= ${binary:Version}),
          python,
          python-requests,
          ${misc:Depends},
@@ -49,13 +49,12 @@ Description: hardware driver for Ettus Research products - host apps
  display hardware configuration information, and Doxygen generated
  documentation.
 
-Package: libuhd3.14.1
+Package: libuhd3.14.L
 Architecture: any
 Section: libs
 Pre-Depends: ${misc:Pre-Depends}
 Depends: python, adduser, ${shlibs:Depends}, ${misc:Depends}
 Suggests: gnuradio
-Replaces: libuhd003
 Multi-Arch: same
 Description: hardware driver for Ettus Research products
  Host library for the USRP Hardware Driver for Ettus Research products.
@@ -64,10 +63,10 @@ Description: hardware driver for Ettus Research products
  along with digital interfaces for getting signals to and from a software
  defined radio running on the host computer.
 
-Package: libuhd-dev
+Package: libuhd-dev-3.14.L
 Architecture: any
 Section: libdevel
-Depends: libuhd3.14.1 (= ${binary:Version}), python, ${misc:Depends}, ${shlibs:Depends}
+Depends: libuhd3.14.L (= ${binary:Version}), python, ${misc:Depends}, ${shlibs:Depends}
 Suggests: gnuradio
 Description: universal hardware driver for Ettus Research products
  Host library for the USRP Hardware Driver for Ettus Research products.
