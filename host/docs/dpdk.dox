@@ -36,7 +36,16 @@ it can be obtained with the following command:
 
 Otherwise, you'll need to follow the build guide at
 https://doc.dpdk.org/guides-17.11/linux_gsg/build_dpdk.html . The software
-releases can be found at https://core.dpdk.org/download/.
+releases can be found at https://core.dpdk.org/download/ . Note that if you
+are building and installing DPDK from source, you will need to change its
+configuration to build shared libraries in order for UHD to link successfully.
+After running `make config` or `make defconfig`, open the `build/.config` file
+in an editor and find the following line:
+
+    CONFIG_RTE_BUILD_SHARED_LIB=n
+
+Change the `n` to a `y` to enable the building of shared libraries, then type
+`make` to start the build.
 
 \subsection dpdk_system_configuration System Configuration
 
