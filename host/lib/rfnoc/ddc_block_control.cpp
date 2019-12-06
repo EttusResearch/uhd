@@ -73,7 +73,7 @@ public:
                                             << _cic_max_decim);
         set_mtu_forwarding_policy(forwarding_policy_t::ONE_TO_ONE);
         // Load list of valid decimation values
-        std::set<size_t> decims{1}; // 1 is always a valid decimatino
+        std::set<size_t> decims{1}; // 1 is always a valid decimation
         for (size_t hb = 0; hb < _num_halfbands; hb++) {
             for (size_t cic_decim = 1; cic_decim <= _cic_max_decim; cic_decim++) {
                 decims.insert((1 << hb) * cic_decim);
@@ -348,7 +348,7 @@ private:
                 if (samp_rate_out.is_valid()) {
                     if (samp_rate_in.is_valid()) {
                         decim =
-                            coerce_decim(int(samp_rate_in.get() / samp_rate_out.get()));
+                            coerce_decim(samp_rate_in.get() / samp_rate_out.get());
                     }
                     // If decim is dirty, it will trigger the decim resolver.
                     // However, the decim resolver will set the output rate based
