@@ -123,9 +123,9 @@ public:
     //  Returns true if successful (i.e. if string valid)
     bool set(const std::string& new_name);
 
-    //! Sets from individual compontents, like calling set_device_no(), set_block_name()
+    //! Sets from individual components, like calling set_device_no(), set_block_name()
     //  and set_block_count() one after another, only if \p block_name is invalid, stops
-    //  and returns false before chaning anything
+    //  and returns false before changing anything
     bool set(const size_t device_no,
         const std::string& block_name,
         const size_t block_ctr = 0);
