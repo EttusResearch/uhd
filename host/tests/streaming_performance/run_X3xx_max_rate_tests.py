@@ -65,7 +65,7 @@ def run_test(path, params, iterations, label):
     print(label + "\n")
     results = batch_run_benchmark_rate.run(path, iterations, params)
     stats = batch_run_benchmark_rate.calculate_stats(results)
-    print(batch_run_benchmark_rate.get_summary_string(stats))
+    print(batch_run_benchmark_rate.get_summary_string(stats, iterations, params))
 
 def run_tests_for_single_10G(path, addr, iterations, duration):
     base_params = {

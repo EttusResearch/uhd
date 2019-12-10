@@ -11,7 +11,7 @@ benchmark rate C++ example with different streaming parameters.
 To run all the tests, execute it with all supported options for the test_type
 parameter:
     E320_XG      Runs E320 tests with single and dual 10 GbE links
-    E120_Liberio Runs E310 tests with Liberio
+    E310_Liberio Runs E310 tests with Liberio
 
 Example usage:
 run_E3xx_max_rate_tests.py --path <benchmark_rate_dir>/benchmark_rate --addr 192.168.10.2 --second_addr 192.168.20.2 --test_type E320_XG
@@ -60,7 +60,7 @@ def run_test(path, params, iterations, label):
     print(label + "\n")
     results = batch_run_benchmark_rate.run(path, iterations, params, False)
     stats = batch_run_benchmark_rate.calculate_stats(results)
-    print(batch_run_benchmark_rate.get_summary_string(stats))
+    print(batch_run_benchmark_rate.get_summary_string(stats, iterations, params))
 
 def run_E320_tests_for_single_10G(path, addr, iterations, duration):
     """

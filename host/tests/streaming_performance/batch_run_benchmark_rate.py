@@ -12,6 +12,7 @@ batch_run_benchmark_rate.py --path <benchmark_rate_dir>/benchmark_rate --iterati
 """
 import argparse
 import collections
+import re
 import parse_benchmark_rate
 import run_benchmark_rate
 
@@ -71,90 +72,112 @@ def run(path, iterations, benchmark_rate_params, stop_on_error=True):
 
     return parsed_results
 
-def get_summary_string(summary, params=None):
+def get_summary_string(stats, iterations, params):
     """
-    Returns summary info in a string resembling benchmark_rate output.
+    Returns summary info in a table format.
     """
-    statistics_msg = """
-Benchmark rate summary:
-    Num received samples:     avg {}, min {}, max {}, non-zero {}
-    Num dropped samples:      avg {}, min {}, max {}, non-zero {}
-    Num overruns detected:    avg {}, min {}, max {}, non-zero {}
-    Num transmitted samples:  avg {}, min {}, max {}, non-zero {}
-    Num sequence errors (Tx): avg {}, min {}, max {}, non-zero {}
-    Num sequence errors (Rx): avg {}, min {}, max {}, non-zero {}
-    Num underruns detected:   avg {}, min {}, max {}, non-zero {}
-    Num late commands:        avg {}, min {}, max {}, non-zero {}
-    Num timeouts (Tx):        avg {}, min {}, max {}, non-zero {}
-    Num timeouts (Rx):        avg {}, min {}, max {}, non-zero {}
-""".format(
-        summary.avg_vals.received_samps,
-        summary.min_vals.received_samps,
-        summary.max_vals.received_samps,
-        summary.non_zero_vals.received_samps,
-        summary.avg_vals.dropped_samps,
-        summary.min_vals.dropped_samps,
-        summary.max_vals.dropped_samps,
-        summary.non_zero_vals.dropped_samps,
-        summary.avg_vals.overruns,
-        summary.min_vals.overruns,
-        summary.max_vals.overruns,
-        summary.non_zero_vals.overruns,
-        summary.avg_vals.transmitted_samps,
-        summary.min_vals.transmitted_samps,
-        summary.max_vals.transmitted_samps,
-        summary.non_zero_vals.transmitted_samps,
-        summary.avg_vals.tx_seq_errs,
-        summary.min_vals.tx_seq_errs,
-        summary.max_vals.tx_seq_errs,
-        summary.non_zero_vals.tx_seq_errs,
-        summary.avg_vals.rx_seq_errs,
-        summary.min_vals.rx_seq_errs,
-        summary.max_vals.rx_seq_errs,
-        summary.non_zero_vals.rx_seq_errs,
-        summary.avg_vals.underruns,
-        summary.min_vals.underruns,
-        summary.max_vals.underruns,
-        summary.non_zero_vals.underruns,
-        summary.avg_vals.late_cmds,
-        summary.min_vals.late_cmds,
-        summary.max_vals.late_cmds,
-        summary.non_zero_vals.late_cmds,
-        summary.avg_vals.tx_timeouts,
-        summary.min_vals.tx_timeouts,
-        summary.max_vals.tx_timeouts,
-        summary.non_zero_vals.tx_timeouts,
-        summary.avg_vals.rx_timeouts,
-        summary.min_vals.rx_timeouts,
-        summary.max_vals.rx_timeouts,
-        summary.non_zero_vals.rx_timeouts)
+    header = "| stat | rx samps | tx samps | rx dropped | overrun | rx seq | tx seq | underrun | rx tmo | tx tmo | late |"
+    ruler  = "|------|----------|----------|------------|---------|--------|--------|----------|--------|--------|------|"
 
-    if params is not None:
-        duration = 10
-        if "duration" in params:
-            duration = int(params["duration"])
+    def get_params_row(results, iterations, duration, mcr):
+        """
+        Returns a row containing the test setup, e.g.:
+        1 rx, 1 tx, rate 6.452e+06 sps, 1 iterations, 10s duration
+        """
+        rate = max(results.rx_rate, results.tx_rate)
+        s = ""
+        s += "{} rx".format(int(results.num_rx_channels))
+        s += ", "
+        s += "{} tx".format(int(results.num_tx_channels))
+        s += ", "
+        s += "rate {:.3e} sps".format(round(rate, 2))
+        s += ", "
+        s += "{} iterations".format(iterations)
+        s += ", "
+        s += "{}s duration".format(duration)
+        if mcr is not None:
+            s += ", "
+            s += "mcr {}".format(mcr)
 
-        num_rx_channels = summary.min_vals.num_rx_channels
-        rx_rate =  summary.min_vals.rx_rate
+        return "| " + s + " "*(len(ruler)-len(s)-3) + "|"
 
-        if num_rx_channels != 0:
-            avg_samps = summary.avg_vals.received_samps
-            expected_samps = num_rx_channels * duration * rx_rate
-            percent = (avg_samps) / expected_samps * 100
-            statistics_msg += "    Expected samps (Rx):      {}\n".format(expected_samps)
-            statistics_msg += "    Actual samps % (Rx):      {}\n".format(round(percent, 1))
+    def get_table_row(results, iterations, duration, stat_label):
+        """
+        Returns a row of numeric results.
+        """
+        expected_samps = results.num_rx_channels * duration * results.rx_rate
+        rx_samps = 0
+        rx_dropped = 0
 
-        num_tx_channels = summary.min_vals.num_tx_channels
-        tx_rate =  summary.min_vals.tx_rate
+        if expected_samps > 0:
+            rx_samps = results.received_samps / expected_samps * 100
+            rx_dropped = results.dropped_samps / expected_samps * 100
 
-        if num_tx_channels != 0:
-            avg_samps = summary.avg_vals.transmitted_samps
-            expected_samps = num_tx_channels * duration * tx_rate
-            percent = (avg_samps) / expected_samps * 100
-            statistics_msg += "    Expected samps (Tx):      {}\n".format(expected_samps)
-            statistics_msg += "    Actual samps % (Tx):      {}\n".format(round(percent, 1))
+        tx_samps = 0
+        expected_samps = results.num_tx_channels * duration * results.tx_rate
 
-    return statistics_msg
+        if expected_samps > 0:
+            tx_samps = results.transmitted_samps / expected_samps * 100
+
+        s = (
+            "| {}  ".format(stat_label) +
+            "| {:>8} ".format(round(rx_samps, 1)) +
+            "| {:>8} ".format(round(tx_samps, 1)) +
+            "| {:>10} ".format(round(rx_dropped, 1)) +
+            "| {:>7} ".format(round(results.overruns, 1)) +
+            "| {:>6} ".format(round(results.rx_seq_errs, 1)) +
+            "| {:>6} ".format(round(results.tx_seq_errs, 1)) +
+            "| {:>8.1e} ".format(round(results.underruns, 1)) +
+            "| {:>6} ".format(round(results.rx_timeouts, 1)) +
+            "| {:>6} ".format(round(results.tx_timeouts, 1)) +
+            "| {:>4} ".format(round(results.late_cmds, 1))
+        )
+
+        return s + "|"
+
+    def get_non_zero_row(results):
+        """
+        Returns a row with the number of non-zero values for each value.
+        """
+        s = (
+            "| nz   " +
+            "| {:>8} ".format(int(results.received_samps)) +
+            "| {:>8} ".format(int(results.transmitted_samps)) +
+            "| {:>10} ".format(int(results.dropped_samps)) +
+            "| {:>7} ".format(int(results.overruns)) +
+            "| {:>6} ".format(int(results.rx_seq_errs)) +
+            "| {:>6} ".format(int(results.tx_seq_errs)) +
+            "| {:>8} ".format(int(results.underruns)) +
+            "| {:>6} ".format(int(results.rx_timeouts)) +
+            "| {:>6} ".format(int(results.tx_timeouts)) +
+            "| {:>4} ".format(int(results.late_cmds))
+        )
+
+        return s + "|"
+
+    duration = 10
+    if "duration" in params:
+        duration = int(params["duration"])
+
+    mcr = None
+    if "args" in params:
+        args = params["args"]
+        expr = ""
+        expr += r"master_clock_rate\s*=\s*(\d[\deE+-.]*)"
+        match = re.search(expr, args)
+        if match:
+            mcr = match.group(1)
+
+    s = ""
+    s += header + "\n"
+    s += ruler + "\n"
+    s += get_params_row(stats.avg_vals, iterations, duration, mcr) + "\n"
+    s += get_table_row(stats.avg_vals, iterations, duration, "avg") + "\n"
+    s += get_table_row(stats.min_vals, iterations, duration, "min") + "\n"
+    s += get_table_row(stats.max_vals, iterations, duration, "max") + "\n"
+    s += get_non_zero_row(stats.non_zero_vals) + "\n"
+
+    return s
 
 def parse_args():
     """
@@ -170,5 +193,5 @@ def parse_args():
 if __name__ == "__main__":
     path, iterations, params = parse_args();
     results = run(path, iterations, params)
-    summary = calculate_stats(results)
-    print(get_summary_string(summary, params))
+    stats = calculate_stats(results)
+    print(get_summary_string(stats, iterations, params))

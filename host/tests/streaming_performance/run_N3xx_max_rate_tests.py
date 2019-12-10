@@ -12,6 +12,8 @@ To run all the tests, execute it with all supported options for the test_type
 parameter:
     N310_XG      Runs N310 tests with single and dual 10 GbE links
     N310_Liberio Runs N310 tests with Liberio
+    N320_XG      Runs N320 tests with single and dual 10 GbE links
+    N320_Liberio Runs N320 tests with Liberio
 
 Example usage:
 run_N3xx_max_rate_tests.py --path <benchmark_rate_dir>/benchmark_rate --addr 192.168.10.2 --second_addr 192.168.20.2 --test_type N310_XG
@@ -24,8 +26,14 @@ import batch_run_benchmark_rate
 
 Test_Type_N310_XG = "N310_XG"
 Test_Type_N310_Liberio = "N310_Liberio"
+Test_Type_N320_XG = "N320_XG"
+Test_Type_N320_Liberio = "N320_Liberio"
 
-test_type_list = [Test_Type_N310_XG, Test_Type_N310_Liberio]
+test_type_list = [
+    Test_Type_N310_XG,
+    Test_Type_N310_Liberio,
+    Test_Type_N320_Liberio,
+    Test_Type_N320_XG]
 
 def parse_args():
     """
@@ -65,7 +73,7 @@ def run_test(path, params, iterations, label):
     print(label + "\n")
     results = batch_run_benchmark_rate.run(path, iterations, params)
     stats = batch_run_benchmark_rate.calculate_stats(results)
-    print(batch_run_benchmark_rate.get_summary_string(stats, params))
+    print(batch_run_benchmark_rate.get_summary_string(stats, iterations, params))
 
 def run_N310_tests_for_single_10G(path, addr, iterations, duration):
     """
@@ -624,6 +632,347 @@ def run_N310_tests_for_Liberio_315(path, iterations, duration):
     params["tx_channels"] = "0,1,2,3"
     run_test(path, params, iterations, "4xTRX @{}".format(rate))
 
+def run_N320_tests_for_Liberio_315(path, iterations, duration):
+    """
+    Runs tests that are in the neighborhood of max rate for Liberio
+    """
+    def base_params():
+        return {
+            "args" : "master_clock_rate=200e6",
+            "duration" : duration
+        }
+
+    # Run RX at 6.896552 Msps with one channel
+    rate = "6.896552e6"
+    params = base_params()
+    params["rx_rate"] = rate
+    params["rx_channels"] = "0"
+    run_test(path, params, iterations, "1xRX @{}".format(rate))
+
+    # Run RX at 8 Msps with one channel
+    rate = "8.0e6"
+    params = base_params()
+    params["rx_rate"] = rate
+    params["rx_channels"] = "0"
+    run_test(path, params, iterations, "1xRX @{}".format(rate))
+
+    # Run RX at 9.090909 Msps with one channel
+    rate = "9.090909e6"
+    params = base_params()
+    params["rx_rate"] = rate
+    params["rx_channels"] = "0"
+    run_test(path, params, iterations, "1xRX @{}".format(rate))
+
+    # Run RX at 10 Msps with one channel
+    rate = "10.0e6"
+    params = base_params()
+    params["rx_rate"] = rate
+    params["rx_channels"] = "0"
+    run_test(path, params, iterations, "1xRX @{}".format(rate))
+
+    # Run TX at 2 Msps with one channel
+    rate = "2.0e6"
+    params = base_params()
+    params["tx_rate"] = rate
+    params["tx_channels"] = "0"
+    run_test(path, params, iterations, "1xTX @{}".format(rate))
+
+    # Run TX at 2.985075 Msps with one channel
+    rate = "2.985075e6"
+    params = base_params()
+    params["tx_rate"] = rate
+    params["tx_channels"] = "0"
+    run_test(path, params, iterations, "1xTX @{}".format(rate))
+
+    # Run TX at 4 Msps with one channel
+    rate = "4.0e6"
+    params = base_params()
+    params["tx_rate"] = rate
+    params["tx_channels"] = "0"
+    run_test(path, params, iterations, "1xTX @{}".format(rate))
+
+    # Run TX at 6.060606 Msps with one channel
+    rate = "6.060606e6"
+    params = base_params()
+    params["tx_rate"] = rate
+    params["tx_channels"] = "0"
+    run_test(path, params, iterations, "1xTX @{}".format(rate))
+
+    # Run TX at 6.896552 Msps with one channel
+    rate = "6.896552e6"
+    params = base_params()
+    params["tx_rate"] = rate
+    params["tx_channels"] = "0"
+    run_test(path, params, iterations, "1xTX @{}".format(rate))
+
+    # Run TRX at 2.985075 Msps with one channel
+    rate = "2.985075e6"
+    params = base_params()
+    params["rx_rate"] = rate
+    params["rx_channels"] = "0"
+    params["tx_rate"] = rate
+    params["tx_channels"] = "0"
+    run_test(path, params, iterations, "1xTRX @{}".format(rate))
+
+    # Run TRX at 4 Msps with one channel
+    rate = "4.0e6"
+    params = base_params()
+    params["rx_rate"] = rate
+    params["rx_channels"] = "0"
+    params["tx_rate"] = rate
+    params["tx_channels"] = "0"
+    run_test(path, params, iterations, "1xTRX @{}".format(rate))
+
+    # Run TRX at 5 Msps with one channel
+    rate = "5.0e6"
+    params = base_params()
+    params["rx_rate"] = rate
+    params["rx_channels"] = "0"
+    params["tx_rate"] = rate
+    params["tx_channels"] = "0"
+    run_test(path, params, iterations, "1xTRX @{}".format(rate))
+
+    # Run TRX at 0.5 Msps with one channel
+    rate = "0.5e6"
+    params = base_params()
+    params["rx_rate"] = rate
+    params["rx_channels"] = "0,1"
+    params["tx_rate"] = rate
+    params["tx_channels"] = "0,1"
+    run_test(path, params, iterations, "2xTRX @{}".format(rate))
+
+    # Run TRX at 0.75 Msps with one channel
+    rate = "0.75e6"
+    params = base_params()
+    params["rx_rate"] = rate
+    params["rx_channels"] = "0,1"
+    params["tx_rate"] = rate
+    params["tx_channels"] = "0,1"
+    run_test(path, params, iterations, "2xTRX @{}".format(rate))
+
+    # Run TRX at 1.0 Msps with one channel
+    rate = "1.0e6"
+    params = base_params()
+    params["rx_rate"] = rate
+    params["rx_channels"] = "0,1"
+    params["tx_rate"] = rate
+    params["tx_channels"] = "0,1"
+    run_test(path, params, iterations, "2xTRX @{}".format(rate))
+
+def run_N320_tests_for_Liberio_master_next(path, iterations, duration):
+    """
+    Runs tests that are in the neighborhood of max rate for Liberio
+    """
+    def base_params():
+        return {
+            "args" : "master_clock_rate=200e6",
+            "duration" : duration
+        }
+
+
+    # Run RX at 2 Msps with one channel
+    rate = "2e6"
+    params = base_params()
+    params["rx_rate"] = rate
+    params["rx_channels"] = "0"
+    run_test(path, params, iterations, "1xRX @{}".format(rate))
+
+    # Run RX at 2.985075 Msps with one channel
+    rate = "2.985075e6"
+    params = base_params()
+    params["rx_rate"] = rate
+    params["rx_channels"] = "0"
+    run_test(path, params, iterations, "1xRX @{}".format(rate))
+
+    # Run RX at 4 Msps with one channel
+    rate = "4e6"
+    params = base_params()
+    params["rx_rate"] = rate
+    params["rx_channels"] = "0"
+    run_test(path, params, iterations, "1xRX @{}".format(rate))
+
+    # Run TX at 2.985075 Msps with one channel
+    rate = "2.985075e6"
+    params = base_params()
+    params["tx_rate"] = rate
+    params["tx_channels"] = "0"
+    run_test(path, params, iterations, "1xTX @{}".format(rate))
+
+    # Run TX at 4 Msps with one channel
+    rate = "4.0e6"
+    params = base_params()
+    params["tx_rate"] = rate
+    params["tx_channels"] = "0"
+    run_test(path, params, iterations, "1xTX @{}".format(rate))
+
+    # Run TX at 5 Msps with one channel
+    rate = "5.0e6"
+    params = base_params()
+    params["tx_rate"] = rate
+    params["tx_channels"] = "0"
+    run_test(path, params, iterations, "1xTX @{}".format(rate))
+
+    # Run TX at 6.060606 Msps with one channel
+    rate = "6.060606e6"
+    params = base_params()
+    params["tx_rate"] = rate
+    params["tx_channels"] = "0"
+    run_test(path, params, iterations, "1xTX @{}".format(rate))
+
+    # Run TX at 6.896552 Msps with one channel
+    rate = "6.896552e6"
+    params = base_params()
+    params["tx_rate"] = rate
+    params["tx_channels"] = "0"
+    run_test(path, params, iterations, "1xTX @{}".format(rate))
+
+    # Run TRX at 2 Msps with one channel
+    rate = "2e6"
+    params = base_params()
+    params["rx_rate"] = rate
+    params["rx_channels"] = "0"
+    params["tx_rate"] = rate
+    params["tx_channels"] = "0"
+    run_test(path, params, iterations, "1xTRX @{}".format(rate))
+
+    # Run TRX at 2.985075 Msps with one channel
+    rate = "2.985075e6"
+    params = base_params()
+    params["rx_rate"] = rate
+    params["rx_channels"] = "0"
+    params["tx_rate"] = rate
+    params["tx_channels"] = "0"
+    run_test(path, params, iterations, "1xTRX @{}".format(rate))
+
+    # Run TRX at 4 Msps with one channel
+    rate = "4.0e6"
+    params = base_params()
+    params["rx_rate"] = rate
+    params["rx_channels"] = "0"
+    params["tx_rate"] = rate
+    params["tx_channels"] = "0"
+    run_test(path, params, iterations, "1xTRX @{}".format(rate))
+
+    # Run TRX at 5 Msps with one channel
+    rate = "5.0e6"
+    params = base_params()
+    params["rx_rate"] = rate
+    params["rx_channels"] = "0"
+    params["tx_rate"] = rate
+    params["tx_channels"] = "0"
+    run_test(path, params, iterations, "1xTRX @{}".format(rate))
+
+    # Run TRX at 0.5 Msps with two channelS
+    rate = "0.5e6"
+    params = base_params()
+    params["rx_rate"] = rate
+    params["rx_channels"] = "0,1"
+    params["tx_rate"] = rate
+    params["tx_channels"] = "0,1"
+    run_test(path, params, iterations, "2xTRX @{}".format(rate))
+
+    # Run TRX at 0.75 Msps with two channels
+    rate = "0.75e6"
+    params = base_params()
+    params["rx_rate"] = rate
+    params["rx_channels"] = "0,1"
+    params["tx_rate"] = rate
+    params["tx_channels"] = "0,1"
+    run_test(path, params, iterations, "2xTRX @{}".format(rate))
+
+    # Run TRX at 1.0 Msps with two channels
+    rate = "1.0e6"
+    params = base_params()
+    params["rx_rate"] = rate
+    params["rx_channels"] = "0,1"
+    params["tx_rate"] = rate
+    params["tx_channels"] = "0,1"
+    run_test(path, params, iterations, "2xTRX @{}".format(rate))
+
+    # Run TRX at 1.25 Msps with two channels
+    rate = "1.25e6"
+    params = base_params()
+    params["rx_rate"] = rate
+    params["rx_channels"] = "0,1"
+    params["tx_rate"] = rate
+    params["tx_channels"] = "0,1"
+    run_test(path, params, iterations, "2xTRX @{}".format(rate))
+
+    # Run TRX at 1.5 Msps with two channels
+    rate = "1.5e6"
+    params = base_params()
+    params["rx_rate"] = rate
+    params["rx_channels"] = "0,1"
+    params["tx_rate"] = rate
+    params["tx_channels"] = "0,1"
+    run_test(path, params, iterations, "2xTRX @{}".format(rate))
+
+def run_N320_tests_for_single_10G(path, addr, iterations, duration):
+    """
+    Runs tests that are in the neighborhood of max rate for single 10 GbE
+    """
+    def base_params(rate):
+        return {
+            "args" : "addr={},master_clock_rate={}".format(addr, rate),
+            "duration" : duration
+        }
+
+    # Run RX at 250 Msps with one channel
+    rate = "250e6"
+    params = base_params(rate)
+    params["rx_rate"] = rate
+    params["rx_channels"] = "0"
+    run_test(path, params, iterations, "1xRX @{}".format(rate))
+
+    # Run TX at 250 Msps with one channel
+    rate = "250e6"
+    params = base_params(rate)
+    params["tx_rate"] = rate
+    params["tx_channels"] = "0"
+    run_test(path, params, iterations, "1xTX @{}".format(rate))
+
+    # Run TRX at 250 Msps with one channel
+    rate = "250e6"
+    params = base_params(rate)
+    params["tx_rate"] = rate
+    params["tx_channels"] = "0"
+    params["rx_rate"] = rate
+    params["rx_channels"] = "0"
+    run_test(path, params, iterations, "1xTRX @{}".format(rate))
+
+def run_N320_tests_for_dual_10G(path, addr, second_addr, iterations, duration):
+    """
+    Runs tests that are in the neighborhood of max rate for dual 10 GbE
+    """
+    def base_params(rate):
+        return {
+            "args" : "addr={},second_addr={},master_clock_rate={}".format(addr, second_addr, rate),
+            "duration" : duration
+        }
+
+    # Run RX at 250 Msps with two channels
+    rate = "250e6"
+    params = base_params(rate)
+    params["rx_rate"] = rate
+    params["rx_channels"] = "0,1"
+    run_test(path, params, iterations, "2xRX @{}".format(rate))
+
+    # Run TX at 250 Msps with two channels
+    rate = "250e6"
+    params = base_params(rate)
+    params["tx_rate"] = rate
+    params["tx_channels"] = "0,1"
+    run_test(path, params, iterations, "2xTX @{}".format(rate))
+
+    # Run TRX at 250 Msps with two channels
+    rate = "250e6"
+    params = base_params(rate)
+    params["tx_rate"] = rate
+    params["rx_rate"] = rate
+    params["tx_channels"] = "0,1"
+    params["rx_channels"] = "0,1"
+    run_test(path, params, iterations, "2xTRX @{}".format(rate))
+
 def main():
     path, test_type, addr, second_addr = parse_args()
     start_time = time.time()
@@ -638,6 +987,14 @@ def main():
     if test_type == Test_Type_N310_Liberio:
         #run_N310_tests_for_Liberio_315(path, 10, 30)
         run_N310_tests_for_Liberio_master_next(path, 10, 30)
+
+    if test_type == Test_Type_N320_Liberio:
+        #run_N320_tests_for_Liberio_315(path, 10, 30)
+        run_N320_tests_for_Liberio_master_next(path, 10, 30)
+
+    if test_type == Test_Type_N320_XG:
+        run_N320_tests_for_single_10G(path, addr, 10, 30)
+        run_N320_tests_for_dual_10G(path, addr, second_addr, 10, 30)
 
     end_time = time.time()
     elapsed = end_time - start_time
