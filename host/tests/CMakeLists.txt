@@ -118,6 +118,22 @@ endmacro(UHD_ADD_NONAPI_TEST)
 if(ENABLE_DPDK)
     find_package(DPDK)
     UHD_ADD_NONAPI_TEST(
+        TARGET "dpdk_test.cpp"
+        EXTRA_SOURCES
+        ${CMAKE_SOURCE_DIR}/lib/utils/config_parser.cpp
+        ${CMAKE_SOURCE_DIR}/lib/utils/paths.cpp
+        ${CMAKE_SOURCE_DIR}/lib/utils/pathslib.cpp
+        ${CMAKE_SOURCE_DIR}/lib/utils/prefs.cpp
+        ${CMAKE_SOURCE_DIR}/lib/transport/adapter.cpp
+        ${CMAKE_SOURCE_DIR}/lib/transport/uhd-dpdk/dpdk_common.cpp
+        ${CMAKE_SOURCE_DIR}/lib/transport/uhd-dpdk/dpdk_io_service.cpp
+        ${CMAKE_SOURCE_DIR}/lib/transport/udp_dpdk_link.cpp
+        INCLUDE_DIRS
+        ${DPDK_INCLUDE_DIR}
+        EXTRA_LIBS ${DPDK_LIBRARIES}
+        NOAUTORUN # Don't register for auto-run, it requires special config
+    )
+    UHD_ADD_NONAPI_TEST(
         TARGET "dpdk_port_test.cpp"
         EXTRA_SOURCES
         ${CMAKE_SOURCE_DIR}/lib/utils/config_parser.cpp

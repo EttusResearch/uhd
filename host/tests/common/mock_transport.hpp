@@ -7,6 +7,7 @@
 #ifndef INCLUDED_UHDLIB_TRANSPORT_TRANSPORT_IF_HPP
 #define INCLUDED_UHDLIB_TRANSPORT_TRANSPORT_IF_HPP
 
+#include <uhd/exception.hpp>
 #include <uhdlib/transport/io_service.hpp>
 #include <boost/lockfree/spsc_queue.hpp>
 #include <utility>
@@ -39,8 +40,7 @@ public:
         uint16_t dst_addr,
         uint16_t src_addr,
         uint32_t credits)
-        : _credits(credits)
-        , _frame_size(send_link->get_send_frame_size())
+        : _credits(credits), _frame_size(send_link->get_send_frame_size())
     {
         _send_addr = (dst_addr << 16) | (src_addr << 0);
         _recv_addr = (src_addr << 16) | (dst_addr << 0);
@@ -66,8 +66,8 @@ public:
                                       send_link_if* /*send_link*/) {
             return this->recv_buff(buff, link);
         };
-        send_io_if::fc_callback_t fc_cb = [this](size_t) {
-            return this->_seqno < this->_ackno + this->_credits;
+        send_io_if::fc_callback_t fc_cb = [this](const size_t bytes) {
+            return this->can_send(bytes);
         };
 
         /* Pretend get 1 flow control message per sent packet */
@@ -155,6 +155,11 @@ public:
         send_link->release_send_buff(std::move(buff));
         _seqno++;
     }
+
+    bool can_send(size_t bytes)
+    {
+        return _seqno < _ackno + _credits;
+    };
 
     /*!
      * Callback for when packets are received (for processing).
@@ -312,6 +317,7 @@ public:
             UHD_ASSERT_THROW(buff == nullptr);
             fc_data[TYPE_OFFSET] = 1; /* FC type */
             fc_data[ADDR_OFFSET] = _send_addr;
+            fc_buff->set_packet_size(3 * sizeof(uint32_t));
             send_link->release_send_buff(std::move(fc_buff));
         } else {
             recv_link->release_recv_buff(std::move(buff));
