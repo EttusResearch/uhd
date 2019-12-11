@@ -136,6 +136,13 @@ public:
 private:
     chdr_ctrl_xport(const chdr_ctrl_xport&) = delete;
 
+    void _release_cb(uhd::transport::frame_buff::uptr buff,
+        uhd::transport::recv_link_if* recv_link);
+
+    bool _ctrl_recv_cb(uhd::transport::frame_buff::uptr& buff);
+
+    bool _mgmt_recv_cb(uhd::transport::frame_buff::uptr& buff);
+
     sep_id_t _my_epid;
 
     // Packet for received data

@@ -35,22 +35,12 @@ chdr_ctrl_xport::chdr_ctrl_xport(io_service::sptr io_srv,
                                                        recv_link_if* /*recv_link*/,
                                                        send_link_if
                                                            * /*send_link*/) -> bool {
-        _recv_packet->refresh(buff->data());
-        auto hdr      = _recv_packet->get_chdr_header();
-        auto pkt_type = hdr.get_pkt_type();
-        auto dst_epid = hdr.get_dst_epid();
-
-        /* Check type and destination EPID */
-        if ((pkt_type == PKT_TYPE_CTRL) && (dst_epid == _my_epid)) {
-            return true;
-        } else {
-            return false;
-        }
-        return false;
+        return this->_ctrl_recv_cb(buff);
     };
+
     recv_io_if::fc_callback_t release_cb =
-        [](frame_buff::uptr buff, recv_link_if* link, send_link_if* /*send_link*/) {
-            link->release_recv_buff(std::move(buff));
+        [this](frame_buff::uptr buff, recv_link_if* link, send_link_if* /*send_link*/) {
+            this->_release_cb(std::move(buff), link);
         };
 
     _ctrl_recv_if = io_srv->make_recv_client(
@@ -60,22 +50,49 @@ chdr_ctrl_xport::chdr_ctrl_xport(io_service::sptr io_srv,
                                                        recv_link_if* /*recv_link*/,
                                                        send_link_if
                                                            * /*send_link*/) -> bool {
-        _recv_packet->refresh(buff->data());
-        auto hdr      = _recv_packet->get_chdr_header();
-        auto pkt_type = hdr.get_pkt_type();
-        auto dst_epid = hdr.get_dst_epid();
-
-        /* Check type and destination EPID */
-        if ((pkt_type == PKT_TYPE_MGMT) && (dst_epid == _my_epid)) {
-            return true;
-        } else {
-            return false;
-        }
-        return false;
+        return this->_mgmt_recv_cb(buff);
     };
 
     _mgmt_recv_if = io_srv->make_recv_client(
         recv_link, 1, mgmt_recv_cb, send_link_if::sptr(), 0, release_cb);
+}
+
+bool chdr_ctrl_xport::_ctrl_recv_cb(uhd::transport::frame_buff::uptr& buff)
+{
+    _recv_packet->refresh(buff->data());
+    auto hdr      = _recv_packet->get_chdr_header();
+    auto pkt_type = hdr.get_pkt_type();
+    auto dst_epid = hdr.get_dst_epid();
+
+    /* Check type and destination EPID */
+    if ((pkt_type == PKT_TYPE_CTRL) && (dst_epid == _my_epid)) {
+        return true;
+    } else {
+        return false;
+    }
+    return false;
+}
+
+bool chdr_ctrl_xport::_mgmt_recv_cb(uhd::transport::frame_buff::uptr& buff)
+{
+    _recv_packet->refresh(buff->data());
+    auto hdr      = _recv_packet->get_chdr_header();
+    auto pkt_type = hdr.get_pkt_type();
+    auto dst_epid = hdr.get_dst_epid();
+
+    /* Check type and destination EPID */
+    if ((pkt_type == PKT_TYPE_MGMT) && (dst_epid == _my_epid)) {
+        return true;
+    } else {
+        return false;
+    }
+    return false;
+}
+
+void chdr_ctrl_xport::_release_cb(uhd::transport::frame_buff::uptr buff,
+   uhd::transport::recv_link_if* recv_link)
+{
+    recv_link->release_recv_buff(std::move(buff));
 }
 
 
