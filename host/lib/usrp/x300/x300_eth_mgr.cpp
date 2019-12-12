@@ -52,14 +52,18 @@ constexpr size_t XGE_DATA_FRAME_RECV_SIZE = 8000;
 constexpr size_t GE_DATA_FRAME_SEND_SIZE  = 1472;
 constexpr size_t GE_DATA_FRAME_RECV_SIZE  = 1472;
 constexpr size_t ETH_MSG_NUM_FRAMES       = 64;
-constexpr size_t ETH_DATA_NUM_FRAMES      = 32;
-constexpr size_t ETH_MSG_FRAME_SIZE       = uhd::transport::udp_simple::mtu; // bytes
-constexpr size_t MAX_RATE_10GIGE          = (size_t)( // bytes/s
+
+// Default for num data frames is set to a value that will work well when send
+// or recv offload is enabled, or when using DPDK.
+constexpr size_t ETH_DATA_NUM_FRAMES = 32;
+
+constexpr size_t ETH_MSG_FRAME_SIZE = uhd::transport::udp_simple::mtu; // bytes
+constexpr size_t MAX_RATE_10GIGE    = (size_t)( // bytes/s
     10e9 / 8 * // wire speed multiplied by percentage of packets that is sample data
     (float(x300::DATA_FRAME_MAX_SIZE - CHDR_MAX_LEN_HDR)
         / float(x300::DATA_FRAME_MAX_SIZE
                 + 8 /* UDP header */ + 20 /* Ethernet header length */)));
-constexpr size_t MAX_RATE_1GIGE           = (size_t)( // bytes/s
+constexpr size_t MAX_RATE_1GIGE     = (size_t)( // bytes/s
     10e9 / 8 * // wire speed multiplied by percentage of packets that is sample data
     (float(GE_DATA_FRAME_RECV_SIZE - CHDR_MAX_LEN_HDR)
         / float(GE_DATA_FRAME_RECV_SIZE
@@ -196,7 +200,7 @@ eth_manager::eth_manager(
     // Once we read the EEPROM, we use it to map IP to its interface
     // In discover_eth(), we'll check and enable the other IP address, if given
     x300_eth_conn_t init;
-    init.addr = args.get_first_addr();
+    init.addr      = args.get_first_addr();
     auto device_id = allocate_device_id();
     _local_device_ids.push_back(device_id);
     eth_conns[device_id] = init;
@@ -237,18 +241,16 @@ both_links_t eth_manager::get_links(link_type_t link_type,
     // Buffering is done in the socket buffers, so size them relative to
     // the link rate
     link_params_t default_link_params;
-    // There is no need for more than 1 send and recv frame since the
-    // buffering is done in the socket buffers
-    default_link_params.num_send_frames = 1; // or 2?
-    default_link_params.num_recv_frames = 2;
+    default_link_params.num_send_frames = ETH_DATA_NUM_FRAMES;
+    default_link_params.num_recv_frames = ETH_DATA_NUM_FRAMES;
     default_link_params.send_frame_size = conn.link_rate == MAX_RATE_1GIGE
                                               ? GE_DATA_FRAME_SEND_SIZE
                                               : XGE_DATA_FRAME_SEND_SIZE;
     default_link_params.recv_frame_size = conn.link_rate == MAX_RATE_1GIGE
                                               ? GE_DATA_FRAME_RECV_SIZE
                                               : XGE_DATA_FRAME_RECV_SIZE;
-    default_link_params.send_buff_size  = conn.link_rate / 50;
-    default_link_params.recv_buff_size  = std::max(conn.link_rate / 50,
+    default_link_params.send_buff_size = conn.link_rate / 50;
+    default_link_params.recv_buff_size = std::max(conn.link_rate / 50,
         ETH_MSG_NUM_FRAMES * ETH_MSG_FRAME_SIZE); // enough to hold greater of 20 ms or
                                                   // number of msg frames
 
@@ -260,8 +262,10 @@ both_links_t eth_manager::get_links(link_type_t link_type,
         link_args);
 
     // Enforce a minimum bound of the number of receive and send frames.
-    link_params.num_send_frames = std::max(uhd::rfnoc::MIN_NUM_FRAMES, link_params.num_send_frames);
-    link_params.num_recv_frames = std::max(uhd::rfnoc::MIN_NUM_FRAMES, link_params.num_recv_frames);
+    link_params.num_send_frames =
+        std::max(uhd::rfnoc::MIN_NUM_FRAMES, link_params.num_send_frames);
+    link_params.num_recv_frames =
+        std::max(uhd::rfnoc::MIN_NUM_FRAMES, link_params.num_recv_frames);
 
     if (_args.get_use_dpdk()) {
 #ifdef HAVE_DPDK
@@ -338,8 +342,8 @@ void eth_manager::init_link(
 
         _max_frame_sizes = pri_frame_sizes;
         if (_local_device_ids.size() > 1) {
-            frame_size_t sec_frame_sizes =
-                determine_max_frame_size(eth_conns.at(_local_device_ids.at(1)).addr, req_max_frame_size);
+            frame_size_t sec_frame_sizes = determine_max_frame_size(
+                eth_conns.at(_local_device_ids.at(1)).addr, req_max_frame_size);
 
             // Choose the minimum of the max frame sizes
             // to ensure we don't exceed any one of the links' MTU
@@ -382,7 +386,7 @@ void eth_manager::init_link(
     // Check actual frame sizes against detected frame sizes, and print
     // warnings if they don't match
     for (auto conn_pair : eth_conns) {
-        auto conn = conn_pair.second;
+        auto conn                  = conn_pair.second;
         size_t rec_send_frame_size = conn.link_rate == MAX_RATE_1GIGE
                                          ? GE_DATA_FRAME_SEND_SIZE
                                          : XGE_DATA_FRAME_SEND_SIZE;
