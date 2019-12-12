@@ -23,13 +23,19 @@ namespace {
             config_parser& conf_file
     ) {
         if (not path.empty()) {
-                UHD_LOG_TRACE("PREFS", "Trying to load " << path);
-            try {
-                conf_file.read_file(path);
-                UHD_LOG_DEBUG("PREFS",
-                        "Loaded " << config_type << " config file " << path);
-            } catch (...) {
-                // nop
+            UHD_LOG_TRACE("PREFS", "Trying to load " << path);
+            if (boost::filesystem::exists(path)) {
+                try {
+                    conf_file.read_file(path);
+                    UHD_LOG_DEBUG("PREFS",
+                            "Loaded " << config_type << " config file " << path);
+                } catch (...) {
+                    UHD_LOG_DEBUG("PREFS",
+                            "Failed to load " << config_type << " config file " << path);
+                }
+            } else {
+                UHD_LOG_TRACE("PREFS",
+                    "No " << config_type << " config file found at " << path);
             }
         }
     }

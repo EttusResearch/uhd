@@ -13,7 +13,7 @@ using namespace uhd;
 
 config_parser::config_parser(const std::string &path)
 {
-    if (not path.empty() and boost::filesystem::exists(path)) {
+    if (not path.empty()) {
         try {
             boost::property_tree::ini_parser::read_ini(path, _pt);
         } catch (const boost::property_tree::ini_parser_error &) {
