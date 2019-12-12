@@ -98,7 +98,7 @@ uhd::rfnoc::chdr_ctrl_xport::sptr x300_impl::x300_mb_iface::make_ctrl_transport(
     send_link_if::sptr send_link;
     recv_link_if::sptr recv_link;
     bool lossy_xport;
-    std::tie(send_link, std::ignore, recv_link, std::ignore, lossy_xport) =
+    std::tie(send_link, std::ignore, recv_link, std::ignore, lossy_xport, std::ignore) =
         _conn_mgr->get_links(link_type_t::CTRL,
             local_device_id,
             local_epid,
@@ -139,8 +139,8 @@ uhd::rfnoc::chdr_rx_data_xport::uptr x300_impl::x300_mb_iface::make_rx_data_tran
     send_link_if::sptr send_link;
     recv_link_if::sptr recv_link;
     size_t recv_buff_size;
-    bool lossy_xport;
-    std::tie(send_link, std::ignore, recv_link, recv_buff_size, lossy_xport) =
+    bool lossy_xport, packet_fc;
+    std::tie(send_link, std::ignore, recv_link, recv_buff_size, lossy_xport, packet_fc) =
         _conn_mgr->get_links(link_type_t::RX_DATA,
             local_sep_addr.first,
             local_epid,
@@ -150,16 +150,21 @@ uhd::rfnoc::chdr_rx_data_xport::uptr x300_impl::x300_mb_iface::make_rx_data_tran
     /* Associate local device ID with the adapter */
     _adapter_map[local_sep_addr.first] = send_link->get_send_adapter_id();
 
-    // TODO: configure this based on the transport type
-    const uhd::rfnoc::stream_buff_params_t recv_capacity = {
-        recv_buff_size, uhd::rfnoc::MAX_FC_CAPACITY_PKTS};
+    const uhd::rfnoc::stream_buff_params_t recv_capacity = {recv_buff_size,
+        packet_fc ? static_cast<uint32_t>(recv_link->get_num_recv_frames())
+                  : uhd::rfnoc::MAX_FC_CAPACITY_PKTS};
 
     const double ratio = 1.0 / 32;
 
-    // Configure flow control frequency to use bytes only for UDP
-    uhd::rfnoc::stream_buff_params_t fc_freq = {
-        static_cast<uint64_t>(std::ceil(double(recv_buff_size) * ratio)),
-        uhd::rfnoc::MAX_FC_FREQ_PKTS};
+    // Configure flow control frequency to use either bytes only or packets only
+    uhd::rfnoc::stream_buff_params_t fc_freq;
+    if (packet_fc) {
+        fc_freq = {uhd::rfnoc::MAX_FC_FREQ_BYTES,
+            static_cast<uint32_t>(std::ceil(recv_link->get_num_recv_frames() * ratio))};
+    } else {
+        fc_freq = {static_cast<uint64_t>(std::ceil(double(recv_buff_size) * ratio)),
+            uhd::rfnoc::MAX_FC_FREQ_PKTS};
+    }
 
     uhd::rfnoc::stream_buff_params_t fc_headroom = {0, 0};
 
@@ -220,7 +225,7 @@ uhd::rfnoc::chdr_tx_data_xport::uptr x300_impl::x300_mb_iface::make_tx_data_tran
     send_link_if::sptr send_link;
     recv_link_if::sptr recv_link;
     bool lossy_xport;
-    std::tie(send_link, std::ignore, recv_link, std::ignore, lossy_xport) =
+    std::tie(send_link, std::ignore, recv_link, std::ignore, lossy_xport, std::ignore) =
         _conn_mgr->get_links(link_type_t::TX_DATA,
             local_sep_addr.first,
             local_epid,

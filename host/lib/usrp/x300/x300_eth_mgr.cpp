@@ -263,25 +263,27 @@ both_links_t eth_manager::get_links(link_type_t link_type,
     link_params.num_send_frames = std::max(uhd::rfnoc::MIN_NUM_FRAMES, link_params.num_send_frames);
     link_params.num_recv_frames = std::max(uhd::rfnoc::MIN_NUM_FRAMES, link_params.num_recv_frames);
 
-    // Dummy variables for populating the return tuple
-    size_t recv_buff_size, send_buff_size;
     if (_args.get_use_dpdk()) {
 #ifdef HAVE_DPDK
-         auto link = uhd::transport::udp_dpdk_link::make(
-             conn.addr, BOOST_STRINGIZE(X300_VITA_UDP_PORT), link_params);
-         return std::make_tuple(link, send_buff_size, link, recv_buff_size, true);
+        auto link = uhd::transport::udp_dpdk_link::make(
+            conn.addr, BOOST_STRINGIZE(X300_VITA_UDP_PORT), link_params);
+        return std::make_tuple(link,
+            link_params.send_buff_size,
+            link,
+            link_params.recv_buff_size,
+            true,
+            true);
 #else
         UHD_LOG_WARNING("X300", "Cannot create DPDK transport, falling back to UDP");
 #endif
     }
-
-    // No DPDK, then return regular/kernel UDP
     auto link = uhd::transport::udp_boost_asio_link::make(conn.addr,
         BOOST_STRINGIZE(X300_VITA_UDP_PORT),
         link_params,
-        recv_buff_size,
-        send_buff_size);
-    return std::make_tuple(link, send_buff_size, link, recv_buff_size, true);
+        link_params.recv_buff_size,
+        link_params.send_buff_size);
+    return std::make_tuple(
+        link, link_params.send_buff_size, link, link_params.recv_buff_size, true, false);
 }
 
 /******************************************************************************

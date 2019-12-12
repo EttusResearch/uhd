@@ -116,8 +116,8 @@ uhd::transport::both_links_t mpmd_link_if_ctrl_liberio::get_link(const size_t li
         link_info.first, link_info.second, link_params);
     io_srv->attach_send_link(link);
     io_srv->attach_recv_link(link);
-    return std::tuple<send_link_if::sptr, size_t, recv_link_if::sptr, size_t, bool>(
-        link, link_params.send_buff_size, link, link_params.recv_buff_size, false);
+    return std::make_tuple(
+        link, link_params.send_buff_size, link, link_params.recv_buff_size, false, true);
 }
 
 size_t mpmd_link_if_ctrl_liberio::get_mtu(const uhd::direction_t /*dir*/) const

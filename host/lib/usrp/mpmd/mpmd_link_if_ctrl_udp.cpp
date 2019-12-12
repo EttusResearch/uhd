@@ -32,7 +32,7 @@ const uhd::rfnoc::chdr::chdr_packet_factory mpmd_link_if_ctrl_udp::_pkt_factory(
 namespace {
 
 //! Maximum CHDR packet size in bytes
-const size_t MPMD_10GE_DATA_FRAME_MAX_SIZE = 8000;
+const size_t MPMD_10GE_DATA_FRAME_MAX_SIZE    = 8000;
 const size_t MPMD_1GE_DATA_FRAME_MAX_SIZE     = 1472;
 const size_t MPMD_1GE_ASYNCMSG_FRAME_MAX_SIZE = 1472;
 
@@ -366,8 +366,12 @@ uhd::transport::both_links_t mpmd_link_if_ctrl_udp::get_link(const size_t link_i
     if (_mb_args.has_key("use_dpdk")) { // FIXME use constrained device args
 #ifdef HAVE_DPDK
         auto link = uhd::transport::udp_dpdk_link::make(ip_addr, udp_port, link_params);
-        return std::make_tuple(
-            link, link_params.send_buff_size, link, link_params.recv_buff_size, true);
+        return std::make_tuple(link,
+            link_params.send_buff_size,
+            link,
+            link_params.recv_buff_size,
+            true,
+            true);
 #else
         UHD_LOG_WARNING("X300", "Cannot create DPDK transport, falling back to UDP");
 #endif
@@ -378,7 +382,7 @@ uhd::transport::both_links_t mpmd_link_if_ctrl_udp::get_link(const size_t link_i
         link_params.recv_buff_size,
         link_params.send_buff_size);
     return std::make_tuple(
-        link, link_params.send_buff_size, link, link_params.recv_buff_size, true);
+        link, link_params.send_buff_size, link, link_params.recv_buff_size, true, false);
 }
 
 size_t mpmd_link_if_ctrl_udp::get_num_links() const

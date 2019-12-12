@@ -20,7 +20,8 @@ using both_links_t = std::tuple<uhd::transport::send_link_if::sptr,
     size_t, // num_send_frames
     uhd::transport::recv_link_if::sptr,
     size_t, // num_recv_frames
-    bool>;  // lossy_xport
+    bool, // lossy_xport
+    bool>; // packet flow control
 
 /*!
  * Parameters for link creation.
@@ -39,4 +40,3 @@ struct link_params_t
 }} // namespace uhd::transport
 
 #endif /* INCLUDED_UHDLIB_TRANSPORT_LINKS_HPP */
-

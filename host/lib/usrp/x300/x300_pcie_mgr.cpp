@@ -351,14 +351,13 @@ both_links_t pcie_manager::get_links(link_type_t link_type,
     // Note: The nirio_link object's factory has a lot of code for sanity
     // checking the link params, and merging the link_args with the default
     // link_params, so we use that.
-    link_params_t link_params      = get_default_link_params(link_type);
+    link_params_t link_params = get_default_link_params(link_type);
 
     // PCIe: Lossless, and little endian
     size_t recv_buff_size, send_buff_size;
-    auto link = nirio_link::make(_rio_fpga_interface,
-        dma_channel_num,
-        link_params,
-        link_args);
+    auto link =
+        nirio_link::make(_rio_fpga_interface, dma_channel_num, link_params, link_args);
 
-    return std::make_tuple(link, send_buff_size, link, recv_buff_size, false /*not lossy*/);
+    return std::make_tuple(
+        link, send_buff_size, link, recv_buff_size, false /*not lossy*/, false);
 }
