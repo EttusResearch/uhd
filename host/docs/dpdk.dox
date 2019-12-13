@@ -166,5 +166,11 @@ runtime. There is no mechanism for MPM's TCP/IP control traffic to flow over a
 link that is occupied by DPDK, so mgmt_addr must point to a link that is not
 used for CHDR, such as N310's RJ45 port.
 
+\subsection dpdk_thread_priorities Thread Priorities with DPDK
+
+When using DPDK, threads that call rx_streamer::recv() or tx_streamer::send()
+need to have an elevated priority for best results. This can be accomplished by
+using the uhd::set_thread_priority_safe() API call.
+
 */
 // vim:ft=doxygen:
