@@ -31,7 +31,6 @@ public:
         sep_id_t my_epid)
         : _my_epid(my_epid)
         , _xport(xport)
-        , _send_seqnum(0)
         , _send_pkt(pkt_factory.make_ctrl())
         , _recv_pkt(pkt_factory.make_ctrl())
         , _stop_recv_thread(false)
@@ -177,13 +176,15 @@ private:
     chdr_ctrl_packet::cuptr _recv_pkt;
     // A collection of ctrlport endpoints (keyed by the port number)
     std::map<ep_map_key_t, ctrlport_endpoint::sptr> _endpoint_map;
-    // A thread that will handle all responses and async message requests
-    std::atomic_bool _stop_recv_thread;
-    std::thread _recv_thread;
     // Mutex that protects all state in this class except for _send_pkt
     std::mutex _mutex;
     // Mutex that protects _send_pkt and _xport.send
     std::mutex _send_mutex;
+    // A thread that will handle all responses and async message requests
+    // Must be declared after the mutexes, the thread starts at construction and
+    // depends on the mutexes having been constructed.
+    std::atomic_bool _stop_recv_thread;
+    std::thread _recv_thread;
 };
 
 chdr_ctrl_endpoint::uptr chdr_ctrl_endpoint::make(chdr_ctrl_xport::sptr xport,
