@@ -64,6 +64,7 @@ inline std::string time_delta_str(const start_time_type& ref_time)
 }
 
 #define NOW() (time_delta_str(start_time))
+volatile bool set_realtime_priority = false;
 
 /***********************************************************************
  * Benchmark RX Rate
@@ -75,6 +76,10 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp,
     const start_time_type& start_time,
     std::atomic<bool>& burst_timer_elapsed)
 {
+    if (set_realtime_priority) {
+        uhd::set_thread_priority_safe();
+    }
+
     // print pre-test summary
     std::cout << boost::format("[%s] Testing receive rate %f Msps on %u channels") % NOW()
                      % (usrp->get_rx_rate() / 1e6) % rx_stream->get_num_channels()
@@ -199,6 +204,10 @@ void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp,
     const size_t spp,
     bool random_nsamps = false)
 {
+    if (set_realtime_priority) {
+        uhd::set_thread_priority_safe();
+    }
+ 
     // print pre-test summary
     std::cout << boost::format("[%s] Testing transmit rate %f Msps on %u channels")
                      % NOW() % (usrp->get_tx_rate() / 1e6) % tx_stream->get_num_channels()
@@ -380,6 +389,10 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         std::cerr << "Benchmark results will be inaccurate on USRP1 due to insufficient "
                      "features.\n"
                   << std::endl;
+    }
+    // "use_dpdk" must be specified in the device args for proper performance during streaming with dpdk
+    if (args.find("use_dpdk") != std::string::npos) {
+        set_realtime_priority = true;
     }
     start_time_type start_time(std::chrono::steady_clock::now());
     std::cout << boost::format("[%s] Creating the usrp device with: %s...") % NOW() % args
