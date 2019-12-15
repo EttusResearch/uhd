@@ -4,7 +4,7 @@ Change Log for Releases
 ## 003.015.000.000
 * N320: Fix MCR initialization, fix checks for LO distribution board,
   reset RX IQ balance on init, replace DRAM FIFO with replay block,
-  improve constraints, fix I/Q imbalance compensation
+  improve constraints, fix I/Q imbalance compensation, add FPGPIO control
 * N310: increase default dc offset averaging window, make tunes
   asynchronous, add capability to control RF filter bypass and freq.band
   limits, fix setting user DB EEPROM, correctly report N321 vs N320,
@@ -13,12 +13,13 @@ Change Log for Releases
   link up status, add workaround for clocking interference with external
   reference clocks, disable gpsdo clock/time source options when
   enable_gps=0
-* X310: Fix max bitfile size, fix GPIO ATR property access type, heavily
+* X300: Fix max bitfile size, fix GPIO ATR property access type, heavily
   refactor, introduce conn_mgr, add DPDK support, add
   capability to flash NI-2974 FPGA, fix clocking code, enable 11.52 MHz
   and 23.04 MHz system ref rates, improve usage of constrained device
   args, enable ADC gain through RFNoC API, add mode to set master clock
-  rate to arbitrary values between 184.32 and 200 MHz
+  rate to arbitrary values between 184.32 and 200 MHz, throttle
+  muxed_zero_copy_if
 * E320: Fix time source clobbering ref source, add support for RevE, fix
   reporting of FPGA version hash, fix SFP link up status, fix missing
   ce_clk driver
@@ -53,10 +54,12 @@ Change Log for Releases
 * Python API: Added include of complex.h to allow pybind to convert
   complex data types
 * Python API: Make multi_usrp::get_*_usrp_info() return a Python dict
+* Python API: Fix array processing in send_waveforms()
 * UHD: Allow ignoring fallthrough warnings, reduce Boost footprint,
   remove gpsd dependency, improve streaming, reduced the number of
-  compiler warnings, introduce pop() to the prop tree
-* UHD: Add typecast operator from uhd::dict<> to std::map<>
+  compiler warnings, introduce pop() to the prop tree, add typecast
+  operator from uhd::dict<> to std::map<>, properly cache config file
+  data
 * MPM/mpmd: Introduce compatible rev numbers to support future hardware,
   fix some resource leaks in mpmd, fix spurious reclaims causing
   unnecessary warnings, fix resource leaks in liberio xport, allow to
@@ -83,7 +86,9 @@ Change Log for Releases
   tests to MPM
 * Utilities: Fix converter benchmark for Py3k and scaling issue
 * Tools: Fix kitchen_sink
-* Docs: Various fixes, fix Doxygen warnings, fix links to KB
+* Docs: Various fixes, fix Doxygen warnings, fix links to KB, update
+  DPDK information about building libraries, add DPDK subsection about
+  thread priorities, update testing procedures
 * C API: Add uhd_get_abi_string, uhd_get_version_string
 * CMake: Make manpage compression optional, allow setting of PKG_DOC_DIR
   from the CMake commandline, add replay example, fix missing 'project',
@@ -92,7 +97,6 @@ Change Log for Releases
   versions, add MPM unit testing, fix missing BIGOBJ for MSVC, add our
   own UHDBoost.cmake to better find Boost across versions and systems
 * Formatting: Apply clang-format to all files, break after template<>
-
 
 ## 003.014.001.000
 N320: Terminate the DAC when not transmitting
