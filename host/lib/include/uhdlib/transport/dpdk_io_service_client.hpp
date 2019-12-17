@@ -132,7 +132,7 @@ public:
             std::unique_lock<std::mutex> lock(_waiter->mutex);
             wait_req_get(_waiter);
             _waiter->complete = false;
-            auto is_complete  = [this] { return !rte_ring_empty(_buffer_queue); };
+            auto is_complete  = [this] { return _waiter->complete; };
             if (timeout_ms < 0) {
                 _waiter->cond.wait(lock, is_complete);
             } else {
@@ -141,9 +141,11 @@ public:
                     return frame_buff::uptr();
                 }
             }
-            if (rte_ring_dequeue(_buffer_queue, (void**)&buff_ptr)) {
-                return frame_buff::uptr();
-            }
+            // Occasionally the conditional variable wait method returns but the
+            // first dequeue operation fails, even though we push onto it before
+            // setting complete to true. Retrying successfully dequeues a value
+            // in those cases.
+            while (rte_ring_dequeue(_buffer_queue, (void**)&buff_ptr)) {}
         }
         return frame_buff::uptr(buff_ptr);
     }
@@ -240,7 +242,7 @@ public:
             std::unique_lock<std::mutex> lock(_waiter->mutex);
             wait_req_get(_waiter);
             _waiter->complete = false;
-            auto is_complete  = [this] { return !rte_ring_empty(_recv_queue); };
+            auto is_complete  = [this] { return _waiter->complete; };
             if (timeout_ms < 0) {
                 _waiter->cond.wait(lock, is_complete);
             } else {
@@ -249,9 +251,11 @@ public:
                     return frame_buff::uptr();
                 }
             }
-            if (rte_ring_dequeue(_recv_queue, (void**)&buff_ptr)) {
-                return frame_buff::uptr();
-            }
+            // Occasionally the conditional variable wait method returns but the
+            // first dequeue operation fails, even though we push onto it before
+            // setting complete to true. Retrying successfully dequeues a value
+            // in those cases.
+            while (rte_ring_dequeue(_recv_queue, (void**)&buff_ptr)) {}
         }
         return frame_buff::uptr(buff_ptr);
     }
