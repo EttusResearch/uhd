@@ -38,6 +38,14 @@
       <address>152</address>
     </setreg>
     <setreg>
+      <name>RX_CTRL_TIME_HI</name>
+      <address>153</address>
+    </setreg>
+    <setreg>
+      <name>RX_CTRL_TIME_LO</name>
+      <address>154</address>
+    </setreg>
+    <setreg>
       <name>RX_CTRL_HALT</name>
       <address>155</address>
     </setreg>

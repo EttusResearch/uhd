@@ -17,28 +17,35 @@ public:
     static const uint32_t REPLAY_WORD_SIZE    = 8; // In bytes
     static const uint32_t SAMPLES_PER_WORD    = 2;
     static const uint32_t BYTES_PER_SAMPLE    = 4;
-    static const uint32_t DEFAULT_BUFFER_SIZE = 32 * 1024 * 1024;
+    static const uint32_t DEFAULT_BUFFER_SIZE = 32 * 1024 * 1024; // In bytes
     static const uint32_t DEFAULT_WPP         = 182;
     static const uint32_t DEFAULT_SPP         = DEFAULT_WPP * SAMPLES_PER_WORD;
 
-
     UHD_RFNOC_BLOCK_CONSTRUCTOR(replay_block_ctrl)
+    , _num_channels(get_input_ports().size()), _params(_num_channels)
     {
-        _num_channels = get_input_ports().size();
-        _params.resize(_num_channels);
         for (size_t chan = 0; chan < _params.size(); chan++) {
-            _params[chan].words_per_packet = DEFAULT_WPP;
             sr_write("RX_CTRL_MAXLEN", DEFAULT_WPP, chan);
-
             // Configure replay channels to be adjacent DEFAULT_BUFFER_SIZE'd blocks
             _params[chan].rec_base_addr    = chan * DEFAULT_BUFFER_SIZE;
             _params[chan].play_base_addr   = chan * DEFAULT_BUFFER_SIZE;
-            _params[chan].rec_buffer_size  = DEFAULT_BUFFER_SIZE;
-            _params[chan].play_buffer_size = DEFAULT_BUFFER_SIZE;
             sr_write("REC_BASE_ADDR", _params[chan].rec_base_addr, chan);
             sr_write("REC_BUFFER_SIZE", _params[chan].rec_buffer_size, chan);
             sr_write("PLAY_BASE_ADDR", _params[chan].play_base_addr, chan);
             sr_write("PLAY_BUFFER_SIZE", _params[chan].play_buffer_size, chan);
+
+            if (_tree->exists("tick_rate")) {
+                const double tick_rate = _tree->access<double>("tick_rate").get();
+                UHD_LOG_TRACE(unique_id(),
+                    "Initializing tick rate to " << (tick_rate / 1e6) << " MHz");
+                set_command_tick_rate(tick_rate, chan);
+                _tree->access<double>("tick_rate")
+                    .add_coerced_subscriber([this, chan](const double rate) {
+                        const double tick_rate =
+                            this->_tree->access<double>("tick_rate").get();
+                        this->set_command_tick_rate(tick_rate, chan);
+                    });
+            }
         }
     }
 
@@ -46,24 +53,29 @@ public:
     /**************************************************************************
      * API Calls
      **************************************************************************/
-
     void config_record(const uint32_t base_addr, const uint32_t size, const size_t chan)
     {
         std::lock_guard<std::mutex> lock(_mutex);
-        _params[chan].rec_base_addr   = base_addr;
-        _params[chan].rec_buffer_size = size;
-        sr_write("REC_BASE_ADDR", base_addr, chan);
-        sr_write("REC_BUFFER_SIZE", size, chan);
+        // Address and size must be a multiple of the replay word size
+        uint32_t new_base_addr = (base_addr / REPLAY_WORD_SIZE) * REPLAY_WORD_SIZE;
+        uint32_t new_size      = (size / REPLAY_WORD_SIZE) * REPLAY_WORD_SIZE;
+        _params[chan].rec_base_addr   = new_base_addr;
+        _params[chan].rec_buffer_size = new_size;
+        sr_write("REC_BASE_ADDR", new_base_addr, chan);
+        sr_write("REC_BUFFER_SIZE", new_size, chan);
         sr_write("REC_RESTART", 0, chan);
     }
 
     void config_play(const uint32_t base_addr, const uint32_t size, const size_t chan)
     {
         std::lock_guard<std::mutex> lock(_mutex);
-        _params[chan].play_base_addr   = base_addr;
-        _params[chan].play_buffer_size = size;
-        sr_write("PLAY_BASE_ADDR", base_addr, chan);
-        sr_write("PLAY_BUFFER_SIZE", size, chan);
+        // Address and size must be a multiple of the replay word size
+        uint32_t new_base_addr = (base_addr / REPLAY_WORD_SIZE) * REPLAY_WORD_SIZE;
+        uint32_t new_size      = (size / REPLAY_WORD_SIZE) * REPLAY_WORD_SIZE;
+        _params[chan].play_base_addr   = new_base_addr;
+        _params[chan].play_buffer_size = new_size;
+        sr_write("PLAY_BASE_ADDR", new_base_addr, chan);
+        sr_write("PLAY_BUFFER_SIZE", new_size, chan);
     }
 
     void record_restart(const size_t chan)
@@ -132,7 +144,7 @@ public:
             return;
         }
 
-        constexpr size_t max_num_samps = 0x0fffffff;
+        constexpr size_t max_num_samps = 0x0fffffff * SAMPLES_PER_WORD;
         if (stream_cmd.num_samps > max_num_samps) {
             UHD_LOG_ERROR("REPLAY",
                 "Requesting too many samples in a single burst! "
@@ -164,19 +176,32 @@ public:
 
         // Calculate how many words to transfer at a time in CONTINUOUS mode
         uint32_t cont_burst_size =
-            (_params[chan].play_buffer_size > _params[chan].words_per_packet)
+            (_params[chan].play_buffer_size / REPLAY_WORD_SIZE > _params[chan].words_per_packet)
                 ? _params[chan].words_per_packet
-                : _params[chan].play_buffer_size;
+                : _params[chan].play_buffer_size / REPLAY_WORD_SIZE;
 
         // Calculate the number of words to transfer in NUM_SAMPS mode
         uint32_t num_words = stream_cmd.num_samps / SAMPLES_PER_WORD;
 
-        // Calculate the word from flags and length
+        // Calculate the command word from flags and length
         const uint32_t cmd_word =
             0 | (uint32_t(stream_cmd.stream_now ? 1 : 0) << 31)
             | (uint32_t(inst_chain ? 1 : 0) << 30) | (uint32_t(inst_reload ? 1 : 0) << 29)
             | (uint32_t(inst_stop ? 1 : 0) << 28)
             | (inst_samps ? num_words : (inst_stop ? 0 : cont_burst_size));
+
+        // Set the time for the command
+        if (not stream_cmd.stream_now) {
+            const double tick_rate = _tree->exists("tick_rate")
+                                         ? _tree->access<double>("tick_rate").get()
+                                         : 1.0;
+            UHD_LOG_DEBUG(unique_id(),
+                "Using tick rate " << (tick_rate / 1e6) << " MHz to set stream command.");
+            set_command_tick_rate(tick_rate, chan);
+            const uint64_t ticks = stream_cmd.time_spec.to_ticks(tick_rate);
+            sr_write("RX_CTRL_TIME_LO", uint32_t(ticks >> 0), chan);
+            sr_write("RX_CTRL_TIME_HI", uint32_t(ticks >> 32), chan);
+        }
 
         // Issue the stream command
         sr_write("RX_CTRL_COMMAND", cmd_word, chan);
@@ -185,14 +210,14 @@ public:
 private:
     struct replay_params_t
     {
-        size_t words_per_packet;
+        size_t words_per_packet   = DEFAULT_WPP;
+        uint32_t rec_buffer_size  = DEFAULT_BUFFER_SIZE;
+        uint32_t play_buffer_size = DEFAULT_BUFFER_SIZE;
         uint32_t rec_base_addr;
-        uint32_t rec_buffer_size;
         uint32_t play_base_addr;
-        uint32_t play_buffer_size;
     };
 
-    size_t _num_channels;
+    const size_t _num_channels;
     std::vector<replay_params_t> _params;
 
     std::mutex _mutex;

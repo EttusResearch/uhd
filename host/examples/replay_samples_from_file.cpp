@@ -56,7 +56,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     // Handle command line options
 
     std::string args, radio_args, file, ant, ref;
-    double rate, freq, gain, bw;
+    double rate, freq, gain, bw, seconds_in_future;
     size_t radio_id, radio_chan, replay_id, replay_chan, nsamps;
 
     po::options_description desc("Allowed Options");
@@ -77,6 +77,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("ant", po::value<std::string>(&ant), "antenna selection")
         ("bw", po::value<double>(&bw), "analog front-end filter bandwidth in Hz")
         ("ref", po::value<std::string>(&ref)->default_value("internal"), "reference source (internal, external, mimo)")
+        ("secs", po::value<double>(&seconds_in_future)->default_value(1.5), "number of seconds in the future to start replay")
     ;
     // clang-format on
     po::variables_map vm;
@@ -203,7 +204,6 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     ///////////////////////////////////////////////////////////////////////////
     // Setup streamer to Replay block
 
-    uint64_t noc_id;
     uhd::device_addr_t streamer_args;
     uhd::stream_args_t stream_args(cpu_format, wire_format);
     uhd::tx_streamer::sptr tx_stream;
@@ -342,35 +342,63 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
     uhd::stream_cmd_t stream_cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
 
-    if (nsamps <= 0) {
+    if (nsamps == 0) {
         // Replay the entire buffer over and over
         stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS;
-        stream_cmd.num_samps   = words_to_replay;
-        cout << boost::format("Issuing replay command for %d words in continuous mode...")
-                    % stream_cmd.num_samps
+        stream_cmd.num_samps   = words_to_replay * samples_per_word;
+        cout << boost::format("Start replay of %d samples in continuous mode, "
+                    "%f seconds in the future...")
+                    % stream_cmd.num_samps % seconds_in_future
              << endl;
     } else {
         // Replay nsamps, wrapping back to the start of the buffer if nsamps is
         // larger than the buffer size.
         stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE;
-        stream_cmd.num_samps   = nsamps / samples_per_word;
-        cout << boost::format("Issuing replay command for %d words...")
-                    % stream_cmd.num_samps
+        stream_cmd.num_samps   = nsamps;
+        cout << boost::format("Start replay of %d samples, "
+                    "%f seconds in the future...")
+                    % stream_cmd.num_samps % seconds_in_future
              << endl;
     }
-    stream_cmd.stream_now = true;
+    if (seconds_in_future == 0.0) {
+        stream_cmd.stream_now = true;
+    }
+    else {
+        stream_cmd.stream_now = false;
+        stream_cmd.time_spec  = radio_ctrl->get_time_now() +
+            uhd::time_spec_t(seconds_in_future);
+    }
     replay_ctrl->issue_stream_cmd(stream_cmd, replay_chan);
 
 
     ///////////////////////////////////////////////////////////////////////////
-    // Wait until user says to stop
+    // Wait until samples sent or user says to stop
 
     // Setup SIGINT handler (Ctrl+C)
     std::signal(SIGINT, &sig_int_handler);
-    cout << "Replaying data (Press Ctrl+C to stop)..." << endl;
+    cout << "Replaying data (Press Ctrl+C to stop)..." << std::endl;
 
-    while (not stop_signal_called)
-        ;
+    bool got_async_burst_ack = false;
+    if (nsamps == 0) {
+        // Transmit until the user presses Ctrl+C
+        while (not stop_signal_called) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+    }
+    else {
+        const double timeout = seconds_in_future + nsamps / radio_ctrl->get_rate() + 0.5;
+        uhd::async_metadata_t async_md;
+
+        // Wait until we get the end-of-burst acknowledgment
+        while (not stop_signal_called and not got_async_burst_ack
+               and tx_stream->recv_async_msg(async_md, timeout)) {
+            got_async_burst_ack =
+                (async_md.event_code == uhd::async_metadata_t::EVENT_CODE_BURST_ACK);
+        }
+        std::cout << (got_async_burst_ack ? "Done" : "Timeout") << std::endl;
+
+        return EXIT_SUCCESS;
+    }
 
     // Remove SIGINT handler
     std::signal(SIGINT, SIG_DFL);
@@ -393,7 +421,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
     uint16_t prev_packet_count, packet_count;
 
-    cout << "Waiting for replay data to flush... ";
+    cout << "Waiting for replay data to flush... " << std::flush;
     prev_packet_count =
         replay_ctrl->sr_read64(uhd::rfnoc::SR_READBACK_REG_GLOBAL_PARAMS, replay_chan)
         >> 32;
@@ -407,7 +435,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         prev_packet_count = packet_count;
     }
 
-    cout << endl;
+    cout << endl << "Done" << endl;
 
     return EXIT_SUCCESS;
 }
