@@ -176,8 +176,8 @@ FUNCVERIF_SETTINGS = {
         '--drop-threshold': 0,
         '--underrun-threshold': 100,
         '--overrun-threshold': 100,
-        '--rx_subdev': 'A:0 B:0',
-        '--tx_subdev': 'A:0 B:0',
+        '--rx_subdev': 'A:0 A:1',
+        '--tx_subdev': 'A:0 A:1',
         '--duration': 60,
         '__tests': [
             {'--rx_rate': 1.25e6, 'master_clock_rate': '125e6', '--channels': 0,},
@@ -411,8 +411,8 @@ FUNCVERIF_SETTINGS = {
         '--drop-threshold': 0,
         '--underrun-threshold': 100,
         '--overrun-threshold': 100,
-        '--rx_subdev': 'A:0 B:0',
-        '--tx_subdev': 'A:0 B:0',
+        '--rx_subdev': 'A:0 A:1',
+        '--tx_subdev': 'A:0 A:1',
         '--duration': 60,
         '__tests': [
             {'--rx_rate': 1.25e6, 'master_clock_rate': '125e6', '--channels': 0,},
@@ -532,8 +532,8 @@ FUNCVERIF_SETTINGS = {
         '--drop-threshold': 0,
         '--underrun-threshold': 100,
         '--overrun-threshold': 100,
-        '--rx_subdev': 'A:0 A:1 B:0 B:1',
-        '--tx_subdev': 'A:0 A:1 B:0 B:1',
+        '--rx_subdev': 'A:0 A:1',
+        '--tx_subdev': 'A:0 A:1',
         '--duration': 60,
         '__tests': [
             {'--rx_rate': 125e6,   '--tx_rate': 62.5e6,  'master_clock_rate': '125e6',    '--channels': '0,1',
