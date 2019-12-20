@@ -2,20 +2,9 @@
  * Dissector for UHD CVITA (CHDR) packets
  *
  * Copyright 2010-2014 Ettus Research LLC
+ * Copyright 2019 Ettus Research, a National Instruments brand
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 #include "config.h"
@@ -99,7 +88,14 @@ static gint ett_chdr_cmd = -1;
 /* Forward-declare the dissector functions */
 void proto_register_chdr(void);
 void proto_reg_handoff_chdr(void);
+
+#if VERSION_MAJOR == 1
 static void dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree);
+#elif (VERSION_MAJOR == 2) || (VERSION_MAJOR == 3)
+static int dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data);
+#else
+#error Wireshark version not found or not compatible
+#endif
 
 /* heuristic dissector call. Will always return. */
 static gboolean heur_dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void* whatislove)
@@ -108,7 +104,11 @@ static gboolean heur_dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree 
         printf(LOG_HEADER"heuristic dissector always returns true!\n");
         heur_warning_printed++;
     }
+#if VERSION_MAJOR == 1
     dissect_chdr(tvb, pinfo, tree);
+#elif (VERSION_MAJOR == 2) || (VERSION_MAJOR == 3)
+    dissect_chdr(tvb, pinfo, tree, whatislove);
+#endif
     return (TRUE);
 }
 
@@ -152,7 +152,11 @@ static unsigned long long get_timestamp(guint8 *bytes, gint len)
 }
 
 /* The dissector itself */
+#if VERSION_MAJOR == 1
 static void dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
+#elif (VERSION_MAJOR == 2) || (VERSION_MAJOR == 3)
+static int dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void *data)
+#endif
 {
     // Here are all the variables
     proto_item *item;
@@ -331,6 +335,9 @@ static void dissect_chdr(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree)
             }
         }
     }
+#if (VERSION_MAJOR == 2) || (VERSION_MAJOR == 3)
+  return (tvb_captured_length(tvb));
+#endif
 }
 
 void proto_register_chdr(void)
@@ -516,10 +523,8 @@ void proto_reg_handoff_chdr(void)
     /* register heuristic dissector for use with USB */
 #if VERSION_MAJOR == 1
     heur_dissector_add("usb.bulk", heur_dissect_chdr, proto_chdr);
-#elif VERSION_MAJOR == 2
+#elif (VERSION_MAJOR == 2) || (VERSION_MAJOR == 3)
     heur_dissector_add("usb.bulk", heur_dissect_chdr, "USB dissector", "usb_bulk", proto_chdr, HEURISTIC_ENABLE);
-#else
-#error Wireshark version not found or not compatible
 #endif
     /* register dissector for UDP packets */
     static dissector_handle_t chdr_handle;

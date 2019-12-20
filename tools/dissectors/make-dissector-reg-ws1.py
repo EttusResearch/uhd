@@ -33,7 +33,7 @@ srcdir = sys.argv[1]
 registertype = sys.argv[2]
 if registertype == "plugin" or registertype == "plugin_wtap":
 	tmp_filename = "plugin.c-tmp"
-	final_filename = "plugin.c"
+	final_filename = "plugin-" + sys.argv[3] + ".c"
 	cache_filename = None
 	preamble = """\
 /*
@@ -66,7 +66,7 @@ else:
 #
 # All subsequent arguments are the files to scan.
 #
-files = sys.argv[3:]
+files = sys.argv[4:]
 
 # Create the proper list of filenames
 filenames = []
