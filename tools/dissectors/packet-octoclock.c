@@ -138,7 +138,9 @@ static int dissect_octo(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, voi
 				packet_offset(len),
 				packet_elem_size(len),
 				ENC_LITTLE_ENDIAN);
+#if (VERSION_MAJOR == 2) || (VERSION_MAJOR == 3)
 		return len;
+#endif
 	}
 #if (VERSION_MAJOR == 2) || (VERSION_MAJOR == 3)
 	return 0;

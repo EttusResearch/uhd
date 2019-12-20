@@ -1,58 +1,112 @@
-# Copyright 2010-2013 Ettus Research LLC
-# 
-# GNU Radio is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3, or (at your option)
-# any later version.
-# 
-# GNU Radio is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-# 
-# You should have received a copy of the GNU General Public License
-# along with GNU Radio; see the file COPYING.  If not, write to
-# the Free Software Foundation, Inc., 51 Franklin Street,
-# Boston, MA 02110-1301, USA.
+# Copyright 2019 Ettus Research, a National Instruments brand
+#
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
 
-# Set component parameters
-set(ETTUS_DISSECTOR_INCLUDE_DIRS ${CMAKE_SOURCE_DIR} CACHE INTERNAL "" FORCE)
-set(ETTUS_DISSECTOR_NAME "chdr" CACHE STRING "Select a dissector to build")
+########################################################################
+# useful macros
+########################################################################
+include(WSComponent)
 
-function(generate_ettus_dissector DISSECTOR_NAME)
+set(PLUGIN_C_GENERATOR ${CMAKE_SOURCE_DIR}/make-dissector-reg-ws1.py)
+macro(REGISTER_PLUGIN_FILES _plugin _outputfile _registertype)
 
-    set(ETTUS_PLUGIN_SRC ${CMAKE_SOURCE_DIR}/packet-${DISSECTOR_NAME}.c)
+    add_custom_command(
+            OUTPUT ${_outputfile}
+	    DEPENDS ${ARGN} ${PLUGIN_C_GENERATOR}
+	    COMMAND ${PYTHON_EXECUTABLE}
+	        ${PLUGIN_C_GENERATOR}
+		${CMAKE_CURRENT_SOURCE_DIR}
+		${_registertype}
+                ${_plugin}
+		${ARGN}
+            COMMENT "Generating ${_outputfile}"
+    )
 
     configure_file(
         ${CMAKE_CURRENT_SOURCE_DIR}/moduleinfo.h.in
         ${CMAKE_BINARY_DIR}/moduleinfo.h
     )
 
-    set(PLUGIN_C_GENERATOR ${CMAKE_SOURCE_DIR}/make-dissector-reg-ws1.py)
-    set(PLUGIN_C plugin-chdr.c)
+endmacro(REGISTER_PLUGIN_FILES)
 
-    add_custom_command(
-            OUTPUT ${PLUGIN_C}
-            DEPENDS ${ETTUS_PLUGIN_SRC}
-            COMMAND ${PLUGIN_C_GENERATOR} ${CMAKE_SOURCE_DIR} plugin ${DISSECTOR_NAME} ${ETTUS_PLUGIN_SRC}
-            COMMENT "Generating ${PLUGIN_C}"
+# Plugin name and version info (major minor micro extra)
+macro(SET_MODULE_INFO _plugin _ver_major _ver_minor _ver_micro _ver_extra)
+	if(WIN32)
+		# Create the Windows .rc file for the plugin.
+		set(MODULE_NAME ${_plugin})
+		set(MODULE_VERSION_MAJOR ${_ver_major})
+		set(MODULE_VERSION_MINOR ${_ver_minor})
+		set(MODULE_VERSION_MICRO ${_ver_micro})
+		set(MODULE_VERSION_EXTRA ${_ver_extra})
+		set(MODULE_VERSION "${MODULE_VERSION_MAJOR}.${MODULE_VERSION_MINOR}.${MODULE_VERSION_MICRO}.${MODULE_VERSION_EXTRA}")
+		set(RC_MODULE_VERSION "${MODULE_VERSION_MAJOR},${MODULE_VERSION_MINOR},${MODULE_VERSION_MICRO},${MODULE_VERSION_EXTRA}")
+
+		set(MSVC_VARIANT "${CMAKE_GENERATOR}")
+
+		# Create the plugin.rc file from the template
+		set(_plugin_rc_in ${CMAKE_CURRENT_SOURCE_DIR}/plugin.rc.in)
+		configure_file(${_plugin_rc_in} plugin.rc @ONLY)
+		set(PLUGIN_RC_FILE ${CMAKE_CURRENT_BINARY_DIR}/plugin.rc)
+	endif()
+
+	set(PLUGIN_VERSION "${_ver_major}.${_ver_minor}.${_ver_micro}")
+	add_definitions(-DPLUGIN_VERSION=\"${PLUGIN_VERSION}\")
+	add_definitions(-DVERSION_MAJOR=${WIRESHARK_VERSION_MAJOR})
+	add_definitions(-DVERSION_MINOR=${WIRESHARK_VERSION_MINOR})
+endmacro()
+
+macro(ADD_PLUGIN_LIBRARY _plugin _subfolder)
+	add_library(${_plugin} MODULE
+		${PLUGIN_FILES}
+		${PLUGIN_RC_FILE}
+	)
+
+	set_target_properties(${_plugin} PROPERTIES
+		PREFIX ""
+		LINK_FLAGS "${WS_LINK_FLAGS}"
+		FOLDER "Plugins"
+	)
+
+	set_target_properties(${_plugin} PROPERTIES
+		LIBRARY_OUTPUT_DIRECTORY ${_subfolder}
+		INSTALL_RPATH ""
+	)
+endmacro()
+
+macro(INSTALL_PLUGIN _plugin _subfolder)
+    install(TARGETS ${_plugin}
+        LIBRARY DESTINATION ${WIRESHARK_PLUGIN_DIR} NAMELINK_SKIP
     )
+endmacro()
 
-    set(ETTUS_TARGET_NAME "${DISSECTOR_NAME}")
-    add_library(${ETTUS_TARGET_NAME} MODULE
-        ${PLUGIN_C}
-        moduleinfo.h
-        ${ETTUS_PLUGIN_SRC}
+if(NOT WIRESHARK_PLUGIN_DIR)
+    message(FATAL_ERROR "Wireshark was compiled without support for plugins")
+endif()
+
+if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    set(CMAKE_INSTALL_PREFIX ${WIRESHARK_PLUGIN_DIR}
+        CACHE
+        PATH
+        "Default installation path for plugins"
+        FORCE
     )
-    set_target_properties(${ETTUS_TARGET_NAME} PROPERTIES PREFIX "")
-    set_target_properties(${ETTUS_TARGET_NAME} PROPERTIES LINK_FLAGS "${WS_LINK_FLAGS}")
-    target_link_libraries(${ETTUS_TARGET_NAME} ${WIRESHARK_LIBRARIES})
+endif(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
 
-    install(TARGETS ${ETTUS_TARGET_NAME} 
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/plugins NAMELINK_SKIP
-    ) 
+WS_REGISTER_COMPONENT("CHDR" ENABLE_CHDR ON "" OFF ON)
+WS_REGISTER_COMPONENT("Octoclock" ENABLE_OCTOCLOCK ON "" OFF OFF)
+WS_REGISTER_COMPONENT("ZPU" ENABLE_ZPU ON "" OFF OFF)
 
-endfunction(generate_ettus_dissector)
+if(ENABLE_CHDR)
+    include(epan_chdr.cmake)
+endif(ENABLE_CHDR)
 
-generate_ettus_dissector("${ETTUS_DISSECTOR_NAME}")
+if(ENABLE_OCTOCLOCK)
+    include(epan_octoclock.cmake)
+endif(ENABLE_OCTOCLOCK)
 
+if(ENABLE_ZPU)
+    include(epan_zpu.cmake)
+endif(ENABLE_ZPU)
+
+WS_PRINT_COMPONENT_SUMMARY()

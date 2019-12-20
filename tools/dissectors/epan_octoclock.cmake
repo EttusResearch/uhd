@@ -27,5 +27,3 @@ set_target_properties(octoclock PROPERTIES LINK_FLAGS "${WS_LINK_FLAGS}")
 target_link_libraries(octoclock ${WIRESHARK_LIBRARIES})
 
 install_plugin(octoclock epan)
-
-

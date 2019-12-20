@@ -24,9 +24,6 @@
 #include <epan/packet.h>
 #include <ctype.h>
 #include <stdio.h>
-#if VERSION_MAJOR == 1
-#include <endian.h>
-#endif
 
 #include "../../host/lib/usrp/x300/x300_fw_common.h"
 #include "zpu_addr_names.h"
@@ -125,11 +122,7 @@ static int dissect_zpu(tvbuff_t *tvb, packet_info *pinfo, proto_tree *tree, void
                 if (len >= 12)
                 {
                     proto_tree_add_item(zpu_tree, hf_zpu_addr, tvb, 8, 4, ENC_NA);
-#if VERSION_MAJOR == 1
-                    guint8 *bytes = tvb_get_string(tvb, 8, 4);
-#elif (VERSION_MAJOR == 2) || (VERSION_MAJOR == 3)
                     guint8 *bytes = tvb_get_string_enc(wmem_packet_scope(), tvb, 8, 4, ENC_ASCII);
-#endif
                     unsigned int addr = 0;
                     memcpy(&addr, bytes, 4);
                     /* TODO proper endianness handling */
