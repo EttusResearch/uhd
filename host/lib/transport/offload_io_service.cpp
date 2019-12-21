@@ -328,9 +328,6 @@ private:
     // The I/O service that executes within the offload thread
     io_service::sptr _io_srv;
 
-    // Type of clients supported by this I/O service
-    client_type_t _client_type;
-
     // Offload thread, its stop flag, and thread-related parameters
     std::unique_ptr<std::thread> _offload_thread;
     std::atomic<bool> _stop_offload_thread{false};
@@ -469,7 +466,7 @@ recv_io_if::sptr offload_io_service_impl::make_recv_client(recv_link_if::sptr re
 {
     UHD_ASSERT_THROW(_offload_thread);
 
-    if (_client_type == SEND_ONLY) {
+    if (_offload_thread_params.client_type == SEND_ONLY) {
         throw uhd::runtime_error("Recv client not supported by this I/O service");
     }
 
@@ -518,7 +515,7 @@ send_io_if::sptr offload_io_service_impl::make_send_client(send_link_if::sptr se
 {
     UHD_ASSERT_THROW(_offload_thread);
 
-    if (_client_type == RECV_ONLY) {
+    if (_offload_thread_params.client_type == RECV_ONLY) {
         throw uhd::runtime_error("Send client not supported by this I/O service");
     }
 
