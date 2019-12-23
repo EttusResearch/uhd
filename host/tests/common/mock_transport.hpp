@@ -156,7 +156,7 @@ public:
         _seqno++;
     }
 
-    bool can_send(size_t bytes)
+    bool can_send(size_t /* bytes */)
     {
         return _seqno < _ackno + _credits;
     };
