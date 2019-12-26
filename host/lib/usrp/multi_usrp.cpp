@@ -2218,7 +2218,7 @@ public:
                         return val;
                     }
                     default:
-                        return uint32_t(_tree->access<uint64_t>(
+                        return uint32_t(_tree->access<uint32_t>(
                             mb_root(mboard) / "gpio" / bank / attr).get());
                 }
                 return 0;
