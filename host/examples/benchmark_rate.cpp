@@ -25,7 +25,6 @@ using namespace std::chrono_literals;
 
 namespace {
 constexpr auto CLOCK_TIMEOUT = 1000ms; // 1000mS timeout for external clock locking
-constexpr float INIT_DELAY   = 0.05; // 50mS initial delay before transmit
 } // namespace
 
 using start_time_type = std::chrono::time_point<std::chrono::steady_clock>;
@@ -64,7 +63,6 @@ inline std::string time_delta_str(const start_time_type& ref_time)
 }
 
 #define NOW() (time_delta_str(start_time))
-volatile bool set_realtime_priority = false;
 
 /***********************************************************************
  * Benchmark RX Rate
@@ -74,9 +72,11 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp,
     uhd::rx_streamer::sptr rx_stream,
     bool random_nsamps,
     const start_time_type& start_time,
-    std::atomic<bool>& burst_timer_elapsed)
+    std::atomic<bool>& burst_timer_elapsed,
+    bool elevate_priority,
+    double rx_delay)
 {
-    if (set_realtime_priority) {
+    if (elevate_priority) {
         uhd::set_thread_priority_safe();
     }
 
@@ -98,13 +98,13 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp,
     const double rate = usrp->get_rx_rate();
 
     uhd::stream_cmd_t cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
-    cmd.time_spec  = usrp->get_time_now() + uhd::time_spec_t(INIT_DELAY);
+    cmd.time_spec  = usrp->get_time_now() + uhd::time_spec_t(rx_delay);
     cmd.stream_now = (buffs.size() == 1);
     rx_stream->issue_stream_cmd(cmd);
 
     const float burst_pkt_time =
         std::max<float>(0.100f, (2 * max_samps_per_packet / rate));
-    float recv_timeout = burst_pkt_time + INIT_DELAY;
+    float recv_timeout = burst_pkt_time + rx_delay;
 
     bool stop_called = false;
     while (true) {
@@ -202,9 +202,11 @@ void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp,
     std::atomic<bool>& burst_timer_elapsed,
     const start_time_type& start_time,
     const size_t spp,
+    bool elevate_priority,
+    double tx_delay,
     bool random_nsamps = false)
 {
-    if (set_realtime_priority) {
+    if (elevate_priority) {
         uhd::set_thread_priority_safe();
     }
  
@@ -223,7 +225,7 @@ void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp,
     // Create the metadata, and populate the time spec at the latest possible moment
     uhd::tx_metadata_t md;
     md.has_time_spec = (buffs.size() != 1);
-    md.time_spec     = usrp->get_time_now() + uhd::time_spec_t(INIT_DELAY);
+    md.time_spec     = usrp->get_time_now() + uhd::time_spec_t(tx_delay);
 
     if (random_nsamps) {
         std::srand((unsigned int)time(NULL));
@@ -324,6 +326,9 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     std::atomic<bool> burst_timer_elapsed(false);
     size_t overrun_threshold, underrun_threshold, drop_threshold, seq_threshold;
     size_t rx_spp, tx_spp;
+    double tx_delay, rx_delay;
+    std::string priority;
+    bool elevate_priority = false;
 
     // setup the program options
     po::options_description desc("Allowed options");
@@ -358,6 +363,10 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
          "Number of dropped packets (D) which will declare the benchmark a failure.")
         ("seq-threshold", po::value<size_t>(&seq_threshold),
          "Number of dropped packets (D) which will declare the benchmark a failure.")
+        // NOTE: TX delay defaults to 0.25 seconds to allow the buffer on the device to fill completely
+        ("tx_delay", po::value<double>(&tx_delay)->default_value(0.25), "delay before starting TX in seconds")
+        ("rx_delay", po::value<double>(&rx_delay)->default_value(0.05), "delay before starting RX in seconds")
+        ("priority", po::value<std::string>(&priority)->default_value("high"), "thread priority (high, normal)")
     ;
     // clang-format on
     po::variables_map vm;
@@ -372,6 +381,11 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                      "    Specify both options for a full-duplex test.\n"
                   << std::endl;
         return ~0;
+    }
+
+    if (priority == "high") {
+        uhd::set_thread_priority_safe();
+        elevate_priority = true;
     }
 
     // Random number of samples?
@@ -389,10 +403,6 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         std::cerr << "Benchmark results will be inaccurate on USRP1 due to insufficient "
                      "features.\n"
                   << std::endl;
-    }
-    // "use_dpdk" must be specified in the device args for proper performance during streaming with dpdk
-    if (args.find("use_dpdk") != std::string::npos) {
-        set_realtime_priority = true;
     }
     start_time_type start_time(std::chrono::steady_clock::now());
     std::cout << boost::format("[%s] Creating the usrp device with: %s...") % NOW() % args
@@ -525,8 +535,14 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         stream_args.args                 = uhd::device_addr_t(rx_stream_args);
         uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
         auto rx_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
-            benchmark_rx_rate(
-                usrp, rx_cpu, rx_stream, random_nsamps, start_time, burst_timer_elapsed);
+            benchmark_rx_rate(usrp,
+                rx_cpu,
+                rx_stream,
+                random_nsamps,
+                start_time,
+                burst_timer_elapsed,
+                elevate_priority,
+                rx_delay);
         });
         uhd::set_thread_name(rx_thread, "bmark_rx_stream");
     }
@@ -552,6 +568,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
                 burst_timer_elapsed,
                 start_time,
                 spp,
+                elevate_priority,
+                tx_delay,
                 random_nsamps);
         });
         uhd::set_thread_name(tx_thread, "bmark_tx_stream");
@@ -561,11 +579,13 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         uhd::set_thread_name(tx_async_thread, "bmark_tx_helper");
     }
 
-    // sleep for the required duration
-    if (rx_channel_nums.size() > 1 or tx_channel_nums.size() > 1) {
-        // If we have multiple channels, we need to account for the INIT_DELAY in order to
-        // send/receive the proper number of samples.
-        duration += INIT_DELAY;
+    // sleep for the required duration (add any initial delay)
+    if (vm.count("rx_rate") and vm.count("tx_rate")) {
+        duration += std::max(rx_delay, tx_delay);
+    } else if (vm.count("rx_rate")) {
+        duration += rx_delay;
+    } else {
+        duration += tx_delay;
     }
     const int64_t secs = int64_t(duration);
     const int64_t usecs = int64_t((duration - secs) * 1e6);
