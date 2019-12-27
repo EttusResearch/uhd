@@ -710,7 +710,7 @@ FUNCVERIF_SETTINGS = {
             {'--rx_rate': 200e6,  'master_clock_rate': '200e6', '--channels': '0,1'},
             {'--rx_rate': 184.32e6,  'master_clock_rate': '184.32e6', '--channels': '0,1'},
         ],
-	}
+	},
     'e320_1gige': {
         '--args': "type=e3xx,addr={addr},master_clock_rate={master_clock_rate},{args}",
         '--seq-threshold': 0,
