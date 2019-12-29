@@ -130,19 +130,19 @@ BOOST_AUTO_TEST_CASE(test_sid_t_from_str)
     BOOST_CHECK_EQUAL(sid.get_dst_addr(), (uint32_t)3);
     BOOST_CHECK_EQUAL(sid.get_dst_endpoint(), (uint32_t)4);
 
-    sid = "01:02>03:10";
+    sid = std::string("01:02>03:10");
     BOOST_CHECK_EQUAL(sid.get_src_addr(), (uint32_t)1);
     BOOST_CHECK_EQUAL(sid.get_src_endpoint(), (uint32_t)2);
     BOOST_CHECK_EQUAL(sid.get_dst_addr(), (uint32_t)3);
     BOOST_CHECK_EQUAL(sid.get_dst_endpoint(), (uint32_t)16);
 
-    sid = "01:06/03:10";
+    sid = std::string("01:06/03:10");
     BOOST_CHECK_EQUAL(sid.get_src_addr(), (uint32_t)1);
     BOOST_CHECK_EQUAL(sid.get_src_endpoint(), (uint32_t)6);
     BOOST_CHECK_EQUAL(sid.get_dst_addr(), (uint32_t)3);
     BOOST_CHECK_EQUAL(sid.get_dst_endpoint(), (uint32_t)16);
 
-    sid = "01:02:04:10";
+    sid = std::string("01:02:04:10");
     BOOST_CHECK_EQUAL(sid.get_src_addr(), (uint32_t)1);
     BOOST_CHECK_EQUAL(sid.get_src_endpoint(), (uint32_t)2);
     BOOST_CHECK_EQUAL(sid.get_dst_addr(), (uint32_t)4);

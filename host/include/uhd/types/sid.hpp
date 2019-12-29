@@ -191,25 +191,27 @@ public:
     void reverse();
 
     // Overloaded operators
-
+#if 0
     sid_t operator=(const uint32_t new_sid)
     {
         set_sid(new_sid);
         return *this;
     }
-
+#endif
+#if 0
     sid_t operator=(const sid_t& sid)
     {
         set_sid(sid.get_sid());
         return *this;
     }
-
+#endif
+#if 0
     sid_t operator=(const std::string& sid_str)
     {
         set_from_str(sid_str);
         return *this;
     }
-
+#endif
     bool operator==(const sid_t& sid) const
     {
         return (not _set and not sid.is_set()) or (_sid == sid.get_sid());
