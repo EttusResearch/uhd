@@ -119,11 +119,11 @@ static inline int uhd_dpdk_port_init(struct uhd_dpdk_port *port,
     uint64_t rx_offloads = DEV_RX_OFFLOAD_IPV4_CKSUM;
     uint64_t tx_offloads = DEV_TX_OFFLOAD_IPV4_CKSUM;
     if ((dev_info.rx_offload_capa & rx_offloads) != rx_offloads) {
-        RTE_LOG(WARNING, EAL, "%d: Only supports RX offloads 0x%0llx\n", port->id, dev_info.rx_offload_capa);
+        RTE_LOG(WARNING, EAL, "%d: Only supports RX offloads 0x%0lx\n", port->id, dev_info.rx_offload_capa);
         rte_exit(EXIT_FAILURE, "Missing required RX offloads\n");
     }
     if ((dev_info.tx_offload_capa & tx_offloads) != tx_offloads) {
-        RTE_LOG(WARNING, EAL, "%d: Only supports TX offloads 0x%0llx\n", port->id, dev_info.tx_offload_capa);
+        RTE_LOG(WARNING, EAL, "%d: Only supports TX offloads 0x%0lx\n", port->id, dev_info.tx_offload_capa);
         rte_exit(EXIT_FAILURE, "Missing required TX offloads\n");
     }
 

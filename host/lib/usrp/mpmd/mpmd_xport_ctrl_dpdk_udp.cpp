@@ -240,7 +240,7 @@ mpmd_xport_ctrl_dpdk_udp::make_transport(
     }
     auto recv = transport::dpdk_zero_copy::make(
         _ctx,
-        (const unsigned int) dpdk_port_id,
+        (unsigned int) dpdk_port_id,
         xport_info["ipv4"],
         xport_info["port"],
         "0",

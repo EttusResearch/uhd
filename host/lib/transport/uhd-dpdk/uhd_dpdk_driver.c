@@ -297,7 +297,7 @@ static inline int _uhd_dpdk_driver_cleanup(struct uhd_dpdk_thread *t)
     /* Close sockets upon request, but reply to other service requests with
      * errors
      */
-    struct uhd_dpdk_config_req *sock_req;
+    struct uhd_dpdk_config_req *sock_req = NULL;
     if (rte_ring_dequeue(t->sock_req_ring, (void **) &sock_req)) {
         switch (sock_req->req_type) {
         case UHD_DPDK_SOCK_CLOSE:
@@ -581,7 +581,7 @@ int _uhd_dpdk_driver_main(void *arg)
     pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t),
                            &t->cpu_affinity);
     char name[16];
-    snprintf(name, sizeof(name), "dpdk-io_%u", lcore_id);
+    snprintf(name, sizeof(name), "dpdk-io_%3hhu", lcore_id);
     pthread_setname_np(pthread_self(), name);
 
     RTE_LOG(INFO, USER2, "Thread %d started\n", lcore_id);

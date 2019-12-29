@@ -435,7 +435,7 @@ private:
             }
 
             // extract packet info
-            memset(&info.ifpi, 0, sizeof(vrt::if_packet_info_t));
+            memset((void *) &info.ifpi, 0, sizeof(vrt::if_packet_info_t));
             info.ifpi.num_packet_words32 = num_packet_words32 - _header_offset_words32;
             info.vrt_hdr = buff->cast<const uint32_t*>() + _header_offset_words32;
             _vrt_unpacker(info.vrt_hdr, info.ifpi);

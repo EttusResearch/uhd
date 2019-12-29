@@ -103,7 +103,8 @@ struct uhd_dpdk_socket* uhd_dpdk_sock_open(unsigned int portid,
         goto sock_open_end;
     }
 
-    struct uhd_dpdk_socket *s = (struct uhd_dpdk_socket *) rte_zmalloc(NULL, sizeof(*s), 0);
+    struct uhd_dpdk_socket * s;
+    s = (struct uhd_dpdk_socket *) rte_zmalloc(NULL, sizeof(struct uhd_dpdk_socket), 0);
     if (!s) {
         goto sock_open_end;
     }

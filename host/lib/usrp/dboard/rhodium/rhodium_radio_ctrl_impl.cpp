@@ -289,10 +289,8 @@ double rhodium_radio_ctrl_impl::set_rx_frequency(
     return coerced_freq;
 }
 
-double rhodium_radio_ctrl_impl::set_rx_bandwidth(
-        const double bandwidth,
-        const size_t chan
-) {
+double rhodium_radio_ctrl_impl::set_rx_bandwidth(const double bandwidth __attribute__((unused)),
+						 const size_t chan) {
     UHD_LOG_TRACE(unique_id(), "set_rx_bandwidth(bandwidth=" << bandwidth << ", chan=" << chan << ")");
     UHD_ASSERT_THROW(chan == 0);
 
@@ -300,9 +298,8 @@ double rhodium_radio_ctrl_impl::set_rx_bandwidth(
 }
 
 double rhodium_radio_ctrl_impl::set_tx_bandwidth(
-        const double bandwidth,
-        const size_t chan
-) {
+						 const double bandwidth __attribute__((unused)),
+						 const size_t chan) {
     UHD_LOG_TRACE(unique_id(), "set_tx_bandwidth(bandwidth=" << bandwidth << ", chan=" << chan << ")");
     UHD_ASSERT_THROW(chan == 0);
 
@@ -652,7 +649,7 @@ void rhodium_radio_ctrl_impl::set_rpc_client(
                 if (!std::isnormal(identify_duration)) {
                     identify_duration = DEFAULT_IDENTIFY_DURATION;
                 }
-            } catch (std::invalid_argument) {
+            } catch (std::invalid_argument & ia) {
                 identify_duration = DEFAULT_IDENTIFY_DURATION;
             }
 

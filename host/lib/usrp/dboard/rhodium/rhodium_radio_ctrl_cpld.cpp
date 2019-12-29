@@ -14,6 +14,9 @@ using namespace uhd::usrp;
 using namespace uhd::rfnoc;
 
 namespace {
+  // quiet warning from gcc versions (e.g. 9+) about unused function defs.
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"  
     const char* rx_band_to_log(rhodium_radio_ctrl_impl::rx_band rx_band)
     {
         switch (rx_band)
@@ -67,6 +70,7 @@ namespace {
             UHD_THROW_INVALID_CODE_PATH();
         }
     }
+#pragma GCC diagnostic pop  
 }
 
 void rhodium_radio_ctrl_impl::_update_rx_freq_switches(

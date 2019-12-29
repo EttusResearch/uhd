@@ -1475,7 +1475,7 @@ uhd::both_xports_t x300_impl::make_transport(const uhd::sid_t& address,
         }
         auto recv = transport::dpdk_zero_copy::make(
             dpdk_ctx,
-            (const unsigned int) dpdk_port_id,
+            (unsigned int) dpdk_port_id,
             conn.addr,
             BOOST_STRINGIZE(X300_VITA_UDP_PORT),
             "0",
