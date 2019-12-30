@@ -370,7 +370,7 @@ UHD_INLINE void set_optimal_rx_gain(uhd::usrp::multi_usrp::sptr usrp,
 }
 
 
-/*! Returns true if any error on the TX stream has occured
+/*! Returns true if any error on the TX stream has occurred
  */
 bool has_tx_error(uhd::tx_streamer::sptr tx_stream)
 {
