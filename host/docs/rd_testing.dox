@@ -344,7 +344,9 @@ tbd
 | FPGAFUNCVERIF-N310-XG-v1  | USRP N310     | None        | \ref rdtesting_fpgafuncverif_manual | \ref rdtesting_fpgafuncverif_auto |
 | FPGAFUNCVERIF-N300-HG-v1  | USRP N300     | None        | \ref rdtesting_fpgafuncverif_manual | \ref rdtesting_fpgafuncverif_auto |
 | FPGAFUNCVERIF-N300-XG-v1  | USRP N300     | None        | \ref rdtesting_fpgafuncverif_manual | \ref rdtesting_fpgafuncverif_auto |
+| FPGAFUNCVERIF-E320-1G-v1  | USRP E320     | None        | \ref rdtesting_fpgafuncverif_manual | \ref rdtesting_fpgafuncverif_auto |
 | FPGAFUNCVERIF-E320-XG-v1  | USRP E320     | None        | \ref rdtesting_fpgafuncverif_manual | \ref rdtesting_fpgafuncverif_auto |
+| FPGAFUNCVERIF-E320-device-v1  | USRP E320     | None        | \ref rdtesting_fpgafuncverif_manual | \ref rdtesting_fpgafuncverif_auto |
 
 The FPGA functional verification tests exercise the Digital Downconverter (DDC),
 Digital Upconverter (DUC), and Radio Core RFNoC blocks.
@@ -433,7 +435,9 @@ rates and channel configurations without any data flow issues.
 
 Note: On TX tests, initial Us within the first 5 seconds can be ignored and do not fail the test
 
-#### USRP E31x (SG3 Required, SG1 Optional)
+#### USRP E3xx Device (Embedded Mode)
+
+- E320 and E310 SG3 are required tests, E310 SG1 is optional
 
 | Channels      | Master Clock Rate       | Sample Rate | Duration | Notes              |
 |---------------|-------------------------|-------------|----------|--------------------|
@@ -446,43 +450,43 @@ Note: On TX tests, initial Us within the first 5 seconds can be ignored and do n
 | 2x TX         | 10e6                    | 1e6         | 60       |                    |
 | 2x TX         | 30.72e6                 | 1.92e6      | 60       |                    |
 | 1x RX & 1x TX | 10e6                    | 1e6         | 60       | Test both channels |
-| 1x RX & 1x TX | 61.44e6                 | 3.84e6      | 60       | Use channel 1      |
+| 1x RX & 1x TX | 30.72e6                 | 3.84e6      | 60       | Use channel 1      |
 | 2x RX & 2x TX | 10e6                    | 1e6         | 60       |                    |
 | 2x RX & 2x TX | 30.72e6                 | 1.92e6      | 60       |                    |
-| 1x RX & 1x TX | 61.44e6                 | 3.84e6      | 600      | Use channel 0      |
+| 1x RX & 1x TX | 30.72e6                 | 3.84e6      | 600      | Use channel 0      |
 | 2x RX & 2x TX | 30.72e6                 | 1.92e6      | 600      |                    |
 
 #### USRP E320: 1 GigE Interface
 
 | Channels      | Master Clock Rate       | Sample Rate | Duration | Notes              |
 |---------------|-------------------------|-------------|----------|--------------------|
-| 1x RX         | 10e6                    | 1e6         | 60       | Test both channels |
-| 1x RX         | 61.44e6                 | 1.024e6     | 60       | Test both channels |
-| 1x TX         | 10e6                    | 1e6         | 60       | Test both channels |
-| 1x TX         | 61.44e6                 | 1.024e6     | 60       | Test both channels |
-| 2x RX         | 10e6                    | 1e6         | 60       |                    |
-| 2x RX         | 30.72e6                 | 1.024e6     | 60       |                    |
-| 2x TX         | 10e6                    | 1e6         | 60       |                    |
-| 2x TX         | 30.72e6                 | 1.024e6     | 60       |                    |
-| 1x RX & 1x TX | 10e6                    | 1e6         | 60       | Test both channels |
-| 1x RX & 1x TX | 61.44e6                 | 1.024e6     | 60       | Use channel 1      |
-| 2x RX & 2x TX | 10e6                    | 1e6         | 60       |                    |
-| 2x RX & 2x TX | 30.72e6                 | 1.024e6     | 60       |                    |
-| 1x RX & 1x TX | 61.44e6                 | 1.024e6     | 600      | Use channel 0      |
-| 2x RX & 2x TX | 30.72e6                 | 1.024e6     | 600      |                    |
+| 1x RX         | 15.36e6                 | 15.36e6     | 60       | Test both channels |
+| 1x RX         | 61.44e6                 | 3.84e6      | 60       | Test both channels |
+| 1x TX         | 15.36e6                 | 15.36e6     | 60       | Test both channels |
+| 1x TX         | 61.44e6                 | 3.84e6      | 60       | Test both channels |
+| 2x RX         | 61.44e6                 | 7.68e6      | 60       |                    |
+| 2x RX         | 30.72e6                 | 1.92e6      | 60       |                    |
+| 2x TX         | 61.44e6                 | 7.68e6      | 60       |                    |
+| 2x TX         | 30.72e6                 | 1.92e6      | 60       |                    |
+| 1x RX & 1x TX | 30.72e6                 | 7.68e6      | 60       | Test both channels |
+| 1x RX & 1x TX | 61.44e6                 | 1.92e6      | 60       | Use channel 1      |
+| 2x RX & 2x TX | 30.72e6                 | 3.84e6      | 60       |                    |
+| 2x RX & 2x TX | 30.72e6                 | 1.92e6      | 60       |                    |
+| 1x RX & 1x TX | 30.72e6                 | 3.84e6      | 600      | Use channel 0      |
+| 2x RX & 2x TX | 30.72e6                 | 1.92e6      | 600      |                    |
 
 #### USRP E320: 10 GigE Interface
 
 | Channels      | Master Clock Rate       | Sample Rate          | Duration | Notes              |
 |---------------|-------------------------|----------------------|----------|--------------------|
-| 1x RX         | 61.44e6                 | 1.024e6, 61.44e6     | 60       | Test both channels |
-| 1x TX         | 61.44e6                 | 1.024e6, 61.44e6     | 60       | Test both channels |
-| 2x RX         | 30.72e6                 | 1.024e6, 30.72e6     | 60       |                    |
-| 2x TX         | 30.72e6                 | 1.024e6, 30.72e6     | 60       |                    |
-| 1x RX & 1x TX | 61.44e6                 | 1.024e6, 30.72e6     | 60       | Test both channels |
-| 2x RX & 2x TX | 30.72e6                 | 1.024e6, 30.72e6     | 60       |                    |
-| 1x RX & 1x TX | 61.44e6                 | 1e6, 30.72e6         | 600      | Use channel 0      |
-| 2x RX & 2x TX | 30.72e6                 | 1e6, 30.72e6         | 600      |                    |
+| 1x RX         | 61.44e6                 | 1.92e6, 61.44e6      | 60       | Test both channels |
+| 1x TX         | 61.44e6                 | 1.92e6, 61.44e6      | 60       | Test both channels |
+| 2x RX         | 30.72e6                 | 1.92e6, 30.72e6      | 60       |                    |
+| 2x TX         | 30.72e6                 | 1.92e6, 30.72e6      | 60       |                    |
+| 1x RX & 1x TX | 61.44e6                 | 1.92e6, 30.72e6      | 60       | Test both channels |
+| 2x RX & 2x TX | 30.72e6                 | 1.92e6, 30.72e6      | 60       |                    |
+| 1x RX & 1x TX | 61.44e6                 | 1.92e6, 30.72e6      | 600      | Use channel 0      |
+| 2x RX & 2x TX | 30.72e6                 | 1.92e6, 30.72e6      | 600      |                    |
 
 #### USRP N300/N310: 1 GigE Interface
 
@@ -713,6 +717,14 @@ on either N320 OR N321.
 
          $ usrp_fpga_funcverif n320wx -a 192.168.20.2 -p /path/to/examples
 
+### E310
+The E310 tests need to be run on the device in the embedded mode.
+
+#### Embedded mode
+- Login into the device.
+- The following command must pass:
+
+         $ usrp_fpga_funcverif e3xxdev -a 127.0.0.1 -p /path/to/examples
 
 ### E320
 The E320 tests depend on the FPGA image to be tested.
@@ -729,6 +741,11 @@ The E320 tests depend on the FPGA image to be tested.
 
          $ usrp_fpga_funcverif e320xg -a 192.168.10.2 -p /path/to/examples
 
+#### Embedded mode
+- Login into the device.
+- The following command must pass:
+
+         $ usrp_fpga_funcverif e3xxdev -a 127.0.0.1 -p /path/to/examples
 
 \section rdtesting_phasealignment Phase alignment tests
 

@@ -711,7 +711,7 @@ FUNCVERIF_SETTINGS = {
             {'--rx_rate': 184.32e6,  'master_clock_rate': '184.32e6', '--channels': '0,1'},
         ],
     },
-    'e320_1gige': {
+    'e3xx_device': {
         '--args': "type=e3xx,addr={addr},master_clock_rate={master_clock_rate},{args}",
         '--seq-threshold': 0,
         '--drop-threshold': 0,
@@ -724,28 +724,65 @@ FUNCVERIF_SETTINGS = {
             {'--rx_rate': 1e6, 'master_clock_rate': '10e6', '--channels': 0,},
             {'--rx_rate': 1e6, 'master_clock_rate': '10e6', '--channels': 1,},
 
-            {'--rx_rate': 1.024e6, 'master_clock_rate': '61.44e6', '--channels': 0,},
-            {'--rx_rate': 1.024e6, 'master_clock_rate': '61.44e6', '--channels': 1,},
+            {'--rx_rate': 3.84e6, 'master_clock_rate': '61.44e6', '--channels': 0,},
+            {'--rx_rate': 3.84e6, 'master_clock_rate': '61.44e6', '--channels': 1,},
 
             {'--tx_rate': 1e6, 'master_clock_rate': '10e6', '--channels': 0,},
             {'--tx_rate': 1e6, 'master_clock_rate': '10e6', '--channels': 1,},
 
-            {'--tx_rate': 1.024e6, 'master_clock_rate': '61.44e6', '--channels': 0,},
-            {'--tx_rate': 1.024e6, 'master_clock_rate': '61.44e6', '--channels': 1,},
+            {'--tx_rate': 3.84e6, 'master_clock_rate': '61.44e6', '--channels': 0,},
+            {'--tx_rate': 3.84e6, 'master_clock_rate': '61.44e6', '--channels': 1,},
 
             {'--rx_rate': 1e6,   'master_clock_rate': '10e6',    '--channels': '0,1',},
-            {'--rx_rate': 1.024e6, 'master_clock_rate': '30.72e6', '--channels': '0,1',},
+            {'--rx_rate': 1.92e6, 'master_clock_rate': '30.72e6', '--channels': '0,1',},
 
             {'--tx_rate': 1e6,   'master_clock_rate': '10e6',    '--channels': '0,1',},
-            {'--tx_rate': 1.024e6, 'master_clock_rate': '30.72e6', '--channels': '0,1',},
+            {'--tx_rate': 1.92e6, 'master_clock_rate': '30.72e6', '--channels': '0,1',},
 
             {'--rx_rate': 1e6,   '--tx_rate': 1e6,   'master_clock_rate': '10e6',    '--channels': '0',},
             {'--rx_rate': 1e6,   '--tx_rate': 1e6,   'master_clock_rate': '10e6',    '--channels': '1',},
-            {'--rx_rate': 1.024e6,   '--tx_rate': 1.024e6,   'master_clock_rate': '30.72e6',    '--channels': '1',},
+            {'--rx_rate': 3.84e6,   '--tx_rate': 3.84e6,   'master_clock_rate': '30.72e6',    '--channels': '1',},
             {'--rx_rate': 1e6,   '--tx_rate': 1e6,   'master_clock_rate': '10e6',    '--channels': '0,1',},
-            {'--rx_rate': 1.024e6, '--tx_rate': 1.024e6, 'master_clock_rate': '30.72e6', '--channels': '0,1',},
-            {'--rx_rate': 1e6,  '--tx_rate': 1e6,  'master_clock_rate': '61.44e6',  '--channels': '0', ' --duration': 600, },
-            {'--rx_rate': 1e6,  '--tx_rate': 1e6,  'master_clock_rate': '30.72e6',  '--channels': '0,1', ' --duration': 600, },
+            {'--rx_rate': 1.92e6, '--tx_rate': 1.92e6, 'master_clock_rate': '30.72e6', '--channels': '0,1',},
+            {'--rx_rate': 3.84e6,  '--tx_rate': 3.84e6,  'master_clock_rate': '30.72e6',  '--channels': '0', ' --duration': 600, },
+            {'--rx_rate': 1.92e6,  '--tx_rate': 1.92e6,  'master_clock_rate': '30.72e6',  '--channels': '0,1', ' --duration': 600, },
+        ],
+    },
+    'e320_1gige': {
+        '--args': "type=e3xx,addr={addr},master_clock_rate={master_clock_rate},{args}",
+        '--seq-threshold': 0,
+        '--drop-threshold': 0,
+        '--underrun-threshold': 100,
+        '--overrun-threshold': 100,
+        '--rx_subdev': 'A:0 A:1',
+        '--tx_subdev': 'A:0 A:1',
+        '--duration': 60,
+        '__tests': [
+            {'--rx_rate': 15.36e6, 'master_clock_rate': '15.36e6', '--channels': 0,},
+            {'--rx_rate': 15.36e6, 'master_clock_rate': '15.36e6', '--channels': 1,},
+
+            {'--rx_rate': 3.84e6, 'master_clock_rate': '61.44e6', '--channels': 0,},
+            {'--rx_rate': 3.84e6, 'master_clock_rate': '61.44e6', '--channels': 1,},
+
+            {'--tx_rate': 15.36e6, 'master_clock_rate': '15.36e6', '--channels': 0,},
+            {'--tx_rate': 15.36e6, 'master_clock_rate': '15.36e6', '--channels': 1,},
+
+            {'--tx_rate': 3.84e6, 'master_clock_rate': '61.44e6', '--channels': 0,},
+            {'--tx_rate': 3.84e6, 'master_clock_rate': '61.44e6', '--channels': 1,},
+
+            {'--rx_rate': 7.68e6,   'master_clock_rate': '61.44e6',    '--channels': '0,1',},
+            {'--rx_rate': 1.92e6, 'master_clock_rate': '30.72e6', '--channels': '0,1',},
+
+            {'--tx_rate': 7.68e6,   'master_clock_rate': '61.44e6',    '--channels': '0,1',},
+            {'--tx_rate': 1.92e6, 'master_clock_rate': '30.72e6', '--channels': '0,1',},
+
+            {'--rx_rate': 7.68e6,   '--tx_rate': 7.68e6,   'master_clock_rate': '30.72e6',    '--channels': '0',},
+            {'--rx_rate': 7.68e6,   '--tx_rate': 7.68e6,   'master_clock_rate': '30.72e6',    '--channels': '1',},
+            {'--rx_rate': 3.84e6,   '--tx_rate': 1.92e6,   'master_clock_rate': '61.44e6',    '--channels': '1',},
+            {'--rx_rate': 3.84e6,   '--tx_rate': 3.84e6,   'master_clock_rate': '30.72e6',    '--channels': '0,1',},
+            {'--rx_rate': 1.92e6, '--tx_rate': 1.92e6, 'master_clock_rate': '30.72e6', '--channels': '0,1',},
+            {'--rx_rate': 3.84e6,  '--tx_rate': 3.84e6,  'master_clock_rate': '30.72e6',  '--channels': '0', ' --duration': 600, },
+            {'--rx_rate': 1.92e6,  '--tx_rate': 1.92e6,  'master_clock_rate': '30.72e6',  '--channels': '0,1', ' --duration': 600, },
         ],
     },
     'e320_10gige': {
@@ -758,36 +795,33 @@ FUNCVERIF_SETTINGS = {
         '--tx_subdev': 'A:0 A:1',
         '--duration': 60,
         '__tests': [
-            {'--rx_rate': 1.024e6, 'master_clock_rate': '61.44e6', '--channels': 0,},
-            {'--rx_rate': 1.024e6, 'master_clock_rate': '61.44e6', '--channels': 1,},
+            {'--rx_rate': 3.84e6, 'master_clock_rate': '30.72e6', '--channels': 0,},
+            {'--rx_rate': 3.84e6, 'master_clock_rate': '30.72e6', '--channels': 1,},
 
             {'--rx_rate': 61.44e6, 'master_clock_rate': '61.44e6', '--channels': 0,},
             {'--rx_rate': 61.44e6, 'master_clock_rate': '61.44e6', '--channels': 1,},
 
-            {'--tx_rate': 1e6, 'master_clock_rate': '10e6', '--channels': 0,},
-            {'--tx_rate': 1e6, 'master_clock_rate': '10e6', '--channels': 1,},
+            {'--tx_rate': 3.84e6, 'master_clock_rate': '30.72e6', '--channels': 0,},
+            {'--tx_rate': 3.84e6, 'master_clock_rate': '30.72e6', '--channels': 1,},
 
             {'--tx_rate': 61.44e6, 'master_clock_rate': '61.44e6', '--channels': 0,},
             {'--tx_rate': 61.44e6, 'master_clock_rate': '61.44e6', '--channels': 1,},
 
-            {'--tx_rate': 1.024e6, 'master_clock_rate': '61.44e6', '--channels': 0,},
-            {'--tx_rate': 1.024e6, 'master_clock_rate': '61.44e6', '--channels': 1,},
-
-            {'--rx_rate': 1.024e6, 'master_clock_rate': '30.72e6', '--channels': '0,1',},
+            {'--rx_rate': 1.92e6, 'master_clock_rate': '30.72e6', '--channels': '0,1',},
             {'--rx_rate': 30.72e6, 'master_clock_rate': '30.72e6', '--channels': '0,1',},
 
-            {'--tx_rate': 1.024e6, 'master_clock_rate': '30.72e6', '--channels': '0,1',},
+            {'--tx_rate': 1.92e6, 'master_clock_rate': '30.72e6', '--channels': '0,1',},
             {'--tx_rate': 30.72e6, 'master_clock_rate': '30.72e6', '--channels': '0,1',},
 
-            {'--rx_rate': 1.024e6,   '--tx_rate': 1.024e6,   'master_clock_rate': '61.44e6',    '--channels': '0',},
+            {'--rx_rate': 1.92e6,   '--tx_rate': 1.92e6,   'master_clock_rate': '61.44e6',    '--channels': '0',},
             {'--rx_rate': 30.72e6,   '--tx_rate': 30.72e6,   'master_clock_rate': '61.44e6',    '--channels': '0',},
-            {'--rx_rate': 1.024e6,   '--tx_rate': 1.024e6,   'master_clock_rate': '61.44e6',    '--channels': '1',},
+            {'--rx_rate': 1.92e6,   '--tx_rate': 1.92e6,   'master_clock_rate': '61.44e6',    '--channels': '1',},
             {'--rx_rate': 30.72e6,   '--tx_rate': 30.72e6,   'master_clock_rate': '61.44e6',    '--channels': '1',},
-            {'--rx_rate': 1.024e6, '--tx_rate': 1.024e6, 'master_clock_rate': '30.72e6', '--channels': '0,1',},
+            {'--rx_rate': 1.92e6, '--tx_rate': 1.92e6, 'master_clock_rate': '30.72e6', '--channels': '0,1',},
             {'--rx_rate': 30.72e6, '--tx_rate': 30.72e6, 'master_clock_rate': '30.72e6', '--channels': '0,1',},
-            {'--rx_rate': 1e6,  '--tx_rate': 1e6,  'master_clock_rate': '61.44e6',  '--channels': '0', ' --duration': 600, },
+            {'--rx_rate': 1.92e6,  '--tx_rate': 1.92e6,  'master_clock_rate': '61.44e6',  '--channels': '0', ' --duration': 600, },
             {'--rx_rate': 30.72e6,  '--tx_rate': 30.72e6,  'master_clock_rate': '61.44e6',  '--channels': '0', ' --duration': 600, },
-            {'--rx_rate': 1e6,  '--tx_rate': 1e6,  'master_clock_rate': '30.72e6',  '--channels': '0,1', ' --duration': 600, },
+            {'--rx_rate': 1.92e6,  '--tx_rate': 1.92e6,  'master_clock_rate': '30.72e6',  '--channels': '0,1', ' --duration': 600, },
             {'--rx_rate': 30.72e6,  '--tx_rate': 30.72e6,  'master_clock_rate': '30.72e6',  '--channels': '0,1', ' --duration': 600, },
         ],
     },
@@ -829,6 +863,8 @@ DEV_TO_TEST = {
     'x3x0_2x_10gige': ['x3x0_2x_10gige'],
     'x3x0_pcie': ['x3x0_pcie'],
     'x3x0_dpdk': ['x3x0_dpdk'],
+    #e310,e320
+    'e3xxdev': ['e3xx_device'],
     #e320
     'e3201g': ['e320_1gige'],
     'e320xg': ['e320_10gige'],
