@@ -53,7 +53,7 @@ endif(DPDK_INCLUDE_VERSION_DIR)
 
 set(DPDK_VERSION "${DPDK_VERSION_MAJOR}.${DPDK_VERSION_MINOR}")
 
-find_package_handle_standard_args(dpdk
+find_package_handle_standard_args(DPDK
     REQUIRED_VARS DPDK_INCLUDE_DIR DPDK_LIBRARIES
     VERSION_VAR DPDK_VERSION
 )
