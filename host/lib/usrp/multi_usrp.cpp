@@ -2730,11 +2730,17 @@ private:
             sum_rate += is_tx ? get_tx_rate(chan) : get_rx_rate(chan);
         }
         sum_rate /= get_num_mboards();
-        if (max_link_rate > 0 and (max_link_rate / bytes_per_sample) < sum_rate) {
+        if (max_link_rate > 0 and
+            (max_link_rate / bytes_per_sample) < sum_rate)
+        {
             UHD_LOGGER_WARNING("MULTI_USRP") << boost::format(
-                "The total sum of rates (%f MSps on %u channels) exceeds the maximum capacity of the connection.\n"
+                "The total sum of rates (%f MSps on %u channels) "
+                "exceeds the maximum capacity of the connection (%f MSps).\n"
                 "This can cause %s."
-            ) % (sum_rate/1e6) % args.channels.size() % (is_tx ? "underruns (U)" : "overflows (O)")  ;
+            ) %
+            (sum_rate/1e6) % args.channels.size() %
+            (is_tx ? "underruns (U)" : "overflows (O)") %
+            (max_link_rate/1e6);
             link_rate_is_ok = false;
         }
 
