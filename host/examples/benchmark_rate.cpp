@@ -89,7 +89,7 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp,
 
     uhd::stream_cmd_t cmd(uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
     cmd.time_spec  = usrp->get_time_now() + uhd::time_spec_t(rx_delay);
-    cmd.stream_now = (buffs.size() == 1);
+    cmd.stream_now = false;
     rx_stream->issue_stream_cmd(cmd);
 
     const float burst_pkt_time =
@@ -215,7 +215,7 @@ void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp,
         buffs.push_back(&buff.front()); // same buffer for each channel
     // Create the metadata, and populate the time spec at the latest possible moment
     uhd::tx_metadata_t md;
-    md.has_time_spec = (buffs.size() != 1);
+    md.has_time_spec = true;
     md.time_spec     = usrp->get_time_now() + uhd::time_spec_t(tx_delay);
 
     if (random_nsamps) {
