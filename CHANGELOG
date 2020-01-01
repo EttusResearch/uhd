@@ -70,6 +70,7 @@ Change Log for Releases
   initialization would hang on failure
 * MPM:  Re-enable RPC server timeouts after components have been updated
 * MPMD: Remove arbitraty frame size defaults for UDP transports
+* MPMD: Fix incorrect link rate warnings
 * FPGA: Use new device-tree overlay syntax, upgraded to Vivado 2018.3,
   broke various paths with critical timing, allow SystemVerilog source
   files, improve viv_modify_bd and viv_modify_tcl_bd, fix resets on 2clk
@@ -82,10 +83,13 @@ Change Log for Releases
 * Examples: Fix benchmark_rate INIT_DELAY, fix memory leak in
   tx_samples_c
 * Examples: Remove thread priority elevation
+* Examples: Add options to benchmark_rate for start delays and priority
 * Tests: Make the Python interpreter for devtests a parameter, add unit
   tests to MPM
 * Utilities: Fix converter benchmark for Py3k and scaling issue
 * Tools: Fix kitchen_sink
+* Tools: Fix Wireshark dissectors to work with WS1, 2, and 3
+* Tools: Various fixes to FPGA functional verification tests
 * Docs: Various fixes, fix Doxygen warnings, fix links to KB, update
   DPDK information about building libraries, add DPDK subsection about
   thread priorities, update testing procedures
@@ -95,7 +99,8 @@ Change Log for Releases
   replace ENABLE_PYTHON3 with a simpler Python detection, clean up
   superfluous modules, improve log statements, bump dependency min
   versions, add MPM unit testing, fix missing BIGOBJ for MSVC, add our
-  own UHDBoost.cmake to better find Boost across versions and systems
+  own UHDBoost.cmake to better find Boost across versions and systems,
+  constrain DPDK check to exact version
 * Formatting: Apply clang-format to all files, break after template<>
 
 ## 003.014.001.000
