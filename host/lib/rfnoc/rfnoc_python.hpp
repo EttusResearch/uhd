@@ -100,6 +100,9 @@ void export_rfnoc(py::module& m)
         .def(py::self < py::self)
         .def(py::self > py::self)
         .def(py::self == std::string());
+    // This will allow functions in Python that take a block_id to also take
+    // a string:
+    py::implicitly_convertible<std::string, block_id_t>();
 
     py::enum_<graph_edge_t::edge_t>(m, "edge")
         .value("static", graph_edge_t::STATIC)
