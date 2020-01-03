@@ -12,6 +12,8 @@ from . import libpyuhd as lib
 BlockID = lib.rfnoc.block_id
 Edge = lib.rfnoc.edge
 GraphEdge = lib.rfnoc.graph_edge
+Source = lib.rfnoc.source
+ResSourceInfo = lib.rfnoc.res_source_info
 RfnocGraph = lib.rfnoc.rfnoc_graph
 MBController = lib.rfnoc.mb_controller
 Timekeeper = lib.rfnoc.timekeeper

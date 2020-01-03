@@ -12,6 +12,7 @@
 #include <uhd/rfnoc/graph_edge.hpp>
 #include <uhd/rfnoc/mb_controller.hpp>
 #include <uhd/rfnoc/noc_block_base.hpp>
+#include <uhd/rfnoc/res_source_info.hpp>
 #include <uhd/rfnoc_graph.hpp>
 #include <uhd/transport/adapter_id.hpp>
 #include <uhd/types/device_addr.hpp>
@@ -131,6 +132,31 @@ void export_rfnoc(py::module& m)
         // Methods
         .def("__str__", &graph_edge_t::to_string)
         .def("to_string", &graph_edge_t::to_string);
+
+    py::enum_<res_source_info::source_t>(m, "source")
+        .value("user", res_source_info::USER)
+        .value("input_edge", res_source_info::INPUT_EDGE)
+        .value("output_edge", res_source_info::OUTPUT_EDGE)
+        .value("framework", res_source_info::FRAMEWORK)
+        .export_values();
+
+    py::class_<res_source_info>(m, "res_source_info")
+        // Constructors
+        .def(py::init<res_source_info::source_t, size_t>(),
+            py::arg("source_type"),
+            py::arg("instance_") = 0)
+
+        // Properties
+        .def_readwrite("type", &res_source_info::type)
+        .def_readwrite("instance", &res_source_info::instance)
+
+        // Methods
+        .def("__str__", &res_source_info::to_string)
+        .def("to_string", &res_source_info::to_string)
+        .def_static("invert_edge", &res_source_info::invert_edge)
+
+        // Operators
+        .def(py::self == py::self);
 
     py::class_<rfnoc_graph, rfnoc_graph::sptr>(m, "rfnoc_graph")
         .def(py::init(&rfnoc_graph::make))
