@@ -200,7 +200,7 @@ class MPMShell(cmd.Cmd):
         from mprpc.exceptions import RPCError
         if requires_token and \
                 (self._claimer is None or self._claimer.get_token() is None):
-            print("Cannot execute `{}' -- no claim available!")
+            print("Cannot execute '{}' -- no claim available!".format(command))
             return
         try:
             if args or requires_token:
