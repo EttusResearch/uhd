@@ -1018,11 +1018,11 @@ public:
             result["rx_rev"]    = str_to_bytes(rx_eeprom.revision);
         }
         if (get_tree()->exists(DB_PATH / "tx_eeprom")) {
-            const auto rx_eeprom =
-                get_tree()->access<dboard_eeprom_t>(DB_PATH / "rx_eeprom").get();
-            result["tx_id"]     = str_to_bytes(rx_eeprom.id.to_pp_string());
-            result["tx_serial"] = str_to_bytes(rx_eeprom.serial);
-            result["tx_rev"]    = str_to_bytes(rx_eeprom.revision);
+            const auto tx_eeprom =
+                get_tree()->access<dboard_eeprom_t>(DB_PATH / "tx_eeprom").get();
+            result["tx_id"]     = str_to_bytes(tx_eeprom.id.to_pp_string());
+            result["tx_serial"] = str_to_bytes(tx_eeprom.serial);
+            result["tx_rev"]    = str_to_bytes(tx_eeprom.revision);
         }
         return result;
     }
