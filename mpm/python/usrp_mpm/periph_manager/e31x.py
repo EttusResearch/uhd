@@ -343,14 +343,15 @@ class e31x(ZynqComponents, PeriphManagerBase):
 
         If no EEPROM is defined, returns empty values.
         """
+        (self._eeprom_head, self.eeprom_rawdata) = {}, b''
         eeprom_path = \
             get_eeprom_paths(self.mboard_eeprom_addr)[self.mboard_eeprom_path_index]
         if not eeprom_path:
             self.log.error("Could not identify EEPROM path for %s!",
                            self.mboard_eeprom_addr)
-            return {}, b''
+            return
         self.log.trace("MB EEPROM: Using path {}".format(eeprom_path))
-        (eeprom_head, eeprom_rawdata) = e31x_legacy_eeprom.read_eeprom(
+        (self._eeprom_head, self.eeprom_rawdata) = e31x_legacy_eeprom.read_eeprom(
             True, # is_motherboard
             eeprom_path,
             self.mboard_eeprom_offset,
@@ -358,10 +359,9 @@ class e31x(ZynqComponents, PeriphManagerBase):
             e31x_legacy_eeprom.MboardEEPROM.eeprom_header_keys,
             self.mboard_eeprom_max_len
         )
-        self.log.trace("Read %d bytes of EEPROM data.", len(eeprom_rawdata))
-        return eeprom_head, eeprom_rawdata
+        self.log.trace("Read %d bytes of EEPROM data.", len(self.eeprom_rawdata))
 
-    def _read_dboard_eeprom(self, dboard_eeprom_path):
+    def _read_dboard_eeprom_data(self, dboard_eeprom_path):
         return e31x_legacy_eeprom.read_eeprom(
             False, # is not motherboard.
             dboard_eeprom_path,
