@@ -1266,6 +1266,23 @@ Slave 6   | 4001_8000 - 4001_bfff | dboard-regs1     | Daughterboard control, sl
 <tr><td rowspan="1">Slave 6                                     <td>4001_8000 - 4001_bfff <td>see above <td>-<td>same as Slave 5<td>
 </table>
 
+\subsection n3xx_mg_eeprom_flags EEPROM flags
+
+EEPROM flags can be set with
+
+    $ eeprom-set-flags 0xFLAGS
+
+where FLAGS is the hex number that you can construct with the following table of bits:
+
+| Bit | Description           |
+|-----|-----------------------|
+| 0   | Auto-boot (1=on)      |
+| 2   | TPM (0=present)       |
+
+For example, to set your device to auto-boot, with TPM, the flag value is 0x1, so
+
+    $ eeprom-set-flags 0x1
+
 \section n3xx_rh N32x-specific Features
 
 \subsection n3xx_rh_panels Front and Rear Panel
@@ -1407,6 +1424,23 @@ QSFP+ lane 0 | Unused | Unused | 10 GbE       | Aurora
 QSFP+ lane 1 | Unused | Unused | 10 GbE       | Aurora
 QSFP+ lane 2 | Unused | Unused | Unused       | Aurora
 QSFP+ lane 3 | Unused | Unused | Unused       | Aurora
+
+\subsection n3xx_rh_eeprom_flags EEPROM flags
+
+EEPROM flags can be set with
+
+    $ eeprom-set-flags 0xFLAGS
+
+where FLAGS is the hex number that you can construct with the following table of bits:
+
+| Bit | Description           |
+|-----|-----------------------|
+| 0   | Auto-boot (1=on)      |
+| 2   | TPM (0=present)       |
+
+For example, to set your device to auto-boot, with TPM, the flag value is 0x1, so
+
+    $ eeprom-set-flags 0x1
 
 */
 // vim:ft=doxygen:
