@@ -12,8 +12,8 @@
 #include <uhd/rfnoc/constants.hpp>
 #include <boost/format.hpp>
 #include <boost/lexical_cast.hpp>
-#include <regex>
 #include <iostream>
+#include <regex>
 
 using namespace uhd::rfnoc;
 
