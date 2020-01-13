@@ -1235,9 +1235,9 @@ where FLAGS is the hex number that you can construct with the following table of
 | 2   | TPM (0=present)       |
 | 3   | Enclosure (1=present) |
 
-For example, to set your device to auto-boot, with TPM, and with fans, the flag value is 0x5, so
+For example, to set your device to auto-boot, with TPM, and with fans, the flag value is 0x3, so
 
-    $ eeprom-set-flags 0x5
+    $ eeprom-set-flags 0x3
 
 \section e3xx_regmap E3XX FPGA Register Map
 
