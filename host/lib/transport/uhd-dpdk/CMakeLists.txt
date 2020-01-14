@@ -26,7 +26,7 @@ if(ENABLE_DPDK)
         ${CMAKE_CURRENT_SOURCE_DIR}/dpdk_io_service.cpp
         PROPERTIES COMPILE_FLAGS "${UHD_DPDK_CFLAGS} -D_GNU_SOURCE"
     )
-    include_directories(${DPDK_INCLUDE_DIR})
+    include_directories(${DPDK_INCLUDE_DIRS})
     LIBUHD_APPEND_LIBS(${DPDK_LIBRARIES})
 endif(ENABLE_DPDK)
 

@@ -129,7 +129,7 @@ if(ENABLE_DPDK)
         ${CMAKE_SOURCE_DIR}/lib/transport/uhd-dpdk/dpdk_io_service.cpp
         ${CMAKE_SOURCE_DIR}/lib/transport/udp_dpdk_link.cpp
         INCLUDE_DIRS
-        ${DPDK_INCLUDE_DIR}
+        ${DPDK_INCLUDE_DIRS}
         EXTRA_LIBS ${DPDK_LIBRARIES}
         NOAUTORUN # Don't register for auto-run, it requires special config
     )
@@ -145,7 +145,7 @@ if(ENABLE_DPDK)
         ${CMAKE_SOURCE_DIR}/lib/transport/uhd-dpdk/dpdk_io_service.cpp
         ${CMAKE_SOURCE_DIR}/lib/transport/udp_dpdk_link.cpp
         INCLUDE_DIRS
-        ${DPDK_INCLUDE_DIR}
+        ${DPDK_INCLUDE_DIRS}
         EXTRA_LIBS ${DPDK_LIBRARIES}
         NOAUTORUN # Don't register for auto-run, it requires special config
     )

@@ -37,6 +37,7 @@ if(ENABLE_X300)
     )
 
     if(ENABLE_DPDK)
+        include_directories(${DPDK_INCLUDE_DIRS})
         add_definitions(-DHAVE_DPDK)
     endif(ENABLE_DPDK)
 endif(ENABLE_X300)

@@ -143,6 +143,7 @@ endif(ENABLE_LIBERIO)
 
 if(ENABLE_DPDK)
     INCLUDE_SUBDIRECTORY(uhd-dpdk)
+    include_directories(${DPDK_INCLUDE_DIRS})
 
     LIBUHD_APPEND_SOURCES(
         ${CMAKE_CURRENT_SOURCE_DIR}/udp_dpdk_link.cpp
