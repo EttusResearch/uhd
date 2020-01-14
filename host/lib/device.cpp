@@ -115,11 +115,13 @@ device::sptr device::make(const device_addr_t& hint, device_filter_t filter, siz
 
     typedef boost::tuple<device_addr_t, make_t> dev_addr_make_t;
     std::vector<dev_addr_make_t> dev_addr_makers;
+    device_addr_t hint_with_prefs = prefs::get_usrp_args(hint);
+    UHD_LOGGER_DEBUG("UHD") << "Looking for device with hint: " << hint_with_prefs.to_string();
 
     for (const dev_fcn_reg_t& fcn : get_dev_fcn_regs()) {
         try {
             if (filter == ANY or fcn.get<2>() == filter) {
-                for (device_addr_t dev_addr : fcn.get<0>()(hint)) {
+                for (device_addr_t dev_addr : fcn.get<0>()(hint_with_prefs)) {
                     // append the discovered address and its factory function
                     dev_addr_makers.push_back(dev_addr_make_t(dev_addr, fcn.get<1>()));
                 }
