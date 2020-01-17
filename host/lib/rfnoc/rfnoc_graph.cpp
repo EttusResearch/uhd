@@ -908,7 +908,26 @@ namespace uhd { namespace rfnoc { namespace detail {
 rfnoc_graph::sptr make_rfnoc_graph(
     detail::rfnoc_device::sptr dev, const uhd::device_addr_t& device_addr)
 {
-    return std::make_shared<rfnoc_graph_impl>(dev, device_addr);
+    static std::mutex _map_mutex;
+    static std::map<std::weak_ptr<rfnoc_device>,
+        std::weak_ptr<rfnoc_graph>,
+        std::owner_less<std::weak_ptr<rfnoc_device>>>
+        dev_to_graph;
+    rfnoc_graph::sptr graph;
+
+    // Check if a graph was already created for this device
+    std::lock_guard<std::mutex> lock(_map_mutex);
+    if (dev_to_graph.count(dev) and not dev_to_graph[dev].expired()) {
+        graph = dev_to_graph[dev].lock();
+        if (graph != nullptr) {
+            return graph;
+        }
+    }
+
+    // Create a new graph
+    graph             = std::make_shared<rfnoc_graph_impl>(dev, device_addr);
+    dev_to_graph[dev] = graph;
+    return graph;
 }
 
 }}} /* namespace uhd::rfnoc::detail */
