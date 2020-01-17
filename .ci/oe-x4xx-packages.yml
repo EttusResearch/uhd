@@ -1,0 +1,175 @@
+#
+# Copyright 2021 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+# Description:
+#
+# Automated x4xx openembedded build on Azure DevOps
+#
+# This pipeline builds the following openembedded targets:
+# - UHD
+# - UHD FPGA images
+# - MPMD
+#
+# It also runs UHD unit tests and publishes their results.
+
+trigger:
+  branches:
+    include:
+    - master
+  paths:
+    include:
+    - .ci
+    - host
+    - mpm
+    - images/manifest.txt
+
+pr:
+  branches:
+    include:
+    - master
+  paths:
+    include:
+    - .ci
+    - host
+    - mpm
+    - images/manifest.txt
+
+variables:
+  SITECONF_FILE: '$(Agent.WorkFolder)/site.conf'
+  MANIFEST_URL: 'git@github.com:EttusResearch/oe-manifest-dev.git'
+  MANIFEST_BRANCH: 'zeus-dev'
+  MANIFEST_FILE: 'head-titanium-dev.xml'
+  IMAGE_VERSION_SUFFIX: '-$(Build.BuildNumber)'
+  MENDER_ARTIFACT_NAME: '$(Build.BuildNumber)'
+
+jobs:
+- job: 'Build_OE_packages'
+  timeoutInMinutes: 60
+  cancelTimeoutInMinutes: 10
+  strategy:
+    matrix: {'x4xx-rev2': {}}
+
+  pool:
+    name: de-dre-lab
+    demands:
+    - openembedded
+    - Agent.Name -equals oss-build3
+
+  steps:
+
+  - script: env
+    displayName: 'Print environment'
+
+  - script: ssh -T git@github.com || true
+    displayName: 'Test github authentication'
+
+  - script: |
+      cd $AGENT_BUILDDIRECTORY
+      repo init -u $MANIFEST_URL -b $MANIFEST_BRANCH -m $MANIFEST_FILE
+      repo forall -c git clean -fd
+      repo forall -c git reset --hard
+      repo sync
+      if [ -x .repo/manifests/apply-patches.sh ]; then
+        .repo/manifests/apply-patches.sh
+      fi
+    displayName: 'Checkout openembedded layers'
+
+  - checkout: self
+    path: uhddev
+    displayName: 'Checkout uhddev'
+
+  - script: |
+      if (echo $SYSTEM_JOBNAME | grep -q -e "-nomender$"); then
+        DEVICE=${SYSTEM_JOBNAME:0:-9}
+        TEMPLATECONF_DIR="meta-ettus/conf/without-mender/$DEVICE"
+      else
+        DEVICE=$SYSTEM_JOBNAME
+        TEMPLATECONF_DIR="meta-ettus/conf/with-mender/$DEVICE"
+      fi
+      BUILD_DIR="$DEVICE/build-$BUILD_BUILDNUMBER" # relative to Agent.BuildDirectory
+      TESTRESULTS_DIR="$BUILD_DIR/testresults" # relative to Agent.BuildDirectory
+      # set variables to be used in the pipeline
+      echo "###vso[task.setVariable variable=Device;isOutput=true]$DEVICE"
+      echo "###vso[task.setVariable variable=TemplateConf_Dir;isOutput=true]$TEMPLATECONF_DIR"
+      echo "###vso[task.setVariable variable=Build_Dir;isOutput=true]$BUILD_DIR"
+      echo "###vso[task.setVariable variable=TESTRESULTS_DIR;isOutput=true]$TESTRESULTS_DIR"
+    name: config
+
+  - script: |
+      cd $AGENT_BUILDDIRECTORY
+      mkdir -p $PWD/$CONFIG_BUILD_DIR
+      export TEMPLATECONF=$PWD/$CONFIG_TEMPLATECONF_DIR
+      if [ -d $CONFIG_BUILD_DIR/conf ]; then
+        rm -rv $CONFIG_BUILD_DIR/conf
+      fi
+      source oe-core/oe-init-build-env $CONFIG_BUILD_DIR
+      echo "INHERIT += \"externalsrc\"" >> conf/local.conf
+      echo "EXTERNALSRC_pn-uhd = \"$AGENT_BUILDDIRECTORY/uhddev/host\"" >> conf/local.conf
+      echo "EXTERNALSRC_pn-mpmd = \"$AGENT_BUILDDIRECTORY/uhddev/mpm\"" >> conf/local.conf
+      echo "RRECOMMENDS_uhd_class-target_remove = \"uhd-fpga-images\"" >> conf/local.conf
+      echo "RDEPENDS_mpmd_remove = \"uhd-fpga-images-firmware\"" >> conf/local.conf
+      if [ -n "$SITECONF_FILE" ]; then
+        cp -v $SITECONF_FILE conf/site.conf
+        DEPLOY_DIR_BASE=$(grep -e "^DEPLOY_DIR_BASE\s*=" conf/site.conf | sed "s|^.*=\s*\"\(\S*\)\"$|\1|")
+        if [ -n "$DEPLOY_DIR_BASE" ]; then
+          DEPLOY_DIR="$DEPLOY_DIR_BASE/${SYSTEM_DEFINITIONNAME}/${CONFIG_BUILD_DIR}"
+          echo "###vso[task.setVariable variable=DEPLOY_DIR]$DEPLOY_DIR"
+          echo "Setting DEPLOY_DIR to $DEPLOY_DIR"
+          echo "DEPLOY_DIR = \"$DEPLOY_DIR\"" >> conf/local.conf
+        fi
+        echo "TESTRESULTS_DIR = \"$(Agent.BuildDirectory)/$(config.TESTRESULTS_DIR)\"" >> conf/local.conf
+      fi
+      for FILE in $TEMPLATECONF/multiconfig/*.sample; do
+        mkdir -p conf/multiconfig
+        cp -v $FILE conf/multiconfig/$(basename $FILE .sample)
+      done
+      for FILE in $(find conf -name "*.conf"); do
+        echo "*** content of file $FILE: ***"
+        cat $FILE
+      done
+    displayName: 'Setup environment'
+
+  - script: |
+      cd $AGENT_BUILDDIRECTORY
+      source oe-core/oe-init-build-env $CONFIG_BUILD_DIR
+      bitbake -p
+    displayName: 'Parse recipes'
+
+  - script: |
+      cd $AGENT_BUILDDIRECTORY
+      source oe-core/oe-init-build-env $CONFIG_BUILD_DIR
+      bitbake uhd:do_package_write_ipk
+    displayName: 'Build UHD'
+
+  - script: |
+      cd $AGENT_BUILDDIRECTORY
+      source oe-core/oe-init-build-env $CONFIG_BUILD_DIR
+      bitbake uhd:do_run_tests
+    displayName: 'Run UHD tests'
+    continueOnError: true
+
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: 'cTest'
+      testResultsFiles: '**/Test.xml'
+      testRunTitle: 'UHD tests'
+      searchFolder: '$(Agent.BuildDirectory)/$(config.TESTRESULTS_DIR)/uhd'
+    displayName: 'Publish UHD tests results'
+    continueOnError: true
+
+  - script: |
+      cd $AGENT_BUILDDIRECTORY
+      source oe-core/oe-init-build-env $CONFIG_BUILD_DIR
+      bitbake mpmd:do_package_write_ipk
+    displayName: 'Build MPM'
+
+  - publish: '$(DEPLOY_DIR)/ipk'
+    artifact: 'IPK files'
+    displayName: 'Publish Artifacts'
+
+  - script: |
+      if [ -d $(DEPLOY_DIR) ]; then mv $(DEPLOY_DIR) $(DEPLOY_DIR)_attempt_$(System.JobAttempt); fi
+    condition: failed()
+    displayName: rename deploy dir if build failed

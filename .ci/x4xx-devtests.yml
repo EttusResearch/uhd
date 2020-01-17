@@ -1,0 +1,76 @@
+#
+# Copyright 2021 Ettus Research, a National Instruments Brand
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+# Description:
+#
+# X410-Specific Pipeline to execute the devtests (equivalent to make test_x4xx)
+# on the DUT.
+
+# no CI triggers
+trigger: none
+
+# no PR triggers
+pr: none
+
+variables:
+  UHDForHostArtifactName: 'qemux86-64-feed'
+
+# pipeline triggers
+resources:
+  pipelines:
+  - pipeline: 'x4xx-uhddev-oe-for-host-artifacts'
+    source: 'x4xx-uhddev-oe-for-host'
+    branch: master
+    trigger:
+      # workaround if no additional branch filter is specified
+      enabled: True
+
+pool:
+  demands:
+  - 'x4xx-devtests'
+
+jobs:
+- job: 'devtests'
+
+  steps:
+  - checkout: none
+
+  # note: 'download' parameter must not use a variable, otherwise artifact is not found
+  - download: 'x4xx-uhddev-oe-for-host-artifacts'
+    artifact: '$(UHDForHostArtifactName)'
+    displayName: 'Download artifact $(UHDForHostArtifactName)'
+
+  - script: |
+      cp x4xx-uhddev-oe-for-host-artifacts/$(UHDForHostArtifactName)/base-feeds.conf opkg.conf
+      echo -e "arch all 1\narch core2-64 6\narch qemux86_64 11" >> opkg.conf
+      rm -rf rootfs
+      opkg -f opkg.conf -o rootfs update && opkg -f opkg.conf -o rootfs install uhd uhd-examples uhd-tests
+    workingDirectory: $(Agent.BuildDirectory)
+    displayName: 'Install UHD'
+
+  - script: |
+      PATH="$PATH:/usr/lib/uhd/examples"
+      ARGS="--args=type=x4xx --devtest-pattern=x4x0 --xml"
+      linux-user-chroot $PWD/rootfs /usr/bin/python3 /usr/lib/uhd/tests/devtest/run_testsuite.py --src-dir=/usr/lib/uhd/tests/devtest $ARGS
+    workingDirectory: $(Agent.BuildDirectory)
+    displayName: 'Run x4xx-devtests'
+    continueOnError: true
+
+  - task: PublishTestResults@2
+    inputs:
+      testResultsFormat: 'JUnit'
+      testResultsFiles: '**/TEST-*.xml'
+      testRunTitle: 'Devtests'
+      searchFolder: '$(Agent.BuildDirectory)/rootfs'
+
+  - script: |
+      rm -v -f a/*
+      cp -v rootfs/*.log a/
+    displayName: 'Prepare Logfile Artifact'
+    workingDirectory: $(Agent.BuildDirectory)
+
+  - publish: '$(Agent.BuildDirectory)/a'
+    artifact: 'Logfiles'
+    displayName: 'Publish Logfiles Artifact'
