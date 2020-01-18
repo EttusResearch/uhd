@@ -610,7 +610,7 @@ inline object::object(const msgpack_object& o)
 inline void operator<< (clmdep_msgpack::object& o, const msgpack_object& v)
 {
     // FIXME beter way?
-    std::memcpy(&o, &v, sizeof(v));
+  std::memcpy((void *) &o, (void *) &v, sizeof(v));
 }
 
 inline object::operator msgpack_object() const

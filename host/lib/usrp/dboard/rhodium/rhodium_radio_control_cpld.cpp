@@ -15,7 +15,12 @@ using namespace uhd::usrp;
 using namespace uhd::rfnoc;
 
 namespace {
-
+  // the following pragmas quiet the G++ "unsed function" warning.
+  // The warning indicates that this code is unused in some compilation
+  // configurations, and thus may be untested. 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-function"
+  
 const char* rx_band_to_log(rhodium_radio_control_impl::rx_band rx_band)
 {
     switch (rx_band) {
@@ -67,6 +72,7 @@ const char* tx_band_to_log(rhodium_radio_control_impl::tx_band tx_band)
             UHD_THROW_INVALID_CODE_PATH();
     }
 }
+#pragma GCC diagnostic pop
 } // namespace
 
 void rhodium_radio_control_impl::_update_rx_freq_switches(const double freq)

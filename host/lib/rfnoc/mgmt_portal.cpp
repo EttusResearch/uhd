@@ -250,6 +250,7 @@ public:
                 "initialize_endpoint(): Cannot reach node with specified address.");
         }
         const node_addr_t& node_addr = _node_addr_map.at(lookup_node);
+	(void) node_addr; // value may be unused if UHD_LOG_TRACE is disabled. 
         // Add/update the entry in the stream endpoint ID map
         _epid_addr_map[epid] = addr;
         UHD_LOG_DEBUG("RFNOC::MGMT",

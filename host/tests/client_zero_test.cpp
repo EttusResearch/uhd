@@ -93,7 +93,7 @@ public:
             last_flush_timeout = data;
             return;
         }
-        if ((addr & SLOT_OFFSET) == 1) {
+        if ((addr & SLOT_OFFSET) != 0) { // was == 1, but this is tautologically false, as SLOT_OFFSET = 512
             UHD_LOG_INFO("MOCK_REG_IFACE",
                 "Set flush/reset bits to flush=" << (data & 0x1) << ",ctrl_rst="
                                                  << ((data >> 1) & 0x1 >> 1)

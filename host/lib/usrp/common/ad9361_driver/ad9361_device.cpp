@@ -1838,7 +1838,7 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
     /* Call into the clock configuration / settings function. This is where
      * all the hard work gets done. */
     double rate = _setup_rates(req_rate);
-
+    (void) rate; // supress unused warning if LOG trace is disabled.
     UHD_LOG_TRACE("AD936X", "[ad9361_device_t::set_clock_rate] rate=" << rate);
 
     /* Transition to the ALERT state and calibrate everything. */

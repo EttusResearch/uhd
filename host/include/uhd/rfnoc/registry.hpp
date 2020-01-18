@@ -66,6 +66,9 @@ public:
      * \param device_id The 16-bit Device-ID for this block
      *        (ANY_DEVICE for device agnostic blocks).
      * \param block_name The name used for the block ID (e.g. "Radio").
+     * \param mb_access 
+     * \param timebase_clock
+     * \param ctrlport_clock
      * \param factory_fn A factory function that returns a reference to the
      *                   block.
      */

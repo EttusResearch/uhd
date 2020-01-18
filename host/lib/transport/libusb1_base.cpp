@@ -21,6 +21,13 @@
 using namespace uhd;
 using namespace uhd::transport;
 
+
+#if LIBUSB_API_VERSION >= 0x1000106
+#  define UHD_USB_SET_DEBUG(ctx,lvl) libusb_set_option(ctx, LIBUSB_OPTION_LOG_LEVEL, lvl)
+#else
+#  define UHD_USB_SET_DEBUG(ctx,lvl) libusb_set_debug(ctx, lvl)
+#endif	
+  
 /***********************************************************************
  * libusb session
  **********************************************************************/
@@ -35,7 +42,7 @@ public:
     libusb_session_impl(void)
     {
         UHD_ASSERT_THROW(libusb_init(&_context) == 0);
-        libusb_set_debug(_context, debug_level);
+	UHD_USB_SET_DEBUG(_context, debug_level);
         task_handler = task::make(
             std::bind(&libusb_session_impl::libusb_event_handler_task, this, _context));
     }
@@ -104,8 +111,9 @@ libusb::session::sptr libusb::session::get_global_session(void)
     const char* level_string = getenv("LIBUSB_DEBUG_LEVEL");
     if (level_string != NULL) {
         const int level = int(level_string[0] - '0'); // easy conversion to integer
-        if (level >= 0 and level <= 3)
-            libusb_set_debug(new_global_session->get_context(), level);
+        if (level >= 0 and level <= 3) {
+	  UHD_USB_SET_DEBUG(new_global_session->get_context(), level);	  
+	}
     }
 
     return new_global_session;

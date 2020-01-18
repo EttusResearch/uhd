@@ -789,6 +789,7 @@ private:
         const size_t num_blocks,
         const size_t first_block_port)
     {
+        (void) mb_idx;
         UHD_LOG_TRACE(LOG_ID,
             std::string("Flushing and resetting blocks on mboard ")
                 + std::to_string(mb_idx));
