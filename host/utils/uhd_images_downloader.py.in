@@ -1,11 +1,37 @@
 #!@RUNTIME_PYTHON_EXECUTABLE@
 #
 # Copyright 2018 Ettus Research, a National Instruments Company
+# Copyright 2020 Ettus Research, a National Instruments Brand
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 """
-Download image files required for USRPs
+Download image files required for USRPs.
+
+Usage: The `uhd_images_downloader` should work, "out of the box", with no command line arguments.
+Assuming your computer has an internet connection to [files.ettus.com], simply run the utility
+every time you update UHD, and the installed images for your devices should always be up to date.
+
+
+Images will be downloaded on a per-target basis. That is, there are image packages for a desired
+device and configuration. Users can specify which image packages they would plan to use. To see a
+list of available targets, run `uhd_images_downloader --list-targets`. The left column of the
+printout will be a list of available image archives. From there, you can construct a regular
+expression which matches to the targets you wish to download. For example, in order to download all
+image packages related to the X300 product line, users may run
+`uhd_images_downloader --types x3.*`.
+
+
+The `uhd_images_downloader` uses a manifest to look-up the URLs of image packages to download.
+Downloaded images are recorded in an inventory file that lives in the images install location.
+This allows the downloader to skip images that were previously downloaded, and haven't changed
+since.
+
+Manifests are built into the downloader, but can also be accessed at uhd/images/manifest.txt.
+
+Inventory files are JSON files called `inventory.json`, by default. It is possible to specify the
+inventory file in command line arguments, but we don't recommend using this functionality unless
+you're really sure you need it.
 """
 from __future__ import print_function
 import argparse
@@ -86,7 +112,8 @@ def parse_args():
     Setup argument parser and parse. Also does some sanity checks and sets some
     global variables we want to use.
     """
-    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+                                     description=__doc__)
     parser.add_argument('-t', '--types', action='append',
                         help="RegEx to select image sets from the manifest file.")
     parser.add_argument('-i', '--install-location',
