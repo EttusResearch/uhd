@@ -209,7 +209,7 @@ void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp,
     if (elevate_priority) {
         uhd::set_thread_priority_safe();
     }
- 
+
     // print pre-test summary
     std::cout << boost::format("[%s] Testing transmit rate %f Msps on %u channels")
                      % NOW() % (usrp->get_tx_rate() / 1e6) % tx_stream->get_num_channels()
@@ -227,12 +227,13 @@ void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp,
     md.has_time_spec = (buffs.size() != 1);
     md.time_spec     = usrp->get_time_now() + uhd::time_spec_t(tx_delay);
 
+    const float timeout = 1.0;
+
     if (random_nsamps) {
         std::srand((unsigned int)time(NULL));
         while (not burst_timer_elapsed) {
             size_t total_num_samps = rand() % max_samps_per_packet;
             size_t num_acc_samps   = 0;
-            const float timeout    = 1;
 
             usrp->set_time_now(uhd::time_spec_t(0.0));
             while (num_acc_samps < total_num_samps) {
@@ -246,7 +247,7 @@ void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp,
     } else {
         while (not burst_timer_elapsed) {
             const size_t num_tx_samps_sent_now =
-                tx_stream->send(buffs, spp, md) * tx_stream->get_num_channels();
+                tx_stream->send(buffs, spp, md, timeout) * tx_stream->get_num_channels();
             num_tx_samps += num_tx_samps_sent_now;
             if (num_tx_samps_sent_now == 0) {
                 num_timeouts_tx++;
