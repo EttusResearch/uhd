@@ -9,12 +9,27 @@ USRP MPM Python Unit testing framework
 
 import unittest
 import sys
+import argparse
 from sys_utils_tests import TestNet
+
+import importlib.util
+if importlib.util.find_spec("xmlrunner"):
+    from xmlrunner import XMLTestRunner
 
 TESTS = {
     '__all__': {TestNet},
     'n3xx': set(),
 }
+
+def parse_args():
+    """Parse arguments when running this as a script"""
+    parser_help = 'Run MPM Python unittests'
+    parser = argparse.ArgumentParser(description=parser_help)
+    parser.add_argument('-x', '--xml', dest='xml', action='store_true', default=False,
+                        help='Generate XML report (only if module xmlrunner is available)')
+    parser.add_argument('device_name', help="the device name for device specific tests",
+                        default='', nargs='?')
+    return parser.parse_args()
 
 def get_test_suite(device_name=''):
     """
@@ -41,23 +56,23 @@ def get_test_suite(device_name=''):
     test_suite = unittest.TestSuite(test_suite_list)
     return test_suite
 
-def run_tests(device_name=''):
+def run_tests(device_name='', use_xmlrunner=False):
     """
     Executes the unit tests specified by the test suite.
     This should be called from CMake.
     """
     test_result = unittest.TestResult()
-    test_runner = unittest.TextTestRunner(verbosity=2)
+    if use_xmlrunner and 'XMLTestRunner' in globals():
+        test_runner = XMLTestRunner(verbosity=2)
+    else:
+        test_runner = unittest.TextTestRunner(verbosity=2)
     test_result = test_runner.run(get_test_suite(device_name))
     return test_result
 
 def main():
-    if len(sys.argv) >= 2:
-        mpm_device_name = sys.argv[1]
-    else:
-        mpm_device_name = ''
+    args = parse_args()
 
-    if not run_tests(mpm_device_name).wasSuccessful():
+    if not run_tests(args.device_name, use_xmlrunner=args.xml).wasSuccessful():
         sys.exit(-1)
 
 if __name__ == "__main__":
