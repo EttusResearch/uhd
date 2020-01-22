@@ -24,9 +24,6 @@ set(_mpm_disabled_components "" CACHE INTERNAL "" FORCE)
 macro(MPM_REGISTER_COMPONENT name var enb deps dis req)
     message(STATUS "")
     message(STATUS "Configuring ${name} support...")
-    foreach(dep ${deps})
-        message(STATUS "  Dependency ${dep} = ${${dep}}")
-    endforeach(dep)
 
     # If user specified option, store here. Note: If the user doesn't specify
     # this option on the cmake command line, both user_enabled and
@@ -44,10 +41,16 @@ macro(MPM_REGISTER_COMPONENT name var enb deps dis req)
 
     # Override default if user set
     if(user_enabled OR user_disabled)
+        message(STATUS "  User forced ${var} = ${${var}}")
         set(option "${${var}}")
     else(user_enabled OR user_disabled)
-        set(option ${req})
+        message(STATUS "  Default value ${var} = ${enb}")
+        set(option ${enb})
     endif()
+
+    foreach(dep ${deps})
+        message(STATUS "  Dependency ${dep} = ${${dep}}")
+    endforeach(dep)
 
     # setup the dependent option for this component
     include(CMakeDependentOption)
@@ -67,13 +70,15 @@ macro(MPM_REGISTER_COMPONENT name var enb deps dis req)
 
     #append the component into one of the lists
     if(${var})
-        message(STATUS "  Enabling ${name} support.")
+        message(STATUS "  Enabling ${name} support (${var} = ${${var}})")
         list(APPEND _mpm_enabled_components ${name})
     else(${var})
-        message(STATUS "  Disabling ${name} support.")
+        message(STATUS "  Disabling ${name} support (${var} = ${${var}})")
         list(APPEND _mpm_disabled_components ${name})
     endif(${var})
-    message(STATUS "  Override with -D${var}=ON/OFF")
+    if(NOT user_enabled AND NOT user_disabled)
+        message(STATUS "  Override with -D${var}=ON/OFF")
+    endif(NOT user_enabled AND NOT user_disabled)
 
     #make components lists into global variables
     set(_mpm_enabled_components ${_uhd_enabled_components} CACHE INTERNAL "" FORCE)
