@@ -18,7 +18,7 @@
 #include <uhdlib/utils/narrow.hpp>
 #include <string>
 #ifdef HAVE_DPDK
-//#    include <uhdlib/transport/dpdk_simple.hpp>
+#    include <uhdlib/transport/dpdk_simple.hpp>
 #    include <uhdlib/transport/udp_dpdk_link.hpp>
 #endif
 
@@ -132,11 +132,16 @@ size_t discover_mtu(const std::string& address,
     const double echo_timeout,
     const bool use_dpdk)
 {
+    //! Function to create a udp_simple::sptr (kernel-based or DPDK-based)
+    using udp_simple_factory_t = std::function<uhd::transport::udp_simple::sptr(
+        const std::string&, const std::string&)>;
+
+    udp_simple_factory_t udp_make_broadcast = udp_simple::make_broadcast;
     if (use_dpdk) {
 #ifdef HAVE_DPDK
-        // FIXME
-        UHD_LOG_WARNING("MPMD", "Using hard-coded MTU of 8000 for DPDK");
-        return 8000;
+        udp_make_broadcast = [](const std::string& addr, const std::string& port) {
+            return dpdk_simple::make_broadcast(addr, port);
+        };
 #else
         UHD_LOG_WARNING("MPMD",
             "DPDK was requested but is not available, falling back to regular UDP");
@@ -152,7 +157,7 @@ size_t discover_mtu(const std::string& address,
     // The return port will probably differ from the discovery port, so we
     // need a "broadcast" UDP connection; using make_connected() would
     // drop packets
-    udp_simple::sptr udp = udp_simple::make_broadcast(address, port);
+    udp_simple::sptr udp = udp_make_broadcast(address, port);
     std::string send_buf(uhd::mpmd::mpmd_impl::MPM_ECHO_CMD);
     send_buf.resize(max_frame_size, '#');
     UHD_ASSERT_THROW(send_buf.size() == max_frame_size);
@@ -202,87 +207,6 @@ size_t discover_mtu(const std::string& address,
     return min_frame_size;
 }
 
-// DPDK version
-//size_t discover_mtu(const std::string& address,
-    //const std::string& port,
-    //size_t min_frame_size,
-    //size_t max_frame_size,
-    //const double echo_timeout = 0.020)
-//{
-    //const auto& ctx                 = uhd::transport::uhd_dpdk_ctx::get();
-    //const size_t echo_prefix_offset = uhd::mpmd::mpmd_impl::MPM_ECHO_CMD.size();
-    //const size_t mtu_hdr_len        = echo_prefix_offset + 10;
-    //const int port_id               = ctx.get_route(address);
-    //UHD_ASSERT_THROW(port_id >= 0);
-    //UHD_ASSERT_THROW(min_frame_size < max_frame_size);
-    //UHD_ASSERT_THROW(min_frame_size % 4 == 0);
-    //UHD_ASSERT_THROW(max_frame_size % 4 == 0);
-    //UHD_ASSERT_THROW(min_frame_size >= echo_prefix_offset + mtu_hdr_len);
-    //using namespace uhd::transport;
-    //uhd::transport::zero_copy_xport_params buff_args;
-    //buff_args.recv_frame_size = max_frame_size;
-    //buff_args.send_frame_size = max_frame_size;
-    //buff_args.num_send_frames = 1;
-    //buff_args.num_recv_frames = 1;
-    //auto dev_addr             = uhd::device_addr_t();
-    //dpdk_zero_copy::sptr sock = dpdk_zero_copy::make(
-        //ctx, (unsigned int)port_id, address, port, "0", buff_args, dev_addr);
-    //std::string send_buf(uhd::mpmd::mpmd_impl::MPM_ECHO_CMD);
-    //send_buf.resize(max_frame_size, '#');
-    //UHD_ASSERT_THROW(send_buf.size() == max_frame_size);
-
-    //// Little helper to check returned packets match the sent ones
-    //auto require_bufs_match = [&send_buf, mtu_hdr_len](
-                                  //const uint8_t* recv_buf, const size_t len) {
-        //if (len < mtu_hdr_len
-            //or std::memcmp((void*)&recv_buf[0], (void*)&send_buf[0], mtu_hdr_len) != 0) {
-            //throw uhd::runtime_error("Unexpected content of MTU "
-                                     //"discovery return packet!");
-        //}
-    //};
-    //UHD_LOG_TRACE("MPMD", "Determining UDP MTU... ");
-    //size_t seq_no = 0;
-    //while (min_frame_size < max_frame_size) {
-        //managed_send_buffer::sptr msbuf = sock->get_send_buff(0);
-        //UHD_ASSERT_THROW(msbuf.get() != nullptr);
-        //max_frame_size = std::min(msbuf->size(), max_frame_size);
-        //// Only test multiples of 4 bytes!
-        //const size_t test_frame_size = (max_frame_size / 2 + min_frame_size / 2 + 3)
-                                       //& ~size_t(3);
-        //// Encode sequence number and current size in the string, makes it
-        //// easy to debug in code or Wireshark. Is also used for identifying
-        //// response packets.
-        //std::sprintf(
-            //&send_buf[echo_prefix_offset], ";%04lu,%04lu", seq_no++, test_frame_size);
-        //// Copy to real buffer
-        //UHD_LOG_TRACE("MPMD", "Testing frame size " << test_frame_size);
-        //auto* tx_buf = msbuf->cast<uint8_t*>();
-        //std::memcpy(tx_buf, &send_buf[0], test_frame_size);
-        //msbuf->commit(test_frame_size);
-        //msbuf.reset();
-
-        //managed_recv_buffer::sptr mrbuf = sock->get_recv_buff(echo_timeout);
-        //if (mrbuf.get() == nullptr || mrbuf->size() == 0) {
-            //// Nothing received, so this is probably too big
-            //max_frame_size = test_frame_size - 4;
-        //} else if (mrbuf->size() >= test_frame_size) {
-            //// Size went through, so bump the minimum
-            //require_bufs_match(mrbuf->cast<uint8_t*>(), mrbuf->size());
-            //min_frame_size = test_frame_size;
-        //} else if (mrbuf->size() < test_frame_size) {
-            //// This is an odd case. Something must have snipped the packet
-            //// on the way back. Still, we'll just back off and try
-            //// something smaller.
-            //UHD_LOG_DEBUG("MPMD", "Unexpected packet truncation during MTU discovery.");
-            //require_bufs_match(mrbuf->cast<uint8_t*>(), mrbuf->size());
-            //max_frame_size = mrbuf->size();
-        //}
-        //mrbuf.reset();
-    //}
-    //UHD_LOG_DEBUG("MPMD", "Path MTU for address " << address << ": " << min_frame_size);
-    //return min_frame_size;
-//}
-
 } // namespace
 
 
@@ -295,10 +219,12 @@ mpmd_link_if_ctrl_udp::mpmd_link_if_ctrl_udp(const uhd::device_addr_t& mb_args,
     , _udp_info(get_udp_info_from_xport_info(xport_info))
     , _mtu(MPMD_10GE_DATA_FRAME_MAX_SIZE)
 {
-    const bool use_dpdk = mb_args.has_key("use_dpdk"); // FIXME use constrained_device_args
+    const bool use_dpdk =
+        mb_args.has_key("use_dpdk"); // FIXME use constrained_device_args
     const std::string mpm_discovery_port = _mb_args.get(
         mpmd_impl::MPM_DISCOVERY_PORT_KEY, std::to_string(mpmd_impl::MPM_DISCOVERY_PORT));
-    auto discover_mtu_for_ip = [mpm_discovery_port, use_dpdk](const std::string& ip_addr) {
+    auto discover_mtu_for_ip = [mpm_discovery_port, use_dpdk](
+                                   const std::string& ip_addr) {
         return discover_mtu(ip_addr,
             mpm_discovery_port,
             IP_PROTOCOL_MIN_MTU_SIZE - IP_PROTOCOL_UDP_PLUS_IP_HEADER,
@@ -347,8 +273,8 @@ uhd::transport::both_links_t mpmd_link_if_ctrl_udp::get_link(const size_t link_i
                                               : (link_rate == MAX_RATE_1GIGE)
                                                     ? MPMD_1GE_DATA_FRAME_MAX_SIZE
                                                     : get_mtu(uhd::RX_DIRECTION);
-    default_link_params.send_buff_size  = get_link_rate(link_idx) * MPMD_BUFFER_DEPTH;
-    default_link_params.recv_buff_size  = get_link_rate(link_idx) * MPMD_BUFFER_DEPTH;
+    default_link_params.send_buff_size = get_link_rate(link_idx) * MPMD_BUFFER_DEPTH;
+    default_link_params.recv_buff_size = get_link_rate(link_idx) * MPMD_BUFFER_DEPTH;
 
     link_params_t link_params = calculate_udp_link_params(link_type,
         get_mtu(uhd::TX_DIRECTION),
@@ -402,4 +328,3 @@ mpmd_link_if_ctrl_udp::get_packet_factory() const
 {
     return _pkt_factory;
 }
-
