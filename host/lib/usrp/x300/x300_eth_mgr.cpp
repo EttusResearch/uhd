@@ -93,14 +93,13 @@ eth_manager::udp_simple_factory_t eth_manager::x300_get_udp_factory(const bool u
 
 device_addrs_t eth_manager::find(const device_addr_t& hint)
 {
-    x300_device_args_t hint_args;
-    hint_args.parse(hint);
+    bool use_dpdk          = hint.has_key("use_dpdk");
+    std::string first_addr = hint.has_key("addr") ? hint["addr"] : "";
 
     udp_simple_factory_t udp_make_broadcast = udp_simple::make_broadcast;
-    udp_simple_factory_t udp_make_connected =
-        x300_get_udp_factory(hint_args.get_use_dpdk());
+    udp_simple_factory_t udp_make_connected = x300_get_udp_factory(use_dpdk);
 #ifdef HAVE_DPDK
-    if (hint_args.get_use_dpdk()) {
+    if (use_dpdk) {
         auto dpdk_ctx = uhd::transport::dpdk::dpdk_ctx::get();
         if (not dpdk_ctx->is_init_done()) {
             dpdk_ctx->init(hint);
@@ -108,8 +107,8 @@ device_addrs_t eth_manager::find(const device_addr_t& hint)
         udp_make_broadcast = dpdk_simple::make_broadcast;
     }
 #endif
-    udp_simple::sptr comm = udp_make_broadcast(
-        hint_args.get_first_addr(), BOOST_STRINGIZE(X300_FW_COMMS_UDP_PORT));
+    udp_simple::sptr comm =
+        udp_make_broadcast(first_addr, BOOST_STRINGIZE(X300_FW_COMMS_UDP_PORT));
 
     // load request struct
     x300_fw_comms_t request = x300_fw_comms_t();
