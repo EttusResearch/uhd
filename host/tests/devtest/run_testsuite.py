@@ -15,6 +15,7 @@ import subprocess
 import argparse
 import logging
 from usrp_probe import get_usrp_list
+import importlib.util
 
 def setup_parser():
     """ Set up argparser """
@@ -27,6 +28,8 @@ def setup_parser():
     parser.add_argument('--build-dir', help='Build dir (where examples/ and utils/ are)')
     parser.add_argument('--build-type', default='Release')
     parser.add_argument('--python-interp', default=sys.executable)
+    parser.add_argument('--xml', '-x', dest='xml', action='store_true', default=False,
+                        help='Generate XML report (using Python module unittest-xml-reporting)')
     return parser
 
 def setup_env(args):
@@ -113,9 +116,18 @@ def main():
         env['_UHD_TEST_PRINT_LEVEL'] = str(logging.WARNING)
         env['_UHD_BUILD_DIR'] = str(args.build_dir)
         env['_UHD_DEVTEST_SRC_DIR'] = str(args.src_dir)
+        if args.xml:
+            if not importlib.util.find_spec("xmlrunner"):
+                print("Error: XML report is requested but Python unittest-xml-reporting (aka. xmlrunner)\n" \
+                      "       is not installed. Typically you can install it with:\n" \
+                      "       pip3 install unittest-xml-reporting")
+                sys.exit(1)
+            test_module = "xmlrunner"
+        else:
+            test_module = "unittest"
         proc = subprocess.Popen(
             [
-                args.python_interp, "-m", "unittest", "discover", "-v",
+                args.python_interp, "-m", test_module, "discover", "-v",
                 "-s", args.src_dir,
                 "-p", devtest_pattern,
             ],
