@@ -400,8 +400,7 @@ private:
             if (log_level_num >= uhd::log::trace and log_level_num <= uhd::log::fatal) {
                 return log_level_num;
             } else {
-                UHD_LOGGER_ERROR("LOG")
-                    << "Failed to set log level to: " << log_level_str;
+                std::cerr << "[LOG] Failed to set log level to: " << log_level_str;
                 return previous_level;
             }
         }
