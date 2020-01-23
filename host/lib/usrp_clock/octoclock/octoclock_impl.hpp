@@ -22,6 +22,11 @@
 
 uhd::device_addrs_t octoclock_find(const uhd::device_addr_t& hint);
 
+//! Create an empty octoclock packet with a random sequence number
+octoclock_packet_t make_octoclock_packet();
+//! Create an empty octoclock packet with a given sequence number
+octoclock_packet_t make_octoclock_packet(const uint32_t sequence);
+
 /*!
  * OctoClock implementation guts
  */

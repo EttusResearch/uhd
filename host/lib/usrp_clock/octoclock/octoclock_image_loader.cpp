@@ -168,7 +168,7 @@ static void octoclock_setup_session(octoclock_session_t& session,
     session.sequence = uint32_t(std::rand());
 
     // Query OctoClock again to get compat number
-    octoclock_packet_t pkt_out;
+    auto pkt_out = make_octoclock_packet();
     const octoclock_packet_t* pkt_in =
         reinterpret_cast<const octoclock_packet_t*>(session.data_in);
     size_t len = 0;
@@ -192,8 +192,7 @@ static void octoclock_reset_into_bootloader(octoclock_session_t& session)
         return;
 
     // Force compat num to device's current, works around old firmware bug
-    octoclock_packet_t pkt_out;
-    pkt_out.sequence  = uhd::htonx<uint32_t>(++session.sequence);
+    auto pkt_out      = make_octoclock_packet(uhd::htonx<uint32_t>(++session.sequence));
     pkt_out.proto_ver = uhd::htonx<uint32_t>(session.starting_firmware_version);
     pkt_out.code      = RESET_CMD;
 
@@ -229,8 +228,7 @@ static void octoclock_burn(octoclock_session_t& session)
     // Make sure we're in the bootloader for this
     octoclock_reset_into_bootloader(session);
 
-    octoclock_packet_t pkt_out;
-    pkt_out.sequence = uhd::htonx<uint32_t>(++session.sequence);
+    auto pkt_out = make_octoclock_packet(uhd::htonx<uint32_t>(++session.sequence));
     const octoclock_packet_t* pkt_in =
         reinterpret_cast<const octoclock_packet_t*>(session.data_in);
 
@@ -284,8 +282,7 @@ static void octoclock_burn(octoclock_session_t& session)
 
 static void octoclock_verify(octoclock_session_t& session)
 {
-    octoclock_packet_t pkt_out;
-    pkt_out.sequence = uhd::htonx<uint32_t>(++session.sequence);
+    auto pkt_out = make_octoclock_packet(uhd::htonx<uint32_t>(++session.sequence));
     const octoclock_packet_t* pkt_in =
         reinterpret_cast<const octoclock_packet_t*>(session.data_in);
     size_t len = 0;
@@ -331,8 +328,7 @@ static void octoclock_verify(octoclock_session_t& session)
 
 static void octoclock_finalize(octoclock_session_t& session)
 {
-    octoclock_packet_t pkt_out;
-    pkt_out.sequence = uhd::htonx<uint32_t>(++session.sequence);
+    auto pkt_out = make_octoclock_packet(uhd::htonx<uint32_t>(++session.sequence));
     const octoclock_packet_t* pkt_in =
         reinterpret_cast<const octoclock_packet_t*>(session.data_in);
     size_t len = 0;

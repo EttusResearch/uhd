@@ -98,12 +98,9 @@ device_addrs_t octoclock_find(const device_addr_t& hint)
         _hint["addr"], BOOST_STRINGIZE(OCTOCLOCK_UDP_CTRL_PORT));
 
     // Send a query packet
-    octoclock_packet_t pkt_out;
-    pkt_out.proto_ver = OCTOCLOCK_FW_COMPAT_NUM;
-    // To avoid replicating sequence numbers between sessions
-    pkt_out.sequence = uint32_t(std::rand());
-    pkt_out.len      = 0;
-    pkt_out.code     = OCTOCLOCK_QUERY_CMD;
+    auto pkt_out = make_octoclock_packet();
+    pkt_out.len  = 0;
+    pkt_out.code = OCTOCLOCK_QUERY_CMD;
     try {
         udp_transport->send(boost::asio::buffer(&pkt_out, sizeof(pkt_out)));
     } catch (const std::exception& ex) {
@@ -176,6 +173,27 @@ device::sptr octoclock_make(const device_addr_t& device_addr)
 UHD_STATIC_BLOCK(register_octoclock_device)
 {
     device::register_device(&octoclock_find, &octoclock_make, device::CLOCK);
+}
+
+/***********************************************************************
+ * Helpers
+ **********************************************************************/
+octoclock_packet_t make_octoclock_packet()
+{
+    octoclock_packet_t new_pkt;
+    memset(&new_pkt, 0, sizeof(octoclock_packet_t));
+    new_pkt.sequence  = uint32_t(std::rand());
+    new_pkt.proto_ver = OCTOCLOCK_FW_COMPAT_NUM;
+    return new_pkt;
+}
+
+octoclock_packet_t make_octoclock_packet(const uint32_t sequence)
+{
+    octoclock_packet_t new_pkt;
+    memset(&new_pkt, 0, sizeof(octoclock_packet_t));
+    new_pkt.sequence  = sequence;
+    new_pkt.proto_ver = OCTOCLOCK_FW_COMPAT_NUM;
+    return new_pkt;
 }
 
 /***********************************************************************
@@ -349,9 +367,7 @@ void octoclock_impl::_set_eeprom(
 
 uint32_t octoclock_impl::_get_fw_version(const std::string& oc)
 {
-    octoclock_packet_t pkt_out;
-    pkt_out.sequence = uhd::htonx<uint32_t>(++_sequence);
-    pkt_out.len      = 0;
+    auto pkt_out = make_octoclock_packet(uhd::htonx<uint32_t>(++_sequence));
     size_t len;
 
     uint8_t octoclock_data[udp_simple::mtu];
@@ -372,10 +388,8 @@ uint32_t octoclock_impl::_get_fw_version(const std::string& oc)
 
 void octoclock_impl::_get_state(const std::string& oc)
 {
-    octoclock_packet_t pkt_out;
-    pkt_out.sequence = uhd::htonx<uint32_t>(++_sequence);
-    pkt_out.len      = 0;
-    size_t len       = 0;
+    auto pkt_out = make_octoclock_packet(uhd::htonx<uint32_t>(++_sequence));
+    size_t len   = 0;
 
     uint8_t octoclock_data[udp_simple::mtu];
     const octoclock_packet_t* pkt_in =

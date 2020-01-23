@@ -7,6 +7,7 @@
 
 #include "octoclock_uart.hpp"
 #include "common.h"
+#include "octoclock_impl.hpp"
 #include <uhd/exception.hpp>
 #include <uhd/utils/byteswap.hpp>
 #include <stdint.h>
@@ -42,9 +43,7 @@ octoclock_uart_iface::octoclock_uart_iface(udp_simple::sptr udp, uint32_t proto_
     size_t len = 0;
 
     // Get pool size from device
-    octoclock_packet_t pkt_out;
-    pkt_out.sequence = uhd::htonx<uint32_t>(_sequence);
-    pkt_out.len      = 0;
+    auto pkt_out = make_octoclock_packet(uhd::htonx<uint32_t>(_sequence));
 
     uint8_t octoclock_data[udp_simple::mtu];
     const octoclock_packet_t* pkt_in =
@@ -63,9 +62,8 @@ void octoclock_uart_iface::write_uart(const std::string& buf)
 {
     size_t len = 0;
 
-    octoclock_packet_t pkt_out;
-    pkt_out.sequence = uhd::htonx<uint32_t>(++_sequence);
-    pkt_out.len      = buf.size();
+    auto pkt_out = make_octoclock_packet(uhd::htonx<uint32_t>(++_sequence));
+    pkt_out.len  = buf.size();
     memcpy(pkt_out.data, buf.c_str(), buf.size());
 
     uint8_t octoclock_data[udp_simple::mtu];
@@ -108,8 +106,7 @@ std::string octoclock_uart_iface::read_uart(double timeout)
 
 void octoclock_uart_iface::_update_cache()
 {
-    octoclock_packet_t pkt_out;
-    pkt_out.len = 0;
+    auto pkt_out = make_octoclock_packet();
     size_t len  = 0;
 
     uint8_t octoclock_data[udp_simple::mtu];
