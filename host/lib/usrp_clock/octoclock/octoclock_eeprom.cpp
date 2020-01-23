@@ -6,6 +6,7 @@
 //
 
 #include "common.h"
+#include "octoclock_impl.hpp"
 #include <uhd/exception.hpp>
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/types/byte_vector.hpp>
@@ -15,7 +16,6 @@
 #include <uhd/utils/byteswap.hpp>
 #include <boost/asio.hpp>
 #include <boost/assign/list_of.hpp>
-#include <iostream>
 
 typedef boost::asio::ip::address_v4 ip_v4;
 
@@ -34,11 +34,8 @@ void octoclock_eeprom_t::_load()
     const octoclock_fw_eeprom_t* eeprom_in =
         reinterpret_cast<const octoclock_fw_eeprom_t*>(pkt_in->data);
 
-    octoclock_packet_t pkt_out;
-    // To avoid replicating sequence numbers between sessions
-    pkt_out.sequence = uint32_t(std::rand());
-    size_t len       = 0;
-
+    auto pkt_out = make_octoclock_packet();
+    size_t len   = 0;
     UHD_OCTOCLOCK_SEND_AND_RECV(
         xport, _proto_ver, SEND_EEPROM_CMD, pkt_out, len, octoclock_data);
     if (UHD_OCTOCLOCK_PACKET_MATCHES(SEND_EEPROM_ACK, pkt_out, pkt_in, len)) {
@@ -86,11 +83,9 @@ void octoclock_eeprom_t::_store() const
     const octoclock_packet_t* pkt_in =
         reinterpret_cast<const octoclock_packet_t*>(octoclock_data);
 
-    octoclock_packet_t pkt_out;
-    // To avoid replicating sequence numbers between sessions
-    pkt_out.sequence = uint32_t(std::rand());
-    pkt_out.len      = sizeof(octoclock_fw_eeprom_t);
-    size_t len       = 0;
+    auto pkt_out = make_octoclock_packet();
+    pkt_out.len  = sizeof(octoclock_fw_eeprom_t);
+    size_t len   = 0;
 
     octoclock_fw_eeprom_t* eeprom_out =
         reinterpret_cast<octoclock_fw_eeprom_t*>(&pkt_out.data);
