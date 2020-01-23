@@ -8,23 +8,26 @@
 #ifndef INCLUDED_OCTOCLOCK_UART_HPP
 #define INCLUDED_OCTOCLOCK_UART_HPP
 
-#include <vector>
-
+#include "common.h"
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/types/serial.hpp>
+#include <boost/thread.hpp>
+#include <string>
+#include <vector>
 
 /*!
  * The OctoClock doesn't take UART input per se but reads a specific
  * packet type and sends the string from there through its own serial
  * functions.
  */
-namespace uhd{
-class octoclock_uart_iface : public uhd::uart_iface{
+namespace uhd {
+class octoclock_uart_iface : public uhd::uart_iface
+{
 public:
     octoclock_uart_iface(uhd::transport::udp_simple::sptr udp, uint32_t proto_ver);
-    ~octoclock_uart_iface(void) {};
+    ~octoclock_uart_iface(void){};
 
-    void write_uart(const std::string &buf);
+    void write_uart(const std::string& buf);
     std::string read_uart(double timeout);
 
 private:
@@ -36,15 +39,16 @@ private:
     std::vector<uint8_t> _cache;
     std::string _rxbuff;
     uint32_t _sequence;
-	uint32_t _proto_ver;
+    uint32_t _proto_ver;
     boost::system_time _last_cache_update;
 
     void _update_cache();
     char _getchar();
 };
 
-uart_iface::sptr octoclock_make_uart_iface(uhd::transport::udp_simple::sptr udp, uint32_t proto_ver);
+uart_iface::sptr octoclock_make_uart_iface(
+    uhd::transport::udp_simple::sptr udp, uint32_t proto_ver);
 
-}
+} // namespace uhd
 
 #endif /* INCLUDED_OCTOCLOCK_UART_HPP */
