@@ -21,8 +21,7 @@ namespace uhd { namespace rfnoc { namespace detail {
 class rfnoc_device : public uhd::device
 {
 public:
-    using sptr = std::shared_ptr<rfnoc_device>; // FIXME make std::shared_ptr when
-                                                  // uhd::device is ready
+    using sptr = std::shared_ptr<rfnoc_device>;
 
     rfnoc_device()
     {
