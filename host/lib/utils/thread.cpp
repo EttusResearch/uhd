@@ -118,7 +118,9 @@ void uhd::set_thread_name(boost::thread* thrd, const std::string& name)
     pthread_setname_np(thrd->native_handle(), name.substr(0, 16).c_str());
 #endif /* HAVE_PTHREAD_SETNAME */
 #ifdef HAVE_THREAD_SETNAME_DUMMY
-    UHD_LOG_DEBUG(
-        "UHD", "Setting thread name is not implemented; wanted to set to " << name);
+        // Then we can't set the thread name. This function may get called
+        // before the logger starts, and thus can't log any error messages.
+        // Note that CMake will also tell the user about not being able to set
+        // thread names.
 #endif /* HAVE_THREAD_SETNAME_DUMMY */
 }
