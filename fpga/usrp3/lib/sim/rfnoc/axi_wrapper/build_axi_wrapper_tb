@@ -1,0 +1,1 @@
+iverilog -o axi_wrapper_tb axi_wrapper_tb.v -y . -y ../control/ -y ../fifo/ -y /opt/Xilinx/14.6/ISE_DS/ISE/verilog/src/unisims/ -y ../packet_proc/ -y ../timing/ -y ../vita/ -y ../../top/x300/coregen -y /opt/Xilinx/14.4/ISE_DS/ISE/verilog/src/XilinxCoreLib -y ../coregen/ -y ../ -y ../../../usrp2/models/ -Wall

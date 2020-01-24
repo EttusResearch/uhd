@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<Runs Version="1" Minor="8">
+	<Run Id="impl_1" Type="Ft2:EntireDesign" SrcSet="sources_1" Part="xc6slx75fgg484-3" LaunchPart="xc6slx75fgg484-3" ConstrsSet="constrs_1" Description="Imported on Tue Jan 29 17:25:57 2013" State="current" Dir="$PRUNDIR/impl_1" LaunchTime="1359509156" Reconstructed="TRUE">
+		<File Type="MAP-PSR" Name="b200.psr"/>
+		<File Type="PA-EDIF" Name="b200.edf"/>
+		<File Type="PAR-NCD" Name="b200.ncd"/>
+		<File Type="PA-UCF" Name="b200.ucf"/>
+		<File Type="PAR-PAD" Name="b200_routed_pad.txt"/>
+		<File Type="PAR-PAR" Name="b200_routed.par"/>
+		<File Type="PAR-UNR" Name="b200_routed.unroutes"/>
+		<File Type="BG-BIT" Name="b200.bit"/>
+		<File Type="BG-DRC" Name="b200.drc"/>
+		<File Type="PA-CONSTRSDIR" Name=".constrs"/>
+		<File Type="BG-BGN" Name="b200.bgn"/>
+		<File Type="TRCE-TWR" Name="b200.twr"/>
+		<File Type="TRCE-TWX" Name="b200.twx"/>
+		<File Type="XDL-XDL" Name="b200.xdl"/>
+		<File Type="WBT-USG" Name="usage_statistics_webtalk.html"/>
+		<File Type="WBT-LOG" Name="webtalk.log"/>
+		<File Type="RUN-SRCS" Name="$PDATADIR/runs/impl_1/sources.xml"/>
+		<File Type="RUN-CONSTRS" Name="$PDATADIR/runs/impl_1/constrs_in.xml"/>
+		<File Type="RUN-STRAT" Name="$PDATADIR/runs/impl_1/impl_1.psg"/>
+		<File Type="NGDB-NGD" Name="b200.ngd"/>
+		<File Type="NGDB-BLD" Name="b200.bld"/>
+		<File Type="MAP-NCD" Name="b200.ncd"/>
+		<File Type="MAP-MRP" Name="b200.mrp"/>
+		<File Type="MAP-MAP" Name="b200.map"/>
+	</Run>
+</Runs>
+

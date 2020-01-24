@@ -1,0 +1,32 @@
+#
+# Copyright 2018 Ettus Research, a National Instruments Company
+#
+
+##################################################
+# DB IFC Sources
+##################################################
+RHODIUM_DB_SRCS = $(abspath $(addprefix $(BASE_DIR)/n3xx/dboards/rh/db_ifc/, \
+DbCore.vhd \
+DaughterboardRegs.vhd \
+ClockingRegs.vhd \
+PkgRhPersonality.vhd \
+PkgDaughterboardRegMap.vhd \
+PkgClockingRegMap.vhd \
+PkgJesdConfig.vhd \
+PkgAdcDacInterfaceTypes.vhd \
+RadioClocking.vhd \
+Jesd204bXcvrCore.edf \
+))
+
+RHODIUM_TOP_SRCS = $(abspath $(addprefix $(BASE_DIR)/n3xx/dboards/rh/, \
+n3xx.v \
+))
+
+RHODIUM_DB_CLOCKS_XDC = $(abspath $(addprefix $(BASE_DIR)/n3xx/dboards/rh/, \
+db_clocks.xdc \
+))
+
+RHODIUM_DB_XDC = $(abspath $(addprefix $(BASE_DIR)/n3xx/dboards/rh/, \
+db_pins.xdc \
+db_timing.xdc \
+))

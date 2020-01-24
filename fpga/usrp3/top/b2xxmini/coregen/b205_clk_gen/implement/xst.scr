@@ -1,0 +1,9 @@
+run
+-ifmt MIXED
+-top b205_clk_gen_exdes
+-p xc6slx75-csg484-3
+-ifn xst.prj
+-ofn b205_clk_gen_exdes
+-keep_hierarchy soft 
+-equivalent_register_removal no 
+-max_fanout 65535

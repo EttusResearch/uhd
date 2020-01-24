@@ -1,0 +1,18 @@
+# Output products list for <b200_chipscope_ila>
+_xmsgs/pn_parser.xmsgs
+b200_chipscope_ila.asy
+b200_chipscope_ila.cdc
+b200_chipscope_ila.constraints/b200_chipscope_ila.ucf
+b200_chipscope_ila.constraints/b200_chipscope_ila.xdc
+b200_chipscope_ila.gise
+b200_chipscope_ila.ncf
+b200_chipscope_ila.ngc
+b200_chipscope_ila.ucf
+b200_chipscope_ila.v
+b200_chipscope_ila.veo
+b200_chipscope_ila.xco
+b200_chipscope_ila.xdc
+b200_chipscope_ila.xise
+b200_chipscope_ila_flist.txt
+b200_chipscope_ila_readme.txt
+b200_chipscope_ila_xmdf.tcl

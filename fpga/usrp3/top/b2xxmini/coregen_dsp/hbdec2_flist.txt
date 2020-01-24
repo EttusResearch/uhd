@@ -1,0 +1,19 @@
+# Output products list for <hbdec2>
+hbdec2.asy
+hbdec2.gise
+hbdec2.mif
+hbdec2.ngc
+hbdec2.v
+hbdec2.veo
+hbdec2.xco
+hbdec2.xise
+hbdec2COEFF_auto0_0.mif
+hbdec2COEFF_auto0_1.mif
+hbdec2COEFF_auto0_2.mif
+hbdec2COEFF_auto_HALFBAND_CENTRE0.mif
+hbdec2_flist.txt
+hbdec2_readme.txt
+hbdec2_reload_addrfilt_decode_rom.mif
+hbdec2_reload_order.txt
+hbdec2_xmdf.tcl
+hbdec2filt_decode_rom.mif

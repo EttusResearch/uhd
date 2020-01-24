@@ -1,0 +1,37 @@
+#
+# Copyright 2012-2013 Ettus Research LLC
+# Copyright 2016 Ettus Research, a National Instruments Company
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+##################################################
+# FIFO Sources
+##################################################
+FIFO_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/fifo/, \
+axi_demux4.v \
+axi_demux8.v \
+axi_demux.v \
+axi_fifo_2clk.v \
+axi_fifo32_to_fifo64.v \
+axi_fifo64_to_fifo32.v \
+axi_fifo32_to_fifo16.v \
+axi_fifo16_to_fifo32.v \
+axi_fifo_bram.v \
+axi_fifo_cascade.v \
+axi_fifo_flop2.v \
+axi_fifo_flop.v \
+axi_fifo_short.v \
+axi_fifo.v \
+axi_filter_mux4.v \
+axi_loopback.v \
+axi_mux4.v \
+axi_mux8.v \
+axi_mux_select.v \
+axi_mux.v \
+axi_packet_gate.v \
+fifo64_to_axi4lite.v \
+shortfifo.v \
+axis_fifo_monitor.v \
+axis_strm_monitor.v \
+))

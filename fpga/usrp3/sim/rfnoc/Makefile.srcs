@@ -1,0 +1,27 @@
+#
+# Copyright 2019 Ettus Research, a National Instruments Company
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+##################################################
+# Simulation Libraries/Headers for AXI based interfaces
+##################################################
+SIM_RFNOC_SRCS = $(abspath $(addprefix $(BASE_DIR)/../sim/rfnoc/, \
+PkgTestExec.sv \
+test_exec.svh \
+sim_clock_gen.sv \
+PkgAxiStreamBfm.sv \
+PkgChdrUtils.sv \
+PkgChdrBfm.sv \
+PkgAxisCtrlBfm.sv \
+PkgRfnocItemUtils.sv \
+PkgRfnocBlockCtrlBfm.sv \
+))
+
+##################################################
+# Proto-RFNoC simlib still used in some places
+##################################################
+SIM_PROTORFNOC_SRCS = $(abspath $(addprefix $(BASE_DIR)/../sim/rfnoc/, \
+sim_rfnoc_lib.svh \
+))

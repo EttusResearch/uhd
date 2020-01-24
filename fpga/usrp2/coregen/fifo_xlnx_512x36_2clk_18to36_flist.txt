@@ -1,0 +1,12 @@
+# Output products list for <fifo_xlnx_512x36_2clk_18to36>
+_xmsgs/pn_parser.xmsgs
+fifo_generator_ug175.pdf
+fifo_xlnx_512x36_2clk_18to36.gise
+fifo_xlnx_512x36_2clk_18to36.ngc
+fifo_xlnx_512x36_2clk_18to36.v
+fifo_xlnx_512x36_2clk_18to36.veo
+fifo_xlnx_512x36_2clk_18to36.xco
+fifo_xlnx_512x36_2clk_18to36.xise
+fifo_xlnx_512x36_2clk_18to36_flist.txt
+fifo_xlnx_512x36_2clk_18to36_readme.txt
+fifo_xlnx_512x36_2clk_18to36_xmdf.tcl

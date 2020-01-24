@@ -1,0 +1,19 @@
+/bin/rm -r isim
+
+vlogcomp -work work ${XILINX}/verilog/src/glbl.v
+
+vlogcomp -work work --sourcelibext .v \
+	 --sourcelibdir ../../../lib/axi \
+	 --sourcelibdir ../../../lib/fifo \
+	 --sourcelibdir ../../../lib/control \
+	 --sourcelibdir ../../../top/x300/coregen \
+	 ../../../lib/axi/axi_dram_fifo_tb.v
+
+
+
+fuse work.axi_dram_fifo_tb work.glbl -L unisims_ver -L xilinxcorelib_ver -o axi_dram_fifo_tb.exe
+
+# run the simulation scrip
+./axi_dram_fifo_tb.exe  -gui #-tclbatch simcmds.tcl
+
+

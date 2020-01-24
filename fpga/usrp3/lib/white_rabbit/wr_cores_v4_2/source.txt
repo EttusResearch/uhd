@@ -1,0 +1,2 @@
+This directory is a subset of the following tag:
+https://www.ohwr.org/projects/wr-cores/repository?utf8=%E2%9C%93&rev=wrpc-v4.2&branch=master&tag=wrpc-v4.2

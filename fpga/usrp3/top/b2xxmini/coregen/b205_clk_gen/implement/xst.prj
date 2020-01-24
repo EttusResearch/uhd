@@ -1,0 +1,2 @@
+verilog work ../../b205_clk_gen.v
+verilog work ../example_design/b205_clk_gen_exdes.v

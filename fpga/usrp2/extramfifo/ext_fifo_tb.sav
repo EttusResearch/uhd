@@ -1,0 +1,30 @@
+[timestart] 0
+[size] 1523 832
+[pos] -1 -1
+*-15.000000 66300 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] ext_fifo_tb.
+[treeopen] ext_fifo_tb.ext_fifo_i1.
+[treeopen] ext_fifo_tb.ext_fifo_i1.nobl_fifo_i1.
+@28
+ext_fifo_tb.ext_fifo_i1.src_rdy_i
+ext_fifo_tb.ext_fifo_i1.dst_rdy_o
+@22
+ext_fifo_tb.ext_fifo_i1.datain[35:0]
+@28
+ext_fifo_tb.ext_fifo_i1.src_rdy_o
+ext_fifo_tb.ext_fifo_i1.dst_rdy_i
+@22
+ext_fifo_tb.ext_fifo_i1.dataout[35:0]
+ext_fifo_tb.ext_fifo_i1.RAM_A[17:0]
+@28
+ext_fifo_tb.ext_fifo_i1.RAM_WEn
+ext_fifo_tb.ext_fifo_i1.RAM_CE1n
+@22
+ext_fifo_tb.ext_fifo_i1.RAM_D_pi[35:0]
+ext_fifo_tb.ext_fifo_i1.RAM_D_po[35:0]
+ext_fifo_tb.ext_fifo_i1.write_data[35:0]
+@28
+ext_fifo_tb.ext_fifo_i1.full1
+ext_fifo_tb.ext_fifo_i1.empty1
+@29
+ext_fifo_tb.ext_fifo_i1.space_avail

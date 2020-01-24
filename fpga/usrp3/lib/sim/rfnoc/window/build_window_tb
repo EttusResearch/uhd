@@ -1,0 +1,1 @@
+iverilog -o window_tb window_tb.v -y ../coregen -y ../../../usrp2/models -y . -y ../control/ -y ../fifo/ -y /opt/Xilinx/14.6/ISE_DS/ISE/verilog/src/unisims/ -y ../packet_proc/ -y ../timing/ -y ../vita/

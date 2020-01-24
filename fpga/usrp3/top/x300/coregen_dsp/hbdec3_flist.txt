@@ -1,0 +1,18 @@
+# Output products list for <hbdec3>
+hbdec3.asy
+hbdec3.gise
+hbdec3.mif
+hbdec3.ngc
+hbdec3.v
+hbdec3.veo
+hbdec3.xco
+hbdec3.xise
+hbdec3COEFF_auto0_0.mif
+hbdec3COEFF_auto0_1.mif
+hbdec3COEFF_auto_HALFBAND_CENTRE0.mif
+hbdec3_flist.txt
+hbdec3_readme.txt
+hbdec3_reload_addrfilt_decode_rom.mif
+hbdec3_reload_order.txt
+hbdec3_xmdf.tcl
+hbdec3filt_decode_rom.mif

@@ -1,0 +1,15 @@
+# This file contains all testbenches to exlcude from the filter
+# list discovered by run_testbenches.py
+# NOTE: Lines containing "#" are treated as a comment
+
+lib/rfnoc/noc_block_eq_tb
+lib/rfnoc/noc_block_ofdm_tb
+lib/rfnoc/noc_block_schmidl_cox_tb
+top/e31x/sim/dram_test
+top/n3xx/sim/arm_to_sfp_loopback
+top/n3xx/sim/aurora_loopback
+top/n3xx/sim/one_gig_eth_loopback
+top/n3xx/sim/ten_gig_eth_loopback
+top/x300/sim/x300_pcie_int
+top/n3xx/dboards/eiscat/radio/noc_block_ddc_eiscat_tb
+top/n3xx/dboards/eiscat/radio/noc_block_radio_core_eiscat_tb

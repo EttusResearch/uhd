@@ -1,0 +1,117 @@
+// SPDX-License-Identifier: GPL-2.0 OR X11
+/*
+ * Copyright (c) 2018 National Instruments Corp
+ */
+
+/dts-v1/;
+/plugin/;
+
+#include "n320-fpga.dtsi"
+
+&fpga_full {
+	nixge0: ethernet@40000000 {
+		compatible = "ni,xge-enet-2.00";
+		reg = <0x40000000 0x6000>;
+
+		clocks = <&clkc 15>;
+		clock-names = "bus_clk";
+
+		nvmem-cells = <&eth1_addr>;
+		nvmem-cell-names = "address";
+
+		interrupts = <0 29 4>, <0 30 4>;
+		interrupt-names = "rx", "tx";
+		interrupt-parent = <&intc>;
+		status = "okay";
+
+		phy-mode = "xgmii";
+		phy-handle = <&ethernet_phy1>;
+
+		mdio {
+			ethernet_phy1: ethernet-phy@4 {
+				compatible = "ethernet-phy-ieee802.3-c45";
+				reg = <4>;
+			};
+		};
+	};
+
+	uio@40006000 {
+		compatible = "usrp-uio";
+		reg = <0x40006000 0x2000>;
+		reg-names = "misc-enet-regs0";
+		status = "okay";
+	};
+
+	nixge1: ethernet@40008000 {
+		compatible = "ni,xge-enet-2.00";
+		reg = <0x40008000 0x6000>;
+
+		clocks = <&clkc 15>;
+		clock-names = "bus_clk";
+
+		nvmem-cells = <&eth2_addr>;
+		nvmem-cell-names = "address";
+
+		interrupts = <0 31 4>, <0 32 4>;
+		interrupt-names = "rx", "tx";
+		interrupt-parent = <&intc>;
+		status = "okay";
+
+		phy-mode = "xgmii";
+		phy-handle = <&ethernet_phy2>;
+
+		mdio {
+			ethernet_phy2: ethernet-phy@4 {
+				compatible = "ethernet-phy-ieee802.3-c45";
+				reg = <4>;
+			};
+		};
+	};
+
+	uio@4000e000 {
+		compatible = "usrp-uio";
+		reg = <0x4000e000 0x2000>;
+		reg-names = "misc-enet-regs1";
+		status = "okay";
+	};
+
+	uio@40020000 {
+		compatible = "usrp-uio";
+		reg = <0x40020000 0x1000>;
+		reg-names = "misc-auro-regs0";
+		status = "okay";
+	};
+
+	uio@40024000 {
+		compatible = "usrp-uio";
+		reg = <0x40024000 0x1000>;
+		reg-names = "misc-auro-regs1";
+		status = "okay";
+	};
+
+	uio@40028000 {
+		compatible = "usrp-uio";
+		reg = <0x40028000 0x1000>;
+		reg-names = "misc-auro-regs2";
+		status = "okay";
+	};
+
+
+	uio@4002c000 {
+		compatible = "usrp-uio";
+		reg = <0x4002c000 0x1000>;
+		reg-names = "misc-auro-regs3";
+		status = "okay";
+	};
+
+	qsfp_i2c: qsfp-i2c@43D80000 {
+		compatible = "xlnx,xps-iic-2.00.a";
+		clocks = <&clkc 15>;
+		interrupt-parent = <&intc>;
+		interrupts = <0 55 4>;
+		reg = <0x43D80000 0x10000>;
+	};
+};
+
+#include "n320-common.dtsi"
+#include "dma-common.dtsi"

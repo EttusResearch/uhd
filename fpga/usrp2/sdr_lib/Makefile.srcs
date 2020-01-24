@@ -1,0 +1,45 @@
+#
+# Copyright 2010-2012 Ettus Research LLC
+#
+
+##################################################
+# FIFO Sources
+##################################################
+SDR_LIB_SRCS = $(abspath $(addprefix $(BASE_DIR)/../sdr_lib/, \
+acc.v \
+add2.v \
+add2_and_clip.v \
+add2_and_clip_reg.v \
+add2_and_round.v \
+add2_and_round_reg.v \
+add2_reg.v \
+cic_dec_shifter.v \
+cic_decim.v \
+cic_int_shifter.v \
+cic_interp.v \
+cic_strober.v \
+clip.v \
+clip_reg.v \
+cordic.v \
+cordic_z24.v \
+cordic_stage.v \
+ddc_chain.v \
+duc_chain.v \
+dspengine_16to8.v \
+dspengine_8to16.v \
+hb_dec.v \
+hb_interp.v \
+pipectrl.v \
+pipestage.v \
+round.v \
+round_reg.v \
+round_sd.v \
+rx_dcoffset.v \
+rx_frontend.v \
+sign_extend.v \
+small_hb_dec.v \
+small_hb_int.v \
+tx_frontend.v \
+dsp_tx_glue.v \
+dsp_rx_glue.v \
+))

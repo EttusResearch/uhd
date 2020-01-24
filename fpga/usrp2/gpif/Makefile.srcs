@@ -1,0 +1,13 @@
+#
+# Copyright 2010-2012 Ettus Research LLC
+#
+
+##################################################
+# SERDES Sources
+##################################################
+GPIF_SRCS = $(abspath $(addprefix $(BASE_DIR)/../gpif/, \
+packet_reframer.v \
+slave_fifo.v \
+fifo36_to_gpmc16.v \
+gpmc16_to_fifo36.v \
+))

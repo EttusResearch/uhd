@@ -1,0 +1,46 @@
+// SPDX-License-Identifier: GPL-2.0 OR X11
+/*
+ * Copyright (c) 2018 National Instruments Corp
+ */
+
+&fpga_full {
+	uio@40010000 {
+		compatible = "usrp-uio";
+		reg = <0x40010000 0x2000>;
+		reg-names = "mboard-regs";
+		status = "okay";
+	};
+
+	uio@40014000 {
+		compatible = "usrp-uio";
+		reg = <0x40014000 0x4000>;
+		reg-names = "dboard-regs";
+		status = "okay";
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	cs-gpios = <0>, <0>, <0>, <&gpio0 62 0>;
+
+	spidev0: spidev@0 {
+		compatible = "rohm,dh2228fv";
+		reg = <0>;
+		status = "okay";
+		spi-max-frequency = <1000000>;
+	};
+};
+
+&spi1 {
+	status = "okay";
+
+	cs-gpios = <0>, <0>, <0>, <&gpio0 63 0>;
+
+	spidev1: spidev@0 {
+		compatible = "rohm,dh2228fv";
+		reg = <0>;
+		status = "okay";
+		spi-max-frequency = <1000000>;
+	};
+};

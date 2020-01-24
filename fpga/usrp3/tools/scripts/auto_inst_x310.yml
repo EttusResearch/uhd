@@ -1,0 +1,29 @@
+# auto-inst file for X310
+# To regenerate rfnoc_ce_auto_inst_x310.v:
+#   ./uhd_image_builder.py  -d x310 -t X310_RFNOC_HG -m 10 --fill-with-fifos -y auto_inst_x310.yml -o rfnoc_ce_auto_inst_x310.v
+
+- block: ddc
+  parameters:
+    NOC_ID: 64'hDDC0_0000_0000_0001
+    NUM_CHAINS: 1
+
+- block: duc
+  parameters:
+
+- block: fft
+  parameters:
+
+- block: window
+  parameters:
+
+- block: fir_filter
+  parameters:
+
+- block: siggen
+  parameters:
+
+- block: keep_one_in_n
+  parameters:
+
+- block: fosphor
+  parameters:

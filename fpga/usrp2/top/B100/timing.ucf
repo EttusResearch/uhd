@@ -1,0 +1,24 @@
+NET "CLK_FPGA_P" TNM_NET = "CLK_FPGA_P";
+TIMESPEC "TS_CLK_FPGA_P" = PERIOD "CLK_FPGA_P" 15625 ps HIGH 50 %;
+
+NET "IFCLK" TNM_NET = "IFCLK";
+TIMESPEC "TS_IFCLK" = PERIOD "IFCLK" 20833 ps HIGH 50 %;
+
+#constrain FX2 IO
+INST "GPIF_D<*>" TNM = gpif_net_in;
+INST "GPIF_CTL<*>" TNM = gpif_net_in;
+
+INST "GPIF_D<*>" TNM = gpif_net_out;
+INST "GPIF_ADR<*>" TNM = gpif_net_out;
+INST "GPIF_SLWR" TNM = gpif_net_out;
+INST "GPIF_SLOE" TNM = gpif_net_out;
+INST "GPIF_SLRD" TNM = gpif_net_out;
+INST "GPIF_PKTEND" TNM = gpif_net_out;
+
+TIMEGRP "gpif_net_in" OFFSET = IN 5 ns VALID 10 ns BEFORE "IFCLK" RISING;
+TIMEGRP "gpif_net_out" OFFSET = OUT 7 ns AFTER "IFCLK" RISING;
+
+TIMESPEC TS_Pad2Pad = FROM PADS TO PADS 7 ns;
+
+NET PPS_IN TIG;
+NET debug_led* TIG;

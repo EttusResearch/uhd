@@ -1,0 +1,14 @@
+#
+# Copyright 2013 Ettus Research LLC
+# Copyright 2016 Ettus Research, a National Instruments Company
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+##################################################
+# Packet Processing Sources
+##################################################
+PACKET_PROC_200_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/packet_proc_200/, \
+cvita_dest_lookup_legacy.v \
+source_flow_control_legacy.v \
+))

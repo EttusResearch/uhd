@@ -1,0 +1,25 @@
+65,66d64
+<       input            gtrefclk_p,                // Differential +ve of reference clock for MGT: 125MHz, very high quality.
+<       input            gtrefclk_n,                // Differential -ve of reference clock for MGT: 125MHz, very high quality.
+70,71d67
+<       output           gtrefclk,                  // gtrefclk routed through an IBUFG.
+<       output           gtrefclk_bufg,             // gtrefclk routed through a BUFG for driving logic.
+88d83
+<    wire gtrefclk_i;
+93,108d87
+<    // Clock circuitry for the Transceiver uses a differential input clock.
+<    // gtrefclk is routed to the tranceiver.
+<    IBUFDS_GTE2 ibufds_gtrefclk (
+<       .I     (gtrefclk_p),
+<       .IB    (gtrefclk_n),
+<       .CEB   (1'b0),
+<       .O     (gtrefclk_i),
+<       .ODIV2 ()
+<    );
+< 
+<   assign gtrefclk = gtrefclk_i;
+< 
+<    BUFG  bufg_gtrefclk (
+<       .I         (gtrefclk_i),
+<       .O         (gtrefclk_bufg)
+<    );

@@ -1,0 +1,16 @@
+vlogcomp -work work ${XILINX}/verilog/src/glbl.v
+#vlogcomp --define SIM_SCRIPT=true --define ISIM=true -work work ../../../packet_proc/source_flow_control_tb.v
+vlogcomp -work work --sourcelibext .v \
+	 --sourcelibdir ../../axi \
+	 --sourcelibdir ../../fifo \
+	 --sourcelibdir ../../../top/b250/coregen \
+	 ../../axi/axi_dram_fifo_tb.v
+
+
+
+fuse work.axi_dram_fifo_tb work.glbl -L unisims_ver -L xilinxcorelib_ver -o axi_dram_fifo_tb.exe
+
+# run the simulation scrip
+./axi_dram_fifo_tb.exe -gui #-tclbatch simcmds.tcl
+#./source_flow_control_tb.exe
+

@@ -1,0 +1,10 @@
+##################################################
+# Logic to interface to Opencores 10G MAC
+##################################################
+XGE_INTERFACE_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/xge_interface/, \
+axi64_to_xge64.v \
+axi_count_packets_in_fifo.v \
+xge64_to_axi64.v \
+xge_handshake.v \
+xge_mac_wrapper.v \
+))

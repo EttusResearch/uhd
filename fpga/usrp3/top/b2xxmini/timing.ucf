@@ -1,0 +1,38 @@
+# 40 MHz main tcxo clock
+NET "CLK_40MHz_FPGA*" TNM_NET = "CLK_40MHz_FPGA";
+TIMESPEC "TS_CLK_40MHz_FPGA" = PERIOD "CLK_40MHz_FPGA" 25000 ps HIGH 50 %;
+
+# 100 MHz GPIF clock
+NET "FX3_PCLK" TNM_NET = "FX3_PCLK";
+TIMESPEC "TS_FX3_PCLK" = PERIOD "FX3_PCLK" 10000 ps HIGH 50 %;
+
+# data clock from catalina, sample rate dependent
+# this clock equals sample rate in CMOS DDR 1R1T mode
+# this clock is double the sample rate in CMOS DDR 2R2T mode
+# Max clock rate is 61.44 MHz
+NET "CAT_DCLK_P" TNM_NET = "CAT_DCLK_P";
+TIMESPEC "TS_CAT_DCLK_P" = PERIOD "CAT_DCLK_P" 16276 ps HIGH 50 %;
+
+#always use IOB for GPIF pins for awesome timing
+INST "FX3_DQ*" IOB = TRUE;
+INST "FX3_CTL*" IOB = TRUE;
+
+#low speed misc output group
+INST "cFE_SEL_*" TNM = radio_misc_out;  # Radio Clk domain
+INST "cLED_*" TNM = radio_misc_out;  # Radio Clk domain
+INST "cTXDRV_PWEN*" TNM = radio_misc_out;  # Radio Clk domain
+INST "CAT_EN" TNM = ls_misc_out;   # Bus clk domain + combinatorial
+INST "CAT_SPI_EN" TNM = ls_misc_out;    # Bus clk domain
+INST "CAT_SPI_CLK" TNM = ls_misc_out;   # Bus clk domain
+INST "CAT_SPI_DO" TNM = ls_misc_out;  # Bus clk domain (I)
+INST "CAT_SPI_DI" TNM = ls_misc_out;  # Bus clk domain + combinatorial
+INST "CLK_40M_DAC_nSYNC" TNM = ls_misc_out; # Bus clk domain
+INST "CLK_40M_DAC_SCLK" TNM = ls_misc_out;  # Bus clk domain
+INST "CLK_40M_DAC_DIN" TNM = ls_misc_out;   # Bus clk domain
+
+#constrain the misc IOs to the clocks
+NET "bus_clk" TNM_NET = "bus_clk";
+TIMESPEC "TS_bus_clk" = PERIOD "bus_clk" 10 ns HIGH 50 %;
+TIMEGRP "ls_misc_out" OFFSET = OUT 15 ns AFTER "bus_clk" RISING;
+TIMEGRP "radio_misc_out" OFFSET = OUT 15 ns AFTER "radio_clk" RISING;
+

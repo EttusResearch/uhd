@@ -1,0 +1,16 @@
+#
+# Copyright 2010 Ettus Research LLC
+#
+
+##################################################
+# Timing Sources
+##################################################
+TIMING_SRCS = $(abspath $(addprefix $(BASE_DIR)/../timing/, \
+time_64bit.v \
+time_compare.v \
+time_receiver.v \
+time_sender.v \
+time_sync.v \
+timer.v \
+simple_timer.v \
+))

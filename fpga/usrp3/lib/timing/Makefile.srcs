@@ -1,0 +1,17 @@
+#
+# Copyright 2013 Ettus Research LLC
+# Copyright 2016 Ettus Research, a National Instruments Company
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+##################################################
+# Timing Sources
+##################################################
+TIMING_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/timing/, \
+time_compare.v \
+timekeeper.v \
+pps_generator.v \
+pps_synchronizer.v \
+pulse_generator.v \
+))

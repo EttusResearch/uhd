@@ -1,0 +1,7 @@
+build*
+catcap_tb
+catgen_tb
+fuse*
+isim*
+_impact*
+coregen.log

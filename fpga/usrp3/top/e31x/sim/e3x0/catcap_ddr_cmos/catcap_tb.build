@@ -1,0 +1,21 @@
+
+#!/bin/sh
+
+rm -rf isim* 
+rm -rf catcap_tb
+rm -rf fuse*
+\
+#     --sourcelibdir ../../models \
+
+vlogcomp \
+    --sourcelibext .v \
+    --sourcelibdir ../../../top/e300/coregen \
+    --sourcelibdir ../../control_lib \
+    --sourcelibdir ../../../top/e300/ \
+    --sourcelibdir $XILINX/verilog/src \
+    --sourcelibdir $XILINX/verilog/src/unisims \
+    --work work \
+    catcap_tb.v
+
+ 
+fuse -o catcap_tb catcap_tb

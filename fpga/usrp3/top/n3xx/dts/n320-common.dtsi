@@ -1,0 +1,132 @@
+// SPDX-License-Identifier: GPL-2.0 OR X11
+/*
+ * Copyright (c) 2018 National Instruments Corp
+ */
+
+&fpga_full {
+	uio@40010000 {
+		compatible = "usrp-uio";
+		reg = <0x40010000 0x2000>;
+		reg-names = "mboard-regs";
+		status = "okay";
+	};
+
+	uio@40014000 {
+		compatible = "usrp-uio";
+		reg = <0x40014000 0x4000>;
+		reg-names = "dboard-regs-0";
+		status = "okay";
+	};
+
+	uio@40018000 {
+		compatible = "usrp-uio";
+		reg = <0x40018000 0x4000>;
+		reg-names = "dboard-regs-1";
+		status = "okay";
+	};
+
+	uio@42100000 {
+		compatible = "usrp-uio";
+		reg = <0x42100000 0x1000>;
+		reg-names = "dboard-jtag-0";
+		status = "okay";
+	};
+
+	uio@42200000 {
+		compatible = "usrp-uio";
+		reg = <0x42200000 0x1000>;
+		reg-names = "dboard-jtag-1";
+		status = "okay";
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	cs-gpios = <0>, <0>, <0>, <&gpio0 67 0>, <&gpio0 68 0>;
+
+	spidev0: spidev@0 {
+		compatible = "rohm,dh2228fv";
+		reg = <0>;
+		status = "okay";
+		spi-max-frequency = <1000000>;
+	};
+
+	spidev1: spidev@1 {
+		compatible = "rohm,dh2228fv";
+		reg = <1>;
+		status = "okay";
+		spi-max-frequency = <1000000>;
+	};
+
+	spidev2: spidev@2 {
+		compatible = "rohm,dh2228fv";
+		reg = <2>;
+		status = "okay";
+		spi-max-frequency = <1000000>;
+	};
+
+	spidev3: spidev@3 {
+		compatible = "rohm,dh2228fv";
+		reg = <3>;
+		status = "okay";
+		spi-max-frequency = <1000000>;
+	};
+
+	spidev4: spidev@4 {
+		compatible = "rohm,dh2228fv";
+		reg = <4>;
+		status = "okay";
+		spi-max-frequency = <1000000>;
+	};
+};
+
+&spi1 {
+	status = "okay";
+
+	cs-gpios = <0>, <0>, <0>, <&gpio0 69 0>, <&gpio0 70 0>;
+
+	spidev5: spidev@0 {
+		compatible = "rohm,dh2228fv";
+		reg = <0>;
+		status = "okay";
+		spi-max-frequency = <1000000>;
+	};
+
+	spidev6: spidev@1 {
+		compatible = "rohm,dh2228fv";
+		reg = <1>;
+		status = "okay";
+		spi-max-frequency = <1000000>;
+	};
+
+	spidev7: spidev@2 {
+		compatible = "rohm,dh2228fv";
+		reg = <2>;
+		status = "okay";
+		spi-max-frequency = <1000000>;
+	};
+
+	spidev8: spidev@3 {
+		compatible = "rohm,dh2228fv";
+		reg = <3>;
+		status = "okay";
+		spi-max-frequency = <1000000>;
+	};
+
+	spidev9: spidev@4 {
+		compatible = "rohm,dh2228fv";
+		reg = <4>;
+		status = "okay";
+		spi-max-frequency = <1000000>;
+	};
+};
+
+&usrpio_i2c0 {
+	rhodium_lodist_gpio: rhodium-lodist-gpio@22 {
+		compatible = "nxp,tca6424";
+		reg = <0x22>;
+		gpio-controller;
+		#gpio-cells = <2>;
+	};
+};

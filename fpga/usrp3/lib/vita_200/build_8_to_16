@@ -1,0 +1,2 @@
+iverilog -y . -y ../dsp/ -y ../control/ -Wall chdr_8sc_to_16sc_tb.v -o chdr_8sc_to_16sc_tb
+

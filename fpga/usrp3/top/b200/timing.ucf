@@ -1,0 +1,46 @@
+
+# codec_main_clk is 40 MHz main tcxo clock
+NET "codec_main_clk*" TNM_NET = "codec_main_clk";
+TIMESPEC "TS_codec_main_clk" = PERIOD "codec_main_clk" 25000 ps HIGH 50 %;
+
+
+# IFCLK is 100 MHz GPIF clock
+NET "IFCLK" TNM_NET = "IFCLK";
+TIMESPEC "TS_IFCLK" = PERIOD "IFCLK" 10000 ps HIGH 50 %;
+
+
+# codec_data_clk is the data clock from catalina, sample rate dependent
+# this clock equals sample rate in CMOS DDR 1R1T mode
+# this clock is double the sample rate in CMOS DDR 2R2T mode
+# Max clock rate is 61.44 MHz
+NET "codec_data_clk_p" TNM_NET = "codec_data_clk_p";
+TIMESPEC "TS_codec_data_clk_p" = PERIOD "codec_data_clk_p" 16276 ps HIGH 50 %;
+
+#always use IOB for GPIF pins for awesome timing
+INST "GPIF_*" IOB = TRUE;
+
+#low speed misc output group
+INST "SFDX*" TNM = radio_misc_out; # Radio Clk domain
+INST "SRX*" TNM = radio_misc_out;  # Radio Clk domain
+INST "LED_*" TNM = radio_misc_out;  # Radio Clk domain
+INST "tx_enable*" TNM = radio_misc_out;  # Radio Clk domain
+INST "tx_bandsel_*" TNM = ls_misc_out; # Bus clk domain
+INST "rx_bandsel_*" TNM = ls_misc_out; # Bus clk domain
+INST "ref_sel" TNM = ls_misc_out;  # Bus clk domain
+INST "pll_ce" TNM = ls_misc_out;   # Bus clk domain
+INST "cat_ce" TNM = ls_misc_out;   # Bus clk domain + combinatorial
+#INST "fx3_miso" TNM = ls_misc_out;  # Combinatorial
+INST "cat_miso" TNM = ls_misc_out;  # Bus clk domain (I)
+INST "cat_mosi" TNM = ls_misc_out;  # Bus clk domain + combinatorial
+INST "pll_mosi" TNM = ls_misc_out;  # Bus clk domain + combinatorial
+INST "*_sclk" TNM = ls_misc_out;    # Bus clk domain + combinatorial
+INST "gps_*" TNM = ls_misc_out;  # Bus clk domain
+#INST "FPGA_*D0" TNM = ls_misc_out; # UNUSED
+
+#constrain the misc IOs to the clocks
+NET "gpif_clk" TNM_NET = "gpif_clk";
+TIMESPEC "TS_gpif_clk" = PERIOD "gpif_clk" 10 ns HIGH 50 %;
+# These next 2 constarints have never worked...either fix them or remove them. Probably need a virtual clock to make them work.
+#TIMEGRP "ls_misc_out" OFFSET = OUT 15 ns AFTER "gpif_clk" RISING;
+#TIMEGRP "radio_misc_out" OFFSET = OUT 15 ns AFTER "radio_clk" RISING;
+

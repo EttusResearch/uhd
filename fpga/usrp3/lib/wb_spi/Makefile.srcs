@@ -1,0 +1,14 @@
+#
+# Copyright 2013 Ettus Research LLC
+#
+
+##################################################
+# Control Lib Sources
+##################################################
+WB_SPI_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/wb_spi/, \
+rtl/verilog/spi_clgen.v \
+rtl/verilog/spi_defines.v \
+rtl/verilog/spi_shift.v \
+rtl/verilog/spi_top16.v \
+rtl/verilog/spi_top.v \
+))

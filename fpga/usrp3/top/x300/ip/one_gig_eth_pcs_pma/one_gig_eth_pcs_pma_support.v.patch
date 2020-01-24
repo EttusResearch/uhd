@@ -1,0 +1,17 @@
+70,73c70,71
+<       input        gtrefclk_p,                // differential clock
+<       input        gtrefclk_n,                // differential clock
+<       output       gtrefclk_out,              // Very high quality clock for GT transceiver.
+<       output       gtrefclk_bufg_out,
+---
+>       input        gtrefclk,              // gtrefclk routed through an IBUFG.
+>       input        gtrefclk_bufg,         // gtrefclk routed through a BUFG for driving logic.
+125,126d122
+<    wire         gtrefclk;                 // High quality clock
+<    wire         gtrefclk_bufg;
+205,206d200
+<       .gtrefclk_p                (gtrefclk_p),
+<       .gtrefclk_n                (gtrefclk_n),
+210,211d203
+<       .gtrefclk                  (gtrefclk),
+<       .gtrefclk_bufg             (gtrefclk_bufg),

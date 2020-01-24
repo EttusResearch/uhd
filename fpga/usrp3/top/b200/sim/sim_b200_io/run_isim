@@ -1,0 +1,22 @@
+vlogcomp -work work ${XILINX}/verilog/src/glbl.v
+
+# usrp3/top/b200/sim/sim_b200_io/siso 
+vlogcomp  -work work --sourcelibext .v \
+        --sourcelibdir ../../../../../lib/axi \
+        --sourcelibdir ../../../../../lib/fifo \
+        --sourcelibdir ../../../../../lib/control \
+        --sourcelibdir ../../../coregen \
+        --sourcelibdir ../../../ \
+        --sourcelibdir ../../../../../lib/timing \
+        --sourcelibdir ../../../../../lib/vita \
+        --sourcelibdir ../../../../../lib/packet_proc \
+        --sourcelibdir ../../../../../lib/dsp \
+        --sourcelibdir ../../../../../lib/wishbone \
+        --sourcelibdir ../../../../../lib/gpif2 \
+	--sourcelibdir ../../../../../lib/io \
+        ../../b200_io_tb.v
+
+fuse work.b200_io_tb work.glbl  -L unisims_ver -L xilinxcorelib_ver -o b200_io_tb.exe
+
+# run the simulation scrip
+./b200_io_tb.exe   -gui #-tclbatch simcmds.tcl

@@ -1,0 +1,18 @@
+#
+# Copyright 2019 Ettus Research, A National Instruments Company
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+##################################################
+# RFNoC Utility Sources
+##################################################
+RFNOC_BLOCK_AXI_RAM_FIFO_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/rfnoc/blocks/rfnoc_block_axi_ram_fifo/, \
+noc_shell_axi_ram_fifo.v \
+axi_ram_fifo_regs.vh \
+axi_ram_fifo_regs.v \
+axi_ram_fifo_bist.v \
+axi_ram_fifo_bist_regs.v \
+axi_ram_fifo.v \
+rfnoc_block_axi_ram_fifo.v \
+))

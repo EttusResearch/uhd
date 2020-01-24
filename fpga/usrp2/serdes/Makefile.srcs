@@ -1,0 +1,14 @@
+#
+# Copyright 2010 Ettus Research LLC
+#
+
+##################################################
+# SERDES Sources
+##################################################
+SERDES_SRCS = $(abspath $(addprefix $(BASE_DIR)/../serdes/, \
+serdes.v \
+serdes_fc_rx.v \
+serdes_fc_tx.v \
+serdes_rx.v \
+serdes_tx.v \
+))

@@ -1,0 +1,68 @@
+// SPDX-License-Identifier: GPL-2.0 OR X11
+/*
+ * Copyright (c) 2018 National Instruments Corp
+ */
+
+/dts-v1/;
+/plugin/;
+
+#include "n310-fpga.dtsi"
+
+&fpga_full {
+	uio@40006000 {
+		compatible = "usrp-uio";
+		reg = <0x40006000 0x2000>;
+		reg-names = "misc-enet-regs0";
+		status = "okay";
+	};
+
+	nixge1: ethernet@40008000 {
+		compatible = "ni,xge-enet-2.00";
+		reg = <0x40008000 0x6000>;
+
+		clocks = <&clkc 15>;
+		clock-names = "bus_clk";
+
+		nvmem-cells = <&eth2_addr>;
+		nvmem-cell-names = "address";
+
+		interrupts = <0 31 4>, <0 32 4>;
+		interrupt-names = "rx", "tx";
+		interrupt-parent = <&intc>;
+		status = "okay";
+
+		phy-mode = "xgmii";
+		phy-handle = <&ethernet_phy2>;
+
+		mdio {
+			ethernet_phy2: ethernet-phy@4 {
+				compatible = "ethernet-phy-ieee802.3-c45";
+				reg = <4>;
+			};
+		};
+	};
+
+	uio@4000e000 {
+		compatible = "usrp-uio";
+		reg = <0x4000e000 0x2000>;
+		reg-names = "misc-enet-regs1";
+		status = "okay";
+	};
+
+	uio@43d40000 {
+		compatible = "usrp-uio";
+		reg = <0x43d40000 0x40000>;
+		reg-names = "wr-regs";
+		status = "okay";
+	};
+
+	uart2@42c00000 {
+		compatible = "xlnx,xps-uartlite-1.00.a";
+		reg = <0x42c00000 0x1000>;
+		interrupt-parent = <&intc>;
+		interrupts = <0 54 4>;
+	};
+};
+
+#include "n310-common.dtsi"
+#include "dma-common.dtsi"

@@ -1,0 +1,8 @@
+xsim_proj
+modelsim_proj
+build-ip
+.ip_user_files
+.Xil
+xsim.dir
+work/
+xvlog.pb

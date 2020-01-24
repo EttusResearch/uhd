@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2018 National Instruments Corp
+ *
+ * SPDX-License-Identifier: GPL-2.0 OR X11
+ */
+
+/dts-v1/;
+/plugin/;
+
+#include "e31x-sg1-fpga.dtsi"
+#include "e31x-common.dtsi"
+#include "e31x-pmu.dtsi"
+#include "dma-common.dtsi"

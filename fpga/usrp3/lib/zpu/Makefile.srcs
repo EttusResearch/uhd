@@ -1,0 +1,21 @@
+#
+# Copyright 2010-2012 Ettus Research LLC
+#
+
+##################################################
+# ZPU Open Cores Sources
+##################################################
+ZPU_CORE_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/zpu/, \
+zpu_top_pkg.vhd \
+zpu_wb_top.vhd \
+wishbone/wishbone_pkg.vhd \
+wishbone/zpu_system.vhd \
+wishbone/zpu_wb_bridge.vhd \
+core/zpu_core.vhd \
+core/zpupkg.vhd \
+zpu_bootram.v \
+))
+
+ZPU_CONFIG_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/zpu/, \
+core/zpu_config.vhd \
+))

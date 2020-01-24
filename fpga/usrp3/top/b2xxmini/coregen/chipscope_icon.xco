@@ -1,0 +1,56 @@
+##############################################################
+#
+# Xilinx Core Generator version 14.6
+# Date: Wed Apr 15 00:05:36 2015
+#
+##############################################################
+#
+#  This file contains the customisation parameters for a
+#  Xilinx CORE Generator IP GUI. It is strongly recommended
+#  that you do not manually alter this file as it may cause
+#  unexpected and unsupported behavior.
+#
+##############################################################
+#
+#  Generated from component: xilinx.com:ip:chipscope_icon:1.06.a
+#
+##############################################################
+#
+# BEGIN Project Options
+SET addpads = false
+SET asysymbol = true
+SET busformat = BusFormatAngleBracketNotRipped
+SET createndf = false
+SET designentry = Verilog
+SET device = xc6slx75
+SET devicefamily = spartan6
+SET flowvendor = Foundation_ISE
+SET formalverification = false
+SET foundationsym = false
+SET implementationfiletype = Ngc
+SET package = fgg484
+SET removerpms = false
+SET simulationfiles = Structural
+SET speedgrade = -3
+SET verilogsim = true
+SET vhdlsim = false
+# END Project Options
+# BEGIN Select
+SELECT ICON_(ChipScope_Pro_-_Integrated_Controller) family Xilinx,_Inc. 1.06.a
+# END Select
+# BEGIN Parameters
+CSET component_name=chipscope_icon
+CSET constraint_type=external
+CSET enable_jtag_bufg=true
+CSET example_design=false
+CSET number_control_ports=1
+CSET use_ext_bscan=false
+CSET use_softbscan=false
+CSET use_unused_bscan=false
+CSET user_scan_chain=USER1
+# END Parameters
+# BEGIN Extra information
+MISC pkg_timestamp=2013-06-08T17:28:33Z
+# END Extra information
+GENERATE
+# CRC: b52cbe62

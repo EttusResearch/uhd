@@ -1,0 +1,36 @@
+#
+# Copyright 2010 Ettus Research LLC
+#
+
+##################################################
+# Open Cores Sources
+##################################################
+OPENCORES_SRCS = $(abspath $(addprefix $(BASE_DIR)/../opencores/, \
+8b10b/decode_8b10b.v \
+8b10b/encode_8b10b.v \
+aemb/rtl/verilog/aeMB_bpcu.v \
+aemb/rtl/verilog/aeMB_core_BE.v \
+aemb/rtl/verilog/aeMB_ctrl.v \
+aemb/rtl/verilog/aeMB_edk32.v \
+aemb/rtl/verilog/aeMB_ibuf.v \
+aemb/rtl/verilog/aeMB_regf.v \
+aemb/rtl/verilog/aeMB_xecu.v \
+i2c/rtl/verilog/i2c_master_bit_ctrl.v \
+i2c/rtl/verilog/i2c_master_byte_ctrl.v \
+i2c/rtl/verilog/i2c_master_defines.v \
+i2c/rtl/verilog/i2c_master_top.v \
+i2c/rtl/verilog/timescale.v \
+spi/rtl/verilog/spi_clgen.v \
+spi/rtl/verilog/spi_defines.v \
+spi/rtl/verilog/spi_shift.v \
+spi/rtl/verilog/spi_top.v \
+spi/rtl/verilog/spi_top16.v \
+zpu/zpu_top_pkg.vhd \
+zpu/zpu_wb_top.vhd \
+zpu/wishbone/wishbone_pkg.vhd \
+zpu/wishbone/zpu_system.vhd \
+zpu/wishbone/zpu_wb_bridge.vhd \
+zpu/core/zpu_config.vhd \
+zpu/core/zpu_core.vhd \
+zpu/core/zpupkg.vhd \
+))

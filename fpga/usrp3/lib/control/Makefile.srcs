@@ -1,0 +1,61 @@
+#
+# Copyright 2013 Ettus Research LLC
+# Copyright 2017 Ettus Research, a National Instruments Company
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+##################################################
+# Control Lib Sources
+##################################################
+CONTROL_LIB_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/control/, \
+ad5662_auto_spi.v \
+arb_qualify_master.v \
+axi_crossbar.v \
+axi_crossbar_regport.v \
+axi_fifo_header.v \
+axi_forwarding_cam.v \
+axi_setting_reg.v \
+axi_slave_mux.v \
+axi_test_vfifo.v \
+bin2gray.v \
+binary_encoder.v \
+db_control.v \
+fe_control.v \
+filter_bad_sid.v \
+gpio_atr_io.v \
+gpio_atr.v \
+gray2bin.v \
+por_gen.v \
+priority_encoder_one_hot.v \
+priority_encoder.v \
+ram_2port_impl.vh \
+ram_2port.v \
+reset_sync.v \
+s7_icap_wb.v \
+serial_to_settings.v \
+setting_reg.v \
+settings_bus_mux.v \
+settings_bus_timed_2clk.v \
+simple_i2c_core.v \
+simple_spi_core.v \
+synchronizer_impl.v \
+synchronizer.v \
+pulse_synchronizer.v \
+user_settings.v \
+axil_regport_master.v \
+axil_to_ni_regport.v \
+regport_resp_mux.v \
+regport_to_xbar_settingsbus.v \
+regport_to_settingsbus.v \
+pulse_stretch.v \
+pulse_stretch_min.v \
+mdio_master.v \
+map/cam_priority_encoder.v \
+map/cam_bram.v \
+map/cam_srl.v \
+map/cam.v \
+map/kv_map.v \
+map/axis_muxed_kv_map.v \
+axil_ctrlport_master.v\
+))

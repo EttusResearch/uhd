@@ -1,0 +1,26 @@
+#
+# Copyright 2016 Ettus Research
+#
+
+# Minimal set of sources in lib directory needed for simulation
+include $(BASE_DIR)/../lib/fifo/Makefile.srcs
+include $(BASE_DIR)/../lib/axi/Makefile.srcs
+include $(BASE_DIR)/../lib/control/Makefile.srcs
+include $(BASE_DIR)/../lib/timing/Makefile.srcs
+include $(BASE_DIR)/../lib/packet_proc/Makefile.srcs
+include $(BASE_DIR)/../lib/dsp/Makefile.srcs
+include $(BASE_DIR)/../lib/rfnoc/Makefile.srcs
+
+# Use sim version of axi_fifo_2clk
+FIFO_SRCS := $(filter-out %/axi_fifo_2clk.v,$(FIFO_SRCS))
+FIFO_SRCS += $(abspath $(BASE_DIR)/../lib/sim/fifo/axi_fifo_2clk_sim.v)
+
+SIM_DESIGN_SRCS = $(abspath \
+$(FIFO_SRCS) \
+$(AXI_SRCS) \
+$(CONTROL_LIB_SRCS) \
+$(TIMING_SRCS) \
+$(PACKET_PROC_SRCS) \
+$(DSP_SRCS) \
+$(RFNOC_SRCS) \
+)

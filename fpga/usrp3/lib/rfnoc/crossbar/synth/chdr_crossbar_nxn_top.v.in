@@ -1,0 +1,55 @@
+//
+// Copyright 2018 Ettus Research, A National Instruments Company
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
+
+module chdr_crossbar_nxn_top(
+  input clk,
+  input rst
+);
+  // Router global config
+  localparam NPORTS      = {ports};
+  localparam DWIDTH      = {dataw};
+  localparam MTU         = {mtu};
+  localparam RLUT_SIZE   = {rlutsize};
+  localparam OPTIMIZE    = "{opt}";
+
+  (* dont_touch = "true"*) wire [(DWIDTH*NPORTS)-1:0] s_axis_tdata , m_axis_tdata ;
+  (* dont_touch = "true"*) wire [NPORTS-1:0]          s_axis_tlast , m_axis_tlast ;
+  (* dont_touch = "true"*) wire [NPORTS-1:0]          s_axis_tvalid, m_axis_tvalid;
+  (* dont_touch = "true"*) wire [NPORTS-1:0]          s_axis_tready, m_axis_tready;
+
+  chdr_crossbar_nxn #(
+    .CHDR_W             (DWIDTH),
+    .NPORTS             (NPORTS),
+    .DEFAULT_PORT       (0),
+    .MTU                (MTU),
+    .ROUTE_TBL_SIZE     (RLUT_SIZE),
+    .MUX_ALLOC          ("ROUND-ROBIN"),
+    .OPTIMIZE           (OPTIMIZE),
+    .NPORTS_MGMT        (NPORTS),
+    .EXT_RTCFG_PORT     (1)
+  ) router_dut_i (
+     // General         
+    .clk                (clk),
+    .reset              (rst),
+    // Inputs           
+    .s_axis_tdata       (s_axis_tdata),
+    .s_axis_tlast       (s_axis_tlast),
+    .s_axis_tvalid      (s_axis_tvalid),
+    .s_axis_tready      (s_axis_tready),
+    // Output           
+    .m_axis_tdata       (m_axis_tdata),
+    .m_axis_tlast       (m_axis_tlast),
+    .m_axis_tvalid      (m_axis_tvalid),
+    .m_axis_tready      (m_axis_tready),
+    // External rtcfg port
+    .ext_rtcfg_stb      (0),
+    .ext_rtcfg_addr     (0),
+    .ext_rtcfg_data     (0),
+    .ext_rtcfg_ack      ()
+  );
+
+endmodule
+

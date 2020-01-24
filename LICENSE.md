@@ -2,10 +2,20 @@
 
 Please refer to the individual files to verify which license applies to them.
 
-UHD itself, is, by default, licensed under the GPLv3. If you wish to obtain an
-alternative license, please contact info@ettus.com.
+UHD and MPM themselves, are, by default, licensed under the GPLv3. If you wish
+to obtain an alternative license, please contact info@ettus.com. Some of UHD's
+dependencies are shipped as part of the repository
+(see https://github.com/EttusResearch/uhd/tree/master/host/lib/deps for details).
 
-## GPLv3 License Text
+The FPGA codebase (stored under fpga/) has its own
+[licensing situation][fpga-license]. See the various subdirectories therein for
+more details.
+
+Individual source files in this repository may have different licenses than
+discussed above. Please refer to individual files and directories to verify
+which license applies to which file.
+
+## GPLv3 License Text (applies to most of UHD and MPM)
 
                     GNU GENERAL PUBLIC LICENSE
                        Version 3, 29 June 2007
@@ -629,3 +639,4 @@ copy of the Program in return for a fee.
 
                      END OF TERMS AND CONDITIONS
 
+[fpga-license]: https://github.com/EttusResearch/uhd/blob/master/fpga/usrp3/LICENSE.md

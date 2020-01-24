@@ -1,0 +1,12 @@
+#
+# Copyright 2015 Ettus Research LLC
+#
+
+##################################################
+# Simulation Libraries/Headers for AXI based interfaces
+##################################################
+SIM_AXI_SRCS = $(abspath $(addprefix $(BASE_DIR)/../sim/axi/, \
+sim_axi4_lib.svh \
+sim_axis_lib.svh \
+sim_cvita_lib.svh \
+))

@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2018 National Instruments Corp
+ *
+ * SPDX-License-Identifier: GPL-2.0 OR X11
+ */
+
+/dts-v1/;
+/plugin/;
+
+#include "e31x-sg3-idle-fpga.dtsi"
+#include "e31x-pmu.dtsi"

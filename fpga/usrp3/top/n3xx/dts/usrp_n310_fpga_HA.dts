@@ -1,0 +1,54 @@
+// SPDX-License-Identifier: GPL-2.0 OR X11
+/*
+ * Copyright (c) 2017 National Instruments Corp
+ *
+ */
+
+/dts-v1/;
+/plugin/;
+
+#include "n310-fpga.dtsi"
+
+&fpga_full {
+	nixge0: ethernet@40000000 {
+		compatible = "ni,xge-enet-2.00";
+		reg = <0x40000000 0x6000>;
+
+		clocks = <&clkc 15>;
+		clock-names = "bus_clk";
+
+		nvmem-cells = <&eth1_addr>;
+		nvmem-cell-names = "address";
+
+		interrupts = <0 29 4>, <0 30 4>;
+		interrupt-names = "rx", "tx";
+		interrupt-parent = <&intc>;
+		status = "okay";
+
+		phy-mode = "xgmii";
+
+		fixed-link {
+			speed = <1000>;
+			full-duplex;
+			/* 114 = 54 (MIOs) + 60 (EMIO 60) */
+			link-gpios = <&gpio0 114 0>;
+		};
+	};
+
+	uio@40006000 {
+		compatible = "usrp-uio";
+		reg = <0x40006000 0x2000>;
+		reg-names = "misc-enet-regs0";
+		status = "okay";
+	};
+
+	uio@4000c000 {
+		compatible = "usrp-uio";
+		reg = <0x4000c000 0x1000>;
+		reg-names = "misc-auro-regs1";
+		status = "okay";
+	};
+};
+
+#include "n310-common.dtsi"
+#include "dma-common.dtsi"

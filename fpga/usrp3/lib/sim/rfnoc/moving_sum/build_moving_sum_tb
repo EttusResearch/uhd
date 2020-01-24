@@ -1,0 +1,1 @@
+iverilog -o moving_sum_tb -y . -y ../control/ -y ../fifo/ moving_sum_tb.v -y /opt/Xilinx/14.4/ISE_DS/ISE/verilog/src/unisims/ -Wall

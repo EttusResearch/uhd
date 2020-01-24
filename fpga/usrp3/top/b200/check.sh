@@ -1,0 +1,1 @@
+iverilog ../top/b200/b200.v -y control/ -y timing/ -y fifo/ -y vita/ -y /opt/Xilinx/14.4/ISE_DS/ISE/verilog/src/unisims/ -y ../top/b200/ -y ../top/b200/coregen/ -y gpif2/ -y /opt/Xilinx/14.4/ISE_DS/ISE/verilog/src/XilinxCoreLib/ -Wall | grep -v timescale

@@ -1,0 +1,15 @@
+# Output products list for <b200_chipscope_icon>
+b200_chipscope_icon.asy
+b200_chipscope_icon.constraints/b200_chipscope_icon.ucf
+b200_chipscope_icon.constraints/b200_chipscope_icon.xdc
+b200_chipscope_icon.gise
+b200_chipscope_icon.ngc
+b200_chipscope_icon.ucf
+b200_chipscope_icon.v
+b200_chipscope_icon.veo
+b200_chipscope_icon.xco
+b200_chipscope_icon.xdc
+b200_chipscope_icon.xise
+b200_chipscope_icon_flist.txt
+b200_chipscope_icon_readme.txt
+b200_chipscope_icon_xmdf.tcl

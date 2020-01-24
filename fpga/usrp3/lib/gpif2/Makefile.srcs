@@ -1,0 +1,16 @@
+#
+# Copyright 2010-2013 Ettus Research LLC
+# Copyright 2016 Ettus Research, a National Instruments Company
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+##################################################
+# SERDES Sources
+##################################################
+GPIF2_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/gpif2/, \
+gpif2_slave_fifo32.v \
+gpif2_to_fifo64.v \
+fifo64_to_gpif2.v \
+gpif2_error_checker.v \
+))

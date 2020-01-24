@@ -1,0 +1,469 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Bitfile>
+  <BitfileVersion>4.0</BitfileVersion>
+  <Documentation>
+    <BuildSpecVersion/>
+    <BuildSpecDescription/>
+  </Documentation>
+  <SignatureRegister>97C6D9F4F4829001B83378F93CAB0C94</SignatureRegister>
+  <SignatureGuids>7BAD6AEB9741248079F13147B3F8AD94</SignatureGuids>
+  <SignatureNames>AE54C47F787D92DB46F7DC973338D786</SignatureNames>
+  <TimeStamp/>
+  <CompilationStatus/>
+  <BitstreamVersion>2</BitstreamVersion>
+  <VI>
+    <Name>USRP_X3x0_Top.vi</Name>
+    <RegisterList>
+      <Register>
+        <Name>ViSignature</Name>
+        <Hidden>true</Hidden>
+        <Indicator>true</Indicator>
+        <Datatype>
+          <Array>
+            <Name/>
+            <Size>4</Size>
+            <Type>
+              <U32>
+                <Name/>
+              </U32>
+            </Type>
+          </Array>
+        </Datatype>
+        <FlattenedType/>
+        <Grouping/>
+        <Offset>262132</Offset>
+        <SizeInBits>128</SizeInBits>
+        <Class>0</Class>
+        <Internal>true</Internal>
+        <TypedefPath/>
+        <TypedefRelativePath/>
+        <ID>0</ID>
+        <Bidirectional>false</Bidirectional>
+        <Synchronous>false</Synchronous>
+        <MechanicalAction>Switch When Pressed</MechanicalAction>
+        <AccessMayTimeout>false</AccessMayTimeout>
+        <RegisterNode>false</RegisterNode>
+        <SubControlList/>
+      </Register>
+      <Register>
+        <Name>DiagramReset</Name>
+        <Hidden>false</Hidden>
+        <Indicator>false</Indicator>
+        <Datatype>
+          <U32>
+            <Name/>
+          </U32>
+        </Datatype>
+        <FlattenedType/>
+        <Grouping/>
+        <Offset>262140</Offset>
+        <SizeInBits>32</SizeInBits>
+        <Class>0</Class>
+        <Internal>true</Internal>
+        <TypedefPath/>
+        <TypedefRelativePath/>
+        <ID>0</ID>
+        <Bidirectional>true</Bidirectional>
+        <Synchronous>false</Synchronous>
+        <MechanicalAction>Switch When Pressed</MechanicalAction>
+        <AccessMayTimeout>false</AccessMayTimeout>
+        <RegisterNode>false</RegisterNode>
+        <SubControlList/>
+      </Register>
+      <Register>
+        <Name>ViControl</Name>
+        <Hidden>false</Hidden>
+        <Indicator>false</Indicator>
+        <Datatype>
+          <U32>
+            <Name/>
+          </U32>
+        </Datatype>
+        <FlattenedType/>
+        <Grouping/>
+        <Offset>262136</Offset>
+        <SizeInBits>32</SizeInBits>
+        <Class>0</Class>
+        <Internal>true</Internal>
+        <TypedefPath/>
+        <TypedefRelativePath/>
+        <ID>0</ID>
+        <Bidirectional>true</Bidirectional>
+        <Synchronous>false</Synchronous>
+        <MechanicalAction>Switch When Pressed</MechanicalAction>
+        <AccessMayTimeout>false</AccessMayTimeout>
+        <RegisterNode>false</RegisterNode>
+        <SubControlList/>
+      </Register>
+      <Register>
+        <Name>InterruptEnable</Name>
+        <Hidden>false</Hidden>
+        <Indicator>false</Indicator>
+        <Datatype>
+          <U32>
+            <Name/>
+          </U32>
+        </Datatype>
+        <FlattenedType/>
+        <Grouping/>
+        <Offset>262116</Offset>
+        <SizeInBits>32</SizeInBits>
+        <Class>0</Class>
+        <Internal>true</Internal>
+        <TypedefPath/>
+        <TypedefRelativePath/>
+        <ID>0</ID>
+        <Bidirectional>true</Bidirectional>
+        <Synchronous>false</Synchronous>
+        <MechanicalAction>Switch When Pressed</MechanicalAction>
+        <AccessMayTimeout>false</AccessMayTimeout>
+        <RegisterNode>false</RegisterNode>
+        <SubControlList/>
+      </Register>
+      <Register>
+        <Name>InterruptMask</Name>
+        <Hidden>false</Hidden>
+        <Indicator>false</Indicator>
+        <Datatype>
+          <U32>
+            <Name/>
+          </U32>
+        </Datatype>
+        <FlattenedType/>
+        <Grouping/>
+        <Offset>262124</Offset>
+        <SizeInBits>32</SizeInBits>
+        <Class>0</Class>
+        <Internal>true</Internal>
+        <TypedefPath/>
+        <TypedefRelativePath/>
+        <ID>0</ID>
+        <Bidirectional>true</Bidirectional>
+        <Synchronous>false</Synchronous>
+        <MechanicalAction>Switch When Pressed</MechanicalAction>
+        <AccessMayTimeout>false</AccessMayTimeout>
+        <RegisterNode>false</RegisterNode>
+        <SubControlList/>
+      </Register>
+      <Register>
+        <Name>InterruptStatus</Name>
+        <Hidden>false</Hidden>
+        <Indicator>false</Indicator>
+        <Datatype>
+          <U32>
+            <Name/>
+          </U32>
+        </Datatype>
+        <FlattenedType/>
+        <Grouping/>
+        <Offset>262128</Offset>
+        <SizeInBits>32</SizeInBits>
+        <Class>0</Class>
+        <Internal>true</Internal>
+        <TypedefPath/>
+        <TypedefRelativePath/>
+        <ID>0</ID>
+        <Bidirectional>true</Bidirectional>
+        <Synchronous>false</Synchronous>
+        <MechanicalAction>Switch When Pressed</MechanicalAction>
+        <AccessMayTimeout>false</AccessMayTimeout>
+        <RegisterNode>false</RegisterNode>
+        <SubControlList/>
+      </Register>
+    </RegisterList>
+    <Icon>
+      <ImageType>0</ImageType>
+      <ImageDepth>8</ImageDepth>
+      <Image>////////////////////////////////////////////AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD//wAA/////////////////////////wAAAAAAAAAAAP//AAD/+fn5+fn5+fn5+fn59/ks+SzgAAAAAAAAAAAA//8AAP/5///////////////3+Sz5LP8AAAAAAAAAAAD//wAA//n/6OTo////6OTo//f8K/ws/wAAAAAAAAAAAP//AAD/+f/k/+T////k/+T/9ywsLCzgAAAAAAAAAAAA//8AAP/56OT/5Oj/6OT/5Oj3K/wrLP8AAAAAAAAAAAD//wAA//nk6P/o5P/k6P/o5Pf8CPws/wAAAAAAAAAAAP//AAD/+eT////k/+T////k9/wI/Cz/AAAAAAAAAAAA//8AAP/5/////+jk6P/////3K/wrLP8AAAAAAAAAAAD//wAA//n///////////////csLCws/wAAAAAAAAAAAP//AAD/9/f39/f39/f39/f39ywsg4P/AAAAAAAAAAAA//8AAP8sLCwsLCwsLCwsLCwsLCyDBYODAAAAAAAAAAD//wAA/yz8LCwsLCz8LCwsLCMjI4MFBQWDgwAAAAAAAP//AAD//PD8LCws/CP8LCMjLCwsgwUF/wUFg4MAAAAA//8AAP8s7ywsLCwjLCwjLCwsLCyDBf///wUFBYMjIwD//wAA///w////I///I////////4MFBf8FBYODAAAAAP//AAAAAO8AAAAjAAAjAADw7+/wgwUFBYODAAAAAAAA//8AAAAAAPAAAAAjIwAA7wAAAACDBYODAAAAAAAAAAD//wAAAAAAAO/vAAAAAPAAAAAAAIODAAAAAAAAAAAAAP//AAAAAAAAAADw7/DvAAAAAAAAAAAAAAAAAP8AAAAA//8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD//wAAAAD//wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/AAAAAP//AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP8AAAAA//8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/wAAAAD//wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/AAAAAP//AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP8AAAAA//8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD//wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP///////////////////////////////////////////w==</Image>
+      <Mask>//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////8=</Mask>
+      <Colors>AP///wD//8wA//+ZAP//ZgD//zMA//8AAP/M/wD/zMwA/8yZAP/MZgD/zDMA/8wAAP+Z/wD/mcwA/5mZAP+ZZgD/mTMA/5kAAP9m/wD/ZswA/2aZAP9mZgD/ZjMA/2YAAP8z/wD/M8wA/zOZAP8zZgD/MzMA/zMAAP8A/wD/AMwA/wCZAP8AZgD/ADMA/wAAAMz//wDM/8wAzP+ZAMz/ZgDM/zMAzP8AAMzM/wDMzMwAzMyZAMzMZgDMzDMAzMwAAMyZ/wDMmcwAzJmZAMyZZgDMmTMAzJkAAMxm/wDMZswAzGaZAMxmZgDMZjMAzGYAAMwz/wDMM8wAzDOZAMwzZgDMMzMAzDMAAMwA/wDMAMwAzACZAMwAZgDMADMAzAAAAJn//wCZ/8wAmf+ZAJn/ZgCZ/zMAmf8AAJnM/wCZzMwAmcyZAJnMZgCZzDMAmcwAAJmZ/wCZmcwAmZmZAJmZZgCZmTMAmZkAAJlm/wCZZswAmWaZAJlmZgCZZjMAmWYAAJkz/wCZM8wAmTOZAJkzZgCZMzMAmTMAAJkA/wCZAMwAmQCZAJkAZgCZADMAmQAAAGb//wBm/8wAZv+ZAGb/ZgBm/zMAZv8AAGbM/wBmzMwAZsyZAGbMZgBmzDMAZswAAGaZ/wBmmcwAZpmZAGaZZgBmmTMAZpkAAGZm/wBmZswAZmaZAGZmZgBmZjMAZmYAAGYz/wBmM8wAZjOZAGYzZgBmMzMAZjMAAGYA/wBmAMwAZgCZAGYAZgBmADMAZgAAADP//wAz/8wAM/+ZADP/ZgAz/zMAM/8AADPM/wAzzMwAM8yZADPMZgAzzDMAM8wAADOZ/wAzmcwAM5mZADOZZgAzmTMAM5kAADNm/wAzZswAM2aZADNmZgAzZjMAM2YAADMz/wAzM8wAMzOZADMzZgAzMzMAMzMAADMA/wAzAMwAMwCZADMAZgAzADMAMwAAAAD//wAA/8wAAP+ZAAD/ZgAA/zMAAP8AAADM/wAAzMwAAMyZAADMZgAAzDMAAMwAAACZ/wAAmcwAAJmZAACZZgAAmTMAAJkAAABm/wAAZswAAGaZAABmZgAAZjMAAGYAAAAz/wAAM8wAADOZAAAzZgAAMzMAADMAAAAA/wAAAMwAAACZAAAAZgAAADMA7gAAAN0AAAC7AAAAqgAAAIgAAAB3AAAAVQAAAEQAAAAiAAAAEQAAAADuAAAA3QAAALsAAACqAAAAiAAAAHcAAABVAAAARAAAACIAAAARAAAAAO4AAADdAAAAuwAAAKoAAACIAAAAdwAAAFUAAABEAAAAIgAAABEA7u7uAN3d3QC7u7sAqqqqAIiIiAB3d3cAVVVVAERERAAiIiIAERERAAAAAA==</Colors>
+      <Rectangle>
+        <Left>0</Left>
+        <Top>0</Top>
+        <Right>32</Right>
+        <Bottom>32</Bottom>
+      </Rectangle>
+    </Icon>
+  </VI>
+  <Project>
+    <TargetClass>294XR; 295XR</TargetClass>
+    <AutoRunWhenDownloaded>false</AutoRunWhenDownloaded>
+    <CompilationResultsTree>
+      <CompilationResults>
+        <NiFpga>
+          <BaseAddressOnDevice>0</BaseAddressOnDevice>
+          <DmaChannelAllocationList>
+            <Channel name="RX FIFO 0">
+              <BaseAddressTag>NiLvFpgaFIFO 0</BaseAddressTag>
+              <ControlSet>0</ControlSet>
+              <DataType>
+                <Delta>1.000000000000000000000000000000000000000000000000000000</Delta>
+                <IntegerWordLength>64</IntegerWordLength>
+                <Maximum>18446744073709551600.00000000000000000000000000000000000</Maximum>
+                <Minimum>0.000000000000000000000000000000000000000000000000000000</Minimum>
+                <Signed>false</Signed>
+                <SubType>U64</SubType>
+                <WordLength>64</WordLength>
+              </DataType>
+              <Direction>TargetToHost</Direction>
+              <Implementation>niFpgaTargetToHost</Implementation>
+              <Number>0</Number>
+              <NumberOfElements>1023</NumberOfElements>
+              <UserVisible>true</UserVisible>
+            </Channel>
+            <Channel name="RX FIFO 1">
+              <BaseAddressTag>NiLvFpgaFIFO 1</BaseAddressTag>
+              <ControlSet>1</ControlSet>
+              <DataType>
+                <Delta>1.000000000000000000000000000000000000000000000000000000</Delta>
+                <IntegerWordLength>64</IntegerWordLength>
+                <Maximum>18446744073709551600.00000000000000000000000000000000000</Maximum>
+                <Minimum>0.000000000000000000000000000000000000000000000000000000</Minimum>
+                <Signed>false</Signed>
+                <SubType>U64</SubType>
+                <WordLength>64</WordLength>
+              </DataType>
+              <Direction>TargetToHost</Direction>
+              <Implementation>niFpgaTargetToHost</Implementation>
+              <Number>1</Number>
+              <NumberOfElements>1023</NumberOfElements>
+              <UserVisible>true</UserVisible>
+            </Channel>
+            <Channel name="RX FIFO 2">
+              <BaseAddressTag>NiLvFpgaFIFO 2</BaseAddressTag>
+              <ControlSet>2</ControlSet>
+              <DataType>
+                <Delta>1.000000000000000000000000000000000000000000000000000000</Delta>
+                <IntegerWordLength>64</IntegerWordLength>
+                <Maximum>18446744073709551600.00000000000000000000000000000000000</Maximum>
+                <Minimum>0.000000000000000000000000000000000000000000000000000000</Minimum>
+                <Signed>false</Signed>
+                <SubType>U64</SubType>
+                <WordLength>64</WordLength>
+              </DataType>
+              <Direction>TargetToHost</Direction>
+              <Implementation>niFpgaTargetToHost</Implementation>
+              <Number>2</Number>
+              <NumberOfElements>1023</NumberOfElements>
+              <UserVisible>true</UserVisible>
+            </Channel>
+            <Channel name="RX FIFO 3">
+              <BaseAddressTag>NiLvFpgaFIFO 3</BaseAddressTag>
+              <ControlSet>3</ControlSet>
+              <DataType>
+                <Delta>1.000000000000000000000000000000000000000000000000000000</Delta>
+                <IntegerWordLength>64</IntegerWordLength>
+                <Maximum>18446744073709551600.00000000000000000000000000000000000</Maximum>
+                <Minimum>0.000000000000000000000000000000000000000000000000000000</Minimum>
+                <Signed>false</Signed>
+                <SubType>U64</SubType>
+                <WordLength>64</WordLength>
+              </DataType>
+              <Direction>TargetToHost</Direction>
+              <Implementation>niFpgaTargetToHost</Implementation>
+              <Number>3</Number>
+              <NumberOfElements>1023</NumberOfElements>
+              <UserVisible>true</UserVisible>
+            </Channel>
+            <Channel name="RX FIFO 4">
+              <BaseAddressTag>NiLvFpgaFIFO 4</BaseAddressTag>
+              <ControlSet>4</ControlSet>
+              <DataType>
+                <Delta>1.000000000000000000000000000000000000000000000000000000</Delta>
+                <IntegerWordLength>64</IntegerWordLength>
+                <Maximum>18446744073709551600.00000000000000000000000000000000000</Maximum>
+                <Minimum>0.000000000000000000000000000000000000000000000000000000</Minimum>
+                <Signed>false</Signed>
+                <SubType>U64</SubType>
+                <WordLength>64</WordLength>
+              </DataType>
+              <Direction>TargetToHost</Direction>
+              <Implementation>niFpgaTargetToHost</Implementation>
+              <Number>4</Number>
+              <NumberOfElements>1023</NumberOfElements>
+              <UserVisible>true</UserVisible>
+            </Channel>
+            <Channel name="RX FIFO 5">
+              <BaseAddressTag>NiLvFpgaFIFO 5</BaseAddressTag>
+              <ControlSet>5</ControlSet>
+              <DataType>
+                <Delta>1.000000000000000000000000000000000000000000000000000000</Delta>
+                <IntegerWordLength>64</IntegerWordLength>
+                <Maximum>18446744073709551600.00000000000000000000000000000000000</Maximum>
+                <Minimum>0.000000000000000000000000000000000000000000000000000000</Minimum>
+                <Signed>false</Signed>
+                <SubType>U64</SubType>
+                <WordLength>64</WordLength>
+              </DataType>
+              <Direction>TargetToHost</Direction>
+              <Implementation>niFpgaTargetToHost</Implementation>
+              <Number>5</Number>
+              <NumberOfElements>1023</NumberOfElements>
+              <UserVisible>true</UserVisible>
+            </Channel>
+            <Channel name="TX FIFO 0">
+              <BaseAddressTag>NiLvFpgaFIFO 6</BaseAddressTag>
+              <ControlSet>6</ControlSet>
+              <DataType>
+                <Delta>1.000000000000000000000000000000000000000000000000000000</Delta>
+                <IntegerWordLength>64</IntegerWordLength>
+                <Maximum>18446744073709551600.00000000000000000000000000000000000</Maximum>
+                <Minimum>0.000000000000000000000000000000000000000000000000000000</Minimum>
+                <Signed>false</Signed>
+                <SubType>U64</SubType>
+                <WordLength>64</WordLength>
+              </DataType>
+              <Direction>HostToTarget</Direction>
+              <Implementation>niFpgaHostToTarget</Implementation>
+              <Number>6</Number>
+              <NumberOfElements>1029</NumberOfElements>
+              <UserVisible>true</UserVisible>
+            </Channel>
+            <Channel name="TX FIFO 1">
+              <BaseAddressTag>NiLvFpgaFIFO 7</BaseAddressTag>
+              <ControlSet>7</ControlSet>
+              <DataType>
+                <Delta>1.000000000000000000000000000000000000000000000000000000</Delta>
+                <IntegerWordLength>64</IntegerWordLength>
+                <Maximum>18446744073709551600.00000000000000000000000000000000000</Maximum>
+                <Minimum>0.000000000000000000000000000000000000000000000000000000</Minimum>
+                <Signed>false</Signed>
+                <SubType>U64</SubType>
+                <WordLength>64</WordLength>
+              </DataType>
+              <Direction>HostToTarget</Direction>
+              <Implementation>niFpgaHostToTarget</Implementation>
+              <Number>7</Number>
+              <NumberOfElements>1029</NumberOfElements>
+              <UserVisible>true</UserVisible>
+            </Channel>
+            <Channel name="TX FIFO 2">
+              <BaseAddressTag>NiLvFpgaFIFO 8</BaseAddressTag>
+              <ControlSet>8</ControlSet>
+              <DataType>
+                <Delta>1.000000000000000000000000000000000000000000000000000000</Delta>
+                <IntegerWordLength>64</IntegerWordLength>
+                <Maximum>18446744073709551600.00000000000000000000000000000000000</Maximum>
+                <Minimum>0.000000000000000000000000000000000000000000000000000000</Minimum>
+                <Signed>false</Signed>
+                <SubType>U64</SubType>
+                <WordLength>64</WordLength>
+              </DataType>
+              <Direction>HostToTarget</Direction>
+              <Implementation>niFpgaHostToTarget</Implementation>
+              <Number>8</Number>
+              <NumberOfElements>1029</NumberOfElements>
+              <UserVisible>true</UserVisible>
+            </Channel>
+            <Channel name="TX FIFO 3">
+              <BaseAddressTag>NiLvFpgaFIFO 9</BaseAddressTag>
+              <ControlSet>9</ControlSet>
+              <DataType>
+                <Delta>1.000000000000000000000000000000000000000000000000000000</Delta>
+                <IntegerWordLength>64</IntegerWordLength>
+                <Maximum>18446744073709551600.00000000000000000000000000000000000</Maximum>
+                <Minimum>0.000000000000000000000000000000000000000000000000000000</Minimum>
+                <Signed>false</Signed>
+                <SubType>U64</SubType>
+                <WordLength>64</WordLength>
+              </DataType>
+              <Direction>HostToTarget</Direction>
+              <Implementation>niFpgaHostToTarget</Implementation>
+              <Number>9</Number>
+              <NumberOfElements>1029</NumberOfElements>
+              <UserVisible>true</UserVisible>
+            </Channel>
+            <Channel name="TX FIFO 4">
+              <BaseAddressTag>NiLvFpgaFIFO 10</BaseAddressTag>
+              <ControlSet>10</ControlSet>
+              <DataType>
+                <Delta>1.000000000000000000000000000000000000000000000000000000</Delta>
+                <IntegerWordLength>64</IntegerWordLength>
+                <Maximum>18446744073709551600.00000000000000000000000000000000000</Maximum>
+                <Minimum>0.000000000000000000000000000000000000000000000000000000</Minimum>
+                <Signed>false</Signed>
+                <SubType>U64</SubType>
+                <WordLength>64</WordLength>
+              </DataType>
+              <Direction>HostToTarget</Direction>
+              <Implementation>niFpgaHostToTarget</Implementation>
+              <Number>10</Number>
+              <NumberOfElements>1029</NumberOfElements>
+              <UserVisible>true</UserVisible>
+            </Channel>
+            <Channel name="TX FIFO 5">
+              <BaseAddressTag>NiLvFpgaFIFO 11</BaseAddressTag>
+              <ControlSet>11</ControlSet>
+              <DataType>
+                <Delta>1.000000000000000000000000000000000000000000000000000000</Delta>
+                <IntegerWordLength>64</IntegerWordLength>
+                <Maximum>18446744073709551600.00000000000000000000000000000000000</Maximum>
+                <Minimum>0.000000000000000000000000000000000000000000000000000000</Minimum>
+                <Signed>false</Signed>
+                <SubType>U64</SubType>
+                <WordLength>64</WordLength>
+              </DataType>
+              <Direction>HostToTarget</Direction>
+              <Implementation>niFpgaHostToTarget</Implementation>
+              <Number>11</Number>
+              <NumberOfElements>1029</NumberOfElements>
+              <UserVisible>true</UserVisible>
+            </Channel>
+          </DmaChannelAllocationList>
+          <RegisterBlockList>
+            <RegisterBlock name="NiLvFpgaFIFO 0">
+              <Offset>0xFF80</Offset>
+            </RegisterBlock>
+            <RegisterBlock name="NiLvFpgaFIFO 1">
+              <Offset>0xFF40</Offset>
+            </RegisterBlock>
+            <RegisterBlock name="NiLvFpgaFIFO 2">
+              <Offset>0xFF00</Offset>
+            </RegisterBlock>
+            <RegisterBlock name="NiLvFpgaFIFO 3">
+              <Offset>0xFEC0</Offset>
+            </RegisterBlock>
+            <RegisterBlock name="NiLvFpgaFIFO 4">
+              <Offset>0xFE80</Offset>
+            </RegisterBlock>
+            <RegisterBlock name="NiLvFpgaFIFO 5">
+              <Offset>0xFE40</Offset>
+            </RegisterBlock>
+            <RegisterBlock name="NiLvFpgaFIFO 6">
+              <Offset>0xFE00</Offset>
+            </RegisterBlock>
+            <RegisterBlock name="NiLvFpgaFIFO 7">
+              <Offset>0xFDC0</Offset>
+            </RegisterBlock>
+            <RegisterBlock name="NiLvFpgaFIFO 8">
+              <Offset>0xFD80</Offset>
+            </RegisterBlock>
+            <RegisterBlock name="NiLvFpgaFIFO 9">
+              <Offset>0xFD40</Offset>
+            </RegisterBlock>
+            <RegisterBlock name="NiLvFpgaFIFO 10">
+              <Offset>0xFD00</Offset>
+            </RegisterBlock>
+            <RegisterBlock name="NiLvFpgaFIFO 11">
+              <Offset>0xFCC0</Offset>
+            </RegisterBlock>
+          </RegisterBlockList>
+          <UsedBaseClockList>
+            <BaseClock name="ReliableClkIn">
+         </BaseClock>
+            <BaseClock name="ChinchClk">
+         </BaseClock>
+            <BaseClock name="40 MHz Onboard Clock">
+         </BaseClock>
+          </UsedBaseClockList>
+          <version>1</version>
+        </NiFpga>
+      </CompilationResults>
+    </CompilationResultsTree>
+    <MultipleUserClocks>false</MultipleUserClocks>
+    <AllowImplicitEnableRemoval>false</AllowImplicitEnableRemoval>
+  </Project>
+  <ClientData/>
+  <BitstreamMD5>a72ba1716893a0bd02f88dac3ab28e1b</BitstreamMD5>
+  <Bitstream>a72ba1716893a0bd02f88dac3ab28e1b</Bitstream>
+</Bitfile>

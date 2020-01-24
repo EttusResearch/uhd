@@ -1,0 +1,47 @@
+#
+# Copyright 2013 Ettus Research LLC
+# Copyright 2016 Ettus Research, a National Instruments Company
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+##################################################
+# DSP Sources
+##################################################
+DSP_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/dsp/, \
+acc.v \
+add2_and_clip_reg.v \
+add2_and_clip.v \
+add2_and_round_reg.v \
+add2_and_round.v \
+add2_reg.v \
+add2.v \
+add_then_mac.v \
+cic_decim.v \
+cic_dec_shifter.v \
+cic_interp.v \
+cic_int_shifter.v \
+cic_strober.v \
+clip_reg.v \
+clip.v \
+cordic_stage.v \
+cordic_z24.v \
+ddc_chain.v \
+duc_chain.v \
+hb47_int.v \
+hb_dec.v \
+hb_interp.v \
+Makefile.srcs \
+mult_add_clip.v \
+round_reg.v \
+round_sd.v \
+round.v \
+rx_dcoffset.v \
+rx_frontend.v \
+sign_extend.v \
+small_hb_dec.v \
+small_hb_int.v \
+srl.v \
+tx_frontend.v \
+variable_delay_line.v \
+))

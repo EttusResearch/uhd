@@ -1,0 +1,18 @@
+rm -rf fuse* *.exe isim
+vlogcomp -work work ${XILINX}/verilog/src/glbl.v
+vlogcomp -work work --sourcelibext .v \
+	 --sourcelibdir ../../.. \
+	  --sourcelibdir ../../../../control \
+	 --sourcelibdir ../../../../../top/b200/coregen_dsp \
+	 --sourcelibdir ../../../../../top/b200/coregen \
+	 --sourcelibdir ${XILINX}/verilog/src/unimacro \
+	 ../ddc_chain_tb.v
+
+
+
+fuse work.ddc_chain_tb work.glbl -L unisims_ver -L xilinxcorelib_ver -o testbench.exe
+
+# run the simulation script
+./testbench.exe #-gui   #-tclbatch simcmds.tcl 
+
+

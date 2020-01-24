@@ -1,0 +1,18 @@
+# Output products list for <chipscope_ila_256>
+_xmsgs/pn_parser.xmsgs
+chipscope_ila_256.asy
+chipscope_ila_256.cdc
+chipscope_ila_256.constraints/chipscope_ila_256.ucf
+chipscope_ila_256.constraints/chipscope_ila_256.xdc
+chipscope_ila_256.gise
+chipscope_ila_256.ncf
+chipscope_ila_256.ngc
+chipscope_ila_256.ucf
+chipscope_ila_256.v
+chipscope_ila_256.veo
+chipscope_ila_256.xco
+chipscope_ila_256.xdc
+chipscope_ila_256.xise
+chipscope_ila_256_flist.txt
+chipscope_ila_256_readme.txt
+chipscope_ila_256_xmdf.tcl

@@ -1,0 +1,16 @@
+{
+    "warning": { 
+        "ignore": [
+            "BD 41-1661",
+            "Synth 8-2306",
+            "build-ip",
+            "Synth 8-350",
+            "Synth 8-3331"
+            ]
+        },
+    "critical warning": { 
+        "ignore": [
+            "Synth 8-2490"
+            ]
+        }
+}

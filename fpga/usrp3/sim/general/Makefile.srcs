@@ -1,0 +1,13 @@
+#
+# Copyright 2015 Ettus Research LLC
+#
+
+##################################################
+# General Simulation Libraries/Headers
+##################################################
+SIM_GENERAL_SRCS = $(abspath $(addprefix $(BASE_DIR)/../sim/general/, \
+sim_clks_rsts.vh \
+sim_exec_report.vh \
+sim_math.vh \
+sim_file_io.svh \
+))

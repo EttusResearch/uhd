@@ -1,0 +1,47 @@
+//
+// Copyright 2018 Ettus Research, A National Instruments Company
+//
+// SPDX-License-Identifier: LGPL-3.0-or-later
+//
+
+module axis_ctrl_crossbar_nxn_top(
+  input clk,
+  input rst
+);
+  // Router global config
+  localparam IMPL        = "{top}";
+  localparam NPORTS      = {ports};
+  localparam DWIDTH      = {dataw};
+  localparam MTU         = {mtu};
+  localparam ROUTING     = "{ralloc}";
+
+  (* dont_touch = "true"*) wire [(DWIDTH*NPORTS)-1:0] s_axis_tdata , m_axis_tdata ;
+  (* dont_touch = "true"*) wire [NPORTS-1:0]          s_axis_tlast , m_axis_tlast ;
+  (* dont_touch = "true"*) wire [NPORTS-1:0]          s_axis_tvalid, m_axis_tvalid;
+  (* dont_touch = "true"*) wire [NPORTS-1:0]          s_axis_tready, m_axis_tready;
+  (* dont_touch = "true"*) wire                       deadlock_detected;
+
+  axis_ctrl_crossbar_nxn #(
+    .WIDTH            (DWIDTH),
+    .NPORTS           (NPORTS),
+    .TOPOLOGY         (IMPL),
+    .INGRESS_BUFF_SIZE(MTU),
+    .ROUTER_BUFF_SIZE (MTU),
+    .ROUTING_ALLOC    (ROUTING),
+    .SWITCH_ALLOC     ("ROUND-ROBIN")
+  ) router_dut_i (
+    .clk              (clk),
+    .reset            (rst),
+    .s_axis_tdata     (s_axis_tdata ),
+    .s_axis_tlast     (s_axis_tlast ),
+    .s_axis_tvalid    (s_axis_tvalid),
+    .s_axis_tready    (s_axis_tready),
+    .m_axis_tdata     (m_axis_tdata ),
+    .m_axis_tlast     (m_axis_tlast ),
+    .m_axis_tvalid    (m_axis_tvalid),
+    .m_axis_tready    (m_axis_tready),
+    .deadlock_detected(deadlock_detected)
+  );
+
+endmodule
+

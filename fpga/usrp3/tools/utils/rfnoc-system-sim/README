@@ -1,0 +1,6 @@
+Dependencies:
+- python2
+- graphviz
+- python-graphviz
+- python-numpy
+- python-matplotlib

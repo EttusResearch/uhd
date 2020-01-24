@@ -1,0 +1,20 @@
+#
+# Copyright 2010 Ettus Research LLC
+#
+
+##################################################
+# VRT Sources
+##################################################
+VRT_SRCS = $(abspath $(addprefix $(BASE_DIR)/../vrt/, \
+vita_rx_control.v \
+vita_rx_framer.v \
+vita_rx_chain.v \
+vita_tx_control.v \
+vita_tx_deframer.v \
+vita_tx_chain.v \
+gen_context_pkt.v \
+trigger_context_pkt.v \
+vita_pkt_gen.v \
+vita_rx_engine_glue.v \
+vita_tx_engine_glue.v \
+))

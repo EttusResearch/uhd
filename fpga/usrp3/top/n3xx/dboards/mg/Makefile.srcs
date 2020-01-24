@@ -1,0 +1,34 @@
+#
+# Copyright 2017 Ettus Research LLC
+#
+
+##################################################
+# DB IFC Sources
+##################################################
+MAGNESIUM_DB_SRCS = $(abspath $(addprefix $(BASE_DIR)/n3xx/dboards/mg/db_ifc/, \
+DbCore.vhd \
+DaughterboardRegs.vhd \
+ClockingRegs.vhd \
+PkgMgPersonality.vhd \
+PkgDaughterboardRegMap.vhd \
+PkgClockingRegMap.vhd \
+PkgJesdConfig.vhd \
+RadioClocking.vhd \
+Jesd204bXcvrCore.edf \
+))
+
+MAGNESIUM_TOP_SRCS = $(abspath $(addprefix $(BASE_DIR)/n3xx/dboards/mg/, \
+n3xx.v \
+))
+
+MAGNESIUM_DB_TIMING_XDC = $(abspath $(addprefix $(BASE_DIR)/n3xx/dboards/mg/, \
+db_timing.xdc \
+))
+
+MAGNESIUM_DB0_XDC = $(abspath $(addprefix $(BASE_DIR)/n3xx/dboards/mg/, \
+db0_pins.xdc \
+))
+
+MAGNESIUM_DB1_XDC = $(abspath $(addprefix $(BASE_DIR)/n3xx/dboards/mg/, \
+db1_pins.xdc \
+))

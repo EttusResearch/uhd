@@ -64,7 +64,7 @@ The following guidelines apply:
 - [UHD Coding Guidelines][uhd-coding] (for anything in this repository)
 - [FPGA Coding Guidelines][fpga-coding] (for any FPGA-related modifications)
 
-[fpga-coding]: https://github.com/EttusResearch/fpga/blob/master/CODING.md
+[fpga-coding]: https://github.com/EttusResearch/uhd/blob/master/fpga/CODING.md
 [uhd-coding]: https://github.com/EttusResearch/uhd/blob/master/CODING.md
 [ettus-cla]: http://files.ettus.com/licenses/Ettus_CLA.pdf
 [ettus-ml]: http://lists.ettus.com/mailman/listinfo/usrp-users_lists.ettus.com

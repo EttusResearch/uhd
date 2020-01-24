@@ -1,0 +1,61 @@
+#
+# Copyright 2010-2012 Ettus Research LLC
+#
+
+##################################################
+# Control Lib Sources
+##################################################
+CONTROL_LIB_SRCS = $(abspath $(addprefix $(BASE_DIR)/../control_lib/, \
+CRC16_D16.v \
+atr_controller.v \
+bin2gray.v \
+dcache.v \
+decoder_3_8.v \
+dbsm.v \
+dpram32.v \
+double_buffer.v \
+gray2bin.v \
+gray_send.v \
+icache.v \
+mux4.v \
+mux8.v \
+nsgpio.v \
+ram_2port.v \
+ram_harv_cache.v \
+ram_harvard.v \
+ram_harvard2.v \
+ram_loader.v \
+setting_reg.v \
+settings_bus.v \
+settings_bus_crossclock.v \
+srl.v \
+system_control.v \
+wb_1master.v \
+wb_readback_mux.v \
+wb_readback_mux_16LE.v \
+quad_uart.v \
+simple_uart.v \
+simple_uart_tx.v \
+simple_uart_rx.v \
+oneshot_2clk.v \
+sd_spi.v \
+sd_spi_wb.v \
+wb_bridge_16_32.v \
+reset_sync.v \
+priority_enc.v \
+pic.v \
+longfifo.v \
+shortfifo.v \
+medfifo.v \
+s3a_icap_wb.v \
+bootram.v \
+nsgpio16LE.v \
+settings_bus_16LE.v \
+atr_controller16.v \
+fifo_to_wb.v \
+gpio_atr.v \
+user_settings.v \
+settings_fifo_ctrl.v \
+simple_spi_core.v \
+simple_i2c_core.v \
+))

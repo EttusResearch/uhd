@@ -1,0 +1,64 @@
+#
+# Copyright 2008-2011 Ettus Research LLC
+#
+
+##################################################
+# Constants
+##################################################
+ISE_VER = $(shell xtclsh -h | head -n1 | cut -f2 -d" " | cut -f1 -d.)
+ifeq ($(ISE_VER),10)
+	ISE_EXT = ise
+else
+	ISE_EXT = xise
+endif
+BASE_DIR = $(abspath ..)
+ISE_HELPER = xtclsh $(BASE_DIR)/tcl/ise_helper.tcl
+SANITY_CHECKER = python $(BASE_DIR)/python/check_inout.py
+TIMING_CHECKER = python $(BASE_DIR)/python/check_timing.py
+ISE_FILE = $(BUILD_DIR)/$(TOP_MODULE).$(ISE_EXT)
+BIN_FILE = $(BUILD_DIR)/$(TOP_MODULE).bin
+BIT_FILE = $(BUILD_DIR)/$(TOP_MODULE).bit
+MCS_FILE = $(BUILD_DIR)/$(TOP_MODULE).mcs
+TWR_FILE = $(BUILD_DIR)/$(TOP_MODULE).twr
+
+##################################################
+# Global Targets
+##################################################
+all: bin
+
+proj: $(ISE_FILE)
+
+check: $(ISE_FILE)
+	$(SANITY_CHECKER) $(TOP_MODULE).v $(TOP_MODULE).ucf
+	$(ISE_HELPER) "Check Syntax"
+
+synth: $(ISE_FILE)
+	$(ISE_HELPER) "Synthesize - XST"
+
+bin: check $(BIN_FILE)
+	$(TIMING_CHECKER) $(TWR_FILE)
+
+mcs: $(MCS_FILE)
+
+clean:
+	$(RM) -r $(BUILD_DIR)
+
+.PHONY: all proj check synth bin mcs clean
+
+##################################################
+# Dependency Targets
+##################################################
+.SECONDEXPANSION:
+$(ISE_FILE): $$(SOURCES) $$(MAKEFILE_LIST)
+	@echo $@
+	$(ISE_HELPER) ""
+
+$(BIN_FILE): $(ISE_FILE) $$(SOURCES) $$(MAKEFILE_LIST)
+	@echo $@
+	$(ISE_HELPER) "Generate Programming File" 2>&1 | tee $(BUILD_DIR)/build.log
+	touch $@
+
+$(MCS_FILE): $(BIN_FILE)
+	promgen -w -spi -p mcs -o $(MCS_FILE) -s 4096 -u 0 $(BIT_FILE)
+
+.EXPORT_ALL_VARIABLES:

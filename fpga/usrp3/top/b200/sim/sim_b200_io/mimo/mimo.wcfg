@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<wave_config>
+   <wave_state>
+   </wave_state>
+   <db_ref_list>
+      <db_ref path="./isim.wdb" id="1" type="auto">
+         <top_modules>
+            <top_module name="b200_io_tb" />
+            <top_module name="glbl" />
+         </top_modules>
+      </db_ref>
+   </db_ref_list>
+   <WVObjectSize size="4" />
+   <wvobject fp_name="group18" type="group">
+      <obj_property name="label">Test Bench</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/b200_io_tb/tb_clk" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">tb_clk</obj_property>
+         <obj_property name="ObjectShortName">tb_clk</obj_property>
+      </wvobject>
+      <wvobject fp_name="/b200_io_tb/reset" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">reset</obj_property>
+         <obj_property name="ObjectShortName">reset</obj_property>
+      </wvobject>
+      <wvobject fp_name="/b200_io_tb/mimo" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">mimo</obj_property>
+         <obj_property name="ObjectShortName">mimo</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group33" type="group">
+      <obj_property name="label">RX</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/b200_io_tb/dut/rx_clk" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">rx_clk</obj_property>
+         <obj_property name="ObjectShortName">rx_clk</obj_property>
+      </wvobject>
+      <wvobject fp_name="/b200_io_tb/dut/rx_frame" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">rx_frame</obj_property>
+         <obj_property name="ObjectShortName">rx_frame</obj_property>
+      </wvobject>
+      <wvobject fp_name="/b200_io_tb/dut/rx_data" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">rx_data[11:0]</obj_property>
+         <obj_property name="ObjectShortName">rx_data[11:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group32" type="group">
+      <obj_property name="label">TX</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/b200_io_tb/dut/tx_clk" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">tx_clk</obj_property>
+         <obj_property name="ObjectShortName">tx_clk</obj_property>
+      </wvobject>
+      <wvobject fp_name="/b200_io_tb/dut/tx_frame" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">tx_frame</obj_property>
+         <obj_property name="ObjectShortName">tx_frame</obj_property>
+      </wvobject>
+      <wvobject fp_name="/b200_io_tb/dut/tx_data" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">tx_data[11:0]</obj_property>
+         <obj_property name="ObjectShortName">tx_data[11:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+   </wvobject>
+   <wvobject fp_name="group13" type="group">
+      <obj_property name="label">Internal</obj_property>
+      <obj_property name="DisplayName">label</obj_property>
+      <wvobject fp_name="/b200_io_tb/dut/radio_clk" type="logic" db_ref_id="1">
+         <obj_property name="ElementShortName">radio_clk</obj_property>
+         <obj_property name="ObjectShortName">radio_clk</obj_property>
+      </wvobject>
+      <wvobject fp_name="/b200_io_tb/dut/rx_i0" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">rx_i0[11:0]</obj_property>
+         <obj_property name="ObjectShortName">rx_i0[11:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/b200_io_tb/dut/rx_q0" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">rx_q0[11:0]</obj_property>
+         <obj_property name="ObjectShortName">rx_q0[11:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/b200_io_tb/dut/rx_i1" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">rx_i1[11:0]</obj_property>
+         <obj_property name="ObjectShortName">rx_i1[11:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/b200_io_tb/dut/rx_q1" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">rx_q1[11:0]</obj_property>
+         <obj_property name="ObjectShortName">rx_q1[11:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/b200_io_tb/dut/tx_i0" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">tx_i0[11:0]</obj_property>
+         <obj_property name="ObjectShortName">tx_i0[11:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/b200_io_tb/dut/tx_q0" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">tx_q0[11:0]</obj_property>
+         <obj_property name="ObjectShortName">tx_q0[11:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/b200_io_tb/dut/tx_i1" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">tx_i1[11:0]</obj_property>
+         <obj_property name="ObjectShortName">tx_i1[11:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+      <wvobject fp_name="/b200_io_tb/dut/tx_q1" type="array" db_ref_id="1">
+         <obj_property name="ElementShortName">tx_q1[11:0]</obj_property>
+         <obj_property name="ObjectShortName">tx_q1[11:0]</obj_property>
+         <obj_property name="Radix">HEXRADIX</obj_property>
+      </wvobject>
+   </wvobject>
+</wave_config>

@@ -1,0 +1,8 @@
+// SPDX-License-Identifier: GPL-2.0 OR X11
+/*
+ * Copyright (c) 2017 National Instruments Corp
+ */
+
+&fpga_full {
+	firmware-name = "n310.bin";
+};

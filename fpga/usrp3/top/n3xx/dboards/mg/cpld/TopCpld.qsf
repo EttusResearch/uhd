@@ -1,0 +1,313 @@
+# -------------------------------------------------------------------------- #
+#
+# Copyright (C) 2017  Intel Corporation. All rights reserved.
+# Your use of Intel Corporation's design tools, logic functions 
+# and other software and tools, and its AMPP partner logic 
+# functions, and any output files from any of the foregoing 
+# (including device programming or simulation files), and any 
+# associated documentation or information are expressly subject 
+# to the terms and conditions of the Intel Program License 
+# Subscription Agreement, the Intel Quartus Prime License Agreement,
+# the Intel MegaCore Function License Agreement, or other 
+# applicable license agreement, including, without limitation, 
+# that your use is for the sole purpose of programming logic 
+# devices manufactured by Intel and sold by Intel or its 
+# authorized distributors.  Please refer to the applicable 
+# agreement for further details.
+#
+# -------------------------------------------------------------------------- #
+#
+# Quartus Prime
+# Version 16.1.2 Build 203 01/18/2017 SJ Standard Edition
+# Date created = 14:51:27  February 24, 2017
+#
+# -------------------------------------------------------------------------- #
+#
+# Notes:
+#
+# 1) The default values for assignments are stored in the file:
+#		TopCpld_assignment_defaults.qdf
+#    If this file doesn't exist, see file:
+#		assignment_defaults.qdf
+#
+# 2) Altera recommends that you do not modify this file. This
+#    file is updated automatically by the Quartus Prime software
+#    and any changes you make may be lost or overwritten.
+#
+# -------------------------------------------------------------------------- #
+
+
+set_global_assignment -name FAMILY "MAX V"
+set_global_assignment -name DEVICE 5M570ZF256I5
+set_global_assignment -name ORIGINAL_QUARTUS_VERSION 16.1.2
+set_global_assignment -name PROJECT_CREATION_TIME_DATE "14:51:27  FEBRUARY 24, 2017"
+set_global_assignment -name LAST_QUARTUS_VERSION "16.1.2 Lite Edition"
+set_global_assignment -name PROJECT_OUTPUT_DIRECTORY output_files
+set_global_assignment -name MIN_CORE_JUNCTION_TEMP "-40"
+set_global_assignment -name MAX_CORE_JUNCTION_TEMP 125
+set_global_assignment -name ERROR_CHECK_FREQUENCY_DIVISOR "-1"
+set_global_assignment -name SDC_FILE Timing.sdc
+set_global_assignment -name POWER_PRESET_COOLING_SOLUTION "NO HEAT SINK WITH STILL AIR"
+set_global_assignment -name AUTO_RESTART_CONFIGURATION OFF
+set_global_assignment -name ENABLE_OCT_DONE OFF
+set_global_assignment -name ENABLE_CONFIGURATION_PINS OFF
+set_global_assignment -name ENABLE_BOOT_SEL_PIN OFF
+set_global_assignment -name STRATIXV_CONFIGURATION_SCHEME "PASSIVE SERIAL"
+set_global_assignment -name USE_CONFIGURATION_DEVICE ON
+set_global_assignment -name GENERATE_SVF_FILE ON
+set_global_assignment -name TIMEQUEST_MULTICORNER_ANALYSIS OFF
+set_global_assignment -name RESERVE_ALL_UNUSED_PINS "AS INPUT TRI-STATED"
+
+set_location_assignment PIN_C3 -to aCh2RxSw4[0]
+set_location_assignment PIN_C2 -to aCh2TxPaEn
+set_location_assignment PIN_D3 -to aCh2RxSw6[0]
+set_location_assignment PIN_D1 -to aCh2RxSw4[1]
+set_location_assignment PIN_D2 -to aCh2TxSw3
+set_location_assignment PIN_E1 -to aCh2RxSw4[2]
+set_location_assignment PIN_E4 -to aCh2RxSw7[1]
+set_location_assignment PIN_F2 -to aCh2RxSw6[1]
+set_location_assignment PIN_E3 -to aCh2RxSw7[0]
+set_location_assignment PIN_F1 -to aCh2RxSw5[0]
+set_location_assignment PIN_E2 -to aCh2RxSw5[1]
+set_location_assignment PIN_G2 -to aCh2RxSw5[3]
+set_location_assignment PIN_F3 -to aCh2TxSw4[0]
+set_location_assignment PIN_G1 -to aCh2RxSw6[2]
+set_location_assignment PIN_G3 -to aCh2TxSw4[1]
+set_location_assignment PIN_H2 -to aCh2TxAmpEn
+set_location_assignment PIN_H1 -to aCh2RxSw5[2]
+set_location_assignment PIN_J1 -to aCh2TxMixerEn
+set_location_assignment PIN_H5 -to aLoSpiSync
+set_location_assignment PIN_J2 -to aCh2RxMixerEn
+#set_location_assignment PIN_L3	-to aLmkSpiSdio
+set_location_assignment PIN_K1 -to aCh2TxSw5[1]
+set_location_assignment PIN_K2 -to aCh2TxSw5[0]
+set_location_assignment PIN_M2 -to aLmkSpiSdio
+set_location_assignment PIN_L1 -to aCh2RxSw8[0]
+set_location_assignment PIN_M3 -to lPlSpiSdi
+set_location_assignment PIN_L2 -to aCh2RxSw8[1]
+set_location_assignment PIN_M1 -to aCh2RxAmpEn
+set_location_assignment PIN_N2 -to aLmkSpiSck
+set_location_assignment PIN_N1 -to aLmkSpiCs_n
+set_location_assignment PIN_N3 -to PlSpiSck
+# set_location_assignment PIN_P2 -to lPlSpiLe
+set_location_assignment PIN_R3 -to aMkReset_n
+set_location_assignment PIN_R1 -to lPlSpiLe
+set_location_assignment PIN_T2 -to aLmkSync
+set_location_assignment PIN_R4 -to aVcxoCtrl
+set_location_assignment PIN_T4 -to aDacDin
+set_location_assignment PIN_T5 -to aDacSync_n
+set_location_assignment PIN_R6 -to aPlSpiAddr[2]
+set_location_assignment PIN_R5 -to aDacSck
+set_location_assignment PIN_T6 -to aPlSpiAddr[1]
+set_location_assignment PIN_R7 -to aLmkClkinSel[0]
+set_location_assignment PIN_T7 -to lPlSpiSdo
+set_location_assignment PIN_P8 -to sPsSpiLe
+set_location_assignment PIN_R8 -to aPsSpiAddr[1]
+set_location_assignment PIN_P9 -to aPlSpiAddr[0]
+set_location_assignment PIN_T8 -to PsSpiSck
+set_location_assignment PIN_T9 -to aPsSpiAddr[0]
+set_location_assignment PIN_R9 -to sPsSpiSdi
+set_location_assignment PIN_P10 -to aAtrRx1
+set_location_assignment PIN_T10 -to sPsSpiSdo
+set_location_assignment PIN_P11 -to aAtrTx2
+set_location_assignment PIN_R10 -to aRxLoLockDetect
+set_location_assignment PIN_R12 -to aRxLoSck
+set_location_assignment PIN_T11 -to aTxLoLockDetect
+set_location_assignment PIN_P12 -to aAtrRx2
+set_location_assignment PIN_R11 -to aRxLoDin
+set_location_assignment PIN_T12 -to aRxLoCs_n
+set_location_assignment PIN_R13 -to aTxLoDin
+set_location_assignment PIN_T13 -to aRxLoMuxOut
+set_location_assignment PIN_P13 -to aAtrTx1
+set_location_assignment PIN_T15 -to aTxLoSck
+set_location_assignment PIN_R14 -to aTxLoCs_n
+set_location_assignment PIN_R16 -to aTxLoMuxOut
+set_location_assignment PIN_P14 -to aMkTx1En
+set_location_assignment PIN_N15 -to aMkRx2En
+set_location_assignment PIN_P15 -to aMkRx1En
+set_location_assignment PIN_N16 -to aMkTx2En
+set_location_assignment PIN_K15 -to aCh1TxSw5[1]
+set_location_assignment PIN_L14 -to aCh1RxMixerEn
+set_location_assignment PIN_K16 -to aCh1TxMixerEn
+set_location_assignment PIN_K14 -to aCh1RxSw8[0]
+set_location_assignment PIN_J15 -to aCh1TxAmpEn
+set_location_assignment PIN_J14 -to aCh1RxSw8[1]
+set_location_assignment PIN_J16 -to aCh1TxSw5[0]
+set_location_assignment PIN_H14 -to aCh1RxAmpEn
+set_location_assignment PIN_H16 -to aCh1TxSw4[0]
+set_location_assignment PIN_G14 -to aCh1TxSw4[1]
+set_location_assignment PIN_H15 -to aCh1RxSw5[1]
+set_location_assignment PIN_F14 -to aCh1RxSw7[1]
+set_location_assignment PIN_G16 -to aCh1RxSw5[0]
+set_location_assignment PIN_G15 -to aCh1RxSw4[0]
+set_location_assignment PIN_E14 -to aCh1RxSw6[1]
+set_location_assignment PIN_F16 -to aCh1RxSw2[1]
+set_location_assignment PIN_E13 -to aCh1RxSw7[0]
+set_location_assignment PIN_F15 -to aCh1RxSw2[0]
+set_location_assignment PIN_D14 -to aCh1RxSw6[2]
+set_location_assignment PIN_E16 -to aCh1RxSw6[0]
+set_location_assignment PIN_E15 -to aCh1TxSw3
+set_location_assignment PIN_C15 -to aCh1RxSw5[2]
+set_location_assignment PIN_D16 -to aCh1TxPaEn
+set_location_assignment PIN_C14 -to aCh1RxSw4[1]
+set_location_assignment PIN_D15 -to aCh1RxSw5[3]
+set_location_assignment PIN_B14 -to aCh1TxSw2[3]
+set_location_assignment PIN_B16 -to aCh1RxLna2En
+set_location_assignment PIN_C13 -to aCh1RxSw4[2]
+set_location_assignment PIN_A15 -to aCh1TxSw2[2]
+set_location_assignment PIN_B13 -to aCh1TxSw2[1]
+set_location_assignment PIN_A13 -to aCh1TxSw2[0]
+set_location_assignment PIN_C12 -to aCh1RxSw1[0]
+set_location_assignment PIN_B12 -to aCh1TxSw1[0]
+set_location_assignment PIN_D12 -to aCh1RxSw1[1]
+set_location_assignment PIN_A12 -to aCh1TxSw1[1]
+set_location_assignment PIN_C11 -to aCh1LedTx
+set_location_assignment PIN_B11 -to aCh1RxLna1En
+set_location_assignment PIN_D11 -to aCh2RxSw1[1]
+set_location_assignment PIN_A11 -to aCh1RxSw3[2]
+set_location_assignment PIN_C10 -to aCh1LedRx
+set_location_assignment PIN_B10 -to aCh1RxSw3[1]
+set_location_assignment PIN_C9 -to aCh1LedRx2
+set_location_assignment PIN_A10 -to aCh1RxSw3[0]
+set_location_assignment PIN_C8 -to aCh2LedRx2
+set_location_assignment PIN_B9 -to aCh1SwTrx[1]
+set_location_assignment PIN_A9 -to aCh1SwTrx[0]
+set_location_assignment PIN_A8 -to aCh2SwTrx[0]
+set_location_assignment PIN_C7 -to aCh2RxSw3[0]
+set_location_assignment PIN_B8 -to aCh2SwTrx[1]
+set_location_assignment PIN_C6 -to aCh2LedRx
+set_location_assignment PIN_A7 -to aCh2RxSw3[1]
+set_location_assignment PIN_B5 -to aCh2TxSw1[0]
+set_location_assignment PIN_C5 -to aCh2RxSw1[0]
+set_location_assignment PIN_A6 -to aCh2TxSw1[1]
+set_location_assignment PIN_D5 -to aCh2LedTx
+set_location_assignment PIN_B6 -to aCh2RxSw3[2]
+set_location_assignment PIN_B4 -to aCh2RxLna2En
+set_location_assignment PIN_A5 -to aCh2RxLna1En
+set_location_assignment PIN_C4 -to aCh2RxSw2[0]
+set_location_assignment PIN_A4 -to aCh2TxSw2[1]
+set_location_assignment PIN_D4 -to aCh2RxSw2[1]
+set_location_assignment PIN_A2 -to aCh2TxSw2[3]
+set_location_assignment PIN_B3 -to aCh2TxSw2[0]
+set_location_assignment PIN_B1 -to aCh2TxSw2[2]
+
+set_global_assignment -name DEVICE_FILTER_PACKAGE FBGA
+set_global_assignment -name DEVICE_FILTER_PIN_COUNT 256
+set_global_assignment -name GENERATE_JAM_FILE ON
+set_global_assignment -name GENERATE_JBC_FILE ON
+set_global_assignment -name RESERVE_ALL_UNUSED_PINS_NO_OUTPUT_GND "AS INPUT TRI-STATED"
+set_global_assignment -name OPTIMIZATION_MODE "HIGH PERFORMANCE EFFORT"
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2RxSw4[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2TxPaEn
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2RxSw6[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2RxSw4[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2TxSw3
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2RxSw7[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2RxSw4[2]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2RxSw6[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2RxSw7[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2RxSw5[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2RxSw5[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2TxSw4[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2RxSw5[3]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2RxSw6[2]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2TxSw4[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2TxAmpEn
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2RxSw5[2]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2TxMixerEn
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2RxMixerEn
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2TxSw5[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2TxSw5[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aLmkSpiSdio
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2RxSw8[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2RxSw8[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2RxAmpEn
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aLmkSpiSck
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aLmkSpiCs_n
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aMkReset_n
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aLmkSync
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aVcxoCtrl
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aDacDin
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aDacSync_n
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aDacSck
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to lPlSpiSdo
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to sPsSpiSdo
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aRxLoSck
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aRxLoDin
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aRxLoCs_n
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aTxLoDin
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aTxLoSck
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aTxLoCs_n
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aMkTx1En
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aMkRx2En
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aMkRx1En
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aMkTx2En
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1RxMixerEn
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1TxSw5[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1TxMixerEn
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1RxSw8[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1TxAmpEn
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1RxSw8[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1TxSw5[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1RxAmpEn
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1TxSw4[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1TxSw4[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1RxSw5[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1RxSw7[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1RxSw4[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1RxSw5[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1RxSw6[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1RxSw2[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1RxSw7[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1RxSw2[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1RxSw6[2]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1RxSw6[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1TxSw3
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1RxSw5[2]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1TxPaEn
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1RxSw4[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1RxSw5[3]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1TxSw2[3]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1RxSw4[2]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1RxLna2En
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1TxSw2[2]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1TxSw2[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1TxSw2[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1RxSw1[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1TxSw1[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1RxSw1[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1TxSw1[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1LedTx
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1RxLna1En
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2RxSw1[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1RxSw3[2]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1LedRx
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1RxSw3[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1LedRx2
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1RxSw3[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2LedRx2
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1SwTrx[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh1SwTrx[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2SwTrx[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2RxSw3[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2SwTrx[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2LedRx
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2RxSw3[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2TxSw1[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2RxSw1[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2TxSw1[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2LedTx
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2RxSw3[2]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2RxLna2En
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2RxLna1En
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2TxSw2[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2RxSw2[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2RxSw2[1]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2TxSw2[0]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2TxSw2[3]
+set_instance_assignment -name CURRENT_STRENGTH_NEW 8MA -to aCh2TxSw2[2]
+set_global_assignment -name SEED 11
+set_global_assignment -name VHDL_FILE PkgMgCpld.vhd
+set_global_assignment -name VHDL_FILE PkgSetup.vhd
+set_global_assignment -name VHDL_FILE TopCpld.vhd
+set_global_assignment -name TOP_LEVEL_ENTITY TopCpld

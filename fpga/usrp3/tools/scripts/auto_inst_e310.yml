@@ -1,0 +1,22 @@
+# auto-inst file for E310
+# To regenerate rfnoc_ce_auto_inst_e310.v:
+#   ./uhd_image_builder.py  -d e310 -t E310_RFNOC_sg3 -y auto_inst_e310.yml -o rfnoc_ce_auto_inst_e310.v
+
+- block: axi_fifo_loopback
+  parameters:
+
+- block: window
+  parameters:
+
+- block: fft
+  parameters:
+
+- block: fosphor
+  parameters:
+    MTU: 12
+
+- block: axi_fifo_loopback
+  parameters:
+
+- block: fir_filter
+  parameters:

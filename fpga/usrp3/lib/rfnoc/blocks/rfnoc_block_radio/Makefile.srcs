@@ -1,0 +1,20 @@
+#
+# Copyright 2018 Ettus Research, A National Instruments Company
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+##################################################
+# RFNoC Utility Sources
+##################################################
+RFNOC_BLOCK_RADIO_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/rfnoc/blocks/rfnoc_block_radio/, \
+rfnoc_block_radio_regs.vh \
+radio_rx_core.v \
+radio_tx_core.v \
+radio_core.v \
+noc_shell_radio.v \
+rfnoc_block_radio.v \
+rx_frontend_gen3.v \
+tx_frontend_gen3.v \
+quarter_rate_downconverter.v \
+))

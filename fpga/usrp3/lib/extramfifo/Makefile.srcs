@@ -1,0 +1,17 @@
+#
+# Copyright 2010 Ettus Research LLC
+# Copyright 2015 Ettus Research, a National Instruments Company
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+#
+
+##################################################
+# Extram Sources
+##################################################
+EXTRAM_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/extramfifo/, \
+ext_fifo.v \
+nobl_if.v \
+nobl_fifo.v \
+refill_randomizer.v \
+))

@@ -1,0 +1,39 @@
+#
+# Copyright 2018 Ettus Research, A National Instruments Company
+#
+# SPDX-License-Identifier: LGPL-3.0-or-later
+#
+
+##################################################
+# RFNoC Core Sources
+##################################################
+RFNOC_CORE_HEADERS = $(abspath $(addprefix $(BASE_DIR)/../lib/rfnoc/core/, \
+rfnoc_chdr_utils.vh \
+rfnoc_axis_ctrl_utils.vh \
+rfnoc_chdr_internal_utils.vh \
+ctrlport.vh \
+))
+
+RFNOC_CORE_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/rfnoc/core/, \
+axis_ctrl_endpoint.v \
+axis_ctrl_master.v \
+axis_ctrl_slave.v \
+chdr_compute_tkeep.v \
+chdr_to_chdr_data.v \
+chdr_to_axis_pyld_ctxt.v \
+chdr_to_axis_data_mdata.v \
+chdr_to_axis_data.v \
+axis_pyld_ctxt_to_chdr.v \
+axis_data_mdata_to_chdr.v \
+axis_data_to_chdr.v \
+chdr_ingress_fifo.v \
+chdr_mgmt_pkt_handler.v \
+chdr_data_swapper.v \
+chdr_stream_endpoint.v \
+chdr_stream_input.v \
+chdr_stream_output.v \
+chdr_to_axis_ctrl.v \
+ctrlport_endpoint.v \
+backend_iface.v \
+rfnoc_core_kernel.v \
+))

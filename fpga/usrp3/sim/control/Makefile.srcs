@@ -1,0 +1,10 @@
+#
+# Copyright 2015 Ettus Research LLC
+#
+
+##################################################
+# Control/Readback simulation libraries
+##################################################
+SIM_CONTROL_SRCS = $(abspath $(addprefix $(BASE_DIR)/../sim/control/, \
+sim_set_rb_lib.svh \
+))

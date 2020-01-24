@@ -159,4 +159,4 @@ the FPGA repository.
 [CppCoreGuideLines]: https://github.com/isocpp/CppCoreGuidelines/blob/master/CppCoreGuidelines.md
 [PEP8]: https://www.python.org/dev/peps/pep-0008/
 [Pep257]: https://www.python.org/dev/peps/pep-0257/
-[fpga-coding]: https://github.com/EttusResearch/fpga/blob/master/CODING.md
+[fpga-coding]: https://github.com/EttusResearch/uhd/blob/master/fpga/CODING.md

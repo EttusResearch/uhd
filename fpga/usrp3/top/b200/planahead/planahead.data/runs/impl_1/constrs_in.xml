@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<DARoots Version="1" Minor="26">
+  <FileSet Name="constrs_in" Type="Constrs" RelSrcDir="$PSRCDIR/constrs_1">
+    <Filter Type="Constrs"/>
+    <File Path="$PSRCDIR/constrs_1/imports/b200/b200.ucf">
+      <FileInfo>
+        <Attr Name="ImportPath" Val="$PPRDIR/../b200.ucf"/>
+        <Attr Name="ImportTime" Val="1358988004"/>
+        <Attr Name="UsedInSynthesis" Val="1"/>
+        <Attr Name="UsedInImplementation" Val="1"/>
+      </FileInfo>
+    </File>
+    <File Path="$PSRCDIR/constrs_1/imports/b200/timing.ucf">
+      <FileInfo>
+        <Attr Name="ImportPath" Val="$PPRDIR/../timing.ucf"/>
+        <Attr Name="ImportTime" Val="1359506480"/>
+        <Attr Name="UsedInSynthesis" Val="1"/>
+        <Attr Name="UsedInImplementation" Val="1"/>
+      </FileInfo>
+    </File>
+    <Config>
+      <Option Name="ConstrsType" Val="UCF"/>
+    </Config>
+  </FileSet>
+</DARoots>

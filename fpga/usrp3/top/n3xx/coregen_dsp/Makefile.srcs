@@ -1,0 +1,17 @@
+#
+# Copyright 2012 Ettus Research LLC
+#
+
+##################################################
+# Coregen Sources
+##################################################
+
+COREGEN_DSP_SRCS = $(abspath $(addprefix $(BASE_DIR)/../top/n3xx/coregen_dsp/, \
+hbdec1.v \
+hbdec1.ngc \
+hbdec2.v \
+hbdec2.ngc \
+hbdec3.v \
+hbdec3.ngc \
+))
+

@@ -1,0 +1,157 @@
+
+#### FX3 Lines ##############################################################
+# GPIF Data lines
+NET "FX3_DQ<0>"  LOC = "T22" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # FX3 Parallel Data
+NET "FX3_DQ<1>"  LOC = "T21" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # FX3 Parallel Data
+NET "FX3_DQ<2>"  LOC = "M19" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # FX3 Parallel Data
+NET "FX3_DQ<3>"  LOC = "R22" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # FX3 Parallel Data
+NET "FX3_DQ<4>"  LOC = "R20" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # FX3 Parallel Data
+NET "FX3_DQ<5>"  LOC = "R19" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # FX3 Parallel Data
+NET "FX3_DQ<6>"  LOC = "P20" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # FX3 Parallel Data
+NET "FX3_DQ<7>"  LOC = "N19" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # FX3 Parallel Data
+NET "FX3_DQ<8>"  LOC = "P22" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # FX3 Parallel Data
+NET "FX3_DQ<9>"  LOC = "N20" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # FX3 Parallel Data
+NET "FX3_DQ<10>" LOC = "P21" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # FX3 Parallel Data
+NET "FX3_DQ<11>" LOC = "M21" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # FX3 Parallel Data
+NET "FX3_DQ<12>" LOC = "N22" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # FX3 Parallel Data
+NET "FX3_DQ<13>" LOC = "L22" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # FX3 Parallel Data
+NET "FX3_DQ<14>" LOC = "M22" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # FX3 Parallel Data
+NET "FX3_DQ<15>" LOC = "P19" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # FX3 Parallel Data
+NET "FX3_DQ<16>" LOC = "D21" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # FX3 Parallel Data
+NET "FX3_DQ<17>" LOC = "F22" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # FX3 Parallel Data
+NET "FX3_DQ<18>" LOC = "C22" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # FX3 Parallel Data
+NET "FX3_DQ<19>" LOC = "D22" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # FX3 Parallel Data
+NET "FX3_DQ<20>" LOC = "E22" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # FX3 Parallel Data
+NET "FX3_DQ<21>" LOC = "B22" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # FX3 Parallel Data
+NET "FX3_DQ<22>" LOC = "B21" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # FX3 Parallel Data
+NET "FX3_DQ<23>" LOC = "F20" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # FX3 Parallel Data
+NET "FX3_DQ<24>" LOC = "G19" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # FX3 Parallel Data
+NET "FX3_DQ<25>" LOC = "D20" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # FX3 Parallel Data
+NET "FX3_DQ<26>" LOC = "E20" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # FX3 Parallel Data
+NET "FX3_DQ<27>" LOC = "D19" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # FX3 Parallel Data
+NET "FX3_DQ<28>" LOC = "J19" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # FX3 Parallel Data
+NET "FX3_DQ<29>" LOC = "C20" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # FX3 Parallel Data
+NET "FX3_DQ<30>" LOC = "F19" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # FX3 Parallel Data
+NET "FX3_DQ<31>" LOC = "C18" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # FX3 Parallel Data
+
+NET "FX3_PCLK" LOC = "H20" | IOSTANDARD = LVCMOS18 | DRIVE = 6 | SLEW = SLOW; # FX3 Data Synchronization Clock, called IFCLK in B200
+
+# GPIF Control Lines
+NET "FX3_CTL0" LOC = "M20" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # SLCSn
+NET "FX3_CTL1" LOC = "J22" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # SLWRn
+NET "FX3_CTL2" LOC = "J21" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # SLOEn
+NET "FX3_CTL3" LOC = "K22" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # SLRDn
+NET "FX3_CTL4" LOC = "M18" | IOSTANDARD = LVCMOS18 ; # FLAG_A
+NET "FX3_CTL5" LOC = "L19" | IOSTANDARD = LVCMOS18 ; # FLAG_B
+NET "FX3_CTL6" LOC = "H22" | IOSTANDARD = LVCMOS18 ; #
+NET "FX3_CTL7" LOC = "L20" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # PKTENDn
+NET "FX3_CTL8" LOC = "K19" | IOSTANDARD = LVCMOS18 ; #
+NET "FX3_CTL9" LOC = "K20" | IOSTANDARD = LVCMOS18 ; #
+##FX3_CTL10 is not for general signaling
+NET "FX3_CTL11" LOC = "H21" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # A1
+NET "FX3_CTL12" LOC = "G22" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # A0
+
+
+#### AD9364 #################################################################
+NET "CAT_RESETn" LOC = "T3" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # Transceiver Global Reset
+NET "CAT_EN_AGC" LOC = "AA4" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # Transceiver AGC Enable
+NET "CAT_EN"     LOC = "V3"  | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # Transceiver Globe Enable
+NET "CAT_TXnRX"  LOC = "Y4"  | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # Transceiver Globe TX and RX control
+
+# SPI
+NET "CAT_SPI_EN" LOC = "T4" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # Transceiver Controller SPI Latch
+NET "CAT_SPI_CLK" LOC = "Y3" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # Transceiver Controller SPI Serial Clock
+NET "CAT_SPI_DI" LOC = "AA2" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # Transceiver Controller SPI Data In
+NET "CAT_SPI_DO" LOC = "U4" | IOSTANDARD = LVCMOS18 | PULLUP; # Transceiver Controller SPI Data Out
+
+# Control Lines
+NET "CAT_CTL_OUT<0>"  LOC = "D2" | IOSTANDARD = LVCMOS18 ; #
+NET "CAT_CTL_OUT<1>"  LOC = "AB4" | IOSTANDARD = LVCMOS18 ; #
+NET "CAT_CTL_OUT<2>"  LOC = "AB3" | IOSTANDARD = LVCMOS18 ; #
+NET "CAT_CTL_OUT<3>"  LOC = "K3" | IOSTANDARD = LVCMOS18 ; #
+NET "CAT_CTL_OUT<4>"  LOC = "AB2" | IOSTANDARD = LVCMOS18 ; #
+NET "CAT_CTL_OUT<5>"  LOC = "T7" | IOSTANDARD = LVCMOS18 ; #
+NET "CAT_CTL_OUT<6>"  LOC = "U8" | IOSTANDARD = LVCMOS18 ; #
+NET "CAT_CTL_OUT<7>"  LOC = "W4" | IOSTANDARD = LVCMOS18 ; #
+NET "CAT_CTL_IN<0>"   LOC = "H5" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; #
+NET "CAT_CTL_IN<1>"   LOC = "H3" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; #
+NET "CAT_CTL_IN<2>"   LOC = "J4" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; #
+NET "CAT_CTL_IN<3>"   LOC = "D1" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; #
+
+# Rx Bus
+NET "CAT_P0_D<0>"  LOC = "H1" | IOSTANDARD = LVCMOS18; # Transceiver Parallel Data. Bank3 LB.
+NET "CAT_P0_D<1>"  LOC = "H2" | IOSTANDARD = LVCMOS18; # Transceiver Parallel Data. Bank3 LB.
+NET "CAT_P0_D<2>"  LOC = "G1" | IOSTANDARD = LVCMOS18; # Transceiver Parallel Data. Bank3 LT.
+NET "CAT_P0_D<3>"  LOC = "G3" | IOSTANDARD = LVCMOS18; # Transceiver Parallel Data. Bank3 LT.
+NET "CAT_P0_D<4>"  LOC = "F1" | IOSTANDARD = LVCMOS18; # Transceiver Parallel Data. Bank3 LT.
+NET "CAT_P0_D<5>"  LOC = "F2" | IOSTANDARD = LVCMOS18; # Transceiver Parallel Data. Bank3 LT.
+NET "CAT_P0_D<6>"  LOC = "E1" | IOSTANDARD = LVCMOS18; # Transceiver Parallel Data. Bank3 LT.
+NET "CAT_P0_D<7>"  LOC = "E3" | IOSTANDARD = LVCMOS18; # Transceiver Parallel Data. Bank3 LT.
+NET "CAT_P0_D<8>"  LOC = "L1" | IOSTANDARD = LVCMOS18; # Transceiver Parallel Data. Bank3 LB.
+NET "CAT_P0_D<9>"  LOC = "L3" | IOSTANDARD = LVCMOS18; # Transceiver Parallel Data. Bank3 LB.
+NET "CAT_P0_D<10>" LOC = "M1" | IOSTANDARD = LVCMOS18; # Transceiver Parallel Data. Bank3 LB.
+NET "CAT_P0_D<11>" LOC = "M2" | IOSTANDARD = LVCMOS18; # Transceiver Parallel Data. Bank3 LB.
+
+# Tx Bus
+NET "CAT_P1_D<0>"  LOC = "T1" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # Transceiver Parallel Data. Bank3 LB.
+NET "CAT_P1_D<1>"  LOC = "T2" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # Transceiver Parallel Data. Bank3 LB.
+NET "CAT_P1_D<2>"  LOC = "U1" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # Transceiver Parallel Data. Bank3 LB.
+NET "CAT_P1_D<3>"  LOC = "U3" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # Transceiver Parallel Data. Bank3 LB.
+NET "CAT_P1_D<4>"  LOC = "V1" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # Transceiver Parallel Data. Bank3 LB.
+NET "CAT_P1_D<5>"  LOC = "V2" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # Transceiver Parallel Data. Bank3 LB.
+NET "CAT_P1_D<6>"  LOC = "W1" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # Transceiver Parallel Data. Bank3 LB.
+NET "CAT_P1_D<7>"  LOC = "W3" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # Transceiver Parallel Data. Bank3 LB.
+NET "CAT_P1_D<8>"  LOC = "Y1" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # Transceiver Parallel Data. Bank3 LB.
+NET "CAT_P1_D<9>"  LOC = "Y2" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # Transceiver Parallel Data. Bank3 LB.
+NET "CAT_P1_D<10>" LOC = "R1" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # Transceiver Parallel Data. Bank3 LB.
+NET "CAT_P1_D<11>" LOC = "R3" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # Transceiver Parallel Data. Bank3 LB.
+
+# Frame syncs
+NET "CAT_TX_FR_N" LOC = "K1" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # Bank3 LB.
+NET "CAT_TX_FR_P" LOC = "K2" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # Bank3 LB.
+#NET "CAT_RX_FR_N" LOC = "P1" | IOSTANDARD = LVCMOS18; # Bank3 LB.
+NET "CAT_RX_FR_P" LOC = "P2" | IOSTANDARD = LVCMOS18; # Bank3 LB.
+
+# Clocks ('N' clock lines are currently unused)
+#NET "CAT_DCLK_N" LOC = "P3" | IOSTANDARD = LVCMOS18; # Data Clock
+NET "CAT_DCLK_P"  LOC = "N4" | IOSTANDARD = LVCMOS18; # Data Clock
+NET "CAT_FBCLK_P" LOC = "J3" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # Clock to AD9364. Bank3 LB.
+NET "CAT_FBCLK_N" LOC = "J1" | IOSTANDARD = LVCMOS18 | DRIVE = 2 | SLEW = SLOW; # Clock to AD9364. Bank3 LB.
+
+#### Peripherals ############################################################
+# Radio Switchery
+NET "cFE_SEL_TRX_TX" LOC = "A5" | IOSTANDARD = LVCMOS33 | DRIVE = 2 | SLEW = SLOW; # TRX Switch, high to enable TX path (Always on for Duplex) (high for now)
+NET "cFE_SEL_TRX_RX" LOC = "A6" | IOSTANDARD = LVCMOS33 | DRIVE = 2 | SLEW = SLOW; # TRX Switch, high to enable RX path (Always off for Duplex) (low for now)
+NET "cFE_SEL_RX_TRX" LOC = "B3" | IOSTANDARD = LVCMOS33 | DRIVE = 2 | SLEW = SLOW; # high to enable RX path to TRX switch (Always off for Duplex) (low for now)
+NET "cFE_SEL_RX_RX2" LOC = "C5" | IOSTANDARD = LVCMOS33 | DRIVE = 2 | SLEW = SLOW; # high to enable RX path to RX2 port (Always on for Duplex) (high for now)
+NET "cTXDRV_PWEN"    LOC = "A4" | IOSTANDARD = LVCMOS33 | DRIVE = 4 | SLEW = SLOW; # high to enable power to TX power amplifier (high for now)
+
+# LEDs  R: 5mA / G: 1.25mA / B: 2.5mA (the mcd is equalized with this number), set by resistor already, with LVTTL logic (3.3V)
+NET "cLED_TRX_G"     LOC = "A7" | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW; # low to turn on TRX port LED green
+NET "cLED_TRX_B"     LOC = "B6" | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW; # low to turn on TRX port LED blue
+NET "cLED_TRX_R"     LOC = "C6" | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW; # low to turn on TRX port LED red
+NET "cLED_RX2_G"     LOC = "A9" | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW; # low to turn on RX2 port LED green
+NET "cLED_RX2_B"     LOC = "B8" | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW; # low to turn on RX2 port LED blue
+NET "cLED_RX2_R"     LOC = "A8" | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW; # low to turn on RX2 port LED red
+NET "cLED_S0"        LOC = "B10" | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW; # low to turn on S0 port LED red
+NET "cLED_S1"        LOC = "A10" | IOSTANDARD = LVCMOS33 | DRIVE = 8 | SLEW = SLOW; # low to turn on S1 port LED red
+
+
+# Clocking
+NET "CLK_40MHz_FPGA"    LOC = "AA10" | IOSTANDARD = LVCMOS18;   # 40MHz VCTCXO clock feed back
+NET "PPS_IN"            LOC = "B12" | IOSTANDARD = LVCMOS33;    # Pulse per second input (external)
+NET "CLKIN_10MHz"       LOC = "E6" | IOSTANDARD = LVCMOS18;     # 10MHz from external source
+NET "CLKIN_10MHz_REQ"   LOC = "E5" | IOSTANDARD = LVCMOS18;     # select 10MHz from external source
+NET "CLK_40M_DAC_nSYNC" LOC = "C17" | IOSTANDARD = LVCMOS33 | DRIVE = 2 | SLEW = SLOW; # 40MHz VCTCXO triming DAC serial frame/data latch (high for now)
+NET "CLK_40M_DAC_SCLK"  LOC = "D17" | IOSTANDARD = LVCMOS33 | DRIVE = 2 | SLEW = SLOW; # 40MHz VCTCXO triming DAC serial data clock (low for now)
+NET "CLK_40M_DAC_DIN"   LOC = "C16" | IOSTANDARD = LVCMOS33 | DRIVE = 2 | SLEW = SLOW; # 40MHz VCTCXO triming DAC serial data (low for now)
+
+## GPIO bus
+NET "fp_gpio<0>" LOC = "A18" | IOSTANDARD = LVCMOS33 | PULLUP;
+NET "fp_gpio<1>" LOC = "A17" | IOSTANDARD = LVCMOS33 | PULLUP;
+NET "fp_gpio<2>" LOC = "B16" | IOSTANDARD = LVCMOS33 | PULLUP;
+NET "fp_gpio<3>" LOC = "B18" | IOSTANDARD = LVCMOS33 | PULLUP;
+NET "fp_gpio<4>" LOC = "C15" | IOSTANDARD = LVCMOS33 | PULLUP;
+NET "fp_gpio<5>" LOC = "A15" | IOSTANDARD = LVCMOS33 | PULLUP;
+NET "fp_gpio<6>" LOC = "A16" | IOSTANDARD = LVCMOS33 | PULLUP;
+NET "fp_gpio<7>" LOC = "A13" | IOSTANDARD = LVCMOS33 | PULLUP;

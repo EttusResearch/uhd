@@ -1,0 +1,19 @@
+#
+# Copyright 2012-2013 Ettus Research LLC
+#
+
+##################################################
+# io_port2
+##################################################
+IOPORT2_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/io_port2/, \
+./LvFpga_Chinch_Interface.v \
+./LvFpga_Chinch_Interface.ngc \
+./ioport2_msg_codec.v \
+./pcie_pkt_route_specifier.v \
+./pcie_axi_wb_conv.v \
+./pcie_wb_reg_core.v \
+./pcie_iop2_msg_arbiter.v \
+./pcie_basic_regs.v \
+./pcie_dma_ctrl.v \
+./pcie_lossy_samp_gate.v \
+))
