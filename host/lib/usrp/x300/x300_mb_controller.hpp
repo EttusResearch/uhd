@@ -120,6 +120,10 @@ public:
     bool synchronize(std::vector<mb_controller::sptr>& mb_controllers,
         const uhd::time_spec_t& time_spec = uhd::time_spec_t(0.0),
         const bool quiet                  = false);
+    std::vector<std::string> get_gpio_banks() const;
+    std::vector<std::string> get_gpio_srcs(const std::string&) const;
+    std::vector<std::string> get_gpio_src(const std::string&);
+    void set_gpio_src(const std::string&, const std::vector<std::string>&);
 
 private:
     //! Return a string X300::MB_CTRL#N

@@ -1,5 +1,5 @@
 //
-// Copyright 2019 Ettus Research, a National Instruments Brand
+// Copyright 2019-2020 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -26,7 +26,7 @@ constexpr uint32_t ADC_SELF_TEST_DURATION = 100; // ms
 
 // When these regs are fixed, there is another fixme below to actually init the
 // timekeepers
-constexpr uint32_t TK_NUM_TIMEKEEPERS     = 12;   //Read-only
+constexpr uint32_t TK_NUM_TIMEKEEPERS     = 12; // Read-only
 constexpr uint32_t TK_REG_BASE            = 100;
 constexpr uint32_t TK_REG_OFFSET          = 48;
 constexpr uint32_t TK_REG_TICKS_NOW_LO    = 0x00; // Read-only
@@ -40,6 +40,11 @@ constexpr uint32_t TK_REG_TICKS_PERIOD_LO = 0x1C; // Read-Write
 constexpr uint32_t TK_REG_TICKS_PERIOD_HI = 0x20; // Read-Write
 
 constexpr char LOG_ID[] = "X300::MB_CTRL";
+
+constexpr char GPIO_SRC_BANK[]     = "FP0";
+constexpr char GPIO_SRC_RFA[]      = "RFA";
+constexpr char GPIO_SRC_RFB[]      = "RFB";
+constexpr size_t GPIO_SRC_NUM_PINS = 12;
 
 } // namespace
 
@@ -75,7 +80,9 @@ x300_mb_controller::x300_mb_controller(const size_t hw_rev,
 
     const size_t num_tks = _zpu_ctrl->peek32(SR_ADDR(SET0_BASE, TK_NUM_TIMEKEEPERS));
     for (size_t i = 0; i < num_tks; i++) {
-        register_timekeeper(i, std::make_shared<x300_timekeeper>(i, _zpu_ctrl, clock_ctrl->get_master_clock_rate()));
+        register_timekeeper(i,
+            std::make_shared<x300_timekeeper>(
+                i, _zpu_ctrl, clock_ctrl->get_master_clock_rate()));
     }
 
     init_gps();
@@ -107,8 +114,7 @@ void x300_mb_controller::x300_timekeeper::set_ticks_now(const uint64_t ticks)
         get_tk_addr(TK_REG_TICKS_EVENT_LO), narrow_cast<uint32_t>(ticks & 0xFFFFFFFF));
     _zpu_ctrl->poke32(
         get_tk_addr(TK_REG_TICKS_EVENT_HI), narrow_cast<uint32_t>(ticks >> 32));
-    _zpu_ctrl->poke32(
-        get_tk_addr(TK_REG_TICKS_CTRL), narrow_cast<uint32_t>(0x1));
+    _zpu_ctrl->poke32(get_tk_addr(TK_REG_TICKS_CTRL), narrow_cast<uint32_t>(0x1));
 }
 
 void x300_mb_controller::x300_timekeeper::set_ticks_next_pps(const uint64_t ticks)
@@ -117,16 +123,15 @@ void x300_mb_controller::x300_timekeeper::set_ticks_next_pps(const uint64_t tick
         get_tk_addr(TK_REG_TICKS_EVENT_LO), narrow_cast<uint32_t>(ticks & 0xFFFFFFFF));
     _zpu_ctrl->poke32(
         get_tk_addr(TK_REG_TICKS_EVENT_HI), narrow_cast<uint32_t>(ticks >> 32));
-    _zpu_ctrl->poke32(
-        get_tk_addr(TK_REG_TICKS_CTRL), narrow_cast<uint32_t>(0x2));
+    _zpu_ctrl->poke32(get_tk_addr(TK_REG_TICKS_CTRL), narrow_cast<uint32_t>(0x2));
 }
 
 void x300_mb_controller::x300_timekeeper::set_period(const uint64_t period_ns)
 {
     _zpu_ctrl->poke32(get_tk_addr(TK_REG_TICKS_PERIOD_LO),
         narrow_cast<uint32_t>(period_ns & 0xFFFFFFFF));
-    _zpu_ctrl->poke32(get_tk_addr(TK_REG_TICKS_PERIOD_HI),
-        narrow_cast<uint32_t>(period_ns >> 32));
+    _zpu_ctrl->poke32(
+        get_tk_addr(TK_REG_TICKS_PERIOD_HI), narrow_cast<uint32_t>(period_ns >> 32));
 }
 
 uint32_t x300_mb_controller::x300_timekeeper::get_tk_addr(const uint32_t tk_addr)
@@ -247,8 +252,8 @@ void x300_mb_controller::set_clock_source(const std::string& source)
                         .str());
             } else {
                 // TODO: Re-enable this warning when we figure out a reliable lock time
-                // UHD_LOGGER_WARNING("X300::MB_CTRL") << "Reference clock failed to lock to " +
-                // source + " during device initialization.  " <<
+                // UHD_LOGGER_WARNING("X300::MB_CTRL") << "Reference clock failed to lock
+                // to " + source + " during device initialization.  " <<
                 //    "Check for the lock before operation or ignore this warning if using
                 //    another clock source." ;
             }
@@ -311,7 +316,8 @@ void x300_mb_controller::set_sync_source(
     set_sync_source(sync_args);
 }
 
-void x300_mb_controller::set_sync_source(const device_addr_t& sync_source) {
+void x300_mb_controller::set_sync_source(const device_addr_t& sync_source)
+{
     if (sync_source.has_key("clock_source")) {
         set_clock_source(sync_source["clock_source"]);
     }
@@ -338,8 +344,7 @@ std::vector<device_addr_t> x300_mb_controller::get_sync_sources()
         {"external", "internal"},
         {"external", "external"},
         {"gpsdo", "gpsdo"},
-        {"gpsdo", "internal"}
-    };
+        {"gpsdo", "internal"}};
 
     // Now convert to vector of device_addr_t
     std::vector<device_addr_t> sync_sources;
@@ -482,6 +487,78 @@ bool x300_mb_controller::synchronize(std::vector<mb_controller::sptr>& mb_contro
         }
     }
     throw uhd::runtime_error(err_str);
+}
+
+std::vector<std::string> x300_mb_controller::get_gpio_banks() const
+{
+    return {GPIO_SRC_BANK};
+}
+
+std::vector<std::string> x300_mb_controller::get_gpio_srcs(const std::string& bank) const
+{
+    if (bank != GPIO_SRC_BANK) {
+        UHD_LOG_ERROR(LOG_ID,
+            "Invalid GPIO source bank: " << bank << ". Only supported bank is "
+                                         << GPIO_SRC_BANK);
+        throw uhd::runtime_error(
+            std::string("Invalid GPIO source bank: ") + GPIO_SRC_BANK);
+    }
+    return {GPIO_SRC_RFA, GPIO_SRC_RFB};
+}
+
+std::vector<std::string> x300_mb_controller::get_gpio_src(const std::string& bank)
+{
+    if (bank != GPIO_SRC_BANK) {
+        UHD_LOG_ERROR(LOG_ID,
+            "Invalid GPIO source bank: " << bank << ". Only supported bank is "
+                                         << GPIO_SRC_BANK);
+        throw uhd::runtime_error(
+            std::string("Invalid GPIO source bank: ") + GPIO_SRC_BANK);
+    }
+    uint32_t fp_gpio_src = _zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_FP_GPIO_SRC));
+    const auto gpio_srcs = get_gpio_srcs(bank);
+    std::vector<std::string> gpio_src;
+    for (size_t ii = 0; ii < GPIO_SRC_NUM_PINS; ++ii) {
+        const uint32_t this_src = (fp_gpio_src >> (2 * ii)) & 0x3;
+        if (this_src > 1) {
+            UHD_LOG_WARNING(LOG_ID,
+                "get_gpio_src() read back invalid GPIO source index: "
+                    << this_src << ". Falling back to " << (this_src & 0x1));
+        }
+        gpio_src.push_back(gpio_srcs[this_src & 0x1]);
+    }
+    return gpio_src;
+}
+
+void x300_mb_controller::set_gpio_src(
+    const std::string& bank, const std::vector<std::string>& srcs)
+{
+    if (srcs.size() > GPIO_SRC_NUM_PINS) {
+        UHD_LOG_WARNING(LOG_ID, "set_gpio_src(): Provided more sources than pins!");
+    }
+    uint32_t fp_gpio_src   = _zpu_ctrl->peek32(SR_ADDR(SET0_BASE, ZPU_RB_FP_GPIO_SRC));
+    size_t pins_configured = 0;
+
+    const auto gpio_srcs = get_gpio_srcs(bank);
+    for (auto src : srcs) {
+        const uint32_t pins = [src]() {
+            if (src == GPIO_SRC_RFA) {
+                return 0;
+            }
+            if (src == GPIO_SRC_RFB) {
+                return 1;
+            }
+            UHD_LOG_ERROR(LOG_ID, "Invalid GPIO source provided: " << src);
+            throw uhd::runtime_error("Invalid GPIO source provided!");
+        }();
+        uint32_t pin_mask = ~(uint32_t(0x3) << (2 * pins_configured));
+        fp_gpio_src       = (fp_gpio_src & pin_mask) | (pins << 2 * pins_configured);
+        pins_configured++;
+        if (pins_configured > GPIO_SRC_NUM_PINS) {
+            break;
+        }
+    }
+    _zpu_ctrl->poke32(SR_ADDR(SET0_BASE, ZPU_SR_FP_GPIO_SRC), fp_gpio_src);
 }
 
 /******************************************************************************

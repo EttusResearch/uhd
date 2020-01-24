@@ -24,6 +24,7 @@ void export_multi_usrp(py::module& m)
         // Factory
         .def(py::init(&multi_usrp::make))
 
+        // clang-format off
         // General USRP methods
         .def("get_rx_freq"             , &multi_usrp::get_rx_freq, py::arg("chan") = 0)
         .def("get_rx_num_channels"     , &multi_usrp::get_rx_num_channels)
@@ -170,6 +171,7 @@ void export_multi_usrp(py::module& m)
         .def("get_gpio_srcs"           , &multi_usrp::get_gpio_srcs, py::arg("bank"), py::arg("mboard") = 0)
         .def("get_gpio_src"            , &multi_usrp::get_gpio_src, py::arg("bank"), py::arg("mboard") = 0)
         .def("set_gpio_src"            , &multi_usrp::set_gpio_src, py::arg("bank"), py::arg("src"), py::arg("mboard") = 0)
+        .def("get_gpio_src_banks"      , &multi_usrp::get_gpio_src_banks, py::arg("mboard") = 0)
 
         // Filter API methods
         .def("get_rx_filter_names"     , &multi_usrp::get_rx_filter_names)
@@ -178,6 +180,7 @@ void export_multi_usrp(py::module& m)
         .def("get_tx_filter_names"     , &multi_usrp::get_tx_filter_names)
         .def("get_tx_filter"           , &multi_usrp::get_tx_filter)
         .def("set_tx_filter"           , &multi_usrp::set_tx_filter)
+        // clang-format off
         ;
 }
 

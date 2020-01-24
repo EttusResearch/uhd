@@ -35,8 +35,7 @@ static const int ZPU_SR_REF_FREQ   = 04;
 static const int ZPU_SR_SPI        = 32;
 static const int ZPU_SR_ETHINT0    = 40;
 static const int ZPU_SR_ETHINT1    = 56;
-static const int ZPU_SR_DRAM_FIFO0 = 72;
-static const int ZPU_SR_DRAM_FIFO1 = 80;
+static const int ZPU_SR_FP_GPIO_SRC = 72;
 
 // reset bits
 #define ZPU_SR_SW_RST_ETH_PHY (1 << 0)
@@ -51,6 +50,7 @@ static const int ZPU_RB_NUM_CE     = 7;
 static const int ZPU_RB_GIT_HASH   = 10;
 static const int ZPU_RB_SFP0_TYPE  = 4;
 static const int ZPU_RB_SFP1_TYPE  = 5;
+static const int ZPU_RB_FP_GPIO_SRC = 13;
 
 static const uint32_t RB_SFP_1G_ETH  = 0;
 static const uint32_t RB_SFP_10G_ETH = 1;

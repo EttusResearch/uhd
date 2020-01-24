@@ -1,6 +1,7 @@
 //
 // Copyright 2014-15 Ettus Research LLC
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2020 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -48,8 +49,11 @@
 // ATR_TX - Output values to be set when transmitting
 // ATR_XX - Output values to be set when operating in full duplex
 // This code below contains examples of setting all these registers.  On
-// devices with multiple radios, the ATR for the front panel GPIO is driven
-// by the state of the first radio (0 or A).
+// devices with multiple radios, the ATR driver for the front panel GPIO
+// defaults to the state of the first radio (0 or A). This can be changed
+// on a bit-by-bit basis by writing to the register:
+// The ATR source can also be controlled, ie. drive from Radio0 or Radio1.
+// SRC - Source (RFA=Radio0, RFB=Radio1, etc.)
 //
 // The UHD API
 // The multi_usrp::set_gpio_attr() method is the UHD API for configuring and
@@ -57,8 +61,9 @@
 // bank - the name of the GPIO bank (typically "FP0" for front panel GPIO,
 //                                   "TX<n>" for TX daughter card GPIO, or
 //                                   "RX<n>" for RX daughter card GPIO)
-// attr - attribute (register) to change ("DDR", "OUT", "CTRL", "ATR_0X",
-//                                        "ATR_RX", "ATR_TX", "ATR_XX")
+// attr - attribute (register) to change ("SRC", "DDR", "OUT", "CTRL",
+//                                        "ATR_0X", "ATR_RX", "ATR_TX",
+//                                        "ATR_XX")
 // value - the value to be set
 // mask - a mask indicating which bits in the specified attribute register are
 //          to be changed (default is all bits).
@@ -71,6 +76,7 @@
 #include <stdlib.h>
 #include <boost/format.hpp>
 #include <boost/program_options.hpp>
+#include <boost/tokenizer.hpp>
 #include <chrono>
 #include <csignal>
 #include <iostream>
@@ -127,6 +133,13 @@ void output_reg_values(const std::string bank,
                          % to_bit_string(gpio_bits, num_bits))
                   << std::endl;
     }
+    // GPIO Src
+    const auto gpio_src = usrp->get_gpio_src(bank);
+    std::cout << boost::format("%10s:") % "SRC: ";
+    for (auto src : gpio_src) {
+        std::cout << " " << src;
+    }
+    std::cout << std::endl;
 }
 
 int UHD_SAFE_MAIN(int argc, char* argv[])
@@ -137,9 +150,12 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     double rx_rate, tx_rate, dwell;
     std::string gpio;
     size_t num_bits;
+    std::string src_str;
     std::string ctrl_str;
     std::string ddr_str;
     std::string out_str;
+    std::string tx_subdev_spec;
+    std::string rx_subdev_spec;
 
     // setup the program options
     po::options_description desc("Allowed options");
@@ -147,6 +163,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     desc.add_options()
         ("help", "help message")
         ("args", po::value<std::string>(&args)->default_value(""), "multi uhd device address args")
+        ("tx_subdev_spec", po::value<std::string>(&tx_subdev_spec)->default_value(""), "A:0, B:0, or A:0 B:0")
+        ("rx_subdev_spec", po::value<std::string>(&rx_subdev_spec)->default_value(""), "A:0, B:0, or A:0 B:0")
         ("repeat", "repeat loop until Ctrl-C is pressed")
         ("list-banks", "print list of banks before running tests")
         ("cpu", po::value<std::string>(&cpu)->default_value(GPIO_DEFAULT_CPU_FORMAT), "cpu data format")
@@ -157,6 +175,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         ("bank", po::value<std::string>(&gpio)->default_value(GPIO_DEFAULT_GPIO), "name of gpio bank")
         ("bits", po::value<size_t>(&num_bits)->default_value(GPIO_DEFAULT_NUM_BITS), "number of bits in gpio bank")
         ("bitbang", "single test case where user sets values for CTRL, DDR, and OUT registers")
+        ("src", po::value<std::string>(&src_str), "GPIO SRC reg value")
         ("ddr", po::value<std::string>(&ddr_str)->default_value(GPIO_DEFAULT_DDR), "GPIO DDR reg value")
         ("out", po::value<std::string>(&out_str)->default_value(GPIO_DEFAULT_OUT), "GPIO OUT reg value")
     ;
@@ -186,6 +205,18 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         }
     }
     std::cout << "Using GPIO bank: " << gpio << std::endl;
+
+    // subdev spec
+    if (tx_subdev_spec != "")
+        usrp->set_tx_subdev_spec(tx_subdev_spec);
+    if (rx_subdev_spec != "")
+        usrp->set_rx_subdev_spec(rx_subdev_spec);
+    std::cout << boost::format("  rx_subdev_spec: %s")
+                     % usrp->get_rx_subdev_spec(0).to_string()
+              << std::endl;
+    std::cout << boost::format("  tx_subdev_spec: %s")
+                     % usrp->get_tx_subdev_spec(0).to_string()
+              << std::endl;
 
     // print out initial unconfigured state of FP GPIO
     std::cout << "Initial GPIO values:" << std::endl;
@@ -225,6 +256,15 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
 
         // GPIO[4] = output
         ddr |= GPIO_BIT(4);
+    }
+
+    // set GPIO driver source
+    if (vm.count("src")) {
+        std::vector<std::string> gpio_src;
+        typedef boost::char_separator<char> separator;
+        boost::tokenizer<separator> tokens(src_str, separator(" "));
+        std::copy(tokens.begin(), tokens.end(), std::back_inserter(gpio_src));
+        usrp->set_gpio_src(gpio, gpio_src);
     }
 
     // set data direction register (DDR)

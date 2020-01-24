@@ -1,6 +1,7 @@
 //
 // Copyright 2014 Ettus Research LLC
 // Copyright 2017 Ettus Research, a National Instruments Company
+// Copyright 2020 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -21,7 +22,7 @@ module x300_core #(
    // Radio 0
    input [31:0] rx0, output [31:0] tx0,
    input [31:0] db0_gpio_in, output [31:0] db0_gpio_out, output [31:0] db0_gpio_ddr,
-   input [31:0] fp_gpio_in, output [31:0] fp_gpio_out, output [31:0] fp_gpio_ddr,
+   input [31:0] fp_gpio_in, output reg [31:0] fp_gpio_out, output reg [31:0] fp_gpio_ddr,
    output [7:0] sen0, output sclk0, output mosi0, input miso0,
    output [2:0] radio_led0,
    output reg [31:0] radio0_misc_out, input [31:0] radio0_misc_in,
@@ -311,6 +312,8 @@ module x300_core #(
       // SFP 1
       .SFPP1_ModAbs(SFPP1_ModAbs),.SFPP1_TxFault(SFPP1_TxFault),.SFPP1_RxLOS(SFPP1_RxLOS),
       .SFPP1_RS0(SFPP1_RS0), .SFPP1_RS1(SFPP1_RS1),
+      // Front-panel GPIO source
+      .fp_gpio_src(sr_fp_gpio_src),
       //clocky locky misc
       .clock_status({misc_clock_status, pps_detect, LMK_Holdover, LMK_Lock, LMK_Status}),
       .clock_control({1'b0, clock_misc_opt[1:0], pps_out_enb, pps_select[1:0], clock_ref_sel[1:0]}),
@@ -528,6 +531,7 @@ module x300_core #(
    wire [31:0] db_gpio_in[0:NUM_DBOARDS-1], db_gpio_out[0:NUM_DBOARDS-1], db_gpio_ddr[0:NUM_DBOARDS-1];
    wire [31:0] misc_outs[0:NUM_DBOARDS-1];
    reg  [31:0] misc_ins[0:NUM_DBOARDS-1];
+   wire [24:0] sr_fp_gpio_src, fp_gpio_src;
    wire [7:0]  sen[0:NUM_DBOARDS-1];
    wire        sclk[0:NUM_DBOARDS-1], mosi[0:NUM_DBOARDS-1], miso[0:NUM_DBOARDS-1];
    wire        rx_running[0:NUM_CHANNELS-1], tx_running[0:NUM_CHANNELS-1];
@@ -602,6 +606,34 @@ module x300_core #(
    endgenerate
 
    //------------------------------------
+   // Front-Panel GPIO Source Mux
+   //------------------------------------
+   // Number of FP GPIO Pins
+   localparam FP_GPIO_WIDTH = 12;
+
+   // Bring FP GPIO controls into radio clk domain
+   synchronizer #(.WIDTH(24)) fp_gpio_sync (
+      .clk(radio_clk), .rst(radio_rst), .in(sr_fp_gpio_src), .out(fp_gpio_src)
+   );
+
+   // For each bit in the front-panel GPIO, mux the output and the direction
+   // control bit based on the fp_gpio_src register. The fp_gpio_src register
+   // holds 2 bits per GPIO pin, which selects which source to use for GPIO
+   // control. Currently, only daughter board 0 and daughter board 1 are
+   // supported.
+   for (i=0; i<FP_GPIO_WIDTH; i=i+1) begin : gen_fp_gpio_mux
+      always @(posedge radio_clk) begin
+         fp_gpio_out[i] <= fp_gpio_r_out[fp_gpio_src[2*i +: 2] == 0 ? 0 : 1][i];
+         fp_gpio_ddr[i] <= fp_gpio_r_ddr[fp_gpio_src[2*i +: 2] == 0 ? 0 : 1][i];
+      end
+   end
+
+   // Front-panel GPIO inputs are routed to all daughter boards
+   for (i=0; i<NUM_DBOARDS; i=i+1) begin : gen_fp_gpio_inputs
+      assign fp_gpio_r_in[i] = fp_gpio_in;
+   end
+
+   //------------------------------------
    // Radio to ADC,DAC and IO Mapping
    //------------------------------------
 
@@ -652,11 +684,6 @@ module x300_core #(
    assign db1_gpio_out = db_gpio_out[1];
    assign db0_gpio_ddr = db_gpio_ddr[0];
    assign db1_gpio_ddr = db_gpio_ddr[1];
-
-   //Front-panel board GPIO
-   assign {fp_gpio_r_in[1], fp_gpio_r_in[0]} = {32'b0, fp_gpio_in};
-   assign fp_gpio_out = fp_gpio_r_out[0];  //fp_gpio_r_out[1] unused
-   assign fp_gpio_ddr = fp_gpio_r_ddr[0];  //fp_gpio_ddr[1] unused
 
    //SPI
    assign {sen0, sclk0, mosi0} = {sen[0], sclk[0], mosi[0]};

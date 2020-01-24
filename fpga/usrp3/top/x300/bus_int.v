@@ -45,6 +45,8 @@ module bus_int #(
     input SFPP0_ModAbs, input SFPP0_TxFault, input SFPP0_RxLOS, inout SFPP0_RS0, inout SFPP0_RS1,
     // SFP+ 1
     input SFPP1_ModAbs, input SFPP1_TxFault, input SFPP1_RxLOS, inout SFPP1_RS0, inout SFPP1_RS1,
+    // Front-panel GPIO source
+    output [23:0] fp_gpio_src,
     // Clock control and status
     input [7:0] clock_status, output [7:0] clock_control, output [31:0] ref_freq, output ref_freq_changed,
     // SFP+ 0 data stream
@@ -153,7 +155,7 @@ module bus_int #(
    localparam SR_SPI             = 8'd32;
    localparam SR_ETHINT0         = 8'd40;
    localparam SR_ETHINT1         = 8'd56;
-   //localparam SR_NEXT_ADDR       = 8'd72;
+   localparam SR_FP_GPIO_SRC     = 8'd72;
    localparam SR_BASE_TIME       = 8'd100;
 
    localparam RB_COUNTER         = 8'd00;
@@ -169,6 +171,7 @@ module bus_int #(
    localparam RB_GIT_HASH        = 8'd10;
    localparam RB_XADC_VALS       = 8'd11;
    localparam RB_NUM_TIMEKEEPERS = 8'd12;
+   localparam RB_FP_GPIO_SRC     = 8'd13;
 
    localparam COMPAT_MAJOR       = 16'h0026;
    localparam COMPAT_MINOR       = 16'h0000;
@@ -433,6 +436,7 @@ module bus_int #(
 `endif
        RB_GIT_HASH:  rb_data = `GIT_HASH;
        RB_XADC_VALS: rb_data = xadc_readback;
+       RB_FP_GPIO_SRC: rb_data = fp_gpio_src;
        SR_BASE_TIME: begin
                        rb_data = radio_time[31:0];
                        radio_time_hi_ld = 1'b1;
@@ -603,6 +607,13 @@ module bus_int #(
 
    assign SFPP1_RS0 = sfpp1_ctrl[0] ? 1'b0 : 1'bz;
    assign SFPP1_RS1 = sfpp1_ctrl[1] ? 1'b0 : 1'bz;
+
+
+   // Front-panel GPIO source - Each pin is allocated 2 bits
+   setting_reg #(.my_addr(SR_FP_GPIO_SRC), .awidth(SR_AWIDTH), .width(24)) set_fp_gpio_src
+     (.clk(clk), .rst(reset),
+      .strobe(set_stb), .addr(set_addr), .in(set_data),
+      .out(fp_gpio_src));
 
    // ////////////////////////////////////////////////////////////////
    // ETH interfaces

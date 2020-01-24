@@ -147,27 +147,24 @@ public:
         _init_codecs();
         _x300_mb_control->register_reset_codec_cb([this]() { this->reset_codec(); });
         // FP-GPIO
-        if (_radio_type == PRIMARY) {
-            RFNOC_LOG_TRACE("Creating FP-GPIO interface...");
-            _fp_gpio = gpio_atr::gpio_atr_3000::make(_wb_iface,
-                x300_regs::SR_FP_GPIO,
-                x300_regs::RB_FP_GPIO,
-                x300_regs::PERIPH_REG_OFFSET);
-            // Create the GPIO banks and attributes, and populate them with some default
-            // values
-            // TODO: Do we need this section? Since the _fp_gpio handles state now, we
-            // don't need to stash values here. We only need this if we want to set
-            // anything to a default value.
-            for (const gpio_atr::gpio_attr_map_t::value_type attr :
-                gpio_atr::gpio_attr_map) {
-                // TODO: Default values?
-                if (attr.first == usrp::gpio_atr::GPIO_SRC) {
-                    // Don't set the SRC
-                    // TODO: Remove from the map??
-                    continue;
-                }
-                set_gpio_attr("FP0", usrp::gpio_atr::gpio_attr_map.at(attr.first), 0);
+        RFNOC_LOG_TRACE("Creating FP-GPIO interface...");
+        _fp_gpio = gpio_atr::gpio_atr_3000::make(_wb_iface,
+            x300_regs::SR_FP_GPIO,
+            x300_regs::RB_FP_GPIO,
+            x300_regs::PERIPH_REG_OFFSET);
+        // Create the GPIO banks and attributes, and populate them with some default
+        // values
+        // TODO: Do we need this section? Since the _fp_gpio handles state now, we
+        // don't need to stash values here. We only need this if we want to set
+        // anything to a default value.
+        for (const gpio_atr::gpio_attr_map_t::value_type attr : gpio_atr::gpio_attr_map) {
+            // TODO: Default values?
+            if (attr.first == usrp::gpio_atr::GPIO_SRC) {
+                // Don't set the SRC
+                // TODO: Remove from the map??
+                continue;
             }
+            set_gpio_attr("FP0", usrp::gpio_atr::gpio_attr_map.at(attr.first), 0);
         }
         // DB Initialization
         _init_db(); // This does not init the dboards themselves!
@@ -855,17 +852,13 @@ public:
     /*** GPIO API ************************************************************/
     std::vector<std::string> get_gpio_banks() const
     {
-        std::vector<std::string> banks{"RX", "TX"};
-        if (_fp_gpio) {
-            banks.push_back("FP0");
-        }
-        return banks;
+        return {"RX", "TX", "FP0"};
     }
 
     void set_gpio_attr(
         const std::string& bank, const std::string& attr, const uint32_t value)
     {
-        if (bank == "FP0" and _fp_gpio) {
+        if (bank == "FP0") {
             _fp_gpio->set_gpio_attr(usrp::gpio_atr::gpio_attr_rev_map.at(attr), value);
             return;
         }
@@ -909,7 +902,7 @@ public:
 
     uint32_t get_gpio_attr(const std::string& bank, const std::string& attr)
     {
-        if (bank == "FP0" and _fp_gpio) {
+        if (bank == "FP0") {
             return _fp_gpio->get_attr_reg(usrp::gpio_atr::gpio_attr_rev_map.at(attr));
         }
         if (bank.size() >= 2 and bank[1] == 'X') {
