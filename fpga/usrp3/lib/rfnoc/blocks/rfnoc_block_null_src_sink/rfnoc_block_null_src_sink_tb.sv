@@ -20,6 +20,7 @@ module rfnoc_block_null_src_sink_tb;
   import PkgRfnocItemUtils::*;
 
   // Parameters
+  localparam        NOC_ID      = 32'h0000_0001;
   localparam [9:0]  THIS_PORTID = 10'h17;
   localparam [15:0] THIS_EPID   = 16'hDEAD;
   localparam int    CHDR_W      = 64;
@@ -87,7 +88,7 @@ module rfnoc_block_null_src_sink_tb;
     // Shared Variables
     // ----------------------------------------
     timeout_t    timeout;
-    ctrl_word_t  rvalue = 0;
+    ctrl_word_t  rvalue;
 
     // Initialize
     // ----------------------------------------
@@ -118,7 +119,7 @@ module rfnoc_block_null_src_sink_tb;
     begin
       test.start_timeout(timeout, 1us, "Waiting for block info response");
       // Get static block info and validate it
-      `ASSERT_ERROR(blk_ctrl.get_noc_id() == 1, "Incorrect noc_id Value");
+      `ASSERT_ERROR(blk_ctrl.get_noc_id() == NOC_ID, "Incorrect noc_id Value");
       `ASSERT_ERROR(blk_ctrl.get_num_data_i() == 2, "Incorrect num_data_i Value");
       `ASSERT_ERROR(blk_ctrl.get_num_data_o() == 2, "Incorrect num_data_o Value");
       `ASSERT_ERROR(blk_ctrl.get_ctrl_fifosize() == 5, "Incorrect ctrl_fifosize Value");

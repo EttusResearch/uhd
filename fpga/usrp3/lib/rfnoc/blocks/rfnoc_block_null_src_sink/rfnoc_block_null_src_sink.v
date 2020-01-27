@@ -64,7 +64,6 @@ module rfnoc_block_null_src_sink #(
   localparam [19:0] REG_LOOP_PKT_CNT_HI   = 20'h3C;
 
   wire                 rfnoc_chdr_rst;
-  wire                 rfnoc_ctrl_rst;
 
   wire                 ctrlport_req_wr;
   wire                 ctrlport_req_rd;
@@ -73,99 +72,97 @@ module rfnoc_block_null_src_sink #(
   reg                  ctrlport_resp_ack;
   reg  [31:0]          ctrlport_resp_data;
 
-  wire [(32*NIPC)-1:0] src_pyld_tdata , snk_pyld_tdata , loop_pyld_tdata ;
-  wire [NIPC-1:0]      src_pyld_tkeep , snk_pyld_tkeep , loop_pyld_tkeep ;
+  wire [(32*NIPC)-1:0] src_pyld_tdata ,                  loop_pyld_tdata ;
+  wire [NIPC-1:0]      src_pyld_tkeep ,                  loop_pyld_tkeep ;
   wire                 src_pyld_tlast , snk_pyld_tlast , loop_pyld_tlast ;
   wire                 src_pyld_tvalid, snk_pyld_tvalid, loop_pyld_tvalid;
   wire                 src_pyld_tready, snk_pyld_tready, loop_pyld_tready;
 
-  wire [CHDR_W-1:0]    src_ctxt_tdata , snk_ctxt_tdata , loop_ctxt_tdata ;
-  wire [3:0]           src_ctxt_tuser , snk_ctxt_tuser , loop_ctxt_tuser ;
-  wire                 src_ctxt_tlast , snk_ctxt_tlast , loop_ctxt_tlast ;
-  wire                 src_ctxt_tvalid, snk_ctxt_tvalid, loop_ctxt_tvalid;
+  wire [CHDR_W-1:0]    src_ctxt_tdata ,                  loop_ctxt_tdata ;
+  wire [3:0]           src_ctxt_tuser ,                  loop_ctxt_tuser ;
+  wire                 src_ctxt_tlast ,                  loop_ctxt_tlast ;
+  wire                 src_ctxt_tvalid,                  loop_ctxt_tvalid;
   wire                 src_ctxt_tready, snk_ctxt_tready, loop_ctxt_tready;
 
   // NoC Shell
   // ---------------------------
-  noc_shell_generic_ctrlport_pyld_chdr #(
-    .NOC_ID                   (32'h0000_0001),
-    .THIS_PORTID              (THIS_PORTID),
-    .CHDR_W                   (CHDR_W),
-    .CTRL_FIFOSIZE            (5),
-    .CTRLPORT_SLV_EN          (0),
-    .NUM_DATA_I               (2),
-    .NUM_DATA_O               (2),
-    .ITEM_W                   (32),
-    .NIPC                     (NIPC),
-    .MTU                      (MTU),
-    .CTXT_FIFOSIZE            (1),
-    .PYLD_FIFOSIZE            (1)
-  ) noc_shell_i (
-    .rfnoc_chdr_clk           (rfnoc_chdr_clk                     ),
-    .rfnoc_chdr_rst           (rfnoc_chdr_rst                     ),
-    .rfnoc_ctrl_clk           (rfnoc_ctrl_clk                     ),
-    .rfnoc_ctrl_rst           (rfnoc_ctrl_rst                     ),
-    .rfnoc_core_config        (rfnoc_core_config                  ),
-    .rfnoc_core_status        (rfnoc_core_status                  ),
-    .s_rfnoc_chdr_tdata       (s_rfnoc_chdr_tdata                 ),
-    .s_rfnoc_chdr_tlast       (s_rfnoc_chdr_tlast                 ),
-    .s_rfnoc_chdr_tvalid      (s_rfnoc_chdr_tvalid                ),
-    .s_rfnoc_chdr_tready      (s_rfnoc_chdr_tready                ),
-    .m_rfnoc_chdr_tdata       (m_rfnoc_chdr_tdata                 ),
-    .m_rfnoc_chdr_tlast       (m_rfnoc_chdr_tlast                 ),
-    .m_rfnoc_chdr_tvalid      (m_rfnoc_chdr_tvalid                ),
-    .m_rfnoc_chdr_tready      (m_rfnoc_chdr_tready                ),
-    .s_rfnoc_ctrl_tdata       (s_rfnoc_ctrl_tdata                 ),
-    .s_rfnoc_ctrl_tlast       (s_rfnoc_ctrl_tlast                 ),
-    .s_rfnoc_ctrl_tvalid      (s_rfnoc_ctrl_tvalid                ),
-    .s_rfnoc_ctrl_tready      (s_rfnoc_ctrl_tready                ),
-    .m_rfnoc_ctrl_tdata       (m_rfnoc_ctrl_tdata                 ),
-    .m_rfnoc_ctrl_tlast       (m_rfnoc_ctrl_tlast                 ),
-    .m_rfnoc_ctrl_tvalid      (m_rfnoc_ctrl_tvalid                ),
-    .m_rfnoc_ctrl_tready      (m_rfnoc_ctrl_tready                ),
-    .m_ctrlport_req_wr        (ctrlport_req_wr                    ),
-    .m_ctrlport_req_rd        (ctrlport_req_rd                    ),
-    .m_ctrlport_req_addr      (ctrlport_req_addr                  ),
-    .m_ctrlport_req_data      (ctrlport_req_data                  ),
-    .m_ctrlport_req_byte_en   (                                   ),
-    .m_ctrlport_req_has_time  (                                   ),
-    .m_ctrlport_req_time      (                                   ),
-    .m_ctrlport_resp_ack      (ctrlport_resp_ack                  ),
-    .m_ctrlport_resp_status   (2'd0                               ),
-    .m_ctrlport_resp_data     (ctrlport_resp_data                 ),
-    .s_ctrlport_req_wr        ('h0                                ),
-    .s_ctrlport_req_rd        ('h0                                ),
-    .s_ctrlport_req_addr      ('h0                                ),
-    .s_ctrlport_req_portid    ('h0                                ),
-    .s_ctrlport_req_rem_epid  ('h0                                ),
-    .s_ctrlport_req_rem_portid('h0                                ),
-    .s_ctrlport_req_data      ('h0                                ),
-    .s_ctrlport_req_byte_en   ('h0                                ),
-    .s_ctrlport_req_has_time  ('h0                                ),
-    .s_ctrlport_req_time      ('h0                                ),
-    .s_ctrlport_resp_ack      (                                   ),
-    .s_ctrlport_resp_status   (                                   ),
-    .s_ctrlport_resp_data     (                                   ),
-    .m_axis_payload_tdata     ({loop_pyld_tdata , snk_pyld_tdata }),
-    .m_axis_payload_tkeep     ({loop_pyld_tkeep , snk_pyld_tkeep }),
-    .m_axis_payload_tlast     ({loop_pyld_tlast , snk_pyld_tlast }),
-    .m_axis_payload_tvalid    ({loop_pyld_tvalid, snk_pyld_tvalid}),
-    .m_axis_payload_tready    ({loop_pyld_tready, snk_pyld_tready}),
-    .m_axis_context_tdata     ({loop_ctxt_tdata , snk_ctxt_tdata }),
-    .m_axis_context_tuser     ({loop_ctxt_tuser , snk_ctxt_tuser }),
-    .m_axis_context_tlast     ({loop_ctxt_tlast , snk_ctxt_tlast }),
-    .m_axis_context_tvalid    ({loop_ctxt_tvalid, snk_ctxt_tvalid}),
-    .m_axis_context_tready    ({loop_ctxt_tready, snk_ctxt_tready}),
-    .s_axis_payload_tdata     ({loop_pyld_tdata , src_pyld_tdata }),
-    .s_axis_payload_tkeep     ({loop_pyld_tkeep , src_pyld_tkeep }),
-    .s_axis_payload_tlast     ({loop_pyld_tlast , src_pyld_tlast }),
-    .s_axis_payload_tvalid    ({loop_pyld_tvalid, src_pyld_tvalid}),
-    .s_axis_payload_tready    ({loop_pyld_tready, src_pyld_tready}),
-    .s_axis_context_tdata     ({loop_ctxt_tdata , src_ctxt_tdata }),
-    .s_axis_context_tuser     ({loop_ctxt_tuser , src_ctxt_tuser }),
-    .s_axis_context_tlast     ({loop_ctxt_tlast , src_ctxt_tlast }),
-    .s_axis_context_tvalid    ({loop_ctxt_tvalid, src_ctxt_tvalid}),
-    .s_axis_context_tready    ({loop_ctxt_tready, src_ctxt_tready})
+  noc_shell_null_src_sink #(
+    .THIS_PORTID (THIS_PORTID),
+    .CHDR_W      (CHDR_W),
+    .MTU         (MTU)
+  ) noc_shell_null_src_sink_i (
+    .rfnoc_chdr_clk          (rfnoc_chdr_clk),
+    .rfnoc_ctrl_clk          (rfnoc_ctrl_clk),
+    .rfnoc_chdr_rst          (rfnoc_chdr_rst),
+    .rfnoc_ctrl_rst          (),
+    .rfnoc_core_config       (rfnoc_core_config),
+    .rfnoc_core_status       (rfnoc_core_status),
+    .s_rfnoc_chdr_tdata      (s_rfnoc_chdr_tdata),
+    .s_rfnoc_chdr_tlast      (s_rfnoc_chdr_tlast),
+    .s_rfnoc_chdr_tvalid     (s_rfnoc_chdr_tvalid),
+    .s_rfnoc_chdr_tready     (s_rfnoc_chdr_tready),
+    .m_rfnoc_chdr_tdata      (m_rfnoc_chdr_tdata),
+    .m_rfnoc_chdr_tlast      (m_rfnoc_chdr_tlast),
+    .m_rfnoc_chdr_tvalid     (m_rfnoc_chdr_tvalid),
+    .m_rfnoc_chdr_tready     (m_rfnoc_chdr_tready),
+    .s_rfnoc_ctrl_tdata      (s_rfnoc_ctrl_tdata),
+    .s_rfnoc_ctrl_tlast      (s_rfnoc_ctrl_tlast),
+    .s_rfnoc_ctrl_tvalid     (s_rfnoc_ctrl_tvalid),
+    .s_rfnoc_ctrl_tready     (s_rfnoc_ctrl_tready),
+    .m_rfnoc_ctrl_tdata      (m_rfnoc_ctrl_tdata),
+    .m_rfnoc_ctrl_tlast      (m_rfnoc_ctrl_tlast),
+    .m_rfnoc_ctrl_tvalid     (m_rfnoc_ctrl_tvalid),
+    .m_rfnoc_ctrl_tready     (m_rfnoc_ctrl_tready),
+    .ctrlport_clk            (),
+    .ctrlport_rst            (),
+    .m_ctrlport_req_wr       (ctrlport_req_wr),
+    .m_ctrlport_req_rd       (ctrlport_req_rd),
+    .m_ctrlport_req_addr     (ctrlport_req_addr),
+    .m_ctrlport_req_data     (ctrlport_req_data),
+    .m_ctrlport_resp_ack     (ctrlport_resp_ack),
+    .m_ctrlport_resp_data    (ctrlport_resp_data),
+    .axis_data_clk           (),
+    .axis_data_rst           (),
+    .m_sink_payload_tdata    (),        // Sink data is dropped and not used
+    .m_sink_payload_tkeep    (),
+    .m_sink_payload_tlast    (snk_pyld_tlast),
+    .m_sink_payload_tvalid   (snk_pyld_tvalid),
+    .m_sink_payload_tready   (snk_pyld_tready),
+    .m_sink_context_tdata    (),        // Sink context is dropped and not used
+    .m_sink_context_tuser    (),
+    .m_sink_context_tlast    (),
+    .m_sink_context_tvalid   (),
+    .m_sink_context_tready   (snk_ctxt_tready),
+    .m_loop_payload_tdata    (loop_pyld_tdata),
+    .m_loop_payload_tkeep    (loop_pyld_tkeep),
+    .m_loop_payload_tlast    (loop_pyld_tlast),
+    .m_loop_payload_tvalid   (loop_pyld_tvalid),
+    .m_loop_payload_tready   (loop_pyld_tready),
+    .m_loop_context_tdata    (loop_ctxt_tdata),
+    .m_loop_context_tuser    (loop_ctxt_tuser),
+    .m_loop_context_tlast    (loop_ctxt_tlast),
+    .m_loop_context_tvalid   (loop_ctxt_tvalid),
+    .m_loop_context_tready   (loop_ctxt_tready),
+    .s_source_payload_tdata  (src_pyld_tdata),
+    .s_source_payload_tkeep  (src_pyld_tkeep),
+    .s_source_payload_tlast  (src_pyld_tlast),
+    .s_source_payload_tvalid (src_pyld_tvalid),
+    .s_source_payload_tready (src_pyld_tready),
+    .s_source_context_tdata  (src_ctxt_tdata),
+    .s_source_context_tuser  (src_ctxt_tuser),
+    .s_source_context_tlast  (src_ctxt_tlast),
+    .s_source_context_tvalid (src_ctxt_tvalid),
+    .s_source_context_tready (src_ctxt_tready),
+    .s_loop_payload_tdata    (loop_pyld_tdata),
+    .s_loop_payload_tkeep    (loop_pyld_tkeep),
+    .s_loop_payload_tlast    (loop_pyld_tlast),
+    .s_loop_payload_tvalid   (loop_pyld_tvalid),
+    .s_loop_payload_tready   (loop_pyld_tready),
+    .s_loop_context_tdata    (loop_ctxt_tdata),
+    .s_loop_context_tuser    (loop_ctxt_tuser),
+    .s_loop_context_tlast    (loop_ctxt_tlast),
+    .s_loop_context_tvalid   (loop_ctxt_tvalid),
+    .s_loop_context_tready   (loop_ctxt_tready)
   );
 
   // Packet Counters

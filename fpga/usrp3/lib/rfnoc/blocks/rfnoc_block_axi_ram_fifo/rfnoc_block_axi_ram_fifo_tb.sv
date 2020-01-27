@@ -45,6 +45,7 @@ module rfnoc_block_axi_ram_fifo_tb #(
   localparam int  STALL_PROB     = 25;       // BFM stall probability
 
   // Block configuration
+  localparam int NOC_ID        = 'hF1F0_0000;
   localparam int THIS_PORTID   = 'h123;
   localparam int MTU           = 12;
   localparam int NUM_HB        = 3;
@@ -74,7 +75,7 @@ module rfnoc_block_axi_ram_fifo_tb #(
     rfnoc_chdr_clk_gen (.clk(rfnoc_chdr_clk), .rst());
   sim_clock_gen #(.PERIOD(CTRL_CLK_PER), .AUTOSTART(0))
     rfnoc_ctrl_clk_gen (.clk(rfnoc_ctrl_clk), .rst());
-  sim_clock_gen #(.PERIOD(MEM_CLK_PER), .AUOSTART(0))
+  sim_clock_gen #(.PERIOD(MEM_CLK_PER), .AUTOSTART(0))
     mem_clk_gen        (.clk(mem_clk),        .rst(mem_rst));
 
 
@@ -379,7 +380,7 @@ module rfnoc_block_axi_ram_fifo_tb #(
   
   task test_block_info();
     test.start_test("Verify Block Info", 2us);
-    `ASSERT_ERROR(blk_ctrl.get_noc_id() == rfnoc_block_axi_ram_fifo_i.NOC_ID, "Incorrect NOC_ID Value");
+    `ASSERT_ERROR(blk_ctrl.get_noc_id() == NOC_ID, "Incorrect NOC_ID Value");
     `ASSERT_ERROR(blk_ctrl.get_num_data_i() == NUM_PORTS, "Incorrect NUM_DATA_I Value");
     `ASSERT_ERROR(blk_ctrl.get_num_data_o() == NUM_PORTS, "Incorrect NUM_DATA_O Value");
     `ASSERT_ERROR(blk_ctrl.get_mtu() == MTU, "Incorrect MTU Value");

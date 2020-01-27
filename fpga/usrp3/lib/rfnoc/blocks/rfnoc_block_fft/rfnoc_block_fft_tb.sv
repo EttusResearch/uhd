@@ -28,6 +28,7 @@ module rfnoc_block_fft_tb();
   localparam int  STALL_PROB     = 25;    // BFM stall probability
 
   // Block configuration
+  localparam int NOC_ID        = 32'hFF70_0000;
   localparam int CHDR_W        = 64;
   localparam int THIS_PORTID   = 'h123;
   localparam int MTU           = 10;
@@ -222,7 +223,7 @@ module rfnoc_block_fft_tb();
     //-------------------------------------------------------------------------
     
     test.start_test("Verify Block Info", 2us);
-    `ASSERT_ERROR(blk_ctrl.get_noc_id() == DUT.NOC_ID, "Incorrect NOC_ID Value");
+    `ASSERT_ERROR(blk_ctrl.get_noc_id() == NOC_ID, "Incorrect NOC_ID Value");
     `ASSERT_ERROR(blk_ctrl.get_num_data_i() == NUM_PORTS, "Incorrect NUM_DATA_I Value");
     `ASSERT_ERROR(blk_ctrl.get_num_data_o() == NUM_PORTS, "Incorrect NUM_DATA_O Value");
     `ASSERT_ERROR(blk_ctrl.get_mtu() == MTU, "Incorrect MTU Value");

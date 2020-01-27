@@ -40,6 +40,7 @@ module rfnoc_block_ddc_tb();
   localparam int NUM_PORTS     = 1;
   localparam int NUM_HB        = 3;
   localparam int CIC_MAX_DECIM = 255;
+  localparam int NOC_ID        = 32'hDDC00000;
 
 
   //---------------------------------------------------------------------------
@@ -297,7 +298,7 @@ module rfnoc_block_ddc_tb();
     //-------------------------------------------------------------------------
 
     test.start_test("Verify Block Info", 2us);
-    `ASSERT_ERROR(blk_ctrl.get_noc_id() == rfnoc_block_ddc_i.NOC_ID, "Incorrect NOC_ID Value");
+    `ASSERT_ERROR(blk_ctrl.get_noc_id() == NOC_ID, "Incorrect NOC_ID Value");
     `ASSERT_ERROR(blk_ctrl.get_num_data_i() == NUM_PORTS, "Incorrect NUM_DATA_I Value");
     `ASSERT_ERROR(blk_ctrl.get_num_data_o() == NUM_PORTS, "Incorrect NUM_DATA_O Value");
     `ASSERT_ERROR(blk_ctrl.get_mtu() == MTU, "Incorrect MTU Value");

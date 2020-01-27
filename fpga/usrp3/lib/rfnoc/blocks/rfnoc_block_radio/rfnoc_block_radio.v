@@ -16,8 +16,6 @@
 //   NUM_PORTS        : Number of radio channels (RX/TX pairs)
 //   MTU              : Maximum transmission unit (i.e., maximum packet size) 
 //                      in CHDR words is 2**MTU.
-//   CTRL_FIFO_SIZE   : Size of the Control Port slave FIFO. This affects the
-//                      number of outstanding commands that can be pending.
 //   PERIPH_BASE_ADDR : CTRL port peripheral window base address
 //   PERIPH_ADDR_W    : CTRL port peripheral address space = 2**PERIPH_ADDR_W
 //
@@ -30,7 +28,6 @@ module rfnoc_block_radio #(
   parameter ITEM_W           = 32,
   parameter NUM_PORTS        = 2,
   parameter MTU              = 10,
-  parameter CTRL_FIFO_SIZE   = 9,
   parameter PERIPH_BASE_ADDR = 20'h80000,
   parameter PERIPH_ADDR_W    = 19
 ) (
@@ -115,7 +112,6 @@ module rfnoc_block_radio #(
   `include "rfnoc_block_radio_regs.vh"
   `include "../../core/rfnoc_axis_ctrl_utils.vh"
 
-  localparam NOC_ID  = 32'h12AD1000;
   localparam RADIO_W = NIPC*ITEM_W;
 
 
@@ -144,8 +140,10 @@ module rfnoc_block_radio #(
   wire        ctrlport_reg_has_time;
   wire [63:0] ctrlport_reg_time;
   wire [31:0] ctrlport_reg_req_data;
+  wire [ 3:0] ctrlport_reg_req_byte_en;
   wire [31:0] ctrlport_reg_resp_data;
   wire        ctrlport_reg_resp_ack;
+  wire [ 1:0] ctrlport_reg_resp_status;
 
   // Control port signals used for error reporting (user logic masters to NoC shell)
   wire        ctrlport_err_req_wr;
@@ -163,27 +161,22 @@ module rfnoc_block_radio #(
   // NoC Shell
   //---------------------------------------------------------------------------
 
-  wire rfnoc_chdr_rst;
   wire radio_rst;
 
   noc_shell_radio #(
-    .NOC_ID          (NOC_ID),
     .THIS_PORTID     (THIS_PORTID),
     .CHDR_W          (CHDR_W),
-    .CTRLPORT_SLV_EN (1),
-    .CTRLPORT_MST_EN (1),
-    .CTRL_FIFO_SIZE  (CTRL_FIFO_SIZE),
-    .NUM_DATA_I      (NUM_PORTS),
-    .NUM_DATA_O      (NUM_PORTS),
-    .ITEM_W          (ITEM_W),
+    .MTU             (MTU),
+    .NUM_PORTS       (NUM_PORTS),
     .NIPC            (NIPC),
-    .PYLD_FIFO_SIZE  (MTU),
-    .MTU             (MTU)
+    .ITEM_W          (ITEM_W)
   ) noc_shell_radio_i (
     .rfnoc_chdr_clk            (rfnoc_chdr_clk),
-    .rfnoc_chdr_rst            (rfnoc_chdr_rst),
     .rfnoc_ctrl_clk            (rfnoc_ctrl_clk),
+    .radio_clk                 (radio_clk),
+    .rfnoc_chdr_rst            (),
     .rfnoc_ctrl_rst            (),
+    .radio_rst                 (radio_rst),
     .rfnoc_core_config         (rfnoc_core_config),
     .rfnoc_core_status         (rfnoc_core_status),
     .s_rfnoc_chdr_tdata        (s_rfnoc_chdr_tdata),
@@ -202,17 +195,17 @@ module rfnoc_block_radio #(
     .m_rfnoc_ctrl_tlast        (m_rfnoc_ctrl_tlast),
     .m_rfnoc_ctrl_tvalid       (m_rfnoc_ctrl_tvalid),
     .m_rfnoc_ctrl_tready       (m_rfnoc_ctrl_tready),
-    .ctrlport_clk              (radio_clk),
-    .ctrlport_rst              (radio_rst),
+    .ctrlport_clk              (),
+    .ctrlport_rst              (),
     .m_ctrlport_req_wr         (ctrlport_reg_req_wr),
     .m_ctrlport_req_rd         (ctrlport_reg_req_rd),
     .m_ctrlport_req_addr       (ctrlport_reg_req_addr),
     .m_ctrlport_req_data       (ctrlport_reg_req_data),
-    .m_ctrlport_req_byte_en    (),
+    .m_ctrlport_req_byte_en    (ctrlport_reg_req_byte_en),
     .m_ctrlport_req_has_time   (ctrlport_reg_has_time),
     .m_ctrlport_req_time       (ctrlport_reg_time),
     .m_ctrlport_resp_ack       (ctrlport_reg_resp_ack),
-    .m_ctrlport_resp_status    (AXIS_CTRL_STS_OKAY),
+    .m_ctrlport_resp_status    (ctrlport_reg_resp_status),
     .m_ctrlport_resp_data      (ctrlport_reg_resp_data),
     .s_ctrlport_req_wr         (ctrlport_err_req_wr),
     .s_ctrlport_req_rd         (1'b0),
@@ -227,38 +220,27 @@ module rfnoc_block_radio #(
     .s_ctrlport_resp_ack       (ctrlport_err_resp_ack),
     .s_ctrlport_resp_status    (),
     .s_ctrlport_resp_data      (),
-    .axis_data_clk             (radio_clk),
-    .axis_data_rst             (radio_rst),
-    .m_axis_tdata              (axis_tx_tdata),
-    .m_axis_tkeep              (),                          // Radio only transmits full words
-    .m_axis_tlast              (axis_tx_tlast),
-    .m_axis_tvalid             (axis_tx_tvalid),
-    .m_axis_tready             (axis_tx_tready),
-    .m_axis_ttimestamp         (axis_tx_ttimestamp),
-    .m_axis_thas_time          (axis_tx_thas_time),
-    .m_axis_teov               (),
-    .m_axis_teob               (axis_tx_teob),
-    .s_axis_tdata              (axis_rx_tdata),
-    .s_axis_tkeep              ({NUM_PORTS*NIPC{1'b1}}), // Radio only receives full words
-    .s_axis_tlast              (axis_rx_tlast),
-    .s_axis_tvalid             (axis_rx_tvalid),
-    .s_axis_tready             (axis_rx_tready),
-    .s_axis_ttimestamp         (axis_rx_ttimestamp),
-    .s_axis_thas_time          (axis_rx_thas_time),
-    .s_axis_teov               ({NUM_PORTS{1'b0}}),
-    .s_axis_teob               (axis_rx_teob)
-  );
-
-  // Cross the CHDR reset to the radio_clk domain
-  pulse_synchronizer #(
-    .MODE ("POSEDGE")
-  ) ctrl_rst_sync_i (
-    .clk_a   (rfnoc_chdr_clk),
-    .rst_a   (1'b0),
-    .pulse_a (rfnoc_chdr_rst),
-    .busy_a  (),
-    .clk_b   (radio_clk),
-    .pulse_b (radio_rst)
+    .axis_data_clk             (),
+    .axis_data_rst             (),
+    .m_in_axis_tdata           (axis_tx_tdata),
+    .m_in_axis_tkeep           (),                        // Radio only transmits full words
+    .m_in_axis_tlast           (axis_tx_tlast),
+    .m_in_axis_tvalid          (axis_tx_tvalid),
+    .m_in_axis_tready          (axis_tx_tready),
+    .m_in_axis_ttimestamp      (axis_tx_ttimestamp),
+    .m_in_axis_thas_time       (axis_tx_thas_time),
+    .m_in_axis_tlength         (),
+    .m_in_axis_teov            (),
+    .m_in_axis_teob            (axis_tx_teob),
+    .s_out_axis_tdata          (axis_rx_tdata),
+    .s_out_axis_tkeep          ({NUM_PORTS*NIPC{1'b1}}),  // Radio only receives full words
+    .s_out_axis_tlast          (axis_rx_tlast),
+    .s_out_axis_tvalid         (axis_rx_tvalid),
+    .s_out_axis_tready         (axis_rx_tready),
+    .s_out_axis_ttimestamp     (axis_rx_ttimestamp),
+    .s_out_axis_thas_time      (axis_rx_thas_time),
+    .s_out_axis_teov           ({NUM_PORTS{1'b0}}),
+    .s_out_axis_teob           (axis_rx_teob)
   );
 
 
@@ -304,11 +286,11 @@ module rfnoc_block_radio #(
     .s_ctrlport_req_rd       (ctrlport_reg_req_rd),
     .s_ctrlport_req_addr     (ctrlport_reg_req_addr),
     .s_ctrlport_req_data     (ctrlport_reg_req_data),
-    .s_ctrlport_req_byte_en  (4'b0),
+    .s_ctrlport_req_byte_en  (ctrlport_reg_req_byte_en),
     .s_ctrlport_req_has_time (ctrlport_reg_has_time),
     .s_ctrlport_req_time     (ctrlport_reg_time),
     .s_ctrlport_resp_ack     (ctrlport_reg_resp_ack),
-    .s_ctrlport_resp_status  (),
+    .s_ctrlport_resp_status  (ctrlport_reg_resp_status),
     .s_ctrlport_resp_data    (ctrlport_reg_resp_data),
     .m_ctrlport_req_wr       ({m_ctrlport_req_wr,
                                ctrlport_core_req_wr,

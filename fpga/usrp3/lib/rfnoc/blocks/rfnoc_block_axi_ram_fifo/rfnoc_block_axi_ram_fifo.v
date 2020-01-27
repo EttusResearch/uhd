@@ -182,12 +182,14 @@ module rfnoc_block_axi_ram_fifo #(
 
   `include "axi_ram_fifo_regs.vh"
 
-  localparam NOC_ID = 'hF1F0_0000;
-
   // If the memory width is larger than the CHDR width, then we need to use 
   // tkeep to track which CHDR words are valid as they go through the FIFO. 
   // Calculate the TKEEP width here. Set to 1 if it's not needed.
   localparam KEEP_W = (MEM_DATA_W/CHDR_W) > 1 ? (MEM_DATA_W/CHDR_W) : 1;
+
+  // Set WORD_W to the smaller of MEM_DATA_W and CHDR_W. This will be our
+  // common word size when resizing between CHDR and memory words.
+  localparam WORD_W = (MEM_DATA_W < CHDR_W) ? MEM_DATA_W : CHDR_W;
 
 
   //---------------------------------------------------------------------------
@@ -205,7 +207,7 @@ module rfnoc_block_axi_ram_fifo #(
   // NoC Shell
   //---------------------------------------------------------------------------
 
-  wire        rfnoc_chdr_rst;
+  wire mem_rst;
 
   wire        ctrlport_req_wr;
   wire        ctrlport_req_rd;
@@ -214,110 +216,74 @@ module rfnoc_block_axi_ram_fifo #(
   wire        ctrlport_resp_ack;
   wire [31:0] ctrlport_resp_data;
 
-  wire [NUM_PORTS*MEM_DATA_W-1:0] m_axis_data_tdata;
-  wire [    NUM_PORTS*KEEP_W-1:0] m_axis_data_tkeep;
-  wire [           NUM_PORTS-1:0] m_axis_data_tlast;
-  wire [           NUM_PORTS-1:0] m_axis_data_tvalid;
-  wire [           NUM_PORTS-1:0] m_axis_data_tready;
+  wire axis_chdr_clk;
+  wire axis_chdr_rst;
 
-  wire [NUM_PORTS*MEM_DATA_W-1:0] s_axis_data_tdata;
-  wire [    NUM_PORTS*KEEP_W-1:0] s_axis_data_tkeep;
-  wire [           NUM_PORTS-1:0] s_axis_data_tlast;
-  wire [           NUM_PORTS-1:0] s_axis_data_tvalid;
-  wire [           NUM_PORTS-1:0] s_axis_data_tready;
+  wire [NUM_PORTS*CHDR_W-1:0] m_axis_chdr_tdata;
+  wire [       NUM_PORTS-1:0] m_axis_chdr_tlast;
+  wire [       NUM_PORTS-1:0] m_axis_chdr_tvalid;
+  wire [       NUM_PORTS-1:0] m_axis_chdr_tready;
+
+  wire [NUM_PORTS*CHDR_W-1:0] s_axis_chdr_tdata;
+  wire [       NUM_PORTS-1:0] s_axis_chdr_tlast;
+  wire [       NUM_PORTS-1:0] s_axis_chdr_tvalid;
+  wire [       NUM_PORTS-1:0] s_axis_chdr_tready;
 
   noc_shell_axi_ram_fifo #(
-    .NOC_ID           (NOC_ID),
-    .THIS_PORTID      (THIS_PORTID),
-    .CHDR_W           (CHDR_W),
-    .DATA_W           (MEM_DATA_W),
-    .CTRL_FIFO_SIZE   (5),
-    .CTRLPORT_MST_EN  (1),
-    .CTRLPORT_SLV_EN  (0),
-    .NUM_DATA_I       (NUM_PORTS),
-    .NUM_DATA_O       (NUM_PORTS),
-    .MTU              (MTU),
-    .SYNC_DATA_CLOCKS (0)
+    .THIS_PORTID (THIS_PORTID),
+    .CHDR_W      (CHDR_W),
+    .NUM_PORTS   (NUM_PORTS),
+    .MTU         (MTU)
   ) noc_shell_axi_ram_fifo_i (
-    .rfnoc_chdr_clk            (rfnoc_chdr_clk),
-    .rfnoc_chdr_rst            (rfnoc_chdr_rst),
-    .rfnoc_ctrl_clk            (rfnoc_ctrl_clk),
-    .rfnoc_ctrl_rst            (),
-    .rfnoc_core_config         (rfnoc_core_config),
-    .rfnoc_core_status         (rfnoc_core_status),
-    .s_rfnoc_chdr_tdata        (s_rfnoc_chdr_tdata),
-    .s_rfnoc_chdr_tlast        (s_rfnoc_chdr_tlast),
-    .s_rfnoc_chdr_tvalid       (s_rfnoc_chdr_tvalid),
-    .s_rfnoc_chdr_tready       (s_rfnoc_chdr_tready),
-    .m_rfnoc_chdr_tdata        (m_rfnoc_chdr_tdata),
-    .m_rfnoc_chdr_tlast        (m_rfnoc_chdr_tlast),
-    .m_rfnoc_chdr_tvalid       (m_rfnoc_chdr_tvalid),
-    .m_rfnoc_chdr_tready       (m_rfnoc_chdr_tready),
-    .s_rfnoc_ctrl_tdata        (s_rfnoc_ctrl_tdata),
-    .s_rfnoc_ctrl_tlast        (s_rfnoc_ctrl_tlast),
-    .s_rfnoc_ctrl_tvalid       (s_rfnoc_ctrl_tvalid),
-    .s_rfnoc_ctrl_tready       (s_rfnoc_ctrl_tready),
-    .m_rfnoc_ctrl_tdata        (m_rfnoc_ctrl_tdata),
-    .m_rfnoc_ctrl_tlast        (m_rfnoc_ctrl_tlast),
-    .m_rfnoc_ctrl_tvalid       (m_rfnoc_ctrl_tvalid),
-    .m_rfnoc_ctrl_tready       (m_rfnoc_ctrl_tready),
-    .ctrlport_clk              (mem_clk),
-    .ctrlport_rst              (axi_rst),
-    .m_ctrlport_req_wr         (ctrlport_req_wr),
-    .m_ctrlport_req_rd         (ctrlport_req_rd),
-    .m_ctrlport_req_addr       (ctrlport_req_addr),
-    .m_ctrlport_req_data       (ctrlport_req_data),
-    .m_ctrlport_req_byte_en    (),
-    .m_ctrlport_req_has_time   (),
-    .m_ctrlport_req_time       (),
-    .m_ctrlport_resp_ack       (ctrlport_resp_ack),
-    .m_ctrlport_resp_status    (2'b0),
-    .m_ctrlport_resp_data      (ctrlport_resp_data),
-    .s_ctrlport_req_wr         (1'b0),
-    .s_ctrlport_req_rd         (1'b0),
-    .s_ctrlport_req_addr       (20'b0),
-    .s_ctrlport_req_portid     (10'b0),
-    .s_ctrlport_req_rem_epid   (16'b0),
-    .s_ctrlport_req_rem_portid (10'b0),
-    .s_ctrlport_req_data       (32'b0),
-    .s_ctrlport_req_byte_en    (4'b0),
-    .s_ctrlport_req_has_time   (1'b0),
-    .s_ctrlport_req_time       (64'b0),
-    .s_ctrlport_resp_ack       (),
-    .s_ctrlport_resp_status    (),
-    .s_ctrlport_resp_data      (),
-    .axis_data_clk             (mem_clk),
-    .axis_data_rst             (axi_rst),
-    .m_axis_tdata              (m_axis_data_tdata),
-    .m_axis_tkeep              (m_axis_data_tkeep),
-    .m_axis_tlast              (m_axis_data_tlast),
-    .m_axis_tvalid             (m_axis_data_tvalid),
-    .m_axis_tready             (m_axis_data_tready),
-    .s_axis_tdata              (s_axis_data_tdata),
-    .s_axis_tkeep              (s_axis_data_tkeep),
-    .s_axis_tlast              (s_axis_data_tlast),
-    .s_axis_tvalid             (s_axis_data_tvalid),
-    .s_axis_tready             (s_axis_data_tready)
+    .rfnoc_chdr_clk       (rfnoc_chdr_clk),
+    .rfnoc_ctrl_clk       (rfnoc_ctrl_clk),
+    .mem_clk              (mem_clk),
+    .rfnoc_chdr_rst       (),
+    .rfnoc_ctrl_rst       (),
+    .mem_rst              (mem_rst),
+    .rfnoc_core_config    (rfnoc_core_config),
+    .rfnoc_core_status    (rfnoc_core_status),
+    .s_rfnoc_chdr_tdata   (s_rfnoc_chdr_tdata),
+    .s_rfnoc_chdr_tlast   (s_rfnoc_chdr_tlast),
+    .s_rfnoc_chdr_tvalid  (s_rfnoc_chdr_tvalid),
+    .s_rfnoc_chdr_tready  (s_rfnoc_chdr_tready),
+    .m_rfnoc_chdr_tdata   (m_rfnoc_chdr_tdata),
+    .m_rfnoc_chdr_tlast   (m_rfnoc_chdr_tlast),
+    .m_rfnoc_chdr_tvalid  (m_rfnoc_chdr_tvalid),
+    .m_rfnoc_chdr_tready  (m_rfnoc_chdr_tready),
+    .s_rfnoc_ctrl_tdata   (s_rfnoc_ctrl_tdata),
+    .s_rfnoc_ctrl_tlast   (s_rfnoc_ctrl_tlast),
+    .s_rfnoc_ctrl_tvalid  (s_rfnoc_ctrl_tvalid),
+    .s_rfnoc_ctrl_tready  (s_rfnoc_ctrl_tready),
+    .m_rfnoc_ctrl_tdata   (m_rfnoc_ctrl_tdata),
+    .m_rfnoc_ctrl_tlast   (m_rfnoc_ctrl_tlast),
+    .m_rfnoc_ctrl_tvalid  (m_rfnoc_ctrl_tvalid),
+    .m_rfnoc_ctrl_tready  (m_rfnoc_ctrl_tready),
+    .ctrlport_clk         (),
+    .ctrlport_rst         (),
+    .m_ctrlport_req_wr    (ctrlport_req_wr),
+    .m_ctrlport_req_rd    (ctrlport_req_rd),
+    .m_ctrlport_req_addr  (ctrlport_req_addr),
+    .m_ctrlport_req_data  (ctrlport_req_data),
+    .m_ctrlport_resp_ack  (ctrlport_resp_ack),
+    .m_ctrlport_resp_data (ctrlport_resp_data),
+    .axis_chdr_clk        (axis_chdr_clk),
+    .axis_chdr_rst        (axis_chdr_rst),
+    .m_in_chdr_tdata      (m_axis_chdr_tdata),
+    .m_in_chdr_tlast      (m_axis_chdr_tlast),
+    .m_in_chdr_tvalid     (m_axis_chdr_tvalid),
+    .m_in_chdr_tready     (m_axis_chdr_tready),
+    .s_out_chdr_tdata     (s_axis_chdr_tdata),
+    .s_out_chdr_tlast     (s_axis_chdr_tlast),
+    .s_out_chdr_tvalid    (s_axis_chdr_tvalid),
+    .s_out_chdr_tready    (s_axis_chdr_tready)
   );
 
-  wire rfnoc_chdr_rst_mem_clk;
   reg  mem_rst_block;
-
-  // Cross the CHDR reset to the mem_clk domain
-  pulse_synchronizer #(
-    .MODE ("POSEDGE")
-  ) ctrl_rst_sync_i (
-    .clk_a   (rfnoc_chdr_clk),
-    .rst_a   (1'b0),
-    .pulse_a (rfnoc_chdr_rst),
-    .busy_a  (),
-    .clk_b   (mem_clk),
-    .pulse_b (rfnoc_chdr_rst_mem_clk)
-  );
 
   // Combine the resets in a glitch-free manner
   always @(posedge mem_clk) begin
-    mem_rst_block <= axi_rst | rfnoc_chdr_rst_mem_clk;
+    mem_rst_block <= axi_rst | mem_rst;
   end
 
 
@@ -363,11 +329,82 @@ module rfnoc_block_axi_ram_fifo #(
 
 
   //---------------------------------------------------------------------------
-  // FIFO Instances
+  // AXI RAM Port Instances
   //---------------------------------------------------------------------------
 
   genvar i;
   for (i = 0; i < NUM_PORTS; i = i + 1) begin : gen_ram_fifos
+
+    wire [MEM_DATA_W-1:0] m_axis_mem_tdata;
+    wire [    KEEP_W-1:0] m_axis_mem_tkeep;
+    wire                  m_axis_mem_tlast;
+    wire                  m_axis_mem_tvalid;
+    wire                  m_axis_mem_tready;
+
+    wire [MEM_DATA_W-1:0] s_axis_mem_tdata;
+    wire [    KEEP_W-1:0] s_axis_mem_tkeep;
+    wire                  s_axis_mem_tlast;
+    wire                  s_axis_mem_tvalid;
+    wire                  s_axis_mem_tready;
+
+    //-------------------------------------------------------------------------
+    // Width Conversion
+    //-------------------------------------------------------------------------
+    //
+    // Resize Data between CHDR_W and MEM_DATA_W. Cross between rfnoc_chdr_clk
+    // and mem_clk.
+    //
+    //-------------------------------------------------------------------------
+
+    axis_width_conv #(
+      .WORD_W    (WORD_W),
+      .IN_WORDS  (CHDR_W/WORD_W),
+      .OUT_WORDS (MEM_DATA_W/WORD_W),
+      .SYNC_CLKS (0),
+      .PIPELINE  ("NONE")
+    ) axis_width_conv_to_mem_i (
+      .s_axis_aclk   (axis_chdr_clk),
+      .s_axis_rst    (axis_chdr_rst),
+      .s_axis_tdata  (m_axis_chdr_tdata[i*CHDR_W +: CHDR_W]),
+      .s_axis_tkeep  ({CHDR_W/WORD_W{1'b1}}),
+      .s_axis_tlast  (m_axis_chdr_tlast[i]),
+      .s_axis_tvalid (m_axis_chdr_tvalid[i]),
+      .s_axis_tready (m_axis_chdr_tready[i]),
+      .m_axis_aclk   (mem_clk),
+      .m_axis_rst    (mem_rst),
+      .m_axis_tdata  (m_axis_mem_tdata),
+      .m_axis_tkeep  (m_axis_mem_tkeep),
+      .m_axis_tlast  (m_axis_mem_tlast),
+      .m_axis_tvalid (m_axis_mem_tvalid),
+      .m_axis_tready (m_axis_mem_tready)
+    );
+
+    axis_width_conv #(
+      .WORD_W    (WORD_W),
+      .IN_WORDS  (MEM_DATA_W/WORD_W),
+      .OUT_WORDS (CHDR_W/WORD_W),
+      .SYNC_CLKS (0),
+      .PIPELINE  ("NONE")
+    ) axis_width_conv_to_chdr_i (
+      .s_axis_aclk   (mem_clk),
+      .s_axis_rst    (mem_rst),
+      .s_axis_tdata  (s_axis_mem_tdata),
+      .s_axis_tkeep  (s_axis_mem_tkeep),
+      .s_axis_tlast  (s_axis_mem_tlast),
+      .s_axis_tvalid (s_axis_mem_tvalid),
+      .s_axis_tready (s_axis_mem_tready),
+      .m_axis_aclk   (axis_chdr_clk),
+      .m_axis_rst    (axis_chdr_rst),
+      .m_axis_tdata  (s_axis_chdr_tdata[i*CHDR_W +: CHDR_W]),
+      .m_axis_tkeep  (),
+      .m_axis_tlast  (s_axis_chdr_tlast[i]),
+      .m_axis_tvalid (s_axis_chdr_tvalid[i]),
+      .m_axis_tready (s_axis_chdr_tready[i])
+    );
+
+    //---------------------------------------------------------------------------
+    // AXI RAM FIFO Instance
+    //---------------------------------------------------------------------------
 
     wire [MEM_ADDR_W-1:0] m_axi_awaddr_int;
     wire [MEM_ADDR_W-1:0] m_axi_araddr_int;
@@ -408,18 +445,18 @@ module rfnoc_block_axi_ram_fifo #(
       //-----------------------------------------------------------------------
 
       // AXI-Stream Input
-      .s_tdata        (m_axis_data_tdata[MEM_DATA_W*i +: MEM_DATA_W]),
-      .s_tkeep        (m_axis_data_tkeep[KEEP_W*i +: KEEP_W]),
-      .s_tlast        (m_axis_data_tlast[i]),
-      .s_tvalid       (m_axis_data_tvalid[i]),
-      .s_tready       (m_axis_data_tready[i]),
+      .s_tdata        (m_axis_mem_tdata),
+      .s_tkeep        (m_axis_mem_tkeep),
+      .s_tlast        (m_axis_mem_tlast),
+      .s_tvalid       (m_axis_mem_tvalid),
+      .s_tready       (m_axis_mem_tready),
       //
       //  AXI-Stream Output
-      .m_tdata        (s_axis_data_tdata[MEM_DATA_W*i +: MEM_DATA_W]),
-      .m_tkeep        (s_axis_data_tkeep[KEEP_W*i +: KEEP_W]),
-      .m_tlast        (s_axis_data_tlast[i]),
-      .m_tvalid       (s_axis_data_tvalid[i]),
-      .m_tready       (s_axis_data_tready[i]),
+      .m_tdata        (s_axis_mem_tdata),
+      .m_tkeep        (s_axis_mem_tkeep),
+      .m_tlast        (s_axis_mem_tlast),
+      .m_tvalid       (s_axis_mem_tvalid),
+      .m_tready       (s_axis_mem_tready),
 
       //-----------------------------------------------------------------------
       // AXI4 Memory Interface

@@ -8,5 +8,6 @@
 # RFNoC Utility Sources
 ##################################################
 RFNOC_OOT_SRCS += $(abspath $(addprefix $(BASE_DIR)/../lib/rfnoc/blocks/rfnoc_block_null_src_sink/, \
+noc_shell_null_src_sink.v   \
 rfnoc_block_null_src_sink.v \
 ))

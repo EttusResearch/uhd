@@ -27,6 +27,8 @@ module rfnoc_block_fir_filter_tb #(
   // Local Parameters
   //---------------------------------------------------------------------------
 
+  localparam int NOC_ID = 32'hF112_0000;
+
   // Simulation parameters
   localparam real CHDR_CLK_PER = 6.0; // 166 MHz
   localparam real CE_CLK_PER   = 5.0; // 200 MHz
@@ -218,7 +220,7 @@ module rfnoc_block_fir_filter_tb #(
     //-------------------------------------------------------------------------
     
     test.start_test("Verify Block Info", 2us);
-    `ASSERT_ERROR(blk_ctrl.get_noc_id() == rfnoc_block_fir_filter_i.NOC_ID, "Incorrect NOC_ID Value");
+    `ASSERT_ERROR(blk_ctrl.get_noc_id() == NOC_ID, "Incorrect NOC_ID Value");
     `ASSERT_ERROR(blk_ctrl.get_num_data_i() == NUM_PORTS, "Incorrect NUM_DATA_I Value");
     `ASSERT_ERROR(blk_ctrl.get_num_data_o() == NUM_PORTS, "Incorrect NUM_DATA_O Value");
     `ASSERT_ERROR(blk_ctrl.get_mtu() == MTU, "Incorrect MTU Value");

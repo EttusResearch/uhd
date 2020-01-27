@@ -22,11 +22,11 @@ control:
   sw_iface: nocscript
   fpga_iface: ctrlport
   interface_direction: slave
-  fifo_depth: 32
+  fifo_depth: 64
   clk_domain: ce
   ctrlport:
     byte_mode: False
-    timed: False
+    timed: True
     has_status: False
 
 data:

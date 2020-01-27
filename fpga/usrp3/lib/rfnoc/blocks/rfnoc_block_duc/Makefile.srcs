@@ -5,7 +5,7 @@
 #
 
 RFNOC_BLOCK_DUC_SRCS = $(abspath $(addprefix $(BASE_DIR)/../lib/rfnoc/blocks/rfnoc_block_duc/, \
-../rfnoc_block_ddc/noc_shell_ddc.v \
+noc_shell_duc.v \
 rfnoc_block_duc_regs.vh \
 rfnoc_block_duc.v \
 ))

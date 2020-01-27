@@ -34,6 +34,7 @@ module rfnoc_block_radio_tb #(
 
 
   // Simulation Parameters
+  localparam int          NOC_ID         = 32'h12AD1000;
   localparam logic [ 9:0] THIS_PORTID    = 10'h17;
   localparam logic [15:0] THIS_EPID      = 16'hDEAD;
   localparam int          MTU            = 8;
@@ -555,11 +556,9 @@ module rfnoc_block_radio_tb #(
     test.start_test("Verify Block Info", 2us);
 
     // Get static block info and validate it
-    `ASSERT_ERROR(blk_ctrl.get_noc_id() == rfnoc_block_radio_i.NOC_ID, "Incorrect noc_id Value");
+    `ASSERT_ERROR(blk_ctrl.get_noc_id() == NOC_ID, "Incorrect noc_id Value");
     `ASSERT_ERROR(blk_ctrl.get_num_data_i() == NUM_PORTS, "Incorrect num_data_i Value");
     `ASSERT_ERROR(blk_ctrl.get_num_data_o() == NUM_PORTS, "Incorrect num_data_o Value");
-    `ASSERT_ERROR(blk_ctrl.get_ctrl_fifosize() == rfnoc_block_radio_i.noc_shell_radio_i.CTRL_FIFO_SIZE,
-      "Incorrect ctrl_fifosize Value");
     `ASSERT_ERROR(blk_ctrl.get_mtu() == MTU, "Incorrect mtu Value");
 
     test.end_test();

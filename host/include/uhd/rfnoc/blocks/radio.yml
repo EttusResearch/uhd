@@ -8,6 +8,7 @@ noc_id: 0x12AD1000
 parameters:
   NUM_PORTS: 2
   NIPC: 1
+  ITEM_W: 32
 
 clocks:
   - name: rfnoc_chdr
@@ -20,8 +21,8 @@ clocks:
 control:
   sw_iface: nocscript
   fpga_iface: ctrlport
-  interface_direction: master_slave
-  fifo_depth: 32
+  interface_direction: remote_master_slave
+  fifo_depth: 512
   clk_domain: radio
   ctrlport:
     byte_mode: True
@@ -34,7 +35,7 @@ data:
   inputs:
     in:
       num_ports: NUM_PORTS
-      item_width: 32
+      item_width: ITEM_W
       nipc: NIPC
       info_fifo_depth: 32
       payload_fifo_depth: MTU
@@ -43,7 +44,7 @@ data:
   outputs:
     out:
       num_ports: NUM_PORTS
-      item_width: 32
+      item_width: ITEM_W
       nipc: NIPC
       info_fifo_depth: 32
       payload_fifo_depth: MTU

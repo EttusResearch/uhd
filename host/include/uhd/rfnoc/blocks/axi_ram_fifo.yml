@@ -1,0 +1,52 @@
+schema: rfnoc_modtool_args
+module_name: axi_ram_fifo
+version: 1.0
+rfnoc_version: 1.0
+chdr_width: 64
+noc_id: 0xF1F00000
+
+parameters:
+  NUM_PORTS: 2
+  MEM_DATA_W: 64
+  MEM_ADDR_W: 30
+  FIFO_ADDR_BASE: "{30'h02000000, 30'h00000000}"
+  FIFO_ADDR_MASK: "{30'h01FFFFFF, 30'h01FFFFFF}"
+  MEM_CLK_RATE: "300e6"
+
+clocks:
+  - name: rfnoc_chdr
+    freq: "[]"
+  - name: rfnoc_ctrl
+    freq: "[]"
+  - name: mem
+    freq: "[]"
+
+control:
+  sw_iface: nocscript
+  fpga_iface: ctrlport
+  interface_direction: slave
+  fifo_depth: 32
+  clk_domain: mem
+  ctrlport:
+    byte_mode: False
+    timed: False
+    has_status: False
+
+data:
+  fpga_iface: axis_chdr
+  clk_domain: rfnoc_chdr
+  inputs:
+    in:
+      num_ports: NUM_PORTS
+  outputs:
+    out:
+      num_ports: NUM_PORTS
+
+io_ports:
+  axi_ram:
+    type: axi4_mm_2x64_4g
+    drive: master
+
+registers:
+
+properties:

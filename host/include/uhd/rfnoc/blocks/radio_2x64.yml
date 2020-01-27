@@ -19,8 +19,8 @@ clocks:
 control:
   sw_iface: nocscript
   fpga_iface: ctrlport
-  interface_direction: master_slave
-  fifo_depth: 32
+  interface_direction: remote_master_slave
+  fifo_depth: 512
   clk_domain: radio
   ctrlport:
     byte_mode: True

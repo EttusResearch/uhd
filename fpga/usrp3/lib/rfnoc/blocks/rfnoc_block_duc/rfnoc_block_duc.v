@@ -14,8 +14,6 @@
 //   NUM_PORTS      : Number of DUC signal processing chains
 //   MTU            : Maximum transmission unit (i.e., maximum packet size) in
 //                    CHDR words is 2**MTU.
-//   CTRL_FIFO_SIZE : Size of the Control Port slave FIFO. This affects the
-//                    number of outstanding commands that can be pending.
 //   NUM_HB         : Number of half-band filter blocks to include (0-3)
 //   CIC_MAX_INTERP : Maximum interpolation to support in the CIC filter
 //
@@ -25,7 +23,6 @@ module rfnoc_block_duc #(
   parameter CHDR_W         = 64,
   parameter NUM_PORTS      = 2,
   parameter MTU            = 10,
-  parameter CTRL_FIFO_SIZE = 6,
   parameter NUM_HB         = 2,
   parameter CIC_MAX_INTERP = 128
 ) (
@@ -75,8 +72,6 @@ module rfnoc_block_duc #(
   localparam ITEM_W = 32;
   localparam NIPC   = 1;
 
-  localparam NOC_ID = 'hD0C0_0000;
-
   localparam COMPAT_MAJOR  = 16'h0;
   localparam COMPAT_MINOR  = 16'h0;
 
@@ -87,8 +82,6 @@ module rfnoc_block_duc #(
   //---------------------------------------------------------------------------
   // Signal Declarations
   //---------------------------------------------------------------------------
-
-  wire rfnoc_chdr_rst;
 
   wire        ctrlport_req_wr;
   wire        ctrlport_req_rd;
@@ -118,104 +111,74 @@ module rfnoc_block_duc #(
   wire [    NUM_PORTS*64-1:0] s_axis_data_ttimestamp;
   wire [       NUM_PORTS-1:0] s_axis_data_thas_time;
 
-  wire duc_rst;
-
-  // Cross the CHDR reset to the ce_clk domain
-  synchronizer duc_rst_sync_i (
-    .clk (ce_clk),
-    .rst (1'b0),
-    .in  (rfnoc_chdr_rst),
-    .out (duc_rst)
-  );
-
 
   //---------------------------------------------------------------------------
   // NoC Shell
   //---------------------------------------------------------------------------
 
-  // TODO: Replace noc_shell_radio with a customized block
-  noc_shell_ddc #(
-    .NOC_ID          (NOC_ID),
-    .THIS_PORTID     (THIS_PORTID),
-    .CHDR_W          (CHDR_W),
-    .CTRLPORT_SLV_EN (0),
-    .CTRLPORT_MST_EN (1),
-    .CTRL_FIFO_SIZE  (CTRL_FIFO_SIZE),
-    .NUM_DATA_I      (NUM_PORTS),
-    .NUM_DATA_O      (NUM_PORTS),
-    .ITEM_W          (ITEM_W),
-    .NIPC            (NIPC),
-    .PYLD_FIFO_SIZE  (MTU),
-    .MTU             (MTU)
-  ) noc_shell_ddc_i (
-    .rfnoc_chdr_clk            (rfnoc_chdr_clk),
-    .rfnoc_chdr_rst            (rfnoc_chdr_rst),
-    .rfnoc_ctrl_clk            (rfnoc_ctrl_clk),
-    .rfnoc_ctrl_rst            (),
-    .rfnoc_core_config         (rfnoc_core_config),
-    .rfnoc_core_status         (rfnoc_core_status),
-    .s_rfnoc_chdr_tdata        (s_rfnoc_chdr_tdata),
-    .s_rfnoc_chdr_tlast        (s_rfnoc_chdr_tlast),
-    .s_rfnoc_chdr_tvalid       (s_rfnoc_chdr_tvalid),
-    .s_rfnoc_chdr_tready       (s_rfnoc_chdr_tready),
-    .m_rfnoc_chdr_tdata        (m_rfnoc_chdr_tdata),
-    .m_rfnoc_chdr_tlast        (m_rfnoc_chdr_tlast),
-    .m_rfnoc_chdr_tvalid       (m_rfnoc_chdr_tvalid),
-    .m_rfnoc_chdr_tready       (m_rfnoc_chdr_tready),
-    .s_rfnoc_ctrl_tdata        (s_rfnoc_ctrl_tdata),
-    .s_rfnoc_ctrl_tlast        (s_rfnoc_ctrl_tlast),
-    .s_rfnoc_ctrl_tvalid       (s_rfnoc_ctrl_tvalid),
-    .s_rfnoc_ctrl_tready       (s_rfnoc_ctrl_tready),
-    .m_rfnoc_ctrl_tdata        (m_rfnoc_ctrl_tdata),
-    .m_rfnoc_ctrl_tlast        (m_rfnoc_ctrl_tlast),
-    .m_rfnoc_ctrl_tvalid       (m_rfnoc_ctrl_tvalid),
-    .m_rfnoc_ctrl_tready       (m_rfnoc_ctrl_tready),
-    .ctrlport_clk              (ce_clk),
-    .ctrlport_rst              (duc_rst),
-    .m_ctrlport_req_wr         (ctrlport_req_wr),
-    .m_ctrlport_req_rd         (ctrlport_req_rd),
-    .m_ctrlport_req_addr       (ctrlport_req_addr),
-    .m_ctrlport_req_data       (ctrlport_req_data),
-    .m_ctrlport_req_byte_en    (),
-    .m_ctrlport_req_has_time   (ctrlport_req_has_time),
-    .m_ctrlport_req_time       (ctrlport_req_time),
-    .m_ctrlport_resp_ack       (ctrlport_resp_ack),
-    .m_ctrlport_resp_status    (AXIS_CTRL_STS_OKAY),
-    .m_ctrlport_resp_data      (ctrlport_resp_data),
-    .s_ctrlport_req_wr         (1'b0),
-    .s_ctrlport_req_rd         (1'b0),
-    .s_ctrlport_req_addr       (20'b0),
-    .s_ctrlport_req_portid     (10'b0),
-    .s_ctrlport_req_rem_epid   (16'b0),
-    .s_ctrlport_req_rem_portid (10'b0),
-    .s_ctrlport_req_data       (32'b0),
-    .s_ctrlport_req_byte_en    (4'b0),
-    .s_ctrlport_req_has_time   (1'b0),
-    .s_ctrlport_req_time       (64'b0),
-    .s_ctrlport_resp_ack       (),
-    .s_ctrlport_resp_status    (),
-    .s_ctrlport_resp_data      (),
-    .axis_data_clk             (ce_clk),
-    .axis_data_rst             (duc_rst),
-    .m_axis_tdata              (m_axis_data_tdata),
-    .m_axis_tkeep              (),
-    .m_axis_tlast              (m_axis_data_tlast),
-    .m_axis_tvalid             (m_axis_data_tvalid),
-    .m_axis_tready             (m_axis_data_tready),
-    .m_axis_ttimestamp         (m_axis_data_ttimestamp),
-    .m_axis_thas_time          (m_axis_data_thas_time),
-    .m_axis_tlength            (m_axis_data_tlength),
-    .m_axis_teov               (),
-    .m_axis_teob               (m_axis_data_teob),
-    .s_axis_tdata              (s_axis_data_tdata),
-    .s_axis_tkeep              ({NUM_PORTS*NIPC{1'b1}}),
-    .s_axis_tlast              (s_axis_data_tlast),
-    .s_axis_tvalid             (s_axis_data_tvalid),
-    .s_axis_tready             (s_axis_data_tready),
-    .s_axis_ttimestamp         (s_axis_data_ttimestamp),
-    .s_axis_thas_time          (s_axis_data_thas_time),
-    .s_axis_teov               ({NUM_PORTS{1'b0}}),
-    .s_axis_teob               (s_axis_data_teob)
+  wire ce_rst;
+
+  noc_shell_duc #(
+    .THIS_PORTID (THIS_PORTID),
+    .CHDR_W      (CHDR_W),
+    .MTU         (MTU),
+    .NUM_PORTS   (NUM_PORTS)
+  ) noc_shell_duc_i (
+    .rfnoc_chdr_clk          (rfnoc_chdr_clk),
+    .rfnoc_ctrl_clk          (rfnoc_ctrl_clk),
+    .ce_clk                  (ce_clk),
+    .rfnoc_chdr_rst          (),
+    .rfnoc_ctrl_rst          (),
+    .ce_rst                  (ce_rst),
+    .rfnoc_core_config       (rfnoc_core_config),
+    .rfnoc_core_status       (rfnoc_core_status),
+    .s_rfnoc_chdr_tdata      (s_rfnoc_chdr_tdata),
+    .s_rfnoc_chdr_tlast      (s_rfnoc_chdr_tlast),
+    .s_rfnoc_chdr_tvalid     (s_rfnoc_chdr_tvalid),
+    .s_rfnoc_chdr_tready     (s_rfnoc_chdr_tready),
+    .m_rfnoc_chdr_tdata      (m_rfnoc_chdr_tdata),
+    .m_rfnoc_chdr_tlast      (m_rfnoc_chdr_tlast),
+    .m_rfnoc_chdr_tvalid     (m_rfnoc_chdr_tvalid),
+    .m_rfnoc_chdr_tready     (m_rfnoc_chdr_tready),
+    .s_rfnoc_ctrl_tdata      (s_rfnoc_ctrl_tdata),
+    .s_rfnoc_ctrl_tlast      (s_rfnoc_ctrl_tlast),
+    .s_rfnoc_ctrl_tvalid     (s_rfnoc_ctrl_tvalid),
+    .s_rfnoc_ctrl_tready     (s_rfnoc_ctrl_tready),
+    .m_rfnoc_ctrl_tdata      (m_rfnoc_ctrl_tdata),
+    .m_rfnoc_ctrl_tlast      (m_rfnoc_ctrl_tlast),
+    .m_rfnoc_ctrl_tvalid     (m_rfnoc_ctrl_tvalid),
+    .m_rfnoc_ctrl_tready     (m_rfnoc_ctrl_tready),
+    .ctrlport_clk            (),
+    .ctrlport_rst            (),
+    .m_ctrlport_req_wr       (ctrlport_req_wr),
+    .m_ctrlport_req_rd       (ctrlport_req_rd),
+    .m_ctrlport_req_addr     (ctrlport_req_addr),
+    .m_ctrlport_req_data     (ctrlport_req_data),
+    .m_ctrlport_req_has_time (ctrlport_req_has_time),
+    .m_ctrlport_req_time     (ctrlport_req_time),
+    .m_ctrlport_resp_ack     (ctrlport_resp_ack),
+    .m_ctrlport_resp_data    (ctrlport_resp_data),
+    .axis_data_clk           (),
+    .axis_data_rst           (),
+    .m_in_axis_tdata         (m_axis_data_tdata),
+    .m_in_axis_tkeep         (),
+    .m_in_axis_tlast         (m_axis_data_tlast),
+    .m_in_axis_tvalid        (m_axis_data_tvalid),
+    .m_in_axis_tready        (m_axis_data_tready),
+    .m_in_axis_ttimestamp    (m_axis_data_ttimestamp),
+    .m_in_axis_thas_time     (m_axis_data_thas_time),
+    .m_in_axis_tlength       (m_axis_data_tlength),
+    .m_in_axis_teov          (),
+    .m_in_axis_teob          (m_axis_data_teob),
+    .s_out_axis_tdata        (s_axis_data_tdata),
+    .s_out_axis_tkeep        ({NUM_PORTS*NIPC{1'b1}}),
+    .s_out_axis_tlast        (s_axis_data_tlast),
+    .s_out_axis_tvalid       (s_axis_data_tvalid),
+    .s_out_axis_tready       (s_axis_data_tready),
+    .s_out_axis_ttimestamp   (s_axis_data_ttimestamp),
+    .s_out_axis_thas_time    (s_axis_data_thas_time),
+    .s_out_axis_teov         ({NUM_PORTS{1'b0}}),
+    .s_out_axis_teob         (s_axis_data_teob)
   );
 
 
@@ -240,7 +203,7 @@ module rfnoc_block_duc #(
     .NUM_PORTS (NUM_PORTS)
   ) ctrlport_to_settings_bus_i (
     .ctrlport_clk             (ce_clk),
-    .ctrlport_rst             (duc_rst),
+    .ctrlport_rst             (ce_rst),
     .s_ctrlport_req_wr        (ctrlport_req_wr),
     .s_ctrlport_req_rd        (ctrlport_req_rd),
     .s_ctrlport_req_addr      (ctrlport_req_addr),
@@ -256,7 +219,9 @@ module rfnoc_block_duc #(
     .set_has_time             (set_has_time),
     .rb_stb                   ({NUM_PORTS{1'b1}}),
     .rb_addr                  (rb_addr),
-    .rb_data                  (rb_data));
+    .rb_data                  (rb_data),
+    .timestamp                (64'b0)
+  );
 
 
   //---------------------------------------------------------------------------
@@ -328,7 +293,7 @@ module rfnoc_block_duc #(
         .SR_FREQ_ADDR(SR_FREQ_ADDR),
         .SR_SCALE_IQ_ADDR(SR_SCALE_IQ_ADDR))
       dds_timed (
-        .clk(ce_clk), .reset(duc_rst), .clear(clear_tx_seqnum[i]),
+        .clk(ce_clk), .reset(ce_rst), .clear(clear_tx_seqnum[i]),
         .timed_cmd_fifo_full(),
         .set_stb(set_stb_int), .set_addr(set_addr_int), .set_data(set_data_int),
         .set_time(set_time_int), .set_has_time(set_has_time_int),
@@ -353,7 +318,7 @@ module rfnoc_block_duc #(
         .SR_M_ADDR(SR_M_ADDR),
         .SR_CONFIG_ADDR(SR_CONFIG_ADDR))
       axi_rate_change (
-        .clk(ce_clk), .reset(duc_rst), .clear(clear_tx_seqnum[i]), .clear_user(clear_user),
+        .clk(ce_clk), .reset(ce_rst), .clear(clear_tx_seqnum[i]), .clear_user(clear_user),
         .src_sid(src_sid[16*i+15:16*i]), .dst_sid(next_dst_sid[16*i+15:16*i]),
         .set_stb(set_stb_int), .set_addr(set_addr_int), .set_data(set_data_int),
         .i_tdata(m_axis_data_tdata[ITEM_W*i+:ITEM_W]), .i_tlast(m_axis_data_tlast[i]), .i_tvalid(m_axis_data_tvalid[i]),
@@ -376,7 +341,7 @@ module rfnoc_block_duc #(
         .NUM_HB(NUM_HB),
         .CIC_MAX_INTERP(CIC_MAX_INTERP))
       duc (
-        .clk(ce_clk), .reset(duc_rst), .clear(clear_duc),
+        .clk(ce_clk), .reset(ce_rst), .clear(clear_duc),
         .set_stb(set_stb_int), .set_addr(set_addr_int), .set_data(set_data_int),
         .i_tdata(sample_tdata), .i_tuser(128'b0), .i_tvalid(sample_tvalid), .i_tready(sample_tready),
         .o_tdata(sample_duc_tdata), .o_tuser(), .o_tvalid(sample_duc_tvalid), .o_tready(sample_duc_tready));
