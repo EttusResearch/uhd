@@ -51,6 +51,10 @@ class E320XportMgrUDP(XportMgrUDP):
         'sfp0': {
             'label': 'misc-enet-regs',
             'type': 'sfp',
+        },
+        'int0': {
+            'label': 'misc-enet-int-regs',
+            'type': 'internal',
         }
     }
 
