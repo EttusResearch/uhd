@@ -23,11 +23,11 @@ class EthDispatcherCtrl(object):
     ETH_IP_OFFSET = 0x0000
     ETH_PORT_OFFSET = 0x0004
     FORWARD_ETH_BCAST_OFFSET = 0x0008
-    BRIDGE_MAC_LO_OFFSET = 0x0010
-    BRIDGE_MAC_HI_OFFSET = 0x0014
-    BRIDGE_IP_OFFSET = 0x0018
-    BRIDGE_PORT_OFFSET = 0x001c
-    BRIDGE_ENABLE_OFFSET = 0x0020
+    BRIDGE_INTERNAL_MAC_LO_OFFSET = 0x0010
+    BRIDGE_INTERNAL_MAC_HI_OFFSET = 0x0014
+    BRIDGE_INTERNAL_IP_OFFSET = 0x0018
+    BRIDGE_INTERNAL_PORT_OFFSET = 0x001c
+    BRIDGE_INTERNAL_ENABLE_OFFSET = 0x0020
 
 
     def __init__(self, label):
@@ -41,7 +41,7 @@ class EthDispatcherCtrl(object):
         self.log.trace("Bridge Mode {}".format(
             "Enabled" if bridge_mode else "Disabled"
         ))
-        self.poke32(self.BRIDGE_ENABLE_OFFSET, int(bridge_mode))
+        self.poke32(self.BRIDGE_INTERNAL_ENABLE_OFFSET, int(bridge_mode))
 
     def set_bridge_mac_addr(self, mac_addr):
         """
@@ -51,13 +51,13 @@ class EthDispatcherCtrl(object):
         self.log.debug("Setting bridge MAC address to `{}'".format(mac_addr))
         mac_addr_int = int(netaddr.EUI(mac_addr))
         self.log.trace("Writing to address 0x{:04X}: 0x{:04X}".format(
-            self.BRIDGE_MAC_LO_OFFSET, mac_addr_int & 0xFFFFFFFF
+            self.BRIDGE_INTERNAL_MAC_LO_OFFSET, mac_addr_int & 0xFFFFFFFF
         ))
-        self.poke32(self.BRIDGE_MAC_LO_OFFSET, mac_addr_int & 0xFFFFFFFF)
+        self.poke32(self.BRIDGE_INTERNAL_MAC_LO_OFFSET, mac_addr_int & 0xFFFFFFFF)
         self.log.trace("Writing to address 0x{:04X}: 0x{:04X}".format(
-            self.BRIDGE_MAC_HI_OFFSET, mac_addr_int >> 32
+            self.BRIDGE_INTERNAL_MAC_HI_OFFSET, mac_addr_int >> 32
         ))
-        self.poke32(self.BRIDGE_MAC_HI_OFFSET, mac_addr_int >> 32)
+        self.poke32(self.BRIDGE_INTERNAL_MAC_HI_OFFSET, mac_addr_int >> 32)
 
     def set_ipv4_addr(self, ip_addr, bridge_en=False):
         """
@@ -65,7 +65,7 @@ class EthDispatcherCtrl(object):
         Outgoing packets will have this IP address.
         """
         if bridge_en:
-            own_ip_offset = self.BRIDGE_IP_OFFSET
+            own_ip_offset = self.BRIDGE_INTERNAL_IP_OFFSET
         else:
             own_ip_offset = self.ETH_IP_OFFSET
         self.log.debug("Setting my own IP address to `{}'".format(ip_addr))
@@ -82,7 +82,7 @@ class EthDispatcherCtrl(object):
         port_value = port_value or self.DEFAULT_VITA_PORT[port_idx]
         assert port_idx in (0,) #FIXME: Fix port_idx = 1
         if bridge_en:
-            port_reg_addr = self.BRIDGE_PORT_OFFSET
+            port_reg_addr = self.BRIDGE_INTERNAL_PORT_OFFSET
         else:
             port_reg_addr = self.ETH_PORT_OFFSET
         with self._regs:
@@ -100,3 +100,26 @@ class EthDispatcherCtrl(object):
         ))
         with self._regs:
             self.poke32(self.FORWARD_ETH_BCAST_OFFSET, reg_value)
+
+    def setup_internal_interface(self, mac_addr, ip_addr):
+        """
+        Set up the FPGA side of the internal interface
+        """
+        with self._regs:
+            self.log.debug("Setting internal MAC address to `{}'".format(mac_addr))
+            mac_addr_int = int(netaddr.EUI(mac_addr))
+            mac_addr_low = mac_addr_int & 0xFFFFFFFF
+            mac_addr_hi = mac_addr_int >> 32
+            self.log.trace("Writing to address 0x{:04X}: 0x{:04X}".format(
+                self.BRIDGE_INTERNAL_MAC_LO_OFFSET, mac_addr_low
+            ))
+            self.poke32(self.BRIDGE_INTERNAL_MAC_LO_OFFSET, mac_addr_low)
+            self.log.trace("Writing to address 0x{:04X}: 0x{:04X}".format(
+                self.BRIDGE_INTERNAL_MAC_HI_OFFSET, mac_addr_hi
+            ))
+            self.poke32(self.BRIDGE_INTERNAL_MAC_HI_OFFSET, mac_addr_hi)
+            self.log.debug("Setting internal IP address to `{}'".format(ip_addr))
+            ip_addr_int = int(netaddr.IPAddress(ip_addr))
+            self.poke32(self.BRIDGE_INTERNAL_IP_OFFSET, ip_addr_int)
+            self.log.debug("Setting internal Mode")
+            self.poke32(self.BRIDGE_INTERNAL_ENABLE_OFFSET, int(True))

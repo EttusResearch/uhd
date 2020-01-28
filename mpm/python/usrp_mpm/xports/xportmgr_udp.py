@@ -9,6 +9,7 @@ UDP Transport manager
 """
 
 from six import iteritems, itervalues
+from usrp_mpm import prefs
 from usrp_mpm.ethdispatch import EthDispatcherCtrl
 from usrp_mpm.sys_utils import net
 
@@ -131,6 +132,10 @@ class XportMgrUDP:
                 self._eth_dispatchers[iface].set_ipv4_addr(
                     self._chdr_ifaces[iface]['ip_addr']
                 )
+                if self.iface_config[iface]['type'] == 'internal':
+                    #TODO: Get MAC address from EEPROM
+                    internal_ip_addr = self.get_internal_interface_address(iface)
+                    self._eth_dispatchers[iface].setup_internal_interface('00:01:02:03:04:05', internal_ip_addr)
 
     def init(self, args):
         """

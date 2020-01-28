@@ -62,18 +62,23 @@ class N3xxXportMgrUDP(XportMgrUDP):
     iface_config = {
         'bridge0': {
             'label': 'misc-enet-regs0',
+            'type': 'bridge',
         },
         'sfp0': {
             'label': 'misc-enet-regs0',
+            'type': 'sfp',
         },
         'sfp1': {
             'label': 'misc-enet-regs1',
+            'type': 'sfp',
         },
         'eth1': {
             'label': 'misc-enet-regs0',
+            'type': 'sfp',
         },
         'eth2': {
             'label': 'misc-enet-regs1',
+            'type': 'sfp',
         },
     }
     bridges = {'bridge0': ['sfp0', 'sfp1', 'bridge0']}

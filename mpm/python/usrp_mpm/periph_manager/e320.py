@@ -50,6 +50,7 @@ class E320XportMgrUDP(XportMgrUDP):
     iface_config = {
         'sfp0': {
             'label': 'misc-enet-regs',
+            'type': 'sfp',
         }
     }
 
