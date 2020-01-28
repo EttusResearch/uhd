@@ -37,6 +37,7 @@ E310_GPIO_SRC_PS = "PS"
 # We use the index positions of RFA and RFB to map between name and radio index
 E310_GPIO_SRCS = ("RFA", "RFB", E310_GPIO_SRC_PS)
 E310_FPGPIO_WIDTH = 6
+E310_GPIO_BANKS = ["INT0",]
 
 ###############################################################################
 # Transport managers

@@ -35,7 +35,7 @@ E320_DEFAULT_ENABLE_FPGPIO = True
 E320_FPGA_COMPAT = (5, 0)
 E320_MONITOR_THREAD_INTERVAL = 1.0 # seconds
 E320_DBOARD_SLOT_IDX = 0
-E320_GPIO_BANKS = "FP0"
+E320_GPIO_BANKS = ["FP0",]
 E320_GPIO_SRC_PS = "PS"
 # We use the index positions of RFA and RFB to map between name and radio index
 E320_GPIO_SRCS = ("RFA", "RFB", E320_GPIO_SRC_PS)
