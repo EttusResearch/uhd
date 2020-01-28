@@ -26,6 +26,8 @@ public:
     {
         std::string udp_port;
         size_t link_rate;
+        std::string link_type;
+        size_t if_mtu;
     };
 
     using udp_link_info_map = std::unordered_map<std::string, udp_link_info_t>;

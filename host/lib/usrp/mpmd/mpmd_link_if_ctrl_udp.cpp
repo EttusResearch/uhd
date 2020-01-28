@@ -68,8 +68,11 @@ mpmd_link_if_ctrl_udp::udp_link_info_map get_udp_info_from_xport_info(
         const size_t link_rate     = link_info.count("link_rate")
                                      ? std::stoul(link_info.at("link_rate"))
                                      : MAX_RATE_1GIGE;
+        const std::string link_type = link_info.at("type");
+        const size_t if_mtu         = std::stoul(link_info.at("mtu"));
         result.emplace(link_info.at("ipv4"),
-            mpmd_link_if_ctrl_udp::udp_link_info_t{udp_port, link_rate});
+            mpmd_link_if_ctrl_udp::udp_link_info_t{
+                udp_port, link_rate, link_type, if_mtu});
     }
 
     return result;
@@ -238,7 +241,15 @@ mpmd_link_if_ctrl_udp::mpmd_link_if_ctrl_udp(const uhd::device_addr_t& mb_args,
         try {
             // If MTU discovery fails, we gracefully recover, but declare that
             // link invalid.
-            _mtu = std::min(_mtu, discover_mtu_for_ip(ip_addr));
+            auto& info = _udp_info.at(ip_addr);
+            if (info.link_type == "internal") {
+                UHD_LOG_TRACE("MPMD::XPORT::UDP",
+                    "MTU for internal interface " << ip_addr << " is "
+                                                  << std::to_string(info.if_mtu));
+                _mtu = std::min(_mtu, info.if_mtu);
+            } else {
+                _mtu = std::min(_mtu, discover_mtu_for_ip(ip_addr));
+            }
             _available_addrs.push_back(ip_addr);
         } catch (const uhd::exception& ex) {
             UHD_LOG_WARNING("MPMD::XPORT::UDP",

@@ -71,6 +71,7 @@ def get_iface_info(ifname):
         'ip_addrs': ip_addrs,
         'link_speed': link_speed,
         'bridge': is_bridge(link_info.get_attr('IFLA_LINKINFO')),
+        'mtu': link_info.get_attr('IFLA_MTU'),
     }
 
 

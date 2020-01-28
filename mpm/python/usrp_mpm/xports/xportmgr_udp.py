@@ -186,7 +186,9 @@ class XportMgrUDP:
             {
                 'ipv4': str(iface_info['ip_addr']),
                 'port': str(self.chdr_port),
-                'link_rate': str(int(iface_info['link_speed'] * 1e6 / 8))
+                'link_rate': str(int(iface_info['link_speed'] * 1e6 / 8)),
+                'type': str(self.iface_config[iface_name]['type']),
+                'mtu': str(iface_info['mtu'])
             }
             for iface_name, iface_info in iteritems(self._chdr_ifaces)
         ]
