@@ -295,7 +295,7 @@ public:
         const double timeout = 0.1) = 0;
 
     /*!
-     * Receive and asynchronous message from this TX stream.
+     * Receive an asynchronous message from this TX stream.
      * \param async_metadata the metadata to be filled in
      * \param timeout the timeout in seconds to wait for a message
      * \return true when the async_metadata is valid, false for timeout
