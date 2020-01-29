@@ -127,6 +127,10 @@ public:
      */
     virtual device::sptr get_device(void) = 0;
 
+    /*! Return a reference to the property tree
+     */
+    virtual uhd::property_tree::sptr get_tree(void) const = 0;
+
     //! Convenience method to get a RX streamer. See also uhd::device::get_rx_stream().
     virtual rx_streamer::sptr get_rx_stream(const stream_args_t& args) = 0;
 

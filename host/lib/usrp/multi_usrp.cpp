@@ -405,6 +405,11 @@ public:
         return _dev;
     }
 
+    uhd::property_tree::sptr get_tree() const
+    {
+        return _tree;
+    }
+
     dict<std::string, std::string> get_usrp_rx_info(size_t chan){
         mboard_chan_pair mcp = rx_chan_to_mcp(chan);
         dict<std::string, std::string> usrp_info;

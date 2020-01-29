@@ -161,6 +161,11 @@ public:
         return nullptr;
     }
 
+    uhd::property_tree::sptr get_tree() const
+    {
+        return _tree;
+    }
+
     rx_streamer::sptr get_rx_stream(const stream_args_t& args_)
     {
         std::lock_guard<std::recursive_mutex> l(_graph_mutex);
