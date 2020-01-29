@@ -14,7 +14,7 @@ module pps_generator #(
    input  reset,
    output pps
 );
-    reg [31:0] count;
+    reg [31:0] count = 32'h0;
 
     always @(posedge clk) begin
         if (reset) begin
