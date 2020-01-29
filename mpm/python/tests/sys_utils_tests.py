@@ -9,6 +9,7 @@ Tests related to usrp_mpm.sys_utils
 
 from base_tests import TestBase
 import unittest
+import test_utilities
 from usrp_mpm.sys_utils import net
 import platform
 

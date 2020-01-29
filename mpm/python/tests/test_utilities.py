@@ -6,6 +6,80 @@
 """ Utility classes to facilitate unit testing """
 
 import queue
+import platform
+import os
+
+def on_linux():
+    """
+    Returns True if this is being executed on a Linux system
+    """
+    return 'linux' in platform.system().lower()
+
+def on_usrp():
+    """
+    Returns True if this is being executed on an USRP
+    """
+    # Check device tree standard property for manufacturer info
+    path = '/sys/firmware/devicetree/base/compatible'
+
+    if not os.path.exists(path):
+        return False
+    else:
+        with open(path, 'r') as f:
+            s = f.read()
+            # String returned is actually a list of null-terminated strings,
+            # replace the null-terminations with a separator
+            s.replace('\x00', ';')
+            return 'ettus' in s
+
+def _mock_gpiod_pkg():
+    """
+    Replace the gpiod python package with a mock version if import
+    of the gpiod package fails. This package is not available on all
+    OS versions that we would like to test in.
+    """
+    try:
+        import gpiod
+    except Exception as ex:
+        # The gpiod package should be available if testing on a USRP
+        if on_usrp():
+            raise ex
+        import sys
+        sys.modules["gpiod"] = MockGpiod
+
+class MockGpiod(object):
+    """
+    Mocks a portion of the gpiod python package without actually
+    accessing GPIO hardware.
+    """
+    LINE_REQ_DIR_IN = 0
+    LINE_REQ_DIR_OUT = 1
+
+    _DEFAULT_LINE_VAL = 0
+
+    class MockLine(object):
+        def __init__(self, val):
+            self.val = val
+
+        def request(self):
+            pass
+
+        def release(self):
+            pass
+
+        def get_value(self):
+            return self.val
+
+        def set_value(self, val):
+            self.val = val
+
+    def __init__(self):
+        self.lines = dict()
+
+    def find_line(self, name):
+        if name not in self.lines.keys():
+            self.lines[name] = self.MockLine(self._DEFAULT_LINE_VAL)
+        return self.lines[name]
 
 class MockRegsIface(object):
     """
@@ -111,3 +185,8 @@ class MockLog(object):
             return ''
         else:
             return log_messages.get_nowait()
+
+# importing this utilities package should mock out the gpiod package
+# if necessary so that usrp_mpm can be imported on devices without
+# gpiod support for the OS.
+_mock_gpiod_pkg()

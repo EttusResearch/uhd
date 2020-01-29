@@ -7,7 +7,7 @@
 Base Test Case classes
 """
 
-import platform
+from test_utilities import on_linux, on_usrp
 import unittest
 
 class TestBase(unittest.TestCase):
@@ -19,7 +19,7 @@ class TestBase(unittest.TestCase):
         Test function decorator which skips tests unless the current
         execution environment is a linux OS.
         """
-        if 'linux' in platform.system().lower():
+        if on_linux():
             return lambda func: func
         return unittest.skip("This test is only valid when run on a Linux system.")
 
@@ -27,11 +27,8 @@ class TestBase(unittest.TestCase):
         """
         Test function decorator which skips tests unless the current
         execution environment is a USRP.
-
-        Assumes that 'arm' in the machine name constitutes an ARM
-        processor, aka a USRP.
         """
-        if 'arm' in platform.machine().lower():
+        if on_usrp():
             return lambda func: func
         return unittest.skip("This test is only valid when run on the USRP.")
 
