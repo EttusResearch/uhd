@@ -71,9 +71,11 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp,
     }
 
     // print pre-test summary
-    std::cout << boost::format("[%s] Testing receive rate %f Msps on %u channels") % NOW()
-                     % (usrp->get_rx_rate() / 1e6) % rx_stream->get_num_channels()
-              << std::endl;
+    auto time_stamp   = NOW();
+    auto rx_rate      = usrp->get_rx_rate() / 1e6;
+    auto num_channels = rx_stream->get_num_channels();
+    std::cout << boost::format("[%s] Testing receive rate %f Msps on %u channels\n")
+                     % time_stamp % rx_rate % num_channels;
 
     // setup variables and allocate buffer
     uhd::rx_metadata_t md;
@@ -98,8 +100,6 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp,
 
     bool stop_called = false;
     while (true) {
-        // if (burst_timer_elapsed.load(boost::memory_order_relaxed) and not stop_called)
-        // {
         if (burst_timer_elapsed and not stop_called) {
             rx_stream->issue_stream_cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
             stop_called = true;
@@ -202,9 +202,11 @@ void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp,
     }
 
     // print pre-test summary
-    std::cout << boost::format("[%s] Testing transmit rate %f Msps on %u channels")
-                     % NOW() % (usrp->get_tx_rate() / 1e6) % tx_stream->get_num_channels()
-              << std::endl;
+    auto time_stamp   = NOW();
+    auto tx_rate      = usrp->get_tx_rate() / 1e6;
+    auto num_channels = tx_stream->get_num_channels();
+    std::cout << boost::format("[%s] Testing transmit rate %f Msps on %u channels\n")
+                     % time_stamp % tx_rate % num_channels;
 
     // setup variables and allocate buffer
     const size_t max_samps_per_packet = tx_stream->get_max_num_samps();
@@ -350,7 +352,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
          "Number of dropped packets (D) which will declare the benchmark a failure.")
         ("seq-threshold", po::value<size_t>(&seq_threshold),
          "Number of dropped packets (D) which will declare the benchmark a failure.")
-	// NOTE: TX delay defaults to 0.25 seconds to allow the buffer on the device to fill completely
+        // NOTE: TX delay defaults to 0.25 seconds to allow the buffer on the device to fill completely
         ("tx_delay", po::value<double>(&tx_delay)->default_value(0.25), "delay before starting TX in seconds")
         ("rx_delay", po::value<double>(&rx_delay)->default_value(0.05), "delay before starting RX in seconds")
         ("priority", po::value<std::string>(&priority)->default_value("high"), "thread priority (high, normal)")
