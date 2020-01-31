@@ -81,9 +81,11 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp,
     }
 
     // print pre-test summary
-    std::cout << boost::format("[%s] Testing receive rate %f Msps on %u channels") % NOW()
-                     % (usrp->get_rx_rate() / 1e6) % rx_stream->get_num_channels()
-              << std::endl;
+    auto time_stamp = NOW();
+    auto rx_rate = usrp->get_rx_rate() / 1e6;
+    auto num_channels = rx_stream->get_num_channels();
+    std::cout << boost::format("[%s] Testing receive rate %f Msps on %u channels\n") 
+                     % time_stamp % rx_rate % num_channels;
 
     // setup variables and allocate buffer
     uhd::rx_metadata_t md;
@@ -211,9 +213,11 @@ void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp,
     }
 
     // print pre-test summary
-    std::cout << boost::format("[%s] Testing transmit rate %f Msps on %u channels")
-                     % NOW() % (usrp->get_tx_rate() / 1e6) % tx_stream->get_num_channels()
-              << std::endl;
+    auto time_stamp = NOW();
+    auto tx_rate = usrp->get_tx_rate() / 1e6;
+    auto num_channels = tx_stream->get_num_channels();
+    std::cout << boost::format("[%s] Testing transmit rate %f Msps on %u channels\n")
+                     % time_stamp % tx_rate % num_channels;
 
     // setup variables and allocate buffer
     const size_t max_samps_per_packet = tx_stream->get_max_num_samps();
@@ -527,7 +531,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     if (vm.count("rx_rate")) {
         usrp->set_rx_rate(rx_rate);
         if (vm.count("rx_spp")) {
-            std::cout << "Setting RX spp to " << rx_spp << std::endl;
+            std::cout << boost::format("Setting RX spp to %u\n") % rx_spp;
             usrp->set_rx_spp(rx_spp);
         }
         // create a receive streamer
@@ -561,7 +565,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         if (vm.count("tx_spp")) {
             spp = std::min(spp, tx_spp);
         }
-        std::cout << "Setting TX spp to " << spp << std::endl;
+        std::cout << boost::format("Setting TX spp to %u\n") % spp;
         auto tx_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
             benchmark_tx_rate(usrp,
                 tx_cpu,
