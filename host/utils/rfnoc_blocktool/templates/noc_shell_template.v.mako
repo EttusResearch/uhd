@@ -163,7 +163,7 @@ module noc_shell_${config['module_name']} #(
   );
 
   pulse_stretch_min #(.LENGTH(32)) pulse_stretch_min_${clock['name']} (
-    .clk(rfnoc_ctrl_clk), .rst(1'b0),
+    .clk(${clock['name']}_clk), .rst(1'b0),
     .pulse_in(${clock['name']}_rst_pulse), .pulse_out(${clock['name']}_rst)
   );
 

@@ -28,7 +28,7 @@
   ${out_wire}wire [${num_ports}-1:0]        ${ma_pre}${port_name}_axis_tlast${term}
   ${out_wire}wire [${num_ports}-1:0]        ${ma_pre}${port_name}_axis_tvalid${term}
   ${in_wire}wire [${num_ports}-1:0]        ${ma_pre}${port_name}_axis_tready${term}
-  ${out_wire}wire [${num_ports}*CHDR_W-1:0] ${ma_pre}${port_name}_axis_ttimestamp${term}
+  ${out_wire}wire [${num_ports}*64-1:0]     ${ma_pre}${port_name}_axis_ttimestamp${term}
   ${out_wire}wire [${num_ports}-1:0]        ${ma_pre}${port_name}_axis_thas_time${term}
   ${out_wire}wire [${num_ports}*16-1:0]     ${ma_pre}${port_name}_axis_tlength${term}
   ${out_wire}wire [${num_ports}-1:0]        ${ma_pre}${port_name}_axis_teov${term}
@@ -40,7 +40,7 @@
   ${out_wire}wire               ${ma_pre}${port_name}_axis_tlast${term}
   ${out_wire}wire               ${ma_pre}${port_name}_axis_tvalid${term}
   ${in_wire}wire               ${ma_pre}${port_name}_axis_tready${term}
-  ${out_wire}wire [CHDR_W-1:0]  ${ma_pre}${port_name}_axis_ttimestamp${term}
+  ${out_wire}wire [63:0]        ${ma_pre}${port_name}_axis_ttimestamp${term}
   ${out_wire}wire               ${ma_pre}${port_name}_axis_thas_time${term}
   ${out_wire}wire [15:0]        ${ma_pre}${port_name}_axis_tlength${term}
   ${out_wire}wire               ${ma_pre}${port_name}_axis_teov${term}
@@ -59,7 +59,7 @@
   ${in_wire}wire [${num_ports}-1:0]        ${sl_pre}${port_name}_axis_tlast${term}
   ${in_wire}wire [${num_ports}-1:0]        ${sl_pre}${port_name}_axis_tvalid${term}
   ${out_wire}wire [${num_ports}-1:0]        ${sl_pre}${port_name}_axis_tready${term}
-  ${in_wire}wire [${num_ports}*CHDR_W-1:0] ${sl_pre}${port_name}_axis_ttimestamp${term}
+  ${in_wire}wire [${num_ports}*64-1:0]     ${sl_pre}${port_name}_axis_ttimestamp${term}
   ${in_wire}wire [${num_ports}-1:0]        ${sl_pre}${port_name}_axis_thas_time${term}
   ${in_wire}wire [${num_ports}-1:0]        ${sl_pre}${port_name}_axis_teov${term}
   ${in_wire}wire [${num_ports}-1:0]        ${sl_pre}${port_name}_axis_teob${term if (term == ";") or (idx < num_inputs - 1) else ""}
@@ -70,7 +70,7 @@
   ${in_wire}wire               ${sl_pre}${port_name}_axis_tlast${term}
   ${in_wire}wire               ${sl_pre}${port_name}_axis_tvalid${term}
   ${out_wire}wire               ${sl_pre}${port_name}_axis_tready${term}
-  ${in_wire}wire [CHDR_W-1:0]  ${sl_pre}${port_name}_axis_ttimestamp${term}
+  ${in_wire}wire [63:0]        ${sl_pre}${port_name}_axis_ttimestamp${term}
   ${in_wire}wire               ${sl_pre}${port_name}_axis_thas_time${term}
   ${in_wire}wire               ${sl_pre}${port_name}_axis_teov${term}
   ${in_wire}wire               ${sl_pre}${port_name}_axis_teob${term if (term == ";") or (idx < num_outputs - 1) else ""}
