@@ -15,6 +15,7 @@
 #include <uhd/types/dict.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/usrp/gps_ctrl.hpp>
+#include <uhd/usrp/mboard_eeprom.hpp>
 #include <uhd/usrp_clock/octoclock_eeprom.hpp>
 #include <boost/thread.hpp>
 #include <memory>
@@ -54,8 +55,7 @@ private:
     uint32_t _sequence;
     uint32_t _proto_ver;
 
-    void _set_eeprom(
-        const std::string& oc, const uhd::usrp_clock::octoclock_eeprom_t& oc_eeprom);
+    void _set_eeprom(const std::string& oc, const uhd::usrp::mboard_eeprom_t& oc_eeprom);
 
     uint32_t _get_fw_version(const std::string& oc);
 

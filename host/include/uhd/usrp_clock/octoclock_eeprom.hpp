@@ -11,6 +11,7 @@
 #include <uhd/config.hpp>
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/types/dict.hpp>
+#include <uhd/usrp/mboard_eeprom.hpp>
 #include <string>
 
 namespace uhd { namespace usrp_clock {
@@ -22,7 +23,7 @@ namespace uhd { namespace usrp_clock {
  * Use the dictionary interface to get and set values.
  * Commit to the EEPROM to save changed settings.
  */
-class UHD_API octoclock_eeprom_t : public uhd::dict<std::string, std::string>
+class UHD_API octoclock_eeprom_t : public uhd::usrp::mboard_eeprom_t
 {
 public:
     //! Make a new empty OctoClock EEPROM handler
