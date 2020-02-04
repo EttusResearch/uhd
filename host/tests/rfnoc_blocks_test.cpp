@@ -19,6 +19,9 @@
 
 using namespace uhd::rfnoc;
 
+// Redeclare this here, since it's only defined outside of UHD_API
+noc_block_base::make_args_t::~make_args_t() = default;
+
 namespace {
 
 constexpr size_t DEFAULT_MTU = 8000;
