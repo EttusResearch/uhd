@@ -161,10 +161,9 @@ public:
             const int coerced_decim = coerce_decim(get_input_rate(chan) / rate);
             set_property<int>("decim", coerced_decim, chan);
         } else {
-            RFNOC_LOG_DEBUG(
-                "Property samp_rate@"
-                << chan
-                << " is not valid, attempting to set output rate via the edge property.");
+            RFNOC_LOG_DEBUG("Property samp_rate@"
+                            << chan << " is not valid, attempting to set output rate "
+                            << (rate / 1e6) << " Msps via the edge property.");
             set_property<double>("samp_rate", rate, {res_source_info::OUTPUT_EDGE, chan});
         }
         return _samp_rate_out.at(chan).get();
@@ -209,10 +208,10 @@ private:
             property_t<double>(PROP_KEY_SAMP_RATE, {res_source_info::INPUT_EDGE, chan}));
         _samp_rate_out.push_back(
             property_t<double>(PROP_KEY_SAMP_RATE, {res_source_info::OUTPUT_EDGE, chan}));
-        _scaling_in.push_back(property_t<double>(
-            PROP_KEY_SCALING, DEFAULT_SCALING, {res_source_info::INPUT_EDGE, chan}));
-        _scaling_out.push_back(property_t<double>(
-            PROP_KEY_SCALING, DEFAULT_SCALING, {res_source_info::OUTPUT_EDGE, chan}));
+        _scaling_in.push_back(
+            property_t<double>(PROP_KEY_SCALING, {res_source_info::INPUT_EDGE, chan}));
+        _scaling_out.push_back(
+            property_t<double>(PROP_KEY_SCALING, {res_source_info::OUTPUT_EDGE, chan}));
         _decim.push_back(property_t<int>(
             PROP_KEY_DECIM, DEFAULT_DECIM, {res_source_info::USER, chan}));
         _freq.push_back(property_t<double>(
@@ -266,13 +265,17 @@ private:
                 &scaling_in    = *scaling_in]() {
                 RFNOC_LOG_TRACE("Calling resolver for `decim'@" << chan);
                 decim = coerce_decim(double(decim.get()));
-                set_decim(decim.get(), chan);
+                if (decim.is_dirty()) {
+                    set_decim(decim.get(), chan);
+                }
                 if (samp_rate_in.is_valid()) {
                     samp_rate_out = samp_rate_in.get() / decim.get();
                 } else if (samp_rate_out.is_valid()) {
                     samp_rate_in = samp_rate_out.get() * decim.get();
                 }
-                scaling_in.force_dirty();
+                if (scaling_in.is_valid()) {
+                    scaling_in.force_dirty();
+                }
             });
         // Resolver for _freq: this gets executed when the user directly
         // modifies _freq.
@@ -291,10 +294,30 @@ private:
                     RFNOC_LOG_DEBUG("Not setting frequency until sampling rate is set.");
                 }
             });
-        // Resolver for the input rate: we try and match decim so that the output
-        // rate is not modified. if decim needs to be coerced, only then the
-        // output rate is modified.
-        // Note this will also affect the frequency.
+        // Resolver for the input rate:
+        // If this is called, then most likely, the input sampling rate was set.
+        // In that case, we try and keep the output sampling rate as it was, and
+        // modify decim to match the input/output ratio. If we can't exactly hit
+        // the previous output rate, then we coerce the desired decim to a valid
+        // decim value, and update the output rate.
+        // Note: This means that if the user set decim explicitly, then this
+        // resolver can undo the user's intentions. However, it is the option
+        // that retains the consistency of the graph as much as possible, and
+        // allows the user to call set_output_rate() on this block before the
+        // graph was committed.
+        //
+        // The scaling is modified in the same resolver to avoid circular
+        // dependencies. Note that changing the decimation will change the
+        // scaling ratio (input to output scaling), so we need to write to the
+        // decimation register in this resolver as well as the decim resolver
+        // in order to make sure that _residual_scaling is correctly set.
+        // Otherwise, the decim resolver and this resolver would conflict each
+        // other when writing to scaling_out.
+        //
+        // This resolver may affect the frequency: If the input sampling rate
+        // was changed, then the phase accumulator increment needs to be
+        // recalculated in order to retain the current value of the frequency
+        // offset, which is given in Hz (not in radians).
         add_property_resolver({samp_rate_in, scaling_in},
             {decim, samp_rate_out, freq, scaling_out},
             [this,
@@ -309,29 +332,28 @@ private:
                     "Calling resolver for `samp_rate_in/scaling_in'@" << chan);
                 if (samp_rate_in.is_valid()) {
                     RFNOC_LOG_TRACE("New samp_rate_in is " << samp_rate_in.get());
-                    // decim takes priority over samp_rate_out if set
-                    // If decim changes, it will trigger the decim resolver to run
-                    if (not decim.is_valid()) {
-                        decim = coerce_decim(samp_rate_in.get() / samp_rate_out.get());
-                    }
-                    const double new_samp_rate_out = samp_rate_in.get() / decim.get();
-                    // Only update the samp_rate_out if the new value is not the same
-                    // frequency. However, we still want to call the operator= to make
-                    // sure metadata gets handled
                     if (samp_rate_out.is_valid()) {
+                        decim = coerce_decim(samp_rate_in.get() / samp_rate_out.get());
+                        set_decim(decim.get(), chan);
+                        const double new_samp_rate_out = samp_rate_in.get() / decim.get();
+                        // Only update the samp_rate_out if the new value is not the same
+                        // frequency. However, we still want to call the operator= to make
+                        // sure metadata gets handled
                         samp_rate_out = (uhd::math::frequencies_are_equal(
                                             samp_rate_out, new_samp_rate_out))
                                             ? samp_rate_out.get()
                                             : new_samp_rate_out;
-                    } else {
-                        samp_rate_out = new_samp_rate_out;
+                        RFNOC_LOG_TRACE("New samp_rate_out is " << samp_rate_out.get());
+                    } else if (decim.is_valid()) {
+                        samp_rate_out = samp_rate_in.get() / decim.get();
                     }
-                    RFNOC_LOG_TRACE("New samp_rate_out is " << samp_rate_out.get());
                     // If the input rate changes, we need to update the DDS, too,
                     // since it works on frequencies normalized by the input rate.
                     freq.force_dirty();
                 }
-                scaling_out = scaling_in.get() * _residual_scaling.at(chan);
+                if (scaling_in.is_valid()) {
+                    scaling_out = scaling_in.get() * _residual_scaling.at(chan);
+                }
             });
         // Resolver for the output rate: like the previous one, but flipped.
         add_property_resolver({samp_rate_out, scaling_out},
@@ -349,6 +371,7 @@ private:
                     if (samp_rate_in.is_valid()) {
                         decim =
                             coerce_decim(samp_rate_in.get() / samp_rate_out.get());
+                        set_decim(decim.get(), chan);
                     }
                     // If decim is dirty, it will trigger the decim resolver.
                     // However, the decim resolver will set the output rate based
@@ -369,7 +392,9 @@ private:
                         RFNOC_LOG_TRACE("New samp_rate_in is " << samp_rate_in.get());
                     }
                 }
-                scaling_out = scaling_in.get() * _residual_scaling.at(chan);
+                if (scaling_in.is_valid()) {
+                    scaling_out = scaling_in.get() * _residual_scaling.at(chan);
+                }
             });
         // Resolvers for type: These are constants
         add_property_resolver({type_in}, {type_in}, [& type_in = *type_in]() {
