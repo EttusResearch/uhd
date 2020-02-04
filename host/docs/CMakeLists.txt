@@ -21,35 +21,18 @@ set(ENABLE_MANUAL_OR_DOXYGEN false)
 ########################################################################
 LIBUHD_REGISTER_COMPONENT("Manual" ENABLE_MANUAL ON "DOXYGEN_FOUND" OFF OFF)
 
-# Check if fpga submodule is there. If yes:
-# - Add fpga-src/docs and fpga-src/README.md to inputs
-# - Add fpga-src docs dirs to strip?
-# If no:
-# - Make FPGA Manual reference link to our website
-
 if(ENABLE_MANUAL)
+    set(FPGA_SOURCE_DIR "${CMAKE_SOURCE_DIR}/../fpga")
     set(ENABLE_MANUAL_OR_DOXYGEN true)
-    # First: Set up UHD manual only
     file(GLOB manual_sources "*.dox")
+    file(GLOB_RECURSE fpga_manual_sources "${FPGA_SOURCE_DIR}/docs/*.md")
+    list(APPEND manual_sources ${fpga_manual_sources})
     set(DOXYGEN_DEPENDENCIES ${manual_sources})
-    set(DOXYGEN_INPUT_DIRS "${CMAKE_SOURCE_DIR}/docs ${CMAKE_CURRENT_BINARY_DIR}")
+    set(DOXYGEN_INPUT_DIRS "${CMAKE_SOURCE_DIR}/docs ${CMAKE_CURRENT_BINARY_DIR} ${FPGA_SOURCE_DIR}/docs")
     set(DOXYGEN_DEP_COMPONENT "manual")
-    set(DOXYGEN_FPGA_MANUAL_REFERENCE "<a href=\"http://files.ettus.com/manual/md_fpga.html\">Part III: FPGA Manual</a>")
-    set(DOXYGEN_STRIP_EXTRA "")
+    set(DOXYGEN_FPGA_MANUAL_REFERENCE "\\subpage md_fpga \"Part III: FPGA Manual\"")
+    set(DOXYGEN_STRIP_EXTRA "${CMAKE_SOURCE_DIR}/../fpga/docs")
     set(DOXYGEN_EXCLUDE_DIRS "")
-    # Now, check if we have the FPGA sources as well.
-    # If so, pull them in:
-    if(HAS_FPGA_SUBMODULE)
-        file(GLOB_RECURSE fpga_manual_sources "${FPGA_SUBMODULE_DIR}/docs/*.md")
-        list(APPEND manual_sources ${fpga_manual_sources})
-        set(DOXYGEN_INPUT_DIRS "${DOXYGEN_INPUT_DIRS} ${FPGA_SUBMODULE_DIR}/docs")
-        set(DOXYGEN_FPGA_MANUAL_REFERENCE "\\subpage md_fpga \"Part III: FPGA Manual\"")
-	set(DOXYGEN_STRIP_EXTRA "${FPGA_SUBMODULE_DIR}/docs")
-    endif(HAS_FPGA_SUBMODULE)
-    configure_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/mainpage.dox.in
-        ${CMAKE_CURRENT_BINARY_DIR}/mainpage.dox
-    @ONLY)
 endif(ENABLE_MANUAL)
 
 ########################################################################

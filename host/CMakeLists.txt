@@ -375,21 +375,6 @@ LIBUHD_REGISTER_COMPONENT("Utils" ENABLE_UTILS ON "ENABLE_LIBUHD" OFF OFF)
 LIBUHD_REGISTER_COMPONENT("Tests" ENABLE_TESTS ON "ENABLE_LIBUHD" OFF OFF)
 
 ########################################################################
-# Check for fpga-src submodule
-########################################################################
-set(HAS_FPGA_SUBMODULE FALSE)
-execute_process(
-    COMMAND ${PYTHON_EXECUTABLE} -c "import os; print(os.path.abspath(os.path.join('${CMAKE_SOURCE_DIR}', '..', 'fpga-src')))"
-    OUTPUT_VARIABLE FPGA_SUBMODULE_DIR
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-if(EXISTS "${FPGA_SUBMODULE_DIR}/docs/fpga.md")
-    set(HAS_FPGA_SUBMODULE TRUE)
-    message(STATUS "")
-    message(STATUS "Found FPGA submodule: ${FPGA_SUBMODULE_DIR}")
-endif(EXISTS "${FPGA_SUBMODULE_DIR}/docs/fpga.md")
-
-########################################################################
 # Add the subdirectories
 ########################################################################
 if(ENABLE_LIBUHD)
