@@ -66,6 +66,18 @@ public:
      * \param device_id The 16-bit Device-ID for this block
      *        (ANY_DEVICE for device agnostic blocks).
      * \param block_name The name used for the block ID (e.g. "Radio").
+     * \param mb_access Set this to true to request full access to the
+     *                  motherboard in the block controller. Radio blocks, for
+     *                  example, require this. If set, UHD may grant access to
+     *                  the underlying motherboard controller to the block.
+     *                  See also uhd::rfnoc::noc_block_base::get_mb_controller().
+     * \param timebase_clock The name of the clock that is used for time
+     *                       reference on timed commands. Blocks that derive
+     *                       time from the graph (e.g. DDC, DUC blocks) should
+     *                       set this to uhd::rfnoc::CLOCK_KEY_GRAPH.
+     * \param ctrlport_clock The name of the clock that is driving the control
+     *                       port. This is device-dependent. A typical value
+     *                       is `"bus_clk"`.
      * \param factory_fn A factory function that returns a reference to the
      *                   block.
      */
