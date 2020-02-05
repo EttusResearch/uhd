@@ -534,6 +534,19 @@ def main():
             "\n".join("{}".format(item) for item in manifest.items())
         ))
 
+        # Strip down path until we find first parent directory of images_dir
+        # that exists and then check if we have proper write permissions
+        images_dir_parent = images_dir
+        while not os.path.exists(os.path.abspath(images_dir_parent)):
+            path_pair = os.path.split(images_dir_parent)
+            if images_dir_parent == path_pair[0]:
+                # Prevent infinite loop
+                break
+            images_dir_parent = path_pair[0]
+        if not os.access(os.path.abspath(images_dir_parent), os.W_OK):
+            log("ERROR", "Invalid permissions to write images destination")
+            return False
+
         # Read the inventory into a dictionary we can perform lookups on
         if os.path.isfile(args.inventory_location):
             inventory_fn = args.inventory_location
