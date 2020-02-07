@@ -15,7 +15,7 @@
 
 namespace uhd {
 
-static const float default_thread_priority = float(0.5);
+constexpr float DEFAULT_THREAD_PRIORITY = float(0.5);
 
 /*!
  * Set the scheduling priority on the current thread.
@@ -34,7 +34,7 @@ static const float default_thread_priority = float(0.5);
  * \throw exception on set priority failure
  */
 UHD_API void set_thread_priority(
-    float priority = default_thread_priority, bool realtime = true);
+    float priority = DEFAULT_THREAD_PRIORITY, bool realtime = true);
 
 /*!
  * Set the scheduling priority on the current thread.
@@ -42,7 +42,7 @@ UHD_API void set_thread_priority(
  * \return true on success, false on failure
  */
 UHD_API bool set_thread_priority_safe(
-    float priority = default_thread_priority, bool realtime = true);
+    float priority = DEFAULT_THREAD_PRIORITY, bool realtime = true);
 
 /*!
  * Set the thread name on the given boost thread.
