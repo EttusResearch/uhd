@@ -19,6 +19,18 @@ set (CMAKE_CATALINA_SOURCE_DIR
 )
 
 ########################################################################
+# Setup defines for process scheduling (needed for thread.cpp)
+########################################################################
+
+message(STATUS "  Priority scheduling disabled.")
+set(THREAD_PRIO_DEFS HAVE_THREAD_PRIO_DUMMY)
+
+set_source_files_properties(
+    ${UHD_HOST_ROOT}/lib/utils/thread.cpp
+    PROPERTIES COMPILE_DEFINITIONS "${THREAD_PRIO_DEFS}"
+)
+
+########################################################################
 # Setup UHD_VERSION and UHD_COMPONENT for version.cpp
 ########################################################################
 configure_file(
@@ -41,6 +53,7 @@ set(catalina_sources
     ${UHD_HOST_ROOT}/lib/types/serial.cpp
     ${UHD_HOST_ROOT}/lib/property_tree.cpp
     ${UHD_HOST_ROOT}/lib/utils/log.cpp
+    ${UHD_HOST_ROOT}/lib/utils/thread.cpp
     ${CMAKE_BINARY_DIR}/lib/version.cpp
 )
 
