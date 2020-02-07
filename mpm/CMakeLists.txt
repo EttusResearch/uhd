@@ -77,6 +77,7 @@ message(STATUS "Configuring Boost C++ Libraries...")
 set(BOOST_REQUIRED_COMPONENTS
     system
     thread
+    date_time
 )
 # Same as with Python version: MPM might work with other versions of Boost,
 # but we don't make any guarantees.
