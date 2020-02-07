@@ -8,16 +8,16 @@
 #ifndef INCLUDED_AD9361_CTRL_HPP
 #define INCLUDED_AD9361_CTRL_HPP
 
-#include <uhd/transport/zero_copy.hpp>
-#include <uhd/types/ranges.hpp>
-#include <uhd/types/serial.hpp>
-#include <uhd/types/sensors.hpp>
 #include <uhd/exception.hpp>
-#include <memory>
-#include <ad9361_device.h>
-#include <string>
-#include <complex>
 #include <uhd/types/filters.hpp>
+#include <uhd/types/ranges.hpp>
+#include <uhd/types/sensors.hpp>
+#include <uhd/types/serial.hpp>
+#include <uhd/utils/noncopyable.hpp>
+#include <ad9361_device.h>
+#include <complex>
+#include <memory>
+#include <string>
 #include <vector>
 
 namespace uhd { namespace usrp {

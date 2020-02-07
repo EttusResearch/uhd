@@ -1,6 +1,6 @@
 //
 // Copyright 2012-2015 Ettus Research LLC
-// Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2018-2020 Ettus Research, a National Instruments Company
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -9,7 +9,6 @@
 #include <uhd/types/serial.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/usrp/common/ad9361_ctrl.hpp>
-#include <boost/format.hpp>
 #include <memory>
 #include <cstring>
 #include <mutex>
@@ -135,15 +134,13 @@ public:
 
         if (clipped_rate != rate) {
             UHD_LOGGER_WARNING("AD936X")
-                << boost::format("The requested master_clock_rate %f MHz exceeds bounds "
-                                 "imposed by UHD.\n"
-                                 "The master_clock_rate has been forced to %f MHz.\n")
-                       % (rate / 1e6) % (clipped_rate / 1e6);
+                << "The requested master_clock_rate " << (rate / 1e6)
+                << " MHz exceeds bounds imposed by UHD.\n"
+                   "The master_clock_rate has been forced to "
+                << (clipped_rate / 1e6) << " MHz.\n";
         }
 
-        double return_rate = _device.set_clock_rate(clipped_rate);
-
-        return return_rate;
+        return _device.set_clock_rate(clipped_rate);
     }
 
     //! set which RX and TX chains/antennas are active
@@ -243,10 +240,10 @@ public:
         const double max_bw = ad9361_device_t::AD9361_MAX_BW;
         if (bw < min_bw or bw > max_bw) {
             UHD_LOGGER_WARNING("AD936X")
-                << boost::format(
-                       "The requested bandwidth %f MHz is out of range (%f - %f MHz).\n"
-                       "The bandwidth has been forced to %f MHz.\n")
-                       % (bw / 1e6) % (min_bw / 1e6) % (max_bw / 1e6) % (actual_bw / 1e6);
+                << "The requested bandwidth " << (bw / 1e6) << " MHz is out of range ("
+                << (min_bw / 1e6) << " - " << (max_bw / 1e6)
+                << " MHz).\nThe bandwidth has been forced to " << (actual_bw / 1e6)
+                << " MHz.";
         }
         return actual_bw;
     }
