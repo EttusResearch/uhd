@@ -966,9 +966,9 @@ void radio_control_impl::async_message_handler(
             switch (code) {
                 case err_codes::ERR_RX_OVERRUN: {
                     UHD_LOG_FASTPATH("O");
-                    auto rx_event_action        = rx_event_action_info::make();
-                    rx_event_action->error_code = uhd::rx_metadata_t::ERROR_CODE_OVERFLOW;
-                    const bool cont_mode        = _last_stream_cmd.at(chan).stream_mode
+                    auto rx_event_action = rx_event_action_info::make(
+                        uhd::rx_metadata_t::ERROR_CODE_OVERFLOW);
+                    const bool cont_mode = _last_stream_cmd.at(chan).stream_mode
                                            == stream_cmd_t::STREAM_MODE_START_CONTINUOUS;
                     rx_event_action->args["cont_mode"] = std::to_string(cont_mode);
                     RFNOC_LOG_TRACE("Posting overrun event action message.");
@@ -978,9 +978,8 @@ void radio_control_impl::async_message_handler(
                 }
                 case err_codes::ERR_RX_LATE_CMD:
                     UHD_LOG_FASTPATH("L");
-                    auto rx_event_action = rx_event_action_info::make();
-                    rx_event_action->error_code =
-                        uhd::rx_metadata_t::ERROR_CODE_LATE_COMMAND;
+                    auto rx_event_action = rx_event_action_info::make(
+                        uhd::rx_metadata_t::ERROR_CODE_LATE_COMMAND);
                     RFNOC_LOG_TRACE("Posting RX late command message.");
                     post_action(res_source_info{res_source_info::OUTPUT_EDGE, chan},
                         rx_event_action);

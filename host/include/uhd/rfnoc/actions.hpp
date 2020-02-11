@@ -70,13 +70,13 @@ public:
     using sptr = std::shared_ptr<rx_event_action_info>;
 
     //! The error code that describes the event
-    uhd::rx_metadata_t::error_code_t error_code = uhd::rx_metadata_t::ERROR_CODE_NONE;
+    uhd::rx_metadata_t::error_code_t error_code;
 
     //! Factory function
-    static sptr make();
+    static sptr make(uhd::rx_metadata_t::error_code_t error_code);
 
-private:
-    rx_event_action_info();
+protected:
+    rx_event_action_info(uhd::rx_metadata_t::error_code_t error_code);
 };
 
 struct UHD_API tx_event_action_info : public action_info

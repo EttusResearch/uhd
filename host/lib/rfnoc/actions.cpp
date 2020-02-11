@@ -51,17 +51,23 @@ stream_cmd_action_info::sptr stream_cmd_action_info::make(
 }
 
 /*** RX Metadata Action Info *************************************************/
-rx_event_action_info::rx_event_action_info() : action_info(ACTION_KEY_RX_EVENT)
+rx_event_action_info::rx_event_action_info(uhd::rx_metadata_t::error_code_t error_code_)
+    : action_info(ACTION_KEY_RX_EVENT), error_code(error_code_)
 {
     // nop
 }
 
-rx_event_action_info::sptr rx_event_action_info::make()
+rx_event_action_info::sptr rx_event_action_info::make(
+    uhd::rx_metadata_t::error_code_t error_code)
 {
     struct rx_event_action_info_make_shared : public rx_event_action_info
     {
+        rx_event_action_info_make_shared(uhd::rx_metadata_t::error_code_t error_code)
+            : rx_event_action_info(error_code)
+        {
+        }
     };
-    return std::make_shared<rx_event_action_info_make_shared>();
+    return std::make_shared<rx_event_action_info_make_shared>(error_code);
 }
 
 /*** TX Metadata Action Info *************************************************/
