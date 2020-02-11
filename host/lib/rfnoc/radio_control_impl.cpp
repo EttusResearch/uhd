@@ -930,7 +930,7 @@ void radio_control_impl::async_message_handler(
             switch (code) {
                 case err_codes::ERR_TX_UNDERRUN: {
                     auto tx_event_action = tx_event_action_info::make(
-                        uhd::async_metadata_t::EVENT_CODE_UNDERFLOW);
+                        uhd::async_metadata_t::EVENT_CODE_UNDERFLOW, timestamp);
                     post_action(res_source_info{res_source_info::INPUT_EDGE, chan},
                         tx_event_action);
                     UHD_LOG_FASTPATH("U");
@@ -939,7 +939,7 @@ void radio_control_impl::async_message_handler(
                 }
                 case err_codes::ERR_TX_LATE_DATA: {
                     auto tx_event_action = tx_event_action_info::make(
-                        uhd::async_metadata_t::EVENT_CODE_TIME_ERROR);
+                        uhd::async_metadata_t::EVENT_CODE_TIME_ERROR, timestamp);
                     post_action(res_source_info{res_source_info::INPUT_EDGE, chan},
                         tx_event_action);
                     UHD_LOG_FASTPATH("L");
@@ -948,7 +948,7 @@ void radio_control_impl::async_message_handler(
                 }
                 case err_codes::EVENT_TX_BURST_ACK: {
                     auto tx_event_action = tx_event_action_info::make(
-                        uhd::async_metadata_t::EVENT_CODE_BURST_ACK);
+                        uhd::async_metadata_t::EVENT_CODE_BURST_ACK, timestamp);
                     post_action(res_source_info{res_source_info::INPUT_EDGE, chan},
                         tx_event_action);
                     RFNOC_LOG_TRACE("Posting burst ack event action message.");

@@ -11,6 +11,7 @@
 #include <uhd/types/device_addr.hpp>
 #include <uhd/types/metadata.hpp>
 #include <uhd/types/stream_cmd.hpp>
+#include <boost/optional.hpp>
 #include <memory>
 #include <string>
 #include <vector>
@@ -93,10 +94,12 @@ public:
     uint64_t tsf;
 
     //! Factory function
-    static sptr make(uhd::async_metadata_t::event_code_t event_code);
+    static sptr make(uhd::async_metadata_t::event_code_t event_code,
+        const boost::optional<uint64_t>& tsf);
 
 protected:
-    tx_event_action_info(uhd::async_metadata_t::event_code_t event_code);
+    tx_event_action_info(uhd::async_metadata_t::event_code_t event_code,
+        const boost::optional<uint64_t>& tsf);
 };
 
 }} /* namespace uhd::rfnoc */
