@@ -114,6 +114,8 @@ def parse_args():
                        help="Set LO export {True, False} for each channel with a comma-separated list.")
     parser.add_argument("--lo-source",
                        help="Set LO source {None, internal, companion, external} for each channel with a comma-separated list. None skips this channel.")
+    parser.add_argument("--twinrx", type=bool, default=False,
+                        help="Set if the device is a TwinRX")
     # Signal Source
     parser.add_argument("--source-plugin", type=str, default="default",
                         help="Select source plugin. This can either be one of"
@@ -244,19 +246,6 @@ def setup_usrp(args):
         return None
     # At this point, we can assume our device has valid and locked clock and PPS
 
-    # Set the LO source and export
-    if (args.lo_export is not None) and (args.lo_source is not None):
-        (args.lo_source, args.lo_export) = normalize_lo_source_export_sel(args)
-        for chan, lo_source, lo_export in zip(args.channels, args.lo_source, args.lo_export):
-            if lo_export == "True":
-                logger.info("LO export enabled on channel %s", chan)
-                usrp.set_rx_lo_export_enabled(True, "all", chan)
-                usrp.set_tx_lo_export_enabled(True, "all", chan)
-            if lo_source != "None":
-                logger.info("Channel %s source set to %s", chan, lo_source)
-                usrp.set_rx_lo_source(lo_source, "all", chan)
-                usrp.set_tx_lo_source(lo_source, "all", chan)
-
     # Determine channel settings
     # TODO: Add support for >2 channels! (TwinRX)
     if len(args.channels) != 2:
@@ -267,6 +256,21 @@ def setup_usrp(args):
     for chan in args.channels:
         usrp.set_rx_rate(args.rate, chan)
         usrp.set_rx_gain(args.gain, chan)
+
+    # Set the LO source and export
+    if (args.lo_export is not None) and (args.lo_source is not None):
+        (args.lo_source, args.lo_export) = normalize_lo_source_export_sel(args)
+        for chan, lo_source, lo_export in zip(args.channels, args.lo_source, args.lo_export):
+            if lo_export == "True":
+                logger.info("LO export enabled on channel %s", chan)
+                usrp.set_rx_lo_export_enabled(True, "all", chan)
+                if args.twinrx is False:
+                    usrp.set_tx_lo_export_enabled(True, "all", chan)
+            if lo_source != "None":
+                logger.info("Channel %s source set to %s", chan, lo_source)
+                usrp.set_rx_lo_source(lo_source, "all", chan)
+                if args.twinrx is False:
+                    usrp.set_tx_lo_source(lo_source, "all", chan)
 
     # Actually synchronize devices
     # We already know we have >=2 channels, so don't worry about that
@@ -317,14 +321,37 @@ def generate_time_spec(usrp, time_delta=0.05):
     return usrp.get_time_now() + uhd.types.TimeSpec(time_delta)
 
 
-def tune_usrp(usrp, freq, channels, delay=CMD_DELAY):
-    """Synchronously set the device's frequency"""
+def tune_usrp(usrp, freq, channels, lo_source, delay=CMD_DELAY):
+    """Synchronously set the device's frequency.
+       If a channel is using an internal LO it will be tuned first
+       and every other channel will be manually tuned based on the response.
+       This is to account for the internal LO channel having an offset in the actual DSP frequency.
+       Then all channels are synchronously tuned."""
+
+    treq = uhd.types.TuneRequest(freq)
+    lo_source_channel = -1
+    for chan, lo in zip(channels, lo_source):
+        if lo == "internal":
+            lo_source_channel = chan
+    if lo_source_channel != -1:
+        treq.dsp_freq = (usrp.set_rx_freq(uhd.types.TuneRequest(freq), lo_source_channel)).actual_dsp_freq
+        treq.target_freq = freq
+        treq.rf_freq = freq
+        treq.rf_freq_policy = uhd.types.TuneRequestPolicy(ord('M'))
+        treq.dsp_freq_policy = uhd.types.TuneRequestPolicy(ord('M'))
+        for chan, lo_source in zip(channels, lo_source):
+            if lo_source == "internal":
+                continue
+            usrp.set_rx_freq(treq, chan)
     usrp.set_command_time(generate_time_spec(usrp, time_delta=delay))
     for chan in channels:
-        usrp.set_rx_freq(uhd.types.TuneRequest(freq), chan)
+        usrp.set_rx_freq(treq, chan)
+    usrp.clear_command_time()
+    time.sleep(delay)
 
 
-def recv_aligned_num_samps(usrp, streamer, num_samps, freq, channels=(0,)):
+
+def recv_aligned_num_samps(usrp, streamer, num_samps, freq, lo_source, channels=(0,)):
     """
     RX a finite number of samples from the USRP
     :param usrp: MultiUSRP object
@@ -338,7 +365,7 @@ def recv_aligned_num_samps(usrp, streamer, num_samps, freq, channels=(0,)):
     result = np.empty((len(channels), num_samps), dtype=np.complex64)
 
     # Tune to the desired frequency
-    tune_usrp(usrp, freq, channels)
+    tune_usrp(usrp, freq, channels, lo_source)
 
     metadata = uhd.types.RXMetadata()
     buffer_samps = streamer.get_max_num_samps() * 10
@@ -444,6 +471,7 @@ def check_results(alignment_stats, drift_thresh, stddev_thresh):
     success = True  # Whether or not we've exceeded a threshold
     msg = ""
     for freq, stats_list in sorted(alignment_stats.items()):
+        band_success = True
         # Try to grab the test frequency for the frequency band
         try:
             test_freq = stats_list[0].get("test_freq")
@@ -462,6 +490,7 @@ def check_results(alignment_stats, drift_thresh, stddev_thresh):
             mean_deg = run_dict.get("mean", 0.) * 180 / np.pi
             stddev_deg = run_dict.get("stddev", 0.) * 180 / np.pi
             if stddev_deg > stddev_thresh:
+                band_success = False
                 success = False
 
             msg += "{:.2f}MHz<-{:.2f}MHz: {:.3f} deg +- {:.3f}\n".format(
@@ -472,8 +501,11 @@ def check_results(alignment_stats, drift_thresh, stddev_thresh):
         # Report the largest difference in mean values of runs
         max_drift = calc_max_drift(mean_list)
         if max_drift > drift_thresh:
+            band_success = False
             success = False
         msg += "--Maximum drift over runs: {:.2f} degrees\n".format(max_drift)
+        if band_success is False:
+            msg += "Failure!\n"
         # Print a newline to separate frequency bands
         msg += "\n"
 
@@ -536,6 +568,7 @@ def main():
         if args.easy_tune:
             # Round to the nearest MHz
             tune_freq = np.round(tune_freq, -6)
+
         # Request the SigGen tune to our test frequency plus some offset away
         # the device's LO
         src_gen.tune(tune_freq + args.tone_offset, current_power)
@@ -548,7 +581,7 @@ def main():
             for i in range(NUM_RETRIES):
                 # Tune to a random frequency in each of the frequency bands...
                 tune_away_freq = npr.uniform(tune_away_start, tune_away_stop)
-                tune_usrp(usrp, tune_away_freq, args.channels)
+                tune_usrp(usrp, tune_away_freq, args.channels, args.lo_source)
                 time.sleep(args.skip_time)
 
                 logger.info("Receiving samples, take %d, (%.2fMHz -> %.2fMHz)",
@@ -559,6 +592,7 @@ def main():
                                                streamer,
                                                nsamps,
                                                tune_freq,
+                                               args.lo_source,
                                                args.channels)
                 if samps.size >= nsamps:
                     break
@@ -602,6 +636,10 @@ def main():
                      tune_freq/1e6,
                      calc_max_drift(run_means) * 180 / np.pi,
                      max(run_stddevs) * 180. / np.pi)
+        if args.drift_threshold < calc_max_drift(run_means) * 180 / np.pi:
+            logger.info("Drift threshold of %.1f has been exceeded by %.1f degrees", args.drift_threshold, (calc_max_drift(run_means) * 180 / np.pi) - args.drift_threshold)
+        if args.stddev_threshold < max(run_stddevs) * 180. / np.pi:
+            logger.info("Max stddev threshold of %.2f has been exceeded by %.2f degrees", args.stddev_threshold, (max(run_stddevs) * 180. / np.pi) - args.stddev_threshold)
         all_alignment_stats[freq_start] = alignment_stats
         # Increment the power level for the next run
         current_power += args.power_step
