@@ -57,7 +57,7 @@ class PeriphManagerBase(object):
     be implemented here. Motherboard specific information can be stored in
     separate motherboard classes derived from this class
     """
-    class EepromSearch(Enum):
+    class _EepromSearch(Enum):
         """
         List supported ways of searching EEPROM files.
         """
@@ -76,7 +76,7 @@ class PeriphManagerBase(object):
     description = "MPM Device"
     # EEPROM layout used by this class. Defaults to legacy which uses eeprom.py
     # to read EEPROM data
-    eeprom_search = EepromSearch.LEGACY
+    eeprom_search = _EepromSearch.LEGACY
     # Address of the motherboard EEPROM. This could be something like
     # "e0005000.i2c". This value will be passed to get_eeprom_paths() tos
     # determine a full path to an EEPROM device.
@@ -365,15 +365,15 @@ class PeriphManagerBase(object):
 
         This is a wrapper call to switch between the support EEPROM layouts.
         """
-        if not self.eeprom_search in self.EepromSearch:
+        if not self.eeprom_search in self._EepromSearch:
             self.log.warning("%s is not a valid EEPROM layout type. "
                              "Skipping readout.")
             return
 
         self._eeprom_head, self._eeprom_rawdata = {}, b""
-        if self.eeprom_search == self.EepromSearch.LEGACY:
+        if self.eeprom_search == self._EepromSearch.LEGACY:
             self._read_mboard_eeprom_legacy()
-        elif self.eeprom_search == self.EepromSearch.SYMBOL:
+        elif self.eeprom_search == self._EepromSearch.SYMBOL:
             self._read_mboard_eeprom_by_symbol()
 
         self.log.trace("Found EEPROM metadata: `{}'"
@@ -546,21 +546,21 @@ class PeriphManagerBase(object):
         """
         Read back EEPROM info from the daughterboards
         """
-        if not self.eeprom_search in self.EepromSearch:
+        if not self.eeprom_search in self._EepromSearch:
             self.log.warning("%s is not a valid EEPROM search type. "
                              "Skipping readout.")
             return []
 
-        if self.eeprom_search == self.EepromSearch.LEGACY:
+        if self.eeprom_search == self._EepromSearch.LEGACY:
             return self._get_dboard_info_legacy()
-        if self.eeprom_search == self.EepromSearch.SYMBOL:
+        if self.eeprom_search == self._EepromSearch.SYMBOL:
             return self._get_dboard_info_by_symbol()
 
     def _get_aux_board_info(self):
         """
         Read back EEPROM info from all auxiliary boards
         """
-        if self.eeprom_search == self.EepromSearch.LEGACY:
+        if self.eeprom_search == self._EepromSearch.LEGACY:
             #legacy has no support for aux board EEPROM read
             return {}
         self.log.debug("Read aux boards EEPROMs")
