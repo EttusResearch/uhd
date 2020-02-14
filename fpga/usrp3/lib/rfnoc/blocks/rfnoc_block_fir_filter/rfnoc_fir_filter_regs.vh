@@ -24,7 +24,7 @@ localparam FIR_FILTER_ADDR_W = 4;
 localparam REG_FIR_NUM_COEFFS = 'h0;
 
 
-// REG_FIR_LOAD_COEFF (R)
+// REG_FIR_LOAD_COEFF (W)
 //
 // Register for inputting the next coefficient to be loaded into the filter. To
 // load a new set of filter coefficients, write NUM_COEFFS-1 coefficients to
@@ -38,7 +38,7 @@ localparam REG_FIR_NUM_COEFFS = 'h0;
 localparam REG_FIR_LOAD_COEFF = 'h4;
 
 
-// REG_FIR_LOAD_COEFF_LAST (R)
+// REG_FIR_LOAD_COEFF_LAST (W)
 //
 // Register for inputting the last coefficient to be loaded into the filter. To
 // load a new set of filter coefficients, write NUM_COEFFS-1 coefficients to

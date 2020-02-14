@@ -14,7 +14,7 @@
 localparam RAM_FIFO_ADDR_W = 7;
 
 
-// REG_FIFO_INFO (R|W)
+// REG_FIFO_INFO (R)
 //
 // Contains info/control bits for the FIFO.
 //
@@ -153,13 +153,15 @@ localparam REG_FIFO_PACKET_CNT = 'h28;
 // [3] : Continuous mode (run until stopped). When set to 1, test will continue 
 //       to run until Stop bit is set.
 //
-// [2] : Clear the BIST counters (i.e., the TX, RX, cycle, and error counters)
+// [2] : Clear the BIST counters (strobe). Resets the TX, RX, cycle, and error
+//       counters. This bit is self-clearing.
 //
-// [1] : Stop BIST  (strobe). Write a 1 to this bit to stop the test that is 
-//       currently running 
+// [1] : Stop BIST (strobe). Write a 1 to this bit to stop the test that is 
+//       currently running. This bit is self-clearing. 
 //
-// [0] : Start BIST (strobe). Write a 1 to this bit to start a test using the 
-//       configured NUM_BYTES and continuous mode setting.
+// [0] : Start BIST (strobe). Write a 1 to this bit to start a test using the
+//       configured NUM_BYTES and continuous mode setting. This bit is
+//       self-clearing.
 //
 localparam REG_BIST_CTRL = 'h30;
 //
@@ -170,7 +172,7 @@ localparam REG_BIST_STOP_POS    = 1;  // Strobe
 localparam REG_BIST_START_POS   = 0;  // Strobe
 
 
-// REG_BIST_CLOCK_RATE (R)
+// REG_BIST_CLK_RATE (R)
 //
 // Reports the clock rate of the BIST component in Hz. This can be used with 
 // REG_BIST_CYCLE_COUNT to calculate throughput.
