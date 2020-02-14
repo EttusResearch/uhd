@@ -40,9 +40,7 @@ public:
                     "Initializing tick rate to " << (tick_rate / 1e6) << " MHz");
                 set_command_tick_rate(tick_rate, chan);
                 _tree->access<double>("tick_rate")
-                    .add_coerced_subscriber([this, chan](const double rate) {
-                        const double tick_rate =
-                            this->_tree->access<double>("tick_rate").get();
+                    .add_coerced_subscriber([this, chan](const double tick_rate) {
                         this->set_command_tick_rate(tick_rate, chan);
                     });
             }
