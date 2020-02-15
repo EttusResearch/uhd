@@ -196,21 +196,21 @@ private:
     static constexpr size_t LENGTH_OFFSET    = 16;
     static constexpr size_t DST_EPID_OFFSET  = 0;
 
-    static inline constexpr uint64_t mask(size_t width)
+    static inline uint64_t mask(const size_t width)
     {
         return ((uint64_t(1) << width) - 1);
     }
 
     template <typename field_t>
-    static inline constexpr field_t get_field(
-        uint64_t flat_hdr, size_t offset, size_t width)
+    static inline field_t get_field(
+        const uint64_t flat_hdr, const size_t offset, const size_t width)
     {
         return static_cast<field_t>((flat_hdr >> offset) & mask(width));
     }
 
     template <typename field_t>
-    static inline constexpr uint64_t set_field(
-        const uint64_t old_val, field_t field, size_t offset, size_t width)
+    static inline uint64_t set_field(
+        const uint64_t old_val, const field_t field, const size_t offset, const size_t width)
     {
         return (old_val & ~(mask(width) << offset))
                | ((static_cast<uint64_t>(field) & mask(width)) << offset);
