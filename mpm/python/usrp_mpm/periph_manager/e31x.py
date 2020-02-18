@@ -583,7 +583,7 @@ class e31x(ZynqComponents, PeriphManagerBase):
         Return a list of valid GPIO sources for a given bank
         """
         assert bank in self.get_gpio_banks(), "Invalid GPIO bank: {}".format(bank)
-        return self._fp_gpio_srcs
+        return E310_GPIO_SRCS
 
     def get_gpio_src(self, bank):
         """
