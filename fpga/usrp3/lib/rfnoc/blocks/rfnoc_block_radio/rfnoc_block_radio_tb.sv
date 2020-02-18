@@ -81,14 +81,26 @@ module rfnoc_block_radio_tb #(
   //---------------------------------------------------------------------------
 
   // Connections to DUT as interfaces:
-  RfnocBackendIf        backend               (rfnoc_chdr_clk, rfnoc_ctrl_clk);
-  AxiStreamIf #(32)     m_ctrl                (rfnoc_ctrl_clk, 1'b0);
-  AxiStreamIf #(32)     s_ctrl                (rfnoc_ctrl_clk, 1'b0);
+  RfnocBackendIf        backend            (rfnoc_chdr_clk, rfnoc_ctrl_clk);
+  AxiStreamIf #(32)     m_ctrl             (rfnoc_ctrl_clk, 1'b0);
+  AxiStreamIf #(32)     s_ctrl             (rfnoc_ctrl_clk, 1'b0);
   AxiStreamIf #(CHDR_W) m_chdr [NUM_PORTS] (rfnoc_chdr_clk, 1'b0);
   AxiStreamIf #(CHDR_W) s_chdr [NUM_PORTS] (rfnoc_chdr_clk, 1'b0);
 
   // Bus functional model for a software block controller
-  RfnocBlockCtrlBfm #(.CHDR_W(CHDR_W)) blk_ctrl;
+  RfnocBlockCtrlBfm #(.CHDR_W(CHDR_W)) blk_ctrl = new(backend, m_ctrl, s_ctrl);
+
+  // Connect block controller to BFMs
+  for (genvar i = 0; i < NUM_PORTS; i++) begin : gen_bfm_connections
+    initial begin
+      blk_ctrl.connect_master_data_port(i, m_chdr[i]);
+      blk_ctrl.connect_slave_data_port(i, s_chdr[i]);
+
+      // Set the initial CHDR BFM stall probability
+      blk_ctrl.set_master_stall_prob(i, STALL_PROB);
+      blk_ctrl.set_slave_stall_prob(i, STALL_PROB);
+    end
+  end
 
 
 
@@ -141,11 +153,8 @@ module rfnoc_block_radio_tb #(
   logic [       NUM_PORTS-1:0] m_rfnoc_chdr_tvalid_flat;
   logic [       NUM_PORTS-1:0] m_rfnoc_chdr_tready_flat;
 
-  semaphore port_sem = new(0);
-
   // Use the same strobe for both Rx and Tx
   assign radio_tx_stb = radio_rx_stb;
-
 
   // Flatten the data stream arrays into concatenated vectors
   genvar i;
@@ -159,19 +168,6 @@ module rfnoc_block_radio_tb #(
     assign s_chdr[i].tlast             = m_rfnoc_chdr_tlast_flat[i];
     assign s_chdr[i].tvalid            = m_rfnoc_chdr_tvalid_flat[i];
     assign m_rfnoc_chdr_tready_flat[i] = s_chdr[i].tready;
-
-    // Connect each interface to the BFM. This is done in a generate block 
-    // since the interface indices must be constant in SystemVerilog :(
-    initial begin
-      // Get the port number (plus 1) from the semaphore. This will block until 
-      // the semaphore is incremented to this port number (plus 1).
-      port_sem.get(i+1);
-      // Connect the master and slave interfaces to the BFM
-      void'(blk_ctrl.add_master_data_port(m_chdr[i]));
-      void'(blk_ctrl.add_slave_data_port(s_chdr[i]));
-      // Put the port number to communicate that we're done
-      port_sem.put(i+1);
-    end
   end
 
 
@@ -1305,27 +1301,7 @@ module rfnoc_block_radio_tb #(
     rfnoc_ctrl_clk_gen.start();
     radio_clk_gen.start();
 
-    // Setup and start the stream endpoint BFM
-    blk_ctrl = new(backend, m_ctrl, s_ctrl);
-    for (int i = 0; i < NUM_PORTS; i++) begin
-      // I'd love to do this:
-      //     void'(blk_ctrl.add_master_data_port(m_chdr[i]));
-      //     void'(blk_ctrl.add_slave_data_port(s_chdr[i]));
-      // But interface indices must be constant. So instead, we use a semaphore 
-      // to trigger port initialization and control the order of initialization 
-      // in the generate block gen_radio_connections.
-
-      // Put the port number in the semaphore to cause its initializer to run
-      port_sem.put(i+1);
-      // Delay to allow gen_radio_connections to run
-      #0;
-      // Get the port number again to know when it's done
-      port_sem.get(i+1);
-
-      // Set the CHDR BFM stall probability
-      blk_ctrl.set_master_stall_prob(i, STALL_PROB);
-      blk_ctrl.set_slave_stall_prob(i, STALL_PROB);
-    end
+    // Start the BFMs running
     blk_ctrl.run();
 
 
