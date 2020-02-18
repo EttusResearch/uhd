@@ -5,7 +5,7 @@
 //
 // Module: chdr_xport_adapter_generic
 // Description: A generic transport adapter module that can be used in
-//   a veriety of transports. It does the following:
+//   a variety of transports. It does the following:
 //   - Exposes a configuration port for mgmt packets to configure the node
 //   - Implements a return-address map for packets with metadata other than
 //     the CHDR. Additional metadata can be passed as a tuser to this module
@@ -20,8 +20,10 @@
 //   - CHDR_W: Width of the CHDR bus in bits
 //   - USER_W: Width of the tuser bus in bits
 //   - TBL_SIZE: Log2 of the depth of the routing table
-//   - NODE_TYPE: The node type to return for a node-info discovery
+//   - NODE_SUBTYPE: The node subtype to return for a node-info discovery
 //   - NODE_INST: The node type to return for a node-info discovery
+//   - ALLOW_DISC: Controls if the external transport network should be
+//                 discoverable by management packets from RFNoC side.
 //
 // Signals:
 //   - device_id     : The ID of the device that has instantiated this module
@@ -38,7 +40,8 @@ module chdr_xport_adapter_generic #(
   parameter        USER_W       = 16,
   parameter        TBL_SIZE     = 6,
   parameter [7:0]  NODE_SUBTYPE = 8'd0,
-  parameter        NODE_INST    = 0
+  parameter        NODE_INST    = 0,
+  parameter        ALLOW_DISC   = 1
 )(
   // Clock and reset
   input  wire               clk,
@@ -100,7 +103,7 @@ module chdr_xport_adapter_generic #(
     .DATA_W(CHDR_W), .USER_W(USER_W), .STAGES_EN(SWAP_LANES), .DYNAMIC(0)
   ) xport_in_swap_i (
     .clk(clk), .rst(rst),
-    .s_axis_tdata(s_axis_xport_tdata), .s_axis_tswap('h0),
+    .s_axis_tdata(s_axis_xport_tdata), .s_axis_tswap({$clog2(CHDR_W)-1{1'b0}}),
     .s_axis_tuser(s_axis_xport_tuser), .s_axis_tlast(s_axis_xport_tlast),
     .s_axis_tvalid(s_axis_xport_tvalid), .s_axis_tready(s_axis_xport_tready),
     .m_axis_tdata (i_xport_tdata), .m_axis_tuser(i_xport_tuser),
@@ -112,7 +115,7 @@ module chdr_xport_adapter_generic #(
     .DATA_W(CHDR_W), .USER_W(USER_W), .STAGES_EN(SWAP_LANES), .DYNAMIC(0)
   ) xport_out_swap_i (
     .clk(clk), .rst(rst),
-    .s_axis_tdata(o_xport_tdata), .s_axis_tswap('h0),
+    .s_axis_tdata(o_xport_tdata), .s_axis_tswap({$clog2(CHDR_W)-1{1'b0}}),
     .s_axis_tuser(o_xport_tuser), .s_axis_tlast(o_xport_tlast),
     .s_axis_tvalid(o_xport_tvalid), .s_axis_tready(o_xport_tready),
     .m_axis_tdata (m_axis_xport_tdata), .m_axis_tuser (m_axis_xport_tuser),
@@ -142,12 +145,16 @@ module chdr_xport_adapter_generic #(
   wire              lookup_stb, lookup_done_stb, lookup_result_match;
   wire [15:0]       lookup_epid;
   wire [USER_W-1:0] lookup_result_value;
+  wire [47:0]       node_info;
+
+  assign node_info = chdr_mgmt_build_node_info({ 10'h0, NODE_SUBTYPE}, 
+                       NODE_INST, NODE_TYPE_TRANSPORT, device_id);
 
   chdr_mgmt_pkt_handler #(
     .PROTOVER(PROTOVER), .CHDR_W(CHDR_W), .USER_W(USER_W), .MGMT_ONLY(0)
   ) mgmt_ep_i (
     .clk(clk), .rst(rst),
-    .node_info(chdr_mgmt_build_node_info({10'h0, NODE_SUBTYPE}, NODE_INST, NODE_TYPE_TRANSPORT, device_id)),
+    .node_info(node_info),
     .s_axis_chdr_tdata(i_xport_tdata), .s_axis_chdr_tlast(i_xport_tlast),
     .s_axis_chdr_tvalid(i_xport_tvalid), .s_axis_chdr_tready(i_xport_tready),
     .s_axis_chdr_tuser(i_xport_tuser),
@@ -188,10 +195,62 @@ module chdr_xport_adapter_generic #(
   end
 
   // ---------------------------------------------------
+  // Optional management filter
+  // ---------------------------------------------------
+
+  wire [CHDR_W-1:0] f2m_tdata;
+  wire              f2m_tlast;
+  wire              f2m_tvalid;
+  wire              f2m_tready;
+
+  if (ALLOW_DISC) begin : gen_no_mgmt_filter
+    // Allow all packets to pass through
+    assign f2m_tdata           = s_axis_rfnoc_tdata;
+    assign f2m_tlast           = s_axis_rfnoc_tlast;
+    assign f2m_tvalid          = s_axis_rfnoc_tvalid;
+    assign s_axis_rfnoc_tready = f2m_tready;
+
+  end else begin : gen_mgmt_filter
+    // Disallow forwarding of management discovery packets from RFNoC to the
+    // transport interface for transports that don't support them.
+    //vhook_nowarn unused_*
+    wire [CHDR_W-1:0] unused_tdata;
+    wire              unused_tlast, unused_tvalid, unused_tready;
+    wire [CHDR_W-1:0] s_header;
+    wire              dispose_pkt;
+
+    // We identify discovery packets by the fact that they are management
+    // packets and that they use the null EPID as the destination.
+    assign dispose_pkt = (chdr_get_pkt_type(s_header[63:0]) == CHDR_PKT_TYPE_MGMT) && 
+                         (chdr_get_dst_epid(s_header[63:0]) == NULL_EPID);
+
+    axi_demux #(
+      .WIDTH          (CHDR_W),
+      .SIZE           (2),
+      .PRE_FIFO_SIZE  (0),
+      .POST_FIFO_SIZE (1)
+    ) axi_demux_mgmt_filter_i (
+      .clk      (clk),
+      .reset    (rst),
+      .clear    (1'b0),
+      .header   (s_header),
+      .dest     (dispose_pkt),
+      .i_tdata  (s_axis_rfnoc_tdata),
+      .i_tlast  (s_axis_rfnoc_tlast),
+      .i_tvalid (s_axis_rfnoc_tvalid),
+      .i_tready (s_axis_rfnoc_tready),
+      .o_tdata  ({unused_tdata, f2m_tdata}),
+      .o_tlast  ({unused_tlast, f2m_tlast}),
+      .o_tvalid ({unused_tvalid, f2m_tvalid}),
+      .o_tready ({1'b1, f2m_tready})
+    );
+  end
+
+  // ---------------------------------------------------
   // MUX and DEMUX for return path
   // ---------------------------------------------------
 
-  wire [USER_W-1:0] dummy_tuser;
+  wire [USER_W-1:0] unused_tuser;
   axis_switch #(
     .DATA_W(CHDR_W+USER_W), .DEST_W(1), .IN_PORTS(1), .OUT_PORTS(2), .PIPELINE(0)
   ) rtn_demux_i (
@@ -199,7 +258,7 @@ module chdr_xport_adapter_generic #(
     .s_axis_tdata({x2d_tuser, x2d_tdata}), .s_axis_alloc(1'b0),
     .s_axis_tdest(x2d_tid == CHDR_MGMT_RETURN_TO_SRC ? 2'b01 : 2'b00), 
     .s_axis_tlast(x2d_tlast), .s_axis_tvalid(x2d_tvalid), .s_axis_tready(x2d_tready),
-    .m_axis_tdata({x2x_tuser, x2x_tdata, dummy_tuser, m_axis_rfnoc_tdata}),
+    .m_axis_tdata({x2x_tuser, x2x_tdata, unused_tuser, m_axis_rfnoc_tdata}),
     .m_axis_tdest(/* unused */),
     .m_axis_tlast({x2x_tlast, m_axis_rfnoc_tlast}),
     .m_axis_tvalid({x2x_tvalid, m_axis_rfnoc_tvalid}),
@@ -210,9 +269,9 @@ module chdr_xport_adapter_generic #(
     .WIDTH(CHDR_W+USER_W+1), .SIZE(2), .PRE_FIFO_SIZE(0), .POST_FIFO_SIZE(0)
   ) rtn_mux_i (
     .clk(clk), .reset(rst), .clear(1'b0),
-    .i_tdata({1'b1, x2x_tuser, x2x_tdata, 1'b0, {USER_W{1'b0}}, s_axis_rfnoc_tdata}),
-    .i_tlast({x2x_tlast, s_axis_rfnoc_tlast}),
-    .i_tvalid({x2x_tvalid, s_axis_rfnoc_tvalid}), .i_tready({x2x_tready, s_axis_rfnoc_tready}),
+    .i_tdata({1'b1, x2x_tuser, x2x_tdata, 1'b0, {USER_W{1'b0}}, f2m_tdata}),
+    .i_tlast({x2x_tlast, f2m_tlast}),
+    .i_tvalid({x2x_tvalid, f2m_tvalid}), .i_tready({x2x_tready, f2m_tready}),
     .o_tdata({m2x_tdest, m2x_tuser, m2x_tdata}), .o_tlast(m2x_tlast),
     .o_tvalid(m2x_tvalid), .o_tready(m2x_tready)
   );
