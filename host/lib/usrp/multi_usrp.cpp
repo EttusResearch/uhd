@@ -1718,6 +1718,34 @@ public:
         return rx_gain_group(chan)->get_names();
     }
 
+    /**************************************************************************
+     * RX Power control
+     *************************************************************************/
+    bool has_rx_power_reference(const size_t chan)
+    {
+        return _tree->exists(rx_rf_fe_root(chan) / "ref_power/value");
+    }
+
+    void set_rx_power_reference(const double power_dbm, const size_t chan = 0)
+    {
+        const auto power_ref_path = rx_rf_fe_root(chan) / "ref_power/value";
+        if (!_tree->exists(power_ref_path)) {
+            throw uhd::not_implemented_error(
+                "set_rx_power_reference() not available for this device and channel");
+        }
+        _tree->access<double>(power_ref_path).set(power_dbm);
+    }
+
+    double get_rx_power_reference(const size_t chan = 0)
+    {
+        const auto power_ref_path = rx_rf_fe_root(chan) / "ref_power/value";
+        if (!_tree->exists(power_ref_path)) {
+            throw uhd::not_implemented_error(
+                "get_rx_power_reference() not available for this device and channel");
+        }
+        return _tree->access<double>(power_ref_path).get();
+    }
+
     void set_rx_antenna(const std::string& ant, size_t chan)
     {
         _tree->access<std::string>(rx_rf_fe_root(chan) / "antenna" / "value").set(ant);
@@ -2192,6 +2220,34 @@ public:
     std::vector<std::string> get_tx_gain_names(size_t chan)
     {
         return tx_gain_group(chan)->get_names();
+    }
+
+    /**************************************************************************
+     * TX Power Controls
+     *************************************************************************/
+    bool has_tx_power_reference(const size_t chan)
+    {
+        return _tree->exists(tx_rf_fe_root(chan) / "ref_power/value");
+    }
+
+    void set_tx_power_reference(const double power_dbm, const size_t chan = 0)
+    {
+        const auto power_ref_path = tx_rf_fe_root(chan) / "ref_power/value";
+        if (!_tree->exists(power_ref_path)) {
+            throw uhd::not_implemented_error(
+                "set_tx_power_reference() not available for this device and channel");
+        }
+        _tree->access<double>(power_ref_path).set(power_dbm);
+    }
+
+    double get_tx_power_reference(const size_t chan = 0)
+    {
+        const auto power_ref_path = tx_rf_fe_root(chan) / "ref_power/value";
+        if (!_tree->exists(power_ref_path)) {
+            throw uhd::not_implemented_error(
+                "get_tx_power_reference() not available for this device and channel");
+        }
+        return _tree->access<double>(power_ref_path).get();
     }
 
     void set_tx_antenna(const std::string& ant, size_t chan)

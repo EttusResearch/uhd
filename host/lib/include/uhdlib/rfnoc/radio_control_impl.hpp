@@ -72,6 +72,8 @@ public:
     virtual double set_rx_bandwidth(const double bandwidth, const size_t chan);
     virtual void set_tx_gain_profile(const std::string& profile, const size_t chan);
     virtual void set_rx_gain_profile(const std::string& profile, const size_t chan);
+    virtual void set_rx_power_reference(const double power_dbm, const size_t chan);
+    virtual void set_tx_power_reference(const double power_dbm, const size_t chan);
 
     // Getters
     virtual std::string get_tx_antenna(const size_t chan) const;
@@ -100,6 +102,10 @@ public:
     virtual double get_rx_bandwidth(const size_t);
     virtual meta_range_t get_tx_bandwidth_range(size_t chan) const;
     virtual meta_range_t get_rx_bandwidth_range(size_t chan) const;
+    virtual bool has_rx_power_reference(const size_t chan);
+    virtual bool has_tx_power_reference(const size_t chan);
+    virtual double get_rx_power_reference(const size_t chan);
+    virtual double get_tx_power_reference(const size_t chan);
 
     /**************************************************************************
      * LO Controls

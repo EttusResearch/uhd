@@ -19,6 +19,7 @@ void export_multi_usrp(py::module& m)
     const auto ALL_CHANS   = multi_usrp::ALL_CHANS;
     const auto ALL_LOS     = multi_usrp::ALL_LOS;
 
+    // clang-format off
     py::class_<multi_usrp, multi_usrp::sptr>(m, "multi_usrp")
 
         // Factory
@@ -125,6 +126,8 @@ void export_multi_usrp(py::module& m)
         .def("get_rx_gain_profile"     , &multi_usrp::get_rx_gain_profile, py::arg("chan") = 0)
         .def("set_rx_gain_profile"     , &multi_usrp::set_rx_gain_profile, py::arg("profile"), py::arg("chan") = 0)
         .def("get_rx_gain_profile_names", &multi_usrp::get_rx_gain_profile_names, py::arg("chan") = 0)
+        .def("set_rx_power_reference"  , &multi_usrp::set_rx_power_reference, py::arg("power_dbm"), py::arg("chan") = 0)
+        .def("get_rx_power_reference"  , &multi_usrp::get_rx_power_reference, py::arg("chan") = 0)
 
         // TX methods
         .def("set_tx_subdev_spec"      , &multi_usrp::set_tx_subdev_spec, py::arg("spec"), py::arg("mboard") = ALL_MBOARDS)
@@ -163,6 +166,8 @@ void export_multi_usrp(py::module& m)
         .def("get_tx_gain_profile"     , &multi_usrp::get_tx_gain_profile, py::arg("chan") = 0)
         .def("set_tx_gain_profile"     , &multi_usrp::set_tx_gain_profile, py::arg("profile"), py::arg("chan") = 0)
         .def("get_tx_gain_profile_names", &multi_usrp::get_tx_gain_profile_names, py::arg("chan") = 0)
+        .def("set_tx_power_reference"  , &multi_usrp::set_tx_power_reference, py::arg("power_dbm"), py::arg("chan") = 0)
+        .def("get_tx_power_reference"  , &multi_usrp::get_tx_power_reference, py::arg("chan") = 0)
 
         // GPIO methods
         .def("get_gpio_banks"          , &multi_usrp::get_gpio_banks)
@@ -182,6 +187,7 @@ void export_multi_usrp(py::module& m)
         .def("set_tx_filter"           , &multi_usrp::set_tx_filter)
         // clang-format off
         ;
+    // clang-format on
 }
 
 #endif /* INCLUDED_UHD_USRP_MULTI_USRP_PYTHON_HPP */

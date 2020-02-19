@@ -1396,6 +1396,24 @@ public:
         return rx_chain.radio->get_rx_gain_names(rx_chain.block_chan);
     }
 
+    bool has_rx_power_reference(const size_t chan)
+    {
+        auto& rx_chain = _get_rx_chan(chan);
+        return rx_chain.radio->has_rx_power_reference(rx_chain.block_chan);
+    }
+
+    void set_rx_power_reference(const double power_dbm, const size_t chan)
+    {
+        auto& rx_chain = _get_rx_chan(chan);
+        rx_chain.radio->set_rx_power_reference(power_dbm, rx_chain.block_chan);
+    }
+
+    double get_rx_power_reference(const size_t chan)
+    {
+        auto& rx_chain = _get_rx_chan(chan);
+        return rx_chain.radio->get_rx_power_reference(rx_chain.block_chan);
+    }
+
     void set_rx_antenna(const std::string& ant, size_t chan)
     {
         auto& rx_chain = _get_rx_chan(chan);
@@ -1834,6 +1852,24 @@ public:
     {
         auto tx_chain = _get_tx_chan(chan);
         return tx_chain.radio->get_tx_gain_names(tx_chain.block_chan);
+    }
+
+    bool has_tx_power_reference(const size_t chan)
+    {
+        auto& tx_chain = _get_tx_chan(chan);
+        return tx_chain.radio->has_rx_power_reference(tx_chain.block_chan);
+    }
+
+    void set_tx_power_reference(const double power_dbm, const size_t chan)
+    {
+        auto& tx_chain = _get_tx_chan(chan);
+        tx_chain.radio->set_tx_power_reference(power_dbm, tx_chain.block_chan);
+    }
+
+    double get_tx_power_reference(const size_t chan)
+    {
+        auto& tx_chain = _get_tx_chan(chan);
+        return tx_chain.radio->get_tx_power_reference(tx_chain.block_chan);
     }
 
     void set_tx_antenna(const std::string& ant, size_t chan)

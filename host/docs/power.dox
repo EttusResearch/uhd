@@ -1,0 +1,154 @@
+/*! \page page_power Power Level Controls
+
+\tableofcontents
+
+\section power_overview
+
+Starting with UHD 4, UHD comes with reference power level APIs. These allow to
+not just set a relative gain level, but configure a USRP to transmit a certain
+power, or to estimate received power levels.
+
+The actual transmitted or received power also depends on the transmitted signal
+itself. The absolute power setting is thus a *reference power level*.
+The reference power level maps a digital signal level (in dBFS) to an absolute,
+analog power level (in dBm). The power level setting is the analog power level
+that corresponds to a 0 dBFS digital signal.
+
+Note that most USRPs do not support setting reference power levels. Refer to the
+individual device manual pages for more information.
+
+\section power_ref_levels RX and TX reference power levels
+
+<b>RX reference power level:</b>
+
+The RX reference power level is defined as such: When a signal with this power
+level is applied to the RF input, the digital signal will be at a 0 dBFS power
+level.
+
+If a tone with this power level is applied to the RF input, it will be
+full-scale in the digital representation.
+
+Example: The reference power level is set to -4 dBm by calling
+~~~{.cpp}
+U->set_rx_power_reference(-4.0, 0);
+~~~
+
+Then, a signal is captured. It turns out the signal is a sine wave with
+an amplitude of 0.5, which means its power is 6 dB lower than a signal
+with an amplitude of 1.0 (or -6 dBFS). Based on the reference power level, we
+can thus infer that the tone injected into the RF port is:
+
+    (-4 dBm - 6 dB) = -10 dBm
+
+<b>TX reference power level:</b>
+
+The TX reference power level is defined as such: When a 0 dBFS signal is
+transmitted, it will leave the RF output at the selected reference power level.
+In other contexts, this value is sometimes referred to as "peak power level",
+because it's the maximum power that can be transmitted.
+
+If a fullscale tone is transmitted, the transmitted analog tone will have the
+reference power level.
+
+Example: The reference power level is set to -4 dBm by calling
+~~~{.cpp}
+U->set_tx_power_reference(-4.0, 0);
+~~~
+
+Then, we generate a tone that is a sine wave with amplitude 0.5 and
+transmit it using this device and channel. With this amplitude, the
+signal is 6 dB lower in power than a sine wave with amplitude 1.0.
+Based on the reference power level, we can thus infer that the tone
+leaving the RF port has the following absolute power:
+
+    (-4 dBm - 6 dB) = -10 dBm
+
+\section power_amp_rate Amplitude Ranges and Clipping
+
+In practice, it is never possible to cleanly transmit or receive a signal at
+0 dBFS, so the reference levels need to be appropriately normalized. Because
+all USRPs have a different amplitude range they can transmit/receive before
+clipping or distortion occurs, the APIs are designed to be agnostic of the
+hardware. The derivation of the actual analog power is thus the responsibility
+of the application (i.e., the code that also calls `recv()` and `send()`), which has
+access to the sample values. UHD itself doesn't inspect the sample values for
+performance reasons, and thus can only manage reference levels.
+
+\section power_tune_owner Retaining gain or power levels across frequency
+
+When tuning a USRP (i.e., changing its frequency) it may be necessary to also
+adjust gain stages. Due to physical limitations, the same output power is not
+always available (or possible) at different frequencies. This means that the
+output power may vary when retuning. The relative gain range is usually the same
+across frequencies, though.
+
+UHD will try to maintain the relative gain setting, or the power level setting.
+The choice is determined by which API was called last. If the gain level was set
+last (i.e., by either calling `set_tx_gain()` or `set_rx_gain()`), then the gain
+level will be kept constant after retuning, but the power level will likely have
+changed. If the power reference level was set last (by either calling
+`set_rx_power_reference()` or `set_tx_power_reference()`), then UHD will attempt
+to maintain a constant power reference level, which means UHD will likely have
+to modify the relative gain values. To get the exact power level after a retune,
+read back the current power reference level (`get_rx_power_reference()` or
+`get_tx_power_reference()`).
+
+The following example shows how the APIs behave for reception. For transmission,
+the behaviour is the same (just replace 'rx' with 'tx' in the API calls). Note
+that the determination of relative gain or power is retained over retunes is
+independent for TX and RX.
+
+~~~{.cpp}
+// usrp is a multi_usrp object, f0 and f1 are valid frequencies
+usrp->set_rx_frequency(f0);
+usrp->set_rx_gain(10);
+// This should print '10', or the closest coerced value:
+std::cout << usrp->get_rx_gain() << std::endl;
+// This can print anything, depending on device and calibration data:
+std::cout << usrp->get_rx_power_reference() << std::endl;
+usrp->set_rx_frequency(f1);
+// This should still print '10', or the closest coerced value:
+std::cout << usrp->get_rx_gain() << std::endl;
+// This can print anything, and possibly not the same value as before
+std::cout << usrp->get_rx_power_reference() << std::endl;
+usrp->set_rx_power_reference(-20);
+// This should print -20, assuming the device can transmit at that power:
+std::cout << usrp->get_rx_power_reference() << std::endl;
+// This will print the current gain value, whatever that is
+std::cout << usrp->get_rx_gain() << std::endl;
+usrp->set_rx_frequency(f0);
+// This should still print -20, or the closest coerced value
+std::cout << usrp->get_rx_power_reference() << std::endl;
+// This will print the current gain value, possibly not the same as before
+std::cout << usrp->get_rx_gain() << std::endl;
+~~~
+
+\section power_implementation Device Implementations of Power Level APIs
+
+Under the hood, this API call will affect any gain stage that it needs to
+affect. It is possible to read back the current gain settings by calling
+`get_tx_gain()` or `get_rx_gain()`. However, changing the gain settings by calling
+`set_tx_gain()` or `set_rx_gain()` will cause the power level to change.
+
+The specific implementation of this API is very device-specific. Refer to the
+individual USRP manual pages for more details.
+
+\section power_storage Calibration Table Storage
+
+UHD needs to store calibration tables to be able to map reference power levels
+to settings for the individual gain stages of each USRP and/or daughterboard.
+These tables can be stored in three different ways:
+
+- Hard-coded as part of UHD. If a gain table is hard-coded as part of UHD, it
+  means that the gain table is considered an average table for a given device.
+  Its accuracy may vary a lot, as it is not calibrated to a specific device
+  and/or environment.
+- In the device EEPROM. By storing calibration data in an EEPROM on the device,
+  it is possible to use the same calibration data even when using different host
+  computers. Calibration data in EEPROMs can also be updated to account for
+  different environments, aging of components, or anything else.
+- On a file. Calibration data in a file is the most flexible, it can be replaced
+  easily. It is however local to the computer that stores the calibration data.
+
+*/
+// vim:ft=doxygen:

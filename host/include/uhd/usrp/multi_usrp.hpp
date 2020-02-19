@@ -22,6 +22,7 @@
 #define UHD_USRP_MULTI_USRP_FILTER_API
 #define UHD_USRP_MULTI_USRP_LO_CONFIG_API
 #define UHD_USRP_MULTI_USRP_TX_LO_CONFIG_API
+#define UHD_USRP_MULTI_USRP_POWER_LEVEL
 
 #include <uhd/config.hpp>
 #include <uhd/device.hpp>
@@ -1176,6 +1177,59 @@ public:
     virtual void set_rx_iq_balance(
         const std::complex<double>& correction, size_t chan = ALL_CHANS) = 0;
 
+
+    /**************************************************************************
+     * Power level controls
+     *************************************************************************/
+    /*! Return true if this channel has a reference power API enabled
+     *
+     * Many devices either don't have a built-in reference power API, or they
+     * require calibration data for it to work. This means that it is not clear,
+     * even when the device type is known, if a device supports setting a power
+     * reference level. Use this method to query the availability of
+     * set_rx_power_reference() and get_rx_power_reference(), which will throw
+     * a uhd::not_implemented_error or uhd::runtime_error if they cannot be used.
+     *
+     * See \ref page_power for more information, or query the specific device's
+     * manual page to see if a power API is available, and how to enable it.
+     *
+     * \param chan The channel for which this feature is queried
+     *
+     * \returns true if this channel has an RX power API available
+     */
+    virtual bool has_rx_power_reference(const size_t chan = 0) = 0;
+
+    /*! Set the reference RX power level for a given channel
+     *
+     * Note: This functionality is not supported for most devices, and will
+     * cause a uhd::not_implemented_error exception to be thrown on devices that
+     * do not have this functionality.
+     *
+     * For more information on how to use this API, see \ref page_power.
+     *
+     * \param power_dbm The reference power level in dBm
+     * \param chan The channel for which this setting applies
+     *
+     * \throws uhd::not_implemented_error if this functionality does not exist
+     *         for this device
+     */
+    virtual void set_rx_power_reference(
+        const double power_dbm, const size_t chan = 0) = 0;
+
+    /*! Return the actual reference RX power level.
+     *
+     * Note: This functionality is not supported for most devices, and will
+     * cause a uhd::not_implemented_error exception to be thrown on devices that
+     * do not have this functionality.
+     *
+     * For more information on how to use this API, see \ref page_power.
+     *
+     * \param chan The channel for which this setting is queried
+     * \throws uhd::not_implemented_error if this functionality does not exist
+     *         for this device
+     */
+    virtual double get_rx_power_reference(const size_t chan = 0) = 0;
+
     /*******************************************************************
      * TX methods
      ******************************************************************/
@@ -1371,6 +1425,58 @@ public:
      * \return a vector of gain element names
      */
     virtual std::vector<std::string> get_tx_gain_names(size_t chan = 0) = 0;
+
+    /**************************************************************************
+     * Power level controls
+     *************************************************************************/
+    /*! Return true if this channel has a reference power API enabled
+     *
+     * Many devices either don't have a built-in reference power API, or they
+     * require calibration data for it to work. This means that it is not clear,
+     * even when the device type is known, if a device supports setting a power
+     * reference level. Use this method to query the availability of
+     * set_tx_power_reference() and get_tx_power_reference(), which will throw
+     * a uhd::not_implemented_error or uhd::runtime_error if they cannot be used.
+     *
+     * See \ref page_power for more information, or query the specific device's
+     * manual page to see if a power API is available, and how to enable it.
+     *
+     * \param chan The channel for which this feature is queried
+     *
+     * \returns true if this channel has a TX power API available
+     */
+    virtual bool has_tx_power_reference(const size_t chan = 0) = 0;
+
+    /*! Set the reference TX power level for a given channel
+     *
+     * Note: This functionality is not supported for most devices, and will
+     * cause a uhd::not_implemented_error exception to be thrown on devices that
+     * do not have this functionality.
+     *
+     * For more information on how to use this API, see \ref page_power.
+     *
+     * \param power_dbm The reference power level in dBm
+     * \param chan The channel for which this setting applies
+     *
+     * \throws uhd::not_implemented_error if this functionality does not exist
+     *         for this device
+     */
+    virtual void set_tx_power_reference(
+        const double power_dbm, const size_t chan = 0) = 0;
+
+    /*! Return the actual reference TX power level.
+     *
+     * Note: This functionality is not supported for most devices, and will
+     * cause a uhd::not_implemented_error exception to be thrown on devices that
+     * do not have this functionality.
+     *
+     * For more information on how to use this API, see \ref page_power.
+     *
+     * \param chan The channel for which this setting is queried
+     * \throws uhd::not_implemented_error if this functionality does not exist
+     *         for this device
+     */
+    virtual double get_tx_power_reference(const size_t chan = 0) = 0;
 
     /*!
      * Select the TX antenna on the frontend.

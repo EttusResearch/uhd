@@ -404,6 +404,28 @@ double radio_control_impl::set_rx_gain(
     return set_rx_gain(gain, chan);
 }
 
+bool radio_control_impl::has_rx_power_reference(const size_t)
+{
+    return false;
+}
+
+bool radio_control_impl::has_tx_power_reference(const size_t)
+{
+    return false;
+}
+
+void radio_control_impl::set_rx_power_reference(const double, const size_t)
+{
+    throw uhd::not_implemented_error(
+        "set_rx_power_reference() is not supported on this radio!");
+}
+
+void radio_control_impl::set_tx_power_reference(const double, const size_t)
+{
+    throw uhd::not_implemented_error(
+        "set_tx_power_reference() is not supported on this radio!");
+}
+
 void radio_control_impl::set_rx_agc(const bool, const size_t)
 {
     throw uhd::not_implemented_error("set_rx_agc() is not supported on this radio!");
@@ -573,6 +595,20 @@ uhd::meta_range_t radio_control_impl::get_rx_bandwidth_range(size_t chan) const
     std::lock_guard<std::mutex> l(_cache_mutex);
     result.push_back(_rx_bandwidth.at(chan));
     return result;
+}
+
+double radio_control_impl::get_rx_power_reference(const size_t)
+{
+    throw uhd::not_implemented_error(
+        "get_rx_power_reference() is not supported on this radio!");
+    return 0.0;
+}
+
+double radio_control_impl::get_tx_power_reference(const size_t)
+{
+    throw uhd::not_implemented_error(
+        "get_tx_power_reference() is not supported on this radio!");
+    return 0.0;
 }
 
 /******************************************************************************
