@@ -50,8 +50,7 @@ except ImportError:
         input('Hit Enter to continue.')
     exit(0)
 
-
-
+# pylint: disable=bad-whitespace
 _DEFAULT_TARGET_REGEX     = "(fpga|fw|windrv)_default"
 _BASE_DIR_STRUCTURE_PARTS = ["share", "uhd", "images"]
 _DEFAULT_INSTALL_PATH     = os.path.join("@CMAKE_INSTALL_PREFIX@", *_BASE_DIR_STRUCTURE_PARTS)
@@ -62,16 +61,19 @@ _DEFAULT_BUFFER_SIZE      = 8192
 _DEFAULT_DOWNLOAD_LIMIT   = 100 * 1024 * 1024 # Bytes
 _ARCHIVE_DEFAULT_TYPE     = "zip"
 _UHD_VERSION              = "@UHD_VERSION@"
-# Note: _MANIFEST_CONTENTS are placed at the bottom of this file for aesthetic reasons
-_LOG_LEVELS = {"TRACE": 1,
-               "DEBUG": 2,
-               "INFO": 3,
-               "WARN": 4,
-               "ERROR": 5}
+_LOG_LEVELS = {
+    "TRACE": 1,
+    "DEBUG": 2,
+    "INFO":  3,
+    "WARN":  4,
+    "ERROR": 5,
+}
 _LOG_LEVEL = _LOG_LEVELS["INFO"]
 _YES = False
 _PROXIES = {}
-
+_BASE_URL_ENV_VAR = "UHD_IMAGES_URL"
+# pylint: enable=bad-whitespace
+# Note: _MANIFEST_CONTENTS are placed at the bottom of this file for aesthetic reasons
 
 def log(level, message):
     """Logging function"""
@@ -112,8 +114,10 @@ def parse_args():
                         "http://user:pass@1.2.3.4:port\n"
                         "If this this option is not given, the environment "
                         "variable HTTP_PROXY can also be used to specify a proxy.")
-    parser.add_argument("-b", "--base-url", type=str, default=_DEFAULT_BASE_URL,
-                        help="Set base URL for images download location")
+    parser.add_argument("-b", "--base-url", type=str,
+                        help="Set base URL for images download location. "
+                        "Defaults to ${} if set, or {} otherwise.".format(
+                            _BASE_URL_ENV_VAR, _DEFAULT_BASE_URL))
     parser.add_argument("-k", "--keep", action="store_true", default=False,
                         help="Keep the downloaded images archives in the image directory")
     parser.add_argument("-T", "--test", action="store_true", default=False,
@@ -129,8 +133,18 @@ def parse_args():
                         help="Decrease verbosity level")
     parser.add_argument('-v', '--verbose', action='count', default=0,
                         help="Increase verbosity level")
-    # Some sanitation that's easier to handle outside of the argparse framework:
     args = parser.parse_args()
+    # Set the verbosity
+    global _LOG_LEVEL
+    log("TRACE", "Default log level: {}".format(_LOG_LEVEL))
+    _LOG_LEVEL = _LOG_LEVEL - args.verbose + args.quiet
+    # Some sanitation that's easier to handle outside of the argparse framework:
+    if not args.base_url:
+        if os.environ.get(_BASE_URL_ENV_VAR):
+            args.base_url = os.environ.get(_BASE_URL_ENV_VAR)
+        else:
+            args.base_url = _DEFAULT_BASE_URL
+    log("INFO", "Using base URL: {}".format(args.base_url))
     if not args.base_url.endswith('/') and args.base_url != "":
         args.base_url += '/'
     if args.yes:
@@ -139,10 +153,6 @@ def parse_args():
     if args.http_proxy:
         global _PROXIES
         _PROXIES['http'] = args.http_proxy
-    # Set the verbosity
-    global _LOG_LEVEL
-    log("TRACE", "Default log level: {}".format(_LOG_LEVEL))
-    _LOG_LEVEL = _LOG_LEVEL - args.verbose + args.quiet
     return args
 
 
