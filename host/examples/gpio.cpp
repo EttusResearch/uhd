@@ -123,7 +123,7 @@ void output_reg_values(const std::string bank,
 {
     const std::vector<std::string> attrs = {
         "CTRL", "DDR", "ATR_0X", "ATR_RX", "ATR_TX", "ATR_XX", "OUT", "READBACK"};
-    std::cout << (boost::format("%10s ") % "Bit");
+    std::cout << (boost::format("%10s:") % "Bit");
     for (int i = num_bits - 1; i >= 0; i--)
         std::cout << (boost::format(" %2d") % i);
     std::cout << std::endl;
@@ -133,13 +133,20 @@ void output_reg_values(const std::string bank,
                          % to_bit_string(gpio_bits, num_bits))
                   << std::endl;
     }
-    // GPIO Src
-    const auto gpio_src = usrp->get_gpio_src(bank);
-    std::cout << boost::format("%10s:") % "SRC: ";
-    for (auto src : gpio_src) {
-        std::cout << " " << src;
+
+    // GPIO Src - get_gpio_src() not supported for all devices
+    try {
+        const auto gpio_src = usrp->get_gpio_src(bank);
+        std::cout << boost::format("%10s:") % "SRC";
+        for (auto src : gpio_src) {
+            std::cout << " " << src;
+        }
+        std::cout << std::endl;
+    } catch (const uhd::not_implemented_error& e) {
+        std::cout << "Ignoring " << e.what() << std::endl;
+    } catch (...) {
+        throw;
     }
-    std::cout << std::endl;
 }
 
 int UHD_SAFE_MAIN(int argc, char* argv[])
