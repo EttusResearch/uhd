@@ -16,6 +16,8 @@ PkgChdrUtils.sv \
 PkgChdrBfm.sv \
 PkgAxisCtrlBfm.sv \
 PkgRfnocItemUtils.sv \
+PkgCtrlIfaceBfm.sv \
+PkgChdrIfaceBfm.sv \
 PkgRfnocBlockCtrlBfm.sv \
 ))
 

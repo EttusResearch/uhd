@@ -150,7 +150,6 @@ package PkgChdrUtils;
     chdr_epid_t      dst_epid;
   } chdr_header_t;
 
-
   // AXIS-Ctrl packet header
   typedef struct packed {
     // Word 1
