@@ -364,22 +364,28 @@ def download(
         # requests library versions pre-4c3b9df6091b65d8c72763222bd5fdefb7231149
         # (Dec.'12) workaround
         resp = requests.get(images_url, prefetch=False, proxies=_PROXIES,
-                            headers={'User-Agent': 'UHD Images Downloader'})
+                            headers={'User-Agent': 'UHD Images Downloader'},
+                            allow_redirects=True)
     if resp.status_code != 200:
         raise RuntimeError("URL does not exist: {}".format(images_url))
-    filesize = float(resp.headers['content-length'])
+    filesize = float(resp.headers.get('content-length', -1))
     if filesize > download_limit:
         if not ask_permission(
                 "The file size for this target ({:.1f} MiB) exceeds the "
                 "download limit ({:.1f} MiB). Continue downloading?".format(
                     filesize/1024**2, download_limit/1024**2)):
             return 0, 0, ""
+    if filesize == -1:
+        if not ask_permission(
+                "The file size for this target could not be determined. "
+                "Continue downloading?"):
+            return 0, 0, ""
     filesize_dl = 0
     base_filename = os.path.basename(filename)
     if print_progress and not sys.stdout.isatty():
         print_progress = False
         log("INFO", "Downloading {}, total size: {} kB".format(
-            base_filename, filesize/1000))
+            base_filename, filesize/1000 if filesize > 0 else "-unknown-"))
     with open(filename, "wb") as temp_file:
         sha256_sum = hashlib.sha256()
         for buff in resp.iter_content(chunk_size=buffer_size):
@@ -388,10 +394,13 @@ def download(
                 filesize_dl += len(buff)
                 sha256_sum.update(buff)
             if print_progress:
-                status = r"%05d kB / %05d kB (%03d%%) %s" % (
-                    int(math.ceil(filesize_dl / 1000.)), int(math.ceil(filesize / 1000.)),
-                    int(math.ceil(filesize_dl * 100.) / filesize),
-                    base_filename)
+                status = r"%05d kB " % int(math.ceil(filesize_dl / 1000.))
+                if filesize > 0:
+                    status += r"/ %05d kB (%03d%%) " % (
+                        int(math.ceil(filesize / 1000.)),
+                        int(math.ceil(filesize_dl * 100.) / filesize),
+                    )
+                status += base_filename
                 if os.name == "nt":
                     status += chr(8) * (len(status) + 1)
                 else:
@@ -400,6 +409,8 @@ def download(
                 sys.stdout.flush()
     if print_progress:
         print('')
+    if filesize <= 0:
+        filesize = filesize_dl
     return filesize, filesize_dl, sha256_sum.hexdigest()
 
 
