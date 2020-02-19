@@ -19,26 +19,10 @@ import sys
 import tempfile
 import zipfile
 import platform
+from urllib.parse import urljoin  # Python 3
+
 # For all the non-core-library imports, we will be extra paranoid and be very
 # nice with error messages so that everyone understands what's up.
-try:
-    from urllib.parse import urljoin  # Python 3
-except ImportError:
-    from urlparse import urljoin      # Python 2
-try:
-    from builtins import input
-except ImportError:
-    input = raw_input
-try:
-    from six import iteritems
-except ImportError:
-    sys.stdout.write(
-        "[ERROR] Missing module 'six'! Please install it, e.g., by "
-        "running 'pip install six' or any other tool that can install "
-        "Python modules.\n")
-    if platform.system() == 'Windows':
-        input('Hit Enter to continue.')
-    exit(0)
 try:
     import requests
 except ImportError:
@@ -326,7 +310,7 @@ def print_target_list(manifest, args):
                 base=args.base_url,
                 relpath=value["url"]))
     else:
-        for manifest_item in iteritems(manifest):
+        for manifest_item in manifest.items():
             print(args.base_url+manifest_item[1]["url"])
 
 
