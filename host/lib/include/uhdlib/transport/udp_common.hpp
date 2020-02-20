@@ -268,6 +268,17 @@ inline link_params_t calculate_udp_link_params(
             link_args.cast<size_t>("recv_buff_size", link_params.recv_buff_size);
     }
 
+#if defined(UHD_PLATFORM_MACOS) || defined(UHD_PLATFORM_BSD)
+    // limit buffer size on OSX to avoid the warning issued by
+    // resize_buff_helper
+    if (link_params.recv_buff_size > MAX_BUFF_SIZE_ETH_MACOS) {
+        link_params.recv_buff_size = MAX_BUFF_SIZE_ETH_MACOS;
+    }
+    if (link_params.send_buff_size > MAX_BUFF_SIZE_ETH_MACOS) {
+        link_params.send_buff_size = MAX_BUFF_SIZE_ETH_MACOS;
+    }
+#endif
+
     return link_params;
 }
 
