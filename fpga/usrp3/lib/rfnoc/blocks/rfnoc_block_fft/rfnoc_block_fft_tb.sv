@@ -30,6 +30,7 @@ module rfnoc_block_fft_tb();
   // Block configuration
   localparam int NOC_ID        = 32'hFF70_0000;
   localparam int CHDR_W        = 64;
+  localparam int SAMP_W        = 32;
   localparam int THIS_PORTID   = 'h123;
   localparam int MTU           = 10;
   localparam int NUM_PORTS     = 1;
@@ -59,6 +60,8 @@ module rfnoc_block_fft_tb();
   //---------------------------------------------------------------------------
   // Bus Functional Models
   //---------------------------------------------------------------------------
+
+  typedef ChdrData #(CHDR_W, SAMP_W)::chdr_word_t chdr_word_t;
 
   RfnocBackendIf        backend            (rfnoc_chdr_clk, rfnoc_ctrl_clk);
   AxiStreamIf #(32)     m_ctrl             (rfnoc_ctrl_clk, 1'b0);

@@ -13,16 +13,20 @@
 
 package PkgChdrUtils;
 
+  import PkgChdrData::*;
+
+
   //---------------------------------------------------------------------------
   // Type Definitions
   //---------------------------------------------------------------------------
 
-  // CHDR Definitions
-  // ----------------
+  //----------------------
+  // AXIS-CHDR Definitions
+  //----------------------
 
-  // The fundamental unit of the CHDR bus, which is always a multiple of 64-bits
-  typedef logic [63:0] chdr_word_t;
-  typedef chdr_word_t chdr_word_queue_t[$];
+  // Expose the CHDR word and item/sample data types and methods in the
+  // ChdrData class. The width of these types is a class parameter. 
+  export PkgChdrData::ChdrData;
 
   // CHDR header fields
   typedef enum bit [2:0] { 
@@ -37,10 +41,13 @@ package PkgChdrUtils;
   } chdr_pkt_type_t;                    // CHDR Packet Type
 
   typedef bit [ 5:0] chdr_vc_t;         // CHDR Virtual Channel field
+  typedef bit [ 0:0] chdr_eob_t;        // CHDR End of Burst field
+  typedef bit [ 0:0] chdr_eov_t;        // CHDR End of Vector field
   typedef bit [ 4:0] chdr_num_mdata_t;  // CHDR Num Metadata field
   typedef bit [15:0] chdr_seq_num_t;    // CHDR SeqNum field
   typedef bit [15:0] chdr_length_t;     // CHDR Length field
   typedef bit [15:0] chdr_epid_t;       // CHDR EPID field
+  typedef bit [63:0] chdr_timestamp_t;  // CHDR Timestamp field
 
   // CHDR Context Field Identifiers
   typedef enum bit [3:0] { 
@@ -50,8 +57,9 @@ package PkgChdrUtils;
     CONTEXT_FIELD_MDATA  = 4'd3
   } chdr_context_type_t;
 
+  //----------------------
   // AXIS-Ctrl Definitions
-  // ---------------------
+  //----------------------
 
   // The fundamental unit of the AXIS-Ctrl (control) bus, which is always 32 bits
   typedef logic [31:0] ctrl_word_t;
@@ -82,9 +90,9 @@ package PkgChdrUtils;
   typedef bit  [3:0] ctrl_byte_en_t;  // AXIS-Ctrl ByteEnable field
   typedef bit [19:0] ctrl_address_t;  // AXIS-Ctrl Address field
 
-
+  //-------------------------------
   // CHDR Type-Specific Definitions
-  // ------------------------------
+  //-------------------------------
 
   // CHDR Status packet fields
   typedef enum bit [3:0] {
@@ -141,8 +149,8 @@ package PkgChdrUtils;
   // CHDR packet header
   typedef struct packed {
     chdr_vc_t        vc;
-    bit              eob;
-    bit              eov;
+    chdr_eob_t       eob;
+    chdr_eov_t       eov;
     chdr_pkt_type_t  pkt_type;
     chdr_num_mdata_t num_mdata;
     chdr_seq_num_t   seq_num;
@@ -235,41 +243,6 @@ package PkgChdrUtils;
     chdr_mgmt_header_t  header;
     chdr_mgmt_op_t      ops[$];
   } chdr_mgmt_t;
-
-
-
-  //---------------------------------------------------------------------------
-  // Functions
-  //---------------------------------------------------------------------------
-
-  // Returns 1 if the queues have the same contents, otherwise returns 0. This 
-  // function is equivalent to (a == b), but this doesn't work correctly yet in 
-  // Vivado 2018.3.
-  function automatic bit chdr_word_queues_equal(ref chdr_word_t a[$], ref chdr_word_t b[$]);
-    chdr_word_t x, y;
-    if (a.size() != b.size()) return 0;
-    foreach (a[i]) begin
-      x = a[i];
-      y = b[i];
-      if (x !== y) return 0;
-    end
-    return 1;
-  endfunction : chdr_word_queues_equal
-
-
-  // Returns 1 if the queues have the same contents, otherwise returns 0. This 
-  // function is equivalent to (a == b), but this doesn't work correctly yet in 
-  // Vivado 2018.3.
-  function automatic bit chdr_mgmt_op_queues_equal(ref chdr_mgmt_op_t a[$], ref chdr_mgmt_op_t b[$]);
-    chdr_mgmt_op_t x, y;
-    if (a.size() != b.size()) return 0;
-    foreach (a[i]) begin
-      x = a[i];
-      y = b[i];
-      if (x !== y) return 0;
-    end
-    return 1;
-  endfunction : chdr_mgmt_op_queues_equal
 
 
 endpackage : PkgChdrUtils

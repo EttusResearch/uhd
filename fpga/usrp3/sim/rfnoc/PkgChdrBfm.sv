@@ -21,14 +21,17 @@ package PkgChdrBfm;
   // CHDR Packet Class
   //---------------------------------------------------------------------------
 
-  class ChdrPacket #(int BUS_WIDTH = 64);
+  class ChdrPacket #(int CHDR_W = 64);
 
-    typedef ChdrPacket #(BUS_WIDTH) ChdrPacket;
+    typedef ChdrPacket #(CHDR_W)              ChdrPacket;
+    typedef ChdrData   #(CHDR_W)::chdr_word_t chdr_word_t;
 
-    chdr_header_t header;
-    chdr_word_t   timestamp;
-    chdr_word_t   metadata[$];
-    chdr_word_t   data[$];
+    const int BYTES_PER_CHDR_W = CHDR_W / 8;
+
+    chdr_header_t    header;
+    chdr_timestamp_t timestamp;
+    chdr_word_t      metadata[$];
+    chdr_word_t      data[$];
 
     extern function ChdrPacket copy();
     extern function bit        equal(ChdrPacket packet);
@@ -39,12 +42,12 @@ package PkgChdrBfm;
     extern function void write_raw          (ref chdr_header_t         header,
                                              ref chdr_word_t           data[$],
                                              input chdr_word_t         metadata[$] = {},
-                                             input chdr_word_t         timestamp = 0,
+                                             input chdr_timestamp_t    timestamp = 0,
                                              input int                 data_byte_length = -1);
     extern function void read_raw           (output chdr_header_t      header, 
                                              output chdr_word_t        data[$],
                                              output chdr_word_t        metadata[$],
-                                             output chdr_word_t        timestamp,
+                                             output chdr_timestamp_t   timestamp,
                                              output int                data_byte_length);
     extern function void write_stream_status(ref chdr_header_t         header, 
                                              ref chdr_str_status_t     status);
@@ -62,12 +65,12 @@ package PkgChdrBfm;
                                              ref chdr_ctrl_header_t    ctrl_header,
                                              ref ctrl_op_word_t        ctrl_op_word,
                                              ref ctrl_word_t           ctrl_data[$],
-                                             input chdr_word_t         ctrl_timestamp = 0);
+                                             input chdr_timestamp_t    ctrl_timestamp = 0);
     extern function void read_ctrl          (output chdr_header_t      header,
                                              output chdr_ctrl_header_t ctrl_header,
                                              output ctrl_op_word_t     ctrl_op_word,
                                              output ctrl_word_t        ctrl_data[$],
-                                             output chdr_word_t        ctrl_timestamp);
+                                             output chdr_timestamp_t   ctrl_timestamp);
 
 
     // Helper methods
@@ -79,6 +82,8 @@ package PkgChdrBfm;
     extern function string sprint_raw();
     extern function string sprint_pretty();
 
+    extern function bit chdr_word_queues_equal(ref chdr_word_t a[$], ref chdr_word_t b[$]);
+
   endclass : ChdrPacket;
 
 
@@ -88,14 +93,14 @@ package PkgChdrBfm;
   //---------------------------------------------------------------------------
 
   class ChdrBfm #(
-    parameter int BUS_WIDTH  = 64,
+    parameter int CHDR_W  = 64,
     parameter int USER_WIDTH = 1
-  ) extends AxiStreamBfm #(BUS_WIDTH, USER_WIDTH);
+  ) extends AxiStreamBfm #(CHDR_W, USER_WIDTH);
 
-    typedef ChdrPacket #(BUS_WIDTH) ChdrPacket;
+    typedef ChdrPacket #(CHDR_W)              ChdrPacket;
+    typedef ChdrData   #(CHDR_W)::chdr_word_t chdr_word_t;
 
-    // Number of 64-bit CHDR words per AXI word
-    const int CHDR_PER_BUS = BUS_WIDTH / $bits(chdr_word_t);
+    const int BYTES_PER_CHDR_W = CHDR_W / 8;
 
     // Default fields used by high-level transaction methods
     chdr_epid_t     dst_epid;
@@ -103,8 +108,8 @@ package PkgChdrBfm;
 
 
     extern function new (
-      virtual AxiStreamIf #(BUS_WIDTH, USER_WIDTH).master master,
-      virtual AxiStreamIf #(BUS_WIDTH, USER_WIDTH).slave  slave
+      virtual AxiStreamIf #(CHDR_W, USER_WIDTH).master master,
+      virtual AxiStreamIf #(CHDR_W, USER_WIDTH).slave  slave
     );
 
 
@@ -210,7 +215,7 @@ package PkgChdrBfm;
       str = {str, $sformatf("  > chdr_str_command_t : %p\n", tmp_cmd)};
     end else if (header.pkt_type == CHDR_CONTROL) begin
       chdr_header_t tmp_hdr;
-      chdr_word_t tmp_ts;
+      chdr_timestamp_t tmp_ts;
       chdr_ctrl_header_t tmp_ctrl_hdr;
       ctrl_op_word_t tmp_op_word;
       ctrl_word_t tmp_ctrl_data[$];
@@ -250,11 +255,11 @@ package PkgChdrBfm;
   // method to calculate the payload length based on the size of the data
   // array.
   function void ChdrPacket::write_raw (
-    ref chdr_header_t header,
-    ref chdr_word_t   data[$],
-    input chdr_word_t metadata[$] = {},
-    input chdr_word_t timestamp = 0,
-    input int         data_byte_length = -1
+    ref chdr_header_t      header,
+    ref chdr_word_t        data[$],
+    input chdr_word_t      metadata[$] = {},
+    input chdr_timestamp_t timestamp = 0,
+    input int              data_byte_length = -1
   );
     this.header    = header;
     this.timestamp = timestamp;
@@ -267,11 +272,11 @@ package PkgChdrBfm;
       int array_num_bytes;
 
       // Make sure number of words for data_byte_length matches data length
-      assert((data_byte_length+7) / 8 == data.size()) else begin
+      assert((data_byte_length+(BYTES_PER_CHDR_W-1)) / BYTES_PER_CHDR_W == data.size()) else begin
         $error("ChdrPacket::write_raw: data_byte_length doesn't correspond to number of words in data");
       end
 
-      array_num_bytes = data.size() * $bits(chdr_word_t)/8;
+      array_num_bytes = data.size() * BYTES_PER_CHDR_W;
       this.header.length -= (array_num_bytes - data_byte_length);
     end
   endfunction : write_raw
@@ -279,11 +284,11 @@ package PkgChdrBfm;
 
   // Read the contents of this packet
   function void ChdrPacket::read_raw (
-    output chdr_header_t header, 
-    output chdr_word_t   data[$],
-    output chdr_word_t   metadata[$],
-    output chdr_word_t   timestamp,
-    output int           data_byte_length
+    output chdr_header_t    header, 
+    output chdr_word_t      data[$],
+    output chdr_word_t      metadata[$],
+    output chdr_timestamp_t timestamp,
+    output int              data_byte_length
   );
     header           = this.header;
     data             = this.data;
@@ -301,8 +306,8 @@ package PkgChdrBfm;
     header.pkt_type = CHDR_STRM_STATUS; // Update packet type in header
     this.header = header;
     data        = {};
-    for (int i = 0; i < $bits(status); i += $bits(chdr_word_t)) begin
-      data.push_back( status[i +: $bits(chdr_word_t)] );
+    for (int i = 0; i < $bits(status); i += CHDR_W) begin
+      data.push_back( status[i +: CHDR_W] );
     end
     update_lengths();
   endfunction : write_stream_status
@@ -315,17 +320,17 @@ package PkgChdrBfm;
   );
     // Make sure it's a stream status packet
     assert(this.header.pkt_type == CHDR_STRM_STATUS) else begin
-      $error("ChdrPacket::read_status: Packet type is not CHDR_STRM_STATUS");
+      $error("ChdrPacket::read_stream_status: Packet type is not CHDR_STRM_STATUS");
     end
 
     // Make sure we have enough payload
     assert($bits(status) <= $bits(data)) else begin
-      $error("ChdrPacket::read_status: Not enough data for status payload");
+      $error("ChdrPacket::read_stream_status: Not enough data for status payload");
     end
 
     header = this.header;
-    for (int i = 0; i < $bits(status)/$bits(chdr_word_t); i++) begin
-      status[i*$bits(chdr_word_t) +: $bits(chdr_word_t)] = data[i];
+    for (int i = 0; i < $bits(status)/CHDR_W; i++) begin
+      status[i*CHDR_W +: CHDR_W] = data[i];
     end
   endfunction : read_stream_status
 
@@ -338,8 +343,8 @@ package PkgChdrBfm;
     header.pkt_type = CHDR_STRM_CMD; // Update packet type in header
     this.header = header;
     data = {};
-    for (int i = 0; i < $bits(command); i += $bits(chdr_word_t)) begin
-      data.push_back( command[i +: $bits(chdr_word_t)] );
+    for (int i = 0; i < $bits(command); i += CHDR_W) begin
+      data.push_back( command[i +: CHDR_W] );
     end
     update_lengths();
   endfunction : write_stream_cmd
@@ -352,17 +357,17 @@ package PkgChdrBfm;
   );
     // Make sure it's a stream command packet
     assert(this.header.pkt_type == CHDR_STRM_CMD) else begin
-      $error("ChdrPacket::read_command: Packet type is not CHDR_STRM_CMD");
+      $error("ChdrPacket::read_stream_cmd: Packet type is not CHDR_STRM_CMD");
     end
 
     // Make sure we have enough payload
     assert($bits(command) <= $bits(data)) else begin
-      $error("ChdrPacket::read_command: Not enough data for command payload");
+      $error("ChdrPacket::read_stream_cmd: Not enough data for command payload");
     end
 
     header = this.header;
-    for (int i = 0; i < $bits(command)/$bits(chdr_word_t); i++) begin
-      command[i*$bits(chdr_word_t) +: $bits(chdr_word_t)] = data[i];
+    for (int i = 0; i < $bits(command)/CHDR_W; i++) begin
+      command[i*CHDR_W +: CHDR_W] = data[i];
     end
   endfunction : read_stream_cmd
 
@@ -402,7 +407,7 @@ package PkgChdrBfm;
 
     header = this.header;
 
-    num_ops = data_bytes()/8 - 1;   // Num words, minus one for the header
+    num_ops = data_bytes()/BYTES_PER_CHDR_W - 1;   // Num words, minus one for the header
 
     // Make sure we have enough payload
     assert(1 + num_ops <= data.size()) else begin
@@ -425,33 +430,48 @@ package PkgChdrBfm;
     ref chdr_ctrl_header_t ctrl_header,
     ref ctrl_op_word_t     ctrl_op_word,
     ref ctrl_word_t        ctrl_data[$],
-    input chdr_word_t      ctrl_timestamp = 0
+    input chdr_timestamp_t ctrl_timestamp = 0
   );
     bit partial_word;
     ctrl_word_t mandatory_data;
+    ChdrData #(CHDR_W, 64)::item_queue_t data64;
+
     header.pkt_type = CHDR_CONTROL; // Update packet type in header
     this.header = header;
-    data = {};
+    data64 = {};
 
     // Insert word 0 of control payload
-    data.push_back(ctrl_header[63:0]);
+    data64.push_back(ctrl_header);
 
     // Insert word 1 of control payload, if timestamp is used
     if (ctrl_header.has_time) begin
-      data.push_back(ctrl_timestamp);
+      data64.push_back(ctrl_timestamp);
+    end
+
+    // Make sure the amount of data passed matches the header
+    assert (ctrl_header.num_data == ctrl_data.size()) else begin
+      $error("ChdrPacket::write_ctrl: NumData doesn't match ctrl_data[] size");
     end
 
     // Insert word 2 of control payload, the operation word
     // and first word of control data.
     mandatory_data = (ctrl_header.num_data > 0) ? ctrl_data[0] : '0;
-    data.push_back({mandatory_data, ctrl_op_word[31:0]});
+    data64.push_back({mandatory_data, ctrl_op_word[31:0]});
     // We have a half CHDR word if num_data is even
     partial_word = (ctrl_header.num_data[0] == '0);
 
     // Insert remaining data, if present
     for (int i = 1; i < ctrl_data.size(); i+=2) begin
-      data.push_back({(partial_word ? '0 : ctrl_data[i+1]), ctrl_data[i]});
+      if (i == ctrl_data.size()-1) begin
+        // num_data must be even in this case, so last word is half filled
+        data64.push_back({ 32'b0, ctrl_data[i] });
+      end else begin
+        data64.push_back({ ctrl_data[i+1], ctrl_data[i] });
+      end
     end
+
+    // Convert from 64-bit words to CHDR_W-bit words
+    data = ChdrData #(CHDR_W, 64)::item_to_chdr(data64);
 
     update_lengths();
   endfunction : write_ctrl
@@ -463,62 +483,71 @@ package PkgChdrBfm;
     output chdr_ctrl_header_t ctrl_header,
     output ctrl_op_word_t     ctrl_op_word,
     output ctrl_word_t        ctrl_data[$],
-    output chdr_word_t        ctrl_timestamp
+    output chdr_timestamp_t   ctrl_timestamp
   );
+    ChdrData #(CHDR_W, 32)::item_queue_t data32;
     chdr_word_t chdr_op_word;
+    int ctrl_packet_size;
     int dptr = 0;
 
     // Make sure it's a stream status packet
     assert(this.header.pkt_type == CHDR_CONTROL) else begin
-      $error("ChdrPacket::read_status: Packet type is not CHDR_CONTROL");
+      $error("ChdrPacket::read_ctrl: Packet type is not CHDR_CONTROL");
     end
 
-    // Make sure we have enough payload
-    assert($bits(ctrl_header)+$bits(ctrl_op_word) <= $bits(data)) else begin
-      $error("ChdrPacket::read_status: Not enough data for status payload");
-    end
+    // Convert packet to 32-bit words for easier parsing
+    data32 = ChdrData #(CHDR_W, 32)::chdr_to_item(data, data_bytes());
 
+    // CHDR header
     header = this.header;
 
-    // Word 0
-    ctrl_header[63:0] = data[dptr++];
+    // Ctrl header
+    ctrl_header = { data32[dptr+1], data32[dptr] };
+    dptr += 2;
 
-    // Word 1
-    if (ctrl_header.has_time) begin 
-      ctrl_timestamp = data[dptr++];
+    // Make sure we have enough payload. Calculate expected size in 32-bit
+    // words.
+    ctrl_packet_size = 3 + ctrl_header.num_data;     // header + op_word + data
+    if (ctrl_header.has_time) ctrl_packet_size += 2; // timestamp
+    assert(data32.size() < ctrl_packet_size) else begin
+      $error("ChdrPacket::read_ctrl: Not enough CHDR payload for control packet");
+    end
+    assert(data32.size() > ctrl_packet_size) else begin
+      $warning("ChdrPacket::read_ctrl: Excess CHDR payload for control packet");
     end
 
-    // Word 2, last 32-bits of control header and first word of control data
-    chdr_op_word = data[dptr++];
-    ctrl_op_word = chdr_op_word[31:0];
-    ctrl_data.delete();
-    if (ctrl_header.num_data > 0) begin
-      ctrl_data[0] = chdr_op_word[63:32];
+    // Timestamp (optional)
+    if(ctrl_header.has_time) begin
+      ctrl_timestamp = { data32[dptr+1], data32[dptr] };
+      dptr += 2;
     end
 
-    // Copy any remaining data words
-    for (int i = dptr; i < data.size(); i++) begin
-      ctrl_data.push_back(data[i][31:0]);
-      if (i != data.size()-1 || ctrl_header.num_data[0] != 0)
-        ctrl_data.push_back(data[i][63:32]);
+    // Operation word
+    ctrl_op_word = data32[dptr++];
+
+    // Data words
+    ctrl_data = {};
+    while (dptr < data32.size()) begin
+      ctrl_data.push_back(data32[dptr++]);
     end
+
   endfunction : read_ctrl
 
 
   // Calculate the header size (including timestamp), in bytes, from the header
   // information.
   function int ChdrPacket::header_bytes();
-    if (BUS_WIDTH == $bits(chdr_word_t) && header.pkt_type == CHDR_DATA_WITH_TS) begin
-      header_bytes = 2 * (BUS_WIDTH / 8);  // Two words (header + timestamp)
+    if (CHDR_W == 64 && header.pkt_type == CHDR_DATA_WITH_TS) begin
+      header_bytes = 2 * BYTES_PER_CHDR_W;  // Two words (header + timestamp)
     end else begin
-      header_bytes = (BUS_WIDTH / 8);      // One word, regardless of timestamp
+      header_bytes = BYTES_PER_CHDR_W;      // One word, regardless of timestamp
     end
   endfunction : header_bytes
 
 
   // Calculate the metadata size from the header information.
   function int ChdrPacket::mdata_bytes();
-    mdata_bytes = header.num_mdata * BUS_WIDTH/8;
+    mdata_bytes = header.num_mdata * BYTES_PER_CHDR_W;
   endfunction : mdata_bytes
 
 
@@ -535,15 +564,12 @@ package PkgChdrBfm;
     int num_mdata;
 
     // Calculate NumMData based on the size of metadata queue
-    num_mdata = metadata.size() / (BUS_WIDTH / $bits(chdr_word_t));
-    if (metadata.size() % (BUS_WIDTH / $bits(chdr_word_t)) != 0) begin
-      num_mdata++;
-    end
+    num_mdata = metadata.size();
     assert(num_mdata < 2**$bits(chdr_num_mdata_t)) else
       $fatal(1, "ChdrPacket::update_lengths():  Calculated NumMData exceeds maximum size");
 
     // Calculate the Length field
-    num_bytes = data.size() * $bits(chdr_word_t) / 8;        // Payload length
+    num_bytes = data.size() * BYTES_PER_CHDR_W;                    // Payload length
     num_bytes = num_bytes + header_bytes() + mdata_bytes();  // Payload + header length
     assert(num_bytes < 2**$bits(chdr_length_t)) else
       $fatal(1, "ChdrPacket::update_lengths():  Calculated Length exceeds maximum size");
@@ -553,6 +579,20 @@ package PkgChdrBfm;
     header.length    = num_bytes;
   endfunction : update_lengths
 
+
+  // Returns 1 if the queues have the same contents, otherwise returns 0. This
+  // function is equivalent to (a == b), but this doesn't work correctly yet in
+  // Vivado 2018.3.
+  function automatic bit ChdrPacket::chdr_word_queues_equal(ref chdr_word_t a[$], ref chdr_word_t b[$]);
+    chdr_word_t x, y;
+    if (a.size() != b.size()) return 0;
+    foreach (a[i]) begin
+      x = a[i];
+      y = b[i];
+      if (x !== y) return 0;
+    end
+    return 1;
+  endfunction : chdr_word_queues_equal
 
 
 
@@ -564,11 +604,11 @@ package PkgChdrBfm;
   // Class constructor. This must be given an interface for the master 
   // connection and an interface for the slave connection.
   function ChdrBfm::new (
-    virtual AxiStreamIf #(BUS_WIDTH, USER_WIDTH).master master,
-    virtual AxiStreamIf #(BUS_WIDTH, USER_WIDTH).slave  slave
+    virtual AxiStreamIf #(CHDR_W, USER_WIDTH).master master,
+    virtual AxiStreamIf #(CHDR_W, USER_WIDTH).slave  slave
   );
     super.new(master, slave);
-    assert(BUS_WIDTH % 64 == 0) else begin
+    assert(CHDR_W % 64 == 0) else begin
       $fatal(1, "ChdrBfm::new: CHDR bus width must be a multiple of 64 bits");
     end
   endfunction : new
@@ -637,6 +677,7 @@ package PkgChdrBfm;
     enum int { ST_HEADER, ST_TIMESTAMP, ST_METADATA, ST_PAYLOAD } rx_state;
     data_t word;
     int num_rx_mdata;
+    int num_rx_bytes;
     ChdrPacket chdr_packet = new();
 
     rx_state = ST_HEADER;
@@ -646,12 +687,13 @@ package PkgChdrBfm;
       
       case (rx_state)
         ST_HEADER : begin
+          num_rx_bytes += BYTES_PER_CHDR_W;
           chdr_packet.header = word[63:0];
 
           // Depending on the size of the word, we could have just the header 
           // or both the header and the timestamp in this word.
           if (chdr_packet.header.pkt_type == CHDR_DATA_WITH_TS) begin
-            if ($bits(word) >= 128) begin
+            if (CHDR_W >= 128) begin
               chdr_packet.timestamp = word[127:64];
               rx_state = ST_METADATA;
             end else begin
@@ -667,31 +709,31 @@ package PkgChdrBfm;
           end
         end
         ST_TIMESTAMP : begin
+          num_rx_bytes += BYTES_PER_CHDR_W;
           chdr_packet.timestamp = word;
           rx_state = (chdr_packet.header.num_mdata > 0) ? ST_METADATA : ST_PAYLOAD;
         end
         ST_METADATA : begin
-          for(int w = 0; w < CHDR_PER_BUS; w++) begin
-            // Grab the next chdr_word_t worth of bits
-            //$display("Grabbing meta word %d (%016X)", w, word[w*$bits(chdr_word_t) +: $bits(chdr_word_t)]);
-            chdr_packet.metadata.push_back(word[w*$bits(chdr_word_t) +: $bits(chdr_word_t)]);
-          end
+          chdr_packet.metadata.push_back(word);
           num_rx_mdata++;
+          num_rx_bytes += BYTES_PER_CHDR_W;
           if (num_rx_mdata == chdr_packet.header.num_mdata) rx_state = ST_PAYLOAD;
         end
         ST_PAYLOAD : begin
-          for(int w = 0; w < CHDR_PER_BUS; w++) begin
-            // Grab the next chdr_word_t worth of bits
-            //$display("Grabbing data word %d (%016X)", w, word[w*$bits(chdr_word_t) +: $bits(chdr_word_t)]);
-            chdr_packet.data.push_back(word[w*$bits(chdr_word_t) +: $bits(chdr_word_t)]);
-          end
+          chdr_packet.data.push_back(word);
+          num_rx_bytes += BYTES_PER_CHDR_W;
         end
       endcase
-
     end
 
-    assert(rx_state == ST_PAYLOAD) else begin
+    assert (rx_state == ST_PAYLOAD) else begin
       $error("ChdrBfm::axis_to_chdr: Malformed CHDR packet");
+    end
+
+    // Check length field, noting that the last word may be partially filled
+    assert (chdr_packet.header.length >= num_rx_bytes-(BYTES_PER_CHDR_W-1) &&
+            chdr_packet.header.length <= num_rx_bytes) else begin
+      $error("ChdrBfm::axis_to_chdr: Incorrect CHDR length");
     end
 
     return chdr_packet;
@@ -702,44 +744,37 @@ package PkgChdrBfm;
   // Convert a CHDR packet data structure to a an AXI-Stream packet data 
   // structure.
   function ChdrBfm::AxisPacket ChdrBfm::chdr_to_axis (ChdrPacket chdr_packet);
-    int num_bus_words, num_chdr_words, expected_bus_words;
+    int num_words, expected_words;
     data_t bus_word = 0;
     AxisPacket axis_packet = new();
 
     // Check that we have the right number of metadata words
-    num_chdr_words = chdr_packet.metadata.size();
-    num_bus_words = num_chdr_words / CHDR_PER_BUS;
-    if (num_chdr_words % CHDR_PER_BUS != 0) num_bus_words++;
-    assert (num_bus_words == chdr_packet.header.num_mdata) else begin
+    assert (chdr_packet.metadata.size() == chdr_packet.header.num_mdata) else begin
       $error("ChdrBfm::chdr_to_axis: Packet metadata size doesn't match header NumMData field");
     end
 
     // Calculate the number of words needed to represent this packet
-    num_bus_words = 0;
-    num_bus_words += chdr_packet.data.size() / CHDR_PER_BUS;
-    if (chdr_packet.data.size() % CHDR_PER_BUS != 0) num_bus_words++;
-    num_bus_words += chdr_packet.metadata.size() / CHDR_PER_BUS;
-    if (chdr_packet.metadata.size() % CHDR_PER_BUS != 0) num_bus_words++;
-    if (chdr_packet.header.pkt_type == CHDR_DATA_WITH_TS && CHDR_PER_BUS == 1) begin
+    num_words = chdr_packet.data.size() + chdr_packet.metadata.size();
+    if (chdr_packet.header.pkt_type == CHDR_DATA_WITH_TS && CHDR_W == 64) begin
       // Add two words, one for header and one for timestamp
-      num_bus_words += 2;
+      num_words += 2;
     end else begin
       // Add one word only for header (which may or may not include a timestamp)
-      num_bus_words += 1;
+      num_words += 1;
     end
   
     // Calculate the number of words represented by the Length field
-    expected_bus_words = chdr_packet.header.length / (BUS_WIDTH/8);
-    if (chdr_packet.header.length % (BUS_WIDTH/8) != 0) expected_bus_words++;
+    expected_words = chdr_packet.header.length / BYTES_PER_CHDR_W;
+    if (chdr_packet.header.length % BYTES_PER_CHDR_W != 0) expected_words++;
 
     // Make sure length field matches actual packet length
-    assert (num_bus_words == expected_bus_words) else begin
+    assert (num_words == expected_words) else begin
       $error("ChdrBfm::chdr_to_axis: Packet size doesn't match header Length field");
     end
 
     // Insert header
     bus_word[63:0] = chdr_packet.header;
-    if (BUS_WIDTH == 64) begin
+    if (CHDR_W == 64) begin
       axis_packet.data.push_back(bus_word);
       if (chdr_packet.header.pkt_type == CHDR_DATA_WITH_TS) begin
         // Insert timestamp
@@ -754,21 +789,13 @@ package PkgChdrBfm;
 
     // Insert metadata
     while (chdr_packet.metadata.size() > 0) begin
-      bus_word = 0;
-      for (int w = 0; w < CHDR_PER_BUS; w++) begin
-        bus_word[w*$bits(chdr_word_t) +: $bits(chdr_word_t)] = chdr_packet.metadata.pop_front();
-        if (chdr_packet.metadata.size() == 0) break;
-      end
+      bus_word = chdr_packet.metadata.pop_front();
       axis_packet.data.push_back(bus_word);
     end
 
     // Insert payload
     while (chdr_packet.data.size() > 0) begin
-      bus_word = 0;
-      for (int word_count = 0; word_count < CHDR_PER_BUS; word_count++) begin
-        bus_word[word_count*64 +: 64] = chdr_packet.data.pop_front();
-        if (chdr_packet.data.size() == 0) break;
-      end
+      bus_word = chdr_packet.data.pop_front();
       axis_packet.data.push_back(bus_word);
     end
 

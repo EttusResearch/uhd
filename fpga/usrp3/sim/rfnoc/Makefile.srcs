@@ -12,6 +12,7 @@ PkgTestExec.sv \
 test_exec.svh \
 sim_clock_gen.sv \
 PkgAxiStreamBfm.sv \
+PkgChdrData.sv \
 PkgChdrUtils.sv \
 PkgChdrBfm.sv \
 PkgAxisCtrlBfm.sv \

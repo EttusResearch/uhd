@@ -28,6 +28,7 @@ module rfnoc_block_${config['module_name']}_tb;
   localparam [ 9:0] THIS_PORTID     = 10'h123;
   localparam [31:0] NOC_ID          = 32'h${format(config['noc_id'], "08X")};
   localparam int    CHDR_W          = ${config['chdr_width']};
+  localparam int    ITEM_W          = 32;
 %if 'parameters' in config:
 %for param, value in config['parameters'].items():
   localparam int    ${'{:<15}'.format(param)} = ${value};
@@ -37,7 +38,7 @@ module rfnoc_block_${config['module_name']}_tb;
   localparam int    NUM_PORTS_O     = ${func.num_ports_out_str()};
   localparam int    MTU             = 13;
   localparam int    SPP             = 64;
-  localparam int    PKT_SIZE_BYTES  = SPP * 4; // Assumes 4 bytes per sample
+  localparam int    PKT_SIZE_BYTES  = SPP * (ITEM_W/8);
   localparam int    STALL_PROB      = 25;      // Default BFM stall probability
   localparam real   CHDR_CLK_PER    = 5.0;     // 200 MHz
   localparam real   CTRL_CLK_PER    = 25.0;    // 40 MHz
@@ -84,6 +85,10 @@ module rfnoc_block_${config['module_name']}_tb;
 
   // Block Controller BFM
   RfnocBlockCtrlBfm #(.CHDR_W(CHDR_W)) blk_ctrl = new(backend, m_ctrl, s_ctrl);
+
+  // CHDR word and item/sample data types
+  typedef ChdrData #(CHDR_W, ITEM_W)::chdr_word_t chdr_word_t;
+  typedef ChdrData #(CHDR_W, ITEM_W)::item_t      item_t;
 
   // Connect block controller to BFMs
   for (genvar i = 0; i < NUM_PORTS_I; i++) begin : gen_bfm_input_connections

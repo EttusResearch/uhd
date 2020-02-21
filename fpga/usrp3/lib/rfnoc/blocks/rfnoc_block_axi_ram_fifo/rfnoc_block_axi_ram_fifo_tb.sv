@@ -83,6 +83,8 @@ module rfnoc_block_axi_ram_fifo_tb #(
   // Bus Functional Models
   //---------------------------------------------------------------------------
 
+  typedef ChdrData #(CHDR_W)::chdr_word_t chdr_word_t;
+
   RfnocBackendIf        backend            (rfnoc_chdr_clk, rfnoc_ctrl_clk);
   AxiStreamIf #(32)     m_ctrl             (rfnoc_ctrl_clk, 1'b0);
   AxiStreamIf #(32)     s_ctrl             (rfnoc_ctrl_clk, 1'b0);

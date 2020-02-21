@@ -96,12 +96,14 @@ package PkgRfnocBlockCtrlBfm;
   class RfnocBlockCtrlBfm #(CHDR_W = 64);
 
     local virtual RfnocBackendIf.master backend;
-    local CtrlIfaceBfm              ctrl;
-    local ChdrIfaceBfm #(CHDR_W)   m_data[$];
-    local ChdrIfaceBfm #(CHDR_W)   s_data[$];
+    local CtrlIfaceBfm                  ctrl;
+    local ChdrIfaceBfm #(CHDR_W)        m_data[$];
+    local ChdrIfaceBfm #(CHDR_W)        s_data[$];
     local bit                           running;
 
     localparam CMD_PROP_CYC = 5;
+
+    typedef ChdrData #(CHDR_W)::chdr_word_t chdr_word_t;
 
     // Class constructor to create a new BFM instance.
     //

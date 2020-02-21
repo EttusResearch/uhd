@@ -24,6 +24,7 @@ module rfnoc_block_null_src_sink_tb;
   localparam [9:0]  THIS_PORTID = 10'h17;
   localparam [15:0] THIS_EPID   = 16'hDEAD;
   localparam int    CHDR_W      = 64;
+  localparam int    ITEM_W      = 32;
   localparam int    SPP         = 201;
   localparam int    LPP         = ((SPP+1)/2);
   localparam int    NUM_PKTS    = 50;
@@ -47,6 +48,8 @@ module rfnoc_block_null_src_sink_tb;
   AxiStreamIf #(CHDR_W) m1_chdr (rfnoc_chdr_clk);                 // Optional data iface
   AxiStreamIf #(CHDR_W) s0_chdr (rfnoc_chdr_clk);                 // Optional data iface
   AxiStreamIf #(CHDR_W) s1_chdr (rfnoc_chdr_clk);                 // Optional data iface
+
+  typedef ChdrData #(CHDR_W, ITEM_W)::chdr_word_t chdr_word_t;
 
   // Bus functional model for a software block controller
   RfnocBlockCtrlBfm #(.CHDR_W(CHDR_W)) blk_ctrl;
@@ -128,7 +131,7 @@ module rfnoc_block_null_src_sink_tb;
       // Read status register and validate it
       blk_ctrl.reg_read(dut.REG_CTRL_STATUS, rvalue);
       `ASSERT_ERROR(rvalue[31:24] == 2, "Incorrect NIPC Value");
-      `ASSERT_ERROR(rvalue[23:16] == 32, "Incorrect ITEM_W Value");
+      `ASSERT_ERROR(rvalue[23:16] == ITEM_W, "Incorrect ITEM_W Value");
       test.end_timeout(timeout);
     end
     test.end_test();
@@ -139,7 +142,7 @@ module rfnoc_block_null_src_sink_tb;
       repeat (NUM_PKTS) begin
         chdr_word_t rx_data[$];
         int rx_bytes;
-        automatic ItemDataBuff #(logic[31:0]) tx_dbuff = new, rx_dbuff = new;
+        automatic ItemDataBuff #(logic[ITEM_W-1:0]) tx_dbuff = new, rx_dbuff = new;
         for (int i = 0; i < SPP; i++)
           tx_dbuff.put($urandom());
         test.start_timeout(timeout, 5us, "Waiting for pkt to loop back");
@@ -176,7 +179,7 @@ module rfnoc_block_null_src_sink_tb;
       repeat (NUM_PKTS) begin
         chdr_word_t rx_data[$];
         int rx_bytes;
-        automatic ItemDataBuff #(logic[31:0]) tx_dbuff = new;
+        automatic ItemDataBuff #(logic[ITEM_W-1:0]) tx_dbuff = new;
         for (int i = 0; i < SPP; i++)
           tx_dbuff.put($urandom());
         test.start_timeout(timeout, 5us, "Waiting for pkt to loop back");

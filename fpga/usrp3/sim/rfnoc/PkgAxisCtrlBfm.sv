@@ -29,7 +29,7 @@ package PkgAxisCtrlBfm;
     //------------
 
     axis_ctrl_header_t header;
-    chdr_word_t        timestamp;
+    chdr_timestamp_t   timestamp;
     ctrl_op_word_t     op_word;
     ctrl_word_t        data[$];
 
@@ -86,7 +86,7 @@ package PkgAxisCtrlBfm;
       ref axis_ctrl_header_t header,
       ref ctrl_op_word_t     op_word,
       ref ctrl_word_t        data[$],
-      input chdr_word_t      timestamp = 0
+      input chdr_timestamp_t timestamp = 0
     );
       this.header    = header;
       this.data      = data;

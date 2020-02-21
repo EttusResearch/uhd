@@ -16,11 +16,11 @@ package PkgChdrIfaceBfm;
 
 
   typedef struct packed {
-    chdr_vc_t   vc;
-    logic       eob;
-    logic       eov;
-    logic       has_time;
-    chdr_word_t timestamp;
+    chdr_vc_t        vc;
+    chdr_eob_t       eob;
+    chdr_eov_t       eov;
+    bit              has_time;
+    chdr_timestamp_t timestamp;
   } packet_info_t;
 
 

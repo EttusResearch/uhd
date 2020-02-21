@@ -5,11 +5,14 @@
 //
 // Module: PkgRfnocItemUtils
 //
-// Description: This package contains utilities to handle and process items.
+// Description: This package contains classes to handle and process CHDR items
+// (e.g., samples) and to convert between CHDR words and items. It includes the
+// following classes:
 //
-// - ItemDataBuff: A class that holds a collection of items of arbitrary width
-//                 To can convert to and from a CHDR vector
-// - ItemDataBuffQueue: A queue of ItemDataBuff buffers
+//   - ItemDataBuff: A class that holds a collection of items of arbitrary
+//                   width and functions to convert to and from a CHDR vector.
+//
+//   - ItemDataBuffQueue: A queue of ItemDataBuff buffers
 // 
 
 package PkgRfnocItemUtils;
@@ -20,14 +23,20 @@ package PkgRfnocItemUtils;
   // Item Data Buffer
   //---------------------------------------------------------------------------
   //
-  // This class items of an arbitrary type
+  // This is a class of "items" of an arbitrary type
   //
   //---------------------------------------------------------------------------
-  class ItemDataBuff #(type data_t);
-    typedef ItemDataBuff #(data_t) ItemDataBuffQueue[$];
+
+  class ItemDataBuff #(type item_t = logic [31:0], int CHDR_W = 64);
+
+    localparam ITEM_W = $bits(item_t);
+
+    // Redefine these types from PkgChdrUtils to workaround Vivado 2019.1 bug
+    typedef logic [CHDR_W-1:0] chdr_word_t;
+    typedef chdr_word_t        chdr_word_queue_t[$];
 
     // Store data in the user-specified format
-    local data_t buff[$];
+    local item_t buff[$];
 
     // Create a new empty buffer
     function new();
@@ -36,7 +45,7 @@ package PkgRfnocItemUtils;
 
     // Get the bitwidth of a item in this buffer
     function int item_w();
-      return $size(data_t);
+      return ITEM_W;
     endfunction : item_w
 
     // Delete the contents of this buffer
@@ -55,48 +64,46 @@ package PkgRfnocItemUtils;
     endfunction : get_bytes
 
     // Get the i'th element in this buffer
-    function data_t get(int i);
+    function item_t get(int i);
       return buff[i];
     endfunction : get
 
     // Put and element in this buffer. If i is negative
     // then put it at the end
-    function void put(data_t d, int i = -1);
+    function void put(item_t d, int i = -1);
       if (i < 0)
         buff.push_back(d);
       else
         buff.insert(i, d);
     endfunction : put
 
-    // Convert the contents of this buffer to a CHDR payload
-    // A CHDR payload can be transmitted using the block controller
-    // BFM.
+    // Convert the contents of this buffer to a CHDR payload A CHDR payload can
+    // be transmitted using the block controller BFM.
     function chdr_word_queue_t to_chdr_payload();
-      int samps_per_word = $size(chdr_word_t) / $size(data_t);
+      int samps_per_word = CHDR_W / ITEM_W;
       int num_chdr_lines = ((buff.size() + samps_per_word - 1) / samps_per_word);
       chdr_word_t chdr_w_vtr[$];
       for (int i = 0; i < num_chdr_lines; i++) begin
         chdr_word_t tmp = 'x;
         for (int j = 0; j < samps_per_word; j++) begin
-          tmp[j*$size(data_t) +: $size(data_t)] = buff[i*samps_per_word + j];
+          tmp[j*ITEM_W +: ITEM_W] = buff[i*samps_per_word + j];
         end
         chdr_w_vtr.push_back(tmp);
       end
       return chdr_w_vtr;
     endfunction : to_chdr_payload
 
-    // Populate this buffer using a CHDR payload
-    // A CHDR payload can be received using the block controller
-    // BFM.
+    // Populate this buffer using a CHDR payload A CHDR payload can be received
+    // using the block controller BFM.
     function void from_chdr_payload(chdr_word_queue_t chdr_w_vtr, int bytes);
-      int samps_per_word = $size(chdr_word_t) / $size(data_t);
+      int samps_per_word = CHDR_W / ITEM_W;
       int bytes_left = bytes;
       buff.delete();
       foreach (chdr_w_vtr[i]) begin
         for (int j = 0; j < samps_per_word; j++) begin
           if (bytes_left > 0) begin
-            buff.push_back(chdr_w_vtr[i][j*$size(data_t) +: $size(data_t)]);
-            bytes_left -= ($size(data_t)/8);
+            buff.push_back(chdr_w_vtr[i][j*ITEM_W +: ITEM_W]);
+            bytes_left -= (ITEM_W/8);
           end
         end
       end
@@ -112,7 +119,7 @@ package PkgRfnocItemUtils;
         end
         return str;
       end else begin
-        string str = $sformatf("ItemDataBuff (%0d-bit)\n", $size(data_t));
+        string str = $sformatf("ItemDataBuff (%0d-bit)\n", ITEM_W);
         foreach (buff[i]) begin
           str = { str, $sformatf({"%5d> ", format, "\n"}, i, buff[i]) };
         end
@@ -127,7 +134,7 @@ package PkgRfnocItemUtils;
 
     // Check if the contents of two buffers is equal
     function bit equal(
-      ItemDataBuff #(data_t) rhs
+      ItemDataBuff #(item_t) rhs
     );
       if (this.size() != rhs.size()) return 0;
       for (int i = 0; i < this.size(); i++) begin
@@ -139,8 +146,16 @@ package PkgRfnocItemUtils;
   endclass
 
 
-  class ItemDataBuffQueue #(type data_t);
-    local ItemDataBuff #(data_t) queue[$];
+  //---------------------------------------------------------------------------
+  // Item Data Buffer Queue
+  //---------------------------------------------------------------------------
+  //
+  // This is a queue of item buffers
+  //
+  //---------------------------------------------------------------------------
+
+  class ItemDataBuffQueue #(type item_t = logic [31:0], int CHDR_W = 64);
+    local ItemDataBuff #(item_t, CHDR_W) queue[$];
 
     // Create a new empty queue
     function new();
@@ -158,13 +173,13 @@ package PkgRfnocItemUtils;
     endfunction : size
 
     // Get the i'th element in this buffer
-    function ItemDataBuff #(data_t) get(int i);
+    function ItemDataBuff #(item_t) get(int i);
       return queue[i];
     endfunction : get
 
     // Put an element in this buffer. If i is negative
     // then put it at the end
-    function void put(ItemDataBuff #(data_t) buff, int i = -1);
+    function void put(ItemDataBuff #(item_t) buff, int i = -1);
       if (i < 0)
         queue.push_back(buff);
       else
@@ -181,10 +196,10 @@ package PkgRfnocItemUtils;
       int handle = $fopen(filename, "r");
       queue.delete();
       while ($fgets(line, handle) > 0) begin
-        data_t word = 'x;
+        item_t word = 'x;
         int buff_i = word_i++ / max_buff_size;
         if (queue.size() < buff_i + 1) begin
-          ItemDataBuff #(data_t) buff = new;
+          ItemDataBuff #(item_t) buff = new;
           queue.push_back(buff);
         end
         if ($sscanf(line, "%x", word) > 0) begin

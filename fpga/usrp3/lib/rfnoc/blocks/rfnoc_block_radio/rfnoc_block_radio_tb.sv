@@ -27,7 +27,6 @@ module rfnoc_block_radio_tb #(
   import PkgRfnocBlockCtrlBfm::*;
   import PkgAxisCtrlBfm::*;
   import PkgChdrBfm::*;
-  import PkgRfnocItemUtils::*;
 
   // Pull in radio register offsets and constants
   `include "rfnoc_block_radio_regs.vh"
@@ -86,6 +85,9 @@ module rfnoc_block_radio_tb #(
   AxiStreamIf #(32)     s_ctrl             (rfnoc_ctrl_clk, 1'b0);
   AxiStreamIf #(CHDR_W) m_chdr [NUM_PORTS] (rfnoc_chdr_clk, 1'b0);
   AxiStreamIf #(CHDR_W) s_chdr [NUM_PORTS] (rfnoc_chdr_clk, 1'b0);
+
+  typedef ChdrData #(CHDR_W, ITEM_W)::chdr_word_t chdr_word_t;
+  typedef ChdrData #(CHDR_W, ITEM_W)::item_t      sample_t;
 
   // Bus functional model for a software block controller
   RfnocBlockCtrlBfm #(.CHDR_W(CHDR_W)) blk_ctrl = new(backend, m_ctrl, s_ctrl);
@@ -370,13 +372,13 @@ module rfnoc_block_radio_tb #(
       for (int i = 0; i < valid_words; i++) begin
         // Check each sample of the next chdr_word_t value
         for (int sub_sample = 0; sub_sample < $bits(chdr_word_t)/ITEM_W; sub_sample++) begin
-          chdr_word_t word;
-          word = data[i][ITEM_W*sub_sample +: ITEM_W];  // Work around Vivado 2018.3 issue
+          sample_t actual;
+          actual = data[i][ITEM_W*sub_sample +: ITEM_W];  // Work around Vivado 2018.3 issue
           `ASSERT_ERROR(
-            word == sample_val,
+            actual == sample_val,
             $sformatf(
               "Sample %0d (0x%X) didn't match expected value (0x%X)",
-              sample_count, data[i][ITEM_W*sub_sample +: ITEM_W],  sample_val
+              sample_count, actual, sample_val
             )
           );
           sample_val++;

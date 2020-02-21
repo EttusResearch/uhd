@@ -45,6 +45,8 @@ module chdr_stream_endpoint_tb;
   localparam [9:0]  PORT_A   = 10'd1;
   localparam [9:0]  PORT_B   = 10'd2;
 
+  typedef ChdrData #(CHDR_W)::chdr_word_t chdr_word_t;
+
   // ----------------------------------------
   // DUT (and Crossbar) Instantiations
   // ----------------------------------------
