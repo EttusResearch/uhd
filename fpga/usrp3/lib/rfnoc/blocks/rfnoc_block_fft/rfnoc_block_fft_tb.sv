@@ -70,7 +70,7 @@ module rfnoc_block_fft_tb();
   AxiStreamIf #(CHDR_W) s_chdr             (rfnoc_chdr_clk, 1'b0);
 
   // Bus functional model for a software block controller
-  RfnocBlockCtrlBfm #(.CHDR_W(CHDR_W)) blk_ctrl = 
+  RfnocBlockCtrlBfm #(CHDR_W, SAMP_W) blk_ctrl = 
     new(backend, m_ctrl, s_ctrl);
 
   // Connect block controller to BFMs

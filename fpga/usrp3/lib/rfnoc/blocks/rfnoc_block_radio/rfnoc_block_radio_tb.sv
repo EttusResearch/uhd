@@ -90,7 +90,7 @@ module rfnoc_block_radio_tb #(
   typedef ChdrData #(CHDR_W, ITEM_W)::item_t      sample_t;
 
   // Bus functional model for a software block controller
-  RfnocBlockCtrlBfm #(.CHDR_W(CHDR_W)) blk_ctrl = new(backend, m_ctrl, s_ctrl);
+  RfnocBlockCtrlBfm #(CHDR_W, ITEM_W) blk_ctrl = new(backend, m_ctrl, s_ctrl);
 
   // Connect block controller to BFMs
   for (genvar i = 0; i < NUM_PORTS; i++) begin : gen_bfm_connections
