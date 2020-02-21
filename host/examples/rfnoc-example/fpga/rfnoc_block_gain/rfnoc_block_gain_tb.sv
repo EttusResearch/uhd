@@ -63,7 +63,7 @@ module rfnoc_block_gain_tb;
   AxiStreamIf #(CHDR_W) s_chdr [NUM_PORTS_O] (rfnoc_chdr_clk, 1'b0);
 
   // Block Controller BFM
-  RfnocBlockCtrlBfm #(.CHDR_W(CHDR_W)) blk_ctrl = new(backend, m_ctrl, s_ctrl);
+  RfnocBlockCtrlBfm #(CHDR_W, ITEM_W) blk_ctrl = new(backend, m_ctrl, s_ctrl);
 
   // CHDR word and item/sample data types
   typedef ChdrData #(CHDR_W, ITEM_W)::chdr_word_t chdr_word_t;
@@ -229,8 +229,8 @@ module rfnoc_block_gain_tb;
       foreach (test_gains[gain_index]) begin
         shortint     gain;
         int          num_bytes;
-        chdr_word_t  send_payload[$];    // CHDR payload words (64-bit)
-        chdr_word_t  recv_payload[$];    // CHDR payload words (64-bit)
+        item_t send_samples[$];    // Sample words
+        item_t recv_samples[$];    // Sample words
 
         gain = test_gains[gain_index];
 
@@ -240,41 +240,40 @@ module rfnoc_block_gain_tb;
 
         // Generate a payload of random samples in the range [-255, 255], two
         // samples per CHDR word.
-        send_payload = {};
-        for (int i = 0; i < SPP/2; i++) begin
-          send_payload.push_back({
-            rand_shortint(MIN_TEST_VAL, MAX_TEST_VAL),  // 2nd sample I
-            rand_shortint(MIN_TEST_VAL, MAX_TEST_VAL),  // 2nd sample Q
-            rand_shortint(MIN_TEST_VAL, MAX_TEST_VAL),  // 1st sample I
-            rand_shortint(MIN_TEST_VAL, MAX_TEST_VAL)   // 1st sample Q
+        send_samples = {};
+        for (int i = 0; i < SPP; i++) begin
+          send_samples.push_back({
+            rand_shortint(MIN_TEST_VAL, MAX_TEST_VAL),  // I
+            rand_shortint(MIN_TEST_VAL, MAX_TEST_VAL)   // Q
           });
         end
 
         // Queue a packet for transfer
-        blk_ctrl.send(0, send_payload);
+        blk_ctrl.send_items(0, send_samples);
 
         // Receive the output packet
-        blk_ctrl.recv(0, recv_payload, num_bytes);
+        blk_ctrl.recv_items(0, recv_samples);
 
         // Check the resulting payload size
-        `ASSERT_ERROR(num_bytes == SPP*4, 
+        `ASSERT_ERROR(recv_samples.size() == SPP, 
           "Received payload didn't match size of payload sent");
 
-        // Check the resulting payload data
-        for (int i = 0; i < SPP/2; i++) begin
-          chdr_word_t expected;
-          chdr_word_t received;
+        // Check the resulting samples
+        for (int i = 0; i < SPP; i++) begin
+          item_t sample_in;
+          item_t expected;
+          item_t sample_out;
 
-          expected[63:48] = mult_and_clip(gain, send_payload[i][63:48]);
-          expected[47:32] = mult_and_clip(gain, send_payload[i][47:32]);
-          expected[31:16] = mult_and_clip(gain, send_payload[i][31:16]);
-          expected[15: 0] = mult_and_clip(gain, send_payload[i][15: 0]);
-          received = recv_payload[i];
+          sample_in  = send_samples[i];
+          sample_out = recv_samples[i];
+
+          expected[31:16] = mult_and_clip(gain, sample_in[31:16]);  // I
+          expected[15: 0] = mult_and_clip(gain, sample_in[15: 0]);  // Q
 
           `ASSERT_ERROR(
-            expected == received,
-            $sformatf("For word %0d, gain %0d, input 0x%X, received 0x%X, expected 0x%X", 
-                      i, gain, send_payload[i], recv_payload[i], expected));
+            sample_out == expected,
+            $sformatf("For sample %0d, gain %0d, input 0x%X, received 0x%X, expected 0x%X", 
+                      i, gain, sample_in, sample_out, expected));
         end
 
         test.end_test();

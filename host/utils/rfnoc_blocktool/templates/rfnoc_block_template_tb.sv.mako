@@ -84,7 +84,7 @@ module rfnoc_block_${config['module_name']}_tb;
   AxiStreamIf #(CHDR_W) s_chdr [NUM_PORTS_O] (rfnoc_chdr_clk, 1'b0);
 
   // Block Controller BFM
-  RfnocBlockCtrlBfm #(.CHDR_W(CHDR_W)) blk_ctrl = new(backend, m_ctrl, s_ctrl);
+  RfnocBlockCtrlBfm #(CHDR_W, ITEM_W) blk_ctrl = new(backend, m_ctrl, s_ctrl);
 
   // CHDR word and item/sample data types
   typedef ChdrData #(CHDR_W, ITEM_W)::chdr_word_t chdr_word_t;
