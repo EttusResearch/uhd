@@ -1,6 +1,7 @@
 //
 // Copyright 2014 Ettus Research LLC
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2020 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
@@ -73,16 +74,17 @@ static const device_type_t N320 = 0x1320;
 static const device_type_t X300 = 0xA300;
 
 // block identifiers
-static const noc_id_t ADDSUB_BLOCK       = 0xADD00000;
-static const noc_id_t DUC_BLOCK          = 0xD0C00000;
-static const noc_id_t DDC_BLOCK          = 0xDDC00000;
-static const noc_id_t FFT_BLOCK          = 0xFF700000;
-static const noc_id_t FIR_FILTER_BLOCK   = 0xF1120000;
-static const noc_id_t FOSPHOR_BLOCK      = 0x666F0000;
-static const noc_id_t LOGPWR_BLOCK       = 0x4C500000;
-static const noc_id_t SPLIT_STREAM_BLOCK = 0x57570000;
-static const noc_id_t RADIO_BLOCK        = 0x12AD1000;
-static const noc_id_t VECTOR_IIR_BLOCK   = 0x11120000;
-static const noc_id_t WINDOW_BLOCK       = 0xD0530000;
+static const noc_id_t ADDSUB_BLOCK         = 0xADD00000;
+static const noc_id_t DUC_BLOCK            = 0xD0C00000;
+static const noc_id_t DDC_BLOCK            = 0xDDC00000;
+static const noc_id_t FFT_BLOCK            = 0xFF700000;
+static const noc_id_t FIR_FILTER_BLOCK     = 0xF1120000;
+static const noc_id_t FOSPHOR_BLOCK        = 0x666F0000;
+static const noc_id_t LOGPWR_BLOCK         = 0x4C500000;
+static const noc_id_t MOVING_AVERAGE_BLOCK = 0xAAD20000;
+static const noc_id_t SPLIT_STREAM_BLOCK   = 0x57570000;
+static const noc_id_t RADIO_BLOCK          = 0x12AD1000;
+static const noc_id_t VECTOR_IIR_BLOCK     = 0x11120000;
+static const noc_id_t WINDOW_BLOCK         = 0xD0530000;
 
 }} // namespace uhd::rfnoc

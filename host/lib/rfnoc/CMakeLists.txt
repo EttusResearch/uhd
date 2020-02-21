@@ -49,6 +49,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/fir_filter_block_control.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/fosphor_block_control.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/logpwr_block_control.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/moving_average_block_control.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/null_block_control.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/radio_control_impl.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/split_stream_block_control.cpp
