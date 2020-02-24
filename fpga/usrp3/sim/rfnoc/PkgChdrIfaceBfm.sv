@@ -50,10 +50,15 @@ package PkgChdrIfaceBfm;
       virtual AxiStreamIf #(CHDR_W).master m_chdr,
       virtual AxiStreamIf #(CHDR_W).slave  s_chdr,
       input   int                          max_payload_length = 2**$bits(chdr_length_t),
-      input   int                          ticks_per_word     = CHDR_W/32
+      input   int                          ticks_per_word     = CHDR_W/ITEM_W
     );
       super.new(m_chdr, s_chdr);
       this.seq_num = 0;
+
+      assert (CHDR_W % ITEM_W == 0) else begin
+        $fatal(1, "ChdrIfaceBfm::new: CHDR_W must be a multiple of ITEM_W");
+      end
+
       set_max_payload_length(max_payload_length);
       set_ticks_per_word(ticks_per_word);
     endfunction : new
@@ -189,7 +194,7 @@ package PkgChdrIfaceBfm;
       if (data_bytes < 0) data_bytes = data.size() * BYTES_PER_CHDR_W;
 
       // Make sure there's not too much metadata for this number of packets
-      assert(metadata.size()*$bits(chdr_word_t) < num_pkts * 2**$bits(chdr_num_mdata_t) * CHDR_W) else
+      assert(metadata.size() <= num_pkts * (2**$bits(chdr_num_mdata_t)-1)) else
         $fatal(1, "ChdrIfaceBfm::send: Too much metadata for this send request");
 
       // Send the data, one packet at a time.
@@ -204,7 +209,7 @@ package PkgChdrIfaceBfm;
           payload_length = data_bytes - (num_pkts-1) * max_payload_length;
           first_dword    = i*max_payload_length/BYTES_PER_CHDR_W;
           last_dword     = data.size()-1;
-          first_mword    = i*(2**$bits(chdr_num_mdata_t) * CHDR_W / $bits(chdr_word_t));
+          first_mword    = i*(2**$bits(chdr_num_mdata_t)-1);
           last_mword     = metadata.size()-1;
         end else begin
           // A full-sized packet, not the last

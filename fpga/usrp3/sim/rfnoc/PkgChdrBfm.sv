@@ -569,8 +569,9 @@ package PkgChdrBfm;
       $fatal(1, "ChdrPacket::update_lengths():  Calculated NumMData exceeds maximum size");
 
     // Calculate the Length field
-    num_bytes = data.size() * BYTES_PER_CHDR_W;                    // Payload length
-    num_bytes = num_bytes + header_bytes() + mdata_bytes();  // Payload + header length
+    num_bytes = header_bytes() +                             // Header
+                num_mdata * BYTES_PER_CHDR_W +               // Metadata
+                data.size() * BYTES_PER_CHDR_W;              // Payload
     assert(num_bytes < 2**$bits(chdr_length_t)) else
       $fatal(1, "ChdrPacket::update_lengths():  Calculated Length exceeds maximum size");
 
