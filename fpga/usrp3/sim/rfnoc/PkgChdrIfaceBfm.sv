@@ -26,9 +26,9 @@ package PkgChdrIfaceBfm;
 
   class ChdrIfaceBfm #(CHDR_W = 64, ITEM_W = 32) extends ChdrBfm #(CHDR_W);
 
-    // Redefine the ChdrPacket and chdr_word_t data types from ChdrBfm due to a
-    // bug in Vivado 2019.1.
-    typedef ChdrPacket #(CHDR_W)                      ChdrPacket;
+    // Redefine the ChdrPacket_t and chdr_word_t data types from ChdrBfm due to
+    // a bug in Vivado 2019.1.
+    typedef ChdrPacket #(CHDR_W)                      ChdrPacket_t;
     typedef ChdrData   #(CHDR_W, ITEM_W)::chdr_word_t chdr_word_t;
     typedef ChdrData   #(CHDR_W, ITEM_W)::item_t      item_t;
 
@@ -116,8 +116,8 @@ package PkgChdrIfaceBfm;
       input chdr_word_t   metadata[$] = {},
       input packet_info_t pkt_info    = 0
     );
-      ChdrPacket      chdr_packet;
-      chdr_header_t   chdr_header;
+      ChdrPacket_t  chdr_packet;
+      chdr_header_t chdr_header;
 
       // Build packet
       chdr_packet = new();
@@ -175,7 +175,7 @@ package PkgChdrIfaceBfm;
       input chdr_word_t   metadata[$] = {},
       input packet_info_t pkt_info    = 0
     );
-      ChdrPacket      chdr_packet;
+      ChdrPacket_t    chdr_packet;
       chdr_header_t   chdr_header;
       chdr_pkt_type_t pkt_type;
       chdr_word_t     timestamp;
@@ -295,7 +295,7 @@ package PkgChdrIfaceBfm;
       output chdr_word_t   metadata[$],
       output packet_info_t pkt_info
     );
-      ChdrPacket chdr_packet;
+      ChdrPacket_t chdr_packet;
       get_chdr(chdr_packet);
 
       data               = chdr_packet.data;
@@ -343,7 +343,7 @@ package PkgChdrIfaceBfm;
     //                chdr_word_t size.
     //
     task recv(output chdr_word_t data[$], output int data_bytes);
-      ChdrPacket chdr_packet;
+      ChdrPacket_t chdr_packet;
       get_chdr(chdr_packet);
       data = chdr_packet.data;
       data_bytes = chdr_packet.data_bytes();

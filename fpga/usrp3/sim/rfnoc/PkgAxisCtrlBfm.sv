@@ -117,9 +117,9 @@ package PkgAxisCtrlBfm;
 
     extern function bit try_get_ctrl(output AxisCtrlPacket ctrl_packet);
 
-    extern function AxisPacket axis_ctrl_to_axis(AxisCtrlPacket ctrl_packet);
+    extern function AxisPacket_t axis_ctrl_to_axis(AxisCtrlPacket ctrl_packet);
 
-    extern function AxisCtrlPacket axis_to_axis_ctrl(AxisPacket axis_packet);
+    extern function AxisCtrlPacket axis_to_axis_ctrl(AxisPacket_t axis_packet);
 
   endclass : AxisCtrlBfm
 
@@ -141,7 +141,7 @@ package PkgAxisCtrlBfm;
 
   // Queue the provided packet for transmission
   task AxisCtrlBfm::put_ctrl(AxisCtrlPacket ctrl_packet);
-    AxisPacket axis_packet;
+    AxisPacket_t axis_packet;
     axis_packet = axis_ctrl_to_axis(ctrl_packet);
     super.put(axis_packet);
   endtask : put_ctrl
@@ -150,14 +150,14 @@ package PkgAxisCtrlBfm;
   // Attempt to queue the provided packet for transmission. Return 1 if 
   // successful, return 0 if the queue is full.
   task AxisCtrlBfm::try_put_ctrl(AxisCtrlPacket ctrl_packet);
-    AxisPacket axis_packet;
+    AxisPacket_t axis_packet;
     axis_packet = axis_ctrl_to_axis(ctrl_packet);
     super.put(axis_packet);
   endtask : try_put_ctrl
 
   // Get the next packet when it becomes available (waits if necessary)
   task AxisCtrlBfm::get_ctrl(output AxisCtrlPacket ctrl_packet);
-    AxisPacket axis_packet;
+    AxisPacket_t axis_packet;
     super.get(axis_packet);
     ctrl_packet = axis_to_axis_ctrl(axis_packet);
   endtask : get_ctrl
@@ -166,7 +166,7 @@ package PkgAxisCtrlBfm;
   // Get the next packet if there's one available and return 1. Return 0 if 
   // there's no packet available.
   function bit AxisCtrlBfm::try_get_ctrl(output AxisCtrlPacket ctrl_packet);
-    AxisPacket axis_packet;
+    AxisPacket_t axis_packet;
     if(!super.try_get(axis_packet)) return 0;
     ctrl_packet = axis_to_axis_ctrl(axis_packet);
     return 1;
@@ -175,8 +175,8 @@ package PkgAxisCtrlBfm;
 
   // Convert an AXIS-Ctrl packet data structure to an AXI-Stream packet data 
   // structure.
-  function AxisCtrlBfm::AxisPacket AxisCtrlBfm::axis_ctrl_to_axis(AxisCtrlPacket ctrl_packet);
-    AxisPacket axis_packet = new();
+  function AxisCtrlBfm::AxisPacket_t AxisCtrlBfm::axis_ctrl_to_axis(AxisCtrlPacket ctrl_packet);
+    AxisPacket_t axis_packet = new();
     int index;
 
     // Insert words 0 and 1 (header)
@@ -203,7 +203,7 @@ package PkgAxisCtrlBfm;
 
   // Convert an AXI-Stream packet data structure to an AXIS-Ctrl packet data 
   // structure.
-  function AxisCtrlPacket AxisCtrlBfm::axis_to_axis_ctrl(AxisPacket axis_packet);
+  function AxisCtrlPacket AxisCtrlBfm::axis_to_axis_ctrl(AxisPacket_t axis_packet);
     AxisCtrlPacket ctrl_packet = new();
     int i;  // Use an index instead of pop_front() to workaround a ModelSim bug
     

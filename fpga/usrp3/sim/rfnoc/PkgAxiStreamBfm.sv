@@ -71,7 +71,7 @@ package PkgAxiStreamBfm;
     typedef logic [DATA_WIDTH/8-1:0] keep_t;  // Single TKEEP word
     typedef logic [USER_WIDTH-1:0]   user_t;  // Single TUSER word
 
-    typedef AxiStreamPacket #(DATA_WIDTH, USER_WIDTH) AxisPacket;
+    typedef AxiStreamPacket #(DATA_WIDTH, USER_WIDTH) AxisPacket_t;
 
 
     //------------
@@ -88,8 +88,8 @@ package PkgAxiStreamBfm;
     //---------
 
     // Return a handle to a copy of this transaction
-    function AxisPacket copy();
-      AxisPacket temp;
+    function AxisPacket_t copy();
+      AxisPacket_t temp;
       temp = new();
       temp.data = this.data;
       temp.user = this.user;
@@ -107,7 +107,7 @@ package PkgAxiStreamBfm;
 
 
     // Return true if this packet equals that of the argument
-    virtual function bit equal(AxisPacket packet);
+    virtual function bit equal(AxisPacket_t packet);
       // These variables are needed to workaround Vivado queue support issues
       data_t data_a, data_b;
       user_t user_a, user_b;
@@ -186,10 +186,10 @@ package PkgAxiStreamBfm;
     // Type Definitions
     //------------------
 
-    typedef AxiStreamPacket #(DATA_WIDTH, USER_WIDTH) AxisPacket;
-    typedef AxisPacket::data_t data_t;
-    typedef AxisPacket::user_t user_t;
-    typedef AxisPacket::keep_t keep_t;
+    typedef AxiStreamPacket #(DATA_WIDTH, USER_WIDTH) AxisPacket_t;
+    typedef AxisPacket_t::data_t data_t;
+    typedef AxisPacket_t::user_t user_t;
+    typedef AxisPacket_t::keep_t keep_t;
 
 
     //------------
@@ -200,9 +200,9 @@ package PkgAxiStreamBfm;
     local const int DEF_STALL_PROB = 38;
 
     // Default values to use for idle bus cycles
-    local const AxisPacket::data_t IDLE_DATA = {DATA_WIDTH{1'bX}};
-    local const AxisPacket::user_t IDLE_USER = {(USER_WIDTH > 1 ? USER_WIDTH : 1){1'bX}};
-    local const AxisPacket::keep_t IDLE_KEEP = {(DATA_WIDTH/8){1'bX}};
+    local const AxisPacket_t::data_t IDLE_DATA = {DATA_WIDTH{1'bX}};
+    local const AxisPacket_t::user_t IDLE_USER = {(USER_WIDTH > 1 ? USER_WIDTH : 1){1'bX}};
+    local const AxisPacket_t::keep_t IDLE_KEEP = {(DATA_WIDTH/8){1'bX}};
 
     // Virtual interfaces for master and slave connections to DUT
     local virtual AxiStreamIf #(DATA_WIDTH, USER_WIDTH).master master;
@@ -213,8 +213,8 @@ package PkgAxiStreamBfm;
     local bit slave_en;
 
     // Queues to store the bus transactions
-    mailbox #(AxisPacket) tx_packets;
-    mailbox #(AxisPacket) rx_packets;
+    mailbox #(AxisPacket_t) tx_packets;
+    mailbox #(AxisPacket_t) rx_packets;
 
     // Properties for the stall behavior of the BFM
     protected int master_stall_prob = DEF_STALL_PROB;
@@ -226,7 +226,7 @@ package PkgAxiStreamBfm;
     //---------
 
     // Returns 1 if the packets have the same contents, otherwise returns 0.
-    function bit packets_equal(AxisPacket a, AxisPacket b);
+    function bit packets_equal(AxisPacket_t a, AxisPacket_t b);
       return a.equal(b);
     endfunction : packets_equal
 
@@ -247,7 +247,7 @@ package PkgAxiStreamBfm;
 
 
     // Queue the provided packet for transmission
-    task put(AxisPacket packet);
+    task put(AxisPacket_t packet);
       assert (master_en) else $fatal(1, "Cannot use TX operations for a null master");
       tx_packets.put(packet);
     endtask : put
@@ -255,14 +255,14 @@ package PkgAxiStreamBfm;
 
     // Attempt to queue the provided packet for transmission. Return 1 if 
     // successful, return 0 if the queue is full.
-    function bit try_put(AxisPacket packet);
+    function bit try_put(AxisPacket_t packet);
       assert (master_en) else $fatal(1, "Cannot use TX operations for a null master");
       return tx_packets.try_put(packet);
     endfunction : try_put
 
 
     // Get the next packet when it becomes available (waits if necessary)
-    task get(output AxisPacket packet);
+    task get(output AxisPacket_t packet);
       assert (slave_en) else $fatal(1, "Cannot use RX operations for a null slave");
       rx_packets.get(packet);
     endtask : get
@@ -270,7 +270,7 @@ package PkgAxiStreamBfm;
 
     // Get the next packet if there's one available and return 1. Return 0 if 
     // there's no packet available.
-    function bit try_get(output AxisPacket packet);
+    function bit try_get(output AxisPacket_t packet);
       assert (slave_en) else $fatal(1, "Cannot use RX operations for a null slave");
       return rx_packets.try_get(packet);
     endfunction : try_get
@@ -278,7 +278,7 @@ package PkgAxiStreamBfm;
 
     // Get the next packet when it becomes available (wait if necessary), but 
     // don't remove it from the receive queue.
-    task peek(output AxisPacket packet);
+    task peek(output AxisPacket_t packet);
       assert (slave_en) else $fatal(1, "Cannot use RX operations for a null slave");
       rx_packets.peek(packet);
     endtask : peek
@@ -287,7 +287,7 @@ package PkgAxiStreamBfm;
     // Get the next packet if there's one available and return 1, but don't 
     // remove it from the receive queue. Return 0 if there's no packet 
     // available.
-    function bit try_peek(output AxisPacket packet);
+    function bit try_peek(output AxisPacket_t packet);
       assert (slave_en) else $fatal(1, "Cannot use RX operations for a null slave");
       return rx_packets.try_peek(packet);
     endfunction : try_peek
@@ -388,7 +388,7 @@ package PkgAxiStreamBfm;
     //----------------
 
     local task master_body();
-      AxisPacket packet;
+      AxisPacket_t packet;
 
       master.tvalid <= 0;
       master.tdata  <= IDLE_DATA;
@@ -443,7 +443,7 @@ package PkgAxiStreamBfm;
     //---------------
 
     local task slave_body();
-      AxisPacket packet = new();
+      AxisPacket_t packet = new();
 
       slave.tready <= 0;
 

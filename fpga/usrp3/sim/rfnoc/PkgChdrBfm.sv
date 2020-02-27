@@ -23,7 +23,7 @@ package PkgChdrBfm;
 
   class ChdrPacket #(int CHDR_W = 64);
 
-    typedef ChdrPacket #(CHDR_W)              ChdrPacket;
+    typedef ChdrPacket #(CHDR_W)              ChdrPacket_t;
     typedef ChdrData   #(CHDR_W)::chdr_word_t chdr_word_t;
 
     const int BYTES_PER_CHDR_W = CHDR_W / 8;
@@ -33,10 +33,10 @@ package PkgChdrBfm;
     chdr_word_t      metadata[$];
     chdr_word_t      data[$];
 
-    extern function ChdrPacket copy();
-    extern function bit        equal(ChdrPacket packet);
-    extern function string     sprint(bit pretty = 1);
-    extern function void       print(bit pretty = 1);
+    extern function ChdrPacket_t copy();
+    extern function bit          equal(ChdrPacket_t packet);
+    extern function string       sprint(bit pretty = 1);
+    extern function void         print(bit pretty = 1);
 
     // Accessors
     extern function void write_raw          (ref chdr_header_t         header,
@@ -97,7 +97,7 @@ package PkgChdrBfm;
     parameter int USER_WIDTH = 1
   ) extends AxiStreamBfm #(CHDR_W, USER_WIDTH);
 
-    typedef ChdrPacket #(CHDR_W)              ChdrPacket;
+    typedef ChdrPacket #(CHDR_W)              ChdrPacket_t;
     typedef ChdrData   #(CHDR_W)::chdr_word_t chdr_word_t;
 
     const int BYTES_PER_CHDR_W = CHDR_W / 8;
@@ -114,20 +114,20 @@ package PkgChdrBfm;
 
 
     // Send Transactions
-    extern task put_chdr(ChdrPacket chdr_packet);
-    extern function bit try_put_chdr(ChdrPacket chdr_packet);
+    extern task put_chdr(ChdrPacket_t chdr_packet);
+    extern function bit try_put_chdr(ChdrPacket_t chdr_packet);
 
 
     // Receive Transactions
-    extern task get_chdr(output ChdrPacket chdr_packet);
-    extern function bit try_get_chdr(output ChdrPacket chdr_packet);
-    extern task peek_chdr(output ChdrPacket chdr_packet);
-    extern function bit try_peek_chdr(output ChdrPacket chdr_packet);
+    extern task get_chdr(output ChdrPacket_t chdr_packet);
+    extern function bit try_get_chdr(output ChdrPacket_t chdr_packet);
+    extern task peek_chdr(output ChdrPacket_t chdr_packet);
+    extern function bit try_peek_chdr(output ChdrPacket_t chdr_packet);
 
 
     // AXI-Stream/CHDR Conversion Functions
-    extern function ChdrPacket axis_to_chdr (AxisPacket axis_packet);
-    extern function AxisPacket chdr_to_axis (ChdrPacket chdr_packet);
+    extern function ChdrPacket_t axis_to_chdr (AxisPacket_t axis_packet);
+    extern function AxisPacket_t chdr_to_axis (ChdrPacket_t chdr_packet);
       
   endclass : ChdrBfm
 
@@ -138,8 +138,8 @@ package PkgChdrBfm;
   //---------------------------------------------------------------------------
 
   // Create a copy of this packet and return a handle to the copy
-  function ChdrPacket::ChdrPacket ChdrPacket::copy();
-    ChdrPacket temp;
+  function ChdrPacket::ChdrPacket_t ChdrPacket::copy();
+    ChdrPacket_t temp;
     temp = new();
     temp.header    = this.header;
     temp.timestamp = this.timestamp;
@@ -150,7 +150,7 @@ package PkgChdrBfm;
 
 
   // Return true if this packet equals that of the argument
-  function bit ChdrPacket::equal(ChdrPacket packet);
+  function bit ChdrPacket::equal(ChdrPacket_t packet);
     if (header != packet.header) return 0;
     if (!chdr_word_queues_equal(data, packet.data)) return 0;
     if (!chdr_word_queues_equal(metadata, packet.metadata)) return 0;
@@ -616,8 +616,8 @@ package PkgChdrBfm;
 
   
   // Queue the provided packet for transmission
-  task ChdrBfm::put_chdr (ChdrPacket chdr_packet);
-    AxisPacket axis_packet;
+  task ChdrBfm::put_chdr (ChdrPacket_t chdr_packet);
+    AxisPacket_t axis_packet;
 
     axis_packet = chdr_to_axis(chdr_packet);
     super.put(axis_packet);
@@ -626,8 +626,8 @@ package PkgChdrBfm;
 
   // Attempt to queue the provided packet for transmission. Return 1 if 
   // successful, return 0 if the queue is full.
-  function bit ChdrBfm::try_put_chdr (ChdrPacket chdr_packet);
-    AxisPacket axis_packet;
+  function bit ChdrBfm::try_put_chdr (ChdrPacket_t chdr_packet);
+    AxisPacket_t axis_packet;
     bit status;
 
     axis_packet = chdr_to_axis(chdr_packet);
@@ -636,8 +636,8 @@ package PkgChdrBfm;
   
 
   // Get the next packet when it becomes available (wait if necessary)
-  task ChdrBfm::get_chdr (output ChdrPacket chdr_packet);
-    AxisPacket axis_packet;
+  task ChdrBfm::get_chdr (output ChdrPacket_t chdr_packet);
+    AxisPacket_t axis_packet;
     super.get(axis_packet);
     chdr_packet = axis_to_chdr(axis_packet);
   endtask : get_chdr
@@ -645,8 +645,8 @@ package PkgChdrBfm;
 
   // Get the next packet if there's one available and return 1. Return 0 if 
   // there's no packet available.
-  function bit ChdrBfm::try_get_chdr (output ChdrPacket chdr_packet);
-    AxisPacket axis_packet;
+  function bit ChdrBfm::try_get_chdr (output ChdrPacket_t chdr_packet);
+    AxisPacket_t axis_packet;
     if (!super.try_get(axis_packet)) return 0;
     chdr_packet = axis_to_chdr(axis_packet);
     return 1;
@@ -655,8 +655,8 @@ package PkgChdrBfm;
 
   // Get the next packet when it becomes available (wait if necessary), but 
   // don't remove it from the receive queue.
-  task ChdrBfm::peek_chdr (output ChdrPacket chdr_packet);
-    AxisPacket axis_packet;
+  task ChdrBfm::peek_chdr (output ChdrPacket_t chdr_packet);
+    AxisPacket_t axis_packet;
     super.peek(axis_packet);
     chdr_packet = axis_to_chdr(axis_packet);
   endtask : peek_chdr
@@ -664,8 +664,8 @@ package PkgChdrBfm;
 
   // Get the next packet if there's one available and return 1, but don't 
   // remove it from the receive queue. Return 0 if there's no packet available.
-  function bit ChdrBfm::try_peek_chdr (output ChdrPacket chdr_packet);
-    AxisPacket axis_packet;
+  function bit ChdrBfm::try_peek_chdr (output ChdrPacket_t chdr_packet);
+    AxisPacket_t axis_packet;
     if (!super.try_get(axis_packet)) return 0;
     chdr_packet = axis_to_chdr(axis_packet);
     return 1;
@@ -674,12 +674,12 @@ package PkgChdrBfm;
 
   // Convert the data payload of an AXI Stream packet data structure to a CHDR 
   // packet data structure.
-  function ChdrBfm::ChdrPacket ChdrBfm::axis_to_chdr (AxisPacket axis_packet);
+  function ChdrBfm::ChdrPacket_t ChdrBfm::axis_to_chdr (AxisPacket_t axis_packet);
     enum int { ST_HEADER, ST_TIMESTAMP, ST_METADATA, ST_PAYLOAD } rx_state;
     data_t word;
     int num_rx_mdata;
     int num_rx_bytes;
-    ChdrPacket chdr_packet = new();
+    ChdrPacket_t chdr_packet = new();
 
     rx_state = ST_HEADER;
 
@@ -744,10 +744,10 @@ package PkgChdrBfm;
 
   // Convert a CHDR packet data structure to a an AXI-Stream packet data 
   // structure.
-  function ChdrBfm::AxisPacket ChdrBfm::chdr_to_axis (ChdrPacket chdr_packet);
+  function ChdrBfm::AxisPacket_t ChdrBfm::chdr_to_axis (ChdrPacket_t chdr_packet);
     int num_words, expected_words;
     data_t bus_word = 0;
-    AxisPacket axis_packet = new();
+    AxisPacket_t axis_packet = new();
 
     // Check that we have the right number of metadata words
     assert (chdr_packet.metadata.size() == chdr_packet.header.num_mdata) else begin
