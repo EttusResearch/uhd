@@ -151,7 +151,7 @@ The second interface is specified by the extra argument <b>second_addr</b>.
 ### DPDK Support
 
 To enable the highest streaming rates over the network, X310 supports using
-transports based on the \subpage page_dpdk "Data Plane Development Kit (DPDK)".
+transports based on the \ref page_dpdk "Data Plane Development Kit (DPDK)".
 See the DPDK page for details on how it can improve streaming and how to use
 it.
 
