@@ -26,7 +26,7 @@ def download_images(img_root_dir=None):
     print("== Starting download...")
     try:
         downloader_cmd = [
-            'python',
+            'python3',
             '../host/utils/uhd_images_downloader.py.in',
             '-i', img_root_dir,
             '-m', 'manifest.txt'
