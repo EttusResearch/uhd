@@ -307,6 +307,10 @@ UHD_ADD_RFNOC_BLOCK_TEST(
 )
 
 UHD_ADD_RFNOC_BLOCK_TEST(
+    TARGET moving_average_block_test.cpp
+)
+
+UHD_ADD_RFNOC_BLOCK_TEST(
     TARGET null_block_test.cpp
 )
 
