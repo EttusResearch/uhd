@@ -73,6 +73,6 @@ neon_manager::neon_manager(const std::string& catalina_spidev)
     // Make the SPI interface
     auto spi_io_iface = std::make_shared<e320_ad9361_io_spi>(spi_iface, 0);
     // Make the actual Catalina Ctrl object
-    _catalina_ctrl = ad9361_ctrl::make_spi(
-        std::make_shared<e320_ad9361_client_t>(), spi_io_iface);
+    _catalina_ctrl =
+        ad9361_ctrl::make_spi(std::make_shared<e320_ad9361_client_t>(), spi_io_iface);
 }

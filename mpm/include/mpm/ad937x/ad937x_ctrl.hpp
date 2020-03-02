@@ -360,30 +360,27 @@ void export_mykonos(py::module& top_module)
         .def("set_clock_rate", &ad937x_ctrl::set_clock_rate)
         .def("enable_channel", &ad937x_ctrl::enable_channel)
         .def("set_freq", &ad937x_ctrl::set_freq)
-        .def("async__set_freq", +[](
-                ad937x_ctrl& self,
-                const std::string &which,
-                const double value,
-                const bool wait_for_lock
-        ){
+        .def("async__set_freq",
+            +[](ad937x_ctrl& self,
+                 const std::string& which,
+                 const double value,
+                 const bool wait_for_lock) {
                 self.handle_set_freq = std::async(std::launch::async,
                     &ad937x_ctrl::set_freq,
                     &self,
                     which,
                     value,
-                    wait_for_lock
-                );
-        })
-        .def("await__set_freq", +[](
-                ad937x_ctrl& self
-        )->bool{
+                    wait_for_lock);
+            })
+        .def("await__set_freq",
+            +[](ad937x_ctrl& self) -> bool {
                 if (self.handle_set_freq.wait_for(std::chrono::seconds(0))
-                        == std::future_status::ready){
+                    == std::future_status::ready) {
                     self.handle_set_freq.get();
                     return true;
                 }
                 return false;
-        })
+            })
         .def("get_freq", &ad937x_ctrl::get_freq)
         .def("get_lo_locked", &ad937x_ctrl::get_lo_locked)
         .def("set_fir", &ad937x_ctrl::set_fir)
@@ -397,11 +394,14 @@ void export_mykonos(py::module& top_module)
         .def_readonly_static("RX_GAIN_DELAY", &ad937x_ctrl::RX_GAIN_DELAY)
         .def_readonly_static("FLASH_CAL", &ad937x_ctrl::FLASH_CAL)
         .def_readonly_static("PATH_DELAY", &ad937x_ctrl::PATH_DELAY)
-        .def_readonly_static("TX_LO_LEAKAGE_INTERNAL", &ad937x_ctrl::TX_LO_LEAKAGE_INTERNAL)
-        .def_readonly_static("TX_LO_LEAKAGE_EXTERNAL", &ad937x_ctrl::TX_LO_LEAKAGE_EXTERNAL)
+        .def_readonly_static(
+            "TX_LO_LEAKAGE_INTERNAL", &ad937x_ctrl::TX_LO_LEAKAGE_INTERNAL)
+        .def_readonly_static(
+            "TX_LO_LEAKAGE_EXTERNAL", &ad937x_ctrl::TX_LO_LEAKAGE_EXTERNAL)
         .def_readonly_static("TX_QEC_INIT", &ad937x_ctrl::TX_QEC_INIT)
         .def_readonly_static("LOOPBACK_RX_LO_DELAY", &ad937x_ctrl::LOOPBACK_RX_LO_DELAY)
-        .def_readonly_static("LOOPBACK_RX_RX_QEC_INIT", &ad937x_ctrl::LOOPBACK_RX_RX_QEC_INIT)
+        .def_readonly_static(
+            "LOOPBACK_RX_RX_QEC_INIT", &ad937x_ctrl::LOOPBACK_RX_RX_QEC_INIT)
         .def_readonly_static("RX_LO_DELAY", &ad937x_ctrl::RX_LO_DELAY)
         .def_readonly_static("RX_QEC_INIT", &ad937x_ctrl::RX_QEC_INIT)
         .def_readonly_static("DPD_INIT", &ad937x_ctrl::DPD_INIT)
@@ -424,7 +424,8 @@ void export_mykonos(py::module& top_module)
         .def_readonly_static("TRACK_ORX1_QEC_SNLO", &ad937x_ctrl::TRACK_ORX1_QEC_SNLO)
         .def_readonly_static("TRACK_ORX2_QEC_SNLO", &ad937x_ctrl::TRACK_ORX2_QEC_SNLO)
         .def_readonly_static("TRACK_SRX_QEC", &ad937x_ctrl::TRACK_SRX_QEC)
-        .def_readonly_static("DEFAULT_INIT_CALS_MASKS", &ad937x_ctrl::DEFAULT_INIT_CALS_MASKS)
+        .def_readonly_static(
+            "DEFAULT_INIT_CALS_MASKS", &ad937x_ctrl::DEFAULT_INIT_CALS_MASKS)
         .def_readonly_static(
             "DEFAULT_TRACKING_CALS_MASKS", &ad937x_ctrl::DEFAULT_TRACKING_CALS_MASKS)
         .def_readonly_static(

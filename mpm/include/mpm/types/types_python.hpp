@@ -30,9 +30,7 @@ void export_types(py::module& top_module)
     py::class_<log_buf, std::shared_ptr<log_buf>>(m, "log_buf")
         .def_static("make_singleton", &log_buf::make_singleton)
         .def("set_notify_callback",
-            +[](log_buf& self, py::object object) {
-                self.set_notify_callback(object);
-            })
+            +[](log_buf& self, py::object object) { self.set_notify_callback(object); })
         .def("pop", [](log_buf& self) {
             auto log_msg = self.pop();
             return py::make_tuple(static_cast<int>(std::get<0>(log_msg)),

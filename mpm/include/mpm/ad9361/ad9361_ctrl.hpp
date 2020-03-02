@@ -12,9 +12,9 @@
 #include <boost/make_shared.hpp>
 #include <boost/noncopyable.hpp>
 #include <functional>
+#include <future>
 #include <string>
 #include <vector>
-#include <future>
 
 namespace mpm { namespace chips {
 using uhd::usrp::ad9361_ctrl;
@@ -64,47 +64,30 @@ void export_catalina(py::module& top_module)
         .def("set_filter", &ad9361_ctrl::set_filter)
         .def("output_digital_test_tone", &ad9361_ctrl::output_digital_test_tone);
 
-    m.def("async__tune", +[](
-            ad9361_ctrl& catalina,
-            const std::string &which,
-            const double value
-    ){
-            handle_tune = std::async(std::launch::async,
-                &ad9361_ctrl::tune,
-                &catalina,
-                which,
-                value
-            );
+    m.def("async__tune",
+        +[](ad9361_ctrl& catalina, const std::string& which, const double value) {
+            handle_tune = std::async(
+                std::launch::async, &ad9361_ctrl::tune, &catalina, which, value);
+        });
+    m.def("await__tune", +[]() -> bool {
+        if (handle_tune.wait_for(std::chrono::seconds(0)) == std::future_status::ready) {
+            handle_tune.get();
+            return true;
+        }
+        return false;
     });
-    m.def("await__tune", +[](
-    )->bool{
-            if (handle_tune.wait_for(std::chrono::seconds(0))
-                == std::future_status::ready){
-                handle_tune.get();
-                return true;
-            }
-            return false;
+    m.def("async__set_clock_rate", +[](ad9361_ctrl& catalina, const double value) {
+        handle_set_clock_rate = std::async(
+            std::launch::async, &ad9361_ctrl::set_clock_rate, &catalina, value);
     });
-    m.def("async__set_clock_rate", +[](
-            ad9361_ctrl& catalina,
-            const double value
-    ){
-            handle_set_clock_rate = std::async(std::launch::async,
-                &ad9361_ctrl::set_clock_rate,
-                &catalina,
-                value
-            );
+    m.def("await__set_clock_rate", +[]() -> bool {
+        if (handle_set_clock_rate.wait_for(std::chrono::seconds(0))
+            == std::future_status::ready) {
+            handle_set_clock_rate.get();
+            return true;
+        }
+        return false;
     });
-    m.def("await__set_clock_rate", +[](
-    )->bool{
-            if (handle_set_clock_rate.wait_for(std::chrono::seconds(0))
-                    == std::future_status::ready){
-                handle_set_clock_rate.get();
-                return true;
-            }
-            return false;
-    });
-
 }
 
 #endif

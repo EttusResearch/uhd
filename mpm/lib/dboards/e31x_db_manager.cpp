@@ -28,9 +28,9 @@ constexpr uint32_t AD9361_SPI_DATA_MASK  = 0x000000FF;
 constexpr uint32_t AD9361_SPI_DATA_SHIFT = 0;
 constexpr uint32_t AD9361_SPI_NUM_BITS   = 24;
 constexpr uint32_t AD9361_SPI_SPEED_HZ   = 2000000;
-constexpr int      AD9361_SPI_MODE       = 1;
+constexpr int AD9361_SPI_MODE            = 1;
 
-} // namespace /*anon*/
+} // namespace
 
 /*! MPM-style E310 SPI Iface for AD9361 CTRL
  *
@@ -38,10 +38,14 @@ constexpr int      AD9361_SPI_MODE       = 1;
 class e310_ad9361_io_spi : public ad9361_io
 {
 public:
-    e310_ad9361_io_spi(regs_iface::sptr regs_iface, uint32_t slave_num) :
-        _regs_iface(regs_iface), _slave_num(slave_num) { }
+    e310_ad9361_io_spi(regs_iface::sptr regs_iface, uint32_t slave_num)
+        : _regs_iface(regs_iface), _slave_num(slave_num)
+    {
+    }
 
-    ~e310_ad9361_io_spi() {/*nop*/}
+    ~e310_ad9361_io_spi()
+    { /*nop*/
+    }
 
     uint8_t peek8(uint32_t reg)
     {
