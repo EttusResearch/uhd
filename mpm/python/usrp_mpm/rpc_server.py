@@ -519,16 +519,16 @@ class MPMServer(RPCServer):
             raise RuntimeError("Attempt to reset manager without valid claim.")
 
         # Stop the timer, reset_timer_and_mgr can take some time:
-        self._disable_timeouts = True
-        try:
-            self.reset_mgr()
-            self.log.debug("Reset the periph manager")
-        except Exception as ex:
-            self.log.error(
-                "Error in reset_timer_and_mgr: {}".format(
-                    ex
-                ))
-            self._last_error = str(ex)
+        with self._timeout_disabler():
+            try:
+                self.reset_mgr()
+                self.log.debug("Reset the periph manager")
+            except Exception as ex:
+                self.log.error(
+                    "Error in reset_timer_and_mgr: {}".format(
+                        ex
+                    ))
+                self._last_error = str(ex)
 
         self.log.debug("End of reset_timer_and_mgr")
         self._reset_timer()
@@ -561,12 +561,11 @@ class MPMServer(RPCServer):
                 if component_id in self.periph_manager.updateable_components:
                     # Check if that updating that component means the PM should be reset
                     reset_now = (reset_now or
-                                self.periph_manager.updateable_components[component_id]['reset']) and \
-                                not metadata.get('reset', "").lower() == "false"
+                                 self.periph_manager.updateable_components[component_id]['reset']) and \
+                                 not metadata.get('reset', "").lower() == "false"
                 else:
                     self.log.debug("ID {} not in updateable components ({})".format(
                         component_id, self.periph_manager.updateable_components))
-
             try:
                 self.log.trace("Reset after updating component? {}".format(reset_now))
                 if reset_now:
