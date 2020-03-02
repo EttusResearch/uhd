@@ -360,9 +360,10 @@ class mock_terminator_t : public node_t
 public:
     static size_t counter;
 
-    mock_terminator_t(
-        const size_t num_ports, const std::vector<std::string> expected_actions = {})
-        : _num_ports(num_ports), _term_count(counter++)
+    mock_terminator_t(const size_t num_ports,
+        const std::vector<std::string> expected_actions = {},
+        const std::string name                          = "MOCK_TERMINATOR")
+        : _num_ports(num_ports), _term_count(counter++), _name(name)
     {
         set_prop_forwarding_policy(forwarding_policy_t::DROP);
         set_action_forwarding_policy(forwarding_policy_t::DROP);
@@ -380,7 +381,7 @@ public:
 
     std::string get_unique_id() const
     {
-        return "MOCK_TERMINATOR" + std::to_string(_term_count);
+        return _name + std::to_string(_term_count);
     }
 
     size_t get_num_input_ports() const
@@ -423,6 +424,7 @@ public:
 private:
     const size_t _num_ports;
     const size_t _term_count;
+    const std::string _name;
 };
 size_t mock_terminator_t::counter = 0;
 
