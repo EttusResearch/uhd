@@ -180,12 +180,12 @@ struct UHD_API mock_block_container
 /*! Factory function for mock block controllers
  */
 UHD_API mock_block_container get_mock_block(const noc_id_t noc_id,
-    const size_t num_inputs        = 1,
-    const size_t num_outputs       = 1,
-    const uhd::device_addr_t& args = uhd::device_addr_t(),
-    const size_t mtu               = 8000,
-    const device_type_t device_id  = ANY_DEVICE);
-
+    const size_t num_inputs                            = 1,
+    const size_t num_outputs                           = 1,
+    const uhd::device_addr_t& args                     = uhd::device_addr_t(),
+    const size_t mtu                                   = 8000,
+    const device_type_t device_id                      = ANY_DEVICE,
+    std::shared_ptr<mock_reg_iface_t> client_reg_iface = nullptr);
 
 }}; // namespace uhd::rfnoc
 
