@@ -44,7 +44,6 @@ public:
     static const uint32_t SR_FFT_DIRECTION;
     static const uint32_t SR_FFT_SCALING;
     static const uint32_t SR_FFT_SHIFT_CONFIG;
-
 };
 
 }} // namespace uhd::rfnoc

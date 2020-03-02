@@ -252,7 +252,9 @@ public:
 
             _mb_pool.push_back(std::make_shared<libusb_zero_copy_mb>(lut,
                 this->get_frame_size(),
-                std::bind(&libusb_zero_copy_single::enqueue_buffer, this, std::placeholders::_1),
+                std::bind(&libusb_zero_copy_single::enqueue_buffer,
+                    this,
+                    std::placeholders::_1),
                 is_recv,
                 name));
 

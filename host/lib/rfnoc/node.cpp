@@ -91,7 +91,7 @@ void node_t::clear_command_time(const size_t instance)
 void node_t::register_property(property_base_t* prop, resolve_callback_t&& clean_callback)
 {
     std::lock_guard<std::mutex> _l(_prop_mutex);
-    const auto src_type          = prop->get_src_info().type;
+    const auto src_type = prop->get_src_info().type;
 
     // If the map is empty for this source type, create an empty vector
     if (_props.count(src_type) == 0) {
@@ -99,9 +99,9 @@ void node_t::register_property(property_base_t* prop, resolve_callback_t&& clean
     }
 
     auto prop_already_registered = [prop](const property_base_t* existing_prop) {
-        return (prop == existing_prop) ||
-            (prop->get_src_info() == existing_prop->get_src_info()
-                   && prop->get_id() == existing_prop->get_id());
+        return (prop == existing_prop)
+               || (prop->get_src_info() == existing_prop->get_src_info()
+                      && prop->get_id() == existing_prop->get_id());
     };
     if (!filter_props(prop_already_registered).empty()) {
         throw uhd::runtime_error(std::string("Attempting to double-register property: ")
@@ -168,9 +168,7 @@ void node_t::set_action_forwarding_policy(
     _action_fwd_policies[action_key] = policy;
 }
 
-void node_t::post_action(
-    const res_source_info& edge_info,
-    action_info::sptr action)
+void node_t::post_action(const res_source_info& edge_info, action_info::sptr action)
 {
     _post_action_cb(edge_info, action);
 }
@@ -230,7 +228,7 @@ property_base_t* node_t::inject_edge_property(
     // We need to create a new property and stash it away:
     new_prop = [&]() -> property_base_t* {
         auto prop = blueprint->clone(new_src_info);
-        auto ptr = prop.get();
+        auto ptr  = prop.get();
         _dynamic_props.emplace(std::move(prop));
         return ptr;
     }();
@@ -269,12 +267,11 @@ property_base_t* node_t::inject_edge_property(
     }
     if (fwd_policy == forwarding_policy_t::ONE_TO_FAN) {
         const auto opposite_port_type = res_source_info::invert_edge(port_type);
-        const size_t num_ports = opposite_port_type == res_source_info::INPUT_EDGE
+        const size_t num_ports        = opposite_port_type == res_source_info::INPUT_EDGE
                                      ? get_num_input_ports()
                                      : get_num_output_ports();
         for (size_t i = 0; i < num_ports; i++) {
-            auto opposite_prop =
-                inject_edge_property(new_prop, {opposite_port_type, i});
+            auto opposite_prop = inject_edge_property(new_prop, {opposite_port_type, i});
             // Now add a resolver that will always forward the value from this
             // property to the other one.
             add_property_resolver(
@@ -302,9 +299,8 @@ property_base_t* node_t::inject_edge_property(
                 if (other_port_idx == port_idx) {
                     continue;
                 }
-                auto prop =
-                    _find_property({res_source_info::INPUT_EDGE, other_port_idx},
-                        new_prop->get_id());
+                auto prop = _find_property(
+                    {res_source_info::INPUT_EDGE, other_port_idx}, new_prop->get_id());
                 if (prop) {
                     prop_accessor_t{}.forward<false>(new_prop, prop);
                 }
@@ -319,7 +315,8 @@ property_base_t* node_t::inject_edge_property(
             if (port_type == res_source_info::OUTPUT_EDGE && other_port_idx == port_idx) {
                 continue;
             }
-            inject_edge_property(new_prop, {res_source_info::OUTPUT_EDGE, other_port_idx});
+            inject_edge_property(
+                new_prop, {res_source_info::OUTPUT_EDGE, other_port_idx});
         }
         // Now add a dynamic resolver that will update all input properties.
         // In order to keep this code simple, we bypass the write list and
@@ -330,9 +327,8 @@ property_base_t* node_t::inject_edge_property(
                 if (other_port_idx == port_idx) {
                     continue;
                 }
-                auto prop =
-                    _find_property({res_source_info::OUTPUT_EDGE, other_port_idx},
-                        new_prop->get_id());
+                auto prop = _find_property(
+                    {res_source_info::OUTPUT_EDGE, other_port_idx}, new_prop->get_id());
                 if (prop) {
                     prop_accessor_t{}.forward<false>(new_prop, prop);
                 }
@@ -365,7 +361,8 @@ void node_t::init_props()
                 << "Failed to initialize node. Most likely cause: Inconsistent default "
                    "values. Resolver threw this error: "
                 << ex.what();
-            //throw uhd::runtime_error(std::string("Failed to initialize node ") + get_unique_id());
+            // throw uhd::runtime_error(std::string("Failed to initialize node ") +
+            // get_unique_id());
         }
 
         // 3) Set outputs back to RO
@@ -482,12 +479,12 @@ void node_t::forward_edge_property(
     // Set of local properties that match incoming_prop. It can be an empty set,
     // or, if the node is misconfigured, a set with more than one entry. Or, if
     // all is as expected, it's a set with a single entry.
-    auto local_prop_set = filter_props([prop_src_type, incoming_prop, incoming_port](
-                                           property_base_t* prop) -> bool {
-        return prop->get_src_info().type == prop_src_type
-               && prop->get_src_info().instance == incoming_port
-               && prop->get_id() == incoming_prop->get_id();
-    });
+    auto local_prop_set = filter_props(
+        [prop_src_type, incoming_prop, incoming_port](property_base_t* prop) -> bool {
+            return prop->get_src_info().type == prop_src_type
+                   && prop->get_src_info().instance == incoming_port
+                   && prop->get_id() == incoming_prop->get_id();
+        });
 
     // If there is no such property, we're forwarding a new property
     if (local_prop_set.empty()) {
@@ -530,8 +527,7 @@ void node_t::receive_action(const res_source_info& src_info, action_info::sptr a
 
     // Now implement custom forwarding for all forwarding policies:
     if (fwd_policy == forwarding_policy_t::DROP) {
-        UHD_LOG_TRACE(
-            get_unique_id(), "Dropping action " << action->key);
+        UHD_LOG_TRACE(get_unique_id(), "Dropping action " << action->key);
     }
     if (fwd_policy == forwarding_policy_t::ONE_TO_ONE) {
         UHD_LOG_TRACE(
@@ -589,4 +585,3 @@ bool node_t::_has_port(const res_source_info& port_info) const
            || (port_info.type == res_source_info::OUTPUT_EDGE
                   && port_info.instance <= get_num_output_ports());
 }
-

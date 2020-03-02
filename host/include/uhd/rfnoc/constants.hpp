@@ -8,16 +8,16 @@
 #ifndef INCLUDED_LIBUHD_RFNOC_CONSTANTS_HPP
 #define INCLUDED_LIBUHD_RFNOC_CONSTANTS_HPP
 
-#include <uhd/types/dict.hpp>
 #include <uhd/rfnoc/defaults.hpp>
+#include <uhd/types/dict.hpp>
 #include <stdint.h>
 #include <boost/assign/list_of.hpp>
 #include <string>
 
 namespace uhd { namespace rfnoc {
 
-static const size_t NOC_SHELL_COMPAT_MAJOR  = 5;
-static const size_t NOC_SHELL_COMPAT_MINOR  = 1;
+static const size_t NOC_SHELL_COMPAT_MAJOR = 5;
+static const size_t NOC_SHELL_COMPAT_MINOR = 1;
 
 static const size_t MAX_PACKET_SIZE     = 8000; // bytes
 static const size_t DEFAULT_PACKET_SIZE = 1456; // bytes
@@ -74,7 +74,7 @@ static const uint32_t AXIS_CONFIG_BUS =
 static const uint32_t AXIS_CONFIG_BUS_TLAST =
     AXI_WRAPPER_BASE + 2; // tdata with tvalid & tlast asserted
 
-static const size_t CMD_FIFO_SIZE = 256; // Lines == multiples of 8 bytes
+static const size_t CMD_FIFO_SIZE    = 256; // Lines == multiples of 8 bytes
 static const size_t MAX_CMD_PKT_SIZE = 3; // Lines == multiples of 8 bytes
 
 // Named settings registers

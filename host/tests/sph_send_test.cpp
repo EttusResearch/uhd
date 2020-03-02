@@ -7,10 +7,10 @@
 
 #include "../common/mock_zero_copy.hpp"
 #include "../lib/transport/super_send_packet_handler.hpp"
-#include <functional>
 #include <boost/shared_array.hpp>
 #include <boost/test/unit_test.hpp>
 #include <complex>
+#include <functional>
 #include <list>
 #include <vector>
 

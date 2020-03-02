@@ -14,8 +14,8 @@
 #include <uhd/types/ref_vector.hpp>
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <memory>
 #include <boost/utility.hpp>
+#include <memory>
 #include <string>
 #include <vector>
 

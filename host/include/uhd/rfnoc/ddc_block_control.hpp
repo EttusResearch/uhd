@@ -8,8 +8,8 @@
 #define INCLUDED_LIBUHD_DDC_BLOCK_CONTROL_HPP
 
 #include <uhd/config.hpp>
-#include <uhd/types/ranges.hpp>
 #include <uhd/rfnoc/noc_block_base.hpp>
+#include <uhd/types/ranges.hpp>
 #include <boost/optional.hpp>
 
 namespace uhd { namespace rfnoc {
@@ -130,6 +130,6 @@ public:
         const uhd::stream_cmd_t& stream_cmd, const size_t port) = 0;
 };
 
-}} /* uhd::rfnoc */
+}} // namespace uhd::rfnoc
 
 #endif /* INCLUDED_LIBUHD_DDC_BLOCK_CONTROL_HPP */

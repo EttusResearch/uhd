@@ -17,8 +17,8 @@
 #include <uhdlib/utils/narrow.hpp>
 #include <stdint.h>
 #include <boost/format.hpp>
-#include <functional>
 #include <algorithm>
+#include <functional>
 #include <iomanip>
 #include <utility>
 #include <vector>

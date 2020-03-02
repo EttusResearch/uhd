@@ -8,7 +8,6 @@
 #include <uhd/rfnoc/defaults.hpp>
 #include <uhd/rfnoc/fft_block_control.hpp>
 #include <uhd/rfnoc/registry.hpp>
-
 #include <string>
 
 using namespace uhd::rfnoc;
@@ -57,7 +56,6 @@ public:
 
 
 private:
-
     /**************************************************************************
      * Initialization
      *************************************************************************/
@@ -80,18 +78,17 @@ private:
             this->regs().poke32(SR_MAGNITUDE_OUT, uint32_t(this->_shift.get()));
         });
 
-        //register edge properties
+        // register edge properties
         register_property(&_type_in);
         register_property(&_type_out);
 
-        //add resolvers for type (keeps it constant)
+        // add resolvers for type (keeps it constant)
         add_property_resolver({&_type_in}, {&_type_in}, [& type_in = _type_in]() {
             type_in.set(IO_TYPE_SC16);
         });
         add_property_resolver({&_type_out}, {&_type_out}, [& type_out = _type_out]() {
             type_out.set(IO_TYPE_SC16);
         });
-
     }
 
     property_t<int> _size{PROP_KEY_FFT_LEN, DEFAULT_SIZE, {res_source_info::USER}};

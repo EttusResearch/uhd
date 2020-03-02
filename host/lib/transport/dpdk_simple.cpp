@@ -21,13 +21,13 @@ namespace {
 constexpr double SEND_TIMEOUT_MS = 500; // seconds
 }
 
-class dpdk_simple_impl : public dpdk_simple {
+class dpdk_simple_impl : public dpdk_simple
+{
 public:
     dpdk_simple_impl(const std::string& addr, const std::string& port)
     {
         link_params_t link_params = _get_default_link_params();
-        _link =
-            uhd::transport::udp_dpdk_link::make(addr, port, link_params);
+        _link = uhd::transport::udp_dpdk_link::make(addr, port, link_params);
         UHD_LOG_TRACE("DPDK::SIMPLE",
             "Creating simple UDP object for " << addr << ":" << port
                                               << ", DPDK port index "
@@ -37,7 +37,7 @@ public:
         UHD_ASSERT_THROW(ctx->is_init_done());
 
         // Init I/O service
-        _port_id = _link->get_port()->get_port_id();
+        _port_id    = _link->get_port()->get_port_id();
         _io_service = ctx->get_io_service(_port_id);
         // This is normally done by the I/O service manager, but with DPDK, this
         // is all it does so we skip that step
@@ -120,7 +120,7 @@ public:
     size_t recv(const boost::asio::mutable_buffer& user_buff, double timeout)
     {
         size_t user_buff_size = boost::asio::buffer_size(user_buff);
-        uint8_t* user_data = boost::asio::buffer_cast<uint8_t*>(user_buff);
+        uint8_t* user_data    = boost::asio::buffer_cast<uint8_t*>(user_buff);
 
         auto buff = _recv_io->get_recv_buff(static_cast<int32_t>(timeout * 1e3));
         if (!buff) {
@@ -218,4 +218,3 @@ udp_simple::sptr dpdk_simple::make_broadcast(
     return udp_simple::sptr(new dpdk_simple_impl(addr, port));
 }
 }} // namespace uhd::transport
-

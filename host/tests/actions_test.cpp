@@ -4,16 +4,15 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhd/rfnoc/node.hpp>
+#include "rfnoc_graph_mock_nodes.hpp"
 #include <uhd/rfnoc/actions.hpp>
+#include <uhd/rfnoc/node.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhdlib/rfnoc/graph.hpp>
 #include <uhdlib/rfnoc/node_accessor.hpp>
 #include <uhdlib/rfnoc/prop_accessor.hpp>
-#include <uhdlib/rfnoc/graph.hpp>
 #include <boost/test/unit_test.hpp>
 #include <iostream>
-
-#include "rfnoc_graph_mock_nodes.hpp"
 
 
 const std::string STREAM_CMD_KEY = "stream_cmd";
@@ -80,9 +79,9 @@ BOOST_AUTO_TEST_CASE(test_actions_simple_graph)
 
     uhd::stream_cmd_t num_samps_cmd(uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE);
     constexpr size_t NUM_SAMPS = 100;
-    num_samps_cmd.num_samps = NUM_SAMPS;
+    num_samps_cmd.num_samps    = NUM_SAMPS;
 
     mock_streamer.issue_stream_cmd(num_samps_cmd, 0);
-    BOOST_CHECK_EQUAL(NUM_SAMPS * mock_ddc.get_property<int>("decim", 0),
-            mock_rx_radio.last_num_samps);
+    BOOST_CHECK_EQUAL(
+        NUM_SAMPS * mock_ddc.get_property<int>("decim", 0), mock_rx_radio.last_num_samps);
 }

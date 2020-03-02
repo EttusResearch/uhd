@@ -10,11 +10,11 @@
 #include <uhd/transport/zero_copy_flow_ctrl.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
-#include <functional>
 #include <boost/format.hpp>
-#include <memory>
 #include <boost/thread/mutex.hpp>
 #include <boost/thread/thread.hpp>
+#include <functional>
+#include <memory>
 
 using namespace uhd;
 using namespace uhd::transport;
@@ -113,12 +113,10 @@ public:
         UHD_LOG_TRACE("TRANSPORT", "Created zero_copy_flow_ctrl");
 
         for (size_t i = 0; i < transport->get_num_send_frames(); i++) {
-            _send_buffers[i] =
-                std::make_shared<zero_copy_flow_ctrl_msb>(_send_flow_ctrl);
+            _send_buffers[i] = std::make_shared<zero_copy_flow_ctrl_msb>(_send_flow_ctrl);
         }
         for (size_t i = 0; i < transport->get_num_recv_frames(); i++) {
-            _recv_buffers[i] =
-                std::make_shared<zero_copy_flow_ctrl_mrb>(_recv_flow_ctrl);
+            _recv_buffers[i] = std::make_shared<zero_copy_flow_ctrl_mrb>(_recv_flow_ctrl);
         }
     }
 

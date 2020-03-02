@@ -145,7 +145,8 @@ public:
             // first dequeue operation fails, even though we push onto it before
             // setting complete to true. Retrying successfully dequeues a value
             // in those cases.
-            while (rte_ring_dequeue(_buffer_queue, (void**)&buff_ptr)) {}
+            while (rte_ring_dequeue(_buffer_queue, (void**)&buff_ptr)) {
+            }
         }
         return frame_buff::uptr(buff_ptr);
     }
@@ -200,7 +201,8 @@ public:
         size_t queue_size        = (size_t)exp2(ceil(log2(num_recv_frames + 1)));
         dpdk::port_id_t nic_port = link->get_port()->get_port_id();
         uint16_t id              = io_srv->_get_unique_client_id();
-	UHD_LOG_DEBUG("DPDK::IO_SERVICE", "Creating recv client with queue size of " << queue_size);
+        UHD_LOG_DEBUG(
+            "DPDK::IO_SERVICE", "Creating recv client with queue size of " << queue_size);
         char name[16];
         snprintf(name, sizeof(name), "rx%hu-%hu", nic_port, id);
         _recv_queue = rte_ring_create(
@@ -255,7 +257,8 @@ public:
             // first dequeue operation fails, even though we push onto it before
             // setting complete to true. Retrying successfully dequeues a value
             // in those cases.
-            while (rte_ring_dequeue(_recv_queue, (void**)&buff_ptr)) {}
+            while (rte_ring_dequeue(_recv_queue, (void**)&buff_ptr)) {
+            }
         }
         return frame_buff::uptr(buff_ptr);
     }

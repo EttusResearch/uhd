@@ -19,7 +19,8 @@ namespace uhd { namespace transport {
  * The pop operation blocks on the bounded_buffer to become non empty.
  * The push operation blocks on the bounded_buffer to become non full.
  */
-template <typename elem_type> class bounded_buffer
+template <typename elem_type>
+class bounded_buffer
 {
 public:
     /*!

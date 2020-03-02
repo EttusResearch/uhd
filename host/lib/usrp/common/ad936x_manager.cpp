@@ -8,9 +8,9 @@
 #include <uhd/utils/log.hpp>
 #include <uhdlib/usrp/common/ad936x_manager.hpp>
 #include <boost/functional/hash.hpp>
-#include <memory>
 #include <chrono>
 #include <cmath>
+#include <memory>
 #include <thread>
 
 using namespace uhd;

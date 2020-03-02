@@ -49,4 +49,3 @@ uhd::rfnoc::mock_block_container uhd::rfnoc::get_mock_block(const noc_id_t noc_i
     // Make block and return
     return ret_val;
 }
-

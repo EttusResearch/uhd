@@ -33,7 +33,9 @@ class udp_boost_asio_adapter_info : public adapter_info
 {
 public:
     udp_boost_asio_adapter_info(boost::asio::ip::udp::socket& s)
-        : _src_ip(s.local_endpoint().address()) {}
+        : _src_ip(s.local_endpoint().address())
+    {
+    }
 
     ~udp_boost_asio_adapter_info() {}
 

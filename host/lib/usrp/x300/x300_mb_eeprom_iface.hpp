@@ -11,8 +11,8 @@
 #include <uhd/config.hpp>
 #include <uhd/types/serial.hpp>
 #include <uhd/types/wb_iface.hpp>
-#include <memory>
 #include <boost/utility.hpp>
+#include <memory>
 
 class x300_mb_eeprom_iface : public uhd::i2c_iface
 {

@@ -18,7 +18,7 @@ using namespace uhd::rfnoc::detail;
 
 namespace {
 
-const std::string LOG_ID = "RFNOC::GRAPH::DETAIL";
+const std::string LOG_ID                 = "RFNOC::GRAPH::DETAIL";
 constexpr unsigned MAX_ACTION_ITERATIONS = 200;
 
 /*! Helper function to pretty-print edge info
@@ -275,8 +275,8 @@ void graph_t::resolve_all_properties(
     }
 
     // Start iterating over nodes
-    bool forward_dir                 = true;
-    int num_iterations               = 0;
+    bool forward_dir   = true;
+    int num_iterations = 0;
     // If all edge properties were known at the beginning, a single iteration
     // would suffice. However, usually during the first time the property
     // propagation is run, blocks create new (dynamic) edge properties that
@@ -425,10 +425,10 @@ void graph_t::enqueue_action(
         }
 
         // Unpack next action
-        auto& next_action               = _action_queue.front();
-        node_ref_t action_src_node      = std::get<0>(next_action);
-        res_source_info action_src_port = std::get<1>(next_action);
-        action_info::sptr next_action_sptr   = std::get<2>(next_action);
+        auto& next_action                  = _action_queue.front();
+        node_ref_t action_src_node         = std::get<0>(next_action);
+        res_source_info action_src_port    = std::get<1>(next_action);
+        action_info::sptr next_action_sptr = std::get<2>(next_action);
         _action_queue.pop_front();
 
         // Find the node that is supposed to receive this action, and if we find
@@ -592,7 +592,7 @@ bool graph_t::_assert_edge_props_consistent(rfnoc_graph_t::edge_descriptor edge)
 void graph_t::_check_topology()
 {
     node_accessor_t node_accessor{};
-    bool topo_ok = true;
+    bool topo_ok     = true;
     auto v_iterators = boost::vertices(_graph);
     for (auto it = v_iterators.first; it != v_iterators.second; ++it) {
         node_ref_t node = boost::get(vertex_property_t(), _graph, *it);
@@ -654,4 +654,3 @@ std::pair<graph_t::node_ref_t, graph_t::graph_edge_t> graph_t::_find_neighbour(
 
     UHD_THROW_INVALID_CODE_PATH();
 }
-

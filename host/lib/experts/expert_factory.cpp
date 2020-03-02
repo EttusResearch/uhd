@@ -14,4 +14,4 @@ expert_container::sptr expert_factory::create_container(const std::string& name)
     return expert_container::make(name);
 }
 
-}}
+}} // namespace uhd::experts

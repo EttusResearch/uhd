@@ -714,8 +714,8 @@ BOOST_AUTO_TEST_CASE(test_convert_types_fc32_and_fc32_chdr)
     convert::id_type id;
     id.input_format  = "fc32";
     id.output_format = "fc32_chdr";
-    id.num_inputs   = 1;
-    id.num_outputs  = 1;
+    id.num_inputs    = 1;
+    id.num_outputs   = 1;
 
     // try various lengths to test edge cases
     for (size_t nsamps = 1; nsamps < 16; nsamps++) {

@@ -62,9 +62,7 @@ chdr_tx_data_xport::chdr_tx_data_xport(uhd::transport::io_service::sptr io_srv,
         return this->_recv_callback(buff, recv_link, send_link);
     };
 
-    auto fc_cb = [this](size_t num_bytes) {
-        return this->_fc_callback(num_bytes);
-    };
+    auto fc_cb = [this](size_t num_bytes) { return this->_fc_callback(num_bytes); };
 
     // Needs just a single recv frame for strs packets
     _send_io = io_srv->make_send_client(send_link,

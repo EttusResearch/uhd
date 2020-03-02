@@ -8,8 +8,8 @@
 
 #include <uhd/exception.hpp>
 #include <uhdlib/usrp/cores/spi_core_3000.hpp>
-#include <memory>
 #include <chrono>
+#include <memory>
 #include <mutex>
 #include <thread>
 

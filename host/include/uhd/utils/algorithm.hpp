@@ -30,7 +30,8 @@ namespace uhd {
  * \param range the range of elements to be sorted
  * \return a new range with the elements sorted
  */
-template <typename Range> UHD_INLINE Range sorted(const Range& range)
+template <typename Range>
+UHD_INLINE Range sorted(const Range& range)
 {
     Range r(range);
     std::sort(boost::begin(r), boost::end(r));
@@ -47,7 +48,8 @@ template <typename Range> UHD_INLINE Range sorted(const Range& range)
  * \param range the range of elements to be reversed
  * \return a new range with the elements reversed
  */
-template <typename Range> UHD_INLINE Range reversed(const Range& range)
+template <typename Range>
+UHD_INLINE Range reversed(const Range& range)
 {
     Range r(range);
     std::reverse(boost::begin(r), boost::end(r));
@@ -76,7 +78,8 @@ UHD_INLINE bool has(const Range& range, const T& value)
  * \param bound2 the upper or lower bound
  * \return the value clipped at the bounds
  */
-template <typename T> UHD_INLINE T clip(const T& val, const T& bound1, const T& bound2)
+template <typename T>
+UHD_INLINE T clip(const T& val, const T& bound1, const T& bound2)
 {
     const T minimum = std::min(bound1, bound2);
     if (val < minimum)

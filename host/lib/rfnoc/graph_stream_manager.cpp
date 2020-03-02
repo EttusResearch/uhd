@@ -10,8 +10,8 @@
 #include <uhdlib/rfnoc/link_stream_manager.hpp>
 #include <uhdlib/transport/links.hpp>
 #include <boost/format.hpp>
-#include <memory>
 #include <map>
+#include <memory>
 #include <set>
 
 using namespace uhd;

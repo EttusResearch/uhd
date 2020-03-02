@@ -17,7 +17,8 @@
  * The B100 clock control:
  * - Disable/enable clock lines.
  */
-class b100_clock_ctrl : uhd::noncopyable{
+class b100_clock_ctrl : uhd::noncopyable
+{
 public:
     typedef std::shared_ptr<b100_clock_ctrl> sptr;
 
@@ -81,12 +82,12 @@ public:
      * \return the clock rate in Hz
      */
     virtual double get_tx_clock_rate(void) = 0;
-    
+
     /*!
      * Enable/disable the FPGA clock.
      * \param enb true to enable
      */
-    
+
     virtual void enable_fpga_clock(bool enb) = 0;
 
     /*!
@@ -100,17 +101,17 @@ public:
      * \param enb true to enable
      */
     virtual void enable_tx_dboard_clock(bool enb) = 0;
-    
+
     /*!
      * Use the internal TCXO reference
      */
     virtual void use_internal_ref(void) = 0;
-    
+
     /*!
      * Use the external SMA reference
      */
     virtual void use_external_ref(void) = 0;
-    
+
     /*!
      * Use external if available, internal otherwise
      */
@@ -118,7 +119,6 @@ public:
 
     //! Is the reference locked?
     virtual bool get_locked(void) = 0;
-
 };
 
 #endif /* INCLUDED_B100_CLOCK_CTRL_HPP */

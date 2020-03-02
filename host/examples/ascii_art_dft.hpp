@@ -65,13 +65,15 @@ namespace { /*anon*/
 static const double pi = double(std::acos(-1.0));
 
 //! Round a floating-point value to the nearest integer
-template <typename T> int iround(T val)
+template <typename T>
+int iround(T val)
 {
     return (val > 0) ? int(val + 0.5) : int(val - 0.5);
 }
 
 //! Pick the closest number that is nice to display
-template <typename T> T to_clean_num(const T num)
+template <typename T>
+T to_clean_num(const T num)
 {
     if (num == 0)
         return 0;

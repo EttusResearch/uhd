@@ -12,7 +12,7 @@
 #include <uhd/property_tree.hpp>
 #include <string>
 
-namespace uhd{ namespace usrp{
+namespace uhd { namespace usrp {
 
 void apply_tx_fe_corrections(property_tree::sptr sub_tree, // starts at mboards/x
     const std::string& db_serial,
@@ -34,6 +34,6 @@ void apply_rx_fe_corrections(property_tree::sptr sub_tree, // starts at mboards/
     const fs_path rx_fe_corr_path,
     const double rx_lo_freq // actual lo freq
 );
-}} //namespace uhd::usrp
+}} // namespace uhd::usrp
 
 #endif /* INCLUDED_LIBUHD_USRP_COMMON_APPLY_CORRECTIONS_HPP */

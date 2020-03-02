@@ -297,9 +297,9 @@ public:
                 // Flow control not needed because we have allocated special room in the
                 // buffer for async message responses
                 ctrl_payload tx_ctrl(rx_ctrl);
-                tx_ctrl.is_ack   = true;
-                tx_ctrl.src_epid = _my_epid;
-                tx_ctrl.status   = status;
+                tx_ctrl.is_ack     = true;
+                tx_ctrl.src_epid   = _my_epid;
+                tx_ctrl.status     = status;
                 const auto timeout = [&]() {
                     std::unique_lock<std::mutex> lock(_mutex);
                     return _policy.timeout;
@@ -368,7 +368,6 @@ private:
         const uhd::time_spec_t& time_spec,
         const steady_clock::time_point& timeout_time)
     {
-
         if (!_client_clk.is_running()) {
             throw uhd::system_error("Ctrlport client clock is not running");
         }
@@ -411,9 +410,8 @@ private:
         if (!buff_not_full()) {
             // If we're sending a timed command or if we have a timed command in the
             // queue, use the MASSIVE_TIMEOUT instead
-            auto timed_timeout = (check_timed_in_queue()
-                                      ? start_timeout(MASSIVE_TIMEOUT)
-                                      : timeout_time);
+            auto timed_timeout =
+                (check_timed_in_queue() ? start_timeout(MASSIVE_TIMEOUT) : timeout_time);
             if (not _buff_free_cond.wait_until(lock, timed_timeout, buff_not_full)) {
                 throw uhd::op_timeout(
                     "Control operation timed out waiting for space in command buffer");

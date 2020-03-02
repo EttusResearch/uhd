@@ -28,11 +28,11 @@
 #include <uhdlib/usrp/cores/spi_core_3000.hpp>
 #include <uhdlib/usrp/cores/tx_frontend_core_200.hpp>
 #include <boost/algorithm/string.hpp>
-#include <memory>
 #include <algorithm>
 #include <chrono>
 #include <functional>
 #include <iostream>
+#include <memory>
 #include <thread>
 
 using namespace uhd;
@@ -869,26 +869,19 @@ public:
             constexpr uint16_t mask = 0xFFFF;
             if (attr == "CTRL") {
                 _db_iface->set_pin_ctrl(unit, value, mask);
-            }
-            else if (attr == "DDR") {
+            } else if (attr == "DDR") {
                 _db_iface->set_gpio_ddr(unit, value, mask);
-            }
-            else if (attr == "OUT") {
+            } else if (attr == "OUT") {
                 _db_iface->set_gpio_out(unit, value, mask);
-            }
-            else if (attr == "ATR_0X") {
+            } else if (attr == "ATR_0X") {
                 _db_iface->set_atr_reg(unit, gpio_atr::ATR_REG_IDLE, value, mask);
-            }
-            else if (attr == "ATR_RX") {
+            } else if (attr == "ATR_RX") {
                 _db_iface->set_atr_reg(unit, gpio_atr::ATR_REG_RX_ONLY, value, mask);
-            }
-            else if (attr == "ATR_TX") {
+            } else if (attr == "ATR_TX") {
                 _db_iface->set_atr_reg(unit, gpio_atr::ATR_REG_TX_ONLY, value, mask);
-            }
-            else if (attr == "ATR_XX") {
+            } else if (attr == "ATR_XX") {
                 _db_iface->set_atr_reg(unit, gpio_atr::ATR_REG_FULL_DUPLEX, value, mask);
-            }
-            else {
+            } else {
                 RFNOC_LOG_ERROR("Invalid GPIO attribute name: " << attr);
                 throw uhd::key_error(std::string("Invalid GPIO attribute name: ") + attr);
             }

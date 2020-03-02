@@ -11,8 +11,8 @@
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <chrono>
-#include <thread>
 #include <memory>
+#include <thread>
 
 namespace {
 /*************************************************************************
@@ -263,7 +263,8 @@ mpmd_mboard_impl::mpmd_mboard_impl(
     , _claim_rpc(make_mpm_rpc_client(rpc_server_addr, mb_args, MPMD_CLAIMER_RPC_TIMEOUT))
 {
     UHD_LOGGER_TRACE("MPMD") << "Initializing mboard, connecting to RPC server address: "
-                             << rpc_server_addr << " mboard args: " << mb_args.to_string();
+                             << rpc_server_addr
+                             << " mboard args: " << mb_args.to_string();
 
     _claimer_task = claim_device_and_make_task();
     if (mb_args_.has_key(MPMD_MEAS_LATENCY_KEY)) {

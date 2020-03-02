@@ -115,8 +115,8 @@ public:
             + (chdr_w_stride * (_mdata_offset + get_chdr_header().get_num_mdata())));
     }
 
-    virtual size_t calculate_payload_offset(const packet_type_t pkt_type,
-        const uint8_t num_mdata = 0) const
+    virtual size_t calculate_payload_offset(
+        const packet_type_t pkt_type, const uint8_t num_mdata = 0) const
     {
         chdr_header header;
         header.set_pkt_type(pkt_type);

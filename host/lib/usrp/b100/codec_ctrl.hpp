@@ -8,8 +8,8 @@
 #ifndef INCLUDED_B100_CODEC_CTRL_HPP
 #define INCLUDED_B100_CODEC_CTRL_HPP
 
-#include <uhd/types/serial.hpp>
 #include <uhd/types/ranges.hpp>
+#include <uhd/types/serial.hpp>
 #include <uhd/utils/noncopyable.hpp>
 #include <memory>
 
@@ -18,7 +18,8 @@
  * - Init/power down codec.
  * - Read aux adc, write aux dac.
  */
-class b100_codec_ctrl : uhd::noncopyable{
+class b100_codec_ctrl : uhd::noncopyable
+{
 public:
     typedef std::shared_ptr<b100_codec_ctrl> sptr;
 
@@ -35,7 +36,7 @@ public:
     static sptr make(uhd::spi_iface::sptr iface);
 
     //! aux adc identifier constants
-    enum aux_adc_t{
+    enum aux_adc_t {
         AUX_ADC_A2 = 0xA2,
         AUX_ADC_A1 = 0xA1,
         AUX_ADC_B2 = 0xB2,
@@ -52,11 +53,11 @@ public:
     virtual double read_aux_adc(aux_adc_t which) = 0;
 
     //! aux dac identifier constants
-    enum aux_dac_t{
+    enum aux_dac_t {
         AUX_DAC_A = 0xA,
         AUX_DAC_B = 0xB,
         AUX_DAC_C = 0xC,
-        AUX_DAC_D = 0xD //really the sigma delta output
+        AUX_DAC_D = 0xD // really the sigma delta output
     };
 
     /*!

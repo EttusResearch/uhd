@@ -11,9 +11,9 @@
 #include "adf4351_regs.hpp"
 #include "magnesium_cpld_regs.hpp"
 #include <uhd/types/serial.hpp>
+#include <functional>
 #include <memory>
 #include <mutex>
-#include <functional>
 
 //! Controls the CPLD on a Magnesium daughterboard
 //

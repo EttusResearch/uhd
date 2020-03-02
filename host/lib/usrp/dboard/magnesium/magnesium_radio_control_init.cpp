@@ -9,8 +9,8 @@
 #include <uhd/types/eeprom.hpp>
 #include <uhd/types/sensors.hpp>
 #include <uhd/utils/log.hpp>
-#include <uhdlib/usrp/cores/spi_core_3000.hpp>
 #include <uhdlib/rfnoc/reg_iface_adapter.hpp>
+#include <uhdlib/usrp/cores/spi_core_3000.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/algorithm/string/split.hpp>
@@ -25,8 +25,8 @@ namespace {
 
 enum slave_select_t { SEN_CPLD = 1, SEN_TX_LO = 2, SEN_RX_LO = 4, SEN_PHASE_DAC = 8 };
 
-constexpr double MAGNESIUM_DEFAULT_FREQ       = 2.5e9; // Hz
-constexpr double MAGNESIUM_DEFAULT_BANDWIDTH  = 100e6; // Hz
+constexpr double MAGNESIUM_DEFAULT_FREQ      = 2.5e9; // Hz
+constexpr double MAGNESIUM_DEFAULT_BANDWIDTH = 100e6; // Hz
 
 } // namespace
 
@@ -148,10 +148,12 @@ void magnesium_radio_control_impl::_init_frontend_subtree(
                     << chan_idx << " to prop tree path " << tx_fe_path << " and "
                     << rx_fe_path);
     // TX Standard attributes
-    subtree->create<std::string>(tx_fe_path / "name").set(get_fe_name(chan_idx, TX_DIRECTION));
+    subtree->create<std::string>(tx_fe_path / "name")
+        .set(get_fe_name(chan_idx, TX_DIRECTION));
     subtree->create<std::string>(tx_fe_path / "connection").set("IQ");
     // RX Standard attributes
-    subtree->create<std::string>(rx_fe_path / "name").set(get_fe_name(chan_idx, RX_DIRECTION));
+    subtree->create<std::string>(rx_fe_path / "name")
+        .set(get_fe_name(chan_idx, RX_DIRECTION));
     subtree->create<std::string>(rx_fe_path / "connection").set("IQ");
     // TX Antenna
     subtree->create<std::string>(tx_fe_path / "antenna" / "value")
@@ -160,7 +162,7 @@ void magnesium_radio_control_impl::_init_frontend_subtree(
         })
         .set_publisher([this, chan_idx]() { return this->get_tx_antenna(chan_idx); });
     subtree->create<std::vector<std::string>>(tx_fe_path / "antenna" / "options")
-        .set_publisher([this](){ return get_tx_antennas(0); })
+        .set_publisher([this]() { return get_tx_antennas(0); })
         .add_coerced_subscriber([](const std::vector<std::string>&) {
             throw uhd::runtime_error("Attempting to update antenna options!");
         });
@@ -171,7 +173,7 @@ void magnesium_radio_control_impl::_init_frontend_subtree(
         })
         .set_publisher([this, chan_idx]() { return this->get_rx_antenna(chan_idx); });
     subtree->create<std::vector<std::string>>(rx_fe_path / "antenna" / "options")
-        .set_publisher([this](){ return get_rx_antennas(0); })
+        .set_publisher([this]() { return get_rx_antennas(0); })
         .add_coerced_subscriber([](const std::vector<std::string>&) {
             throw uhd::runtime_error("Attempting to update antenna options!");
         });
@@ -182,7 +184,7 @@ void magnesium_radio_control_impl::_init_frontend_subtree(
         })
         .set_publisher([this, chan_idx]() { return this->get_tx_frequency(chan_idx); });
     subtree->create<meta_range_t>(tx_fe_path / "freq" / "range")
-        .set_publisher([this, chan_idx](){ return get_tx_frequency_range(chan_idx); })
+        .set_publisher([this, chan_idx]() { return get_tx_frequency_range(chan_idx); })
         .add_coerced_subscriber([](const meta_range_t&) {
             throw uhd::runtime_error("Attempting to update freq range!");
         });
@@ -193,7 +195,7 @@ void magnesium_radio_control_impl::_init_frontend_subtree(
         })
         .set_publisher([this, chan_idx]() { return this->get_rx_frequency(chan_idx); });
     subtree->create<meta_range_t>(rx_fe_path / "freq" / "range")
-        .set_publisher([this, chan_idx](){ return get_rx_frequency_range(chan_idx); })
+        .set_publisher([this, chan_idx]() { return get_rx_frequency_range(chan_idx); })
         .add_coerced_subscriber([](const meta_range_t&) {
             throw uhd::runtime_error("Attempting to update freq range!");
         });
@@ -205,7 +207,7 @@ void magnesium_radio_control_impl::_init_frontend_subtree(
         })
         .set_publisher([this, chan_idx]() { return this->get_tx_bandwidth(chan_idx); });
     subtree->create<meta_range_t>(tx_fe_path / "bandwidth" / "range")
-        .set_publisher([this, chan_idx](){ return get_tx_bandwidth_range(chan_idx); })
+        .set_publisher([this, chan_idx]() { return get_tx_bandwidth_range(chan_idx); })
         .add_coerced_subscriber([](const meta_range_t&) {
             throw uhd::runtime_error("Attempting to update bandwidth range!");
         });
@@ -217,7 +219,7 @@ void magnesium_radio_control_impl::_init_frontend_subtree(
         })
         .set_publisher([this, chan_idx]() { return this->get_rx_bandwidth(chan_idx); });
     subtree->create<meta_range_t>(rx_fe_path / "bandwidth" / "range")
-        .set_publisher([this, chan_idx](){ return get_rx_bandwidth_range(chan_idx); })
+        .set_publisher([this, chan_idx]() { return get_rx_bandwidth_range(chan_idx); })
         .add_coerced_subscriber([](const meta_range_t&) {
             throw uhd::runtime_error("Attempting to update bandwidth range!");
         });
@@ -230,13 +232,16 @@ void magnesium_radio_control_impl::_init_frontend_subtree(
             .set_coercer([this, chan_idx, gain_name](const double gain) {
                 return this->set_tx_gain(gain, gain_name, chan_idx);
             })
-            .set_publisher(
-                [this, chan_idx, gain_name]() { return get_tx_gain(gain_name, chan_idx); });
+            .set_publisher([this, chan_idx, gain_name]() {
+                return get_tx_gain(gain_name, chan_idx);
+            });
         subtree->create<meta_range_t>(tx_fe_path / "gains" / gain_name / "range")
             .add_coerced_subscriber([](const meta_range_t&) {
                 throw uhd::runtime_error("Attempting to update gain range!");
             })
-            .set_publisher([this, gain_name, chan_idx]() { return get_tx_gain_range(gain_name, chan_idx); });
+            .set_publisher([this, gain_name, chan_idx]() {
+                return get_tx_gain_range(gain_name, chan_idx);
+            });
     }
     subtree->create<std::vector<std::string>>(tx_fe_path / "gains/all/profile/options")
         .set_publisher(
@@ -256,13 +261,16 @@ void magnesium_radio_control_impl::_init_frontend_subtree(
             .set_coercer([this, chan_idx, gain_name](const double gain) {
                 return this->set_rx_gain(gain, gain_name, chan_idx);
             })
-            .set_publisher(
-                [this, chan_idx, gain_name]() { return get_rx_gain(gain_name, chan_idx); });
+            .set_publisher([this, chan_idx, gain_name]() {
+                return get_rx_gain(gain_name, chan_idx);
+            });
         subtree->create<meta_range_t>(rx_fe_path / "gains" / gain_name / "range")
             .add_coerced_subscriber([](const meta_range_t&) {
                 throw uhd::runtime_error("Attempting to update gain range!");
             })
-            .set_publisher([this, gain_name, chan_idx]() { return get_rx_gain_range(gain_name, chan_idx); });
+            .set_publisher([this, gain_name, chan_idx]() {
+                return get_rx_gain_range(gain_name, chan_idx);
+            });
     }
     subtree->create<std::vector<std::string>>(rx_fe_path / "gains/all/profile/options")
         .set_publisher(
@@ -375,7 +383,8 @@ void magnesium_radio_control_impl::_init_frontend_subtree(
     auto rx_sensor_names = get_rx_sensor_names(chan_idx);
     for (const auto& sensor_name : rx_sensor_names) {
         RFNOC_LOG_TRACE("Adding RX sensor " << sensor_name);
-        get_tree()->create<sensor_value_t>(rx_fe_path / "sensors" / sensor_name)
+        get_tree()
+            ->create<sensor_value_t>(rx_fe_path / "sensors" / sensor_name)
             .add_coerced_subscriber([](const sensor_value_t&) {
                 throw uhd::runtime_error("Attempting to write to sensor!");
             })
@@ -386,7 +395,8 @@ void magnesium_radio_control_impl::_init_frontend_subtree(
     auto tx_sensor_names = get_tx_sensor_names(chan_idx);
     for (const auto& sensor_name : tx_sensor_names) {
         RFNOC_LOG_TRACE("Adding TX sensor " << sensor_name);
-        get_tree()->create<sensor_value_t>(tx_fe_path / "sensors" / sensor_name)
+        get_tree()
+            ->create<sensor_value_t>(tx_fe_path / "sensors" / sensor_name)
             .add_coerced_subscriber([](const sensor_value_t&) {
                 throw uhd::runtime_error("Attempting to write to sensor!");
             })
@@ -403,7 +413,8 @@ void magnesium_radio_control_impl::_init_prop_tree()
     }
 
     // DB EEPROM
-    get_tree()->create<eeprom_map_t>("eeprom")
+    get_tree()
+        ->create<eeprom_map_t>("eeprom")
         .add_coerced_subscriber(
             [this](const eeprom_map_t& db_eeprom) { set_db_eeprom(db_eeprom); })
         .set_publisher([this]() { return get_db_eeprom(); });
@@ -446,4 +457,3 @@ void magnesium_radio_control_impl::_init_mpm()
     _n3xx_timekeeper->update_tick_rate(_master_clock_rate);
     radio_control_impl::set_rate(_master_clock_rate);
 }
-

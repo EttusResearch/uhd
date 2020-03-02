@@ -28,7 +28,7 @@ namespace po = boost::program_options;
 using namespace uhd::transport;
 
 static constexpr size_t MAX_HEADER_LEN = 16;
-static constexpr size_t LINE_SIZE = 8;
+static constexpr size_t LINE_SIZE      = 8;
 
 //
 // Old device3 rx flow control cache and procedures
@@ -75,7 +75,8 @@ inline bool rx_flow_ctrl(
 
         // Update counters assuming the buffer is a consumed packet
         if (not packet_info.error) {
-            const size_t bytes = 4 * (packet_info.num_header_words32 + packet_info.num_payload_words32);
+            const size_t bytes =
+                4 * (packet_info.num_header_words32 + packet_info.num_payload_words32);
             fc_cache->total_bytes_consumed += bytes;
             fc_cache->total_packets_consumed++;
         }
@@ -104,12 +105,12 @@ inline void handle_rx_flowctrl_ack(
 struct tx_fc_cache_t
 {
     uint32_t last_byte_ack = 0;
-    uint32_t last_seq_ack = 0;
-    uint32_t byte_count = 0;
-    uint32_t pkt_count = 0;
-    uint32_t window_size = 0;
+    uint32_t last_seq_ack  = 0;
+    uint32_t byte_count    = 0;
+    uint32_t pkt_count     = 0;
+    uint32_t window_size   = 0;
     uint32_t fc_ack_seqnum = 0;
-    bool fc_received = false;
+    bool fc_received       = false;
     std::function<uint32_t(uint32_t)> to_host;
     std::function<uint32_t(uint32_t)> from_host;
     std::function<void(
@@ -137,9 +138,9 @@ inline bool tx_flow_ctrl(std::shared_ptr<tx_fc_cache_t> fc_cache,
 
             // Just zero out the counts here to avoid actually tring to read flow
             // control packets in the benchmark
-            fc_cache->byte_count = 0;
+            fc_cache->byte_count    = 0;
             fc_cache->last_byte_ack = 0;
-            fc_cache->pkt_count = 0;
+            fc_cache->pkt_count     = 0;
 
             return true;
         }
@@ -195,10 +196,9 @@ void benchmark_recv_packet_handler(const size_t spp, const std::string& format)
     fc_cache->xport     = xport;
     fc_cache->interval  = std::numeric_limits<std::size_t>::max();
 
-    auto zero_copy_xport = zero_copy_flow_ctrl::make(
-        xport, 0, [fc_cache](managed_buffer::sptr buff) {
-            return rx_flow_ctrl(fc_cache, buff);
-        });
+    auto zero_copy_xport = zero_copy_flow_ctrl::make(xport,
+        0,
+        [fc_cache](managed_buffer::sptr buff) { return rx_flow_ctrl(fc_cache, buff); });
 
     // Create streamer
     auto streamer = std::make_shared<sph::recv_packet_streamer>(spp);
@@ -208,15 +208,15 @@ void benchmark_recv_packet_handler(const size_t spp, const std::string& format)
     // Configure streamer xport
     streamer->set_vrt_unpacker(&vrt::chdr::if_hdr_unpack_be);
     streamer->set_xport_chan_get_buff(0,
-        [zero_copy_xport](double timeout) { return zero_copy_xport->get_recv_buff(timeout); },
+        [zero_copy_xport](
+            double timeout) { return zero_copy_xport->get_recv_buff(timeout); },
         false // flush
     );
 
     // Configure flow control ack
-    streamer->set_xport_handle_flowctrl_ack(
-        0, [fc_cache](const uint32_t* payload) {
-            handle_rx_flowctrl_ack(fc_cache, payload);
-        });
+    streamer->set_xport_handle_flowctrl_ack(0, [fc_cache](const uint32_t* payload) {
+        handle_rx_flowctrl_ack(fc_cache, payload);
+    });
 
     // Configure converter
     uhd::convert::id_type id;
@@ -261,16 +261,15 @@ void benchmark_send_packet_handler(
 
     // Configure flow control
     std::shared_ptr<tx_fc_cache_t> fc_cache(new tx_fc_cache_t());
-    fc_cache->to_host   = uhd::ntohx<uint32_t>;
-    fc_cache->from_host = uhd::htonx<uint32_t>;
-    fc_cache->pack      = vrt::chdr::if_hdr_pack_be;
-    fc_cache->unpack    = vrt::chdr::if_hdr_unpack_be;
+    fc_cache->to_host     = uhd::ntohx<uint32_t>;
+    fc_cache->from_host   = uhd::htonx<uint32_t>;
+    fc_cache->pack        = vrt::chdr::if_hdr_pack_be;
+    fc_cache->unpack      = vrt::chdr::if_hdr_unpack_be;
     fc_cache->window_size = UINT32_MAX;
 
     auto zero_copy_xport = zero_copy_flow_ctrl::make(xport,
-        [fc_cache, xport](managed_buffer::sptr buff) {
-            return tx_flow_ctrl(fc_cache, xport, buff);
-        },
+        [fc_cache, xport](
+            managed_buffer::sptr buff) { return tx_flow_ctrl(fc_cache, xport, buff); },
         0);
 
     // Create streamer
@@ -287,13 +286,13 @@ void benchmark_send_packet_handler(
     streamer->set_enable_trailer(false);
 
     // Configure streamer xport
-    streamer->set_xport_chan_get_buff(
-        0, [zero_copy_xport](double timeout) { return zero_copy_xport->get_send_buff(timeout); });
+    streamer->set_xport_chan_get_buff(0, [zero_copy_xport](double timeout) {
+        return zero_copy_xport->get_send_buff(timeout);
+    });
 
     // Configure flow control ack
-    streamer->set_xport_chan_post_send_cb(0, [fc_cache, zero_copy_xport]() {
-        tx_flow_ctrl_ack(fc_cache, zero_copy_xport);
-    });
+    streamer->set_xport_chan_post_send_cb(0,
+        [fc_cache, zero_copy_xport]() { tx_flow_ctrl_ack(fc_cache, zero_copy_xport); });
 
     // Allocate buffer
     std::vector<uint8_t> buffer(spp * bpi);
@@ -342,8 +341,8 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    const char* formats[]   = {"sc16", "fc32", "fc64"};
-    constexpr size_t spp = 1000;
+    const char* formats[] = {"sc16", "fc32", "fc64"};
+    constexpr size_t spp  = 1000;
     std::cout << "spp: " << spp << "\n";
 
     std::cout << "----------------------------------------------------------\n";

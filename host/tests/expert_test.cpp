@@ -9,9 +9,9 @@
 #include <uhdlib/experts/expert_container.hpp>
 #include <uhdlib/experts/expert_factory.hpp>
 #include <boost/format.hpp>
-#include <memory>
 #include <boost/test/unit_test.hpp>
 #include <fstream>
+#include <memory>
 
 using namespace uhd::experts;
 

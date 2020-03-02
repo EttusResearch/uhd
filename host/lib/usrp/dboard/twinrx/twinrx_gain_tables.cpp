@@ -796,13 +796,11 @@ static const std::vector<twinrx_gain_config_t> LOWBAND4_TABLE{
 };
 // clang-format on
 
-const twinrx_gain_table twinrx_gain_table::lookup_table
-(
+const twinrx_gain_table twinrx_gain_table::lookup_table(
     twinrx_ctrl::signal_path_t signal_path,
     twinrx_ctrl::preselector_path_t preselector_path,
-    std::string
-) {
-
+    std::string)
+{
     if (signal_path == twinrx_ctrl::PATH_HIGHBAND) {
         switch (preselector_path) {
             case twinrx_ctrl::PRESEL_PATH1:
@@ -829,12 +827,15 @@ const twinrx_gain_table twinrx_gain_table::lookup_table
     throw runtime_error("NO GAIN TABLE SELECTED");
 }
 
-const twinrx_gain_config_t& twinrx_gain_table::find_by_index(size_t index) const {
-    if (index >= get_num_entries()) throw uhd::value_error("invalid gain table index");
+const twinrx_gain_config_t& twinrx_gain_table::find_by_index(size_t index) const
+{
+    if (index >= get_num_entries())
+        throw uhd::value_error("invalid gain table index");
     return _tbl.at(index);
 }
 
-uhd::gain_range_t twinrx_gain_table::get_gain_range() const {
+uhd::gain_range_t twinrx_gain_table::get_gain_range() const
+{
     double max = std::numeric_limits<double>::min();
     double min = std::numeric_limits<double>::max();
     for (size_t i = 0; i < get_num_entries(); i++) {

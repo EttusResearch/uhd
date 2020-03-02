@@ -58,10 +58,10 @@ void registry::register_block_direct(noc_id_t noc_id,
 {
     block_device_pair_t key{noc_id, device_id};
     if (get_direct_block_registry().count(key)) {
-        std::cerr
-            << "[REGISTRY] WARNING: Attempting to overwrite previously "
-               "registered RFNoC block with noc_id,device_id: " << std::hex
-            << "0x" << noc_id << ", 0x" << device_id <<std::dec << std::endl;
+        std::cerr << "[REGISTRY] WARNING: Attempting to overwrite previously "
+                     "registered RFNoC block with noc_id,device_id: "
+                  << std::hex << "0x" << noc_id << ", 0x" << device_id << std::dec
+                  << std::endl;
         return;
     }
     get_direct_block_registry().emplace(key,
@@ -76,10 +76,9 @@ void registry::register_block_descriptor(
     const std::string& block_key, factory_t factory_fn)
 {
     if (get_descriptor_block_registry().count(block_key)) {
-        std::cerr
-            << "[REGISTRY] WARNING: Attempting to overwrite previously "
-               "registered RFNoC block with block key"
-            << block_key << std::endl;
+        std::cerr << "[REGISTRY] WARNING: Attempting to overwrite previously "
+                     "registered RFNoC block with block key"
+                  << block_key << std::endl;
         return;
     }
     get_descriptor_block_registry().emplace(block_key, std::move(factory_fn));
@@ -107,4 +106,3 @@ block_factory_info_t factory::get_block_factory(noc_id_t noc_id, device_type_t d
     }
     return get_direct_block_registry().at(key);
 }
-

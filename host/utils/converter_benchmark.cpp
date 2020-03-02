@@ -47,7 +47,7 @@ void configure_conv(
     if (in_type == "sc16") {
         if (out_type == "fc32") {
             std::cout << "Setting scalar to 1./32767." << std::endl;
-            conv->set_scalar(1./32767.);
+            conv->set_scalar(1. / 32767.);
             return;
         }
     }
@@ -116,7 +116,8 @@ void init_random_vector_real_int(std::vector<char>& buf_ptr, size_t n_items)
 }
 
 // Fill a buffer with increasing numbers
-template <typename T> void init_inc_vector(std::vector<char>& buf_ptr, size_t n_items)
+template <typename T>
+void init_inc_vector(std::vector<char>& buf_ptr, size_t n_items)
 {
     T* const buf = reinterpret_cast<T* const>(&buf_ptr[0]);
     for (size_t i = 0; i < n_items; i++) {
@@ -206,7 +207,8 @@ double run_benchmark(converter::sptr conv,
     return benchmark_timer.elapsed();
 }
 
-template <typename T> std::string void_ptr_to_hexstring(const void* v_ptr, size_t index)
+template <typename T>
+std::string void_ptr_to_hexstring(const void* v_ptr, size_t index)
 {
     const T* ptr = reinterpret_cast<const T*>(v_ptr);
     return str(boost::format("%X") % ptr[index]);

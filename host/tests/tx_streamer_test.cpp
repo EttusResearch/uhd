@@ -6,9 +6,9 @@
 
 #include "../common/mock_link.hpp"
 #include <uhdlib/transport/tx_streamer_impl.hpp>
-#include <memory>
 #include <boost/test/unit_test.hpp>
 #include <iostream>
+#include <memory>
 
 namespace uhd { namespace transport {
 
@@ -88,8 +88,8 @@ public:
         tx_streamer_impl::set_scale_factor(chan, scale_factor);
     }
 
-    bool recv_async_msg(uhd::async_metadata_t& /*async_metadata*/,
-        double /*timeout = 0.1*/)
+    bool recv_async_msg(
+        uhd::async_metadata_t& /*async_metadata*/, double /*timeout = 0.1*/)
     {
         return false;
     }
@@ -141,7 +141,10 @@ static std::shared_ptr<mock_tx_streamer> make_tx_streamer(
     return streamer;
 }
 
-std::tuple<mock_tx_data_xport::packet_info_t, std::complex<uint16_t>*, size_t, boost::shared_array<uint8_t>>
+std::tuple<mock_tx_data_xport::packet_info_t,
+    std::complex<uint16_t>*,
+    size_t,
+    boost::shared_array<uint8_t>>
 pop_send_packet(mock_send_link::sptr send_link)
 {
     auto packet = send_link->pop_send_packet();
@@ -485,8 +488,7 @@ BOOST_AUTO_TEST_CASE(test_send_one_channel_eov_error_cases)
         streamer->send(&buff.front(), num_samps, metadata, 1.0), uhd::value_error);
 
     // Error case: EOV values greater than nsamps_per_buff
-    BOOST_CHECK_THROW(
-        streamer->send(&buff.front(), 1, metadata, 1.0), uhd::value_error);
+    BOOST_CHECK_THROW(streamer->send(&buff.front(), 1, metadata, 1.0), uhd::value_error);
 }
 
 BOOST_AUTO_TEST_CASE(test_send_one_channel_multi_packet)
@@ -529,7 +531,8 @@ BOOST_AUTO_TEST_CASE(test_send_one_channel_multi_packet)
             size_t packet_samps;
             boost::shared_array<uint8_t> frame_buff;
 
-            std::tie(info, data, packet_samps, frame_buff) = pop_send_packet(send_links[0]);
+            std::tie(info, data, packet_samps, frame_buff) =
+                pop_send_packet(send_links[0]);
 
             for (size_t j = 0; j < packet_samps; j++) {
                 const size_t n = j + samps_checked;
@@ -595,7 +598,8 @@ BOOST_AUTO_TEST_CASE(test_send_two_channel_one_packet)
             size_t packet_samps;
             boost::shared_array<uint8_t> frame_buff;
 
-            std::tie(info, data, packet_samps, frame_buff) = pop_send_packet(send_links[ch]);
+            std::tie(info, data, packet_samps, frame_buff) =
+                pop_send_packet(send_links[ch]);
             BOOST_CHECK_EQUAL(num_samps, packet_samps);
 
             // Check data
@@ -639,7 +643,8 @@ BOOST_AUTO_TEST_CASE(test_meta_data_cache)
     size_t packet_samps;
     boost::shared_array<uint8_t> frame_buff;
 
-    std::tie(info, std::ignore, packet_samps, frame_buff) = pop_send_packet(send_links[0]);
+    std::tie(info, std::ignore, packet_samps, frame_buff) =
+        pop_send_packet(send_links[0]);
     BOOST_CHECK_EQUAL(packet_samps, num_sent);
     BOOST_CHECK(info.has_tsf);
     BOOST_CHECK(info.eob);
@@ -652,8 +657,10 @@ BOOST_AUTO_TEST_CASE(test_spp)
         auto send_links = make_links(1);
         uhd::stream_args_t stream_args("fc64", "sc16");
         stream_args.args["spp"] = std::to_string(10);
-        auto streamer = std::make_shared<mock_tx_streamer>(send_links.size(), stream_args);
-        mock_tx_data_xport::uptr xport(std::make_unique<mock_tx_data_xport>(send_links[0]));
+        auto streamer =
+            std::make_shared<mock_tx_streamer>(send_links.size(), stream_args);
+        mock_tx_data_xport::uptr xport(
+            std::make_unique<mock_tx_data_xport>(send_links[0]));
         streamer->connect_channel(0, std::move(xport));
         BOOST_CHECK_EQUAL(streamer->get_max_num_samps(), 10);
     }
@@ -663,10 +670,13 @@ BOOST_AUTO_TEST_CASE(test_spp)
         auto send_links = make_links(1);
         uhd::stream_args_t stream_args("fc64", "sc16");
         stream_args.args["spp"] = std::to_string(10000);
-        auto streamer = std::make_shared<mock_tx_streamer>(send_links.size(), stream_args);
-        mock_tx_data_xport::uptr xport(std::make_unique<mock_tx_data_xport>(send_links[0]));
+        auto streamer =
+            std::make_shared<mock_tx_streamer>(send_links.size(), stream_args);
+        mock_tx_data_xport::uptr xport(
+            std::make_unique<mock_tx_data_xport>(send_links[0]));
         const size_t max_pyld = xport->get_max_payload_size();
         streamer->connect_channel(0, std::move(xport));
-        BOOST_CHECK_EQUAL(streamer->get_max_num_samps(), max_pyld / sizeof(std::complex<uint16_t>));
+        BOOST_CHECK_EQUAL(
+            streamer->get_max_num_samps(), max_pyld / sizeof(std::complex<uint16_t>));
     }
 }

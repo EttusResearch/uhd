@@ -132,7 +132,8 @@ UHD_INLINE void send_udp_packet(int sock_fd, void* mem, size_t len)
     // This is known to occur at least on some OSX systems.
     // But it should be safe to always check for the error.
     while (true) {
-        const ssize_t ret = uhd::narrow_cast<ssize_t>(::send(sock_fd, (const char*)mem, len, 0));
+        const ssize_t ret =
+            uhd::narrow_cast<ssize_t>(::send(sock_fd, (const char*)mem, len, 0));
         if (ret == ssize_t(len))
             break;
         if (ret == -1 and errno == ENOBUFS) {

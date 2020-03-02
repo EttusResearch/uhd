@@ -79,7 +79,8 @@ const uhd::byte_vector_t EEPROM_DATA_HEADER = {
 } // namespace
 
 //! used with lexical cast to parse a hex string
-template <class T> struct to_hex
+template <class T>
+struct to_hex
 {
     T value;
     operator T() const
@@ -628,9 +629,9 @@ int32_t main(int32_t argc, char* argv[])
                       << std::endl;
 
             // Read values that will be clobbered by the bootloader
-            auto pidvid      = b200->read_eeprom(0x00, 0x04, 4);
+            auto pidvid               = b200->read_eeprom(0x00, 0x04, 4);
             uhd::byte_vector_t vidpid = {pidvid[2], pidvid[3], pidvid[0], pidvid[1]};
-            auto eeprom_data = b200->read_eeprom(0x04, 0xDC, 36);
+            auto eeprom_data          = b200->read_eeprom(0x04, 0xDC, 36);
 
             // Write in default header
             b200->write_eeprom(

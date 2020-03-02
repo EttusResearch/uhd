@@ -33,7 +33,8 @@ struct usrprio_device_info
     std::string pcie_serial_num;
     std::string interface_path;
 
-    template <typename Archive> void serialize(Archive& ar, const unsigned int version)
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int version)
     {
         if (version || !version) { // Suppress unused warning
             ar& interface_num;

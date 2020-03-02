@@ -27,15 +27,21 @@ public:
     mpmd_link_if_ctrl_liberio(const uhd::device_addr_t& mb_args,
         const mpmd_link_if_mgr::xport_info_list_t& xport_info);
 
-    size_t get_num_links() const { return 1; }
+    size_t get_num_links() const
+    {
+        return 1;
+    }
 
-    uhd::transport::both_links_t get_link(
-        const size_t link_idx, const uhd::transport::link_type_t link_type,
+    uhd::transport::both_links_t get_link(const size_t link_idx,
+        const uhd::transport::link_type_t link_type,
         const uhd::device_addr_t& link_args);
 
     size_t get_mtu(const uhd::direction_t) const;
 
-    double get_link_rate(const size_t /*link_idx*/) const { return _link_rate; }
+    double get_link_rate(const size_t /*link_idx*/) const
+    {
+        return _link_rate;
+    }
 
     const uhd::rfnoc::chdr::chdr_packet_factory& get_packet_factory() const
     {
@@ -43,7 +49,6 @@ public:
     }
 
 private:
-
     const uhd::device_addr_t _mb_args;
     const uhd::dict<std::string, std::string> _recv_args;
     const uhd::dict<std::string, std::string> _send_args;

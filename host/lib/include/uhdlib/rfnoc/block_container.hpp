@@ -7,10 +7,10 @@
 #ifndef INCLUDED_LIBUHD_BLOCK_CONTAINER_HPP
 #define INCLUDED_LIBUHD_BLOCK_CONTAINER_HPP
 
-#include <uhd/rfnoc/noc_block_base.hpp>
 #include <uhd/rfnoc/block_id.hpp>
-#include <boost/units/detail/utility.hpp>
+#include <uhd/rfnoc/noc_block_base.hpp>
 #include <unordered_set>
+#include <boost/units/detail/utility.hpp>
 #include <mutex>
 #include <vector>
 
@@ -64,4 +64,3 @@ private:
 }}} /* namespace uhd::rfnoc::detail */
 
 #endif /* INCLUDED_LIBUHD_BLOCK_CONTAINER_HPP */
-

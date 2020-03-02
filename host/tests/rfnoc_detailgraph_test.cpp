@@ -4,15 +4,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#include "rfnoc_graph_mock_nodes.hpp"
 #include <uhd/rfnoc/node.hpp>
 #include <uhd/utils/log.hpp>
+#include <uhdlib/rfnoc/graph.hpp>
 #include <uhdlib/rfnoc/node_accessor.hpp>
 #include <uhdlib/rfnoc/prop_accessor.hpp>
-#include <uhdlib/rfnoc/graph.hpp>
 #include <boost/test/unit_test.hpp>
 #include <iostream>
-
-#include "rfnoc_graph_mock_nodes.hpp"
 
 using uhd::rfnoc::detail::graph_t;
 using namespace uhd::rfnoc;
@@ -57,11 +56,12 @@ public:
     {
         return _graph_ptr->_vertices_to_nodes(_graph_ptr->_get_topo_sorted_nodes());
     }
+
 private:
     graph_t* _graph_ptr;
 };
 
-}}};
+}}}; // namespace uhd::rfnoc::detail
 
 BOOST_AUTO_TEST_CASE(test_graph)
 {

@@ -75,7 +75,7 @@ void e3xx_radio_control_impl::deinit()
  * API Calls
  *****************************************************************************/
 bool e3xx_radio_control_impl::check_topology(const std::vector<size_t>& connected_inputs,
-        const std::vector<size_t>& connected_outputs)
+    const std::vector<size_t>& connected_outputs)
 {
     if (!node_t::check_topology(connected_inputs, connected_outputs)) {
         return false;
@@ -112,7 +112,7 @@ bool e3xx_radio_control_impl::check_topology(const std::vector<size_t>& connecte
     RFNOC_LOG_TRACE("RX FE0 Active: " << rx_fe0_active);
     RFNOC_LOG_TRACE("RX FE1 Active: " << rx_fe1_active);
 
-    //setup the active chains in the codec
+    // setup the active chains in the codec
     if (connected_inputs.size() + connected_outputs.size() == 0) {
         // Ensure at least one RX chain is enabled so AD9361 outputs a sample clock
         this->set_streaming_mode(true, false, true, false);
@@ -252,19 +252,21 @@ void e3xx_radio_control_impl::set_rx_agc(const bool enb, const size_t chan)
     _ad9361->set_agc(rx_fe, enb);
 }
 
-double e3xx_radio_control_impl::set_rx_bandwidth(const double bandwidth, const size_t chan)
+double e3xx_radio_control_impl::set_rx_bandwidth(
+    const double bandwidth, const size_t chan)
 {
     std::lock_guard<std::mutex> l(_set_lock);
-    double clipped_bw =
-        _ad9361->set_bw_filter(get_which_ad9361_chain(RX_DIRECTION, chan, _fe_swap), bandwidth);
+    double clipped_bw = _ad9361->set_bw_filter(
+        get_which_ad9361_chain(RX_DIRECTION, chan, _fe_swap), bandwidth);
     return radio_control_impl::set_rx_bandwidth(clipped_bw, chan);
 }
 
-double e3xx_radio_control_impl::set_tx_bandwidth(const double bandwidth, const size_t chan)
+double e3xx_radio_control_impl::set_tx_bandwidth(
+    const double bandwidth, const size_t chan)
 {
     std::lock_guard<std::mutex> l(_set_lock);
-    double clipped_bw =
-        _ad9361->set_bw_filter(get_which_ad9361_chain(TX_DIRECTION, chan, _fe_swap), bandwidth);
+    double clipped_bw = _ad9361->set_bw_filter(
+        get_which_ad9361_chain(TX_DIRECTION, chan, _fe_swap), bandwidth);
     return radio_control_impl::set_tx_bandwidth(clipped_bw, chan);
 }
 
@@ -429,7 +431,7 @@ void e3xx_radio_control_impl::loopback_self_test(const size_t chan)
     // Set 2R2T mode, stream on all channels
     this->set_streaming_mode(true, true, true, true);
     // This was in there in the E320 code, but the comments didn't make sense:
-    //this->set_streaming_mode(true, true, true, true);
+    // this->set_streaming_mode(true, true, true, true);
     // Set maximum rate for 2R2T mode
     /* FIXME
      * We're directly setting the master clock rate here because we want to
@@ -457,29 +459,34 @@ void e3xx_radio_control_impl::loopback_self_test(const size_t chan)
         boost::hash_combine(hash, i);
         const uint32_t word32 = uint32_t(hash) & 0xfff0fff0;
         // Write test word to codec_idle idle register (on TX side)
-        regs().poke32(
-            regmap::RADIO_BASE_ADDR + chan * regmap::REG_CHAN_OFFSET + regmap::REG_TX_IDLE_VALUE, word32);
+        regs().poke32(regmap::RADIO_BASE_ADDR + chan * regmap::REG_CHAN_OFFSET
+                          + regmap::REG_TX_IDLE_VALUE,
+            word32);
 
         // Read back values - TX is lower 32-bits and RX is upper 32-bits
         const uint32_t rb_tx =
-            regs().peek32(regmap::RADIO_BASE_ADDR + chan * regmap::REG_CHAN_OFFSET + regmap::REG_TX_IDLE_VALUE);
+            regs().peek32(regmap::RADIO_BASE_ADDR + chan * regmap::REG_CHAN_OFFSET
+                          + regmap::REG_TX_IDLE_VALUE);
         const uint32_t rb_rx =
-            regs().peek32(regmap::RADIO_BASE_ADDR + chan * regmap::REG_CHAN_OFFSET + regmap::REG_RX_DATA);
+            regs().peek32(regmap::RADIO_BASE_ADDR + chan * regmap::REG_CHAN_OFFSET
+                          + regmap::REG_RX_DATA);
 
         // Compare TX and RX values to test word
         bool test_fail = word32 != rb_tx or word32 != rb_rx;
         if (test_fail) {
             RFNOC_LOG_WARNING(
                 "CODEC loopback test failed! "
-                    << boost::format("Expected: 0x%08X Received (TX/RX): 0x%08X/0x%08X")
-                           % word32 % rb_tx % rb_rx);
+                << boost::format("Expected: 0x%08X Received (TX/RX): 0x%08X/0x%08X")
+                       % word32 % rb_tx % rb_rx);
             throw uhd::runtime_error("CODEC loopback test failed.");
         }
     }
     RFNOC_LOG_INFO("CODEC loopback test passed");
 
     // Zero out the idle data.
-    regs().poke32(regmap::RADIO_BASE_ADDR + chan * regmap::REG_CHAN_OFFSET + regmap::REG_TX_IDLE_VALUE, 0);
+    regs().poke32(regmap::RADIO_BASE_ADDR + chan * regmap::REG_CHAN_OFFSET
+                      + regmap::REG_TX_IDLE_VALUE,
+        0);
 
     // Take AD936x out of loopback mode
     _ad9361->data_port_loopback(false);

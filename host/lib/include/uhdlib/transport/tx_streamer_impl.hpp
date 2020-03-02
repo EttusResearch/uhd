@@ -90,9 +90,9 @@ public:
 
 private:
     size_t* _eov_positions;
-    size_t  _eov_positions_size;
-    size_t  _remaining;
-    size_t  _read_pos;
+    size_t _eov_positions_size;
+    size_t _remaining;
+    size_t _read_pos;
 };
 
 } // namespace detail

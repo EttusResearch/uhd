@@ -187,7 +187,7 @@ struct UHD_API tx_metadata_t
      * for the array and for indicating the maximum number of elements in
      * the array via the `eov_positions_size` value below.
      */
-    size_t* eov_positions = nullptr;
+    size_t* eov_positions     = nullptr;
     size_t eov_positions_size = 0;
 
     /*!

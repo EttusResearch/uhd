@@ -81,10 +81,10 @@ void benchmark_rx_rate(uhd::usrp::multi_usrp::sptr usrp,
     }
 
     // print pre-test summary
-    auto time_stamp = NOW();
-    auto rx_rate = usrp->get_rx_rate() / 1e6;
+    auto time_stamp   = NOW();
+    auto rx_rate      = usrp->get_rx_rate() / 1e6;
     auto num_channels = rx_stream->get_num_channels();
-    std::cout << boost::format("[%s] Testing receive rate %f Msps on %u channels\n") 
+    std::cout << boost::format("[%s] Testing receive rate %f Msps on %u channels\n")
                      % time_stamp % rx_rate % num_channels;
 
     // setup variables and allocate buffer
@@ -213,8 +213,8 @@ void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp,
     }
 
     // print pre-test summary
-    auto time_stamp = NOW();
-    auto tx_rate = usrp->get_tx_rate() / 1e6;
+    auto time_stamp   = NOW();
+    auto tx_rate      = usrp->get_tx_rate() / 1e6;
     auto num_channels = tx_stream->get_num_channels();
     std::cout << boost::format("[%s] Testing transmit rate %f Msps on %u channels\n")
                      % time_stamp % tx_rate % num_channels;
@@ -592,7 +592,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     } else {
         duration += tx_delay;
     }
-    const int64_t secs = int64_t(duration);
+    const int64_t secs  = int64_t(duration);
     const int64_t usecs = int64_t((duration - secs) * 1e6);
     std::this_thread::sleep_for(
         std::chrono::seconds(secs) + std::chrono::microseconds(usecs));

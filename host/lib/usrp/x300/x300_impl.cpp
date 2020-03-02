@@ -9,8 +9,8 @@
 #include "x300_impl.hpp"
 #include "x300_claim.hpp"
 #include "x300_eth_mgr.hpp"
-#include "x300_mb_eeprom.hpp"
 #include "x300_mb_controller.hpp"
+#include "x300_mb_eeprom.hpp"
 #include "x300_mb_eeprom_iface.hpp"
 #include "x300_mboard_type.hpp"
 #include "x300_pcie_mgr.hpp"
@@ -179,8 +179,7 @@ static void x300_load_fw(wb_iface::sptr fw_reg_ctrl, const std::string& file_nam
     UHD_LOGGER_INFO("X300") << "Firmware loaded!";
 }
 
-x300_impl::x300_impl(const uhd::device_addr_t& dev_addr)
-    : rfnoc_device()
+x300_impl::x300_impl(const uhd::device_addr_t& dev_addr) : rfnoc_device()
 {
     UHD_LOGGER_INFO("X300") << "X300 initialization sequence...";
 
@@ -215,8 +214,8 @@ x300_impl::x300_impl(const uhd::device_addr_t& dev_addr)
 
 void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t& dev_addr)
 {
-    const fs_path mb_path  = fs_path("/mboards") / mb_i;
-    mboard_members_t& mb   = _mb[mb_i];
+    const fs_path mb_path = fs_path("/mboards") / mb_i;
+    mboard_members_t& mb  = _mb[mb_i];
     mb.args.parse(dev_addr);
     mb.xport_path = dev_addr.has_key("resource") ? xport_path_t::NIRIO
                                                  : xport_path_t::ETH;
@@ -483,4 +482,3 @@ void x300_impl::check_fpga_compat(const fs_path& mb_path, const mboard_members_t
         "Using FPGA version: " << compat_major << "." << compat_minor
                                << " git hash: " << git_hash_str);
 }
-

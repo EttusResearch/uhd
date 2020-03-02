@@ -11,9 +11,9 @@
 using namespace uhd::rfnoc;
 
 namespace {
-    // A static counter, which we use to uniquely label actions
-    std::atomic<size_t> action_counter{0};
-}
+// A static counter, which we use to uniquely label actions
+std::atomic<size_t> action_counter{0};
+} // namespace
 
 action_info::action_info(const std::string& key, const uhd::device_addr_t& args)
     : id(action_counter++), key(key), args(args)
@@ -72,7 +72,8 @@ rx_event_action_info::sptr rx_event_action_info::make(
 
 /*** TX Metadata Action Info *************************************************/
 tx_event_action_info::tx_event_action_info(
-    uhd::async_metadata_t::event_code_t event_code_, const boost::optional<uint64_t>& tsf_)
+    uhd::async_metadata_t::event_code_t event_code_,
+    const boost::optional<uint64_t>& tsf_)
     : action_info(ACTION_KEY_TX_EVENT), event_code(event_code_), has_tsf(tsf_)
 {
     if (has_tsf) {

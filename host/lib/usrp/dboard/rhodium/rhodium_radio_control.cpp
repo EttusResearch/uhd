@@ -18,9 +18,9 @@
 #include <uhdlib/utils/narrow.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
-#include <memory>
 #include <cmath>
 #include <cstdlib>
+#include <memory>
 #include <sstream>
 
 using namespace uhd;
@@ -29,16 +29,16 @@ using namespace uhd::rfnoc;
 using namespace uhd::math::fp_compare;
 
 namespace {
-    constexpr char RX_FE_CONNECTION_LOWBAND[]  = "QI";
-    constexpr char RX_FE_CONNECTION_HIGHBAND[] = "IQ";
-    constexpr char TX_FE_CONNECTION_LOWBAND[]  = "QI";
-    constexpr char TX_FE_CONNECTION_HIGHBAND[] = "IQ";
+constexpr char RX_FE_CONNECTION_LOWBAND[]  = "QI";
+constexpr char RX_FE_CONNECTION_HIGHBAND[] = "IQ";
+constexpr char TX_FE_CONNECTION_LOWBAND[]  = "QI";
+constexpr char TX_FE_CONNECTION_HIGHBAND[] = "IQ";
 
-    constexpr double DEFAULT_IDENTIFY_DURATION = 5.0; // seconds
+constexpr double DEFAULT_IDENTIFY_DURATION = 5.0; // seconds
 
-    constexpr uint64_t SET_RATE_RPC_TIMEOUT_MS = 10000;
+constexpr uint64_t SET_RATE_RPC_TIMEOUT_MS = 10000;
 
-}
+} // namespace
 
 
 /******************************************************************************
@@ -51,8 +51,7 @@ rhodium_radio_control_impl::rhodium_radio_control_impl(make_args_ptr make_args)
     UHD_ASSERT_THROW(get_block_id().get_block_count() < 2);
     const char radio_slot_name[] = {'A', 'B'};
     _radio_slot                  = radio_slot_name[get_block_id().get_block_count()];
-    _rpc_prefix =
-        (_radio_slot == "A") ? "db_0_" : "db_1_";
+    _rpc_prefix                  = (_radio_slot == "A") ? "db_0_" : "db_1_";
     RFNOC_LOG_TRACE("Radio slot: " << _radio_slot);
     UHD_ASSERT_THROW(get_num_input_ports() == RHODIUM_NUM_CHANS);
     UHD_ASSERT_THROW(get_num_output_ports() == RHODIUM_NUM_CHANS);
@@ -207,14 +206,12 @@ double rhodium_radio_control_impl::set_tx_frequency(const double freq, const siz
 
     const bool is_highband = !_is_tx_lowband(coerced_target_freq);
 
-    const double target_lo_freq = is_highband ?
-        coerced_target_freq : _get_lowband_lo_freq() - coerced_target_freq;
-    const double actual_lo_freq =
-        set_tx_lo_freq(target_lo_freq, RHODIUM_LO1, chan);
-    const double coerced_freq = is_highband ?
-        actual_lo_freq : _get_lowband_lo_freq() - actual_lo_freq;
-    const auto conn = is_highband ?
-        TX_FE_CONNECTION_HIGHBAND : TX_FE_CONNECTION_LOWBAND;
+    const double target_lo_freq =
+        is_highband ? coerced_target_freq : _get_lowband_lo_freq() - coerced_target_freq;
+    const double actual_lo_freq = set_tx_lo_freq(target_lo_freq, RHODIUM_LO1, chan);
+    const double coerced_freq   = is_highband ? actual_lo_freq
+                                            : _get_lowband_lo_freq() - actual_lo_freq;
+    const auto conn = is_highband ? TX_FE_CONNECTION_HIGHBAND : TX_FE_CONNECTION_LOWBAND;
 
     // update the cached frequency value now so calls to set gain and update
     // switches will read the new frequency
@@ -224,7 +221,8 @@ double rhodium_radio_control_impl::set_tx_frequency(const double freq, const siz
     set_tx_gain(radio_control_impl::get_tx_gain(chan), 0);
 
     if (_get_highband_spur_reduction_enabled(TX_DIRECTION)) {
-        if (_get_timed_command_enabled() and _is_tx_lowband(old_freq) != not is_highband) {
+        if (_get_timed_command_enabled()
+            and _is_tx_lowband(old_freq) != not is_highband) {
             RFNOC_LOG_WARNING(
                 "Timed tuning commands that transition between lowband and highband, 450 "
                 "MHz, do not function correctly when highband_spur_reduction is enabled! "
@@ -260,14 +258,12 @@ double rhodium_radio_control_impl::set_rx_frequency(const double freq, const siz
 
     const bool is_highband = !_is_rx_lowband(coerced_target_freq);
 
-    const double target_lo_freq = is_highband ?
-        coerced_target_freq : _get_lowband_lo_freq() - coerced_target_freq;
-    const double actual_lo_freq =
-            set_rx_lo_freq(target_lo_freq, RHODIUM_LO1, chan);
-    const double coerced_freq = is_highband ?
-        actual_lo_freq : _get_lowband_lo_freq() - actual_lo_freq;
-    const auto conn = is_highband ?
-        RX_FE_CONNECTION_HIGHBAND : RX_FE_CONNECTION_LOWBAND;
+    const double target_lo_freq =
+        is_highband ? coerced_target_freq : _get_lowband_lo_freq() - coerced_target_freq;
+    const double actual_lo_freq = set_rx_lo_freq(target_lo_freq, RHODIUM_LO1, chan);
+    const double coerced_freq   = is_highband ? actual_lo_freq
+                                            : _get_lowband_lo_freq() - actual_lo_freq;
+    const auto conn = is_highband ? RX_FE_CONNECTION_HIGHBAND : RX_FE_CONNECTION_LOWBAND;
 
     // update the cached frequency value now so calls to set gain and update
     // switches will read the new frequency
@@ -277,7 +273,8 @@ double rhodium_radio_control_impl::set_rx_frequency(const double freq, const siz
     set_rx_gain(radio_control_impl::get_rx_gain(chan), 0);
 
     if (_get_highband_spur_reduction_enabled(RX_DIRECTION)) {
-        if (_get_timed_command_enabled() and _is_rx_lowband(old_freq) != not is_highband) {
+        if (_get_timed_command_enabled()
+            and _is_rx_lowband(old_freq) != not is_highband) {
             RFNOC_LOG_WARNING(
                 "Timed tuning commands that transition between lowband and highband, 450 "
                 "MHz, do not function correctly when highband_spur_reduction is enabled! "
@@ -313,17 +310,17 @@ double rhodium_radio_control_impl::set_tx_gain(const double gain, const size_t c
     RFNOC_LOG_TRACE("set_tx_gain(gain=" << gain << ", chan=" << chan << ")");
     UHD_ASSERT_THROW(chan == 0);
 
-    auto freq = this->get_tx_frequency(chan);
+    auto freq  = this->get_tx_frequency(chan);
     auto index = get_tx_gain_range(chan).clip(gain);
 
-    auto old_band = _is_tx_lowband(_tx_frequency_at_last_gain_write) ?
-        rhodium_cpld_ctrl::gain_band_t::LOW :
-        rhodium_cpld_ctrl::gain_band_t::HIGH;
-    auto new_band = _is_tx_lowband(freq) ?
-        rhodium_cpld_ctrl::gain_band_t::LOW :
-        rhodium_cpld_ctrl::gain_band_t::HIGH;
+    auto old_band = _is_tx_lowband(_tx_frequency_at_last_gain_write)
+                        ? rhodium_cpld_ctrl::gain_band_t::LOW
+                        : rhodium_cpld_ctrl::gain_band_t::HIGH;
+    auto new_band = _is_tx_lowband(freq) ? rhodium_cpld_ctrl::gain_band_t::LOW
+                                         : rhodium_cpld_ctrl::gain_band_t::HIGH;
 
-    // The CPLD requires a rewrite of the gain control command on a change of lowband or highband
+    // The CPLD requires a rewrite of the gain control command on a change of lowband or
+    // highband
     if (radio_control_impl::get_tx_gain(chan) != index or old_band != new_band) {
         RFNOC_LOG_TRACE("Writing new TX gain index: " << index);
         _cpld->set_gain_index(index, new_band, TX_DIRECTION);
@@ -342,17 +339,17 @@ double rhodium_radio_control_impl::set_rx_gain(const double gain, const size_t c
     RFNOC_LOG_TRACE("set_rx_gain(gain=" << gain << ", chan=" << chan << ")");
     UHD_ASSERT_THROW(chan == 0);
 
-    auto freq = this->get_rx_frequency(chan);
+    auto freq  = this->get_rx_frequency(chan);
     auto index = get_rx_gain_range(chan).clip(gain);
 
-    auto old_band = _is_rx_lowband(_rx_frequency_at_last_gain_write) ?
-        rhodium_cpld_ctrl::gain_band_t::LOW :
-        rhodium_cpld_ctrl::gain_band_t::HIGH;
-    auto new_band = _is_rx_lowband(freq) ?
-        rhodium_cpld_ctrl::gain_band_t::LOW :
-        rhodium_cpld_ctrl::gain_band_t::HIGH;
+    auto old_band = _is_rx_lowband(_rx_frequency_at_last_gain_write)
+                        ? rhodium_cpld_ctrl::gain_band_t::LOW
+                        : rhodium_cpld_ctrl::gain_band_t::HIGH;
+    auto new_band = _is_rx_lowband(freq) ? rhodium_cpld_ctrl::gain_band_t::LOW
+                                         : rhodium_cpld_ctrl::gain_band_t::HIGH;
 
-    // The CPLD requires a rewrite of the gain control command on a change of lowband or highband
+    // The CPLD requires a rewrite of the gain control command on a change of lowband or
+    // highband
     if (radio_control_impl::get_rx_gain(chan) != index or old_band != new_band) {
         RFNOC_LOG_TRACE("Writing new RX gain index: " << index);
         _cpld->set_gain_index(index, new_band, RX_DIRECTION);
@@ -398,13 +395,13 @@ void rhodium_radio_control_impl::_update_atr(
 
     const auto rx_ant  = (dir == RX_DIRECTION) ? ant : get_rx_antenna(0);
     const auto tx_ant  = (dir == TX_DIRECTION) ? ant : get_tx_antenna(0);
-    const auto sw10_tx = _is_tx_lowband(get_tx_frequency(0)) ?
-        SW10_FROMTXLOWBAND : SW10_FROMTXHIGHBAND;
+    const auto sw10_tx = _is_tx_lowband(get_tx_frequency(0)) ? SW10_FROMTXLOWBAND
+                                                             : SW10_FROMTXHIGHBAND;
 
 
     const uint32_t atr_idle = SW10_ISOLATION;
 
-    const uint32_t atr_rx = [rx_ant]{
+    const uint32_t atr_rx = [rx_ant] {
         if (rx_ant == "TX/RX") {
             return SW10_TORX | LED_RX;
         } else if (rx_ant == "RX2") {
@@ -414,8 +411,7 @@ void rhodium_radio_control_impl::_update_atr(
         }
     }();
 
-    const uint32_t atr_tx = (tx_ant == "TX/RX") ?
-        (sw10_tx | LED_TX) : SW10_ISOLATION;
+    const uint32_t atr_tx = (tx_ant == "TX/RX") ? (sw10_tx | LED_TX) : SW10_ISOLATION;
 
     const uint32_t atr_dx = [tx_ant, rx_ant, sw10_tx] {
         uint32_t sw10_return;

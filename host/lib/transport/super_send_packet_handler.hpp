@@ -18,8 +18,8 @@
 #include <uhd/utils/byteswap.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <uhd/utils/thread.hpp>
-#include <functional>
 #include <chrono>
+#include <functional>
 #include <iostream>
 #include <thread>
 #include <vector>

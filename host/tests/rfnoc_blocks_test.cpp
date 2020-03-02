@@ -5,11 +5,11 @@
 //
 
 #include "rfnoc_graph_mock_nodes.hpp"
-#include <uhd/rfnoc/mock_block.hpp>
 #include <uhd/rfnoc/actions.hpp>
 #include <uhd/rfnoc/ddc_block_control.hpp>
 #include <uhd/rfnoc/defaults.hpp>
 #include <uhd/rfnoc/duc_block_control.hpp>
+#include <uhd/rfnoc/mock_block.hpp>
 #include <uhd/rfnoc/null_block_control.hpp>
 #include <uhdlib/rfnoc/graph.hpp>
 #include <uhdlib/rfnoc/node_accessor.hpp>
@@ -230,7 +230,7 @@ BOOST_AUTO_TEST_CASE(test_duc_block)
     constexpr int TEST_INTERP  = 20; // 2 halfbands, CIC==5
 
     auto block_container = get_mock_block(noc_id, num_chans, num_chans);
-    auto& duc_reg_iface = block_container.reg_iface;
+    auto& duc_reg_iface  = block_container.reg_iface;
     duc_reg_iface->read_memory[duc_block_control::RB_COMPAT_NUM] =
         (duc_block_control::MAJOR_COMPAT << 16) | duc_block_control::MINOR_COMPAT;
     duc_reg_iface->read_memory[duc_block_control::RB_NUM_HB]         = num_hb;

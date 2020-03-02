@@ -50,7 +50,7 @@
 #if defined(_MSC_VER)
 #    pragma warning(push)
 #    pragma warning(disable : 4127) // conditional expression is constant
-#endif                          // _MSC_VER
+#endif // _MSC_VER
 
 namespace uhd {
 
@@ -83,8 +83,9 @@ inline T narrow(U u)
     if (static_cast<U>(t) != u) {
         throw narrowing_error("");
     }
-    if (!std::integral_constant<bool, std::is_signed<T>::value == std::is_signed<U>::value>::value
-            && ((t < T{}) != (u < U{}))) {
+    if (!std::integral_constant<bool,
+            std::is_signed<T>::value == std::is_signed<U>::value>::value
+        && ((t < T{}) != (u < U{}))) {
         throw narrowing_error("");
     }
     return t;

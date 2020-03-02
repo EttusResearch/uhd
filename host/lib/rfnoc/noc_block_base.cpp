@@ -29,9 +29,9 @@ noc_block_base::noc_block_base(make_args_ptr make_args)
     , _block_args(make_args->args)
     , _tree(make_args->tree)
 {
-    RFNOC_LOG_TRACE(
-        "Using timebase clock: `" << _tb_clock_iface->get_name() << "'. Current frequency: "
-                                 << (_tb_clock_iface->get_freq() / 1e6) << " MHz");
+    RFNOC_LOG_TRACE("Using timebase clock: `"
+                    << _tb_clock_iface->get_name() << "'. Current frequency: "
+                    << (_tb_clock_iface->get_freq() / 1e6) << " MHz");
     RFNOC_LOG_TRACE("Using ctrlport clock: `"
                     << _ctrlport_clock_iface->get_name() << "'. Current frequency: "
                     << (_ctrlport_clock_iface->get_freq() / 1e6) << " MHz");
@@ -171,7 +171,7 @@ void noc_block_base::set_tick_rate(const double tick_rate)
         return;
     }
     // Update this node
-    RFNOC_LOG_TRACE("Setting tb clock freq to " << tick_rate/1e6 << " MHz");
+    RFNOC_LOG_TRACE("Setting tb clock freq to " << tick_rate / 1e6 << " MHz");
     _tb_clock_iface->set_freq(tick_rate);
     // Now trigger property propagation
     if (!_tick_rate_props.empty()) {

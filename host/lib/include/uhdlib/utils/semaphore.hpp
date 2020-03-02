@@ -9,7 +9,7 @@
 #include <mutex>
 
 #ifndef INCLUDED_UHDLIB_UTILS_SEMAPHORE_HPP
-#define INCLUDED_UHDLIB_UTILS_SEMAPHORE_HPP
+#    define INCLUDED_UHDLIB_UTILS_SEMAPHORE_HPP
 
 namespace uhd {
 

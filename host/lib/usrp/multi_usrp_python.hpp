@@ -13,11 +13,11 @@
 
 void export_multi_usrp(py::module& m)
 {
-    using multi_usrp      = uhd::usrp::multi_usrp;
+    using multi_usrp = uhd::usrp::multi_usrp;
 
     const auto ALL_MBOARDS = multi_usrp::ALL_MBOARDS;
-    const auto ALL_CHANS = multi_usrp::ALL_CHANS;
-    const auto ALL_LOS = multi_usrp::ALL_LOS;
+    const auto ALL_CHANS   = multi_usrp::ALL_CHANS;
+    const auto ALL_LOS     = multi_usrp::ALL_LOS;
 
     py::class_<multi_usrp, multi_usrp::sptr>(m, "multi_usrp")
 

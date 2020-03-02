@@ -147,10 +147,12 @@ ad9361_ctrl::sptr make_rpc(rpc_client::sptr rpcc)
 
 /*! Helper function to convert direction and channel to the 'which' required by most
    Catalina driver functions */
-std::string get_which_ad9361_chain(const direction_t dir, const size_t chan, const bool fe_swap)
+std::string get_which_ad9361_chain(
+    const direction_t dir, const size_t chan, const bool fe_swap)
 {
     UHD_ASSERT_THROW(dir == RX_DIRECTION or dir == TX_DIRECTION);
     UHD_ASSERT_THROW(chan == 0 or chan == 1);
     size_t ad9361_chan = fe_swap ? (chan ? 0 : 1) : chan;
-    return str(boost::format("%s%d") % (dir == RX_DIRECTION ? "RX" : "TX") % (ad9361_chan + 1));
+    return str(
+        boost::format("%s%d") % (dir == RX_DIRECTION ? "RX" : "TX") % (ad9361_chan + 1));
 }

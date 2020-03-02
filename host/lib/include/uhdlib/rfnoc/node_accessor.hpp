@@ -93,7 +93,8 @@ public:
      *
      * This will call node_t::receive_action() (see that for details).
      */
-    void send_action(node_t* node, const res_source_info& port_info, action_info::sptr action)
+    void send_action(
+        node_t* node, const res_source_info& port_info, action_info::sptr action)
     {
         node->receive_action(port_info, action);
     }

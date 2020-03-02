@@ -14,15 +14,15 @@
 #include "magnesium_ad9371_iface.hpp"
 #include "magnesium_cpld_ctrl.hpp"
 #include "magnesium_cpld_regs.hpp"
-#include <iostream>
+#include <uhd/types/eeprom.hpp>
 #include <uhd/types/serial.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/usrp/gpio_defs.hpp>
-#include <uhd/types/eeprom.hpp>
 #include <uhdlib/rfnoc/radio_control_impl.hpp>
 #include <uhdlib/usrp/common/adf435x.hpp>
 #include <uhdlib/usrp/common/mpmd_mb_controller.hpp>
 #include <uhdlib/usrp/cores/gpio_atr_3000.hpp>
+#include <iostream>
 #include <mutex>
 
 namespace uhd { namespace rfnoc {
@@ -77,8 +77,8 @@ public:
     double set_rate(double rate);
 
     // Setters
-    void set_tx_antenna(const std::string &ant, const size_t chan);
-    void set_rx_antenna(const std::string &ant, const size_t chan);
+    void set_tx_antenna(const std::string& ant, const size_t chan);
+    void set_rx_antenna(const std::string& ant, const size_t chan);
     double set_tx_frequency(const double freq, const size_t chan);
     double set_rx_frequency(const double freq, const size_t chan);
     double set_tx_gain(const double gain, const size_t chan);
@@ -157,13 +157,15 @@ public:
     /**************************************************************************
      * Radio Identification API Calls
      *************************************************************************/
-    std::string get_slot_name() const { return _radio_slot; }
+    std::string get_slot_name() const
+    {
+        return _radio_slot;
+    }
     size_t get_chan_from_dboard_fe(
         const std::string& fe, const uhd::direction_t direction) const;
     std::string get_dboard_fe_from_chan(
         const size_t chan, const uhd::direction_t direction) const;
-    std::string get_fe_name(
-        const size_t chan, const uhd::direction_t direction) const;
+    std::string get_fe_name(const size_t chan, const uhd::direction_t direction) const;
 
     /**************************************************************************
      * node_t API Calls

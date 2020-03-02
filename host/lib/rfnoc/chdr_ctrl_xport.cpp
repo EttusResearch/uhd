@@ -23,20 +23,18 @@ chdr_ctrl_xport::chdr_ctrl_xport(io_service::sptr io_srv,
     : _my_epid(my_epid), _recv_packet(pkt_factory.make_generic())
 {
     /* Make dumb send pipe */
-    send_io_if::send_callback_t send_cb = [this](frame_buff::uptr buff,
-                                              send_link_if* link) {
+    send_io_if::send_callback_t send_cb = [this](
+                                              frame_buff::uptr buff, send_link_if* link) {
         link->release_send_buff(std::move(buff));
     };
     _send_if = io_srv->make_send_client(
         send_link, num_send_frames, send_cb, recv_link_if::sptr(), 0, nullptr, nullptr);
 
     /* Make dumb recv pipe that matches management and control packets */
-    uhd::transport::recv_callback_t ctrl_recv_cb = [this](frame_buff::uptr& buff,
-                                                       recv_link_if* /*recv_link*/,
-                                                       send_link_if
-                                                           * /*send_link*/) -> bool {
-        return this->_ctrl_recv_cb(buff);
-    };
+    uhd::transport::recv_callback_t ctrl_recv_cb =
+        [this](frame_buff::uptr& buff,
+            recv_link_if* /*recv_link*/,
+            send_link_if * /*send_link*/) -> bool { return this->_ctrl_recv_cb(buff); };
 
     recv_io_if::fc_callback_t release_cb =
         [this](frame_buff::uptr buff, recv_link_if* link, send_link_if* /*send_link*/) {
@@ -46,12 +44,10 @@ chdr_ctrl_xport::chdr_ctrl_xport(io_service::sptr io_srv,
     _ctrl_recv_if = io_srv->make_recv_client(
         recv_link, num_recv_frames, ctrl_recv_cb, send_link_if::sptr(), 0, release_cb);
 
-    uhd::transport::recv_callback_t mgmt_recv_cb = [this](frame_buff::uptr& buff,
-                                                       recv_link_if* /*recv_link*/,
-                                                       send_link_if
-                                                           * /*send_link*/) -> bool {
-        return this->_mgmt_recv_cb(buff);
-    };
+    uhd::transport::recv_callback_t mgmt_recv_cb =
+        [this](frame_buff::uptr& buff,
+            recv_link_if* /*recv_link*/,
+            send_link_if * /*send_link*/) -> bool { return this->_mgmt_recv_cb(buff); };
 
     _mgmt_recv_if = io_srv->make_recv_client(
         recv_link, 1, mgmt_recv_cb, send_link_if::sptr(), 0, release_cb);
@@ -89,8 +85,8 @@ bool chdr_ctrl_xport::_mgmt_recv_cb(uhd::transport::frame_buff::uptr& buff)
     return false;
 }
 
-void chdr_ctrl_xport::_release_cb(uhd::transport::frame_buff::uptr buff,
-   uhd::transport::recv_link_if* recv_link)
+void chdr_ctrl_xport::_release_cb(
+    uhd::transport::frame_buff::uptr buff, uhd::transport::recv_link_if* recv_link)
 {
     recv_link->release_recv_buff(std::move(buff));
 }

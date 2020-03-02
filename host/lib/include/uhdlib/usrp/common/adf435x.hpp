@@ -17,9 +17,9 @@
 #include <uhd/utils/log.hpp>
 #include <uhdlib/utils/math.hpp>
 #include <uhdlib/utils/narrow.hpp>
-#include <functional>
 #include <boost/math/special_functions/round.hpp>
 #include <boost/thread.hpp>
+#include <functional>
 #include <vector>
 
 class adf435x_iface

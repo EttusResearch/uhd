@@ -8,9 +8,9 @@
 #include <uhdlib/utils/paths.hpp>
 
 #ifdef BOOST_MSVC
-#  include <windows.h>
+#    include <windows.h>
 #else
-#  include <wordexp.h>
+#    include <wordexp.h>
 #endif
 
 std::string uhd::path_expandvars(const std::string& path)
@@ -21,15 +21,12 @@ std::string uhd::path_expandvars(const std::string& path)
 #ifdef BOOST_MSVC
     constexpr size_t max_pathlen = 4096;
     char result[max_pathlen];
-    const size_t result_len = ExpandEnvironmentStrings(
-        path.c_str(),
-        &result[0],
-        max_pathlen
-    );
+    const size_t result_len =
+        ExpandEnvironmentStrings(path.c_str(), &result[0], max_pathlen);
     if (result == 0) {
         return path;
     }
-    return std::string(result, result+result_len);
+    return std::string(result, result + result_len);
 #else
     wordexp_t p;
     std::string return_value;
@@ -42,4 +39,3 @@ std::string uhd::path_expandvars(const std::string& path)
     return return_value;
 #endif
 }
-

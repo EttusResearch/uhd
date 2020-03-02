@@ -75,8 +75,7 @@ class rx_streamer_impl : public rx_streamer
 public:
     //! Constructor
     rx_streamer_impl(const size_t num_ports, const uhd::stream_args_t stream_args)
-        : _zero_copy_streamer(num_ports)
-        , _in_buffs(num_ports)
+        : _zero_copy_streamer(num_ports), _in_buffs(num_ports)
     {
         if (stream_args.cpu_format.empty()) {
             throw uhd::value_error("[rx_stream] Must provide a cpu_format!");
@@ -95,7 +94,8 @@ public:
     }
 
     //! Connect a new channel to the streamer
-    // FIXME: Needs some way to handle virtual channels, since xport could be shared among them
+    // FIXME: Needs some way to handle virtual channels, since xport could be shared among
+    // them
     virtual void connect_channel(const size_t channel, typename transport_t::uptr xport)
     {
         const size_t mtu = xport->get_max_payload_size();
@@ -144,8 +144,8 @@ public:
         size_t total_samps_recv =
             _recv_one_packet(buffs, nsamps_per_buff, metadata, eov_positions, timeout_ms);
 
-        if (one_packet or metadata.end_of_burst or
-            (eov_positions.data() and eov_positions.remaining() == 0)) {
+        if (one_packet or metadata.end_of_burst
+            or (eov_positions.data() and eov_positions.remaining() == 0)) {
             return total_samps_recv;
         }
 
@@ -260,9 +260,8 @@ private:
     {
         if (_buff_samps_remaining == 0) {
             // Current set of buffers has expired, get the next one
-            _buff_samps_remaining =
-                _zero_copy_streamer.get_recv_buffs(
-                    _in_buffs, metadata, eov_positions, timeout_ms);
+            _buff_samps_remaining = _zero_copy_streamer.get_recv_buffs(
+                _in_buffs, metadata, eov_positions, timeout_ms);
             _fragment_offset_in_samps = 0;
         } else {
             // There are samples still left in the current set of buffers
@@ -309,8 +308,7 @@ private:
         _converters[chan]->conv(buffer_ptr, out_buffs, num_samps);
 
         // Advance the pointer for the source buffer
-        _in_buffs[chan] =
-            buffer_ptr + num_samps * _convert_info.bytes_per_otw_item;
+        _in_buffs[chan] = buffer_ptr + num_samps * _convert_info.bytes_per_otw_item;
 
         if (_buff_samps_remaining == num_samps) {
             _zero_copy_streamer.release_recv_buff(chan);
@@ -318,8 +316,7 @@ private:
     }
 
     //! Create converters and initialize _convert_info
-    void _setup_converters(const size_t num_ports,
-        const uhd::stream_args_t stream_args)
+    void _setup_converters(const size_t num_ports, const uhd::stream_args_t stream_args)
     {
         // Note to code archaeologists: In the past, we had to also specify the
         // endianness here, but that is no longer necessary because we can make

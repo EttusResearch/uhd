@@ -138,5 +138,4 @@ BOOST_AUTO_TEST_CASE(test_node_accessor)
     BOOST_CHECK(!TN1.user_prop_cb_called);
     node_accessor.init_props(&TN1);
     BOOST_CHECK(TN1.user_prop_cb_called);
-
 }

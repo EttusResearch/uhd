@@ -19,146 +19,169 @@ using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
 
-void b100_impl::update_rates(void){
+void b100_impl::update_rates(void)
+{
     const fs_path mb_path = "/mboards/0";
     _tree->access<double>(mb_path / "tick_rate").update();
 
-    //and now that the tick rate is set, init the host rates to something
-    for(const std::string &name:  _tree->list(mb_path / "rx_dsps")){
+    // and now that the tick rate is set, init the host rates to something
+    for (const std::string& name : _tree->list(mb_path / "rx_dsps")) {
         _tree->access<double>(mb_path / "rx_dsps" / name / "rate" / "value").update();
     }
-    for(const std::string &name:  _tree->list(mb_path / "tx_dsps")){
+    for (const std::string& name : _tree->list(mb_path / "tx_dsps")) {
         _tree->access<double>(mb_path / "tx_dsps" / name / "rate" / "value").update();
     }
 }
 
-void b100_impl::update_tick_rate(const double rate){
-
-    //update the tick rate on all existing streamers -> thread safe
-    for (size_t i = 0; i < _rx_streamers.size(); i++){
+void b100_impl::update_tick_rate(const double rate)
+{
+    // update the tick rate on all existing streamers -> thread safe
+    for (size_t i = 0; i < _rx_streamers.size(); i++) {
         std::shared_ptr<sph::recv_packet_streamer> my_streamer =
             std::dynamic_pointer_cast<sph::recv_packet_streamer>(_rx_streamers[i].lock());
-        if (my_streamer.get() == NULL) continue;
+        if (my_streamer.get() == NULL)
+            continue;
         my_streamer->set_tick_rate(rate);
     }
-    for (size_t i = 0; i < _tx_streamers.size(); i++){
+    for (size_t i = 0; i < _tx_streamers.size(); i++) {
         std::shared_ptr<sph::send_packet_streamer> my_streamer =
             std::dynamic_pointer_cast<sph::send_packet_streamer>(_tx_streamers[i].lock());
-        if (my_streamer.get() == NULL) continue;
+        if (my_streamer.get() == NULL)
+            continue;
         my_streamer->set_tick_rate(rate);
     }
 }
 
-void b100_impl::update_rx_samp_rate(const size_t dspno, const double rate){
+void b100_impl::update_rx_samp_rate(const size_t dspno, const double rate)
+{
     std::shared_ptr<sph::recv_packet_streamer> my_streamer =
         std::dynamic_pointer_cast<sph::recv_packet_streamer>(_rx_streamers[dspno].lock());
-    if (my_streamer.get() == NULL) return;
+    if (my_streamer.get() == NULL)
+        return;
 
     my_streamer->set_samp_rate(rate);
     const double adj = _rx_dsps[dspno]->get_scaling_adjustment();
     my_streamer->set_scale_factor(adj);
 }
 
-void b100_impl::update_tx_samp_rate(const size_t dspno, const double rate){
+void b100_impl::update_tx_samp_rate(const size_t dspno, const double rate)
+{
     std::shared_ptr<sph::send_packet_streamer> my_streamer =
         std::dynamic_pointer_cast<sph::send_packet_streamer>(_tx_streamers[dspno].lock());
-    if (my_streamer.get() == NULL) return;
+    if (my_streamer.get() == NULL)
+        return;
 
     my_streamer->set_samp_rate(rate);
     const double adj = _tx_dsp->get_scaling_adjustment();
     my_streamer->set_scale_factor(adj);
 }
 
-void b100_impl::update_rx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
+void b100_impl::update_rx_subdev_spec(const uhd::usrp::subdev_spec_t& spec)
+{
     fs_path root = "/mboards/0/dboards";
 
-    //sanity checking
+    // sanity checking
     validate_subdev_spec(_tree, spec, "rx");
 
-    //setup mux for this spec
+    // setup mux for this spec
     bool fe_swapped = false;
-    for (size_t i = 0; i < spec.size(); i++){
-        const std::string conn = _tree->access<std::string>(root / spec[i].db_name / "rx_frontends" / spec[i].sd_name / "connection").get();
-        if (i == 0 and (conn == "QI" or conn == "Q")) fe_swapped = true;
+    for (size_t i = 0; i < spec.size(); i++) {
+        const std::string conn =
+            _tree
+                ->access<std::string>(root / spec[i].db_name / "rx_frontends"
+                                      / spec[i].sd_name / "connection")
+                .get();
+        if (i == 0 and (conn == "QI" or conn == "Q"))
+            fe_swapped = true;
         _rx_dsps[i]->set_mux(conn, fe_swapped);
     }
     _rx_fe->set_mux(fe_swapped);
 }
 
-void b100_impl::update_tx_subdev_spec(const uhd::usrp::subdev_spec_t &spec){
+void b100_impl::update_tx_subdev_spec(const uhd::usrp::subdev_spec_t& spec)
+{
     fs_path root = "/mboards/0/dboards";
 
-    //sanity checking
+    // sanity checking
     validate_subdev_spec(_tree, spec, "tx");
 
-    //set the mux for this spec
-    const std::string conn = _tree->access<std::string>(root / spec[0].db_name / "tx_frontends" / spec[0].sd_name / "connection").get();
+    // set the mux for this spec
+    const std::string conn =
+        _tree
+            ->access<std::string>(
+                root / spec[0].db_name / "tx_frontends" / spec[0].sd_name / "connection")
+            .get();
     _tx_fe->set_mux(conn);
 }
 
 /***********************************************************************
  * Async Data
  **********************************************************************/
-bool b100_impl::recv_async_msg(
-    async_metadata_t &async_metadata, double timeout
-){
+bool b100_impl::recv_async_msg(async_metadata_t& async_metadata, double timeout)
+{
     return _fifo_ctrl->pop_async_msg(async_metadata, timeout);
 }
 
 /***********************************************************************
  * Receive streamer
  **********************************************************************/
-rx_streamer::sptr b100_impl::get_rx_stream(const uhd::stream_args_t &args_){
+rx_streamer::sptr b100_impl::get_rx_stream(const uhd::stream_args_t& args_)
+{
     stream_args_t args = args_;
 
-    //setup defaults for unspecified values
-    args.otw_format = args.otw_format.empty()? "sc16" : args.otw_format;
-    args.channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
+    // setup defaults for unspecified values
+    args.otw_format = args.otw_format.empty() ? "sc16" : args.otw_format;
+    args.channels   = args.channels.empty() ? std::vector<size_t>(1, 0) : args.channels;
 
-    //calculate packet size
-    static const size_t hdr_size = 0
-        + vrt::max_if_hdr_words32*sizeof(uint32_t)
-        + sizeof(vrt::if_packet_info_t().tlr) //forced to have trailer
-        - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
-        - sizeof(vrt::if_packet_info_t().tsi) //no int time ever used
-    ;
+    // calculate packet size
+    static const size_t hdr_size =
+        0 + vrt::max_if_hdr_words32 * sizeof(uint32_t)
+        + sizeof(vrt::if_packet_info_t().tlr) // forced to have trailer
+        - sizeof(vrt::if_packet_info_t().cid) // no class id ever used
+        - sizeof(vrt::if_packet_info_t().tsi) // no int time ever used
+        ;
     const size_t bpp = _data_transport->get_recv_frame_size() - hdr_size;
     const size_t bpi = convert::get_bytes_per_item(args.otw_format);
-    const size_t spp = unsigned(args.args.cast<double>("spp", bpp/bpi));
+    const size_t spp = unsigned(args.args.cast<double>("spp", bpp / bpi));
 
-    //make the new streamer given the samples per packet
-    std::shared_ptr<sph::recv_packet_streamer> my_streamer = std::make_shared<sph::recv_packet_streamer>(spp);
+    // make the new streamer given the samples per packet
+    std::shared_ptr<sph::recv_packet_streamer> my_streamer =
+        std::make_shared<sph::recv_packet_streamer>(spp);
 
-    //init some streamer stuff
+    // init some streamer stuff
     my_streamer->resize(args.channels.size());
     my_streamer->set_vrt_unpacker(&vrt::if_hdr_unpack_le);
 
-    //set the converter
+    // set the converter
     uhd::convert::id_type id;
-    id.input_format = args.otw_format + "_item32_le";
-    id.num_inputs = 1;
+    id.input_format  = args.otw_format + "_item32_le";
+    id.num_inputs    = 1;
     id.output_format = args.cpu_format;
-    id.num_outputs = 1;
+    id.num_outputs   = 1;
     my_streamer->set_converter(id);
 
-    //bind callbacks for the handler
-    for (size_t chan_i = 0; chan_i < args.channels.size(); chan_i++){
+    // bind callbacks for the handler
+    for (size_t chan_i = 0; chan_i < args.channels.size(); chan_i++) {
         const size_t dsp = args.channels[chan_i];
-        _rx_dsps[dsp]->set_nsamps_per_packet(spp); //seems to be a good place to set this
+        _rx_dsps[dsp]->set_nsamps_per_packet(spp); // seems to be a good place to set this
         _rx_dsps[dsp]->setup(args);
         _recv_demuxer->realloc_sid(B100_RX_SID_BASE + dsp);
-        my_streamer->set_xport_chan_get_buff(chan_i, std::bind(
-            &recv_packet_demuxer_3000::get_recv_buff, _recv_demuxer, B100_RX_SID_BASE + dsp, std::placeholders::_1
-        ), true /*flush*/);
-        my_streamer->set_overflow_handler(chan_i, std::bind(
-            &rx_dsp_core_200::handle_overflow, _rx_dsps[dsp]
-        ));
-        my_streamer->set_issue_stream_cmd(chan_i, std::bind(
-            &rx_dsp_core_200::issue_stream_command, _rx_dsps[dsp], std::placeholders::_1));
-        _rx_streamers[dsp] = my_streamer; //store weak pointer
+        my_streamer->set_xport_chan_get_buff(chan_i,
+            std::bind(&recv_packet_demuxer_3000::get_recv_buff,
+                _recv_demuxer,
+                B100_RX_SID_BASE + dsp,
+                std::placeholders::_1),
+            true /*flush*/);
+        my_streamer->set_overflow_handler(
+            chan_i, std::bind(&rx_dsp_core_200::handle_overflow, _rx_dsps[dsp]));
+        my_streamer->set_issue_stream_cmd(chan_i,
+            std::bind(&rx_dsp_core_200::issue_stream_command,
+                _rx_dsps[dsp],
+                std::placeholders::_1));
+        _rx_streamers[dsp] = my_streamer; // store weak pointer
     }
 
-    //sets all tick and samp rates on this streamer
+    // sets all tick and samp rates on this streamer
     this->update_rates();
 
     return my_streamer;
@@ -167,52 +190,57 @@ rx_streamer::sptr b100_impl::get_rx_stream(const uhd::stream_args_t &args_){
 /***********************************************************************
  * Transmit streamer
  **********************************************************************/
-tx_streamer::sptr b100_impl::get_tx_stream(const uhd::stream_args_t &args_){
+tx_streamer::sptr b100_impl::get_tx_stream(const uhd::stream_args_t& args_)
+{
     stream_args_t args = args_;
 
-    //setup defaults for unspecified values
-    args.otw_format = args.otw_format.empty()? "sc16" : args.otw_format;
-    args.channels = args.channels.empty()? std::vector<size_t>(1, 0) : args.channels;
+    // setup defaults for unspecified values
+    args.otw_format = args.otw_format.empty() ? "sc16" : args.otw_format;
+    args.channels   = args.channels.empty() ? std::vector<size_t>(1, 0) : args.channels;
 
-    //calculate packet size
-    static const size_t hdr_size = 0
-        + vrt::max_if_hdr_words32*sizeof(uint32_t)
-        + sizeof(vrt::if_packet_info_t().tlr) //forced to have trailer
-        - sizeof(vrt::if_packet_info_t().sid) //no stream id ever used
-        - sizeof(vrt::if_packet_info_t().cid) //no class id ever used
-        - sizeof(vrt::if_packet_info_t().tsi) //no int time ever used
-    ;
+    // calculate packet size
+    static const size_t hdr_size =
+        0 + vrt::max_if_hdr_words32 * sizeof(uint32_t)
+        + sizeof(vrt::if_packet_info_t().tlr) // forced to have trailer
+        - sizeof(vrt::if_packet_info_t().sid) // no stream id ever used
+        - sizeof(vrt::if_packet_info_t().cid) // no class id ever used
+        - sizeof(vrt::if_packet_info_t().tsi) // no int time ever used
+        ;
     static const size_t bpp = _data_transport->get_send_frame_size() - hdr_size;
-    const size_t spp = bpp/convert::get_bytes_per_item(args.otw_format);
+    const size_t spp        = bpp / convert::get_bytes_per_item(args.otw_format);
 
-    //make the new streamer given the samples per packet
-    std::shared_ptr<sph::send_packet_streamer> my_streamer = std::make_shared<sph::send_packet_streamer>(spp);
+    // make the new streamer given the samples per packet
+    std::shared_ptr<sph::send_packet_streamer> my_streamer =
+        std::make_shared<sph::send_packet_streamer>(spp);
 
-    //init some streamer stuff
+    // init some streamer stuff
     my_streamer->resize(args.channels.size());
     my_streamer->set_vrt_packer(&vrt::if_hdr_pack_le);
 
-    //set the converter
+    // set the converter
     uhd::convert::id_type id;
-    id.input_format = args.cpu_format;
-    id.num_inputs = 1;
+    id.input_format  = args.cpu_format;
+    id.num_inputs    = 1;
     id.output_format = args.otw_format + "_item32_le";
-    id.num_outputs = 1;
+    id.num_outputs   = 1;
     my_streamer->set_converter(id);
 
-    //bind callbacks for the handler
-    for (size_t chan_i = 0; chan_i < args.channels.size(); chan_i++){
+    // bind callbacks for the handler
+    for (size_t chan_i = 0; chan_i < args.channels.size(); chan_i++) {
         const size_t dsp = args.channels[chan_i];
-        UHD_ASSERT_THROW(dsp == 0); //always 0
+        UHD_ASSERT_THROW(dsp == 0); // always 0
         _tx_dsp->setup(args);
-        my_streamer->set_xport_chan_get_buff(chan_i, std::bind(
-            &zero_copy_if::get_send_buff, _data_transport, std::placeholders::_1
-        ));
-        my_streamer->set_async_receiver(std::bind(&fifo_ctrl_excelsior::pop_async_msg, _fifo_ctrl, std::placeholders::_1, std::placeholders::_2));
-        _tx_streamers[dsp] = my_streamer; //store weak pointer
+        my_streamer->set_xport_chan_get_buff(chan_i,
+            std::bind(
+                &zero_copy_if::get_send_buff, _data_transport, std::placeholders::_1));
+        my_streamer->set_async_receiver(std::bind(&fifo_ctrl_excelsior::pop_async_msg,
+            _fifo_ctrl,
+            std::placeholders::_1,
+            std::placeholders::_2));
+        _tx_streamers[dsp] = my_streamer; // store weak pointer
     }
 
-    //sets all tick and samp rates on this streamer
+    // sets all tick and samp rates on this streamer
     this->update_rates();
 
     return my_streamer;

@@ -6,10 +6,10 @@
 //
 
 #ifndef INCLUDED_LIBUHD_RFNOC_E31X_RADIO_CTRL_IMPL_HPP
-#define INCLUDED_LIBUHD_RFNOC_E31X_RADIO_CTRL_IMPL_HPP
+#    define INCLUDED_LIBUHD_RFNOC_E31X_RADIO_CTRL_IMPL_HPP
 
-#include "e3xx_constants.hpp"
-#include "e3xx_radio_control_impl.hpp"
+#    include "e3xx_constants.hpp"
+#    include "e3xx_radio_control_impl.hpp"
 
 namespace {
 static constexpr char E31x_GPIO_BANK[] = "INT0";
@@ -41,11 +41,11 @@ private:
      * ATR/ Switches Types
      *************************************************************************/
     enum tx_sw1_t {
-        TX_SW1_LB_80 = 7,
-        TX_SW1_LB_160 = 6,
-        TX_SW1_LB_225 = 5,
-        TX_SW1_LB_400 = 4,
-        TX_SW1_LB_575 = 3,
+        TX_SW1_LB_80   = 7,
+        TX_SW1_LB_160  = 6,
+        TX_SW1_LB_225  = 5,
+        TX_SW1_LB_400  = 4,
+        TX_SW1_LB_575  = 3,
         TX_SW1_LB_1000 = 2,
         TX_SW1_LB_1700 = 1,
         TX_SW1_LB_2750 = 0,
@@ -53,12 +53,12 @@ private:
     };
 
     enum vctxrx_sw_t {
-        VCTXRX_SW_TX_HB = 3,
+        VCTXRX_SW_TX_HB  = 3,
         VCTXRX1_SW_TX_LB = 1,
-        VCTXRX1_SW_RX = 2,
+        VCTXRX1_SW_RX    = 2,
         VCTXRX2_SW_TX_LB = 2,
-        VCTXRX2_SW_RX = 1,
-        VCTXRX_SW_OFF = 0,
+        VCTXRX2_SW_RX    = 1,
+        VCTXRX_SW_OFF    = 0,
     };
 
     enum rx_sw1_t {
@@ -74,7 +74,7 @@ private:
         RX1_SW1_LB_B5 = 1,
         RX1_SW1_LB_B6 = 3,
         RX1_SW1_LB_B7 = 5,
-        RX_SW1_OFF = 7
+        RX_SW1_OFF    = 7
     };
 
     enum rx_swc_t {
@@ -84,7 +84,7 @@ private:
         RX1_SWC_LB_B2 = 2,
         RX1_SWC_LB_B3 = 3,
         RX1_SWC_LB_B4 = 1,
-        RX_SWC_OFF = 0
+        RX_SWC_OFF    = 0
     };
 
     enum rx_swb_t {
@@ -94,15 +94,15 @@ private:
         RX1_SWB_LB_B5 = 2,
         RX1_SWB_LB_B6 = 3,
         RX1_SWB_LB_B7 = 1,
-        RX_SWB_OFF = 0
+        RX_SWB_OFF    = 0
     };
 
     enum vcrx_sw_t {
-        VCRX_RX_SW_LB = 1,
-        VCRX_RX_SW_HB = 2,
+        VCRX_RX_SW_LB   = 1,
+        VCRX_RX_SW_HB   = 2,
         VCRX_TXRX_SW_LB = 2,
         VCRX_TXRX_SW_HB = 1,
-        VCRX_SW_OFF = 0 //or 3
+        VCRX_SW_OFF     = 0 // or 3
     };
 
     // (TX_ENABLEB, TX_ENABLEA)
@@ -111,7 +111,7 @@ private:
         TX1_BIAS_LB_ON = 2,
         TX2_BIAS_HB_ON = 1,
         TX2_BIAS_LB_ON = 2,
-        TX_BIAS_OFF = 0
+        TX_BIAS_OFF    = 0
     };
 
     /************************************************************************
@@ -123,15 +123,9 @@ private:
     };
 
     uint32_t get_rx_switches(
-        const size_t chan,
-        const double freq,
-        const std::string &ant
-    );
+        const size_t chan, const double freq, const std::string& ant);
 
-    uint32_t get_tx_switches(
-        const size_t chan,
-        const double freq
-    );
+    uint32_t get_tx_switches(const size_t chan, const double freq);
 
     uint32_t get_idle_switches();
 

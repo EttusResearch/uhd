@@ -15,9 +15,9 @@
 #include <complex>
 #include <cstdlib>
 #include <ctime>
+#include <functional>
 #include <iostream>
 #include <thread>
-#include <functional>
 
 namespace po = boost::program_options;
 

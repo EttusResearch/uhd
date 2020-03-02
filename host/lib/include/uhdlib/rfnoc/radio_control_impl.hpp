@@ -52,16 +52,18 @@ public:
      * RF-specific API calls
      *************************************************************************/
     // Setters
-    virtual void set_tx_antenna(const std::string &ant, const size_t chan);
-    virtual void set_rx_antenna(const std::string &ant, const size_t chan);
+    virtual void set_tx_antenna(const std::string& ant, const size_t chan);
+    virtual void set_rx_antenna(const std::string& ant, const size_t chan);
     virtual double set_tx_frequency(const double freq, const size_t chan);
     virtual double set_rx_frequency(const double freq, const size_t chan);
     virtual void set_tx_tune_args(const uhd::device_addr_t&, const size_t chan);
     virtual void set_rx_tune_args(const uhd::device_addr_t&, const size_t chan);
     virtual double set_tx_gain(const double gain, const size_t chan);
-    virtual double set_tx_gain(const double gain, const std::string& name, const size_t chan);
+    virtual double set_tx_gain(
+        const double gain, const std::string& name, const size_t chan);
     virtual double set_rx_gain(const double gain, const size_t chan);
-    virtual double set_rx_gain(const double gain, const std::string& name, const size_t chan);
+    virtual double set_rx_gain(
+        const double gain, const std::string& name, const size_t chan);
     virtual void set_rx_agc(const bool enable, const size_t chan);
     virtual double set_tx_bandwidth(const double bandwidth, const size_t chan);
     virtual double set_rx_bandwidth(const double bandwidth, const size_t chan);
@@ -118,8 +120,7 @@ public:
     virtual std::vector<std::string> get_tx_lo_names(const size_t chan) const;
     virtual std::vector<std::string> get_tx_lo_sources(
         const std::string& name, const size_t chan);
-    virtual freq_range_t get_tx_lo_freq_range(
-        const std::string& name, const size_t chan);
+    virtual freq_range_t get_tx_lo_freq_range(const std::string& name, const size_t chan);
     virtual void set_tx_lo_source(
         const std::string& src, const std::string& name, const size_t chan);
     virtual const std::string get_tx_lo_source(
@@ -147,9 +148,8 @@ public:
      * GPIO Controls
      *************************************************************************/
     virtual std::vector<std::string> get_gpio_banks() const;
-    virtual void set_gpio_attr(const std::string& bank,
-        const std::string& attr,
-        const uint32_t value);
+    virtual void set_gpio_attr(
+        const std::string& bank, const std::string& attr, const uint32_t value);
     virtual uint32_t get_gpio_attr(const std::string& bank, const std::string& attr);
 
     /**************************************************************************
@@ -185,16 +185,20 @@ public:
      *
      * See rfnoc_block_radio_regs.vh for details
      */
-    struct regmap {
-        static const uint32_t REG_COMPAT_NUM = 0x00;  // Compatibility number register offset
-        static const uint32_t REG_RADIO_WIDTH   = 0x1000 + 0x04;   // Upper 16 bits is sample width, lower 16 bits is NSPC
+    struct regmap
+    {
+        static const uint32_t REG_COMPAT_NUM =
+            0x00; // Compatibility number register offset
+        static const uint32_t REG_RADIO_WIDTH =
+            0x1000 + 0x04; // Upper 16 bits is sample width, lower 16 bits is NSPC
 
         static const uint32_t RADIO_BASE_ADDR = 0x1000;
         static const uint32_t REG_CHAN_OFFSET = 128;
-        static const uint32_t RADIO_ADDR_W     = 7;     // Address space size per radio
+        static const uint32_t RADIO_ADDR_W    = 7; // Address space size per radio
 
         // General Radio Registers
-        static const uint32_t REG_LOOPBACK_EN   = 0x00;   // Loopback enable (connect Tx output to Rx input)
+        static const uint32_t REG_LOOPBACK_EN =
+            0x00; // Loopback enable (connect Tx output to Rx input)
 
         // Note on the RX and TX Control Registers: These are per-channel,
         // which means the values here are offsets. The base address per
@@ -202,35 +206,48 @@ public:
         // channel index.
 
         // RX Control Registers
-        static const uint32_t REG_RX_STATUS            = 0x10; // Status of Rx radio
-        static const uint32_t REG_RX_CMD               = 0x14; // The next radio command to execute
-        static const uint32_t REG_RX_CMD_NUM_WORDS_LO  = 0x18; // Number of radio words for the next command (low word)
-        static const uint32_t REG_RX_CMD_NUM_WORDS_HI  = 0x1C; // Number of radio words for the next command (high word)
-        static const uint32_t REG_RX_CMD_TIME_LO       = 0x20; // Time for the next command (low word)
-        static const uint32_t REG_RX_CMD_TIME_HI       = 0x24; // Time for the next command (high word)
-        static const uint32_t REG_RX_MAX_WORDS_PER_PKT = 0x28; // Maximum packet length to build from Rx data
-        static const uint32_t REG_RX_ERR_PORT          = 0x2C; // Port ID for error reporting
-        static const uint32_t REG_RX_ERR_REM_PORT      = 0x30; // Remote port ID for error reporting
-        static const uint32_t REG_RX_ERR_REM_EPID      = 0x34; // Remote EPID (endpoint ID) for error reporting
-        static const uint32_t REG_RX_ERR_ADDR          = 0x38; // Offset to which to write error code (ADDR+0) and time (ADDR+8)
-        static const uint32_t REG_RX_DATA              = 0x3C;
-        static const uint32_t REG_RX_HAS_TIME          = 0x70; // Set to one if radio output packets should have timestamps
+        static const uint32_t REG_RX_STATUS = 0x10; // Status of Rx radio
+        static const uint32_t REG_RX_CMD    = 0x14; // The next radio command to execute
+        static const uint32_t REG_RX_CMD_NUM_WORDS_LO =
+            0x18; // Number of radio words for the next command (low word)
+        static const uint32_t REG_RX_CMD_NUM_WORDS_HI =
+            0x1C; // Number of radio words for the next command (high word)
+        static const uint32_t REG_RX_CMD_TIME_LO =
+            0x20; // Time for the next command (low word)
+        static const uint32_t REG_RX_CMD_TIME_HI =
+            0x24; // Time for the next command (high word)
+        static const uint32_t REG_RX_MAX_WORDS_PER_PKT =
+            0x28; // Maximum packet length to build from Rx data
+        static const uint32_t REG_RX_ERR_PORT = 0x2C; // Port ID for error reporting
+        static const uint32_t REG_RX_ERR_REM_PORT =
+            0x30; // Remote port ID for error reporting
+        static const uint32_t REG_RX_ERR_REM_EPID =
+            0x34; // Remote EPID (endpoint ID) for error reporting
+        static const uint32_t REG_RX_ERR_ADDR =
+            0x38; // Offset to which to write error code (ADDR+0) and time (ADDR+8)
+        static const uint32_t REG_RX_DATA = 0x3C;
+        static const uint32_t REG_RX_HAS_TIME =
+            0x70; // Set to one if radio output packets should have timestamps
 
         // TX Control Registers
-        static const uint32_t REG_TX_IDLE_VALUE   = 0x40; // Value to output when transmitter is idle
+        static const uint32_t REG_TX_IDLE_VALUE =
+            0x40; // Value to output when transmitter is idle
         static const uint32_t REG_TX_ERROR_POLICY = 0x44; // Tx error policy
         static const uint32_t REG_TX_ERR_PORT     = 0x48; // Port ID for error reporting
-        static const uint32_t REG_TX_ERR_REM_PORT = 0x4C; // Remote port ID for error reporting
-        static const uint32_t REG_TX_ERR_REM_EPID = 0x50; // Remote EPID (endpoint ID) for error reporting
-        static const uint32_t REG_TX_ERR_ADDR     = 0x54; // Offset to which to write error code (ADDR+0) and time (ADDR+8)
+        static const uint32_t REG_TX_ERR_REM_PORT =
+            0x4C; // Remote port ID for error reporting
+        static const uint32_t REG_TX_ERR_REM_EPID =
+            0x50; // Remote EPID (endpoint ID) for error reporting
+        static const uint32_t REG_TX_ERR_ADDR =
+            0x54; // Offset to which to write error code (ADDR+0) and time (ADDR+8)
 
-        static const uint32_t RX_CMD_STOP       = 0; // Stop acquiring at end of next packet
-        static const uint32_t RX_CMD_FINITE     = 1; // Acquire NUM_SAMPS then stop
+        static const uint32_t RX_CMD_STOP   = 0; // Stop acquiring at end of next packet
+        static const uint32_t RX_CMD_FINITE = 1; // Acquire NUM_SAMPS then stop
         static const uint32_t RX_CMD_CONTINUOUS = 2; // Acquire until stopped
 
         static const uint32_t RX_CMD_TIMED_POS = 31;
 
-        static const uint32_t PERIPH_BASE = 0x80000;
+        static const uint32_t PERIPH_BASE       = 0x80000;
         static const uint32_t PERIPH_REG_OFFSET = 8;
 
         static const uint32_t SWREG_TX_ERR      = 0x0000;

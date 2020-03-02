@@ -187,10 +187,12 @@ public:
             .set_publisher(std::bind(&tx_dsp_core_3000::get_host_rates, this));
         subtree->create<double>("rate/value")
             .set(DEFAULT_RATE)
-            .set_coercer(std::bind(&tx_dsp_core_3000::set_host_rate, this, std::placeholders::_1));
+            .set_coercer(
+                std::bind(&tx_dsp_core_3000::set_host_rate, this, std::placeholders::_1));
         subtree->create<double>("freq/value")
             .set(DEFAULT_CORDIC_FREQ)
-            .set_coercer(std::bind(&tx_dsp_core_3000::set_freq, this, std::placeholders::_1))
+            .set_coercer(
+                std::bind(&tx_dsp_core_3000::set_freq, this, std::placeholders::_1))
             .set_publisher([this]() { return this->get_freq(); });
         subtree->create<meta_range_t>("freq/range")
             .set_publisher(std::bind(&tx_dsp_core_3000::get_freq_range, this));

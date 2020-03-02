@@ -64,13 +64,13 @@ struct io_service_args_t
     size_t num_poll_offload_threads = 1;
 
     //! CPU affinity of offload threads, if wait_mode is set to BLOCK
-    std::map<size_t,size_t> recv_offload_thread_cpu;
+    std::map<size_t, size_t> recv_offload_thread_cpu;
 
     //! CPU affinity of offload threads, if wait_mode is set to BLOCK
     std::map<size_t, size_t> send_offload_thread_cpu;
 
     //! CPU affinity of offload threads, if wait_mode is set to POLL
-    std::map<size_t,size_t> poll_offload_thread_cpu;
+    std::map<size_t, size_t> poll_offload_thread_cpu;
 };
 
 /*! Reads I/O service args from provided dictionary

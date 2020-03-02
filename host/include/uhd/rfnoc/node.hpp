@@ -35,7 +35,7 @@ namespace uhd { namespace rfnoc {
 class UHD_API node_t
 {
 public:
-    using resolver_fn_t = std::function<void(void)>;
+    using resolver_fn_t      = std::function<void(void)>;
     using resolve_callback_t = std::function<void(void)>;
     using action_handler_t =
         std::function<void(const res_source_info&, action_info::sptr)>;
@@ -574,7 +574,7 @@ private:
     //! Stores a reference to every registered property (Property Registry)
     std::unordered_map<res_source_info::source_t,
         std::vector<property_base_t*>,
-        std::hash<size_t> >
+        std::hash<size_t>>
         _props;
 
     //! Stores a clean callback for some properties
@@ -602,8 +602,8 @@ private:
     //! Forwarding policy for specific properties
     //
     // The entry with the empty-string-key is the default policy.
-    std::unordered_map<std::string, forwarding_policy_t> _prop_fwd_policies{{
-        "", forwarding_policy_t::ONE_TO_ONE}};
+    std::unordered_map<std::string, forwarding_policy_t> _prop_fwd_policies{
+        {"", forwarding_policy_t::ONE_TO_ONE}};
 
     /**************************************************************************
      * Action-related attributes
@@ -614,8 +614,8 @@ private:
     std::unordered_map<std::string, action_handler_t> _action_handlers;
 
     //! Default action forwarding policies
-    std::unordered_map<std::string, forwarding_policy_t> _action_fwd_policies{{
-        "", forwarding_policy_t::ONE_TO_ONE}};
+    std::unordered_map<std::string, forwarding_policy_t> _action_fwd_policies{
+        {"", forwarding_policy_t::ONE_TO_ONE}};
 
     //! Callback which allows us to post actions to other nodes in the graph
     //

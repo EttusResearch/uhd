@@ -27,7 +27,10 @@ public:
     mpmd_mb_controller(uhd::rpc_client::sptr rpcc, uhd::device_addr_t device_info);
 
     //! Return reference to the RPC client
-    uhd::rpc_client::sptr get_rpc_client() { return _rpc; }
+    uhd::rpc_client::sptr get_rpc_client()
+    {
+        return _rpc;
+    }
 
     /**************************************************************************
      * Timekeeper API

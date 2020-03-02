@@ -15,8 +15,8 @@
 #include <uhd/usrp/gpio_defs.hpp>
 #include <uhd/utils/pimpl.hpp>
 #include <stdint.h>
-#include <memory>
 #include <boost/thread/thread.hpp>
+#include <memory>
 #include <string>
 #include <vector>
 

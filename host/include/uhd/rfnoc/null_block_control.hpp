@@ -85,4 +85,3 @@ public:
 }} // namespace uhd::rfnoc
 
 #endif /* INCLUDED_LIBUHD_NULL_BLOCK_CONTROL_HPP */
-

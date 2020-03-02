@@ -5,8 +5,8 @@
 //
 
 #include <uhd/exception.hpp>
-#include <uhd/utils/log.hpp>
 #include <uhd/rfnoc/mb_controller.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/radio_control_impl.hpp>
 #include <uhdlib/utils/compat_check.hpp>
 #include <map>
@@ -26,7 +26,7 @@ const std::string DEFAULT_GAIN_PROFILE("default");
 
 } // namespace
 
-const std::string radio_control::ALL_LOS = "all";
+const std::string radio_control::ALL_LOS   = "all";
 const std::string radio_control::ALL_GAINS = "";
 const size_t radio_control::ALL_CHANS      = size_t(~0);
 
@@ -125,8 +125,8 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
                 uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS);
             stream_cmd_action->stream_cmd.stream_now = false;
             stream_cmd_action->stream_cmd.time_spec =
-                get_mb_controller()->get_timekeeper(0)->get_time_now() +
-                uhd::time_spec_t(OVERRUN_RESTART_DELAY);
+                get_mb_controller()->get_timekeeper(0)->get_time_now()
+                + uhd::time_spec_t(OVERRUN_RESTART_DELAY);
             const size_t port = src.instance;
             if (port > get_num_output_ports()) {
                 RFNOC_LOG_WARNING("Received stream command to invalid output port!");
@@ -141,8 +141,8 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
     _type_in.reserve(get_num_input_ports());
     _type_out.reserve(get_num_output_ports());
     for (size_t chan = 0; chan < get_num_output_ports(); ++chan) {
-        _spp_prop.push_back(property_t<int>(
-            PROP_KEY_SPP, DEFAULT_SPP, {res_source_info::USER, chan}));
+        _spp_prop.push_back(
+            property_t<int>(PROP_KEY_SPP, DEFAULT_SPP, {res_source_info::USER, chan}));
         _samp_rate_in.push_back(property_t<double>(
             PROP_KEY_SAMP_RATE, get_tick_rate(), {res_source_info::INPUT_EDGE, chan}));
         _samp_rate_out.push_back(property_t<double>(
@@ -196,7 +196,8 @@ radio_control_impl::radio_control_impl(make_args_ptr make_args)
         // At run time, it will use the implementation by the child class.
         add_property_resolver({&_samp_rate_in.back(), &_samp_rate_out.back()},
             {&_samp_rate_in.back(), &_samp_rate_out.back()},
-            [this, chan,
+            [this,
+                chan,
                 &samp_rate_in  = _samp_rate_in.at(chan),
                 &samp_rate_out = _samp_rate_out.at(chan)]() {
                 RFNOC_LOG_TRACE("Calling resolver for samp_rate@" << chan);
@@ -358,7 +359,8 @@ uhd::gain_range_t radio_control_impl::get_rx_gain_range(const size_t chan) const
     return result;
 }
 
-uhd::gain_range_t radio_control_impl::get_rx_gain_range(const std::string& name, const size_t chan) const
+uhd::gain_range_t radio_control_impl::get_rx_gain_range(
+    const std::string& name, const size_t chan) const
 {
     if (name != ALL_GAINS) {
         throw uhd::value_error(
@@ -374,7 +376,8 @@ double radio_control_impl::set_tx_gain(const double gain, const size_t chan)
     return gain;
 }
 
-double radio_control_impl::set_tx_gain(const double gain, const std::string& name, const size_t chan)
+double radio_control_impl::set_tx_gain(
+    const double gain, const std::string& name, const size_t chan)
 {
     if (name != ALL_GAINS) {
         throw uhd::key_error(
@@ -390,7 +393,8 @@ double radio_control_impl::set_rx_gain(const double gain, const size_t chan)
     return gain;
 }
 
-double radio_control_impl::set_rx_gain(const double gain, const std::string& name, const size_t chan)
+double radio_control_impl::set_rx_gain(
+    const double gain, const std::string& name, const size_t chan)
 {
     if (name != ALL_GAINS) {
         throw uhd::key_error(
@@ -525,7 +529,8 @@ double radio_control_impl::get_rx_gain(const size_t chan)
 double radio_control_impl::get_tx_gain(const std::string& name, const size_t chan)
 {
     if (name != ALL_GAINS) {
-        throw uhd::value_error(std::string("get_tx_gain(): Unknown gain name `") + name + "'");
+        throw uhd::value_error(
+            std::string("get_tx_gain(): Unknown gain name `") + name + "'");
     }
     return get_tx_gain(chan);
 }
@@ -533,7 +538,8 @@ double radio_control_impl::get_tx_gain(const std::string& name, const size_t cha
 double radio_control_impl::get_rx_gain(const std::string& name, const size_t chan)
 {
     if (name != ALL_GAINS) {
-        throw uhd::value_error(std::string("get_rx_gain(): Unknown gain name `") + name + "'");
+        throw uhd::value_error(
+            std::string("get_rx_gain(): Unknown gain name `") + name + "'");
     }
     return get_rx_gain(chan);
 }
@@ -624,12 +630,14 @@ std::vector<std::string> radio_control_impl::get_tx_lo_names(const size_t) const
     return {};
 }
 
-std::vector<std::string> radio_control_impl::get_tx_lo_sources(const std::string&, const size_t)
+std::vector<std::string> radio_control_impl::get_tx_lo_sources(
+    const std::string&, const size_t)
 {
     return {"internal"};
 }
 
-uhd::freq_range_t radio_control_impl::get_tx_lo_freq_range(const std::string&, const size_t)
+uhd::freq_range_t radio_control_impl::get_tx_lo_freq_range(
+    const std::string&, const size_t)
 {
     return uhd::freq_range_t();
 }
@@ -905,7 +913,7 @@ void radio_control_impl::async_message_handler(
     // BASE == 0x0000 for RX, 0x1000 for TX
     const uint32_t addr_base = (addr >= regmap::SWREG_RX_ERR) ? regmap::SWREG_RX_ERR
                                                               : regmap::SWREG_TX_ERR;
-    const uint32_t chan        = (addr - addr_base) / regmap::SWREG_CHAN_OFFSET;
+    const uint32_t chan = (addr - addr_base) / regmap::SWREG_CHAN_OFFSET;
     // Note: addr_offset is always going to be zero for now, because we only
     // have one "register" that gets hit for either RX or TX, but we'll keep it
     // in case we add other regs in the future

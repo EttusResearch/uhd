@@ -44,8 +44,7 @@ public:
         liberio_chan_put(_chan);
     }
 
-    liberio_frame_buff(const liberio_frame_buff& src)
-        : liberio_frame_buff(src._chan) {}
+    liberio_frame_buff(const liberio_frame_buff& src) : liberio_frame_buff(src._chan) {}
 
     UHD_FORCE_INLINE size_t get(int32_t timeout_ms)
     {
@@ -55,7 +54,7 @@ public:
             return 0;
         }
         _packet_size = liberio_buf_get_len(_buff, 0);
-        _data = liberio_buf_get_mem(_buff, 0);
+        _data        = liberio_buf_get_mem(_buff, 0);
         return _packet_size;
     }
 
@@ -67,6 +66,7 @@ public:
         _buff = nullptr;
         _data = nullptr;
     }
+
 private:
     struct liberio_buf* _buff = nullptr;
     struct liberio_chan* _chan;
@@ -75,7 +75,7 @@ private:
 class liberio_adapter_info : public adapter_info
 {
 public:
-    liberio_adapter_info() = default;
+    liberio_adapter_info()  = default;
     ~liberio_adapter_info() = default;
 
     std::string to_string()
@@ -102,8 +102,9 @@ class liberio_link : public recv_link_base<liberio_link>,
 public:
     using sptr = std::shared_ptr<liberio_link>;
 
-    liberio_link(
-        const std::string& tx_path, const std::string& rx_path, const link_params_t& params);
+    liberio_link(const std::string& tx_path,
+        const std::string& rx_path,
+        const link_params_t& params);
 
     ~liberio_link();
 

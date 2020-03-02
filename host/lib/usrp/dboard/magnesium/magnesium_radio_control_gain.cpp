@@ -7,8 +7,8 @@
 #include "magnesium_constants.hpp"
 #include "magnesium_gain_table.hpp"
 #include "magnesium_radio_control.hpp"
-#include <uhd/utils/log.hpp>
 #include <uhd/exception.hpp>
+#include <uhd/utils/log.hpp>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -61,14 +61,13 @@ double magnesium_radio_control_impl::_set_all_gain(
     const double ad9371_gain =
         ((dir == RX_DIRECTION) ? AD9371_MAX_RX_GAIN : AD9371_MAX_TX_GAIN)
         - gain_tuple.ad9371_att;
-    RFNOC_LOG_TRACE(
-        "AD9371 attenuation==" << gain_tuple.ad9371_att
-                               << " dB, "
-                                  "AD9371 gain=="
-                               << ad9371_gain
-                               << " dB, "
-                                  "DSA attenuation == "
-                               << gain_tuple.dsa_att << " dB.");
+    RFNOC_LOG_TRACE("AD9371 attenuation==" << gain_tuple.ad9371_att
+                                           << " dB, "
+                                              "AD9371 gain=="
+                                           << ad9371_gain
+                                           << " dB, "
+                                              "DSA attenuation == "
+                                           << gain_tuple.dsa_att << " dB.");
     _ad9371->set_gain(ad9371_gain, ad9371_chan, dir);
     _dsa_set_att(gain_tuple.dsa_att, chan, dir);
     if (dir == RX_DIRECTION or dir == DX_DIRECTION) {
@@ -101,9 +100,8 @@ double magnesium_radio_control_impl::_get_all_gain(
 double magnesium_radio_control_impl::_dsa_set_att(
     const double att, const size_t chan, const direction_t dir)
 {
-    RFNOC_LOG_TRACE(
-        __func__ << "(att="
-                 << "att dB, chan=" << chan << ", dir=" << dir << ")")
+    RFNOC_LOG_TRACE(__func__ << "(att="
+                             << "att dB, chan=" << chan << ", dir=" << dir << ")")
     const uint32_t dsa_val = 2 * att;
 
     _set_dsa_val(chan, dir, dsa_val);

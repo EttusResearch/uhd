@@ -9,8 +9,8 @@
 #include <uhd/types/serial.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/usrp/common/ad9361_ctrl.hpp>
-#include <memory>
 #include <cstring>
+#include <memory>
 #include <mutex>
 
 using namespace uhd;

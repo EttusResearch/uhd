@@ -242,11 +242,13 @@ public:
 
     /*! Return a list of TX gain profiles for this radio
      */
-    virtual std::vector<std::string> get_tx_gain_profile_names(const size_t chan) const = 0;
+    virtual std::vector<std::string> get_tx_gain_profile_names(
+        const size_t chan) const = 0;
 
     /*! Return a list of TX gain profiles for this radio
      */
-    virtual std::vector<std::string> get_rx_gain_profile_names(const size_t chan) const = 0;
+    virtual std::vector<std::string> get_rx_gain_profile_names(
+        const size_t chan) const = 0;
 
     /*! Set the TX gain profile
      */
@@ -583,9 +585,8 @@ public:
      * \param attr the name of a GPIO attribute (e.g., CTRL)
      * \param value the new value for this GPIO bank
      */
-    virtual void set_gpio_attr(const std::string& bank,
-        const std::string& attr,
-        const uint32_t value) = 0;
+    virtual void set_gpio_attr(
+        const std::string& bank, const std::string& attr, const uint32_t value) = 0;
 
     /*!
      * Get a GPIO attribute on a particular GPIO bank.

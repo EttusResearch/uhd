@@ -26,9 +26,7 @@ static uhd::usrp::io_service_args_t get_default_io_srv_args()
 
 mpmd_mboard_impl::mpmd_mb_iface::mpmd_mb_iface(
     const uhd::device_addr_t& mb_args, uhd::rpc_client::sptr rpc)
-    : _mb_args(mb_args)
-    , _rpc(rpc)
-    , _link_if_mgr(xport::mpmd_link_if_mgr::make(mb_args))
+    : _mb_args(mb_args), _rpc(rpc), _link_if_mgr(xport::mpmd_link_if_mgr::make(mb_args))
 {
     _remote_device_id = allocate_device_id();
     UHD_LOG_TRACE("MPMD::MB_IFACE", "Assigning device_id " << _remote_device_id);

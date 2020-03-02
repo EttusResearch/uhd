@@ -369,8 +369,7 @@ private:
                     "Calling resolver for `samp_rate_out/scaling_out'@" << chan);
                 if (samp_rate_out.is_valid()) {
                     if (samp_rate_in.is_valid()) {
-                        decim =
-                            coerce_decim(samp_rate_in.get() / samp_rate_out.get());
+                        decim = coerce_decim(samp_rate_in.get() / samp_rate_out.get());
                         set_decim(decim.get(), chan);
                     }
                     // If decim is dirty, it will trigger the decim resolver.

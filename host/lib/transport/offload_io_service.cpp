@@ -28,17 +28,16 @@ constexpr int32_t blocking_timeout_ms = 10;
 
 // Fixed-size queue that supports blocking semantics
 template <typename queue_item_t>
-class offload_thread_queue {
+class offload_thread_queue
+{
 public:
-    offload_thread_queue(size_t size)
-        : _buffer(new queue_item_t[size])
-        , _capacity(size)
+    offload_thread_queue(size_t size) : _buffer(new queue_item_t[size]), _capacity(size)
     {
     }
 
     ~offload_thread_queue()
     {
-        delete [] _buffer;
+        delete[] _buffer;
     }
 
     void push(const queue_item_t& item)
@@ -475,7 +474,8 @@ recv_io_if::sptr offload_io_service_impl::make_recv_client(recv_link_if::sptr re
     // Create a request to create a new receiver in the offload thread
     auto req_fn =
         [this, recv_link, num_recv_frames, cb, fc_link, num_send_frames, fc_cb, port]() {
-            frame_reservation_t frames = {recv_link, num_recv_frames, fc_link, num_send_frames};
+            frame_reservation_t frames = {
+                recv_link, num_recv_frames, fc_link, num_send_frames};
             _reservation_mgr.reserve_frames(frames);
 
             auto inline_recv_io = _io_srv->make_recv_client(
@@ -529,13 +529,19 @@ send_io_if::sptr offload_io_service_impl::make_send_client(send_link_if::sptr se
                       recv_link,
                       num_recv_frames,
                       recv_cb,
-                        fc_cb,
+                      fc_cb,
                       port]() {
-        frame_reservation_t frames = {recv_link, num_recv_frames, send_link, num_send_frames};
+        frame_reservation_t frames = {
+            recv_link, num_recv_frames, send_link, num_send_frames};
         _reservation_mgr.reserve_frames(frames);
 
-        auto inline_send_io = _io_srv->make_send_client(
-            send_link, num_send_frames, send_cb, recv_link, num_recv_frames, recv_cb, fc_cb);
+        auto inline_send_io = _io_srv->make_send_client(send_link,
+            num_send_frames,
+            send_cb,
+            recv_link,
+            num_recv_frames,
+            recv_cb,
+            fc_cb);
 
         send_client_info_t client_info;
         client_info.inline_io       = inline_send_io;
@@ -599,7 +605,8 @@ void offload_io_service_impl::_get_send_buff(send_client_info_t& info)
 }
 
 // Release a single recv buffer and update client info
-void offload_io_service_impl::_release_recv_buff(recv_client_info_t& info, frame_buff* buff)
+void offload_io_service_impl::_release_recv_buff(
+    recv_client_info_t& info, frame_buff* buff)
 {
     info.inline_io->release_recv_buff(frame_buff::uptr(buff));
     assert(info.num_frames_in_use > 0);
@@ -607,7 +614,8 @@ void offload_io_service_impl::_release_recv_buff(recv_client_info_t& info, frame
 }
 
 // Release a single send info
-void offload_io_service_impl::_release_send_buff(send_client_info_t& info, frame_buff* buff)
+void offload_io_service_impl::_release_send_buff(
+    send_client_info_t& info, frame_buff* buff)
 {
     info.inline_io->release_send_buff(frame_buff::uptr(buff));
     assert(info.num_frames_in_use > 0);
@@ -728,7 +736,8 @@ void offload_io_service_impl::_do_work_blocking()
 
                 if (it->num_frames_in_use == it->frames_reserved.num_recv_frames) {
                     // If all buffers are in use, block to avoid excessive CPU usage
-                    std::tie(buff, disconnect) = it->port->offload_thread_pop(blocking_timeout_ms);
+                    std::tie(buff, disconnect) =
+                        it->port->offload_thread_pop(blocking_timeout_ms);
                 } else {
                     // Otherwise, just check current status
                     std::tie(buff, disconnect) = it->port->offload_thread_pop();
@@ -758,7 +767,8 @@ void offload_io_service_impl::_do_work_blocking()
                     bool disconnect;
                     std::tie(buff, disconnect) = it->port->offload_thread_peek();
                     if (buff) {
-                        if (it->inline_io->wait_for_dest_ready(buff->packet_size(), blocking_timeout_ms)) {
+                        if (it->inline_io->wait_for_dest_ready(
+                                buff->packet_size(), blocking_timeout_ms)) {
                             _release_send_buff(*it, buff);
                             it->port->offload_thread_pop();
                         }

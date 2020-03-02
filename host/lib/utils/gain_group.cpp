@@ -130,7 +130,10 @@ public:
         }
         std::sort(indexes_step_size_dec.begin(),
             indexes_step_size_dec.end(),
-            std::bind(&compare_by_step_size, std::placeholders::_1, std::placeholders::_2, all_fcns));
+            std::bind(&compare_by_step_size,
+                std::placeholders::_1,
+                std::placeholders::_2,
+                all_fcns));
         UHD_ASSERT_THROW(all_fcns.at(indexes_step_size_dec.front()).get_range().step()
                          >= all_fcns.at(indexes_step_size_dec.back()).get_range().step());
 

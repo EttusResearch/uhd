@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhd/rfnoc/property.hpp>
 #include <uhd/rfnoc/dirtifier.hpp>
+#include <uhd/rfnoc/property.hpp>
 #include <uhdlib/rfnoc/prop_accessor.hpp>
 #include <boost/test/unit_test.hpp>
 #include <iostream>
@@ -25,7 +25,7 @@ BOOST_AUTO_TEST_CASE(test_res_source_info)
     BOOST_CHECK_EQUAL(S2.instance, 5);
 
     // Check initializer
-    auto src_info_printer = [](res_source_info rsi){
+    auto src_info_printer = [](res_source_info rsi) {
         std::cout << static_cast<int>(rsi.type) << "::" << rsi.instance << std::endl;
     };
     src_info_printer({res_source_info::OUTPUT_EDGE, 5});
@@ -94,7 +94,8 @@ BOOST_AUTO_TEST_CASE(test_access)
 
     // Now test the scoped access mode
     {
-        auto access_lock = prop_accessor.get_scoped_prop_access(prop_i, property_base_t::RW, property_base_t::NONE);
+        auto access_lock = prop_accessor.get_scoped_prop_access(
+            prop_i, property_base_t::RW, property_base_t::NONE);
         prop_i.set(42);
         BOOST_CHECK_EQUAL(prop_i.get(), 42);
     }
@@ -145,8 +146,10 @@ BOOST_AUTO_TEST_CASE(test_dirtifier)
     prop_accessor.mark_clean(dirtifier);
     BOOST_CHECK(dirtifier.is_dirty());
     property_t<int> prop_i{"int_prop", 5, {res_source_info::USER}};
-    BOOST_REQUIRE_THROW(prop_accessor.forward<false>(&dirtifier, &prop_i), uhd::type_error);
-    BOOST_REQUIRE_THROW(prop_accessor.forward<false>(&prop_i, &dirtifier), uhd::type_error);
+    BOOST_REQUIRE_THROW(
+        prop_accessor.forward<false>(&dirtifier, &prop_i), uhd::type_error);
+    BOOST_REQUIRE_THROW(
+        prop_accessor.forward<false>(&prop_i, &dirtifier), uhd::type_error);
     BOOST_CHECK(!prop_accessor.are_compatible(&prop_i, &dirtifier));
     BOOST_CHECK(!prop_accessor.are_compatible(&dirtifier, &prop_i));
 }

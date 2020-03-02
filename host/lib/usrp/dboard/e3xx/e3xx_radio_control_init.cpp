@@ -103,8 +103,10 @@ void e3xx_radio_control_impl::_init_peripherals()
             usrp::gpio_atr::MODE_ATR, usrp::gpio_atr::gpio_atr_3000::MASK_SET_ALL);
     }
     RFNOC_LOG_TRACE("Initializing front-panel GPIO control...")
-    _fp_gpio = usrp::gpio_atr::gpio_atr_3000::make(
-        _wb_ifaces.at(0), e3xx_regs::SR_FP_GPIO, e3xx_regs::RB_FP_GPIO, e3xx_regs::PERIPH_REG_OFFSET);
+    _fp_gpio = usrp::gpio_atr::gpio_atr_3000::make(_wb_ifaces.at(0),
+        e3xx_regs::SR_FP_GPIO,
+        e3xx_regs::RB_FP_GPIO,
+        e3xx_regs::PERIPH_REG_OFFSET);
 
 
     auto block_args = get_block_args();
@@ -123,9 +125,9 @@ void e3xx_radio_control_impl::_init_frontend_subtree(
 {
     const fs_path tx_fe_path = fs_path("tx_frontends") / chan_idx;
     const fs_path rx_fe_path = fs_path("rx_frontends") / chan_idx;
-    RFNOC_LOG_TRACE(
-        "Adding non-RFNoC block properties for channel "
-            << chan_idx << " to prop tree path " << tx_fe_path << " and " << rx_fe_path);
+    RFNOC_LOG_TRACE("Adding non-RFNoC block properties for channel "
+                    << chan_idx << " to prop tree path " << tx_fe_path << " and "
+                    << rx_fe_path);
     // TX Standard attributes
     subtree->create<std::string>(tx_fe_path / "name").set("E3xx");
     subtree->create<std::string>(tx_fe_path / "connection").set("IQ");
@@ -242,7 +244,8 @@ void e3xx_radio_control_impl::_init_frontend_subtree(
     auto rx_sensor_names = get_rx_sensor_names(chan_idx);
     for (const auto& rx_sensor_name : rx_sensor_names) {
         RFNOC_LOG_TRACE("Adding RX sensor " << rx_sensor_name);
-        get_tree()->create<sensor_value_t>(rx_fe_path / "sensors" / rx_sensor_name)
+        get_tree()
+            ->create<sensor_value_t>(rx_fe_path / "sensors" / rx_sensor_name)
             .add_coerced_subscriber([](const sensor_value_t&) {
                 throw uhd::runtime_error("Attempting to write to sensor!");
             })
@@ -253,7 +256,8 @@ void e3xx_radio_control_impl::_init_frontend_subtree(
     auto tx_sensor_names = get_tx_sensor_names(chan_idx);
     for (const auto& tx_sensor_name : tx_sensor_names) {
         RFNOC_LOG_TRACE("Adding TX sensor " << tx_sensor_name);
-        get_tree()->create<sensor_value_t>(tx_fe_path / "sensors" / tx_sensor_name)
+        get_tree()
+            ->create<sensor_value_t>(tx_fe_path / "sensors" / tx_sensor_name)
             .add_coerced_subscriber([](const sensor_value_t&) {
                 throw uhd::runtime_error("Attempting to write to sensor!");
             })
@@ -301,4 +305,3 @@ void e3xx_radio_control_impl::_init_codec()
         this->set_tx_bandwidth(E3XX_DEFAULT_BANDWIDTH, chan);
     }
 }
-

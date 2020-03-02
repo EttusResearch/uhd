@@ -6,23 +6,20 @@
 //
 
 #include "b200_cores.hpp"
-#include "b200_regs.hpp"
 #include "b200_impl.hpp"
+#include "b200_regs.hpp"
 #include <mutex>
 
-b200_local_spi_core::b200_local_spi_core(
-    uhd::wb_iface::sptr iface,
-    perif_t default_perif) :
-    _spi_core(spi_core_3000::make(iface, TOREG(SR_CORE_SPI), RB32_CORE_SPI)),
-    _current_perif(default_perif),
-    _last_perif(default_perif)
+b200_local_spi_core::b200_local_spi_core(uhd::wb_iface::sptr iface, perif_t default_perif)
+    : _spi_core(spi_core_3000::make(iface, TOREG(SR_CORE_SPI), RB32_CORE_SPI))
+    , _current_perif(default_perif)
+    , _last_perif(default_perif)
 {
     change_perif(default_perif);
 }
 
-uint32_t b200_local_spi_core::transact_spi(
-    int which_slave,
-    const uhd::spi_config_t &config,
+uint32_t b200_local_spi_core::transact_spi(int which_slave,
+    const uhd::spi_config_t& config,
     uint32_t data,
     size_t num_bits,
     bool readback)
@@ -34,15 +31,15 @@ uint32_t b200_local_spi_core::transact_spi(
 void b200_local_spi_core::change_perif(perif_t perif)
 {
     std::lock_guard<std::mutex> lock(_mutex);
-    _last_perif = _current_perif;
+    _last_perif    = _current_perif;
     _current_perif = perif;
 
     switch (_current_perif) {
         case CODEC:
-            _spi_core->set_divider(B200_BUS_CLOCK_RATE/AD9361_SPI_RATE);
+            _spi_core->set_divider(B200_BUS_CLOCK_RATE / AD9361_SPI_RATE);
             break;
         case PLL:
-            _spi_core->set_divider(B200_BUS_CLOCK_RATE/ADF4001_SPI_RATE);
+            _spi_core->set_divider(B200_BUS_CLOCK_RATE / ADF4001_SPI_RATE);
             break;
     }
 }
@@ -52,9 +49,8 @@ void b200_local_spi_core::restore_perif()
     change_perif(_last_perif);
 }
 
-b200_ref_pll_ctrl::b200_ref_pll_ctrl(b200_local_spi_core::sptr spi) :
-    uhd::usrp::adf4001_ctrl(spi, ADF4001_SLAVENO),
-    _spi(spi)
+b200_ref_pll_ctrl::b200_ref_pll_ctrl(b200_local_spi_core::sptr spi)
+    : uhd::usrp::adf4001_ctrl(spi, ADF4001_SLAVENO), _spi(spi)
 {
 }
 
@@ -71,4 +67,3 @@ b200_local_spi_core::sptr b200_local_spi_core::make(
 {
     return sptr(new b200_local_spi_core(iface, default_perif));
 }
-

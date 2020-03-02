@@ -9,29 +9,27 @@
 #include <uhd/exception.hpp>
 #include <uhd/utils/paths.hpp>
 #include <uhdlib/utils/paths.hpp>
-
 #include <boost/algorithm/string.hpp>
-#include <functional>
 #include <boost/version.hpp>
+#include <functional>
 #if BOOST_VERSION >= 106100
-#include <boost/dll/runtime_symbol_info.hpp>
+#    include <boost/dll/runtime_symbol_info.hpp>
 #endif
 #include <boost/filesystem.hpp>
 #include <boost/format.hpp>
-#include <regex>
 #include <boost/tokenizer.hpp>
-
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
+#include <regex>
 #include <streambuf>
 #include <string>
 #include <vector>
 
 #ifdef BOOST_MSVC
-#define USE_GET_TEMP_PATH
-#include <windows.h> //GetTempPath
+#    define USE_GET_TEMP_PATH
+#    include <windows.h> //GetTempPath
 #endif
 
 namespace fs = boost::filesystem;
@@ -45,22 +43,22 @@ namespace fs = boost::filesystem;
  * \param default_val A default string value to use if the path isn't found.
  * \returns The string value of the environment variable.
  */
-static std::string get_env_var(const std::string &var_name,
-        const std::string &default_val = "") {
-
+static std::string get_env_var(
+    const std::string& var_name, const std::string& default_val = "")
+{
     std::string env_result = default_val;
-    char *env_var_str = NULL;
+    char* env_var_str      = NULL;
 
     /* Some versions of MinGW don't expose `_dupenv_s` */
 #if defined(UHD_PLATFORM_WIN32) && !defined(__MINGW32__)
     size_t len;
     errno_t err = _dupenv_s(&env_var_str, &len, var_name.c_str());
-    if((not err) and (env_var_str != NULL))
+    if ((not err) and (env_var_str != NULL))
         env_result = std::string(env_var_str);
     free(env_var_str);
 #else
     env_var_str = std::getenv(var_name.c_str());
-    if(env_var_str != NULL)
+    if (env_var_str != NULL)
         env_result = std::string(env_var_str);
 #endif
 
@@ -75,25 +73,28 @@ static std::string get_env_var(const std::string &var_name,
  * \param var_name The environment variable name to read.
  * \returns The vector of paths from the environment variable.
  */
-static std::vector<std::string> get_env_paths(const std::string &var_name){
+static std::vector<std::string> get_env_paths(const std::string& var_name)
+{
 #ifdef UHD_PLATFORM_WIN32
     static const std::string env_path_sep = ";";
 #else
     static const std::string env_path_sep = ":";
 #endif /*UHD_PLATFORM_WIN32*/
 
-#define path_tokenizer(inp) \
-    boost::tokenizer<boost::char_separator<char> > \
-    (inp, boost::char_separator<char>(env_path_sep.c_str()))
+#define path_tokenizer(inp)                        \
+    boost::tokenizer<boost::char_separator<char>>( \
+        inp, boost::char_separator<char>(env_path_sep.c_str()))
 
     std::string var_value = get_env_var(var_name);
 
     std::vector<std::string> paths;
 
-    //convert to full filesystem path, filter blank paths
-    if (var_value.empty()) return paths;
-    for(const std::string &path_string:  path_tokenizer(var_value)){
-        if (path_string.empty()) continue;
+    // convert to full filesystem path, filter blank paths
+    if (var_value.empty())
+        return paths;
+    for (const std::string& path_string : path_tokenizer(var_value)) {
+        if (path_string.empty())
+            continue;
         paths.push_back(fs::system_complete(path_string).string());
     }
 
@@ -111,10 +112,11 @@ static std::vector<std::string> get_env_paths(const std::string &var_name){
  * \param path The path starting with the tilde character
  * \returns The same path with the tilde expanded to contents of $HOME.
  */
-static std::string expand_home_directory(std::string path) {
+static std::string expand_home_directory(std::string path)
+{
     boost::trim(path);
 
-    if(path.empty() || (path[0] != '~')) {
+    if (path.empty() || (path[0] != '~')) {
         return path;
     }
 
@@ -130,80 +132,95 @@ static std::string expand_home_directory(std::string path) {
  **********************************************************************/
 
 
-std::string uhd::get_tmp_path(void){
-    const char *tmp_path = NULL;
+std::string uhd::get_tmp_path(void)
+{
+    const char* tmp_path = NULL;
 
-    //try the official uhd temp path environment variable
+    // try the official uhd temp path environment variable
     tmp_path = std::getenv("UHD_TEMP_PATH");
-    if (tmp_path != NULL) return tmp_path;
+    if (tmp_path != NULL)
+        return tmp_path;
 
-    //try the windows function if available
-    #ifdef USE_GET_TEMP_PATH
+// try the windows function if available
+#ifdef USE_GET_TEMP_PATH
     char lpBuffer[2048];
-    if (GetTempPath(sizeof(lpBuffer), lpBuffer)) return lpBuffer;
-    #endif
+    if (GetTempPath(sizeof(lpBuffer), lpBuffer))
+        return lpBuffer;
+#endif
 
-    //try windows environment variables
+    // try windows environment variables
     tmp_path = std::getenv("TMP");
-    if (tmp_path != NULL) return tmp_path;
+    if (tmp_path != NULL)
+        return tmp_path;
 
     tmp_path = std::getenv("TEMP");
-    if (tmp_path != NULL) return tmp_path;
+    if (tmp_path != NULL)
+        return tmp_path;
 
-    //try the stdio define if available
-    #ifdef P_tmpdir
+// try the stdio define if available
+#ifdef P_tmpdir
     return P_tmpdir;
-    #else
+#else
 
-    //try unix environment variables
+    // try unix environment variables
     tmp_path = std::getenv("TMPDIR");
-    if (tmp_path != NULL) return tmp_path;
+    if (tmp_path != NULL)
+        return tmp_path;
 
-    //give up and use the unix default
+    // give up and use the unix default
     return "/tmp";
-    #endif
+#endif
 }
 
-std::string uhd::get_app_path(void){
+std::string uhd::get_app_path(void)
+{
     const std::string uhdcalib_path = get_env_var("UHD_CONFIG_DIR");
-    if (not uhdcalib_path.empty()) return uhdcalib_path;
+    if (not uhdcalib_path.empty())
+        return uhdcalib_path;
 
     const std::string appdata_path = get_env_var("APPDATA");
-    if (not appdata_path.empty()) return appdata_path;
+    if (not appdata_path.empty())
+        return appdata_path;
 
     const std::string home_path = get_env_var("HOME");
-    if (not home_path.empty()) return home_path;
+    if (not home_path.empty())
+        return home_path;
 
     return uhd::get_tmp_path();
 }
 
 #if BOOST_VERSION >= 106100
-std::string uhd::get_pkg_path(void) {
+std::string uhd::get_pkg_path(void)
+{
     fs::path pkg_path = fs::path(uhd::get_lib_path()).parent_path().lexically_normal();
     return get_env_var("UHD_PKG_PATH", pkg_path.string());
 }
 
-std::string uhd::get_lib_path(void) {
+std::string uhd::get_lib_path(void)
+{
     fs::path runtime_libfile_path = boost::dll::this_line_location();
     return runtime_libfile_path.remove_filename().string();
 }
 #else
-std::string uhd::get_pkg_path(void) {
+std::string uhd::get_pkg_path(void)
+{
     return get_env_var("UHD_PKG_PATH", UHD_PKG_PATH);
 }
 
-std::string uhd::get_lib_path(void) {
+std::string uhd::get_lib_path(void)
+{
     fs::path lib_path = fs::path(uhd::get_pkg_path()) / UHD_LIB_DIR;
     return lib_path.string();
 }
 #endif
 
 
-std::vector<fs::path> uhd::get_module_paths(void){
+std::vector<fs::path> uhd::get_module_paths(void)
+{
     std::vector<fs::path> paths;
 
     std::vector<std::string> env_paths = get_env_paths("UHD_MODULE_PATH");
-    for(std::string &str_path:  env_paths) {
+    for (std::string& str_path : env_paths) {
         paths.push_back(str_path);
     }
 
@@ -214,52 +231,76 @@ std::vector<fs::path> uhd::get_module_paths(void){
 }
 
 #ifdef UHD_PLATFORM_WIN32
-#include <windows.h>
+#    include <windows.h>
 /*!
  * On Windows, query the system registry for the UHD images install path.
  * If the key isn't found in the registry, an empty string is returned.
  * \param registry_key_path The registry key to look for.
  * \return The images path, formatted for windows.
  */
-std::string _get_images_path_from_registry(const std::string& registry_key_path) {
+std::string _get_images_path_from_registry(const std::string& registry_key_path)
+{
     std::smatch reg_key_match;
-    //If a substring in the search path is enclosed in [] (square brackets) then it is interpreted as a registry path
-    if (not std::regex_search(registry_key_path, reg_key_match, std::regex("\\[(.+)\\](.*)", std::regex::icase)))
+    // If a substring in the search path is enclosed in [] (square brackets) then it is
+    // interpreted as a registry path
+    if (not std::regex_search(registry_key_path,
+            reg_key_match,
+            std::regex("\\[(.+)\\](.*)", std::regex::icase)))
         return std::string();
-    std::string reg_key_path = std::string(reg_key_match[1].first, reg_key_match[1].second);
-    std::string path_suffix = std::string(reg_key_match[2].first, reg_key_match[2].second);
+    std::string reg_key_path =
+        std::string(reg_key_match[1].first, reg_key_match[1].second);
+    std::string path_suffix =
+        std::string(reg_key_match[2].first, reg_key_match[2].second);
 
-    //Split the registry path into parent, key-path and value.
+    // Split the registry path into parent, key-path and value.
     std::smatch reg_parent_match;
-    if (not std::regex_search(reg_key_path, reg_parent_match, std::regex("^(.+?)\\\\(.+)\\\\(.+)$", std::regex::icase)))
+    if (not std::regex_search(reg_key_path,
+            reg_parent_match,
+            std::regex("^(.+?)\\\\(.+)\\\\(.+)$", std::regex::icase)))
         return std::string();
-    std::string reg_parent = std::string(reg_parent_match[1].first, reg_parent_match[1].second);
-    std::string reg_path = std::string(reg_parent_match[2].first, reg_parent_match[2].second);
-    std::string reg_val_name = std::string(reg_parent_match[3].first, reg_parent_match[3].second);
+    std::string reg_parent =
+        std::string(reg_parent_match[1].first, reg_parent_match[1].second);
+    std::string reg_path =
+        std::string(reg_parent_match[2].first, reg_parent_match[2].second);
+    std::string reg_val_name =
+        std::string(reg_parent_match[3].first, reg_parent_match[3].second);
 
     HKEY hkey_parent = HKEY_LOCAL_MACHINE;
-    if      (reg_parent == "HKEY_LOCAL_MACHINE")    hkey_parent = HKEY_LOCAL_MACHINE;
-    else if (reg_parent == "HKEY_CURRENT_USER")     hkey_parent = HKEY_CURRENT_USER;
-    else if (reg_parent == "HKEY_CLASSES_ROOT")     hkey_parent = HKEY_CLASSES_ROOT;
-    else if (reg_parent == "HKEY_CURRENT_CONFIG")   hkey_parent = HKEY_CURRENT_CONFIG;
-    else if (reg_parent == "HKEY_USERS")            hkey_parent = HKEY_CURRENT_USER;
+    if (reg_parent == "HKEY_LOCAL_MACHINE")
+        hkey_parent = HKEY_LOCAL_MACHINE;
+    else if (reg_parent == "HKEY_CURRENT_USER")
+        hkey_parent = HKEY_CURRENT_USER;
+    else if (reg_parent == "HKEY_CLASSES_ROOT")
+        hkey_parent = HKEY_CLASSES_ROOT;
+    else if (reg_parent == "HKEY_CURRENT_CONFIG")
+        hkey_parent = HKEY_CURRENT_CONFIG;
+    else if (reg_parent == "HKEY_USERS")
+        hkey_parent = HKEY_CURRENT_USER;
 
     TCHAR value_buff[1024];
-    DWORD value_buff_size = 1024*sizeof(TCHAR);
+    DWORD value_buff_size = 1024 * sizeof(TCHAR);
 
-    //Get a handle to the key location
+    // Get a handle to the key location
     HKEY hkey_location;
-    if (RegOpenKeyExA(hkey_parent, reg_path.c_str(), 0, KEY_QUERY_VALUE, &hkey_location) != ERROR_SUCCESS)
+    if (RegOpenKeyExA(hkey_parent, reg_path.c_str(), 0, KEY_QUERY_VALUE, &hkey_location)
+        != ERROR_SUCCESS)
         return std::string();
 
-    //Query key value
+    // Query key value
     DWORD dw_type = REG_SZ;
-    if(RegQueryValueExA(hkey_location, reg_val_name.c_str(), NULL, &dw_type, (LPBYTE)value_buff, &value_buff_size) == ERROR_SUCCESS) {
+    if (RegQueryValueExA(hkey_location,
+            reg_val_name.c_str(),
+            NULL,
+            &dw_type,
+            (LPBYTE)value_buff,
+            &value_buff_size)
+        == ERROR_SUCCESS) {
         RegCloseKey(hkey_location);
-        if (value_buff_size >= 1024*sizeof(TCHAR)) {
+        if (value_buff_size >= 1024 * sizeof(TCHAR)) {
             return std::string();
         } else {
-            std::string return_value(value_buff, value_buff_size-1); //value_buff_size includes the null terminator
+            std::string return_value(value_buff,
+                value_buff_size - 1); // value_buff_size includes the null terminator
             return_value += path_suffix;
             return return_value;
         }
@@ -267,10 +308,10 @@ std::string _get_images_path_from_registry(const std::string& registry_key_path)
         return std::string();
     }
 }
-#endif  /*UHD_PLATFORM_WIN32*/
+#endif /*UHD_PLATFORM_WIN32*/
 
-std::string uhd::get_images_dir(const std::string &search_paths) {
-
+std::string uhd::get_images_dir(const std::string& search_paths)
+{
     /*   This function will check for the existence of directories in this
      *   order:
      *
@@ -285,9 +326,9 @@ std::string uhd::get_images_dir(const std::string &search_paths) {
     /* We will start by looking for a path indicated by the `UHD_IMAGES_DIR`
      * environment variable. */
     std::vector<std::string> env_paths = get_env_paths("UHD_IMAGES_DIR");
-    for(auto possible_dir:  env_paths) {
+    for (auto possible_dir : env_paths) {
         if (fs::is_directory(fs::path(possible_dir))) {
-                return possible_dir;
+            return possible_dir;
         }
     }
 
@@ -306,18 +347,18 @@ std::string uhd::get_images_dir(const std::string &search_paths) {
         std::vector<std::string> search_paths_vector;
 
         boost::split(search_paths_vector, _search_paths, boost::is_any_of(",;"));
-        for(std::string& search_path:  search_paths_vector) {
-
+        for (std::string& search_path : search_paths_vector) {
             boost::algorithm::trim(search_path);
-            if (search_path.empty()) continue;
+            if (search_path.empty())
+                continue;
 
 #ifdef UHD_PLATFORM_WIN32
             possible_dir = _get_images_path_from_registry(search_path);
             if (possible_dir.empty()) {
-                //Could not read from the registry due to missing key, invalid
-                //values, etc Just use the search path. The is_directory check
-                //will fail if this is a registry path and we will move on to
-                //the next item in the list.
+                // Could not read from the registry due to missing key, invalid
+                // values, etc Just use the search path. The is_directory check
+                // will fail if this is a registry path and we will move on to
+                // the next item in the list.
                 possible_dir = search_path;
             }
 #else
@@ -340,10 +381,12 @@ std::string uhd::get_images_dir(const std::string &search_paths) {
     }
 }
 
-std::string uhd::find_image_path(const std::string &image_name, const std::string &search_paths){
+std::string uhd::find_image_path(
+    const std::string& image_name, const std::string& search_paths)
+{
     /* If a path was provided on the command-line or as a hint from the caller,
      * we default to that. */
-    if (fs::exists(image_name)){
+    if (fs::exists(image_name)) {
         return fs::system_complete(image_name).string();
     }
 
@@ -354,33 +397,33 @@ std::string uhd::find_image_path(const std::string &image_name, const std::strin
         if (fs::exists(image_path)) {
             return image_path.string();
         } else {
-            throw uhd::io_error(
-                "Could not find the image '" + image_name + "' in the image directory " + images_dir
-                + "\nFor more information regarding image paths, please refer to the UHD manual.");
+            throw uhd::io_error("Could not find the image '" + image_name
+                                + "' in the image directory " + images_dir
+                                + "\nFor more information regarding image paths, please "
+                                  "refer to the UHD manual.");
         }
     }
 
     /* If we made it this far, then we didn't find anything. */
     images_dir = "<no images directory located>";
-    throw uhd::io_error("Could not find path for image: " + image_name
-            + "\n\n"
-            + "Using images directory: " + images_dir
-            + "\n\n"
-            + "Set the environment variable 'UHD_IMAGES_DIR' appropriately or"
-            + " follow the below instructions to download the images package."
-            + "\n\n"
-            + uhd::print_utility_error("uhd_images_downloader.py"));
+    throw uhd::io_error("Could not find path for image: " + image_name + "\n\n"
+                        + "Using images directory: " + images_dir + "\n\n"
+                        + "Set the environment variable 'UHD_IMAGES_DIR' appropriately or"
+                        + " follow the below instructions to download the images package."
+                        + "\n\n" + uhd::print_utility_error("uhd_images_downloader.py"));
 }
 
-std::string uhd::find_utility(const std::string &name) {
-    return fs::path(fs::path(uhd::get_lib_path()) / "uhd" / "utils" / name)
-        .string();
+std::string uhd::find_utility(const std::string& name)
+{
+    return fs::path(fs::path(uhd::get_lib_path()) / "uhd" / "utils" / name).string();
 }
 
-std::string uhd::print_utility_error(const std::string &name, const std::string &args){
-    #ifdef UHD_PLATFORM_WIN32
-    return "As an Administrator, please run:\n\n\"" + find_utility(name) + args +  "\"";
-    #else
-    return "Please run:\n\n \"" + find_utility(name) + (args.empty() ? "" : (" " + args)) + "\"";
-    #endif
+std::string uhd::print_utility_error(const std::string& name, const std::string& args)
+{
+#ifdef UHD_PLATFORM_WIN32
+    return "As an Administrator, please run:\n\n\"" + find_utility(name) + args + "\"";
+#else
+    return "Please run:\n\n \"" + find_utility(name) + (args.empty() ? "" : (" " + args))
+           + "\"";
+#endif
 }

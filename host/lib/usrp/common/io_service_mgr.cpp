@@ -40,8 +40,8 @@ namespace uhd { namespace usrp {
 class inline_io_service_mgr
 {
 public:
-    io_service::sptr connect_links(recv_link_if::sptr recv_link,
-        send_link_if::sptr send_link);
+    io_service::sptr connect_links(
+        recv_link_if::sptr recv_link, send_link_if::sptr send_link);
 
     void disconnect_links(recv_link_if::sptr recv_link, send_link_if::sptr send_link);
 
@@ -56,8 +56,8 @@ private:
     std::map<link_pair_t, link_info_t> _link_info_map;
 };
 
-io_service::sptr inline_io_service_mgr::connect_links(recv_link_if::sptr recv_link,
-    send_link_if::sptr send_link)
+io_service::sptr inline_io_service_mgr::connect_links(
+    recv_link_if::sptr recv_link, send_link_if::sptr send_link)
 {
     // Check if links are already connected
     const link_pair_t links{recv_link, send_link};
@@ -421,12 +421,7 @@ public:
     void disconnect_links(recv_link_if::sptr recv_link, send_link_if::sptr send_link);
 
 private:
-    enum io_service_type_t
-    {
-        INLINE_IO_SRV,
-        BLOCKING_IO_SRV,
-        POLLING_IO_SRV
-    };
+    enum io_service_type_t { INLINE_IO_SRV, BLOCKING_IO_SRV, POLLING_IO_SRV };
     struct xport_args_t
     {
         bool offload                              = false;
@@ -463,7 +458,8 @@ io_service_mgr::sptr io_service_mgr::make(const uhd::device_addr_t& args)
 #ifdef HAVE_DPDK
         return std::make_shared<dpdk_io_service_mgr_impl>();
 #else
-        UHD_LOG_WARNING(LOG_ID, "Cannot instantiate DPDK I/O service. Proceeding with regular I/O service.");
+        UHD_LOG_WARNING(LOG_ID,
+            "Cannot instantiate DPDK I/O service. Proceeding with regular I/O service.");
 #endif
     }
     return std::make_shared<io_service_mgr_impl>(args);
@@ -485,8 +481,8 @@ io_service::sptr io_service_mgr_impl::connect_links(recv_link_if::sptr recv_link
         default_args.send_offload = false;
     }
 
-    const io_service_args_t args = read_io_service_args(
-        merge_io_service_dev_args(_args, stream_args), default_args);
+    const io_service_args_t args =
+        read_io_service_args(merge_io_service_dev_args(_args, stream_args), default_args);
 
     // Check if the links are already attached to an I/O service. If they are,
     // then use the same manager to connect, since links can only be connected
@@ -528,7 +524,8 @@ io_service::sptr io_service_mgr_impl::connect_links(recv_link_if::sptr recv_link
     // the inline I/O service. Warn if a different one was requested.
     if (!_out_of_order_supported(recv_link, send_link)) {
         if (io_srv_type != INLINE_IO_SRV) {
-            UHD_LOG_WARNING(LOG_ID, "Link type does not support send/recv offload, ignoring");
+            UHD_LOG_WARNING(
+                LOG_ID, "Link type does not support send/recv offload, ignoring");
         }
         io_srv_type = INLINE_IO_SRV;
     }

@@ -40,11 +40,11 @@ public:
      */
     void connect(node_ref_t src_node, node_ref_t dst_node, graph_edge_t edge_info);
 
-    //void disconnect(node_ref_t src_node,
-        //node_ref_t dst_node,
-        //const size_t src_port,
-        //const size_t dst_port);
-        //
+    // void disconnect(node_ref_t src_node,
+    // node_ref_t dst_node,
+    // const size_t src_port,
+    // const size_t dst_port);
+    //
 
     /*! Commit graph and run initial checks
      *
@@ -138,7 +138,7 @@ private:
     };
 
     using ForwardEdgePredicate = ForwardBackwardEdgePredicate<true>;
-    using BackEdgePredicate = ForwardBackwardEdgePredicate<false>;
+    using BackEdgePredicate    = ForwardBackwardEdgePredicate<false>;
 
     //! Vertex predicate, only selects nodes with dirty props
     struct DirtyNodePredicate;

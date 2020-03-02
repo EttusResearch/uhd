@@ -10,12 +10,13 @@
 
 #include <uhd/config.hpp>
 #include <uhd/types/serial.hpp>
+#include <uhd/types/wb_iface.hpp>
 #include <uhd/utils/noncopyable.hpp>
 #include <boost/utility.hpp>
 #include <memory>
-#include <uhd/types/wb_iface.hpp>
 
-class i2c_core_200 : uhd::noncopyable, public uhd::i2c_iface{
+class i2c_core_200 : uhd::noncopyable, public uhd::i2c_iface
+{
 public:
     typedef std::shared_ptr<i2c_core_200> sptr;
 

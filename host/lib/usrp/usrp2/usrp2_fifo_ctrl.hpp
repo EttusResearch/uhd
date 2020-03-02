@@ -8,12 +8,12 @@
 #ifndef INCLUDED_USRP2_FIFO_CTRL_HPP
 #define INCLUDED_USRP2_FIFO_CTRL_HPP
 
-#include <uhd/types/time_spec.hpp>
-#include <uhd/types/serial.hpp>
 #include <uhd/transport/zero_copy.hpp>
-#include <memory>
-#include <boost/utility.hpp>
+#include <uhd/types/serial.hpp>
+#include <uhd/types/time_spec.hpp>
 #include <uhd/types/wb_iface.hpp>
+#include <boost/utility.hpp>
+#include <memory>
 #include <string>
 
 /*!

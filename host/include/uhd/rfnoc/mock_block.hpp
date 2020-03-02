@@ -162,7 +162,7 @@ struct UHD_API mock_block_container
 
     //! Use this to retrieve a reference to the block controller. Make sure that
     // the register space is appropiately primed before doing so.
-    template<typename block_type = noc_block_base>
+    template <typename block_type = noc_block_base>
     std::shared_ptr<block_type> get_block()
     {
         return std::dynamic_pointer_cast<block_type>(factory(std::move(make_args)));
@@ -175,7 +175,6 @@ struct UHD_API mock_block_container
     // but std::functions need to be CopyConstructible, and this struct doesn't,
     // so it needs to live out here in the open.
     noc_block_base::make_args_ptr make_args;
-
 };
 
 /*! Factory function for mock block controllers
@@ -185,7 +184,7 @@ UHD_API mock_block_container get_mock_block(const noc_id_t noc_id,
     const size_t num_outputs       = 1,
     const uhd::device_addr_t& args = uhd::device_addr_t(),
     const size_t mtu               = 8000,
-    const device_type_t device_id        = ANY_DEVICE);
+    const device_type_t device_id  = ANY_DEVICE);
 
 
 }}; // namespace uhd::rfnoc

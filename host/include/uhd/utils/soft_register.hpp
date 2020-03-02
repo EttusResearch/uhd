@@ -11,13 +11,13 @@
 #include <uhd/exception.hpp>
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/utils/dirty_tracked.hpp>
-#include <stdint.h>
 #include <uhd/utils/noncopyable.hpp>
+#include <stdint.h>
+#include <unordered_map>
 #include <boost/thread/locks.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/tokenizer.hpp>
 #include <list>
-#include <unordered_map>
 
 /*! \file soft_register.hpp
  * Utilities to access and index hardware registers.
@@ -84,7 +84,8 @@ UHD_INLINE size_t shift(const soft_reg_field_t field)
     return ((field >> 8) & 0xFF);
 }
 
-template <typename data_t> UHD_INLINE data_t mask(const soft_reg_field_t field)
+template <typename data_t>
+UHD_INLINE data_t mask(const soft_reg_field_t field)
 {
     constexpr data_t ONE      = static_cast<data_t>(1);
     constexpr data_t ALL_ONES = ~static_cast<data_t>(0);
@@ -137,7 +138,7 @@ template <typename reg_data_t, bool readable, bool writable>
 class UHD_API soft_register_t : public soft_register_base
 {
 public:
-    typedef std::shared_ptr<soft_register_t<reg_data_t, readable, writable> > sptr;
+    typedef std::shared_ptr<soft_register_t<reg_data_t, readable, writable>> sptr;
 
     // Reserved field. Represents all bits in the register.
     UHD_DEFINE_SOFT_REG_FIELD(REGISTER, sizeof(reg_data_t) * 8, 0); //[WIDTH-1:0]
@@ -311,7 +312,7 @@ class UHD_API soft_register_sync_t
     : public soft_register_t<reg_data_t, readable, writable>
 {
 public:
-    typedef std::shared_ptr<soft_register_sync_t<reg_data_t, readable, writable> > sptr;
+    typedef std::shared_ptr<soft_register_sync_t<reg_data_t, readable, writable>> sptr;
 
     soft_register_sync_t(wb_iface::wb_addr_type wr_addr,
         wb_iface::wb_addr_type rd_addr,
@@ -642,9 +643,8 @@ public:
     {
         // Turn the slash separated path string into tokens
         std::list<std::string> tokens;
-        for (const std::string& node :
-            boost::tokenizer<boost::char_separator<char> >(
-                path, boost::char_separator<char>("/"))) {
+        for (const std::string& node : boost::tokenizer<boost::char_separator<char>>(
+                 path, boost::char_separator<char>("/"))) {
             tokens.push_back(node);
         }
         if ((tokens.size() > 2 && tokens.front() == _name) || // If this is a nested DB

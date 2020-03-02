@@ -10,9 +10,9 @@ using namespace uhd::rfnoc;
 using namespace uhd;
 
 namespace {
-    //! Default timeout value for tRPC calls that we know can take long (ms)
-    constexpr size_t MPMD_DEFAULT_LONG_TIMEOUT = 12000; // ms
-}
+//! Default timeout value for tRPC calls that we know can take long (ms)
+constexpr size_t MPMD_DEFAULT_LONG_TIMEOUT = 12000; // ms
+} // namespace
 
 mpmd_mb_controller::mpmd_mb_controller(
     uhd::rpc_client::sptr rpcc, uhd::device_addr_t device_info)
@@ -108,7 +108,8 @@ std::vector<std::string> mpmd_mb_controller::get_clock_sources() const
     return _rpc->request_with_token<std::vector<std::string>>("get_clock_sources");
 }
 
-void mpmd_mb_controller::set_sync_source(const std::string& clock_source, const std::string& time_source)
+void mpmd_mb_controller::set_sync_source(
+    const std::string& clock_source, const std::string& time_source)
 {
     uhd::device_addr_t sync_source;
     sync_source["clock_source"] = clock_source;
@@ -177,8 +178,7 @@ uhd::usrp::mboard_eeprom_t mpmd_mb_controller::get_eeprom()
 {
     auto mb_eeprom =
         _rpc->request_with_token<std::map<std::string, std::string>>("get_mb_eeprom");
-    uhd::usrp::mboard_eeprom_t mb_eeprom_dict(
-        mb_eeprom.cbegin(), mb_eeprom.cend());
+    uhd::usrp::mboard_eeprom_t mb_eeprom_dict(mb_eeprom.cbegin(), mb_eeprom.cend());
     return mb_eeprom_dict;
 }
 

@@ -88,14 +88,12 @@ nirio_link::nirio_link(uhd::niusrprio::niusrprio_session::sptr fpga_session,
             static_cast<uint32_t>(_link_params.recv_frame_size / sizeof(fifo_data_t))),
         status);
 
-	// Config 64-bit word flipping and enable DMA streams
-	nirio_status_chain(
-		PROXY->poke(PCIE_TX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance),
-			DMA_CTRL_SW_BUF_U64 | DMA_CTRL_ENABLED),
+    // Config 64-bit word flipping and enable DMA streams
+    nirio_status_chain(PROXY->poke(PCIE_TX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance),
+                           DMA_CTRL_SW_BUF_U64 | DMA_CTRL_ENABLED),
         status);
-	nirio_status_chain(
-		PROXY->poke(PCIE_RX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance),
-			DMA_CTRL_SW_BUF_U64 | DMA_CTRL_ENABLED),
+    nirio_status_chain(PROXY->poke(PCIE_RX_DMA_REG(DMA_CTRL_STATUS_REG, _fifo_instance),
+                           DMA_CTRL_SW_BUF_U64 | DMA_CTRL_ENABLED),
         status);
 
     // Create FIFOs

@@ -10,8 +10,8 @@
 
 #include <uhd/config.hpp>
 #include <uhd/types/ref_vector.hpp>
-#include <functional>
 #include <boost/operators.hpp>
+#include <functional>
 #include <memory>
 #include <string>
 

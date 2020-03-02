@@ -43,8 +43,8 @@ public:
      * \param chdr_ctrl_xport The ctrl xport to use for initializing the SEP/EPID
      * \return The allocated EPID
      */
-    sep_id_t allocate_epid(const sep_addr_t& addr, mgmt::mgmt_portal& mgmt_portal,
-        chdr_ctrl_xport& xport);
+    sep_id_t allocate_epid(
+        const sep_addr_t& addr, mgmt::mgmt_portal& mgmt_portal, chdr_ctrl_xport& xport);
 
     /*! \brief Get a pre-allocated EPID. Throws an exception is not allocated
      *

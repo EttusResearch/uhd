@@ -13,8 +13,8 @@
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/usrp/fe_connection.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <memory>
 #include <complex>
+#include <memory>
 #include <string>
 
 class rx_frontend_core_3000 : uhd::noncopyable

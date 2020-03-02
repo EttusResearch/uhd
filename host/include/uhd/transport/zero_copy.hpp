@@ -12,8 +12,8 @@
 #include <uhd/utils/noncopyable.hpp>
 #include <boost/detail/atomic_count.hpp>
 #include <boost/intrusive_ptr.hpp>
-#include <memory>
 #include <boost/utility.hpp>
+#include <memory>
 
 namespace uhd { namespace transport {
 
@@ -21,9 +21,7 @@ namespace uhd { namespace transport {
 class UHD_API managed_buffer
 {
 public:
-    managed_buffer(void) : _ref_count(0), _buffer(NULL), _length(0)
-    {
-    }
+    managed_buffer(void) : _ref_count(0), _buffer(NULL), _length(0) {}
 
     virtual ~managed_buffer(void) {}
 
@@ -47,7 +45,8 @@ public:
      * Get a pointer to the underlying buffer.
      * \return a pointer into memory
      */
-    template <class T> UHD_INLINE T cast(void) const
+    template <class T>
+    UHD_INLINE T cast(void) const
     {
         return static_cast<T>(_buffer);
     }

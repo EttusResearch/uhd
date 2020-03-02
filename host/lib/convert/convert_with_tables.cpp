@@ -20,7 +20,8 @@ typedef uint16_t (*tohost16_type)(uint16_t);
  * Implementation for sc16 to sc8 lookup table
  *  - Lookup the real and imaginary parts individually
  **********************************************************************/
-template <bool swap> class convert_sc16_1_to_sc8_item32_1 : public converter
+template <bool swap>
+class convert_sc16_1_to_sc8_item32_1 : public converter
 {
 public:
     convert_sc16_1_to_sc8_item32_1(void) : _table(sc16_table_len) {}

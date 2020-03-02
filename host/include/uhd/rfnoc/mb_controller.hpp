@@ -40,7 +40,7 @@ public:
     class UHD_API timekeeper
     {
     public:
-        using sptr = std::shared_ptr<timekeeper>;
+        using sptr              = std::shared_ptr<timekeeper>;
         using write_period_fn_t = std::function<void(uint64_t)>;
 
         timekeeper();
@@ -83,7 +83,7 @@ public:
 
         /*! Set the time "now" from a time spec
          */
-        void set_time_now(const uhd::time_spec_t &time);
+        void set_time_now(const uhd::time_spec_t& time);
 
         /*! Set the ticks "now"
          */
@@ -91,7 +91,7 @@ public:
 
         /*! Set the time at next PPS from a time spec
          */
-        void set_time_next_pps(const uhd::time_spec_t &time);
+        void set_time_next_pps(const uhd::time_spec_t& time);
 
         /*! Set the ticks at next PPS
          */
@@ -99,7 +99,10 @@ public:
 
         /*! Return the current tick rate
          */
-        double get_tick_rate() { return _tick_rate; }
+        double get_tick_rate()
+        {
+            return _tick_rate;
+        }
 
     protected:
         /*! Set the tick rate
@@ -399,4 +402,3 @@ private:
 }} // namespace uhd::rfnoc
 
 #endif /* INCLUDED_LIBUHD_MB_CONTROLLER_HPP */
-

@@ -23,7 +23,7 @@ namespace uhd { namespace utils {
 class scope_exit
 {
 public:
-    using uptr = std::unique_ptr<scope_exit>;
+    using uptr      = std::unique_ptr<scope_exit>;
     using exit_cb_t = std::function<void(void)>;
 
     // \param exit_b The function object ("exit callback") that gets executed
@@ -49,7 +49,6 @@ private:
     std::function<void(void)> _exit_cb;
 };
 
-}} /* namespace uhd::rfnoc */
+}} // namespace uhd::utils
 
 #endif /* INCLUDED_UHD_SCOPE_EXIT_HPP */
-

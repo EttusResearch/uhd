@@ -49,17 +49,27 @@
  * E31x frequency bands:
  *
  * For RX: (chan here is fe_chan - swapped)
- *     Band   Freq         RX_BSEL-210       RXC_BSEL-10   RXB_BSEL-10         RX2                TX/RX
- *                                                                          VCRX_V1_V2        VCTXRX_V1_V2
- *                         chan1 | chan2   chan1 | chan2  chan1 | chan2  RX ant | TXRX ant   chan2 | chan1
- *     ----------------------------------------------------------------------------------------------------
- *     LB_B2: < 450       RF5 100  RF6 101  J2 10   J1 01   -- 00  -- 00    01    10         J2 10    J1 01
- *     LB_B3: 450-700     RF3 010  RF4 011  J3 11   J3 11   -- 00  -- 00    01    10         J2 10    J1 01
- *     LB_B4: 700-1200    RF1 000  RF2 001  J1 01   J2 10   -- 00  -- 00    01    10         J2 10    J1 01
- *     LB_B5: 1200-1800   RF2 001  RF1 000  -- 00   -- 00   J2 10  J1 01    01    10         J2 10    J1 01
- *     LB_B6: 1800-2350   RF4 011  RF3 010  -- 00   -- 00   J3 11  J3 11    01    10         J2 10    J1 01
- *     LB_B7: 2350-2600   RF6 101  RF5 100  -- 00   -- 00   J1 01  J2 10    01    10         J2 10    J1 01
- *     HB:    2600+       --- 111  --- 111  -- 00   -- 00   -- 00  -- 00    10    01         J2 10    J1 01
+ *     Band   Freq         RX_BSEL-210       RXC_BSEL-10   RXB_BSEL-10         RX2 TX/RX
+ *                                                                          VCRX_V1_V2
+ VCTXRX_V1_V2
+ *                         chan1 | chan2   chan1 | chan2  chan1 | chan2  RX ant | TXRX ant
+ chan2 | chan1
+ *
+ ----------------------------------------------------------------------------------------------------
+ *     LB_B2: < 450       RF5 100  RF6 101  J2 10   J1 01   -- 00  -- 00    01    10 J2 10
+ J1 01
+ *     LB_B3: 450-700     RF3 010  RF4 011  J3 11   J3 11   -- 00  -- 00    01    10 J2 10
+ J1 01
+ *     LB_B4: 700-1200    RF1 000  RF2 001  J1 01   J2 10   -- 00  -- 00    01    10 J2 10
+ J1 01
+ *     LB_B5: 1200-1800   RF2 001  RF1 000  -- 00   -- 00   J2 10  J1 01    01    10 J2 10
+ J1 01
+ *     LB_B6: 1800-2350   RF4 011  RF3 010  -- 00   -- 00   J3 11  J3 11    01    10 J2 10
+ J1 01
+ *     LB_B7: 2350-2600   RF6 101  RF5 100  -- 00   -- 00   J1 01  J2 10    01    10 J2 10
+ J1 01
+ *     HB:    2600+       --- 111  --- 111  -- 00   -- 00   -- 00  -- 00    10    01 J2 10
+ J1 01
  *
  *
  * For TX:
@@ -131,7 +141,8 @@ constexpr double E3XX_TX_LB_2750_MIN_FREQ = 1842.6e6;
 constexpr double E3XX_TX_HB_MIN_FREQ      = 2940.0e6;
 } // namespace
 
-e3xx_radio_control_impl::rx_band e3xx_radio_control_impl::map_freq_to_rx_band(const double freq)
+e3xx_radio_control_impl::rx_band e3xx_radio_control_impl::map_freq_to_rx_band(
+    const double freq)
 {
     e3xx_radio_control_impl::rx_band band;
 
@@ -158,7 +169,8 @@ e3xx_radio_control_impl::rx_band e3xx_radio_control_impl::map_freq_to_rx_band(co
     return band;
 }
 
-e3xx_radio_control_impl::tx_band e3xx_radio_control_impl::map_freq_to_tx_band(const double freq)
+e3xx_radio_control_impl::tx_band e3xx_radio_control_impl::map_freq_to_tx_band(
+    const double freq)
 {
     e3xx_radio_control_impl::tx_band band;
 

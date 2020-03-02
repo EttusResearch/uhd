@@ -19,9 +19,7 @@ const uint32_t gain_block_control::REG_GAIN_VALUE = 0x00;
 class gain_block_control_impl : public gain_block_control
 {
 public:
-    RFNOC_BLOCK_CONSTRUCTOR(gain_block_control)
-    {
-    }
+    RFNOC_BLOCK_CONSTRUCTOR(gain_block_control) {}
 
     void set_gain_value(const uint32_t gain)
     {
@@ -34,7 +32,6 @@ public:
     }
 
 private:
-
 };
 
 UHD_RFNOC_BLOCK_REGISTER_DIRECT(

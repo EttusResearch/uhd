@@ -11,8 +11,8 @@
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
 #include <atomic>
-#include <string>
 #include <memory>
+#include <string>
 
 namespace uhd { namespace rfnoc {
 

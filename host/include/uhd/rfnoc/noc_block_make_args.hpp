@@ -7,9 +7,9 @@
 #ifndef INCLUDED_LIBUHD_NOC_BLOCK_MAKE_ARGS_HPP
 #define INCLUDED_LIBUHD_NOC_BLOCK_MAKE_ARGS_HPP
 
+#include <uhd/property_tree.hpp>
 #include <uhd/rfnoc/noc_block_base.hpp>
 #include <uhd/rfnoc/register_iface.hpp>
-#include <uhd/property_tree.hpp>
 
 namespace uhd { namespace rfnoc {
 

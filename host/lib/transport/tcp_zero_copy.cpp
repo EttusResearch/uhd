@@ -8,11 +8,11 @@
 #include <uhd/transport/buffer_pool.hpp>
 #include <uhd/transport/tcp_zero_copy.hpp>
 #include <uhd/utils/log.hpp>
-#include <uhdlib/utils/atomic.hpp>
 #include <uhdlib/transport/udp_common.hpp>
+#include <uhdlib/utils/atomic.hpp>
 #include <boost/format.hpp>
-#include <memory>
 #include <chrono>
+#include <memory>
 #include <thread>
 #include <vector>
 

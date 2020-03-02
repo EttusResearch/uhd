@@ -35,9 +35,9 @@
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
-#include <memory>
 #include <uhd/utils/noncopyable.hpp>
 #include <complex>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -1564,12 +1564,14 @@ public:
     /*******************************************************************
      * Filter API methods
      ******************************************************************/
-    // TODO: This should be a const function, but I don't want to wrestle with the compiler right now
+    // TODO: This should be a const function, but I don't want to wrestle with the
+    // compiler right now
     /*!
      * Enumerate the available filters in the RX signal path.
      * \param chan RX channel index 0 to N-1
      * \return a vector of strings representing the selected filter names.
-     * \return Filter names will follow the pattern BLOCK_ID:FILTER_NAME. For example, "0/Radio#0:HB_0"
+     * \return Filter names will follow the pattern BLOCK_ID:FILTER_NAME. For example,
+     * "0/Radio#0:HB_0"
      */
     virtual std::vector<std::string> get_rx_filter_names(const size_t chan) = 0;
 
@@ -1579,7 +1581,8 @@ public:
      * \param chan RX channel index 0 to N-1
      * \return a filter_info_base::sptr.
      */
-    virtual uhd::filter_info_base::sptr get_rx_filter(const std::string& name, const size_t chan) = 0;
+    virtual uhd::filter_info_base::sptr get_rx_filter(
+        const std::string& name, const size_t chan) = 0;
 
     /*!
      * Write back a filter obtained by get_rx_filter() to the signal path.
@@ -1588,15 +1591,18 @@ public:
      * \param filter the filter_info_base::sptr of the filter object to be written
      * \param chan RX channel index 0 to N-1
      */
-    virtual void set_rx_filter(
-        const std::string& name, uhd::filter_info_base::sptr filter, const size_t chan) = 0;
+    virtual void set_rx_filter(const std::string& name,
+        uhd::filter_info_base::sptr filter,
+        const size_t chan) = 0;
 
-    // TODO: This should be a const function, but I don't want to wrestle with the compiler right now
+    // TODO: This should be a const function, but I don't want to wrestle with the
+    // compiler right now
     /*!
      * Enumerate the available filters in the TX signal path.
      * \param chan TX channel index 0 to N-1
      * \return a vector of strings representing the selected filter names.
-     * \return Filter names will follow the pattern BLOCK_ID:FILTER_NAME. For example, "0/Radio#0:HB_0"
+     * \return Filter names will follow the pattern BLOCK_ID:FILTER_NAME. For example,
+     * "0/Radio#0:HB_0"
      */
     virtual std::vector<std::string> get_tx_filter_names(const size_t chan) = 0;
 
@@ -1606,7 +1612,8 @@ public:
      * \param chan TX channel index 0 to N-1
      * \return a filter_info_base::sptr.
      */
-    virtual uhd::filter_info_base::sptr get_tx_filter(const std::string& name, const size_t chan) = 0;
+    virtual uhd::filter_info_base::sptr get_tx_filter(
+        const std::string& name, const size_t chan) = 0;
 
     /*!
      * Write back a filter obtained by get_tx_filter() to the signal path.
@@ -1615,8 +1622,9 @@ public:
      * \param filter the filter_info_base::sptr of the filter object to be written
      * \param chan TX channel index 0 to N-1
      */
-    virtual void set_tx_filter(
-        const std::string& name, uhd::filter_info_base::sptr filter, const size_t chan) = 0;
+    virtual void set_tx_filter(const std::string& name,
+        uhd::filter_info_base::sptr filter,
+        const size_t chan) = 0;
 };
 
 } // namespace usrp

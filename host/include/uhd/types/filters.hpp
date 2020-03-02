@@ -12,8 +12,8 @@
 #include <uhd/utils/log.hpp>
 #include <stdint.h>
 #include <boost/scoped_array.hpp>
-#include <memory>
 #include <iostream>
+#include <memory>
 #include <ostream>
 #include <sstream>
 #include <string>
@@ -119,7 +119,8 @@ public:
     virtual std::string to_pp_string();
 };
 
-template <typename tap_t> class UHD_API digital_filter_base : public filter_info_base
+template <typename tap_t>
+class UHD_API digital_filter_base : public filter_info_base
 {
 protected:
     double _rate;
@@ -208,7 +209,7 @@ template <typename tap_t>
 class UHD_API digital_filter_fir : public digital_filter_base<tap_t>
 {
 public:
-    typedef std::shared_ptr<digital_filter_fir<tap_t> > sptr;
+    typedef std::shared_ptr<digital_filter_fir<tap_t>> sptr;
 
     digital_filter_fir(filter_info_base::filter_type type,
         bool bypass,

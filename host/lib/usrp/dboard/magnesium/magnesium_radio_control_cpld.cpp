@@ -120,12 +120,11 @@ void magnesium_radio_control_impl::_update_rx_freq_switches(const double freq,
     const bool bypass_lnas,
     const magnesium_cpld_ctrl::chan_sel_t chan_sel)
 {
-    RFNOC_LOG_TRACE(
-        "Update all RX freq related switches. f=" << freq
-                                                  << " Hz, "
-                                                     "bypass LNAS: "
-                                                  << (bypass_lnas ? "Yes" : "No")
-                                                  << ", chan=" << chan_sel);
+    RFNOC_LOG_TRACE("Update all RX freq related switches. f="
+                    << freq
+                    << " Hz, "
+                       "bypass LNAS: "
+                    << (bypass_lnas ? "Yes" : "No") << ", chan=" << chan_sel);
     auto rx_sw2           = magnesium_cpld_ctrl::RX_SW2_BYPASSPATHTOSWITCH6;
     auto rx_sw3           = magnesium_cpld_ctrl::RX_SW3_SHUTDOWNSW3;
     auto rx_sw4           = magnesium_cpld_ctrl::RX_SW4_FILTER2100X2850MHZFROM;

@@ -21,4 +21,3 @@ adapter_id_t adapter_ctx::register_adapter(adapter_info& info)
         return id;
     }
 }
-

@@ -5,8 +5,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <pybind11/pybind11.h>
 #include <pybind11/complex.h>
+#include <pybind11/pybind11.h>
 
 #define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
 #include <numpy/arrayobject.h>
@@ -14,21 +14,18 @@
 namespace py = pybind11;
 
 #include "rfnoc/rfnoc_python.hpp"
-
 #include "stream_python.hpp"
-
-#include "types/types_python.hpp"
-#include "types/serial_python.hpp"
-#include "types/time_spec_python.hpp"
+#include "types/filters_python.hpp"
 #include "types/metadata_python.hpp"
 #include "types/sensors_python.hpp"
-#include "types/filters_python.hpp"
+#include "types/serial_python.hpp"
+#include "types/time_spec_python.hpp"
 #include "types/tune_python.hpp"
-
-#include "usrp/fe_connection_python.hpp"
+#include "types/types_python.hpp"
 #include "usrp/dboard_iface_python.hpp"
-#include "usrp/subdev_spec_python.hpp"
+#include "usrp/fe_connection_python.hpp"
 #include "usrp/multi_usrp_python.hpp"
+#include "usrp/subdev_spec_python.hpp"
 
 // We need this hack because import_array() returns NULL
 // for newer Python versions.
@@ -79,4 +76,3 @@ PYBIND11_MODULE(libpyuhd, m)
     auto rfnoc_module = m.def_submodule("rfnoc", "RFNoC Objects");
     export_rfnoc(rfnoc_module);
 }
-

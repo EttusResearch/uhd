@@ -29,9 +29,9 @@ using namespace uhd::niusrprio;
 
 namespace {
 
-//uint32_t extract_sid_from_pkt(void* pkt, size_t)
+// uint32_t extract_sid_from_pkt(void* pkt, size_t)
 //{
-    //return uhd::sid_t(uhd::wtohx(static_cast<const uint32_t*>(pkt)[1])).get_dst();
+// return uhd::sid_t(uhd::wtohx(static_cast<const uint32_t*>(pkt)[1])).get_dst();
 //}
 
 constexpr uint32_t RADIO_DEST_PREFIX_TX = 0;
@@ -42,13 +42,13 @@ constexpr uint32_t RADIO_DEST_PREFIX_TX = 0;
 // 64 frames * 256 bytes each aligns with the typical page size of 4096 bytes.  Since most
 // page sizes are 4096 bytes or some multiple of that, keep the number of frames * frame
 // size aligned to it.
-constexpr size_t PCIE_RX_DATA_FRAME_SIZE     = 4096; // bytes
-constexpr size_t PCIE_RX_DATA_NUM_FRAMES     = 4096;
-constexpr size_t PCIE_TX_DATA_FRAME_SIZE     = 4096; // bytes
-constexpr size_t PCIE_TX_DATA_NUM_FRAMES     = 4096;
-constexpr size_t PCIE_MSG_FRAME_SIZE         = 256; // bytes
-constexpr size_t PCIE_MSG_NUM_FRAMES         = 64;
-constexpr size_t PCIE_MAX_CHANNELS           = 6;
+constexpr size_t PCIE_RX_DATA_FRAME_SIZE = 4096; // bytes
+constexpr size_t PCIE_RX_DATA_NUM_FRAMES = 4096;
+constexpr size_t PCIE_TX_DATA_FRAME_SIZE = 4096; // bytes
+constexpr size_t PCIE_TX_DATA_NUM_FRAMES = 4096;
+constexpr size_t PCIE_MSG_FRAME_SIZE     = 256; // bytes
+constexpr size_t PCIE_MSG_NUM_FRAMES     = 64;
+constexpr size_t PCIE_MAX_CHANNELS       = 6;
 // constexpr size_t MAX_RATE_PCIE               = 800000000; // bytes/s
 
 

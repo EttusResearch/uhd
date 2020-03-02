@@ -68,11 +68,13 @@ rfnoc_rx_streamer::rfnoc_rx_streamer(
             mtu_resolver_out.insert(&mtu_prop);
         }
 
-        add_property_resolver({&_mtu_in[i]}, std::move(mtu_resolver_out),
-            [&mtu_in = _mtu_in[i], i, this]() {
+        add_property_resolver({&_mtu_in[i]},
+            std::move(mtu_resolver_out),
+            [& mtu_in = _mtu_in[i], i, this]() {
                 RFNOC_LOG_TRACE("Calling resolver for `mtu_in'@" << i);
                 if (mtu_in.is_valid()) {
-                    const size_t mtu = std::min(mtu_in.get(), rx_streamer_impl::get_mtu());
+                    const size_t mtu =
+                        std::min(mtu_in.get(), rx_streamer_impl::get_mtu());
                     // Set the same MTU value for all chans
                     for (auto& prop : this->_mtu_in) {
                         prop.set(mtu);
@@ -112,7 +114,7 @@ void rfnoc_rx_streamer::issue_stream_cmd(const stream_cmd_t& stream_cmd)
             "single streamer will fail to time align.");
     }
 
-    auto cmd = stream_cmd_action_info::make(stream_cmd.stream_mode);
+    auto cmd        = stream_cmd_action_info::make(stream_cmd.stream_mode);
     cmd->stream_cmd = stream_cmd;
 
     for (size_t i = 0; i < get_num_channels(); i++) {
@@ -126,8 +128,7 @@ const uhd::stream_args_t& rfnoc_rx_streamer::get_stream_args() const
     return _stream_args;
 }
 
-bool rfnoc_rx_streamer::check_topology(
-    const std::vector<size_t>& connected_inputs,
+bool rfnoc_rx_streamer::check_topology(const std::vector<size_t>& connected_inputs,
     const std::vector<size_t>& connected_outputs)
 {
     // Check that all channels are connected
@@ -160,27 +161,26 @@ void rfnoc_rx_streamer::connect_channel(
     rx_streamer_impl<chdr_rx_data_xport>::connect_channel(channel, std::move(xport));
 }
 
-void rfnoc_rx_streamer::_register_props(const size_t chan,
-    const std::string& otw_format)
+void rfnoc_rx_streamer::_register_props(const size_t chan, const std::string& otw_format)
 {
     // Create actual properties and store them
-    _scaling_in.push_back(property_t<double>(
-        PROP_KEY_SCALING, {res_source_info::INPUT_EDGE, chan}));
+    _scaling_in.push_back(
+        property_t<double>(PROP_KEY_SCALING, {res_source_info::INPUT_EDGE, chan}));
     _samp_rate_in.push_back(
         property_t<double>(PROP_KEY_SAMP_RATE, {res_source_info::INPUT_EDGE, chan}));
-    _tick_rate_in.push_back(property_t<double>(
-        PROP_KEY_TICK_RATE, {res_source_info::INPUT_EDGE, chan}));
+    _tick_rate_in.push_back(
+        property_t<double>(PROP_KEY_TICK_RATE, {res_source_info::INPUT_EDGE, chan}));
     _type_in.emplace_back(property_t<std::string>(
         PROP_KEY_TYPE, otw_format, {res_source_info::INPUT_EDGE, chan}));
-    _mtu_in.emplace_back(property_t<size_t>(
-        PROP_KEY_MTU, get_mtu(), {res_source_info::INPUT_EDGE, chan}));
+    _mtu_in.emplace_back(
+        property_t<size_t>(PROP_KEY_MTU, get_mtu(), {res_source_info::INPUT_EDGE, chan}));
 
     // Give us some shorthands for the rest of this function
     property_t<double>* scaling_in   = &_scaling_in.back();
     property_t<double>* samp_rate_in = &_samp_rate_in.back();
     property_t<double>* tick_rate_in = &_tick_rate_in.back();
     property_t<std::string>* type_in = &_type_in.back();
-    property_t<size_t>* mtu_in = &_mtu_in.back();
+    property_t<size_t>* mtu_in       = &_mtu_in.back();
 
     // Register them
     register_property(scaling_in);
@@ -190,24 +190,23 @@ void rfnoc_rx_streamer::_register_props(const size_t chan,
     register_property(mtu_in);
 
     // Add resolvers
-    add_property_resolver({scaling_in}, {},
-        [&scaling_in = *scaling_in, chan, this]() {
-            RFNOC_LOG_TRACE("Calling resolver for `scaling_in'@" << chan);
-            if (scaling_in.is_valid()) {
-                this->set_scale_factor(chan, scaling_in.get() / 32767.0);
-            }
-        });
+    add_property_resolver({scaling_in}, {}, [& scaling_in = *scaling_in, chan, this]() {
+        RFNOC_LOG_TRACE("Calling resolver for `scaling_in'@" << chan);
+        if (scaling_in.is_valid()) {
+            this->set_scale_factor(chan, scaling_in.get() / 32767.0);
+        }
+    });
 
-    add_property_resolver({samp_rate_in}, {},
-        [&samp_rate_in = *samp_rate_in, chan, this]() {
+    add_property_resolver(
+        {samp_rate_in}, {}, [& samp_rate_in = *samp_rate_in, chan, this]() {
             RFNOC_LOG_TRACE("Calling resolver for `samp_rate_in'@" << chan);
             if (samp_rate_in.is_valid()) {
                 this->set_samp_rate(samp_rate_in.get());
             }
         });
 
-    add_property_resolver({tick_rate_in}, {},
-        [&tick_rate_in = *tick_rate_in, chan, this]() {
+    add_property_resolver(
+        {tick_rate_in}, {}, [& tick_rate_in = *tick_rate_in, chan, this]() {
             RFNOC_LOG_TRACE("Calling resolver for `tick_rate_in'@" << chan);
             if (tick_rate_in.is_valid()) {
                 this->set_tick_rate(tick_rate_in.get());

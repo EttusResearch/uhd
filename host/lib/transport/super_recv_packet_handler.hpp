@@ -21,8 +21,8 @@
 #include <boost/dynamic_bitset.hpp>
 #include <boost/format.hpp>
 #include <functional>
-#include <memory>
 #include <iostream>
+#include <memory>
 #include <vector>
 
 namespace uhd { namespace transport { namespace sph {
@@ -670,9 +670,9 @@ private:
                     curr_info.metadata.time_spec =
                         prev_info.metadata.time_spec
                         + time_spec_t::from_ticks(
-                            prev_info[index].ifpi.num_payload_words32 * sizeof(uint32_t)
-                                / _bytes_per_otw_item,
-                            _samp_rate);
+                              prev_info[index].ifpi.num_payload_words32 * sizeof(uint32_t)
+                                  / _bytes_per_otw_item,
+                              _samp_rate);
                     curr_info.metadata.out_of_sequence = true;
                     curr_info.metadata.error_code = rx_metadata_t::ERROR_CODE_OVERFLOW;
                     UHD_LOG_FASTPATH("D");
@@ -797,7 +797,6 @@ private:
     const rx_streamer::buffs_type* _convert_buffs;
     size_t _convert_buffer_offset_bytes;
     size_t _convert_bytes_to_copy;
-
 };
 
 class recv_packet_streamer : public recv_packet_handler, public rx_streamer

@@ -35,8 +35,8 @@ public:
 
     ~eov_data_wrapper()
     {
-        _metadata.eov_positions = _data;
-        _metadata.eov_positions_size = _size;
+        _metadata.eov_positions       = _data;
+        _metadata.eov_positions_size  = _size;
         _metadata.eov_positions_count = _write_pos;
     }
 
@@ -69,14 +69,14 @@ public:
 
 private:
     uhd::rx_metadata_t& _metadata;
-    size_t*            _data;
-    size_t             _size;
-    size_t             _remaining;
-    size_t             _write_pos;
-    size_t             _running_sample_count;
+    size_t* _data;
+    size_t _size;
+    size_t _remaining;
+    size_t _write_pos;
+    size_t _running_sample_count;
 };
 
-} // namespace uhd::transport::detail
+} // namespace detail
 
 /*!
  * Implementation of rx streamer manipulation of frame buffers and packet info.
@@ -269,9 +269,8 @@ public:
         // channel 0 is checked for eov--in most cases, it should be the
         // same for all channels.
         if (eov_positions.data() && eov) {
-            eov_positions.push_back(
-                eov_positions.get_running_sample_count() +
-                info_0.payload_bytes / _bytes_per_item);
+            eov_positions.push_back(eov_positions.get_running_sample_count()
+                                    + info_0.payload_bytes / _bytes_per_item);
         }
 
         // Done with these packets, save timestamp info for next call

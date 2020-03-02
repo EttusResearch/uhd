@@ -10,8 +10,8 @@
 
 #include <uhd/config.hpp>
 #include <stdint.h>
-#include <memory>
 #include <iostream>
+#include <memory>
 #include <string>
 
 namespace uhd {

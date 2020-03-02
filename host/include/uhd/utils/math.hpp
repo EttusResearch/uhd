@@ -64,7 +64,8 @@ namespace fp_compare {
  * // Compare doubles 'x' and 'y'.
  * bool x_equals_y = (fp_compare_epsilon<double>(x) == y);
  */
-template <typename float_t> class fp_compare_epsilon
+template <typename float_t>
+class fp_compare_epsilon
 {
 public:
     UHD_INLINE fp_compare_epsilon(float_t value);
@@ -170,7 +171,8 @@ namespace fp_compare {
  * // Compare doubles 'x' and 'y'.
  * bool x_equals_y = (fp_compare_delta<double>(x) == y);
  */
-template <typename float_t> class fp_compare_delta
+template <typename float_t>
+class fp_compare_delta
 {
 public:
     UHD_INLINE fp_compare_delta(float_t value);
@@ -233,14 +235,16 @@ UHD_INLINE bool frequencies_are_equal(double lhs, double rhs)
 }
 
 //! Portable version of lcm() across Boost versions
-template <typename IntegerType> inline IntegerType lcm(IntegerType x, IntegerType y)
+template <typename IntegerType>
+inline IntegerType lcm(IntegerType x, IntegerType y)
 {
     // Note: _bmint is defined conditionally at the top of the file
     return _bmint::lcm<IntegerType>(x, y);
 }
 
 //! Portable version of gcd() across Boost versions
-template <typename IntegerType> inline IntegerType gcd(IntegerType x, IntegerType y)
+template <typename IntegerType>
+inline IntegerType gcd(IntegerType x, IntegerType y)
 {
     // Note: _bmint is defined conditionally at the top of the file
     return _bmint::gcd<IntegerType>(x, y);

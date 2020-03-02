@@ -8,9 +8,9 @@
 
 #include <uhd/property_tree.hpp>
 #include <uhd/types/dict.hpp>
-#include <memory>
 #include <boost/thread/mutex.hpp>
 #include <iostream>
+#include <memory>
 #include <typeindex>
 
 using namespace uhd;
@@ -157,7 +157,8 @@ public:
         return prop;
     }
 
-    void _create(const fs_path& path_, const std::shared_ptr<void>& prop,
+    void _create(const fs_path& path_,
+        const std::shared_ptr<void>& prop,
         std::type_index prop_type)
     {
         const fs_path path = _root / path_;
@@ -172,7 +173,7 @@ public:
         if (node->prop.get() != NULL)
             throw uhd::runtime_error(
                 "Cannot create! Property already exists at: " + path);
-        node->prop = prop;
+        node->prop           = prop;
         node->prop_type_hash = prop_type.hash_code();
     }
 
@@ -207,7 +208,8 @@ public:
         if (node->prop.get() == NULL)
             throw uhd::runtime_error("Cannot access! Property uninitialized at: " + path);
         if (node->prop_type_hash != expected_prop_type.hash_code())
-            throw uhd::runtime_error("Cannot access! Property types do not match at: " + path);
+            throw uhd::runtime_error(
+                "Cannot access! Property types do not match at: " + path);
         return node->prop;
     }
 

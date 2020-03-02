@@ -4,9 +4,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#include <uhd/rfnoc/defaults.hpp>
 #include <uhd/rfnoc/null_block_control.hpp>
 #include <uhd/rfnoc/registry.hpp>
-#include <uhd/rfnoc/defaults.hpp>
 #include <atomic>
 
 namespace {
@@ -41,9 +41,9 @@ public:
     RFNOC_BLOCK_CONSTRUCTOR(null_block_control)
     {
         uint32_t initial_state = regs().peek32(REG_CTRL_STATUS);
-        _streaming = initial_state & 0x2;
-        _nipc = (initial_state >> 24) & 0xFF;
-        _item_width = (initial_state >> 16) & 0xFF;
+        _streaming             = initial_state & 0x2;
+        _nipc                  = (initial_state >> 24) & 0xFF;
+        _item_width            = (initial_state >> 16) & 0xFF;
         reset_counters();
         register_issue_stream_cmd();
     }
@@ -121,17 +121,17 @@ public:
         return regs().peek32(REG_SRC_THROTTLE_CYC);
     }
 
-    uint64_t get_count(
-        const port_type_t port_type, const count_type_t count_type)
+    uint64_t get_count(const port_type_t port_type, const count_type_t count_type)
     {
-        const uint32_t count_addr_lo = [&](){
+        const uint32_t count_addr_lo = [&]() {
             switch (port_type) {
                 case SOURCE:
                     return count_type == LINES ? REG_SRC_LINE_CNT_LO : REG_SRC_PKT_CNT_LO;
                 case SINK:
                     return count_type == LINES ? REG_SNK_LINE_CNT_LO : REG_SNK_PKT_CNT_LO;
                 case LOOP:
-                    return count_type == LINES ? REG_LOOP_LINE_CNT_LO : REG_LOOP_PKT_CNT_LO;
+                    return count_type == LINES ? REG_LOOP_LINE_CNT_LO
+                                               : REG_LOOP_PKT_CNT_LO;
                 default:
                     UHD_THROW_INVALID_CODE_PATH();
             }
@@ -140,7 +140,6 @@ public:
     }
 
 private:
-
     /*! Action API: Register a handler for stream commands
      */
     void register_issue_stream_cmd()

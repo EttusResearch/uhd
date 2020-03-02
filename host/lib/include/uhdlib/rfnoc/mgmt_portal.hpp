@@ -72,8 +72,7 @@ public:
     // \param addr The physical address of the stream endpoint
     // \param epid The endpoint ID to assign to this endpoint
     //
-    virtual void register_endpoint(
-        const sep_addr_t& addr, const sep_id_t& epid) = 0;
+    virtual void register_endpoint(const sep_addr_t& addr, const sep_id_t& epid) = 0;
 
     //! Get information about a discovered (reachable) stream endpoint
     //

@@ -6,9 +6,9 @@
 
 #include "../common/mock_link.hpp"
 #include <uhdlib/transport/rx_streamer_impl.hpp>
-#include <memory>
 #include <boost/test/unit_test.hpp>
 #include <iostream>
+#include <memory>
 
 namespace uhd { namespace transport {
 
@@ -774,7 +774,7 @@ BOOST_AUTO_TEST_CASE(test_recv_one_channel_one_eov)
         // only one, since filling the EOV vector results in an early
         // termination of `recv()` (which we don't want here).
         std::vector<size_t> eov_positions(2);
-        metadata.eov_positions = eov_positions.data();
+        metadata.eov_positions      = eov_positions.data();
         metadata.eov_positions_size = eov_positions.size();
 
         std::cout << "receiving packet " << i << std::endl;
@@ -805,8 +805,8 @@ BOOST_AUTO_TEST_CASE(test_recv_two_channel_aggregate_eov)
     const std::vector<size_t> eov_every_nth_packet{3, 5};
 
     const size_t num_chans = eov_every_nth_packet.size();
-    auto recv_links = make_links(num_chans);
-    auto streamer   = make_rx_streamer(recv_links, format);
+    auto recv_links        = make_links(num_chans);
+    auto streamer          = make_rx_streamer(recv_links, format);
 
     const size_t spp       = streamer->get_max_num_samps();
     const size_t num_samps = spp * NUM_PACKETS;
@@ -825,13 +825,13 @@ BOOST_AUTO_TEST_CASE(test_recv_two_channel_aggregate_eov)
         for (size_t ch = 0; ch < num_chans; ch++) {
             header.eob     = false;
             header.has_tsf = false;
-            header.eov = ((i + 1) % eov_every_nth_packet[ch]) == 0;
+            header.eov     = ((i + 1) % eov_every_nth_packet[ch]) == 0;
 
             push_back_recv_packet(recv_links[ch], header, spp);
 
             eov |= header.eov;
         }
-        if(eov) {
+        if (eov) {
             expected_eov_offsets.push_back(spp * (i + 1));
         }
     }
@@ -839,15 +839,14 @@ BOOST_AUTO_TEST_CASE(test_recv_two_channel_aggregate_eov)
     uhd::rx_metadata_t metadata;
 
     std::vector<size_t> eov_positions(expected_eov_offsets.size() + 1);
-    metadata.eov_positions = eov_positions.data();
+    metadata.eov_positions      = eov_positions.data();
     metadata.eov_positions_size = eov_positions.size();
 
-    size_t num_samps_ret =
-        streamer->recv(buffers, num_samps, metadata, 1.0, false);
+    size_t num_samps_ret = streamer->recv(buffers, num_samps, metadata, 1.0, false);
 
     BOOST_CHECK_EQUAL(num_samps_ret, num_samps);
     BOOST_CHECK_EQUAL(metadata.eov_positions_count, expected_eov_offsets.size());
-    for(size_t i = 0; i < metadata.eov_positions_count; i++) {
+    for (size_t i = 0; i < metadata.eov_positions_count; i++) {
         BOOST_CHECK_EQUAL(expected_eov_offsets[i], metadata.eov_positions[i]);
     }
 }

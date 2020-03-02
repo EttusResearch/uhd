@@ -136,8 +136,8 @@ public:
 private:
     chdr_ctrl_xport(const chdr_ctrl_xport&) = delete;
 
-    void _release_cb(uhd::transport::frame_buff::uptr buff,
-        uhd::transport::recv_link_if* recv_link);
+    void _release_cb(
+        uhd::transport::frame_buff::uptr buff, uhd::transport::recv_link_if* recv_link);
 
     bool _ctrl_recv_cb(uhd::transport::frame_buff::uptr& buff);
 

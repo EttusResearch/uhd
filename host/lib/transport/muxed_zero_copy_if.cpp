@@ -67,12 +67,11 @@ public:
         }
         // Only allocate a portion of the base transport's frames to each stream
         // to prevent all streams from attempting to use all the frames.
-        stream_impl::sptr stream =
-            std::make_shared<stream_impl>(this->shared_from_this(),
-                stream_num,
-                _base_xport->get_num_send_frames(),
-                _base_xport->get_num_recv_frames());
-        _streams[stream_num] = stream;
+        stream_impl::sptr stream = std::make_shared<stream_impl>(this->shared_from_this(),
+            stream_num,
+            _base_xport->get_num_send_frames(),
+            _base_xport->get_num_recv_frames());
+        _streams[stream_num]     = stream;
         return stream;
     }
 

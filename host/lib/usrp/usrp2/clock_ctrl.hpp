@@ -13,7 +13,8 @@
 #include <memory>
 #include <vector>
 
-class usrp2_clock_ctrl : uhd::noncopyable{
+class usrp2_clock_ctrl : uhd::noncopyable
+{
 public:
     typedef std::shared_ptr<usrp2_clock_ctrl> sptr;
 
@@ -76,7 +77,7 @@ public:
      * \param enb true to enable
      */
     virtual void enable_external_ref(bool enb) = 0;
-    
+
     /*!
      * Enable/disable test clock output.
      * \param enb true to enable
@@ -88,7 +89,7 @@ public:
      * \param enb true to enable
      */
     virtual void enable_mimo_clock_out(bool enb) = 0;
-    
+
     /*!
      * Set the output delay of the mimo clock
      * Used to synchronise daisy-chained USRPs over the MIMO cable
@@ -96,7 +97,6 @@ public:
      * \param delay the clock delay in seconds
      */
     virtual void set_mimo_clock_delay(double delay) = 0;
-
 };
 
 #endif /* INCLUDED_CLOCK_CTRL_HPP */

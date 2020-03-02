@@ -12,7 +12,6 @@
 #include <uhdlib/transport/inline_io_service.hpp>
 #include <uhdlib/transport/rx_streamer_impl.hpp>
 #include <uhdlib/transport/tx_streamer_impl.hpp>
-#include <memory>
 #include <boost/program_options.hpp>
 #include <chrono>
 #include <iostream>

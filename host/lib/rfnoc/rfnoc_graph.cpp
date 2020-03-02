@@ -35,7 +35,7 @@ struct block_xbar_info
     noc_id_t noc_id;
     size_t inst_num;
 };
-}
+} // namespace
 
 class rfnoc_graph_impl : public rfnoc_graph
 {
@@ -43,8 +43,9 @@ public:
     /**************************************************************************
      * Structors
      *************************************************************************/
-    rfnoc_graph_impl(detail::rfnoc_device::sptr dev, const uhd::device_addr_t& dev_addr)
-    try : _device(dev),
+    rfnoc_graph_impl(
+        detail::rfnoc_device::sptr dev, const uhd::device_addr_t& dev_addr) try
+        : _device(dev),
           _tree(_device->get_tree()),
           _num_mboards(_tree->list("/mboards").size()),
           _block_registry(std::make_unique<detail::block_container_t>()),
@@ -492,7 +493,7 @@ private:
                     + std::to_string(chdr_w_to_bits(chdr_w)) + " but device "
                     + std::to_string(mb_idx) + " has CHDR width of "
                     + std::to_string(
-                        chdr_w_to_bits(_device->get_mb_iface(mb_idx).get_chdr_w()))
+                          chdr_w_to_bits(_device->get_mb_iface(mb_idx).get_chdr_w()))
                     + " bits!");
             }
             if (_device->get_mb_iface(mb_idx).get_endianness() != endianness) {

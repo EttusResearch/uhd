@@ -9,11 +9,11 @@
 #define INCLUDED_LIBUHD_RFNOC_E3XX_RADIO_CTRL_IMPL_HPP
 
 #include "e3xx_ad9361_iface.hpp"
+#include <uhd/rfnoc/filter_node.hpp>
 #include <uhd/types/eeprom.hpp>
 #include <uhd/types/serial.hpp>
 #include <uhd/usrp/dboard_manager.hpp>
 #include <uhd/usrp/gpio_defs.hpp>
-#include <uhd/rfnoc/filter_node.hpp>
 #include <uhdlib/rfnoc/radio_control_impl.hpp>
 #include <uhdlib/usrp/common/mpmd_mb_controller.hpp>
 #include <uhdlib/usrp/cores/gpio_atr_3000.hpp>
@@ -22,22 +22,23 @@
 namespace uhd { namespace rfnoc {
 
 namespace e3xx_regs {
-    constexpr uint32_t PERIPH_BASE            = 0x80000;
-    constexpr uint32_t PERIPH_REG_OFFSET      = 8;
-    constexpr uint32_t PERIPH_REG_CHAN_OFFSET = 0x800;
-    constexpr uint32_t SR_LEDS                = PERIPH_BASE + 176 * PERIPH_REG_OFFSET;
-    constexpr uint32_t SR_FP_GPIO             = PERIPH_BASE + 184 * PERIPH_REG_OFFSET;
-    constexpr uint32_t SR_DB_GPIO             = PERIPH_BASE + 192 * PERIPH_REG_OFFSET;
+constexpr uint32_t PERIPH_BASE            = 0x80000;
+constexpr uint32_t PERIPH_REG_OFFSET      = 8;
+constexpr uint32_t PERIPH_REG_CHAN_OFFSET = 0x800;
+constexpr uint32_t SR_LEDS                = PERIPH_BASE + 176 * PERIPH_REG_OFFSET;
+constexpr uint32_t SR_FP_GPIO             = PERIPH_BASE + 184 * PERIPH_REG_OFFSET;
+constexpr uint32_t SR_DB_GPIO             = PERIPH_BASE + 192 * PERIPH_REG_OFFSET;
 
-    constexpr uint32_t RB_DB_GPIO = PERIPH_BASE + 19 * PERIPH_REG_OFFSET;
-    constexpr uint32_t RB_FP_GPIO = PERIPH_BASE + 20 * PERIPH_REG_OFFSET;
+constexpr uint32_t RB_DB_GPIO = PERIPH_BASE + 19 * PERIPH_REG_OFFSET;
+constexpr uint32_t RB_FP_GPIO = PERIPH_BASE + 20 * PERIPH_REG_OFFSET;
 
 
-}
+} // namespace e3xx_regs
 
 /*! \brief Provide access to an E3xx radio.
  */
-class e3xx_radio_control_impl : public radio_control_impl, public uhd::rfnoc::detail::filter_node
+class e3xx_radio_control_impl : public radio_control_impl,
+                                public uhd::rfnoc::detail::filter_node
 {
 public:
     //! Frequency bands for RX. Bands are a function of the analog filter banks
@@ -78,7 +79,7 @@ public:
     void deinit();
 
     bool check_topology(const std::vector<size_t>& connected_inputs,
-            const std::vector<size_t>& connected_outputs);
+        const std::vector<size_t>& connected_outputs);
 
     /************************************************************************
      * radio_control API calls
@@ -87,8 +88,8 @@ public:
     uhd::meta_range_t get_rate_range() const;
 
     // Setters
-    void set_tx_antenna(const std::string &ant, const size_t chan);
-    void set_rx_antenna(const std::string &ant, const size_t chan);
+    void set_tx_antenna(const std::string& ant, const size_t chan);
+    void set_rx_antenna(const std::string& ant, const size_t chan);
     double set_tx_frequency(const double freq, const size_t chan);
     double set_rx_frequency(const double freq, const size_t chan);
     double set_tx_gain(const double gain, const size_t chan);
@@ -144,7 +145,10 @@ public:
     /**************************************************************************
      * Radio Identification API Calls
      *************************************************************************/
-    std::string get_slot_name() const { return "A"; }
+    std::string get_slot_name() const
+    {
+        return "A";
+    }
     virtual size_t get_chan_from_dboard_fe(
         const std::string& fe, const uhd::direction_t direction) const;
     virtual std::string get_dboard_fe_from_chan(

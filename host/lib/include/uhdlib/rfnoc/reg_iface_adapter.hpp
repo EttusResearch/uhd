@@ -13,12 +13,11 @@
 #include <memory>
 
 //! Convenience macro to generate a reg_iface_adapter from within an RFNoC block
-#define RFNOC_MAKE_WB_IFACE(BASE_OFFSET, CHAN)                               \
-    std::make_shared<reg_iface_adapter>(                                   \
-        [this]() -> register_iface& { return regs(); },                      \
-        [this, chan = CHAN]() { return get_command_time(chan); },            \
-        [this, chan = CHAN](                                                 \
-            const uhd::time_spec_t& time) { set_command_time(time, chan); }, \
+#define RFNOC_MAKE_WB_IFACE(BASE_OFFSET, CHAN)                                          \
+    std::make_shared<reg_iface_adapter>([this]() -> register_iface& { return regs(); }, \
+        [this, chan = CHAN]() { return get_command_time(chan); },                       \
+        [this, chan = CHAN](                                                            \
+            const uhd::time_spec_t& time) { set_command_time(time, chan); },            \
         BASE_OFFSET)
 
 namespace uhd { namespace rfnoc {
@@ -39,7 +38,7 @@ class UHD_API reg_iface_adapter : public uhd::timed_wb_iface
 public:
     using regs_accessor_t = std::function<register_iface&(void)>;
     using time_accessor_t = std::function<uhd::time_spec_t(void)>;
-    using time_setter_t = std::function<void(const uhd::time_spec_t&)>;
+    using time_setter_t   = std::function<void(const uhd::time_spec_t&)>;
 
     /*!
      * \param regs_accessor Function object to retrieve the register_iface

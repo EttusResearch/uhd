@@ -127,12 +127,12 @@ uhd::time_spec_t mb_controller::timekeeper::get_time_last_pps()
     return time_spec_t::from_ticks(get_ticks_last_pps(), _tick_rate);
 }
 
-void mb_controller::timekeeper::set_time_now(const uhd::time_spec_t &time)
+void mb_controller::timekeeper::set_time_now(const uhd::time_spec_t& time)
 {
     set_ticks_now(time.to_ticks(_tick_rate));
 }
 
-void mb_controller::timekeeper::set_time_next_pps(const uhd::time_spec_t &time)
+void mb_controller::timekeeper::set_time_next_pps(const uhd::time_spec_t& time)
 {
     set_ticks_next_pps(time.to_ticks(_tick_rate));
 }
@@ -146,7 +146,8 @@ void mb_controller::timekeeper::set_tick_rate(const double tick_rate)
 
     // The period is the inverse of the tick rate, normalized by nanoseconds,
     // and represented as Q32 (e.g., period == 1ns means period_ns == 1<<32)
-    const uint64_t period_ns = static_cast<uint64_t>(1e9 / tick_rate * (uint64_t(1) << 32));
+    const uint64_t period_ns =
+        static_cast<uint64_t>(1e9 / tick_rate * (uint64_t(1) << 32));
     set_period(period_ns);
 }
 

@@ -15,8 +15,8 @@
 #include <cstdlib>
 #include <functional>
 #include <iostream>
-#include <mutex>
 #include <memory>
+#include <mutex>
 
 using namespace uhd;
 using namespace uhd::transport;

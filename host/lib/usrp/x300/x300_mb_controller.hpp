@@ -54,17 +54,26 @@ public:
     }
 
     //! Reference to the ZPU peek/poke interface
-    uhd::wb_iface::sptr get_zpu_ctrl() { return _zpu_ctrl; }
+    uhd::wb_iface::sptr get_zpu_ctrl()
+    {
+        return _zpu_ctrl;
+    }
 
     //! Return reference to LMK clock controller
-    x300_clock_ctrl::sptr get_clock_ctrl() { return _clock_ctrl; }
+    x300_clock_ctrl::sptr get_clock_ctrl()
+    {
+        return _clock_ctrl;
+    }
 
     void register_reset_codec_cb(std::function<void(void)>&& reset_cb)
     {
         _reset_cbs.push_back(std::move(reset_cb));
     }
 
-    void set_initialization_done() { _initialization_done = true; }
+    void set_initialization_done()
+    {
+        _initialization_done = true;
+    }
 
     void register_radio(uhd::usrp::x300::x300_radio_mbc_iface* radio)
     {
@@ -80,7 +89,8 @@ public:
     class x300_timekeeper : public mb_controller::timekeeper
     {
     public:
-        x300_timekeeper(const size_t tk_idx, uhd::wb_iface::sptr zpu_ctrl, const double tick_rate)
+        x300_timekeeper(
+            const size_t tk_idx, uhd::wb_iface::sptr zpu_ctrl, const double tick_rate)
             : _tk_idx(tk_idx), _zpu_ctrl(zpu_ctrl)
         {
             set_tick_rate(tick_rate);

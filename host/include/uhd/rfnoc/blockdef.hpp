@@ -11,9 +11,9 @@
 #include <uhd/config.hpp>
 #include <uhd/types/device_addr.hpp>
 #include <stdint.h>
+#include <memory>
 #include <set>
 #include <vector>
-#include <memory>
 
 namespace uhd { namespace rfnoc {
 

@@ -34,7 +34,8 @@ public:
         } else if (wave_type == "SINE") {
             static const double tau = 2 * std::acos(-1.0);
             for (size_t i = 0; i < wave_table_len; i++) {
-                real_wave_table[i] = static_cast<float>(std::sin((tau * i) / wave_table_len));
+                real_wave_table[i] =
+                    static_cast<float>(std::sin((tau * i) / wave_table_len));
             }
         } else {
             throw std::runtime_error("unknown waveform type: " + wave_type);

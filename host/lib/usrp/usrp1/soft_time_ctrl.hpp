@@ -8,15 +8,15 @@
 #ifndef INCLUDED_LIBUHD_USRP_USRP1_SOFT_TIME_CTRL_HPP
 #define INCLUDED_LIBUHD_USRP_USRP1_SOFT_TIME_CTRL_HPP
 
+#include <uhd/transport/bounded_buffer.hpp>
+#include <uhd/types/metadata.hpp>
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/types/time_spec.hpp>
-#include <uhd/types/metadata.hpp>
-#include <uhd/transport/bounded_buffer.hpp>
 #include <uhd/utils/noncopyable.hpp>
-#include <memory>
 #include <functional>
+#include <memory>
 
-namespace uhd{ namespace usrp{
+namespace uhd { namespace usrp {
 
 /*!
  * The soft time control emulates some of the
@@ -25,7 +25,8 @@ namespace uhd{ namespace usrp{
  * timed transmits, timed receive commands, device time,
  * and inline and async error messages.
  */
-class soft_time_ctrl : uhd::noncopyable{
+class soft_time_ctrl : uhd::noncopyable
+{
 public:
     typedef std::shared_ptr<soft_time_ctrl> sptr;
     typedef std::function<void(bool)> cb_fcn_type;
@@ -37,33 +38,33 @@ public:
      * \param stream_on_off a function to enable/disable rx
      * \return a new soft time control object
      */
-    static sptr make(const cb_fcn_type &stream_on_off);
+    static sptr make(const cb_fcn_type& stream_on_off);
 
     //! Set the current time
-    virtual void set_time(const time_spec_t &time) = 0;
+    virtual void set_time(const time_spec_t& time) = 0;
 
     //! Get the current time
     virtual time_spec_t get_time(void) = 0;
 
     //! Call after the internal recv function
-    virtual size_t recv_post(rx_metadata_t &md, const size_t nsamps) = 0;
+    virtual size_t recv_post(rx_metadata_t& md, const size_t nsamps) = 0;
 
     //! Call before the internal send function
-    virtual void send_pre(const tx_metadata_t &md, double &timeout) = 0;
+    virtual void send_pre(const tx_metadata_t& md, double& timeout) = 0;
 
     //! Issue a stream command to receive
-    virtual void issue_stream_cmd(const stream_cmd_t &cmd) = 0;
+    virtual void issue_stream_cmd(const stream_cmd_t& cmd) = 0;
 
     //! Get access to a buffer of async metadata
-    virtual transport::bounded_buffer<async_metadata_t> &get_async_queue(void) = 0;
+    virtual transport::bounded_buffer<async_metadata_t>& get_async_queue(void) = 0;
 
     //! Get access to a buffer of inline metadata
-    virtual transport::bounded_buffer<rx_metadata_t> &get_inline_queue(void) = 0;
+    virtual transport::bounded_buffer<rx_metadata_t>& get_inline_queue(void) = 0;
 
     //! Stops threads before deconstruction to avoid race conditions
     virtual void stop(void) = 0;
 };
 
-}} //namespace
+}} // namespace uhd::usrp
 
 #endif /* INCLUDED_LIBUHD_USRP_USRP1_SOFT_TIME_CTRL_HPP */

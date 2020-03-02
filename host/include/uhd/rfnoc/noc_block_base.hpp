@@ -19,8 +19,8 @@
 #define RFNOC_BLOCK_CONSTRUCTOR(CLASS_NAME) \
     CLASS_NAME##_impl(make_args_ptr make_args) : CLASS_NAME(std::move(make_args))
 
-#define RFNOC_DECLARE_BLOCK(CLASS_NAME) \
-    using sptr = std::shared_ptr<CLASS_NAME>;\
+#define RFNOC_DECLARE_BLOCK(CLASS_NAME)       \
+    using sptr = std::shared_ptr<CLASS_NAME>; \
     CLASS_NAME(make_args_ptr make_args) : noc_block_base(std::move(make_args)) {}
 
 namespace uhd { namespace rfnoc {
@@ -59,7 +59,10 @@ public:
      * node_t API calls
      *************************************************************************/
     //! Unique ID for an RFNoC block is its block ID
-    std::string get_unique_id() const { return get_block_id().to_string(); }
+    std::string get_unique_id() const
+    {
+        return get_block_id().to_string();
+    }
 
     //! Number of input ports. Note: This gets passed into this block from the
     // information stored in the global register space.
@@ -67,7 +70,10 @@ public:
     // Note: This may be overridden by the block (e.g., the X300 radio may not
     // have all ports available if no TwinRX board is plugged in), but the
     // subclassed version may never report more ports than this.
-    size_t get_num_input_ports() const { return _num_input_ports; }
+    size_t get_num_input_ports() const
+    {
+        return _num_input_ports;
+    }
 
     //! Number of output ports. Note: This gets passed outto this block from the
     // information stored in the global register space.
@@ -75,7 +81,10 @@ public:
     // Note: This may be overridden by the block (e.g., the X300 radio may not
     // have all ports available if no TwinRX board is plugged in), but the
     // subclassed version may never report more ports than this.
-    size_t get_num_output_ports() const { return _num_output_ports; }
+    size_t get_num_output_ports() const
+    {
+        return _num_output_ports;
+    }
 
     /**************************************************************************
      * RFNoC-block specific API calls
@@ -84,13 +93,19 @@ public:
      *
      * \return noc_id The 32-bit NoC ID of this block
      */
-    noc_id_t get_noc_id() const { return _noc_id; }
+    noc_id_t get_noc_id() const
+    {
+        return _noc_id;
+    }
 
     /*! Returns the unique block ID for this block.
      *
      * \return block_id The block ID of this block (e.g. "0/FFT#1")
      */
-    const block_id_t& get_block_id() const { return _block_id; }
+    const block_id_t& get_block_id() const
+    {
+        return _block_id;
+    }
 
     /*! Returns the tick rate of the current time base
      *
@@ -114,13 +129,22 @@ public:
 
     /*! Return the arguments that were passed into this block from the framework
      */
-    uhd::device_addr_t get_block_args() const { return _block_args; }
+    uhd::device_addr_t get_block_args() const
+    {
+        return _block_args;
+    }
 
     //! Return a reference to this block's subtree
-    uhd::property_tree::sptr& get_tree() const { return _tree; }
+    uhd::property_tree::sptr& get_tree() const
+    {
+        return _tree;
+    }
 
     //! Return a reference to this block's subtree (non-const version)
-    uhd::property_tree::sptr& get_tree() { return _tree; }
+    uhd::property_tree::sptr& get_tree()
+    {
+        return _tree;
+    }
 
 protected:
     noc_block_base(make_args_ptr make_args);
@@ -267,7 +291,7 @@ private:
 
     //! Container for the 'mtu' property. This will hold one edge property
     // for all in- and output edges.
-    std::vector<property_t<size_t> > _mtu_props;
+    std::vector<property_t<size_t>> _mtu_props;
 
     //! The actual MTU value
     std::unordered_map<res_source_info, size_t> _mtu;

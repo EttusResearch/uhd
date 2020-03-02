@@ -13,9 +13,9 @@
 #include <uhd/utils/noncopyable.hpp>
 #include <functional>
 #include <memory>
+#include <string>
 #include <typeindex>
 #include <vector>
-#include <string>
 
 namespace uhd {
 
@@ -246,14 +246,15 @@ public:
 
     //! Pop a property off the tree, and returns the property
     template <typename T>
-    std::shared_ptr<property<T> > pop(const fs_path& path);
+    std::shared_ptr<property<T>> pop(const fs_path& path);
 
 private:
     //! Internal pop function
     virtual std::shared_ptr<void> _pop(const fs_path& path) = 0;
 
     //! Internal create property with wild-card type
-    virtual void _create(const fs_path& path, const std::shared_ptr<void>& prop,
+    virtual void _create(const fs_path& path,
+        const std::shared_ptr<void>& prop,
         std::type_index prop_type) = 0;
 
     //! Internal access property with wild-card type

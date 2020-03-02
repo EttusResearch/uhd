@@ -15,12 +15,11 @@
 #include <uhd/utils/algorithm.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhd/utils/math.hpp>
-#include <uhd/rfnoc/registry.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
-#include <memory>
 #include <cmath>
 #include <cstdlib>
+#include <memory>
 #include <sstream>
 
 using namespace uhd;
@@ -206,7 +205,8 @@ double magnesium_radio_control_impl::set_rate(double requested_rate)
     return _master_clock_rate;
 }
 
-void magnesium_radio_control_impl::set_tx_antenna(const std::string& ant, const size_t chan)
+void magnesium_radio_control_impl::set_tx_antenna(
+    const std::string& ant, const size_t chan)
 {
     if (ant != get_tx_antenna(chan)) {
         throw uhd::value_error(
@@ -216,7 +216,8 @@ void magnesium_radio_control_impl::set_tx_antenna(const std::string& ant, const 
     // We can't actually set the TX antenna, so let's stop here.
 }
 
-void magnesium_radio_control_impl::set_rx_antenna(const std::string& ant, const size_t chan)
+void magnesium_radio_control_impl::set_rx_antenna(
+    const std::string& ant, const size_t chan)
 {
     UHD_ASSERT_THROW(chan <= MAGNESIUM_NUM_CHANS);
     if (std::find(MAGNESIUM_RX_ANTENNAS.begin(), MAGNESIUM_RX_ANTENNAS.end(), ant)
@@ -233,7 +234,8 @@ void magnesium_radio_control_impl::set_rx_antenna(const std::string& ant, const 
     radio_control_impl::set_rx_antenna(ant, chan);
 }
 
-double magnesium_radio_control_impl::set_tx_frequency(const double req_freq, const size_t chan)
+double magnesium_radio_control_impl::set_tx_frequency(
+    const double req_freq, const size_t chan)
 {
     const double freq = MAGNESIUM_FREQ_RANGE.clip(req_freq);
     RFNOC_LOG_TRACE("set_tx_frequency(f=" << freq << ", chan=" << chan << ")");
@@ -269,7 +271,8 @@ double magnesium_radio_control_impl::set_tx_frequency(const double req_freq, con
     return radio_control_impl::get_tx_frequency(chan);
 }
 
-void magnesium_radio_control_impl::_update_gain(const size_t chan, const uhd::direction_t dir)
+void magnesium_radio_control_impl::_update_gain(
+    const size_t chan, const uhd::direction_t dir)
 {
     const std::string fe = (dir == TX_DIRECTION) ? "tx_frontends" : "rx_frontends";
     const double freq    = (dir == TX_DIRECTION) ? this->get_tx_frequency(chan)
@@ -277,7 +280,8 @@ void magnesium_radio_control_impl::_update_gain(const size_t chan, const uhd::di
     this->_set_all_gain(this->_get_all_gain(chan, dir), freq, chan, dir);
 }
 
-void magnesium_radio_control_impl::_update_freq(const size_t chan, const uhd::direction_t dir)
+void magnesium_radio_control_impl::_update_freq(
+    const size_t chan, const uhd::direction_t dir)
 {
     const std::string ad9371_source = dir == TX_DIRECTION
                                           ? this->get_tx_lo_source(MAGNESIUM_LO1, chan)
@@ -301,7 +305,8 @@ void magnesium_radio_control_impl::_update_freq(const size_t chan, const uhd::di
     }
 }
 
-double magnesium_radio_control_impl::set_rx_frequency(const double req_freq, const size_t chan)
+double magnesium_radio_control_impl::set_rx_frequency(
+    const double req_freq, const size_t chan)
 {
     const double freq = MAGNESIUM_FREQ_RANGE.clip(req_freq);
     RFNOC_LOG_TRACE("set_rx_frequency(f=" << freq << ", chan=" << chan << ")");
@@ -366,8 +371,7 @@ double magnesium_radio_control_impl::set_tx_bandwidth(
 void magnesium_radio_control_impl::set_tx_gain_profile(
     const std::string& profile, const size_t)
 {
-    if (std::find(
-            MAGNESIUM_GP_OPTIONS.begin(), MAGNESIUM_GP_OPTIONS.end(), profile)
+    if (std::find(MAGNESIUM_GP_OPTIONS.begin(), MAGNESIUM_GP_OPTIONS.end(), profile)
         == MAGNESIUM_GP_OPTIONS.end()) {
         RFNOC_LOG_ERROR("Invalid TX gain profile: " << profile);
         throw uhd::key_error("Invalid TX gain profile!");
@@ -378,8 +382,7 @@ void magnesium_radio_control_impl::set_tx_gain_profile(
 void magnesium_radio_control_impl::set_rx_gain_profile(
     const std::string& profile, const size_t)
 {
-    if (std::find(
-            MAGNESIUM_GP_OPTIONS.begin(), MAGNESIUM_GP_OPTIONS.end(), profile)
+    if (std::find(MAGNESIUM_GP_OPTIONS.begin(), MAGNESIUM_GP_OPTIONS.end(), profile)
         == MAGNESIUM_GP_OPTIONS.end()) {
         RFNOC_LOG_ERROR("Invalid RX gain profile: " << profile);
         throw uhd::key_error("Invalid RX gain profile!");
@@ -592,12 +595,14 @@ uhd::freq_range_t magnesium_radio_control_impl::get_rx_frequency_range(const siz
     return meta_range_t(MAGNESIUM_MIN_FREQ, MAGNESIUM_MAX_FREQ, 1.0);
 }
 
-std::vector<std::string> magnesium_radio_control_impl::get_tx_gain_names(const size_t) const
+std::vector<std::string> magnesium_radio_control_impl::get_tx_gain_names(
+    const size_t) const
 {
     return {MAGNESIUM_GAIN1, MAGNESIUM_GAIN2, MAGNESIUM_AMP};
 }
 
-std::vector<std::string> magnesium_radio_control_impl::get_rx_gain_names(const size_t) const
+std::vector<std::string> magnesium_radio_control_impl::get_rx_gain_names(
+    const size_t) const
 {
     return {MAGNESIUM_GAIN1, MAGNESIUM_GAIN2, MAGNESIUM_AMP};
 }
@@ -710,7 +715,8 @@ std::vector<std::string> magnesium_radio_control_impl::get_tx_gain_profile_names
     return MAGNESIUM_GP_OPTIONS;
 }
 
-std::vector<std::string> magnesium_radio_control_impl::get_rx_gain_profile_names(const size_t ) const
+std::vector<std::string> magnesium_radio_control_impl::get_rx_gain_profile_names(
+    const size_t) const
 {
     return MAGNESIUM_GP_OPTIONS;
 }
@@ -761,7 +767,7 @@ std::vector<std::string> magnesium_radio_control_impl::get_rx_lo_sources(
 
 freq_range_t magnesium_radio_control_impl::get_rx_lo_freq_range(
     const std::string& name, const size_t /*chan*/
-) const
+    ) const
 {
     if (name == MAGNESIUM_LO1) {
         return freq_range_t{ADF4351_MIN_FREQ, ADF4351_MAX_FREQ};
@@ -790,7 +796,7 @@ void magnesium_radio_control_impl::set_rx_lo_source(
 
 const std::string magnesium_radio_control_impl::get_rx_lo_source(
     const std::string& name, const size_t /*chan*/
-) const
+    ) const
 {
     if (name == MAGNESIUM_LO1) {
         // TODO: should we use this from cache?
@@ -860,14 +866,14 @@ double magnesium_radio_control_impl::get_rx_lo_freq(
 // TX LO
 std::vector<std::string> magnesium_radio_control_impl::get_tx_lo_names(
     const size_t /*chan*/
-) const
+    ) const
 {
     return std::vector<std::string>{MAGNESIUM_LO1, MAGNESIUM_LO2};
 }
 
 std::vector<std::string> magnesium_radio_control_impl::get_tx_lo_sources(
     const std::string& name, const size_t /*chan*/
-) const
+    ) const
 {
     if (name == MAGNESIUM_LO2) {
         return std::vector<std::string>{"internal"};
@@ -960,7 +966,8 @@ double magnesium_radio_control_impl::set_tx_lo_freq(
     return return_freq;
 }
 
-double magnesium_radio_control_impl::get_tx_lo_freq(const std::string& name, const size_t chan)
+double magnesium_radio_control_impl::get_tx_lo_freq(
+    const std::string& name, const size_t chan)
 {
     RFNOC_LOG_TRACE("get_tx_lo_freq(name=" << name << ")");
     std::string source = this->get_tx_lo_source(name, chan);
@@ -1106,7 +1113,8 @@ std::vector<std::string> magnesium_radio_control_impl::get_rx_sensor_names(size_
     return sensor_names;
 }
 
-sensor_value_t magnesium_radio_control_impl::get_rx_sensor(const std::string& name, size_t chan)
+sensor_value_t magnesium_radio_control_impl::get_rx_sensor(
+    const std::string& name, size_t chan)
 {
     if (name == "lo_locked") {
         return sensor_value_t(
@@ -1124,7 +1132,8 @@ std::vector<std::string> magnesium_radio_control_impl::get_tx_sensor_names(size_
     return sensor_names;
 }
 
-sensor_value_t magnesium_radio_control_impl::get_tx_sensor(const std::string& name, size_t chan)
+sensor_value_t magnesium_radio_control_impl::get_tx_sensor(
+    const std::string& name, size_t chan)
 {
     if (name == "lo_locked") {
         return sensor_value_t(
@@ -1137,7 +1146,8 @@ sensor_value_t magnesium_radio_control_impl::get_tx_sensor(const std::string& na
 /**************************************************************************
  * node_t API Calls
  *************************************************************************/
-void magnesium_radio_control_impl::set_command_time(uhd::time_spec_t time, const size_t chan)
+void magnesium_radio_control_impl::set_command_time(
+    uhd::time_spec_t time, const size_t chan)
 {
     node_t::set_command_time(time, chan);
     _wb_ifaces.at(chan)->set_time(time);

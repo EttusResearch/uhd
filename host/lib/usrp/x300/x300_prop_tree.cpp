@@ -14,8 +14,7 @@ using namespace uhd::rfnoc;
 
 namespace uhd { namespace usrp { namespace x300 {
 
-void init_prop_tree(
-    const size_t mb_idx, x300_mb_controller* mbc, property_tree::sptr pt)
+void init_prop_tree(const size_t mb_idx, x300_mb_controller* mbc, property_tree::sptr pt)
 {
     const fs_path mb_path = fs_path("/mboards") / mb_idx;
     try {
@@ -42,17 +41,15 @@ void init_prop_tree(
     ////////////////////////////////////////////////////////////////////
     pt->create<std::string>(mb_path / "time_source" / "value")
         .set(mbc->get_time_source())
-        .add_coerced_subscriber([mbc](const std::string& time_source) {
-            mbc->set_time_source(time_source);
-        });
+        .add_coerced_subscriber(
+            [mbc](const std::string& time_source) { mbc->set_time_source(time_source); });
     pt->create<std::vector<std::string>>(mb_path / "time_source" / "options")
         .set(mbc->get_time_sources());
 
     // setup the time output, default to ON
     pt->create<bool>(mb_path / "time_source" / "output")
-        .add_coerced_subscriber([mbc](const bool time_output) {
-            mbc->set_time_source_out(time_output);
-        })
+        .add_coerced_subscriber(
+            [mbc](const bool time_output) { mbc->set_time_source_out(time_output); })
         .set(true);
 
     ////////////////////////////////////////////////////////////////////
@@ -69,9 +66,8 @@ void init_prop_tree(
 
     // setup external reference options. default to 10 MHz input reference
     pt->create<std::string>(mb_path / "clock_source" / "external");
-    pt
-        ->create<std::vector<double>>(
-            mb_path / "clock_source" / "external" / "freq" / "options")
+    pt->create<std::vector<double>>(
+          mb_path / "clock_source" / "external" / "freq" / "options")
         .set(EXTERNAL_FREQ_OPTIONS);
     pt->create<double>(mb_path / "clock_source" / "external" / "value")
         .set(mbc->get_clock_ctrl()->get_sysref_clock_rate())

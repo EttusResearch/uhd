@@ -387,8 +387,14 @@ send_io_if::sptr inline_io_service::make_send_client(send_link_if::sptr send_lin
     UHD_ASSERT_THROW(send_cb);
     connect_sender(send_link.get(), num_send_frames);
     sptr io_srv  = shared_from_this();
-    auto send_io = std::make_shared<inline_send_io>(
-        io_srv, send_link, num_send_frames, send_cb, recv_link, num_recv_frames, recv_cb, fc_cb);
+    auto send_io = std::make_shared<inline_send_io>(io_srv,
+        send_link,
+        num_send_frames,
+        send_cb,
+        recv_link,
+        num_recv_frames,
+        recv_cb,
+        fc_cb);
     if (recv_link) {
         UHD_ASSERT_THROW(recv_cb);
         UHD_ASSERT_THROW(fc_cb);

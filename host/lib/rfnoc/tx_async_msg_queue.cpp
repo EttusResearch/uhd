@@ -11,13 +11,10 @@
 using namespace uhd;
 using namespace uhd::rfnoc;
 
-tx_async_msg_queue::tx_async_msg_queue(size_t capacity)
-    : _queue(capacity)
-{
-}
+tx_async_msg_queue::tx_async_msg_queue(size_t capacity) : _queue(capacity) {}
 
-bool tx_async_msg_queue::recv_async_msg(uhd::async_metadata_t& async_metadata,
-    int32_t timeout_ms)
+bool tx_async_msg_queue::recv_async_msg(
+    uhd::async_metadata_t& async_metadata, int32_t timeout_ms)
 {
     using namespace std::chrono;
 

@@ -9,8 +9,9 @@
 
 uhd::time_spec_t uhd::get_system_time(void)
 {
-    const auto now = std::chrono::steady_clock::now().time_since_epoch();
+    const auto now     = std::chrono::steady_clock::now().time_since_epoch();
     const auto seconds = std::chrono::duration_cast<std::chrono::seconds>(now);
-    const auto nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(now-seconds);
+    const auto nanoseconds =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(now - seconds);
     return uhd::time_spec_t(seconds.count(), nanoseconds.count(), 1e9);
 }

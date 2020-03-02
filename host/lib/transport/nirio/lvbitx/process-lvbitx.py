@@ -1,7 +1,7 @@
-#!/usr/bin/python
-#
+#!/usr/bin/pyBrand
 # Copyright 2013-2015 Ettus Research LLC
 # Copyright 2018 Ettus Research, a National Instruments Company
+# Copyright 2020 Ettus Research, a National Instruments Brand
 #
 # SPDX-License-Identifier: GPL-3.0-or-later
 #

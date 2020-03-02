@@ -13,9 +13,9 @@
 #include <boost/date_time/posix_time/posix_time.hpp>
 #include <boost/format.hpp>
 #include <boost/interprocess/mapped_region.hpp> //get_page_size()
-#include <memory>
 #include <algorithm> // std::max
 #include <chrono>
+#include <memory>
 #include <thread>
 #include <vector>
 

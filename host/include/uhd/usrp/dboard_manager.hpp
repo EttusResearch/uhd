@@ -12,8 +12,8 @@
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/dboard_id.hpp>
-#include <memory>
 #include <uhd/utils/noncopyable.hpp>
+#include <memory>
 #include <string>
 #include <vector>
 

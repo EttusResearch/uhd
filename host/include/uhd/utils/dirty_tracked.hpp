@@ -21,7 +21,8 @@ namespace uhd {
  * - Must have an assignment operator (=)
  * - Must have an equality operator (==)
  */
-template <typename data_t> class dirty_tracked
+template <typename data_t>
+class dirty_tracked
 {
 public:
     /*!

@@ -12,8 +12,8 @@
 #include <uhd/types/device_addr.hpp>
 #include <uhd/types/dict.hpp>
 #include <uhd/utils/tasks.hpp>
-#include <uhdlib/rfnoc/rfnoc_device.hpp>
 #include <uhdlib/rfnoc/clock_iface.hpp>
+#include <uhdlib/rfnoc/rfnoc_device.hpp>
 #include <uhdlib/usrp/common/mpmd_mb_controller.hpp>
 #include <uhdlib/utils/rpc.hpp>
 #include <boost/optional.hpp>
@@ -123,7 +123,8 @@ public:
      * separate thread, and needs some kind of flag to be notified that
      * something is up.
      */
-    void allow_claim_failure(const bool allow) {
+    void allow_claim_failure(const bool allow)
+    {
         if (allow) {
             _allow_claim_failure_latch = true;
         }
@@ -173,7 +174,6 @@ private:
      * really need to know what it does.
      */
     std::atomic<bool> _allow_claim_failure_latch{false};
-
 };
 
 

@@ -35,20 +35,20 @@ public:
      *
      * \throws uhd::runtime_error if the parsing failed.
      */
-    config_parser(const std::string &path="");
+    config_parser(const std::string& path = "");
 
     /*! Load another config file and update the current values.
      *
      * If a value exists in both the new and current file, the new value wins.
      */
-    void read_file(const std::string &path);
+    void read_file(const std::string& path);
 
     //! Return a list of sections
     std::vector<std::string> sections();
 
     //! Return a list of options (keys) in a section, or an empty list if
     //  section does not exist
-    std::vector<std::string> options(const std::string &section);
+    std::vector<std::string> options(const std::string& section);
 
     /*! Return the value of a key
      *
@@ -57,15 +57,12 @@ public:
      * \param def Default value, in case the key does not exist
      */
     template <typename T>
-    T get(
-            const std::string &section,
-            const std::string &key,
-            const T &def
-    ) {
+    T get(const std::string& section, const std::string& key, const T& def)
+    {
         try {
             const auto child = _pt.get_child(section);
             return child.get<T>(key, def);
-        } catch (const boost::property_tree::ptree_bad_path &) {
+        } catch (const boost::property_tree::ptree_bad_path&) {
             return def;
         }
     }
@@ -78,27 +75,20 @@ public:
      * \throws uhd::key_error if the key or the section don't exist
      */
     template <typename T>
-    T get(
-            const std::string &section,
-            const std::string &key
-    ) {
+    T get(const std::string& section, const std::string& key)
+    {
         try {
             const auto child = _pt.get_child(section);
             return child.get<T>(key);
-        } catch (const boost::property_tree::ptree_bad_path &) {
-            throw uhd::key_error(
-                std::string("[config_parser] Key ") + key +
-                " not found in section " + section
-            );
+        } catch (const boost::property_tree::ptree_bad_path&) {
+            throw uhd::key_error(std::string("[config_parser] Key ") + key
+                                 + " not found in section " + section);
         }
     }
 
     template <typename T>
-    void set(
-            const std::string &section,
-            const std::string &key,
-            const T &value
-    ) {
+    void set(const std::string& section, const std::string& key, const T& value)
+    {
         _pt.put<T>(section + "." + key, value);
     }
 

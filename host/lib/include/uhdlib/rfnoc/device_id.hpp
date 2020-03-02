@@ -19,4 +19,3 @@ device_id_t allocate_device_id();
 }} /* namespace uhd::rfnoc */
 
 #endif /* INCLUDED_LIBUHD_DEVICE_ID_HPP */
-

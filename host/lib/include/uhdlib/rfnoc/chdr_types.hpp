@@ -209,8 +209,10 @@ private:
     }
 
     template <typename field_t>
-    static inline uint64_t set_field(
-        const uint64_t old_val, const field_t field, const size_t offset, const size_t width)
+    static inline uint64_t set_field(const uint64_t old_val,
+        const field_t field,
+        const size_t offset,
+        const size_t width)
     {
         return (old_val & ~(mask(width) << offset))
                | ((static_cast<uint64_t>(field) & mask(width)) << offset);

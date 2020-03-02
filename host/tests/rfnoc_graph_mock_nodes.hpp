@@ -45,25 +45,24 @@ public:
                 UHD_LOG_INFO(get_unique_id(), " Calling resolver for `samp_rate_in'...");
                 samp_rate_in = master_clock_rate.get();
             });
-        add_property_resolver({&_samp_rate_out},
-            {&_samp_rate_out},
-            [this]() {
-                UHD_LOG_INFO(get_unique_id(), " Calling resolver for `samp_rate_out'...");
-                if (this->disable_samp_out_resolver) {
-                    _samp_rate_out = this->force_samp_out_value;
-                    UHD_LOG_DEBUG(get_unique_id(),
-                        "Forcing samp_rate_out to " << _samp_rate_out.get());
-                    return;
-                }
-                this->_samp_rate_out = this->_master_clock_rate.get();
-            });
+        add_property_resolver({&_samp_rate_out}, {&_samp_rate_out}, [this]() {
+            UHD_LOG_INFO(get_unique_id(), " Calling resolver for `samp_rate_out'...");
+            if (this->disable_samp_out_resolver) {
+                _samp_rate_out = this->force_samp_out_value;
+                UHD_LOG_DEBUG(
+                    get_unique_id(), "Forcing samp_rate_out to " << _samp_rate_out.get());
+                return;
+            }
+            this->_samp_rate_out = this->_master_clock_rate.get();
+        });
         add_property_resolver({&_master_clock_rate},
             {&_master_clock_rate, &_samp_rate_in, &_samp_rate_out},
             [& samp_rate_out       = _samp_rate_out,
                 &samp_rate_in      = _samp_rate_in,
                 &master_clock_rate = _master_clock_rate,
                 this]() {
-                UHD_LOG_INFO(get_unique_id(), " Calling resolver for `master_clock_rate'...");
+                UHD_LOG_INFO(
+                    get_unique_id(), " Calling resolver for `master_clock_rate'...");
                 if (_master_clock_rate.get() > 150e6) {
                     _master_clock_rate = 200e6;
                 } else {
@@ -79,13 +78,11 @@ public:
                 }
             });
         // By depending on ALWAYS_DIRTY, this property is always updated:
-        add_property_resolver({&ALWAYS_DIRTY},
-            {&_rssi},
-            [this]() {
-                UHD_LOG_INFO(get_unique_id(), " Calling resolver for `rssi'...");
-                rssi_resolver_count++;
-                _rssi = static_cast<double>(rssi_resolver_count);
-            });
+        add_property_resolver({&ALWAYS_DIRTY}, {&_rssi}, [this]() {
+            UHD_LOG_INFO(get_unique_id(), " Calling resolver for `rssi'...");
+            rssi_resolver_count++;
+            _rssi = static_cast<double>(rssi_resolver_count);
+        });
 
 
         set_action_forwarding_policy(forwarding_policy_t::DROP);
@@ -102,11 +99,12 @@ public:
                                                            << ", id==" << action->id);
                 if (stream_mode == uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS) {
                     UHD_LOG_INFO(get_unique_id(), "Starting Stream!");
-                } else if (stream_mode == uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS) {
+                } else if (stream_mode
+                           == uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS) {
                     UHD_LOG_INFO(get_unique_id(), "Stopping Stream!");
                 } else {
                     this->last_num_samps = stream_cmd_action->stream_cmd.num_samps;
-                    RFNOC_LOG_INFO("Streaming num samps: " <<  this->last_num_samps);
+                    RFNOC_LOG_INFO("Streaming num samps: " << this->last_num_samps);
                 }
             });
     }
@@ -132,19 +130,17 @@ public:
     }
 
     // Some public attributes that help debugging
-    size_t rssi_resolver_count = 0;
+    size_t rssi_resolver_count     = 0;
     bool disable_samp_out_resolver = false;
-    double force_samp_out_value = 23e6;
+    double force_samp_out_value    = 23e6;
 
     size_t last_num_samps = 0;
 
 private:
     const size_t _radio_idx;
 
-    property_t<double> _samp_rate_in{
-        "samp_rate", 200e6, {res_source_info::INPUT_EDGE}};
-    property_t<double> _samp_rate_out{
-        "samp_rate", 200e6, {res_source_info::OUTPUT_EDGE}};
+    property_t<double> _samp_rate_in{"samp_rate", 200e6, {res_source_info::INPUT_EDGE}};
+    property_t<double> _samp_rate_out{"samp_rate", 200e6, {res_source_info::OUTPUT_EDGE}};
     property_t<double> _master_clock_rate{
         "master_clock_rate", 200e6, {res_source_info::USER}};
     property_t<double> _rssi{"rssi", 0, {res_source_info::USER}};
@@ -200,8 +196,8 @@ public:
                 samp_rate_in = samp_rate_out.get() * decim.get();
             });
 
-        register_action_handler(
-            ACTION_KEY_STREAM_CMD, [this](const res_source_info& src, action_info::sptr action) {
+        register_action_handler(ACTION_KEY_STREAM_CMD,
+            [this](const res_source_info& src, action_info::sptr action) {
                 res_source_info dst_edge{
                     res_source_info::invert_edge(src.type), src.instance};
                 stream_cmd_action_info::sptr stream_cmd_action =
@@ -212,7 +208,7 @@ public:
                 RFNOC_LOG_INFO("Received stream command: " << stream_mode << " to "
                                                            << src.to_string()
                                                            << ", id==" << action->id);
-                auto new_action = stream_cmd_action_info::make(stream_mode);
+                auto new_action        = stream_cmd_action_info::make(stream_mode);
                 new_action->stream_cmd = stream_cmd_action->stream_cmd;
                 if (stream_mode == uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE
                     || stream_mode == uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_MORE) {
@@ -226,12 +222,16 @@ public:
                 }
 
                 RFNOC_LOG_INFO("Forwarding stream_cmd, num_samps is "
-                               << new_action->stream_cmd.num_samps << ", id==" << new_action->id);
+                               << new_action->stream_cmd.num_samps
+                               << ", id==" << new_action->id);
                 post_action(dst_edge, new_action);
             });
     }
 
-    std::string get_unique_id() const { return "MOCK_DDC"; }
+    std::string get_unique_id() const
+    {
+        return "MOCK_DDC";
+    }
 
     size_t get_num_input_ports() const
     {
@@ -281,7 +281,10 @@ public:
         set_action_forwarding_policy(forwarding_policy_t::ONE_TO_ONE);
     }
 
-    std::string get_unique_id() const { return "MOCK_FIFO"; }
+    std::string get_unique_id() const
+    {
+        return "MOCK_FIFO";
+    }
 
     size_t get_num_input_ports() const
     {
@@ -345,10 +348,8 @@ public:
     }
 
 private:
-    property_t<double> _samp_rate_user{
-        "samp_rate", 1e6, {res_source_info::USER}};
-    property_t<double> _samp_rate_in{
-        "samp_rate", 1e6, {res_source_info::INPUT_EDGE}};
+    property_t<double> _samp_rate_user{"samp_rate", 1e6, {res_source_info::USER}};
+    property_t<double> _samp_rate_in{"samp_rate", 1e6, {res_source_info::INPUT_EDGE}};
     const size_t _num_ports;
 };
 

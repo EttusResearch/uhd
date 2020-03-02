@@ -71,8 +71,8 @@ public:
     double set_rate(double rate);
 
     // Setters
-    void set_tx_antenna(const std::string &ant, const size_t chan);
-    void set_rx_antenna(const std::string &ant, const size_t chan);
+    void set_tx_antenna(const std::string& ant, const size_t chan);
+    void set_rx_antenna(const std::string& ant, const size_t chan);
     double set_tx_frequency(const double freq, const size_t chan);
     double set_rx_frequency(const double freq, const size_t chan);
     void set_tx_tune_args(const uhd::device_addr_t&, const size_t chan);
@@ -163,8 +163,10 @@ public:
      * ??? calls
      ***********************************************************************/
     // LO Distribution Control
-    void set_tx_lo_output_enabled(const bool enabled, const std::string& port_name, const size_t chan);
-    void set_rx_lo_output_enabled(const bool enabled, const std::string& port_name, const size_t chan);
+    void set_tx_lo_output_enabled(
+        const bool enabled, const std::string& port_name, const size_t chan);
+    void set_rx_lo_output_enabled(
+        const bool enabled, const std::string& port_name, const size_t chan);
     bool get_tx_lo_output_enabled(const std::string& port_name, const size_t chan);
     bool get_rx_lo_output_enabled(const std::string& port_name, const size_t chan);
 
@@ -172,27 +174,29 @@ public:
 
     //! Set the external gain for a TX LO
     //  Out of range values will be coerced
-    double set_tx_lo_gain(const double gain, const std::string &name, const size_t chan);
+    double set_tx_lo_gain(const double gain, const std::string& name, const size_t chan);
 
     //! Set the external gain for an RX LO
     //  Out of range values will be coerced
-    double set_rx_lo_gain(const double gain, const std::string &name, const size_t chan);
+    double set_rx_lo_gain(const double gain, const std::string& name, const size_t chan);
 
-    double get_tx_lo_gain(const std::string &name, const size_t chan);
-    double get_rx_lo_gain(const std::string &name, const size_t chan);
+    double get_tx_lo_gain(const std::string& name, const size_t chan);
+    double get_rx_lo_gain(const std::string& name, const size_t chan);
 
     // LO Output Power Control
 
     //! Set the output power setting of a TX LO
     //  Out of range values will be coerced
-    double set_tx_lo_power(const double power, const std::string &name, const size_t chan);
+    double set_tx_lo_power(
+        const double power, const std::string& name, const size_t chan);
 
     //! Set the output power setting of a RX LO
     //  Out of range values will be coerced
-    double set_rx_lo_power(const double power, const std::string &name, const size_t chan);
+    double set_rx_lo_power(
+        const double power, const std::string& name, const size_t chan);
 
-    double get_tx_lo_power(const std::string &name, const size_t chan);
-    double get_rx_lo_power(const std::string &name, const size_t chan);
+    double get_tx_lo_power(const std::string& name, const size_t chan);
+    double get_rx_lo_power(const std::string& name, const size_t chan);
 
 
 private:
@@ -239,42 +243,28 @@ private:
     void _init_mpm_sensors(const direction_t dir, const size_t chan_idx);
 
     //! Get the frequency range for an LO
-    freq_range_t _get_lo_freq_range(const std::string &name) const;
+    freq_range_t _get_lo_freq_range(const std::string& name) const;
 
     //! Get the current lowband intermediate frequency
     double _get_lowband_lo_freq() const;
 
     //! Configure LO1's export
-    void _set_lo1_export_enabled(
-        const bool enabled,
-        const direction_t dir
-    );
+    void _set_lo1_export_enabled(const bool enabled, const direction_t dir);
 
     //! Validate that port_name is valid, and that LO distribution functions
     //  can be called in this instance
     void _validate_output_port(
-        const std::string& port_name,
-        const std::string& function_name
-    );
+        const std::string& port_name, const std::string& function_name);
 
     //! Configure LO Distribution board's termination switches
     void _set_lo_output_enabled(
-        const bool enabled,
-        const std::string& port_name,
-        const direction_t dir
-    );
+        const bool enabled, const std::string& port_name, const direction_t dir);
 
-    bool _get_lo_output_enabled(
-        const std::string& port_name,
-        const direction_t dir
-    );
+    bool _get_lo_output_enabled(const std::string& port_name, const direction_t dir);
 
     //! Configure LO1's output power
     //  Out of range values will be coerced to [0-63]
-    double _set_lo1_power(
-        const double power,
-        const direction_t dir
-    );
+    double _set_lo1_power(const double power, const direction_t dir);
 
     //! Flash all front end LEDs at 1 Hz for the specified amount of time
     void _identify_with_leds(double identify_duration);
@@ -328,29 +318,21 @@ private:
      * Frontend Controls
      *************************************************************************/
 
-    void _set_tx_fe_connection(const std::string &conn);
-    void _set_rx_fe_connection(const std::string &conn);
+    void _set_tx_fe_connection(const std::string& conn);
+    void _set_rx_fe_connection(const std::string& conn);
     std::string _get_tx_fe_connection() const;
     std::string _get_rx_fe_connection() const;
 
     /**************************************************************************
      * CPLD Controls (implemented in rhodium_radio_ctrl_cpld.cpp)
      *************************************************************************/
-    void _update_rx_freq_switches(
-        const double freq
-    );
+    void _update_rx_freq_switches(const double freq);
 
-    void _update_tx_freq_switches(
-        const double freq
-    );
+    void _update_tx_freq_switches(const double freq);
 
-    void _update_rx_input_switches(
-        const std::string &input
-    );
+    void _update_rx_input_switches(const std::string& input);
 
-    void _update_tx_output_switches(
-        const std::string &output
-    );
+    void _update_tx_output_switches(const std::string& output);
 
     /**************************************************************************
      * Private attributes
@@ -412,7 +394,7 @@ private:
     //! Saved frontend connection for DSP core
     std::string _rx_fe_connection;
     std::string _tx_fe_connection;
-     //! Desired RF frequency
+    //! Desired RF frequency
     std::map<direction_t, double> _desired_rf_freq = {
         {RX_DIRECTION, 2.44e9}, {TX_DIRECTION, 2.44e9}};
     //! Frequency at which gain setting was last applied.  The CPLD requires a new gain
@@ -446,8 +428,8 @@ private:
     bool _lo_dist_present = false;
 
     //! LO Distribution board output status
-    bool _lo_dist_rx_out_enabled[4] = { false, false, false, false };
-    bool _lo_dist_tx_out_enabled[4] = { false, false, false, false };
+    bool _lo_dist_rx_out_enabled[4] = {false, false, false, false};
+    bool _lo_dist_tx_out_enabled[4] = {false, false, false, false};
 
     std::unordered_map<uhd::direction_t, uhd::device_addr_t, std::hash<size_t>>
         _tune_args{{uhd::RX_DIRECTION, uhd::device_addr_t()},
@@ -477,4 +459,3 @@ private:
 }} /* namespace uhd::rfnoc */
 
 #endif /* INCLUDED_LIBUHD_RFNOC_RHODIUM_RADIO_CTRL_IMPL_HPP */
-

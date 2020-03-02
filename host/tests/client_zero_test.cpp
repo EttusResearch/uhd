@@ -4,8 +4,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhd/rfnoc/register_iface.hpp>
 #include <uhd/rfnoc/mock_block.hpp>
+#include <uhd/rfnoc/register_iface.hpp>
 #include <uhd/utils/log.hpp>
 #include <uhdlib/rfnoc/client_zero.hpp>
 #include <uhdlib/utils/narrow.hpp>
@@ -137,10 +137,10 @@ constexpr uint32_t client_zero_test_iface::SLOT_OFFSET;
 
 BOOST_AUTO_TEST_CASE(simple_read_if_chdr_pkt)
 {
-    constexpr uint16_t DEVICE_ID      = 0xBEEF;
-    constexpr uint16_t CTRL_FIFO_SIZE = 5; // in words
+    constexpr uint16_t DEVICE_ID           = 0xBEEF;
+    constexpr uint16_t CTRL_FIFO_SIZE      = 5; // in words
     constexpr uint16_t CTRL_MAX_ASYNC_MSGS = 2;
-    constexpr uint16_t MTU            = 40; // FIXME in words?
+    constexpr uint16_t MTU                 = 40; // FIXME in words?
     auto mock_reg_iface = std::make_shared<client_zero_test_iface>(DEVICE_ID);
 
     // Prime the pump: We add some blocks and connections

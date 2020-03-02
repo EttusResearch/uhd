@@ -14,7 +14,7 @@
 #include <uhd/utils/noncopyable.hpp>
 #include <memory>
 
-class b200_uart: uhd::noncopyable, public uhd::uart_iface
+class b200_uart : uhd::noncopyable, public uhd::uart_iface
 {
 public:
     typedef std::shared_ptr<b200_uart> sptr;

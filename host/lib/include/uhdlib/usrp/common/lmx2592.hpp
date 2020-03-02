@@ -12,9 +12,9 @@
 #include <uhd/utils/math.hpp>
 #include <uhd/utils/safe_call.hpp>
 #include <boost/format.hpp>
-#include <functional>
 #include <algorithm>
 #include <cstdint>
+#include <functional>
 #include <utility>
 #include <vector>
 

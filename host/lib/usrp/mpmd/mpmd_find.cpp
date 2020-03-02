@@ -93,7 +93,7 @@ device_addrs_t mpmd_find_with_addr(
         // Create result to return
         device_addr_t new_addr;
         new_addr[MGMT_ADDR_KEY] = recv_addr;
-        new_addr["type"]               = "mpmd"; // hwd will overwrite this
+        new_addr["type"]        = "mpmd"; // hwd will overwrite this
         // remove ident string and put other informations into device_args dict
         result.erase(result.begin());
         // parse key-value pairs in the discovery string and add them to the
@@ -134,8 +134,7 @@ device_addrs_t mpmd_find_with_addrs(const device_addrs_t& hints)
     device_addrs_t found_devices;
     found_devices.reserve(hints.size());
     for (const auto& hint : hints) {
-        if (not(hint.has_key(xport::FIRST_ADDR_KEY)
-                or hint.has_key(MGMT_ADDR_KEY))) {
+        if (not(hint.has_key(xport::FIRST_ADDR_KEY) or hint.has_key(MGMT_ADDR_KEY))) {
             UHD_LOG_DEBUG("MPMD FIND", "No address given in hint " << hint.to_string());
             continue;
         }

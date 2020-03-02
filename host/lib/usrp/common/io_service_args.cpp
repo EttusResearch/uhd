@@ -58,16 +58,18 @@ io_service_args_t read_io_service_args(
     io_service_args_t io_srv_args;
     std::string tmp_str, default_str;
 
-    io_srv_args.recv_offload = get_bool_arg(args, recv_offload_str, defaults.recv_offload);
-    io_srv_args.send_offload = get_bool_arg(args, send_offload_str, defaults.send_offload);
+    io_srv_args.recv_offload =
+        get_bool_arg(args, recv_offload_str, defaults.recv_offload);
+    io_srv_args.send_offload =
+        get_bool_arg(args, send_offload_str, defaults.send_offload);
 
     io_srv_args.recv_offload_wait_mode = get_wait_mode_arg(
         args, recv_offload_wait_mode_str, defaults.recv_offload_wait_mode);
     io_srv_args.send_offload_wait_mode = get_wait_mode_arg(
         args, send_offload_wait_mode_str, defaults.send_offload_wait_mode);
 
-    io_srv_args.num_poll_offload_threads =
-        args.cast<size_t>(num_poll_offload_threads_str, defaults.num_poll_offload_threads);
+    io_srv_args.num_poll_offload_threads = args.cast<size_t>(
+        num_poll_offload_threads_str, defaults.num_poll_offload_threads);
     if (io_srv_args.num_poll_offload_threads == 0) {
         UHD_LOG_WARNING(LOG_ID,
             "Invalid value for num_poll_offload_threads. "
@@ -75,7 +77,8 @@ io_service_args_t read_io_service_args(
         io_srv_args.num_poll_offload_threads = 1;
     }
 
-    auto read_thread_args = [&args](const std::regex& expr, std::map<size_t, size_t>& dest) {
+    auto read_thread_args = [&args](
+                                const std::regex& expr, std::map<size_t, size_t>& dest) {
         auto keys = args.keys();
         for (const auto& key : keys) {
             std::smatch match;

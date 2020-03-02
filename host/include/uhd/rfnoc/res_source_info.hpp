@@ -14,15 +14,16 @@
 namespace uhd { namespace rfnoc {
 
 /*! Describes the source of a particular resource (property or action)
-*/
-struct res_source_info {
+ */
+struct res_source_info
+{
     /*! Source type
-    */
+     */
     enum source_t {
-        USER,        ///< The user API sources this resource
-        INPUT_EDGE,  ///< An input edge sources this resource
+        USER, ///< The user API sources this resource
+        INPUT_EDGE, ///< An input edge sources this resource
         OUTPUT_EDGE, ///< An input edge sources this resource
-        FRAMEWORK    ///< This is a special resource, only accessed by the framework
+        FRAMEWORK ///< This is a special resource, only accessed by the framework
     };
 
     // No default ctor: The source type must be specified
@@ -49,9 +50,11 @@ struct res_source_info {
     //! Returns a string representation of the source
     std::string to_string() const
     {
-        const std::string type_repr = type == USER ? "USER" :
-            type == INPUT_EDGE ? "INPUT_EDGE" :
-            type == OUTPUT_EDGE ? "OUTPUT_EDGE" : "INVALID";
+        const std::string type_repr =
+            type == USER
+                ? "USER"
+                : type == INPUT_EDGE ? "INPUT_EDGE"
+                                     : type == OUTPUT_EDGE ? "OUTPUT_EDGE" : "INVALID";
         return type_repr + ":" + std::to_string(instance);
     }
 
@@ -86,4 +89,3 @@ struct hash<uhd::rfnoc::res_source_info>
 } // namespace std
 
 #endif /* INCLUDED_LIBUHD_RES_SRC_INFO_HPP */
-

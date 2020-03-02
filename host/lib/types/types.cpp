@@ -5,18 +5,16 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhd/types/stream_cmd.hpp>
 #include <uhd/types/metadata.hpp>
+#include <uhd/types/stream_cmd.hpp>
 
 using namespace uhd;
 
 /***********************************************************************
  * stream command
  **********************************************************************/
-stream_cmd_t::stream_cmd_t(const stream_mode_t &stream_mode):
-    stream_mode(stream_mode),
-    num_samps(0),
-    stream_now(true)
+stream_cmd_t::stream_cmd_t(const stream_mode_t& stream_mode)
+    : stream_mode(stream_mode), num_samps(0), stream_now(true)
 {
     /* NOP */
 }

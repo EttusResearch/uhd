@@ -13,10 +13,9 @@
 #include <uhd/transport/zero_copy.hpp>
 #include <uhd/types/endianness.hpp>
 #include <uhd/utils/byteswap.hpp>
-#include <memory>
 #include <boost/shared_array.hpp>
-#include <memory>
 #include <list>
+#include <memory>
 #include <vector>
 
 /***********************************************************************

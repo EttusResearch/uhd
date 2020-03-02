@@ -8,15 +8,15 @@
 #ifndef INCLUDED_AD9361_MANAGER_HPP
 #define INCLUDED_AD9361_MANAGER_HPP
 
-#include <uhd/types/wb_iface.hpp>
-#include <uhd/utils/math.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/types/direction.hpp>
+#include <uhd/types/wb_iface.hpp>
+#include <uhd/utils/math.hpp>
 #include <uhdlib/usrp/common/ad9361_ctrl.hpp>
-#include <boost/format.hpp>
-#include <memory>
 #include <stdint.h>
+#include <boost/format.hpp>
 #include <functional>
+#include <memory>
 
 namespace uhd { namespace usrp {
 
@@ -45,12 +45,9 @@ public:
      * \param codec_ctrl The actual AD936x control object
      * \param n_frontends Number of frontends (1 or 2)
      */
-    static sptr make(
-            const ad9361_ctrl::sptr &codec_ctrl,
-            const size_t n_frontends
-    );
+    static sptr make(const ad9361_ctrl::sptr& codec_ctrl, const size_t n_frontends);
 
-    virtual ~ad936x_manager(void) {};
+    virtual ~ad936x_manager(void){};
 
     /*! Put the AD936x into a default state.
      *
@@ -67,14 +64,13 @@ public:
      *
      * \param iface An interface to the associated radio control core
      * \param iface The radio control core's address to write the loopback value
-     * \param iface The radio control core's readback address to read back the returned value
+     * \param iface The radio control core's readback address to read back the returned
+     * value
      *
      * \throws a uhd::runtime_error if the loopback value didn't match.
      */
-    virtual void loopback_self_test(
-            std::function<void(uint32_t)> poker_functor,
-            std::function<uint64_t()> peeker_functor
-    ) = 0;
+    virtual void loopback_self_test(std::function<void(uint32_t)> poker_functor,
+        std::function<uint64_t()> peeker_functor) = 0;
 
     /*! Determine a tick rate that will work with a given sampling rate
      *  (assuming a DDC/DUC chain is also available elsewhere).
@@ -97,10 +93,7 @@ public:
      * \returns a valid tick rate that can be used with the given rate
      * \throws a uhd::value_error if \p lcm_rate exceeds the max tick rate
      */
-    virtual double get_auto_tick_rate(
-            const double lcm_rate,
-            size_t num_chans
-    ) = 0;
+    virtual double get_auto_tick_rate(const double lcm_rate, size_t num_chans) = 0;
 
     /*! Check if a given sampling rate is within the available analog bandwidth.
      *
@@ -110,11 +103,9 @@ public:
 
     /*! Populate the property tree for the device frontend
      */
-    virtual void populate_frontend_subtree(
-            uhd::property_tree::sptr subtree,
-            const std::string &key,
-            uhd::direction_t dir
-    ) = 0;
+    virtual void populate_frontend_subtree(uhd::property_tree::sptr subtree,
+        const std::string& key,
+        uhd::direction_t dir) = 0;
 
 }; /* class ad936x_manager */
 

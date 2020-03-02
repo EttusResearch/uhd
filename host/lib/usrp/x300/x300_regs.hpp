@@ -27,14 +27,14 @@ static const int BL_DATA    = 1;
 // I2C1 device addresses
 #define MBOARD_EEPROM_ADDR 0x50
 
-static const int ZPU_SR_LEDS       = 00;
-static const int ZPU_SR_SW_RST     = 01;
-static const int ZPU_SR_CLOCK_CTRL = 02;
-static const int ZPU_SR_XB_LOCAL   = 03;
-static const int ZPU_SR_REF_FREQ   = 04;
-static const int ZPU_SR_SPI        = 32;
-static const int ZPU_SR_ETHINT0    = 40;
-static const int ZPU_SR_ETHINT1    = 56;
+static const int ZPU_SR_LEDS        = 00;
+static const int ZPU_SR_SW_RST      = 01;
+static const int ZPU_SR_CLOCK_CTRL  = 02;
+static const int ZPU_SR_XB_LOCAL    = 03;
+static const int ZPU_SR_REF_FREQ    = 04;
+static const int ZPU_SR_SPI         = 32;
+static const int ZPU_SR_ETHINT0     = 40;
+static const int ZPU_SR_ETHINT1     = 56;
 static const int ZPU_SR_FP_GPIO_SRC = 72;
 
 // reset bits
@@ -43,13 +43,13 @@ static const int ZPU_SR_FP_GPIO_SRC = 72;
 #define ZPU_SR_SW_RST_RADIO_CLK_PLL (1 << 2)
 #define ZPU_SR_SW_RST_ADC_IDELAYCTRL (1 << 3)
 
-static const int ZPU_RB_SPI        = 2;
-static const int ZPU_RB_CLK_STATUS = 3;
-static const int ZPU_RB_COMPAT_NUM = 6;
-static const int ZPU_RB_NUM_CE     = 7;
-static const int ZPU_RB_GIT_HASH   = 10;
-static const int ZPU_RB_SFP0_TYPE  = 4;
-static const int ZPU_RB_SFP1_TYPE  = 5;
+static const int ZPU_RB_SPI         = 2;
+static const int ZPU_RB_CLK_STATUS  = 3;
+static const int ZPU_RB_COMPAT_NUM  = 6;
+static const int ZPU_RB_NUM_CE      = 7;
+static const int ZPU_RB_GIT_HASH    = 10;
+static const int ZPU_RB_SFP0_TYPE   = 4;
+static const int ZPU_RB_SFP1_TYPE   = 5;
 static const int ZPU_RB_FP_GPIO_SRC = 13;
 
 static const uint32_t RB_SFP_1G_ETH  = 0;

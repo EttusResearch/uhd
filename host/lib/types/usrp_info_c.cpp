@@ -7,7 +7,8 @@
 
 #include <uhd/types/usrp_info.h>
 
-uhd_error uhd_usrp_rx_info_free(uhd_usrp_rx_info_t *rx_info){
+uhd_error uhd_usrp_rx_info_free(uhd_usrp_rx_info_t* rx_info)
+{
     free(rx_info->mboard_id);
     free(rx_info->mboard_name);
     free(rx_info->mboard_serial);
@@ -20,7 +21,8 @@ uhd_error uhd_usrp_rx_info_free(uhd_usrp_rx_info_t *rx_info){
     return UHD_ERROR_NONE;
 }
 
-uhd_error uhd_usrp_tx_info_free(uhd_usrp_tx_info_t *tx_info){
+uhd_error uhd_usrp_tx_info_free(uhd_usrp_tx_info_t* tx_info)
+{
     free(tx_info->mboard_id);
     free(tx_info->mboard_name);
     free(tx_info->mboard_serial);

@@ -257,8 +257,8 @@ private:
 #ifdef HAVE_DPDK
             _use_dpdk.set(true);
 #else
-            UHD_LOG_WARNING("DPDK",
-                "Detected use_dpdk argument, but DPDK support not built in.");
+            UHD_LOG_WARNING(
+                "DPDK", "Detected use_dpdk argument, but DPDK support not built in.");
 #endif
         }
         PARSE_DEFAULT(_recv_frame_size)

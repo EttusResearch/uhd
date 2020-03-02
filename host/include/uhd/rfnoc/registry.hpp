@@ -16,29 +16,33 @@
 
 //! This macro must be placed inside a block implementation file
 // after the class definition
-#define UHD_RFNOC_BLOCK_REGISTER_FOR_DEVICE_DIRECT(CLASS_NAME,             \
-    NOC_ID, DEVICE_ID, BLOCK_NAME, MB_ACCESS, TB_CLOCK, CTRL_CLOCK)        \
-    uhd::rfnoc::noc_block_base::sptr CLASS_NAME##_make(                    \
-        uhd::rfnoc::noc_block_base::make_args_ptr make_args)               \
-    {                                                                      \
-        return std::make_shared<CLASS_NAME##_impl>(std::move(make_args));  \
-    }                                                                      \
-    UHD_STATIC_BLOCK(register_rfnoc_##CLASS_NAME)                          \
-    {                                                                      \
-        uhd::rfnoc::registry::register_block_direct(NOC_ID, DEVICE_ID,     \
-            BLOCK_NAME, MB_ACCESS,                                         \
-            TB_CLOCK, CTRL_CLOCK, &CLASS_NAME##_make);                     \
+#define UHD_RFNOC_BLOCK_REGISTER_FOR_DEVICE_DIRECT(                             \
+    CLASS_NAME, NOC_ID, DEVICE_ID, BLOCK_NAME, MB_ACCESS, TB_CLOCK, CTRL_CLOCK) \
+    uhd::rfnoc::noc_block_base::sptr CLASS_NAME##_make(                         \
+        uhd::rfnoc::noc_block_base::make_args_ptr make_args)                    \
+    {                                                                           \
+        return std::make_shared<CLASS_NAME##_impl>(std::move(make_args));       \
+    }                                                                           \
+    UHD_STATIC_BLOCK(register_rfnoc_##CLASS_NAME)                               \
+    {                                                                           \
+        uhd::rfnoc::registry::register_block_direct(NOC_ID,                     \
+            DEVICE_ID,                                                          \
+            BLOCK_NAME,                                                         \
+            MB_ACCESS,                                                          \
+            TB_CLOCK,                                                           \
+            CTRL_CLOCK,                                                         \
+            &CLASS_NAME##_make);                                                \
     }
 
-#define UHD_RFNOC_BLOCK_REGISTER_DIRECT(                                   \
-    CLASS_NAME, NOC_ID, BLOCK_NAME, TB_CLOCK, CTRL_CLOCK)                  \
-    UHD_RFNOC_BLOCK_REGISTER_FOR_DEVICE_DIRECT(CLASS_NAME,                 \
-        NOC_ID, ANY_DEVICE, BLOCK_NAME, false, TB_CLOCK, CTRL_CLOCK)
+#define UHD_RFNOC_BLOCK_REGISTER_DIRECT(                  \
+    CLASS_NAME, NOC_ID, BLOCK_NAME, TB_CLOCK, CTRL_CLOCK) \
+    UHD_RFNOC_BLOCK_REGISTER_FOR_DEVICE_DIRECT(           \
+        CLASS_NAME, NOC_ID, ANY_DEVICE, BLOCK_NAME, false, TB_CLOCK, CTRL_CLOCK)
 
-#define UHD_RFNOC_BLOCK_REGISTER_DIRECT_MB_ACCESS(                         \
-    CLASS_NAME, NOC_ID, BLOCK_NAME, TB_CLOCK, CTRL_CLOCK)                  \
-    UHD_RFNOC_BLOCK_REGISTER_FOR_DEVICE_DIRECT(CLASS_NAME,                 \
-        NOC_ID, ANY_DEVICE, BLOCK_NAME, true, TB_CLOCK, CTRL_CLOCK)
+#define UHD_RFNOC_BLOCK_REGISTER_DIRECT_MB_ACCESS(        \
+    CLASS_NAME, NOC_ID, BLOCK_NAME, TB_CLOCK, CTRL_CLOCK) \
+    UHD_RFNOC_BLOCK_REGISTER_FOR_DEVICE_DIRECT(           \
+        CLASS_NAME, NOC_ID, ANY_DEVICE, BLOCK_NAME, true, TB_CLOCK, CTRL_CLOCK)
 
 namespace uhd { namespace rfnoc {
 
@@ -100,9 +104,8 @@ public:
      * found, it will be used to find a block that was previously registered
      * here.
      */
-    static void register_block_descriptor(const std::string& block_key,
-        factory_t factory_fn);
-
+    static void register_block_descriptor(
+        const std::string& block_key, factory_t factory_fn);
 };
 
 }} /* namespace uhd::rfnoc */

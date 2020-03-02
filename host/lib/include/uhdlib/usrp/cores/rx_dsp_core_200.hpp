@@ -11,31 +11,32 @@
 #include <uhd/config.hpp>
 #include <uhd/stream.hpp>
 #include <uhd/types/ranges.hpp>
-#include <uhd/utils/noncopyable.hpp>
-#include <memory>
 #include <uhd/types/stream_cmd.hpp>
 #include <uhd/types/wb_iface.hpp>
+#include <uhd/utils/noncopyable.hpp>
+#include <memory>
 #include <string>
 
-class rx_dsp_core_200 : uhd::noncopyable{
+class rx_dsp_core_200 : uhd::noncopyable
+{
 public:
     typedef std::shared_ptr<rx_dsp_core_200> sptr;
 
     virtual ~rx_dsp_core_200(void) = 0;
 
-    static sptr make(
-        uhd::wb_iface::sptr iface,
-        const size_t dsp_base, const size_t ctrl_base,
-        const uint32_t sid, const bool lingering_packet = false
-    );
+    static sptr make(uhd::wb_iface::sptr iface,
+        const size_t dsp_base,
+        const size_t ctrl_base,
+        const uint32_t sid,
+        const bool lingering_packet = false);
 
     virtual void clear(void) = 0;
 
     virtual void set_nsamps_per_packet(const size_t nsamps) = 0;
 
-    virtual void issue_stream_command(const uhd::stream_cmd_t &stream_cmd) = 0;
+    virtual void issue_stream_command(const uhd::stream_cmd_t& stream_cmd) = 0;
 
-    virtual void set_mux(const std::string &mode, const bool fe_swapped = false) = 0;
+    virtual void set_mux(const std::string& mode, const bool fe_swapped = false) = 0;
 
     virtual void set_tick_rate(const double rate) = 0;
 
@@ -53,7 +54,7 @@ public:
 
     virtual void handle_overflow(void) = 0;
 
-    virtual void setup(const uhd::stream_args_t &stream_args) = 0;
+    virtual void setup(const uhd::stream_args_t& stream_args) = 0;
 };
 
 #endif /* INCLUDED_LIBUHD_USRP_RX_DSP_CORE_200_HPP */

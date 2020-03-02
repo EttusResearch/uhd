@@ -16,8 +16,8 @@ const std::string STREAMER_ID = "TxStreamer";
 static std::atomic<uint64_t> streamer_inst_ctr;
 static constexpr size_t ASYNC_MSG_QUEUE_SIZE = 1000;
 
-rfnoc_tx_streamer::rfnoc_tx_streamer(const size_t num_chans,
-    const uhd::stream_args_t stream_args)
+rfnoc_tx_streamer::rfnoc_tx_streamer(
+    const size_t num_chans, const uhd::stream_args_t stream_args)
     : tx_streamer_impl<chdr_tx_data_xport>(num_chans, stream_args)
     , _unique_id(STREAMER_ID + "#" + std::to_string(streamer_inst_ctr++))
     , _stream_args(stream_args)
@@ -56,11 +56,13 @@ rfnoc_tx_streamer::rfnoc_tx_streamer(const size_t num_chans,
             mtu_resolver_out.insert(&mtu_prop);
         }
 
-        add_property_resolver({&_mtu_out[i]}, std::move(mtu_resolver_out),
-            [&mtu_out = _mtu_out[i], i, this]() {
+        add_property_resolver({&_mtu_out[i]},
+            std::move(mtu_resolver_out),
+            [& mtu_out = _mtu_out[i], i, this]() {
                 RFNOC_LOG_TRACE("Calling resolver for `mtu_out'@" << i);
                 if (mtu_out.is_valid()) {
-                    const size_t mtu = std::min(mtu_out.get(), tx_streamer_impl::get_mtu());
+                    const size_t mtu =
+                        std::min(mtu_out.get(), tx_streamer_impl::get_mtu());
                     // Set the same MTU value for all chans
                     for (auto& prop : this->_mtu_out) {
                         prop.set(mtu);
@@ -96,8 +98,7 @@ const uhd::stream_args_t& rfnoc_tx_streamer::get_stream_args() const
     return _stream_args;
 }
 
-bool rfnoc_tx_streamer::check_topology(
-    const std::vector<size_t>& connected_inputs,
+bool rfnoc_tx_streamer::check_topology(const std::vector<size_t>& connected_inputs,
     const std::vector<size_t>& connected_outputs)
 {
     // Check that all channels are connected
@@ -119,7 +120,8 @@ void rfnoc_tx_streamer::connect_channel(
     set_property<size_t>(PROP_KEY_MTU, mtu, {res_source_info::OUTPUT_EDGE, channel});
 
     xport->set_enqueue_async_msg_fn(
-        [this, channel](async_metadata_t::event_code_t event_code, bool has_tsf, uint64_t tsf) {
+        [this, channel](
+            async_metadata_t::event_code_t event_code, bool has_tsf, uint64_t tsf) {
             async_metadata_t md;
             md.channel       = channel;
             md.event_code    = event_code;
@@ -135,23 +137,22 @@ void rfnoc_tx_streamer::connect_channel(
     tx_streamer_impl<chdr_tx_data_xport>::connect_channel(channel, std::move(xport));
 }
 
-bool rfnoc_tx_streamer::recv_async_msg(uhd::async_metadata_t& async_metadata,
-    double timeout)
+bool rfnoc_tx_streamer::recv_async_msg(
+    uhd::async_metadata_t& async_metadata, double timeout)
 {
     const auto timeout_ms = static_cast<uint64_t>(timeout * 1000);
     return _async_msg_queue->recv_async_msg(async_metadata, timeout_ms);
 }
 
-void rfnoc_tx_streamer::_register_props(const size_t chan,
-    const std::string& otw_format)
+void rfnoc_tx_streamer::_register_props(const size_t chan, const std::string& otw_format)
 {
     // Create actual properties and store them
-    _scaling_out.push_back(property_t<double>(
-        PROP_KEY_SCALING, {res_source_info::OUTPUT_EDGE, chan}));
-    _samp_rate_out.push_back(property_t<double>(
-        PROP_KEY_SAMP_RATE, {res_source_info::OUTPUT_EDGE, chan}));
-    _tick_rate_out.push_back(property_t<double>(
-        PROP_KEY_TICK_RATE, {res_source_info::OUTPUT_EDGE, chan}));
+    _scaling_out.push_back(
+        property_t<double>(PROP_KEY_SCALING, {res_source_info::OUTPUT_EDGE, chan}));
+    _samp_rate_out.push_back(
+        property_t<double>(PROP_KEY_SAMP_RATE, {res_source_info::OUTPUT_EDGE, chan}));
+    _tick_rate_out.push_back(
+        property_t<double>(PROP_KEY_TICK_RATE, {res_source_info::OUTPUT_EDGE, chan}));
     _type_out.emplace_back(property_t<std::string>(
         PROP_KEY_TYPE, otw_format, {res_source_info::OUTPUT_EDGE, chan}));
     _mtu_out.push_back(property_t<size_t>(

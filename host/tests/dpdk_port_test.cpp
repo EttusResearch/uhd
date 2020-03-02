@@ -13,16 +13,14 @@
 #include <memory>
 #include <thread>
 
-namespace po = boost::program_options;
+namespace po   = boost::program_options;
 namespace dpdk = uhd::transport::dpdk;
 
 void requester(dpdk::service_queue* queue)
 {
     uint32_t count = 0;
     std::chrono::seconds block(-1);
-    auto req = dpdk::wait_req_alloc(
-        dpdk::wait_type::WAIT_TYPE_COUNT, &count
-    );
+    auto req = dpdk::wait_req_alloc(dpdk::wait_type::WAIT_TYPE_COUNT, &count);
     std::cout << "Requesting count increment" << std::endl;
     queue->submit(req, block);
     if (count == 1) {
@@ -31,9 +29,7 @@ void requester(dpdk::service_queue* queue)
     wait_req_put(req);
 
     std::cout << "Requesting termination" << std::endl;
-    req = dpdk::wait_req_alloc(
-        dpdk::wait_type::WAIT_FLOW_CLOSE, NULL
-    );
+    req = dpdk::wait_req_alloc(dpdk::wait_type::WAIT_FLOW_CLOSE, NULL);
     queue->submit(req, block);
     wait_req_put(req);
 }
@@ -48,34 +44,34 @@ void servicer(uhd::transport::dpdk::service_queue* queue)
             continue;
         }
         switch (req->reason) {
-        case dpdk::wait_type::WAIT_TYPE_COUNT:
-            (*(uint32_t *) req->data)++;
-            break;
-        case dpdk::wait_type::WAIT_FLOW_CLOSE:
-            running = false;
-            break;
-        case dpdk::wait_type::WAIT_SIMPLE:
-            break;
-        default:
-            std::cout << "ERROR: Received unexpected service request type" << std::endl;
-            throw uhd::runtime_error("Unexpected service request type");
+            case dpdk::wait_type::WAIT_TYPE_COUNT:
+                (*(uint32_t*)req->data)++;
+                break;
+            case dpdk::wait_type::WAIT_FLOW_CLOSE:
+                running = false;
+                break;
+            case dpdk::wait_type::WAIT_SIMPLE:
+                break;
+            default:
+                std::cout << "ERROR: Received unexpected service request type"
+                          << std::endl;
+                throw uhd::runtime_error("Unexpected service request type");
         }
         if (queue->complete(req) == -ENOBUFS) {
             req->reason = dpdk::wait_type::WAIT_SIMPLE;
-            while (queue->requeue(req) == -ENOBUFS);
+            while (queue->requeue(req) == -ENOBUFS)
+                ;
         }
     }
 }
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     po::options_description desc("Allowed options");
     int status = 0;
     std::string args;
-    desc.add_options()
-        ("help", "help message")
-        ("args", po::value<std::string>(&args)->default_value(""), "UHD-DPDK args")
-    ;
+    desc.add_options()("help", "help message")(
+        "args", po::value<std::string>(&args)->default_value(""), "UHD-DPDK args");
     po::variables_map vm;
     po::store(po::parse_command_line(argc, argv, desc), vm);
     po::notify(vm);
@@ -86,7 +82,7 @@ int main(int argc, char **argv)
     }
 
     auto dpdk_args = uhd::device_addr_t(args);
-    auto ctx = uhd::transport::dpdk::dpdk_ctx::get();
+    auto ctx       = uhd::transport::dpdk::dpdk_ctx::get();
     ctx->init(args);
 
     uhd::transport::dpdk::dpdk_port* port = ctx->get_port(0);
@@ -107,7 +103,7 @@ int main(int argc, char **argv)
     std::cout << "Starting up ARP thread..." << std::endl;
     std::vector<uhd::transport::dpdk::dpdk_port*> ports;
     ports.push_back(port);
-    //auto io_srv = uhd::transport::dpdk_io_service::make(1, ports, 16);
+    // auto io_srv = uhd::transport::dpdk_io_service::make(1, ports, 16);
     auto io_srv = ctx->get_io_service(1);
 
     // Create link
@@ -117,8 +113,8 @@ int main(int argc, char **argv)
     params.send_frame_size = 8000;
     params.num_recv_frames = 511;
     params.num_send_frames = 511;
-    params.recv_buff_size = params.recv_frame_size*params.num_recv_frames;
-    params.send_buff_size = params.send_frame_size*params.num_send_frames;
+    params.recv_buff_size  = params.recv_frame_size * params.num_recv_frames;
+    params.send_buff_size  = params.send_frame_size * params.num_send_frames;
     auto link = uhd::transport::udp_dpdk_link::make("192.168.10.2", "49600", params);
 
     // Attach link
