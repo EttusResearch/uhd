@@ -94,45 +94,46 @@ module ctrlport_decoder_param #(
 
   wire [NUM_SLAVES-1:0] dec_mask;  // Address decoder mask
 
-  genvar i;
+  generate
+    genvar i;
 
-  for (i = 0; i < NUM_SLAVES; i = i+1) begin : gen_dec_mask
-    localparam [19:0] BASE_ADDR = PORT_BASE  [i*20 +: 20];
-    localparam [31:0] ADDR_W    = PORT_ADDR_W[i*32 +: 32];
-    assign dec_mask[i] = ~|((s_ctrlport_req_addr ^ BASE_ADDR) & ((~0) << ADDR_W));
-  end
+    for (i = 0; i < NUM_SLAVES; i = i+1) begin : gen_dec_mask
+      localparam [19:0] BASE_ADDR = PORT_BASE  [i*20 +: 20];
+      localparam [31:0] ADDR_W    = PORT_ADDR_W[i*32 +: 32];
+      assign dec_mask[i] = ~|((s_ctrlport_req_addr ^ BASE_ADDR) & ((~0) << ADDR_W));
+    end
 
 
-  //---------------------------------------------------------------------------
-  // Split the requests among the slaves
-  //---------------------------------------------------------------------------
+    //---------------------------------------------------------------------------
+    // Split the requests among the slaves
+    //---------------------------------------------------------------------------
 
-  for (i = 0; i < NUM_SLAVES; i = i+1) begin : gen_split
-    localparam [31:0] ADDR_W = PORT_ADDR_W[i*32 +: 32];
+    for (i = 0; i < NUM_SLAVES; i = i+1) begin : gen_split
+      localparam [31:0] ADDR_W = PORT_ADDR_W[i*32 +: 32];
 
-    always @(posedge ctrlport_clk) begin
-      if (ctrlport_rst) begin
-        m_ctrlport_req_wr[i] <= 1'b0;
-        m_ctrlport_req_rd[i] <= 1'b0;
-      end else begin
-        // Mask WR and RD based on address decoding
-        m_ctrlport_req_wr[i] <= s_ctrlport_req_wr & dec_mask[i];
-        m_ctrlport_req_rd[i] <= s_ctrlport_req_rd & dec_mask[i];
+      always @(posedge ctrlport_clk) begin
+        if (ctrlport_rst) begin
+          m_ctrlport_req_wr[i] <= 1'b0;
+          m_ctrlport_req_rd[i] <= 1'b0;
+        end else begin
+          // Mask WR and RD based on address decoding
+          m_ctrlport_req_wr[i] <= s_ctrlport_req_wr & dec_mask[i];
+          m_ctrlport_req_rd[i] <= s_ctrlport_req_rd & dec_mask[i];
 
-        // Other values pass through to all slaves, but should be ignored
-        // unless WR or RD is asserted.
-        m_ctrlport_req_data    [32*i +: 32] <= s_ctrlport_req_data;
-        m_ctrlport_req_byte_en [4*i +: 4]   <= s_ctrlport_req_byte_en;
-        m_ctrlport_req_has_time[i]          <= s_ctrlport_req_has_time;
-        m_ctrlport_req_time    [64*i +: 64] <= s_ctrlport_req_time;
+          // Other values pass through to all slaves, but should be ignored
+          // unless WR or RD is asserted.
+          m_ctrlport_req_data    [32*i +: 32] <= s_ctrlport_req_data;
+          m_ctrlport_req_byte_en [4*i +: 4]   <= s_ctrlport_req_byte_en;
+          m_ctrlport_req_has_time[i]          <= s_ctrlport_req_has_time;
+          m_ctrlport_req_time    [64*i +: 64] <= s_ctrlport_req_time;
 
-        // Mask the address bits to that of the slaves address space.
-        m_ctrlport_req_addr[20*i +: 20]     <= 20'b0;
-        m_ctrlport_req_addr[20*i +: ADDR_W] <= s_ctrlport_req_addr[ADDR_W-1 : 0];
+          // Mask the address bits to that of the slaves address space.
+          m_ctrlport_req_addr[20*i +: 20]     <= 20'b0;
+          m_ctrlport_req_addr[20*i +: ADDR_W] <= s_ctrlport_req_addr[ADDR_W-1 : 0];
+        end
       end
     end
-  end
-
+  endgenerate
 
   //---------------------------------------------------------------------------
   // Decode the responses
