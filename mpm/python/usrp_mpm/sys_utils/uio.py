@@ -24,8 +24,10 @@ def open_uio(label=None, path=None, length=None, read_only=True, offset=None):
     Use this like you would open() for a file"""
     uio_obj = UIO(label, path, length, read_only, offset)
     uio_obj._open()
-    yield uio_obj
-    uio_obj._close()
+    try:
+        yield uio_obj
+    finally:
+        uio_obj._close()
 
 
 def get_all_uio_devs():
