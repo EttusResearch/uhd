@@ -23,6 +23,7 @@ monkey.patch_all()
 from builtins import str, bytes
 from builtins import range
 from six import iteritems
+from contextlib import contextmanager
 from mprpc import RPCServer
 from usrp_mpm.mpmlog import get_main_logger
 from usrp_mpm.mpmutils import to_binary_str
@@ -380,6 +381,14 @@ class MPMServer(RPCServer):
         self._timer.kill()
         self._timer = spawn_later(self._timeout_interval, self._timeout_event)
 
+    @contextmanager
+    def _timeout_disabler(self):
+        self._disable_timeouts = True
+        try:
+            yield self
+        finally:
+            self._disable_timeouts = False
+
     ###########################################################################
     # Status queries
     ###########################################################################
@@ -488,8 +497,6 @@ class MPMServer(RPCServer):
         :param file_metadata_l: List of dictionary of strings containing metadata
         :param data_l: List of binary string with the file contents to be written
         """
-        # Stop the timer, update_component can take some time:
-        self._disable_timeouts = True
         # Check the claimed status
         if not self._check_token_valid(token):
             self._last_error =\
@@ -498,39 +505,37 @@ class MPMServer(RPCServer):
                 )
             self.log.error(self._last_error)
             raise RuntimeError("Attempt to update component without valid claim.")
-        result = self.periph_manager.update_component(file_metadata_l, data_l)
-        if not result:
-            component_ids = [metadata['id'] for metadata in file_metadata_l]
-            raise RuntimeError("Failed to update components: {}".format(component_ids))
+        with self._timeout_disabler():
+            result = self.periph_manager.update_component(file_metadata_l, data_l)
+            if not result:
+                component_ids = [metadata['id'] for metadata in file_metadata_l]
+                raise RuntimeError("Failed to update components: {}".format(component_ids))
 
-        # Check if we need to reset the peripheral manager
-        reset_now = False
-        for metadata, data in zip(file_metadata_l, data_l):
-            # Make sure the component is in the updateable_components
-            component_id = metadata['id']
-            if component_id in self.periph_manager.updateable_components:
-                # Check if that updating that component means the PM should be reset
-                if self.periph_manager.updateable_components[component_id]['reset']:
-                    reset_now = True
-            else:
-                self.log.debug("ID {} not in updateable components ({})".format(
-                    component_id, self.periph_manager.updateable_components))
+            # Check if we need to reset the peripheral manager
+            reset_now = False
+            for metadata, data in zip(file_metadata_l, data_l):
+                # Make sure the component is in the updateable_components
+                component_id = metadata['id']
+                if component_id in self.periph_manager.updateable_components:
+                    # Check if that updating that component means the PM should be reset
+                    if self.periph_manager.updateable_components[component_id]['reset']:
+                        reset_now = True
+                else:
+                    self.log.debug("ID {} not in updateable components ({})".format(
+                        component_id, self.periph_manager.updateable_components))
 
-        try:
-            self.log.trace("Reset after updating component? {}".format(reset_now))
-            if reset_now:
-                self.reset_mgr()
-                self.log.debug("Reset the periph manager")
-        except Exception as ex:
-            self.log.error(
-                "Error in update_component while resetting: {}".format(
-                    ex
-                ))
-            self._last_error = str(ex)
+            try:
+                self.log.trace("Reset after updating component? {}".format(reset_now))
+                if reset_now:
+                    self.reset_mgr()
+                    self.log.debug("Reset the periph manager")
+            except Exception as ex:
+                self.log.error(
+                    "Error in update_component while resetting: {}".format(
+                        ex
+                    ))
+                self._last_error = str(ex)
 
-        # Re-enable timeouts before we reset the timer, so the MPM session can
-        # timeout if something goes wrong
-        self._disable_timeouts = False
         self.log.debug("End of update_component")
         self._reset_timer()
 
