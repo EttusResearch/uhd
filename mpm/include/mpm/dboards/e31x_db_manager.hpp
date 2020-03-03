@@ -15,18 +15,21 @@
 #include <mutex>
 
 namespace mpm { namespace dboards {
-    class e31x_db_manager
+class e31x_db_manager
+{
+public:
+    e31x_db_manager(const std::string& catalina_spidev);
+
+    /*! Return a reference to the radio chip controls
+     */
+    mpm::chips::ad9361_ctrl::sptr get_radio_ctrl()
     {
-    public:
-        e31x_db_manager(const std::string &catalina_spidev);
+        return _catalina_ctrl;
+    }
 
-        /*! Return a reference to the radio chip controls
-         */
-        mpm::chips::ad9361_ctrl::sptr get_radio_ctrl(){ return _catalina_ctrl; }
-
-    private:
-        mpm::chips::ad9361_ctrl::sptr _catalina_ctrl;
-    };
+private:
+    mpm::chips::ad9361_ctrl::sptr _catalina_ctrl;
+};
 
 }}; /* namespace mpm::dboards */
 

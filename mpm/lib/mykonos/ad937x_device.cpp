@@ -47,7 +47,7 @@ static const uint32_t PLL_LOCK_TIMEOUT_MS = 200;
 // Fewer discontinuities at lower signal frequencies
 // Minimum value is 0.8 ms, enforced by ADI's API
 static constexpr double RX_DC_OFFSET_AVERAGING_WINDOW_MS = 1.0;
-static_assert(RX_DC_OFFSET_AVERAGING_WINDOW_MS >= 0.8, 
+static_assert(RX_DC_OFFSET_AVERAGING_WINDOW_MS >= 0.8,
     "RX DC offset averaging window must be greater than 0.8 ms");
 
 /******************************************************
@@ -305,7 +305,8 @@ void ad937x_device::setup_cal(const uint32_t init_cals_mask,
     uint16_t window = std::ceil((RX_DC_OFFSET_AVERAGING_WINDOW_MS
                                     * (mykonos_config.device->rx->rxProfile->iqRate_kHz))
                                 / 1024);
-    CALL_API(MYKONOS_setRfDcOffsetCnt(mykonos_config.device, MYK_DC_OFFSET_RX_CHN, window));
+    CALL_API(
+        MYKONOS_setRfDcOffsetCnt(mykonos_config.device, MYK_DC_OFFSET_RX_CHN, window));
 
     CALL_API(MYKONOS_enableTrackingCals(mykonos_config.device, tracking_cals_mask));
     // ready for radioOn

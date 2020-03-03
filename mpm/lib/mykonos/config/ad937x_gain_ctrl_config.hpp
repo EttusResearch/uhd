@@ -15,7 +15,8 @@
 // C++14 requires std::hash includes a specialization for enums, but gcc doesn't do that
 // yet Remove this when that happens
 namespace std {
-template <> struct hash<uhd::direction_t>
+template <>
+struct hash<uhd::direction_t>
 {
     size_t operator()(const uhd::direction_t& x) const
     {
@@ -23,7 +24,8 @@ template <> struct hash<uhd::direction_t>
     }
 };
 
-template <> struct hash<mpm::ad937x::device::chain_t>
+template <>
+struct hash<mpm::ad937x::device::chain_t>
 {
     size_t operator()(const mpm::ad937x::device::chain_t& x) const
     {
