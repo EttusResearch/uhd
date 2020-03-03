@@ -20,6 +20,10 @@ Files: host/lib/deps/pybind11/include/*
 Copyright: Copyright (c) 2016 Wenzel Jakob
 License: PyBind11-BSD
 
+Files: host/lib/deps/flatbuffers/include/*
+Copyright: Copyright 2014 Google Inc.
+License: Apache
+
 Files:  images/*
         firmware/fx2/b100/CMakeLists.txt
         firmware/fx2/CMakeLists.txt
