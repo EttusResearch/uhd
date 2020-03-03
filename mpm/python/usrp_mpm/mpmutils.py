@@ -182,6 +182,8 @@ def lock_guard(lockable):
     lockable -- Must have a .lock() and .unlock() method
     """
     lockable.lock()
-    yield
-    lockable.unlock()
+    try:
+        yield
+    finally:
+        lockable.unlock()
 
