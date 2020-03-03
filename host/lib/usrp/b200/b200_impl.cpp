@@ -428,7 +428,7 @@ b200_impl::b200_impl(const uhd::device_addr_t& device_addr, usb_device_handle::s
     ////////////////////////////////////////////////////////////////////
     // Create control transport
     ////////////////////////////////////////////////////////////////////
-    uint8_t usb_speed = _iface->get_usb_speed();
+    usb_speed = _iface->get_usb_speed();
     UHD_LOGGER_INFO("B200") << "Operating over USB " << (int) usb_speed << "." ;
     const std::string min_frame_size = (usb_speed == 3) ? "1024" : "512";
 

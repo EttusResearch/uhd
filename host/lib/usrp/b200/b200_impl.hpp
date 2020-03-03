@@ -115,6 +115,9 @@ public:
     uhd::tx_streamer::sptr get_tx_stream(const uhd::stream_args_t &args);
     bool recv_async_msg(uhd::async_metadata_t &, double);
 
+    //USB type info
+    uint8_t get_usb_speed() const;
+
     //! Check that the combination of stream args and tick rate are valid.
     //
     // Basically figures out the arguments for enforce_tick_rate_limits()
@@ -126,6 +129,7 @@ public:
 
 private:
     b200_product_t  _product;
+    uint8_t         usb_speed;
     size_t          _revision;
     bool            _gpsdo_capable;
     //! This flag is true if the FPGA has custom (user) registers and access to

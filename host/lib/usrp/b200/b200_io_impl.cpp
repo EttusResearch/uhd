@@ -595,3 +595,12 @@ tx_streamer::sptr b200_impl::get_tx_stream(const uhd::stream_args_t& args_)
 
     return my_streamer;
 }
+
+/***********************************************************************
+ * Information
+ **********************************************************************/
+
+uint8_t b200_impl::get_usb_speed() const
+{
+    return usb_speed;
+}
