@@ -56,7 +56,8 @@ public:
     };
 
     //! The Lexer object used for NocScript
-    template <typename Lexer> struct ns_lexer : lex::lexer<Lexer>
+    template <typename Lexer>
+    struct ns_lexer : lex::lexer<Lexer>
     {
         ns_lexer()
         {
@@ -136,7 +137,7 @@ private:
             //<< boost::format("VALID_PARENS_CLOSE [%s]\n") % ((next_valid_state & 0x4) ?
             //"x" : " ")
             //<< boost::format("VALID_EXPRESSION   [%s]\n") % ((next_valid_state & (0x8 +
-            //0x02)) ? "x" : " ")
+            // 0x02)) ? "x" : " ")
             //<< boost::format("VALID_OPERATOR      [%s]\n") % ((next_valid_state & 0x10)
             //? "x" : " ")
             //<< std::endl;

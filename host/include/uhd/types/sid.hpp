@@ -84,7 +84,8 @@ public:
     sid_t(const std::string&);
 
     //! Copy a sid
-    sid_t(const sid_t& sid) {
+    sid_t(const sid_t& sid)
+    {
         set_sid(sid.get_sid());
     }
 

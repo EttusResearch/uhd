@@ -6,18 +6,19 @@
 //
 
 #include "usrp1_iface.hpp"
-#include <uhd/utils/log.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/byteswap.hpp>
+#include <uhd/utils/log.hpp>
 #include <boost/format.hpp>
-#include <stdexcept>
 #include <iomanip>
+#include <stdexcept>
 
 using namespace uhd;
 using namespace uhd::usrp;
 using namespace uhd::transport;
 
-class usrp1_iface_impl : public usrp1_iface{
+class usrp1_iface_impl : public usrp1_iface
+{
 public:
     /*******************************************************************
      * Structors
@@ -39,54 +40,50 @@ public:
     {
         uint32_t swapped = uhd::htonx(value);
 
-        UHD_LOGGER_TRACE("USRP1")
-            << "poke32("
-            << std::dec << std::setw(2) << addr << ", 0x"
-            << std::hex << std::setw(8) << value << ")"
-        ;
+        UHD_LOGGER_TRACE("USRP1") << "poke32(" << std::dec << std::setw(2) << addr
+                                  << ", 0x" << std::hex << std::setw(8) << value << ")";
 
         uint8_t w_index_h = SPI_ENABLE_FPGA & 0xff;
         uint8_t w_index_l = (SPI_FMT_MSB | SPI_FMT_HDR_1) & 0xff;
 
-        int ret =_ctrl_transport->usrp_control_write(
-                                          VRQ_SPI_WRITE,
-                                          addr & 0x7f,
-                                          (w_index_h << 8) | (w_index_l << 0),
-                                          (unsigned char*) &swapped,
-                                          sizeof(uint32_t));
+        int ret = _ctrl_transport->usrp_control_write(VRQ_SPI_WRITE,
+            addr & 0x7f,
+            (w_index_h << 8) | (w_index_l << 0),
+            (unsigned char*)&swapped,
+            sizeof(uint32_t));
 
-        if (ret < 0) throw uhd::io_error("USRP1: failed control write");
+        if (ret < 0)
+            throw uhd::io_error("USRP1: failed control write");
     }
 
     uint32_t peek32(const uint32_t addr)
     {
-        UHD_LOGGER_TRACE("USRP1")
-            << "peek32("
-            << std::dec << std::setw(2) << addr << ")"
-        ;
+        UHD_LOGGER_TRACE("USRP1") << "peek32(" << std::dec << std::setw(2) << addr << ")";
 
         uint32_t value_out;
 
         uint8_t w_index_h = SPI_ENABLE_FPGA & 0xff;
         uint8_t w_index_l = (SPI_FMT_MSB | SPI_FMT_HDR_1) & 0xff;
 
-        int ret = _ctrl_transport->usrp_control_read(
-                                          VRQ_SPI_READ,
-                                          0x80 | (addr & 0x7f),
-                                          (w_index_h << 8) | (w_index_l << 0),
-                                          (unsigned char*) &value_out,
-                                          sizeof(uint32_t));
+        int ret = _ctrl_transport->usrp_control_read(VRQ_SPI_READ,
+            0x80 | (addr & 0x7f),
+            (w_index_h << 8) | (w_index_l << 0),
+            (unsigned char*)&value_out,
+            sizeof(uint32_t));
 
-        if (ret < 0) throw uhd::io_error("USRP1: failed control read");
+        if (ret < 0)
+            throw uhd::io_error("USRP1: failed control read");
 
         return uhd::ntohx(value_out);
     }
 
-    void poke16(const uint32_t, const uint16_t) {
+    void poke16(const uint32_t, const uint16_t)
+    {
         throw uhd::not_implemented_error("Unhandled command poke16()");
     }
 
-    uint16_t peek16(const uint32_t) {
+    uint16_t peek16(const uint32_t)
+    {
         throw uhd::not_implemented_error("Unhandled command peek16()");
         return 0;
     }
@@ -94,11 +91,13 @@ public:
     /*******************************************************************
      * I2C
      ******************************************************************/
-    void write_i2c(uint16_t addr, const byte_vector_t &bytes){
+    void write_i2c(uint16_t addr, const byte_vector_t& bytes)
+    {
         return _ctrl_transport->write_i2c(addr, bytes);
     }
 
-    byte_vector_t read_i2c(uint16_t addr, size_t num_bytes){
+    byte_vector_t read_i2c(uint16_t addr, size_t num_bytes)
+    {
         return _ctrl_transport->read_i2c(addr, num_bytes);
     }
 
@@ -114,70 +113,68 @@ public:
      * control buffer for IN data.
      ******************************************************************/
     uint32_t transact_spi(int which_slave,
-                                 const spi_config_t &,
-                                 uint32_t bits,
-                                 size_t num_bits,
-                                 bool readback)
+        const spi_config_t&,
+        uint32_t bits,
+        size_t num_bits,
+        bool readback)
     {
         UHD_LOGGER_TRACE("USRP1")
             << "transact_spi: "
-            << "  slave: " << which_slave
-            << "  bits: " << bits
-            << "  num_bits: " << num_bits
-            << "  readback: " << readback
-        ;
+            << "  slave: " << which_slave << "  bits: " << bits
+            << "  num_bits: " << num_bits << "  readback: " << readback;
         UHD_ASSERT_THROW((num_bits <= 32) && !(num_bits % 8));
         size_t num_bytes = num_bits / 8;
 
         if (readback) {
-            unsigned char buff[4] = {
-                (unsigned char)(bits & 0xff),
+            unsigned char buff[4] = {(unsigned char)(bits & 0xff),
                 (unsigned char)((bits >> 8) & 0xff),
                 (unsigned char)((bits >> 16) & 0xff),
-                (unsigned char)((bits >> 24) & 0xff)
-            };
-            //conditions where there are two header bytes
-            if (num_bytes >= 3 and buff[num_bytes-1] != 0 and buff[num_bytes-2] != 0 and buff[num_bytes-3] == 0){
-                if (int(num_bytes-2) != _ctrl_transport->usrp_control_read(
-                    VRQ_SPI_READ, (buff[num_bytes-1] << 8) | (buff[num_bytes-2] << 0),
-                    (which_slave << 8) | SPI_FMT_MSB | SPI_FMT_HDR_2,
-                    buff, num_bytes-2
-                )) throw uhd::io_error("USRP1: failed SPI readback transaction");
+                (unsigned char)((bits >> 24) & 0xff)};
+            // conditions where there are two header bytes
+            if (num_bytes >= 3 and buff[num_bytes - 1] != 0 and buff[num_bytes - 2] != 0
+                and buff[num_bytes - 3] == 0) {
+                if (int(num_bytes - 2)
+                    != _ctrl_transport->usrp_control_read(VRQ_SPI_READ,
+                           (buff[num_bytes - 1] << 8) | (buff[num_bytes - 2] << 0),
+                           (which_slave << 8) | SPI_FMT_MSB | SPI_FMT_HDR_2,
+                           buff,
+                           num_bytes - 2))
+                    throw uhd::io_error("USRP1: failed SPI readback transaction");
             }
 
-            //conditions where there is one header byte
-            else if (num_bytes >= 2 and buff[num_bytes-1] != 0 and buff[num_bytes-2] == 0){
-                if (int(num_bytes-1) != _ctrl_transport->usrp_control_read(
-                    VRQ_SPI_READ, buff[num_bytes-1],
-                    (which_slave << 8) | SPI_FMT_MSB | SPI_FMT_HDR_1,
-                    buff, num_bytes-1
-                )) throw uhd::io_error("USRP1: failed SPI readback transaction");
-            }
-            else{
+            // conditions where there is one header byte
+            else if (num_bytes >= 2 and buff[num_bytes - 1] != 0
+                     and buff[num_bytes - 2] == 0) {
+                if (int(num_bytes - 1)
+                    != _ctrl_transport->usrp_control_read(VRQ_SPI_READ,
+                           buff[num_bytes - 1],
+                           (which_slave << 8) | SPI_FMT_MSB | SPI_FMT_HDR_1,
+                           buff,
+                           num_bytes - 1))
+                    throw uhd::io_error("USRP1: failed SPI readback transaction");
+            } else {
                 throw uhd::io_error("USRP1: invalid input data for SPI readback");
             }
-            uint32_t val = (((uint32_t)buff[0]) <<  0) |
-                                  (((uint32_t)buff[1]) <<  8) |
-                                  (((uint32_t)buff[2]) << 16) |
-                                  (((uint32_t)buff[3]) << 24);
+            uint32_t val = (((uint32_t)buff[0]) << 0) | (((uint32_t)buff[1]) << 8)
+                           | (((uint32_t)buff[2]) << 16) | (((uint32_t)buff[3]) << 24);
             return val;
-        }
-        else {
+        } else {
             // Byteswap on num_bytes
-            unsigned char buff[4] = { 0 };
+            unsigned char buff[4] = {0};
             for (size_t i = 1; i <= num_bytes; i++)
                 buff[num_bytes - i] = (bits >> ((i - 1) * 8)) & 0xff;
 
             uint8_t w_index_h = which_slave & 0xff;
             uint8_t w_index_l = (SPI_FMT_MSB | SPI_FMT_HDR_0) & 0xff;
 
-            int ret =_ctrl_transport->usrp_control_write(
-                                          VRQ_SPI_WRITE,
-                                          0x00,
-                                          (w_index_h << 8) | (w_index_l << 0),
-                                          buff, num_bytes);
+            int ret = _ctrl_transport->usrp_control_write(VRQ_SPI_WRITE,
+                0x00,
+                (w_index_h << 8) | (w_index_l << 0),
+                buff,
+                num_bytes);
 
-            if (ret < 0) throw uhd::io_error("USRP1: failed SPI transaction");
+            if (ret < 0)
+                throw uhd::io_error("USRP1: failed SPI transaction");
 
             return 0;
         }

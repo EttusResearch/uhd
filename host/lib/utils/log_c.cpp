@@ -9,16 +9,15 @@
 #include <stdarg.h>
 
 
-void UHD_API _uhd_log(
-        const uhd_log_severity_level_t log_level,
-        const char *filename,
-        const int lineno,
-        const char *component,
-        const char *format,
-        ...
-) {
-    int size = 0;
-    char *c_str = NULL;
+void UHD_API _uhd_log(const uhd_log_severity_level_t log_level,
+    const char* filename,
+    const int lineno,
+    const char* component,
+    const char* format,
+    ...)
+{
+    int size    = 0;
+    char* c_str = NULL;
     va_list ap;
 
     /* figure out size */
@@ -32,7 +31,7 @@ void UHD_API _uhd_log(
 
     /* trailing '\0' */
     size++;
-    c_str = (char *)malloc(size);
+    c_str = (char*)malloc(size);
     if (!c_str) {
         return;
     }
@@ -45,14 +44,14 @@ void UHD_API _uhd_log(
     va_end(ap);
 
     try {
-        uhd::_log::log(
-            static_cast<uhd::log::severity_level>(log_level),
+        uhd::_log::log(static_cast<uhd::log::severity_level>(log_level),
             filename,
             unsigned(lineno),
             component,
-            boost::this_thread::get_id()
-        ) << c_str;
-    } catch (...) {}
+            boost::this_thread::get_id())
+            << c_str;
+    } catch (...) {
+    }
 
 out_free:
     free(c_str);

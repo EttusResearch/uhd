@@ -10,12 +10,12 @@
 
 #include <uhd/transport/zero_copy.hpp>
 #include <uhd/types/serial.hpp> //uart iface
+#include <uhd/utils/noncopyable.hpp>
 #include <uhd/utils/tasks.hpp>
 #include <boost/shared_ptr.hpp>
-#include <uhd/utils/noncopyable.hpp>
 namespace uhd { namespace usrp { namespace n230 {
 
-class n230_uart: uhd::noncopyable, public uhd::uart_iface
+class n230_uart : uhd::noncopyable, public uhd::uart_iface
 {
 public:
     typedef boost::shared_ptr<n230_uart> sptr;
@@ -23,6 +23,6 @@ public:
     virtual void set_baud_divider(const double baud_div) = 0;
 };
 
-}}} //namespace
+}}} // namespace uhd::usrp::n230
 
 #endif /* INCLUDED_N230_UART_HPP */

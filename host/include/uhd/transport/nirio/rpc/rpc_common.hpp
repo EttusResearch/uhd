@@ -71,12 +71,14 @@ class func_args_writer_t
 public:
     func_args_writer_t() : _stream(), _archive(_stream, boost::archive::no_header) {}
 
-    template <typename data_t> void push(const data_t& d)
+    template <typename data_t>
+    void push(const data_t& d)
     {
         _archive << d;
     }
 
-    template <typename data_t> func_args_writer_t& operator<<(const data_t& data)
+    template <typename data_t>
+    func_args_writer_t& operator<<(const data_t& data)
     {
         push(data);
         return *this;
@@ -104,13 +106,15 @@ class func_args_reader_t
 public:
     func_args_reader_t() : _stream(), _archive() {}
 
-    template <typename data_t> void pull(data_t& d) const
+    template <typename data_t>
+    void pull(data_t& d) const
     {
         if (_archive)
             (*_archive) >> d;
     }
 
-    template <typename data_t> const func_args_reader_t& operator>>(data_t& data) const
+    template <typename data_t>
+    const func_args_reader_t& operator>>(data_t& data) const
     {
         pull(data);
         return *this;

@@ -289,7 +289,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         tx_usrp->set_clock_source(ref);
         rx_usrp->set_clock_source(ref);
     }
-    
+
     std::cout << boost::format("Using TX Device: %s") % tx_usrp->get_pp_string()
               << std::endl;
     std::cout << boost::format("Using RX Device: %s") % rx_usrp->get_pp_string()

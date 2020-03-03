@@ -8,28 +8,27 @@
 #ifndef INCLUDED_LIBUHD_XPORTS_HPP
 #define INCLUDED_LIBUHD_XPORTS_HPP
 
-#include <uhd/types/sid.hpp>
-#include <uhd/types/endianness.hpp>
 #include <uhd/transport/zero_copy.hpp>
+#include <uhd/types/endianness.hpp>
+#include <uhd/types/sid.hpp>
 
 namespace uhd {
 
-    /*! Holds all necessary items for a bidirectional link
-     */
-    struct both_xports_t
-    {
-        both_xports_t(): recv_buff_size(0), send_buff_size(0), lossless(false)
-            {}
-        uhd::transport::zero_copy_if::sptr recv;
-        uhd::transport::zero_copy_if::sptr send;
-        size_t recv_buff_size;
-        size_t send_buff_size;
-        uhd::sid_t send_sid;
-        uhd::sid_t recv_sid;
-        uhd::endianness_t endianness;
-        bool lossless;
-    };
-
+/*! Holds all necessary items for a bidirectional link
+ */
+struct both_xports_t
+{
+    both_xports_t() : recv_buff_size(0), send_buff_size(0), lossless(false) {}
+    uhd::transport::zero_copy_if::sptr recv;
+    uhd::transport::zero_copy_if::sptr send;
+    size_t recv_buff_size;
+    size_t send_buff_size;
+    uhd::sid_t send_sid;
+    uhd::sid_t recv_sid;
+    uhd::endianness_t endianness;
+    bool lossless;
 };
+
+}; // namespace uhd
 
 #endif /* INCLUDED_LIBUHD_XPORTS_HPP */

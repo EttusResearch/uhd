@@ -221,7 +221,8 @@ public:
     }
 
     // get size for internal socket buffer
-    template <typename Opt> size_t get_buff_size(void) const
+    template <typename Opt>
+    size_t get_buff_size(void) const
     {
         Opt option;
         _socket->get_option(option);
@@ -229,7 +230,8 @@ public:
     }
 
     // set size for internal socket buffer
-    template <typename Opt> size_t resize_buff(size_t num_bytes)
+    template <typename Opt>
+    size_t resize_buff(size_t num_bytes)
     {
 #if defined(UHD_PLATFORM_MACOS) || defined(UHD_PLATFORM_BSD)
         // limit buffer resize on macos or it will error

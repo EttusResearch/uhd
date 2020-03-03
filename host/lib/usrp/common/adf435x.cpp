@@ -9,9 +9,7 @@
 
 using namespace uhd;
 
-adf435x_iface::~adf435x_iface()
-{
-}
+adf435x_iface::~adf435x_iface() {}
 
 adf435x_iface::sptr adf435x_iface::make_adf4350(write_fn_t write)
 {

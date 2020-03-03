@@ -52,7 +52,8 @@ public:
      * Get a pointer to the underlying buffer.
      * \return a pointer into memory
      */
-    template <class T> UHD_INLINE T cast(void) const
+    template <class T>
+    UHD_INLINE T cast(void) const
     {
         return static_cast<T>(_buffer);
     }

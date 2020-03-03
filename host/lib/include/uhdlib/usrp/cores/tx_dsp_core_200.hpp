@@ -11,21 +11,21 @@
 #include <uhd/config.hpp>
 #include <uhd/stream.hpp>
 #include <uhd/types/ranges.hpp>
+#include <uhd/types/wb_iface.hpp>
 #include <uhd/utils/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
-#include <uhd/types/wb_iface.hpp>
 
-class tx_dsp_core_200 : uhd::noncopyable{
+class tx_dsp_core_200 : uhd::noncopyable
+{
 public:
     typedef boost::shared_ptr<tx_dsp_core_200> sptr;
 
     virtual ~tx_dsp_core_200(void) = 0;
 
-    static sptr make(
-        uhd::wb_iface::sptr iface,
-        const size_t dsp_base, const size_t ctrl_base,
-        const uint32_t sid
-    );
+    static sptr make(uhd::wb_iface::sptr iface,
+        const size_t dsp_base,
+        const size_t ctrl_base,
+        const uint32_t sid);
 
     virtual void clear(void) = 0;
 
@@ -45,7 +45,7 @@ public:
 
     virtual void set_updates(const size_t cycles_per_up, const size_t packets_per_up) = 0;
 
-    virtual void setup(const uhd::stream_args_t &stream_args) = 0;
+    virtual void setup(const uhd::stream_args_t& stream_args) = 0;
 };
 
 #endif /* INCLUDED_LIBUHD_USRP_TX_DSP_CORE_200_HPP */

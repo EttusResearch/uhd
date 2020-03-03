@@ -12,7 +12,10 @@
 #ifndef __cplusplus
 #include <stdbool.h>
 #endif
+#include <uhd/config.hpp>
 #include <uhd/transport/udp_constants.hpp>
+#include <stddef.h>
+#include <string>
 
 namespace uhd {
 namespace usrp {

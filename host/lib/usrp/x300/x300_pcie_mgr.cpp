@@ -52,7 +52,7 @@ constexpr size_t MAX_RATE_PCIE               = 800000000; // bytes/s
 constexpr double PCIE_DEFAULT_RECV_TIMEOUT_CTRL = 0.5; // seconds
 //! Default timeout value for receiving muxed async messages
 constexpr double PCIE_DEFAULT_RECV_TIMEOUT_ASYNC = 0.1; // seconds
-}
+} // namespace
 
 uhd::wb_iface::sptr x300_make_ctrl_iface_pcie(
     uhd::niusrprio::niriok_proxy::sptr drv_proxy, bool enable_errors = true);

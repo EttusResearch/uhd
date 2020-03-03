@@ -12,9 +12,9 @@
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/dboard_id.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <uhd/utils/pimpl.hpp>
 #include <boost/shared_ptr.hpp>
-#include <uhd/utils/noncopyable.hpp>
 
 namespace uhd { namespace usrp {
 

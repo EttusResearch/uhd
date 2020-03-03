@@ -50,7 +50,8 @@ class expression_literal : public expression
 public:
     typedef boost::shared_ptr<expression_literal> sptr;
 
-    template <typename expr_type> static sptr make(expr_type x)
+    template <typename expr_type>
+    static sptr make(expr_type x)
     {
         return boost::make_shared<expression_literal>(x);
     };

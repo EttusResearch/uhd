@@ -29,22 +29,26 @@ uint32_t byteswap(uint32_t);
 uint64_t byteswap(uint64_t);
 
 //! network to host: short, long, or long-long
-template <typename T> T ntohx(T);
+template <typename T>
+T ntohx(T);
 
 //! host to network: short, long, or long-long
-template <typename T> T htonx(T);
+template <typename T>
+T htonx(T);
 
 //! worknet to host: short, long, or long-long
 //
 // The argument is assumed to be little-endian (i.e, the inverse
 // of typical network endianness).
-template <typename T> T wtohx(T);
+template <typename T>
+T wtohx(T);
 
 //! host to worknet: short, long, or long-long
 //
 // The return value is little-endian (i.e, the inverse
 // of typical network endianness).
-template <typename T> T htowx(T);
+template <typename T>
+T htowx(T);
 
 } // namespace uhd
 

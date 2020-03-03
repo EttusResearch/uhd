@@ -82,7 +82,7 @@ static const uint32_t AXIS_CONFIG_BUS =
 static const uint32_t AXIS_CONFIG_BUS_TLAST =
     AXI_WRAPPER_BASE + 2; // tdata with tvalid & tlast asserted
 
-static const size_t CMD_FIFO_SIZE = 256; // Lines == multiples of 8 bytes
+static const size_t CMD_FIFO_SIZE    = 256; // Lines == multiples of 8 bytes
 static const size_t MAX_CMD_PKT_SIZE = 3; // Lines == multiples of 8 bytes
 
 // Named settings registers

@@ -175,7 +175,6 @@ uhd::both_xports_t mpmd_xport_ctrl_udp::make_transport(
     const usrp::device3_impl::xport_type_t xport_type,
     const uhd::device_addr_t& xport_args)
 {
-
     double link_speed = MAX_RATE_1GIGE;
     if (xport_info.count("link_speed") == 0) {
         UHD_LOG_WARNING("MPMD",
@@ -198,8 +197,8 @@ uhd::both_xports_t mpmd_xport_ctrl_udp::make_transport(
     default_buff_args.num_recv_frames = MPMD_UDP_DEFAULT_NUM_RECV_FRAMES;
     default_buff_args.recv_frame_size = MPMD_UDP_MSG_FRAME_SIZE;
     default_buff_args.send_frame_size = MPMD_UDP_MSG_FRAME_SIZE;
-    default_buff_args.recv_buff_size = link_speed * MPMD_BUFFER_DEPTH;
-    default_buff_args.send_buff_size = link_speed * MPMD_BUFFER_DEPTH;
+    default_buff_args.recv_buff_size  = link_speed * MPMD_BUFFER_DEPTH;
+    default_buff_args.send_buff_size  = link_speed * MPMD_BUFFER_DEPTH;
     if (xport_type == usrp::device3_impl::CTRL) {
         default_buff_args.num_recv_frames =
             uhd::rfnoc::CMD_FIFO_SIZE / uhd::rfnoc::MAX_CMD_PKT_SIZE;
@@ -207,26 +206,20 @@ uhd::both_xports_t mpmd_xport_ctrl_udp::make_transport(
         default_buff_args.send_frame_size =
             xport_args.cast<size_t>("send_frame_size", send_mtu);
         default_buff_args.num_send_frames =
-            xport_args.cast<size_t>("num_send_frames",
-            default_buff_args.num_send_frames);
+            xport_args.cast<size_t>("num_send_frames", default_buff_args.num_send_frames);
         default_buff_args.send_buff_size =
-            xport_args.cast<size_t>("send_buff_size",
-            default_buff_args.send_buff_size);
+            xport_args.cast<size_t>("send_buff_size", default_buff_args.send_buff_size);
     } else if (xport_type == usrp::device3_impl::RX_DATA) {
         default_buff_args.recv_frame_size =
             xport_args.cast<size_t>("recv_frame_size", recv_mtu);
         default_buff_args.num_recv_frames =
-            xport_args.cast<size_t>("num_recv_frames",
-            default_buff_args.num_recv_frames);
+            xport_args.cast<size_t>("num_recv_frames", default_buff_args.num_recv_frames);
         default_buff_args.recv_buff_size =
-            xport_args.cast<size_t>("recv_buff_size",
-            default_buff_args.recv_buff_size);
+            xport_args.cast<size_t>("recv_buff_size", default_buff_args.recv_buff_size);
     }
     transport::udp_zero_copy::buff_params buff_params;
-    auto recv                     = transport::udp_zero_copy::make(xport_info["ipv4"],
-        xport_info["port"],
-        default_buff_args,
-        buff_params);
+    auto recv = transport::udp_zero_copy::make(
+        xport_info["ipv4"], xport_info["port"], default_buff_args, buff_params);
     const uint16_t port           = recv->get_local_port();
     const std::string src_ip_addr = recv->get_local_addr();
     xport_info["src_port"]        = std::to_string(port);

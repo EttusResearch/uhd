@@ -19,9 +19,9 @@
 #include <boost/algorithm/string.hpp>
 #include <boost/date_time/posix_time/posix_time_io.hpp>
 #include <boost/make_shared.hpp>
+#include <bitset>
 #include <chrono>
 #include <thread>
-#include <bitset>
 
 using namespace uhd;
 using namespace uhd::usrp;
@@ -738,24 +738,23 @@ uint32_t x300_radio_ctrl_impl::get_gpio_attr(
 {
     if (bank == "FP0" and _fp_gpio) {
         const auto attr_type = usrp::gpio_atr::gpio_attr_rev_map.at(attr);
-        switch(attr_type) {
+        switch (attr_type) {
             case usrp::gpio_atr::GPIO_SRC:
             case usrp::gpio_atr::GPIO_CTRL:
             case usrp::gpio_atr::GPIO_DDR: {
                 auto str_val =
-                    _tree->access<std::vector<std::string>>(
-                        fs_path("gpio") / bank / attr).get();
+                    _tree->access<std::vector<std::string>>(fs_path("gpio") / bank / attr)
+                        .get();
                 uint32_t val = 0;
                 for (size_t i = 0; i < str_val.size(); i++) {
-                    val += usrp::gpio_atr::gpio_attr_value_pair.at(attr).at(str_val[i]) << i;
+                    val += usrp::gpio_atr::gpio_attr_value_pair.at(attr).at(str_val[i])
+                           << i;
                 }
                 return val;
-            }
-            break;
+            } break;
             default: {
                 return _tree->access<uint32_t>(fs_path("gpio") / bank / attr).get();
-            }
-            break;
+            } break;
         }
     }
     if (bank.size() > 2 and bank[1] == 'X') {

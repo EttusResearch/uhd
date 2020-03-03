@@ -7,10 +7,10 @@
 #ifndef INCLUDED_UTILS_RPC_HPP
 #define INCLUDED_UTILS_RPC_HPP
 
+#include <uhd/exception.hpp>
+#include <uhd/utils/log.hpp>
 #include <rpc/client.h>
 #include <rpc/rpc_error.h>
-#include <uhd/utils/log.hpp>
-#include <uhd/exception.hpp>
 #include <boost/format.hpp>
 #include <memory>
 
@@ -49,15 +49,14 @@ namespace uhd {
  */
 class rpc_client
 {
-  public:
+public:
     using sptr = std::shared_ptr<rpc_client>;
 
-    static sptr make(
-            const std::string &addr,
-            const uint16_t port,
-            const uint64_t timeout_ms = DEFAULT_RPC_TIMEOUT_MS,
-            const std::string &get_last_error_cmd=""
-    ) {
+    static sptr make(const std::string& addr,
+        const uint16_t port,
+        const uint64_t timeout_ms             = DEFAULT_RPC_TIMEOUT_MS,
+        const std::string& get_last_error_cmd = "")
+    {
         return std::make_shared<rpc_client>(addr, port, timeout_ms, get_last_error_cmd);
     }
 
@@ -69,13 +68,11 @@ class rpc_client
      *                           try and use this command to fetch information
      *                           about what went wrong on the client side.
      */
-    rpc_client(
-            const std::string &addr,
-            const uint16_t port,
-            const uint64_t timeout_ms = DEFAULT_RPC_TIMEOUT_MS,
-            std::string const &get_last_error_cmd=""
-    ) : _get_last_error_cmd(get_last_error_cmd)
-      , _default_timeout_ms(timeout_ms)
+    rpc_client(const std::string& addr,
+        const uint16_t port,
+        const uint64_t timeout_ms             = DEFAULT_RPC_TIMEOUT_MS,
+        std::string const& get_last_error_cmd = "")
+        : _get_last_error_cmd(get_last_error_cmd), _default_timeout_ms(timeout_ms)
     {
         _client = std::make_shared<rpc::client>(addr, port);
 
@@ -108,24 +105,22 @@ class rpc_client
         try {
             return _client->call(func_name, std::forward<Args>(args)...)
                 .template as<return_type>();
-        } catch (const ::rpc::rpc_error &ex) {
+        } catch (const ::rpc::rpc_error& ex) {
             const std::string error = _get_last_error_safe();
             if (not error.empty()) {
                 UHD_LOG_ERROR("RPC", error);
             }
-            throw uhd::runtime_error(str(
-                boost::format("Error during RPC call to `%s'. Error message: %s")
-                % func_name % (error.empty() ? ex.what() : error)
-            ));
+            throw uhd::runtime_error(
+                str(boost::format("Error during RPC call to `%s'. Error message: %s")
+                    % func_name % (error.empty() ? ex.what() : error)));
         } catch (const std::bad_cast& ex) {
-            throw uhd::runtime_error(str(
-                boost::format("Error during RPC call to `%s'. Error message: %s")
-                % func_name % ex.what()
-            ));
+            throw uhd::runtime_error(
+                str(boost::format("Error during RPC call to `%s'. Error message: %s")
+                    % func_name % ex.what()));
         }
     };
 
-     /*! Perform an RPC request.
+    /*! Perform an RPC request.
      *
      * Thread safe (locked). This function blocks until it receives a valid
      * response from the server.
@@ -144,20 +139,18 @@ class rpc_client
         try {
             return _client->call(func_name, std::forward<Args>(args)...)
                 .template as<return_type>();
-        } catch (const ::rpc::rpc_error &ex) {
+        } catch (const ::rpc::rpc_error& ex) {
             const std::string error = _get_last_error_safe();
             if (not error.empty()) {
                 UHD_LOG_ERROR("RPC", error);
             }
-            throw uhd::runtime_error(str(
-                boost::format("Error during RPC call to `%s'. Error message: %s")
-                % func_name % (error.empty() ? ex.what() : error)
-            ));
+            throw uhd::runtime_error(
+                str(boost::format("Error during RPC call to `%s'. Error message: %s")
+                    % func_name % (error.empty() ? ex.what() : error)));
         } catch (const std::bad_cast& ex) {
-            throw uhd::runtime_error(str(
-                boost::format("Error during RPC call to `%s'. Error message: %s")
-                % func_name % ex.what()
-            ));
+            throw uhd::runtime_error(
+                str(boost::format("Error during RPC call to `%s'. Error message: %s")
+                    % func_name % ex.what()));
         }
     };
 
@@ -179,26 +172,23 @@ class rpc_client
         std::lock_guard<std::mutex> lock(_mutex);
         auto holder = rpcc_timeout_holder(_client, timeout_ms, _default_timeout_ms);
         try {
-
             _client->call(func_name, std::forward<Args>(args)...);
-        } catch (const ::rpc::rpc_error &ex) {
+        } catch (const ::rpc::rpc_error& ex) {
             const std::string error = _get_last_error_safe();
             if (not error.empty()) {
                 UHD_LOG_ERROR("RPC", error);
             }
-            throw uhd::runtime_error(str(
-                boost::format("Error during RPC call to `%s'. Error message: %s")
-                % func_name % (error.empty() ? ex.what() : error)
-            ));
+            throw uhd::runtime_error(
+                str(boost::format("Error during RPC call to `%s'. Error message: %s")
+                    % func_name % (error.empty() ? ex.what() : error)));
         } catch (const std::bad_cast& ex) {
-            throw uhd::runtime_error(str(
-                boost::format("Error during RPC call to `%s'. Error message: %s")
-                % func_name % ex.what()
-            ));
+            throw uhd::runtime_error(
+                str(boost::format("Error during RPC call to `%s'. Error message: %s")
+                    % func_name % ex.what()));
         }
     };
 
-     /*! Perform an RPC notification.
+    /*! Perform an RPC notification.
      *
      * Thread safe (locked). This function does not require a response from the
      * server, although the underlying implementation may provide one.
@@ -214,20 +204,18 @@ class rpc_client
         std::lock_guard<std::mutex> lock(_mutex);
         try {
             _client->call(func_name, std::forward<Args>(args)...);
-        } catch (const ::rpc::rpc_error &ex) {
+        } catch (const ::rpc::rpc_error& ex) {
             const std::string error = _get_last_error_safe();
             if (not error.empty()) {
                 UHD_LOG_ERROR("RPC", error);
             }
-            throw uhd::runtime_error(str(
-                boost::format("Error during RPC call to `%s'. Error message: %s")
-                % func_name % (error.empty() ? ex.what() : error)
-            ));
+            throw uhd::runtime_error(
+                str(boost::format("Error during RPC call to `%s'. Error message: %s")
+                    % func_name % (error.empty() ? ex.what() : error)));
         } catch (const std::bad_cast& ex) {
-            throw uhd::runtime_error(str(
-                boost::format("Error during RPC call to `%s'. Error message: %s")
-                % func_name % ex.what()
-            ));
+            throw uhd::runtime_error(
+                str(boost::format("Error during RPC call to `%s'. Error message: %s")
+                    % func_name % ex.what()));
         }
     };
 
@@ -245,9 +233,11 @@ class rpc_client
     /*! Like request_with_token(), but it can be specified different timeout than default.
      */
     template <typename return_type, typename... Args>
-    return_type request_with_token(uint64_t timeout_ms, std::string const& func_name, Args&&... args)
+    return_type request_with_token(
+        uint64_t timeout_ms, std::string const& func_name, Args&&... args)
     {
-        return request<return_type>(timeout_ms, func_name, _token, std::forward<Args>(args)...);
+        return request<return_type>(
+            timeout_ms, func_name, _token, std::forward<Args>(args)...);
     };
 
     /*! Like notify(), also provides a token.
@@ -261,51 +251,53 @@ class rpc_client
         notify(func_name, _token, std::forward<Args>(args)...);
     };
 
-     /*! Like notify_with_token() but it can be specified different timeout than default.
+    /*! Like notify_with_token() but it can be specified different timeout than default.
      */
     template <typename... Args>
-    void notify_with_token(uint64_t timeout_ms, std::string const& func_name, Args&&... args)
+    void notify_with_token(
+        uint64_t timeout_ms, std::string const& func_name, Args&&... args)
     {
         notify(timeout_ms, func_name, _token, std::forward<Args>(args)...);
     };
 
     /*! Sets the token value. This is used by the `_with_token` methods.
      */
-    void set_token(const std::string &token)
+    void set_token(const std::string& token)
     {
         _token = token;
     }
 
-  private:
-
+private:
     /*! This is internal object to hold timeout of the rpc client
      * it is used as an RAII in code block.
      */
-    class rpcc_timeout_holder{
-        public:
+    class rpcc_timeout_holder
+    {
+    public:
+        rpcc_timeout_holder(std::shared_ptr<rpc::client> client,
+            uint64_t set_timeout,
+            uint64_t resume_timeout)
+            : _rpcc(client), _save_timeout(resume_timeout)
+        {
+            _rpcc->set_timeout(set_timeout);
+        }
 
-            rpcc_timeout_holder(std::shared_ptr<rpc::client> client,
-                uint64_t set_timeout,
-                uint64_t resume_timeout
-            ): _rpcc(client), _save_timeout(resume_timeout)
-            {
-                _rpcc->set_timeout(set_timeout);
-            }
+        ~rpcc_timeout_holder()
+        {
+            _rpcc->set_timeout(_save_timeout);
+        }
 
-            ~rpcc_timeout_holder(){
-                _rpcc->set_timeout(_save_timeout);
-            }
-        private:
-            std::shared_ptr<rpc::client> _rpcc;
-            uint64_t _save_timeout;
+    private:
+        std::shared_ptr<rpc::client> _rpcc;
+        uint64_t _save_timeout;
     };
 
-     /*! Pull the last error out of the RPC server. Not thread-safe, meant to
-      * be called from notify() or request().
-      *
-      * This function will do its best not to get in anyone's way. If it can't
-      * get an error string, it'll return an empty string.
-      */
+    /*! Pull the last error out of the RPC server. Not thread-safe, meant to
+     * be called from notify() or request().
+     *
+     * This function will do its best not to get in anyone's way. If it can't
+     * get an error string, it'll return an empty string.
+     */
     std::string _get_last_error_safe()
     {
         if (_get_last_error_cmd.empty()) {
@@ -313,7 +305,7 @@ class rpc_client
         }
         try {
             return _client->call(_get_last_error_cmd).as<std::string>();
-        } catch (const ::rpc::rpc_error &ex) {
+        } catch (const ::rpc::rpc_error& ex) {
             // nop
         } catch (const std::bad_cast& ex) {
             // nop

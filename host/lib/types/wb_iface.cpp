@@ -5,14 +5,14 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhd/types/wb_iface.hpp>
 #include <uhd/exception.hpp>
+#include <uhd/types/wb_iface.hpp>
 
 using namespace uhd;
 
 wb_iface::~wb_iface(void)
 {
-    //NOP
+    // NOP
 }
 
 void wb_iface::poke64(const wb_iface::wb_addr_type, const uint64_t)

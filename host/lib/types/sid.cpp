@@ -5,27 +5,21 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhd/types/sid.hpp>
 #include <uhd/exception.hpp>
+#include <uhd/types/sid.hpp>
 #include <uhd/utils/cast.hpp>
 #include <boost/format.hpp>
-#include <boost/regex.hpp>
 #include <boost/lexical_cast.hpp>
+#include <boost/regex.hpp>
 
 using namespace uhd;
 
-sid_t::sid_t()
-    : _sid(0x0000), _set(false)
-{
-}
+sid_t::sid_t() : _sid(0x0000), _set(false) {}
 
-sid_t::sid_t(uint32_t sid)
-    : _sid(sid), _set(true)
-{
-}
+sid_t::sid_t(uint32_t sid) : _sid(sid), _set(true) {}
 
 sid_t::sid_t(uint8_t src_addr, uint8_t src_ep, uint8_t dst_addr, uint8_t dst_ep)
-    :  _sid(0x0000), _set(true)
+    : _sid(0x0000), _set(true)
 {
     set_src_addr(src_addr);
     set_src_endpoint(src_ep);
@@ -33,8 +27,7 @@ sid_t::sid_t(uint8_t src_addr, uint8_t src_ep, uint8_t dst_addr, uint8_t dst_ep)
     set_dst_endpoint(dst_ep);
 }
 
-sid_t::sid_t(const std::string &sid_str)
-    : _sid(0x0000), _set(false)
+sid_t::sid_t(const std::string& sid_str) : _sid(0x0000), _set(false)
 {
     set_from_str(sid_str);
 }
@@ -44,12 +37,8 @@ std::string sid_t::to_pp_string() const
     if (not _set) {
         return "x.x>x.x";
     }
-    return str(boost::format("%d.%d>%d.%d")
-        % get_src_addr()
-        % get_src_endpoint()
-        % get_dst_addr()
-        % get_dst_endpoint()
-    );
+    return str(boost::format("%d.%d>%d.%d") % get_src_addr() % get_src_endpoint()
+               % get_dst_addr() % get_dst_endpoint());
 }
 
 std::string sid_t::to_pp_string_hex() const
@@ -57,12 +46,8 @@ std::string sid_t::to_pp_string_hex() const
     if (not _set) {
         return "xx:xx>xx:xx";
     }
-    return str(boost::format("%02x:%02x>%02x:%02x")
-        % get_src_addr()
-        % get_src_endpoint()
-        % get_dst_addr()
-        % get_dst_endpoint()
-    );
+    return str(boost::format("%02x:%02x>%02x:%02x") % get_src_addr() % get_src_endpoint()
+               % get_dst_addr() % get_dst_endpoint());
 }
 
 
@@ -72,10 +57,11 @@ void sid_t::set_sid(uint32_t new_sid)
     _sid = new_sid;
 }
 
-void sid_t::set_from_str(const std::string &sid_str)
+void sid_t::set_from_str(const std::string& sid_str)
 {
     const std::string dec_regex = "(\\d{1,3})\\.(\\d{1,3})[.:/><](\\d{1,3})\\.(\\d{1,3})";
-    const std::string hex_regex = "([[:xdigit:]]{2}):([[:xdigit:]]{2})[.:/><]([[:xdigit:]]{2}):([[:xdigit:]]{2})";
+    const std::string hex_regex =
+        "([[:xdigit:]]{2}):([[:xdigit:]]{2})[.:/><]([[:xdigit:]]{2}):([[:xdigit:]]{2})";
 
     boost::cmatch matches;
     if (boost::regex_match(sid_str.c_str(), matches, boost::regex(dec_regex))) {
@@ -94,30 +80,37 @@ void sid_t::set_from_str(const std::string &sid_str)
         return;
     }
 
-    throw uhd::value_error(str(boost::format("Invalid SID representation: %s") % sid_str));
+    throw uhd::value_error(
+        str(boost::format("Invalid SID representation: %s") % sid_str));
 }
 
-void sid_t::set_src(uint32_t new_addr) {
+void sid_t::set_src(uint32_t new_addr)
+{
     set_sid((_sid & 0x0000FFFF) | ((new_addr & 0xFFFF) << 16));
 }
 
-void sid_t::set_dst(uint32_t new_addr) {
+void sid_t::set_dst(uint32_t new_addr)
+{
     set_sid((_sid & 0xFFFF0000) | (new_addr & 0xFFFF));
 }
 
-void sid_t::set_src_addr(uint32_t new_addr) {
+void sid_t::set_src_addr(uint32_t new_addr)
+{
     set_sid((_sid & 0x00FFFFFF) | ((new_addr & 0xFF) << 24));
 }
 
-void sid_t::set_src_endpoint(uint32_t new_addr) {
+void sid_t::set_src_endpoint(uint32_t new_addr)
+{
     set_sid((_sid & 0xFF00FFFF) | ((new_addr & 0xFF) << 16));
 }
 
-void sid_t::set_dst_addr(uint32_t new_addr) {
+void sid_t::set_dst_addr(uint32_t new_addr)
+{
     set_sid((_sid & 0xFFFF00FF) | ((new_addr & 0xFF) << 8));
 }
 
-void sid_t::set_dst_endpoint(uint32_t new_addr) {
+void sid_t::set_dst_endpoint(uint32_t new_addr)
+{
     set_sid((_sid & 0xFFFFFF00) | ((new_addr & 0xFF) << 0));
 }
 
@@ -140,4 +133,3 @@ void sid_t::reverse()
 {
     set_sid((get_dst() << 16) | get_src());
 }
-

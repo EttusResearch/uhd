@@ -57,10 +57,7 @@ private:
     {
         UHD_LOG_TRACE(_log_prefix, "[RPC] Calling " << func_name);
         return _rpcc->request_with_token<return_type>(
-                timeout_ms,
-                _rpc_prefix + func_name,
-                std::forward<Args>(args)...
-        );
+            timeout_ms, _rpc_prefix + func_name, std::forward<Args>(args)...);
     };
 
     //! Reference to the RPC client

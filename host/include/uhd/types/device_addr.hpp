@@ -71,7 +71,8 @@ public:
      * \return the casted value as type T or the default
      * \throw error when the parameter cannot be casted
      */
-    template <typename T> T cast(const std::string& key, const T& def) const
+    template <typename T>
+    T cast(const std::string& key, const T& def) const
     {
         if (not this->has_key(key))
             return def;

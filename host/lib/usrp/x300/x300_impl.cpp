@@ -204,8 +204,8 @@ x300_impl::x300_impl(const uhd::device_addr_t& dev_addr) : device3_impl(), _sid_
 
 void x300_impl::setup_mb(const size_t mb_i, const uhd::device_addr_t& dev_addr)
 {
-    const fs_path mb_path  = fs_path("/mboards") / mb_i;
-    mboard_members_t& mb   = _mb[mb_i];
+    const fs_path mb_path = fs_path("/mboards") / mb_i;
+    mboard_members_t& mb  = _mb[mb_i];
     mb.args.parse(dev_addr);
     mb.xport_path = dev_addr.has_key("resource") ? xport_path_t::NIRIO
                                                  : xport_path_t::ETH;
@@ -557,10 +557,10 @@ uhd::both_xports_t x300_impl::make_transport(const uhd::sid_t& address,
     both_xports_t xports;
 
     // Calculate MTU based on MTU in args and device limitations
-    const size_t send_mtu = args.cast<size_t>("mtu",
-        get_mtu(mb_index, uhd::TX_DIRECTION));
-    const size_t recv_mtu = args.cast<size_t>("mtu",
-        get_mtu(mb_index, uhd::RX_DIRECTION));
+    const size_t send_mtu =
+        args.cast<size_t>("mtu", get_mtu(mb_index, uhd::TX_DIRECTION));
+    const size_t recv_mtu =
+        args.cast<size_t>("mtu", get_mtu(mb_index, uhd::RX_DIRECTION));
 
     if (mb.xport_path == xport_path_t::NIRIO) {
         xports.send_sid =
@@ -906,4 +906,3 @@ void x300_impl::check_fpga_compat(const fs_path& mb_path, const mboard_members_t
         "Using FPGA version: " << compat_major << "." << compat_minor
                                << " git hash: " << git_hash_str);
 }
-

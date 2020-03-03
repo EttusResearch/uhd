@@ -264,7 +264,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     uhd::tx_metadata_t tx_md;
     tx_md.has_time_spec  = false;
     tx_md.start_of_burst = true;
-    double timeout = 0.01;
+    double timeout       = 0.01;
     auto dwell_time      = std::chrono::milliseconds(static_cast<int64_t>(dwell * 1000));
 
     int loop = 0;

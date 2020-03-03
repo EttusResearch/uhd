@@ -80,7 +80,8 @@ inline bool rx_flow_ctrl(
 
         // Update counters assuming the buffer is a consumed packet
         if (not packet_info.error) {
-            const size_t bytes = 4 * (packet_info.num_header_words32 + packet_info.num_payload_words32);
+            const size_t bytes =
+                4 * (packet_info.num_header_words32 + packet_info.num_payload_words32);
             fc_cache->total_bytes_consumed += bytes;
             fc_cache->total_packets_consumed++;
         }

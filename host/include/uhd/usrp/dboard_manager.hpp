@@ -12,8 +12,8 @@
 #include <uhd/usrp/dboard_base.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/dboard_id.hpp>
-#include <boost/shared_ptr.hpp>
 #include <uhd/utils/noncopyable.hpp>
+#include <boost/shared_ptr.hpp>
 #include <string>
 #include <vector>
 

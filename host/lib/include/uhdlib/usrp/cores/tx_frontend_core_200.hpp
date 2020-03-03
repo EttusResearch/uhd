@@ -9,14 +9,15 @@
 #define INCLUDED_LIBUHD_USRP_RX_FRONTEND_CORE_200_HPP
 
 #include <uhd/config.hpp>
-#include <uhd/types/wb_iface.hpp>
 #include <uhd/property_tree.hpp>
+#include <uhd/types/wb_iface.hpp>
 #include <uhd/utils/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 #include <complex>
 #include <string>
 
-class tx_frontend_core_200 : uhd::noncopyable{
+class tx_frontend_core_200 : uhd::noncopyable
+{
 public:
     typedef boost::shared_ptr<tx_frontend_core_200> sptr;
 
@@ -27,14 +28,13 @@ public:
 
     static sptr make(uhd::wb_iface::sptr iface, const size_t base);
 
-    virtual void set_mux(const std::string &mode) = 0;
+    virtual void set_mux(const std::string& mode) = 0;
 
-    virtual std::complex<double> set_dc_offset(const std::complex<double> &off) = 0;
+    virtual std::complex<double> set_dc_offset(const std::complex<double>& off) = 0;
 
-    virtual void set_iq_balance(const std::complex<double> &cor) = 0;
+    virtual void set_iq_balance(const std::complex<double>& cor) = 0;
 
     virtual void populate_subtree(uhd::property_tree::sptr subtree) = 0;
-
 };
 
 #endif /* INCLUDED_LIBUHD_USRP_RX_FRONTEND_CORE_200_HPP */

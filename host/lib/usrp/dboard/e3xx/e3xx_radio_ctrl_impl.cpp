@@ -166,16 +166,16 @@ double e3xx_radio_ctrl_impl::set_rx_frequency(const double freq, const size_t ch
 double e3xx_radio_ctrl_impl::set_rx_bandwidth(const double bandwidth, const size_t chan)
 {
     std::lock_guard<std::mutex> l(_set_lock);
-    double clipped_bw =
-        _ad9361->set_bw_filter(get_which_ad9361_chain(RX_DIRECTION, chan, _fe_swap), bandwidth);
+    double clipped_bw = _ad9361->set_bw_filter(
+        get_which_ad9361_chain(RX_DIRECTION, chan, _fe_swap), bandwidth);
     return radio_ctrl_impl::set_rx_bandwidth(clipped_bw, chan);
 }
 
 double e3xx_radio_ctrl_impl::set_tx_bandwidth(const double bandwidth, const size_t chan)
 {
     std::lock_guard<std::mutex> l(_set_lock);
-    double clipped_bw =
-        _ad9361->set_bw_filter(get_which_ad9361_chain(TX_DIRECTION, chan, _fe_swap), bandwidth);
+    double clipped_bw = _ad9361->set_bw_filter(
+        get_which_ad9361_chain(TX_DIRECTION, chan, _fe_swap), bandwidth);
     return radio_ctrl_impl::set_tx_bandwidth(clipped_bw, chan);
 }
 

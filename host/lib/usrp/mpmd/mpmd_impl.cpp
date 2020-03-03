@@ -350,7 +350,8 @@ void mpmd_impl::setup_rpc_blocks(
     }
 }
 
-size_t mpmd_impl::get_mtu(const size_t mb_index, const uhd::direction_t dir) {
+size_t mpmd_impl::get_mtu(const size_t mb_index, const uhd::direction_t dir)
+{
     return _mb[mb_index]->get_mtu(dir);
 }
 

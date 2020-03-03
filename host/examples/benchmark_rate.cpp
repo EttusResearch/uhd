@@ -24,7 +24,7 @@
 namespace po = boost::program_options;
 
 namespace {
-constexpr int64_t CLOCK_TIMEOUT     = 1000; // 1000mS timeout for external clock locking
+constexpr int64_t CLOCK_TIMEOUT = 1000; // 1000mS timeout for external clock locking
 } // namespace
 
 /***********************************************************************
@@ -200,7 +200,7 @@ void benchmark_tx_rate(uhd::usrp::multi_usrp::sptr usrp,
     if (elevate_priority) {
         uhd::set_thread_priority_safe();
     }
- 
+
     // print pre-test summary
     std::cout << boost::format("[%s] Testing transmit rate %f Msps on %u channels")
                      % NOW() % (usrp->get_tx_rate() / 1e6) % tx_stream->get_num_channels()
@@ -532,8 +532,14 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         stream_args.channels             = rx_channel_nums;
         uhd::rx_streamer::sptr rx_stream = usrp->get_rx_stream(stream_args);
         auto rx_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
-            benchmark_rx_rate(
-                usrp, rx_cpu, rx_stream, random_nsamps, start_time, burst_timer_elapsed, elevate_priority, rx_delay);
+            benchmark_rx_rate(usrp,
+                rx_cpu,
+                rx_stream,
+                random_nsamps,
+                start_time,
+                burst_timer_elapsed,
+                elevate_priority,
+                rx_delay);
         });
         uhd::set_thread_name(rx_thread, "bmark_rx_stream");
     }
@@ -546,8 +552,14 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         stream_args.channels             = tx_channel_nums;
         uhd::tx_streamer::sptr tx_stream = usrp->get_tx_stream(stream_args);
         auto tx_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
-            benchmark_tx_rate(
-                usrp, tx_cpu, tx_stream, burst_timer_elapsed, start_time, elevate_priority, tx_delay, random_nsamps);
+            benchmark_tx_rate(usrp,
+                tx_cpu,
+                tx_stream,
+                burst_timer_elapsed,
+                start_time,
+                elevate_priority,
+                tx_delay,
+                random_nsamps);
         });
         uhd::set_thread_name(tx_thread, "bmark_tx_stream");
         auto tx_async_thread = thread_group.create_thread([=, &burst_timer_elapsed]() {
@@ -564,7 +576,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     } else {
         duration += tx_delay;
     }
-    const int64_t secs = int64_t(duration);
+    const int64_t secs  = int64_t(duration);
     const int64_t usecs = int64_t((duration - secs) * 1e6);
     std::this_thread::sleep_for(
         std::chrono::seconds(secs) + std::chrono::microseconds(usecs));

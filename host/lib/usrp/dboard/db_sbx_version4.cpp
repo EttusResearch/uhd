@@ -17,22 +17,26 @@ using namespace boost::assign;
 /***********************************************************************
  * Structors
  **********************************************************************/
-sbx_xcvr::sbx_version4::sbx_version4(sbx_xcvr *_self_sbx_xcvr) {
-    //register the handle to our base SBX class
+sbx_xcvr::sbx_version4::sbx_version4(sbx_xcvr* _self_sbx_xcvr)
+{
+    // register the handle to our base SBX class
     self_base = _self_sbx_xcvr;
-    _txlo = adf435x_iface::make_adf4351(boost::bind(&sbx_xcvr::sbx_version4::write_lo_regs, this, dboard_iface::UNIT_TX, _1));
-    _rxlo = adf435x_iface::make_adf4351(boost::bind(&sbx_xcvr::sbx_version4::write_lo_regs, this, dboard_iface::UNIT_RX, _1));
+    _txlo     = adf435x_iface::make_adf4351(boost::bind(
+        &sbx_xcvr::sbx_version4::write_lo_regs, this, dboard_iface::UNIT_TX, _1));
+    _rxlo     = adf435x_iface::make_adf4351(boost::bind(
+        &sbx_xcvr::sbx_version4::write_lo_regs, this, dboard_iface::UNIT_RX, _1));
 }
 
 
-sbx_xcvr::sbx_version4::~sbx_version4(void){
+sbx_xcvr::sbx_version4::~sbx_version4(void)
+{
     /* NOP */
 }
 
-void sbx_xcvr::sbx_version4::write_lo_regs(dboard_iface::unit_t unit, const std::vector<uint32_t> &regs)
+void sbx_xcvr::sbx_version4::write_lo_regs(
+    dboard_iface::unit_t unit, const std::vector<uint32_t>& regs)
 {
-    for(uint32_t reg:  regs)
-    {
+    for (uint32_t reg : regs) {
         self_base->get_iface()->write_spi(unit, spi_config_t::EDGE_RISE, reg, 32);
     }
 }
@@ -41,42 +45,44 @@ void sbx_xcvr::sbx_version4::write_lo_regs(dboard_iface::unit_t unit, const std:
 /***********************************************************************
  * Tuning
  **********************************************************************/
-double sbx_xcvr::sbx_version4::set_lo_freq(dboard_iface::unit_t unit, double target_freq) {
-    UHD_LOGGER_TRACE("SBX") << boost::format(
-        "SBX tune: target frequency %f MHz"
-    ) % (target_freq/1e6) ;
+double sbx_xcvr::sbx_version4::set_lo_freq(dboard_iface::unit_t unit, double target_freq)
+{
+    UHD_LOGGER_TRACE("SBX") << boost::format("SBX tune: target frequency %f MHz")
+                                   % (target_freq / 1e6);
 
     /*
      * If the user sets 'mode_n=integer' in the tuning args, the user wishes to
      * tune in Integer-N mode, which can result in better spur
      * performance on some mixers. The default is fractional tuning.
      */
-    property_tree::sptr subtree = (unit == dboard_iface::UNIT_RX) ? self_base->get_rx_subtree()
-                                                                  : self_base->get_tx_subtree();
+    property_tree::sptr subtree = (unit == dboard_iface::UNIT_RX)
+                                      ? self_base->get_rx_subtree()
+                                      : self_base->get_tx_subtree();
     device_addr_t tune_args = subtree->access<device_addr_t>("tune_args").get();
-    bool is_int_n = boost::iequals(tune_args.get("mode_n",""), "integer");
+    bool is_int_n           = boost::iequals(tune_args.get("mode_n", ""), "integer");
 
-    //Select the LO
+    // Select the LO
     adf435x_iface::sptr& lo_iface = unit == dboard_iface::UNIT_RX ? _rxlo : _txlo;
     lo_iface->set_feedback_select(adf435x_iface::FB_SEL_DIVIDED);
     lo_iface->set_reference_freq(self_base->get_iface()->get_clock_rate(unit));
 
-    //Use 8/9 prescaler for vco_freq > 3 GHz (pg.18 prescaler)
-    lo_iface->set_prescaler(target_freq > 3.6e9 ? adf435x_iface::PRESCALER_8_9 : adf435x_iface::PRESCALER_4_5);
+    // Use 8/9 prescaler for vco_freq > 3 GHz (pg.18 prescaler)
+    lo_iface->set_prescaler(target_freq > 3.6e9 ? adf435x_iface::PRESCALER_8_9
+                                                : adf435x_iface::PRESCALER_4_5);
 
-    //Configure the LO
+    // Configure the LO
     double actual_freq = 0.0;
     actual_freq = lo_iface->set_frequency(sbx_freq_range.clip(target_freq), is_int_n);
 
-    if ((unit == dboard_iface::UNIT_TX) and (actual_freq == sbx_tx_lo_2dbm.clip(actual_freq))) {
+    if ((unit == dboard_iface::UNIT_TX)
+        and (actual_freq == sbx_tx_lo_2dbm.clip(actual_freq))) {
         lo_iface->set_output_power(adf435x_iface::OUTPUT_POWER_2DBM);
     } else {
         lo_iface->set_output_power(adf435x_iface::OUTPUT_POWER_5DBM);
     }
 
-    //Write to hardware
+    // Write to hardware
     lo_iface->commit();
 
     return actual_freq;
 }
-

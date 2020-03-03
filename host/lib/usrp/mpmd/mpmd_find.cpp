@@ -8,10 +8,10 @@
 
 #include "mpmd_devices.hpp"
 #include "mpmd_impl.hpp"
-#include <uhdlib/transport/dpdk_common.hpp>
 #include <uhd/transport/if_addrs.hpp>
 #include <uhd/transport/udp_simple.hpp>
 #include <uhd/types/device_addr.hpp>
+#include <uhdlib/transport/dpdk_common.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/asio.hpp>
 #include <future>

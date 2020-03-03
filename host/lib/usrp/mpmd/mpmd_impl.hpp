@@ -140,7 +140,8 @@ public:
      * separate thread, and needs some kind of flag to be notified that
      * something is up.
      */
-    void allow_claim_failure(const bool allow) {
+    void allow_claim_failure(const bool allow)
+    {
         if (allow) {
             _allow_claim_failure_latch = true;
         }
@@ -198,7 +199,6 @@ private:
      * really need to know what it does.
      */
     std::atomic<bool> _allow_claim_failure_latch{false};
-
 };
 
 

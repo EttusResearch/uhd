@@ -15,21 +15,21 @@ namespace uhd { namespace usrp { namespace x300 {
 
 static constexpr size_t NIUSRPRIO_DEFAULT_RPC_PORT = 5444;
 
-static constexpr size_t XB_DST_E0              = 0;
-static constexpr size_t XB_DST_E1              = 1;
-static constexpr size_t XB_DST_PCI             = 2;
-static constexpr size_t XB_DST_R0              = 3; // Radio 0 -> Slot A
-static constexpr size_t XB_DST_R1              = 4; // Radio 1 -> Slot B
-static constexpr size_t XB_DST_CE0             = 5;
+static constexpr size_t XB_DST_E0  = 0;
+static constexpr size_t XB_DST_E1  = 1;
+static constexpr size_t XB_DST_PCI = 2;
+static constexpr size_t XB_DST_R0  = 3; // Radio 0 -> Slot A
+static constexpr size_t XB_DST_R1  = 4; // Radio 1 -> Slot B
+static constexpr size_t XB_DST_CE0 = 5;
 
 static constexpr size_t SRC_ADDR0 = 0;
 static constexpr size_t SRC_ADDR1 = 1;
 static constexpr size_t DST_ADDR  = 2;
 
-static constexpr double DEFAULT_TICK_RATE = 200e6; // Hz
-static constexpr double MAX_TICK_RATE     = 200e6; // Hz
-static constexpr double MIN_TICK_RATE     = 184.32e6; // Hz
-static constexpr double BUS_CLOCK_RATE    = 187.5e6; // Hz
+static constexpr double DEFAULT_TICK_RATE   = 200e6; // Hz
+static constexpr double MAX_TICK_RATE       = 200e6; // Hz
+static constexpr double MIN_TICK_RATE       = 184.32e6; // Hz
+static constexpr double BUS_CLOCK_RATE      = 187.5e6; // Hz
 static constexpr double DEFAULT_SYSREF_RATE = 10e6;
 
 static const std::string FW_FILE_NAME = "usrp_x300_fw.bin";
@@ -43,8 +43,7 @@ static const std::vector<std::string> CLOCK_SOURCE_OPTIONS{
     "internal", "external", "gpsdo"};
 static const std::vector<std::string> TIME_SOURCE_OPTIONS{
     "internal", "external", "gpsdo"};
-static const std::vector<double> EXTERNAL_FREQ_OPTIONS{
-    10e6, 11.52e6, 23.04e6, 30.72e6};
+static const std::vector<double> EXTERNAL_FREQ_OPTIONS{10e6, 11.52e6, 23.04e6, 30.72e6};
 
 // Limit the number of initialization threads
 static const size_t MAX_INIT_THREADS = 10;

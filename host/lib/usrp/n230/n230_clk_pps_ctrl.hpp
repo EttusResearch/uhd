@@ -11,10 +11,10 @@
 #include "n230_cores.hpp"
 #include "n230_fpga_defs.h"
 #include <uhd/types/sensors.hpp>
-#include <uhdlib/usrp/cores/time_core_3000.hpp>
-#include <uhdlib/usrp/common/ad9361_ctrl.hpp>
-#include <boost/shared_ptr.hpp>
 #include <uhd/utils/noncopyable.hpp>
+#include <uhdlib/usrp/common/ad9361_ctrl.hpp>
+#include <uhdlib/usrp/cores/time_core_3000.hpp>
+#include <boost/shared_ptr.hpp>
 #include <vector>
 
 namespace uhd { namespace usrp { namespace n230 {
@@ -24,8 +24,7 @@ class n230_clk_pps_ctrl : uhd::noncopyable
 public:
     typedef boost::shared_ptr<n230_clk_pps_ctrl> sptr;
 
-    static sptr make(
-        ad9361_ctrl::sptr codec_ctrl,
+    static sptr make(ad9361_ctrl::sptr codec_ctrl,
         n230_ref_pll_ctrl::sptr ref_pll_ctrl,
         fpga::core_misc_reg_t& core_misc_reg,
         fpga::core_pps_sel_reg_t& core_pps_sel_reg,
@@ -52,7 +51,7 @@ public:
      **********************************************************************/
     /*! Set the reference clock source of the device.
      */
-    virtual void set_clock_source(const std::string &source) = 0;
+    virtual void set_clock_source(const std::string& source) = 0;
 
     /*! Get the reference clock source of the device.
      */
@@ -67,13 +66,13 @@ public:
      **********************************************************************/
     /*! Set the time source of the device.
      */
-    virtual void set_pps_source(const std::string &source) = 0;
+    virtual void set_pps_source(const std::string& source) = 0;
 
     /*! Get the reference clock source of the device.
      */
     virtual const std::string& get_pps_source() = 0;
 };
 
-}}} //namespace
+}}} // namespace uhd::usrp::n230
 
 #endif /* INCLUDED_N230_CLK_PPS_CTRL_HPP */

@@ -112,11 +112,11 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     std::cout << "Configuring Rx radio..." << std::endl;
     rx_radio_ctrl->set_args(rx_args);
 
-    // Lock mboard clocks 
+    // Lock mboard clocks
     if (vm.count("ref")) {
         rx_radio_ctrl->set_clock_source(ref);
     }
-    
+
     if (spp) {
         rx_radio_ctrl->set_arg<int>("spp", spp, rx_chan);
     }
@@ -129,20 +129,20 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     std::cout << "Actual  Rx frequency: "
               << (rx_radio_ctrl->set_rx_frequency(rx_freq, rx_chan) / 1e6) << " MHz."
               << std::endl;
-    
+
     if (rx_gain) {
         std::cout << "Setting Rx gain: " << (rx_gain) << " dB." << std::endl;
         std::cout << "Actual  Rx gain: " << (rx_radio_ctrl->set_rx_gain(rx_gain, rx_chan))
                   << " dB." << std::endl;
     }
-    
+
     if (not rx_ant.empty()) {
         std::cout << "Setting Rx antenna: " << (rx_ant) << "." << std::endl;
         rx_radio_ctrl->set_rx_antenna(rx_ant, rx_chan);
         std::cout << "Actual  Rx antenna: " << rx_radio_ctrl->get_rx_antenna(rx_chan)
                   << "." << std::endl;
     }
-    
+
     if (!rx_timestamps) {
         std::cout << "Disabling timestamps on RX... (direct loopback, may underrun)"
                   << std::endl;
@@ -153,26 +153,26 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     std::cout << "Configuring Tx radio..." << std::endl;
     tx_radio_ctrl->set_args(tx_args);
 
-    // Lock mboard clocks 
+    // Lock mboard clocks
     if (vm.count("ref")) {
         tx_radio_ctrl->set_clock_source(ref);
     }
-    
+
     std::cout << "Setting Tx rate: " << (rate / 1e6) << " Msps" << std::endl;
     double actual_tx_rate = tx_radio_ctrl->set_rate(rate);
     std::cout << "Actual  Tx rate: " << (actual_tx_rate / 1e6) << " Msps" << std::endl;
-    
+
     std::cout << "Setting Tx frequency: " << (tx_freq / 1e6) << " MHz." << std::endl;
     std::cout << "Actual  Tx frequency: "
               << (tx_radio_ctrl->set_tx_frequency(tx_freq, tx_chan) / 1e6) << " MHz."
               << std::endl;
-    
+
     if (tx_gain) {
         std::cout << "Setting Tx gain: " << (tx_gain) << " dB." << std::endl;
         std::cout << "Actual  Tx gain: " << (tx_radio_ctrl->set_tx_gain(tx_gain, tx_chan))
                   << " dB." << std::endl;
     }
-    
+
     if (not tx_ant.empty()) {
         std::cout << "Setting Tx antenna: " << (tx_ant) << "." << std::endl;
         tx_radio_ctrl->set_tx_antenna(tx_ant, tx_chan);

@@ -5,9 +5,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <type_traits>
-#include <uhd/utils/byteswap.hpp>
 #include "convert_common.hpp"
+#include <uhd/utils/byteswap.hpp>
+#include <type_traits>
 
 using namespace uhd::convert;
 
@@ -26,9 +26,9 @@ struct item32_sc12_3x
 };
 
 enum item32_sc12_3x_enable {
-    CONVERT12_LINE0 = 0x01,
-    CONVERT12_LINE1 = 0x02,
-    CONVERT12_LINE2 = 0x04,
+    CONVERT12_LINE0    = 0x01,
+    CONVERT12_LINE1    = 0x02,
+    CONVERT12_LINE2    = 0x04,
     CONVERT12_LINE_ALL = 0x07,
 };
 
@@ -48,10 +48,10 @@ enum item32_sc12_3x_enable {
  * 31              0
  */
 template <towire32_type towire>
-void pack(item32_sc12_3x &output, int enable, const int32_t iq[8])
+void pack(item32_sc12_3x& output, int enable, const int32_t iq[8])
 {
     if (enable & CONVERT12_LINE0)
-        output.line0 = towire(iq[0] << 20 | iq[1] <<  8 | iq[2] >> 4);
+        output.line0 = towire(iq[0] << 20 | iq[1] << 8 | iq[2] >> 4);
     if (enable & CONVERT12_LINE1)
         output.line1 = towire(iq[2] << 28 | iq[3] << 16 | iq[4] << 4 | iq[5] >> 8);
     if (enable & CONVERT12_LINE2)
@@ -59,46 +59,40 @@ void pack(item32_sc12_3x &output, int enable, const int32_t iq[8])
 }
 
 template <typename type, towire32_type towire>
-void convert_star_4_to_sc12_item32_3
-(
-    const std::complex<type> &in0,
-    const std::complex<type> &in1,
-    const std::complex<type> &in2,
-    const std::complex<type> &in3,
+void convert_star_4_to_sc12_item32_3(const std::complex<type>& in0,
+    const std::complex<type>& in1,
+    const std::complex<type>& in2,
+    const std::complex<type>& in3,
     const int enable,
-    item32_sc12_3x &output,
+    item32_sc12_3x& output,
     const double scalar,
-    typename std::enable_if<std::is_floating_point<type>::value>::type* = NULL
-)
+    typename std::enable_if<std::is_floating_point<type>::value>::type* = NULL)
 {
-    int32_t iq[8] {
-        int32_t(in0.real()*scalar) & 0xfff,
-        int32_t(in0.imag()*scalar) & 0xfff,
-        int32_t(in1.real()*scalar) & 0xfff,
-        int32_t(in1.imag()*scalar) & 0xfff,
+    int32_t iq[8]{
+        int32_t(in0.real() * scalar) & 0xfff,
+        int32_t(in0.imag() * scalar) & 0xfff,
+        int32_t(in1.real() * scalar) & 0xfff,
+        int32_t(in1.imag() * scalar) & 0xfff,
 
-        int32_t(in2.real()*scalar) & 0xfff,
-        int32_t(in2.imag()*scalar) & 0xfff,
-        int32_t(in3.real()*scalar) & 0xfff,
-        int32_t(in3.imag()*scalar) & 0xfff,
+        int32_t(in2.real() * scalar) & 0xfff,
+        int32_t(in2.imag() * scalar) & 0xfff,
+        int32_t(in3.real() * scalar) & 0xfff,
+        int32_t(in3.imag() * scalar) & 0xfff,
     };
     pack<towire>(output, enable, iq);
 }
 
 template <typename type, towire32_type towire>
-void convert_star_4_to_sc12_item32_3
-(
-    const std::complex<type> &in0,
-    const std::complex<type> &in1,
-    const std::complex<type> &in2,
-    const std::complex<type> &in3,
+void convert_star_4_to_sc12_item32_3(const std::complex<type>& in0,
+    const std::complex<type>& in1,
+    const std::complex<type>& in2,
+    const std::complex<type>& in3,
     const int enable,
-    item32_sc12_3x &output,
+    item32_sc12_3x& output,
     const double,
-    typename std::enable_if<std::is_same<type, short>::value>::type* = NULL
-)
+    typename std::enable_if<std::is_same<type, short>::value>::type* = NULL)
 {
-    int32_t iq[8] {
+    int32_t iq[8]{
         int32_t(in0.real() >> 4) & 0xfff,
         int32_t(in0.imag() >> 4) & 0xfff,
         int32_t(in1.real() >> 4) & 0xfff,

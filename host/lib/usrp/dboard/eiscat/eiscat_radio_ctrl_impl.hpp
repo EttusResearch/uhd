@@ -8,11 +8,10 @@
 #define INCLUDED_LIBUHD_RFNOC_EISCAT_RADIO_CTRL_IMPL_HPP
 
 #include <uhd/types/direction.hpp>
-#include <uhdlib/rfnoc/rpc_block_ctrl.hpp>
 #include <uhdlib/rfnoc/radio_ctrl_impl.hpp>
+#include <uhdlib/rfnoc/rpc_block_ctrl.hpp>
 
-namespace uhd {
-    namespace rfnoc {
+namespace uhd { namespace rfnoc {
 
 /*! \brief Provide access to an EISCAT radio, including beamformer.
  *
@@ -85,7 +84,7 @@ namespace uhd {
 class eiscat_radio_ctrl_impl : public radio_ctrl_impl, public rpc_block_ctrl
 {
 public:
-    using sptr = boost::shared_ptr<eiscat_radio_ctrl_impl>;
+    using sptr      = boost::shared_ptr<eiscat_radio_ctrl_impl>;
     using fir_tap_t = int32_t; // See also EISCAT_BITS_PER_TAP
 
     /************************************************************************
@@ -103,7 +102,7 @@ public:
     double set_rate(double rate);
 
     //! \throws uhd::runtime_error
-    void set_tx_antenna(const std::string &ant, const size_t chan);
+    void set_tx_antenna(const std::string& ant, const size_t chan);
 
     /*! Configures FPGA switching for antenna selection
      *
@@ -129,7 +128,7 @@ public:
      *
      * \throws uhd::value_error if the antenna value was not valid
      */
-    void set_rx_antenna(const std::string &ant, const size_t chan);
+    void set_rx_antenna(const std::string& ant, const size_t chan);
 
     //! \throws uhd::runtime_error
     double set_tx_frequency(const double freq, const size_t chan);
@@ -145,24 +144,21 @@ public:
     //! \returns zero
     double set_rx_gain(const double gain, const size_t chan);
 
-    size_t get_chan_from_dboard_fe(const std::string &fe, const uhd::direction_t dir);
+    size_t get_chan_from_dboard_fe(const std::string& fe, const uhd::direction_t dir);
     std::string get_dboard_fe_from_chan(const size_t chan, const uhd::direction_t dir);
 
     //! \returns The EISCAT sampling rate
     double get_output_samp_rate(size_t port);
 
     void set_rx_streamer(bool active, const size_t port);
-    void issue_stream_cmd(const uhd::stream_cmd_t &stream_cmd, const size_t port);
+    void issue_stream_cmd(const uhd::stream_cmd_t& stream_cmd, const size_t port);
 
 protected:
     virtual bool check_radio_config();
 
     /*! Finalize initialization sequence (ADCs, deframers) etc.
      */
-    void set_rpc_client(
-        uhd::rpc_client::sptr rpcc,
-        const uhd::device_addr_t &block_args
-    );
+    void set_rpc_client(uhd::rpc_client::sptr rpcc, const uhd::device_addr_t& block_args);
 
 private:
     /*************************************************************************
@@ -183,10 +179,7 @@ private:
      *                          of taps that the filter can handle, or if any
      *                          tap has more bits than allowed.
      */
-    void write_fir_taps(
-        const size_t fir_idx,
-        const std::vector<fir_tap_t> &taps
-    );
+    void write_fir_taps(const size_t fir_idx, const std::vector<fir_tap_t>& taps);
 
     /*! Choose a filter to be applied between an output beam and antenna input
      *
@@ -198,17 +191,14 @@ private:
      * \param write_time If false, time will never get written *even if* it is
      *                   non-zero. The assumption is that someone else wrote
      *                   the value previously
-     *                   \param write_time If false, time will never get written *even if* it is
-     *                                     non-zero. The assumption is that someone else wrote
-     *                                     the value previously 
+     *                   \param write_time If false, time will never get written *even if*
+     * it is non-zero. The assumption is that someone else wrote the value previously
      */
-    void select_filter(
-        const size_t beam_index,
+    void select_filter(const size_t beam_index,
         const size_t antenna_index,
         const size_t fir_index,
-        const uhd::time_spec_t &time_spec,
-        const bool write_time=true
-    );
+        const uhd::time_spec_t& time_spec,
+        const bool write_time = true);
 
 
     /*! Sets the command time for the next call to select_filter()
@@ -217,7 +207,7 @@ private:
      *                  *all* subsequent filter selections. To request
      *                  immediate application of filters, set this to zero.
      */
-    void set_fir_ctrl_time(const uhd::time_spec_t &time_spec);
+    void set_fir_ctrl_time(const uhd::time_spec_t& time_spec);
 
     /*! Sets the digital gain on a specific antenna
      *
@@ -225,10 +215,7 @@ private:
      * \param normalized_gain A value in [0, 1] which gets converted to a
      *                        digital gain value
      */
-    void set_antenna_gain(
-        const size_t antenna_idx,
-        const double normalized_gain
-    );
+    void set_antenna_gain(const size_t antenna_idx, const double normalized_gain);
 
     /*! Directly writes a value to the beam configuration register.
      */
@@ -292,4 +279,3 @@ private:
 }} /* namespace uhd::rfnoc */
 
 #endif /* INCLUDED_LIBUHD_RFNOC_EISCAT_RADIO_CTRL_IMPL_HPP */
-

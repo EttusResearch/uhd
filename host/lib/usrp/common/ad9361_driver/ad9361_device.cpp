@@ -5,22 +5,21 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#include "ad9361_device.h"
+#include "ad9361_client.h"
 #include "ad9361_filter_taps.h"
 #include "ad9361_gain_tables.h"
 #include "ad9361_synth_lut.h"
-#include "ad9361_client.h"
-#include "ad9361_device.h"
 #define _USE_MATH_DEFINES
 #include <uhd/exception.hpp>
 #include <uhd/utils/log.hpp>
-
-#include <boost/scoped_array.hpp>
+#include <stdint.h>
 #include <boost/format.hpp>
 #include <boost/math/special_functions.hpp>
+#include <boost/scoped_array.hpp>
 #include <chrono>
-#include <thread>
 #include <cmath>
-#include <stdint.h>
+#include <thread>
 
 ////////////////////////////////////////////////////////////
 // the following macros evaluate to a compile time constant
@@ -33,14 +32,11 @@
 #define HEX__(n) 0x##n##LU
 
 /* 8-bit conversion function */
-#define B8__(x) ((x&0x0000000FLU)?1:0) \
-+((x&0x000000F0LU)?2:0) \
-+((x&0x00000F00LU)?4:0) \
-+((x&0x0000F000LU)?8:0) \
-+((x&0x000F0000LU)?16:0) \
-+((x&0x00F00000LU)?32:0) \
-+((x&0x0F000000LU)?64:0) \
-+((x&0xF0000000LU)?128:0)
+#define B8__(x)                                                         \
+    ((x & 0x0000000FLU) ? 1 : 0) + ((x & 0x000000F0LU) ? 2 : 0)         \
+        + ((x & 0x00000F00LU) ? 4 : 0) + ((x & 0x0000F000LU) ? 8 : 0)   \
+        + ((x & 0x000F0000LU) ? 16 : 0) + ((x & 0x00F00000LU) ? 32 : 0) \
+        + ((x & 0x0F000000LU) ? 64 : 0) + ((x & 0xF0000000LU) ? 128 : 0)
 
 /* for upto 8-bit binary constants */
 #define B8(d) ((unsigned char)B8__(HEX__(d)))
@@ -53,8 +49,9 @@ namespace uhd { namespace usrp {
  * point numbers. It is used to prevent re-tunes for frequencies that are
  * the same but not 'exactly' because of data precision issues. */
 // TODO: see if we can avoid the need for this function
-int freq_is_nearly_equal(double a, double b) {
-    return std::max(a,b) - std::min(a,b) < 1;
+int freq_is_nearly_equal(double a, double b)
+{
+    return std::max(a, b) - std::min(a, b) < 1;
 }
 
 /***********************************************************************
@@ -63,26 +60,29 @@ int freq_is_nearly_equal(double a, double b) {
 
 /* This function takes in the calculated maximum number of FIR taps, and
  * returns a number of taps that makes AD9361 happy. */
-int get_num_taps(int max_num_taps) {
-
-    int num_taps = 0;
+int get_num_taps(int max_num_taps)
+{
+    int num_taps        = 0;
     int num_taps_list[] = {16, 32, 48, 64, 80, 96, 112, 128};
     int i;
-    for(i = 1; i < 8; i++) {
-        if(max_num_taps >= num_taps_list[i]) {
+    for (i = 1; i < 8; i++) {
+        if (max_num_taps >= num_taps_list[i]) {
             continue;
         } else {
             num_taps = num_taps_list[i - 1];
             break;
         }
-    } if(num_taps == 0) { num_taps = 128; }
+    }
+    if (num_taps == 0) {
+        num_taps = 128;
+    }
 
     return num_taps;
 }
 
-const double ad9361_device_t::AD9361_MAX_GAIN        = 89.75;
-const double ad9361_device_t::AD9361_MIN_CLOCK_RATE  = 220e3;
-const double ad9361_device_t::AD9361_MAX_CLOCK_RATE  = 61.44e6;
+const double ad9361_device_t::AD9361_MAX_GAIN         = 89.75;
+const double ad9361_device_t::AD9361_MIN_CLOCK_RATE   = 220e3;
+const double ad9361_device_t::AD9361_MAX_CLOCK_RATE   = 61.44e6;
 const double ad9361_device_t::AD9361_CAL_VALID_WINDOW = 100e6;
 // Max bandwdith is due to filter rolloff in analog filter stage
 const double ad9361_device_t::AD9361_MIN_BW = 200e3;
@@ -98,7 +98,8 @@ const double ad9361_device_t::DEFAULT_TX_FREQ = 850e6;
  * how many taps are in the filter, and given a vector of the taps
  * themselves.  */
 
-void ad9361_device_t::_program_fir_filter(direction_t direction, chain_t chain, int num_taps, uint16_t *coeffs)
+void ad9361_device_t::_program_fir_filter(
+    direction_t direction, chain_t chain, int num_taps, uint16_t* coeffs)
 {
     uint16_t base;
 
@@ -115,14 +116,14 @@ void ad9361_device_t::_program_fir_filter(direction_t direction, chain_t chain, 
 
     uint8_t reg_chain = 0;
     switch (chain) {
-    case CHAIN_1:
-        reg_chain = 0x01 << 3;
-        break;
-    case CHAIN_2:
-        reg_chain = 0x02 << 3;
-        break;
-    default:
-        reg_chain = 0x03 << 3;
+        case CHAIN_1:
+            reg_chain = 0x01 << 3;
+            break;
+        case CHAIN_2:
+            reg_chain = 0x02 << 3;
+            break;
+        default:
+            reg_chain = 0x03 << 3;
     }
 
     /* Turn on the filter clock. */
@@ -140,7 +141,8 @@ void ad9361_device_t::_program_fir_filter(direction_t direction, chain_t chain, 
         _io_iface->poke8(base + 4, 0x00);
     }
 
-    /* Iterate through indirect programming of filter coeffs using ADI recomended procedure */
+    /* Iterate through indirect programming of filter coeffs using ADI recomended
+     * procedure */
     for (addr = 0; addr < num_taps; addr++) {
         _io_iface->poke8(base + 0, addr);
         _io_iface->poke8(base + 1, (coeffs[addr]) & 0xff);
@@ -151,23 +153,25 @@ void ad9361_device_t::_program_fir_filter(direction_t direction, chain_t chain, 
     }
 
     /* UG-671 states (page 25) (paraphrased and clarified):
-     " After the table has been programmed, write to register BASE+5 with the write bit D2 cleared and D1 high.
-     Then, write to register BASE+5 again with D1 clear, thus ensuring that the write bit resets internally
-     before the clock stops. Wait 4 sample clock periods after setting D2 high while that data writes into the table"
+     " After the table has been programmed, write to register BASE+5 with the write bit D2
+     cleared and D1 high. Then, write to register BASE+5 again with D1 clear, thus
+     ensuring that the write bit resets internally before the clock stops. Wait 4 sample
+     clock periods after setting D2 high while that data writes into the table"
      */
 
     _io_iface->poke8(base + 5, reg_numtaps | reg_chain | (1 << 1));
     if (direction == RX) {
-        _io_iface->poke8(base + 5, reg_numtaps | reg_chain );
+        _io_iface->poke8(base + 5, reg_numtaps | reg_chain);
         /* Rx Gain, set to prevent digital overflow/saturation in filters
            0:+6dB, 1:0dB, 2:-6dB, 3:-12dB
            page 35 of UG-671 */
-        _io_iface->poke8(base + 6, 0x02); /* Also turn on -6dB Rx gain here, to stop filter overfow.*/
+        _io_iface->poke8(
+            base + 6, 0x02); /* Also turn on -6dB Rx gain here, to stop filter overfow.*/
     } else {
         /* Tx Gain. bit[0]. set to prevent digital overflow/saturation in filters
            0: 0dB, 1:-6dB
            page 25 of UG-671 */
-        _io_iface->poke8(base + 5, reg_numtaps | reg_chain );
+        _io_iface->poke8(base + 5, reg_numtaps | reg_chain);
     }
 }
 
@@ -175,26 +179,31 @@ void ad9361_device_t::_program_fir_filter(direction_t direction, chain_t chain, 
 /* Program the RX FIR Filter. */
 void ad9361_device_t::_setup_rx_fir(size_t num_taps, int32_t decimation)
 {
-    if (not (decimation == 1 or decimation == 2 or decimation == 4)) {
+    if (not(decimation == 1 or decimation == 2 or decimation == 4)) {
         throw uhd::runtime_error("[ad9361_device_t] Invalid Rx FIR decimation.");
     }
     boost::scoped_array<uint16_t> coeffs(new uint16_t[num_taps]);
     for (size_t i = 0; i < num_taps; i++) {
         switch (num_taps) {
-        case 128:
-            coeffs[i] = uint16_t((decimation==4) ? fir_128_x4_coeffs[i] : hb127_coeffs[i]);
-            break;
-        case 96:
-            coeffs[i] = uint16_t((decimation==4) ? fir_96_x4_coeffs[i] : hb95_coeffs[i]);
-            break;
-        case 64:
-            coeffs[i] = uint16_t((decimation==4) ? fir_64_x4_coeffs[i] : hb63_coeffs[i]);
-            break;
-        case 48:
-            coeffs[i] = uint16_t((decimation==4) ? fir_48_x4_coeffs[i] : hb47_coeffs[i]);
-            break;
-        default:
-            throw uhd::runtime_error("[ad9361_device_t] Unsupported number of Rx FIR taps.");
+            case 128:
+                coeffs[i] =
+                    uint16_t((decimation == 4) ? fir_128_x4_coeffs[i] : hb127_coeffs[i]);
+                break;
+            case 96:
+                coeffs[i] =
+                    uint16_t((decimation == 4) ? fir_96_x4_coeffs[i] : hb95_coeffs[i]);
+                break;
+            case 64:
+                coeffs[i] =
+                    uint16_t((decimation == 4) ? fir_64_x4_coeffs[i] : hb63_coeffs[i]);
+                break;
+            case 48:
+                coeffs[i] =
+                    uint16_t((decimation == 4) ? fir_48_x4_coeffs[i] : hb47_coeffs[i]);
+                break;
+            default:
+                throw uhd::runtime_error(
+                    "[ad9361_device_t] Unsupported number of Rx FIR taps.");
         }
     }
 
@@ -204,29 +213,35 @@ void ad9361_device_t::_setup_rx_fir(size_t num_taps, int32_t decimation)
 /* Program the TX FIR Filter. */
 void ad9361_device_t::_setup_tx_fir(size_t num_taps, int32_t interpolation)
 {
-    if (not (interpolation == 1 or interpolation == 2 or interpolation == 4)) {
+    if (not(interpolation == 1 or interpolation == 2 or interpolation == 4)) {
         throw uhd::runtime_error("[ad9361_device_t] Invalid Tx FIR interpolation.");
     }
     if (interpolation == 1 and num_taps > 64) {
-        throw uhd::runtime_error("[ad9361_device_t] Too many Tx FIR taps for interpolation value.");
+        throw uhd::runtime_error(
+            "[ad9361_device_t] Too many Tx FIR taps for interpolation value.");
     }
     boost::scoped_array<uint16_t> coeffs(new uint16_t[num_taps]);
     for (size_t i = 0; i < num_taps; i++) {
         switch (num_taps) {
-        case 128:
-            coeffs[i] = uint16_t((interpolation==4) ? fir_128_x4_coeffs[i] : hb127_coeffs[i]);
-            break;
-        case 96:
-            coeffs[i] = uint16_t((interpolation==4) ? fir_96_x4_coeffs[i] : hb95_coeffs[i]);
-            break;
-        case 64:
-            coeffs[i] = uint16_t((interpolation==4) ? fir_64_x4_coeffs[i] : hb63_coeffs[i]);
-            break;
-        case 48:
-            coeffs[i] = uint16_t((interpolation==4) ? fir_48_x4_coeffs[i] : hb47_coeffs[i]);
-            break;
-        default:
-            throw uhd::runtime_error("[ad9361_device_t] Unsupported number of Tx FIR taps.");
+            case 128:
+                coeffs[i] = uint16_t(
+                    (interpolation == 4) ? fir_128_x4_coeffs[i] : hb127_coeffs[i]);
+                break;
+            case 96:
+                coeffs[i] =
+                    uint16_t((interpolation == 4) ? fir_96_x4_coeffs[i] : hb95_coeffs[i]);
+                break;
+            case 64:
+                coeffs[i] =
+                    uint16_t((interpolation == 4) ? fir_64_x4_coeffs[i] : hb63_coeffs[i]);
+                break;
+            case 48:
+                coeffs[i] =
+                    uint16_t((interpolation == 4) ? fir_48_x4_coeffs[i] : hb47_coeffs[i]);
+                break;
+            default:
+                throw uhd::runtime_error(
+                    "[ad9361_device_t] Unsupported number of Tx FIR taps.");
         }
     }
 
@@ -310,9 +325,10 @@ void ad9361_device_t::_calibrate_synth_charge_pumps()
 double ad9361_device_t::_calibrate_baseband_rx_analog_filter(double req_rfbw)
 {
     double bbbw = req_rfbw / 2.0;
-    if(bbbw > _baseband_bw / 2.0)
-    {
-        UHD_LOGGER_DEBUG("AD936X")<< "baseband bandwidth too large for current sample rate. Setting bandwidth to: "<<_baseband_bw;
+    if (bbbw > _baseband_bw / 2.0) {
+        UHD_LOGGER_DEBUG("AD936X") << "baseband bandwidth too large for current sample "
+                                      "rate. Setting bandwidth to: "
+                                   << _baseband_bw;
         bbbw = _baseband_bw / 2.0;
     }
 
@@ -326,16 +342,17 @@ double ad9361_device_t::_calibrate_baseband_rx_analog_filter(double req_rfbw)
     }
 
     double rxtune_clk = ((1.4 * bbbw * 2 * M_PI) / M_LN2);
-    _rx_bbf_tunediv = std::min<uint16_t>(511, uint16_t(std::ceil(_bbpll_freq / rxtune_clk)));
+    _rx_bbf_tunediv =
+        std::min<uint16_t>(511, uint16_t(std::ceil(_bbpll_freq / rxtune_clk)));
     _regs.bbftune_config = (_regs.bbftune_config & 0xFE)
-            | ((_rx_bbf_tunediv >> 8) & 0x0001);
+                           | ((_rx_bbf_tunediv >> 8) & 0x0001);
 
-    double bbbw_mhz = bbbw / 1e6;
-    double temp = ((bbbw_mhz - std::floor(bbbw_mhz)) * 1000) / 7.8125;
+    double bbbw_mhz  = bbbw / 1e6;
+    double temp      = ((bbbw_mhz - std::floor(bbbw_mhz)) * 1000) / 7.8125;
     uint8_t bbbw_khz = std::min<uint8_t>(127, uint8_t(std::floor(temp + 0.5)));
 
     /* Set corner frequencies and dividers. */
-    _io_iface->poke8(0x1fb, (uint8_t) (bbbw_mhz));
+    _io_iface->poke8(0x1fb, (uint8_t)(bbbw_mhz));
     _io_iface->poke8(0x1fc, bbbw_khz);
     _io_iface->poke8(0x1f8, (_rx_bbf_tunediv & 0x00FF));
     _io_iface->poke8(0x1f9, _regs.bbftune_config);
@@ -377,9 +394,10 @@ double ad9361_device_t::_calibrate_baseband_tx_analog_filter(double req_rfbw)
 {
     double bbbw = req_rfbw / 2.0;
 
-    if(bbbw > _baseband_bw / 2.0)
-    {
-        UHD_LOGGER_DEBUG("AD936X")<< "baseband bandwidth too large for current sample rate. Setting bandwidth to: "<<_baseband_bw;
+    if (bbbw > _baseband_bw / 2.0) {
+        UHD_LOGGER_DEBUG("AD936X") << "baseband bandwidth too large for current sample "
+                                      "rate. Setting bandwidth to: "
+                                   << _baseband_bw;
         bbbw = _baseband_bw / 2.0;
     }
 
@@ -393,9 +411,9 @@ double ad9361_device_t::_calibrate_baseband_tx_analog_filter(double req_rfbw)
     }
 
     double txtune_clk = ((1.6 * bbbw * 2 * M_PI) / M_LN2);
-    uint16_t txbbfdiv = std::min<uint16_t>(511, uint16_t(std::ceil(_bbpll_freq / txtune_clk)));
-    _regs.bbftune_mode = (_regs.bbftune_mode & 0xFE)
-            | ((txbbfdiv >> 8) & 0x0001);
+    uint16_t txbbfdiv =
+        std::min<uint16_t>(511, uint16_t(std::ceil(_bbpll_freq / txtune_clk)));
+    _regs.bbftune_mode = (_regs.bbftune_mode & 0xFE) | ((txbbfdiv >> 8) & 0x0001);
 
     /* Program the divider values. */
     _io_iface->poke8(0x0d6, (txbbfdiv & 0x00FF));
@@ -432,9 +450,10 @@ double ad9361_device_t::_calibrate_secondary_tx_filter(double req_rfbw)
 {
     double bbbw = req_rfbw / 2.0;
 
-    if(bbbw > _baseband_bw / 2.0)
-    {
-        UHD_LOGGER_DEBUG("AD936X")<< "baseband bandwidth too large for current sample rate. Setting bandwidth to: "<<_baseband_bw;
+    if (bbbw > _baseband_bw / 2.0) {
+        UHD_LOGGER_DEBUG("AD936X") << "baseband bandwidth too large for current sample "
+                                      "rate. Setting bandwidth to: "
+                                   << _baseband_bw;
         bbbw = _baseband_bw / 2.0;
     }
 
@@ -459,8 +478,9 @@ double ad9361_device_t::_calibrate_secondary_tx_filter(double req_rfbw)
     int cap = 0;
     int i;
     for (i = 0; i <= 3; i++) {
-        cap = static_cast<int>(std::floor(0.5 + ((1 / ((corner_freq * res) * 1e6)) * 1e12)))
-                - 12;
+        cap =
+            static_cast<int>(std::floor(0.5 + ((1 / ((corner_freq * res) * 1e6)) * 1e12)))
+            - 12;
 
         if (cap <= 63) {
             break;
@@ -483,7 +503,8 @@ double ad9361_device_t::_calibrate_secondary_tx_filter(double req_rfbw)
         reg0d0 = 0x57;
     } else {
         reg0d0 = 0x00;
-        throw uhd::runtime_error("[ad9361_device_t] Cal2ndTxFil: INVALID_CODE_PATH bad bbbw_mhz");
+        throw uhd::runtime_error(
+            "[ad9361_device_t] Cal2ndTxFil: INVALID_CODE_PATH bad bbbw_mhz");
     }
 
     /* Translate resistor values to register settings. */
@@ -528,9 +549,10 @@ double ad9361_device_t::_calibrate_rx_TIAs(double req_rfbw)
 
     double bbbw = req_rfbw / 2.0;
 
-    if(bbbw > _baseband_bw / 2.0)
-    {
-        UHD_LOGGER_DEBUG("AD936X")<< "baseband bandwidth too large for current sample rate. Setting bandwidth to: "<<_baseband_bw;
+    if (bbbw > _baseband_bw / 2.0) {
+        UHD_LOGGER_DEBUG("AD936X") << "baseband bandwidth too large for current sample "
+                                      "rate. Setting bandwidth to: "
+                                   << _baseband_bw;
         bbbw = _baseband_bw / 2.0;
     }
 
@@ -545,8 +567,8 @@ double ad9361_device_t::_calibrate_rx_TIAs(double req_rfbw)
     double ceil_bbbw_mhz = std::ceil(bbbw / 1e6);
 
     /* Do some crazy resistor and capacitor math. */
-    int Cbbf = (reg1eb * 160) + (reg1ec * 10) + 140;
-    int R2346 = 18300 * (reg1e6 & 0x07);
+    int Cbbf       = (reg1eb * 160) + (reg1ec * 10) + 140;
+    int R2346      = 18300 * (reg1e6 & 0x07);
     double CTIA_fF = (Cbbf * R2346 * 0.56) / 3500;
 
     /* Translate baseband BW to register settings. */
@@ -557,22 +579,23 @@ double ad9361_device_t::_calibrate_rx_TIAs(double req_rfbw)
     } else if (ceil_bbbw_mhz > 10) {
         reg1db = 0x20;
     } else {
-        throw uhd::runtime_error("[ad9361_device_t] CalRxTias: INVALID_CODE_PATH bad bbbw_mhz");
+        throw uhd::runtime_error(
+            "[ad9361_device_t] CalRxTias: INVALID_CODE_PATH bad bbbw_mhz");
     }
 
     if (CTIA_fF > 2920) {
-        reg1dc = 0x40;
-        reg1de = 0x40;
-        uint8_t temp = (uint8_t) std::min<uint8_t>(127,
-                uint8_t(std::floor(0.5 + ((CTIA_fF - 400.0) / 320.0))));
+        reg1dc       = 0x40;
+        reg1de       = 0x40;
+        uint8_t temp = (uint8_t)std::min<uint8_t>(
+            127, uint8_t(std::floor(0.5 + ((CTIA_fF - 400.0) / 320.0))));
         reg1dd = temp;
         reg1df = temp;
     } else {
         uint8_t temp = uint8_t(std::floor(0.5 + ((CTIA_fF - 400.0) / 40.0)) + 0x40);
-        reg1dc = temp;
-        reg1de = temp;
-        reg1dd = 0;
-        reg1df = 0;
+        reg1dc       = temp;
+        reg1de       = temp;
+        reg1dd       = 0;
+        reg1df       = 0;
     }
 
     /* w00t. Settings calculated. Program them and roll out. */
@@ -593,12 +616,12 @@ double ad9361_device_t::_calibrate_rx_TIAs(double req_rfbw)
  * some of the 40 registers depend on the values in others. */
 void ad9361_device_t::_setup_adc()
 {
-    double bbbw_mhz = (((_bbpll_freq / 1e6) / _rx_bbf_tunediv) * M_LN2) \
-                  / (1.4 * 2 * M_PI);
+    double bbbw_mhz =
+        (((_bbpll_freq / 1e6) / _rx_bbf_tunediv) * M_LN2) / (1.4 * 2 * M_PI);
 
     /* For calibration, baseband BW is half the complex BW, and must be
      * between 28e6 and 0.2e6. */
-    if(bbbw_mhz > 28) {
+    if (bbbw_mhz > 28) {
         bbbw_mhz = 28;
     } else if (bbbw_mhz < 0.20) {
         bbbw_mhz = 0.20;
@@ -606,101 +629,111 @@ void ad9361_device_t::_setup_adc()
 
     uint8_t rxbbf_c3_msb = _io_iface->peek8(0x1eb) & 0x3F;
     uint8_t rxbbf_c3_lsb = _io_iface->peek8(0x1ec) & 0x7F;
-    uint8_t rxbbf_r2346 = _io_iface->peek8(0x1e6) & 0x07;
+    uint8_t rxbbf_r2346  = _io_iface->peek8(0x1e6) & 0x07;
 
     double fsadc = _adcclock_freq / 1e6;
 
     /* Sort out the RC time constant for our baseband bandwidth... */
     double rc_timeconst = 0.0;
-    if(bbbw_mhz < 18) {
-        rc_timeconst = (1 / ((1.4 * 2 * M_PI) \
-                            * (18300 * rxbbf_r2346)
-                            * ((160e-15 * rxbbf_c3_msb)
-                                + (10e-15 * rxbbf_c3_lsb) + 140e-15)
-                            * (bbbw_mhz * 1e6)));
+    if (bbbw_mhz < 18) {
+        rc_timeconst =
+            (1
+                / ((1.4 * 2 * M_PI) * (18300 * rxbbf_r2346)
+                      * ((160e-15 * rxbbf_c3_msb) + (10e-15 * rxbbf_c3_lsb) + 140e-15)
+                      * (bbbw_mhz * 1e6)));
     } else {
-        rc_timeconst = (1 / ((1.4 * 2 * M_PI) \
-                            * (18300 * rxbbf_r2346)
-                            * ((160e-15 * rxbbf_c3_msb)
-                                + (10e-15 * rxbbf_c3_lsb) + 140e-15)
-                            * (bbbw_mhz * 1e6) * (1 + (0.01 * (bbbw_mhz - 18)))));
+        rc_timeconst =
+            (1
+                / ((1.4 * 2 * M_PI) * (18300 * rxbbf_r2346)
+                      * ((160e-15 * rxbbf_c3_msb) + (10e-15 * rxbbf_c3_lsb) + 140e-15)
+                      * (bbbw_mhz * 1e6) * (1 + (0.01 * (bbbw_mhz - 18)))));
     }
 
     double scale_res = sqrt(1 / rc_timeconst);
     double scale_cap = sqrt(1 / rc_timeconst);
 
     double scale_snr = (_adcclock_freq < 80e6) ? 1.0 : 1.584893192;
-    double maxsnr = 640 / 160;
+    double maxsnr    = 640 / 160;
 
     /* Calculate the values for all 40 settings registers.
      *
      * DO NOT TOUCH THIS UNLESS YOU KNOW EXACTLY WHAT YOU ARE DOING. kthx.*/
     uint8_t data[40];
-    data[0] = 0;    data[1] = 0; data[2] = 0; data[3] = 0x24;
-    data[4] = 0x24; data[5] = 0; data[6] = 0;
-    data[7] = std::min<uint8_t>(124, uint8_t(std::floor(-0.5
-                    + (80.0 * scale_snr * scale_res
-                    * std::min<double>(1.0, sqrt(maxsnr * fsadc / 640.0))))));
+    data[0]        = 0;
+    data[1]        = 0;
+    data[2]        = 0;
+    data[3]        = 0x24;
+    data[4]        = 0x24;
+    data[5]        = 0;
+    data[6]        = 0;
+    data[7]        = std::min<uint8_t>(124,
+        uint8_t(
+            std::floor(-0.5
+                       + (80.0 * scale_snr * scale_res
+                             * std::min<double>(1.0, sqrt(maxsnr * fsadc / 640.0))))));
     double data007 = data[7];
-    data[8] = std::min<uint8_t>(255, uint8_t(std::floor(0.5
-                    + ((20.0 * (640.0 / fsadc) * ((data007 / 80.0))
-                    / (scale_res * scale_cap))))));
-    data[10] = std::min<uint8_t>(127, uint8_t(std::floor(-0.5 + (77.0 * scale_res
-                    * std::min<double>(1.0, sqrt(maxsnr * fsadc / 640.0))))));
+    data[8]        = std::min<uint8_t>(255,
+        uint8_t(std::floor(0.5
+                           + ((20.0 * (640.0 / fsadc) * ((data007 / 80.0))
+                                 / (scale_res * scale_cap))))));
+    data[10]       = std::min<uint8_t>(127,
+        uint8_t(std::floor(
+            -0.5
+            + (77.0 * scale_res * std::min<double>(1.0, sqrt(maxsnr * fsadc / 640.0))))));
     double data010 = data[10];
-    data[9] = std::min<uint8_t>(127, uint8_t(std::floor(0.8 * data010)));
-    data[11] = std::min<uint8_t>(255, uint8_t(std::floor(0.5
-                    + (20.0 * (640.0 / fsadc) * ((data010 / 77.0)
-                    / (scale_res * scale_cap))))));
-    data[12] = std::min<uint8_t>(127, uint8_t(std::floor(-0.5
-                    + (80.0 * scale_res * std::min<double>(1.0,
-                    sqrt(maxsnr * fsadc / 640.0))))));
+    data[9]        = std::min<uint8_t>(127, uint8_t(std::floor(0.8 * data010)));
+    data[11]       = std::min<uint8_t>(255,
+        uint8_t(std::floor(
+            0.5
+            + (20.0 * (640.0 / fsadc) * ((data010 / 77.0) / (scale_res * scale_cap))))));
+    data[12]       = std::min<uint8_t>(127,
+        uint8_t(std::floor(
+            -0.5
+            + (80.0 * scale_res * std::min<double>(1.0, sqrt(maxsnr * fsadc / 640.0))))));
     double data012 = data[12];
-    data[13] = std::min<uint8_t>(255, uint8_t(std::floor(-1.5
-                    + (20.0 * (640.0 / fsadc) * ((data012 / 80.0)
-                    / (scale_res * scale_cap))))));
-    data[14] = 21 * uint8_t(std::floor(0.1 * 640.0 / fsadc));
-    data[15] = std::min<uint8_t>(127, uint8_t(1.025 * data007));
+    data[13]       = std::min<uint8_t>(255,
+        uint8_t(std::floor(
+            -1.5
+            + (20.0 * (640.0 / fsadc) * ((data012 / 80.0) / (scale_res * scale_cap))))));
+    data[14]       = 21 * uint8_t(std::floor(0.1 * 640.0 / fsadc));
+    data[15]       = std::min<uint8_t>(127, uint8_t(1.025 * data007));
     double data015 = data[15];
-    data[16] = std::min<uint8_t>(127, uint8_t(std::floor((data015
-                    * (0.98 + (0.02 * std::max<double>(1.0,
-                    (640.0 / fsadc) / maxsnr)))))));
-    data[17] = data[15];
-    data[18] = std::min<uint8_t>(127, uint8_t(0.975 * (data010)));
+    data[16]       = std::min<uint8_t>(127,
+        uint8_t(std::floor(
+            (data015
+                * (0.98 + (0.02 * std::max<double>(1.0, (640.0 / fsadc) / maxsnr)))))));
+    data[17]       = data[15];
+    data[18]       = std::min<uint8_t>(127, uint8_t(0.975 * (data010)));
     double data018 = data[18];
-    data[19] = std::min<uint8_t>(127, uint8_t(std::floor((data018
-                    * (0.98 + (0.02 * std::max<double>(1.0,
-                    (640.0 / fsadc) / maxsnr)))))));
-    data[20] = data[18];
-    data[21] = std::min<uint8_t>(127, uint8_t(0.975 * data012));
+    data[19]       = std::min<uint8_t>(127,
+        uint8_t(std::floor(
+            (data018
+                * (0.98 + (0.02 * std::max<double>(1.0, (640.0 / fsadc) / maxsnr)))))));
+    data[20]       = data[18];
+    data[21]       = std::min<uint8_t>(127, uint8_t(0.975 * data012));
     double data021 = data[21];
-    data[22] = std::min<uint8_t>(127, uint8_t(std::floor((data021
-                    * (0.98 + (0.02 * std::max<double>(1.0,
-                    (640.0 / fsadc) / maxsnr)))))));
-    data[23] = data[21];
-    data[24] = 0x2e;
-    data[25] = uint8_t(std::floor(128.0 + std::min<double>(63.0,
-                    63.0 * (fsadc / 640.0))));
-    data[26] = uint8_t(std::floor(std::min<double>(63.0, 63.0 * (fsadc / 640.0)
-                    * (0.92 + (0.08 * (640.0 / fsadc))))));
-    data[27] = uint8_t(std::floor(std::min<double>(63.0,
-                    32.0 * sqrt(fsadc / 640.0))));
-    data[28] = uint8_t(std::floor(128.0 + std::min<double>(63.0,
-                    63.0 * (fsadc / 640.0))));
-    data[29] = uint8_t(std::floor(std::min<double>(63.0,
-                    63.0 * (fsadc / 640.0)
-                    * (0.92 + (0.08 * (640.0 / fsadc))))));
-    data[30] = uint8_t(std::floor(std::min<double>(63.0,
-                    32.0 * sqrt(fsadc / 640.0))));
-    data[31] = uint8_t(std::floor(128.0 + std::min<double>(63.0,
-                    63.0 * (fsadc / 640.0))));
-    data[32] = uint8_t(std::floor(std::min<double>(63.0,
-                    63.0 * (fsadc / 640.0) * (0.92
-                    + (0.08 * (640.0 / fsadc))))));
-    data[33] = uint8_t(std::floor(std::min<double>(63.0,
-                    63.0 * sqrt(fsadc / 640.0))));
-    data[34] = std::min<uint8_t>(127, uint8_t(std::floor(64.0
-                    * sqrt(fsadc / 640.0))));
+    data[22]       = std::min<uint8_t>(127,
+        uint8_t(std::floor(
+            (data021
+                * (0.98 + (0.02 * std::max<double>(1.0, (640.0 / fsadc) / maxsnr)))))));
+    data[23]       = data[21];
+    data[24]       = 0x2e;
+    data[25] =
+        uint8_t(std::floor(128.0 + std::min<double>(63.0, 63.0 * (fsadc / 640.0))));
+    data[26] = uint8_t(std::floor(std::min<double>(
+        63.0, 63.0 * (fsadc / 640.0) * (0.92 + (0.08 * (640.0 / fsadc))))));
+    data[27] = uint8_t(std::floor(std::min<double>(63.0, 32.0 * sqrt(fsadc / 640.0))));
+    data[28] =
+        uint8_t(std::floor(128.0 + std::min<double>(63.0, 63.0 * (fsadc / 640.0))));
+    data[29] = uint8_t(std::floor(std::min<double>(
+        63.0, 63.0 * (fsadc / 640.0) * (0.92 + (0.08 * (640.0 / fsadc))))));
+    data[30] = uint8_t(std::floor(std::min<double>(63.0, 32.0 * sqrt(fsadc / 640.0))));
+    data[31] =
+        uint8_t(std::floor(128.0 + std::min<double>(63.0, 63.0 * (fsadc / 640.0))));
+    data[32] = uint8_t(std::floor(std::min<double>(
+        63.0, 63.0 * (fsadc / 640.0) * (0.92 + (0.08 * (640.0 / fsadc))))));
+    data[33] = uint8_t(std::floor(std::min<double>(63.0, 63.0 * sqrt(fsadc / 640.0))));
+    data[34] = std::min<uint8_t>(127, uint8_t(std::floor(64.0 * sqrt(fsadc / 640.0))));
     data[35] = 0x40;
     data[36] = 0x40;
     data[37] = 0x2c;
@@ -708,8 +741,8 @@ void ad9361_device_t::_setup_adc()
     data[39] = 0x00;
 
     /* Program the registers! */
-    for(size_t i = 0; i < 40; i++) {
-        _io_iface->poke8(0x200+i, data[i]);
+    for (size_t i = 0; i < 40; i++) {
+        _io_iface->poke8(0x200 + i, data[i]);
     }
 }
 
@@ -718,11 +751,12 @@ void ad9361_device_t::_setup_adc()
  */
 void ad9361_device_t::_calibrate_baseband_dc_offset()
 {
-    _io_iface->poke8(0x18b, 0x83); //Reset RF DC tracking flag
+    _io_iface->poke8(0x18b, 0x83); // Reset RF DC tracking flag
 
     _io_iface->poke8(0x193, 0x3f); // Calibration settings
     _io_iface->poke8(0x190, 0x0f); // Set tracking coefficient
-    //write_ad9361_reg(device, 0x190, /*0x0f*//*0xDF*/0x80*1 | 0x40*1 | (16+8/*+4*/)); // Set tracking coefficient: don't *4 counter, do decim /4, increased gain shift
+    // write_ad9361_reg(device, 0x190, /*0x0f*//*0xDF*/0x80*1 | 0x40*1 | (16+8/*+4*/)); //
+    // Set tracking coefficient: don't *4 counter, do decim /4, increased gain shift
     _io_iface->poke8(0x194, 0x01); // More calibration settings
 
     /* Start that calibration, baby. */
@@ -730,7 +764,8 @@ void ad9361_device_t::_calibrate_baseband_dc_offset()
     _io_iface->poke8(0x016, 0x01);
     while (_io_iface->peek8(0x016) & 0x01) {
         if (count > 100) {
-            throw uhd::runtime_error("[ad9361_device_t] Baseband DC Offset Calibration Failure");
+            throw uhd::runtime_error(
+                "[ad9361_device_t] Baseband DC Offset Calibration Failure");
             break;
         }
         count++;
@@ -763,7 +798,8 @@ void ad9361_device_t::_calibrate_rf_dc_offset()
     _io_iface->poke8(0x016, 0x02);
     while (_io_iface->peek8(0x016) & 0x02) {
         if (count > 200) {
-            throw uhd::runtime_error("[ad9361_device_t] RF DC Offset Calibration Failure");
+            throw uhd::runtime_error(
+                "[ad9361_device_t] RF DC Offset Calibration Failure");
             break;
         }
         count++;
@@ -814,7 +850,8 @@ void ad9361_device_t::_calibrate_rx_quadrature()
     _io_iface->poke8(0x016, 0x20);
     while (_io_iface->peek8(0x016) & 0x20) {
         if (count > 1000) {
-            throw uhd::runtime_error("[ad9361_device_t] Rx Quadrature Calibration Failure");
+            throw uhd::runtime_error(
+                "[ad9361_device_t] Rx Quadrature Calibration Failure");
             break;
         }
         count++;
@@ -831,15 +868,15 @@ void ad9361_device_t::_calibrate_rx_quadrature()
  * The TX quadrature needs to be done twice, once for each TX chain, with
  * only one register change in between. Thus, this function enacts the
  * calibrations, and it is called from calibrate_tx_quadrature. */
-void ad9361_device_t::_tx_quadrature_cal_routine() {
-
+void ad9361_device_t::_tx_quadrature_cal_routine()
+{
     /* This is a weird process, but here is how it works:
      * 1) Read the calibrated NCO frequency bits out of 0A3.
      * 2) Write the two bits to the RX NCO freq part of 0A0.
      * 3) Re-read 0A3 to get bits [5:0] because maybe they changed?
      * 4) Update only the TX NCO freq bits in 0A3.
      * 5) Profit (I hope). */
-    uint8_t reg0a3 = _io_iface->peek8(0x0a3);
+    uint8_t reg0a3   = _io_iface->peek8(0x0a3);
     uint8_t nco_freq = (reg0a3 & 0xC0);
     _io_iface->poke8(0x0a0, 0x15 | (nco_freq >> 1));
     reg0a3 = _io_iface->peek8(0x0a3);
@@ -849,8 +886,8 @@ void ad9361_device_t::_tx_quadrature_cal_routine() {
      * where the two test tones used for quadrature calibration are outside
      * of the RX BBF, and therefore don't make it to the ADC. We will check
      * for that scenario here. */
-    double max_cal_freq = (((_baseband_bw * _tfir_factor)
-            * ((nco_freq >> 6) + 1)) / 32) * 2;
+    double max_cal_freq =
+        (((_baseband_bw * _tfir_factor) * ((nco_freq >> 6) + 1)) / 32) * 2;
     double bbbw = _baseband_bw / 2.0; // bbbw represents the one-sided BW
     if (bbbw > 28e6) {
         bbbw = 28e6;
@@ -882,7 +919,8 @@ void ad9361_device_t::_tx_quadrature_cal_routine() {
     _io_iface->poke8(0x016, 0x10);
     while (_io_iface->peek8(0x016) & 0x10) {
         if (count > 100) {
-            throw uhd::runtime_error("[ad9361_device_t] TX Quadrature Calibration Failure");
+            throw uhd::runtime_error(
+                "[ad9361_device_t] TX Quadrature Calibration Failure");
             break;
         }
         count++;
@@ -897,7 +935,8 @@ void ad9361_device_t::_calibrate_tx_quadrature()
     /* Make sure we are, in fact, in the ALERT state. If not, something is
      * terribly wrong in the driver execution flow. */
     if ((_io_iface->peek8(0x017) & 0x0F) != 5) {
-        throw uhd::runtime_error("[ad9361_device_t] TX Quad Cal started, but not in ALERT");
+        throw uhd::runtime_error(
+            "[ad9361_device_t] TX Quad Cal started, but not in ALERT");
     }
 
     /* Turn off free-running and continuous calibrations. Note that this
@@ -974,19 +1013,20 @@ void ad9361_device_t::_program_mixer_gm_subtable()
 /* Program the gain table.
  *
  * There are three different gain tables for different frequency ranges! */
-void ad9361_device_t::_program_gain_table() {
+void ad9361_device_t::_program_gain_table()
+{
     /* Figure out which gain table we should be using for our current
      * frequency band. */
-    uint8_t (*gain_table)[3] = NULL;
+    uint8_t(*gain_table)[3] = NULL;
     uint8_t new_gain_table;
     if (_rx_freq < 1300e6) {
-        gain_table = gain_table_sub_1300mhz;
+        gain_table     = gain_table_sub_1300mhz;
         new_gain_table = 1;
     } else if (_rx_freq < 4e9) {
-        gain_table = gain_table_1300mhz_to_4000mhz;
+        gain_table     = gain_table_1300mhz_to_4000mhz;
         new_gain_table = 2;
     } else if (_rx_freq <= 6e9) {
-        gain_table = gain_table_4000mhz_to_6000mhz;
+        gain_table     = gain_table_4000mhz_to_6000mhz;
         new_gain_table = 3;
     } else {
         new_gain_table = 1;
@@ -1112,17 +1152,17 @@ void ad9361_device_t::_setup_synth(direction_t direction, double vcorate)
 
     /* Parse the values out of the LUT based on our calculated index... */
     uint8_t vco_output_level = synth_cal_lut[vcoindex][0];
-    uint8_t vco_varactor = synth_cal_lut[vcoindex][1];
-    uint8_t vco_bias_ref = synth_cal_lut[vcoindex][2];
-    uint8_t vco_bias_tcf = synth_cal_lut[vcoindex][3];
-    uint8_t vco_cal_offset = synth_cal_lut[vcoindex][4];
+    uint8_t vco_varactor     = synth_cal_lut[vcoindex][1];
+    uint8_t vco_bias_ref     = synth_cal_lut[vcoindex][2];
+    uint8_t vco_bias_tcf     = synth_cal_lut[vcoindex][3];
+    uint8_t vco_cal_offset   = synth_cal_lut[vcoindex][4];
     uint8_t vco_varactor_ref = synth_cal_lut[vcoindex][5];
     uint8_t charge_pump_curr = synth_cal_lut[vcoindex][6];
-    uint8_t loop_filter_c2 = synth_cal_lut[vcoindex][7];
-    uint8_t loop_filter_c1 = synth_cal_lut[vcoindex][8];
-    uint8_t loop_filter_r1 = synth_cal_lut[vcoindex][9];
-    uint8_t loop_filter_c3 = synth_cal_lut[vcoindex][10];
-    uint8_t loop_filter_r3 = synth_cal_lut[vcoindex][11];
+    uint8_t loop_filter_c2   = synth_cal_lut[vcoindex][7];
+    uint8_t loop_filter_c1   = synth_cal_lut[vcoindex][8];
+    uint8_t loop_filter_r1   = synth_cal_lut[vcoindex][9];
+    uint8_t loop_filter_c3   = synth_cal_lut[vcoindex][10];
+    uint8_t loop_filter_r3   = synth_cal_lut[vcoindex][11];
 
     /* ... annnd program! */
     if (direction == RX) {
@@ -1171,8 +1211,8 @@ double ad9361_device_t::_tune_bbvco(const double rate)
 
     _req_coreclk = rate;
 
-    const double fref = 40e6;
-    const int modulus = 2088960;
+    const double fref   = 40e6;
+    const int modulus   = 2088960;
     const double vcomax = 1430e6;
     const double vcomin = 672e6;
     double vcorate;
@@ -1181,7 +1221,7 @@ double ad9361_device_t::_tune_bbvco(const double rate)
     /* Iterate over VCO dividers until appropriate divider is found. */
     int i = 1;
     for (; i <= 6; i++) {
-        vcodiv = 1 << i;
+        vcodiv  = 1 << i;
         vcorate = rate * vcodiv;
 
         if (vcorate >= vcomin && vcorate <= vcomax)
@@ -1196,40 +1236,40 @@ double ad9361_device_t::_tune_bbvco(const double rate)
     /* Fo = Fref * (Nint + Nfrac / mod) */
     int nint = static_cast<int>(vcorate / fref);
     UHD_LOG_TRACE("AD936X", "[ad9361_device_t::_tune_bbvco] (nint)=" << (vcorate / fref));
-    int nfrac = static_cast<int>(boost::math::round(((vcorate / fref) - (double) nint) * (double) modulus));
+    int nfrac = static_cast<int>(
+        boost::math::round(((vcorate / fref) - (double)nint) * (double)modulus));
     UHD_LOG_TRACE("AD936X",
         "[ad9361_device_t::_tune_bbvco] (nfrac)=" << ((vcorate / fref) - (double)nint)
                                                          * (double)modulus);
     UHD_LOG_TRACE("AD936X",
         boost::format("[ad9361_device_t::_tune_bbvco] nint=%d nfrac=%d") % nint % nfrac);
-    double actual_vcorate = fref
-            * ((double) nint + ((double) nfrac / (double) modulus));
+    double actual_vcorate = fref * ((double)nint + ((double)nfrac / (double)modulus));
 
     /* Scale CP current according to VCO rate */
-    const double icp_baseline = 150e-6;
+    const double icp_baseline  = 150e-6;
     const double freq_baseline = 1280e6;
-    double icp = icp_baseline * (actual_vcorate / freq_baseline);
-    int icp_reg = static_cast<int>(icp / 25e-6) - 1;
+    double icp                 = icp_baseline * (actual_vcorate / freq_baseline);
+    int icp_reg                = static_cast<int>(icp / 25e-6) - 1;
 
-    _io_iface->poke8(0x045, 0x00);            // REFCLK / 1 to BBPLL
-    _io_iface->poke8(0x046, icp_reg & 0x3F);  // CP current
-    _io_iface->poke8(0x048, 0xe8);            // BBPLL loop filters
-    _io_iface->poke8(0x049, 0x5b);            // BBPLL loop filters
-    _io_iface->poke8(0x04a, 0x35);            // BBPLL loop filters
+    _io_iface->poke8(0x045, 0x00); // REFCLK / 1 to BBPLL
+    _io_iface->poke8(0x046, icp_reg & 0x3F); // CP current
+    _io_iface->poke8(0x048, 0xe8); // BBPLL loop filters
+    _io_iface->poke8(0x049, 0x5b); // BBPLL loop filters
+    _io_iface->poke8(0x04a, 0x35); // BBPLL loop filters
 
     _io_iface->poke8(0x04b, 0xe0);
-    _io_iface->poke8(0x04e, 0x10);            // Max accuracy
+    _io_iface->poke8(0x04e, 0x10); // Max accuracy
 
-    _io_iface->poke8(0x043, nfrac & 0xFF);         // Nfrac[7:0]
-    _io_iface->poke8(0x042, (nfrac >> 8) & 0xFF);  // Nfrac[15:8]
+    _io_iface->poke8(0x043, nfrac & 0xFF); // Nfrac[7:0]
+    _io_iface->poke8(0x042, (nfrac >> 8) & 0xFF); // Nfrac[15:8]
     _io_iface->poke8(0x041, (nfrac >> 16) & 0xFF); // Nfrac[23:16]
-    _io_iface->poke8(0x044, nint);                 // Nint
+    _io_iface->poke8(0x044, nint); // Nint
 
     _calibrate_lock_bbpll();
 
     _regs.bbpll = (_regs.bbpll & 0xF8) | i;
 
-    _bbpll_freq = actual_vcorate;
+    _bbpll_freq    = actual_vcorate;
     _adcclock_freq = (actual_vcorate / vcodiv);
 
     return _adcclock_freq;
@@ -1242,10 +1282,10 @@ double ad9361_device_t::_tune_bbvco(const double rate)
  * settings to the appropriate index after a re-tune. */
 void ad9361_device_t::_reprogram_gains()
 {
-    set_gain(RX, CHAIN_1,_rx1_gain);
-    set_gain(RX, CHAIN_2,_rx2_gain);
-    set_gain(TX, CHAIN_1,_tx1_gain);
-    set_gain(TX, CHAIN_2,_tx2_gain);
+    set_gain(RX, CHAIN_1, _rx1_gain);
+    set_gain(RX, CHAIN_2, _rx2_gain);
+    set_gain(TX, CHAIN_1, _tx1_gain);
+    set_gain(TX, CHAIN_2, _tx2_gain);
 }
 
 /* This is the internal tune function, not available for a host call.
@@ -1255,8 +1295,8 @@ void ad9361_device_t::_reprogram_gains()
 double ad9361_device_t::_tune_helper(direction_t direction, const double value)
 {
     /* The RFPLL runs from 6 GHz - 12 GHz */
-    const double fref = 80e6;
-    const int modulus = 8388593;
+    const double fref   = 80e6;
+    const int modulus   = 8388593;
     const double vcomax = 12e9;
     const double vcomin = 6e9;
     double vcorate;
@@ -1265,7 +1305,7 @@ double ad9361_device_t::_tune_helper(direction_t direction, const double value)
     /* Iterate over VCO dividers until appropriate divider is found. */
     int i;
     for (i = 0; i <= 6; i++) {
-        vcodiv = 2 << i;
+        vcodiv  = 2 << i;
         vcorate = value * vcodiv;
         if (vcorate >= vcomin && vcorate <= vcomax)
             break;
@@ -1273,30 +1313,27 @@ double ad9361_device_t::_tune_helper(direction_t direction, const double value)
     if (i == 7)
         throw uhd::runtime_error("[ad9361_device_t] RFVCO can't find valid VCO rate!");
 
-    int nint = static_cast<int>(vcorate / fref);
+    int nint  = static_cast<int>(vcorate / fref);
     int nfrac = static_cast<int>(((vcorate / fref) - nint) * modulus);
 
-    double actual_vcorate = fref * (nint + (double) (nfrac) / modulus);
-    double actual_lo = actual_vcorate / vcodiv;
+    double actual_vcorate = fref * (nint + (double)(nfrac) / modulus);
+    double actual_lo      = actual_vcorate / vcodiv;
 
     if (direction == RX) {
-
         _req_rx_freq = value;
 
         /* Set band-specific settings. */
         if (value < _client_params->get_band_edge(AD9361_RX_BAND0)) {
             _regs.inputsel = (_regs.inputsel & 0xC0) | 0x30; // Port C, balanced
-        } else if ((value
-                >= _client_params->get_band_edge(AD9361_RX_BAND0))
-                && (value
-                        < _client_params->get_band_edge(AD9361_RX_BAND1))) {
+        } else if ((value >= _client_params->get_band_edge(AD9361_RX_BAND0))
+                   && (value < _client_params->get_band_edge(AD9361_RX_BAND1))) {
             _regs.inputsel = (_regs.inputsel & 0xC0) | 0x0C; // Port B, balanced
-        } else if ((value
-                >= _client_params->get_band_edge(AD9361_RX_BAND1))
-                && (value <= 6e9)) {
+        } else if ((value >= _client_params->get_band_edge(AD9361_RX_BAND1))
+                   && (value <= 6e9)) {
             _regs.inputsel = (_regs.inputsel & 0xC0) | 0x03; // Port A, balanced
         } else {
-            throw uhd::runtime_error("[ad9361_device_t] [_tune_helper] INVALID_CODE_PATH");
+            throw uhd::runtime_error(
+                "[ad9361_device_t] [_tune_helper] INVALID_CODE_PATH");
         }
 
         _io_iface->poke8(0x004, _regs.inputsel);
@@ -1326,18 +1363,17 @@ double ad9361_device_t::_tune_helper(direction_t direction, const double value)
         return actual_lo;
 
     } else {
-
         _req_tx_freq = value;
 
         /* Set band-specific settings. */
         if (value < _client_params->get_band_edge(AD9361_TX_BAND0)) {
             _regs.inputsel = _regs.inputsel | 0x40;
-        } else if ((value
-                >= _client_params->get_band_edge(AD9361_TX_BAND0))
-                && (value <= 6e9)) {
+        } else if ((value >= _client_params->get_band_edge(AD9361_TX_BAND0))
+                   && (value <= 6e9)) {
             _regs.inputsel = _regs.inputsel & 0xBF;
         } else {
-            throw uhd::runtime_error("[ad9361_device_t] [_tune_helper] INVALID_CODE_PATH");
+            throw uhd::runtime_error(
+                "[ad9361_device_t] [_tune_helper] INVALID_CODE_PATH");
         }
 
         _io_iface->poke8(0x004, _regs.inputsel);
@@ -1387,8 +1423,8 @@ double ad9361_device_t::_setup_rates(const double rate)
      * bring-up, and then they will be switched out to reflect the actual
      * user-requested antenna selections. */
     int divfactor = 0;
-    _tfir_factor = 0;
-    _rfir_factor = 0;
+    _tfir_factor  = 0;
+    _rfir_factor  = 0;
 
     if (rate < 0.33e6) {
         // RX1 + RX2 enabled, 3, 2, 2, 4
@@ -1397,7 +1433,7 @@ double ad9361_device_t::_setup_rates(const double rate)
         // TX1 + TX2 enabled, 3, 2, 2, 4
         _regs.txfilt = B8(11101111);
 
-        divfactor = 48;
+        divfactor    = 48;
         _tfir_factor = 4;
         _rfir_factor = 4;
     } else if (rate < 0.66e6) {
@@ -1407,7 +1443,7 @@ double ad9361_device_t::_setup_rates(const double rate)
         // TX1 + TX2 enabled, 2, 2, 2, 4
         _regs.txfilt = B8(11011111);
 
-        divfactor = 32;
+        divfactor    = 32;
         _tfir_factor = 4;
         _rfir_factor = 4;
     } else if (rate <= 20e6) {
@@ -1417,7 +1453,7 @@ double ad9361_device_t::_setup_rates(const double rate)
         // TX1 + TX2 enabled, 2, 2, 2, 2
         _regs.txfilt = B8(11011110);
 
-        divfactor = 16;
+        divfactor    = 16;
         _tfir_factor = 2;
         _rfir_factor = 2;
     } else if ((rate > 20e6) && (rate < 23e6)) {
@@ -1427,7 +1463,7 @@ double ad9361_device_t::_setup_rates(const double rate)
         // TX1 + TX2 enabled, 3, 1, 2, 2
         _regs.txfilt = B8(11100110);
 
-        divfactor = 24;
+        divfactor    = 24;
         _tfir_factor = 2;
         _rfir_factor = 2;
     } else if ((rate >= 23e6) && (rate < 41e6)) {
@@ -1437,7 +1473,7 @@ double ad9361_device_t::_setup_rates(const double rate)
         // TX1 + TX2 enabled, 1, 2, 2, 2
         _regs.txfilt = B8(11001110);
 
-        divfactor = 16;
+        divfactor    = 16;
         _tfir_factor = 2;
         _rfir_factor = 2;
     } else if ((rate >= 41e6) && (rate <= 58e6)) {
@@ -1447,7 +1483,7 @@ double ad9361_device_t::_setup_rates(const double rate)
         // TX1 + TX2 enabled, 3, 1, 1, 2
         _regs.txfilt = B8(11100010);
 
-        divfactor = 12;
+        divfactor    = 12;
         _tfir_factor = 2;
         _rfir_factor = 2;
     } else if ((rate > 58e6) && (rate <= 61.44e6)) {
@@ -1458,7 +1494,7 @@ double ad9361_device_t::_setup_rates(const double rate)
         // TX1 + TX2 enabled, 2, 1, 1, 2
         _regs.txfilt = B8(11010010);
 
-        divfactor = 8;
+        divfactor    = 8;
         _tfir_factor = 2;
         _rfir_factor = 2;
     } else {
@@ -1470,14 +1506,14 @@ double ad9361_device_t::_setup_rates(const double rate)
 
     /* Tune the BBPLL to get the ADC and DAC clocks. */
     const double adcclk = _tune_bbvco(rate * divfactor);
-    double dacclk = adcclk;
+    double dacclk       = adcclk;
 
     /* The DAC clock must be <= 336e6, and is either the ADC clock or 1/2 the
      * ADC clock.*/
     if (adcclk > 336e6) {
         /* Make the DAC clock = ADC/2 */
         _regs.bbpll = _regs.bbpll | 0x08;
-        dacclk = adcclk / 2.0;
+        dacclk      = adcclk / 2.0;
     } else {
         _regs.bbpll = _regs.bbpll & 0xF7;
     }
@@ -1492,24 +1528,27 @@ double ad9361_device_t::_setup_rates(const double rate)
     _baseband_bw = (adcclk / divfactor);
 
     /*
-     The Tx & Rx FIR calculate 16 taps per clock cycle. This limits the number of available taps to the ratio of DAC_CLK/ADC_CLK
-     to the input data rate multiplied by 16. For example, if the input data rate is 25 MHz and DAC_CLK is 100 MHz,
-     then the ratio of DAC_CLK to the input data rate is 100/25 or 4. In this scenario, the total number of taps available is 64.
+     The Tx & Rx FIR calculate 16 taps per clock cycle. This limits the number of
+     available taps to the ratio of DAC_CLK/ADC_CLK to the input data rate multiplied
+     by 16. For example, if the input data rate is 25 MHz and DAC_CLK is 100 MHz, then the
+     ratio of DAC_CLK to the input data rate is 100/25 or 4. In this scenario, the total
+     number of taps available is 64.
 
-     Also, whilst the Rx FIR filter always has memory available for 128 taps, the Tx FIR Filter can only support a maximum length of 64 taps
-     in 1x interpolation mode, and 128 taps in 2x & 4x modes.
+     Also, whilst the Rx FIR filter always has memory available for 128 taps, the Tx FIR
+     Filter can only support a maximum length of 64 taps in 1x interpolation mode, and 128
+     taps in 2x & 4x modes.
      */
-    const size_t max_tx_taps = std::min<size_t>(
-            std::min<size_t>((16 * (int)((dacclk / rate) + 0.5)), 128),
+    const size_t max_tx_taps =
+        std::min<size_t>(std::min<size_t>((16 * (int)((dacclk / rate) + 0.5)), 128),
             (_tfir_factor == 1) ? 64 : 128);
-    const size_t max_rx_taps = std::min<size_t>((16 * (size_t)((adcclk / rate) + 0.5)),
-            128);
+    const size_t max_rx_taps =
+        std::min<size_t>((16 * (size_t)((adcclk / rate) + 0.5)), 128);
 
     const size_t num_tx_taps = get_num_taps(max_tx_taps);
     const size_t num_rx_taps = get_num_taps(max_rx_taps);
 
-    _setup_tx_fir(num_tx_taps,_tfir_factor);
-    _setup_rx_fir(num_rx_taps,_rfir_factor);
+    _setup_tx_fir(num_tx_taps, _tfir_factor);
+    _setup_rx_fir(num_rx_taps, _rfir_factor);
 
     return _baseband_bw;
 }
@@ -1522,42 +1561,42 @@ void ad9361_device_t::initialize()
     std::lock_guard<std::recursive_mutex> lock(_mutex);
 
     /* Initialize shadow registers. */
-    _regs.vcodivs = 0x00;
-    _regs.inputsel = 0x30;
-    _regs.rxfilt = 0x00;
-    _regs.txfilt = 0x00;
-    _regs.bbpll = 0x02;
+    _regs.vcodivs        = 0x00;
+    _regs.inputsel       = 0x30;
+    _regs.rxfilt         = 0x00;
+    _regs.txfilt         = 0x00;
+    _regs.bbpll          = 0x02;
     _regs.bbftune_config = 0x1e;
-    _regs.bbftune_mode = 0x1e;
+    _regs.bbftune_mode   = 0x1e;
 
     /* Initialize private VRQ fields. */
-    _rx_freq = DEFAULT_RX_FREQ;
-    _tx_freq = DEFAULT_TX_FREQ;
-    _req_rx_freq = 0.0;
-    _req_tx_freq = 0.0;
-    _baseband_bw = 0.0;
-    _req_clock_rate = 0.0;
-    _req_coreclk = 0.0;
-    _bbpll_freq = 0.0;
-    _adcclock_freq = 0.0;
-    _rx_bbf_tunediv = 0;
-    _curr_gain_table = 0;
-    _rx1_gain = 0;
-    _rx2_gain = 0;
-    _tx1_gain = 0;
-    _tx2_gain = 0;
-    _use_dc_offset_tracking = true;
+    _rx_freq                 = DEFAULT_RX_FREQ;
+    _tx_freq                 = DEFAULT_TX_FREQ;
+    _req_rx_freq             = 0.0;
+    _req_tx_freq             = 0.0;
+    _baseband_bw             = 0.0;
+    _req_clock_rate          = 0.0;
+    _req_coreclk             = 0.0;
+    _bbpll_freq              = 0.0;
+    _adcclock_freq           = 0.0;
+    _rx_bbf_tunediv          = 0;
+    _curr_gain_table         = 0;
+    _rx1_gain                = 0;
+    _rx2_gain                = 0;
+    _tx1_gain                = 0;
+    _tx2_gain                = 0;
+    _use_dc_offset_tracking  = true;
     _use_iq_balance_tracking = true;
-    _rx1_agc_mode = GAIN_MODE_SLOW_AGC;
-    _rx2_agc_mode = GAIN_MODE_SLOW_AGC;
-    _rx1_agc_enable = false;
-    _rx2_agc_enable = false;
-    _rx_analog_bw = 0;
-    _tx_analog_bw = 0;
-    _rx_tia_lp_bw = 0;
-    _tx_sec_lp_bw = 0;
-    _rx_bb_lp_bw = 0;
-    _tx_bb_lp_bw = 0;
+    _rx1_agc_mode            = GAIN_MODE_SLOW_AGC;
+    _rx2_agc_mode            = GAIN_MODE_SLOW_AGC;
+    _rx1_agc_enable          = false;
+    _rx2_agc_enable          = false;
+    _rx_analog_bw            = 0;
+    _tx_analog_bw            = 0;
+    _rx_tia_lp_bw            = 0;
+    _tx_sec_lp_bw            = 0;
+    _rx_bb_lp_bw             = 0;
+    _tx_bb_lp_bw             = 0;
 
     /* Reset the device. */
     _io_iface->poke8(0x000, 0x01);
@@ -1567,7 +1606,10 @@ void ad9361_device_t::initialize()
     /* Check device ID to make sure iface works */
     uint32_t device_id = (_io_iface->peek8(0x037) & 0x8);
     if (device_id != 0x8) {
-        throw uhd::runtime_error(str(boost::format("[ad9361_device_t::initialize] Device ID readback failure. Expected: 0x8, Received: 0x%x") % device_id));
+        throw uhd::runtime_error(
+            str(boost::format("[ad9361_device_t::initialize] Device ID readback failure. "
+                              "Expected: 0x8, Received: 0x%x")
+                % device_id));
     }
 
     /* There is not a WAT big enough for this. */
@@ -1582,20 +1624,20 @@ void ad9361_device_t::initialize()
 
     /* Enable clocks. */
     switch (_client_params->get_clocking_mode()) {
-    case clocking_mode_t::AD9361_XTAL_N_CLK_PATH: {
-        _io_iface->poke8(0x009, 0x17);
-    } break;
+        case clocking_mode_t::AD9361_XTAL_N_CLK_PATH: {
+            _io_iface->poke8(0x009, 0x17);
+        } break;
 
-    case clocking_mode_t::AD9361_XTAL_P_CLK_PATH: {
-        _io_iface->poke8(0x009, 0x07);
-        _io_iface->poke8(0x292, 0x08);
-        _io_iface->poke8(0x293, 0x80);
-        _io_iface->poke8(0x294, 0x00);
-        _io_iface->poke8(0x295, 0x14);
-    } break;
+        case clocking_mode_t::AD9361_XTAL_P_CLK_PATH: {
+            _io_iface->poke8(0x009, 0x07);
+            _io_iface->poke8(0x292, 0x08);
+            _io_iface->poke8(0x293, 0x80);
+            _io_iface->poke8(0x294, 0x00);
+            _io_iface->poke8(0x295, 0x14);
+        } break;
 
-    default:
-        throw uhd::runtime_error("[ad9361_device_t] NOT IMPLEMENTED");
+        default:
+            throw uhd::runtime_error("[ad9361_device_t] NOT IMPLEMENTED");
     }
     std::this_thread::sleep_for(std::chrono::milliseconds(20));
 
@@ -1606,34 +1648,33 @@ void ad9361_device_t::initialize()
      *      FDD dual port DDR CMOS no swap.
      *      Force TX on one port, RX on the other. */
     switch (_client_params->get_digital_interface_mode()) {
-    case AD9361_DDR_FDD_LVCMOS: {
-        _io_iface->poke8(0x010, 0xc8); // Swap I&Q on Tx, Swap I&Q on Rx, Toggle frame sync mode
-        _io_iface->poke8(0x011, 0x00);
-        _io_iface->poke8(0x012, 0x02);
-    } break;
+        case AD9361_DDR_FDD_LVCMOS: {
+            _io_iface->poke8(
+                0x010, 0xc8); // Swap I&Q on Tx, Swap I&Q on Rx, Toggle frame sync mode
+            _io_iface->poke8(0x011, 0x00);
+            _io_iface->poke8(0x012, 0x02);
+        } break;
 
-    case AD9361_DDR_FDD_LVDS: {
-        _io_iface->poke8(0x010, 0xcc); // Swap I&Q on Tx, Swap I&Q on Rx, Toggle frame sync mode, 2R2T timing.
-        _io_iface->poke8(0x011, 0x00);
-        _io_iface->poke8(0x012, 0x10);
+        case AD9361_DDR_FDD_LVDS: {
+            _io_iface->poke8(0x010, 0xcc); // Swap I&Q on Tx, Swap I&Q on Rx, Toggle frame
+                                           // sync mode, 2R2T timing.
+            _io_iface->poke8(0x011, 0x00);
+            _io_iface->poke8(0x012, 0x10);
 
-        //LVDS Specific
-        _io_iface->poke8(0x03C, 0x23);
-        _io_iface->poke8(0x03D, 0xFF);
-        _io_iface->poke8(0x03E, 0x0F);
-    } break;
+            // LVDS Specific
+            _io_iface->poke8(0x03C, 0x23);
+            _io_iface->poke8(0x03D, 0xFF);
+            _io_iface->poke8(0x03E, 0x0F);
+        } break;
 
-    default:
-        throw uhd::runtime_error("[ad9361_device_t] NOT IMPLEMENTED");
+        default:
+            throw uhd::runtime_error("[ad9361_device_t] NOT IMPLEMENTED");
     }
 
     /* Data delay for TX and RX data clocks */
-    digital_interface_delays_t timing =
-            _client_params->get_digital_interface_timing();
-    uint8_t rx_delays = ((timing.rx_clk_delay & 0xF) << 4)
-            | (timing.rx_data_delay & 0xF);
-    uint8_t tx_delays = ((timing.tx_clk_delay & 0xF) << 4)
-            | (timing.tx_data_delay & 0xF);
+    digital_interface_delays_t timing = _client_params->get_digital_interface_timing();
+    uint8_t rx_delays = ((timing.rx_clk_delay & 0xF) << 4) | (timing.rx_data_delay & 0xF);
+    uint8_t tx_delays = ((timing.tx_clk_delay & 0xF) << 4) | (timing.tx_data_delay & 0xF);
     _io_iface->poke8(0x006, rx_delays);
     _io_iface->poke8(0x007, tx_delays);
 
@@ -1670,7 +1711,7 @@ void ad9361_device_t::initialize()
     _io_iface->poke8(0x036, 0xFF);
 
     /* Setup GPO */
-    _io_iface->poke8(0x03a, 0x27); //set delay register
+    _io_iface->poke8(0x03a, 0x27); // set delay register
     _io_iface->poke8(0x020, 0x00); // GPO Auto Enable Setup in RX and TX
     _io_iface->poke8(0x027, 0x03); // GPO Manual and GPO auto value in ALERT
     _io_iface->poke8(0x028, 0x00); // GPO_0 RX Delay
@@ -1739,16 +1780,16 @@ void ad9361_device_t::initialize()
 
     // cals done, set PPORT config
     switch (_client_params->get_digital_interface_mode()) {
-    case AD9361_DDR_FDD_LVCMOS: {
-        _io_iface->poke8(0x012, 0x02);
-    } break;
+        case AD9361_DDR_FDD_LVCMOS: {
+            _io_iface->poke8(0x012, 0x02);
+        } break;
 
-    case AD9361_DDR_FDD_LVDS: {
-        _io_iface->poke8(0x012, 0x10);
-    } break;
+        case AD9361_DDR_FDD_LVDS: {
+            _io_iface->poke8(0x012, 0x10);
+        } break;
 
-    default:
-        throw uhd::runtime_error("[ad9361_device_t] NOT IMPLEMENTED");
+        default:
+            throw uhd::runtime_error("[ad9361_device_t] NOT IMPLEMENTED");
     }
 
     _io_iface->poke8(0x013, 0x01); // Set ENSM FDD bit
@@ -1794,7 +1835,8 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
     std::lock_guard<std::recursive_mutex> lock(_mutex);
 
     if (req_rate > 61.44e6) {
-        throw uhd::runtime_error("[ad9361_device_t] Requested master clock rate outside range");
+        throw uhd::runtime_error(
+            "[ad9361_device_t] Requested master clock rate outside range");
     }
 
     UHD_LOG_TRACE("AD936X", "[ad9361_device_t::set_clock_rate] req_rate=" << req_rate);
@@ -1812,21 +1854,22 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
      * there, transition the ENSM to State 0. */
     uint8_t current_state = _io_iface->peek8(0x017) & 0x0F;
     switch (current_state) {
-    case 0x05:
-        /* We are in the ALERT state. */
-        _io_iface->poke8(0x014, 0x21);
-        std::this_thread::sleep_for(std::chrono::milliseconds(5));
-        _io_iface->poke8(0x014, 0x00);
-        break;
+        case 0x05:
+            /* We are in the ALERT state. */
+            _io_iface->poke8(0x014, 0x21);
+            std::this_thread::sleep_for(std::chrono::milliseconds(5));
+            _io_iface->poke8(0x014, 0x00);
+            break;
 
-    case 0x0A:
-        /* We are in the FDD state. */
-        _io_iface->poke8(0x014, 0x00);
-        break;
+        case 0x0A:
+            /* We are in the FDD state. */
+            _io_iface->poke8(0x014, 0x00);
+            break;
 
-    default:
-        throw uhd::runtime_error("[ad9361_device_t] [set_clock_rate:1] AD9361 in unknown state");
-        break;
+        default:
+            throw uhd::runtime_error(
+                "[ad9361_device_t] [set_clock_rate:1] AD9361 in unknown state");
+            break;
     };
 
     /* Store the current chain / antenna selections so that we can restore
@@ -1842,9 +1885,9 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
     UHD_LOG_TRACE("AD936X", "[ad9361_device_t::set_clock_rate] rate=" << rate);
 
     /* Transition to the ALERT state and calibrate everything. */
-    _io_iface->poke8(0x015, 0x04); //dual synth mode, synth en ctrl en
-    _io_iface->poke8(0x014, 0x05); //use SPI for TXNRX ctrl, to ALERT, TX on
-    _io_iface->poke8(0x013, 0x01); //enable ENSM
+    _io_iface->poke8(0x015, 0x04); // dual synth mode, synth en ctrl en
+    _io_iface->poke8(0x014, 0x05); // use SPI for TXNRX ctrl, to ALERT, TX on
+    _io_iface->poke8(0x013, 0x01); // enable ENSM
     std::this_thread::sleep_for(std::chrono::milliseconds(1));
 
     _calibrate_synth_charge_pumps();
@@ -1882,38 +1925,39 @@ double ad9361_device_t::set_clock_rate(const double req_rate)
     switch (_client_params->get_digital_interface_mode()) {
         case AD9361_DDR_FDD_LVCMOS: {
             _io_iface->poke8(0x012, 0x02);
-        }break;
+        } break;
 
         case AD9361_DDR_FDD_LVDS: {
             _io_iface->poke8(0x012, 0x10);
-        }break;
+        } break;
 
         default:
-        throw uhd::runtime_error("[ad9361_device_t] NOT IMPLEMENTED");
+            throw uhd::runtime_error("[ad9361_device_t] NOT IMPLEMENTED");
     }
     _io_iface->poke8(0x013, 0x01); // Set ENSM FDD bit
     _io_iface->poke8(0x015, 0x04); // dual synth mode, synth en ctrl en
 
     /* End the function in the same state as the entry state. */
     switch (current_state) {
-    case 0x05:
-        /* We are already in ALERT. */
-        break;
+        case 0x05:
+            /* We are already in ALERT. */
+            break;
 
-    case 0x0A:
-        /* Transition back to FDD, and restore the original antenna
-         * / chain selections. */
-        _regs.txfilt = (_regs.txfilt & 0x3F) | orig_tx_chains;
-        _regs.rxfilt = (_regs.rxfilt & 0x3F) | orig_rx_chains;
+        case 0x0A:
+            /* Transition back to FDD, and restore the original antenna
+             * / chain selections. */
+            _regs.txfilt = (_regs.txfilt & 0x3F) | orig_tx_chains;
+            _regs.rxfilt = (_regs.rxfilt & 0x3F) | orig_rx_chains;
 
-        _io_iface->poke8(0x002, _regs.txfilt);
-        _io_iface->poke8(0x003, _regs.rxfilt);
-        _io_iface->poke8(0x014, 0x21);
-        break;
+            _io_iface->poke8(0x002, _regs.txfilt);
+            _io_iface->poke8(0x003, _regs.rxfilt);
+            _io_iface->poke8(0x014, 0x21);
+            break;
 
-    default:
-        throw uhd::runtime_error("[ad9361_device_t] [set_clock_rate:2] AD9361 in unknown state");
-        break;
+        default:
+            throw uhd::runtime_error(
+                "[ad9361_device_t] [set_clock_rate:2] AD9361 in unknown state");
+            break;
     };
 
     return get_clock_rate();
@@ -1967,9 +2011,9 @@ void ad9361_device_t::set_active_chains(bool tx1, bool tx2, bool rx1, bool rx2)
 
     /* Check for FDD state */
     uint8_t set_back_to_fdd = 0;
-    uint8_t ensm_state = _io_iface->peek8(0x017) & 0x0F;
-    if (ensm_state == 0xA)   // FDD
-            {
+    uint8_t ensm_state      = _io_iface->peek8(0x017) & 0x0F;
+    if (ensm_state == 0xA) // FDD
+    {
         /* Put into ALERT state (via the FDD flush state). */
         _io_iface->poke8(0x014, 0x01);
         set_back_to_fdd = 1;
@@ -2003,38 +2047,42 @@ void ad9361_device_t::set_active_chains(bool tx1, bool tx2, bool rx1, bool rx2)
 void ad9361_device_t::set_timing_mode(const ad9361_device_t::timing_mode_t timing_mode)
 {
     switch (_client_params->get_digital_interface_mode()) {
-    case AD9361_DDR_FDD_LVCMOS: {
-        switch(timing_mode) {
-        case TIMING_MODE_1R1T: {
-            _io_iface->poke8(0x010, 0xc8); // Swap I&Q on Tx, Swap I&Q on Rx, Toggle frame sync mode
+        case AD9361_DDR_FDD_LVCMOS: {
+            switch (timing_mode) {
+                case TIMING_MODE_1R1T: {
+                    _io_iface->poke8(0x010,
+                        0xc8); // Swap I&Q on Tx, Swap I&Q on Rx, Toggle frame sync mode
+                    break;
+                }
+                case TIMING_MODE_2R2T: {
+                    throw uhd::runtime_error("[ad9361_device_t] [set_timing_mode] 2R2T "
+                                             "timing mode not supported for CMOS");
+                    break;
+                }
+                default:
+                    UHD_THROW_INVALID_CODE_PATH();
+            }
             break;
         }
-        case TIMING_MODE_2R2T: {
-            throw uhd::runtime_error("[ad9361_device_t] [set_timing_mode] 2R2T timing mode not supported for CMOS");
+        case AD9361_DDR_FDD_LVDS: {
+            switch (timing_mode) {
+                case TIMING_MODE_1R1T: {
+                    _io_iface->poke8(0x010, 0xc8); // Swap I&Q on Tx, Swap I&Q on Rx,
+                                                   // Toggle frame sync mode, 1R1T timing.
+                    break;
+                }
+                case TIMING_MODE_2R2T: {
+                    _io_iface->poke8(0x010, 0xcc); // Swap I&Q on Tx, Swap I&Q on Rx,
+                                                   // Toggle frame sync mode, 2R2T timing.
+                    break;
+                }
+                default:
+                    UHD_THROW_INVALID_CODE_PATH();
+            }
             break;
         }
         default:
-        UHD_THROW_INVALID_CODE_PATH();
-        }
-    break;
-    }
-    case AD9361_DDR_FDD_LVDS: {
-        switch(timing_mode) {
-        case TIMING_MODE_1R1T: {
-            _io_iface->poke8(0x010, 0xc8); // Swap I&Q on Tx, Swap I&Q on Rx, Toggle frame sync mode, 1R1T timing.
-            break;
-        }
-        case TIMING_MODE_2R2T: {
-            _io_iface->poke8(0x010, 0xcc); // Swap I&Q on Tx, Swap I&Q on Rx, Toggle frame sync mode, 2R2T timing.
-            break;
-        }
-        default:
-        UHD_THROW_INVALID_CODE_PATH();
-        }
-    break;
-    }
-    default:
-        throw uhd::runtime_error("[ad9361_device_t] NOT IMPLEMENTED");
+            throw uhd::runtime_error("[ad9361_device_t] NOT IMPLEMENTED");
     }
 }
 
@@ -2138,7 +2186,6 @@ double ad9361_device_t::set_gain(direction_t direction, chain_t chain, const dou
     std::lock_guard<std::recursive_mutex> lock(_mutex);
 
     if (direction == RX) {
-
         int gain_index = static_cast<int>(value);
 
         /* Clip the gain values to the proper min/max gain values. */
@@ -2169,7 +2216,7 @@ double ad9361_device_t::set_gain(direction_t direction, chain_t chain, const dou
          * "value" is out of bounds, so range checking must be performed
          * outside this function.
          */
-        double atten = AD9361_MAX_GAIN - value;
+        double atten      = AD9361_MAX_GAIN - value;
         uint32_t attenreg = uint32_t(atten * 4);
         if (chain == CHAIN_1) {
             _tx1_gain = value;
@@ -2180,11 +2227,11 @@ double ad9361_device_t::set_gain(direction_t direction, chain_t chain, const dou
             _io_iface->poke8(0x075, attenreg & 0xFF);
             _io_iface->poke8(0x076, (attenreg >> 8) & 0x01);
         }
-        return AD9361_MAX_GAIN - ((double) (attenreg) / 4);
+        return AD9361_MAX_GAIN - ((double)(attenreg) / 4);
     }
 }
 
-void ad9361_device_t::output_test_tone()  // On RF side!
+void ad9361_device_t::output_test_tone() // On RF side!
 {
     std::lock_guard<std::recursive_mutex> lock(_mutex);
     /* Output a 480 kHz tone at 800 MHz */
@@ -2212,19 +2259,20 @@ void ad9361_device_t::data_port_loopback(const bool loopback_enabled)
  * -0.25dB / bit 9bit resolution.*/
 double ad9361_device_t::get_rssi(chain_t chain)
 {
-    uint32_t reg_rssi = 0;
+    uint32_t reg_rssi   = 0;
     uint8_t lsb_bit_pos = 0;
     if (chain == CHAIN_1) {
-        reg_rssi = 0x1A7;
+        reg_rssi    = 0x1A7;
         lsb_bit_pos = 0;
-    }else {
-        reg_rssi = 0x1A9;
+    } else {
+        reg_rssi    = 0x1A9;
         lsb_bit_pos = 1;
     }
     uint8_t msbs = _io_iface->peek8(reg_rssi);
-    uint8_t lsb = ((_io_iface->peek8(0x1AB)) >> lsb_bit_pos) & 0x01;
+    uint8_t lsb  = ((_io_iface->peek8(0x1AB)) >> lsb_bit_pos) & 0x01;
     uint16_t val = ((msbs << 1) | lsb);
-    double rssi = (-0.25f * ((double)val)); //-0.25dB/lsb (See Gain Control Users Guide p. 25)
+    double rssi =
+        (-0.25f * ((double)val)); //-0.25dB/lsb (See Gain Control Users Guide p. 25)
     return rssi;
 }
 
@@ -2235,39 +2283,40 @@ double ad9361_device_t::get_rssi(chain_t chain)
  */
 double ad9361_device_t::_get_temperature(const double cal_offset, const double timeout)
 {
-    //set 0x01D[0] to 1 to disable AuxADC GPIO reading
+    // set 0x01D[0] to 1 to disable AuxADC GPIO reading
     uint8_t tmp = 0;
-    tmp = _io_iface->peek8(0x01D);
+    tmp         = _io_iface->peek8(0x01D);
     _io_iface->poke8(0x01D, (tmp | 0x01));
-    _io_iface->poke8(0x00B, 0); //set offset to 0
+    _io_iface->poke8(0x00B, 0); // set offset to 0
 
-    _io_iface->poke8(0x00C, 0x01); //start reading, clears bit 0x00C[1]
-    auto end_time =
-        std::chrono::steady_clock::now()
-        + std::chrono::milliseconds(int64_t(timeout * 1000));
-    //wait for valid data (toggle of bit 1 in 0x00C)
-    while(((_io_iface->peek8(0x00C) >> 1) & 0x01) == 0) {
+    _io_iface->poke8(0x00C, 0x01); // start reading, clears bit 0x00C[1]
+    auto end_time = std::chrono::steady_clock::now()
+                    + std::chrono::milliseconds(int64_t(timeout * 1000));
+    // wait for valid data (toggle of bit 1 in 0x00C)
+    while (((_io_iface->peek8(0x00C) >> 1) & 0x01) == 0) {
         std::this_thread::sleep_for(std::chrono::microseconds(100));
         if (std::chrono::steady_clock::now() > end_time) {
             throw uhd::runtime_error(
                 "[ad9361_device_t] timeout while reading temperature");
         }
     }
-    _io_iface->poke8(0x00C, 0x00); //clear read flag
+    _io_iface->poke8(0x00C, 0x00); // clear read flag
 
-    uint8_t temp = _io_iface->peek8(0x00E); //read temperature.
-    double tmp_temp = temp/1.140f; //according to ADI driver
-    tmp_temp = tmp_temp + cal_offset; //Constant offset acquired by one point calibration.
+    uint8_t temp    = _io_iface->peek8(0x00E); // read temperature.
+    double tmp_temp = temp / 1.140f; // according to ADI driver
+    tmp_temp        = tmp_temp + cal_offset; // Constant offset acquired by one point
+                                      // calibration.
 
     return tmp_temp;
 }
 
-double ad9361_device_t::get_average_temperature(const double cal_offset, const size_t num_samples)
+double ad9361_device_t::get_average_temperature(
+    const double cal_offset, const size_t num_samples)
 {
     double d_temp = 0;
-    for(size_t i = 0; i < num_samples; i++) {
+    for (size_t i = 0; i < num_samples; i++) {
         double tmp_temp = _get_temperature(cal_offset);
-        d_temp += (tmp_temp/num_samples);
+        d_temp += (tmp_temp / num_samples);
     }
     return d_temp;
 }
@@ -2289,7 +2338,8 @@ void ad9361_device_t::set_dc_offset_auto(direction_t direction, const bool on)
         _use_dc_offset_tracking = on;
         _configure_bb_dc_tracking();
     } else {
-        throw uhd::runtime_error("[ad9361_device_t] [set_dc_offset_auto] Tx DC tracking not supported");
+        throw uhd::runtime_error(
+            "[ad9361_device_t] [set_dc_offset_auto] Tx DC tracking not supported");
     }
 }
 
@@ -2312,7 +2362,8 @@ void ad9361_device_t::set_iq_balance_auto(direction_t direction, const bool on)
             _io_iface->poke8(0x014, 0x21); // FDD mode
         }
     } else {
-        throw uhd::runtime_error("[ad9361_device_t] [set_iq_balance_auto] Tx IQ tracking not supported");
+        throw uhd::runtime_error(
+            "[ad9361_device_t] [set_iq_balance_auto] Tx IQ tracking not supported");
     }
 }
 
@@ -2321,41 +2372,41 @@ void ad9361_device_t::set_iq_balance_auto(direction_t direction, const bool on)
  * the gain configuration will be reloaded. */
 void ad9361_device_t::_setup_agc(chain_t chain, gain_mode_t gain_mode)
 {
-    uint8_t gain_mode_reg = 0;
-    uint8_t gain_mode_prev = 0;
+    uint8_t gain_mode_reg      = 0;
+    uint8_t gain_mode_prev     = 0;
     uint8_t gain_mode_bits_pos = 0;
 
-    gain_mode_reg = _io_iface->peek8(0x0FA);
+    gain_mode_reg  = _io_iface->peek8(0x0FA);
     gain_mode_prev = (gain_mode_reg & 0x0F);
 
     if (chain == CHAIN_1) {
         gain_mode_bits_pos = 0;
     } else if (chain == CHAIN_2) {
         gain_mode_bits_pos = 2;
-    } else
-    {
+    } else {
         throw uhd::runtime_error("[ad9361_device_t] Wrong value for chain");
     }
 
-    gain_mode_reg = (gain_mode_reg & (~(0x03<<gain_mode_bits_pos))); //clear mode bits
+    gain_mode_reg = (gain_mode_reg & (~(0x03 << gain_mode_bits_pos))); // clear mode bits
     switch (gain_mode) {
         case GAIN_MODE_MANUAL:
-            //leave bits cleared
+            // leave bits cleared
             break;
         case GAIN_MODE_SLOW_AGC:
-            gain_mode_reg = (gain_mode_reg | (0x02<<gain_mode_bits_pos));
+            gain_mode_reg = (gain_mode_reg | (0x02 << gain_mode_bits_pos));
             break;
         case GAIN_MODE_FAST_AGC:
-            gain_mode_reg = (gain_mode_reg | (0x01<<gain_mode_bits_pos));
+            gain_mode_reg = (gain_mode_reg | (0x01 << gain_mode_bits_pos));
             break;
         default:
             throw uhd::runtime_error("[ad9361_device_t] Gain mode does not exist");
     }
     _io_iface->poke8(0x0FA, gain_mode_reg);
     uint8_t gain_mode_status = _io_iface->peek8(0x0FA);
-    gain_mode_status = (gain_mode_status & 0x0F);
+    gain_mode_status         = (gain_mode_status & 0x0F);
     /*Check if gain mode configuration needs to be reprogrammed*/
-    if (((gain_mode_prev == 0) && (gain_mode_status != 0)) || ((gain_mode_prev != 0) && (gain_mode_status == 0))) {
+    if (((gain_mode_prev == 0) && (gain_mode_status != 0))
+        || ((gain_mode_prev != 0) && (gain_mode_status == 0))) {
         if (gain_mode_status == 0) {
             /*load manual mode config*/
             _setup_gain_control(false);
@@ -2368,50 +2419,45 @@ void ad9361_device_t::_setup_agc(chain_t chain, gain_mode_t gain_mode)
 
 void ad9361_device_t::set_agc(chain_t chain, bool enable)
 {
-    if(chain == CHAIN_1) {
+    if (chain == CHAIN_1) {
         _rx1_agc_enable = enable;
-        if(enable) {
+        if (enable) {
             _setup_agc(chain, _rx1_agc_mode);
         } else {
             _setup_agc(chain, GAIN_MODE_MANUAL);
         }
-    } else if (chain == CHAIN_2){
+    } else if (chain == CHAIN_2) {
         _rx2_agc_enable = enable;
-        if(enable) {
+        if (enable) {
             _setup_agc(chain, _rx2_agc_mode);
         } else {
             _setup_agc(chain, GAIN_MODE_MANUAL);
         }
-    } else
-    {
+    } else {
         throw uhd::runtime_error("[ad9361_device_t] Wrong value for chain");
     }
 }
 
 void ad9361_device_t::set_agc_mode(chain_t chain, gain_mode_t gain_mode)
 {
-    if(chain == CHAIN_1) {
+    if (chain == CHAIN_1) {
         _rx1_agc_mode = gain_mode;
-        if(_rx1_agc_enable) {
+        if (_rx1_agc_enable) {
             _setup_agc(chain, _rx1_agc_mode);
         }
-    } else if(chain == CHAIN_2){
+    } else if (chain == CHAIN_2) {
         _rx2_agc_mode = gain_mode;
-        if(_rx2_agc_enable) {
+        if (_rx2_agc_enable) {
             _setup_agc(chain, _rx2_agc_mode);
         }
-    } else
-    {
+    } else {
         throw uhd::runtime_error("[ad9361_device_t] Wrong value for chain");
     }
 }
 
 std::vector<std::string> ad9361_device_t::get_filter_names(direction_t direction)
 {
-    auto& filters = (direction == RX)
-        ? _rx_filters
-        : _tx_filters
-    ;
+    auto& filters = (direction == RX) ? _rx_filters : _tx_filters;
 
     std::vector<std::string> ret;
     ret.reserve(filters.size());
@@ -2423,68 +2469,53 @@ std::vector<std::string> ad9361_device_t::get_filter_names(direction_t direction
 }
 
 filter_info_base::sptr ad9361_device_t::get_filter(
-        direction_t direction,
-        chain_t chain,
-        const std::string &name
-) {
-    auto& filters = (direction == RX)
-        ? _rx_filters
-        : _tx_filters
-    ;
+    direction_t direction, chain_t chain, const std::string& name)
+{
+    auto& filters = (direction == RX) ? _rx_filters : _tx_filters;
 
     if (!filters.count(name)) {
         throw uhd::runtime_error(
-            "ad9361_device_t::get_filter this filter does not exist: " + name
-        );
+            "ad9361_device_t::get_filter this filter does not exist: " + name);
     }
     // Check entry 0 in the tuple (the getter) exists before calling it
     if (!std::get<0>(filters[name])) {
         throw uhd::runtime_error(
-            "ad9361_device_t::get_filter this filter can not be read: " + name
-        );
+            "ad9361_device_t::get_filter this filter can not be read: " + name);
     }
     return std::get<0>(filters[name])(chain);
 }
 
-void ad9361_device_t::set_filter(
-        direction_t direction,
-        chain_t chain,
-        const std::string &name,
-        filter_info_base::sptr filter
-) {
-    auto& filters = (direction == RX)
-        ? _rx_filters
-        : _tx_filters
-    ;
+void ad9361_device_t::set_filter(direction_t direction,
+    chain_t chain,
+    const std::string& name,
+    filter_info_base::sptr filter)
+{
+    auto& filters = (direction == RX) ? _rx_filters : _tx_filters;
 
     if (!filters.count(name)) {
         throw uhd::runtime_error(
-            "ad9361_device_t::set_filter this filter does not exist: " + name
-        );
+            "ad9361_device_t::set_filter this filter does not exist: " + name);
     }
     // Check entry 1 in the tuple (the setter) exists before calling it
     if (!std::get<1>(filters[name])) {
         throw uhd::runtime_error(
-            "ad9361_device_t::set_filter this filter can not be written: " +
-            name
-        );
+            "ad9361_device_t::set_filter this filter can not be written: " + name);
     }
     std::get<1>(filters[name])(chain, filter);
 }
 
 double ad9361_device_t::set_bw_filter(direction_t direction, const double rf_bw)
 {
-    //both low pass filters are programmed to the same bw. However, their cutoffs will differ.
-    //Together they should create the requested bb bw.
-    //Select rf_bw if it is between AD9361_MIN_BW & AD9361_MAX_BW.
+    // both low pass filters are programmed to the same bw. However, their cutoffs will
+    // differ. Together they should create the requested bb bw. Select rf_bw if it is
+    // between AD9361_MIN_BW & AD9361_MAX_BW.
     const double clipped_bw = std::min(std::max(rf_bw, AD9361_MIN_BW), AD9361_MAX_BW);
-    if(direction == RX)
-    {
-        _rx_bb_lp_bw = _calibrate_baseband_rx_analog_filter(clipped_bw); //returns bb bw
+    if (direction == RX) {
+        _rx_bb_lp_bw  = _calibrate_baseband_rx_analog_filter(clipped_bw); // returns bb bw
         _rx_tia_lp_bw = _calibrate_rx_TIAs(clipped_bw);
         _rx_analog_bw = clipped_bw;
     } else {
-        _tx_bb_lp_bw = _calibrate_baseband_tx_analog_filter(clipped_bw); //returns bb bw
+        _tx_bb_lp_bw  = _calibrate_baseband_tx_analog_filter(clipped_bw); // returns bb bw
         _tx_sec_lp_bw = _calibrate_secondary_tx_filter(clipped_bw);
         _tx_analog_bw = clipped_bw;
     }
@@ -2492,20 +2523,20 @@ double ad9361_device_t::set_bw_filter(direction_t direction, const double rf_bw)
     return (clipped_bw);
 }
 
-void ad9361_device_t::_set_fir_taps(direction_t direction, chain_t chain, const std::vector<int16_t>& taps)
+void ad9361_device_t::_set_fir_taps(
+    direction_t direction, chain_t chain, const std::vector<int16_t>& taps)
 {
-    size_t num_taps = taps.size();
+    size_t num_taps       = taps.size();
     size_t num_taps_avail = _get_num_fir_taps(direction);
-    if(num_taps == num_taps_avail)
-    {
+    if (num_taps == num_taps_avail) {
         boost::scoped_array<uint16_t> coeffs(new uint16_t[num_taps_avail]);
-        for (size_t i = 0; i < num_taps_avail; i++)
-        {
+        for (size_t i = 0; i < num_taps_avail; i++) {
             coeffs[i] = uint16_t(taps[i]);
         }
         _program_fir_filter(direction, chain, num_taps_avail, coeffs.get());
-    } else if(num_taps < num_taps_avail){
-        throw uhd::runtime_error("ad9361_device_t::_set_fir_taps not enough coefficients.");
+    } else if (num_taps < num_taps_avail) {
+        throw uhd::runtime_error(
+            "ad9361_device_t::_set_fir_taps not enough coefficients.");
     } else {
         throw uhd::runtime_error("ad9361_device_t::_set_fir_taps too many coefficients.");
     }
@@ -2514,7 +2545,7 @@ void ad9361_device_t::_set_fir_taps(direction_t direction, chain_t chain, const 
 size_t ad9361_device_t::_get_num_fir_taps(direction_t direction)
 {
     uint8_t num = 0;
-    if(direction == RX)
+    if (direction == RX)
         num = _io_iface->peek8(0x0F5);
     else
         num = _io_iface->peek8(0x065);
@@ -2525,7 +2556,7 @@ size_t ad9361_device_t::_get_num_fir_taps(direction_t direction)
 size_t ad9361_device_t::_get_fir_dec_int(direction_t direction)
 {
     uint8_t dec_int = 0;
-    if(direction == RX)
+    if (direction == RX)
         dec_int = _io_iface->peek8(0x003);
     else
         dec_int = _io_iface->peek8(0x002);
@@ -2535,8 +2566,7 @@ size_t ad9361_device_t::_get_fir_dec_int(direction_t direction)
      * 2 = dec/int by 2
      * 3 = dec/int by 4 */
     dec_int = (dec_int & 0x03);
-    if(dec_int == 3)
-    {
+    if (dec_int == 3) {
         return 4;
     }
     return dec_int;
@@ -2548,41 +2578,39 @@ std::vector<int16_t> ad9361_device_t::_get_fir_taps(direction_t direction, chain
     size_t num_taps = _get_num_fir_taps(direction);
     uint8_t config;
     uint8_t reg_numtaps = (((num_taps / 16) - 1) & 0x07) << 5;
-    config = reg_numtaps | 0x02; //start the programming clock
+    config              = reg_numtaps | 0x02; // start the programming clock
 
-    if(chain == CHAIN_1)
-    {
+    if (chain == CHAIN_1) {
         config = config | (1 << 3);
-    } else if (chain == CHAIN_2){
+    } else if (chain == CHAIN_2) {
         config = config | (1 << 4);
     } else {
-        throw uhd::runtime_error("[ad9361_device_t] Can not read both chains synchronously");
+        throw uhd::runtime_error(
+            "[ad9361_device_t] Can not read both chains synchronously");
     }
 
-    if(direction == RX)
-    {
+    if (direction == RX) {
         base = 0xF0;
     } else {
         base = 0x60;
     }
 
-    _io_iface->poke8(base+5,config);
+    _io_iface->poke8(base + 5, config);
 
     std::vector<int16_t> taps;
     uint8_t lower_val;
     uint8_t higher_val;
     uint16_t coeff;
-    for(size_t i = 0;i < num_taps;i++)
-    {
-        _io_iface->poke8(base,0x00+i);
-        lower_val = _io_iface->peek8(base+3);
-        higher_val = _io_iface->peek8(base+4);
-        coeff = ((higher_val << 8) | lower_val);
+    for (size_t i = 0; i < num_taps; i++) {
+        _io_iface->poke8(base, 0x00 + i);
+        lower_val  = _io_iface->peek8(base + 3);
+        higher_val = _io_iface->peek8(base + 4);
+        coeff      = ((higher_val << 8) | lower_val);
         taps.push_back(int16_t(coeff));
     }
 
-    config = (config & (~(1 << 1))); //disable filter clock
-    _io_iface->poke8(base+5,config);
+    config = (config & (~(1 << 1))); // disable filter clock
+    _io_iface->poke8(base + 5, config);
     return taps;
 }
 
@@ -2594,15 +2622,15 @@ filter_info_base::sptr ad9361_device_t::_get_filter_lp_tia_sec(direction_t direc
 {
     double cutoff = 0;
 
-    if(direction == RX)
-    {
-       cutoff = 2.5 * _rx_tia_lp_bw;
+    if (direction == RX) {
+        cutoff = 2.5 * _rx_tia_lp_bw;
     } else {
-       cutoff = 5 * _tx_sec_lp_bw;
+        cutoff = 5 * _tx_sec_lp_bw;
     }
 
-    filter_info_base::sptr lp(new analog_filter_lp(filter_info_base::ANALOG_LOW_PASS, false, 0, "single-pole", cutoff, 20));
-    return  lp;
+    filter_info_base::sptr lp(new analog_filter_lp(
+        filter_info_base::ANALOG_LOW_PASS, false, 0, "single-pole", cutoff, 20));
+    return lp;
 }
 
 /*
@@ -2611,15 +2639,19 @@ filter_info_base::sptr ad9361_device_t::_get_filter_lp_tia_sec(direction_t direc
 filter_info_base::sptr ad9361_device_t::_get_filter_lp_bb(direction_t direction)
 {
     double cutoff = 0;
-    if(direction == RX)
-    {
+    if (direction == RX) {
         cutoff = 1.4 * _rx_bb_lp_bw;
     } else {
         cutoff = 1.6 * _tx_bb_lp_bw;
     }
 
-    filter_info_base::sptr bb_lp(new analog_filter_lp(filter_info_base::ANALOG_LOW_PASS, false, 1, "third-order Butterworth", cutoff, 60));
-    return  bb_lp;
+    filter_info_base::sptr bb_lp(new analog_filter_lp(filter_info_base::ANALOG_LOW_PASS,
+        false,
+        1,
+        "third-order Butterworth",
+        cutoff,
+        60));
+    return bb_lp;
 }
 
 /*
@@ -2642,227 +2674,272 @@ filter_info_base::sptr ad9361_device_t::_get_filter_dec_int_3(direction_t direct
 
     filter_info_base::sptr ret;
 
-    if(direction == RX)
-    {
+    if (direction == RX) {
         full_scale = 16384;
-        dec = 3;
-        interpol = 1;
+        dec        = 3;
+        interpol   = 1;
 
         enable = _io_iface->peek8(0x003);
         enable = ((enable >> 4) & 0x03);
-        taps.assign(taps_array_rx, taps_array_rx + sizeof(taps_array_rx) / sizeof(int16_t) );
+        taps.assign(
+            taps_array_rx, taps_array_rx + sizeof(taps_array_rx) / sizeof(int16_t));
 
     } else {
         full_scale = 8192;
-        dec = 1;
-        interpol = 3;
+        dec        = 1;
+        interpol   = 3;
 
         uint8_t use_dac_clk_div = _io_iface->peek8(0x00A);
-        use_dac_clk_div = ((use_dac_clk_div >> 3) & 0x01);
-        if(use_dac_clk_div == 1)
-        {
+        use_dac_clk_div         = ((use_dac_clk_div >> 3) & 0x01);
+        if (use_dac_clk_div == 1) {
             rate = rate / 2;
         }
 
         enable = _io_iface->peek8(0x002);
         enable = ((enable >> 4) & 0x03);
-        if(enable == 2) //0 => int. by 1, 1 => int. by 2 (HB3), 2 => int. by 3
+        if (enable == 2) // 0 => int. by 1, 1 => int. by 2 (HB3), 2 => int. by 3
         {
             rate /= 3;
         }
 
-        taps.assign(taps_array_tx, taps_array_tx + sizeof(taps_array_tx) / sizeof(int16_t) );
+        taps.assign(
+            taps_array_tx, taps_array_tx + sizeof(taps_array_tx) / sizeof(int16_t));
     }
 
-    ret = filter_info_base::sptr(new digital_filter_base<int16_t>(type, (enable != 2) ? true : false, 2, rate, interpol, dec, full_scale, taps.size(), taps));
-    return  ret;
+    ret = filter_info_base::sptr(new digital_filter_base<int16_t>(type,
+        (enable != 2) ? true : false,
+        2,
+        rate,
+        interpol,
+        dec,
+        full_scale,
+        taps.size(),
+        taps));
+    return ret;
 }
 
 filter_info_base::sptr ad9361_device_t::_get_filter_hb_3(direction_t direction)
 {
-    uint8_t enable = 0;
-    double rate = _adcclock_freq;
-    double full_scale = 0;
-    size_t dec = 1;
-    size_t interpol = 1;
+    uint8_t enable                     = 0;
+    double rate                        = _adcclock_freq;
+    double full_scale                  = 0;
+    size_t dec                         = 1;
+    size_t interpol                    = 1;
     filter_info_base::filter_type type = filter_info_base::DIGITAL_I16;
-    int16_t taps_array_rx[] = {1, 4, 6, 4, 1};
-    int16_t taps_array_tx[] = {1, 2, 1};
+    int16_t taps_array_rx[]            = {1, 4, 6, 4, 1};
+    int16_t taps_array_tx[]            = {1, 2, 1};
     std::vector<int16_t> taps;
 
-    if(direction == RX)
-    {
+    if (direction == RX) {
         full_scale = 16;
-        dec = 2;
+        dec        = 2;
 
         enable = _io_iface->peek8(0x003);
         enable = ((enable >> 4) & 0x03);
-        taps.assign(taps_array_rx, taps_array_rx + sizeof(taps_array_rx) / sizeof(int16_t) );
+        taps.assign(
+            taps_array_rx, taps_array_rx + sizeof(taps_array_rx) / sizeof(int16_t));
     } else {
         full_scale = 2;
-        interpol = 2;
+        interpol   = 2;
 
         uint8_t use_dac_clk_div = _io_iface->peek8(0x00A);
-        use_dac_clk_div = ((use_dac_clk_div >> 3) & 0x01);
-        if(use_dac_clk_div == 1)
-        {
+        use_dac_clk_div         = ((use_dac_clk_div >> 3) & 0x01);
+        if (use_dac_clk_div == 1) {
             rate = rate / 2;
         }
 
         enable = _io_iface->peek8(0x002);
         enable = ((enable >> 4) & 0x03);
-        if(enable == 1)
-        {
+        if (enable == 1) {
             rate /= 2;
         }
-        taps.assign(taps_array_tx, taps_array_tx + sizeof(taps_array_tx) / sizeof(int16_t) );
+        taps.assign(
+            taps_array_tx, taps_array_tx + sizeof(taps_array_tx) / sizeof(int16_t));
     }
 
-    filter_info_base::sptr hb = filter_info_base::sptr(new digital_filter_base<int16_t>(type, (enable != 1) ? true : false, 2, rate, interpol, dec, full_scale, taps.size(), taps));
-    return  hb;
+    filter_info_base::sptr hb =
+        filter_info_base::sptr(new digital_filter_base<int16_t>(type,
+            (enable != 1) ? true : false,
+            2,
+            rate,
+            interpol,
+            dec,
+            full_scale,
+            taps.size(),
+            taps));
+    return hb;
 }
 
 filter_info_base::sptr ad9361_device_t::_get_filter_hb_2(direction_t direction)
 {
-    uint8_t enable = 0;
-    double rate = _adcclock_freq;
-    double full_scale = 0;
-    size_t dec = 1;
-    size_t interpol = 1;
+    uint8_t enable                     = 0;
+    double rate                        = _adcclock_freq;
+    double full_scale                  = 0;
+    size_t dec                         = 1;
+    size_t interpol                    = 1;
     filter_info_base::filter_type type = filter_info_base::DIGITAL_I16;
-    int16_t taps_array[] = {-9, 0, 73, 128, 73, 0, -9};
-    std::vector<int16_t> taps(taps_array, taps_array + sizeof(taps_array) / sizeof(int16_t) );
+    int16_t taps_array[]               = {-9, 0, 73, 128, 73, 0, -9};
+    std::vector<int16_t> taps(
+        taps_array, taps_array + sizeof(taps_array) / sizeof(int16_t));
 
-    digital_filter_base<int16_t>::sptr hb_3 = boost::dynamic_pointer_cast<digital_filter_base<int16_t> >(_get_filter_hb_3(direction));
-    digital_filter_base<int16_t>::sptr dec_int_3 = boost::dynamic_pointer_cast<digital_filter_base<int16_t> >(_get_filter_dec_int_3(direction));
+    digital_filter_base<int16_t>::sptr hb_3 =
+        boost::dynamic_pointer_cast<digital_filter_base<int16_t>>(
+            _get_filter_hb_3(direction));
+    digital_filter_base<int16_t>::sptr dec_int_3 =
+        boost::dynamic_pointer_cast<digital_filter_base<int16_t>>(
+            _get_filter_dec_int_3(direction));
 
-    if(direction == RX)
-    {
+    if (direction == RX) {
         full_scale = 256;
-        dec = 2;
-        enable = _io_iface->peek8(0x003);
+        dec        = 2;
+        enable     = _io_iface->peek8(0x003);
     } else {
         full_scale = 128;
-        interpol = 2;
-        enable = _io_iface->peek8(0x002);
+        interpol   = 2;
+        enable     = _io_iface->peek8(0x002);
     }
 
     enable = ((enable >> 3) & 0x01);
 
-    if(!(hb_3->is_bypassed()))
-    {
-        if(direction == RX)
-        {
+    if (!(hb_3->is_bypassed())) {
+        if (direction == RX) {
             rate = hb_3->get_output_rate();
-        }else if (direction == TX) {
+        } else if (direction == TX) {
             rate = hb_3->get_input_rate();
-            if(enable)
-            {
+            if (enable) {
                 rate /= 2;
             }
         }
-    } else { //else dec3/int3 or none of them is used.
-        if(direction == RX)
-        {
+    } else { // else dec3/int3 or none of them is used.
+        if (direction == RX) {
             rate = dec_int_3->get_output_rate();
-        }else if (direction == TX) {
+        } else if (direction == TX) {
             rate = dec_int_3->get_input_rate();
-            if(enable)
-            {
+            if (enable) {
                 rate /= 2;
             }
         }
     }
 
-    filter_info_base::sptr hb(new digital_filter_base<int16_t>(type, (enable == 0) ? true : false, 3, rate, interpol, dec, full_scale, taps.size(), taps));
-    return  hb;
+    filter_info_base::sptr hb(new digital_filter_base<int16_t>(type,
+        (enable == 0) ? true : false,
+        3,
+        rate,
+        interpol,
+        dec,
+        full_scale,
+        taps.size(),
+        taps));
+    return hb;
 }
 
 filter_info_base::sptr ad9361_device_t::_get_filter_hb_1(direction_t direction)
 {
-    uint8_t enable = 0;
-    double rate = 0;
-    double full_scale = 0;
-    size_t dec = 1;
-    size_t interpol = 1;
+    uint8_t enable                     = 0;
+    double rate                        = 0;
+    double full_scale                  = 0;
+    size_t dec                         = 1;
+    size_t interpol                    = 1;
     filter_info_base::filter_type type = filter_info_base::DIGITAL_I16;
 
     std::vector<int16_t> taps;
-    int16_t taps_rx_array[] = {-8, 0, 42, 0, -147, 0, 619, 1013, 619, 0, -147, 0, 42, 0, -8};
-    int16_t taps_tx_array[] = {-53, 0, 313, 0, -1155, 0, 4989, 8192, 4989, 0, -1155, 0, 313, 0, -53};
+    int16_t taps_rx_array[] = {
+        -8, 0, 42, 0, -147, 0, 619, 1013, 619, 0, -147, 0, 42, 0, -8};
+    int16_t taps_tx_array[] = {
+        -53, 0, 313, 0, -1155, 0, 4989, 8192, 4989, 0, -1155, 0, 313, 0, -53};
 
-    digital_filter_base<int16_t>::sptr hb_2 = boost::dynamic_pointer_cast<digital_filter_base<int16_t> >(_get_filter_hb_2(direction));
+    digital_filter_base<int16_t>::sptr hb_2 =
+        boost::dynamic_pointer_cast<digital_filter_base<int16_t>>(
+            _get_filter_hb_2(direction));
 
-    if(direction == RX)
-    {
+    if (direction == RX) {
         full_scale = 2048;
-        dec = 2;
-        enable = _io_iface->peek8(0x003);
-        enable = ((enable >> 2) & 0x01);
-        rate = hb_2->get_output_rate();
-        taps.assign(taps_rx_array, taps_rx_array + sizeof(taps_rx_array) / sizeof(int16_t) );
+        dec        = 2;
+        enable     = _io_iface->peek8(0x003);
+        enable     = ((enable >> 2) & 0x01);
+        rate       = hb_2->get_output_rate();
+        taps.assign(
+            taps_rx_array, taps_rx_array + sizeof(taps_rx_array) / sizeof(int16_t));
     } else if (direction == TX) {
         full_scale = 8192;
-        interpol = 2;
-        enable = _io_iface->peek8(0x002);
-        enable = ((enable >> 2) & 0x01);
-        rate = hb_2->get_input_rate();
-        if(enable)
-        {
+        interpol   = 2;
+        enable     = _io_iface->peek8(0x002);
+        enable     = ((enable >> 2) & 0x01);
+        rate       = hb_2->get_input_rate();
+        if (enable) {
             rate /= 2;
         }
-        taps.assign(taps_tx_array, taps_tx_array + sizeof(taps_tx_array) / sizeof(int16_t) );
+        taps.assign(
+            taps_tx_array, taps_tx_array + sizeof(taps_tx_array) / sizeof(int16_t));
     }
 
-    filter_info_base::sptr hb(new digital_filter_base<int16_t>(type, (enable == 0) ? true : false, 4, rate, interpol, dec, full_scale, taps.size(), taps));
-    return  hb;
+    filter_info_base::sptr hb(new digital_filter_base<int16_t>(type,
+        (enable == 0) ? true : false,
+        4,
+        rate,
+        interpol,
+        dec,
+        full_scale,
+        taps.size(),
+        taps));
+    return hb;
 }
 
-filter_info_base::sptr ad9361_device_t::_get_filter_fir(direction_t direction, chain_t chain)
+filter_info_base::sptr ad9361_device_t::_get_filter_fir(
+    direction_t direction, chain_t chain)
 {
-    double rate = 0;
-    size_t dec = 1;
-    size_t interpol = 1;
+    double rate         = 0;
+    size_t dec          = 1;
+    size_t interpol     = 1;
     size_t max_num_taps = 128;
-    uint8_t enable = 1;
+    uint8_t enable      = 1;
 
-    digital_filter_base<int16_t>::sptr hb_1 = boost::dynamic_pointer_cast<digital_filter_base<int16_t> >(_get_filter_hb_1(direction));
+    digital_filter_base<int16_t>::sptr hb_1 =
+        boost::dynamic_pointer_cast<digital_filter_base<int16_t>>(
+            _get_filter_hb_1(direction));
 
-    if(direction == RX)
-    {
+    if (direction == RX) {
         dec = _get_fir_dec_int(direction);
-        if(dec == 0)
-        {
+        if (dec == 0) {
             enable = 0;
-            dec = 1;
+            dec    = 1;
         }
         interpol = 1;
-        rate = hb_1->get_output_rate();
-    }else if (direction == TX) {
+        rate     = hb_1->get_output_rate();
+    } else if (direction == TX) {
         interpol = _get_fir_dec_int(direction);
-        if(interpol == 0)
-        {
-            enable = 0;
+        if (interpol == 0) {
+            enable   = 0;
             interpol = 1;
         }
-        dec = 1;
+        dec  = 1;
         rate = hb_1->get_input_rate();
-        if(enable)
-        {
+        if (enable) {
             rate /= interpol;
         }
     }
     max_num_taps = _get_num_fir_taps(direction);
 
-    filter_info_base::sptr fir(new digital_filter_fir<int16_t>(filter_info_base::DIGITAL_FIR_I16, (enable == 0) ? true : false, 5, rate, interpol, dec, 32767, max_num_taps, _get_fir_taps(direction, chain)));
+    filter_info_base::sptr fir(
+        new digital_filter_fir<int16_t>(filter_info_base::DIGITAL_FIR_I16,
+            (enable == 0) ? true : false,
+            5,
+            rate,
+            interpol,
+            dec,
+            32767,
+            max_num_taps,
+            _get_fir_taps(direction, chain)));
 
     return fir;
 }
 
-void ad9361_device_t::_set_filter_fir(direction_t direction, chain_t channel, filter_info_base::sptr filter)
+void ad9361_device_t::_set_filter_fir(
+    direction_t direction, chain_t channel, filter_info_base::sptr filter)
 {
-    digital_filter_fir<int16_t>::sptr fir = boost::dynamic_pointer_cast<digital_filter_fir<int16_t> >(filter);
-    //only write taps. Ignore everything else for now
+    digital_filter_fir<int16_t>::sptr fir =
+        boost::dynamic_pointer_cast<digital_filter_fir<int16_t>>(filter);
+    // only write taps. Ignore everything else for now
     _set_fir_taps(direction, channel, fir->get_taps());
 }
 
@@ -2871,34 +2948,39 @@ void ad9361_device_t::_set_filter_fir(direction_t direction, chain_t channel, fi
  * _tx_analog_bw and _rx_analog_bw are not valid any more!
  * For useful data in those variables set_bw_filter method should be used
  */
-void ad9361_device_t::_set_filter_lp_bb(direction_t direction, filter_info_base::sptr filter)
+void ad9361_device_t::_set_filter_lp_bb(
+    direction_t direction, filter_info_base::sptr filter)
 {
     analog_filter_lp::sptr lpf = boost::dynamic_pointer_cast<analog_filter_lp>(filter);
-    double bw = lpf->get_cutoff();
-    if(direction == RX)
-    {
-        //remember: this function takes rf bw as its input and calibrated to 1.4 x the given value
-        _rx_bb_lp_bw = _calibrate_baseband_rx_analog_filter(2 * bw / 1.4); //returns bb bw
+    double bw                  = lpf->get_cutoff();
+    if (direction == RX) {
+        // remember: this function takes rf bw as its input and calibrated to 1.4 x the
+        // given value
+        _rx_bb_lp_bw = _calibrate_baseband_rx_analog_filter(2 * bw / 1.4); // returns bb
+                                                                           // bw
 
     } else {
-        //remember: this function takes rf bw as its input and calibrates to 1.6 x the given value
+        // remember: this function takes rf bw as its input and calibrates to 1.6 x the
+        // given value
         _tx_bb_lp_bw = _calibrate_baseband_tx_analog_filter(2 * bw / 1.6);
     }
 }
 
-void ad9361_device_t::_set_filter_lp_tia_sec(direction_t direction, filter_info_base::sptr filter)
+void ad9361_device_t::_set_filter_lp_tia_sec(
+    direction_t direction, filter_info_base::sptr filter)
 {
     analog_filter_lp::sptr lpf = boost::dynamic_pointer_cast<analog_filter_lp>(filter);
-    double bw = lpf->get_cutoff();
-    if(direction == RX)
-    {
-        //remember: this function takes rf bw as its input and calibrated to 2.5 x the given value
-        _rx_tia_lp_bw = _calibrate_rx_TIAs(2 * bw / 2.5); //returns bb bw
+    double bw                  = lpf->get_cutoff();
+    if (direction == RX) {
+        // remember: this function takes rf bw as its input and calibrated to 2.5 x the
+        // given value
+        _rx_tia_lp_bw = _calibrate_rx_TIAs(2 * bw / 2.5); // returns bb bw
 
     } else {
-        //remember: this function takes rf bw as its input and calibrates to 5 x the given value
+        // remember: this function takes rf bw as its input and calibrates to 5 x the
+        // given value
         _tx_sec_lp_bw = _calibrate_secondary_tx_filter(2 * bw / 5);
     }
 }
 
-}}
+}} // namespace uhd::usrp

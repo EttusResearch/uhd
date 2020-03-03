@@ -8,26 +8,23 @@
 #ifndef INCLUDED_N230_CORES_HPP
 #define INCLUDED_N230_CORES_HPP
 
-#include <uhdlib/usrp/cores/spi_core_3000.hpp>
 #include <uhdlib/usrp/common/adf4001_ctrl.hpp>
+#include <uhdlib/usrp/cores/spi_core_3000.hpp>
 #include <boost/thread/mutex.hpp>
 
 namespace uhd { namespace usrp { namespace n230 {
 
-class n230_core_spi_core : uhd::noncopyable, public uhd::spi_iface {
-
+class n230_core_spi_core : uhd::noncopyable, public uhd::spi_iface
+{
 public:
     typedef boost::shared_ptr<n230_core_spi_core> sptr;
 
-    enum perif_t {
-        CODEC, PLL
-    };
+    enum perif_t { CODEC, PLL };
 
     n230_core_spi_core(uhd::wb_iface::sptr iface, perif_t default_perif);
 
-    virtual uint32_t transact_spi(
-        int which_slave,
-        const spi_config_t &config,
+    virtual uint32_t transact_spi(int which_slave,
+        const spi_config_t& config,
         uint32_t data,
         size_t num_bits,
         bool readback);
@@ -38,13 +35,14 @@ public:
     static sptr make(uhd::wb_iface::sptr iface, perif_t default_perif = CODEC);
 
 private:
-    spi_core_3000::sptr     _spi_core;
-    perif_t                 _current_perif;
-    perif_t                 _last_perif;
-    boost::mutex            _mutex;
+    spi_core_3000::sptr _spi_core;
+    perif_t _current_perif;
+    perif_t _last_perif;
+    boost::mutex _mutex;
 };
 
-class n230_ref_pll_ctrl : public adf4001_ctrl {
+class n230_ref_pll_ctrl : public adf4001_ctrl
+{
 public:
     typedef boost::shared_ptr<n230_ref_pll_ctrl> sptr;
 
@@ -56,6 +54,6 @@ private:
 };
 
 
-}}} //namespace
+}}} // namespace uhd::usrp::n230
 
 #endif /* INCLUDED_N230_CORES_HPP */

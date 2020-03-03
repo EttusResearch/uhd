@@ -18,7 +18,8 @@ namespace uhd { namespace cast {
 // Example:
 //     uint16_t x = hexstr_cast<uint16_t>("0xDEADBEEF");
 // Uses stringstream.
-template <typename T> UHD_INLINE T hexstr_cast(const std::string& in)
+template <typename T>
+UHD_INLINE T hexstr_cast(const std::string& in)
 {
     T x;
     std::stringstream ss;

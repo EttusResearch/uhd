@@ -233,9 +233,8 @@ static void x300_setup_session(x300_session_t& session,
             if (fpga_file_type == "ni-2974") {
                 fpga_file_type = "x310";
             }
-            session.filepath = find_image_path(
-                str(boost::format("usrp_%s_fpga_%s.bit")
-                    % fpga_file_type % session.fpga_type));
+            session.filepath = find_image_path(str(boost::format("usrp_%s_fpga_%s.bit")
+                                                   % fpga_file_type % session.fpga_type));
         }
     } else
         session.filepath = filepath;

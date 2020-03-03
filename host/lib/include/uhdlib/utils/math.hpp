@@ -18,8 +18,9 @@ namespace uhd { namespace math {
 /*! log2(num), rounded up to the nearest integer.
  */
 template <class T>
-T ceil_log2(T num){
-    return std::ceil(std::log(num)/std::log(T(2)));
+T ceil_log2(T num)
+{
+    return std::ceil(std::log(num) / std::log(T(2)));
 }
 
 /**

@@ -119,7 +119,8 @@ public:
     virtual std::string to_pp_string();
 };
 
-template <typename tap_t> class UHD_API digital_filter_base : public filter_info_base
+template <typename tap_t>
+class UHD_API digital_filter_base : public filter_info_base
 {
 protected:
     double _rate;

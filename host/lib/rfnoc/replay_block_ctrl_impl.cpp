@@ -27,8 +27,8 @@ public:
         for (size_t chan = 0; chan < _params.size(); chan++) {
             sr_write("RX_CTRL_MAXLEN", DEFAULT_WPP, chan);
             // Configure replay channels to be adjacent DEFAULT_BUFFER_SIZE'd blocks
-            _params[chan].rec_base_addr    = chan * DEFAULT_BUFFER_SIZE;
-            _params[chan].play_base_addr   = chan * DEFAULT_BUFFER_SIZE;
+            _params[chan].rec_base_addr  = chan * DEFAULT_BUFFER_SIZE;
+            _params[chan].play_base_addr = chan * DEFAULT_BUFFER_SIZE;
             sr_write("REC_BASE_ADDR", _params[chan].rec_base_addr, chan);
             sr_write("REC_BUFFER_SIZE", _params[chan].rec_buffer_size, chan);
             sr_write("PLAY_BASE_ADDR", _params[chan].play_base_addr, chan);
@@ -55,8 +55,8 @@ public:
     {
         std::lock_guard<std::mutex> lock(_mutex);
         // Address and size must be a multiple of the replay word size
-        uint32_t new_base_addr = (base_addr / REPLAY_WORD_SIZE) * REPLAY_WORD_SIZE;
-        uint32_t new_size      = (size / REPLAY_WORD_SIZE) * REPLAY_WORD_SIZE;
+        uint32_t new_base_addr        = (base_addr / REPLAY_WORD_SIZE) * REPLAY_WORD_SIZE;
+        uint32_t new_size             = (size / REPLAY_WORD_SIZE) * REPLAY_WORD_SIZE;
         _params[chan].rec_base_addr   = new_base_addr;
         _params[chan].rec_buffer_size = new_size;
         sr_write("REC_BASE_ADDR", new_base_addr, chan);
@@ -68,9 +68,9 @@ public:
     {
         std::lock_guard<std::mutex> lock(_mutex);
         // Address and size must be a multiple of the replay word size
-        uint32_t new_base_addr = (base_addr / REPLAY_WORD_SIZE) * REPLAY_WORD_SIZE;
-        uint32_t new_size      = (size / REPLAY_WORD_SIZE) * REPLAY_WORD_SIZE;
-        _params[chan].play_base_addr   = new_base_addr;
+        uint32_t new_base_addr       = (base_addr / REPLAY_WORD_SIZE) * REPLAY_WORD_SIZE;
+        uint32_t new_size            = (size / REPLAY_WORD_SIZE) * REPLAY_WORD_SIZE;
+        _params[chan].play_base_addr = new_base_addr;
         _params[chan].play_buffer_size = new_size;
         sr_write("PLAY_BASE_ADDR", new_base_addr, chan);
         sr_write("PLAY_BUFFER_SIZE", new_size, chan);
@@ -174,7 +174,8 @@ public:
 
         // Calculate how many words to transfer at a time in CONTINUOUS mode
         uint32_t cont_burst_size =
-            (_params[chan].play_buffer_size / REPLAY_WORD_SIZE > _params[chan].words_per_packet)
+            (_params[chan].play_buffer_size / REPLAY_WORD_SIZE
+                > _params[chan].words_per_packet)
                 ? _params[chan].words_per_packet
                 : _params[chan].play_buffer_size / REPLAY_WORD_SIZE;
 

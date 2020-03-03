@@ -20,7 +20,7 @@ BOOST_AUTO_TEST_CASE(test_scope_exit)
 
 BOOST_AUTO_TEST_CASE(test_scope_exit_function_object)
 {
-    bool flag = false;
+    bool flag                          = false;
     std::function<void(void)> resetter = [&flag]() { flag = true; };
 
     {
@@ -32,7 +32,7 @@ BOOST_AUTO_TEST_CASE(test_scope_exit_function_object)
 
 BOOST_AUTO_TEST_CASE(test_scope_exit_function_named_lambda)
 {
-    bool flag = false;
+    bool flag     = false;
     auto resetter = [&flag]() { flag = true; };
 
     {
@@ -42,4 +42,3 @@ BOOST_AUTO_TEST_CASE(test_scope_exit_function_named_lambda)
     }
     BOOST_CHECK(flag);
 }
-

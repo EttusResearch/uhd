@@ -28,10 +28,7 @@ public:
      * \param xports Bidirectional transport object to the RFNoC block port.
      * \param name Optional name for better identification in error messages.
      */
-    static sptr make(
-        const both_xports_t &xports,
-        const std::string &name="0"
-    );
+    static sptr make(const both_xports_t& xports, const std::string& name = "0");
 
     /*! Send a command packet.
      *
@@ -53,12 +50,10 @@ public:
      * \throws uhd::io_error if the response is malformed; uhd::runtime_error if
      *         no packet could be sent.
      */
-    virtual uint64_t send_cmd_pkt(
-            const size_t addr,
-            const size_t data,
-            const bool readback=false,
-            const uint64_t timestamp=0
-    ) = 0;
+    virtual uint64_t send_cmd_pkt(const size_t addr,
+        const size_t data,
+        const bool readback      = false,
+        const uint64_t timestamp = 0) = 0;
 
     /*! Set the depth of the command FIFO size
      *

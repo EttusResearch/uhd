@@ -127,7 +127,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
     if (vm.count("ref")) {
         radio_ctrl->set_clock_source(ref);
     }
-    
+
     // Apply any radio arguments provided
     radio_ctrl->set_args(radio_args);
 
@@ -347,7 +347,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_START_CONTINUOUS;
         stream_cmd.num_samps   = words_to_replay * samples_per_word;
         cout << boost::format("Start replay of %d samples in continuous mode, "
-                    "%f seconds in the future...")
+                              "%f seconds in the future...")
                     % stream_cmd.num_samps % seconds_in_future
              << endl;
     } else {
@@ -356,17 +356,16 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         stream_cmd.stream_mode = uhd::stream_cmd_t::STREAM_MODE_NUM_SAMPS_AND_DONE;
         stream_cmd.num_samps   = nsamps;
         cout << boost::format("Start replay of %d samples, "
-                    "%f seconds in the future...")
+                              "%f seconds in the future...")
                     % stream_cmd.num_samps % seconds_in_future
              << endl;
     }
     if (seconds_in_future == 0.0) {
         stream_cmd.stream_now = true;
-    }
-    else {
+    } else {
         stream_cmd.stream_now = false;
-        stream_cmd.time_spec  = radio_ctrl->get_time_now() +
-            uhd::time_spec_t(seconds_in_future);
+        stream_cmd.time_spec =
+            radio_ctrl->get_time_now() + uhd::time_spec_t(seconds_in_future);
     }
     replay_ctrl->issue_stream_cmd(stream_cmd, replay_chan);
 
@@ -384,8 +383,7 @@ int UHD_SAFE_MAIN(int argc, char* argv[])
         while (not stop_signal_called) {
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
         }
-    }
-    else {
+    } else {
         const double timeout = seconds_in_future + nsamps / radio_ctrl->get_rate() + 0.5;
         uhd::async_metadata_t async_md;
 

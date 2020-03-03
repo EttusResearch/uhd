@@ -120,7 +120,7 @@ private:
 #ifdef HAVE_DPDK
             if (mb_args.has_key("use_dpdk")) {
                 return mpmd_xport_ctrl_base::uptr(new mpmd_xport_ctrl_dpdk_udp(mb_args));
-	    }
+            }
 #endif
             return mpmd_xport_ctrl_base::uptr(new mpmd_xport_ctrl_udp(mb_args));
 #ifdef HAVE_LIBERIO

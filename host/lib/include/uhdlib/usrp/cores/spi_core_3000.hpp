@@ -10,8 +10,8 @@
 
 #include <uhd/config.hpp>
 #include <uhd/types/serial.hpp>
-#include <uhd/utils/noncopyable.hpp>
 #include <uhd/types/wb_iface.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 
 class spi_core_3000 : uhd::noncopyable, public uhd::spi_iface

@@ -10,10 +10,10 @@
 
 #include <uhd/rfnoc/graph.hpp>
 #include <uhd/transport/zero_copy.hpp>
-#include <uhd/types/sid.hpp>
 #include <uhd/types/endianness.hpp>
-#include <uhdlib/rfnoc/async_msg.hpp>
+#include <uhd/types/sid.hpp>
 #include <uhd/utils/noncopyable.hpp>
+#include <uhdlib/rfnoc/async_msg.hpp>
 #include <functional>
 
 namespace uhd { namespace rfnoc {
@@ -33,12 +33,10 @@ public:
      * \param sid The source part of this is taken as the local address of the
      *            transports. The remote part is ignored.
      */
-    static sptr make(
-        uhd::transport::zero_copy_if::sptr recv,
+    static sptr make(uhd::transport::zero_copy_if::sptr recv,
         uhd::transport::zero_copy_if::sptr send,
         uhd::sid_t sid,
-        uhd::endianness_t endianness
-    );
+        uhd::endianness_t endianness);
 
     /*! Register an event handler.
      *
@@ -58,9 +56,7 @@ public:
      *          Should never return anything less than 1.
      */
     virtual int register_event_handler(
-            const async_msg_t::event_code_t event_code,
-            async_handler_type handler
-    ) = 0;
+        const async_msg_t::event_code_t event_code, async_handler_type handler) = 0;
 
     /*! Post async messages into this message handler.
      *
@@ -70,12 +66,10 @@ public:
      *   argument
      * - Some messages print error codes (e.g. O, U, L, S)
      */
-    virtual void post_async_msg(
-            const async_msg_t &metadata
-    ) = 0;
+    virtual void post_async_msg(const async_msg_t& metadata) = 0;
 
     /*! Return the 16-bit address of this async message
-    */
+     */
     virtual uint32_t get_local_addr() const = 0;
 };
 

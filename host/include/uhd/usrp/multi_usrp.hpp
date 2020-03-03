@@ -36,8 +36,8 @@
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/usrp/subdev_spec.hpp>
-#include <boost/shared_ptr.hpp>
 #include <uhd/utils/noncopyable.hpp>
+#include <boost/shared_ptr.hpp>
 #include <complex>
 #include <string>
 #include <vector>

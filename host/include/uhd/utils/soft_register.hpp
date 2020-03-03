@@ -11,9 +11,9 @@
 #include <uhd/exception.hpp>
 #include <uhd/types/wb_iface.hpp>
 #include <uhd/utils/dirty_tracked.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <stdint.h>
 #include <boost/foreach.hpp>
-#include <uhd/utils/noncopyable.hpp>
 #include <boost/thread/locks.hpp>
 #include <boost/thread/mutex.hpp>
 #include <boost/tokenizer.hpp>
@@ -85,7 +85,8 @@ UHD_INLINE size_t shift(const soft_reg_field_t field)
     return ((field >> 8) & 0xFF);
 }
 
-template <typename data_t> UHD_INLINE data_t mask(const soft_reg_field_t field)
+template <typename data_t>
+UHD_INLINE data_t mask(const soft_reg_field_t field)
 {
     constexpr data_t ONE      = static_cast<data_t>(1);
     constexpr data_t ALL_ONES = ~static_cast<data_t>(0);

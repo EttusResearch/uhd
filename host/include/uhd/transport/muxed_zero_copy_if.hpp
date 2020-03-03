@@ -11,9 +11,9 @@
 
 #include <uhd/config.hpp>
 #include <uhd/transport/zero_copy.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <stdint.h>
 #include <boost/function.hpp>
-#include <uhd/utils/noncopyable.hpp>
 
 namespace uhd { namespace transport {
 

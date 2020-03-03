@@ -10,11 +10,11 @@
 
 #include <uhd/config.hpp>
 #include <uhd/transport/zero_copy.hpp>
+#include <uhd/utils/noncopyable.hpp>
 #include <stdint.h>
 #include <boost/function.hpp>
 #include <boost/optional/optional.hpp>
 #include <boost/shared_ptr.hpp>
-#include <uhd/utils/noncopyable.hpp>
 #include <vector>
 
 namespace uhd {

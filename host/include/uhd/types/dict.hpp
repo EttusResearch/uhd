@@ -18,7 +18,8 @@ namespace uhd {
 /*!
  * A templated dictionary class with a python-like interface.
  */
-template <typename Key, typename Val> class dict
+template <typename Key, typename Val>
+class dict
 {
 public:
     /*!
@@ -32,7 +33,8 @@ public:
      * \param first the begin iterator
      * \param last the end iterator
      */
-    template <typename InputIterator> dict(InputIterator first, InputIterator last);
+    template <typename InputIterator>
+    dict(InputIterator first, InputIterator last);
 
     /*!
      * Get the number of elements in this dict.

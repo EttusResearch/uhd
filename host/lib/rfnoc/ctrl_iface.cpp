@@ -28,7 +28,8 @@ using namespace uhd::transport;
 static const double ACK_TIMEOUT     = 2.0; // supposed to be worst case practical timeout
 static const double MASSIVE_TIMEOUT = 10.0; // for when we wait on a timed command
 
-template <uhd::endianness_t _endianness> class ctrl_iface_impl : public ctrl_iface
+template <uhd::endianness_t _endianness>
+class ctrl_iface_impl : public ctrl_iface
 {
 public:
     ctrl_iface_impl(const both_xports_t& xports, const std::string& name)
@@ -37,7 +38,6 @@ public:
         , _seq_out(0)
         , _max_outstanding_acks(xports.recv->get_num_recv_frames())
     {
-
         UHD_ASSERT_THROW(bool(_xports.send));
         UHD_ASSERT_THROW(bool(_xports.recv));
         // Flush the response transport in case we have something over:

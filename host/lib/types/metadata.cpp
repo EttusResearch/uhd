@@ -5,12 +5,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <string>
-#include <sstream>
-#include <boost/format.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/types/metadata.hpp>
 #include <uhd/types/time_spec.hpp>
+#include <boost/format.hpp>
+#include <sstream>
+#include <string>
 
 using namespace uhd;
 
@@ -51,7 +51,7 @@ std::string rx_metadata_t::to_pp_string(bool compact) const
 std::string rx_metadata_t::strerror() const
 {
     std::string errstr = "";
-    switch(this->error_code) {
+    switch (this->error_code) {
         case ERROR_CODE_NONE:
             errstr = "ERROR_CODE_NONE";
             break;
@@ -66,7 +66,7 @@ std::string rx_metadata_t::strerror() const
             break;
         case ERROR_CODE_OVERFLOW:
             errstr = "ERROR_CODE_OVERFLOW ";
-	    errstr += (this->out_of_sequence ? "(Out of sequence error)" : "(Overflow)");
+            errstr += (this->out_of_sequence ? "(Out of sequence error)" : "(Overflow)");
             break;
         case ERROR_CODE_ALIGNMENT:
             errstr = "ERROR_CODE_ALIGNMENT (Multi-channel alignment failed)";
@@ -74,8 +74,9 @@ std::string rx_metadata_t::strerror() const
         case ERROR_CODE_BAD_PACKET:
             errstr = "ERROR_CODE_BAD_PACKET";
             break;
-	default:
-            errstr = std::string(str(boost::format("Unknown error code: 0x%x") % error_code));
+        default:
+            errstr =
+                std::string(str(boost::format("Unknown error code: 0x%x") % error_code));
     }
 
     return errstr;

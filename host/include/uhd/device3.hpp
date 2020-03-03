@@ -54,7 +54,8 @@ public:
      * \return true if a block of type T with the specified id exists
      * \note this access is not thread safe if peformed during block enumeration
      */
-    template <typename T> bool has_block(const rfnoc::block_id_t& block_id) const
+    template <typename T>
+    bool has_block(const rfnoc::block_id_t& block_id) const
     {
         if (has_block(block_id)) {
             return bool(boost::dynamic_pointer_cast<T>(get_block_ctrl(block_id)));

@@ -9,8 +9,8 @@
 
 #include <uhd/config.hpp>
 #include <uhd/types/device_addr.hpp>
-#include <uhd/utils/static.hpp>
 #include <uhd/utils/noncopyable.hpp>
+#include <uhd/utils/static.hpp>
 #include <array>
 #include <atomic>
 #include <mutex>
@@ -18,7 +18,8 @@
 
 namespace uhd { namespace transport {
 
-class uhd_dpdk_ctx : uhd::noncopyable {
+class uhd_dpdk_ctx : uhd::noncopyable
+{
 public:
     UHD_SINGLETON_FCN(uhd_dpdk_ctx, get);
 
@@ -28,7 +29,7 @@ public:
      * Initialize uhd-dpdk (and do only once)
      * \param user_args User args passed in to override config files
      */
-    void init(const device_addr_t &user_args);
+    void init(const device_addr_t& user_args);
 
     /*!
      * Get MTU of NICs used by DPDK
@@ -43,14 +44,14 @@ public:
      * \param port_id Int to write ID of port corresponding to MAC address
      * \return 0 if match found, else no match
      */
-    int get_port_id(std::array<uint8_t, 6> mac_addr, unsigned int &port_id) const;
+    int get_port_id(std::array<uint8_t, 6> mac_addr, unsigned int& port_id) const;
 
     /*!
      * Get port ID for routing packet destined for given address
      * \param addr Destination address
      * \return port ID from routing table
      */
-    int get_route(const std::string &addr) const;
+    int get_route(const std::string& addr) const;
 
     /*!
      * Set IPv4 address and subnet mask of given NIC port

@@ -59,23 +59,20 @@ using namespace uhd::convert;
  * | 127                                 0 |
  *
  */
-#define SC12_SHIFT_MASK      0x0fff0fff, 0x0fff0fff, 0xfff0fff0, 0xfff0fff0
-#define SC12_PACK_SHUFFLE1   5,4,8,7,11,10,14,13,6,5,9,8,12,11,15,14
-#define SC12_PACK_SHUFFLE2   15,14,7,6,13,12,5,4,11,10,3,2,9,8,1,0
+#define SC12_SHIFT_MASK 0x0fff0fff, 0x0fff0fff, 0xfff0fff0, 0xfff0fff0
+#define SC12_PACK_SHUFFLE1 5, 4, 8, 7, 11, 10, 14, 13, 6, 5, 9, 8, 12, 11, 15, 14
+#define SC12_PACK_SHUFFLE2 15, 14, 7, 6, 13, 12, 5, 4, 11, 10, 3, 2, 9, 8, 1, 0
 
 template <typename type, tohost32_type tohost>
-inline void convert_sc12_item32_3_to_star_4
-(
-    const item32_sc12_3x &input,
-    std::complex<type> *out,
+inline void convert_sc12_item32_3_to_star_4(const item32_sc12_3x& input,
+    std::complex<type>* out,
     double scalar,
-    typename std::enable_if<std::is_same<type, float>::value>::type* = NULL
-)
+    typename std::enable_if<std::is_same<type, float>::value>::type* = NULL)
 {
     __m128i m0, m1, m2, m3, m4;
     m0 = _mm_set_epi32(SC12_SHIFT_MASK);
     m1 = _mm_set_epi8(SC12_PACK_SHUFFLE1);
-    m2 = _mm_loadu_si128((__m128i*) &input);
+    m2 = _mm_loadu_si128((__m128i*)&input);
     m2 = _mm_shuffle_epi32(m2, _MM_SHUFFLE(0, 1, 2, 3));
     m3 = _mm_shuffle_epi8(m2, m1);
     m3 = _mm_and_si128(m3, m0);
@@ -88,7 +85,7 @@ inline void convert_sc12_item32_3_to_star_4
     m4 = _mm_unpackhi_epi32(m1, m2);
 
     __m128 m5, m6, m7;
-    m5 = _mm_set_ps1(scalar/(1 << 16));
+    m5 = _mm_set_ps1(scalar / (1 << 16));
     m6 = _mm_cvtepi32_ps(m3);
     m7 = _mm_cvtepi32_ps(m4);
     m6 = _mm_mul_ps(m6, m5);
@@ -99,20 +96,17 @@ inline void convert_sc12_item32_3_to_star_4
 }
 
 template <typename type, tohost32_type tohost>
-inline void convert_sc12_item32_3_to_star_4
-(
-    const item32_sc12_3x &input,
-    std::complex<type> *out,
+inline void convert_sc12_item32_3_to_star_4(const item32_sc12_3x& input,
+    std::complex<type>* out,
     double,
-    typename std::enable_if<std::is_same<type, short>::value>::type* = NULL
-)
+    typename std::enable_if<std::is_same<type, short>::value>::type* = NULL)
 {
     __m128i m0, m1, m2, m3;
     m0 = _mm_set_epi32(SC12_SHIFT_MASK);
     m1 = _mm_set_epi8(SC12_PACK_SHUFFLE1);
     m2 = _mm_set_epi8(SC12_PACK_SHUFFLE2);
 
-    m3 = _mm_loadu_si128((__m128i*) &input);
+    m3 = _mm_loadu_si128((__m128i*)&input);
     m3 = _mm_shuffle_epi32(m3, _MM_SHUFFLE(0, 1, 2, 3));
     m3 = _mm_shuffle_epi8(m3, m1);
     m3 = _mm_and_si128(m3, m0);
@@ -122,62 +116,92 @@ inline void convert_sc12_item32_3_to_star_4
     m0 = _mm_unpackhi_epi64(m1, m0);
     m1 = _mm_shuffle_epi8(m0, m2);
 
-    _mm_storeu_si128((__m128i*) out, m1);
+    _mm_storeu_si128((__m128i*)out, m1);
 }
 
 template <typename type, tohost32_type tohost>
 struct convert_sc12_item32_1_to_star_2 : public converter
 {
-    convert_sc12_item32_1_to_star_2(void):_scalar(0.0)
+    convert_sc12_item32_1_to_star_2(void) : _scalar(0.0)
     {
-        //NOP
+        // NOP
     }
 
     void set_scalar(const double scalar)
     {
         const int unpack_growth = 16;
-        _scalar = scalar/unpack_growth;
+        _scalar                 = scalar / unpack_growth;
     }
 
-    void operator()(const input_type &inputs, const output_type &outputs, const size_t nsamps)
+    void operator()(
+        const input_type& inputs, const output_type& outputs, const size_t nsamps)
     {
         const size_t head_samps = size_t(inputs[0]) & 0x3;
-        size_t rewind = 0;
-        switch(head_samps)
-        {
-            case 0: break;
-            case 1: rewind = 9; break;
-            case 2: rewind = 6; break;
-            case 3: rewind = 3; break;
+        size_t rewind           = 0;
+        switch (head_samps) {
+            case 0:
+                break;
+            case 1:
+                rewind = 9;
+                break;
+            case 2:
+                rewind = 6;
+                break;
+            case 3:
+                rewind = 3;
+                break;
         }
 
-        const item32_sc12_3x *input = reinterpret_cast<const item32_sc12_3x *>(size_t(inputs[0]) - rewind);
-        std::complex<type> *output = reinterpret_cast<std::complex<type> *>(outputs[0]);
+        const item32_sc12_3x* input =
+            reinterpret_cast<const item32_sc12_3x*>(size_t(inputs[0]) - rewind);
+        std::complex<type>* output = reinterpret_cast<std::complex<type>*>(outputs[0]);
         std::complex<type> dummy;
         size_t i = 0, o = 0;
-        switch (head_samps)
-        {
-        case 0: break; //no head
-        case 1: convert_sc12_item32_3_to_star_4<type, tohost>(input[i++], dummy, dummy, dummy, output[0], _scalar); break;
-        case 2: convert_sc12_item32_3_to_star_4<type, tohost>(input[i++], dummy, dummy, output[0], output[1], _scalar); break;
-        case 3: convert_sc12_item32_3_to_star_4<type, tohost>(input[i++], dummy, output[0], output[1], output[2], _scalar); break;
+        switch (head_samps) {
+            case 0:
+                break; // no head
+            case 1:
+                convert_sc12_item32_3_to_star_4<type, tohost>(
+                    input[i++], dummy, dummy, dummy, output[0], _scalar);
+                break;
+            case 2:
+                convert_sc12_item32_3_to_star_4<type, tohost>(
+                    input[i++], dummy, dummy, output[0], output[1], _scalar);
+                break;
+            case 3:
+                convert_sc12_item32_3_to_star_4<type, tohost>(
+                    input[i++], dummy, output[0], output[1], output[2], _scalar);
+                break;
         }
         o += head_samps;
 
-        //convert the body
-        while (o+3 < nsamps)
-        {
-           convert_sc12_item32_3_to_star_4<type, tohost>(input[i], &output[o], _scalar);
-            i += 1; o += 4;
+        // convert the body
+        while (o + 3 < nsamps) {
+            convert_sc12_item32_3_to_star_4<type, tohost>(input[i], &output[o], _scalar);
+            i += 1;
+            o += 4;
         }
 
         const size_t tail_samps = nsamps - o;
-        switch (tail_samps)
-        {
-        case 0: break; //no tail
-        case 1: convert_sc12_item32_3_to_star_4<type, tohost>(input[i], output[o+0], dummy, dummy, dummy, _scalar); break;
-        case 2: convert_sc12_item32_3_to_star_4<type, tohost>(input[i], output[o+0], output[o+1], dummy, dummy, _scalar); break;
-        case 3: convert_sc12_item32_3_to_star_4<type, tohost>(input[i], output[o+0], output[o+1], output[o+2], dummy, _scalar); break;
+        switch (tail_samps) {
+            case 0:
+                break; // no tail
+            case 1:
+                convert_sc12_item32_3_to_star_4<type, tohost>(
+                    input[i], output[o + 0], dummy, dummy, dummy, _scalar);
+                break;
+            case 2:
+                convert_sc12_item32_3_to_star_4<type, tohost>(
+                    input[i], output[o + 0], output[o + 1], dummy, dummy, _scalar);
+                break;
+            case 3:
+                convert_sc12_item32_3_to_star_4<type, tohost>(input[i],
+                    output[o + 0],
+                    output[o + 1],
+                    output[o + 2],
+                    dummy,
+                    _scalar);
+                break;
         }
     }
 
@@ -197,13 +221,15 @@ static converter::sptr make_convert_sc12_item32_le_1_to_sc16_1(void)
 UHD_STATIC_BLOCK(register_sse_unpack_sc12)
 {
     uhd::convert::id_type id;
-    id.num_inputs = 1;
-    id.num_outputs = 1;
+    id.num_inputs    = 1;
+    id.num_outputs   = 1;
     id.output_format = "fc32";
-    id.input_format = "sc12_item32_le";
-    uhd::convert::register_converter(id, &make_convert_sc12_item32_le_1_to_fc32_1, PRIORITY_SIMD);
+    id.input_format  = "sc12_item32_le";
+    uhd::convert::register_converter(
+        id, &make_convert_sc12_item32_le_1_to_fc32_1, PRIORITY_SIMD);
 
     id.output_format = "sc16";
-    id.input_format = "sc12_item32_le";
-    uhd::convert::register_converter(id, &make_convert_sc12_item32_le_1_to_sc16_1, PRIORITY_SIMD);
+    id.input_format  = "sc12_item32_le";
+    uhd::convert::register_converter(
+        id, &make_convert_sc12_item32_le_1_to_sc16_1, PRIORITY_SIMD);
 }

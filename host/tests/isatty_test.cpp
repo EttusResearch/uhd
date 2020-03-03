@@ -5,9 +5,9 @@
 //
 
 #include <uhdlib/utils/isatty.hpp>
+#include <stdio.h>
 #include <boost/test/unit_test.hpp>
 #include <iostream>
-#include <stdio.h>
 
 BOOST_AUTO_TEST_CASE(test_isatty)
 {
@@ -29,4 +29,3 @@ BOOST_AUTO_TEST_CASE(test_isatty)
     BOOST_REQUIRE(!uhd::is_a_tty(99));
 #endif
 }
-

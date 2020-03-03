@@ -9,10 +9,11 @@
 #define INCLUDED_CODEC_CTRL_HPP
 
 #include "usrp2_iface.hpp"
-#include <boost/shared_ptr.hpp>
 #include <uhd/utils/noncopyable.hpp>
+#include <boost/shared_ptr.hpp>
 
-class usrp2_codec_ctrl : uhd::noncopyable{
+class usrp2_codec_ctrl : uhd::noncopyable
+{
 public:
     typedef boost::shared_ptr<usrp2_codec_ctrl> sptr;
 
@@ -62,7 +63,6 @@ public:
      *  modulation.
      */
     virtual size_t get_tx_interpolation() const = 0;
-
 };
 
 #endif /* INCLUDED_CODEC_CTRL_HPP */

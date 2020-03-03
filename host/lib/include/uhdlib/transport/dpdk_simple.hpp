@@ -29,8 +29,8 @@ public:
      * \param addr a string representing the destination address
      * \param port a string representing the destination port
      */
-    static udp_simple::sptr make_connected(struct uhd_dpdk_ctx &ctx,
-        const std::string &addr, const std::string &port);
+    static udp_simple::sptr make_connected(
+        struct uhd_dpdk_ctx& ctx, const std::string& addr, const std::string& port);
 
     /*!
      * Make a new broadcasting dpdk transport:
@@ -44,8 +44,8 @@ public:
      * \param addr a string representing the destination address
      * \param port a string representing the destination port
      */
-    static udp_simple::sptr make_broadcast(struct uhd_dpdk_ctx &ctx,
-        const std::string &addr, const std::string &port);
+    static udp_simple::sptr make_broadcast(
+        struct uhd_dpdk_ctx& ctx, const std::string& addr, const std::string& port);
 
     /*!
      * Send a single buffer.

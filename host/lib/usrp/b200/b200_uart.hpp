@@ -14,7 +14,7 @@
 #include <uhd/utils/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 
-class b200_uart: uhd::noncopyable, public uhd::uart_iface
+class b200_uart : uhd::noncopyable, public uhd::uart_iface
 {
 public:
     typedef boost::shared_ptr<b200_uart> sptr;

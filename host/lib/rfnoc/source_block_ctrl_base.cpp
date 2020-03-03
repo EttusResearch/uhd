@@ -34,8 +34,7 @@ void source_block_ctrl_base::issue_stream_cmd(
         // if the number of upstream and downstream ports are the same.
         // The stream command is limited to only that port to prevent issuing
         // it on the wrong block and port.
-        if (_num_input_ports == _num_output_ports
-            and upstream_node.first != chan) {
+        if (_num_input_ports == _num_output_ports and upstream_node.first != chan) {
             continue;
         }
         source_node_ctrl::sptr this_upstream_block_ctrl =

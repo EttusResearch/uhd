@@ -107,7 +107,7 @@ std::string octoclock_uart_iface::read_uart(double timeout)
 void octoclock_uart_iface::_update_cache()
 {
     auto pkt_out = make_octoclock_packet();
-    size_t len  = 0;
+    size_t len   = 0;
 
     uint8_t octoclock_data[udp_simple::mtu];
     const octoclock_packet_t* pkt_in =

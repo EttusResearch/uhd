@@ -11,10 +11,10 @@ using namespace uhd;
 
 rx_streamer::~rx_streamer(void)
 {
-    //empty
+    // empty
 }
 
 tx_streamer::~tx_streamer(void)
 {
-    //empty
+    // empty
 }

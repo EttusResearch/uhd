@@ -13,26 +13,27 @@
 #include <uhd/utils/noncopyable.hpp>
 #include <boost/shared_ptr.hpp>
 
-#define FL_BEGIN               0
-#define FL_END                 2
-#define FL_XFER                1
-#define USRP_HASH_SLOT_0_ADDR  0xe1e0
-#define USRP_HASH_SLOT_1_ADDR  0xe1f0
-#define VRQ_FPGA_LOAD          0x02
-#define VRQ_FPGA_SET_RESET     0x04
+#define FL_BEGIN 0
+#define FL_END 2
+#define FL_XFER 1
+#define USRP_HASH_SLOT_0_ADDR 0xe1e0
+#define USRP_HASH_SLOT_1_ADDR 0xe1f0
+#define VRQ_FPGA_LOAD 0x02
+#define VRQ_FPGA_SET_RESET 0x04
 #define VRQ_FPGA_SET_TX_ENABLE 0x05
 #define VRQ_FPGA_SET_RX_ENABLE 0x06
-#define VRQ_FPGA_SET_TX_RESET  0x0a
-#define VRQ_FPGA_SET_RX_RESET  0x0b
-#define VRQ_I2C_READ           0x81
-#define VRQ_I2C_WRITE          0x08
-#define VRQ_SET_LED            0x01
-#define VRT_VENDOR_IN          0xC0
-#define VRT_VENDOR_OUT         0x40
+#define VRQ_FPGA_SET_TX_RESET 0x0a
+#define VRQ_FPGA_SET_RX_RESET 0x0b
+#define VRQ_I2C_READ 0x81
+#define VRQ_I2C_WRITE 0x08
+#define VRQ_SET_LED 0x01
+#define VRT_VENDOR_IN 0xC0
+#define VRT_VENDOR_OUT 0x40
 
-namespace uhd{ namespace usrp{
+namespace uhd { namespace usrp {
 
-class fx2_ctrl : uhd::noncopyable, public uhd::i2c_iface{
+class fx2_ctrl : uhd::noncopyable, public uhd::i2c_iface
+{
 public:
     typedef boost::shared_ptr<fx2_ctrl> sptr;
 
@@ -54,8 +55,7 @@ public:
      * \param filename name of firmware file
      * \param force reload firmware if already loaded
      */
-    virtual void usrp_load_firmware(std::string filename,
-                                   bool force = false) = 0;
+    virtual void usrp_load_firmware(std::string filename, bool force = false) = 0;
 
     /*!
      * Load fpga file onto usrp
@@ -79,10 +79,10 @@ public:
      * \return number of bytes read or error
      */
     virtual int usrp_control_read(uint8_t request,
-                                  uint16_t value,
-                                  uint16_t index,
-                                  unsigned char *buff,
-                                  uint16_t length) = 0;
+        uint16_t value,
+        uint16_t index,
+        unsigned char* buff,
+        uint16_t length) = 0;
 
     /*!
      * Submit an OUT transfer
@@ -94,10 +94,10 @@ public:
      * \return number of bytes written or error
      */
     virtual int usrp_control_write(uint8_t request,
-                                   uint16_t value,
-                                   uint16_t index,
-                                   unsigned char *buff,
-                                   uint16_t length) = 0;
+        uint16_t value,
+        uint16_t index,
+        unsigned char* buff,
+        uint16_t length) = 0;
 
     /*!
      * Perform an I2C write
@@ -107,9 +107,7 @@ public:
      * \return number of bytes written or error
      */
 
-    virtual int usrp_i2c_write(uint16_t i2c_addr,
-                               unsigned char *buf,
-                               uint16_t len) = 0;
+    virtual int usrp_i2c_write(uint16_t i2c_addr, unsigned char* buf, uint16_t len) = 0;
 
     /*!
      * Perform an I2C read
@@ -119,9 +117,7 @@ public:
      * \return number of bytes read or error
      */
 
-    virtual int usrp_i2c_read(uint16_t i2c_addr,
-                               unsigned char *buf,
-                               uint16_t len) = 0;
+    virtual int usrp_i2c_read(uint16_t i2c_addr, unsigned char* buf, uint16_t len) = 0;
 
     //! enable/disable the rx path
     virtual void usrp_rx_enable(bool on) = 0;
@@ -133,6 +129,6 @@ public:
     virtual void usrp_fpga_reset(bool on) = 0;
 };
 
-}} //namespace uhd::usrp
+}} // namespace uhd::usrp
 
 #endif /* INCLUDED_LIBUHD_USRP_COMMON_FX2_CTRL_HPP */

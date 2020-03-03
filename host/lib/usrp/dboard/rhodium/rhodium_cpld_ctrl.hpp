@@ -38,14 +38,14 @@ public:
     };
 
     enum tx_sw1_t {
-        TX_SW1_TOLOWBAND = 0,
-        TX_SW1_TOSWITCH2 = 1,
+        TX_SW1_TOLOWBAND     = 0,
+        TX_SW1_TOSWITCH2     = 1,
         TX_SW1_TOCALLOOPBACK = 2,
-        TX_SW1_ISOLATION = 3
+        TX_SW1_ISOLATION     = 3
     };
 
     enum tx_sw2_t {
-        TX_SW2_FROMSWITCH3 = 0,
+        TX_SW2_FROMSWITCH3           = 0,
         TX_SW2_FROMTXFILTERLP6000MHZ = 1,
         TX_SW2_FROMTXFILTERLP4100MHZ = 2,
         TX_SW2_FROMTXFILTERLP3000MHZ = 3
@@ -62,23 +62,23 @@ public:
         TX_SW5_TOTXFILTERLP3000MHZ = 0,
         TX_SW5_TOTXFILTERLP4100MHZ = 1,
         TX_SW5_TOTXFILTERLP6000MHZ = 2,
-        TX_SW5_TOSWITCH4 = 3
+        TX_SW5_TOSWITCH4           = 3
     };
 
     enum rx_sw1_t {
         RX_SW1_FROMCALLOOPBACK = 0,
-        RX_SW1_FROMRX2INPUT = 1,
-        RX_SW1_ISOLATION = 2,
-        RX_SW1_FROMTXRXINPUT = 3
+        RX_SW1_FROMRX2INPUT    = 1,
+        RX_SW1_ISOLATION       = 2,
+        RX_SW1_FROMTXRXINPUT   = 3
     };
 
     enum rx_sw2_sw7_t {
-        RX_SW2_SW7_LOWBANDFILTERBANK = 0,
+        RX_SW2_SW7_LOWBANDFILTERBANK  = 0,
         RX_SW2_SW7_HIGHBANDFILTERBANK = 1
     };
 
     enum rx_sw3_t {
-        RX_SW3_TOSWITCH4 = 0,
+        RX_SW3_TOSWITCH4            = 0,
         RX_SW3_TOFILTER4500X6000MHZ = 1,
         RX_SW3_TOFILTER3000X4500MHZ = 2,
         RX_SW3_TOFILTER2050X3000MHZ = 3
@@ -95,52 +95,33 @@ public:
         RX_SW6_FROMFILTER2050X3000MHZ = 0,
         RX_SW6_FROMFILTER3000X4500MHZ = 1,
         RX_SW6_FROMFILTER4500X6000MHZ = 2,
-        RX_SW6_FROMSWITCH5 = 3,
+        RX_SW6_FROMSWITCH5            = 3,
     };
 
-    enum cal_iso_sw_t {
-        CAL_ISO_ISOLATION = 0,
-        CAL_ISO_CALLOOPBACK = 1
-    };
+    enum cal_iso_sw_t { CAL_ISO_ISOLATION = 0, CAL_ISO_CALLOOPBACK = 1 };
 
-    enum tx_hb_lb_sel_t {
-        TX_HB_LB_SEL_LOWBAND = 0,
-        TX_HB_LB_SEL_HIGHBAND = 1
-    };
+    enum tx_hb_lb_sel_t { TX_HB_LB_SEL_LOWBAND = 0, TX_HB_LB_SEL_HIGHBAND = 1 };
 
-    enum tx_lo_input_sel_t {
-        TX_LO_INPUT_SEL_INTERNAL = 0,
-        TX_LO_INPUT_SEL_EXTERNAL = 1
-    };
+    enum tx_lo_input_sel_t { TX_LO_INPUT_SEL_INTERNAL = 0, TX_LO_INPUT_SEL_EXTERNAL = 1 };
 
-    enum rx_hb_lb_sel_t {
-        RX_HB_LB_SEL_LOWBAND = 0,
-        RX_HB_LB_SEL_HIGHBAND = 1
-    };
+    enum rx_hb_lb_sel_t { RX_HB_LB_SEL_LOWBAND = 0, RX_HB_LB_SEL_HIGHBAND = 1 };
 
-    enum rx_lo_input_sel_t {
-        RX_LO_INPUT_SEL_INTERNAL = 1,
-        RX_LO_INPUT_SEL_EXTERNAL = 0
-    };
+    enum rx_lo_input_sel_t { RX_LO_INPUT_SEL_INTERNAL = 1, RX_LO_INPUT_SEL_EXTERNAL = 0 };
 
-    enum rx_demod_adj {
-        RX_DEMOD_OPEN = 0,
-        RX_DEMOD_200OHM = 1,
-        RX_DEMOD_1500OHM = 2
-    };
+    enum rx_demod_adj { RX_DEMOD_OPEN = 0, RX_DEMOD_200OHM = 1, RX_DEMOD_1500OHM = 2 };
 
     enum tx_lo_filter_sel_t {
-        TX_LO_FILTER_SEL_0_9GHZ_LPF = 0,
+        TX_LO_FILTER_SEL_0_9GHZ_LPF  = 0,
         TX_LO_FILTER_SEL_5_85GHZ_LPF = 1,
         TX_LO_FILTER_SEL_2_25GHZ_LPF = 2,
-        TX_LO_FILTER_SEL_ISOLATION = 3
+        TX_LO_FILTER_SEL_ISOLATION   = 3
     };
 
     enum rx_lo_filter_sel_t {
-        RX_LO_FILTER_SEL_0_9GHZ_LPF = 0,
+        RX_LO_FILTER_SEL_0_9GHZ_LPF  = 0,
         RX_LO_FILTER_SEL_5_85GHZ_LPF = 1,
         RX_LO_FILTER_SEL_2_25GHZ_LPF = 2,
-        RX_LO_FILTER_SEL_ISOLATION = 3
+        RX_LO_FILTER_SEL_ISOLATION   = 3
     };
 
     /*! Constructor.
@@ -148,10 +129,7 @@ public:
      * \param write_spi_fn SPI write function
      * \param read_spi_fn SPI read function
      */
-    rhodium_cpld_ctrl(
-        write_spi_t write_spi_fn,
-        read_spi_t read_spi_fn
-    );
+    rhodium_cpld_ctrl(write_spi_t write_spi_fn, read_spi_t read_spi_fn);
 
     /**************************************************************************
      * API
@@ -187,13 +165,11 @@ public:
      * \param tx_hb_lb_sel Power on the highband or lowband amplifier
      * \param tx_lo_filter_sel Select LPF filter for LO
      */
-    void set_tx_switches(
-        const tx_sw2_t tx_sw2,
+    void set_tx_switches(const tx_sw2_t tx_sw2,
         const tx_sw3_sw4_t tx_sw3_sw4,
         const tx_sw5_t tx_sw5,
         const tx_hb_lb_sel_t tx_hb_lb_sel,
-        const bool defer_commit = false
-    );
+        const bool defer_commit = false);
 
     /*! Frequency-related settings, receive side
      *
@@ -204,14 +180,12 @@ public:
      * \param rx_hb_lb_sel Power on the highband or lowband amplifier
      * \param rx_lo_filter_sel Select LPF filter for LO
      */
-    void set_rx_switches(
-        const rx_sw2_sw7_t rx_sw2_sw7,
+    void set_rx_switches(const rx_sw2_sw7_t rx_sw2_sw7,
         const rx_sw3_t rx_sw3,
         const rx_sw4_sw5_t rx_sw4_sw5,
         const rx_sw6_t rx_sw6,
         const rx_hb_lb_sel_t rx_hb_lb_sel,
-        const bool defer_commit = false
-    );
+        const bool defer_commit = false);
 
     /*! Input switches for RX side
      *
@@ -220,91 +194,72 @@ public:
      * \param rx_sw1 Input selection of RX path
      * \param cal_iso_sw Terminates the calibration loopback path
      */
-    void set_rx_input_switches(
-        const rx_sw1_t rx_sw1,
+    void set_rx_input_switches(const rx_sw1_t rx_sw1,
         const cal_iso_sw_t cal_iso_sw,
-        const bool defer_commit = false
-    );
+        const bool defer_commit = false);
 
-   /*! Output switches for TX side
-    *
-    * Note: These are not frequency dependent.
-    *
-    * \param tx_sw1 Output selection of TX path
-    */
-    void set_tx_output_switches(
-        const tx_sw1_t tx_sw1,
-        const bool defer_commit = false
-    );
+    /*! Output switches for TX side
+     *
+     * Note: These are not frequency dependent.
+     *
+     * \param tx_sw1 Output selection of TX path
+     */
+    void set_tx_output_switches(const tx_sw1_t tx_sw1, const bool defer_commit = false);
 
-   /*! Input switch for RX LO
-    *
-    * \param rx_lo_input_sel Selects RX LO source
-    */
+    /*! Input switch for RX LO
+     *
+     * \param rx_lo_input_sel Selects RX LO source
+     */
     void set_rx_lo_source(
-        const rx_lo_input_sel_t rx_lo_input_sel,
-        const bool defer_commit = false
-    );
+        const rx_lo_input_sel_t rx_lo_input_sel, const bool defer_commit = false);
 
-   /*! Input switch for TX LO
-    *
-    * \param tx_lo_input_sel Selects TX LO source
-    */
+    /*! Input switch for TX LO
+     *
+     * \param tx_lo_input_sel Selects TX LO source
+     */
     void set_tx_lo_source(
-        const tx_lo_input_sel_t tx_lo_input_sel,
-        const bool defer_commit = false
-    );
+        const tx_lo_input_sel_t tx_lo_input_sel, const bool defer_commit = false);
 
-   /*! Configure RX LO filter, synth, and mixer settings
-    *
-    * \param freq RX LO Frequency
-    */
-    void set_rx_lo_path(
-        const double freq,
-        const bool defer_commit = false
-    );
+    /*! Configure RX LO filter, synth, and mixer settings
+     *
+     * \param freq RX LO Frequency
+     */
+    void set_rx_lo_path(const double freq, const bool defer_commit = false);
 
-   /*! Configure TX LO filter, synth, and mixer settings
-    *
-    * \param freq TX LO Frequency
-    */
-    void set_tx_lo_path(
-        const double freq,
-        const bool defer_commit = false
-    );
+    /*! Configure TX LO filter, synth, and mixer settings
+     *
+     * \param freq TX LO Frequency
+     */
+    void set_tx_lo_path(const double freq, const bool defer_commit = false);
 
 
-   /*! Gain index setting for the RF frontend
-    *
-    * Sets the gain index to one of the predefined values that have been
-    * loaded into the CPLD by gain table loader in MPM.
-    *
-    * \param index Index of the gain table entry to apply (0-60)
-    * \param band Selects which table to use (lowband or highband)
-    * \param dir Selects which RF frontend to apply to (RX or TX)
-    */
-    void set_gain_index(
-        const uint32_t index,
+    /*! Gain index setting for the RF frontend
+     *
+     * Sets the gain index to one of the predefined values that have been
+     * loaded into the CPLD by gain table loader in MPM.
+     *
+     * \param index Index of the gain table entry to apply (0-60)
+     * \param band Selects which table to use (lowband or highband)
+     * \param dir Selects which RF frontend to apply to (RX or TX)
+     */
+    void set_gain_index(const uint32_t index,
         const gain_band_t band,
         const uhd::direction_t dir,
-        const bool defer_commit = false
-    );
+        const bool defer_commit = false);
 
-   /*! Gain setting for LO1
-    *
-    * Sets the attenuation of the RX LO1 DSA or TX LO1 DSA.
-    *
-    * Note: This function uses gain as a parameter, although it is
-    * setting an attenuation.
-    *
-    * \param index Gain value to apply (0-30)
-    * \param dir Selects which LO to apply to (RX, TX, or DX)
-    */
-    void set_lo_gain(
-        const uint32_t index,
+    /*! Gain setting for LO1
+     *
+     * Sets the attenuation of the RX LO1 DSA or TX LO1 DSA.
+     *
+     * Note: This function uses gain as a parameter, although it is
+     * setting an attenuation.
+     *
+     * \param index Gain value to apply (0-30)
+     * \param dir Selects which LO to apply to (RX, TX, or DX)
+     */
+    void set_lo_gain(const uint32_t index,
         const uhd::direction_t dir,
-        const bool defer_commit = false
-    );
+        const bool defer_commit = false);
 
 private:
     //! Write function: Take address / data pair, craft SPI transaction

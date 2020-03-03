@@ -18,8 +18,7 @@ void export_fe_connection(py::module& m)
     py::enum_<sampling_t>(m, "sampling")
         .value("QUADRATURE", sampling_t::QUADRATURE)
         .value("HETERODYNE", sampling_t::HETERODYNE)
-        .value("REAL"      , sampling_t::REAL      )
-        ;
+        .value("REAL", sampling_t::REAL);
 
     py::class_<fe_connection_t>(m, "fe_connection")
 
@@ -29,12 +28,11 @@ void export_fe_connection(py::module& m)
 
         // Methods
         .def("get_sampling_mode", &fe_connection_t::get_sampling_mode)
-        .def("is_iq_swapped"    , &fe_connection_t::is_iq_swapped    )
-        .def("is_i_inverted"    , &fe_connection_t::is_i_inverted    )
-        .def("is_q_inverted"    , &fe_connection_t::is_q_inverted    )
-        .def("get_if_freq"      , &fe_connection_t::get_if_freq      )
-        .def("set_if_freq"      , &fe_connection_t::set_if_freq      )
-        ;
+        .def("is_iq_swapped", &fe_connection_t::is_iq_swapped)
+        .def("is_i_inverted", &fe_connection_t::is_i_inverted)
+        .def("is_q_inverted", &fe_connection_t::is_q_inverted)
+        .def("get_if_freq", &fe_connection_t::get_if_freq)
+        .def("set_if_freq", &fe_connection_t::set_if_freq);
 }
 
 #endif /* INCLUDED_UHD_USRP_FE_CONNECTION_PYTHON_HPP */

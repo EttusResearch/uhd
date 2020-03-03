@@ -9,22 +9,23 @@
 #define INCLUDED_LIBUHD_USRP_GPIO_CORE_3000_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/types/wb_iface.hpp>
 #include <uhd/usrp/dboard_iface.hpp>
 #include <uhd/usrp/gpio_defs.hpp>
 #include <uhd/utils/noncopyable.hpp>
 #include <uhdlib/usrp/gpio_defs.hpp>
-#include <uhd/types/wb_iface.hpp>
 #include <boost/shared_ptr.hpp>
 
 namespace uhd { namespace usrp { namespace gpio_atr {
 
-class gpio_atr_3000 : uhd::noncopyable {
+class gpio_atr_3000 : uhd::noncopyable
+{
 public:
     typedef boost::shared_ptr<gpio_atr_3000> sptr;
 
     static const uint32_t MASK_SET_ALL = 0xFFFFFFFF;
 
-    virtual ~gpio_atr_3000(void) {};
+    virtual ~gpio_atr_3000(void){};
 
     /*!
      * Create a read-write GPIO ATR interface object
@@ -33,8 +34,7 @@ public:
      * \param base base settings offset for GPIO ATR registers
      * \param rb_addr readback offset for GPIO ATR registers
      */
-    static sptr make(
-        uhd::wb_iface::sptr iface,
+    static sptr make(uhd::wb_iface::sptr iface,
         const uhd::wb_iface::wb_addr_type base,
         const uhd::wb_iface::wb_addr_type rb_addr);
 
@@ -50,8 +50,8 @@ public:
     /*!
      * Select the ATR mode for all bits in the mask
      *
-     * \param mode the mode to apply {ATR = outputs driven by ATR state machine, GPIO = outputs static}
-     * \param mask apply the mode to all non-zero bits in the mask
+     * \param mode the mode to apply {ATR = outputs driven by ATR state machine, GPIO =
+     * outputs static} \param mask apply the mode to all non-zero bits in the mask
      */
     virtual void set_atr_mode(const gpio_atr_mode_t mode, const uint32_t mask) = 0;
 
@@ -70,7 +70,9 @@ public:
      * \param value the value to write
      * \param mask only writes to the bits where mask is non-zero
      */
-    virtual void set_atr_reg(const gpio_atr_reg_t atr, const uint32_t value, const uint32_t mask = MASK_SET_ALL) = 0;
+    virtual void set_atr_reg(const gpio_atr_reg_t atr,
+        const uint32_t value,
+        const uint32_t mask = MASK_SET_ALL) = 0;
 
     /*!
      * Write to a static GPIO output
@@ -78,7 +80,8 @@ public:
      * \param value the value to write
      * \param mask only writes to the bits where mask is non-zero
      */
-    virtual void set_gpio_out(const uint32_t value, const uint32_t mask = MASK_SET_ALL) = 0;
+    virtual void set_gpio_out(
+        const uint32_t value, const uint32_t mask = MASK_SET_ALL) = 0;
 
     /*!
      * Read the state of the GPIO pins
@@ -98,13 +101,14 @@ public:
     virtual void set_gpio_attr(const gpio_attr_t attr, const uint32_t value) = 0;
 };
 
-class db_gpio_atr_3000 {
+class db_gpio_atr_3000
+{
 public:
     typedef boost::shared_ptr<db_gpio_atr_3000> sptr;
 
     typedef uhd::usrp::dboard_iface::unit_t db_unit_t;
 
-    virtual ~db_gpio_atr_3000(void) {};
+    virtual ~db_gpio_atr_3000(void){};
 
     /*!
      * Create a read-write GPIO ATR interface object for a daughterboard connector
@@ -113,8 +117,7 @@ public:
      * \param base base settings offset for GPIO ATR registers
      * \param rb_addr readback offset for GPIO ATR registers
      */
-    static sptr make(
-        uhd::wb_iface::sptr iface,
+    static sptr make(uhd::wb_iface::sptr iface,
         const uhd::wb_iface::wb_addr_type base,
         const uhd::wb_iface::wb_addr_type rb_addr);
 
@@ -122,10 +125,11 @@ public:
      * Configure the GPIO mode for all pins in the daughterboard connector
      *
      * \param unit the side of the daughterboard interface to configure (TX or RX)
-     * \param value if value[i] is 1, the i'th bit is in ATR mode otherwise it is in GPIO mode
-     * \param mask mask
+     * \param value if value[i] is 1, the i'th bit is in ATR mode otherwise it is in GPIO
+     * mode \param mask mask
      */
-    virtual void set_pin_ctrl(const db_unit_t unit, const uint32_t value, const uint32_t mask) = 0;
+    virtual void set_pin_ctrl(
+        const db_unit_t unit, const uint32_t value, const uint32_t mask) = 0;
 
     virtual uint32_t get_pin_ctrl(const db_unit_t unit) = 0;
 
@@ -136,7 +140,8 @@ public:
      * \param value if value[i] is 1, the i'th bit is an output otherwise it is an input
      * \param mask mask
      */
-    virtual void set_gpio_ddr(const db_unit_t unit, const uint32_t value, const uint32_t mask) = 0;
+    virtual void set_gpio_ddr(
+        const db_unit_t unit, const uint32_t value, const uint32_t mask) = 0;
 
     virtual uint32_t get_gpio_ddr(const db_unit_t unit) = 0;
 
@@ -148,7 +153,10 @@ public:
      * \param value the value to write
      * \param mask mask
      */
-    virtual void set_atr_reg(const db_unit_t unit, const gpio_atr_reg_t atr, const uint32_t value, const uint32_t mask) = 0;
+    virtual void set_atr_reg(const db_unit_t unit,
+        const gpio_atr_reg_t atr,
+        const uint32_t value,
+        const uint32_t mask) = 0;
 
     virtual uint32_t get_atr_reg(const db_unit_t unit, const gpio_atr_reg_t atr) = 0;
 
@@ -159,7 +167,8 @@ public:
      * \param value the value to write
      * \param mask mask
      */
-    virtual void set_gpio_out(const db_unit_t unit, const uint32_t value, const uint32_t mask) = 0;
+    virtual void set_gpio_out(
+        const db_unit_t unit, const uint32_t value, const uint32_t mask) = 0;
 
     virtual uint32_t get_gpio_out(const db_unit_t unit) = 0;
 
@@ -174,6 +183,6 @@ public:
     virtual uint32_t read_gpio(const db_unit_t unit) = 0;
 };
 
-}}} //namespaces
+}}} // namespace uhd::usrp::gpio_atr
 
 #endif /* INCLUDED_LIBUHD_USRP_GPIO_CORE_3000_HPP */
