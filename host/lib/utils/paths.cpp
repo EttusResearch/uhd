@@ -214,6 +214,25 @@ std::string uhd::get_lib_path(void)
 }
 #endif
 
+std::string uhd::get_cal_data_path(void)
+{
+    const std::string uhdcalib_path = get_env_var("UHD_CAL_DATA_PATH");
+    if (not uhdcalib_path.empty()) {
+        return uhdcalib_path;
+    }
+
+    std::string xdg_data_home_str = get_env_var("XDG_DATA_HOME", "");
+    fs::path xdg_data_home(xdg_data_home_str);
+    if (xdg_data_home_str.empty()) {
+        const std::string home = get_env_var("HOME", "");
+        xdg_data_home          = fs::path(home) / ".local" / "share";
+    }
+
+    // FIXME: This needs to check if paths make sense, work on Windows, etc.
+
+    fs::path cal_data_path = fs::path(xdg_data_home) / "uhd" / "cal_data";
+    return cal_data_path.string();
+}
 
 std::vector<fs::path> uhd::get_module_paths(void)
 {

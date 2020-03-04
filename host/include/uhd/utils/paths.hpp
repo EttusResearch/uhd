@@ -29,6 +29,9 @@ UHD_API std::string get_lib_path(void);
 //! Get a string representing the system's pkg directory
 UHD_API std::string get_pkg_path(void);
 
+//! Get a string representing the location of the calibration database
+UHD_API std::string get_cal_data_path(void);
+
 //! Get UHD library paths
 UHD_API std::vector<fs::path> get_module_paths(void);
 

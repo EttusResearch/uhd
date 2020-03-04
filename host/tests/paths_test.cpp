@@ -44,11 +44,13 @@ BOOST_AUTO_TEST_CASE(test_get_paths)
     const std::string tmp_path = get_tmp_path();
     const std::string app_path = get_app_path();
     const std::string pkg_path = get_pkg_path();
+    const std::string cal_path = get_cal_data_path();
     const auto module_paths    = get_module_paths();
 
     std::cout << "tmp_path: " << tmp_path << std::endl;
     std::cout << "app_path: " << app_path << std::endl;
     std::cout << "pkg_path: " << pkg_path << std::endl;
+    std::cout << "cal_path: " << cal_path << std::endl;
     for (const auto& module_path : module_paths) {
         std::cout << "module path: " << module_path << std::endl;
     }
@@ -63,5 +65,5 @@ BOOST_AUTO_TEST_CASE(test_get_paths)
 
     const std::string utility_error =
         print_utility_error("uhd_images_downloader", "--help");
-    std::cout << "utility_error: " << tmp_path << std::endl;
+    std::cout << "utility_error: " << utility_error << std::endl;
 }
