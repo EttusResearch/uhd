@@ -1,0 +1,32 @@
+//
+// Copyright 2020 Ettus Research, a National Instruments Brand
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+
+// Calibration Table for I/Q Balance correction coefficients
+// This is a very simple calibration coefficient table, and
+// works for Gen-3 cals (IQ balance and DC offset) which have
+// a single real/imag pair of coefficients per frequency.
+
+include "cal_metadata.fbs";
+
+namespace uhd.usrp.cal;
+
+struct IQCalCoeff
+{
+    freq: double;
+    coeff_real: double;
+    coeff_imag: double;
+    suppression_abs: double;
+    suppression_delta: double;
+}
+
+table IQCalCoeffs
+{
+    metadata: Metadata;
+    coeffs: [IQCalCoeff];
+}
+
+root_type IQCalCoeffs;
+file_identifier "IQ/f"; // I/Q data per frequency

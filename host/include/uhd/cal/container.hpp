@@ -25,6 +25,15 @@ class UHD_API container
 public:
     virtual ~container() = default;
 
+    //! Return the name of this calibration table
+    virtual std::string get_name() const = 0;
+
+    //! Return the device serial of this calibration table
+    virtual std::string get_serial() const = 0;
+
+    //! Timestamp of acquisition time
+    virtual uint64_t get_timestamp() const = 0;
+
     //! Return a serialized version of this container
     virtual std::vector<uint8_t> serialize() = 0;
 

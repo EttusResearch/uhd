@@ -16,4 +16,6 @@ from ... import libpyuhd as lib
 # database is a class, but we treat it like a namespace, i.e., a submodule
 database = lib.cal.database
 Source = lib.cal.source
+IQCal = lib.cal.iq_cal
+InterpMode = lib.cal.interp_mode
 # pylint: enable=invalid-name

@@ -8,7 +8,15 @@ UHD_INSTALL(FILES
     database.hpp
     container.hpp
     interpolation.hpp
+    iq_cal.hpp
+    iq_cal_generated.h
     DESTINATION ${INCLUDE_DIR}/uhd/cal
+    COMPONENT headers
+)
+
+UHD_INSTALL(FILES
+    iq_cal.fbs
+    DESTINATION ${PKG_DATA_DIR}/cal
     COMPONENT headers
 )
 

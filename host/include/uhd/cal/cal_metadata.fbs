@@ -1,0 +1,15 @@
+//
+// Copyright 2020 Ettus Research, a National Instruments Brand
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+
+// Common metadata for all calibration containers
+table Metadata
+{
+    name: string; // Can be given arbitrary, based on calibration
+    serial: string; // Device serial
+    timestamp: uint64; // Unix timestamp
+    version_major: int; // Cal data version (major)
+    version_minor: int; // Cal data version (minor)
+}

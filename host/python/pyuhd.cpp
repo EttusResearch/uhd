@@ -13,6 +13,7 @@
 
 namespace py = pybind11;
 
+#include "cal/cal_python.hpp"
 #include "rfnoc/rfnoc_python.hpp"
 #include "stream_python.hpp"
 #include "types/filters_python.hpp"
@@ -73,4 +74,8 @@ PYBIND11_MODULE(libpyuhd, m)
     // Register RFNoC submodule
     auto rfnoc_module = m.def_submodule("rfnoc", "RFNoC Objects");
     export_rfnoc(rfnoc_module);
+
+    // Register calibration submodule
+    auto cal_module = m.def_submodule("cal", "Calibration Objects");
+    export_cal(cal_module);
 }
