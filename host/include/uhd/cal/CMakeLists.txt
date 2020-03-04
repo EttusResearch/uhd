@@ -6,6 +6,8 @@
 
 UHD_INSTALL(FILES
     database.hpp
+    container.hpp
+    interpolation.hpp
     DESTINATION ${INCLUDE_DIR}/uhd/cal
     COMPONENT headers
 )
