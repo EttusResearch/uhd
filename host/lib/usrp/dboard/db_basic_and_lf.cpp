@@ -5,6 +5,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#include "db_basic_and_lf.hpp"
 #include <uhd/types/dict.hpp>
 #include <uhd/types/ranges.hpp>
 #include <uhd/usrp/dboard_base.hpp>
@@ -17,27 +18,7 @@
 
 using namespace uhd;
 using namespace uhd::usrp;
-
-/***********************************************************************
- * Constants
- **********************************************************************/
-namespace {
-constexpr uint32_t BASIC_TX_PID = 0x0000;
-constexpr uint32_t BASIC_RX_PID = 0x0001;
-constexpr uint32_t LF_TX_PID    = 0x000E;
-constexpr uint32_t LF_RX_PID    = 0x000F;
-
-constexpr double BASIC_MAX_BANDWIDTH = 250e6; // Hz
-constexpr double LF_MAX_BANDWIDTH    = 32e6; // Hz
-
-
-const std::map<std::string, double> subdev_bandwidth_scalar{
-    {"A", 1.0}, {"B", 1.0}, {"AB", 2.0}, {"BA", 2.0}};
-
-const uhd::dict<std::string, std::string> sd_name_to_conn =
-    boost::assign::map_list_of("AB", "IQ")("BA", "QI")("A", "I")("B", "Q");
-} // namespace
-
+using namespace uhd::usrp::dboard::basic_and_lf;
 
 /***********************************************************************
  * The basic and lf boards:
@@ -50,8 +31,6 @@ public:
     virtual ~basic_rx(void);
 
 private:
-    void set_rx_ant(const std::string& ant);
-
     double _max_freq;
 };
 
@@ -91,13 +70,21 @@ static dboard_base::sptr make_lf_tx(dboard_base::ctor_args_t args)
 UHD_STATIC_BLOCK(reg_basic_and_lf_dboards)
 {
     dboard_manager::register_dboard(
-        BASIC_TX_PID, &make_basic_tx, "Basic TX", sd_name_to_conn.keys());
+        BASIC_TX_PID, &make_basic_tx, "Basic TX", antenna_mode_to_conn.keys());
     dboard_manager::register_dboard(
-        BASIC_RX_PID, &make_basic_rx, "Basic RX", sd_name_to_conn.keys());
+        BASIC_RX_PID, &make_basic_rx, "Basic RX", antenna_mode_to_conn.keys());
     dboard_manager::register_dboard(
-        LF_TX_PID, &make_lf_tx, "LF TX", sd_name_to_conn.keys());
+        LF_TX_PID, &make_lf_tx, "LF TX", antenna_mode_to_conn.keys());
     dboard_manager::register_dboard(
-        LF_RX_PID, &make_lf_rx, "LF RX", sd_name_to_conn.keys());
+        LF_RX_PID, &make_lf_rx, "LF RX", antenna_mode_to_conn.keys());
+    dboard_manager::register_dboard(
+        BASIC_TX_RFNOC_PID, &make_basic_tx, "Basic TX", tx_frontends);
+    dboard_manager::register_dboard(
+        BASIC_RX_RFNOC_PID, &make_basic_rx, "Basic RX", rx_frontends);
+    dboard_manager::register_dboard(
+        LF_TX_RFNOC_PID, &make_lf_tx, "LF TX", tx_frontends);
+    dboard_manager::register_dboard(
+        LF_RX_RFNOC_PID, &make_lf_rx, "LF RX", rx_frontends);
 }
 
 /***********************************************************************
@@ -106,20 +93,30 @@ UHD_STATIC_BLOCK(reg_basic_and_lf_dboards)
 basic_rx::basic_rx(ctor_args_t args, double max_freq)
     : rx_dboard_base(args), _max_freq(max_freq)
 {
+    // Examine the frontend to use the RFNoC or the N210 implementation
+    // (preserves legacy behavior)
     const std::string fe_name(get_subdev_name());
-    const std::string fe_conn(sd_name_to_conn[fe_name]);
-    const std::string db_name(
-        str(boost::format("%s (%s)")
-            % ((get_rx_id() == BASIC_RX_PID) ? "BasicRX" : "LFRX") % fe_name));
+    const bool is_rfnoc_dev = std::find(rx_frontends.begin(), rx_frontends.end(), fe_name)
+                              != rx_frontends.end();
+    const std::string ant_mode(is_rfnoc_dev ? "AB" : fe_name);
+    const std::string fe_conn(antenna_mode_to_conn[ant_mode]);
+    const std::string db_name([this]() {
+        switch (get_rx_id().to_uint16()) {
+            case BASIC_RX_PID:
+            case BASIC_RX_RFNOC_PID:
+                return str(boost::format("%s (%s)") % "BasicRX" % get_subdev_name());
+            case LF_RX_PID:
+            case LF_RX_RFNOC_PID:
+                return str(boost::format("%s (%s)") % "LFRX" % get_subdev_name());
+            default:
+                UHD_THROW_INVALID_CODE_PATH();
+        }
+    }());
     UHD_LOG_TRACE("BASICRX",
-        "Initializing driver for: " << db_name << " IQ connection type: " << fe_conn);
-    const bool has_fe_conn_settings =
-        get_iface()->has_set_fe_connection(dboard_iface::UNIT_RX);
-    UHD_LOG_TRACE("BASICRX",
-        "Access to FE connection settings: " << (has_fe_conn_settings ? "Yes" : "No"));
+        "Initializing driver for: " << db_name << " IQ connection type: " << ant_mode);
+    UHD_LOG_TRACE("BASICRX", "Is RFNoC Device: " << (is_rfnoc_dev ? "Yes" : "No"));
 
-    std::vector<std::string> antenna_options =
-        has_fe_conn_settings ? sd_name_to_conn.keys() : std::vector<std::string>(1, "");
+    std::vector<std::string> antenna_options = antenna_mode_to_conn.keys();
 
     ////////////////////////////////////////////////////////////////////
     // Register properties
@@ -134,29 +131,43 @@ basic_rx::basic_rx(ctor_args_t args, double max_freq)
         .set(freq_range_t(-_max_freq, +_max_freq));
     this->get_rx_subtree()
         ->create<std::string>("antenna/value")
-        .set(has_fe_conn_settings ? fe_name : "");
-    if (has_fe_conn_settings) {
-        this->get_rx_subtree()
-            ->access<std::string>("antenna/value")
-            .add_coerced_subscriber(
-                [this](const std::string& ant) { this->set_rx_ant(ant); });
-    }
+        .set(is_rfnoc_dev ? ant_mode : "");
     this->get_rx_subtree()
         ->create<std::vector<std::string>>("antenna/options")
-        .set(antenna_options);
+        .set(is_rfnoc_dev ? antenna_options : std::vector<std::string>(1, ""));
     this->get_rx_subtree()->create<int>("sensors"); // phony property so this dir exists
     this->get_rx_subtree()
         ->create<std::string>("connection")
-        .set(sd_name_to_conn[get_subdev_name()]);
+        .set(antenna_mode_to_conn[ant_mode]);
     this->get_rx_subtree()->create<bool>("enabled").set(true); // always enabled
     this->get_rx_subtree()->create<bool>("use_lo_offset").set(false);
     this->get_rx_subtree()
         ->create<double>("bandwidth/value")
-        .set(subdev_bandwidth_scalar.at(get_subdev_name()) * _max_freq);
+        .set(antenna_mode_bandwidth_scalar.at(ant_mode) * _max_freq);
     this->get_rx_subtree()
         ->create<meta_range_t>("bandwidth/range")
-        .set(freq_range_t(subdev_bandwidth_scalar.at(get_subdev_name()) * _max_freq,
-            subdev_bandwidth_scalar.at(get_subdev_name()) * _max_freq));
+        .set(freq_range_t(antenna_mode_bandwidth_scalar.at(ant_mode) * _max_freq,
+            antenna_mode_bandwidth_scalar.at(ant_mode) * _max_freq));
+    if (is_rfnoc_dev) {
+        this->get_rx_subtree()
+            ->access<std::string>("antenna/value")
+            .add_coerced_subscriber([this](const std::string& ant) {
+                this->get_rx_subtree()
+                    ->access<std::string>("connection")
+                    .set(antenna_mode_to_conn[ant]);
+                this->get_rx_subtree()
+                    ->access<double>("bandwidth/value")
+                    .set(antenna_mode_bandwidth_scalar.at(ant) * _max_freq);
+                this->get_rx_subtree()
+                    ->access<meta_range_t>("bandwidth/range")
+                    .set(freq_range_t(antenna_mode_bandwidth_scalar.at(ant) * _max_freq,
+                        antenna_mode_bandwidth_scalar.at(ant) * _max_freq));
+                UHD_LOG_TRACE("BASICRX",
+                    "Changing antenna mode on channel: " << get_subdev_name()
+                                                         << " IQ connection type: "
+                                                         << antenna_mode_to_conn[ant]);
+            });
+    }
 
     // disable RX dboard clock by default
     this->get_iface()->set_clock_enabled(dboard_iface::UNIT_RX, false);
@@ -172,34 +183,40 @@ basic_rx::~basic_rx(void)
     /* NOP */
 }
 
-void basic_rx::set_rx_ant(const std::string& ant)
-{
-    UHD_ASSERT_THROW(get_iface()->has_set_fe_connection(dboard_iface::UNIT_RX));
-    UHD_LOG_TRACE("BASICRX", "Setting antenna value to: " << ant);
-    get_iface()->set_fe_connection(dboard_iface::UNIT_RX,
-        get_subdev_name(),
-        usrp::fe_connection_t(sd_name_to_conn[ant], 0.0 /* IF */));
-}
-
 /***********************************************************************
  * Basic and LF TX dboard
  **********************************************************************/
 basic_tx::basic_tx(ctor_args_t args, double max_freq) : tx_dboard_base(args)
 {
+    // Examine the frontend to use the RFNoC or the N210 implementation
+    // (preserves legacy behavior)
+    const std::string fe_name(get_subdev_name());
+    const bool is_rfnoc_dev = std::find(tx_frontends.begin(), tx_frontends.end(), fe_name)
+                              != tx_frontends.end();
+    const std::string ant_mode(is_rfnoc_dev ? "AB" : fe_name);
     _max_freq = max_freq;
-    // this->get_iface()->set_clock_enabled(dboard_iface::UNIT_TX, true);
+    const std::string db_name([this]() {
+        switch (get_tx_id().to_uint16()) {
+            case BASIC_TX_PID:
+            case BASIC_TX_RFNOC_PID:
+                return str(boost::format("%s (%s)") % "BasicTX" % get_subdev_name());
+            case LF_TX_PID:
+            case LF_TX_RFNOC_PID:
+                return str(boost::format("%s (%s)") % "LFTX" % get_subdev_name());
+            default:
+                UHD_THROW_INVALID_CODE_PATH();
+        }
+    }());
+    UHD_LOG_TRACE("BASICTX",
+        "Initializing driver for: " << db_name << " IQ connection type: " << ant_mode);
+    UHD_LOG_TRACE("BASICTX", "Is RFNoC Device: " << (is_rfnoc_dev ? "Yes" : "No"));
+
+    std::vector<std::string> antenna_options = antenna_mode_to_conn.keys();
 
     ////////////////////////////////////////////////////////////////////
     // Register properties
     ////////////////////////////////////////////////////////////////////
-    if (get_tx_id() == BASIC_TX_PID) {
-        this->get_tx_subtree()->create<std::string>("name").set(
-            std::string(str(boost::format("BasicTX (%s)") % get_subdev_name())));
-    } else {
-        this->get_tx_subtree()->create<std::string>("name").set(
-            std::string(str(boost::format("LFTX (%s)") % get_subdev_name())));
-    }
-
+    this->get_tx_subtree()->create<std::string>("name").set(db_name);
     this->get_tx_subtree()->create<int>("gains"); // phony property so this dir exists
     this->get_tx_subtree()->create<double>("freq/value").set_publisher([]() {
         return 0.0;
@@ -207,21 +224,45 @@ basic_tx::basic_tx(ctor_args_t args, double max_freq) : tx_dboard_base(args)
     this->get_tx_subtree()
         ->create<meta_range_t>("freq/range")
         .set(freq_range_t(-_max_freq, +_max_freq));
-    this->get_tx_subtree()->create<std::string>("antenna/value").set("");
-    this->get_tx_subtree()->create<std::vector<std::string>>("antenna/options").set({""});
+    this->get_tx_subtree()
+        ->create<std::string>("antenna/value")
+        .set(is_rfnoc_dev ? ant_mode : "");
+    this->get_tx_subtree()
+        ->create<std::vector<std::string>>("antenna/options")
+        .set(is_rfnoc_dev ? antenna_options : std::vector<std::string>(1, ""));
     this->get_tx_subtree()->create<int>("sensors"); // phony property so this dir exists
     this->get_tx_subtree()
         ->create<std::string>("connection")
-        .set(sd_name_to_conn[get_subdev_name()]);
+        .set(antenna_mode_to_conn[ant_mode]);
     this->get_tx_subtree()->create<bool>("enabled").set(true); // always enabled
     this->get_tx_subtree()->create<bool>("use_lo_offset").set(false);
     this->get_tx_subtree()
         ->create<double>("bandwidth/value")
-        .set(subdev_bandwidth_scalar.at(get_subdev_name()) * _max_freq);
+        .set(antenna_mode_bandwidth_scalar.at(ant_mode) * _max_freq);
     this->get_tx_subtree()
         ->create<meta_range_t>("bandwidth/range")
-        .set(freq_range_t(subdev_bandwidth_scalar.at(get_subdev_name()) * _max_freq,
-            subdev_bandwidth_scalar.at(get_subdev_name()) * _max_freq));
+        .set(freq_range_t(antenna_mode_bandwidth_scalar.at(ant_mode) * _max_freq,
+            antenna_mode_bandwidth_scalar.at(ant_mode) * _max_freq));
+    if (is_rfnoc_dev) {
+        this->get_tx_subtree()
+            ->access<std::string>("antenna/value")
+            .add_coerced_subscriber([this](const std::string& ant) {
+                this->get_tx_subtree()
+                    ->access<std::string>("connection")
+                    .set(antenna_mode_to_conn[ant]);
+                this->get_tx_subtree()
+                    ->access<double>("bandwidth/value")
+                    .set(antenna_mode_bandwidth_scalar.at(ant) * _max_freq);
+                this->get_tx_subtree()
+                    ->access<meta_range_t>("bandwidth/range")
+                    .set(freq_range_t(antenna_mode_bandwidth_scalar.at(ant) * _max_freq,
+                        antenna_mode_bandwidth_scalar.at(ant) * _max_freq));
+                UHD_LOG_TRACE("BASICTX",
+                    "Changing antenna mode for channel: " << get_subdev_name()
+                                                          << " IQ connection type: "
+                                                          << antenna_mode_to_conn[ant]);
+            });
+    }
 
     // disable TX dboard clock by default
     this->get_iface()->set_clock_enabled(dboard_iface::UNIT_TX, false);

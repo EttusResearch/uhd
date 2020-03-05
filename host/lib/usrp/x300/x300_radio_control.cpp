@@ -4,6 +4,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#include "../dboard/db_basic_and_lf.hpp"
 #include "x300_adc_ctrl.hpp"
 #include "x300_dac_ctrl.hpp"
 #include "x300_dboard_iface.hpp"
@@ -208,10 +209,12 @@ public:
 
         // Properties
         for (auto& samp_rate_prop : _samp_rate_in) {
-            samp_rate_prop.set(get_rate());
+            set_property(
+                samp_rate_prop.get_id(), get_rate(), samp_rate_prop.get_src_info());
         }
         for (auto& samp_rate_prop : _samp_rate_out) {
-            samp_rate_prop.set(get_rate());
+            set_property(
+                samp_rate_prop.get_id(), get_rate(), samp_rate_prop.get_src_info());
         }
     } /* ctor */
 
@@ -237,6 +240,16 @@ public:
 
     void set_tx_antenna(const std::string& ant, const size_t chan)
     {
+        // Antenna changes may result in a change of streaming mode for LF/Basic dboards
+        if (_basic_lf_tx) {
+            if (not uhd::usrp::dboard::basic_and_lf::antenna_mode_to_conn.has_key(ant)) {
+                throw uhd::lookup_error(
+                    str(boost::format("Invalid antenna mode: %s") % ant));
+            }
+            const std::string connection =
+                uhd::usrp::dboard::basic_and_lf::antenna_mode_to_conn[ant];
+            _tx_fe_map[chan].core->set_mux(connection);
+        }
         get_tree()
             ->access<std::string>(get_db_path("tx", chan) / "antenna" / "value")
             .set(ant);
@@ -259,6 +272,18 @@ public:
 
     void set_rx_antenna(const std::string& ant, const size_t chan)
     {
+        // Antenna changes may result in a change of streaming mode for LF/Basic dboards
+        if (_basic_lf_rx) {
+            if (not uhd::usrp::dboard::basic_and_lf::antenna_mode_to_conn.has_key(ant)) {
+                throw uhd::lookup_error(
+                    str(boost::format("Invalid antenna mode: %s") % ant));
+            }
+            const std::string connection =
+                uhd::usrp::dboard::basic_and_lf::antenna_mode_to_conn[ant];
+            const double if_freq = 0.0;
+            _rx_fe_map[chan].core->set_fe_connection(
+                usrp::fe_connection_t(connection, if_freq));
+        }
         get_tree()
             ->access<std::string>(get_db_path("rx", chan) / "antenna" / "value")
             .set(ant);
@@ -1022,7 +1047,7 @@ public:
     }
 
     size_t get_chan_from_dboard_fe(
-        const std::string& fe, const direction_t direction) const
+        const std::string& fe, const uhd::direction_t direction) const
     {
         switch (direction) {
             case uhd::TX_DIRECTION:
@@ -1448,6 +1473,22 @@ private:
             const size_t addr = EEPROM_ADDRS[i] + DB_OFFSET;
             // Load EEPROM
             _db_eeproms[addr].load(*zpu_i2c, BASE_ADDR | addr);
+            // Use the RFNoC implementation for Basic/LF dboards
+            uint16_t dboard_pid = _db_eeproms[addr].id.to_uint16();
+            switch (dboard_pid) {
+                case uhd::usrp::dboard::basic_and_lf::BASIC_RX_PID:
+                case uhd::usrp::dboard::basic_and_lf::LF_RX_PID:
+                    dboard_pid |= uhd::usrp::dboard::basic_and_lf::RFNOC_PID_FLAG;
+                    _db_eeproms[addr].id = dboard_pid;
+                    _basic_lf_rx         = true;
+                    break;
+                case uhd::usrp::dboard::basic_and_lf::BASIC_TX_PID:
+                case uhd::usrp::dboard::basic_and_lf::LF_TX_PID:
+                    dboard_pid |= uhd::usrp::dboard::basic_and_lf::RFNOC_PID_FLAG;
+                    _db_eeproms[addr].id = dboard_pid;
+                    _basic_lf_tx         = true;
+                    break;
+            }
             // Add to tree
             get_tree()
                 ->create<dboard_eeprom_t>(DB_PATH / EEPROM_PATHS[i])
@@ -1489,29 +1530,22 @@ private:
         );
         RFNOC_LOG_TRACE("DB Manager Initialization complete.");
 
-        // The X3x0 radio block defaults to two ports, but most daughterboards
-        // only have one frontend. So we now reduce the number of actual ports
-        // based on what is connected.
-        // Note: The Basic and LF boards pretend they have four frontends,
-        // which a hack from the past. However, they actually only have one
-        // frontend, and we select the AB/BA/A/B setting through the antenna.
-        // The easiest way to identify those boards is because they're the only
-        // ones with four frontends.
-        // For all other cases, we reduce the number of frontends to one.
+        // The X3x0 radio block defaults to a maximum of two ports, but
+        // many daughterboards have fewer possible frontends. So we now
+        // reduce the number of actual ports based on what is connected.
+        // Note: The Basic and LF boards have two possible frontends on
+        // the rx side, and one on the tx side. TwinRX boards have two
+        // possible rx frontends, and require up to two ports on the rx side.
+        // For all other cases, the number of possible frontends is one for
+        // rx and tx.
         const size_t num_tx_frontends = _db_manager->get_tx_frontends().size();
         const size_t num_rx_frontends = _db_manager->get_rx_frontends().size();
-        if (num_tx_frontends == 4) {
-            RFNOC_LOG_TRACE("Found four frontends, inferring BasicTX or LFTX.");
-            set_num_input_ports(1);
-        } else if (num_tx_frontends == 2 || num_tx_frontends == 1) {
+        if (num_tx_frontends == 2 || num_tx_frontends == 1) {
             set_num_input_ports(num_tx_frontends);
         } else {
             throw uhd::runtime_error("Unexpected number of TX frontends!");
         }
-        if (num_rx_frontends == 4) {
-            RFNOC_LOG_TRACE("Found four frontends, inferring BasicRX or LFRX.");
-            set_num_output_ports(1);
-        } else if (num_rx_frontends == 2 || num_rx_frontends == 1) {
+        if (num_rx_frontends == 2 || num_rx_frontends == 1) {
             set_num_output_ports(num_rx_frontends);
         } else {
             throw uhd::runtime_error("Unexpected number of RX frontends!");
@@ -1537,28 +1571,14 @@ private:
             if (rx_chan >= get_num_output_ports()) {
                 break;
             }
-            _rx_fe_map[rx_chan].db_fe_name = fe;
-            _db_iface->add_rx_fe(fe, _rx_fe_map[rx_chan].core);
-            const fs_path fe_path(DB_PATH / "rx_frontends" / fe);
-            const std::string conn =
-                get_tree()->access<std::string>(fe_path / "connection").get();
-            const double if_freq =
-                (get_tree()->exists(fe_path / "if_freq/value"))
-                    ? get_tree()->access<double>(fe_path / "if_freq/value").get()
-                    : 0.0;
-            _rx_fe_map[rx_chan].core->set_fe_connection(
-                usrp::fe_connection_t(conn, if_freq));
+            _set_rx_fe(fe, rx_chan);
             rx_chan++;
         }
         for (const std::string& fe : _db_manager->get_tx_frontends()) {
             if (tx_chan >= get_num_input_ports()) {
                 break;
             }
-            _tx_fe_map[tx_chan].db_fe_name = fe;
-            const fs_path fe_path(DB_PATH / "tx_frontends" / fe);
-            const std::string conn =
-                get_tree()->access<std::string>(fe_path / "connection").get();
-            _tx_fe_map[tx_chan].core->set_mux(conn);
+            _set_tx_fe(fe, tx_chan);
             tx_chan++;
         }
         UHD_ASSERT_THROW(rx_chan or tx_chan);
@@ -1687,6 +1707,30 @@ private:
         _leds->set_atr_reg(gpio_atr::ATR_REG_RX_ONLY, is_txrx ? TXRX_RX : RX2_RX);
         _leds->set_atr_reg(gpio_atr::ATR_REG_TX_ONLY, TXRX_TX);
         _leds->set_atr_reg(gpio_atr::ATR_REG_FULL_DUPLEX, RX2_RX | TXRX_TX);
+    }
+
+    void _set_rx_fe(const std::string& fe, const size_t chan)
+    {
+        _rx_fe_map[chan].db_fe_name = fe;
+        _db_iface->add_rx_fe(fe, _rx_fe_map[chan].core);
+        const std::string connection =
+            get_tree()->access<std::string>(get_db_path("rx", chan) / "connection").get();
+        const double if_freq =
+            (get_tree()->exists(get_db_path("rx", chan) / "if_freq" / "value"))
+                ? get_tree()
+                      ->access<double>(get_db_path("rx", chan) / "if_freq" / "value")
+                      .get()
+                : 0.0;
+        _rx_fe_map[chan].core->set_fe_connection(
+            usrp::fe_connection_t(connection, if_freq));
+    }
+
+    void _set_tx_fe(const std::string& fe, const size_t chan)
+    {
+        _tx_fe_map[chan].db_fe_name = fe;
+        const std::string connection =
+            get_tree()->access<std::string>(get_db_path("tx", chan) / "connection").get();
+        _tx_fe_map[chan].core->set_mux(connection);
     }
 
     void set_rx_fe_corrections(const double lo_freq, const size_t chan)
@@ -1866,6 +1910,9 @@ private:
         std::string db_fe_name;
         tx_frontend_core_200::sptr core;
     };
+
+    bool _basic_lf_rx;
+    bool _basic_lf_tx;
 
     std::unordered_map<size_t, rx_fe_perif> _rx_fe_map;
     std::unordered_map<size_t, tx_fe_perif> _tx_fe_map;

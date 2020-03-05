@@ -193,6 +193,7 @@ public:
     {
         switch (_fe_conn.get_sampling_mode()) {
             case fe_connection_t::REAL:
+                return _adc_rate;
             case fe_connection_t::HETERODYNE:
                 return _adc_rate / 2;
             default:
