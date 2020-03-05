@@ -5,6 +5,8 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
+#include <uhd/cal/database.hpp>
+#include <uhd/cal/iq_cal.hpp>
 #include <uhd/property_tree.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/usrp/multi_usrp.hpp>
@@ -181,33 +183,18 @@ static void store_results(const std::vector<result_t>& results,
     const std::string& what, // Type of test, e.g. "iq",
     const std::string& serial)
 {
-    // make the calibration file path
-    fs::path cal_data_path = fs::path(uhd::get_app_path()) / ".uhd";
-    fs::create_directory(cal_data_path);
-    cal_data_path = cal_data_path / "cal";
-    fs::create_directory(cal_data_path);
-    cal_data_path =
-        cal_data_path / str(boost::format("%s_%s_cal_v0.2_%s.csv") % xx % what % serial);
-    if (fs::exists(cal_data_path))
-        fs::rename(cal_data_path,
-            cal_data_path.string() + str(boost::format(".%d") % time(NULL)));
-
-    // fill the calibration file
-    std::ofstream cal_data(cal_data_path.string().c_str());
-    cal_data << boost::format("name, %s Frontend Calibration\n") % XX;
-    cal_data << boost::format("serial, %s\n") % serial;
-    cal_data << boost::format("timestamp, %d\n") % time(NULL);
-    cal_data << boost::format("version, 0, 1\n");
-    cal_data << boost::format("DATA STARTS HERE\n");
-    cal_data << "lo_frequency, correction_real, correction_imag, measured, delta\n";
-
+    using namespace uhd::usrp::cal;
+    // Note: We could also load existing data and update it.
+    auto cal_data = iq_cal::make(XX + " Frontend Calibration", serial, time(NULL));
     for (size_t i = 0; i < results.size(); i++) {
-        cal_data << results[i].freq << ", " << results[i].real_corr << ", "
-                 << results[i].imag_corr << ", " << results[i].best << ", "
-                 << results[i].delta << "\n";
+        cal_data->set_cal_coeff(results[i].freq,
+            {results[i].real_corr, results[i].imag_corr},
+            results[i].best,
+            results[i].delta);
     }
 
-    std::cout << "wrote cal data to " << cal_data_path << std::endl;
+    const std::string cal_key = xx + "_" + what;
+    database::write_cal_data(cal_key, serial, cal_data->serialize());
 }
 
 /***********************************************************************

@@ -18,6 +18,8 @@ namespace uhd {
  */
 std::string path_expandvars(const std::string& path);
 
+std::string get_appdata_path(void);
+
 } /* namespace uhd */
 
 #endif /* INCLUDED_UHDLIB_UTILS_PATHS_HPP */

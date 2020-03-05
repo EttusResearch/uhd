@@ -8,6 +8,7 @@
 #include <uhd/config.hpp>
 #include <uhd/exception.hpp>
 #include <uhd/utils/paths.hpp>
+#include <uhd/utils/log.hpp>
 #include <uhdlib/utils/paths.hpp>
 #include <boost/algorithm/string.hpp>
 #include <boost/version.hpp>
@@ -188,6 +189,31 @@ std::string uhd::get_app_path(void)
 
     return uhd::get_tmp_path();
 }
+
+// Only used for deprecated CSV file loader. Delete this once CSV support is
+// removed.
+std::string uhd::get_appdata_path(void)
+{
+    const std::string uhdcalib_path = get_env_var("UHD_CONFIG_DIR");
+    if (not uhdcalib_path.empty()) {
+        UHD_LOG_WARNING("UHD",
+            "The environment variable UHD_CONFIG_DIR is deprecated. Refer to "
+            "https://files.ettus.com/manual/page_calibration.html for how to store "
+            "calibration data.");
+        return uhdcalib_path;
+    }
+
+    const std::string appdata_path = get_env_var("APPDATA");
+    if (not appdata_path.empty())
+        return appdata_path;
+
+    const std::string home_path = get_env_var("HOME");
+    if (not home_path.empty())
+        return home_path;
+
+    return uhd::get_tmp_path();
+}
+
 
 #if BOOST_VERSION >= 106100
 std::string uhd::get_pkg_path(void)

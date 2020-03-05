@@ -5,218 +5,185 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //
 
-#include <uhd/types/dict.hpp>
+#include <uhd/cal/container.hpp>
+#include <uhd/cal/database.hpp>
+#include <uhd/cal/iq_cal.hpp>
 #include <uhd/usrp/dboard_eeprom.hpp>
 #include <uhd/utils/csv.hpp>
 #include <uhd/utils/log.hpp>
-#include <uhd/utils/paths.hpp>
 #include <uhdlib/usrp/common/apply_corrections.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/thread/mutex.hpp>
+#include <uhdlib/utils/paths.hpp>
+#include <unordered_map>
+#include <boost/filesystem.hpp> // For deprecated CSV reader only
 #include <complex>
 #include <cstdio>
 #include <fstream>
+#include <mutex>
 
-namespace fs = boost::filesystem;
+using namespace uhd::usrp::cal;
 
-boost::mutex corrections_mutex;
-
-/***********************************************************************
- * Helper routines
- **********************************************************************/
-static double linear_interp(double x, double x0, double y0, double x1, double y1)
-{
-    return y0 + (x - x0) * (y1 - y0) / (x1 - x0);
-}
+std::mutex corrections_mutex;
 
 /***********************************************************************
  * FE apply corrections implementation
  **********************************************************************/
-struct fe_cal_t
+namespace {
+
+// Cache the loaded data so we don't have to serialize on every tune
+std::unordered_map<std::string, iq_cal::sptr> fe_cal_cache;
+
+// Deprecated CSV file loader. Delete this function once we remove CSV support.
+// Then, also delete the uhd::csv module.
+bool load_legacy_fe_corrections(const std::string& cal_key,
+    const std::string& db_serial, const std::string& file_prefix)
 {
-    double lo_freq;
-    double iq_corr_real;
-    double iq_corr_imag;
-};
-
-static bool fe_cal_comp(fe_cal_t a, fe_cal_t b)
-{
-    return (a.lo_freq < b.lo_freq);
-}
-
-static uhd::dict<std::string, std::vector<fe_cal_t>> fe_cal_cache;
-
-static bool is_same_freq(const double f1, const double f2)
-{
-    const double epsilon = 0.1;
-    return ((f1 - epsilon) < f2 and (f1 + epsilon) > f2);
-}
-
-static std::complex<double> get_fe_correction(
-    const std::string& key, const double lo_freq)
-{
-    const std::vector<fe_cal_t>& datas = fe_cal_cache[key];
-    if (datas.empty())
-        throw uhd::runtime_error("empty calibration table " + key);
-
-    // search for lo freq
-    size_t lo_index = 0;
-    size_t hi_index = datas.size() - 1;
-    for (size_t i = 0; i < datas.size(); i++) {
-        if (is_same_freq(datas[i].lo_freq, lo_freq)) {
-            hi_index = i;
-            lo_index = i;
-            break;
-        }
-        if (datas[i].lo_freq > lo_freq) {
-            hi_index = i;
-            break;
-        }
-        lo_index = i;
+    namespace fs                             = boost::filesystem;
+    const std::string file_prefix_deprecated = file_prefix + "_cal_v0.2_";
+    // make the calibration file path
+    const fs::path cal_data_path = fs::path(uhd::get_appdata_path()) / ".uhd" / "cal"
+                                   / (file_prefix_deprecated + db_serial + ".csv");
+    UHD_LOG_TRACE(
+        "CAL", "Checking for deprecated CSV-based cal data at " << cal_data_path);
+    if (not fs::exists(cal_data_path)) {
+        return false;
     }
 
-    if (lo_index == 0)
-        return std::complex<double>(
-            datas[lo_index].iq_corr_real, datas[lo_index].iq_corr_imag);
-    if (hi_index == lo_index)
-        return std::complex<double>(
-            datas[hi_index].iq_corr_real, datas[hi_index].iq_corr_imag);
+    // The serial/timestamp don't really matter, we never look them  up once we
+    // generate the container here.
+    auto iq_cal_container = iq_cal::make(file_prefix, db_serial, 0);
 
-    // interpolation time
-    return std::complex<double>(linear_interp(lo_freq,
-                                    datas[lo_index].lo_freq,
-                                    datas[lo_index].iq_corr_real,
-                                    datas[hi_index].lo_freq,
-                                    datas[hi_index].iq_corr_real),
-        linear_interp(lo_freq,
-            datas[lo_index].lo_freq,
-            datas[lo_index].iq_corr_imag,
-            datas[hi_index].lo_freq,
-            datas[hi_index].iq_corr_imag));
+    // parse csv file
+    std::ifstream cal_data(cal_data_path.string().c_str());
+    const uhd::csv::rows_type rows = uhd::csv::to_rows(cal_data);
+    bool read_data = false, skip_next = false;
+    for (const uhd::csv::row_type& row : rows) {
+        if (not read_data and not row.empty() and row[0] == "DATA STARTS HERE") {
+            read_data = true;
+            skip_next = true;
+            continue;
+        }
+        if (not read_data)
+            continue;
+        if (skip_next) {
+            skip_next = false;
+            continue;
+        }
+
+        iq_cal_container->set_cal_coeff(
+            std::stod(row[0]), {std::stod(row[1]), std::stod(row[2])});
+    }
+    fe_cal_cache.insert({cal_key, iq_cal_container});
+    UHD_LOGGER_INFO("CAL") << "Calibration data loaded: " << cal_data_path.string();
+    return true;
 }
 
-static void apply_fe_corrections(uhd::property_tree::sptr sub_tree,
+void apply_fe_corrections(uhd::property_tree::sptr sub_tree,
     const std::string& db_serial,
     const uhd::fs_path& fe_path,
     const std::string& file_prefix,
     const double lo_freq)
 {
-    // make the calibration file path
-    const fs::path cal_data_path = fs::path(uhd::get_app_path()) / ".uhd" / "cal"
-                                   / (file_prefix + db_serial + ".csv");
-    if (not fs::exists(cal_data_path))
-        return;
-
-    // parse csv file or get from cache
-    if (not fe_cal_cache.has_key(cal_data_path.string())) {
-        std::ifstream cal_data(cal_data_path.string().c_str());
-        const uhd::csv::rows_type rows = uhd::csv::to_rows(cal_data);
-
-        bool read_data = false, skip_next = false;
-        ;
-        std::vector<fe_cal_t> datas;
-        for (const uhd::csv::row_type& row : rows) {
-            if (not read_data and not row.empty() and row[0] == "DATA STARTS HERE") {
-                read_data = true;
-                skip_next = true;
-                continue;
+    const auto cal_key = file_prefix + ":" + db_serial;
+    // Check if we need to load cal data
+    if (!fe_cal_cache.count(cal_key)) {
+        if (database::has_cal_data(file_prefix, db_serial)) {
+            try {
+                const auto cal_data = database::read_cal_data(file_prefix, db_serial);
+                fe_cal_cache.insert({cal_key, container::make<iq_cal>(cal_data)});
+                UHD_LOG_DEBUG("CAL",
+                    "Loaded calibration data for " << file_prefix
+                                                   << " serial=" << db_serial);
+            } catch (const uhd::exception& ex) {
+                UHD_LOG_WARNING("CAL",
+                    "Error occurred reading cal data: `" << ex.what()
+                                                        << "'. Skipping future loads.");
+                fe_cal_cache.insert({cal_key, nullptr});
             }
-            if (not read_data)
-                continue;
-            if (skip_next) {
-                skip_next = false;
-                continue;
-            }
-            fe_cal_t data;
-            std::sscanf(row[0].c_str(), "%lf", &data.lo_freq);
-            std::sscanf(row[1].c_str(), "%lf", &data.iq_corr_real);
-            std::sscanf(row[2].c_str(), "%lf", &data.iq_corr_imag);
-            datas.push_back(data);
+        // Delete the following else clause once we remove CSV support
+        } else if (load_legacy_fe_corrections(cal_key, db_serial, file_prefix)) {
+            UHD_LOG_WARNING("CAL",
+                "Found deprecated (CSV-based) cal data format. This feature will go away "
+                "in the future, please convert your calibration data to the new binary "
+                "format, or re-run your self-cal routines. For more information, see "
+                "https://files.ettus.com/manual/page_calibration.html");
+        } else {
+            // If there is no cal data, store a nullptr so we can skip the check
+            // next time.
+            fe_cal_cache.insert({cal_key, nullptr});
+            UHD_LOG_TRACE("CAL",
+                "No calibration data found for " << file_prefix
+                                                 << " serial=" << db_serial);
         }
-        std::sort(datas.begin(), datas.end(), fe_cal_comp);
-        fe_cal_cache[cal_data_path.string()] = datas;
-        UHD_LOGGER_INFO("CAL") << "Calibration data loaded: " << cal_data_path.string();
     }
 
+    // Check if valid data even exists
+    if (fe_cal_cache.at(cal_key) == nullptr) {
+        return;
+    }
+
+    // OK we have cal data: Now apply it
     sub_tree->access<std::complex<double>>(fe_path).set(
-        get_fe_correction(cal_data_path.string(), lo_freq));
+        fe_cal_cache.at(cal_key)->get_cal_coeff(lo_freq));
 }
 
-/***********************************************************************
- * Wrapper routines with nice try/catch + print
- **********************************************************************/
-void uhd::usrp::apply_tx_fe_corrections( // overloading to work according to rfnoc tree
-                                         // struct
-    property_tree::sptr sub_tree, // starts at mboards/x
+} // namespace
+
+/******************************************************************************
+ * Wrapper routines with nice try/catch + print, RFNoC device version
+ *****************************************************************************/
+void uhd::usrp::apply_tx_fe_corrections(property_tree::sptr sub_tree,
     const std::string& db_serial,
     const uhd::fs_path tx_fe_corr_path,
-    const double lo_freq // actual lo freq
-)
+    const double lo_freq)
 {
-    boost::mutex::scoped_lock l(corrections_mutex);
+    std::lock_guard<std::mutex> l(corrections_mutex);
     try {
-        apply_fe_corrections(sub_tree,
-            db_serial,
-            tx_fe_corr_path + "/iq_balance/value",
-            "tx_iq_cal_v0.2_",
-            lo_freq);
-        apply_fe_corrections(sub_tree,
-            db_serial,
-            tx_fe_corr_path + "/dc_offset/value",
-            "tx_dc_cal_v0.2_",
-            lo_freq);
+        apply_fe_corrections(
+            sub_tree, db_serial, tx_fe_corr_path + "/iq_balance/value", "tx_iq", lo_freq);
+    } catch (const std::exception& e) {
+        UHD_LOGGER_ERROR("CAL") << "Failure in apply_tx_fe_corrections: " << e.what();
+    }
+
+    try {
+        apply_fe_corrections(
+            sub_tree, db_serial, tx_fe_corr_path + "/dc_offset/value", "tx_dc", lo_freq);
     } catch (const std::exception& e) {
         UHD_LOGGER_ERROR("CAL") << "Failure in apply_tx_fe_corrections: " << e.what();
     }
 }
 
+void uhd::usrp::apply_rx_fe_corrections(property_tree::sptr sub_tree,
+    const std::string& db_serial,
+    const uhd::fs_path rx_fe_corr_path,
+    const double lo_freq)
+{
+    std::lock_guard<std::mutex> l(corrections_mutex);
+    try {
+        apply_fe_corrections(
+            sub_tree, db_serial, rx_fe_corr_path + "/iq_balance/value", "rx_iq", lo_freq);
+    } catch (const std::exception& e) {
+        UHD_LOGGER_ERROR("CAL") << "Failure in apply_tx_fe_corrections: " << e.what();
+    }
+}
+
+/******************************************************************************
+ * Gen-2 versions
+ *****************************************************************************/
 void uhd::usrp::apply_tx_fe_corrections(
     property_tree::sptr sub_tree, // starts at mboards/x
     const std::string& slot, // name of dboard slot
     const double lo_freq // actual lo freq
 )
 {
-    boost::mutex::scoped_lock l(corrections_mutex);
+    std::lock_guard<std::mutex> l(corrections_mutex);
 
     // extract eeprom serial
     const uhd::fs_path db_path = "dboards/" + slot + "/tx_eeprom";
     const std::string db_serial =
         sub_tree->access<uhd::usrp::dboard_eeprom_t>(db_path).get().serial;
+    const uhd::fs_path corr_path("tx_frontends/" + slot);
 
-    try {
-        apply_fe_corrections(sub_tree,
-            db_serial,
-            "tx_frontends/" + slot + "/iq_balance/value",
-            "tx_iq_cal_v0.2_",
-            lo_freq);
-        apply_fe_corrections(sub_tree,
-            db_serial,
-            "tx_frontends/" + slot + "/dc_offset/value",
-            "tx_dc_cal_v0.2_",
-            lo_freq);
-    } catch (const std::exception& e) {
-        UHD_LOGGER_ERROR("CAL") << "Failure in apply_tx_fe_corrections: " << e.what();
-    }
-}
-
-void uhd::usrp::apply_rx_fe_corrections( // overloading to work according to rfnoc tree
-                                         // struct
-    property_tree::sptr sub_tree, // starts at mboards/x
-    const std::string& db_serial,
-    const uhd::fs_path rx_fe_corr_path,
-    const double lo_freq // actual lo freq
-)
-{
-    boost::mutex::scoped_lock l(corrections_mutex);
-    try {
-        apply_fe_corrections(sub_tree,
-            db_serial,
-            rx_fe_corr_path + "/iq_balance/value",
-            "rx_iq_cal_v0.2_",
-            lo_freq);
-    } catch (const std::exception& e) {
-        UHD_LOGGER_ERROR("CAL") << "Failure in apply_tx_fe_corrections: " << e.what();
-    }
+    apply_tx_fe_corrections(sub_tree, db_serial, corr_path, lo_freq);
 }
 
 void uhd::usrp::apply_rx_fe_corrections(
@@ -225,17 +192,11 @@ void uhd::usrp::apply_rx_fe_corrections(
     const double lo_freq // actual lo freq
 )
 {
-    boost::mutex::scoped_lock l(corrections_mutex);
+    std::lock_guard<std::mutex> l(corrections_mutex);
     const uhd::fs_path db_path = "dboards/" + slot + "/rx_eeprom";
     const std::string db_serial =
         sub_tree->access<uhd::usrp::dboard_eeprom_t>(db_path).get().serial;
-    try {
-        apply_fe_corrections(sub_tree,
-            db_serial,
-            "rx_frontends/" + slot + "/iq_balance/value",
-            "rx_iq_cal_v0.2_",
-            lo_freq);
-    } catch (const std::exception& e) {
-        UHD_LOGGER_ERROR("CAL") << "Failure in apply_rx_fe_corrections: " << e.what();
-    }
+    const uhd::fs_path corr_path("rx_frontends/" + slot);
+
+    apply_rx_fe_corrections(sub_tree, db_serial, corr_path, lo_freq);
 }
