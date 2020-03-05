@@ -25,6 +25,7 @@ set(test_sources
     buffer_test.cpp
     byteswap_test.cpp
     cast_test.cpp
+    cal_database_test.cpp
     chdr_test.cpp
     constrained_device_args_test.cpp
     convert_test.cpp

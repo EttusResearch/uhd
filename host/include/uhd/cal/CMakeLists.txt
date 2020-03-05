@@ -4,9 +4,9 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
-include(CMakeRC)
-cmrc_add_resource_library(uhd-resources
-    ALIAS uhd_rc
-    NAMESPACE rc
-    cal/test.cal
+UHD_INSTALL(FILES
+    database.hpp
+    DESTINATION ${INCLUDE_DIR}/uhd/cal
+    COMPONENT headers
 )
+

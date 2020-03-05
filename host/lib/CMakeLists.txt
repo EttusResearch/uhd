@@ -82,6 +82,7 @@ LIBUHD_REGISTER_COMPONENT("DPDK" ENABLE_DPDK ON "ENABLE_MPMD;DPDK_FOUND" OFF OFF
 # Include subdirectories (different than add)
 ########################################################################
 INCLUDE_SUBDIRECTORY(include)
+INCLUDE_SUBDIRECTORY(cal)
 INCLUDE_SUBDIRECTORY(ic_reg_maps)
 INCLUDE_SUBDIRECTORY(types)
 INCLUDE_SUBDIRECTORY(convert)

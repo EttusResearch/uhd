@@ -6,6 +6,7 @@
 # SPDX-License-Identifier: GPL-3.0-or-later
 #
 
+add_subdirectory(cal)
 add_subdirectory(rfnoc)
 add_subdirectory(transport)
 add_subdirectory(types)
