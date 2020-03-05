@@ -96,7 +96,7 @@ class MPMServer(RPCServer):
         # first the commands need to be registered
         super(MPMServer, self).__init__(
             pack_params={'use_bin_type': True},
-            unpack_params={'max_buffer_size': 50000000},
+            unpack_params={'max_buffer_size': 50000000, 'raw': False},
         )
         self._state.system_ready.value = True
         self.log.info("RPC server ready!")
@@ -477,7 +477,7 @@ class MPMServer(RPCServer):
         # changes in future versions of RPCServer may cause issues.
         super(MPMServer, self).__init__(
             pack_params={'use_bin_type': True},
-            unpack_params={'max_buffer_size': 50000000},
+            unpack_params={'max_buffer_size': 50000000, 'raw': False},
         )
 
     def reset_mgr(self):
