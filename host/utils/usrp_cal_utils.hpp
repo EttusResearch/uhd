@@ -46,12 +46,11 @@ static constexpr size_t MAX_NUM_TX_ERRORS = 10;
  **********************************************************************/
 static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp)
 {
-    auto tree = usrp->get_tree();
-    // Will work on 1st subdev, top-level must make sure it's the right one
-    uhd::usrp::subdev_spec_t subdev_spec = usrp->get_rx_subdev_spec();
+    constexpr size_t chan = 0;
+    const auto rx_info    = usrp->get_usrp_rx_info(chan);
+    const auto tx_info    = usrp->get_usrp_tx_info(chan);
 
-    const uhd::fs_path mb_path = "/mboards/0";
-    const std::string mb_name  = tree->access<std::string>(mb_path / "name").get();
+    const std::string mb_name = rx_info["mboard_id"];
     if (mb_name.find("USRP2") != std::string::npos
         or mb_name.find("N200") != std::string::npos
         or mb_name.find("N210") != std::string::npos
@@ -64,34 +63,51 @@ static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp)
         usrp->set_tx_rate(4e6);
         usrp->set_rx_rate(4e6);
     } else {
-        throw std::runtime_error("self-calibration is not supported for this device");
+        throw std::runtime_error(
+            std::string("self-calibration is not supported for this device: ") + mb_name);
     }
 
-    const uhd::fs_path tx_fe_path =
-        "/mboards/0/dboards/" + subdev_spec[0].db_name + "/tx_frontends/0";
-    const std::string tx_name = tree->access<std::string>(tx_fe_path / "name").get();
+    const std::string tx_name = tx_info["tx_subdev_name"];
     if (tx_name.find("WBX") == std::string::npos
         and tx_name.find("SBX") == std::string::npos
         and tx_name.find("CBX") == std::string::npos
         and tx_name.find("RFX") == std::string::npos
         and tx_name.find("UBX") == std::string::npos
         and tx_name.find("Rhodium") == std::string::npos) {
-        throw std::runtime_error("self-calibration is not supported for this TX dboard");
+        throw std::runtime_error(
+            std::string("self-calibration is not supported for this TX dboard :")
+            + tx_name);
     }
     usrp->set_tx_gain(0);
 
-    const uhd::fs_path rx_fe_path =
-        "/mboards/0/dboards/" + subdev_spec[0].db_name + "/rx_frontends/0";
-    const std::string rx_name = tree->access<std::string>(rx_fe_path / "name").get();
+    const std::string rx_name = rx_info["rx_subdev_name"];
     if (rx_name.find("WBX") == std::string::npos
         and rx_name.find("SBX") == std::string::npos
         and rx_name.find("CBX") == std::string::npos
         and rx_name.find("RFX") == std::string::npos
         and rx_name.find("UBX") == std::string::npos
         and rx_name.find("Rhodium") == std::string::npos) {
-        throw std::runtime_error("self-calibration is not supported for this RX dboard");
+        throw std::runtime_error(
+            std::string("self-calibration is not supported for this RX dboard :")
+            + rx_name);
     }
     usrp->set_rx_gain(0);
+}
+
+/***********************************************************************
+ * Retrieve d'board serial
+ **********************************************************************/
+static std::string get_serial(uhd::usrp::multi_usrp::sptr usrp, const std::string& tx_rx)
+{
+    const size_t chan = 0;
+    auto usrp_info    = (tx_rx == "tx") ? usrp->get_usrp_tx_info(chan)
+                                     : usrp->get_usrp_rx_info(chan);
+    const std::string serial_key = tx_rx + "_serial";
+    if (!usrp_info.has_key(serial_key)) {
+        throw uhd::runtime_error("Cannot determine daughterboard serial!");
+    }
+
+    return usrp_info[serial_key];
 }
 
 /***********************************************************************
@@ -99,21 +115,12 @@ static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp)
  **********************************************************************/
 void check_for_empty_serial(uhd::usrp::multi_usrp::sptr usrp)
 {
-    // Will work on 1st subdev, top-level must make sure it's the right one
-    uhd::usrp::subdev_spec_t subdev_spec = usrp->get_rx_subdev_spec();
-
-    // extract eeprom
-    uhd::property_tree::sptr tree = usrp->get_tree();
-    // This only works with transceiver boards, so we can always check rx side
-    const uhd::fs_path db_path =
-        "/mboards/0/dboards/" + subdev_spec[0].db_name + "/rx_eeprom";
-    const uhd::usrp::dboard_eeprom_t db_eeprom =
-        tree->access<uhd::usrp::dboard_eeprom_t>(db_path).get();
-
-    std::string error_string = "This dboard has no serial!\n\nPlease see the Calibration "
-                               "documentation for details on how to fix this.";
-    if (db_eeprom.serial.empty())
+    if (get_serial(usrp, "rx").empty()) {
+        std::string error_string =
+            "This dboard has no serial!\n\nPlease see the Calibration "
+            "documentation for details on how to fix this.";
         throw std::runtime_error(error_string);
+    }
 }
 
 /***********************************************************************
@@ -164,21 +171,6 @@ static inline void write_samples_to_file(
     outfile.close();
 }
 
-
-/***********************************************************************
- * Retrieve d'board serial
- **********************************************************************/
-static std::string get_serial(uhd::usrp::multi_usrp::sptr usrp, const std::string& tx_rx)
-{
-    uhd::property_tree::sptr tree = usrp->get_tree();
-    // Will work on 1st subdev, top-level must make sure it's the right one
-    uhd::usrp::subdev_spec_t subdev_spec = usrp->get_rx_subdev_spec();
-    const uhd::fs_path db_path =
-        "/mboards/0/dboards/" + subdev_spec[0].db_name + "/" + tx_rx + "_eeprom";
-    const uhd::usrp::dboard_eeprom_t db_eeprom =
-        tree->access<uhd::usrp::dboard_eeprom_t>(db_path).get();
-    return db_eeprom.serial;
-}
 
 /***********************************************************************
  * Store data to file
