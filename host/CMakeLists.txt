@@ -452,6 +452,7 @@ endforeach(Boost_Comp)
 if(ENABLE_USB)
     list(APPEND UHD_LINK_LIST_STATIC "usb-1.0")
 endif(ENABLE_USB)
+LIST(APPEND UHD_LINK_LIST_STATIC "tinfo")
 set(UHD_RFNOC_FOUND "TRUE")
 
 configure_file(

@@ -25,7 +25,7 @@ if(CURSES_FOUND)
         get_filename_component(name ${source} NAME_WE)
         add_executable(${name} ${source} ${latency_lib_path})
     	LIBUHD_APPEND_SOURCES(${name})
-        target_link_libraries(${name} uhd ${Boost_LIBRARIES} ${CURSES_LIBRARIES})
+	target_link_libraries(${name} uhd ${Boost_LIBRARIES} tinfo ${CURSES_LIBRARIES})
     	UHD_INSTALL(TARGETS ${name} RUNTIME DESTINATION ${latency_comp_dest} COMPONENT ${latency_comp_name})
     endforeach(source)
 

@@ -55,11 +55,11 @@ find_package(Curses)
 if(CURSES_FOUND)
     include_directories(${CURSES_INCLUDE_DIR})
     add_executable(rx_ascii_art_dft rx_ascii_art_dft.cpp)
-    target_link_libraries(rx_ascii_art_dft uhd ${CURSES_LIBRARIES} ${Boost_LIBRARIES})
+    target_link_libraries(rx_ascii_art_dft uhd ${CURSES_LIBRARIES} tinfo ${Boost_LIBRARIES})
     UHD_INSTALL(TARGETS rx_ascii_art_dft RUNTIME DESTINATION ${PKG_LIB_DIR}/examples COMPONENT examples)
 
     add_executable(twinrx_freq_hopping twinrx_freq_hopping.cpp)
-    target_link_libraries(twinrx_freq_hopping uhd ${CURSES_LIBRARIES} ${Boost_LIBRARIES})
+    target_link_libraries(twinrx_freq_hopping uhd ${CURSES_LIBRARIES} tinfo ${Boost_LIBRARIES})
     UHD_INSTALL(TARGETS twinrx_freq_hopping RUNTIME DESTINATION ${PKG_LIB_DIR}/examples COMPONENT examples)
 endif(CURSES_FOUND)
 
