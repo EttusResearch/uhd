@@ -130,9 +130,9 @@ set(PKG_MAN_DIR share/man/man1)
 # UHD config files
 ########################################################################
 set(UHD_USER_CONF_FILE
-    ".uhd/uhd.conf"
+    "uhd.conf"
     CACHE STRING
-    "Location of the user-specific UHD configuration file, relative to APPDATA (or HOME)"
+    "Location of the user-specific UHD configuration file, relative to APPDATA (or XDG_CONFIG_HOME)"
 )
 if(UNIX)
     set(UHD_SYS_CONF_FILE

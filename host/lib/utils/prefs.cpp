@@ -17,7 +17,7 @@ using namespace uhd;
 namespace {
 constexpr char UHD_CONF_FILE_VAR[] = "UHD_CONFIG_FILE";
 
-inline void _update_conf_file(
+inline bool _update_conf_file(
     const std::string& path, const std::string& config_type, config_parser& conf_file)
 {
     if (not path.empty()) {
@@ -27,15 +27,19 @@ inline void _update_conf_file(
                 conf_file.read_file(path);
                 UHD_LOG_DEBUG(
                     "PREFS", "Loaded " << config_type << " config file " << path);
+                return true;
             } catch (...) {
                 UHD_LOG_DEBUG(
                     "PREFS", "Failed to load " << config_type << " config file " << path);
+                return false;
             }
         } else {
             UHD_LOG_TRACE(
                 "PREFS", "No " << config_type << " config file found at " << path);
+            return false;
         }
     }
+    return false;
 }
 
 void update_from_key(
@@ -76,10 +80,26 @@ config_parser& uhd::prefs::get_uhd_config()
         UHD_LOG_TRACE("CONF", "Initializing config file object...");
         const std::string sys_conf_file = path_expandvars(UHD_SYS_CONF_FILE);
         _update_conf_file(sys_conf_file, "system", _conf_files);
+        // prefer .config/uhd.conf
+        // otherwise ~/.uhd/uhd.conf
         const std::string user_conf_file =
-            (boost::filesystem::path(get_app_path()) / std::string(UHD_USER_CONF_FILE))
-                .string();
-        _update_conf_file(user_conf_file, "user", _conf_files);
+            (get_xdg_config_home() / std::string(UHD_USER_CONF_FILE)).string();
+        const bool user_conf_loaded =
+            _update_conf_file(user_conf_file, "user", _conf_files);
+        // Config files can be in ~/.config/ or in ~/.uhd. The latter is
+        // considered deprecated. We load from there (if we have not already
+        // loaded from ~/.config), but we show a warning.
+        if (!user_conf_loaded
+            && _update_conf_file(
+                   (get_legacy_config_home() / std::string(UHD_USER_CONF_FILE)).string(),
+                   "user",
+                   _conf_files)) {
+            UHD_LOG_WARNING("PREFS",
+                "Loaded config from " << get_legacy_config_home().string()
+                                      << ". This location is considered deprecated, "
+                                         "consider moving your config file to "
+                                      << get_xdg_config_home().string() << " instead.");
+        }
         std::string env_conf_file;
         try { // getenv into std::string can fail
             if (std::getenv(UHD_CONF_FILE_VAR) != NULL) {

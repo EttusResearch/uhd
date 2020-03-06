@@ -55,9 +55,9 @@ directly.
    <b><tt>\%programdata%/uhd/uhd.conf</tt></b>. The default can be overwritten
    at compile time by setting `UHD_SYS_CONF_FILE` through CMake.
 2. A user-specific configuration file. On Unix systems, it defaults to
-   `$APPDATA/.uhd/uhd.conf`, where `$APPDATA` is usually the same as the user's
-   home directory, unless `$APPDATA` or `$USER_CONFIG_DIR` are defined. On
-   Windows systems, it simply resolves to <b><tt>\%appdata%</tt></b>.
+   `$XDG_CONFIG_HOME/uhd.conf`, where `$XDG_CONFIG_HOME` is usually the same as
+   `$HOME/.config`. On Windows systems, it also checks
+   <b><tt>\%localappdata%</tt></b> and <b><tt>\%appdata%</tt></b>.
    The default can be overwritten at compile time by setting
    the `UHD_USER_CONF_FILE` through CMake.
 3. A configuration file specified by the environment variable `UHD_CONFIG_FILE`

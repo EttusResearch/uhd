@@ -35,6 +35,8 @@
 
 namespace fs = boost::filesystem;
 
+static constexpr char UHD_CAL_DATA_PATH_VAR[] = "UHD_CAL_DATA_PATH";
+
 /*! Get the value of an environment variable.
  *
  * The returned std::string is the full environment variable string, and thus
@@ -128,6 +130,89 @@ static std::string expand_home_directory(std::string path)
 }
 #endif
 
+fs::path uhd::get_xdg_data_home()
+{
+    std::string xdg_data_home_str = get_env_var("XDG_DATA_HOME", "");
+    fs::path xdg_data_home(xdg_data_home_str);
+    if (!xdg_data_home_str.empty()) {
+        return fs::path(xdg_data_home_str);
+    }
+#ifdef UHD_PLATFORM_WIN32
+    const std::string localappdata = get_env_var("LOCALAPPDATA", "");
+    if (!localappdata.empty()) {
+        return fs::path(localappdata);
+    }
+    const std::string appdata = get_env_var("APPDATA", "");
+    if (!appdata.empty()) {
+        return fs::path(appdata);
+    }
+#endif
+    const std::string home = get_env_var("HOME", "");
+    if (home.empty()) {
+#ifdef UHD_PLATFORM_WIN32
+        const std::string err_msg =
+            "get_xdg_data_home(): Unable to find \%HOME\%, \%XDG_DATA_HOME\%, "
+            "\%LOCALAPPDATA\% or \%APPDATA\%.";
+#else
+        const std::string err_msg =
+            "get_xdg_data_home(): Unable to find $HOME or $XDG_DATA_HOME.";
+#endif
+        throw uhd::runtime_error(err_msg);
+    }
+    return fs::path(home) / ".local" / "share";
+}
+
+fs::path uhd::get_xdg_config_home()
+{
+    std::string xdg_config_home_str = get_env_var("XDG_CONFIG_HOME", "");
+    fs::path xdg_config_home(xdg_config_home_str);
+    if (!xdg_config_home_str.empty()) {
+        return fs::path(xdg_config_home_str);
+    }
+#ifdef UHD_PLATFORM_WIN32
+    const std::string localappdata = get_env_var("LOCALAPPDATA", "");
+    if (!localappdata.empty()) {
+        return fs::path(localappdata);
+    }
+    const std::string appdata = get_env_var("APPDATA", "");
+    if (!appdata.empty()) {
+        return fs::path(appdata);
+    }
+#endif
+    const std::string home = get_env_var("HOME", "");
+    if (home.empty()) {
+#ifdef UHD_PLATFORM_WIN32
+        const std::string err_msg =
+            "get_xdg_config_home(): Unable to find \%HOME\%, \%XDG_CONFIG_HOME\%, "
+            "\%LOCALAPPDATA\% or \%APPDATA\%.";
+#else
+        const std::string err_msg =
+            "get_xdg_config_home(): Unable to find $HOME or $XDG_CONFIG_HOME.";
+#endif
+        throw uhd::runtime_error(err_msg);
+    }
+    return fs::path(home) / ".config";
+}
+
+fs::path uhd::get_legacy_config_home()
+{
+#ifdef UHD_PLATFORM_WIN32
+    const std::string localappdata = get_env_var("LOCALAPPDATA", "");
+    if (!localappdata.empty()) {
+        return fs::path(localappdata) / ".uhd";
+    }
+    const std::string appdata = get_env_var("APPDATA", "");
+    if (!appdata.empty()) {
+        return fs::path(appdata) / ".uhd";
+    }
+#endif
+    const std::string home = get_env_var("HOME", "");
+    if (home.empty()) {
+        throw uhd::runtime_error("Unable to find $HOME.");
+    }
+    return fs::path(home) / ".uhd";
+}
+
 /***********************************************************************
  * Implement the functions in paths.hpp
  **********************************************************************/
@@ -171,23 +256,6 @@ std::string uhd::get_tmp_path(void)
     // give up and use the unix default
     return "/tmp";
 #endif
-}
-
-std::string uhd::get_app_path(void)
-{
-    const std::string uhdcalib_path = get_env_var("UHD_CONFIG_DIR");
-    if (not uhdcalib_path.empty())
-        return uhdcalib_path;
-
-    const std::string appdata_path = get_env_var("APPDATA");
-    if (not appdata_path.empty())
-        return appdata_path;
-
-    const std::string home_path = get_env_var("HOME");
-    if (not home_path.empty())
-        return home_path;
-
-    return uhd::get_tmp_path();
 }
 
 // Only used for deprecated CSV file loader. Delete this once CSV support is
@@ -242,21 +310,14 @@ std::string uhd::get_lib_path(void)
 
 std::string uhd::get_cal_data_path(void)
 {
-    const std::string uhdcalib_path = get_env_var("UHD_CAL_DATA_PATH");
+    // The easy case: User has set the environment variable
+    const std::string uhdcalib_path = get_env_var(UHD_CAL_DATA_PATH_VAR);
     if (not uhdcalib_path.empty()) {
         return uhdcalib_path;
     }
 
-    std::string xdg_data_home_str = get_env_var("XDG_DATA_HOME", "");
-    fs::path xdg_data_home(xdg_data_home_str);
-    if (xdg_data_home_str.empty()) {
-        const std::string home = get_env_var("HOME", "");
-        xdg_data_home          = fs::path(home) / ".local" / "share";
-    }
-
-    // FIXME: This needs to check if paths make sense, work on Windows, etc.
-
-    fs::path cal_data_path = fs::path(xdg_data_home) / "uhd" / "cal_data";
+    // If not, we use the default location
+    const fs::path cal_data_path = get_xdg_data_home() / "uhd" / "cal";
     return cal_data_path.string();
 }
 

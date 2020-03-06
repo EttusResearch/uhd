@@ -20,9 +20,6 @@ namespace uhd {
 //! Get a string representing the system's temporary directory
 UHD_API std::string get_tmp_path(void);
 
-//! Get a string representing the system's appdata directory
-UHD_API std::string get_app_path(void);
-
 //! Get a string representing the system's library directory
 UHD_API std::string get_lib_path(void);
 
