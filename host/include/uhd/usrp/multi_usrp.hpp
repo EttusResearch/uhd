@@ -120,9 +120,18 @@ public:
      */
     static sptr make(const device_addr_t& dev_addr);
 
-    /*!
-     * Get the underlying device object.
-     * This is needed to get access to the streaming API and properties.
+    /*! Get the underlying device object
+     *
+     * Note that it is not recommended to use this method. The property tree can
+     * be accessed by calling get_tree() on this object, and the streamers own
+     * all the streaming-related functionality. get_tx_stream() and
+     * get_rx_stream() can also be called on this object.
+     *
+     * For RFNoC devices, this won't return a true uhd::device anyway, because
+     * direct device access is locked for those. The returned pointer will
+     * still point to a valid device object, however, it has reduced
+     * functionality (in particular, recv_async_msg() won't work).
+     *
      * \return the device object within this USRP
      */
     virtual device::sptr get_device(void) = 0;

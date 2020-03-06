@@ -88,11 +88,18 @@ public:
      */
     virtual tx_streamer::sptr get_tx_stream(const stream_args_t& args) = 0;
 
-    /*!
-     * Receive and asynchronous message from the device.
+    /*! Receive asynchronous message from the device
+     *
+     * Note that when calling multi_usrp::get_device() on an RFNoC-capable device,
+     * the returned uhd::device (while still being a valid object) will not be
+     * able to execute this method. Instead, query the asynchronous messages
+     * from the appropriate Tx streamer.
+     *
      * \param async_metadata the metadata to be filled in
      * \param timeout the timeout in seconds to wait for a message
      * \return true when the async_metadata is valid, false for timeout
+     * \throws uhd::runtime_error if called on a device returned by
+     *         multi_usrp::get_device on an RFNoC device.
      */
     virtual bool recv_async_msg(
         async_metadata_t& async_metadata, double timeout = 0.1) = 0;

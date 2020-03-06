@@ -37,6 +37,50 @@ constexpr char DEFAULT_OTW_FORMAT[] = "sc16";
 constexpr double RX_SIGN            = +1.0;
 constexpr double TX_SIGN            = -1.0;
 
+//! A faux container for a UHD device
+//
+// Note that multi_usrp_rfnoc no longer gives access to the underlying device
+// class. Legacy code might use multi_usrp->get_device()->get_tree() or
+// similar functionalities; these can be faked with this redirector class.
+//
+// The only exception is recv_async_msg(), which depends on the streamer. It
+// will throw a uhd::runtime_error now.
+class redirector_device : public uhd::device
+{
+public:
+    redirector_device(multi_usrp* musrp_ptr) : _musrp(musrp_ptr) {}
+
+    rx_streamer::sptr get_rx_stream(const stream_args_t& args)
+    {
+        return _musrp->get_rx_stream(args);
+    }
+
+    tx_streamer::sptr get_tx_stream(const stream_args_t& args)
+    {
+        return _musrp->get_tx_stream(args);
+    }
+
+    bool recv_async_msg(async_metadata_t&, double)
+    {
+        throw uhd::runtime_error(
+            "uhd::device::recv_async_msg() cannot be called on this device type!");
+        return false;
+    }
+
+    uhd::property_tree::sptr get_tree(void) const
+    {
+        return _musrp->get_tree();
+    }
+
+    device_filter_t get_device_type() const
+    {
+        return USRP;
+    }
+
+private:
+    multi_usrp* _musrp;
+};
+
 /*! Make sure the stream args are valid and can be used by get_tx_stream()
  * and get_rx_stream().
  *
@@ -94,7 +138,10 @@ public:
      * Structors
      *************************************************************************/
     multi_usrp_rfnoc(rfnoc_graph::sptr graph, const device_addr_t& addr)
-        : _args(addr), _graph(graph), _tree(_graph->get_tree())
+        : _args(addr)
+        , _graph(graph)
+        , _tree(_graph->get_tree())
+        , _device(std::make_shared<redirector_device>(this))
     {
         // Discover all of the radios on our devices and create a mapping between
         // radio chains and channel numbers. The result is sorted.
@@ -155,10 +202,9 @@ public:
         // nop
     }
 
-    // Direct device access makes no sense with RFNoC
     device::sptr get_device(void)
     {
-        return nullptr;
+        return _device;
     }
 
     uhd::property_tree::sptr get_tree() const
@@ -2275,6 +2321,8 @@ private:
     std::unordered_map<size_t, double> _tx_rates;
 
     std::recursive_mutex _graph_mutex;
+
+    std::shared_ptr<redirector_device> _device;
 };
 
 /******************************************************************************
