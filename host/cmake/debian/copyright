@@ -51,6 +51,10 @@ Files: host/cmake/Modules/FindUSB1.cmake
 Copyright: Copyright (c) 2006, 2008  Laurent Montel, <montel@kde.org>
 License: Kitware-BSD
 
+Files: host/cmake/Modules/CMakeRC.cmake
+Copyright: Copyright (c) 2017 vector-of-bool <vectorofbool@gmail.com>
+License: MIT
+
 Files: firmware/fx2/*
 Copyright: 2003,2004,2006,2007 Free Software Foundation, Inc.
 License: GPL-3+

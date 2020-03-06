@@ -131,6 +131,11 @@ if(ENABLE_C_API)
 endif(ENABLE_C_API)
 
 ########################################################################
+# Add common resource compiler subdirectory
+########################################################################
+add_subdirectory(rc)
+
+########################################################################
 # Add DLL resource file to Windows build
 ########################################################################
 if(MSVC)
@@ -172,7 +177,7 @@ if(ENABLE_MPMD)
     list(APPEND libuhd_sources $<TARGET_OBJECTS:uhd_rpclib>)
 endif()
 add_library(uhd SHARED ${libuhd_sources})
-target_link_libraries(uhd ${Boost_LIBRARIES} ${libuhd_libs})
+target_link_libraries(uhd ${Boost_LIBRARIES} ${libuhd_libs} uhd_rc)
 set_target_properties(uhd PROPERTIES DEFINE_SYMBOL "UHD_DLL_EXPORTS")
 if(NOT LIBUHDDEV_PKG)
     set_target_properties(uhd PROPERTIES SOVERSION "${UHD_ABI_VERSION}")
