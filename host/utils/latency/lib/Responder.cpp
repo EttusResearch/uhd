@@ -284,7 +284,7 @@ void Responder::print_test_parameters()
 // available
 void Responder::set_usrp_rx_dc_offset(uhd::usrp::multi_usrp::sptr usrp, bool ena)
 {
-    uhd::property_tree::sptr tree = usrp->get_device()->get_tree();
+    uhd::property_tree::sptr tree = usrp->get_tree();
     // FIXME: Path needs to be build in a programmatic way.
     bool dc_offset_exists =
         tree->exists(uhd::fs_path("/mboards/0/rx_frontends/A/dc_offset"));

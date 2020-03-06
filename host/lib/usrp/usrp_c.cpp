@@ -507,7 +507,7 @@ uhd_error uhd_usrp_get_mboard_eeprom(
     UHD_SAFE_C_SAVE_ERROR(
         h, uhd::fs_path eeprom_path = str(boost::format("/mboards/%d/eeprom") % mboard);
 
-        uhd::property_tree::sptr ptree = USRP(h)->get_device()->get_tree();
+        uhd::property_tree::sptr ptree = USRP(h)->get_tree();
         mb_eeprom->mboard_eeprom_cpp =
             ptree->access<uhd::usrp::mboard_eeprom_t>(eeprom_path).get();)
 }
@@ -518,7 +518,7 @@ uhd_error uhd_usrp_set_mboard_eeprom(
     UHD_SAFE_C_SAVE_ERROR(
         h, uhd::fs_path eeprom_path = str(boost::format("/mboards/%d/eeprom") % mboard);
 
-        uhd::property_tree::sptr ptree = USRP(h)->get_device()->get_tree();
+        uhd::property_tree::sptr ptree = USRP(h)->get_tree();
         ptree->access<uhd::usrp::mboard_eeprom_t>(eeprom_path)
             .set(mb_eeprom->mboard_eeprom_cpp);)
 }
@@ -534,7 +534,7 @@ uhd_error uhd_usrp_get_dboard_eeprom(uhd_usrp_handle h,
         uhd::fs_path eeprom_path =
             str(boost::format("/mboards/%d/dboards/%s/%s_eeprom") % mboard % slot % unit);
 
-        uhd::property_tree::sptr ptree = USRP(h)->get_device()->get_tree();
+        uhd::property_tree::sptr ptree = USRP(h)->get_tree();
         db_eeprom->dboard_eeprom_cpp =
             ptree->access<uhd::usrp::dboard_eeprom_t>(eeprom_path).get();)
 }
@@ -550,7 +550,7 @@ uhd_error uhd_usrp_set_dboard_eeprom(uhd_usrp_handle h,
         uhd::fs_path eeprom_path =
             str(boost::format("/mboards/%d/dboards/%s/%s_eeprom") % mboard % slot % unit);
 
-        uhd::property_tree::sptr ptree = USRP(h)->get_device()->get_tree();
+        uhd::property_tree::sptr ptree = USRP(h)->get_tree();
         ptree->access<uhd::usrp::dboard_eeprom_t>(eeprom_path)
             .set(db_eeprom->dboard_eeprom_cpp);)
 }

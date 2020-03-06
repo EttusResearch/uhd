@@ -46,7 +46,7 @@ static constexpr size_t MAX_NUM_TX_ERRORS = 10;
  **********************************************************************/
 static inline void set_optimum_defaults(uhd::usrp::multi_usrp::sptr usrp)
 {
-    uhd::property_tree::sptr tree = usrp->get_device()->get_tree();
+    auto tree = usrp->get_tree();
     // Will work on 1st subdev, top-level must make sure it's the right one
     uhd::usrp::subdev_spec_t subdev_spec = usrp->get_rx_subdev_spec();
 
@@ -103,7 +103,7 @@ void check_for_empty_serial(uhd::usrp::multi_usrp::sptr usrp)
     uhd::usrp::subdev_spec_t subdev_spec = usrp->get_rx_subdev_spec();
 
     // extract eeprom
-    uhd::property_tree::sptr tree = usrp->get_device()->get_tree();
+    uhd::property_tree::sptr tree = usrp->get_tree();
     // This only works with transceiver boards, so we can always check rx side
     const uhd::fs_path db_path =
         "/mboards/0/dboards/" + subdev_spec[0].db_name + "/rx_eeprom";
@@ -170,7 +170,7 @@ static inline void write_samples_to_file(
  **********************************************************************/
 static std::string get_serial(uhd::usrp::multi_usrp::sptr usrp, const std::string& tx_rx)
 {
-    uhd::property_tree::sptr tree = usrp->get_device()->get_tree();
+    uhd::property_tree::sptr tree = usrp->get_tree();
     // Will work on 1st subdev, top-level must make sure it's the right one
     uhd::usrp::subdev_spec_t subdev_spec = usrp->get_rx_subdev_spec();
     const uhd::fs_path db_path =
