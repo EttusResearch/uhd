@@ -64,17 +64,9 @@ __firmware/__
 
 The source code for all microprocessors in USRP hardware.
 
-__fpga-src/__
+__fpga/__
 
-The source code for the UHD FPGA images. Note this is a git submodule,
-if you are cloning the repository and want to modify the FPGA code,
-you will need to run 'git clone --recursive' to automatically
-populate this directory. Alternatively, you can run 'git submodule init'
-followed by 'git submodule update' to populate it after cloning the
-repository without '--recursive'.
-
-Note that this subdirectory is very large, and not necessary for
-building applications that link against UHD.
+The source code for the UHD FPGA images.
 
 __images/__
 
