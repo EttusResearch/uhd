@@ -65,12 +65,12 @@ endif(WIN32)
 add_custom_command(TARGET pyuhd
     POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:pyuhd> ${CMAKE_CURRENT_BINARY_DIR}/uhd/$<TARGET_FILE_NAME:pyuhd>)
 
-set(PYUHD_FILES
-  ${CMAKE_CURRENT_SOURCE_DIR}/__init__.py
-  ${CMAKE_CURRENT_SOURCE_DIR}/types.py
-  ${CMAKE_CURRENT_SOURCE_DIR}/usrp.py
-  ${CMAKE_CURRENT_SOURCE_DIR}/filters.py
-  ${CMAKE_CURRENT_SOURCE_DIR}/rfnoc.py
+# List of Python files that are part of the module but don't get
+# generated during build time.
+# Note: When adding Python files into uhd/, they don't get added to the
+# dependency list until CMake is re-run.
+file(GLOB_RECURSE PYUHD_FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/uhd/*.py
 )
 
 set(SETUP_PY_IN    "${CMAKE_CURRENT_SOURCE_DIR}/setup.py.in")
@@ -81,7 +81,7 @@ file(TO_NATIVE_PATH ${CMAKE_CURRENT_BINARY_DIR} NATIVE_CURRENT_BINARY_DIR)
 configure_file(${SETUP_PY_IN} ${SETUP_PY})
 
 add_custom_command(OUTPUT ${TIMESTAMP_FILE}
-  COMMAND ${CMAKE_COMMAND} -E copy ${PYUHD_FILES} ${CMAKE_CURRENT_BINARY_DIR}/uhd
+  COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/uhd ${CMAKE_CURRENT_BINARY_DIR}/uhd
   COMMAND ${PYTHON_EXECUTABLE} ${SETUP_PY} -q build
   COMMAND ${CMAKE_COMMAND} -E touch ${TIMESTAMP_FILE}
   DEPENDS ${PYUHD_FILES})

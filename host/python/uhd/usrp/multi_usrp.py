@@ -8,7 +8,7 @@ Python UHD module containing the MultiUSRP and other objects
 """
 
 import numpy as np
-from . import libpyuhd as lib
+from .. import libpyuhd as lib
 
 
 class MultiUSRP(lib.usrp.multi_usrp):
@@ -126,16 +126,3 @@ class MultiUSRP(lib.usrp.multi_usrp):
         return send_samps
 
 
-SubdevSpecPair = lib.usrp.subdev_spec_pair
-SubdevSpec = lib.usrp.subdev_spec
-GPIOAtrReg = lib.usrp.gpio_atr_reg
-GPIOAtrMode = lib.usrp.gpio_atr_mode
-Unit = lib.usrp.unit
-AuxDAC = lib.usrp.aux_dac
-AuxADC = lib.usrp.aux_adc
-SpecialProps = lib.usrp.special_props
-Sampling = lib.usrp.sampling
-FEConnection = lib.usrp.fe_connection
-StreamArgs = lib.usrp.stream_args
-RXStreamer = lib.usrp.rx_streamer
-TXStreamer = lib.usrp.tx_streamer
