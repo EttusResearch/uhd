@@ -37,6 +37,7 @@ set(util_share_sources
 )
 set(util_share_sources_py
     converter_benchmark.py
+    convert_cal_data.py
 )
 if(ENABLE_USB)
     list(APPEND util_share_sources

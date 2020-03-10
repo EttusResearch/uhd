@@ -88,6 +88,8 @@ utilities will automatically generate the calibration data in the new format.
 To convert existing calbration data to the new format, use the convert_cal_data.py
 utility. By default, it will convert all existing data. Use `convert_cal_data.py --help`
 to get a full list of command line options.
+The tool is installed with the other utilities, for example into `/usr/share/lib/uhd/utils`,
+depending on your OS and CMake settings.
 
 
 \subsection ignore_cal_file Ignoring Calibration Files
