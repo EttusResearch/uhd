@@ -31,18 +31,11 @@ namespace py = pybind11;
 // for newer Python versions.
 // This function is also necessary because it ensures access to the C API
 // and removes a warning.
-#if PY_MAJOR_VERSION >= 3
 void* init_numpy()
 {
     import_array();
     return NULL;
 }
-#else
-void init_numpy()
-{
-    import_array();
-}
-#endif
 
 PYBIND11_MODULE(libpyuhd, m)
 {
