@@ -150,11 +150,9 @@ public:
             gain_bucket.at(i) += additional_gain;
             gain_left_to_distribute -= additional_gain;
         }
-        UHD_LOGGER_DEBUG("UHD") << "gain_left_to_distribute " << gain_left_to_distribute;
 
         // now write the bucket out to the individual gain values
         for (size_t i = 0; i < gain_bucket.size(); i++) {
-            UHD_LOGGER_DEBUG("UHD") << i << ": " << gain_bucket.at(i);
             all_fcns.at(i).set_value(gain_bucket.at(i));
         }
     }
