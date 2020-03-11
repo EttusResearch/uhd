@@ -11,3 +11,4 @@ from . import types
 from . import usrp
 from . import filters
 from . import rfnoc
+from .libpyuhd.paths import *

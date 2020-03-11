@@ -26,6 +26,7 @@ namespace py = pybind11;
 #include "usrp/fe_connection_python.hpp"
 #include "usrp/multi_usrp_python.hpp"
 #include "usrp/subdev_spec_python.hpp"
+#include "utils/paths_python.hpp"
 
 // We need this hack because import_array() returns NULL
 // for newer Python versions.
@@ -42,6 +43,10 @@ PYBIND11_MODULE(libpyuhd, m)
     // Initialize the numpy C API
     // (otherwise we will see segmentation faults)
     init_numpy();
+
+    // Register paths submodule
+    auto paths_module = m.def_submodule("paths", "Path Utilities");
+    export_paths(paths_module);
 
     // Register types submodule
     auto types_module = m.def_submodule("types", "UHD Types");
