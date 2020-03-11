@@ -17,8 +17,9 @@ all supported simulator targets. Currently, the following targets will work:
     cleanall:   Cleanup everything!
     xsim:       Run the simulation using the Xilinx Vivado Simulator
     xclean:     Cleanup Xilinx Vivado Simulator intermediate files
-    vsim:       Run the simulation using Modelsim
-    vclean:     Cleanup Modelsim intermediate files
+    vsim:       Run the simulation using ModelSim simulator via Vivado 
+    modelsim:   Runs the simulation using ModelSim without Vivado
+    vclean:     Cleanup ModelSim intermediate files
 
 
 ## Using Xilinx Vivado XSim

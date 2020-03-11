@@ -125,21 +125,25 @@ if [expr [string equal $simulator "Modelsim"] == 1] {
 # Launch simulation
 launch_simulation
 
-# Synthesize requested modules
-foreach synth_top "$::env(VIV_SYNTH_TOP)" {
-    set_property top $synth_top [current_fileset]
-    synth_design -mode out_of_context
-    # Perform a simple regex-based search for all clock signals and constrain
-    # them to 500 MHz for the timing report.
-    set clk_regexp "(?i)^(?!.*en.*).*(clk|clock).*"
-    foreach clk_inst [get_ports -regexp $clk_regexp] {
-      create_clock -name $clk_inst -period 2.0 [get_ports $clk_inst]
-    }
-    report_utilization -no_primitives -file ${working_dir}/${synth_top}_synth.rpt
-    report_timing_summary -setup -max_paths 3 -unique_pins -no_header -append -file ${working_dir}/${synth_top}_synth.rpt
-    write_checkpoint -force ${working_dir}/${synth_top}_synth.dcp
+if { [info exists ::env(VIV_SYNTH_TOP)] } {
+   puts "BUILDER: Synthesizing"
+   # Synthesize requested modules
+   foreach synth_top "$::env(VIV_SYNTH_TOP)" {
+      set_property top $synth_top [current_fileset]
+      synth_design -mode out_of_context
+      # Perform a simple regex-based search for all clock signals and constrain
+      # them to 500 MHz for the timing report.
+      set clk_regexp "(?i)^(?!.*en.*).*(clk|clock).*"
+      foreach clk_inst [get_ports -regexp $clk_regexp] {
+         create_clock -name $clk_inst -period 2.0 [get_ports $clk_inst]
+      }
+      report_utilization -no_primitives -file ${working_dir}/${synth_top}_synth.rpt
+      report_timing_summary -setup -max_paths 3 -unique_pins -no_header -append -file ${working_dir}/${synth_top}_synth.rpt
+      write_checkpoint -force ${working_dir}/${synth_top}_synth.dcp
+   }
+} else {
+   puts "BUILDER: Skipping resource report because VIV_SYNTH_TOP is not set"
 }
-
 # Close project
 if [string equal $vivado_mode "batch"] {
     puts "BUILDER: Closing project"
