@@ -121,7 +121,7 @@ if { [string compare $cmd "create"] == 0 } {
             open_project "$tmp_bddir/tmp_bd.xpr"
             open_bd_design [get_files "$src_rootname.bd"]
             # Rewrite TCL BD file
-            write_bd_tcl -make_local -include_layout -force "$src_dir/$src_rootname.tcl"
+            write_bd_tcl -make_local -force "$src_dir/$src_rootname.tcl"
             puts "INFO: BD TCL source updated: $src_dir/$src_rootname.tcl"
             # Close and delete tmp_bd project, not needed anymore.
             close_project
