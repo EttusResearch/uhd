@@ -1,14 +1,10 @@
-//
-// Copyright 2014-2015 Ettus Research LLC
-// Copyright 2018 Ettus Research, a National Instruments Company
-//
-// SPDX-License-Identifier: GPL-3.0-or-later
-//
+
 
 #ifndef INCLUDED_UHD_UTILS_MATH_HPP
 #define INCLUDED_UHD_UTILS_MATH_HPP
 
 #include <uhd/config.hpp>
+#include <uhd/exception.hpp>
 #include <stdint.h>
 #include <boost/numeric/conversion/bounds.hpp>
 #include <cmath>
@@ -249,6 +245,24 @@ inline IntegerType gcd(IntegerType x, IntegerType y)
     // Note: _bmint is defined conditionally at the top of the file
     return _bmint::gcd<IntegerType>(x, y);
 }
+
+//! Linearly interpolate f(x) given f(x0) = y0 and f(x1) = y1
+//
+// This draws a line through the coordinates x0/y0 and x1/y1, and then returns
+// the y-value for the given x-value on said line.
+//
+// \throws uhd::runtime_error if x0 == x1, since that doesn't allow us to
+//         interpolate.
+template <typename InterpType>
+inline InterpType linear_interp(
+    InterpType x, InterpType x0, InterpType y0, InterpType x1, InterpType y1)
+{
+    if (x0 == x1) {
+        throw uhd::runtime_error("linear_interp(): x0 and x1 must differ!");
+    }
+    return y0 + (x - x0) * (y1 - y0) / (x1 - x0);
+}
+
 
 } // namespace math
 } // namespace uhd
