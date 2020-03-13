@@ -252,6 +252,12 @@ UHD_ADD_NONAPI_TEST(
 )
 
 UHD_ADD_NONAPI_TEST(
+    TARGET fir_filter_block_test.cpp
+    EXTRA_SOURCES
+    ${CMAKE_SOURCE_DIR}/lib/rfnoc/graph.cpp
+)
+
+UHD_ADD_NONAPI_TEST(
     TARGET "transport_test.cpp"
     EXTRA_SOURCES
     ${CMAKE_SOURCE_DIR}/lib/transport/inline_io_service.cpp
