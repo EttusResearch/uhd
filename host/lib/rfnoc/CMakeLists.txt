@@ -45,6 +45,7 @@ LIBUHD_APPEND_SOURCES(
     ${CMAKE_CURRENT_SOURCE_DIR}/duc_block_control.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/dmafifo_block_control.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/fft_block_control.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/fir_filter_block_control.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/null_block_control.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/radio_control_impl.cpp
 )

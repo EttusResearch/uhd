@@ -72,9 +72,10 @@ static const device_type_t N320 = 0x1320;
 static const device_type_t X300 = 0xA300;
 
 // block identifiers
-static const noc_id_t RADIO_BLOCK = 0x12AD1000;
-static const noc_id_t DUC_BLOCK   = 0xD0C00000;
-static const noc_id_t DDC_BLOCK   = 0xDDC00000;
+static const noc_id_t RADIO_BLOCK      = 0x12AD1000;
+static const noc_id_t DUC_BLOCK        = 0xD0C00000;
+static const noc_id_t DDC_BLOCK        = 0xDDC00000;
+static const noc_id_t FIR_FILTER_BLOCK = 0xf1120000;
 
 }} // namespace uhd::rfnoc
 
