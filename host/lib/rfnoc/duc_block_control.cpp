@@ -34,19 +34,20 @@ constexpr uint32_t REG_CHAN_OFFSET = 2048;
 
 using namespace uhd::rfnoc;
 
-const uint16_t duc_block_control::MINOR_COMPAT = 0;
+const uint16_t duc_block_control::MINOR_COMPAT = 1;
 const uint16_t duc_block_control::MAJOR_COMPAT = 0;
 
 const uint32_t duc_block_control::RB_COMPAT_NUM     = 0; // read this first
 const uint32_t duc_block_control::RB_NUM_HB         = 8;
 const uint32_t duc_block_control::RB_CIC_MAX_INTERP = 16;
 
-const uint32_t duc_block_control::SR_N_ADDR        = 128 * 8;
-const uint32_t duc_block_control::SR_M_ADDR        = 129 * 8;
-const uint32_t duc_block_control::SR_CONFIG_ADDR   = 130 * 8;
-const uint32_t duc_block_control::SR_INTERP_ADDR   = 131 * 8;
-const uint32_t duc_block_control::SR_FREQ_ADDR     = 132 * 8;
-const uint32_t duc_block_control::SR_SCALE_IQ_ADDR = 133 * 8;
+const uint32_t duc_block_control::SR_N_ADDR         = 128 * 8;
+const uint32_t duc_block_control::SR_M_ADDR         = 129 * 8;
+const uint32_t duc_block_control::SR_CONFIG_ADDR    = 130 * 8;
+const uint32_t duc_block_control::SR_INTERP_ADDR    = 131 * 8;
+const uint32_t duc_block_control::SR_FREQ_ADDR      = 132 * 8;
+const uint32_t duc_block_control::SR_SCALE_IQ_ADDR  = 133 * 8;
+const uint32_t duc_block_control::SR_TIME_INCR_ADDR = 137 * 8;
 
 class duc_block_control_impl : public duc_block_control
 {
@@ -464,9 +465,11 @@ private:
 
         // Rate change = M/N, where N = 1
         _duc_reg_iface.poke32(SR_M_ADDR, interp, chan);
-        // FIXME:
-        // - TwinRX had some issues with N == 1
         _duc_reg_iface.poke32(SR_N_ADDR, 1, chan);
+
+        // Configure time increment in ticks per M output samples
+        _duc_reg_iface.poke32(SR_TIME_INCR_ADDR,
+            uint32_t(get_tick_rate()/get_output_rate(chan)), chan);
 
         if (cic_interp > 1 and hb_enable == 0) {
             RFNOC_LOG_WARNING(

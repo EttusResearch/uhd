@@ -1,5 +1,6 @@
 //
 // Copyright 2019 Ettus Research, A National Instruments Company
+// Copyright 2020 Ettus Research, A National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -13,15 +14,16 @@
 localparam DDC_BASE_ADDR = 'h00;
 localparam DDC_ADDR_W    = 8;
 
-localparam RB_COMPAT_NUM    = 0;
-localparam RB_NUM_HB        = 1;
-localparam RB_CIC_MAX_DECIM = 2;
-localparam SR_N_ADDR        = 128;
-localparam SR_M_ADDR        = 129;
-localparam SR_CONFIG_ADDR   = 130;
-localparam SR_FREQ_ADDR     = 132;
-localparam SR_SCALE_IQ_ADDR = 133;
-localparam SR_DECIM_ADDR    = 134;
-localparam SR_MUX_ADDR      = 135;
-localparam SR_COEFFS_ADDR   = 136;
+localparam RB_COMPAT_NUM     = 0;
+localparam RB_NUM_HB         = 1;
+localparam RB_CIC_MAX_DECIM  = 2;
+localparam SR_N_ADDR         = 128;
+localparam SR_M_ADDR         = 129;
+localparam SR_CONFIG_ADDR    = 130;
+localparam SR_FREQ_ADDR      = 132;
+localparam SR_SCALE_IQ_ADDR  = 133;
+localparam SR_DECIM_ADDR     = 134;
+localparam SR_MUX_ADDR       = 135;
+localparam SR_COEFFS_ADDR    = 136;
+localparam SR_TIME_INCR_ADDR = 137;
 

@@ -1,5 +1,6 @@
 //
 // Copyright 2019 Ettus Research, a National Instruments Company
+// Copyright 2020 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -73,7 +74,7 @@ module rfnoc_block_ddc #(
   localparam NIPC   = 1;
 
   localparam COMPAT_MAJOR  = 16'h0;
-  localparam COMPAT_MINOR  = 16'h0;
+  localparam COMPAT_MINOR  = 16'h1;
 
   `include "rfnoc_block_ddc_regs.vh"
   `include "../../core/rfnoc_axis_ctrl_utils.vh"
@@ -334,7 +335,8 @@ module rfnoc_block_ddc #(
         .MAX_M(1),
         .SR_N_ADDR(SR_N_ADDR),
         .SR_M_ADDR(SR_M_ADDR),
-        .SR_CONFIG_ADDR(SR_CONFIG_ADDR))
+        .SR_CONFIG_ADDR(SR_CONFIG_ADDR),
+        .SR_TIME_INCR_ADDR(SR_TIME_INCR_ADDR))
       axi_rate_change (
         .clk(ce_clk), .reset(ce_rst), .clear(clear_tx_seqnum[i]), .clear_user(clear_user),
         .src_sid(src_sid[16*i+15:16*i]), .dst_sid(next_dst_sid[16*i+15:16*i]),

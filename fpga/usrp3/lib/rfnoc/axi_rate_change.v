@@ -1,6 +1,7 @@
 //
 // Copyright 2016 Ettus Research
 // Copyright 2018 Ettus Research, a National Instruments Company
+// Copyright 2020 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -44,7 +45,8 @@ module axi_rate_change #(
   // Settings registers
   parameter SR_N_ADDR               = 0,
   parameter SR_M_ADDR               = 1,
-  parameter SR_CONFIG_ADDR          = 2
+  parameter SR_CONFIG_ADDR          = 2,
+  parameter SR_TIME_INCR_ADDR       = 3
 )(
   input clk, input reset, input clear,
   output clear_user,  // Strobed after end of burst. Throttles input. Useful for resetting user code between bursts.
@@ -99,6 +101,15 @@ module axi_rate_change #(
     .clk(clk), .rst(reset), .strobe(set_stb), .addr(set_addr), .in(set_data),
     .out(sr_config), .changed());
   assign enable_clear_user = sr_config;
+
+  // Time increment in ticks per M samples
+  wire [$clog2(MAX_N+1)-1:0] sr_time_incr;
+  reg  [$clog2(MAX_N+1)-1:0] time_incr;
+  setting_reg #(
+    .my_addr(SR_TIME_INCR_ADDR), .width($clog2(MAX_N+1)), .at_reset(0)
+  ) set_time_incr (
+    .clk(clk), .rst(reset), .strobe(set_stb), .addr(set_addr), .in(set_data),
+    .out(sr_time_incr), .changed());
 
   /********************************************************
   ** Header, word count FIFOs
@@ -179,6 +190,8 @@ module axi_rate_change #(
         RECV_INIT : begin
           n                      <= sr_n;
           m                      <= sr_m;
+          // Default time increment to sr_n value to preserve default behavior
+          time_incr              <= sr_time_incr == 0 ? sr_n : sr_time_incr;
           rate_changed           <= 1'b0;
           first_header           <= 1'b1;
           partial_first_word     <= 1'b1;
@@ -401,9 +414,9 @@ module axi_rate_change #(
               if (has_time_clear) begin
                 has_time_out   <= 1'b0;
               end
-              vita_time_out    <= vita_time_accum + n;
+              vita_time_out    <= vita_time_accum + time_incr;
             end
-            vita_time_accum    <= vita_time_accum + n;
+            vita_time_accum    <= vita_time_accum + time_incr;
             if (last_word_in_burst) begin
               vt_state         <= VT_INIT;
             end

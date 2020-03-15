@@ -1,5 +1,6 @@
 //
 // Copyright 2019 Ettus Research, A National Instruments Company
+// Copyright 2020 Ettus Research, A National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -22,4 +23,4 @@ localparam SR_CONFIG_ADDR    = 130;
 localparam SR_INTERP_ADDR    = 131;
 localparam SR_FREQ_ADDR      = 132;
 localparam SR_SCALE_IQ_ADDR  = 133;
-
+localparam SR_TIME_INCR_ADDR = 137;

@@ -34,21 +34,22 @@ constexpr uint32_t REG_CHAN_OFFSET = 2048;
 
 using namespace uhd::rfnoc;
 
-const uint16_t ddc_block_control::MINOR_COMPAT = 0;
+const uint16_t ddc_block_control::MINOR_COMPAT = 1;
 const uint16_t ddc_block_control::MAJOR_COMPAT = 0;
 
 const uint32_t ddc_block_control::RB_COMPAT_NUM    = 0; // read this first
 const uint32_t ddc_block_control::RB_NUM_HB        = 8;
 const uint32_t ddc_block_control::RB_CIC_MAX_DECIM = 16;
 
-const uint32_t ddc_block_control::SR_N_ADDR        = 128 * 8;
-const uint32_t ddc_block_control::SR_M_ADDR        = 129 * 8;
-const uint32_t ddc_block_control::SR_CONFIG_ADDR   = 130 * 8;
-const uint32_t ddc_block_control::SR_FREQ_ADDR     = 132 * 8;
-const uint32_t ddc_block_control::SR_SCALE_IQ_ADDR = 133 * 8;
-const uint32_t ddc_block_control::SR_DECIM_ADDR    = 134 * 8;
-const uint32_t ddc_block_control::SR_MUX_ADDR      = 135 * 8;
-const uint32_t ddc_block_control::SR_COEFFS_ADDR   = 136 * 8;
+const uint32_t ddc_block_control::SR_N_ADDR         = 128 * 8;
+const uint32_t ddc_block_control::SR_M_ADDR         = 129 * 8;
+const uint32_t ddc_block_control::SR_CONFIG_ADDR    = 130 * 8;
+const uint32_t ddc_block_control::SR_FREQ_ADDR      = 132 * 8;
+const uint32_t ddc_block_control::SR_SCALE_IQ_ADDR  = 133 * 8;
+const uint32_t ddc_block_control::SR_DECIM_ADDR     = 134 * 8;
+const uint32_t ddc_block_control::SR_MUX_ADDR       = 135 * 8;
+const uint32_t ddc_block_control::SR_COEFFS_ADDR    = 136 * 8;
+const uint32_t ddc_block_control::SR_TIME_INCR_ADDR = 137 * 8;
 
 class ddc_block_control_impl : public ddc_block_control
 {
@@ -478,10 +479,11 @@ private:
 
         // Rate change = M/N
         _ddc_reg_iface.poke32(SR_N_ADDR, decim, chan);
-        // FIXME:
-        // - eiscat DDC had a real mode, where M needed to be 2
-        // - TwinRX had some issues with M == 1
         _ddc_reg_iface.poke32(SR_M_ADDR, 1, chan);
+
+        // Configure time increment in ticks per M output samples
+        _ddc_reg_iface.poke32(SR_TIME_INCR_ADDR,
+            uint32_t(get_tick_rate()/get_output_rate(chan)), chan);
 
         if (cic_decim > 1 and hb_enable == 0) {
             RFNOC_LOG_WARNING(

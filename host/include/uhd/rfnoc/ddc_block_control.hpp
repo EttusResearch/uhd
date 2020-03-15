@@ -46,6 +46,7 @@ public:
     static const uint32_t SR_DECIM_ADDR;
     static const uint32_t SR_MUX_ADDR;
     static const uint32_t SR_COEFFS_ADDR;
+    static const uint32_t SR_TIME_INCR_ADDR;
 
     /*! Set the DDS frequency
      *

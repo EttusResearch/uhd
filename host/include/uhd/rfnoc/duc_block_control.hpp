@@ -45,6 +45,7 @@ public:
     static const uint32_t SR_FREQ_ADDR;
     static const uint32_t SR_SCALE_IQ_ADDR;
     static const uint32_t SR_INTERP_ADDR;
+    static const uint32_t SR_TIME_INCR_ADDR;
 
     /*! Set the DDS frequency
      *
