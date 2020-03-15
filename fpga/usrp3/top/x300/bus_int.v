@@ -1,7 +1,7 @@
 //
 // Copyright 2013 Ettus Research LLC
 // Copyright 2017 Ettus Research, a National Instruments Company
-// Copyright 2019 Ettus Research, a National Instruments Brand
+// Copyright 2019-2020 Ettus Research, a National Instruments Brand
 //
 // SPDX-License-Identifier: LGPL-3.0-or-later
 //
@@ -508,7 +508,7 @@ module bus_int #(
      .s_ctrlport_req_data   (set_data),
      .s_ctrlport_resp_ack   (),
      .s_ctrlport_resp_data  (),
-     .sample_rx_stb         (radio_rx_stb[0]),
+     .sample_rx_stb         (1'b1),
      .pps                   (pps),
      .tb_timestamp          (radio_time_tb),
      .tb_timestamp_last_pps (radio_time_last_pps_tb),
