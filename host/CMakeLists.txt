@@ -223,6 +223,9 @@ set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING "")
 #force UHD_RELEASE_MODE to be a string for cmake-gui
 set(UHD_RELEASE_MODE "${UHD_RELEASE_MODE}" CACHE STRING "UHD Release Mode")
 
+# Add any additional C++ compiler flags passed into CMake through NIUHD_CXXFLAGS variable
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${NIUHD_CXXFLAGS}")
+
 if(${CMAKE_CXX_COMPILER_ID} STREQUAL "GNU" OR
     ${CMAKE_CXX_COMPILER_ID} MATCHES "Clang")
     if(STRIP_BINARIES)
