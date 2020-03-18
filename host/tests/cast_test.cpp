@@ -27,4 +27,24 @@ BOOST_AUTO_TEST_CASE(test_from_str)
     BOOST_CHECK_EQUAL(5.0, from_str<double>("5.0"));
     BOOST_CHECK_EQUAL(23, from_str<int>("23"));
     BOOST_CHECK_EQUAL("foo", from_str<std::string>("foo"));
+
+    BOOST_CHECK_EQUAL(true, from_str<bool>("true"));
+    BOOST_CHECK_EQUAL(true, from_str<bool>("True"));
+    BOOST_CHECK_EQUAL(true, from_str<bool>("Y"));
+    BOOST_CHECK_EQUAL(true, from_str<bool>("y"));
+    BOOST_CHECK_EQUAL(true, from_str<bool>("YES"));
+    BOOST_CHECK_EQUAL(true, from_str<bool>("yEs"));
+    BOOST_CHECK_EQUAL(true, from_str<bool>("1"));
+
+    BOOST_CHECK_EQUAL(false, from_str<bool>("false"));
+    BOOST_CHECK_EQUAL(false, from_str<bool>("False"));
+    BOOST_CHECK_EQUAL(false, from_str<bool>("n"));
+    BOOST_CHECK_EQUAL(false, from_str<bool>("N"));
+    BOOST_CHECK_EQUAL(false, from_str<bool>("No"));
+    BOOST_CHECK_EQUAL(false, from_str<bool>("nO"));
+    BOOST_CHECK_EQUAL(false, from_str<bool>("0"));
+
+    BOOST_CHECK_THROW(from_str<bool>(""), uhd::runtime_error);
+    BOOST_CHECK_THROW(from_str<bool>("abc"), uhd::runtime_error);
+    BOOST_CHECK_THROW(from_str<bool>("deadbeef"), uhd::runtime_error);
 }

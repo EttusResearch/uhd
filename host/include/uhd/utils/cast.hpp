@@ -37,12 +37,27 @@ data_t from_str(const std::string&)
     throw uhd::runtime_error("Cannot convert from string!");
 }
 
+// Specializations of `uhd::cast::from_str()` for supported data types
+
+//! Specialization of `uhd::cast::from_str()` for Boolean values
+//
+//   Examples evaluating to `true`: 'True', 'Yes', 'y', '1', empty string
+//   Examples evaluating to `false`: 'false', 'NO', 'n', '0'
+//   Throws `uhd::runtime_error` if the string can't be converted to `bool`
+template <>
+UHD_API bool from_str(const std::string& val);
+
+//! Specialization of `uhd::cast::from_str()` for double-precision values
 template <>
 UHD_API double from_str(const std::string& val);
 
+//! Specialization of `uhd::cast::from_str()` for integer values
 template <>
 UHD_API int from_str(const std::string& val);
 
+//! Specialization of `uhd::cast::from_str()` for strings
+//
+//   This function simply returns the incoming string
 template <>
 UHD_API std::string from_str(const std::string& val);
 
