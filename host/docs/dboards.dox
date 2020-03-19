@@ -13,17 +13,27 @@ of each board as well.
 
 The Basic RX and LFRX boards have four modes of operation:
 
--   **Frontend A:** real signal on antenna RXA
--   **Frontend B:** real signal on antenna RXB
--   **Frontend AB:** quadrature frontend using both antennas (IQ)
--   **Frontend BA:** quadrature frontend using both antennas (QI)
+-   **Antenna Mode A:** real signal from antenna RXA
+-   **Antenna Mode B:** real signal from antenna RXB
+-   **Antenna Mode AB:** complex signal using both antennas (IQ)
+-   **Antenna Mode BA:** complex signal using both antennas (QI)
 
-The way in which you select the mode depends on the USRP type. On the X310,
-selecting the mode is done using the antenna API:
+The way in which you select the mode depends on the USRP type.
+
+The X300 series will create subdevices 0 and 1 for each BasicRX or LFRX board.
+The default is to make a channel for each subdevice. That can be controlled by
+setting the subdev spec:
 
 ```cpp
 auto usrp = uhd::usrp::multi_usrp::make("type=x300");
-usrp->set_rx_antenna("A"); // Disable RXB port
+usrp->set_rx_subdev_spec("A:1"); // Only 1 channel using subdevice 1 on Radio A
+```
+
+The antenna mode is selected for each channel using the antenna API:
+
+```cpp
+auto usrp = uhd::usrp::multi_usrp::make("type=x300");
+usrp->set_rx_antenna("A", 0); // Disable RXB port on channel 0
 ```
 
 On the USRP2, the N200 series, the B100 series, the E100, and the USRP1 the mode
@@ -40,22 +50,22 @@ rate of the ADC.
 
 BasicRX Bandwidth:
 
--   **For Real-Mode (A or B frontend)**: 250 MHz
--   **For Complex (AB or BA frontend)**: 500 MHz
+-   **For Real-Mode (Antenna Mode A or B)**: 250 MHz
+-   **For Complex (Antenna Mode AB or BA)**: 500 MHz
 
 LFRX Bandwidth:
 
--   **For Real-Mode (A or B frontend)**: 33 MHz
--   **For Complex (AB or BA frontend)**: 66 MHz
+-   **For Real-Mode (Antenna Mode A or B)**: 33 MHz
+-   **For Complex (Antenna Mode AB or BA)**: 66 MHz
 
 \subsection dboards_basictx Basic TX and LFTX
 
-The Basic TX and LFTX boards have 4 frontends:
+The Basic TX and LFTX boards have 4 modes of operation:
 
--   **Frontend A:** real signal on antenna TXA
--   **Frontend B:** real signal on antenna TXB
--   **Frontend AB:** quadrature frontend using both antennas (IQ)
--   **Frontend BA:** quadrature frontend using both antennas (QI)
+-   **Antenna Mode A:** real signal from antenna TXA
+-   **Antenna Mode B:** real signal from antenna TXB
+-   **Antenna Mode AB:** complex signal using both antennas (IQ)
+-   **Antenna Mode BA:** complex signal using both antennas (QI)
 
 The boards have no tunable elements or programmable gains. Through the
 magic of aliasing, you can up-convert signals greater than the Nyquist
@@ -63,13 +73,13 @@ rate of the DAC.
 
 BasicTX Bandwidth:
 
--   **For Real-Mode (A or B frontend**): 250 MHz
--   **For Complex (AB or BA frontend)**: 500 MHz
+-   **For Real-Mode (Antenna Mode A or B**): 250 MHz
+-   **For Complex (Antenna Mode AB or BA)**: 500 MHz
 
 LFTX Bandwidth:
 
--   **For Real-Mode (A or B frontend)**: 33 MHz
--   **For Complex (AB or BA frontend)**: 66 MHz
+-   **For Real-Mode (Antenna Mode A or B)**: 33 MHz
+-   **For Complex (Antenna Mode AB or BA)**: 66 MHz
 
 \subsection dboards_dbsrx DBSRX
 

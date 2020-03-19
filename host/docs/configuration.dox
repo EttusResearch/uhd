@@ -51,7 +51,7 @@ Ex: The subdev spec markup string to select a WBX on slot B.
 
     B:0
 
-Ex: The subdev spec markup string to select a BasicRX on slot B.
+Ex: The subdev spec markup string to select a BasicRX on slot B (on USRP2/N200 devices only).
 
     B:AB
 
