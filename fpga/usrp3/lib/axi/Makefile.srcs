@@ -33,4 +33,5 @@ axis_shift_register.v \
 axis_upsizer.v \
 axis_downsizer.v \
 axis_width_conv.v \
+axis_split.v \
 ))
