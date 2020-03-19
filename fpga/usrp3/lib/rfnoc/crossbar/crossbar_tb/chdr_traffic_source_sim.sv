@@ -72,10 +72,12 @@ module chdr_traffic_source_sim #(
     input [7:0] traffic_patt;
     input [15:0] last_sid;
 
+    logic [31:0] rnum;
+    
     if (traffic_patt == TRAFFIC_PATT_UNIFORM) begin
       gen_dst_sid = $urandom_range('d0, NUM_NODES-'d1);
     end else if (traffic_patt == TRAFFIC_PATT_UNIFORM_OTHERS) begin
-      logic [31:0] rnum = $urandom_range('d0, NUM_NODES-'d2);
+      rnum = $urandom_range('d0, NUM_NODES-'d2);
       if (rnum < NODE_ID)
         gen_dst_sid = rnum[15:0];
       else
@@ -99,7 +101,9 @@ module chdr_traffic_source_sim #(
   // Generation loop. Push to m_chdr infinitely fast
   initial begin: gen_blk
     // Generate infinitely
-    $srandom(NODE_ID + NUM_NODES);
+    std::process p;
+    p = process::self();
+    p.srandom(NODE_ID + NUM_NODES);
     m_chdr.reset();
     while (1) begin
       // A generation session begins on the posedge of start_stb

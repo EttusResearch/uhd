@@ -36,8 +36,7 @@ module cap_pattern_verifier_tb();
     .PATTERN("RAMP"),
     .RAMP_START(14'h0000),
     .RAMP_STOP(14'h3FFF),
-    .RAMP_INCR(14'h0001),
-    .NTH_CYCLE(1)
+    .RAMP_INCR(14'h0001)
   ) dut0 (
     .clk(clk),
     .rst(rst),
@@ -54,8 +53,7 @@ module cap_pattern_verifier_tb();
     .PATTERN("RAMP"),
     .RAMP_START(14'h0100),
     .RAMP_STOP(14'h0FFF),
-    .RAMP_INCR(14'h0001),
-    .NTH_CYCLE(1)
+    .RAMP_INCR(14'h0001)
   ) dut1 (
     .clk(clk),
     .rst(rst),

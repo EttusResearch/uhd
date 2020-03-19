@@ -35,7 +35,6 @@ module file_source #(
     end
   end
 
-  wire [31:0] sid;
   reg  [11:0] seqnum;
   wire [15:0] rate;
   reg  [1:0]  state;

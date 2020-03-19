@@ -172,7 +172,7 @@ module axis_width_conv_tb();
   // - words: The size of the packet in words
   // - inst: The instance number of the module to send to
   // - gaps: If 1 then insert bubble cycles randomly in the stream
-  task push_test_pkt(input integer words, input integer inst, input logic gaps);
+  task automatic push_test_pkt(input integer words, input integer inst, input logic gaps);
     begin
       logic [(MAX_IN_WORDS*WORD_W)-1:0] data = 0;
       logic [MAX_IN_WORDS-1:0]          keep = 0;
@@ -217,7 +217,7 @@ module axis_width_conv_tb();
   // - inst: The instance number of the module to send to
   // - gaps: If 1 then insert bubble cycles randomly in the stream
   // - ok: If 1 then all sanity checks have passed
-  task pull_test_pkt(input integer words, input integer inst, input logic gaps, output logic ok);
+  task automatic pull_test_pkt(input integer words, input integer inst, input logic gaps, output logic ok);
     begin
       logic [(MAX_OUT_WORDS*WORD_W)-1:0] pull_data = 0;
       logic [MAX_OUT_WORDS-1:0]          pull_keep = 0;

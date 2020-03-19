@@ -29,7 +29,17 @@ module chdr_dechunker_tb();
    reg [31:0] o_xfer_count = 0, i_xfer_count = 0;
    reg [63:0] o_last_tdata = 0;
 
-   
+   reg [63:0]  i_tdata;
+   reg         i_tlast;
+   reg         i_tvalid;
+   wire        i_tready;
+
+   wire [63:0] o_tdata;
+   wire        o_tlast, o_tvalid, o_tready;
+
+   reg result;
+
+
    always #10 clk = ~clk;
    
    initial $dumpfile("chdr_dechunker_tb.vcd");
@@ -106,15 +116,6 @@ module chdr_dechunker_tb();
       #100 reset = 0;
    end
    
-   reg [63:0]  i_tdata;
-   reg         i_tlast;
-   reg         i_tvalid;
-   wire        i_tready;
-
-   wire [63:0] o_tdata;
-   wire        o_tlast, o_tvalid, o_tready;
-   
-   reg result;
    initial begin
       quantum <= 8;
       i_tvalid <= 0;
